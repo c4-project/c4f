@@ -15,6 +15,13 @@ type config =
     x86_argv : string Queue.t;
   }
 
+(** [compiler_spec] describes how to invoke a compiler. *)
+type compiler_spec =
+  {
+    cc : string;
+    argv: string list;
+  }
+
 let usage = "act [paths to comparator output]"
 
 let c_path_of results_path = Filename.concat results_path "C"
@@ -93,14 +100,45 @@ let summarise_config (cfg : config) (f : Format.formatter) : unit =
 let null_formatter () : Format.formatter =
   Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
 
+let test_compiler (cc : string) =
+  let pid = Unix.create_process cc
+                                [|cc; "--version"|]
+                                Unix.stdin
+                                Unix.stdout
+                                Unix.stderr
+  in
+  let (_, stat) = Unix.waitpid [] pid in
+  match stat with
+  | Unix.WEXITED ret when ret = 0 -> R.ok ()
+  | Unix.WEXITED ret -> R.error_msgf "exited with code %d" ret
+  | Unix.WSIGNALED sg -> R.error_msgf "compiler killed by signal %d" sg
+  | Unix.WSTOPPED sg -> R.error_msgf "compiler stopped by signal %d" sg
+
+let default_compiler_argv : string list =
+  [ "-S"       (* emit assembly *)
+  ; "-no-fpic" (* don't emit position-independent code *)
+  ]
+
+let make_compiler_argv (argv : string Queue.t) : string list =
+  match List.of_seq (Queue.to_seq argv) with
+  | [] -> ["-S"; "-no-fpic"]
+  | xs -> xs
+
+let make_compiler_spec (cc : string) (argv : string Queue.t) =
+  test_compiler cc
+  |> R.reword_error_msg (fun _ -> R.msg "Compiler test failed")
+  |> R.map (fun _ -> { cc = cc
+                     ; argv = make_compiler_argv argv
+                     }
+           )
+
 let () =
   let cfg : config =
-    {
-      verbose = ref false;
-      results_paths = Queue.create ();
-      out_root_path = ref Filename.current_dir_name;
-      x86_cc = ref "gcc";
-      x86_argv = Queue.create ();
+    { verbose = ref false
+    ; results_paths = Queue.create ()
+    ; out_root_path = ref Filename.current_dir_name
+    ; x86_cc = ref "gcc"
+    ; x86_argv = Queue.create ()
     }
   in
 
@@ -124,5 +162,13 @@ let () =
     else null_formatter ()
   in
   summarise_config cfg verbose_fmt;
+
+  let x86_spec = make_compiler_spec !(cfg.x86_cc) cfg.x86_argv in
+  begin
+    match x86_spec with
+    | Ok _ -> ()
+    | Error err ->
+       Format.eprintf "@[invalid x86 compiler:@ %a@]@." R.pp_msg err
+  end;
 
   Queue.iter (proc_results verbose_fmt cfg) cfg.results_paths
