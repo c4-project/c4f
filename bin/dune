@@ -1,3 +1,5 @@
 (executable
   (name main)
-  (libraries lib))
+  (libraries
+    lib
+    rresult))
