@@ -1,0 +1,5 @@
+((gcc-x86
+  ((style gcc)
+   (emits X86)
+   (cmd gcc)
+   (argv ("-m32" "-DNO_PTHREADS")))))
