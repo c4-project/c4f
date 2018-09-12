@@ -1,3 +1,4 @@
+open Core
 open Rresult
 
 type config =
@@ -19,7 +20,7 @@ type config =
 type compiler_spec =
   { cc   : string
   ; argv : string list
-  }
+  } [@@deriving sexp]
 
 let usage = "act [paths to comparator output]"
 
@@ -36,7 +37,7 @@ type pathset =
   }
 
 let gen_pathset (cfg : config) results_path c_fname =
-  let basename  = Filename.basename (Filename.remove_extension c_fname) in
+  let basename  = Filename.basename (Filename.chop_extension c_fname) in
   let lit_fname = basename ^ ".litmus" in
   let asm_fname = basename ^ ".s" in
   let root      = !(cfg.out_root_path) in
@@ -47,18 +48,16 @@ let gen_pathset (cfg : config) results_path c_fname =
   }
 
 let run_cc (cc : string) (argv : string list) =
-  let pid = Unix.create_process cc
-                                (Array.of_list (cc :: argv))
-                                Unix.stdin
-                                Unix.stdout
-                                Unix.stderr
+  let proc = Unix.create_process ~prog:cc
+                                 ~args:(cc :: argv)
   in
-  let (_, stat) = Unix.waitpid [] pid in
-  match stat with
-  | Unix.WEXITED ret when ret = 0 -> R.ok ()
-  | Unix.WEXITED ret -> R.error_msgf "exited with code %d" ret
-  | Unix.WSIGNALED sg -> R.error_msgf "compiler killed by signal %d" sg
-  | Unix.WSTOPPED sg -> R.error_msgf "compiler stopped by signal %d" sg
+  Unix.waitpid proc.pid
+  |> R.reword_error
+       (function
+        | `Exit_non_zero ret ->
+           R.msgf "exited with code %d" ret
+        | `Signal sg ->
+           R.msgf "compiler caught signal %s" (Signal.to_string sg))
 
 let compile_x86 (ccspec : compiler_spec) (ps : pathset) =
   let final_argv = ccspec.argv @ ["-o"; ps.x86_path; "--"; ps.c_path] in
@@ -66,7 +65,7 @@ let compile_x86 (ccspec : compiler_spec) (ps : pathset) =
 
 let summarise_pathset (vf : Format.formatter) (ps : pathset) : unit =
   List.iter
-    (fun (io, t, v) -> Format.fprintf vf "@[[%s] %s file:@ %s@]@." io t v)
+    ~f:(fun (io, t, v) -> Format.fprintf vf "@[[%s] %s file:@ %s@]@." io t v)
     [ ("in" , "C"         , ps.c_path)
     ; ("in" , "C Litmus"  , ps.litc_path)
     ; ("out", "x86"       , ps.x86_path)
@@ -87,16 +86,12 @@ let proc_c (cfg : config) (ccspec : compiler_spec) vf results_path c_fname : uni
 let proc_results (cfg : config) (ccspec : compiler_spec) (vf : Format.formatter) (results_path : string) : unit =
   let c_path = Filename.concat results_path "C" in
   try
-    (Sys.readdir c_path)
-    |> Array.to_seq
-    |> Seq.filter (fun file -> Filename.extension file = ".c")
-    |> Seq.iter (proc_c cfg ccspec vf results_path)
+    Sys.readdir c_path
+    |> Array.filter ~f:(fun file -> snd (Filename.split_extension file) = Some ".c")
+    |> Array.iter ~f:(proc_c cfg ccspec vf results_path)
   with
     Sys_error e ->
-     Format.eprintf "@[system error:@ %s@]@." e
-
-let qpush (q : string Queue.t) (s : string) : unit =
-  Queue.push s q
+    Format.eprintf "@[system error:@ %s@]@." e
 
 let pp_kv (k : string) (v : Format.formatter -> unit) (f : Format.formatter) : unit =
   Format.pp_open_hvbox f 0;
@@ -111,11 +106,11 @@ let pp_sr (s : string ref) (f : Format.formatter) : unit =
 
 let pp_sq (sq : string Queue.t) (f : Format.formatter) : unit =
   let first = ref true in
-  Queue.iter (fun s -> begin
-                  if not !first then Format.pp_print_space f ();
-                  first := false;
-                  Format.pp_print_string f s
-                end)
+  Queue.iter ~f:(fun s -> begin
+                     if not !first then Format.pp_print_space f ();
+                     first := false;
+                     Format.pp_print_string f s
+                   end)
              sq
 
 let summarise_config (cfg : config) (f : Format.formatter) : unit =
@@ -145,7 +140,7 @@ let default_compiler_argv : string list =
   ]
 
 let make_compiler_argv (argv : string Queue.t) : string list =
-  default_compiler_argv @ List.of_seq (Queue.to_seq argv)
+  default_compiler_argv @ (Queue.to_list argv)
 
 let make_compiler_spec (cc : string) (argv : string Queue.t) =
   test_compiler cc
@@ -162,7 +157,7 @@ type ent_type =
 
 let get_ent_type (path : string) : ent_type =
   try
-    if Sys.is_directory path
+    if Sys.is_directory_exn path
     then Dir
     else File
   with
@@ -176,24 +171,24 @@ let mkdir (path : string) =
   | File -> R.error_msgf "%s exists, but is a file" path
   | Nothing ->
      try
-       Unix.mkdir path 0o755;
+       Unix.mkdir path;
        R.ok ()
      with
      | Unix.Unix_error (errno, func, arg) ->
         R.error_msgf "couldn't %s %s: %s"
-                     func arg (Unix.error_message errno)
+                     func arg (Unix.Error.message errno)
 
 let collect_map (f : 'a -> 'b -> ('b, 'e) result)
                 (init : 'b)
                 (xs : 'a list)
     : ('b, 'e) result =
-  List.fold_right (fun (v : 'a) (c : ('b, 'e) result) -> c >>= f v)
-                  xs
-                  (R.ok init)
+  List.fold_right xs
+                  ~init:(R.ok init)
+                  ~f:(fun (v : 'a) (c : ('b, 'e) result) -> c >>= f v)
 
 let make_dir_structure (root : string) =
   try
-    if Sys.is_directory root
+    if Sys.is_directory_exn root
     then
       collect_map (fun p _ -> mkdir p)
                   ()
@@ -222,12 +217,12 @@ let () =
        "Verbose mode.")
     ; ("-xc", Arg.Set_string cfg.x86_cc,
        "The x86 compiler to use.")
-    ; ("-xa", Arg.String (qpush cfg.x86_argv),
+    ; ("-xa", Arg.String (Queue.enqueue cfg.x86_argv),
        "Adds an argument to the x86 compiler.")
-    ; ("--", Arg.Rest (qpush cfg.results_paths), "")
+    ; ("--", Arg.Rest (Queue.enqueue cfg.results_paths), "")
     ]
   in
-  Arg.parse spec (qpush cfg.results_paths) usage;
+  Arg.parse spec (Queue.enqueue cfg.results_paths) usage;
 
   let verbose_fmt =
     if !(cfg.verbose)
@@ -244,7 +239,7 @@ let () =
       R.reword_error_msg (fun _ -> R.msg "invalid x86 compiler")
     >>= (
       fun x86_spec ->
-      Queue.iter (proc_results cfg x86_spec verbose_fmt) cfg.results_paths;
+      Queue.iter cfg.results_paths ~f:(proc_results cfg x86_spec verbose_fmt);
       R.ok ()
     )
   )
