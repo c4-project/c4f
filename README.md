@@ -6,7 +6,7 @@ This repository, while not containing anything particularly useful yet, will eve
 
 At time of writing, it literally just runs a compiler on every C test case in a memalloy run.  Eventually, it'll do something useful.
 
-## Requirements
+## Requirements
 
 - opam
 - dune
