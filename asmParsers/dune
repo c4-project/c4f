@@ -1,5 +1,6 @@
 (library
   (name asmParsers)
+  (preprocess (pps ppx_sexp_message))
   (libraries
     core
     menhirlib

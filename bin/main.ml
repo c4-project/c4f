@@ -174,8 +174,7 @@ let compile (cc_id : string) (cc_spec : CompilerSpec.t) (ps : pathset) =
   @ cc_spec.argv
   @ ["-o"
     ; asm_path
-    ; "--";
-    ps.c_path
+    ; ps.c_path
     ] in
   run_cc cc_spec.cmd final_argv
 

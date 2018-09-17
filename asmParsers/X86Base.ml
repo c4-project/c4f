@@ -16,6 +16,7 @@
 
 (** Define registers, barriers, and instructions for X86 *) 
 
+open Core
 open Printf
 
 
@@ -52,16 +53,17 @@ let regs =
    CF, "CF" ;
  ]
 
-let parse_list = List.map (fun (r,s) -> s,r) regs
+let parse_list = Map.of_alist_exn (module String.Caseless) (List.Assoc.inverse regs)
 
-let parse_reg s =
-  try Some (List.assoc s parse_list)
-  with Not_found -> None
+let parse_reg (s : string) : reg option =
+  Map.find parse_list s
 
 let pp_reg r = match r with 
 | Symbolic_reg r -> "%"^r
 | Internal i -> sprintf "i%i" i
-| _ -> try List.assoc r regs with Not_found -> assert false
+| _ -> match List.Assoc.find regs r ~equal:(=) with
+       | Some rr -> rr
+       | None -> assert false
 
 let reg_compare = Pervasives.compare (* Will do, no doubt *)
 
@@ -162,7 +164,7 @@ type parsedInstruction = instruction
       
 let pp_abs = ParsedConstant.pp_v
 
-let pp_rm32 rm32 = 
+let pp_rm32 rm32 =
   match rm32 with
   | Rm32_reg r -> pp_reg r
   | Rm32_deref r -> "[" ^ pp_reg r ^ "]"
@@ -599,7 +601,7 @@ include Pseudo.Make
 
     end)
 
-let get_macro _name = raise Not_found
+let get_macro _name = raise_s [%message "get_macro not found"]
 
 let get_id_and_list _i = failwith "get_id_and_list is only for Bell"
 

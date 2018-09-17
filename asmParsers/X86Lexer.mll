@@ -15,12 +15,13 @@
 (****************************************************************************)
 
 {
-module Make(O:LexUtils.Config) = struct
-open Lexing
-open LexMisc
-open X86Parser
-module X86 = X86Base
-module LU = LexUtils.Make(O)
+  module Make(O:LexUtils.Config) = struct
+    open Core
+    open Lexing
+    open LexMisc
+    open X86Parser
+    module X86 = X86Base
+    module LU = LexUtils.Make(O)
 }
 let digit = [ '0'-'9' ]
 let hex   = [ '0'-'9' 'a'-'f' 'A'-'F' ]
@@ -82,11 +83,10 @@ rule token = parse
 | "sfence"|"SFENCE"   { IT_SFENCE }
 | "mfence"|"MFENCE"   { IT_MFENCE }
 | "setnb"|"SETNB"       { IT_SETNB }
-| name as x
-  { match X86.parse_reg x with
-    | Some r -> ARCH_REG r
-    | None -> NAME x
-  }
+| name as x { x
+              |> X86.parse_reg
+              |> Option.value_map ~default:(NAME x) ~f:(fun f -> ARCH_REG f)
+            }
 | eof { EOF }
 | _ { raise (error ("Unexpected char: " ^ Lexing.lexeme lexbuf) lexbuf) }
 
