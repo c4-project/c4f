@@ -1,6 +1,6 @@
 open Core
-open Sexplib
 open Rresult
+open Lib
 
 type config =
   {
@@ -17,15 +17,6 @@ let iter_result (f : 'a -> (unit, 'e) result)
     : 'a list -> (unit, 'e) result =
   List.fold_result ~init:() ~f:(fun _ -> f)
 
-(** [compiler_spec] describes how to invoke a compiler. *)
-type compiler_spec =
-  { style : string
-  ; emits : string
-  ; cmd   : string
-  ; argv  : string list
-  } [@@deriving sexp]
-
-type compiler_spec_set = (string * compiler_spec) list
 
 let usage = "act [paths to comparator output]"
 
@@ -55,7 +46,7 @@ type pathset =
   }
 
 let gen_pathset
-      (specs : compiler_spec_set)
+      (specs : CompilerSpec.set)
       (root_path : string)
       (results_path : string)
       (c_fname : string)
@@ -138,7 +129,7 @@ let run_cc (cc : string) (argv : string list) =
   Stdio.In_channel.close errch;
   res
 
-let compile (cc_id : string) (cc_spec : compiler_spec) (ps : pathset) =
+let compile (cc_id : string) (cc_spec : CompilerSpec.t) (ps : pathset) =
   let asm_path = List.Assoc.find_exn ps.a_paths cc_id ~equal:(=) in
   let final_argv =
   [ "-S"       (* emit assembly *)
@@ -161,7 +152,7 @@ let summarise_pathset (vf : Format.formatter) (ps : pathset) : unit =
       @ List.map ~f:(fun (c, p) -> ("out", c, p)) ps.a_paths
       @ List.map ~f:(fun (c, p) -> ("out", c ^ " (litmus)", p)) ps.lita_paths)
 
-let proc_c (cfg : config) (cc_specs : compiler_spec_set) vf results_path c_fname =
+let proc_c (cfg : config) (cc_specs : CompilerSpec.set) vf results_path c_fname =
   let root = !(cfg.out_root_path) in
   let paths = gen_pathset cc_specs root results_path c_fname in
   summarise_pathset vf paths;
@@ -171,7 +162,7 @@ let proc_c (cfg : config) (cc_specs : compiler_spec_set) vf results_path c_fname
     fun _ -> iter_result (fun (cn, cs) -> compile cn cs paths) cc_specs
   )
 
-let proc_results (cfg : config) (cc_specs : compiler_spec_set) (vf : Format.formatter) (results_path : string) =
+let proc_results (cfg : config) (cc_specs : CompilerSpec.set) (vf : Format.formatter) (results_path : string) =
   let c_path = Filename.concat results_path "C" in
   try
     Sys.readdir c_path
@@ -182,60 +173,25 @@ let proc_results (cfg : config) (cc_specs : compiler_spec_set) (vf : Format.form
   with
     Sys_error e -> R.error_msgf "system error: %s" e
 
-let pp_kv (k : string) (v : Format.formatter -> unit) (f : Format.formatter) : unit =
-  Format.pp_open_hvbox f 0;
-  Format.pp_print_string f k;
-  Format.pp_print_string f ":";
-  Format.pp_print_break f 1 1;
-  v f;
-  Format.pp_close_box f ()
-
-let pp_sr (s : string ref) (f : Format.formatter) : unit =
-  Format.pp_print_string f !s
-
-let pp_sq (sq : string Queue.t) (f : Format.formatter) : unit =
-  let first = ref true in
-  Queue.iter ~f:(fun s -> begin
-                     if not !first then Format.pp_print_space f ();
-                     first := false;
-                     Format.pp_print_string f s
-                   end)
-             sq
-
-let pp_spec (spec : compiler_spec) (f : Format.formatter) : unit =
-  Format.pp_open_vbox f 0;
-  pp_kv "Style" (fun f -> Format.pp_print_string f spec.style) f;
-  Format.pp_print_cut f ();
-  pp_kv "Emits" (fun f -> Format.pp_print_string f spec.emits) f;
-  Format.pp_print_cut f ();
-  pp_kv "Command" (fun f -> Format.pp_print_string f spec.cmd) f;
-  Format.pp_print_cut f ();
-  pp_kv "Arguments"
-        (fun f -> Format.pp_print_list
-                    ~pp_sep:(Format.pp_print_space)
-                    (Format.pp_print_string)
-                    f spec.argv) f;
-  Format.pp_close_box f ()
-
 let summarise_config (cfg : config) (f : Format.formatter) : unit =
   Format.pp_open_vbox f 0;
   Format.pp_print_string f "Config --";
   Format.pp_print_break f 0 4;
   Format.pp_open_vbox f 0;
-  pp_kv "Reading compiler specs from" (pp_sr cfg.spec_file) f;
+  MyFormat.pp_kv "Reading compiler specs from" (MyFormat.pp_sr cfg.spec_file) f;
   Format.pp_print_cut f ();
-  pp_kv "memalloy results paths" (pp_sq cfg.results_paths) f;
+  MyFormat.pp_kv "memalloy results paths" (MyFormat.pp_sq cfg.results_paths) f;
   Format.pp_close_box f ();
   Format.pp_print_cut f ();
   Format.pp_close_box f ();
   Format.pp_print_flush f ()
 
-let summarise_specs (specs : compiler_spec_set) (f : Format.formatter) : unit =
+let summarise_specs (specs : CompilerSpec.set) (f : Format.formatter) : unit =
   Format.pp_open_vbox f 0;
   Format.pp_print_string f "Compiler specs --";
   Format.pp_print_break f 0 4;
   Format.pp_open_vbox f 0;
-  List.iter ~f:(fun (c, s) -> pp_kv c (pp_spec s) f) specs;
+  List.iter ~f:(fun (c, s) -> MyFormat.pp_kv c (CompilerSpec.pp s) f) specs;
   Format.pp_close_box f ();
   Format.pp_print_cut f ();
   Format.pp_close_box f ();
@@ -247,24 +203,15 @@ let null_formatter () : Format.formatter =
 let test_compiler (cc : string) =
   run_cc cc ["--version"]
 
-let compiler_spec_set_of_sexp : Sexp.t -> compiler_spec_set =
-  List.Assoc.t_of_sexp
-    Sexplib0.Sexp_conv.string_of_sexp
-    compiler_spec_of_sexp
-
-let load_compiler_specs (specpath : string) : compiler_spec_set =
-  Sexp.load_sexp_conv_exn specpath compiler_spec_set_of_sexp
-
 (** [make_compiler_specs specpath] reads in the compiler spec list at
     [specpath], converting it to a [compiler_spec_set]. *)
 
 let make_compiler_specs (specpath : string) =
-  load_compiler_specs specpath
+  CompilerSpec.load_specs specpath
   |> List.fold_result ~init:[]
                       ~f:(fun specs (c, spec) ->
                         test_compiler (spec.cmd) >>| (fun _ -> (c, spec)::specs)
                       )
-
 let () =
   let cfg : config =
     { verbose = ref false

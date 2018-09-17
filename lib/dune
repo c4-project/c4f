@@ -1,2 +1,6 @@
 (library
-  (name lib))
+  (name lib)
+  (preprocess (pps ppx_jane))
+  (libraries
+    core
+    rresult))
