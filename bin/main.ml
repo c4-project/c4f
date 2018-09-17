@@ -178,20 +178,20 @@ let summarise_config (cfg : config) (f : Format.formatter) : unit =
   Format.pp_print_string f "Config --";
   Format.pp_print_break f 0 4;
   Format.pp_open_vbox f 0;
-  MyFormat.pp_kv "Reading compiler specs from" (MyFormat.pp_sr cfg.spec_file) f;
+  MyFormat.pp_kv f "Reading compiler specs from" MyFormat.pp_sr cfg.spec_file;
   Format.pp_print_cut f ();
-  MyFormat.pp_kv "memalloy results paths" (MyFormat.pp_sq cfg.results_paths) f;
+  MyFormat.pp_kv f "memalloy results paths" MyFormat.pp_sq cfg.results_paths;
   Format.pp_close_box f ();
   Format.pp_print_cut f ();
   Format.pp_close_box f ();
   Format.pp_print_flush f ()
 
-let summarise_specs (specs : CompilerSpec.set) (f : Format.formatter) : unit =
+let summarise_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
   Format.pp_open_vbox f 0;
   Format.pp_print_string f "Compiler specs --";
   Format.pp_print_break f 0 4;
   Format.pp_open_vbox f 0;
-  List.iter ~f:(fun (c, s) -> MyFormat.pp_kv c (CompilerSpec.pp s) f) specs;
+  List.iter ~f:(fun (c, s) -> MyFormat.pp_kv f c CompilerSpec.pp s) specs;
   Format.pp_close_box f ();
   Format.pp_print_cut f ();
   Format.pp_close_box f ();
@@ -207,7 +207,7 @@ let test_compiler (cc : string) =
     [specpath], converting it to a [compiler_spec_set]. *)
 
 let make_compiler_specs (specpath : string) =
-  CompilerSpec.load_specs specpath
+  CompilerSpec.load_specs ~path:specpath
   |> List.fold_result ~init:[]
                       ~f:(fun specs (c, spec) ->
                         test_compiler (spec.cmd) >>| (fun _ -> (c, spec)::specs)
@@ -244,7 +244,7 @@ let () =
     R.reword_error_msg (fun _ -> R.msg "Compiler specs are invalid.")
   >>= (
     fun specs ->
-    summarise_specs specs verbose_fmt;
+    summarise_specs verbose_fmt specs;
     Queue.fold_result cfg.results_paths
                       ~init:()
                       ~f:(fun _ -> proc_results cfg specs verbose_fmt);
