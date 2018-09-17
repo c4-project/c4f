@@ -24,7 +24,7 @@ module LU = LexUtils.Make(O)
 }
 let digit = [ '0'-'9' ]
 let hex   = [ '0'-'9' 'a'-'f' 'A'-'F' ]
-let alpha = [ 'a'-'z' 'A'-'Z']
+let alpha = [ 'a'-'z' 'A'-'Z' ]
 
 (* Symbol lexing
    See: https://sourceware.org/binutils/docs/as/Symbol-Intro.html#Symbol-Intro
@@ -41,14 +41,15 @@ let hexnum = hex+
 
 rule token = parse
 | [' ''\t''\r'] { token lexbuf }
-| '\n'      { let e = EOL in new_line lexbuf; e }
+| '\n'      { new_line lexbuf; EOL }
 | "/*"      { LU.skip_c_comment lexbuf ; token lexbuf }
-| '#'       { LU.skip_c_line_comment lexbuf ; token lexbuf }
+| '#'       { LU.skip_c_line_comment lexbuf ; EOL }
 | '.' (name as d) { DIRECTIVE d }
 | '-' ? num as x { INTEL_NUM x }
-| "0x" (hexnum as x) { ATT_HEX x }
-| (hexnum as x) 'h' { INTEL_HEX x }
 | '$' ('-'? num as x) { ATT_NUM x }
+| "0x" (hexnum as x) { ATT_HEX x }
+| "0x" { raise (error ("Malformed hex constant: " ^ Lexing.lexeme lexbuf) lexbuf) }
+| (hexnum as x) 'h' { INTEL_HEX x }
 | '%' (name as name) { SYMB_REG name }
 | ';' { SEMI }
 | ',' { COMMA }

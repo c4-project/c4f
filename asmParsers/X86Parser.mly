@@ -59,7 +59,7 @@ stm_list:
 stm:
   | directive EOL {$1}
   | instr_option EOL {$1}
-  | error EOL { raise (X86Base.ParseError($loc, X86Base.Statement)) }
+  | error { raise (X86Base.ParseError($loc, X86Base.Statement)) }
 
 directive:
   | DIRECTIVE separated_list(COMMA, directive_arg) { Nop }
@@ -136,13 +136,13 @@ rm32:
   |  LBRK NAME RBRK {Rm32_abs (Constant.Symbolic ($2,0))}
   |  LBRK INTEL_NUM RBRK {Rm32_abs (Constant.Concrete $2)}
 
-num:
-  | ATT_NUM   { Int.of_string $1 }
-  | INTEL_NUM { Int.of_string $1 }
+k:
   | ATT_HEX   { Int.of_string ("0x" ^ $1) }
   | INTEL_HEX { Int.of_string ("0x" ^ $1) }
+  | ATT_NUM   { Int.of_string $1 }
+  | INTEL_NUM { Int.of_string $1 }
 
 operand:
   | effaddr {Operand_effaddr $1}
-  | num {Operand_immediate $1} /* enough ? */
-  | error COMMA { raise (X86Base.ParseError($loc, X86Base.Operand)) }
+  | k {Operand_immediate $1} /* enough ? */
+  | error { raise (X86Base.ParseError($sloc, X86Base.Operand)) }

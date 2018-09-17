@@ -155,10 +155,9 @@ let parse_x86_ic (asm_fname : string) (asm_ic : In_channel.t) : unit =
              e
              print_position lexbuf.lex_curr_p
   | X86Base.ParseError ((s, e), ty) ->
-     eprintf "parsing error in %s at %a - %a \n"
+     eprintf "parsing error in %s at %a \n"
              (X86Base.print_parse_error ty)
-             print_position s
-             print_position e
+             Pos.pp_pos2 (s, e)
   | X86Parser.Error ->
      eprintf "parsing error (in %a)\n"
              print_position lexbuf.lex_curr_p
