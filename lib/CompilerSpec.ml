@@ -9,7 +9,7 @@ type t =
   ; argv  : string list
   } [@@deriving sexp]
 
-type set = (string * t) list
+type set = (string, t) List.Assoc.t [@@deriving sexp]
 
 let pp (spec : t) (f : Format.formatter) : unit =
   Format.pp_open_vbox f 0;
@@ -25,11 +25,6 @@ let pp (spec : t) (f : Format.formatter) : unit =
                              (Format.pp_print_string)
                              f spec.argv) f;
   Format.pp_close_box f ()
-
-let set_of_sexp : Sexp.t -> set =
-  List.Assoc.t_of_sexp
-    Sexplib0.Sexp_conv.string_of_sexp
-    t_of_sexp
 
 let load_specs (specpath : string) : set =
   Sexp.load_sexp_conv_exn specpath set_of_sexp
