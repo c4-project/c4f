@@ -2,6 +2,7 @@
   (name asmParsers)
   (libraries
     core
+    menhirlib
     rresult)
   (modules_without_implementation constant pPMode scalar))
 (ocamllex

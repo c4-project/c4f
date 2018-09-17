@@ -602,3 +602,17 @@ include Pseudo.Make
 let get_macro _name = raise Not_found
 
 let get_id_and_list _i = failwith "get_id_and_list is only for Bell"
+
+type parse_error =
+  | Statement
+  | Instruction
+  | Operand
+
+let print_parse_error =
+  function
+  | Statement -> "statement"
+  | Instruction -> "instruction"
+  | Operand -> "operand"
+
+exception ParseError of ((Lexing.position * Lexing.position) * parse_error)
+

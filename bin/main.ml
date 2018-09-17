@@ -135,22 +135,36 @@ let asm_path_of (cc_id : string) (ps : pathset) : string =
 
 module XL = X86Lexer.Make(LexUtils.Default)
 
-let parse_x86_ic (asm_ic : In_channel.t) : unit =
+let print_position oc (pos : Lexing.position) =
+  fprintf oc "%s:%d:%d"
+          pos.pos_fname
+          pos.pos_lnum
+          (pos.pos_cnum - pos.pos_bol)
+
+let parse_x86_ic (asm_fname : string) (asm_ic : In_channel.t) : unit =
+  let lexbuf = Lexing.from_channel asm_ic in
+  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = asm_fname };
   try
-    let lexbuf = Lexing.from_channel asm_ic in
     while true do
       let _ = X86Parser.main XL.token lexbuf in
       ()
     done
-  with LexMisc.Error (e, p) ->
-    eprintf "lexing error: %s (in %s:%d:%d)"
-            e
-            p.pos_fname
-            p.pos_lnum
-            (p.pos_cnum - p.pos_bol)
+  with
+  | LexMisc.Error (e, _) ->
+     eprintf "lexing error: %s (in %a)\n"
+             e
+             print_position lexbuf.lex_curr_p
+  | X86Base.ParseError ((s, e), ty) ->
+     eprintf "parsing error in %s at %a - %a \n"
+             (X86Base.print_parse_error ty)
+             print_position s
+             print_position e
+  | X86Parser.Error ->
+     eprintf "parsing error (in %a)\n"
+             print_position lexbuf.lex_curr_p
 
-let parse_x86_file (asm_path : string) =
-  In_channel.with_file asm_path ~f:parse_x86_ic
+let parse_x86_file (asm_fname : string) =
+  In_channel.with_file asm_fname ~f:(parse_x86_ic asm_fname)
 
 let compile (cc_id : string) (cc_spec : CompilerSpec.t) (ps : pathset) =
   let asm_path = List.Assoc.find_exn ps.a_paths cc_id ~equal:(=) in

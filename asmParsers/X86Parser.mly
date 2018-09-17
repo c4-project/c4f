@@ -22,110 +22,109 @@ open X86
 %}
 
 %token EOF
+%token EOL
 %token <X86Base.reg> ARCH_REG
+%token <string> DIRECTIVE
 %token <string> SYMB_REG
-%token <string> NUM
+%token <string> ATT_NUM
 %token <string> INTEL_NUM
+%token <string> ATT_HEX
+%token <string> INTEL_HEX
 %token <string> NAME
-%token <int> PROC
 
-%token SEMI COMMA PIPE LBRK RBRK
+%token SEMI COMMA LBRK RBRK
 %token LPAR RPAR COLON
 /* Instruction tokens */
 
-%token  I_XOR I_OR I_ADD  I_MOV  I_MOVB I_MOVW I_MOVL I_MOVQ I_MOVT I_MOVSD I_DEC  I_CMP  I_CMOVC  I_INC  I_JMP
-%token  I_LOCK  I_XCHG   I_LFENCE  I_SFENCE  I_MFENCE
-%token  I_READ I_SETNB I_JE I_JNE
-%token  I_CMPXCHG
+%token  IT_XOR IT_OR IT_ADD  IT_MOV  IT_MOVB IT_MOVW IT_MOVL IT_MOVQ IT_MOVT IT_MOVSD IT_DEC  IT_CMP  IT_CMOVC  IT_INC  IT_JMP
+%token  IT_LOCK  IT_XCHG   IT_LFENCE  IT_SFENCE  IT_MFENCE
+%token  IT_SETNB IT_JE IT_JNE
+%token  IT_CMPXCHG
 
-%type <int list * (X86Base.pseudo) list list> main
+%type <X86Base.pseudo list> main
 %start  main
 
-%nonassoc SEMI
 %%
-main: semi_opt proc_list iol_list EOF { $2,$3 }
 
+main:
+  | stm_list EOF { $1 }
 
 semi_opt:
-| { () }
-| SEMI { () }
+  | SEMI { () }
+  | { () }
 
-proc_list:
-| PROC SEMI  {[$1]}
-| PROC PIPE proc_list  { $1::$3 }
+stm_list:
+  | list(stm) {$1}
 
-iol_list :
-|  instr_option_list SEMI
-    {[$1]}
-|  instr_option_list SEMI iol_list {$1::$3}
+stm:
+  | directive EOL {$1}
+  | instr_option EOL {$1}
+  | error EOL { raise (X86Base.ParseError($loc, X86Base.Statement)) }
 
-instr_option_list :
-  | instr_option
-      {[$1]}
-  | instr_option PIPE instr_option_list
-      {$1::$3}
+directive:
+  | DIRECTIVE separated_list(COMMA, directive_arg) { Nop }
 
-instr_option :
-| {Nop}
-| NAME COLON instr_option { Label ($1,$3) }
-| instr      { Instruction $1}
+directive_arg:
+  | NAME { () }
+  | operand { () }
+
+instr_option:
+  | NAME COLON instr_option { Label ($1,$3) }
+  | option(instr)      { match $1 with | Some x -> Instruction x | None -> Nop}
 
 
 reg:
 | SYMB_REG { Symbolic_reg $1 }
 | ARCH_REG { $1 }
 
-k:
-| NUM { $1 }
-
 instr:
-  | I_XOR   effaddr  COMMA  operand
+  | IT_XOR   effaddr  COMMA  operand
     {I_XOR ($2,$4)}
-  | I_OR   effaddr  COMMA  operand
+  | IT_OR   effaddr  COMMA  operand
     {I_OR ($2,$4)}
-  | I_ADD   effaddr  COMMA  operand
+  | IT_ADD   effaddr  COMMA  operand
     {I_ADD ($2,$4)}
-  | I_MOV   effaddr  COMMA  operand
+  | IT_MOV   effaddr  COMMA  operand
     {I_MOV ($2,$4)}
-  | I_MOVB   effaddr  COMMA  operand
+  | IT_MOVB   effaddr  COMMA  operand
     {I_MOVB ($2,$4)}
-  | I_MOVW   effaddr  COMMA  operand
+  | IT_MOVW   effaddr  COMMA  operand
     {I_MOVW ($2,$4)}
-  | I_MOVL   effaddr  COMMA  operand
+  | IT_MOVL   effaddr  COMMA  operand
     {I_MOVL ($2,$4)}
-  | I_MOVQ   effaddr  COMMA  operand
+  | IT_MOVQ   effaddr  COMMA  operand
     {I_MOVQ ($2,$4)}
-  | I_MOVT   effaddr  COMMA  operand
+  | IT_MOVT   effaddr  COMMA  operand
     {I_MOVT ($2,$4)}
-  | I_MOVSD
+  | IT_MOVSD
     {I_MOVSD}
-  | I_DEC   effaddr
+  | IT_DEC   effaddr
     {I_DEC $2}
-  | I_CMP   effaddr COMMA   operand
+  | IT_CMP   effaddr COMMA   operand
     {I_CMP ($2,$4)}
-  | I_CMOVC reg COMMA  effaddr
+  | IT_CMOVC reg COMMA  effaddr
     {I_CMOVC ($2, $4)}
-  | I_INC   effaddr
+  | IT_INC   effaddr
     {I_INC $2}
-  | I_JMP  NAME
+  | IT_JMP  NAME
     {I_JMP $2}
-  | I_JE NAME
+  | IT_JE NAME
     {I_JCC(C_EQ, $2)}
-  | I_JNE NAME
+  | IT_JNE NAME
     {I_JCC(C_NE, $2)}
-  | I_LOCK semi_opt instr
+  | IT_LOCK semi_opt instr
     {I_LOCK $3 }
-  | I_XCHG   effaddr COMMA effaddr
+  | IT_XCHG   effaddr COMMA effaddr
     { I_XCHG ($2,$4)}
-  | I_CMPXCHG effaddr COMMA reg
+  | IT_CMPXCHG effaddr COMMA reg
     { I_CMPXCHG ($2,$4)}
-  | I_LFENCE
+  | IT_LFENCE
       { I_LFENCE}
-  | I_SFENCE
+  | IT_SFENCE
       { I_SFENCE}
-  | I_MFENCE
+  | IT_MFENCE
       { I_MFENCE}
-  | I_SETNB effaddr {I_SETNB $2 }
+  | IT_SETNB effaddr {I_SETNB $2 }
 
 effaddr:
   | rm32  {Effaddr_rm32 $1}
@@ -135,9 +134,15 @@ rm32:
   |  LPAR reg RPAR {Rm32_deref $2}
   |  LBRK reg RBRK {Rm32_deref $2}
   |  LBRK NAME RBRK {Rm32_abs (Constant.Symbolic ($2,0))}
-  |  LBRK NUM RBRK {Rm32_abs (Constant.Concrete $2)}
+  |  LBRK INTEL_NUM RBRK {Rm32_abs (Constant.Concrete $2)}
+
+num:
+  | ATT_NUM   { Int.of_string $1 }
+  | INTEL_NUM { Int.of_string $1 }
+  | ATT_HEX   { Int.of_string ("0x" ^ $1) }
+  | INTEL_HEX { Int.of_string ("0x" ^ $1) }
 
 operand:
   | effaddr {Operand_effaddr $1}
-  | k {Operand_immediate (Int.of_string $1) }
-  | INTEL_NUM {Operand_immediate (Int.of_string $1)} /* enough ? */
+  | num {Operand_immediate $1} /* enough ? */
+  | error COMMA { raise (X86Base.ParseError($loc, X86Base.Operand)) }

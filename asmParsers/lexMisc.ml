@@ -20,14 +20,6 @@ exception Error of string * position
 
 let error msg lexbuf = raise (Error (msg,lexbuf.lex_curr_p ))
 
-let incr_lineno lexbuf =
-  let pos = lexbuf.lex_curr_p in
-  let n = pos.pos_lnum + 1 in
-  lexbuf.lex_curr_p <- 
-    { pos with
-      pos_lnum = n ;
-      pos_bol = pos.pos_cnum; }
-
 let init_file name lexbuf =
   lexbuf.lex_curr_p <-
     {pos_fname = name; pos_lnum = 1;

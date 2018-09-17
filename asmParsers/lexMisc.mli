@@ -22,9 +22,5 @@ open Lexing
 exception Error of string * position
 val error : string -> lexbuf -> 'a
 
-
-(* record a line change in lexer state *)
-val incr_lineno : lexbuf -> unit
-
 (* init position *)
 val init_file : string -> lexbuf -> unit
