@@ -1,6 +1,7 @@
 open Core
 open Rresult
 open Lib
+open AsmParsers
 
 type config =
   {
@@ -129,6 +130,28 @@ let run_cc (cc : string) (argv : string list) =
   Stdio.In_channel.close errch;
   res
 
+let asm_path_of (cc_id : string) (ps : pathset) : string =
+  List.Assoc.find_exn ps.a_paths cc_id ~equal:(=)
+
+module XL = X86Lexer.Make(LexUtils.Default)
+
+let parse_x86_ic (asm_ic : In_channel.t) : unit =
+  try
+    let lexbuf = Lexing.from_channel asm_ic in
+    while true do
+      let _ = X86Parser.main XL.token lexbuf in
+      ()
+    done
+  with LexMisc.Error (e, p) ->
+    eprintf "lexing error: %s (in %s:%d:%d)"
+            e
+            p.pos_fname
+            p.pos_lnum
+            (p.pos_cnum - p.pos_bol)
+
+let parse_x86_file (asm_path : string) =
+  In_channel.with_file asm_path ~f:parse_x86_ic
+
 let compile (cc_id : string) (cc_spec : CompilerSpec.t) (ps : pathset) =
   let asm_path = List.Assoc.find_exn ps.a_paths cc_id ~equal:(=) in
   let final_argv =
@@ -159,7 +182,13 @@ let proc_c (cfg : config) (cc_specs : CompilerSpec.set) vf results_path c_fname 
   make_dir_structure paths |>
     R.reword_error_msg (fun _ -> R.msg "couldn't make dir structure")
   >>= (
-    fun _ -> iter_result (fun (cn, cs) -> compile cn cs paths) cc_specs
+    fun _ -> iter_result
+               (fun (cn, cs) ->
+                 let r = compile cn cs paths in
+                 (* Temporary *)
+                 parse_x86_file (asm_path_of cn paths);
+                 r
+               ) cc_specs
   )
 
 let proc_results (cfg : config) (cc_specs : CompilerSpec.set) (vf : Format.formatter) (results_path : string) =

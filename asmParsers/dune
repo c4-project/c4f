@@ -1,0 +1,10 @@
+(library
+  (name asmParsers)
+  (libraries
+    core
+    rresult)
+  (modules_without_implementation constant pPMode scalar))
+(ocamllex
+  (modules X86Lexer lexUtils))
+(menhir
+  (modules X86Parser))
