@@ -2,6 +2,6 @@
   (name lib)
   (preprocess (pps ppx_deriving.std ppx_jane))
   (libraries
-    asmParsers
+    lang
     core
     rresult))

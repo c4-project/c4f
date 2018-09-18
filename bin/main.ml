@@ -1,7 +1,7 @@
 open Core
 open Rresult
 open Lib
-open AsmParsers
+open Lang
 
 type config =
   {

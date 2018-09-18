@@ -1,5 +1,5 @@
 (library
-  (name asmParsers)
+  (name lang)
   (preprocess (pps ppx_sexp_message))
   (libraries
     core
