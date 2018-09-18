@@ -4,8 +4,7 @@
   (libraries
     core
     menhirlib
-    rresult)
-  (modules_without_implementation constant pPMode scalar))
+    rresult))
 (ocamllex
   (modules X86Lexer lexUtils))
 (menhir

@@ -16,9 +16,6 @@
 (****************************************************************************)
 
 open Core
-
-module X86 = X86Base
-open X86
 %}
 
 %token EOF
@@ -62,7 +59,7 @@ label:
 
 instr:
   | prefix NAME separated_list (COMMA, operand)
-           { Stm_instruction
+           { X86Base.Stm_instruction
                { prefix = Some $1
                ; opcode = $2
                ; operands = $3
@@ -70,11 +67,11 @@ instr:
            }
   | NAME separated_list (COMMA, operand)
          { if String.is_prefix $1 ~prefix:"."
-           then Stm_directive
+           then X86Base.Stm_directive
                   { dir_name = $1
                   ; dir_ops  = $2
                   }
-           else Stm_instruction
+           else X86Base.Stm_instruction
              { prefix = None
              ; opcode = $1
              ; operands = $2
@@ -82,8 +79,8 @@ instr:
          }
 
 bop:
-  | PLUS { Bop_plus }
-  | MINUS { Bop_minus }
+  | PLUS { X86Base.Bop_plus }
+  | MINUS { X86Base.Bop_minus }
 
 bis:
   | LPAR ATT_REG RPAR
@@ -102,19 +99,19 @@ indirect:
   | disp { { (X86Base.in_zero ()) with in_disp = Some $1 } }
 
 disp:
-  | k    { DispNumeric $1 }
-  | NAME { DispSymbolic $1 }
+  | k    { X86Base.DispNumeric $1 }
+  | NAME { X86Base.DispSymbolic $1 }
 
 operand:
-  | prim_operand bop operand { Operand_bop($1,$2,$3) }
+  | prim_operand bop operand { X86Base.Operand_bop($1,$2,$3) }
   | prim_operand { $1 }
   | error { raise (X86Base.ParseError($sloc, X86Base.Operand)) }
 
 prim_operand:
-  | DOLLAR disp {Operand_immediate $2}
-  | STRING {Operand_string $1}
-  | ATT_REG {Operand_reg $1}
-  | indirect {Operand_indirect $1}
+  | DOLLAR disp {X86Base.Operand_immediate $2}
+  | STRING {X86Base.Operand_string $1}
+  | ATT_REG {X86Base.Operand_reg $1}
+  | indirect {X86Base.Operand_indirect $1}
 
 k:
   | ATT_HEX    { Int.of_string ("0x" ^ $1) }
