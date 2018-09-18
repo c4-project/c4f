@@ -27,14 +27,12 @@ open X86
 %token MINUS
 %token DOLLAR
 %token <X86Base.reg> ATT_REG
-%token <X86Base.reg> INTEL_REG
 %token <string> STRING
 %token <string> NUM
 %token <string> ATT_HEX
-%token <string> INTEL_HEX
 %token <string> NAME
 
-%token COMMA LBRK RBRK
+%token COMMA
 %token LPAR RPAR COLON
 /* Instruction tokens */
 
@@ -55,10 +53,6 @@ stm:
   | option(instr) EOL { Option.value ~default:Stm_nop $1 }
   | label { Stm_label $1 }
   | error { raise (X86Base.ParseError($loc, X86Base.Statement)) }
-
-reg:
-| ATT_REG { $1 }
-| INTEL_REG { $1 }
 
 prefix:
   | IT_LOCK { Pre_Lock }
@@ -87,20 +81,29 @@ instr:
              }
          }
 
-effaddr:
-  | rm32  {Effaddr_rm32 $1}
-
-rm32:
-  |  reg {Rm32_reg $1}
-  |  NAME {Rm32_abs (Constant.Symbolic ($1,0))}
-  |  LPAR ATT_REG RPAR {Rm32_deref $2}
-  |  LBRK INTEL_REG RBRK {Rm32_deref $2}
-  |  LBRK NAME RBRK {Rm32_abs (Constant.Symbolic ($2,0))}
-  |  LBRK NUM RBRK {Rm32_abs (Constant.Concrete $2)}
-
 bop:
   | PLUS { Bop_plus }
   | MINUS { Bop_minus }
+
+bis:
+  | LPAR ATT_REG RPAR
+    { { (X86Base.in_zero ()) with in_base = Some $2 } }
+  | LPAR option(ATT_REG) COMMA ATT_REG RPAR
+         { { (X86Base.in_zero ()) with in_base = $2;
+                                       in_index = Some $4 } }
+  | LPAR option(ATT_REG) COMMA option(ATT_REG) COMMA k RPAR
+         { { (X86Base.in_zero ()) with in_base = $2;
+                                       in_index = $4;
+                                       in_scale = Some $6 } }
+
+indirect:
+  | bis { $1 }
+  | disp bis { { $2 with in_disp = Some $1 } }
+  | disp { { (X86Base.in_zero ()) with in_disp = Some $1 } }
+
+disp:
+  | k    { DispNumeric $1 }
+  | NAME { DispSymbolic $1 }
 
 operand:
   | prim_operand bop operand { Operand_bop($1,$2,$3) }
@@ -108,11 +111,11 @@ operand:
   | error { raise (X86Base.ParseError($sloc, X86Base.Operand)) }
 
 prim_operand:
-  | effaddr {Operand_effaddr $1}
-  | k {Operand_immediate $1}
+  | DOLLAR disp {Operand_immediate $2}
   | STRING {Operand_string $1}
+  | ATT_REG {Operand_reg $1}
+  | indirect {Operand_indirect $1}
 
 k:
   | ATT_HEX    { Int.of_string ("0x" ^ $1) }
-  | INTEL_HEX  { Int.of_string ("0x" ^ $1) }
   | NUM        { Int.of_string $1 }

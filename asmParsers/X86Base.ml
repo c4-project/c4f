@@ -24,9 +24,12 @@ open Printf
 (* Registers *)
 (*************)
 
-type reg = 
+type reg =
+  (* 32-bit *)
   | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
-(* we do 32-bit protected mode for now*)
+  | AX | BX | CX | DX
+  | AL | BL | CL | DL
+  | AH | BH | CH | DH
   | ZF | SF | CF
 (* Wastefully putting 31 bits instead of 1 bit *)
   | Symbolic_reg of string
@@ -51,6 +54,21 @@ let regs =
    ZF, "ZF" ;
    SF, "SF" ;
    CF, "CF" ;
+   (* 16-bit registers *)
+   AX, "AX";
+   BX, "BX";
+   CX, "CX";
+   DX, "DX";
+   (* 8-bit low registers *)
+   AL, "AL";
+   BL, "BL";
+   CL, "CL";
+   DL, "DL";
+   (* 8-bit high registers *)
+   AH, "AH";
+   BH, "BH";
+   CH, "CH";
+   DH, "DH";
  ]
 
 let parse_list = Map.of_alist_exn (module String.Caseless) (List.Assoc.inverse regs)
@@ -93,22 +111,34 @@ let barrier_compare = Pervasives.compare
 
 type abs = ParsedConstant.v
 
-type rm32 =
-  |  Rm32_reg of reg
-  |  Rm32_deref of reg
-  |  Rm32_abs of abs
-(* Absolute memory location, we should later combine with Rm32_deref to have proper base-displacement (and later, scale-index) addressing *)
+type disp =
+  | DispSymbolic of string
+  | DispNumeric of int
 
-type effaddr =
-  | Effaddr_rm32 of rm32
+type indirect =
+  { in_seg    : reg option
+  ; in_disp   : disp option
+  ; in_base   : reg option
+  ; in_index  : reg option
+  ; in_scale  : int option
+  }
+
+let in_zero () =
+  { in_seg    = None
+  ; in_disp   = None
+  ; in_base   = None
+  ; in_index  = None
+  ; in_scale  = None
+  }
 
 type bop =
   | Bop_plus
   | Bop_minus
 
 type operand =
-  | Operand_effaddr of effaddr
-  | Operand_immediate of int
+  | Operand_indirect of indirect
+  | Operand_reg of reg
+  | Operand_immediate of disp
   | Operand_string of string
   | Operand_bop of operand * bop * operand
 

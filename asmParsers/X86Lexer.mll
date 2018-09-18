@@ -45,7 +45,6 @@ rule token = parse
 | '$' { DOLLAR }
 | "0x" (hexnum as x) { ATT_HEX x }
 | "0x" { raise (error ("Malformed hex constant: " ^ Lexing.lexeme lexbuf) lexbuf) }
-| (hexnum as x) 'h' { INTEL_HEX x }
 | '%' (name as name)
       { match X86.parse_reg name with
         | Some r -> ATT_REG r
@@ -54,16 +53,12 @@ rule token = parse
 | ',' { COMMA }
 | '(' { LPAR }
 | ')' { RPAR }
-| '[' { LBRK }
-| ']' { RBRK }
 | ':' { COLON }
 | '+' { PLUS }
 | '-' { MINUS }
 | '"' { read_string (Buffer.create 17) lexbuf }
-| name as x { x
-              |> X86.parse_reg
-              |> Option.value_map ~default:(NAME x) ~f:(fun f -> INTEL_REG f)
-            }
+| "lock" { IT_LOCK }
+| name as x { NAME x }
 | eof { EOF }
 | _ { raise (error ("Unexpected char: " ^ Lexing.lexeme lexbuf) lexbuf) }
 
