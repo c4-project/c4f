@@ -31,10 +31,7 @@ let parse_x86_ic (asm_fname : string) (asm_ic : In_channel.t) : unit =
   let lexbuf = Lexing.from_channel asm_ic in
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = asm_fname };
   try
-    while true do
-      let _ = X86Parser.main XL.token lexbuf in
-      ()
-    done
+    ignore (X86Parser.main XL.token lexbuf)
   with
   | LexMisc.Error (e, _) ->
      eprintf "lexing error: %s (in %a)\n"

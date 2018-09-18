@@ -95,17 +95,43 @@ type abs = ParsedConstant.v
 
 type rm32 =
   |  Rm32_reg of reg
-  |  Rm32_deref of reg 
+  |  Rm32_deref of reg
   |  Rm32_abs of abs
 (* Absolute memory location, we should later combine with Rm32_deref to have proper base-displacement (and later, scale-index) addressing *)
-	
+
 type effaddr =
   | Effaddr_rm32 of rm32
-	
+
+type bop =
+  | Bop_plus
+  | Bop_minus
+
 type operand =
   | Operand_effaddr of effaddr
   | Operand_immediate of int
+  | Operand_string of string
+  | Operand_bop of operand * bop * operand
 
+type directive =
+  { dir_name : string
+  ; dir_ops  : operand list
+  }
+
+type prefix =
+  | Pre_Lock
+
+type instruction =
+  { prefix   : prefix option
+  ; opcode   : string
+  ; operands : operand list
+  }
+
+type statement =
+  | Stm_label of string
+  | Stm_directive of directive
+  | Stm_instruction of instruction
+  | Stm_nop
+(*
 let get_naccs_rm32 = function
   |  Rm32_reg _ -> 0
   |  Rm32_deref _
@@ -117,7 +143,7 @@ let get_naccs_eff  = function
 let get_naccs_op = function
   | Operand_immediate _ -> 0
   | Operand_effaddr e -> get_naccs_eff e
-
+ *)
 type condition =
   | C_EQ
   | C_NE
@@ -129,7 +155,7 @@ type condition =
   | C_NS         (* Not sign *)
       
 type lbl = Label.t
-
+(*
 type instruction =
   | I_ADD of effaddr * operand
   | I_XOR of effaddr * operand
@@ -604,7 +630,7 @@ include Pseudo.Make
 let get_macro _name = raise_s [%message "get_macro not found"]
 
 let get_id_and_list _i = failwith "get_id_and_list is only for Bell"
-
+ *)
 type parse_error =
   | Statement
   | Instruction

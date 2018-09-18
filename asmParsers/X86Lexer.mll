@@ -28,13 +28,9 @@ let hex   = [ '0'-'9' 'a'-'f' 'A'-'F' ]
 let alpha = [ 'a'-'z' 'A'-'Z' ]
 
 (* Symbol lexing
-   See: https://sourceware.org/binutils/docs/as/Symbol-Intro.html#Symbol-Intro
-
-   NB: We forbid symbols beginning with '$' and '.' to prevent ambiguity against
-   directives.  It may be that we need to permit these later on---the as manual
-   doesn't rule them out. *)
-let nameprf = (alpha|'_')
-let namechr = (nameprf|digit|'$' | '.')
+   See: https://sourceware.org/binutils/docs/as/Symbol-Intro.html#Symbol-Intro *)
+let nameprf = (alpha|'_'|'.')
+let namechr = (nameprf|digit| '$' | '.')
 let name  = nameprf namechr*
 
 let num = digit+
@@ -45,50 +41,39 @@ rule token = parse
 | '\n'      { new_line lexbuf; EOL }
 | "/*"      { LU.skip_c_comment lexbuf ; token lexbuf }
 | '#'       { LU.skip_c_line_comment lexbuf ; EOL }
-| '.' (name as d) { DIRECTIVE d }
-| '-' ? num as x { INTEL_NUM x }
-| '$' ('-'? num as x) { ATT_NUM x }
+| '-' ? num as x { NUM x }
+| '$' { DOLLAR }
 | "0x" (hexnum as x) { ATT_HEX x }
 | "0x" { raise (error ("Malformed hex constant: " ^ Lexing.lexeme lexbuf) lexbuf) }
 | (hexnum as x) 'h' { INTEL_HEX x }
-| '%' (name as name) { SYMB_REG name }
-| ';' { SEMI }
+| '%' (name as name)
+      { match X86.parse_reg name with
+        | Some r -> ATT_REG r
+        | None -> raise (error ("Invalid register: " ^ Lexing.lexeme lexbuf) lexbuf)
+      }
 | ',' { COMMA }
 | '(' { LPAR }
 | ')' { RPAR }
 | '[' { LBRK }
 | ']' { RBRK }
 | ':' { COLON }
-| "add"|"ADD"   { IT_ADD }
-| "xor"|"XOR"   { IT_XOR }
-| "or"|"OR"   { IT_OR }
-| "mov"|"MOV"   { IT_MOV }
-| "movb"|"MOVB"   { IT_MOVB }
-| "movw"|"MOVW"   { IT_MOVW }
-| "movl"|"MOVL"   { IT_MOVL }
-| "movq"|"MOVQ"   { IT_MOVQ }
-| "movt"|"MOVT"   { IT_MOVT }
-| "movsd"|"MOVSD"   { IT_MOVSD }
-| "dec"|"DEC"   { IT_DEC }
-| "cmp"|"CMP"   { IT_CMP }
-| "cmovc"|"CMOVC"   { IT_CMOVC }
-| "inc"|"INC"   { IT_INC }
-| "jmp"|"JMP"   { IT_JMP }
-| "je"|"JE"    { IT_JE }
-| "jne"|"JNE"    { IT_JNE }
-| "lock"|"LOCK"   { IT_LOCK }
-| "xchg"|"XCHG"   { IT_XCHG }
-| "cmpxchg"|"CMPXCHG"   { IT_CMPXCHG }
-| "lfence"|"LFENCE"   { IT_LFENCE }
-| "sfence"|"SFENCE"   { IT_SFENCE }
-| "mfence"|"MFENCE"   { IT_MFENCE }
-| "setnb"|"SETNB"       { IT_SETNB }
+| '+' { PLUS }
+| '-' { MINUS }
+| '"' { read_string (Buffer.create 17) lexbuf }
 | name as x { x
               |> X86.parse_reg
-              |> Option.value_map ~default:(NAME x) ~f:(fun f -> ARCH_REG f)
+              |> Option.value_map ~default:(NAME x) ~f:(fun f -> INTEL_REG f)
             }
 | eof { EOF }
 | _ { raise (error ("Unexpected char: " ^ Lexing.lexeme lexbuf) lexbuf) }
+
+(* per 'Real World OCaml' *)
+and read_string buf
+  = parse
+  | '"' { STRING (Buffer.contents buf) }
+  | '\\' '0' { Buffer.add_char buf '\x00'; read_string buf lexbuf }
+  | [^ '"' '\\']+ { Buffer.add_string buf (Lexing.lexeme lexbuf); read_string buf lexbuf }
+  | _ { raise (error ("Invalid string character: " ^ Lexing.lexeme lexbuf) lexbuf) }
 
 {
 let token lexbuf =
