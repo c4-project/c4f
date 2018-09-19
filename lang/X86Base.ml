@@ -47,38 +47,7 @@ copyright notice follow. *)
 open Core
 open X86Ast
 
-let regs =
-  [
-   EAX, "EAX" ;
-   EBX, "EBX" ;
-   ECX, "ECX" ;
-   EDX, "EDX" ;
-   ESI, "ESI" ;
-   EDI, "EDI" ;
-   EBP, "EBP" ;
-   ESP, "ESP" ;
-   EIP, "EIP" ;
-   ZF, "ZF" ;
-   SF, "SF" ;
-   CF, "CF" ;
-   (* 16-bit registers *)
-   AX, "AX";
-   BX, "BX";
-   CX, "CX";
-   DX, "DX";
-   (* 8-bit low registers *)
-   AL, "AL";
-   BL, "BL";
-   CL, "CL";
-   DL, "DL";
-   (* 8-bit high registers *)
-   AH, "AH";
-   BH, "BH";
-   CH, "CH";
-   DH, "DH";
- ]
-
-let parse_list = Map.of_alist_exn (module String.Caseless) (List.Assoc.inverse regs)
+let parse_list = Map.of_alist_exn (module String.Caseless) (List.Assoc.inverse X86Ast.regs)
 
 let parse_reg (s : string) : reg option =
   Map.find parse_list s
@@ -88,7 +57,6 @@ let in_zero () =
   ; in_disp   = None
   ; in_base   = None
   ; in_index  = None
-  ; in_scale  = None
   }
 
 type parse_error =

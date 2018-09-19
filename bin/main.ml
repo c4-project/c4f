@@ -19,6 +19,10 @@ let usage = "act [paths to comparator output]"
 let asm_path_of (cc_id : string) (ps : Pathset.t) : string =
   List.Assoc.find_exn ps.a_paths cc_id ~equal:(=)
 
+let lita_path_of (cc_id : string) (ps : Pathset.t) : string =
+  List.Assoc.find_exn ps.lita_paths cc_id ~equal:(=)
+
+
 let summarise_pathset (vf : Format.formatter) (ps : Pathset.t) : unit =
   List.iter
     ~f:(fun (io, t, v) -> Format.fprintf vf "@[[%s] %s file:@ %s@]@." io t v)
@@ -37,7 +41,7 @@ let format_to_string pp v : string =
   Format.pp_print_flush f ();
   Buffer.contents buf
 
-let c_asm (cn : string) (ps : Pathset.t) =
+let parse_c_asm (cn : string) (ps : Pathset.t) =
   R.reword_error
     (function
      | LangParser.Parse(perr) ->
@@ -46,6 +50,20 @@ let c_asm (cn : string) (ps : Pathset.t) =
         R.msg (format_to_string X86ATT.Frontend.pp_lerr lerr)
     )
     (X86ATT.Frontend.run_file ~file:(asm_path_of cn ps))
+
+let c_asm (cn : string) (ps : Pathset.t) =
+  parse_c_asm cn ps
+  >>=
+    (fun asm ->
+      Out_channel.with_file
+        (lita_path_of cn ps)
+        ~f:(fun oc ->
+          let f = Format.formatter_of_out_channel oc in
+          X86Ast.pp_ast X86Ast.SynAtt f asm;
+          Format.pp_print_flush f ());
+      Ok ()
+    )
+
 
 let proc_c (cfg : config) (cc_specs : CompilerSpec.set) vf results_path c_fname =
   let root = !(cfg.out_root_path) in

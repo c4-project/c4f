@@ -13,10 +13,10 @@ module type S = sig
   val run_file : file:string -> (ast, (perr, lerr) LangParser.error) result
 end
 
-module Make (SI : LangParser.S) : S = struct
-  type ast = SI.ast
+module Make (SI : LangParser.S) : (S with type ast = SI.ast) = struct
   type lerr = SI.lerr
   type perr = SI.perr
+  type ast = SI.ast
 
   let pp_perr = SI.pp_perr
   let pp_lerr = SI.pp_lerr

@@ -46,6 +46,14 @@ copyright notice follow. *)
 
 (** Generic, low-level abstract syntax tree for AT&T and Intel x86 *)
 
+open Core
+
+(* [syntax] marks an x86 AST as being either AT&T or Intel syntax. *)
+
+type syntax =
+  | SynAtt
+  | SynIntel
+
 type reg =
   | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
   | AX | BX | CX | DX
@@ -53,21 +61,33 @@ type reg =
   | AH | BH | CH | DH
   | ZF | SF | CF
 
+(** [regs] associates each register with its string name. *)
+val regs : (reg, string) List.Assoc.t
+
+val pp_reg : syntax -> Format.formatter -> reg -> unit
+
 type disp =
   | DispSymbolic of string
   | DispNumeric of int
+
+type index =
+  | Unscaled of reg
+  | Scaled of reg * int
 
 type indirect =
   { in_seg    : reg option
   ; in_disp   : disp option
   ; in_base   : reg option
-  ; in_index  : reg option
-  ; in_scale  : int option
+  ; in_index  : index option
   }
+
+val pp_indirect : syntax -> Format.formatter -> indirect -> unit
 
 type bop =
   | BopPlus
   | BopMinus
+
+val pp_bop : Format.formatter -> bop -> unit
 
 type operand =
   | OperandIndirect of indirect
@@ -76,13 +96,19 @@ type operand =
   | OperandString of string
   | OperandBop of operand * bop * operand
 
+val pp_operand : syntax -> Format.formatter -> operand -> unit
+
 type directive =
   { dir_name : string
   ; dir_ops  : operand list
   }
 
+val pp_directive : syntax -> Format.formatter -> directive -> unit
+
 type prefix =
   | PreLock
+
+val pp_prefix : Format.formatter -> prefix -> unit
 
 type instruction =
   { prefix   : prefix option
@@ -90,12 +116,14 @@ type instruction =
   ; operands : operand list
   }
 
+val pp_instruction : syntax -> Format.formatter -> instruction -> unit
+
 type statement =
   | StmLabel of string
   | StmDirective of directive
   | StmInstruction of instruction
   | StmNop
 
-type syntax =
-  | SynAtt
-  | SynIntel
+val pp_statement : syntax -> Format.formatter -> statement -> unit
+
+val pp_ast : syntax -> Format.formatter -> statement list -> unit

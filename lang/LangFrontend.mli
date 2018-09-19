@@ -24,4 +24,4 @@ module type S = sig
 end
 
 (** [Make] lifts an instance of [LangParser.S] into a frontend. *)
-module Make : functor (SI : LangParser.S) -> S
+module Make : functor (SI : LangParser.S) -> (S with type ast = SI.ast)

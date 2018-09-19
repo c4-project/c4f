@@ -98,16 +98,18 @@ instr:
            }
     (* lock cmpxchgl %eax, %ebx *)
   | NAME separated_list (COMMA, operand)
-         { if String.is_prefix $1 ~prefix:"."
-           then X86Ast.StmDirective
-                  { dir_name = $1
-                  ; dir_ops  = $2
-                  }
-           else X86Ast.StmInstruction
-             { prefix = None
-             ; opcode = $1
-             ; operands = $2
-             }
+         { match String.chop_prefix $1 ~prefix:"." with
+           | Some dir_name ->
+              X86Ast.StmDirective
+                { dir_name
+                ; dir_ops  = $2
+                }
+           | None ->
+              X86Ast.StmInstruction
+                { prefix = None
+                ; opcode = $1
+                ; operands = $2
+                }
          }
 
 (* Binary operator *)
@@ -122,16 +124,14 @@ bis:
     (* (%eax) *)
   | LPAR option(ATT_REG) COMMA ATT_REG RPAR
          { { (X86Base.in_zero ()) with in_base = $2;
-                                       in_index = Some $4 } }
+                                       in_index = Some (Unscaled $4) } }
     (* (%eax, %ebx)
        (    , %ebx) *)
-  | LPAR option(ATT_REG) COMMA option(ATT_REG) COMMA k RPAR
+  | LPAR option(ATT_REG) COMMA ATT_REG COMMA k RPAR
          { { (X86Base.in_zero ()) with in_base = $2;
-                                       in_index = $4;
-                                       in_scale = Some $6 } }
+                                       in_index = Some (Scaled ($4, $6)) } }
     (* (%eax, %ebx, 2)
-       (    , %ebx, 2)
-       (    ,     , 2) *)
+       (    , %ebx, 2) *)
 
 (* Memory access: base/index/scale, displacement, or both *)
 indirect:

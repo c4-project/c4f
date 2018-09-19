@@ -95,6 +95,7 @@ rule token = parse
 and read_string buf
   = parse
   | '"' { STRING (Buffer.contents buf) }
+  | '\\' '\\' { Buffer.add_char buf '\\'; read_string buf lexbuf }
   | '\\' '0' { Buffer.add_char buf '\x00'; read_string buf lexbuf }
   | [^ '"' '\\']+ { Buffer.add_string buf (Lexing.lexeme lexbuf); read_string buf lexbuf }
   | _ { raise (error ("Invalid string character: " ^ Lexing.lexeme lexbuf) lexbuf) }

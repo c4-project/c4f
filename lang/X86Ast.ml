@@ -44,7 +44,11 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Generic, low-level abstract syntax tree for AT&T and Intel x86 *)
+open Core
+
+type syntax =
+  | SynAtt
+  | SynIntel
 
 type reg =
   | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
@@ -53,21 +57,140 @@ type reg =
   | AH | BH | CH | DH
   | ZF | SF | CF
 
+let regs =
+  [ EAX, "EAX"
+  ; EBX, "EBX"
+  ; ECX, "ECX"
+  ; EDX, "EDX"
+  ; ESI, "ESI"
+  ; EDI, "EDI"
+  ; EBP, "EBP"
+  ; ESP, "ESP"
+  ; EIP, "EIP"
+  (* Flag registers *)
+  ; ZF,  "ZF"
+  ; SF,  "SF"
+  ; CF,  "CF"
+  (* 16-bit registers *)
+  ; AX,  "AX"
+  ; BX,  "BX"
+  ; CX,  "CX"
+  ; DX,  "DX"
+  (* 8-bit low registers *)
+  ; AL,  "AL"
+  ; BL,  "BL"
+  ; CL,  "CL"
+  ; DL,  "DL"
+  (* 8-bit high registers *)
+  ; AH,  "AH"
+  ; BH,  "BH"
+  ; CH,  "CH"
+  ; DH,  "DH"
+ ]
+
+let pp_reg syn f reg =
+  Format.pp_open_box f 0;
+  if syn = SynAtt then Format.pp_print_char f '%';
+  Format.pp_print_string f (List.Assoc.find_exn regs reg ~equal:(=));
+  Format.pp_close_box f ()
+
 type disp =
   | DispSymbolic of string
   | DispNumeric of int
+
+let pp_option (f : Format.formatter) ~pp : 'a -> unit =
+  Option.iter ~f:(pp f)
+
+let pp_seg syn f =
+  Format.fprintf f "%a:" (pp_reg syn)
+
+let pp_disp f = function
+  | DispSymbolic s -> Format.pp_print_string f s
+  | DispNumeric  0 -> ()
+  | DispNumeric  k -> Format.pp_print_int    f k
+
+type index =
+  | Unscaled of reg
+  | Scaled of reg * int
+
+let pp_index syn f =
+  function
+  | Unscaled r -> pp_reg syn f r
+  | Scaled (r, i) -> Format.fprintf f
+                                    "%a%s%d"
+                                    (pp_reg syn) r
+                                    (match syn with
+                                     | SynAtt -> ","
+                                     | SynIntel -> "*")
+                                    i
 
 type indirect =
   { in_seg    : reg option
   ; in_disp   : disp option
   ; in_base   : reg option
-  ; in_index  : reg option
-  ; in_scale  : int option
+  ; in_index  : index option
   }
+
+let pp_bis_att f bo iso =
+  match bo, iso with
+  | None  , None -> ()
+  | Some b, None ->
+     Format.fprintf f "(%a)"
+                    (pp_reg SynAtt) b
+  | _     , Some i ->
+     Format.fprintf f "(%a,%a)"
+                    (pp_option ~pp:(pp_reg SynAtt)) bo
+                    (pp_index SynAtt) i
+
+let pp_indirect_att f {in_seg; in_disp; in_base; in_index} =
+  pp_option f ~pp:(pp_seg SynAtt) in_seg;
+  pp_option f ~pp:pp_disp in_disp;
+  pp_bis_att f in_base in_index
+
+let disp_positive =
+  function
+  | None -> false
+  | Some (DispNumeric k) -> 0 < k
+  | _ -> true
+
+let pp_indirect_intel f {in_seg; in_disp; in_base; in_index} =
+  Format.pp_open_box f 0;
+  Format.pp_print_char f '[';
+
+  (* seg:base+index*scale+disp *)
+
+  pp_option f ~pp:(pp_seg SynIntel) in_seg;
+
+  pp_option f ~pp:(pp_reg SynIntel) in_base;
+
+  let plus_between_b_i = in_base <> None && in_index <> None in
+  if plus_between_b_i then Format.pp_print_char f '+';
+
+  pp_option f ~pp:(pp_index SynIntel) in_index;
+
+  let plus_between_bis_d =
+    (in_base <> None || in_index <> None)
+    && disp_positive in_disp
+  in
+  if plus_between_bis_d then Format.pp_print_char f '+';
+
+  pp_option f ~pp:pp_disp in_disp;
+
+  Format.pp_print_char f ']';
+  Format.pp_close_box f ()
+
+let pp_indirect syn f ind =
+  Format.pp_open_box f 0;
+  if syn = SynAtt then pp_indirect_att f ind else pp_indirect_intel f ind;
+  Format.pp_close_box f ()
 
 type bop =
   | BopPlus
   | BopMinus
+
+let pp_bop f = function
+  | BopPlus -> Format.pp_print_char f '+'
+  | BopMinus -> Format.pp_print_char f '-'
 
 type operand =
   | OperandIndirect of indirect
@@ -76,13 +199,59 @@ type operand =
   | OperandString of string
   | OperandBop of operand * bop * operand
 
+let string_escape =
+  String.Escaping.escape_gen_exn
+    ~escape_char:'\\'
+    ~escapeworthy_map:[ '\x00', '0'
+                      ; '"', '"'
+                      ; '\\', '\\'
+                      ]
+
+let rec pp_operand syn f = function
+  | OperandIndirect i -> pp_indirect syn f i
+  | OperandReg r -> pp_reg syn f r
+  | OperandImmediate d ->
+     Format.pp_open_box f 0;
+     if syn = SynAtt then Format.pp_print_char f '$';
+     pp_disp f d;
+     Format.pp_close_box f ();
+  | OperandString s ->
+     Format.fprintf f "\"%s\"" (Staged.unstage string_escape s)
+  | OperandBop (l, b, r) ->
+     Format.pp_open_box f 0;
+     pp_operand syn f l;
+     pp_bop f b;
+     pp_operand syn f r;
+     Format.pp_close_box f ()
+
+let pp_comma f =
+  Format.pp_print_char f ',';
+  Format.pp_print_space f
+
+let pp_oplist syn =
+  Format.pp_print_list ~pp_sep:pp_comma
+                       (pp_operand syn)
+
 type directive =
   { dir_name : string
   ; dir_ops  : operand list
   }
 
+let pp_directive syn f { dir_name; dir_ops } =
+  Format.fprintf f
+                 "@[.%s@ %a@]"
+                 dir_name
+                 (pp_oplist syn) dir_ops
+
 type prefix =
   | PreLock
+
+let prefix_string = function
+  | PreLock -> "lock"
+
+let pp_prefix f p =
+  Format.pp_print_string f (prefix_string p);
+  Format.pp_print_space f ()
 
 type instruction =
   { prefix   : prefix option
@@ -90,12 +259,27 @@ type instruction =
   ; operands : operand list
   }
 
+let pp_instruction syn f { prefix; opcode; operands } =
+  Format.fprintf f
+                 "@[@[%a%s@]@ %a@]"
+                 (pp_option ~pp:pp_prefix) prefix
+                 opcode
+                 (pp_oplist syn) operands
+
 type statement =
   | StmLabel of string
   | StmDirective of directive
   | StmInstruction of instruction
   | StmNop
 
-type syntax =
-  | SynAtt
-  | SynIntel
+let pp_statement syn f = function
+  | StmLabel l -> Format.fprintf f "@[%s:@ @]" l
+  | StmDirective d -> pp_directive syn f d; Format.pp_print_cut f ()
+  | StmInstruction i -> pp_instruction syn f i; Format.pp_print_cut f ()
+  | StmNop -> Format.pp_print_cut f ()
+
+let pp_ast syn f ast =
+  Format.pp_open_vbox f 0;
+  (* We don't print newlines out here due to nops and labels. *)
+  List.iter ~f:(pp_statement syn f) ast;
+  Format.pp_close_box f ();

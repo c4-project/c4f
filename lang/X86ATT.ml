@@ -4,7 +4,7 @@ type perror =
   | Range of (Lexing.position * Lexing.position * X86Base.parse_error)
   | Uncaught of Lexing.position
 
-module Frontend : LangFrontend.S =
+module Frontend : (LangFrontend.S with type ast = X86Ast.statement list) =
   LangFrontend.Make (
       struct
         type perr = perror
