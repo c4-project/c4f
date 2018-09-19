@@ -54,7 +54,7 @@ open Core
 %token PLUS
 %token MINUS
 %token DOLLAR
-%token <X86Base.reg> ATT_REG
+%token <X86Ast.reg> ATT_REG
 %token <string> STRING
 %token <string> NUM
 %token <string> ATT_HEX
@@ -66,7 +66,7 @@ open Core
 
 %token  IT_LOCK
 
-%type <X86Base.statement list> main
+%type <X86Ast.statement list> main
 %start  main
 
 %%
@@ -78,72 +78,93 @@ stm_list:
   | list(stm) { $1 }
 
 stm:
-  | option(instr) EOL { Option.value ~default:Stm_nop $1 }
-  | label { Stm_label $1 }
+  | option(instr) EOL { Option.value ~default:StmNop $1 }
+  | label { X86Ast.StmLabel $1 }
   | error { raise (X86Base.ParseError($loc, X86Base.Statement)) }
 
 prefix:
-  | IT_LOCK { Pre_Lock }
+  | IT_LOCK { PreLock }
 
 label:
   NAME COLON { $1 }
 
 instr:
   | prefix NAME separated_list (COMMA, operand)
-           { X86Base.Stm_instruction
+           { X86Ast.StmInstruction
                { prefix = Some $1
                ; opcode = $2
                ; operands = $3
                }
            }
+    (* lock cmpxchgl %eax, %ebx *)
   | NAME separated_list (COMMA, operand)
          { if String.is_prefix $1 ~prefix:"."
-           then X86Base.Stm_directive
+           then X86Ast.StmDirective
                   { dir_name = $1
                   ; dir_ops  = $2
                   }
-           else X86Base.Stm_instruction
+           else X86Ast.StmInstruction
              { prefix = None
              ; opcode = $1
              ; operands = $2
              }
          }
 
+(* Binary operator *)
 bop:
-  | PLUS { X86Base.Bop_plus }
-  | MINUS { X86Base.Bop_minus }
+  | PLUS { X86Ast.BopPlus }
+  | MINUS { X86Ast.BopMinus }
 
+(* Base/index/scale triple *)
 bis:
   | LPAR ATT_REG RPAR
     { { (X86Base.in_zero ()) with in_base = Some $2 } }
+    (* (%eax) *)
   | LPAR option(ATT_REG) COMMA ATT_REG RPAR
          { { (X86Base.in_zero ()) with in_base = $2;
                                        in_index = Some $4 } }
+    (* (%eax, %ebx)
+       (    , %ebx) *)
   | LPAR option(ATT_REG) COMMA option(ATT_REG) COMMA k RPAR
          { { (X86Base.in_zero ()) with in_base = $2;
                                        in_index = $4;
                                        in_scale = Some $6 } }
+    (* (%eax, %ebx, 2)
+       (    , %ebx, 2)
+       (    ,     , 2) *)
 
+(* Memory access: base/index/scale, displacement, or both *)
 indirect:
   | bis { $1 }
+    (* (%eax, %ebx, 2) *)
   | disp bis { { $2 with in_disp = Some $1 } }
+    (* -8(%eax, %ebx, 2) *)
   | disp { { (X86Base.in_zero ()) with in_disp = Some $1 } }
+    (* 0x4000 *)
 
+(* Memory displacement *)
 disp:
-  | k    { X86Base.DispNumeric $1 }
-  | NAME { X86Base.DispSymbolic $1 }
+  | k    { X86Ast.DispNumeric $1 }
+  | NAME { X86Ast.DispSymbolic $1 }
 
 operand:
-  | prim_operand bop operand { X86Base.Operand_bop($1,$2,$3) }
+  | prim_operand bop operand { X86Ast.OperandBop($1,$2,$3) }
   | prim_operand { $1 }
   | error { raise (X86Base.ParseError($sloc, X86Base.Operand)) }
 
 prim_operand:
-  | DOLLAR disp {X86Base.Operand_immediate $2}
-  | STRING {X86Base.Operand_string $1}
-  | ATT_REG {X86Base.Operand_reg $1}
-  | indirect {X86Base.Operand_indirect $1}
+  | DOLLAR disp {X86Ast.OperandImmediate $2}
+    (* $10 *)
+  | STRING {X86Ast.OperandString $1}
+    (* "Hello, world!" *)
+  | ATT_REG {X86Ast.OperandReg $1}
+    (* %eax *)
+  | indirect {X86Ast.OperandIndirect $1}
+    (* -8(%eax, %ebx, 2) *)
 
+(* Numeric constant: hexadecimal or decimal *)
 k:
   | ATT_HEX    { Int.of_string ("0x" ^ $1) }
+    (* 0xDEADBEEF *)
   | NUM        { Int.of_string $1 }
+    (* 42 *)

@@ -44,65 +44,58 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-open Core
-open X86Ast
+(** Generic, low-level abstract syntax tree for AT&T and Intel x86 *)
 
-let regs =
-  [
-   EAX, "EAX" ;
-   EBX, "EBX" ;
-   ECX, "ECX" ;
-   EDX, "EDX" ;
-   ESI, "ESI" ;
-   EDI, "EDI" ;
-   EBP, "EBP" ;
-   ESP, "ESP" ;
-   EIP, "EIP" ;
-   ZF, "ZF" ;
-   SF, "SF" ;
-   CF, "CF" ;
-   (* 16-bit registers *)
-   AX, "AX";
-   BX, "BX";
-   CX, "CX";
-   DX, "DX";
-   (* 8-bit low registers *)
-   AL, "AL";
-   BL, "BL";
-   CL, "CL";
-   DL, "DL";
-   (* 8-bit high registers *)
-   AH, "AH";
-   BH, "BH";
-   CH, "CH";
-   DH, "DH";
- ]
+type reg =
+  | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
+  | AX | BX | CX | DX
+  | AL | BL | CL | DL
+  | AH | BH | CH | DH
+  | ZF | SF | CF
 
-let parse_list = Map.of_alist_exn (module String.Caseless) (List.Assoc.inverse regs)
+type disp =
+  | DispSymbolic of string
+  | DispNumeric of int
 
-let parse_reg (s : string) : reg option =
-  Map.find parse_list s
-
-let in_zero () =
-  { in_seg    = None
-  ; in_disp   = None
-  ; in_base   = None
-  ; in_index  = None
-  ; in_scale  = None
+type indirect =
+  { in_seg    : reg option
+  ; in_disp   : disp option
+  ; in_base   : reg option
+  ; in_index  : reg option
+  ; in_scale  : int option
   }
 
-type parse_error =
-  | Statement
-  | Instruction
-  | Operand
+type bop =
+  | BopPlus
+  | BopMinus
 
-let print_parse_error =
-  function
-  | Statement -> "statement"
-  | Instruction -> "instruction"
-  | Operand -> "operand"
+type operand =
+  | OperandIndirect of indirect
+  | OperandReg of reg
+  | OperandImmediate of disp
+  | OperandString of string
+  | OperandBop of operand * bop * operand
 
-let pp_error f err = Format.pp_print_string f (print_parse_error err)
+type directive =
+  { dir_name : string
+  ; dir_ops  : operand list
+  }
 
-exception ParseError of ((Lexing.position * Lexing.position) * parse_error)
+type prefix =
+  | PreLock
 
+type instruction =
+  { prefix   : prefix option
+  ; opcode   : string
+  ; operands : operand list
+  }
+
+type statement =
+  | StmLabel of string
+  | StmDirective of directive
+  | StmInstruction of instruction
+  | StmNop
+
+type syntax =
+  | SynAtt
+  | SynIntel

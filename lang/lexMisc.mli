@@ -16,11 +16,12 @@
 
 (** Misc lexing utilities *)
 
-open Lexing
+(** [pp_pos f pos] pretty-prints position [pos] onto formatter [f]. *)
+val pp_pos : Format.formatter -> Lexing.position -> unit
+
+(** [pp_pos2 f rng] pretty-prints position range [rng] onto formatter [f]. *)
+val pp_pos2 : Format.formatter -> (Lexing.position * Lexing.position) -> unit
 
 (* Error report in all lexers *)
-exception Error of string * position
-val error : string -> lexbuf -> 'a
-
-(* init position *)
-val init_file : string -> lexbuf -> unit
+exception Error of string * Lexing.position
+val error : string -> Lexing.lexbuf -> 'a
