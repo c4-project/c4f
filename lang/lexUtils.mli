@@ -30,17 +30,6 @@ module Default : Config
 
 module Make : functor (O:Config) -> sig
 
-(* Build some special lexbuf:   'from_section (pos1,pos2) chan'
-   Returns a lexbuf that behave as if the lexed stream starts at
-   pos1 in chan (included) and ends at position pos2 (excluded) *)
-val from_section : Pos.pos2 -> in_channel -> lexbuf
-
-(* Idem, source being a string *)
-
-val from_section_string : Pos.pos2 -> string -> lexbuf
-
-
-
 (* Lexer used elsewhere *)
 val skip_comment : lexbuf -> unit
 val skip_c_comment : lexbuf -> unit

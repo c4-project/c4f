@@ -19,36 +19,6 @@ let usage = "act [paths to comparator output]"
 let asm_path_of (cc_id : string) (ps : Pathset.t) : string =
   List.Assoc.find_exn ps.a_paths cc_id ~equal:(=)
 
-module XL = X86Lexer.Make(LexUtils.Default)
-
-let print_position oc (pos : Lexing.position) =
-  fprintf oc "%s:%d:%d"
-          pos.pos_fname
-          pos.pos_lnum
-          (pos.pos_cnum - pos.pos_bol)
-
-let parse_x86_ic (asm_fname : string) (asm_ic : In_channel.t) : unit =
-  let lexbuf = Lexing.from_channel asm_ic in
-  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = asm_fname };
-  try
-    ignore (X86Parser.main XL.token lexbuf)
-  with
-  | LexMisc.Error (e, _) ->
-     eprintf "lexing error: %s (in %a)\n"
-             e
-             print_position lexbuf.lex_curr_p
-  | X86Base.ParseError ((s, e), ty) ->
-     eprintf "parsing error in %s at %a \n"
-             (X86Base.print_parse_error ty)
-             Pos.pp_pos2 (s, e)
-  | X86Parser.Error ->
-     eprintf "parsing error (in %a)\n"
-             print_position lexbuf.lex_curr_p
-
-let parse_x86_file (asm_fname : string) =
-  In_channel.with_file asm_fname ~f:(parse_x86_ic asm_fname)
-
-
 let summarise_pathset (vf : Format.formatter) (ps : Pathset.t) : unit =
   List.iter
     ~f:(fun (io, t, v) -> Format.fprintf vf "@[[%s] %s file:@ %s@]@." io t v)
@@ -57,6 +27,25 @@ let summarise_pathset (vf : Format.formatter) (ps : Pathset.t) : unit =
       ]
       @ List.map ~f:(fun (c, p) -> ("out", c, p)) ps.a_paths
       @ List.map ~f:(fun (c, p) -> ("out", c ^ " (litmus)", p)) ps.lita_paths)
+
+let format_to_string pp v : string =
+  let buf = Buffer.create 16 in
+  let f = Format.formatter_of_buffer buf in
+  Format.pp_open_box f 0;
+  pp f v;
+  Format.pp_close_box f ();
+  Format.pp_print_flush f ();
+  Buffer.contents buf
+
+let c_asm (cn : string) (ps : Pathset.t) =
+  R.reword_error
+    (function
+     | LangParser.Parse(perr) ->
+        R.msg (format_to_string X86ATT.Frontend.pp_perr perr)
+     | LangParser.Lex(lerr) ->
+        R.msg (format_to_string X86ATT.Frontend.pp_lerr lerr)
+    )
+    (X86ATT.Frontend.run_file ~file:(asm_path_of cn ps))
 
 let proc_c (cfg : config) (cc_specs : CompilerSpec.set) vf results_path c_fname =
   let root = !(cfg.out_root_path) in
@@ -70,10 +59,9 @@ let proc_c (cfg : config) (cc_specs : CompilerSpec.set) vf results_path c_fname 
   >>= (
     fun _ -> Utils.iter_result
                (fun (cn, cs) ->
-                 let r = Compiler.compile cn cs paths in
-                 (* Temporary *)
-                 parse_x86_file (asm_path_of cn paths);
-                 r
+                 Compiler.compile cn cs paths
+                 >>= (fun _ -> Result.map ~f:ignore (c_asm cn paths))
+
                ) cc_specs
   )
 
@@ -88,7 +76,7 @@ let proc_results (cfg : config) (cc_specs : CompilerSpec.set) (vf : Format.forma
   with
     Sys_error e -> R.error_msgf "system error: %s" e
 
-let summarise_config (cfg : config) (f : Format.formatter) : unit =
+let pp_config (f : Format.formatter) (cfg : config) : unit =
   Format.pp_open_vbox f 0;
   Format.pp_print_string f "Config --";
   Format.pp_print_break f 0 4;
@@ -101,7 +89,7 @@ let summarise_config (cfg : config) (f : Format.formatter) : unit =
   Format.pp_close_box f ();
   Format.pp_print_flush f ()
 
-let summarise_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
+let pp_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
   Format.pp_open_vbox f 0;
   Format.pp_print_string f "Compiler specs --";
   Format.pp_print_break f 0 4;
@@ -111,9 +99,6 @@ let summarise_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
   Format.pp_print_cut f ();
   Format.pp_close_box f ();
   Format.pp_print_flush f ()
-
-let null_formatter () : Format.formatter =
-  Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
 
 (** [make_compiler_specs specpath] reads in the compiler spec list at
     [specpath], converting it to a [compiler_spec_set]. *)
@@ -148,15 +133,15 @@ let () =
   let verbose_fmt =
     if !(cfg.verbose)
     then Format.err_formatter
-    else null_formatter ()
+    else MyFormat.null_formatter ()
   in
-  summarise_config cfg verbose_fmt;
+  pp_config verbose_fmt cfg;
 
   make_compiler_specs !(cfg.spec_file) |>
     R.reword_error_msg (fun _ -> R.msg "Compiler specs are invalid.")
   >>= (
     fun specs ->
-    summarise_specs verbose_fmt specs;
+    pp_specs verbose_fmt specs;
     Queue.fold_result cfg.results_paths
                       ~init:()
                       ~f:(fun _ -> proc_results cfg specs verbose_fmt);

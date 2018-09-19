@@ -17,6 +17,6 @@
 (** Lexing X86 assembly *)
 
 module Make : functor(O:LexUtils.Config) -> sig
-  val token : Lexing.lexbuf -> X86Parser.token
+  val token : Lexing.lexbuf -> X86ATTParser.token
 end
 

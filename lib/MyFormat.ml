@@ -1,5 +1,8 @@
 open Core
 
+let null_formatter () =
+  Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
+
 let pp_kv f k pv v =
   Format.pp_open_hvbox f 0;
   Format.pp_print_string f k;

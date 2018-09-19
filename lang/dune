@@ -4,8 +4,9 @@
   (libraries
     core
     menhirlib
-    rresult))
+    rresult)
+  (modules_without_implementation LangParser))
 (ocamllex
-  (modules X86Lexer lexUtils))
+  (modules X86ATTLexer lexUtils))
 (menhir
-  (modules X86Parser))
+  (modules X86ATTParser))
