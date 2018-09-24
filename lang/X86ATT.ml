@@ -60,9 +60,17 @@ module Lang : (Language.S with type statement = X86Ast.statement) = struct
     | X86Ast.StmNop -> true
     | _ -> false
 
+  let instruction_type_inner _ (* { prefix; opcode; operands } *) =
+    Language.AbsOther
+
+  let instruction_type =
+    function
+    | X86Ast.StmInstruction i -> Some (instruction_type_inner i)
+    | _ -> None
+
   let is_directive =
     function
-    | X86Ast.StmDirective _ -> true
+    | X86Ast.StmInstruction {opcode = X86OpDirective _; _} -> true
     | _ -> false
 
   let is_program_boundary =

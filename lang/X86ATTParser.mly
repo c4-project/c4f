@@ -88,8 +88,15 @@ prefix:
 label:
   NAME COLON { $1 }
 
+opcode:
+  | NAME { match String.chop_prefix $1 ~prefix:"." with
+	   | Some dir_name ->
+	      X86OpDirective dir_name
+	   | None ->
+	      X86OpUnknown $1 }
+
 instr:
-  | prefix NAME separated_list (COMMA, operand)
+  | prefix opcode separated_list (COMMA, operand)
            { X86Ast.StmInstruction
                { prefix = Some $1
                ; opcode = $2
@@ -97,19 +104,12 @@ instr:
                }
            }
     (* lock cmpxchgl %eax, %ebx *)
-  | NAME separated_list (COMMA, operand)
-         { match String.chop_prefix $1 ~prefix:"." with
-           | Some dir_name ->
-              X86Ast.StmDirective
-                { dir_name
-                ; dir_ops  = $2
-                }
-           | None ->
-              X86Ast.StmInstruction
-                { prefix = None
-                ; opcode = $1
-                ; operands = $2
-                }
+  | opcode separated_list (COMMA, operand)
+         { X86Ast.StmInstruction
+               { prefix = None
+               ; opcode = $1
+               ; operands = $2
+               }
          }
 
 (* Binary operator *)

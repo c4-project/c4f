@@ -65,6 +65,7 @@ val syntax_of_sexp : Sexp.t -> syntax
 
 val pp_syntax : Format.formatter -> syntax -> unit
 
+(** [reg] enumerates all of the known (32-bit) x86 registers. *)
 type reg =
   | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
   | AX | BX | CX | DX
@@ -109,21 +110,22 @@ type operand =
 
 val pp_operand : syntax -> Format.formatter -> operand -> unit
 
-type directive =
-  { dir_name : string
-  ; dir_ops  : operand list
-  }
-
-val pp_directive : syntax -> Format.formatter -> directive -> unit
-
 type prefix =
   | PreLock
 
 val pp_prefix : Format.formatter -> prefix -> unit
 
+type opcode =
+  | X86OpDirective of string (* Assembler directive *)
+  | X86OpUnknown of string (* An opcode we don't (yet?) understand. *)
+
+(** [pp_opcode syn f op] pretty-prints opcode [op] on formatter [f],
+    using the correct syntax for [syn]. *)
+val pp_opcode : syntax -> Format.formatter -> opcode -> unit
+
 type instruction =
   { prefix   : prefix option
-  ; opcode   : string
+  ; opcode   : opcode
   ; operands : operand list
   }
 
@@ -131,7 +133,6 @@ val pp_instruction : syntax -> Format.formatter -> instruction -> unit
 
 type statement =
   | StmLabel of string
-  | StmDirective of directive
   | StmInstruction of instruction
   | StmNop
 

@@ -261,17 +261,6 @@ let pp_oplist syn =
   Format.pp_print_list ~pp_sep:pp_comma
                        (pp_operand syn)
 
-type directive =
-  { dir_name : string
-  ; dir_ops  : operand list
-  }
-
-let pp_directive syn f { dir_name; dir_ops } =
-  Format.fprintf f
-                 "@[.%s@ %a@]"
-                 dir_name
-                 (pp_oplist syn) dir_ops
-
 type prefix =
   | PreLock
 
@@ -282,28 +271,35 @@ let pp_prefix f p =
   Format.pp_print_string f (prefix_string p);
   Format.pp_print_space f ()
 
+type opcode =
+  | X86OpDirective of string
+  | X86OpUnknown of string
+
+let pp_opcode _ f =
+  function
+  | X86OpDirective s -> Format.fprintf f ".%s" s
+  | X86OpUnknown s -> String.pp f s
+
 type instruction =
   { prefix   : prefix option
-  ; opcode   : string
+  ; opcode   : opcode
   ; operands : operand list
   }
 
 let pp_instruction syn f { prefix; opcode; operands } =
   Format.fprintf f
-                 "@[@[%a%s@]@ %a@]"
+                 "@[@[%a%a@]@ %a@]"
                  (pp_option ~pp:pp_prefix) prefix
-                 opcode
+                 (pp_opcode syn) opcode
                  (pp_oplist syn) operands
 
 type statement =
   | StmLabel of string
-  | StmDirective of directive
   | StmInstruction of instruction
   | StmNop
 
 let pp_statement syn f = function
   | StmLabel l -> Format.fprintf f "@[%s:@ @]" l
-  | StmDirective d -> pp_directive syn f d; Format.pp_print_cut f ()
   | StmInstruction i -> pp_instruction syn f i; Format.pp_print_cut f ()
   | StmNop -> Format.fprintf f " "; Format.pp_print_cut f ()
 

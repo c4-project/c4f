@@ -40,6 +40,14 @@ val sexp_of_name : name -> Sexp.t
    X86). *)
 val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
 
+(** [abs_instruction] is an abstracted instruction. *)
+type abs_instruction =
+  | AbsJump of string list
+  | AbsMove
+  | AbsCall
+  | AbsStack
+  | AbsOther
+
 (** [S] is the signature implemented by Litmus languages. *)
 module type S = sig
   (** [statement] is the type of statements in the language. *)
@@ -71,6 +79,10 @@ module type S = sig
 
   (** [nop] builds a no-op instruction. *)
   val nop : unit -> statement
+
+  (** [instruction_type stm] gets the abstract type of an instruction.
+     If [stm] isn't an instruction, it returns [None].  *)
+  val instruction_type : statement -> abs_instruction option
 
   (** [is_nop stm] decides whether [stm] appears to be an empty
      statement. *)

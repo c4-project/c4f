@@ -32,15 +32,24 @@ let pp_name ?(show_sublang=true) f = function
      then Format.fprintf f "@ (%a)"
                          X86Ast.pp_syntax syn
 
+type abs_instruction =
+  | AbsJump of string list
+  | AbsMove
+  | AbsCall
+  | AbsStack
+  | AbsOther
+
 module type S = sig
   type statement
   type location
   type constant
+
   val name : name
   val pp_statement : Format.formatter -> statement -> unit
   val pp_location : Format.formatter -> location -> unit
   val pp_constant : Format.formatter -> constant -> unit
   val nop : unit -> statement
+  val instruction_type : statement -> abs_instruction option
   val is_nop : statement -> bool
   val is_directive : statement -> bool
   val is_program_boundary : statement -> bool
