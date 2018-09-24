@@ -1,5 +1,10 @@
+;; -*- mode: lisp; -*-
+
 (library
-  (name utils)
-  (libraries
-    core))
+ (name utils)
+ (inline_tests)
+ (preprocess
+  (pps ppx_expect))
+ (libraries
+  core))
 

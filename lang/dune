@@ -1,13 +1,17 @@
+;; -*- mode: lisp; -*-
+
 (library
-  (name lang)
-  (preprocess (pps ppx_deriving.std ppx_jane ppx_sexp_message))
+ (name lang)
+ (inline_tests)
+ (preprocess
+  (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
   (libraries
-    core
-    utils
-    menhirlib
-    rresult)
+   core
+   utils
+   menhirlib
+   rresult)
   (modules_without_implementation LangParser))
 (ocamllex
-  (modules X86ATTLexer lexUtils))
+ (modules X86ATTLexer lexUtils))
 (menhir
-  (modules X86ATTParser))
+ (modules X86ATTParser))

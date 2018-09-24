@@ -82,4 +82,18 @@ let maybe_int_of_string s =
 let is_program_label l =
   (* TODO(@MattWindsor91): this is probably GCC-specific. *)
   String.chop_prefix ~prefix:"_P" l
-  |> Option.exists ~f:(fun ls -> maybe_int_of_string ls <> None)
+  |> Option.exists ~f:(fun ls -> match maybe_int_of_string ls with
+                                 | Some x when 0 <= x -> true
+                                 | _ -> false)
+
+let%expect_test "is_program_label: positive example" =
+  printf "%b" (is_program_label "_P0");
+  [%expect {| true |}]
+
+let%expect_test "is_program_label: wrong suffix" =
+  printf "%b" (is_program_label "_P0P");
+  [%expect {| false |}]
+
+let%expect_test "is_program_label: negative" =
+  printf "%b" (is_program_label "_P-1");
+  [%expect {| false |}]
