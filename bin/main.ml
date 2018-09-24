@@ -75,7 +75,7 @@ let proc_c (cfg : config) (cc_specs : CompilerSpec.set) vf results_path c_fname 
   Pathset.make_dir_structure paths |>
     R.reword_error_msg (fun _ -> R.msg "couldn't make dir structure")
   >>= (
-    fun _ -> Utils.iter_result
+    fun _ -> Utils.List.iter_result
                (fun (cn, cs) ->
                  Compiler.compile cn cs paths
                  >>= (fun _ -> Result.map ~f:ignore (c_asm cn paths))
@@ -87,10 +87,8 @@ let proc_results (cfg : config) (cc_specs : CompilerSpec.set) (vf : Format.forma
   let c_path = Filename.concat results_path "C" in
   try
     Sys.readdir c_path
-    |> Array.filter ~f:(fun file -> snd (Filename.split_extension file) = Some "c")
-    |> Array.fold_result
-         ~init:()
-         ~f:(fun _ -> proc_c cfg cc_specs vf results_path)
+    |> Array.filter ~f:(Utils.has_extension ~ext:"c")
+    |> Utils.Array.iter_result (proc_c cfg cc_specs vf results_path)
   with
     Sys_error e -> R.error_msgf "system error: %s" e
 
