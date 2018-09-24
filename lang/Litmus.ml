@@ -23,6 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Utils
+open Utils.MyContainers
 
 (*
  * Litmus AST module
@@ -98,47 +99,61 @@ module T (LS : Language.S) = struct
                                            LS.pp_constant c)
           init)
 
+  let pp_instr_raw (f : Format.formatter) =
+      Format.fprintf f "@[<h>%a@]" LS.pp_statement
+
+  let instr_width (ins : LS.statement) : int =
+    String.length (MyFormat.format_to_string pp_instr_raw ins)
+
+  let column_width : LS.statement list list -> int =
+    MyList.max_measure
+      ~measure:(MyList.max_measure ~measure:instr_width)
+
   let pp_programs (f : Format.formatter)
                   (ps : LS.statement list list)
       : unit =
+    let cw = column_width ps in
+
     let endl () =
       Format.pp_print_char f ';';
       Format.pp_print_tab f ()
     in
 
-    let print_sep i =
-      if 0 < i then Format.fprintf f " | "
+    let pp_sep i =
+      (* No need to left-pad the |: the way we do the column
+         justification below does it for us *)
+      if 0 < i then Format.fprintf f "| "
     in
 
-    let print_header i _ =
-      print_sep i;
-      (* TODO(MattWindsor91): calculate column widths a bit more
-         robustly! *)
-      let padding = String.init 20 ~f:(fun _ -> ' ') in
-      Format.fprintf f "@[P%d%s@]" i padding;
+    let pp_header i _ =
+      pp_sep i;
+      (* Since we're setting tabs here, we need to pad the column width.
+         NB: the width of each column will be around 'cw+1', factoring
+         in the 'P' prefix. *)
+      Format.fprintf f "@[P%-*d@]" cw i;
       Format.pp_set_tab f ()
     in
 
-    let print_instr i (ins : 'a) =
-      print_sep i;
-      Format.fprintf f "@[<h>%a@]" LS.pp_statement ins;
+    let pp_instr i (ins : 'a) =
+      pp_sep i;
+      pp_instr_raw f ins;
       Format.pp_print_tab f ()
     in
 
-    let print_row (row : 'a list) =
-      List.iteri ~f:print_instr row;
+    let pp_row (row : 'a list) =
+      List.iteri ~f:pp_instr row;
       endl ();
     in
 
     Format.pp_open_tbox f ();
 
     Format.pp_set_tab f ();
-    List.iteri ~f:print_header ps;
+    List.iteri ~f:pp_header ps;
     endl ();
 
     (* The [is_valid] check in [pp] guarantees this transpose is okay. *)
     let ps' = List.transpose_exn ps in
-    List.iter ~f:print_row ps';
+    List.iter ~f:pp_row ps';
 
     Format.pp_close_tbox f ()
 

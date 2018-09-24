@@ -5,6 +5,12 @@ open Core
 
 val null_formatter : unit -> Format.formatter
 
+(** [format_to_string pp v] runs formatter [pp] on value [v], and
+    dumps the results into a string. *)
+val format_to_string : (Format.formatter -> 'v -> unit)
+                       -> 'v
+                       -> string
+
 (** [pp_c_braces f pi] wraps a vertical pretty-printer [pi] inside a
    C-style brace pair. *)
 val pp_c_braces : Format.formatter

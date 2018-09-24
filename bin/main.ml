@@ -34,22 +34,13 @@ let summarise_pathset (vf : Format.formatter) (ps : Pathset.t) : unit =
       @ List.map ~f:(fun (c, p) -> ("out", c, p)) ps.a_paths
       @ List.map ~f:(fun (c, p) -> ("out", c ^ " (litmus)", p)) ps.lita_paths)
 
-let format_to_string pp v : string =
-  let buf = Buffer.create 16 in
-  let f = Format.formatter_of_buffer buf in
-  Format.pp_open_box f 0;
-  pp f v;
-  Format.pp_close_box f ();
-  Format.pp_print_flush f ();
-  Buffer.contents buf
-
 let parse_c_asm (cn : string) (ps : Pathset.t) =
   R.reword_error
     (function
      | LangParser.Parse(perr) ->
-        R.msg (format_to_string X86ATT.Frontend.pp_perr perr)
+        R.msg (MyFormat.format_to_string X86ATT.Frontend.pp_perr perr)
      | LangParser.Lex(lerr) ->
-        R.msg (format_to_string X86ATT.Frontend.pp_lerr lerr)
+        R.msg (MyFormat.format_to_string X86ATT.Frontend.pp_lerr lerr)
     )
     (X86ATT.Frontend.run_file ~file:(asm_path_of cn ps))
 
@@ -87,7 +78,7 @@ let proc_asm (asm : X86ATT.Frontend.ast) =
 
 let build_litmus (asm : X86ATT.Frontend.ast) =
   R.reword_error
-    (fun err -> R.msg (format_to_string L.pp_err err))
+    (fun err -> R.msg (MyFormat.format_to_string L.pp_err err))
     (L.make ~name:"TODO"
             ~init:[]
             ~programs:(proc_asm asm))

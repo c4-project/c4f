@@ -29,3 +29,12 @@ let pp_sq f sq =
                      Format.pp_print_string f s
                    end)
              sq
+
+let format_to_string pp v =
+  let buf = Buffer.create 16 in
+  let f = Format.formatter_of_buffer buf in
+  Format.pp_open_box f 0;
+  pp f v;
+  Format.pp_close_box f ();
+  Format.pp_print_flush f ();
+  Buffer.contents buf
