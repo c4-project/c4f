@@ -3,6 +3,7 @@
   (preprocess (pps ppx_sexp_message))
   (libraries
     core
+    utils
     menhirlib
     rresult)
   (modules_without_implementation LangParser))

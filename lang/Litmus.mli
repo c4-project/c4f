@@ -23,34 +23,53 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Top-level AST for Litmus files *)
 
-(** [t] is the top-level container for a Litmus test. *)
+open Core
 
-type 'a t
+(*
+ * Litmus AST module
+ *)
 
-(** [pp ppa f litmus] pretty-prints the litmus test [litmus] onto
-   formatter [f], given a program pretty printer [ppa]. *)
+(** [T] is a functor that, given a language described by [Language.S],
+    produces a module type for litmus test syntax trees, as well as
+    operations for pretty-printing it. *)
+module T : functor (LS : Language.S) -> sig
 
-val pp : (Format.formatter -> 'a -> unit)
-         -> Format.formatter
-         -> 'a t
-         -> unit
+  (** [t] is the top-level container for a Litmus test. *)
 
-(** [err] is the type of validity errors that can arise when building
-   a [t]. *)
+  type t
 
-type err =
-  | NameEmpty
-  | ProgramsEmpty
-  | ProgramsNotUniform
+  (** [pp f litmus] pretty-prints the litmus test [litmus] onto
+      formatter [f]. *)
 
-(** [pp_err f err] pretty-prints the validity error [err] onto
-   formatter [f]. *)
+  val pp : Format.formatter -> t -> unit
 
-val pp_err : Format.formatter -> err -> unit
+  (*
+   * Validity errors
+   *)
 
-(** [make] tries to build a [t] from a name [name], language [lang], and
-    program list [programs].  It returns a result with possible error [err]. *)
-val make : name:string
-           -> lang:Language.t
-           -> programs:'a list list
-           -> ('a t, err) result
+  (** [err] is the type of validity errors that can arise when building
+   a litmus test. *)
+
+  type err =
+    | NameEmpty
+    | ProgramsEmpty
+    | ProgramsNotUniform
+    | DuplicateInit of LS.location
+
+  (** [pp_err f err] pretty-prints the validity error [err] onto
+     formatter [f]. *)
+
+  val pp_err : Format.formatter -> err -> unit
+
+  (*
+   * Construction
+   *)
+
+  (** [make] tries to build a [t] from a name [name], initialiser
+     [init], and program list [programs].  It returns a result with
+     possible error [err]. *)
+  val make : name:string
+             -> init:((LS.location, LS.constant) List.Assoc.t)
+             -> programs:LS.statement list list
+             -> (t, err) result
+end

@@ -1,8 +1,5 @@
 open Core
 
-(** [has_extension] asks whether a given filename has the extension [ext]. *)
-val has_extension : ext:string -> string -> bool
-
 (** [ContainerExtensions] outlines generic extension operations on
    Core containers. *)
 module type ContainerExtensions = sig
@@ -18,6 +15,6 @@ end
    [ContainerExtensions]. *)
 module ContainerExtend : functor (S : Container.S1) -> (ContainerExtensions with type 'a cont = 'a S.t)
 
-module Array : (ContainerExtensions with type 'a cont = 'a array)
+module MyArray : (ContainerExtensions with type 'a cont = 'a array)
 
-module List : (ContainerExtensions with type 'a cont = 'a list)
+module MyList : (ContainerExtensions with type 'a cont = 'a list)

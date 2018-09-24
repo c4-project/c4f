@@ -3,6 +3,15 @@ open Core
 let null_formatter () =
   Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
 
+let pp_c_braces f pi =
+  Format.pp_open_vbox f 4;
+  Format.pp_print_char f '{';
+  Format.pp_print_cut f ();
+  pi f;
+  Format.pp_close_box f ();
+  Format.pp_print_cut f ();
+  Format.pp_print_char f '}'
+
 let pp_kv f k pv v =
   Format.pp_open_hvbox f 0;
   Format.pp_print_string f k;

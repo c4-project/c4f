@@ -1,5 +1,6 @@
 open Core
 open Rresult
+open Utils.MyContainers
 
 type t =
   { c_path     : string
@@ -63,7 +64,7 @@ let lita_path_of (root : string) (file : string) (cname : string) : string =
 let make_dir_structure ps =
   try
     if Sys.is_directory_exn ps.out_root
-    then Utils.List.iter_result
+    then MyList.iter_result
            mkdir
            (List.map ~f:(fun (c, _) -> a_dir_of ps.out_root c) ps.a_paths
             @ List.map ~f:(fun (c, _) -> lita_dir_of ps.out_root c) ps.lita_paths)

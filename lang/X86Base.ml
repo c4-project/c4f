@@ -74,3 +74,14 @@ let pp_error f err = Format.pp_print_string f (print_parse_error err)
 
 exception ParseError of ((Lexing.position * Lexing.position) * parse_error)
 
+module ATT : (Language.S with type statement = X86Ast.statement) = struct
+  let name = (Language.X86 (X86Ast.SynAtt))
+
+  type statement = X86Ast.statement
+  type constant = X86Ast.operand (* TODO: this is too weak *)
+  type location = X86Ast.indirect (* TODO: as is this *)
+
+  let pp_statement = X86Ast.pp_statement X86Ast.SynAtt
+  let pp_constant = X86Ast.pp_operand X86Ast.SynAtt
+  let pp_location = X86Ast.pp_indirect X86Ast.SynAtt
+end

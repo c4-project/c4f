@@ -21,12 +21,22 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-type t =
+type name =
   | X86 of X86Ast.syntax
 
-let pp ?(show_sublang=true) f = function
+let pp_name ?(show_sublang=true) f = function
   | X86 syn ->
      Format.pp_print_string f "X86";
      if show_sublang
      then Format.fprintf f "@ (%a)"
                          X86Ast.pp_syntax syn
+
+module type S = sig
+  type statement
+  type location
+  type constant
+  val name : name
+  val pp_statement : Format.formatter -> statement -> unit
+  val pp_location : Format.formatter -> location -> unit
+  val pp_constant : Format.formatter -> constant -> unit
+end

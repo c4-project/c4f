@@ -23,12 +23,39 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Enumeration of languages supported by act *)
 
-(** [t] enumerates all languages, and dialects thereof, supported by act. *)
-type t =
+(** [name] enumerates all languages, and dialects thereof, supported by act. *)
+type name =
   | X86 of X86Ast.syntax
 
-(** [pp ?show_sublang f l] pretty-prints language [l] onto formatter
-   [f].  If [show_sublang] is true (the default), we also print
-   details about any sub-language (eg. AT&T/Intel syntax for X86). *)
+(** [pp_name ?show_sublang f l] pretty-prints language name [l] onto
+   formatter [f].  If [show_sublang] is true (the default), we also
+   print details about any sub-language (eg. AT&T/Intel syntax for
+   X86). *)
 
-val pp : ?show_sublang:bool -> Format.formatter -> t -> unit
+val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
+
+(** [S] is the signature implemented by Litmus languages. *)
+module type S = sig
+  (** [statement] is the type of statements in the language. *)
+  type statement
+
+  (** [location] is the type of initialisable and checkable
+     locations. *)
+  type location
+
+  (** [constant] is the type of constants used in initialisation and
+     checks. *)
+  type constant
+
+  (** [name] is the name of the signature. *)
+  val name : name
+
+  (** [pp_statement f s] pretty-prints statement [s] on formatter [f]. *)
+  val pp_statement : Format.formatter -> statement -> unit
+
+  (** [pp_location f l] pretty-prints location [l] on formatter [f]. *)
+  val pp_location : Format.formatter -> location -> unit
+
+  (** [pp_constant f k] pretty-prints constant [k] on formatter [f]. *)
+  val pp_constant : Format.formatter -> constant -> unit
+end

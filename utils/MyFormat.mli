@@ -5,6 +5,12 @@ open Core
 
 val null_formatter : unit -> Format.formatter
 
+(** [pp_c_braces f pi] wraps a vertical pretty-printer [pi] inside a
+   C-style brace pair. *)
+val pp_c_braces : Format.formatter
+                  -> (Format.formatter -> unit)
+                  -> unit
+
 (** [pp_kv f k pv v] prints a key-value pair, whose key is the string
    [k] and value is the value [v] printable by [pv], onto formatter
    [f]. *)

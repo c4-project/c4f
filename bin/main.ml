@@ -1,6 +1,8 @@
 open Core
 open Rresult
 open Lib
+open Utils
+open Utils.MyContainers
 open Lang
 
 type config =
@@ -51,12 +53,14 @@ let parse_c_asm (cn : string) (ps : Pathset.t) =
     )
     (X86ATT.Frontend.run_file ~file:(asm_path_of cn ps))
 
+module L = Litmus.T (X86Base.ATT)
+
 let build_litmus (asm : X86ATT.Frontend.ast) =
   R.reword_error
-    (fun err -> R.msg (format_to_string Litmus.pp_err err))
-    (Litmus.make ~name:"TODO"
-                 ~lang:(Language.X86 (X86Ast.SynAtt))
-                 ~programs:[asm])
+    (fun err -> R.msg (format_to_string L.pp_err err))
+    (L.make ~name:"TODO"
+            ~init:[]
+            ~programs:[asm])
 
 let c_asm (cn : string) (ps : Pathset.t) =
   parse_c_asm cn ps
@@ -66,7 +70,7 @@ let c_asm (cn : string) (ps : Pathset.t) =
       (lita_path_of cn ps)
       ~f:(fun oc ->
         let f = Format.formatter_of_out_channel oc in
-        Litmus.pp (X86Ast.pp_statement X86Ast.SynAtt) f lit;
+        L.pp f lit;
         Format.pp_print_flush f ());
     Result.ok_unit)
 
@@ -80,7 +84,7 @@ let proc_c (cfg : config) (cc_specs : CompilerSpec.set) vf results_path c_fname 
   Pathset.make_dir_structure paths |>
     R.reword_error_msg (fun _ -> R.msg "couldn't make dir structure")
   >>= (
-    fun _ -> Utils.List.iter_result
+    fun _ -> MyList.iter_result
                (fun (cn, cs) ->
                  Compiler.compile cn cs paths
                  >>= (fun _ -> Result.map ~f:ignore (c_asm cn paths))
@@ -92,8 +96,8 @@ let proc_results (cfg : config) (cc_specs : CompilerSpec.set) (vf : Format.forma
   let c_path = Filename.concat results_path "C" in
   try
     Sys.readdir c_path
-    |> Array.filter ~f:(Utils.has_extension ~ext:"c")
-    |> Utils.Array.iter_result (proc_c cfg cc_specs vf results_path)
+    |> Array.filter ~f:(MyFilename.has_extension ~ext:"c")
+    |> MyArray.iter_result (proc_c cfg cc_specs vf results_path)
   with
     Sys_error e -> R.error_msgf "system error: %s" e
 

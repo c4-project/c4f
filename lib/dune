@@ -3,5 +3,6 @@
   (preprocess (pps ppx_deriving.std ppx_jane))
   (libraries
     lang
+    utils
     core
     rresult))

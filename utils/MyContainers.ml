@@ -13,12 +13,9 @@ module ContainerExtend (S : Container.S1)
   let iter_result f = S.fold_result ~init:() ~f:(fun _ -> f)
 end
 
-module Array
+module MyArray
        : (ContainerExtensions with type 'a cont = 'a array) =
   ContainerExtend(Array)
 
-module List : (ContainerExtensions with type 'a cont = 'a list) =
+module MyList : (ContainerExtensions with type 'a cont = 'a list) =
   ContainerExtend(List)
-
-let has_extension ~ext file =
-  snd (Filename.split_extension file) = Some ext
