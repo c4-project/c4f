@@ -74,6 +74,16 @@ let pp_error f err = Format.pp_print_string f (print_parse_error err)
 
 exception ParseError of ((Lexing.position * Lexing.position) * parse_error)
 
+let maybe_int_of_string s =
+  try
+    Some (Int.of_string s)
+  with _ -> None
+
+let is_program_label l =
+  (* TODO(@MattWindsor91): this is probably GCC-specific. *)
+  String.chop_prefix ~prefix:"_P" l
+  |> Option.exists ~f:(fun ls -> maybe_int_of_string ls <> None)
+
 module ATT : (Language.S with type statement = X86Ast.statement) = struct
   let name = (Language.X86 (X86Ast.SynAtt))
 
@@ -84,4 +94,16 @@ module ATT : (Language.S with type statement = X86Ast.statement) = struct
   let pp_statement = X86Ast.pp_statement X86Ast.SynAtt
   let pp_constant = X86Ast.pp_operand X86Ast.SynAtt
   let pp_location = X86Ast.pp_indirect X86Ast.SynAtt
+
+  let nop () = X86Ast.StmNop
+
+  let is_directive =
+    function
+    | X86Ast.StmDirective _ -> true
+    | _ -> false
+
+  let is_program_boundary =
+    function
+    | X86Ast.StmLabel l -> is_program_label l
+    | _ -> false
 end

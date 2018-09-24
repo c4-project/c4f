@@ -21,7 +21,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Enumeration of languages supported by act *)
+(** High-level interface to languages supported by act *)
 
 open Core
 
@@ -64,4 +64,19 @@ module type S = sig
 
   (** [pp_constant f k] pretty-prints constant [k] on formatter [f]. *)
   val pp_constant : Format.formatter -> constant -> unit
+
+  (*
+   * Analyses and heuristics
+   *)
+
+  (** [nop] builds a no-op instruction. *)
+  val nop : unit -> statement
+
+  (** [is_directive stm] decides whether [stm] appears to be an
+     assembler directive. *)
+  val is_directive : statement -> bool
+
+  (** [is_program_boundary stm] decides whether [stm] appears to mark
+      a boundary between two Litmus programs. *)
+  val is_program_boundary : statement -> bool
 end

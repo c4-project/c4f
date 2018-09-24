@@ -55,12 +55,35 @@ let parse_c_asm (cn : string) (ps : Pathset.t) =
 
 module L = Litmus.T (X86Base.ATT)
 
+let remove_directives (asm : X86ATT.Frontend.ast) =
+  List.filter ~f:(fun x -> not (X86Base.ATT.is_directive x)) asm
+
+let split_asm (asm : X86ATT.Frontend.ast) =
+  List.group ~break:(fun _ -> X86Base.ATT.is_program_boundary)
+             asm
+
+let make_programs_uniform nop ps =
+  let maxlen =
+    ps
+    |> (List.max_elt ~compare:(fun x y -> Int.compare (List.length x) (List.length y)))
+    |> Option.value_map ~f:(List.length) ~default:0
+  in
+  List.map ~f:(fun p -> p @ List.init (maxlen - List.length p)
+                                      ~f:(fun _ -> nop))
+           ps
+
+let proc_asm (asm : X86ATT.Frontend.ast) =
+  asm
+  |> split_asm
+  |> List.map ~f:remove_directives
+  |> make_programs_uniform (X86Base.ATT.nop ())
+
 let build_litmus (asm : X86ATT.Frontend.ast) =
   R.reword_error
     (fun err -> R.msg (format_to_string L.pp_err err))
     (L.make ~name:"TODO"
             ~init:[]
-            ~programs:[asm])
+            ~programs:(proc_asm asm))
 
 let c_asm (cn : string) (ps : Pathset.t) =
   parse_c_asm cn ps

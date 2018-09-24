@@ -40,4 +40,7 @@ module type S = sig
   val pp_statement : Format.formatter -> statement -> unit
   val pp_location : Format.formatter -> location -> unit
   val pp_constant : Format.formatter -> constant -> unit
+  val nop : unit -> statement
+  val is_directive : statement -> bool
+  val is_program_boundary : statement -> bool
 end
