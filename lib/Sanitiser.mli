@@ -21,27 +21,19 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-type name =
-  | X86 of X86Ast.syntax
-             [@@deriving sexp]
+(** Assembly sanitisation *)
 
-let pp_name ?(show_sublang=true) f = function
-  | X86 syn ->
-     Format.pp_print_string f "x86";
-     if show_sublang
-     then Format.fprintf f "@ (%a)"
-                         X86Ast.pp_syntax syn
+open Lang
 
-module type S = sig
+module type Intf = sig
   type statement
-  type location
-  type constant
-  val name : name
-  val pp_statement : Format.formatter -> statement -> unit
-  val pp_location : Format.formatter -> location -> unit
-  val pp_constant : Format.formatter -> constant -> unit
-  val nop : unit -> statement
-  val is_nop : statement -> bool
-  val is_directive : statement -> bool
-  val is_program_boundary : statement -> bool
+
+  (** [sanitise stms] sanitises a statement list, turning it into a
+     list of separate program lists with various litmus-unfriendly
+     elements removed or simplified. *)
+  val sanitise : statement list -> statement list list
 end
+
+(** [T] implements the assembly sanitiser for a given language. *)
+module T : functor (LS : Language.S) ->
+           (Intf with type statement = LS.statement)

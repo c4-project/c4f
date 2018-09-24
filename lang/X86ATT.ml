@@ -41,3 +41,32 @@ module Frontend : (LangFrontend.S with type ast = X86Ast.statement list) =
           | X86ATTParser.Error ->
              Error (LangParser.Parse (Uncaught lexbuf.lex_curr_p))
       end)
+
+module Lang : (Language.S with type statement = X86Ast.statement) = struct
+  let name = (Language.X86 (X86Ast.SynAtt))
+
+  type statement = X86Ast.statement
+  type constant = X86Ast.operand (* TODO: this is too weak *)
+  type location = X86Ast.indirect (* TODO: as is this *)
+
+  let pp_statement = X86Ast.pp_statement X86Ast.SynAtt
+  let pp_constant = X86Ast.pp_operand X86Ast.SynAtt
+  let pp_location = X86Ast.pp_indirect X86Ast.SynAtt
+
+  let nop () = X86Ast.StmNop
+
+  let is_nop =
+    function
+    | X86Ast.StmNop -> true
+    | _ -> false
+
+  let is_directive =
+    function
+    | X86Ast.StmDirective _ -> true
+    | _ -> false
+
+  let is_program_boundary =
+    function
+    | X86Ast.StmLabel l -> X86Base.is_program_label l
+    | _ -> false
+end

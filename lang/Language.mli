@@ -72,6 +72,10 @@ module type S = sig
   (** [nop] builds a no-op instruction. *)
   val nop : unit -> statement
 
+  (** [is_nop stm] decides whether [stm] appears to be an empty
+     statement. *)
+  val is_nop : statement -> bool
+
   (** [is_directive stm] decides whether [stm] appears to be an
      assembler directive. *)
   val is_directive : statement -> bool

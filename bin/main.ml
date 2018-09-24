@@ -44,44 +44,15 @@ let parse_c_asm (cn : string) (ps : Pathset.t) =
     )
     (X86ATT.Frontend.run_file ~file:(asm_path_of cn ps))
 
-module L = Litmus.T (X86Base.ATT)
-
-let remove_directives (asm : X86ATT.Frontend.ast) =
-  List.filter ~f:(fun x -> not (X86Base.ATT.is_directive x)) asm
-
-let split_asm (asm : X86ATT.Frontend.ast) =
-  (* Adding a nop to the start forces there to be some instructions
-     before the first program, meaning we can simplify discarding
-     such instructions. *)
-  let progs =
-    (X86Base.ATT.nop() :: asm)
-    |> List.group ~break:(fun _ -> X86Base.ATT.is_program_boundary)
-  in
-  List.drop progs 1
-(* TODO(MattWindsor91): divine the end of the program. *)
-
-let make_programs_uniform nop ps =
-  let maxlen =
-    ps
-    |> (List.max_elt ~compare:(fun x y -> Int.compare (List.length x) (List.length y)))
-    |> Option.value_map ~f:(List.length) ~default:0
-  in
-  List.map ~f:(fun p -> p @ List.init (maxlen - List.length p)
-                                      ~f:(fun _ -> nop))
-           ps
-
-let proc_asm (asm : X86ATT.Frontend.ast) =
-  asm
-  |> split_asm
-  |> List.map ~f:remove_directives
-  |> make_programs_uniform (X86Base.ATT.nop ())
+module L = Litmus.T (X86ATT.Lang)
+module S = Sanitiser.T (X86ATT.Lang)
 
 let build_litmus (asm : X86ATT.Frontend.ast) =
   R.reword_error
     (fun err -> R.msg (MyFormat.format_to_string L.pp_err err))
     (L.make ~name:"TODO"
             ~init:[]
-            ~programs:(proc_asm asm))
+            ~programs:(S.sanitise asm))
 
 let c_asm (cn : string) (ps : Pathset.t) =
   parse_c_asm cn ps
