@@ -54,6 +54,12 @@ type syntax =
   | SynAtt
   | SynIntel
 
+(** [sexp_of_syntax syn] converts [syn] into an S-expression. *)
+val sexp_of_syntax : syntax -> Sexp.t
+(** [syntax_of_sexp sexp] tries to interpret an S-expression [sexp] as
+   a syntax name. *)
+val syntax_of_sexp : Sexp.t -> syntax
+
 (** [pp_syntax f syn] pretty-prints a syntax name [syn] onto formatter
    [f]. *)
 

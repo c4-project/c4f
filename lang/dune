@@ -1,6 +1,6 @@
 (library
   (name lang)
-  (preprocess (pps ppx_sexp_message))
+  (preprocess (pps ppx_deriving.std ppx_jane ppx_sexp_message))
   (libraries
     core
     utils

@@ -1,4 +1,5 @@
 open Core
+open Lang
 open Sexplib
 
 (*
@@ -18,31 +19,15 @@ val show_style : style -> string
 val pp_style : Format.formatter -> style -> unit
 
 (*
- * arch
- *)
-
-(** [CompilerSpec.arch] enumerates the various instruction-set
-   architectures that act understands. *)
-type arch =
-  | X86 (* 32-bit x86 *)
-
-(** [CompilerSpec.show_arch] returns a string representation of an
-   [arch]. *)
-val show_arch : arch -> string
-
-(** [CompilerSpec.pp_arch] pretty-prints an [arch]. *)
-val pp_arch : Format.formatter -> arch -> unit
-
-(*
  * t
  *)
 
 (** [CompilerSpec.t] describes how to invoke a compiler. *)
 type t =
-  { style : style       (* The 'style' of compiler being described. *)
-  ; emits : arch        (* The architecture the compiler will emit. *)
-  ; cmd   : string      (* The compiler command. *)
-  ; argv  : string list (* The arguments to the command. *)
+  { style : style          (* The 'style' of compiler being described. *)
+  ; emits : Language.name  (* The architecture the compiler will emit. *)
+  ; cmd   : string         (* The compiler command. *)
+  ; argv  : string list    (* The arguments to the command. *)
   }
 val t_of_sexp : Sexp.t -> t
 val sexp_of_t : t -> Sexp.t

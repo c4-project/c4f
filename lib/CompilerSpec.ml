@@ -1,4 +1,5 @@
 open Core
+open Lang
 open Sexplib
 open Utils
 
@@ -11,20 +12,12 @@ type style =
     [@@deriving show, sexp]
 
 (*
- * arch
- *)
-
-type arch =
-  | X86
-    [@@deriving show, sexp]
-
-(*
  * t
  *)
 
 type t =
   { style : style
-  ; emits : arch
+  ; emits : Language.name
   ; cmd   : string
   ; argv  : string list
   } [@@deriving sexp]
@@ -35,7 +28,7 @@ let pp f spec =
   Format.pp_open_vbox f 0;
   MyFormat.pp_kv f "Style" pp_style spec.style;
   Format.pp_print_cut f ();
-  MyFormat.pp_kv f "Emits" pp_arch spec.emits;
+  MyFormat.pp_kv f "Emits" Language.pp_name spec.emits;
   Format.pp_print_cut f ();
   MyFormat.pp_kv f "Command" Format.pp_print_string spec.cmd;
   Format.pp_print_cut f ();

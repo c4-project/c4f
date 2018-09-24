@@ -23,10 +23,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 type name =
   | X86 of X86Ast.syntax
+             [@@deriving sexp]
 
 let pp_name ?(show_sublang=true) f = function
   | X86 syn ->
-     Format.pp_print_string f "X86";
+     Format.pp_print_string f "x86";
      if show_sublang
      then Format.fprintf f "@ (%a)"
                          X86Ast.pp_syntax syn

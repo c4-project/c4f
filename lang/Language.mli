@@ -23,15 +23,21 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Enumeration of languages supported by act *)
 
+open Core
+
 (** [name] enumerates all languages, and dialects thereof, supported by act. *)
 type name =
   | X86 of X86Ast.syntax
+
+(** [name_of_sexp] converts from an S-expression to a [name]. *)
+val name_of_sexp : Sexp.t -> name
+(** [sexp_of_name] converts from a [name] to an S-expression. *)
+val sexp_of_name : name -> Sexp.t
 
 (** [pp_name ?show_sublang f l] pretty-prints language name [l] onto
    formatter [f].  If [show_sublang] is true (the default), we also
    print details about any sub-language (eg. AT&T/Intel syntax for
    X86). *)
-
 val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
 
 (** [S] is the signature implemented by Litmus languages. *)

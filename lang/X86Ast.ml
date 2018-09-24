@@ -50,13 +50,34 @@ type syntax =
   | SynAtt
   | SynIntel
 
-let str_syntax =
-  function
-  | SynAtt -> "AT&T"
-  | SynIntel -> "Intel"
+let syntax_map =
+  [ SynAtt  , "AT&T"
+  ; SynIntel, "Intel"
+  ]
 
-let pp_syntax f syn =
-  Format.pp_print_string f (str_syntax syn)
+let syntax_rev_map =
+  Map.of_alist_exn (module String.Caseless) (List.Assoc.inverse syntax_map)
+
+let str_lookup = List.Assoc.find_exn ~equal:(=)
+
+let syntax_to_str = str_lookup syntax_map
+let str_to_syntax = Map.find syntax_rev_map
+
+let sexp_of_syntax syn =
+  Sexp.Atom (syntax_to_str syn)
+
+let syntax_of_sexp =
+  function
+  | Sexp.Atom a as s ->
+     begin
+       match str_to_syntax a with
+       | Some v -> v
+       | None -> raise (Sexp.Of_sexp_error (failwith "expected x86 syntax name", s))
+     end
+  | s -> raise (Sexp.Of_sexp_error (failwith "expected x86 syntax, not a list", s))
+
+
+let pp_syntax f syn = Format.pp_print_string f (syntax_to_str syn)
 
 type reg =
   | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP

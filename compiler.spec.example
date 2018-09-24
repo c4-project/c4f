@@ -1,5 +1,34 @@
-((gcc-x86
-  ((style gcc)
-   (emits X86)
-   (cmd gcc)
+;; -*- mode: lisp; -*-
+;; This is a compiler spec file.
+;; It tells act which compilers to run, and how to run them.
+;;
+;; It takes the form of a list S-expression, where each item in the list
+;; a pair of a 'compiler identifier' and a specification for that
+;; compiler.
+;;
+;; By default, 'act' reads from './compiler.spec'.
+(
+ ;; This stanza specifies a compiler we'll call 'gcc-x86'.
+ (gcc-x86
+  (
+   ;; 'style' tells us what sort of interface the compiler exposes.
+   ;;
+   ;; Currently, we only support 'gcc' here; later, we might have
+   ;; support for MSVC, etc.
+   ;;
+   ;; 'act' runs some lightweight checks to make sure that the
+   ;; compiler actually obeys the style choice.
+   (style gcc)
+
+   ;; 'emits' tells act which language the compiler is emitting.
+   ;; Each language may have a sub-dialect, in which case 'emits'
+   ;; is a list.
+   ;;
+   ;; Currently, we only support '(x86 at&t)' (AT&T syntax x86).
+   (emits (x86 at&t))
+
+   ;; 'cmd' gives the command name for the compiler.
+   (cmd gcc-8)
+
+   ;; 'argv' gives the list of arguments to the compiler.
    (argv ("-m32" "-DNO_PTHREADS")))))
