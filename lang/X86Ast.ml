@@ -305,7 +305,7 @@ let pp_statement syn f = function
   | StmLabel l -> Format.fprintf f "@[%s:@ @]" l
   | StmDirective d -> pp_directive syn f d; Format.pp_print_cut f ()
   | StmInstruction i -> pp_instruction syn f i; Format.pp_print_cut f ()
-  | StmNop -> Format.pp_print_cut f ()
+  | StmNop -> Format.fprintf f " "; Format.pp_print_cut f ()
 
 let pp_ast syn f ast =
   Format.pp_open_vbox f 0;

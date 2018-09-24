@@ -59,8 +59,15 @@ let remove_directives (asm : X86ATT.Frontend.ast) =
   List.filter ~f:(fun x -> not (X86Base.ATT.is_directive x)) asm
 
 let split_asm (asm : X86ATT.Frontend.ast) =
-  List.group ~break:(fun _ -> X86Base.ATT.is_program_boundary)
-             asm
+  (* Adding a nop to the start forces there to be some instructions
+     before the first program, meaning we can simplify discarding
+     such instructions. *)
+  let progs =
+    (X86Base.ATT.nop() :: asm)
+    |> List.group ~break:(fun _ -> X86Base.ATT.is_program_boundary)
+  in
+  List.drop progs 1
+(* TODO(MattWindsor91): divine the end of the program. *)
 
 let make_programs_uniform nop ps =
   let maxlen =

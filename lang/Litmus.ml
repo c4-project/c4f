@@ -93,7 +93,7 @@ module T (LS : Language.S) = struct
       (fun f ->
         List.iter
           ~f:(fun (l, c) -> Format.fprintf f
-                                           "@[%a = %a;@]@."
+                                           "@[%a = %a;@]@,"
                                            LS.pp_location l
                                            LS.pp_constant c)
           init)
@@ -107,18 +107,21 @@ module T (LS : Language.S) = struct
     in
 
     let print_sep i =
-      if 0 < i then Format.fprintf f "|@."
+      if 0 < i then Format.fprintf f " | "
     in
 
     let print_header i _ =
       print_sep i;
-      Format.fprintf f "@[P%d@]" i;
+      (* TODO(MattWindsor91): calculate column widths a bit more
+         robustly! *)
+      let padding = String.init 20 ~f:(fun _ -> ' ') in
+      Format.fprintf f "@[P%d%s@]" i padding;
       Format.pp_set_tab f ()
     in
 
     let print_instr i (ins : 'a) =
       print_sep i;
-      Format.fprintf f "@[%a@]" LS.pp_statement ins;
+      Format.fprintf f "@[<h>%a@]" LS.pp_statement ins;
       Format.pp_print_tab f ()
     in
 
@@ -129,6 +132,7 @@ module T (LS : Language.S) = struct
 
     Format.pp_open_tbox f ();
 
+    Format.pp_set_tab f ();
     List.iteri ~f:print_header ps;
     endl ();
 
