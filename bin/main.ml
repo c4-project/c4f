@@ -51,19 +51,24 @@ let parse_c_asm (cn : string) (ps : Pathset.t) =
     )
     (X86ATT.Frontend.run_file ~file:(asm_path_of cn ps))
 
+let build_litmus (asm : X86ATT.Frontend.ast) =
+  R.reword_error
+    (fun err -> R.msg (format_to_string Litmus.pp_err err))
+    (Litmus.make ~name:"TODO"
+                 ~lang:(Language.X86 (X86Ast.SynAtt))
+                 ~programs:[asm])
+
 let c_asm (cn : string) (ps : Pathset.t) =
   parse_c_asm cn ps
-  >>=
-    (fun asm ->
-      Out_channel.with_file
-        (lita_path_of cn ps)
-        ~f:(fun oc ->
-          let f = Format.formatter_of_out_channel oc in
-          X86Ast.pp_ast X86Ast.SynAtt f asm;
-          Format.pp_print_flush f ());
-      Ok ()
-    )
-
+  >>= build_litmus
+  >>= (fun lit ->
+    Out_channel.with_file
+      (lita_path_of cn ps)
+      ~f:(fun oc ->
+        let f = Format.formatter_of_out_channel oc in
+        Litmus.pp (X86Ast.pp_statement X86Ast.SynAtt) f lit;
+        Format.pp_print_flush f ());
+    Result.ok_unit)
 
 let proc_c (cfg : config) (cc_specs : CompilerSpec.set) vf results_path c_fname =
   let root = !(cfg.out_root_path) in

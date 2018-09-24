@@ -48,11 +48,16 @@ copyright notice follow. *)
 
 open Core
 
-(* [syntax] marks an x86 AST as being either AT&T or Intel syntax. *)
+(** [syntax] marks an x86 AST as being either AT&T or Intel syntax. *)
 
 type syntax =
   | SynAtt
   | SynIntel
+
+(** [pp_syntax f syn] pretty-prints a syntax name [syn] onto formatter
+   [f]. *)
+
+val pp_syntax : Format.formatter -> syntax -> unit
 
 type reg =
   | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP

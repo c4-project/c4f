@@ -50,6 +50,14 @@ type syntax =
   | SynAtt
   | SynIntel
 
+let str_syntax =
+  function
+  | SynAtt -> "AT&T"
+  | SynIntel -> "Intel"
+
+let pp_syntax f syn =
+  Format.pp_print_string f (str_syntax syn)
+
 type reg =
   | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
   | AX | BX | CX | DX
