@@ -24,10 +24,8 @@ let pp_sr f sr =
   Format.pp_print_string f !sr
 
 let pp_sq f sq =
-  let first = ref true in
-  Queue.iter ~f:(fun s -> begin
-                     if not !first then Format.pp_print_space f ();
-                     first := false;
+  Queue.iteri ~f:(fun i s -> begin
+                     if 0 < i then Format.pp_print_space f ();
                      Format.pp_print_string f s
                    end)
              sq
