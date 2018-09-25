@@ -1,10 +1,11 @@
-# Untitled automated compiler testing project
+# act: automagic compiler tormentor
 
-This repository, while not containing anything particularly useful
-yet, will eventually hold a tool for automatically testing compilers
-for concurrency memory model bugs, using
+`act` is a work-in-progress automatic compiler tester for finding
+concurrency memory model discrepancies between C code and its
+compiled assembly.  It uses
 [memalloy](https://github.com/JohnWickerson/memalloy) as a test-case
-generator.
+generator, and will eventually generate litmus tests that can be
+used with herd7.
 
 Parts of `act` derive from the
 [herdtools7](https://github.com/herd/herdtools7) project of Alglave,
@@ -12,23 +13,32 @@ Maranget, et al.
 
 ## What it does
 
-At time of writing, it literally just runs a compiler on every C test
-case in a memalloy run.  Eventually, it'll do something useful.
+At time of writing, it literally just runs gcc (x86 32-bit) on every C
+test case in a memalloy run, then emits a slightly sanitised version of
+the (AT&T syntax) assembly that herd7 can _almost_ parse.
+Eventually, it'll do something useful.
 
 ## Requirements
 
-- opam
+- A recent OCaml compiler (tested with 4.07)
+- opam (tested with version 2)
 - dune
-- ??
+- Several packages, which will be pointed out by `dune` if missing
+  from your `opam` environment.
+
+**NOTE**:
+`act` uses Jane Street's `core` library, which only works properly on
+POSIX-style operating systems.  If you're using Windows, consider
+using WSL, or Cygwin, etc.
 
 ## Running
 
-First, copy and modify `compiler.spec.example` to taste.
-
-`dune exec bin/main.exe path/to/memalloy/run` will run the compilers
-listed in `./compiler.spec` on `path/to/memalloy/run/`.
-
-Use `dune exec bin/main.exe -help` for usage.
+- First, copy and modify `compiler.spec.example` to taste.
+- Use `dune exec bin/main.exe -help` for usage.
+- `dune exec bin/main.exe path/to/memalloy/run` will run the compilers
+  listed in `./compiler.spec` on `path/to/memalloy/run/`.
+- `dune runtest` will run `act`'s _expects_ tests, and output any
+  discrepancies in `act`'s output as diffs.
 
 By default, `act` will dump its results in directories in the current
 working directory.
