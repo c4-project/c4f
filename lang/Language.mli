@@ -42,14 +42,33 @@ val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
 
 (** [abs_instruction] is an abstracted instruction. *)
 type abs_instruction =
-  | AbsDirective of string
-  | AbsJump of string list
-  | AbsMove
-  | AbsCall
-  | AbsStack
-  | AbsOther
+  | AIJump of string list
+  | AIMove
+  | AINop
+  | AICall
+  | AIStack
+  | AIOther
 
-(** [StatementS] is the interface that must be implemented by
+(** [abs_statement] is an abstracted statement. *)
+type abs_statement =
+  | ASDirective of string
+  | ASInstruction of abs_instruction
+  | ASBlank
+  | ASLabel of string
+  | ASOther
+
+(** [BaseS] is the top-level signature that must be implemented by act
+   languages (as part of [S]). *)
+module type BaseS = sig
+  (** [name] is the name of the language. *)
+  val name : name
+
+  (** [is_program_label l] decides whether symbol [l] is a label
+     marking the start of a program. *)
+  val is_program_label : string -> bool
+end
+
+(** [StatementS] is the signature that must be implemented by
     act languages in regards to their statement types. *)
 module type StatementS = sig
   type t
@@ -72,17 +91,8 @@ module type StatementS = sig
   (** [nop] builds a no-op instruction. *)
   val nop : unit -> t
 
-  (** [instruction_type stm] gets the abstract type of an instruction.
-     If [stm] isn't an instruction, it returns [None].  *)
-  val instruction_type : t -> abs_instruction option
-
-  (** [is_nop stm] decides whether [stm] appears to be an empty
-     statement. *)
-  val is_nop : t -> bool
-
-  (** [is_program_boundary stm] decides whether [stm] appears to mark
-      a boundary between two Litmus programs. *)
-  val is_program_boundary : t -> bool
+  (** [statement_type stm] gets the abstract type of a statement. *)
+  val statement_type : t -> abs_statement
 end
 
 module type LocationS = sig
@@ -97,9 +107,7 @@ end
 
 (** [S] is the signature that Litmus languages must implement. *)
 module type S = sig
-  (** [name] is the name of the language. *)
-  val name : name
-
+  include BaseS
   module Statement : StatementS
   module Location : LocationS
   module Constant : ConstantS
@@ -109,8 +117,7 @@ end
     Usually, you can get an [Intf] by applying the functor [Make]
     onto a bare-bones language [S]. *)
 module type Intf = sig
-  (** [name] is the name of the language. *)
-  val name : name
+  include BaseS
 
   module Statement : sig
     include StatementS
@@ -118,6 +125,17 @@ module type Intf = sig
     (** [is_directive stm] decides whether [stm] appears to be an
      assembler directive. *)
     val is_directive : t -> bool
+
+    (** [is_nop stm] decides whether [stm] appears to be a NOP. *)
+    val is_nop : t -> bool
+
+    (** [instruction_type stm] gets the abstract type of an instruction.
+     If [stm] isn't an instruction, it returns [None].  *)
+    val instruction_type : t -> abs_instruction option
+
+    (** [is_program_boundary stm] decides whether [stm] appears to mark
+      a boundary between two Litmus programs. *)
+    val is_program_boundary : t -> bool
   end
 
   module Location : sig

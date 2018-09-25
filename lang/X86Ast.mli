@@ -165,6 +165,7 @@ The parser is lax when it comes to opcodes it doesn't understand: it
 type opcode =
   | X86OpJump of condition option
   | X86OpMov of size option
+  | X86OpNop
   | X86OpDirective of string (* Assembler directive *)
   | X86OpUnknown of string (* An opcode we don't (yet?) understand. *)
 

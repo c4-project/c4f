@@ -409,6 +409,7 @@ module ConditionTable =
 type opcode =
   | X86OpJump of condition option
   | X86OpMov of size option
+  | X86OpNop
   | X86OpDirective of string
   | X86OpUnknown of string
 
@@ -433,10 +434,12 @@ module OpcodeTable =
             List.map ~f:(fun (x, s) -> X86OpJump (Some x), "j" ^ s)
                      ConditionTable.table
         in
-        List.concat
-          [ jumps
-          ; make_att_suffixes (fun x -> X86OpMov x) "mov"
+        let movs = make_att_suffixes (fun x -> X86OpMov x) "mov" in
+        let basics =
+          [ X86OpNop, "nop"
           ]
+        in
+        List.concat [jumps; movs; basics]
     end)
 
 let pp_opcode _ f =

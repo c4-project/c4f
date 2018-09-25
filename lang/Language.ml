@@ -33,12 +33,24 @@ let pp_name ?(show_sublang=true) f = function
                          X86Ast.pp_syntax syn
 
 type abs_instruction =
-  | AbsDirective of string
-  | AbsJump of string list
-  | AbsMove
-  | AbsCall
-  | AbsStack
-  | AbsOther
+  | AIJump of string list
+  | AIMove
+  | AINop
+  | AICall
+  | AIStack
+  | AIOther
+
+type abs_statement =
+  | ASDirective of string
+  | ASInstruction of abs_instruction
+  | ASBlank
+  | ASLabel of string
+  | ASOther
+
+module type BaseS = sig
+  val name : name
+  val is_program_label : string -> bool
+end
 
 module type StatementS = sig
   type t
@@ -47,9 +59,8 @@ module type StatementS = sig
 
   val map_ids : f:(string -> string) -> t -> t
   val nop : unit -> t
-  val instruction_type : t -> abs_instruction option
-  val is_nop : t -> bool
-  val is_program_boundary : t -> bool
+
+  val statement_type : t -> abs_statement
 end
 
 module type LocationS = sig
@@ -63,20 +74,22 @@ module type ConstantS = sig
 end
 
 module type S = sig
-  val name : name
-
+  include BaseS
   module Statement : StatementS
   module Location : LocationS
   module Constant : ConstantS
 end
 
 module type Intf = sig
-  val name : name
+  include BaseS
 
   module Statement : sig
     include StatementS
 
     val is_directive : t -> bool
+    val is_nop : t -> bool
+    val instruction_type : t -> abs_instruction option
+    val is_program_boundary : t -> bool
   end
 
   module Location : sig
@@ -91,13 +104,30 @@ end
 module Make (M : S) =
   struct
     let name = M.name
+    let is_program_label = M.is_program_label
 
     module Statement = struct
       include M.Statement
 
+      let instruction_type stm =
+        match statement_type stm with
+        | ASInstruction i -> Some i
+        | _ -> None
+
       let is_directive stm =
-        match instruction_type stm with
-        | Some (AbsDirective _) -> true
+        match statement_type stm with
+        | ASDirective _ -> true
+        | _ -> false
+
+      let is_nop stm =
+        match statement_type stm with
+        | ASBlank -> true
+        | ASInstruction AINop -> true
+        | _ -> false
+
+      let is_program_boundary stm =
+        match statement_type stm with
+        | ASLabel l -> is_program_label l
         | _ -> false
     end
 

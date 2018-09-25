@@ -47,33 +47,32 @@ module Lang =
     (struct
       let name = (Language.X86 (X86Ast.SynAtt))
 
+      let is_program_label = X86Base.is_program_label
+
       module Statement = struct
+        open X86Ast
+
         type t = X86Ast.statement
 
         let pp = X86Ast.pp_statement X86Ast.SynAtt
 
         let nop () = X86Ast.StmNop
 
-        let is_nop =
-          function
-          | X86Ast.StmNop -> true
-          | _ -> false
-
-        let instruction_type_inner ({opcode; _} : X86Ast.instruction) =
+        let instruction_type ({opcode; _} : X86Ast.instruction) =
           match opcode with
-          | X86Ast.X86OpDirective s -> Language.AbsDirective s
-          | X86Ast.X86OpJump _ -> Language.AbsJump [] (* TODO: populate this *)
-          | _ -> Language.AbsOther
+          | X86Ast.X86OpDirective _ ->
+             (* handled by statement_type below. *)
+             assert false
+          | X86Ast.X86OpNop -> Language.AINop
+          | X86Ast.X86OpJump _ -> Language.AIJump [] (* TODO: populate this *)
+          | _ -> Language.AIOther
 
-        let instruction_type =
+        let statement_type =
           function
-          | X86Ast.StmInstruction i -> Some (instruction_type_inner i)
-          | _ -> None
-
-        let is_program_boundary =
-          function
-          | X86Ast.StmLabel l -> X86Base.is_program_label l
-          | _ -> false
+          | StmInstruction { opcode = X86OpDirective s; _ } -> Language.ASDirective s
+          | StmInstruction i -> Language.ASInstruction (instruction_type i)
+          | StmLabel l -> Language.ASLabel l
+          | StmNop -> Language.ASBlank
 
         let map_ids = X86Ast.map_statement_ids
       end
