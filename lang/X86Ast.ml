@@ -45,39 +45,38 @@ copyright notice follow. *)
 (****************************************************************************)
 
 open Core
+open Utils
 
 type syntax =
   | SynAtt
   | SynIntel
 
-let syntax_map =
-  [ SynAtt  , "AT&T"
-  ; SynIntel, "Intel"
-  ]
-
-let syntax_rev_map =
-  Map.of_alist_exn (module String.Caseless) (List.Assoc.inverse syntax_map)
-
-let str_lookup = List.Assoc.find_exn ~equal:(=)
-
-let syntax_to_str = str_lookup syntax_map
-let str_to_syntax = Map.find syntax_rev_map
+module SyntaxMap =
+  StringTable.Make
+    (struct
+      type t = syntax
+      let table =
+        [ SynAtt  , "AT&T"
+        ; SynIntel, "Intel"
+        ]
+    end)
 
 let sexp_of_syntax syn =
-  Sexp.Atom (syntax_to_str syn)
+  syn |> SyntaxMap.to_string_exn |> Sexp.Atom
 
 let syntax_of_sexp =
   function
   | Sexp.Atom a as s ->
      begin
-       match str_to_syntax a with
+       match SyntaxMap.of_string a with
        | Some v -> v
        | None -> raise (Sexp.Of_sexp_error (failwith "expected x86 syntax name", s))
      end
   | s -> raise (Sexp.Of_sexp_error (failwith "expected x86 syntax, not a list", s))
 
 
-let pp_syntax f syn = Format.pp_print_string f (syntax_to_str syn)
+let pp_syntax f syn =
+  Format.pp_print_string f (Option.value ~default:"??" (SyntaxMap.to_string syn))
 
 type reg =
   | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
@@ -86,41 +85,46 @@ type reg =
   | AH | BH | CH | DH
   | ZF | SF | CF
 
-let regs =
-  [ EAX, "EAX"
-  ; EBX, "EBX"
-  ; ECX, "ECX"
-  ; EDX, "EDX"
-  ; ESI, "ESI"
-  ; EDI, "EDI"
-  ; EBP, "EBP"
-  ; ESP, "ESP"
-  ; EIP, "EIP"
-  (* Flag registers *)
-  ; ZF,  "ZF"
-  ; SF,  "SF"
-  ; CF,  "CF"
-  (* 16-bit registers *)
-  ; AX,  "AX"
-  ; BX,  "BX"
-  ; CX,  "CX"
-  ; DX,  "DX"
-  (* 8-bit low registers *)
-  ; AL,  "AL"
-  ; BL,  "BL"
-  ; CL,  "CL"
-  ; DL,  "DL"
-  (* 8-bit high registers *)
-  ; AH,  "AH"
-  ; BH,  "BH"
-  ; CH,  "CH"
-  ; DH,  "DH"
- ]
+module RegTable =
+  StringTable.Make
+    (struct
+      type t = reg
+      let table =
+        [ EAX, "EAX"
+        ; EBX, "EBX"
+        ; ECX, "ECX"
+        ; EDX, "EDX"
+        ; ESI, "ESI"
+        ; EDI, "EDI"
+        ; EBP, "EBP"
+        ; ESP, "ESP"
+        ; EIP, "EIP"
+        (* Flag registers *)
+        ; ZF,  "ZF"
+        ; SF,  "SF"
+        ; CF,  "CF"
+        (* 16-bit registers *)
+        ; AX,  "AX"
+        ; BX,  "BX"
+        ; CX,  "CX"
+        ; DX,  "DX"
+        (* 8-bit low registers *)
+        ; AL,  "AL"
+        ; BL,  "BL"
+        ; CL,  "CL"
+        ; DL,  "DL"
+        (* 8-bit high registers *)
+        ; AH,  "AH"
+        ; BH,  "BH"
+        ; CH,  "CH"
+        ; DH,  "DH"
+        ]
+    end)
 
 let pp_reg syn f reg =
   Format.pp_open_box f 0;
   if syn = SynAtt then Format.pp_print_char f '%';
-  Format.pp_print_string f (List.Assoc.find_exn regs reg ~equal:(=));
+  Format.pp_print_string f (RegTable.to_string_exn reg);
   Format.pp_close_box f ()
 
 type disp =

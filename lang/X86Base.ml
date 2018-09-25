@@ -47,10 +47,8 @@ copyright notice follow. *)
 open Core
 open X86Ast
 
-let parse_list = Map.of_alist_exn (module String.Caseless) (List.Assoc.inverse X86Ast.regs)
-
 let parse_reg (s : string) : reg option =
-  Map.find parse_list s
+  RegTable.of_string s
 
 let in_zero () =
   { in_seg    = None

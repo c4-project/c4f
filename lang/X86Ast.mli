@@ -47,6 +47,7 @@ copyright notice follow. *)
 (** Generic, low-level abstract syntax tree for AT&T and Intel x86 *)
 
 open Core
+open Utils
 
 (** [syntax] marks an x86 AST as being either AT&T or Intel syntax. *)
 
@@ -73,8 +74,9 @@ type reg =
   | AH | BH | CH | DH
   | ZF | SF | CF
 
-(** [regs] associates each register with its string name. *)
-val regs : (reg, string) List.Assoc.t
+(** [RegTable] associates each register with its string name. *)
+
+module RegTable : (StringTable.Intf with type t = reg)
 
 val pp_reg : syntax -> Format.formatter -> reg -> unit
 
