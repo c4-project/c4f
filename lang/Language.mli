@@ -42,7 +42,7 @@ val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
 
 (** [abs_instruction] is an abstracted instruction. *)
 type abs_instruction =
-  | AIJump of string list
+  | AIJump
   | AIMove
   | AINop
   | AICall

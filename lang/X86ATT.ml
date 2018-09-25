@@ -64,7 +64,7 @@ module Lang =
              (* handled by statement_type below. *)
              assert false
           | X86Ast.X86OpNop -> Language.AINop
-          | X86Ast.X86OpJump _ -> Language.AIJump [] (* TODO: populate this *)
+          | X86Ast.X86OpJump _ -> Language.AIJump
           | _ -> Language.AIOther
 
         let statement_type =

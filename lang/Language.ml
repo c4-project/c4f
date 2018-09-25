@@ -35,7 +35,7 @@ let pp_name ?(show_sublang=true) f = function
                          X86Ast.pp_syntax syn
 
 type abs_instruction =
-  | AIJump of string list
+  | AIJump
   | AIMove
   | AINop
   | AICall
@@ -132,7 +132,7 @@ module Make (M : S) =
 
       let is_jump stm =
         match instruction_type stm with
-        | Some (AIJump _) -> true
+        | Some AIJump -> true
         | _ -> false
 
       let is_label stm =
