@@ -117,9 +117,27 @@ type prefix =
 
 val pp_prefix : Format.formatter -> prefix -> unit
 
+type size =
+  | X86SByte
+  | X86SWord
+  | X86SLong
+
+(** [opcode] enumerates X86 opcodes.
+
+Some opcodes contain optional [size] parameters.  These collect any
+   AT&T-style size suffixes that were found on the opcode during
+   parsing.  The parser won't raise an error if it sees an AT&T
+   suffixes when parsing Intel, or no suffix when parsing AT&T.
+
+The parser is lax when it comes to opcodes it doesn't understand: it
+   emits them as [X86OpUnknown]. *)
 type opcode =
+  | X86OpMov of size option
   | X86OpDirective of string (* Assembler directive *)
   | X86OpUnknown of string (* An opcode we don't (yet?) understand. *)
+
+(** [OpcodeTable] associates each opcode with its string name. *)
+module OpcodeTable : (StringTable.Intf with type t = opcode)
 
 (** [pp_opcode syn f op] pretty-prints opcode [op] on formatter [f],
     using the correct syntax for [syn]. *)

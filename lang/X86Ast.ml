@@ -275,14 +275,44 @@ let pp_prefix f p =
   Format.pp_print_string f (prefix_string p);
   Format.pp_print_space f ()
 
+type size =
+  | X86SByte
+  | X86SWord
+  | X86SLong
+
 type opcode =
+  | X86OpMov of size option
   | X86OpDirective of string
   | X86OpUnknown of string
+
+(** [make_att_suffixes f prefix] generates all of the various
+    combinations of an opcode and its AT&T size suffixes. *)
+let make_att_suffixes (f : size option -> opcode)
+                      (prefix : string)
+    : (opcode, string) List.Assoc.t =
+  [ f None           , prefix
+  ; f (Some X86SByte), prefix ^ "b"
+  ; f (Some X86SWord), prefix ^ "w"
+  ; f (Some X86SLong), prefix ^ "l"
+  ]
+
+module OpcodeTable =
+  StringTable.Make
+    (struct
+      type t = opcode
+      let table =
+        make_att_suffixes (fun x -> X86OpMov x) "mov"
+    end)
 
 let pp_opcode _ f =
   function
   | X86OpDirective s -> Format.fprintf f ".%s" s
   | X86OpUnknown s -> String.pp f s
+  | opc ->
+     opc
+     |> OpcodeTable.to_string
+     |> Option.value ~default:"<FIXME: OPCODE WITH NO STRING EQUIVALENT>"
+     |> String.pp f
 
 type instruction =
   { prefix   : prefix option

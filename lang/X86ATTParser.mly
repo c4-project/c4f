@@ -93,7 +93,10 @@ opcode:
 	   | Some dir_name ->
 	      X86OpDirective dir_name
 	   | None ->
-	      X86OpUnknown $1 }
+	      $1
+	      |> X86Ast.OpcodeTable.of_string
+	      |> Option.value ~default:(X86OpUnknown $1)
+	 }
 
 instr:
   | prefix opcode separated_list (COMMA, operand)
