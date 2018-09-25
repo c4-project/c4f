@@ -57,9 +57,12 @@ module type StatementS = sig
 
   include Core.Pretty_printer.S with type t := t
 
-  val map_ids : f:(string -> string) -> t -> t
-  val nop : unit -> t
+  val fold_map_symbols : f:('a -> string -> 'a * string) ->
+                         init:'a ->
+                         t ->
+                         ('a * t)
 
+  val nop : unit -> t
   val statement_type : t -> abs_statement
 end
 
@@ -86,6 +89,7 @@ module type Intf = sig
   module Statement : sig
     include StatementS
 
+    val map_symbols : f:(string -> string) -> t -> t
     val is_directive : t -> bool
     val is_nop : t -> bool
     val instruction_type : t -> abs_instruction option
@@ -129,6 +133,9 @@ module Make (M : S) =
         match statement_type stm with
         | ASLabel l -> is_program_label l
         | _ -> false
+
+      let map_symbols ~f stm =
+        snd (fold_map_symbols ~f:(fun _ x -> ((), f x)) ~init:() stm)
     end
 
     module Location = struct

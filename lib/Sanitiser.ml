@@ -77,7 +77,7 @@ module T (LS : Language.Intf) =
     (** [mangle_identifiers] reduces identifiers into a form that herd
        can parse. *)
     let mangle_identifiers stm =
-      LS.Statement.map_ids ~f:mangle stm
+      LS.Statement.map_symbols ~f:mangle stm
 
     (** [sanitise_stm] performs sanitisation at the single statement
        level. *)

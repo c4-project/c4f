@@ -80,9 +80,15 @@ module type StatementS = sig
    * Transformations
    *)
 
-  (** [map_statement_ids f stm] maps an identifier rewriting functon
-     [f] over [stm]. *)
-  val map_ids : f:(string -> string) -> t -> t
+  (** [fold_map_symbols ~init ~f stm] maps [f] over every symbol in
+     [stm], threading through an accumulator with initial value
+     [init].
+
+     There are no guarantees on order. *)
+  val fold_map_symbols : f:('a -> string -> 'a * string) ->
+                         init:'a ->
+                         t ->
+                         ('a * t)
 
   (*
    * Analyses and heuristics
@@ -121,6 +127,13 @@ module type Intf = sig
 
   module Statement : sig
     include StatementS
+
+    (** [map_symbols ~f stm] maps [f] over every symbol in [stm].
+
+     There are no guarantees on order. *)
+    val map_symbols : f:(string -> string) ->
+                      t ->
+                      t
 
     (** [is_directive stm] decides whether [stm] appears to be an
      assembler directive. *)

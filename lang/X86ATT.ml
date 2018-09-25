@@ -74,7 +74,7 @@ module Lang =
           | StmLabel l -> Language.ASLabel l
           | StmNop -> Language.ASBlank
 
-        let map_ids = X86Ast.map_statement_ids
+        let fold_map_symbols = X86Ast.fold_map_statement_symbols
       end
 
       module Constant = struct

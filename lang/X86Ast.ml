@@ -135,10 +135,11 @@ type disp =
   | DispSymbolic of string
   | DispNumeric of int
 
-let map_disp_ids ~f =
+let fold_map_disp_symbols ~f ~init =
   function
-  | DispSymbolic s -> DispSymbolic (f s)
-  | DispNumeric  k -> DispNumeric k
+  | DispSymbolic s ->
+     Tuple2.map_snd ~f:(fun x -> DispSymbolic x) (f init s)
+  | DispNumeric  k -> (init, DispNumeric k)
 
 let pp_disp f = function
   | DispSymbolic s -> Format.pp_print_string f s
@@ -174,12 +175,12 @@ type indirect =
   ; in_index  : index option
   }
 
-let map_indirect_ids ~f { in_seg; in_disp; in_base; in_index } =
-  { in_seg = in_seg (* register *)
-  ; in_disp = Option.map ~f:(map_disp_ids ~f:f) in_disp
-  ; in_base = in_base (* register *)
-  ; in_index = in_index (* register and possible number *)
-  }
+let fold_map_indirect_symbols ~f ~init indirect =
+  (match indirect.in_disp with
+   | Some d ->
+      Tuple2.map_snd ~f:(fun x -> { indirect with in_disp = Some x })
+                     (fold_map_disp_symbols ~f ~init d)
+   | None   -> (init, indirect))
 
 let pp_seg syn f =
   Format.fprintf f "%a:" (pp_reg syn)
@@ -260,17 +261,20 @@ type operand =
   | OperandString of string
   | OperandBop of operand * bop * operand
 
-let rec map_operand_ids ~f =
+let rec fold_map_operand_symbols ~f ~init =
   function
-  | OperandIndirect i -> OperandIndirect (map_indirect_ids ~f:f i)
-  | OperandReg r -> OperandReg r
-  | OperandImmediate d -> OperandImmediate (map_disp_ids ~f:f d)
-  | OperandString s -> OperandString s
+  | OperandIndirect i ->
+     Tuple2.map_snd ~f:(fun x -> OperandIndirect x)
+                    (fold_map_indirect_symbols ~f ~init i)
+  | OperandReg r -> (init, OperandReg r)
+  | OperandImmediate d ->
+     Tuple2.map_snd ~f:(fun x -> OperandImmediate x)
+                    (fold_map_disp_symbols ~f ~init d)
+  | OperandString s -> (init, OperandString s)
   | OperandBop (l, b, r) ->
-     OperandBop ( map_operand_ids ~f:f l
-                , b
-                , map_operand_ids ~f:f r
-                )
+     let (init, l') = fold_map_operand_symbols ~f ~init l in
+     let (init, r') = fold_map_operand_symbols ~f ~init r in
+     (init, OperandBop (l', b, r'))
 
 let string_escape =
   String.Escaping.escape_gen_exn
@@ -492,11 +496,11 @@ type instruction =
   ; operands : operand list
   }
 
-let map_instruction_ids ~f { prefix; opcode; operands } =
-  { prefix = prefix
-  ; opcode = opcode
-  ; operands = (List.map ~f:(map_operand_ids ~f:f) operands)
-  }
+let fold_map_instruction_symbols ~f ~init ins =
+  Tuple2.map_snd ~f:(fun x -> { ins with operands = x })
+                 (List.fold_map ~f:(fun init -> fold_map_operand_symbols ~f ~init)
+                                ~init
+                                ins.operands)
 
 let pp_instruction syn f { prefix; opcode; operands } =
   Format.fprintf f
@@ -514,11 +518,15 @@ type statement =
   | StmLabel of string
   | StmNop
 
-let map_statement_ids ~f =
+let fold_map_statement_symbols ~f ~init =
   function
-  | StmInstruction i -> StmInstruction (map_instruction_ids ~f:f i)
-  | StmLabel l -> StmLabel (f l)
-  | StmNop -> StmNop
+  | StmInstruction i ->
+     Tuple.T2.map_snd ~f:(fun x -> StmInstruction x)
+                      (fold_map_instruction_symbols ~f ~init i)
+  | StmLabel l ->
+     Tuple.T2.map_snd ~f:(fun x -> StmLabel x)
+                      (f init l)
+  | StmNop -> (init, StmNop)
 
 let pp_statement syn f =
   function

@@ -189,12 +189,16 @@ type statement =
   | StmLabel of string
   | StmNop
 
-(** [map_statement_ids f s] maps [f] across all identifier symbols in
-   [s] (labels, memory locations, etc.).
+(** [fold_map_statement_symbols ~init ~f s] maps [f] across all
+   identifier symbols in [s] (labels, memory locations, etc.),
+   threading through an accumulator with initial value [~init].
 
 It does *not* map [f] over string literals, opcodes, or directive
    names. *)
-val map_statement_ids : f:(string -> string) -> statement -> statement
+val fold_map_statement_symbols : f:('a -> string -> ('a * string)) ->
+                                 init:'a ->
+                                 statement ->
+                                 ('a * statement)
 
 val pp_statement : syntax -> Format.formatter -> statement -> unit
 
