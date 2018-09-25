@@ -23,6 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Lang
+open Utils.MyContainers
 
 module type Intf = sig
   type statement
@@ -30,16 +31,31 @@ module type Intf = sig
   val sanitise : statement list -> statement list list
 end
 
+let mangler =
+  (* We could always just use something like Base36 here, but this
+     seems a bit more human-readable. *)
+  String.Escaping.escape_gen_exn
+    ~escape_char:'Z'
+    ~escapeworthy_map:[ '_', 'U'
+                      ; '$', 'D'
+                      ; '.', 'P'
+                      ; 'Z', 'Z'
+                      ]
+let mangle ident =
+  Staged.unstage mangler ident
+
+let%expect_test "mangle: sample" =
+  print_string (mangle "_foo$bar.BAZ");
+  [%expect {| ZUfooZDbarZPBAZZ |}]
+
 module T (LS : Language.S)
        : (Intf with type statement = LS.statement) =
   struct
     type statement = LS.statement
 
-    let remove_nops =
-      List.filter ~f:(fun x -> not (LS.is_nop x))
+    let remove_nops = MyList.exclude ~f:LS.is_nop
 
-    let remove_directives  =
-      List.filter ~f:(fun x -> not (LS.is_directive x))
+    let remove_directives = MyList.exclude ~f:LS.is_directive
 
     let split_programs stms =
       (* Adding a nop to the start forces there to be some
@@ -47,7 +63,7 @@ module T (LS : Language.S)
          simplify discarding such instructions. *)
       let progs =
         (LS.nop() :: stms)
-        |> List.group ~break:(fun _ -> LS.is_program_boundary)
+        |> List.group ~break:(Fn.const LS.is_program_boundary)
       in
       List.drop progs 1
     (* TODO(MattWindsor91): divine the end of the program. *)
@@ -59,18 +75,31 @@ module T (LS : Language.S)
         |> Option.value_map ~f:(List.length) ~default:0
       in
       List.map ~f:(fun p -> p @ List.init (maxlen - List.length p)
-                                          ~f:(fun _ -> nop))
+                                          ~f:(Fn.const nop))
                ps
 
-    (** [sanitise_single_stm] performs sanitisation on a single program. *)
+    (** [mangle_identifiers] reduces identifiers into a form that herd
+       can parse. *)
+    let mangle_identifiers stm =
+      LS.map_statement_ids ~f:mangle stm
+
+    (** [sanitise_stm] performs sanitisation at the single statement
+       level. *)
+    let sanitise_stm stm =
+      stm
+      |> mangle_identifiers
+
+    (** [sanitise_program] performs sanitisation on a single program. *)
     let sanitise_program prog =
       prog
       |> remove_nops
       |> remove_directives
+      |> List.map ~f:sanitise_stm
 
-    let sanitise stms =
-      stms
-      |> split_programs
+    let sanitise_programs progs =
+      progs
       |> List.map ~f:sanitise_program
       |> make_programs_uniform (LS.nop ())
+
+    let sanitise stms = sanitise_programs (split_programs stms)
   end

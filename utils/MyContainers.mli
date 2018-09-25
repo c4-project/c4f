@@ -26,4 +26,9 @@ module ContainerExtend : functor (S : Container.S1) -> (ContainerExtensions with
 
 module MyArray : (ContainerExtensions with type 'a cont = 'a array)
 
-module MyList : (ContainerExtensions with type 'a cont = 'a list)
+module MyList : sig
+  include (ContainerExtensions with type 'a cont = 'a list)
+
+  (** [exclude ~f xs] is the inverse of [filter ~f xs]. *)
+  val exclude : f:('a -> bool) -> 'a cont -> 'a cont
+end

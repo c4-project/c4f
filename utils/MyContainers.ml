@@ -11,7 +11,7 @@ module ContainerExtend (S : Container.S1)
        : (ContainerExtensions with type 'a cont = 'a S.t) = struct
   type 'a cont = 'a S.t
 
-  let iter_result f = S.fold_result ~init:() ~f:(fun _ -> f)
+  let iter_result f = S.fold_result ~init:() ~f:(Fn.const f)
 
   let max_measure ~measure ?(default=0) xs =
     xs
@@ -23,5 +23,13 @@ module MyArray
        : (ContainerExtensions with type 'a cont = 'a array) =
   ContainerExtend(Array)
 
-module MyList : (ContainerExtensions with type 'a cont = 'a list) =
-  ContainerExtend(List)
+module MyList =
+  struct
+    include ContainerExtend(List)
+
+    let exclude ~f xs = List.filter ~f:(Fn.non f) xs
+  end
+
+let%expect_test "MyList: max_measure on empty list" =
+  printf "%d" (MyList.max_measure ~default:1066 ~measure:Fn.id []);
+  [%expect {| 1066 |}]
