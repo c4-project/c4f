@@ -36,7 +36,8 @@ module type Table =
 (** [Intf] is the abstract interface of the string table. *)
 module type Intf =
   sig
-    type t
+    (* This lets us access the table directly. *)
+    include Table
 
     (** [of_string str] tries to look up the string [str] in the
        string table.

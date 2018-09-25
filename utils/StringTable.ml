@@ -8,7 +8,7 @@ module type Table =
 
 module type Intf =
   sig
-    type t
+    include Table
     val of_string : string -> t option
     val of_string_exn : string -> t
     val to_string : ?equal:(t -> t -> bool) -> t -> string option
@@ -17,7 +17,7 @@ module type Intf =
 
 module Make (T : Table) =
   struct
-    type t = T.t
+    include T
 
     let rev_table =
       lazy

@@ -122,6 +122,37 @@ type size =
   | X86SWord
   | X86SLong
 
+(** [inv_condition] enumerates all of the x86 conditions that can be
+   inverted with a 'not' prefix (for example, 'above' (A) becomes 'not
+   above' (NA). *)
+type inv_condition =
+  [ `Above
+  | `AboveEqual
+  | `Below
+  | `BelowEqual
+  | `Carry
+  | `Equal
+  | `Greater
+  | `GreaterEqual
+  | `Less
+  | `LessEqual
+  | `Overflow
+  | `Parity
+  | `Sign
+  | `Zero
+  ]
+
+(** [condition] enumerates all x86 conditions, including both forms of
+    invertible conditions. *)
+type condition =
+  [ inv_condition
+  | `Not of inv_condition
+  | `CXZero
+  | `ECXZero
+  | `ParityEven
+  | `ParityOdd
+  ]
+
 (** [opcode] enumerates X86 opcodes.
 
 Some opcodes contain optional [size] parameters.  These collect any
@@ -132,6 +163,7 @@ Some opcodes contain optional [size] parameters.  These collect any
 The parser is lax when it comes to opcodes it doesn't understand: it
    emits them as [X86OpUnknown]. *)
 type opcode =
+  | X86OpJump of condition option
   | X86OpMov of size option
   | X86OpDirective of string (* Assembler directive *)
   | X86OpUnknown of string (* An opcode we don't (yet?) understand. *)

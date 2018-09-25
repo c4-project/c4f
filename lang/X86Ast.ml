@@ -280,7 +280,77 @@ type size =
   | X86SWord
   | X86SLong
 
+type inv_condition =
+  [ `Above
+  | `AboveEqual
+  | `Below
+  | `BelowEqual
+  | `Carry
+  | `Equal
+  | `Greater
+  | `GreaterEqual
+  | `Less
+  | `LessEqual
+  | `Overflow
+  | `Parity
+  | `Sign
+  | `Zero
+  ]
+
+type condition =
+  [ inv_condition
+  | `Not of inv_condition
+  | `CXZero
+  | `ECXZero
+  | `ParityEven
+  | `ParityOdd
+  ]
+
+(** [build_inv_condition (ic, s) builds, for an invertible condition
+   C, string table entries for C and NC. *)
+let build_inv_condition (ic, s) =
+  [ ((ic :> condition), s)
+  ; (`Not ic, "n" ^ s)
+  ]
+
+module InvConditionTable =
+  StringTable.Make
+    (struct
+      type t = inv_condition
+      let table =
+        [ `Above       , "a"
+        ; `AboveEqual  , "ae"
+        ; `Below       , "b"
+        ; `BelowEqual  , "be"
+        ; `Carry       , "c"
+        ; `Equal       , "e"
+        ; `Greater     , "g"
+        ; `GreaterEqual, "ge"
+        ; `Less        , "l"
+        ; `LessEqual   , "le"
+        ; `Overflow    , "o"
+        ; `Parity      , "p"
+        ; `Sign        , "s"
+        ; `Zero        , "z"
+        ]
+    end)
+
+module ConditionTable =
+  StringTable.Make
+    (struct
+      type t = condition
+      let table =
+        List.bind ~f:build_inv_condition InvConditionTable.table
+        @
+        [ `CXZero    , "cxz"
+        ; `ECXZero   , "ecxz"
+        ; `ParityEven, "pe"
+        ; `ParityOdd , "po"
+        ]
+    end)
+
 type opcode =
+  | X86OpJump of condition option
   | X86OpMov of size option
   | X86OpDirective of string
   | X86OpUnknown of string
@@ -301,7 +371,14 @@ module OpcodeTable =
     (struct
       type t = opcode
       let table =
-        make_att_suffixes (fun x -> X86OpMov x) "mov"
+        let jumps =
+          (X86OpJump None, "jmp") ::
+          List.map ~f:(fun (x, s) -> X86OpJump (Some x), "j" ^ s) ConditionTable.table
+        in
+        List.concat
+          [ jumps
+          ; make_att_suffixes (fun x -> X86OpMov x) "mov"
+          ]
     end)
 
 let pp_opcode _ f =
@@ -313,6 +390,32 @@ let pp_opcode _ f =
      |> OpcodeTable.to_string
      |> Option.value ~default:"<FIXME: OPCODE WITH NO STRING EQUIVALENT>"
      |> String.pp f
+
+let%expect_test "pp_opcode: jmp" =
+  Format.printf "%a" (pp_opcode SynAtt) (X86OpJump None);
+  Format.print_flush ();
+  [%expect {| jmp |}]
+
+let%expect_test "pp_opcode: jge" =
+  Format.printf "%a" (pp_opcode SynAtt) (X86OpJump (Some `GreaterEqual));
+  Format.print_flush ();
+  [%expect {| jge |}]
+
+let%expect_test "pp_opcode: jnz" =
+  Format.printf "%a" (pp_opcode SynAtt) (X86OpJump (Some (`Not `Zero)));
+  Format.print_flush ();
+  [%expect {| jnz |}]
+
+let%expect_test "pp_opcode: mov" =
+  Format.printf "%a" (pp_opcode SynAtt) (X86OpMov None);
+  Format.print_flush ();
+  [%expect {| mov |}]
+
+let%expect_test "pp_opcode: movw" =
+  Format.printf "%a" (pp_opcode SynAtt) (X86OpMov (Some X86SWord));
+  Format.print_flush ();
+  [%expect {| movw |}]
+
 
 type instruction =
   { prefix   : prefix option
