@@ -21,6 +21,8 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Core
+
 type name =
   | X86 of X86Ast.syntax
              [@@deriving sexp]
@@ -89,8 +91,13 @@ module type Intf = sig
   module Statement : sig
     include StatementS
 
+    module SymSet : (Set.S with type Elt.t = string)
     val map_symbols : f:(string -> string) -> t -> t
+    val symbol_set : t -> SymSet.t
+
     val is_directive : t -> bool
+    val is_jump : t -> bool
+    val is_label : t -> bool
     val is_nop : t -> bool
     val instruction_type : t -> abs_instruction option
     val is_program_boundary : t -> bool
@@ -123,6 +130,16 @@ module Make (M : S) =
         | ASDirective _ -> true
         | _ -> false
 
+      let is_jump stm =
+        match instruction_type stm with
+        | Some (AIJump _) -> true
+        | _ -> false
+
+      let is_label stm =
+        match statement_type stm with
+        | ASLabel _ -> true
+        | _ -> false
+
       let is_nop stm =
         match statement_type stm with
         | ASBlank -> true
@@ -134,8 +151,14 @@ module Make (M : S) =
         | ASLabel l -> is_program_label l
         | _ -> false
 
+      module SymSet =
+        Set.Make(String)
+
       let map_symbols ~f stm =
         snd (fold_map_symbols ~f:(fun _ x -> ((), f x)) ~init:() stm)
+
+      let symbol_set stm =
+        fst (fold_map_symbols ~f:(fun set x -> SymSet.add set x, x) ~init:SymSet.empty stm)
     end
 
     module Location = struct

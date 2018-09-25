@@ -85,11 +85,28 @@ module T (LS : Language.Intf) =
       stm
       |> mangle_identifiers
 
+    let all_jump_symbols_in prog =
+      prog
+      |> List.filter ~f:LS.Statement.is_jump
+      |> List.map ~f:LS.Statement.symbol_set
+      |> LS.Statement.SymSet.union_list
+
+    (** [remove_dead_labels prog] removes all labels in [prog] whose symbols
+        aren't mentioned in jump instructions. *)
+    let remove_dead_labels prog =
+      let jsyms = all_jump_symbols_in prog in
+      List.filter
+        ~f:(fun stm -> match LS.Statement.statement_type stm with
+                       | Language.ASLabel l -> LS.Statement.SymSet.mem jsyms l
+                       | _ -> true)
+        prog
+
     (** [sanitise_program] performs sanitisation on a single program. *)
     let sanitise_program prog =
       prog
       |> remove_nops
       |> remove_directives
+      |> remove_dead_labels
       |> List.map ~f:sanitise_stm
 
     let sanitise_programs progs =

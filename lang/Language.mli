@@ -128,6 +128,9 @@ module type Intf = sig
   module Statement : sig
     include StatementS
 
+    (** [SymSet] is a set module for symbols. *)
+    module SymSet : (Set.S with type Elt.t = string)
+
     (** [map_symbols ~f stm] maps [f] over every symbol in [stm].
 
      There are no guarantees on order. *)
@@ -135,9 +138,21 @@ module type Intf = sig
                       t ->
                       t
 
+    (** [symbol_set] retrieves the set of all symbols found in a given
+       statement. *)
+    val symbol_set : t -> SymSet.t
+
     (** [is_directive stm] decides whether [stm] appears to be an
      assembler directive. *)
     val is_directive : t -> bool
+
+    (** [is_jump stm] decides whether [stm] appears to be a
+     jump instruction. *)
+    val is_jump : t -> bool
+
+    (** [is_label stm] decides whether [stm] appears to be an
+     label. *)
+    val is_label : t -> bool
 
     (** [is_nop stm] decides whether [stm] appears to be a NOP. *)
     val is_nop : t -> bool
