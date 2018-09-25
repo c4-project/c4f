@@ -32,7 +32,7 @@ let pp_name ?(show_sublang=true) f = function
      Format.pp_print_string f "X86";
      if show_sublang
      then Format.fprintf f "@ (%a)"
-                         X86Ast.pp_syntax syn
+                         X86PP.pp_syntax syn
 
 type abs_instruction =
   | AIJump

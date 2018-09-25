@@ -55,16 +55,14 @@ type syntax =
   | SynAtt
   | SynIntel
 
+(** [SyntaxMap] associates each syntax type with its string name. *)
+module SyntaxMap : (StringTable.Intf with type t = syntax)
+
 (** [sexp_of_syntax syn] converts [syn] into an S-expression. *)
 val sexp_of_syntax : syntax -> Sexp.t
 (** [syntax_of_sexp sexp] tries to interpret an S-expression [sexp] as
    a syntax name. *)
 val syntax_of_sexp : Sexp.t -> syntax
-
-(** [pp_syntax f syn] pretty-prints a syntax name [syn] onto formatter
-   [f]. *)
-
-val pp_syntax : Format.formatter -> syntax -> unit
 
 (** [reg] enumerates all of the known (32-bit) x86 registers. *)
 type reg =
@@ -75,10 +73,7 @@ type reg =
   | ZF | SF | CF
 
 (** [RegTable] associates each register with its string name. *)
-
 module RegTable : (StringTable.Intf with type t = reg)
-
-val pp_reg : syntax -> Format.formatter -> reg -> unit
 
 type disp =
   | DispSymbolic of string
@@ -95,13 +90,9 @@ type indirect =
   ; in_index  : index option
   }
 
-val pp_indirect : syntax -> Format.formatter -> indirect -> unit
-
 type bop =
   | BopPlus
   | BopMinus
-
-val pp_bop : Format.formatter -> bop -> unit
 
 type operand =
   | OperandIndirect of indirect
@@ -110,12 +101,8 @@ type operand =
   | OperandString of string
   | OperandBop of operand * bop * operand
 
-val pp_operand : syntax -> Format.formatter -> operand -> unit
-
 type prefix =
   | PreLock
-
-val pp_prefix : Format.formatter -> prefix -> unit
 
 type size =
   | X86SByte
@@ -172,17 +159,11 @@ type opcode =
 (** [OpcodeTable] associates each opcode with its string name. *)
 module OpcodeTable : (StringTable.Intf with type t = opcode)
 
-(** [pp_opcode syn f op] pretty-prints opcode [op] on formatter [f],
-    using the correct syntax for [syn]. *)
-val pp_opcode : syntax -> Format.formatter -> opcode -> unit
-
 type instruction =
   { prefix   : prefix option
   ; opcode   : opcode
   ; operands : operand list
   }
-
-val pp_instruction : syntax -> Format.formatter -> instruction -> unit
 
 type statement =
   | StmInstruction of instruction
@@ -199,7 +180,3 @@ val fold_map_statement_symbols : f:('a -> string -> ('a * string)) ->
                                  init:'a ->
                                  statement ->
                                  ('a * statement)
-
-val pp_statement : syntax -> Format.formatter -> statement -> unit
-
-val pp_ast : syntax -> Format.formatter -> statement list -> unit
