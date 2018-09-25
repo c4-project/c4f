@@ -42,67 +42,95 @@ val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
 
 (** [abs_instruction] is an abstracted instruction. *)
 type abs_instruction =
+  | AbsDirective of string
   | AbsJump of string list
   | AbsMove
   | AbsCall
   | AbsStack
   | AbsOther
 
-(** [S] is the signature implemented by Litmus languages. *)
-module type S = sig
-  (** [Statement] contains the type of statements in the language, as
-     well as operations on them. *)
-  module Statement : sig
-    type t
+(** [StatementS] is the interface that must be implemented by
+    act languages in regards to their statement types. *)
+module type StatementS = sig
+  type t
 
-    include Core.Pretty_printer.S with type t := t
+  (** Languages must supply a pretty-printer for their statements. *)
+  include Core.Pretty_printer.S with type t := t
 
-    (*
-     * Transformations
-     *)
+  (*
+   * Transformations
+   *)
 
-    (** [map_statement_ids f stm] maps an identifier rewriting functon
+  (** [map_statement_ids f stm] maps an identifier rewriting functon
      [f] over [stm]. *)
-    val map_ids : f:(string -> string) -> t -> t
+  val map_ids : f:(string -> string) -> t -> t
 
-    (*
-     * Analyses and heuristics
-     *)
+  (*
+   * Analyses and heuristics
+   *)
 
-    (** [nop] builds a no-op instruction. *)
-    val nop : unit -> t
+  (** [nop] builds a no-op instruction. *)
+  val nop : unit -> t
 
-    (** [instruction_type stm] gets the abstract type of an instruction.
+  (** [instruction_type stm] gets the abstract type of an instruction.
      If [stm] isn't an instruction, it returns [None].  *)
-    val instruction_type : t -> abs_instruction option
+  val instruction_type : t -> abs_instruction option
 
-    (** [is_nop stm] decides whether [stm] appears to be an empty
+  (** [is_nop stm] decides whether [stm] appears to be an empty
      statement. *)
-    val is_nop : t -> bool
+  val is_nop : t -> bool
+
+  (** [is_program_boundary stm] decides whether [stm] appears to mark
+      a boundary between two Litmus programs. *)
+  val is_program_boundary : t -> bool
+end
+
+module type LocationS = sig
+  type t
+  include Core.Pretty_printer.S with type t := t
+end
+
+module type ConstantS = sig
+  type t
+  include Core.Pretty_printer.S with type t := t
+end
+
+(** [S] is the signature that Litmus languages must implement. *)
+module type S = sig
+  (** [name] is the name of the language. *)
+  val name : name
+
+  module Statement : StatementS
+  module Location : LocationS
+  module Constant : ConstantS
+end
+
+(** [Intf] is the user-facing interface module for act languages.
+    Usually, you can get an [Intf] by applying the functor [Make]
+    onto a bare-bones language [S]. *)
+module type Intf = sig
+  (** [name] is the name of the language. *)
+  val name : name
+
+  module Statement : sig
+    include StatementS
 
     (** [is_directive stm] decides whether [stm] appears to be an
      assembler directive. *)
     val is_directive : t -> bool
-
-    (** [is_program_boundary stm] decides whether [stm] appears to mark
-      a boundary between two Litmus programs. *)
-    val is_program_boundary : t -> bool
   end
 
-  (** [location] is the type of initialisable and checkable
-     locations. *)
-  type location
+  module Location : sig
+    include LocationS
+  end
 
-  (** [constant] is the type of constants used in initialisation and
-     checks. *)
-  type constant
-
-  (** [name] is the name of the language. *)
-  val name : name
-
-  (** [pp_location f l] pretty-prints location [l] on formatter [f]. *)
-  val pp_location : Format.formatter -> location -> unit
-
-  (** [pp_constant f k] pretty-prints constant [k] on formatter [f]. *)
-  val pp_constant : Format.formatter -> constant -> unit
+  module Constant : sig
+    include ConstantS
+  end
 end
+
+(** [Make] builds a module satisfying [Intf] from a module satisfying [S]. *)
+module Make : functor (M : S) ->
+              (Intf with type Statement.t = M.Statement.t
+                     and type Location.t  = M.Location.t
+                     and type Constant.t  = M.Constant.t)

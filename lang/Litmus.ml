@@ -29,11 +29,11 @@ open Utils.MyContainers
  * Litmus AST module
  *)
 
-module T (LS : Language.S) = struct
+module T (LS : Language.Intf) = struct
 
   type t =
     { name : string
-    ; init : ((LS.location, LS.constant) List.Assoc.t)
+    ; init : ((LS.Location.t, LS.Constant.t) List.Assoc.t)
     ; programs : LS.Statement.t list list
     }
 
@@ -41,7 +41,7 @@ module T (LS : Language.S) = struct
     | NameEmpty
     | ProgramsEmpty
     | ProgramsNotUniform
-    | DuplicateInit of LS.location
+    | DuplicateInit of LS.Location.t
 
   let pp_err f =
     function
@@ -53,12 +53,12 @@ module T (LS : Language.S) = struct
        Format.pp_print_string f "programs have different sizes"
     | DuplicateInit (loc) ->
        Format.fprintf f "location %a initialised multiple times"
-                      LS.pp_location loc
+                      LS.Location.pp loc
 
   (** [validate_init init] validates an incoming litmus test's
      init block. *)
 
-  let validate_init (init : (LS.location, LS.constant) List.Assoc.t)
+  let validate_init (init : (LS.Location.t, LS.Constant.t) List.Assoc.t)
       : err option =
     List.find_a_dup ~compare:(fun x y -> if fst x = fst y then 0 else -1) init
     |> Option.map ~f:(fun x -> DuplicateInit (fst x))
@@ -87,7 +87,7 @@ module T (LS : Language.S) = struct
     Option.value_map ~default:(Ok lit) ~f:Result.fail (validate lit)
 
   let pp_init (f : Format.formatter)
-              (init : (LS.location, LS.constant) List.Assoc.t)
+              (init : (LS.Location.t, LS.Constant.t) List.Assoc.t)
     : unit =
     MyFormat.pp_c_braces
       f
@@ -95,8 +95,8 @@ module T (LS : Language.S) = struct
         List.iter
           ~f:(fun (l, c) -> Format.fprintf f
                                            "@[%a = %a;@]@,"
-                                           LS.pp_location l
-                                           LS.pp_constant c)
+                                           LS.Location.pp l
+                                           LS.Constant.pp c)
           init)
 
   let pp_instr_raw (f : Format.formatter) =

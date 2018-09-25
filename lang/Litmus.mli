@@ -32,7 +32,7 @@ open Core
 (** [T] is a functor that, given a language described by [Language.S],
     produces a module type for litmus test syntax trees, as well as
     operations for pretty-printing it. *)
-module T : functor (LS : Language.S) -> sig
+module T : functor (LS : Language.Intf) -> sig
 
   (** [t] is the top-level container for a Litmus test. *)
 
@@ -54,7 +54,7 @@ module T : functor (LS : Language.S) -> sig
     | NameEmpty
     | ProgramsEmpty
     | ProgramsNotUniform
-    | DuplicateInit of LS.location
+    | DuplicateInit of LS.Location.t
 
   (** [pp_err f err] pretty-prints the validity error [err] onto
      formatter [f]. *)
@@ -69,7 +69,7 @@ module T : functor (LS : Language.S) -> sig
      [init], and program list [programs].  It returns a result with
      possible error [err]. *)
   val make : name:string
-             -> init:((LS.location, LS.constant) List.Assoc.t)
+             -> init:((LS.Location.t, LS.Constant.t) List.Assoc.t)
              -> programs:LS.Statement.t list list
              -> (t, err) result
 end

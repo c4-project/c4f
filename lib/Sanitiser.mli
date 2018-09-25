@@ -35,5 +35,5 @@ module type Intf = sig
 end
 
 (** [T] implements the assembly sanitiser for a given language. *)
-module T : functor (LS : Language.S) ->
+module T : functor (LS : Language.Intf) ->
            (Intf with type statement := LS.Statement.t)

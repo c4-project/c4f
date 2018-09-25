@@ -42,45 +42,49 @@ module Frontend : (LangFrontend.S with type ast = X86Ast.statement list) =
              Error (LangParser.Parse (Uncaught lexbuf.lex_curr_p))
       end)
 
-module Lang = struct
-  let name = (Language.X86 (X86Ast.SynAtt))
+module Lang =
+  Language.Make
+    (struct
+      let name = (Language.X86 (X86Ast.SynAtt))
 
-  module Statement = struct
-    type t = X86Ast.statement
+      module Statement = struct
+        type t = X86Ast.statement
 
-    let pp = X86Ast.pp_statement X86Ast.SynAtt
+        let pp = X86Ast.pp_statement X86Ast.SynAtt
 
-    let nop () = X86Ast.StmNop
+        let nop () = X86Ast.StmNop
 
-    let is_nop =
-      function
-      | X86Ast.StmNop -> true
-      | _ -> false
+        let is_nop =
+          function
+          | X86Ast.StmNop -> true
+          | _ -> false
 
-    let instruction_type_inner _ (* { prefix; opcode; operands } *) =
-      Language.AbsOther
+        let instruction_type_inner ({opcode; _} : X86Ast.instruction) =
+          match opcode with
+          | X86Ast.X86OpDirective s -> Language.AbsDirective s
+          | X86Ast.X86OpJump _ -> Language.AbsJump [] (* TODO: populate this *)
+          | _ -> Language.AbsOther
 
-    let instruction_type =
-      function
-      | X86Ast.StmInstruction i -> Some (instruction_type_inner i)
-      | _ -> None
+        let instruction_type =
+          function
+          | X86Ast.StmInstruction i -> Some (instruction_type_inner i)
+          | _ -> None
 
-    let is_directive =
-      function
-      | X86Ast.StmInstruction {opcode = X86OpDirective _; _} -> true
-      | _ -> false
+        let is_program_boundary =
+          function
+          | X86Ast.StmLabel l -> X86Base.is_program_label l
+          | _ -> false
 
-    let is_program_boundary =
-      function
-      | X86Ast.StmLabel l -> X86Base.is_program_label l
-      | _ -> false
+        let map_ids = X86Ast.map_statement_ids
+      end
 
-    let map_ids = X86Ast.map_statement_ids
-  end
+      module Constant = struct
+        type t = X86Ast.operand (* TODO: this is too weak *)
+        let pp = X86Ast.pp_operand X86Ast.SynAtt
+      end
 
-  type constant = X86Ast.operand (* TODO: this is too weak *)
-  type location = X86Ast.indirect (* TODO: as is this *)
-
-  let pp_constant = X86Ast.pp_operand X86Ast.SynAtt
-  let pp_location = X86Ast.pp_indirect X86Ast.SynAtt
-end
+      module Location = struct
+        type t = X86Ast.indirect (* TODO: as is this *)
+        let pp = X86Ast.pp_indirect X86Ast.SynAtt
+      end
+    end)

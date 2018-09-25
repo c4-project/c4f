@@ -48,7 +48,7 @@ let%expect_test "mangle: sample" =
   print_string (mangle "_foo$bar.BAZ");
   [%expect {| ZUfooZDbarZPBAZZ |}]
 
-module T (LS : Language.S) =
+module T (LS : Language.Intf) =
   struct
     let remove_nops = MyList.exclude ~f:LS.Statement.is_nop
     let remove_directives = MyList.exclude ~f:LS.Statement.is_directive

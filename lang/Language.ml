@@ -33,30 +33,79 @@ let pp_name ?(show_sublang=true) f = function
                          X86Ast.pp_syntax syn
 
 type abs_instruction =
+  | AbsDirective of string
   | AbsJump of string list
   | AbsMove
   | AbsCall
   | AbsStack
   | AbsOther
 
+module type StatementS = sig
+  type t
+
+  include Core.Pretty_printer.S with type t := t
+
+  val map_ids : f:(string -> string) -> t -> t
+  val nop : unit -> t
+  val instruction_type : t -> abs_instruction option
+  val is_nop : t -> bool
+  val is_program_boundary : t -> bool
+end
+
+module type LocationS = sig
+  type t
+  include Core.Pretty_printer.S with type t := t
+end
+
+module type ConstantS = sig
+  type t
+  include Core.Pretty_printer.S with type t := t
+end
+
 module type S = sig
+  val name : name
+
+  module Statement : StatementS
+  module Location : LocationS
+  module Constant : ConstantS
+end
+
+module type Intf = sig
+  val name : name
+
   module Statement : sig
-    type t
+    include StatementS
 
-    include Core.Pretty_printer.S with type t := t
-
-    val map_ids : f:(string -> string) -> t -> t
-    val nop : unit -> t
-    val instruction_type : t -> abs_instruction option
-    val is_nop : t -> bool
     val is_directive : t -> bool
-    val is_program_boundary : t -> bool
   end
 
-  type location
-  type constant
+  module Location : sig
+    include LocationS
+  end
 
-  val name : name
-  val pp_location : Format.formatter -> location -> unit
-  val pp_constant : Format.formatter -> constant -> unit
+  module Constant : sig
+    include ConstantS
+  end
 end
+
+module Make (M : S) =
+  struct
+    let name = M.name
+
+    module Statement = struct
+      include M.Statement
+
+      let is_directive stm =
+        match instruction_type stm with
+        | Some (AbsDirective _) -> true
+        | _ -> false
+    end
+
+    module Location = struct
+      include M.Location
+    end
+
+    module Constant = struct
+      include M.Constant
+    end
+  end
