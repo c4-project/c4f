@@ -4,7 +4,8 @@ open Rresult
 (** [Pathset.t] is a record containing various paths used in the
    execution of [act]. *)
 type t =
-  { c_path     : string                        (* Path to the executable C file     *)
+  { basename   : string                        (* Inferred base name *)
+  ; c_path     : string                        (* Path to the executable C file     *)
   ; litc_path  : string                        (* Path to the C litmus test         *)
   ; out_root   : string                        (* Root for the output dir structure *)
   ; a_paths    : (string, string) List.Assoc.t (* Paths to output for each compiler *)
@@ -22,3 +23,6 @@ val make : CompilerSpec.set
            -> results_path : string
            -> c_fname      : string
            -> t
+
+(** [pp f ps] pretty-prints a pathset [p] onto formatter [f]. *)
+val pp : Format.formatter -> t -> unit

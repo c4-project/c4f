@@ -18,21 +18,17 @@ type config =
 
 let usage = "act [paths to comparator output]"
 
+type env =
+  { vf    : Format.formatter
+  ; root  : string
+  ; specs : CompilerSpec.set
+  }
+
 let asm_path_of (cc_id : string) (ps : Pathset.t) : string =
   List.Assoc.find_exn ps.a_paths cc_id ~equal:(=)
 
 let lita_path_of (cc_id : string) (ps : Pathset.t) : string =
   List.Assoc.find_exn ps.lita_paths cc_id ~equal:(=)
-
-
-let summarise_pathset (vf : Format.formatter) (ps : Pathset.t) : unit =
-  List.iter
-    ~f:(fun (io, t, v) -> Format.fprintf vf "@[[%s] %s file:@ %s@]@." io t v)
-    ( [ ("in" , "C"         , ps.c_path)
-      ; ("in" , "C Litmus"  , ps.litc_path)
-      ]
-      @ List.map ~f:(fun (c, p) -> ("out", c, p)) ps.a_paths
-      @ List.map ~f:(fun (c, p) -> ("out", c ^ " (litmus)", p)) ps.lita_paths)
 
 let parse_c_asm (cn : string) (ps : Pathset.t) =
   R.reword_error
@@ -54,10 +50,11 @@ let build_litmus (asm : X86ATT.Frontend.ast) =
             ~init:[]
             ~programs:(S.sanitise asm))
 
-let c_asm (cn : string) (ps : Pathset.t) =
+let c_asm (env : env) (cn : string) (ps : Pathset.t) =
   parse_c_asm cn ps
   >>= build_litmus
   >>= (fun lit ->
+    Format.fprintf env.vf "@[OUT@ %s@]@." ps.basename;
     Out_channel.with_file
       (lita_path_of cn ps)
       ~f:(fun oc ->
@@ -66,30 +63,32 @@ let c_asm (cn : string) (ps : Pathset.t) =
         Format.pp_print_flush f ());
     Result.ok_unit)
 
-let proc_c (cfg : config) (cc_specs : CompilerSpec.set) vf results_path c_fname =
-  let root = !(cfg.out_root_path) in
+let proc_c (env : env) (cc_specs : CompilerSpec.set) vf results_path c_fname =
   let paths = Pathset.make cc_specs
-                           ~root_path:root
+                           ~root_path:env.root
                            ~results_path:results_path
                            ~c_fname:c_fname in
-  summarise_pathset vf paths;
+  Pathset.pp vf paths;
+  Format.pp_print_newline vf ();
+
   Pathset.make_dir_structure paths |>
     R.reword_error_msg (fun _ -> R.msg "couldn't make dir structure")
   >>= (
     fun _ -> MyList.iter_result
                (fun (cn, cs) ->
+                 Format.fprintf vf "@[CC[%s]@ %s@]@." cn paths.basename;
                  Compiler.compile cn cs paths
-                 >>= (fun _ -> Result.map ~f:ignore (c_asm cn paths))
+                 >>= (fun _ -> Result.map ~f:ignore (c_asm env cn paths))
 
                ) cc_specs
   )
 
-let proc_results (cfg : config) (cc_specs : CompilerSpec.set) (vf : Format.formatter) (results_path : string) =
+let proc_results (env : env) (cc_specs : CompilerSpec.set) (vf : Format.formatter) (results_path : string) =
   let c_path = Filename.concat results_path "C" in
   try
     Sys.readdir c_path
     |> Array.filter ~f:(MyFilename.has_extension ~ext:"c")
-    |> MyArray.iter_result (proc_c cfg cc_specs vf results_path)
+    |> MyArray.iter_result (proc_c env cc_specs vf results_path)
   with
     Sys_error e -> R.error_msgf "system error: %s" e
 
@@ -159,9 +158,15 @@ let () =
   >>= (
     fun specs ->
     pp_specs verbose_fmt specs;
+    let env =
+      { vf = verbose_fmt
+      ; root = !(cfg.out_root_path)
+      ; specs = specs
+      }
+    in
     Queue.fold_result cfg.results_paths
                       ~init:()
-                      ~f:(fun _ -> proc_results cfg specs verbose_fmt);
+                      ~f:(fun _ -> proc_results env specs verbose_fmt);
   )
   |>
     function

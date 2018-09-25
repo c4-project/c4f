@@ -1,9 +1,11 @@
 open Core
 open Rresult
+open Utils
 open Utils.MyContainers
 
 type t =
-  { c_path     : string
+  { basename   : string
+  ; c_path     : string
   ; litc_path  : string
   ; out_root   : string
   ; a_paths    : (string, string) List.Assoc.t
@@ -77,9 +79,35 @@ let make specs ~root_path ~results_path ~c_fname =
   let lit_fname  = basename ^ ".litmus" in
   let spec_map f = List.map ~f:(fun (c, _) -> (c, f c)) specs in
   let asm_fname  = basename ^ ".s" in
-  { out_root     = root_path
+  { basename     = basename
+  ; out_root     = root_path
   ; c_path       = c_path_of    results_path c_fname
   ; litc_path    = litc_path_of results_path lit_fname
   ; a_paths      = spec_map (a_path_of root_path asm_fname)
   ; lita_paths   = spec_map (lita_path_of root_path lit_fname)
   }
+
+let pp f ps =
+  Format.pp_open_vbox f 4;
+  Format.fprintf f "@[Paths for '%s'@ --@]" ps.basename;
+
+  let p dir (k, v) =
+    Format.pp_print_cut f ();
+    MyFormat.pp_kv f (sprintf "%s (%s)" k dir) String.pp v
+  in
+
+  let in_paths =
+    [ "C", ps.c_path
+    ; "C/litmus", ps.litc_path
+    ]
+  in
+  List.iter in_paths ~f:(p "in");
+
+  let out_paths =
+    List.map ~f:(fun (c, p) -> (c, p)) ps.a_paths
+    @ List.map ~f:(fun (c, p) -> (c ^ "/litmus", p)) ps.lita_paths
+  in
+  List.iter out_paths ~f:(p "out");
+
+  Format.pp_close_box f ()
+
