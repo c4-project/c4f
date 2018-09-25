@@ -63,6 +63,45 @@ module Lang : (Language.S with type statement = X86Ast.statement) = struct
   let instruction_type_inner _ (* { prefix; opcode; operands } *) =
     Language.AbsOther
 
+  open X86Ast
+
+  let map_disp_ids ~f =
+    function
+    | DispSymbolic s -> DispSymbolic (f s)
+    | DispNumeric  k -> DispNumeric k
+
+  let map_location_ids ~f { in_seg; in_disp; in_base; in_index } =
+    { in_seg = in_seg (* register *)
+    ; in_disp = Option.map ~f:(map_disp_ids ~f:f) in_disp
+    ; in_base = in_base (* register *)
+    ; in_index = in_index (* register and possible number *)
+    }
+
+  let rec map_operand_ids ~f =
+    function
+    | OperandIndirect i -> OperandIndirect (map_location_ids ~f:f i)
+    | OperandReg r -> OperandReg r
+    | OperandImmediate d -> OperandImmediate (map_disp_ids ~f:f d)
+    | OperandString s -> OperandString s
+    | OperandBop (l, b, r) ->
+       OperandBop ( map_operand_ids ~f:f l
+                  , b
+                  , map_operand_ids ~f:f r
+                  )
+
+  let map_instr_ids ~f { prefix; opcode; operands } : X86Ast.instruction =
+    { prefix = prefix
+    ; opcode = opcode
+    ; operands = (List.map ~f:(map_operand_ids ~f:f) operands)
+    }
+
+  let map_statement_ids ~f =
+    function
+    | X86Ast.StmInstruction i ->
+       X86Ast.StmInstruction (map_instr_ids ~f:f i)
+    | X86Ast.StmLabel l -> X86Ast.StmLabel (f l)
+    | X86Ast.StmNop -> X86Ast.StmNop
+
   let instruction_type =
     function
     | X86Ast.StmInstruction i -> Some (instruction_type_inner i)

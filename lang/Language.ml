@@ -48,6 +48,7 @@ module type S = sig
   val pp_statement : Format.formatter -> statement -> unit
   val pp_location : Format.formatter -> location -> unit
   val pp_constant : Format.formatter -> constant -> unit
+  val map_statement_ids : f:(string -> string) -> statement -> statement
   val nop : unit -> statement
   val instruction_type : statement -> abs_instruction option
   val is_nop : statement -> bool

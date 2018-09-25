@@ -74,6 +74,14 @@ module type S = sig
   val pp_constant : Format.formatter -> constant -> unit
 
   (*
+   * Transformations
+   *)
+
+  (** [map_statement_ids f stm] maps an identifier rewriting functon
+     [f] over [stm]. *)
+  val map_statement_ids : f:(string -> string) -> statement -> statement
+
+  (*
    * Analyses and heuristics
    *)
 
