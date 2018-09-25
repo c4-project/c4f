@@ -11,6 +11,13 @@ val format_to_string : (Format.formatter -> 'v -> unit)
                        -> 'v
                        -> string
 
+(** [pp_option f ~pp o] pretty-prints the value inside [o] using [pp]
+   onto formatter [f], if there is one.  Otherwise, it is a no-op. *)
+val pp_option : Format.formatter ->
+                pp:(Format.formatter -> 'a -> unit) ->
+                'a option ->
+                unit
+
 (** [pp_c_braces f pi] wraps a vertical pretty-printer [pi] inside a
    C-style brace pair. *)
 val pp_c_braces : Format.formatter

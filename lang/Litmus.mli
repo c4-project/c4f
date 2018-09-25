@@ -70,6 +70,6 @@ module T : functor (LS : Language.S) -> sig
      possible error [err]. *)
   val make : name:string
              -> init:((LS.location, LS.constant) List.Assoc.t)
-             -> programs:LS.statement list list
+             -> programs:LS.Statement.t list list
              -> (t, err) result
 end

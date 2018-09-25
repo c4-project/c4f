@@ -48,22 +48,18 @@ let%expect_test "mangle: sample" =
   print_string (mangle "_foo$bar.BAZ");
   [%expect {| ZUfooZDbarZPBAZZ |}]
 
-module T (LS : Language.S)
-       : (Intf with type statement = LS.statement) =
+module T (LS : Language.S) =
   struct
-    type statement = LS.statement
-
-    let remove_nops = MyList.exclude ~f:LS.is_nop
-
-    let remove_directives = MyList.exclude ~f:LS.is_directive
+    let remove_nops = MyList.exclude ~f:LS.Statement.is_nop
+    let remove_directives = MyList.exclude ~f:LS.Statement.is_directive
 
     let split_programs stms =
       (* Adding a nop to the start forces there to be some
          instructions before the first program, meaning we can
          simplify discarding such instructions. *)
       let progs =
-        (LS.nop() :: stms)
-        |> List.group ~break:(Fn.const LS.is_program_boundary)
+        (LS.Statement.nop() :: stms)
+        |> List.group ~break:(Fn.const LS.Statement.is_program_boundary)
       in
       List.drop progs 1
     (* TODO(MattWindsor91): divine the end of the program. *)
@@ -81,7 +77,7 @@ module T (LS : Language.S)
     (** [mangle_identifiers] reduces identifiers into a form that herd
        can parse. *)
     let mangle_identifiers stm =
-      LS.map_statement_ids ~f:mangle stm
+      LS.Statement.map_ids ~f:mangle stm
 
     (** [sanitise_stm] performs sanitisation at the single statement
        level. *)
@@ -99,7 +95,7 @@ module T (LS : Language.S)
     let sanitise_programs progs =
       progs
       |> List.map ~f:sanitise_program
-      |> make_programs_uniform (LS.nop ())
+      |> make_programs_uniform (LS.Statement.nop ())
 
     let sanitise stms = sanitise_programs (split_programs stms)
   end

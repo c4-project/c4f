@@ -184,9 +184,16 @@ type instruction =
 val pp_instruction : syntax -> Format.formatter -> instruction -> unit
 
 type statement =
-  | StmLabel of string
   | StmInstruction of instruction
+  | StmLabel of string
   | StmNop
+
+(** [map_statement_ids f s] maps [f] across all identifier symbols in
+   [s] (labels, memory locations, etc.).
+
+It does *not* map [f] over string literals, opcodes, or directive
+   names. *)
+val map_statement_ids : f:(string -> string) -> statement -> statement
 
 val pp_statement : syntax -> Format.formatter -> statement -> unit
 

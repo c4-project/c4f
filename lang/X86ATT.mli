@@ -3,4 +3,4 @@
 module Frontend : (LangFrontend.S with type ast = X86Ast.statement list)
 
 (** [Lang] is a language description for the AT&T syntax of x86. *)
-module Lang : (Language.S with type statement = X86Ast.statement)
+module Lang : (Language.S with type Statement.t = X86Ast.statement)

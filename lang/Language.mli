@@ -50,8 +50,44 @@ type abs_instruction =
 
 (** [S] is the signature implemented by Litmus languages. *)
 module type S = sig
-  (** [statement] is the type of statements in the language. *)
-  type statement
+  (** [Statement] contains the type of statements in the language, as
+     well as operations on them. *)
+  module Statement : sig
+    type t
+
+    include Core.Pretty_printer.S with type t := t
+
+    (*
+     * Transformations
+     *)
+
+    (** [map_statement_ids f stm] maps an identifier rewriting functon
+     [f] over [stm]. *)
+    val map_ids : f:(string -> string) -> t -> t
+
+    (*
+     * Analyses and heuristics
+     *)
+
+    (** [nop] builds a no-op instruction. *)
+    val nop : unit -> t
+
+    (** [instruction_type stm] gets the abstract type of an instruction.
+     If [stm] isn't an instruction, it returns [None].  *)
+    val instruction_type : t -> abs_instruction option
+
+    (** [is_nop stm] decides whether [stm] appears to be an empty
+     statement. *)
+    val is_nop : t -> bool
+
+    (** [is_directive stm] decides whether [stm] appears to be an
+     assembler directive. *)
+    val is_directive : t -> bool
+
+    (** [is_program_boundary stm] decides whether [stm] appears to mark
+      a boundary between two Litmus programs. *)
+    val is_program_boundary : t -> bool
+  end
 
   (** [location] is the type of initialisable and checkable
      locations. *)
@@ -61,46 +97,12 @@ module type S = sig
      checks. *)
   type constant
 
-  (** [name] is the name of the signature. *)
+  (** [name] is the name of the language. *)
   val name : name
-
-  (** [pp_statement f s] pretty-prints statement [s] on formatter [f]. *)
-  val pp_statement : Format.formatter -> statement -> unit
 
   (** [pp_location f l] pretty-prints location [l] on formatter [f]. *)
   val pp_location : Format.formatter -> location -> unit
 
   (** [pp_constant f k] pretty-prints constant [k] on formatter [f]. *)
   val pp_constant : Format.formatter -> constant -> unit
-
-  (*
-   * Transformations
-   *)
-
-  (** [map_statement_ids f stm] maps an identifier rewriting functon
-     [f] over [stm]. *)
-  val map_statement_ids : f:(string -> string) -> statement -> statement
-
-  (*
-   * Analyses and heuristics
-   *)
-
-  (** [nop] builds a no-op instruction. *)
-  val nop : unit -> statement
-
-  (** [instruction_type stm] gets the abstract type of an instruction.
-     If [stm] isn't an instruction, it returns [None].  *)
-  val instruction_type : statement -> abs_instruction option
-
-  (** [is_nop stm] decides whether [stm] appears to be an empty
-     statement. *)
-  val is_nop : statement -> bool
-
-  (** [is_directive stm] decides whether [stm] appears to be an
-     assembler directive. *)
-  val is_directive : statement -> bool
-
-  (** [is_program_boundary stm] decides whether [stm] appears to mark
-      a boundary between two Litmus programs. *)
-  val is_program_boundary : statement -> bool
 end

@@ -3,6 +3,8 @@ open Core
 let null_formatter () =
   Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
 
+let pp_option f ~pp = Option.iter ~f:(pp f)
+
 let pp_c_braces f pi =
   Format.pp_open_vbox f 4;
   Format.pp_print_char f '{';

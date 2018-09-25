@@ -36,4 +36,4 @@ end
 
 (** [T] implements the assembly sanitiser for a given language. *)
 module T : functor (LS : Language.S) ->
-           (Intf with type statement = LS.statement)
+           (Intf with type statement := LS.Statement.t)

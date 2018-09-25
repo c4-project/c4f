@@ -34,7 +34,7 @@ module T (LS : Language.S) = struct
   type t =
     { name : string
     ; init : ((LS.location, LS.constant) List.Assoc.t)
-    ; programs : LS.statement list list
+    ; programs : LS.Statement.t list list
     }
 
   type err =
@@ -66,7 +66,7 @@ module T (LS : Language.S) = struct
   (** [validate_programs ps] validates an incoming litmus test's
      programs. *)
 
-  let validate_programs (ps : LS.statement list list) : err option =
+  let validate_programs (ps : LS.Statement.t list list) : err option =
     match ps with
     | [] -> Some ProgramsEmpty
     | p::ps ->
@@ -100,17 +100,17 @@ module T (LS : Language.S) = struct
           init)
 
   let pp_instr_raw (f : Format.formatter) =
-      Format.fprintf f "@[<h>%a@]" LS.pp_statement
+      Format.fprintf f "@[<h>%a@]" LS.Statement.pp
 
-  let instr_width (ins : LS.statement) : int =
+  let instr_width (ins : LS.Statement.t) : int =
     String.length (MyFormat.format_to_string pp_instr_raw ins)
 
-  let column_width : LS.statement list list -> int =
+  let column_width : LS.Statement.t list list -> int =
     MyList.max_measure
       ~measure:(MyList.max_measure ~measure:instr_width)
 
   let pp_programs (f : Format.formatter)
-                  (ps : LS.statement list list)
+                  (ps : LS.Statement.t list list)
       : unit =
     let cw = column_width ps in
 

@@ -40,18 +40,23 @@ type abs_instruction =
   | AbsOther
 
 module type S = sig
-  type statement
+  module Statement : sig
+    type t
+
+    include Core.Pretty_printer.S with type t := t
+
+    val map_ids : f:(string -> string) -> t -> t
+    val nop : unit -> t
+    val instruction_type : t -> abs_instruction option
+    val is_nop : t -> bool
+    val is_directive : t -> bool
+    val is_program_boundary : t -> bool
+  end
+
   type location
   type constant
 
   val name : name
-  val pp_statement : Format.formatter -> statement -> unit
   val pp_location : Format.formatter -> location -> unit
   val pp_constant : Format.formatter -> constant -> unit
-  val map_statement_ids : f:(string -> string) -> statement -> statement
-  val nop : unit -> statement
-  val instruction_type : statement -> abs_instruction option
-  val is_nop : statement -> bool
-  val is_directive : statement -> bool
-  val is_program_boundary : statement -> bool
 end

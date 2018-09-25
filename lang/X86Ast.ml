@@ -127,20 +127,27 @@ let pp_reg syn f reg =
   Format.pp_print_string f (RegTable.to_string_exn reg);
   Format.pp_close_box f ()
 
+(*
+ * Displacements
+ *)
+
 type disp =
   | DispSymbolic of string
   | DispNumeric of int
 
-let pp_option (f : Format.formatter) ~pp : 'a -> unit =
-  Option.iter ~f:(pp f)
-
-let pp_seg syn f =
-  Format.fprintf f "%a:" (pp_reg syn)
+let map_disp_ids ~f =
+  function
+  | DispSymbolic s -> DispSymbolic (f s)
+  | DispNumeric  k -> DispNumeric k
 
 let pp_disp f = function
   | DispSymbolic s -> Format.pp_print_string f s
   | DispNumeric  0 -> ()
   | DispNumeric  k -> Format.pp_print_int    f k
+
+(*
+ * Indices
+ *)
 
 type index =
   | Unscaled of reg
@@ -156,6 +163,9 @@ let pp_index syn f =
                                      | SynAtt -> ","
                                      | SynIntel -> "*")
                                     i
+(*
+ * Memory addresses
+ *)
 
 type indirect =
   { in_seg    : reg option
@@ -163,6 +173,16 @@ type indirect =
   ; in_base   : reg option
   ; in_index  : index option
   }
+
+let map_indirect_ids ~f { in_seg; in_disp; in_base; in_index } =
+  { in_seg = in_seg (* register *)
+  ; in_disp = Option.map ~f:(map_disp_ids ~f:f) in_disp
+  ; in_base = in_base (* register *)
+  ; in_index = in_index (* register and possible number *)
+  }
+
+let pp_seg syn f =
+  Format.fprintf f "%a:" (pp_reg syn)
 
 let pp_bis_att f bo iso =
   match bo, iso with
@@ -172,12 +192,12 @@ let pp_bis_att f bo iso =
                     (pp_reg SynAtt) b
   | _     , Some i ->
      Format.fprintf f "(%a,%a)"
-                    (pp_option ~pp:(pp_reg SynAtt)) bo
+                    (MyFormat.pp_option ~pp:(pp_reg SynAtt)) bo
                     (pp_index SynAtt) i
 
 let pp_indirect_att f {in_seg; in_disp; in_base; in_index} =
-  pp_option f ~pp:(pp_seg SynAtt) in_seg;
-  pp_option f ~pp:pp_disp in_disp;
+  MyFormat.pp_option f ~pp:(pp_seg SynAtt) in_seg;
+  MyFormat.pp_option f ~pp:pp_disp in_disp;
   pp_bis_att f in_base in_index
 
 let disp_positive =
@@ -192,14 +212,14 @@ let pp_indirect_intel f {in_seg; in_disp; in_base; in_index} =
 
   (* seg:base+index*scale+disp *)
 
-  pp_option f ~pp:(pp_seg SynIntel) in_seg;
+  MyFormat.pp_option f ~pp:(pp_seg SynIntel) in_seg;
 
-  pp_option f ~pp:(pp_reg SynIntel) in_base;
+  MyFormat.pp_option f ~pp:(pp_reg SynIntel) in_base;
 
   let plus_between_b_i = in_base <> None && in_index <> None in
   if plus_between_b_i then Format.pp_print_char f '+';
 
-  pp_option f ~pp:(pp_index SynIntel) in_index;
+  MyFormat.pp_option f ~pp:(pp_index SynIntel) in_index;
 
   let plus_between_bis_d =
     (in_base <> None || in_index <> None)
@@ -207,7 +227,7 @@ let pp_indirect_intel f {in_seg; in_disp; in_base; in_index} =
   in
   if plus_between_bis_d then Format.pp_print_char f '+';
 
-  pp_option f ~pp:pp_disp in_disp;
+  MyFormat.pp_option f ~pp:pp_disp in_disp;
 
   Format.pp_print_char f ']';
   Format.pp_close_box f ()
@@ -217,6 +237,10 @@ let pp_indirect syn f ind =
   if syn = SynAtt then pp_indirect_att f ind else pp_indirect_intel f ind;
   Format.pp_close_box f ()
 
+(*
+ * Operators
+ *)
+
 type bop =
   | BopPlus
   | BopMinus
@@ -225,12 +249,28 @@ let pp_bop f = function
   | BopPlus -> Format.pp_print_char f '+'
   | BopMinus -> Format.pp_print_char f '-'
 
+(*
+ * Operands
+ *)
+
 type operand =
   | OperandIndirect of indirect
   | OperandReg of reg
   | OperandImmediate of disp
   | OperandString of string
   | OperandBop of operand * bop * operand
+
+let rec map_operand_ids ~f =
+  function
+  | OperandIndirect i -> OperandIndirect (map_indirect_ids ~f:f i)
+  | OperandReg r -> OperandReg r
+  | OperandImmediate d -> OperandImmediate (map_disp_ids ~f:f d)
+  | OperandString s -> OperandString s
+  | OperandBop (l, b, r) ->
+     OperandBop ( map_operand_ids ~f:f l
+                , b
+                , map_operand_ids ~f:f r
+                )
 
 let string_escape =
   String.Escaping.escape_gen_exn
@@ -265,6 +305,10 @@ let pp_oplist syn =
   Format.pp_print_list ~pp_sep:pp_comma
                        (pp_operand syn)
 
+(*
+ * Prefixes
+ *)
+
 type prefix =
   | PreLock
 
@@ -275,10 +319,18 @@ let pp_prefix f p =
   Format.pp_print_string f (prefix_string p);
   Format.pp_print_space f ()
 
+(*
+ * Sizes
+ *)
+
 type size =
   | X86SByte
   | X86SWord
   | X86SLong
+
+(*
+ * Conditions
+ *)
 
 type inv_condition =
   [ `Above
@@ -306,12 +358,6 @@ type condition =
   | `ParityOdd
   ]
 
-(** [build_inv_condition (ic, s) builds, for an invertible condition
-   C, string table entries for C and NC. *)
-let build_inv_condition (ic, s) =
-  [ ((ic :> condition), s)
-  ; (`Not ic, "n" ^ s)
-  ]
 
 module InvConditionTable =
   StringTable.Make
@@ -335,6 +381,13 @@ module InvConditionTable =
         ]
     end)
 
+(** [build_inv_condition (ic, s) builds, for an invertible condition
+   C, string table entries for C and NC. *)
+let build_inv_condition (ic, s) =
+  [ ((ic :> condition), s)
+  ; (`Not ic, "n" ^ s)
+  ]
+
 module ConditionTable =
   StringTable.Make
     (struct
@@ -348,6 +401,10 @@ module ConditionTable =
         ; `ParityOdd , "po"
         ]
     end)
+
+(*
+ * Opcodes
+ *)
 
 type opcode =
   | X86OpJump of condition option
@@ -373,7 +430,8 @@ module OpcodeTable =
       let table =
         let jumps =
           (X86OpJump None, "jmp") ::
-          List.map ~f:(fun (x, s) -> X86OpJump (Some x), "j" ^ s) ConditionTable.table
+            List.map ~f:(fun (x, s) -> X86OpJump (Some x), "j" ^ s)
+                     ConditionTable.table
         in
         List.concat
           [ jumps
@@ -390,6 +448,11 @@ let pp_opcode _ f =
      |> OpcodeTable.to_string
      |> Option.value ~default:"<FIXME: OPCODE WITH NO STRING EQUIVALENT>"
      |> String.pp f
+
+let%expect_test "pp_opcode: directive" =
+  Format.printf "%a" (pp_opcode SynAtt) (X86OpDirective "text");
+  Format.print_flush ();
+  [%expect {| .text |}]
 
 let%expect_test "pp_opcode: jmp" =
   Format.printf "%a" (pp_opcode SynAtt) (X86OpJump None);
@@ -416,6 +479,9 @@ let%expect_test "pp_opcode: movw" =
   Format.print_flush ();
   [%expect {| movw |}]
 
+(*
+ * Instructions
+ *)
 
 type instruction =
   { prefix   : prefix option
@@ -423,22 +489,42 @@ type instruction =
   ; operands : operand list
   }
 
+let map_instruction_ids ~f { prefix; opcode; operands } =
+  { prefix = prefix
+  ; opcode = opcode
+  ; operands = (List.map ~f:(map_operand_ids ~f:f) operands)
+  }
+
 let pp_instruction syn f { prefix; opcode; operands } =
   Format.fprintf f
                  "@[@[%a%a@]@ %a@]"
-                 (pp_option ~pp:pp_prefix) prefix
+                 (MyFormat.pp_option ~pp:pp_prefix) prefix
                  (pp_opcode syn) opcode
                  (pp_oplist syn) operands
 
+(*
+ * Statements
+ *)
+
 type statement =
-  | StmLabel of string
   | StmInstruction of instruction
+  | StmLabel of string
   | StmNop
 
-let pp_statement syn f = function
-  | StmLabel l -> Format.fprintf f "@[%s:@ @]" l
+let map_statement_ids ~f =
+  function
+  | StmInstruction i -> StmInstruction (map_instruction_ids ~f:f i)
+  | StmLabel l -> StmLabel (f l)
+  | StmNop -> StmNop
+
+let pp_statement syn f =
+  function
   | StmInstruction i -> pp_instruction syn f i; Format.pp_print_cut f ()
-  | StmNop -> Format.fprintf f " "; Format.pp_print_cut f ()
+  | StmLabel l -> Format.fprintf f "@[%s:@ @]" l
+  | StmNop ->
+     (* This blank space is deliberate, to make tabstops move across
+        properly in litmus printing. *)
+     Format.fprintf f " "; Format.pp_print_cut f ()
 
 let pp_ast syn f ast =
   Format.pp_open_vbox f 0;
