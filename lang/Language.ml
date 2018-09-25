@@ -27,7 +27,7 @@ type name =
 
 let pp_name ?(show_sublang=true) f = function
   | X86 syn ->
-     Format.pp_print_string f "x86";
+     Format.pp_print_string f "X86";
      if show_sublang
      then Format.fprintf f "@ (%a)"
                          X86Ast.pp_syntax syn
