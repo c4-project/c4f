@@ -48,7 +48,7 @@ let build_litmus (asm : X86ATT.Frontend.ast) =
     (fun err -> R.msg (MyFormat.format_to_string L.pp_err err))
     (L.make ~name:"TODO"
             ~init:[]
-            ~programs:(S.sanitise asm))
+            ~programs:(S.sanitise asm.program))
 
 let c_asm (env : env) (cn : string) (ps : Pathset.t) =
   parse_c_asm cn ps

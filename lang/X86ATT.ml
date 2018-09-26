@@ -4,13 +4,13 @@ type perror =
   | Range of (Lexing.position * Lexing.position * X86Base.parse_error)
   | Uncaught of Lexing.position
 
-module Frontend : (LangFrontend.S with type ast = X86Ast.statement list) =
+module Frontend =
   LangFrontend.Make (
       struct
         type perr = perror
         type lerr = string * Lexing.position
         type token = X86ATTParser.token
-        type ast = X86Ast.statement list
+        type ast = X86Ast.t
 
         let pp_perr f =
           function
@@ -32,7 +32,9 @@ module Frontend : (LangFrontend.S with type ast = X86Ast.statement list) =
 
         let parse lex lexbuf =
           try
-            Ok (X86ATTParser.main lex lexbuf)
+            Ok ({ syntax = X86Ast.SynAtt
+                ; program = X86ATTParser.main lex lexbuf
+                } : X86Ast.t)
           with
           | LexMisc.Error (e, _) ->
              Error (LangParser.Lex (e, lexbuf.lex_curr_p))

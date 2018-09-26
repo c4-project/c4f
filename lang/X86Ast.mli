@@ -176,6 +176,11 @@ type statement =
   | StmLabel of string
   | StmNop
 
+type t =
+  { syntax  : syntax
+  ; program : statement list
+  }
+
 (** [fold_map_statement_symbols ~init ~f s] maps [f] across all
    identifier symbols in [s] (labels, memory locations, etc.),
    threading through an accumulator with initial value [~init].

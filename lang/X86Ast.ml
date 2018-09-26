@@ -364,6 +364,13 @@ type statement =
   | StmLabel of string
   | StmNop
 
+(** [t] is the type of an X86 abstract syntax tree, containing the
+    specific X86 syntax dialect and a list of statements. *)
+type t =
+  { syntax  : syntax
+  ; program : statement list
+  }
+
 let fold_map_statement_symbols ~f ~init =
   function
   | StmInstruction i ->
