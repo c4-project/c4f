@@ -259,57 +259,85 @@ module ConditionTable =
  * Opcodes
  *)
 
+type sizable_opcode =
+  [ `Add
+  | `Mov
+  | `Push
+  | `Sub
+  ]
+
+module SizableOpcodeTable =
+  StringTable.Make
+    (struct
+      type t = sizable_opcode
+      let table =
+        [ `Add,   "add"
+        ; `Mov,   "mov"
+        ; `Push,  "push"
+        ; `Sub,   "sub"
+        ]
+    end)
+
+module ATTSizeTable =
+  StringTable.Make
+    (struct
+      type t = size
+      let table =
+        [ X86SByte, "b"
+        ; X86SWord, "w"
+        ; X86SLong, "l"
+        ]
+    end)
+
+module ATTSizedOpcodeTable =
+  StringTable.Make
+    (struct
+      type t = (sizable_opcode * size)
+
+      let table =
+        List.map
+          ~f:(fun ((op, ops), (sz, szs)) -> ((op, sz), ops^szs))
+          (List.cartesian_product SizableOpcodeTable.table
+                                  ATTSizeTable.table)
+    end)
+
+type basic_opcode =
+  [ sizable_opcode
+  | `Leave
+  | `Nop
+  | `Ret
+  ]
+
+module BasicOpcodeTable =
+  StringTable.Make
+    (struct
+      type t = basic_opcode
+      let table =
+        (SizableOpcodeTable.table
+         :> (basic_opcode, string) List.Assoc.t)
+        @
+        [ `Leave, "leave"
+        ; `Nop,   "nop"
+        ; `Ret,   "ret"
+        ]
+    end)
+
 type opcode =
-  | OpAdd of size option
+  | OpBasic of basic_opcode
+  | OpSized of sizable_opcode * size
   | OpJump of condition option
-  | OpLeave
-  | OpMov of size option
-  | OpNop
-  | OpPush of size option
-  | OpRet
-  | OpSub of size option
   | OpDirective of string
   | OpUnknown of string
 
-(** [make_att_suffixes f prefix] generates all of the various
-    combinations of an opcode and its AT&T size suffixes. *)
-let make_att_suffixes (f : size option -> opcode)
-                      (prefix : string)
-    : (opcode, string) List.Assoc.t =
-  [ f None           , prefix
-  ; f (Some X86SByte), prefix ^ "b"
-  ; f (Some X86SWord), prefix ^ "w"
-  ; f (Some X86SLong), prefix ^ "l"
-  ]
-
-module OpcodeTable =
+module JumpTable =
   StringTable.Make
     (struct
-      type t = opcode
-      let table =
-        (* Conditional jump instructions *)
-        let jumps =
-            List.map ~f:(fun (x, s) -> OpJump (Some x), "j" ^ s)
-                     ConditionTable.table
-        in
-        (* Instructions with AT&T size suffixes *)
-        let sized =
-          List.bind ~f:(fun (f, s) -> make_att_suffixes f s)
-                    [ (fun x -> OpAdd  x), "add"
-                    ; (fun x -> OpMov  x), "mov"
-                    ; (fun x -> OpPush x), "push"
-                    ; (fun x -> OpSub  x), "sub"
-                    ]
-        in
-        (* Other instructions *)
-        let rest =
-          [ OpJump None, "jmp"
-          ; OpLeave,     "leave"
-          ; OpNop,       "nop"
-          ; OpRet,       "ret"
-          ]
-        in
-        List.concat [jumps; sized; rest]
+      type t = condition option
+
+      (* Jump instructions are always jC for some condition C, except
+         jmp. *)
+      let f (x, s) = (Some x, "j" ^ s)
+      let table = (None, "jmp") :: List.map ~f ConditionTable.table
     end)
 
 (*

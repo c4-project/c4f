@@ -322,10 +322,21 @@ let pp_opcode _ f =
   function
   | OpDirective s -> Format.fprintf f ".%s" s
   | OpUnknown s -> String.pp f s
-  | opc ->
+  | OpBasic opc ->
      opc
-     |> OpcodeTable.to_string
+     |> BasicOpcodeTable.to_string
      |> Option.value ~default:"<FIXME: OPCODE WITH NO STRING EQUIVALENT>"
+     |> String.pp f
+  | OpJump opc ->
+     opc
+     |> JumpTable.to_string
+     |> Option.value ~default:"<FIXME: JUMP WITH NO STRING EQUIVALENT>"
+     |> String.pp f
+  | OpSized (opc, sz) ->
+     (* TODO: Intel syntax *)
+     (opc, sz)
+     |> ATTSizedOpcodeTable.to_string
+     |> Option.value ~default:"<FIXME: JUMP WITH NO STRING EQUIVALENT>"
      |> String.pp f
 
 let%expect_test "pp_opcode: directive" =
@@ -345,11 +356,11 @@ let%expect_test "pp_opcode: jnz" =
   [%expect {| jnz |}]
 
 let%expect_test "pp_opcode: mov" =
-  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpMov None);
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpBasic `Mov);
   [%expect {| mov |}]
 
 let%expect_test "pp_opcode: movw" =
-  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpMov (Some X86SWord));
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpSized (`Mov, X86SWord));
   [%expect {| movw |}]
 
 (*

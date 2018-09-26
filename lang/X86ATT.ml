@@ -65,11 +65,12 @@ module Lang =
           | X86Ast.OpDirective _ ->
              (* handled by statement_type below. *)
              assert false
-          | X86Ast.OpNop -> Language.AINop
+          | X86Ast.OpBasic `Nop -> Language.AINop
           | X86Ast.OpJump _ -> Language.AIJump
-          | X86Ast.OpPush _ -> Language.AIStack
-          | X86Ast.OpRet
-            | X86Ast.OpLeave -> Language.AICall
+          | X86Ast.OpBasic `Push
+            | X86Ast.OpSized (`Push, _)-> Language.AIStack
+          | X86Ast.OpBasic `Ret
+            | X86Ast.OpBasic `Leave -> Language.AICall
           | _ -> Language.AIOther
 
         let statement_type =

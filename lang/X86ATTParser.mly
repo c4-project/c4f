@@ -46,7 +46,9 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-open Core
+ open Core
+ open Option
+ open X86Ast
 %}
 
 %token EOF
@@ -89,13 +91,14 @@ label:
   NAME COLON { $1 }
 
 opcode:
-  | NAME { match String.chop_prefix $1 ~prefix:"." with
-	   | Some dir_name ->
-	      OpDirective dir_name
-	   | None ->
-	      $1
-	      |> X86Ast.OpcodeTable.of_string
-	      |> Option.value ~default:(OpUnknown $1)
+  | NAME { (String.chop_prefix $1 ~prefix:"." >>| (fun f -> OpDirective f))
+	   |> first_some
+	        (X86Ast.JumpTable.of_string $1 >>| (fun j -> OpJump j))
+	   |> first_some
+	        (X86Ast.ATTSizedOpcodeTable.of_string $1 >>| (fun (x, y) -> OpSized (x, y)))
+	   |> first_some
+	        (X86Ast.BasicOpcodeTable.of_string $1 >>| (fun o -> OpBasic o))
+	   |> Option.value ~default:(OpUnknown $1)
 	 }
 
 instr:

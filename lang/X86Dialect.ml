@@ -88,6 +88,14 @@ let operand_order_of = function
   | Intel
     | Herd7 -> DstSrc
 
+let has_size_suffix_in = function
+  | Att
+    (* Surprisingly enough, herd7 syntax uses AT&T suffixes
+       (for 'mov', at least!). *)
+    | Herd7 -> true
+  | Intel -> false
+
+
 module type HasDialect =
   sig
     val dialect : t
@@ -96,6 +104,7 @@ module type HasDialect =
 module type Traits =
   sig
     val operand_order : operand_order
+    val has_size_suffix : bool
 
     val of_src_dst : 'o -> 'o -> 'o list
     val to_src_dst : 'o list -> ('o * 'o) option
@@ -107,6 +116,7 @@ module type Traits =
 module MakeTraits (N : HasDialect) =
   struct
     let operand_order = operand_order_of N.dialect
+    let has_size_suffix = has_size_suffix_in N.dialect
 
     let of_src_dst src dst =
       match operand_order with

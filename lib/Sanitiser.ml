@@ -200,22 +200,28 @@ module X86 (DT : X86Dialect.Traits) =
                                      , OperandImmediate (DispSymbolic s)
                                      )
 
+    let sub_to_add_ops =
+      DT.bind_src_dst
+        ~f:(fun src dst -> match src with
+                           | OperandImmediate s -> Some (negate s, dst)
+                           | _ -> None)
+
     let sub_to_add =
       function
-      | StmInstruction
-        ( { prefix = pf
-          ; opcode = OpSub sz
-          ; operands = ops
-          } as op ) ->
+      | StmInstruction si ->
          StmInstruction
-           (Option.value_map
-              ~default:op
-              ~f:(fun ops' -> { prefix = pf ; opcode = OpAdd sz; operands = ops'})
-              (DT.bind_src_dst ops
-                               ~f:(fun src dst ->
-                                 match src with
-                                 | OperandImmediate s -> Some (negate s, dst)
-                                 | _ -> None)))
+           (match si with
+            | { prefix; opcode = OpBasic `Sub; operands} as op ->
+               Option.value_map
+                 ~default:op
+                 ~f:(fun ops' -> { prefix ; opcode = OpBasic `Add; operands = ops' })
+                 (sub_to_add_ops operands)
+            | { prefix; opcode = OpSized (`Sub, s); operands} as op ->
+               Option.value_map
+                 ~default:op
+                 ~f:(fun ops' -> { prefix ; opcode = OpSized (`Add, s); operands = ops' })
+                 (sub_to_add_ops operands)
+            | _ -> si)
       | x -> x
 
     let on_statement stm =

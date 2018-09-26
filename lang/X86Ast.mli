@@ -93,6 +93,8 @@ type size =
   | X86SWord
   | X86SLong
 
+module ATTSizeTable : (StringTable.Intf with type t = size)
+
 (** [inv_condition] enumerates all of the x86 conditions that can be
    inverted with a 'not' prefix (for example, 'above' (A) becomes 'not
    above' (NA). *)
@@ -124,30 +126,58 @@ type condition =
   | `ParityOdd
   ]
 
-(** [opcode] enumerates X86 opcodes.
+(*
+ * Opcodes
+ *)
 
-Some opcodes contain optional [size] parameters.  These collect any
-   AT&T-style size suffixes that were found on the opcode during
-   parsing.  The parser won't raise an error if it sees an AT&T
-   suffixes when parsing Intel, or no suffix when parsing AT&T.
+(** [sizable_opcode] enumerates X86 opcodes that may have an associated size
+    directive (Intel) or suffix (AT&T). *)
+type sizable_opcode =
+  [ `Add
+  | `Mov
+  | `Push
+  | `Sub
+  ]
 
-The parser is lax when it comes to opcodes it doesn't understand: it
-   emits them as [OpUnknown]. *)
+(** [SizableOpcodeTable] is a parse table for [sizable_opcode]s
+   *without* an associated size.
+
+To parse an AT&T-style opcode-with-size-suffix, use
+   [SizedOpcodeTable]. *)
+module SizableOpcodeTable : (StringTable.Intf with type t = sizable_opcode)
+
+(** [ATTSizedOpcodeTable] associates each pair of sizable opcode and
+   size with a string.
+
+This is mainly for AT&T-style dialects; Intel handles this
+   differently. *)
+module ATTSizedOpcodeTable : (StringTable.Intf with type t = (sizable_opcode * size))
+
+(** [basic_opcode] enumerates all known X86 opcodes that aren't
+   jumps. *)
+type basic_opcode =
+  [ sizable_opcode
+  | `Leave
+  | `Nop
+  | `Ret
+  ]
+
+(** [BasicOpcodeTable] is a parse table for [basic_opcode]s without an
+   associated size. *)
+module BasicOpcodeTable : (StringTable.Intf with type t = basic_opcode)
+
+(* [opcode] enumerates all x86 opcode-style items.  The parser is lax
+   when it comes to opcodes it doesn't understand: it emits them as
+   [OpUnknown]. *)
 type opcode =
-  | OpAdd of size option
+  | OpBasic of basic_opcode
+  | OpSized of sizable_opcode * size
   | OpJump of condition option
-  | OpLeave
-  | OpMov of size option
-  | OpNop
-  | OpPush of size option
-  | OpRet
-  | OpSub of size option
-  (* Special opcodes *)
   | OpDirective of string (* Assembler directive *)
   | OpUnknown of string (* An opcode we don't (yet?) understand. *)
 
-(** [OpcodeTable] associates each opcode with its string name. *)
-module OpcodeTable : (StringTable.Intf with type t = opcode)
+(** [JumpTable] is a parse table for jump opcodes. *)
+module JumpTable : (StringTable.Intf with type t = condition option)
 
 type instruction =
   { prefix   : prefix option

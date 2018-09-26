@@ -86,6 +86,10 @@ Since the AST doesn't mark the order of operands itself, this function
    is necessary to make sense of two-operand instructions. *)
 val operand_order_of : t -> operand_order
 
+(** [has_size_suffix_in dialect] gets whether [dialect] uses
+   AT&T-style size suffixes. *)
+val has_size_suffix_in : t -> bool
+
 (*
  * Module interface
  *)
@@ -102,6 +106,9 @@ module type Traits =
   sig
     (** See [operand_order_of] above. *)
     val operand_order : operand_order
+
+    (** See [has_size_suffix_in] above. *)
+    val has_size_suffix : bool
 
     (** [of_src_dst src dst] converts [src] and [dst] into an operand
        list, with the arguments in the correct order for this
