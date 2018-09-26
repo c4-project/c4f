@@ -32,7 +32,7 @@ module Frontend =
 
         let parse lex lexbuf =
           try
-            Ok ({ syntax = X86Ast.SynAtt
+            Ok ({ syntax = X86Dialect.Att
                 ; program = X86ATTParser.main lex lexbuf
                 } : X86Ast.t)
           with
@@ -47,7 +47,7 @@ module Frontend =
 module Lang =
   Language.Make
     (struct
-      let name = (Language.X86 (X86Ast.SynAtt))
+      let name = (Language.X86 (X86Dialect.Att))
 
       let is_program_label = X86Base.is_program_label
 
@@ -56,7 +56,7 @@ module Lang =
 
         type t = X86Ast.statement
 
-        let pp = X86PP.pp_statement X86Ast.SynAtt
+        let pp = X86PP.pp_statement X86Dialect.Att
 
         let nop () = X86Ast.StmNop
 
@@ -85,11 +85,11 @@ module Lang =
 
       module Constant = struct
         type t = X86Ast.operand (* TODO: this is too weak *)
-        let pp = X86PP.pp_operand X86Ast.SynAtt
+        let pp = X86PP.pp_operand X86Dialect.Att
       end
 
       module Location = struct
         type t = X86Ast.indirect (* TODO: as is this *)
-        let pp = X86PP.pp_indirect X86Ast.SynAtt
+        let pp = X86PP.pp_indirect X86Dialect.Att
       end
     end)

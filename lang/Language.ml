@@ -24,7 +24,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 
 type name =
-  | X86 of X86Ast.syntax
+  | X86 of X86Dialect.t
              [@@deriving sexp]
 
 let pp_name ?(show_sublang=true) f = function
@@ -32,7 +32,7 @@ let pp_name ?(show_sublang=true) f = function
      Format.pp_print_string f "X86";
      if show_sublang
      then Format.fprintf f "@ (%a)"
-                         X86PP.pp_syntax syn
+                         X86Dialect.pp syn
 
 type abs_instruction =
   | AIJump

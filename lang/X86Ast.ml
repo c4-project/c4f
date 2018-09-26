@@ -47,33 +47,6 @@ copyright notice follow. *)
 open Core
 open Utils
 
-type syntax =
-  | SynAtt
-  | SynIntel
-
-module SyntaxMap =
-  StringTable.Make
-    (struct
-      type t = syntax
-      let table =
-        [ SynAtt  , "AT&T"
-        ; SynIntel, "Intel"
-        ]
-    end)
-
-let sexp_of_syntax syn =
-  syn |> SyntaxMap.to_string_exn |> Sexp.Atom
-
-let syntax_of_sexp =
-  function
-  | Sexp.Atom a as s ->
-     begin
-       match SyntaxMap.of_string a with
-       | Some v -> v
-       | None -> raise (Sexp.Of_sexp_error (failwith "expected x86 syntax name", s))
-     end
-  | s -> raise (Sexp.Of_sexp_error (failwith "expected x86 syntax, not a list", s))
-
 type reg =
   | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
   | AX | BX | CX | DX
@@ -367,7 +340,7 @@ type statement =
 (** [t] is the type of an X86 abstract syntax tree, containing the
     specific X86 syntax dialect and a list of statements. *)
 type t =
-  { syntax  : syntax
+  { syntax  : X86Dialect.t
   ; program : statement list
   }
 

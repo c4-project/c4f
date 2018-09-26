@@ -44,28 +44,28 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Pretty-printing for AT&T and Intel x86 *)
+(** Enumeration of, and facts about, x86 dialects *)
 
-open X86Ast
+open Core
+open Utils
 
-val pp_reg : X86Dialect.t -> Format.formatter -> reg -> unit
+(** [t] enumerates the various dialects of x86 syntax. *)
+
+type t =
+  | Att   (* AT&T syntax (like GNU as) *)
+  | Intel (* Intel syntax *)
+
+(** [DialectMap] associates each dialect with its string name. *)
+module Map : (StringTable.Intf with type t = t)
+
+(** [sexp_of_t syn] converts [syn] into an S-expression. *)
+val sexp_of_t : t -> Sexp.t
+(** [t_of_sexp sexp] tries to interpret an S-expression [sexp] as
+   a dialect name. *)
+val t_of_sexp : Sexp.t -> t
 
 
-val pp_indirect : X86Dialect.t -> Format.formatter -> indirect -> unit
+(** [pp f syn] pretty-prints a dialect name [syn] onto formatter
+   [f]. *)
 
-
-val pp_bop : Format.formatter -> bop -> unit
-
-val pp_operand : X86Dialect.t -> Format.formatter -> operand -> unit
-
-val pp_prefix : Format.formatter -> prefix -> unit
-
-(** [pp_opcode syn f op] pretty-prints opcode [op] on formatter [f],
-    using the correct X86Dialect.t for [syn]. *)
-val pp_opcode : X86Dialect.t -> Format.formatter -> opcode -> unit
-
-val pp_instruction : X86Dialect.t -> Format.formatter -> instruction -> unit
-
-val pp_statement : X86Dialect.t -> Format.formatter -> statement -> unit
-
-val pp_ast : Format.formatter -> t -> unit
+val pp : Format.formatter -> t -> unit

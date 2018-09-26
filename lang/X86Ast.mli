@@ -46,23 +46,7 @@ copyright notice follow. *)
 
 (** Generic, low-level abstract syntax tree for AT&T and Intel x86 *)
 
-open Core
 open Utils
-
-(** [syntax] marks an x86 AST as being either AT&T or Intel syntax. *)
-
-type syntax =
-  | SynAtt
-  | SynIntel
-
-(** [SyntaxMap] associates each syntax type with its string name. *)
-module SyntaxMap : (StringTable.Intf with type t = syntax)
-
-(** [sexp_of_syntax syn] converts [syn] into an S-expression. *)
-val sexp_of_syntax : syntax -> Sexp.t
-(** [syntax_of_sexp sexp] tries to interpret an S-expression [sexp] as
-   a syntax name. *)
-val syntax_of_sexp : Sexp.t -> syntax
 
 (** [reg] enumerates all of the known (32-bit) x86 registers. *)
 type reg =
@@ -177,7 +161,7 @@ type statement =
   | StmNop
 
 type t =
-  { syntax  : syntax
+  { syntax  : X86Dialect.t
   ; program : statement list
   }
 

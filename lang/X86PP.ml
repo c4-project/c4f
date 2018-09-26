@@ -48,20 +48,18 @@ open Core
 open Utils
 open X86Ast
 
-let pp_syntax f syn =
-  Format.pp_print_string f (Option.value ~default:"??" (SyntaxMap.to_string syn))
 let pp_reg syn f reg =
   Format.pp_open_box f 0;
-  if syn = SynAtt then Format.pp_print_char f '%';
+  if syn = X86Dialect.Att then Format.pp_print_char f '%';
   Format.pp_print_string f (RegTable.to_string_exn reg);
   Format.pp_close_box f ()
 
 let%expect_test "pp_opcode: AT&T, ESP" =
-  Format.printf "%a@." (pp_reg SynAtt) ESP;
+  Format.printf "%a@." (pp_reg X86Dialect.Att) ESP;
   [%expect {| %ESP |}]
 
 let%expect_test "pp_opcode: intel, EAX" =
-  Format.printf "%a@." (pp_reg SynIntel) EAX;
+  Format.printf "%a@." (pp_reg X86Dialect.Intel) EAX;
   [%expect {| EAX |}]
 
 (*
@@ -85,8 +83,8 @@ let pp_index syn f =
                                     "%a%s%d"
                                     (pp_reg syn) r
                                     (match syn with
-                                     | SynAtt -> ","
-                                     | SynIntel -> "*")
+                                     | X86Dialect.Att -> ","
+                                     | X86Dialect.Intel -> "*")
                                     i
 (*
  * Memory addresses
@@ -100,14 +98,14 @@ let pp_bis_att f bo iso =
   | None  , None -> ()
   | Some b, None ->
      Format.fprintf f "(%a)"
-                    (pp_reg SynAtt) b
+                    (pp_reg X86Dialect.Att) b
   | _     , Some i ->
      Format.fprintf f "(%a,%a)"
-                    (MyFormat.pp_option ~pp:(pp_reg SynAtt)) bo
-                    (pp_index SynAtt) i
+                    (MyFormat.pp_option ~pp:(pp_reg X86Dialect.Att)) bo
+                    (pp_index X86Dialect.Att) i
 
 let pp_indirect_att f {in_seg; in_disp; in_base; in_index} =
-  MyFormat.pp_option f ~pp:(pp_seg SynAtt) in_seg;
+  MyFormat.pp_option f ~pp:(pp_seg X86Dialect.Att) in_seg;
   let show_zero = in_base = None && in_index = None in
   MyFormat.pp_option f ~pp:(pp_disp ~show_zero) in_disp;
   pp_bis_att f in_base in_index
@@ -124,14 +122,14 @@ let pp_indirect_intel f {in_seg; in_disp; in_base; in_index} =
 
   (* seg:base+index*scale+disp *)
 
-  MyFormat.pp_option f ~pp:(pp_seg SynIntel) in_seg;
+  MyFormat.pp_option f ~pp:(pp_seg X86Dialect.Intel) in_seg;
 
-  MyFormat.pp_option f ~pp:(pp_reg SynIntel) in_base;
+  MyFormat.pp_option f ~pp:(pp_reg X86Dialect.Intel) in_base;
 
   let plus_between_b_i = in_base <> None && in_index <> None in
   if plus_between_b_i then Format.pp_print_char f '+';
 
-  MyFormat.pp_option f ~pp:(pp_index SynIntel) in_index;
+  MyFormat.pp_option f ~pp:(pp_index X86Dialect.Intel) in_index;
 
   let plus_between_bis_d =
     (in_base <> None || in_index <> None)
@@ -147,11 +145,11 @@ let pp_indirect_intel f {in_seg; in_disp; in_base; in_index} =
 
 let pp_indirect syn f ind =
   Format.pp_open_box f 0;
-  if syn = SynAtt then pp_indirect_att f ind else pp_indirect_intel f ind;
+  if syn = X86Dialect.Att then pp_indirect_att f ind else pp_indirect_intel f ind;
   Format.pp_close_box f ()
 
 let%expect_test "pp_indirect: intel, +ve numeric displacement only" =
-  Format.printf "%a@." (pp_indirect SynIntel)
+  Format.printf "%a@." (pp_indirect X86Dialect.Intel)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric 2001)
                 ; in_base = None
@@ -160,7 +158,7 @@ let%expect_test "pp_indirect: intel, +ve numeric displacement only" =
   [%expect {| [2001] |}]
 
 let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
-  Format.printf "%a@." (pp_indirect SynAtt)
+  Format.printf "%a@." (pp_indirect X86Dialect.Att)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric 2001)
                 ; in_base = None
@@ -169,7 +167,7 @@ let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
   [%expect {| 2001 |}]
 
 let%expect_test "pp_indirect: Intel, +ve disp and base" =
-  Format.printf "%a@." (pp_indirect SynIntel)
+  Format.printf "%a@." (pp_indirect X86Dialect.Intel)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric 76)
                 ; in_base = Some EAX
@@ -178,7 +176,7 @@ let%expect_test "pp_indirect: Intel, +ve disp and base" =
   [%expect {| [EAX+76] |}]
 
 let%expect_test "pp_indirect: AT&T, +ve disp and base" =
-  Format.printf "%a@." (pp_indirect SynAtt)
+  Format.printf "%a@." (pp_indirect X86Dialect.Att)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric 76)
                 ; in_base = Some EAX
@@ -187,7 +185,7 @@ let%expect_test "pp_indirect: AT&T, +ve disp and base" =
   [%expect {| 76(%EAX) |}]
 
 let%expect_test "pp_indirect: Intel, zero disp only" =
-  Format.printf "%a@." (pp_indirect SynIntel)
+  Format.printf "%a@." (pp_indirect X86Dialect.Intel)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric 0)
                 ; in_base = None
@@ -197,7 +195,7 @@ let%expect_test "pp_indirect: Intel, zero disp only" =
 
 
 let%expect_test "pp_indirect: AT&T, zero disp only" =
-  Format.printf "%a@." (pp_indirect SynAtt)
+  Format.printf "%a@." (pp_indirect X86Dialect.Att)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric 0)
                 ; in_base = None
@@ -206,7 +204,7 @@ let%expect_test "pp_indirect: AT&T, zero disp only" =
   [%expect {| 0 |}]
 
 let%expect_test "pp_indirect: Intel, +ve disp and base" =
-  Format.printf "%a@." (pp_indirect SynIntel)
+  Format.printf "%a@." (pp_indirect X86Dialect.Intel)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric (-42))
                 ; in_base = Some ECX
@@ -215,7 +213,7 @@ let%expect_test "pp_indirect: Intel, +ve disp and base" =
   [%expect {| [ECX-42] |}]
 
 let%expect_test "pp_indirect: AT&T, -ve disp and base" =
-  Format.printf "%a@." (pp_indirect SynAtt)
+  Format.printf "%a@." (pp_indirect X86Dialect.Att)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric (-42))
                 ; in_base = Some ECX
@@ -224,7 +222,7 @@ let%expect_test "pp_indirect: AT&T, -ve disp and base" =
   [%expect {| -42(%ECX) |}]
 
 let%expect_test "pp_indirect: Intel, base only" =
-  Format.printf "%a@." (pp_indirect SynIntel)
+  Format.printf "%a@." (pp_indirect X86Dialect.Intel)
                 { in_seg = None
                 ; in_disp = None
                 ; in_base = Some EDX
@@ -233,7 +231,7 @@ let%expect_test "pp_indirect: Intel, base only" =
   [%expect {| [EDX] |}]
 
 let%expect_test "pp_indirect: AT&T, base only" =
-  Format.printf "%a@." (pp_indirect SynAtt)
+  Format.printf "%a@." (pp_indirect X86Dialect.Att)
                 { in_seg = None
                 ; in_disp = None
                 ; in_base = Some EDX
@@ -242,7 +240,7 @@ let%expect_test "pp_indirect: AT&T, base only" =
   [%expect {| (%EDX) |}]
 
 let%expect_test "pp_indirect: Intel, zero disp and base" =
-  Format.printf "%a@." (pp_indirect SynIntel)
+  Format.printf "%a@." (pp_indirect X86Dialect.Intel)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric 0)
                 ; in_base = Some EDX
@@ -251,7 +249,7 @@ let%expect_test "pp_indirect: Intel, zero disp and base" =
   [%expect {| [EDX] |}]
 
 let%expect_test "pp_indirect: AT&T, zero disp and base" =
-  Format.printf "%a@." (pp_indirect SynAtt)
+  Format.printf "%a@." (pp_indirect X86Dialect.Att)
                 { in_seg = None
                 ; in_disp = Some (DispNumeric 0)
                 ; in_base = Some EDX
@@ -284,7 +282,7 @@ let rec pp_operand syn f = function
   | OperandReg r -> pp_reg syn f r
   | OperandImmediate d ->
      Format.pp_open_box f 0;
-     if syn = SynAtt then Format.pp_print_char f '$';
+     if syn = X86Dialect.Att then Format.pp_print_char f '$';
      pp_disp f d;
      Format.pp_close_box f ();
   | OperandString s ->
@@ -331,27 +329,27 @@ let pp_opcode _ f =
      |> String.pp f
 
 let%expect_test "pp_opcode: directive" =
-  Format.printf "%a@." (pp_opcode SynAtt) (X86OpDirective "text");
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpDirective "text");
   [%expect {| .text |}]
 
 let%expect_test "pp_opcode: jmp" =
-  Format.printf "%a@." (pp_opcode SynAtt) (X86OpJump None);
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpJump None);
   [%expect {| jmp |}]
 
 let%expect_test "pp_opcode: jge" =
-  Format.printf "%a@." (pp_opcode SynAtt) (X86OpJump (Some `GreaterEqual));
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpJump (Some `GreaterEqual));
   [%expect {| jge |}]
 
 let%expect_test "pp_opcode: jnz" =
-  Format.printf "%a@." (pp_opcode SynAtt) (X86OpJump (Some (`Not `Zero)));
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpJump (Some (`Not `Zero)));
   [%expect {| jnz |}]
 
 let%expect_test "pp_opcode: mov" =
-  Format.printf "%a@." (pp_opcode SynAtt) (X86OpMov None);
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpMov None);
   [%expect {| mov |}]
 
 let%expect_test "pp_opcode: movw" =
-  Format.printf "%a@." (pp_opcode SynAtt) (X86OpMov (Some X86SWord));
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpMov (Some X86SWord));
   [%expect {| movw |}]
 
 (*
@@ -378,8 +376,8 @@ let pp_statement syn f =
         properly in litmus printing. *)
      Format.fprintf f " "; Format.pp_print_cut f ()
 
-let pp_ast syn f ast =
+let pp_ast f ast =
   Format.pp_open_vbox f 0;
   (* We don't print newlines out here due to nops and labels. *)
-  List.iter ~f:(pp_statement syn f) ast;
+  List.iter ~f:(pp_statement ast.syntax f) ast.program;
   Format.pp_close_box f ();

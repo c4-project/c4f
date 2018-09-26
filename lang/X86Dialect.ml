@@ -44,28 +44,35 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Pretty-printing for AT&T and Intel x86 *)
+open Core
+open Utils
 
-open X86Ast
+type t =
+  | Att
+  | Intel
 
-val pp_reg : X86Dialect.t -> Format.formatter -> reg -> unit
+module Map =
+  StringTable.Make
+    (struct
+      type nonrec t = t
+      let table =
+        [ Att  , "AT&T"
+        ; Intel, "Intel"
+        ]
+    end)
 
+let sexp_of_t syn =
+  syn |> Map.to_string_exn |> Sexp.Atom
 
-val pp_indirect : X86Dialect.t -> Format.formatter -> indirect -> unit
+let t_of_sexp =
+  function
+  | Sexp.Atom a as s ->
+     begin
+       match Map.of_string a with
+       | Some v -> v
+       | None -> raise (Sexp.Of_sexp_error (failwith "expected x86 dialect name", s))
+     end
+  | s -> raise (Sexp.Of_sexp_error (failwith "expected x86 dialect, not a list", s))
 
-
-val pp_bop : Format.formatter -> bop -> unit
-
-val pp_operand : X86Dialect.t -> Format.formatter -> operand -> unit
-
-val pp_prefix : Format.formatter -> prefix -> unit
-
-(** [pp_opcode syn f op] pretty-prints opcode [op] on formatter [f],
-    using the correct X86Dialect.t for [syn]. *)
-val pp_opcode : X86Dialect.t -> Format.formatter -> opcode -> unit
-
-val pp_instruction : X86Dialect.t -> Format.formatter -> instruction -> unit
-
-val pp_statement : X86Dialect.t -> Format.formatter -> statement -> unit
-
-val pp_ast : Format.formatter -> t -> unit
+let pp f syn =
+  Format.pp_print_string f (Option.value ~default:"??" (Map.to_string syn))

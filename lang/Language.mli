@@ -27,7 +27,7 @@ open Core
 
 (** [name] enumerates all languages, and dialects thereof, supported by act. *)
 type name =
-  | X86 of X86Ast.syntax
+  | X86 of X86Dialect.t
 
 (** [name_of_sexp] converts from an S-expression to a [name]. *)
 val name_of_sexp : Sexp.t -> name
