@@ -44,28 +44,44 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Pretty-printing for AT&T and Intel x86 *)
+(** Pretty-printing for x86
+
+This module is organised along dialect boundaries: first, we give an
+   interface module [S] that exposes the most useful pretty-printers
+   for the x86 AST; then, we give an implementation for each of the
+   dialects we support.
+
+Note that changing the pretty-printer from one dialect to another does
+   *NOT* result in valid assembly output in that dialect!  The AST
+   doesn't track things like which operand is source and which is
+   destination, and these change between dialects.  *)
 
 open X86Ast
 
-val pp_reg : X86Dialect.t -> Format.formatter -> reg -> unit
+module type S =
+  sig
+    val pp_reg : Format.formatter -> reg -> unit
+    val pp_indirect : Format.formatter -> indirect -> unit
 
+    val pp_bop : Format.formatter -> bop -> unit
+    val pp_operand : Format.formatter -> operand -> unit
 
-val pp_indirect : X86Dialect.t -> Format.formatter -> indirect -> unit
+    val pp_prefix : Format.formatter -> prefix -> unit
 
+    (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
+    val pp_opcode : Format.formatter -> opcode -> unit
 
-val pp_bop : Format.formatter -> bop -> unit
+    val pp_instruction : Format.formatter -> instruction -> unit
 
-val pp_operand : X86Dialect.t -> Format.formatter -> operand -> unit
+    val pp_statement : Format.formatter -> statement -> unit
+end
 
-val pp_prefix : Format.formatter -> prefix -> unit
-
-(** [pp_opcode syn f op] pretty-prints opcode [op] on formatter [f],
-    using the correct X86Dialect.t for [syn]. *)
-val pp_opcode : X86Dialect.t -> Format.formatter -> opcode -> unit
-
-val pp_instruction : X86Dialect.t -> Format.formatter -> instruction -> unit
-
-val pp_statement : X86Dialect.t -> Format.formatter -> statement -> unit
+(** [ATT] provides pretty-printing for AT&T-syntax x86. *)
+module ATT : S
+(** [Intel] provides pretty-printing for Intel-syntax x86. *)
+module Intel : S
+(** [Herd7] provides pretty-printing for Herd-syntax x86. *)
+module Herd7 : S
 
 val pp_ast : Format.formatter -> t -> unit
+

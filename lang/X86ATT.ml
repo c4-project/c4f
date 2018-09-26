@@ -56,7 +56,7 @@ module Lang =
 
         type t = X86Ast.statement
 
-        let pp = X86PP.pp_statement X86Dialect.Att
+        let pp = X86PP.ATT.pp_statement
 
         let nop () = X86Ast.StmNop
 
@@ -86,11 +86,11 @@ module Lang =
 
       module Constant = struct
         type t = X86Ast.operand (* TODO: this is too weak *)
-        let pp = X86PP.pp_operand X86Dialect.Att
+        let pp = X86PP.ATT.pp_operand
       end
 
       module Location = struct
         type t = X86Ast.indirect (* TODO: as is this *)
-        let pp = X86PP.pp_indirect X86Dialect.Att
+        let pp = X86PP.ATT.pp_indirect
       end
     end)
