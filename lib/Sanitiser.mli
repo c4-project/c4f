@@ -51,3 +51,5 @@ module NullLangHook : functor (LS : Language.Intf) ->
 module T : functor (LS : Language.Intf) ->
            functor (LH : LangHook with type statement = LS.Statement.t) ->
            (Intf with type statement := LS.Statement.t)
+
+module X86ATT : (LangHook with type statement = X86ATT.Lang.Statement.t)

@@ -287,12 +287,14 @@ module ConditionTable =
  *)
 
 type opcode =
+  | X86OpAdd of size option
   | X86OpJump of condition option
   | X86OpLeave
   | X86OpMov of size option
   | X86OpNop
   | X86OpPush of size option
   | X86OpRet
+  | X86OpSub of size option
   | X86OpDirective of string
   | X86OpUnknown of string
 
@@ -320,8 +322,10 @@ module OpcodeTable =
         (* Instructions with AT&T size suffixes *)
         let sized =
           List.bind ~f:(fun (f, s) -> make_att_suffixes f s)
-                    [ (fun x -> X86OpMov x), "mov"
+                    [ (fun x -> X86OpAdd x), "add"
+                    ; (fun x -> X86OpMov x), "mov"
                     ; (fun x -> X86OpPush x), "push"
+                    ; (fun x -> X86OpSub x), "sub"
                     ]
         in
         (* Other instructions *)

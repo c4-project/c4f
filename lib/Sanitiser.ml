@@ -143,3 +143,38 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
 
     let sanitise stms = sanitise_programs (split_programs stms)
   end
+
+(* TODO(@MattWindsor91): should this move someplace else? *)
+
+module X86ATT =
+  struct
+    type statement = X86Ast.statement
+
+    open X86Ast
+
+    let negate = function
+      | DispNumeric k -> OperandImmediate (DispNumeric (-k))
+      | DispSymbolic s -> OperandBop ( OperandImmediate (DispNumeric 0)
+                                     , BopMinus
+                                     , OperandImmediate (DispSymbolic s)
+                                     )
+
+    let sub_to_add =
+      function
+      | StmInstruction
+        (* NB: When we adapt this for Intel, src and dest'll swap. *)
+        ( { opcode = X86OpSub sz
+          ; operands = [ OperandImmediate src; dst ]
+          ; _
+          } as op ) ->
+         StmInstruction
+           { op with opcode = X86OpAdd sz
+                   ; operands = [ negate src; dst ]
+           }
+      | x -> x
+
+    let on_statement stm =
+      stm
+      |> sub_to_add
+    let on_program = Fn.id
+  end

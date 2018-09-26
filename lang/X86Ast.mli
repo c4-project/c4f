@@ -150,12 +150,14 @@ Some opcodes contain optional [size] parameters.  These collect any
 The parser is lax when it comes to opcodes it doesn't understand: it
    emits them as [X86OpUnknown]. *)
 type opcode =
+  | X86OpAdd of size option
   | X86OpJump of condition option
   | X86OpLeave
   | X86OpMov of size option
   | X86OpNop
   | X86OpPush of size option
   | X86OpRet
+  | X86OpSub of size option
   (* Special opcodes *)
   | X86OpDirective of string (* Assembler directive *)
   | X86OpUnknown of string (* An opcode we don't (yet?) understand. *)
