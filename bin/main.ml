@@ -41,7 +41,7 @@ let parse_c_asm (cn : string) (ps : Pathset.t) =
     (X86ATT.Frontend.run_file ~file:(asm_path_of cn ps))
 
 module L = Litmus.T (X86ATT.Lang)
-module S = Sanitiser.T (X86ATT.Lang)
+module S = Sanitiser.T (X86ATT.Lang) (Sanitiser.NullLangHook (X86ATT.Lang))
 
 let build_litmus (asm : X86ATT.Frontend.ast) =
   R.reword_error

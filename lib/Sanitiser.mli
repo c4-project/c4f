@@ -34,6 +34,20 @@ module type Intf = sig
   val sanitise : statement list -> statement list list
 end
 
+(** [LangHook] is an interface for language-specific hooks into the
+   sanitisation process. *)
+module type LangHook = sig
+  type statement
+
+  val on_program : statement list -> statement list
+  val on_statement : statement -> statement
+end
+
+(** [NullLangHook] is a [LangHook] that does nothing. *)
+module NullLangHook : functor (LS : Language.Intf) ->
+                      (LangHook with type statement = LS.Statement.t)
+
 (** [T] implements the assembly sanitiser for a given language. *)
 module T : functor (LS : Language.Intf) ->
+           functor (LH : LangHook with type statement = LS.Statement.t) ->
            (Intf with type statement := LS.Statement.t)

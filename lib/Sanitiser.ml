@@ -31,6 +31,21 @@ module type Intf = sig
   val sanitise : statement list -> statement list list
 end
 
+module type LangHook = sig
+  type statement
+
+  val on_program : statement list -> statement list
+  val on_statement : statement -> statement
+end
+
+module NullLangHook (LS : Language.Intf) =
+  struct
+    type statement = LS.Statement.t
+
+    let on_program = Fn.id
+    let on_statement = Fn.id
+  end
+
 let mangler =
   (* We could always just use something like Base36 here, but this
      seems a bit more human-readable. *)
@@ -48,7 +63,7 @@ let%expect_test "mangle: sample" =
   print_string (mangle "_foo$bar.BAZ");
   [%expect {| ZUfooZDbarZPBAZZ |}]
 
-module T (LS : Language.Intf) =
+module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.t) =
   struct
     let remove_nops = MyList.exclude ~f:LS.Statement.is_nop
     let remove_directives = MyList.exclude ~f:LS.Statement.is_directive
@@ -83,6 +98,7 @@ module T (LS : Language.Intf) =
        level. *)
     let sanitise_stm stm =
       stm
+      |> LH.on_statement
       |> mangle_identifiers
 
     let all_jump_symbols_in prog =
@@ -113,6 +129,7 @@ module T (LS : Language.Intf) =
     (** [sanitise_program] performs sanitisation on a single program. *)
     let sanitise_program prog =
       prog
+      |> LH.on_program
       |> remove_nops
       |> remove_directives
       |> remove_irrelevant_instructions
