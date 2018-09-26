@@ -89,7 +89,16 @@ module T (LS : Language.Intf) =
       prog
       |> List.filter ~f:LS.Statement.is_jump
       |> List.map ~f:LS.Statement.symbol_set
-      |> LS.Statement.SymSet.union_list
+      |> Language.SymSet.union_list
+
+    let irrelevant_instruction_types =
+      Language.AISet.of_list
+        [ Language.AICall
+        ; Language.AIStack
+        ]
+
+    let remove_irrelevant_instructions =
+      MyList.exclude ~f:(LS.Statement.instruction_mem irrelevant_instruction_types)
 
     (** [remove_dead_labels prog] removes all labels in [prog] whose symbols
         aren't mentioned in jump instructions. *)
@@ -97,7 +106,7 @@ module T (LS : Language.Intf) =
       let jsyms = all_jump_symbols_in prog in
       List.filter
         ~f:(fun stm -> match LS.Statement.statement_type stm with
-                       | Language.ASLabel l -> LS.Statement.SymSet.mem jsyms l
+                       | Language.ASLabel l -> Language.SymSet.mem jsyms l
                        | _ -> true)
         prog
 
@@ -106,6 +115,7 @@ module T (LS : Language.Intf) =
       prog
       |> remove_nops
       |> remove_directives
+      |> remove_irrelevant_instructions
       |> remove_dead_labels
       |> List.map ~f:sanitise_stm
 

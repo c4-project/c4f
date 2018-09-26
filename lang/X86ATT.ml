@@ -65,11 +65,15 @@ module Lang =
              assert false
           | X86Ast.X86OpNop -> Language.AINop
           | X86Ast.X86OpJump _ -> Language.AIJump
+          | X86Ast.X86OpPush _ -> Language.AIStack
+          | X86Ast.X86OpRet
+            | X86Ast.X86OpLeave -> Language.AICall
           | _ -> Language.AIOther
 
         let statement_type =
           function
-          | StmInstruction { opcode = X86OpDirective s; _ } -> Language.ASDirective s
+          | StmInstruction { opcode = X86OpDirective s; _ } ->
+             Language.ASDirective s
           | StmInstruction i -> Language.ASInstruction (instruction_type i)
           | StmLabel l -> Language.ASLabel l
           | StmNop -> Language.ASBlank

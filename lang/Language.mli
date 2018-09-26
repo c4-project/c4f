@@ -49,6 +49,18 @@ type abs_instruction =
   | AIStack
   | AIOther
 
+val min_abs_instruction : int
+val max_abs_instruction : int
+val abs_instruction_to_enum : abs_instruction -> int
+val abs_instruction_of_enum : int -> abs_instruction option
+
+(** [abs_location] is an abstracted location. *)
+type abs_location =
+  | ALStackPointer
+  | ALStackOffset of int
+  | ALHeap of string
+  | ALUnknown
+
 (** [abs_statement] is an abstracted statement. *)
 type abs_statement =
   | ASDirective of string
@@ -56,6 +68,12 @@ type abs_statement =
   | ASBlank
   | ASLabel of string
   | ASOther
+
+(** [AISet] is a set module for abstract instruction types. *)
+module AISet : (Set.S with type Elt.t = abs_instruction)
+
+(** [SymSet] is a set module for symbols. *)
+module SymSet : (Set.S with type Elt.t = string)
 
 (** [BaseS] is the top-level signature that must be implemented by act
    languages (as part of [S]). *)
@@ -76,10 +94,6 @@ module type StatementS = sig
   (** Languages must supply a pretty-printer for their statements. *)
   include Core.Pretty_printer.S with type t := t
 
-  (*
-   * Transformations
-   *)
-
   (** [fold_map_symbols ~init ~f stm] maps [f] over every symbol in
      [stm], threading through an accumulator with initial value
      [init].
@@ -89,10 +103,6 @@ module type StatementS = sig
                          init:'a ->
                          t ->
                          ('a * t)
-
-  (*
-   * Analyses and heuristics
-   *)
 
   (** [nop] builds a no-op instruction. *)
   val nop : unit -> t
@@ -128,9 +138,6 @@ module type Intf = sig
   module Statement : sig
     include StatementS
 
-    (** [SymSet] is a set module for symbols. *)
-    module SymSet : (Set.S with type Elt.t = string)
-
     (** [map_symbols ~f stm] maps [f] over every symbol in [stm].
 
      There are no guarantees on order. *)
@@ -160,6 +167,11 @@ module type Intf = sig
     (** [instruction_type stm] gets the abstract type of an instruction.
      If [stm] isn't an instruction, it returns [None].  *)
     val instruction_type : t -> abs_instruction option
+
+    (** [instruction_mem set stm] checks whether [stm] is an
+       instruction and, if so, whether its abstract type is in the set
+       [set]. *)
+    val instruction_mem : AISet.t -> t -> bool
 
     (** [is_program_boundary stm] decides whether [stm] appears to mark
       a boundary between two Litmus programs. *)

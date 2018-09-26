@@ -41,6 +41,13 @@ type abs_instruction =
   | AICall
   | AIStack
   | AIOther
+[@@deriving enum, sexp]
+
+type abs_location =
+  | ALStackPointer
+  | ALStackOffset of int
+  | ALHeap of string
+  | ALUnknown
 
 type abs_statement =
   | ASDirective of string
@@ -48,6 +55,22 @@ type abs_statement =
   | ASBlank
   | ASLabel of string
   | ASOther
+
+module AISet =
+  Set.Make(
+      struct
+        type t = abs_instruction
+
+        let compare x y =
+          Int.compare (abs_instruction_to_enum x)
+                      (abs_instruction_to_enum y)
+
+        let sexp_of_t = sexp_of_abs_instruction
+        let t_of_sexp = abs_instruction_of_sexp
+      end
+    )
+
+module SymSet = Set.Make(String)
 
 module type BaseS = sig
   val name : name
@@ -91,7 +114,6 @@ module type Intf = sig
   module Statement : sig
     include StatementS
 
-    module SymSet : (Set.S with type Elt.t = string)
     val map_symbols : f:(string -> string) -> t -> t
     val symbol_set : t -> SymSet.t
 
@@ -100,6 +122,7 @@ module type Intf = sig
     val is_label : t -> bool
     val is_nop : t -> bool
     val instruction_type : t -> abs_instruction option
+    val instruction_mem : AISet.t -> t -> bool
     val is_program_boundary : t -> bool
   end
 
@@ -124,6 +147,10 @@ module Make (M : S) =
         match statement_type stm with
         | ASInstruction i -> Some i
         | _ -> None
+
+      let instruction_mem set stm =
+        Option.exists ~f:(fun it -> AISet.mem set it)
+                      (instruction_type stm)
 
       let is_directive stm =
         match statement_type stm with
@@ -150,9 +177,6 @@ module Make (M : S) =
         match statement_type stm with
         | ASLabel l -> is_program_label l
         | _ -> false
-
-      module SymSet =
-        Set.Make(String)
 
       let map_symbols ~f stm =
         snd (fold_map_symbols ~f:(fun _ x -> ((), f x)) ~init:() stm)

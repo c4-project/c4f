@@ -288,8 +288,11 @@ module ConditionTable =
 
 type opcode =
   | X86OpJump of condition option
+  | X86OpLeave
   | X86OpMov of size option
   | X86OpNop
+  | X86OpPush of size option
+  | X86OpRet
   | X86OpDirective of string
   | X86OpUnknown of string
 
@@ -309,17 +312,27 @@ module OpcodeTable =
     (struct
       type t = opcode
       let table =
+        (* Conditional jump instructions *)
         let jumps =
-          (X86OpJump None, "jmp") ::
             List.map ~f:(fun (x, s) -> X86OpJump (Some x), "j" ^ s)
                      ConditionTable.table
         in
-        let movs = make_att_suffixes (fun x -> X86OpMov x) "mov" in
-        let basics =
-          [ X86OpNop, "nop"
+        (* Instructions with AT&T size suffixes *)
+        let sized =
+          List.bind ~f:(fun (f, s) -> make_att_suffixes f s)
+                    [ (fun x -> X86OpMov x), "mov"
+                    ; (fun x -> X86OpPush x), "push"
+                    ]
+        in
+        (* Other instructions *)
+        let rest =
+          [ X86OpJump None, "jmp"
+          ; X86OpLeave,     "leave"
+          ; X86OpNop,       "nop"
+          ; X86OpRet,       "ret"
           ]
         in
-        List.concat [jumps; movs; basics]
+        List.concat [jumps; sized; rest]
     end)
 
 (*
