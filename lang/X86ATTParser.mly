@@ -91,11 +91,11 @@ label:
 opcode:
   | NAME { match String.chop_prefix $1 ~prefix:"." with
 	   | Some dir_name ->
-	      X86OpDirective dir_name
+	      OpDirective dir_name
 	   | None ->
 	      $1
 	      |> X86Ast.OpcodeTable.of_string
-	      |> Option.value ~default:(X86OpUnknown $1)
+	      |> Option.value ~default:(OpUnknown $1)
 	 }
 
 instr:

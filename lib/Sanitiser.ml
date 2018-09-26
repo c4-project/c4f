@@ -187,7 +187,7 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
 
 (* TODO(@MattWindsor91): should this move someplace else? *)
 
-module X86ATT =
+module X86 (DT : X86Dialect.Traits) =
   struct
     type statement = X86Ast.statement
 
@@ -203,15 +203,19 @@ module X86ATT =
     let sub_to_add =
       function
       | StmInstruction
-        (* NB: When we adapt this for Intel, src and dest'll swap. *)
-        ( { opcode = X86OpSub sz
-          ; operands = [ OperandImmediate src; dst ]
-          ; _
+        ( { prefix = pf
+          ; opcode = OpSub sz
+          ; operands = ops
           } as op ) ->
          StmInstruction
-           { op with opcode = X86OpAdd sz
-                   ; operands = [ negate src; dst ]
-           }
+           (Option.value_map
+              ~default:op
+              ~f:(fun ops' -> { prefix = pf ; opcode = OpAdd sz; operands = ops'})
+              (DT.bind_src_dst ops
+                               ~f:(fun src dst ->
+                                 match src with
+                                 | OperandImmediate s -> Some (negate s, dst)
+                                 | _ -> None)))
       | x -> x
 
     let on_statement stm =

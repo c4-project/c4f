@@ -260,16 +260,16 @@ module ConditionTable =
  *)
 
 type opcode =
-  | X86OpAdd of size option
-  | X86OpJump of condition option
-  | X86OpLeave
-  | X86OpMov of size option
-  | X86OpNop
-  | X86OpPush of size option
-  | X86OpRet
-  | X86OpSub of size option
-  | X86OpDirective of string
-  | X86OpUnknown of string
+  | OpAdd of size option
+  | OpJump of condition option
+  | OpLeave
+  | OpMov of size option
+  | OpNop
+  | OpPush of size option
+  | OpRet
+  | OpSub of size option
+  | OpDirective of string
+  | OpUnknown of string
 
 (** [make_att_suffixes f prefix] generates all of the various
     combinations of an opcode and its AT&T size suffixes. *)
@@ -289,24 +289,24 @@ module OpcodeTable =
       let table =
         (* Conditional jump instructions *)
         let jumps =
-            List.map ~f:(fun (x, s) -> X86OpJump (Some x), "j" ^ s)
+            List.map ~f:(fun (x, s) -> OpJump (Some x), "j" ^ s)
                      ConditionTable.table
         in
         (* Instructions with AT&T size suffixes *)
         let sized =
           List.bind ~f:(fun (f, s) -> make_att_suffixes f s)
-                    [ (fun x -> X86OpAdd x), "add"
-                    ; (fun x -> X86OpMov x), "mov"
-                    ; (fun x -> X86OpPush x), "push"
-                    ; (fun x -> X86OpSub x), "sub"
+                    [ (fun x -> OpAdd  x), "add"
+                    ; (fun x -> OpMov  x), "mov"
+                    ; (fun x -> OpPush x), "push"
+                    ; (fun x -> OpSub  x), "sub"
                     ]
         in
         (* Other instructions *)
         let rest =
-          [ X86OpJump None, "jmp"
-          ; X86OpLeave,     "leave"
-          ; X86OpNop,       "nop"
-          ; X86OpRet,       "ret"
+          [ OpJump None, "jmp"
+          ; OpLeave,     "leave"
+          ; OpNop,       "nop"
+          ; OpRet,       "ret"
           ]
         in
         List.concat [jumps; sized; rest]

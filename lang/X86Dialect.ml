@@ -87,3 +87,50 @@ let operand_order_of = function
   | Att -> SrcDst
   | Intel
     | Herd7 -> DstSrc
+
+module type HasDialect =
+  sig
+    val dialect : t
+  end
+
+module type Traits =
+  sig
+    val operand_order : operand_order
+
+    val of_src_dst : 'o -> 'o -> 'o list
+    val to_src_dst : 'o list -> ('o * 'o) option
+    val bind_src_dst : f:('o -> 'o -> ('o * 'o) option) -> 'o list -> ('o list) option
+    val map_src_dst : f:('o -> 'o -> ('o * 'o)) -> 'o list -> ('o list) option
+  end
+
+(** Shortcut for promoting the above functions to modules. *)
+module MakeTraits (N : HasDialect) =
+  struct
+    let operand_order = operand_order_of N.dialect
+
+    let of_src_dst src dst =
+      match operand_order with
+      | SrcDst -> [src; dst]
+      | DstSrc -> [dst; src]
+
+    let to_src_dst =
+      function
+      | [o1; o2] ->
+         (match operand_order with
+          | SrcDst -> Some (o1, o2)
+          | DstSrc -> Some (o2, o1))
+      | _ -> None
+
+    open Option
+
+    let bind_src_dst ~f xs =
+      to_src_dst xs
+      >>= (fun (s, d) -> f s d)
+      >>| Tuple2.uncurry of_src_dst
+
+    let map_src_dst ~f = bind_src_dst ~f:(fun s d -> Some (f s d))
+  end
+
+module ATTTraits = MakeTraits (struct let dialect = Att end)
+module IntelTraits = MakeTraits (struct let dialect = Intel end)
+module Herd7Traits = MakeTraits (struct let dialect = Herd7 end)

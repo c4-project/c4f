@@ -62,19 +62,19 @@ module Lang =
 
         let instruction_type ({opcode; _} : X86Ast.instruction) =
           match opcode with
-          | X86Ast.X86OpDirective _ ->
+          | X86Ast.OpDirective _ ->
              (* handled by statement_type below. *)
              assert false
-          | X86Ast.X86OpNop -> Language.AINop
-          | X86Ast.X86OpJump _ -> Language.AIJump
-          | X86Ast.X86OpPush _ -> Language.AIStack
-          | X86Ast.X86OpRet
-            | X86Ast.X86OpLeave -> Language.AICall
+          | X86Ast.OpNop -> Language.AINop
+          | X86Ast.OpJump _ -> Language.AIJump
+          | X86Ast.OpPush _ -> Language.AIStack
+          | X86Ast.OpRet
+            | X86Ast.OpLeave -> Language.AICall
           | _ -> Language.AIOther
 
         let statement_type =
           function
-          | StmInstruction { opcode = X86OpDirective s; _ } ->
+          | StmInstruction { opcode = OpDirective s; _ } ->
              Language.ASDirective s
           | StmInstruction i -> Language.ASInstruction (instruction_type i)
           | StmLabel l -> Language.ASLabel l

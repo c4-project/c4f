@@ -85,3 +85,43 @@ type operand_order =
 Since the AST doesn't mark the order of operands itself, this function
    is necessary to make sense of two-operand instructions. *)
 val operand_order_of : t -> operand_order
+
+(*
+ * Module interface
+ *)
+
+(** [HasDialect] is a signature for modules that report a specific
+    dialect. *)
+module type HasDialect =
+  sig
+    val dialect : t
+  end
+
+(** [Traits] is a modular interface to the trait functions above. *)
+module type Traits =
+  sig
+    (** See [operand_order_of] above. *)
+    val operand_order : operand_order
+
+    (** [of_src_dst src dst] converts [src] and [dst] into an operand
+       list, with the arguments in the correct order for this
+       dialect. *)
+    val of_src_dst : 'o -> 'o -> 'o list
+
+    (** [to_src_dst ops] tries to interpret [ops] as a pair of source
+        and destination operand, returning them in the order
+        [(src, dst)] if successful. *)
+    val to_src_dst : 'o list -> ('o * 'o) option
+
+    (** [bind_src_dst ~f ops] tries to interpret [ops] as a pair of source
+        and destination operand, and binds [f] over them if successful. *)
+    val bind_src_dst : f:('o -> 'o -> ('o * 'o) option) -> 'o list -> ('o list) option
+
+    (** [maps_src_dst ~f ops] tries to interpret [ops] as a pair of source
+        and destination operand, and maps [f] over them if successful. *)
+    val map_src_dst : f:('o -> 'o -> ('o * 'o)) -> 'o list -> ('o list) option
+  end
+
+module ATTTraits : Traits
+module IntelTraits : Traits
+module Herd7Traits : Traits

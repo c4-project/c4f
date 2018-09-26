@@ -314,15 +314,14 @@ let pp_prefix f p =
   Format.pp_print_string f (prefix_string p);
   Format.pp_print_space f ()
 
-
 (*
  * Opcodes
  *)
 
 let pp_opcode _ f =
   function
-  | X86OpDirective s -> Format.fprintf f ".%s" s
-  | X86OpUnknown s -> String.pp f s
+  | OpDirective s -> Format.fprintf f ".%s" s
+  | OpUnknown s -> String.pp f s
   | opc ->
      opc
      |> OpcodeTable.to_string
@@ -330,27 +329,27 @@ let pp_opcode _ f =
      |> String.pp f
 
 let%expect_test "pp_opcode: directive" =
-  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpDirective "text");
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpDirective "text");
   [%expect {| .text |}]
 
 let%expect_test "pp_opcode: jmp" =
-  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpJump None);
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpJump None);
   [%expect {| jmp |}]
 
 let%expect_test "pp_opcode: jge" =
-  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpJump (Some `GreaterEqual));
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpJump (Some `GreaterEqual));
   [%expect {| jge |}]
 
 let%expect_test "pp_opcode: jnz" =
-  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpJump (Some (`Not `Zero)));
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpJump (Some (`Not `Zero)));
   [%expect {| jnz |}]
 
 let%expect_test "pp_opcode: mov" =
-  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpMov None);
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpMov None);
   [%expect {| mov |}]
 
 let%expect_test "pp_opcode: movw" =
-  Format.printf "%a@." (pp_opcode X86Dialect.Att) (X86OpMov (Some X86SWord));
+  Format.printf "%a@." (pp_opcode X86Dialect.Att) (OpMov (Some X86SWord));
   [%expect {| movw |}]
 
 (*

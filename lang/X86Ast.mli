@@ -132,19 +132,19 @@ Some opcodes contain optional [size] parameters.  These collect any
    suffixes when parsing Intel, or no suffix when parsing AT&T.
 
 The parser is lax when it comes to opcodes it doesn't understand: it
-   emits them as [X86OpUnknown]. *)
+   emits them as [OpUnknown]. *)
 type opcode =
-  | X86OpAdd of size option
-  | X86OpJump of condition option
-  | X86OpLeave
-  | X86OpMov of size option
-  | X86OpNop
-  | X86OpPush of size option
-  | X86OpRet
-  | X86OpSub of size option
+  | OpAdd of size option
+  | OpJump of condition option
+  | OpLeave
+  | OpMov of size option
+  | OpNop
+  | OpPush of size option
+  | OpRet
+  | OpSub of size option
   (* Special opcodes *)
-  | X86OpDirective of string (* Assembler directive *)
-  | X86OpUnknown of string (* An opcode we don't (yet?) understand. *)
+  | OpDirective of string (* Assembler directive *)
+  | OpUnknown of string (* An opcode we don't (yet?) understand. *)
 
 (** [OpcodeTable] associates each opcode with its string name. *)
 module OpcodeTable : (StringTable.Intf with type t = opcode)
