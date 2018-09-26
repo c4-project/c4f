@@ -68,6 +68,16 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
     let remove_nops = MyList.exclude ~f:LS.Statement.is_nop
     let remove_directives = MyList.exclude ~f:LS.Statement.is_directive
 
+    let warn (fmt : Format.formatter -> unit) =
+      let f = Format.err_formatter in
+      Format.pp_open_hbox f ();
+      Format.fprintf f "Warning:@ ";
+      Format.pp_open_hovbox f 0;
+      fmt f;
+      Format.pp_close_box f ();
+      Format.pp_close_box f ();
+      Format.pp_print_newline f ()
+
     let split_programs stms =
       (* Adding a nop to the start forces there to be some
          instructions before the first program, meaning we can
@@ -94,12 +104,43 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
     let mangle_identifiers stm =
       LS.Statement.map_symbols ~f:mangle stm
 
+    let make_unknown_warning stm stype f =
+      Format.fprintf f
+                     "act didn't understand@ %s@ %a.@,The litmus translation may be wrong."
+                     stype
+                     LS.Statement.pp stm
+
+    (** [warn_unknown_statements stm] emits warnings for each statement in
+        [stm] without a high-level analysis. *)
+    let warn_unknown_statements stm =
+      (match LS.Statement.statement_type stm with
+       | Language.ASOther ->
+          warn (make_unknown_warning stm "statement")
+       | _ -> ());
+         stm
+
+    (** [warn_unknown_instructions stm] emits warnings for each
+       instruction in [stm] without a high-level analysis. *)
+    let warn_unknown_instructions stm =
+      (match LS.Statement.instruction_type stm with
+       | Some Language.AIOther ->
+          warn (make_unknown_warning stm "instruction")
+       | _ -> ());
+         stm
+
+
     (** [sanitise_stm] performs sanitisation at the single statement
        level. *)
     let sanitise_stm stm =
       stm
       |> LH.on_statement
+      (* Do warnings after the language-specific hook has done any
+         reduction necessary, but before we start making broad-brush
+         changes to the statements. *)
+      |> warn_unknown_statements
+      |> warn_unknown_instructions
       |> mangle_identifiers
+
 
     let all_jump_symbols_in prog =
       prog
