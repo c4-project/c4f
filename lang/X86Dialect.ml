@@ -50,6 +50,7 @@ open Utils
 type t =
   | Att
   | Intel
+  | Herd7
 
 module Map =
   StringTable.Make
@@ -58,6 +59,7 @@ module Map =
       let table =
         [ Att  , "AT&T"
         ; Intel, "Intel"
+        ; Herd7, "Herd7"
         ]
     end)
 
@@ -76,3 +78,12 @@ let t_of_sexp =
 
 let pp f syn =
   Format.pp_print_string f (Option.value ~default:"??" (Map.to_string syn))
+
+type operand_order =
+  | SrcDst
+  | DstSrc
+
+let operand_order_of = function
+  | Att -> SrcDst
+  | Intel
+    | Herd7 -> DstSrc

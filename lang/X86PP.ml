@@ -84,7 +84,8 @@ let pp_index syn f =
                                     (pp_reg syn) r
                                     (match syn with
                                      | X86Dialect.Att -> ","
-                                     | X86Dialect.Intel -> "*")
+                                     | X86Dialect.Intel
+                                       | X86Dialect.Herd7 -> "*")
                                     i
 (*
  * Memory addresses

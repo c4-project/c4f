@@ -54,6 +54,7 @@ open Utils
 type t =
   | Att   (* AT&T syntax (like GNU as) *)
   | Intel (* Intel syntax *)
+  | Herd7 (* Herd7 syntax (somewhere in between) *)
 
 (** [DialectMap] associates each dialect with its string name. *)
 module Map : (StringTable.Intf with type t = t)
@@ -64,8 +65,23 @@ val sexp_of_t : t -> Sexp.t
    a dialect name. *)
 val t_of_sexp : Sexp.t -> t
 
-
 (** [pp f syn] pretty-prints a dialect name [syn] onto formatter
    [f]. *)
 
 val pp : Format.formatter -> t -> unit
+
+(*
+ * Traits
+ *)
+
+(** [operand_order] enumerates the different orders of operands for
+   two-operand instructions. *)
+type operand_order =
+  | SrcDst (* Source then destination (AT&T) *)
+  | DstSrc (* Destination then source (Intel, Litmus) *)
+
+(** [operand_order_of dialect] gets [dialect]'s operand order.
+
+Since the AST doesn't mark the order of operands itself, this function
+   is necessary to make sense of two-operand instructions. *)
+val operand_order_of : t -> operand_order
