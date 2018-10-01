@@ -29,8 +29,8 @@ module type S = sig
 
   type stm_explanation =
     { original : statement
-    ; abs_type : Language.abs_statement
-    ; flags : Language.FlagSet.t
+    ; abs_type : Language.AbsStatement.t
+    ; flags : Language.AbsStatement.FlagSet.t
     }
 
   type t =
@@ -48,8 +48,8 @@ module Make (LS : Language.Intf) =
 
     type stm_explanation =
       { original : statement
-      ; abs_type : Language.abs_statement
-      ; flags : Language.FlagSet.t
+      ; abs_type : Language.AbsStatement.t
+      ; flags : Language.AbsStatement.FlagSet.t
       }
 
     type t =
@@ -58,7 +58,7 @@ module Make (LS : Language.Intf) =
 
     let explain_statement jsyms stm =
       { original = stm
-      ; abs_type = LS.Statement.statement_type stm
+      ; abs_type = LS.Statement.abs_type stm
       ; flags = LS.Statement.flags ~jsyms stm
       }
 
@@ -68,32 +68,38 @@ module Make (LS : Language.Intf) =
       }
 
     let stringify_ins =
+      (* TODO(@MattWindsor91): merge with pp? *)
+      let open Language.AbsInstruction in
       function
-      | Language.AIArith -> "arithmetic"
-      | Language.AICall -> "calling convention"
-      | Language.AIFence -> "memory fence"
-      | Language.AIJump -> "jump"
-      | Language.AIMove -> "move"
-      | Language.AINop -> "no operation"
-      | Language.AIStack -> "stack manipulation"
-      | Language.AIOther -> "?? instruction ??"
+      | Arith -> "arithmetic"
+      | Call  -> "calling convention"
+      | Fence -> "memory fence"
+      | Jump  -> "jump"
+      | Move  -> "move"
+      | Nop   -> "no operation"
+      | Stack -> "stack manipulation"
+      | Other -> "?? instruction ??"
 
     let stringify_stm_basic =
+      (* TODO(@MattWindsor91): merge with pp? *)
+      let open Language.AbsStatement in
       function
-      | Language.ASBlank -> ""
-      | Language.ASDirective _ -> "directive"
-      | Language.ASLabel _ -> "label"
-      | Language.ASInstruction ins -> stringify_ins ins
-      | Language.ASOther -> "??"
+      | Blank -> ""
+      | Directive _ -> "directive"
+      | Label _ -> "label"
+      | Instruction ins -> stringify_ins ins
+      | Other -> "??"
 
     let pp_statement f exp =
+      (* TODO(@MattWindsor91): emit '<-- xyz' in a comment *)
+      let open Language.AbsStatement in
       match exp.abs_type with
-      | Language.ASBlank -> ()
+      | Blank -> () (* so as not to clutter up blank lines *)
       | _ ->
          Format.fprintf f "@[<h>%a@ <--@ @[%s%a@]@]@,"
                         LS.Statement.pp exp.original
                         (stringify_stm_basic exp.abs_type)
-                        Language.FlagSet.pp exp.flags
+                        Language.AbsStatement.FlagSet.pp exp.flags
 
     let pp f exp =
       Format.pp_open_vbox f 0;

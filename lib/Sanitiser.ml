@@ -113,8 +113,8 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
     (** [warn_unknown_statements stm] emits warnings for each statement in
         [stm] without a high-level analysis. *)
     let warn_unknown_statements stm =
-      (match LS.Statement.statement_type stm with
-       | Language.ASOther ->
+      (match LS.Statement.abs_type stm with
+       | Language.AbsStatement.Other ->
           warn (make_unknown_warning stm "statement")
        | _ -> ());
          stm
@@ -123,7 +123,7 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
        instruction in [stm] without a high-level analysis. *)
     let warn_unknown_instructions stm =
       (match LS.Statement.instruction_type stm with
-       | Some Language.AIOther ->
+       | Some Language.AbsInstruction.Other ->
           warn (make_unknown_warning stm "instruction")
        | _ -> ());
          stm
@@ -145,9 +145,10 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
        instruction that can be thrown out when converting to a litmus
        test. *)
     let irrelevant_instruction_types =
-      Language.AISet.of_list
-        [ Language.AICall
-        ; Language.AIStack
+      let open Language.AbsInstruction in
+      Set.of_list
+        [ Call
+        ; Stack
         ]
 
     let remove_irrelevant_instructions =
@@ -192,11 +193,11 @@ module X86 (DT : X86Dialect.Traits) =
                                      , OperandImmediate (DispSymbolic s)
                                      )
 
-    let sub_to_add_ops =
+    let sub_to_add_ops : operand list -> operand list option =
       DT.bind_src_dst
-        ~f:(fun src dst -> match src with
-                           | OperandImmediate s -> Some (negate s, dst)
-                           | _ -> None)
+        ~f:(function
+            | {src = OperandImmediate s; dst} -> Some {src = negate s; dst}
+            | _ -> None)
 
     let sub_to_add =
       function
@@ -219,5 +220,6 @@ module X86 (DT : X86Dialect.Traits) =
     let on_statement stm =
       stm
       |> sub_to_add
+
     let on_program = Fn.id
   end

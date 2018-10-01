@@ -35,94 +35,163 @@ let pp_name ?(show_sublang=true) f = function
      then Format.fprintf f "@ (%a)"
                          X86Dialect.pp syn
 
-type abs_instruction =
-  | AIArith
-  | AIFence
-  | AIJump
-  | AIMove
-  | AINop
-  | AICall
-  | AIStack
-  | AIOther
-[@@deriving enum, sexp]
-
-type abs_location =
-  | ALStackPointer
-  | ALStackOffset of int
-  | ALHeap of string
-  | ALUnknown
-
-type abs_statement =
-  | ASDirective of string
-  | ASInstruction of abs_instruction
-  | ASBlank
-  | ASLabel of string
-  | ASOther
-
-module AISet =
-  Set.Make(
-      struct
-        type t = abs_instruction
-
-        let compare x y =
-          Int.compare (abs_instruction_to_enum x)
-                      (abs_instruction_to_enum y)
-
-        let sexp_of_t = sexp_of_abs_instruction
-        let t_of_sexp = abs_instruction_of_sexp
-      end
-    )
-
-type stm_flag =
-  [ `UnusedLabel
-  | `ProgBoundary
-  ] [@@deriving enum, sexp]
-
-module FlagTable =
-  StringTable.Make (
-      struct
-        type t = stm_flag
-
-        let table =
-          [ `UnusedLabel, "unused label"
-          ; `ProgBoundary, "program boundary"
-          ]
-      end
-    )
-
-let pp_flag f flag =
-  flag
-  |> FlagTable.to_string
-  |> Option.value ~default:"??"
-  |> String.pp f
-
-module FlagSet =
+module AbsInstruction =
   struct
-    include
-      Set.Make(
+    type t =
+      | Arith
+      | Fence
+      | Jump
+      | Move
+      | Nop
+      | Call
+      | Stack
+      | Other [@@deriving enum, sexp]
+
+    module Table =
+      StringTable.Make (
           struct
-            type t = stm_flag
+            type nonrec t = t
 
-            let compare x y =
-              Int.compare (stm_flag_to_enum x)
-                          (stm_flag_to_enum y)
-
-            let sexp_of_t = sexp_of_stm_flag
-            let t_of_sexp = stm_flag_of_sexp
+            let table =
+              [ Arith, "arith"
+              ; Fence, "fence"
+              ; Jump , "jump"
+              ; Move , "move"
+              ; Nop  , "nop"
+              ; Call , "call"
+              ; Stack, "stack"
+              ; Other, "other"
+              ]
           end
         )
 
-    let pp f fset =
-      match Set.to_list fset with
-      | [] -> ()
-      | xs ->
-         Format.pp_print_space f ();
-         Format.pp_print_char f '(';
-         Format.pp_open_hovbox f 0;
-         Format.pp_print_list ~pp_sep:(fun f _ -> Format.fprintf f ",@ ") pp_flag f xs;
-         Format.pp_close_box f ();
-         Format.pp_print_char f ')'
-    end
+    let pp f ins =
+      ins
+      |> Table.to_string
+      |> Option.value ~default:"??"
+      |> String.pp f
+
+    module Set =
+      Set.Make(
+          struct
+            type nonrec t = t
+
+            let compare x y =
+              Int.compare (to_enum x)
+                          (to_enum y)
+
+            let sexp_of_t = sexp_of_t
+            let t_of_sexp = t_of_sexp
+          end
+        )
+
+  end
+
+module AbsLocation =
+  struct
+    type t =
+      | StackPointer
+      | StackOffset of int
+      | Heap of string
+      | GeneralRegister
+      | Unknown
+
+    let pp f =
+      function
+      | StackPointer      -> String.pp      f "&stack"
+      | StackOffset     i -> Format.fprintf f "stack[%d]" i
+      | Heap            s -> Format.fprintf f "heap[%s]" s
+      | GeneralRegister   -> String.pp      f "reg"
+      | Unknown           -> String.pp      f "??"
+  end
+
+module AbsStatement =
+  struct
+    type t =
+      | Directive of string
+      | Instruction of AbsInstruction.t
+      | Blank
+      | Label of string
+      | Other
+
+    let pp f =
+      function
+      | Blank         -> ()
+      | Directive   d -> Format.fprintf f "directive@ (%s)" d
+      | Label       l -> Format.fprintf f ":%s"             l
+      | Instruction i -> AbsInstruction.pp f i
+      | Other         -> String.pp f "??"
+
+    type flag =
+      [ `UnusedLabel
+      | `ProgBoundary
+      ] [@@deriving enum, sexp]
+
+    module FlagTable =
+      StringTable.Make (
+          struct
+            type t = flag
+
+            let table =
+              [ `UnusedLabel, "unused label"
+              ; `ProgBoundary, "program boundary"
+              ]
+          end
+        )
+
+    let pp_flag f flag =
+      flag
+      |> FlagTable.to_string
+      |> Option.value ~default:"??"
+      |> String.pp f
+
+    module FlagSet =
+      struct
+        include
+          Set.Make(
+              struct
+                type t = flag
+
+                let compare x y =
+                  Int.compare (flag_to_enum x)
+                              (flag_to_enum y)
+
+                let sexp_of_t = sexp_of_flag
+                let t_of_sexp = flag_of_sexp
+              end
+            )
+
+        let pp f fset =
+          match Set.to_list fset with
+          | [] -> ()
+          | xs ->
+             Format.pp_print_space f ();
+             Format.pp_print_char f '(';
+             Format.pp_open_hovbox f 0;
+             Format.pp_print_list ~pp_sep:(fun f _ -> Format.fprintf f ",@ ") pp_flag f xs;
+             Format.pp_close_box f ();
+             Format.pp_print_char f ')'
+      end
+
+  end
+
+module AbsOperands =
+  struct
+    type t =
+      | None
+      | LocTransfer of (AbsLocation.t, AbsLocation.t) SrcDst.t
+      | Erroneous
+      | Other
+
+    let pp f =
+      function
+      | None -> String.pp f "none"
+      | LocTransfer {src; dst} -> Format.fprintf f "@[%a@ ->@ %a@]"
+                                                 AbsLocation.pp src
+                                                 AbsLocation.pp dst
+      | Erroneous -> String.pp f "<invalid operands>"
+      | Other -> String.pp f "??"
+  end
 
 module SymSet = Set.Make(String)
 
@@ -141,13 +210,17 @@ module type StatementS = sig
                          t ->
                          ('a * t)
 
+  val instruction_operands : t -> AbsOperands.t option
+
   val nop : unit -> t
-  val statement_type : t -> abs_statement
+  val abs_type : t -> AbsStatement.t
 end
 
 module type LocationS = sig
   type t
   include Core.Pretty_printer.S with type t := t
+
+  val abs_type : t -> AbsLocation.t
 end
 
 module type ConstantS = sig
@@ -171,8 +244,8 @@ module type Intf = sig
     val map_symbols : f:(string -> string) -> t -> t
     val symbol_set : t -> SymSet.t
 
-    val instruction_type : t -> abs_instruction option
-    val instruction_mem : AISet.t -> t -> bool
+    val instruction_type : t -> AbsInstruction.t option
+    val instruction_mem : AbsInstruction.Set.t -> t -> bool
 
     val is_directive : t -> bool
     val is_jump : t -> bool
@@ -181,7 +254,7 @@ module type Intf = sig
     val is_nop : t -> bool
     val is_program_boundary : t -> bool
 
-    val flags : jsyms:SymSet.t -> t -> FlagSet.t
+    val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
   end
 
   module Location : sig
@@ -210,27 +283,27 @@ module Make (M : S) =
         fst (fold_map_symbols ~f:(fun set x -> SymSet.add set x, x) ~init:SymSet.empty stm)
 
       let instruction_type stm =
-        match statement_type stm with
-        | ASInstruction i -> Some i
+        match abs_type stm with
+        | AbsStatement.Instruction i -> Some i
         | _ -> None
 
       let instruction_mem set stm =
-        Option.exists ~f:(fun it -> AISet.mem set it)
+        Option.exists ~f:(fun it -> AbsInstruction.Set.mem set it)
                       (instruction_type stm)
 
       let is_directive stm =
-        match statement_type stm with
-        | ASDirective _ -> true
+        match abs_type stm with
+        | AbsStatement.Directive _ -> true
         | _ -> false
 
       let is_jump stm =
         match instruction_type stm with
-        | Some AIJump -> true
+        | Some AbsInstruction.Jump -> true
         | _ -> false
 
       let is_label stm =
-        match statement_type stm with
-        | ASLabel _ -> true
+        match abs_type stm with
+        | AbsStatement.Label _ -> true
         | _ -> false
 
       let is_unused_label ~jsyms stm =
@@ -239,14 +312,14 @@ module Make (M : S) =
              (SymSet.inter jsyms (symbol_set stm))
 
       let is_nop stm =
-        match statement_type stm with
-        | ASBlank -> true
-        | ASInstruction AINop -> true
+        match abs_type stm with
+        | AbsStatement.Blank -> true
+        | AbsStatement.Instruction AbsInstruction.Nop -> true
         | _ -> false
 
       let is_program_boundary stm =
-        match statement_type stm with
-        | ASLabel l -> is_program_label l
+        match abs_type stm with
+        | AbsStatement.Label l -> is_program_label l
         | _ -> false
 
       let flags ~jsyms stm =
@@ -255,7 +328,7 @@ module Make (M : S) =
           ]
           |> List.map ~f:(Tuple2.uncurry Option.some_if)
           |> List.filter_opt
-          |> FlagSet.of_list
+          |> AbsStatement.FlagSet.of_list
     end
 
     module Location = struct

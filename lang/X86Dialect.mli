@@ -46,7 +46,6 @@ copyright notice follow. *)
 
 (** Enumeration of, and facts about, x86 dialects *)
 
-open Core
 open Utils
 
 (** [t] enumerates the various dialects of x86 syntax. *)
@@ -54,15 +53,10 @@ type t =
   | Att   (* AT&T syntax (like GNU as) *)
   | Intel (* Intel syntax *)
   | Herd7 (* Herd7 syntax (somewhere in between) *)
+  [@@deriving sexp]
 
 (** [DialectMap] associates each dialect with its string name. *)
 module Map : (StringTable.Intf with type t = t)
-
-(** [sexp_of_t syn] converts [syn] into an S-expression. *)
-val sexp_of_t : t -> Sexp.t
-(** [t_of_sexp sexp] tries to interpret an S-expression [sexp] as
-   a dialect name. *)
-val t_of_sexp : Sexp.t -> t
 
 (** [pp f syn] pretty-prints a dialect name [syn] onto formatter
    [f]. *)
@@ -72,17 +66,12 @@ val pp : Format.formatter -> t -> unit
  * Traits
  *)
 
-(** [operand_order] enumerates the different orders of operands for
-   two-operand instructions. *)
-type operand_order =
-  | SrcDst (* Source then destination (AT&T) *)
-  | DstSrc (* Destination then source (Intel, Litmus) *)
 
 (** [operand_order_of dialect] gets [dialect]'s operand order.
 
 Since the AST doesn't mark the order of operands itself, this function
    is necessary to make sense of two-operand instructions. *)
-val operand_order_of : t -> operand_order
+val operand_order_of : t -> SrcDst.order
 
 (** [has_size_suffix_in dialect] gets whether [dialect] uses
    AT&T-style size suffixes. *)
@@ -103,30 +92,10 @@ module type HasDialect =
 module type Traits =
   sig
     include HasDialect
-
-    (** See [operand_order_of] above. *)
-    val operand_order : operand_order
+    include SrcDst.S
 
     (** See [has_size_suffix_in] above. *)
     val has_size_suffix : bool
-
-    (** [of_src_dst src dst] converts [src] and [dst] into an operand
-       list, with the arguments in the correct order for this
-       dialect. *)
-    val of_src_dst : 'o -> 'o -> 'o list
-
-    (** [to_src_dst ops] tries to interpret [ops] as a pair of source
-        and destination operand, returning them in the order
-        [(src, dst)] if successful. *)
-    val to_src_dst : 'o list -> ('o * 'o) option
-
-    (** [bind_src_dst ~f ops] tries to interpret [ops] as a pair of source
-        and destination operand, and binds [f] over them if successful. *)
-    val bind_src_dst : f:('o -> 'o -> ('o * 'o) option) -> 'o list -> ('o list) option
-
-    (** [maps_src_dst ~f ops] tries to interpret [ops] as a pair of source
-        and destination operand, and maps [f] over them if successful. *)
-    val map_src_dst : f:('o -> 'o -> ('o * 'o)) -> 'o list -> ('o list) option
   end
 
 (** [ATTTraits] contains versions of the trait functions for

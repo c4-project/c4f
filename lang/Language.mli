@@ -29,11 +29,7 @@ open Utils
 (** [name] enumerates all languages, and dialects thereof, supported by act. *)
 type name =
   | X86 of X86Dialect.t
-
-(** [name_of_sexp] converts from an S-expression to a [name]. *)
-val name_of_sexp : Sexp.t -> name
-(** [sexp_of_name] converts from a [name] to an S-expression. *)
-val sexp_of_name : name -> Sexp.t
+         [@@deriving sexp]
 
 (** [pp_name ?show_sublang f l] pretty-prints language name [l] onto
    formatter [f].  If [show_sublang] is true (the default), we also
@@ -41,60 +37,110 @@ val sexp_of_name : name -> Sexp.t
    X86). *)
 val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
 
-(** [abs_instruction] is an abstracted instruction. *)
-type abs_instruction =
-  | AIArith (* arithmetic *)
-  | AIFence (* memory fence *)
-  | AIJump  (* conditional or unconditional jump *)
-  | AIMove  (* move *)
-  | AINop   (* no operation *)
-  | AICall  (* calling-convention related instructions *)
-  | AIStack (* stack resizing and pointer manipulation *)
-  | AIOther (* unclassified instruction *)
-[@@deriving enum]
-
 (*
  * Types for abstract language observations
  *)
 
-(** [abs_location] is an abstracted location. *)
-type abs_location =
-  | ALStackPointer
-  | ALStackOffset of int
-  | ALHeap of string
-  | ALUnknown
+(** [AbsInstruction] contains types and utilities for abstracted
+   instructions. *)
+module AbsInstruction :
+sig
+  (** [AbsInstruction.t] is an abstracted instruction. *)
+  type t =
+    | Arith (* arithmetic *)
+    | Fence (* memory fence *)
+    | Jump  (* conditional or unconditional jump *)
+    | Move  (* move *)
+    | Nop   (* no operation *)
+    | Call  (* calling-convention related instructions *)
+    | Stack (* stack resizing and pointer manipulation *)
+    | Other (* unclassified instruction *)
+[@@deriving enum]
 
-(** [abs_statement] is an abstracted statement. *)
-type abs_statement =
-  | ASDirective of string
-  | ASInstruction of abs_instruction
-  | ASBlank
-  | ASLabel of string
-  | ASOther
+  (** Abstract instructions may be pretty-printed. *)
+  include Pretty_printer.S with type t := t
 
-(** [AISet] is a set module for abstract instruction types. *)
-module AISet : (Set.S with type Elt.t = abs_instruction)
+  (** [Set] is a set module for abstract instruction types. *)
+  module Set : (Set.S with type Elt.t = t)
+end
+
+(** [AbsLocation] contains types and utilities for abstracted
+   locations. *)
+module AbsLocation :
+sig
+  (** [AbsLocation.t] is an abstracted location. *)
+  type t =
+    | StackPointer       (* Stack pointer *)
+    | StackOffset of int (* Absolute offset from stack pointer *)
+    | Heap of string     (* Named heap location *)
+    | GeneralRegister    (* General-purpose register *)
+    | Unknown            (* Not known *)
+
+  (** Abstract locations may be pretty-printed. *)
+  include Pretty_printer.S with type t := t
+end
+
+(** [AbsStatement] contains types and utilities for abstracted
+   statements. *)
+module AbsStatement :
+sig
+  (** [AbsStatement.t] is an abstracted statement. *)
+  type t =
+    | Directive of string
+    | Instruction of AbsInstruction.t
+    | Blank
+    | Label of string
+    | Other
+
+  (** Abstract statements may be pretty-printed. *)
+  include Pretty_printer.S with type t := t
+
+  (** [flag] is an enumeration of various statement observations.
+
+Most of these flags have corresponding Boolean accessors in
+     [Language.Intf.Statement]. *)
+  type flag =
+    [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
+    | `ProgBoundary  (* A label that looks like a program boundary *)
+    ] [@@deriving enum, sexp]
+
+  (** [FlagTable] associates each [flag] with a string. *)
+  module FlagTable : StringTable.Intf with type t = flag
+
+  (** [FlagSet] is a set module for [flag]. *)
+  module FlagSet : sig
+    include Set.S with type Elt.t := flag
+    include Pretty_printer.S with type t := t
+  end
+end
+
+
+(** [AbsOperands] contains types and utilities for abstracted
+   operand bundles. *)
+module AbsOperands :
+sig
+  (** [AbsOperands.t] is an abstracted operand bundle. *)
+  type t =
+    (* This instruction takes no operands. *)
+    | None
+    (* This instruction is taking a transfer from source location to
+     destination location. *)
+    | LocTransfer of (AbsLocation.t, AbsLocation.t) SrcDst.t
+    (* Instruction has the wrong sort of operands. *)
+    | Erroneous
+    (* No analysis available---the operands may or may not be valid. *)
+    | Other
+
+  (** Abstract operand bundles may be pretty-printed. *)
+  include Pretty_printer.S with type t := t
+end
 
 (** [SymSet] is a set module for symbols. *)
 module SymSet : (Set.S with type Elt.t = string)
 
-(* TODO(@MattWindsor91): move to Lang? *)
-
-(** [stm_flag] is an enumeration of various statement observations.
-
- Most of these flags have corresponding Boolean accessors in
- [Language.Intf.Statement]. *)
-type stm_flag =
-  [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
-  | `ProgBoundary  (* A label that looks like a program boundary *)
-  ] [@@deriving enum, sexp]
-
-module FlagTable : StringTable.Intf with type t = stm_flag
-module FlagSet : sig
-  include Set.S with type Elt.t := stm_flag
-  include Pretty_printer.S with type t := t
-end
-
+(*
+ * Interface for language implementation
+ *)
 
 (** [BaseS] is the top-level signature that must be implemented by act
    languages (as part of [S]). *)
@@ -125,16 +171,27 @@ module type StatementS = sig
                          t ->
                          ('a * t)
 
+
+  (** [instruction_operands stm] tries to get abstract information
+       about the operands of an instruction.  If [stm] isn't an
+       instruction, it returns [None].  *)
+  val instruction_operands : t -> AbsOperands.t option
+
   (** [nop] builds a no-op instruction. *)
   val nop : unit -> t
 
-  (** [statement_type stm] gets the abstract type of a statement. *)
-  val statement_type : t -> abs_statement
+  (** [abs_type stm] gets the abstract type of a statement. *)
+  val abs_type : t -> AbsStatement.t
 end
 
 module type LocationS = sig
   type t
+
+  (** Languages must supply a pretty-printer for their locations. *)
   include Core.Pretty_printer.S with type t := t
+
+  (** [abs_type] gets the abstract type of a location. *)
+  val abs_type : t -> AbsLocation.t
 end
 
 module type ConstantS = sig
@@ -170,14 +227,22 @@ module type Intf = sig
        statement. *)
     val symbol_set : t -> SymSet.t
 
+    (*
+     * Instruction analysis
+     *)
+
     (** [instruction_type stm] gets the abstract type of an instruction.
      If [stm] isn't an instruction, it returns [None].  *)
-    val instruction_type : t -> abs_instruction option
+    val instruction_type : t -> AbsInstruction.t option
 
     (** [instruction_mem set stm] checks whether [stm] is an
        instruction and, if so, whether its abstract type is in the set
        [set]. *)
-    val instruction_mem : AISet.t -> t -> bool
+    val instruction_mem : AbsInstruction.Set.t -> t -> bool
+
+    (*
+     * Statement analysis
+     *)
 
     (** [is_directive stm] decides whether [stm] appears to be an
      assembler directive. *)
@@ -206,7 +271,7 @@ module type Intf = sig
     (** [flags ~jsyms stm] summarises the above boolean functions as
         a set of [stm_flag]s.  It uses [jsyms] to calculate whether
         the statement is an unused label. *)
-    val flags : jsyms:SymSet.t -> t -> FlagSet.t
+    val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
   end
 
   module Location : sig

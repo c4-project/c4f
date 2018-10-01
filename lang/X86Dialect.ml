@@ -79,14 +79,10 @@ let t_of_sexp =
 let pp f syn =
   Format.pp_print_string f (Option.value ~default:"??" (Map.to_string syn))
 
-type operand_order =
-  | SrcDst
-  | DstSrc
-
 let operand_order_of = function
-  | Att -> SrcDst
+  | Att -> SrcDst.SrcDst
   | Intel
-    | Herd7 -> DstSrc
+    | Herd7 -> SrcDst.DstSrc
 
 let has_size_suffix_in = function
   | Att
@@ -104,14 +100,9 @@ module type HasDialect =
 module type Traits =
   sig
     include HasDialect
+    include SrcDst.S
 
-    val operand_order : operand_order
     val has_size_suffix : bool
-
-    val of_src_dst : 'o -> 'o -> 'o list
-    val to_src_dst : 'o list -> ('o * 'o) option
-    val bind_src_dst : f:('o -> 'o -> ('o * 'o) option) -> 'o list -> ('o list) option
-    val map_src_dst : f:('o -> 'o -> ('o * 'o)) -> 'o list -> ('o list) option
   end
 
 (** [MakeTraits] wraps the trait functions in a module, and adds some
@@ -120,30 +111,14 @@ module MakeTraits (N : HasDialect) =
   struct
     include N
 
-    let operand_order = operand_order_of N.dialect
+    include SrcDst.Make (
+                struct
+                  let operand_order = operand_order_of N.dialect
+                end
+              )
+
     let has_size_suffix = has_size_suffix_in N.dialect
 
-    let of_src_dst src dst =
-      match operand_order with
-      | SrcDst -> [src; dst]
-      | DstSrc -> [dst; src]
-
-    let to_src_dst =
-      function
-      | [o1; o2] ->
-         (match operand_order with
-          | SrcDst -> Some (o1, o2)
-          | DstSrc -> Some (o2, o1))
-      | _ -> None
-
-    open Option
-
-    let bind_src_dst ~f xs =
-      to_src_dst xs
-      >>= (fun (s, d) -> f s d)
-      >>| Tuple2.uncurry of_src_dst
-
-    let map_src_dst ~f = bind_src_dst ~f:(fun s d -> Some (f s d))
   end
 
 module ATTTraits = MakeTraits (struct let dialect = Att end)
