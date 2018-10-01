@@ -30,10 +30,26 @@ type name =
 
 let pp_name ?(show_sublang=true) f = function
   | X86 syn ->
+     Format.pp_open_box f 0;
      Format.pp_print_string f "X86";
      if show_sublang
-     then Format.fprintf f "@ (%a)"
-                         X86Dialect.pp syn
+     then Format.fprintf f "@ (%a)" X86Dialect.pp syn;
+     Format.pp_close_box f ()
+
+let%expect_test "pp_name: explicitly showing sublang" =
+  Format.printf "%a@."
+                (pp_name ~show_sublang:true) (X86 X86Dialect.Att);
+  [%expect {| X86 (AT&T) |}]
+
+let%expect_test "pp_name: explicitly not showing sublang" =
+  Format.printf "%a@."
+                (pp_name ~show_sublang:false) (X86 X86Dialect.Intel);
+  [%expect {| X86 |}]
+
+let%expect_test "pp_name: default" =
+  Format.printf "%a@."
+                (fun a -> pp_name a) (X86 X86Dialect.Herd7);
+  [%expect {| X86 (Herd7) |}]
 
 module AbsInstruction =
   struct
@@ -197,79 +213,88 @@ module AbsOperands =
 
 module SymSet = Set.Make(String)
 
-module type BaseS = sig
-  val name : name
-  val is_program_label : string -> bool
-end
-
-module type StatementS = sig
-  type t
-
-  include Core.Pretty_printer.S with type t := t
-
-  val fold_map_symbols : f:('a -> string -> 'a * string) ->
-                         init:'a ->
-                         t ->
-                         ('a * t)
-
-  val instruction_operands : t -> AbsOperands.t option
-
-  val nop : unit -> t
-  val abs_type : t -> AbsStatement.t
-end
-
-module type LocationS = sig
-  type t
-  include Core.Pretty_printer.S with type t := t
-
-  val abs_type : t -> AbsLocation.t
-end
-
-module type ConstantS = sig
-  type t
-  include Core.Pretty_printer.S with type t := t
-end
-
-module type S = sig
-  include BaseS
-  module Statement : StatementS
-  module Location : LocationS
-  module Constant : ConstantS
-end
-
-module type Intf = sig
-  include BaseS
-
-  module Statement : sig
-    include StatementS
-
-    val map_symbols : f:(string -> string) -> t -> t
-    val symbol_set : t -> SymSet.t
-
-    val instruction_type : t -> AbsInstruction.t option
-    val instruction_mem : AbsInstruction.Set.t -> t -> bool
-
-    val is_directive : t -> bool
-    val is_jump : t -> bool
-    val is_label : t -> bool
-    val is_unused_label : jsyms:SymSet.t -> t -> bool
-    val is_stack_manipulation : t -> bool
-    val is_nop : t -> bool
-    val is_program_boundary : t -> bool
-
-    val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
+module type BaseS =
+  sig
+    val name : name
+    val is_program_label : string -> bool
   end
 
-  module Location : sig
-    include LocationS
+module type StatementS =
+  sig
+    type t
+
+    include Core.Pretty_printer.S with type t := t
+
+    val fold_map_symbols : f:('a -> string -> 'a * string) ->
+                           init:'a ->
+                           t ->
+                           ('a * t)
+
+    val instruction_operands : t -> AbsOperands.t option
+
+    val nop : unit -> t
+    val abs_type : t -> AbsStatement.t
   end
 
-  module Constant : sig
-    include ConstantS
+module type LocationS =
+  sig
+    type t
+    include Core.Pretty_printer.S with type t := t
+
+    val abs_type : t -> AbsLocation.t
   end
 
-  val jump_symbols : Statement.t list -> SymSet.t
-end
+module type ConstantS =
+  sig
+    type t
+    include Core.Pretty_printer.S with type t := t
+  end
+
+module type S =
+  sig
+    include BaseS
+    module Statement : StatementS
+    module Location : LocationS
+    module Constant : ConstantS
+  end
+
+module type Intf =
+  sig
+    include BaseS
+
+    module Statement :
+    sig
+      include StatementS
+
+      val map_symbols : f:(string -> string) -> t -> t
+      val symbol_set : t -> SymSet.t
+
+      val instruction_type : t -> AbsInstruction.t option
+      val instruction_mem : AbsInstruction.Set.t -> t -> bool
+
+      val is_directive : t -> bool
+      val is_jump : t -> bool
+      val is_label : t -> bool
+      val is_unused_label : jsyms:SymSet.t -> t -> bool
+      val is_stack_manipulation : t -> bool
+      val is_nop : t -> bool
+      val is_program_boundary : t -> bool
+
+      val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
+    end
+
+    module Location :
+    sig
+      include LocationS
+    end
+
+    module Constant :
+    sig
+      include ConstantS
+    end
+
+    val jump_symbols : Statement.t list -> SymSet.t
+  end
 
 module Make (M : S) =
   struct
@@ -344,22 +369,24 @@ module Make (M : S) =
         | _ -> false
 
       let flags ~jsyms stm =
-          [ is_unused_label ~jsyms stm, `UnusedLabel
-          ; is_program_boundary    stm, `ProgBoundary
-          ; is_stack_manipulation  stm, `StackManip
-          ]
-          |> List.map ~f:(Tuple2.uncurry Option.some_if)
-          |> List.filter_opt
-          |> AbsStatement.FlagSet.of_list
+        [ is_unused_label ~jsyms stm, `UnusedLabel
+        ; is_program_boundary    stm, `ProgBoundary
+        ; is_stack_manipulation  stm, `StackManip
+        ]
+        |> List.map ~f:(Tuple2.uncurry Option.some_if)
+        |> List.filter_opt
+        |> AbsStatement.FlagSet.of_list
     end
 
-    module Location = struct
-      include M.Location
-    end
+    module Location =
+      struct
+        include M.Location
+      end
 
-    module Constant = struct
-      include M.Constant
-    end
+    module Constant =
+      struct
+        include M.Constant
+      end
 
     let jump_symbols prog =
       prog
