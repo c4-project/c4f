@@ -128,6 +128,9 @@ sig
     (* This instruction is taking a transfer from source location to
      destination location. *)
     | LocTransfer of (AbsLocation.t, AbsLocation.t) SrcDst.t
+    (* This instruction is loading an integer literal, doing something
+       with it, and storing into a location. *)
+    | IntImmediate of (int, AbsLocation.t) SrcDst.t
     (* Instruction has the wrong sort of operands. *)
     | Erroneous
     (* No analysis available---the operands may or may not be valid. *)

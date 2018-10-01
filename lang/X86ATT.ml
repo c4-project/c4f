@@ -59,17 +59,16 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
         let indirect_abs_type ( { in_seg; in_disp; in_base; in_index } : X86Ast.indirect) =
           let open Language.AbsLocation in
           match in_seg, in_disp, in_base, in_index with
-          (* In the sort of code act is going to analyse, ESP is almost
-             always pointing to the top of the stack. *)
-          | None, None, Some ESP, None ->
-             StackPointer
-          (* This might be incorrect. *)
-          | None, None, Some EBP, None ->
-             StackPointer
           (* Typically, [ EBP - i ] is a stack location: EBP is the
              frame pointer, and the x86 stack grows downwards. *)
           | None, Some (DispNumeric i), Some EBP, None ->
              StackOffset i
+          (* This is the same as [ EBP - 0 ]. *)
+          | None, None, Some ESP, None ->
+             StackOffset 0
+          (* This may be over-optimistic. *)
+          | None, Some (DispSymbolic s), None, None ->
+             Heap s
           | _, _, _, _ -> Unknown
 
         let abs_type =
@@ -109,6 +108,13 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
                         { src = Location.abs_type s
                         ; dst = Location.abs_type d
                         }
+                   | { src = OperandImmediate (DispNumeric k)
+                     ; dst = OperandLocation d
+                     } ->
+                      IntImmediate
+                        { src = k
+                        ; dst = Location.abs_type d
+                        }
                    | _ -> None (* TODO(@MattWindsor91): flag erroneous *)
                   )
                ~default:None
@@ -121,12 +127,12 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
             | `Mfence
             | `Nop
             | `Ret -> zero_operands operands
-          | `Mov -> src_dst_operands operands
-          (* TODO(@MattWindsor91): analyse other opcodes! *)
           | `Add
+            | `Sub
+            | `Mov -> src_dst_operands operands
+          (* TODO(@MattWindsor91): analyse other opcodes! *)
             | `Pop
-            | `Push
-            | `Sub -> Other
+            | `Push -> Other
 
         let instruction_operands_inner {opcode; operands; _} =
           match opcode with
@@ -180,6 +186,17 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
                            });
           [%expect {| &stack -> &stack |}]
 
+        let%expect_test "instruction_operands_inner: add $-16, %ESP" =
+          Format.printf "%a@."
+                        Language.AbsOperands.pp
+                        (instruction_operands_inner
+                           { opcode = X86Ast.OpBasic `Add
+                           ; operands = [ X86Ast.OperandImmediate (X86Ast.DispNumeric (-16))
+                                        ; X86Ast.OperandLocation (X86Ast.LocReg ESP)
+                                        ]
+                           ; prefix = None
+                           });
+          [%expect {| $-16 -> &stack |}]
 
         let instruction_operands =
           function

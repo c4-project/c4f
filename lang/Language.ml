@@ -198,15 +198,21 @@ module AbsOperands =
     type t =
       | None
       | LocTransfer of (AbsLocation.t, AbsLocation.t) SrcDst.t
+      | IntImmediate of (int, AbsLocation.t) SrcDst.t
       | Erroneous
       | Other
 
     let pp f =
       function
       | None -> String.pp f "none"
-      | LocTransfer {src; dst} -> Format.fprintf f "@[%a@ ->@ %a@]"
-                                                 AbsLocation.pp src
-                                                 AbsLocation.pp dst
+      | LocTransfer {src; dst} ->
+         Format.fprintf f "@[%a@ ->@ %a@]"
+                        AbsLocation.pp src
+                        AbsLocation.pp dst
+      | IntImmediate {src; dst} ->
+         Format.fprintf f "@[$%d@ ->@ %a@]"
+                        src
+                        AbsLocation.pp dst
       | Erroneous -> String.pp f "<invalid operands>"
       | Other -> String.pp f "??"
   end
@@ -353,6 +359,15 @@ module Make (M : S) =
       let is_stack_manipulation stm =
         match instruction_type stm with
         | Some AbsInstruction.Stack -> true
+        | Some AbsInstruction.Arith ->
+        (* Stack pointer movements *)
+           (match instruction_operands stm with
+            | Some (AbsOperands.IntImmediate
+                      { src = _
+                      ; dst = AbsLocation.StackPointer
+                   })
+              -> true
+            | _ -> false)
         | Some AbsInstruction.Move ->
            (* Stack pointer transfers *)
            (match instruction_operands stm with
