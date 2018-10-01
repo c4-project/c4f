@@ -19,8 +19,11 @@ module type S = sig
      reporting purposes. *)
   val run_ic : ?file:string -> In_channel.t -> (ast, (perr, lerr) LangParser.error) result
 
-  (** run_file file runs the language frontend on filename [file]. *)
+  (** [run_file file] runs the language frontend on filename [file]. *)
   val run_file : file:string -> (ast, (perr, lerr) LangParser.error) result
+
+  (** [run_stdin ()] runs the language frontend on standard input. *)
+  val run_stdin : unit -> (ast, (perr, lerr) LangParser.error) result
 end
 
 (** [Make] lifts an instance of [LangParser.S] into a frontend. *)

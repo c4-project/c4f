@@ -17,15 +17,22 @@ let asm_path_of (cc_id : string) (ps : Pathset.t) : string =
 let lita_path_of (cc_id : string) (ps : Pathset.t) : string =
   List.Assoc.find_exn ps.lita_paths cc_id ~equal:(=)
 
-let parse_c_asm (cn : string) (ps : Pathset.t) =
-  R.reword_error
-    (function
-     | LangParser.Parse(perr) ->
-        R.msg (MyFormat.format_to_string X86ATT.Frontend.pp_perr perr)
-     | LangParser.Lex(lerr) ->
-        R.msg (MyFormat.format_to_string X86ATT.Frontend.pp_lerr lerr)
-    )
-    (X86ATT.Frontend.run_file ~file:(asm_path_of cn ps))
+let parse_asm (cs : CompilerSpec.t) (file : string option) =
+  match cs.emits with
+  | Language.X86 (X86Dialect.Att) ->
+     R.reword_error
+       (function
+        | LangParser.Parse(perr) ->
+           R.msg (MyFormat.format_to_string X86ATT.Frontend.pp_perr perr)
+        | LangParser.Lex(lerr) ->
+           R.msg (MyFormat.format_to_string X86ATT.Frontend.pp_lerr lerr)
+       )
+       (match file with
+        | Some file -> X86ATT.Frontend.run_file ~file
+        | None      -> X86ATT.Frontend.run_stdin ())
+  | Language.X86 d ->
+     R.error_msgf "FIXME: unsupported x86 dialect %s"
+                  (X86Dialect.Map.to_string d |> Option.value ~default:"(unknown)")
 
 module L = Litmus.T (X86ATT.Lang)
 module S = Sanitiser.T (X86ATT.Lang) (Sanitiser.X86 (X86Dialect.ATTTraits))
@@ -37,18 +44,25 @@ let build_litmus (asm : X86ATT.Frontend.ast) =
             ~init:[]
             ~programs:(S.sanitise asm.program))
 
-let c_asm (env : env) (cn : string) (ps : Pathset.t) =
-  parse_c_asm cn ps
-  >>= build_litmus
-  >>= (fun lit ->
-    Format.fprintf env.vf "@[OUT@ %s@]@." ps.basename;
-    Out_channel.with_file
-      (lita_path_of cn ps)
-      ~f:(fun oc ->
-        let f = Format.formatter_of_out_channel oc in
-        L.pp f lit;
-        Format.pp_print_flush f ());
-    Result.ok_unit)
+let output_litmus_oc (lit : L.t) (oc : Out_channel.t) =
+  let f = Format.formatter_of_out_channel oc in
+  L.pp f lit;
+  Format.pp_print_flush f ()
+
+let output_litmus (lit : L.t) (file : string option) =
+  match file with
+  | Some file -> Out_channel.with_file file ~f:(output_litmus_oc lit)
+  | None -> output_litmus_oc lit Out_channel.stdout
+
+let c_asm (env : env) (cn : string) (cs : CompilerSpec.t) (ps : Pathset.t) =
+  let open Result.Let_syntax in
+  let%bind asm = parse_asm cs (Some (asm_path_of cn ps)) in
+  let%bind lit = build_litmus asm in
+  Format.fprintf env.vf "@[OUT@ %s@]@." ps.basename;
+  output_litmus lit (Some (lita_path_of cn ps));
+  (* TODO(@MattWindsor91): catch errors from output_litmus. *)
+  Result.ok_unit
+
 
 let proc_c (env : env) (cc_specs : CompilerSpec.set) vf results_path c_fname =
   let paths = Pathset.make cc_specs
@@ -65,7 +79,7 @@ let proc_c (env : env) (cc_specs : CompilerSpec.set) vf results_path c_fname =
                (fun (cn, cs) ->
                  Format.fprintf vf "@[CC[%s]@ %s@]@." cn paths.basename;
                  Compiler.compile cn cs paths
-                 >>= (fun _ -> Result.map ~f:ignore (c_asm env cn paths))
+                 >>= (fun _ -> Result.map ~f:ignore (c_asm env cn cs paths))
 
                ) cc_specs
   )
@@ -92,18 +106,71 @@ let pp_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
 
 (** [make_compiler_specs specpath] reads in the compiler spec list at
     [specpath], converting it to a [compiler_spec_set]. *)
-
 let make_compiler_specs (specpath : string) =
   CompilerSpec.load_specs ~path:specpath
   |> List.fold_result ~init:[]
                       ~f:(fun specs (c, spec) ->
                         Compiler.test spec >>| (fun _ -> (c, spec)::specs)
                       )
+  |> R.reword_error_msg (fun _ -> R.msg "Compiler specs are invalid.")
 
-let command =
+let verbose_formatter verbose =
+  if verbose
+  then Format.err_formatter
+  else MyFormat.null_formatter ()
+
+let prerr =
+  function
+  | Ok _ -> ()
+  | Error err ->
+     Format.eprintf "@[Fatal error:@.@[%a@]@]@." R.pp_msg err
+
+let get_spec specs compiler_id =
+  List.Assoc.find specs ~equal:(=) compiler_id
+  |> Result.of_option ~error:(R.msgf "invalid compiler ID: %s" compiler_id)
+
+let do_litmusify _ infile outfile compiler_id specs =
+  let open Result.Let_syntax in
+  let%bind spec = get_spec specs compiler_id in
+  let%bind asm = parse_asm spec infile in
+  let%bind lit = build_litmus asm in
+  output_litmus lit outfile;
+  Result.ok_unit
+
+let litmusify =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"Main driver for the Automagic Compiler Tormentor"
+    ~summary:"Converts an assembly file to a litmus test"
+    [%map_open
+     let spec_file =
+       flag "spec"
+            (optional_with_default
+               (Filename.concat Filename.current_dir_name "compiler.spec")
+               string)
+            ~doc: "PATH the compiler spec file to use"
+     and verbose =
+       flag "verbose"
+            no_arg
+            ~doc: "verbose mode"
+     and compiler_id =
+       anon ("COMPILER_ID" %: string)
+     and outfile =
+       flag "output"
+            (optional string)
+            ~doc: "FILE the litmus output file (default: stdout)"
+     and infile =
+       anon (maybe ("FILE" %: string))
+         in
+         fun () ->
+         let vf = verbose_formatter verbose in
+         make_compiler_specs spec_file
+         >>= do_litmusify vf infile outfile compiler_id |> prerr
+    ]
+
+let memalloy =
+  let open Command.Let_syntax in
+  Command.basic
+    ~summary:"Runs automatic testing over a memalloy output directory"
     [%map_open
      let spec_file =
        flag "spec"
@@ -132,32 +199,29 @@ let command =
          let inpaths =
            (Option.value ~default:[] inpaths_anon)
            @ (Option.value ~default:[] inpaths_rest)
-         and verbose_fmt =
-           if verbose
-           then Format.err_formatter
-           else MyFormat.null_formatter ()
-         in
-         make_compiler_specs spec_file |>
-           R.reword_error_msg (fun _ -> R.msg "Compiler specs are invalid.")
+         and vf = verbose_formatter verbose in
+         make_compiler_specs spec_file
          >>= (
            fun specs ->
-           pp_specs verbose_fmt specs;
+           pp_specs vf specs;
            let env =
-             { vf = verbose_fmt
+             { vf
              ; root = out_root_path
-             ; specs = specs
+             ; specs
              }
            in
            List.fold_result inpaths
                             ~init:()
-                            ~f:(fun _ -> proc_results env specs verbose_fmt);
+                            ~f:(fun _ -> proc_results env specs vf);
          )
-         |>
-           function
-           | Ok _ -> ()
-           | Error err ->
-              Format.eprintf "@[Fatal error:@.@[%a@]@]@." R.pp_msg err
+         |> prerr
     ]
 
-let () =
-  Command.run command
+let command =
+  Command.group
+    ~summary:"Automagic Compiler Tormentor"
+    [ "memalloy", memalloy
+    ; "litmusify", litmusify
+    ]
+
+let () = Command.run command

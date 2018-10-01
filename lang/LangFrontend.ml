@@ -11,6 +11,7 @@ module type S = sig
   val run_ic : ?file:string -> In_channel.t -> (ast, (perr, lerr) LangParser.error) result
 
   val run_file : file:string -> (ast, (perr, lerr) LangParser.error) result
+  val run_stdin : unit -> (ast, (perr, lerr) LangParser.error) result
 end
 
 module Make (SI : LangParser.S) : (S with type ast = SI.ast) = struct
@@ -31,4 +32,7 @@ module Make (SI : LangParser.S) : (S with type ast = SI.ast) = struct
 
   let run_file ~file =
     In_channel.with_file file ~f:(run_ic ~file)
+
+  let run_stdin () =
+    run_ic ~file:"(stdin)" In_channel.stdin
 end
