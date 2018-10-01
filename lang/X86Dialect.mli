@@ -50,7 +50,6 @@ open Core
 open Utils
 
 (** [t] enumerates the various dialects of x86 syntax. *)
-
 type t =
   | Att   (* AT&T syntax (like GNU as) *)
   | Intel (* Intel syntax *)
@@ -67,7 +66,6 @@ val t_of_sexp : Sexp.t -> t
 
 (** [pp f syn] pretty-prints a dialect name [syn] onto formatter
    [f]. *)
-
 val pp : Format.formatter -> t -> unit
 
 (*
@@ -104,6 +102,8 @@ module type HasDialect =
 (** [Traits] is a modular interface to the trait functions above. *)
 module type Traits =
   sig
+    include HasDialect
+
     (** See [operand_order_of] above. *)
     val operand_order : operand_order
 
@@ -129,6 +129,14 @@ module type Traits =
     val map_src_dst : f:('o -> 'o -> ('o * 'o)) -> 'o list -> ('o list) option
   end
 
+(** [ATTTraits] contains versions of the trait functions for
+   AT&T-syntax x86 assembly. *)
 module ATTTraits : Traits
+
+(** [IntelTraits] contains versions of the trait functions for
+   Intel-syntax x86 assembly. *)
 module IntelTraits : Traits
+
+(** [Herd7Traits] contains versions of the trait functions for
+   Herd7-syntax x86 assembly. *)
 module Herd7Traits : Traits

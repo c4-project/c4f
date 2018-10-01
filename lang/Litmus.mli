@@ -29,18 +29,16 @@ open Core
  * Litmus AST module
  *)
 
-(** [T] is a functor that, given a language described by [Language.S],
-    produces a module type for litmus test syntax trees, as well as
-    operations for pretty-printing it. *)
+(** [T] is a functor that, given a language described by
+   [Language.Intf], produces a module type for litmus test syntax
+   trees, as well as operations for pretty-printing it. *)
 module T : functor (LS : Language.Intf) -> sig
 
   (** [t] is the top-level container for a Litmus test. *)
-
   type t
 
   (** [pp f litmus] pretty-prints the litmus test [litmus] onto
       formatter [f]. *)
-
   val pp : Format.formatter -> t -> unit
 
   (*
@@ -49,7 +47,6 @@ module T : functor (LS : Language.Intf) -> sig
 
   (** [err] is the type of validity errors that can arise when building
    a litmus test. *)
-
   type err =
     | NameEmpty
     | ProgramsEmpty
@@ -58,7 +55,6 @@ module T : functor (LS : Language.Intf) -> sig
 
   (** [pp_err f err] pretty-prints the validity error [err] onto
      formatter [f]. *)
-
   val pp_err : Format.formatter -> err -> unit
 
   (*

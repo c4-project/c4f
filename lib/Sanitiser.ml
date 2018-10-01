@@ -148,6 +148,9 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
       |> List.map ~f:LS.Statement.symbol_set
       |> Language.SymSet.union_list
 
+    (** [irrelevant_instruction_types] lists the high-level types of
+       instruction that can be thrown out when converting to a litmus
+       test. *)
     let irrelevant_instruction_types =
       Language.AISet.of_list
         [ Language.AICall

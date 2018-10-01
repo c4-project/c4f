@@ -103,6 +103,8 @@ module type HasDialect =
 
 module type Traits =
   sig
+    include HasDialect
+
     val operand_order : operand_order
     val has_size_suffix : bool
 
@@ -112,9 +114,12 @@ module type Traits =
     val map_src_dst : f:('o -> 'o -> ('o * 'o)) -> 'o list -> ('o list) option
   end
 
-(** Shortcut for promoting the above functions to modules. *)
+(** [MakeTraits] wraps the trait functions in a module, and adds some
+    convenience methods. *)
 module MakeTraits (N : HasDialect) =
   struct
+    include N
+
     let operand_order = operand_order_of N.dialect
     let has_size_suffix = has_size_suffix_in N.dialect
 

@@ -44,10 +44,11 @@ module Frontend =
              Error (LangParser.Parse (Uncaught lexbuf.lex_curr_p))
       end)
 
-module Lang =
+(* TODO(@MattWindsor91): break this out into a separate module. *)
+module Make (T : X86Dialect.Traits) (P : X86PP.S) =
   Language.Make
     (struct
-      let name = (Language.X86 (X86Dialect.Att))
+      let name = (Language.X86 (T.dialect))
 
       let is_program_label = X86Base.is_program_label
 
@@ -56,7 +57,7 @@ module Lang =
 
         type t = X86Ast.statement
 
-        let pp = X86PP.ATT.pp_statement
+        let pp = P.pp_statement
 
         let nop () = X86Ast.StmNop
 
@@ -86,11 +87,14 @@ module Lang =
 
       module Constant = struct
         type t = X86Ast.operand (* TODO: this is too weak *)
-        let pp = X86PP.ATT.pp_operand
+        let pp = P.pp_operand
       end
 
       module Location = struct
         type t = X86Ast.indirect (* TODO: as is this *)
-        let pp = X86PP.ATT.pp_indirect
+        let pp = P.pp_indirect
       end
     end)
+
+module Lang = Make (X86Dialect.ATTTraits) (X86PP.ATT)
+
