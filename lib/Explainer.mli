@@ -29,20 +29,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Lang
-open Utils
-
-(* TODO(@MattWindsor91): move to Lang? *)
-
-type stm_flag =
-  [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
-  | `ProgBoundary  (* A label that looks like a program boundary *)
-  ] [@@deriving enum, sexp]
-
-module FlagTable : StringTable.Intf with type t = stm_flag
-module FlagSet : sig
-  include Set.S with type Elt.t := stm_flag
-  include Pretty_printer.S with type t := t
-end
 
 module type S = sig
   type statement
@@ -51,7 +37,7 @@ module type S = sig
   type stm_explanation =
     { original : statement
     ; abs_type : Language.abs_statement
-    ; flags : FlagSet.t
+    ; flags : Language.FlagSet.t
     }
 
   (** [t] is the type of assembly explanations. *)

@@ -24,6 +24,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 (** High-level interface to languages supported by act *)
 
 open Core
+open Utils
 
 (** [name] enumerates all languages, and dialects thereof, supported by act. *)
 type name =
@@ -50,11 +51,11 @@ type abs_instruction =
   | AICall  (* calling-convention related instructions *)
   | AIStack (* stack resizing and pointer manipulation *)
   | AIOther (* unclassified instruction *)
+[@@deriving enum]
 
-val min_abs_instruction : int
-val max_abs_instruction : int
-val abs_instruction_to_enum : abs_instruction -> int
-val abs_instruction_of_enum : int -> abs_instruction option
+(*
+ * Types for abstract language observations
+ *)
 
 (** [abs_location] is an abstracted location. *)
 type abs_location =
@@ -76,6 +77,24 @@ module AISet : (Set.S with type Elt.t = abs_instruction)
 
 (** [SymSet] is a set module for symbols. *)
 module SymSet : (Set.S with type Elt.t = string)
+
+(* TODO(@MattWindsor91): move to Lang? *)
+
+(** [stm_flag] is an enumeration of various statement observations.
+
+ Most of these flags have corresponding Boolean accessors in
+ [Language.Intf.Statement]. *)
+type stm_flag =
+  [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
+  | `ProgBoundary  (* A label that looks like a program boundary *)
+  ] [@@deriving enum, sexp]
+
+module FlagTable : StringTable.Intf with type t = stm_flag
+module FlagSet : sig
+  include Set.S with type Elt.t := stm_flag
+  include Pretty_printer.S with type t := t
+end
+
 
 (** [BaseS] is the top-level signature that must be implemented by act
    languages (as part of [S]). *)
@@ -151,6 +170,15 @@ module type Intf = sig
        statement. *)
     val symbol_set : t -> SymSet.t
 
+    (** [instruction_type stm] gets the abstract type of an instruction.
+     If [stm] isn't an instruction, it returns [None].  *)
+    val instruction_type : t -> abs_instruction option
+
+    (** [instruction_mem set stm] checks whether [stm] is an
+       instruction and, if so, whether its abstract type is in the set
+       [set]. *)
+    val instruction_mem : AISet.t -> t -> bool
+
     (** [is_directive stm] decides whether [stm] appears to be an
      assembler directive. *)
     val is_directive : t -> bool
@@ -163,21 +191,22 @@ module type Intf = sig
      label. *)
     val is_label : t -> bool
 
+    (** [is_unused_label ~jsyms stm] decides whether [stm] is a label
+       whose symbol doesn't appear in the given set [jsyms] of jump
+       destination symbols. *)
+    val is_unused_label : jsyms:SymSet.t -> t -> bool
+
     (** [is_nop stm] decides whether [stm] appears to be a NOP. *)
     val is_nop : t -> bool
-
-    (** [instruction_type stm] gets the abstract type of an instruction.
-     If [stm] isn't an instruction, it returns [None].  *)
-    val instruction_type : t -> abs_instruction option
-
-    (** [instruction_mem set stm] checks whether [stm] is an
-       instruction and, if so, whether its abstract type is in the set
-       [set]. *)
-    val instruction_mem : AISet.t -> t -> bool
 
     (** [is_program_boundary stm] decides whether [stm] appears to mark
       a boundary between two Litmus programs. *)
     val is_program_boundary : t -> bool
+
+    (** [flags ~jsyms stm] summarises the above boolean functions as
+        a set of [stm_flag]s.  It uses [jsyms] to calculate whether
+        the statement is an unused label. *)
+    val flags : jsyms:SymSet.t -> t -> FlagSet.t
   end
 
   module Location : sig

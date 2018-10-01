@@ -157,11 +157,7 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
         aren't mentioned in jump instructions. *)
     let remove_dead_labels prog =
       let jsyms = LS.jump_symbols prog in
-      List.filter
-        ~f:(fun stm -> match LS.Statement.statement_type stm with
-                       | Language.ASLabel l -> Language.SymSet.mem jsyms l
-                       | _ -> true)
-        prog
+      MyList.exclude ~f:(LS.Statement.is_unused_label ~jsyms) prog
 
     (** [sanitise_program] performs sanitisation on a single program. *)
     let sanitise_program prog =

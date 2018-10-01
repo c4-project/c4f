@@ -22,6 +22,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
+open Utils
 
 type name =
   | X86 of X86Dialect.t
@@ -72,6 +73,57 @@ module AISet =
       end
     )
 
+type stm_flag =
+  [ `UnusedLabel
+  | `ProgBoundary
+  ] [@@deriving enum, sexp]
+
+module FlagTable =
+  StringTable.Make (
+      struct
+        type t = stm_flag
+
+        let table =
+          [ `UnusedLabel, "unused label"
+          ; `ProgBoundary, "program boundary"
+          ]
+      end
+    )
+
+let pp_flag f flag =
+  flag
+  |> FlagTable.to_string
+  |> Option.value ~default:"??"
+  |> String.pp f
+
+module FlagSet =
+  struct
+    include
+      Set.Make(
+          struct
+            type t = stm_flag
+
+            let compare x y =
+              Int.compare (stm_flag_to_enum x)
+                          (stm_flag_to_enum y)
+
+            let sexp_of_t = sexp_of_stm_flag
+            let t_of_sexp = stm_flag_of_sexp
+          end
+        )
+
+    let pp f fset =
+      match Set.to_list fset with
+      | [] -> ()
+      | xs ->
+         Format.pp_print_space f ();
+         Format.pp_print_char f '(';
+         Format.pp_open_hovbox f 0;
+         Format.pp_print_list ~pp_sep:(fun f _ -> Format.fprintf f ",@ ") pp_flag f xs;
+         Format.pp_close_box f ();
+         Format.pp_print_char f ')'
+    end
+
 module SymSet = Set.Make(String)
 
 module type BaseS = sig
@@ -119,13 +171,17 @@ module type Intf = sig
     val map_symbols : f:(string -> string) -> t -> t
     val symbol_set : t -> SymSet.t
 
+    val instruction_type : t -> abs_instruction option
+    val instruction_mem : AISet.t -> t -> bool
+
     val is_directive : t -> bool
     val is_jump : t -> bool
     val is_label : t -> bool
+    val is_unused_label : jsyms:SymSet.t -> t -> bool
     val is_nop : t -> bool
-    val instruction_type : t -> abs_instruction option
-    val instruction_mem : AISet.t -> t -> bool
     val is_program_boundary : t -> bool
+
+    val flags : jsyms:SymSet.t -> t -> FlagSet.t
   end
 
   module Location : sig
@@ -146,6 +202,12 @@ module Make (M : S) =
 
     module Statement = struct
       include M.Statement
+
+      let map_symbols ~f stm =
+        snd (fold_map_symbols ~f:(fun _ x -> ((), f x)) ~init:() stm)
+
+      let symbol_set stm =
+        fst (fold_map_symbols ~f:(fun set x -> SymSet.add set x, x) ~init:SymSet.empty stm)
 
       let instruction_type stm =
         match statement_type stm with
@@ -171,6 +233,11 @@ module Make (M : S) =
         | ASLabel _ -> true
         | _ -> false
 
+      let is_unused_label ~jsyms stm =
+        is_label stm
+        && SymSet.is_empty
+             (SymSet.inter jsyms (symbol_set stm))
+
       let is_nop stm =
         match statement_type stm with
         | ASBlank -> true
@@ -182,11 +249,13 @@ module Make (M : S) =
         | ASLabel l -> is_program_label l
         | _ -> false
 
-      let map_symbols ~f stm =
-        snd (fold_map_symbols ~f:(fun _ x -> ((), f x)) ~init:() stm)
-
-      let symbol_set stm =
-        fst (fold_map_symbols ~f:(fun set x -> SymSet.add set x, x) ~init:SymSet.empty stm)
+      let flags ~jsyms stm =
+          [ is_unused_label ~jsyms stm, `UnusedLabel
+          ; is_program_boundary stm, `ProgBoundary
+          ]
+          |> List.map ~f:(Tuple2.uncurry Option.some_if)
+          |> List.filter_opt
+          |> FlagSet.of_list
     end
 
     module Location = struct
