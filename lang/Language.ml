@@ -135,6 +135,8 @@ module type Intf = sig
   module Constant : sig
     include ConstantS
   end
+
+  val jump_symbols : Statement.t list -> SymSet.t
 end
 
 module Make (M : S) =
@@ -194,4 +196,10 @@ module Make (M : S) =
     module Constant = struct
       include M.Constant
     end
+
+    let jump_symbols prog =
+      prog
+      |> List.filter ~f:Statement.is_jump
+      |> List.map ~f:Statement.symbol_set
+      |> SymSet.union_list
   end

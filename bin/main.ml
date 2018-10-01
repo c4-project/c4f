@@ -36,6 +36,7 @@ let parse_asm (cs : CompilerSpec.t) (file : string option) =
 
 module L = Litmus.T (X86ATT.Lang)
 module S = Sanitiser.T (X86ATT.Lang) (Sanitiser.X86 (X86Dialect.ATTTraits))
+module E = Explainer.Make (X86ATT.Lang)
 
 let build_litmus (asm : X86ATT.Frontend.ast) =
   R.reword_error
@@ -64,32 +65,32 @@ let c_asm (env : env) (cn : string) (cs : CompilerSpec.t) (ps : Pathset.t) =
   Result.ok_unit
 
 
-let proc_c (env : env) (cc_specs : CompilerSpec.set) vf results_path c_fname =
-  let paths = Pathset.make cc_specs
+let proc_c (env : env) results_path c_fname =
+  let paths = Pathset.make env.specs
                            ~root_path:env.root
                            ~results_path:results_path
                            ~c_fname:c_fname in
-  Pathset.pp vf paths;
-  Format.pp_print_newline vf ();
+  Pathset.pp env.vf paths;
+  Format.pp_print_newline env.vf ();
 
   Pathset.make_dir_structure paths |>
     R.reword_error_msg (fun _ -> R.msg "couldn't make dir structure")
   >>= (
     fun _ -> MyList.iter_result
                (fun (cn, cs) ->
-                 Format.fprintf vf "@[CC[%s]@ %s@]@." cn paths.basename;
+                 Format.fprintf env.vf "@[CC[%s]@ %s@]@." cn paths.basename;
                  Compiler.compile cn cs paths
                  >>= (fun _ -> Result.map ~f:ignore (c_asm env cn cs paths))
 
-               ) cc_specs
+               ) env.specs
   )
 
-let proc_results (env : env) (cc_specs : CompilerSpec.set) (vf : Format.formatter) (results_path : string) =
+let proc_results (env : env) (results_path : string) =
   let c_path = Filename.concat results_path "C" in
   try
     Sys.readdir c_path
     |> Array.filter ~f:(MyFilename.has_extension ~ext:"c")
-    |> MyArray.iter_result (proc_c env cc_specs vf results_path)
+    |> MyArray.iter_result (proc_c env results_path)
   with
     Sys_error e -> R.error_msgf "system error: %s" e
 
@@ -104,14 +105,20 @@ let pp_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
   Format.pp_close_box f ();
   Format.pp_print_flush f ()
 
-(** [make_compiler_specs specpath] reads in the compiler spec list at
-    [specpath], converting it to a [compiler_spec_set]. *)
-let make_compiler_specs (specpath : string) =
+(** [tap f r] behaves like [Result.iter f r], but returns [r]. *)
+let tap (f : 'a -> unit) (r : ('a, 'e) result) : ('a, 'e) result =
+  Result.iter ~f r; r
+
+(** [make_compiler_specs vf specpath] reads in the compiler spec list at
+    [specpath], converting it to a [compiler_spec_set].
+    It pretty-prints the specs onto [vf]. *)
+let make_compiler_specs (vf : Format.formatter) (specpath : string) =
   CompilerSpec.load_specs ~path:specpath
   |> List.fold_result ~init:[]
                       ~f:(fun specs (c, spec) ->
                         Compiler.test spec >>| (fun _ -> (c, spec)::specs)
                       )
+  |> tap (pp_specs vf)
   |> R.reword_error_msg (fun _ -> R.msg "Compiler specs are invalid.")
 
 let verbose_formatter verbose =
@@ -136,6 +143,53 @@ let do_litmusify _ infile outfile compiler_id specs =
   let%bind lit = build_litmus asm in
   output_litmus lit outfile;
   Result.ok_unit
+
+let output_explanation_oc (expl : E.t) (oc : Out_channel.t) =
+  let f = Format.formatter_of_out_channel oc in
+  E.pp f expl;
+  Format.pp_print_flush f ()
+
+let output_explanation (expl : E.t) (file : string option) =
+  match file with
+  | Some file -> Out_channel.with_file file ~f:(output_explanation_oc expl)
+  | None -> output_explanation_oc expl Out_channel.stdout
+
+let do_explain _ infile outfile compiler_id specs =
+  let open Result.Let_syntax in
+  let%bind spec = get_spec specs compiler_id in
+  let%bind asm = parse_asm spec infile in
+  output_explanation (E.explain asm.program) outfile;
+  Result.ok_unit
+
+let explain =
+  let open Command.Let_syntax in
+  Command.basic
+    ~summary:"Explains act's understanding of an assembly file"
+    [%map_open
+     let spec_file =
+       flag "spec"
+            (optional_with_default
+               (Filename.concat Filename.current_dir_name "compiler.spec")
+               string)
+            ~doc: "PATH the compiler spec file to use"
+     and verbose =
+       flag "verbose"
+            no_arg
+            ~doc: "verbose mode"
+     and compiler_id =
+       anon ("COMPILER_ID" %: string)
+     and outfile =
+       flag "output"
+            (optional string)
+            ~doc: "FILE the explanation output file (default: stdout)"
+     and infile =
+       anon (maybe ("FILE" %: string))
+         in
+         fun () ->
+         let vf = verbose_formatter verbose in
+         make_compiler_specs vf spec_file
+         >>= do_explain vf infile outfile compiler_id |> prerr
+    ]
 
 let litmusify =
   let open Command.Let_syntax in
@@ -163,9 +217,14 @@ let litmusify =
          in
          fun () ->
          let vf = verbose_formatter verbose in
-         make_compiler_specs spec_file
+         make_compiler_specs vf spec_file
          >>= do_litmusify vf infile outfile compiler_id |> prerr
     ]
+
+let do_memalloy env inpaths =
+  List.fold_result inpaths
+                   ~init:()
+                   ~f:(fun _ -> proc_results env)
 
 let memalloy =
   let open Command.Let_syntax in
@@ -178,7 +237,7 @@ let memalloy =
                (Filename.concat Filename.current_dir_name "compiler.spec")
                string)
             ~doc: "PATH the compiler spec file to use"
-     and out_root_path =
+     and root =
        flag "output"
             (optional_with_default
                Filename.current_dir_name
@@ -200,28 +259,17 @@ let memalloy =
            (Option.value ~default:[] inpaths_anon)
            @ (Option.value ~default:[] inpaths_rest)
          and vf = verbose_formatter verbose in
-         make_compiler_specs spec_file
-         >>= (
-           fun specs ->
-           pp_specs vf specs;
-           let env =
-             { vf
-             ; root = out_root_path
-             ; specs
-             }
-           in
-           List.fold_result inpaths
-                            ~init:()
-                            ~f:(fun _ -> proc_results env specs vf);
-         )
+         make_compiler_specs vf spec_file
+         >>= (fun specs -> do_memalloy { vf; root; specs } inpaths)
          |> prerr
     ]
 
 let command =
   Command.group
     ~summary:"Automagic Compiler Tormentor"
-    [ "memalloy", memalloy
+    [ "explain"  , explain
     ; "litmusify", litmusify
+    ; "memalloy" , memalloy
     ]
 
 let () = Command.run command

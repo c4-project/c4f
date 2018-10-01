@@ -56,6 +56,14 @@ assembly file, the litmus output won't have any postconditions or
 initial assignments, and `act` will make incomplete guesses about
 where program boundaries and interesting memory locations are.
 
+### Analysing an assembly file without conversion
+
+`dune exec bin/main.exe explain COMPILER-NAME path/to/asm.s`
+
+This asks `act` to dump out the given assembly file along with
+line-by-line annotations explaining how `act` categorised each line of
+assembly.  This is mostly useful for debugging what `act` is doing.
+
 ### Processing a memalloy run
 
 `dune exec bin/main.exe memalloy path/to/memalloy/results`

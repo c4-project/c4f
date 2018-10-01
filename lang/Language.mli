@@ -187,6 +187,10 @@ module type Intf = sig
   module Constant : sig
     include ConstantS
   end
+
+  (** [jump_symbols] retrieves the set of all symbols that appear to be
+      jump targets. *)
+  val jump_symbols : Statement.t list -> SymSet.t
 end
 
 (** [Make] builds a module satisfying [Intf] from a module satisfying [S]. *)

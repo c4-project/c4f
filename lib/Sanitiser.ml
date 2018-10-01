@@ -141,13 +141,6 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
       |> warn_unknown_instructions
       |> mangle_identifiers
 
-
-    let all_jump_symbols_in prog =
-      prog
-      |> List.filter ~f:LS.Statement.is_jump
-      |> List.map ~f:LS.Statement.symbol_set
-      |> Language.SymSet.union_list
-
     (** [irrelevant_instruction_types] lists the high-level types of
        instruction that can be thrown out when converting to a litmus
        test. *)
@@ -163,7 +156,7 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
     (** [remove_dead_labels prog] removes all labels in [prog] whose symbols
         aren't mentioned in jump instructions. *)
     let remove_dead_labels prog =
-      let jsyms = all_jump_symbols_in prog in
+      let jsyms = LS.jump_symbols prog in
       List.filter
         ~f:(fun stm -> match LS.Statement.statement_type stm with
                        | Language.ASLabel l -> Language.SymSet.mem jsyms l
