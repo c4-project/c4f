@@ -5,19 +5,6 @@ open Utils
 open Utils.MyContainers
 open Lang
 
-type config =
-  {
-    verbose : bool ref;
-
-    out_root_path : string ref;
-
-    results_paths : string Queue.t;
-
-    spec_file : string ref;
-  }
-
-let usage = "act [paths to comparator output]"
-
 type env =
   { vf    : Format.formatter
   ; root  : string
@@ -92,19 +79,6 @@ let proc_results (env : env) (cc_specs : CompilerSpec.set) (vf : Format.formatte
   with
     Sys_error e -> R.error_msgf "system error: %s" e
 
-let pp_config (f : Format.formatter) (cfg : config) : unit =
-  Format.pp_open_vbox f 0;
-  Format.pp_print_string f "Config --";
-  Format.pp_print_break f 0 4;
-  Format.pp_open_vbox f 0;
-  MyFormat.pp_kv f "Reading compiler specs from" MyFormat.pp_sr cfg.spec_file;
-  Format.pp_print_cut f ();
-  MyFormat.pp_kv f "memalloy results paths" MyFormat.pp_sq cfg.results_paths;
-  Format.pp_close_box f ();
-  Format.pp_print_cut f ();
-  Format.pp_close_box f ();
-  Format.pp_print_flush f ()
-
 let pp_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
   Format.pp_open_vbox f 0;
   Format.pp_print_string f "Compiler specs --";
@@ -125,51 +99,65 @@ let make_compiler_specs (specpath : string) =
                       ~f:(fun specs (c, spec) ->
                         Compiler.test spec >>| (fun _ -> (c, spec)::specs)
                       )
-let () =
-  let cfg : config =
-    { verbose = ref false
-    ; results_paths = Queue.create ()
-    ; out_root_path = ref Filename.current_dir_name
-    ; spec_file = ref (Filename.concat Filename.current_dir_name "compiler.spec")
-    }
-  in
 
-  let spec =
-    [ ("-o", Arg.Set_string cfg.out_root_path,
-       "The path under which output directories will be created.")
-    ; ("-v", Arg.Set cfg.verbose,
-       "Verbose mode.")
-    ; ("-c", Arg.Set_string cfg.spec_file,
-       "The compiler spec file to use.")
-    ; ("--", Arg.Rest (Queue.enqueue cfg.results_paths), "")
+let command =
+  let open Command.Let_syntax in
+  Command.basic
+    ~summary:"Main driver for the Automagic Compiler Tormentor"
+    [%map_open
+     let spec_file =
+       flag "spec"
+            (optional_with_default
+               (Filename.concat Filename.current_dir_name "compiler.spec")
+               string)
+            ~doc: "PATH the compiler spec file to use"
+     and out_root_path =
+       flag "output"
+            (optional_with_default
+               Filename.current_dir_name
+               string)
+            ~doc: "PATH the path under which output directories will be created"
+     and verbose =
+       flag "verbose"
+            no_arg
+            ~doc: "verbose mode"
+     and inpaths_anon =
+       anon (maybe (non_empty_sequence_as_list ("PATH" %: string)))
+     and inpaths_rest =
+       flag "--"
+            escape
+            ~doc: "PATHS any remaining arguments are treated as input paths"
+         in
+         fun () ->
+         let inpaths =
+           (Option.value ~default:[] inpaths_anon)
+           @ (Option.value ~default:[] inpaths_rest)
+         and verbose_fmt =
+           if verbose
+           then Format.err_formatter
+           else MyFormat.null_formatter ()
+         in
+         make_compiler_specs spec_file |>
+           R.reword_error_msg (fun _ -> R.msg "Compiler specs are invalid.")
+         >>= (
+           fun specs ->
+           pp_specs verbose_fmt specs;
+           let env =
+             { vf = verbose_fmt
+             ; root = out_root_path
+             ; specs = specs
+             }
+           in
+           List.fold_result inpaths
+                            ~init:()
+                            ~f:(fun _ -> proc_results env specs verbose_fmt);
+         )
+         |>
+           function
+           | Ok _ -> ()
+           | Error err ->
+              Format.eprintf "@[Fatal error:@.@[%a@]@]@." R.pp_msg err
     ]
-  in
-  Arg.parse spec (Queue.enqueue cfg.results_paths) usage;
 
-  let verbose_fmt =
-    if !(cfg.verbose)
-    then Format.err_formatter
-    else MyFormat.null_formatter ()
-  in
-  pp_config verbose_fmt cfg;
-
-  make_compiler_specs !(cfg.spec_file) |>
-    R.reword_error_msg (fun _ -> R.msg "Compiler specs are invalid.")
-  >>= (
-    fun specs ->
-    pp_specs verbose_fmt specs;
-    let env =
-      { vf = verbose_fmt
-      ; root = !(cfg.out_root_path)
-      ; specs = specs
-      }
-    in
-    Queue.fold_result cfg.results_paths
-                      ~init:()
-                      ~f:(fun _ -> proc_results env specs verbose_fmt);
-  )
-  |>
-    function
-    | Ok _ -> ()
-    | Error err ->
-       Format.eprintf "@[Fatal error:@.@[%a@]@]@." R.pp_msg err
+let () =
+  Command.run command
