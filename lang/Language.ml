@@ -35,6 +35,8 @@ let pp_name ?(show_sublang=true) f = function
                          X86Dialect.pp syn
 
 type abs_instruction =
+  | AIArith
+  | AIFence
   | AIJump
   | AIMove
   | AINop

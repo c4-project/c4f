@@ -135,6 +135,7 @@ type condition =
 type sizable_opcode =
   [ `Add
   | `Mov
+  | `Pop
   | `Push
   | `Sub
   ]
@@ -158,6 +159,7 @@ module ATTSizedOpcodeTable : (StringTable.Intf with type t = (sizable_opcode * s
 type basic_opcode =
   [ sizable_opcode
   | `Leave
+  | `Mfence
   | `Nop
   | `Ret
   ]

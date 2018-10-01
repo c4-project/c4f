@@ -262,6 +262,7 @@ module ConditionTable =
 type sizable_opcode =
   [ `Add
   | `Mov
+  | `Pop
   | `Push
   | `Sub
   ]
@@ -271,10 +272,11 @@ module SizableOpcodeTable =
     (struct
       type t = sizable_opcode
       let table =
-        [ `Add,   "add"
-        ; `Mov,   "mov"
-        ; `Push,  "push"
-        ; `Sub,   "sub"
+        [ `Add,  "add"
+        ; `Mov,  "mov"
+        ; `Pop,  "pop"
+        ; `Push, "push"
+        ; `Sub,  "sub"
         ]
     end)
 
@@ -304,6 +306,7 @@ module ATTSizedOpcodeTable =
 type basic_opcode =
   [ sizable_opcode
   | `Leave
+  | `Mfence
   | `Nop
   | `Ret
   ]
@@ -316,9 +319,10 @@ module BasicOpcodeTable =
         (SizableOpcodeTable.table
          :> (basic_opcode, string) List.Assoc.t)
         @
-        [ `Leave, "leave"
-        ; `Nop,   "nop"
-        ; `Ret,   "ret"
+        [ `Leave,  "leave"
+        ; `Mfence, "mfence"
+        ; `Nop,    "nop"
+        ; `Ret,    "ret"
         ]
     end)
 

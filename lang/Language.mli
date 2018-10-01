@@ -42,12 +42,14 @@ val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
 
 (** [abs_instruction] is an abstracted instruction. *)
 type abs_instruction =
-  | AIJump
-  | AIMove
-  | AINop
-  | AICall
-  | AIStack
-  | AIOther
+  | AIArith (* arithmetic *)
+  | AIFence (* memory fence *)
+  | AIJump  (* conditional or unconditional jump *)
+  | AIMove  (* move *)
+  | AINop   (* no operation *)
+  | AICall  (* calling-convention related instructions *)
+  | AIStack (* stack resizing and pointer manipulation *)
+  | AIOther (* unclassified instruction *)
 
 val min_abs_instruction : int
 val max_abs_instruction : int

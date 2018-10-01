@@ -61,18 +61,29 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
 
         let nop () = X86Ast.StmNop
 
+        let basic_instruction_type
+            : [< X86Ast.basic_opcode] -> Language.abs_instruction =
+          function
+          | `Add    -> Language.AIArith
+          | `Leave  -> Language.AICall
+          | `Mfence -> Language.AIFence
+          | `Mov    -> Language.AIMove
+          | `Nop    -> Language.AINop
+          | `Pop    -> Language.AIStack
+          | `Push   -> Language.AIStack
+          | `Ret    -> Language.AICall
+          | `Sub    -> Language.AIArith
+
         let instruction_type ({opcode; _} : X86Ast.instruction) =
           match opcode with
           | X86Ast.OpDirective _ ->
              (* handled by statement_type below. *)
              assert false
-          | X86Ast.OpBasic `Nop -> Language.AINop
           | X86Ast.OpJump _ -> Language.AIJump
-          | X86Ast.OpBasic `Push
-            | X86Ast.OpSized (`Push, _)-> Language.AIStack
-          | X86Ast.OpBasic `Ret
-            | X86Ast.OpBasic `Leave -> Language.AICall
-          | _ -> Language.AIOther
+          | X86Ast.OpBasic b -> basic_instruction_type b
+          | X86Ast.OpSized (b, _) -> basic_instruction_type b
+          | X86Ast.OpUnknown _ -> Language.AIOther
+
 
         let statement_type =
           function
