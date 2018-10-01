@@ -78,9 +78,14 @@ type bop =
   | BopPlus
   | BopMinus
 
+(** [location] enumerates memory locations: either
+    indirect seg/disp/base/index stanzas, or registers. *)
+type location =
+  | LocIndirect of indirect
+  | LocReg of reg
+
 type operand =
-  | OperandIndirect of indirect
-  | OperandReg of reg
+  | OperandLocation of location
   | OperandImmediate of disp
   | OperandString of string
   | OperandBop of operand * bop * operand

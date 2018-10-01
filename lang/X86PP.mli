@@ -62,6 +62,7 @@ module type S =
   sig
     val pp_reg : Format.formatter -> reg -> unit
     val pp_indirect : Format.formatter -> indirect -> unit
+    val pp_location : Format.formatter -> location -> unit
 
     val pp_bop : Format.formatter -> bop -> unit
     val pp_operand : Format.formatter -> operand -> unit

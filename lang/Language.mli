@@ -102,6 +102,8 @@ Most of these flags have corresponding Boolean accessors in
   type flag =
     [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
     | `ProgBoundary  (* A label that looks like a program boundary *)
+    | `StackManip    (* A statement that only serves to manipulate
+                        the call stack *)
     ] [@@deriving enum, sexp]
 
   (** [FlagTable] associates each [flag] with a string. *)
@@ -261,6 +263,11 @@ module type Intf = sig
        destination symbols. *)
     val is_unused_label : jsyms:SymSet.t -> t -> bool
 
+    (** [is_stack_manipulation stm] decides whether [stm] is a
+        stack manipulation, and therefore can be removed in litmus
+        tests. *)
+    val is_stack_manipulation : t -> bool
+
     (** [is_nop stm] decides whether [stm] appears to be a NOP. *)
     val is_nop : t -> bool
 
@@ -289,6 +296,6 @@ end
 
 (** [Make] builds a module satisfying [Intf] from a module satisfying [S]. *)
 module Make : functor (M : S) ->
-              (Intf with type Statement.t = M.Statement.t
-                     and type Location.t  = M.Location.t
-                     and type Constant.t  = M.Constant.t)
+              Intf with type Statement.t = M.Statement.t
+                    and type Location.t  = M.Location.t
+                    and type Constant.t  = M.Constant.t

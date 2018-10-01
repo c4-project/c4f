@@ -65,6 +65,7 @@ module type S =
   sig
     val pp_reg : Format.formatter -> reg -> unit
     val pp_indirect : Format.formatter -> indirect -> unit
+    val pp_location : Format.formatter -> location -> unit
     val pp_bop : Format.formatter -> bop -> unit
     val pp_operand : Format.formatter -> operand -> unit
     val pp_prefix : Format.formatter -> prefix -> unit
@@ -325,10 +326,14 @@ module Make (D : Dialect) =
                           ; '\\', '\\'
                           ]
 
+    let pp_location f =
+      function
+      | LocIndirect i -> pp_indirect f i
+      | LocReg r -> pp_reg f r
+
     let rec pp_operand f =
       function
-      | OperandIndirect i -> pp_indirect f i
-      | OperandReg r -> pp_reg f r
+      | OperandLocation l -> pp_location f l;
       | OperandImmediate d -> pp_immediate f d;
       | OperandString s ->
          Format.fprintf f "\"%s\"" (Staged.unstage string_escape s)

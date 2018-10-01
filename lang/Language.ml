@@ -125,6 +125,7 @@ module AbsStatement =
     type flag =
       [ `UnusedLabel
       | `ProgBoundary
+      | `StackManip
       ] [@@deriving enum, sexp]
 
     module FlagTable =
@@ -135,6 +136,7 @@ module AbsStatement =
             let table =
               [ `UnusedLabel, "unused label"
               ; `ProgBoundary, "program boundary"
+              ; `StackManip, "manipulates stack"
               ]
           end
         )
@@ -251,6 +253,7 @@ module type Intf = sig
     val is_jump : t -> bool
     val is_label : t -> bool
     val is_unused_label : jsyms:SymSet.t -> t -> bool
+    val is_stack_manipulation : t -> bool
     val is_nop : t -> bool
     val is_program_boundary : t -> bool
 
@@ -322,9 +325,28 @@ module Make (M : S) =
         | AbsStatement.Label l -> is_program_label l
         | _ -> false
 
+      let is_stack_manipulation stm =
+        match instruction_type stm with
+        | Some AbsInstruction.Stack -> true
+        | Some AbsInstruction.Move ->
+           (* Stack pointer transfers *)
+           (match instruction_operands stm with
+            | Some (AbsOperands.LocTransfer
+                      { src = AbsLocation.StackPointer
+                      ; dst = _
+                   })
+              | Some (AbsOperands.LocTransfer
+                        { src = _
+                        ; dst = AbsLocation.StackPointer
+                     })
+              -> true
+            | _ -> false)
+        | _ -> false
+
       let flags ~jsyms stm =
           [ is_unused_label ~jsyms stm, `UnusedLabel
-          ; is_program_boundary stm, `ProgBoundary
+          ; is_program_boundary    stm, `ProgBoundary
+          ; is_stack_manipulation  stm, `StackManip
           ]
           |> List.map ~f:(Tuple2.uncurry Option.some_if)
           |> List.filter_opt

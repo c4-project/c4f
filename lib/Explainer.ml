@@ -77,7 +77,7 @@ module Make (LS : Language.Intf) =
       | Jump  -> "jump"
       | Move  -> "move"
       | Nop   -> "no operation"
-      | Stack -> "stack manipulation"
+      | Stack -> "stack"
       | Other -> "?? instruction ??"
 
     let stringify_stm_basic =

@@ -148,6 +148,12 @@ indirect:
   | disp { { (X86Base.in_zero ()) with in_disp = Some $1 } }
     (* 0x4000 *)
 
+location:
+  | ATT_REG {X86Ast.LocReg $1}
+    (* %eax *)
+  | indirect {X86Ast.LocIndirect $1}
+    (* -8(%eax, %ebx, 2) *)
+
 (* Memory displacement *)
 disp:
   | k    { X86Ast.DispNumeric $1 }
@@ -163,10 +169,7 @@ prim_operand:
     (* $10 *)
   | STRING {X86Ast.OperandString $1}
     (* "Hello, world!" *)
-  | ATT_REG {X86Ast.OperandReg $1}
-    (* %eax *)
-  | indirect {X86Ast.OperandIndirect $1}
-    (* -8(%eax, %ebx, 2) *)
+  | location {X86Ast.OperandLocation $1}
 
 (* Numeric constant: hexadecimal or decimal *)
 k:

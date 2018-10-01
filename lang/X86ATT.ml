@@ -52,6 +52,35 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
 
       let is_program_label = X86Base.is_program_label
 
+      module Location = struct
+        type t = X86Ast.location
+        let pp = P.pp_location
+
+        let indirect_abs_type ( { in_seg; in_disp; in_base; in_index } : X86Ast.indirect) =
+          let open Language.AbsLocation in
+          match in_seg, in_disp, in_base, in_index with
+          (* In the sort of code act is going to analyse, ESP is almost
+             always pointing to the top of the stack. *)
+          | None, None, Some ESP, None ->
+             StackPointer
+          (* This might be incorrect. *)
+          | None, None, Some EBP, None ->
+             StackPointer
+          (* Typically, [ EBP - i ] is a stack location: EBP is the
+             frame pointer, and the x86 stack grows downwards. *)
+          | None, Some (DispNumeric i), Some EBP, None ->
+             StackOffset i
+          | _, _, _, _ -> Unknown
+
+        let abs_type =
+          let open Language.AbsLocation in
+          function
+          | X86Ast.LocReg ESP
+            | LocReg EBP -> StackPointer
+          | X86Ast.LocReg _ -> GeneralRegister
+          | X86Ast.LocIndirect i -> indirect_abs_type i
+      end
+
       module Statement = struct
         open X86Ast
 
@@ -59,21 +88,42 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
 
         let pp = P.pp_statement
 
+        let zero_operands (operands : operand list)
+            : Language.AbsOperands.t =
+          let open Language.AbsOperands in
+          if List.is_empty operands
+          then None
+          else Erroneous
+
+        let src_dst_operands (operands : operand list)
+          : Language.AbsOperands.t =
+          let open Language.AbsOperands in
+          let open X86Dialect.ATTTraits in
+          to_src_dst operands
+          |> Option.value_map
+               ~f:(function
+                   | { src = OperandLocation s
+                     ; dst = OperandLocation d
+                     } ->
+                      LocTransfer
+                        { src = Location.abs_type s
+                        ; dst = Location.abs_type d
+                        }
+                   | _ -> None (* TODO(@MattWindsor91): flag erroneous *)
+                  )
+               ~default:None
+
         let basic_operands (o : [< X86Ast.basic_opcode])
             (operands : X86Ast.operand list) =
           let open Language.AbsOperands in
           match o with
-          (* Zero-argument operands *)
           | `Leave
             | `Mfence
             | `Nop
-            | `Ret ->
-             if List.is_empty operands
-             then None
-             else Erroneous
+            | `Ret -> zero_operands operands
+          | `Mov -> src_dst_operands operands
           (* TODO(@MattWindsor91): analyse other opcodes! *)
           | `Add
-            | `Mov
             | `Pop
             | `Push
             | `Sub -> Other
@@ -104,6 +154,31 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
                            ; prefix = None
                            });
           [%expect {| <invalid operands> |}]
+
+        let%expect_test "instruction_operands_inner: mov %ESP, %EBP" =
+          Format.printf "%a@."
+                        Language.AbsOperands.pp
+                        (instruction_operands_inner
+                           { opcode = X86Ast.OpBasic `Mov
+                           ; operands = [ X86Ast.OperandLocation (X86Ast.LocReg ESP)
+                                        ; X86Ast.OperandLocation (X86Ast.LocReg EBP)
+                                        ]
+                           ; prefix = None
+                           });
+          [%expect {| &stack -> &stack |}]
+
+
+        let%expect_test "instruction_operands_inner: movl %ESP, %EBP" =
+          Format.printf "%a@."
+                        Language.AbsOperands.pp
+                        (instruction_operands_inner
+                           { opcode = X86Ast.OpSized (`Mov, X86SLong)
+                           ; operands = [ X86Ast.OperandLocation (X86Ast.LocReg ESP)
+                                        ; X86Ast.OperandLocation (X86Ast.LocReg EBP)
+                                        ]
+                           ; prefix = None
+                           });
+          [%expect {| &stack -> &stack |}]
 
 
         let instruction_operands =
@@ -155,15 +230,6 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
       module Constant = struct
         type t = X86Ast.operand (* TODO: this is too weak *)
         let pp = P.pp_operand
-      end
-
-      module Location = struct
-        type t = X86Ast.indirect (* TODO: as is this *)
-        let pp = P.pp_indirect
-
-        let abs_type _ =
-          let open Language.AbsLocation in
-          Unknown
       end
     end)
 

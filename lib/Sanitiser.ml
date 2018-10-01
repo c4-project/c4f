@@ -65,9 +65,6 @@ let%expect_test "mangle: sample" =
 
 module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.t) =
   struct
-    let remove_nops = MyList.exclude ~f:LS.Statement.is_nop
-    let remove_directives = MyList.exclude ~f:LS.Statement.is_directive
-
     let warn (fmt : Format.formatter -> unit) =
       let f = Format.err_formatter in
       Format.pp_open_hbox f ();
@@ -141,6 +138,9 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
       |> warn_unknown_instructions
       |> mangle_identifiers
 
+    let any (fs : ('a -> bool) list) (a : 'a) : bool =
+      List.exists ~f:(fun f -> f a) fs
+
     (** [irrelevant_instruction_types] lists the high-level types of
        instruction that can be thrown out when converting to a litmus
        test. *)
@@ -151,23 +151,29 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
         ; Stack
         ]
 
-    let remove_irrelevant_instructions =
-      MyList.exclude ~f:(LS.Statement.instruction_mem irrelevant_instruction_types)
+    let instruction_is_irrelevant =
+      LS.Statement.instruction_mem irrelevant_instruction_types
 
-    (** [remove_dead_labels prog] removes all labels in [prog] whose symbols
-        aren't mentioned in jump instructions. *)
-    let remove_dead_labels prog =
+    (** [remove_irrelevant_statements prog] completely removes
+       statements in [prog] that have no use in Litmus and cannot be
+       rewritten. *)
+    let remove_irrelevant_statements prog =
       let jsyms = LS.jump_symbols prog in
-      MyList.exclude ~f:(LS.Statement.is_unused_label ~jsyms) prog
+      let matchers =
+        [ instruction_is_irrelevant
+        ; LS.Statement.is_nop
+        ; LS.Statement.is_directive
+        ; LS.Statement.is_stack_manipulation
+        ; LS.Statement.is_unused_label ~jsyms
+        ]
+      in
+      MyList.exclude ~f:(any matchers) prog
 
     (** [sanitise_program] performs sanitisation on a single program. *)
     let sanitise_program prog =
       prog
       |> LH.on_program
-      |> remove_nops
-      |> remove_directives
-      |> remove_irrelevant_instructions
-      |> remove_dead_labels
+      |> remove_irrelevant_statements
       |> List.map ~f:sanitise_stm
 
     let sanitise_programs progs =

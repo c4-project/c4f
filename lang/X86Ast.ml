@@ -131,6 +131,21 @@ let fold_map_indirect_symbols ~f ~init indirect =
    | None   -> (init, indirect))
 
 (*
+ * Locations
+ *)
+
+type location =
+  | LocIndirect of indirect
+  | LocReg of reg
+
+let fold_map_location_symbols ~f ~init =
+  function
+  | LocReg r -> (init, LocReg r)
+  | LocIndirect ind ->
+     Tuple2.map_snd ~f:(fun x -> LocIndirect x)
+                    (fold_map_indirect_symbols ~f ~init ind)
+
+(*
  * Operators
  *)
 
@@ -143,18 +158,16 @@ type bop =
  *)
 
 type operand =
-  | OperandIndirect of indirect
-  | OperandReg of reg
+  | OperandLocation of location
   | OperandImmediate of disp
   | OperandString of string
   | OperandBop of operand * bop * operand
 
 let rec fold_map_operand_symbols ~f ~init =
   function
-  | OperandIndirect i ->
-     Tuple2.map_snd ~f:(fun x -> OperandIndirect x)
-                    (fold_map_indirect_symbols ~f ~init i)
-  | OperandReg r -> (init, OperandReg r)
+  | OperandLocation l ->
+     Tuple2.map_snd ~f:(fun x -> OperandLocation x)
+                    (fold_map_location_symbols ~f ~init l)
   | OperandImmediate d ->
      Tuple2.map_snd ~f:(fun x -> OperandImmediate x)
                     (fold_map_disp_symbols ~f ~init d)
