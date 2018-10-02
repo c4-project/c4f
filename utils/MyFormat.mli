@@ -2,8 +2,10 @@ open Core
 
 (** [null_formatter ()] is a formatter that silently discards anything
     printed to it. *)
-
 val null_formatter : unit -> Format.formatter
+
+(** [pp_csep f] prints a comma and space break on [f]. *)
+val pp_csep : Format.formatter -> unit -> unit
 
 (** [format_to_string pp v] runs formatter [pp] on value [v], and
     dumps the results into a string. *)

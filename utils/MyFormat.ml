@@ -5,6 +5,8 @@ let null_formatter () =
 
 let pp_option f ~pp = Option.iter ~f:(pp f)
 
+let pp_csep f () = Format.fprintf f ",@ "
+
 let pp_c_braces f pi =
   Format.pp_open_vbox f 4;
   Format.pp_print_char f '{';

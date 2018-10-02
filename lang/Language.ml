@@ -186,7 +186,7 @@ module AbsStatement =
              Format.pp_print_space f ();
              Format.pp_print_char f '(';
              Format.pp_open_hovbox f 0;
-             Format.pp_print_list ~pp_sep:(fun f _ -> Format.fprintf f ",@ ") pp_flag f xs;
+             Format.pp_print_list ~pp_sep:MyFormat.pp_csep pp_flag f xs;
              Format.pp_close_box f ();
              Format.pp_print_char f ')'
       end

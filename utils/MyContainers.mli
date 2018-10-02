@@ -15,9 +15,9 @@ module type ContainerExtensions = sig
      If [xs] is empty, return [default] if given, and [0]
      otherwise. *)
   val max_measure : measure:('a -> int)
-                    -> ?default:int
-                    -> 'a cont
-                    -> int
+    -> ?default:int
+    -> 'a cont
+    -> int
 end
 
 (** We produce a functor for extending any Core [Container] with
@@ -26,9 +26,14 @@ module ContainerExtend : functor (S : Container.S1) -> (ContainerExtensions with
 
 module MyArray : (ContainerExtensions with type 'a cont = 'a array)
 
-module MyList : sig
+module MyList :
+sig
   include (ContainerExtensions with type 'a cont = 'a list)
 
   (** [exclude ~f xs] is the inverse of [filter ~f xs]. *)
-  val exclude : f:('a -> bool) -> 'a cont -> 'a cont
+  val exclude : f:('a -> bool) -> 'a list -> 'a list
+
+  (** [right_pad ~padding xs] pads every list in xs with [padding],
+      ensuring all lists have equal length. *)
+  val right_pad : padding:'a -> 'a list list -> 'a list list
 end

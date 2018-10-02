@@ -135,14 +135,7 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
     (* TODO(MattWindsor91): divine the end of the program. *)
 
     let make_programs_uniform nop ps =
-      let maxlen =
-        ps
-        |> (List.max_elt ~compare:(fun x y -> Int.compare (List.length x) (List.length y)))
-        |> Option.value_map ~f:(List.length) ~default:0
-      in
-      List.map ~f:(fun p -> p @ List.init (maxlen - List.length p)
-                                          ~f:(Fn.const nop))
-               ps
+      MyList.right_pad ~padding:nop ps
 
     (** [mangle_identifiers] reduces identifiers into a form that herd
        can parse. *)
