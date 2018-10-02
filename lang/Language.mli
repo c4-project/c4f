@@ -163,6 +163,9 @@ end
 module type StatementS = sig
   type t
 
+  (** [loc] is the type of locations inside statements. *)
+  type loc
+
   (** Languages must supply a pretty-printer for their statements. *)
   include Core.Pretty_printer.S with type t := t
 
@@ -171,10 +174,22 @@ module type StatementS = sig
      [init].
 
      There are no guarantees on order. *)
-  val fold_map_symbols : f:('a -> string -> 'a * string) ->
-                         init:'a ->
-                         t ->
-                         ('a * t)
+  val fold_map_symbols
+    :  f:('a -> string -> 'a * string)
+    -> init:'a
+    -> t
+    -> ('a * t)
+
+  (** [fold_map_locations ~init ~f stm] maps [f] over every location
+     in [stm], threading through an accumulator with initial value
+     [init].
+
+     There are no guarantees on order. *)
+  val fold_map_locations
+    :  f:('a -> loc -> 'a * loc)
+    -> init:'a
+    -> t
+    -> ('a * t)
 
   (** [instruction_operands stm] tries to get abstract information
        about the operands of an instruction.  If [stm] isn't an
@@ -188,26 +203,33 @@ module type StatementS = sig
   val abs_type : t -> AbsStatement.t
 end
 
-module type LocationS = sig
+module type LocationS =
+sig
   type t
 
   (** Languages must supply a pretty-printer for their locations. *)
   include Core.Pretty_printer.S with type t := t
 
+  (** [make_heap_loc sym] creates a location referencing a symbolic heap
+      location named [sym]. *)
+  val make_heap_loc : string -> t
+
   (** [abs_type] gets the abstract type of a location. *)
   val abs_type : t -> AbsLocation.t
 end
 
-module type ConstantS = sig
+module type ConstantS =
+sig
   type t
   include Core.Pretty_printer.S with type t := t
 end
 
 (** [S] is the signature that Litmus languages must implement. *)
-module type S = sig
+module type S =
+sig
   include BaseS
-  module Statement : StatementS
   module Location : LocationS
+  module Statement : StatementS with type loc = Location.t
   module Constant : ConstantS
 end
 
@@ -216,6 +238,10 @@ end
     onto a bare-bones language [S]. *)
 module type Intf = sig
   include BaseS
+
+  module Location : sig
+    include LocationS
+  end
 
   module Statement : sig
     include StatementS
@@ -230,6 +256,11 @@ module type Intf = sig
     (** [symbol_set] retrieves the set of all symbols found in a given
        statement. *)
     val symbol_set : t -> SymSet.t
+
+    (** [map_locations ~f stm] maps [f] over every location in [stm].
+
+     There are no guarantees on order. *)
+    val map_locations : f:(Location.t -> Location.t) -> t -> t
 
     (*
      * Instruction analysis
@@ -281,10 +312,6 @@ module type Intf = sig
         a set of [stm_flag]s.  It uses [jsyms] to calculate whether
         the statement is an unused label. *)
     val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
-  end
-
-  module Location : sig
-    include LocationS
   end
 
   module Constant : sig

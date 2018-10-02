@@ -123,6 +123,16 @@ type indirect =
   ; in_index  : index option
   }
 
+let in_zero () =
+  { in_seg    = None
+  ; in_disp   = None
+  ; in_base   = None
+  ; in_index  = None
+  }
+
+let in_base_only r = { (in_zero ()) with in_base = Some r }
+let in_disp_only d = { (in_zero ()) with in_disp = Some d }
+
 let fold_map_indirect_symbols ~f ~init indirect =
   (match indirect.in_disp with
    | Some d ->
@@ -177,6 +187,17 @@ let rec fold_map_operand_symbols ~f ~init =
      let (init, r') = fold_map_operand_symbols ~f ~init r in
      (init, OperandBop (l', b, r'))
 
+let rec fold_map_operand_locations ~f ~init =
+  function
+  | OperandLocation l ->
+     Tuple2.map_snd ~f:(fun x -> OperandLocation x)
+                    (f init l)
+  | OperandImmediate d -> (init, OperandImmediate d)
+  | OperandString s -> (init, OperandString s)
+  | OperandBop (l, b, r) ->
+     let (init, l') = fold_map_operand_locations ~f ~init l in
+     let (init, r') = fold_map_operand_locations ~f ~init r in
+     (init, OperandBop (l', b, r'))
 
 (*
  * Prefixes
@@ -373,6 +394,12 @@ let fold_map_instruction_symbols ~f ~init ins =
                                 ~init
                                 ins.operands)
 
+let fold_map_instruction_locations ~f ~init ins =
+  Tuple2.map_snd ~f:(fun x -> { ins with operands = x })
+                 (List.fold_map ~f:(fun init -> fold_map_operand_locations ~f ~init)
+                                ~init
+                                ins.operands)
+
 (*
  * Statements
  *)
@@ -397,4 +424,12 @@ let fold_map_statement_symbols ~f ~init =
   | StmLabel l ->
      Tuple.T2.map_snd ~f:(fun x -> StmLabel x)
                       (f init l)
+  | StmNop -> (init, StmNop)
+
+let fold_map_statement_locations ~f ~init =
+  function
+  | StmInstruction i ->
+     Tuple.T2.map_snd ~f:(fun x -> StmInstruction x)
+                      (fold_map_instruction_locations ~f ~init i)
+  | StmLabel l -> (init, StmLabel l)
   | StmNop -> (init, StmNop)

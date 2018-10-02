@@ -27,7 +27,8 @@ open Core
 open Lang
 
 type ctx =
-  { jsyms : Language.SymSet.t
+  { progname : string option      (* Name of current thread/program *)
+  ; jsyms    : Language.SymSet.t  (* Currently live jump symbols *)
   }
 
 val initial_ctx : ctx

@@ -26,11 +26,13 @@ open Lang
 open Utils.MyContainers
 
 type ctx =
-  { jsyms    : Language.SymSet.t
+  { progname : string option
+  ; jsyms    : Language.SymSet.t
   }
 
 let initial_ctx =
-  { jsyms = Language.SymSet.empty
+  { progname = None
+  ; jsyms    = Language.SymSet.empty
   }
 
 module WithCtx =
@@ -99,10 +101,16 @@ let mangler =
      seems a bit more human-readable. *)
   String.Escaping.escape_gen_exn
     ~escape_char:'Z'
-    ~escapeworthy_map:[ '_', 'U'
-                      ; '$', 'D'
-                      ; '.', 'P'
-                      ; 'Z', 'Z'
+    (* We escape some things that couldn't possibly appear in legal
+       x86 assembler, but _might_ be generated during sanitisation. *)
+    ~escapeworthy_map:[ '+', 'A' (* Add *)
+                      ; ',', 'C' (* Comma *)
+                      ; '$', 'D' (* Dollar *)
+                      ; '.', 'F' (* Full stop *)
+                      ; '-', 'M' (* Minus *)
+                      ; '%', 'P' (* Percent *)
+                      ; '_', 'U' (* Underscore *)
+                      ; 'Z', 'Z' (* Z *)
                       ]
 let mangle ident =
   Staged.unstage mangler ident
@@ -137,6 +145,20 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
     let make_programs_uniform nop ps =
       MyList.right_pad ~padding:nop ps
 
+    let change_stack_to_heap stm =
+      WithCtx.peek
+        (fun { progname; _ } ->
+           let f ln =
+             match LS.Location.abs_type ln with
+             | Language.AbsLocation.StackOffset i ->
+               LS.Location.make_heap_loc
+                 (sprintf "t%ss%d"
+                    (Option.value ~default:"?" progname)
+                    i)
+                 | _ -> ln
+           in
+           LS.Statement.map_locations ~f stm)
+
     (** [mangle_identifiers] reduces identifiers into a form that herd
        can parse. *)
     let mangle_identifiers stm =
@@ -166,12 +188,12 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
        | _ -> ());
          stm
 
-
     (** [sanitise_stm] performs sanitisation at the single statement
        level. *)
     let sanitise_stm stm =
       let open WithCtx.Monad in
       LH.on_statement stm
+      >>= change_stack_to_heap
       (* Do warnings after the language-specific hook has done any
          reduction necessary, but before we start making broad-brush
          changes to the statements. *)
@@ -211,8 +233,19 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
            in
            MyList.exclude ~f:(any matchers) prog)
 
-    let calc_context (prog : LS.Statement.t list) =
-      { jsyms = LS.jump_symbols prog }
+    let update_ctx
+        (prog : LS.Statement.t list)
+        ?(progname : string option) =
+      WithCtx.run
+        (fun ctx ->
+           ( { jsyms    = LS.jump_symbols prog
+             ; progname = ( Option.value_map
+                              ~f:Option.some
+                              ~default:ctx.progname
+                              progname )
+             }
+           , prog
+           ))
 
     let bindL
       ~f
@@ -229,20 +262,22 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
 
 
     (** [sanitise_program] performs sanitisation on a single program. *)
-    let sanitise_program (prog : LS.Statement.t list)
+    let sanitise_program (i : int) (prog : LS.Statement.t list)
       : LS.Statement.t list =
       let open WithCtx.Monad in
       WithCtx.run'
         ((return prog)
+         >>= update_ctx ~progname:(sprintf "%d" i)
          >>= LH.on_program
          >>= remove_irrelevant_statements
          |>  bindL ~f:sanitise_stm
         )
-        (calc_context prog)
+        initial_ctx
+
 
     let sanitise_programs progs =
       progs
-      |> List.map ~f:sanitise_program
+      |> List.mapi ~f:sanitise_program
       |> make_programs_uniform (LS.Statement.nop ())
 
     let sanitise stms = sanitise_programs (split_programs stms)
@@ -294,5 +329,6 @@ struct
     >>| sub_to_add
 
   let on_program = WithCtx.Monad.return
+
   let on_location = WithCtx.Monad.return
 end

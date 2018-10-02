@@ -126,16 +126,16 @@ bop:
 (* Base/index/scale triple *)
 bis:
   | LPAR ATT_REG RPAR
-    { { (X86Base.in_zero ()) with in_base = Some $2 } }
+    { X86Ast.in_base_only $2 }
     (* (%eax) *)
   | LPAR option(ATT_REG) COMMA ATT_REG RPAR
-         { { (X86Base.in_zero ()) with in_base = $2;
+         { { (X86Ast.in_zero ()) with in_base = $2;
                                        in_index = Some (Unscaled $4) } }
     (* (%eax, %ebx)
        (    , %ebx) *)
   | LPAR option(ATT_REG) COMMA ATT_REG COMMA k RPAR
-         { { (X86Base.in_zero ()) with in_base = $2;
-                                       in_index = Some (Scaled ($4, $6)) } }
+         { { (X86Ast.in_zero ()) with in_base = $2;
+                                      in_index = Some (Scaled ($4, $6)) } }
     (* (%eax, %ebx, 2)
        (    , %ebx, 2) *)
 
@@ -145,7 +145,7 @@ indirect:
     (* (%eax, %ebx, 2) *)
   | disp bis { { $2 with in_disp = Some $1 } }
     (* -8(%eax, %ebx, 2) *)
-  | disp { { (X86Base.in_zero ()) with in_disp = Some $1 } }
+  | disp { X86Ast.in_disp_only $1 }
     (* 0x4000 *)
 
 location:

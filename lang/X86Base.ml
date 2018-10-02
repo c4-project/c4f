@@ -50,13 +50,6 @@ open X86Ast
 let parse_reg (s : string) : reg option =
   RegTable.of_string s
 
-let in_zero () =
-  { in_seg    = None
-  ; in_disp   = None
-  ; in_base   = None
-  ; in_index  = None
-  }
-
 type parse_error =
   | Statement
   | Instruction

@@ -56,6 +56,12 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
         type t = X86Ast.location
         let pp = P.pp_location
 
+        let make_heap_loc l =
+          l
+          |> X86Ast.DispSymbolic
+          |> X86Ast.in_disp_only
+          |> X86Ast.LocIndirect
+
         let indirect_abs_type ( { in_seg; in_disp; in_base; in_index } : X86Ast.indirect) =
           let open Language.AbsLocation in
           match in_seg, in_disp, in_base, in_index with
@@ -84,6 +90,7 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
         open X86Ast
 
         type t = X86Ast.statement
+        type loc = Location.t
 
         let pp = P.pp_statement
 
@@ -241,6 +248,7 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
           | StmNop -> Blank
 
         let fold_map_symbols = X86Ast.fold_map_statement_symbols
+        let fold_map_locations = X86Ast.fold_map_statement_locations
       end
 
       module Constant = struct

@@ -74,6 +74,19 @@ type indirect =
   ; in_index  : index option
   }
 
+(** [in_zero] creates an indirect reference with all fields empty.
+   This is useful only for creating other types of indirect reference:
+   the empty reference is invalid! *)
+val in_zero : unit -> indirect
+
+(** [in_base_only] creates an indirect reference with given
+   base register, and all other fields empty. *)
+val in_base_only : reg -> indirect
+
+(** [in_disp_only] creates an indirect reference with given
+   displacement, and all other fields empty. *)
+val in_disp_only : disp -> indirect
+
 type bop =
   | BopPlus
   | BopMinus
@@ -208,7 +221,17 @@ type t =
 
 It does *not* map [f] over string literals, opcodes, or directive
    names. *)
-val fold_map_statement_symbols : f:('a -> string -> ('a * string)) ->
-                                 init:'a ->
-                                 statement ->
-                                 ('a * statement)
+val fold_map_statement_symbols
+  :  f:('a -> string -> ('a * string))
+  -> init:'a
+  -> statement
+  -> ('a * statement)
+
+(** [fold_map_statement_symbols ~init ~f s] maps [f] across all memory
+   or register location references in [s], threading through an
+   accumulator with initial value [~init]. *)
+val fold_map_statement_locations
+  :  f:('a -> location -> ('a * location))
+  -> init:'a
+  -> statement
+  -> ('a * statement)
