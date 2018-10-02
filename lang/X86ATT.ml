@@ -173,7 +173,6 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
                            });
           [%expect {| &stack -> &stack |}]
 
-
         let%expect_test "instruction_operands_inner: movl %ESP, %EBP" =
           Format.printf "%a@."
                         Language.AbsOperands.pp

@@ -23,37 +23,87 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Assembly sanitisation *)
 
+open Core
 open Lang
 
-module type Intf = sig
+type ctx =
+  { jsyms : Language.SymSet.t
+  }
+
+val initial_ctx : ctx
+
+(** [WithCtx] is a state monad for attaching a dependency on a
+    sanitisation context to a computation. *)
+module WithCtx :
+sig
+  type 'a t
+
+  (** [make] creates a context-sensitive computation that can modify
+     the current context. *)
+  val make : (ctx -> (ctx * 'a)) -> 'a t
+
+  (** [peek] creates a context-sensitive computation that can look at
+     the current context, but not modify it. *)
+  val peek : (ctx -> 'a) -> 'a t
+
+  (** [run] unfolds a [WithCtx.t] into a function from context
+      to context and final result. *)
+  val run : 'a t -> ctx -> (ctx * 'a)
+
+  (** [run'] behaves like [run], but discards the final context. *)
+  val run' : 'a t -> ctx -> 'a
+
+  module Monad : Monad.S with type 'a t := 'a t
+end
+
+module type Intf =
+sig
   type statement
 
   (** [sanitise stms] sanitises a statement list, turning it into a
-     list of separate program lists with various litmus-unfriendly
-     elements removed or simplified. *)
+      list of separate program lists with various litmus-unfriendly
+      elements removed or simplified. *)
   val sanitise : statement list -> statement list list
 end
 
 (** [LangHook] is an interface for language-specific hooks into the
-   sanitisation process. *)
-module type LangHook = sig
+    sanitisation process. *)
+module type LangHook =
+sig
   type statement
+  type location
 
-  val on_program : statement list -> statement list
-  val on_statement : statement -> statement
+  (** [on_statement] is a hook mapped over each the program as a
+     whole. *)
+  val on_program :
+    (statement list) ->
+    (statement list) WithCtx.t
+
+  (** [on_statement] is a hook mapped over each statement in the
+     program. *)
+  val on_statement :
+    statement ->
+    statement WithCtx.t
+
+  (** [on_location] is a hook mapped over each location in the
+      program. *)
+  val on_location :
+    location ->
+    location WithCtx.t
 end
 
 (** [NullLangHook] is a [LangHook] that does nothing. *)
 module NullLangHook : functor (LS : Language.Intf) ->
-                      LangHook with type statement = LS.Statement.t
+  LangHook with type statement = LS.Statement.t
 
 (** [T] implements the assembly sanitiser for a given language. *)
 module T : functor (LS : Language.Intf) ->
-           functor (LH : LangHook with type statement = LS.Statement.t) ->
-           Intf with type statement := LS.Statement.t
+  functor (LH : LangHook with type statement = LS.Statement.t) ->
+    Intf with type statement := LS.Statement.t
 
 (** [X86] implements x86-specific sanitisation passes.
     It requires an [X86Dialect.Traits] module to tell it things about the
     current x86 dialect (for example, the order of operands). *)
-module X86 : functor (DT : X86Dialect.Traits) ->
-             LangHook with type statement = X86ATT.Lang.Statement.t
+module X86 : functor (DT : X86Dialect.Traits)
+  -> LangHook with type statement = X86ATT.Lang.Statement.t
+               and type location = X86ATT.Lang.Location.t

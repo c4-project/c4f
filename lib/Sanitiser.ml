@@ -25,6 +25,42 @@ open Core
 open Lang
 open Utils.MyContainers
 
+type ctx =
+  { jsyms    : Language.SymSet.t
+  }
+
+let initial_ctx =
+  { jsyms = Language.SymSet.empty
+  }
+
+module WithCtx =
+struct
+  type 'a t = ctx -> (ctx * 'a)
+
+  let run = Fn.id
+  let run' f ctx = f ctx |> snd
+  let make = Fn.id
+  let peek f ctx = ctx, f ctx
+
+  module Monad = Monad.Make (
+    struct
+      type nonrec 'a t = 'a t
+
+      let map' wc ~f =
+        fun ctx ->
+          let (ctx', a) = wc ctx in
+          (ctx', f a)
+      let map = `Custom map'
+      let bind wc ~f =
+        fun ctx ->
+          let (ctx', a) = wc ctx in
+          (f a) ctx'
+      let return a = fun initial_ctx -> (initial_ctx, a)
+    end
+    )
+end
+
+
 module type Intf = sig
   type statement
 
@@ -33,18 +69,30 @@ end
 
 module type LangHook = sig
   type statement
+  type location
 
-  val on_program : statement list -> statement list
-  val on_statement : statement -> statement
+  val on_program :
+    (statement list) ->
+    (statement list) WithCtx.t
+
+  val on_statement :
+    statement ->
+    statement WithCtx.t
+
+  val on_location :
+    location ->
+    location WithCtx.t
 end
 
 module NullLangHook (LS : Language.Intf) =
-  struct
-    type statement = LS.Statement.t
+struct
+  type statement = LS.Statement.t
+  type location = LS.Location.t
 
-    let on_program = Fn.id
-    let on_statement = Fn.id
-  end
+  let on_program = WithCtx.Monad.return
+  let on_statement = WithCtx.Monad.return
+  let on_location = WithCtx.Monad.return
+end
 
 let mangler =
   (* We could always just use something like Base36 here, but this
@@ -129,14 +177,14 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
     (** [sanitise_stm] performs sanitisation at the single statement
        level. *)
     let sanitise_stm stm =
-      stm
-      |> LH.on_statement
+      let open WithCtx.Monad in
+      LH.on_statement stm
       (* Do warnings after the language-specific hook has done any
          reduction necessary, but before we start making broad-brush
          changes to the statements. *)
-      |> warn_unknown_statements
-      |> warn_unknown_instructions
-      |> mangle_identifiers
+      >>| warn_unknown_statements
+      >>| warn_unknown_instructions
+      >>| mangle_identifiers
 
     let any (fs : ('a -> bool) list) (a : 'a) : bool =
       List.exists ~f:(fun f -> f a) fs
@@ -158,23 +206,46 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
        statements in [prog] that have no use in Litmus and cannot be
        rewritten. *)
     let remove_irrelevant_statements prog =
-      let jsyms = LS.jump_symbols prog in
-      let matchers =
-        [ instruction_is_irrelevant
-        ; LS.Statement.is_nop
-        ; LS.Statement.is_directive
-        ; LS.Statement.is_stack_manipulation
-        ; LS.Statement.is_unused_label ~jsyms
-        ]
-      in
-      MyList.exclude ~f:(any matchers) prog
+      WithCtx.peek
+        (fun { jsyms; _ } ->
+           let matchers =
+             [ instruction_is_irrelevant
+             ; LS.Statement.is_nop
+             ; LS.Statement.is_directive
+             ; LS.Statement.is_stack_manipulation
+             ; LS.Statement.is_unused_label ~jsyms
+             ]
+           in
+           MyList.exclude ~f:(any matchers) prog)
+
+    let calc_context (prog : LS.Statement.t list) =
+      { jsyms = LS.jump_symbols prog }
+
+    let bindL
+      ~f
+      (xs : ('a list) WithCtx.t) :
+      ('b list) WithCtx.t =
+      let open WithCtx.Monad.Let_syntax in
+      xs
+      >>= (List.fold_right
+            ~init:(return [])
+            ~f:(fun x m ->
+                let%bind x' = f x in
+                let%bind m' = m in
+                return (x'::m')))
+
 
     (** [sanitise_program] performs sanitisation on a single program. *)
-    let sanitise_program prog =
-      prog
-      |> LH.on_program
-      |> remove_irrelevant_statements
-      |> List.map ~f:sanitise_stm
+    let sanitise_program (prog : LS.Statement.t list)
+      : LS.Statement.t list =
+      let open WithCtx.Monad in
+      WithCtx.run'
+        ((return prog)
+         >>= LH.on_program
+         >>= remove_irrelevant_statements
+         |>  bindL ~f:sanitise_stm
+        )
+        (calc_context prog)
 
     let sanitise_programs progs =
       progs
@@ -187,45 +258,48 @@ module T (LS : Language.Intf) (LH : LangHook with type statement = LS.Statement.
 (* TODO(@MattWindsor91): should this move someplace else? *)
 
 module X86 (DT : X86Dialect.Traits) =
-  struct
-    type statement = X86Ast.statement
+struct
+  open X86Ast
 
-    open X86Ast
+  type nonrec statement = statement
+  type nonrec location = location
 
-    let negate = function
-      | DispNumeric k -> OperandImmediate (DispNumeric (-k))
-      | DispSymbolic s -> OperandBop ( OperandImmediate (DispNumeric 0)
-                                     , BopMinus
-                                     , OperandImmediate (DispSymbolic s)
-                                     )
+  let negate = function
+    | DispNumeric k -> OperandImmediate (DispNumeric (-k))
+    | DispSymbolic s -> OperandBop ( OperandImmediate (DispNumeric 0)
+                                   , BopMinus
+                                   , OperandImmediate (DispSymbolic s)
+                                   )
 
-    let sub_to_add_ops : operand list -> operand list option =
-      DT.bind_src_dst
-        ~f:(function
-            | {src = OperandImmediate s; dst} -> Some {src = negate s; dst}
-            | _ -> None)
+  let sub_to_add_ops : operand list -> operand list option =
+    DT.bind_src_dst
+      ~f:(function
+          | {src = OperandImmediate s; dst} -> Some {src = negate s; dst}
+          | _ -> None)
 
-    let sub_to_add =
-      function
-      | StmInstruction si ->
-         StmInstruction
-           (match si with
-            | { prefix; opcode = OpBasic `Sub; operands} as op ->
-               Option.value_map
-                 ~default:op
-                 ~f:(fun ops' -> { prefix ; opcode = OpBasic `Add; operands = ops' })
-                 (sub_to_add_ops operands)
-            | { prefix; opcode = OpSized (`Sub, s); operands} as op ->
-               Option.value_map
-                 ~default:op
-                 ~f:(fun ops' -> { prefix ; opcode = OpSized (`Add, s); operands = ops' })
-                 (sub_to_add_ops operands)
-            | _ -> si)
-      | x -> x
+  let sub_to_add =
+    function
+    | StmInstruction si ->
+      StmInstruction
+        (match si with
+         | { prefix; opcode = OpBasic `Sub; operands} as op ->
+           Option.value_map
+             ~default:op
+             ~f:(fun ops' -> { prefix ; opcode = OpBasic `Add; operands = ops' })
+             (sub_to_add_ops operands)
+         | { prefix; opcode = OpSized (`Sub, s); operands} as op ->
+           Option.value_map
+             ~default:op
+             ~f:(fun ops' -> { prefix ; opcode = OpSized (`Add, s); operands = ops' })
+             (sub_to_add_ops operands)
+         | _ -> si)
+    | x -> x
 
-    let on_statement stm =
-      stm
-      |> sub_to_add
+  let on_statement stm =
+    let open WithCtx.Monad in
+    return stm
+    >>| sub_to_add
 
-    let on_program = Fn.id
-  end
+  let on_program = WithCtx.Monad.return
+  let on_location = WithCtx.Monad.return
+end

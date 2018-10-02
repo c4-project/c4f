@@ -176,7 +176,6 @@ module type StatementS = sig
                          t ->
                          ('a * t)
 
-
   (** [instruction_operands stm] tries to get abstract information
        about the operands of an instruction.  If [stm] isn't an
        instruction, it returns [None].  *)
