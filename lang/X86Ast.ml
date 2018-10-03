@@ -426,10 +426,10 @@ let fold_map_statement_symbols ~f ~init =
                       (f init l)
   | StmNop -> (init, StmNop)
 
-let fold_map_statement_locations ~f ~init =
+let fold_map_statement_instructions ~f ~init =
   function
   | StmInstruction i ->
      Tuple.T2.map_snd ~f:(fun x -> StmInstruction x)
-                      (fold_map_instruction_locations ~f ~init i)
+                      (f init i)
   | StmLabel l -> (init, StmLabel l)
   | StmNop -> (init, StmNop)

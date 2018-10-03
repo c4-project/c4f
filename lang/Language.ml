@@ -53,8 +53,7 @@ let%expect_test "pp_name: default" =
     (fun a -> pp_name a) (X86 X86Dialect.Herd7);
   [%expect {| X86 (Herd7) |}]
 
-module AbsInstruction =
-struct
+module AbsInstruction = struct
   type t =
     | Arith
     | Fence
@@ -123,8 +122,7 @@ struct
     | Unknown           -> String.pp      f "??"
 end
 
-module AbsStatement =
-struct
+module AbsStatement = struct
   type t =
     | Directive of string
     | Instruction of AbsInstruction.t
@@ -165,8 +163,7 @@ struct
     |> Option.value ~default:"??"
     |> String.pp f
 
-  module FlagSet =
-  struct
+  module FlagSet = struct
     include
       Set.Make(
       struct
@@ -192,11 +189,9 @@ struct
         Format.pp_close_box f ();
         Format.pp_print_char f ')'
   end
-
 end
 
-module AbsOperands =
-struct
+module AbsOperands = struct
   type t =
     | None
     | LocTransfer of (AbsLocation.t, AbsLocation.t) SrcDst.t
@@ -221,134 +216,188 @@ end
 
 module SymSet = Set.Make(String)
 
-module type BaseS =
-sig
+module type BaseS = sig
   val name : name
   val is_program_label : string -> bool
 end
 
-module type StatementS =
-sig
+module type StatementS = sig
   type t
-  type loc
+  type ins
 
-  include Core.Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
 
-  val fold_map_symbols
-    :  f:('a -> string -> 'a * string)
-    -> init:'a
-    -> t
-    -> ('a * t)
+  module OnSymbolsS
+    : FoldMap.S with type t = string
+                 and type cont = t
+  module OnInstructionsS
+    : FoldMap.S with type t = ins
+                 and type cont = t
 
-  val fold_map_locations
-    :  f:('a -> loc -> 'a * loc)
-    -> init:'a
-    -> t
-    -> ('a * t)
-
-  val instruction_operands : t -> AbsOperands.t option
-
-  val nop : unit -> t
+  val empty : unit -> t
   val abs_type : t -> AbsStatement.t
 end
 
-module type LocationS =
-sig
+module type InstructionS = sig
   type t
-  include Core.Pretty_printer.S with type t := t
+  type loc
+
+  include Pretty_printer.S with type t := t
+
+  module OnSymbolsS
+    : FoldMap.S with type t = string
+                 and type cont = t
+  module OnLocationsS
+    : FoldMap.S with type t = loc
+                 and type cont = t
+
+  val abs_operands : t -> AbsOperands.t
+  val abs_type : t -> AbsInstruction.t
+end
+
+module type LocationS = sig
+  type t
+
+  include Pretty_printer.S with type t := t
 
   val make_heap_loc : string -> t
-
   val abs_type : t -> AbsLocation.t
 end
 
-module type ConstantS =
-sig
+module type ConstantS = sig
   type t
   include Core.Pretty_printer.S with type t := t
 end
 
-module type S =
-sig
+module type S = sig
   include BaseS
-  module Location : LocationS
-  module Statement : StatementS with type loc = Location.t
+
   module Constant : ConstantS
+  module Location : LocationS
+  module Instruction : InstructionS with type loc = Location.t
+  module Statement : StatementS with type ins = Instruction.t
 end
 
-module type Intf =
-sig
+module type Intf = sig
   include BaseS
 
-  module Location :
-  sig
+  module Constant : sig
+    include ConstantS
+  end
+
+  module Location : sig
     include LocationS
+  end
+
+  module Instruction : sig
+    include InstructionS
+
+    module OnSymbols
+      : FoldMap.SetIntf with type t = string
+                         and type cont = t
+    module OnLocations
+      : FoldMap.Intf with type t = Location.t
+                      and type cont = t
+
+    val mem : AbsInstruction.Set.t -> t -> bool
+    val is_jump : t -> bool
+    val is_stack_manipulation : t -> bool
   end
 
   module Statement :
   sig
     include StatementS
 
-    val map_symbols : f:(string -> string) -> t -> t
-    val symbol_set : t -> SymSet.t
+    module OnSymbols
+      : FoldMap.SetIntf with type t = string
+                         and type cont = t
+    module OnInstructions
+      : FoldMap.Intf with type t = Instruction.t
+                      and type cont = t
 
-    val map_locations : f:(Location.t -> Location.t) -> t -> t
 
-    val instruction_type : t -> AbsInstruction.t option
     val instruction_mem : AbsInstruction.Set.t -> t -> bool
+    val is_jump : t -> bool
+    val is_stack_manipulation : t -> bool
 
     val is_directive : t -> bool
-    val is_jump : t -> bool
     val is_label : t -> bool
     val is_unused_label : jsyms:SymSet.t -> t -> bool
-    val is_stack_manipulation : t -> bool
     val is_nop : t -> bool
     val is_program_boundary : t -> bool
 
     val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
   end
 
-  module Constant :
-  sig
-    include ConstantS
-  end
 
   val jump_symbols : Statement.t list -> SymSet.t
 end
 
-module Make (M : S) =
-struct
+module Make (M : S) = struct
   let name = M.name
   let is_program_label = M.is_program_label
+
+  module Instruction = struct
+    include M.Instruction
+
+    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (SymSet)
+    module OnLocations = FoldMap.Make (OnLocationsS)
+
+    let is_jump ins =
+      match abs_type ins with
+      | AbsInstruction.Jump -> true
+      | _ -> false
+
+    let is_stack_manipulation ins =
+      match abs_type ins with
+      | AbsInstruction.Stack -> true
+      | AbsInstruction.Arith -> begin
+          (* Stack pointer movements *)
+          match abs_operands ins with
+          | AbsOperands.IntImmediate
+              { src = _
+              ; dst = AbsLocation.StackPointer
+              }
+            -> true
+          | _ -> false
+        end
+      | AbsInstruction.Move -> begin
+          (* Stack pointer transfers *)
+          match abs_operands ins with
+          | AbsOperands.LocTransfer
+              { src = AbsLocation.StackPointer
+              ; dst = _
+              }
+          | AbsOperands.LocTransfer
+              { src = _
+              ; dst = AbsLocation.StackPointer
+              }
+            -> true
+          | _ -> false
+        end
+      | _ -> false
+
+    let mem s i = AbsInstruction.Set.mem s (abs_type i)
+  end
 
   module Statement = struct
     include M.Statement
 
-    let map_symbols ~f stm =
-      snd (fold_map_symbols ~f:(fun _ x -> ((), f x)) ~init:() stm)
+    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (SymSet)
+    module OnInstructions = FoldMap.Make (OnInstructionsS)
 
-    let symbol_set stm =
-      fst (fold_map_symbols ~f:(fun set x -> SymSet.add set x, x) ~init:SymSet.empty stm)
-    let map_locations ~f stm =
-      snd (fold_map_locations ~f:(fun _ x -> ((), f x)) ~init:() stm)
+    let is_jump =
+      OnInstructions.exists ~f:Instruction.is_jump
 
-    let instruction_type stm =
-      match abs_type stm with
-      | AbsStatement.Instruction i -> Some i
-      | _ -> None
+    let is_stack_manipulation =
+      OnInstructions.exists ~f:Instruction.is_stack_manipulation
 
-    let instruction_mem set stm =
-      Option.exists ~f:(fun it -> AbsInstruction.Set.mem set it)
-        (instruction_type stm)
+    let instruction_mem s =
+      OnInstructions.exists ~f:(Instruction.mem s)
 
     let is_directive stm =
       match abs_type stm with
       | AbsStatement.Directive _ -> true
-      | _ -> false
-
-    let is_jump stm =
-      match instruction_type stm with
-      | Some AbsInstruction.Jump -> true
       | _ -> false
 
     let is_label stm =
@@ -359,7 +408,7 @@ struct
     let is_unused_label ~jsyms stm =
       is_label stm
       && SymSet.is_empty
-        (SymSet.inter jsyms (symbol_set stm))
+        (SymSet.inter jsyms (OnSymbols.set stm))
 
     let is_nop stm =
       match abs_type stm with
@@ -370,33 +419,6 @@ struct
     let is_program_boundary stm =
       match abs_type stm with
       | AbsStatement.Label l -> is_program_label l
-      | _ -> false
-
-    let is_stack_manipulation stm =
-      match instruction_type stm with
-      | Some AbsInstruction.Stack -> true
-      | Some AbsInstruction.Arith ->
-        (* Stack pointer movements *)
-        (match instruction_operands stm with
-         | Some (AbsOperands.IntImmediate
-                   { src = _
-                   ; dst = AbsLocation.StackPointer
-                   })
-           -> true
-         | _ -> false)
-      | Some AbsInstruction.Move ->
-        (* Stack pointer transfers *)
-        (match instruction_operands stm with
-         | Some (AbsOperands.LocTransfer
-                   { src = AbsLocation.StackPointer
-                   ; dst = _
-                   })
-         | Some (AbsOperands.LocTransfer
-                   { src = _
-                   ; dst = AbsLocation.StackPointer
-                   })
-           -> true
-         | _ -> false)
       | _ -> false
 
     let flags ~jsyms stm =
@@ -422,6 +444,6 @@ struct
   let jump_symbols prog =
     prog
     |> List.filter ~f:Statement.is_jump
-    |> List.map ~f:Statement.symbol_set
+    |> List.map ~f:Statement.OnSymbols.set
     |> SymSet.union_list
 end

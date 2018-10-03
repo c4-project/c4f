@@ -215,6 +215,32 @@ type t =
   ; program : statement list
   }
 
+(*
+ * Traversing an AST
+ *)
+
+(** [fold_map_instruction_symbols ~init ~f s] maps [f] across all
+   identifier symbols in [i] (labels, memory locations, etc.),
+   threading through an accumulator with initial value [~init].
+
+    It does *not* map [f] over string literals, opcodes, or directive
+   names. *)
+val fold_map_instruction_symbols
+  :  f:('a -> string -> ('a * string))
+  -> init:'a
+  -> instruction
+  -> ('a * instruction)
+
+
+(** [fold_map_instruction_locations ~init ~f i] maps [f] across all memory
+   or register location references in [i], threading through an
+   accumulator with initial value [~init]. *)
+val fold_map_instruction_locations
+  :  f:('a -> location -> ('a * location))
+  -> init:'a
+  -> instruction
+  -> ('a * instruction)
+
 (** [fold_map_statement_symbols ~init ~f s] maps [f] across all
    identifier symbols in [s] (labels, memory locations, etc.),
    threading through an accumulator with initial value [~init].
@@ -227,11 +253,11 @@ val fold_map_statement_symbols
   -> statement
   -> ('a * statement)
 
-(** [fold_map_statement_symbols ~init ~f s] maps [f] across all memory
-   or register location references in [s], threading through an
+(** [fold_map_statement_instructions ~init ~f s] maps [f] across all
+   instructions in [s], threading through an
    accumulator with initial value [~init]. *)
-val fold_map_statement_locations
-  :  f:('a -> location -> ('a * location))
+val fold_map_statement_instructions
+  :  f:('a -> instruction -> ('a * instruction))
   -> init:'a
   -> statement
   -> ('a * statement)

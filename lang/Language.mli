@@ -161,46 +161,58 @@ end
 (** [StatementS] is the signature that must be implemented by
     act languages in regards to their statement types. *)
 module type StatementS = sig
+  (** [t] is the type of statements. *)
   type t
 
-  (** [loc] is the type of locations inside statements. *)
-  type loc
+  (** [ins] is the type of instructions inside statements. *)
+  type ins
 
   (** Languages must supply a pretty-printer for their statements. *)
   include Core.Pretty_printer.S with type t := t
 
-  (** [fold_map_symbols ~init ~f stm] maps [f] over every symbol in
-     [stm], threading through an accumulator with initial value
-     [init].
+  (** They must allow fold-mapping over symbols... *)
+  module OnSymbolsS
+    : FoldMap.S with type t = string
+                 and type cont = t
 
-     There are no guarantees on order. *)
-  val fold_map_symbols
-    :  f:('a -> string -> 'a * string)
-    -> init:'a
-    -> t
-    -> ('a * t)
+  (** ...and over instructions. *)
+  module OnInstructionsS
+    : FoldMap.S with type t = ins
+                 and type cont = t
 
-  (** [fold_map_locations ~init ~f stm] maps [f] over every location
-     in [stm], threading through an accumulator with initial value
-     [init].
-
-     There are no guarantees on order. *)
-  val fold_map_locations
-    :  f:('a -> loc -> 'a * loc)
-    -> init:'a
-    -> t
-    -> ('a * t)
-
-  (** [instruction_operands stm] tries to get abstract information
-       about the operands of an instruction.  If [stm] isn't an
-       instruction, it returns [None].  *)
-  val instruction_operands : t -> AbsOperands.t option
-
-  (** [nop] builds a no-op instruction. *)
-  val nop : unit -> t
+  (** [empty] builds an empty statement. *)
+  val empty : unit -> t
 
   (** [abs_type stm] gets the abstract type of a statement. *)
   val abs_type : t -> AbsStatement.t
+end
+
+module type InstructionS = sig
+  (** [t] is the type of instructions. *)
+  type t
+
+  (** [loc] is the type of locations inside instructions. *)
+  type loc
+
+  (** Languages must supply a pretty-printer for their instructions. *)
+  include Core.Pretty_printer.S with type t := t
+
+  (** They must allow fold-mapping over symbols... *)
+  module OnSymbolsS
+    : FoldMap.S with type t = string
+                 and type cont = t
+
+  (** ...and over locations. *)
+  module OnLocationsS
+    : FoldMap.S with type t = loc
+                 and type cont = t
+
+  (** [operands ins] gets the abstracted operands of instruction
+     [ins]. *)
+  val abs_operands : t -> AbsOperands.t
+
+  (** [abs_type ins] gets the abstract type of instruction [ins]. *)
+  val abs_type : t -> AbsInstruction.t
 end
 
 module type LocationS =
@@ -214,7 +226,7 @@ sig
       location named [sym]. *)
   val make_heap_loc : string -> t
 
-  (** [abs_type] gets the abstract type of a location. *)
+  (** [abs_type loc] gets the abstract type of a location. *)
   val abs_type : t -> AbsLocation.t
 end
 
@@ -228,9 +240,10 @@ end
 module type S =
 sig
   include BaseS
-  module Location : LocationS
-  module Statement : StatementS with type loc = Location.t
   module Constant : ConstantS
+  module Location : LocationS
+  module Instruction : InstructionS with type loc = Location.t
+  module Statement : StatementS with type ins = Instruction.t
 end
 
 (** [Intf] is the user-facing interface module for act languages.
@@ -239,41 +252,75 @@ end
 module type Intf = sig
   include BaseS
 
+  module Constant : sig
+    include ConstantS
+  end
+
   module Location : sig
     include LocationS
+  end
+
+  module Instruction : sig
+    include InstructionS
+
+    (** [OnSymbols] is an extension of the incoming
+        [InstructionS.OnSymbolsS], including symbol map operations. *)
+    module OnSymbols
+      : FoldMap.SetIntf with type t = string
+                         and type cont = t
+
+    (** [OnLocations] is an extension of the incoming
+        [StatementS.OnLocationsS]. *)
+    module OnLocations
+      : FoldMap.Intf with type t = Location.t
+                      and type cont = t
+
+    (** [mem set ins] checks whether [ins]'s abstract type is in the
+       set [set]. *)
+    val mem : AbsInstruction.Set.t -> t -> bool
+
+    (** [is_jump ins] decides whether [ins] appears to be a
+     jump instruction. *)
+    val is_jump : t -> bool
+
+    (** [is_stack_manipulation ins] decides whether [ins] is a
+        stack manipulation, and therefore can be removed in litmus
+        tests. *)
+    val is_stack_manipulation : t -> bool
   end
 
   module Statement : sig
     include StatementS
 
-    (** [map_symbols ~f stm] maps [f] over every symbol in [stm].
+    (** [OnSymbols] is an extension of the incoming
+        [StatementS.OnSymbolsS], including symbol map operations. *)
+    module OnSymbols
+      : FoldMap.SetIntf with type t = string
+                         and type cont = t
 
-     There are no guarantees on order. *)
-    val map_symbols : f:(string -> string) ->
-                      t ->
-                      t
-
-    (** [symbol_set] retrieves the set of all symbols found in a given
-       statement. *)
-    val symbol_set : t -> SymSet.t
-
-    (** [map_locations ~f stm] maps [f] over every location in [stm].
-
-     There are no guarantees on order. *)
-    val map_locations : f:(Location.t -> Location.t) -> t -> t
+    (** [OnInstructions] is an extension of the incoming
+        [StatementS.OnInstructionsS]. *)
+    module OnInstructions
+      : FoldMap.Intf with type t = Instruction.t
+                      and type cont = t
 
     (*
-     * Instruction analysis
+     * Shortcuts for querying instructions in a statement
      *)
-
-    (** [instruction_type stm] gets the abstract type of an instruction.
-     If [stm] isn't an instruction, it returns [None].  *)
-    val instruction_type : t -> AbsInstruction.t option
 
     (** [instruction_mem set stm] checks whether [stm] is an
        instruction and, if so, whether its abstract type is in the set
        [set]. *)
     val instruction_mem : AbsInstruction.Set.t -> t -> bool
+
+    (** [is_jump stm] decides whether [stm] appears to be a
+     jump instruction. *)
+    val is_jump : t -> bool
+
+    (** [is_stack_manipulation stm] decides whether [stm] is a
+        stack manipulation, and therefore can be removed in litmus
+        tests. *)
+    val is_stack_manipulation : t -> bool
 
     (*
      * Statement analysis
@@ -283,10 +330,6 @@ module type Intf = sig
      assembler directive. *)
     val is_directive : t -> bool
 
-    (** [is_jump stm] decides whether [stm] appears to be a
-     jump instruction. *)
-    val is_jump : t -> bool
-
     (** [is_label stm] decides whether [stm] appears to be an
      label. *)
     val is_label : t -> bool
@@ -295,11 +338,6 @@ module type Intf = sig
        whose symbol doesn't appear in the given set [jsyms] of jump
        destination symbols. *)
     val is_unused_label : jsyms:SymSet.t -> t -> bool
-
-    (** [is_stack_manipulation stm] decides whether [stm] is a
-        stack manipulation, and therefore can be removed in litmus
-        tests. *)
-    val is_stack_manipulation : t -> bool
 
     (** [is_nop stm] decides whether [stm] appears to be a NOP. *)
     val is_nop : t -> bool
@@ -314,10 +352,6 @@ module type Intf = sig
     val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
   end
 
-  module Constant : sig
-    include ConstantS
-  end
-
   (** [jump_symbols] retrieves the set of all symbols that appear to be
       jump targets. *)
   val jump_symbols : Statement.t list -> SymSet.t
@@ -325,6 +359,8 @@ end
 
 (** [Make] builds a module satisfying [Intf] from a module satisfying [S]. *)
 module Make : functor (M : S) ->
-              Intf with type Statement.t = M.Statement.t
-                    and type Location.t  = M.Location.t
-                    and type Constant.t  = M.Constant.t
+  Intf with type Constant.t    = M.Constant.t
+        and type Location.t    = M.Location.t
+        and type Instruction.t = M.Instruction.t
+        and type Statement.t   = M.Statement.t
+

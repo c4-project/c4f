@@ -86,13 +86,27 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
           | X86Ast.LocIndirect i -> indirect_abs_type i
       end
 
-      module Statement = struct
+      module Instruction = struct
         open X86Ast
 
-        type t = X86Ast.statement
+        type t = X86Ast.instruction
         type loc = Location.t
 
-        let pp = P.pp_statement
+        let pp = P.pp_instruction
+
+        let basic_instruction_type
+            : [< X86Ast.basic_opcode] -> Language.AbsInstruction.t =
+          let open Language.AbsInstruction in
+          function
+          | `Add    -> Arith
+          | `Leave  -> Call
+          | `Mfence -> Fence
+          | `Mov    -> Move
+          | `Nop    -> Nop
+          | `Pop    -> Stack
+          | `Push   -> Stack
+          | `Ret    -> Call
+          | `Sub    -> Arith
 
         let zero_operands (operands : operand list)
             : Language.AbsOperands.t =
@@ -141,26 +155,26 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
             | `Pop
             | `Push -> Other
 
-        let instruction_operands_inner {opcode; operands; _} =
+        let abs_operands {opcode; operands; _} =
           match opcode with
           | X86Ast.OpBasic b -> basic_operands b operands
           | X86Ast.OpSized (b, _) -> basic_operands b operands
           | _ -> Language.AbsOperands.Other
 
-        let%expect_test "instruction_operands_inner: nop -> none" =
+        let%expect_test "abs_operands: nop -> none" =
           Format.printf "%a@."
                         Language.AbsOperands.pp
-                        (instruction_operands_inner
+                        (abs_operands
                            { opcode = X86Ast.OpBasic `Nop
                            ; operands = []
                            ; prefix = None
                            });
           [%expect {| none |}]
 
-        let%expect_test "instruction_operands_inner: nop $42 -> error" =
+        let%expect_test "abs_operands: nop $42 -> error" =
           Format.printf "%a@."
                         Language.AbsOperands.pp
-                        (instruction_operands_inner
+                        (abs_operands
                            { opcode = X86Ast.OpBasic `Nop
                            ; operands = [ X86Ast.OperandImmediate
                                             (X86Ast.DispNumeric 42) ]
@@ -168,10 +182,10 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
                            });
           [%expect {| <invalid operands> |}]
 
-        let%expect_test "instruction_operands_inner: mov %ESP, %EBP" =
+        let%expect_test "abs_operands: mov %ESP, %EBP" =
           Format.printf "%a@."
                         Language.AbsOperands.pp
-                        (instruction_operands_inner
+                        (abs_operands
                            { opcode = X86Ast.OpBasic `Mov
                            ; operands = [ X86Ast.OperandLocation (X86Ast.LocReg ESP)
                                         ; X86Ast.OperandLocation (X86Ast.LocReg EBP)
@@ -180,10 +194,10 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
                            });
           [%expect {| &stack -> &stack |}]
 
-        let%expect_test "instruction_operands_inner: movl %ESP, %EBP" =
+        let%expect_test "abs_operands: movl %ESP, %EBP" =
           Format.printf "%a@."
                         Language.AbsOperands.pp
-                        (instruction_operands_inner
+                        (abs_operands
                            { opcode = X86Ast.OpSized (`Mov, X86SLong)
                            ; operands = [ X86Ast.OperandLocation (X86Ast.LocReg ESP)
                                         ; X86Ast.OperandLocation (X86Ast.LocReg EBP)
@@ -192,10 +206,10 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
                            });
           [%expect {| &stack -> &stack |}]
 
-        let%expect_test "instruction_operands_inner: add $-16, %ESP" =
+        let%expect_test "abs_operands: add $-16, %ESP" =
           Format.printf "%a@."
                         Language.AbsOperands.pp
-                        (instruction_operands_inner
+                        (abs_operands
                            { opcode = X86Ast.OpBasic `Add
                            ; operands = [ X86Ast.OperandImmediate (X86Ast.DispNumeric (-16))
                                         ; X86Ast.OperandLocation (X86Ast.LocReg ESP)
@@ -204,51 +218,60 @@ module Make (T : X86Dialect.Traits) (P : X86PP.S) =
                            });
           [%expect {| $-16 -> &stack |}]
 
-        let instruction_operands =
-          function
-          | StmInstruction i -> Some (instruction_operands_inner i)
-          | _ -> None
-
-
-        let nop () = X86Ast.StmNop
-
-        let basic_instruction_type
-            : [< X86Ast.basic_opcode] -> Language.AbsInstruction.t =
-          let open Language.AbsInstruction in
-          function
-          | `Add    -> Arith
-          | `Leave  -> Call
-          | `Mfence -> Fence
-          | `Mov    -> Move
-          | `Nop    -> Nop
-          | `Pop    -> Stack
-          | `Push   -> Stack
-          | `Ret    -> Call
-          | `Sub    -> Arith
-
-        let instruction_type ({opcode; _} : X86Ast.instruction) =
+        let abs_type ({opcode; _} : X86Ast.instruction) =
           let open Language.AbsInstruction in
           match opcode with
           | X86Ast.OpDirective _ ->
              (* handled by abs_type below. *)
-             assert false
+             Other
           | X86Ast.OpJump _ -> Jump
           | X86Ast.OpBasic b -> basic_instruction_type b
           | X86Ast.OpSized (b, _) -> basic_instruction_type b
           | X86Ast.OpUnknown _ -> Other
 
+        module OnSymbolsS = struct
+          type t = string
+          type cont = X86Ast.instruction
+          let fold_map = X86Ast.fold_map_instruction_symbols
+        end
+
+        module OnLocationsS = struct
+          type t = Location.t
+          type cont = X86Ast.instruction
+          let fold_map = X86Ast.fold_map_instruction_locations
+        end
+      end
+
+      module Statement = struct
+        open X86Ast
+
+        type t = X86Ast.statement
+        type ins = X86Ast.instruction
+
+        let pp = P.pp_statement
+
+        let empty () = X86Ast.StmNop
 
         let abs_type =
           let open Language.AbsStatement in
           function
           | StmInstruction { opcode = OpDirective s; _ } ->
              Directive s
-          | StmInstruction i -> Instruction (instruction_type i)
+          | StmInstruction i -> Instruction (Instruction.abs_type i)
           | StmLabel l -> Label l
           | StmNop -> Blank
 
-        let fold_map_symbols = X86Ast.fold_map_statement_symbols
-        let fold_map_locations = X86Ast.fold_map_statement_locations
+        module OnSymbolsS = struct
+          type t = string
+          type cont = X86Ast.statement
+          let fold_map = X86Ast.fold_map_statement_symbols
+        end
+
+        module OnInstructionsS = struct
+          type t = Instruction.t
+          type cont = X86Ast.statement
+          let fold_map = X86Ast.fold_map_statement_instructions
+        end
       end
 
       module Constant = struct

@@ -34,9 +34,11 @@ let parse_asm (cs : CompilerSpec.t) (file : string option) =
      R.error_msgf "FIXME: unsupported x86 dialect %s"
                   (X86Dialect.Map.to_string d |> Option.value ~default:"(unknown)")
 
-module L = Litmus.T (X86ATT.Lang)
-module S = Sanitiser.T (X86ATT.Lang) (Sanitiser.X86 (X86Dialect.ATTTraits))
-module E = Explainer.Make (X86ATT.Lang)
+module LATT = X86ATT.Lang
+module X = Sanitiser.X86 (X86Dialect.ATTTraits)
+module S = Sanitiser.T (LATT) (X)
+module E = Explainer.Make (LATT)
+module L = Litmus.T (LATT)
 
 let build_litmus (asm : X86ATT.Frontend.ast) =
   R.reword_error
