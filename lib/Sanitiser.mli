@@ -140,7 +140,6 @@ module T :
     -> Intf with type statement := LS.Statement.t
 
 (** [X86] implements x86-specific sanitisation passes.
-    It requires an [X86Dialect.Traits] module to tell it things about the
+    It requires an [X86.Lang] module to tell it things about the
     current x86 dialect (for example, the order of operands). *)
-module X86 : functor (DT : X86Dialect.Traits)
-  -> LangHook with module L = X86ATT.Lang
+module X86 : functor (L : X86.Lang) -> LangHook with module L = L

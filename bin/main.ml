@@ -23,24 +23,24 @@ let parse_asm (cs : CompilerSpec.t) (file : string option) =
      R.reword_error
        (function
         | LangParser.Parse(perr) ->
-           R.msg (MyFormat.format_to_string X86ATT.Frontend.pp_perr perr)
+           R.msg (MyFormat.format_to_string X86.AttFrontend.pp_perr perr)
         | LangParser.Lex(lerr) ->
-           R.msg (MyFormat.format_to_string X86ATT.Frontend.pp_lerr lerr)
+           R.msg (MyFormat.format_to_string X86.AttFrontend.pp_lerr lerr)
        )
        (match file with
-        | Some file -> X86ATT.Frontend.run_file ~file
-        | None      -> X86ATT.Frontend.run_stdin ())
+        | Some file -> X86.AttFrontend.run_file ~file
+        | None      -> X86.AttFrontend.run_stdin ())
   | Language.X86 d ->
      R.error_msgf "FIXME: unsupported x86 dialect %s"
                   (X86Dialect.Map.to_string d |> Option.value ~default:"(unknown)")
 
-module LATT = X86ATT.Lang
-module X = Sanitiser.X86 (X86Dialect.ATTTraits)
+module LATT = X86.ATT
+module X = Sanitiser.X86 (LATT)
 module S = Sanitiser.T (LATT) (X)
 module E = Explainer.Make (LATT)
 module L = Litmus.T (LATT)
 
-let build_litmus (asm : X86ATT.Frontend.ast) =
+let build_litmus (asm : X86.AttFrontend.ast) =
   R.reword_error
     (fun err -> R.msg (MyFormat.format_to_string L.pp_err err))
     (L.make ~name:"TODO"

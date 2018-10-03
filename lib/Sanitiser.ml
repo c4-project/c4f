@@ -410,12 +410,12 @@ end
 
 (* TODO(@MattWindsor91): should this move someplace else? *)
 
-module X86 (DT : X86Dialect.Traits) =
+module X86 (L : X86.Lang) =
 struct
   open X86Ast
 
-  module L = X86ATT.Lang
-  module C = Ctx (X86ATT.Lang)
+  module L = L
+  module C = Ctx (L)
 
   let negate = function
     | DispNumeric k -> OperandImmediate (DispNumeric (-k))
@@ -425,7 +425,7 @@ struct
                                    )
 
   let sub_to_add_ops : operand list -> operand list option =
-    DT.bind_src_dst
+    L.bind_src_dst
       ~f:(function
           | {src = OperandImmediate s; dst} -> Some {src = negate s; dst}
           | _ -> None)
