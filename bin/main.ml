@@ -34,18 +34,18 @@ let parse_asm (cs : CompilerSpec.t) (file : string option) =
      R.error_msgf "FIXME: unsupported x86 dialect %s"
                   (X86Dialect.Map.to_string d |> Option.value ~default:"(unknown)")
 
-module LATT = X86.ATT
-module X = Sanitiser.X86 (LATT)
-module S = Sanitiser.T (LATT) (X)
-module E = Explainer.Make (LATT)
-module L = Litmus.T (LATT)
+module X = Sanitiser.X86 (X86.ATT)
+module S = Sanitiser.T (X86.ATT) (X)
+module E = Explainer.Make (X86.ATT)
+module C = X86Conv.Make (X86.ATT) (X86.Herd7)
+module L = Litmus.T (X86.Herd7)
 
 let build_litmus (asm : X86.AttFrontend.ast) =
   R.reword_error
     (fun err -> R.msg (MyFormat.format_to_string L.pp_err err))
     (L.make ~name:"TODO"
             ~init:[]
-            ~programs:(S.sanitise asm.program))
+            ~programs:(List.map ~f:C.convert (S.sanitise asm.program)))
 
 let output_litmus_oc (lit : L.t) (oc : Out_channel.t) =
   let f = Format.formatter_of_out_channel oc in
