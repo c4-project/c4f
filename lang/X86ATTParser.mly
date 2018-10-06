@@ -61,6 +61,7 @@ copyright notice follow. *)
 %token <string> NUM
 %token <string> ATT_HEX
 %token <string> NAME
+%token <string> GAS_TYPE
 
 %token COMMA
 %token LPAR RPAR COLON
@@ -168,6 +169,8 @@ prim_operand:
   | DOLLAR disp {X86Ast.OperandImmediate $2}
     (* $10 *)
   | STRING {X86Ast.OperandString $1}
+    (* @function *)
+  | GAS_TYPE { X86Ast.OperandType $1 }
     (* "Hello, world!" *)
   | location {X86Ast.OperandLocation $1}
 

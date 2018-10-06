@@ -171,6 +171,7 @@ type operand =
   | OperandLocation of location
   | OperandImmediate of disp
   | OperandString of string
+  | OperandType of string
   | OperandBop of operand * bop * operand
 
 let rec fold_map_operand_symbols ~f ~init =
@@ -182,6 +183,7 @@ let rec fold_map_operand_symbols ~f ~init =
      Tuple2.map_snd ~f:(fun x -> OperandImmediate x)
                     (fold_map_disp_symbols ~f ~init d)
   | OperandString s -> (init, OperandString s)
+  | OperandType ty -> (init, OperandType ty)
   | OperandBop (l, b, r) ->
      let (init, l') = fold_map_operand_symbols ~f ~init l in
      let (init, r') = fold_map_operand_symbols ~f ~init r in
@@ -194,6 +196,7 @@ let rec fold_map_operand_locations ~f ~init =
                     (f init l)
   | OperandImmediate d -> (init, OperandImmediate d)
   | OperandString s -> (init, OperandString s)
+  | OperandType ty -> (init, OperandType ty)
   | OperandBop (l, b, r) ->
      let (init, l') = fold_map_operand_locations ~f ~init l in
      let (init, r') = fold_map_operand_locations ~f ~init r in

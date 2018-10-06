@@ -337,6 +337,8 @@ module Make (D : Dialect) =
       | OperandImmediate d -> pp_immediate f d;
       | OperandString s ->
          Format.fprintf f "\"%s\"" (Staged.unstage string_escape s)
+      | OperandType ty ->
+         Format.fprintf f "@@%s" ty
       | OperandBop (l, b, r) ->
          Format.pp_open_box f 0;
          pp_operand f l;

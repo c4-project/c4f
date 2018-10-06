@@ -88,6 +88,7 @@ rule token = parse
 | '"' { read_string (Buffer.create 17) lexbuf }
 | "lock" { IT_LOCK }
 | name as x { NAME x }
+| '@' name as x { GAS_TYPE x }
 | eof { EOF }
 | _ { raise (error ("Unexpected char: " ^ Lexing.lexeme lexbuf) lexbuf) }
 

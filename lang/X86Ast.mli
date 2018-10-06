@@ -101,6 +101,7 @@ type operand =
   | OperandLocation of location
   | OperandImmediate of disp
   | OperandString of string
+  | OperandType of string (* Type annotation *)
   | OperandBop of operand * bop * operand
 
 type prefix =
