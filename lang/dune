@@ -8,7 +8,7 @@
   (libraries
    core
    utils
-   menhirlib
+   menhirLib
    rresult)
   (modules_without_implementation LangParser))
 (ocamllex
