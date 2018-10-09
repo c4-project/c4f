@@ -193,6 +193,9 @@ let explain =
          |> prerr
     ]
 
+let run_herd prog litname _ oc =
+  Run.run ~oc ~prog [litname]
+
 let litmusify =
   let open Command.Let_syntax in
   Command.basic
@@ -206,12 +209,16 @@ let litmusify =
             ~doc: "PATH the compiler spec file to use"
      and verbose =
        flag "verbose"
-            no_arg
-            ~doc: "verbose mode"
-      and no_warnings =
-        flag "no-warnings"
-          no_arg
-          ~doc: "silence all warnings"
+         no_arg
+         ~doc: "verbose mode"
+     and no_warnings =
+       flag "no-warnings"
+         no_arg
+         ~doc: "silence all warnings"
+     and sendto =
+       flag "sendto"
+         (optional string)
+         ~doc: "CMDNAME pass generated litmus through this Herd-like command"
      and compiler_id =
        anon ("COMPILER_ID" %: string)
      and outfile =
@@ -226,7 +233,13 @@ let litmusify =
          let wf = maybe_err_formatter (not no_warnings) in
          Result.Let_syntax.(
            let%bind specs = make_compiler_specs vf spec_file in
-           do_litmusify `Litmusify vf wf infile outfile compiler_id specs
+           match sendto with
+           | None -> do_litmusify `Litmusify vf wf infile outfile compiler_id specs
+           | Some cmd ->
+             let tmpname = Filename.temp_file "act" "litmus" in
+             let%bind _ = do_litmusify `Litmusify vf wf infile (Some tmpname) compiler_id specs in
+             Io.Out_sink.with_output ~f:(run_herd cmd tmpname)
+               (Io.Out_sink.of_option outfile)
          )
          |> prerr
     ]
