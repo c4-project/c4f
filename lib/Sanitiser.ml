@@ -187,9 +187,7 @@ let%expect_test "mangle: sample" =
   print_string (mangle "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet");
   [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
 
-module T
-    (LS   : Language.Intf)
-    (LH   : LangHook with module L = LS) =
+module T (LH : LangHook) =
 struct
   module Ctx = LH.C
   module Warn = LH.C.Warn
@@ -199,8 +197,8 @@ struct
        instructions before the first program, meaning we can
        simplify discarding such instructions. *)
     let progs =
-      (LS.Statement.empty() :: stms)
-      |> List.group ~break:(Fn.const LS.Statement.is_program_boundary)
+      (LH.L.Statement.empty() :: stms)
+      |> List.group ~break:(Fn.const LH.L.Statement.is_program_boundary)
     in
     List.drop progs 1
   (* TODO(MattWindsor91): divine the end of the program. *)
@@ -225,21 +223,21 @@ struct
     Ctx.peek
       (fun { progname; _ } ->
          let f ln =
-           match LS.Location.abs_type ln with
+           match LH.L.Location.abs_type ln with
            | Language.AbsLocation.StackOffset i ->
-             LS.Location.make_heap_loc
+             LH.L.Location.make_heap_loc
                (sprintf "t%ss%d"
                   (Option.value ~default:"?" progname)
                   i)
            | _ -> ln
          in
-         LS.Instruction.OnLocations.map ~f ins)
+         LH.L.Instruction.OnLocations.map ~f ins)
 
   (** [warn_unknown_instructions stm] emits warnings for each
       instruction in [stm] without a high-level analysis. *)
   let warn_unknown_instructions ins =
     let open Ctx.Monad in
-    match LS.Instruction.abs_type ins with
+    match LH.L.Instruction.abs_type ins with
      | Language.AbsInstruction.Other ->
        Ctx.warn (Warn.UnknownElt (Warn.Instruction ins)) ins
      | _ -> return ins
@@ -255,13 +253,13 @@ struct
   (** [mangle_identifiers] reduces identifiers into a form that herd
       can parse. *)
   let mangle_identifiers stm =
-    LS.Statement.OnSymbols.map ~f:mangle stm
+    LH.L.Statement.OnSymbols.map ~f:mangle stm
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
   let warn_unknown_statements stm =
     let open Ctx.Monad in
-    match LS.Statement.abs_type stm with
+    match LH.L.Statement.abs_type stm with
     | Language.AbsStatement.Other ->
       Ctx.warn (Warn.UnknownElt (Warn.Statement stm)) stm
     | _ -> return stm
@@ -272,7 +270,7 @@ struct
   let sanitise_all_ins stm =
     Ctx.make
       (fun ctx ->
-         LS.Statement.OnInstructions.fold_map
+         LH.L.Statement.OnInstructions.fold_map
            ~f:(fun ctx' ins ->
                Ctx.run (sanitise_ins ins)
                  ctx')
@@ -308,7 +306,7 @@ struct
       ]
 
   let instruction_is_irrelevant =
-    LS.Statement.instruction_mem irrelevant_instruction_types
+    LH.L.Statement.instruction_mem irrelevant_instruction_types
 
   (** [remove_irrelevant_statements prog] completely removes
       statements in [prog] that have no use in Litmus and cannot be
@@ -317,7 +315,7 @@ struct
     Ctx.peek
       (fun { jsyms; _ } ->
          let matchers =
-           LS.Statement.(
+           LH.L.Statement.(
              [ instruction_is_irrelevant
              ; is_nop
              ; is_directive
@@ -329,10 +327,10 @@ struct
 
   let update_ctx
       ?(progname : string option)
-      (prog : LS.Statement.t list) =
+      (prog : LH.L.Statement.t list) =
     Ctx.modify
       (fun ctx ->
-         ( { ctx with jsyms    = LS.jump_symbols prog
+         ( { ctx with jsyms    = LH.L.jump_symbols prog
                     ; progname = ( Option.value_map
                                      ~f:Option.some
                                      ~default:ctx.progname
@@ -353,9 +351,9 @@ struct
     let pp_elt f =
       Warn.(
         function
-        | Statement s -> LS.Statement.pp f s
-        | Instruction i -> LS.Instruction.pp f i
-        | Location l -> LS.Location.pp f l
+        | Statement s -> LH.L.Statement.pp f s
+        | Instruction i -> LH.L.Instruction.pp f i
+        | Location l -> LH.L.Location.pp f l
       )
     in
     Format.fprintf f
@@ -387,8 +385,8 @@ struct
          ctx)
 
   (** [sanitise_program] performs sanitisation on a single program. *)
-  let sanitise_program (i : int) (prog : LS.Statement.t list)
-    : LS.Statement.t list =
+  let sanitise_program (i : int) (prog : LH.L.Statement.t list)
+    : LH.L.Statement.t list =
     let open Ctx.Monad in
     Ctx.run'
       ((return prog)
@@ -404,7 +402,7 @@ struct
   let sanitise_programs progs =
     progs
     |> List.mapi ~f:sanitise_program
-    |> make_programs_uniform (LS.Statement.empty ())
+    |> make_programs_uniform (LH.L.Statement.empty ())
 
   let sanitise stms = sanitise_programs (split_programs stms)
 end

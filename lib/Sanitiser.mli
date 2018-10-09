@@ -26,6 +26,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lang
 
+(** [WarnIntf] is the interface to the warnings emitted by the
+   sanitiser. *)
 module type WarnIntf =
 sig
   module L : Language.Intf
@@ -44,6 +46,7 @@ sig
     }
 end
 
+(** [Warn] produces a warnings module for the given language. *)
 module Warn : functor (LS : Language.Intf)
   -> WarnIntf with module L = LS
 
@@ -135,9 +138,8 @@ module NullLangHook : functor (LS : Language.Intf)
 
 (** [T] implements the assembly sanitiser for a given language. *)
 module T :
-  functor (LS : Language.Intf)
-    -> functor (LH : LangHook with module L = LS)
-    -> Intf with type statement := LS.Statement.t
+  functor (LH : LangHook)
+    -> Intf with type statement := LH.L.Statement.t
 
 (** [X86] implements x86-specific sanitisation passes.
     It requires an [X86.Lang] module to tell it things about the

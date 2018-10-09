@@ -35,7 +35,7 @@ let parse_asm (cs : CompilerSpec.t) (file : string option) =
                   (X86Dialect.Map.to_string d |> Option.value ~default:"(unknown)")
 
 module X = Sanitiser.X86 (X86.ATT)
-module S = Sanitiser.T (X86.ATT) (X)
+module S = Sanitiser.T (X)
 module E = Explainer.Make (X86.ATT)
 module C = X86Conv.Make (X86.ATT) (X86.Herd7)
 module L = Litmus.T (X86.Herd7)
