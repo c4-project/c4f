@@ -47,14 +47,15 @@ module AbsInstruction :
 sig
   (** [AbsInstruction.t] is an abstracted instruction. *)
   type t =
-    | Arith (* arithmetic *)
-    | Fence (* memory fence *)
-    | Jump  (* conditional or unconditional jump *)
-    | Move  (* move *)
-    | Nop   (* no operation *)
-    | Call  (* calling-convention related instructions *)
-    | Stack (* stack resizing and pointer manipulation *)
-    | Other (* unclassified instruction *)
+    | Arith   (* arithmetic *)
+    | Compare (* comparison *)
+    | Fence   (* memory fence *)
+    | Jump    (* conditional or unconditional jump *)
+    | Move    (* move *)
+    | Nop     (* no operation *)
+    | Call    (* calling-convention related instructions *)
+    | Stack   (* stack resizing and pointer manipulation *)
+    | Other   (* unclassified instruction *)
 [@@deriving enum]
 
   (** Abstract instructions may be pretty-printed. *)

@@ -56,6 +56,7 @@ let%expect_test "pp_name: default" =
 module AbsInstruction = struct
   type t =
     | Arith
+    | Compare
     | Fence
     | Jump
     | Move
@@ -70,14 +71,15 @@ module AbsInstruction = struct
       type nonrec t = t
 
       let table =
-        [ Arith, "arith"
-        ; Fence, "fence"
-        ; Jump , "jump"
-        ; Move , "move"
-        ; Nop  , "nop"
-        ; Call , "call"
-        ; Stack, "stack"
-        ; Other, "other"
+        [ Arith,   "arith"
+        ; Compare, "compare"
+        ; Fence,   "fence"
+        ; Jump ,   "jump"
+        ; Move ,   "move"
+        ; Nop  ,   "nop"
+        ; Call ,   "call"
+        ; Stack,   "stack"
+        ; Other,   "other"
         ]
     end
     )

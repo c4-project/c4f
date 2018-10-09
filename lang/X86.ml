@@ -96,6 +96,7 @@ struct
             let open Language.AbsInstruction in
             function
             | `Add    -> Arith
+            | `Cmp    -> Compare
             | `Leave  -> Call
             | `Mfence -> Fence
             | `Mov    -> Move
@@ -149,6 +150,7 @@ struct
             | `Sub
             | `Mov -> src_dst_operands operands
             (* TODO(@MattWindsor91): analyse other opcodes! *)
+            | `Cmp
             | `Pop
             | `Push -> Other
 

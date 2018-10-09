@@ -164,6 +164,7 @@ type condition =
     directive (Intel) or suffix (AT&T). *)
 type sizable_opcode =
   [ `Add
+  | `Cmp
   | `Mov
   | `Pop
   | `Push

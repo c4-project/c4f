@@ -58,6 +58,21 @@ struct
         (sub_to_add_ops operands)
     | x -> x
 
+  (** [drop_unsupported_lengths] removes long-sized length suffixes on
+      instructions where herd doesn't support them. *)
+  let drop_unsupported_lengths =
+    (* TODO(@MattWindsor91): ideally, we should be checking to see if
+       the operands are compatible with dropping the l. *)
+    function
+    | { opcode = OpSized (o, X86SLong); _ } as op ->
+      begin
+        match o with
+        | `Cmp -> { op with opcode = OpBasic (o :> basic_opcode) }
+        (* TODO(@MattWindsor91): some of these might also need dropping. *)
+        | `Add | `Mov | `Pop | `Push | `Sub -> op
+      end
+    | op -> op
+
   let on_statement = Ctx.Monad.return
 
   let on_program = Ctx.Monad.return
@@ -68,6 +83,7 @@ struct
     let open Ctx.Monad in
     return stm
     >>| sub_to_add
+    >>| drop_unsupported_lengths
 end
 
 module Sanitiser (L : X86.Lang) = Sanitiser.Make (SanitiserHook (L))

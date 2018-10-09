@@ -71,14 +71,15 @@ module Make (LS : Language.Intf) =
       (* TODO(@MattWindsor91): merge with pp? *)
       let open Language.AbsInstruction in
       function
-      | Arith -> "arithmetic"
-      | Call  -> "calling convention"
-      | Fence -> "memory fence"
-      | Jump  -> "jump"
-      | Move  -> "move"
-      | Nop   -> "no operation"
-      | Stack -> "stack"
-      | Other -> "?? instruction ??"
+      | Arith   -> "arithmetic"
+      | Compare -> "comparison"
+      | Call    -> "calling convention"
+      | Fence   -> "memory fence"
+      | Jump    -> "jump"
+      | Move    -> "move"
+      | Nop     -> "no operation"
+      | Stack   -> "stack"
+      | Other   -> "?? instruction ??"
 
     let stringify_stm_basic =
       (* TODO(@MattWindsor91): merge with pp? *)
