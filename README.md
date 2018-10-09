@@ -26,6 +26,8 @@ Eventually, it'll do something useful.
 - Several packages, which will be pointed out by `dune` if missing
   from your `opam` environment.
 
+(Note: For `menhirLib`, install `menhir`).
+
 **NOTE**:
 `act` uses Jane Street's `core` library, which only works properly on
 POSIX-style operating systems.  If you're using Windows, consider
