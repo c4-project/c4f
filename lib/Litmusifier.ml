@@ -56,13 +56,22 @@ let parse_x86 dialect t =
     (F.run_ic ~file:t.iname t.inp)
     "assembly parse error" t.iname String.sexp_of_t
 
+let make_init (type s l c)
+    (module LS : Language.Intf with type Statement.t = s
+                                and type Location.t  = l
+                                and type Constant.t  = c)
+    (progs : s list list) :
+  (string, c) List.Assoc.t =
+  let syms = Language.SymSet.union_list (List.map ~f: LS.heap_symbols progs) in
+  List.map ~f:(fun s -> (s, LS.Constant.zero))
+    (Language.SymSet.to_list syms)
+
 let output_litmus (type s)
     (module S : Sanitiser.Intf with type statement = s)
     (module L : Litmus.Intf with type LS.Statement.t = s)
     t
     (stms : s list)
-    (conv : s list -> s list)
-  =
+    (conv : s list -> s list) =
   let emit_warnings =
   function
   | [] -> ()
@@ -81,7 +90,7 @@ let output_litmus (type s)
   let%bind lit =
     Or_error.tag ~tag:"couldn't build litmus file"
     ( L.make ~name:t.iname
-             ~init:[]
+             ~init:(make_init (module L.LS) programs)
              ~programs:(List.map ~f:conv programs)
     )
   in

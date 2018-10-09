@@ -36,7 +36,7 @@ sig
 
   type t =
     { name : string
-    ; init : ((LS.Location.t, LS.Constant.t) List.Assoc.t)
+    ; init : ((string, LS.Constant.t) List.Assoc.t) (* Initial heap *)
     ; programs : LS.Statement.t list list
     }
 
@@ -50,7 +50,7 @@ sig
      [init], and program list [programs].  It returns a result,
      as it may fail if the input isn't a valid Litmus program. *)
   val make : name:string
-             -> init:((LS.Location.t, LS.Constant.t) List.Assoc.t)
+             -> init:((string, LS.Constant.t) List.Assoc.t)
              -> programs:LS.Statement.t list list
              -> t Or_error.t
 end

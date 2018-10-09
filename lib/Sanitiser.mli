@@ -80,7 +80,8 @@ module type CtxIntf = sig
 
   type ctx =
     { progname : string option
-    ; jsyms    : Language.SymSet.t
+    ; hsyms    : Language.SymSet.t  (* Heap symbols *)
+    ; jsyms    : Language.SymSet.t  (* Jump symbols *)
     ; warnings : Warn.t list
     }
 

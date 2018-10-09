@@ -272,6 +272,8 @@ module type ConstantS = sig
 
   include Core.Pretty_printer.S with type t := t
   include Sexpable.S with type t := t
+
+  val zero : t
 end
 
 module type S = sig
@@ -292,6 +294,8 @@ module type Intf = sig
 
   module Location : sig
     include LocationS
+
+    val to_heap_symbol : t -> string option
   end
 
   module Instruction : sig
@@ -334,7 +338,7 @@ module type Intf = sig
     val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
   end
 
-
+  val heap_symbols : Statement.t list -> SymSet.t
   val jump_symbols : Statement.t list -> SymSet.t
 end
 
@@ -439,12 +443,26 @@ module Make (M : S) = struct
   module Location =
   struct
     include M.Location
+
+    let to_heap_symbol l =
+      match abs_type l with
+      | AbsLocation.Heap s -> Some s
+      | _ -> None
   end
 
   module Constant =
   struct
     include M.Constant
   end
+
+  (** [heap_symbols] retrieves the set of all symbols that appear to be
+      standing in for heap locations. *)
+  let heap_symbols prog =
+    prog
+    |> List.concat_map ~f:Statement.OnInstructions.list
+    |> List.concat_map ~f:Instruction.OnLocations.list
+    |> List.filter_map ~f:Location.to_heap_symbol
+    |> SymSet.of_list
 
   let jump_symbols prog =
     prog

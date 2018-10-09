@@ -280,6 +280,8 @@ struct
           let sexp_of_t = [%sexp_of: X86Ast.operand]
           let t_of_sexp = [%of_sexp: X86Ast.operand]
           let pp = P.pp_operand
+
+          let zero = X86Ast.OperandImmediate (X86Ast.DispNumeric 0)
         end
       end)
 end

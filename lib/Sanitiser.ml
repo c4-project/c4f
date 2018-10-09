@@ -123,6 +123,7 @@ sig
 
   type ctx =
     { progname : string option
+    ; hsyms    : Language.SymSet.t
     ; jsyms    : Language.SymSet.t
     ; warnings : Warn.t list
     }
@@ -152,12 +153,14 @@ struct
 
   type ctx =
     { progname : string option
+    ; hsyms    : Language.SymSet.t
     ; jsyms    : Language.SymSet.t
     ; warnings : Warn.t list
     }
 
   let initial =
     { progname = None
+    ; hsyms    = Language.SymSet.empty
     ; jsyms    = Language.SymSet.empty
     ; warnings = []
     }
@@ -407,11 +410,13 @@ struct
       (prog : LH.L.Statement.t list) =
     Ctx.modify
       (fun ctx ->
-         ( { ctx with jsyms    = LH.L.jump_symbols prog
-                    ; progname = ( Option.value_map
-                                     ~f:Option.some
-                                     ~default:ctx.progname
-                                     progname )
+         ( { ctx with
+             hsyms    = LH.L.heap_symbols prog
+           ; jsyms    = LH.L.jump_symbols prog
+           ; progname = ( Option.value_map
+                            ~f:Option.some
+                            ~default:ctx.progname
+                            progname )
            }
          ))
       prog

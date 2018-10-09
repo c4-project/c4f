@@ -249,6 +249,9 @@ sig
 
   (** They must also include S-expression conversion. *)
   include Sexpable.S with type t := t
+
+  (** [zero] is a constant representing numeric zero. *)
+  val zero : t
 end
 
 (** [S] is the signature that Litmus languages must implement. *)
@@ -273,6 +276,10 @@ module type Intf = sig
 
   module Location : sig
     include LocationS
+
+    (** [to_heap_symbol l] returns [l]'s underlying heap symbol if it
+       is a symbolic heap reference. *)
+    val to_heap_symbol : t -> string option
   end
 
   module Instruction : sig
@@ -366,6 +373,10 @@ module type Intf = sig
         the statement is an unused label. *)
     val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
   end
+
+  (** [heap_symbols] retrieves the set of all symbols that appear to be
+      standing in for heap locations. *)
+  val heap_symbols : Statement.t list -> SymSet.t
 
   (** [jump_symbols] retrieves the set of all symbols that appear to be
       jump targets. *)

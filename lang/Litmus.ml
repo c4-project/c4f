@@ -35,14 +35,14 @@ sig
 
   type t =
     { name : string
-    ; init : ((LS.Location.t, LS.Constant.t) List.Assoc.t)
+    ; init : ((string, LS.Constant.t) List.Assoc.t)
     ; programs : LS.Statement.t list list
     }
 
   include Pretty_printer.S with type t := t
 
   val make : name:string
-             -> init:((LS.Location.t, LS.Constant.t) List.Assoc.t)
+             -> init:((string, LS.Constant.t) List.Assoc.t)
              -> programs:LS.Statement.t list list
              -> t Or_error.t
 end
@@ -53,21 +53,21 @@ struct
 
   type t =
     { name : string
-    ; init : ((LS.Location.t, LS.Constant.t) List.Assoc.t)
+    ; init : ((string, LS.Constant.t) List.Assoc.t)
     ; programs : LS.Statement.t list list
     }
 
   (** [validate_init init] validates an incoming litmus test's
      init block. *)
 
-  let validate_init (init : (LS.Location.t, LS.Constant.t) List.Assoc.t)
+  let validate_init (init : (string, LS.Constant.t) List.Assoc.t)
       : unit Or_error.t =
     let dup =
-      List.find_a_dup ~compare:(fun x y -> if fst x = fst y then 0 else -1)
+      List.find_a_dup ~compare:(fun x y -> String.compare (fst x) (fst y))
         init
     in
     let dup_to_err d =
-      Or_error.error "duplicate item in 'init'" d [%sexp_of: LS.Location.t * LS.Constant.t]
+      Or_error.error "duplicate item in 'init'" d [%sexp_of: string * LS.Constant.t]
     in
     Option.value_map
       ~default:Result.ok_unit
@@ -100,15 +100,15 @@ struct
     validate lit *> return lit
 
   let pp_init (f : Format.formatter)
-              (init : (LS.Location.t, LS.Constant.t) List.Assoc.t)
+              (init : (string, LS.Constant.t) List.Assoc.t)
     : unit =
     MyFormat.pp_c_braces
       f
       (fun f ->
         List.iter
           ~f:(fun (l, c) -> Format.fprintf f
-                                           "@[%a = %a;@]@,"
-                                           LS.Location.pp l
+                                           "@[%s = %a;@]@,"
+                                           l
                                            LS.Constant.pp c)
           init)
 
@@ -170,11 +170,25 @@ struct
 
     Format.pp_close_tbox f ()
 
+  let pp_location_stanza f init =
+    Format.fprintf f "@[<h>locations@ [@[%a@]]@]@,"
+      ( Format.pp_print_list
+          ~pp_sep:(fun f () -> Format.fprintf f ";@ ")
+          String.pp
+      )
+      (List.map ~f:fst init)
+
   let pp_body_validated f litmus =
     pp_init f (litmus.init);
     Format.pp_print_cut f ();
     Format.pp_print_cut f ();
-    pp_programs f (litmus.programs)
+    pp_programs f (litmus.programs);
+    Format.pp_print_cut f ();
+    Format.pp_print_cut f ();
+    (* This just repeats information already in the initialiser,
+       but herd7 seems to need either a location stanza or a
+       precondition, and this is always guaranteed to exist. *)
+    pp_location_stanza f (litmus.init)
 
   let pp_body f litmus =
     match validate litmus with
