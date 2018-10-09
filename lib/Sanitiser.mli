@@ -32,8 +32,7 @@ open Lang
 
 (** [CustomWarnS] is the signature that any custom sanitisation
    warnings need to implement. *)
-module type CustomWarnS =
-sig
+module type CustomWarnS = sig
   include Pretty_printer.S
 end
 
@@ -42,8 +41,7 @@ module NoCustomWarn : CustomWarnS
 
 (** [WarnIntf] is the interface to the warnings emitted by the
    sanitiser. *)
-module type WarnIntf =
-sig
+module type WarnIntf = sig
   module L : Language.Intf
   module C : CustomWarnS
 
@@ -77,8 +75,7 @@ module Warn
 
 (** [CtxIntf] is the interface to the state monad used by the sanitiser to
     carry global information around in a sanitisation pass. *)
-module type CtxIntf =
-sig
+module type CtxIntf = sig
   module Warn : WarnIntf
 
   type ctx =
@@ -163,20 +160,23 @@ module NullLangHook : functor (LS : Language.Intf)
  *)
 
 module type Intf = sig
+  module Warn : WarnIntf
+
   type statement
+
+  (** [output] is the type of (successful) sanitiser output. *)
+  type output =
+    { programs : statement list list
+    ; warnings : Warn.t list
+    }
 
   (** [sanitise stms] sanitises a statement list, turning it into a
       list of separate program lists with various litmus-unfriendly
       elements removed or simplified. *)
-  val sanitise : statement list -> statement list list
+  val sanitise : statement list -> output
 end
 
-(** [T] implements the assembly sanitiser for a given language. *)
-module T :
+(** [Make] implements the assembly sanitiser for a given language. *)
+module Make :
   functor (LH : LangHookS)
-    -> Intf with type statement := LH.L.Statement.t
-
-(** [X86] implements x86-specific sanitisation passes.
-    It requires an [X86.Lang] module to tell it things about the
-    current x86 dialect (for example, the order of operands). *)
-module X86 : functor (L : X86.Lang) -> LangHookS with module L = L
+    -> Intf with type statement = LH.L.Statement.t

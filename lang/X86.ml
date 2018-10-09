@@ -44,6 +44,18 @@ module AttFrontend =
              Error (LangParser.Parse (Uncaught lexbuf.lex_curr_p))
       end)
 
+module type Lang =
+sig
+  include X86Dialect.Traits
+  include X86PP.S
+  include
+    Language.Intf
+    with type Constant.t = X86Ast.operand
+     and type Location.t = X86Ast.location
+     and type Instruction.t = X86Ast.instruction
+     and type Statement.t = X86Ast.statement
+end
+
 module Make (T : X86Dialect.Traits) (P : X86PP.S) =
 struct
   include T
@@ -283,18 +295,6 @@ struct
           let pp = P.pp_operand
         end
       end)
-end
-
-module type Lang =
-sig
-  include X86Dialect.Traits
-  include X86PP.S
-  include
-    Language.Intf
-    with type Constant.t = X86Ast.operand
-     and type Location.t = X86Ast.location
-     and type Instruction.t = X86Ast.instruction
-     and type Statement.t = X86Ast.statement
 end
 
 module ATT = Make (X86Dialect.ATTTraits) (X86PP.ATT)

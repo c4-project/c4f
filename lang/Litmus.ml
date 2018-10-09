@@ -29,7 +29,34 @@ open Utils.MyContainers
  * Litmus AST module
  *)
 
-module T (LS : Language.Intf) = struct
+module type Intf =
+sig
+  module LS : Language.Intf
+
+  type t =
+    { name : string
+    ; init : ((LS.Location.t, LS.Constant.t) List.Assoc.t)
+    ; programs : LS.Statement.t list list
+    }
+
+  include Pretty_printer.S with type t := t
+
+  type err =
+    | NameEmpty
+    | ProgramsEmpty
+    | ProgramsNotUniform
+    | DuplicateInit of LS.Location.t
+
+  val pp_err : Format.formatter -> err -> unit
+  val make : name:string
+             -> init:((LS.Location.t, LS.Constant.t) List.Assoc.t)
+             -> programs:LS.Statement.t list list
+             -> (t, err) result
+end
+
+module Make (LS : Language.Intf) =
+struct
+  module LS = LS
 
   type t =
     { name : string

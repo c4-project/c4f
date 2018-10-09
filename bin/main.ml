@@ -7,6 +7,7 @@ open Lang
 
 type env =
   { vf    : Format.formatter
+  ; wf    : Format.formatter
   ; root  : string
   ; specs : CompilerSpec.set
   }
@@ -34,18 +35,34 @@ let parse_asm (cs : CompilerSpec.t) (file : string option) =
      R.error_msgf "FIXME: unsupported x86 dialect %s"
                   (X86Dialect.Map.to_string d |> Option.value ~default:"(unknown)")
 
-module X = Sanitiser.X86 (X86.ATT)
-module S = Sanitiser.T (X)
+module S = X86Specifics.Sanitiser (X86.ATT)
 module E = Explainer.Make (X86.ATT)
 module C = X86Conv.Make (X86.ATT) (X86.Herd7)
-module L = Litmus.T (X86.Herd7)
+module L = X86Specifics.LitmusDirect
 
-let build_litmus (asm : X86.AttFrontend.ast) =
+let emit_warnings wf name =
+  function
+  | [] -> ()
+  | ws ->
+    let pp_warning f w =
+      Format.fprintf f "@[<h>-@ @[<hov>%a@]@]@,"
+        S.Warn.pp w
+    in
+    let pp_name f s =
+      Format.fprintf f "@ for@ %s" s
+    in
+    Format.fprintf wf "Warnings%a:@ @[<v>%a@]@."
+      (MyFormat.pp_option ~pp:pp_name) name
+      (fun f -> List.iter ~f:(pp_warning f)) ws
+
+let build_litmus (wf : Format.formatter) (name : string option) (asm : X86.AttFrontend.ast) =
+  let {S.programs; warnings} = S.sanitise asm.program in
+  emit_warnings wf name warnings;
   R.reword_error
     (fun err -> R.msg (MyFormat.format_to_string L.pp_err err))
-    (L.make ~name:"TODO"
+    (L.make ~name:(Option.value name ~default:"anonymous")
             ~init:[]
-            ~programs:(List.map ~f:C.convert (S.sanitise asm.program)))
+            ~programs:(List.map ~f:C.convert programs))
 
 let output_litmus_oc (lit : L.t) (oc : Out_channel.t) =
   let f = Format.formatter_of_out_channel oc in
@@ -60,7 +77,7 @@ let output_litmus (lit : L.t) (file : string option) =
 let c_asm (env : env) (cn : string) (cs : CompilerSpec.t) (ps : Pathset.t) =
   let open Result.Let_syntax in
   let%bind asm = parse_asm cs (Some (asm_path_of cn ps)) in
-  let%bind lit = build_litmus asm in
+  let%bind lit = build_litmus env.wf (Some ps.basename) asm in
   Format.fprintf env.vf "@[OUT@ %s@]@." ps.basename;
   output_litmus lit (Some (lita_path_of cn ps));
   (* TODO(@MattWindsor91): catch errors from output_litmus. *)
@@ -123,8 +140,8 @@ let make_compiler_specs (vf : Format.formatter) (specpath : string) =
   |> tap (pp_specs vf)
   |> R.reword_error_msg (fun _ -> R.msg "Compiler specs are invalid.")
 
-let verbose_formatter verbose =
-  if verbose
+let maybe_err_formatter on =
+  if on
   then Format.err_formatter
   else MyFormat.null_formatter ()
 
@@ -138,11 +155,11 @@ let get_spec specs compiler_id =
   List.Assoc.find specs ~equal:(=) compiler_id
   |> Result.of_option ~error:(R.msgf "invalid compiler ID: %s" compiler_id)
 
-let do_litmusify _ infile outfile compiler_id specs =
+let do_litmusify _ wf infile outfile compiler_id specs =
   let open Result.Let_syntax in
   let%bind spec = get_spec specs compiler_id in
   let%bind asm = parse_asm spec infile in
-  let%bind lit = build_litmus asm in
+  let%bind lit = build_litmus wf Option.(infile >>| Filename.basename) asm in
   output_litmus lit outfile;
   Result.ok_unit
 
@@ -188,7 +205,7 @@ let explain =
        anon (maybe ("FILE" %: string))
          in
          fun () ->
-         let vf = verbose_formatter verbose in
+         let vf = maybe_err_formatter verbose in
          make_compiler_specs vf spec_file
          >>= do_explain vf infile outfile compiler_id |> prerr
     ]
@@ -208,6 +225,10 @@ let litmusify =
        flag "verbose"
             no_arg
             ~doc: "verbose mode"
+      and no_warnings =
+        flag "no-warnings"
+          no_arg
+          ~doc: "silence all warnings"
      and compiler_id =
        anon ("COMPILER_ID" %: string)
      and outfile =
@@ -218,9 +239,13 @@ let litmusify =
        anon (maybe ("FILE" %: string))
          in
          fun () ->
-         let vf = verbose_formatter verbose in
-         make_compiler_specs vf spec_file
-         >>= do_litmusify vf infile outfile compiler_id |> prerr
+         let vf = maybe_err_formatter verbose in
+         let wf = maybe_err_formatter (not no_warnings) in
+         Result.Let_syntax.(
+           let%bind specs = make_compiler_specs vf spec_file in
+           do_litmusify vf wf infile outfile compiler_id specs
+         )
+         |> prerr
     ]
 
 let do_memalloy env inpaths =
@@ -233,38 +258,45 @@ let memalloy =
   Command.basic
     ~summary:"Runs automatic testing over a memalloy output directory"
     [%map_open
-     let spec_file =
-       flag "spec"
-            (optional_with_default
-               (Filename.concat Filename.current_dir_name "compiler.spec")
-               string)
-            ~doc: "PATH the compiler spec file to use"
-     and root =
-       flag "output"
-            (optional_with_default
-               Filename.current_dir_name
-               string)
-            ~doc: "PATH the path under which output directories will be created"
-     and verbose =
-       flag "verbose"
-            no_arg
-            ~doc: "verbose mode"
-     and inpaths_anon =
-       anon (maybe (non_empty_sequence_as_list ("PATH" %: string)))
-     and inpaths_rest =
-       flag "--"
-            escape
-            ~doc: "PATHS any remaining arguments are treated as input paths"
-         in
-         fun () ->
-         let inpaths =
-           (Option.value ~default:[] inpaths_anon)
-           @ (Option.value ~default:[] inpaths_rest)
-         and vf = verbose_formatter verbose in
-         make_compiler_specs vf spec_file
-         >>= (fun specs -> do_memalloy { vf; root; specs } inpaths)
-         |> prerr
-    ]
+      let spec_file =
+        flag "spec"
+          (optional_with_default
+             (Filename.concat Filename.current_dir_name "compiler.spec")
+             string)
+          ~doc: "PATH the compiler spec file to use"
+      and root =
+        flag "output"
+          (optional_with_default
+             Filename.current_dir_name
+             string)
+          ~doc: "PATH the path under which output directories will be created"
+      and verbose =
+        flag "verbose"
+          no_arg
+          ~doc: "verbose mode"
+      and no_warnings =
+        flag "no-warnings"
+          no_arg
+          ~doc: "silence all warnings"
+      and inpaths_anon =
+        anon (maybe (non_empty_sequence_as_list ("PATH" %: string)))
+      and inpaths_rest =
+        flag "--"
+          escape
+          ~doc: "PATHS any remaining arguments are treated as input paths"
+      in
+      fun () ->
+        let inpaths =
+          (Option.value ~default:[] inpaths_anon)
+          @ (Option.value ~default:[] inpaths_rest)
+        in
+        let vf = maybe_err_formatter verbose in
+        let wf = maybe_err_formatter (not no_warnings) in
+        Result.Let_syntax.(
+         let%bind specs = make_compiler_specs vf spec_file in
+         do_memalloy { vf; wf; root; specs } inpaths
+        ) |> prerr
+]
 
 let command =
   Command.group

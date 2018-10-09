@@ -199,9 +199,16 @@ end
  *)
 
 module type Intf = sig
+  module Warn : WarnIntf
+
   type statement
 
-  val sanitise : statement list -> statement list list
+  type output =
+    { programs : statement list list
+    ; warnings : Warn.t list
+    }
+
+  val sanitise : statement list -> output
 end
 
 module type LangHookS =
@@ -250,10 +257,17 @@ let%expect_test "mangle: sample" =
   print_string (mangle "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet");
   [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
 
-module T (LH : LangHookS) =
+module Make (LH : LangHookS) =
 struct
   module Ctx = LH.Ctx
   module Warn = LH.Ctx.Warn
+
+  type statement = LH.L.Statement.t
+
+  type output =
+    { programs : statement list list
+    ; warnings : Warn.t list
+    }
 
   let split_programs stms =
     (* Adding a nop to the start forces there to be some
@@ -402,90 +416,30 @@ struct
          ))
       prog
 
-  let emit_warning w =
-    let f = Format.err_formatter in
-    Format.pp_open_hbox f ();
-    Format.fprintf f "Warning:@ ";
-    Format.pp_open_hovbox f 0;
-    Ctx.Warn.pp f w;
-    Format.pp_close_box f ();
-    Format.pp_close_box f ();
-    Format.pp_print_newline f ()
-
-  let emit_warnings =
-    (* TODO(@MattWindsor91): push these all the way through the program *)
-    Ctx.modify
-      (fun ctx ->
-         List.iter ~f:emit_warning ctx.warnings;
-         ctx)
-
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program (i : int) (prog : LH.L.Statement.t list)
-    : LH.L.Statement.t list =
+    : (LH.L.Statement.t list * Warn.t list) =
     let open Ctx.Monad in
-    Ctx.run'
-      ((return prog)
-       >>= update_ctx ~progname:(sprintf "%d" i)
-       >>= LH.on_program
-       >>= remove_irrelevant_statements
-       |>  bindL ~f:sanitise_stm
-       >>= emit_warnings
-      )
-      Ctx.initial
-
+    let ({ Ctx.warnings; _ }, program) =
+      Ctx.run
+        ((return prog)
+         >>= update_ctx ~progname:(sprintf "%d" i)
+         >>= LH.on_program
+         >>= remove_irrelevant_statements
+         |>  bindL ~f:sanitise_stm
+        )
+        Ctx.initial
+    in (program, warnings)
 
   let sanitise_programs progs =
-    progs
-    |> List.mapi ~f:sanitise_program
-    |> make_programs_uniform (LH.L.Statement.empty ())
+    let progs', warnlists =
+      progs
+      |> List.mapi ~f:sanitise_program
+      |> List.unzip
+    in
+    { programs = make_programs_uniform (LH.L.Statement.empty ()) progs'
+    ; warnings = List.concat warnlists
+    }
 
   let sanitise stms = sanitise_programs (split_programs stms)
-end
-
-(* TODO(@MattWindsor91): should this move someplace else? *)
-
-module X86 (L : X86.Lang) =
-struct
-  open X86Ast
-
-  module L = L
-  module Ctx = CtxMake (L) (NoCustomWarn)
-
-  let negate = function
-    | DispNumeric k -> OperandImmediate (DispNumeric (-k))
-    | DispSymbolic s -> OperandBop ( OperandImmediate (DispNumeric 0)
-                                   , BopMinus
-                                   , OperandImmediate (DispSymbolic s)
-                                   )
-
-  let sub_to_add_ops : operand list -> operand list option =
-    L.bind_src_dst
-      ~f:(function
-          | {src = OperandImmediate s; dst} -> Some {src = negate s; dst}
-          | _ -> None)
-
-  let sub_to_add =
-    function
-    | { prefix; opcode = OpBasic `Sub; operands} as op ->
-      Option.value_map
-        ~default:op
-        ~f:(fun ops' -> { prefix ; opcode = OpBasic `Add; operands = ops' })
-        (sub_to_add_ops operands)
-    | { prefix; opcode = OpSized (`Sub, s); operands} as op ->
-      Option.value_map
-        ~default:op
-        ~f:(fun ops' -> { prefix ; opcode = OpSized (`Add, s); operands = ops' })
-        (sub_to_add_ops operands)
-    | x -> x
-
-  let on_statement = Ctx.Monad.return
-
-  let on_program = Ctx.Monad.return
-
-  let on_location = Ctx.Monad.return
-
-  let on_instruction stm =
-    let open Ctx.Monad in
-    return stm
-    >>| sub_to_add
 end
