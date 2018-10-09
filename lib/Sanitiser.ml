@@ -27,40 +27,95 @@ open Lang
 open Utils
 open Utils.MyContainers
 
+(*
+ * Warnings
+ *)
+
+module type CustomWarnS =
+sig
+  include Pretty_printer.S
+end
+
+module NoCustomWarn =
+struct
+  (* No warnings possible *)
+  type t
+  let pp _ _ = ()
+end
+
 module type WarnIntf = sig
   module L : Language.Intf
+  module C : CustomWarnS
 
   type elt =
     | Instruction of L.Instruction.t
     | Statement of L.Statement.t
     | Location of L.Location.t
 
-  type t =
+  type body =
     | UnknownElt of elt
+    | Custom of C.t
 
-  type entry =
-    { body     : t
+  type t =
+    { body     : body
     ; progname : string option
     }
+
+  include Pretty_printer.S with type t := t
 end
 
-module Warn (LS : Language.Intf) : WarnIntf with module L = LS =
+module Warn (L : Language.Intf) (C : CustomWarnS) =
 struct
-  module L = LS
+  module L = L
+  module C = C
 
   type elt =
     | Instruction of L.Instruction.t
     | Statement of L.Statement.t
     | Location of L.Location.t
 
-  type t =
+  type body =
     | UnknownElt of elt
+    | Custom of C.t
 
-  type entry =
-    { body     : t
+  type t =
+    { body     : body
     ; progname : string option
     }
+
+  let pp_elt f =
+    function
+    | Statement s -> L.Statement.pp f s
+    | Instruction i -> L.Instruction.pp f i
+    | Location l -> L.Location.pp f l
+
+  let pp_unknown_warning f elt =
+    let elt_type_name =
+      match elt with
+      | Statement _ -> "statement"
+      | Instruction _ -> "instruction"
+      | Location _ -> "location"
+    in
+    Format.fprintf f
+      "act didn't understand@ %s@ %a.@,The litmus translation may be wrong."
+      elt_type_name
+      pp_elt elt
+
+  let pp_body f =
+    function
+    | UnknownElt elt -> pp_unknown_warning f elt
+    | Custom c -> C.pp f c
+
+  let pp f ent =
+    MyFormat.pp_option f
+      ~pp:(fun f -> Format.fprintf f "In program %a:@ " String.pp)
+      ent.progname;
+    pp_body f ent.body
 end
+
+(*
+ * Context
+ *)
 
 module type CtxIntf =
 sig
@@ -69,7 +124,7 @@ sig
   type ctx =
     { progname : string option
     ; jsyms    : Language.SymSet.t
-    ; warnings : Warn.entry list
+    ; warnings : Warn.t list
     }
 
   type 'a t
@@ -82,19 +137,23 @@ sig
   val run : 'a t -> ctx -> (ctx * 'a)
   val run' : 'a t -> ctx -> 'a
 
-  val warn : Warn.t -> 'a -> 'a t
+  val warn : Warn.body -> 'a -> 'a t
 
   module Monad : Monad.S with type 'a t := 'a t
 end
 
-module Ctx (LS : Language.Intf) =
+(*
+ * Language-dependent parts
+ *)
+
+module CtxMake (L : Language.Intf) (C : CustomWarnS) =
 struct
-  module Warn = Warn(LS)
+  module Warn = Warn (L) (C)
 
   type ctx =
     { progname : string option
     ; jsyms    : Language.SymSet.t
-    ; warnings : Warn.entry list
+    ; warnings : Warn.t list
     }
 
   let initial =
@@ -128,12 +187,16 @@ struct
     end
     )
 
-  let warn (w : Warn.t) =
+  let warn (w : Warn.body) =
     modify
       (fun ctx ->
          let ent = { Warn.progname = ctx.progname; body = w } in
          { ctx with warnings = ent::ctx.warnings })
 end
+
+(*
+ * Main sanitiser modules
+ *)
 
 module type Intf = sig
   type statement
@@ -141,26 +204,26 @@ module type Intf = sig
   val sanitise : statement list -> statement list list
 end
 
-module type LangHook =
+module type LangHookS =
 sig
   module L : Language.Intf
-  module C : CtxIntf with module Warn.L = L
+  module Ctx : CtxIntf with module Warn.L = L
 
-  val on_program : L.Statement.t list -> (L.Statement.t list) C.t
-  val on_statement : L.Statement.t -> L.Statement.t C.t
-  val on_instruction : L.Instruction.t -> L.Instruction.t C.t
-  val on_location : L.Location.t -> L.Location.t C.t
+  val on_program : L.Statement.t list -> (L.Statement.t list) Ctx.t
+  val on_statement : L.Statement.t -> L.Statement.t Ctx.t
+  val on_instruction : L.Instruction.t -> L.Instruction.t Ctx.t
+  val on_location : L.Location.t -> L.Location.t Ctx.t
 end
 
 module NullLangHook (LS : Language.Intf) =
 struct
   module L = LS
-  module C = Ctx(LS)
+  module Ctx = CtxMake (LS) (NoCustomWarn)
 
-  let on_program = C.Monad.return
-  let on_statement = C.Monad.return
-  let on_instruction = C.Monad.return
-  let on_location = C.Monad.return
+  let on_program = Ctx.Monad.return
+  let on_statement = Ctx.Monad.return
+  let on_instruction = Ctx.Monad.return
+  let on_location = Ctx.Monad.return
 end
 
 let mangler =
@@ -187,10 +250,10 @@ let%expect_test "mangle: sample" =
   print_string (mangle "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet");
   [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
 
-module T (LH : LangHook) =
+module T (LH : LangHookS) =
 struct
-  module Ctx = LH.C
-  module Warn = LH.C.Warn
+  module Ctx = LH.Ctx
+  module Warn = LH.Ctx.Warn
 
   let split_programs stms =
     (* Adding a nop to the start forces there to be some
@@ -339,40 +402,12 @@ struct
          ))
       prog
 
-  let emit_unknown_warning f elt =
-    let elt_type_name =
-      Warn.(
-        match elt with
-        | Statement _ -> "statement"
-        | Instruction _ -> "instruction"
-        | Location _ -> "location"
-      )
-    in
-    let pp_elt f =
-      Warn.(
-        function
-        | Statement s -> LH.L.Statement.pp f s
-        | Instruction i -> LH.L.Instruction.pp f i
-        | Location l -> LH.L.Location.pp f l
-      )
-    in
-    Format.fprintf f
-      "act didn't understand@ %s@ %a.@,The litmus translation may be wrong."
-      elt_type_name
-      pp_elt elt
-
-  let emit_warning ent =
+  let emit_warning w =
     let f = Format.err_formatter in
     Format.pp_open_hbox f ();
     Format.fprintf f "Warning:@ ";
     Format.pp_open_hovbox f 0;
-    Warn.(
-      MyFormat.pp_option f
-        ~pp:(fun f -> Format.fprintf f "In program %a:@ " String.pp)
-        ent.progname;
-      match ent.body with
-      | UnknownElt elt -> emit_unknown_warning f elt
-    );
+    Ctx.Warn.pp f w;
     Format.pp_close_box f ();
     Format.pp_close_box f ();
     Format.pp_print_newline f ()
@@ -414,7 +449,7 @@ struct
   open X86Ast
 
   module L = L
-  module C = Ctx (L)
+  module Ctx = CtxMake (L) (NoCustomWarn)
 
   let negate = function
     | DispNumeric k -> OperandImmediate (DispNumeric (-k))
@@ -443,14 +478,14 @@ struct
         (sub_to_add_ops operands)
     | x -> x
 
-  let on_statement = C.Monad.return
+  let on_statement = Ctx.Monad.return
 
-  let on_program = C.Monad.return
+  let on_program = Ctx.Monad.return
 
-  let on_location = C.Monad.return
+  let on_location = Ctx.Monad.return
 
   let on_instruction stm =
-    let open C.Monad in
+    let open Ctx.Monad in
     return stm
     >>| sub_to_add
 end

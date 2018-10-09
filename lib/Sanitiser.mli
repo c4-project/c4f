@@ -26,29 +26,54 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lang
 
+(*
+ * Warnings
+ *)
+
+(** [CustomWarnS] is the signature that any custom sanitisation
+   warnings need to implement. *)
+module type CustomWarnS =
+sig
+  include Pretty_printer.S
+end
+
+(** [NoCustomWarn] is a dummy interface implementing [CustomWarnS]. *)
+module NoCustomWarn : CustomWarnS
+
 (** [WarnIntf] is the interface to the warnings emitted by the
    sanitiser. *)
 module type WarnIntf =
 sig
   module L : Language.Intf
+  module C : CustomWarnS
 
   type elt =
     | Instruction of L.Instruction.t
     | Statement of L.Statement.t
     | Location of L.Location.t
 
-  type t =
+  type body =
     | UnknownElt of elt
+    | Custom of C.t
 
-  type entry =
-    { body     : t
+  type t =
+    { body     : body
     ; progname : string option
     }
+
+  include Pretty_printer.S with type t := t
 end
 
-(** [Warn] produces a warnings module for the given language. *)
-module Warn : functor (LS : Language.Intf)
-  -> WarnIntf with module L = LS
+(** [Warn] produces a warnings module for the given language and
+   custom warnings set. *)
+module Warn
+  : functor (L : Language.Intf)
+    -> functor (C : CustomWarnS)
+      -> WarnIntf with module L = L and module C = C
+
+(*
+ * Context
+ *)
 
 (** [CtxIntf] is the interface to the state monad used by the sanitiser to
     carry global information around in a sanitisation pass. *)
@@ -59,7 +84,7 @@ sig
   type ctx =
     { progname : string option
     ; jsyms    : Language.SymSet.t
-    ; warnings : Warn.entry list
+    ; warnings : Warn.t list
     }
 
   type 'a t
@@ -90,15 +115,52 @@ sig
 
   (** [warn w a] adds a warning [w] to the current context, passing
       [a] through. *)
-  val warn : Warn.t -> 'a -> 'a t
+  val warn : Warn.body -> 'a -> 'a t
 
   (** [CtxIntf] implementations form monads. *)
   module Monad : Monad.S with type 'a t := 'a t
 end
 
-(** [Ctx] builds a context monad for the given language. *)
-module Ctx : functor (LS : Language.Intf)
-  -> CtxIntf with module Warn.L = LS
+(** [CtxMake] builds a context monad for the given language. *)
+module CtxMake
+  : functor (L : Language.Intf)
+    -> functor (C : CustomWarnS)
+      -> CtxIntf with module Warn.L = L and module Warn.C = C
+
+(*
+ * Language-dependent parts
+ *)
+
+(** [LangHookS] is an interface for language-specific hooks into the
+    sanitisation process. *)
+module type LangHookS = sig
+  module L : Language.Intf
+  module Ctx : CtxIntf with module Warn.L = L
+
+  (** [on_program] is a hook mapped over each the program as a
+     whole. *)
+  val on_program : L.Statement.t list -> (L.Statement.t list) Ctx.t
+
+  (** [on_statement] is a hook mapped over each statement in the
+     program. *)
+  val on_statement : L.Statement.t -> L.Statement.t Ctx.t
+
+  (** [on_instruction] is a hook mapped over each instruction in the
+     program. *)
+  val on_instruction : L.Instruction.t -> L.Instruction.t Ctx.t
+
+  (** [on_location] is a hook mapped over each location in the
+      program. *)
+  val on_location : L.Location.t -> L.Location.t Ctx.t
+end
+
+(** [NullLangHook] is a [LangHook] that does nothing. *)
+module NullLangHook : functor (LS : Language.Intf)
+  -> LangHookS with module L = LS
+
+(*
+ * Main sanitiser modules
+ *)
 
 module type Intf = sig
   type statement
@@ -109,39 +171,12 @@ module type Intf = sig
   val sanitise : statement list -> statement list list
 end
 
-(** [LangHook] is an interface for language-specific hooks into the
-    sanitisation process. *)
-module type LangHook = sig
-  module L : Language.Intf
-  module C : CtxIntf with module Warn.L = L
-
-  (** [on_program] is a hook mapped over each the program as a
-     whole. *)
-  val on_program : L.Statement.t list -> (L.Statement.t list) C.t
-
-  (** [on_statement] is a hook mapped over each statement in the
-     program. *)
-  val on_statement : L.Statement.t -> L.Statement.t C.t
-
-  (** [on_instruction] is a hook mapped over each instruction in the
-     program. *)
-  val on_instruction : L.Instruction.t -> L.Instruction.t C.t
-
-  (** [on_location] is a hook mapped over each location in the
-      program. *)
-  val on_location : L.Location.t -> L.Location.t C.t
-end
-
-(** [NullLangHook] is a [LangHook] that does nothing. *)
-module NullLangHook : functor (LS : Language.Intf)
-  -> LangHook with module L = LS
-
 (** [T] implements the assembly sanitiser for a given language. *)
 module T :
-  functor (LH : LangHook)
+  functor (LH : LangHookS)
     -> Intf with type statement := LH.L.Statement.t
 
 (** [X86] implements x86-specific sanitisation passes.
     It requires an [X86.Lang] module to tell it things about the
     current x86 dialect (for example, the order of operands). *)
-module X86 : functor (L : X86.Lang) -> LangHook with module L = L
+module X86 : functor (L : X86.Lang) -> LangHookS with module L = L
