@@ -1,0 +1,74 @@
+(* This file is part of 'act'.
+
+Copyright (c) 2018 by Matt Windsor
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+
+open Core
+open Lang
+
+module SanitiserHook (L : X86.Lang) =
+struct
+  open X86Ast
+
+  module L = L
+  module Ctx = Sanitiser.CtxMake (L) (Sanitiser.NoCustomWarn)
+
+  let negate = function
+    | DispNumeric k -> OperandImmediate (DispNumeric (-k))
+    | DispSymbolic s -> OperandBop ( OperandImmediate (DispNumeric 0)
+                                   , BopMinus
+                                   , OperandImmediate (DispSymbolic s)
+                                   )
+
+  let sub_to_add_ops : operand list -> operand list option =
+    L.bind_src_dst
+      ~f:(function
+          | {src = OperandImmediate s; dst} -> Some {src = negate s; dst}
+          | _ -> None)
+
+  let sub_to_add =
+    function
+    | { prefix; opcode = OpBasic `Sub; operands} as op ->
+      Option.value_map
+        ~default:op
+        ~f:(fun ops' -> { prefix ; opcode = OpBasic `Add; operands = ops' })
+        (sub_to_add_ops operands)
+    | { prefix; opcode = OpSized (`Sub, s); operands} as op ->
+      Option.value_map
+        ~default:op
+        ~f:(fun ops' -> { prefix ; opcode = OpSized (`Add, s); operands = ops' })
+        (sub_to_add_ops operands)
+    | x -> x
+
+  let on_statement = Ctx.Monad.return
+
+  let on_program = Ctx.Monad.return
+
+  let on_location = Ctx.Monad.return
+
+  let on_instruction stm =
+    let open Ctx.Monad in
+    return stm
+    >>| sub_to_add
+end
+
+module Sanitiser (L : X86.Lang) = Sanitiser.Make (SanitiserHook (L))
+module LitmusDirect = Litmus.Make (X86.Herd7)

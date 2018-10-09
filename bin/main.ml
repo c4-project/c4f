@@ -17,48 +17,11 @@ let asm_path_of (cc_id : string) (ps : Pathset.t) : string =
 let lita_path_of (cc_id : string) (ps : Pathset.t) : string =
   List.Assoc.find_exn ps.lita_paths cc_id ~equal:(=)
 
-let parse_asm (cs : CompilerSpec.t) (file : string option) =
-  match cs.emits with
-  | Language.X86 (X86Dialect.Att) ->
-    let fname = Option.value ~default:"(stdin)" file in
-    Or_error.tag_arg
-      ( match file with
-        | Some file -> X86.AttFrontend.run_file ~file
-        | None      -> X86.AttFrontend.run_stdin ()
-      )
-      "assembly parse error" fname String.sexp_of_t
-  | Language.X86 _ ->
-    Or_error.error "language unsupported" cs.emits Language.sexp_of_name
 
 module S = X86Specifics.Sanitiser (X86.ATT)
 module E = Explainer.Make (X86.ATT)
 module C = X86Conv.Make (X86.ATT) (X86.Herd7)
 module L = X86Specifics.LitmusDirect
-
-let emit_warnings wf name =
-  function
-  | [] -> ()
-  | ws ->
-    let pp_warning f w =
-      Format.fprintf f "@[<h>-@ @[<hov>%a@]@]@,"
-        S.Warn.pp w
-    in
-    let pp_name f s =
-      Format.fprintf f "@ for@ %s" s
-    in
-    Format.fprintf wf "Warnings%a:@ @[<v>%a@]@."
-      (MyFormat.pp_option ~pp:pp_name) name
-      (fun f -> List.iter ~f:(pp_warning f)) ws
-
-let build_litmus (wf : Format.formatter) (name : string option) (asm : X86.AttFrontend.ast) =
-  let {S.programs; warnings} = S.sanitise asm.program in
-  emit_warnings wf name warnings;
-  Or_error.tag
-    ~tag:"couldn't build litmus file"
-    ( L.make ~name:(Option.value name ~default:"anonymous")
-             ~init:[]
-             ~programs:(List.map ~f:C.convert programs)
-    )
 
 
 let output_litmus_oc (lit : L.t) (oc : Out_channel.t) =
@@ -66,20 +29,25 @@ let output_litmus_oc (lit : L.t) (oc : Out_channel.t) =
   L.pp f lit;
   Format.pp_print_flush f ()
 
-let output_litmus (lit : L.t) (file : string option) =
-  match file with
-  | Some file -> Out_channel.with_file file ~f:(output_litmus_oc lit)
-  | None -> output_litmus_oc lit Out_channel.stdout
-
-let c_asm (env : env) (cn : string) (cs : CompilerSpec.t) (ps : Pathset.t) =
-  let open Result.Let_syntax in
-  let%bind asm = parse_asm cs (Some (asm_path_of cn ps)) in
-  let%bind lit = build_litmus env.wf (Some ps.basename) asm in
-  Format.fprintf env.vf "@[OUT@ %s@]@." ps.basename;
-  output_litmus lit (Some (lita_path_of cn ps));
-  (* TODO(@MattWindsor91): catch errors from output_litmus. *)
-  Result.ok_unit
-
+let c_asm (env : env) (cid : string) (spec : CompilerSpec.t) (ps : Pathset.t) =
+  let open Io in
+  let f src inp _ outp =
+    let iname = MyFormat.format_to_string (In_source.pp) src in
+    Litmusifier.run
+      { vf = env.vf
+      ; wf = env.wf
+      ; cid
+      ; spec
+      ; iname
+      ; inp
+      ; outp
+      ; mode = `Litmusify
+      }
+  in
+  with_input_and_output
+    (`File (asm_path_of cid ps))
+    (`File (lita_path_of cid ps))
+    ~f
 
 let proc_c (env : env) results_path c_fname =
   let open Or_error in
@@ -154,13 +122,28 @@ let get_spec specs compiler_id =
   |> Result.of_option
     ~error:(Error.create "invalid compiler ID" compiler_id [%sexp_of: string])
 
-let do_litmusify _ wf infile outfile compiler_id specs =
+let do_litmusify mode vf wf infile outfile cid specs =
   let open Result.Let_syntax in
-  let%bind spec = get_spec specs compiler_id in
-  let%bind asm = parse_asm spec infile in
-  let%bind lit = build_litmus wf Option.(infile >>| Filename.basename) asm in
-  output_litmus lit outfile;
-  Result.ok_unit
+  let%bind spec = get_spec specs cid in
+  Io.(
+    let f src inp _ outp =
+      let iname = MyFormat.format_to_string (In_source.pp) src in
+      Litmusifier.run
+        { vf
+        ; wf
+        ; cid
+        ; spec
+        ; iname
+        ; inp
+        ; outp
+        ; mode
+        }
+    in
+    with_input_and_output
+      (In_source.of_option infile)
+      (Out_sink.of_option outfile)
+      ~f
+  )
 
 let output_explanation_oc (expl : E.t) (oc : Out_channel.t) =
   let f = Format.formatter_of_out_channel oc in
@@ -171,13 +154,6 @@ let output_explanation (expl : E.t) (file : string option) =
   match file with
   | Some file -> Out_channel.with_file file ~f:(output_explanation_oc expl)
   | None -> output_explanation_oc expl Out_channel.stdout
-
-let do_explain _ infile outfile compiler_id specs =
-  let open Result.Let_syntax in
-  let%bind spec = get_spec specs compiler_id in
-  let%bind asm = parse_asm spec infile in
-  output_explanation (E.explain asm.program) outfile;
-  Result.ok_unit
 
 let explain =
   let open Command.Let_syntax in
@@ -194,6 +170,10 @@ let explain =
        flag "verbose"
             no_arg
             ~doc: "verbose mode"
+     and no_warnings =
+        flag "no-warnings"
+          no_arg
+          ~doc: "silence all warnings"
      and compiler_id =
        anon ("COMPILER_ID" %: string)
      and outfile =
@@ -205,9 +185,10 @@ let explain =
          in
          fun () ->
          let vf = maybe_err_formatter verbose in
+         let wf = maybe_err_formatter (not no_warnings) in
          Result.Let_syntax.(
            make_compiler_specs vf spec_file
-           >>= do_explain vf infile outfile compiler_id
+           >>= do_litmusify `Explain vf wf infile outfile compiler_id
          )
          |> prerr
     ]
@@ -245,7 +226,7 @@ let litmusify =
          let wf = maybe_err_formatter (not no_warnings) in
          Result.Let_syntax.(
            let%bind specs = make_compiler_specs vf spec_file in
-           do_litmusify vf wf infile outfile compiler_id specs
+           do_litmusify `Litmusify vf wf infile outfile compiler_id specs
          )
          |> prerr
     ]
