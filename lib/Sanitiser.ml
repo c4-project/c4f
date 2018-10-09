@@ -176,6 +176,7 @@ let mangler =
                       ; '.', 'F' (* Full stop *)
                       ; '-', 'M' (* Minus *)
                       ; '%', 'P' (* Percent *)
+                      ; '@', 'T' (* aT *)
                       ; '_', 'U' (* Underscore *)
                       ; 'Z', 'Z' (* Z *)
                       ]
@@ -183,8 +184,8 @@ let mangle ident =
   Staged.unstage mangler ident
 
 let%expect_test "mangle: sample" =
-  print_string (mangle "_foo$bar.BAZ");
-  [%expect {| ZUfooZDbarZPBAZZ |}]
+  print_string (mangle "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet");
+  [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
 
 module T
     (LS   : Language.Intf)
