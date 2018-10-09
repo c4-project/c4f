@@ -1,5 +1,4 @@
 open Core
-open Rresult
 
 (** [Pathset.t] is a record containing various paths used in the
    execution of [act]. *)
@@ -14,7 +13,7 @@ type t =
 
 (** [make_dir_structure] tries to make the output directories
    mentioned in a [Pathset.t]. *)
-val make_dir_structure : t -> (unit, R.msg) result
+val make_dir_structure : t -> unit Or_error.t
 
 (** [make] constructs a [Pathset.t] from a compiler spec set and
    various other paths. *)

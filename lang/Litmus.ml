@@ -41,17 +41,10 @@ sig
 
   include Pretty_printer.S with type t := t
 
-  type err =
-    | NameEmpty
-    | ProgramsEmpty
-    | ProgramsNotUniform
-    | DuplicateInit of LS.Location.t
-
-  val pp_err : Format.formatter -> err -> unit
   val make : name:string
              -> init:((LS.Location.t, LS.Constant.t) List.Assoc.t)
              -> programs:LS.Statement.t list list
-             -> (t, err) result
+             -> t Or_error.t
 end
 
 module Make (LS : Language.Intf) =
@@ -64,54 +57,47 @@ struct
     ; programs : LS.Statement.t list list
     }
 
-  type err =
-    | NameEmpty
-    | ProgramsEmpty
-    | ProgramsNotUniform
-    | DuplicateInit of LS.Location.t
-
-  let pp_err f =
-    function
-    | NameEmpty ->
-       Format.pp_print_string f "empty name given"
-    | ProgramsEmpty ->
-       Format.pp_print_string f "no programs given"
-    | ProgramsNotUniform ->
-       Format.pp_print_string f "programs have different sizes"
-    | DuplicateInit (loc) ->
-       Format.fprintf f "location %a initialised multiple times"
-                      LS.Location.pp loc
-
   (** [validate_init init] validates an incoming litmus test's
      init block. *)
 
   let validate_init (init : (LS.Location.t, LS.Constant.t) List.Assoc.t)
-      : err option =
-    List.find_a_dup ~compare:(fun x y -> if fst x = fst y then 0 else -1) init
-    |> Option.map ~f:(fun x -> DuplicateInit (fst x))
+      : unit Or_error.t =
+    let dup =
+      List.find_a_dup ~compare:(fun x y -> if fst x = fst y then 0 else -1)
+        init
+    in
+    let dup_to_err d =
+      Or_error.error "duplicate item in 'init'" d [%sexp_of: LS.Location.t * LS.Constant.t]
+    in
+    Option.value_map
+      ~default:Result.ok_unit
+      ~f:dup_to_err
+      dup
 
   (** [validate_programs ps] validates an incoming litmus test's
      programs. *)
 
-  let validate_programs (ps : LS.Statement.t list list) : err option =
+  let validate_programs (ps : LS.Statement.t list list) : unit Or_error.t =
     match ps with
-    | [] -> Some ProgramsEmpty
+    | [] -> Or_error.error_string "programs are empty"
     | p::ps ->
        let l = List.length p in
-       if (List.for_all ~f:(fun p' -> List.length p' = l) ps)
-       then None
-       else Some ProgramsNotUniform
+       Result.ok_if_true
+         (List.for_all ~f:(fun p' -> List.length p' = l) ps)
+         ~error:(Error.of_string "programs must be of uniform size")
 
   (** [validate lit] validates an incoming litmus test. *)
 
-  let validate (lit : t) : err option =
-    Option.first_some
-      (validate_init lit.init)
-      (validate_programs lit.programs)
+  let validate (lit : t) : unit Or_error.t =
+    Or_error.combine_errors_unit
+      [ validate_init lit.init
+      ; validate_programs lit.programs
+      ]
 
   let make ~name ~init ~programs =
+    let open Or_error in
     let lit = { name; init; programs } in
-    Option.value_map ~default:(Ok lit) ~f:Result.fail (validate lit)
+    validate lit *> return lit
 
   let pp_init (f : Format.formatter)
               (init : (LS.Location.t, LS.Constant.t) List.Assoc.t)
@@ -192,8 +178,9 @@ struct
 
   let pp_body f litmus =
     match validate litmus with
-    | None -> pp_body_validated f litmus
-    | Some err -> Format.fprintf f "@[(* Invalid litmus file: %a *)@]@," pp_err err
+    | Ok _ -> pp_body_validated f litmus
+    | Error err -> Format.fprintf f "[@(*@ @[<hov>Invalid litmus file:@ %a@] *)@]@,"
+                     Error.pp err
 
   let pp f litmus =
     Format.pp_open_vbox f 0;

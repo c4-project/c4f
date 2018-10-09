@@ -8,5 +8,4 @@
  (libraries
   lang
   utils
-  core
-  rresult))
+  core))

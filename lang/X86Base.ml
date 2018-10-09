@@ -50,20 +50,29 @@ open X86Ast
 let parse_reg (s : string) : reg option =
   RegTable.of_string s
 
-type parse_error =
+type error_type =
   | Statement
   | Instruction
   | Operand
+    [@@deriving sexp]
 
-let print_parse_error =
-  function
-  | Statement -> "statement"
-  | Instruction -> "instruction"
-  | Operand -> "operand"
+type error_range = (Lexing.position * Lexing.position)
 
-let pp_error f err = Format.pp_print_string f (print_parse_error err)
+let sexp_of_error_range ((from, until) : error_range) =
+  Sexp.Atom
+    (sprintf "%s:%d:%d-%d:%d"
+       from.pos_fname
+       from.pos_lnum
+       (from.pos_cnum - from.pos_bol)
+       until.pos_lnum
+       (until.pos_cnum - until.pos_bol))
 
-exception ParseError of ((Lexing.position * Lexing.position) * parse_error)
+type error =
+  { at  : error_range
+  ; why : error_type
+  } [@@deriving sexp_of]
+
+exception ParseError of error [@@deriving sexp_of]
 
 let maybe_int_of_string s =
   try

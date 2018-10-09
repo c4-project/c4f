@@ -5,5 +5,4 @@
     lib
     core
     utils
-    rresult
     unix))

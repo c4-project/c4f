@@ -1,5 +1,4 @@
 open Core
-open Rresult
 
 type compilation =
   { cc_id    : string
@@ -8,6 +7,17 @@ type compilation =
   ; out_path : string
   }
 
+type compiler_code =
+  { cmd   : string list
+  ; code  : int
+  ; error : string list
+  } [@@deriving sexp]
+
+type compiler_sig =
+  { cmd    : string list
+  ; signal : Signal.t
+  } [@@deriving sexp]
+
 let run_cc (cc : string) (argv : string list) =
   let proc = Unix.create_process ~prog:cc
                                  ~args:argv
@@ -15,18 +25,21 @@ let run_cc (cc : string) (argv : string list) =
   let errch = Unix.in_channel_of_descr proc.stderr in
   let res =
     Unix.waitpid proc.pid
-    |> R.reword_error
-         (function
-          | `Exit_non_zero ret ->
-             let outp = Stdio.In_channel.input_lines errch in
-             R.msgf "'%s' exited with code %d with error:\n%s"
-                    (String.concat ~sep:" " (cc::argv))
-                    ret
-                    (String.concat ~sep:"\n" outp)
-          | `Signal sg ->
-             R.msgf "'%s' caught signal %s"
-                    (String.concat ~sep:" " (cc::argv))
-                    (Signal.to_string sg))
+    |> Result.map_error
+      ~f:(
+        function
+        | `Exit_non_zero code ->
+          let error = Stdio.In_channel.input_lines errch in
+          Error.create
+            "compiler exited with error"
+            { cmd = cc::argv; code; error }
+            [%sexp_of: compiler_code]
+        | `Signal signal ->
+          Error.create
+            "compiler caught signal"
+            { cmd = cc::argv; signal }
+            [%sexp_of: compiler_sig]
+      )
   in
   Stdio.In_channel.close errch;
   res

@@ -53,6 +53,7 @@ type reg =
   | AL | BL | CL | DL
   | AH | BH | CH | DH
   | ZF | SF | CF
+[@@deriving sexp]
 
 module RegTable =
   StringTable.Make
@@ -97,6 +98,7 @@ module RegTable =
 type disp =
   | DispSymbolic of string
   | DispNumeric of int
+[@@deriving sexp]
 
 let fold_map_disp_symbols ~f ~init =
   function
@@ -111,6 +113,7 @@ let fold_map_disp_symbols ~f ~init =
 type index =
   | Unscaled of reg
   | Scaled of reg * int
+[@@deriving sexp]
 
 (*
  * Memory addresses
@@ -122,6 +125,7 @@ type indirect =
   ; in_base   : reg option
   ; in_index  : index option
   }
+[@@deriving sexp]
 
 let in_zero () =
   { in_seg    = None
@@ -147,6 +151,7 @@ let fold_map_indirect_symbols ~f ~init indirect =
 type location =
   | LocIndirect of indirect
   | LocReg of reg
+[@@deriving sexp]
 
 let fold_map_location_symbols ~f ~init =
   function
@@ -162,6 +167,7 @@ let fold_map_location_symbols ~f ~init =
 type bop =
   | BopPlus
   | BopMinus
+[@@deriving sexp]
 
 (*
  * Operands
@@ -173,6 +179,7 @@ type operand =
   | OperandString of string
   | OperandType of string
   | OperandBop of operand * bop * operand
+[@@deriving sexp]
 
 let rec fold_map_operand_symbols ~f ~init =
   function
@@ -208,6 +215,7 @@ let rec fold_map_operand_locations ~f ~init =
 
 type prefix =
   | PreLock
+[@@deriving sexp]
 
 (*
  * Sizes
@@ -217,6 +225,7 @@ type size =
   | X86SByte
   | X86SWord
   | X86SLong
+[@@deriving sexp]
 
 (*
  * Conditions
@@ -238,6 +247,7 @@ type inv_condition =
   | `Sign
   | `Zero
   ]
+[@@deriving sexp]
 
 type condition =
   [ inv_condition
@@ -247,6 +257,7 @@ type condition =
   | `ParityEven
   | `ParityOdd
   ]
+[@@deriving sexp]
 
 
 module InvConditionTable =
@@ -303,6 +314,7 @@ type sizable_opcode =
   | `Push
   | `Sub
   ]
+[@@deriving sexp]
 
 module SizableOpcodeTable =
   StringTable.Make
@@ -347,6 +359,7 @@ type basic_opcode =
   | `Nop
   | `Ret
   ]
+[@@deriving sexp]
 
 module BasicOpcodeTable =
   StringTable.Make
@@ -369,6 +382,7 @@ type opcode =
   | OpJump of condition option
   | OpDirective of string
   | OpUnknown of string
+[@@deriving sexp]
 
 module JumpTable =
   StringTable.Make
@@ -390,6 +404,7 @@ type instruction =
   ; opcode   : opcode
   ; operands : operand list
   }
+[@@deriving sexp]
 
 let fold_map_instruction_symbols ~f ~init ins =
   Tuple2.map_snd ~f:(fun x -> { ins with operands = x })
@@ -411,6 +426,7 @@ type statement =
   | StmInstruction of instruction
   | StmLabel of string
   | StmNop
+[@@deriving sexp]
 
 (** [t] is the type of an X86 abstract syntax tree, containing the
     specific X86 syntax dialect and a list of statements. *)
@@ -418,6 +434,7 @@ type t =
   { syntax  : X86Dialect.t
   ; program : statement list
   }
+[@@deriving sexp]
 
 let fold_map_statement_symbols ~f ~init =
   function

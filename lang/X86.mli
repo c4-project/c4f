@@ -2,7 +2,7 @@
 
 (** [AttFrontend] is a parser/lexer combination for the AT&T syntax of
    x86 assembly, as emitted by compilers like gcc. *)
-module AttFrontend : LangFrontend.S with type ast = X86Ast.t
+module AttFrontend : LangFrontend.Intf with type ast = X86Ast.t
 
 (** [Lang] is the type of language modules over the X86 AST. *)
 module type Lang =

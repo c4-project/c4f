@@ -43,32 +43,16 @@ sig
   include Pretty_printer.S with type t := t
 
   (*
-   * Validity errors
-   *)
-
-  (** [err] is the type of validity errors that can arise when building
-   a litmus test. *)
-  type err =
-    | NameEmpty
-    | ProgramsEmpty
-    | ProgramsNotUniform
-    | DuplicateInit of LS.Location.t
-
-  (** [pp_err f err] pretty-prints the validity error [err] onto
-     formatter [f]. *)
-  val pp_err : Format.formatter -> err -> unit
-
-  (*
    * Construction
    *)
 
   (** [make] tries to build a [t] from a name [name], initialiser
-     [init], and program list [programs].  It returns a result with
-     possible error [err]. *)
+     [init], and program list [programs].  It returns a result,
+     as it may fail if the input isn't a valid Litmus program. *)
   val make : name:string
              -> init:((LS.Location.t, LS.Constant.t) List.Assoc.t)
              -> programs:LS.Statement.t list list
-             -> (t, err) result
+             -> t Or_error.t
 end
 
 (** [Make] is a functor that, given a language described by

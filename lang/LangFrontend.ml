@@ -25,26 +25,27 @@ open Core
 
 module type S = sig
   type ast
-  type perr
-  type lerr
+  type token
 
-  val pp_perr : Format.formatter -> perr -> unit
-  val pp_lerr : Format.formatter -> lerr -> unit
-
-  val run_ic : ?file:string -> In_channel.t -> (ast, (perr, lerr) LangParser.error) result
-
-  val run_file : file:string -> (ast, (perr, lerr) LangParser.error) result
-  val run_stdin : unit -> (ast, (perr, lerr) LangParser.error) result
+  val lex : Lexing.lexbuf -> token
+  val parse
+    :  (Lexing.lexbuf -> token)
+    -> Lexing.lexbuf
+    -> ast Or_error.t
 end
 
-module Make (SI : LangParser.S) =
-  struct
-    type lerr = SI.lerr
-    type perr = SI.perr
-    type ast = SI.ast
+module type Intf = sig
+  type ast
 
-    let pp_perr = SI.pp_perr
-    let pp_lerr = SI.pp_lerr
+  val run_ic : ?file:string -> In_channel.t -> ast Or_error.t
+
+  val run_file : file:string -> ast Or_error.t
+  val run_stdin : unit -> ast Or_error.t
+end
+
+module Make (SI : S) =
+  struct
+    type ast = SI.ast
 
     let run_ic ?file ic =
       let lexbuf = Lexing.from_channel ic in

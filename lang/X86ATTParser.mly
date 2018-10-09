@@ -83,7 +83,7 @@ stm_list:
 stm:
   | option(instr) EOL { Option.value ~default:StmNop $1 }
   | label { X86Ast.StmLabel $1 }
-  | error { raise (X86Base.ParseError($loc, X86Base.Statement)) }
+  | error { raise (X86Base.ParseError({at = $sloc; why = X86Base.Statement })) }
 
 prefix:
   | IT_LOCK { PreLock }
@@ -163,7 +163,7 @@ disp:
 operand:
   | prim_operand bop operand { X86Ast.OperandBop($1,$2,$3) }
   | prim_operand { $1 }
-  | error { raise (X86Base.ParseError($sloc, X86Base.Operand)) }
+  | error { raise (X86Base.ParseError({at = $sloc; why = X86Base.Operand})) }
 
 prim_operand:
   | DOLLAR disp {X86Ast.OperandImmediate $2}

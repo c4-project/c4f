@@ -170,6 +170,9 @@ module type StatementS = sig
   (** Languages must supply a pretty-printer for their statements. *)
   include Core.Pretty_printer.S with type t := t
 
+  (** They must also include S-expression conversion. *)
+  include Sexpable.S with type t := t
+
   (** They must allow fold-mapping over symbols... *)
   module OnSymbolsS
     : FoldMap.S with type t = string
@@ -197,6 +200,10 @@ module type InstructionS = sig
   (** Languages must supply a pretty-printer for their instructions. *)
   include Core.Pretty_printer.S with type t := t
 
+  (** They must also include S-expression conversion. *)
+  include Sexpable.S with type t := t
+
+
   (** They must allow fold-mapping over symbols... *)
   module OnSymbolsS
     : FoldMap.S with type t = string
@@ -222,6 +229,9 @@ sig
   (** Languages must supply a pretty-printer for their locations. *)
   include Core.Pretty_printer.S with type t := t
 
+  (** They must also include S-expression conversion. *)
+  include Sexpable.S with type t := t
+
   (** [make_heap_loc sym] creates a location referencing a symbolic heap
       location named [sym]. *)
   val make_heap_loc : string -> t
@@ -233,7 +243,12 @@ end
 module type ConstantS =
 sig
   type t
+
+  (** Languages must supply a pretty-printer for their constants. *)
   include Core.Pretty_printer.S with type t := t
+
+  (** They must also include S-expression conversion. *)
+  include Sexpable.S with type t := t
 end
 
 (** [S] is the signature that Litmus languages must implement. *)

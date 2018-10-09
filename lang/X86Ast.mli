@@ -55,6 +55,7 @@ type reg =
   | AL | BL | CL | DL
   | AH | BH | CH | DH
   | ZF | SF | CF
+[@@deriving sexp]
 
 (** [RegTable] associates each register with its string name. *)
 module RegTable : (StringTable.Intf with type t = reg)
@@ -62,10 +63,12 @@ module RegTable : (StringTable.Intf with type t = reg)
 type disp =
   | DispSymbolic of string
   | DispNumeric of int
+[@@deriving sexp]
 
 type index =
   | Unscaled of reg
   | Scaled of reg * int
+[@@deriving sexp]
 
 type indirect =
   { in_seg    : reg option
@@ -73,6 +76,7 @@ type indirect =
   ; in_base   : reg option
   ; in_index  : index option
   }
+[@@deriving sexp]
 
 (** [in_zero] creates an indirect reference with all fields empty.
    This is useful only for creating other types of indirect reference:
@@ -90,12 +94,14 @@ val in_disp_only : disp -> indirect
 type bop =
   | BopPlus
   | BopMinus
+[@@deriving sexp]
 
 (** [location] enumerates memory locations: either
     indirect seg/disp/base/index stanzas, or registers. *)
 type location =
   | LocIndirect of indirect
   | LocReg of reg
+[@@deriving sexp]
 
 type operand =
   | OperandLocation of location
@@ -103,14 +109,17 @@ type operand =
   | OperandString of string
   | OperandType of string (* Type annotation *)
   | OperandBop of operand * bop * operand
+[@@deriving sexp]
 
 type prefix =
   | PreLock
+[@@deriving sexp]
 
 type size =
   | X86SByte
   | X86SWord
   | X86SLong
+[@@deriving sexp]
 
 module ATTSizeTable : (StringTable.Intf with type t = size)
 
@@ -133,6 +142,7 @@ type inv_condition =
   | `Sign
   | `Zero
   ]
+[@@deriving sexp]
 
 (** [condition] enumerates all x86 conditions, including both forms of
     invertible conditions. *)
@@ -144,6 +154,7 @@ type condition =
   | `ParityEven
   | `ParityOdd
   ]
+[@@deriving sexp]
 
 (*
  * Opcodes
@@ -158,6 +169,7 @@ type sizable_opcode =
   | `Push
   | `Sub
   ]
+[@@deriving sexp]
 
 (** [SizableOpcodeTable] is a parse table for [sizable_opcode]s
    *without* an associated size.
@@ -182,6 +194,7 @@ type basic_opcode =
   | `Nop
   | `Ret
   ]
+[@@deriving sexp]
 
 (** [BasicOpcodeTable] is a parse table for [basic_opcode]s without an
    associated size. *)
@@ -196,6 +209,7 @@ type opcode =
   | OpJump of condition option
   | OpDirective of string (* Assembler directive *)
   | OpUnknown of string (* An opcode we don't (yet?) understand. *)
+[@@deriving sexp]
 
 (** [JumpTable] is a parse table for jump opcodes. *)
 module JumpTable : (StringTable.Intf with type t = condition option)
@@ -205,16 +219,19 @@ type instruction =
   ; opcode   : opcode
   ; operands : operand list
   }
+[@@deriving sexp]
 
 type statement =
   | StmInstruction of instruction
   | StmLabel of string
   | StmNop
+[@@deriving sexp]
 
 type t =
   { syntax  : X86Dialect.t
   ; program : statement list
   }
+[@@deriving sexp]
 
 (*
  * Traversing an AST

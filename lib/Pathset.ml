@@ -1,5 +1,4 @@
 open Core
-open Rresult
 open Utils
 open Utils.MyContainers
 
@@ -33,18 +32,12 @@ let get_ent_type (path : string) : ent_type =
     If [path] exists but is a file, or another error occurred, it returns
     an error message. *)
 let mkdir (path : string) =
+  let open Or_error in
   match get_ent_type path with
-  | Dir -> R.ok ()
-  | File -> R.error_msgf "%s exists, but is a file" path
-  | Unknown -> R.error_msgf "couldn't determine whether %s already exists" path
-  | Nothing ->
-     try
-       Unix.mkdir path;
-       R.ok ()
-     with
-     | Unix.Unix_error (errno, func, arg) ->
-        R.error_msgf "couldn't %s %s: %s"
-                     func arg (Unix.Error.message errno)
+  | Dir -> Result.ok_unit
+  | File -> error "path exists, but is a file" path [%sexp_of: string]
+  | Unknown -> error "couldn't determine whether path already exists" path [%sexp_of: string]
+  | Nothing -> Or_error.try_with (fun () -> Unix.mkdir path)
 
 let c_path_of results_path : string -> string =
   Filename.concat (Filename.concat results_path "C")
@@ -64,15 +57,16 @@ let lita_path_of (root : string) (file : string) (cname : string) : string =
   Filename.concat (lita_dir_of root cname) file
 
 let make_dir_structure ps =
-  try
-    if Sys.is_directory_exn ps.out_root
-    then MyList.iter_result
-           mkdir
-           (List.map ~f:(fun (c, _) -> a_dir_of ps.out_root c) ps.a_paths
-            @ List.map ~f:(fun (c, _) -> lita_dir_of ps.out_root c) ps.lita_paths)
-    else R.error_msgf "%s not a directory" ps.out_root
-  with
-  | Sys_error e -> R.error_msgf "system error while making directories: %s" e
+  let open Or_error in
+  try_with_join
+    ( fun () ->
+        if Sys.is_directory_exn ps.out_root
+        then MyList.iter_result
+            mkdir
+            (List.map ~f:(fun (c, _) -> a_dir_of ps.out_root c) ps.a_paths
+             @ List.map ~f:(fun (c, _) -> lita_dir_of ps.out_root c) ps.lita_paths)
+        else error "not a directory" ps.out_root [%sexp_of: string]
+    )
 
 let make specs ~root_path ~results_path ~c_fname =
   let basename   = Filename.basename (Filename.chop_extension c_fname) in

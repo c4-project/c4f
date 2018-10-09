@@ -1,5 +1,4 @@
 open Core
-open Rresult
 open Lib
 open Utils
 open Utils.MyContainers
@@ -21,19 +20,15 @@ let lita_path_of (cc_id : string) (ps : Pathset.t) : string =
 let parse_asm (cs : CompilerSpec.t) (file : string option) =
   match cs.emits with
   | Language.X86 (X86Dialect.Att) ->
-     R.reword_error
-       (function
-        | LangParser.Parse(perr) ->
-           R.msg (MyFormat.format_to_string X86.AttFrontend.pp_perr perr)
-        | LangParser.Lex(lerr) ->
-           R.msg (MyFormat.format_to_string X86.AttFrontend.pp_lerr lerr)
-       )
-       (match file with
+    let fname = Option.value ~default:"(stdin)" file in
+    Or_error.tag_arg
+      ( match file with
         | Some file -> X86.AttFrontend.run_file ~file
-        | None      -> X86.AttFrontend.run_stdin ())
-  | Language.X86 d ->
-     R.error_msgf "FIXME: unsupported x86 dialect %s"
-                  (X86Dialect.Map.to_string d |> Option.value ~default:"(unknown)")
+        | None      -> X86.AttFrontend.run_stdin ()
+      )
+      "assembly parse error" fname String.sexp_of_t
+  | Language.X86 _ ->
+    Or_error.error "language unsupported" cs.emits Language.sexp_of_name
 
 module S = X86Specifics.Sanitiser (X86.ATT)
 module E = Explainer.Make (X86.ATT)
@@ -58,11 +53,13 @@ let emit_warnings wf name =
 let build_litmus (wf : Format.formatter) (name : string option) (asm : X86.AttFrontend.ast) =
   let {S.programs; warnings} = S.sanitise asm.program in
   emit_warnings wf name warnings;
-  R.reword_error
-    (fun err -> R.msg (MyFormat.format_to_string L.pp_err err))
-    (L.make ~name:(Option.value name ~default:"anonymous")
-            ~init:[]
-            ~programs:(List.map ~f:C.convert programs))
+  Or_error.tag
+    ~tag:"couldn't build litmus file"
+    ( L.make ~name:(Option.value name ~default:"anonymous")
+             ~init:[]
+             ~programs:(List.map ~f:C.convert programs)
+    )
+
 
 let output_litmus_oc (lit : L.t) (oc : Out_channel.t) =
   let f = Format.formatter_of_out_channel oc in
@@ -85,6 +82,7 @@ let c_asm (env : env) (cn : string) (cs : CompilerSpec.t) (ps : Pathset.t) =
 
 
 let proc_c (env : env) results_path c_fname =
+  let open Or_error in
   let paths = Pathset.make env.specs
                            ~root_path:env.root
                            ~results_path:results_path
@@ -92,26 +90,25 @@ let proc_c (env : env) results_path c_fname =
   Pathset.pp env.vf paths;
   Format.pp_print_newline env.vf ();
 
-  Pathset.make_dir_structure paths |>
-    R.reword_error_msg (fun _ -> R.msg "couldn't make dir structure")
-  >>= (
-    fun _ -> MyList.iter_result
-               (fun (cn, cs) ->
-                 Format.fprintf env.vf "@[CC[%s]@ %s@]@." cn paths.basename;
-                 Compiler.compile cn cs paths
-                 >>= (fun _ -> Result.map ~f:ignore (c_asm env cn cs paths))
-
-               ) env.specs
-  )
+  tag (Pathset.make_dir_structure paths)
+    ~tag:"couldn't make dir structure"
+  *>
+    MyList.iter_result
+      (fun (cn, cs) ->
+         Format.fprintf env.vf "@[CC[%s]@ %s@]@." cn paths.basename;
+         Compiler.compile cn cs paths
+         *> c_asm env cn cs paths
+      ) env.specs
 
 let proc_results (env : env) (results_path : string) =
   let c_path = Filename.concat results_path "C" in
-  try
-    Sys.readdir c_path
-    |> Array.filter ~f:(MyFilename.has_extension ~ext:"c")
-    |> MyArray.iter_result (proc_c env results_path)
-  with
-    Sys_error e -> R.error_msgf "system error: %s" e
+  Or_error.try_with_join
+    (
+      fun () ->
+        Sys.readdir c_path
+        |> Array.filter ~f:(MyFilename.has_extension ~ext:"c")
+        |> MyArray.iter_result (proc_c env results_path)
+    )
 
 let pp_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
   Format.pp_open_vbox f 0;
@@ -132,13 +129,14 @@ let tap (f : 'a -> unit) (r : ('a, 'e) result) : ('a, 'e) result =
     [specpath], converting it to a [compiler_spec_set].
     It pretty-prints the specs onto [vf]. *)
 let make_compiler_specs (vf : Format.formatter) (specpath : string) =
+  let open Or_error in
   CompilerSpec.load_specs ~path:specpath
   |> List.fold_result ~init:[]
                       ~f:(fun specs (c, spec) ->
                         Compiler.test spec >>| (fun _ -> (c, spec)::specs)
                       )
   |> tap (pp_specs vf)
-  |> R.reword_error_msg (fun _ -> R.msg "Compiler specs are invalid.")
+  |> tag ~tag:"compiler specs are invalid"
 
 let maybe_err_formatter on =
   if on
@@ -149,11 +147,12 @@ let prerr =
   function
   | Ok _ -> ()
   | Error err ->
-     Format.eprintf "@[Fatal error:@.@[%a@]@]@." R.pp_msg err
+     Format.eprintf "@[Fatal error:@.@[%a@]@]@." Error.pp err
 
 let get_spec specs compiler_id =
   List.Assoc.find specs ~equal:(=) compiler_id
-  |> Result.of_option ~error:(R.msgf "invalid compiler ID: %s" compiler_id)
+  |> Result.of_option
+    ~error:(Error.create "invalid compiler ID" compiler_id [%sexp_of: string])
 
 let do_litmusify _ wf infile outfile compiler_id specs =
   let open Result.Let_syntax in
@@ -206,8 +205,11 @@ let explain =
          in
          fun () ->
          let vf = maybe_err_formatter verbose in
-         make_compiler_specs vf spec_file
-         >>= do_explain vf infile outfile compiler_id |> prerr
+         Result.Let_syntax.(
+           make_compiler_specs vf spec_file
+           >>= do_explain vf infile outfile compiler_id
+         )
+         |> prerr
     ]
 
 let litmusify =

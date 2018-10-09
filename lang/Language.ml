@@ -226,6 +226,7 @@ module type StatementS = sig
   type ins
 
   include Pretty_printer.S with type t := t
+  include Sexpable.S with type t := t
 
   module OnSymbolsS
     : FoldMap.S with type t = string
@@ -243,6 +244,7 @@ module type InstructionS = sig
   type loc
 
   include Pretty_printer.S with type t := t
+  include Sexpable.S with type t := t
 
   module OnSymbolsS
     : FoldMap.S with type t = string
@@ -259,6 +261,7 @@ module type LocationS = sig
   type t
 
   include Pretty_printer.S with type t := t
+  include Sexpable.S with type t := t
 
   val make_heap_loc : string -> t
   val abs_type : t -> AbsLocation.t
@@ -266,7 +269,9 @@ end
 
 module type ConstantS = sig
   type t
+
   include Core.Pretty_printer.S with type t := t
+  include Sexpable.S with type t := t
 end
 
 module type S = sig
