@@ -19,9 +19,8 @@ module AttFrontend =
             )
       end)
 
-module type Lang =
-sig
-  include X86Dialect.Traits
+module type Lang = sig
+  include X86Dialect.Intf
   include X86PP.S
   include
     Language.Intf
@@ -31,7 +30,7 @@ sig
      and type Statement.t = X86Ast.statement
 end
 
-module Make (T : X86Dialect.Traits) (P : X86PP.S) =
+module Make (T : X86Dialect.Intf) (P : X86PP.S) =
 struct
   include T
   include P
@@ -116,7 +115,7 @@ struct
           let src_dst_operands (operands : operand list)
             : Language.AbsOperands.t =
             let open Language.AbsOperands in
-            let open X86Dialect.ATTTraits in
+            let open T in
             to_src_dst operands
             |> Option.value_map
               ~f:(function
@@ -325,7 +324,7 @@ struct
       end)
 end
 
-module ATT = Make (X86Dialect.ATTTraits) (X86PP.ATT)
-module Intel = Make (X86Dialect.IntelTraits) (X86PP.Intel)
-module Herd7 = Make (X86Dialect.Herd7Traits) (X86PP.Herd7)
+module ATT = Make (X86Dialect.ATT) (X86PP.ATT)
+module Intel = Make (X86Dialect.Intel) (X86PP.Intel)
+module Herd7 = Make (X86Dialect.Herd7) (X86PP.Herd7)
 

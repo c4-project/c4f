@@ -79,48 +79,37 @@ let t_of_sexp =
 let pp f syn =
   Format.pp_print_string f (Option.value ~default:"??" (Map.to_string syn))
 
-let operand_order_of = function
-  | Att -> SrcDst.SrcDst
-  | Intel
-    | Herd7 -> SrcDst.DstSrc
+module type HasDialect = sig
+  val dialect : t
+end
 
-let has_size_suffix_in = function
-  | Att
-    (* Surprisingly enough, herd7 syntax uses AT&T suffixes
-       (for 'mov', at least!). *)
-    | Herd7 -> true
-  | Intel -> false
+module type Intf = sig
+  include HasDialect
+  include SrcDst.S
 
+  val has_size_suffix : bool
 
-module type HasDialect =
-  sig
-    val dialect : t
-  end
+  val symbolic_jump_type : [`Displacement | `Immediate ]
+end
 
-module type Traits =
-  sig
-    include HasDialect
-    include SrcDst.S
+module ATT = struct
+  let dialect = Att
+  include SrcDst.Make (struct let operand_order = SrcDst.SrcDst end)
+  let has_size_suffix = true
+  let symbolic_jump_type = `Immediate
+end
 
-    val has_size_suffix : bool
-  end
+module Intel = struct
+  let dialect = Intel
+  include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
+  let has_size_suffix = false
+  let symbolic_jump_type = `Displacement
+end
 
-(** [MakeTraits] wraps the trait functions in a module, and adds some
-    convenience methods. *)
-module MakeTraits (N : HasDialect) =
-  struct
-    include N
-
-    include SrcDst.Make (
-                struct
-                  let operand_order = operand_order_of N.dialect
-                end
-              )
-
-    let has_size_suffix = has_size_suffix_in N.dialect
-
-  end
-
-module ATTTraits = MakeTraits (struct let dialect = Att end)
-module IntelTraits = MakeTraits (struct let dialect = Intel end)
-module Herd7Traits = MakeTraits (struct let dialect = Herd7 end)
+module Herd7 = struct
+  let dialect = Herd7
+  include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
+  (* Surprisingly, this is true---for some operations, anyway. *)
+  let has_size_suffix = true
+  let symbolic_jump_type = `Displacement
+end

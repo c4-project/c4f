@@ -5,9 +5,8 @@
 module AttFrontend : LangFrontend.Intf with type ast = X86Ast.t
 
 (** [Lang] is the type of language modules over the X86 AST. *)
-module type Lang =
-sig
-  include X86Dialect.Traits
+module type Lang = sig
+  include X86Dialect.Intf
   include X86PP.S
   include
     Language.Intf

@@ -62,50 +62,36 @@ module Map : (StringTable.Intf with type t = t)
    [f]. *)
 val pp : Format.formatter -> t -> unit
 
-(*
- * Traits
- *)
-
-
-(** [operand_order_of dialect] gets [dialect]'s operand order.
-
-Since the AST doesn't mark the order of operands itself, this function
-   is necessary to make sense of two-operand instructions. *)
-val operand_order_of : t -> SrcDst.order
-
-(** [has_size_suffix_in dialect] gets whether [dialect] uses
-   AT&T-style size suffixes. *)
-val has_size_suffix_in : t -> bool
-
-(*
- * Module interface
- *)
-
 (** [HasDialect] is a signature for modules that report a specific
     dialect. *)
-module type HasDialect =
-  sig
-    val dialect : t
-  end
+module type HasDialect = sig
+  val dialect : t
+end
 
-(** [Traits] is a modular interface to the trait functions above. *)
-module type Traits =
-  sig
-    include HasDialect
-    include SrcDst.S
+(** [Intf] is the interface of modules containing x86 dialect information. *)
+module type Intf = sig
+  include HasDialect
 
-    (** See [has_size_suffix_in] above. *)
-    val has_size_suffix : bool
-  end
+  (** This lets us query a dialect's operand order. *)
+  include SrcDst.S
 
-(** [ATTTraits] contains versions of the trait functions for
-   AT&T-syntax x86 assembly. *)
-module ATTTraits : Traits
+  (** [has_size_suffix] gets whether this dialect uses
+   AT&T-style size suffixes. *)
+  val has_size_suffix : bool
 
-(** [IntelTraits] contains versions of the trait functions for
-   Intel-syntax x86 assembly. *)
-module IntelTraits : Traits
+  (** [symbolic_jump_type] gets the type of syntax this dialect
+     appears to use for symbolic jumps.
 
-(** [Herd7Traits] contains versions of the trait functions for
-   Herd7-syntax x86 assembly. *)
-module Herd7Traits : Traits
+      In AT&T, symbolic jumps look like displacements; in
+      Intel and Herd7, they look like immediate values. *)
+  val symbolic_jump_type : [`Displacement | `Immediate ]
+end
+
+(** [ATT] describes the AT&T dialect of x86 assembly. *)
+module ATT : Intf
+
+(** [Intel] describes the Intel dialect of x86 assembly. *)
+module Intel : Intf
+
+(** [Herd7] describes the Herd7 dialect of x86 assembly. *)
+module Herd7 : Intf
