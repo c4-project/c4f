@@ -38,12 +38,41 @@ module Make (SD : X86.Lang) (DD : X86.Lang) = struct
     |> SD.to_src_dst
     |> Option.value_map ~f:DD.of_src_dst ~default:operands
 
-  let convert_instruction ins =
+  (** [swap_instruction ins] does any swapping of operands needed to
+     convert from [SD] to [DD]. *)
+  let swap_instruction ins =
     X86Ast.(
       (* TODO(@MattWindsor91): actually check the instructions
          are src/dst *)
       { ins with operands = swap ins.operands }
     )
+
+  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the
+      correct abstract syntax for [DD]. *)
+  let make_jump_operand jsym =
+    X86Ast.(
+      let jdisp = DispSymbolic jsym in
+      match DD.symbolic_jump_type with
+      | `Indirect ->
+        OperandLocation (LocIndirect (in_disp_only jdisp))
+      | `Immediate ->
+        OperandImmediate jdisp
+    )
+
+  (** [convert_jump_operand ins] checks to see if [ins] is a jump and,
+     if so, does some syntactic rearranging of the jump's destination.
+
+      See [X86Dialect.Intf.symbolic_jump_type] for an explanation. *)
+  let convert_jump_operand ins =
+    match SD.Instruction.abs_operands ins with
+    | Language.AbsOperands.SymbolicJump jsym ->
+      { ins with operands = [ make_jump_operand jsym ] }
+    | _ -> ins
+
+  let convert_instruction ins =
+    ins
+    |> swap_instruction
+    |> convert_jump_operand
 
   let convert_statement =
     X86Ast.(

@@ -80,11 +80,16 @@ module type Intf = sig
   val has_size_suffix : bool
 
   (** [symbolic_jump_type] gets the type of syntax this dialect
-     appears to use for symbolic jumps.
+     _appears_ to use for symbolic jumps.
 
-      In AT&T, symbolic jumps look like displacements; in
-      Intel and Herd7, they look like immediate values. *)
-  val symbolic_jump_type : [`Displacement | `Immediate ]
+      In all x86 dialects, a jump to a label is `jCC LABEL`, where
+     `CC` is `mp` or some condition.  Because of the way we parse x86,
+     the label resolves to different abstract syntax depending on the
+     dialect.
+
+      In AT&T, symbolic jumps look like indirect displacements; in
+     Intel and Herd7, they look like immediate values. *)
+  val symbolic_jump_type : [`Indirect | `Immediate ]
 end
 
 (** [ATT] describes the AT&T dialect of x86 assembly. *)

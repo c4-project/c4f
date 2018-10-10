@@ -89,21 +89,21 @@ module type Intf = sig
 
   val has_size_suffix : bool
 
-  val symbolic_jump_type : [`Displacement | `Immediate ]
+  val symbolic_jump_type : [`Indirect | `Immediate ]
 end
 
 module ATT = struct
   let dialect = Att
   include SrcDst.Make (struct let operand_order = SrcDst.SrcDst end)
   let has_size_suffix = true
-  let symbolic_jump_type = `Immediate
+  let symbolic_jump_type = `Indirect
 end
 
 module Intel = struct
   let dialect = Intel
   include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
   let has_size_suffix = false
-  let symbolic_jump_type = `Displacement
+  let symbolic_jump_type = `Immediate
 end
 
 module Herd7 = struct
@@ -111,5 +111,5 @@ module Herd7 = struct
   include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
   (* Surprisingly, this is true---for some operations, anyway. *)
   let has_size_suffix = true
-  let symbolic_jump_type = `Displacement
+  let symbolic_jump_type = `Immediate
 end
