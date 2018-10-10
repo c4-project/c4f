@@ -1,16 +1,14 @@
 open Core
 
-module type ContainerExtensions =
-sig
-  type 'a cont
+module type Extensions = sig
+  type 'a t
 
-  val iter_result : ('a -> (unit, 'e) result) -> 'a cont -> (unit, 'e) result
-  val max_measure : measure:('a -> int) -> ?default:int -> 'a cont -> int
+  val iter_result : ('a -> (unit, 'e) result) -> 'a t -> (unit, 'e) result
+  val max_measure : measure:('a -> int) -> ?default:int -> 'a t -> int
 end
 
-module ContainerExtend (S : Container.S1) =
-struct
-  type 'a cont = 'a S.t
+module Extend (S : Container.S1) = struct
+  type 'a t = 'a S.t
 
   let iter_result f = S.fold_result ~init:() ~f:(Fn.const f)
 
@@ -20,11 +18,11 @@ struct
     |> Option.value_map ~f:measure ~default:default
 end
 
-module MyArray = ContainerExtend(Array)
+module MyArray = Extend (Array)
 
-module MyList =
-struct
-  include ContainerExtend(List)
+module MyList = struct
+  include Extend (List)
+  include MyMonad.Extend (List)
 
   let exclude ~f xs = List.filter ~f:(Fn.non f) xs
 
@@ -46,22 +44,14 @@ struct
     in
       List.map ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f) xs
 
-  let pp_listlist =
-    Format.printf "@[<v>%a@]@."
-    (Format.pp_print_list
-         ~pp_sep:Format.pp_print_cut
-         (fun f k ->
-           Format.fprintf f "@[<h>%a@]"
-           (Format.pp_print_list
-              ~pp_sep:MyFormat.pp_csep Int.pp)
-           k))
-
   let%expect_test "MyList: right_pad empty list" =
-    pp_listlist (right_pad ~padding:2 []);
+    Format.printf "@[%a@]@."
+      (MyFormat.pp_listlist ~pp:Int.pp) (right_pad ~padding:2 []);
     [%expect {||}]
 
   let%expect_test "MyList: right_pad example list" =
-    pp_listlist
+    Format.printf "@[%a@]@."
+      (MyFormat.pp_listlist ~pp:Int.pp)
       (right_pad ~padding:6
          [ [0; 8; 0; 0]
          ; [9; 9; 9]
@@ -77,4 +67,19 @@ struct
                 9, 1, 1, 9, 6
                 7, 2, 5, 6, 6
                 3, 6, 6, 6, 6 |}]
+
+  let%expect_test "mapM: list" =
+    Format.printf "@[<h>%a@]@."
+      (MyFormat.pp_listlist ~pp:Int.pp)
+      (mapM ~f:(fun k -> [k; 0])
+         ([[1; 2; 3]]));
+    [%expect {|
+              1, 2, 3
+              1, 2, 0
+              1, 0, 3
+              1, 0, 0
+              0, 2, 3
+              0, 2, 0
+              0, 0, 3
+              0, 0, 0 |}]
 end

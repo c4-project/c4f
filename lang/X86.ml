@@ -102,7 +102,7 @@ struct
             | `Nop    -> Nop
             | `Pop    -> Stack
             | `Push   -> Stack
-            | `Ret    -> Call
+            | `Ret    -> Return
             | `Sub    -> Arith
 
           let zero_operands (operands : operand list)
@@ -242,18 +242,6 @@ struct
                  });
             [%expect {| &stack -> &stack |}]
 
-          let%expect_test "abs_operands: add $-16, %ESP" =
-            Format.printf "%a@."
-              Language.AbsOperands.pp
-              (abs_operands
-                 { opcode = X86Ast.OpBasic `Add
-                 ; operands = [ X86Ast.OperandImmediate (X86Ast.DispNumeric (-16))
-                              ; X86Ast.OperandLocation (X86Ast.LocReg ESP)
-                              ]
-                 ; prefix = None
-                 });
-            [%expect {| $-16 -> &stack |}]
-
           let abs_type ({opcode; _} : X86Ast.instruction) =
             let open Language.AbsInstruction in
             match opcode with
@@ -325,6 +313,32 @@ struct
 end
 
 module ATT = Make (X86Dialect.ATT) (X86PP.ATT)
+
+let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
+  Format.printf "%a@."
+    Language.AbsOperands.pp
+    (ATT.Instruction.abs_operands
+       { opcode = X86Ast.OpBasic `Add
+       ; operands = [ X86Ast.OperandImmediate (X86Ast.DispNumeric (-16))
+                    ; X86Ast.OperandLocation (X86Ast.LocReg ESP)
+                    ]
+       ; prefix = None
+       });
+  [%expect {| $-16 -> &stack |}]
+
 module Intel = Make (X86Dialect.Intel) (X86PP.Intel)
+
+let%expect_test "abs_operands: add ESP, -16, Intel" =
+  Format.printf "%a@."
+    Language.AbsOperands.pp
+    (Intel.Instruction.abs_operands
+       { opcode = X86Ast.OpBasic `Add
+       ; operands = [ X86Ast.OperandLocation (X86Ast.LocReg ESP)
+                    ; X86Ast.OperandImmediate (X86Ast.DispNumeric (-16))
+                    ]
+       ; prefix = None
+       });
+  [%expect {| $-16 -> &stack |}]
+
 module Herd7 = Make (X86Dialect.Herd7) (X86PP.Herd7)
 

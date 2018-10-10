@@ -72,12 +72,13 @@ module Make (LS : Language.Intf) =
       let open Language.AbsInstruction in
       function
       | Arith   -> "arithmetic"
-      | Compare -> "comparison"
       | Call    -> "calling convention"
+      | Compare -> "comparison"
       | Fence   -> "memory fence"
       | Jump    -> "jump"
       | Move    -> "move"
       | Nop     -> "no operation"
+      | Return  -> "return to caller"
       | Stack   -> "stack"
       | Other   -> "?? instruction ??"
 

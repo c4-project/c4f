@@ -7,6 +7,16 @@ let pp_option f ~pp = Option.iter ~f:(pp f)
 
 let pp_csep f () = Format.fprintf f ",@ "
 
+let pp_listlist ~pp f =
+  Format.fprintf f "@[<v>%a@]"
+    (Format.pp_print_list
+       ~pp_sep:Format.pp_print_cut
+       (fun f k ->
+          Format.fprintf f "@[<h>%a@]"
+            (Format.pp_print_list
+               ~pp_sep:pp_csep pp)
+            k))
+
 let pp_c_braces f pi =
   Format.pp_open_vbox f 4;
   Format.pp_print_char f '{';

@@ -56,14 +56,15 @@ let%expect_test "pp_name: default" =
 
 module AbsInstruction = struct
   type t =
-    | Arith
-    | Compare
-    | Fence
-    | Jump
-    | Move
-    | Nop
-    | Call
-    | Stack
+    | Arith   (* arithmetic *)
+    | Call    (* calling-convention related instructions *)
+    | Compare (* comparison *)
+    | Fence   (* memory fence *)
+    | Jump    (* conditional or unconditional jump *)
+    | Move    (* move *)
+    | Nop     (* no operation *)
+    | Return  (* jump to caller *)
+    | Stack   (* stack resizing and pointer manipulation *)
     | Other [@@deriving enum, sexp]
 
   module Table =
@@ -72,15 +73,16 @@ module AbsInstruction = struct
       type nonrec t = t
 
       let table =
-        [ Arith,   "arith"
+        [ Arith  , "arith"
+        ; Call   , "call"
         ; Compare, "compare"
-        ; Fence,   "fence"
-        ; Jump ,   "jump"
-        ; Move ,   "move"
-        ; Nop  ,   "nop"
-        ; Call ,   "call"
-        ; Stack,   "stack"
-        ; Other,   "other"
+        ; Fence  , "fence"
+        ; Jump   , "jump"
+        ; Move   , "move"
+        ; Nop    , "nop"
+        ; Return , "return"
+        ; Stack  , "stack"
+        ; Other  , "other"
         ]
     end
     )

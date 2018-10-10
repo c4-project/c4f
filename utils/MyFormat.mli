@@ -20,6 +20,14 @@ val pp_option : Format.formatter ->
                 'a option ->
                 unit
 
+(** [pp_listlist ~pp o] pretty-prints a list of lists, using
+    newlines to separate the first dimension and commas the second. *)
+val pp_listlist
+  :  pp:(Format.formatter -> 'a -> unit)
+  -> Format.formatter
+  -> 'a list list
+  -> unit
+
 (** [pp_c_braces f pi] wraps a vertical pretty-printer [pi] inside a
    C-style brace pair. *)
 val pp_c_braces : Format.formatter

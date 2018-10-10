@@ -128,7 +128,8 @@ sig
     ; warnings : Warn.t list
     }
 
-  type 'a t
+  include Monad.S
+  include MyMonad.Extensions with type 'a t := 'a t
 
   val initial : ctx
 
@@ -139,8 +140,6 @@ sig
   val run' : 'a t -> ctx -> 'a
 
   val warn : Warn.body -> 'a -> 'a t
-
-  module Monad : Monad.S with type 'a t := 'a t
 end
 
 (*
@@ -165,15 +164,10 @@ struct
     ; warnings = []
     }
 
-  type 'a t = ctx -> (ctx * 'a)
+  module M = struct
+    type 'a t = (ctx -> (ctx * 'a))
 
-  let run = Fn.id
-  let run' f ctx = f ctx |> snd
-  let make = Fn.id
-  let peek f ctx = ctx, f ctx
-  let modify f a ctx = f ctx, a
-
-  module Monad = Monad.Make (
+    include Monad.Make (
     struct
       type nonrec 'a t = 'a t
 
@@ -189,6 +183,17 @@ struct
       let return a = fun initial_ctx -> (initial_ctx, a)
     end
     )
+  end
+
+  include M
+  include MyMonad.Extend(M)
+
+  let run = Fn.id
+  let run' f ctx = f ctx |> snd
+  let make = Fn.id
+  let peek f ctx = ctx, f ctx
+  let modify f a ctx = f ctx, a
+
 
   let warn (w : Warn.body) =
     modify
@@ -230,10 +235,10 @@ struct
   module L = LS
   module Ctx = CtxMake (LS) (NoCustomWarn)
 
-  let on_program = Ctx.Monad.return
-  let on_statement = Ctx.Monad.return
-  let on_instruction = Ctx.Monad.return
-  let on_location = Ctx.Monad.return
+  let on_program = Ctx.return
+  let on_statement = Ctx.return
+  let on_instruction = Ctx.return
+  let on_location = Ctx.return
 end
 
 let mangler =
@@ -286,19 +291,6 @@ struct
   let make_programs_uniform nop ps =
     MyList.right_pad ~padding:nop ps
 
-  let bindL
-      ~f
-      (xs : ('a list) Ctx.t) :
-    ('b list) Ctx.t =
-    Ctx.Monad.Let_syntax.(
-      xs
-      >>= (List.fold_right
-             ~init:(return [])
-             ~f:(fun x m ->
-                 let%bind x' = f x in
-                 let%bind m' = m in
-                 return (x'::m'))))
-
   let change_stack_to_heap ins =
     Ctx.peek
       (fun { progname; _ } ->
@@ -316,16 +308,15 @@ struct
   (** [warn_unknown_instructions stm] emits warnings for each
       instruction in [stm] without a high-level analysis. *)
   let warn_unknown_instructions ins =
-    let open Ctx.Monad in
     match LH.L.Instruction.abs_type ins with
      | Language.AbsInstruction.Other ->
        Ctx.warn (Warn.UnknownElt (Warn.Instruction ins)) ins
-     | _ -> return ins
+     | _ -> Ctx.return ins
 
   (** [sanitise_ins] performs sanitisation at the single instruction
       level. *)
   let sanitise_ins ins =
-    let open Ctx.Monad in
+    let open Ctx in
     LH.on_instruction ins
     >>= warn_unknown_instructions
     >>= change_stack_to_heap
@@ -338,11 +329,10 @@ struct
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
   let warn_unknown_statements stm =
-    let open Ctx.Monad in
     match LH.L.Statement.abs_type stm with
     | Language.AbsStatement.Other ->
       Ctx.warn (Warn.UnknownElt (Warn.Statement stm)) stm
-    | _ -> return stm
+    | _ -> Ctx.return stm
 
   (** [sanitise_all_ins stm] iterates instruction sanitisation over
      every instruction in [stm], threading the context through
@@ -360,8 +350,8 @@ struct
 
   (** [sanitise_stm] performs sanitisation at the single statement
       level. *)
-  let sanitise_stm stm =
-    let open Ctx.Monad in
+  let sanitise_stm _ stm =
+    let open Ctx in
     LH.on_statement stm
     (* Do warnings after the language-specific hook has done any
        reduction necessary, but before we start making broad-brush
@@ -381,7 +371,7 @@ struct
   let irrelevant_instruction_types =
     let open Language.AbsInstruction in
     Set.of_list
-      [ Call
+      [ Call (* -not- Return: these need more subtle translation *)
       ; Stack
       ]
 
@@ -424,14 +414,14 @@ struct
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program (i : int) (prog : LH.L.Statement.t list)
     : (LH.L.Statement.t list * Warn.t list) =
-    let open Ctx.Monad in
+    let open Ctx in
     let ({ Ctx.warnings; _ }, program) =
       Ctx.run
         ((return prog)
          >>= update_ctx ~progname:(sprintf "%d" i)
          >>= LH.on_program
          >>= remove_irrelevant_statements
-         |>  bindL ~f:sanitise_stm
+         |> Ctx.mapiM ~f:sanitise_stm
         )
         Ctx.initial
     in (program, warnings)

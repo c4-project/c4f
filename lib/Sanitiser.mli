@@ -25,6 +25,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Lang
+open Utils
 
 (*
  * Warnings
@@ -85,7 +86,12 @@ module type CtxIntf = sig
     ; warnings : Warn.t list
     }
 
-  type 'a t
+
+  (** [CtxIntf] implementations form monads. *)
+  include Monad.S
+
+  (** [CtxIntf] implementations also include some monad extensions. *)
+  include MyMonad.Extensions with type 'a t := 'a t
 
   val initial : ctx
 
@@ -114,9 +120,6 @@ module type CtxIntf = sig
   (** [warn w a] adds a warning [w] to the current context, passing
       [a] through. *)
   val warn : Warn.body -> 'a -> 'a t
-
-  (** [CtxIntf] implementations form monads. *)
-  module Monad : Monad.S with type 'a t := 'a t
 end
 
 (** [CtxMake] builds a context monad for the given language. *)

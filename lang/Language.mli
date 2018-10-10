@@ -43,20 +43,28 @@ val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
 
 (** [AbsInstruction] contains types and utilities for abstracted
    instructions. *)
-module AbsInstruction :
-sig
+module AbsInstruction : sig
   (** [AbsInstruction.t] is an abstracted instruction. *)
   type t =
     | Arith   (* arithmetic *)
+    | Call    (* calling-convention related instructions *)
     | Compare (* comparison *)
     | Fence   (* memory fence *)
     | Jump    (* conditional or unconditional jump *)
     | Move    (* move *)
     | Nop     (* no operation *)
-    | Call    (* calling-convention related instructions *)
+    | Return  (* jump to caller -- see below *)
     | Stack   (* stack resizing and pointer manipulation *)
     | Other   (* unclassified instruction *)
-[@@deriving enum]
+  [@@deriving sexp, enum]
+
+  (* Why do we have a separate [Return] type, instead of classing it
+     as [Call] or [Jump]?  Two reasons:
+
+     - It has semantics roughly in between both;
+
+     - It makes it easier for us to translate returns to
+     end-of-program jumps in sanitisation.  *)
 
   (** Abstract instructions may be pretty-printed. *)
   include Pretty_printer.S with type t := t

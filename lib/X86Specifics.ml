@@ -73,14 +73,14 @@ struct
       end
     | op -> op
 
-  let on_statement = Ctx.Monad.return
+  let on_statement = Ctx.return
 
-  let on_program = Ctx.Monad.return
+  let on_program = Ctx.return
 
-  let on_location = Ctx.Monad.return
+  let on_location = Ctx.return
 
   let on_instruction stm =
-    let open Ctx.Monad in
+    let open Ctx in
     return stm
     >>| sub_to_add
     >>| drop_unsupported_lengths
