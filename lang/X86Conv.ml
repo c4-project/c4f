@@ -47,18 +47,6 @@ module Make (SD : X86.Lang) (DD : X86.Lang) = struct
       { ins with operands = swap ins.operands }
     )
 
-  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the
-      correct abstract syntax for [DD]. *)
-  let make_jump_operand jsym =
-    X86Ast.(
-      let jdisp = DispSymbolic jsym in
-      match DD.symbolic_jump_type with
-      | `Indirect ->
-        OperandLocation (LocIndirect (in_disp_only jdisp))
-      | `Immediate ->
-        OperandImmediate jdisp
-    )
-
   (** [convert_jump_operand ins] checks to see if [ins] is a jump and,
      if so, does some syntactic rearranging of the jump's destination.
 
@@ -66,7 +54,7 @@ module Make (SD : X86.Lang) (DD : X86.Lang) = struct
   let convert_jump_operand ins =
     match SD.Instruction.abs_operands ins with
     | Language.AbsOperands.SymbolicJump jsym ->
-      { ins with operands = [ make_jump_operand jsym ] }
+      { ins with operands = [ DD.make_jump_operand jsym ] }
     | _ -> ins
 
   let convert_instruction ins =

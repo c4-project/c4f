@@ -52,12 +52,16 @@ module type WarnIntf = sig
     | Location of L.Location.t
 
   type body =
+    (* Something needed an end-of-program label, but there wasn't one. *)
+    | MissingEndLabel
+    (* This element isn't known to act, and its translation may be wrong. *)
     | UnknownElt of elt
+    (* Hook for language-specific sanitiser passes to add warnings. *)
     | Custom of C.t
 
   type t =
     { body     : body
-    ; progname : string option
+    ; progname : string
     }
 
   include Pretty_printer.S with type t := t
@@ -80,7 +84,9 @@ module type CtxIntf = sig
   module Warn : WarnIntf
 
   type ctx =
-    { progname : string option
+    { progname : string             (* Name of current program *)
+    ; proglen  : int                (* Length of current program *)
+    ; endlabel : string option      (* End label of current program *)
     ; hsyms    : Language.SymSet.t  (* Heap symbols *)
     ; jsyms    : Language.SymSet.t  (* Jump symbols *)
     ; warnings : Warn.t list
@@ -93,7 +99,12 @@ module type CtxIntf = sig
   (** [CtxIntf] implementations also include some monad extensions. *)
   include MyMonad.Extensions with type 'a t := 'a t
 
-  val initial : ctx
+  (** [initial ~progname ~proglen] opens an initial context for the
+      program with the given name and length. *)
+  val initial
+    :  progname:string
+    -> proglen:int
+    -> ctx
 
   (** Constructing context-sensitive computation s*)
 
@@ -116,6 +127,10 @@ module type CtxIntf = sig
 
   (** [run'] behaves like [run], but discards the final context. *)
   val run' : 'a t -> ctx -> 'a
+
+  (** [warn_in_ctx ctx w] adds a warning [w] to [ctx], returning
+      the new context. *)
+  val warn_in_ctx : ctx -> Warn.body -> ctx
 
   (** [warn w a] adds a warning [w] to the current context, passing
       [a] through. *)

@@ -65,7 +65,8 @@ module AbsInstruction = struct
     | Nop     (* no operation *)
     | Return  (* jump to caller *)
     | Stack   (* stack resizing and pointer manipulation *)
-    | Other [@@deriving enum, sexp]
+    | Other   (* known, but doesn't fit in these categories *)
+    | Unknown [@@deriving enum, sexp]
 
   module Table =
     StringTable.Make (
@@ -83,6 +84,7 @@ module AbsInstruction = struct
         ; Return , "return"
         ; Stack  , "stack"
         ; Other  , "other"
+        ; Unknown, "??"
         ]
     end
     )
@@ -244,6 +246,8 @@ module type StatementS = sig
                  and type cont = t
 
   val empty : unit -> t
+  val label : string -> t
+  val instruction : ins -> t
   val abs_type : t -> AbsStatement.t
 end
 
@@ -260,6 +264,8 @@ module type InstructionS = sig
   module OnLocationsS
     : FoldMap.S with type t = loc
                  and type cont = t
+
+  val jump : string -> t
 
   val abs_operands : t -> AbsOperands.t
   val abs_type : t -> AbsInstruction.t
@@ -321,9 +327,8 @@ module type Intf = sig
     val is_stack_manipulation : t -> bool
   end
 
-  module Statement :
-  sig
-    include StatementS
+  module Statement :  sig
+    include StatementS with type ins = Instruction.t
 
     module OnSymbols
       : FoldMap.SetIntf with type t = string

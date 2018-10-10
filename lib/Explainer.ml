@@ -80,7 +80,8 @@ module Make (LS : Language.Intf) =
       | Nop     -> "no operation"
       | Return  -> "return to caller"
       | Stack   -> "stack"
-      | Other   -> "?? instruction ??"
+      | Other   -> "other"
+      | Unknown -> "?? instruction ??"
 
     let stringify_stm_basic =
       (* TODO(@MattWindsor91): merge with pp? *)

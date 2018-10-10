@@ -55,7 +55,8 @@ module AbsInstruction : sig
     | Nop     (* no operation *)
     | Return  (* jump to caller -- see below *)
     | Stack   (* stack resizing and pointer manipulation *)
-    | Other   (* unclassified instruction *)
+    | Other   (* known, but doesn't fit in these categories *)
+    | Unknown (* unclassified instruction *)
   [@@deriving sexp, enum]
 
   (* Why do we have a separate [Return] type, instead of classing it
@@ -194,8 +195,22 @@ module type StatementS = sig
     : FoldMap.S with type t = ins
                  and type cont = t
 
+  (*
+   * Constructors
+   *)
+
   (** [empty] builds an empty statement. *)
   val empty : unit -> t
+
+  (** [label] builds a label with the given symbol. *)
+  val label : string -> t
+
+  (** [instruction] builds an instruction statement. *)
+  val instruction : ins -> t
+
+  (*
+   * Inspection
+   *)
 
   (** [abs_type stm] gets the abstract type of a statement. *)
   val abs_type : t -> AbsStatement.t
@@ -224,6 +239,9 @@ module type InstructionS = sig
   module OnLocationsS
     : FoldMap.S with type t = loc
                  and type cont = t
+
+  (** [jump sym] builds an unconditional jump to symbol [sym]. *)
+  val jump : string -> t
 
   (** [operands ins] gets the abstracted operands of instruction
      [ins]. *)
@@ -323,7 +341,7 @@ module type Intf = sig
   end
 
   module Statement : sig
-    include StatementS
+    include StatementS with type ins = Instruction.t
 
     (** [OnSymbols] is an extension of the incoming
         [StatementS.OnSymbolsS], including symbol map operations. *)

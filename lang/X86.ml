@@ -28,12 +28,24 @@ module type Lang = sig
      and type Location.t = X86Ast.location
      and type Instruction.t = X86Ast.instruction
      and type Statement.t = X86Ast.statement
+
+  val make_jump_operand : string -> X86Ast.operand
 end
 
 module Make (T : X86Dialect.Intf) (P : X86PP.S) =
 struct
   include T
   include P
+
+  let make_jump_operand jsym =
+    X86Ast.(
+      let jdisp = DispSymbolic jsym in
+      match T.symbolic_jump_type with
+      | `Indirect ->
+        OperandLocation (LocIndirect (in_disp_only jdisp))
+      | `Immediate ->
+        OperandImmediate jdisp
+    )
 
   include
     Language.Make
@@ -89,6 +101,12 @@ struct
           type loc = Location.t
 
           let pp = P.pp_instruction
+
+          let jump l =
+            { prefix = None
+            ; opcode = OpJump None
+            ; operands = [ make_jump_operand l ]
+            }
 
           let basic_instruction_type
             : [< X86Ast.basic_opcode] -> Language.AbsInstruction.t =
@@ -251,7 +269,7 @@ struct
             | X86Ast.OpJump _ -> Jump
             | X86Ast.OpBasic b -> basic_instruction_type b
             | X86Ast.OpSized (b, _) -> basic_instruction_type b
-            | X86Ast.OpUnknown _ -> Other
+            | X86Ast.OpUnknown _ -> Unknown
 
           module OnSymbolsS = struct
             type t = string
@@ -277,6 +295,8 @@ struct
           type ins = X86Ast.instruction
 
           let empty () = X86Ast.StmNop
+          let label s = X86Ast.StmLabel s
+          let instruction i = X86Ast.StmInstruction i
 
           let abs_type =
             let open Language.AbsStatement in

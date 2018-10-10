@@ -53,12 +53,13 @@ module type WarnIntf = sig
     | Location of L.Location.t
 
   type body =
+    | MissingEndLabel
     | UnknownElt of elt
     | Custom of C.t
 
   type t =
     { body     : body
-    ; progname : string option
+    ; progname : string
     }
 
   include Pretty_printer.S with type t := t
@@ -75,12 +76,13 @@ struct
     | Location of L.Location.t
 
   type body =
+    | MissingEndLabel
     | UnknownElt of elt
     | Custom of C.t
 
   type t =
     { body     : body
-    ; progname : string option
+    ; progname : string
     }
 
   let pp_elt f =
@@ -103,13 +105,14 @@ struct
 
   let pp_body f =
     function
+    | MissingEndLabel ->
+      String.pp f
+        "act needed an end-of-program label here, but there wasn't one."
     | UnknownElt elt -> pp_unknown_warning f elt
     | Custom c -> C.pp f c
 
   let pp f ent =
-    MyFormat.pp_option f
-      ~pp:(fun f -> Format.fprintf f "In program %a:@ " String.pp)
-      ent.progname;
+    Format.fprintf f "In program %s:@ " ent.progname;
     pp_body f ent.body
 end
 
@@ -122,7 +125,9 @@ sig
   module Warn : WarnIntf
 
   type ctx =
-    { progname : string option
+    { progname : string
+    ; proglen  : int
+    ; endlabel : string option
     ; hsyms    : Language.SymSet.t
     ; jsyms    : Language.SymSet.t
     ; warnings : Warn.t list
@@ -131,7 +136,7 @@ sig
   include Monad.S
   include MyMonad.Extensions with type 'a t := 'a t
 
-  val initial : ctx
+  val initial : progname:string -> proglen:int -> ctx
 
   val make : (ctx -> (ctx * 'a)) -> 'a t
   val peek : (ctx -> 'a) -> 'a t
@@ -139,6 +144,7 @@ sig
   val run : 'a t -> ctx -> (ctx * 'a)
   val run' : 'a t -> ctx -> 'a
 
+  val warn_in_ctx : ctx -> Warn.body -> ctx
   val warn : Warn.body -> 'a -> 'a t
 end
 
@@ -151,14 +157,18 @@ struct
   module Warn = Warn (L) (C)
 
   type ctx =
-    { progname : string option
+    { progname : string
+    ; proglen  : int
+    ; endlabel : string option
     ; hsyms    : Language.SymSet.t
     ; jsyms    : Language.SymSet.t
     ; warnings : Warn.t list
     }
 
-  let initial =
-    { progname = None
+  let initial ~progname ~proglen =
+    { progname
+    ; proglen
+    ; endlabel = None
     ; hsyms    = Language.SymSet.empty
     ; jsyms    = Language.SymSet.empty
     ; warnings = []
@@ -194,12 +204,12 @@ struct
   let peek f ctx = ctx, f ctx
   let modify f a ctx = f ctx, a
 
+  let warn_in_ctx ctx w =
+    let ent = { Warn.progname = ctx.progname; body = w } in
+    { ctx with warnings = ent::ctx.warnings }
 
   let warn (w : Warn.body) =
-    modify
-      (fun ctx ->
-         let ent = { Warn.progname = ctx.progname; body = w } in
-         { ctx with warnings = ent::ctx.warnings })
+    modify (Fn.flip warn_in_ctx w)
 end
 
 (*
@@ -298,9 +308,7 @@ struct
            match LH.L.Location.abs_type ln with
            | Language.AbsLocation.StackOffset i ->
              LH.L.Location.make_heap_loc
-               (sprintf "t%ss%d"
-                  (Option.value ~default:"?" progname)
-                  i)
+               (sprintf "t%ss%d" progname i)
            | _ -> ln
          in
          LH.L.Instruction.OnLocations.map ~f ins)
@@ -309,9 +317,25 @@ struct
       instruction in [stm] without a high-level analysis. *)
   let warn_unknown_instructions ins =
     match LH.L.Instruction.abs_type ins with
-     | Language.AbsInstruction.Other ->
+     | Language.AbsInstruction.Unknown ->
        Ctx.warn (Warn.UnknownElt (Warn.Instruction ins)) ins
      | _ -> Ctx.return ins
+
+  let change_ret_to_end_jump ins =
+    Ctx.(
+      match LH.L.Instruction.abs_type ins with
+      | Language.AbsInstruction.Return ->
+        make
+          (fun ctx ->
+             match ctx.endlabel with
+             | None ->
+               (warn_in_ctx ctx Warn.MissingEndLabel), ins
+             | Some endl ->
+               ctx,
+               LH.L.Instruction.jump endl
+          )
+      | _ -> return ins
+    )
 
   (** [sanitise_ins] performs sanitisation at the single instruction
       level. *)
@@ -319,6 +343,7 @@ struct
     let open Ctx in
     LH.on_instruction ins
     >>= warn_unknown_instructions
+    >>= change_ret_to_end_jump
     >>= change_stack_to_heap
 
   (** [mangle_identifiers] reduces identifiers into a form that herd
@@ -395,36 +420,79 @@ struct
          in
          MyList.exclude ~f:(any matchers) prog)
 
-  let update_ctx
-      ?(progname : string option)
+  let update_symbol_tables
       (prog : LH.L.Statement.t list) =
     Ctx.modify
       (fun ctx ->
          ( { ctx with
              hsyms    = LH.L.heap_symbols prog
            ; jsyms    = LH.L.jump_symbols prog
-           ; progname = ( Option.value_map
-                            ~f:Option.some
-                            ~default:ctx.progname
-                            progname )
            }
          ))
       prog
 
+  (** [freshen_label] generates a (hopefully) unique label with the
+      prefix 'prefix'. *)
+  let freshen_label (syms : Language.SymSet.t) (prefix : string) : string =
+    let rec f prefix count =
+      let str = sprintf "%s%d" prefix count in
+      if Language.SymSet.mem syms str
+      then f prefix (count + 1)
+      else str
+    in
+    f prefix 0
+
+  (** [add_end_label] adds an end-of-program label to the current
+     program. *)
+  let add_end_label (prog : LH.L.Statement.t list)
+    : (LH.L.Statement.t list) Ctx.t =
+    Ctx.(
+      make
+        (fun ctx ->
+           (* Don't generate duplicate endlabels! *)
+           match ctx.endlabel with
+           | Some _ -> ctx, prog
+           | None ->
+             let prefix = "END" ^ ctx.progname
+             in
+             let endl = freshen_label ctx.jsyms prefix in
+             let prog' = prog @ [ LH.L.Statement.label endl ] in
+             let ctx' =
+               { ctx with proglen  = ctx.proglen + 1
+                        ; jsyms    = Language.SymSet.add ctx.jsyms endl
+                        ; endlabel = Some endl
+               } in
+             ctx', prog'
+        )
+    )
+
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program (i : int) (prog : LH.L.Statement.t list)
     : (LH.L.Statement.t list * Warn.t list) =
-    let open Ctx in
-    let ({ Ctx.warnings; _ }, program) =
-      Ctx.run
-        ((return prog)
-         >>= update_ctx ~progname:(sprintf "%d" i)
-         >>= LH.on_program
-         >>= remove_irrelevant_statements
-         |> Ctx.mapiM ~f:sanitise_stm
-        )
-        Ctx.initial
-    in (program, warnings)
+    let progname = sprintf "%d" i in
+    let proglen = List.length prog in
+    Ctx.(
+      let ({ warnings; _ }, program) =
+        run
+          ((return prog)
+           (* Initial table population. *)
+           >>= update_symbol_tables
+           >>= add_end_label
+           >>= LH.on_program
+           (* The language hook might have invalidated the symbol
+              tables. *)
+           >>= update_symbol_tables
+           (* Need to sanitise statements first, in case the
+              sanitisation pass makes irrelevant statements
+              (like jumps) relevant again. *)
+           |> mapiM ~f:sanitise_stm
+           (* Make sure we have valid tables before we start removing. *)
+           >>= update_symbol_tables
+           >>= remove_irrelevant_statements
+          )
+          (initial ~progname ~proglen)
+      in (program, warnings)
+    )
 
   let sanitise_programs progs =
     let progs', warnlists =

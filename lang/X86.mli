@@ -14,6 +14,10 @@ module type Lang = sig
      and type Location.t = X86Ast.location
      and type Instruction.t = X86Ast.instruction
      and type Statement.t = X86Ast.statement
+
+  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the
+      correct abstract syntax for this version of x86. *)
+  val make_jump_operand : string -> X86Ast.operand
 end
 
 (** [Att] is a language description for the AT&T dialect of x86. *)
