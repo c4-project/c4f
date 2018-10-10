@@ -154,10 +154,33 @@ struct
             | `Pop
             | `Push -> Other
 
+          let jump_operands =
+            Language.AbsOperands.(
+              function
+              | [o] ->
+                begin
+                  match o with
+                  | OperandLocation
+                      (X86Ast.LocIndirect
+                         { in_disp = Some (X86Ast.DispSymbolic s)
+                         ; in_base = None
+                         ; in_index = None
+                         ; in_seg = None
+                         }
+                      )
+                  | X86Ast.OperandImmediate
+                      (X86Ast.DispSymbolic s)
+                    -> SymbolicJump s
+                  | _ -> Other
+                end
+              | _ -> Erroneous
+            )
+
           let abs_operands {opcode; operands; _} =
             match opcode with
             | X86Ast.OpBasic b -> basic_operands b operands
             | X86Ast.OpSized (b, _) -> basic_operands b operands
+            | X86Ast.OpJump _ -> jump_operands operands
             | _ -> Language.AbsOperands.Other
 
           let%expect_test "abs_operands: nop -> none" =
@@ -169,6 +192,21 @@ struct
                  ; prefix = None
                  });
             [%expect {| none |}]
+
+          let%expect_test "abs_operands: jmp, AT&T style" =
+            Format.printf "%a@."
+              Language.AbsOperands.pp
+              (abs_operands
+                 { opcode = X86Ast.OpJump None
+                 ; operands =
+                     [ X86Ast.OperandLocation
+                         (X86Ast.LocIndirect
+                            (X86Ast.in_disp_only
+                               (X86Ast.DispSymbolic "L1")))
+                     ]
+                 ; prefix = None
+                 });
+            [%expect {| jump->L1 |}]
 
           let%expect_test "abs_operands: nop $42 -> error" =
             Format.printf "%a@."
@@ -247,10 +285,9 @@ struct
           type t = X86Ast.statement
           let sexp_of_t = [%sexp_of: X86Ast.statement]
           let t_of_sexp = [%of_sexp: X86Ast.statement]
+          let pp = P.pp_statement
 
           type ins = X86Ast.instruction
-
-          let pp = P.pp_statement
 
           let empty () = X86Ast.StmNop
 

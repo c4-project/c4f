@@ -24,6 +24,7 @@
 
 open Core
 open Utils
+open Utils.MyContainers
 
 type name =
   | X86 of X86Dialect.t
@@ -198,6 +199,7 @@ module AbsOperands = struct
     | None
     | LocTransfer of (AbsLocation.t, AbsLocation.t) SrcDst.t
     | IntImmediate of (int, AbsLocation.t) SrcDst.t
+    | SymbolicJump of string
     | Erroneous
     | Other
 
@@ -212,6 +214,8 @@ module AbsOperands = struct
       Format.fprintf f "@[$%d@ ->@ %a@]"
         src
         AbsLocation.pp dst
+    | SymbolicJump s ->
+      Format.fprintf f "@[jump->%s@]" s
     | Erroneous -> String.pp f "<invalid operands>"
     | Other -> String.pp f "??"
 end
@@ -462,6 +466,13 @@ module Make (M : S) = struct
   let heap_symbols prog =
     prog
     |> List.concat_map ~f:Statement.OnInstructions.list
+    (* In x86, at least, jumps can contain locations that look without
+       context to be heap symbols.  Currently, we pessimistically
+       exclude any location that's inside a jump.
+
+       Maybe, one day, we'll find an architecture that does actually
+       contain heap locations in a jump, and have to re-think this. *)
+    |> MyList.exclude ~f:Instruction.is_jump
     |> List.concat_map ~f:Instruction.OnLocations.list
     |> List.filter_map ~f:Location.to_heap_symbol
     |> SymSet.of_list

@@ -132,6 +132,8 @@ sig
     (* This instruction is loading an integer literal, doing something
        with it, and storing into a location. *)
     | IntImmediate of (int, AbsLocation.t) SrcDst.t
+    (* This instruction is jumping to the given symbol. *)
+    | SymbolicJump of string
     (* Instruction has the wrong sort of operands. *)
     | Erroneous
     (* No analysis available---the operands may or may not be valid. *)
