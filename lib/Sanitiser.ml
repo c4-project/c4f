@@ -403,6 +403,17 @@ struct
   let instruction_is_irrelevant =
     LH.L.Statement.instruction_mem irrelevant_instruction_types
 
+  (** [proglen_fix f prog] runs [f] on [prog] until the
+      reported program length no longer changes. *)
+  let proglen_fix f prog =
+    let rec mu prog ctx =
+      let (ctx', prog') = Ctx.run (f prog) ctx in
+      if ctx.proglen = ctx'.proglen
+      then (ctx', prog') (* Fixed point *)
+      else mu prog' ctx'
+    in
+    Ctx.make (mu prog)
+
   (** [remove_irrelevant_statements prog] completely removes
       statements in [prog] that have no use in Litmus and cannot be
       rewritten. *)
@@ -419,6 +430,25 @@ struct
              ])
          in
          MyList.exclude ~f:(any matchers) prog)
+
+  let remove_useless_jumps prog =
+    let rec mu skipped ctx =
+      function
+      | x::x'::xs
+        when LH.L.Statement.(
+            is_jump x
+            && is_label x'
+            && OnSymbols.Set.equal
+                   (OnSymbols.set x) (OnSymbols.set x')
+          ) ->
+        let ctx' = Ctx.({ ctx with proglen = pred ctx.proglen }) in
+        mu skipped ctx' (x'::xs)
+      | x::x'::xs ->
+        mu (x::skipped) ctx (x'::xs)
+      | [] -> (ctx, List.rev skipped)
+      | [x] -> (ctx, List.rev (x::skipped))
+    in
+    Ctx.make (Fn.flip (mu []) prog)
 
   let update_symbol_tables
       (prog : LH.L.Statement.t list) =
@@ -466,6 +496,20 @@ struct
         )
     )
 
+  (** [remove_fix prog] performs a loop of statement-removing
+     operations until we reach a fixed point in the program length. *)
+  let remove_fix (prog : LH.L.Statement.t list)
+    : LH.L.Statement.t list Ctx.t =
+    let mu prog =
+      Ctx.(
+        return prog
+        >>= update_symbol_tables
+        >>= remove_irrelevant_statements
+        >>= remove_useless_jumps
+      )
+    in
+    proglen_fix mu prog
+
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program (i : int) (prog : LH.L.Statement.t list)
     : (LH.L.Statement.t list * Warn.t list) =
@@ -486,9 +530,7 @@ struct
               sanitisation pass makes irrelevant statements
               (like jumps) relevant again. *)
            |> mapiM ~f:sanitise_stm
-           (* Make sure we have valid tables before we start removing. *)
-           >>= update_symbol_tables
-           >>= remove_irrelevant_statements
+           >>= remove_fix
           )
           (initial ~progname ~proglen)
       in (program, warnings)
