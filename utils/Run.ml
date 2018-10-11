@@ -47,8 +47,12 @@ let run ?oc ~prog args =
     Out_channel.output Out_channel.stderr ~buf ~pos:0 ~len
   in
   let%bind out =
-    Or_error.try_with_join
-      (fun () -> return (Process.run ~prog ~args ~stdoutf ~stderrf ()))
+    Or_error.tag_arg
+      (Or_error.try_with_join
+         (fun () -> return (Process.run ~prog ~args ~stdoutf ~stderrf ())))
+      "Failed to run a child process:"
+      (prog::args)
+      [%sexp_of: string list]
   in
   match out.status with
   | `Timeout _ ->

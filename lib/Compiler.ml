@@ -24,7 +24,7 @@ let compile_gcc (cmp : compilation) : unit Or_error.t =
 let compile (cc_id : CompilerSpec.Id.t) (cc_spec : CompilerSpec.t) (ps : Pathset.t) =
   let compiler_paths =
     List.Assoc.find_exn ps.compiler_paths cc_id
-      ~equal:(List.equal ~equal:(=)) in
+      ~equal:(CompilerSpec.Id.equal) in
   let cmp = { cc_id = cc_id
             ; cc_spec = cc_spec
             ; in_path = ps.c_path
@@ -39,15 +39,15 @@ let test (cc_spec : CompilerSpec.t) =
 
 let test_specs (specs : CompilerSpec.set) =
   let f (name, spec) =
-    Or_error.tag
-      ~tag:(sprintf "Compiler %a failed test"
-                         (fun () -> CompilerSpec.Id.to_string) name)
+    Or_error.tag_arg
       (test spec)
+      "A compiler in your spec file didn't respond properly"
+      name
+      [%sexp_of:CompilerSpec.Id.t]
   in
   MyOr_error.tapM
     ~f:(fun s -> Or_error.combine_errors_unit (List.map ~f s))
     specs
-
 
 let load_and_test_specs ~path =
   let open Or_error.Let_syntax in

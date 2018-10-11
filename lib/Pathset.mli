@@ -16,9 +16,9 @@ type t =
   ; compiler_paths : (CompilerSpec.Id.t, compiler) List.Assoc.t
   }
 
-(** [make_dir_structure] tries to make the output directories
+(** [mkdirs] tries to make the output directories
    mentioned in a [Pathset.t]. *)
-val make_dir_structure : t -> unit Or_error.t
+val mkdirs : t -> unit Or_error.t
 
 (** [make] constructs a [Pathset.t] from a compiler spec set and
    various other paths. *)
@@ -28,5 +28,14 @@ val make
   -> results_path : string
   -> c_fname      : string
   -> t
+
+(** [make_and_mkdirs] constructs a [Pathset.t] per [make], then
+    tries to make the directories through [mkdirs]. *)
+val make_and_mkdirs
+  :  CompilerSpec.set
+  -> root_path    : string
+  -> results_path : string
+  -> c_fname      : string
+  -> t Or_error.t
 
 include Pretty_printer.S with type t := t

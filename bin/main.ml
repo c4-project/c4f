@@ -43,31 +43,31 @@ let c_asm o (cid : CompilerSpec.Id.t) (spec : CompilerSpec.t) (ps : Pathset.t) =
       ; mode = `Litmusify
       }
   in
-  with_input_and_output
-    (`File (asm_path_of cid ps))
-    (`File (lita_path_of cid ps))
-    ~f
+  Or_error.tag ~tag:"While translating assembly to litmus"
+    (with_input_and_output
+     (`File (asm_path_of cid ps))
+     (`File (lita_path_of cid ps))
+     ~f)
 
 let proc_c (o : OutputCtx.t) root specs results_path c_fname =
-  let open Or_error in
-  let paths = Pathset.make specs
-                           ~root_path:root
-                           ~results_path:results_path
-                           ~c_fname:c_fname in
+  let open Or_error.Let_syntax in
+  let%bind paths =
+    Pathset.make_and_mkdirs
+      specs
+      ~root_path:root
+      ~results_path
+      ~c_fname
+  in
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
-
-  tag (Pathset.make_dir_structure paths)
-    ~tag:"couldn't make dir structure"
-  *>
-    MyList.iter_result
-      (fun (cid, cs) ->
-         Format.fprintf o.vf "@[CC[%a]@ %s@]@."
-           CompilerSpec.Id.pp cid
-           paths.basename;
-         Compiler.compile cid cs paths
-         *> c_asm o cid cs paths
-      ) specs
+  MyList.iter_result
+    (fun (cid, cs) ->
+       Format.fprintf o.vf "@[CC[%a]@ %s@]@."
+         CompilerSpec.Id.pp cid
+         paths.basename;
+       Compiler.compile cid cs paths
+       >>= (fun () -> c_asm o cid cs paths)
+    ) specs
 
 let do_memalloy (o : OutputCtx.t) root specs (results_path : string) =
   let c_path = Filename.concat results_path "C" in
@@ -107,7 +107,7 @@ let get_spec specs compiler_id =
   |> Result.of_option
     ~error:(Error.create "invalid compiler ID" compiler_id [%sexp_of: CompilerSpec.Id.t])
 
-let do_litmusify mode o infile outfile (cid : CompilerSpec.Id.t) specs =
+let do_litmusify mode o ~infile ~outfile (cid : CompilerSpec.Id.t) specs =
   let open Result.Let_syntax in
   let%bind spec = get_spec specs cid in
   Io.(
@@ -174,7 +174,7 @@ let explain =
        Or_error.Let_syntax.(
          let%bind specs = Compiler.load_and_test_specs ~path:spec_file in
          pp_specs o.vf specs;
-         do_litmusify `Explain o infile outfile cid specs
+         do_litmusify `Explain o ~infile ~outfile cid specs
        )
        |> prerr
     ]
@@ -222,11 +222,11 @@ let litmusify =
          let%bind specs = Compiler.load_and_test_specs ~path:spec_file in
          pp_specs o.vf specs;
          match sendto with
-         | None -> do_litmusify `Litmusify o infile outfile cid specs
+         | None -> do_litmusify `Litmusify o ~infile ~outfile cid specs
          | Some cmd ->
            let tmpname = Filename.temp_file "act" "litmus" in
            let cid = CompilerSpec.Id.of_string compiler_id in
-           let%bind _ = do_litmusify `Litmusify o infile (Some tmpname) cid specs in
+           let%bind _ = do_litmusify `Litmusify o ~infile ~outfile:(Some tmpname) cid specs in
            Io.Out_sink.with_output ~f:(run_herd cmd tmpname)
              (Io.Out_sink.of_option outfile)
        )

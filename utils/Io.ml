@@ -39,11 +39,18 @@ module In_source = struct
   let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdin
 
   let with_input ~f src =
-    match src with
-    | `File s ->
-      Or_error.try_with_join (fun _ -> In_channel.with_file s ~f:(f src))
-    | `Stdin ->
-      Or_error.try_with_join (fun _ -> f src In_channel.stdin)
+    Or_error.(
+      match src with
+      | `File s ->
+        tag_arg
+          (try_with_join (fun _ -> In_channel.with_file s ~f:(f src)))
+          "While reading from file:"
+          s
+          [%sexp_of: string]
+      | `Stdin ->
+        tag ~tag:"While reading from standard input:"
+          (try_with_join (fun _ -> f src In_channel.stdin))
+    )
 end
 
 module Out_sink = struct
@@ -60,11 +67,17 @@ module Out_sink = struct
   let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdout
 
   let with_output ~f snk =
-    match snk with
-    | `File s ->
-      Or_error.try_with_join (fun _ -> Out_channel.with_file s ~f:(f snk))
-    | `Stdout ->
-      Or_error.try_with_join (fun _ -> f snk Out_channel.stdout)
+    Or_error.(
+      match snk with
+      | `File s ->
+        tag_arg
+          (try_with_join (fun _ -> Out_channel.with_file s ~f:(f snk)))
+          "While writing to file:"
+          s
+          [%sexp_of: string]
+      | `Stdout ->
+        try_with_join (fun _ -> f snk Out_channel.stdout)
+    )
 end
 
 let with_input_and_output ~f src snk =

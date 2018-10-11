@@ -53,7 +53,7 @@ let parse_x86 dialect t =
   let module F = (val f : Lang.LangFrontend.Intf with type ast = X86Ast.t) in
   Or_error.tag_arg
     (F.run_ic ~file:t.iname t.inp)
-    "assembly parse error" t.iname String.sexp_of_t
+    "Error while parsing X86 assembly" t.iname String.sexp_of_t
 
 let make_init (type s l c)
     (module LS : Language.Intf with type Statement.t = s
@@ -87,7 +87,7 @@ let output_litmus (type s)
   let {S.programs; warnings} = S.sanitise stms in
   emit_warnings warnings;
   let%bind lit =
-    Or_error.tag ~tag:"couldn't build litmus file"
+    Or_error.tag ~tag:"Couldn't build litmus file."
     ( L.make ~name:t.iname
              ~init:(make_init (module L.LS) programs)
              ~programs:(List.map ~f:conv programs)

@@ -69,22 +69,25 @@ let lita_dir_of (root : string) (cid : string list) : string list =
 let lita_path_of (root : string) (file : string) (cid : string list) : string  list =
   [root] @ cid @ ["litmus"; file]
 
-let make_dir_structure ps =
-  let open Or_error in
-  try_with_join
-    ( fun () ->
-        if Sys.is_directory_exn ps.out_root
-        then MyList.iter_result
-            mkdir_p
-            (List.concat_map
-               ~f:(fun (c, _) ->
-                   [ a_dir_of ps.out_root c
-                   ; lita_dir_of ps.out_root c
-                   ])
-               ps.compiler_paths
-            )
-        else error "not a directory" ps.out_root [%sexp_of: string]
-    )
+let mkdirs ps =
+  Or_error.(
+    tag ~tag:"Couldn't make directories"
+      (try_with_join
+         ( fun () ->
+             if Sys.is_directory_exn ps.out_root
+             then MyList.iter_result
+                 mkdir_p
+                 (List.concat_map
+                    ~f:(fun (c, _) ->
+                        [ a_dir_of ps.out_root c
+                        ; lita_dir_of ps.out_root c
+                        ])
+                    ps.compiler_paths
+                 )
+             else error "not a directory" ps.out_root [%sexp_of: string]
+         )
+      )
+  )
 
 let make_compiler root_path asm_fname cid =
   { a_path      = lcat (a_path_of root_path asm_fname cid)
@@ -102,6 +105,10 @@ let make specs ~root_path ~results_path ~c_fname =
   ; litc_path    = lcat (litc_path_of results_path lit_fname)
   ; compiler_paths = spec_map (make_compiler root_path asm_fname)
   }
+
+let make_and_mkdirs specs ~root_path ~results_path ~c_fname =
+  let paths = make specs ~root_path ~results_path ~c_fname in
+  Or_error.(mkdirs paths >>= (fun _ -> return paths))
 
 let pp f ps =
   Format.pp_open_vbox f 4;
