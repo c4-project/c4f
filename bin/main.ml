@@ -60,7 +60,7 @@ let proc_c (o : OutputCtx.t) root specs results_path c_fname =
          *> c_asm o cn cs paths
       ) specs
 
-let proc_results (o : OutputCtx.t) root specs (results_path : string) =
+let do_memalloy (o : OutputCtx.t) root specs (results_path : string) =
   let c_path = Filename.concat results_path "C" in
   Or_error.try_with_join
     (
@@ -220,11 +220,6 @@ let litmusify =
        |> prerr
     ]
 
-let do_memalloy o root specs inpaths =
-  List.fold_result inpaths
-    ~init:()
-    ~f:(fun _ -> proc_results o root specs)
-
 let memalloy =
   let open Command.Let_syntax in
   Command.basic
@@ -250,24 +245,16 @@ let memalloy =
         flag "no-warnings"
           no_arg
           ~doc: "silence all warnings"
-      and inpaths_anon =
-        anon (maybe (non_empty_sequence_as_list ("PATH" %: string)))
-      and inpaths_rest =
-        flag "--"
-          escape
-          ~doc: "PATHS any remaining arguments are treated as input paths"
+      and inpath =
+        anon ("RESULTS_PATH" %: string)
       in
       fun () ->
-        let inpaths =
-          (Option.value ~default:[] inpaths_anon)
-          @ (Option.value ~default:[] inpaths_rest)
-        in
         let warnings = not no_warnings in
         let o = OutputCtx.make ~verbose ~warnings in
         Result.Let_syntax.(
           let%bind specs = Compiler.load_and_test_specs ~path:spec_file in
           pp_specs o.vf specs;
-          do_memalloy o root specs inpaths
+          do_memalloy o root specs inpath
         ) |> prerr
 ]
 
