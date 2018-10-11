@@ -20,6 +20,7 @@ type t =
   ; emits : Language.name
   ; cmd   : string
   ; argv  : string list
+  ; herd  : string sexp_option
   } [@@deriving sexp]
 
 module Id = struct

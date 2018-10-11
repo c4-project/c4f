@@ -3,8 +3,9 @@ open Utils
 open Utils.MyContainers
 
 type compiler =
-  { a_path : string
+  { asm_path  : string
   ; lita_path : string
+  ; herd_path : string
   }
 
 type t =
@@ -20,12 +21,19 @@ let compiler_paths_of ps cid =
     ps.compiler_paths
     cid
     ~equal:(CompilerSpec.Id.equal)
+;;
 
 let compiler_asm_path ps cid =
-  (compiler_paths_of ps cid).a_path
+  (compiler_paths_of ps cid).asm_path
+;;
 
 let compiler_lita_path ps cid =
   (compiler_paths_of ps cid).lita_path
+;;
+
+let compiler_herd_path ps cid =
+  (compiler_paths_of ps cid).herd_path
+;;
 
 type ent_type =
   | File
@@ -72,14 +80,20 @@ let litc_path_of results_path name =
 let asm_dir_of (root : string) (cid : string list) : string list =
   [root] @ cid @ ["asm"]
 
-let a_path_of (root : string) (file : string) (cid : string list) : string list =
-  [root] @ cid @ ["asm"; file]
+let asm_path_of (root : string) (file : string) (cid : string list) : string list =
+  asm_dir_of root cid @ [file]
 
 let lita_dir_of (root : string) (cid : string list) : string list =
   [root] @ cid @ ["litmus"]
 
 let lita_path_of (root : string) (file : string) (cid : string list) : string  list =
-  [root] @ cid @ ["litmus"; file]
+  lita_dir_of root cid @ [file]
+
+let herd_dir_of (root : string) (cid : string list) : string list =
+  [root] @ cid @ ["herd"]
+
+let herd_path_of (root : string) (file : string) (cid : string list) : string  list =
+  herd_dir_of root cid @ [file]
 
 let mkdirs ps =
   Or_error.(
@@ -93,6 +107,7 @@ let mkdirs ps =
                     ~f:(fun (c, _) ->
                         [ asm_dir_of ps.out_root c
                         ; lita_dir_of ps.out_root c
+                        ; herd_dir_of ps.out_root c
                         ])
                     ps.compiler_paths
                  )
@@ -101,22 +116,27 @@ let mkdirs ps =
       )
   )
 
-let make_compiler root_path asm_fname cid =
-  { a_path      = lcat (a_path_of root_path asm_fname cid)
-  ; lita_path   = lcat (lita_path_of root_path asm_fname cid)
+let make_compiler root_path basename cid =
+  let asm_fname  = basename ^ ".s" in
+  let lita_fname = basename ^ ".s.litmus" in
+  let herd_fname = basename ^ ".herd.txt" in
+  { asm_path  = lcat (asm_path_of  root_path asm_fname cid)
+  ; lita_path = lcat (lita_path_of root_path lita_fname cid)
+  ; herd_path = lcat (herd_path_of root_path herd_fname cid)
   }
+;;
 
 let make specs ~in_root ~out_root ~c_fname =
   let basename   = Filename.basename (Filename.chop_extension c_fname) in
-  let lit_fname  = basename ^ ".litmus" in
   let spec_map f = List.map ~f:(fun (c, _) -> (c, f c)) specs in
-  let asm_fname  = basename ^ ".s" in
-  { basename     = basename
-  ; out_root     = out_root
-  ; c_path       = lcat (c_path_of    in_root c_fname)
-  ; litc_path    = lcat (litc_path_of in_root lit_fname)
-  ; compiler_paths = spec_map (make_compiler out_root asm_fname)
+  let lit_fname  = basename ^ ".litmus" in
+  { basename
+  ; out_root
+  ; c_path         = lcat (c_path_of    in_root c_fname)
+  ; litc_path      = lcat (litc_path_of in_root lit_fname)
+  ; compiler_paths = spec_map (make_compiler out_root basename)
   }
+;;
 
 let make_and_mkdirs specs ~in_root ~out_root ~c_fname =
   let paths = make specs ~in_root ~out_root ~c_fname in
@@ -141,9 +161,10 @@ let pp f ps =
   let out_paths =
     List.concat_map
       ~f:(
-        fun (c, {a_path; lita_path}) ->
-          [ CompilerSpec.Id.to_string c, a_path
+        fun (c, {asm_path; lita_path; herd_path}) ->
+          [ CompilerSpec.Id.to_string c, asm_path
           ; (CompilerSpec.Id.to_string c) ^ "/litmus", lita_path
+          ; (CompilerSpec.Id.to_string c) ^ "/herd", herd_path
           ]
       )
       ps.compiler_paths

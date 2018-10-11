@@ -2,8 +2,9 @@ open Core
 
 (** [Pathset.compiler] is a record containing compiler-specific paths. *)
 type compiler =
-  { a_path    : string (* Path to assembly output *)
+  { asm_path  : string (* Path to assembly output *)
   ; lita_path : string (* Path to litmus output *)
+  ; herd_path : string (* Path to herd output *)
   }
 
 (** [Pathset.t] is a record containing various paths used in the
@@ -24,10 +25,16 @@ val compiler_paths_of : t -> CompilerSpec.Id.t -> compiler
    [cid], throwing an exception if [cid] isn't known to [ps]. *)
 val compiler_asm_path : t -> CompilerSpec.Id.t -> string
 
-(** [compiler_lita_of ps cid] gets the assembly litmus path for
+(** [compiler_lita_path ps cid] gets the assembly litmus path for
    compiler ID [cid], throwing an exception if [cid] isn't known to
    [ps]. *)
 val compiler_lita_path : t -> CompilerSpec.Id.t -> string
+
+(** [compiler_herd_path ps cid] gets the herd output path for
+   compiler ID [cid], throwing an exception if [cid] isn't known to
+   [ps]. *)
+val compiler_herd_path : t -> CompilerSpec.Id.t -> string
+
 
 (** [mkdirs] tries to make the output directories
    mentioned in a [Pathset.t]. *)

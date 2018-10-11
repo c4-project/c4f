@@ -12,7 +12,7 @@ let pp_listlist ~pp f =
     (Format.pp_print_list
        ~pp_sep:Format.pp_print_cut
        (fun f k ->
-          Format.fprintf f "@[<h>%a@]"
+          Format.fprintf f "@[<h>[@ %a@ ]@]"
             (Format.pp_print_list
                ~pp_sep:pp_csep pp)
             k))

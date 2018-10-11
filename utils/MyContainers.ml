@@ -61,12 +61,12 @@ module MyList = struct
          ; [3]
          ]);
     [%expect {|
-                0, 8, 0, 0, 6
-                9, 9, 9, 6, 6
-                8, 8, 1, 9, 9
-                9, 1, 1, 9, 6
-                7, 2, 5, 6, 6
-                3, 6, 6, 6, 6 |}]
+                [ 0, 8, 0, 0, 6 ]
+                [ 9, 9, 9, 6, 6 ]
+                [ 8, 8, 1, 9, 9 ]
+                [ 9, 1, 1, 9, 6 ]
+                [ 7, 2, 5, 6, 6 ]
+                [ 3, 6, 6, 6, 6 ] |}]
 
   let%expect_test "mapM: list" =
     Format.printf "@[<h>%a@]@."
@@ -74,20 +74,17 @@ module MyList = struct
       (mapM ~f:(fun k -> [k; 0])
          ([[1; 2; 3]]));
     [%expect {|
-              1, 2, 3
-              1, 2, 0
-              1, 0, 3
-              1, 0, 0
-              0, 2, 3
-              0, 2, 0
-              0, 0, 3
-              0, 0, 0 |}]
+              [ 1, 2, 3 ]
+              [ 1, 2, 0 ]
+              [ 1, 0, 3 ]
+              [ 1, 0, 0 ]
+              [ 0, 2, 3 ]
+              [ 0, 2, 0 ]
+              [ 0, 0, 3 ]
+              [ 0, 0, 0 ] |}]
 
-  let prefixes =
-    function
-    | [] -> [] (* This is to ensure we skip the empty prefix. *)
-    | x::xs ->
-      List.mapi ~f:(fun i _ -> x::(List.take xs (i + 1))) xs
+  let prefixes xs =
+    List.mapi ~f:(fun i _ -> List.take xs (i+1)) xs
 
   let%expect_test "prefixes: empty list" =
     Format.printf "@[<h>%a@]@."
@@ -100,7 +97,7 @@ module MyList = struct
       (MyFormat.pp_listlist ~pp:Int.pp)
       (prefixes [1; 2; 3]);
     [%expect {|
-              1
-              1, 2,
-              1, 2, 3 |}]
+              [ 1 ]
+              [ 1, 2 ]
+              [ 1, 2, 3 ] |}]
 end

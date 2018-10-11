@@ -37,4 +37,10 @@
    (cmd gcc-8)
 
    ;; 'argv' gives the list of arguments to the compiler.
-   (argv ("-m32" "-DNO_PTHREADS")))))
+   (argv ("-m32" "-DNO_PTHREADS"))
+
+   ;; Optionally, you can tell act to auto-run Herd on generated litmus.
+   ;; To do so, uncomment this line and, if needed, replace "herd7"
+   ;; with the full path to the Herd binary.
+   ;; (herd "herd7")
+))))
