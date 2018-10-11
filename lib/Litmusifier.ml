@@ -25,8 +25,7 @@ open Core
 open Lang
 
 type t =
-  { vf    : Format.formatter
-  ; wf    : Format.formatter
+  { o     : OutputCtx.t
   ; cid   : string
   ; spec  : CompilerSpec.t
   ; iname : string
@@ -80,7 +79,7 @@ let output_litmus (type s)
       Format.fprintf f "@[<h>-@ @[<hov>%a@]@]@,"
         S.Warn.pp w
     in
-    Format.fprintf t.wf "Warnings@ for@ %s:@ @[<v>%a@]@."
+    Format.fprintf t.o.wf "Warnings@ for@ %s:@ @[<v>%a@]@."
       t.iname
       (fun f -> List.iter ~f:(pp_warning f)) ws
   in

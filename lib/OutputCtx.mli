@@ -21,18 +21,15 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Front-end for single-file litmus conversion and explanation *)
+(** Bundle of formatters used to output information in the middle of
+    act execution *)
 
-open Core
-
+(** [t] is the type of output contexts. *)
 type t =
-  { o     : OutputCtx.t
-  ; cid   : string
-  ; spec  : CompilerSpec.t
-  ; iname : string
-  ; inp   : In_channel.t
-  ; outp  : Out_channel.t
-  ; mode  : [`Explain | `Litmusify]
+  { vf : Format.formatter (* Verbose formatter *)
+  ; wf : Format.formatter (* Warning formatter *)
+  ; ef : Format.formatter (* Error formatter *)
   }
 
-val run : t -> unit Or_error.t
+(** [make] makes a [t] from various reporting flags. *)
+val make : verbose:bool -> warnings:bool -> t

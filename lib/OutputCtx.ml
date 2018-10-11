@@ -21,18 +21,21 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Front-end for single-file litmus conversion and explanation *)
-
-open Core
+open Utils
 
 type t =
-  { o     : OutputCtx.t
-  ; cid   : string
-  ; spec  : CompilerSpec.t
-  ; iname : string
-  ; inp   : In_channel.t
-  ; outp  : Out_channel.t
-  ; mode  : [`Explain | `Litmusify]
+  { vf : Format.formatter
+  ; wf : Format.formatter
+  ; ef : Format.formatter
   }
 
-val run : t -> unit Or_error.t
+let maybe_err_formatter on =
+  if on
+  then Format.err_formatter
+  else MyFormat.null_formatter ()
+
+let make ~verbose ~warnings =
+  { vf = maybe_err_formatter verbose
+  ; wf = maybe_err_formatter warnings
+  ; ef = Format.err_formatter
+  }
