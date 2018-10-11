@@ -15,6 +15,18 @@ type t =
   ; compiler_paths : (CompilerSpec.Id.t, compiler) List.Assoc.t
   }
 
+let compiler_paths_of ps cid =
+  List.Assoc.find_exn
+    ps.compiler_paths
+    cid
+    ~equal:(CompilerSpec.Id.equal)
+
+let compiler_asm_path ps cid =
+  (compiler_paths_of ps cid).a_path
+
+let compiler_lita_path ps cid =
+  (compiler_paths_of ps cid).lita_path
+
 type ent_type =
   | File
   | Dir
@@ -57,7 +69,7 @@ let c_path_of results_path name =
 let litc_path_of results_path name =
   [results_path; "litmus"; name]
 
-let a_dir_of (root : string) (cid : string list) : string list =
+let asm_dir_of (root : string) (cid : string list) : string list =
   [root] @ cid @ ["asm"]
 
 let a_path_of (root : string) (file : string) (cid : string list) : string list =
@@ -79,7 +91,7 @@ let mkdirs ps =
                  mkdir_p
                  (List.concat_map
                     ~f:(fun (c, _) ->
-                        [ a_dir_of ps.out_root c
+                        [ asm_dir_of ps.out_root c
                         ; lita_dir_of ps.out_root c
                         ])
                     ps.compiler_paths
@@ -94,20 +106,20 @@ let make_compiler root_path asm_fname cid =
   ; lita_path   = lcat (lita_path_of root_path asm_fname cid)
   }
 
-let make specs ~root_path ~results_path ~c_fname =
+let make specs ~in_root ~out_root ~c_fname =
   let basename   = Filename.basename (Filename.chop_extension c_fname) in
   let lit_fname  = basename ^ ".litmus" in
   let spec_map f = List.map ~f:(fun (c, _) -> (c, f c)) specs in
   let asm_fname  = basename ^ ".s" in
   { basename     = basename
-  ; out_root     = root_path
-  ; c_path       = lcat (c_path_of    results_path c_fname)
-  ; litc_path    = lcat (litc_path_of results_path lit_fname)
-  ; compiler_paths = spec_map (make_compiler root_path asm_fname)
+  ; out_root     = out_root
+  ; c_path       = lcat (c_path_of    in_root c_fname)
+  ; litc_path    = lcat (litc_path_of in_root lit_fname)
+  ; compiler_paths = spec_map (make_compiler out_root asm_fname)
   }
 
-let make_and_mkdirs specs ~root_path ~results_path ~c_fname =
-  let paths = make specs ~root_path ~results_path ~c_fname in
+let make_and_mkdirs specs ~in_root ~out_root ~c_fname =
+  let paths = make specs ~in_root ~out_root ~c_fname in
   Or_error.(mkdirs paths >>= (fun _ -> return paths))
 
 let pp f ps =
