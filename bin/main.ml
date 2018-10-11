@@ -4,12 +4,6 @@ open Utils
 open Utils.MyContainers
 open Lang
 
-type env =
-  { o     : OutputCtx.t
-  ; root  : string
-  ; specs : CompilerSpec.set
-  }
-
 let asm_path_of (cc_id : string) (ps : Pathset.t) : string =
   List.Assoc.find_exn ps.a_paths cc_id ~equal:(=)
 
@@ -28,12 +22,12 @@ let output_litmus_oc (lit : L.t) (oc : Out_channel.t) =
   L.pp f lit;
   Format.pp_print_flush f ()
 
-let c_asm (env : env) (cid : string) (spec : CompilerSpec.t) (ps : Pathset.t) =
+let c_asm o (cid : string) (spec : CompilerSpec.t) (ps : Pathset.t) =
   let open Io in
   let f src inp _ outp =
     let iname = MyFormat.format_to_string (In_source.pp) src in
     Litmusifier.run
-      { o  = env.o
+      { o
       ; cid
       ; spec
       ; iname
@@ -47,33 +41,33 @@ let c_asm (env : env) (cid : string) (spec : CompilerSpec.t) (ps : Pathset.t) =
     (`File (lita_path_of cid ps))
     ~f
 
-let proc_c (env : env) results_path c_fname =
+let proc_c (o : OutputCtx.t) root specs results_path c_fname =
   let open Or_error in
-  let paths = Pathset.make env.specs
-                           ~root_path:env.root
+  let paths = Pathset.make specs
+                           ~root_path:root
                            ~results_path:results_path
                            ~c_fname:c_fname in
-  Pathset.pp env.o.vf paths;
-  Format.pp_print_newline env.o.vf ();
+  Pathset.pp o.vf paths;
+  Format.pp_print_newline o.vf ();
 
   tag (Pathset.make_dir_structure paths)
     ~tag:"couldn't make dir structure"
   *>
     MyList.iter_result
       (fun (cn, cs) ->
-         Format.fprintf env.o.vf "@[CC[%s]@ %s@]@." cn paths.basename;
+         Format.fprintf o.vf "@[CC[%s]@ %s@]@." cn paths.basename;
          Compiler.compile cn cs paths
-         *> c_asm env cn cs paths
-      ) env.specs
+         *> c_asm o cn cs paths
+      ) specs
 
-let proc_results (env : env) (results_path : string) =
+let proc_results (o : OutputCtx.t) root specs (results_path : string) =
   let c_path = Filename.concat results_path "C" in
   Or_error.try_with_join
     (
       fun () ->
         Sys.readdir c_path
         |> Array.filter ~f:(MyFilename.has_extension ~ext:"c")
-        |> MyArray.iter_result (proc_c env results_path)
+        |> MyArray.iter_result (proc_c o root specs results_path)
     )
 
 let pp_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
@@ -86,23 +80,6 @@ let pp_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
   Format.pp_print_cut f ();
   Format.pp_close_box f ();
   Format.pp_print_flush f ()
-
-(** [tap f r] behaves like [Result.iter f r], but returns [r]. *)
-let tap (f : 'a -> unit) (r : ('a, 'e) result) : ('a, 'e) result =
-  Result.iter ~f r; r
-
-(** [make_compiler_specs o specpath] reads in the compiler spec list at
-    [specpath], converting it to a [compiler_spec_set].
-    It pretty-prints the specs onto [vf]. *)
-let make_compiler_specs (o : OutputCtx.t) (specpath : string) =
-  let open Or_error in
-  CompilerSpec.load_specs ~path:specpath
-  |> List.fold_result ~init:[]
-                      ~f:(fun specs (c, spec) ->
-                        Compiler.test spec >>| (fun _ -> (c, spec)::specs)
-                      )
-  |> tap (pp_specs o.vf)
-  |> tag ~tag:"compiler specs are invalid"
 
 let maybe_err_formatter on =
   if on
@@ -183,9 +160,10 @@ let explain =
      fun () ->
        let warnings = not no_warnings in
        let o = OutputCtx.make ~verbose ~warnings in
-       Result.Let_syntax.(
-         make_compiler_specs o spec_file
-         >>= do_litmusify `Explain o infile outfile compiler_id
+       Or_error.Let_syntax.(
+         let%bind specs = Compiler.load_and_test_specs ~path:spec_file in
+         pp_specs o.vf specs;
+         do_litmusify `Explain o infile outfile compiler_id specs
        )
        |> prerr
     ]
@@ -229,7 +207,8 @@ let litmusify =
        let warnings = not no_warnings in
        let o = OutputCtx.make ~verbose ~warnings in
        Result.Let_syntax.(
-         let%bind specs = make_compiler_specs o spec_file in
+         let%bind specs = Compiler.load_and_test_specs ~path:spec_file in
+         pp_specs o.vf specs;
          match sendto with
          | None -> do_litmusify `Litmusify o infile outfile compiler_id specs
          | Some cmd ->
@@ -241,10 +220,10 @@ let litmusify =
        |> prerr
     ]
 
-let do_memalloy env inpaths =
+let do_memalloy o root specs inpaths =
   List.fold_result inpaths
-                   ~init:()
-                   ~f:(fun _ -> proc_results env)
+    ~init:()
+    ~f:(fun _ -> proc_results o root specs)
 
 let memalloy =
   let open Command.Let_syntax in
@@ -286,8 +265,9 @@ let memalloy =
         let warnings = not no_warnings in
         let o = OutputCtx.make ~verbose ~warnings in
         Result.Let_syntax.(
-          let%bind specs = make_compiler_specs o spec_file in
-          do_memalloy { o; root; specs } inpaths
+          let%bind specs = Compiler.load_and_test_specs ~path:spec_file in
+          pp_specs o.vf specs;
+          do_memalloy o root specs inpaths
         ) |> prerr
 ]
 

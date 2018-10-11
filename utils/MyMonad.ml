@@ -12,6 +12,16 @@ module type Extensions = sig
     :  f:(int -> 'a -> 'b t)
     -> ('a list) t
     -> ('b list) t
+
+  val tapM
+    :  f:('a -> unit t)
+    -> 'a
+    -> 'a t
+
+  val tap
+    :  f:('a -> unit)
+    -> 'a
+    -> 'a t
 end
 
 module Extend (M : Monad.S) = struct
@@ -33,9 +43,14 @@ module Extend (M : Monad.S) = struct
     return (List.rev xsc')
 
   let mapM ~f xsc = mapiM ~f:(Fn.const f) xsc
+
+  let tapM ~f a = M.(f a >>| Fn.const a)
+
+  let tap ~f a = f a; M.return a
 end
 
 module MyOption = Extend (Option)
+module MyOr_error = Extend (Or_error)
 
 let%expect_test "mapiM: returning identity on option" =
   Format.printf "@[<h>%a@]@."
@@ -52,4 +67,16 @@ let%expect_test "mapiM: counting upwards on option" =
     (MyOption.mapiM ~f:(fun i _ -> Some i)
        (Some ["a"; "b"; "c"; "d"; "e"]));
   [%expect {| 0, 1, 2, 3, 4 |}]
+
+let%expect_test "tapM on option, where the tap returns None" =
+  Format.printf "@[%a@]@."
+    (MyFormat.pp_option ~pp:Int.pp)
+    (MyOption.tapM ~f:(Fn.const None) 10);
+  [%expect {||}]
+
+let%expect_test "tapM on option, where the tap returns Some" =
+  Format.printf "@[%a@]@."
+    (MyFormat.pp_option ~pp:Int.pp)
+    (MyOption.tapM ~f:(Fn.const (Some ())) 10);
+  [%expect {| 10 |}]
 

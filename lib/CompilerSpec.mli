@@ -39,4 +39,4 @@ type set = (string, t) List.Assoc.t
 val set_of_sexp : Sexp.t -> set
 val sexp_of_set : set -> Sexp.t
 
-val load_specs : path:string -> set
+val load_specs : path:string -> set Or_error.t

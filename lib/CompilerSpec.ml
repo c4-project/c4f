@@ -39,4 +39,5 @@ let pp f spec =
   Format.pp_close_box f ()
 
 let load_specs ~path =
-  Sexp.load_sexp_conv_exn path set_of_sexp
+  Or_error.try_with
+    (fun () -> Sexp.load_sexp_conv_exn path set_of_sexp)
