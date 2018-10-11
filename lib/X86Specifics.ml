@@ -68,6 +68,7 @@ struct
       begin
         match o with
         | `Cmp -> { op with opcode = OpBasic (o :> basic_opcode) }
+        | `Ret
         (* TODO(@MattWindsor91): some of these might also need dropping. *)
         | `Add | `Mov | `Pop | `Push | `Sub -> op
       end

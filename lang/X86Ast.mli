@@ -168,6 +168,8 @@ type sizable_opcode =
   | `Mov
   | `Pop
   | `Push
+  | `Ret (* Some compilers seem to emit RETL (32-bit)/RETQ (64-bit);
+            it's unclear if there's any semantic difference from RET. *)
   | `Sub
   ]
 [@@deriving sexp]
@@ -193,7 +195,6 @@ type basic_opcode =
   | `Leave
   | `Mfence
   | `Nop
-  | `Ret
   ]
 [@@deriving sexp]
 

@@ -313,6 +313,7 @@ type sizable_opcode =
   | `Mov
   | `Pop
   | `Push
+  | `Ret
   | `Sub
   ]
 [@@deriving sexp]
@@ -327,6 +328,7 @@ module SizableOpcodeTable =
         ; `Mov,  "mov"
         ; `Pop,  "pop"
         ; `Push, "push"
+        ; `Ret,  "ret"
         ; `Sub,  "sub"
         ]
     end)
@@ -359,7 +361,6 @@ type basic_opcode =
   | `Leave
   | `Mfence
   | `Nop
-  | `Ret
   ]
 [@@deriving sexp]
 
@@ -374,7 +375,6 @@ module BasicOpcodeTable =
         [ `Leave,  "leave"
         ; `Mfence, "mfence"
         ; `Nop,    "nop"
-        ; `Ret,    "ret"
         ]
     end)
 
