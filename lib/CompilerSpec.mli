@@ -33,9 +33,16 @@ val t_of_sexp : Sexp.t -> t
 val sexp_of_t : t -> Sexp.t
 val pp : Format.formatter -> t -> unit
 
+module Id : sig
+  (** [t] is the type of compiler IDs. *)
+  type t = string list [@@deriving compare, hash, sexp]
+
+  include Core.Identifiable.S_plain with type t := t
+end
+
 (** [CompilerSpec.set] is an associative list mapping compiler names
    to compiler specs. *)
-type set = (string, t) List.Assoc.t
+type set = (Id.t, t) List.Assoc.t
 val set_of_sexp : Sexp.t -> set
 val sexp_of_set : set -> Sexp.t
 

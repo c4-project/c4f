@@ -27,7 +27,7 @@ open Core
 
 type t =
   { o     : OutputCtx.t
-  ; cid   : string
+  ; cid   : CompilerSpec.Id.t
   ; spec  : CompilerSpec.t
   ; iname : string
   ; inp   : In_channel.t

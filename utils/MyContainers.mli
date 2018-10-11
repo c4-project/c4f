@@ -38,4 +38,7 @@ module MyList : sig
   (** [right_pad ~padding xs] pads every list in xs with [padding],
       ensuring all lists have equal length. *)
   val right_pad : padding:'a -> 'a list list -> 'a list list
+
+  (** [prefixes xs] returns all non-empty prefixes of [xs]. *)
+  val prefixes : 'a list -> 'a list list
 end

@@ -2,13 +2,17 @@ open Core
 open Utils
 open Utils.MyContainers
 
+type compiler =
+  { a_path : string
+  ; lita_path : string
+  }
+
 type t =
-  { basename   : string
-  ; c_path     : string
-  ; litc_path  : string
-  ; out_root   : string
-  ; a_paths    : (string, string) List.Assoc.t
-  ; lita_paths : (string, string) List.Assoc.t
+  { basename       : string
+  ; c_path         : string
+  ; litc_path      : string
+  ; out_root       : string
+  ; compiler_paths : (CompilerSpec.Id.t, compiler) List.Assoc.t
   }
 
 type ent_type =
@@ -39,22 +43,31 @@ let mkdir (path : string) =
   | Unknown -> error "couldn't determine whether path already exists" path [%sexp_of: string]
   | Nothing -> Or_error.try_with (fun () -> Unix.mkdir path)
 
-let c_path_of results_path : string -> string =
-  Filename.concat (Filename.concat results_path "C")
-let litc_path_of results_path : string -> string =
-  Filename.concat (Filename.concat results_path "litmus")
+let lcat = List.reduce_balanced_exn ~f:Filename.concat
 
-let a_dir_of (root : string) (cname : string) : string =
-  Filename.concat root (cname ^ "_asm")
+let subpaths (path : string list) : string list =
+  List.map ~f:lcat (MyList.prefixes path)
 
-let a_path_of (root : string) (file : string) (cname : string) : string =
-  Filename.concat (a_dir_of root cname) file
+let mkdir_p (path : string list) =
+  Or_error.all_unit (List.map ~f:mkdir (subpaths path))
 
-let lita_dir_of (root : string) (cname : string) : string =
-  Filename.concat root (cname ^ "_litmus")
+let c_path_of results_path name =
+  [results_path; "C"; name]
 
-let lita_path_of (root : string) (file : string) (cname : string) : string =
-  Filename.concat (lita_dir_of root cname) file
+let litc_path_of results_path name =
+  [results_path; "litmus"; name]
+
+let a_dir_of (root : string) (cid : string list) : string list =
+  [root] @ cid @ ["asm"]
+
+let a_path_of (root : string) (file : string) (cid : string list) : string list =
+  [root] @ cid @ ["asm"; file]
+
+let lita_dir_of (root : string) (cid : string list) : string list =
+  [root] @ cid @ ["litmus"]
+
+let lita_path_of (root : string) (file : string) (cid : string list) : string  list =
+  [root] @ cid @ ["litmus"; file]
 
 let make_dir_structure ps =
   let open Or_error in
@@ -62,11 +75,21 @@ let make_dir_structure ps =
     ( fun () ->
         if Sys.is_directory_exn ps.out_root
         then MyList.iter_result
-            mkdir
-            (List.map ~f:(fun (c, _) -> a_dir_of ps.out_root c) ps.a_paths
-             @ List.map ~f:(fun (c, _) -> lita_dir_of ps.out_root c) ps.lita_paths)
+            mkdir_p
+            (List.concat_map
+               ~f:(fun (c, _) ->
+                   [ a_dir_of ps.out_root c
+                   ; lita_dir_of ps.out_root c
+                   ])
+               ps.compiler_paths
+            )
         else error "not a directory" ps.out_root [%sexp_of: string]
     )
+
+let make_compiler root_path asm_fname cid =
+  { a_path      = lcat (a_path_of root_path asm_fname cid)
+  ; lita_path   = lcat (lita_path_of root_path asm_fname cid)
+  }
 
 let make specs ~root_path ~results_path ~c_fname =
   let basename   = Filename.basename (Filename.chop_extension c_fname) in
@@ -75,10 +98,9 @@ let make specs ~root_path ~results_path ~c_fname =
   let asm_fname  = basename ^ ".s" in
   { basename     = basename
   ; out_root     = root_path
-  ; c_path       = c_path_of    results_path c_fname
-  ; litc_path    = litc_path_of results_path lit_fname
-  ; a_paths      = spec_map (a_path_of root_path asm_fname)
-  ; lita_paths   = spec_map (lita_path_of root_path lit_fname)
+  ; c_path       = lcat (c_path_of    results_path c_fname)
+  ; litc_path    = lcat (litc_path_of results_path lit_fname)
+  ; compiler_paths = spec_map (make_compiler root_path asm_fname)
   }
 
 let pp f ps =
@@ -98,8 +120,14 @@ let pp f ps =
   List.iter in_paths ~f:(p "in");
 
   let out_paths =
-    List.map ~f:(fun (c, p) -> (c, p)) ps.a_paths
-    @ List.map ~f:(fun (c, p) -> (c ^ "/litmus", p)) ps.lita_paths
+    List.concat_map
+      ~f:(
+        fun (c, {a_path; lita_path}) ->
+          [ CompilerSpec.Id.to_string c, a_path
+          ; (CompilerSpec.Id.to_string c) ^ "/litmus", lita_path
+          ]
+      )
+      ps.compiler_paths
   in
   List.iter out_paths ~f:(p "out");
 

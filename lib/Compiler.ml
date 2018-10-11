@@ -3,7 +3,7 @@ open Utils
 open Utils.MyMonad
 
 type compilation =
-  { cc_id    : string
+  { cc_id    : CompilerSpec.Id.t
   ; cc_spec  : CompilerSpec.t
   ; in_path  : string
   ; out_path : string
@@ -21,12 +21,14 @@ let compile_gcc (cmp : compilation) : unit Or_error.t =
     ] in
   Run.run ~prog:cmp.cc_spec.cmd final_argv
 
-let compile (cc_id : string) (cc_spec : CompilerSpec.t) (ps : Pathset.t) =
-  let asm_path = List.Assoc.find_exn ps.a_paths cc_id ~equal:(=) in
+let compile (cc_id : CompilerSpec.Id.t) (cc_spec : CompilerSpec.t) (ps : Pathset.t) =
+  let compiler_paths =
+    List.Assoc.find_exn ps.compiler_paths cc_id
+      ~equal:(List.equal ~equal:(=)) in
   let cmp = { cc_id = cc_id
             ; cc_spec = cc_spec
             ; in_path = ps.c_path
-            ; out_path = asm_path
+            ; out_path = compiler_paths.a_path
             } in
   match cc_spec.style with
   | Gcc -> compile_gcc cmp
@@ -37,7 +39,9 @@ let test (cc_spec : CompilerSpec.t) =
 
 let test_specs (specs : CompilerSpec.set) =
   let f (name, spec) =
-    Or_error.tag ~tag:(sprintf "Compiler %s failed test" name)
+    Or_error.tag
+      ~tag:(sprintf "Compiler %a failed test"
+                         (fun () -> CompilerSpec.Id.to_string) name)
       (test spec)
   in
   MyOr_error.tapM

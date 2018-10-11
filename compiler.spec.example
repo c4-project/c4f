@@ -8,8 +8,14 @@
 ;;
 ;; By default, 'act' reads from './compiler.spec'.
 (
- ;; This stanza specifies a compiler we'll call 'gcc-x86'.
- (gcc-x86
+ ;; This stanza specifies a compiler we'll call 'gcc x86'.
+ ;; Compiler identifiers are lists: each item in the list corresponds
+ ;; to a level in the directory hierarchy act builds in memalloy mode.
+ ;;
+ ;; In other modes, where act expects you to provide the identifier of
+ ;; a single compiler, you should join the items together with any
+ ;; of the following characters: '.', ' ', '/', or '\'.
+ ((gcc x86)
   (
    ;; 'style' tells us what sort of interface the compiler exposes.
    ;;

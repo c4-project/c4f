@@ -22,7 +22,27 @@ type t =
   ; argv  : string list
   } [@@deriving sexp]
 
-type set = (string, t) List.Assoc.t [@@deriving sexp]
+module Id = struct
+  module T = struct
+    (** [t] is the type of compiler IDs. *)
+    type t = string list [@@deriving compare, hash, sexp]
+
+    let allowed_id_splits = [ '.' ; ' '; '/'; '\\']
+
+    let of_string =
+      String.split_on_chars ~on:allowed_id_splits
+
+    let to_string =
+      String.concat ~sep:"."
+
+    let module_name = "act.Lib.CompilerSpec"
+  end
+
+  include T
+  include Identifiable.Make_plain (T)
+end
+
+type set = (Id.t, t) List.Assoc.t [@@deriving sexp]
 
 let pp f spec =
   Format.pp_open_vbox f 0;
@@ -39,5 +59,8 @@ let pp f spec =
   Format.pp_close_box f ()
 
 let load_specs ~path =
-  Or_error.try_with
-    (fun () -> Sexp.load_sexp_conv_exn path set_of_sexp)
+  Or_error.(
+    tag ~tag:"Couldn't parse compiler spec file."
+      (try_with
+         (fun () -> Sexp.load_sexp_conv_exn path set_of_sexp))
+  )
