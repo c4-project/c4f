@@ -53,6 +53,7 @@ type reg =
   | AL | BL | CL | DL
   | AH | BH | CH | DH
   | ZF | SF | CF
+  | CS | DS | ES | FS | GS
 [@@deriving sexp]
 
 module RegTable =
@@ -69,6 +70,12 @@ module RegTable =
         ; EBP, "EBP"
         ; ESP, "ESP"
         ; EIP, "EIP"
+        (* Segment registers *)
+        ; CS,  "CS"
+        ; DS,  "DS"
+        ; ES,  "ES"
+        ; FS,  "FS"
+        ; GS,  "GS"
         (* Flag registers *)
         ; ZF,  "ZF"
         ; SF,  "SF"

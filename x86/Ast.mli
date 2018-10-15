@@ -55,6 +55,7 @@ type reg =
   | AL | BL | CL | DL
   | AH | BH | CH | DH
   | ZF | SF | CF
+  | CS | DS | ES | FS | GS
 [@@deriving sexp]
 
 (** [RegTable] associates each register with its string name. *)
