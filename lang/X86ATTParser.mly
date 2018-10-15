@@ -46,8 +46,8 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
- open Core
- open Option
+(* We don't open Core at the toplevel because Menhir generates exceptions that
+   are ok in the standard library, but deprecated in Core. *)
  open X86Ast
 %}
 
@@ -81,7 +81,7 @@ stm_list:
   | list(stm) { $1 }
 
 stm:
-  | option(instr) EOL { Option.value ~default:StmNop $1 }
+  | option(instr) EOL { Core.Option.value ~default:StmNop $1 }
   | label { X86Ast.StmLabel $1 }
   | error { raise (X86Base.ParseError({at = $sloc; why = X86Base.Statement })) }
 
@@ -92,14 +92,16 @@ label:
   NAME COLON { $1 }
 
 opcode:
-  | NAME { (String.chop_prefix $1 ~prefix:"." >>| (fun f -> OpDirective f))
-	   |> first_some
-	        (X86Ast.JumpTable.of_string $1 >>| (fun j -> OpJump j))
-	   |> first_some
-	        (X86Ast.ATTSizedOpcodeTable.of_string $1 >>| (fun (x, y) -> OpSized (x, y)))
-	   |> first_some
-	        (X86Ast.BasicOpcodeTable.of_string $1 >>| (fun o -> OpBasic o))
-	   |> Option.value ~default:(OpUnknown $1)
+  | NAME { Core.Option.(
+	     (Core.String.chop_prefix $1 ~prefix:"." >>| (fun f -> OpDirective f))
+	     |> first_some
+	          (JumpTable.of_string $1 >>| (fun j -> OpJump j))
+	     |> first_some
+	          (ATTSizedOpcodeTable.of_string $1 >>| (fun (x, y) -> OpSized (x, y)))
+	     |> first_some
+	          (BasicOpcodeTable.of_string $1 >>| (fun o -> OpBasic o))
+	     |> value ~default:(OpUnknown $1)
+	   )
 	 }
 
 instr:
@@ -126,25 +128,25 @@ bop:
 
 (* Base/index/scale triple *)
 bis:
-  | LPAR ATT_REG RPAR
-    { X86Ast.in_base_only $2 }
+  | ATT_REG
+    { X86Ast.in_base_only $1 }
     (* (%eax) *)
-  | LPAR option(ATT_REG) COMMA ATT_REG RPAR
-         { { (X86Ast.in_zero ()) with in_base = $2;
-                                       in_index = Some (Unscaled $4) } }
+  | option(ATT_REG) COMMA ATT_REG
+         { { (X86Ast.in_zero ()) with in_base = $1;
+                                       in_index = Some (Unscaled $3) } }
     (* (%eax, %ebx)
        (    , %ebx) *)
-  | LPAR option(ATT_REG) COMMA ATT_REG COMMA k RPAR
-         { { (X86Ast.in_zero ()) with in_base = $2;
-                                      in_index = Some (Scaled ($4, $6)) } }
+  | option(ATT_REG) COMMA ATT_REG COMMA k
+         { { (X86Ast.in_zero ()) with in_base = $1;
+                                      in_index = Some (Scaled ($3, $5)) } }
     (* (%eax, %ebx, 2)
        (    , %ebx, 2) *)
 
 (* Memory access: base/index/scale, displacement, or both *)
 indirect:
-  | bis { $1 }
+  | LPAR bis RPAR { $2 }
     (* (%eax, %ebx, 2) *)
-  | disp bis { { $2 with in_disp = Some $1 } }
+  | disp LPAR bis RPAR { { $3 with in_disp = Some $1 } }
     (* -8(%eax, %ebx, 2) *)
   | disp { X86Ast.in_disp_only $1 }
     (* 0x4000 *)
@@ -176,7 +178,7 @@ prim_operand:
 
 (* Numeric constant: hexadecimal or decimal *)
 k:
-  | ATT_HEX    { Int.of_string ("0x" ^ $1) }
+  | ATT_HEX    { Core.Int.of_string ("0x" ^ $1) }
     (* 0xDEADBEEF *)
-  | NUM        { Int.of_string $1 }
+  | NUM        { Core.Int.of_string $1 }
     (* 42 *)

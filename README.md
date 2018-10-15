@@ -40,9 +40,9 @@ We've tested `act` on:
 
 First, you'll need:
 
-- A recent OCaml compiler (tested with 4.07)
+- OCaml (4.07+)
 - opam (tested with version 2)
-- dune
+- dune (1.4+)
 
 You'll then need to install several `opam` packages.  To find out which,
 run `dune external-lib-deps --missing bin/main.exe`.
