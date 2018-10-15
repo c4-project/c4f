@@ -131,4 +131,4 @@ working directory.
   [herd7](https://github.com/herd/herdtools7).  We include these in
   `act` under the provisos of herd's
   [CECILL-B](http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html)
-  licence.
+  licence: see `LICENSE.herd`.
