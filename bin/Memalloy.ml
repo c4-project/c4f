@@ -89,7 +89,7 @@ let herd o paths cid (spec : CompilerSpec.t) =
       fun prog ->
         log_stage "HERD" o paths cid;
         let f _ oc =
-          Run.run ~oc ~prog [ Pathset.compiler_lita_path paths cid ]
+          Run.Local.run ~oc ~prog [ Pathset.compiler_lita_path paths cid ]
         in
         let herd_path = Pathset.compiler_herd_path paths cid in
         let%bind _ =

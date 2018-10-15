@@ -20,7 +20,7 @@ module type WithSpec = sig
   val cspec : CompilerSpec.t
 end
 
-module Gcc (W : WithSpec) : Intf = struct
+module Gcc (W : WithSpec) (R : Run.Runner) : Intf = struct
   let id = W.cid
 
   let compile ~infile ~outfile =
@@ -33,11 +33,11 @@ module Gcc (W : WithSpec) : Intf = struct
         ; outfile
         ; infile
         ] in
-    Run.run ~prog:W.cspec.cmd final_argv
+    R.run ~prog:W.cspec.cmd final_argv
   ;;
 
   let test () =
-    Run.run ~prog:W.cspec.cmd ["--version"]
+    R.run ~prog:W.cspec.cmd ["--version"]
   ;;
 end
 
@@ -48,7 +48,7 @@ let from_spec cid (cspec : CompilerSpec.t) =
         let cid = cid
         let cspec = cspec
       end
-      ) : Intf)
+      )(Run.Local) : Intf)
 ;;
 
 let test_specs (specs : CompilerSpec.set) =

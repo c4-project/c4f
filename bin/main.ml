@@ -113,7 +113,7 @@ let explain =
     ]
 
 let run_herd prog litname _ oc =
-  Run.run ~oc ~prog [litname]
+  Run.Local.run ~oc ~prog [litname]
 
 let litmusify =
   let open Command.Let_syntax in

@@ -36,36 +36,46 @@ type exit_sig =
   ; signal : Signal.t
   } [@@deriving sexp]
 
-let run ?oc ~prog args =
-  let open Or_error.Let_syntax in
-  let stdoutf =
-    match oc with
-    | None -> Fn.const (Fn.const ())
-    | Some o -> fun buf len -> Out_channel.output o ~buf ~pos:0 ~len
-  in
-  let stderrf buf len =
-    Out_channel.output Out_channel.stderr ~buf ~pos:0 ~len
-  in
-  let%bind out =
-    Or_error.tag_arg
-      (Or_error.try_with_join
-         (fun () -> return (Process.run ~prog ~args ~stdoutf ~stderrf ())))
-      "Failed to run a child process:"
-      (prog::args)
-      [%sexp_of: string list]
-  in
-  match out.status with
-  | `Timeout _ ->
-    Or_error.error_string "timed out"
-  | `Exited 0 -> Result.ok_unit
-  | `Exited code ->
-    Or_error.error
-      "process exited with nonzero status"
-      { cmd = prog::args; code }
-      [%sexp_of: exit_code]
-  | `Signaled signal ->
-    Or_error.error
-      "process caught signal"
-      { cmd = prog::args; signal }
-      [%sexp_of: exit_sig]
+module type Runner = sig
+  val run
+    :  ?oc:Out_channel.t
+    -> prog:string
+    -> string list
+    -> unit Or_error.t
+end
 
+module Local : Runner = struct
+
+  let run ?oc ~prog args =
+    let open Or_error.Let_syntax in
+    let stdoutf =
+      match oc with
+      | None -> Fn.const (Fn.const ())
+      | Some o -> fun buf len -> Out_channel.output o ~buf ~pos:0 ~len
+    in
+    let stderrf buf len =
+      Out_channel.output Out_channel.stderr ~buf ~pos:0 ~len
+    in
+    let%bind out =
+      Or_error.tag_arg
+        (Or_error.try_with_join
+           (fun () -> return (Process.run ~prog ~args ~stdoutf ~stderrf ())))
+        "Failed to run a child process:"
+        (prog::args)
+        [%sexp_of: string list]
+    in
+    match out.status with
+    | `Timeout _ ->
+      Or_error.error_string "timed out"
+    | `Exited 0 -> Result.ok_unit
+    | `Exited code ->
+      Or_error.error
+        "process exited with nonzero status"
+        { cmd = prog::args; code }
+        [%sexp_of: exit_code]
+    | `Signaled signal ->
+      Or_error.error
+        "process caught signal"
+        { cmd = prog::args; signal }
+        [%sexp_of: exit_sig]
+end

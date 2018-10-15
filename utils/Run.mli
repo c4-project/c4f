@@ -25,13 +25,19 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
-(** [run ?oc ~prog ~args] runs the given program, waits for it to
-   complete, and translates any errors to [Error.t].
+(** [Runner] is the interface of process runners. *)
+module type Runner = sig
+  (** [run ?oc ~prog ~args] runs the given program, waits for it to
+      complete, and translates any errors to [Error.t].
 
-    If [oc] is given, the process's standard output will be copied
-    line-by-line to it at the end. *)
-val run
-  :  ?oc:Out_channel.t
-  -> prog:string
-  -> string list
-  -> unit Or_error.t
+      If [oc] is given, the process's standard output will be copied
+      line-by-line to it at the end. *)
+  val run
+    :  ?oc:Out_channel.t
+    -> prog:string
+    -> string list
+    -> unit Or_error.t
+end
+
+(** [Local] just runs commands on the local machine. *)
+module Local : Runner
