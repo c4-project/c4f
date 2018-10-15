@@ -32,10 +32,15 @@ let log_stage stage (o : OutputCtx.t) (paths : Pathset.t) cid =
     paths.basename
 ;;
 
-let compile o paths cid spec =
+let compile o paths cid cspec =
+  (* TODO(@MattWindsor91): inefficiently remaking the compiler module
+     every time. *)
+  let module C = (val Compiler.from_spec cid cspec) in
   log_stage "CC" o paths cid;
   Or_error.tag ~tag:"While compiling to assembly"
-    (Compiler.compile cid spec paths)
+    (C.compile
+       ~infile:paths.c_path
+       ~outfile:(Pathset.compiler_asm_path paths cid))
 ;;
 
 let litmusify o paths cid spec =
