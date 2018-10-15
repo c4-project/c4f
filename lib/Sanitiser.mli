@@ -24,7 +24,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 (** Assembly sanitisation *)
 
 open Core
-open Lang
 open Utils
 
 (*

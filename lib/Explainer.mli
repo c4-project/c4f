@@ -28,7 +28,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
    language module.  *)
 
 open Core
-open Lang
 
 module type S = sig
   type statement

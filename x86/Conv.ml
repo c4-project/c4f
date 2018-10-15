@@ -30,8 +30,8 @@ module type Intf = sig
   val convert : stm list -> stm list
 end
 
-module Make (SD : X86.Lang) (DD : X86.Lang) = struct
-  type stm = X86Ast.statement
+module Make (SD : Language.Intf) (DD : Language.Intf) = struct
+  type stm = Ast.statement
 
   let swap operands =
     operands
@@ -41,7 +41,7 @@ module Make (SD : X86.Lang) (DD : X86.Lang) = struct
   (** [swap_instruction ins] does any swapping of operands needed to
      convert from [SD] to [DD]. *)
   let swap_instruction ins =
-    X86Ast.(
+    Ast.(
       (* TODO(@MattWindsor91): actually check the instructions
          are src/dst *)
       { ins with operands = swap ins.operands }
@@ -50,10 +50,10 @@ module Make (SD : X86.Lang) (DD : X86.Lang) = struct
   (** [convert_jump_operand ins] checks to see if [ins] is a jump and,
      if so, does some syntactic rearranging of the jump's destination.
 
-      See [X86Dialect.Intf.symbolic_jump_type] for an explanation. *)
+      See [Dialect.Intf.symbolic_jump_type] for an explanation. *)
   let convert_jump_operand ins =
     match SD.Instruction.abs_operands ins with
-    | Language.AbsOperands.SymbolicJump jsym ->
+    | Lib.Language.AbsOperands.SymbolicJump jsym ->
       { ins with operands = [ DD.make_jump_operand jsym ] }
     | _ -> ins
 
@@ -63,7 +63,7 @@ module Make (SD : X86.Lang) (DD : X86.Lang) = struct
     |> convert_jump_operand
 
   let convert_statement =
-    X86Ast.(
+    Ast.(
       function
       | StmInstruction i ->
         StmInstruction (convert_instruction i)

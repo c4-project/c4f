@@ -1,5 +1,4 @@
 open Core
-open Lang
 open Sexplib
 open Utils
 
@@ -28,9 +27,9 @@ type ssh =
 type t =
   { enabled : bool [@default true] [@sexp_drop_default]
   ; style : style
-  ; emits : Language.name
+  ; emits : string sexp_list
   ; cmd   : string
-  ; argv  : string list
+  ; argv  : string sexp_list
   ; herd  : string sexp_option
   ; ssh   : ssh sexp_option
   } [@@deriving sexp]
@@ -61,7 +60,11 @@ let pp f spec =
   Format.pp_open_vbox f 0;
   MyFormat.pp_kv f "Style" pp_style spec.style;
   Format.pp_print_cut f ();
-  MyFormat.pp_kv f "Emits" Language.pp_name spec.emits;
+  MyFormat.pp_kv f "Emits"
+    (Format.pp_print_list
+       ~pp_sep:(Format.pp_print_space)
+       String.pp)
+    spec.emits;
   Format.pp_print_cut f ();
   MyFormat.pp_kv f "Command" Format.pp_print_string spec.cmd;
   Format.pp_print_cut f ();

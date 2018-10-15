@@ -1,5 +1,4 @@
 open Core
-open Lang
 
 (*
  * style
@@ -37,7 +36,7 @@ type ssh =
 type t =
   { enabled : bool           (* Whether the compiler is enabled. *)
   ; style   : style          (* The 'style' of compiler being described. *)
-  ; emits   : Language.name  (* The architecture the compiler will emit. *)
+  ; emits   : string list    (* The architecture the compiler will emit. *)
   ; cmd     : string         (* The compiler command. *)
   ; argv    : string list    (* The arguments to the command. *)
   ; herd    : string option  (* If present, the 'herd' command to use. *)

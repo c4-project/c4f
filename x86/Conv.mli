@@ -34,6 +34,6 @@ end
 
 (** [Make SD DD] makes a conversion from x86 dialect SD to dialect DD. *)
 module Make
-  : functor (SD : X86.Lang)
-    -> functor (DD : X86.Lang)
-      -> Intf with type stm = X86Ast.statement
+  : functor (SD : Language.Intf)
+    -> functor (DD : Language.Intf)
+      -> Intf with type stm = Ast.statement

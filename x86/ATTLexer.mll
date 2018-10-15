@@ -49,7 +49,7 @@ copyright notice follow. *)
     open Core
     open Lexing
     open LexMisc
-    open X86ATTParser
+    open ATTParser
     module LU = LexUtils.Make(O)
 }
 let digit = [ '0'-'9' ]
@@ -75,7 +75,7 @@ rule token = parse
 | "0x" (hexnum as x) { ATT_HEX x }
 | "0x" { raise (error ("Malformed hex constant: " ^ Lexing.lexeme lexbuf) lexbuf) }
 | '%' (name as name)
-      { match X86Base.parse_reg name with
+      { match Base.parse_reg name with
         | Some r -> ATT_REG r
         | None -> raise (error ("Invalid register: " ^ Lexing.lexeme lexbuf) lexbuf)
       }

@@ -22,14 +22,13 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
-open Lang
 
-module SanitiserHook (L : X86.Lang) =
+module Hook (L : Language.Intf) =
 struct
-  open X86Ast
+  open Ast
 
   module L = L
-  module Ctx = Sanitiser.CtxMake (L) (Sanitiser.NoCustomWarn)
+  module Ctx = Lib.Sanitiser.CtxMake (L) (Lib.Sanitiser.NoCustomWarn)
 
   let negate = function
     | DispNumeric k -> OperandImmediate (DispNumeric (-k))
@@ -64,7 +63,7 @@ struct
     (* TODO(@MattWindsor91): ideally, we should be checking to see if
        the operands are compatible with dropping the l. *)
     function
-    | { opcode = OpSized (o, X86SLong); _ } as op ->
+    | { opcode = OpSized (o, SLong); _ } as op ->
       begin
         match o with
         | `Cmp -> { op with opcode = OpBasic (o :> basic_opcode) }
@@ -87,5 +86,4 @@ struct
     >>| drop_unsupported_lengths
 end
 
-module Sanitiser (L : X86.Lang) = Sanitiser.Make (SanitiserHook (L))
-module LitmusDirect = Litmus.Make (X86.Herd7)
+module Make (L : Language.Intf) = Lib.Sanitiser.Make (Hook (L))

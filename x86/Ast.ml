@@ -222,9 +222,9 @@ type prefix =
  *)
 
 type size =
-  | X86SByte
-  | X86SWord
-  | X86SLong
+  | SByte
+  | SWord
+  | SLong
 [@@deriving sexp]
 
 (*
@@ -338,9 +338,9 @@ module ATTSizeTable =
     (struct
       type t = size
       let table =
-        [ X86SByte, "b"
-        ; X86SWord, "w"
-        ; X86SLong, "l"
+        [ SByte, "b"
+        ; SWord, "w"
+        ; SLong, "l"
         ]
     end)
 
@@ -433,10 +433,10 @@ type statement =
 (** [t] is the type of an X86 abstract syntax tree, containing the
     specific X86 syntax dialect and a list of statements. *)
 type t =
-  { syntax  : X86Dialect.t
+  { syntax  : Dialect.t
   ; program : statement list
   }
-[@@deriving sexp]
+[@@deriving sexp, fields]
 
 let fold_map_statement_symbols ~f ~init =
   function

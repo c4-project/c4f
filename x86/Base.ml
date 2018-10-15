@@ -45,71 +45,69 @@ copyright notice follow. *)
 (****************************************************************************)
 
 open Core
-open Utils
+open Ast
 
-type t =
-  | Att
-  | Intel
-  | Herd7
+let parse_reg (s : string) : reg option =
+  RegTable.of_string s
 
-module Map =
-  StringTable.Make
-    (struct
-      type nonrec t = t
-      let table =
-        [ Att  , "AT&T"
-        ; Intel, "Intel"
-        ; Herd7, "Herd7"
-        ]
-    end)
+type error_type =
+  | Statement
+  | Instruction
+  | Operand
+    [@@deriving sexp]
 
-let sexp_of_t syn =
-  syn |> Map.to_string_exn |> Sexp.Atom
+type error_range = (Lexing.position * Lexing.position)
 
-let t_of_sexp =
-  function
-  | Sexp.Atom a as s ->
-     begin
-       match Map.of_string a with
-       | Some v -> v
-       | None -> raise (Sexp.Of_sexp_error (failwith "expected x86 dialect name", s))
-     end
-  | s -> raise (Sexp.Of_sexp_error (failwith "expected x86 dialect, not a list", s))
+let sexp_of_error_range ((from, until) : error_range) =
+  Sexp.Atom
+    (sprintf "%s:%d:%d-%d:%d"
+       from.pos_fname
+       from.pos_lnum
+       (from.pos_cnum - from.pos_bol)
+       until.pos_lnum
+       (until.pos_cnum - until.pos_bol))
 
-let pp f syn =
-  Format.pp_print_string f (Option.value ~default:"??" (Map.to_string syn))
+type error =
+  { at  : error_range
+  ; why : error_type
+  } [@@deriving sexp_of]
 
-module type HasDialect = sig
-  val dialect : t
-end
+exception ParseError of error [@@deriving sexp_of]
 
-module type Intf = sig
-  include HasDialect
-  include SrcDst.S
+let maybe_int_of_string s =
+  try
+    Some (Int.of_string s)
+  with _ -> None
 
-  val has_size_suffix : bool
+let strip_symbol_prefixes l =
+  String.chop_prefix ~prefix:"_" l
+  |> Option.value ~default:l
 
-  val symbolic_jump_type : [`Indirect | `Immediate ]
-end
+let is_program_label l =
+  (* TODO(@MattWindsor91): this is probably GCC-specific. *)
+  l
+  |> strip_symbol_prefixes
+  |> String.chop_prefix ~prefix:"P"
+  |> Option.exists ~f:(fun ls -> match maybe_int_of_string ls with
+                                 | Some x when 0 <= x -> true
+                                 | _ -> false)
 
-module ATT = struct
-  let dialect = Att
-  include SrcDst.Make (struct let operand_order = SrcDst.SrcDst end)
-  let has_size_suffix = true
-  let symbolic_jump_type = `Indirect
-end
+let%expect_test "is_program_label: positive Mach-O example" =
+  printf "%b" (is_program_label "_P0");
+  [%expect {| true |}]
 
-module Intel = struct
-  let dialect = Intel
-  include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
-  let has_size_suffix = false
-  let symbolic_jump_type = `Immediate
-end
+let%expect_test "is_program_label: positive ELF example" =
+  printf "%b" (is_program_label "P0");
+  [%expect {| true |}]
 
-module Herd7 = struct
-  let dialect = Herd7
-  include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
-  (* Surprisingly, this is true---for some operations, anyway. *)
-  let has_size_suffix = true
-  let symbolic_jump_type = `Immediate
-end
+let%expect_test "is_program_label: wrong suffix, Mach-O" =
+  printf "%b" (is_program_label "_P0P");
+  [%expect {| false |}]
+
+let%expect_test "is_program_label: wrong suffix, ELF" =
+  printf "%b" (is_program_label "P0P");
+  [%expect {| false |}]
+
+let%expect_test "is_program_label: negative" =
+  printf "%b" (is_program_label "_P-1");
+  [%expect {| false |}]

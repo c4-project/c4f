@@ -3,6 +3,7 @@
   (preprocess (pps ppx_jane))
   (libraries
     lib
+    x86
     core
     utils
     unix))

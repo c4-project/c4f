@@ -21,36 +21,18 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Front-end for single-file litmus conversion and explanation *)
+(** x86-specific functionality for act's sanitiser *)
 
-open Core
+(** [Hook] implements x86-specific sanitisation passes.
+    It requires an [Language.Intf] module to tell it things about the
+    current x86 dialect (for example, the order of operands). *)
+module Hook
+  : functor (L : Language.Intf)
+    -> Lib.Sanitiser.LangHookS with module L = L
 
-module type Intf = sig
-  type t =
-    { o     : OutputCtx.t
-    ; cid   : CompilerSpec.Id.t
-    ; spec  : CompilerSpec.t
-    ; iname : string
-    ; inp   : In_channel.t
-    ; outp  : Out_channel.t
-    ; mode  : [`Explain | `Litmusify]
-    }
-  ;;
+(** [Make] directly instantiates a sanitiser for an
+    [Language.Intf] module. *)
+module Make
+  : functor (L : Language.Intf)
+    -> Lib.Sanitiser.Intf with type statement = L.Statement.t
 
-  val run : t -> unit Or_error.t
-end
-
-module type S = sig
-  type statement
-
-  module Frontend  : LangFrontend.Intf
-  module Litmus    : Litmus.Intf with type LS.Statement.t = statement
-  module Sanitiser : Sanitiser.Intf with type statement = statement
-  module Explainer : Explainer.S with type statement = statement
-
-  val final_convert : statement list -> statement list
-
-  val statements : Frontend.ast -> statement list
-end
-
-module Make : functor (M : S) -> Intf

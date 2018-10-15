@@ -53,10 +53,12 @@ let get_spec specs compiler_id =
 let do_litmusify mode o ~infile ~outfile (cid : CompilerSpec.Id.t) specs =
   let open Result.Let_syntax in
   let%bind spec = get_spec specs cid in
+  let%bind lit = LangSupport.get_litmusifier ~emits:spec.CompilerSpec.emits in
   Io.(
     let f src inp _ outp =
       let iname = MyFormat.format_to_string (In_source.pp) src in
-      Litmusifier.run
+      let module L = (val lit) in
+      L.run
         { o
         ; cid
         ; spec

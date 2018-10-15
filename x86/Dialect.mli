@@ -44,70 +44,61 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-open Core
-open X86Ast
+(** Enumeration of, and facts about, x86 dialects *)
 
-let parse_reg (s : string) : reg option =
-  RegTable.of_string s
+open Utils
 
-type error_type =
-  | Statement
-  | Instruction
-  | Operand
-    [@@deriving sexp]
+(** [t] enumerates the various dialects of x86 syntax. *)
+type t =
+  | Att   (* AT&T syntax (like GNU as) *)
+  | Intel (* Intel syntax *)
+  | Herd7 (* Herd7 syntax (somewhere in between) *)
+  [@@deriving sexp, compare, hash]
 
-type error_range = (Lexing.position * Lexing.position)
+(** [STable] associates each dialect with its string name. *)
+module STable : (StringTable.Intf with type t = t)
 
-let sexp_of_error_range ((from, until) : error_range) =
-  Sexp.Atom
-    (sprintf "%s:%d:%d-%d:%d"
-       from.pos_fname
-       from.pos_lnum
-       (from.pos_cnum - from.pos_bol)
-       until.pos_lnum
-       (until.pos_cnum - until.pos_bol))
+include Core.Identifiable.S_plain with type t := t
 
-type error =
-  { at  : error_range
-  ; why : error_type
-  } [@@deriving sexp_of]
+(** [pp f syn] pretty-prints a dialect name [syn] onto formatter
+   [f]. *)
+val pp : Format.formatter -> t -> unit
 
-exception ParseError of error [@@deriving sexp_of]
+(** [HasDialect] is a signature for modules that report a specific
+    dialect. *)
+module type HasDialect = sig
+  val dialect : t
+end
 
-let maybe_int_of_string s =
-  try
-    Some (Int.of_string s)
-  with _ -> None
+(** [Intf] is the interface of modules containing x86 dialect information. *)
+module type Intf = sig
+  include HasDialect
 
-let strip_symbol_prefixes l =
-  String.chop_prefix ~prefix:"_" l
-  |> Option.value ~default:l
+  (** This lets us query a dialect's operand order. *)
+  include SrcDst.S
 
-let is_program_label l =
-  (* TODO(@MattWindsor91): this is probably GCC-specific. *)
-  l
-  |> strip_symbol_prefixes
-  |> String.chop_prefix ~prefix:"P"
-  |> Option.exists ~f:(fun ls -> match maybe_int_of_string ls with
-                                 | Some x when 0 <= x -> true
-                                 | _ -> false)
+  (** [has_size_suffix] gets whether this dialect uses
+   AT&T-style size suffixes. *)
+  val has_size_suffix : bool
 
-let%expect_test "is_program_label: positive Mach-O example" =
-  printf "%b" (is_program_label "_P0");
-  [%expect {| true |}]
+  (** [symbolic_jump_type] gets the type of syntax this dialect
+     _appears_ to use for symbolic jumps.
 
-let%expect_test "is_program_label: positive ELF example" =
-  printf "%b" (is_program_label "P0");
-  [%expect {| true |}]
+      In all x86 dialects, a jump to a label is `jCC LABEL`, where
+     `CC` is `mp` or some condition.  Because of the way we parse x86,
+     the label resolves to different abstract syntax depending on the
+     dialect.
 
-let%expect_test "is_program_label: wrong suffix, Mach-O" =
-  printf "%b" (is_program_label "_P0P");
-  [%expect {| false |}]
+      In AT&T, symbolic jumps look like indirect displacements; in
+     Intel and Herd7, they look like immediate values. *)
+  val symbolic_jump_type : [`Indirect | `Immediate ]
+end
 
-let%expect_test "is_program_label: wrong suffix, ELF" =
-  printf "%b" (is_program_label "P0P");
-  [%expect {| false |}]
+(** [ATT] describes the AT&T dialect of x86 assembly. *)
+module ATT : Intf
 
-let%expect_test "is_program_label: negative" =
-  printf "%b" (is_program_label "_P-1");
-  [%expect {| false |}]
+(** [Intel] describes the Intel dialect of x86 assembly. *)
+module Intel : Intf
+
+(** [Herd7] describes the Herd7 dialect of x86 assembly. *)
+module Herd7 : Intf

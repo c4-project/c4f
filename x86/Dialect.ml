@@ -44,45 +44,61 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Pretty-printing for x86
+open Utils
 
-This module is organised along dialect boundaries: first, we give an
-   interface module [S] that exposes the most useful pretty-printers
-   for the x86 AST; then, we give an implementation for each of the
-   dialects we support.
-
-Note that changing the pretty-printer from one dialect to another does
-   *NOT* result in valid assembly output in that dialect!  The AST
-   doesn't track things like which operand is source and which is
-   destination, and these change between dialects.  *)
-
-open X86Ast
-
-module type S =
-  sig
-    val pp_reg : Format.formatter -> reg -> unit
-    val pp_indirect : Format.formatter -> indirect -> unit
-    val pp_location : Format.formatter -> location -> unit
-
-    val pp_bop : Format.formatter -> bop -> unit
-    val pp_operand : Format.formatter -> operand -> unit
-
-    val pp_prefix : Format.formatter -> prefix -> unit
-
-    (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
-    val pp_opcode : Format.formatter -> opcode -> unit
-
-    val pp_instruction : Format.formatter -> instruction -> unit
-
-    val pp_statement : Format.formatter -> statement -> unit
+module M = struct
+  type t =
+    | Att
+    | Intel
+    | Herd7
+  [@@deriving compare, hash, sexp]
 end
 
-(** [ATT] provides pretty-printing for AT&T-syntax x86. *)
-module ATT : S
-(** [Intel] provides pretty-printing for Intel-syntax x86. *)
-module Intel : S
-(** [Herd7] provides pretty-printing for Herd-syntax x86. *)
-module Herd7 : S
+include M
 
-val pp_ast : Format.formatter -> t -> unit
+module STable =
+  StringTable.Make
+    (struct
+      type nonrec t = t
+      let table =
+        [ Att  , "AT&T"
+        ; Intel, "Intel"
+        ; Herd7, "Herd7"
+        ]
+    end)
+include StringTable.ToIdentifiable(STable)(M)
 
+module type HasDialect = sig
+  val dialect : t
+end
+
+module type Intf = sig
+  include HasDialect
+  include SrcDst.S
+
+  val has_size_suffix : bool
+
+  val symbolic_jump_type : [`Indirect | `Immediate ]
+end
+
+module ATT = struct
+  let dialect = Att
+  include SrcDst.Make (struct let operand_order = SrcDst.SrcDst end)
+  let has_size_suffix = true
+  let symbolic_jump_type = `Indirect
+end
+
+module Intel = struct
+  let dialect = Intel
+  include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
+  let has_size_suffix = false
+  let symbolic_jump_type = `Immediate
+end
+
+module Herd7 = struct
+  let dialect = Herd7
+  include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
+  (* Surprisingly, this is true---for some operations, anyway. *)
+  let has_size_suffix = true
+  let symbolic_jump_type = `Immediate
+end

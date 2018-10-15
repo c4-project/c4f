@@ -48,7 +48,7 @@ copyright notice follow. *)
 
 (* We don't open Core at the toplevel because Menhir generates exceptions that
    are ok in the standard library, but deprecated in Core. *)
- open X86Ast
+ open Ast
 %}
 
 %token EOF
@@ -56,7 +56,7 @@ copyright notice follow. *)
 %token PLUS
 %token MINUS
 %token DOLLAR
-%token <X86Ast.reg> ATT_REG
+%token <Ast.reg> ATT_REG
 %token <string> STRING
 %token <string> NUM
 %token <string> ATT_HEX
@@ -69,7 +69,7 @@ copyright notice follow. *)
 
 %token  IT_LOCK
 
-%type <X86Ast.statement list> main
+%type <Ast.statement list> main
 %start  main
 
 %%
@@ -82,8 +82,8 @@ stm_list:
 
 stm:
   | option(instr) EOL { Core.Option.value ~default:StmNop $1 }
-  | label { X86Ast.StmLabel $1 }
-  | error { raise (X86Base.ParseError({at = $sloc; why = X86Base.Statement })) }
+  | label { Ast.StmLabel $1 }
+  | error { raise (Base.ParseError({at = $sloc; why = Base.Statement })) }
 
 prefix:
   | IT_LOCK { PreLock }
@@ -106,7 +106,7 @@ opcode:
 
 instr:
   | prefix opcode separated_list (COMMA, operand)
-           { X86Ast.StmInstruction
+           { Ast.StmInstruction
                { prefix = Some $1
                ; opcode = $2
                ; operands = $3
@@ -114,7 +114,7 @@ instr:
            }
     (* lock cmpxchgl %eax, %ebx *)
   | opcode separated_list (COMMA, operand)
-         { X86Ast.StmInstruction
+         { Ast.StmInstruction
                { prefix = None
                ; opcode = $1
                ; operands = $2
@@ -123,21 +123,21 @@ instr:
 
 (* Binary operator *)
 bop:
-  | PLUS { X86Ast.BopPlus }
-  | MINUS { X86Ast.BopMinus }
+  | PLUS { Ast.BopPlus }
+  | MINUS { Ast.BopMinus }
 
 (* Base/index/scale triple *)
 bis:
   | ATT_REG
-    { X86Ast.in_base_only $1 }
+    { Ast.in_base_only $1 }
     (* (%eax) *)
   | option(ATT_REG) COMMA ATT_REG
-         { { (X86Ast.in_zero ()) with in_base = $1;
+         { { (Ast.in_zero ()) with in_base = $1;
                                        in_index = Some (Unscaled $3) } }
     (* (%eax, %ebx)
        (    , %ebx) *)
   | option(ATT_REG) COMMA ATT_REG COMMA k
-         { { (X86Ast.in_zero ()) with in_base = $1;
+         { { (Ast.in_zero ()) with in_base = $1;
                                       in_index = Some (Scaled ($3, $5)) } }
     (* (%eax, %ebx, 2)
        (    , %ebx, 2) *)
@@ -148,33 +148,33 @@ indirect:
     (* (%eax, %ebx, 2) *)
   | disp LPAR bis RPAR { { $3 with in_disp = Some $1 } }
     (* -8(%eax, %ebx, 2) *)
-  | disp { X86Ast.in_disp_only $1 }
+  | disp { Ast.in_disp_only $1 }
     (* 0x4000 *)
 
 location:
-  | ATT_REG {X86Ast.LocReg $1}
+  | ATT_REG {Ast.LocReg $1}
     (* %eax *)
-  | indirect {X86Ast.LocIndirect $1}
+  | indirect {Ast.LocIndirect $1}
     (* -8(%eax, %ebx, 2) *)
 
 (* Memory displacement *)
 disp:
-  | k    { X86Ast.DispNumeric $1 }
-  | NAME { X86Ast.DispSymbolic $1 }
+  | k    { Ast.DispNumeric $1 }
+  | NAME { Ast.DispSymbolic $1 }
 
 operand:
-  | prim_operand bop operand { X86Ast.OperandBop($1,$2,$3) }
+  | prim_operand bop operand { Ast.OperandBop($1,$2,$3) }
   | prim_operand { $1 }
-  | error { raise (X86Base.ParseError({at = $sloc; why = X86Base.Operand})) }
+  | error { raise (Base.ParseError({at = $sloc; why = Base.Operand})) }
 
 prim_operand:
-  | DOLLAR disp {X86Ast.OperandImmediate $2}
+  | DOLLAR disp {Ast.OperandImmediate $2}
     (* $10 *)
-  | STRING {X86Ast.OperandString $1}
+  | STRING {Ast.OperandString $1}
     (* @function *)
-  | GAS_TYPE { X86Ast.OperandType $1 }
+  | GAS_TYPE { Ast.OperandType $1 }
     (* "Hello, world!" *)
-  | location {X86Ast.OperandLocation $1}
+  | location {Ast.OperandLocation $1}
 
 (* Numeric constant: hexadecimal or decimal *)
 k:

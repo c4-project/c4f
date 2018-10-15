@@ -26,17 +26,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Utils
 
-(** [name] enumerates all languages, and dialects thereof, supported by act. *)
-type name =
-  | X86 of X86Dialect.t
-         [@@deriving sexp]
-
-(** [pp_name ?show_sublang f l] pretty-prints language name [l] onto
-   formatter [f].  If [show_sublang] is true (the default), we also
-   print details about any sub-language (eg. AT&T/Intel syntax for
-   X86). *)
-val pp_name : ?show_sublang:bool -> Format.formatter -> name -> unit
-
 (*
  * Types for abstract language observations
  *)
@@ -162,8 +151,8 @@ module SymSet : (Set.S with type Elt.t = string)
 (** [BaseS] is the top-level signature that must be implemented by act
    languages (as part of [S]). *)
 module type BaseS = sig
-  (** [name] is the name of the language. *)
-  val name : name
+  (** [name] is the Herd7 name of the language. *)
+  val name : string
 
   (** [is_program_label l] decides whether symbol [l] is a label
      marking the start of a program. *)

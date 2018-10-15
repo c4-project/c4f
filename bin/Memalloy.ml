@@ -44,10 +44,13 @@ let compile o paths cid cspec =
 ;;
 
 let litmusify o paths cid spec =
+  let open Result.Let_syntax in
   log_stage "LITMUS" o paths cid;
+  let%bind lit = LangSupport.get_litmusifier ~emits:spec.CompilerSpec.emits in
   let f src inp _ outp =
     let iname = MyFormat.format_to_string (Io.In_source.pp) src in
-    Litmusifier.run
+    let module L = (val lit) in
+    L.run
       { o
       ; cid
       ; spec

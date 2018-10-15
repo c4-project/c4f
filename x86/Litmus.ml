@@ -21,27 +21,4 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Modules implementing x86-specific functionality for act
-
-    This module shouldn't be confused with the x86 modules in [Lang],
-   which are intended to be less dependent on what act actually
-   does. *)
-
-open Lang
-
-(** [SanitiserHook] implements x86-specific sanitisation passes.
-    It requires an [X86.Lang] module to tell it things about the
-    current x86 dialect (for example, the order of operands). *)
-module SanitiserHook
-  : functor (L : X86.Lang) -> Sanitiser.LangHookS with module L = L
-
-(** [Sanitiser] directly instantiates a sanitiser for an
-    [X86.Lang] module. *)
-module Sanitiser
-  : functor (L : X86.Lang)
-    -> Sanitiser.Intf with type statement = L.Statement.t
-
-(** [LitmusDirect] instantiates a litmus test emitter for the Herd7
-   dialect of x86. *)
-module LitmusDirect
-  : Litmus.Intf with type LS.Statement.t = X86Ast.statement
+module LitmusDirect = Lib.Litmus.Make (Language.Herd7)

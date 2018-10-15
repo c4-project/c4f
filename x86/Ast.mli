@@ -116,9 +116,9 @@ type prefix =
 [@@deriving sexp]
 
 type size =
-  | X86SByte
-  | X86SWord
-  | X86SLong
+  | SByte
+  | SWord
+  | SLong
 [@@deriving sexp]
 
 module ATTSizeTable : (StringTable.Intf with type t = size)
@@ -230,10 +230,10 @@ type statement =
 [@@deriving sexp]
 
 type t =
-  { syntax  : X86Dialect.t
+  { syntax  : Dialect.t
   ; program : statement list
   }
-[@@deriving sexp]
+[@@deriving sexp, fields]
 
 (*
  * Traversing an AST

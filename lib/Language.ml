@@ -26,34 +26,6 @@ open Core
 open Utils
 open Utils.MyContainers
 
-type name =
-  | X86 of X86Dialect.t
-[@@deriving sexp]
-
-let pp_name ?(show_sublang=true) f =
-  function
-  | X86 syn ->
-    Format.pp_open_box f 0;
-    Format.pp_print_string f "X86";
-    if show_sublang
-    then Format.fprintf f "@ (%a)" X86Dialect.pp syn;
-    Format.pp_close_box f ()
-
-let%expect_test "pp_name: explicitly showing sublang" =
-  Format.printf "%a@."
-    (pp_name ~show_sublang:true) (X86 X86Dialect.Att);
-  [%expect {| X86 (AT&T) |}]
-
-let%expect_test "pp_name: explicitly not showing sublang" =
-  Format.printf "%a@."
-    (pp_name ~show_sublang:false) (X86 X86Dialect.Intel);
-  [%expect {| X86 |}]
-
-let%expect_test "pp_name: default" =
-  Format.printf "%a@."
-    (fun a -> pp_name a) (X86 X86Dialect.Herd7);
-  [%expect {| X86 (Herd7) |}]
-
 module AbsInstruction = struct
   type t =
     | Arith   (* arithmetic *)
@@ -227,7 +199,7 @@ end
 module SymSet = Set.Make(String)
 
 module type BaseS = sig
-  val name : name
+  val name : string
   val is_program_label : string -> bool
 end
 

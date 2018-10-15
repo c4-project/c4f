@@ -21,36 +21,9 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Front-end for single-file litmus conversion and explanation *)
+(** x86-specific functionality for act's Litmus generator *)
 
-open Core
-
-module type Intf = sig
-  type t =
-    { o     : OutputCtx.t
-    ; cid   : CompilerSpec.Id.t
-    ; spec  : CompilerSpec.t
-    ; iname : string
-    ; inp   : In_channel.t
-    ; outp  : Out_channel.t
-    ; mode  : [`Explain | `Litmusify]
-    }
-  ;;
-
-  val run : t -> unit Or_error.t
-end
-
-module type S = sig
-  type statement
-
-  module Frontend  : LangFrontend.Intf
-  module Litmus    : Litmus.Intf with type LS.Statement.t = statement
-  module Sanitiser : Sanitiser.Intf with type statement = statement
-  module Explainer : Explainer.S with type statement = statement
-
-  val final_convert : statement list -> statement list
-
-  val statements : Frontend.ast -> statement list
-end
-
-module Make : functor (M : S) -> Intf
+(** [Direct] instantiates a litmus test emitter for the Herd7
+   dialect of x86. *)
+module LitmusDirect
+  : Lib.Litmus.Intf with type LS.Statement.t = Ast.statement

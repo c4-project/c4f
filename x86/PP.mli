@@ -44,59 +44,45 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Enumeration of, and facts about, x86 dialects *)
+(** Pretty-printing for x86
 
-open Utils
+This module is organised along dialect boundaries: first, we give an
+   interface module [S] that exposes the most useful pretty-printers
+   for the x86 AST; then, we give an implementation for each of the
+   dialects we support.
 
-(** [t] enumerates the various dialects of x86 syntax. *)
-type t =
-  | Att   (* AT&T syntax (like GNU as) *)
-  | Intel (* Intel syntax *)
-  | Herd7 (* Herd7 syntax (somewhere in between) *)
-  [@@deriving sexp]
+Note that changing the pretty-printer from one dialect to another does
+   *NOT* result in valid assembly output in that dialect!  The AST
+   doesn't track things like which operand is source and which is
+   destination, and these change between dialects.  *)
 
-(** [DialectMap] associates each dialect with its string name. *)
-module Map : (StringTable.Intf with type t = t)
+open Ast
 
-(** [pp f syn] pretty-prints a dialect name [syn] onto formatter
-   [f]. *)
-val pp : Format.formatter -> t -> unit
+module type S =
+  sig
+    val pp_reg : Format.formatter -> reg -> unit
+    val pp_indirect : Format.formatter -> indirect -> unit
+    val pp_location : Format.formatter -> location -> unit
 
-(** [HasDialect] is a signature for modules that report a specific
-    dialect. *)
-module type HasDialect = sig
-  val dialect : t
+    val pp_bop : Format.formatter -> bop -> unit
+    val pp_operand : Format.formatter -> operand -> unit
+
+    val pp_prefix : Format.formatter -> prefix -> unit
+
+    (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
+    val pp_opcode : Format.formatter -> opcode -> unit
+
+    val pp_instruction : Format.formatter -> instruction -> unit
+
+    val pp_statement : Format.formatter -> statement -> unit
 end
 
-(** [Intf] is the interface of modules containing x86 dialect information. *)
-module type Intf = sig
-  include HasDialect
+(** [ATT] provides pretty-printing for AT&T-syntax x86. *)
+module ATT : S
+(** [Intel] provides pretty-printing for Intel-syntax x86. *)
+module Intel : S
+(** [Herd7] provides pretty-printing for Herd-syntax x86. *)
+module Herd7 : S
 
-  (** This lets us query a dialect's operand order. *)
-  include SrcDst.S
+val pp_ast : Format.formatter -> t -> unit
 
-  (** [has_size_suffix] gets whether this dialect uses
-   AT&T-style size suffixes. *)
-  val has_size_suffix : bool
-
-  (** [symbolic_jump_type] gets the type of syntax this dialect
-     _appears_ to use for symbolic jumps.
-
-      In all x86 dialects, a jump to a label is `jCC LABEL`, where
-     `CC` is `mp` or some condition.  Because of the way we parse x86,
-     the label resolves to different abstract syntax depending on the
-     dialect.
-
-      In AT&T, symbolic jumps look like indirect displacements; in
-     Intel and Herd7, they look like immediate values. *)
-  val symbolic_jump_type : [`Indirect | `Immediate ]
-end
-
-(** [ATT] describes the AT&T dialect of x86 assembly. *)
-module ATT : Intf
-
-(** [Intel] describes the Intel dialect of x86 assembly. *)
-module Intel : Intf
-
-(** [Herd7] describes the Herd7 dialect of x86 assembly. *)
-module Herd7 : Intf

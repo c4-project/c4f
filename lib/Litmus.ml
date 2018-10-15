@@ -198,8 +198,8 @@ struct
 
   let pp f litmus =
     Format.pp_open_vbox f 0;
-    Format.fprintf f "@[%a@ %s@]@,@,"
-                   (Language.pp_name ~show_sublang:false) LS.name
+    Format.fprintf f "@[%s@ %s@]@,@,"
+                   LS.name
                    litmus.name;
     pp_body f litmus;
     Format.pp_close_box f ()

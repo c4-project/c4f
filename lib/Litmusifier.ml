@@ -22,120 +22,114 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
-open Lang
 
-type t =
-  { o     : OutputCtx.t
-  ; cid   : CompilerSpec.Id.t
-  ; spec  : CompilerSpec.t
-  ; iname : string
-  ; inp   : In_channel.t
-  ; outp  : Out_channel.t
-  ; mode  : [`Explain | `Litmusify]
-  }
+module type Intf = sig
+  type t =
+    { o     : OutputCtx.t
+    ; cid   : CompilerSpec.Id.t
+    ; spec  : CompilerSpec.t
+    ; iname : string
+    ; inp   : In_channel.t
+    ; outp  : Out_channel.t
+    ; mode  : [`Explain | `Litmusify]
+    }
+  ;;
 
-let lang_of_x86_dialect =
-  function
-  | X86Dialect.Att -> (module X86.ATT : X86.Lang)
-  | X86Dialect.Intel -> (module X86.Intel : X86.Lang)
-  | X86Dialect.Herd7 -> (module X86.Herd7 : X86.Lang)
+  val run : t -> unit Or_error.t
+end
 
-let frontend_of_x86_dialect =
-  function
-  | X86Dialect.Att
-    -> Or_error.return (module X86.AttFrontend : Lang.LangFrontend.Intf with type ast = X86Ast.t)
-  | d ->
-    Or_error.error "x86 dialect unsupported" d [%sexp_of: X86Dialect.t]
+module type S = sig
+  type statement
 
-let parse_x86 dialect t =
-  let open Or_error.Let_syntax in
-  let%bind f = frontend_of_x86_dialect dialect in
-  let module F = (val f : Lang.LangFrontend.Intf with type ast = X86Ast.t) in
-  Or_error.tag_arg
-    (F.run_ic ~file:t.iname t.inp)
-    "Error while parsing X86 assembly" t.iname String.sexp_of_t
+  module Frontend  : LangFrontend.Intf
+  module Litmus    : (Litmus.Intf with type LS.Statement.t = statement)
+  module Sanitiser : (Sanitiser.Intf with type statement = statement)
+  module Explainer : (Explainer.S with type statement = statement)
 
-let make_init (type s l c)
-    (module LS : Language.Intf with type Statement.t = s
-                                and type Location.t  = l
-                                and type Constant.t  = c)
-    (progs : s list list) :
-  (string, c) List.Assoc.t =
-  let syms = Language.SymSet.union_list (List.map ~f: LS.heap_symbols progs) in
-  List.map ~f:(fun s -> (s, LS.Constant.zero))
-    (Language.SymSet.to_list syms)
+  val final_convert : statement list -> statement list
 
-let output_litmus (type s)
-    (module S : Sanitiser.Intf with type statement = s)
-    (module L : Litmus.Intf with type LS.Statement.t = s)
-    t
-    (stms : s list)
-    (conv : s list -> s list) =
-  let emit_warnings =
-  function
-  | [] -> ()
-  | ws ->
-    let pp_warning f w =
-      Format.fprintf f "@[<h>-@ @[<hov>%a@]@]@,"
-        S.Warn.pp w
+  val statements : Frontend.ast -> statement list
+end
+
+module Make (M : S) : Intf = struct
+  type t =
+    { o     : OutputCtx.t
+    ; cid   : CompilerSpec.Id.t
+    ; spec  : CompilerSpec.t
+    ; iname : string
+    ; inp   : In_channel.t
+    ; outp  : Out_channel.t
+    ; mode  : [`Explain | `Litmusify]
+    }
+  ;;
+
+  (* Shorthand for modules we use a _lot_. *)
+  module L = M.Litmus;;
+  module LS = L.LS;;
+  module S = M.Sanitiser;;
+  module E = M.Explainer;;
+
+  let parse t =
+    Or_error.tag_arg
+      (M.Frontend.run_ic ~file:t.iname t.inp)
+      "Error while parsing X86 assembly" t.iname String.sexp_of_t
+
+  let make_init (progs : LS.Statement.t list list) : (string, LS.Constant.t) List.Assoc.t =
+    let syms = Language.SymSet.union_list (List.map ~f: LS.heap_symbols progs) in
+    List.map ~f:(fun s -> (s, LS.Constant.zero))
+      (Language.SymSet.to_list syms)
+
+  let output_litmus
+      t
+      (stms : LS.Statement.t list)
+      (conv : LS.Statement.t list -> LS.Statement.t list) =
+    let emit_warnings =
+      function
+      | [] -> ()
+      | ws ->
+        let pp_warning f w =
+          Format.fprintf f "@[<h>-@ @[<hov>%a@]@]@,"
+            S.Warn.pp w
+        in
+        Format.fprintf t.o.wf "Warnings@ for@ %s:@ @[<v>%a@]@."
+          t.iname
+          (fun f -> List.iter ~f:(pp_warning f)) ws
     in
-    Format.fprintf t.o.wf "Warnings@ for@ %s:@ @[<v>%a@]@."
-      t.iname
-      (fun f -> List.iter ~f:(pp_warning f)) ws
-  in
-  let open Or_error.Let_syntax in
-  let {S.programs; warnings} = S.sanitise stms in
-  emit_warnings warnings;
-  let%bind lit =
-    Or_error.tag ~tag:"Couldn't build litmus file."
-    ( L.make ~name:t.iname
-             ~init:(make_init (module L.LS) programs)
-             ~programs:(List.map ~f:conv programs)
-    )
-  in
-  let f = Format.formatter_of_out_channel t.outp in
-  L.pp f lit;
-  Format.pp_print_flush f ();
-  Result.ok_unit
+    let open Or_error.Let_syntax in
+    let {S.programs; warnings} = S.sanitise stms in
+    emit_warnings warnings;
+    let%bind lit =
+      Or_error.tag ~tag:"Couldn't build litmus file."
+        ( L.make ~name:t.iname
+            ~init:(make_init programs)
+            ~programs:(List.map ~f:conv programs)
+        )
+    in
+    let f = Format.formatter_of_out_channel t.outp in
+    L.pp f lit;
+    Format.pp_print_flush f ();
+    Result.ok_unit
 
-let output_explanation
-    (type s)
-    (module E : Explainer.S with type statement = s)
-    t
-    (program : s list) =
-  let exp = E.explain program in
-  let f = Format.formatter_of_out_channel t.outp in
-  E.pp f exp;
-  Format.pp_print_flush f ();
-  Result.ok_unit
-
-let run_x86 dialect t =
-  (* TODO (@MattWindsor91): there must be a nicer way of generalising
-     this. *)
-  let open Result.Let_syntax in
-  let module X = (val (lang_of_x86_dialect dialect) : X86.Lang) in
-  let module S = X86Specifics.Sanitiser (X) in
-  let module C = X86Conv.Make (X) (X86.Herd7) in
-  let%bind asm = parse_x86 dialect t in
-  match t.mode with
-  | `Litmusify ->
-    let module L = X86Specifics.LitmusDirect in
-    output_litmus
-      (module S : Sanitiser.Intf with type statement = X86Ast.statement)
-      (module L : Litmus.Intf with type LS.Statement.t = X86Ast.statement)
+  let output_explanation
       t
-      (asm.program)
-      C.convert
-  | `Explain ->
-    let module E = Explainer.Make (X) in
-    output_explanation
-      (module E : Explainer.S with type statement = X86Ast.statement)
-      t
-      (asm.program)
+      (program : LS.Statement.t list) =
+    let exp = E.explain program in
+    let f = Format.formatter_of_out_channel t.outp in
+    E.pp f exp;
+    Format.pp_print_flush f ();
+    Result.ok_unit
 
-let run t =
-  (* TODO (@MattWindsor91): eventually modularise the different
-     languages, once we actually have some. *)
-  match t.spec.emits with
-  | Language.X86 dialect ->
-    run_x86 dialect t
+  let run t =
+    (* TODO (@MattWindsor91): there must be a nicer way of generalising
+       this. *)
+    let open Result.Let_syntax in
+    let%bind asm = parse t in
+    match t.mode with
+    | `Litmusify ->
+      output_litmus
+        t
+        (M.statements asm)
+        M.final_convert
+    | `Explain ->
+      output_explanation t (M.statements asm)
+end

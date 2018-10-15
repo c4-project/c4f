@@ -46,7 +46,7 @@ copyright notice follow. *)
 
 open Core
 open Utils
-open X86Ast
+open Ast
 
 let disp_positive =
   function
@@ -438,7 +438,7 @@ let%expect_test "pp_opcode: mov" =
   [%expect {| mov |}]
 
 let%expect_test "pp_opcode: movw (AT&T)" =
-  Format.printf "%a@." ATT.pp_opcode (OpSized (`Mov, X86SWord));
+  Format.printf "%a@." ATT.pp_opcode (OpSized (`Mov, SWord));
   [%expect {| movw |}]
 
 module Intel = Make(IntelSpecific)
@@ -448,9 +448,9 @@ let pp_ast f ast =
   Format.pp_open_vbox f 0;
   let pps =
     match ast.syntax with
-    | X86Dialect.Att -> ATT.pp_statement
-    | X86Dialect.Intel -> Intel.pp_statement
-    | X86Dialect.Herd7 -> Herd7.pp_statement
+    | Dialect.Att -> ATT.pp_statement
+    | Dialect.Intel -> Intel.pp_statement
+    | Dialect.Herd7 -> Herd7.pp_statement
   in
   (* We don't print newlines out here due to nops and labels. *)
   List.iter ~f:(pps f) ast.program;

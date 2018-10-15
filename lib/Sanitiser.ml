@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core
-open Lang
 open Utils
 open Utils.MyContainers
 
