@@ -77,6 +77,7 @@ let check_herd_output herd_path =
     | _ -> Result.ok_unit
   in
   Io.In_source.with_input (`File herd_path) ~f
+;;
 
 (** [herd o paths cid spec] sees if [spec] asked for a Herd run
     on compiler [cid] and, if so, runs the requested Herd command
@@ -115,10 +116,11 @@ let proc_c (o : OutputCtx.t) specs ~in_root ~out_root c_fname =
   in
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
+  let enabled_specs = List.filter ~f:(fun (_, s) -> s.enabled) specs in
   let results =
     List.map
       ~f:(Tuple2.uncurry (proc_c_on_compiler o paths))
-      specs
+      enabled_specs
   in
   Or_error.combine_errors_unit results
 ;;
@@ -145,11 +147,33 @@ let check_c_files_exist c_path c_files =
     else Result.ok_unit
 ;;
 
-let run o specs ~in_root ~out_root =
+let report_spec_errors o =
+  function
+  | [] -> ()
+  | es ->
+    Format.fprintf o.OutputCtx.wf
+      "@[<v>Some of the specified compilers don't seem to be valid:@,@,%a@]@."
+      (Format.pp_print_list Error.pp ~pp_sep:Format.pp_print_cut)
+      es
+;;
+
+let test_specs o specs =
+  let (valid_specs, errors) = Compiler.test_specs specs in
+  report_spec_errors o errors;
+  Result.return valid_specs
+;;
+
+let run ?(local_only=false) ~in_root ~out_root o specs =
   let open Or_error.Let_syntax in
+  let filtered_specs =
+    if local_only
+    then List.filter ~f:(fun (_, s) -> Option.is_none s.CompilerSpec.ssh) specs
+    else specs
+  in
+  let%bind valid_specs = test_specs o filtered_specs in
   let c_path = Filename.concat in_root "C" in
   let%bind c_files = get_c_files c_path in
   let%bind _ = check_c_files_exist c_path c_files in
-  let results = List.map ~f:(proc_c o specs ~in_root ~out_root) c_files in
+  let results = List.map ~f:(proc_c o valid_specs ~in_root ~out_root) c_files in
   Or_error.combine_errors_unit results
 ;;

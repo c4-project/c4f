@@ -12,15 +12,27 @@ type style =
     [@@deriving show, sexp]
 
 (*
+ * ssh
+ *)
+
+type ssh =
+  { host     : string
+  ; user     : string sexp_option
+  ; copy_dir : string
+  } [@@deriving sexp]
+
+(*
  * t
  *)
 
 type t =
-  { style : style
+  { enabled : bool [@default true] [@sexp_drop_default]
+  ; style : style
   ; emits : Language.name
   ; cmd   : string
   ; argv  : string list
   ; herd  : string sexp_option
+  ; ssh   : ssh sexp_option
   } [@@deriving sexp]
 
 module Id = struct
@@ -63,5 +75,5 @@ let load_specs ~path =
   Or_error.(
     tag ~tag:"Couldn't parse compiler spec file."
       (try_with
-         (fun () -> Sexp.load_sexp_conv_exn path set_of_sexp))
+         (fun () -> Sexp.load_sexp_conv_exn path [%of_sexp: set]))
   )

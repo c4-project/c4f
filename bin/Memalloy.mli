@@ -26,12 +26,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lib
 
-(** [run o specs ~in_root ~out_root] runs the memalloy frontend.
-    It assumes that [in_root] points to a memalloy (or compatible)
-    results directory, and outputs results in [out_root]. *)
+(** [run ?local-only ~in_root ~out_root o specs] runs the memalloy
+   frontend.  It assumes that [in_root] points to a memalloy (or
+   compatible) results directory, and outputs results in [out_root].
+
+    If [local_only] is present and true, all remote compilers are
+   skipped.  *)
 val run
-  :  OutputCtx.t
-  -> CompilerSpec.set
+  :  ?local_only:bool
   -> in_root:string
   -> out_root:string
+  -> OutputCtx.t
+  -> CompilerSpec.set
   -> unit Or_error.t

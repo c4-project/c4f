@@ -105,7 +105,7 @@ let explain =
        let cid = CompilerSpec.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
        Or_error.Let_syntax.(
-         let%bind specs = Compiler.load_and_test_specs ~path:spec_file in
+         let%bind specs = CompilerSpec.load_specs ~path:spec_file in
          pp_specs o.vf specs;
          do_litmusify `Explain o ~infile ~outfile cid specs
        )
@@ -152,7 +152,7 @@ let litmusify =
        let cid = CompilerSpec.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
        Result.Let_syntax.(
-         let%bind specs = Compiler.load_and_test_specs ~path:spec_file in
+         let%bind specs = CompilerSpec.load_specs ~path:spec_file in
          pp_specs o.vf specs;
          match sendto with
          | None -> do_litmusify `Litmusify o ~infile ~outfile cid specs
@@ -191,6 +191,10 @@ let memalloy =
         flag "no-warnings"
           no_arg
           ~doc: "silence all warnings"
+      and local_only =
+        flag "local-only"
+          no_arg
+          ~doc: "skip all remote compilers"
       and in_root =
         anon ("RESULTS_PATH" %: string)
       in
@@ -198,9 +202,9 @@ let memalloy =
         let warnings = not no_warnings in
         let o = OutputCtx.make ~verbose ~warnings in
         Result.Let_syntax.(
-          let%bind specs = Compiler.load_and_test_specs ~path:spec_file in
+          let%bind specs = CompilerSpec.load_specs ~path:spec_file in
           pp_specs o.vf specs;
-          Memalloy.run o specs ~in_root ~out_root
+          Memalloy.run o specs ~local_only ~in_root ~out_root
         ) |> prerr
 ]
 

@@ -19,8 +19,6 @@ val from_spec
   -> CompilerSpec.t
   -> (module Intf)
 
-(** [load_and_test_specs ~path] is a wrapper around
-    [CompilerSpec.load_specs] that also tests each compiler. *)
-val load_and_test_specs
-  :  path:string
-  -> CompilerSpec.set Or_error.t
+(** [test_specs specs] tests all enabled specs in the set [specs], and
+    partitions them into a list of valid specs and test failures. *)
+val test_specs : CompilerSpec.set -> (CompilerSpec.set * Error.t list)

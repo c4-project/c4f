@@ -11,12 +11,22 @@ Parts of `act` derive from the
 [herdtools7](https://github.com/herd/herdtools7) project of Alglave,
 Maranget, et al.
 
-## What it does
+## What it can do (so far)
 
-At time of writing, it literally just runs gcc (x86 32-bit) on every C
-test case in a memalloy run, then emits a slightly sanitised version of
-the (AT&T syntax) assembly that herd7 can _almost_ parse.
-Eventually, it'll do something useful.
+- Run various versions of x86-32 gcc/clang against a set of memalloy
+  witnesses (including experimental compile-by-SSH support);
+- Sanitise the assembly output by removing or simplifying pieces of
+  syntax that herd7 doesn't understand (though this process is
+  inherently partial and prone to issues);
+- Generate litmus tests from the sanitised assembly;
+- Run herd on those litmus tests, saving the results for later
+  inspection.
+- Other modes allow per-file sanitisation, litmus generation,
+  Herd running, etc.
+
+Future versions of `act` will automate the comparison of herd output
+against the memalloy input, and support more
+compilers/architectures/dialects/instructions/syntax.
 
 ## Building and running
 
@@ -47,8 +57,8 @@ First, you'll need:
 You'll then need to install several `opam` packages.  To find out which,
 run `dune external-lib-deps --missing bin/main.exe`.
 
-**NOTE**:
-For `menhirLib`, install the `menhir` package.
+**NOTE**: For `menhirLib`, install the `menhir` OPAM package (not the
+nonexistent `menhirLib` one!).
 
 ### Preparation
 

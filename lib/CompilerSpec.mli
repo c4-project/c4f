@@ -1,6 +1,5 @@
 open Core
 open Lang
-open Sexplib
 
 (*
  * style
@@ -19,20 +18,33 @@ val show_style : style -> string
 val pp_style : Format.formatter -> style -> unit
 
 (*
+ * ssh
+ *)
+
+(** [CompilerSpec.ssh] describes how to invoke a compiler remotely
+   from ssh. *)
+type ssh =
+  { host     : string        (* The host to run on. *)
+  ; user     : string option (* The user to run as. *)
+  ; copy_dir : string        (* The remote directory to use for temporary results. *)
+  } [@@deriving sexp]
+
+(*
  * t
  *)
 
 (** [CompilerSpec.t] describes how to invoke a compiler. *)
 type t =
-  { style : style               (* The 'style' of compiler being described. *)
-  ; emits : Language.name       (* The architecture the compiler will emit. *)
-  ; cmd   : string              (* The compiler command. *)
-  ; argv  : string list         (* The arguments to the command. *)
-  ; herd  : string sexp_option  (* If present, the 'herd' command to use. *)
-  }
-val t_of_sexp : Sexp.t -> t
-val sexp_of_t : t -> Sexp.t
-val pp : Format.formatter -> t -> unit
+  { enabled : bool           (* Whether the compiler is enabled. *)
+  ; style   : style          (* The 'style' of compiler being described. *)
+  ; emits   : Language.name  (* The architecture the compiler will emit. *)
+  ; cmd     : string         (* The compiler command. *)
+  ; argv    : string list    (* The arguments to the command. *)
+  ; herd    : string option  (* If present, the 'herd' command to use. *)
+  ; ssh     : ssh option     (* If present, details for executing the compiler over SSH. *)
+  } [@@deriving sexp]
+
+include Pretty_printer.S with type t := t
 
 module Id : sig
   (** [t] is the type of compiler IDs. *)
@@ -43,8 +55,6 @@ end
 
 (** [CompilerSpec.set] is an associative list mapping compiler names
    to compiler specs. *)
-type set = (Id.t, t) List.Assoc.t
-val set_of_sexp : Sexp.t -> set
-val sexp_of_set : set -> Sexp.t
+type set = (Id.t, t) List.Assoc.t [@@deriving sexp]
 
 val load_specs : path:string -> set Or_error.t

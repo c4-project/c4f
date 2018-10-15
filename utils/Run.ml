@@ -45,7 +45,6 @@ module type Runner = sig
 end
 
 module Local : Runner = struct
-
   let run ?oc ~prog args =
     let open Or_error.Let_syntax in
     let stdoutf =
@@ -78,4 +77,29 @@ module Local : Runner = struct
         "process caught signal"
         { cmd = prog::args; signal }
         [%sexp_of: exit_sig]
+end
+
+module type SshConf = sig
+  val host : string
+  val user : string option
+end
+
+module Ssh (C : SshConf) : Runner = struct
+  let run ?oc ~prog args =
+    let open Or_error in
+    let open Or_error.Let_syntax in
+    let%bind output =
+      tag_arg
+        (try_with
+           (fun () ->
+              Shell.ssh_lines "%s %s" prog (String.concat ~sep:" " args)
+                ~host:C.host ?user:C.user))
+        "Error running remote command via ssh:"
+        (C.host, Option.value ~default:"(default user)" C.user)
+        [%sexp_of: string * string]
+    in
+    Option.iter
+      ~f:(fun o -> Out_channel.output_lines o output)
+      oc;
+    Result.ok_unit
 end
