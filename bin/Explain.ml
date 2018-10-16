@@ -65,8 +65,9 @@ let command =
          )
        in
        Or_error.Let_syntax.(
-         let%bind specs = CompilerSpec.load_specs ~path:spec_file in
-         Common.do_litmusify `Explain passes o ~infile ~outfile cid specs
+         let%bind specs = CompilerSpec.Set.load ~path:spec_file in
+         let%bind spec = CompilerSpec.Set.get specs cid in
+         Common.do_litmusify `Explain passes o ~infile ~outfile spec
        )
        |> Common.print_error
    ]

@@ -66,14 +66,14 @@ let command =
        let o = OutputCtx.make ~verbose ~warnings in
        let passes = Sanitiser.Pass.all_set () in
        Result.Let_syntax.(
-         let%bind specs = CompilerSpec.load_specs ~path:spec_file in
+         let%bind specs = CompilerSpec.Set.load ~path:spec_file in
+         let%bind spec = CompilerSpec.Set.get specs cid in
          match sendto with
-         | None -> Common.do_litmusify `Litmusify passes o ~infile ~outfile cid specs
+         | None -> Common.do_litmusify `Litmusify passes o ~infile ~outfile spec
          | Some cmd ->
            let tmpname = Filename.temp_file "act" "litmus" in
-           let cid = CompilerSpec.Id.of_string compiler_id in
            let%bind _ =
-             Common.do_litmusify `Litmusify passes o ~infile ~outfile:(Some tmpname) cid specs in
+             Common.do_litmusify `Litmusify passes o ~infile ~outfile:(Some tmpname) spec in
            Io.Out_sink.with_output ~f:(run_herd cmd tmpname)
              (Io.Out_sink.of_option outfile)
        )

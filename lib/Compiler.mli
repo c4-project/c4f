@@ -21,4 +21,4 @@ val from_spec
 
 (** [test_specs specs] tests all enabled specs in the set [specs], and
     partitions them into a list of valid specs and test failures. *)
-val test_specs : CompilerSpec.set -> (CompilerSpec.set * Error.t list)
+val test_specs : CompilerSpec.Set.t -> (CompilerSpec.Set.t * Error.t list)

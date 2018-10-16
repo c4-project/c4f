@@ -146,9 +146,6 @@ let from_spec cid (cspec : CompilerSpec.t) =
       )(H)(R) : Intf)
 ;;
 
-let all_enabled =
-  List.filter ~f:(fun (_, s) -> s.CompilerSpec.enabled)
-
 let test_spec cid cspec =
   let module M = (val from_spec cid cspec) in
   Or_error.tag_arg
@@ -157,10 +154,5 @@ let test_spec cid cspec =
     cid
     [%sexp_of:CompilerSpec.Id.t]
 
-let test_specs (specs : CompilerSpec.set) =
-  List.partition_map
-    ~f:(fun (cid, cspec) ->
-        match Result.error (test_spec cid cspec) with
-        | None -> `Fst (cid, cspec)
-        | Some e -> `Snd e)
-    (all_enabled specs)
+let test_specs specs =
+  CompilerSpec.Set.test ~f:test_spec specs

@@ -23,37 +23,6 @@
 
 open Core
 open Lib
-open Utils
-
-let pp_spec_verbose f (c, s) =
-  MyFormat.pp_kv f (CompilerSpec.Id.to_string c) CompilerSpec.pp s
-;;
-
-let pp_spec_terse f (c, s) =
-  Format.pp_open_hbox f ();
-  let facts =
-    List.concat
-      [ [CompilerSpec.Id.to_string c]
-      ; if s.CompilerSpec.enabled then [] else ["(DISABLED)"]
-      ; if Option.is_none s.ssh then [] else ["(REMOTE)"]
-      ]
-  in
-  Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp f facts;
-  Format.pp_close_box f ()
-;;
-
-let pp_specs
-    (verbose : bool) (f : Format.formatter)
-    (specs : CompilerSpec.set) : unit =
-  Format.pp_open_vbox f 0;
-  Format.pp_print_list
-    ~pp_sep:Format.pp_print_cut
-    (if verbose then pp_spec_verbose else pp_spec_terse)
-    f
-    specs;
-  Format.pp_close_box f ();
-  Format.pp_print_newline f ()
-;;
 
 let command =
   let open Command.Let_syntax in
@@ -73,8 +42,8 @@ let command =
       in
       fun () ->
         Or_error.Let_syntax.(
-          let%bind specs = CompilerSpec.load_specs ~path:spec_file in
-          pp_specs verbose Format.std_formatter specs;
+          let%bind specs = CompilerSpec.Set.load ~path:spec_file in
+          CompilerSpec.Set.pp_verbose verbose Format.std_formatter specs;
           return ()
         )
         |> Common.print_error

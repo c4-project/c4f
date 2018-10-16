@@ -23,6 +23,27 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
+module Dir = struct
+  let get_files ?ext path =
+    let open Or_error in
+    let open Or_error.Let_syntax in
+    let%bind farray =
+      tag_arg
+        (try_with (fun () -> Sys.readdir path))
+        "Couldn't read directory"
+        path
+        [%sexp_of: string]
+    in
+    let with_ext =
+      Option.value_map
+        ~default:farray
+        ~f:(fun ext ->
+            Array.filter ~f:(MyFilename.has_extension ~ext) farray)
+        ext
+    in
+    return (Array.to_list with_ext)
+end
+
 module In_source = struct
   type t =
     [ `File of string

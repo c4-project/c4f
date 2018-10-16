@@ -63,10 +63,8 @@ let mkdir (path : string) =
   | Unknown -> error "couldn't determine whether path already exists" path [%sexp_of: string]
   | Nothing -> Or_error.try_with (fun () -> Unix.mkdir path)
 
-let lcat = List.reduce_balanced_exn ~f:Filename.concat
-
 let subpaths (path : string list) : string list =
-  List.map ~f:lcat (MyList.prefixes path)
+  List.map ~f:MyFilename.concat_list (MyList.prefixes path)
 
 let mkdir_p (path : string list) =
   Or_error.all_unit (List.map ~f:mkdir (subpaths path))
@@ -116,6 +114,8 @@ let mkdirs ps =
       )
   )
 
+let lcat = MyFilename.concat_list
+
 let make_compiler root_path basename cid =
   let asm_fname  = basename ^ ".s" in
   let lita_fname = basename ^ ".s.litmus" in
@@ -128,7 +128,7 @@ let make_compiler root_path basename cid =
 
 let make specs ~in_root ~out_root ~c_fname =
   let basename   = Filename.basename (Filename.chop_extension c_fname) in
-  let spec_map f = List.map ~f:(fun (c, _) -> (c, f c)) specs in
+  let spec_map f = CompilerSpec.Set.map ~f:(fun c _ -> (c, f c)) specs in
   let lit_fname  = basename ^ ".litmus" in
   { basename
   ; out_root

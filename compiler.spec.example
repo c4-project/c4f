@@ -37,8 +37,8 @@ By default, 'act' reads from './compiler.spec'.  |#
    #| 'emits' tells act which language the compiler is emitting.  Each
    language may have a sub-dialect, in which case 'emits' is a list.
 
-   Currently, we only support '(x86 at&t)' (AT&T syntax x86). |#
-   (emits (x86 at&t))
+   Currently, we only support '(x86 att)' (AT&T syntax x86). |#
+   (emits (x86 att))
 
    #| 'cmd' gives the command name for the compiler.  This should
       point to somewhere in your PATH, or be an absolute path. |#

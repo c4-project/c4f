@@ -26,15 +26,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lib
 
-(** [do_litmusify] *)
+(** [do_litmusify] finds the right [Litmusifier] for a compiler spec,
+    and runs it with the given arguments. *)
 val do_litmusify
   :  [`Litmusify | `Explain]
   -> Sanitiser.Pass.Set.t
   -> OutputCtx.t
   -> infile : string option
   -> outfile : string option
-  -> CompilerSpec.Id.t
-  -> CompilerSpec.set
+  -> CompilerSpec.t
   -> unit Or_error.t
 ;;
 

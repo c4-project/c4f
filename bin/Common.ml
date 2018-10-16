@@ -25,15 +25,8 @@ open Core
 open Lib
 open Utils
 
-let get_spec specs compiler_id =
-  List.Assoc.find specs ~equal:(CompilerSpec.Id.equal) compiler_id
-  |> Result.of_option
-    ~error:(Error.create "invalid compiler ID" compiler_id [%sexp_of: CompilerSpec.Id.t])
-;;
-
-let do_litmusify mode passes o ~infile ~outfile (cid : CompilerSpec.Id.t) specs =
+let do_litmusify mode passes o ~infile ~outfile spec =
   let open Result.Let_syntax in
-  let%bind spec = get_spec specs cid in
   let%bind lit = LangSupport.get_litmusifier ~emits:spec.CompilerSpec.emits in
   Io.(
     let f src inp _ outp =
@@ -41,8 +34,6 @@ let do_litmusify mode passes o ~infile ~outfile (cid : CompilerSpec.Id.t) specs 
       let module L = (val lit) in
       L.run
         { o
-        ; cid
-        ; spec
         ; iname
         ; inp
         ; outp

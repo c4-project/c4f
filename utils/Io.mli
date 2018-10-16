@@ -25,6 +25,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
+(** [Dir] contains high-ish-level operations on directories. *)
+module Dir : sig
+  (** [get_files ~ext path] wraps [Sys.readfiles] with error handling
+      and optional extension filtering. *)
+  val get_files
+    :  ?ext:string
+    -> string
+    -> string list Or_error.t
+end
+
 (** [In_source] describes input sources. *)
 module In_source : sig
   type t =

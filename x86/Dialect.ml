@@ -61,7 +61,7 @@ module STable =
     (struct
       type nonrec t = t
       let table =
-        [ Att  , "AT&T"
+        [ Att  , "ATT"
         ; Intel, "Intel"
         ; Herd7, "Herd7"
         ]

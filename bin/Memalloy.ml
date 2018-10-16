@@ -44,28 +44,15 @@ let compile o paths cid cspec =
 ;;
 
 let litmusify o paths cid spec =
-  let open Result.Let_syntax in
   log_stage "LITMUS" o paths cid;
-  let%bind lit = LangSupport.get_litmusifier ~emits:spec.CompilerSpec.emits in
-  let f src inp _ outp =
-    let iname = MyFormat.format_to_string (Io.In_source.pp) src in
-    let module L = (val lit) in
-    L.run
-      { o
-      ; cid
-      ; spec
-      ; iname
-      ; inp
-      ; outp
-      ; mode = `Litmusify
-      ; passes = Sanitiser.Pass.all_set ()
-      }
-  in
   Or_error.tag ~tag:"While translating assembly to litmus"
-    (Io.with_input_and_output
-     (`File (Pathset.compiler_asm_path paths cid))
-     (`File (Pathset.compiler_lita_path paths cid))
-     ~f)
+    (Common.do_litmusify
+       `Litmusify
+       (Sanitiser.Pass.all_set ())
+       o
+       ~infile:(Some (Pathset.compiler_asm_path paths cid))
+       ~outfile:(Some (Pathset.compiler_lita_path paths cid))
+       spec)
 ;;
 
 (** [check_herd_output herd_path] checks to see if Herd wrote
@@ -120,27 +107,16 @@ let proc_c (o : OutputCtx.t) specs ~in_root ~out_root c_fname =
   in
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
-  let enabled_specs = List.filter ~f:(fun (_, s) -> s.enabled) specs in
   let results =
-    List.map
-      ~f:(Tuple2.uncurry (proc_c_on_compiler o paths))
-      enabled_specs
+    CompilerSpec.Set.map
+      ~f:(proc_c_on_compiler o paths)
+      specs
   in
   Or_error.combine_errors_unit results
 ;;
 
-let is_c_file = MyFilename.has_extension ~ext:"c";;
-
-let get_c_files (c_path : string) : string list Or_error.t =
-  Or_error.(
-    tag_arg
-      (try_with (fun () -> Sys.readdir c_path))
-      "Couldn't open directory: is this definitely a memalloy run?"
-      c_path
-      [%sexp_of: string]
-    >>| Array.filter ~f:is_c_file
-    >>| Array.to_list
-  )
+let get_c_files : string -> string list Or_error.t =
+  Io.Dir.get_files ~ext:"c"
 ;;
 
 let check_c_files_exist c_path c_files =
@@ -171,7 +147,7 @@ let run ?(local_only=false) ~in_root ~out_root o specs =
   let open Or_error.Let_syntax in
   let filtered_specs =
     if local_only
-    then List.filter ~f:(fun (_, s) -> Option.is_none s.CompilerSpec.ssh) specs
+    then CompilerSpec.Set.filter ~f:(fun s -> Option.is_none s.CompilerSpec.ssh) specs
     else specs
   in
   let%bind valid_specs = test_specs o filtered_specs in
@@ -218,7 +194,7 @@ let command =
         let warnings = not no_warnings in
         let o = OutputCtx.make ~verbose ~warnings in
         Result.Let_syntax.(
-          let%bind specs = CompilerSpec.load_specs ~path:spec_file in
+          let%bind specs = CompilerSpec.Set.load ~path:spec_file in
           run o specs ~local_only ~in_root ~out_root
         ) |> Common.print_error
     ]

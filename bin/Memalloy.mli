@@ -37,7 +37,7 @@ val run
   -> in_root:string
   -> out_root:string
   -> OutputCtx.t
-  -> CompilerSpec.set
+  -> CompilerSpec.Set.t
   -> unit Or_error.t
 
 (** [command] packages up the memalloy command as a [Command.t]. *)

@@ -10,8 +10,14 @@
     unix))
 
 (rule
- (with-stdout-to regress.output (run act regress)))
+ (targets regress.output)
+ (action
+  (with-stdout-to regress.output
+   (run act regress "tests")))
+ (deps "tests/explain/x86/att/gcc_macho_o0_moves.s")
+)
 
 (alias
  (name runtest)
- (action (diff regress.expected regress.output)))
+ (action (diff regress.expected regress.output)
+))
