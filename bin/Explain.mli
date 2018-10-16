@@ -21,24 +21,9 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Top-level for act's `memalloy` command *)
+(** The litmusify command *)
 
 open Core
-open Lib
 
-(** [run ?local-only ~in_root ~out_root o specs] runs the memalloy
-   frontend.  It assumes that [in_root] points to a memalloy (or
-   compatible) results directory, and outputs results in [out_root].
-
-    If [local_only] is present and true, all remote compilers are
-   skipped.  *)
-val run
-  :  ?local_only:bool
-  -> in_root:string
-  -> out_root:string
-  -> OutputCtx.t
-  -> CompilerSpec.set
-  -> unit Or_error.t
-
-(** [command] packages up the memalloy command as a [Command.t]. *)
+(** [command] is the top-level Explain command. *)
 val command : Command.t

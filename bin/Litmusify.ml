@@ -21,28 +21,17 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Main entry point into act *)
-
 open Core
 open Lib
 open Utils
 
-let pp_specs (f : Format.formatter) (specs : CompilerSpec.set) : unit =
-  Format.pp_open_vbox f 0;
-  Format.pp_print_string f "Compiler specs --";
-  Format.pp_print_break f 0 4;
-  Format.pp_open_vbox f 0;
-  List.iter ~f:(fun (c, s) ->
-      MyFormat.pp_kv f (CompilerSpec.Id.to_string c) CompilerSpec.pp s) specs;
-  Format.pp_close_box f ();
-  Format.pp_print_cut f ();
-  Format.pp_close_box f ();
-  Format.pp_print_flush f ()
+let run_herd prog litname _ oc =
+  Run.Local.run ~oc ~prog [litname]
 
-let explain =
+let command =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"Explains act's understanding of an assembly file"
+    ~summary:"Converts an assembly file to a litmus test"
     [%map_open
      let spec_file =
        flag "spec"
@@ -52,22 +41,22 @@ let explain =
             ~doc: "PATH the compiler spec file to use"
      and verbose =
        flag "verbose"
-            no_arg
-            ~doc: "verbose mode"
-     and no_warnings =
-        flag "no-warnings"
-          no_arg
-          ~doc: "silence all warnings"
-     and sanitise =
-       flag "sanitise"
          no_arg
-         ~doc: "if true, do basic sanitisation on the assembly first"
+         ~doc: "verbose mode"
+     and no_warnings =
+       flag "no-warnings"
+         no_arg
+         ~doc: "silence all warnings"
+     and sendto =
+       flag "sendto"
+         (optional string)
+         ~doc: "CMDNAME pass generated litmus through this Herd-like command"
      and compiler_id =
        anon ("COMPILER_ID" %: string)
      and outfile =
        flag "output"
             (optional string)
-            ~doc: "FILE the explanation output file (default: stdout)"
+            ~doc: "FILE the litmus output file (default: stdout)"
      and infile =
        anon (maybe ("FILE" %: string))
      in
@@ -75,25 +64,18 @@ let explain =
        let warnings = not no_warnings in
        let cid = CompilerSpec.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
-       let passes = Sanitiser.(
-           if sanitise then Pass.explain else Pass.Set.empty
-         )
-       in
-       Or_error.Let_syntax.(
+       let passes = Sanitiser.Pass.all_set () in
+       Result.Let_syntax.(
          let%bind specs = CompilerSpec.load_specs ~path:spec_file in
-         pp_specs o.vf specs;
-         Common.do_litmusify `Explain passes o ~infile ~outfile cid specs
+         match sendto with
+         | None -> Common.do_litmusify `Litmusify passes o ~infile ~outfile cid specs
+         | Some cmd ->
+           let tmpname = Filename.temp_file "act" "litmus" in
+           let cid = CompilerSpec.Id.of_string compiler_id in
+           let%bind _ =
+             Common.do_litmusify `Litmusify passes o ~infile ~outfile:(Some tmpname) cid specs in
+           Io.Out_sink.with_output ~f:(run_herd cmd tmpname)
+             (Io.Out_sink.of_option outfile)
        )
        |> Common.print_error
     ]
-
-
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    [ "explain"  , Explain.command
-    ; "litmusify", Litmusify.command
-    ; "memalloy" , Memalloy.command
-    ]
-
-let () = Command.run command

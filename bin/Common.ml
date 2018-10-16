@@ -21,24 +21,43 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Top-level for act's `memalloy` command *)
-
 open Core
 open Lib
+open Utils
 
-(** [run ?local-only ~in_root ~out_root o specs] runs the memalloy
-   frontend.  It assumes that [in_root] points to a memalloy (or
-   compatible) results directory, and outputs results in [out_root].
+let get_spec specs compiler_id =
+  List.Assoc.find specs ~equal:(CompilerSpec.Id.equal) compiler_id
+  |> Result.of_option
+    ~error:(Error.create "invalid compiler ID" compiler_id [%sexp_of: CompilerSpec.Id.t])
+;;
 
-    If [local_only] is present and true, all remote compilers are
-   skipped.  *)
-val run
-  :  ?local_only:bool
-  -> in_root:string
-  -> out_root:string
-  -> OutputCtx.t
-  -> CompilerSpec.set
-  -> unit Or_error.t
+let do_litmusify mode passes o ~infile ~outfile (cid : CompilerSpec.Id.t) specs =
+  let open Result.Let_syntax in
+  let%bind spec = get_spec specs cid in
+  let%bind lit = LangSupport.get_litmusifier ~emits:spec.CompilerSpec.emits in
+  Io.(
+    let f src inp _ outp =
+      let iname = MyFormat.format_to_string (In_source.pp) src in
+      let module L = (val lit) in
+      L.run
+        { o
+        ; cid
+        ; spec
+        ; iname
+        ; inp
+        ; outp
+        ; mode
+        ; passes
+        }
+    in
+    with_input_and_output
+      (In_source.of_option infile)
+      (Out_sink.of_option outfile)
+      ~f
+  )
+;;
 
-(** [command] packages up the memalloy command as a [Command.t]. *)
-val command : Command.t
+let print_error =
+  Result.iter_error
+    ~f:(Format.eprintf "@[act encountered a top-level error:@.@[%a@]@]@." Error.pp)
+;;

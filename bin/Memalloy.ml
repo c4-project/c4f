@@ -181,3 +181,45 @@ let run ?(local_only=false) ~in_root ~out_root o specs =
   let results = List.map ~f:(proc_c o valid_specs ~in_root ~out_root) c_files in
   Or_error.combine_errors_unit results
 ;;
+
+let command =
+  let open Command.Let_syntax in
+  Command.basic
+    ~summary:"Runs automatic testing over a memalloy output directory"
+    [%map_open
+      let spec_file =
+        flag "spec"
+          (optional_with_default
+             (Filename.concat Filename.current_dir_name "compiler.spec")
+             string)
+          ~doc: "PATH the compiler spec file to use"
+      and out_root =
+        flag "output"
+          (optional_with_default
+             Filename.current_dir_name
+             string)
+          ~doc: "PATH the path under which output directories will be created"
+      and verbose =
+        flag "verbose"
+          no_arg
+          ~doc: "verbose mode"
+      and no_warnings =
+        flag "no-warnings"
+          no_arg
+          ~doc: "silence all warnings"
+      and local_only =
+        flag "local-only"
+          no_arg
+          ~doc: "skip all remote compilers"
+      and in_root =
+        anon ("RESULTS_PATH" %: string)
+      in
+      fun () ->
+        let warnings = not no_warnings in
+        let o = OutputCtx.make ~verbose ~warnings in
+        Result.Let_syntax.(
+          let%bind specs = CompilerSpec.load_specs ~path:spec_file in
+          run o specs ~local_only ~in_root ~out_root
+        ) |> Common.print_error
+    ]
+;;
