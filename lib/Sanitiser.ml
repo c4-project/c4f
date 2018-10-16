@@ -116,11 +116,57 @@ struct
 end
 
 (*
+ * Pass
+ *)
+
+
+
+module Pass = struct
+  module M = struct
+    type t =
+      | LangHooks
+      | MangleSymbols
+      | RemoveLitmus
+      | RemoveUseless
+      | SimplifyLitmus
+      | Warn
+    [@@deriving enum, sexp]
+
+    let table =
+      [ LangHooks     , "lang-hooks"
+      ; MangleSymbols , "mangle-symbols"
+      ; RemoveLitmus  , "remove-litmus"
+      ; RemoveUseless , "remove-useless"
+      ; SimplifyLitmus, "simplify-litmus"
+      ; Warn          , "warn"
+      ]
+  end
+
+  include M
+  include Enum.ExtendTable (M)
+
+  (** [explain] collects passes that are useful for explaining an
+     assembly file without modifying its semantics too much. *)
+  let explain = Set.of_list [ RemoveUseless ]
+end
+
+let%expect_test "all passes accounted for" =
+  Format.printf "@[<v>%a@]@."
+    (Format.pp_print_list ~pp_sep:Format.pp_print_cut Pass.pp)
+    (Pass.all_list ());
+  [%expect {|
+    lang-hooks
+    mangle-symbols
+    remove-litmus
+    remove-useless
+    simplify-litmus
+    warn |}]
+
+(*
  * Context
  *)
 
-module type CtxIntf =
-sig
+module type CtxIntf = sig
   module Warn : WarnIntf
 
   type ctx =
@@ -129,19 +175,22 @@ sig
     ; endlabel : string option
     ; hsyms    : Language.SymSet.t
     ; jsyms    : Language.SymSet.t
+    ; passes   : Pass.Set.t
     ; warnings : Warn.t list
     }
 
   include Monad.S
   include MyMonad.Extensions with type 'a t := 'a t
 
-  val initial : progname:string -> proglen:int -> ctx
+  val initial : passes:Pass.Set.t -> progname:string -> proglen:int -> ctx
 
   val make : (ctx -> (ctx * 'a)) -> 'a t
   val peek : (ctx -> 'a) -> 'a t
   val modify : (ctx -> ctx) -> 'a -> 'a t
   val run : 'a t -> ctx -> (ctx * 'a)
   val run' : 'a t -> ctx -> 'a
+
+  val (|->) : Pass.t -> ('a -> 'a t) -> ('a -> 'a t)
 
   val warn_in_ctx : ctx -> Warn.body -> ctx
   val warn : Warn.body -> 'a -> 'a t
@@ -151,8 +200,8 @@ end
  * Language-dependent parts
  *)
 
-module CtxMake (L : Language.Intf) (C : CustomWarnS) =
-struct
+module CtxMake (L : Language.Intf) (C : CustomWarnS)
+ : CtxIntf with module Warn.L = L and module Warn.C = C = struct
   module Warn = Warn (L) (C)
 
   type ctx =
@@ -161,15 +210,17 @@ struct
     ; endlabel : string option
     ; hsyms    : Language.SymSet.t
     ; jsyms    : Language.SymSet.t
+    ; passes   : Pass.Set.t
     ; warnings : Warn.t list
     }
 
-  let initial ~progname ~proglen =
+  let initial ~passes ~progname ~proglen =
     { progname
     ; proglen
     ; endlabel = None
     ; hsyms    = Language.SymSet.empty
     ; jsyms    = Language.SymSet.empty
+    ; passes
     ; warnings = []
     }
 
@@ -203,6 +254,14 @@ struct
   let peek f ctx = ctx, f ctx
   let modify f a ctx = f ctx, a
 
+  let (|->) pass f a =
+    make
+      (fun ctx ->
+         if Pass.Set.mem ctx.passes pass
+         then run (f a) ctx
+         else (ctx, a))
+
+
   let warn_in_ctx ctx w =
     let ent = { Warn.progname = ctx.progname; body = w } in
     { ctx with warnings = ent::ctx.warnings }
@@ -220,12 +279,22 @@ module type Intf = sig
 
   type statement
 
-  type output =
-    { programs : statement list list
-    ; warnings : Warn.t list
-    }
+  module Output : sig
+    type 'a t
 
-  val sanitise : statement list -> output
+    val result : 'a t -> 'a
+    val warnings : 'a t -> Warn.t list
+  end
+
+  val sanitise
+    :  ?passes:Pass.Set.t
+    -> statement list
+    -> statement list Output.t
+
+  val split_and_sanitise
+    :  ?passes:Pass.Set.t
+    -> statement list
+    -> statement list list Output.t
 end
 
 module type LangHookS =
@@ -274,17 +343,19 @@ let%expect_test "mangle: sample" =
   print_string (mangle "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet");
   [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
 
-module Make (LH : LangHookS) =
-struct
+module Make (LH : LangHookS)
+  : Intf with type statement = LH.L.Statement.t = struct
   module Ctx = LH.Ctx
   module Warn = LH.Ctx.Warn
 
   type statement = LH.L.Statement.t
 
-  type output =
-    { programs : statement list list
-    ; warnings : Warn.t list
-    }
+  module Output = struct
+    type 'a t =
+      { result   : 'a
+      ; warnings : Warn.t list
+      } [@@deriving fields]
+  end
 
   let split_programs stms =
     (* Adding a nop to the start forces there to be some
@@ -340,15 +411,17 @@ struct
       level. *)
   let sanitise_ins ins =
     let open Ctx in
-    LH.on_instruction ins
-    >>= warn_unknown_instructions
-    >>= change_ret_to_end_jump
-    >>= change_stack_to_heap
+    return ins
+    >>= (LangHooks      |-> LH.on_instruction)
+    >>= (Warn           |-> warn_unknown_instructions)
+    >>= (SimplifyLitmus |-> change_ret_to_end_jump)
+    >>= (SimplifyLitmus |-> change_stack_to_heap)
 
   (** [mangle_identifiers] reduces identifiers into a form that herd
       can parse. *)
   let mangle_identifiers stm =
-    LH.L.Statement.OnSymbols.map ~f:mangle stm
+    Ctx.return
+      (LH.L.Statement.OnSymbols.map ~f:mangle stm)
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
@@ -376,15 +449,16 @@ struct
       level. *)
   let sanitise_stm _ stm =
     let open Ctx in
-    LH.on_statement stm
+    return stm
+    >>= (LangHooks |-> LH.on_statement)
     (* Do warnings after the language-specific hook has done any
        reduction necessary, but before we start making broad-brush
        changes to the statements. *)
-    >>= warn_unknown_statements
+    >>= (Warn |-> warn_unknown_statements)
     >>= sanitise_all_ins
     (* Do this last, in case the instruction sanitisers have
        introduced invalid identifiers. *)
-    >>| mangle_identifiers
+    >>= (MangleSymbols |-> mangle_identifiers)
 
   let any (fs : ('a -> bool) list) (a : 'a) : bool =
     List.exists ~f:(fun f -> f a) fs
@@ -413,22 +487,34 @@ struct
     in
     Ctx.make (mu prog)
 
-  (** [remove_irrelevant_statements prog] completely removes
-      statements in [prog] that have no use in Litmus and cannot be
-      rewritten. *)
-  let remove_irrelevant_statements prog =
+  (** [remove_generally_irrelevant_statements prog] completely removes
+     statements in [prog] that have no use in general and cannot be
+     rewritten. *)
+  let remove_generally_irrelevant_statements prog =
     Ctx.peek
       (fun { jsyms; _ } ->
          let matchers =
            LH.L.Statement.(
-             [ instruction_is_irrelevant
-             ; is_nop
+             [ is_nop
              ; is_directive
-             ; is_stack_manipulation
              ; is_unused_label ~jsyms
              ])
          in
          MyList.exclude ~f:(any matchers) prog)
+
+
+  (** [remove_litmus_irrelevant_statements prog] completely removes
+     statements in [prog] that have no use in Litmus and cannot be
+     rewritten. *)
+  let remove_litmus_irrelevant_statements prog =
+    Ctx.return
+      (let matchers =
+         LH.L.Statement.(
+           [ instruction_is_irrelevant
+           ; is_stack_manipulation
+           ])
+       in
+       MyList.exclude ~f:(any matchers) prog)
 
   let remove_useless_jumps prog =
     let rec mu skipped ctx =
@@ -503,14 +589,17 @@ struct
       Ctx.(
         return prog
         >>= update_symbol_tables
-        >>= remove_irrelevant_statements
-        >>= remove_useless_jumps
+        >>= (RemoveUseless |-> remove_generally_irrelevant_statements)
+        >>= (RemoveLitmus  |-> remove_litmus_irrelevant_statements)
+        >>= (RemoveUseless |-> remove_useless_jumps)
       )
     in
     proglen_fix mu prog
 
   (** [sanitise_program] performs sanitisation on a single program. *)
-  let sanitise_program (i : int) (prog : LH.L.Statement.t list)
+  let sanitise_program
+      (passes : Pass.Set.t)
+      (i : int) (prog : LH.L.Statement.t list)
     : (LH.L.Statement.t list * Warn.t list) =
     let progname = sprintf "%d" i in
     let proglen = List.length prog in
@@ -520,8 +609,8 @@ struct
           ((return prog)
            (* Initial table population. *)
            >>= update_symbol_tables
-           >>= add_end_label
-           >>= LH.on_program
+           >>= (SimplifyLitmus |-> add_end_label)
+           >>= (LangHooks      |-> LH.on_program)
            (* The language hook might have invalidated the symbol
               tables. *)
            >>= update_symbol_tables
@@ -531,19 +620,31 @@ struct
            |> mapiM ~f:sanitise_stm
            >>= remove_fix
           )
-          (initial ~progname ~proglen)
+          (initial ~passes ~progname ~proglen)
       in (program, warnings)
     )
 
-  let sanitise_programs progs =
+  let sanitise ?passes prog =
+    let passes' = Option.value ~default:(Pass.all_set ()) passes in
+    let prog', warnlist = sanitise_program passes' 0 prog in
+    Output.(
+      { result   = prog'
+      ; warnings = warnlist
+      }
+    )
+
+  let sanitise_programs ?passes progs =
+    let passes' = Option.value ~default:(Pass.all_set ()) passes in
     let progs', warnlists =
       progs
-      |> List.mapi ~f:sanitise_program
+      |> List.mapi ~f:(sanitise_program passes')
       |> List.unzip
     in
-    { programs = make_programs_uniform (LH.L.Statement.empty ()) progs'
-    ; warnings = List.concat warnlists
-    }
+    Output.(
+      { result   = make_programs_uniform (LH.L.Statement.empty ()) progs'
+      ; warnings = List.concat warnlists
+      }
+    )
 
-  let sanitise stms = sanitise_programs (split_programs stms)
+  let split_and_sanitise ?passes stms = sanitise_programs ?passes (split_programs stms)
 end

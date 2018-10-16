@@ -58,6 +58,7 @@ let litmusify o paths cid spec =
       ; inp
       ; outp
       ; mode = `Litmusify
+      ; passes = Sanitiser.Pass.all_set ()
       }
   in
   Or_error.tag ~tag:"While translating assembly to litmus"

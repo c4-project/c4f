@@ -29,7 +29,7 @@ module type S = sig
   type stm_explanation =
     { original : statement
     ; abs_type : Language.AbsStatement.t
-    ; flags : Language.AbsStatement.FlagSet.t
+    ; flags : Language.AbsStatement.Flag.Set.t
     }
 
   type t =
@@ -48,7 +48,7 @@ module Make (LS : Language.Intf) =
     type stm_explanation =
       { original : statement
       ; abs_type : Language.AbsStatement.t
-      ; flags : Language.AbsStatement.FlagSet.t
+      ; flags : Language.AbsStatement.Flag.Set.t
       }
 
     type t =
@@ -101,7 +101,7 @@ module Make (LS : Language.Intf) =
          Format.fprintf f "@[<h>%a@ <--@ @[%s%a@]@]@,"
                         LS.Statement.pp exp.original
                         (stringify_stm_basic exp.abs_type)
-                        Language.AbsStatement.FlagSet.pp exp.flags
+                        Language.AbsStatement.Flag.pp_set exp.flags
 
     let pp f exp =
       Format.pp_open_vbox f 0;

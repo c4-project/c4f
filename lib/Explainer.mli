@@ -36,7 +36,7 @@ module type S = sig
   type stm_explanation =
     { original : statement
     ; abs_type : Language.AbsStatement.t
-    ; flags : Language.AbsStatement.FlagSet.t
+    ; flags : Language.AbsStatement.Flag.Set.t
     }
 
   (** [t] is the type of assembly explanations. *)

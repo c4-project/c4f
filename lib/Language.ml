@@ -27,60 +27,37 @@ open Utils
 open Utils.MyContainers
 
 module AbsInstruction = struct
-  type t =
-    | Arith   (* arithmetic *)
-    | Call    (* calling-convention related instructions *)
-    | Compare (* comparison *)
-    | Fence   (* memory fence *)
-    | Jump    (* conditional or unconditional jump *)
-    | Move    (* move *)
-    | Nop     (* no operation *)
-    | Return  (* jump to caller *)
-    | Stack   (* stack resizing and pointer manipulation *)
-    | Other   (* known, but doesn't fit in these categories *)
-    | Unknown [@@deriving enum, sexp]
+  module M = struct
+    type t =
+      | Arith   (* arithmetic *)
+      | Call    (* calling-convention related instructions *)
+      | Compare (* comparison *)
+      | Fence   (* memory fence *)
+      | Jump    (* conditional or unconditional jump *)
+      | Move    (* move *)
+      | Nop     (* no operation *)
+      | Return  (* jump to caller *)
+      | Stack   (* stack resizing and pointer manipulation *)
+      | Other   (* known, but doesn't fit in these categories *)
+      | Unknown [@@deriving enum, sexp]
 
-  module Table =
-    StringTable.Make (
-    struct
-      type nonrec t = t
+    let table =
+      [ Arith  , "arith"
+      ; Call   , "call"
+      ; Compare, "compare"
+      ; Fence  , "fence"
+      ; Jump   , "jump"
+      ; Move   , "move"
+      ; Nop    , "nop"
+      ; Return , "return"
+      ; Stack  , "stack"
+      ; Other  , "other"
+      ; Unknown, "??"
+      ]
+  end
 
-      let table =
-        [ Arith  , "arith"
-        ; Call   , "call"
-        ; Compare, "compare"
-        ; Fence  , "fence"
-        ; Jump   , "jump"
-        ; Move   , "move"
-        ; Nop    , "nop"
-        ; Return , "return"
-        ; Stack  , "stack"
-        ; Other  , "other"
-        ; Unknown, "??"
-        ]
-    end
-    )
-
-  let pp f ins =
-    ins
-    |> Table.to_string
-    |> Option.value ~default:"??"
-    |> String.pp f
-
-  module Set =
-    Set.Make(
-    struct
-      type nonrec t = t
-
-      let compare x y =
-        Int.compare (to_enum x)
-          (to_enum y)
-
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp = t_of_sexp
-    end
-    )
-
+  include M
+  include Enum.ExtendTable (M)
 end
 
 module AbsLocation =
@@ -117,16 +94,13 @@ module AbsStatement = struct
     | Instruction i -> AbsInstruction.pp f i
     | Other         -> String.pp f "??"
 
-  type flag =
-    [ `UnusedLabel
-    | `ProgBoundary
-    | `StackManip
-    ] [@@deriving enum, sexp]
-
-  module FlagTable =
-    StringTable.Make (
-    struct
-      type t = flag
+  module Flag = struct
+    module M = struct
+      type t =
+        [ `UnusedLabel
+        | `ProgBoundary
+        | `StackManip
+        ] [@@deriving enum, sexp]
 
       let table =
         [ `UnusedLabel, "unused label"
@@ -134,39 +108,9 @@ module AbsStatement = struct
         ; `StackManip, "manipulates stack"
         ]
     end
-    )
 
-  let pp_flag f flag =
-    flag
-    |> FlagTable.to_string
-    |> Option.value ~default:"??"
-    |> String.pp f
-
-  module FlagSet = struct
-    include
-      Set.Make(
-      struct
-        type t = flag
-
-        let compare x y =
-          Int.compare (flag_to_enum x)
-            (flag_to_enum y)
-
-        let sexp_of_t = sexp_of_flag
-        let t_of_sexp = flag_of_sexp
-      end
-      )
-
-    let pp f fset =
-      match Set.to_list fset with
-      | [] -> ()
-      | xs ->
-        Format.pp_print_space f ();
-        Format.pp_print_char f '(';
-        Format.pp_open_hovbox f 0;
-        Format.pp_print_list ~pp_sep:MyFormat.pp_csep pp_flag f xs;
-        Format.pp_close_box f ();
-        Format.pp_print_char f ')'
+    include M
+    include Enum.ExtendTable (M)
   end
 end
 
@@ -320,7 +264,7 @@ module type Intf = sig
     val is_nop : t -> bool
     val is_program_boundary : t -> bool
 
-    val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
+    val flags : jsyms:SymSet.t -> t -> AbsStatement.Flag.Set.t
   end
 
   val heap_symbols : Statement.t list -> SymSet.t
@@ -422,7 +366,7 @@ module Make (M : S) = struct
       ]
       |> List.map ~f:(Tuple2.uncurry Option.some_if)
       |> List.filter_opt
-      |> AbsStatement.FlagSet.of_list
+      |> AbsStatement.Flag.Set.of_list
   end
 
   module Location =

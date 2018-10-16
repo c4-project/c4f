@@ -74,6 +74,36 @@ module Warn
       -> WarnIntf with module L = L and module C = C
 
 (*
+ * Passes
+ *)
+
+(** [Pass] enumerates the various sanitisation passes. *)
+module Pass : sig
+  type t =
+    (* Run language-specific hooks. *)
+    | LangHooks
+    (* Mangle symbols to ensure litmus tools can lex them. *)
+    | MangleSymbols
+    (* Remove elements that have an effect in the assembly, but said
+       effect isn't captured in the litmus test. *)
+    | RemoveLitmus
+    (* Remove elements with no (direct) effect in the assembly. *)
+    | RemoveUseless
+    (* Simplify elements that aren't directly understandable by
+       litmus tools. *)
+    | SimplifyLitmus
+    (* Warn about things the sanitiser doesn't understand. *)
+    | Warn
+
+  (** We include the usual enum extensions for [Pass]. *)
+  include Enum.ExtensionTable with type t := t
+
+  (** [explain] collects passes that are useful for explaining an
+     assembly file without modifying its semantics too much. *)
+  val explain : Set.t
+end
+
+(*
  * Context
  *)
 
@@ -88,6 +118,7 @@ module type CtxIntf = sig
     ; endlabel : string option      (* End label of current program *)
     ; hsyms    : Language.SymSet.t  (* Heap symbols *)
     ; jsyms    : Language.SymSet.t  (* Jump symbols *)
+    ; passes   : Pass.Set.t         (* Enabled passes *)
     ; warnings : Warn.t list
     }
 
@@ -98,10 +129,12 @@ module type CtxIntf = sig
   (** [CtxIntf] implementations also include some monad extensions. *)
   include MyMonad.Extensions with type 'a t := 'a t
 
-  (** [initial ~progname ~proglen] opens an initial context for the
-      program with the given name and length. *)
+  (** [initial ~passes ~progname ~proglen] opens an initial context
+     for the program with the given name, length, and enabled
+     passes. *)
   val initial
-    :  progname:string
+    :  passes:Pass.Set.t
+    -> progname:string
     -> proglen:int
     -> ctx
 
@@ -126,6 +159,11 @@ module type CtxIntf = sig
 
   (** [run'] behaves like [run], but discards the final context. *)
   val run' : 'a t -> ctx -> 'a
+
+  (** [p |-> f] guards a contextual computation [f] on the
+      pass [p]; it won't run unless [p] is in the current context's
+      pass set. *)
+  val (|->) : Pass.t -> ('a -> 'a t) -> ('a -> 'a t)
 
   (** [warn_in_ctx ctx w] adds a warning [w] to [ctx], returning
       the new context. *)
@@ -182,16 +220,36 @@ module type Intf = sig
 
   type statement
 
-  (** [output] is the type of (successful) sanitiser output. *)
-  type output =
-    { programs : statement list list
-    ; warnings : Warn.t list
-    }
+  module Output : sig
+    (** ['a t] is the type of (successful) sanitiser output,
+        containing an ['a]. *)
+    type 'a t
 
-  (** [sanitise stms] sanitises a statement list, turning it into a
-      list of separate program lists with various litmus-unfriendly
-      elements removed or simplified. *)
-  val sanitise : statement list -> output
+    val result : 'a t -> 'a
+
+    val warnings : 'a t -> Warn.t list
+  end
+
+  (** [sanitise ?passes stms] sanitises a statement list.
+
+      Optional argument 'passes' controls the sanitisation passes
+      used; the default is [Pass.all]. *)
+  val sanitise
+    :  ?passes:Pass.Set.t
+    -> statement list
+    -> statement list Output.t
+
+  (** [split_and_sanitise ?passes stms] splits a statement list into
+     separate litmus programs, then sanitises each, turning it into a
+     list of separate program lists with various litmus-unfriendly
+     elements removed or simplified.
+
+      Optional argument 'passes' controls the sanitisation passes
+     used; the default is [Pass.all]. *)
+  val split_and_sanitise
+    :  ?passes:Pass.Set.t
+    -> statement list
+    -> statement list list Output.t
 end
 
 (** [Make] implements the assembly sanitiser for a given language. *)

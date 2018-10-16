@@ -50,7 +50,7 @@ let get_spec specs compiler_id =
   |> Result.of_option
     ~error:(Error.create "invalid compiler ID" compiler_id [%sexp_of: CompilerSpec.Id.t])
 
-let do_litmusify mode o ~infile ~outfile (cid : CompilerSpec.Id.t) specs =
+let do_litmusify mode passes o ~infile ~outfile (cid : CompilerSpec.Id.t) specs =
   let open Result.Let_syntax in
   let%bind spec = get_spec specs cid in
   let%bind lit = LangSupport.get_litmusifier ~emits:spec.CompilerSpec.emits in
@@ -66,6 +66,7 @@ let do_litmusify mode o ~infile ~outfile (cid : CompilerSpec.Id.t) specs =
         ; inp
         ; outp
         ; mode
+        ; passes
         }
     in
     with_input_and_output
@@ -93,6 +94,10 @@ let explain =
         flag "no-warnings"
           no_arg
           ~doc: "silence all warnings"
+     and sanitise =
+       flag "sanitise"
+         no_arg
+         ~doc: "if true, do basic sanitisation on the assembly first"
      and compiler_id =
        anon ("COMPILER_ID" %: string)
      and outfile =
@@ -106,10 +111,14 @@ let explain =
        let warnings = not no_warnings in
        let cid = CompilerSpec.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
+       let passes = Sanitiser.(
+           if sanitise then Pass.explain else Pass.Set.empty
+         )
+       in
        Or_error.Let_syntax.(
          let%bind specs = CompilerSpec.load_specs ~path:spec_file in
          pp_specs o.vf specs;
-         do_litmusify `Explain o ~infile ~outfile cid specs
+         do_litmusify `Explain passes o ~infile ~outfile cid specs
        )
        |> prerr
     ]
@@ -153,15 +162,17 @@ let litmusify =
        let warnings = not no_warnings in
        let cid = CompilerSpec.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
+       let passes = Sanitiser.Pass.all_set () in
        Result.Let_syntax.(
          let%bind specs = CompilerSpec.load_specs ~path:spec_file in
          pp_specs o.vf specs;
          match sendto with
-         | None -> do_litmusify `Litmusify o ~infile ~outfile cid specs
+         | None -> do_litmusify `Litmusify passes o ~infile ~outfile cid specs
          | Some cmd ->
            let tmpname = Filename.temp_file "act" "litmus" in
            let cid = CompilerSpec.Id.of_string compiler_id in
-           let%bind _ = do_litmusify `Litmusify o ~infile ~outfile:(Some tmpname) cid specs in
+           let%bind _ =
+             do_litmusify `Litmusify passes o ~infile ~outfile:(Some tmpname) cid specs in
            Io.Out_sink.with_output ~f:(run_herd cmd tmpname)
              (Io.Out_sink.of_option outfile)
        )

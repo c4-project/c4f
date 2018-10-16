@@ -46,7 +46,6 @@ module AbsInstruction : sig
     | Stack   (* stack resizing and pointer manipulation *)
     | Other   (* known, but doesn't fit in these categories *)
     | Unknown (* unclassified instruction *)
-  [@@deriving sexp, enum]
 
   (* Why do we have a separate [Return] type, instead of classing it
      as [Call] or [Jump]?  Two reasons:
@@ -56,11 +55,9 @@ module AbsInstruction : sig
      - It makes it easier for us to translate returns to
      end-of-program jumps in sanitisation.  *)
 
-  (** Abstract instructions may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
-
-  (** [Set] is a set module for abstract instruction types. *)
-  module Set : (Set.S with type Elt.t = t)
+  (** [AbsInstruction] contains various enum extensions, including a
+      [Set] type. *)
+  include Enum.ExtensionTable with type t := t
 end
 
 (** [AbsLocation] contains types and utilities for abstracted
@@ -81,8 +78,7 @@ end
 
 (** [AbsStatement] contains types and utilities for abstracted
    statements. *)
-module AbsStatement :
-sig
+module AbsStatement : sig
   (** [AbsStatement.t] is an abstracted statement. *)
   type t =
     | Directive of string
@@ -94,24 +90,21 @@ sig
   (** Abstract statements may be pretty-printed. *)
   include Pretty_printer.S with type t := t
 
-  (** [flag] is an enumeration of various statement observations.
+  (** [Flag] is an enumeration of various statement observations.
 
 Most of these flags have corresponding Boolean accessors in
-     [Language.Intf.Statement]. *)
-  type flag =
-    [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
-    | `ProgBoundary  (* A label that looks like a program boundary *)
-    | `StackManip    (* A statement that only serves to manipulate
+      [Language.Intf.Statement]. *)
+  module Flag : sig
+    type t =
+      [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
+      | `ProgBoundary  (* A label that looks like a program boundary *)
+      | `StackManip    (* A statement that only serves to manipulate
                         the call stack *)
-    ] [@@deriving enum, sexp]
+      ]
 
-  (** [FlagTable] associates each [flag] with a string. *)
-  module FlagTable : StringTable.Intf with type t = flag
-
-  (** [FlagSet] is a set module for [flag]. *)
-  module FlagSet : sig
-    include Set.S with type Elt.t := flag
-    include Pretty_printer.S with type t := t
+    (** [Flag] contains various enum extensions, including a [Set]
+       type. *)
+    include Enum.ExtensionTable with type t := t
   end
 end
 
@@ -389,7 +382,7 @@ module type Intf = sig
     (** [flags ~jsyms stm] summarises the above boolean functions as
         a set of [stm_flag]s.  It uses [jsyms] to calculate whether
         the statement is an unused label. *)
-    val flags : jsyms:SymSet.t -> t -> AbsStatement.FlagSet.t
+    val flags : jsyms:SymSet.t -> t -> AbsStatement.Flag.Set.t
   end
 
   (** [heap_symbols] retrieves the set of all symbols that appear to be

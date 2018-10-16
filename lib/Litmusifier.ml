@@ -25,13 +25,14 @@ open Core
 
 module type Intf = sig
   type t =
-    { o     : OutputCtx.t
-    ; cid   : CompilerSpec.Id.t
-    ; spec  : CompilerSpec.t
-    ; iname : string
-    ; inp   : In_channel.t
-    ; outp  : Out_channel.t
-    ; mode  : [`Explain | `Litmusify]
+    { o      : OutputCtx.t
+    ; cid    : CompilerSpec.Id.t
+    ; spec   : CompilerSpec.t
+    ; iname  : string
+    ; inp    : In_channel.t
+    ; outp   : Out_channel.t
+    ; mode   : [`Explain | `Litmusify]
+    ; passes : Sanitiser.Pass.Set.t
     }
   ;;
 
@@ -60,6 +61,7 @@ module Make (M : S) : Intf = struct
     ; inp   : In_channel.t
     ; outp  : Out_channel.t
     ; mode  : [`Explain | `Litmusify]
+    ; passes : Sanitiser.Pass.Set.t
     }
   ;;
 
@@ -72,12 +74,14 @@ module Make (M : S) : Intf = struct
   let parse t =
     Or_error.tag_arg
       (M.Frontend.run_ic ~file:t.iname t.inp)
-      "Error while parsing X86 assembly" t.iname String.sexp_of_t
+      "Error while parsing assembly" t.iname String.sexp_of_t
+  ;;
 
   let make_init (progs : LS.Statement.t list list) : (string, LS.Constant.t) List.Assoc.t =
     let syms = Language.SymSet.union_list (List.map ~f: LS.heap_symbols progs) in
     List.map ~f:(fun s -> (s, LS.Constant.zero))
       (Language.SymSet.to_list syms)
+  ;;
 
   let output_litmus
       t
@@ -96,7 +100,9 @@ module Make (M : S) : Intf = struct
           (fun f -> List.iter ~f:(pp_warning f)) ws
     in
     let open Or_error.Let_syntax in
-    let {S.programs; warnings} = S.sanitise stms in
+    let o = S.split_and_sanitise ~passes:t.passes stms in
+    let programs = S.Output.result o in
+    let warnings = S.Output.warnings o in
     emit_warnings warnings;
     let%bind lit =
       Or_error.tag ~tag:"Couldn't build litmus file."
@@ -109,15 +115,18 @@ module Make (M : S) : Intf = struct
     L.pp f lit;
     Format.pp_print_flush f ();
     Result.ok_unit
+  ;;
 
   let output_explanation
       t
       (program : LS.Statement.t list) =
-    let exp = E.explain program in
+    let san = S.sanitise ~passes:t.passes program in
+    let exp = E.explain (S.Output.result san) in
     let f = Format.formatter_of_out_channel t.outp in
     E.pp f exp;
     Format.pp_print_flush f ();
     Result.ok_unit
+  ;;
 
   let run t =
     (* TODO (@MattWindsor91): there must be a nicer way of generalising

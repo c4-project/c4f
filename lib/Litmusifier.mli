@@ -27,13 +27,14 @@ open Core
 
 module type Intf = sig
   type t =
-    { o     : OutputCtx.t
-    ; cid   : CompilerSpec.Id.t
-    ; spec  : CompilerSpec.t
-    ; iname : string
-    ; inp   : In_channel.t
-    ; outp  : Out_channel.t
-    ; mode  : [`Explain | `Litmusify]
+    { o      : OutputCtx.t
+    ; cid    : CompilerSpec.Id.t
+    ; spec   : CompilerSpec.t
+    ; iname  : string
+    ; inp    : In_channel.t
+    ; outp   : Out_channel.t
+    ; mode   : [`Explain | `Litmusify]
+    ; passes : Sanitiser.Pass.Set.t
     }
   ;;
 
