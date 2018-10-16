@@ -81,11 +81,24 @@ trying to parse the arguments itself.)
 To start with, try:
 
 ```
-$ dune exec bin/main.exe -- specs
+$ dune exec act -- specs
 ```
 
 This will read in your `compiler.spec` file, and, if all is well,
 output the available compilers.
+
+
+### Installing
+
+To install `act` into your OPAM `bin` directory, try:
+
+```
+$ dune build @install
+$ dune install
+```
+
+If this succeeds, you should be able to run `act` _without_
+`dune exec`.
 
 
 ### Testing
@@ -110,7 +123,7 @@ discrepancies in `act`'s output as diffs.
 ### `specs`: display compiler specs
 
 ```
-$ dune exec bin/main.exe specs
+$ dune exec act specs
 ```
 
 This asks `act` to list all the compilers it knows about from reading
@@ -121,7 +134,7 @@ per-compiler.
 ### `explain`: analyse assembly without conversion
 
 ```
-$ dune exec bin/main.exe explain COMPILER-NAME path/to/asm.s
+$ dune exec act explain COMPILER-NAME path/to/asm.s
 ```
 
 This asks `act` to dump out the given assembly file along with
@@ -137,7 +150,7 @@ cleanup on the assembly first.
 ### `litmusify`: convert a single assembly file to a litmus test
 
 ```
-$ dune exec bin/main.exe litmusify COMPILER-NAME path/to/asm.s
+$ dune exec act litmusify COMPILER-NAME path/to/asm.s
 ```
 
 This asks `act` to try to convert the given assembly file into a
@@ -158,7 +171,7 @@ where program boundaries and interesting memory locations are.
 
 ### `memalloy`: processing a memalloy run
 
-`dune exec bin/main.exe memalloy path/to/memalloy/results`
+`dune exec act memalloy path/to/memalloy/results`
 
 This asks `act` to run the compilers listed in `./compiler.spec` on
 the witnesses in `path/to/memalloy/run/C`, then convert them into

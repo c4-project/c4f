@@ -1,5 +1,6 @@
 (executable
   (name main)
+  (public_name act)
   (preprocess (pps ppx_jane))
   (libraries
     lib
@@ -7,3 +8,10 @@
     core
     utils
     unix))
+
+(rule
+ (with-stdout-to regress.output (run act regress)))
+
+(alias
+ (name runtest)
+ (action (diff regress.expected regress.output)))

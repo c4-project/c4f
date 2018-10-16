@@ -21,18 +21,9 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Main entry point into act *)
+(** The 'regress' command *)
 
 open Core
 
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    [ "explain"  , Explain.command
-    ; "litmusify", Litmusify.command
-    ; "memalloy" , Memalloy.command
-    ; "specs"    , Specs.command
-    ; "regress"  , Regress.command
-    ]
-
-let () = Command.run command
+(** [command] is the top-level 'regress' command. *)
+val command : Command.t
