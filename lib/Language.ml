@@ -260,7 +260,11 @@ module type Intf = sig
 
     val is_directive : t -> bool
     val is_label : t -> bool
-    val is_unused_label : jsyms:SymSet.t -> t -> bool
+    val is_unused_label
+      :  ?ignore_boundaries:bool
+      -> jsyms:SymSet.t
+      -> t
+      -> bool
     val is_nop : t -> bool
     val is_program_boundary : t -> bool
 
@@ -343,10 +347,8 @@ module Make (M : S) = struct
       | AbsStatement.Label _ -> true
       | _ -> false
 
-    let is_unused_label ~jsyms stm =
-      is_label stm
-      && SymSet.is_empty
-        (SymSet.inter jsyms (OnSymbols.set stm))
+    let disjoint s1 s2 =
+      SymSet.is_empty (SymSet.inter s1 s2)
 
     let is_nop stm =
       match abs_type stm with
@@ -358,6 +360,11 @@ module Make (M : S) = struct
       match abs_type stm with
       | AbsStatement.Label l -> is_program_label l
       | _ -> false
+
+    let is_unused_label ?(ignore_boundaries=false) ~jsyms stm =
+      is_label stm
+      && disjoint jsyms (OnSymbols.set stm)
+      && not (ignore_boundaries && is_program_boundary stm)
 
     let flags ~jsyms stm =
       [ is_unused_label ~jsyms stm, `UnusedLabel

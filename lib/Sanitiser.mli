@@ -84,6 +84,10 @@ module Pass : sig
     | LangHooks
     (* Mangle symbols to ensure litmus tools can lex them. *)
     | MangleSymbols
+    (* Remove program boundaries.  (If this pass isn't active,
+       program boundaries are retained even if they're not
+       jumped to. *)
+    | RemoveBoundaries
     (* Remove elements that have an effect in the assembly, but said
        effect isn't captured in the litmus test. *)
     | RemoveLitmus

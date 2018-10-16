@@ -367,10 +367,18 @@ module type Intf = sig
      label. *)
     val is_label : t -> bool
 
-    (** [is_unused_label ~jsyms stm] decides whether [stm] is a label
-       whose symbol doesn't appear in the given set [jsyms] of jump
-       destination symbols. *)
-    val is_unused_label : jsyms:SymSet.t -> t -> bool
+    (** [is_unused_label ignore_boundaries ~jsyms stm] decides whether
+       [stm] is a label whose symbol doesn't appear in the given set
+       [jsyms] of jump destination symbols.
+
+        If [ignore_boundaries] is present and true, [is_unused_label]
+       will report program boundaries as in-use, even if they aren't
+       jumped to from [jsyms]. *)
+    val is_unused_label
+      :  ?ignore_boundaries:bool
+      -> jsyms:SymSet.t
+      -> t
+      -> bool
 
     (** [is_nop stm] decides whether [stm] appears to be a NOP. *)
     val is_nop : t -> bool

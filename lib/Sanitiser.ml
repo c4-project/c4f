@@ -119,13 +119,12 @@ end
  * Pass
  *)
 
-
-
 module Pass = struct
   module M = struct
     type t =
       | LangHooks
       | MangleSymbols
+      | RemoveBoundaries
       | RemoveLitmus
       | RemoveUseless
       | SimplifyLitmus
@@ -133,12 +132,13 @@ module Pass = struct
     [@@deriving enum, sexp]
 
     let table =
-      [ LangHooks     , "lang-hooks"
-      ; MangleSymbols , "mangle-symbols"
-      ; RemoveLitmus  , "remove-litmus"
-      ; RemoveUseless , "remove-useless"
-      ; SimplifyLitmus, "simplify-litmus"
-      ; Warn          , "warn"
+      [ LangHooks       , "lang-hooks"
+      ; MangleSymbols   , "mangle-symbols"
+      ; RemoveBoundaries, "remove-boundaries"
+      ; RemoveLitmus    , "remove-litmus"
+      ; RemoveUseless   , "remove-useless"
+      ; SimplifyLitmus  , "simplify-litmus"
+      ; Warn            , "warn"
       ]
   end
 
@@ -157,6 +157,7 @@ let%expect_test "all passes accounted for" =
   [%expect {|
     lang-hooks
     mangle-symbols
+    remove-boundaries
     remove-litmus
     remove-useless
     simplify-litmus
@@ -492,12 +493,16 @@ module Make (LH : LangHookS)
      rewritten. *)
   let remove_generally_irrelevant_statements prog =
     Ctx.peek
-      (fun { jsyms; _ } ->
+      (fun { jsyms; passes; _ } ->
+         let remove_boundaries =
+           Pass.Set.mem passes Pass.RemoveBoundaries
+         in
+         let ignore_boundaries = not remove_boundaries in
          let matchers =
            LH.L.Statement.(
              [ is_nop
              ; is_directive
-             ; is_unused_label ~jsyms
+             ; is_unused_label ~ignore_boundaries ~jsyms
              ])
          in
          MyList.exclude ~f:(any matchers) prog)
