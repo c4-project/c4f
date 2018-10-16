@@ -10,7 +10,7 @@ module AttFrontend : LangFrontend.Intf with type ast = Ast.t
 (** [Intf] is the type of language modules over the X86 AST. *)
 module type Intf = sig
   include Dialect.Intf
-  include PP.S
+  include PP.Printer
   include
     Language.Intf
     with type Constant.t = Ast.operand

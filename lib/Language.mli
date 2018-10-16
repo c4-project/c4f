@@ -150,6 +150,14 @@ module type BaseS = sig
   (** [is_program_label l] decides whether symbol [l] is a label
      marking the start of a program. *)
   val is_program_label : string -> bool
+
+  (** [pp_comment ~pp f k] prints a line comment whose body is
+      given by invoking [pp] on [k]. *)
+  val pp_comment
+    :  pp:(Format.formatter -> 'a -> unit)
+    -> Format.formatter
+    -> 'a
+    -> unit
 end
 
 (** [StatementS] is the signature that must be implemented by

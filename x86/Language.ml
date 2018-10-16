@@ -22,7 +22,7 @@ module AttFrontend =
 
 module type Intf = sig
   include Dialect.Intf
-  include PP.S
+  include PP.Printer
   include
     Language.Intf
     with type Constant.t = Ast.operand
@@ -33,7 +33,7 @@ module type Intf = sig
   val make_jump_operand : string -> Ast.operand
 end
 
-module Make (T : Dialect.Intf) (P : PP.S) =
+module Make (T : Dialect.Intf) (P : PP.Printer) =
 struct
   include T
   include P
@@ -54,6 +54,8 @@ struct
         let name = "X86"
 
         let is_program_label = Base.is_program_label
+
+        let pp_comment = P.pp_comment
 
         module Location = struct
           type t = Ast.location

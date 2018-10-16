@@ -54,152 +54,182 @@ let disp_positive =
   | Some (DispNumeric k) -> 0 < k
   | _ -> true
 
-module type Dialect =
-  sig
-    val pp_reg : Format.formatter -> reg -> unit
-    val pp_indirect : Format.formatter -> indirect -> unit
-    val pp_immediate : Format.formatter -> disp -> unit
-  end
+module type Dialect = sig
+  val pp_reg : Format.formatter -> reg -> unit
+  val pp_indirect : Format.formatter -> indirect -> unit
+  val pp_immediate : Format.formatter -> disp -> unit
+  val pp_comment
+    :  pp:(Format.formatter -> 'a -> unit)
+    -> Format.formatter
+    -> 'a
+    -> unit
+end
 
-module type S =
-  sig
-    val pp_reg : Format.formatter -> reg -> unit
-    val pp_indirect : Format.formatter -> indirect -> unit
-    val pp_location : Format.formatter -> location -> unit
-    val pp_bop : Format.formatter -> bop -> unit
-    val pp_operand : Format.formatter -> operand -> unit
-    val pp_prefix : Format.formatter -> prefix -> unit
-    val pp_opcode : Format.formatter -> opcode -> unit
-    val pp_instruction : Format.formatter -> instruction -> unit
-    val pp_statement : Format.formatter -> statement -> unit
-  end
+module type Printer = sig
+  include Dialect
 
-module Basic =
-  struct
+  val pp_location : Format.formatter -> location -> unit
+  val pp_bop : Format.formatter -> bop -> unit
+  val pp_operand : Format.formatter -> operand -> unit
+  val pp_prefix : Format.formatter -> prefix -> unit
+  val pp_opcode : Format.formatter -> opcode -> unit
+  val pp_instruction : Format.formatter -> instruction -> unit
+  val pp_statement : Format.formatter -> statement -> unit
+end
+
+(* Parts specific to all dialects *)
+module Basic = struct
     (*
      * Displacements
      *)
 
-    let pp_disp ?(show_zero = true) f =
-      function
-      | DispSymbolic s -> Format.pp_print_string f s
-      | DispNumeric  0 when not show_zero -> ()
-      | DispNumeric  k -> Format.pp_print_int    f k
-  end
+  let pp_disp ?(show_zero = true) f =
+    function
+    | DispSymbolic s -> Format.pp_print_string f s
+    | DispNumeric  0 when not show_zero -> ()
+    | DispNumeric  k -> Format.pp_print_int    f k
+end
 
-module ATTSpecific =
-  struct
-    let pp_reg f reg =
-      Format.fprintf f "@[%%%s@]" (RegTable.to_string_exn reg)
+(* Parts specific to AT&T *)
+module ATTSpecific = struct
+  let pp_comment ~pp f = Format.fprintf f "@[<h># %a@]" pp
 
-    let%expect_test "pp_reg: AT&T, ESP" =
-      Format.printf "%a@." pp_reg ESP;
-      [%expect {| %ESP |}]
+  let%expect_test "pp_comment: AT&T" =
+    Format.printf "%a@."
+      (pp_comment ~pp:String.pp) "AT&T comment";
+    [%expect {| # AT&T comment |}]
 
-    let pp_index f =
-      function
-      | Unscaled r -> pp_reg f r
-      | Scaled (r, i) -> Format.fprintf f "%a,@ %d"
-                                        pp_reg r
-                                        i
+  let pp_reg f reg =
+    Format.fprintf f "@[%%%s@]" (RegTable.to_string_exn reg)
 
-    let pp_indirect f {in_seg; in_disp; in_base; in_index} =
-      let pp_seg f = Format.fprintf f "%a:" pp_reg in
+  let%expect_test "pp_reg: AT&T, ESP" =
+    Format.printf "%a@." pp_reg ESP;
+    [%expect {| %ESP |}]
 
-      let pp_bis f bo iso =
-        match bo, iso with
-        | None  , None -> ()
-        | Some b, None ->
-           Format.fprintf f "(%a)"
-                          pp_reg b
-        | _     , Some i ->
-           Format.fprintf f "(%a,%a)"
-                          (MyFormat.pp_option ~pp:pp_reg) bo
-                          pp_index i
-      in
+  let pp_index f =
+    function
+    | Unscaled r -> pp_reg f r
+    | Scaled (r, i) -> Format.fprintf f "%a,@ %d"
+                         pp_reg r
+                         i
 
-      MyFormat.pp_option f ~pp:pp_seg in_seg;
-      let show_zero = in_base = None && in_index = None in
-      MyFormat.pp_option f ~pp:(Basic.pp_disp ~show_zero) in_disp;
-      pp_bis f in_base in_index
+  let pp_indirect f {in_seg; in_disp; in_base; in_index} =
+    let pp_seg f = Format.fprintf f "%a:" pp_reg in
 
-    let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
-      Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric 2001)
-                    ; in_base = None
-                    ; in_index = None
-                    };
-      [%expect {| 2001 |}]
+    let pp_bis f bo iso =
+      match bo, iso with
+      | None  , None -> ()
+      | Some b, None ->
+        Format.fprintf f "(%a)"
+          pp_reg b
+      | _     , Some i ->
+        Format.fprintf f "(%a,%a)"
+          (MyFormat.pp_option ~pp:pp_reg) bo
+          pp_index i
+    in
 
-    let%expect_test "pp_indirect: AT&T, +ve disp and base" =
-      Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric 76)
-                    ; in_base = Some EAX
-                    ; in_index = None
-                    };
-      [%expect {| 76(%EAX) |}]
+    MyFormat.pp_option f ~pp:pp_seg in_seg;
+    let show_zero = in_base = None && in_index = None in
+    MyFormat.pp_option f ~pp:(Basic.pp_disp ~show_zero) in_disp;
+    pp_bis f in_base in_index
 
-    let%expect_test "pp_indirect: AT&T, zero disp only" =
-      Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric 0)
-                    ; in_base = None
-                    ; in_index = None
-                    };
-      [%expect {| 0 |}]
+  let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
+    Format.printf "%a@." pp_indirect
+      { in_seg = None
+      ; in_disp = Some (DispNumeric 2001)
+      ; in_base = None
+      ; in_index = None
+      };
+    [%expect {| 2001 |}]
 
-    let%expect_test "pp_indirect: AT&T, -ve disp and base" =
-      Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric (-42))
-                    ; in_base = Some ECX
-                    ; in_index = None
-                    };
-      [%expect {| -42(%ECX) |}]
+  let%expect_test "pp_indirect: AT&T, +ve disp and base" =
+    Format.printf "%a@." pp_indirect
+      { in_seg = None
+      ; in_disp = Some (DispNumeric 76)
+      ; in_base = Some EAX
+      ; in_index = None
+      };
+    [%expect {| 76(%EAX) |}]
 
-    let%expect_test "pp_indirect: AT&T, base only" =
-      Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = None
-                    ; in_base = Some EDX
-                    ; in_index = None
-                    };
-      [%expect {| (%EDX) |}]
+  let%expect_test "pp_indirect: AT&T, zero disp only" =
+    Format.printf "%a@." pp_indirect
+      { in_seg = None
+      ; in_disp = Some (DispNumeric 0)
+      ; in_base = None
+      ; in_index = None
+      };
+    [%expect {| 0 |}]
 
-    let%expect_test "pp_indirect: AT&T, zero disp and base" =
-      Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric 0)
-                    ; in_base = Some EDX
-                    ; in_index = None
-                    };
-      [%expect {| (%EDX) |}]
+  let%expect_test "pp_indirect: AT&T, -ve disp and base" =
+    Format.printf "%a@." pp_indirect
+      { in_seg = None
+      ; in_disp = Some (DispNumeric (-42))
+      ; in_base = Some ECX
+      ; in_index = None
+      };
+    [%expect {| -42(%ECX) |}]
 
-    let pp_immediate f = Format.fprintf f "@[$%a@]"
-                                        (Basic.pp_disp ~show_zero:true)
+  let%expect_test "pp_indirect: AT&T, base only" =
+    Format.printf "%a@." pp_indirect
+      { in_seg = None
+      ; in_disp = None
+      ; in_base = Some EDX
+      ; in_index = None
+      };
+    [%expect {| (%EDX) |}]
 
-    let%expect_test "pp_immediate: AT&T, positive number" =
-      Format.printf "%a@." pp_immediate (DispNumeric 24);
-      [%expect {| $24 |}]
+  let%expect_test "pp_indirect: AT&T, zero disp and base" =
+    Format.printf "%a@." pp_indirect
+      { in_seg = None
+      ; in_disp = Some (DispNumeric 0)
+      ; in_base = Some EDX
+      ; in_index = None
+      };
+    [%expect {| (%EDX) |}]
 
-    let%expect_test "pp_immediate: AT&T, zero" =
-      Format.printf "%a@." pp_immediate (DispNumeric 0);
-      [%expect {| $0 |}]
+  let pp_immediate f = Format.fprintf f "@[$%a@]"
+      (Basic.pp_disp ~show_zero:true)
 
-    let%expect_test "pp_immediate: AT&T, negative number" =
-      Format.printf "%a@." pp_immediate (DispNumeric (-42));
-      [%expect {| $-42 |}]
+  let%expect_test "pp_immediate: AT&T, positive number" =
+    Format.printf "%a@." pp_immediate (DispNumeric 24);
+    [%expect {| $24 |}]
+
+  let%expect_test "pp_immediate: AT&T, zero" =
+    Format.printf "%a@." pp_immediate (DispNumeric 0);
+    [%expect {| $0 |}]
+
+  let%expect_test "pp_immediate: AT&T, negative number" =
+    Format.printf "%a@." pp_immediate (DispNumeric (-42));
+    [%expect {| $-42 |}]
 
 
-    let%expect_test "pp_immediate: AT&T, symbolic" =
-      Format.printf "%a@." pp_immediate (DispSymbolic "kappa");
-      [%expect {| $kappa |}]
-  end
+  let%expect_test "pp_immediate: AT&T, symbolic" =
+    Format.printf "%a@." pp_immediate (DispSymbolic "kappa");
+    [%expect {| $kappa |}]
+end
 
-module IntelSpecific =
-  struct
+(** Parts specific to Intel *)
+module IntelSpecific = struct
+  let pp_comment ~pp f = Format.fprintf f "@[<h>; %a@]" pp
+
+  let%expect_test "pp_comment: Intel" =
+    Format.printf "%a@."
+      (pp_comment ~pp:String.pp) "intel comment";
+    [%expect {| ; intel comment |}]
+end
+
+(** Parts specific to Herd7 *)
+module Herd7Specific = struct
+  let pp_comment ~pp f = Format.fprintf f "@[<h>// %a@]" pp
+
+  let%expect_test "pp_comment: Herd7" =
+    Format.printf "%a@."
+      (pp_comment ~pp:String.pp) "herd comment";
+    [%expect {| // herd comment |}]
+end
+
+(** Parts common to Intel and Herd7 *)
+module IntelAndHerd7 = struct
     let pp_reg f reg = String.pp f (RegTable.to_string_exn reg)
 
     let%expect_test "pp_reg: intel, EAX" =
@@ -441,8 +471,14 @@ let%expect_test "pp_opcode: movw (AT&T)" =
   Format.printf "%a@." ATT.pp_opcode (OpSized (`Mov, SWord));
   [%expect {| movw |}]
 
-module Intel = Make(IntelSpecific)
-module Herd7 = Make(IntelSpecific) (* FIXME! *)
+module Intel = Make(struct
+    include IntelSpecific
+    include IntelAndHerd7
+  end)
+module Herd7 = Make(struct
+    include Herd7Specific
+    include IntelAndHerd7
+  end)
 
 let pp_ast f ast =
   Format.pp_open_vbox f 0;

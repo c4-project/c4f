@@ -92,16 +92,20 @@ module Make (LS : Language.Intf) =
       | Instruction ins -> stringify_ins ins
       | Other -> "??"
 
+    let pp_explanation f exp =
+      Format.fprintf f "@[<--@ @[%s%a@]@]"
+        (stringify_stm_basic exp.abs_type)
+        Language.AbsStatement.Flag.pp_set exp.flags
+
     let pp_statement f exp =
       (* TODO(@MattWindsor91): emit '<-- xyz' in a comment *)
       let open Language.AbsStatement in
       match exp.abs_type with
       | Blank -> () (* so as not to clutter up blank lines *)
       | _ ->
-         Format.fprintf f "@[<h>%a@ <--@ @[%s%a@]@]@,"
+         Format.fprintf f "@[<h>%a@ %a@]@,"
                         LS.Statement.pp exp.original
-                        (stringify_stm_basic exp.abs_type)
-                        Language.AbsStatement.Flag.pp_set exp.flags
+                        (LS.pp_comment ~pp:pp_explanation) exp
 
     let pp f exp =
       Format.pp_open_vbox f 0;

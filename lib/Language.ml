@@ -144,7 +144,14 @@ module SymSet = Set.Make(String)
 
 module type BaseS = sig
   val name : string
+
   val is_program_label : string -> bool
+
+  val pp_comment
+    :  pp:(Format.formatter -> 'a -> unit)
+    -> Format.formatter
+    -> 'a
+    -> unit
 end
 
 module type StatementS = sig
@@ -279,8 +286,7 @@ module type Intf = sig
 end
 
 module Make (M : S) = struct
-  let name = M.name
-  let is_program_label = M.is_program_label
+  include (M : BaseS)
 
   module Instruction = struct
     include M.Instruction

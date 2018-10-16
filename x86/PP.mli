@@ -47,7 +47,7 @@ copyright notice follow. *)
 (** Pretty-printing for x86
 
 This module is organised along dialect boundaries: first, we give an
-   interface module [S] that exposes the most useful pretty-printers
+   interface module [Printer] that exposes the most useful pretty-printers
    for the x86 AST; then, we give an implementation for each of the
    dialects we support.
 
@@ -58,31 +58,40 @@ Note that changing the pretty-printer from one dialect to another does
 
 open Ast
 
-module type S =
-  sig
-    val pp_reg : Format.formatter -> reg -> unit
-    val pp_indirect : Format.formatter -> indirect -> unit
-    val pp_location : Format.formatter -> location -> unit
+module type Printer = sig
+  val pp_reg : Format.formatter -> reg -> unit
+  val pp_indirect : Format.formatter -> indirect -> unit
+  val pp_immediate : Format.formatter -> disp -> unit
 
-    val pp_bop : Format.formatter -> bop -> unit
-    val pp_operand : Format.formatter -> operand -> unit
+  (** [pp_comment ~pp f k] prints a line comment whose body is
+      given by invoking [pp] on [k]. *)
+  val pp_comment
+    :  pp:(Format.formatter -> 'a -> unit)
+    -> Format.formatter
+    -> 'a
+    -> unit
 
-    val pp_prefix : Format.formatter -> prefix -> unit
+  val pp_location : Format.formatter -> location -> unit
 
-    (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
-    val pp_opcode : Format.formatter -> opcode -> unit
+  val pp_bop : Format.formatter -> bop -> unit
+  val pp_operand : Format.formatter -> operand -> unit
 
-    val pp_instruction : Format.formatter -> instruction -> unit
+  val pp_prefix : Format.formatter -> prefix -> unit
 
-    val pp_statement : Format.formatter -> statement -> unit
+  (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
+  val pp_opcode : Format.formatter -> opcode -> unit
+
+  val pp_instruction : Format.formatter -> instruction -> unit
+
+  val pp_statement : Format.formatter -> statement -> unit
 end
 
 (** [ATT] provides pretty-printing for AT&T-syntax x86. *)
-module ATT : S
+module ATT : Printer
 (** [Intel] provides pretty-printing for Intel-syntax x86. *)
-module Intel : S
+module Intel : Printer
 (** [Herd7] provides pretty-printing for Herd-syntax x86. *)
-module Herd7 : S
+module Herd7 : Printer
 
 val pp_ast : Format.formatter -> t -> unit
 
