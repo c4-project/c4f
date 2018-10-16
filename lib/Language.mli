@@ -380,6 +380,10 @@ module type Intf = sig
       -> t
       -> bool
 
+    (** [is_jump_pair x y] returns true if [x] is a jump instruction,
+        [y] is a label, and [x] is jumping to [y]. *)
+    val is_jump_pair : t -> t -> bool
+
     (** [is_nop stm] decides whether [stm] appears to be a NOP. *)
     val is_nop : t -> bool
 

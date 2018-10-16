@@ -243,7 +243,7 @@ module type Intf = sig
     val is_stack_manipulation : t -> bool
   end
 
-  module Statement :  sig
+  module Statement : sig
     include StatementS with type ins = Instruction.t
 
     module OnSymbols
@@ -259,12 +259,15 @@ module type Intf = sig
     val is_stack_manipulation : t -> bool
 
     val is_directive : t -> bool
+
     val is_label : t -> bool
     val is_unused_label
       :  ?ignore_boundaries:bool
       -> jsyms:SymSet.t
       -> t
       -> bool
+    val is_jump_pair : t -> t -> bool
+
     val is_nop : t -> bool
     val is_program_boundary : t -> bool
 
@@ -365,6 +368,11 @@ module Make (M : S) = struct
       is_label stm
       && disjoint jsyms (OnSymbols.set stm)
       && not (ignore_boundaries && is_program_boundary stm)
+
+    let is_jump_pair x y =
+      is_jump x
+      && is_label y
+      && OnSymbols.Set.equal (OnSymbols.set x) (OnSymbols.set y)
 
     let flags ~jsyms stm =
       [ is_unused_label ~jsyms stm, `UnusedLabel

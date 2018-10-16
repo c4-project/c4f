@@ -524,13 +524,7 @@ module Make (LH : LangHookS)
   let remove_useless_jumps prog =
     let rec mu skipped ctx =
       function
-      | x::x'::xs
-        when LH.L.Statement.(
-            is_jump x
-            && is_label x'
-            && OnSymbols.Set.equal
-                   (OnSymbols.set x) (OnSymbols.set x')
-          ) ->
+      | x::x'::xs when LH.L.Statement.is_jump_pair x x' ->
         let ctx' = Ctx.({ ctx with proglen = pred ctx.proglen }) in
         mu skipped ctx' (x'::xs)
       | x::x'::xs ->
