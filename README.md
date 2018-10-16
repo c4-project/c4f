@@ -103,8 +103,16 @@ If this succeeds, you should be able to run `act` _without_
 
 ### Testing
 
-`dune runtest` will run `act`'s _expects_ tests, and output any
+`dune runtest` will run `act`'s test suite, and output any
 discrepancies in `act`'s output as diffs.
+
+`act` has the following types of test:
+
+- _expects tests_, which are inlined into the code, and test the
+  immediate output of various `act` functions;
+- _regression tests_, which run the explainer and litmusifier on a
+  directory of sample assembly and diff the result against a last
+  known good output (see `bin/tests` and `bin/dune` for the tests)
 
 
 ## How to use `act`

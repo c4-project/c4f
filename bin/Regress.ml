@@ -25,11 +25,13 @@ open Core
 open Lib
 open Utils
 
-let regress_explain_file (l : (module Litmusifier.Intf)) path file =
+let regress_run_litmusifier (l : (module Litmusifier.Intf))
+    path mode passes file =
   let open Or_error.Let_syntax in
   let module L = (val l) in
 
-  printf "## %s\n" file;
+  printf "## %s\n\n```\n" file;
+  Out_channel.flush stdout;
 
   let o =
     { OutputCtx.vf = MyFormat.null_formatter ()
@@ -44,8 +46,8 @@ let regress_explain_file (l : (module Litmusifier.Intf)) path file =
       ; iname = file
       ; inp
       ; outp
-      ; mode = `Explain
-      ; passes = Sanitiser.Pass.explain
+      ; mode
+      ; passes
       }
   in
 
@@ -53,29 +55,43 @@ let regress_explain_file (l : (module Litmusifier.Intf)) path file =
     Io.with_input_and_output ~f (`File (path ^/ file)) `Stdout
   in
 
-  Format.close_box ();
+  Out_channel.flush stdout;
+  printf "```\n";
+
   return ()
 ;;
 
-let regress_explain test_path =
+let regress_run_litmusifier_many modename mode passes test_path =
   let open Or_error.Let_syntax in
 
-  printf "# Explanation tests\n\n";
+  printf "# %s tests\n\n" modename;
 
   let emits = ["x86"; "att"] in
-  let path = MyFilename.concat_list ([test_path; "explain"] @ emits) in
+  let path = MyFilename.concat_list ([test_path; "asm"] @ emits) in
   let%bind l = LangSupport.get_litmusifier ~emits in
   let%bind testfiles = Io.Dir.get_files ~ext:"s" path in
-  let results = List.map ~f:(regress_explain_file l path) testfiles in
+  let results = List.map
+      ~f:(regress_run_litmusifier l path mode passes) testfiles
+  in
   let%bind _ = Or_error.combine_errors_unit results in
-
-  printf "\nRan %d test(s).\n" (List.length testfiles);
+  printf "\nRan %d test(s).\n\n" (List.length testfiles);
   return ()
+;;
+
+let regress_explain =
+  regress_run_litmusifier_many "Explainer" `Explain
+    (Sanitiser.Pass.explain)
+;;
+
+let regress_litmusify =
+  regress_run_litmusifier_many "Litmusifier" `Litmusify
+    (Sanitiser.Pass.all_set ())
 ;;
 
 let regress test_path =
   let open Or_error.Let_syntax in
   let%bind _ = regress_explain test_path in
+  let%bind _ = regress_litmusify test_path in
   Out_channel.newline stdout;
   return ()
 ;;

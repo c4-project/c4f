@@ -1,0 +1,76 @@
+# Explainer tests
+
+## gcc_macho_o0_moves.s
+
+```
+_P0:  # <-- label (unused label, program boundary)
+pushl %EBP # <-- stack (manipulates stack)
+movl %ESP, %EBP # <-- move (manipulates stack)
+subl $16, %ESP # <-- arithmetic (manipulates stack)
+movl _y, %EAX # <-- move
+movl %EAX, -4(%EBP) # <-- move
+movl -4(%EBP), %EAX # <-- move
+movl %EAX, _t0r0 # <-- move
+movl _t0r0, %EAX # <-- move
+cmpl $1, %EAX # <-- comparison
+jne L3 # <-- jump
+movl $1, _x # <-- move
+L3:  # <-- label
+leave  # <-- calling convention
+ret  # <-- return to caller
+_P1:  # <-- label (unused label, program boundary)
+pushl %EBP # <-- stack (manipulates stack)
+movl %ESP, %EBP # <-- move (manipulates stack)
+subl $16, %ESP # <-- arithmetic (manipulates stack)
+movl _x, %EAX # <-- move
+movl %EAX, _t1r0 # <-- move
+movl _t1r0, %EAX # <-- move
+cmpl $1, %EAX # <-- comparison
+jne L6 # <-- jump
+movl $1, -4(%EBP) # <-- move
+movl -4(%EBP), %EAX # <-- move
+movl %EAX, _y # <-- move
+mfence  # <-- memory fence
+L6:  # <-- label
+leave  # <-- calling convention
+ret  # <-- return to caller
+```
+
+Ran 1 test(s).
+
+# Litmusifier tests
+
+## gcc_macho_o0_moves.s
+
+```
+X86 gcc_macho_o0_moves.s
+
+{
+    ZUt0r0 = 0;
+    ZUt1r0 = 0;
+    ZUx = 0;
+    ZUy = 0;
+    t0sZM4 = 0;
+    t1sZM4 = 0;
+    
+}
+
+P0                 | P1                 ;
+movl EAX, [ZUy]    | movl EAX, [ZUx]    ;
+movl [t0sZM4], EAX | movl [ZUt1r0], EAX ;
+movl EAX, [t0sZM4] | movl EAX, [ZUt1r0] ;
+movl [ZUt0r0], EAX | cmp EAX, 1         ;
+movl EAX, [ZUt0r0] | jne L6             ;
+cmp EAX, 1         | movl [t1sZM4], 1   ;
+jne L3             | movl EAX, [t1sZM4] ;
+movl [ZUx], 1      | movl [ZUy], EAX    ;
+L3:                | mfence             ;
+                   | L6:                ;
+
+
+locations [ZUt0r0; ZUt1r0; ZUx; ZUy; t0sZM4; t1sZM4]
+```
+
+Ran 1 test(s).
+
+
