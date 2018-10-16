@@ -31,7 +31,7 @@ let run_herd prog litname _ oc =
 let command =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"Converts an assembly file to a litmus test"
+    ~summary:"converts an assembly file to a litmus test"
     [%map_open
      let spec_file =
        flag "spec"

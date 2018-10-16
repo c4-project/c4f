@@ -27,7 +27,7 @@ open Lib
 let command =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"Explains act's understanding of an assembly file"
+    ~summary:"explains act's understanding of an assembly file"
     [%map_open
      let spec_file =
        flag "spec"

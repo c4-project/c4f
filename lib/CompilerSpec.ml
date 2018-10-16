@@ -56,8 +56,24 @@ end
 
 type set = (Id.t, t) List.Assoc.t [@@deriving sexp]
 
+let pp_ssh_stanza f =
+  function
+  | None -> String.pp f "local"
+  | Some { host; user = Some u; copy_dir } ->
+    Format.fprintf f "%s@@%s:%s" host u copy_dir
+  | Some { host; user = None; copy_dir } ->
+    Format.fprintf f "%s:%s" host copy_dir
+;;
+
+let pp_herd_stanza f =
+  function
+  | None -> String.pp f "no"
+  | Some h -> Format.fprintf f "yes:@ %s" h
+;;
+
 let pp f spec =
   Format.pp_open_vbox f 0;
+  if not spec.enabled then Format.fprintf f "-- DISABLED --@,";
   MyFormat.pp_kv f "Style" pp_style spec.style;
   Format.pp_print_cut f ();
   MyFormat.pp_kv f "Emits"
@@ -66,13 +82,15 @@ let pp f spec =
        String.pp)
     spec.emits;
   Format.pp_print_cut f ();
-  MyFormat.pp_kv f "Command" Format.pp_print_string spec.cmd;
+  MyFormat.pp_kv f "Command"
+    (Format.pp_print_list ~pp_sep:(Format.pp_print_space) String.pp)
+    (spec.cmd :: spec.argv);
   Format.pp_print_cut f ();
-  MyFormat.pp_kv f "Arguments" (Format.pp_print_list
-                                  ~pp_sep:(Format.pp_print_space)
-                                  (Format.pp_print_string))
-                             spec.argv;
+  MyFormat.pp_kv f "Host" pp_ssh_stanza spec.ssh;
+  Format.pp_print_cut f ();
+  MyFormat.pp_kv f "Herd" pp_herd_stanza spec.herd;
   Format.pp_close_box f ()
+;;
 
 let load_specs ~path =
   Or_error.(

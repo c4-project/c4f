@@ -21,17 +21,9 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Main entry point into act *)
+(** The 'specs' command *)
 
 open Core
 
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    [ "explain"  , Explain.command
-    ; "litmusify", Litmusify.command
-    ; "memalloy" , Memalloy.command
-    ; "specs"    , Specs.command
-    ]
-
-let () = Command.run command
+(** [command] is the top-level 'specs' command. *)
+val command : Command.t

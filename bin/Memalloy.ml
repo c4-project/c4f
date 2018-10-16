@@ -185,7 +185,7 @@ let run ?(local_only=false) ~in_root ~out_root o specs =
 let command =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"Runs automatic testing over a memalloy output directory"
+    ~summary:"runs automatic testing over a memalloy output directory"
     [%map_open
       let spec_file =
         flag "spec"
