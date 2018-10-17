@@ -144,6 +144,63 @@ module Symbol = struct
   type t = string
 
   module Set = Set.Make (String)
+
+  module Sort = struct
+    module M = struct
+      type t =
+        | Jump
+        | Heap
+        | Label
+          [@@deriving enum, sexp]
+
+      let table =
+        [ Jump,  "jump"
+        ; Heap,  "heap"
+        ; Label, "label"
+        ]
+    end
+
+    include M
+    include Enum.ExtendTable (M)
+  end
+
+  module Table = struct
+    type elt = t
+
+    (* Not necessarily an associative list: each symbol might be
+       in multiple different sort buckets. *)
+    type nonrec t = (t * Sort.t) list
+
+    let empty = [];;
+
+    let of_sets =
+      List.concat_map
+        ~f:(fun (set, sort) ->
+            List.map ~f:(fun sym -> (sym, sort))
+              (Set.to_list set)
+          )
+    ;;
+
+    let add tbl sym sort = (sym, sort) :: tbl;;
+
+    let remove tbl sym sort =
+      MyList.exclude
+        ~f:(Tuple2.equal ~eq1:String.equal ~eq2:Sort.equal (sym, sort))
+        tbl
+    ;;
+
+    let set_of_sorts tbl sorts =
+      tbl
+      |> List.filter_map
+        ~f:(fun (sym, sort) ->
+            if Sort.Set.mem sorts sort then Some sym else None)
+      |> Set.of_list
+    ;;
+
+    let set_of_sort tbl sort = set_of_sorts tbl (Sort.Set.singleton sort);;
+
+    let set tbl = tbl |> List.map ~f:fst |> Set.of_list;;
+  end
 end
 
 
@@ -275,7 +332,7 @@ module type Intf = sig
     val is_label : t -> bool
     val is_unused_label
       :  ?ignore_boundaries:bool
-      -> jsyms:Symbol.Set.t
+      -> syms:Symbol.Table.t
       -> t
       -> bool
     val is_jump_pair : t -> t -> bool
@@ -283,14 +340,17 @@ module type Intf = sig
     val is_nop : t -> bool
     val is_program_boundary : t -> bool
 
-    val flags : jsyms:Symbol.Set.t -> t -> AbsStatement.Flag.Set.t
+    val flags : syms:Symbol.Table.t -> t -> AbsStatement.Flag.Set.t
   end
 
-  val heap_symbols : Statement.t list -> Symbol.Set.t
-  val jump_symbols : Statement.t list -> Symbol.Set.t
+  val symbols : Statement.t list -> Symbol.Table.t
 end
 
-module Make (M : S) = struct
+module Make (M : S)
+  : Intf with type Constant.t    = M.Constant.t
+          and type Location.t    = M.Location.t
+          and type Instruction.t = M.Instruction.t
+          and type Statement.t   = M.Statement.t = struct
   include (M : BaseS)
 
   module Instruction = struct
@@ -375,7 +435,8 @@ module Make (M : S) = struct
       | AbsStatement.Label l -> is_program_label l
       | _ -> false
 
-    let is_unused_label ?(ignore_boundaries=false) ~jsyms stm =
+    let is_unused_label ?(ignore_boundaries=false) ~syms stm =
+      let jsyms = Symbol.Table.set_of_sort syms Symbol.Sort.Jump in
       is_label stm
       && disjoint jsyms (OnSymbols.set stm)
       && not (ignore_boundaries && is_program_boundary stm)
@@ -385,8 +446,8 @@ module Make (M : S) = struct
       && is_label y
       && OnSymbols.Set.equal (OnSymbols.set x) (OnSymbols.set y)
 
-    let flags ~jsyms stm =
-      [ is_unused_label ~jsyms stm, `UnusedLabel
+    let flags ~syms stm =
+      [ is_unused_label ~syms  stm, `UnusedLabel
       ; is_program_boundary    stm, `ProgBoundary
       ; is_stack_manipulation  stm, `StackManip
       ]
@@ -410,8 +471,6 @@ module Make (M : S) = struct
     include M.Constant
   end
 
-  (** [heap_symbols] retrieves the set of all symbols that appear to be
-      standing in for heap locations. *)
   let heap_symbols prog =
     prog
     |> List.concat_map ~f:Statement.OnInstructions.list
@@ -431,4 +490,17 @@ module Make (M : S) = struct
     |> List.filter ~f:Statement.is_jump
     |> List.map ~f:Statement.OnSymbols.set
     |> Symbol.Set.union_list
+
+  let label_symbols prog =
+    prog
+    |> List.filter ~f:Statement.is_label
+    |> List.map ~f:Statement.OnSymbols.set
+    |> Symbol.Set.union_list
+
+  let symbols prog =
+    Symbol.Table.of_sets
+      [ heap_symbols prog , Symbol.Sort.Heap
+      ; jump_symbols prog , Symbol.Sort.Jump
+      ; label_symbols prog, Symbol.Sort.Label
+      ]
 end

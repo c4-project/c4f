@@ -55,15 +55,15 @@ module Make (LS : Language.Intf) =
       { statements : stm_explanation list
       }
 
-    let explain_statement jsyms stm =
+    let explain_statement syms stm =
       { original = stm
       ; abs_type = LS.Statement.abs_type stm
-      ; flags = LS.Statement.flags ~jsyms stm
+      ; flags = LS.Statement.flags ~syms stm
       }
 
     let explain prog =
-      let jsyms = LS.jump_symbols prog in
-      { statements = List.map ~f:(explain_statement jsyms) prog
+      let syms = LS.symbols prog in
+      { statements = List.map ~f:(explain_statement syms) prog
       }
 
     let stringify_ins =

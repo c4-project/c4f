@@ -138,6 +138,51 @@ module Symbol : sig
 
   (** [Set] is a set module for symbols. *)
   module Set : Set.S with type Elt.t = string
+
+  (** [Sort] is a module containing an enumeration of symbol sorts. *)
+  module Sort : sig
+    type t =
+      | Jump
+      | Heap
+      | Label
+
+    include Enum.ExtensionTable with type t := t
+  end
+
+  (** [Table] is a module concerning symbol tables: many-to-many
+     mappings between symbols and sorts. *)
+  module Table : sig
+    type elt = t
+    type t
+
+    (** [empty] is the empty table. *)
+    val empty : t;;
+
+    (** [of_sets sets] expands a symbol-set-to-sort associative list
+       into a [t]. *)
+
+    (** [add tbl sym sort] registers [sym] as a symbol with sort
+       [sort] in [tbl], returning a new table. *)
+    val add : t -> elt -> Sort.t -> t;;
+
+    (** [remove tbl sym sort] de-registers [sym] as a symbol with sort
+       [sort] in [tbl], returning a new table.
+
+        If [sym] also maps to another sort, those mappings remain. *)
+    val remove : t -> elt -> Sort.t -> t;;
+
+    (** [set_of_sorts tbl sorts] returns all symbols in [tbl] with a
+       sort in [sorts], as a symbol set. *)
+    val set_of_sorts : t -> Sort.Set.t -> Set.t;;
+
+    (** [set_of_sort tbl sort] returns all symbols in [tbl] with sort
+       [sort], as a symbol set. *)
+    val set_of_sort : t -> Sort.t -> Set.t;;
+
+    (** [set tbl] returns all symbols in [tbl]
+       as a symbol set. *)
+    val set : t -> Set.t;;
+  end
 end
 
 (*
@@ -375,16 +420,16 @@ module type Intf = sig
      label. *)
     val is_label : t -> bool
 
-    (** [is_unused_label ignore_boundaries ~jsyms stm] decides whether
-       [stm] is a label whose symbol doesn't appear in the given set
-       [jsyms] of jump destination symbols.
+    (** [is_unused_label ignore_boundaries ~syms stm] decides whether
+       [stm] is a label whose symbol isn't registered as a jump
+        destination in [syms].
 
         If [ignore_boundaries] is present and true, [is_unused_label]
        will report program boundaries as in-use, even if they aren't
        jumped to from [jsyms]. *)
     val is_unused_label
       :  ?ignore_boundaries:bool
-      -> jsyms:Symbol.Set.t
+      -> syms:Symbol.Table.t
       -> t
       -> bool
 
@@ -399,19 +444,14 @@ module type Intf = sig
       a boundary between two Litmus programs. *)
     val is_program_boundary : t -> bool
 
-    (** [flags ~jsyms stm] summarises the above boolean functions as
-        a set of [stm_flag]s.  It uses [jsyms] to calculate whether
+    (** [flags ~syms stm] summarises the above boolean functions as
+        a set of [stm_flag]s.  It uses [syms] to calculate whether
         the statement is an unused label. *)
-    val flags : jsyms:Symbol.Set.t -> t -> AbsStatement.Flag.Set.t
+    val flags : syms:Symbol.Table.t -> t -> AbsStatement.Flag.Set.t
   end
 
-  (** [heap_symbols] retrieves the set of all symbols that appear to be
-      standing in for heap locations. *)
-  val heap_symbols : Statement.t list -> Symbol.Set.t
-
-  (** [jump_symbols] retrieves the set of all symbols that appear to be
-      jump targets. *)
-  val jump_symbols : Statement.t list -> Symbol.Set.t
+  (** [symbols] retrieves the symbol table for a given program. *)
+  val symbols : Statement.t list -> Symbol.Table.t
 end
 
 (** [Make] builds a module satisfying [Intf] from a module satisfying [S]. *)

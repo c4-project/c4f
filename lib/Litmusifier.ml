@@ -74,7 +74,12 @@ module Make (M : S) : Intf = struct
   ;;
 
   let make_init (progs : LS.Statement.t list list) : (string, LS.Constant.t) List.Assoc.t =
-    let syms = Language.Symbol.Set.union_list (List.map ~f: LS.heap_symbols progs) in
+    let get_hsyms prog =
+      prog
+      |> LS.symbols
+      |> Fn.flip Language.Symbol.Table.set_of_sort Language.Symbol.Sort.Heap
+    in
+    let syms = Language.Symbol.Set.union_list (List.map ~f:get_hsyms progs) in
     List.map ~f:(fun s -> (s, LS.Constant.zero))
       (Language.Symbol.Set.to_list syms)
   ;;

@@ -31,33 +31,12 @@ module type Intf = sig
   include Monad.S
   include MyMonad.Extensions with type 'a t := 'a t
 
-  (*
-   * Building stateful computations
-   *)
-
-  (** [make] creates a context-sensitive computation that can modify
-     the current context. *)
-  val make : (state -> (state * 'a)) -> 'a t
-
-  (** [peek] creates a context-sensitive computation that can look at
-     the current context, but not modify it. *)
-  val peek : (state -> 'a) -> 'a t
-
-  (** [modify] creates a context-sensitive computation that can look at
-     and modify the current context, but not modify the value passing
-     through. *)
-  val modify : (state -> state) -> 'a -> 'a t
-
-  (*
-   * Running a stateful computation
-   *)
-
-  (** [run] unfolds a [t] into a function from context
-      to context and final result. *)
-  val run : 'a t -> state -> (state * 'a)
-
-  (** [run'] behaves like [run], but discards the final context. *)
-  val run' : 'a t -> state -> 'a
+  val make : (state -> (state * 'a)) -> 'a t;;
+  val peek : (state -> 'a) -> 'a t;;
+  val modify : (state -> state) -> 'a -> 'a t;;
+  val modify_unit : (state -> state) -> unit t;;
+  val run : 'a t -> state -> (state * 'a);;
+  val run' : 'a t -> state -> 'a;;
 end
 
 module type S = sig
@@ -78,21 +57,24 @@ module Make (M : S)
         fun state ->
           let (state', a) = wc state in
           (state', f a)
-      let map = `Custom map'
+      ;;
+      let map = `Custom map';;
       let bind wc ~f =
         fun state ->
           let (state', a) = wc state in
           (f a) state'
-      let return a = fun state -> (state, a)
+      ;;
+      let return a = fun state -> (state, a);;
     end)
   end
 
   include Inner
   include MyMonad.Extend(Inner)
 
-  let run = Fn.id
-  let run' f ctx = f ctx |> snd
-  let make = Fn.id
-  let peek f ctx = ctx, f ctx
-  let modify f a ctx = f ctx, a
+  let run = Fn.id;;
+  let run' f ctx = f ctx |> snd;;
+  let make = Fn.id;;
+  let peek f ctx = ctx, f ctx;;
+  let modify f a ctx = f ctx, a;;
+  let modify_unit f = modify f ();;
 end

@@ -62,8 +62,7 @@ module type WarnIntf = sig
   include Pretty_printer.S with type t := t
 end
 
-module Warn (L : Language.Intf) (C : CustomWarnS) =
-struct
+module Warn (L : Language.Intf) (C : CustomWarnS) = struct
   module L = L
   module C = C
 
@@ -173,8 +172,7 @@ module type CtxIntf = sig
     { progname : string
     ; proglen  : int
     ; endlabel : string option
-    ; hsyms    : Language.Symbol.Set.t
-    ; jsyms    : Language.Symbol.Set.t
+    ; syms     : Language.Symbol.Table.t
     ; passes   : Pass.Set.t
     ; warnings : Warn.t list
     }
@@ -183,10 +181,21 @@ module type CtxIntf = sig
 
   val initial : passes:Pass.Set.t -> progname:string -> proglen:int -> ctx
 
+  val pass_enabled : Pass.t -> bool t
   val (|->) : Pass.t -> ('a -> 'a t) -> ('a -> 'a t)
 
   val warn_in_ctx : ctx -> Warn.body -> ctx
   val warn : Warn.body -> 'a -> 'a t
+
+  val add_sym
+    :  Language.Symbol.t
+    -> Language.Symbol.Sort.t
+    -> Language.Symbol.t t
+  ;;
+
+  val syms_with_sorts
+    :  Language.Symbol.Sort.t list
+    -> Language.Symbol.Set.t t
 
   val make_fresh_label : string -> string t
   val make_fresh_heap_loc : string -> string t
@@ -211,23 +220,25 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
     { progname : string
     ; proglen  : int
     ; endlabel : string option
-    ; hsyms    : Language.Symbol.Set.t
-    ; jsyms    : Language.Symbol.Set.t
+    ; syms     : Language.Symbol.Table.t
     ; passes   : Pass.Set.t
     ; warnings : Warn.t list
-    }
+    }[@@deriving fields]
 
   let initial ~passes ~progname ~proglen =
     { progname
     ; proglen
     ; endlabel = None
-    ; hsyms    = Language.Symbol.Set.empty
-    ; jsyms    = Language.Symbol.Set.empty
+    ; syms     = Language.Symbol.Table.empty
     ; passes
     ; warnings = []
     }
 
   include State.Make (struct type state = ctx end)
+
+  let pass_enabled pass =
+    peek (fun ctx -> Pass.Set.mem ctx.passes pass)
+  ;;
 
   let (|->) pass f a =
     make
@@ -235,6 +246,7 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
          if Pass.Set.mem ctx.passes pass
          then run (f a) ctx
          else (ctx, a))
+  ;;
 
   let warn_in_ctx ctx w =
     let ent = { Warn.progname = ctx.progname; body = w } in
@@ -243,17 +255,39 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
   let warn (w : Warn.body) =
     modify (Fn.flip warn_in_ctx w)
 
-  let make_fresh_label prefix =
+  let add_sym sym sort =
     make
       (fun ctx ->
-         let l = freshen_label ctx.jsyms prefix in
-         { ctx with jsyms = Language.Symbol.Set.add ctx.jsyms l }, l)
+         { ctx with syms = Language.Symbol.Table.add ctx.syms sym sort }
+         , sym
+      )
+  ;;
+
+  let syms_with_sorts sorts =
+    Language.Symbol.(
+      let open Let_syntax in
+      let%bind all_syms = peek (Field.get Fields_of_ctx.syms) in
+      return (Table.set_of_sorts all_syms (Sort.Set.of_list sorts))
+    )
+  ;;
+
+  let make_fresh_label prefix =
+    Language.Symbol.(
+      let open Let_syntax in
+      let%bind syms = syms_with_sorts [ Sort.Jump; Sort.Label ] in
+      let l = freshen_label syms prefix in
+      add_sym l Sort.Label
+    )
+  ;;
 
   let make_fresh_heap_loc prefix =
-    make
-      (fun ctx ->
-         let l = freshen_label ctx.hsyms prefix in
-         { ctx with hsyms = Language.Symbol.Set.add ctx.hsyms l }, l)
+    Language.Symbol.(
+      let open Let_syntax in
+      let%bind syms = syms_with_sorts [ Sort.Heap ] in
+      let l = freshen_label syms prefix in
+      add_sym l Sort.Heap
+    )
+  ;;
 end
 
 (*
@@ -477,20 +511,20 @@ module Make (LH : LangHookS)
      statements in [prog] that have no use in general and cannot be
      rewritten. *)
   let remove_generally_irrelevant_statements prog =
-    Ctx.peek
-      (fun { jsyms; passes; _ } ->
-         let remove_boundaries =
-           Pass.Set.mem passes Pass.RemoveBoundaries
-         in
-         let ignore_boundaries = not remove_boundaries in
-         let matchers =
-           LH.L.Statement.(
-             [ is_nop
-             ; is_directive
-             ; is_unused_label ~ignore_boundaries ~jsyms
-             ])
-         in
-         MyList.exclude ~f:(any matchers) prog)
+    let open Ctx.Let_syntax in
+    let%bind syms = Ctx.peek (fun ctx -> ctx.syms) in
+    let%bind remove_boundaries =
+      Ctx.pass_enabled Pass.RemoveBoundaries
+    in
+    let ignore_boundaries = not remove_boundaries in
+    let matchers =
+      LH.L.Statement.(
+        [ is_nop
+        ; is_directive
+        ; is_unused_label ~ignore_boundaries ~syms
+        ])
+    in
+    return (MyList.exclude ~f:(any matchers) prog)
 
 
   (** [remove_litmus_irrelevant_statements prog] completely removes
@@ -522,12 +556,8 @@ module Make (LH : LangHookS)
   let update_symbol_tables
       (prog : LH.L.Statement.t list) =
     Ctx.modify
-      (fun ctx ->
-         ( { ctx with
-             hsyms    = LH.L.heap_symbols prog
-           ; jsyms    = LH.L.jump_symbols prog
-           }
-         ))
+      (fun ctx -> { ctx with syms = LH.L.symbols prog }
+      )
       prog
 
   (** [add_end_label] adds an end-of-program label to the current
@@ -542,7 +572,9 @@ module Make (LH : LangHookS)
       let%bind progname = (Ctx.peek (fun ctx -> ctx.progname)) in
       let prefix = "END" ^ progname in
       let%bind lbl = Ctx.make_fresh_label prefix in
-      return (prog @ [LH.L.Statement.label lbl])
+      Ctx.modify
+        (fun ctx -> { ctx with endlabel = Some lbl })
+        (prog @ [LH.L.Statement.label lbl])
 
   (** [remove_fix prog] performs a loop of statement-removing
      operations until we reach a fixed point in the program length. *)

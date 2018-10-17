@@ -118,12 +118,11 @@ module type CtxIntf = sig
   module Warn : WarnIntf with module L = Lang
 
   type ctx =
-    { progname : string                 (* Name of current program *)
-    ; proglen  : int                    (* Length of current program *)
-    ; endlabel : string option          (* End label of current program *)
-    ; hsyms    : Language.Symbol.Set.t  (* Heap symbols *)
-    ; jsyms    : Language.Symbol.Set.t  (* Jump symbols *)
-    ; passes   : Pass.Set.t             (* Enabled passes *)
+    { progname : string                   (* Name of current program *)
+    ; proglen  : int                      (* Length of current program *)
+    ; endlabel : string option            (* End label of current program *)
+    ; syms     : Language.Symbol.Table.t  (* Symbol table *)
+    ; passes   : Pass.Set.t               (* Enabled passes *)
     ; warnings : Warn.t list
     }
 
@@ -139,6 +138,10 @@ module type CtxIntf = sig
     -> proglen:int
     -> ctx
 
+  (** [pass_enabled pass] is a contextual computation that returns
+      [true] provided that [pass] is enabled. *)
+  val pass_enabled : Pass.t -> bool t;;
+
   (** [p |-> f] guards a contextual computation [f] on the
       pass [p]; it won't run unless [p] is in the current context's
       pass set. *)
@@ -151,6 +154,22 @@ module type CtxIntf = sig
   (** [warn w a] adds a warning [w] to the current context, passing
       [a] through. *)
   val warn : Warn.body -> 'a -> 'a t
+
+  (** [add_sym sym sort] is a context computation that adds
+      [sym] to the context symbol table with sort [sort], then
+      passes [sym] through. *)
+  val add_sym
+    :  Language.Symbol.t
+    -> Language.Symbol.Sort.t
+    -> Language.Symbol.t t
+  ;;
+
+  (** [syms_with_sorts sortlist] is a context computation that gets
+     the set of all symbols in the context's symbol table with sorts
+     in [sortlist]. *)
+  val syms_with_sorts
+    :  Language.Symbol.Sort.t list
+    -> Language.Symbol.Set.t t
 
   (** [make_fresh_label] generates a fresh label with the given prefix
       (in regards to the context's symbol tables), interns it into the

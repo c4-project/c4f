@@ -48,6 +48,10 @@ module type Intf = sig
      through. *)
   val modify : (state -> state) -> 'a -> 'a t
 
+  (** [modify_unit] behaves as [modify], but doesn't pass through a
+      value. *)
+  val modify_unit : (state -> state) -> unit t
+
   (*
    * Running a stateful computation
    *)
