@@ -72,3 +72,45 @@ let get_litmusifier ~emits =
   in
   proc (List.tl_exn emits)
 ;;
+
+module Gcc : Compiler.S = struct
+  let compile_args ~args ~emits ~infile ~outfile =
+    ignore emits;
+    [ "-S"       (* emit assembly *)
+    ; "-fno-pic" (* don't emit position-independent code *)
+    ]
+    @ args
+    @ [ "-o"; outfile; infile]
+  ;;
+
+  let test_args = ["--version"] ;;
+end
+
+let style_modules =
+  [ "gcc", (module Gcc : Compiler.S) ]
+;;
+
+let compiler_module_from_spec (cspec : Compiler.Spec.with_id) =
+  let style = cspec.cspec.style in
+  List.Assoc.find ~equal:String.Caseless.equal style_modules style
+  |> Result.of_option ~error:(Error.createf "Unknown compiler style: %s" style)
+;;
+
+let compiler_from_spec (cspec : Compiler.Spec.with_id) =
+  Compiler.from_spec
+    compiler_module_from_spec
+    cspec
+;;
+
+let test_spec cspec =
+  let open Or_error.Let_syntax in
+  let%bind m = compiler_from_spec cspec in
+  let module M = (val m) in
+  Or_error.tag_arg
+    (M.test ())
+    "A compiler in your spec file didn't respond properly"
+    cspec.cid
+    [%sexp_of:Compiler.Id.t]
+;;
+
+let test_specs specs = Compiler.Set.test ~f:test_spec specs;;

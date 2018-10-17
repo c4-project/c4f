@@ -30,9 +30,28 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
     spec, and hooks up the correct language-dependent modules. *)
 
 open Core
+open Lib
+
+(*
+ * Assembly languages
+ *)
 
 (** [get_litmusifier ~emits] tries to get a [Litmusifier.Intf] for the
    given emits clause. *)
 val get_litmusifier
   :  emits:string list
   -> (module Lib.Litmusifier.Intf) Or_error.t
+
+(*
+ * Compilers
+ *)
+
+(** [compiler_from_spec cid spec] generates a compiler module from
+   [cid] and [spec]. *)
+val compiler_from_spec
+  :  Compiler.Spec.with_id
+  -> (module Compiler.Intf) Or_error.t
+
+(** [test_specs specs] tests all enabled specs in the set [specs], and
+    partitions them into a list of valid specs and test failures. *)
+val test_specs : Compiler.Set.t -> (Compiler.Set.t * Error.t list)

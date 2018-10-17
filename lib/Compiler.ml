@@ -1,38 +1,186 @@
 open Core
+open Sexplib
 open Utils
 
-(** [Intf] is the interface of compiler modules. *)
-module type Intf = sig
-  (** [id] gets the identifier for this compiler. *)
-  val id : CompilerSpec.Id.t
+module Id = struct
+  module T = struct
+    (** [t] is the type of compiler IDs. *)
+    type t = string list [@@deriving compare, hash, sexp]
 
-  (** [test ()] tests that the compiler is working. *)
-  val test : unit -> unit Or_error.t
+    let allowed_id_splits = [ '.' ; ' '; '/'; '\\']
 
-  (** [compile ~infile ~outfile] runs the compiler on [infile],
-      emitting assembly to [outfile] and returning any errors that arise. *)
-  val compile : infile:string -> outfile:string -> unit Or_error.t
+    let of_string =
+      String.split_on_chars ~on:allowed_id_splits
+
+    let to_string =
+      String.concat ~sep:"."
+
+    let module_name = "act.Lib.Compiler.Id"
+  end
+
+  include T
+  include Identifiable.Make_plain (T)
+
+  let to_string_list = Fn.id
+end
+
+module Spec = struct
+  type ssh =
+    { host     : string
+    ; user     : string sexp_option
+    ; copy_dir : string
+    } [@@deriving sexp, fields]
+
+  type t =
+    { enabled : bool [@default true] [@sexp_drop_default]
+    ; style : string
+    ; emits : string sexp_list
+    ; cmd   : string
+    ; argv  : string sexp_list
+    ; herd  : string sexp_option
+    ; ssh   : ssh sexp_option
+    } [@@deriving sexp, fields]
+
+  let pp_ssh_stanza f =
+    function
+    | None -> String.pp f "local"
+    | Some { host; user = Some u; copy_dir } ->
+      Format.fprintf f "%s@@%s:%s" host u copy_dir
+    | Some { host; user = None; copy_dir } ->
+      Format.fprintf f "%s:%s" host copy_dir
+  ;;
+
+  let pp_herd_stanza f =
+    function
+    | None -> String.pp f "no"
+    | Some h -> Format.fprintf f "yes:@ %s" h
+  ;;
+
+  let pp f spec =
+    Format.pp_open_vbox f 0;
+    if not spec.enabled then Format.fprintf f "-- DISABLED --@,";
+    MyFormat.pp_kv f "Style" String.pp spec.style;
+    Format.pp_print_cut f ();
+    MyFormat.pp_kv f "Emits"
+      (Format.pp_print_list
+         ~pp_sep:(Format.pp_print_space)
+         String.pp)
+      spec.emits;
+    Format.pp_print_cut f ();
+    MyFormat.pp_kv f "Command"
+      (Format.pp_print_list ~pp_sep:(Format.pp_print_space) String.pp)
+      (spec.cmd :: spec.argv);
+    Format.pp_print_cut f ();
+    MyFormat.pp_kv f "Host" pp_ssh_stanza spec.ssh;
+    Format.pp_print_cut f ();
+    MyFormat.pp_kv f "Herd" pp_herd_stanza spec.herd;
+    Format.pp_close_box f ()
+  ;;
+
+  type with_id =
+    { cid   : Id.t
+    ; cspec : t
+    }
 end
 
 module type WithSpec = sig
-  val cid : CompilerSpec.Id.t
-  val cspec : CompilerSpec.t
+  val cspec : Spec.with_id
 end
 
-(** [Hooks] is the signature of mechanisms used to tell compilers to
-   do something before/after a compilation.
+module Set = struct
+  (* Wrapping this so that we can use [of_sexp] below. *)
+  module SM = struct
+    type t = (Id.t, Spec.t) List.Assoc.t [@@deriving sexp]
+  end
+  include SM
 
-    The main use of this module is to set up file transfers when doing
-   remote compilation. *)
+  let get specs cid =
+    List.Assoc.find specs ~equal:(Id.equal) cid
+    |> Result.of_option
+      ~error:(Error.create "unknown compiler ID" cid [%sexp_of: Id.t])
+  ;;
+
+  let load ~path =
+    Or_error.(
+      tag ~tag:"Couldn't parse compiler spec file."
+        (try_with
+           (fun () -> Sexp.load_sexp_conv_exn path [%of_sexp: SM.t]))
+    )
+  ;;
+
+  let filter ~f = List.filter ~f:(fun (_, e) -> f e);;
+
+  let test
+      ~(f : Spec.with_id -> unit Or_error.t)
+      (specs : t) : (t * Error.t list) =
+    List.partition_map
+      ~f:(fun (cid, cspec) ->
+          match Result.error (f {cid; cspec}) with
+          | None -> `Fst (cid, cspec)
+          | Some e -> `Snd e)
+      (filter ~f:Spec.enabled specs)
+  ;;
+
+  let map
+      ~(f : Spec.with_id -> 'a) specs =
+    List.map ~f:(fun (cid, cspec) -> f {cid; cspec})
+      (filter ~f:Spec.enabled specs)
+  ;;
+
+  let pp_spec_verbose f (c, s) =
+    MyFormat.pp_kv f (Id.to_string c) Spec.pp s
+  ;;
+
+  let pp_spec_terse f (c, s) =
+    Format.pp_open_hbox f ();
+    let facts =
+      List.concat
+        [ [Id.to_string c]
+        ; if Spec.enabled s then [] else ["(DISABLED)"]
+        ; if Option.is_none (Spec.ssh s) then [] else ["(REMOTE)"]
+        ]
+    in
+    Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp f facts;
+    Format.pp_close_box f ()
+  ;;
+
+  let pp_verbose
+      (verbose : bool) (f : Format.formatter)
+      (specs : t) : unit =
+    Format.pp_open_vbox f 0;
+    Format.pp_print_list
+      ~pp_sep:Format.pp_print_cut
+      (if verbose then pp_spec_verbose else pp_spec_terse)
+      f
+      specs;
+    Format.pp_close_box f ();
+    Format.pp_print_newline f ()
+  ;;
+
+  let pp = pp_verbose true;;
+end
+
+(*
+ * S
+ *)
+
+module type S = sig
+  val test_args : string list
+
+  val compile_args
+    :  args    : string list
+    -> emits   : string list
+    -> infile  : string
+    -> outfile : string
+    -> string list
+end
+
+(*
+ * Hooks
+ *)
+
 module type Hooks = sig
-  (** [pre ~infile ~outfile] is run before compiling, and, if the
-      hook is successful, returns the new infile and outfile to use
-      for the compilation. *)
   val pre : infile:string -> outfile:string -> (string * string) Or_error.t
-
-  (** [post ~infile ~outfile] is run after a successful compile.
-      It receives the *original* input and output file names---not the
-      ones returned by [pre]. *)
   val post : infile:string -> outfile:string -> unit Or_error.t
 end
 
@@ -44,7 +192,7 @@ end
 
 (** [ScpHooks] is a [Hooks] implementation that copies infile and outfile
     to and from a remote directory. *)
-module ScpHooks (C : sig val ssh: CompilerSpec.ssh end) : Hooks = struct
+module ScpHooks (C : sig val ssh: Spec.ssh end) : Hooks = struct
   let scp_to src dst =
     (* Core_extended has scp, but it only goes in one direction. *)
     Or_error.(
@@ -89,33 +237,39 @@ module ScpHooks (C : sig val ssh: CompilerSpec.ssh end) : Hooks = struct
   ;;
 end
 
-module Gcc
-    (S : WithSpec)
-    (H : Hooks)
-    (R : Run.Runner) : Intf = struct
-  let id = S.cid
+(*
+ * Intf and making Intfs
+ *)
 
-  let argv infile outfile =
-    [ "-S"       (* emit assembly *)
-    ; "-fno-pic" (* don't emit position-independent code *)
-    ]
-    @ S.cspec.argv
-    @ [ "-o"; outfile; infile]
-  ;;
+module type Intf = sig
+  include WithSpec
+
+  val test : unit -> unit Or_error.t
+  val compile : infile:string -> outfile:string -> unit Or_error.t
+end
+
+module Make (P : WithSpec) (C : S) (H : Hooks) (R : Run.Runner)
+  : Intf = struct
+
+  include P
 
   let compile ~infile ~outfile =
     let open Or_error.Let_syntax in
     let%bind (infile', outfile') = H.pre ~infile ~outfile in
-    let%bind _ = R.run ~prog:S.cspec.cmd (argv infile' outfile') in
+    let s = P.cspec.cspec in
+    let argv =
+      C.compile_args
+        ~args:s.argv ~emits:s.emits ~infile:infile' ~outfile:outfile'
+    in
+    let%bind _ = R.run ~prog:s.cmd argv in
+    (* NB: H.post intentionally gets sent the original filenames. *)
     H.post ~infile ~outfile
   ;;
 
-  let test () =
-    R.run ~prog:S.cspec.cmd ["--version"]
-  ;;
+  let test () = R.run ~prog:P.cspec.cspec.cmd C.test_args;;
 end
 
-let runner_from_spec (cspec : CompilerSpec.t) =
+let runner_from_spec (cspec : Spec.t) =
   Run.(
     match cspec.ssh with
     | None -> (module Local : Runner)
@@ -129,30 +283,21 @@ let runner_from_spec (cspec : CompilerSpec.t) =
   )
 ;;
 
-let hooks_from_spec (cspec : CompilerSpec.t) =
+let hooks_from_spec (cspec : Spec.t) =
   match cspec.ssh with
   | None -> (module NoHooks : Hooks)
   | Some s -> (module ScpHooks (struct let ssh = s end) : Hooks)
 
-let from_spec cid (cspec : CompilerSpec.t) =
-  let module R = (val runner_from_spec cspec) in
-  let module H = (val hooks_from_spec cspec) in
-  match cspec.style with
-  | Gcc -> (module Gcc(
-      struct
-        let cid = cid
-        let cspec = cspec
-      end
-      )(H)(R) : Intf)
-;;
-
-let test_spec cid cspec =
-  let module M = (val from_spec cid cspec) in
-  Or_error.tag_arg
-    (M.test ())
-    "A compiler in your spec file didn't respond properly"
-    cid
-    [%sexp_of:CompilerSpec.Id.t]
-
-let test_specs specs =
-  CompilerSpec.Set.test ~f:test_spec specs
+let from_spec f (cspec : Spec.with_id) =
+  let open Or_error.Let_syntax in
+  let%bind s = f cspec in
+  let h = hooks_from_spec (cspec.cspec) in
+  let r = runner_from_spec (cspec.cspec) in
+  return
+    (module
+      (Make
+         (struct let cspec = cspec end)
+         (val s : S)
+         (val h : Hooks)
+         (val r : Run.Runner))
+      : Intf)

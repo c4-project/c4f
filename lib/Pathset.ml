@@ -13,14 +13,14 @@ type t =
   ; c_path         : string
   ; litc_path      : string
   ; out_root       : string
-  ; compiler_paths : (CompilerSpec.Id.t, compiler) List.Assoc.t
+  ; compiler_paths : (Compiler.Id.t, compiler) List.Assoc.t
   }
 
 let compiler_paths_of ps cid =
   List.Assoc.find_exn
     ps.compiler_paths
     cid
-    ~equal:(CompilerSpec.Id.equal)
+    ~equal:(Compiler.Id.equal)
 ;;
 
 let compiler_asm_path ps cid =
@@ -75,22 +75,22 @@ let c_path_of results_path name =
 let litc_path_of results_path name =
   [results_path; "litmus"; name]
 
-let asm_dir_of (root : string) (cid : string list) : string list =
-  [root] @ cid @ ["asm"]
+let asm_dir_of (root : string) (cid : Compiler.Id.t) : string list =
+  [root] @ (Compiler.Id.to_string_list cid) @ ["asm"]
 
-let asm_path_of (root : string) (file : string) (cid : string list) : string list =
+let asm_path_of (root : string) (file : string) (cid : Compiler.Id.t) : string list =
   asm_dir_of root cid @ [file]
 
-let lita_dir_of (root : string) (cid : string list) : string list =
-  [root] @ cid @ ["litmus"]
+let lita_dir_of (root : string) (cid : Compiler.Id.t) : string list =
+  [root] @ (Compiler.Id.to_string_list cid) @ ["litmus"]
 
-let lita_path_of (root : string) (file : string) (cid : string list) : string  list =
+let lita_path_of (root : string) (file : string) (cid : Compiler.Id.t) : string list =
   lita_dir_of root cid @ [file]
 
-let herd_dir_of (root : string) (cid : string list) : string list =
-  [root] @ cid @ ["herd"]
+let herd_dir_of (root : string) (cid : Compiler.Id.t) : string list =
+  [root] @ (Compiler.Id.to_string_list cid) @ ["herd"]
 
-let herd_path_of (root : string) (file : string) (cid : string list) : string  list =
+let herd_path_of (root : string) (file : string) (cid : Compiler.Id.t) : string  list =
   herd_dir_of root cid @ [file]
 
 let mkdirs ps =
@@ -128,7 +128,7 @@ let make_compiler root_path basename cid =
 
 let make specs ~in_root ~out_root ~c_fname =
   let basename   = Filename.basename (Filename.chop_extension c_fname) in
-  let spec_map f = CompilerSpec.Set.map ~f:(fun c _ -> (c, f c)) specs in
+  let spec_map f = Compiler.Set.map ~f:(fun {cid; _} -> (cid, f cid)) specs in
   let lit_fname  = basename ^ ".litmus" in
   { basename
   ; out_root
@@ -162,9 +162,9 @@ let pp f ps =
     List.concat_map
       ~f:(
         fun (c, {asm_path; lita_path; herd_path}) ->
-          [ CompilerSpec.Id.to_string c, asm_path
-          ; (CompilerSpec.Id.to_string c) ^ "/litmus", lita_path
-          ; (CompilerSpec.Id.to_string c) ^ "/herd", herd_path
+          [ Compiler.Id.to_string c, asm_path
+          ; (Compiler.Id.to_string c) ^ "/litmus", lita_path
+          ; (Compiler.Id.to_string c) ^ "/herd", herd_path
           ]
       )
       ps.compiler_paths

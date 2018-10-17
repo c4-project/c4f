@@ -28,22 +28,24 @@ open Utils
 let log_stage stage (o : OutputCtx.t) (paths : Pathset.t) cid =
   Format.fprintf o.vf "@[%s[%a]@ %s@]@."
     stage
-    CompilerSpec.Id.pp cid
+    Compiler.Id.pp cid
     paths.basename
 ;;
 
-let compile o paths cid cspec =
+let compile o paths cspec =
+  let open Or_error.Let_syntax in
   (* TODO(@MattWindsor91): inefficiently remaking the compiler module
      every time. *)
-  let module C = (val Compiler.from_spec cid cspec) in
-  log_stage "CC" o paths cid;
+  let%bind c = LangSupport.compiler_from_spec cspec in
+  let module C = (val c) in
+  log_stage "CC" o paths cspec.cid;
   Or_error.tag ~tag:"While compiling to assembly"
     (C.compile
        ~infile:paths.c_path
-       ~outfile:(Pathset.compiler_asm_path paths cid))
+       ~outfile:(Pathset.compiler_asm_path paths cspec.cid))
 ;;
 
-let litmusify o paths cid spec =
+let litmusify o paths {Compiler.Spec.cid; cspec} =
   log_stage "LITMUS" o paths cid;
   Or_error.tag ~tag:"While translating assembly to litmus"
     (Common.do_litmusify
@@ -52,7 +54,7 @@ let litmusify o paths cid spec =
        o
        ~infile:(Some (Pathset.compiler_asm_path paths cid))
        ~outfile:(Some (Pathset.compiler_lita_path paths cid))
-       spec)
+       cspec)
 ;;
 
 (** [check_herd_output herd_path] checks to see if Herd wrote
@@ -70,15 +72,15 @@ let check_herd_output herd_path =
   Io.In_source.with_input (`File herd_path) ~f
 ;;
 
-(** [herd o paths cid spec] sees if [spec] asked for a Herd run
-    on compiler [cid] and, if so, runs the requested Herd command
-    on [cid]'s Litmus output. *)
-let herd o paths cid (spec : CompilerSpec.t) =
+(** [herd o paths cspec] sees if [cspec] asked for a Herd run and, if
+   so, runs the requested Herd command on its Litmus output. *)
+let herd o paths (cspec : Compiler.Spec.with_id) =
   let open Or_error.Let_syntax in
   Option.value_map
     ~default:Result.ok_unit
     ~f:(
       fun prog ->
+        let cid = cspec.cid in
         log_stage "HERD" o paths cid;
         let f _ oc =
           Run.Local.run ~oc ~prog [ Pathset.compiler_lita_path paths cid ]
@@ -90,14 +92,14 @@ let herd o paths cid (spec : CompilerSpec.t) =
         in
         check_herd_output herd_path
     )
-    spec.herd
+    cspec.cspec.herd
 ;;
 
-let proc_c_on_compiler (o : OutputCtx.t) paths cid spec =
+let proc_c_on_compiler (o : OutputCtx.t) paths cspec =
   let open Or_error.Let_syntax in
-  let%bind _ = compile o paths cid spec in
-  let%bind _ = litmusify o paths cid spec in
-  herd o paths cid spec
+  let%bind _ = compile o paths cspec in
+  let%bind _ = litmusify o paths cspec in
+  herd o paths cspec
 ;;
 
 let proc_c (o : OutputCtx.t) specs ~in_root ~out_root c_fname =
@@ -108,7 +110,7 @@ let proc_c (o : OutputCtx.t) specs ~in_root ~out_root c_fname =
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
   let results =
-    CompilerSpec.Set.map
+    Compiler.Set.map
       ~f:(proc_c_on_compiler o paths)
       specs
   in
@@ -138,7 +140,7 @@ let report_spec_errors o =
 ;;
 
 let test_specs o specs =
-  let (valid_specs, errors) = Compiler.test_specs specs in
+  let (valid_specs, errors) = LangSupport.test_specs specs in
   report_spec_errors o errors;
   Result.return valid_specs
 ;;
@@ -147,7 +149,7 @@ let run ?(local_only=false) ~in_root ~out_root o specs =
   let open Or_error.Let_syntax in
   let filtered_specs =
     if local_only
-    then CompilerSpec.Set.filter ~f:(fun s -> Option.is_none s.CompilerSpec.ssh) specs
+    then Compiler.Set.filter ~f:(fun s -> Option.is_none s.Compiler.Spec.ssh) specs
     else specs
   in
   let%bind valid_specs = test_specs o filtered_specs in
@@ -194,7 +196,7 @@ let command =
         let warnings = not no_warnings in
         let o = OutputCtx.make ~verbose ~warnings in
         Result.Let_syntax.(
-          let%bind specs = CompilerSpec.Set.load ~path:spec_file in
+          let%bind specs = Compiler.Set.load ~path:spec_file in
           run o specs ~local_only ~in_root ~out_root
         ) |> Common.print_error
     ]

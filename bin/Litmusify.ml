@@ -62,12 +62,12 @@ let command =
      in
      fun () ->
        let warnings = not no_warnings in
-       let cid = CompilerSpec.Id.of_string compiler_id in
+       let cid = Compiler.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
        let passes = Sanitiser.Pass.all_set () in
        Result.Let_syntax.(
-         let%bind specs = CompilerSpec.Set.load ~path:spec_file in
-         let%bind spec = CompilerSpec.Set.get specs cid in
+         let%bind specs = Compiler.Set.load ~path:spec_file in
+         let%bind spec = Compiler.Set.get specs cid in
          match sendto with
          | None -> Common.do_litmusify `Litmusify passes o ~infile ~outfile spec
          | Some cmd ->

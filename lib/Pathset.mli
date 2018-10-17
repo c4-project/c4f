@@ -14,26 +14,26 @@ type t =
   ; c_path         : string
   ; litc_path      : string
   ; out_root       : string
-  ; compiler_paths : (CompilerSpec.Id.t, compiler) List.Assoc.t
+  ; compiler_paths : (Compiler.Id.t, compiler) List.Assoc.t
   }
 
 (** [compiler_paths_of ps cid] gets the compiler paths for compiler ID
     [cid], throwing an exception if [cid] isn't known to [ps]. *)
-val compiler_paths_of : t -> CompilerSpec.Id.t -> compiler
+val compiler_paths_of : t -> Compiler.Id.t -> compiler
 
 (** [compiler_asm_path ps cid] gets the assembly path for compiler ID
    [cid], throwing an exception if [cid] isn't known to [ps]. *)
-val compiler_asm_path : t -> CompilerSpec.Id.t -> string
+val compiler_asm_path : t -> Compiler.Id.t -> string
 
 (** [compiler_lita_path ps cid] gets the assembly litmus path for
    compiler ID [cid], throwing an exception if [cid] isn't known to
    [ps]. *)
-val compiler_lita_path : t -> CompilerSpec.Id.t -> string
+val compiler_lita_path : t -> Compiler.Id.t -> string
 
 (** [compiler_herd_path ps cid] gets the herd output path for
    compiler ID [cid], throwing an exception if [cid] isn't known to
    [ps]. *)
-val compiler_herd_path : t -> CompilerSpec.Id.t -> string
+val compiler_herd_path : t -> Compiler.Id.t -> string
 
 
 (** [mkdirs] tries to make the output directories
@@ -43,7 +43,7 @@ val mkdirs : t -> unit Or_error.t
 (** [make] constructs a [Pathset.t] from a compiler spec set and
    various other paths. *)
 val make
-  :  CompilerSpec.Set.t
+  :  Compiler.Set.t
   -> in_root  : string
   -> out_root : string
   -> c_fname  : string
@@ -52,7 +52,7 @@ val make
 (** [make_and_mkdirs] constructs a [Pathset.t] per [make], then
     tries to make the directories through [mkdirs]. *)
 val make_and_mkdirs
-  :  CompilerSpec.Set.t
+  :  Compiler.Set.t
   -> in_root  : string
   -> out_root : string
   -> c_fname  : string
