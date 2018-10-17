@@ -317,8 +317,7 @@ module type Intf = sig
     -> statement list list Output.t
 end
 
-module type LangHookS =
-sig
+module type LangHookS = sig
   module L : Language.Intf
   module Ctx : CtxIntf with module Lang = L
 
@@ -328,8 +327,7 @@ sig
   val on_location : L.Location.t -> L.Location.t Ctx.t
 end
 
-module NullLangHook (LS : Language.Intf) =
-struct
+module NullLangHook (LS : Language.Intf) = struct
   module L = LS
   module Ctx = CtxMake (LS) (NoCustomWarn)
 
@@ -427,6 +425,27 @@ module Make (LH : LangHookS)
       | _ -> return ins
     )
 
+  (** [sanitise_loc] performs sanitisation at the single location
+      level. *)
+  let sanitise_loc loc =
+    let open Ctx in
+    return loc
+    >>= (LangHooks      |-> LH.on_location)
+
+  (** [sanitise_all_locs loc] iterates location sanitisation over
+     every location in [loc], threading the context through
+     monadically. *)
+  let sanitise_all_locs ins =
+    Ctx.make
+      (fun ctx ->
+         LH.L.Instruction.OnLocations.fold_map
+           ~f:(fun ctx' loc ->
+               Ctx.run (sanitise_loc loc)
+                 ctx')
+           ~init:ctx
+           ins
+      )
+
   (** [sanitise_ins] performs sanitisation at the single instruction
       level. *)
   let sanitise_ins ins =
@@ -434,6 +453,7 @@ module Make (LH : LangHookS)
     return ins
     >>= (LangHooks      |-> LH.on_instruction)
     >>= (Warn           |-> warn_unknown_instructions)
+    >>= sanitise_all_locs
     >>= (SimplifyLitmus |-> change_ret_to_end_jump)
     >>= (SimplifyLitmus |-> change_stack_to_heap)
 

@@ -14,7 +14,9 @@
  (action
   (with-stdout-to regress.output
    (run act regress "tests")))
- (deps "tests/asm/x86/att/gcc_macho_o0_moves.s")
+ (deps
+  "tests/asm/x86/att/gcc_macho_o0_moves.s"
+  "tests/asm/x86/att/gcc_elf_o0_stackchk.s")
 )
 
 (alias

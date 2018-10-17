@@ -170,6 +170,7 @@ type condition =
     directive (Intel) or suffix (AT&T). *)
 type sizable_opcode =
   [ `Add
+  | `Call (* Some compilers seem to emit CALLQ? *)
   | `Cmp
   | `Mov
   | `Pop

@@ -23,8 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
-module Hook (L : Language.Intf) =
-struct
+module Hook (L : Language.Intf) = struct
   open Ast
 
   module L = L
@@ -67,6 +66,7 @@ struct
       begin
         match o with
         | `Cmp -> { op with opcode = OpBasic (o :> basic_opcode) }
+        | `Call
         | `Ret
         (* TODO(@MattWindsor91): some of these might also need dropping. *)
         | `Add | `Mov | `Pop | `Push | `Sub -> op
@@ -77,13 +77,52 @@ struct
 
   let on_program = Ctx.return
 
-  let on_location = Ctx.return
+  (** [segment_offset_to_heap loc] is a contextual computation that,
+     heuristically, converts memory addresses like [GS:20] to symbolic
+     heap locations.
+
+      It assumes, perhaps incorrectly, that these segments aren't
+     moved, or shared per thread. *)
+  let segment_offset_to_heap =
+    let open Ctx.Let_syntax in
+    function
+    | LocIndirect
+        { in_seg = Some s
+        ; in_disp = Some (DispNumeric k)
+        ; in_index = None
+        ; in_base = None
+        } ->
+      begin
+        let%bind progname = Ctx.peek (fun c -> c.progname) in
+        let%bind loc =
+          Ctx.make_fresh_heap_loc
+            (sprintf "t%sg%sd%d"
+               progname
+               (Ast.RegTable.to_string_exn s)
+               k
+            )
+        in
+        let%bind _ = Ctx.add_sym loc Lib.Language.Symbol.Sort.Heap in
+        return (L.Location.make_heap_loc loc)
+      end
+    | LocIndirect _
+    | LocReg _ as l -> return l
+  ;;
+
+  let on_location loc =
+    Ctx.(
+      return loc
+      >>= segment_offset_to_heap
+    )
+  ;;
 
   let on_instruction stm =
-    let open Ctx in
-    return stm
-    >>| sub_to_add
-    >>| drop_unsupported_lengths
+    Ctx.(
+      return stm
+      >>| sub_to_add
+      >>| drop_unsupported_lengths
+    )
+  ;;
 end
 
 module Make (L : Language.Intf) = Lib.Sanitiser.Make (Hook (L))

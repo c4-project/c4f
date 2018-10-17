@@ -317,6 +317,7 @@ module ConditionTable =
 
 type sizable_opcode =
   [ `Add
+  | `Call
   | `Cmp
   | `Mov
   | `Pop
@@ -332,6 +333,7 @@ module SizableOpcodeTable =
       type t = sizable_opcode
       let table =
         [ `Add,  "add"
+        ; `Call, "call"
         ; `Cmp,  "cmp"
         ; `Mov,  "mov"
         ; `Pop,  "pop"
