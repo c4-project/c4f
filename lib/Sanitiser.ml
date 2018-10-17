@@ -173,22 +173,15 @@ module type CtxIntf = sig
     { progname : string
     ; proglen  : int
     ; endlabel : string option
-    ; hsyms    : Language.SymSet.t
-    ; jsyms    : Language.SymSet.t
+    ; hsyms    : Language.Symbol.Set.t
+    ; jsyms    : Language.Symbol.Set.t
     ; passes   : Pass.Set.t
     ; warnings : Warn.t list
     }
 
-  include Monad.S
-  include MyMonad.Extensions with type 'a t := 'a t
+  include State.Intf with type state := ctx
 
   val initial : passes:Pass.Set.t -> progname:string -> proglen:int -> ctx
-
-  val make : (ctx -> (ctx * 'a)) -> 'a t
-  val peek : (ctx -> 'a) -> 'a t
-  val modify : (ctx -> ctx) -> 'a -> 'a t
-  val run : 'a t -> ctx -> (ctx * 'a)
-  val run' : 'a t -> ctx -> 'a
 
   val (|->) : Pass.t -> ('a -> 'a t) -> ('a -> 'a t)
 
@@ -199,10 +192,10 @@ module type CtxIntf = sig
   val make_fresh_heap_loc : string -> string t
 end
 
-let freshen_label (syms : Language.SymSet.t) (prefix : string) : string =
+let freshen_label (syms : Language.Symbol.Set.t) (prefix : string) : string =
   let rec mu prefix count =
     let str = sprintf "%s%d" prefix count in
-    if Language.SymSet.mem syms str
+    if Language.Symbol.Set.mem syms str
     then mu prefix (count + 1)
     else str
   in
@@ -212,15 +205,14 @@ let freshen_label (syms : Language.SymSet.t) (prefix : string) : string =
 module CtxMake (L : Language.Intf) (C : CustomWarnS)
  : CtxIntf with module Lang = L and module Warn.C = C = struct
   module Lang = L
-
   module Warn = Warn (L) (C)
 
   type ctx =
     { progname : string
     ; proglen  : int
     ; endlabel : string option
-    ; hsyms    : Language.SymSet.t
-    ; jsyms    : Language.SymSet.t
+    ; hsyms    : Language.Symbol.Set.t
+    ; jsyms    : Language.Symbol.Set.t
     ; passes   : Pass.Set.t
     ; warnings : Warn.t list
     }
@@ -229,39 +221,13 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
     { progname
     ; proglen
     ; endlabel = None
-    ; hsyms    = Language.SymSet.empty
-    ; jsyms    = Language.SymSet.empty
+    ; hsyms    = Language.Symbol.Set.empty
+    ; jsyms    = Language.Symbol.Set.empty
     ; passes
     ; warnings = []
     }
 
-  module M = struct
-    type 'a t = (ctx -> (ctx * 'a))
-
-    include Monad.Make (struct
-      type nonrec 'a t = 'a t
-
-      let map' wc ~f =
-        fun ctx ->
-          let (ctx', a) = wc ctx in
-          (ctx', f a)
-      let map = `Custom map'
-      let bind wc ~f =
-        fun ctx ->
-          let (ctx', a) = wc ctx in
-          (f a) ctx'
-      let return a = fun initial_ctx -> (initial_ctx, a)
-    end)
-  end
-
-  include M
-  include MyMonad.Extend(M)
-
-  let run = Fn.id
-  let run' f ctx = f ctx |> snd
-  let make = Fn.id
-  let peek f ctx = ctx, f ctx
-  let modify f a ctx = f ctx, a
+  include State.Make (struct type state = ctx end)
 
   let (|->) pass f a =
     make
@@ -278,16 +244,16 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
     modify (Fn.flip warn_in_ctx w)
 
   let make_fresh_label prefix =
-    run
+    make
       (fun ctx ->
          let l = freshen_label ctx.jsyms prefix in
-         { ctx with jsyms = Language.SymSet.add ctx.jsyms l }, l)
+         { ctx with jsyms = Language.Symbol.Set.add ctx.jsyms l }, l)
 
   let make_fresh_heap_loc prefix =
-    run
+    make
       (fun ctx ->
          let l = freshen_label ctx.hsyms prefix in
-         { ctx with hsyms = Language.SymSet.add ctx.hsyms l }, l)
+         { ctx with hsyms = Language.Symbol.Set.add ctx.hsyms l }, l)
 end
 
 (*

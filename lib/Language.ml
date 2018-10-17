@@ -140,7 +140,12 @@ module AbsOperands = struct
     | Other -> String.pp f "??"
 end
 
-module SymSet = Set.Make(String)
+module Symbol = struct
+  type t = string
+
+  module Set = Set.Make (String)
+end
+
 
 module type BaseS = sig
   val name : string
@@ -270,7 +275,7 @@ module type Intf = sig
     val is_label : t -> bool
     val is_unused_label
       :  ?ignore_boundaries:bool
-      -> jsyms:SymSet.t
+      -> jsyms:Symbol.Set.t
       -> t
       -> bool
     val is_jump_pair : t -> t -> bool
@@ -278,11 +283,11 @@ module type Intf = sig
     val is_nop : t -> bool
     val is_program_boundary : t -> bool
 
-    val flags : jsyms:SymSet.t -> t -> AbsStatement.Flag.Set.t
+    val flags : jsyms:Symbol.Set.t -> t -> AbsStatement.Flag.Set.t
   end
 
-  val heap_symbols : Statement.t list -> SymSet.t
-  val jump_symbols : Statement.t list -> SymSet.t
+  val heap_symbols : Statement.t list -> Symbol.Set.t
+  val jump_symbols : Statement.t list -> Symbol.Set.t
 end
 
 module Make (M : S) = struct
@@ -291,7 +296,7 @@ module Make (M : S) = struct
   module Instruction = struct
     include M.Instruction
 
-    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (SymSet)
+    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (Symbol.Set)
     module OnLocations = FoldMap.Make (OnLocationsS)
 
     let is_jump ins =
@@ -334,7 +339,7 @@ module Make (M : S) = struct
   module Statement = struct
     include M.Statement
 
-    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (SymSet)
+    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (Symbol.Set)
     module OnInstructions = FoldMap.Make (OnInstructionsS)
 
     let is_jump =
@@ -357,7 +362,7 @@ module Make (M : S) = struct
       | _ -> false
 
     let disjoint s1 s2 =
-      SymSet.is_empty (SymSet.inter s1 s2)
+      Symbol.Set.is_empty (Symbol.Set.inter s1 s2)
 
     let is_nop stm =
       match abs_type stm with
@@ -419,11 +424,11 @@ module Make (M : S) = struct
     |> MyList.exclude ~f:Instruction.is_jump
     |> List.concat_map ~f:Instruction.OnLocations.list
     |> List.filter_map ~f:Location.to_heap_symbol
-    |> SymSet.of_list
+    |> Symbol.Set.of_list
 
   let jump_symbols prog =
     prog
     |> List.filter ~f:Statement.is_jump
     |> List.map ~f:Statement.OnSymbols.set
-    |> SymSet.union_list
+    |> Symbol.Set.union_list
 end

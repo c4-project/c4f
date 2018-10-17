@@ -115,24 +115,20 @@ end
     carry global information around in a sanitisation pass. *)
 module type CtxIntf = sig
   module Lang : Language.Intf
-
   module Warn : WarnIntf with module L = Lang
 
   type ctx =
-    { progname : string             (* Name of current program *)
-    ; proglen  : int                (* Length of current program *)
-    ; endlabel : string option      (* End label of current program *)
-    ; hsyms    : Language.SymSet.t  (* Heap symbols *)
-    ; jsyms    : Language.SymSet.t  (* Jump symbols *)
-    ; passes   : Pass.Set.t         (* Enabled passes *)
+    { progname : string                 (* Name of current program *)
+    ; proglen  : int                    (* Length of current program *)
+    ; endlabel : string option          (* End label of current program *)
+    ; hsyms    : Language.Symbol.Set.t  (* Heap symbols *)
+    ; jsyms    : Language.Symbol.Set.t  (* Jump symbols *)
+    ; passes   : Pass.Set.t             (* Enabled passes *)
     ; warnings : Warn.t list
     }
 
-  (** [CtxIntf] implementations form monads. *)
-  include Monad.S
-
-  (** [CtxIntf] implementations also include some monad extensions. *)
-  include MyMonad.Extensions with type 'a t := 'a t
+  (** [CtxIntf] includes a state monad, [t]. *)
+  include State.Intf with type state := ctx
 
   (** [initial ~passes ~progname ~proglen] opens an initial context
      for the program with the given name, length, and enabled
@@ -142,28 +138,6 @@ module type CtxIntf = sig
     -> progname:string
     -> proglen:int
     -> ctx
-
-  (** Constructing context-sensitive computation s*)
-
-  (** [make] creates a context-sensitive computation that can modify
-     the current context. *)
-  val make : (ctx -> (ctx * 'a)) -> 'a t
-
-  (** [peek] creates a context-sensitive computation that can look at
-     the current context, but not modify it. *)
-  val peek : (ctx -> 'a) -> 'a t
-
-  (** [modify] creates a context-sensitive computation that can look at
-     and modify the current context, but not modify the value passing
-     through. *)
-  val modify : (ctx -> ctx) -> 'a -> 'a t
-
-  (** [run] unfolds a [t] into a function from context
-      to context and final result. *)
-  val run : 'a t -> ctx -> (ctx * 'a)
-
-  (** [run'] behaves like [run], but discards the final context. *)
-  val run' : 'a t -> ctx -> 'a
 
   (** [p |-> f] guards a contextual computation [f] on the
       pass [p]; it won't run unless [p] is in the current context's

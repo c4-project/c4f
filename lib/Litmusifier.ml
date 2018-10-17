@@ -74,9 +74,9 @@ module Make (M : S) : Intf = struct
   ;;
 
   let make_init (progs : LS.Statement.t list list) : (string, LS.Constant.t) List.Assoc.t =
-    let syms = Language.SymSet.union_list (List.map ~f: LS.heap_symbols progs) in
+    let syms = Language.Symbol.Set.union_list (List.map ~f: LS.heap_symbols progs) in
     List.map ~f:(fun s -> (s, LS.Constant.zero))
-      (Language.SymSet.to_list syms)
+      (Language.Symbol.Set.to_list syms)
   ;;
 
   let output_litmus

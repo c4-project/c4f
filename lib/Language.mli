@@ -62,8 +62,7 @@ end
 
 (** [AbsLocation] contains types and utilities for abstracted
    locations. *)
-module AbsLocation :
-sig
+module AbsLocation : sig
   (** [AbsLocation.t] is an abstracted location. *)
   type t =
     | StackPointer       (* Stack pointer *)
@@ -111,8 +110,7 @@ end
 
 (** [AbsOperands] contains types and utilities for abstracted
    operand bundles. *)
-module AbsOperands :
-sig
+module AbsOperands : sig
   (** [AbsOperands.t] is an abstracted operand bundle. *)
   type t =
     (* This instruction takes no operands. *)
@@ -134,8 +132,13 @@ sig
   include Pretty_printer.S with type t := t
 end
 
-(** [SymSet] is a set module for symbols. *)
-module SymSet : (Set.S with type Elt.t = string)
+module Symbol : sig
+  (** Symbols are strings. *)
+  type t = string
+
+  (** [Set] is a set module for symbols. *)
+  module Set : Set.S with type Elt.t = string
+end
 
 (*
  * Interface for language implementation
@@ -241,8 +244,7 @@ module type InstructionS = sig
   val abs_type : t -> AbsInstruction.t
 end
 
-module type LocationS =
-sig
+module type LocationS = sig
   type t
 
   (** Languages must supply a pretty-printer for their locations. *)
@@ -259,8 +261,7 @@ sig
   val abs_type : t -> AbsLocation.t
 end
 
-module type ConstantS =
-sig
+module type ConstantS = sig
   type t
 
   (** Languages must supply a pretty-printer for their constants. *)
@@ -274,8 +275,7 @@ sig
 end
 
 (** [S] is the signature that Litmus languages must implement. *)
-module type S =
-sig
+module type S = sig
   include BaseS
   module Constant : ConstantS
   module Location : LocationS
@@ -384,7 +384,7 @@ module type Intf = sig
        jumped to from [jsyms]. *)
     val is_unused_label
       :  ?ignore_boundaries:bool
-      -> jsyms:SymSet.t
+      -> jsyms:Symbol.Set.t
       -> t
       -> bool
 
@@ -402,16 +402,16 @@ module type Intf = sig
     (** [flags ~jsyms stm] summarises the above boolean functions as
         a set of [stm_flag]s.  It uses [jsyms] to calculate whether
         the statement is an unused label. *)
-    val flags : jsyms:SymSet.t -> t -> AbsStatement.Flag.Set.t
+    val flags : jsyms:Symbol.Set.t -> t -> AbsStatement.Flag.Set.t
   end
 
   (** [heap_symbols] retrieves the set of all symbols that appear to be
       standing in for heap locations. *)
-  val heap_symbols : Statement.t list -> SymSet.t
+  val heap_symbols : Statement.t list -> Symbol.Set.t
 
   (** [jump_symbols] retrieves the set of all symbols that appear to be
       jump targets. *)
-  val jump_symbols : Statement.t list -> SymSet.t
+  val jump_symbols : Statement.t list -> Symbol.Set.t
 end
 
 (** [Make] builds a module satisfying [Intf] from a module satisfying [S]. *)
