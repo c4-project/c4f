@@ -30,13 +30,11 @@ open Utils.MyContainers
  * Warnings
  *)
 
-module type CustomWarnS =
-sig
+module type CustomWarnS = sig
   include Pretty_printer.S
 end
 
-module NoCustomWarn =
-struct
+module NoCustomWarn = struct
   (* No warnings possible *)
   type t
   let pp _ _ = ()
@@ -168,7 +166,8 @@ let%expect_test "all passes accounted for" =
  *)
 
 module type CtxIntf = sig
-  module Warn : WarnIntf
+  module Lang : Language.Intf
+  module Warn : WarnIntf with module L = Lang
 
   type ctx =
     { progname : string
@@ -195,14 +194,25 @@ module type CtxIntf = sig
 
   val warn_in_ctx : ctx -> Warn.body -> ctx
   val warn : Warn.body -> 'a -> 'a t
+
+  val make_fresh_label : string -> string t
+  val make_fresh_heap_loc : string -> string t
 end
 
-(*
- * Language-dependent parts
- *)
+let freshen_label (syms : Language.SymSet.t) (prefix : string) : string =
+  let rec mu prefix count =
+    let str = sprintf "%s%d" prefix count in
+    if Language.SymSet.mem syms str
+    then mu prefix (count + 1)
+    else str
+  in
+  mu prefix 0
+;;
 
 module CtxMake (L : Language.Intf) (C : CustomWarnS)
- : CtxIntf with module Warn.L = L and module Warn.C = C = struct
+ : CtxIntf with module Lang = L and module Warn.C = C = struct
+  module Lang = L
+
   module Warn = Warn (L) (C)
 
   type ctx =
@@ -228,8 +238,7 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
   module M = struct
     type 'a t = (ctx -> (ctx * 'a))
 
-    include Monad.Make (
-    struct
+    include Monad.Make (struct
       type nonrec 'a t = 'a t
 
       let map' wc ~f =
@@ -242,8 +251,7 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
           let (ctx', a) = wc ctx in
           (f a) ctx'
       let return a = fun initial_ctx -> (initial_ctx, a)
-    end
-    )
+    end)
   end
 
   include M
@@ -262,13 +270,24 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
          then run (f a) ctx
          else (ctx, a))
 
-
   let warn_in_ctx ctx w =
     let ent = { Warn.progname = ctx.progname; body = w } in
     { ctx with warnings = ent::ctx.warnings }
 
   let warn (w : Warn.body) =
     modify (Fn.flip warn_in_ctx w)
+
+  let make_fresh_label prefix =
+    run
+      (fun ctx ->
+         let l = freshen_label ctx.jsyms prefix in
+         { ctx with jsyms = Language.SymSet.add ctx.jsyms l }, l)
+
+  let make_fresh_heap_loc prefix =
+    run
+      (fun ctx ->
+         let l = freshen_label ctx.hsyms prefix in
+         { ctx with hsyms = Language.SymSet.add ctx.hsyms l }, l)
 end
 
 (*
@@ -301,7 +320,7 @@ end
 module type LangHookS =
 sig
   module L : Language.Intf
-  module Ctx : CtxIntf with module Warn.L = L
+  module Ctx : CtxIntf with module Lang = L
 
   val on_program : L.Statement.t list -> (L.Statement.t list) Ctx.t
   val on_statement : L.Statement.t -> L.Statement.t Ctx.t
@@ -545,40 +564,19 @@ module Make (LH : LangHookS)
          ))
       prog
 
-  (** [freshen_label] generates a (hopefully) unique label with the
-      prefix 'prefix'. *)
-  let freshen_label (syms : Language.SymSet.t) (prefix : string) : string =
-    let rec f prefix count =
-      let str = sprintf "%s%d" prefix count in
-      if Language.SymSet.mem syms str
-      then f prefix (count + 1)
-      else str
-    in
-    f prefix 0
-
   (** [add_end_label] adds an end-of-program label to the current
      program. *)
   let add_end_label (prog : LH.L.Statement.t list)
     : (LH.L.Statement.t list) Ctx.t =
-    Ctx.(
-      make
-        (fun ctx ->
-           (* Don't generate duplicate endlabels! *)
-           match ctx.endlabel with
-           | Some _ -> ctx, prog
-           | None ->
-             let prefix = "END" ^ ctx.progname
-             in
-             let endl = freshen_label ctx.jsyms prefix in
-             let prog' = prog @ [ LH.L.Statement.label endl ] in
-             let ctx' =
-               { ctx with proglen  = ctx.proglen + 1
-                        ; jsyms    = Language.SymSet.add ctx.jsyms endl
-                        ; endlabel = Some endl
-               } in
-             ctx', prog'
-        )
-    )
+    let open Ctx.Let_syntax in
+    (* Don't generate duplicate endlabels! *)
+    match%bind (Ctx.peek (fun ctx -> ctx.endlabel)) with
+    | Some _ -> return prog
+    | None ->
+      let%bind progname = (Ctx.peek (fun ctx -> ctx.progname)) in
+      let prefix = "END" ^ progname in
+      let%bind lbl = Ctx.make_fresh_label prefix in
+      return (prog @ [LH.L.Statement.label lbl])
 
   (** [remove_fix prog] performs a loop of statement-removing
      operations until we reach a fixed point in the program length. *)

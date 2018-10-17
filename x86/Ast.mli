@@ -92,6 +92,11 @@ val in_base_only : reg -> indirect
    displacement, and all other fields empty. *)
 val in_disp_only : disp -> indirect
 
+(** [in_seg_disp] creates an indirect reference with given
+   segment-displacement pair, and all other fields empty. *)
+val in_seg_disp : (reg option * disp) -> indirect
+
+
 type bop =
   | BopPlus
   | BopMinus

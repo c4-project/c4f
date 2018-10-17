@@ -143,6 +143,7 @@ let in_zero () =
 
 let in_base_only r = { (in_zero ()) with in_base = Some r }
 let in_disp_only d = { (in_zero ()) with in_disp = Some d }
+let in_seg_disp (s, d) = { (in_zero ()) with in_seg = s; in_disp = Some d }
 
 let fold_map_indirect_symbols ~f ~init indirect =
   (match indirect.in_disp with

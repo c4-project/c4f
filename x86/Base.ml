@@ -50,26 +50,21 @@ open Ast
 let parse_reg (s : string) : reg option =
   RegTable.of_string s
 
-type error_type =
-  | Statement
-  | Instruction
-  | Operand
-    [@@deriving sexp]
-
 type error_range = (Lexing.position * Lexing.position)
 
-let sexp_of_error_range ((from, until) : error_range) =
-  Sexp.Atom
+let sexp_of_error_range ((from, until) : error_range) : Sexp.t =
+  Sexp.of_string
     (sprintf "%s:%d:%d-%d:%d"
        from.pos_fname
        from.pos_lnum
        (from.pos_cnum - from.pos_bol)
        until.pos_lnum
        (until.pos_cnum - until.pos_bol))
+;;
 
 type error =
-  { at  : error_range
-  ; why : error_type
+  { at      : error_range
+  ; because : string
   } [@@deriving sexp_of]
 
 exception ParseError of error [@@deriving sexp_of]

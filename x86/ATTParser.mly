@@ -83,7 +83,7 @@ stm_list:
 stm:
   | option(instr) EOL { Core.Option.value ~default:StmNop $1 }
   | label { Ast.StmLabel $1 }
-  | error { raise (Base.ParseError({at = $sloc; why = Base.Statement })) }
+  | error { raise (Base.ParseError({at = $sloc; because = "unknown statement error" })) }
 
 prefix:
   | IT_LOCK { PreLock }
@@ -142,20 +142,32 @@ bis:
     (* (%eax, %ebx, 2)
        (    , %ebx, 2) *)
 
+(* Segment:displacement *)
+segdisp:
+  | disp { (None, $1) }
+  | separated_pair(ATT_REG, COLON, disp) { Core.(Tuple2.map_fst ~f:Option.some $1) }
+
 (* Memory access: base/index/scale, displacement, or both *)
 indirect:
-  | LPAR bis RPAR { $2 }
+  | delimited(LPAR, bis, RPAR) { $1 }
     (* (%eax, %ebx, 2) *)
-  | disp LPAR bis RPAR { { $3 with in_disp = Some $1 } }
+  | segdisp delimited(LPAR, bis, RPAR) { { $2 with in_seg = fst $1; in_disp = Some (snd $1) } }
     (* -8(%eax, %ebx, 2) *)
-  | disp { Ast.in_disp_only $1 }
+  | segdisp { Ast.in_seg_disp $1 }
     (* 0x4000 *)
 
 location:
-  | ATT_REG {Ast.LocReg $1}
-    (* %eax *)
   | indirect {Ast.LocIndirect $1}
     (* -8(%eax, %ebx, 2) *)
+  | ATT_REG {Ast.LocReg $1}
+    (* %eax *)
+  | ATT_REG error
+    { raise (Base.ParseError(
+		 { at = $sloc
+		 ; because = "unexpected item following register"
+		 }
+	    ))
+    }
 
 (* Memory displacement *)
 disp:
@@ -165,7 +177,12 @@ disp:
 operand:
   | prim_operand bop operand { Ast.OperandBop($1,$2,$3) }
   | prim_operand { $1 }
-  | error { raise (Base.ParseError({at = $sloc; why = Base.Operand})) }
+  | error { raise (Base.ParseError(
+		       { at = $sloc
+		       ; because = "unknown error in operand"
+		       }
+		  ))
+	  }
 
 prim_operand:
   | DOLLAR disp {Ast.OperandImmediate $2}

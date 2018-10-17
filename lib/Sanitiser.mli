@@ -114,7 +114,9 @@ end
 (** [CtxIntf] is the interface to the state monad used by the sanitiser to
     carry global information around in a sanitisation pass. *)
 module type CtxIntf = sig
-  module Warn : WarnIntf
+  module Lang : Language.Intf
+
+  module Warn : WarnIntf with module L = Lang
 
   type ctx =
     { progname : string             (* Name of current program *)
@@ -125,7 +127,6 @@ module type CtxIntf = sig
     ; passes   : Pass.Set.t         (* Enabled passes *)
     ; warnings : Warn.t list
     }
-
 
   (** [CtxIntf] implementations form monads. *)
   include Monad.S
@@ -176,13 +177,24 @@ module type CtxIntf = sig
   (** [warn w a] adds a warning [w] to the current context, passing
       [a] through. *)
   val warn : Warn.body -> 'a -> 'a t
+
+  (** [make_fresh_label] generates a fresh label with the given prefix
+      (in regards to the context's symbol tables), interns it into the
+      context, and returns the generated label. *)
+  val make_fresh_label : string -> string t
+
+  (** [make_fresh_heap_loc] generates a fresh heap location symbol with
+      the given prefix
+      (in regards to the context's symbol tables), interns it into the
+      context, and returns the generated location symbol. *)
+  val make_fresh_heap_loc : string -> string t
 end
 
 (** [CtxMake] builds a context monad for the given language. *)
 module CtxMake
   : functor (L : Language.Intf)
     -> functor (C : CustomWarnS)
-      -> CtxIntf with module Warn.L = L and module Warn.C = C
+      -> CtxIntf with module Lang = L and module Warn.C = C
 
 (*
  * Language-dependent parts
@@ -192,7 +204,7 @@ module CtxMake
     sanitisation process. *)
 module type LangHookS = sig
   module L : Language.Intf
-  module Ctx : CtxIntf with module Warn.L = L
+  module Ctx : CtxIntf with module Lang = L
 
   (** [on_program] is a hook mapped over each the program as a
      whole. *)
