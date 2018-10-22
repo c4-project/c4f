@@ -2,44 +2,48 @@ open Core
 open Utils
 open Utils.MyContainers
 
-type compiler =
-  { asm_path  : string
-  ; lita_path : string
-  ; herd_path : string
-  }
+module M = struct
+  type t =
+    { c_path    : string list
+    ; litc_path : string list
+    ; asm_path  : string list
+    ; lita_path : string list
+    ; herd_path : string list
+    } [@@deriving fields]
+end
+include M
 
-type t =
-  { basename       : string
-  ; c_path         : string
-  ; litc_path      : string
-  ; out_root       : string
-  ; compiler_paths : (Compiler.Id.t, compiler) List.Assoc.t
-  }
+module File = struct
+  type ps = t
 
-let compiler_paths_of ps cid =
-  List.Assoc.find_exn
-    ps.compiler_paths
-    cid
-    ~equal:(Compiler.Id.equal)
-;;
+  type t =
+    { basename  : string
+    ; c_path    : string
+    ; litc_path : string
+    ; asm_path  : string
+    ; lita_path : string
+    ; herd_path : string
+    } [@@deriving fields]
 
-let compiler_asm_path ps cid =
-  (compiler_paths_of ps cid).asm_path
-;;
+  let make ps basename =
+    let lcat = MyFilename.concat_list in
+    { basename
+    ; c_path    = lcat (M.c_path    ps @ [basename ^ ".c"])
+    ; litc_path = lcat (M.litc_path ps @ [basename ^ ".litmus"])
+    ; asm_path  = lcat (M.asm_path  ps @ [basename ^ ".s"])
+    ; lita_path = lcat (M.lita_path ps @ [basename ^ ".s.litmus"])
+    ; herd_path = lcat (M.herd_path ps @ [basename ^ ".herd.txt"])
+    }
+  ;;
+end
 
-let compiler_lita_path ps cid =
-  (compiler_paths_of ps cid).lita_path
-;;
-
-let compiler_herd_path ps cid =
-  (compiler_paths_of ps cid).herd_path
-;;
 
 type ent_type =
   | File
   | Dir
   | Nothing
   | Unknown
+;;
 
 let get_ent_type (path : string) : ent_type =
   match Sys.file_exists path with
@@ -62,118 +66,64 @@ let mkdir (path : string) =
   | File -> error "path exists, but is a file" path [%sexp_of: string]
   | Unknown -> error "couldn't determine whether path already exists" path [%sexp_of: string]
   | Nothing -> Or_error.try_with (fun () -> Unix.mkdir path)
+;;
 
 let subpaths (path : string list) : string list =
   List.map ~f:MyFilename.concat_list (MyList.prefixes path)
+;;
 
 let mkdir_p (path : string list) =
   Or_error.all_unit (List.map ~f:mkdir (subpaths path))
+;;
 
-let c_path_of results_path name =
-  [results_path; "C"; name]
-
-let litc_path_of results_path name =
-  [results_path; "litmus"; name]
-
-let asm_dir_of (root : string) (cid : Compiler.Id.t) : string list =
-  [root] @ (Compiler.Id.to_string_list cid) @ ["asm"]
-
-let asm_path_of (root : string) (file : string) (cid : Compiler.Id.t) : string list =
-  asm_dir_of root cid @ [file]
-
-let lita_dir_of (root : string) (cid : Compiler.Id.t) : string list =
-  [root] @ (Compiler.Id.to_string_list cid) @ ["litmus"]
-
-let lita_path_of (root : string) (file : string) (cid : Compiler.Id.t) : string list =
-  lita_dir_of root cid @ [file]
-
-let herd_dir_of (root : string) (cid : Compiler.Id.t) : string list =
-  [root] @ (Compiler.Id.to_string_list cid) @ ["herd"]
-
-let herd_path_of (root : string) (file : string) (cid : Compiler.Id.t) : string  list =
-  herd_dir_of root cid @ [file]
+let all_paths (ps : t) : (string, string list) List.Assoc.t =
+  let to_pair fld = (Field.name fld, Field.get fld ps) in
+  Fields.to_list
+    ~c_path:to_pair
+    ~litc_path:to_pair
+    ~asm_path:to_pair
+    ~lita_path:to_pair
+    ~herd_path:to_pair
+;;
 
 let mkdirs ps =
   Or_error.(
     tag ~tag:"Couldn't make directories"
       (try_with_join
          ( fun () ->
-             if Sys.is_directory_exn ps.out_root
-             then MyList.iter_result
-                 mkdir_p
-                 (List.concat_map
-                    ~f:(fun (c, _) ->
-                        [ asm_dir_of ps.out_root c
-                        ; lita_dir_of ps.out_root c
-                        ; herd_dir_of ps.out_root c
-                        ])
-                    ps.compiler_paths
-                 )
-             else error "not a directory" ps.out_root [%sexp_of: string]
+             Or_error.all_unit
+               (List.map ~f:(Fn.compose mkdir_p snd) (all_paths ps))
          )
       )
   )
+;;
 
-let lcat = MyFilename.concat_list
-
-let make_compiler root_path basename cid =
-  let asm_fname  = basename ^ ".s" in
-  let lita_fname = basename ^ ".s.litmus" in
-  let herd_fname = basename ^ ".herd.txt" in
-  { asm_path  = lcat (asm_path_of  root_path asm_fname cid)
-  ; lita_path = lcat (lita_path_of root_path lita_fname cid)
-  ; herd_path = lcat (herd_path_of root_path herd_fname cid)
+let make spec ~in_root ~out_root =
+  let cid = Compiler.CSpec.WithId.id spec in
+  { c_path    = [in_root; "C"]
+  ; litc_path = [in_root; "Litmus"]
+  ; asm_path  = [out_root] @ (Compiler.Id.to_string_list cid) @ ["asm"]
+  ; lita_path = [out_root] @ (Compiler.Id.to_string_list cid) @ ["litmus"]
+  ; herd_path = [out_root] @ (Compiler.Id.to_string_list cid) @ ["herd"]
   }
 ;;
 
-let make specs ~in_root ~out_root ~c_fname =
-  let basename   = Filename.basename (Filename.chop_extension c_fname) in
-  let spec_map f =
-    Compiler.CSpec.Set.map
-      ~f:(fun c -> let cid = Compiler.CSpec.WithId.id c in (cid, f cid))
-      specs
-  in
-  let lit_fname  = basename ^ ".litmus" in
-  { basename
-  ; out_root
-  ; c_path         = lcat (c_path_of    in_root c_fname)
-  ; litc_path      = lcat (litc_path_of in_root lit_fname)
-  ; compiler_paths = spec_map (make_compiler out_root basename)
-  }
-;;
-
-let make_and_mkdirs specs ~in_root ~out_root ~c_fname =
-  let paths = make specs ~in_root ~out_root ~c_fname in
+let make_and_mkdirs spec ~in_root ~out_root =
+  let paths = make spec ~in_root ~out_root in
   Or_error.(mkdirs paths >>= (fun _ -> return paths))
+;;
 
 let pp f ps =
-  Format.pp_open_vbox f 4;
-  Format.fprintf f "@[Paths for '%s'@ --@]" ps.basename;
+  Format.pp_open_vbox f 0;
 
-  let p dir (k, v) =
-    Format.pp_print_cut f ();
-    MyFormat.pp_kv f (sprintf "%s (%s)" k dir) String.pp v
+  let p f (k, v) =
+    MyFormat.pp_kv f k String.pp (MyFilename.concat_list v)
   in
-
-  let in_paths =
-    [ "C", ps.c_path
-    ; "C/litmus", ps.litc_path
-    ]
-  in
-  List.iter in_paths ~f:(p "in");
-
-  let out_paths =
-    List.concat_map
-      ~f:(
-        fun (c, {asm_path; lita_path; herd_path}) ->
-          [ Compiler.Id.to_string c, asm_path
-          ; (Compiler.Id.to_string c) ^ "/litmus", lita_path
-          ; (Compiler.Id.to_string c) ^ "/herd", herd_path
-          ]
-      )
-      ps.compiler_paths
-  in
-  List.iter out_paths ~f:(p "out");
+  Format.pp_print_list
+    ~pp_sep:Format.pp_print_cut
+    p
+    f
+    (all_paths ps);
 
   Format.pp_close_box f ()
-
+;;
