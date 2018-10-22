@@ -46,6 +46,7 @@ let command =
          let%bind ccfg = Compiler.Cfg.from_raw rcfg in
          let specs = Compiler.Cfg.compilers ccfg in
          Compiler.CSpec.Set.pp_verbose verbose Format.std_formatter specs;
+         Format.print_newline ();
          return ()
         )
         |> Common.print_error

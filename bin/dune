@@ -19,6 +19,20 @@
   "tests/asm/x86/att/gcc_elf_o0_stackchk.s")
 )
 
+(rule
+ (targets specs.output)
+ (action
+  (with-stdout-to specs.output
+   (run act specs "-verbose" "-spec" "compiler.spec.example")))
+ (deps
+  "compiler.spec.example")
+)
+
+(alias
+ (name runtest)
+ (action (diff specs.expected specs.output)
+))
+
 (alias
  (name runtest)
  (action (diff regress.expected regress.output)

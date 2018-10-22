@@ -67,8 +67,8 @@ nonexistent `menhirLib` one!).
 
 ### Preparation
 
-First, copy `compiler.spec.example` somewhere (by default, `act` looks
-for it in `./compiler.spec`), and adjust to your needs.
+First, copy `bin/compiler.spec.example` somewhere (by default, `act`
+looks for it in `./compiler.spec`), and adjust to your needs.
 
 
 ### Running
