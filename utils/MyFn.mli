@@ -21,35 +21,13 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
-open Lib
-open Utils
+(** Function combinators and miscellanea *)
 
-let do_litmusify mode passes o ~infile ~outfile spec =
-  let open Result.Let_syntax in
-  let emits = Compiler.CSpec.emits spec in
-  let%bind lit = LangSupport.get_litmusifier ~emits in
-  Io.(
-    let f src inp _ outp =
-      let iname = MyFormat.format_to_string (In_source.pp) src in
-      let module L = (val lit) in
-      L.run
-        { o
-        ; iname
-        ; inp
-        ; outp
-        ; mode
-        ; passes
-        }
-    in
-    with_input_and_output
-      (In_source.of_option infile)
-      (Out_sink.of_option outfile)
-      ~f
-  )
-;;
-
-let print_error =
-  Result.iter_error
-    ~f:(Format.eprintf "@[act encountered a top-level error:@.@[%a@]@]@." Error.pp)
+(** [on lift f] lifts a binary function [f] using the lifter [lift].
+    It does the same thing as the `on` function from Haskell, but
+    with arguments flipped to make sense without infixing. *)
+val on
+  :  ('a -> 'b)
+  -> ('b -> 'b -> 'r)
+  -> ('a -> 'a -> 'r)
 ;;

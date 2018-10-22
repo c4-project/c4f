@@ -1,10 +1,17 @@
+(** [Compiler] contains the high-level interface for specifying and
+   invoking compilers. *)
+
 open Core
 open Utils
 
-(** [Id] is a module for compiler identifiers. *)
+(*
+ * Specifications: parts common to both compilers and machines
+ *)
+
+(** [Id] is a module for compiler and machine identifiers. *)
 module Id : sig
   (** [t] is the type of compiler IDs. *)
-  type t [@@deriving compare, hash, sexp]
+  type t
 
   (** [to_string_list cid] returns a list of each element in [cid]'s
      ID. *)
@@ -13,81 +20,314 @@ module Id : sig
   include Core.Identifiable.S_plain with type t := t
 end
 
-(** [Spec] is a module for compiler specifications. *)
-module Spec : sig
-  (** [ssh] describes how to invoke a compiler remotely
-      from ssh. *)
-  type ssh =
-    { host     : string        (* The host to run on. *)
-    ; user     : string option (* The user to run as. *)
-    ; copy_dir : string        (* The remote directory to use for temporary results. *)
-    } [@@deriving sexp, fields]
+(** [SpecS] is the basic interface of both compiler and
+    machine specifications. *)
+module type SpecS = sig
+  (** [t] is the opaque type of specifications.
+      To construct a [t], read one in as an S-expression;
+      a proper constructor may appear in later revisions. *)
+  type t
 
-  (** [t] describes how to invoke a compiler. *)
-  type t =
-    { enabled : bool           (* Whether the compiler is enabled. *)
-    ; style   : string         (* The 'style' of compiler being described. *)
-    ; emits   : string list    (* The architecture the compiler will emit. *)
-    ; cmd     : string         (* The compiler command. *)
-    ; argv    : string list    (* The arguments to the command. *)
-    ; herd    : string option  (* If present, the 'herd' command to use. *)
-    ; ssh     : ssh option     (* If present, details for executing the compiler over SSH. *)
-    } [@@deriving sexp, fields]
+  (** [enabled c] gets whether [c] is enabled. *)
+  val enabled : t -> bool
 
   include Pretty_printer.S with type t := t
+  include Sexpable.S with type t := t
 
-  (** [with_id] is a [t] bundled with its own compiler ID. *)
-  type with_id =
-    { cid   : Id.t
-    ; cspec : t
-    }
+  (** [pp_summary f spec] prints a one-line summary of [spec]. *)
+  val pp_summary : Format.formatter -> t -> unit
 end
 
-(** [WithSpec] is an interface for modules containing a compiler
-    specification. *)
-module type WithSpec = sig
-  val cspec : Spec.with_id
+(** [SpecIntf] is the top-level, outward-facing interface of both
+   compiler and machine specifications. *)
+module type SpecIntf = sig
+  include SpecS
+
+  (** [WithId] contains types and functions for handling bundles of
+     spec ID and spec. *)
+  module WithId : sig
+    type elt = t
+
+    (** [t] is the type of ID-and-spec pairs. *)
+    type t
+
+    (** [create ~id ~spec] creates a new [WithId.t] pair. *)
+    val create : id:Id.t -> spec:elt -> t;;
+
+    (** [id w] gets the ID component of a [WithId.t]. *)
+    val id : t -> Id.t;;
+
+    (** [spec w] gets the spec component of a [WithId.t]. *)
+    val spec : t -> elt;;
+
+    include Sexpable.S with type t := t
+  end
+
+  (** [Set] is the interface of modules for dealing with sets of
+      compiler specs. *)
+  module Set : sig
+    type elt = t
+
+    (** [t] is the type of sets. *)
+    type t
+
+    include Pretty_printer.S with type t := t
+    include Sexpable.S with type t := t
+
+    (** [pp_verbose verbose f specs] prints a [specs] with the level of
+        verbosity implied by [verbose]. *)
+    val pp_verbose : bool -> Format.formatter -> t -> unit
+
+    (** [get specs id] tries to look up ID [id] in [specs],
+        and emits an error if it can't. *)
+    val get : t -> Id.t -> elt Or_error.t
+
+    (** [of_list xs] tries to make a set from [xs].
+        It raises an error if [xs] contains duplicate IDs. *)
+    val of_list : WithId.t list -> t Or_error.t
+
+    (** [partition_map specs ~f] applies a partitioning predicate [f] to the
+        specifications in [specs], returning those marked [`Fst] in
+        the first bucket and those marked [`Snd] in the second. *)
+    val partition_map
+      :  t
+      -> f : (WithId.t -> [`Fst of 'a | `Snd of 'b])
+      -> ('a list * 'b list)
+    ;;
+
+    (** [map specs ~f] applies a mapper [f] to the
+        specifications in [specs], returning the results as a list. *)
+    val map
+      :  t
+      -> f : (WithId.t -> 'a)
+      -> 'a list
+    ;;
+  end
+
+  (** [pp_verbose verbose f spec] prints a [spec] with the level of
+      verbosity implied by [verbose]. *)
+  val pp_verbose : bool -> Format.formatter -> t -> unit
 end
 
-(** [Set] is a module for dealing with sets of compiler specs. *)
-module Set : sig
+(** [MakeSpec] makes a [SpecIntf] from a [SpecS]. *)
+module MakeSpec
+  : functor (S : SpecS)
+    -> SpecIntf with type t = S.t
+;;
+
+(*
+ * Machines
+ *)
+
+(** [MRefIntf] is the signature any machine reference module
+    going into [MakeCSpec] must implement. *)
+module type MRefIntf = sig
+  (** [t] is the type of machine references. *)
   type t
 
   include Pretty_printer.S with type t := t
+  include Sexpable.S with type t := t
 
-  (** [pp_verbose verbose f specs] prints a [specs] with the level of
-     verbosity implied by [verbose]. *)
-  val pp_verbose : bool -> Format.formatter -> t -> unit
+  (** [default] is the default machine reference, used whenever a
+      reference is omitted in a compiler specification. *)
+  val default : t;;
+
+  (** [is_remote m] returns a guess as to whether machine reference
+     [m] is a reference to a remote machine. *)
+  val is_remote : t -> bool;;
+end
+
+(** [SshIntf] is the interface of modules defining SSH
+    configuration. *)
+module type SshIntf = sig
+  type t
+
+  include Pretty_printer.S with type t := t
+  include Sexpable.S with type t := t
+
+  (** [host] gets the hostname of the SSH remote. *)
+  val host : t -> string
+  (** [user] gets the optional username of the SSH remote. *)
+  val user : t -> string option
+  (** [copy_dir] gets the remote directory to which we'll be
+      copying work. *)
+  val copy_dir : t -> string
+end
+
+(** [Ssh] is a module defining SSH configuration. *)
+module Ssh : SshIntf
+
+(** [MSpecIntf] is a the interface of modules defining machine
+   specification types. *)
+module type MSpecIntf = sig
+  (** [t] describes a machine. *)
+  type t;;
+
+  (** [via] describes the connection to the machine. *)
+  type via =
+    | Local
+    | Ssh of Ssh.t
+  ;;
+  (** [via spec] gets the [via] stanza of a machine spec [spec]. *)
+  val via : t -> via;;
+
+  (** Machine specifications are machine references... *)
+  include MRefIntf with type t := t
+  (** ...and specifications. *)
+  include SpecIntf with type t := t
+end
+
+(** [MSpec] is a module for machine specifications. *)
+module MSpec : MSpecIntf
+
+(*
+ * Compiler specifications
+ *)
+
+(** [CSpecIntf] is the interface of modules defining compiler
+    specification types. *)
+module type CSpecIntf = sig
+  (** [Mach] is some module for resolving references to the machine on
+     which a compiler is located.  This can either be an inline
+     machine specification module, or a more indirect form of
+     reference. *)
+  module Mach : MRefIntf
+
+  (** [t] is the opaque type of compiler specifications.
+      To construct a [t], read one in as an S-expression;
+      a proper constructor may appear in later revisions. *)
+  type t
+
+  (** [style c] gets the invocation style of [c]. *)
+  val style : t -> string
+
+  (** [emits c] gets the architecture emitted by [c]. *)
+  val emits : t -> string list
+
+  (** [cmd] gets the command used to invoke [c]. *)
+  val cmd : t -> string
+
+  (** [argv] gets any extra arguments to supply to [c]. *)
+  val argv : t -> string list
+
+  (** [herd] gets the optional Herd command to run on [c]'s output. *)
+  val herd : t -> string option
+
+  (** [machine] gets the machine reference for [c]. *)
+  val machine : t -> Mach.t
+
+  (** [create ~enabled ~style ~emits ~cmd ~argv ~herd ~machine]
+      creates a compiler spec with the given fields.
+
+      These fields are subject to change, and as such [create] is an
+      unstable API. *)
+  val create
+    :  enabled : bool
+    -> style   : string
+    -> emits   : string list
+    -> cmd     : string
+    -> argv    : string list
+    -> herd    : string option
+    -> machine : Mach.t
+    -> t
+  ;;
+
+  (** Compiler specifications are specifications! *)
+  include SpecIntf with type t := t
+end
+
+(** [MakeCSpec] is a functor for building compiler specifications
+   parametrised on machine references.
+
+    See [CfgSpec] and [Spec] for implementations of this functor. *)
+module MakeCSpec
+  : functor (M : MRefIntf)
+    -> CSpecIntf with module Mach = M
+;;
+
+(** [CfgCSpec] is a module describing compiler specs where machine
+    references are unresolved IDs.  This is the format
+    used in the configuration file, hence the name. *)
+module CfgCSpec : CSpecIntf with type Mach.t = Id.t
+
+(** [CSpec] is a module describing compiler specs where machine
+    references are inlined [MSpec.t] records. *)
+module CSpec : CSpecIntf with type Mach.t = MSpec.t
+
+(** [WithCSpec] is an interface for modules containing a compiler
+    specification. *)
+module type WithCSpec = sig
+  val cspec : CSpec.WithId.t
+end
+
+(*
+ * Configuration
+ *)
+
+(** [CfgIntf] is the baseline interface of modules over compiler
+    configuration. *)
+module type CfgIntf = sig
+  module C : CSpecIntf
+  module M : MSpecIntf
+
+  type t
 
   include Sexpable.S with type t := t
 
-  (** [get specs cid] tries to look up compiler ID [cid] in specs
-      [specs], and emits an error if it can't. *)
-  val get : t -> Id.t -> Spec.t Or_error.t
+  (** [compilers c] gets the set of all active compilers in
+      configuration [c]. *)
+  val compilers : t -> C.Set.t
 
-  (** [filter ~f specs] applies a filtering predicate to the
-      specifications in [specs]. *)
-  val filter
-    :  f : (Spec.t -> bool)
-    -> t
-    -> t
-
-  (** [test ~f specs] runs a testing predicate [f] over each enabled
-      compiler in [specs].  It returns [specs] with all disabled
-      and failed compilers removed, and the list of any
-      testing errors discovered. *)
-  val test
-    :  f : (Spec.with_id -> unit Or_error.t)
-    -> t
-    -> t * Error.t list
-
-  (** [load ~file] loads a spec set from [file]. *)
-  val load : path:string -> t Or_error.t
-
-  (** [map ~f specs] maps a function across each enabled
-      compiler ID and spec pair in [specs]. *)
-  val map : f:(Spec.with_id -> 'a) -> t -> 'a list
+  (** [machines c] gets the set of all active machines in
+      configuration [c]. *)
+  val machines : t -> M.Set.t
 end
+
+(** [RawCfg] concerns compiler configurations loaded directly from a
+    spec file, without any compiler testing or expansion. *)
+module RawCfg : sig
+  include CfgIntf with module C = CfgCSpec and module M = MSpec
+
+  (** [load ~path] loads a [RawCfg] from a file. *)
+  val load : path:string -> t Or_error.t
+end
+
+(** [Cfg] concerns compiler configurations that have been
+    pre-processed from [RawCfg]s. *)
+module Cfg : sig
+  include CfgIntf with module C = CSpec and module M = MSpec
+
+  (** [disabled_compilers c] reports all disabled compiler IDs in
+      the given config, along with any reason why. *)
+  val disabled_compilers : t -> (Id.t * Error.t option) list
+
+  (** [disabled_machines c] reports all disabled machines in
+      the given config, along with any reason why. *)
+  val disabled_machines : t -> (Id.t * Error.t option) list
+
+  (** [from_raw c ?chook ?mhook] takes a raw config [t] and processes it by:
+
+      - applying the given testing hooks onto the compilers and machines, and
+      disabling any that fail;
+      - resolving machine references, and disabling any
+      broken ones.
+
+      Testing hooks are optional (and default to passing the compiler
+      or machine through unaltered), and should return
+      [Ok (Some x)] when the element is enabled and passing;
+      [Ok None] when the element is disabled; and
+      [Error e] when the element is enabled and failing. *)
+  val from_raw
+    :  ?chook:(CSpec.WithId.t -> CSpec.WithId.t option Or_error.t)
+    -> ?mhook:(MSpec.WithId.t -> MSpec.WithId.t option Or_error.t)
+    -> RawCfg.t
+    -> t Or_error.t
+  ;;
+end
+
+(*
+ * Running compilers
+ *)
 
 (** [S] is the basic interface compilers must implement. *)
 module type S = sig
@@ -128,7 +368,7 @@ end
 
 (** [Intf] is the outward-facing interface of compiler modules. *)
 module type Intf = sig
-  include WithSpec
+  include WithCSpec
 
   (** [test ()] tests that the compiler is working. *)
   val test : unit -> unit Or_error.t
@@ -141,7 +381,7 @@ end
 (** [Make] produces a runnable compiler satisfying [Intf] from a
     triple of spec [P], compiler [C], hooks [H], and runner [R]. *)
 module Make
-  : functor (P : WithSpec)
+  : functor (P : WithCSpec)
     -> functor (C : S)
       -> functor (H : Hooks)
         -> functor (R : Run.Runner)
@@ -151,6 +391,6 @@ module Make
    [S] from a spec, and attempts to produce a first-class compiler
    module. *)
 val from_spec
-  :  (Spec.with_id -> (module S) Or_error.t)
-  -> Spec.with_id
+  :  (CSpec.WithId.t -> (module S) Or_error.t)
+  -> CSpec.WithId.t
   -> (module Intf) Or_error.t

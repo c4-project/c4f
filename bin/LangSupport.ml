@@ -90,27 +90,52 @@ let style_modules =
   [ "gcc", (module Gcc : Compiler.S) ]
 ;;
 
-let compiler_module_from_spec (cspec : Compiler.Spec.with_id) =
-  let style = cspec.cspec.style in
+let compiler_module_from_spec (cspec : Compiler.CSpec.WithId.t) =
+  let style =
+    Compiler.CSpec.style
+      (Compiler.CSpec.WithId.spec cspec)
+  in
   List.Assoc.find ~equal:String.Caseless.equal style_modules style
   |> Result.of_option ~error:(Error.createf "Unknown compiler style: %s" style)
 ;;
 
-let compiler_from_spec (cspec : Compiler.Spec.with_id) =
+let compiler_from_spec (cspec : Compiler.CSpec.WithId.t) =
   Compiler.from_spec
     compiler_module_from_spec
     cspec
 ;;
 
-let test_spec cspec =
+let test_compiler cspec =
   let open Or_error.Let_syntax in
   let%bind m = compiler_from_spec cspec in
   let module M = (val m) in
-  Or_error.tag_arg
-    (M.test ())
-    "A compiler in your spec file didn't respond properly"
-    cspec.cid
-    [%sexp_of:Compiler.Id.t]
+  let%bind () =
+    Or_error.tag_arg
+      (M.test ())
+      "A compiler in your spec file didn't respond properly"
+      (Compiler.CSpec.WithId.id cspec)
+      [%sexp_of:Compiler.Id.t]
+  in
+    return (Some cspec)
 ;;
 
-let test_specs specs = Compiler.Set.test ~f:test_spec specs;;
+let test_machine local_only mspec =
+  let is_remote =
+    Compiler.MSpec.is_remote
+      (Compiler.MSpec.WithId.spec mspec)
+  in
+  let disabled = local_only && is_remote in
+  Or_error.return (
+    (* TODO(@MattWindsor91): actually test! *)
+    Option.some_if (not disabled) mspec
+  )
+;;
+
+let load_and_test_cfg ?(local_only=false) ~path =
+  let open Or_error.Let_syntax in
+  let%bind rcfg = Compiler.RawCfg.load ~path in
+  Compiler.Cfg.from_raw
+    rcfg
+    ~chook:test_compiler
+    ~mhook:(test_machine local_only)
+;;

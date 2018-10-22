@@ -49,9 +49,16 @@ val get_litmusifier
 (** [compiler_from_spec cid spec] generates a compiler module from
    [cid] and [spec]. *)
 val compiler_from_spec
-  :  Compiler.Spec.with_id
+  :  Compiler.CSpec.WithId.t
   -> (module Compiler.Intf) Or_error.t
 
-(** [test_specs specs] tests all enabled specs in the set [specs], and
-    partitions them into a list of valid specs and test failures. *)
-val test_specs : Compiler.Set.t -> (Compiler.Set.t * Error.t list)
+(** [load_and_test_cfg ?local_only ~path] loads the compiler config
+   file at [~path], and tests all machines and compilers therein.
+
+    If [local_only] is present and true, all remote machines will be
+    disabled. *)
+val load_and_test_cfg
+  :  ?local_only : bool
+  -> path : string
+  -> Compiler.Cfg.t Or_error.t
+;;

@@ -1,84 +1,124 @@
 ;; -*- mode: lisp; -*-
 
-#| This is a compiler spec file.  It tells act which compilers to run,
-and how to run them.
-
-It takes the form of a list S-expression, where each item in the list
-a pair of a 'compiler identifier' and a specification for that
-compiler.  For details on syntax, see
-`https://github.com/janestreet/sexplib`.
-
-By default, 'act' reads from './compiler.spec'.  |#
+;; This is a compiler spec file.  It tells act which compilers to run,
+;; and how to run them.
+;;
+;; A compiler spec file is a long S-expression.
+;; For details on syntax, see `https://github.com/janestreet/sexplib`.
+;;
+;; By default, 'act' reads from './compiler.spec'.  It's recommended to
+;; copy this file there, and then edit it.
 
 (
- #| This expression specifies a compiler we'll call 'gcc x86'.
- Compiler identifiers are lists: each item in the list corresponds
- to a level in the directory hierarchy act builds in memalloy mode.
-
- Whenever you want to refer to a compiler by identifier on an act
- command line, you need to join the list elements with one of the
- following characters: '.', ' ', '/', or '\'.  For example, you could
- refer to this compiler as 'gcc.x86'.  |#
- ((gcc x86)
+ ;; First, we define a 'machines' section.
+ ;; This tells 'act' which machines it can run compilers on, and how.
+ (machines
   (
-   #| 'enabled BOOL' enables or disables a compiler.  You can omit
-   '(enabled true)': compilers are enabled by default. |#
-   (enabled true)
+   ;; Each machine (and compiler) has an associated ID.  The ID is
+   ;; a list of strings.
+   ;;
+   ;; By default, compilers run on the (default) machine, so we'll
+   ;; define that first.
+   ((default)
+    (
+     ;; The 'via' stanza tells 'act' how to reach this machine.
+     ;; '(via local)' tells 'act' the machine is the local machine
+     ;; it's currently running on.
+     (via local)
+     ))
 
-   #| 'style' tells us what sort of interface the compiler exposes.
+   ;; Suppose we want to run compilers on a remote machine.
+   ;; We can do so by using 'via ssh'.  Here's an example:
+   ((example)
+    (
+     ;; We can disable machines using the (enabled false) stanza.
+     ;; You can also put (enabled true), but it's redundant.
+     (enabled false)
+     ;; Most of this is self-explanatory, except for the 'copy_dir'.
+     ;; This tells act where, on the remote system, to copy work for
+     ;; the remote compiler to run, and where to expect the remote
+     ;; system to put its results.  It should be writable, but
+     ;; there otherwise aren't any real requirements.
+     (via (ssh ((host "example.com")
+		(user "johndoe") ; Optional
+		(copy_dir "/home/johndoe/actscratch"))))
+     ))
 
-    Currently, we only support 'gcc' here; later, we might have
-    support for MSVC, etc.
+   ;; Some notes about act's SSH support:
+   ;;
+   ;; - act won't ask for a password or passphrase---it'll only work
+   ;;   if you have some sort of non-interactive authentication
+   ;;   mechanism (such as public-key with the key added to your
+   ;;   current agent).
+   ;;
+   ;; - act doesn't clean up the copy_dir after use, nor will it make
+   ;;   the copy_dir if it doesn't already exist.
+   ;;
+   ;; - In memalloy mode, you can disable all SSH compilers by passing
+   ;;   the '-local-only' flag on the command line.
+   ;;
+   ;; - act currently establishes three SSH connections per
+   ;;   compilation: one for the compiler, and two to SCP the results
+   ;;   across.  This may get optimised in future versions, but, until
+   ;;   then, be warned that the process may be slow and
+   ;;   traffic-intensive.
 
-   'act' runs some lightweight checks to make sure that the compiler
-   actually obeys the style choice. |#
-   (style gcc)
+   ;; This concludes the 'machines' section.
+   ))
 
-   #| 'emits' tells act which language the compiler is emitting.  Each
-   language may have a sub-dialect, in which case 'emits' is a list.
+ ;; Now, we define the compilers themselves.
+ (compilers
+  (
+   ;; This stanza specifies a compiler we'll call 'gcc x86'.  Compiler
+   ;; IDs are also lists; each item in the list corresponds to a level
+   ;; in the directory hierarchy act builds in memalloy mode.
 
-   Currently, we only support '(x86 att)' (AT&T syntax x86). |#
-   (emits (x86 att))
+   ;; Whenever you want to refer to a compiler by identifier on an act
+   ;; command line, you need to join the list elements with one of the
+   ;; following characters: '.', ' ', '/', or '\'.  For example, you
+   ;; could refer to this compiler as 'gcc.x86'.
+   ((gcc x86)
+    (
+     ;; As with machines, 'enabled BOOL' enables or disables a
+     ;; compiler.  If a compiler is enabled, but its machine isn't,
+     ;; the compiler won't run.
+     (enabled true)
 
-   #| 'cmd' gives the command name for the compiler.  This should
-      point to somewhere in your PATH, or be an absolute path. |#
-   (cmd gcc)
+     ;; 'style' tells us what sort of interface the compiler exposes.
+     ;;
+     ;; Currently, we only support 'gcc' here; later, we might have
+     ;; support for MSVC, etc.
+     ;;
+     ;; 'act' runs some lightweight checks to make sure that the
+     ;; compiler actually obeys the style choice.
+     (style gcc)
 
-   #| 'argv' gives the list of arguments to the compiler. |#
-   (argv ("-m32" "-DNO_PTHREADS"))
+     ;; 'emits' tells act which language the compiler is emitting.
+     ;; Each language may have a sub-dialect, in which case 'emits' is
+     ;; a list.
+     ;; Currently, we only support '(x86 att)' (AT&T syntax x86).
+     (emits (x86 att))
 
-   #| Optionally, you can tell act to auto-run Herd on generated
-      litmus.  To do so, uncomment the line below and, if needed,
-      replace "herd7" with the name of the Herd binary (or full path,
-      if it isn't in your PATH).
+     ;; 'cmd' gives the command name for the compiler.  This should
+     ;; point to somewhere in the user's PATH, or be an absolute path.
+     (cmd gcc)
 
-   (herd "herd7")
+     ;; 'argv' gives the list of arguments to the compiler.
+     ;; These are added to by 'act' internally.
+     (argv ("-m32" "-DNO_PTHREADS"))
 
-   |#
+     ;; Optionally, you can tell act to auto-run Herd on generated
+     ;; litmus.  To do so, use 'herd HERD', where 'HERD' is the name
+     ;; of the Herd binary (or full path, if it isn't in your PATH).
+     ;;
+     ;; Note that herd always runs locally, even on remote targets.
+     (herd "herd7") ; optional
 
-   #| By default, 'act' assumes the compiler exists on the local
-   machine.  To use 'act' with remote compilers over SSH, you can
-   uncomment and adjust the following S-expression.
-
-   (ssh
-     (
-       (host "hostname")
-       (user "username")
-       (copy_dir "/path/to/directory/where/we/should/run/the/compiler")
-     )
-   )
-
-   Some notes about act's SSH support:
-
-   - act won't ask for a password or passphrase---it'll only work if
-     you have some sort of non-interactive authentication mechanism
-     (such as public-key with the key added to your current agent).
-   - act doesn't clean up the copy_dir after use, nor will it make
-     the copy_dir if it doesn't already exist.
-   - In memalloy mode, you can disable all SSH compilers by passing the
-     '-local-only' flag on the command line.
-   - act currently establishes three SSH connections per compilation:
-     one for the compiler, and two to SCP the results across.
-     This may get optimised in future versions, but, until then,
-     be warned that the process may be slow and traffic-intensive. |#
-   )))
+     ;; By default, 'act' assumes the compiler exists on the machine
+     ;; '(default)'.  To override this, use a (machine ID) stanza.
+     (machine (default)) ; optional
+     ))
+   ;; This concludes the 'compilers' section.
+   ))
+ ;; End of spec file.
+ )

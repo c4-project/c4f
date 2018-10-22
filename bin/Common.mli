@@ -34,7 +34,7 @@ val do_litmusify
   -> OutputCtx.t
   -> infile : string option
   -> outfile : string option
-  -> Compiler.Spec.t
+  -> Compiler.CSpec.t
   -> unit Or_error.t
 ;;
 

@@ -128,7 +128,11 @@ let make_compiler root_path basename cid =
 
 let make specs ~in_root ~out_root ~c_fname =
   let basename   = Filename.basename (Filename.chop_extension c_fname) in
-  let spec_map f = Compiler.Set.map ~f:(fun {cid; _} -> (cid, f cid)) specs in
+  let spec_map f =
+    Compiler.CSpec.Set.map
+      ~f:(fun c -> let cid = Compiler.CSpec.WithId.id c in (cid, f cid))
+      specs
+  in
   let lit_fname  = basename ^ ".litmus" in
   { basename
   ; out_root
