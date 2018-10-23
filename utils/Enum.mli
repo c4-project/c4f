@@ -98,6 +98,11 @@ module type ExtensionTable = sig
   include StringTable.Intf with type t := t
   include Identifiable.S_common with type t := t
 
+  (** [of_string_option] is the same as [of_string] in
+     [StringTable.Intf], but renamed so as not to clash with the
+     [Stringable] version. *)
+  val of_string_option : string -> t option
+
   (** [pp_set] pretty-prints a set of [t]. *)
   val pp_set : Format.formatter -> Set.t -> unit
 end

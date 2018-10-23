@@ -48,18 +48,40 @@ copyright notice follow. *)
 
 open Utils
 
-(** [reg] enumerates all of the known (32-bit) x86 registers. *)
-type reg =
-  | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
-  | AX | BX | CX | DX
-  | AL | BL | CL | DL
-  | AH | BH | CH | DH
-  | ZF | SF | CF
-  | CS | DS | ES | FS | GS
-[@@deriving sexp]
+(** [Reg] contains types and functions for dealing with x86 registers
+   in the abstract syntax. *)
+module Reg : sig
+  (** [t] enumerates all commonly used registers available in 32-bit
+     x86. *)
+  type t =
+    | AH | AL | AX | EAX
+    | BH | BL | BX | EBX
+    | CH | CL | CX | ECX
+    | DH | DL | DX | EDX
+    | BP | EBP
+    | SI | ESI
+    | DI | EDI
+    | SP | ESP
+    | CS | DS | SS | ES | FS | GS
+    | CF | PF | AF | ZF | SF | OF
+    | EIP
+  ;;
 
-(** [RegTable] associates each register with its string name. *)
-module RegTable : (StringTable.Intf with type t = reg)
+  include Enum.ExtensionTable with type t := t
+
+  (** [kind] enumerates the general kinds of register. *)
+  type kind =
+    | Gen8 of [`Low | `High]  (** General-purpose 8bit  (xH or xL) *)
+    | Gen16                   (** General-purpose 16bit (usually xX) *)
+    | Gen32                   (** General-purpose 32bit (usually ExX) *)
+    | Segment                 (** Segment register *)
+    | Flags                   (** Flag from the flag register *)
+    | IP                      (** Instruction pointer *)
+  ;;
+
+  (** [kind_of r] gets the kind of register [r]. *)
+  val kind_of : t -> kind
+end
 
 type disp =
   | DispSymbolic of string
@@ -67,14 +89,14 @@ type disp =
 [@@deriving sexp]
 
 type index =
-  | Unscaled of reg
-  | Scaled of reg * int
+  | Unscaled of Reg.t
+  | Scaled of Reg.t * int
 [@@deriving sexp]
 
 type indirect =
-  { in_seg    : reg option
+  { in_seg    : Reg.t option
   ; in_disp   : disp option
-  ; in_base   : reg option
+  ; in_base   : Reg.t option
   ; in_index  : index option
   }
 [@@deriving sexp]
@@ -86,7 +108,7 @@ val in_zero : unit -> indirect
 
 (** [in_base_only] creates an indirect reference with given
    base register, and all other fields empty. *)
-val in_base_only : reg -> indirect
+val in_base_only : Reg.t -> indirect
 
 (** [in_disp_only] creates an indirect reference with given
    displacement, and all other fields empty. *)
@@ -94,7 +116,7 @@ val in_disp_only : disp -> indirect
 
 (** [in_seg_disp] creates an indirect reference with given
    segment-displacement pair, and all other fields empty. *)
-val in_seg_disp : (reg option * disp) -> indirect
+val in_seg_disp : (Reg.t option * disp) -> indirect
 
 
 type bop =
@@ -106,7 +128,7 @@ type bop =
     indirect seg/disp/base/index stanzas, or registers. *)
 type location =
   | LocIndirect of indirect
-  | LocReg of reg
+  | LocReg of Reg.t
 [@@deriving sexp]
 
 type operand =

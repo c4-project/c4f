@@ -47,56 +47,88 @@ copyright notice follow. *)
 open Core
 open Utils
 
-type reg =
-  | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP | EIP
-  | AX | BX | CX | DX
-  | AL | BL | CL | DL
-  | AH | BH | CH | DH
-  | ZF | SF | CF
-  | CS | DS | ES | FS | GS
-[@@deriving sexp]
+module Reg = struct
+  module M = struct
+    (* Ordered as in Intel manual *)
+    type t =
+      | AH | AL | AX | EAX
+      | BH | BL | BX | EBX
+      | CH | CL | CX | ECX
+      | DH | DL | DX | EDX
+      | BP | EBP
+      | SI | ESI
+      | DI | EDI
+      | SP | ESP
+      | CS | DS | SS | ES | FS | GS
+      | CF | PF | AF | ZF | SF | OF
+      | EIP
+    [@@deriving enum, sexp]
+    ;;
 
-module RegTable =
-  StringTable.Make
-    (struct
-      type t = reg
-      let table =
-        [ EAX, "EAX"
-        ; EBX, "EBX"
-        ; ECX, "ECX"
-        ; EDX, "EDX"
-        ; ESI, "ESI"
-        ; EDI, "EDI"
-        ; EBP, "EBP"
-        ; ESP, "ESP"
-        ; EIP, "EIP"
-        (* Segment registers *)
-        ; CS,  "CS"
-        ; DS,  "DS"
-        ; ES,  "ES"
-        ; FS,  "FS"
-        ; GS,  "GS"
-        (* Flag registers *)
-        ; ZF,  "ZF"
-        ; SF,  "SF"
-        ; CF,  "CF"
-        (* 16-bit registers *)
-        ; AX,  "AX"
-        ; BX,  "BX"
-        ; CX,  "CX"
-        ; DX,  "DX"
-        (* 8-bit low registers *)
-        ; AL,  "AL"
-        ; BL,  "BL"
-        ; CL,  "CL"
-        ; DL,  "DL"
-        (* 8-bit high registers *)
-        ; AH,  "AH"
-        ; BH,  "BH"
-        ; CH,  "CH"
-        ; DH,  "DH"
-        ]
-    end)
+    let table =
+      [ AH , "AH"
+      ; AL , "AL"
+      ; AX , "AX"
+      ; EAX, "EAX"
+      ; BH , "BH"
+      ; BL , "BL"
+      ; BX , "BX"
+      ; EBX, "EBX"
+      ; CH , "CH"
+      ; CL , "CL"
+      ; CX , "CX"
+      ; ECX, "ECX"
+      ; DH , "DH"
+      ; DL , "DL"
+      ; DX , "DX"
+      ; EDX, "EDX"
+      ; BP , "BP"
+      ; EBP, "EBP"
+      ; SI , "SI"
+      ; ESI, "ESI"
+      ; DI , "DI"
+      ; EDI, "EDI"
+      ; SP , "SP"
+      ; ESP, "ESP"
+      ; CS , "CS"
+      ; DS , "DS"
+      ; SS , "SS"
+      ; ES , "ES"
+      ; FS , "FS"
+      ; GS , "GS"
+      ; CF , "CF"
+      ; PF , "PF"
+      ; AF , "AF"
+      ; ZF , "ZF"
+      ; SF , "SF"
+      ; OF , "OF"
+      ; EIP, "EIP"
+      ]
+    ;;
+  end
+
+  include M
+  include Enum.ExtendTable (M)
+
+  type kind =
+    | Gen8 of [`Low | `High]
+    | Gen16
+    | Gen32
+    | Segment
+    | Flags
+    | IP
+  ;;
+
+  let kind_of : t -> kind = function
+    | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP -> Gen32
+    | AX | BX | CX | DX | SI | DI | BP | SP -> Gen16
+    | AH | BH | CH | DH -> Gen8 `High
+    | AL | BL | CL | DL -> Gen8 `Low
+    | CS | DS | SS | ES | FS | GS -> Segment
+    | CF | PF | AF | ZF | SF | OF -> Flags
+    | EIP -> IP
+  ;;
+end
 
 (*
  * Displacements
@@ -118,8 +150,8 @@ let fold_map_disp_symbols ~f ~init =
  *)
 
 type index =
-  | Unscaled of reg
-  | Scaled of reg * int
+  | Unscaled of Reg.t
+  | Scaled of Reg.t * int
 [@@deriving sexp]
 
 (*
@@ -127,9 +159,9 @@ type index =
  *)
 
 type indirect =
-  { in_seg    : reg option
+  { in_seg    : Reg.t option
   ; in_disp   : disp option
-  ; in_base   : reg option
+  ; in_base   : Reg.t option
   ; in_index  : index option
   }
 [@@deriving sexp]
@@ -158,7 +190,7 @@ let fold_map_indirect_symbols ~f ~init indirect =
 
 type location =
   | LocIndirect of indirect
-  | LocReg of reg
+  | LocReg of Reg.t
 [@@deriving sexp]
 
 let fold_map_location_symbols ~f ~init =

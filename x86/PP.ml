@@ -55,7 +55,7 @@ let disp_positive =
   | _ -> true
 
 module type Dialect = sig
-  val pp_reg : Format.formatter -> reg -> unit
+  val pp_reg : Format.formatter -> Reg.t -> unit
   val pp_indirect : Format.formatter -> indirect -> unit
   val pp_immediate : Format.formatter -> disp -> unit
   val pp_comment
@@ -100,7 +100,7 @@ module ATTSpecific = struct
     [%expect {| # AT&T comment |}]
 
   let pp_reg f reg =
-    Format.fprintf f "@[%%%s@]" (RegTable.to_string_exn reg)
+    Format.fprintf f "@[%%%s@]" (Reg.to_string reg)
 
   let%expect_test "pp_reg: AT&T, ESP" =
     Format.printf "%a@." pp_reg ESP;
@@ -230,7 +230,7 @@ end
 
 (** Parts common to Intel and Herd7 *)
 module IntelAndHerd7 = struct
-    let pp_reg f reg = String.pp f (RegTable.to_string_exn reg)
+    let pp_reg f reg = String.pp f (Reg.to_string reg)
 
     let%expect_test "pp_reg: intel, EAX" =
       Format.printf "%a@." pp_reg EAX;

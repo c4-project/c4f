@@ -99,7 +99,7 @@ module Hook (L : Language.Intf) = struct
           Ctx.make_fresh_heap_loc
             (sprintf "t%sg%sd%d"
                progname
-               (Ast.RegTable.to_string_exn s)
+               (Ast.Reg.to_string s)
                k
             )
         in

@@ -56,7 +56,7 @@ copyright notice follow. *)
 %token PLUS
 %token MINUS
 %token DOLLAR
-%token <Ast.reg> ATT_REG
+%token <Ast.Reg.t> ATT_REG
 %token <string> STRING
 %token <string> NUM
 %token <string> ATT_HEX

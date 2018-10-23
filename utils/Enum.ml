@@ -66,6 +66,7 @@ module type ExtensionTable = sig
   include StringTable.Intf with type t := t
   include Identifiable.S_common with type t := t
 
+  val of_string_option : string -> t option
   val pp_set : Format.formatter -> Set.t -> unit
 end
 
@@ -124,6 +125,8 @@ module ExtendTable (E : SSexpTable) : ExtensionTable with type t := E.t = struct
         let hash_fold_t = Ex.hash_fold_t
       end)
   include Id
+
+  let of_string_option = Tbl.of_string;;
 
   let pp_set f set =
     match Set.to_list set with

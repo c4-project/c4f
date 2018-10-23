@@ -45,10 +45,6 @@ copyright notice follow. *)
 (****************************************************************************)
 
 open Core
-open Ast
-
-let parse_reg (s : string) : reg option =
-  RegTable.of_string s
 
 type error_range = (Lexing.position * Lexing.position)
 

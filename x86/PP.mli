@@ -59,7 +59,7 @@ Note that changing the pretty-printer from one dialect to another does
 open Ast
 
 module type Printer = sig
-  val pp_reg : Format.formatter -> reg -> unit
+  val pp_reg : Format.formatter -> Reg.t -> unit
   val pp_indirect : Format.formatter -> indirect -> unit
   val pp_immediate : Format.formatter -> disp -> unit
 
