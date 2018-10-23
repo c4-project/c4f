@@ -22,4 +22,5 @@ depends: [
 "ppx_jane"
 "ppx_sexp_message"
 ]
-build: ["dune" "build" "-p" name]
+build: [ "dune" "build" "-p" name ]
+run-test: [ "dune" "runtest" "-p" name ]
