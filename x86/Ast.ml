@@ -237,54 +237,77 @@ let fold_map_location_registers ~f ~init = function
       (Indirect.fold_map_registers ~f ~init i)
 ;;
 
-(*
- * Operators
- *)
+module Operand = struct
+  type bop =
+    | BopPlus
+    | BopMinus
+  [@@deriving sexp]
 
-type bop =
-  | BopPlus
-  | BopMinus
-[@@deriving sexp]
+  type t =
+    | Location of location
+    | Immediate of disp
+    | String of string
+    | Typ of string
+    | Bop of t * bop * t
+  [@@deriving sexp, variants]
 
-(*
- * Operands
- *)
+  let rec fold_map
+      ~init
+      ?(location=Tuple2.create)
+      ?(immediate=Tuple2.create)
+      ?(string=Tuple2.create)
+      ?(typ=Tuple2.create)
+      ?(bop=Tuple2.create)
+    (x : t) : ('a * t) =
+    Variants.map
+      x
+      ~location:(fun v l -> Tuple2.map_snd ~f:v.constructor (location init l))
+      ~immediate:(fun v d -> Tuple2.map_snd ~f:v.constructor (immediate init d))
+      ~string:(fun v s -> Tuple2.map_snd ~f:v.constructor (string init s))
+      ~typ:(fun v t -> Tuple2.map_snd ~f:v.constructor (typ init t))
+      ~bop:(fun v l b r ->
+          let (init, l') = fold_map ~init ~location ~immediate ~string ~typ ~bop l in
+          let (init, b') = bop init b in
+          let (init, r') = fold_map ~init ~location ~immediate ~string ~typ ~bop r in
+          (init, v.constructor l' b' r'))
+  ;;
 
-type operand =
-  | OperandLocation of location
-  | OperandImmediate of disp
-  | OperandString of string
-  | OperandType of string
-  | OperandBop of operand * bop * operand
-[@@deriving sexp]
+  let fold_map_symbols ~f ~init t =
+    fold_map
+      ~init
+      ~location:(fun init -> fold_map_location_symbols ~f ~init)
+      ~immediate:(fun init -> fold_map_disp_symbols ~f ~init)
+      t
+  ;;
 
-let rec fold_map_operand_symbols ~f ~init =
-  function
-  | OperandLocation l ->
-     Tuple2.map_snd ~f:(fun x -> OperandLocation x)
-                    (fold_map_location_symbols ~f ~init l)
-  | OperandImmediate d ->
-     Tuple2.map_snd ~f:(fun x -> OperandImmediate x)
-                    (fold_map_disp_symbols ~f ~init d)
-  | OperandString s -> (init, OperandString s)
-  | OperandType ty -> (init, OperandType ty)
-  | OperandBop (l, b, r) ->
-     let (init, l') = fold_map_operand_symbols ~f ~init l in
-     let (init, r') = fold_map_operand_symbols ~f ~init r in
-     (init, OperandBop (l', b, r'))
+  let%expect_test "symbol fold over bop" =
+    let ast =
+      bop
+        (bop
+           (immediate (DispSymbolic "a"))
+           BopPlus
+           (immediate (DispSymbolic "b")))
+        BopMinus
+        (location
+           (LocIndirect (Indirect.make ~disp:(DispSymbolic "c") ())))
+    in
+    let f count sym = (count + 1), String.capitalize sym in
+    let (total, ast') = fold_map_symbols ~f ~init:0 ast in
+    Format.printf "@[<v>@[<h>Total:@ %d@]@,%a@]@."
+      total
+      Sexp.pp_hum [%sexp (ast' : t)];
+    [%expect {|
+      Total: 3
+      (Bop (Bop (Immediate (DispSymbolic A)) BopPlus (Immediate (DispSymbolic B)))
+       BopMinus
+       (Location
+        (LocIndirect ((seg ()) (disp ((DispSymbolic C))) (base ()) (index ()))))) |}]
+  ;;
 
-let rec fold_map_operand_locations ~f ~init =
-  function
-  | OperandLocation l ->
-     Tuple2.map_snd ~f:(fun x -> OperandLocation x)
-                    (f init l)
-  | OperandImmediate d -> (init, OperandImmediate d)
-  | OperandString s -> (init, OperandString s)
-  | OperandType ty -> (init, OperandType ty)
-  | OperandBop (l, b, r) ->
-     let (init, l') = fold_map_operand_locations ~f ~init l in
-     let (init, r') = fold_map_operand_locations ~f ~init r in
-     (init, OperandBop (l', b, r'))
+  let fold_map_locations ~f ~init t =
+    fold_map ~init ~location:f t
+  ;;
+end
 
 (*
  * Prefixes
@@ -501,19 +524,19 @@ module JumpTable =
 type instruction =
   { prefix   : prefix option
   ; opcode   : opcode
-  ; operands : operand list
+  ; operands : Operand.t list
   }
 [@@deriving sexp]
 
 let fold_map_instruction_symbols ~f ~init ins =
   Tuple2.map_snd ~f:(fun x -> { ins with operands = x })
-                 (List.fold_map ~f:(fun init -> fold_map_operand_symbols ~f ~init)
+                 (List.fold_map ~f:(fun init -> Operand.fold_map_symbols ~f ~init)
                                 ~init
                                 ins.operands)
 
 let fold_map_instruction_locations ~f ~init ins =
   Tuple2.map_snd ~f:(fun x -> { ins with operands = x })
-                 (List.fold_map ~f:(fun init -> fold_map_operand_locations ~f ~init)
+                 (List.fold_map ~f:(fun init -> Operand.fold_map_locations ~f ~init)
                                 ~init
                                 ins.operands)
 

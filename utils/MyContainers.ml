@@ -14,9 +14,40 @@ module Extend (S : Container.S1) = struct
 
   let max_measure ~measure ?(default=0) xs =
     xs
-    |> S.max_elt ~compare:(fun x y -> Int.compare (measure x) (measure y))
+    |> S.max_elt ~compare:(MyFn.on measure Int.compare)
     |> Option.value_map ~f:measure ~default:default
 end
+
+module type SetExtensions = sig
+  type t
+
+  val disjoint : t -> t -> bool
+end
+
+module SetExtend (S : Set.S) : SetExtensions with type t := S.t = struct
+  let disjoint x y = S.(is_empty (inter x y));;
+end
+
+let%expect_test "disjoint: positive witness" =
+  let module M = SetExtend (Int.Set) in
+  printf "%b"
+    (M.disjoint
+       (Int.Set.of_list [2; 4; 6; 8])
+       (Int.Set.of_list [3; 5; 7; 9]));
+  [%expect {| true |}]
+
+let%expect_test "disjoint: negative witness" =
+  let module M = SetExtend (Int.Set) in
+  printf "%b"
+    (M.disjoint
+       (Int.Set.of_list [2; 4; 6; 8])
+       (Int.Set.of_list [1; 2; 3; 4]));
+  [%expect {| false |}]
+
+let%expect_test "disjoint: double empty is disjoint" =
+  let module M = SetExtend (Int.Set) in
+  printf "%b" (M.disjoint (Int.Set.empty) (Int.Set.empty));
+  [%expect {| true |}]
 
 module MyArray = Extend (Array)
 

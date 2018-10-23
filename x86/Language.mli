@@ -13,14 +13,14 @@ module type Intf = sig
   include PP.Printer
   include
     Language.Intf
-    with type Constant.t = Ast.operand
+    with type Constant.t = Ast.Operand.t
      and type Location.t = Ast.location
      and type Instruction.t = Ast.instruction
      and type Statement.t = Ast.statement
 
   (** [make_jump_operand jsym] expands a jump symbol [jsym] to the
       correct abstract syntax for this version of x86. *)
-  val make_jump_operand : string -> Ast.operand
+  val make_jump_operand : string -> Ast.Operand.t
 end
 
 (** [Att] is a language description for the AT&T dialect of x86. *)

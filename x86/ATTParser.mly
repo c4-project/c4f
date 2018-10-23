@@ -123,8 +123,8 @@ instr:
 
 (* Binary operator *)
 bop:
-  | PLUS { BopPlus }
-  | MINUS { BopMinus }
+  | PLUS { Operand.BopPlus }
+  | MINUS { Operand.BopMinus }
 
 (* Base/index/scale triple *)
 bis:
@@ -186,7 +186,7 @@ disp:
   | NAME { DispSymbolic $1 }
 
 operand:
-  | prim_operand bop operand { OperandBop($1,$2,$3) }
+  | prim_operand bop operand { Operand.bop $1 $2 $3 }
   | prim_operand { $1 }
   | error { raise (Base.ParseError(
 		       { at = $sloc
@@ -196,13 +196,13 @@ operand:
 	  }
 
 prim_operand:
-  | DOLLAR disp {OperandImmediate $2}
+  | DOLLAR disp { Operand.immediate $2 }
     (* $10 *)
-  | STRING {OperandString $1}
+  | STRING { Operand.string $1 }
     (* @function *)
-  | GAS_TYPE { OperandType $1 }
+  | GAS_TYPE { Operand.typ $1 }
     (* "Hello, world!" *)
-  | location {OperandLocation $1}
+  | location { Operand.location $1}
 
 (* Numeric constant: hexadecimal or decimal *)
 k:

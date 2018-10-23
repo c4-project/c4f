@@ -46,6 +46,7 @@ copyright notice follow. *)
 
 (** Generic, low-level abstract syntax tree for AT&T and Intel x86 *)
 
+open Core
 open Utils
 
 (** [Reg] contains types and functions for dealing with x86 registers
@@ -121,11 +122,6 @@ module Indirect : sig
   val index : t -> index option;;
 end
 
-type bop =
-  | BopPlus
-  | BopMinus
-[@@deriving sexp]
-
 (** [location] enumerates memory locations: either
     indirect seg/disp/base/index stanzas, or registers. *)
 type location =
@@ -133,13 +129,31 @@ type location =
   | LocReg of Reg.t
 [@@deriving sexp]
 
-type operand =
-  | OperandLocation of location
-  | OperandImmediate of disp
-  | OperandString of string
-  | OperandType of string (* Type annotation *)
-  | OperandBop of operand * bop * operand
-[@@deriving sexp]
+module Operand : sig
+  type bop =
+    | BopPlus
+    | BopMinus
+  [@@deriving sexp]
+  ;;
+
+  type t =
+    | Location of location
+    | Immediate of disp
+    | String of string
+    | Typ of string (* Type annotation *)
+    | Bop of t * bop * t
+  ;;
+
+  (* Constructors *)
+
+  val location : location -> t;;
+  val immediate : disp -> t;;
+  val string : string -> t;;
+  val typ : string -> t;;
+  val bop : t -> bop -> t -> t;;
+
+  include Sexpable.S with type t := t;;
+end
 
 type prefix =
   | PreLock
@@ -252,7 +266,7 @@ module JumpTable : (StringTable.Intf with type t = condition option)
 type instruction =
   { prefix   : prefix option
   ; opcode   : opcode
-  ; operands : operand list
+  ; operands : Operand.t list
   }
 [@@deriving sexp]
 

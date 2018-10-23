@@ -150,7 +150,11 @@ end
 module Symbol = struct
   type t = string
 
-  module Set = Set.Make (String)
+  module Set = struct
+    module S = Set.Make (String)
+    include S
+    include MyContainers.SetExtend (S)
+  end
 
   module Sort = struct
     module M = struct

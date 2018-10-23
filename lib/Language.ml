@@ -249,9 +249,6 @@ module Make (M : S)
       | Abstract.Statement.Label _ -> true
       | _ -> false
 
-    let disjoint s1 s2 =
-      Abstract.Symbol.Set.(is_empty (inter s1 s2))
-
     let is_nop stm =
       Abstract.(
         match abs_type stm with
@@ -270,7 +267,7 @@ module Make (M : S)
     let is_unused_label ?(ignore_boundaries=false) ~syms stm =
       let jsyms = Abstract.Symbol.(Table.set_of_sort syms Sort.Jump) in
       is_label stm
-      && disjoint jsyms (OnSymbols.set stm)
+      && Abstract.Symbol.Set.disjoint jsyms (OnSymbols.set stm)
       && not (ignore_boundaries && is_program_boundary stm)
 
     let is_jump_pair x y =

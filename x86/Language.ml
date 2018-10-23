@@ -25,12 +25,12 @@ module type Intf = sig
   include PP.Printer
   include
     Language.Intf
-    with type Constant.t = Ast.operand
+    with type Constant.t = Ast.Operand.t
      and type Location.t = Ast.location
      and type Instruction.t = Ast.instruction
      and type Statement.t = Ast.statement
 
-  val make_jump_operand : string -> Ast.operand
+  val make_jump_operand : string -> Ast.Operand.t
 end
 
 module Make (T : Dialect.Intf) (P : PP.Printer) =
@@ -43,9 +43,9 @@ struct
       let disp = DispSymbolic jsym in
       match T.symbolic_jump_type with
       | `Indirect ->
-        OperandLocation (LocIndirect (Indirect.make ~disp ()))
+        Operand.Location (LocIndirect (Indirect.make ~disp ()))
       | `Immediate ->
-        OperandImmediate disp
+        Operand.Immediate disp
     )
 
   include
@@ -128,29 +128,30 @@ struct
             | `Xchg   -> Rmw
             | `Xor    -> Logical
 
-          let zero_operands (operands : operand list)
+          let zero_operands (operands : Operand.t list)
             : Abstract.Operands.t =
             let open Abstract.Operands in
             if List.is_empty operands
             then None
             else Erroneous
 
-          let src_dst_operands (operands : operand list)
+          let src_dst_operands (operands : Operand.t list)
             : Abstract.Operands.t =
             let open Abstract.Operands in
+            let open Operand in
             let open T in
             to_src_dst operands
             |> Option.value_map
               ~f:(function
-                  | { src = OperandLocation s
-                    ; dst = OperandLocation d
+                  | { src = Location s
+                    ; dst = Location d
                     } ->
                     LocTransfer
                       { src = Location.abs_type s
                       ; dst = Location.abs_type d
                       }
-                  | { src = OperandImmediate (DispNumeric k)
-                    ; dst = OperandLocation d
+                  | { src = Immediate (DispNumeric k)
+                    ; dst = Location d
                     } ->
                     IntImmediate
                       { src = k
@@ -161,7 +162,7 @@ struct
               ~default:None
 
           let basic_operands (o : [< Ast.basic_opcode])
-              (operands : Ast.operand list) =
+              (operands : Ast.Operand.t list) =
             let open Abstract.Operands in
             match o with
             | `Leave
@@ -185,14 +186,13 @@ struct
               | [o] ->
                 begin
                   match o with
-                  | OperandLocation
-                      (Ast.LocIndirect i) ->
+                  | Operand.Location (LocIndirect i) ->
                     begin
-                      match Ast.Indirect.disp i with
-                      | Some (Ast.DispSymbolic s) -> SymbolicJump s
+                      match Indirect.disp i with
+                      | Some (DispSymbolic s) -> SymbolicJump s
                       | _ -> Unknown
                     end
-                  | Ast.OperandImmediate (Ast.DispSymbolic s) -> SymbolicJump s
+                  | Operand.Immediate (Ast.DispSymbolic s) -> SymbolicJump s
                   | _ -> Unknown
                 end
               | _ -> Erroneous
@@ -222,7 +222,7 @@ struct
               (abs_operands
                  { opcode = Ast.OpJump None
                  ; operands =
-                     [ Ast.OperandLocation
+                     [ Operand.Location
                          (Ast.LocIndirect
                             (Ast.Indirect.make
                                ~disp:(Ast.DispSymbolic "L1") ()))
@@ -236,7 +236,7 @@ struct
               Abstract.Operands.pp
               (abs_operands
                  { opcode = Ast.OpBasic `Nop
-                 ; operands = [ Ast.OperandImmediate
+                 ; operands = [ Operand.Immediate
                                   (Ast.DispNumeric 42) ]
                  ; prefix = None
                  });
@@ -247,8 +247,8 @@ struct
               Abstract.Operands.pp
               (abs_operands
                  { opcode = Ast.OpBasic `Mov
-                 ; operands = [ Ast.OperandLocation (Ast.LocReg ESP)
-                              ; Ast.OperandLocation (Ast.LocReg EBP)
+                 ; operands = [ Operand.Location (Ast.LocReg ESP)
+                              ; Operand.Location (Ast.LocReg EBP)
                               ]
                  ; prefix = None
                  });
@@ -259,8 +259,8 @@ struct
               Abstract.Operands.pp
               (abs_operands
                  { opcode = Ast.OpSized (`Mov, SLong)
-                 ; operands = [ Ast.OperandLocation (Ast.LocReg ESP)
-                              ; Ast.OperandLocation (Ast.LocReg EBP)
+                 ; operands = [ Operand.Location (Ast.LocReg ESP)
+                              ; Operand.Location (Ast.LocReg EBP)
                               ]
                  ; prefix = None
                  });
@@ -328,12 +328,11 @@ struct
 
         module Constant = struct
           (* TODO: this is too weak *)
-          type t = Ast.operand
-          let sexp_of_t = [%sexp_of: Ast.operand]
-          let t_of_sexp = [%of_sexp: Ast.operand]
+          include Ast.Operand
+
           let pp = P.pp_operand
 
-          let zero = Ast.OperandImmediate (Ast.DispNumeric 0)
+          let zero = Ast.Operand.Immediate (Ast.DispNumeric 0)
         end
       end)
 end
@@ -345,8 +344,8 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
     Abstract.Operands.pp
     (ATT.Instruction.abs_operands
        { opcode = Ast.OpBasic `Add
-       ; operands = [ Ast.OperandImmediate (Ast.DispNumeric (-16))
-                    ; Ast.OperandLocation (Ast.LocReg ESP)
+       ; operands = [ Ast.Operand.Immediate (Ast.DispNumeric (-16))
+                    ; Ast.Operand.Location (Ast.LocReg ESP)
                     ]
        ; prefix = None
        });
@@ -359,8 +358,8 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
     Abstract.Operands.pp
     (Intel.Instruction.abs_operands
        { opcode = Ast.OpBasic `Add
-       ; operands = [ Ast.OperandLocation (Ast.LocReg ESP)
-                    ; Ast.OperandImmediate (Ast.DispNumeric (-16))
+       ; operands = [ Ast.Operand.Location (Ast.LocReg ESP)
+                    ; Ast.Operand.Immediate (Ast.DispNumeric (-16))
                     ]
        ; prefix = None
        });

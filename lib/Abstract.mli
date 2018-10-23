@@ -138,7 +138,10 @@ module Symbol : sig
   type t = string
 
   (** [Set] is a set module for symbols. *)
-  module Set : Set.S with type Elt.t = string
+  module Set : sig
+    include Set.S with type Elt.t = string
+    include MyContainers.SetExtensions with type t := t
+  end
 
   (** [Sort] is a module containing an enumeration of symbol sorts. *)
   module Sort : sig

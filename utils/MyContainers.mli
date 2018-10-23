@@ -27,6 +27,19 @@ module Extend : functor (S : Container.S1) -> (Extensions with type 'a t = 'a S.
 
 module MyArray : Extensions with type 'a t = 'a array
 
+(** [SetExtensions] contains various extensions to implementations of
+   [Set.S]. *)
+module type SetExtensions = sig
+  type t
+
+  (** [disjoint x y] returns [true] provided that [x] and [y] have no
+      elements in common. *)
+  val disjoint : t -> t -> bool
+end
+
+(** [SetExtend] builds set extensions for module [S]. *)
+module SetExtend : functor (S : Set.S) -> SetExtensions with type t := S.t;;
+
 (** [MyList] contains various extensions to [List]. *)
 module MyList : sig
   include Extensions with type 'a t = 'a list

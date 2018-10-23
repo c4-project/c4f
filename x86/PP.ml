@@ -69,8 +69,8 @@ module type Printer = sig
   include Dialect
 
   val pp_location : Format.formatter -> location -> unit
-  val pp_bop : Format.formatter -> bop -> unit
-  val pp_operand : Format.formatter -> operand -> unit
+  val pp_bop : Format.formatter -> Operand.bop -> unit
+  val pp_operand : Format.formatter -> Operand.t -> unit
   val pp_prefix : Format.formatter -> prefix -> unit
   val pp_opcode : Format.formatter -> opcode -> unit
   val pp_instruction : Format.formatter -> instruction -> unit
@@ -329,7 +329,7 @@ module Make (D : Dialect) =
      *)
 
     let pp_bop f = function
-      | BopPlus -> Format.pp_print_char f '+'
+      | Operand.BopPlus -> Format.pp_print_char f '+'
       | BopMinus -> Format.pp_print_char f '-'
 
     (*
@@ -349,15 +349,14 @@ module Make (D : Dialect) =
       | LocIndirect i -> pp_indirect f i
       | LocReg r -> pp_reg f r
 
-    let rec pp_operand f =
-      function
-      | OperandLocation l -> pp_location f l;
-      | OperandImmediate d -> pp_immediate f d;
-      | OperandString s ->
+    let rec pp_operand f = function
+      | Operand.Location l -> pp_location f l;
+      | Operand.Immediate d -> pp_immediate f d;
+      | Operand.String s ->
          Format.fprintf f "\"%s\"" (Staged.unstage string_escape s)
-      | OperandType ty ->
+      | Operand.Typ ty ->
          Format.fprintf f "@@%s" ty
-      | OperandBop (l, b, r) ->
+      | Operand.Bop (l, b, r) ->
          Format.pp_open_box f 0;
          pp_operand f l;
          pp_bop f b;

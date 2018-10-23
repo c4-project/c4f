@@ -44,16 +44,17 @@ module Hook (L : Language.Intf) = struct
   module Pass = Lib.Sanitiser.Pass
 
   let negate = function
-    | DispNumeric k -> OperandImmediate (DispNumeric (-k))
-    | DispSymbolic s -> OperandBop ( OperandImmediate (DispNumeric 0)
-                                   , BopMinus
-                                   , OperandImmediate (DispSymbolic s)
-                                   )
+    | DispNumeric k -> Operand.Immediate (DispNumeric (-k))
+    | DispSymbolic s ->
+      Operand.Bop ( Operand.Immediate (DispNumeric 0)
+                  , Operand.BopMinus
+                  , Operand.Immediate (DispSymbolic s)
+                  )
 
-  let sub_to_add_ops : operand list -> operand list option =
+  let sub_to_add_ops : Operand.t list -> Operand.t list option =
     L.bind_src_dst
       ~f:(function
-          | {src = OperandImmediate s; dst} -> Some {src = negate s; dst}
+          | {src = Operand.Immediate s; dst} -> Some {src = negate s; dst}
           | _ -> None)
 
   let sub_to_add =
