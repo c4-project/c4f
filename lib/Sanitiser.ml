@@ -48,10 +48,12 @@ module type WarnIntf = sig
     | Instruction of L.Instruction.t
     | Statement of L.Statement.t
     | Location of L.Location.t
+    | Operands of L.Instruction.t
 
   type body =
     | MissingEndLabel
     | UnknownElt of elt
+    | ErroneousElt of elt
     | Custom of C.t
 
   type t =
@@ -70,10 +72,12 @@ module Warn (L : Language.Intf) (C : CustomWarnS) = struct
     | Instruction of L.Instruction.t
     | Statement of L.Statement.t
     | Location of L.Location.t
+    | Operands of L.Instruction.t
 
   type body =
     | MissingEndLabel
     | UnknownElt of elt
+    | ErroneousElt of elt
     | Custom of C.t
 
   type t =
@@ -84,19 +88,27 @@ module Warn (L : Language.Intf) (C : CustomWarnS) = struct
   let pp_elt f =
     function
     | Statement s -> L.Statement.pp f s
-    | Instruction i -> L.Instruction.pp f i
+    | Instruction i | Operands i -> L.Instruction.pp f i
     | Location l -> L.Location.pp f l
+  ;;
 
-  let pp_unknown_warning f elt =
-    let elt_type_name =
-      match elt with
+    let elt_type_name = function
       | Statement _ -> "statement"
       | Instruction _ -> "instruction"
+      | Operands _ -> "the operands of instruction"
       | Location _ -> "location"
-    in
+    ;;
+
+  let pp_unknown_warning f elt =
     Format.fprintf f
-      "act didn't understand@ %s@ %a.@,The litmus translation may be wrong."
-      elt_type_name
+      "act didn't understand@ %s@ %a.@ The litmus translation may be wrong."
+      (elt_type_name elt)
+      pp_elt elt
+
+  let pp_erroneous_warning f elt =
+    Format.fprintf f
+      "act thinks@ %s@ %a@ is@ erroneous.@ The litmus translation may be wrong."
+      (elt_type_name elt)
       pp_elt elt
 
   let pp_body f =
@@ -105,6 +117,7 @@ module Warn (L : Language.Intf) (C : CustomWarnS) = struct
       String.pp f
         "act needed an end-of-program label here, but there wasn't one."
     | UnknownElt elt -> pp_unknown_warning f elt
+    | ErroneousElt elt -> pp_erroneous_warning f elt
     | Custom c -> C.pp f c
 
   let pp f ent =
@@ -409,6 +422,27 @@ module Make (LH : LangHookS)
        Ctx.warn (Warn.UnknownElt (Warn.Instruction ins)) ins
      | _ -> Ctx.return ins
 
+  (** [warn_operands stm] emits warnings for each instruction
+     in [stm] whose operands don't have a high-level analysis,
+      or are erroneous. *)
+  let warn_operands ins =
+    (* Don't emit warnings for unknown instructions---the
+       upper warning should be enough. *)
+    match LH.L.Instruction.abs_type ins with
+    | Language.AbsInstruction.Unknown ->
+      Ctx.return ins
+    | _ ->
+      begin
+        match LH.L.Instruction.abs_operands ins with
+        | Language.AbsOperands.Unknown ->
+          Ctx.warn (Warn.UnknownElt (Warn.Operands ins)) ins
+        | Language.AbsOperands.Erroneous ->
+          Ctx.warn (Warn.ErroneousElt (Warn.Operands ins)) ins
+        | _ -> Ctx.return ins
+      end
+  ;;
+
+
   let change_ret_to_end_jump ins =
     Ctx.(
       match LH.L.Instruction.abs_type ins with
@@ -453,6 +487,7 @@ module Make (LH : LangHookS)
     return ins
     >>= (LangHooks      |-> LH.on_instruction)
     >>= (Warn           |-> warn_unknown_instructions)
+    >>= (Warn           |-> warn_operands)
     >>= sanitise_all_locs
     >>= (SimplifyLitmus |-> change_ret_to_end_jump)
     >>= (SimplifyLitmus |-> change_stack_to_heap)

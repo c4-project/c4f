@@ -128,9 +128,9 @@ module AbsOperands = struct
     | SymbolicJump of string
     | Erroneous
     | Other
+    | Unknown
 
-  let pp f =
-    function
+  let pp f = function
     | None -> String.pp f "none"
     | LocTransfer {src; dst} ->
       Format.fprintf f "@[%a@ ->@ %a@]"
@@ -143,7 +143,9 @@ module AbsOperands = struct
     | SymbolicJump s ->
       Format.fprintf f "@[jump->%s@]" s
     | Erroneous -> String.pp f "<invalid operands>"
-    | Other -> String.pp f "??"
+    | Other -> String.pp f "other"
+    | Unknown -> String.pp f "??"
+  ;;
 end
 
 module Symbol = struct

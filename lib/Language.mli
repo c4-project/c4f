@@ -67,11 +67,11 @@ end
 module AbsLocation : sig
   (** [AbsLocation.t] is an abstracted location. *)
   type t =
-    | StackPointer       (* Stack pointer *)
-    | StackOffset of int (* Absolute offset from stack pointer *)
-    | Heap of string     (* Named heap location *)
-    | GeneralRegister    (* General-purpose register *)
-    | Unknown            (* Not known *)
+    | StackPointer       (** Stack pointer *)
+    | StackOffset of int (** Absolute offset from stack pointer *)
+    | Heap of string     (** Named heap location *)
+    | GeneralRegister    (** General-purpose register *)
+    | Unknown            (** Not known *)
 
   (** Abstract locations may be pretty-printed. *)
   include Pretty_printer.S with type t := t
@@ -127,8 +127,10 @@ module AbsOperands : sig
     | SymbolicJump of string
     (* Instruction has the wrong sort of operands. *)
     | Erroneous
-    (* No analysis available---the operands may or may not be valid. *)
+    (* Instruction has unclassifiable operands. *)
     | Other
+    (* No analysis available---the operands may or may not be valid. *)
+    | Unknown
 
   (** Abstract operand bundles may be pretty-printed. *)
   include Pretty_printer.S with type t := t

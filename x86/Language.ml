@@ -177,7 +177,7 @@ struct
             | `Cmp
             | `Pop
             | `Xchg
-            | `Push -> Other
+            | `Push -> Unknown
 
           let jump_operands =
             Language.AbsOperands.(
@@ -190,10 +190,10 @@ struct
                     begin
                       match Ast.Indirect.disp i with
                       | Some (Ast.DispSymbolic s) -> SymbolicJump s
-                      | _ -> Other
+                      | _ -> Unknown
                     end
                   | Ast.OperandImmediate (Ast.DispSymbolic s) -> SymbolicJump s
-                  | _ -> Other
+                  | _ -> Unknown
                 end
               | _ -> Erroneous
             )
@@ -203,7 +203,8 @@ struct
             | Ast.OpBasic b -> basic_operands b operands
             | Ast.OpSized (b, _) -> basic_operands b operands
             | Ast.OpJump _ -> jump_operands operands
-            | _ -> Language.AbsOperands.Other
+            | Ast.OpDirective _ -> Language.AbsOperands.Other
+            | Ast.OpUnknown _ -> Language.AbsOperands.Unknown
 
           let%expect_test "abs_operands: nop -> none" =
             Format.printf "%a@."

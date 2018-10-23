@@ -49,12 +49,15 @@ module type WarnIntf = sig
     | Instruction of L.Instruction.t
     | Statement of L.Statement.t
     | Location of L.Location.t
+    | Operands of L.Instruction.t
 
   type body =
     (* Something needed an end-of-program label, but there wasn't one. *)
     | MissingEndLabel
     (* This element isn't known to act, and its translation may be wrong. *)
     | UnknownElt of elt
+    (* This element seems erroneous, and its translation may be wrong. *)
+    | ErroneousElt of elt
     (* Hook for language-specific sanitiser passes to add warnings. *)
     | Custom of C.t
 
