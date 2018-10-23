@@ -35,17 +35,18 @@ open Utils
 module AbsInstruction : sig
   (** [AbsInstruction.t] is an abstracted instruction. *)
   type t =
-    | Arith   (* arithmetic *)
-    | Call    (* calling-convention related instructions *)
-    | Compare (* comparison *)
-    | Fence   (* memory fence *)
-    | Jump    (* conditional or unconditional jump *)
-    | Move    (* move *)
-    | Nop     (* no operation *)
-    | Return  (* jump to caller -- see below *)
-    | Stack   (* stack resizing and pointer manipulation *)
-    | Other   (* known, but doesn't fit in these categories *)
-    | Unknown (* unclassified instruction *)
+    | Arith   (** arithmetic *)
+    | Call    (** calling-convention related instructions *)
+    | Compare (** comparison *)
+    | Fence   (** memory fence *)
+    | Jump    (** conditional or unconditional jump *)
+    | Logical (** logical operation *)
+    | Move    (** move *)
+    | Nop     (** no operation *)
+    | Return  (** jump to caller *)
+    | Stack   (** stack resizing and pointer manipulation *)
+    | Other   (** known, but doesn't fit in these categories *)
+    | Unknown (** unclassified instruction *)
 
   (* Why do we have a separate [Return] type, instead of classing it
      as [Call] or [Jump]?  Two reasons:

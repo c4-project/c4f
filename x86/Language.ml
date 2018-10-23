@@ -126,6 +126,7 @@ struct
             | `Push   -> Stack
             | `Ret    -> Return
             | `Sub    -> Arith
+            | `Xor    -> Logical
 
           let zero_operands (operands : operand list)
             : Language.AbsOperands.t =
@@ -169,7 +170,8 @@ struct
             | `Ret -> zero_operands operands
             | `Add
             | `Sub
-            | `Mov -> src_dst_operands operands
+            | `Mov
+            | `Xor -> src_dst_operands operands
             (* TODO(@MattWindsor91): analyse other opcodes! *)
             | `Call
             | `Cmp

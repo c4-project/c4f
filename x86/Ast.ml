@@ -324,6 +324,7 @@ type sizable_opcode =
   | `Push
   | `Ret
   | `Sub
+  | `Xor
   ]
 [@@deriving sexp]
 
@@ -340,6 +341,7 @@ module SizableOpcodeTable =
         ; `Push, "push"
         ; `Ret,  "ret"
         ; `Sub,  "sub"
+        ; `Xor,  "xor"
         ]
     end)
 

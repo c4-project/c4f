@@ -41,74 +41,57 @@ module type S = sig
   val explain : statement list -> t
 end
 
-module Make (LS : Language.Intf) =
-  struct
-    type statement = LS.Statement.t
+module Make (LS : Language.Intf) = struct
+  type statement = LS.Statement.t
 
-    type stm_explanation =
-      { original : statement
-      ; abs_type : Language.AbsStatement.t
-      ; flags : Language.AbsStatement.Flag.Set.t
-      }
+  type stm_explanation =
+    { original : statement
+    ; abs_type : Language.AbsStatement.t
+    ; flags : Language.AbsStatement.Flag.Set.t
+    }
 
-    type t =
-      { statements : stm_explanation list
-      }
+  type t =
+    { statements : stm_explanation list
+    }
 
-    let explain_statement syms stm =
-      { original = stm
-      ; abs_type = LS.Statement.abs_type stm
-      ; flags = LS.Statement.flags ~syms stm
-      }
+  let explain_statement syms stm =
+    { original = stm
+    ; abs_type = LS.Statement.abs_type stm
+    ; flags = LS.Statement.flags ~syms stm
+    }
 
-    let explain prog =
-      let syms = LS.symbols prog in
-      { statements = List.map ~f:(explain_statement syms) prog
-      }
+  let explain prog =
+    let syms = LS.symbols prog in
+    { statements = List.map ~f:(explain_statement syms) prog
+    }
 
-    let stringify_ins =
-      (* TODO(@MattWindsor91): merge with pp? *)
-      let open Language.AbsInstruction in
-      function
-      | Arith   -> "arithmetic"
-      | Call    -> "calling convention"
-      | Compare -> "comparison"
-      | Fence   -> "memory fence"
-      | Jump    -> "jump"
-      | Move    -> "move"
-      | Nop     -> "no operation"
-      | Return  -> "return to caller"
-      | Stack   -> "stack"
-      | Other   -> "other"
-      | Unknown -> "?? instruction ??"
+  let stringify_stm_basic =
+    (* TODO(@MattWindsor91): merge with pp? *)
+    let open Language.AbsStatement in
+    function
+    | Blank -> ""
+    | Directive _ -> "directive"
+    | Label _ -> "label"
+    | Instruction ins -> Language.AbsInstruction.to_string ins
+    | Other -> "??"
 
-    let stringify_stm_basic =
-      (* TODO(@MattWindsor91): merge with pp? *)
-      let open Language.AbsStatement in
-      function
-      | Blank -> ""
-      | Directive _ -> "directive"
-      | Label _ -> "label"
-      | Instruction ins -> stringify_ins ins
-      | Other -> "??"
+  let pp_explanation f exp =
+    Format.fprintf f "@[<--@ @[%s%a@]@]"
+      (stringify_stm_basic exp.abs_type)
+      Language.AbsStatement.Flag.pp_set exp.flags
 
-    let pp_explanation f exp =
-      Format.fprintf f "@[<--@ @[%s%a@]@]"
-        (stringify_stm_basic exp.abs_type)
-        Language.AbsStatement.Flag.pp_set exp.flags
+  let pp_statement f exp =
+    (* TODO(@MattWindsor91): emit '<-- xyz' in a comment *)
+    let open Language.AbsStatement in
+    match exp.abs_type with
+    | Blank -> () (* so as not to clutter up blank lines *)
+    | _ ->
+      Format.fprintf f "@[<h>%a@ %a@]@,"
+        LS.Statement.pp exp.original
+        (LS.pp_comment ~pp:pp_explanation) exp
 
-    let pp_statement f exp =
-      (* TODO(@MattWindsor91): emit '<-- xyz' in a comment *)
-      let open Language.AbsStatement in
-      match exp.abs_type with
-      | Blank -> () (* so as not to clutter up blank lines *)
-      | _ ->
-         Format.fprintf f "@[<h>%a@ %a@]@,"
-                        LS.Statement.pp exp.original
-                        (LS.pp_comment ~pp:pp_explanation) exp
-
-    let pp f exp =
-      Format.pp_open_vbox f 0;
-      List.iter ~f:(pp_statement f) exp.statements;
-      Format.pp_close_box f ()
-  end
+  let pp f exp =
+    Format.pp_open_vbox f 0;
+    List.iter ~f:(pp_statement f) exp.statements;
+    Format.pp_close_box f ()
+end

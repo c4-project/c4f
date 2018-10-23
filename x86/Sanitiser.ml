@@ -65,7 +65,8 @@ module Hook (L : Language.Intf) = struct
     | { opcode = OpSized (o, SLong); _ } as op ->
       begin
         match o with
-        | `Cmp -> { op with opcode = OpBasic (o :> basic_opcode) }
+        | `Cmp
+        | `Xor -> { op with opcode = OpBasic (o :> basic_opcode) }
         | `Call
         | `Ret
         (* TODO(@MattWindsor91): some of these might also need dropping. *)

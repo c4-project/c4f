@@ -29,17 +29,20 @@ open Utils.MyContainers
 module AbsInstruction = struct
   module M = struct
     type t =
-      | Arith   (* arithmetic *)
-      | Call    (* calling-convention related instructions *)
-      | Compare (* comparison *)
-      | Fence   (* memory fence *)
-      | Jump    (* conditional or unconditional jump *)
-      | Move    (* move *)
-      | Nop     (* no operation *)
-      | Return  (* jump to caller *)
-      | Stack   (* stack resizing and pointer manipulation *)
-      | Other   (* known, but doesn't fit in these categories *)
-      | Unknown [@@deriving enum, sexp]
+      | Arith
+      | Call
+      | Compare
+      | Fence
+      | Jump
+      | Logical
+      | Move
+      | Nop
+      | Return
+      | Stack
+      | Other
+      | Unknown
+    [@@deriving enum, sexp]
+    ;;
 
     let table =
       [ Arith  , "arith"
@@ -47,6 +50,7 @@ module AbsInstruction = struct
       ; Compare, "compare"
       ; Fence  , "fence"
       ; Jump   , "jump"
+      ; Logical, "logical"
       ; Move   , "move"
       ; Nop    , "nop"
       ; Return , "return"
