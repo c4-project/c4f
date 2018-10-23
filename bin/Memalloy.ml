@@ -135,8 +135,10 @@ let run_compiler (o : OutputCtx.t) ~in_root ~out_root c_fnames spec
   let%bind paths = Pathset.make_and_mkdirs spec ~in_root ~out_root in
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
+
   let%bind results =
     c_fnames
+    |> List.sort ~compare:String.compare
     |> List.map ~f:(run_single o paths spec)
     |> Or_error.combine_errors
   in
