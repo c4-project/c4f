@@ -1,5 +1,7 @@
 # act: automagic compiler tormentor
 
+[![Build Status](https://travis-ci.com/MattWindsor91/act.svg?branch=master)](https://travis-ci.com/MattWindsor91/act)
+
 `act` is a work-in-progress automatic compiler tester for finding
 concurrency memory model discrepancies between C code and its
 compiled assembly.  It uses
@@ -7,9 +9,17 @@ compiled assembly.  It uses
 generator, and will eventually generate litmus tests that can be
 used with herd7.
 
-Parts of `act` derive from the
-[herdtools7](https://github.com/herd/herdtools7) project of Alglave,
-Maranget, et al.
+## Licence and Acknowledgements
+
+- The overall `act` project, and all original code, is licenced under
+  the MIT licence: see `LICENSE`.
+
+- The architecture lexers and parsers are based on those from
+  [herd7](https://github.com/herd/herdtools7).  We include these in
+  `act` under the provisos of herd's
+  [CECILL-B](http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html)
+  licence: see `LICENSE.herd`. _(Note: this does *not* constitute an
+  official endorsement by the Herd team of this project.)_
 
 
 ## What it can do (so far)
@@ -190,15 +200,3 @@ working directory.  The directory structure corresponds to the
 identifiers in `./compiler-spec`: for example, `(local gcc x86 O3)`
 will emit assembly in `./local/gcc/x86/O3/asm`, and
 litmus tests in `./local/gcc/x86/O3/litmus`.
-
-
-## Licence and Acknowledgements
-
-- The overall `act` project, and all original code, is licenced under
-  the MIT licence: see `LICENSE`.
-
-- The architecture lexers and parsers are based on those from
-  [herd7](https://github.com/herd/herdtools7).  We include these in
-  `act` under the provisos of herd's
-  [CECILL-B](http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html)
-  licence: see `LICENSE.herd`.
