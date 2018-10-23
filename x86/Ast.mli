@@ -202,6 +202,7 @@ type sizable_opcode =
   | `Ret (* Some compilers seem to emit RETL (32-bit)/RETQ (64-bit);
             it's unclear if there's any semantic difference from RET. *)
   | `Sub
+  | `Xchg
   | `Xor
   ]
 [@@deriving sexp]

@@ -44,6 +44,7 @@ module AbsInstruction : sig
     | Move    (** move *)
     | Nop     (** no operation *)
     | Return  (** jump to caller *)
+    | Rmw     (** read-modify-write *)
     | Stack   (** stack resizing and pointer manipulation *)
     | Other   (** known, but doesn't fit in these categories *)
     | Unknown (** unclassified instruction *)

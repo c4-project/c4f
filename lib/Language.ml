@@ -38,6 +38,7 @@ module AbsInstruction = struct
       | Move
       | Nop
       | Return
+      | Rmw
       | Stack
       | Other
       | Unknown
@@ -54,6 +55,7 @@ module AbsInstruction = struct
       ; Move   , "move"
       ; Nop    , "nop"
       ; Return , "return"
+      ; Rmw    , "RMW"
       ; Stack  , "stack"
       ; Other  , "other"
       ; Unknown, "??"

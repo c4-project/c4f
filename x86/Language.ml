@@ -110,10 +110,10 @@ struct
             ; operands = [ make_jump_operand l ]
             }
 
+          (** [basic_instruction_type o] assigns an act classification to a
+              primitive opcode [o]. *)
           let basic_instruction_type
-            : [< Ast.basic_opcode] -> Language.AbsInstruction.t =
-            let open Language.AbsInstruction in
-            function
+            : [< Ast.basic_opcode] -> Language.AbsInstruction.t = function
             | `Add    -> Arith
             | `Call   -> Call
             | `Cmp    -> Compare
@@ -125,6 +125,7 @@ struct
             | `Push   -> Stack
             | `Ret    -> Return
             | `Sub    -> Arith
+            | `Xchg   -> Rmw
             | `Xor    -> Logical
 
           let zero_operands (operands : operand list)
@@ -175,6 +176,7 @@ struct
             | `Call
             | `Cmp
             | `Pop
+            | `Xchg
             | `Push -> Other
 
           let jump_operands =

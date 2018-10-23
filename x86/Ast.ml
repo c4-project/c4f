@@ -384,6 +384,20 @@ module ConditionTable =
  * Opcodes
  *)
 
+(* To add a new opcode:
+
+   1.  Add an entry for it into either 'sizable_opcode' or
+   'basic_opcode', in both here and the MLI file.  It goes into
+   'sizable_opcode' if, in AT&T syntax, it can have a size prefix.
+
+   2.  Add the string representation into the appropriate opcode
+   table.
+
+   3.  Add classifications for the instruction in x86.Language.
+
+   4.  Add legs to the pattern-matches in x86.Sanitiser.
+*)
+
 type sizable_opcode =
   [ `Add
   | `Call
@@ -393,6 +407,7 @@ type sizable_opcode =
   | `Push
   | `Ret
   | `Sub
+  | `Xchg
   | `Xor
   ]
 [@@deriving sexp]
@@ -410,6 +425,7 @@ module SizableOpcodeTable =
         ; `Push, "push"
         ; `Ret,  "ret"
         ; `Sub,  "sub"
+        ; `Xchg, "xchg"
         ; `Xor,  "xor"
         ]
     end)
