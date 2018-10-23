@@ -163,60 +163,62 @@ let fold_map_index_registers ~f ~init = function
  * Memory addresses
  *)
 
-type indirect =
-  { in_seg    : Reg.t option
-  ; in_disp   : disp option
-  ; in_base   : Reg.t option
-  ; in_index  : index option
-  }
-[@@deriving sexp, fields]
-
-let in_zero () =
-  { in_seg    = None
-  ; in_disp   = None
-  ; in_base   = None
-  ; in_index  = None
-  }
-
-let in_base_only r = { (in_zero ()) with in_base = Some r }
-let in_disp_only d = { (in_zero ()) with in_disp = Some d }
-let in_seg_disp (s, d) = { (in_zero ()) with in_seg = s; in_disp = Some d }
-
-let fold_map_indirect_symbols ~f ~init indirect =
-  (match indirect.in_disp with
-   | Some d ->
-      Tuple2.map_snd ~f:(fun x -> { indirect with in_disp = Some x })
-                     (fold_map_disp_symbols ~f ~init d)
-   | None   -> (init, indirect))
-
 let fold_opt (g : 'a -> 'b -> ('a * 'b)) (v : 'a) (ro : 'b option) : ('a * 'b option) =
   Option.value_map ~default:(v, None)
     ~f:(fun x -> Tuple2.map_snd ~f:Option.some (g v x)) ro
 ;;
 
-let fold_map_indirect_registers ~f ~init indirect =
-  Fields_of_indirect.Direct.fold
-    indirect
-    ~init:(init, in_zero ())
-    ~in_seg:(fun (state, ind) fld _ seg ->
-        Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt f state seg))
-    ~in_disp:(fun (state, ind) fld _ disp ->
-        (* no registers in a displacement *)
-        (state, Field.fset fld ind disp))
-    ~in_base:(fun (state, ind) fld _ base ->
-        Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt f state base))
-    ~in_index:(fun (state, ind) fld _ index ->
-        Tuple2.map_snd ~f:(Field.fset fld ind)
-          (fold_opt (fun init -> fold_map_index_registers ~f ~init)
-             state index))
-;;
+module Indirect = struct
+  type t =
+    { seg    : Reg.t option
+    ; disp   : disp option
+    ; base   : Reg.t option
+    ; index  : index option
+    }
+  [@@deriving sexp, fields]
+
+  let make ?base ?seg ?disp ?index () = { seg; disp; base; index };;
+
+  let fold_map
+      ~init
+      ?(seg=Tuple2.create) ?(disp=Tuple2.create) ?(base=Tuple2.create) ?(index=Tuple2.create)
+      indirect =
+    Fields.Direct.fold
+      indirect
+      ~init:(init, make ())
+      ~seg:(fun (state, ind) fld _ cseg ->
+          Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt seg state cseg))
+      ~disp:(fun (state, ind) fld _ cdisp ->
+          Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt disp state cdisp))
+      ~base:(fun (state, ind) fld _ cbase ->
+          Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt base state cbase))
+      ~index:(fun (state, ind) fld _ cindex ->
+          Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt index state cindex))
+  ;;
+
+  let fold_map_symbols ~f ~init indirect =
+    fold_map
+      ~init
+      ~disp:(fun init -> fold_map_disp_symbols ~f ~init)
+      indirect
+  ;;
+
+  let fold_map_registers ~f ~init indirect =
+    fold_map
+      ~init
+      ~seg:f
+      ~base:f
+      ~index:(fun init -> fold_map_index_registers ~f ~init)
+      indirect
+  ;;
+end
 
 (*
  * Locations
  *)
 
 type location =
-  | LocIndirect of indirect
+  | LocIndirect of Indirect.t
   | LocReg of Reg.t
 [@@deriving sexp]
 
@@ -225,14 +227,14 @@ let fold_map_location_symbols ~f ~init =
   | LocReg r -> (init, LocReg r)
   | LocIndirect ind ->
      Tuple2.map_snd ~f:(fun x -> LocIndirect x)
-                    (fold_map_indirect_symbols ~f ~init ind)
+                    (Indirect.fold_map_symbols ~f ~init ind)
 
 let fold_map_location_registers ~f ~init = function
   | LocReg r ->
     Tuple2.map_snd ~f:(fun x -> LocReg x) (f init r)
   | LocIndirect i ->
     Tuple2.map_snd ~f:(fun x -> LocIndirect x)
-      (fold_map_indirect_registers ~f ~init i)
+      (Indirect.fold_map_registers ~f ~init i)
 ;;
 
 (*

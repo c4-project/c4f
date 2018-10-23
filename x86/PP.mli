@@ -60,7 +60,7 @@ open Ast
 
 module type Printer = sig
   val pp_reg : Format.formatter -> Reg.t -> unit
-  val pp_indirect : Format.formatter -> indirect -> unit
+  val pp_indirect : Format.formatter -> Indirect.t -> unit
   val pp_immediate : Format.formatter -> disp -> unit
 
   (** [pp_comment ~pp f k] prints a line comment whose body is

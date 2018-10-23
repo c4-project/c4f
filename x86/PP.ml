@@ -56,7 +56,7 @@ let disp_positive =
 
 module type Dialect = sig
   val pp_reg : Format.formatter -> Reg.t -> unit
-  val pp_indirect : Format.formatter -> indirect -> unit
+  val pp_indirect : Format.formatter -> Indirect.t -> unit
   val pp_immediate : Format.formatter -> disp -> unit
   val pp_comment
     :  pp:(Format.formatter -> 'a -> unit)
@@ -113,7 +113,7 @@ module ATTSpecific = struct
                          pp_reg r
                          i
 
-  let pp_indirect f {in_seg; in_disp; in_base; in_index} =
+  let pp_indirect f indirect =
     let pp_seg f = Format.fprintf f "%a:" pp_reg in
 
     let pp_bis f bo iso =
@@ -128,6 +128,11 @@ module ATTSpecific = struct
           pp_index i
     in
 
+    let in_seg   = Indirect.seg   indirect in
+    let in_base  = Indirect.base  indirect in
+    let in_disp  = Indirect.disp  indirect in
+    let in_index = Indirect.index indirect in
+
     MyFormat.pp_option f ~pp:pp_seg in_seg;
     let show_zero = in_base = None && in_index = None in
     MyFormat.pp_option f ~pp:(Basic.pp_disp ~show_zero) in_disp;
@@ -135,56 +140,47 @@ module ATTSpecific = struct
 
   let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
     Format.printf "%a@." pp_indirect
-      { in_seg = None
-      ; in_disp = Some (DispNumeric 2001)
-      ; in_base = None
-      ; in_index = None
-      };
+      (Indirect.make
+         ~disp:(DispNumeric 2001)
+         ());
     [%expect {| 2001 |}]
 
   let%expect_test "pp_indirect: AT&T, +ve disp and base" =
     Format.printf "%a@." pp_indirect
-      { in_seg = None
-      ; in_disp = Some (DispNumeric 76)
-      ; in_base = Some EAX
-      ; in_index = None
-      };
+      (Indirect.make
+         ~disp:(DispNumeric 76)
+         ~base:EAX
+         ());
     [%expect {| 76(%EAX) |}]
 
   let%expect_test "pp_indirect: AT&T, zero disp only" =
     Format.printf "%a@." pp_indirect
-      { in_seg = None
-      ; in_disp = Some (DispNumeric 0)
-      ; in_base = None
-      ; in_index = None
-      };
+      (Indirect.make
+         ~disp:(DispNumeric 0)
+         ());
     [%expect {| 0 |}]
 
   let%expect_test "pp_indirect: AT&T, -ve disp and base" =
     Format.printf "%a@." pp_indirect
-      { in_seg = None
-      ; in_disp = Some (DispNumeric (-42))
-      ; in_base = Some ECX
-      ; in_index = None
-      };
+      (Indirect.make
+         ~disp:(DispNumeric (-42))
+         ~base:ECX
+         ());
     [%expect {| -42(%ECX) |}]
 
   let%expect_test "pp_indirect: AT&T, base only" =
     Format.printf "%a@." pp_indirect
-      { in_seg = None
-      ; in_disp = None
-      ; in_base = Some EDX
-      ; in_index = None
-      };
+      (Indirect.make
+         ~base:EDX
+         ());
     [%expect {| (%EDX) |}]
 
   let%expect_test "pp_indirect: AT&T, zero disp and base" =
     Format.printf "%a@." pp_indirect
-      { in_seg = None
-      ; in_disp = Some (DispNumeric 0)
-      ; in_base = Some EDX
-      ; in_index = None
-      };
+      (Indirect.make
+         ~disp:(DispNumeric 0)
+         ~base:EDX
+         ());
     [%expect {| (%EDX) |}]
 
   let pp_immediate f = Format.fprintf f "@[$%a@]"
@@ -243,11 +239,16 @@ module IntelAndHerd7 = struct
                                         pp_reg r
                                         i
 
-    let pp_indirect f {in_seg; in_disp; in_base; in_index} =
+    let pp_indirect f indirect =
       let pp_seg f = Format.fprintf f "%a:" pp_reg in
 
       Format.pp_open_box f 0;
       Format.pp_print_char f '[';
+
+      let in_seg   = Indirect.seg   indirect in
+      let in_base  = Indirect.base  indirect in
+      let in_disp  = Indirect.disp  indirect in
+      let in_index = Indirect.index indirect in
 
       (* seg:base+index*scale+disp *)
 
@@ -274,58 +275,45 @@ module IntelAndHerd7 = struct
 
     let%expect_test "pp_indirect: intel, +ve numeric displacement only" =
       Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric 2001)
-                    ; in_base = None
-                    ; in_index = None
-                    };
+        (Indirect.make ~disp:(DispNumeric 2001) ());
       [%expect {| [2001] |}]
 
     let%expect_test "pp_indirect: Intel, +ve disp and base" =
       Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric 76)
-                    ; in_base = Some EAX
-                    ; in_index = None
-                    };
+        (Indirect.make
+           ~disp:(DispNumeric 76)
+           ~base:EAX
+           ());
       [%expect {| [EAX+76] |}]
 
 
     let%expect_test "pp_indirect: Intel, zero disp only" =
       Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric 0)
-                    ; in_base = None
-                    ; in_index = None
-                    };
+        (Indirect.make ~disp:(DispNumeric 0) ());
       [%expect {| [0] |}]
 
 
     let%expect_test "pp_indirect: Intel, +ve disp and base" =
       Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric (-42))
-                    ; in_base = Some ECX
-                    ; in_index = None
-                    };
+        (Indirect.make
+           ~disp:(DispNumeric (-42))
+           ~base:ECX
+           ());
       [%expect {| [ECX-42] |}]
 
     let%expect_test "pp_indirect: Intel, base only" =
       Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = None
-                    ; in_base = Some EDX
-                    ; in_index = None
-                    };
+        (Indirect.make
+           ~base:EDX
+           ());
       [%expect {| [EDX] |}]
 
     let%expect_test "pp_indirect: Intel, zero disp and base" =
       Format.printf "%a@." pp_indirect
-                    { in_seg = None
-                    ; in_disp = Some (DispNumeric 0)
-                    ; in_base = Some EDX
-                    ; in_index = None
-                    };
+        (Indirect.make
+           ~disp:(DispNumeric 0)
+           ~base:EDX
+           ());
       [%expect {| [EDX] |}]
 
     let pp_immediate = (Basic.pp_disp ~show_zero:true)

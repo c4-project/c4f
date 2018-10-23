@@ -129,16 +129,14 @@ bop:
 (* Base/index/scale triple *)
 bis:
   | ATT_REG
-    { in_base_only $1 }
+    { (Some $1, None) }
     (* (%eax) *)
   | option(ATT_REG) COMMA ATT_REG
-         { { (in_zero ()) with in_base = $1;
-                                       in_index = Some (Unscaled $3) } }
+         { ($1, Some (Unscaled $3)) }
     (* (%eax, %ebx)
        (    , %ebx) *)
   | option(ATT_REG) COMMA ATT_REG COMMA k
-         { { (in_zero ()) with in_base = $1;
-                                      in_index = Some (Scaled ($3, $5)) } }
+         { ($1, Some (Scaled ($3, $5))) }
     (* (%eax, %ebx, 2)
        (    , %ebx, 2) *)
 
@@ -149,11 +147,24 @@ segdisp:
 
 (* Memory access: base/index/scale, displacement, or both *)
 indirect:
-  | delimited(LPAR, bis, RPAR) { $1 }
+  | delimited(LPAR, bis, RPAR)
+    {
+      let (base, index) = $1 in
+      Indirect.make ?base ?index ()
+    }
     (* (%eax, %ebx, 2) *)
-  | segdisp delimited(LPAR, bis, RPAR) { { $2 with in_seg = fst $1; in_disp = Some (snd $1) } }
+  | segdisp delimited(LPAR, bis, RPAR)
+    {
+      let (seg, disp) = $1 in
+      let (base, index) = $2 in
+      Indirect.make ?seg ~disp ?base ?index ()
+    }
     (* -8(%eax, %ebx, 2) *)
-  | segdisp { in_seg_disp $1 }
+  | segdisp
+    {
+      let (seg, disp) = $1 in
+      Indirect.make ?seg ~disp ()
+    }
     (* 0x4000 *)
 
 location:

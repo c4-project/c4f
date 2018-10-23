@@ -93,31 +93,33 @@ type index =
   | Scaled of Reg.t * int
 [@@deriving sexp]
 
-type indirect =
-  { in_seg    : Reg.t option
-  ; in_disp   : disp option
-  ; in_base   : Reg.t option
-  ; in_index  : index option
-  }
-[@@deriving sexp]
+module Indirect : sig
+  (** [t] is the opaque type of indirect memory accesses. *)
+  type t
 
-(** [in_zero] creates an indirect reference with all fields empty.
-   This is useful only for creating other types of indirect reference:
-   the empty reference is invalid! *)
-val in_zero : unit -> indirect
+  (** [make ?base ?seg ?disp ?index ()] makes an [Indirect] with
+      the given fields (if present). *)
+  val make
+    :  ?base  : Reg.t
+    -> ?seg   : Reg.t
+    -> ?disp  : disp
+    -> ?index : index
+    -> unit
+    -> t
+  ;;
 
-(** [in_base_only] creates an indirect reference with given
-   base register, and all other fields empty. *)
-val in_base_only : Reg.t -> indirect
+  (** [base] gets the indirect base, if any. *)
+  val base : t -> Reg.t option;;
 
-(** [in_disp_only] creates an indirect reference with given
-   displacement, and all other fields empty. *)
-val in_disp_only : disp -> indirect
+  (** [seg] gets the indirect segment, if any. *)
+  val seg : t -> Reg.t option;;
 
-(** [in_seg_disp] creates an indirect reference with given
-   segment-displacement pair, and all other fields empty. *)
-val in_seg_disp : (Reg.t option * disp) -> indirect
+  (** [disp] gets the indirect displacement, if any. *)
+  val disp : t -> disp option;;
 
+  (** [index] gets the indirect index, if any. *)
+  val index : t -> index option;;
+end
 
 type bop =
   | BopPlus
@@ -127,7 +129,7 @@ type bop =
 (** [location] enumerates memory locations: either
     indirect seg/disp/base/index stanzas, or registers. *)
 type location =
-  | LocIndirect of indirect
+  | LocIndirect of Indirect.t
   | LocReg of Reg.t
 [@@deriving sexp]
 

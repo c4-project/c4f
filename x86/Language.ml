@@ -40,12 +40,12 @@ struct
 
   let make_jump_operand jsym =
     Ast.(
-      let jdisp = DispSymbolic jsym in
+      let disp = DispSymbolic jsym in
       match T.symbolic_jump_type with
       | `Indirect ->
-        OperandLocation (LocIndirect (in_disp_only jdisp))
+        OperandLocation (LocIndirect (Indirect.make ~disp ()))
       | `Immediate ->
-        OperandImmediate jdisp
+        OperandImmediate disp
     )
 
   include
@@ -65,14 +65,13 @@ struct
           let pp = P.pp_location
 
           let make_heap_loc l =
-            l
-            |> Ast.DispSymbolic
-            |> Ast.in_disp_only
-            |> Ast.LocIndirect
+            Ast.(LocIndirect (Indirect.make ~disp:(DispSymbolic l) ()))
+          ;;
 
-          let indirect_abs_type ( { in_seg; in_disp; in_base; in_index } : Ast.indirect) =
+          let indirect_abs_type (i : Ast.Indirect.t) =
             let open Language.AbsLocation in
-            match in_seg, in_disp, in_base, in_index with
+            let open Ast.Indirect in
+            match (seg i), (disp i), (base i), (index i) with
             (* Typically, [ EBP - i ] is a stack location: EBP is the
                frame pointer, and the x86 stack grows downwards. *)
             | None, Some (DispNumeric i), Some EBP, None ->
@@ -185,16 +184,13 @@ struct
                 begin
                   match o with
                   | OperandLocation
-                      (Ast.LocIndirect
-                         { in_disp = Some (Ast.DispSymbolic s)
-                         ; in_base = None
-                         ; in_index = None
-                         ; in_seg = None
-                         }
-                      )
-                  | Ast.OperandImmediate
-                      (Ast.DispSymbolic s)
-                    -> SymbolicJump s
+                      (Ast.LocIndirect i) ->
+                    begin
+                      match Ast.Indirect.disp i with
+                      | Some (Ast.DispSymbolic s) -> SymbolicJump s
+                      | _ -> Other
+                    end
+                  | Ast.OperandImmediate (Ast.DispSymbolic s) -> SymbolicJump s
                   | _ -> Other
                 end
               | _ -> Erroneous
@@ -225,8 +221,8 @@ struct
                  ; operands =
                      [ Ast.OperandLocation
                          (Ast.LocIndirect
-                            (Ast.in_disp_only
-                               (Ast.DispSymbolic "L1")))
+                            (Ast.Indirect.make
+                               ~disp:(Ast.DispSymbolic "L1") ()))
                      ]
                  ; prefix = None
                  });

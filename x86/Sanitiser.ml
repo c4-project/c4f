@@ -98,30 +98,26 @@ module Hook (L : Language.Intf) = struct
 
       It assumes, perhaps incorrectly, that these segments aren't
      moved, or shared per thread. *)
-  let segment_offset_to_heap =
-    let open Ctx.Let_syntax in
-    function
-    | LocIndirect
-        { in_seg = Some s
-        ; in_disp = Some (DispNumeric k)
-        ; in_index = None
-        ; in_base = None
-        } ->
+  let segment_offset_to_heap = function
+    | LocIndirect i as l->
       begin
-        let%bind progname = Ctx.peek (fun c -> c.progname) in
-        let%bind loc =
-          Ctx.make_fresh_heap_loc
-            (sprintf "t%sg%sd%d"
-               progname
-               (Ast.Reg.to_string s)
-               k
-            )
-        in
-        let%bind _ = Ctx.add_sym loc Lib.Language.Symbol.Sort.Heap in
-        return (L.Location.make_heap_loc loc)
+        let open Ctx.Let_syntax in
+        match Ast.Indirect.seg i, Ast.Indirect.disp i with
+        | Some s, Some (DispNumeric k) ->
+          let%bind progname = Ctx.peek (fun c -> c.progname) in
+          let%bind loc =
+            Ctx.make_fresh_heap_loc
+              (sprintf "t%sg%sd%d"
+                 progname
+                 (Ast.Reg.to_string s)
+                 k
+              )
+          in
+          let%bind _ = Ctx.add_sym loc Lib.Language.Symbol.Sort.Heap in
+          return (L.Location.make_heap_loc loc)
+        | _ -> Ctx.return l
       end
-    | LocIndirect _
-    | LocReg _ as l -> return l
+    | LocReg _ as l -> Ctx.return l
   ;;
 
   (** [warn_unsupported_registers reg] warns if [reg] isn't
