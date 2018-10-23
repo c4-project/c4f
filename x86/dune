@@ -13,4 +13,5 @@
 (ocamllex
  (modules ATTLexer lexUtils))
 (menhir
+ (infer false)
  (modules ATTParser))

@@ -82,7 +82,7 @@ stm_list:
 
 stm:
   | option(instr) EOL { Core.Option.value ~default:StmNop $1 }
-  | label { Ast.StmLabel $1 }
+  | label { StmLabel $1 }
   | error { raise (Base.ParseError({at = $sloc; because = "unknown statement error" })) }
 
 prefix:
@@ -106,7 +106,7 @@ opcode:
 
 instr:
   | prefix opcode separated_list (COMMA, operand)
-           { Ast.StmInstruction
+           { StmInstruction
                { prefix = Some $1
                ; opcode = $2
                ; operands = $3
@@ -114,7 +114,7 @@ instr:
            }
     (* lock cmpxchgl %eax, %ebx *)
   | opcode separated_list (COMMA, operand)
-         { Ast.StmInstruction
+         { StmInstruction
                { prefix = None
                ; opcode = $1
                ; operands = $2
@@ -123,21 +123,21 @@ instr:
 
 (* Binary operator *)
 bop:
-  | PLUS { Ast.BopPlus }
-  | MINUS { Ast.BopMinus }
+  | PLUS { BopPlus }
+  | MINUS { BopMinus }
 
 (* Base/index/scale triple *)
 bis:
   | ATT_REG
-    { Ast.in_base_only $1 }
+    { in_base_only $1 }
     (* (%eax) *)
   | option(ATT_REG) COMMA ATT_REG
-         { { (Ast.in_zero ()) with in_base = $1;
+         { { (in_zero ()) with in_base = $1;
                                        in_index = Some (Unscaled $3) } }
     (* (%eax, %ebx)
        (    , %ebx) *)
   | option(ATT_REG) COMMA ATT_REG COMMA k
-         { { (Ast.in_zero ()) with in_base = $1;
+         { { (in_zero ()) with in_base = $1;
                                       in_index = Some (Scaled ($3, $5)) } }
     (* (%eax, %ebx, 2)
        (    , %ebx, 2) *)
@@ -153,13 +153,13 @@ indirect:
     (* (%eax, %ebx, 2) *)
   | segdisp delimited(LPAR, bis, RPAR) { { $2 with in_seg = fst $1; in_disp = Some (snd $1) } }
     (* -8(%eax, %ebx, 2) *)
-  | segdisp { Ast.in_seg_disp $1 }
+  | segdisp { in_seg_disp $1 }
     (* 0x4000 *)
 
 location:
-  | indirect {Ast.LocIndirect $1}
+  | indirect {LocIndirect $1}
     (* -8(%eax, %ebx, 2) *)
-  | ATT_REG {Ast.LocReg $1}
+  | ATT_REG {LocReg $1}
     (* %eax *)
   | ATT_REG error
     { raise (Base.ParseError(
@@ -171,11 +171,11 @@ location:
 
 (* Memory displacement *)
 disp:
-  | k    { Ast.DispNumeric $1 }
-  | NAME { Ast.DispSymbolic $1 }
+  | k    { DispNumeric $1 }
+  | NAME { DispSymbolic $1 }
 
 operand:
-  | prim_operand bop operand { Ast.OperandBop($1,$2,$3) }
+  | prim_operand bop operand { OperandBop($1,$2,$3) }
   | prim_operand { $1 }
   | error { raise (Base.ParseError(
 		       { at = $sloc
@@ -185,13 +185,13 @@ operand:
 	  }
 
 prim_operand:
-  | DOLLAR disp {Ast.OperandImmediate $2}
+  | DOLLAR disp {OperandImmediate $2}
     (* $10 *)
-  | STRING {Ast.OperandString $1}
+  | STRING {OperandString $1}
     (* @function *)
-  | GAS_TYPE { Ast.OperandType $1 }
+  | GAS_TYPE { OperandType $1 }
     (* "Hello, world!" *)
-  | location {Ast.OperandLocation $1}
+  | location {OperandLocation $1}
 
 (* Numeric constant: hexadecimal or decimal *)
 k:

@@ -1,15 +1,25 @@
 opam-version: "2.0"
 name: "act"
 version: "0.1"
-synopsis: "automagic compiler tormentor"
+synopsis: "Automagic compiler tormentor"
 description: """
 'act' is a toolkit for testing memory-model behaviour of compilers.
 """
 maintainer: "Matt Windsor <m.windsor@imperial.ac.uk>"
 authors: "Matt Windsor <m.windsor@imperial.ac.uk>"
 license: "MIT"
-homepage: ""
-bug-reports: ""
-dev-repo: "https://github.com/MattWindsor91/act"
-depends: [ "ocaml" "ocamlfind" ]
+homepage: "https://github.com/MattWindsor91/act"
+bug-reports: "https://github.com/MattWindsor91/act/issues"
+dev-repo: "git+https://github.com/MattWindsor91/act"
+depends: [
+"ocaml"
+"ocamlfind"
+"core"
+"core_extended"
+"menhir"
+"ppx_deriving"
+"ppx_expect"
+"ppx_jane"
+"ppx_sexp_message"
+]
 build: ["dune" "build" "-p" name]
