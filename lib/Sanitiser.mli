@@ -124,7 +124,7 @@ module type CtxIntf = sig
     { progname : string                   (* Name of current program *)
     ; proglen  : int                      (* Length of current program *)
     ; endlabel : string option            (* End label of current program *)
-    ; syms     : Language.Symbol.Table.t  (* Symbol table *)
+    ; syms     : Abstract.Symbol.Table.t  (* Symbol table *)
     ; passes   : Pass.Set.t               (* Enabled passes *)
     ; warnings : Warn.t list
     }
@@ -162,17 +162,17 @@ module type CtxIntf = sig
       [sym] to the context symbol table with sort [sort], then
       passes [sym] through. *)
   val add_sym
-    :  Language.Symbol.t
-    -> Language.Symbol.Sort.t
-    -> Language.Symbol.t t
+    :  Abstract.Symbol.t
+    -> Abstract.Symbol.Sort.t
+    -> Abstract.Symbol.t t
   ;;
 
   (** [syms_with_sorts sortlist] is a context computation that gets
      the set of all symbols in the context's symbol table with sorts
      in [sortlist]. *)
   val syms_with_sorts
-    :  Language.Symbol.Sort.t list
-    -> Language.Symbol.Set.t t
+    :  Abstract.Symbol.Sort.t list
+    -> Abstract.Symbol.Set.t t
 
   (** [make_fresh_label] generates a fresh label with the given prefix
       (in regards to the context's symbol tables), interns it into the

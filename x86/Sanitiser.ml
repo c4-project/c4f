@@ -115,7 +115,7 @@ module Hook (L : Language.Intf) = struct
                  k
               )
           in
-          let%bind _ = Ctx.add_sym loc Lib.Language.Symbol.Sort.Heap in
+          let%bind _ = Ctx.add_sym loc Lib.Abstract.Symbol.Sort.Heap in
           return (L.Location.make_heap_loc loc)
         | _ -> Ctx.return l
       end

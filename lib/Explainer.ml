@@ -28,8 +28,8 @@ module type S = sig
 
   type stm_explanation =
     { original : statement
-    ; abs_type : Language.AbsStatement.t
-    ; flags : Language.AbsStatement.Flag.Set.t
+    ; abs_type : Abstract.Statement.t
+    ; flags : Abstract.Statement.Flag.Set.t
     }
 
   type t =
@@ -46,8 +46,8 @@ module Make (LS : Language.Intf) = struct
 
   type stm_explanation =
     { original : statement
-    ; abs_type : Language.AbsStatement.t
-    ; flags : Language.AbsStatement.Flag.Set.t
+    ; abs_type : Abstract.Statement.t
+    ; flags : Abstract.Statement.Flag.Set.t
     }
 
   type t =
@@ -67,22 +67,22 @@ module Make (LS : Language.Intf) = struct
 
   let stringify_stm_basic =
     (* TODO(@MattWindsor91): merge with pp? *)
-    let open Language.AbsStatement in
+    let open Abstract.Statement in
     function
     | Blank -> ""
     | Directive _ -> "directive"
     | Label _ -> "label"
-    | Instruction ins -> Language.AbsInstruction.to_string ins
+    | Instruction ins -> Abstract.Instruction.to_string ins
     | Other -> "??"
 
   let pp_explanation f exp =
     Format.fprintf f "@[<--@ @[%s%a@]@]"
       (stringify_stm_basic exp.abs_type)
-      Language.AbsStatement.Flag.pp_set exp.flags
+      Abstract.Statement.Flag.pp_set exp.flags
 
   let pp_statement f exp =
     (* TODO(@MattWindsor91): emit '<-- xyz' in a comment *)
-    let open Language.AbsStatement in
+    let open Abstract.Statement in
     match exp.abs_type with
     | Blank -> () (* so as not to clutter up blank lines *)
     | _ ->

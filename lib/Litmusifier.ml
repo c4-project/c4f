@@ -77,11 +77,11 @@ module Make (M : S) : Intf = struct
     let get_hsyms prog =
       prog
       |> LS.symbols
-      |> Fn.flip Language.Symbol.Table.set_of_sort Language.Symbol.Sort.Heap
+      |> Fn.flip Abstract.Symbol.Table.set_of_sort Abstract.Symbol.Sort.Heap
     in
-    let syms = Language.Symbol.Set.union_list (List.map ~f:get_hsyms progs) in
+    let syms = Abstract.Symbol.Set.union_list (List.map ~f:get_hsyms progs) in
     List.map ~f:(fun s -> (s, LS.Constant.zero))
-      (Language.Symbol.Set.to_list syms)
+      (Abstract.Symbol.Set.to_list syms)
   ;;
 
   let output_litmus

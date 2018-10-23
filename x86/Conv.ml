@@ -53,7 +53,7 @@ module Make (SD : Language.Intf) (DD : Language.Intf) = struct
       See [Dialect.Intf.symbolic_jump_type] for an explanation. *)
   let convert_jump_operand ins =
     match SD.Instruction.abs_operands ins with
-    | Lib.Language.AbsOperands.SymbolicJump jsym ->
+    | Lib.Abstract.Operands.SymbolicJump jsym ->
       { ins with operands = [ DD.make_jump_operand jsym ] }
     | _ -> ins
 

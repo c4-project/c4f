@@ -27,169 +27,6 @@ open Core
 open Utils
 
 (*
- * Types for abstract language observations
- *)
-
-(** [AbsInstruction] contains types and utilities for abstracted
-   instructions. *)
-module AbsInstruction : sig
-  (** [AbsInstruction.t] is an abstracted instruction. *)
-  type t =
-    | Arith   (** arithmetic *)
-    | Call    (** calling-convention related instructions *)
-    | Compare (** comparison *)
-    | Fence   (** memory fence *)
-    | Jump    (** conditional or unconditional jump *)
-    | Logical (** logical operation *)
-    | Move    (** move *)
-    | Nop     (** no operation *)
-    | Return  (** jump to caller *)
-    | Rmw     (** read-modify-write *)
-    | Stack   (** stack resizing and pointer manipulation *)
-    | Other   (** known, but doesn't fit in these categories *)
-    | Unknown (** unclassified instruction *)
-
-  (* Why do we have a separate [Return] type, instead of classing it
-     as [Call] or [Jump]?  Two reasons:
-
-     - It has semantics roughly in between both;
-
-     - It makes it easier for us to translate returns to
-     end-of-program jumps in sanitisation.  *)
-
-  (** [AbsInstruction] contains various enum extensions, including a
-      [Set] type. *)
-  include Enum.ExtensionTable with type t := t
-end
-
-(** [AbsLocation] contains types and utilities for abstracted
-   locations. *)
-module AbsLocation : sig
-  (** [AbsLocation.t] is an abstracted location. *)
-  type t =
-    | StackPointer       (** Stack pointer *)
-    | StackOffset of int (** Absolute offset from stack pointer *)
-    | Heap of string     (** Named heap location *)
-    | GeneralRegister    (** General-purpose register *)
-    | Unknown            (** Not known *)
-
-  (** Abstract locations may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
-end
-
-(** [AbsStatement] contains types and utilities for abstracted
-   statements. *)
-module AbsStatement : sig
-  (** [AbsStatement.t] is an abstracted statement. *)
-  type t =
-    | Directive of string
-    | Instruction of AbsInstruction.t
-    | Blank
-    | Label of string
-    | Other
-
-  (** Abstract statements may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
-
-  (** [Flag] is an enumeration of various statement observations.
-
-Most of these flags have corresponding Boolean accessors in
-      [Language.Intf.Statement]. *)
-  module Flag : sig
-    type t =
-      [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
-      | `ProgBoundary  (* A label that looks like a program boundary *)
-      | `StackManip    (* A statement that only serves to manipulate
-                        the call stack *)
-      ]
-
-    (** [Flag] contains various enum extensions, including a [Set]
-       type. *)
-    include Enum.ExtensionTable with type t := t
-  end
-end
-
-
-(** [AbsOperands] contains types and utilities for abstracted
-   operand bundles. *)
-module AbsOperands : sig
-  (** [AbsOperands.t] is an abstracted operand bundle. *)
-  type t =
-    (* This instruction takes no operands. *)
-    | None
-    (* This instruction is taking a transfer from source location to
-     destination location. *)
-    | LocTransfer of (AbsLocation.t, AbsLocation.t) SrcDst.t
-    (* This instruction is loading an integer literal, doing something
-       with it, and storing into a location. *)
-    | IntImmediate of (int, AbsLocation.t) SrcDst.t
-    (* This instruction is jumping to the given symbol. *)
-    | SymbolicJump of string
-    (* Instruction has the wrong sort of operands. *)
-    | Erroneous
-    (* Instruction has unclassifiable operands. *)
-    | Other
-    (* No analysis available---the operands may or may not be valid. *)
-    | Unknown
-
-  (** Abstract operand bundles may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
-end
-
-module Symbol : sig
-  (** Symbols are strings. *)
-  type t = string
-
-  (** [Set] is a set module for symbols. *)
-  module Set : Set.S with type Elt.t = string
-
-  (** [Sort] is a module containing an enumeration of symbol sorts. *)
-  module Sort : sig
-    type t =
-      | Jump
-      | Heap
-      | Label
-
-    include Enum.ExtensionTable with type t := t
-  end
-
-  (** [Table] is a module concerning symbol tables: many-to-many
-     mappings between symbols and sorts. *)
-  module Table : sig
-    type elt = t
-    type t
-
-    (** [empty] is the empty table. *)
-    val empty : t;;
-
-    (** [of_sets sets] expands a symbol-set-to-sort associative list
-       into a [t]. *)
-
-    (** [add tbl sym sort] registers [sym] as a symbol with sort
-       [sort] in [tbl], returning a new table. *)
-    val add : t -> elt -> Sort.t -> t;;
-
-    (** [remove tbl sym sort] de-registers [sym] as a symbol with sort
-       [sort] in [tbl], returning a new table.
-
-        If [sym] also maps to another sort, those mappings remain. *)
-    val remove : t -> elt -> Sort.t -> t;;
-
-    (** [set_of_sorts tbl sorts] returns all symbols in [tbl] with a
-       sort in [sorts], as a symbol set. *)
-    val set_of_sorts : t -> Sort.Set.t -> Set.t;;
-
-    (** [set_of_sort tbl sort] returns all symbols in [tbl] with sort
-       [sort], as a symbol set. *)
-    val set_of_sort : t -> Sort.t -> Set.t;;
-
-    (** [set tbl] returns all symbols in [tbl]
-       as a symbol set. *)
-    val set : t -> Set.t;;
-  end
-end
-
-(*
  * Interface for language implementation
  *)
 
@@ -255,7 +92,7 @@ module type StatementS = sig
    *)
 
   (** [abs_type stm] gets the abstract type of a statement. *)
-  val abs_type : t -> AbsStatement.t
+  val abs_type : t -> Abstract.Statement.t
 end
 
 module type InstructionS = sig
@@ -287,10 +124,10 @@ module type InstructionS = sig
 
   (** [operands ins] gets the abstracted operands of instruction
      [ins]. *)
-  val abs_operands : t -> AbsOperands.t
+  val abs_operands : t -> Abstract.Operands.t
 
   (** [abs_type ins] gets the abstract type of instruction [ins]. *)
-  val abs_type : t -> AbsInstruction.t
+  val abs_type : t -> Abstract.Instruction.t
 end
 
 module type LocationS = sig
@@ -307,7 +144,7 @@ module type LocationS = sig
   val make_heap_loc : string -> t
 
   (** [abs_type loc] gets the abstract type of a location. *)
-  val abs_type : t -> AbsLocation.t
+  val abs_type : t -> Abstract.Location.t
 end
 
 module type ConstantS = sig
@@ -367,7 +204,7 @@ module type Intf = sig
 
     (** [mem set ins] checks whether [ins]'s abstract type is in the
        set [set]. *)
-    val mem : AbsInstruction.Set.t -> t -> bool
+    val mem : Abstract.Instruction.Set.t -> t -> bool
 
     (** [is_jump ins] decides whether [ins] appears to be a
      jump instruction. *)
@@ -401,7 +238,7 @@ module type Intf = sig
     (** [instruction_mem set stm] checks whether [stm] is an
        instruction and, if so, whether its abstract type is in the set
        [set]. *)
-    val instruction_mem : AbsInstruction.Set.t -> t -> bool
+    val instruction_mem : Abstract.Instruction.Set.t -> t -> bool
 
     (** [is_jump stm] decides whether [stm] appears to be a
      jump instruction. *)
@@ -433,7 +270,7 @@ module type Intf = sig
        jumped to from [jsyms]. *)
     val is_unused_label
       :  ?ignore_boundaries:bool
-      -> syms:Symbol.Table.t
+      -> syms:Abstract.Symbol.Table.t
       -> t
       -> bool
 
@@ -451,11 +288,14 @@ module type Intf = sig
     (** [flags ~syms stm] summarises the above boolean functions as
         a set of [stm_flag]s.  It uses [syms] to calculate whether
         the statement is an unused label. *)
-    val flags : syms:Symbol.Table.t -> t -> AbsStatement.Flag.Set.t
+    val flags
+      :  syms:Abstract.Symbol.Table.t
+      -> t
+      -> Abstract.Statement.Flag.Set.t
   end
 
   (** [symbols] retrieves the symbol table for a given program. *)
-  val symbols : Statement.t list -> Symbol.Table.t
+  val symbols : Statement.t list -> Abstract.Symbol.Table.t
 end
 
 (** [Make] builds a module satisfying [Intf] from a module satisfying [S]. *)

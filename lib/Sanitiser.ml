@@ -185,7 +185,7 @@ module type CtxIntf = sig
     { progname : string
     ; proglen  : int
     ; endlabel : string option
-    ; syms     : Language.Symbol.Table.t
+    ; syms     : Abstract.Symbol.Table.t
     ; passes   : Pass.Set.t
     ; warnings : Warn.t list
     }
@@ -201,23 +201,23 @@ module type CtxIntf = sig
   val warn : Warn.body -> 'a -> 'a t
 
   val add_sym
-    :  Language.Symbol.t
-    -> Language.Symbol.Sort.t
-    -> Language.Symbol.t t
+    :  Abstract.Symbol.t
+    -> Abstract.Symbol.Sort.t
+    -> Abstract.Symbol.t t
   ;;
 
   val syms_with_sorts
-    :  Language.Symbol.Sort.t list
-    -> Language.Symbol.Set.t t
+    :  Abstract.Symbol.Sort.t list
+    -> Abstract.Symbol.Set.t t
 
   val make_fresh_label : string -> string t
   val make_fresh_heap_loc : string -> string t
 end
 
-let freshen_label (syms : Language.Symbol.Set.t) (prefix : string) : string =
+let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string =
   let rec mu prefix count =
     let str = sprintf "%s%d" prefix count in
-    if Language.Symbol.Set.mem syms str
+    if Abstract.Symbol.Set.mem syms str
     then mu prefix (count + 1)
     else str
   in
@@ -233,7 +233,7 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
     { progname : string
     ; proglen  : int
     ; endlabel : string option
-    ; syms     : Language.Symbol.Table.t
+    ; syms     : Abstract.Symbol.Table.t
     ; passes   : Pass.Set.t
     ; warnings : Warn.t list
     }[@@deriving fields]
@@ -242,7 +242,7 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
     { progname
     ; proglen
     ; endlabel = None
-    ; syms     = Language.Symbol.Table.empty
+    ; syms     = Abstract.Symbol.Table.empty
     ; passes
     ; warnings = []
     }
@@ -271,13 +271,13 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
   let add_sym sym sort =
     make
       (fun ctx ->
-         { ctx with syms = Language.Symbol.Table.add ctx.syms sym sort }
+         { ctx with syms = Abstract.Symbol.Table.add ctx.syms sym sort }
          , sym
       )
   ;;
 
   let syms_with_sorts sorts =
-    Language.Symbol.(
+    Abstract.Symbol.(
       let open Let_syntax in
       let%bind all_syms = peek (Field.get Fields_of_ctx.syms) in
       return (Table.set_of_sorts all_syms (Sort.Set.of_list sorts))
@@ -285,7 +285,7 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
   ;;
 
   let make_fresh_label prefix =
-    Language.Symbol.(
+    Abstract.Symbol.(
       let open Let_syntax in
       let%bind syms = syms_with_sorts [ Sort.Jump; Sort.Label ] in
       let l = freshen_label syms prefix in
@@ -294,7 +294,7 @@ module CtxMake (L : Language.Intf) (C : CustomWarnS)
   ;;
 
   let make_fresh_heap_loc prefix =
-    Language.Symbol.(
+    Abstract.Symbol.(
       let open Let_syntax in
       let%bind syms = syms_with_sorts [ Sort.Heap ] in
       let l = freshen_label syms prefix in
@@ -407,7 +407,7 @@ module Make (LH : LangHookS)
       (fun { progname; _ } ->
          let f ln =
            match LH.L.Location.abs_type ln with
-           | Language.AbsLocation.StackOffset i ->
+           | Abstract.Location.StackOffset i ->
              LH.L.Location.make_heap_loc
                (sprintf "t%ss%d" progname i)
            | _ -> ln
@@ -418,7 +418,7 @@ module Make (LH : LangHookS)
       instruction in [stm] without a high-level analysis. *)
   let warn_unknown_instructions ins =
     match LH.L.Instruction.abs_type ins with
-     | Language.AbsInstruction.Unknown ->
+     | Abstract.Instruction.Unknown ->
        Ctx.warn (Warn.UnknownElt (Warn.Instruction ins)) ins
      | _ -> Ctx.return ins
 
@@ -429,14 +429,14 @@ module Make (LH : LangHookS)
     (* Don't emit warnings for unknown instructions---the
        upper warning should be enough. *)
     match LH.L.Instruction.abs_type ins with
-    | Language.AbsInstruction.Unknown ->
+    | Abstract.Instruction.Unknown ->
       Ctx.return ins
     | _ ->
       begin
         match LH.L.Instruction.abs_operands ins with
-        | Language.AbsOperands.Unknown ->
+        | Abstract.Operands.Unknown ->
           Ctx.warn (Warn.UnknownElt (Warn.Operands ins)) ins
-        | Language.AbsOperands.Erroneous ->
+        | Abstract.Operands.Erroneous ->
           Ctx.warn (Warn.ErroneousElt (Warn.Operands ins)) ins
         | _ -> Ctx.return ins
       end
@@ -446,7 +446,7 @@ module Make (LH : LangHookS)
   let change_ret_to_end_jump ins =
     Ctx.(
       match LH.L.Instruction.abs_type ins with
-      | Language.AbsInstruction.Return ->
+      | Abstract.Instruction.Return ->
         make
           (fun ctx ->
              match ctx.endlabel with
@@ -502,7 +502,7 @@ module Make (LH : LangHookS)
       [stm] without a high-level analysis. *)
   let warn_unknown_statements stm =
     match LH.L.Statement.abs_type stm with
-    | Language.AbsStatement.Other ->
+    | Abstract.Statement.Other ->
       Ctx.warn (Warn.UnknownElt (Warn.Statement stm)) stm
     | _ -> Ctx.return stm
 
@@ -542,11 +542,12 @@ module Make (LH : LangHookS)
       instruction that can be thrown out when converting to a litmus
       test. *)
   let irrelevant_instruction_types =
-    let open Language.AbsInstruction in
-    Set.of_list
-      [ Call (* -not- Return: these need more subtle translation *)
-      ; Stack
-      ]
+    Abstract.Instruction.(
+      Set.of_list
+        [ Call (* -not- Return: these need more subtle translation *)
+        ; Stack
+        ]
+    )
 
   let instruction_is_irrelevant =
     LH.L.Statement.instruction_mem irrelevant_instruction_types

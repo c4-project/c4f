@@ -69,7 +69,7 @@ struct
           ;;
 
           let indirect_abs_type (i : Ast.Indirect.t) =
-            let open Language.AbsLocation in
+            let open Abstract.Location in
             let open Ast.Indirect in
             match (seg i), (disp i), (base i), (index i) with
             (* Typically, [ EBP - i ] is a stack location: EBP is the
@@ -85,7 +85,7 @@ struct
             | _, _, _, _ -> Unknown
 
           let abs_type =
-            let open Language.AbsLocation in
+            let open Abstract.Location in
             function
             | Ast.LocReg ESP
             | LocReg EBP -> StackPointer
@@ -113,7 +113,7 @@ struct
           (** [basic_instruction_type o] assigns an act classification to a
               primitive opcode [o]. *)
           let basic_instruction_type
-            : [< Ast.basic_opcode] -> Language.AbsInstruction.t = function
+            : [< Ast.basic_opcode] -> Abstract.Instruction.t = function
             | `Add    -> Arith
             | `Call   -> Call
             | `Cmp    -> Compare
@@ -129,15 +129,15 @@ struct
             | `Xor    -> Logical
 
           let zero_operands (operands : operand list)
-            : Language.AbsOperands.t =
-            let open Language.AbsOperands in
+            : Abstract.Operands.t =
+            let open Abstract.Operands in
             if List.is_empty operands
             then None
             else Erroneous
 
           let src_dst_operands (operands : operand list)
-            : Language.AbsOperands.t =
-            let open Language.AbsOperands in
+            : Abstract.Operands.t =
+            let open Abstract.Operands in
             let open T in
             to_src_dst operands
             |> Option.value_map
@@ -162,7 +162,7 @@ struct
 
           let basic_operands (o : [< Ast.basic_opcode])
               (operands : Ast.operand list) =
-            let open Language.AbsOperands in
+            let open Abstract.Operands in
             match o with
             | `Leave
             | `Mfence
@@ -180,7 +180,7 @@ struct
             | `Push -> Unknown
 
           let jump_operands =
-            Language.AbsOperands.(
+            Abstract.Operands.(
               function
               | [o] ->
                 begin
@@ -203,12 +203,12 @@ struct
             | Ast.OpBasic b -> basic_operands b operands
             | Ast.OpSized (b, _) -> basic_operands b operands
             | Ast.OpJump _ -> jump_operands operands
-            | Ast.OpDirective _ -> Language.AbsOperands.Other
-            | Ast.OpUnknown _ -> Language.AbsOperands.Unknown
+            | Ast.OpDirective _ -> Abstract.Operands.Other
+            | Ast.OpUnknown _ -> Abstract.Operands.Unknown
 
           let%expect_test "abs_operands: nop -> none" =
             Format.printf "%a@."
-              Language.AbsOperands.pp
+              Abstract.Operands.pp
               (abs_operands
                  { opcode = Ast.OpBasic `Nop
                  ; operands = []
@@ -218,7 +218,7 @@ struct
 
           let%expect_test "abs_operands: jmp, AT&T style" =
             Format.printf "%a@."
-              Language.AbsOperands.pp
+              Abstract.Operands.pp
               (abs_operands
                  { opcode = Ast.OpJump None
                  ; operands =
@@ -233,7 +233,7 @@ struct
 
           let%expect_test "abs_operands: nop $42 -> error" =
             Format.printf "%a@."
-              Language.AbsOperands.pp
+              Abstract.Operands.pp
               (abs_operands
                  { opcode = Ast.OpBasic `Nop
                  ; operands = [ Ast.OperandImmediate
@@ -244,7 +244,7 @@ struct
 
           let%expect_test "abs_operands: mov %ESP, %EBP" =
             Format.printf "%a@."
-              Language.AbsOperands.pp
+              Abstract.Operands.pp
               (abs_operands
                  { opcode = Ast.OpBasic `Mov
                  ; operands = [ Ast.OperandLocation (Ast.LocReg ESP)
@@ -256,7 +256,7 @@ struct
 
           let%expect_test "abs_operands: movl %ESP, %EBP" =
             Format.printf "%a@."
-              Language.AbsOperands.pp
+              Abstract.Operands.pp
               (abs_operands
                  { opcode = Ast.OpSized (`Mov, SLong)
                  ; operands = [ Ast.OperandLocation (Ast.LocReg ESP)
@@ -267,7 +267,7 @@ struct
             [%expect {| &stack -> &stack |}]
 
           let abs_type ({opcode; _} : Ast.instruction) =
-            let open Language.AbsInstruction in
+            let open Abstract.Instruction in
             match opcode with
             | Ast.OpDirective _ ->
               (* handled by abs_type below. *)
@@ -305,7 +305,7 @@ struct
           let instruction i = Ast.StmInstruction i
 
           let abs_type =
-            let open Language.AbsStatement in
+            let open Abstract.Statement in
             function
             | StmInstruction { opcode = OpDirective s; _ } ->
               Directive s
@@ -342,7 +342,7 @@ module ATT = Make (Dialect.ATT) (PP.ATT)
 
 let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
   Format.printf "%a@."
-    Language.AbsOperands.pp
+    Abstract.Operands.pp
     (ATT.Instruction.abs_operands
        { opcode = Ast.OpBasic `Add
        ; operands = [ Ast.OperandImmediate (Ast.DispNumeric (-16))
@@ -356,7 +356,7 @@ module Intel = Make (Dialect.Intel) (PP.Intel)
 
 let%expect_test "abs_operands: add ESP, -16, Intel" =
   Format.printf "%a@."
-    Language.AbsOperands.pp
+    Abstract.Operands.pp
     (Intel.Instruction.abs_operands
        { opcode = Ast.OpBasic `Add
        ; operands = [ Ast.OperandLocation (Ast.LocReg ESP)
