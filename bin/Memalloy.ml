@@ -25,6 +25,27 @@ open Core
 open Lib
 open Utils
 
+type herd_result =
+  | Disabled
+  | Unknown
+  | Errored
+[@@deriving sexp]
+;;
+
+type run_result =
+  { herd : herd_result
+  }
+[@@deriving sexp]
+;;
+
+type compiler_result = (string, run_result) List.Assoc.t
+[@@deriving sexp]
+;;
+
+type full_result = (Compiler.Id.t, compiler_result) List.Assoc.t
+[@@deriving sexp]
+;;
+
 let log_stage stage (o : OutputCtx.t) (fs : Pathset.File.t) cid =
   Format.fprintf o.vf "@[%s[%a]@ %s@]@."
     stage
@@ -62,16 +83,14 @@ let litmusify o fs cspec =
 (** [check_herd_output herd_path] checks to see if Herd wrote
     anything to [herd_path] and, if not, trips an error. *)
 let check_herd_output herd_path =
-  let f _ ic =
-    (* TODO(@MattWindsor91): do something with these lines. *)
-    match In_channel.input_lines ic with
-    | [] ->
-      Or_error.error_string
-        ( "Herd doesn't seem to have outputted anything; "
-          ^ "check the terminal for error output." )
-    | _ -> Result.ok_unit
-  in
-  Io.In_source.with_input (`File herd_path) ~f
+  let open Or_error.Let_syntax in
+  let f _ ic = return (In_channel.input_lines ic) in
+  match%bind Io.In_source.with_input (`File herd_path) ~f with
+  | [] ->
+    let%bind () = Or_error.try_with (fun () -> Sys.remove herd_path) in
+    return Errored
+  (* TODO(@MattWindsor91): do something with these lines. *)
+  | _ -> return Unknown
 ;;
 
 (** [herd o fs cspec] sees if [cspec] asked for a Herd run and, if
@@ -79,7 +98,7 @@ let check_herd_output herd_path =
 let herd o fs (cspec : Compiler.CSpec.WithId.t) =
   let open Or_error.Let_syntax in
   Option.value_map
-    ~default:Result.ok_unit
+    ~default:(return Disabled)
     ~f:(
       fun prog ->
         let cid = Compiler.CSpec.WithId.id cspec in
@@ -88,7 +107,7 @@ let herd o fs (cspec : Compiler.CSpec.WithId.t) =
           Run.Local.run ~oc ~prog [ Pathset.File.lita_path fs ]
         in
         let herd_path = Pathset.File.herd_path fs in
-        let%bind _ =
+        let%bind () =
           Or_error.tag ~tag:"While running herd"
             (Io.Out_sink.with_output (`File herd_path) ~f)
         in
@@ -106,17 +125,22 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) spec fname =
   let open Or_error.Let_syntax in
   let%bind () = compile o fs spec in
   let%bind () = litmusify o fs spec in
-  herd o fs spec
+  let%bind herd = herd o fs spec in
+  return (basename, { herd });
 ;;
 
-let run_compiler (o : OutputCtx.t) ~in_root ~out_root c_fnames spec =
+let run_compiler (o : OutputCtx.t) ~in_root ~out_root c_fnames spec
+  : (Compiler.Id.t * compiler_result) Or_error.t =
   let open Or_error.Let_syntax in
   let%bind paths = Pathset.make_and_mkdirs spec ~in_root ~out_root in
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
-  c_fnames
-  |> List.map ~f:(run_single o paths spec)
-  |> Or_error.combine_errors_unit
+  let%bind results =
+    c_fnames
+    |> List.map ~f:(run_single o paths spec)
+    |> Or_error.combine_errors
+  in
+  return (Compiler.CSpec.WithId.id spec, results)
 ;;
 
 let check_c_files_exist c_path c_files =
@@ -136,6 +160,13 @@ let report_spec_errors o = function
       es
 ;;
 
+let print_result (r : full_result) =
+  Format.open_box 0;
+  Sexp.pp_hum Format.std_formatter ([%sexp_of:full_result] r);
+  Format.close_box ();
+  Format.print_newline ()
+;;
+
 let run ~in_root ~out_root o cfg =
   let open Or_error.Let_syntax in
 
@@ -147,7 +178,9 @@ let run ~in_root ~out_root o cfg =
   let%bind () = check_c_files_exist c_path c_files in
 
   let results = Compiler.CSpec.Set.map ~f:(run_compiler o ~in_root ~out_root c_files) specs in
-  Or_error.combine_errors_unit results
+  let%bind result = Or_error.combine_errors results in
+  print_result result;
+  return ()
 ;;
 
 let command =

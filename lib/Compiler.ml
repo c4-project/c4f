@@ -5,7 +5,7 @@ open Utils
 module Id = struct
   module T = struct
     (** [t] is the type of compiler IDs. *)
-    type t = string list [@@deriving compare, hash, sexp]
+    type t = string list [@@deriving compare, hash, sexp, bin_io]
 
     let allowed_id_splits = [ '.' ; ' '; '/'; '\\']
 
@@ -19,7 +19,7 @@ module Id = struct
   end
 
   include T
-  include Identifiable.Make_plain (T)
+  include Identifiable.Make (T)
 
   let to_string_list = Fn.id
 end

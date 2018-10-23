@@ -17,7 +17,7 @@ module Id : sig
      ID. *)
   val to_string_list : t -> string list
 
-  include Core.Identifiable.S_plain with type t := t
+  include Core.Identifiable.S with type t := t
 end
 
 (** [SpecS] is the basic interface of both compiler and
