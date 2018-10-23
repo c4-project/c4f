@@ -6,47 +6,47 @@
 P0:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
-subl $24, %ESP # <-- arithmetic (manipulates stack)
+subl $24, %ESP # <-- arith (manipulates stack)
 movl %GS:20, %EAX # <-- move
 movl %EAX, -12(%EBP) # <-- move
-xorl %EAX, %EAX # <-- ?? instruction ??
+xorl %EAX, %EAX # <-- logical
 movl $2, -20(%EBP) # <-- move
 movl -20(%EBP), %EAX # <-- move
 movl %EAX, y # <-- move
-mfence  # <-- memory fence
+mfence  # <-- fence
 movl x, %EAX # <-- move
 movl %EAX, -16(%EBP) # <-- move
 movl -16(%EBP), %EAX # <-- move
 movl %EAX, t0r0 # <-- move
 movl -12(%EBP), %EAX # <-- move
-xorl %GS:20, %EAX # <-- ?? instruction ??
+xorl %GS:20, %EAX # <-- logical
 je .L2 # <-- jump
-call __stack_chk_fail # <-- calling convention
+call __stack_chk_fail # <-- call
 .L2:  # <-- label
-leave  # <-- calling convention
-ret  # <-- return to caller
+leave  # <-- call
+ret  # <-- return
 P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
-subl $24, %ESP # <-- arithmetic (manipulates stack)
+subl $24, %ESP # <-- arith (manipulates stack)
 movl %GS:20, %EAX # <-- move
 movl %EAX, -12(%EBP) # <-- move
-xorl %EAX, %EAX # <-- ?? instruction ??
+xorl %EAX, %EAX # <-- logical
 movl $1, -20(%EBP) # <-- move
 movl -20(%EBP), %EAX # <-- move
 movl %EAX, x # <-- move
-mfence  # <-- memory fence
+mfence  # <-- fence
 movl $1, -16(%EBP) # <-- move
 movl -16(%EBP), %EAX # <-- move
 movl %EAX, y # <-- move
-mfence  # <-- memory fence
+mfence  # <-- fence
 movl -12(%EBP), %EAX # <-- move
-xorl %GS:20, %EAX # <-- ?? instruction ??
+xorl %GS:20, %EAX # <-- logical
 je .L4 # <-- jump
-call __stack_chk_fail # <-- calling convention
+call __stack_chk_fail # <-- call
 .L4:  # <-- label
-leave  # <-- calling convention
-ret  # <-- return to caller
+leave  # <-- call
+ret  # <-- return
 ```
 ## gcc_macho_o0_moves.s
 
@@ -54,34 +54,34 @@ ret  # <-- return to caller
 _P0:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arithmetic (manipulates stack)
+subl $16, %ESP # <-- arith (manipulates stack)
 movl _y, %EAX # <-- move
 movl %EAX, -4(%EBP) # <-- move
 movl -4(%EBP), %EAX # <-- move
 movl %EAX, _t0r0 # <-- move
 movl _t0r0, %EAX # <-- move
-cmpl $1, %EAX # <-- comparison
+cmpl $1, %EAX # <-- compare
 jne L3 # <-- jump
 movl $1, _x # <-- move
 L3:  # <-- label
-leave  # <-- calling convention
-ret  # <-- return to caller
+leave  # <-- call
+ret  # <-- return
 _P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arithmetic (manipulates stack)
+subl $16, %ESP # <-- arith (manipulates stack)
 movl _x, %EAX # <-- move
 movl %EAX, _t1r0 # <-- move
 movl _t1r0, %EAX # <-- move
-cmpl $1, %EAX # <-- comparison
+cmpl $1, %EAX # <-- compare
 jne L6 # <-- jump
 movl $1, -4(%EBP) # <-- move
 movl -4(%EBP), %EAX # <-- move
 movl %EAX, _y # <-- move
-mfence  # <-- memory fence
+mfence  # <-- fence
 L6:  # <-- label
-leave  # <-- calling convention
-ret  # <-- return to caller
+leave  # <-- call
+ret  # <-- return
 ```
 
 Ran 2 test(s).
@@ -113,7 +113,7 @@ X86 gcc_elf_o0_stackchk.s
 P0                    | P1                    ;
 movl EAX, [t0gGSd200] | movl EAX, [t1gGSd200] ;
 movl [t0sZM12], EAX   | movl [t1sZM12], EAX   ;
-xorl EAX, EAX         | xorl EAX, EAX         ;
+xor EAX, EAX          | xor EAX, EAX          ;
 movl [t0sZM20], 2     | movl [t1sZM20], 1     ;
 movl EAX, [t0sZM20]   | movl EAX, [t1sZM20]   ;
 movl [y], EAX         | movl [x], EAX         ;
@@ -123,7 +123,7 @@ movl [t0sZM16], EAX   | movl EAX, [t1sZM16]   ;
 movl EAX, [t0sZM16]   | movl [y], EAX         ;
 movl [t0r0], EAX      | mfence                ;
 movl EAX, [t0sZM12]   | movl EAX, [t1sZM12]   ;
-xorl EAX, [t0gGSd201] | xorl EAX, [t1gGSd201] ;
+xor EAX, [t0gGSd201]  | xor EAX, [t1gGSd201]  ;
 
 
 locations [t0gGSd200; t0gGSd201; t0r0; t0sZM12; t0sZM16; t0sZM20; t1gGSd200;

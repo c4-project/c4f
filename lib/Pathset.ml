@@ -98,18 +98,30 @@ let mkdirs ps =
   )
 ;;
 
-let make spec ~in_root ~out_root =
-  let cid = Compiler.CSpec.WithId.id spec in
+let make id ~in_root ~out_root =
   { c_path    = [in_root; "C"]
   ; litc_path = [in_root; "Litmus"]
-  ; asm_path  = [out_root] @ (Compiler.Id.to_string_list cid) @ ["asm"]
-  ; lita_path = [out_root] @ (Compiler.Id.to_string_list cid) @ ["litmus"]
-  ; herd_path = [out_root] @ (Compiler.Id.to_string_list cid) @ ["herd"]
+  ; asm_path  = [out_root] @ (Compiler.Id.to_string_list id) @ ["asm"]
+  ; lita_path = [out_root] @ (Compiler.Id.to_string_list id) @ ["litmus"]
+  ; herd_path = [out_root] @ (Compiler.Id.to_string_list id) @ ["herd"]
   }
 ;;
 
-let make_and_mkdirs spec ~in_root ~out_root =
-  let paths = make spec ~in_root ~out_root in
+let%expect_test "all_paths of make" =
+  let id = Compiler.Id.of_string "foo.bar.baz" in
+  let ps = make id ~in_root:"inputs" ~out_root:"outputs" in
+  Format.printf "@[%a@]@."
+    Sexp.pp_hum
+    [%sexp (all_paths ps : (string, string list) List.Assoc.t)];
+  [%expect {|
+    ((c_path (inputs C)) (litc_path (inputs Litmus))
+     (asm_path (outputs foo bar baz asm))
+     (lita_path (outputs foo bar baz litmus))
+     (herd_path (outputs foo bar baz herd))) |}]
+;;
+
+let make_and_mkdirs id ~in_root ~out_root =
+  let paths = make id ~in_root ~out_root in
   Or_error.(mkdirs paths >>= (fun _ -> return paths))
 ;;
 

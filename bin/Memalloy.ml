@@ -132,7 +132,8 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) spec fname =
 let run_compiler (o : OutputCtx.t) ~in_root ~out_root c_fnames spec
   : (Compiler.Id.t * compiler_result) Or_error.t =
   let open Or_error.Let_syntax in
-  let%bind paths = Pathset.make_and_mkdirs spec ~in_root ~out_root in
+  let id = Compiler.CSpec.WithId.id spec in
+  let%bind paths = Pathset.make_and_mkdirs id ~in_root ~out_root in
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
 
@@ -142,7 +143,7 @@ let run_compiler (o : OutputCtx.t) ~in_root ~out_root c_fnames spec
     |> List.map ~f:(run_single o paths spec)
     |> Or_error.combine_errors
   in
-  return (Compiler.CSpec.WithId.id spec, results)
+  return (id, results)
 ;;
 
 let check_c_files_exist c_path c_files =
@@ -164,7 +165,7 @@ let report_spec_errors o = function
 
 let print_result (r : full_result) =
   Format.open_box 0;
-  Sexp.pp_hum Format.std_formatter ([%sexp_of:full_result] r);
+  Sexp.pp_hum Format.std_formatter [%sexp (r : full_result)];
   Format.close_box ();
   Format.print_newline ()
 ;;
