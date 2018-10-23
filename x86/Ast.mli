@@ -269,6 +269,17 @@ type t =
  * Traversing an AST
  *)
 
+
+(** [fold_map_location_registers ~f ~init s] maps [f] across all
+    registers in location [l], threading through an accumulator
+    with initial value [~init]. *)
+val fold_map_location_registers
+  :  f:('a -> Reg.t -> ('a * Reg.t))
+  -> init:'a
+  -> location
+  -> ('a * location)
+;;
+
 (** [fold_map_instruction_symbols ~init ~f s] maps [f] across all
    identifier symbols in [i] (labels, memory locations, etc.),
    threading through an accumulator with initial value [~init].

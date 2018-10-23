@@ -23,11 +23,25 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
+module CWarn (L : Language.Intf) = struct
+  type t =
+    | UnsupportedRegister of Ast.Reg.t
+  ;;
+
+  let pp f = function
+    | UnsupportedRegister r ->
+      Format.fprintf f "@[The register@ %a@ may not be supported by Herd.@]"
+        L.pp_reg r
+  ;;
+end
+
 module Hook (L : Language.Intf) = struct
   open Ast
 
   module L = L
-  module Ctx = Lib.Sanitiser.CtxMake (L) (Lib.Sanitiser.NoCustomWarn)
+  module W = CWarn (L)
+  module Ctx = Lib.Sanitiser.CtxMake (L) (W)
+  module Pass = Lib.Sanitiser.Pass
 
   let negate = function
     | DispNumeric k -> OperandImmediate (DispNumeric (-k))
@@ -110,10 +124,40 @@ module Hook (L : Language.Intf) = struct
     | LocReg _ as l -> return l
   ;;
 
+  (** [warn_unsupported_registers reg] warns if [reg] isn't
+      likely to be understood by Herd. *)
+  let warn_unsupported_registers reg =
+    match Reg.kind_of reg with
+    | Reg.Segment
+    | Reg.Gen8 _
+    | Reg.Gen16 ->
+      Ctx.warn
+        (Custom (W.UnsupportedRegister reg))
+        reg
+    | _ -> Ctx.return reg
+  ;;
+
+  let on_register reg =
+    Ctx.(
+      return reg
+      >>= (Pass.Warn |-> warn_unsupported_registers)
+    )
+  ;;
+
+  let through_all_registers loc =
+    Ctx.make
+      (fun ctx ->
+         fold_map_location_registers
+           ~f:(fun ctx' reg -> Ctx.run (on_register reg) ctx')
+           ~init:ctx
+           loc)
+  ;;
+
   let on_location loc =
     Ctx.(
       return loc
       >>= segment_offset_to_heap
+      >>= through_all_registers
     )
   ;;
 

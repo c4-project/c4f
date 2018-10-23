@@ -154,6 +154,11 @@ type index =
   | Scaled of Reg.t * int
 [@@deriving sexp]
 
+let fold_map_index_registers ~f ~init = function
+  | Unscaled r -> Tuple2.map_snd ~f:(fun x -> Unscaled x) (f init r)
+  | Scaled (r, k) -> Tuple2.map_snd ~f:(fun x -> Scaled (x, k)) (f init r)
+;;
+
 (*
  * Memory addresses
  *)
@@ -164,7 +169,7 @@ type indirect =
   ; in_base   : Reg.t option
   ; in_index  : index option
   }
-[@@deriving sexp]
+[@@deriving sexp, fields]
 
 let in_zero () =
   { in_seg    = None
@@ -184,6 +189,28 @@ let fold_map_indirect_symbols ~f ~init indirect =
                      (fold_map_disp_symbols ~f ~init d)
    | None   -> (init, indirect))
 
+let fold_opt (g : 'a -> 'b -> ('a * 'b)) (v : 'a) (ro : 'b option) : ('a * 'b option) =
+  Option.value_map ~default:(v, None)
+    ~f:(fun x -> Tuple2.map_snd ~f:Option.some (g v x)) ro
+;;
+
+let fold_map_indirect_registers ~f ~init indirect =
+  Fields_of_indirect.Direct.fold
+    indirect
+    ~init:(init, in_zero ())
+    ~in_seg:(fun (state, ind) fld _ seg ->
+        Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt f state seg))
+    ~in_disp:(fun (state, ind) fld _ disp ->
+        (* no registers in a displacement *)
+        (state, Field.fset fld ind disp))
+    ~in_base:(fun (state, ind) fld _ base ->
+        Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt f state base))
+    ~in_index:(fun (state, ind) fld _ index ->
+        Tuple2.map_snd ~f:(Field.fset fld ind)
+          (fold_opt (fun init -> fold_map_index_registers ~f ~init)
+             state index))
+;;
+
 (*
  * Locations
  *)
@@ -199,6 +226,14 @@ let fold_map_location_symbols ~f ~init =
   | LocIndirect ind ->
      Tuple2.map_snd ~f:(fun x -> LocIndirect x)
                     (fold_map_indirect_symbols ~f ~init ind)
+
+let fold_map_location_registers ~f ~init = function
+  | LocReg r ->
+    Tuple2.map_snd ~f:(fun x -> LocReg x) (f init r)
+  | LocIndirect i ->
+    Tuple2.map_snd ~f:(fun x -> LocIndirect x)
+      (fold_map_indirect_registers ~f ~init i)
+;;
 
 (*
  * Operators
