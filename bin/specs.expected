@@ -3,4 +3,4 @@ gcc.x86:
  Emits: x86 att
  Command: gcc -m32 -DNO_PTHREADS
  Machine: local
- Herd: yes: herd7
+ Herd: yes

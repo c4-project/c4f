@@ -47,10 +47,10 @@ let command =
        flag "no-warnings"
          no_arg
          ~doc: "silence all warnings"
-     and sendto =
-       flag "sendto"
-         (optional string)
-         ~doc: "CMDNAME pass generated litmus through this Herd-like command"
+     and herd =
+       flag "herd"
+         no_arg
+         ~doc: "if true, pipe results through herd"
      and compiler_id =
        anon ("COMPILER_ID" %: string)
      and outfile =
@@ -68,14 +68,16 @@ let command =
        Result.Let_syntax.(
          let%bind cfg = LangSupport.load_cfg spec_file in
          let%bind spec = Compiler.CSpec.Set.get (Config.M.compilers cfg) cid in
-         match sendto with
-         | None -> Common.do_litmusify `Litmusify passes o ~infile ~outfile spec
-         | Some cmd ->
+         if herd
+         then
+           let cmd = Config.M.herd_or_default cfg in
            let tmpname = Filename.temp_file "act" "litmus" in
            let%bind _ =
              Common.do_litmusify `Litmusify passes o ~infile ~outfile:(Some tmpname) spec in
            Io.Out_sink.with_output ~f:(run_herd cmd tmpname)
              (Io.Out_sink.of_option outfile)
+         else
+           Common.do_litmusify `Litmusify passes o ~infile ~outfile spec
        )
        |> Common.print_error
     ]

@@ -233,8 +233,8 @@ module type CSpecIntf = sig
   (** [argv] gets any extra arguments to supply to [c]. *)
   val argv : t -> string list
 
-  (** [herd] gets the optional Herd command to run on [c]'s output. *)
-  val herd : t -> string option
+  (** [herd c] gets whether Herd auto-running is enabled for [c]. *)
+  val herd : t -> bool
 
   (** [machine] gets the machine reference for [c]. *)
   val machine : t -> Mach.t
@@ -250,7 +250,7 @@ module type CSpecIntf = sig
     -> emits   : string list
     -> cmd     : string
     -> argv    : string list
-    -> herd    : string option
+    -> herd    : bool
     -> machine : Mach.t
     -> t
   ;;

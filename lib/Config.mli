@@ -32,13 +32,17 @@ module type Intf = sig
 
   type t [@@deriving sexp]
 
+  (** [herd c] gets the Herd binary, if any, to use for configuration
+      [c]. *)
+  val herd : t -> string option;;
+
   (** [compilers c] gets the set of all active compilers in
       configuration [c]. *)
-  val compilers : t -> C.Set.t
+  val compilers : t -> C.Set.t;;
 
   (** [machines c] gets the set of all active machines in
       configuration [c]. *)
-  val machines : t -> M.Set.t
+  val machines : t -> M.Set.t;;
 end
 
 (** [Raw] represents act configuration loaded directly from a spec
@@ -47,8 +51,7 @@ module Raw : sig
   include Intf with module C = Compiler.CfgCSpec
                 and module M = Compiler.MSpec
 
-  (** [load ~path] loads a [RawCfg] from a file. *)
-  val load : path:string -> t Or_error.t;;
+  include Utils.Io.LoadableIntf with type t := t
 end
 
   (** [M] represents fully processed act compiler configurations. *)
@@ -58,6 +61,10 @@ module M : sig
 
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
   type 't hook = ('t -> 't option Or_error.t);;
+
+  (** [herd_or_default c] behaves as [herd c], but substitutes a
+      sensible default binary. *)
+  val herd_or_default : t -> string;;
 
   (** [disabled_compilers c] reports all disabled compiler IDs in
       the given config, along with any reason why. *)

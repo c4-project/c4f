@@ -259,7 +259,7 @@ module type CSpecIntf = sig
   val emits : t -> string list
   val cmd : t -> string
   val argv : t -> string list
-  val herd : t -> string option
+  val herd : t -> bool
   val machine : t -> Mach.t
 
   val create
@@ -268,7 +268,7 @@ module type CSpecIntf = sig
     -> emits   : string list
     -> cmd     : string
     -> argv    : string list
-    -> herd    : string option
+    -> herd    : bool
     -> machine : Mach.t
     -> t
   ;;
@@ -287,15 +287,9 @@ module MakeCSpec (R : MRefIntf)
       ; emits   : string sexp_list
       ; cmd     : string
       ; argv    : string sexp_list
-      ; herd    : string sexp_option
+      ; herd    : bool [@default true] [@sexp_drop_default]
       ; machine : Mach.t [@default Mach.default]
       } [@@deriving sexp, fields]
-
-    let pp_herd_stanza f =
-      function
-      | None -> String.pp f "no"
-      | Some h -> Format.fprintf f "yes:@ %s" h
-    ;;
 
     let pp f spec =
       Format.pp_open_vbox f 0;
@@ -314,7 +308,8 @@ module MakeCSpec (R : MRefIntf)
       Format.pp_print_cut f ();
       MyFormat.pp_kv f "Machine" Mach.pp spec.machine;
       Format.pp_print_cut f ();
-      MyFormat.pp_kv f "Herd" pp_herd_stanza spec.herd;
+      MyFormat.pp_kv f "Herd"
+        (fun f x -> String.pp f (if x then "yes" else "no")) spec.herd;
       Format.pp_close_box f ()
     ;;
 

@@ -10,7 +10,11 @@
 ;; copy this file there, and then edit it.
 
 (
- ;; First, we define a 'machines' section.
+ ;; First, we tell 'act' where our Herd binary is.
+ ;; We can omit this stanza if Herd is in PATH as 'herd7'.
+ (herd herd7)
+
+ ;; Next, we define a 'machines' section.
  ;; This tells 'act' which machines it can run compilers on, and how.
  (machines
   (
@@ -82,7 +86,7 @@
      ;; As with machines, 'enabled BOOL' enables or disables a
      ;; compiler.  If a compiler is enabled, but its machine isn't,
      ;; the compiler won't run.
-     (enabled true)
+     (enabled true) ; optional, defaults to 'true'
 
      ;; 'style' tells us what sort of interface the compiler exposes.
      ;;
@@ -107,16 +111,15 @@
      ;; These are added to by 'act' internally.
      (argv ("-m32" "-DNO_PTHREADS"))
 
-     ;; Optionally, you can tell act to auto-run Herd on generated
-     ;; litmus.  To do so, use 'herd HERD', where 'HERD' is the name
-     ;; of the Herd binary (or full path, if it isn't in your PATH).
+     ;; To tell act not to run herd automatically on memalloy
+     ;; runs, change this to '(herd false)'.
      ;;
      ;; Note that herd always runs locally, even on remote targets.
-     (herd "herd7") ; optional
+     (herd true) ; optional, defaults to 'true'
 
      ;; By default, 'act' assumes the compiler exists on the machine
      ;; '(default)'.  To override this, use a (machine ID) stanza.
-     (machine (default)) ; optional
+     (machine (default)) ; optional, defaults to '(default)'
      ))
    ;; This concludes the 'compilers' section.
    ))

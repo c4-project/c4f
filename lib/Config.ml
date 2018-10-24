@@ -30,8 +30,9 @@ module type Intf = sig
 
   type t [@@deriving sexp]
 
-  val compilers : t -> C.Set.t
-  val machines : t -> M.Set.t
+  val herd : t -> string option;;
+  val compilers : t -> C.Set.t;;
+  val machines : t -> M.Set.t;;
 end
 
 module Raw = struct
@@ -44,6 +45,7 @@ module Raw = struct
     type t =
       { compilers : C.Set.t
       ; machines  : M.Set.t
+      ; herd      : string sexp_option
       }
     [@@deriving sexp, fields]
     ;;
@@ -69,7 +71,6 @@ module Raw = struct
       wrap path (fun () -> [%of_sexp: CI.t] (Sexp.input_sexp ic))
     ;;
   end
-
   include Io.LoadableMake (Load);;
 end
 
@@ -111,6 +112,7 @@ module M = struct
   type t =
     { compilers          : C.Set.t
     ; machines           : M.Set.t
+    ; herd               : string option
     ; disabled_compilers : (Compiler.Id.t, Error.t option) List.Assoc.t
     ; disabled_machines  : (Compiler.Id.t, Error.t option) List.Assoc.t
     }
@@ -123,6 +125,10 @@ module M = struct
 
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
   type 't hook = ('t -> 't option Or_error.t);;
+
+  let herd_or_default (c : t) : string =
+    Option.value (herd c) ~default:"herd7"
+  ;;
 
   let machines_from_raw
       (hook : M.WithId.t hook)
@@ -233,6 +239,7 @@ module M = struct
       ; machines
       ; disabled_compilers
       ; disabled_machines
+      ; herd = Raw.herd c
       }
   ;;
 end
