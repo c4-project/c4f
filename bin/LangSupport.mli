@@ -52,13 +52,17 @@ val compiler_from_spec
   :  Compiler.CSpec.WithId.t
   -> (module Compiler.Intf) Or_error.t
 
-(** [load_and_test_cfg ?local_only ~path] loads the compiler config
+(** [load_and_test_cfg ?local_only path] loads the compiler config
    file at [~path], and tests all machines and compilers therein.
 
     If [local_only] is present and true, all remote machines will be
-    disabled. *)
-val load_and_test_cfg
-  :  ?local_only : bool
-  -> path : string
-  -> Compiler.Cfg.t Or_error.t
+    disabled.
+
+    If [test_compilers] is absent, or present and true, compilers will
+    be tested for reachability. *)
+val load_cfg
+  :  ?local_only     : bool (* default false *)
+  -> ?test_compilers : bool (* default true *)
+  -> string
+  -> Config.M.t Or_error.t
 ;;

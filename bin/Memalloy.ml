@@ -180,8 +180,8 @@ let print_result (r : full_result) =
 let run ~in_root ~out_root o cfg =
   let open Or_error.Let_syntax in
 
-  let specs = Compiler.Cfg.compilers cfg in
-  report_spec_errors o (List.filter_map ~f:snd (Compiler.Cfg.disabled_compilers cfg));
+  let specs = Config.M.compilers cfg in
+  report_spec_errors o (List.filter_map ~f:snd (Config.M.disabled_compilers cfg));
 
   let c_path = Filename.concat in_root "C" in
   let%bind c_files = Io.Dir.get_files c_path ~ext:"c" in
@@ -229,9 +229,7 @@ let command =
         let warnings = not no_warnings in
         let o = OutputCtx.make ~verbose ~warnings in
         Result.Let_syntax.(
-          let%bind cfg =
-            LangSupport.load_and_test_cfg ~local_only ~path:spec_file
-          in
+          let%bind cfg = LangSupport.load_cfg ~local_only spec_file in
           run o cfg ~in_root ~out_root
         ) |> Common.print_error
     ]

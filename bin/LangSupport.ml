@@ -131,11 +131,11 @@ let test_machine local_only mspec =
   )
 ;;
 
-let load_and_test_cfg ?(local_only=false) ~path =
+let load_cfg ?(local_only=false) ?(test_compilers=true) path =
   let open Or_error.Let_syntax in
-  let%bind rcfg = Compiler.RawCfg.load ~path in
-  Compiler.Cfg.from_raw
+  let%bind rcfg = Config.Raw.load ~path in
+  Config.M.from_raw
     rcfg
-    ~chook:test_compiler
+    ?chook:(Option.some_if test_compilers test_compiler)
     ~mhook:(test_machine local_only)
 ;;

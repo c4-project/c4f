@@ -66,9 +66,8 @@ let command =
        let o = OutputCtx.make ~verbose ~warnings in
        let passes = Sanitiser.Pass.all_set () in
        Result.Let_syntax.(
-         let%bind rcfg = Compiler.RawCfg.load ~path:spec_file in
-         let%bind ccfg = Compiler.Cfg.from_raw rcfg in
-         let%bind spec = Compiler.CSpec.Set.get (Compiler.Cfg.compilers ccfg) cid in
+         let%bind cfg = LangSupport.load_cfg spec_file in
+         let%bind spec = Compiler.CSpec.Set.get (Config.M.compilers cfg) cid in
          match sendto with
          | None -> Common.do_litmusify `Litmusify passes o ~infile ~outfile spec
          | Some cmd ->

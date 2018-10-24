@@ -42,12 +42,13 @@ let command =
       in
       fun () ->
         Or_error.Let_syntax.(
-         let%bind rcfg = Compiler.RawCfg.load ~path:spec_file in
-         let%bind ccfg = Compiler.Cfg.from_raw rcfg in
-         let specs = Compiler.Cfg.compilers ccfg in
-         Compiler.CSpec.Set.pp_verbose verbose Format.std_formatter specs;
-         Format.print_newline ();
-         return ()
+          let%bind cfg =
+            LangSupport.load_cfg ~test_compilers:false spec_file
+          in
+          let specs = Config.M.compilers cfg in
+          Compiler.CSpec.Set.pp_verbose verbose Format.std_formatter specs;
+          Format.print_newline ();
+          return ()
         )
         |> Common.print_error
     ]
