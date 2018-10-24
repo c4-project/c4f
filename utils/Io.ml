@@ -44,18 +44,29 @@ module Dir = struct
     return (Array.to_list with_ext)
 end
 
+module type CommonS = sig
+  type t
+  val of_option : string option -> t;;
+  val file : t -> string option;;
+end
+
 module In_source = struct
   type t =
     [ `File of string
     | `Stdin
     ] [@@deriving sexp]
 
-  let pp f =
-    function
+  let pp f = function
     | `File s -> String.pp f s
     | `Stdin  -> String.pp f "(stdin)"
+  ;;
 
-  let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdin
+  let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdin;;
+
+  let file = function
+    | `File f -> Some f
+    | `Stdin -> None
+  ;;
 
   let with_input ~f src =
     Or_error.(
@@ -70,6 +81,7 @@ module In_source = struct
         tag ~tag:"While reading from standard input:"
           (try_with_join (fun _ -> f src In_channel.stdin))
     )
+  ;;
 end
 
 module Out_sink = struct
@@ -83,7 +95,12 @@ module Out_sink = struct
     | `File s -> String.pp f s
     | `Stdout -> String.pp f "(stdout)"
 
-  let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdout
+  let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdout;;
+
+  let file = function
+    | `File f -> Some f
+    | `Stdout -> None
+  ;;
 
   let with_output ~f snk =
     Or_error.(
@@ -102,3 +119,32 @@ end
 let with_input_and_output ~f src snk =
   In_source.with_input src
     ~f:(fun isrc' ic -> Out_sink.with_output snk ~f:(f isrc' ic))
+;;
+
+(*
+ * Loading functionality
+ *)
+
+module type LoadableS = sig
+  type t
+  val load_from_string : string -> t Or_error.t;;
+  val load_from_ic : ?path:string -> In_channel.t -> t Or_error.t;;
+end
+
+module type LoadableIntf = sig
+  include LoadableS
+  val load_from_isrc : In_source.t -> t Or_error.t;;
+  val load : path:string -> t Or_error.t;;
+end
+
+module LoadableMake (S : LoadableS)
+  : LoadableIntf with type t := S.t = struct
+  include S
+
+  let load_from_isrc =
+    In_source.with_input
+      ~f:(fun is ic -> load_from_ic ?path:(In_source.file is) ic)
+  ;;
+
+  let load ~path = load_from_isrc (`File path);;
+end

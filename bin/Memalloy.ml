@@ -25,10 +25,13 @@ open Core
 open Lib
 open Utils
 
+(** [herd_result] is an extension of the [Herd.outcome] enumeration
+    with outcomes for Herd analysis being disabled and having failed. *)
 type herd_result =
-  | Disabled
-  | Unknown
-  | Errored
+  [ Herd.outcome
+  | `Disabled
+  | `Errored
+  ]
 [@@deriving sexp]
 ;;
 
@@ -80,17 +83,16 @@ let litmusify o fs cspec =
        (Compiler.CSpec.WithId.spec cspec))
 ;;
 
-(** [check_herd_output herd_path] checks to see if Herd wrote
-    anything to [herd_path] and, if not, trips an error. *)
-let check_herd_output herd_path =
-  let open Or_error.Let_syntax in
-  let f _ ic = return (In_channel.input_lines ic) in
-  match%bind Io.In_source.with_input (`File herd_path) ~f with
-  | [] ->
-    let%bind () = Or_error.try_with (fun () -> Sys.remove herd_path) in
-    return Errored
-  (* TODO(@MattWindsor91): do something with these lines. *)
-  | _ -> return Unknown
+(** [check_herd_output path] runs analysis on the Herd output at
+   [path]. *)
+let check_herd_output (o : OutputCtx.t) path : [< herd_result] =
+  match Herd.load ~path with
+  | Result.Ok herd ->
+    (Herd.single_outcome_of herd :> herd_result)
+  | Result.Error err ->
+    Format.fprintf o.vf "@[<v 4>Herd analysis error:@,%a@]@."
+      Error.pp err;
+    `Errored
 ;;
 
 (** [herd o fs cspec] sees if [cspec] asked for a Herd run and, if
@@ -98,7 +100,7 @@ let check_herd_output herd_path =
 let herd o fs (cspec : Compiler.CSpec.WithId.t) =
   let open Or_error.Let_syntax in
   Option.value_map
-    ~default:(return Disabled)
+    ~default:(return `Disabled)
     ~f:(
       fun prog ->
         let cid = Compiler.CSpec.WithId.id cspec in
@@ -111,7 +113,7 @@ let herd o fs (cspec : Compiler.CSpec.WithId.t) =
           Or_error.tag ~tag:"While running herd"
             (Io.Out_sink.with_output (`File herd_path) ~f)
         in
-        check_herd_output herd_path
+        return (check_herd_output o herd_path)
     )
     (Compiler.CSpec.herd
        (Compiler.CSpec.WithId.spec cspec))

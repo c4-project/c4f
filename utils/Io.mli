@@ -35,6 +35,20 @@ module Dir : sig
     -> string list Or_error.t
 end
 
+(** [CommonS] describes operations common to both input sources and
+   output sinks. *)
+module type CommonS = sig
+  type t
+
+  (** [of_option n] treats [n] as a filename if it's [Some], and
+      as a standard stream otherwise. *)
+  val of_option : string option -> t;;
+
+  (** [file t] returns [Some f] if [t] is a file with path [f],
+      and [None] otherwise. *)
+  val file : t -> string option;;
+end
+
 (** [In_source] describes input sources. *)
 module In_source : sig
   type t =
@@ -44,10 +58,7 @@ module In_source : sig
 
   include Pretty_printer.S with type t := t
   include Sexpable.S with type t := t
-
-  (** [of_option n] treats [n] as a filename if it's [Some], and
-      as standard input otherwise. *)
-  val of_option : string option -> t
+  include CommonS with type t := t
 
   (** [with_input ~f iname] runs [f] connected to the input channel
       pointed to by [iname]. *)
@@ -66,10 +77,7 @@ module Out_sink : sig
 
   include Pretty_printer.S with type t := t
   include Sexpable.S with type t := t
-
-  (** [of_option n] treats [n] as a filename if it's [Some], and
-      as standard output otherwise. *)
-  val of_option : string option -> t
+  include CommonS with type t := t
 
   (** [with_output ~f oname] runs [f] connected to the output channel
       pointed to by [oname]. *)
@@ -88,3 +96,43 @@ val with_input_and_output
   -> In_source.t
   -> Out_sink.t
   -> 'a Or_error.t
+;;
+
+(*
+ * Loading functionality
+ *)
+
+(** [LoadableS] is an interface to be implemented by anything using
+    [LoadableMake]. *)
+module type LoadableS = sig
+  (** [t] is the type to load. *)
+  type t
+
+  (** [load_from_string s] loads a [t] directly from a string [s]. *)
+  val load_from_string : string -> t Or_error.t;;
+
+  (** [load_from_ic ?path ic] loads a [t] from an input channel [ic].
+      If [ic] comes from a file with a given path, [path] should be
+      set to [Some x] where [x] is that path. *)
+  val load_from_ic
+    :  ?path:string
+    -> In_channel.t
+    -> t Or_error.t;;
+end
+
+(** [LoadableIntf] is an interface for modules whose main type can
+    be loaded from a file. *)
+module type LoadableIntf = sig
+  include LoadableS
+
+  (** [load_from_isrc is] loads a [t] from an input source [is]. *)
+  val load_from_isrc : In_source.t -> t Or_error.t;;
+
+  (** [load ~path] loads a [t] from a file named [path]. *)
+  val load : path:string -> t Or_error.t;;
+end
+
+(** [LoadableMake] extends a [LoadableS] into a [LoadableIntf]. *)
+module LoadableMake :
+  functor (S : LoadableS)
+    -> LoadableIntf with type t := S.t;;
