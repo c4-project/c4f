@@ -37,7 +37,7 @@ let%expect_test "pp_c_braces: short items" =
        Format.pp_print_space f ();
        String.pp f "ham"
     );
-  [%expect {| |}]
+  [%expect {| { eggs ham } |}]
 ;;
 
 
@@ -49,7 +49,7 @@ let%expect_test "pp_c_braces: things before and after" =
        Format.pp_print_space f ();
        String.pp f "ham"
     );
-  [%expect {| |}]
+  [%expect {| poached { eggs ham } sandwich |}]
 ;;
 
 let%expect_test "pp_c_braces: long items" =
@@ -60,7 +60,11 @@ let%expect_test "pp_c_braces: long items" =
        Format.pp_print_space f ();
        String.pp f "ham and cheese and cheese and ham"
     );
-  [%expect {| |}]
+  [%expect {|
+    {
+        a very long string that'll doubtless wrap the box
+        ham and cheese and cheese and ham
+    } |}]
 ;;
 
 
@@ -72,7 +76,12 @@ let%expect_test "pp_c_braces: long items; things before and after" =
        Format.pp_print_space f ();
        String.pp f "ham and cheese and cheese and ham"
     );
-  [%expect {| |}]
+  [%expect {|
+    this is
+    {
+        a very long string that'll doubtless wrap the box
+        ham and cheese and cheese and ham
+    } and cheese |}]
 ;;
 
 let pp_kv f k pv v =

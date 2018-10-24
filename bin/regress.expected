@@ -107,7 +107,6 @@ X86 gcc_elf_o0_stackchk.s
     t1sZM20 = 0;
     x = 0;
     y = 0;
-    
 }
 
 P0                    | P1                    ;
@@ -134,15 +133,7 @@ locations [t0gGSd200; t0gGSd201; t0r0; t0sZM12; t0sZM16; t0sZM20; t1gGSd200;
 ```
 X86 gcc_macho_o0_moves.s
 
-{
-    ZUt0r0 = 0;
-    ZUt1r0 = 0;
-    ZUx = 0;
-    ZUy = 0;
-    t0sZM4 = 0;
-    t1sZM4 = 0;
-    
-}
+{ ZUt0r0 = 0; ZUt1r0 = 0; ZUx = 0; ZUy = 0; t0sZM4 = 0; t1sZM4 = 0; }
 
 P0                 | P1                 ;
 movl EAX, [ZUy]    | movl EAX, [ZUx]    ;
