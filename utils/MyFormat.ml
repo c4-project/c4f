@@ -18,13 +18,62 @@ let pp_listlist ~pp f =
             k))
 
 let pp_c_braces f pi =
-  Format.pp_open_vbox f 4;
+  Format.pp_open_hvbox f 0;
+  Format.pp_open_hvbox f 4;
   Format.pp_print_char f '{';
-  Format.pp_print_cut f ();
+  Format.pp_print_space f ();
   pi f;
   Format.pp_close_box f ();
-  Format.pp_print_cut f ();
-  Format.pp_print_char f '}'
+  Format.pp_print_space f ();
+  Format.pp_print_char f '}';
+  Format.pp_close_box f ()
+;;
+
+let%expect_test "pp_c_braces: short items" =
+  Format.printf "@[%a@]@."
+    pp_c_braces
+    (fun f ->
+       String.pp f "eggs";
+       Format.pp_print_space f ();
+       String.pp f "ham"
+    );
+  [%expect {| |}]
+;;
+
+
+let%expect_test "pp_c_braces: things before and after" =
+  Format.printf "@[poached@ %a@ sandwich@]@."
+    pp_c_braces
+    (fun f ->
+       String.pp f "eggs";
+       Format.pp_print_space f ();
+       String.pp f "ham"
+    );
+  [%expect {| |}]
+;;
+
+let%expect_test "pp_c_braces: long items" =
+  Format.printf "@[%a@]@."
+    pp_c_braces
+    (fun f ->
+       String.pp f "a very long string that'll doubtless wrap the box";
+       Format.pp_print_space f ();
+       String.pp f "ham and cheese and cheese and ham"
+    );
+  [%expect {| |}]
+;;
+
+
+let%expect_test "pp_c_braces: long items; things before and after" =
+  Format.printf "@[this is@ %a@ and cheese@]@."
+    pp_c_braces
+    (fun f ->
+       String.pp f "a very long string that'll doubtless wrap the box";
+       Format.pp_print_space f ();
+       String.pp f "ham and cheese and cheese and ham"
+    );
+  [%expect {| |}]
+;;
 
 let pp_kv f k pv v =
   Format.pp_open_hvbox f 0;

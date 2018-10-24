@@ -105,11 +105,12 @@ struct
     MyFormat.pp_c_braces
       f
       (fun f ->
-        List.iter
-          ~f:(fun (l, c) -> Format.fprintf f
-                                           "@[%s = %a;@]@,"
-                                           l
-                                           LS.Constant.pp c)
+         Format.pp_print_list
+           ~pp_sep:Format.pp_print_space
+           (fun f (l, c) ->
+              Format.fprintf f "@[%s = %a;@]" l LS.Constant.pp c
+           )
+           f
           init)
 
   let pp_instr_raw (f : Format.formatter) =
