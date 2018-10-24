@@ -5,11 +5,6 @@ open Core
 module type Extensions = sig
   type 'a t
 
-  (** [iter_result] performs a computation with no result on success,
-     but the possibility of signalling an error, on a list.  If any of
-     the computations fails, the subsequent ones don't execute. *)
-  val iter_result : ('a -> (unit, 'e) result) -> 'a t -> (unit, 'e) result
-
   (** [max_measure ~measure ?default xs] measures each item in [xs]
      according to [measure], and returns the highest measure reported.
      If [xs] is empty, return [default] if given, and [0]
@@ -23,9 +18,9 @@ end
 
 (** We produce a functor for extending any Core [Container] with
    [Extensions]. *)
-module Extend : functor (S : Container.S1) -> (Extensions with type 'a t = 'a S.t)
+module Extend : functor (S : Container.S1) -> Extensions with type 'a t := 'a S.t
 
-module MyArray : Extensions with type 'a t = 'a array
+module MyArray : Extensions with type 'a t := 'a array
 
 (** [SetExtensions] contains various extensions to implementations of
    [Set.S]. *)
@@ -42,7 +37,7 @@ module SetExtend : functor (S : Set.S) -> SetExtensions with type t := S.t;;
 
 (** [MyList] contains various extensions to [List]. *)
 module MyList : sig
-  include Extensions with type 'a t = 'a list
+  include Extensions with type 'a t := 'a list
   include MyMonad.Extensions with type 'a t := 'a list
 
   (** [exclude ~f xs] is the inverse of [filter ~f xs]. *)

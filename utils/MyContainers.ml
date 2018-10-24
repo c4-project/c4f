@@ -3,15 +3,10 @@ open Core
 module type Extensions = sig
   type 'a t
 
-  val iter_result : ('a -> (unit, 'e) result) -> 'a t -> (unit, 'e) result
   val max_measure : measure:('a -> int) -> ?default:int -> 'a t -> int
 end
 
 module Extend (S : Container.S1) = struct
-  type 'a t = 'a S.t
-
-  let iter_result f = S.fold_result ~init:() ~f:(Fn.const f)
-
   let max_measure ~measure ?(default=0) xs =
     xs
     |> S.max_elt ~compare:(MyFn.on measure Int.compare)
@@ -72,8 +67,7 @@ module MyList = struct
   let right_pad ~padding xs =
     let maxlen = max_measure ~measure:List.length xs
     and f = Fn.const padding
-    in
-      List.map ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f) xs
+    in List.map ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f) xs
 
   let%expect_test "MyList: right_pad empty list" =
     Format.printf "@[%a@]@."
