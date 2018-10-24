@@ -25,18 +25,21 @@ open Core
 open Lib
 open Utils
 
-(** [herd_result] is an extension of the [Herd.outcome] enumeration
-    with outcomes for Herd analysis being disabled and having failed. *)
+type herd_outcome =
+  [ Herd.outcome | `Disabled | `Errored ]
+[@@deriving sexp]
+;;
+
+(** [herd_result] summarises the result of running Herd. *)
 type herd_result =
-  [ Herd.outcome
-  | `Disabled
-  | `Errored
-  ]
+  { result       : herd_outcome
+  ; final_states : int sexp_option
+  }
 [@@deriving sexp]
 ;;
 
 type run_result =
-  { herd : herd_result
+  { herd       : herd_result
   }
 [@@deriving sexp]
 ;;
@@ -85,14 +88,16 @@ let litmusify o fs cspec =
 
 (** [check_herd_output path] runs analysis on the Herd output at
    [path]. *)
-let check_herd_output (o : OutputCtx.t) path : [< herd_result] =
+let check_herd_output (o : OutputCtx.t) path : herd_result =
   match Herd.load ~path with
   | Result.Ok herd ->
-    (Herd.single_outcome_of herd :> herd_result)
+    { result       = (Herd.single_outcome_of herd :> herd_outcome)
+    ; final_states = Some (List.length (Herd.states herd))
+    }
   | Result.Error err ->
-    Format.fprintf o.vf "@[<v 4>Herd analysis error:@,%a@]@."
+    Format.fprintf o.wf "@[<v 4>Herd analysis error:@,%a@]@."
       Error.pp err;
-    `Errored
+    { result = `Errored; final_states = None }
 ;;
 
 (** [herd o fs cspec] sees if [cspec] asked for a Herd run and, if
@@ -100,7 +105,7 @@ let check_herd_output (o : OutputCtx.t) path : [< herd_result] =
 let herd o fs (cspec : Compiler.CSpec.WithId.t) =
   let open Or_error.Let_syntax in
   Option.value_map
-    ~default:(return `Disabled)
+    ~default:(return { result = `Disabled; final_states = None })
     ~f:(
       fun prog ->
         let cid = Compiler.CSpec.WithId.id cspec in

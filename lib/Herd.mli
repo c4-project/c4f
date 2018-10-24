@@ -27,10 +27,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
    Herd7 run, extracting location information, and comparing states.
    *)
 
+open Core
 open Utils
 
 (** [t] is the opaque type of a Herd output analysis. *)
 type t;;
+
+module State : sig
+  (** [t] is the type of states: a binding from name to value. *)
+  type t = (string, string) List.Assoc.t;;
+end
 
 (** [single_outcome] is the type of outcomes we can get from single
    (or double) Herd runs. *)
@@ -57,6 +63,9 @@ type outcome =
   ]
 [@@deriving sexp] (* sexp_of_outcome, outcome_of_sexp *)
 ;;
+
+(** [states herd] gets the states of a single Herd output [herd]. *)
+val states : t -> State.t list;;
 
 (** [single_outcome_of herd] analyses the Herd output [herd] in
     isolation. *)

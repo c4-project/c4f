@@ -29,17 +29,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Utils
+open Utils.MyContainers
 
-type state = (string, string) List.Assoc.t;;
+module State = struct
+  type t = (string, string) List.Assoc.t;;
+end
 
 type t =
-  { states : state list
-  }
+  { states   : State.t list
+  ; is_undef : bool
+  } [@@deriving fields]
 ;;
 
 (** [init ()] generates an initial [t]. *)
 let init () =
-  { states = []
+  { states   = []
+  ; is_undef = false
   }
 
 type single_outcome =
@@ -60,14 +65,20 @@ type outcome =
 [@@deriving sexp]
 ;;
 
-let single_outcome_of (_herd : t) : single_outcome =
-  `Unknown
+let single_outcome_of (herd : t) : single_outcome =
+  if herd.is_undef then `Undef else `Unknown
 ;;
 
 (** [rstate] is the current state of a Herd reader. *)
 type rstate =
-  | Empty    (** We haven't read anything yet. *)
-  | Preamble (** We're in the pre-state matter. *)
+  | Empty            (** We haven't read anything yet. *)
+  | Preamble         (** We're in the pre-state matter. *)
+  | State of int     (** We're in a state block with the given
+                         remaining length. *)
+  | Summary          (** We're reading the summary tag. *)
+  | Postamble        (** We're in the post-summary matter. *)
+  | Error of Error.t (** We've hit an error. *)
+;;
 
 (** [reader] is the state structure used when reading in a Herd run. *)
 type reader =
@@ -84,12 +95,26 @@ let init_reader (path : string option) : reader =
   ; state = Empty
   }
 
-(** [fail_if_empty] produces an error if the reader ended in state
-    Empty -- that is, the Herd file was completely empty. *)
-let fail_if_empty (r : reader) : unit Or_error.t =
-  if r.state = Empty
-  then Or_error.error_s [%message "Herd file was empty."]
-  else Result.ok_unit
+(** [fail_if_bad_state] produces an error if the reader ended in a
+    state other than Postamble. *)
+let fail_if_bad_state ({ state;  _} : reader) : unit Or_error.t =
+  match state with
+  | Empty ->
+    Or_error.error_s
+      [%message "Herd file was empty."]
+  | Error e ->
+    Result.Error e
+  | State k ->
+    Or_error.error_s
+      [%message "Herd file ended while expecting more states."
+          ~num_states:(k : int)]
+  | Preamble ->
+    Or_error.error_s
+      [%message "Herd file ended with no state block."]
+  | Summary ->
+    Or_error.error_s
+      [%message "Herd file ended while expecting summary."]
+  | Postamble -> Result.ok_unit
 ;;
 
 (** [validate r] runs some checks on the result of processing
@@ -98,7 +123,7 @@ let validate (r : reader) : t Or_error.t =
   let open Or_error.Let_syntax in
   Or_error.tag_arg
     begin
-      let%bind () = fail_if_empty r in
+      let%bind () = fail_if_bad_state r in
       return r.herd
     end
     "While reading Herd input from"
@@ -106,9 +131,117 @@ let validate (r : reader) : t Or_error.t =
     [%sexp_of: string]
 ;;
 
-let process_line (herd : reader) (_line : string) : reader =
-  let state' = Preamble in
-  { herd with state = state' }
+let process_preamble herd line =
+  (* Try to work out whether we're getting a 'States K' block. *)
+  let proc_state k =
+    match Int.compare k 0 with
+    | -1 -> Error (Error.create_s [%message "negative state" ~got:(k: int)])
+    |  0 -> Summary
+    |  _ -> State k
+  in
+  let state_o =
+    Option.try_with
+      (fun () -> Scanf.sscanf line "States %d" proc_state)
+  in
+  let state' = Option.value ~default:Preamble state_o in
+  (state', herd)
+;;
+
+let process_state n herd line =
+  let proc_binding (binding : string)
+    : (string * string) Or_error.t =
+    match String.split ~on:'=' (String.strip binding) with
+    | [l; r] -> Ok (String.strip l, String.strip r)
+    | _ ->
+      Or_error.error_s
+        [%message
+          "Expected a binding of the form X=Y"
+            ~got:binding
+        ]
+  in
+
+  (* State lines are always 'binding; binding; binding;', with
+     a trailing ;. *)
+  let state_line =
+    line
+    |> String.split ~on:';'
+    |> MyList.exclude ~f:String.is_empty (* Drop trailing ; *)
+    |> List.map ~f:proc_binding
+    |> Result.all
+  in
+
+  match state_line with
+  | Ok sl ->
+    ( (if n = 1 then Summary else State (n - 1))
+    , { herd with states = sl::herd.states }
+    )
+  | Error e -> ( Error e, herd )
+;;
+
+(** [summaries] associates each expected summary line in a Herd
+    output with a function generating the next state and
+    Herd record. *)
+let summaries =
+  [ "Ok"   , (fun h -> (Postamble, { h with is_undef = false }))
+  ; "Undef", (fun h -> (Postamble, { h with is_undef = true }))
+  ]
+;;
+
+let process_summary herd line =
+  let summary = String.strip line in
+  let summary_op =
+    List.Assoc.find
+      ~equal:String.Caseless.equal
+      summaries
+      summary
+  in
+  (Option.value
+     ~default:(
+       Tuple2.create
+         (Error (Error.create_s
+                   [%message "unexpected summary" ~got:summary])))
+     summary_op)
+    herd
+;;
+
+let process_postamble herd _line =
+  (* TODO(@MattWindsor91): do something with this? *)
+  (Postamble, herd)
+
+let process_line (rd: reader) (line : string) : reader =
+  (* A Herd file looks like this:
+
+     Test NAME Required           <- Empty
+     States 3                     <- Preamble
+     ZUt0r0=0; ZUx=1; ZUy=1;      <- State 3
+     ZUt0r0=0; ZUx=1; ZUy=2;      <- State 2
+     ZUt0r0=1; ZUx=1; ZUy=1;      <- State 1
+     Ok                           <- Summary
+     Witnesses                    <- Postamble
+     Positive: 3 Negative: 0      <- Postamble
+     Condition forall (true)      <- Postamble
+     Observation NAME Always 3 0  <- Postamble
+     Time NAME 0.00               <- Postamble
+     Hash=HASH                    <- Postamble
+
+     At time of writing, we're only interested in the state set.
+  *)
+
+  (* Make parsing the line easier by compressing whitespace. *)
+  let line =
+    String.strip (Core_extended.Extended_string.squeeze line)
+  in
+
+  let state', herd' =
+    match rd.state with
+    | Error _   -> (rd.state, rd.herd)
+    | Empty
+    | Preamble  -> process_preamble rd.herd line
+    | State 0   -> failwith "state underflow"
+    | State n   -> process_state n rd.herd line
+    | Summary   -> process_summary rd.herd line
+    | Postamble -> process_postamble rd.herd line
+  in { rd with state = state'; herd = herd' }
 ;;
 
 module Load : Io.LoadableS with type t = t = struct
