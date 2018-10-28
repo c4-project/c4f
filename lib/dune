@@ -7,4 +7,5 @@
   (pps ppx_deriving.std ppx_expect ppx_jane))
  (libraries
   utils
-  core))
+  core
+  menhirLib))

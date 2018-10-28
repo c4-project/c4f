@@ -4,20 +4,17 @@ open Lib
 module AttFrontend =
   LangFrontend.Make (
       struct
-        type token = ATTParser.token
         type ast = Ast.t
+
+        module I = ATTParser.MenhirInterpreter
 
         let lex =
           let module T = ATTLexer.Make(LexUtils.Default) in
           T.token
 
-        let parse lex lexbuf =
-          Or_error.try_with
-            ( fun () ->
-                { Ast.syntax = Dialect.Att
-                ; program = ATTParser.main lex lexbuf
-                }
-            )
+        let parse = ATTParser.Incremental.main;;
+
+        let message = ATTMessages.message;;
       end)
 
 module type Intf = sig

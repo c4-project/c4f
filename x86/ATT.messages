@@ -1,0 +1,276 @@
+main: EOL STRING
+##
+## Ends in an error in state: 6.
+##
+## list(stm) -> stm . list(stm) [ EOF ]
+##
+## The known suffix of the stack is as follows:
+## stm 
+##
+
+Invalid top-level item: expected an instruction, directive, or label
+
+main: IT_LOCK NAME RPAR
+##
+## Ends in an error in state: 9.
+##
+## instr -> prefix opcode . loption(separated_nonempty_list(COMMA,operand)) [ EOL ]
+##
+## The known suffix of the stack is as follows:
+## prefix opcode 
+##
+
+Expected an operand or a newline (to start a new instruction)
+
+main: IT_LOCK STRING
+##
+## Ends in an error in state: 7.
+##
+## instr -> prefix . opcode loption(separated_nonempty_list(COMMA,operand)) [ EOL ]
+##
+## The known suffix of the stack is as follows:
+## prefix 
+##
+
+Expected an opcode to follow this prefix
+
+main: NAME ATT_REG COLON STRING
+##
+## Ends in an error in state: 28.
+##
+## segdisp -> ATT_REG COLON . disp [ PLUS MINUS LPAR EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## ATT_REG COLON 
+##
+
+Invalid displacement in segment:displacement pair
+
+main: NAME ATT_REG STRING
+##
+## Ends in an error in state: 27.
+##
+## location -> ATT_REG . [ PLUS MINUS EOL COMMA ]
+## segdisp -> ATT_REG . COLON disp [ PLUS MINUS LPAR EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## ATT_REG 
+##
+
+After this register, expected a comma (to start a new operand);
+a newline (to start a new instruction);
+a colon (making the register the segment of a seg:disp pair);
+or an operator
+
+main: NAME DOLLAR STRING
+##
+## Ends in an error in state: 24.
+##
+## prim_operand -> DOLLAR . disp [ PLUS MINUS EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## DOLLAR 
+##
+
+Invalid immediate operand
+
+main: NAME LPAR ATT_REG STRING
+##
+## Ends in an error in state: 14.
+##
+## bis -> ATT_REG . [ RPAR ]
+## option(ATT_REG) -> ATT_REG . [ COMMA ]
+##
+## The known suffix of the stack is as follows:
+## ATT_REG 
+##
+
+Expected a comma here (to separate base from index);
+or a right parenthesis (to form a base specification)
+
+main: NAME LPAR COMMA ATT_REG COMMA ATT_HEX STRING
+##
+## Ends in an error in state: 21.
+##
+## indirect -> LPAR bis . RPAR [ PLUS MINUS EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## LPAR bis 
+##
+
+Expected a right parenthesis here (to close the base/index/scale specification)
+
+main: NAME LPAR COMMA ATT_REG COMMA STRING
+##
+## Ends in an error in state: 18.
+##
+## bis -> option(ATT_REG) COMMA ATT_REG COMMA . k [ RPAR ]
+##
+## The known suffix of the stack is as follows:
+## option(ATT_REG) COMMA ATT_REG COMMA 
+##
+
+Invalid index; expected a literal number here
+
+main: NAME LPAR COMMA ATT_REG STRING
+##
+## Ends in an error in state: 17.
+##
+## bis -> option(ATT_REG) COMMA ATT_REG . [ RPAR ]
+## bis -> option(ATT_REG) COMMA ATT_REG . COMMA k [ RPAR ]
+##
+## The known suffix of the stack is as follows:
+## option(ATT_REG) COMMA ATT_REG 
+##
+
+Expected a comma here (to separate index from scale);
+or a right parenthesis (to form a base-index specification)
+
+main: NAME LPAR COMMA STRING
+##
+## Ends in an error in state: 16.
+##
+## bis -> option(ATT_REG) COMMA . ATT_REG [ RPAR ]
+## bis -> option(ATT_REG) COMMA . ATT_REG COMMA k [ RPAR ]
+##
+## The known suffix of the stack is as follows:
+## option(ATT_REG) COMMA 
+##
+
+Invalid index in base/index/scale specification;
+valid specifications include:
+- base (%EAX);
+- index (, %EDI);
+- scaled index (, %EDI, 2);
+- base with index (%EAX, %EDI);
+- base with scaled index (%EAX, %EDI, 2)
+
+main: NAME LPAR STRING
+##
+## Ends in an error in state: 13.
+##
+## indirect -> LPAR . bis RPAR [ PLUS MINUS EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## LPAR 
+##
+
+Invalid base in base/index/scale specification;
+valid specifications include:
+- base (%EAX);
+- index (, %EDI);
+- scaled index (, %EDI, 2);
+- base with index (%EAX, %EDI);
+- base with scaled index (%EAX, %EDI, 2)
+
+main: NAME NUM LPAR COMMA ATT_REG COMMA ATT_HEX STRING
+##
+## Ends in an error in state: 33.
+##
+## indirect -> segdisp LPAR bis . RPAR [ PLUS MINUS EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## segdisp LPAR bis 
+##
+
+Expected a right parenthesis here (to close the base/index/scale specification)
+
+main: NAME NUM LPAR STRING
+##
+## Ends in an error in state: 32.
+##
+## indirect -> segdisp LPAR . bis RPAR [ PLUS MINUS EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## segdisp LPAR 
+##
+
+Invalid base in base/index/scale specification;
+valid specifications include:
+- base (%EAX);
+- index (, %EDI);
+- scaled index (, %EDI, 2);
+- base with index (%EAX, %EDI);
+- base with scaled index (%EAX, %EDI, 2)
+
+main: NAME NUM STRING
+##
+## Ends in an error in state: 31.
+##
+## indirect -> segdisp . LPAR bis RPAR [ PLUS MINUS EOL COMMA ]
+## indirect -> segdisp . [ PLUS MINUS EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## segdisp 
+##
+
+Expected a base/index/scale specification in parentheses;
+an operator;
+a comma (to start a new operand);
+or a newline (to start a new instruction)
+
+main: NAME RPAR
+##
+## Ends in an error in state: 1.
+##
+## label -> NAME . COLON [ NAME IT_LOCK EOL EOF ]
+## opcode -> NAME . [ STRING NUM NAME LPAR GAS_TYPE EOL DOLLAR ATT_REG ATT_HEX ]
+##
+## The known suffix of the stack is as follows:
+## NAME 
+##
+
+Expected an operand;
+a colon (to make this name into a label);
+or a newline (to start a new instruction)
+
+main: NAME STRING COMMA RPAR
+##
+## Ends in an error in state: 44.
+##
+## separated_nonempty_list(COMMA,operand) -> operand COMMA . separated_nonempty_list(COMMA,operand) [ EOL ]
+##
+## The known suffix of the stack is as follows:
+## operand COMMA 
+##
+
+Expected an operand after this comma
+
+main: NAME STRING PLUS RPAR
+##
+## Ends in an error in state: 38.
+##
+## operand -> prim_operand bop . operand [ EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## prim_operand bop 
+##
+
+Expected an operand to follow this operator
+
+main: NAME STRING STRING
+##
+## Ends in an error in state: 35.
+##
+## operand -> prim_operand . bop operand [ EOL COMMA ]
+## operand -> prim_operand . [ EOL COMMA ]
+##
+## The known suffix of the stack is as follows:
+## prim_operand 
+##
+
+After this operand, expected a comma (to start a new operand);
+or a newline (to start a new instruction)
+
+main: STRING
+##
+## Ends in an error in state: 0.
+##
+## main' -> . main [ # ]
+##
+## The known suffix of the stack is as follows:
+## 
+##
+
+Invalid top-level item: expected an instruction, directive, or label
+

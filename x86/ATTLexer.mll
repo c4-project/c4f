@@ -48,7 +48,7 @@ copyright notice follow. *)
   module Make(O:LexUtils.Config) = struct
     open Core
     open Lexing
-    open LexMisc
+    open Lib.LangFrontend
     open ATTParser
     module LU = LexUtils.Make(O)
 }
@@ -73,11 +73,11 @@ rule token = parse
 | '-' ? num as x { NUM x }
 | '$' { DOLLAR }
 | "0x" (hexnum as x) { ATT_HEX x }
-| "0x" { raise (error ("Malformed hex constant: " ^ Lexing.lexeme lexbuf) lexbuf) }
+| "0x" { lex_error ("Malformed hex constant: " ^ Lexing.lexeme lexbuf) lexbuf }
 | '%' (name as name)
       { match Ast.Reg.of_string_option name with
         | Some r -> ATT_REG r
-        | None -> raise (error ("Invalid register: " ^ Lexing.lexeme lexbuf) lexbuf)
+        | None -> lex_error ("Invalid register: " ^ Lexing.lexeme lexbuf) lexbuf
       }
 | ',' { COMMA }
 | '(' { LPAR }
@@ -90,7 +90,7 @@ rule token = parse
 | name as x { NAME x }
 | '@' name as x { GAS_TYPE x }
 | eof { EOF }
-| _ { raise (error ("Unexpected char: " ^ Lexing.lexeme lexbuf) lexbuf) }
+| _ { lex_error ("Unexpected char: " ^ Lexing.lexeme lexbuf) lexbuf }
 
 (* per 'Real World OCaml' *)
 and read_string buf
@@ -99,7 +99,7 @@ and read_string buf
   | '\\' '\\' { Buffer.add_char buf '\\'; read_string buf lexbuf }
   | '\\' '0' { Buffer.add_char buf '\x00'; read_string buf lexbuf }
   | [^ '"' '\\']+ { Buffer.add_string buf (Lexing.lexeme lexbuf); read_string buf lexbuf }
-  | _ { raise (error ("Invalid string character: " ^ Lexing.lexeme lexbuf) lexbuf) }
+  | _ { lex_error ("Invalid string character: " ^ Lexing.lexeme lexbuf) lexbuf }
 
 {
 end

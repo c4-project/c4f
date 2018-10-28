@@ -16,7 +16,7 @@
 
 {
  open Lexing
- open LexMisc
+ open Lib.LangFrontend
 
 module type Config = sig
   val debug : bool
@@ -37,13 +37,13 @@ rule skip_comment i = parse
   | "(*" { skip_comment (i+1) lexbuf }
   | "*)"
       { if i > 1 then skip_comment (i-1) lexbuf}
-  | eof { error "eof in skip_comment" lexbuf }
+  | eof { lex_error "eof in skip_comment" lexbuf }
   | _ { skip_comment i lexbuf}
 
 and skip_c_comment = parse
   | '\n' { new_line lexbuf; skip_c_comment lexbuf }
   | "*/" { () }
-  | eof { error "eof in skip_c_comment" lexbuf }
+  | eof { lex_error "eof in skip_c_comment" lexbuf }
   | _ { skip_c_comment lexbuf}
 
 and skip_c_line_comment = parse
@@ -52,9 +52,9 @@ and skip_c_line_comment = parse
   | _ { skip_c_line_comment lexbuf}
 
 and skip_string = parse
-  | '\n' 	{ error "newline in skip_string" lexbuf }
+  | '\n' 	{ lex_error "newline in skip_string" lexbuf }
   | "\""	{ () }
-  | eof 	{ error "eof in skip_string" lexbuf }
+  | eof 	{ lex_error "eof in skip_string" lexbuf }
   | _ 		{ skip_string lexbuf}
 
 {

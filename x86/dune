@@ -14,4 +14,11 @@
  (modules ATTLexer lexUtils))
 (menhir
  (infer false)
+ (flags "--table")
  (modules ATTParser))
+
+;; These rules generate the error message tables for each parser.
+;; They're probably not as portable as they could be.
+(rule
+ (targets ATTMessages.ml)
+ (action (system "%{bin:menhir} --compile-errors %{dep:ATT.messages} ATTParser.mly > %{targets}")))

@@ -1,6 +1,9 @@
-(* This file is part of 'act'.
+(*
+This file is part of 'act'.
 
 Copyright (c) 2018 by Matt Windsor
+   (parts (c) 2010-2018 Institut National de Recherche en Informatique et
+	                en Automatique, Jade Alglave, and Luc Maranget)
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -19,42 +22,10 @@ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*)
 
-open Lexing
-open Utils
+(** AT&T parser: error messages *)
 
-val pp_pos : Format.formatter -> position -> unit;;
-val pp_pos2
-  :  Format.formatter
-  -> (position * position)
-  -> unit
-;;
-
-val sprint_pos : position -> string;;
-
-exception LexError of string * position;;
-
-(** [lex_error error lexbuf] raises a [LexError] with the given
-    error message and lexbuf. *)
-val lex_error : string -> lexbuf -> 'a;;
-
-module type S = sig
-  type ast
-
-  module I : MenhirLib.IncrementalEngine.INCREMENTAL_ENGINE
-
-  val lex : lexbuf -> I.token;;
-  val parse : position -> ast I.checkpoint;;
-  val message : int -> string;;
-end
-
-module type Intf = sig
-  (** [ast] is the type of the syntax tree outputted by the frontend. *)
-  type ast
-
-  include Io.LoadableIntf with type t := ast;;
-end
-
-(** [Make] lifts an instance of [S] into a frontend. *)
-module Make : functor (SI : S) -> Intf with type ast = SI.ast
+(** [message state] gets the error message for the state numbered [s]. *)
+val message : int -> string;;

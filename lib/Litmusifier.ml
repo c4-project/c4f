@@ -69,7 +69,7 @@ module Make (M : S) : Intf = struct
 
   let parse t =
     Or_error.tag_arg
-      (M.Frontend.run_ic ~file:t.iname t.inp)
+      (M.Frontend.load_from_ic ~path:t.iname t.inp)
       "Error while parsing assembly" t.iname String.sexp_of_t
   ;;
 

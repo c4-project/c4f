@@ -69,13 +69,18 @@ copyright notice follow. *)
 
 %token  IT_LOCK
 
-%type <Ast.statement list> main
+%type <Ast.t> main
 %start  main
 
 %%
 
 main:
-  | stm_list EOF { $1 }
+  | stm_list EOF
+    {
+      { syntax = Dialect.Att
+      ; program = $1
+      }
+    }
 
 stm_list:
   | list(stm) { $1 }
@@ -83,7 +88,6 @@ stm_list:
 stm:
   | option(instr) EOL { Core.Option.value ~default:StmNop $1 }
   | label { StmLabel $1 }
-  | error { raise (Base.ParseError({at = $sloc; because = "unknown statement error" })) }
 
 prefix:
   | IT_LOCK { PreLock }
@@ -172,13 +176,6 @@ location:
     (* -8(%eax, %ebx, 2) *)
   | ATT_REG {LocReg $1}
     (* %eax *)
-  | ATT_REG error
-    { raise (Base.ParseError(
-		 { at = $sloc
-		 ; because = "unexpected item following register"
-		 }
-	    ))
-    }
 
 (* Memory displacement *)
 disp:
@@ -188,12 +185,6 @@ disp:
 operand:
   | prim_operand bop operand { Operand.bop $1 $2 $3 }
   | prim_operand { $1 }
-  | error { raise (Base.ParseError(
-		       { at = $sloc
-		       ; because = "unknown error in operand"
-		       }
-		  ))
-	  }
 
 prim_operand:
   | DOLLAR disp { Operand.immediate $2 }
