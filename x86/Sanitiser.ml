@@ -107,7 +107,7 @@ module Hook (L : Language.Intf) = struct
         let open Ctx.Let_syntax in
         match Ast.Indirect.seg i, Ast.Indirect.disp i with
         | Some s, Some (DispNumeric k) ->
-          let%bind progname = Ctx.peek (fun c -> c.progname) in
+          let%bind progname = Ctx.get_prog_name in
           let%bind loc =
             Ctx.make_fresh_heap_loc
               (sprintf "t%sg%sd%d"
@@ -116,8 +116,8 @@ module Hook (L : Language.Intf) = struct
                  k
               )
           in
-          let%bind _ = Ctx.add_sym loc Lib.Abstract.Symbol.Sort.Heap in
-          return (L.Location.make_heap_loc loc)
+          let%map _ = Ctx.add_symbol loc Lib.Abstract.Symbol.Sort.Heap in
+          L.Location.make_heap_loc loc
         | _ -> Ctx.return l
       end
     | LocReg _ as l -> Ctx.return l

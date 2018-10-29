@@ -126,16 +126,16 @@ module Make (LH : LangHookS)
     MyList.right_pad ~padding:nop ps
 
   let change_stack_to_heap ins =
-    Ctx.peek
-      (fun { progname; _ } ->
-         let f ln =
-           match LH.L.Location.abs_type ln with
-           | Abstract.Location.StackOffset i ->
-             LH.L.Location.make_heap_loc
-               (sprintf "t%ss%d" progname i)
-           | _ -> ln
-         in
-         LH.L.Instruction.OnLocations.map ~f ins)
+    let open Ctx.Let_syntax in
+    let%map name = Ctx.get_prog_name in
+    let f ln =
+      match LH.L.Location.abs_type ln with
+      | Abstract.Location.StackOffset i ->
+        LH.L.Location.make_heap_loc
+          (sprintf "t%ss%d" name i)
+      | _ -> ln
+    in LH.L.Instruction.OnLocations.map ~f ins
+  ;;
 
   (** [warn_unknown_instructions stm] emits warnings for each
       instruction in [stm] without a high-level analysis. *)
@@ -174,7 +174,7 @@ module Make (LH : LangHookS)
     match LH.L.Instruction.abs_type ins with
     | Abstract.Instruction.Return ->
       begin
-        match%bind Ctx.end_label with
+        match%bind Ctx.get_end_label with
         | None ->
           let%map () = Ctx.warn Warn.MissingEndLabel in ins
         | Some endl ->
@@ -286,7 +286,9 @@ module Make (LH : LangHookS)
   let proglen_fix f prog =
     let rec mu prog ctx =
       let (ctx', prog') = Ctx.run (f prog) ctx in
-      if ctx.proglen = ctx'.proglen
+      let proglen  = Ctx.run' Ctx.get_prog_length ctx in
+      let proglen' = Ctx.run' Ctx.get_prog_length ctx' in
+      if proglen = proglen'
       then (ctx', prog') (* Fixed point *)
       else mu prog' ctx'
     in
@@ -297,7 +299,7 @@ module Make (LH : LangHookS)
      rewritten. *)
   let remove_generally_irrelevant_statements prog =
     let open Ctx.Let_syntax in
-    let%bind syms = Ctx.peek (fun ctx -> ctx.syms) in
+    let%bind syms = Ctx.get_symbol_table in
     let%map remove_boundaries =
       Ctx.is_pass_enabled Sanitiser_pass.RemoveBoundaries
     in
@@ -329,7 +331,7 @@ module Make (LH : LangHookS)
     let rec mu skipped ctx =
       function
       | x::x'::xs when LH.L.Statement.is_jump_pair x x' ->
-        let ctx' = Ctx.({ ctx with proglen = pred ctx.proglen }) in
+        let (ctx', ()) = Ctx.run Ctx.dec_prog_length ctx in
         mu skipped ctx' (x'::xs)
       | x::x'::xs ->
         mu (x::skipped) ctx (x'::xs)
@@ -340,10 +342,10 @@ module Make (LH : LangHookS)
 
   let update_symbol_tables
       (prog : LH.L.Statement.t list) =
-    Ctx.modify
-      (fun ctx -> { ctx with syms = LH.L.symbols prog }
-      )
-      prog
+    let open Ctx.Let_syntax in
+    let%map () = Ctx.set_symbol_table (LH.L.symbols prog) in
+    prog
+  ;;
 
   (** [add_end_label] adds an end-of-program label to the current
      program. *)
@@ -351,15 +353,15 @@ module Make (LH : LangHookS)
     : (LH.L.Statement.t list) Ctx.t =
     let open Ctx.Let_syntax in
     (* Don't generate duplicate endlabels! *)
-    match%bind (Ctx.peek (fun ctx -> ctx.endlabel)) with
+    match%bind Ctx.get_end_label with
     | Some _ -> return prog
     | None ->
-      let%bind progname = (Ctx.peek (fun ctx -> ctx.progname)) in
+      let%bind progname = Ctx.get_prog_name in
       let prefix = "END" ^ progname in
       let%bind lbl = Ctx.make_fresh_label prefix in
-      Ctx.modify
-        (fun ctx -> { ctx with endlabel = Some lbl })
-        (prog @ [LH.L.Statement.label lbl])
+      let%map () = Ctx.set_end_label lbl in
+      prog @ [LH.L.Statement.label lbl]
+  ;;
 
   (** [remove_fix prog] performs a loop of statement-removing
      operations until we reach a fixed point in the program length. *)
@@ -384,8 +386,7 @@ module Make (LH : LangHookS)
     let progname = sprintf "%d" i in
     let proglen = List.length prog in
     Ctx.(
-      let ({ warnings; _ }, program) =
-        run
+        run_and_get_warnings
           ((return prog)
            (* Initial table population. *)
            >>= update_symbol_tables
@@ -401,7 +402,6 @@ module Make (LH : LangHookS)
            >>= remove_fix
           )
           (initial ~passes ~progname ~proglen)
-      in (program, warnings)
     )
 
   let sanitise ?passes prog =

@@ -140,11 +140,31 @@ module Make (L : Language.Intf) (C : CustomWarnS)
 
   include State.Make (struct type state = ctx end)
 
+  let run_and_get_warnings t ctx =
+    let (ctx', v) = run t ctx in
+    (v, ctx'.warnings)
+  ;;
+
   let is_pass_enabled pass =
     peek (fun ctx -> Pass.Set.mem ctx.passes pass)
   ;;
 
-  let end_label = peek (fun ctx -> ctx.endlabel)
+  let get_end_label = peek endlabel
+  let set_end_label lbl =
+    modify
+      (fun ctx -> { ctx with proglen = succ ctx.proglen;
+                             endlabel = Some lbl })
+      ()
+  ;;
+
+  let get_prog_name = peek progname
+
+  let get_prog_length = peek proglen
+  let dec_prog_length =
+    (* TODO(@MattWindsor91): warn if prog-length goes below 0? *)
+    modify (fun ctx -> { ctx with proglen = pred ctx.proglen })
+      ()
+  ;;
 
   let (|->) pass f a =
     make
@@ -163,7 +183,7 @@ module Make (L : Language.Intf) (C : CustomWarnS)
       ()
   ;;
 
-  let add_sym sym sort =
+  let add_symbol sym sort =
     make
       (fun ctx ->
          { ctx with syms = Abstract.Symbol.Table.add ctx.syms sym sort }
@@ -171,29 +191,35 @@ module Make (L : Language.Intf) (C : CustomWarnS)
       )
   ;;
 
-  let syms_with_sorts sorts =
+  let get_symbol_table = peek syms
+
+  let get_symbols_with_sorts sorts =
     Abstract.Symbol.(
       let open Let_syntax in
-      let%bind all_syms = peek (Field.get Fields_of_ctx.syms) in
-      return (Table.set_of_sorts all_syms (Sort.Set.of_list sorts))
+      let%map all_syms = get_symbol_table in
+      Table.set_of_sorts all_syms (Sort.Set.of_list sorts)
     )
+  ;;
+
+  let set_symbol_table syms =
+    modify (fun ctx -> { ctx with syms = syms }) ()
   ;;
 
   let make_fresh_label prefix =
     Abstract.Symbol.(
       let open Let_syntax in
-      let%bind syms = syms_with_sorts [ Sort.Jump; Sort.Label ] in
+      let%bind syms = get_symbols_with_sorts [ Sort.Jump; Sort.Label ] in
       let l = freshen_label syms prefix in
-      add_sym l Sort.Label
+      add_symbol l Sort.Label
     )
   ;;
 
   let make_fresh_heap_loc prefix =
     Abstract.Symbol.(
       let open Let_syntax in
-      let%bind syms = syms_with_sorts [ Sort.Heap ] in
+      let%bind syms = get_symbols_with_sorts [ Sort.Heap ] in
       let l = freshen_label syms prefix in
-      add_sym l Sort.Heap
+      add_symbol l Sort.Heap
     )
   ;;
 end

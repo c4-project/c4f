@@ -77,14 +77,7 @@ module type Intf = sig
   module Lang : Language.Intf
   module Warn : WarnIntf with module L = Lang
 
-  type ctx =
-    { progname : string                   (* Name of current program *)
-    ; proglen  : int                      (* Length of current program *)
-    ; endlabel : string option            (* End label of current program *)
-    ; syms     : Abstract.Symbol.Table.t  (* Symbol table *)
-    ; passes   : Sanitiser_pass.Set.t     (* Enabled passes *)
-    ; warnings : Warn.t list
-    }
+  type ctx
 
   (** [Intf] includes a state monad, [t]. *)
   include State.Intf with type state := ctx
@@ -98,21 +91,47 @@ module type Intf = sig
     -> proglen:int
     -> ctx
 
+  (** [run_and_get_warnings t ctx] runs [t] on [ctx], and
+      returns the result and warning list. *)
+  val run_and_get_warnings
+    :  'a t
+    -> ctx
+    -> ('a * Warn.t list)
+  ;;
+
   (*
-   * Accessors
+   * Program properties
+   *)
+
+  (** [get_end_label] is a contextual computation that returns the
+      program's current end label. *)
+  val get_end_label : string option t
+
+  (** [set_end_label] is a contextual computation that sets the
+     program's current end label and increments the program length
+     counter, in anticipation of the program gaining a new label
+     statement. *)
+  val set_end_label : string -> unit t
+
+  (** [get_prog_name] is a contextual computation that returns the
+     program's name. *)
+  val get_prog_name : string t
+
+  (** [get_prog_length] is a contextual computation that returns the
+     program's length. *)
+  val get_prog_length : int t
+
+  (** [dec_prog_length] is a contextual computation that decrements
+      the program's length. *)
+  val dec_prog_length : unit t
+
+  (*
+   * Conditional execution
    *)
 
   (** [is_pass_enabled pass] is a contextual computation that returns
       [true] provided that [pass] is enabled. *)
   val is_pass_enabled : Sanitiser_pass.t -> bool t
-
-  (** [end_label] is a contextual computation that returns the
-      program's current end label. *)
-  val end_label : string option t
-
-  (*
-   * Conditional execution
-   *)
 
   (** [p |-> f] guards a contextual computation [f] on the
       pass [p]; it won't run unless [p] is in the current context's
@@ -122,21 +141,38 @@ module type Intf = sig
   (** [warn w a] adds a warning [w] to the current context. *)
   val warn : Warn.body -> unit t
 
-  (** [add_sym sym sort] is a context computation that adds
-      [sym] to the context symbol table with sort [sort], then
-      passes [sym] through. *)
-  val add_sym
+  (*
+   * Symbols
+   *)
+
+  (** [get_symbol_table] is a contextual computation that returns the
+     current symbol table. *)
+  val get_symbol_table : Abstract.Symbol.Table.t t
+
+  (** [get_symbols_with_sorts sortlist] is a context computation that
+     gets the set of all symbols in the context's symbol table with
+     sorts in [sortlist]. *)
+  val get_symbols_with_sorts
+    :  Abstract.Symbol.Sort.t list
+    -> Abstract.Symbol.Set.t t
+  ;;
+
+  (** [add_symbol sym sort] is a context computation that adds [sym]
+     to the context symbol table with sort [sort], then passes [sym]
+     through. *)
+  val add_symbol
     :  Abstract.Symbol.t
     -> Abstract.Symbol.Sort.t
     -> Abstract.Symbol.t t
   ;;
 
-  (** [syms_with_sorts sortlist] is a context computation that gets
-     the set of all symbols in the context's symbol table with sorts
-     in [sortlist]. *)
-  val syms_with_sorts
-    :  Abstract.Symbol.Sort.t list
-    -> Abstract.Symbol.Set.t t
+  (** [set_symbol_table sym sort] is a context computation that replaces
+      the current symbol table with [syms]. *)
+  val set_symbol_table
+    :  Abstract.Symbol.Table.t
+    -> unit t
+  ;;
+
 
   (** [make_fresh_label] generates a fresh label with the given prefix
       (in regards to the context's symbol tables), interns it into the
