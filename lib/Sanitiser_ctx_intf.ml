@@ -56,6 +56,12 @@ module type WarnIntf = sig
     | UnknownElt of elt
     (* This element seems erroneous, and its translation may be wrong. *)
     | ErroneousElt of elt
+    (* A symbol redirection failed, which may cause the reported
+       location table to be wrong. *)
+    | SymbolRedirFail of { src : L.Symbol.t
+                         ; dst : L.Symbol.t option
+                         ; why : Error.t
+                         }
     (* Hook for language-specific sanitiser passes to add warnings. *)
     | Custom of C.t
 
@@ -83,25 +89,24 @@ module type Intf = sig
   include State.Intf with type state := ctx
 
   (** [initial ~passes ~progname ~proglen] opens an initial context
-     for the program with the given name, length, and enabled
-     passes. *)
+     with the given enabled passes. *)
   val initial
     :  passes:Sanitiser_pass.Set.t
-    -> progname:string
-    -> proglen:int
     -> ctx
-
-  (** [run_and_get_warnings t ctx] runs [t] on [ctx], and
-      returns the result and warning list. *)
-  val run_and_get_warnings
-    :  'a t
-    -> ctx
-    -> ('a * Warn.t list)
-  ;;
 
   (*
    * Program properties
    *)
+
+  (** [enter_program ~name ~len] is a contextual computation that
+      tells the context we've entered a new program with name
+      [name] and body [body].  Any previous program state is
+      expunged. *)
+  val enter_program
+    :  name : string
+    -> Lang.Statement.t list
+    -> (Lang.Statement.t list) t
+  ;;
 
   (** [get_end_label] is a contextual computation that returns the
       program's current end label. *)
@@ -141,6 +146,10 @@ module type Intf = sig
   (** [warn w a] adds a warning [w] to the current context. *)
   val warn : Warn.body -> unit t
 
+  (** [take_warnings] is a contextual computation that returns the
+      current warning set, while clearing it inside the context. *)
+  val take_warnings : Warn.t list t
+
   (*
    * Symbols
    *)
@@ -173,6 +182,14 @@ module type Intf = sig
     -> unit t
   ;;
 
+  (** [redirect ~src ~dst] tries to redirect ~src to ~dst in the
+     concrete symbol redirection table.  If the redirect causes an
+     error, the redirect has no effect and a warning is triggered. *)
+  val redirect
+    :  src : Lang.Symbol.t
+    -> dst : Lang.Symbol.t
+    -> unit t
+  ;;
 
   (** [make_fresh_label] generates a fresh label with the given prefix
       (in regards to the context's symbol tables), interns it into the

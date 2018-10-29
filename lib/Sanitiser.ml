@@ -380,51 +380,56 @@ module Make (LH : LangHookS)
 
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program
-      (passes : Sanitiser_pass.Set.t)
       (i : int) (prog : LH.L.Statement.t list)
-    : (LH.L.Statement.t list * Warn.t list) =
-    let progname = sprintf "%d" i in
-    let proglen = List.length prog in
+    : (LH.L.Statement.t list) Ctx.t =
+    let name = sprintf "%d" i in
     Ctx.(
-        run_and_get_warnings
-          ((return prog)
-           (* Initial table population. *)
-           >>= update_symbol_tables
-           >>= (SimplifyLitmus |-> add_end_label)
-           >>= (LangHooks      |-> LH.on_program)
-           (* The language hook might have invalidated the symbol
-              tables. *)
-           >>= update_symbol_tables
-           (* Need to sanitise statements first, in case the
-              sanitisation pass makes irrelevant statements
-              (like jumps) relevant again. *)
-           |> mapiM ~f:sanitise_stm
-           >>= remove_fix
-          )
-          (initial ~passes ~progname ~proglen)
+      enter_program ~name prog
+      (* Initial table population. *)
+      >>= update_symbol_tables
+      >>= (SimplifyLitmus |-> add_end_label)
+      >>= (LangHooks      |-> LH.on_program)
+      (* The language hook might have invalidated the symbol
+         tables. *)
+      >>= update_symbol_tables
+      (* Need to sanitise statements first, in case the sanitisation
+         pass makes irrelevant statements (like jumps) relevant
+         again. *)
+      |> mapiM ~f:sanitise_stm
+      >>= remove_fix
     )
+  ;;
 
-  let sanitise ?passes prog =
-    let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
-    let prog', warnlist = sanitise_program passes' 0 prog in
+  let sanitise_with_ctx prog =
+    let open Ctx.Let_syntax in
+    let%bind prog' = sanitise_program 0 prog in
+    let%map warns = Ctx.take_warnings in
     Output.(
       { result   = prog'
-      ; warnings = warnlist
+      ; warnings = warns
       }
     )
+  ;;
 
-  let sanitise_programs ?passes progs =
-    let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
-    let progs', warnlists =
-      progs
-      |> List.mapi ~f:(sanitise_program passes')
-      |> List.unzip
-    in
+  let sanitise_programs_with_ctx progs =
+    let open Ctx.Let_syntax in
+    let%bind progs' = Ctx.mapiM ~f:sanitise_program (return progs) in
+    let%map warns = Ctx.take_warnings in
     Output.(
-      { result   = make_programs_uniform (LH.L.Statement.empty ()) progs'
-      ; warnings = List.concat warnlists
+      { result = make_programs_uniform (LH.L.Statement.empty ()) progs'
+      ; warnings = warns
       }
     )
+  ;;
 
-  let split_and_sanitise ?passes stms = sanitise_programs ?passes (split_programs stms)
+  let sanitise_wrapper passes f =
+    let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
+    Ctx.run' f (Ctx.initial ~passes:passes')
+  ;;
+
+  let sanitise ?passes prog = sanitise_wrapper passes (sanitise_with_ctx prog)
+
+  let split_and_sanitise ?passes stms =
+    sanitise_wrapper passes (sanitise_programs_with_ctx (split_programs stms))
+  ;;
 end

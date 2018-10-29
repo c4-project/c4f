@@ -52,6 +52,10 @@ module Warn (L : Language.Intf) (C : CustomWarnS)
     | MissingEndLabel
     | UnknownElt of elt
     | ErroneousElt of elt
+    | SymbolRedirFail of { src : L.Symbol.t
+                         ; dst : L.Symbol.t option
+                         ; why : Error.t
+                         }
     | Custom of C.t
 
   type t =
@@ -85,11 +89,22 @@ module Warn (L : Language.Intf) (C : CustomWarnS)
       (elt_type_name elt)
       pp_elt elt
 
+  let pp_symbol_redir_warning f src dst why =
+    Format.fprintf f
+      "act failed to redirect the symbol %a%a.@ The reason given was:@ \
+       @[<hv>%a@]@ The litmus translation may have an incorrect location table."
+      L.Symbol.pp src
+      (MyFormat.pp_option ~pp:(fun f -> Format.fprintf f " to %a" L.Symbol.pp))
+      dst
+      Error.pp why
+  ;;
+
   let pp_body f =
     function
     | MissingEndLabel ->
       String.pp f
         "act needed an end-of-program label here, but there wasn't one."
+    | SymbolRedirFail { src; dst; why } -> pp_symbol_redir_warning f src dst why
     | UnknownElt elt -> pp_unknown_warning f elt
     | ErroneousElt elt -> pp_erroneous_warning f elt
     | Custom c -> C.pp f c
@@ -121,32 +136,39 @@ module Make (L : Language.Intf) (C : CustomWarnS)
   module Pass = Sanitiser_pass
 
   type ctx =
-    { progname : string
-    ; proglen  : int
-    ; endlabel : string option
-    ; syms     : Abstract.Symbol.Table.t
-    ; passes   : Pass.Set.t
-    ; warnings : Warn.t list
+    { progname  : string
+    ; proglen   : int
+    ; endlabel  : string option
+    ; syms      : Abstract.Symbol.Table.t
+    ; redirects : L.Symbol.R_map.t
+    ; passes    : Pass.Set.t
+    ; warnings  : Warn.t list
     }[@@deriving fields]
 
-  let initial ~passes ~progname ~proglen =
-    { progname
-    ; proglen
-    ; endlabel = None
-    ; syms     = Abstract.Symbol.Table.empty
+  let initial ~passes =
+    { progname  = "(no program)"
+    ; proglen   = 0
+    ; endlabel  = None
+    ; syms      = Abstract.Symbol.Table.empty
+    ; redirects = L.Symbol.R_map.make L.Symbol.Set.empty
     ; passes
-    ; warnings = []
+    ; warnings  = []
     }
 
   include State.Make (struct type state = ctx end)
 
-  let run_and_get_warnings t ctx =
-    let (ctx', v) = run t ctx in
-    (v, ctx'.warnings)
-  ;;
-
   let is_pass_enabled pass =
     peek (fun ctx -> Pass.Set.mem ctx.passes pass)
+  ;;
+
+  let enter_program ~name prog =
+    modify
+      (fun ctx ->
+         { ctx with progname = name
+                  ; proglen = List.length prog
+                  ; endlabel = None
+                  ; syms = Abstract.Symbol.Table.empty })
+      prog
   ;;
 
   let get_end_label = peek endlabel
@@ -183,6 +205,13 @@ module Make (L : Language.Intf) (C : CustomWarnS)
       ()
   ;;
 
+  let take_warnings =
+    make
+      (fun ctx ->
+         let warnings = ctx.warnings in
+         ( { ctx with warnings = [] }, warnings ))
+  ;;
+
   let add_symbol sym sort =
     make
       (fun ctx ->
@@ -203,6 +232,14 @@ module Make (L : Language.Intf) (C : CustomWarnS)
 
   let set_symbol_table syms =
     modify (fun ctx -> { ctx with syms = syms }) ()
+  ;;
+
+  let redirect ~src ~dst =
+    let open Let_syntax in
+    let%bind rds = peek redirects in
+    match L.Symbol.R_map.redirect ~src ~dst rds with
+    | Ok rds' -> modify (fun ctx -> { ctx with redirects = rds' } ) ()
+    | Error why -> warn (Warn.SymbolRedirFail { src; dst = Some dst; why })
   ;;
 
   let make_fresh_label prefix =
