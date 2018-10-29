@@ -80,12 +80,12 @@ let regress_run_litmusifier_many modename mode passes test_path =
 
 let regress_explain =
   regress_run_litmusifier_many "Explainer" `Explain
-    (Sanitiser.Pass.explain)
+    (Sanitiser_pass.explain)
 ;;
 
 let regress_litmusify =
   regress_run_litmusifier_many "Litmusifier" `Litmusify
-    (Sanitiser.Pass.all_set ())
+    (Sanitiser_pass.all_set ())
 ;;
 
 let regress test_path =

@@ -84,7 +84,7 @@ let litmusify o fs cspec =
   Or_error.tag ~tag:"While translating assembly to litmus"
     (Common.do_litmusify
        `Litmusify
-       (Sanitiser.Pass.all_set ())
+       (Sanitiser_pass.all_set ())
        o
        ~infile:(Some (Pathset.File.asm_path fs))
        ~outfile:(Some (Pathset.File.lita_path fs))

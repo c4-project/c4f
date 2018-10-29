@@ -30,7 +30,7 @@ module type Intf = sig
     ; inp    : In_channel.t
     ; outp   : Out_channel.t
     ; mode   : [`Explain | `Litmusify]
-    ; passes : Sanitiser.Pass.Set.t
+    ; passes : Sanitiser_pass.Set.t
     }
   ;;
 
@@ -57,7 +57,7 @@ module Make (M : S) : Intf = struct
     ; inp   : In_channel.t
     ; outp  : Out_channel.t
     ; mode  : [`Explain | `Litmusify]
-    ; passes : Sanitiser.Pass.Set.t
+    ; passes : Sanitiser_pass.Set.t
     }
   ;;
 

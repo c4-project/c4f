@@ -23,175 +23,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Assembly sanitisation *)
 
-open Core
-open Utils
-
-(*
- * Warnings
- *)
-
-(** [CustomWarnS] is the signature that any custom sanitisation
-   warnings need to implement. *)
-module type CustomWarnS = sig
-  include Pretty_printer.S
-end
-
-(** [NoCustomWarn] is a dummy interface implementing [CustomWarnS]. *)
-module NoCustomWarn : CustomWarnS
-
-(** [WarnIntf] is the interface to the warnings emitted by the
-   sanitiser. *)
-module type WarnIntf = sig
-  module L : Language.Intf
-  module C : CustomWarnS
-
-  type elt =
-    | Instruction of L.Instruction.t
-    | Statement of L.Statement.t
-    | Location of L.Location.t
-    | Operands of L.Instruction.t
-
-  type body =
-    (* Something needed an end-of-program label, but there wasn't one. *)
-    | MissingEndLabel
-    (* This element isn't known to act, and its translation may be wrong. *)
-    | UnknownElt of elt
-    (* This element seems erroneous, and its translation may be wrong. *)
-    | ErroneousElt of elt
-    (* Hook for language-specific sanitiser passes to add warnings. *)
-    | Custom of C.t
-
-  type t =
-    { body     : body
-    ; progname : string
-    }
-
-  include Pretty_printer.S with type t := t
-end
-
-(** [Warn] produces a warnings module for the given language and
-   custom warnings set. *)
-module Warn
-  : functor (L : Language.Intf)
-    -> functor (C : CustomWarnS)
-      -> WarnIntf with module L = L and module C = C
-
-(*
- * Passes
- *)
-
-(** [Pass] enumerates the various sanitisation passes. *)
-module Pass : sig
-  type t =
-    (* Run language-specific hooks. *)
-    | LangHooks
-    (* Mangle symbols to ensure litmus tools can lex them. *)
-    | MangleSymbols
-    (* Remove program boundaries.  (If this pass isn't active,
-       program boundaries are retained even if they're not
-       jumped to. *)
-    | RemoveBoundaries
-    (* Remove elements that have an effect in the assembly, but said
-       effect isn't captured in the litmus test. *)
-    | RemoveLitmus
-    (* Remove elements with no (direct) effect in the assembly. *)
-    | RemoveUseless
-    (* Simplify elements that aren't directly understandable by
-       litmus tools. *)
-    | SimplifyLitmus
-    (* Warn about things the sanitiser doesn't understand. *)
-    | Warn
-
-  (** We include the usual enum extensions for [Pass]. *)
-  include Enum.ExtensionTable with type t := t
-
-  (** [explain] collects passes that are useful for explaining an
-     assembly file without modifying its semantics too much. *)
-  val explain : Set.t
-end
-
-(*
- * Context
- *)
-
-(** [CtxIntf] is the interface to the state monad used by the sanitiser to
-    carry global information around in a sanitisation pass. *)
-module type CtxIntf = sig
-  module Lang : Language.Intf
-  module Warn : WarnIntf with module L = Lang
-
-  type ctx =
-    { progname : string                   (* Name of current program *)
-    ; proglen  : int                      (* Length of current program *)
-    ; endlabel : string option            (* End label of current program *)
-    ; syms     : Abstract.Symbol.Table.t  (* Symbol table *)
-    ; passes   : Pass.Set.t               (* Enabled passes *)
-    ; warnings : Warn.t list
-    }
-
-  (** [CtxIntf] includes a state monad, [t]. *)
-  include State.Intf with type state := ctx
-
-  (** [initial ~passes ~progname ~proglen] opens an initial context
-     for the program with the given name, length, and enabled
-     passes. *)
-  val initial
-    :  passes:Pass.Set.t
-    -> progname:string
-    -> proglen:int
-    -> ctx
-
-  (** [pass_enabled pass] is a contextual computation that returns
-      [true] provided that [pass] is enabled. *)
-  val pass_enabled : Pass.t -> bool t;;
-
-  (** [p |-> f] guards a contextual computation [f] on the
-      pass [p]; it won't run unless [p] is in the current context's
-      pass set. *)
-  val (|->) : Pass.t -> ('a -> 'a t) -> ('a -> 'a t)
-
-  (** [warn_in_ctx ctx w] adds a warning [w] to [ctx], returning
-      the new context. *)
-  val warn_in_ctx : ctx -> Warn.body -> ctx
-
-  (** [warn w a] adds a warning [w] to the current context, passing
-      [a] through. *)
-  val warn : Warn.body -> 'a -> 'a t
-
-  (** [add_sym sym sort] is a context computation that adds
-      [sym] to the context symbol table with sort [sort], then
-      passes [sym] through. *)
-  val add_sym
-    :  Abstract.Symbol.t
-    -> Abstract.Symbol.Sort.t
-    -> Abstract.Symbol.t t
-  ;;
-
-  (** [syms_with_sorts sortlist] is a context computation that gets
-     the set of all symbols in the context's symbol table with sorts
-     in [sortlist]. *)
-  val syms_with_sorts
-    :  Abstract.Symbol.Sort.t list
-    -> Abstract.Symbol.Set.t t
-
-  (** [make_fresh_label] generates a fresh label with the given prefix
-      (in regards to the context's symbol tables), interns it into the
-      context, and returns the generated label. *)
-  val make_fresh_label : string -> string t
-
-  (** [make_fresh_heap_loc] generates a fresh heap location symbol with
-      the given prefix
-      (in regards to the context's symbol tables), interns it into the
-      context, and returns the generated location symbol. *)
-  val make_fresh_heap_loc : string -> string t
-end
-
-(** [CtxMake] builds a context monad for the given language. *)
-module CtxMake
-  : functor (L : Language.Intf)
-    -> functor (C : CustomWarnS)
-      -> CtxIntf with module Lang = L and module Warn.C = C
-
 (*
  * Language-dependent parts
  *)
@@ -200,7 +31,7 @@ module CtxMake
     sanitisation process. *)
 module type LangHookS = sig
   module L : Language.Intf
-  module Ctx : CtxIntf with module Lang = L
+  module Ctx : Sanitiser_ctx.Intf with module Lang = L
 
   (** [on_program] is a hook mapped over each the program as a
      whole. *)
@@ -228,7 +59,7 @@ module NullLangHook : functor (LS : Language.Intf)
  *)
 
 module type Intf = sig
-  module Warn : WarnIntf
+  module Warn : Sanitiser_ctx.WarnIntf
 
   type statement
 
@@ -247,7 +78,7 @@ module type Intf = sig
       Optional argument 'passes' controls the sanitisation passes
       used; the default is [Pass.all]. *)
   val sanitise
-    :  ?passes:Pass.Set.t
+    :  ?passes:Sanitiser_pass.Set.t
     -> statement list
     -> statement list Output.t
 
@@ -259,7 +90,7 @@ module type Intf = sig
       Optional argument 'passes' controls the sanitisation passes
      used; the default is [Pass.all]. *)
   val split_and_sanitise
-    :  ?passes:Pass.Set.t
+    :  ?passes:Sanitiser_pass.Set.t
     -> statement list
     -> statement list list Output.t
 end

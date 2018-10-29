@@ -23,292 +23,15 @@
    SOFTWARE. *)
 
 open Core
-open Utils
 open Utils.MyContainers
 
-(*
- * Warnings
- *)
-
-module type CustomWarnS = sig
-  include Pretty_printer.S
-end
-
-module NoCustomWarn = struct
-  (* No warnings possible *)
-  type t
-  let pp _ _ = ()
-end
-
-module type WarnIntf = sig
-  module L : Language.Intf
-  module C : CustomWarnS
-
-  type elt =
-    | Instruction of L.Instruction.t
-    | Statement of L.Statement.t
-    | Location of L.Location.t
-    | Operands of L.Instruction.t
-
-  type body =
-    | MissingEndLabel
-    | UnknownElt of elt
-    | ErroneousElt of elt
-    | Custom of C.t
-
-  type t =
-    { body     : body
-    ; progname : string
-    }
-
-  include Pretty_printer.S with type t := t
-end
-
-module Warn (L : Language.Intf) (C : CustomWarnS) = struct
-  module L = L
-  module C = C
-
-  type elt =
-    | Instruction of L.Instruction.t
-    | Statement of L.Statement.t
-    | Location of L.Location.t
-    | Operands of L.Instruction.t
-
-  type body =
-    | MissingEndLabel
-    | UnknownElt of elt
-    | ErroneousElt of elt
-    | Custom of C.t
-
-  type t =
-    { body     : body
-    ; progname : string
-    }
-
-  let pp_elt f =
-    function
-    | Statement s -> L.Statement.pp f s
-    | Instruction i | Operands i -> L.Instruction.pp f i
-    | Location l -> L.Location.pp f l
-  ;;
-
-    let elt_type_name = function
-      | Statement _ -> "statement"
-      | Instruction _ -> "instruction"
-      | Operands _ -> "the operands of instruction"
-      | Location _ -> "location"
-    ;;
-
-  let pp_unknown_warning f elt =
-    Format.fprintf f
-      "act didn't understand@ %s@ %a.@ The litmus translation may be wrong."
-      (elt_type_name elt)
-      pp_elt elt
-
-  let pp_erroneous_warning f elt =
-    Format.fprintf f
-      "act thinks@ %s@ %a@ is@ erroneous.@ The litmus translation may be wrong."
-      (elt_type_name elt)
-      pp_elt elt
-
-  let pp_body f =
-    function
-    | MissingEndLabel ->
-      String.pp f
-        "act needed an end-of-program label here, but there wasn't one."
-    | UnknownElt elt -> pp_unknown_warning f elt
-    | ErroneousElt elt -> pp_erroneous_warning f elt
-    | Custom c -> C.pp f c
-
-  let pp f ent =
-    Format.fprintf f "In program %s:@ " ent.progname;
-    pp_body f ent.body
-end
-
-(*
- * Pass
- *)
-
-module Pass = struct
-  module M = struct
-    type t =
-      | LangHooks
-      | MangleSymbols
-      | RemoveBoundaries
-      | RemoveLitmus
-      | RemoveUseless
-      | SimplifyLitmus
-      | Warn
-    [@@deriving enum, sexp]
-
-    let table =
-      [ LangHooks       , "lang-hooks"
-      ; MangleSymbols   , "mangle-symbols"
-      ; RemoveBoundaries, "remove-boundaries"
-      ; RemoveLitmus    , "remove-litmus"
-      ; RemoveUseless   , "remove-useless"
-      ; SimplifyLitmus  , "simplify-litmus"
-      ; Warn            , "warn"
-      ]
-  end
-
-  include M
-  include Enum.ExtendTable (M)
-
-  (** [explain] collects passes that are useful for explaining an
-     assembly file without modifying its semantics too much. *)
-  let explain = Set.of_list [ RemoveUseless ]
-end
-
-let%expect_test "all passes accounted for" =
-  Format.printf "@[<v>%a@]@."
-    (Format.pp_print_list ~pp_sep:Format.pp_print_cut Pass.pp)
-    (Pass.all_list ());
-  [%expect {|
-    lang-hooks
-    mangle-symbols
-    remove-boundaries
-    remove-litmus
-    remove-useless
-    simplify-litmus
-    warn |}]
-
-(*
- * Context
- *)
-
-module type CtxIntf = sig
-  module Lang : Language.Intf
-  module Warn : WarnIntf with module L = Lang
-
-  type ctx =
-    { progname : string
-    ; proglen  : int
-    ; endlabel : string option
-    ; syms     : Abstract.Symbol.Table.t
-    ; passes   : Pass.Set.t
-    ; warnings : Warn.t list
-    }
-
-  include State.Intf with type state := ctx
-
-  val initial : passes:Pass.Set.t -> progname:string -> proglen:int -> ctx
-
-  val pass_enabled : Pass.t -> bool t
-  val (|->) : Pass.t -> ('a -> 'a t) -> ('a -> 'a t)
-
-  val warn_in_ctx : ctx -> Warn.body -> ctx
-  val warn : Warn.body -> 'a -> 'a t
-
-  val add_sym
-    :  Abstract.Symbol.t
-    -> Abstract.Symbol.Sort.t
-    -> Abstract.Symbol.t t
-  ;;
-
-  val syms_with_sorts
-    :  Abstract.Symbol.Sort.t list
-    -> Abstract.Symbol.Set.t t
-
-  val make_fresh_label : string -> string t
-  val make_fresh_heap_loc : string -> string t
-end
-
-let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string =
-  let rec mu prefix count =
-    let str = sprintf "%s%d" prefix count in
-    if Abstract.Symbol.Set.mem syms str
-    then mu prefix (count + 1)
-    else str
-  in
-  mu prefix 0
-;;
-
-module CtxMake (L : Language.Intf) (C : CustomWarnS)
- : CtxIntf with module Lang = L and module Warn.C = C = struct
-  module Lang = L
-  module Warn = Warn (L) (C)
-
-  type ctx =
-    { progname : string
-    ; proglen  : int
-    ; endlabel : string option
-    ; syms     : Abstract.Symbol.Table.t
-    ; passes   : Pass.Set.t
-    ; warnings : Warn.t list
-    }[@@deriving fields]
-
-  let initial ~passes ~progname ~proglen =
-    { progname
-    ; proglen
-    ; endlabel = None
-    ; syms     = Abstract.Symbol.Table.empty
-    ; passes
-    ; warnings = []
-    }
-
-  include State.Make (struct type state = ctx end)
-
-  let pass_enabled pass =
-    peek (fun ctx -> Pass.Set.mem ctx.passes pass)
-  ;;
-
-  let (|->) pass f a =
-    make
-      (fun ctx ->
-         if Pass.Set.mem ctx.passes pass
-         then run (f a) ctx
-         else (ctx, a))
-  ;;
-
-  let warn_in_ctx ctx w =
-    let ent = { Warn.progname = ctx.progname; body = w } in
-    { ctx with warnings = ent::ctx.warnings }
-
-  let warn (w : Warn.body) =
-    modify (Fn.flip warn_in_ctx w)
-
-  let add_sym sym sort =
-    make
-      (fun ctx ->
-         { ctx with syms = Abstract.Symbol.Table.add ctx.syms sym sort }
-         , sym
-      )
-  ;;
-
-  let syms_with_sorts sorts =
-    Abstract.Symbol.(
-      let open Let_syntax in
-      let%bind all_syms = peek (Field.get Fields_of_ctx.syms) in
-      return (Table.set_of_sorts all_syms (Sort.Set.of_list sorts))
-    )
-  ;;
-
-  let make_fresh_label prefix =
-    Abstract.Symbol.(
-      let open Let_syntax in
-      let%bind syms = syms_with_sorts [ Sort.Jump; Sort.Label ] in
-      let l = freshen_label syms prefix in
-      add_sym l Sort.Label
-    )
-  ;;
-
-  let make_fresh_heap_loc prefix =
-    Abstract.Symbol.(
-      let open Let_syntax in
-      let%bind syms = syms_with_sorts [ Sort.Heap ] in
-      let l = freshen_label syms prefix in
-      add_sym l Sort.Heap
-    )
-  ;;
-end
 
 (*
  * Main sanitiser modules
  *)
 
 module type Intf = sig
-  module Warn : WarnIntf
+  module Warn : Sanitiser_ctx.WarnIntf
 
   type statement
 
@@ -320,19 +43,19 @@ module type Intf = sig
   end
 
   val sanitise
-    :  ?passes:Pass.Set.t
+    :  ?passes:Sanitiser_pass.Set.t
     -> statement list
     -> statement list Output.t
 
   val split_and_sanitise
-    :  ?passes:Pass.Set.t
+    :  ?passes:Sanitiser_pass.Set.t
     -> statement list
     -> statement list list Output.t
 end
 
 module type LangHookS = sig
   module L : Language.Intf
-  module Ctx : CtxIntf with module Lang = L
+  module Ctx : Sanitiser_ctx.Intf with module Lang = L
 
   val on_program : L.Statement.t list -> (L.Statement.t list) Ctx.t
   val on_statement : L.Statement.t -> L.Statement.t Ctx.t
@@ -342,7 +65,7 @@ end
 
 module NullLangHook (LS : Language.Intf) = struct
   module L = LS
-  module Ctx = CtxMake (LS) (NoCustomWarn)
+  module Ctx = Sanitiser_ctx.Make (LS) (Sanitiser_ctx.NoCustomWarn)
 
   let on_program = Ctx.return
   let on_statement = Ctx.return
@@ -463,6 +186,7 @@ module Make (LH : LangHookS)
       level. *)
   let sanitise_loc loc =
     let open Ctx in
+    let open Sanitiser_pass in
     return loc
     >>= (LangHooks      |-> LH.on_location)
 
@@ -484,6 +208,7 @@ module Make (LH : LangHookS)
       level. *)
   let sanitise_ins ins =
     let open Ctx in
+    let open Sanitiser_pass in
     return ins
     >>= (LangHooks      |-> LH.on_instruction)
     >>= (Warn           |-> warn_unknown_instructions)
@@ -525,6 +250,7 @@ module Make (LH : LangHookS)
       level. *)
   let sanitise_stm _ stm =
     let open Ctx in
+    let open Sanitiser_pass in
     return stm
     >>= (LangHooks |-> LH.on_statement)
     (* Do warnings after the language-specific hook has done any
@@ -571,7 +297,7 @@ module Make (LH : LangHookS)
     let open Ctx.Let_syntax in
     let%bind syms = Ctx.peek (fun ctx -> ctx.syms) in
     let%map remove_boundaries =
-      Ctx.pass_enabled Pass.RemoveBoundaries
+      Ctx.pass_enabled Sanitiser_pass.RemoveBoundaries
     in
     let ignore_boundaries = not remove_boundaries in
     let matchers =
@@ -650,7 +376,7 @@ module Make (LH : LangHookS)
 
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program
-      (passes : Pass.Set.t)
+      (passes : Sanitiser_pass.Set.t)
       (i : int) (prog : LH.L.Statement.t list)
     : (LH.L.Statement.t list * Warn.t list) =
     let progname = sprintf "%d" i in
@@ -677,7 +403,7 @@ module Make (LH : LangHookS)
     )
 
   let sanitise ?passes prog =
-    let passes' = Option.value ~default:(Pass.all_set ()) passes in
+    let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
     let prog', warnlist = sanitise_program passes' 0 prog in
     Output.(
       { result   = prog'
@@ -686,7 +412,7 @@ module Make (LH : LangHookS)
     )
 
   let sanitise_programs ?passes progs =
-    let passes' = Option.value ~default:(Pass.all_set ()) passes in
+    let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
     let progs', warnlists =
       progs
       |> List.mapi ~f:(sanitise_program passes')

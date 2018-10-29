@@ -40,8 +40,8 @@ module Hook (L : Language.Intf) = struct
 
   module L = L
   module W = CWarn (L)
-  module Ctx = Lib.Sanitiser.CtxMake (L) (W)
-  module Pass = Lib.Sanitiser.Pass
+  module Ctx = Lib.Sanitiser_ctx.Make (L) (W)
+  module Pass = Lib.Sanitiser_pass
 
   let negate = function
     | DispNumeric k -> Operand.Immediate (DispNumeric (-k))

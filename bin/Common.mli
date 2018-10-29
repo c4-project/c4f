@@ -30,7 +30,7 @@ open Lib
     and runs it with the given arguments. *)
 val do_litmusify
   :  [`Litmusify | `Explain]
-  -> Sanitiser.Pass.Set.t
+  -> Sanitiser_pass.Set.t
   -> OutputCtx.t
   -> infile : string option
   -> outfile : string option

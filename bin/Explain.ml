@@ -60,8 +60,8 @@ let command =
        let warnings = not no_warnings in
        let cid = Compiler.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
-       let passes = Sanitiser.(
-           if sanitise then Pass.explain else Pass.Set.empty
+       let passes = Sanitiser_pass.(
+           if sanitise then explain else Set.empty
          )
        in
        Or_error.Let_syntax.(

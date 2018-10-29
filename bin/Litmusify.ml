@@ -64,7 +64,7 @@ let command =
        let warnings = not no_warnings in
        let cid = Compiler.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
-       let passes = Sanitiser.Pass.all_set () in
+       let passes = Sanitiser_pass.all_set () in
        Result.Let_syntax.(
          let%bind cfg = LangSupport.load_cfg spec_file in
          let%bind spec = Compiler.CSpec.Set.get (Config.M.compilers cfg) cid in
