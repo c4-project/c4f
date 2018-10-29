@@ -37,32 +37,7 @@ module Make (M : S)
      and type Symbol.t      = M.Symbol.t = struct
   include (M : BaseS)
 
-  module Symbol = struct
-    include M.Symbol
-
-    module Set = struct
-      module Impl = Set.Make (M.Symbol)
-      include Impl
-      include MyContainers.SetExtend (Impl)
-
-      let abstract = Abstract.Symbol.Set.map ~f:M.Symbol.abstract
-    end
-
-    module OnStrings = FoldMap.MakeSet (OnStringsS) (String.Set)
-
-    let program_id_of sym =
-      let asyms = M.Symbol.abstract_demangle sym in
-      let ids =
-        List.filter_map asyms ~f:Abstract.Symbol.program_id_of
-      in
-      (* The demangled symbols should be in order of likelihood, so we
-         take a gamble on the first one being the most likely program
-         ID in case of a tie. *)
-      List.hd ids
-    ;;
-
-    let is_program_label sym = Option.is_some (program_id_of sym)
-  end
+  module Symbol = Language_symbol.Make (M.Symbol)
 
   module Instruction = struct
     include M.Instruction

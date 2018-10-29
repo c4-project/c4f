@@ -45,35 +45,6 @@ module type BaseS = sig
     -> unit
 end
 
-(** [SymbolS], part of the interface an act target language must
-    implement, concerns symbols. *)
-module type SymbolS = sig
-  (** [t] is the concrete type of symbols. *)
-  type t [@@deriving compare, sexp]
-
-  (** Languages must supply a pretty-printer for their symbols. *)
-  include Core.Pretty_printer.S with type t := t
-
-  (** They must allow fold-mapping over any string parts of the
-      symbol. *)
-  module OnStringsS
-    : FoldMap.S with type t = string
-                 and type cont = t
-  ;;
-
-  (** [abstract sym] promotes [sym] to an abstract symbol without any
-      reverse-engineering. *)
-  val abstract : t -> Abstract.Symbol.t
-
-  (** [abstract_demangle sym] tries to reverse any compiler mangling of
-      [sym], returning a list of abstract symbols that correspond to
-      possible original values for [sym].
-
-      The list should be in decreasing order of likelihood, and
-      other heuristics can depend on this order. *)
-  val abstract_demangle : t -> Abstract.Symbol.t list
-end
-
 (** [StatementS] is the signature that must be implemented by
     act languages in regards to their statement types. *)
 module type StatementS = sig
@@ -195,7 +166,7 @@ module type S = sig
   include BaseS
   module Constant    : ConstantS
   module Location    : LocationS
-  module Symbol      : SymbolS
+  module Symbol      : Language_symbol.Basic
   module Instruction : InstructionS with type loc = Location.t
                                      and type sym = Symbol.t
   module Statement   : StatementS with type ins = Instruction.t
@@ -216,40 +187,7 @@ module type Intf = sig
     include ConstantS
   end
 
-  module Symbol : sig
-    include SymbolS
-
-    module Set : sig
-      include Set.S with type Elt.t = t
-      include MyContainers.SetExtensions with type t := t
-
-      (** [abstract set] applies [abstract] to every symbol in
-          the concrete symbol set [set]. *)
-      val abstract : t -> Abstract.Symbol.Set.t
-    end
-
-    (** [OnStrings] is an extension of the incoming
-        [SymbolS.OnStringsS]. *)
-    module OnStrings
-      : FoldMap.SetIntf with type t = string
-                         and type cont = t
-    ;;
-
-    (** [program_id_of sym] tries to interpret [sym] as a
-        program label; if so, it returns [Some n] where [n]
-        is the underlying program ID.
-
-        Program labels, conventionally, take the form
-        [Pn] where [n] is a non-negative integer.  Since the
-        compiler may have mangled the label, [program_id_of]
-        relies on [abstract_demangle]. *)
-    val program_id_of : t -> int option
-
-    (** [is_program_label sym] determines whether concrete symbol
-        [sym] is a program label; it is equivalent to
-        [Option.is_some (program_name_of sym)]. *)
-    val is_program_label : t -> bool
-  end
+  module Symbol : Language_symbol.S
 
   module Location : sig
     include LocationS
