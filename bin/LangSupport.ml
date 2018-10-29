@@ -109,14 +109,14 @@ let test_compiler cspec =
   let open Or_error.Let_syntax in
   let%bind m = compiler_from_spec cspec in
   let module M = (val m) in
-  let%bind () =
+  let%map () =
     Or_error.tag_arg
       (M.test ())
       "A compiler in your spec file didn't respond properly"
       (Compiler.CSpec.WithId.id cspec)
       [%sexp_of:Compiler.Id.t]
   in
-    return (Some cspec)
+    Some cspec
 ;;
 
 let test_machine local_only mspec =

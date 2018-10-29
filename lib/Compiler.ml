@@ -118,14 +118,14 @@ module MakeSpec (S : SpecS) : SpecIntf with type t = S.t = struct
 
     let of_list xs =
       let open Or_error.Let_syntax in
-      let%bind _ =
+      let%map () =
         xs
         |> List.find_all_dups ~compare:(MyFn.on WithId.id Id.compare)
         |> List.map
           ~f:(fun x -> Or_error.error "duplicate ID" (WithId.id x) [%sexp_of: Id.t])
         |> Or_error.combine_errors_unit
       in
-      return (List.map ~f:(fun x -> (WithId.id x, WithId.spec x)) xs)
+      List.map ~f:(fun x -> (WithId.id x, WithId.spec x)) xs
     ;;
 
     let pp_id_spec f ~pp id spec =
@@ -421,8 +421,8 @@ module ScpHooks (C : sig val ssh: Ssh.t end) : Hooks = struct
 
   let pre ~infile ~outfile =
     let open Or_error.Let_syntax in
-    let%bind _ = scp_to infile (remote_name_of infile) in
-    return (remote_name_of infile, remote_name_of outfile)
+    let%map () = scp_to infile (remote_name_of infile) in
+    (remote_name_of infile, remote_name_of outfile)
   ;;
 
   let post ~infile ~outfile =
@@ -455,7 +455,7 @@ module Make (P : WithCSpec) (C : S) (H : Hooks) (R : Run.Runner)
       C.compile_args
         ~args:(CSpec.argv s) ~emits:(CSpec.emits s) ~infile:infile' ~outfile:outfile'
     in
-    let%bind _ = R.run ~prog:(CSpec.cmd s) argv in
+    let%bind () = R.run ~prog:(CSpec.cmd s) argv in
     (* NB: H.post intentionally gets sent the original filenames. *)
     H.post ~infile ~outfile
   ;;
@@ -483,14 +483,13 @@ let hooks_from_spec (cspec : CSpec.t) =
 
 let from_spec f (cspec : CSpec.WithId.t) =
   let open Or_error.Let_syntax in
-  let%bind s = f cspec in
+  let%map s = f cspec in
   let h = hooks_from_spec (CSpec.WithId.spec cspec) in
   let r = runner_from_spec (CSpec.WithId.spec cspec) in
-  return
-    (module
-      (Make
-         (struct let cspec = cspec end)
-         (val s : S)
-         (val h : Hooks)
-         (val r : Run.Runner))
-      : Intf)
+  (module
+    (Make
+       (struct let cspec = cspec end)
+       (val s : S)
+       (val h : Hooks)
+       (val r : Run.Runner))
+    : Intf)

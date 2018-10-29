@@ -72,7 +72,7 @@ let command =
          then
            let cmd = Config.M.herd_or_default cfg in
            let tmpname = Filename.temp_file "act" "litmus" in
-           let%bind _ =
+           let%bind () =
              Common.do_litmusify `Litmusify passes o ~infile ~outfile:(Some tmpname) spec in
            Io.Out_sink.with_output ~f:(run_herd cmd tmpname)
              (Io.Out_sink.of_option outfile)

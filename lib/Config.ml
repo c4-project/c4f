@@ -142,8 +142,8 @@ module M = struct
           ms
       in
       (** TODO(@MattWindsor91): test machines *)
-      let%bind enabled' = M.Set.of_list enabled in
-      return (enabled', disabled)
+      let%map enabled' = M.Set.of_list enabled in
+      (enabled', disabled)
     )
   ;;
 
@@ -218,8 +218,8 @@ module M = struct
                  (CP.part_hook hook))
           ) cs in
       (* TODO(@MattWindsor91): move compiler testing here. *)
-      let%bind enabled' = C.Set.of_list enabled in
-      return (enabled', disabled)
+      let%map enabled' = C.Set.of_list enabled in
+      (enabled', disabled)
   )
   ;;
 
@@ -232,14 +232,13 @@ module M = struct
     let raw_ms = Raw.machines c in
     let%bind (machines, disabled_machines) = machines_from_raw mhook raw_ms in
     let raw_cs = Raw.compilers c in
-    let%bind (compilers, disabled_compilers) =
+    let%map (compilers, disabled_compilers) =
       compilers_from_raw machines disabled_machines chook raw_cs in
-    return
-      { compilers
-      ; machines
-      ; disabled_compilers
-      ; disabled_machines
-      ; herd = Raw.herd c
-      }
+    { compilers
+    ; machines
+    ; disabled_compilers
+    ; disabled_machines
+    ; herd = Raw.herd c
+    }
   ;;
 end

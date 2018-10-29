@@ -570,7 +570,7 @@ module Make (LH : LangHookS)
   let remove_generally_irrelevant_statements prog =
     let open Ctx.Let_syntax in
     let%bind syms = Ctx.peek (fun ctx -> ctx.syms) in
-    let%bind remove_boundaries =
+    let%map remove_boundaries =
       Ctx.pass_enabled Pass.RemoveBoundaries
     in
     let ignore_boundaries = not remove_boundaries in
@@ -581,7 +581,7 @@ module Make (LH : LangHookS)
         ; is_unused_label ~ignore_boundaries ~syms
         ])
     in
-    return (MyList.exclude ~f:(any matchers) prog)
+    MyList.exclude ~f:(any matchers) prog
 
 
   (** [remove_litmus_irrelevant_statements prog] completely removes

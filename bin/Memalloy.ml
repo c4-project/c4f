@@ -112,11 +112,11 @@ let herd o prog ~infile ~outfile (cspec : Compiler.CSpec.WithId.t) =
     let cid = Compiler.CSpec.WithId.id cspec in
     log_stage "HERD" o infile cid;
     let f _ oc = Run.Local.run ~oc ~prog [ infile ] in
-    let%bind () =
+    let%map () =
       Or_error.tag ~tag:"While running herd"
         (Io.Out_sink.with_output (`File outfile) ~f)
     in
-    return (check_herd_output o outfile)
+    check_herd_output o outfile
   end else return `Disabled
 ;;
 
@@ -166,13 +166,13 @@ let run_compiler (o : OutputCtx.t) ~in_root ~out_root herdprog c_fnames spec
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
 
-  let%bind results =
+  let%map results =
     c_fnames
     |> List.sort ~compare:String.compare
     |> List.map ~f:(run_single o paths herdprog spec)
     |> Or_error.combine_errors
   in
-  return (id, results)
+  (id, results)
 ;;
 
 let check_c_files_exist c_path c_files =
@@ -215,9 +215,9 @@ let run ~in_root ~out_root o cfg =
       ~f:(run_compiler o ~in_root ~out_root herdprog c_files)
       specs
   in
-  let%bind result = Or_error.combine_errors results in
+  let%map result = Or_error.combine_errors results in
   print_result result;
-  return ()
+  ()
 ;;
 
 let command =
