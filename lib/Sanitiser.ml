@@ -140,10 +140,11 @@ module Make (LH : LangHookS)
   (** [warn_unknown_instructions stm] emits warnings for each
       instruction in [stm] without a high-level analysis. *)
   let warn_unknown_instructions ins =
+    let open Ctx.Let_syntax in
     match LH.L.Instruction.abs_type ins with
      | Abstract.Instruction.Unknown ->
-       Ctx.warn (Warn.UnknownElt (Warn.Instruction ins)) ins
-     | _ -> Ctx.return ins
+       let%map () = Ctx.warn (Warn.UnknownElt (Warn.Instruction ins)) in ins
+     | _ -> return ins
 
   (** [warn_operands stm] emits warnings for each instruction
      in [stm] whose operands don't have a high-level analysis,
@@ -151,36 +152,36 @@ module Make (LH : LangHookS)
   let warn_operands ins =
     (* Don't emit warnings for unknown instructions---the
        upper warning should be enough. *)
-    match LH.L.Instruction.abs_type ins with
-    | Abstract.Instruction.Unknown ->
-      Ctx.return ins
-    | _ ->
-      begin
-        match LH.L.Instruction.abs_operands ins with
-        | Abstract.Operands.Unknown ->
-          Ctx.warn (Warn.UnknownElt (Warn.Operands ins)) ins
-        | Abstract.Operands.Erroneous ->
-          Ctx.warn (Warn.ErroneousElt (Warn.Operands ins)) ins
-        | _ -> Ctx.return ins
-      end
+    let open Ctx.Let_syntax in
+    let%map () =
+      match LH.L.Instruction.abs_type ins with
+      | Abstract.Instruction.Unknown ->
+        Ctx.return ()
+      | _ ->
+        begin
+          match LH.L.Instruction.abs_operands ins with
+          | Abstract.Operands.Unknown ->
+            Ctx.warn (Warn.UnknownElt (Warn.Operands ins))
+          | Abstract.Operands.Erroneous ->
+            Ctx.warn (Warn.ErroneousElt (Warn.Operands ins))
+          | _ -> Ctx.return ()
+        end
+    in ins
   ;;
 
-
   let change_ret_to_end_jump ins =
-    Ctx.(
-      match LH.L.Instruction.abs_type ins with
-      | Abstract.Instruction.Return ->
-        make
-          (fun ctx ->
-             match ctx.endlabel with
-             | None ->
-               (warn_in_ctx ctx Warn.MissingEndLabel), ins
-             | Some endl ->
-               ctx,
-               LH.L.Instruction.jump endl
-          )
-      | _ -> return ins
-    )
+    let open Ctx.Let_syntax in
+    match LH.L.Instruction.abs_type ins with
+    | Abstract.Instruction.Return ->
+      begin
+        match%bind Ctx.end_label with
+        | None ->
+          let%map () = Ctx.warn Warn.MissingEndLabel in ins
+        | Some endl ->
+          return (LH.L.Instruction.jump endl)
+      end
+    | _ -> Ctx.return ins
+  ;;
 
   (** [sanitise_loc] performs sanitisation at the single location
       level. *)
@@ -227,10 +228,11 @@ module Make (LH : LangHookS)
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
   let warn_unknown_statements stm =
+    let open Ctx.Let_syntax in
     match LH.L.Statement.abs_type stm with
     | Abstract.Statement.Other ->
-      Ctx.warn (Warn.UnknownElt (Warn.Statement stm)) stm
-    | _ -> Ctx.return stm
+      let%map () = Ctx.warn (Warn.UnknownElt (Warn.Statement stm)) in stm
+    | _ -> return stm
 
   (** [sanitise_all_ins stm] iterates instruction sanitisation over
      every instruction in [stm], threading the context through
@@ -297,7 +299,7 @@ module Make (LH : LangHookS)
     let open Ctx.Let_syntax in
     let%bind syms = Ctx.peek (fun ctx -> ctx.syms) in
     let%map remove_boundaries =
-      Ctx.pass_enabled Sanitiser_pass.RemoveBoundaries
+      Ctx.is_pass_enabled Sanitiser_pass.RemoveBoundaries
     in
     let ignore_boundaries = not remove_boundaries in
     let matchers =

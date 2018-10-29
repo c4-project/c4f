@@ -98,22 +98,29 @@ module type Intf = sig
     -> proglen:int
     -> ctx
 
-  (** [pass_enabled pass] is a contextual computation that returns
+  (*
+   * Accessors
+   *)
+
+  (** [is_pass_enabled pass] is a contextual computation that returns
       [true] provided that [pass] is enabled. *)
-  val pass_enabled : Sanitiser_pass.t -> bool t;;
+  val is_pass_enabled : Sanitiser_pass.t -> bool t
+
+  (** [end_label] is a contextual computation that returns the
+      program's current end label. *)
+  val end_label : string option t
+
+  (*
+   * Conditional execution
+   *)
 
   (** [p |-> f] guards a contextual computation [f] on the
       pass [p]; it won't run unless [p] is in the current context's
       pass set. *)
   val (|->) : Sanitiser_pass.t -> ('a -> 'a t) -> ('a -> 'a t)
 
-  (** [warn_in_ctx ctx w] adds a warning [w] to [ctx], returning
-      the new context. *)
-  val warn_in_ctx : ctx -> Warn.body -> ctx
-
-  (** [warn w a] adds a warning [w] to the current context, passing
-      [a] through. *)
-  val warn : Warn.body -> 'a -> 'a t
+  (** [warn w a] adds a warning [w] to the current context. *)
+  val warn : Warn.body -> unit t
 
   (** [add_sym sym sort] is a context computation that adds
       [sym] to the context symbol table with sort [sort], then

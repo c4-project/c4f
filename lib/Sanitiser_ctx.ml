@@ -140,9 +140,11 @@ module Make (L : Language.Intf) (C : CustomWarnS)
 
   include State.Make (struct type state = ctx end)
 
-  let pass_enabled pass =
+  let is_pass_enabled pass =
     peek (fun ctx -> Pass.Set.mem ctx.passes pass)
   ;;
+
+  let end_label = peek (fun ctx -> ctx.endlabel)
 
   let (|->) pass f a =
     make
@@ -152,12 +154,14 @@ module Make (L : Language.Intf) (C : CustomWarnS)
          else (ctx, a))
   ;;
 
-  let warn_in_ctx ctx w =
-    let ent = { Warn.progname = ctx.progname; body = w } in
-    { ctx with warnings = ent::ctx.warnings }
-
-  let warn (w : Warn.body) =
-    modify (Fn.flip warn_in_ctx w)
+  let warn w =
+    modify
+      ( fun ctx ->
+         let ent = { Warn.progname = ctx.progname; body = w } in
+         { ctx with warnings = ent::ctx.warnings }
+      )
+      ()
+  ;;
 
   let add_sym sym sort =
     make

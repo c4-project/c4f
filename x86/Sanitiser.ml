@@ -126,14 +126,15 @@ module Hook (L : Language.Intf) = struct
   (** [warn_unsupported_registers reg] warns if [reg] isn't
       likely to be understood by Herd. *)
   let warn_unsupported_registers reg =
-    match Reg.kind_of reg with
-    | Reg.Segment
-    | Reg.Gen8 _
-    | Reg.Gen16 ->
-      Ctx.warn
-        (Custom (W.UnsupportedRegister reg))
-        reg
-    | _ -> Ctx.return reg
+    let open Ctx.Let_syntax in
+    let%map () =
+      match Reg.kind_of reg with
+      | Reg.Segment
+      | Reg.Gen8 _
+      | Reg.Gen16 ->
+        Ctx.warn (Custom (W.UnsupportedRegister reg))
+      | _ -> Ctx.return ()
+    in reg
   ;;
 
   let on_register reg =
