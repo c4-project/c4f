@@ -32,7 +32,37 @@ open Utils
 open Utils.MyContainers
 
 module State = struct
-  type t = (string, string) List.Assoc.t;;
+  module M = struct
+    type t = string String.Map.t [@@deriving sexp]
+    let compare = String.Map.compare String.compare
+  end
+
+  include M
+
+  let of_alist = String.Map.of_alist_or_error
+
+  let map ~keyf ~valf state =
+    let open Or_error.Let_syntax in
+    let f (k, v) =
+      let%bind ko = keyf k in
+      let%map  v' = valf v in
+      let open Option.Let_syntax in
+      let%map  k' = ko in
+      (k', v')
+    in
+    let      alist  = String.Map.to_alist state in
+    (* First, fail the map if there were any errors... *)
+    let%bind mapped = Or_error.combine_errors (List.map ~f alist) in
+    (* Next, remove any items with no key mapping... *)
+    let      alist' = List.filter_opt mapped in
+    String.Map.of_alist_or_error alist'
+  ;;
+
+  module Set = struct
+    module SM = Set.Make (M)
+    include SM
+    include MyContainers.SetExtend (SM)
+  end
 end
 
 type t =
@@ -56,17 +86,35 @@ type single_outcome =
 
 type outcome =
   [ single_outcome
+  | MyContainers.partial_order
   | `OracleUndef
-  | `Equal
-  | `Subset
-  | `Superset
-  | `NoOrder
   ]
 [@@deriving sexp]
 ;;
 
 let single_outcome_of (herd : t) : single_outcome =
   if herd.is_undef then `Undef else `Unknown
+;;
+
+let compare_states ~initials ~finals ~locmap ~valmap
+  : outcome Or_error.t =
+  let open Or_error.Let_syntax in
+  let f = State.map ~keyf:locmap ~valf:valmap in
+  let%map finals' = Or_error.combine_errors (List.map ~f finals) in
+  let result =
+    State.Set.(MyFn.on of_list partial_compare initials finals')
+  in
+  (result :> outcome)
+;;
+
+let outcome_of ~initial ~final ~locmap ~valmap : outcome Or_error.t =
+  if initial.is_undef
+  then Or_error.return `OracleUndef
+  else if final.is_undef
+  then Or_error.return `Undef
+  else
+    compare_states
+      ~initials:initial.states ~finals:final.states ~locmap ~valmap
 ;;
 
 (** [rstate] is the current state of a Herd reader. *)
@@ -163,11 +211,14 @@ let process_state n herd line =
   (* State lines are always 'binding; binding; binding;', with
      a trailing ;. *)
   let state_line =
-    line
-    |> String.split ~on:';'
-    |> MyList.exclude ~f:String.is_empty (* Drop trailing ; *)
-    |> List.map ~f:proc_binding
-    |> Result.all
+    Or_error.(
+      line
+      |> String.split ~on:';'
+      |> MyList.exclude ~f:String.is_empty (* Drop trailing ; *)
+      |> List.map ~f:proc_binding
+      |> Result.all
+      >>= State.of_alist
+    )
   in
 
   match state_line with
@@ -178,12 +229,18 @@ let process_state n herd line =
   | Error e -> ( Error e, herd )
 ;;
 
+let mk_summary_fun is_undef h =
+  (Postamble, { h with is_undef = is_undef })
+;;
+
 (** [summaries] associates each expected summary line in a Herd
     output with a function generating the next state and
     Herd record. *)
 let summaries =
-  [ "Ok"   , (fun h -> (Postamble, { h with is_undef = false }))
-  ; "Undef", (fun h -> (Postamble, { h with is_undef = true }))
+  [ "Ok"   , mk_summary_fun false
+  ; "No"   , mk_summary_fun false
+  ; "Yes"  , mk_summary_fun false
+  ; "Undef", mk_summary_fun true
   ]
 ;;
 
@@ -208,7 +265,7 @@ let process_postamble herd _line =
   (* TODO(@MattWindsor91): do something with this? *)
   (Postamble, herd)
 
-let process_line (rd: reader) (line : string) : reader =
+let process_line (rd : reader) (line : string) : reader =
   (* A Herd file looks like this:
 
      Test NAME Required           <- Empty

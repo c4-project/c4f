@@ -13,14 +13,51 @@ module Extend (S : Container.S1) = struct
     |> Option.value_map ~f:measure ~default:default
 end
 
+type partial_order =
+  [ `Equal
+  | `Subset
+  | `Superset
+  | `NoOrder
+  ] [@@deriving sexp]
+;;
+
 module type SetExtensions = sig
   type t
 
   val disjoint : t -> t -> bool
+  val partial_compare : t -> t -> partial_order
 end
 
 module SetExtend (S : Set.S) : SetExtensions with type t := S.t = struct
   let disjoint x y = S.(is_empty (inter x y));;
+
+  (** [drop_left p] updates partial order [p] with the information that
+      an element exists in the left hand set that isn't in the right
+      hand set. *)
+  let drop_left = function
+    | `Equal -> `Superset
+    | `Subset -> `NoOrder
+    | `Superset | `NoOrder as x -> x
+  ;;
+
+  (** [drop_right p] updates partial order [p] with the information
+     that an element exists in the right hand set that isn't in the
+     left hand set. *)
+  let drop_right = function
+    | `Equal -> `Subset
+    | `Superset -> `NoOrder
+    | `Subset | `NoOrder as x -> x
+  ;;
+
+  let partial_compare x y =
+    Sequence.fold (S.symmetric_diff x y)
+      ~init:`Equal
+      ~f:(fun po elem ->
+          match elem with
+          | First  _ -> drop_left po
+          | Second _ -> drop_right po
+        )
+  ;;
 end
 
 let%expect_test "disjoint: positive witness" =
@@ -43,6 +80,51 @@ let%expect_test "disjoint: double empty is disjoint" =
   let module M = SetExtend (Int.Set) in
   printf "%b" (M.disjoint (Int.Set.empty) (Int.Set.empty));
   [%expect {| true |}]
+
+let%expect_test "partial_compare: empty sets" =
+  let module M = SetExtend (Int.Set) in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp ( M.partial_compare (Int.Set.empty) (Int.Set.empty)
+             : partial_order
+           )];
+  [%expect {| Equal |}]
+
+let%expect_test "partial_compare: subset" =
+  let module M = SetExtend (Int.Set) in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
+               [ 1; 2; 3 ] [ 1; 2; 3; 4; 5; 6 ]
+             : partial_order
+           )];
+  [%expect {| Subset |}]
+
+let%expect_test "partial_compare: superset" =
+  let module M = SetExtend (Int.Set) in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
+               [ 1; 2; 3; 4; 5; 6 ] [ 4; 5; 6 ]
+             : partial_order
+           )];
+  [%expect {| Superset |}]
+
+let%expect_test "partial_compare: equal" =
+  let module M = SetExtend (Int.Set) in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
+               [ 1; 2; 3; 4; 5; 6 ] [ 6; 5; 4; 3; 2; 1 ]
+             : partial_order
+           )];
+  [%expect {| Equal |}]
+
+let%expect_test "partial_compare: no order" =
+  let module M = SetExtend (Int.Set) in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
+               [ 1; 2; 3; 4 ] [ 3; 4; 5; 6 ]
+             : partial_order
+           )];
+  [%expect {| NoOrder |}]
+
 
 module MyArray = Extend (Array)
 

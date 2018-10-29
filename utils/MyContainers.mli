@@ -22,14 +22,26 @@ module Extend : functor (S : Container.S1) -> Extensions with type 'a t := 'a S.
 
 module MyArray : Extensions with type 'a t := 'a array
 
+(** [partial_order] is the type of returns from [partial_compare]. *)
+type partial_order =
+  [ `Equal
+  | `Subset
+  | `Superset
+  | `NoOrder
+  ] [@@deriving sexp]
+;;
+
 (** [SetExtensions] contains various extensions to implementations of
    [Set.S]. *)
 module type SetExtensions = sig
   type t
-
   (** [disjoint x y] returns [true] provided that [x] and [y] have no
       elements in common. *)
   val disjoint : t -> t -> bool
+
+  (** [partial_compare x y] compares two sets [x] and [y] by analysing
+      their symmetric difference. *)
+  val partial_compare : t -> t -> partial_order
 end
 
 (** [SetExtend] builds set extensions for module [S]. *)

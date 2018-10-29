@@ -17,22 +17,24 @@ module File = struct
   type ps = t
 
   type t =
-    { basename  : string
-    ; c_path    : string
-    ; litc_path : string
-    ; asm_path  : string
-    ; lita_path : string
-    ; herd_path : string
+    { basename   : string
+    ; c_path     : string
+    ; litc_path  : string
+    ; asm_path   : string
+    ; lita_path  : string
+    ; herdc_path : string
+    ; herda_path : string
     } [@@deriving fields]
 
   let make ps basename =
     let lcat = MyFilename.concat_list in
     { basename
-    ; c_path    = lcat (M.c_path    ps @ [basename ^ ".c"])
-    ; litc_path = lcat (M.litc_path ps @ [basename ^ ".litmus"])
-    ; asm_path  = lcat (M.asm_path  ps @ [basename ^ ".s"])
-    ; lita_path = lcat (M.lita_path ps @ [basename ^ ".s.litmus"])
-    ; herd_path = lcat (M.herd_path ps @ [basename ^ ".herd.txt"])
+    ; c_path     = lcat (M.c_path    ps @ [basename ^ ".c"])
+    ; litc_path  = lcat (M.litc_path ps @ [basename ^ ".litmus"])
+    ; asm_path   = lcat (M.asm_path  ps @ [basename ^ ".s"])
+    ; lita_path  = lcat (M.lita_path ps @ [basename ^ ".s.litmus"])
+    ; herdc_path = lcat (M.herd_path ps @ [basename ^ ".herd.txt"])
+    ; herda_path = lcat (M.herd_path ps @ [basename ^ ".s.herd.txt"])
     }
   ;;
 end

@@ -35,7 +35,27 @@ type t;;
 
 module State : sig
   (** [t] is the type of states: a binding from name to value. *)
-  type t = (string, string) List.Assoc.t;;
+  type t [@@deriving sexp, compare]
+
+  (** [map ~keyf ~valf t] maps partial mappers over the keys and
+      values of state [t].  [keyf] may return [Ok None] if the
+      key should be deleted in the new map.
+
+      If all invocations of [keyf] and
+      [valf] return values, and the result is a well-formed map
+      [m], [map] returns [Ok m]; else, an error. *)
+  val map
+    :  keyf : (string -> string option Or_error.t)
+    -> valf : (string -> string Or_error.t)
+    -> t
+    -> t Or_error.t
+  ;;
+
+  (** [of_alist alist] tries to convert [alist] into a state. *)
+  val of_alist
+    :  (string, string) List.Assoc.t
+    -> t Or_error.t
+  ;;
 end
 
 (** [single_outcome] is the type of outcomes we can get from single
@@ -52,24 +72,30 @@ type single_outcome =
 (** [outcome] is the type of summaries of Herd analysis. *)
 type outcome =
   [ single_outcome
+  | MyContainers.partial_order
   | `OracleUndef  (** The oracle execution triggered undefined
                       behaviour. *)
-  | `Equal        (** The execution sets were equal. *)
-  | `Subset       (** The final set was a proper subset of the
-                      oracle set. *)
-  | `Superset     (** The final set was a proper superset of the
-                      oracle set. *)
-  | `NoOrder      (** The two sets aren't ordered. *)
   ]
 [@@deriving sexp] (* sexp_of_outcome, outcome_of_sexp *)
 ;;
 
 (** [states herd] gets the states of a single Herd output [herd]. *)
-val states : t -> State.t list;;
+val states : t -> State.t list
 
 (** [single_outcome_of herd] analyses the Herd output [herd] in
     isolation. *)
-val single_outcome_of : t -> single_outcome;;
+val single_outcome_of : t -> single_outcome
+
+(** [outcome ~initial ~final ~locmap ~valmap] applies the partial
+    mappers [locmap] and [valmap] to every state binding in
+    [final], then analyses it against [initial]. *)
+val outcome_of
+  :  initial : t
+  -> final   : t
+  -> locmap  : (string -> string option Or_error.t)
+  -> valmap  : (string -> string Or_error.t)
+  -> outcome Or_error.t
+;;
 
 (** We can load Herd output analyses using the normal interfaces in
     [Utils.Io.LoadableIntf]. *)

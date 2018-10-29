@@ -25,21 +25,26 @@ open Core
 open Lib
 open Utils
 
-type herd_outcome =
-  [ Herd.outcome | `Disabled | `Errored ]
-[@@deriving sexp]
+(** [herd_run_result] summarises the result of running Herd. *)
+type herd_run_result =
+  [ `Success of Herd.t
+  | `Disabled
+  | `Errored
+  ]
 ;;
 
-(** [herd_result] summarises the result of running Herd. *)
-type herd_result =
-  { result       : herd_outcome
-  ; final_states : int sexp_option
-  }
+(** [herd_analysis] summarises the result of running Herd on a C program
+    and its assembly, then comparing the results. *)
+type herd_analysis =
+  [ Herd.outcome
+  | `Disabled
+  | `Errored of [`C | `Assembly]
+  ]
 [@@deriving sexp]
 ;;
 
 type run_result =
-  { herd       : herd_result
+  { herd : herd_analysis
   }
 [@@deriving sexp]
 ;;
@@ -52,11 +57,11 @@ type full_result = (Compiler.Id.t, compiler_result) List.Assoc.t
 [@@deriving sexp]
 ;;
 
-let log_stage stage (o : OutputCtx.t) (fs : Pathset.File.t) cid =
+let log_stage stage (o : OutputCtx.t) name cid =
   Format.fprintf o.vf "@[%s[%a]@ %s@]@."
     stage
     Compiler.Id.pp cid
-    (Pathset.File.basename fs)
+    name
 ;;
 
 let compile o fs cspec =
@@ -66,7 +71,7 @@ let compile o fs cspec =
   let%bind c = LangSupport.compiler_from_spec cspec in
   let cid = Compiler.CSpec.WithId.id cspec in
   let module C = (val c) in
-  log_stage "CC" o fs cid;
+  log_stage "CC" o (Pathset.File.basename fs) cid;
   Or_error.tag ~tag:"While compiling to assembly"
     (C.compile
        ~infile:(Pathset.File.c_path fs)
@@ -75,7 +80,7 @@ let compile o fs cspec =
 
 let litmusify o fs cspec =
   let cid = Compiler.CSpec.WithId.id cspec in
-  log_stage "LITMUS" o fs cid;
+  log_stage "LITMUS" o (Pathset.File.basename fs) cid;
   Or_error.tag ~tag:"While translating assembly to litmus"
     (Common.do_litmusify
        `Litmusify
@@ -88,48 +93,69 @@ let litmusify o fs cspec =
 
 (** [check_herd_output path] runs analysis on the Herd output at
    [path]. *)
-let check_herd_output (o : OutputCtx.t) path : herd_result =
+let check_herd_output (o : OutputCtx.t) path : herd_run_result =
   match Herd.load ~path with
-  | Result.Ok herd ->
-    { result       = (Herd.single_outcome_of herd :> herd_outcome)
-    ; final_states = Some (List.length (Herd.states herd))
-    }
+  | Result.Ok herd -> `Success herd
   | Result.Error err ->
     Format.fprintf o.wf "@[<v 4>Herd analysis error:@,%a@]@."
       Error.pp err;
-    { result = `Errored; final_states = None }
+    `Errored
 ;;
 
-(** [herd o prog fs cspec] sees if [cspec] asked for a Herd run and, if
-   so, runs the Herd command [prog] on its Litmus output. *)
-let herd o prog fs (cspec : Compiler.CSpec.WithId.t) =
+(** [herd o prog ~infile ~outfile cspec] sees if [cspec] asked for a
+   Herd run and, if so, runs the Herd command [prog] on [infile],
+    outputting to [outfile]. *)
+let herd o prog ~infile ~outfile (cspec : Compiler.CSpec.WithId.t) =
   let open Or_error.Let_syntax in
   if Compiler.CSpec.herd (Compiler.CSpec.WithId.spec cspec)
   then begin
     let cid = Compiler.CSpec.WithId.id cspec in
-    log_stage "HERD" o fs cid;
-    let f _ oc =
-      Run.Local.run ~oc ~prog [ Pathset.File.lita_path fs ]
-    in
-    let herd_path = Pathset.File.herd_path fs in
+    log_stage "HERD" o infile cid;
+    let f _ oc = Run.Local.run ~oc ~prog [ infile ] in
     let%bind () =
       Or_error.tag ~tag:"While running herd"
-        (Io.Out_sink.with_output (`File herd_path) ~f)
+        (Io.Out_sink.with_output (`File outfile) ~f)
     in
-    return (check_herd_output o herd_path)
-  end else return { result = `Disabled; final_states = None }
+    return (check_herd_output o outfile)
+  end else return `Disabled
+;;
+
+let analyse (c_herd : herd_run_result) (a_herd : herd_run_result)
+  : herd_analysis Or_error.t =
+  let open Or_error.Let_syntax in
+    match c_herd, a_herd with
+    | `Disabled, _ | _, `Disabled -> return `Disabled
+    | `Errored, _ -> return (`Errored `C)
+    | _, `Errored -> return (`Errored `Assembly)
+    | `Success initial, `Success final ->
+      let%map outcome =
+        Herd.outcome_of ~initial ~final
+          (* TODO(@MattWindsor91): properly locmap. *)
+          ~locmap:(fun x -> return (Some x))
+          (* TODO(@MattWindsor91): properly valmap, if needed. *)
+          ~valmap:return
+      in
+      (outcome :> herd_analysis)
 ;;
 
 let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog spec fname =
-  let basename = Filename.chop_extension
-      (Filename.basename fname)
-  in
-  let fs = Pathset.File.make ps basename in
+  let base = Filename.chop_extension (Filename.basename fname) in
   let open Or_error.Let_syntax in
-  let%bind () = compile o fs spec in
-  let%bind () = litmusify o fs spec in
-  let%bind herd = herd o herdprog fs spec in
-  return (basename, { herd });
+  Pathset.File.(
+    let fs = make ps base in
+    let%bind c_herd =
+      herd o herdprog spec
+        ~infile:(litc_path fs) ~outfile:(herdc_path fs)
+    in
+    let%bind () = compile o fs spec in
+    let%bind () = litmusify o fs spec in
+    let%bind a_herd =
+      herd o herdprog spec
+        ~infile:(lita_path fs) ~outfile:(herda_path fs)
+    in
+    let%map analysis = analyse c_herd a_herd in
+    (base, { herd = analysis });
+  )
 ;;
 
 let run_compiler (o : OutputCtx.t) ~in_root ~out_root herdprog c_fnames spec

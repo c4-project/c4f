@@ -27,9 +27,13 @@ module File : sig
      for [f]. *)
   val lita_path : t -> string;;
 
-  (** [herd_path f] gets the path of the Herd run output file for
-     [f]. *)
-  val herd_path : t -> string;;
+  (** [herdc_path f] gets the path of the C/litmus Herd run output
+     file for [f]. *)
+  val herdc_path : t -> string;;
+
+  (** [herda_path f] gets the path of the assembly Herd run output
+     file for [f]. *)
+  val herda_path : t -> string;;
 
   (** [make ps basename] makes file-specific paths for
       basename [basename], according to pathset [ps]. *)
