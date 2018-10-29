@@ -26,162 +26,48 @@ open Core
 open Utils
 open Utils.MyContainers
 
-module type BaseS = sig
-  val name : string
-
-  val is_program_label : string -> bool
-
-  val pp_comment
-    :  pp:(Format.formatter -> 'a -> unit)
-    -> Format.formatter
-    -> 'a
-    -> unit
-end
-
-module type StatementS = sig
-  type t
-  type ins
-
-  include Pretty_printer.S with type t := t
-  include Sexpable.S with type t := t
-
-  module OnSymbolsS
-    : FoldMap.S with type t = string
-                 and type cont = t
-  module OnInstructionsS
-    : FoldMap.S with type t = ins
-                 and type cont = t
-
-  val empty : unit -> t
-  val label : string -> t
-  val instruction : ins -> t
-  val abs_type : t -> Abstract.Statement.t
-end
-
-module type InstructionS = sig
-  type t
-  type loc
-
-  include Pretty_printer.S with type t := t
-  include Sexpable.S with type t := t
-
-  module OnSymbolsS
-    : FoldMap.S with type t = string
-                 and type cont = t
-  module OnLocationsS
-    : FoldMap.S with type t = loc
-                 and type cont = t
-
-  val jump : string -> t
-
-  val abs_operands : t -> Abstract.Operands.t
-  val abs_type : t -> Abstract.Instruction.t
-end
-
-module type LocationS = sig
-  type t
-
-  include Pretty_printer.S with type t := t
-  include Sexpable.S with type t := t
-
-  val make_heap_loc : string -> t
-  val abs_type : t -> Abstract.Location.t
-end
-
-module type ConstantS = sig
-  type t
-
-  include Core.Pretty_printer.S with type t := t
-  include Sexpable.S with type t := t
-
-  val zero : t
-end
-
-module type S = sig
-  include BaseS
-
-  module Constant : ConstantS
-  module Location : LocationS
-  module Instruction : InstructionS with type loc = Location.t
-  module Statement : StatementS with type ins = Instruction.t
-end
-
-module type Intf = sig
-  include BaseS
-
-  module Constant : sig
-    include ConstantS
-  end
-
-  module Location : sig
-    include LocationS
-
-    val to_heap_symbol : t -> string option
-  end
-
-  module Instruction : sig
-    include InstructionS
-
-    module OnSymbols
-      : FoldMap.SetIntf with type t = string
-                         and type cont = t
-    module OnLocations
-      : FoldMap.Intf with type t = Location.t
-                      and type cont = t
-
-    val mem : Abstract.Instruction.Set.t -> t -> bool
-    val is_jump : t -> bool
-    val is_stack_manipulation : t -> bool
-  end
-
-  module Statement : sig
-    include StatementS with type ins = Instruction.t
-
-    module OnSymbols
-      : FoldMap.SetIntf with type t = string
-                         and type cont = t
-    module OnInstructions
-      : FoldMap.Intf with type t = Instruction.t
-                      and type cont = t
-
-
-    val instruction_mem : Abstract.Instruction.Set.t -> t -> bool
-    val is_jump : t -> bool
-    val is_stack_manipulation : t -> bool
-
-    val is_directive : t -> bool
-
-    val is_label : t -> bool
-    val is_unused_label
-      :  ?ignore_boundaries:bool
-      -> syms:Abstract.Symbol.Table.t
-      -> t
-      -> bool
-    val is_jump_pair : t -> t -> bool
-
-    val is_nop : t -> bool
-    val is_program_boundary : t -> bool
-
-    val flags
-      :  syms:Abstract.Symbol.Table.t
-      -> t
-      -> Abstract.Statement.Flag.Set.t
-  end
-
-  val symbols : Statement.t list -> Abstract.Symbol.Table.t
-end
+include Language_intf
 
 module Make (M : S)
-  : Intf with type Constant.t    = M.Constant.t
-          and type Location.t    = M.Location.t
-          and type Instruction.t = M.Instruction.t
-          and type Statement.t   = M.Statement.t = struct
+  : Intf
+    with type Constant.t    = M.Constant.t
+     and type Location.t    = M.Location.t
+     and type Instruction.t = M.Instruction.t
+     and type Statement.t   = M.Statement.t
+     and type Symbol.t      = M.Symbol.t = struct
   include (M : BaseS)
+
+  module Symbol = struct
+    include M.Symbol
+
+    module Set = struct
+      module Impl = Set.Make (M.Symbol)
+      include Impl
+      include MyContainers.SetExtend (Impl)
+
+      let abstract = Abstract.Symbol.Set.map ~f:M.Symbol.abstract
+    end
+
+    module OnStrings = FoldMap.MakeSet (OnStringsS) (String.Set)
+
+    let program_id_of sym =
+      let asyms = M.Symbol.abstract_demangle sym in
+      let ids =
+        List.filter_map asyms ~f:Abstract.Symbol.program_id_of
+      in
+      (* The demangled symbols should be in order of likelihood, so we
+         take a gamble on the first one being the most likely program
+         ID in case of a tie. *)
+      List.hd ids
+    ;;
+
+    let is_program_label sym = Option.is_some (program_id_of sym)
+  end
 
   module Instruction = struct
     include M.Instruction
 
-    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (Abstract.Symbol.Set)
+    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (Symbol.Set)
     module OnLocations = FoldMap.Make (OnLocationsS)
 
     let is_jump ins =
@@ -227,7 +113,7 @@ module Make (M : S)
   module Statement = struct
     include M.Statement
 
-    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (Abstract.Symbol.Set)
+    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (Symbol.Set)
     module OnInstructions = FoldMap.Make (OnInstructionsS)
 
     let is_jump =
@@ -249,6 +135,10 @@ module Make (M : S)
       | Abstract.Statement.Label _ -> true
       | _ -> false
 
+    (** [is_label_and p x] returns [p x] if [x] is a label, or
+        [false] otherwise. *)
+    let is_label_and p = MyFn.conj is_label p;;
+
     let is_nop stm =
       Abstract.(
         match abs_type stm with
@@ -257,23 +147,25 @@ module Make (M : S)
         | _ -> false
       )
 
-    let is_program_boundary stm =
-      Abstract.(
-        match abs_type stm with
-        | Statement.Label l -> is_program_label l
-        | _ -> false
-      )
+    let is_program_boundary =
+      is_label_and (OnSymbols.exists ~f:Symbol.is_program_label)
+    ;;
 
-    let is_unused_label ?(ignore_boundaries=false) ~syms stm =
-      let jsyms = Abstract.Symbol.(Table.set_of_sort syms Sort.Jump) in
-      is_label stm
-      && Abstract.Symbol.Set.disjoint jsyms (OnSymbols.set stm)
-      && not (ignore_boundaries && is_program_boundary stm)
+    let is_unused_label ?(ignore_boundaries=false) ~syms =
+      is_label_and
+        (fun stm ->
+           let jsyms = Abstract.Symbol.(Table.set_of_sort syms Sort.Jump) in
+           let ssyms = Symbol.Set.abstract (OnSymbols.set stm) in
+           Abstract.Symbol.Set.disjoint jsyms ssyms
+           && not (ignore_boundaries && is_program_boundary stm)
+        )
+    ;;
 
     let is_jump_pair x y =
       is_jump x
       && is_label y
       && (MyFn.on OnSymbols.set OnSymbols.Set.equal) x y
+    ;;
 
     let flags ~syms stm =
       [ is_unused_label ~syms  stm, `UnusedLabel
@@ -283,10 +175,10 @@ module Make (M : S)
       |> List.map ~f:(Tuple2.uncurry Option.some_if)
       |> List.filter_opt
       |> Abstract.Statement.Flag.Set.of_list
+    ;;
   end
 
-  module Location =
-  struct
+  module Location = struct
     include M.Location
 
     let to_heap_symbol l =
@@ -295,8 +187,7 @@ module Make (M : S)
       | _ -> None
   end
 
-  module Constant =
-  struct
+  module Constant = struct
     include M.Constant
   end
 
@@ -314,23 +205,28 @@ module Make (M : S)
     |> List.filter_map ~f:Location.to_heap_symbol
     |> Abstract.Symbol.Set.of_list
 
-  let jump_symbols prog =
+  (** [symbols_in_statements_where filter prog] collects all
+      abstract symbols belonging to statements in [prog] that match
+      the filtering predicate [filter]. *)
+  let symbols_in_statements_where filter prog =
     prog
-    |> List.filter ~f:Statement.is_jump
-    |> List.map ~f:Statement.OnSymbols.set
-    |> Abstract.Symbol.Set.union_list
+    |> List.filter_map
+      ~f:(fun p ->
+          if filter p
+          then Some (Statement.OnSymbols.set p)
+          else None)
+    |> Symbol.Set.union_list
+    |> Symbol.Set.abstract
+  ;;
 
-  let label_symbols prog =
-    prog
-    |> List.filter ~f:Statement.is_label
-    |> List.map ~f:Statement.OnSymbols.set
-    |> Abstract.Symbol.Set.union_list
+  let jump_symbols = symbols_in_statements_where Statement.is_jump
+  let label_symbols = symbols_in_statements_where Statement.is_label
 
   let symbols prog =
     Abstract.(
       Symbol.Table.of_sets
-        [ heap_symbols prog , Symbol.Sort.Heap
-        ; jump_symbols prog , Symbol.Sort.Jump
+        [ heap_symbols  prog, Symbol.Sort.Heap
+        ; jump_symbols  prog, Symbol.Sort.Jump
         ; label_symbols prog, Symbol.Sort.Label
         ]
     )

@@ -24,16 +24,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Lexing
 open Utils
 
-val pp_pos : Format.formatter -> position -> unit;;
-val pp_pos2
-  :  Format.formatter
-  -> (position * position)
-  -> unit
-;;
+type error_range = (position * position) [@@deriving sexp_of];;
 
-val sprint_pos : position -> string;;
-
-exception LexError of string * position;;
+exception LexError of string * error_range;;
 
 (** [lex_error error lexbuf] raises a [LexError] with the given
     error message and lexbuf. *)

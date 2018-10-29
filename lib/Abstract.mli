@@ -188,4 +188,13 @@ module Symbol : sig
        as a symbol set. *)
     val set : t -> Set.t;;
   end
+
+  (*
+   * Symbol heuristics
+   *)
+
+  (** [program_id_of sym] tries to interpret [sym] as a
+      program label; if so, it returns [Some n] where [n]
+      is the underlying program ID. *)
+  val program_id_of : t -> int option
 end

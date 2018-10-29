@@ -212,4 +212,15 @@ module Symbol = struct
 
     let set tbl = tbl |> List.map ~f:fst |> Set.of_list;;
   end
+
+  let program_id_of sym =
+    let open Option.Let_syntax in
+    let%bind num_s = String.chop_prefix ~prefix:"P" sym in
+    let%bind num   = Caml.int_of_string_opt num_s in
+    Option.some_if (Int.is_non_negative num) num
+  ;;
+
+  let%expect_test "program_id_of: valid" =
+    Sexp.output Out_channel.stdout [%sexp (program_id_of "P0" : int option)];
+    [%expect {| (0) |}]
 end

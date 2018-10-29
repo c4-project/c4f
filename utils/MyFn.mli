@@ -31,3 +31,13 @@ val on
   -> ('b -> 'b -> 'r)
   -> ('a -> 'a -> 'r)
 ;;
+
+(** [conj f g] lifts [&&] over predicates [f] and [g].
+    It is short-circuiting: [g] is never called if [f] returns
+    false. *)
+val conj
+  :  ('a -> bool)
+  -> ('a -> bool)
+  -> 'a
+  -> bool
+;;

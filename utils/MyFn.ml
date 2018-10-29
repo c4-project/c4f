@@ -22,3 +22,10 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 let on lift f x y = f (lift x) (lift y);;
+
+let conj f g x = f x && g x;;
+
+let%expect_test "conj short-circuits" =
+  Core.printf "%b\n" (conj (fun () -> false) (fun () -> failwith "oops") ());
+  [%expect {| false |}]
+;;

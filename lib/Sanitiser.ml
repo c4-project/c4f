@@ -496,7 +496,8 @@ module Make (LH : LangHookS)
       can parse. *)
   let mangle_identifiers stm =
     Ctx.return
-      (LH.L.Statement.OnSymbols.map ~f:mangle stm)
+      (LH.L.Statement.OnSymbols.map stm
+         ~f:(LH.L.Symbol.OnStrings.map ~f:mangle))
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)

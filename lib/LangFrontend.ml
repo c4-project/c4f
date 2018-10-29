@@ -2,13 +2,13 @@
 
    Copyright (c) 2018 by Matt Windsor
 
-   Permission is hereby granted, free of charge, to any person obtaining
-   a copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to
-   permit persons to whom the Software is furnished to do so, subject to
-   the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
    The above copyright notice and this permission notice shall be
    included in all copies or substantial portions of the Software.
@@ -16,36 +16,33 @@
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-   LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-   OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 open Core
 open Utils
 open Lexing
 
-let pp_pos f (pos : position) =
-  Format.fprintf f "@[%s:%d:%d]"
-    pos.pos_fname
-    pos.pos_lnum
-    (pos.pos_cnum - pos.pos_bol)
+type error_range = (Lexing.position * Lexing.position);;
+
+let sexp_of_error_range ((from, until) : error_range) : Sexp.t =
+  Sexp.of_string
+    (sprintf "%s:%d:%d-%d:%d"
+       from.pos_fname
+       from.pos_lnum
+       (from.pos_cnum - from.pos_bol)
+       until.pos_lnum
+       (until.pos_cnum - until.pos_bol))
 ;;
 
-let pp_pos2 f ((pos1, pos2) : position * position) =
-  Format.fprintf f "@[%s:%d:%d-%d:%d]"
-    pos1.pos_fname
-    pos1.pos_lnum
-    (pos1.pos_cnum - pos1.pos_bol)
-    pos2.pos_lnum
-    (pos2.pos_cnum - pos2.pos_bol)
+exception LexError of string * error_range
+
+let lex_error msg lexbuf =
+  raise (LexError (msg, (lexbuf.lex_start_p, lexbuf.lex_curr_p)))
 ;;
-
-let sprint_pos : position -> string = Format.asprintf "%a" pp_pos;;
-
-exception LexError of string * position
-
-let lex_error msg lexbuf = raise (LexError (msg, lexbuf.lex_curr_p));;
 
 module type S = sig
   type ast
@@ -66,11 +63,15 @@ end
 module Make (SI : S) : Intf with type ast = SI.ast = struct
   type ast = SI.ast
 
-  let fail (lexbuf : Lexing.lexbuf) = function
+  let fail (_lexbuf : Lexing.lexbuf) = function
     | SI.I.HandlingError env ->
       let state = SI.I.current_state_number env in
-      let msg = SI.message state in
-      Or_error.errorf "%a: %s" (Fn.const sprint_pos) lexbuf.lex_curr_p msg
+      let details = SI.message state in
+      Or_error.error_s
+        [%message "Parse error"
+          ~position:(SI.I.positions env : error_range)
+          ~details
+        ]
     | _ -> assert false
   ;;
 
@@ -83,8 +84,12 @@ module Make (SI : S) : Intf with type ast = SI.ast = struct
     try
       loop lexbuf (SI.parse lexbuf.lex_curr_p)
     with
-    | LexError (error, position) ->
-      Or_error.error_s [%message "Lexing error" ~position:(sprint_pos position) ~error]
+    | LexError (details, position) ->
+      Or_error.error_s
+        [%message "Lexing error"
+            ~position:(position : error_range)
+            ~details
+        ]
   ;;
 
   module Load : (Io.LoadableS with type t = ast) = struct

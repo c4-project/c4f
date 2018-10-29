@@ -30,8 +30,7 @@ module type Intf = sig
   val make_jump_operand : string -> Ast.Operand.t
 end
 
-module Make (T : Dialect.Intf) (P : PP.Printer) =
-struct
+module Make (T : Dialect.Intf) (P : PP.Printer) = struct
   include T
   include P
 
@@ -49,10 +48,27 @@ struct
     Language.Make
       (struct
         let name = "X86"
-
-        let is_program_label = Base.is_program_label
-
         let pp_comment = P.pp_comment
+
+        module Symbol = struct
+          include String
+
+          let abstract = Fn.id
+          let abstract_demangle str =
+            (* These are the types of manglings we've seen in practice: *)
+            List.filter_opt
+              [ Some str  (* GNU/Linux ELF *)
+              ; String.chop_prefix ~prefix:"_" str (* Darwin Mach-O *)
+              ]
+          ;;
+
+          module OnStringsS = struct
+            type t = string
+            type cont = string
+
+            let fold_map ~f ~init sym = f init sym
+          end
+        end
 
         module Location = struct
           type t = Ast.location
@@ -97,6 +113,7 @@ struct
           let sexp_of_t = [%sexp_of: Ast.instruction]
           let t_of_sexp = [%of_sexp: Ast.instruction]
 
+          type sym = Symbol.t
           type loc = Location.t
 
           let pp = P.pp_instruction
@@ -290,6 +307,7 @@ struct
         module Statement = struct
           open Ast
 
+          type sym = Symbol.t
           type t = Ast.statement
           let sexp_of_t = [%sexp_of: Ast.statement]
           let t_of_sexp = [%of_sexp: Ast.statement]
@@ -335,6 +353,26 @@ struct
 end
 
 module ATT = Make (Dialect.ATT) (PP.ATT)
+
+let%expect_test "is_program_label: positive Mach-O example, AT&T" =
+  printf "%b" (ATT.Symbol.is_program_label "_P0");
+  [%expect {| true |}]
+
+let%expect_test "is_program_label: positive ELF example, AT&T" =
+  printf "%b" (ATT.Symbol.is_program_label "P0");
+  [%expect {| true |}]
+
+let%expect_test "is_program_label: wrong suffix, Mach-O, AT&T" =
+  printf "%b" (ATT.Symbol.is_program_label "_P0P");
+  [%expect {| false |}]
+
+let%expect_test "is_program_label: wrong suffix, ELF, AT&T" =
+  printf "%b" (ATT.Symbol.is_program_label "P0P");
+  [%expect {| false |}]
+
+let%expect_test "is_program_label: negative, AT&T" =
+  printf "%b" (ATT.Symbol.is_program_label "_P-1");
+  [%expect {| false |}]
 
 let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
   Format.printf "%a@."
