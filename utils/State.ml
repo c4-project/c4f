@@ -64,17 +64,24 @@ module Make_transform (B : Basic_transform)
   include MyMonad.Extend(T)
 
   let run f ctx = f ctx |> Inner.map ~f:snd
-  let make = Fn.id
 
-  let peek f ctx =
-    let open Inner.Let_syntax in
-    let%map v = f ctx in (ctx, v)
-  ;;
+  module Monadic = struct
+    let make = Fn.id
 
-  let modify f ctx =
-    let open Inner.Let_syntax in
-    let%map ctx' = f ctx in (ctx', ())
-  ;;
+    let peek f ctx =
+      let open Inner.Let_syntax in
+      let%map v = f ctx in (ctx, v)
+    ;;
+
+    let modify f ctx =
+      let open Inner.Let_syntax in
+      let%map ctx' = f ctx in (ctx', ())
+    ;;
+  end
+
+  let make f = Monadic.make (Fn.compose Inner.return f)
+  let peek f = Monadic.peek (Fn.compose Inner.return f)
+  let modify f = Monadic.modify (Fn.compose Inner.return f)
 end
 
 module Make (B : Basic)

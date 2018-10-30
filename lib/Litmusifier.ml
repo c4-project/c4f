@@ -101,11 +101,11 @@ module Make (M : S) : Intf = struct
           (fun f -> List.iter ~f:(pp_warning f)) ws
     in
     let open Or_error.Let_syntax in
-    let o = S.split_and_sanitise ~passes:t.passes stms in
+    let%bind o = S.split_and_sanitise ~passes:t.passes stms in
     let programs = S.Output.result o in
     let warnings = S.Output.warnings o in
     emit_warnings warnings;
-    let%bind lit =
+    let%map lit =
       Or_error.tag ~tag:"Couldn't build litmus file."
         ( L.make ~name:t.iname
             ~init:(make_init programs)
@@ -114,19 +114,18 @@ module Make (M : S) : Intf = struct
     in
     let f = Format.formatter_of_out_channel t.outp in
     L.pp f lit;
-    Format.pp_print_flush f ();
-    Result.ok_unit
+    Format.pp_print_flush f ()
   ;;
 
   let output_explanation
       t
       (program : LS.Statement.t list) =
-    let san = S.sanitise ~passes:t.passes program in
+    let open Or_error.Let_syntax in
+    let%map san = S.sanitise ~passes:t.passes program in
     let exp = E.explain (S.Output.result san) in
     let f = Format.formatter_of_out_channel t.outp in
     E.pp f exp;
-    Format.pp_print_flush f ();
-    Result.ok_unit
+    Format.pp_print_flush f ()
   ;;
 
   let run t =

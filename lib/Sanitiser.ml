@@ -45,12 +45,12 @@ module type Intf = sig
   val sanitise
     :  ?passes:Sanitiser_pass.Set.t
     -> statement list
-    -> statement list Output.t
+    -> statement list Output.t Or_error.t
 
   val split_and_sanitise
     :  ?passes:Sanitiser_pass.Set.t
     -> statement list
-    -> statement list list Output.t
+    -> statement list list Output.t Or_error.t
 end
 
 module type LangHookS = sig
@@ -195,9 +195,8 @@ module Make (LH : LangHookS)
      every location in [loc], threading the context through
      monadically. *)
   let sanitise_all_locs =
-    Ctx.on_fold_map
-      LH.L.Instruction.OnLocations.fold_map
-      sanitise_loc
+    let module L = LH.L.Instruction.OnLocations.On_monad (Ctx) in
+    L.mapM ~f:sanitise_loc
   ;;
 
   (** [sanitise_ins] performs sanitisation at the single instruction
@@ -233,9 +232,8 @@ module Make (LH : LangHookS)
      every instruction in [stm], threading the context through
      monadically. *)
   let sanitise_all_ins =
-    Ctx.on_fold_map
-      LH.L.Statement.OnInstructions.fold_map
-      sanitise_ins
+    let module L = LH.L.Statement.OnInstructions.On_monad (Ctx) in
+    L.mapM ~f:sanitise_ins
   ;;
 
   (** [sanitise_stm] performs sanitisation at the single statement
@@ -275,7 +273,7 @@ module Make (LH : LangHookS)
       reported program length no longer changes. *)
   let proglen_fix f prog =
     let rec mu prog ctx =
-      let (ctx', proglen, proglen', prog') =
+      match
         Ctx.run
           (let open Ctx.Let_syntax in
            let%bind proglen  = Ctx.get_prog_length in
@@ -284,12 +282,14 @@ module Make (LH : LangHookS)
            let%map  ctx'     = Ctx.peek Fn.id in
            (ctx', proglen, proglen', prog'))
           ctx
-      in
-      if Int.equal proglen proglen'
-      then (ctx', prog') (* Fixed point *)
-      else mu prog' ctx'
+      with
+      | Ok (ctx', proglen, proglen', prog') ->
+        if Int.equal proglen proglen'
+        then Ok (ctx', prog') (* Fixed point *)
+        else mu prog' ctx'
+      | Error e -> Error e
     in
-    Ctx.make (mu prog)
+    Ctx.Monadic.make (mu prog)
 
   (** [remove_generally_irrelevant_statements prog] completely removes
      statements in [prog] that have no use in general and cannot be
@@ -328,15 +328,16 @@ module Make (LH : LangHookS)
     let rec mu skipped ctx =
       function
       | x::x'::xs when LH.L.Statement.is_jump_pair x x' ->
+        let open Or_error.Let_syntax in
         let f = Ctx.(dec_prog_length >>= fun () -> peek Fn.id) in
-        let ctx' = Ctx.run f ctx in
+        let%bind ctx' = Ctx.run f ctx in
         mu skipped ctx' (x'::xs)
       | x::x'::xs ->
         mu (x::skipped) ctx (x'::xs)
-      | [] -> (ctx, List.rev skipped)
-      | [x] -> (ctx, List.rev (x::skipped))
+      | [] -> Or_error.return (ctx, List.rev skipped)
+      | [x] -> Or_error.return (ctx, List.rev (x::skipped))
     in
-    Ctx.make (Fn.flip (mu []) prog)
+    Ctx.Monadic.make (Fn.flip (mu []) prog)
 
   let update_symbol_tables
       (prog : LH.L.Statement.t list) =

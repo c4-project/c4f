@@ -155,35 +155,54 @@ module Make (L : Language.Intf) (C : CustomWarnS)
     ; warnings  = []
     }
 
-  include State.Make (struct type t = ctx end)
+  include State.Make_transform (struct
+      type t = ctx
+      module Inner = Or_error
+    end)
 
   let is_pass_enabled pass =
     peek (fun ctx -> Pass.Set.mem ctx.passes pass)
   ;;
 
   let enter_program ~name prog =
-    modify
-      (fun ctx ->
-         { ctx with progname = name
-                  ; proglen = List.length prog
-                  ; endlabel = None
-                  ; syms = Abstract.Symbol.Table.empty })
-    >>| fun () -> prog
+    modify (
+      fun ctx ->
+        { ctx with progname = name
+                 ; proglen = List.length prog
+                 ; endlabel = None
+                 ; syms = Abstract.Symbol.Table.empty }
+    ) >>| fun () -> prog
   ;;
 
   let get_end_label = peek endlabel
   let set_end_label lbl =
-    modify
-      (fun ctx -> { ctx with proglen = succ ctx.proglen;
-                             endlabel = Some lbl })
+    Monadic.modify (
+      fun ctx ->
+        match ctx.endlabel with
+        | Some s ->
+          Or_error.error_s
+            [%message "Tried to overwrite end label"
+                ~original:s
+                ~replaced:lbl]
+        | None ->
+          Or_error.return
+            { ctx with proglen = succ ctx.proglen;
+                       endlabel = Some lbl }
+    )
   ;;
 
   let get_prog_name = peek progname
 
   let get_prog_length = peek proglen
   let dec_prog_length =
-    (* TODO(@MattWindsor91): warn if prog-length goes below 0? *)
-    modify (fun ctx -> { ctx with proglen = pred ctx.proglen })
+    Monadic.modify (
+      fun ctx ->
+        if ctx.proglen <= 0
+        then Or_error.error_s
+            [%message "Underflow in program length"
+                ~proglen:(ctx.proglen : int)]
+        else Or_error.return { ctx with proglen = pred ctx.proglen }
+    )
   ;;
 
   let (|->) pass f a =
@@ -192,26 +211,27 @@ module Make (L : Language.Intf) (C : CustomWarnS)
   ;;
 
   let warn w =
-    modify
-      ( fun ctx ->
-         let ent = { Warn.progname = ctx.progname; body = w } in
-         { ctx with warnings = ent::ctx.warnings }
-      )
+    modify (
+      fun ctx ->
+        let ent = { Warn.progname = ctx.progname; body = w } in
+        { ctx with warnings = ent::ctx.warnings }
+    )
   ;;
 
   let take_warnings =
-    make
-      (fun ctx ->
-         let warnings = ctx.warnings in
-         ( { ctx with warnings = [] }, warnings ))
+    make (
+      fun ctx ->
+        let warnings = ctx.warnings in
+        ( { ctx with warnings = [] }, warnings )
+    )
   ;;
 
   let add_symbol sym sort =
-    make
-      (fun ctx ->
-         { ctx with syms = Abstract.Symbol.Table.add ctx.syms sym sort }
-         , sym
-      )
+    make (
+      fun ctx ->
+        { ctx with syms = Abstract.Symbol.Table.add ctx.syms sym sort }
+      , sym
+    )
   ;;
 
   let get_symbol_table = peek syms
@@ -231,9 +251,13 @@ module Make (L : Language.Intf) (C : CustomWarnS)
   let redirect ~src ~dst =
     let open Let_syntax in
     let%bind rds = peek redirects in
-    match L.Symbol.R_map.redirect ~src ~dst rds with
-    | Ok rds' -> modify (fun ctx -> { ctx with redirects = rds' } )
-    | Error why -> warn (Warn.SymbolRedirFail { src; dst = Some dst; why })
+    (* Redirection can fail, which _should_ be an internal bug, so
+       we make it a fatal error in the sanitiser. *)
+    Monadic.modify
+      (fun ctx ->
+         let open Or_error.Let_syntax in
+         let%map rds' = L.Symbol.R_map.redirect ~src ~dst rds in
+         { ctx with redirects = rds' })
   ;;
 
   let make_fresh_label prefix =

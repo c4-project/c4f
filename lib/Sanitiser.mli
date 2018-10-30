@@ -23,6 +23,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Assembly sanitisation *)
 
+open Core
+
 (*
  * Language-dependent parts
  *)
@@ -80,7 +82,7 @@ module type Intf = sig
   val sanitise
     :  ?passes:Sanitiser_pass.Set.t
     -> statement list
-    -> statement list Output.t
+    -> statement list Output.t Or_error.t
 
   (** [split_and_sanitise ?passes stms] splits a statement list into
      separate litmus programs, then sanitises each, turning it into a
@@ -92,7 +94,7 @@ module type Intf = sig
   val split_and_sanitise
     :  ?passes:Sanitiser_pass.Set.t
     -> statement list
-    -> statement list list Output.t
+    -> statement list list Output.t Or_error.t
 end
 
 (** [Make] implements the assembly sanitiser for a given language. *)

@@ -85,8 +85,10 @@ module type Intf = sig
 
   type ctx
 
-  (** [Intf] includes a state monad, [t]. *)
-  include State.S with type state := ctx
+  (** [Intf] includes a state transformer, [t],
+      with an inner error monad. *)
+  include State.S_transform with type state := ctx
+                             and module Inner := Or_error
 
   (** [initial ~passes ~progname ~proglen] opens an initial context
      with the given enabled passes. *)

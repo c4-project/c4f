@@ -36,22 +36,12 @@ type ('s, 't, 'c) fold_mapper =
 
 (** [S_common] is the signature common to [S] and [S_transform]. *)
 module type S_common = sig
-  (** [state] is the type of the inner state record. *)
-  type state
-
   (** Both [S] and [S_transform] are extended monads. *)
   include Monad.S
   include MyMonad.Extensions with type 'a t := 'a t
-end
 
-(** [S] is the signature of state monads.
-
-    State monads form a way to thread a modifiable, readable state
-   record through a computation without resorting to mutability.  At
-   any point in a state-monad computation, we can [peek] at the
-   present value of the state, or [modify] it, or do both. *)
-module type S = sig
-  include S_common
+  (** [state] is the type of the inner state record. *)
+  type state
 
   (*
    * Building stateful computations
@@ -68,6 +58,16 @@ module type S = sig
   (** [modify] creates a context-sensitive computation that can look at
       and modify the current context. *)
   val modify : (state -> state) -> unit t
+end
+
+(** [S] is the signature of state monads.
+
+    State monads form a way to thread a modifiable, readable state
+   record through a computation without resorting to mutability.  At
+   any point in a state-monad computation, we can [peek] at the
+   present value of the state, or [modify] it, or do both. *)
+module type S = sig
+  include S_common
 
   (*
    * Running a stateful computation
@@ -96,21 +96,24 @@ module type S_transform = sig
   (** [Inner] is the monad to which we're adding state. *)
   module Inner : Monad.S
 
-  (*
-   * Building stateful computations
-   *)
+  (** [Monadic] contains a version of the state monad interface that
+      can interact with the inner monad ([Inner]) this state transformer is
+      overlaying.
 
-  (** [make] creates a context-sensitive computation that can modify
-      both the current context and the data passing through. *)
-  val make : (state -> (state * 'a) Inner.t) -> 'a t
+      Typically, this will be an error monad, like [Or_error]. *)
+  module Monadic : sig
+    (** [make] creates a context-sensitive computation that can modify
+        both the current context and the data passing through. *)
+    val make : (state -> (state * 'a) Inner.t) -> 'a t
 
-  (** [peek] creates a context-sensitive computation that can look at
-      the current context, but not modify it. *)
-  val peek : (state -> 'a Inner.t) -> 'a t
+    (** [peek] creates a context-sensitive computation that can look at
+        the current context, but not modify it. *)
+    val peek : (state -> 'a Inner.t) -> 'a t
 
-  (** [modify] creates a context-sensitive computation that can look at
-      and modify the current context. *)
-  val modify : (state -> state Inner.t) -> unit t
+    (** [modify] creates a context-sensitive computation that can look at
+        and modify the current context. *)
+    val modify : (state -> state Inner.t) -> unit t
+  end
 
   (*
    * Running a stateful computation
