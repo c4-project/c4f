@@ -1,5 +1,6 @@
 open Core
 open Lib
+open Utils
 
 module AttFrontend =
   LangFrontend.Make (
@@ -23,9 +24,9 @@ module type Intf = sig
   include
     Language.Intf
     with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.location
-     and type Instruction.t = Ast.instruction
-     and type Statement.t = Ast.statement
+     and type Location.t = Ast.Location.t
+     and type Instruction.t = Ast.Instruction.t
+     and type Statement.t = Ast.Statement.t
 
   val make_jump_operand : string -> Ast.Operand.t
 end
@@ -36,10 +37,10 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
 
   let make_jump_operand jsym =
     Ast.(
-      let disp = DispSymbolic jsym in
+      let disp = Disp.Symbolic jsym in
       match T.symbolic_jump_type with
       | `Indirect ->
-        Operand.Location (LocIndirect (Indirect.make ~disp ()))
+        Operand.Location (Location.Indirect (Indirect.make ~disp ()))
       | `Immediate ->
         Operand.Immediate disp
     )
@@ -62,23 +63,25 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               ]
           ;;
 
-          module OnStringsS = struct
+          module OnStrings = Fold_map.Make (struct
             type t = string
-            type cont = string
+            module Elt = String
 
-            let fold_map ~f ~init sym = f init sym
-          end
+            module On_monad (M : Monad.S) = struct
+              let fold_map ~f ~init sym = f init sym
+            end
+          end)
         end
 
         module Location = struct
-          type t = Ast.location
-          let sexp_of_t = [%sexp_of: Ast.location]
-          let t_of_sexp = [%of_sexp: Ast.location]
+          type t = Ast.Location.t
+          let sexp_of_t = [%sexp_of: Ast.Location.t]
+          let t_of_sexp = [%of_sexp: Ast.Location.t]
 
           let pp = P.pp_location
 
           let make_heap_loc l =
-            Ast.(LocIndirect (Indirect.make ~disp:(DispSymbolic l) ()))
+            Ast.(Location.Indirect (Indirect.make ~disp:(Disp.Symbolic l) ()))
           ;;
 
           let indirect_abs_type (i : Ast.Indirect.t) =
@@ -87,31 +90,29 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
             match (seg i), (disp i), (base i), (index i) with
             (* Typically, [ EBP - i ] is a stack location: EBP is the
                frame pointer, and the x86 stack grows downwards. *)
-            | None, Some (DispNumeric i), Some EBP, None ->
+            | None, Some (Ast.Disp.Numeric i), Some EBP, None ->
               StackOffset i
             (* This is the same as [ EBP - 0 ]. *)
             | None, None, Some ESP, None ->
               StackOffset 0
             (* This may be over-optimistic. *)
-            | None, Some (DispSymbolic s), None, None ->
+            | None, Some (Symbolic s), None, None ->
               Heap s
             | _, _, _, _ -> Unknown
 
           let abs_type =
             let open Abstract.Location in
             function
-            | Ast.LocReg ESP
-            | LocReg EBP -> StackPointer
-            | Ast.LocReg _ -> GeneralRegister
-            | Ast.LocIndirect i -> indirect_abs_type i
+            | Ast.Location.Reg ESP
+            | Reg EBP -> StackPointer
+            | Reg _ -> GeneralRegister
+            | Indirect i -> indirect_abs_type i
         end
 
         module Instruction = struct
-          open Ast
-
-          type t = Ast.instruction
-          let sexp_of_t = [%sexp_of: Ast.instruction]
-          let t_of_sexp = [%of_sexp: Ast.instruction]
+          type t = Ast.Instruction.t
+          let sexp_of_t = [%sexp_of: Ast.Instruction.t]
+          let t_of_sexp = [%of_sexp: Ast.Instruction.t]
 
           type sym = Symbol.t
           type loc = Location.t
@@ -119,10 +120,11 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
           let pp = P.pp_instruction
 
           let jump l =
-            { prefix = None
-            ; opcode = OpJump None
-            ; operands = [ make_jump_operand l ]
-            }
+            Ast.Instruction.make
+              ~opcode:(Ast.OpJump None)
+              ~operands:[ make_jump_operand l ]
+              ()
+          ;;
 
           (** [basic_instruction_type o] assigns an act classification to a
               primitive opcode [o]. *)
@@ -142,29 +144,28 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
             | `Xchg   -> Rmw
             | `Xor    -> Logical
 
-          let zero_operands (operands : Operand.t list)
+          let zero_operands (operands : Ast.Operand.t list)
             : Abstract.Operands.t =
             let open Abstract.Operands in
             if List.is_empty operands
             then None
             else Erroneous
 
-          let src_dst_operands (operands : Operand.t list)
+          let src_dst_operands (operands : Ast.Operand.t list)
             : Abstract.Operands.t =
             let open Abstract.Operands in
-            let open Operand in
             let open T in
             to_src_dst operands
             |> Option.value_map
               ~f:(function
-                  | { src = Location s
+                  | { src = Ast.Operand.Location s
                     ; dst = Location d
                     } ->
                     LocTransfer
                       { src = Location.abs_type s
                       ; dst = Location.abs_type d
                       }
-                  | { src = Immediate (DispNumeric k)
+                  | { src = Immediate (Ast.Disp.Numeric k)
                     ; dst = Location d
                     } ->
                     IntImmediate
@@ -200,19 +201,19 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               | [o] ->
                 begin
                   match o with
-                  | Operand.Location (LocIndirect i) ->
+                  | Ast.Operand.Location (Ast.Location.Indirect i) ->
                     begin
-                      match Indirect.disp i with
-                      | Some (DispSymbolic s) -> SymbolicJump s
+                      match Ast.Indirect.disp i with
+                      | Some (Ast.Disp.Symbolic s) -> SymbolicJump s
                       | _ -> Unknown
                     end
-                  | Operand.Immediate (Ast.DispSymbolic s) -> SymbolicJump s
+                  | Ast.Operand.Immediate (Ast.Disp.Symbolic s) -> SymbolicJump s
                   | _ -> Unknown
                 end
               | _ -> Erroneous
             )
 
-          let abs_operands {opcode; operands; _} =
+          let abs_operands {Ast.Instruction.opcode; operands; _} =
             match opcode with
             | Ast.OpBasic b -> basic_operands b operands
             | Ast.OpSized (b, _) -> basic_operands b operands
@@ -224,63 +225,67 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
             Format.printf "%a@."
               Abstract.Operands.pp
               (abs_operands
-                 { opcode = Ast.OpBasic `Nop
-                 ; operands = []
-                 ; prefix = None
-                 });
+                 (Ast.Instruction.make
+                    ~opcode:(Ast.OpBasic `Nop)
+                    ()
+                 ));
             [%expect {| none |}]
 
           let%expect_test "abs_operands: jmp, AT&T style" =
             Format.printf "%a@."
               Abstract.Operands.pp
               (abs_operands
-                 { opcode = Ast.OpJump None
-                 ; operands =
-                     [ Operand.Location
-                         (Ast.LocIndirect
-                            (Ast.Indirect.make
-                               ~disp:(Ast.DispSymbolic "L1") ()))
-                     ]
-                 ; prefix = None
-                 });
+                 (Ast.Instruction.make
+                    ~opcode:(Ast.OpJump None)
+                    ~operands:
+                      [ Ast.Operand.Location
+                          (Ast.Location.Indirect
+                             (Ast.Indirect.make
+                                ~disp:(Ast.Disp.Symbolic "L1") ()))
+                      ]
+                    ()
+                 ));
             [%expect {| jump->L1 |}]
 
           let%expect_test "abs_operands: nop $42 -> error" =
             Format.printf "%a@."
               Abstract.Operands.pp
               (abs_operands
-                 { opcode = Ast.OpBasic `Nop
-                 ; operands = [ Operand.Immediate
-                                  (Ast.DispNumeric 42) ]
-                 ; prefix = None
-                 });
+                (Ast.Instruction.make
+                   ~opcode:(Ast.OpBasic `Nop)
+                   ~operands:[ Ast.Operand.Immediate
+                                 (Ast.Disp.Numeric 42) ]
+                   ()
+                ));
             [%expect {| <invalid operands> |}]
 
           let%expect_test "abs_operands: mov %ESP, %EBP" =
             Format.printf "%a@."
               Abstract.Operands.pp
               (abs_operands
-                 { opcode = Ast.OpBasic `Mov
-                 ; operands = [ Operand.Location (Ast.LocReg ESP)
-                              ; Operand.Location (Ast.LocReg EBP)
+                 (Ast.Instruction.make
+                    ~opcode:(Ast.OpBasic `Mov)
+                    ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
+                              ; Ast.Operand.Location (Ast.Location.Reg EBP)
                               ]
-                 ; prefix = None
-                 });
+                    ()
+              ));
             [%expect {| &stack -> &stack |}]
 
           let%expect_test "abs_operands: movl %ESP, %EBP" =
             Format.printf "%a@."
               Abstract.Operands.pp
               (abs_operands
-                 { opcode = Ast.OpSized (`Mov, SLong)
-                 ; operands = [ Operand.Location (Ast.LocReg ESP)
-                              ; Operand.Location (Ast.LocReg EBP)
+                 (Ast.Instruction.make
+                    ~opcode:(Ast.OpSized (`Mov, Ast.SLong))
+                    ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
+                              ; Ast.Operand.Location (Ast.Location.Reg EBP)
                               ]
-                 ; prefix = None
-                 });
+                    ()
+                 ));
             [%expect {| &stack -> &stack |}]
 
-          let abs_type ({opcode; _} : Ast.instruction) =
+          let abs_type ({opcode; _} : Ast.Instruction.t) =
             let open Abstract.Instruction in
             match opcode with
             | Ast.OpDirective _ ->
@@ -291,53 +296,45 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
             | Ast.OpSized (b, _) -> basic_instruction_type b
             | Ast.OpUnknown _ -> Unknown
 
-          module OnSymbolsS = struct
-            type t = string
-            type cont = Ast.instruction
-            let fold_map = Ast.fold_map_instruction_symbols
+          module OnSymbols = struct
+            include Ast.Instruction.On_symbols
+            module Elt = Symbol
           end
-
-          module OnLocationsS = struct
-            type t = Location.t
-            type cont = Ast.instruction
-            let fold_map = Ast.fold_map_instruction_locations
+          module OnLocations = struct
+            include Ast.Instruction.On_locations
+            module Elt = Ast.Location
           end
         end
 
         module Statement = struct
-          open Ast
-
           type sym = Symbol.t
-          type t = Ast.statement
-          let sexp_of_t = [%sexp_of: Ast.statement]
-          let t_of_sexp = [%of_sexp: Ast.statement]
+          type t = Ast.Statement.t
+          let sexp_of_t = [%sexp_of: Ast.Statement.t]
+          let t_of_sexp = [%of_sexp: Ast.Statement.t]
           let pp = P.pp_statement
 
-          type ins = Ast.instruction
+          type ins = Ast.Instruction.t
 
-          let empty () = Ast.StmNop
-          let label s = Ast.StmLabel s
-          let instruction i = Ast.StmInstruction i
+          let empty () = Ast.Statement.Nop
+          let label s = Ast.Statement.Label s
+          let instruction = Ast.Statement.instruction
 
           let abs_type =
             let open Abstract.Statement in
             function
-            | StmInstruction { opcode = OpDirective s; _ } ->
+            | Ast.Statement.Instruction { opcode = Ast.OpDirective s; _ } ->
               Directive s
-            | StmInstruction i -> Instruction (Instruction.abs_type i)
-            | StmLabel l -> Label l
-            | StmNop -> Blank
+            | Instruction i -> Instruction (Instruction.abs_type i)
+            | Label l -> Label l
+            | Nop -> Blank
 
-          module OnSymbolsS = struct
-            type t = string
-            type cont = Ast.statement
-            let fold_map = Ast.fold_map_statement_symbols
+          module OnSymbols = struct
+            include Ast.Statement.On_symbols
+            module Elt = Symbol
           end
-
-          module OnInstructionsS = struct
-            type t = Instruction.t
-            type cont = Ast.statement
-            let fold_map = Ast.fold_map_statement_instructions
+          module OnInstructions = struct
+            include Ast.Statement.On_instructions
+            module Elt = Ast.Instruction
           end
         end
 
@@ -347,7 +344,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
 
           let pp = P.pp_operand
 
-          let zero = Ast.Operand.Immediate (Ast.DispNumeric 0)
+          let zero = Ast.Operand.Immediate (Ast.Disp.Numeric 0)
         end
       end)
 end
@@ -378,12 +375,13 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
   Format.printf "%a@."
     Abstract.Operands.pp
     (ATT.Instruction.abs_operands
-       { opcode = Ast.OpBasic `Add
-       ; operands = [ Ast.Operand.Immediate (Ast.DispNumeric (-16))
-                    ; Ast.Operand.Location (Ast.LocReg ESP)
+       (Ast.Instruction.make
+          ~opcode:(Ast.OpBasic `Add)
+          ~operands:[ Ast.Operand.Immediate (Ast.Disp.Numeric (-16))
+                    ; Ast.Operand.Location (Ast.Location.Reg ESP)
                     ]
-       ; prefix = None
-       });
+          ()
+       ));
   [%expect {| $-16 -> &stack |}]
 
 module Intel = Make (Dialect.Intel) (PP.Intel)
@@ -392,12 +390,13 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
   Format.printf "%a@."
     Abstract.Operands.pp
     (Intel.Instruction.abs_operands
-       { opcode = Ast.OpBasic `Add
-       ; operands = [ Ast.Operand.Location (Ast.LocReg ESP)
-                    ; Ast.Operand.Immediate (Ast.DispNumeric (-16))
+       (Ast.Instruction.make
+          ~opcode:(Ast.OpBasic `Add)
+          ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
+                    ; Ast.Operand.Immediate (Ast.Disp.Numeric (-16))
                     ]
-       ; prefix = None
-       });
+          ()
+       ));
   [%expect {| $-16 -> &stack |}]
 
 module Herd7 = Make (Dialect.Herd7) (PP.Herd7)

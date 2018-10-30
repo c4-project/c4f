@@ -64,14 +64,14 @@ module type StatementS = sig
   include Sexpable.S with type t := t
 
   (** They must allow fold-mapping over symbols... *)
-  module OnSymbolsS
-    : FoldMap.S with type t = sym
-                 and type cont = t
+  module OnSymbols
+    : Fold_map.S with type Elt.t := sym
+                  and type t := t
 
   (** ...and over instructions. *)
-  module OnInstructionsS
-    : FoldMap.S with type t = ins
-                 and type cont = t
+  module OnInstructions
+    : Fold_map.S with type Elt.t = ins
+                  and type t := t
 
   (*
    * Constructors
@@ -111,14 +111,10 @@ module type InstructionS = sig
   include Sexpable.S with type t := t
 
   (** They must allow fold-mapping over symbols... *)
-  module OnSymbolsS
-    : FoldMap.S with type t = sym
-                 and type cont = t
+  module OnSymbols : Fold_map.S with type Elt.t = sym and type t := t
 
   (** ...and over locations. *)
-  module OnLocationsS
-    : FoldMap.S with type t = loc
-                 and type cont = t
+  module OnLocations : Fold_map.S with type Elt.t = loc and type t := t
 
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
   val jump : string -> t
@@ -201,18 +197,6 @@ module type Intf = sig
     include InstructionS with type loc = Location.t
                           and type sym = Symbol.t
 
-    (** [OnSymbols] is an extension of the incoming
-        [InstructionS.OnSymbolsS], including symbol map operations. *)
-    module OnSymbols
-      : FoldMap.SetIntf with type t = Symbol.t
-                         and type cont = t
-
-    (** [OnLocations] is an extension of the incoming
-        [StatementS.OnLocationsS]. *)
-    module OnLocations
-      : FoldMap.Intf with type t = Location.t
-                      and type cont = t
-
     (** [mem set ins] checks whether [ins]'s abstract type is in the
         set [set]. *)
     val mem : Abstract.Instruction.Set.t -> t -> bool
@@ -230,18 +214,6 @@ module type Intf = sig
   module Statement : sig
     include StatementS with type ins = Instruction.t
                         and type sym = Symbol.t
-
-    (** [OnSymbols] is an extension of the incoming
-        [StatementS.OnSymbolsS], including symbol map operations. *)
-    module OnSymbols
-      : FoldMap.SetIntf with type t = Symbol.t
-                         and type cont = t
-
-    (** [OnInstructions] is an extension of the incoming
-        [StatementS.OnInstructionsS]. *)
-    module OnInstructions
-      : FoldMap.Intf with type t = Instruction.t
-                      and type cont = t
 
     (*
      * Shortcuts for querying instructions in a statement

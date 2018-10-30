@@ -42,9 +42,6 @@ module Make (M : S)
   module Instruction = struct
     include M.Instruction
 
-    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (Symbol.Set)
-    module OnLocations = FoldMap.Make (OnLocationsS)
-
     let is_jump ins =
       match abs_type ins with
       | Abstract.Instruction.Jump -> true
@@ -88,9 +85,6 @@ module Make (M : S)
   module Statement = struct
     include M.Statement
 
-    module OnSymbols = FoldMap.MakeSet (OnSymbolsS) (Symbol.Set)
-    module OnInstructions = FoldMap.Make (OnInstructionsS)
-
     let is_jump =
       OnInstructions.exists ~f:Instruction.is_jump
 
@@ -130,7 +124,7 @@ module Make (M : S)
       is_label_and
         (fun stm ->
            let jsyms = Abstract.Symbol.(Table.set_of_sort syms Sort.Jump) in
-           let ssyms = Symbol.Set.abstract (OnSymbols.set stm) in
+           let ssyms = Symbol.Set.abstract (Symbol.Set.of_list (OnSymbols.to_list stm)) in
            Abstract.Symbol.Set.disjoint jsyms ssyms
            && not (ignore_boundaries && is_program_boundary stm)
         )
@@ -139,7 +133,8 @@ module Make (M : S)
     let is_jump_pair x y =
       is_jump x
       && is_label y
-      && (MyFn.on OnSymbols.set OnSymbols.Set.equal) x y
+      && (MyFn.on (Fn.compose Symbol.Set.of_list OnSymbols.to_list)
+            Symbol.Set.equal) x y
     ;;
 
     let flags ~syms stm =
@@ -168,7 +163,7 @@ module Make (M : S)
 
   let heap_symbols prog =
     prog
-    |> List.concat_map ~f:Statement.OnInstructions.list
+    |> List.concat_map ~f:Statement.OnInstructions.to_list
     (* In x86, at least, jumps can contain locations that look without
        context to be heap symbols.  Currently, we pessimistically
        exclude any location that's inside a jump.
@@ -176,7 +171,7 @@ module Make (M : S)
        Maybe, one day, we'll find an architecture that does actually
        contain heap locations in a jump, and have to re-think this. *)
     |> MyList.exclude ~f:Instruction.is_jump
-    |> List.concat_map ~f:Instruction.OnLocations.list
+    |> List.concat_map ~f:Instruction.OnLocations.to_list
     |> List.filter_map ~f:Location.to_heap_symbol
     |> Abstract.Symbol.Set.of_list
 
@@ -188,7 +183,7 @@ module Make (M : S)
     |> List.filter_map
       ~f:(fun p ->
           if filter p
-          then Some (Statement.OnSymbols.set p)
+          then Some (Symbol.Set.of_list (Statement.OnSymbols.to_list p))
           else None)
     |> Symbol.Set.union_list
     |> Symbol.Set.abstract

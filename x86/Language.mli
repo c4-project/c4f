@@ -14,9 +14,9 @@ module type Intf = sig
   include
     Language.Intf
     with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.location
-     and type Instruction.t = Ast.instruction
-     and type Statement.t = Ast.statement
+     and type Location.t = Ast.Location.t
+     and type Instruction.t = Ast.Instruction.t
+     and type Statement.t = Ast.Statement.t
 
   (** [make_jump_operand jsym] expands a jump symbol [jsym] to the
       correct abstract syntax for this version of x86. *)

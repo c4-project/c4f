@@ -43,8 +43,6 @@ module Make (B : Basic)
     let abstract = Abstract.Symbol.Set.map ~f:B.abstract
   end
 
-  module OnStrings = FoldMap.MakeSet (OnStringsS) (String.Set)
-
   module R_map = struct
     module M = Map.Make_using_comparator (Comp)
     type sym = t [@@deriving compare, eq, sexp]
@@ -120,11 +118,14 @@ module StringDirect =
     let abstract = Fn.id
     let abstract_demangle = List.return
 
-    module OnStringsS = struct
+    module OnStrings = Fold_map.Make (struct
       type t = string
-      type cont = string
-      let fold_map ~f ~init = f init
-    end
+      module Elt = String
+
+      module On_monad (M : Monad.S) = struct
+        let fold_map ~f ~init str = M.(return init >>= Fn.flip f str)
+      end
+    end)
   end)
 ;;
 

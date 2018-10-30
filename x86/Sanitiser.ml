@@ -44,11 +44,11 @@ module Hook (L : Language.Intf) = struct
   module Pass = Lib.Sanitiser_pass
 
   let negate = function
-    | DispNumeric k -> Operand.Immediate (DispNumeric (-k))
-    | DispSymbolic s ->
-      Operand.Bop ( Operand.Immediate (DispNumeric 0)
+    | Disp.Numeric k -> Operand.Immediate (Disp.Numeric (-k))
+    | Symbolic s ->
+      Operand.Bop ( Operand.Immediate (Numeric 0)
                   , Operand.BopMinus
-                  , Operand.Immediate (DispSymbolic s)
+                  , Operand.Immediate (Symbolic s)
                   )
 
   let sub_to_add_ops : Operand.t list -> Operand.t list option =
@@ -57,9 +57,8 @@ module Hook (L : Language.Intf) = struct
           | {src = Operand.Immediate s; dst} -> Some {src = negate s; dst}
           | _ -> None)
 
-  let sub_to_add =
-    function
-    | { prefix; opcode = OpBasic `Sub; operands} as op ->
+  let sub_to_add = function
+    | { Instruction.prefix; opcode = OpBasic `Sub; operands} as op ->
       Option.value_map
         ~default:op
         ~f:(fun ops' -> { prefix ; opcode = OpBasic `Add; operands = ops' })
@@ -77,7 +76,7 @@ module Hook (L : Language.Intf) = struct
     (* TODO(@MattWindsor91): ideally, we should be checking to see if
        the operands are compatible with dropping the l. *)
     function
-    | { opcode = OpSized (o, SLong); _ } as op ->
+    | { Instruction.opcode = OpSized (o, SLong); _ } as op ->
       begin
         match o with
         | `Cmp
@@ -102,11 +101,11 @@ module Hook (L : Language.Intf) = struct
       It assumes, perhaps incorrectly, that these segments aren't
      moved, or shared per thread. *)
   let segment_offset_to_heap = function
-    | LocIndirect i as l->
+    | Location.Indirect i as l ->
       begin
         let open Ctx.Let_syntax in
         match Ast.Indirect.seg i, Ast.Indirect.disp i with
-        | Some s, Some (DispNumeric k) ->
+        | Some s, Some (Disp.Numeric k) ->
           let%bind progname = Ctx.get_prog_name in
           let%bind loc =
             Ctx.make_fresh_heap_loc
@@ -120,7 +119,7 @@ module Hook (L : Language.Intf) = struct
           L.Location.make_heap_loc loc
         | _ -> Ctx.return l
       end
-    | LocReg _ as l -> Ctx.return l
+    | Reg _ as l -> Ctx.return l
   ;;
 
   (** [warn_unsupported_registers reg] warns if [reg] isn't
@@ -145,16 +144,8 @@ module Hook (L : Language.Intf) = struct
   ;;
 
   let through_all_registers loc =
-    let on_register' reg =
-      let open Ctx.Let_syntax in
-      let%bind reg' = on_register reg in
-      let%map  ctx' = Ctx.peek Fn.id in
-      (ctx', reg')
-    in
-    Ctx.make
-      (fun ctx ->
-         fold_map_location_registers loc ~init:ctx
-           ~f:(fun ctx' reg -> Ctx.run (on_register' reg) ctx'))
+    let module F = Location.On_registers.On_monad (Ctx) in
+    F.mapM ~f:on_register loc
   ;;
 
   let on_location loc =

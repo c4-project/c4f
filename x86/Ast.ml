@@ -47,6 +47,94 @@ copyright notice follow. *)
 open Core
 open Utils
 
+(** [Fold_helpers] contains utility functions for building monadic
+    [Fold_map]s. *)
+module Fold_helpers (M : Monad.S) = struct
+  (** [proc_variant0 f init] lifts a fold-map operation into
+      a fold-map operation over a nullary variant constructor, using the
+      Variantslib folder. *)
+  let proc_variant0
+    (f : 's -> unit -> ('s * unit) M.t)
+    (init : 's)
+    (v : 'a Base.Variant.t)
+    : ('s * 'a) M.t =
+    M.(f init () >>| (fun (s, ()) -> (s, v.Base.Variant.constructor)))
+  ;;
+
+  (** [proc_variant1 f init] lifts a fold-map operation into a
+     fold-map operation over a unary variant constructor, using the
+     Variantslib folder. *)
+  let proc_variant1
+      (f : 's -> 'a -> ('s * 'a) M.t)
+      (init : 's)
+      (v : ('a -> 'b) Base.Variant.t)
+      (a : 'a)
+    : ('s * 'b) M.t =
+    M.(f init a >>| Tuple2.map_snd ~f:v.Base.Variant.constructor)
+  ;;
+
+  (** [proc_variant2 f g init] lifts a fold-map operation into a
+     fold-map operation over a binary variant constructor, using the
+     Variantslib folder. *)
+  let proc_variant2
+      (f : 's -> ('a * 'b) -> ('s * ('a * 'b)) M.t)
+      (init : 's)
+      (v : ('a -> 'b -> 'c) Base.Variant.t)
+      (a : 'a)
+      (b : 'b)
+    : ('s * 'c) M.t =
+    let open M.Let_syntax in
+    let%map (init, (a', b')) = f init (a, b) in
+    (init, v.Base.Variant.constructor a' b')
+  ;;
+
+  (** [proc_variant3 f g init] lifts a fold-map operation into a
+     fold-map operation over a ternary variant constructor, using the
+     Variantslib folder.  The functions get applied in order. *)
+  let proc_variant3
+      (f : 's -> ('a * 'b * 'c) -> ('s * ('a * 'b * 'c)) M.t)
+      (init : 's)
+      (v : ('a -> 'b -> 'c -> 'd) Base.Variant.t)
+      (a : 'a)
+      (b : 'b)
+      (c : 'c)
+    : ('s * 'd) M.t =
+    let open M.Let_syntax in
+    let%map (init, (a', b', c')) = f init (a, b, c) in
+    (init, v.Base.Variant.constructor a' b' c')
+  ;;
+
+  let proc_field
+      (f : 's -> 'a -> ('s * 'a) M.t)
+      (acc : ('s * 'b) M.t)
+      (field : ([> `Set_and_create], 'b, 'a) Field.t_with_perm)
+      (_orig : 'b)
+      (cval : 'a)
+    : ('s * 'b) M.t =
+    let open M.Let_syntax in
+    let%bind (state,  container) = acc in
+    let%map  (state', nval) = f state cval in
+    (state', Field.fset field container nval)
+  ;;
+
+  let fold_nop
+      (state : 'b)
+      (item : 'a)
+    : ('b * 'a) M.t =
+    M.return (state, item)
+  ;;
+
+  module On_elt (Elt : Equal.S) = struct
+    module F_opt    = Fold_map.Option (Elt)
+    module F_opt_M  = F_opt.On_monad (M)
+    module F_list   = Fold_map.List (Elt)
+    module F_list_M = F_list.On_monad (M)
+
+    let fold_opt = F_opt_M.fold_map
+    let fold_list = F_list_M.fold_map
+  end
+end
+
 module Reg = struct
   module M = struct
     (* Ordered as in Intel manual *)
@@ -130,86 +218,174 @@ module Reg = struct
   ;;
 end
 
-(*
- * Displacements
- *)
+module Disp = struct
+  type t =
+    | Symbolic of string
+    | Numeric of int
+  [@@deriving sexp, variants, eq]
 
-type disp =
-  | DispSymbolic of string
-  | DispNumeric of int
-[@@deriving sexp]
+  (** Base mapper for displacements *)
+  module Base_map (M : Monad.S) = struct
+    module F = Fold_helpers (M)
 
-let fold_map_disp_symbols ~f ~init =
-  function
-  | DispSymbolic s ->
-     Tuple2.map_snd ~f:(fun x -> DispSymbolic x) (f init s)
-  | DispNumeric  k -> (init, DispNumeric k)
+    let fold_map
+        ~init
+        ~symbolic ~numeric
+        (x : t) : ('a * t) M.t =
+      Variants.map x
+        ~symbolic:(F.proc_variant1 symbolic init)
+        ~numeric:(F.proc_variant1 numeric init)
+    ;;
+  end
 
-(*
- * Indices
- *)
+  module On_symbols : Fold_map.S with type t := t and module Elt := String =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = String
 
-type index =
-  | Unscaled of Reg.t
-  | Scaled of Reg.t * int
-[@@deriving sexp]
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+        module G = F.On_elt (Elt)
 
-let fold_map_index_registers ~f ~init = function
-  | Unscaled r -> Tuple2.map_snd ~f:(fun x -> Unscaled x) (f init r)
-  | Scaled (r, k) -> Tuple2.map_snd ~f:(fun x -> Scaled (x, k)) (f init r)
-;;
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~symbolic:f
+            (* Numeric displacements, of course, have no symbols *)
+            ~numeric:F.fold_nop
+        ;;
+      end
+    end)
+end
+
+module Index = struct
+  type t =
+    | Unscaled of Reg.t
+    | Scaled of Reg.t * int
+  [@@deriving sexp, variants, eq]
+
+  (** Base mapper for indices *)
+  module Base_map (M : Monad.S) = struct
+    module F = Fold_helpers (M)
+
+    let fold_map
+        ~init
+        ?(unscaled=F.fold_nop)
+        ?(scaled=F.fold_nop)
+        (x : t) : ('a * t) M.t =
+      Variants.map x
+        ~unscaled:(F.proc_variant1 unscaled init)
+        ~scaled:(F.proc_variant2 scaled init)
+    ;;
+  end
+
+  (** Recursive mapper for registers *)
+  module On_registers : Fold_map.S with type t := t and module Elt := Reg =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = Reg
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+        module G = F.On_elt (Elt)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~unscaled:f
+            ~scaled:M.(fun s (r, k) -> f s r >>| (fun (s, r') -> (s, (r', k))))
+        ;;
+      end
+    end)
+end
 
 (*
  * Memory addresses
  *)
 
-let fold_opt (g : 'a -> 'b -> ('a * 'b)) (v : 'a) (ro : 'b option) : ('a * 'b option) =
-  Option.value_map ~default:(v, None)
-    ~f:(fun x -> Tuple2.map_snd ~f:Option.some (g v x)) ro
-;;
-
 module Indirect = struct
   type t =
-    { seg    : Reg.t option
-    ; disp   : disp option
-    ; base   : Reg.t option
-    ; index  : index option
+    { seg    : Reg.t   option
+    ; disp   : Disp.t  option
+    ; base   : Reg.t   option
+    ; index  : Index.t option
     }
-  [@@deriving sexp, fields]
+  [@@deriving sexp, eq, fields, make]
 
-  let make ?base ?seg ?disp ?index () = { seg; disp; base; index };;
+  (** Base mapper for memory addresses *)
+  module Base_map (M : Monad.S) = struct
+    module F = Fold_helpers (M)
 
-  let fold_map
-      ~init
-      ?(seg=Tuple2.create) ?(disp=Tuple2.create) ?(base=Tuple2.create) ?(index=Tuple2.create)
-      indirect =
-    Fields.Direct.fold
-      indirect
-      ~init:(init, make ())
-      ~seg:(fun (state, ind) fld _ cseg ->
-          Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt seg state cseg))
-      ~disp:(fun (state, ind) fld _ cdisp ->
-          Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt disp state cdisp))
-      ~base:(fun (state, ind) fld _ cbase ->
-          Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt base state cbase))
-      ~index:(fun (state, ind) fld _ cindex ->
-          Tuple2.map_snd ~f:(Field.fset fld ind) (fold_opt index state cindex))
-  ;;
+    let fold_map
+        ~init
+        ~seg ~disp ~base ~index
+        indirect =
+      Fields.Direct.fold
+        indirect
+        ~init:M.(return (init, indirect))
+        ~seg:(F.proc_field seg)
+        ~disp:(F.proc_field disp)
+        ~base:(F.proc_field base)
+        ~index:(F.proc_field index)
+    ;;
+  end
 
-  let fold_map_symbols ~f ~init indirect =
-    fold_map
-      ~init
-      ~disp:(fun init -> fold_map_disp_symbols ~f ~init)
-      indirect
-  ;;
+  (** Recursive mapper for symbols *)
+  module On_symbols : Fold_map.S with type t := t and module Elt := String =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = String
+      module Set = String.Set
 
-  let fold_map_registers ~f ~init indirect =
-    fold_map
-      ~init
-      ~seg:f
-      ~base:f
-      ~index:(fun init -> fold_map_index_registers ~f ~init)
-      indirect
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        module D = Disp.On_symbols.On_monad (M)
+        module G = F.On_elt (Disp)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~disp:(fun init ->
+                G.fold_opt ~f:(fun init -> D.fold_map ~f ~init)
+                  ~init)
+            (* Segments, bases, and indices have no symbols. *)
+            ~seg:F.fold_nop
+            ~base:F.fold_nop
+            ~index:F.fold_nop
+        ;;
+      end
+    end)
+
+  (** Recursive mapper for registers *)
+  module On_registers : Fold_map.S with type t := t and module Elt := Reg =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = Reg
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        module GR = F.On_elt (Reg)
+
+        module I = Index.On_registers.On_monad (M)
+        module GI = F.On_elt (Index)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~seg:(fun init -> GR.fold_opt ~f ~init)
+            ~base:(fun init -> GR.fold_opt ~f ~init)
+            ~index:(fun init -> GI.fold_opt ~f:(fun init -> I.fold_map ~f ~init) ~init)
+            (* Displacements have no registers. *)
+            ~disp:F.fold_nop
+        ;;
+      end
+    end)
   ;;
 end
 
@@ -217,95 +393,185 @@ end
  * Locations
  *)
 
-type location =
-  | LocIndirect of Indirect.t
-  | LocReg of Reg.t
-[@@deriving sexp]
 
-let fold_map_location_symbols ~f ~init =
-  function
-  | LocReg r -> (init, LocReg r)
-  | LocIndirect ind ->
-     Tuple2.map_snd ~f:(fun x -> LocIndirect x)
-                    (Indirect.fold_map_symbols ~f ~init ind)
+module Location = struct
+  type t =
+    | Indirect of Indirect.t
+    | Reg of Reg.t
+  [@@deriving sexp, variants, eq]
 
-let fold_map_location_registers ~f ~init = function
-  | LocReg r ->
-    Tuple2.map_snd ~f:(fun x -> LocReg x) (f init r)
-  | LocIndirect i ->
-    Tuple2.map_snd ~f:(fun x -> LocIndirect x)
-      (Indirect.fold_map_registers ~f ~init i)
-;;
+  (** Base mapper for locations *)
+  module Base_map (M : Monad.S) = struct
+    module F = Fold_helpers (M)
+
+    let fold_map ~init ~indirect ~reg
+        x =
+      Variants.map
+        x
+        ~indirect:(F.proc_variant1 indirect init)
+        ~reg:(F.proc_variant1 reg init)
+    ;;
+  end
+
+  module On_registers : Fold_map.S with type t := t and module Elt := Reg =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = Reg
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        module I  = Indirect.On_registers.On_monad (M)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~indirect:(fun init -> I.fold_map ~f ~init)
+            ~reg:f
+        ;;
+      end
+    end)
+  ;;
+
+  module On_symbols : Fold_map.S with type t := t and module Elt := String =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = String
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        module I  = Indirect.On_symbols.On_monad (M)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~indirect:(fun init -> I.fold_map ~f ~init)
+            (* Registers don't have any symbols *)
+            ~reg:F.fold_nop
+        ;;
+      end
+    end)
+  ;;
+end
 
 module Operand = struct
   type bop =
     | BopPlus
     | BopMinus
-  [@@deriving sexp]
+  [@@deriving sexp, eq]
 
   type t =
-    | Location of location
-    | Immediate of disp
+    | Location of Location.t
+    | Immediate of Disp.t
     | String of string
     | Typ of string
     | Bop of t * bop * t
-  [@@deriving sexp, variants]
+  [@@deriving sexp, variants, eq]
 
-  let rec fold_map
-      ~init
-      ?(location=Tuple2.create)
-      ?(immediate=Tuple2.create)
-      ?(string=Tuple2.create)
-      ?(typ=Tuple2.create)
-      ?(bop=Tuple2.create)
-    (x : t) : ('a * t) =
-    Variants.map
-      x
-      ~location:(fun v l -> Tuple2.map_snd ~f:v.constructor (location init l))
-      ~immediate:(fun v d -> Tuple2.map_snd ~f:v.constructor (immediate init d))
-      ~string:(fun v s -> Tuple2.map_snd ~f:v.constructor (string init s))
-      ~typ:(fun v t -> Tuple2.map_snd ~f:v.constructor (typ init t))
-      ~bop:(fun v l b r ->
-          let (init, l') = fold_map ~init ~location ~immediate ~string ~typ ~bop l in
-          let (init, b') = bop init b in
-          let (init, r') = fold_map ~init ~location ~immediate ~string ~typ ~bop r in
-          (init, v.constructor l' b' r'))
-  ;;
+  (** Base mapper for operands *)
+  module Base_map (M : Monad.S) = struct
+    module F = Fold_helpers (M)
 
-  let fold_map_symbols ~f ~init t =
-    fold_map
-      ~init
-      ~location:(fun init -> fold_map_location_symbols ~f ~init)
-      ~immediate:(fun init -> fold_map_disp_symbols ~f ~init)
-      t
+    let rec fold_map
+        ~init
+        ~location
+        ~immediate
+        ~string
+        ~typ
+        ~bop
+        (x : t) : ('a * t) M.t =
+      Variants.map
+        x
+        ~location:(F.proc_variant1 location init)
+        ~immediate:(F.proc_variant1 immediate init)
+        ~string:(F.proc_variant1 string init)
+        ~typ:(F.proc_variant1 typ init)
+        ~bop:(F.proc_variant3
+                (fun init (l, b, r) ->
+                   let open M.Let_syntax in
+                   let%bind (init, l') = fold_map ~init ~location ~immediate ~string ~typ ~bop l in
+                   let%bind (init, b') = bop init b in
+                   let%map  (init, r') = fold_map ~init ~location ~immediate ~string ~typ ~bop r in
+                   (init, (l', b', r')))
+                init)
+
+    ;;
+  end
+
+  (** Recursive mapper for locations in operands *)
+  module On_locations : Fold_map.S with type t := t and module Elt := Location =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = Location
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~location:f
+            (* These don't contain locations: *)
+            ~immediate:F.fold_nop
+            ~string:F.fold_nop
+            ~typ:F.fold_nop
+            ~bop:F.fold_nop (* NB: this folds over the operator *)
+        ;;
+      end
+    end)
+
+  (** Recursive mapper for symbols in operands *)
+  module On_symbols : Fold_map.S with type t := t and module Elt := String =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = String
+      module Set = String.Set
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        module L = Location.On_symbols.On_monad (M)
+        module D = Disp.On_symbols.On_monad (M)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~location:(fun init -> L.fold_map ~f ~init)
+            ~immediate:(fun init -> D.fold_map ~f ~init)
+            (* These don't contain symbols: *)
+            ~string:F.fold_nop
+            ~typ:F.fold_nop
+            ~bop:F.fold_nop (* NB: this folds over the operator *)
+        ;;
+      end
+    end)
   ;;
 
   let%expect_test "symbol fold over bop" =
     let ast =
       bop
         (bop
-           (immediate (DispSymbolic "a"))
+           (immediate (Disp.Symbolic "a"))
            BopPlus
-           (immediate (DispSymbolic "b")))
+           (immediate (Disp.Symbolic "b")))
         BopMinus
         (location
-           (LocIndirect (Indirect.make ~disp:(DispSymbolic "c") ())))
+           (Location.Indirect (Indirect.make ~disp:(Disp.Symbolic "c") ())))
     in
     let f count sym = (count + 1), String.capitalize sym in
-    let (total, ast') = fold_map_symbols ~f ~init:0 ast in
+    let (total, ast') = On_symbols.fold_map ~f ~init:0 ast in
     Format.printf "@[<v>@[<h>Total:@ %d@]@,%a@]@."
       total
       Sexp.pp_hum [%sexp (ast' : t)];
     [%expect {|
       Total: 3
-      (Bop (Bop (Immediate (DispSymbolic A)) BopPlus (Immediate (DispSymbolic B)))
-       BopMinus
-       (Location
-        (LocIndirect ((seg ()) (disp ((DispSymbolic C))) (base ()) (index ()))))) |}]
-  ;;
-
-  let fold_map_locations ~f ~init t =
-    fold_map ~init ~location:f t
+      (Bop (Bop (Immediate (Symbolic A)) BopPlus (Immediate (Symbolic B))) BopMinus
+       (Location (Indirect ((seg ()) (disp ((Symbolic C))) (base ()) (index ()))))) |}]
   ;;
 end
 
@@ -315,7 +581,7 @@ end
 
 type prefix =
   | PreLock
-[@@deriving sexp]
+[@@deriving sexp, eq]
 
 (*
  * Sizes
@@ -325,7 +591,7 @@ type size =
   | SByte
   | SWord
   | SLong
-[@@deriving sexp]
+[@@deriving sexp, eq]
 
 (*
  * Conditions
@@ -347,7 +613,7 @@ type inv_condition =
   | `Sign
   | `Zero
   ]
-[@@deriving sexp]
+[@@deriving sexp, eq]
 
 type condition =
   [ inv_condition
@@ -357,7 +623,7 @@ type condition =
   | `ParityEven
   | `ParityOdd
   ]
-[@@deriving sexp]
+[@@deriving sexp, eq]
 
 
 module InvConditionTable =
@@ -433,7 +699,7 @@ type sizable_opcode =
   | `Xchg
   | `Xor
   ]
-[@@deriving sexp]
+[@@deriving sexp, eq]
 
 module SizableOpcodeTable =
   StringTable.Make
@@ -482,7 +748,7 @@ type basic_opcode =
   | `Mfence
   | `Nop
   ]
-[@@deriving sexp]
+[@@deriving sexp, eq]
 
 module BasicOpcodeTable =
   StringTable.Make
@@ -504,7 +770,7 @@ type opcode =
   | OpJump of condition option
   | OpDirective of string
   | OpUnknown of string
-[@@deriving sexp]
+[@@deriving sexp, eq]
 
 module JumpTable =
   StringTable.Make
@@ -521,57 +787,157 @@ module JumpTable =
  * Instructions
  *)
 
-type instruction =
-  { prefix   : prefix option
-  ; opcode   : opcode
-  ; operands : Operand.t list
-  }
-[@@deriving sexp]
+module Instruction = struct
+  module T = struct
+    type t =
+      { prefix   : prefix option
+      ; opcode   : opcode
+      ; operands : Operand.t list
+      }
+    [@@deriving sexp, fields, eq, make]
+    ;;
+  end
+  include T
 
-let fold_map_instruction_symbols ~f ~init ins =
-  Tuple2.map_snd ~f:(fun x -> { ins with operands = x })
-                 (List.fold_map ~f:(fun init -> Operand.fold_map_symbols ~f ~init)
-                                ~init
-                                ins.operands)
+  (** Base mapper for instructions *)
+  module Base_map (M : Monad.S) = struct
+    module F = Fold_helpers (M)
 
-let fold_map_instruction_locations ~f ~init ins =
-  Tuple2.map_snd ~f:(fun x -> { ins with operands = x })
-                 (List.fold_map ~f:(fun init -> Operand.fold_map_locations ~f ~init)
-                                ~init
-                                ins.operands)
+    let fold_map
+        ~init
+        ~prefix ~opcode ~operands
+        ins =
+      Fields.Direct.fold
+        ins
+        ~init:M.(return (init, ins))
+        ~prefix:(F.proc_field prefix)
+        ~opcode:(F.proc_field opcode)
+        ~operands:(F.proc_field operands)
+    ;;
+  end
 
-(*
- * Statements
- *)
+  (** Recursive mapper for symbols in instructions *)
+  module On_symbols : Fold_map.S with type t := t and module Elt := String =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = String
+      module Set = String.Set
 
-type statement =
-  | StmInstruction of instruction
-  | StmLabel of string
-  | StmNop
-[@@deriving sexp]
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        module O  = Operand.On_symbols.On_monad (M)
+        module OG = F.On_elt (Operand)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~operands:(fun init -> OG.fold_list ~f:(fun init -> O.fold_map ~f ~init) ~init)
+            (* Prefixes and opcodes don't contain symbols. *)
+            ~prefix:F.fold_nop
+            ~opcode:F.fold_nop
+        ;;
+      end
+    end)
+  ;;
+
+  (** Recursive mapper for locations in instructions *)
+  module On_locations : Fold_map.S with type t := t and module Elt := Location =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = Location
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        module O  = Operand.On_locations.On_monad (M)
+        module OG = F.On_elt (Operand)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~operands:(fun init -> OG.fold_list ~f:(fun init -> O.fold_map ~f ~init) ~init)
+            (* Prefixes and opcodes don't contain locations. *)
+            ~prefix:F.fold_nop
+            ~opcode:F.fold_nop
+        ;;
+      end
+    end)
+  ;;
+end
+
+module Statement = struct
+  type t =
+    | Instruction of Instruction.t
+    | Label of string
+    | Nop
+  [@@deriving sexp, eq, variants]
+
+  (** Base mapper for statements *)
+  module Base_map (M : Monad.S) = struct
+    module F = Fold_helpers (M)
+
+    let fold_map ~init ~instruction ~label ~nop x =
+      Variants.map x
+        ~instruction:(F.proc_variant1 instruction init)
+        ~label:(F.proc_variant1 label init)
+        ~nop:(F.proc_variant0 nop init)
+    ;;
+  end
+
+  (** Recursive mapper for instructions in statements *)
+  module On_instructions : Fold_map.S with type t := t and module Elt := Instruction =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = Instruction
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        module I = Instruction.On_symbols.On_monad (M)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~instruction:f
+            (* These don't contain instructions: *)
+            ~label:F.fold_nop
+            ~nop:F.fold_nop
+        ;;
+      end
+    end)
+
+  (** Recursive mapper for symbols in statements *)
+  module On_symbols : Fold_map.S with type t := t and module Elt := String =
+    Fold_map.Make (struct
+      type nonrec t = t
+      module Elt = String
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module F = Fold_helpers (M)
+
+        module I = Instruction.On_symbols.On_monad (M)
+
+        let fold_map ~f ~init t =
+          B.fold_map t
+            ~init
+            ~instruction:(fun init -> I.fold_map ~f ~init)
+            ~label:f
+            (* These don't contain symbols: *)
+            ~nop:F.fold_nop
+        ;;
+      end
+    end)
+end
 
 (** [t] is the type of an X86 abstract syntax tree, containing the
     specific X86 syntax dialect and a list of statements. *)
 type t =
   { syntax  : Dialect.t
-  ; program : statement list
+  ; program : Statement.t list
   }
-[@@deriving sexp, fields]
-
-let fold_map_statement_symbols ~f ~init =
-  function
-  | StmInstruction i ->
-     Tuple.T2.map_snd ~f:(fun x -> StmInstruction x)
-                      (fold_map_instruction_symbols ~f ~init i)
-  | StmLabel l ->
-     Tuple.T2.map_snd ~f:(fun x -> StmLabel x)
-                      (f init l)
-  | StmNop -> (init, StmNop)
-
-let fold_map_statement_instructions ~f ~init =
-  function
-  | StmInstruction i ->
-     Tuple.T2.map_snd ~f:(fun x -> StmInstruction x)
-                      (f init i)
-  | StmLabel l -> (init, StmLabel l)
-  | StmNop -> (init, StmNop)
+[@@deriving sexp, eq, fields]

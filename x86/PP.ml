@@ -51,13 +51,13 @@ open Ast
 let disp_positive =
   function
   | None -> false
-  | Some (DispNumeric k) -> 0 < k
+  | Some (Disp.Numeric k) -> 0 < k
   | _ -> true
 
 module type Dialect = sig
   val pp_reg : Format.formatter -> Reg.t -> unit
   val pp_indirect : Format.formatter -> Indirect.t -> unit
-  val pp_immediate : Format.formatter -> disp -> unit
+  val pp_immediate : Format.formatter -> Disp.t -> unit
   val pp_comment
     :  pp:(Format.formatter -> 'a -> unit)
     -> Format.formatter
@@ -68,13 +68,13 @@ end
 module type Printer = sig
   include Dialect
 
-  val pp_location : Format.formatter -> location -> unit
+  val pp_location : Format.formatter -> Location.t -> unit
   val pp_bop : Format.formatter -> Operand.bop -> unit
   val pp_operand : Format.formatter -> Operand.t -> unit
   val pp_prefix : Format.formatter -> prefix -> unit
   val pp_opcode : Format.formatter -> opcode -> unit
-  val pp_instruction : Format.formatter -> instruction -> unit
-  val pp_statement : Format.formatter -> statement -> unit
+  val pp_instruction : Format.formatter -> Instruction.t -> unit
+  val pp_statement : Format.formatter -> Statement.t -> unit
 end
 
 (* Parts specific to all dialects *)
@@ -85,9 +85,9 @@ module Basic = struct
 
   let pp_disp ?(show_zero = true) f =
     function
-    | DispSymbolic s -> Format.pp_print_string f s
-    | DispNumeric  0 when not show_zero -> ()
-    | DispNumeric  k -> Format.pp_print_int    f k
+    | Disp.Symbolic s -> Format.pp_print_string f s
+    | Disp.Numeric  0 when not show_zero -> ()
+    | Disp.Numeric  k -> Format.pp_print_int    f k
 end
 
 (* Parts specific to AT&T *)
@@ -106,9 +106,8 @@ module ATTSpecific = struct
     Format.printf "%a@." pp_reg ESP;
     [%expect {| %ESP |}]
 
-  let pp_index f =
-    function
-    | Unscaled r -> pp_reg f r
+  let pp_index f = function
+    | Index.Unscaled r -> pp_reg f r
     | Scaled (r, i) -> Format.fprintf f "%a,@ %d"
                          pp_reg r
                          i
@@ -141,14 +140,14 @@ module ATTSpecific = struct
   let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
     Format.printf "%a@." pp_indirect
       (Indirect.make
-         ~disp:(DispNumeric 2001)
+         ~disp:(Disp.Numeric 2001)
          ());
     [%expect {| 2001 |}]
 
   let%expect_test "pp_indirect: AT&T, +ve disp and base" =
     Format.printf "%a@." pp_indirect
       (Indirect.make
-         ~disp:(DispNumeric 76)
+         ~disp:(Disp.Numeric 76)
          ~base:EAX
          ());
     [%expect {| 76(%EAX) |}]
@@ -156,14 +155,14 @@ module ATTSpecific = struct
   let%expect_test "pp_indirect: AT&T, zero disp only" =
     Format.printf "%a@." pp_indirect
       (Indirect.make
-         ~disp:(DispNumeric 0)
+         ~disp:(Disp.Numeric 0)
          ());
     [%expect {| 0 |}]
 
   let%expect_test "pp_indirect: AT&T, -ve disp and base" =
     Format.printf "%a@." pp_indirect
       (Indirect.make
-         ~disp:(DispNumeric (-42))
+         ~disp:(Disp.Numeric (-42))
          ~base:ECX
          ());
     [%expect {| -42(%ECX) |}]
@@ -178,7 +177,7 @@ module ATTSpecific = struct
   let%expect_test "pp_indirect: AT&T, zero disp and base" =
     Format.printf "%a@." pp_indirect
       (Indirect.make
-         ~disp:(DispNumeric 0)
+         ~disp:(Disp.Numeric 0)
          ~base:EDX
          ());
     [%expect {| (%EDX) |}]
@@ -187,20 +186,20 @@ module ATTSpecific = struct
       (Basic.pp_disp ~show_zero:true)
 
   let%expect_test "pp_immediate: AT&T, positive number" =
-    Format.printf "%a@." pp_immediate (DispNumeric 24);
+    Format.printf "%a@." pp_immediate (Disp.Numeric 24);
     [%expect {| $24 |}]
 
   let%expect_test "pp_immediate: AT&T, zero" =
-    Format.printf "%a@." pp_immediate (DispNumeric 0);
+    Format.printf "%a@." pp_immediate (Disp.Numeric 0);
     [%expect {| $0 |}]
 
   let%expect_test "pp_immediate: AT&T, negative number" =
-    Format.printf "%a@." pp_immediate (DispNumeric (-42));
+    Format.printf "%a@." pp_immediate (Disp.Numeric (-42));
     [%expect {| $-42 |}]
 
 
   let%expect_test "pp_immediate: AT&T, symbolic" =
-    Format.printf "%a@." pp_immediate (DispSymbolic "kappa");
+    Format.printf "%a@." pp_immediate (Disp.Symbolic "kappa");
     [%expect {| $kappa |}]
 end
 
@@ -234,7 +233,7 @@ module IntelAndHerd7 = struct
 
     let pp_index f =
       function
-      | Unscaled r -> pp_reg f r
+      | Index.Unscaled r -> pp_reg f r
       | Scaled (r, i) -> Format.fprintf f "%a*%d"
                                         pp_reg r
                                         i
@@ -275,13 +274,13 @@ module IntelAndHerd7 = struct
 
     let%expect_test "pp_indirect: intel, +ve numeric displacement only" =
       Format.printf "%a@." pp_indirect
-        (Indirect.make ~disp:(DispNumeric 2001) ());
+        (Indirect.make ~disp:(Disp.Numeric 2001) ());
       [%expect {| [2001] |}]
 
     let%expect_test "pp_indirect: Intel, +ve disp and base" =
       Format.printf "%a@." pp_indirect
         (Indirect.make
-           ~disp:(DispNumeric 76)
+           ~disp:(Disp.Numeric 76)
            ~base:EAX
            ());
       [%expect {| [EAX+76] |}]
@@ -289,14 +288,14 @@ module IntelAndHerd7 = struct
 
     let%expect_test "pp_indirect: Intel, zero disp only" =
       Format.printf "%a@." pp_indirect
-        (Indirect.make ~disp:(DispNumeric 0) ());
+        (Indirect.make ~disp:(Disp.Numeric 0) ());
       [%expect {| [0] |}]
 
 
     let%expect_test "pp_indirect: Intel, +ve disp and base" =
       Format.printf "%a@." pp_indirect
         (Indirect.make
-           ~disp:(DispNumeric (-42))
+           ~disp:(Disp.Numeric (-42))
            ~base:ECX
            ());
       [%expect {| [ECX-42] |}]
@@ -311,7 +310,7 @@ module IntelAndHerd7 = struct
     let%expect_test "pp_indirect: Intel, zero disp and base" =
       Format.printf "%a@." pp_indirect
         (Indirect.make
-           ~disp:(DispNumeric 0)
+           ~disp:(Disp.Numeric 0)
            ~base:EDX
            ());
       [%expect {| [EDX] |}]
@@ -346,8 +345,8 @@ module Make (D : Dialect) =
 
     let pp_location f =
       function
-      | LocIndirect i -> pp_indirect f i
-      | LocReg r -> pp_reg f r
+      | Location.Indirect i -> pp_indirect f i
+      | Reg r -> pp_reg f r
 
     let rec pp_operand f = function
       | Operand.Location l -> pp_location f l;
@@ -411,7 +410,7 @@ module Make (D : Dialect) =
      * Instructions
      *)
 
-    let pp_instruction f { prefix; opcode; operands } =
+    let pp_instruction f { Instruction.prefix; opcode; operands } =
       Format.fprintf f
                      "@[@[%a%a@]@ %a@]"
                      (MyFormat.pp_option ~pp:pp_prefix) prefix
@@ -422,11 +421,10 @@ module Make (D : Dialect) =
      * Statements
      *)
 
-    let pp_statement f =
-      function
-      | StmInstruction i -> pp_instruction f i; Format.pp_print_cut f ()
-      | StmLabel l -> Format.fprintf f "@[%s:@ @]" l
-      | StmNop ->
+    let pp_statement f = function
+      | Statement.Instruction i -> pp_instruction f i; Format.pp_print_cut f ()
+      | Label l -> Format.fprintf f "@[%s:@ @]" l
+      | Nop ->
          (* This blank space is deliberate, to make tabstops move across
         properly in litmus printing. *)
          Format.fprintf f " "; Format.pp_print_cut f ()

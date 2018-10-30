@@ -84,27 +84,47 @@ module Reg : sig
   val kind_of : t -> kind
 end
 
-type disp =
-  | DispSymbolic of string
-  | DispNumeric of int
-[@@deriving sexp]
+(** [Disp] concerns displacements. *)
+module Disp : sig
+  type t =
+    | Symbolic of string
+    | Numeric of int
+  [@@deriving sexp, eq]
+  ;;
 
-type index =
-  | Unscaled of Reg.t
-  | Scaled of Reg.t * int
-[@@deriving sexp]
+  (** [On_symbols] permits enumerating and folding over symbols inside
+     a displacement. *)
+  module On_symbols
+    : Fold_map.S with type t := t and module Elt := String
+  ;;
+end
+
+(** [Index] concerns index-scale pairs. *)
+module Index : sig
+  type t =
+    | Unscaled of Reg.t
+    | Scaled of Reg.t * int
+  [@@deriving sexp, eq]
+  ;;
+
+  (** [On_registers] permits enumerating and folding over registers
+     inside a displacement. *)
+  module On_registers
+    : Fold_map.S with type t := t and module Elt := Reg
+  ;;
+end
 
 module Indirect : sig
   (** [t] is the opaque type of indirect memory accesses. *)
-  type t
+  type t [@@deriving eq]
 
-  (** [make ?base ?seg ?disp ?index ()] makes an [Indirect] with
+  (** [make ?seg ?disp ?base ?index ()] makes an [Indirect] with
       the given fields (if present). *)
   val make
-    :  ?base  : Reg.t
-    -> ?seg   : Reg.t
-    -> ?disp  : disp
-    -> ?index : index
+    :  ?seg   : Reg.t
+    -> ?disp  : Disp.t
+    -> ?base  : Reg.t
+    -> ?index : Index.t
     -> unit
     -> t
   ;;
@@ -116,43 +136,80 @@ module Indirect : sig
   val seg : t -> Reg.t option;;
 
   (** [disp] gets the indirect displacement, if any. *)
-  val disp : t -> disp option;;
+  val disp : t -> Disp.t option;;
 
   (** [index] gets the indirect index, if any. *)
-  val index : t -> index option;;
+  val index : t -> Index.t option;;
+
+  (** [On_registers] permits enumerating and folding over registers
+     inside a memory access. *)
+  module On_registers
+    : Fold_map.S with type t := t and module Elt := Reg
+  ;;
+
+  (** [On_symbols] permits enumerating and folding over symbols inside
+     a memory access. *)
+  module On_symbols
+    : Fold_map.S with type t := t and module Elt := String
+  ;;
 end
 
-(** [location] enumerates memory locations: either
+(** [Location] enumerates memory locations: either
     indirect seg/disp/base/index stanzas, or registers. *)
-type location =
-  | LocIndirect of Indirect.t
-  | LocReg of Reg.t
-[@@deriving sexp]
+module Location : sig
+  type t =
+    | Indirect of Indirect.t
+    | Reg of Reg.t
+  [@@deriving sexp, eq]
+
+  (** [On_registers] permits enumerating and folding over registers
+     inside a location. *)
+  module On_registers
+    : Fold_map.S with type t := t and module Elt := Reg
+  ;;
+
+  (** [On_symbols] permits enumerating and folding over symbols inside
+     a location. *)
+  module On_symbols
+    : Fold_map.S with type t := t and module Elt := String
+  ;;
+end
 
 module Operand : sig
   type bop =
     | BopPlus
     | BopMinus
-  [@@deriving sexp]
+  [@@deriving sexp, eq]
   ;;
 
   type t =
-    | Location of location
-    | Immediate of disp
+    | Location of Location.t
+    | Immediate of Disp.t
     | String of string
     | Typ of string (* Type annotation *)
     | Bop of t * bop * t
+  [@@deriving sexp, eq]
   ;;
 
   (* Constructors *)
 
-  val location : location -> t;;
-  val immediate : disp -> t;;
-  val string : string -> t;;
-  val typ : string -> t;;
-  val bop : t -> bop -> t -> t;;
+  val location : Location.t -> t
+  val immediate : Disp.t -> t
+  val string : string -> t
+  val typ : string -> t
+  val bop : t -> bop -> t -> t
 
-  include Sexpable.S with type t := t;;
+  (** [On_locations] permits enumerating and folding over locations
+     inside an operand. *)
+  module On_locations
+    : Fold_map.S with type t := t and module Elt := Location
+  ;;
+
+  (** [On_symbols] permits enumerating and folding over symbols inside
+     an operand. *)
+  module On_symbols
+    : Fold_map.S with type t := t and module Elt := String
+  ;;
 end
 
 type prefix =
@@ -263,79 +320,54 @@ type opcode =
 (** [JumpTable] is a parse table for jump opcodes. *)
 module JumpTable : (StringTable.Intf with type t = condition option)
 
-type instruction =
-  { prefix   : prefix option
-  ; opcode   : opcode
-  ; operands : Operand.t list
-  }
-[@@deriving sexp]
+module Instruction : sig
+  type t =
+    { prefix   : prefix option
+    ; opcode   : opcode
+    ; operands : Operand.t list
+    }
+  [@@deriving sexp, eq, make]
+  ;;
 
-type statement =
-  | StmInstruction of instruction
-  | StmLabel of string
-  | StmNop
-[@@deriving sexp]
+  (** [On_locations] permits enumerating and folding over locations
+     inside an instruction. *)
+  module On_locations
+    : Fold_map.S with type t := t and module Elt := Location
+  ;;
+
+  (** [On_symbols] permits enumerating and folding over symbols inside
+     an instruction. *)
+  module On_symbols
+    : Fold_map.S with type t := t and module Elt := String
+  ;;
+end
+
+module Statement : sig
+  type t =
+    | Instruction of Instruction.t
+    | Label of string
+    | Nop
+  [@@deriving sexp, eq]
+  ;;
+
+  (** [instruction] creates an instruction statement. *)
+  val instruction : Instruction.t -> t
+
+  (** [On_instructions] permits enumerating and folding over
+     instructions inside a statement. *)
+  module On_instructions
+    : Fold_map.S with type t := t and module Elt := Instruction
+  ;;
+
+  (** [On_symbols] permits enumerating and folding over symbols inside
+     an operand. *)
+  module On_symbols
+    : Fold_map.S with type t := t and module Elt := String
+  ;;
+end
 
 type t =
   { syntax  : Dialect.t
-  ; program : statement list
+  ; program : Statement.t list
   }
-[@@deriving sexp, fields]
-
-(*
- * Traversing an AST
- *)
-
-
-(** [fold_map_location_registers ~f ~init s] maps [f] across all
-    registers in location [l], threading through an accumulator
-    with initial value [~init]. *)
-val fold_map_location_registers
-  :  f:('a -> Reg.t -> ('a * Reg.t))
-  -> init:'a
-  -> location
-  -> ('a * location)
-;;
-
-(** [fold_map_instruction_symbols ~init ~f s] maps [f] across all
-   identifier symbols in [i] (labels, memory locations, etc.),
-   threading through an accumulator with initial value [~init].
-
-    It does *not* map [f] over string literals, opcodes, or directive
-   names. *)
-val fold_map_instruction_symbols
-  :  f:('a -> string -> ('a * string))
-  -> init:'a
-  -> instruction
-  -> ('a * instruction)
-
-
-(** [fold_map_instruction_locations ~init ~f i] maps [f] across all memory
-   or register location references in [i], threading through an
-   accumulator with initial value [~init]. *)
-val fold_map_instruction_locations
-  :  f:('a -> location -> ('a * location))
-  -> init:'a
-  -> instruction
-  -> ('a * instruction)
-
-(** [fold_map_statement_symbols ~init ~f s] maps [f] across all
-   identifier symbols in [s] (labels, memory locations, etc.),
-   threading through an accumulator with initial value [~init].
-
-It does *not* map [f] over string literals, opcodes, or directive
-   names. *)
-val fold_map_statement_symbols
-  :  f:('a -> string -> ('a * string))
-  -> init:'a
-  -> statement
-  -> ('a * statement)
-
-(** [fold_map_statement_instructions ~init ~f s] maps [f] across all
-   instructions in [s], threading through an
-   accumulator with initial value [~init]. *)
-val fold_map_statement_instructions
-  :  f:('a -> instruction -> ('a * instruction))
-  -> init:'a
-  -> statement
-  -> ('a * statement)
+[@@deriving sexp, eq, fields]

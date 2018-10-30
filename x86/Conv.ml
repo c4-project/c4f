@@ -31,7 +31,7 @@ module type Intf = sig
 end
 
 module Make (SD : Language.Intf) (DD : Language.Intf) = struct
-  type stm = Ast.statement
+  type stm = Ast.Statement.t
 
   let swap operands =
     operands
@@ -44,7 +44,7 @@ module Make (SD : Language.Intf) (DD : Language.Intf) = struct
     Ast.(
       (* TODO(@MattWindsor91): actually check the instructions
          are src/dst *)
-      { ins with operands = swap ins.operands }
+      { ins with Instruction.operands = swap ins.Instruction.operands }
     )
 
   (** [convert_jump_operand ins] checks to see if [ins] is a jump and,
@@ -65,10 +65,10 @@ module Make (SD : Language.Intf) (DD : Language.Intf) = struct
   let convert_statement =
     Ast.(
       function
-      | StmInstruction i ->
-        StmInstruction (convert_instruction i)
-      | StmLabel _
-      | StmNop as o -> o
+      | Statement.Instruction i ->
+        Statement.Instruction (convert_instruction i)
+      | Label _
+      | Nop as o -> o
     )
 
   let convert = List.map ~f:convert_statement

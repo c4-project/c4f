@@ -36,4 +36,4 @@ end
 module Make
   : functor (SD : Language.Intf)
     -> functor (DD : Language.Intf)
-      -> Intf with type stm = Ast.statement
+      -> Intf with type stm = Ast.Statement.t

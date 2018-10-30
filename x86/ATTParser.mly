@@ -86,8 +86,8 @@ stm_list:
   | list(stm) { $1 }
 
 stm:
-  | option(instr) EOL { Core.Option.value ~default:StmNop $1 }
-  | label { StmLabel $1 }
+  | option(instr) EOL { Core.Option.value_map ~f:Statement.instruction ~default:Statement.Nop $1 }
+  | label { Statement.Label $1 }
 
 prefix:
   | IT_LOCK { PreLock }
@@ -110,20 +110,19 @@ opcode:
 
 instr:
   | prefix opcode separated_list (COMMA, operand)
-           { StmInstruction
-               { prefix = Some $1
-               ; opcode = $2
-               ; operands = $3
-               }
-           }
+    { Instruction.make
+	~prefix:$1
+	~opcode:$2
+        ~operands:$3
+	()
+    }
     (* lock cmpxchgl %eax, %ebx *)
   | opcode separated_list (COMMA, operand)
-         { StmInstruction
-               { prefix = None
-               ; opcode = $1
-               ; operands = $2
-               }
-         }
+    { Instruction.make
+	~opcode:$1
+        ~operands:$2
+	()
+    }
 
 (* Binary operator *)
 bop:
@@ -136,11 +135,11 @@ bis:
     { (Some $1, None) }
     (* (%eax) *)
   | option(ATT_REG) COMMA ATT_REG
-         { ($1, Some (Unscaled $3)) }
+         { ($1, Some (Index.Unscaled $3)) }
     (* (%eax, %ebx)
        (    , %ebx) *)
   | option(ATT_REG) COMMA ATT_REG COMMA k
-         { ($1, Some (Scaled ($3, $5))) }
+         { ($1, Some (Index.Scaled ($3, $5))) }
     (* (%eax, %ebx, 2)
        (    , %ebx, 2) *)
 
@@ -172,15 +171,15 @@ indirect:
     (* 0x4000 *)
 
 location:
-  | indirect {LocIndirect $1}
+  | indirect {Location.Indirect $1}
     (* -8(%eax, %ebx, 2) *)
-  | ATT_REG {LocReg $1}
+  | ATT_REG {Location.Reg $1}
     (* %eax *)
 
 (* Memory displacement *)
 disp:
-  | k    { DispNumeric $1 }
-  | NAME { DispSymbolic $1 }
+  | k    { Disp.Numeric $1 }
+  | NAME { Disp.Symbolic $1 }
 
 operand:
   | prim_operand bop operand { Operand.bop $1 $2 $3 }

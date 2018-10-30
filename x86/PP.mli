@@ -61,7 +61,7 @@ open Ast
 module type Printer = sig
   val pp_reg : Format.formatter -> Reg.t -> unit
   val pp_indirect : Format.formatter -> Indirect.t -> unit
-  val pp_immediate : Format.formatter -> disp -> unit
+  val pp_immediate : Format.formatter -> Disp.t -> unit
 
   (** [pp_comment ~pp f k] prints a line comment whose body is
       given by invoking [pp] on [k]. *)
@@ -71,7 +71,7 @@ module type Printer = sig
     -> 'a
     -> unit
 
-  val pp_location : Format.formatter -> location -> unit
+  val pp_location : Format.formatter -> Location.t -> unit
 
   val pp_bop : Format.formatter -> Operand.bop -> unit
   val pp_operand : Format.formatter -> Operand.t -> unit
@@ -81,9 +81,9 @@ module type Printer = sig
   (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
   val pp_opcode : Format.formatter -> opcode -> unit
 
-  val pp_instruction : Format.formatter -> instruction -> unit
+  val pp_instruction : Format.formatter -> Instruction.t -> unit
 
-  val pp_statement : Format.formatter -> statement -> unit
+  val pp_statement : Format.formatter -> Statement.t -> unit
 end
 
 (** [ATT] provides pretty-printing for AT&T-syntax x86. *)

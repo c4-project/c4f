@@ -43,9 +43,9 @@ module type Basic = sig
 
   (** They must allow fold-mapping over any string parts of the
       symbol. *)
-  module OnStringsS
-    : FoldMap.S with type t = string
-                 and type cont = t
+  module OnStrings
+    : Fold_map.S with type Elt.t = string
+                  and type t = t
   ;;
 
   (** [abstract sym] promotes [sym] to an abstract symbol without any
@@ -125,13 +125,6 @@ module type S = sig
 
   (** [R_map] is an implementation of [R_map] for this symbol type. *)
   module R_map : R_map with type sym = t and module Set = Set
-
-  (** [OnStrings] is an extension of the incoming
-      [SymbolS.OnStringsS]. *)
-  module OnStrings
-    : FoldMap.SetIntf with type t = string
-                       and type cont = t
-  ;;
 
   (** [program_id_of sym] tries to interpret [sym] as a
       program label; if so, it returns [Some n] where [n]
