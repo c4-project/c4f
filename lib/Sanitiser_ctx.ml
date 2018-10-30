@@ -155,7 +155,7 @@ module Make (L : Language.Intf) (C : CustomWarnS)
     ; warnings  = []
     }
 
-  include State.Make (struct type state = ctx end)
+  include State.Make (struct type t = ctx end)
 
   let is_pass_enabled pass =
     peek (fun ctx -> Pass.Set.mem ctx.passes pass)
@@ -168,7 +168,7 @@ module Make (L : Language.Intf) (C : CustomWarnS)
                   ; proglen = List.length prog
                   ; endlabel = None
                   ; syms = Abstract.Symbol.Table.empty })
-      prog
+    >>| fun () -> prog
   ;;
 
   let get_end_label = peek endlabel
@@ -176,7 +176,6 @@ module Make (L : Language.Intf) (C : CustomWarnS)
     modify
       (fun ctx -> { ctx with proglen = succ ctx.proglen;
                              endlabel = Some lbl })
-      ()
   ;;
 
   let get_prog_name = peek progname
@@ -185,15 +184,11 @@ module Make (L : Language.Intf) (C : CustomWarnS)
   let dec_prog_length =
     (* TODO(@MattWindsor91): warn if prog-length goes below 0? *)
     modify (fun ctx -> { ctx with proglen = pred ctx.proglen })
-      ()
   ;;
 
   let (|->) pass f a =
-    make
-      (fun ctx ->
-         if Pass.Set.mem ctx.passes pass
-         then run (f a) ctx
-         else (ctx, a))
+    let open Let_syntax in
+    if%bind is_pass_enabled pass then f a else return a
   ;;
 
   let warn w =
@@ -202,7 +197,6 @@ module Make (L : Language.Intf) (C : CustomWarnS)
          let ent = { Warn.progname = ctx.progname; body = w } in
          { ctx with warnings = ent::ctx.warnings }
       )
-      ()
   ;;
 
   let take_warnings =
@@ -231,14 +225,14 @@ module Make (L : Language.Intf) (C : CustomWarnS)
   ;;
 
   let set_symbol_table syms =
-    modify (fun ctx -> { ctx with syms = syms }) ()
+    modify (fun ctx -> { ctx with syms = syms })
   ;;
 
   let redirect ~src ~dst =
     let open Let_syntax in
     let%bind rds = peek redirects in
     match L.Symbol.R_map.redirect ~src ~dst rds with
-    | Ok rds' -> modify (fun ctx -> { ctx with redirects = rds' } ) ()
+    | Ok rds' -> modify (fun ctx -> { ctx with redirects = rds' } )
     | Error why -> warn (Warn.SymbolRedirFail { src; dst = Some dst; why })
   ;;
 

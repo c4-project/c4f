@@ -145,12 +145,16 @@ module Hook (L : Language.Intf) = struct
   ;;
 
   let through_all_registers loc =
+    let on_register' reg =
+      let open Ctx.Let_syntax in
+      let%bind reg' = on_register reg in
+      let%map  ctx' = Ctx.peek Fn.id in
+      (ctx', reg')
+    in
     Ctx.make
       (fun ctx ->
-         fold_map_location_registers
-           ~f:(fun ctx' reg -> Ctx.run (on_register reg) ctx')
-           ~init:ctx
-           loc)
+         fold_map_location_registers loc ~init:ctx
+           ~f:(fun ctx' reg -> Ctx.run (on_register' reg) ctx'))
   ;;
 
   let on_location loc =

@@ -194,16 +194,11 @@ module Make (LH : LangHookS)
   (** [sanitise_all_locs loc] iterates location sanitisation over
      every location in [loc], threading the context through
      monadically. *)
-  let sanitise_all_locs ins =
-    Ctx.make
-      (fun ctx ->
-         LH.L.Instruction.OnLocations.fold_map
-           ~f:(fun ctx' loc ->
-               Ctx.run (sanitise_loc loc)
-                 ctx')
-           ~init:ctx
-           ins
-      )
+  let sanitise_all_locs =
+    Ctx.on_fold_map
+      LH.L.Instruction.OnLocations.fold_map
+      sanitise_loc
+  ;;
 
   (** [sanitise_ins] performs sanitisation at the single instruction
       level. *)
@@ -237,16 +232,11 @@ module Make (LH : LangHookS)
   (** [sanitise_all_ins stm] iterates instruction sanitisation over
      every instruction in [stm], threading the context through
      monadically. *)
-  let sanitise_all_ins stm =
-    Ctx.make
-      (fun ctx ->
-         LH.L.Statement.OnInstructions.fold_map
-           ~f:(fun ctx' ins ->
-               Ctx.run (sanitise_ins ins)
-                 ctx')
-           ~init:ctx
-           stm
-      )
+  let sanitise_all_ins =
+    Ctx.on_fold_map
+      LH.L.Statement.OnInstructions.fold_map
+      sanitise_ins
+  ;;
 
   (** [sanitise_stm] performs sanitisation at the single statement
       level. *)
@@ -285,10 +275,17 @@ module Make (LH : LangHookS)
       reported program length no longer changes. *)
   let proglen_fix f prog =
     let rec mu prog ctx =
-      let (ctx', prog') = Ctx.run (f prog) ctx in
-      let proglen  = Ctx.run' Ctx.get_prog_length ctx in
-      let proglen' = Ctx.run' Ctx.get_prog_length ctx' in
-      if proglen = proglen'
+      let (ctx', proglen, proglen', prog') =
+        Ctx.run
+          (let open Ctx.Let_syntax in
+           let%bind proglen  = Ctx.get_prog_length in
+           let%bind prog'    = f prog in
+           let%bind proglen' = Ctx.get_prog_length in
+           let%map  ctx'     = Ctx.peek Fn.id in
+           (ctx', proglen, proglen', prog'))
+          ctx
+      in
+      if Int.equal proglen proglen'
       then (ctx', prog') (* Fixed point *)
       else mu prog' ctx'
     in
@@ -331,7 +328,8 @@ module Make (LH : LangHookS)
     let rec mu skipped ctx =
       function
       | x::x'::xs when LH.L.Statement.is_jump_pair x x' ->
-        let (ctx', ()) = Ctx.run Ctx.dec_prog_length ctx in
+        let f = Ctx.(dec_prog_length >>= fun () -> peek Fn.id) in
+        let ctx' = Ctx.run f ctx in
         mu skipped ctx' (x'::xs)
       | x::x'::xs ->
         mu (x::skipped) ctx (x'::xs)
@@ -424,7 +422,7 @@ module Make (LH : LangHookS)
 
   let sanitise_wrapper passes f =
     let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
-    Ctx.run' f (Ctx.initial ~passes:passes')
+    Ctx.run f (Ctx.initial ~passes:passes')
   ;;
 
   let sanitise ?passes prog = sanitise_wrapper passes (sanitise_with_ctx prog)

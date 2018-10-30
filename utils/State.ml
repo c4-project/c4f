@@ -1,80 +1,105 @@
 (* This file is part of 'act'.
 
-Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
-
-(** Haskell-style state monads *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 open Core
 
-module type Intf = sig
-  type state
+include State_intf
 
-  include Monad.S
-  include MyMonad.Extensions with type 'a t := 'a t
+(* We implement [Make] in terms of [Make_transform] and the identity
+   monad, for simplicity. *)
 
-  val make : (state -> (state * 'a)) -> 'a t;;
-  val peek : (state -> 'a) -> 'a t;;
-  val modify : (state -> state) -> 'a -> 'a t;;
-  val modify_unit : (state -> state) -> unit t;;
-  val run : 'a t -> state -> (state * 'a);;
-  val run' : 'a t -> state -> 'a;;
-end
+module Make_transform (B : Basic_transform)
+  : S_transform with type state = B.t and module Inner = B.Inner = struct
+  type state = B.t
+  module Inner = B.Inner
 
-module type S = sig
-  type state
-end
-
-module Make (M : S)
-  : Intf with type state = M.state = struct
-  type state = M.state
-
-  module Inner = struct
-    type 'a t = (state -> (state * 'a))
+  module T = struct
+    type 'a t = (state -> (state * 'a) Inner.t)
 
     include Monad.Make (struct
-      type nonrec 'a t = 'a t
+        type nonrec 'a t = 'a t
 
-      let map' wc ~f =
-        fun state ->
-          let (state', a) = wc state in
-          (state', f a)
-      ;;
-      let map = `Custom map';;
-      let bind wc ~f =
-        fun state ->
-          let (state', a) = wc state in
-          (f a) state'
-      ;;
-      let return a = fun state -> (state, a);;
-    end)
+        let map' wc ~f =
+          fun state ->
+            let open Inner.Let_syntax in
+            let%map (state', a) = wc state in
+            (state', f a)
+        ;;
+
+        let map = `Custom map'
+
+        let bind wc ~f =
+          fun state ->
+            let open Inner.Let_syntax in
+            let%bind (state', a) = wc state in
+            (f a) state'
+        ;;
+
+        let return a = fun state -> Inner.return (state, a);;
+      end)
   end
 
-  include Inner
-  include MyMonad.Extend(Inner)
+  include T
+  include MyMonad.Extend(T)
 
-  let run = Fn.id;;
-  let run' f ctx = f ctx |> snd;;
-  let make = Fn.id;;
-  let peek f ctx = ctx, f ctx;;
-  let modify f a ctx = f ctx, a;;
-  let modify_unit f = modify f ();;
+  let run f ctx = f ctx |> Inner.map ~f:snd
+  let make = Fn.id
+
+  let peek f ctx =
+    let open Inner.Let_syntax in
+    let%map v = f ctx in (ctx, v)
+  ;;
+
+  let modify f ctx =
+    let open Inner.Let_syntax in
+    let%map ctx' = f ctx in (ctx', ())
+  ;;
 end
+
+module Make (B : Basic)
+  : S with type state = B.t = struct
+  include Make_transform (struct
+      type t = B.t
+      module Inner = Monad.Ident
+    end)
+
+  let on_fold_map
+      (mapper : (state, 'a, 'b) fold_mapper)
+      (comp   : ('a -> 'a t))
+      (coll   : 'b) =
+    make
+      (fun ctx ->
+         mapper coll
+         ~init:ctx
+         ~f:(fun ctx' b ->
+             run
+               (let open Let_syntax in
+                let%bind b' = comp b in
+                let%map ctx'' = peek Fn.id in
+                (ctx'', b')
+               )
+               ctx')
+      )
+end
+;;

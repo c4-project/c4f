@@ -86,7 +86,7 @@ module type Intf = sig
   type ctx
 
   (** [Intf] includes a state monad, [t]. *)
-  include State.Intf with type state := ctx
+  include State.S with type state := ctx
 
   (** [initial ~passes ~progname ~proglen] opens an initial context
      with the given enabled passes. *)
