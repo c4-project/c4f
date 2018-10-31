@@ -41,6 +41,8 @@ module State = struct
 
   let of_alist = String.Map.of_alist_or_error
 
+  let bound = String.Map.keys
+
   let map ~keyf ~valf state =
     let open Or_error.Let_syntax in
     let f (k, v) =
@@ -86,7 +88,7 @@ type single_outcome =
 
 type outcome =
   [ single_outcome
-  | MyContainers.partial_order
+  | State.Set.t MyContainers.partial_order
   | `OracleUndef
   ]
 [@@deriving sexp]

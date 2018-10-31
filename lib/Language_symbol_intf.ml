@@ -58,6 +58,15 @@ module type Basic = sig
       The list should be in decreasing order of likelihood, and
       other heuristics can depend on this order. *)
   val abstract_demangle : t -> Abstract.Symbol.t list
+
+  (** [to_string t] converts a [t] to a string.  The string should be
+      a valid assembly-level representation of [t]. *)
+  val to_string : t -> string
+
+  (** [of_string_opt t] tries to interpret [s] as a symbol.  This
+     function can return [None] if the string doesn't represent a
+     legal symbol in this language. *)
+  val of_string_opt : string -> t option
 end
 
 (** [R_map] is the interface of a map-like structure that represents

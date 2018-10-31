@@ -25,36 +25,39 @@ open Core
 
 module type S = sig
   type t =
-    { o      : OutputCtx.t
-    ; iname  : string
-    ; inp    : In_channel.t
-    ; outp   : Out_channel.t
-    ; mode   : [`Explain | `Litmusify]
-    ; passes : Sanitiser_pass.Set.t
+    { o       : OutputCtx.t
+    ; iname   : string
+    ; inp     : In_channel.t
+    ; outp    : Out_channel.t
+    ; mode    : [`Explain | `Litmusify]
+    ; passes  : Sanitiser_pass.Set.t
+    ; symbols : string list
     }
   ;;
 
-  val run : t -> unit Or_error.t
+  val run : t -> (string, string) List.Assoc.t Or_error.t
 end
 
 module type Basic = sig
-  type statement
-
-  module Frontend  : LangFrontend.Intf
-  module Litmus    : Litmus.Intf with type LS.Statement.t = statement
+  module Frontend : LangFrontend.Intf
+  module Litmus : Litmus.Intf
   module Multi_sanitiser
-    : Sanitiser.S with type statement = statement
+    : Sanitiser.S with type statement = Litmus.LS.Statement.t
+                   and type sym = Litmus.LS.Symbol.t
                    and type 'a Program_container.t = 'a list
   ;;
   module Single_sanitiser
-    : Sanitiser.S with type statement = statement
+    : Sanitiser.S with type statement = Litmus.LS.Statement.t
+                   and type sym = Litmus.LS.Symbol.t
                    and type 'a Program_container.t = 'a
   ;;
-  module Explainer : Explainer.S with type statement = statement
+  module Explainer
+    : Explainer.S with type statement = Litmus.LS.Statement.t
+  ;;
 
-  val final_convert : statement list -> statement list
+  val final_convert : Litmus.LS.Statement.t list -> Litmus.LS.Statement.t list
 
-  val statements : Frontend.ast -> statement list
+  val statements : Frontend.ast -> Litmus.LS.Statement.t list
 end
 
 module Make (B : Basic) : S = struct
@@ -64,7 +67,8 @@ module Make (B : Basic) : S = struct
     ; inp   : In_channel.t
     ; outp  : Out_channel.t
     ; mode  : [`Explain | `Litmusify]
-    ; passes : Sanitiser_pass.Set.t
+    ; passes  : Sanitiser_pass.Set.t
+    ; symbols : string list
     }
   ;;
 
@@ -92,8 +96,14 @@ module Make (B : Basic) : S = struct
       (Abstract.Symbol.Set.to_list syms)
   ;;
 
+  let stringify_redirects =
+    List.map
+      ~f:(fun (k, v) -> (LS.Symbol.to_string k, LS.Symbol.to_string v))
+  ;;
+
   let output_litmus
       t
+      (symbols : LS.Symbol.t list)
       (stms : LS.Statement.t list)
       (conv : LS.Statement.t list -> LS.Statement.t list) =
     let emit_warnings =
@@ -109,7 +119,7 @@ module Make (B : Basic) : S = struct
           (fun f -> List.iter ~f:(pp_warning f)) ws
     in
     let open Or_error.Let_syntax in
-    let%bind o = MS.sanitise ~passes:t.passes stms in
+    let%bind o = MS.sanitise ~passes:t.passes ~symbols stms in
     let programs = MS.Output.result o in
     let warnings = MS.Output.warnings o in
     emit_warnings warnings;
@@ -122,18 +132,21 @@ module Make (B : Basic) : S = struct
     in
     let f = Format.formatter_of_out_channel t.outp in
     L.pp f lit;
-    Format.pp_print_flush f ()
+    Format.pp_print_flush f ();
+    stringify_redirects (MS.Output.redirects o)
   ;;
 
   let output_explanation
       t
+      (symbols : LS.Symbol.t list)
       (program : LS.Statement.t list) =
     let open Or_error.Let_syntax in
-    let%map san = SS.sanitise ~passes:t.passes program in
+    let%map san = SS.sanitise ~passes:t.passes ~symbols program in
     let exp = E.explain (SS.Output.result san) in
     let f = Format.formatter_of_out_channel t.outp in
     E.pp f exp;
-    Format.pp_print_flush f ()
+    Format.pp_print_flush f ();
+    stringify_redirects (SS.Output.redirects san)
   ;;
 
   let run t =
@@ -141,12 +154,25 @@ module Make (B : Basic) : S = struct
        this. *)
     let open Result.Let_syntax in
     let%bind asm = parse t in
+    let%bind symbols =
+      t.symbols
+      |> List.map
+        ~f:(fun s -> Result.of_option (LS.Symbol.of_string_opt s)
+               ~error:(
+                 Error.create_s
+                   [%message "Symbol can't be converted from string"
+                       ~symbol:s]
+               )
+           )
+      |> Or_error.combine_errors
+    in
     match t.mode with
     | `Litmusify ->
       output_litmus
         t
+        symbols
         (B.statements asm)
         B.final_convert
     | `Explain ->
-      output_explanation t (B.statements asm)
+      output_explanation t symbols (B.statements asm)
 end

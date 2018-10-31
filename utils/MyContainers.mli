@@ -1,10 +1,11 @@
 open Core
 
-(** [partial_order] is the type of returns from [partial_compare]. *)
-type partial_order =
+(** ['a partial_order] is the type of returns from [partial_compare],
+    where ['a] is the set type under comparison. *)
+type 'a partial_order =
   [ `Equal
-  | `Subset
-  | `Superset
+  | `Subset   of 'a (** RHS has the following extra values. *)
+  | `Superset of 'a (** LHS has the following extra values. *)
   | `NoOrder
   ] [@@deriving sexp]
 ;;
@@ -19,7 +20,7 @@ module type SetExtensions = sig
 
   (** [partial_compare x y] compares two sets [x] and [y] by analysing
       their symmetric difference. *)
-  val partial_compare : t -> t -> partial_order
+  val partial_compare : t -> t -> t partial_order
 end
 
 (** [SetExtend] builds set extensions for module [S]. *)

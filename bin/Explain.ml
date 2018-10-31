@@ -67,7 +67,8 @@ let command =
        Or_error.Let_syntax.(
          let%bind cfg = LangSupport.load_cfg spec_file in
          let%bind spec = Compiler.CSpec.Set.get (Config.M.compilers cfg) cid in
-         Common.do_litmusify `Explain passes o ~infile ~outfile spec
+         Or_error.ignore
+           (Common.do_litmusify `Explain passes o ~infile ~outfile spec)
        )
        |> Common.print_error
    ]

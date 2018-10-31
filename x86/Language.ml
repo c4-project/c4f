@@ -27,6 +27,7 @@ module type Intf = sig
      and type Location.t = Ast.Location.t
      and type Instruction.t = Ast.Instruction.t
      and type Statement.t = Ast.Statement.t
+     and type Symbol.t = string
 
   val make_jump_operand : string -> Ast.Operand.t
 end
@@ -52,6 +53,8 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
 
         module Symbol = struct
           include String
+
+          let of_string_opt = Option.some
 
           let abstract = Fn.id
           let abstract_demangle str =

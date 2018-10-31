@@ -27,39 +27,39 @@ open Core
 
 module type S = sig
   type t =
-    { o      : OutputCtx.t
-    ; iname  : string
-    ; inp    : In_channel.t
-    ; outp   : Out_channel.t
-    ; mode   : [`Explain | `Litmusify]
-    ; passes : Sanitiser_pass.Set.t
+    { o       : OutputCtx.t
+    ; iname   : string
+    ; inp     : In_channel.t
+    ; outp    : Out_channel.t
+    ; mode    : [`Explain | `Litmusify]
+    ; passes  : Sanitiser_pass.Set.t
+    ; symbols : string list
     }
   ;;
 
-  val run : t -> unit Or_error.t
+  val run : t -> (string, string) List.Assoc.t Or_error.t
 end
 
 module type Basic = sig
-  type statement
-
-  module Frontend
-    : LangFrontend.Intf
-  module Litmus
-    : Litmus.Intf with type LS.Statement.t = statement
-  ;;
+  module Frontend : LangFrontend.Intf
+  module Litmus : Litmus.Intf
   module Multi_sanitiser
-    : Sanitiser.S with type statement = statement
+    : Sanitiser.S with type statement = Litmus.LS.Statement.t
+                   and type sym = Litmus.LS.Symbol.t
                    and type 'a Program_container.t = 'a list
   ;;
   module Single_sanitiser
-    : Sanitiser.S with type statement = statement
+    : Sanitiser.S with type statement = Litmus.LS.Statement.t
+                   and type sym = Litmus.LS.Symbol.t
                    and type 'a Program_container.t = 'a
   ;;
-  module Explainer : Explainer.S with type statement = statement
+  module Explainer
+    : Explainer.S with type statement = Litmus.LS.Statement.t
+  ;;
 
-  val final_convert : statement list -> statement list
+  val final_convert : Litmus.LS.Statement.t list -> Litmus.LS.Statement.t list
 
-  val statements : Frontend.ast -> statement list
+  val statements : Frontend.ast -> Litmus.LS.Statement.t list
 end
 
 module Make : functor (B : Basic) -> S

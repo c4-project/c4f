@@ -39,8 +39,6 @@ let get_litmusifier_x86 =
           struct
             module L = (val l)
 
-            type statement = L.Statement.t
-
             module Frontend = (val f)
             module Litmus = X86.Litmus.LitmusDirect
             module Multi_sanitiser = X86.Sanitiser.Make_multi (L)

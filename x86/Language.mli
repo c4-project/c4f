@@ -17,6 +17,7 @@ module type Intf = sig
      and type Location.t = Ast.Location.t
      and type Instruction.t = Ast.Instruction.t
      and type Statement.t = Ast.Statement.t
+     and type Symbol.t = string
 
   (** [make_jump_operand jsym] expands a jump symbol [jsym] to the
       correct abstract syntax for this version of x86. *)

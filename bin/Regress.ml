@@ -48,6 +48,7 @@ let regress_run_litmusifier (l : (module Litmusifier.S))
       ; outp
       ; mode
       ; passes
+      ; symbols = [] (* TODO(@MattWindsor91): exercise this? *)
       }
   in
 

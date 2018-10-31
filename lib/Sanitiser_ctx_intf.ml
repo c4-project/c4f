@@ -56,12 +56,9 @@ module type WarnIntf = sig
     | UnknownElt of elt
     (* This element seems erroneous, and its translation may be wrong. *)
     | ErroneousElt of elt
-    (* A symbol redirection failed, which may cause the reported
-       location table to be wrong. *)
-    | SymbolRedirFail of { src : L.Symbol.t
-                         ; dst : L.Symbol.t option
-                         ; why : Error.t
-                         }
+    (* Looking up the named symbol in the assembly failed, which may
+       cause the reported location table to be wrong. *)
+    | SymbolRedirFail of L.Symbol.t
     (* Hook for language-specific sanitiser passes to add warnings. *)
     | Custom of C.t
 
@@ -182,6 +179,23 @@ module type Intf = sig
   val set_symbol_table
     :  Abstract.Symbol.Table.t
     -> unit t
+  ;;
+
+  (** [get_redirect sym] looks up [sym] in the concrete symbol
+      redirection table.  If [sym] redirects to itself, the
+      result is [Some sym]; [None] means the symbol has no
+      known corresponding symbol in the assembly. *)
+  val get_redirect
+    :  Lang.Symbol.t
+    -> (Lang.Symbol.t option) t
+  ;;
+
+  (** [get_redirect_alist syms] looks up each symbol in [syms] in the
+     concrete symbol redirection table, and builds an associative list
+     from each such symbol that has a redirection. *)
+  val get_redirect_alist
+    :  Lang.Symbol.t list
+    -> (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t t
   ;;
 
   (** [redirect ~src ~dst] tries to redirect ~src to ~dst in the

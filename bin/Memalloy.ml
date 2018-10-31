@@ -78,7 +78,7 @@ let compile o fs cspec =
        ~outfile:(Pathset.File.asm_path fs))
 ;;
 
-let litmusify o fs cspec =
+let litmusify o fs symbols cspec =
   let cid = Compiler.CSpec.WithId.id cspec in
   log_stage "LITMUS" o (Pathset.File.basename fs) cid;
   Or_error.tag ~tag:"While translating assembly to litmus"
@@ -86,6 +86,7 @@ let litmusify o fs cspec =
        `Litmusify
        (Sanitiser_pass.all_set ())
        o
+       ~symbols
        ~infile:(Some (Pathset.File.asm_path fs))
        ~outfile:(Some (Pathset.File.lita_path fs))
        (Compiler.CSpec.WithId.spec cspec))
@@ -120,40 +121,102 @@ let herd o prog ~infile ~outfile (cspec : Compiler.CSpec.WithId.t) =
   end else return `Disabled
 ;;
 
-let analyse (c_herd : herd_run_result) (a_herd : herd_run_result)
+(** [lower_thread_local_symbol] converts thread-local symbols of the
+   form `0:r0` into the memalloy witness equivalent, `t0r0`. *)
+let lower_thread_local_symbol sym =
+  Option.value ~default:sym
+    ( let open Option.Let_syntax in
+      let%bind (thread, rest) = String.lsplit2 ~on:':' sym in
+      let%bind tnum = Caml.int_of_string_opt thread in
+      let%map tnum = Option.some_if (Int.is_non_negative tnum) tnum in
+      sprintf "t%d%s" tnum rest
+    )
+;;
+
+let analyse
+    (c_herd : herd_run_result)
+    (a_herd : herd_run_result)
+    (locmap : (string, string) List.Assoc.t)
   : herd_analysis Or_error.t =
   let open Or_error.Let_syntax in
-    match c_herd, a_herd with
-    | `Disabled, _ | _, `Disabled -> return `Disabled
-    | `Errored, _ -> return (`Errored `C)
-    | _, `Errored -> return (`Errored `Assembly)
-    | `Success initial, `Success final ->
-      let%map outcome =
-        Herd.outcome_of ~initial ~final
-          (* TODO(@MattWindsor91): properly locmap. *)
-          ~locmap:(fun x -> return (Some x))
-          (* TODO(@MattWindsor91): properly valmap, if needed. *)
-          ~valmap:return
+  (* The locmap function we supply below goes backwards, from
+     assembly locations to C symbols.  Our location map goes the other
+     way, so we need to transpose it. *)
+  let locmap_r = List.Assoc.inverse locmap in
+  match c_herd, a_herd with
+  | `Disabled, _ | _, `Disabled -> return `Disabled
+  | `Errored, _ -> return (`Errored `C)
+  | _, `Errored -> return (`Errored `Assembly)
+  | `Success initial, `Success final ->
+    let%map outcome =
+      Herd.outcome_of ~initial ~final
+        ~locmap:(
+          fun final_sym ->
+            Or_error.return (
+              List.Assoc.find ~equal:String.equal locmap_r final_sym
+            )
+        )
+        (* TODO(@MattWindsor91): properly valmap, if needed. *)
+        ~valmap:return
       in
       (outcome :> herd_analysis)
+;;
+
+(** [locations_of_herd_result r] takes the C/litmus Herd result [r]
+   and extracts an associative array of mappings [(s, s')] where each
+   [s] is a location mentioned in [r]'s state list, and each [s'] is
+   the equivalent variable name in the memalloy C witness. *)
+let locations_of_herd_result = function
+  | `Success herd ->
+    Herd.states herd
+    |> List.concat_map ~f:Herd.State.bound
+    |> List.map ~f:(fun s -> (s, lower_thread_local_symbol s))
+  | `Disabled | `Errored -> []
+;;
+
+(** [compose_alists a b equal] produces an associative list that
+    returns [(x, z)] for each [(x, y)] in [a] such that
+    a [(y', z)] exists in [b] and [equal y y']. *)
+let compose_alists
+  (a : ('a, 'b) List.Assoc.t)
+  (b : ('b, 'c) List.Assoc.t)
+  (equal : 'b -> 'b -> bool)
+  : ('a, 'c) List.Assoc.t =
+  List.filter_map a ~f:(
+    fun (k, v) ->
+      Option.Monad_infix.(
+        List.Assoc.find ~equal b v >>| Tuple2.create k
+      )
+  )
 ;;
 
 let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog spec fname =
   let base = Filename.chop_extension (Filename.basename fname) in
   let open Or_error.Let_syntax in
   Pathset.File.(
+    (* NB: many of these stages depend on earlier stages' filesystem
+       side-effects.  These dependencies aren't evident in the binding
+       chain, so be careful when re-ordering. *)
     let fs = make ps base in
     let%bind c_herd =
       herd o herdprog spec
         ~infile:(litc_path fs) ~outfile:(herdc_path fs)
     in
     let%bind () = compile o fs spec in
-    let%bind () = litmusify o fs spec in
+    let locs = locations_of_herd_result c_herd in
+    (* The location symbols at the C level are each RHS of each
+       pair in locs. *)
+    let syms = List.map ~f:snd locs in
+    let%bind sym_redirects = litmusify o fs syms spec in
+    (* syms' now contains the redirections from C-level symbols to
+       asm/Litmus-level symbols.  To get the mapping between Herd
+       locations, we need the composition of the two maps. *)
+    let locmap = compose_alists locs sym_redirects String.equal in
     let%bind a_herd =
       herd o herdprog spec
         ~infile:(lita_path fs) ~outfile:(herda_path fs)
     in
-    let%map analysis = analyse c_herd a_herd in
+    let%map analysis = analyse c_herd a_herd locmap in
     (base, { herd = analysis });
   )
 ;;

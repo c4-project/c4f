@@ -35,6 +35,7 @@ module Hook
 module Make_single
   : functor (L : Language.Intf)
     -> Lib.Sanitiser.S with type statement = L.Statement.t
+                        and type sym = L.Symbol.t
                         and type 'a Program_container.t = 'a
 ;;
 
@@ -44,6 +45,7 @@ module Make_single
 module Make_multi
   : functor (L : Language.Intf)
     -> Lib.Sanitiser.S with type statement = L.Statement.t
+                        and type sym = L.Symbol.t
                         and type 'a Program_container.t = 'a list
 ;;
 

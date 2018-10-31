@@ -52,10 +52,7 @@ module Warn (L : Language.Intf) (C : CustomWarnS)
     | MissingEndLabel
     | UnknownElt of elt
     | ErroneousElt of elt
-    | SymbolRedirFail of { src : L.Symbol.t
-                         ; dst : L.Symbol.t option
-                         ; why : Error.t
-                         }
+    | SymbolRedirFail of L.Symbol.t
     | Custom of C.t
 
   type t =
@@ -89,14 +86,10 @@ module Warn (L : Language.Intf) (C : CustomWarnS)
       (elt_type_name elt)
       pp_elt elt
 
-  let pp_symbol_redir_warning f src dst why =
+  let pp_symbol_redir_warning f src =
     Format.fprintf f
-      "act failed to redirect the symbol %a%a.@ The reason given was:@ \
-       @[<hv>%a@]@ The litmus translation may have an incorrect location table."
+      "act couldn't find the symbol@ '%a'@ in the assembly.@ The litmus translation may have an incorrect location table."
       L.Symbol.pp src
-      (MyFormat.pp_option ~pp:(fun f -> Format.fprintf f " to %a" L.Symbol.pp))
-      dst
-      Error.pp why
   ;;
 
   let pp_body f =
@@ -104,7 +97,7 @@ module Warn (L : Language.Intf) (C : CustomWarnS)
     | MissingEndLabel ->
       String.pp f
         "act needed an end-of-program label here, but there wasn't one."
-    | SymbolRedirFail { src; dst; why } -> pp_symbol_redir_warning f src dst why
+    | SymbolRedirFail src -> pp_symbol_redir_warning f src
     | UnknownElt elt -> pp_unknown_warning f elt
     | ErroneousElt elt -> pp_erroneous_warning f elt
     | Custom c -> C.pp f c
@@ -247,6 +240,32 @@ module Make (L : Language.Intf) (C : CustomWarnS)
   let set_symbol_table syms =
     modify (fun ctx -> { ctx with syms = syms })
   ;;
+
+  let resolve_redirect sym = function
+    | L.Symbol.R_map.Identity -> sym
+    | MapsTo sym' -> sym'
+  ;;
+
+  let get_redirect sym =
+    let open Let_syntax in
+    let%map rds = peek redirects in
+    Option.map (L.Symbol.R_map.dest_of rds sym)
+      ~f:(resolve_redirect sym)
+  ;;
+
+  let get_redirect_alist syms
+    : ((L.Symbol.t, L.Symbol.t) List.Assoc.t) t =
+    let open Let_syntax in
+    let%map rds = peek redirects in
+    List.filter_map syms
+      ~f:(fun sym ->
+          Option.(
+            L.Symbol.R_map.dest_of rds sym
+            >>| resolve_redirect sym
+            >>| Tuple2.create sym
+          )
+        )
+    ;;
 
   let redirect ~src ~dst =
     let open Let_syntax in

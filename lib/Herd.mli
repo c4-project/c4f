@@ -51,11 +51,16 @@ module State : sig
     -> t Or_error.t
   ;;
 
+  (** [bound t] gets the list of all bound names in [t]. *)
+  val bound : t -> string list
+
   (** [of_alist alist] tries to convert [alist] into a state. *)
   val of_alist
     :  (string, string) List.Assoc.t
     -> t Or_error.t
   ;;
+
+  module Set : Set.S with type Elt.t = t
 end
 
 (** [single_outcome] is the type of outcomes we can get from single
@@ -72,7 +77,7 @@ type single_outcome =
 (** [outcome] is the type of summaries of Herd analysis. *)
 type outcome =
   [ single_outcome
-  | MyContainers.partial_order
+  | State.Set.t MyContainers.partial_order
   | `OracleUndef  (** The oracle execution triggered undefined
                       behaviour. *)
   ]

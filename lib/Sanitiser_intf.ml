@@ -79,6 +79,7 @@ module type S = sig
   module Warn : Sanitiser_ctx.WarnIntf
 
   type statement
+  type sym
 
   (** [Program_container] describes the container that the sanitised
      program or programs are held in. *)
@@ -91,9 +92,14 @@ module type S = sig
     val result : t -> statement list Program_container.t
 
     val warnings : t -> Warn.t list
+
+    val redirects
+      : t
+      -> (sym, sym)
+        List.Assoc.t
   end
 
-  (** [sanitise ?passes stms] sanitises a statement list [stms],
+  (** [sanitise ?passes ?symbols stms] sanitises a statement list [stms],
       returning one or more program lists with various litmus-unfriendly
       elements removed or simplified.
 
@@ -101,9 +107,14 @@ module type S = sig
       [stms] will be split along its program boundaries first.
 
       Optional argument 'passes' controls the sanitisation passes
-      used; the default is [Pass.all]. *)
+      used; the default is [Pass.all].
+
+      Optional argument 'symbols' gives a list of concrete symbols
+      that the sanitiser should track throughout the sanitisation
+      process. *)
   val sanitise
     :  ?passes:Sanitiser_pass.Set.t
+    -> ?symbols:sym list
     -> statement list
     -> Output.t Or_error.t
 end
@@ -123,6 +134,7 @@ module type Sanitiser = sig
   module Make :
     functor (B : Basic)
       -> S with type statement = B.L.Statement.t
+            and type sym = B.L.Symbol.t
             and type 'a Program_container.t = 'a B.Program_container.t
   ;;
 
@@ -132,6 +144,7 @@ module type Sanitiser = sig
   module Make_single :
     functor (H : Hook)
       -> S with type statement = H.L.Statement.t
+            and type sym = H.L.Symbol.t
             and type 'a Program_container.t = 'a
   ;;
 
@@ -141,6 +154,7 @@ module type Sanitiser = sig
   module Make_multi :
     functor (H : Hook)
       -> S with type statement = H.L.Statement.t
+            and type sym = H.L.Symbol.t
             and type 'a Program_container.t = 'a list
   ;;
 end

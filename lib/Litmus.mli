@@ -30,8 +30,7 @@ open Core
  *)
 
 (** [Intf] is the interface for litmus AST modules. *)
-module type Intf =
-sig
+module type Intf = sig
   module LS : Language.Intf
 
   type t =

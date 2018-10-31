@@ -54,8 +54,7 @@ let mangler =
                       ; '_', 'U' (* Underscore *)
                       ; 'Z', 'Z' (* Z *)
                       ]
-let mangle ident =
-  Staged.unstage mangler ident
+let mangle = Staged.unstage mangler
 
 let%expect_test "mangle: sample" =
   print_string (mangle "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet");
@@ -63,6 +62,7 @@ let%expect_test "mangle: sample" =
 
 module Make (B : Basic)
   : S with type statement = B.L.Statement.t
+       and type sym = B.L.Symbol.t
        and type 'a Program_container.t = 'a B.Program_container.t = struct
   module Ctx = B.Ctx
   module Warn = B.Ctx.Warn
@@ -76,11 +76,13 @@ module Make (B : Basic)
   module Ctx_List = MyList.On_monad (Ctx)
 
   type statement = L.Statement.t
+  type sym = L.Symbol.t
 
   module Output = struct
     type t =
-      { result   : statement list Program_container.t
-      ; warnings : Warn.t list
+      { result    : statement list Program_container.t
+      ; warnings  : Warn.t list
+      ; redirects : (sym, sym) List.Assoc.t
       } [@@deriving fields]
   end
 
@@ -131,6 +133,22 @@ module Make (B : Basic)
     in ins
   ;;
 
+  (** [mangle_and_redirect sym] mangles [sym], either by
+      generating and installing a new mangling into
+      the redirects table if none already exists; or by
+      fetching the existing mangle. *)
+  let mangle_and_redirect sym =
+    let open Ctx.Let_syntax in
+    match%bind Ctx.get_redirect sym with
+    | Some sym' when not (L.Symbol.equal sym sym') ->
+      (* There's an existing redirect, so we assume it's a
+         mangled version. *)
+      Ctx.return sym'
+    | Some _ | None ->
+      let sym' = L.Symbol.OnStrings.map ~f:mangle sym in
+      Ctx.redirect ~src:sym ~dst:sym' >>| fun () -> sym'
+  ;;
+
   let change_ret_to_end_jump ins =
     let open Ctx.Let_syntax in
     match L.Instruction.abs_type ins with
@@ -174,12 +192,15 @@ module Make (B : Basic)
     >>= (SimplifyLitmus |-> change_ret_to_end_jump)
     >>= (SimplifyLitmus |-> change_stack_to_heap)
 
-  (** [mangle_identifiers] reduces identifiers into a form that herd
-      can parse. *)
-  let mangle_identifiers stm =
-    Ctx.return
-      (L.Statement.OnSymbols.map stm
-         ~f:(L.Symbol.OnStrings.map ~f:mangle))
+  (** [mangle_identifiers progs] reduces identifiers across a program
+      container [progs] into a form that herd can parse. *)
+  let mangle_identifiers progs =
+    let module Ctx_Stm_Sym = L.Statement.OnSymbols.On_monad (Ctx) in
+    (* Nested mapping:
+       over symbols in statements in statement lists in programs. *)
+    Ctx_Pcon.mapM progs
+      ~f:(Ctx_List.mapM ~f:(Ctx_Stm_Sym.mapM ~f:mangle_and_redirect))
+  ;;
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
@@ -210,9 +231,6 @@ module Make (B : Basic)
        changes to the statements. *)
     >>= (Warn |-> warn_unknown_statements)
     >>= sanitise_all_ins
-    (* Do this last, in case the instruction sanitisers have
-       introduced invalid identifiers. *)
-    >>= (MangleSymbols |-> mangle_identifiers)
 
   let any (fs : ('a -> bool) list) (a : 'a) : bool =
     List.exists ~f:(fun f -> f a) fs
@@ -361,22 +379,68 @@ module Make (B : Basic)
     )
   ;;
 
-  let sanitise_with_ctx progs =
+  (** [find_initial_redirects symbols] tries to find the compiler-mangled
+      version of each symbol in [symbols].  In each case, it sets up a
+      redirect in the redirects table.
+
+      If it fails to find at least one of the symbols, it'll raise a
+      warning. *)
+  let find_initial_redirects symbols progs =
+    let open Ctx in
+    if List.is_empty symbols
+    then return ()
+    else begin
+      let all_progs = Program_container.to_list progs in
+      (* Build a map src->dst, where each dst is a symbol in the
+         assembly, and src is one possible demangling of dst.
+         We're assuming that there'll only be one unique dst for
+         each src, and taking the most recent dst. *)
+      let symbol_map =
+        all_progs
+        |> List.concat_map
+            ~f:(List.concat_map ~f:L.Statement.OnSymbols.to_list)
+        |> List.concat_map ~f:(
+          fun dst ->
+            List.map (L.Symbol.abstract_demangle dst)
+              ~f:(fun src -> (src, dst))
+        )
+        |> String.Map.of_alist_reduce ~f:(fun _ y -> y)
+      in
+      Ctx_List.mapM symbols ~f:(
+        fun src ->
+          match String.Map.find symbol_map (L.Symbol.to_string src) with
+          | Some dst -> Ctx.redirect ~src ~dst
+          | None     -> Ctx.warn (Warn.SymbolRedirFail src)
+      ) >>| (fun _ -> ())
+    end
+  ;;
+
+  let sanitise_with_ctx symbols progs =
     let open Ctx.Let_syntax in
-    let%bind progs' = Ctx_Pcon.mapiM ~f:sanitise_program progs in
-    let%map warns = Ctx.take_warnings in
+    let%bind () = find_initial_redirects symbols progs in
+    let%bind progs' =
+      Ctx_Pcon.mapiM ~f:sanitise_program progs
+      (* We do this last, for two reasons: first, in case the
+         instruction sanitisers have introduced invalid identifiers;
+         and second, so that we know that the manglings agree across
+         program boundaries.*)
+      >>= Ctx.(MangleSymbols |-> mangle_identifiers)
+    in
+    let%bind warns = Ctx.take_warnings in
+    let%map redirs = Ctx.get_redirect_alist symbols in
     Output.(
       { result = make_programs_uniform (L.Statement.empty ()) progs'
       ; warnings = warns
+      ; redirects = redirs
       }
     )
   ;;
 
-  let sanitise ?passes stms =
+  let sanitise ?passes ?(symbols=[]) stms =
     let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
     Ctx.(
       run
-      (Monadic.return (B.split stms) >>= sanitise_with_ctx)
+      (Monadic.return (B.split stms) >>= sanitise_with_ctx symbols)
       (initial ~passes:passes')
     )
   ;;
