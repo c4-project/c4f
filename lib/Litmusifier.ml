@@ -23,7 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
-module type Intf = sig
+module type S = sig
   type t =
     { o      : OutputCtx.t
     ; iname  : string
@@ -37,20 +37,27 @@ module type Intf = sig
   val run : t -> unit Or_error.t
 end
 
-module type S = sig
+module type Basic = sig
   type statement
 
   module Frontend  : LangFrontend.Intf
-  module Litmus    : (Litmus.Intf with type LS.Statement.t = statement)
-  module Sanitiser : (Sanitiser.Intf with type statement = statement)
-  module Explainer : (Explainer.S with type statement = statement)
+  module Litmus    : Litmus.Intf with type LS.Statement.t = statement
+  module Multi_sanitiser
+    : Sanitiser.S with type statement = statement
+                   and type 'a Program_container.t = 'a list
+  ;;
+  module Single_sanitiser
+    : Sanitiser.S with type statement = statement
+                   and type 'a Program_container.t = 'a
+  ;;
+  module Explainer : Explainer.S with type statement = statement
 
   val final_convert : statement list -> statement list
 
   val statements : Frontend.ast -> statement list
 end
 
-module Make (M : S) : Intf = struct
+module Make (B : Basic) : S = struct
   type t =
     { o     : OutputCtx.t
     ; iname : string
@@ -62,14 +69,15 @@ module Make (M : S) : Intf = struct
   ;;
 
   (* Shorthand for modules we use a _lot_. *)
-  module L = M.Litmus;;
+  module L  = B.Litmus;;
   module LS = L.LS;;
-  module S = M.Sanitiser;;
-  module E = M.Explainer;;
+  module MS = B.Multi_sanitiser;;
+  module SS = B.Single_sanitiser;;
+  module E  = B.Explainer;;
 
   let parse t =
     Or_error.tag_arg
-      (M.Frontend.load_from_ic ~path:t.iname t.inp)
+      (B.Frontend.load_from_ic ~path:t.iname t.inp)
       "Error while parsing assembly" t.iname String.sexp_of_t
   ;;
 
@@ -94,16 +102,16 @@ module Make (M : S) : Intf = struct
       | ws ->
         let pp_warning f w =
           Format.fprintf f "@[<h>-@ @[<hov>%a@]@]@,"
-            S.Warn.pp w
+            MS.Warn.pp w
         in
         Format.fprintf t.o.wf "Warnings@ for@ %s:@ @[<v>%a@]@."
           t.iname
           (fun f -> List.iter ~f:(pp_warning f)) ws
     in
     let open Or_error.Let_syntax in
-    let%bind o = S.split_and_sanitise ~passes:t.passes stms in
-    let programs = S.Output.result o in
-    let warnings = S.Output.warnings o in
+    let%bind o = MS.sanitise ~passes:t.passes stms in
+    let programs = MS.Output.result o in
+    let warnings = MS.Output.warnings o in
     emit_warnings warnings;
     let%map lit =
       Or_error.tag ~tag:"Couldn't build litmus file."
@@ -121,8 +129,8 @@ module Make (M : S) : Intf = struct
       t
       (program : LS.Statement.t list) =
     let open Or_error.Let_syntax in
-    let%map san = S.sanitise ~passes:t.passes program in
-    let exp = E.explain (S.Output.result san) in
+    let%map san = SS.sanitise ~passes:t.passes program in
+    let exp = E.explain (SS.Output.result san) in
     let f = Format.formatter_of_out_channel t.outp in
     E.pp f exp;
     Format.pp_print_flush f ()
@@ -137,8 +145,8 @@ module Make (M : S) : Intf = struct
     | `Litmusify ->
       output_litmus
         t
-        (M.statements asm)
-        M.final_convert
+        (B.statements asm)
+        B.final_convert
     | `Explain ->
-      output_explanation t (M.statements asm)
+      output_explanation t (B.statements asm)
 end

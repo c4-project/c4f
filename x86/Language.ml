@@ -46,8 +46,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
     )
 
   include
-    Language.Make
-      (struct
+    Language.Make (struct
         let name = "X86"
         let pp_comment = P.pp_comment
 
@@ -63,7 +62,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               ]
           ;;
 
-          module OnStrings = Fold_map.Make (struct
+          module OnStrings = Fold_map.Make0 (struct
             type t = string
             module Elt = String
 

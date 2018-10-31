@@ -25,7 +25,7 @@ open Core
 open Lib
 open Utils
 
-let regress_run_litmusifier (l : (module Litmusifier.Intf))
+let regress_run_litmusifier (l : (module Litmusifier.S))
     path mode passes file =
   let open Or_error.Let_syntax in
   let module L = (val l) in

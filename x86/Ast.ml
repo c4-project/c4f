@@ -125,10 +125,8 @@ module Fold_helpers (M : Monad.S) = struct
   ;;
 
   module On_elt (Elt : Equal.S) = struct
-    module F_opt    = Fold_map.Option (Elt)
-    module F_opt_M  = F_opt.On_monad (M)
-    module F_list   = Fold_map.List (Elt)
-    module F_list_M = F_list.On_monad (M)
+    module F_opt_M  = Fold_map.Option.On_monad (M)
+    module F_list_M = Fold_map.List.On_monad (M)
 
     let fold_opt = F_opt_M.fold_map
     let fold_list = F_list_M.fold_map
@@ -238,8 +236,8 @@ module Disp = struct
     ;;
   end
 
-  module On_symbols : Fold_map.S with type t := t and module Elt := String =
-    Fold_map.Make (struct
+  module On_symbols : Fold_map.S0 with type t := t and type elt := string =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = String
 
@@ -281,8 +279,8 @@ module Index = struct
   end
 
   (** Recursive mapper for registers *)
-  module On_registers : Fold_map.S with type t := t and module Elt := Reg =
-    Fold_map.Make (struct
+  module On_registers : Fold_map.S0 with type t := t and type elt := Reg.t =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = Reg
 
@@ -333,8 +331,8 @@ module Indirect = struct
   end
 
   (** Recursive mapper for symbols *)
-  module On_symbols : Fold_map.S with type t := t and module Elt := String =
-    Fold_map.Make (struct
+  module On_symbols : Fold_map.S0 with type t := t and type elt := string =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = String
       module Set = String.Set
@@ -361,8 +359,8 @@ module Indirect = struct
     end)
 
   (** Recursive mapper for registers *)
-  module On_registers : Fold_map.S with type t := t and module Elt := Reg =
-    Fold_map.Make (struct
+  module On_registers : Fold_map.S0 with type t := t and type elt := Reg.t =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = Reg
 
@@ -413,8 +411,8 @@ module Location = struct
     ;;
   end
 
-  module On_registers : Fold_map.S with type t := t and module Elt := Reg =
-    Fold_map.Make (struct
+  module On_registers : Fold_map.S0 with type t := t and type elt := Reg.t =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = Reg
 
@@ -434,8 +432,8 @@ module Location = struct
     end)
   ;;
 
-  module On_symbols : Fold_map.S with type t := t and module Elt := String =
-    Fold_map.Make (struct
+  module On_symbols : Fold_map.S0 with type t := t and type elt := string =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = String
 
@@ -502,8 +500,8 @@ module Operand = struct
   end
 
   (** Recursive mapper for locations in operands *)
-  module On_locations : Fold_map.S with type t := t and module Elt := Location =
-    Fold_map.Make (struct
+  module On_locations : Fold_map.S0 with type t := t and type elt := Location.t =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = Location
 
@@ -525,8 +523,8 @@ module Operand = struct
     end)
 
   (** Recursive mapper for symbols in operands *)
-  module On_symbols : Fold_map.S with type t := t and module Elt := String =
-    Fold_map.Make (struct
+  module On_symbols : Fold_map.S0 with type t := t and type elt := string =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = String
       module Set = String.Set
@@ -817,8 +815,8 @@ module Instruction = struct
   end
 
   (** Recursive mapper for symbols in instructions *)
-  module On_symbols : Fold_map.S with type t := t and module Elt := String =
-    Fold_map.Make (struct
+  module On_symbols : Fold_map.S0 with type t := t and type elt := string =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = String
       module Set = String.Set
@@ -843,8 +841,8 @@ module Instruction = struct
   ;;
 
   (** Recursive mapper for locations in instructions *)
-  module On_locations : Fold_map.S with type t := t and module Elt := Location =
-    Fold_map.Make (struct
+  module On_locations : Fold_map.S0 with type t := t and type elt := Location.t =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = Location
 
@@ -888,8 +886,8 @@ module Statement = struct
   end
 
   (** Recursive mapper for instructions in statements *)
-  module On_instructions : Fold_map.S with type t := t and module Elt := Instruction =
-    Fold_map.Make (struct
+  module On_instructions : Fold_map.S0 with type t := t and type elt := Instruction.t =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = Instruction
 
@@ -911,8 +909,8 @@ module Statement = struct
     end)
 
   (** Recursive mapper for symbols in statements *)
-  module On_symbols : Fold_map.S with type t := t and module Elt := String =
-    Fold_map.Make (struct
+  module On_symbols : Fold_map.S0 with type t := t and type elt := string =
+    Fold_map.Make0 (struct
       type nonrec t = t
       module Elt = String
 

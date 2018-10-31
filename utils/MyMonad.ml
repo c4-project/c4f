@@ -1,5 +1,9 @@
 open Core
 
+(* NB: Unlike the versions in Fold_map, these are
+   second-order types and support changing the element
+   type on mapping.  This might need unifying later on. *)
+
 module type Extensions = sig
   type 'a t
 

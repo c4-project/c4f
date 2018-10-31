@@ -118,7 +118,7 @@ module StringDirect =
     let abstract = Fn.id
     let abstract_demangle = List.return
 
-    module OnStrings = Fold_map.Make (struct
+    module OnStrings = Fold_map.Make0 (struct
       type t = string
       module Elt = String
 

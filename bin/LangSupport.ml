@@ -43,7 +43,8 @@ let get_litmusifier_x86 =
 
             module Frontend = (val f)
             module Litmus = X86.Litmus.LitmusDirect
-            module Sanitiser = X86.Sanitiser.Make (L)
+            module Multi_sanitiser = X86.Sanitiser.Make_multi (L)
+            module Single_sanitiser = X86.Sanitiser.Make_single (L)
             module Explainer = Explainer.Make (L)
 
             module Conv = X86.Conv.Make (L) (X86.Language.Herd7)
@@ -51,7 +52,7 @@ let get_litmusifier_x86 =
             let final_convert = Conv.convert
             let statements = X86.Ast.program
           end
-          ): Litmusifier.Intf)
+          ): Litmusifier.S)
   | _ ->
     Or_error.error_string
       "Too many arguments to x86 language; expected only one."

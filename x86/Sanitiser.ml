@@ -165,4 +165,5 @@ module Hook (L : Language.Intf) = struct
   ;;
 end
 
-module Make (L : Language.Intf) = Lib.Sanitiser.Make (Hook (L))
+module Make_single (L : Language.Intf) = Lib.Sanitiser.Make_single (Hook (L))
+module Make_multi  (L : Language.Intf) = Lib.Sanitiser.Make_multi  (Hook (L))

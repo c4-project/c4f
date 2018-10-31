@@ -65,13 +65,13 @@ module type StatementS = sig
 
   (** They must allow fold-mapping over symbols... *)
   module OnSymbols
-    : Fold_map.S with type Elt.t := sym
-                  and type t := t
+    : Fold_map.S0 with type elt := sym and type t := t
+  ;;
 
   (** ...and over instructions. *)
   module OnInstructions
-    : Fold_map.S with type Elt.t = ins
-                  and type t := t
+    : Fold_map.S0 with type elt := ins and type t := t
+  ;;
 
   (*
    * Constructors
@@ -111,10 +111,10 @@ module type InstructionS = sig
   include Sexpable.S with type t := t
 
   (** They must allow fold-mapping over symbols... *)
-  module OnSymbols : Fold_map.S with type Elt.t = sym and type t := t
+  module OnSymbols : Fold_map.S0 with type elt := sym and type t := t
 
   (** ...and over locations. *)
-  module OnLocations : Fold_map.S with type Elt.t = loc and type t := t
+  module OnLocations : Fold_map.S0 with type elt := loc and type t := t
 
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
   val jump : string -> t

@@ -1,18 +1,5 @@
 open Core
 
-module type Extensions = sig
-  type 'a t
-
-  val max_measure : measure:('a -> int) -> ?default:int -> 'a t -> int
-end
-
-module Extend (S : Container.S1) = struct
-  let max_measure ~measure ?(default=0) xs =
-    xs
-    |> S.max_elt ~compare:(MyFn.on measure Int.compare)
-    |> Option.value_map ~f:measure ~default:default
-end
-
 type partial_order =
   [ `Equal
   | `Subset
@@ -126,10 +113,8 @@ let%expect_test "partial_compare: no order" =
   [%expect {| NoOrder |}]
 
 
-module MyArray = Extend (Array)
-
 module MyList = struct
-  include Extend (List)
+  include Fold_map.List
   include MyMonad.Extend (List)
 
   let exclude ~f xs = List.filter ~f:(Fn.non f) xs
@@ -145,11 +130,6 @@ module MyList = struct
     Format.printf "@[%a@]@."
       (Format.pp_print_list ~pp_sep:MyFormat.pp_csep Int.pp) excluded;
     [%expect {| 1, 2, 10, 0, 64 |}]
-
-  let right_pad ~padding xs =
-    let maxlen = max_measure ~measure:List.length xs
-    and f = Fn.const padding
-    in List.map ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f) xs
 
   let%expect_test "MyList: right_pad empty list" =
     Format.printf "@[%a@]@."

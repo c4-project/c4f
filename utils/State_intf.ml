@@ -102,17 +102,26 @@ module type S_transform = sig
 
       Typically, this will be an error monad, like [Or_error]. *)
   module Monadic : sig
-    (** [make] creates a context-sensitive computation that can modify
-        both the current context and the data passing through. *)
+    (** [make] creates a stateful computation that produces a
+       computation in the [Inner] monad.  This computation can modify
+       both the current state and the data passing through. *)
     val make : (state -> (state * 'a) Inner.t) -> 'a t
 
-    (** [peek] creates a context-sensitive computation that can look at
-        the current context, but not modify it. *)
+    (** [peek] creates a stateful computation that produces a
+       computation in the [Inner] monad.  This computation can see the
+       current state, but not modify it. *)
     val peek : (state -> 'a Inner.t) -> 'a t
 
-    (** [modify] creates a context-sensitive computation that can look at
-        and modify the current context. *)
+    (** [modify] creates a stateful computation that produces a
+       computation in the [Inner] monad.  This computation can look at
+       and modify the current context. *)
     val modify : (state -> state Inner.t) -> unit t
+
+    (** [return] lifts an [Inner] computation into a stateful one.
+
+        For example, in [Or_error], this lifts a possibly-failing
+        computation to a context-sensitive one. *)
+    val return : 'a Inner.t -> 'a t
   end
 
   (*

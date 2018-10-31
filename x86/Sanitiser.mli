@@ -28,11 +28,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
     current x86 dialect (for example, the order of operands). *)
 module Hook
   : functor (L : Language.Intf)
-    -> Lib.Sanitiser.LangHookS with module L = L
+    -> Lib.Sanitiser.Hook with module L = L
 
-(** [Make] directly instantiates a sanitiser for an
+(** [Make_single] directly instantiates a single-program sanitiser for an
     [Language.Intf] module. *)
-module Make
+module Make_single
   : functor (L : Language.Intf)
-    -> Lib.Sanitiser.Intf with type statement = L.Statement.t
+    -> Lib.Sanitiser.S with type statement = L.Statement.t
+                        and type 'a Program_container.t = 'a
+;;
+
+
+(** [Make_multi] directly instantiates a multi-program sanitiser for anb
+    [Language.Intf] module. *)
+module Make_multi
+  : functor (L : Language.Intf)
+    -> Lib.Sanitiser.S with type statement = L.Statement.t
+                        and type 'a Program_container.t = 'a list
+;;
 

@@ -25,7 +25,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
-module type Intf = sig
+module type S = sig
   type t =
     { o      : OutputCtx.t
     ; iname  : string
@@ -39,12 +39,22 @@ module type Intf = sig
   val run : t -> unit Or_error.t
 end
 
-module type S = sig
+module type Basic = sig
   type statement
 
-  module Frontend  : LangFrontend.Intf
-  module Litmus    : Litmus.Intf with type LS.Statement.t = statement
-  module Sanitiser : Sanitiser.Intf with type statement = statement
+  module Frontend
+    : LangFrontend.Intf
+  module Litmus
+    : Litmus.Intf with type LS.Statement.t = statement
+  ;;
+  module Multi_sanitiser
+    : Sanitiser.S with type statement = statement
+                   and type 'a Program_container.t = 'a list
+  ;;
+  module Single_sanitiser
+    : Sanitiser.S with type statement = statement
+                   and type 'a Program_container.t = 'a
+  ;;
   module Explainer : Explainer.S with type statement = statement
 
   val final_convert : statement list -> statement list
@@ -52,4 +62,4 @@ module type S = sig
   val statements : Frontend.ast -> statement list
 end
 
-module Make : functor (M : S) -> Intf
+module Make : functor (B : Basic) -> S

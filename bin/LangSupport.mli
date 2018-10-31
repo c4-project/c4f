@@ -40,7 +40,7 @@ open Lib
    given emits clause. *)
 val get_litmusifier
   :  emits:string list
-  -> (module Lib.Litmusifier.Intf) Or_error.t
+  -> (module Lib.Litmusifier.S) Or_error.t
 
 (*
  * Compilers

@@ -77,6 +77,9 @@ module Make_transform (B : Basic_transform)
       let open Inner.Let_syntax in
       let%map ctx' = f ctx in (ctx', ())
     ;;
+
+    let return (x : 'a Inner.t) ctx =
+      Inner.(x >>| Tuple2.create ctx)
   end
 
   let make f = Monadic.make (Fn.compose Inner.return f)

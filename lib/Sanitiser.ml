@@ -25,45 +25,9 @@
 open Core
 open Utils.MyContainers
 
+include Sanitiser_intf
 
-(*
- * Main sanitiser modules
- *)
-
-module type Intf = sig
-  module Warn : Sanitiser_ctx.WarnIntf
-
-  type statement
-
-  module Output : sig
-    type 'a t
-
-    val result : 'a t -> 'a
-    val warnings : 'a t -> Warn.t list
-  end
-
-  val sanitise
-    :  ?passes:Sanitiser_pass.Set.t
-    -> statement list
-    -> statement list Output.t Or_error.t
-
-  val split_and_sanitise
-    :  ?passes:Sanitiser_pass.Set.t
-    -> statement list
-    -> statement list list Output.t Or_error.t
-end
-
-module type LangHookS = sig
-  module L : Language.Intf
-  module Ctx : Sanitiser_ctx.Intf with module Lang = L
-
-  val on_program : L.Statement.t list -> (L.Statement.t list) Ctx.t
-  val on_statement : L.Statement.t -> L.Statement.t Ctx.t
-  val on_instruction : L.Instruction.t -> L.Instruction.t Ctx.t
-  val on_location : L.Location.t -> L.Location.t Ctx.t
-end
-
-module NullLangHook (LS : Language.Intf) = struct
+module Make_null_hook (LS : Language.Intf) = struct
   module L = LS
   module Ctx = Sanitiser_ctx.Make (LS) (Sanitiser_ctx.NoCustomWarn)
 
@@ -97,51 +61,49 @@ let%expect_test "mangle: sample" =
   print_string (mangle "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet");
   [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
 
-module Make (LH : LangHookS)
-  : Intf with type statement = LH.L.Statement.t = struct
-  module Ctx = LH.Ctx
-  module Warn = LH.Ctx.Warn
+module Make (B : Basic)
+  : S with type statement = B.L.Statement.t
+       and type 'a Program_container.t = 'a B.Program_container.t = struct
+  module Ctx = B.Ctx
+  module Warn = B.Ctx.Warn
+  module L = B.L
 
-  type statement = LH.L.Statement.t
+  module Program_container = B.Program_container
+
+  (* Modules for building context-sensitive traversals over program
+     containers and lists *)
+  module Ctx_Pcon = Program_container.On_monad (Ctx)
+  module Ctx_List = MyList.On_monad (Ctx)
+
+  type statement = L.Statement.t
 
   module Output = struct
-    type 'a t =
-      { result   : 'a
+    type t =
+      { result   : statement list Program_container.t
       ; warnings : Warn.t list
       } [@@deriving fields]
   end
 
-  let split_programs stms =
-    (* Adding a nop to the start forces there to be some
-       instructions before the first program, meaning we can
-       simplify discarding such instructions. *)
-    let progs =
-      (LH.L.Statement.empty() :: stms)
-      |> List.group ~break:(Fn.const LH.L.Statement.is_program_boundary)
-    in
-    List.drop progs 1
-  (* TODO(MattWindsor91): divine the end of the program. *)
-
   let make_programs_uniform nop ps =
-    MyList.right_pad ~padding:nop ps
+    B.Program_container.right_pad ~padding:nop ps
 
   let change_stack_to_heap ins =
     let open Ctx.Let_syntax in
     let%map name = Ctx.get_prog_name in
     let f ln =
-      match LH.L.Location.abs_type ln with
+      match L.Location.abs_type ln with
       | Abstract.Location.StackOffset i ->
-        LH.L.Location.make_heap_loc
+        L.Location.make_heap_loc
           (sprintf "t%ss%d" name i)
       | _ -> ln
-    in LH.L.Instruction.OnLocations.map ~f ins
+    in L.Instruction.OnLocations.map ~f ins
   ;;
 
   (** [warn_unknown_instructions stm] emits warnings for each
       instruction in [stm] without a high-level analysis. *)
   let warn_unknown_instructions ins =
     let open Ctx.Let_syntax in
-    match LH.L.Instruction.abs_type ins with
+    match L.Instruction.abs_type ins with
      | Abstract.Instruction.Unknown ->
        let%map () = Ctx.warn (Warn.UnknownElt (Warn.Instruction ins)) in ins
      | _ -> return ins
@@ -154,15 +116,15 @@ module Make (LH : LangHookS)
        upper warning should be enough. *)
     let open Ctx.Let_syntax in
     let%map () =
-      match LH.L.Instruction.abs_type ins with
+      match L.Instruction.abs_type ins with
       | Abstract.Instruction.Unknown ->
         Ctx.return ()
       | _ ->
         begin
-          match LH.L.Instruction.abs_operands ins with
+          match L.Instruction.abs_operands ins with
           | Abstract.Operands.Unknown ->
             Ctx.warn (Warn.UnknownElt (Warn.Operands ins))
-          | Abstract.Operands.Erroneous ->
+          | Erroneous ->
             Ctx.warn (Warn.ErroneousElt (Warn.Operands ins))
           | _ -> Ctx.return ()
         end
@@ -171,14 +133,14 @@ module Make (LH : LangHookS)
 
   let change_ret_to_end_jump ins =
     let open Ctx.Let_syntax in
-    match LH.L.Instruction.abs_type ins with
+    match L.Instruction.abs_type ins with
     | Abstract.Instruction.Return ->
       begin
         match%bind Ctx.get_end_label with
         | None ->
           let%map () = Ctx.warn Warn.MissingEndLabel in ins
         | Some endl ->
-          return (LH.L.Instruction.jump endl)
+          return (L.Instruction.jump endl)
       end
     | _ -> Ctx.return ins
   ;;
@@ -189,14 +151,14 @@ module Make (LH : LangHookS)
     let open Ctx in
     let open Sanitiser_pass in
     return loc
-    >>= (LangHooks      |-> LH.on_location)
+    >>= (LangHooks      |-> B.on_location)
 
   (** [sanitise_all_locs loc] iterates location sanitisation over
      every location in [loc], threading the context through
      monadically. *)
   let sanitise_all_locs =
-    let module L = LH.L.Instruction.OnLocations.On_monad (Ctx) in
-    L.mapM ~f:sanitise_loc
+    let module Loc = L.Instruction.OnLocations.On_monad (Ctx) in
+    Loc.mapM ~f:sanitise_loc
   ;;
 
   (** [sanitise_ins] performs sanitisation at the single instruction
@@ -205,7 +167,7 @@ module Make (LH : LangHookS)
     let open Ctx in
     let open Sanitiser_pass in
     return ins
-    >>= (LangHooks      |-> LH.on_instruction)
+    >>= (LangHooks      |-> B.on_instruction)
     >>= (Warn           |-> warn_unknown_instructions)
     >>= (Warn           |-> warn_operands)
     >>= sanitise_all_locs
@@ -216,14 +178,14 @@ module Make (LH : LangHookS)
       can parse. *)
   let mangle_identifiers stm =
     Ctx.return
-      (LH.L.Statement.OnSymbols.map stm
-         ~f:(LH.L.Symbol.OnStrings.map ~f:mangle))
+      (L.Statement.OnSymbols.map stm
+         ~f:(L.Symbol.OnStrings.map ~f:mangle))
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
   let warn_unknown_statements stm =
     let open Ctx.Let_syntax in
-    match LH.L.Statement.abs_type stm with
+    match L.Statement.abs_type stm with
     | Abstract.Statement.Other ->
       let%map () = Ctx.warn (Warn.UnknownElt (Warn.Statement stm)) in stm
     | _ -> return stm
@@ -232,7 +194,7 @@ module Make (LH : LangHookS)
      every instruction in [stm], threading the context through
      monadically. *)
   let sanitise_all_ins =
-    let module L = LH.L.Statement.OnInstructions.On_monad (Ctx) in
+    let module L = L.Statement.OnInstructions.On_monad (Ctx) in
     L.mapM ~f:sanitise_ins
   ;;
 
@@ -242,7 +204,7 @@ module Make (LH : LangHookS)
     let open Ctx in
     let open Sanitiser_pass in
     return stm
-    >>= (LangHooks |-> LH.on_statement)
+    >>= (LangHooks |-> B.on_statement)
     (* Do warnings after the language-specific hook has done any
        reduction necessary, but before we start making broad-brush
        changes to the statements. *)
@@ -267,7 +229,7 @@ module Make (LH : LangHookS)
     )
 
   let instruction_is_irrelevant =
-    LH.L.Statement.instruction_mem irrelevant_instruction_types
+    L.Statement.instruction_mem irrelevant_instruction_types
 
   (** [proglen_fix f prog] runs [f] on [prog] until the
       reported program length no longer changes. *)
@@ -302,7 +264,7 @@ module Make (LH : LangHookS)
     in
     let ignore_boundaries = not remove_boundaries in
     let matchers =
-      LH.L.Statement.(
+      L.Statement.(
         [ is_nop
         ; is_directive
         ; is_unused_label ~ignore_boundaries ~syms
@@ -317,7 +279,7 @@ module Make (LH : LangHookS)
   let remove_litmus_irrelevant_statements prog =
     Ctx.return
       (let matchers =
-         LH.L.Statement.(
+         L.Statement.(
            [ instruction_is_irrelevant
            ; is_stack_manipulation
            ])
@@ -327,7 +289,7 @@ module Make (LH : LangHookS)
   let remove_useless_jumps prog =
     let rec mu skipped ctx =
       function
-      | x::x'::xs when LH.L.Statement.is_jump_pair x x' ->
+      | x::x'::xs when L.Statement.is_jump_pair x x' ->
         let open Or_error.Let_syntax in
         let f = Ctx.(dec_prog_length >>= fun () -> peek Fn.id) in
         let%bind ctx' = Ctx.run f ctx in
@@ -340,16 +302,16 @@ module Make (LH : LangHookS)
     Ctx.Monadic.make (Fn.flip (mu []) prog)
 
   let update_symbol_tables
-      (prog : LH.L.Statement.t list) =
+      (prog : statement list) =
     let open Ctx.Let_syntax in
-    let%map () = Ctx.set_symbol_table (LH.L.symbols prog) in
+    let%map () = Ctx.set_symbol_table (L.symbols prog) in
     prog
   ;;
 
   (** [add_end_label] adds an end-of-program label to the current
      program. *)
-  let add_end_label (prog : LH.L.Statement.t list)
-    : (LH.L.Statement.t list) Ctx.t =
+  let add_end_label (prog : statement list)
+    : (statement list) Ctx.t =
     let open Ctx.Let_syntax in
     (* Don't generate duplicate endlabels! *)
     match%bind Ctx.get_end_label with
@@ -359,13 +321,13 @@ module Make (LH : LangHookS)
       let prefix = "END" ^ progname in
       let%bind lbl = Ctx.make_fresh_label prefix in
       let%map () = Ctx.set_end_label lbl in
-      prog @ [LH.L.Statement.label lbl]
+      prog @ [L.Statement.label lbl]
   ;;
 
   (** [remove_fix prog] performs a loop of statement-removing
      operations until we reach a fixed point in the program length. *)
-  let remove_fix (prog : LH.L.Statement.t list)
-    : LH.L.Statement.t list Ctx.t =
+  let remove_fix (prog : L.Statement.t list)
+    : L.Statement.t list Ctx.t =
     let mu prog =
       Ctx.(
         return prog
@@ -379,56 +341,66 @@ module Make (LH : LangHookS)
 
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program
-      (i : int) (prog : LH.L.Statement.t list)
-    : (LH.L.Statement.t list) Ctx.t =
+      (i : int) (prog : L.Statement.t list)
+    : (L.Statement.t list) Ctx.t =
     let name = sprintf "%d" i in
     Ctx.(
       enter_program ~name prog
       (* Initial table population. *)
       >>= update_symbol_tables
       >>= (SimplifyLitmus |-> add_end_label)
-      >>= (LangHooks      |-> LH.on_program)
+      >>= (LangHooks      |-> B.on_program)
       (* The language hook might have invalidated the symbol
          tables. *)
       >>= update_symbol_tables
       (* Need to sanitise statements first, in case the sanitisation
          pass makes irrelevant statements (like jumps) relevant
          again. *)
-      |> mapiM ~f:sanitise_stm
+      >>= Ctx_List.mapiM ~f:sanitise_stm
       >>= remove_fix
     )
   ;;
 
-  let sanitise_with_ctx prog =
+  let sanitise_with_ctx progs =
     let open Ctx.Let_syntax in
-    let%bind prog' = sanitise_program 0 prog in
+    let%bind progs' = Ctx_Pcon.mapiM ~f:sanitise_program progs in
     let%map warns = Ctx.take_warnings in
     Output.(
-      { result   = prog'
+      { result = make_programs_uniform (L.Statement.empty ()) progs'
       ; warnings = warns
       }
     )
   ;;
 
-  let sanitise_programs_with_ctx progs =
-    let open Ctx.Let_syntax in
-    let%bind progs' = Ctx.mapiM ~f:sanitise_program (return progs) in
-    let%map warns = Ctx.take_warnings in
-    Output.(
-      { result = make_programs_uniform (LH.L.Statement.empty ()) progs'
-      ; warnings = warns
-      }
-    )
-  ;;
-
-  let sanitise_wrapper passes f =
+  let sanitise ?passes stms =
     let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
-    Ctx.run f (Ctx.initial ~passes:passes')
-  ;;
-
-  let sanitise ?passes prog = sanitise_wrapper passes (sanitise_with_ctx prog)
-
-  let split_and_sanitise ?passes stms =
-    sanitise_wrapper passes (sanitise_programs_with_ctx (split_programs stms))
+    Ctx.(
+      run
+      (Monadic.return (B.split stms) >>= sanitise_with_ctx)
+      (initial ~passes:passes')
+    )
   ;;
 end
+
+module Make_single (H : Hook) = Make(struct
+    include H
+    module Program_container = Utils.Fold_map.Singleton
+
+    let split = Or_error.return (* no operation *)
+  end)
+
+module Make_multi (H : Hook) = Make(struct
+    include H
+    module Program_container = Utils.Fold_map.List
+
+    let split stms =
+      (* Adding a nop to the start forces there to be some
+         instructions before the first program, meaning we can
+         simplify discarding such instructions. *)
+      let progs =
+        (L.Statement.empty() :: stms)
+        |> List.group ~break:(Fn.const L.Statement.is_program_boundary)
+      in
+      Or_error.return (List.drop progs 1)
+      (* TODO(MattWindsor91): divine the end of the program. *)
+  end)
