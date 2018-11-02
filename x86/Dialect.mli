@@ -47,6 +47,7 @@ copyright notice follow. *)
 (** Enumeration of, and facts about, x86 dialects *)
 
 open Utils
+open Lib
 
 (** [t] enumerates the various dialects of x86 syntax. *)
 type t =
@@ -64,18 +65,18 @@ include Core.Identifiable.S_plain with type t := t
    [f]. *)
 val pp : Format.formatter -> t -> unit
 
-(** [HasDialect] is a signature for modules that report a specific
+(** [Has_dialect] is a signature for modules that report a specific
     dialect. *)
-module type HasDialect = sig
+module type Has_dialect = sig
   val dialect : t
 end
 
 (** [Intf] is the interface of modules containing x86 dialect information. *)
 module type Intf = sig
-  include HasDialect
+  include Has_dialect
 
   (** This lets us query a dialect's operand order. *)
-  include SrcDst.S
+  include Src_dst.S
 
   (** [has_size_suffix] gets whether this dialect uses
    AT&T-style size suffixes. *)

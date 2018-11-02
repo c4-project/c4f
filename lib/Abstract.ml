@@ -121,8 +121,8 @@ end
 module Operands = struct
   type t =
     | None
-    | LocTransfer of (Location.t, Location.t) SrcDst.t
-    | IntImmediate of (int, Location.t) SrcDst.t
+    | LocTransfer of (Location.t, Location.t) Src_dst.t
+    | IntImmediate of (int, Location.t) Src_dst.t
     | SymbolicJump of string
     | Erroneous
     | Other

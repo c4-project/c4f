@@ -45,6 +45,7 @@ copyright notice follow. *)
 (****************************************************************************)
 
 open Utils
+open Lib
 
 module M = struct
   type t =
@@ -68,13 +69,13 @@ module STable =
     end)
 include StringTable.ToIdentifiable(STable)(M)
 
-module type HasDialect = sig
+module type Has_dialect = sig
   val dialect : t
 end
 
 module type Intf = sig
-  include HasDialect
-  include SrcDst.S
+  include Has_dialect
+  include Src_dst.S
 
   val has_size_suffix : bool
 
@@ -83,21 +84,21 @@ end
 
 module ATT = struct
   let dialect = Att
-  include SrcDst.Make (struct let operand_order = SrcDst.SrcDst end)
+  include Src_dst.Make (struct let operand_order = Src_dst.Src_then_dst end)
   let has_size_suffix = true
   let symbolic_jump_type = `Indirect
 end
 
 module Intel = struct
   let dialect = Intel
-  include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
+  include Src_dst.Make (struct let operand_order = Src_dst.Dst_then_src end)
   let has_size_suffix = false
   let symbolic_jump_type = `Immediate
 end
 
 module Herd7 = struct
   let dialect = Herd7
-  include SrcDst.Make (struct let operand_order = SrcDst.DstSrc end)
+  include Src_dst.Make (struct let operand_order = Src_dst.Dst_then_src end)
   (* Surprisingly, this is true---for some operations, anyway. *)
   let has_size_suffix = true
   let symbolic_jump_type = `Immediate

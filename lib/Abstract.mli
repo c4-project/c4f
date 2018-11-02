@@ -26,7 +26,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Utils
 
-
 (** [Instruction] contains types and utilities for abstracted
    instructions. *)
 module Instruction : sig
@@ -116,10 +115,10 @@ module Operands : sig
     | None
     (* This instruction is taking a transfer from source location to
      destination location. *)
-    | LocTransfer of (Location.t, Location.t) SrcDst.t
+    | LocTransfer of (Location.t, Location.t) Src_dst.t
     (* This instruction is loading an integer literal, doing something
        with it, and storing into a location. *)
-    | IntImmediate of (int, Location.t) SrcDst.t
+    | IntImmediate of (int, Location.t) Src_dst.t
     (* This instruction is jumping to the given symbol. *)
     | SymbolicJump of string
     (* Instruction has the wrong sort of operands. *)
