@@ -90,10 +90,6 @@ module Hook (L : Language.Intf) = struct
       end
     | op -> op
 
-  let on_statement = Ctx.return
-
-  let on_program = Ctx.return
-
   (** [segment_offset_to_heap loc] is a contextual computation that,
      heuristically, converts memory addresses like [GS:20] to symbolic
      heap locations.
@@ -147,6 +143,10 @@ module Hook (L : Language.Intf) = struct
     let module F = Location.On_registers.On_monad (Ctx) in
     F.mapM ~f:on_register loc
   ;;
+
+  let on_statement = Ctx.return
+
+  let on_program = Ctx.return
 
   let on_location loc =
     Ctx.(

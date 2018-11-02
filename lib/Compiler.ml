@@ -163,7 +163,6 @@ end
 module type SshIntf = sig
   type t
 
-
   include Pretty_printer.S with type t := t
   include Sexpable.S with type t := t
 

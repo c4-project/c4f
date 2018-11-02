@@ -1,3 +1,27 @@
+(* This file is part of 'act'.
+
+   Copyright (c) 2018 by Matt Windsor
+
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
+
 open Core
 
 type 'a partial_order =
@@ -8,14 +32,14 @@ type 'a partial_order =
   ] [@@deriving sexp]
 ;;
 
-module type SetExtensions = sig
+module type Extensions = sig
   type t
 
   val disjoint : t -> t -> bool
   val partial_compare : t -> t -> t partial_order
 end
 
-module SetExtend (S : Set.S) : SetExtensions with type t := S.t = struct
+module Extend (S : Set.S) : Extensions with type t := S.t = struct
   let disjoint x y = S.(is_empty (inter x y));;
 
   (** [drop_left x p] updates partial order [p] with the information that
@@ -48,7 +72,7 @@ module SetExtend (S : Set.S) : SetExtensions with type t := S.t = struct
 end
 
 let%expect_test "disjoint: positive witness" =
-  let module M = SetExtend (Int.Set) in
+  let module M = Extend (Int.Set) in
   printf "%b"
     (M.disjoint
        (Int.Set.of_list [2; 4; 6; 8])
@@ -56,7 +80,7 @@ let%expect_test "disjoint: positive witness" =
   [%expect {| true |}]
 
 let%expect_test "disjoint: negative witness" =
-  let module M = SetExtend (Int.Set) in
+  let module M = Extend (Int.Set) in
   printf "%b"
     (M.disjoint
        (Int.Set.of_list [2; 4; 6; 8])
@@ -64,12 +88,12 @@ let%expect_test "disjoint: negative witness" =
   [%expect {| false |}]
 
 let%expect_test "disjoint: double empty is disjoint" =
-  let module M = SetExtend (Int.Set) in
+  let module M = Extend (Int.Set) in
   printf "%b" (M.disjoint (Int.Set.empty) (Int.Set.empty));
   [%expect {| true |}]
 
 let%expect_test "partial_compare: empty sets" =
-  let module M = SetExtend (Int.Set) in
+  let module M = Extend (Int.Set) in
   Sexp.output_hum Out_channel.stdout
     [%sexp ( M.partial_compare (Int.Set.empty) (Int.Set.empty)
              : Int.Set.t partial_order
@@ -77,7 +101,7 @@ let%expect_test "partial_compare: empty sets" =
   [%expect {| Equal |}]
 
 let%expect_test "partial_compare: subset" =
-  let module M = SetExtend (Int.Set) in
+  let module M = Extend (Int.Set) in
   Sexp.output_hum Out_channel.stdout
     [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
                [ 1; 2; 3 ] [ 1; 2; 3; 4; 5; 6 ]
@@ -86,7 +110,7 @@ let%expect_test "partial_compare: subset" =
   [%expect {| (Subset (4 5 6)) |}]
 
 let%expect_test "partial_compare: superset" =
-  let module M = SetExtend (Int.Set) in
+  let module M = Extend (Int.Set) in
   Sexp.output_hum Out_channel.stdout
     [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
                [ 1; 2; 3; 4; 5; 6 ] [ 4; 5; 6 ]
@@ -95,7 +119,7 @@ let%expect_test "partial_compare: superset" =
   [%expect {| (Superset (1 2 3)) |}]
 
 let%expect_test "partial_compare: equal" =
-  let module M = SetExtend (Int.Set) in
+  let module M = Extend (Int.Set) in
   Sexp.output_hum Out_channel.stdout
     [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
                [ 1; 2; 3; 4; 5; 6 ] [ 6; 5; 4; 3; 2; 1 ]
@@ -104,7 +128,7 @@ let%expect_test "partial_compare: equal" =
   [%expect {| Equal |}]
 
 let%expect_test "partial_compare: no order" =
-  let module M = SetExtend (Int.Set) in
+  let module M = Extend (Int.Set) in
   Sexp.output_hum Out_channel.stdout
     [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
                [ 1; 2; 3; 4 ] [ 3; 4; 5; 6 ]
@@ -112,79 +136,3 @@ let%expect_test "partial_compare: no order" =
            )];
   [%expect {| NoOrder |}]
 
-
-module MyList = struct
-  include Fold_map.List
-  include MyMonad.Extend (List)
-
-  let exclude ~f xs = List.filter ~f:(Fn.non f) xs
-
-  let%expect_test "MyList: max_measure on empty list" =
-    printf "%d" (max_measure ~default:1066 ~measure:Fn.id []);
-    [%expect {| 1066 |}]
-
-  let%expect_test "MyList: exclude -ve numbers" =
-    let excluded = exclude ~f:Int.is_negative
-        [1; -1; 2; 10; -49; 0; 64]
-    in
-    Format.printf "@[%a@]@."
-      (Format.pp_print_list ~pp_sep:MyFormat.pp_csep Int.pp) excluded;
-    [%expect {| 1, 2, 10, 0, 64 |}]
-
-  let%expect_test "MyList: right_pad empty list" =
-    Format.printf "@[%a@]@."
-      (MyFormat.pp_listlist ~pp:Int.pp) (right_pad ~padding:2 []);
-    [%expect {||}]
-
-  let%expect_test "MyList: right_pad example list" =
-    Format.printf "@[%a@]@."
-      (MyFormat.pp_listlist ~pp:Int.pp)
-      (right_pad ~padding:6
-         [ [0; 8; 0; 0]
-         ; [9; 9; 9]
-         ; [8; 8; 1; 9; 9]
-         ; [9; 1; 1; 9]
-         ; [7; 2; 5]
-         ; [3]
-         ]);
-    [%expect {|
-                [ 0, 8, 0, 0, 6 ]
-                [ 9, 9, 9, 6, 6 ]
-                [ 8, 8, 1, 9, 9 ]
-                [ 9, 1, 1, 9, 6 ]
-                [ 7, 2, 5, 6, 6 ]
-                [ 3, 6, 6, 6, 6 ] |}]
-
-  let%expect_test "mapM: list" =
-    Format.printf "@[<h>%a@]@."
-      (MyFormat.pp_listlist ~pp:Int.pp)
-      (mapM ~f:(fun k -> [k; 0])
-         ([[1; 2; 3]]));
-    [%expect {|
-              [ 1, 2, 3 ]
-              [ 1, 2, 0 ]
-              [ 1, 0, 3 ]
-              [ 1, 0, 0 ]
-              [ 0, 2, 3 ]
-              [ 0, 2, 0 ]
-              [ 0, 0, 3 ]
-              [ 0, 0, 0 ] |}]
-
-  let prefixes xs =
-    List.mapi ~f:(fun i _ -> List.take xs (i+1)) xs
-
-  let%expect_test "prefixes: empty list" =
-    Format.printf "@[<h>%a@]@."
-      (MyFormat.pp_listlist ~pp:Int.pp)
-      (prefixes []);
-    [%expect {||}]
-
-  let%expect_test "prefixes: sample list" =
-    Format.printf "@[<h>%a@]@."
-      (MyFormat.pp_listlist ~pp:Int.pp)
-      (prefixes [1; 2; 3]);
-    [%expect {|
-              [ 1 ]
-              [ 1, 2 ]
-              [ 1, 2, 3 ] |}]
-end

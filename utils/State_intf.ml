@@ -38,7 +38,6 @@ type ('s, 't, 'c) fold_mapper =
 module type S_common = sig
   (** Both [S] and [S_transform] are extended monads. *)
   include Monad.S
-  include MyMonad.Extensions with type 'a t := 'a t
 
   (** [state] is the type of the inner state record. *)
   type state

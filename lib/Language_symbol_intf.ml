@@ -124,7 +124,7 @@ module type S = sig
   (** [Set] is an extended set module for concrete symbols. *)
   module Set : sig
     include Set.S with type Elt.t = t
-    include MyContainers.SetExtensions with type t := t
+    include My_set.Extensions with type t := t
 
     (** [abstract set] applies [abstract] to every symbol in
         the concrete symbol set [set]. *)

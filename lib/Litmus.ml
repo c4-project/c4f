@@ -23,7 +23,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Utils
-open Utils.MyContainers
 
 (*
  * Litmus AST module
@@ -120,8 +119,8 @@ struct
     String.length (MyFormat.format_to_string pp_instr_raw ins)
 
   let column_width : LS.Statement.t list list -> int =
-    MyList.max_measure
-      ~measure:(MyList.max_measure ~measure:instr_width)
+    My_list.max_measure
+      ~measure:(My_list.max_measure ~measure:instr_width)
 
   let pp_programs (f : Format.formatter)
                   (ps : LS.Statement.t list list)

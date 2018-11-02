@@ -62,11 +62,11 @@ end
 
 module Make (B : Basic) : S = struct
   type t =
-    { o     : OutputCtx.t
-    ; iname : string
-    ; inp   : In_channel.t
-    ; outp  : Out_channel.t
-    ; mode  : [`Explain | `Litmusify]
+    { o       : OutputCtx.t
+    ; iname   : string
+    ; inp     : In_channel.t
+    ; outp    : Out_channel.t
+    ; mode    : [`Explain | `Litmusify]
     ; passes  : Sanitiser_pass.Set.t
     ; symbols : string list
     }

@@ -27,7 +27,7 @@ module Dir = struct
   let get_files ?ext path =
     let open Or_error in
     let open Or_error.Let_syntax in
-    let%bind farray =
+    let%map farray =
       tag_arg
         (try_with (fun () -> Sys.readdir path))
         "Couldn't read directory"
@@ -41,7 +41,7 @@ module Dir = struct
             Array.filter ~f:(MyFilename.has_extension ~ext) farray)
         ext
     in
-    return (Array.to_list with_ext)
+    Array.to_list with_ext
 end
 
 module type CommonS = sig
@@ -90,12 +90,12 @@ module Out_sink = struct
     | `Stdout
     ] [@@deriving sexp]
 
-  let pp f =
-    function
+  let pp f = function
     | `File s -> String.pp f s
     | `Stdout -> String.pp f "(stdout)"
+  ;;
 
-  let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdout;;
+  let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdout
 
   let file = function
     | `File f -> Some f

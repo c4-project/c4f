@@ -24,7 +24,6 @@
 
 open Core
 open Utils
-open Utils.MyContainers
 
 module Instruction = struct
   module M = struct
@@ -153,7 +152,7 @@ module Symbol = struct
   module Set = struct
     module S = Set.Make (String)
     include S
-    include MyContainers.SetExtend (S)
+    include My_set.Extend (S)
   end
 
   module Sort = struct
@@ -195,7 +194,7 @@ module Symbol = struct
     let add tbl sym sort = (sym, sort) :: tbl;;
 
     let remove tbl sym sort =
-      MyList.exclude
+      My_list.exclude
         ~f:(Tuple2.equal ~eq1:String.equal ~eq2:Sort.equal (sym, sort))
         tbl
     ;;

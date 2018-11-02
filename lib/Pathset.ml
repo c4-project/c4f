@@ -1,6 +1,5 @@
 open Core
 open Utils
-open Utils.MyContainers
 
 module M = struct
   type t =
@@ -65,13 +64,13 @@ let mkdir (path : string) =
   let open Or_error in
   match get_ent_type path with
   | Dir -> Result.ok_unit
-  | File -> error "path exists, but is a file" path [%sexp_of: string]
-  | Unknown -> error "couldn't determine whether path already exists" path [%sexp_of: string]
+  | File -> error_s [%message "path exists, but is a file" ~path]
+  | Unknown -> error_s [%message "couldn't determine whether path already exists" ~path]
   | Nothing -> Or_error.try_with (fun () -> Unix.mkdir path)
 ;;
 
 let subpaths (path : string list) : string list =
-  List.map ~f:MyFilename.concat_list (MyList.prefixes path)
+  List.map ~f:MyFilename.concat_list (My_list.prefixes path)
 ;;
 
 let mkdir_p (path : string list) =

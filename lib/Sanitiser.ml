@@ -23,7 +23,7 @@
    SOFTWARE. *)
 
 open Core
-open Utils.MyContainers
+open Utils
 
 include Sanitiser_intf
 
@@ -73,7 +73,7 @@ module Make (B : Basic)
   (* Modules for building context-sensitive traversals over program
      containers and lists *)
   module Ctx_Pcon = Program_container.On_monad (Ctx)
-  module Ctx_List = MyList.On_monad (Ctx)
+  module Ctx_List = My_list.On_monad (Ctx)
 
   type statement = L.Statement.t
   type sym = L.Symbol.t
@@ -288,7 +288,7 @@ module Make (B : Basic)
         ; is_unused_label ~ignore_boundaries ~syms
         ])
     in
-    MyList.exclude ~f:(any matchers) prog
+    My_list.exclude ~f:(any matchers) prog
 
 
   (** [remove_litmus_irrelevant_statements prog] completely removes
@@ -302,11 +302,10 @@ module Make (B : Basic)
            ; is_stack_manipulation
            ])
        in
-       MyList.exclude ~f:(any matchers) prog)
+       My_list.exclude ~f:(any matchers) prog)
 
   let remove_useless_jumps prog =
-    let rec mu skipped ctx =
-      function
+    let rec mu skipped ctx = function
       | x::x'::xs when L.Statement.is_jump_pair x x' ->
         let open Or_error.Let_syntax in
         let f = Ctx.(dec_prog_length >>= fun () -> peek Fn.id) in

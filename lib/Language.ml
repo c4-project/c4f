@@ -24,7 +24,6 @@
 
 open Core
 open Utils
-open Utils.MyContainers
 
 include Language_intf
 
@@ -170,7 +169,7 @@ module Make (M : S)
 
        Maybe, one day, we'll find an architecture that does actually
        contain heap locations in a jump, and have to re-think this. *)
-    |> MyList.exclude ~f:Instruction.is_jump
+    |> My_list.exclude ~f:Instruction.is_jump
     |> List.concat_map ~f:Instruction.OnLocations.to_list
     |> List.filter_map ~f:Location.to_heap_symbol
     |> Abstract.Symbol.Set.of_list

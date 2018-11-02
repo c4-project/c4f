@@ -29,7 +29,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Utils
-open Utils.MyContainers
 
 module State = struct
   module M = struct
@@ -63,7 +62,7 @@ module State = struct
   module Set = struct
     module SM = Set.Make (M)
     include SM
-    include MyContainers.SetExtend (SM)
+    include My_set.Extend (SM)
   end
 end
 
@@ -88,7 +87,7 @@ type single_outcome =
 
 type outcome =
   [ single_outcome
-  | State.Set.t MyContainers.partial_order
+  | State.Set.t My_set.partial_order
   | `OracleUndef
   ]
 [@@deriving sexp]
@@ -216,7 +215,7 @@ let process_state n herd line =
     Or_error.(
       line
       |> String.split ~on:';'
-      |> MyList.exclude ~f:String.is_empty (* Drop trailing ; *)
+      |> My_list.exclude ~f:String.is_empty (* Drop trailing ; *)
       |> List.map ~f:proc_binding
       |> Result.all
       >>= State.of_alist

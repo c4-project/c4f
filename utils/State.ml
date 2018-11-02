@@ -40,28 +40,25 @@ module Make_transform (B : Basic_transform)
     include Monad.Make (struct
         type nonrec 'a t = 'a t
 
-        let map' wc ~f =
-          fun state ->
-            let open Inner.Let_syntax in
-            let%map (state', a) = wc state in
-            (state', f a)
+        let map' wc ~f state =
+          let open Inner.Let_syntax in
+          let%map (state', a) = wc state in
+          (state', f a)
         ;;
 
         let map = `Custom map'
 
-        let bind wc ~f =
-          fun state ->
-            let open Inner.Let_syntax in
-            let%bind (state', a) = wc state in
-            (f a) state'
+        let bind wc ~f state =
+          let open Inner.Let_syntax in
+          let%bind (state', a) = wc state in
+          (f a) state'
         ;;
 
-        let return a = fun state -> Inner.return (state, a);;
+        let return a state = Inner.return (state, a)
       end)
   end
 
   include T
-  include MyMonad.Extend(T)
 
   let run f ctx = f ctx |> Inner.map ~f:snd
 
@@ -78,8 +75,7 @@ module Make_transform (B : Basic_transform)
       let%map ctx' = f ctx in (ctx', ())
     ;;
 
-    let return (x : 'a Inner.t) ctx =
-      Inner.(x >>| Tuple2.create ctx)
+    let return (x : 'a Inner.t) ctx = Inner.(x >>| Tuple2.create ctx)
   end
 
   let make f = Monadic.make (Fn.compose Inner.return f)

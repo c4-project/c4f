@@ -38,7 +38,7 @@ module Make (B : Basic)
   module Set = struct
     module M = Set.Make_using_comparator (Comp)
     include M
-    include MyContainers.SetExtend (M)
+    include My_set.Extend (M)
 
     let abstract = Abstract.Symbol.Set.map ~f:B.abstract
   end
@@ -77,23 +77,24 @@ module Make (B : Basic)
     let dest_of = M.find
 
     let redirect ~src ~dst rmap =
-      if equal_sym src dst
-      then
-        Or_error.return (M.set rmap ~key:src ~data:Identity)
-      else if Option.is_some (Map.find rmap dst)
-      then
-        Or_error.error_s
-          [%message "Tried to redirect to an existing source"
-              ~src:(src : sym)
-              ~dst:(dst : sym)
-          ]
-      else
-        rmap
-        |> M.set ~key:src ~data:(MapsTo dst)
-        |> M.map ~f:(function
-            | MapsTo dst' when equal_sym src dst' -> MapsTo dst
-            | x -> x)
-        |> Or_error.return
+      Or_error.(
+        if equal_sym src dst
+        then return (M.set rmap ~key:src ~data:Identity)
+        else if Option.is_some (Map.find rmap dst)
+        then
+          error_s
+            [%message "Tried to redirect to an existing source"
+                ~src:(src : sym)
+                ~dst:(dst : sym)
+            ]
+        else
+          rmap
+          |> M.set ~key:src ~data:(MapsTo dst)
+          |> M.map ~f:(function
+              | MapsTo dst' when equal_sym src dst' -> MapsTo dst
+              | x -> x)
+          |> return
+      )
     ;;
   end
 
@@ -111,8 +112,7 @@ module Make (B : Basic)
   let is_program_label sym = Option.is_some (program_id_of sym)
 end
 
-module StringDirect =
-  Make (struct
+module String_direct = Make (struct
     include String
 
     let abstract = Fn.id
@@ -120,31 +120,31 @@ module StringDirect =
     let of_string_opt = Option.some
 
     module OnStrings = Fold_map.Make0 (struct
-      type t = string
-      module Elt = String
+        type t = string
+        module Elt = String
 
-      module On_monad (M : Monad.S) = struct
-        let fold_map ~f ~init str = M.(return init >>= Fn.flip f str)
-      end
-    end)
+        module On_monad (M : Monad.S) = struct
+          let fold_map ~f ~init str = M.(return init >>= Fn.flip f str)
+        end
+      end)
   end)
 ;;
 
 let%expect_test "String.R_map: dest_of example run" =
   let open Or_error.Let_syntax in
-  StringDirect.R_map.(
+  String_direct.R_map.(
     let r =
       let%map map =
-        (return (make (StringDirect.Set.singleton "whiskey")))
-        >>= redirect ~src:"alpha" ~dst:"alpha"
-        >>= redirect ~src:"bravo" ~dst:"echo"
+        (return (make (String_direct.Set.singleton "whiskey")))
+        >>= redirect ~src:"alpha"   ~dst:"alpha"
+        >>= redirect ~src:"bravo"   ~dst:"echo"
         >>= redirect ~src:"charlie" ~dst:"echo"
-        >>= redirect ~src:"echo" ~dst:"foxtrot"
+        >>= redirect ~src:"echo"    ~dst:"foxtrot"
       in
-      let alpha   = StringDirect.R_map.dest_of map "alpha" in
-      let bravo   = StringDirect.R_map.dest_of map "bravo" in
-      let charlie = StringDirect.R_map.dest_of map "charlie" in
-      let delta   = StringDirect.R_map.dest_of map "delta" in
+      let alpha   = String_direct.R_map.dest_of map "alpha" in
+      let bravo   = String_direct.R_map.dest_of map "bravo" in
+      let charlie = String_direct.R_map.dest_of map "charlie" in
+      let delta   = String_direct.R_map.dest_of map "delta" in
       (alpha, bravo, charlie, delta)
     in
     Sexp.output_hum
@@ -161,19 +161,19 @@ let%expect_test "String.R_map: dest_of example run" =
 
 let%expect_test "String.R_map: dest_of example run" =
   let open Or_error.Let_syntax in
-  StringDirect.R_map.(
+  String_direct.R_map.(
     let r =
       let%map map =
-        (return (make (StringDirect.Set.singleton "whiskey")))
-        >>= redirect ~src:"alpha" ~dst:"alpha"
-        >>= redirect ~src:"bravo" ~dst:"echo"
+        (return (make (String_direct.Set.singleton "whiskey")))
+        >>= redirect ~src:"alpha"   ~dst:"alpha"
+        >>= redirect ~src:"bravo"   ~dst:"echo"
         >>= redirect ~src:"charlie" ~dst:"echo"
-        >>= redirect ~src:"echo" ~dst:"foxtrot"
+        >>= redirect ~src:"echo"    ~dst:"foxtrot"
       in
-      let alpha   = StringDirect.R_map.sources_of map "alpha" in
-      let bravo   = StringDirect.R_map.sources_of map "bravo" in
-      let echo    = StringDirect.R_map.sources_of map "echo" in
-      let foxtrot = StringDirect.R_map.sources_of map "foxtrot" in
+      let alpha   = String_direct.R_map.sources_of map "alpha" in
+      let bravo   = String_direct.R_map.sources_of map "bravo" in
+      let echo    = String_direct.R_map.sources_of map "echo" in
+      let foxtrot = String_direct.R_map.sources_of map "foxtrot" in
       (alpha, bravo, echo, foxtrot)
     in
     Sexp.output_hum
