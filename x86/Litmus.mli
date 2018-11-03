@@ -27,5 +27,5 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
    dialect of x86. *)
 module LitmusDirect
   : Lib.Litmus.Intf
-    with type LS.Statement.t = Ast.Statement.t
-     and type LS.Symbol.t = string
+    with type Lang.Statement.t = Ast.Statement.t
+     and type Lang.Symbol.t = string

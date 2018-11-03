@@ -29,7 +29,7 @@ open Core
 (** [Hook] is an interface for language-specific hooks into the
     sanitisation process. *)
 module type Hook = sig
-  module L : Language.Intf
+  module L : Language.S
   module Ctx : Sanitiser_ctx.Intf with module Lang = L
 
   (** [on_program] is a hook mapped over each the program as a
@@ -127,7 +127,7 @@ module type Sanitiser = sig
   module type S = S
 
   (** [Make_null_hook] makes a [Hook] that does nothing. *)
-  module Make_null_hook : functor (L : Language.Intf)
+  module Make_null_hook : functor (L : Language.S)
     -> Hook with module L = L
 
   (** [Make] implements the assembly sanitiser for a given [Basic]. *)

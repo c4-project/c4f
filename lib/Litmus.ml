@@ -28,45 +28,42 @@ open Utils
  * Litmus AST module
  *)
 
-module type Intf =
-sig
-  module LS : Language.Intf
+module type Intf = sig
+  module Lang : Language.S
 
   type t =
     { name : string
-    ; init : ((string, LS.Constant.t) List.Assoc.t)
-    ; programs : LS.Statement.t list list
+    ; init : ((string, Lang.Constant.t) List.Assoc.t)
+    ; programs : Lang.Statement.t list list
     }
 
   include Pretty_printer.S with type t := t
 
   val make : name:string
-             -> init:((string, LS.Constant.t) List.Assoc.t)
-             -> programs:LS.Statement.t list list
+             -> init:((string, Lang.Constant.t) List.Assoc.t)
+             -> programs:Lang.Statement.t list list
              -> t Or_error.t
 end
 
-module Make (LS : Language.Intf) =
-struct
-  module LS = LS
+module Make (Lang : Language.S) : Intf with module Lang = Lang = struct
+  module Lang = Lang
 
   type t =
     { name : string
-    ; init : ((string, LS.Constant.t) List.Assoc.t)
-    ; programs : LS.Statement.t list list
+    ; init : ((string, Lang.Constant.t) List.Assoc.t)
+    ; programs : Lang.Statement.t list list
     }
 
   (** [validate_init init] validates an incoming litmus test's
      init block. *)
-
-  let validate_init (init : (string, LS.Constant.t) List.Assoc.t)
+  let validate_init (init : (string, Lang.Constant.t) List.Assoc.t)
       : unit Or_error.t =
     let dup =
       List.find_a_dup ~compare:(fun x y -> String.compare (fst x) (fst y))
         init
     in
     let dup_to_err d =
-      Or_error.error "duplicate item in 'init'" d [%sexp_of: string * LS.Constant.t]
+      Or_error.error "duplicate item in 'init'" d [%sexp_of: string * Lang.Constant.t]
     in
     Option.value_map
       ~default:Result.ok_unit
@@ -75,8 +72,7 @@ struct
 
   (** [validate_programs ps] validates an incoming litmus test's
      programs. *)
-
-  let validate_programs (ps : LS.Statement.t list list) : unit Or_error.t =
+  let validate_programs (ps : Lang.Statement.t list list) : unit Or_error.t =
     match ps with
     | [] -> Or_error.error_string "programs are empty"
     | p::ps ->
@@ -86,7 +82,6 @@ struct
          ~error:(Error.of_string "programs must be of uniform size")
 
   (** [validate lit] validates an incoming litmus test. *)
-
   let validate (lit : t) : unit Or_error.t =
     Or_error.combine_errors_unit
       [ validate_init lit.init
@@ -99,7 +94,7 @@ struct
     validate lit *> return lit
 
   let pp_init (f : Format.formatter)
-              (init : (string, LS.Constant.t) List.Assoc.t)
+              (init : (string, Lang.Constant.t) List.Assoc.t)
     : unit =
     MyFormat.pp_c_braces
       f
@@ -107,23 +102,23 @@ struct
          Format.pp_print_list
            ~pp_sep:Format.pp_print_space
            (fun f (l, c) ->
-              Format.fprintf f "@[%s = %a;@]" l LS.Constant.pp c
+              Format.fprintf f "@[%s = %a;@]" l Lang.Constant.pp c
            )
            f
           init)
 
   let pp_instr_raw (f : Format.formatter) =
-      Format.fprintf f "@[<h>%a@]" LS.Statement.pp
+      Format.fprintf f "@[<h>%a@]" Lang.Statement.pp
 
-  let instr_width (ins : LS.Statement.t) : int =
+  let instr_width (ins : Lang.Statement.t) : int =
     String.length (MyFormat.format_to_string pp_instr_raw ins)
 
-  let column_width : LS.Statement.t list list -> int =
+  let column_width : Lang.Statement.t list list -> int =
     My_list.max_measure
       ~measure:(My_list.max_measure ~measure:instr_width)
 
   let pp_programs (f : Format.formatter)
-                  (ps : LS.Statement.t list list)
+                  (ps : Lang.Statement.t list list)
       : unit =
     let cw = column_width ps in
 
@@ -198,9 +193,7 @@ struct
 
   let pp f litmus =
     Format.pp_open_vbox f 0;
-    Format.fprintf f "@[%s@ %s@]@,@,"
-                   LS.name
-                   litmus.name;
+    Format.fprintf f "@[%s@ %s@]@,@," Lang.name litmus.name;
     pp_body f litmus;
     Format.pp_close_box f ()
 end

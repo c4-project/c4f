@@ -37,12 +37,16 @@
 type order =
   | Src_then_dst (* Source then destination (eg. in x86, AT&T) *)
   | Dst_then_src (* Destination then source (eg. in x86, Intel) *)
+[@@deriving sexp]
+;;
 
 (** [t] is a source and destination pair, with unambiguous names. *)
 type ('s, 'd) t =
   { src : 's
   ; dst : 'd
   }
+[@@deriving sexp]
+;;
 
 (** [Has_order] is a module signature for things that have a particular
     ordering for two-operand instructions. *)

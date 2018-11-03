@@ -41,7 +41,7 @@ module type S = sig
   val explain : statement list -> t
 end
 
-module Make (LS : Language.Intf) = struct
+module Make (LS : Language.S) = struct
   type statement = LS.Statement.t
 
   type stm_explanation =

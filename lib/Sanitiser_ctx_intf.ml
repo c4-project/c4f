@@ -40,7 +40,7 @@ end
 (** [WarnIntf] is the interface to the warnings emitted by the
    sanitiser. *)
 module type WarnIntf = sig
-  module L : Language.Intf
+  module L : Language.S
   module C : CustomWarnS
 
   type elt =
@@ -77,7 +77,7 @@ end
 (** [Intf] is the interface to the state monad used by the sanitiser to
     carry global information around in a sanitisation pass. *)
 module type Intf = sig
-  module Lang : Language.Intf
+  module Lang : Language.S
   module Warn : WarnIntf with module L = Lang
 
   type ctx
@@ -230,14 +230,14 @@ module type Sanitiser_ctx = sig
   (** [Warn] produces a warnings module for the given language and
       custom warnings set. *)
   module Warn
-    : functor (L : Language.Intf)
+    : functor (L : Language.S)
       -> functor (C : CustomWarnS)
         -> WarnIntf with module L = L and module C = C
   ;;
 
   (** [Make] builds a context monad for the given language. *)
   module Make
-    : functor (L : Language.Intf)
+    : functor (L : Language.S)
       -> functor (C : CustomWarnS)
         -> Intf with module Lang = L
                  and module Warn.C = C

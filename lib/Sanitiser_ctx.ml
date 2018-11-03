@@ -37,7 +37,7 @@ module NoCustomWarn : CustomWarnS = struct
   let pp _ _ = ()
 end
 
-module Warn (L : Language.Intf) (C : CustomWarnS)
+module Warn (L : Language.S) (C : CustomWarnS)
   : WarnIntf with module L = L and module C = C = struct
   module L = L
   module C = C
@@ -122,7 +122,7 @@ let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string =
   mu prefix 0
 ;;
 
-module Make (L : Language.Intf) (C : CustomWarnS)
+module Make (L : Language.S) (C : CustomWarnS)
  : Intf with module Lang = L and module Warn.C = C = struct
   module Lang = L
   module Warn = Warn (L) (C)

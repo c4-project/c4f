@@ -27,9 +27,9 @@ open Utils
 
 include Sanitiser_intf
 
-module Make_null_hook (LS : Language.Intf) = struct
-  module L = LS
-  module Ctx = Sanitiser_ctx.Make (LS) (Sanitiser_ctx.NoCustomWarn)
+module Make_null_hook (Lang : Language.S) = struct
+  module L = Lang
+  module Ctx = Sanitiser_ctx.Make (L) (Sanitiser_ctx.NoCustomWarn)
 
   let on_program = Ctx.return
   let on_statement = Ctx.return
@@ -101,14 +101,26 @@ module Make (B : Basic)
     in L.Instruction.OnLocations.map ~f ins
   ;;
 
+
+  let instruction_has_type ty ins =
+    Abstract.Instruction.equal
+      ty
+      (L.Instruction.abs_type ins)
+  ;;
+
+  let if_instruction_has_type ins ty ~f =
+    if instruction_has_type ty ins then f () else Ctx.return ins
+  ;;
+
   (** [warn_unknown_instructions stm] emits warnings for each
       instruction in [stm] without a high-level analysis. *)
   let warn_unknown_instructions ins =
-    let open Ctx.Let_syntax in
-    match L.Instruction.abs_type ins with
-     | Abstract.Instruction.Unknown ->
-       let%map () = Ctx.warn (Warn.UnknownElt (Warn.Instruction ins)) in ins
-     | _ -> return ins
+    if_instruction_has_type ins
+     Abstract.Instruction.Unknown
+     ~f:(Ctx.(
+         fun () -> warn (Warn.UnknownElt (Warn.Instruction ins))
+           >>| Fn.const ins))
+  ;;
 
   (** [warn_operands stm] emits warnings for each instruction
      in [stm] whose operands don't have a high-level analysis,
@@ -149,18 +161,19 @@ module Make (B : Basic)
       Ctx.redirect ~src:sym ~dst:sym' >>| fun () -> sym'
   ;;
 
-  let change_ret_to_end_jump ins =
+  let make_end_jump () =
     let open Ctx.Let_syntax in
-    match L.Instruction.abs_type ins with
-    | Abstract.Instruction.Return ->
-      begin
-        match%bind Ctx.get_end_label with
-        | None ->
-          let%map () = Ctx.warn Warn.MissingEndLabel in ins
-        | Some endl ->
-          return (L.Instruction.jump endl)
-      end
-    | _ -> Ctx.return ins
+    match%bind Ctx.get_end_label with
+    | None ->
+      Ctx.Monadic.return
+        (Or_error.error_string
+           "Tried to make an end-label jump without an end label")
+    | Some endl ->
+      return (L.Instruction.jump endl)
+
+  let change_ret_to_end_jump ins =
+    if_instruction_has_type ins Abstract.Instruction.Return
+      ~f:make_end_jump
   ;;
 
   (** [sanitise_loc] performs sanitisation at the single location
@@ -378,6 +391,28 @@ module Make (B : Basic)
     )
   ;;
 
+  let all_symbols_in progs =
+    progs
+    |> Program_container.to_list
+    |> List.concat_map
+      ~f:(List.concat_map ~f:L.Statement.OnSymbols.to_list)
+  ;;
+
+  let make_mangle_map progs =
+    let all_symbols = all_symbols_in progs in
+    (* Build a map src->dst, where each dst is a symbol in the
+       assembly, and src is one possible demangling of dst.
+       We're assuming that there'll only be one unique dst for
+       each src, and taking the most recent dst. *)
+    all_symbols
+    |> List.concat_map ~f:(
+      fun dst ->
+        List.map (L.Symbol.abstract_demangle dst)
+          ~f:(fun src -> (src, dst))
+    )
+    |> String.Map.of_alist_reduce ~f:(fun _ y -> y)
+  ;;
+
   (** [find_initial_redirects symbols] tries to find the compiler-mangled
       version of each symbol in [symbols].  In each case, it sets up a
       redirect in the redirects table.
@@ -389,25 +424,10 @@ module Make (B : Basic)
     if List.is_empty symbols
     then return ()
     else begin
-      let all_progs = Program_container.to_list progs in
-      (* Build a map src->dst, where each dst is a symbol in the
-         assembly, and src is one possible demangling of dst.
-         We're assuming that there'll only be one unique dst for
-         each src, and taking the most recent dst. *)
-      let symbol_map =
-        all_progs
-        |> List.concat_map
-            ~f:(List.concat_map ~f:L.Statement.OnSymbols.to_list)
-        |> List.concat_map ~f:(
-          fun dst ->
-            List.map (L.Symbol.abstract_demangle dst)
-              ~f:(fun src -> (src, dst))
-        )
-        |> String.Map.of_alist_reduce ~f:(fun _ y -> y)
-      in
+      let mangle_map = make_mangle_map progs in
       Ctx_List.mapM symbols ~f:(
         fun src ->
-          match String.Map.find symbol_map (L.Symbol.to_string src) with
+          match String.Map.find mangle_map (L.Symbol.to_string src) with
           | Some dst -> Ctx.redirect ~src ~dst
           | None     -> Ctx.warn (Warn.SymbolRedirFail src)
       ) >>| (fun _ -> ())

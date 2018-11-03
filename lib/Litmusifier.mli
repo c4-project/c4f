@@ -44,22 +44,22 @@ module type Basic = sig
   module Frontend : LangFrontend.Intf
   module Litmus : Litmus.Intf
   module Multi_sanitiser
-    : Sanitiser.S with type statement = Litmus.LS.Statement.t
-                   and type sym = Litmus.LS.Symbol.t
+    : Sanitiser.S with type statement = Litmus.Lang.Statement.t
+                   and type sym = Litmus.Lang.Symbol.t
                    and type 'a Program_container.t = 'a list
   ;;
   module Single_sanitiser
-    : Sanitiser.S with type statement = Litmus.LS.Statement.t
-                   and type sym = Litmus.LS.Symbol.t
+    : Sanitiser.S with type statement = Litmus.Lang.Statement.t
+                   and type sym = Litmus.Lang.Symbol.t
                    and type 'a Program_container.t = 'a
   ;;
   module Explainer
-    : Explainer.S with type statement = Litmus.LS.Statement.t
+    : Explainer.S with type statement = Litmus.Lang.Statement.t
   ;;
 
-  val final_convert : Litmus.LS.Statement.t list -> Litmus.LS.Statement.t list
+  val final_convert : Litmus.Lang.Statement.t list -> Litmus.Lang.Statement.t list
 
-  val statements : Frontend.ast -> Litmus.LS.Statement.t list
+  val statements : Frontend.ast -> Litmus.Lang.Statement.t list
 end
 
 module Make : functor (B : Basic) -> S

@@ -27,24 +27,21 @@ open Utils
 
 include Language_intf
 
-module Make (M : S)
-  : Intf
-    with type Constant.t    = M.Constant.t
-     and type Location.t    = M.Location.t
-     and type Instruction.t = M.Instruction.t
-     and type Statement.t   = M.Statement.t
-     and type Symbol.t      = M.Symbol.t = struct
-  include (M : BaseS)
+module Make (B : Basic)
+  : S
+    with type Constant.t    = B.Constant.t
+     and type Location.t    = B.Location.t
+     and type Instruction.t = B.Instruction.t
+     and type Statement.t   = B.Statement.t
+     and type Symbol.t      = B.Symbol.t = struct
+  include (B : Basic_core)
 
-  module Symbol = Language_symbol.Make (M.Symbol)
+  module Symbol = Language_symbol.Make (B.Symbol)
 
   module Instruction = struct
-    include M.Instruction
+    include B.Instruction
 
-    let is_jump ins =
-      match abs_type ins with
-      | Abstract.Instruction.Jump -> true
-      | _ -> false
+    let is_jump = has_abs_type Abstract.Instruction.Jump
 
     let is_stack_manipulation ins =
       Abstract.(
@@ -77,12 +74,10 @@ module Make (M : S)
         | _ -> false
       )
     ;;
-
-    let mem s i = Abstract.Instruction.Set.mem s (abs_type i)
   end
 
   module Statement = struct
-    include M.Statement
+    include B.Statement
 
     let is_jump =
       OnInstructions.exists ~f:Instruction.is_jump
@@ -91,7 +86,7 @@ module Make (M : S)
       OnInstructions.exists ~f:Instruction.is_stack_manipulation
 
     let instruction_mem s =
-      OnInstructions.exists ~f:(Instruction.mem s)
+      OnInstructions.exists ~f:(Instruction.abs_type_in s)
 
     let is_directive stm =
       match abs_type stm with
@@ -148,7 +143,7 @@ module Make (M : S)
   end
 
   module Location = struct
-    include M.Location
+    include B.Location
 
     let to_heap_symbol l =
       match abs_type l with
@@ -157,7 +152,7 @@ module Make (M : S)
   end
 
   module Constant = struct
-    include M.Constant
+    include B.Constant
   end
 
   let heap_symbols prog =

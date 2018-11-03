@@ -22,7 +22,7 @@ module type Intf = sig
   include Dialect.Intf
   include PP.Printer
   include
-    Language.Intf
+    Language.S
     with type Constant.t = Ast.Operand.t
      and type Location.t = Ast.Location.t
      and type Instruction.t = Ast.Instruction.t
@@ -102,13 +102,17 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               Heap s
             | _, _, _, _ -> Unknown
 
-          let abs_type =
-            let open Abstract.Location in
-            function
-            | Ast.Location.Reg ESP
-            | Reg EBP -> StackPointer
-            | Reg _ -> GeneralRegister
-            | Indirect i -> indirect_abs_type i
+          include Abstractable.Make (struct
+              type nonrec t = t
+              module Abs = Abstract.Location
+              open Abs
+
+              let abs_type = function
+                | Ast.Location.Reg ESP
+                | Reg EBP -> StackPointer
+                | Reg _ -> GeneralRegister
+                | Indirect i -> indirect_abs_type i
+            end)
         end
 
         module Instruction = struct
@@ -287,16 +291,21 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
                  ));
             [%expect {| &stack -> &stack |}]
 
-          let abs_type ({opcode; _} : Ast.Instruction.t) =
-            let open Abstract.Instruction in
-            match opcode with
-            | Ast.OpDirective _ ->
-              (* handled by abs_type below. *)
-              Other
-            | Ast.OpJump _ -> Jump
-            | Ast.OpBasic b -> basic_instruction_type b
-            | Ast.OpSized (b, _) -> basic_instruction_type b
-            | Ast.OpUnknown _ -> Unknown
+          include Abstractable.Make_enum (struct
+              type nonrec t = t
+              module Abs = Abstract.Instruction
+              open Abs
+
+              let abs_type ({opcode; _} : Ast.Instruction.t) =
+                match opcode with
+                | Ast.OpDirective _ ->
+                  (* handled by abs_type below. *)
+                  Other
+                | OpJump _ -> Jump
+                | OpBasic b -> basic_instruction_type b
+                | OpSized (b, _) -> basic_instruction_type b
+                | OpUnknown _ -> Unknown
+            end)
 
           module OnSymbols = struct
             include Ast.Instruction.On_symbols

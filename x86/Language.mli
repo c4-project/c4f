@@ -12,7 +12,7 @@ module type Intf = sig
   include Dialect.Intf
   include PP.Printer
   include
-    Language.Intf
+    Language.S
     with type Constant.t = Ast.Operand.t
      and type Location.t = Ast.Location.t
      and type Instruction.t = Ast.Instruction.t

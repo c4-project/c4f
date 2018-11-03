@@ -26,6 +26,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Utils
 
+(** [S] is the baseline signature for all abstract observation
+   types. *)
+module type S = sig
+  type t [@@deriving sexp]
+  include Pretty_printer.S with type t := t
+end
+
+(** [S_enum] is an extended signature for abstract observation types
+    that are also enumerations. *)
+module type S_enum = sig
+  include S
+  include Enum.ExtensionTable with type t := t
+end
+
 (** [Instruction] contains types and utilities for abstracted
    instructions. *)
 module Instruction : sig
@@ -53,9 +67,7 @@ module Instruction : sig
      - It makes it easier for us to translate returns to
      end-of-program jumps in sanitisation.  *)
 
-  (** [AbsInstruction] contains various enum extensions, including a
-      [Set] type. *)
-  include Enum.ExtensionTable with type t := t
+  include S_enum with type t := t
 end
 
 (** [Location] contains types and utilities for abstracted
@@ -69,8 +81,7 @@ module Location : sig
     | GeneralRegister    (** General-purpose register *)
     | Unknown            (** Not known *)
 
-  (** Abstract locations may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
+  include S with type t := t
 end
 
 (** [Statement] contains types and utilities for abstracted
@@ -84,8 +95,7 @@ module Statement : sig
     | Label of string
     | Other
 
-  (** Abstract statements may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
+  include S with type t := t
 
   (** [Flag] is an enumeration of various statement observations.
 
@@ -128,8 +138,7 @@ module Operands : sig
     (* No analysis available---the operands may or may not be valid. *)
     | Unknown
 
-  (** Abstract operand bundles may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
+  include S with type t := t
 end
 
 module Symbol : sig

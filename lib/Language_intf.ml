@@ -26,30 +26,11 @@
 open Core
 open Utils
 
-(*
- * Interface for language implementation
- *)
-
-(** [BaseS] is the top-level signature that must be implemented by act
-    languages (as part of [S]). *)
-module type BaseS = sig
-  (** [name] is the Herd7 name of the language. *)
-  val name : string
-
-  (** [pp_comment ~pp f k] prints a line comment whose body is
-      given by invoking [pp] on [k]. *)
-  val pp_comment
-    :  pp:(Format.formatter -> 'a -> unit)
-    -> Format.formatter
-    -> 'a
-    -> unit
-end
-
-(** [StatementS] is the signature that must be implemented by
-    act languages in regards to their statement types. *)
-module type StatementS = sig
+(** [Basic_statement] is the signature that must be implemented by act
+   languages in regards to their statement types. *)
+module type Basic_statement = sig
   (** [t] is the type of statements. *)
-  type t
+  type t [@@deriving sexp]
 
   (** [ins] is the type of instructions inside statements. *)
   type ins
@@ -58,10 +39,7 @@ module type StatementS = sig
   type sym
 
   (** Languages must supply a pretty-printer for their statements. *)
-  include Core.Pretty_printer.S with type t := t
-
-  (** They must also include S-expression conversion. *)
-  include Sexpable.S with type t := t
+  include Pretty_printer.S with type t := t
 
   (** They must allow fold-mapping over symbols... *)
   module OnSymbols
@@ -73,9 +51,10 @@ module type StatementS = sig
     : Fold_map.S0 with type elt := ins and type t := t
   ;;
 
-  (*
-   * Constructors
-   *)
+  include Abstractable.S
+    with type t := t
+     and module Abs := Abstract.Statement
+  ;;
 
   (** [empty] builds an empty statement. *)
   val empty : unit -> t
@@ -85,18 +64,13 @@ module type StatementS = sig
 
   (** [instruction] builds an instruction statement. *)
   val instruction : ins -> t
-
-  (*
-   * Inspection
-   *)
-
-  (** [abs_type stm] gets the abstract type of a statement. *)
-  val abs_type : t -> Abstract.Statement.t
 end
 
-module type InstructionS = sig
+(** [Basic_instruction] is the signature that must be implemented by act
+   languages in regards to their instruction types. *)
+module type Basic_instruction = sig
   (** [t] is the type of instructions. *)
-  type t
+  type t [@@deriving sexp]
 
   (** [loc] is the type of locations inside instructions. *)
   type loc
@@ -105,10 +79,12 @@ module type InstructionS = sig
   type sym
 
   (** Languages must supply a pretty-printer for their instructions. *)
-  include Core.Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
 
-  (** They must also include S-expression conversion. *)
-  include Sexpable.S with type t := t
+  include Abstractable.S_enum
+    with type t := t
+     and module Abs := Abstract.Instruction
+  ;;
 
   (** They must allow fold-mapping over symbols... *)
   module OnSymbols : Fold_map.S0 with type elt := sym and type t := t
@@ -122,71 +98,80 @@ module type InstructionS = sig
   (** [operands ins] gets the abstracted operands of instruction
       [ins]. *)
   val abs_operands : t -> Abstract.Operands.t
-
-  (** [abs_type ins] gets the abstract type of instruction [ins]. *)
-  val abs_type : t -> Abstract.Instruction.t
 end
 
-module type LocationS = sig
-  type t
+(** [Basic_location] is the signature that must be implemented by act
+   languages in regards to their location types. *)
+module type Basic_location = sig
+  type t [@@deriving sexp]
 
   (** Languages must supply a pretty-printer for their locations. *)
-  include Core.Pretty_printer.S with type t := t
+  include Pretty_printer.S with type t := t
 
-  (** They must also include S-expression conversion. *)
-  include Sexpable.S with type t := t
+  include Abstractable.S
+    with type t := t
+     and module Abs := Abstract.Location
+  ;;
 
   (** [make_heap_loc sym] creates a location referencing a symbolic heap
       location named [sym]. *)
   val make_heap_loc : string -> t
-
-  (** [abs_type loc] gets the abstract type of a location. *)
-  val abs_type : t -> Abstract.Location.t
 end
 
-module type ConstantS = sig
-  type t
+(** [Basic_constant] is the signature that must be implemented by act
+   languages in regards to their constant types. *)
+module type Basic_constant = sig
+  type t [@@deriving sexp]
 
   (** Languages must supply a pretty-printer for their constants. *)
-  include Core.Pretty_printer.S with type t := t
-
-  (** They must also include S-expression conversion. *)
-  include Sexpable.S with type t := t
+  include Pretty_printer.S with type t := t
 
   (** [zero] is a constant representing numeric zero. *)
   val zero : t
 end
 
-(** [S] is the signature that Litmus languages must implement. *)
-module type S = sig
-  include BaseS
-  module Constant    : ConstantS
-  module Location    : LocationS
-  module Symbol      : Language_symbol.Basic
-  module Instruction : InstructionS with type loc = Location.t
-                                     and type sym = Symbol.t
-  module Statement   : StatementS with type ins = Instruction.t
-                                   and type sym = Symbol.t
+(** [Basic_core] is the signature that act languages must implement
+    in regards to miscellaneous facts about the language. *)
+module type Basic_core = sig
+  (** [name] is the Herd7 name of the language. *)
+  val name : string
+
+  (** [pp_comment ~pp f k] prints a line comment whose body is
+      given by invoking [pp] on [k]. *)
+  val pp_comment
+    :  pp:(Format.formatter -> 'a -> unit)
+    -> Format.formatter
+    -> 'a
+    -> unit
 end
 
-(*
- * End-user interface
- *)
+(** [Basic] is the signature that act languages must implement. *)
+module type Basic = sig
+  include Basic_core
 
-(** [Intf] is the user-facing interface module for act languages.
-    Usually, you can get an [Intf] by applying the functor [Make]
-    onto a bare-bones language [S]. *)
-module type Intf = sig
-  include BaseS
+  module Constant    : Basic_constant
+  module Location    : Basic_location
+  module Symbol      : Language_symbol.Basic
+  module Instruction : Basic_instruction with type loc = Location.t
+                                          and type sym = Symbol.t
+  module Statement   : Basic_statement with type ins = Instruction.t
+                                        and type sym = Symbol.t
+end
+
+(** [S] is the user-facing interface module for act languages.
+    Usually, you can get an [S] by applying the functor [Make]
+    onto a bare-bones language [Basic]. *)
+module type S = sig
+  include Basic_core
 
   module Constant : sig
-    include ConstantS
+    include Basic_constant
   end
 
   module Symbol : Language_symbol.S
 
   module Location : sig
-    include LocationS
+    include Basic_location
 
     (** [to_heap_symbol l] returns [l]'s underlying abstract heap
        symbol if it is a symbolic heap reference. *)
@@ -194,12 +179,8 @@ module type Intf = sig
   end
 
   module Instruction : sig
-    include InstructionS with type loc = Location.t
-                          and type sym = Symbol.t
-
-    (** [mem set ins] checks whether [ins]'s abstract type is in the
-        set [set]. *)
-    val mem : Abstract.Instruction.Set.t -> t -> bool
+    include Basic_instruction with type loc = Location.t
+                               and type sym = Symbol.t
 
     (** [is_jump ins] decides whether [ins] appears to be a
         jump instruction. *)
@@ -212,12 +193,8 @@ module type Intf = sig
   end
 
   module Statement : sig
-    include StatementS with type ins = Instruction.t
-                        and type sym = Symbol.t
-
-    (*
-     * Shortcuts for querying instructions in a statement
-     *)
+    include Basic_statement with type ins = Instruction.t
+                             and type sym = Symbol.t
 
     (** [instruction_mem set stm] checks whether [stm] is an
         instruction and, if so, whether its abstract type is in the set
@@ -283,14 +260,14 @@ module type Intf = sig
 end
 
 module type Language = sig
+  module type Basic = Basic
   module type S = S
-  module type Intf = Intf
 
-  (** [Make] builds a module satisfying [Intf] from a module satisfying [S]. *)
-  module Make : functor (M : S) ->
-    Intf with type Constant.t    = M.Constant.t
-          and type Location.t    = M.Location.t
-          and type Instruction.t = M.Instruction.t
-          and type Statement.t   = M.Statement.t
-          and type Symbol.t      = M.Symbol.t
+  (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
+  module Make : functor (B : Basic) ->
+    S with type Constant.t    = B.Constant.t
+       and type Location.t    = B.Location.t
+       and type Instruction.t = B.Instruction.t
+       and type Statement.t   = B.Statement.t
+       and type Symbol.t      = B.Symbol.t
 end

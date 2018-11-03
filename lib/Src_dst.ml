@@ -27,11 +27,13 @@ open Core
 type order =
   | Src_then_dst
   | Dst_then_src
+    [@@deriving sexp]
 
 type ('s, 'd) t =
   { src : 's
   ; dst : 'd
   }
+  [@@deriving sexp]
 
 module type Has_order = sig
   val operand_order : order

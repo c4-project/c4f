@@ -52,4 +52,4 @@ module type S = sig
 end
 
 (** [Make] makes an implementation of [S] for a given language. *)
-module Make : functor (LS : Language.Intf) -> (S with type statement = LS.Statement.t)
+module Make : functor (LS : Language.S) -> (S with type statement = LS.Statement.t)

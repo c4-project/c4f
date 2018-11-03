@@ -31,12 +31,12 @@ open Core
 
 (** [Intf] is the interface for litmus AST modules. *)
 module type Intf = sig
-  module LS : Language.Intf
+  module Lang : Language.S
 
   type t =
     { name : string
-    ; init : ((string, LS.Constant.t) List.Assoc.t) (* Initial heap *)
-    ; programs : LS.Statement.t list list
+    ; init : ((string, Lang.Constant.t) List.Assoc.t) (* Initial heap *)
+    ; programs : Lang.Statement.t list list
     }
 
   include Pretty_printer.S with type t := t
@@ -49,12 +49,14 @@ module type Intf = sig
      [init], and program list [programs].  It returns a result,
      as it may fail if the input isn't a valid Litmus program. *)
   val make : name:string
-             -> init:((string, LS.Constant.t) List.Assoc.t)
-             -> programs:LS.Statement.t list list
+             -> init:((string, Lang.Constant.t) List.Assoc.t)
+             -> programs:Lang.Statement.t list list
              -> t Or_error.t
 end
 
 (** [Make] is a functor that, given a language described by
    [Language.Intf], produces a module type for litmus test syntax
    trees, as well as operations for pretty-printing it. *)
-module Make : functor (LS : Language.Intf) -> Intf with module LS = LS
+module Make
+  : functor (Lang : Language.S)
+    -> Intf with module Lang = Lang
