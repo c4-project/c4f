@@ -25,7 +25,7 @@ open Core
 open Lib
 open Utils
 
-let regress_run_litmusifier (l : (module Litmusifier.S))
+let regress_run_asm (l : (module Asm_job.Runner))
     path mode passes file =
   let open Or_error.Let_syntax in
   let module L = (val l) in
@@ -52,49 +52,45 @@ let regress_run_litmusifier (l : (module Litmusifier.S))
       }
   in
 
-  let%bind _ =
+  let%map _ =
     Io.with_input_and_output ~f (`File (path ^/ file)) `Stdout
   in
 
   Out_channel.flush stdout;
   printf "```\n";
-
-  return ()
 ;;
 
-let regress_run_litmusifier_many modename mode passes test_path =
+let regress_run_asm_many modename mode passes test_path =
   let open Or_error.Let_syntax in
 
   printf "# %s tests\n\n" modename;
 
   let emits = ["x86"; "att"] in
   let path = MyFilename.concat_list ([test_path; "asm"] @ emits) in
-  let%bind l = LangSupport.get_litmusifier ~emits in
+  let%bind l = LangSupport.get_runner ~emits in
   let%bind testfiles = Io.Dir.get_files ~ext:"s" path in
   let results = List.map
-      ~f:(regress_run_litmusifier l path mode passes) testfiles
+      ~f:(regress_run_asm l path mode passes) testfiles
   in
-  let%bind _ = Or_error.combine_errors_unit results in
-  printf "\nRan %d test(s).\n\n" (List.length testfiles);
-  return ()
+  let%map () = Or_error.combine_errors_unit results in
+  printf "\nRan %d test(s).\n\n" (List.length testfiles)
 ;;
 
 let regress_explain =
-  regress_run_litmusifier_many "Explainer" `Explain
+  regress_run_asm_many "Explainer" `Explain
     (Sanitiser_pass.explain)
 ;;
 
 let regress_litmusify =
-  regress_run_litmusifier_many "Litmusifier" `Litmusify
+  regress_run_asm_many "Litmusifier" `Litmusify
     (Sanitiser_pass.all_set ())
 ;;
 
 let regress test_path =
   let open Or_error.Let_syntax in
-  let%bind _ = regress_explain test_path in
-  let%bind _ = regress_litmusify test_path in
-  Out_channel.newline stdout;
-  return ()
+  let%bind () = regress_explain test_path in
+  let%map  () = regress_litmusify test_path in
+  Out_channel.newline stdout
 ;;
 
 let command =

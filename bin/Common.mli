@@ -38,9 +38,9 @@ val do_litmusify
   -> infile : string option
   -> outfile : string option
   -> Compiler.CSpec.t
-  -> (string, string) List.Assoc.t Or_error.t
+  -> Asm_job.output Or_error.t
 ;;
 
 (** [print_error u] prints any top-level errors represented by [u] to
    stderr. *)
-val print_error : unit Or_error.t -> unit;;
+val print_error : unit Or_error.t -> unit

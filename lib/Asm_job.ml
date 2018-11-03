@@ -23,22 +23,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
-module type S = sig
-  type t =
-    { o       : OutputCtx.t
-    ; iname   : string
-    ; inp     : In_channel.t
-    ; outp    : Out_channel.t
-    ; mode    : [`Explain | `Litmusify]
-    ; passes  : Sanitiser_pass.Set.t
-    ; symbols : string list
-    }
-  ;;
+type t =
+  { o       : OutputCtx.t
+  ; iname   : string
+  ; inp     : In_channel.t
+  ; outp    : Out_channel.t
+  ; mode    : [`Explain | `Litmusify]
+  ; passes  : Sanitiser_pass.Set.t
+  ; symbols : string list
+  }
+;;
 
-  val run : t -> (string, string) List.Assoc.t Or_error.t
-end
+(** [output] is the output of a single-file job. *)
+type output =
+  { symbol_map : (string, string) List.Assoc.t
+  }
+;;
 
-module type Basic = sig
+module type Runner_deps = sig
   module Frontend : LangFrontend.Intf
   module Litmus : Litmus.Intf
   module Multi_sanitiser
@@ -60,18 +62,11 @@ module type Basic = sig
   val statements : Frontend.ast -> Litmus.Lang.Statement.t list
 end
 
-module Make (B : Basic) : S = struct
-  type t =
-    { o       : OutputCtx.t
-    ; iname   : string
-    ; inp     : In_channel.t
-    ; outp    : Out_channel.t
-    ; mode    : [`Explain | `Litmusify]
-    ; passes  : Sanitiser_pass.Set.t
-    ; symbols : string list
-    }
-  ;;
+module type Runner = sig
+  val run : t -> output Or_error.t
+end
 
+module Make_runner (B : Runner_deps) : Runner = struct
   (* Shorthand for modules we use a _lot_. *)
   module L  = B.Litmus;;
   module LS = L.Lang;;
@@ -99,6 +94,11 @@ module Make (B : Basic) : S = struct
   let stringify_redirects =
     List.map
       ~f:(fun (k, v) -> (LS.Symbol.to_string k, LS.Symbol.to_string v))
+  ;;
+
+  let make_output redirects : output =
+    { symbol_map = stringify_redirects redirects
+    }
   ;;
 
   let output_litmus
@@ -133,7 +133,7 @@ module Make (B : Basic) : S = struct
     let f = Format.formatter_of_out_channel t.outp in
     L.pp f lit;
     Format.pp_print_flush f ();
-    stringify_redirects (MS.Output.redirects o)
+    make_output (MS.Output.redirects o)
   ;;
 
   let output_explanation
@@ -146,7 +146,7 @@ module Make (B : Basic) : S = struct
     let f = Format.formatter_of_out_channel t.outp in
     E.pp f exp;
     Format.pp_print_flush f ();
-    stringify_redirects (SS.Output.redirects san)
+    make_output (SS.Output.redirects san)
   ;;
 
   let run t =

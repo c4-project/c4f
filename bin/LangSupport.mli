@@ -36,11 +36,11 @@ open Lib
  * Assembly languages
  *)
 
-(** [get_litmusifier ~emits] tries to get a [Litmusifier.Intf] for the
+(** [get_runner ~emits] tries to get a [Asm_job.Runner] for the
    given emits clause. *)
-val get_litmusifier
+val get_runner
   :  emits:string list
-  -> (module Lib.Litmusifier.S) Or_error.t
+  -> (module Lib.Asm_job.Runner) Or_error.t
 
 (*
  * Compilers

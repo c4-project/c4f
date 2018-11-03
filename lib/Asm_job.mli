@@ -21,26 +21,42 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Front-end for single-file litmus conversion and explanation *)
+(** High-level front-end for assembly translation jobs
+
+    [Job] specifies a signature, [Runner], that describes a module that
+    takes an act job specification (of type [t]) and, on success,
+    produces output (of type [output]).  Such [Runner]s abstract over
+    all of the I/O plumbing and other infrastructure needed to do
+    the jobs. *)
 
 open Core
 
-module type S = sig
-  type t =
-    { o       : OutputCtx.t
-    ; iname   : string
-    ; inp     : In_channel.t
-    ; outp    : Out_channel.t
-    ; mode    : [`Explain | `Litmusify]
-    ; passes  : Sanitiser_pass.Set.t
-    ; symbols : string list
-    }
-  ;;
+(** [t] is a description of a single-file job. *)
+type t =
+  { o       : OutputCtx.t
+  ; iname   : string
+  ; inp     : In_channel.t
+  ; outp    : Out_channel.t
+  ; mode    : [`Explain | `Litmusify]
+  ; passes  : Sanitiser_pass.Set.t
+  ; symbols : string list
+  }
+;;
 
-  val run : t -> (string, string) List.Assoc.t Or_error.t
+(** [output] is the output of a single-file job. *)
+type output =
+  { symbol_map : (string, string) List.Assoc.t
+  }
+;;
+
+(** [Runner] is the signature of job runners. *)
+module type Runner = sig
+  val run : t -> output Or_error.t
 end
 
-module type Basic = sig
+(** [Runner_deps] is a signature bringing together the modules we
+   need to be able to run single-file jobs. *)
+module type Runner_deps = sig
   module Frontend : LangFrontend.Intf
   module Litmus : Litmus.Intf
   module Multi_sanitiser
@@ -62,4 +78,5 @@ module type Basic = sig
   val statements : Frontend.ast -> Litmus.Lang.Statement.t list
 end
 
-module Make : functor (B : Basic) -> S
+(** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)
+module Make_runner : functor (R : Runner_deps) -> Runner

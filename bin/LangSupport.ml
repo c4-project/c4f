@@ -24,7 +24,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lib
 
-let get_litmusifier_x86 =
+let get_runner_x86 =
   let open Or_error.Let_syntax in
   function
   | [s] ->
@@ -35,7 +35,7 @@ let get_litmusifier_x86 =
     let%bind f = X86.Language.frontend_of_dialect dialect in
     let l = X86.Language.lang_of_dialect dialect in
     Or_error.return
-      (module Litmusifier.Make (
+      (module Asm_job.Make_runner (
           struct
             module L = (val l)
 
@@ -50,16 +50,16 @@ let get_litmusifier_x86 =
             let final_convert = Conv.convert
             let statements = X86.Ast.program
           end
-          ): Litmusifier.S)
+          ): Asm_job.Runner)
   | _ ->
     Or_error.error_string
       "Too many arguments to x86 language; expected only one."
 
 let lang_procs =
-  [ "x86", get_litmusifier_x86 ]
+  [ "x86", get_runner_x86 ]
 ;;
 
-let get_litmusifier ~emits =
+let get_runner ~emits =
   let open Or_error.Let_syntax in
   let%bind lang =
     List.hd emits

@@ -207,7 +207,8 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog spec fname =
     (* The location symbols at the C level are each RHS of each
        pair in locs. *)
     let syms = List.map ~f:snd locs in
-    let%bind sym_redirects = litmusify o fs syms spec in
+    let%bind output = litmusify o fs syms spec in
+    let sym_redirects = output.symbol_map in
     (* syms' now contains the redirections from C-level symbols to
        asm/Litmus-level symbols.  To get the mapping between Herd
        locations, we need the composition of the two maps. *)

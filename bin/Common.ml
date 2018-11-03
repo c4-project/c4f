@@ -28,7 +28,7 @@ open Utils
 let do_litmusify mode passes o ?(symbols=[]) ~infile ~outfile spec =
   let open Result.Let_syntax in
   let emits = Compiler.CSpec.emits spec in
-  let%bind lit = LangSupport.get_litmusifier ~emits in
+  let%bind lit = LangSupport.get_runner ~emits in
   let module L = (val lit) in
   let f src inp _ outp =
     let iname = MyFormat.format_to_string (Io.In_source.pp) src in
