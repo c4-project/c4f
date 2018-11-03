@@ -25,6 +25,16 @@
 open Core
 open Utils
 
+module type S = sig
+  type t [@@deriving sexp]
+  include Pretty_printer.S with type t := t
+end
+
+module type S_enum = sig
+  include S
+  include Enum.ExtensionTable with type t := t
+end
+
 module Instruction = struct
   module M = struct
     type t =
@@ -72,9 +82,10 @@ module Location = struct
     | Heap of string
     | GeneralRegister
     | Unknown
+  [@@deriving sexp]
+  ;;
 
-  let pp f =
-    function
+  let pp f = function
     | StackPointer      -> String.pp      f "&stack"
     | StackOffset     i -> Format.fprintf f "stack[%d]" i
     | Heap            s -> Format.fprintf f "heap[%s]" s
@@ -89,9 +100,9 @@ module Statement = struct
     | Blank
     | Label of string
     | Other
+  [@@deriving sexp]
 
-  let pp f =
-    function
+  let pp f = function
     | Blank         -> ()
     | Directive   d -> Format.fprintf f "directive@ (%s)" d
     | Label       l -> Format.fprintf f ":%s"             l
@@ -127,6 +138,8 @@ module Operands = struct
     | Erroneous
     | Other
     | Unknown
+        [@@deriving sexp]
+  ;;
 
   let pp f = function
     | None -> String.pp f "none"
