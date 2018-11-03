@@ -66,7 +66,7 @@ end
    need to be able to run single-file jobs. *)
 module type Runner_deps = sig
   module Frontend : LangFrontend.Intf
-  module Litmus : Litmus.Intf
+  module Litmus : Litmus.S
   module Multi_sanitiser
     : Sanitiser.S with type statement = Litmus.Lang.Statement.t
                    and type sym = Litmus.Lang.Symbol.t

@@ -26,6 +26,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 (** [Direct] instantiates a litmus test emitter for the Herd7
    dialect of x86. *)
 module LitmusDirect
-  : Lib.Litmus.Intf
+  : Lib.Litmus.S
     with type Lang.Statement.t = Ast.Statement.t
      and type Lang.Symbol.t = string

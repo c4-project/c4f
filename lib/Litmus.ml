@@ -24,11 +24,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Utils
 
-(*
- * Litmus AST module
- *)
-
-module type Intf = sig
+module type S = sig
   module Lang : Language.S
 
   type t =
@@ -39,13 +35,14 @@ module type Intf = sig
 
   include Pretty_printer.S with type t := t
 
-  val make : name:string
-             -> init:((string, Lang.Constant.t) List.Assoc.t)
-             -> programs:Lang.Statement.t list list
-             -> t Or_error.t
+  val make
+    :  name:string
+    -> init:((string, Lang.Constant.t) List.Assoc.t)
+    -> programs:Lang.Statement.t list list
+    -> t Or_error.t
 end
 
-module Make (Lang : Language.S) : Intf with module Lang = Lang = struct
+module Make (Lang : Language.S) : S with module Lang = Lang = struct
   module Lang = Lang
 
   type t =
@@ -62,8 +59,12 @@ module Make (Lang : Language.S) : Intf with module Lang = Lang = struct
       List.find_a_dup ~compare:(fun x y -> String.compare (fst x) (fst y))
         init
     in
-    let dup_to_err d =
-      Or_error.error "duplicate item in 'init'" d [%sexp_of: string * Lang.Constant.t]
+    let dup_to_err (k, v) =
+      Or_error.error_s
+        [%message "duplicate item in 'init'"
+            ~location:k
+            ~value:(v : Lang.Constant.t)
+        ]
     in
     Option.value_map
       ~default:Result.ok_unit

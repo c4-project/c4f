@@ -29,8 +29,8 @@ open Core
  * Litmus AST module
  *)
 
-(** [Intf] is the interface for litmus AST modules. *)
-module type Intf = sig
+(** [S] is the interface for litmus AST modules. *)
+module type S = sig
   module Lang : Language.S
 
   type t =
@@ -48,10 +48,12 @@ module type Intf = sig
   (** [make] tries to build a [t] from a name [name], initialiser
      [init], and program list [programs].  It returns a result,
      as it may fail if the input isn't a valid Litmus program. *)
-  val make : name:string
-             -> init:((string, Lang.Constant.t) List.Assoc.t)
-             -> programs:Lang.Statement.t list list
-             -> t Or_error.t
+  val make
+    :  name:string
+    -> init:((string, Lang.Constant.t) List.Assoc.t)
+    -> programs:Lang.Statement.t list list
+    -> t Or_error.t
+  ;;
 end
 
 (** [Make] is a functor that, given a language described by
@@ -59,4 +61,5 @@ end
    trees, as well as operations for pretty-printing it. *)
 module Make
   : functor (Lang : Language.S)
-    -> Intf with module Lang = Lang
+    -> S with module Lang = Lang
+;;
