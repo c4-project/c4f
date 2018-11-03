@@ -412,15 +412,15 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
 
 module Herd7 = Make (Dialect.Herd7) (PP.Herd7)
 
-let lang_of_dialect =
-  function
+let lang_of_dialect = function
   | Dialect.Att   -> (module ATT : Intf)
   | Dialect.Intel -> (module Intel : Intf)
   | Dialect.Herd7 -> (module Herd7 : Intf)
+;;
 
-let frontend_of_dialect =
-  function
+let frontend_of_dialect = function
   | Dialect.Att
     -> Or_error.return (module AttFrontend : LangFrontend.Intf with type ast = Ast.t)
   | d ->
     Or_error.error "x86 dialect unsupported" d [%sexp_of: Dialect.t]
+;;
