@@ -152,39 +152,89 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
 
           let zero_operands (operands : Ast.Operand.t list)
             : Abstract.Operands.t =
-            let open Abstract.Operands in
             if List.is_empty operands
-            then None
-            else Erroneous
+            then `None
+            else `Erroneous
+
+          let src_operand
+            : Ast.Operand.t -> Abstract.Operands.src option = function
+            | Ast.Operand.Location s ->
+              Some (`Location (Location.abs_type s))
+            | Immediate (Ast.Disp.Numeric k) -> Some (`Int k)
+            | Immediate (Ast.Disp.Symbolic s) -> Some (`Symbol s)
+            | String _ | Typ _ | Bop _ -> Some `Other
+          ;;
+
+          let dst_operand
+            : Ast.Operand.t -> Abstract.Operands.dst option = function
+            | Ast.Operand.Location s ->
+              Some (`Location (Location.abs_type s))
+            | Immediate _ -> None
+            | String _ | Typ _ | Bop _ -> Some `Other
+          ;;
 
           let src_dst_operands (operands : Ast.Operand.t list)
             : Abstract.Operands.t =
-            let open Abstract.Operands in
             let open T in
-            to_src_dst operands
-            |> Option.value_map
-              ~f:(function
-                  | { src = Ast.Operand.Location s
-                    ; dst = Location d
-                    } ->
-                    LocTransfer
-                      { src = Location.abs_type s
-                      ; dst = Location.abs_type d
-                      }
-                  | { src = Immediate (Ast.Disp.Numeric k)
-                    ; dst = Location d
-                    } ->
-                    IntImmediate
-                      { src = k
-                      ; dst = Location.abs_type d
-                      }
-                  | _ -> None (* TODO(@MattWindsor91): flag erroneous *)
-                )
-              ~default:None
+            Option.Let_syntax.(
+              let%bind { src; dst } = to_src_dst operands in
+              let%map src' = src_operand src
+              and     dst' = dst_operand dst
+              in
+              `Src_dst { Src_dst.src = src'; dst = dst' }
+            ) |> Option.value ~default:`Erroneous
+
+          let run_classifier operand classify =
+            classify operand
+          ;;
+
+          let single_operand operands ~allowed : Abstract.Operands.t =
+            match operands with
+            | [operand] ->
+              Option.value_map
+                ~f:(fun x -> `Single x)
+                ~default:`Erroneous
+                (List.find_map allowed ~f:(run_classifier operand))
+            | _ -> `Erroneous
+          ;;
+
+          let immediate_operand = function
+            | Ast.Operand.Bop _ -> Some `Unknown
+            | Immediate (Ast.Disp.Numeric k) -> Some (`Int k)
+            | Immediate (Ast.Disp.Symbolic s) -> Some (`Symbol s)
+            | Location _ | String _ | Typ _ -> None
+          ;;
+
+          let memory_operand = function
+            | Ast.Operand.Bop _ -> Some `Unknown
+            | Location (Ast.Location.Indirect _ as l)
+              -> Some (`Location (Location.abs_type l))
+            | Location (Reg _)
+            | Immediate _ | String _ | Typ _  -> None
+          ;;
+
+          let register_operand = function
+            | Ast.Operand.Bop _ -> Some `Unknown
+            | Location (Ast.Location.Reg _ as l)
+              -> Some (`Location (Location.abs_type l))
+            | Location (Indirect _)
+            | Immediate _ | String _ | Typ _  -> None
+          ;;
+
+          let jump_target_operand = function
+            | Ast.Operand.Location (Ast.Location.Indirect i) ->
+              begin
+                match Ast.Indirect.disp i with
+                | Some (Ast.Disp.Symbolic s) -> Some (`Symbol s)
+                | _ -> Some `Unknown
+              end
+            | Immediate (Ast.Disp.Symbolic s) -> Some (`Symbol s)
+            | Immediate (Numeric _) | Bop _ -> Some `Unknown
+            | String _ | Typ _ | Location (Reg _) -> None
+          ;;
 
           let basic_operands (o : [< Ast.basic_opcode])
               (operands : Ast.Operand.t list) =
-            let open Abstract.Operands in
             match o with
             | `Leave
             | `Mfence
@@ -194,38 +244,31 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
             | `Sub
             | `Mov
             | `Xor -> src_dst_operands operands
+            | `Push ->
+              single_operand operands
+                ~allowed:[ immediate_operand
+                         ; memory_operand
+                         ; register_operand
+                         ]
+            | `Pop ->
+              single_operand operands
+                ~allowed:[ memory_operand
+                         ; register_operand
+                         ]
             (* TODO(@MattWindsor91): analyse other opcodes! *)
             | `Call
             | `Cmp
-            | `Pop
-            | `Xchg
-            | `Push -> Unknown
-
-          let jump_operands =
-            Abstract.Operands.(
-              function
-              | [o] ->
-                begin
-                  match o with
-                  | Ast.Operand.Location (Ast.Location.Indirect i) ->
-                    begin
-                      match Ast.Indirect.disp i with
-                      | Some (Ast.Disp.Symbolic s) -> SymbolicJump s
-                      | _ -> Unknown
-                    end
-                  | Ast.Operand.Immediate (Ast.Disp.Symbolic s) -> SymbolicJump s
-                  | _ -> Unknown
-                end
-              | _ -> Erroneous
-            )
+            | `Xchg -> `Unknown
 
           let abs_operands {Ast.Instruction.opcode; operands; _} =
             match opcode with
             | Ast.OpBasic b -> basic_operands b operands
             | Ast.OpSized (b, _) -> basic_operands b operands
-            | Ast.OpJump _ -> jump_operands operands
-            | Ast.OpDirective _ -> Abstract.Operands.Other
-            | Ast.OpUnknown _ -> Abstract.Operands.Unknown
+            | Ast.OpJump _ ->
+              single_operand operands ~allowed:[ jump_target_operand ]
+            | Ast.OpDirective _ -> `Other
+            | Ast.OpUnknown _ -> `Unknown
+          ;;
 
           let%expect_test "abs_operands: nop -> none" =
             Format.printf "%a@."
@@ -251,7 +294,21 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
                       ]
                     ()
                  ));
-            [%expect {| jump->L1 |}]
+            [%expect {| sym:L1 |}]
+
+
+          let%expect_test "abs_operands: pop $42 -> error" =
+            Format.printf "%a@."
+              Abstract.Operands.pp
+              (abs_operands
+                 (Ast.Instruction.make
+                    ~opcode:(Ast.OpBasic `Pop)
+                    ~operands:
+                      [ Ast.Operand.Immediate (Ast.Disp.Numeric 42)
+                      ]
+                    ()
+                 ));
+            [%expect {| <invalid operands> |}]
 
           let%expect_test "abs_operands: nop $42 -> error" =
             Format.printf "%a@."
@@ -409,6 +466,19 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
           ()
        ));
   [%expect {| $-16 -> &stack |}]
+
+let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
+  Format.printf "%a@."
+    Abstract.Operands.pp
+    (ATT.Instruction.abs_operands
+       (Ast.Instruction.make
+          ~opcode:(Ast.OpBasic `Mov)
+          ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
+                    ; Ast.Operand.Immediate (Ast.Disp.Numeric 1)
+                    ]
+          ()
+       ));
+  [%expect {| <invalid operands> |}]
 
 module Herd7 = Make (Dialect.Herd7) (PP.Herd7)
 

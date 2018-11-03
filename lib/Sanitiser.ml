@@ -129,11 +129,17 @@ module Make (B : Basic)
       | _ ->
         begin
           match L.Instruction.abs_operands ins with
-          | Abstract.Operands.Unknown ->
+          | `Unknown
+          | `Single `Unknown
+          | `Src_dst { src = `Unknown; _ }
+          | `Src_dst { dst = `Unknown; _ } ->
             Ctx.warn (Warn.UnknownElt (Warn.Operands ins))
-          | Erroneous ->
+          | `Erroneous
+          | `Single `Erroneous
+          | `Src_dst { src = `Erroneous; _ }
+          | `Src_dst { dst = `Erroneous; _ } ->
             Ctx.warn (Warn.ErroneousElt (Warn.Operands ins))
-          | _ -> Ctx.return ()
+          | `Single _ | `Src_dst _ | `Other | `None -> return ()
         end
     in ins
   ;;

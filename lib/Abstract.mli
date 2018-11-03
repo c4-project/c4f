@@ -115,28 +115,52 @@ module Statement : sig
   end
 end
 
-
 (** [Operands] contains types and utilities for abstracted
    operand bundles. *)
 module Operands : sig
+  type common =
+    [ `Erroneous
+    | `Other
+    | `Unknown
+    ]
+  [@@deriving sexp]
+  ;;
+
+  type common_or_loc =
+    [ common
+    | `Location of Location.t
+    ]
+  [@@deriving sexp]
+  ;;
+
+  type src =
+    [ common_or_loc
+    | `Int of int
+    | `Symbol of string
+    ]
+  [@@deriving sexp]
+  ;;
+
+  type dst = common_or_loc
+  [@@deriving sexp]
+  ;;
+
+  type any = src
+  [@@deriving sexp]
+  ;;
+
   (** [AbsOperands.t] is an abstracted operand bundle. *)
   type t =
-    (* This instruction takes no operands. *)
-    | None
-    (* This instruction is taking a transfer from source location to
-     destination location. *)
-    | LocTransfer of (Location.t, Location.t) Src_dst.t
-    (* This instruction is loading an integer literal, doing something
-       with it, and storing into a location. *)
-    | IntImmediate of (int, Location.t) Src_dst.t
-    (* This instruction is jumping to the given symbol. *)
-    | SymbolicJump of string
-    (* Instruction has the wrong sort of operands. *)
-    | Erroneous
-    (* Instruction has unclassifiable operands. *)
-    | Other
-    (* No analysis available---the operands may or may not be valid. *)
-    | Unknown
+    [ common
+    (** This instruction takes no operands. *)
+    | `None
+    (** This instruction takes a single operand. *)
+    | `Single of any
+    (** This instruction takes a source operand and a destination
+       operand. *)
+    | `Src_dst of (src, dst) Src_dst.t
+    ]
+  [@@deriving sexp]
 
   include S with type t := t
 end

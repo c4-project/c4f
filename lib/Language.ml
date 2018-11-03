@@ -50,9 +50,9 @@ module Make (B : Basic)
         | Instruction.Arith -> begin
             (* Stack pointer movements *)
             match abs_operands ins with
-            | Operands.IntImmediate
+            | `Src_dst
                 { src = _
-                ; dst = Location.StackPointer
+                ; dst = `Location (Location.StackPointer)
                 }
               -> true
             | _ -> false
@@ -60,13 +60,13 @@ module Make (B : Basic)
         | Instruction.Move -> begin
             (* Stack pointer transfers *)
             match abs_operands ins with
-            | Operands.LocTransfer
-                { src = Location.StackPointer
+            | `Src_dst
+                { src = `Location (Location.StackPointer)
                 ; dst = _
                 }
-            | Operands.LocTransfer
+            | `Src_dst
                 { src = _
-                ; dst = Location.StackPointer
+                ; dst = `Location (Location.StackPointer)
                 }
               -> true
             | _ -> false

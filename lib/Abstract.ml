@@ -130,32 +130,74 @@ module Statement = struct
 end
 
 module Operands = struct
-  type t =
-    | None
-    | LocTransfer of (Location.t, Location.t) Src_dst.t
-    | IntImmediate of (int, Location.t) Src_dst.t
-    | SymbolicJump of string
-    | Erroneous
-    | Other
-    | Unknown
-        [@@deriving sexp]
+  type common =
+    [ `Erroneous
+    | `Other
+    | `Unknown
+    ]
+  [@@deriving sexp]
   ;;
 
+  let pp_common f = function
+    | `Erroneous -> String.pp f "<invalid operands>"
+    | `Other     -> String.pp f "other"
+    | `Unknown   -> String.pp f "??"
+  ;;
+
+  type common_or_loc =
+    [ common
+    | `Location of Location.t
+    ]
+  [@@deriving sexp]
+  ;;
+
+  let pp_common_or_loc f = function
+    | #common as c -> pp_common f c
+    | `Location loc -> Location.pp f loc
+  ;;
+
+  type src =
+    [ common_or_loc
+    | `Int of int
+    | `Symbol of string
+    ]
+  [@@deriving sexp]
+  ;;
+
+  let pp_src f = function
+    | #common_or_loc as c -> pp_common_or_loc f c
+    | `Int k -> Format.fprintf f "@[<h>$%d@]" k
+    | `Symbol s -> Format.fprintf f "@[<h>sym:%s@]" s
+  ;;
+
+  type dst = common_or_loc
+  [@@deriving sexp]
+  ;;
+
+  let pp_dst = pp_common_or_loc
+
+  type any = src
+  [@@deriving sexp]
+  ;;
+
+  let pp_any = pp_src
+
+  type t =
+    [ common
+    | `None
+    | `Single of any
+    | `Src_dst of (src, dst) Src_dst.t
+    ]
+  [@@deriving sexp]
+
   let pp f = function
-    | None -> String.pp f "none"
-    | LocTransfer {src; dst} ->
+    | #common as c -> pp_common f c
+    | `None -> String.pp f "none"
+    | `Single x -> pp_any f x
+    | `Src_dst { Src_dst.src; dst} ->
       Format.fprintf f "@[%a@ ->@ %a@]"
-        Location.pp src
-        Location.pp dst
-    | IntImmediate {src; dst} ->
-      Format.fprintf f "@[$%d@ ->@ %a@]"
-        src
-        Location.pp dst
-    | SymbolicJump s ->
-      Format.fprintf f "@[jump->%s@]" s
-    | Erroneous -> String.pp f "<invalid operands>"
-    | Other -> String.pp f "other"
-    | Unknown -> String.pp f "??"
+        pp_src src
+        pp_dst dst
   ;;
 end
 
