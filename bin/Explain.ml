@@ -23,6 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Lib
+open Utils
 
 let command =
   let open Command.Let_syntax in
@@ -67,8 +68,20 @@ let command =
        Or_error.Let_syntax.(
          let%bind cfg = LangSupport.load_cfg spec_file in
          let%bind spec = Compiler.CSpec.Set.get (Config.M.compilers cfg) cid in
-         Or_error.ignore
-           (Common.do_litmusify `Explain passes o ~infile ~outfile spec)
+         let emits = Compiler.CSpec.emits spec in
+         let%bind runner = LangSupport.get_runner ~emits in
+         let module Runner = (val runner) in
+         Io.(
+           let input =
+             { Asm_job.inp = In_source.of_option infile
+             ; outp = Out_sink.of_option outfile
+             ; passes
+             ; symbols = []
+             }
+           in
+           let%map out = Runner.explain input in
+           Asm_job.warn out o.wf
+         )
        )
        |> Common.print_error
    ]

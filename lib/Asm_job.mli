@@ -30,28 +30,36 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
     the jobs. *)
 
 open Core
+open Utils
 
 (** [t] is a description of a single-file job. *)
 type t =
-  { o       : OutputCtx.t
-  ; iname   : string
-  ; inp     : In_channel.t
-  ; outp    : Out_channel.t
-  ; mode    : [`Explain | `Litmusify]
+  { inp     : Io.In_source.t
+  ; outp    : Io.Out_sink.t
   ; passes  : Sanitiser_pass.Set.t
   ; symbols : string list
   }
 ;;
 
 (** [output] is the output of a single-file job. *)
-type output =
-  { symbol_map : (string, string) List.Assoc.t
-  }
-;;
+type output
+
+(** [symbol_map o] returns the mapping from pre-compiler
+    symbols (given in the input [t]) to mangled
+    assembly symbols for the job output [o]. *)
+val symbol_map : output -> (string, string) List.Assoc.t
+
+(** [warn o f] prints any warnings attached to output [o] on
+   pretty-print formatter [f]. *)
+val warn : output -> Format.formatter -> unit
 
 (** [Runner] is the signature of job runners. *)
 module type Runner = sig
-  val run : t -> output Or_error.t
+  (** [litmusify] runs a litmusify job. *)
+  val litmusify : t -> output Or_error.t
+
+  (** [explain] runs an explain job. *)
+  val explain : t -> output Or_error.t
 end
 
 (** [Runner_deps] is a signature bringing together the modules we

@@ -25,20 +25,19 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Lib
+open Utils
 
-(** [do_litmusify] finds the right [Litmusifier] for a compiler spec,
-    and runs it with the given arguments.  On success, it returns the
-    mapping from symbols in [symbols] to their counterparts in the
-    litmus test. *)
-val do_litmusify
-  :  [`Litmusify | `Explain]
-  -> Sanitiser_pass.Set.t
-  -> OutputCtx.t
-  -> ?symbols : string list
-  -> infile : string option
-  -> outfile : string option
-  -> Compiler.CSpec.t
-  -> Asm_job.output Or_error.t
+(** [litmusify o inp outp symbols spec] is a thin wrapper around
+    [Asm_job]'s litmusify mode that handles finding the right
+    job runner, printing warnings, and supplying the maximal
+    pass set. *)
+val litmusify
+  :  OutputCtx.t
+    -> Io.In_source.t
+    -> Io.Out_sink.t
+    -> string list
+    -> Compiler.CSpec.t
+    -> (string, string) List.Assoc.t Or_error.t
 ;;
 
 (** [print_error u] prints any top-level errors represented by [u] to

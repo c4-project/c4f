@@ -22,13 +22,11 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
+open Utils
 
 type t =
-  { o       : OutputCtx.t
-  ; iname   : string
-  ; inp     : In_channel.t
-  ; outp    : Out_channel.t
-  ; mode    : [`Explain | `Litmusify]
+  { inp     : Io.In_source.t
+  ; outp    : Io.Out_sink.t
   ; passes  : Sanitiser_pass.Set.t
   ; symbols : string list
   }
@@ -37,7 +35,8 @@ type t =
 (** [output] is the output of a single-file job. *)
 type output =
   { symbol_map : (string, string) List.Assoc.t
-  }
+  ; warn       : Format.formatter -> unit
+  } [@@deriving fields]
 ;;
 
 module type Runner_deps = sig
@@ -63,7 +62,8 @@ module type Runner_deps = sig
 end
 
 module type Runner = sig
-  val run : t -> output Or_error.t
+  val litmusify : t -> output Or_error.t
+  val explain : t -> output Or_error.t
 end
 
 module Make_runner (B : Runner_deps) : Runner = struct
@@ -74,10 +74,15 @@ module Make_runner (B : Runner_deps) : Runner = struct
   module SS = B.Single_sanitiser;;
   module E  = B.Explainer;;
 
-  let parse t =
+  let name_of isrc =
+    Option.value (Io.In_source.file isrc) ~default:"(stdin)"
+  ;;
+
+  let parse isrc inp =
+    let iname = name_of isrc in
     Or_error.tag_arg
-      (B.Frontend.load_from_ic ~path:t.iname t.inp)
-      "Error while parsing assembly" t.iname String.sexp_of_t
+      (B.Frontend.load_from_ic ~path:iname inp)
+      "Error while parsing assembly" iname String.sexp_of_t
   ;;
 
   let make_init (progs : LS.Statement.t list list) : (string, LS.Constant.t) List.Assoc.t =
@@ -96,83 +101,87 @@ module Make_runner (B : Runner_deps) : Runner = struct
       ~f:(fun (k, v) -> (LS.Symbol.to_string k, LS.Symbol.to_string v))
   ;;
 
-  let make_output redirects : output =
+  let emit_warnings iname = function
+    | [] -> Fn.const ()
+    | ws ->
+      let pp_warning f w =
+        Format.fprintf f "@[<h>-@ @[<hov>%a@]@]@,"
+          MS.Warn.pp w
+      in
+      fun f ->
+        Format.fprintf f "Warnings@ for@ %s:@ @[<v>%a@]@."
+          iname
+          (fun f -> List.iter ~f:(pp_warning f)) ws
+  ;;
+
+  let make_output iname redirects warnings : output =
     { symbol_map = stringify_redirects redirects
+    ; warn       = emit_warnings iname warnings
     }
   ;;
 
   let output_litmus
-      t
-      (symbols : LS.Symbol.t list)
-      (stms : LS.Statement.t list)
-      (conv : LS.Statement.t list -> LS.Statement.t list) =
-    let emit_warnings =
-      function
-      | [] -> ()
-      | ws ->
-        let pp_warning f w =
-          Format.fprintf f "@[<h>-@ @[<hov>%a@]@]@,"
-            MS.Warn.pp w
-        in
-        Format.fprintf t.o.wf "Warnings@ for@ %s:@ @[<v>%a@]@."
-          t.iname
-          (fun f -> List.iter ~f:(pp_warning f)) ws
-    in
+    (name    : string)
+    (passes  : Sanitiser_pass.Set.t)
+    (symbols : LS.Symbol.t list)
+    (program : LS.Statement.t list)
+    (_osrc   : Io.Out_sink.t)
+    (outp    : Out_channel.t) =
     let open Or_error.Let_syntax in
-    let%bind o = MS.sanitise ~passes:t.passes ~symbols stms in
+    let%bind o = MS.sanitise ~passes ~symbols program in
     let programs = MS.Output.result o in
     let warnings = MS.Output.warnings o in
-    emit_warnings warnings;
     let%map lit =
       Or_error.tag ~tag:"Couldn't build litmus file."
-        ( L.make ~name:t.iname
+        ( L.make ~name
             ~init:(make_init programs)
-            ~programs:(List.map ~f:conv programs)
+            ~programs:(List.map ~f:B.final_convert programs)
         )
     in
-    let f = Format.formatter_of_out_channel t.outp in
+    let f = Format.formatter_of_out_channel outp in
     L.pp f lit;
     Format.pp_print_flush f ();
-    make_output (MS.Output.redirects o)
+    make_output name (MS.Output.redirects o) warnings
   ;;
 
   let output_explanation
-      t
+      (name    : string)
+      (passes  : Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
-      (program : LS.Statement.t list) =
+      (program : LS.Statement.t list)
+      (_osrc   : Io.Out_sink.t)
+      (outp    : Out_channel.t) =
     let open Or_error.Let_syntax in
-    let%map san = SS.sanitise ~passes:t.passes ~symbols program in
+    let%map san = SS.sanitise ~passes ~symbols program in
     let exp = E.explain (SS.Output.result san) in
-    let f = Format.formatter_of_out_channel t.outp in
+    let f = Format.formatter_of_out_channel outp in
     E.pp f exp;
     Format.pp_print_flush f ();
-    make_output (SS.Output.redirects san)
+    make_output name (SS.Output.redirects san) []
   ;;
 
-  let run t =
-    (* TODO (@MattWindsor91): there must be a nicer way of generalising
-       this. *)
+  let stringify_symbols syms =
+    syms
+    |> List.map
+      ~f:(fun s -> Result.of_option (LS.Symbol.of_string_opt s)
+             ~error:(
+               Error.create_s
+                 [%message "Symbol can't be converted from string"
+                     ~symbol:s]
+             )
+         )
+    |> Or_error.combine_errors
+  ;;
+
+  let run ~f t =
     let open Result.Let_syntax in
-    let%bind asm = parse t in
-    let%bind symbols =
-      t.symbols
-      |> List.map
-        ~f:(fun s -> Result.of_option (LS.Symbol.of_string_opt s)
-               ~error:(
-                 Error.create_s
-                   [%message "Symbol can't be converted from string"
-                       ~symbol:s]
-               )
-           )
-      |> Or_error.combine_errors
-    in
-    match t.mode with
-    | `Litmusify ->
-      output_litmus
-        t
-        symbols
-        (B.statements asm)
-        B.final_convert
-    | `Explain ->
-      output_explanation t symbols (B.statements asm)
+    let name = Filename.basename (name_of t.inp) in
+    let%bind asm = Io.In_source.with_input ~f:parse t.inp in
+    let%bind symbols = stringify_symbols t.symbols in
+    Io.Out_sink.with_output t.outp
+      ~f:(f name t.passes symbols (B.statements asm))
+  ;;
+
+  let litmusify = run ~f:output_litmus
+  let explain = run ~f:output_explanation
 end

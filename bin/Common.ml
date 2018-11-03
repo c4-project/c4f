@@ -23,31 +23,25 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 open Lib
-open Utils
 
-let do_litmusify mode passes o ?(symbols=[]) ~infile ~outfile spec =
+let litmusify (o : OutputCtx.t) inp outp symbols spec =
   let open Result.Let_syntax in
   let emits = Compiler.CSpec.emits spec in
-  let%bind lit = LangSupport.get_runner ~emits in
-  let module L = (val lit) in
-  let f src inp _ outp =
-    let iname = MyFormat.format_to_string (Io.In_source.pp) src in
-    L.run
-      { o
-      ; iname
-      ; inp
-      ; outp
-      ; mode
-      ; passes
-      ; symbols
-      }
+  let%bind runner = LangSupport.get_runner ~emits in
+  let module Runner = (val runner) in
+  let input =
+    { Asm_job.inp
+    ; outp
+    ; passes = Sanitiser_pass.all_set ()
+    ; symbols
+    }
   in
-  Io.(
-    with_input_and_output
-      (In_source.of_option infile)
-      (Out_sink.of_option outfile)
-      ~f
-  )
+  let%map output =
+    Or_error.tag ~tag:"While translating assembly to litmus"
+      (Runner.litmusify input)
+  in
+  Asm_job.warn output o.wf;
+  Asm_job.symbol_map output
 ;;
 
 let print_error =

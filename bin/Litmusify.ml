@@ -64,21 +64,20 @@ let command =
        let warnings = not no_warnings in
        let cid = Compiler.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
-       let passes = Sanitiser_pass.all_set () in
        Result.Let_syntax.(
          let%bind cfg = LangSupport.load_cfg spec_file in
          let%bind spec = Compiler.CSpec.Set.get (Config.M.compilers cfg) cid in
-         if herd
-         then
-           let cmd = Config.M.herd_or_default cfg in
-           let tmpname = Filename.temp_file "act" "litmus" in
-           let%bind _ =
-             Common.do_litmusify `Litmusify passes o ~infile ~outfile:(Some tmpname) spec in
-           Io.Out_sink.with_output ~f:(run_herd cmd tmpname)
-             (Io.Out_sink.of_option outfile)
-         else
-           Or_error.ignore
-             (Common.do_litmusify `Litmusify passes o ~infile ~outfile spec)
+         Io.(
+           let inp = In_source.of_option infile in
+           let outp = Out_sink.of_option outfile in
+           if herd
+           then
+             let cmd = Config.M.herd_or_default cfg in
+             let tmpname = Filename.temp_file "act" "litmus" in
+             let%bind _ = Common.litmusify o inp (`File tmpname) [] spec in
+             Out_sink.with_output ~f:(run_herd cmd tmpname) outp
+           else Or_error.ignore (Common.litmusify o inp outp [] spec)
+         )
        )
        |> Common.print_error
     ]

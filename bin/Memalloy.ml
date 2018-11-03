@@ -78,20 +78,6 @@ let compile o fs cspec =
        ~outfile:(Pathset.File.asm_path fs))
 ;;
 
-let litmusify o fs symbols cspec =
-  let cid = Compiler.CSpec.WithId.id cspec in
-  log_stage "LITMUS" o (Pathset.File.basename fs) cid;
-  Or_error.tag ~tag:"While translating assembly to litmus"
-    (Common.do_litmusify
-       `Litmusify
-       (Sanitiser_pass.all_set ())
-       o
-       ~symbols
-       ~infile:(Some (Pathset.File.asm_path fs))
-       ~outfile:(Some (Pathset.File.lita_path fs))
-       (Compiler.CSpec.WithId.spec cspec))
-;;
-
 (** [check_herd_output path] runs analysis on the Herd output at
    [path]. *)
 let check_herd_output (o : OutputCtx.t) path : herd_run_result =
@@ -207,8 +193,14 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog spec fname =
     (* The location symbols at the C level are each RHS of each
        pair in locs. *)
     let syms = List.map ~f:snd locs in
-    let%bind output = litmusify o fs syms spec in
-    let sym_redirects = output.symbol_map in
+
+    let cid   = Compiler.CSpec.WithId.id spec in
+    let cspec = Compiler.CSpec.WithId.spec spec in
+    let inp   = `File (Pathset.File.asm_path fs) in
+    let outp  = `File (Pathset.File.lita_path fs) in
+    log_stage "LITMUS" o (Pathset.File.basename fs) cid;
+    let%bind sym_redirects = Common.litmusify o inp outp syms cspec in
+
     (* syms' now contains the redirections from C-level symbols to
        asm/Litmus-level symbols.  To get the mapping between Herd
        locations, we need the composition of the two maps. *)

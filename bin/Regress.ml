@@ -33,27 +33,18 @@ let regress_run_asm (l : (module Asm_job.Runner))
   printf "## %s\n\n```\n" file;
   Out_channel.flush stdout;
 
-  let o =
-    { OutputCtx.vf = MyFormat.null_formatter ()
-    ; wf = MyFormat.null_formatter ()
-    ; ef = Format.std_formatter
+  let input =
+    { Asm_job.inp = `File (path ^/ file)
+    ; outp = `Stdout
+    ; passes
+    ; symbols = [] (* TODO(@MattWindsor91): exercise this? *)
     }
   in
 
-  let f _ inp _ outp =
-    L.run
-      { o
-      ; iname = file
-      ; inp
-      ; outp
-      ; mode
-      ; passes
-      ; symbols = [] (* TODO(@MattWindsor91): exercise this? *)
-      }
-  in
-
   let%map _ =
-    Io.with_input_and_output ~f (`File (path ^/ file)) `Stdout
+    match mode with
+    | `Litmusify -> L.litmusify input
+    | `Explain   -> L.explain input
   in
 
   Out_channel.flush stdout;
