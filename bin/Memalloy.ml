@@ -53,14 +53,14 @@ type compiler_result = (string, run_result) List.Assoc.t
 [@@deriving sexp]
 ;;
 
-type full_result = (Compiler.Id.t, compiler_result) List.Assoc.t
+type full_result = (Spec.Id.t, compiler_result) List.Assoc.t
 [@@deriving sexp]
 ;;
 
 let log_stage stage (o : OutputCtx.t) name cid =
   Format.fprintf o.vf "@[%s[%a]@ %s@]@."
     stage
-    Compiler.Id.pp cid
+    Spec.Id.pp cid
     name
 ;;
 
@@ -69,7 +69,7 @@ let compile o fs cspec =
   (* TODO(@MattWindsor91): inefficiently remaking the compiler module
      every time. *)
   let%bind c = LangSupport.compiler_from_spec cspec in
-  let cid = Compiler.CSpec.WithId.id cspec in
+  let cid = Compiler.Full_spec.With_id.id cspec in
   let module C = (val c) in
   log_stage "CC" o (Pathset.File.basename fs) cid;
   Or_error.tag ~tag:"While compiling to assembly"
@@ -92,12 +92,12 @@ let check_herd_output (o : OutputCtx.t) path : herd_run_result =
 (** [herd o prog ~infile ~outfile cspec] sees if [cspec] asked for a
    Herd run and, if so, runs the Herd command [prog] on [infile],
     outputting to [outfile]. *)
-let herd o prog ~infile ~outfile (cspec : Compiler.CSpec.WithId.t) =
+let herd o prog ~infile ~outfile (cspec : Compiler.Full_spec.With_id.t) =
+  let (id, spec) = Compiler.Full_spec.With_id.to_tuple cspec in
   let open Or_error.Let_syntax in
-  if Compiler.CSpec.herd (Compiler.CSpec.WithId.spec cspec)
+  if Compiler.Full_spec.herd spec
   then begin
-    let cid = Compiler.CSpec.WithId.id cspec in
-    log_stage "HERD" o infile cid;
+    log_stage "HERD" o infile id;
     let f _ oc = Run.Local.run ~oc ~prog [ infile ] in
     let%map () =
       Or_error.tag ~tag:"While running herd"
@@ -176,7 +176,7 @@ let compose_alists
   )
 ;;
 
-let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog spec fname =
+let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog cspec fname =
   let base = Filename.chop_extension (Filename.basename fname) in
   let open Or_error.Let_syntax in
   Pathset.File.(
@@ -185,28 +185,26 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog spec fname =
        chain, so be careful when re-ordering. *)
     let fs = make ps base in
     let%bind c_herd =
-      herd o herdprog spec
+      herd o herdprog cspec
         ~infile:(litc_path fs) ~outfile:(herdc_path fs)
     in
-    let%bind () = compile o fs spec in
+    let%bind () = compile o fs cspec in
     let locs = locations_of_herd_result c_herd in
     (* The location symbols at the C level are each RHS of each
        pair in locs. *)
     let syms = List.map ~f:snd locs in
-
-    let cid   = Compiler.CSpec.WithId.id spec in
-    let cspec = Compiler.CSpec.WithId.spec spec in
+    let (id, spec) = Compiler.Full_spec.With_id.to_tuple cspec in
     let inp   = `File (Pathset.File.asm_path fs) in
     let outp  = `File (Pathset.File.lita_path fs) in
-    log_stage "LITMUS" o (Pathset.File.basename fs) cid;
-    let%bind sym_redirects = Common.litmusify o inp outp syms cspec in
+    log_stage "LITMUS" o (Pathset.File.basename fs) id;
+    let%bind sym_redirects = Common.litmusify o inp outp syms spec in
 
     (* syms' now contains the redirections from C-level symbols to
        asm/Litmus-level symbols.  To get the mapping between Herd
        locations, we need the composition of the two maps. *)
     let locmap = compose_alists locs sym_redirects String.equal in
     let%bind a_herd =
-      herd o herdprog spec
+      herd o herdprog cspec
         ~infile:(lita_path fs) ~outfile:(herda_path fs)
     in
     let%map analysis = analyse c_herd a_herd locmap in
@@ -214,10 +212,10 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog spec fname =
   )
 ;;
 
-let run_compiler (o : OutputCtx.t) ~in_root ~out_root herdprog c_fnames spec
-  : (Compiler.Id.t * compiler_result) Or_error.t =
+let run_compiler (o : OutputCtx.t) ~in_root ~out_root herdprog c_fnames cspec
+  : (Spec.Id.t * compiler_result) Or_error.t =
   let open Or_error.Let_syntax in
-  let id = Compiler.CSpec.WithId.id spec in
+  let id = Compiler.Full_spec.With_id.id cspec in
   let%bind paths = Pathset.make_and_mkdirs id ~in_root ~out_root in
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
@@ -225,7 +223,7 @@ let run_compiler (o : OutputCtx.t) ~in_root ~out_root herdprog c_fnames spec
   let%map results =
     c_fnames
     |> List.sort ~compare:String.compare
-    |> List.map ~f:(run_single o paths herdprog spec)
+    |> List.map ~f:(run_single o paths herdprog cspec)
     |> Or_error.combine_errors
   in
   (id, results)
@@ -233,9 +231,8 @@ let run_compiler (o : OutputCtx.t) ~in_root ~out_root herdprog c_fnames spec
 
 let check_c_files_exist c_path c_files =
     if List.is_empty c_files
-    then
-      Or_error.error
-        "Expected at least one C file." c_path [%sexp_of:string]
+    then Or_error.error_s
+        [%message "Expected at least one C file." ~path:c_path]
     else Result.ok_unit
 ;;
 
@@ -267,7 +264,7 @@ let run ~in_root ~out_root o cfg =
   let%bind c_files = Io.Dir.get_files c_path ~ext:"c" in
   let%bind () = check_c_files_exist c_path c_files in
 
-  let results = Compiler.CSpec.Set.map
+  let results = Compiler.Full_spec.Set.map
       ~f:(run_compiler o ~in_root ~out_root herdprog c_files)
       specs
   in

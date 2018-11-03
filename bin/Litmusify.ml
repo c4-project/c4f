@@ -62,11 +62,11 @@ let command =
      in
      fun () ->
        let warnings = not no_warnings in
-       let cid = Compiler.Id.of_string compiler_id in
+       let cid = Spec.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
        Result.Let_syntax.(
          let%bind cfg = LangSupport.load_cfg spec_file in
-         let%bind spec = Compiler.CSpec.Set.get (Config.M.compilers cfg) cid in
+         let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) cid in
          Io.(
            let inp = In_source.of_option infile in
            let outp = Out_sink.of_option outfile in

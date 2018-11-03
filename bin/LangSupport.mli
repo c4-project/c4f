@@ -49,8 +49,8 @@ val get_runner
 (** [compiler_from_spec cid spec] generates a compiler module from
    [cid] and [spec]. *)
 val compiler_from_spec
-  :  Compiler.CSpec.WithId.t
-  -> (module Compiler.Intf) Or_error.t
+  :  Compiler.Full_spec.With_id.t
+  -> (module Compiler.S) Or_error.t
 
 (** [load_and_test_cfg ?local_only path] loads the compiler config
    file at [~path], and tests all machines and compilers therein.

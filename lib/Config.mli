@@ -25,10 +25,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
-(** [Intf] is the baseline interface of modules over configuration. *)
-module type Intf = sig
-  module C : Compiler.CSpecIntf
-  module M : Compiler.MSpecIntf
+(** [S] is the baseline interface of modules over configuration. *)
+module type S = sig
+  module C : Compiler.Spec
 
   type t [@@deriving sexp]
 
@@ -42,22 +41,19 @@ module type Intf = sig
 
   (** [machines c] gets the set of all active machines in
       configuration [c]. *)
-  val machines : t -> M.Set.t;;
+  val machines : t -> Machine.Spec.Set.t;;
 end
 
 (** [Raw] represents act configuration loaded directly from a spec
    file, without any compiler testing or expansion. *)
 module Raw : sig
-  include Intf with module C = Compiler.CfgCSpec
-                and module M = Compiler.MSpec
-
+  include S with module C = Compiler.Cfg_spec
   include Utils.Io.LoadableIntf with type t := t
 end
 
   (** [M] represents fully processed act compiler configurations. *)
 module M : sig
-  include Intf with module C = Compiler.CSpec
-                and module M = Compiler.MSpec
+  include S with module C = Compiler.Full_spec
 
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
   type 't hook = ('t -> 't option Or_error.t);;
@@ -68,11 +64,11 @@ module M : sig
 
   (** [disabled_compilers c] reports all disabled compiler IDs in
       the given config, along with any reason why. *)
-  val disabled_compilers : t -> (Compiler.Id.t * Error.t option) list
+  val disabled_compilers : t -> (Spec.Id.t * Error.t option) list
 
   (** [disabled_machines c] reports all disabled machines in
       the given config, along with any reason why. *)
-  val disabled_machines : t -> (Compiler.Id.t * Error.t option) list
+  val disabled_machines : t -> (Spec.Id.t * Error.t option) list
 
   (** [from_raw c ?chook ?mhook] takes a raw config [t] and processes it by:
 
@@ -87,8 +83,8 @@ module M : sig
       [Ok None] when the element is disabled; and
       [Error e] when the element is enabled and failing. *)
   val from_raw
-    :  ?chook:(Compiler.CSpec.WithId.t hook)
-    -> ?mhook:(Compiler.MSpec.WithId.t hook)
+    :  ?chook:(Compiler.Full_spec.With_id.t hook)
+    -> ?mhook:(Machine.Spec.With_id.t hook)
     -> Raw.t
     -> t Or_error.t
   ;;

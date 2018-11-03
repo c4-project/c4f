@@ -26,7 +26,7 @@ open Lib
 
 let litmusify (o : OutputCtx.t) inp outp symbols spec =
   let open Result.Let_syntax in
-  let emits = Compiler.CSpec.emits spec in
+  let emits = Compiler.Full_spec.emits spec in
   let%bind runner = LangSupport.get_runner ~emits in
   let module Runner = (val runner) in
   let input =

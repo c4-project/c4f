@@ -41,12 +41,3 @@ end
 
 (** [Local] just runs commands on the local machine. *)
 module Local : Runner
-
-(** [SshConf] is the interface of [Ssh] configurations. *)
-module type SshConf = sig
-  val host : string
-  val user : string option
-end
-
-(** [Ssh] runs commands on a remote machine using SSH. *)
-module Ssh (C : SshConf) : Runner

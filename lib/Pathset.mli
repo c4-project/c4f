@@ -47,7 +47,7 @@ val mkdirs : t -> unit Or_error.t;;
 (** [make] constructs a [Pathset.t] from a compiler ID and
    various other paths. *)
 val make
-  :  Compiler.Id.t
+  :  Spec.Id.t
   -> in_root  : string
   -> out_root : string
   -> t
@@ -56,7 +56,7 @@ val make
 (** [make_and_mkdirs] constructs a [Pathset.t] per [make], then
     tries to make the directories through [mkdirs]. *)
 val make_and_mkdirs
-  :  Compiler.Id.t
+  :  Spec.Id.t
   -> in_root  : string
   -> out_root : string
   -> t Or_error.t

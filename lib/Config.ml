@@ -24,27 +24,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Utils
 
-module type Intf = sig
-  module C : Compiler.CSpecIntf
-  module M : Compiler.MSpecIntf
+module type S = sig
+  module C : Compiler.Spec
 
   type t [@@deriving sexp]
 
   val herd : t -> string option;;
   val compilers : t -> C.Set.t;;
-  val machines : t -> M.Set.t;;
+  val machines : t -> Machine.Spec.Set.t;;
 end
 
 module Raw = struct
   module CI
-    : Intf with module C = Compiler.CfgCSpec
-            and module M = Compiler.MSpec = struct
-    module C = Compiler.CfgCSpec
-    module M = Compiler.MSpec
+    : S with module C = Compiler.Cfg_spec = struct
+    module C = Compiler.Cfg_spec
 
     type t =
       { compilers : C.Set.t
-      ; machines  : M.Set.t
+      ; machines  : Machine.Spec.Set.t
       ; herd      : string sexp_option
       }
     [@@deriving sexp, fields]
@@ -82,46 +79,45 @@ let part_chain_fst f g x =
 
 (** Helpers for partitioning specs, parametrised on the spec
     type interface. *)
-module PartHelpers (S : Compiler.SpecIntf) = struct
+module Part_helpers (S : Spec.S) = struct
   (** [part_enabled x] is a partition_map function that
       sorts [x] into [`Fst] if they're enabled and [`Snd] if not. *)
   let part_enabled
-      (x : S.WithId.t) =
-    if (S.enabled (S.WithId.spec x))
+      (x : S.With_id.t) =
+    if (S.enabled (S.With_id.spec x))
     then `Fst x
-    else `Snd (S.WithId.id x, None)
+    else `Snd (S.With_id.id x, None)
   ;;
 
   (** [part_hook hook x] is a partition_map function that
       runs [hook] on [x], and sorts the result into [`Fst] if it
       succeeded and [`Snd] if not. *)
   let part_hook
-      (hook : S.WithId.t -> S.WithId.t option Or_error.t)
-      (x : S.WithId.t) =
+      (hook : S.With_id.t -> S.With_id.t option Or_error.t)
+      (x : S.With_id.t) =
     match hook x with
     | Result.Ok (Some x') -> `Fst x'
-    | Result.Ok None      -> `Snd (S.WithId.id x, None)
-    | Result.Error err    -> `Snd (S.WithId.id x, Some err)
+    | Result.Ok None      -> `Snd (S.With_id.id x, None)
+    | Result.Error err    -> `Snd (S.With_id.id x, Some err)
   ;;
 end
 
 module M = struct
-  module C = Compiler.CSpec
-  module M = Compiler.MSpec
+  module C = Compiler.Full_spec
 
   type t =
     { compilers          : C.Set.t
-    ; machines           : M.Set.t
+    ; machines           : Machine.Spec.Set.t
     ; herd               : string option
-    ; disabled_compilers : (Compiler.Id.t, Error.t option) List.Assoc.t
-    ; disabled_machines  : (Compiler.Id.t, Error.t option) List.Assoc.t
+    ; disabled_compilers : (Spec.Id.t, Error.t option) List.Assoc.t
+    ; disabled_machines  : (Spec.Id.t, Error.t option) List.Assoc.t
     }
   [@@deriving sexp, fields]
   ;;
 
-  module RP = PartHelpers (Raw.C);;
-  module CP = PartHelpers (C);;
-  module MP = PartHelpers (M);;
+  module RP = Part_helpers (Raw.C);;
+  module CP = Part_helpers (C);;
+  module MP = Part_helpers (Machine.Spec);;
 
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
   type 't hook = ('t -> 't option Or_error.t);;
@@ -131,23 +127,23 @@ module M = struct
   ;;
 
   let machines_from_raw
-      (hook : M.WithId.t hook)
-      (ms : Raw.M.Set.t)
-    : (M.Set.t * (Compiler.Id.t, Error.t option) List.Assoc.t) Or_error.t =
+      (hook : Machine.Spec.With_id.t hook)
+      (ms : Machine.Spec.Set.t)
+    : (Machine.Spec.Set.t * (Spec.Id.t, Error.t option) List.Assoc.t) Or_error.t =
     let open Or_error.Let_syntax in
-    Raw.M.Set.(
+    Machine.Spec.Set.(
       let enabled, disabled =
         partition_map
           ~f:(part_chain_fst MP.part_enabled (MP.part_hook hook))
           ms
       in
       (** TODO(@MattWindsor91): test machines *)
-      let%map enabled' = M.Set.of_list enabled in
+      let%map enabled' = Machine.Spec.Set.of_list enabled in
       (enabled', disabled)
     )
   ;;
 
-  let build_compiler (rawc : Raw.C.t) (mach : M.t) : C.t =
+  let build_compiler (rawc : Raw.C.t) (mach : Machine.Spec.t) : C.t =
     Raw.C.(
       C.create
         ~enabled:(enabled rawc)
@@ -162,28 +158,28 @@ module M = struct
 
   let find_machine enabled disabled mach =
     Or_error.(
-      match M.Set.get enabled mach with
+      match Machine.Spec.Set.get enabled mach with
       | Ok m -> return (`Fst m)
       | _ ->
-        match List.Assoc.find ~equal:Compiler.Id.equal disabled mach with
+        match List.Assoc.find ~equal:Spec.Id.equal disabled mach with
         | Some e -> return (`Snd (mach, e))
-        | None -> error "Machine doesn't exist" mach [%sexp_of:Compiler.Id.t]
+        | None -> error_s [%message "Machine doesn't exist" ~id:(mach : Spec.Id.t)]
     )
   ;;
 
   let part_resolve enabled disabled c =
-    let machid = Raw.C.machine (Raw.C.WithId.spec c) in
+    let machid = Raw.C.machine (Raw.C.With_id.spec c) in
     match find_machine enabled disabled machid with
     | (* Machine enabled *)
       Result.Ok (`Fst mach) ->
       `Fst
-        (C.WithId.create
-           ~id:(Raw.C.WithId.id c)
-           ~spec:(build_compiler (Raw.C.WithId.spec c) mach))
+        (C.With_id.create
+           ~id:(Raw.C.With_id.id c)
+           ~spec:(build_compiler (Raw.C.With_id.spec c) mach))
     | (* Machine disabled, possibly because of error *)
       Result.Ok (`Snd (_, err)) ->
       `Snd
-        ( Raw.C.WithId.id c
+        ( Raw.C.With_id.id c
         , Option.map
             ~f:(Error.tag ~tag:"Machine was disabled because:")
             err
@@ -191,17 +187,17 @@ module M = struct
     | (* Error actually finding the machine *)
       Result.Error err ->
       `Snd
-        ( Raw.C.WithId.id c
+        ( Raw.C.With_id.id c
         , Some (Error.tag ~tag:"Error finding machine:" err)
         )
   ;;
 
   let compilers_from_raw
-      (ms : M.Set.t)
-      (ms_disabled : (Compiler.Id.t, Error.t option) List.Assoc.t)
-      (hook : C.WithId.t hook)
+      (ms : Machine.Spec.Set.t)
+      (ms_disabled : (Spec.Id.t, Error.t option) List.Assoc.t)
+      (hook : C.With_id.t hook)
       (cs : Raw.C.Set.t)
-    : (C.Set.t * (Compiler.Id.t, Error.t option) List.Assoc.t) Or_error.t =
+    : (C.Set.t * (Spec.Id.t, Error.t option) List.Assoc.t) Or_error.t =
     let open Or_error.Let_syntax in
     Raw.C.Set.(
       let enabled, disabled =

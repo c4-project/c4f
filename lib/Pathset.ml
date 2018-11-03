@@ -102,14 +102,14 @@ let mkdirs ps =
 let make id ~in_root ~out_root =
   { c_path    = [in_root; "C"]
   ; litc_path = [in_root; "Litmus"]
-  ; asm_path  = [out_root] @ (Compiler.Id.to_string_list id) @ ["asm"]
-  ; lita_path = [out_root] @ (Compiler.Id.to_string_list id) @ ["litmus"]
-  ; herd_path = [out_root] @ (Compiler.Id.to_string_list id) @ ["herd"]
+  ; asm_path  = [out_root] @ (Spec.Id.to_string_list id) @ ["asm"]
+  ; lita_path = [out_root] @ (Spec.Id.to_string_list id) @ ["litmus"]
+  ; herd_path = [out_root] @ (Spec.Id.to_string_list id) @ ["herd"]
   }
 ;;
 
 let%expect_test "all_paths of make" =
-  let id = Compiler.Id.of_string "foo.bar.baz" in
+  let id = Spec.Id.of_string "foo.bar.baz" in
   let ps = make id ~in_root:"inputs" ~out_root:"outputs" in
   Format.printf "@[%a@]@."
     Sexp.pp_hum

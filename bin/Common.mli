@@ -36,7 +36,7 @@ val litmusify
     -> Io.In_source.t
     -> Io.Out_sink.t
     -> string list
-    -> Compiler.CSpec.t
+    -> Compiler.Full_spec.t
     -> (string, string) List.Assoc.t Or_error.t
 ;;
 

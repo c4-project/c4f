@@ -72,7 +72,7 @@ let get_runner ~emits =
   proc (List.tl_exn emits)
 ;;
 
-module Gcc : Compiler.S = struct
+module Gcc : Compiler.Basic = struct
   let compile_args ~args ~emits ~infile ~outfile =
     ignore emits;
     [ "-S"       (* emit assembly *)
@@ -86,19 +86,19 @@ module Gcc : Compiler.S = struct
 end
 
 let style_modules =
-  [ "gcc", (module Gcc : Compiler.S) ]
+  [ "gcc", (module Gcc : Compiler.Basic) ]
 ;;
 
-let compiler_module_from_spec (cspec : Compiler.CSpec.WithId.t) =
+let compiler_module_from_spec (cspec : Compiler.Full_spec.With_id.t) =
   let style =
-    Compiler.CSpec.style
-      (Compiler.CSpec.WithId.spec cspec)
+    Compiler.Full_spec.style
+      (Compiler.Full_spec.With_id.spec cspec)
   in
   List.Assoc.find ~equal:String.Caseless.equal style_modules style
   |> Result.of_option ~error:(Error.createf "Unknown compiler style: %s" style)
 ;;
 
-let compiler_from_spec (cspec : Compiler.CSpec.WithId.t) =
+let compiler_from_spec (cspec : Compiler.Full_spec.With_id.t) =
   Compiler.from_spec
     compiler_module_from_spec
     cspec
@@ -112,16 +112,16 @@ let test_compiler cspec =
     Or_error.tag_arg
       (M.test ())
       "A compiler in your spec file didn't respond properly"
-      (Compiler.CSpec.WithId.id cspec)
-      [%sexp_of:Compiler.Id.t]
+      (Compiler.Full_spec.With_id.id cspec)
+      [%sexp_of:Spec.Id.t]
   in
     Some cspec
 ;;
 
 let test_machine local_only mspec =
   let is_remote =
-    Compiler.MSpec.is_remote
-      (Compiler.MSpec.WithId.spec mspec)
+    Machine.Spec.is_remote
+      (Machine.Spec.With_id.spec mspec)
   in
   let disabled = local_only && is_remote in
   Or_error.return (

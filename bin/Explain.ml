@@ -59,7 +59,7 @@ let command =
      in
      fun () ->
        let warnings = not no_warnings in
-       let cid = Compiler.Id.of_string compiler_id in
+       let cid = Spec.Id.of_string compiler_id in
        let o = OutputCtx.make ~verbose ~warnings in
        let passes = Sanitiser_pass.(
            if sanitise then explain else Set.empty
@@ -67,8 +67,8 @@ let command =
        in
        Or_error.Let_syntax.(
          let%bind cfg = LangSupport.load_cfg spec_file in
-         let%bind spec = Compiler.CSpec.Set.get (Config.M.compilers cfg) cid in
-         let emits = Compiler.CSpec.emits spec in
+         let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) cid in
+         let emits = Compiler.Full_spec.emits spec in
          let%bind runner = LangSupport.get_runner ~emits in
          let module Runner = (val runner) in
          Io.(
