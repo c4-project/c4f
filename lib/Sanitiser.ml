@@ -101,15 +101,8 @@ module Make (B : Basic)
     in L.Instruction.OnLocations.map ~f ins
   ;;
 
-
-  let instruction_has_type ty ins =
-    Abstract.Instruction.equal
-      ty
-      (L.Instruction.abs_type ins)
-  ;;
-
   let if_instruction_has_type ins ty ~f =
-    if instruction_has_type ty ins then f () else Ctx.return ins
+    if L.Instruction.has_abs_type ty ins then f () else Ctx.return ins
   ;;
 
   (** [warn_unknown_instructions stm] emits warnings for each
@@ -262,27 +255,29 @@ module Make (B : Basic)
   let instruction_is_irrelevant =
     L.Statement.instruction_mem irrelevant_instruction_types
 
+  let measure_ctx (measurement : 'a Ctx.t) (f : 'b -> 'c Ctx.t) (x : 'b)
+    : ('a * 'c * 'a) Ctx.t =
+    let open Ctx.Let_syntax in
+    let%bind pre    = measurement in
+    let%bind result = f x in
+    let%map  post   = measurement in
+    (pre, result, post)
+  ;;
+
   (** [proglen_fix f prog] runs [f] on [prog] until the
       reported program length no longer changes. *)
-  let proglen_fix f prog =
-    let rec mu prog ctx =
-      match
-        Ctx.run
-          (let open Ctx.Let_syntax in
-           let%bind proglen  = Ctx.get_prog_length in
-           let%bind prog'    = f prog in
-           let%bind proglen' = Ctx.get_prog_length in
-           let%map  ctx'     = Ctx.peek Fn.id in
-           (ctx', proglen, proglen', prog'))
-          ctx
-      with
-      | Ok (ctx', proglen, proglen', prog') ->
+  let proglen_fix f =
+    Ctx.fix ~f:(
+      fun mu prog ->
+        let open Ctx.Let_syntax in
+        let%bind (proglen, prog', proglen') =
+          measure_ctx Ctx.get_prog_length f prog
+        in
         if Int.equal proglen proglen'
-        then Ok (ctx', prog') (* Fixed point *)
-        else mu prog' ctx'
-      | Error e -> Error e
-    in
-    Ctx.Monadic.make (mu prog)
+        then Ctx.return prog'
+        else mu prog'
+    )
+  ;;
 
   (** [remove_generally_irrelevant_statements prog] completely removes
      statements in [prog] that have no use in general and cannot be
@@ -303,7 +298,6 @@ module Make (B : Basic)
     in
     My_list.exclude ~f:(any matchers) prog
 
-
   (** [remove_litmus_irrelevant_statements prog] completely removes
      statements in [prog] that have no use in Litmus and cannot be
      rewritten. *)
@@ -318,18 +312,20 @@ module Make (B : Basic)
        My_list.exclude ~f:(any matchers) prog)
 
   let remove_useless_jumps prog =
-    let rec mu skipped ctx = function
-      | x::x'::xs when L.Statement.is_jump_pair x x' ->
-        let open Or_error.Let_syntax in
-        let f = Ctx.(dec_prog_length >>= fun () -> peek Fn.id) in
-        let%bind ctx' = Ctx.run f ctx in
-        mu skipped ctx' (x'::xs)
-      | x::x'::xs ->
-        mu (x::skipped) ctx (x'::xs)
-      | [] -> Or_error.return (ctx, List.rev skipped)
-      | [x] -> Or_error.return (ctx, List.rev (x::skipped))
-    in
-    Ctx.Monadic.make (Fn.flip (mu []) prog)
+    Ctx.(
+      fix ~f:(
+        fun mu (passed, remainder) ->
+          match remainder with
+          | x::x'::xs when L.Statement.is_jump_pair x x' ->
+            dec_prog_length >>= fun () -> mu (passed, (x'::xs))
+          | x::x'::xs ->
+            mu (x::passed, (x'::xs))
+          | [] -> return (List.rev passed, [])
+          | [x] -> return (List.rev (x::passed), [])
+      ) ([], prog)
+      >>| fst
+    )
+  ;;
 
   let update_symbol_tables
       (prog : statement list) =

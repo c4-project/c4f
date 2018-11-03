@@ -57,6 +57,19 @@ module type S_common = sig
   (** [modify] creates a context-sensitive computation that can look at
       and modify the current context. *)
   val modify : (state -> state) -> unit t
+
+  (** [fix ~f init] builds a fixed point on [f].
+
+      At each step, [f] is passed a continuation [mu] and a value [a].
+      It may choose to return a recursive application of [mu], or
+      some value derived from [a].
+
+      To begin with, [f] is applied to [mu] and [init]. *)
+  val fix
+    :  f : (('a -> 'a t) -> 'a -> 'a t)
+    -> 'a
+    -> 'a t
+  ;;
 end
 
 (** [S] is the signature of state monads.

@@ -81,6 +81,21 @@ module Make_transform (B : Basic_transform)
   let make f = Monadic.make (Fn.compose Inner.return f)
   let peek f = Monadic.peek (Fn.compose Inner.return f)
   let modify f = Monadic.modify (Fn.compose Inner.return f)
+
+  let fix ~f init =
+    let rec mu a ctx =
+      let mu_monad x = Monadic.make (mu x) in
+      let f' =
+        Let_syntax.(
+          let%bind a'   = f mu_monad a in
+          let%map  ctx' = peek (Fn.id) in
+          (ctx', a')
+        )
+      in
+      run f' ctx
+    in
+    Monadic.make (mu init)
+  ;;
 end
 
 module Make (B : Basic)
