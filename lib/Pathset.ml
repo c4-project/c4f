@@ -130,7 +130,7 @@ let pp f ps =
   Format.pp_open_vbox f 0;
 
   let p f (k, v) =
-    MyFormat.pp_kv f k String.pp (MyFilename.concat_list v)
+    My_format.pp_kv f k String.pp (MyFilename.concat_list v)
   in
   Format.pp_print_list
     ~pp_sep:Format.pp_print_cut

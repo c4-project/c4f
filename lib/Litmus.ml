@@ -97,7 +97,7 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
   let pp_init (f : Format.formatter)
               (init : (string, Lang.Constant.t) List.Assoc.t)
     : unit =
-    MyFormat.pp_c_braces
+    My_format.pp_c_braces
       f
       (fun f ->
          Format.pp_print_list
@@ -112,7 +112,7 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
       Format.fprintf f "@[<h>%a@]" Lang.Statement.pp
 
   let instr_width (ins : Lang.Statement.t) : int =
-    String.length (MyFormat.format_to_string pp_instr_raw ins)
+    String.length (My_format.format_to_string pp_instr_raw ins)
 
   let column_width : Lang.Statement.t list list -> int =
     My_list.max_measure

@@ -135,7 +135,7 @@ module ExtendTable (E : SSexpTable) : ExtensionTable with type t := E.t = struct
       Format.pp_print_space f ();
       Format.pp_print_char f '(';
       Format.pp_open_hovbox f 0;
-      Format.pp_print_list ~pp_sep:MyFormat.pp_csep pp f xs;
+      Format.pp_print_list ~pp_sep:My_format.pp_csep pp f xs;
       Format.pp_close_box f ();
       Format.pp_print_char f ')'
   ;;

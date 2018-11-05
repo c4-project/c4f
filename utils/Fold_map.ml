@@ -200,16 +200,16 @@ let%expect_test "generated list count behaves properly" =
 let%expect_test "mapiM: returning identity on list/option" =
   let module M = List.On_monad (Option) in
   Format.printf "@[<h>%a@]@."
-    (MyFormat.pp_option
-       ~pp:(Format.pp_print_list ~pp_sep:MyFormat.pp_csep String.pp))
+    (My_format.pp_option
+       ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep String.pp))
     (M.mapiM ~f:(fun _ k -> Some k) ["a"; "b"; "c"; "d"; "e"]);
   [%expect {| a, b, c, d, e |}]
 
 let%expect_test "mapiM: counting upwards on list/option" =
   let module M = List.On_monad (Option) in
   Format.printf "@[<h>%a@]@."
-    (MyFormat.pp_option
-       ~pp:(Format.pp_print_list ~pp_sep:MyFormat.pp_csep Int.pp))
+    (My_format.pp_option
+       ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep Int.pp))
     (M.mapiM ~f:(fun i _ -> Some i) [3; 7; 2; 4; 42]);
   [%expect {| 0, 1, 2, 3, 4 |}]
 

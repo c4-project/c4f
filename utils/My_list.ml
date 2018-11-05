@@ -26,31 +26,31 @@ open Core
 
 include Fold_map.List
 
-let exclude ~f xs = List.filter ~f:(Fn.non f) xs
-
 let%expect_test "MyList: max_measure on empty list" =
   printf "%d" (max_measure ~default:1066 ~measure:Fn.id []);
   [%expect {| 1066 |}]
 ;;
+
+let exclude ~f xs = List.filter ~f:(Fn.non f) xs
 
 let%expect_test "MyList: exclude -ve numbers" =
   let excluded = exclude ~f:Int.is_negative
       [1; -1; 2; 10; -49; 0; 64]
   in
   Format.printf "@[%a@]@."
-    (Format.pp_print_list ~pp_sep:MyFormat.pp_csep Int.pp) excluded;
+    (Format.pp_print_list ~pp_sep:My_format.pp_csep Int.pp) excluded;
   [%expect {| 1, 2, 10, 0, 64 |}]
 ;;
 
 let%expect_test "MyList: right_pad empty list" =
   Format.printf "@[%a@]@."
-    (MyFormat.pp_listlist ~pp:Int.pp) (right_pad ~padding:2 []);
+    (My_format.pp_listlist ~pp:Int.pp) (right_pad ~padding:2 []);
   [%expect {||}]
 ;;
 
 let%expect_test "MyList: right_pad example list" =
   Format.printf "@[%a@]@."
-    (MyFormat.pp_listlist ~pp:Int.pp)
+    (My_format.pp_listlist ~pp:Int.pp)
     (right_pad ~padding:6
        [ [0; 8; 0; 0]
        ; [9; 9; 9]
@@ -71,7 +71,7 @@ let%expect_test "MyList: right_pad example list" =
 let%expect_test "mapM: list" =
   let module M = On_monad (List) in
   Format.printf "@[<h>%a@]@."
-    (MyFormat.pp_listlist ~pp:Int.pp)
+    (My_format.pp_listlist ~pp:Int.pp)
     (List.bind ~f:(M.mapM ~f:(fun k -> [k; 0]))
        ([[1; 2; 3]]));
   [%expect {|
@@ -91,14 +91,14 @@ let prefixes xs =
 
 let%expect_test "prefixes: empty list" =
   Format.printf "@[<h>%a@]@."
-    (MyFormat.pp_listlist ~pp:Int.pp)
+    (My_format.pp_listlist ~pp:Int.pp)
     (prefixes []);
   [%expect {||}]
 ;;
 
 let%expect_test "prefixes: sample list" =
   Format.printf "@[<h>%a@]@."
-    (MyFormat.pp_listlist ~pp:Int.pp)
+    (My_format.pp_listlist ~pp:Int.pp)
     (prefixes [1; 2; 3]);
   [%expect {|
               [ 1 ]

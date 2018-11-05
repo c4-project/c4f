@@ -45,21 +45,21 @@ module Make_spec (R : Machine.Reference)
     let pp f spec =
       Format.pp_open_vbox f 0;
       if not spec.enabled then Format.fprintf f "-- DISABLED --@,";
-      MyFormat.pp_kv f "Style" String.pp spec.style;
+      My_format.pp_kv f "Style" String.pp spec.style;
       Format.pp_print_cut f ();
-      MyFormat.pp_kv f "Emits"
+      My_format.pp_kv f "Emits"
         (Format.pp_print_list
            ~pp_sep:(Format.pp_print_space)
            String.pp)
         spec.emits;
       Format.pp_print_cut f ();
-      MyFormat.pp_kv f "Command"
+      My_format.pp_kv f "Command"
         (Format.pp_print_list ~pp_sep:(Format.pp_print_space) String.pp)
         (spec.cmd :: spec.argv);
       Format.pp_print_cut f ();
-      MyFormat.pp_kv f "Machine" Mach.pp spec.machine;
+      My_format.pp_kv f "Machine" Mach.pp spec.machine;
       Format.pp_print_cut f ();
-      MyFormat.pp_kv f "Herd"
+      My_format.pp_kv f "Herd"
         (fun f x -> String.pp f (if x then "yes" else "no")) spec.herd;
       Format.pp_close_box f ()
     ;;

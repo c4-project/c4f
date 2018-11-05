@@ -32,7 +32,7 @@ type t =
 let maybe_err_formatter on =
   if on
   then Format.err_formatter
-  else MyFormat.null_formatter ()
+  else My_format.null_formatter ()
 
 let make ~verbose ~warnings =
   { vf = maybe_err_formatter verbose

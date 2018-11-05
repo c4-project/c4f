@@ -182,7 +182,7 @@ module Make (B : Basic) : S with type t = B.t = struct
     ;;
 
     let pp_id_spec f ~pp id spec =
-      MyFormat.pp_kv f
+      My_format.pp_kv f
         (Id.to_string id)
         pp spec
     ;;

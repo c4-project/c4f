@@ -123,7 +123,7 @@ module ATTSpecific = struct
           pp_reg b
       | _     , Some i ->
         Format.fprintf f "(%a,%a)"
-          (MyFormat.pp_option ~pp:pp_reg) bo
+          (My_format.pp_option ~pp:pp_reg) bo
           pp_index i
     in
 
@@ -132,9 +132,9 @@ module ATTSpecific = struct
     let in_disp  = Indirect.disp  indirect in
     let in_index = Indirect.index indirect in
 
-    MyFormat.pp_option f ~pp:pp_seg in_seg;
+    My_format.pp_option f ~pp:pp_seg in_seg;
     let show_zero = in_base = None && in_index = None in
-    MyFormat.pp_option f ~pp:(Basic.pp_disp ~show_zero) in_disp;
+    My_format.pp_option f ~pp:(Basic.pp_disp ~show_zero) in_disp;
     pp_bis f in_base in_index
 
   let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
@@ -251,14 +251,14 @@ module IntelAndHerd7 = struct
 
       (* seg:base+index*scale+disp *)
 
-      MyFormat.pp_option f ~pp:pp_seg in_seg;
+      My_format.pp_option f ~pp:pp_seg in_seg;
 
-      MyFormat.pp_option f ~pp:pp_reg in_base;
+      My_format.pp_option f ~pp:pp_reg in_base;
 
       let plus_between_b_i = in_base <> None && in_index <> None in
       if plus_between_b_i then Format.pp_print_char f '+';
 
-      MyFormat.pp_option f ~pp:pp_index in_index;
+      My_format.pp_option f ~pp:pp_index in_index;
 
       let plus_between_bis_d =
         (in_base <> None || in_index <> None)
@@ -267,7 +267,7 @@ module IntelAndHerd7 = struct
       if plus_between_bis_d then Format.pp_print_char f '+';
 
       let show_zero = in_base = None && in_index = None in
-      MyFormat.pp_option f ~pp:(Basic.pp_disp ~show_zero) in_disp;
+      My_format.pp_option f ~pp:(Basic.pp_disp ~show_zero) in_disp;
 
       Format.pp_print_char f ']';
       Format.pp_close_box f ()
@@ -413,7 +413,7 @@ module Make (D : Dialect) =
     let pp_instruction f { Instruction.prefix; opcode; operands } =
       Format.fprintf f
                      "@[@[%a%a@]@ %a@]"
-                     (MyFormat.pp_option ~pp:pp_prefix) prefix
+                     (My_format.pp_option ~pp:pp_prefix) prefix
                      pp_opcode opcode
                      pp_oplist operands
 
