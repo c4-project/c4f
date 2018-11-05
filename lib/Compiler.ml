@@ -88,15 +88,11 @@ module Make_spec (R : Machine.Reference)
 end
 
 module Cfg_spec : Spec with type Mach.t = Spec.Id.t =
-  Make_spec (struct
-    include Spec.Id
-    let default = Spec.Id.of_string "default"
-    let is_remote = Fn.const false
-  end)
+  Make_spec (Machine.Id_as_reference)
 ;;
 
-module Full_spec : Spec with type Mach.t = Machine.Spec.t =
-  Make_spec (Machine.Spec)
+module Full_spec : Spec with type Mach.t = Machine.Spec.With_id.t =
+  Make_spec (Machine.With_id_as_reference)
 ;;
 
 module type With_spec = sig
@@ -183,11 +179,13 @@ module Make (B : Basic_with_run_info) : S = struct
 end
 
 let runner_from_spec (cspec : Full_spec.t) =
-  Machine.Spec.runner (Full_spec.machine cspec)
+  Machine.Spec.(
+    runner (With_id.spec (Full_spec.machine cspec))
+  )
 ;;
 
 let hooks_from_spec (cspec : Full_spec.t) =
-  match Machine.Spec.via (Full_spec.machine cspec) with
+  match Machine.Spec.(via (With_id.spec (Full_spec.machine cspec))) with
   | Local -> (module No_hooks : Hooks)
   | Ssh s -> (module Scp_hooks (struct let ssh = s end) : Hooks)
 ;;

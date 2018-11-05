@@ -152,7 +152,9 @@ module M = struct
         ~cmd:(cmd rawc)
         ~argv:(argv rawc)
         ~herd:(herd rawc)
-        ~machine:mach
+        ~machine:(Machine.Spec.With_id.create
+                    ~id:(machine rawc) ~spec:mach
+                 )
     )
   ;;
 

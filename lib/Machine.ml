@@ -24,6 +24,7 @@
 
 open Core
 open Utils
+open Spec
 
 module type Reference = sig
   type t [@@deriving sexp]
@@ -110,4 +111,34 @@ module Spec = struct
   let runner = M.runner
   let is_remote = M.is_remote
   let default = { M.enabled = true; via = Local }
+end
+
+(** [Id_as_reference] is an extension onto [Id] that
+    lets such items be machine references. *)
+module Id_as_reference : sig
+  include (module type of Id)
+  include Reference with type t := t
+end = struct
+  include Id
+  let default = of_string "default"
+  let is_remote = Fn.const false
+end
+
+(** [With_id_as_reference] is an extension onto [Spec.With_id] that
+    lets such items be machine references. *)
+module With_id_as_reference : sig
+  type elt = Spec.t
+  type t = Spec.With_id.t
+  include (module type of Spec.With_id with type elt := elt and type t := t)
+  include Reference with type t := t
+end = struct
+  include Spec.With_id
+  let is_remote t = Spec.is_remote (spec t)
+  let default =
+    create ~id:Id_as_reference.default ~spec:Spec.default
+  let pp f t =
+    Format.fprintf f "@[%a@ (@,%a@,)@]"
+      Id.pp   (id   t)
+      Spec.pp (spec t)
+  ;;
 end

@@ -27,6 +27,7 @@
 
 open Core
 open Utils
+open Spec
 
 (** [Reference] is the signature of references to machines. *)
 module type Reference = sig
@@ -88,3 +89,22 @@ module Spec : sig
   (** ...and specifications. *)
   include Spec.S with type t := t
 end
+
+(** [Id_as_reference] is an extension onto [Id] that
+    lets such items be machine references. *)
+module Id_as_reference : sig
+  include (module type of Id)
+  include Reference with type t := t
+end
+
+(** [With_id_as_reference] is an extension onto [Spec.With_id] that
+    lets such items be machine references. *)
+module With_id_as_reference : sig
+  type elt = Spec.t
+  type t = Spec.With_id.t
+  include (module type of Spec.With_id with type elt := elt
+                                        and type t := t)
+  include Reference with type t := t
+end
+
+

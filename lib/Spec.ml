@@ -65,19 +65,23 @@ module type Basic = sig
   val pp_summary : Format.formatter -> t -> unit
 end
 
+module type S_with_id = sig
+  type elt
+  type t [@@deriving sexp]
+  val create : id:Id.t -> spec:elt -> t
+  val id : t -> Id.t
+  val spec : t -> elt
+  val to_tuple : t -> (Id.t * elt)
+end
+
 (** [S] is the top-level, outward-facing interface of both
    compiler and machine specifications. *)
 module type S = sig
   include Basic
 
-  module With_id : sig
-    type elt = t
-    type t [@@deriving sexp]
-    val create : id:Id.t -> spec:elt -> t
-    val id : t -> Id.t
-    val spec : t -> elt
-    val to_tuple : t -> (Id.t * elt)
-  end
+  (** [With_id] contains types and functions for handling bundles of
+     spec ID and spec. *)
+  module With_id : S_with_id with type elt = t
 
   (** [Set] is the interface of modules for dealing with sets of
       compiler specs. *)
@@ -108,6 +112,16 @@ module type S = sig
       :  t
       -> f : (With_id.t -> [`Fst of 'a | `Snd of 'b])
       -> ('a list * 'b list)
+    ;;
+
+    (** [group specs ~f] groups [specs] into buckets according to some
+       grouping function [f].  [f] returns specification IDs; the idea
+       is that this allows grouping of specifications by references
+        to other, larger specifications. *)
+    val group
+      :  t
+      -> f : (With_id.t -> Id.t)
+      -> t Id.Map.t
     ;;
 
     (** [map specs ~f] applies a mapper [f] to the
@@ -179,6 +193,14 @@ module Make (B : Basic) : S with type t = B.t = struct
         |> Or_error.combine_errors_unit
       in
       List.map ~f:(fun x -> (With_id.id x, With_id.spec x)) xs
+    ;;
+
+    let group t ~f =
+      t
+      |> List.map
+        ~f:(fun (id, spec) ->
+            (f (With_id.create ~id ~spec), (id, spec)))
+      |> Id.Map.of_alist_multi
     ;;
 
     let pp_id_spec f ~pp id spec =

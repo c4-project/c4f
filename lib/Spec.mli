@@ -56,6 +56,29 @@ module type Basic = sig
   val pp_summary : Format.formatter -> t -> unit
 end
 
+(** [S_with_id] is a signature for types bundling a spec ID and
+    a type. *)
+module type S_with_id = sig
+  (** [elt] is the type of elements inside the bundle. *)
+  type elt
+
+  (** [t] is the type of ID-and-element pairs. *)
+  type t [@@deriving sexp]
+
+  (** [create ~id ~spec] creates a new [With_id.t] pair. *)
+  val create : id:Id.t -> spec:elt -> t
+
+  (** [id w] gets the ID component of a [w]. *)
+  val id : t -> Id.t
+
+  (** [spec w] gets the spec component of [w]. *)
+  val spec : t -> elt
+
+  (** [to_tuple w] gets the ID and spec components of [w] as a
+      tuple. *)
+  val to_tuple : t -> (Id.t * elt)
+end
+
 (** [S] is the top-level, outward-facing interface of both
    compiler and machine specifications. *)
 module type S = sig
@@ -63,25 +86,7 @@ module type S = sig
 
   (** [With_id] contains types and functions for handling bundles of
      spec ID and spec. *)
-  module With_id : sig
-    type elt = t
-
-    (** [t] is the type of ID-and-spec pairs. *)
-    type t [@@deriving sexp]
-
-    (** [create ~id ~spec] creates a new [With_id.t] pair. *)
-    val create : id:Id.t -> spec:elt -> t
-
-    (** [id w] gets the ID component of a [w]. *)
-    val id : t -> Id.t
-
-    (** [spec w] gets the spec component of [w]. *)
-    val spec : t -> elt
-
-    (** [to_tuple w] gets the ID and spec components of [w] as a
-       tuple. *)
-    val to_tuple : t -> (Id.t * elt)
-  end
+  module With_id : S_with_id with type elt = t
 
   (** [Set] is the interface of modules for dealing with sets of
       compiler specs. *)
@@ -114,18 +119,25 @@ module type S = sig
       -> ('a list * 'b list)
     ;;
 
-    (** [map specs ~f] applies a mapper [f] to the
-        specifications in [specs], returning the results as a list. *)
-    val map
+    (** [group specs ~f] groups [specs] into buckets according to some
+       grouping function [f].  [f] returns specification IDs; the idea
+       is that this allows grouping of specifications by references
+        to other, larger specifications. *)
+    val group
       :  t
-      -> f : (With_id.t -> 'a)
-      -> 'a list
+      -> f : (With_id.t -> Id.t)
+      -> t Id.Map.t
     ;;
+
+    (** [map specs ~f] applies a mapper [f] to the specifications in
+        [specs], returning the results as a list. *)
+    val map : t -> f : (With_id.t -> 'a) -> 'a list
   end
 
   (** [pp_verbose verbose f spec] prints a [spec] with the level of
-      verbosity implied by [verbose]. *)
-  val pp_verbose : bool -> Format.formatter -> t -> unit
+       verbosity implied by [verbose]. *)
+  val pp_verbose : bool ->
+    Format.formatter -> t -> unit
 end
 
 (** [Make] makes an [S] from a [Basic]. *)

@@ -48,7 +48,7 @@ let stride cell =
   String.length (Format.asprintf "@[<h>%a@]" pp_cell_contents cell)
 ;;
 
-let make ?(sep=" ") ?terminator ~header () =
+let make ?(sep="  ") ?terminator ~header () =
   let open Or_error.Let_syntax in
   let%map () = Result.ok_if_true (not (List.is_empty header))
       ~error:(Error.of_string "Header row must not be empty.")
@@ -199,10 +199,50 @@ let%expect_test "Sample use of tabulator with 'with_rows'" =
   Format.print_newline ();
   Format.printf "@[%a@]@." Sexp.pp_hum ([%sexp_of: unit Or_error.t] tab_result);
   [%expect {|
-    Item            Quantity Available
-    Bicycle         5        false
-    Car             10       true
-    African Swallow 1        true
+    Item             Quantity  Available
+    Bicycle          5         false
+    Car              10        true
+    African Swallow  1         true
+    (Ok ()) |}]
+;;
+
+
+let%expect_test "Sample use of tabulator with rules" =
+  let tab_result =
+    Result.(
+      make
+        ~header:(List.map
+                   ["Item"; "Quantity"; "Available"]
+                   ~f:(Fn.flip String.pp))
+        ()
+      >>= with_rule '='
+      >>= with_row
+        [ Fn.flip String.pp            "Bicycle"
+        ; Fn.flip Int.pp               5
+        ; Fn.flip Format.pp_print_bool false
+        ]
+      >>= with_row
+        [ Fn.flip String.pp            "Car"
+        ; Fn.flip Int.pp               10
+        ; Fn.flip Format.pp_print_bool true
+        ]
+      >>= with_rule '-'
+      >>= with_row
+        [ Fn.flip String.pp            "African Swallow"
+        ; Fn.flip Int.pp               1
+        ; Fn.flip Format.pp_print_bool true
+        ]
+      >>| pp Format.std_formatter
+    ) in
+  Format.print_newline ();
+  Format.printf "@[%a@]@." Sexp.pp_hum ([%sexp_of: unit Or_error.t] tab_result);
+  [%expect {|
+    Item             Quantity  Available
+    ====================================
+    Bicycle          5         false
+    Car              10        true
+    ------------------------------------
+    African Swallow  1         true
     (Ok ()) |}]
 ;;
 

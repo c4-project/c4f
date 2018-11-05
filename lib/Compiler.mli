@@ -97,7 +97,7 @@ module Cfg_spec : Spec with type Mach.t = Spec.Id.t
 
 (** [Full_spec] is a module describing compiler specs where machine
     references are inlined [MSpec.t] records. *)
-module Full_spec : Spec with type Mach.t = Machine.Spec.t
+module Full_spec : Spec with type Mach.t = Machine.Spec.With_id.t
 
 (** [With_spec] is an interface for modules containing a (full)
     compiler specification. *)
