@@ -73,14 +73,14 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
 
   (** [validate_programs ps] validates an incoming litmus test's
      programs. *)
-  let validate_programs (ps : Lang.Statement.t list list) : unit Or_error.t =
-    match ps with
+  let validate_programs = function
     | [] -> Or_error.error_string "programs are empty"
     | p::ps ->
        let l = List.length p in
        Result.ok_if_true
          (List.for_all ~f:(fun p' -> List.length p' = l) ps)
          ~error:(Error.of_string "programs must be of uniform size")
+  ;;
 
   (** [validate lit] validates an incoming litmus test. *)
   let validate (lit : t) : unit Or_error.t =
@@ -90,9 +90,11 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
       ]
 
   let make ~name ~init ~programs =
-    let open Or_error in
+    let open Or_error.Let_syntax in
     let lit = { name; init; programs } in
-    validate lit *> return lit
+    let%map () = validate lit in
+  lit
+  ;;
 
   let pp_init (f : Format.formatter)
               (init : (string, Lang.Constant.t) List.Assoc.t)
@@ -108,63 +110,38 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
            f
           init)
 
-  let pp_instr_raw (f : Format.formatter) =
+  let pp_instr (f : Format.formatter) =
       Format.fprintf f "@[<h>%a@]" Lang.Statement.pp
-
-  let instr_width (ins : Lang.Statement.t) : int =
-    String.length (My_format.format_to_string pp_instr_raw ins)
-
-  let column_width : Lang.Statement.t list list -> int =
-    My_list.max_measure
-      ~measure:(My_list.max_measure ~measure:instr_width)
 
   let pp_programs (f : Format.formatter)
                   (ps : Lang.Statement.t list list)
       : unit =
-    let cw = column_width ps in
-
-    let endl () =
-      Format.pp_print_char f ';';
-      Format.pp_print_tab f ()
+    let program_names =
+      List.mapi ~f:(fun i _ -> sprintf "P%d" i) ps
     in
-
-    let pp_sep i =
-      (* No need to left-pad the |: the way we do the column
-         justification below does it for us *)
-      if 0 < i then Format.fprintf f "| "
+    let header : Tabulator.row =
+      List.map ~f:(Fn.flip String.pp) program_names
     in
-
-    let pp_header i _ =
-      pp_sep i;
-      (* Since we're setting tabs here, we need to pad the column width.
-         NB: the width of each column will be around 'cw+1', factoring
-         in the 'P' prefix. *)
-      Format.fprintf f "@[P%-*d@]" cw i;
-      Format.pp_set_tab f ()
-    in
-
-    let pp_instr i (ins : 'a) =
-      pp_sep i;
-      pp_instr_raw f ins;
-      Format.pp_print_tab f ()
-    in
-
-    let pp_row (row : 'a list) =
-      List.iteri ~f:pp_instr row;
-      endl ();
-    in
-
-    Format.pp_open_tbox f ();
-
-    Format.pp_set_tab f ();
-    List.iteri ~f:pp_header ps;
-    endl ();
-
     (* The [is_valid] check in [pp] guarantees this transpose is okay. *)
-    let ps' = List.transpose_exn ps in
-    List.iter ~f:pp_row ps';
-
-    Format.pp_close_tbox f ()
+    let rows : Tabulator.row list =
+      ps
+      |> List.transpose_exn
+      |> List.map ~f:(fun row -> List.map ~f:(Fn.flip pp_instr) row)
+    in
+    let result =
+      let open Or_error in
+      Tabulator.(
+        make ~sep:" | " ~terminator:" ;" ~header ()
+        >>= with_rows rows
+        >>| pp f
+      )
+    in
+    Result.iter_error result
+      ~f:(fun e ->
+          Format.fprintf f
+            "@[<@ error printing table:@ %a@ >@]"
+            Error.pp e)
+  ;;
 
   let pp_location_stanza f init =
     Format.fprintf f "@[<h>locations@ [@[%a@]]@]@,"

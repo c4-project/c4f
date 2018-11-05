@@ -85,6 +85,12 @@ let with_row row t =
   { t with rows_reversed = (Data row::t.rows_reversed)
          ; column_widths = update_column_lengths row t.column_widths
   }
+;;
+
+let with_rows rows t =
+  let module Mapper = Fold_map.List.On_monad (Or_error) in
+  Mapper.foldM ~f:(Fn.flip with_row) ~init:t rows
+;;
 
 let with_rule rule_char t =
   Ok { t with rows_reversed = (Divider rule_char::t.rows_reversed) }
@@ -166,7 +172,7 @@ let pp f t =
   Format.pp_close_tbox f ()
 ;;
 
-let%expect_test "Sample use of tabulator" =
+let%expect_test "Sample use of tabulator with 'with_rows'" =
   let tab_result =
     Result.(
       make
@@ -174,20 +180,19 @@ let%expect_test "Sample use of tabulator" =
                    ["Item"; "Quantity"; "Available"]
                    ~f:(Fn.flip String.pp))
         ()
-      >>= with_row
-        [ Fn.flip String.pp            "Bicycle"
-        ; Fn.flip Int.pp               5
-        ; Fn.flip Format.pp_print_bool false
-        ]
-      >>= with_row
-        [ Fn.flip String.pp            "Car"
-        ; Fn.flip Int.pp               10
-        ; Fn.flip Format.pp_print_bool true
-        ]
-      >>= with_row
-        [ Fn.flip String.pp            "African Swallow"
-        ; Fn.flip Int.pp               1
-        ; Fn.flip Format.pp_print_bool true
+      >>= with_rows
+        [ [ Fn.flip String.pp            "Bicycle"
+          ; Fn.flip Int.pp               5
+          ; Fn.flip Format.pp_print_bool false
+          ]
+        ; [ Fn.flip String.pp            "Car"
+          ; Fn.flip Int.pp               10
+          ; Fn.flip Format.pp_print_bool true
+          ]
+        ; [ Fn.flip String.pp            "African Swallow"
+          ; Fn.flip Int.pp               1
+          ; Fn.flip Format.pp_print_bool true
+          ]
         ]
       >>| pp Format.std_formatter
     ) in

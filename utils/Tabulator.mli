@@ -49,6 +49,11 @@ val make
    [t]'s header row. *)
 val with_row : row -> t -> t Or_error.t
 
+(** [with_rows rows t] adds [rows] to the tabulator [t] in order,
+   returning the resulting tabulator.  It fails if any row in [rows]
+   is a different length from [t]'s header row. *)
+val with_rows : row list -> t -> t Or_error.t
+
 (** [with_rule rule_char t] adds a dividing rule made up of [rule_char]
     to tabulator [t], returning the resulting tabulator. *)
 val with_rule : char -> t -> t Or_error.t

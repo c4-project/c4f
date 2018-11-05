@@ -64,6 +64,13 @@ module Make0 (I : Basic0)
   module On_monad (MS : Monad.S) = struct
     include I.On_monad (MS)
 
+    let foldM c ~init ~f =
+      MS.(
+        fold_map ~init c ~f:(fun k x -> f k x >>| fun x' -> (x', x))
+        >>| fst
+      )
+    ;;
+
     let mapM ~f c =
       MS.(
         fold_map ~f:(fun () x -> f x >>| Tuple2.create ()) ~init:() c
@@ -127,6 +134,13 @@ module Make1 (I : Basic1)
 
   module On_monad (MS : Monad.S) = struct
     include I.On_monad (MS)
+
+    let foldM c ~init ~f =
+      MS.(
+        fold_map ~init c ~f:(fun k x -> f k x >>| fun x' -> (x', x))
+        >>| fst
+      )
+    ;;
 
     let mapM ~f c =
       MS.(

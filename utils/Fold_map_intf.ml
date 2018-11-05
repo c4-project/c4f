@@ -149,6 +149,16 @@ end
 module type S0_monadic = sig
   include Mappable0_monadic
 
+  (** [foldM x ~init ~f] folds the monadic computation [f] over [x],
+      starting with initial value [init], and returning the final
+      value inside the monadic effect. *)
+  val foldM
+    :  t
+    -> init : 'acc
+    -> f    : ('acc -> elt -> 'acc M.t)
+    -> 'acc M.t
+  ;;
+
   (** [mapM ~f x] maps the monadic computation [f] over [x],
       collecting the monadic effect and returning the result
       inside it. *)
@@ -164,6 +174,16 @@ end
     operators. *)
 module type S1_monadic = sig
   include Mappable1_monadic
+
+  (** [foldM x ~init ~f] folds the monadic computation [f] over [x],
+      starting with initial value [init], and returning the final
+      value inside the monadic effect. *)
+  val foldM
+    :  'elt t
+    -> init : 'acc
+    -> f    : ('acc -> 'elt -> 'acc M.t)
+    -> 'acc M.t
+  ;;
 
   (** [mapM ~f x] maps the monadic computation [f] over [x],
       collecting the monadic effect and returning the result
