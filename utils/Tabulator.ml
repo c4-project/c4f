@@ -283,3 +283,32 @@ let%expect_test "Sample use of tabulator with custom separators and rule" =
     African Swallow | 1        | true     ;
     (Ok ()) |}]
 ;;
+
+module type Tabular = sig
+  type data
+  val to_table : data -> t Or_error.t
+end
+
+module type Tabular_extensions = sig
+  type data
+  val pp_as_table
+    :  ?on_error : (Format.formatter -> Error.t -> unit)
+    -> Format.formatter
+    -> data
+    -> unit
+  ;;
+end
+
+module Extend_tabular (T : Tabular)
+  : Tabular_extensions with type data := T.data = struct
+  let pp_error_default f error =
+    Format.fprintf f "@[<error building table: %a>@]"
+      Error.pp error
+  ;;
+
+  let pp_as_table ?(on_error=pp_error_default) f t =
+    match T.to_table t with
+    | Ok    table -> pp f table
+    | Error e     -> on_error f e
+  ;;
+end

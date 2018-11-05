@@ -113,31 +113,45 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
   let pp_instr (f : Format.formatter) =
       Format.fprintf f "@[<h>%a@]" Lang.Statement.pp
 
-  let pp_programs (f : Format.formatter)
-                  (ps : Lang.Statement.t list list)
-      : unit =
-    let program_names =
-      List.mapi ~f:(fun i _ -> sprintf "P%d" i) ps
-    in
-    let header : Tabulator.row =
-      List.map ~f:(Fn.flip String.pp) program_names
-    in
-    (* The [is_valid] check in [pp] guarantees this transpose is okay. *)
-    let rows : Tabulator.row list =
-      ps
-      |> List.transpose_exn
-      |> List.map ~f:(fun row -> List.map ~f:(Fn.flip pp_instr) row)
-    in
-    let result =
-      let open Or_error in
-      Tabulator.(
-        make ~sep:" | " ~terminator:" ;" ~header ()
-        >>= with_rows rows
-        >>| pp f
-      )
-    in
-    Result.iter_error result
-      ~f:(fun e ->
+  module Program_tabulator = struct
+    module M  = struct
+      type data = Lang.Statement.t list list
+
+      let to_table programs =
+        let open Or_error.Let_syntax in
+
+        let program_names =
+          List.mapi ~f:(fun i _ -> sprintf "P%d" i) programs
+        in
+        let header : Tabulator.row =
+          List.map ~f:(Fn.flip String.pp) program_names
+        in
+
+        let%bind programs' =
+          Result.of_option (List.transpose programs)
+            ~error:(
+              Error.create_s
+                [%message "Couldn't transpose program table"
+                    ~table:(programs : Lang.Statement.t list list)]
+            )
+        in
+        let rows =
+          List.map ~f:(List.map ~f:(Fn.flip pp_instr)) programs'
+        in
+
+        Tabulator.(
+          make ~sep:" | " ~terminator:" ;" ~header ()
+          >>= with_rows rows
+        )
+    end
+
+    include M
+    include Tabulator.Extend_tabular (M)
+  end
+
+  let pp_programs =
+    Program_tabulator.pp_as_table
+      ~on_error:(fun f e ->
           Format.fprintf f
             "@[<@ error printing table:@ %a@ >@]"
             Error.pp e)

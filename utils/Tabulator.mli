@@ -60,3 +60,35 @@ val with_rule : char -> t -> t Or_error.t
 
 (** Pretty-printing a [t] tabulates it onto the given formatter. *)
 include Pretty_printer.S with type t := t
+
+(** [Tabular] is a signature for abstract data types that can be
+    tabulated using a [Tabulator]. *)
+module type Tabular = sig
+  type data
+
+  (** [to_table t] converts [t] into a tabular representation, or
+      returns an error trying. *)
+  val to_table : data -> t Or_error.t
+end
+
+(** [Tabular_extensions] contains extensions for [Tabular].  To
+   create one, use [Extend_tabular]. *)
+module type Tabular_extensions = sig
+  type data
+
+  (** [pp_as_table ?on_error f t] tries to convert [t] to a table and
+     pretty-print it on [f].  If the data can't be shown in table
+     format, [?on_error] (or, if missing, a default formatter) is
+     instead used to output the error to [f]. *)
+  val pp_as_table
+    :  ?on_error : (Format.formatter -> Error.t -> unit)
+    -> Format.formatter
+    -> data
+    -> unit
+  ;;
+end
+
+(** [Extend_tabular] makes a [Tabular_extensions] out of a [Tabular]. *)
+module Extend_tabular
+  : functor (T : Tabular) -> Tabular_extensions with type data := T.data
+;;
