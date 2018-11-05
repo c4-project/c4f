@@ -44,7 +44,8 @@ type herd_analysis =
 ;;
 
 type run_result =
-  { herd : herd_analysis
+  { herd       : herd_analysis
+  ; time_taken : Time.Span.t
   }
 [@@deriving sexp]
 ;;
@@ -176,10 +177,24 @@ let compose_alists
   )
 ;;
 
+let litmusify_single
+    (o : OutputCtx.t) (fs : Pathset.File.t) locations cspec =
+  (* The location symbols at the C level are each RHS of each
+     pair in locs. *)
+  let syms = List.map ~f:snd locations in
+  let (id, spec) = Compiler.Full_spec.With_id.to_tuple cspec in
+  let inp   = `File (Pathset.File.asm_path fs) in
+  let outp  = `File (Pathset.File.lita_path fs) in
+  log_stage "LITMUS" o (Pathset.File.basename fs) id;
+  Common.litmusify o inp outp syms spec
+;;
+
 let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog cspec fname =
   let base = Filename.chop_extension (Filename.basename fname) in
   let open Or_error.Let_syntax in
   Pathset.File.(
+    let start_time = Time.now () in
+
     (* NB: many of these stages depend on earlier stages' filesystem
        side-effects.  These dependencies aren't evident in the binding
        chain, so be careful when re-ordering. *)
@@ -188,17 +203,9 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog cspec fname =
       herd o herdprog cspec
         ~infile:(litc_path fs) ~outfile:(herdc_path fs)
     in
-    let%bind () = compile o fs cspec in
     let locs = locations_of_herd_result c_herd in
-    (* The location symbols at the C level are each RHS of each
-       pair in locs. *)
-    let syms = List.map ~f:snd locs in
-    let (id, spec) = Compiler.Full_spec.With_id.to_tuple cspec in
-    let inp   = `File (Pathset.File.asm_path fs) in
-    let outp  = `File (Pathset.File.lita_path fs) in
-    log_stage "LITMUS" o (Pathset.File.basename fs) id;
-    let%bind sym_redirects = Common.litmusify o inp outp syms spec in
-
+    let%bind () = compile o fs cspec in
+    let%bind sym_redirects = litmusify_single o fs locs cspec in
     (* syms' now contains the redirections from C-level symbols to
        asm/Litmus-level symbols.  To get the mapping between Herd
        locations, we need the composition of the two maps. *)
@@ -208,7 +215,14 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog cspec fname =
         ~infile:(lita_path fs) ~outfile:(herda_path fs)
     in
     let%map analysis = analyse c_herd a_herd locmap in
-    (base, { herd = analysis });
+
+    let end_time = Time.now () in
+
+    ( base
+    , { herd = analysis
+      ; time_taken = Time.diff end_time start_time
+      }
+    )
   )
 ;;
 
@@ -245,11 +259,74 @@ let report_spec_errors o = function
       es
 ;;
 
-let print_result (r : full_result) =
-  Format.open_box 0;
-  Sexp.pp_hum Format.std_formatter [%sexp (r : full_result)];
+let results_table_header =
+  Staged.stage
+    (List.map
+       [ "Compiler"
+       ; "File"
+       ; "Result"
+       ; "Time taken"
+       ]
+       ~f:(Fn.flip String.pp)
+    )
+;;
+
+module Mapper = Fold_map.List.On_monad (Or_error)
+
+let pp_herd_analysis f : herd_analysis -> unit = function
+  | `Errored `Assembly -> String.pp f "ERROR (asm)"
+  | `Errored `C        -> String.pp f "ERROR (C)"
+  | `Disabled          -> String.pp f "--disabled--"
+  | `Unknown           -> String.pp f "??"
+  | `Undef             -> String.pp f "UNDEFINED BEHAVIOUR (asm)"
+  | `OracleUndef       -> String.pp f "UNDEFINED BEHAVIOUR (C)"
+  | `Equal             -> String.pp f "C == asm"
+  | `Subset   _        -> String.pp f "C << asm"
+  | `Superset _        -> String.pp f "C >> asm"
+  | `NoOrder           -> String.pp f "C <> asm"
+;;
+
+let with_compiler_results tabulator compiler_id results =
+  let rows =
+    List.map results
+      ~f:(fun (file, result) ->
+          [ Fn.flip Spec.Id.pp compiler_id
+          ; Fn.flip String.pp file
+          ; Fn.flip pp_herd_analysis result.herd
+          ; Fn.flip Time.Span.pp result.time_taken
+          ])
+  in
+  Tabulator.with_rows rows tabulator
+;;
+
+let with_compiler_and_rules (print_rule, tabulator) (compiler_id, results) =
+  let open Or_error.Let_syntax in
+  let%bind t =
+    (* Don't print a - rule directly below a '=' line *)
+    if print_rule
+    then Tabulator.with_rule '-' tabulator
+    else return tabulator
+  in
+  let%map  t = with_compiler_results t compiler_id results in
+  (true, t)
+;;
+
+let pp_results_table f results =
+  let header = Staged.unstage results_table_header in
+  Tabulator.(
+    let open Or_error.Let_syntax in
+    let%bind t = make ~header () >>= with_rule '=' in
+    Mapper.foldM results ~init:(false, t) ~f:with_compiler_and_rules
+    >>| snd >>| pp f
+  )
+;;
+
+let pp_result f (r : full_result) =
+  Format.pp_open_vbox f 0;
+  let result = pp_results_table f r in
   Format.close_box ();
-  Format.print_newline ()
+  Format.print_newline ();
+  result
 ;;
 
 let run ~in_root ~out_root o cfg =
@@ -268,9 +345,8 @@ let run ~in_root ~out_root o cfg =
       ~f:(run_compiler o ~in_root ~out_root herdprog c_files)
       specs
   in
-  let%map result = Or_error.combine_errors results in
-  print_result result;
-  ()
+  let%bind result = Or_error.combine_errors results in
+  pp_result Format.std_formatter result
 ;;
 
 let command =
