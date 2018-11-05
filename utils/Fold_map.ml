@@ -238,3 +238,36 @@ module Singleton : S1 with type 'a t = 'a =
       let fold_map ~f ~init x = f init x
     end
   end)
+
+module Helpers (M : Monad.S) = struct
+  let proc_variant0 f init v =
+    M.(f init () >>| (fun (s, ()) -> (s, v.Base.Variant.constructor)))
+  ;;
+
+  let proc_variant1 f init v a =
+    M.(f init a >>| Tuple2.map_snd ~f:v.Base.Variant.constructor)
+  ;;
+
+  let proc_variant2 f init v a b =
+    let open M.Let_syntax in
+    let%map (init, (a', b')) = f init (a, b) in
+    (init, v.Base.Variant.constructor a' b')
+  ;;
+
+  let proc_variant3 f init v a b c =
+    let open M.Let_syntax in
+    let%map (init, (a', b', c')) = f init (a, b, c) in
+    (init, v.Base.Variant.constructor a' b' c')
+  ;;
+
+  let proc_field f state field _container original =
+    let open M.Let_syntax in
+    let%bind (acc,  container) = state in
+    let%map  (acc', nval) = f acc original in
+    (acc', Field.fset field container nval)
+  ;;
+
+  let fold_nop acc v = M.return (acc, v)
+end
+
+let chain mapper ~f init = mapper ~f ~init

@@ -29,7 +29,7 @@ open Core
  *)
 
 (** [C0] is a signature containing the base and element types of an
-   arity-0 container. *)
+    arity-0 container. *)
 module type C0 = sig
   (** [t] is the type of container to map over. *)
   type t
@@ -155,8 +155,8 @@ module type S0_monadic = sig
   val mapM : f : (elt -> elt M.t) -> t -> t M.t
 
   (** [mapiM ~f x] behaves as [mapM], but also supplies [f] with the
-     index of the element.  This index should match the actual
-     position of the element in the container [x]. *)
+      index of the element.  This index should match the actual
+      position of the element in the container [x]. *)
   val mapiM : f : (int -> elt -> elt M.t) -> t -> t M.t
 end
 
@@ -171,8 +171,8 @@ module type S1_monadic = sig
   val mapM : f : ('a -> 'b M.t) -> 'a t -> 'b t M.t
 
   (** [mapiM ~f x] behaves as [mapM], but also supplies [f] with the
-     index of the element.  This index should match the actual
-     position of the element in the container [x]. *)
+      index of the element.  This index should match the actual
+      position of the element in the container [x]. *)
   val mapiM : f : (int -> 'a -> 'b M.t) -> 'a t -> 'b t M.t
 end
 
@@ -182,7 +182,7 @@ module type S0 = sig
   include C0
 
   (** [On_monad] implements monadic folding and mapping operators for
-     a given monad [M]. *)
+      a given monad [M]. *)
   module On_monad
     : functor (MS : Monad.S)
       -> S0_monadic with type t := t
@@ -215,7 +215,7 @@ module type S1 = sig
   type 'a t
 
   (** [On_monad] implements monadic folding and mapping operators for
-     a given monad [M]. *)
+      a given monad [M]. *)
   module On_monad
     : functor (MS : Monad.S)
       -> S1_monadic with type 'a t := 'a t
@@ -244,7 +244,7 @@ module type S1 = sig
   ;;
 
   (** [To_S0 (Elt)] demotes this [S1] to an [S0] by fixing the element
-     type to that mentioned in [Elt]. *)
+      type to that mentioned in [Elt]. *)
   module To_S0
     : functor (Elt : Equal.S)
       -> S0 with type t := Elt.t t and type elt := Elt.t
@@ -278,6 +278,78 @@ module type Fold_map = sig
       -> S1 with type 'a t = 'a I.t
   ;;
 
+  (** [Helpers] contains utility functions for building monadic
+     [Fold_map]s.
+
+      Functions beginning [proc_variant] are useful for building
+     fold-map functions on top of Variantslib's [map] function.  The
+     function [proc_field] is useful for building fold-map functions
+     on top of Fieldslib's [fold] function. *)
+  module Helpers : functor (M : Monad.S) -> sig
+    (** [proc_variant0 f init variant] lifts a fold-map operation into
+       a fold-map operation over a nullary variant constructor
+       [variant], using the Variantslib folder. *)
+    val proc_variant0
+      :  ('acc -> unit -> ('acc * unit) M.t)
+      -> 'acc
+      -> 'a Base.Variant.t
+      -> ('acc * 'a) M.t
+    ;;
+
+    (** [proc_variant1 f init variant a] lifts a fold-map operation
+       [f] with initial accumulator [init] over a Variantslib unary
+       variant constructor [variant] with argument [a]. *)
+    val proc_variant1
+      :  ('acc -> 'a -> ('acc * 'a) M.t)
+      -> 'acc
+      -> ('a -> 'b) Base.Variant.t
+      -> 'a
+      -> ('acc * 'b) M.t
+    ;;
+
+    (** [proc_variant2 f init variant a b] lifts a fold-map operation
+       [f] with initial accumulator [init] over a Variantslib binary
+       variant constructor [variant] with arguments [a] and [b]. *)
+    val proc_variant2
+      :  ('acc -> ('a * 'b) -> ('acc * ('a * 'b)) M.t)
+      -> 'acc
+      -> ('a -> 'b -> 'c) Base.Variant.t
+      -> 'a
+      -> 'b
+      -> ('acc * 'c) M.t
+    ;;
+
+    (** [proc_variant3 f init variant a b c] lifts a fold-map
+       operation [f] with initial accumulator [init] over a
+       Variantslib ternary variant constructor [variant] with
+       arguments [a], [b], and [c]. *)
+    val proc_variant3
+      :  ('acc -> ('a * 'b * 'c) -> ('acc * ('a * 'b * 'c)) M.t)
+      -> 'acc
+      -> ('a -> 'b -> 'c -> 'd) Base.Variant.t
+      -> 'a
+      -> 'b
+      -> 'c
+      -> ('acc * 'd) M.t
+    ;;
+
+    (** [proc_field f state field container original] lifts a fold-map
+       operation [f] to a form comparible with Fieldslib's [fold]
+       function. *)
+    val proc_field
+      :  ('acc -> 'elt -> ('acc * 'elt) M.t)
+      -> ('acc * 't) M.t
+      -> ([> `Set_and_create], 't, 'elt) Field.t_with_perm
+      -> 't (** Unused, but needed for Fieldslib compatibility *)
+      -> 'elt
+      -> ('acc * 't) M.t
+    ;;
+
+    (** [fold_nop state item] is a function that has the right signature
+        to use in monadic fold-maps, but does nothing. *)
+    val fold_nop : 'b -> 'a -> ('b * 'a) M.t
+  end
+
   (** Implementations for common containers
 
       Many of these are re-exported in [MyContainers] alongside other
@@ -295,4 +367,13 @@ module type Fold_map = sig
       values.  It's useful for passing a single value to something
       that expects a fold-mappable container. *)
   module Singleton : S1 with type 'a t = 'a
+
+  (** [chain mapper ~f] lifts a fold-map of [f] on an inner container
+     to a fold-mapping function on an outer container. *)
+  val chain
+    :  (f:'f -> init:'i -> 'result)
+    -> f : 'f
+    -> 'i
+    -> 'result
+  ;;
 end
