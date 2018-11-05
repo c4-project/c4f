@@ -236,7 +236,7 @@ let run_compiler (o : OutputCtx.t) ~in_root ~out_root herdprog c_fnames cspec
 
   let%map results =
     c_fnames
-    |> List.sort ~compare:String.compare
+    |> List.sort ~compare:Core_extended.Extended_string.collate
     |> List.map ~f:(run_single o paths herdprog cspec)
     |> Or_error.combine_errors
   in
