@@ -322,39 +322,24 @@ let command =
   Command.basic
     ~summary:"runs automatic testing over a memalloy output directory"
     [%map_open
-      let spec_file =
-        flag "spec"
-          (optional_with_default
-             (Filename.concat Filename.current_dir_name "compiler.spec")
-             string)
-          ~doc: "PATH the compiler spec file to use"
-      and out_root =
+       let standard_args = Standard_args.get
+       and out_root =
         flag "output"
           (optional_with_default
              Filename.current_dir_name
              string)
           ~doc: "PATH the path under which output directories will be created"
-      and verbose =
-        flag "verbose"
-          no_arg
-          ~doc: "verbose mode"
-      and no_warnings =
-        flag "no-warnings"
-          no_arg
-          ~doc: "silence all warnings"
-      and local_only =
-        flag "local-only"
-          no_arg
-          ~doc: "skip all remote compilers"
-      and in_root =
-        anon ("RESULTS_PATH" %: string)
-      in
-      fun () ->
-        let warnings = not no_warnings in
-        let o = Output.make ~verbose ~warnings in
-        Result.Let_syntax.(
-          let%bind cfg = LangSupport.load_cfg ~local_only spec_file in
-          run o cfg ~in_root ~out_root
-        ) |> Output.print_error o
+       and local_only =
+         flag "local-only"
+           no_arg
+           ~doc: "skip all remote compilers"
+       and in_root =
+         anon ("RESULTS_PATH" %: string)
+       in
+       fun () ->
+         Common.lift_command standard_args
+           ~local_only
+           ~test_compilers:true
+           ~f:(run ~in_root ~out_root)
     ]
 ;;

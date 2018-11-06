@@ -47,7 +47,7 @@ let command =
        fun () ->
          Common.lift_command standard_args
            ~local_only:false
-           ~test_compilers:true
+           ~test_compilers:false
            ~f:(fun o cfg ->
                let cid = Spec.Id.of_string compiler_id in
                let passes = Sanitiser_pass.(
