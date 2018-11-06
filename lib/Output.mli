@@ -21,21 +21,33 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Utils
+(** Bundle of formatters used to output information in the middle of
+    act execution *)
 
+open Core
+
+(** [t] is the type of output contexts. *)
 type t =
-  { vf : Format.formatter
-  ; wf : Format.formatter
-  ; ef : Format.formatter
+  { vf : Format.formatter (* Verbose formatter *)
+  ; wf : Format.formatter (* Warning formatter *)
+  ; ef : Format.formatter (* Error formatter *)
   }
 
-let maybe_err_formatter on =
-  if on
-  then Format.err_formatter
-  else My_format.null_formatter ()
+(** [make] makes a [t] from various reporting flags. *)
+val make : verbose:bool -> warnings:bool -> t
 
-let make ~verbose ~warnings =
-  { vf = maybe_err_formatter verbose
-  ; wf = maybe_err_formatter warnings
-  ; ef = Format.err_formatter
-  }
+(** [log_stage o ~stage ~file compiler_id] outputs a brief
+    notice, onto [o]'s verbose formatter, that explains that the
+    stage named [stage] is happening on file [file] and compiler ID
+    [compiler_id]. *)
+val log_stage
+  :  t
+  -> stage:string
+  -> file:string
+  -> Spec.Id.t
+  -> unit
+;;
+
+(** [print_error o u] prints any top-level errors represented by [u]
+   to [o]'s error formatter. *)
+val print_error : t -> unit Or_error.t -> unit

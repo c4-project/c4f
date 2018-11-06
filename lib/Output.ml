@@ -23,24 +23,36 @@
    SOFTWARE. *)
 
 open Core
-open Lib
+open Utils
 
-let command =
-  let open Command.Let_syntax in
-  Command.basic
-    ~summary:"outputs information about the current compiler specs"
-    [%map_open
-      let standard_args = Standard_args.get in
-      fun () ->
-        Common.lift_command standard_args
-          ~local_only:false
-          ~test_compilers:false
-          ~f:(fun _o cfg ->
-              let specs = Config.M.compilers cfg in
-              let verbose = Standard_args.is_verbose standard_args in
-              Compiler.Full_spec.Set.pp_verbose verbose Format.std_formatter specs;
-              Format.print_newline ();
-              Result.ok_unit
-            )
-    ]
+type t =
+  { vf : Format.formatter
+  ; wf : Format.formatter
+  ; ef : Format.formatter
+  }
+
+let maybe_err_formatter on =
+  if on
+  then Format.err_formatter
+  else My_format.null_formatter ()
+;;
+
+let make ~verbose ~warnings =
+  { vf = maybe_err_formatter verbose
+  ; wf = maybe_err_formatter warnings
+  ; ef = Format.err_formatter
+  }
+;;
+
+let log_stage o ~stage ~file compiler_id =
+  Format.fprintf o.vf "@[%s[%a]@ %s@]@."
+    stage
+    Spec.Id.pp compiler_id
+    file
+;;
+
+let print_error o =
+  Result.iter_error
+    ~f:(Format.fprintf o.ef
+          "@[act encountered a top-level error:@.@[%a@]@]@." Error.pp)
 ;;

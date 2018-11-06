@@ -30,59 +30,49 @@ let command =
   Command.basic
     ~summary:"explains act's understanding of an assembly file"
     [%map_open
-     let spec_file =
-       flag "spec"
-            (optional_with_default
-               (Filename.concat Filename.current_dir_name "compiler.spec")
-               string)
-            ~doc: "PATH the compiler spec file to use"
-     and verbose =
-       flag "verbose"
-            no_arg
-            ~doc: "verbose mode"
-     and no_warnings =
-        flag "no-warnings"
-          no_arg
-          ~doc: "silence all warnings"
-     and sanitise =
-       flag "sanitise"
-         no_arg
-         ~doc: "if true, do basic sanitisation on the assembly first"
-     and compiler_id =
-       anon ("COMPILER_ID" %: string)
-     and outfile =
-       flag "output"
-            (optional string)
-            ~doc: "FILE the explanation output file (default: stdout)"
-     and infile =
-       anon (maybe ("FILE" %: string))
-     in
-     fun () ->
-       let warnings = not no_warnings in
-       let cid = Spec.Id.of_string compiler_id in
-       let o = OutputCtx.make ~verbose ~warnings in
-       let passes = Sanitiser_pass.(
-           if sanitise then explain else Set.empty
-         )
+       let standard_args = Standard_args.get
+       and sanitise =
+         flag "sanitise"
+           no_arg
+           ~doc: "if true, do basic sanitisation on the assembly first"
+       and compiler_id =
+         anon ("COMPILER_ID" %: string)
+       and outfile =
+         flag "output"
+           (optional string)
+           ~doc: "FILE the explanation output file (default: stdout)"
+       and infile =
+         anon (maybe ("FILE" %: string))
        in
-       Or_error.Let_syntax.(
-         let%bind cfg = LangSupport.load_cfg spec_file in
-         let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) cid in
-         let emits = Compiler.Full_spec.emits spec in
-         let%bind runner = LangSupport.get_runner ~emits in
-         let module Runner = (val runner) in
-         Io.(
-           let input =
-             { Asm_job.inp = In_source.of_option infile
-             ; outp = Out_sink.of_option outfile
-             ; passes
-             ; symbols = []
-             }
-           in
-           let%map out = Runner.explain input in
-           Asm_job.warn out o.wf
-         )
-       )
-       |> Common.print_error
-   ]
+       fun () ->
+         Common.lift_command standard_args
+           ~local_only:false
+           ~test_compilers:true
+           ~f:(fun o cfg ->
+               let cid = Spec.Id.of_string compiler_id in
+               let passes = Sanitiser_pass.(
+                   if sanitise then explain else Set.empty
+                 )
+               in
+               Or_error.Let_syntax.(
+                 let%bind spec =
+                   Compiler.Full_spec.Set.get (Config.M.compilers cfg) cid
+                 in
+                 let emits = Compiler.Full_spec.emits spec in
+                 let%bind runner = LangSupport.get_runner ~emits in
+                 let module Runner = (val runner) in
+                 Io.(
+                   let input =
+                     { Asm_job.inp = In_source.of_option infile
+                     ; outp = Out_sink.of_option outfile
+                     ; passes
+                     ; symbols = []
+                     }
+                   in
+                   let%map out = Runner.explain input in
+                   Asm_job.warn out o.Output.wf
+                 )
+               )
+             )
+     ]
 ;;

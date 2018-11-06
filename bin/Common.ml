@@ -24,7 +24,27 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lib
 
-let litmusify (o : OutputCtx.t) inp outp symbols spec =
+let lift_command
+    ?(local_only=false)
+    ?(test_compilers=false)
+    ~f
+    standard_args
+    =
+  let o =
+    Output.make
+      ~verbose:(Standard_args.is_verbose standard_args)
+      ~warnings:(Standard_args.are_warnings_enabled standard_args)
+  in
+  Or_error.(
+    LangSupport.load_cfg
+      ~local_only
+      ~test_compilers
+      (Standard_args.spec_file standard_args)
+    >>= f o
+  ) |> Output.print_error o
+;;
+
+let litmusify (o : Output.t) inp outp symbols spec =
   let open Result.Let_syntax in
   let emits = Compiler.Full_spec.emits spec in
   let%bind runner = LangSupport.get_runner ~emits in
@@ -42,9 +62,4 @@ let litmusify (o : OutputCtx.t) inp outp symbols spec =
   in
   Asm_job.warn output o.wf;
   Asm_job.symbol_map output
-;;
-
-let print_error =
-  Result.iter_error
-    ~f:(Format.eprintf "@[act encountered a top-level error:@.@[%a@]@]@." Error.pp)
 ;;

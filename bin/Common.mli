@@ -27,19 +27,27 @@ open Core
 open Lib
 open Utils
 
+(** [lift_command ?local_only ?test_compilers ~f standard_args] lifts
+   a command body [f], performing common book-keeping such as loading
+   and testing the configruation, creating an [Output.t], and printing
+   top-level errors. *)
+val lift_command
+  :  ?local_only:bool (* defaults to false *)
+  -> ?test_compilers:bool (* defaults to false *)
+  -> f:(Output.t -> Config.M.t -> unit Or_error.t)
+  -> Standard_args.t
+  -> unit
+;;
+
 (** [litmusify o inp outp symbols spec] is a thin wrapper around
     [Asm_job]'s litmusify mode that handles finding the right
     job runner, printing warnings, and supplying the maximal
     pass set. *)
 val litmusify
-  :  OutputCtx.t
-    -> Io.In_source.t
-    -> Io.Out_sink.t
-    -> string list
-    -> Compiler.Full_spec.t
-    -> (string, string) List.Assoc.t Or_error.t
+  :  Output.t
+  -> Io.In_source.t
+  -> Io.Out_sink.t
+  -> string list
+  -> Compiler.Full_spec.t
+  -> (string, string) List.Assoc.t Or_error.t
 ;;
-
-(** [print_error u] prints any top-level errors represented by [u] to
-   stderr. *)
-val print_error : unit Or_error.t -> unit

@@ -89,11 +89,9 @@ let command =
   Command.basic
     ~summary:"runs regression tests"
     [%map_open
-      let test_path =
-        anon ("TEST_PATH" %: string)
-      in
+      let test_path = anon ("TEST_PATH" %: string) in
        fun () ->
-         regress test_path
-         |> Common.print_error
+         let o = Output.make ~verbose:false ~warnings:true in
+         regress test_path |> Output.print_error o
     ]
 ;;

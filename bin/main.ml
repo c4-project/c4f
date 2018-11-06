@@ -28,7 +28,8 @@ open Core
 let command =
   Command.group
     ~summary:"Automagic Compiler Tormentor"
-    [ "explain"  , Explain.command
+    [ "compare"  , Compare.command
+    ; "explain"  , Explain.command
     ; "litmusify", Litmusify.command
     ; "test"     , Test.command
     ; "specs"    , Specs.command

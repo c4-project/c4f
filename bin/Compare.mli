@@ -22,25 +22,9 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
-open Lib
+(** The 'compare' command *)
 
-let command =
-  let open Command.Let_syntax in
-  Command.basic
-    ~summary:"outputs information about the current compiler specs"
-    [%map_open
-      let standard_args = Standard_args.get in
-      fun () ->
-        Common.lift_command standard_args
-          ~local_only:false
-          ~test_compilers:false
-          ~f:(fun _o cfg ->
-              let specs = Config.M.compilers cfg in
-              let verbose = Standard_args.is_verbose standard_args in
-              Compiler.Full_spec.Set.pp_verbose verbose Format.std_formatter specs;
-              Format.print_newline ();
-              Result.ok_unit
-            )
-    ]
-;;
+open Core
+
+(** [command] is the top-level 'compare' command. *)
+val command : Command.t

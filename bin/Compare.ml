@@ -23,24 +23,19 @@
    SOFTWARE. *)
 
 open Core
-open Lib
 
 let command =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"outputs information about the current compiler specs"
+    ~summary:"does nothing yet"
     [%map_open
       let standard_args = Standard_args.get in
       fun () ->
         Common.lift_command standard_args
           ~local_only:false
-          ~test_compilers:false
-          ~f:(fun _o cfg ->
-              let specs = Config.M.compilers cfg in
-              let verbose = Standard_args.is_verbose standard_args in
-              Compiler.Full_spec.Set.pp_verbose verbose Format.std_formatter specs;
-              Format.print_newline ();
-              Result.ok_unit
+          ~test_compilers:true
+          ~f:(fun _o _cfg ->
+              Or_error.unimplemented "Coming soon"
             )
     ]
 ;;

@@ -22,25 +22,43 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
-open Lib
+(** [Standard_args] contains argument specifications common to all act
+   sub-commands. *)
 
-let command =
+open Core
+
+type t =
+  { verbose     : bool
+  ; no_warnings : bool
+  ; spec_file   : string
+  }
+;;
+
+let is_verbose t = t.verbose
+let are_warnings_enabled t = not t.no_warnings
+let spec_file t = t.spec_file
+
+let default_spec_file = "compiler.spec"
+
+let get =
   let open Command.Let_syntax in
-  Command.basic
-    ~summary:"outputs information about the current compiler specs"
-    [%map_open
-      let standard_args = Standard_args.get in
-      fun () ->
-        Common.lift_command standard_args
-          ~local_only:false
-          ~test_compilers:false
-          ~f:(fun _o cfg ->
-              let specs = Config.M.compilers cfg in
-              let verbose = Standard_args.is_verbose standard_args in
-              Compiler.Full_spec.Set.pp_verbose verbose Format.std_formatter specs;
-              Format.print_newline ();
-              Result.ok_unit
-            )
-    ]
+  [%map_open
+    let verbose =
+      flag "verbose"
+        no_arg
+        ~doc: "print more information about the compilers"
+    and no_warnings =
+      flag "no-warnings"
+        no_arg
+        ~doc: "if given, suppresses all warnings"
+    and spec_file =
+      flag "spec"
+        (optional_with_default default_spec_file string)
+        ~doc: "PATH the compiler spec file to use"
+    in
+    { verbose
+    ; no_warnings
+    ; spec_file
+    }
+  ]
 ;;

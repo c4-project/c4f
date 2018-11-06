@@ -32,7 +32,7 @@ open Lib
 val run
   :  in_root:string
   -> out_root:string
-  -> OutputCtx.t
+  -> Output.t
   -> Config.M.t
   -> unit Or_error.t
 

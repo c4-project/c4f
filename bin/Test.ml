@@ -33,12 +33,6 @@ type herd_run_result =
   ]
 ;;
 
-let log_stage stage (o : OutputCtx.t) name cid =
-  Format.fprintf o.vf "@[%s[%a]@ %s@]@."
-    stage
-    Spec.Id.pp cid
-    name
-;;
 
 let compile o fs cspec =
   let open Or_error.Let_syntax in
@@ -47,14 +41,14 @@ let compile o fs cspec =
   let%bind c = LangSupport.compiler_from_spec cspec in
   let cid = Compiler.Full_spec.With_id.id cspec in
   let module C = (val c) in
-  log_stage "CC" o (Pathset.File.basename fs) cid;
+  Output.log_stage o ~stage:"CC" ~file:(Pathset.File.basename fs) cid;
   Or_error.tag ~tag:"While compiling to assembly"
     (C.compile
        ~infile:(Pathset.File.c_path fs)
        ~outfile:(Pathset.File.asm_path fs))
 ;;
 
-let run_herd (o : OutputCtx.t) herd arch ~input_path ~output_path =
+let run_herd (o : Output.t) herd arch ~input_path ~output_path =
   let result =
     Or_error.tag ~tag:"While running herd"
       (Herd.run_and_load_results herd arch ~input_path ~output_path)
@@ -77,7 +71,7 @@ let try_run_herd o maybe_herd c_or_asm ~input_path ~output_path cspec =
   match should_run_herd, maybe_herd with
   | false, _ | true, None -> `Disabled
   | true, Some herd -> begin
-      log_stage "HERD" o input_path id;
+      Output.log_stage o ~stage:"HERD" ~file:input_path id;
       let arch = match c_or_asm with
         | `C -> Herd.C
         | `Assembly -> Assembly (Compiler.Full_spec.emits spec)
@@ -156,14 +150,14 @@ let compose_alists
 ;;
 
 let litmusify_single
-    (o : OutputCtx.t) (fs : Pathset.File.t) locations cspec =
+    (o : Output.t) (fs : Pathset.File.t) locations cspec =
   (* The location symbols at the C level are each RHS of each
      pair in locs. *)
   let syms = List.map ~f:snd locations in
   let (id, spec) = Compiler.Full_spec.With_id.to_tuple cspec in
   let inp   = `File (Pathset.File.asm_path fs) in
   let outp  = `File (Pathset.File.lita_path fs) in
-  log_stage "LITMUS" o (Pathset.File.basename fs) id;
+  Output.log_stage o ~stage:"LITMUS" ~file:(Pathset.File.basename fs) id;
   Common.litmusify o inp outp syms spec
 ;;
 
@@ -175,7 +169,7 @@ let map_location_renamings locs sym_redirects =
   compose_alists locs sym_redirects String.equal
 ;;
 
-let run_single (o : OutputCtx.t) (ps: Pathset.t) herd cspec fname =
+let run_single (o : Output.t) (ps: Pathset.t) herd cspec fname =
   let base = Filename.chop_extension (Filename.basename fname) in
   let open Or_error.Let_syntax in
   Pathset.File.(
@@ -210,7 +204,7 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) herd cspec fname =
 ;;
 
 let run_compiler
-    (o : OutputCtx.t) ~in_root ~out_root herdprog c_fnames cspec =
+    (o : Output.t) ~in_root ~out_root herdprog c_fnames cspec =
   let open Or_error.Let_syntax in
   let id = Compiler.Full_spec.With_id.id cspec in
   let%bind paths = Pathset.make_and_mkdirs id ~in_root ~out_root in
@@ -263,7 +257,7 @@ let check_c_files_exist c_path c_files =
 let report_spec_errors o = function
   | [] -> ()
   | es ->
-    Format.fprintf o.OutputCtx.wf
+    Format.fprintf o.Output.wf
       "@[<v>Some of the specified compilers don't seem to be valid:@,@,%a@]@."
       (Format.pp_print_list Error.pp ~pp_sep:Format.pp_print_cut)
       es
@@ -357,10 +351,10 @@ let command =
       in
       fun () ->
         let warnings = not no_warnings in
-        let o = OutputCtx.make ~verbose ~warnings in
+        let o = Output.make ~verbose ~warnings in
         Result.Let_syntax.(
           let%bind cfg = LangSupport.load_cfg ~local_only spec_file in
           run o cfg ~in_root ~out_root
-        ) |> Common.print_error
+        ) |> Output.print_error o
     ]
 ;;

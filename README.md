@@ -190,7 +190,7 @@ $ act test path/to/memalloy/results
 ```
 
 This asks `act` to run the compilers listed in `./compiler.spec` on
-the witnesses in `path/to/memalloy/run/C`, then convert them into
+the witnesses in `path/to/memalloy/results/C`, then convert them into
 litmus tests in the same way that `litmusify` would.
 
 By default, `act` will dump its results in directories in the current
