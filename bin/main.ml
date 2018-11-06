@@ -30,7 +30,7 @@ let command =
     ~summary:"Automagic Compiler Tormentor"
     [ "explain"  , Explain.command
     ; "litmusify", Litmusify.command
-    ; "memalloy" , Memalloy.command
+    ; "test"     , Test.command
     ; "specs"    , Specs.command
     ; "regress"  , Regress.command
     ]
