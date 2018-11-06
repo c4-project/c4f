@@ -161,7 +161,7 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
   let pp_programs f t = pp_programs_inner f t.programs
 
   let pp_location_stanza f init =
-    Format.fprintf f "@[<h>locations@ [@[%a@]]@]@,"
+    Format.fprintf f "@[<h>locations@ [@[%a@]]@]"
       ( Format.pp_print_list
           ~pp_sep:(fun f () -> Format.fprintf f ";@ ")
           String.pp
