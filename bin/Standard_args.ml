@@ -62,3 +62,13 @@ let get =
     }
   ]
 ;;
+
+module Other = struct
+  open Command.Param
+
+  let local_only =
+    flag "local-only"
+      no_arg
+      ~doc: "if given, skip all compilers on remote machines"
+  ;;
+end

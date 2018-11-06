@@ -329,10 +329,7 @@ let command =
              Filename.current_dir_name
              string)
           ~doc: "PATH the path under which output directories will be created"
-       and local_only =
-         flag "local-only"
-           no_arg
-           ~doc: "skip all remote compilers"
+       and local_only = Standard_args.Other.local_only
        and in_root =
          anon ("RESULTS_PATH" %: string)
        in

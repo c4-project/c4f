@@ -44,3 +44,12 @@ val spec_file : t -> string
 (** [get] is a [Command.Param.t] that describes how to get the standard
     arguments at the command line. *)
 val get : t Command.Param.t
+
+(** [Other] collects parameter specifications for arguments that aren't
+    as common as the standard ones, but are still used in more than
+    one sub-command. *)
+module Other : sig
+  (** [local_only] defines a parameter that can be used to make the
+      configuration loader disable compilers on non-local machines. *)
+  val local_only : bool Command.Param.t
+end

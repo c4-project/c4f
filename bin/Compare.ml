@@ -29,10 +29,12 @@ let command =
   Command.basic
     ~summary:"does nothing yet"
     [%map_open
-      let standard_args = Standard_args.get in
+      let standard_args = Standard_args.get
+      and local_only = Standard_args.Other.local_only
+      in
       fun () ->
         Common.lift_command standard_args
-          ~local_only:false
+          ~local_only
           ~test_compilers:true
           ~f:(fun _o _cfg ->
               Or_error.unimplemented "Coming soon"
