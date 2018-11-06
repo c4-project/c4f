@@ -49,17 +49,19 @@ let command =
            ~local_only:false
            ~test_compilers:false
            ~f:(fun o cfg ->
-               let cid = Spec.Id.of_string compiler_id in
+               let id = Spec.Id.of_string compiler_id in
                let passes = Sanitiser_pass.(
                    if sanitise then explain else Set.empty
                  )
                in
                Or_error.Let_syntax.(
                  let%bind spec =
-                   Compiler.Full_spec.Set.get (Config.M.compilers cfg) cid
+                   Compiler.Full_spec.Set.get (Config.M.compilers cfg) id
                  in
-                 let emits = Compiler.Full_spec.emits spec in
-                 let%bind runner = LangSupport.get_runner ~emits in
+                 let cspec =
+                   Compiler.Full_spec.With_id.create ~id ~spec
+                 in
+                 let%bind runner = LangSupport.asm_runner_from_spec cspec in
                  let module Runner = (val runner) in
                  Io.(
                    let input =

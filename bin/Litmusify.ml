@@ -61,9 +61,10 @@ let command =
           ~local_only:false
           ~test_compilers:false
           ~f:(fun o cfg ->
-              let cid = Spec.Id.of_string compiler_id in
+              let id = Spec.Id.of_string compiler_id in
               Result.Let_syntax.(
-                let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) cid in
+                let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) id in
+                let cspec = Compiler.Full_spec.With_id.create ~id ~spec in
                 Io.(
                   let source = In_source.of_option infile in
                   let sink = Out_sink.of_option outfile in
@@ -71,10 +72,10 @@ let command =
                   then
                     let%bind herd = make_herd cfg in
                     let tmpname = Filename.temp_file "act" "litmus" in
-                    let%bind _ = Common.litmusify o source (`File tmpname) [] spec in
+                    let%bind _ = Common.litmusify o source (`File tmpname) [] cspec in
                     let arch = Herd.Assembly (Compiler.Full_spec.emits spec) in
                     Herd.run herd arch ~path:tmpname ~sink
-                  else Or_error.ignore (Common.litmusify o source sink [] spec)
+                  else Or_error.ignore (Common.litmusify o source sink [] cspec)
                 )
               )
             )

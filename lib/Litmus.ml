@@ -34,6 +34,7 @@ module type S = sig
     }
 
   include Pretty_printer.S with type t := t
+  val pp_programs : Format.formatter -> t -> unit
 
   val make
     :  name:string
@@ -149,13 +150,15 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
     include Tabulator.Extend_tabular (M)
   end
 
-  let pp_programs =
+  let pp_programs_inner =
     Program_tabulator.pp_as_table
       ~on_error:(fun f e ->
           Format.fprintf f
             "@[<@ error printing table:@ %a@ >@]"
             Error.pp e)
   ;;
+
+  let pp_programs f t = pp_programs_inner f t.programs
 
   let pp_location_stanza f init =
     Format.fprintf f "@[<h>locations@ [@[%a@]]@]@,"
@@ -169,7 +172,7 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
     pp_init f (litmus.init);
     Format.pp_print_cut f ();
     Format.pp_print_cut f ();
-    pp_programs f (litmus.programs);
+    pp_programs_inner f (litmus.programs);
     Format.pp_print_cut f ();
     Format.pp_print_cut f ();
     (* This just repeats information already in the initialiser,

@@ -24,6 +24,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lib
 
+let compile_with_compiler
+    (c : (module Compiler.S)) o ~name ~infile ~outfile compiler_id =
+  let open Or_error.Let_syntax in
+  let module C = (val c) in
+  Output.log_stage o ~stage:"CC" ~file:name compiler_id;
+
+  let start_time = Time.now () in
+  let%map () =
+    Or_error.tag ~tag:"While compiling to assembly"
+      (C.compile ~infile ~outfile)
+  in
+  let end_time = Time.now() in
+
+  Time.diff end_time start_time
+;;
+
 let lift_command
     ?(local_only=false)
     ?(test_compilers=false)
@@ -44,10 +60,9 @@ let lift_command
   ) |> Output.print_error o
 ;;
 
-let litmusify (o : Output.t) inp outp symbols spec =
+let litmusify ?programs_only (o : Output.t) inp outp symbols spec =
   let open Result.Let_syntax in
-  let emits = Compiler.Full_spec.emits spec in
-  let%bind runner = LangSupport.get_runner ~emits in
+  let%bind runner = LangSupport.asm_runner_from_spec spec in
   let module Runner = (val runner) in
   let input =
     { Asm_job.inp
@@ -58,7 +73,7 @@ let litmusify (o : Output.t) inp outp symbols spec =
   in
   let%map output =
     Or_error.tag ~tag:"While translating assembly to litmus"
-      (Runner.litmusify input)
+      (Runner.litmusify ?programs_only input)
   in
   Asm_job.warn output o.wf;
   Asm_job.symbol_map output

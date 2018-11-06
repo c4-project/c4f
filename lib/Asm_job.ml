@@ -62,7 +62,11 @@ module type Runner_deps = sig
 end
 
 module type Runner = sig
-  val litmusify : t -> output Or_error.t
+  val litmusify
+    :  ?programs_only:bool
+    -> t
+    -> output Or_error.t
+  ;;
   val explain : t -> output Or_error.t
 end
 
@@ -121,12 +125,13 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let output_litmus
-    (name    : string)
-    (passes  : Sanitiser_pass.Set.t)
+    (programs_only : bool)
+    (name : string)
+    (passes : Sanitiser_pass.Set.t)
     (symbols : LS.Symbol.t list)
     (program : LS.Statement.t list)
-    (_osrc   : Io.Out_sink.t)
-    (outp    : Out_channel.t) =
+    (_osrc : Io.Out_sink.t)
+    (outp : Out_channel.t) =
     let open Or_error.Let_syntax in
     let%bind o = MS.sanitise ~passes ~symbols program in
     let programs = MS.Output.result o in
@@ -139,8 +144,9 @@ module Make_runner (B : Runner_deps) : Runner = struct
         )
     in
     let f = Format.formatter_of_out_channel outp in
-    L.pp f lit;
-    Format.pp_print_flush f ();
+    let pp = if programs_only then L.pp_programs else L.pp in
+    pp f lit;
+    Format.pp_print_newline f ();
     make_output name (MS.Output.redirects o) warnings
   ;;
 
@@ -182,6 +188,8 @@ module Make_runner (B : Runner_deps) : Runner = struct
       ~f:(f name t.passes symbols (B.statements asm))
   ;;
 
-  let litmusify = run ~f:output_litmus
+  let litmusify ?(programs_only=false) =
+    run ~f:(output_litmus programs_only)
+  ;;
   let explain = run ~f:output_explanation
 end

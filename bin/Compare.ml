@@ -23,6 +23,51 @@
    SOFTWARE. *)
 
 open Core
+open Lib
+
+let compile o spec ~c_file =
+  let open Or_error.Let_syntax in
+  let infile = c_file in
+  let outfile = Filename.temp_file "act" "s" in
+  let%bind c = LangSupport.compiler_from_spec spec in
+  let%map _ =
+    Common.compile_with_compiler c o (Compiler.Full_spec.With_id.id spec)
+      ~name:(Filename.basename infile)
+      ~infile
+      ~outfile in
+  outfile
+;;
+
+let litmusify o spec ~asm_file =
+  Common.litmusify o
+    ~programs_only:true
+    (`File asm_file)
+    `Stdout
+    []
+    spec
+;;
+
+let run_spec_on_file o spec ~c_file =
+  Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@."
+    Spec.Id.pp (Compiler.Full_spec.With_id.id spec);
+  let open Or_error.Let_syntax in
+  let%bind asm_file = compile o spec ~c_file in
+  let%map  _        = litmusify o spec ~asm_file in
+  Format.printf "@[<h>```@]@."
+;;
+
+let run_all_specs_on_file o specs ~c_file =
+  Format.printf "@[<h>#@ %s@]@." c_file;
+  Or_error.combine_errors_unit
+    (Compiler.Full_spec.Set.map specs
+       ~f:(run_spec_on_file o ~c_file)
+    )
+;;
+
+let run o cfg ~c_file =
+  let specs = Config.M.compilers cfg in
+  run_all_specs_on_file o specs ~c_file
+;;
 
 let command =
   let open Command.Let_syntax in
@@ -31,13 +76,13 @@ let command =
     [%map_open
       let standard_args = Standard_args.get
       and local_only = Standard_args.Other.local_only
+      and c_file =
+         anon ("C_FILE" %: string)
       in
       fun () ->
         Common.lift_command standard_args
           ~local_only
           ~test_compilers:true
-          ~f:(fun _o _cfg ->
-              Or_error.unimplemented "Coming soon"
-            )
+          ~f:(run ~c_file)
     ]
 ;;

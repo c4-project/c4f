@@ -27,6 +27,21 @@ open Core
 open Lib
 open Utils
 
+(** [compile_with_compiler c o ~name ~infile ~outfile compiler_id]
+    compiles [infile] (with short name [name]) to [outfile], using
+    compiler module [c].  In addition, it does some book-keeping
+    and logging, including stage-logging with [compiler_id], and
+    recording and returning the duration spent in the compiler. *)
+val compile_with_compiler
+  :  (module Compiler.S)
+  -> Output.t
+  -> name:string
+  -> infile:string
+  -> outfile:string
+  -> Spec.Id.t
+  -> Time.Span.t Or_error.t
+;;
+
 (** [lift_command ?local_only ?test_compilers ~f standard_args] lifts
    a command body [f], performing common book-keeping such as loading
    and testing the configruation, creating an [Output.t], and printing
@@ -39,15 +54,16 @@ val lift_command
   -> unit
 ;;
 
-(** [litmusify o inp outp symbols spec] is a thin wrapper around
-    [Asm_job]'s litmusify mode that handles finding the right
-    job runner, printing warnings, and supplying the maximal
-    pass set. *)
+(** [litmusify ?programs_only o inp outp symbols spec] is a thin
+   wrapper around [Asm_job]'s litmusify mode that handles finding the
+   right job runner, printing warnings, and supplying the maximal pass
+   set. *)
 val litmusify
-  :  Output.t
+  :  ?programs_only:bool
+  -> Output.t
   -> Io.In_source.t
   -> Io.Out_sink.t
   -> string list
-  -> Compiler.Full_spec.t
+  -> Compiler.Full_spec.With_id.t
   -> (string, string) List.Assoc.t Or_error.t
 ;;

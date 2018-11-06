@@ -41,9 +41,8 @@ module type S = sig
 
   include Pretty_printer.S with type t := t
 
-  (*
-   * Construction
-   *)
+  (** [pp_programs f t] pretty-prints [t]'s program (only) to [f]. *)
+  val pp_programs : Format.formatter -> t -> unit
 
   (** [make] tries to build a [t] from a name [name], initialiser
      [init], and program list [programs].  It returns a result,

@@ -56,11 +56,14 @@ module File : sig
   (** [herd f] gets the Herd result for file [f]. *)
   val herd : t -> Herd.t
 
-  (** [create ~herd ~time_taken] creates a file analysis
-      given Herd analysis [herd] and time taken [time_taken]. *)
+  (** [create ~herd ~time_taken ~time_taken_in_cc] creates a file
+     analysis given Herd analysis [herd], total time taken
+      [time_taken], and time taken in the C compiler
+      [time_taken_in_cc].  *)
   val create
-    :  herd       : Herd.t
-    -> time_taken : Time.Span.t
+    :  herd:Herd.t
+    -> time_taken:Time.Span.t
+    -> time_taken_in_cc:Time.Span.t
     -> t
 end
 

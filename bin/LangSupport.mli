@@ -32,25 +32,26 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lib
 
-(*
- * Assembly languages
- *)
+(** [asm_runner_from_spec spec] generates an assembly job runner from
+   [spec]. *)
+val asm_runner_from_spec
+  :  Compiler.Full_spec.With_id.t
+  -> (module Asm_job.Runner) Or_error.t
+;;
 
-(** [get_runner ~emits] tries to get a [Asm_job.Runner] for the
-   given emits clause. *)
-val get_runner
-  :  emits:string list
-  -> (module Lib.Asm_job.Runner) Or_error.t
+(** [asm_runner_from_emits emits] generates an assembly job runner from
+   an emits clause [emits]. *)
+val asm_runner_from_emits
+  :  string list
+  -> (module Asm_job.Runner) Or_error.t
+;;
 
-(*
- * Compilers
- *)
-
-(** [compiler_from_spec cid spec] generates a compiler module from
-   [cid] and [spec]. *)
+(** [compiler_from_spec spec] generates a compiler module from
+   [spec]. *)
 val compiler_from_spec
   :  Compiler.Full_spec.With_id.t
   -> (module Compiler.S) Or_error.t
+;;
 
 (** [load_and_test_cfg ?local_only path] loads the compiler config
    file at [~path], and tests all machines and compilers therein.

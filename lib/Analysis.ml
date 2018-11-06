@@ -57,8 +57,9 @@ end
 
 module File = struct
   type t =
-    { herd       : Herd.t
-    ; time_taken : Time.Span.t
+    { herd             : Herd.t
+    ; time_taken       : Time.Span.t
+    ; time_taken_in_cc : Time.Span.t
     } [@@deriving sexp_of, fields]
 
   let create = Fields.create
@@ -130,19 +131,27 @@ module M = struct
       else Tabulator.with_rule machine_rule tabulator
   ;;
 
+  let file_to_row mid cid file analysis =
+    [ Fn.flip Spec.Id.pp mid
+    ; Fn.flip Spec.Id.pp cid
+    ; Fn.flip String.pp file
+    ] @
+    (* We use Fieldslib here, mainly, to raise compilation errors
+       if the fields in [analysis] change and we don't add them
+       (or ignore them) here. *)
+    File.Fields.Direct.to_list analysis
+      ~herd:(fun _field _file h f -> Herd.pp f h)
+      ~time_taken:(fun _field _file t f -> Time.Span.pp f t)
+      ~time_taken_in_cc:(fun _field _file t f -> Time.Span.pp f t)
+  ;;
+
   let with_file
       (last_mid, last_cid, tabulator)
       (mid, cid, file, analysis) =
     let open Or_error in
     return tabulator
     >>= maybe_with_rule last_mid mid last_cid cid
-    >>= Tabulator.with_row
-      [ Fn.flip Spec.Id.pp mid
-      ; Fn.flip Spec.Id.pp cid
-      ; Fn.flip String.pp file
-      ; Fn.flip Herd.pp (File.herd analysis)
-      ; Fn.flip Time.Span.pp (File.time_taken analysis)
-      ]
+    >>= Tabulator.with_row (file_to_row mid cid file analysis)
     >>| (fun t' -> Some mid, Some cid, t')
   ;;
 
@@ -154,6 +163,7 @@ module M = struct
          ; "File"
          ; "Result"
          ; "Time taken"
+         ; "Time compiling"
          ]
          ~f:(Fn.flip String.pp)
       )

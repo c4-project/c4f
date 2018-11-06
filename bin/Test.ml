@@ -33,21 +33,6 @@ type herd_run_result =
   ]
 ;;
 
-
-let compile o fs cspec =
-  let open Or_error.Let_syntax in
-  (* TODO(@MattWindsor91): inefficiently remaking the compiler module
-     every time. *)
-  let%bind c = LangSupport.compiler_from_spec cspec in
-  let cid = Compiler.Full_spec.With_id.id cspec in
-  let module C = (val c) in
-  Output.log_stage o ~stage:"CC" ~file:(Pathset.File.basename fs) cid;
-  Or_error.tag ~tag:"While compiling to assembly"
-    (C.compile
-       ~infile:(Pathset.File.c_path fs)
-       ~outfile:(Pathset.File.asm_path fs))
-;;
-
 let run_herd (o : Output.t) herd arch ~input_path ~output_path =
   let result =
     Or_error.tag ~tag:"While running herd"
@@ -154,11 +139,11 @@ let litmusify_single
   (* The location symbols at the C level are each RHS of each
      pair in locs. *)
   let syms = List.map ~f:snd locations in
-  let (id, spec) = Compiler.Full_spec.With_id.to_tuple cspec in
-  let inp   = `File (Pathset.File.asm_path fs) in
-  let outp  = `File (Pathset.File.lita_path fs) in
+  let id   = Compiler.Full_spec.With_id.id cspec in
+  let inp  = `File (Pathset.File.asm_path fs) in
+  let outp = `File (Pathset.File.lita_path fs) in
   Output.log_stage o ~stage:"LITMUS" ~file:(Pathset.File.basename fs) id;
-  Common.litmusify o inp outp syms spec
+  Common.litmusify o inp outp syms cspec
 ;;
 
 (** [map_location_renamings locs sym_redirects] works out the
@@ -169,7 +154,24 @@ let map_location_renamings locs sym_redirects =
   compose_alists locs sym_redirects String.equal
 ;;
 
-let run_single (o : Output.t) (ps: Pathset.t) herd cspec fname =
+let compile_from_pathset_file
+  (c  : (module Compiler.S))
+  (o  : Output.t)
+  (fs : Pathset.File.t)
+  (spec : Compiler.Full_spec.With_id.t) =
+  Common.compile_with_compiler c o (Compiler.Full_spec.With_id.id spec)
+    ~name:(Pathset.File.basename fs)
+    ~infile:(Pathset.File.c_path fs)
+    ~outfile:(Pathset.File.asm_path fs)
+;;
+
+let run_single
+    (c : (module Compiler.S))
+    (o : Output.t)
+    (ps : Pathset.t)
+    herd
+    spec
+    fname =
   let base = Filename.chop_extension (Filename.basename fname) in
   let open Or_error.Let_syntax in
   Pathset.File.(
@@ -180,15 +182,15 @@ let run_single (o : Output.t) (ps: Pathset.t) herd cspec fname =
        chain, so be careful when re-ordering. *)
     let fs = make ps base in
     let c_herd =
-      try_run_herd o herd `C cspec
+      try_run_herd o herd `C spec
         ~input_path:(litc_path fs) ~output_path:(herdc_path fs)
     in
     let locs = locations_of_herd_result c_herd in
-    let%bind () = compile o fs cspec in
-    let%bind sym_redirects = litmusify_single o fs locs cspec in
+    let%bind time_taken_in_cc = compile_from_pathset_file c o fs spec in
+    let%bind sym_redirects = litmusify_single o fs locs spec in
     let loc_map = map_location_renamings locs sym_redirects in
     let a_herd =
-      try_run_herd o herd `Assembly cspec
+      try_run_herd o herd `Assembly spec
         ~input_path:(lita_path fs) ~output_path:(herda_path fs)
     in
     let%map analysis = analyse c_herd a_herd loc_map in
@@ -199,6 +201,7 @@ let run_single (o : Output.t) (ps: Pathset.t) herd cspec fname =
     , Analysis.File.create
         ~herd:analysis
         ~time_taken:(Time.diff end_time start_time)
+        ~time_taken_in_cc
     )
   )
 ;;
@@ -207,6 +210,7 @@ let run_compiler
     (o : Output.t) ~in_root ~out_root herdprog c_fnames cspec =
   let open Or_error.Let_syntax in
   let id = Compiler.Full_spec.With_id.id cspec in
+  let%bind c = LangSupport.compiler_from_spec cspec in
   let%bind paths = Pathset.make_and_mkdirs id ~in_root ~out_root in
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();
@@ -215,7 +219,7 @@ let run_compiler
   let%map results_alist =
     c_fnames
     |> List.sort ~compare:Core_extended.Extended_string.collate
-    |> List.map ~f:(run_single o paths herdprog cspec)
+    |> List.map ~f:(run_single c o paths herdprog cspec)
     |> Or_error.combine_errors
   in
   let end_time = Time.now () in

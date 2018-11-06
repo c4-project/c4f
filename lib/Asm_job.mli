@@ -55,8 +55,16 @@ val warn : output -> Format.formatter -> unit
 
 (** [Runner] is the signature of job runners. *)
 module type Runner = sig
-  (** [litmusify] runs a litmusify job. *)
-  val litmusify : t -> output Or_error.t
+  (** [litmusify ?programs_only t] runs a litmusify job using [t].
+
+      If [programs_only] is present and true, the runner will only
+     output the program table---not the rest of the Litmus file.  This
+     is intended for quick comparisons and tests. *)
+  val litmusify
+    :  ?programs_only:bool
+    -> t
+    -> output Or_error.t
+  ;;
 
   (** [explain] runs an explain job. *)
   val explain : t -> output Or_error.t

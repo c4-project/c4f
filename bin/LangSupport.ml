@@ -59,7 +59,7 @@ let lang_procs =
   [ "x86", get_runner_x86 ]
 ;;
 
-let get_runner ~emits =
+let asm_runner_from_emits emits =
   let open Or_error.Let_syntax in
   let%bind lang =
     List.hd emits
@@ -96,6 +96,14 @@ let compiler_module_from_spec (cspec : Compiler.Full_spec.With_id.t) =
   in
   List.Assoc.find ~equal:String.Caseless.equal style_modules style
   |> Result.of_option ~error:(Error.createf "Unknown compiler style: %s" style)
+;;
+
+let asm_runner_from_spec (cspec : Compiler.Full_spec.With_id.t) =
+  let emits =
+    (Compiler.Full_spec.emits
+       (Compiler.Full_spec.With_id.spec cspec))
+  in
+  asm_runner_from_emits emits
 ;;
 
 let compiler_from_spec (cspec : Compiler.Full_spec.With_id.t) =
