@@ -37,16 +37,103 @@ let make_herd cfg =
   Herd.create ~config:herd_cfg
 ;;
 
+let temp_file = Filename.temp_file "act"
+
+let asm_file is_c maybe_infile =
+  if is_c then Some (temp_file "s") else maybe_infile
+;;
+
+let lit_file use_herd maybe_outfile =
+  if use_herd then Some (temp_file "litmus") else maybe_outfile
+;;
+
+let run_compiler o cspec c_file asm_file =
+  let open Result.Let_syntax in
+  let%bind infile =
+    Result.of_option c_file
+      ~error:(Error.of_string "Can't read in C from stdin")
+  in
+  let%bind outfile =
+    Result.of_option asm_file
+      ~error:(Error.of_string "Can't output compiler result to stdout")
+  in
+  let name = Filename.basename infile in
+  let%bind c = LangSupport.compiler_from_spec cspec in
+  let%map _ =
+    Common.compile_with_compiler c o ~name ~infile ~outfile
+      (Compiler.Full_spec.With_id.id cspec)
+  in
+  ()
+;;
+
+let run_litmusify o cspec asm_file lit_file =
+  let source = Io.In_source.of_option asm_file in
+  let sink = Io.Out_sink.of_option lit_file in
+  Common.litmusify o source sink [] cspec
+;;
+
+let run_herd cfg cspec lit_file outfile =
+  let open Result.Let_syntax in
+  let%bind path =
+    Result.of_option lit_file
+      ~error:(Error.of_string "Can't read in litmus from stdin")
+  in
+  let sink = Io.Out_sink.of_option outfile in
+  let%bind herd = make_herd cfg in
+  let arch = Herd.Assembly (Compiler.Full_spec.With_id.emits cspec) in
+  Herd.run herd arch ~path ~sink
+;;
+
+let decide_if_c infile = function
+  | `C -> true
+  | `Assembly -> false
+  | `Infer ->
+    Option.exists infile
+      ~f:(MyFilename.has_extension ~ext:"c")
+;;
+
+let run file_type use_herd compiler_id ~infile ~outfile o cfg =
+  let open Result.Let_syntax in
+  let id = Spec.Id.of_string compiler_id in
+  let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) id in
+  let cspec = Compiler.Full_spec.With_id.create ~id ~spec in
+
+  let is_c = decide_if_c infile file_type in
+
+  let asm_file = asm_file is_c infile in
+  let lit_file = lit_file use_herd outfile in
+
+  let%bind () =
+    if is_c then run_compiler o cspec infile asm_file else return ()
+  in
+  let%bind _ = run_litmusify o cspec asm_file lit_file in
+  if use_herd then run_herd cfg cspec lit_file outfile else return ()
+;;
+
 let command =
   let open Command.Let_syntax in
   Command.basic
     ~summary:"converts an assembly file to a litmus test"
     [%map_open
       let standard_args = Standard_args.get
-      and herd =
+      and use_herd =
         flag "herd"
           no_arg
           ~doc: "if true, pipe results through herd"
+      and file_type =
+        choose_one
+          [ (let%map c =
+               flag "c"
+                 no_arg
+                 ~doc: "if given, assume input is C (and compile it)"
+             in (Option.some_if c `C))
+          ; (let%map asm =
+               flag "asm"
+                 no_arg
+                 ~doc: "if given, assume input is assembly"
+             in (Option.some_if asm `Assembly))
+          ]
+          ~if_nothing_chosen:(`Default_to `Infer)
       and compiler_id =
         anon ("COMPILER_ID" %: string)
       and outfile =
@@ -60,23 +147,5 @@ let command =
         Common.lift_command standard_args
           ~local_only:false
           ~test_compilers:false
-          ~f:(fun o cfg ->
-              let id = Spec.Id.of_string compiler_id in
-              Result.Let_syntax.(
-                let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) id in
-                let cspec = Compiler.Full_spec.With_id.create ~id ~spec in
-                Io.(
-                  let source = In_source.of_option infile in
-                  let sink = Out_sink.of_option outfile in
-                  if herd
-                  then
-                    let%bind herd = make_herd cfg in
-                    let tmpname = Filename.temp_file "act" "litmus" in
-                    let%bind _ = Common.litmusify o source (`File tmpname) [] cspec in
-                    let arch = Herd.Assembly (Compiler.Full_spec.emits spec) in
-                    Herd.run herd arch ~path:tmpname ~sink
-                  else Or_error.ignore (Common.litmusify o source sink [] cspec)
-                )
-              )
-            )
+          ~f:(run file_type use_herd compiler_id ~infile ~outfile)
     ]

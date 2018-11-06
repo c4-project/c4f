@@ -1,17 +1,22 @@
 open Core
 open Utils
 
-module type Spec = sig
+module type Basic_spec = sig
   module Mach : Machine.Reference
 
   type t
 
-  val style : t -> string
-  val emits : t -> string list
-  val cmd : t -> string
-  val argv : t -> string list
-  val herd : t -> bool
+  val enabled : t -> bool
+  val style   : t -> string
+  val emits   : t -> string list
+  val cmd     : t -> string
+  val argv    : t -> string list
+  val herd    : t -> bool
   val machine : t -> Mach.t
+end
+
+module type Spec = sig
+  include Basic_spec
 
   val create
     :  enabled : bool
@@ -24,7 +29,12 @@ module type Spec = sig
     -> t
   ;;
 
-  include Spec.S with type t := t
+  module With_id : sig
+    include Spec.S_with_id with type elt = t
+    include Basic_spec with type t := t and module Mach := Mach
+  end
+
+  include Spec.S with type t := t and module With_id := With_id
 end
 
 module Make_spec (R : Machine.Reference)
@@ -77,14 +87,28 @@ module Make_spec (R : Machine.Reference)
     ;;
   end
 
-  include Spec.Make (M)
-  let style = M.style
-  let emits = M.emits
-  let cmd = M.cmd
-  let argv = M.argv
-  let herd = M.herd
-  let machine = M.machine
+(* This large amount of module juggling exists to let us be able to
+   extend Spec.Make()'s With_id. *)
+  module MS = Spec.Make (M)
+  module Set = MS.Set
+  include (M : Basic_spec with module Mach := Mach and type t := M.t)
+  include (MS : Spec.Basic with type t := M.t)
+  type t = M.t
+
   let create = M.Fields.create
+  let pp_verbose = MS.pp_verbose
+
+  module With_id = struct
+    include MS.With_id
+
+    let enabled w = M.enabled (spec w)
+    let style   w = M.style   (spec w)
+    let emits   w = M.emits   (spec w)
+    let cmd     w = M.cmd     (spec w)
+    let argv    w = M.argv    (spec w)
+    let herd    w = M.herd    (spec w)
+    let machine w = M.machine (spec w)
+  end
 end
 
 module Cfg_spec : Spec with type Mach.t = Spec.Id.t =

@@ -28,9 +28,12 @@
 open Core
 open Utils
 
-(** [Spec] is the interface of modules defining compiler
-    specification types. *)
-module type Spec = sig
+(** [Basic_spec] is the signature common to any sort of compiler
+    specification, including [With_id] pairs.
+
+    In practice, modules implementing this will either be [Spec]
+    or [Spec.With_id]. *)
+module type Basic_spec = sig
   (** [Mach] is some module for resolving references to the machine on
       which a compiler is located.  This can either be an inline
       machine specification module, or a more indirect form of
@@ -41,6 +44,9 @@ module type Spec = sig
       To construct a [t], read one in as an S-expression;
       a proper constructor may appear in later revisions. *)
   type t
+
+  (** [enabled c] gets whether [c] is enabled. *)
+  val enabled : t -> bool
 
   (** [style c] gets the invocation style of [c]. *)
   val style : t -> string
@@ -59,6 +65,13 @@ module type Spec = sig
 
   (** [machine] gets the machine reference for [c]. *)
   val machine : t -> Mach.t
+end
+
+
+(** [Spec] is the interface of modules defining compiler
+    specification types. *)
+module type Spec = sig
+  include Basic_spec
 
   (** [create ~enabled ~style ~emits ~cmd ~argv ~herd ~machine]
       creates a compiler spec with the given fields.
@@ -76,8 +89,14 @@ module type Spec = sig
     -> t
   ;;
 
-  (** Compiler specifications are specifications! *)
-  include Spec.S with type t := t
+  (** We extend [With_id] to include all of the accessors from
+     [Basic_spec]. *)
+  module With_id : sig
+    include Spec.S_with_id with type elt = t
+    include Basic_spec with type t := t and module Mach := Mach
+  end
+
+  include Spec.S with type t := t and module With_id := With_id
 end
 
 (** [Make_spec] is a functor for building compiler specifications
