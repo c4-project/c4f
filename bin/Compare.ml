@@ -72,7 +72,7 @@ let run o cfg ~c_file =
 let command =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"does nothing yet"
+    ~summary:"displays the litmus output for each compiler over a C file"
     [%map_open
       let standard_args = Standard_args.get
       and local_only = Standard_args.Other.local_only
