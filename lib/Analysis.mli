@@ -40,7 +40,7 @@ end
 module Herd : sig
   (** [t] is the type of Herd analysis runs. *)
   type t =
-    [ Herd.outcome
+    [ Herd_output.outcome
     | `Disabled
     | `Errored of [`C | `Assembly]
     ] [@@deriving sexp_of]

@@ -25,8 +25,16 @@ open Core
 open Lib
 open Utils
 
-let run_herd prog litname _ oc =
-  Run.Local.run ~oc ~prog [litname]
+let make_herd cfg =
+  let open Or_error.Let_syntax in
+  let%bind herd_cfg =
+    Result.of_option (Config.M.herd cfg)
+      ~error:(Error.of_string
+                "No Herd stanza in configuration"
+             )
+  in
+  Herd.create ~config:herd_cfg
+;;
 
 let command =
   let open Command.Let_syntax in
@@ -68,15 +76,16 @@ let command =
          let%bind cfg = LangSupport.load_cfg spec_file in
          let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) cid in
          Io.(
-           let inp = In_source.of_option infile in
-           let outp = Out_sink.of_option outfile in
+           let source = In_source.of_option infile in
+           let sink = Out_sink.of_option outfile in
            if herd
            then
-             let cmd = Config.M.herd_or_default cfg in
+             let%bind herd = make_herd cfg in
              let tmpname = Filename.temp_file "act" "litmus" in
-             let%bind _ = Common.litmusify o inp (`File tmpname) [] spec in
-             Out_sink.with_output ~f:(run_herd cmd tmpname) outp
-           else Or_error.ignore (Common.litmusify o inp outp [] spec)
+             let%bind _ = Common.litmusify o source (`File tmpname) [] spec in
+             let arch = Herd.Assembly (Compiler.Full_spec.emits spec) in
+             Herd.run herd arch ~path:tmpname ~sink
+           else Or_error.ignore (Common.litmusify o source sink [] spec)
          )
        )
        |> Common.print_error

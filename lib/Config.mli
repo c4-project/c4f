@@ -31,9 +31,9 @@ module type S = sig
 
   type t [@@deriving sexp]
 
-  (** [herd c] gets the Herd binary, if any, to use for configuration
+  (** [herd c] gets the Herd config, if any, to use for configuration
       [c]. *)
-  val herd : t -> string option;;
+  val herd : t -> Herd.Config.t option;;
 
   (** [compilers c] gets the set of all active compilers in
       configuration [c]. *)
@@ -57,10 +57,6 @@ module M : sig
 
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
   type 't hook = ('t -> 't option Or_error.t);;
-
-  (** [herd_or_default c] behaves as [herd c], but substitutes a
-      sensible default binary. *)
-  val herd_or_default : t -> string;;
 
   (** [disabled_compilers c] reports all disabled compiler IDs in
       the given config, along with any reason why. *)

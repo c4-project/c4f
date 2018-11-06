@@ -27,7 +27,7 @@ open Utils
 
 (** [herd_run_result] summarises the result of running Herd. *)
 type herd_run_result =
-  [ `Success of Herd.t
+  [ `Success of Herd_output.t
   | `Disabled
   | `Errored
   ]
@@ -54,10 +54,12 @@ let compile o fs cspec =
        ~outfile:(Pathset.File.asm_path fs))
 ;;
 
-(** [check_herd_output path] runs analysis on the Herd output at
-   [path]. *)
-let check_herd_output (o : OutputCtx.t) path : herd_run_result =
-  match Herd.load ~path with
+let run_herd (o : OutputCtx.t) herd arch ~input_path ~output_path =
+  let result =
+    Or_error.tag ~tag:"While running herd"
+      (Herd.run_and_load_results herd arch ~input_path ~output_path)
+  in
+  match result with
   | Result.Ok herd -> `Success herd
   | Result.Error err ->
     Format.fprintf o.wf "@[<v 4>Herd analysis error:@,%a@]@."
@@ -65,22 +67,23 @@ let check_herd_output (o : OutputCtx.t) path : herd_run_result =
     `Errored
 ;;
 
-(** [herd o prog ~infile ~outfile cspec] sees if [cspec] asked for a
-   Herd run and, if so, runs the Herd command [prog] on [infile],
-    outputting to [outfile]. *)
-let herd o prog ~infile ~outfile (cspec : Compiler.Full_spec.With_id.t) =
+(** [try_run_herd o maybe_herd arch ~input_path ~output_path cspec]
+   sees if [cspec] asked for a Herd run and, if so (and [maybe_herd]
+   is [Some]), runs Herd on [infile], outputting to [outfile] and
+   using models for [c_or_asm]. *)
+let try_run_herd o maybe_herd c_or_asm ~input_path ~output_path cspec =
   let (id, spec) = Compiler.Full_spec.With_id.to_tuple cspec in
-  let open Or_error.Let_syntax in
-  if Compiler.Full_spec.herd spec
-  then begin
-    log_stage "HERD" o infile id;
-    let f _ oc = Run.Local.run ~oc ~prog [ infile ] in
-    let%map () =
-      Or_error.tag ~tag:"While running herd"
-        (Io.Out_sink.with_output (`File outfile) ~f)
-    in
-    check_herd_output o outfile
-  end else return `Disabled
+  let should_run_herd = Compiler.Full_spec.herd spec in
+  match should_run_herd, maybe_herd with
+  | false, _ | true, None -> `Disabled
+  | true, Some herd -> begin
+      log_stage "HERD" o input_path id;
+      let arch = match c_or_asm with
+        | `C -> Herd.C
+        | `Assembly -> Assembly (Compiler.Full_spec.emits spec)
+      in
+      run_herd o herd arch ~input_path ~output_path
+    end
 ;;
 
 (** [lower_thread_local_symbol] converts thread-local symbols of the
@@ -111,7 +114,7 @@ let analyse
   | _, `Errored -> return (`Errored `Assembly)
   | `Success initial, `Success final ->
     let%map outcome =
-      Herd.outcome_of ~initial ~final
+      Herd_output.outcome_of ~initial ~final
         ~locmap:(
           fun final_sym ->
             Or_error.return (
@@ -130,8 +133,8 @@ let analyse
    the equivalent variable name in the memalloy C witness. *)
 let locations_of_herd_result = function
   | `Success herd ->
-    Herd.states herd
-    |> List.concat_map ~f:Herd.State.bound
+    Herd_output.states herd
+    |> List.concat_map ~f:Herd_output.State.bound
     |> List.map ~f:(fun s -> (s, lower_thread_local_symbol s))
   | `Disabled | `Errored -> []
 ;;
@@ -164,7 +167,15 @@ let litmusify_single
   Common.litmusify o inp outp syms spec
 ;;
 
-let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog cspec fname =
+(** [map_location_renamings locs sym_redirects] works out the
+    mapping from locations in the original C program to
+    symbols in the Litmus output by using the redirects table
+    from the litmusifier. *)
+let map_location_renamings locs sym_redirects =
+  compose_alists locs sym_redirects String.equal
+;;
+
+let run_single (o : OutputCtx.t) (ps: Pathset.t) herd cspec fname =
   let base = Filename.chop_extension (Filename.basename fname) in
   let open Or_error.Let_syntax in
   Pathset.File.(
@@ -174,22 +185,19 @@ let run_single (o : OutputCtx.t) (ps: Pathset.t) herdprog cspec fname =
        side-effects.  These dependencies aren't evident in the binding
        chain, so be careful when re-ordering. *)
     let fs = make ps base in
-    let%bind c_herd =
-      herd o herdprog cspec
-        ~infile:(litc_path fs) ~outfile:(herdc_path fs)
+    let c_herd =
+      try_run_herd o herd `C cspec
+        ~input_path:(litc_path fs) ~output_path:(herdc_path fs)
     in
     let locs = locations_of_herd_result c_herd in
     let%bind () = compile o fs cspec in
     let%bind sym_redirects = litmusify_single o fs locs cspec in
-    (* syms' now contains the redirections from C-level symbols to
-       asm/Litmus-level symbols.  To get the mapping between Herd
-       locations, we need the composition of the two maps. *)
-    let locmap = compose_alists locs sym_redirects String.equal in
-    let%bind a_herd =
-      herd o herdprog cspec
-        ~infile:(lita_path fs) ~outfile:(herda_path fs)
+    let loc_map = map_location_renamings locs sym_redirects in
+    let a_herd =
+      try_run_herd o herd `Assembly cspec
+        ~input_path:(lita_path fs) ~output_path:(herda_path fs)
     in
-    let%map analysis = analyse c_herd a_herd locmap in
+    let%map analysis = analyse c_herd a_herd loc_map in
 
     let end_time = Time.now () in
 
@@ -272,6 +280,14 @@ let group_specs_by_machine specs =
   |> Spec.Id.Map.to_alist
 ;;
 
+let make_herd =
+  Or_error.(
+    Option.value_map
+      ~default:(return None)
+      ~f:(fun config -> Herd.create ~config >>| Option.some)
+  )
+;;
+
 let run ~in_root ~out_root o cfg =
   let open Or_error.Let_syntax in
 
@@ -279,7 +295,7 @@ let run ~in_root ~out_root o cfg =
   report_spec_errors o
     (List.filter_map ~f:snd (Config.M.disabled_compilers cfg));
 
-  let herdprog = Config.M.herd_or_default cfg in
+  let%bind herd = make_herd (Config.M.herd cfg) in
 
   let c_path = Filename.concat in_root "C" in
   let%bind c_files = Io.Dir.get_files c_path ~ext:"c" in
@@ -290,7 +306,7 @@ let run ~in_root ~out_root o cfg =
   let start_time = Time.now () in
   let%bind results_alist =
     specs_by_machine
-    |> List.map ~f:(run_machine o ~in_root ~out_root herdprog c_files)
+    |> List.map ~f:(run_machine o ~in_root ~out_root herd c_files)
     |> Or_error.combine_errors
   in
   let end_time = Time.now () in

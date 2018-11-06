@@ -22,87 +22,58 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Parsing and comparison functionality for Herd output
-
-    [Herd] contains functions for scraping the human-readable summary of a
-    Herd7 run, extracting location information, and comparing states.
-*)
+(** [Herd] interfaces with the Herd tool. *)
 
 open Core
 open Utils
 
-(** [t] is the opaque type of a Herd output analysis. *)
-type t
-
-module State : sig
-  (** [t] is the type of states: a binding from name to value. *)
-  type t [@@deriving sexp, compare]
-
-  (** [map ~keyf ~valf t] maps partial mappers over the keys and
-      values of state [t].  [keyf] may return [Ok None] if the
-      key should be deleted in the new map.
-
-      If all invocations of [keyf] and
-      [valf] return values, and the result is a well-formed map
-      [m], [map] returns [Ok m]; else, an error. *)
-  val map
-    :  keyf : (string -> string option Or_error.t)
-    -> valf : (string -> string Or_error.t)
-    -> t
-    -> t Or_error.t
+(** [Config] describes configuration needed to find and execute
+    Herd. *)
+module Config : sig
+  (** [t] is the type of Herd configuration. *)
+  type t =
+    { cmd        : string
+    ; c_model    : string option
+    ; asm_models : (string list, string) List.Assoc.t
+    } [@@deriving sexp]
   ;;
-
-  (** [bound t] gets the list of all bound names in [t]. *)
-  val bound : t -> string list
-
-  (** [of_alist alist] tries to convert [alist] into a state. *)
-  val of_alist
-    :  (string, string) List.Assoc.t
-    -> t Or_error.t
-  ;;
-
-  module Set : Set.S with type Elt.t = t
 end
 
-(** [single_outcome] is the type of outcomes we can get from single
-    (or double) Herd runs. *)
-type single_outcome =
-  [ `Unknown   (** Either only one Herd run was analysed, or the
-                   results are inconclusive. *)
-  | `Undef     (** The final execution triggered undefined
-                   behaviour. *)
-  ]
-[@@deriving sexp]
+(** [t] is an opaque type representing a configured and validated
+    Herd interface. *)
+type t
+
+(** [create ~config] validates [config] and, if successful, creates a
+    [t]. *)
+val create : config:Config.t -> t Or_error.t
+
+(** [arch] tells a Herd run which architecture it should model, and,
+   therefore, which model file to load. *)
+type arch =
+  | C
+  | Assembly of string list
 ;;
 
-(** [outcome] is the type of summaries of Herd analysis. *)
-type outcome =
-  [ single_outcome
-  | State.Set.t My_set.partial_order
-  | `OracleUndef  (** The oracle execution triggered undefined
-                      behaviour. *)
-  ]
-[@@deriving sexp] (* sexp_of_outcome, outcome_of_sexp *)
+(** [run t arch ~path ~sink] runs Herd (represented by [t]) on the
+   Litmus test at [path] using the model and other configuration for
+   architecture [arch].  It outputs the results to [sink], but doesn't
+   analyse them. *)
+val run
+  :  t
+  -> arch
+  -> path:string
+  -> sink:Io.Out_sink.t
+  -> unit Or_error.t
 ;;
 
-(** [states herd] gets the states of a single Herd output [herd]. *)
-val states : t -> State.t list
-
-(** [single_outcome_of herd] analyses the Herd output [herd] in
-    isolation. *)
-val single_outcome_of : t -> single_outcome
-
-(** [outcome ~initial ~final ~locmap ~valmap] applies the partial
-    mappers [locmap] and [valmap] to every state binding in
-    [final], then analyses it against [initial]. *)
-val outcome_of
-  :  initial : t
-  -> final   : t
-  -> locmap  : (string -> string option Or_error.t)
-  -> valmap  : (string -> string Or_error.t)
-  -> outcome Or_error.t
+(** [run_and_load_results t arch ~input_path ~output_path] behaves
+   like [run], but then reads [output_path] back in as a
+   [Herd_output.t].  This requires [output_path] to point to a file,
+   rather than being any [Out_sink.t]. *)
+val run_and_load_results
+  :  t
+  -> arch
+  -> input_path:string
+  -> output_path:string
+  -> Herd_output.t Or_error.t
 ;;
-
-(** We can load Herd output analyses using the normal interfaces in
-    [Utils.Io.LoadableIntf]. *)
-include Io.LoadableIntf with type t := t

@@ -10,9 +10,31 @@
 ;; copy this file there, and then edit it.
 
 (
- ;; First, we tell 'act' where our Herd binary is.
- ;; We can omit this stanza if Herd is in PATH as 'herd7'.
- (herd herd7)
+ ;; First, we tell 'act' about how we intend to use Herd.
+ ;; If we omit this stanza, Herd analysis gets disabled.
+ (herd
+  (
+   ;; 'cmd' tells us where Herd is.
+   ;; This can be omitted if herd7 is on PATH.
+   (cmd herd7)
+
+   ;; 'c_model' overrides Herd's choice of cat model when reading in C
+   ;; litmus tests.
+   ;; This can be omitted if you intend to use the normal model.
+   (c_model c11_lahav.cat)
+
+   ;; 'asm_models' overrides Herd's choice of model when reading in
+   ;; assembly litmus tests.  It maps between 'emits' clauses
+   ;; (see the compiler configuration below) and filenames.
+   ;; This can be omitted if you intend to use the normal models.
+   (asm_models
+    (
+     ((x86 att) x86_example.cat)
+     ((x86 intel) x86_another_example.cat)
+     )
+    )
+   )
+  )
 
  ;; Next, we define a 'machines' section.
  ;; This tells 'act' which machines it can run compilers on, and how.

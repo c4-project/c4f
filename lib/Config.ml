@@ -29,9 +29,9 @@ module type S = sig
 
   type t [@@deriving sexp]
 
-  val herd : t -> string option;;
-  val compilers : t -> C.Set.t;;
-  val machines : t -> Machine.Spec.Set.t;;
+  val herd : t -> Herd.Config.t option
+  val compilers : t -> C.Set.t
+  val machines : t -> Machine.Spec.Set.t
 end
 
 module Raw = struct
@@ -42,7 +42,7 @@ module Raw = struct
     type t =
       { compilers : C.Set.t
       ; machines  : Machine.Spec.Set.t
-      ; herd      : string sexp_option
+      ; herd      : Herd.Config.t sexp_option
       }
     [@@deriving sexp, fields]
     ;;
@@ -108,7 +108,7 @@ module M = struct
   type t =
     { compilers          : C.Set.t
     ; machines           : Machine.Spec.Set.t
-    ; herd               : string option
+    ; herd               : Herd.Config.t sexp_option
     ; disabled_compilers : (Spec.Id.t, Error.t option) List.Assoc.t
     ; disabled_machines  : (Spec.Id.t, Error.t option) List.Assoc.t
     }
@@ -121,10 +121,6 @@ module M = struct
 
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
   type 't hook = ('t -> 't option Or_error.t);;
-
-  let herd_or_default (c : t) : string =
-    Option.value (herd c) ~default:"herd7"
-  ;;
 
   let machines_from_raw
       (hook : Machine.Spec.With_id.t hook)
