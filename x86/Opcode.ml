@@ -73,6 +73,7 @@ module Sizable = struct
     [ `Add
     | `Call (* Some compilers seem to emit CALLQ? *)
     | `Cmp
+    | `Cmpxchg
     | `Mov
     | `Pop
     | `Push
@@ -82,23 +83,24 @@ module Sizable = struct
     | `Xchg
     | `Xor
     ]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, eq, enumerate]
   ;;
 
   include (
     StringTable.Make (struct
       type nonrec t = t
       let table =
-        [ `Add,  "add"
-        ; `Call, "call"
-        ; `Cmp,  "cmp"
-        ; `Mov,  "mov"
-        ; `Pop,  "pop"
-        ; `Push, "push"
-        ; `Ret,  "ret"
-        ; `Sub,  "sub"
-        ; `Xchg, "xchg"
-        ; `Xor,  "xor"
+        [ `Add    , "add"
+        ; `Call   , "call"
+        ; `Cmp    , "cmp"
+        ; `Cmpxchg, "cmpxchg"
+        ; `Mov    , "mov"
+        ; `Pop    , "pop"
+        ; `Push   , "push"
+        ; `Ret    , "ret"
+        ; `Sub    , "sub"
+        ; `Xchg   , "xchg"
+        ; `Xor    , "xor"
         ]
     end) : StringTable.Intf with type t := t)
 
@@ -108,16 +110,17 @@ module Sizable = struct
       open Abs
 
       let abs_type = function
-        | `Add    -> Abstract.Instruction.Arith
-        | `Call   -> Call
-        | `Cmp    -> Compare
-        | `Mov    -> Move
-        | `Pop    -> Stack
-        | `Push   -> Stack
-        | `Ret    -> Return
-        | `Sub    -> Arith
-        | `Xchg   -> Rmw
-        | `Xor    -> Logical
+        | `Add     -> Arith
+        | `Call    -> Call
+        | `Cmp     -> Compare
+        | `Cmpxchg -> Rmw
+        | `Mov     -> Move
+        | `Pop     -> Stack
+        | `Push    -> Stack
+        | `Ret     -> Return
+        | `Sub     -> Arith
+        | `Xchg    -> Rmw
+        | `Xor     -> Logical
       ;;
     end)
 end
@@ -174,7 +177,7 @@ module Basic = struct
     | `Mfence
     | `Nop
     ]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, eq, enumerate]
   ;;
 
   include (
@@ -202,6 +205,30 @@ module Basic = struct
         | `Nop    -> Nop
       ;;
     end)
+
+  let%expect_test "Basic: table accounts for all instructions" =
+    Format.printf "@[<v>%a@]@."
+      (Format.pp_print_list ~pp_sep:Format.pp_print_space
+         (fun f opcode ->
+            Format.fprintf f "@[<h>%a -> %s@]"
+              Sexp.pp_hum [%sexp (opcode : t)]
+              (Option.value ~default:"(none)" (to_string opcode))))
+      all;
+    [%expect {|
+      Add -> add
+      Call -> call
+      Cmp -> cmp
+      Cmpxchg -> cmpxchg
+      Mov -> mov
+      Pop -> pop
+      Push -> push
+      Ret -> ret
+      Sub -> sub
+      Xchg -> xchg
+      Xor -> xor
+      Leave -> leave
+      Mfence -> mfence
+      Nop -> nop |}]
 end
 
 module Condition = struct
@@ -221,7 +248,7 @@ module Condition = struct
     | `Sign
     | `Zero
     ]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, eq, enumerate]
   ;;
 
   (** Intermediate table used to build the main condition table. *)
@@ -255,7 +282,7 @@ module Condition = struct
     | `ParityEven
     | `ParityOdd
     ]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, eq, enumerate]
   ;;
 
   (** [build_inv_condition (ic, s) builds, for an invertible condition
@@ -284,7 +311,7 @@ module Jump = struct
     [ `Unconditional
     | `Conditional of Condition.t
     ]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, eq, enumerate]
   ;;
 
   include
@@ -299,6 +326,50 @@ module Jump = struct
         :: List.map ~f Condition.table
       ;;
     end) : StringTable.Intf with type t := t)
+
+
+  let%expect_test "Jump: table accounts for all conditions" =
+    Format.printf "@[<v>%a@]@."
+      (Format.pp_print_list ~pp_sep:Format.pp_print_space
+         (fun f opcode ->
+            Format.fprintf f "@[<h>%a -> %s@]"
+              Sexp.pp_hum [%sexp (opcode : t)]
+              (Option.value ~default:"(none)" (to_string opcode))))
+      all;
+    [%expect {|
+      Unconditional -> jmp
+      (Conditional Above) -> ja
+      (Conditional AboveEqual) -> jae
+      (Conditional Below) -> jb
+      (Conditional BelowEqual) -> jbe
+      (Conditional Carry) -> jc
+      (Conditional Equal) -> je
+      (Conditional Greater) -> jg
+      (Conditional GreaterEqual) -> jge
+      (Conditional Less) -> jl
+      (Conditional LessEqual) -> jle
+      (Conditional Overflow) -> jo
+      (Conditional Parity) -> jp
+      (Conditional Sign) -> js
+      (Conditional Zero) -> jz
+      (Conditional (Not Above)) -> jna
+      (Conditional (Not AboveEqual)) -> jnae
+      (Conditional (Not Below)) -> jnb
+      (Conditional (Not BelowEqual)) -> jnbe
+      (Conditional (Not Carry)) -> jnc
+      (Conditional (Not Equal)) -> jne
+      (Conditional (Not Greater)) -> jng
+      (Conditional (Not GreaterEqual)) -> jnge
+      (Conditional (Not Less)) -> jnl
+      (Conditional (Not LessEqual)) -> jnle
+      (Conditional (Not Overflow)) -> jno
+      (Conditional (Not Parity)) -> jnp
+      (Conditional (Not Sign)) -> jns
+      (Conditional (Not Zero)) -> jnz
+      (Conditional CXZero) -> jcxz
+      (Conditional ECXZero) -> jecxz
+      (Conditional ParityEven) -> jpe
+      (Conditional ParityOdd) -> jpo |}]
 
   include Abstractable.Make (struct
       type nonrec t = t

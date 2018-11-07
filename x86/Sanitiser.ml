@@ -80,6 +80,7 @@ module Hook (L : Language.Intf) = struct
       begin
         match o with
         | `Cmp
+        | `Cmpxchg
         | `Xchg
         | `Xor -> { op with opcode = Basic (o :> Opcode.Basic.t) }
         (* Opcodes below this line *shouldn't* have their lengths dropped. *)

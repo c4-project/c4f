@@ -57,6 +57,7 @@ module Sizable : sig
     [ `Add
     | `Call
     | `Cmp
+    | `Cmpxchg
     | `Mov
     | `Pop
     | `Push

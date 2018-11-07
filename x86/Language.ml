@@ -240,6 +240,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
             (* TODO(@MattWindsor91): analyse other opcodes! *)
             | `Call
             | `Cmp
+            | `Cmpxchg
             | `Xchg -> `Unknown
 
           let abs_operands {Ast.Instruction.opcode; operands; _} =
