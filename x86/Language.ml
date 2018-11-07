@@ -127,28 +127,10 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
 
           let jump l =
             Ast.Instruction.make
-              ~opcode:(Ast.OpJump None)
+              ~opcode:(Opcode.Jump `Unconditional)
               ~operands:[ make_jump_operand l ]
               ()
           ;;
-
-          (** [basic_instruction_type o] assigns an act classification to a
-              primitive opcode [o]. *)
-          let basic_instruction_type
-            : [< Ast.basic_opcode] -> Abstract.Instruction.t = function
-            | `Add    -> Arith
-            | `Call   -> Call
-            | `Cmp    -> Compare
-            | `Leave  -> Call
-            | `Mfence -> Fence
-            | `Mov    -> Move
-            | `Nop    -> Nop
-            | `Pop    -> Stack
-            | `Push   -> Stack
-            | `Ret    -> Return
-            | `Sub    -> Arith
-            | `Xchg   -> Rmw
-            | `Xor    -> Logical
 
           let zero_operands (operands : Ast.Operand.t list)
             : Abstract.Operands.t =
@@ -233,7 +215,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
             | String _ | Typ _ | Location (Reg _) -> None
           ;;
 
-          let basic_operands (o : [< Ast.basic_opcode])
+          let basic_operands (o : [< Opcode.Basic.t])
               (operands : Ast.Operand.t list) =
             match o with
             | `Leave
@@ -262,12 +244,12 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
 
           let abs_operands {Ast.Instruction.opcode; operands; _} =
             match opcode with
-            | Ast.OpBasic b -> basic_operands b operands
-            | Ast.OpSized (b, _) -> basic_operands b operands
-            | Ast.OpJump _ ->
+            | Opcode.Basic b -> basic_operands b operands
+            | Opcode.Sized (b, _) -> basic_operands b operands
+            | Opcode.Jump _ ->
               single_operand operands ~allowed:[ jump_target_operand ]
-            | Ast.OpDirective _ -> `Other
-            | Ast.OpUnknown _ -> `Unknown
+            | Opcode.Directive _ -> `Other
+            | Opcode.Unknown _ -> `Unknown
           ;;
 
           let%expect_test "abs_operands: nop -> none" =
@@ -275,7 +257,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               Abstract.Operands.pp
               (abs_operands
                  (Ast.Instruction.make
-                    ~opcode:(Ast.OpBasic `Nop)
+                    ~opcode:(Opcode.Basic `Nop)
                     ()
                  ));
             [%expect {| none |}]
@@ -285,7 +267,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               Abstract.Operands.pp
               (abs_operands
                  (Ast.Instruction.make
-                    ~opcode:(Ast.OpJump None)
+                    ~opcode:(Opcode.Jump `Unconditional)
                     ~operands:
                       [ Ast.Operand.Location
                           (Ast.Location.Indirect
@@ -302,7 +284,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               Abstract.Operands.pp
               (abs_operands
                  (Ast.Instruction.make
-                    ~opcode:(Ast.OpBasic `Pop)
+                    ~opcode:(Opcode.Basic `Pop)
                     ~operands:
                       [ Ast.Operand.Immediate (Ast.Disp.Numeric 42)
                       ]
@@ -315,7 +297,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               Abstract.Operands.pp
               (abs_operands
                 (Ast.Instruction.make
-                   ~opcode:(Ast.OpBasic `Nop)
+                   ~opcode:(Opcode.Basic `Nop)
                    ~operands:[ Ast.Operand.Immediate
                                  (Ast.Disp.Numeric 42) ]
                    ()
@@ -327,7 +309,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               Abstract.Operands.pp
               (abs_operands
                  (Ast.Instruction.make
-                    ~opcode:(Ast.OpBasic `Mov)
+                    ~opcode:(Opcode.Basic `Mov)
                     ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
                               ; Ast.Operand.Location (Ast.Location.Reg EBP)
                               ]
@@ -340,7 +322,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               Abstract.Operands.pp
               (abs_operands
                  (Ast.Instruction.make
-                    ~opcode:(Ast.OpSized (`Mov, Ast.SLong))
+                    ~opcode:(Opcode.Sized (`Mov, Opcode.Size.Long))
                     ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
                               ; Ast.Operand.Location (Ast.Location.Reg EBP)
                               ]
@@ -351,17 +333,8 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
           include Abstractable.Make_enum (struct
               type nonrec t = t
               module Abs = Abstract.Instruction
-              open Abs
-
               let abs_type ({opcode; _} : Ast.Instruction.t) =
-                match opcode with
-                | Ast.OpDirective _ ->
-                  (* handled by abs_type below. *)
-                  Other
-                | OpJump _ -> Jump
-                | OpBasic b -> basic_instruction_type b
-                | OpSized (b, _) -> basic_instruction_type b
-                | OpUnknown _ -> Unknown
+                Opcode.abs_type opcode
             end)
 
           module OnSymbols = struct
@@ -390,7 +363,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
           let abs_type =
             let open Abstract.Statement in
             function
-            | Ast.Statement.Instruction { opcode = Ast.OpDirective s; _ } ->
+            | Ast.Statement.Instruction { opcode = Opcode.Directive s; _ } ->
               Directive s
             | Instruction i -> Instruction (Instruction.abs_type i)
             | Label l -> Label l
@@ -444,7 +417,7 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
     Abstract.Operands.pp
     (ATT.Instruction.abs_operands
        (Ast.Instruction.make
-          ~opcode:(Ast.OpBasic `Add)
+          ~opcode:(Opcode.Basic `Add)
           ~operands:[ Ast.Operand.Immediate (Ast.Disp.Numeric (-16))
                     ; Ast.Operand.Location (Ast.Location.Reg ESP)
                     ]
@@ -459,7 +432,7 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
     Abstract.Operands.pp
     (Intel.Instruction.abs_operands
        (Ast.Instruction.make
-          ~opcode:(Ast.OpBasic `Add)
+          ~opcode:(Opcode.Basic `Add)
           ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
                     ; Ast.Operand.Immediate (Ast.Disp.Numeric (-16))
                     ]
@@ -472,7 +445,7 @@ let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
     Abstract.Operands.pp
     (ATT.Instruction.abs_operands
        (Ast.Instruction.make
-          ~opcode:(Ast.OpBasic `Mov)
+          ~opcode:(Opcode.Basic `Mov)
           ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
                     ; Ast.Operand.Immediate (Ast.Disp.Numeric 1)
                     ]

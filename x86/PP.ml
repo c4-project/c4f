@@ -72,7 +72,7 @@ module type Printer = sig
   val pp_bop : Format.formatter -> Operand.bop -> unit
   val pp_operand : Format.formatter -> Operand.t -> unit
   val pp_prefix : Format.formatter -> prefix -> unit
-  val pp_opcode : Format.formatter -> opcode -> unit
+  val pp_opcode : Format.formatter -> Opcode.t -> unit
   val pp_instruction : Format.formatter -> Instruction.t -> unit
   val pp_statement : Format.formatter -> Statement.t -> unit
 end
@@ -385,24 +385,23 @@ module Make (D : Dialect) =
      * Opcodes
      *)
 
-    let pp_opcode f =
-      function
-      | OpDirective s -> Format.fprintf f ".%s" s
-      | OpUnknown s -> String.pp f s
-      | OpBasic opc ->
+    let pp_opcode f = function
+      | Opcode.Directive s -> Format.fprintf f ".%s" s
+      | Unknown s -> String.pp f s
+      | Basic opc ->
          opc
-         |> BasicOpcodeTable.to_string
+         |> Opcode.Basic.to_string
          |> Option.value ~default:"<FIXME: OPCODE WITH NO STRING EQUIVALENT>"
          |> String.pp f
-      | OpJump opc ->
+      | Jump opc ->
          opc
-         |> JumpTable.to_string
+         |> Opcode.Jump.to_string
          |> Option.value ~default:"<FIXME: JUMP WITH NO STRING EQUIVALENT>"
          |> String.pp f
-      | OpSized (opc, sz) ->
+      | Sized opc ->
          (* TODO: Intel syntax *)
-         (opc, sz)
-         |> ATTSizedOpcodeTable.to_string
+        opc
+         |> Opcode.Sized.to_string
          |> Option.value ~default:"<FIXME: JUMP WITH NO STRING EQUIVALENT>"
          |> String.pp f
 
@@ -433,27 +432,27 @@ module Make (D : Dialect) =
 module ATT = Make(ATTSpecific)
 
 let%expect_test "pp_opcode: directive" =
-  Format.printf "%a@." ATT.pp_opcode (OpDirective "text");
+  Format.printf "%a@." ATT.pp_opcode (Opcode.Directive "text");
   [%expect {| .text |}]
 
 let%expect_test "pp_opcode: jmp" =
-  Format.printf "%a@." ATT.pp_opcode (OpJump None);
+  Format.printf "%a@." ATT.pp_opcode (Opcode.Jump `Unconditional);
   [%expect {| jmp |}]
 
 let%expect_test "pp_opcode: jge" =
-  Format.printf "%a@." ATT.pp_opcode (OpJump (Some `GreaterEqual));
+  Format.printf "%a@." ATT.pp_opcode (Opcode.Jump (`Conditional `GreaterEqual));
   [%expect {| jge |}]
 
 let%expect_test "pp_opcode: jnz" =
-  Format.printf "%a@." ATT.pp_opcode (OpJump (Some (`Not `Zero)));
+  Format.printf "%a@." ATT.pp_opcode (Opcode.Jump (`Conditional (`Not `Zero)));
   [%expect {| jnz |}]
 
 let%expect_test "pp_opcode: mov" =
-  Format.printf "%a@." ATT.pp_opcode (OpBasic `Mov);
+  Format.printf "%a@." ATT.pp_opcode (Opcode.Basic `Mov);
   [%expect {| mov |}]
 
 let%expect_test "pp_opcode: movw (AT&T)" =
-  Format.printf "%a@." ATT.pp_opcode (OpSized (`Mov, SWord));
+  Format.printf "%a@." ATT.pp_opcode (Opcode.Sized (`Mov, Opcode.Size.Word));
   [%expect {| movw |}]
 
 module Intel = Make(struct

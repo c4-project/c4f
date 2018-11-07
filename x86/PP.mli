@@ -79,7 +79,7 @@ module type Printer = sig
   val pp_prefix : Format.formatter -> prefix -> unit
 
   (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
-  val pp_opcode : Format.formatter -> opcode -> unit
+  val pp_opcode : Format.formatter -> Opcode.t -> unit
 
   val pp_instruction : Format.formatter -> Instruction.t -> unit
 

@@ -58,15 +58,15 @@ module Hook (L : Language.Intf) = struct
           | _ -> None)
 
   let sub_to_add = function
-    | { Instruction.prefix; opcode = OpBasic `Sub; operands} as op ->
+    | { Instruction.prefix; opcode = Opcode.Basic `Sub; operands} as op ->
       Option.value_map
         ~default:op
-        ~f:(fun ops' -> { prefix ; opcode = OpBasic `Add; operands = ops' })
+        ~f:(fun ops' -> { prefix ; opcode = Basic `Add; operands = ops' })
         (sub_to_add_ops operands)
-    | { prefix; opcode = OpSized (`Sub, s); operands} as op ->
+    | { prefix; opcode = Sized (`Sub, s); operands} as op ->
       Option.value_map
         ~default:op
-        ~f:(fun ops' -> { prefix ; opcode = OpSized (`Add, s); operands = ops' })
+        ~f:(fun ops' -> { prefix ; opcode = Sized (`Add, s); operands = ops' })
         (sub_to_add_ops operands)
     | x -> x
 
@@ -76,12 +76,12 @@ module Hook (L : Language.Intf) = struct
     (* TODO(@MattWindsor91): ideally, we should be checking to see if
        the operands are compatible with dropping the l. *)
     function
-    | { Instruction.opcode = OpSized (o, SLong); _ } as op ->
+    | { Instruction.opcode = Sized (o, Long); _ } as op ->
       begin
         match o with
         | `Cmp
         | `Xchg
-        | `Xor -> { op with opcode = OpBasic (o :> basic_opcode) }
+        | `Xor -> { op with opcode = Basic (o :> Opcode.Basic.t) }
         (* Opcodes below this line *shouldn't* have their lengths dropped. *)
         | `Call
         | `Ret

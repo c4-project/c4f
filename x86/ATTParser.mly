@@ -97,14 +97,14 @@ label:
 
 opcode:
   | NAME { Core.Option.(
-	     (Core.String.chop_prefix $1 ~prefix:"." >>| (fun f -> OpDirective f))
+	     (Core.String.chop_prefix $1 ~prefix:"." >>| Opcode.directive)
 	     |> first_some
-	          (JumpTable.of_string $1 >>| (fun j -> OpJump j))
+	          (Opcode.Jump.of_string $1 >>| Opcode.jump)
 	     |> first_some
-	          (ATTSizedOpcodeTable.of_string $1 >>| (fun (x, y) -> OpSized (x, y)))
+	          (Opcode.Sized.of_string $1 >>| Opcode.sized)
 	     |> first_some
-	          (BasicOpcodeTable.of_string $1 >>| (fun o -> OpBasic o))
-	     |> value ~default:(OpUnknown $1)
+	          (Opcode.Basic.of_string $1 >>| Opcode.basic)
+	     |> value ~default:(Opcode.Unknown $1)
 	   )
 	 }
 

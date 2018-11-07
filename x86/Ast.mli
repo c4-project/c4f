@@ -215,114 +215,14 @@ type prefix =
   | PreLock
 [@@deriving sexp]
 
-type size =
-  | SByte
-  | SWord
-  | SLong
-[@@deriving sexp]
-
-module ATTSizeTable : (StringTable.Intf with type t = size)
-
-(** [inv_condition] enumerates all of the x86 conditions that can be
-   inverted with a 'not' prefix (for example, 'above' (A) becomes 'not
-   above' (NA). *)
-type inv_condition =
-  [ `Above
-  | `AboveEqual
-  | `Below
-  | `BelowEqual
-  | `Carry
-  | `Equal
-  | `Greater
-  | `GreaterEqual
-  | `Less
-  | `LessEqual
-  | `Overflow
-  | `Parity
-  | `Sign
-  | `Zero
-  ]
-[@@deriving sexp]
-
-(** [condition] enumerates all x86 conditions, including both forms of
-    invertible conditions. *)
-type condition =
-  [ inv_condition
-  | `Not of inv_condition
-  | `CXZero
-  | `ECXZero
-  | `ParityEven
-  | `ParityOdd
-  ]
-[@@deriving sexp]
-
-(*
- * Opcodes
- *)
-
-(** [sizable_opcode] enumerates X86 opcodes that may have an associated size
-    directive (Intel) or suffix (AT&T). *)
-type sizable_opcode =
-  [ `Add
-  | `Call (* Some compilers seem to emit CALLQ? *)
-  | `Cmp
-  | `Mov
-  | `Pop
-  | `Push
-  | `Ret (* Some compilers seem to emit RETL (32-bit)/RETQ (64-bit);
-            it's unclear if there's any semantic difference from RET. *)
-  | `Sub
-  | `Xchg
-  | `Xor
-  ]
-[@@deriving sexp]
-
-(** [SizableOpcodeTable] is a parse table for [sizable_opcode]s
-   *without* an associated size.
-
-To parse an AT&T-style opcode-with-size-suffix, use
-   [SizedOpcodeTable]. *)
-module SizableOpcodeTable : (StringTable.Intf with type t = sizable_opcode)
-
-(** [ATTSizedOpcodeTable] associates each pair of sizable opcode and
-   size with a string.
-
-This is mainly for AT&T-style dialects; Intel handles this
-   differently. *)
-module ATTSizedOpcodeTable : (StringTable.Intf with type t = (sizable_opcode * size))
-
-(** [basic_opcode] enumerates all known X86 opcodes that aren't
-   jumps. *)
-type basic_opcode =
-  [ sizable_opcode
-  | `Leave
-  | `Mfence
-  | `Nop
-  ]
-[@@deriving sexp]
-
-(** [BasicOpcodeTable] is a parse table for [basic_opcode]s without an
-   associated size. *)
-module BasicOpcodeTable : (StringTable.Intf with type t = basic_opcode)
-
-(* [opcode] enumerates all x86 opcode-style items.  The parser is lax
-   when it comes to opcodes it doesn't understand: it emits them as
-   [OpUnknown]. *)
-type opcode =
-  | OpBasic of basic_opcode
-  | OpSized of sizable_opcode * size
-  | OpJump of condition option
-  | OpDirective of string (* Assembler directive *)
-  | OpUnknown of string (* An opcode we don't (yet?) understand. *)
-[@@deriving sexp]
-
-(** [JumpTable] is a parse table for jump opcodes. *)
-module JumpTable : (StringTable.Intf with type t = condition option)
-
+(** [Instruction] contains the instruction type and related
+   operations. *)
 module Instruction : sig
+  (** [t] is the type of instructions (and instruction-like things,
+      such as directives). *)
   type t =
     { prefix   : prefix option
-    ; opcode   : opcode
+    ; opcode   : Opcode.t
     ; operands : Operand.t list
     }
   [@@deriving sexp, eq, make]
