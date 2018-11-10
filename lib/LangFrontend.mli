@@ -46,7 +46,7 @@ module type Intf = sig
   (** [ast] is the type of the syntax tree outputted by the frontend. *)
   type ast
 
-  include Io.LoadableIntf with type t := ast;;
+  include Loadable.S with type t := ast;;
 end
 
 (** [Make] lifts an instance of [S] into a frontend. *)

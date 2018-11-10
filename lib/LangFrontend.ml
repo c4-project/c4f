@@ -57,7 +57,7 @@ end
 module type Intf = sig
   type ast
 
-  include Io.LoadableIntf with type t := ast;;
+  include Loadable.S with type t := ast
 end
 
 module Make (SI : S) : Intf with type ast = SI.ast = struct
@@ -92,7 +92,7 @@ module Make (SI : S) : Intf with type ast = SI.ast = struct
         ]
   ;;
 
-  module Load : (Io.LoadableS with type t = ast) = struct
+  module Load : (Loadable.Basic with type t = ast) = struct
     type t = ast;;
 
     let load_from_ic ?(path="(stdin)") ic =
@@ -108,5 +108,5 @@ module Make (SI : S) : Intf with type ast = SI.ast = struct
     ;;
   end
 
-  include Io.LoadableMake(Load)
+  include Loadable.Make (Load)
 end

@@ -47,28 +47,9 @@ module Raw = struct
     [@@deriving sexp, fields]
     ;;
   end
+
   include CI
-
-  module Load : Io.LoadableS with type t = CI.t = struct
-    type t = CI.t;;
-
-    let wrap name f =
-      Or_error.tag_arg
-        (Or_error.try_with f)
-        "While reading from"
-        name
-        [%sexp_of: string]
-    ;;
-
-    let load_from_string s =
-      wrap "string" (fun () -> Sexp.of_string_conv_exn s [%of_sexp: CI.t])
-    ;;
-
-    let load_from_ic ?(path="stdin") ic =
-      wrap path (fun () -> [%of_sexp: CI.t] (Sexp.input_sexp ic))
-    ;;
-  end
-  include Io.LoadableMake (Load);;
+  include Loadable.Of_sexpable (CI)
 end
 
 let part_chain_fst f g x =

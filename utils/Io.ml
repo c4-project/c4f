@@ -120,31 +120,3 @@ let with_input_and_output ~f src snk =
   In_source.with_input src
     ~f:(fun isrc' ic -> Out_sink.with_output snk ~f:(f isrc' ic))
 ;;
-
-(*
- * Loading functionality
- *)
-
-module type LoadableS = sig
-  type t
-  val load_from_string : string -> t Or_error.t;;
-  val load_from_ic : ?path:string -> In_channel.t -> t Or_error.t;;
-end
-
-module type LoadableIntf = sig
-  include LoadableS
-  val load_from_isrc : In_source.t -> t Or_error.t;;
-  val load : path:string -> t Or_error.t;;
-end
-
-module LoadableMake (S : LoadableS)
-  : LoadableIntf with type t := S.t = struct
-  include S
-
-  let load_from_isrc =
-    In_source.with_input
-      ~f:(fun is ic -> load_from_ic ?path:(In_source.file is) ic)
-  ;;
-
-  let load ~path = load_from_isrc (`File path);;
-end

@@ -48,7 +48,7 @@ end
    file, without any compiler testing or expansion. *)
 module Raw : sig
   include S with module C = Compiler.Cfg_spec
-  include Utils.Io.LoadableIntf with type t := t
+  include Utils.Loadable.S with type t := t
 end
 
   (** [M] represents fully processed act compiler configurations. *)

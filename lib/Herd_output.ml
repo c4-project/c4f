@@ -302,7 +302,7 @@ let process_line (rd : reader) (line : string) : reader =
   in { rd with state = state'; herd = herd' }
 ;;
 
-module Load : Io.LoadableS with type t = t = struct
+module Load : Loadable.Basic with type t = t = struct
   type nonrec t = t
 
   let load_from_string s =
@@ -319,7 +319,7 @@ module Load : Io.LoadableS with type t = t = struct
   ;;
 end
 
-include Io.LoadableMake (Load);;
+include Loadable.Make (Load);;
 
 let%expect_test "load_from_string on empty string fails" =
   Or_error.iter_error

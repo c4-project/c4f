@@ -104,5 +104,5 @@ val outcome_of
 ;;
 
 (** We can load Herd output analyses using the normal interfaces in
-    [Utils.Io.LoadableIntf]. *)
-include Io.LoadableIntf with type t := t
+    [Loadable]. *)
+include Loadable.S with type t := t
