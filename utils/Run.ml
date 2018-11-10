@@ -26,16 +26,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Core_extended
 
-type exit_code =
-  { cmd   : string list
-  ; code  : int
-  } [@@deriving sexp]
-
-type exit_sig =
-  { cmd    : string list
-  ; signal : Signal.t
-  } [@@deriving sexp]
-
 module type Runner = sig
   val run
     :  ?oc:Out_channel.t
@@ -68,13 +58,19 @@ module Local : Runner = struct
       Or_error.error_string "timed out"
     | `Exited 0 -> Result.ok_unit
     | `Exited code ->
-      Or_error.error
-        "process exited with nonzero status"
-        { cmd = prog::args; code }
-        [%sexp_of: exit_code]
+      Or_error.error_s
+        [%message
+          "process exited with nonzero status"
+            ~prog
+            ~args:(args : string list)
+            ~code:(code : int)
+        ]
     | `Signaled signal ->
-      Or_error.error
-        "process caught signal"
-        { cmd = prog::args; signal }
-        [%sexp_of: exit_sig]
+      Or_error.error_s
+        [%message
+          "process caught signal"
+            ~prog
+            ~args:(args : string list)
+            ~signal:(signal : Signal.t)
+        ]
 end
