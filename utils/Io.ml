@@ -38,7 +38,7 @@ module Dir = struct
       Option.value_map
         ~default:farray
         ~f:(fun ext ->
-            Array.filter ~f:(MyFilename.has_extension ~ext) farray)
+            Array.filter ~f:(My_filename.has_extension ~ext) farray)
         ext
     in
     Array.to_list with_ext

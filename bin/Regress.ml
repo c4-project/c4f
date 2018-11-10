@@ -57,7 +57,7 @@ let regress_run_asm_many modename mode passes test_path =
   printf "# %s tests\n\n" modename;
 
   let emits = ["x86"; "att"] in
-  let path = MyFilename.concat_list ([test_path; "asm"] @ emits) in
+  let path = My_filename.concat_list ([test_path; "asm"] @ emits) in
   let%bind l = LangSupport.asm_runner_from_emits emits in
   let%bind testfiles = Io.Dir.get_files ~ext:"s" path in
   let results = List.map

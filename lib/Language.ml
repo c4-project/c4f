@@ -100,7 +100,7 @@ module Make (B : Basic)
 
     (** [is_label_and p x] returns [p x] if [x] is a label, or
         [false] otherwise. *)
-    let is_label_and p = MyFn.conj is_label p;;
+    let is_label_and p = My_fn.conj is_label p;;
 
     let is_nop stm =
       Abstract.(
@@ -127,7 +127,7 @@ module Make (B : Basic)
     let is_jump_pair x y =
       is_jump x
       && is_label y
-      && (MyFn.on (Fn.compose Symbol.Set.of_list OnSymbols.to_list)
+      && (My_fn.on (Fn.compose Symbol.Set.of_list OnSymbols.to_list)
             Symbol.Set.equal) x y
     ;;
 

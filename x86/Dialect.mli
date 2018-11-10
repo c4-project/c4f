@@ -57,7 +57,7 @@ type t =
   [@@deriving sexp, compare, hash]
 
 (** [STable] associates each dialect with its string name. *)
-module STable : (StringTable.Intf with type t = t)
+module STable : (String_table.Intf with type t = t)
 
 include Core.Identifiable.S_plain with type t := t
 

@@ -26,7 +26,7 @@ module File = struct
     } [@@deriving fields]
 
   let make ps basename =
-    let lcat = MyFilename.concat_list in
+    let lcat = My_filename.concat_list in
     { basename
     ; c_path     = lcat (M.c_path    ps @ [basename ^ ".c"])
     ; litc_path  = lcat (M.litc_path ps @ [basename ^ ".litmus"])
@@ -70,7 +70,7 @@ let mkdir (path : string) =
 ;;
 
 let subpaths (path : string list) : string list =
-  List.map ~f:MyFilename.concat_list (My_list.prefixes path)
+  List.map ~f:My_filename.concat_list (My_list.prefixes path)
 ;;
 
 let mkdir_p (path : string list) =
@@ -130,7 +130,7 @@ let pp f ps =
   Format.pp_open_vbox f 0;
 
   let p f (k, v) =
-    My_format.pp_kv f k String.pp (MyFilename.concat_list v)
+    My_format.pp_kv f k String.pp (My_filename.concat_list v)
   in
   Format.pp_print_list
     ~pp_sep:Format.pp_print_cut

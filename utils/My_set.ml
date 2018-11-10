@@ -103,7 +103,7 @@ let%expect_test "partial_compare: empty sets" =
 let%expect_test "partial_compare: subset" =
   let module M = Extend (Int.Set) in
   Sexp.output_hum Out_channel.stdout
-    [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
+    [%sexp ( My_fn.on Int.Set.of_list M.partial_compare
                [ 1; 2; 3 ] [ 1; 2; 3; 4; 5; 6 ]
              : Int.Set.t partial_order
            )];
@@ -112,7 +112,7 @@ let%expect_test "partial_compare: subset" =
 let%expect_test "partial_compare: superset" =
   let module M = Extend (Int.Set) in
   Sexp.output_hum Out_channel.stdout
-    [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
+    [%sexp ( My_fn.on Int.Set.of_list M.partial_compare
                [ 1; 2; 3; 4; 5; 6 ] [ 4; 5; 6 ]
              : Int.Set.t partial_order
            )];
@@ -121,7 +121,7 @@ let%expect_test "partial_compare: superset" =
 let%expect_test "partial_compare: equal" =
   let module M = Extend (Int.Set) in
   Sexp.output_hum Out_channel.stdout
-    [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
+    [%sexp ( My_fn.on Int.Set.of_list M.partial_compare
                [ 1; 2; 3; 4; 5; 6 ] [ 6; 5; 4; 3; 2; 1 ]
              : Int.Set.t partial_order
            )];
@@ -130,7 +130,7 @@ let%expect_test "partial_compare: equal" =
 let%expect_test "partial_compare: no order" =
   let module M = Extend (Int.Set) in
   Sexp.output_hum Out_channel.stdout
-    [%sexp ( MyFn.on Int.Set.of_list M.partial_compare
+    [%sexp ( My_fn.on Int.Set.of_list M.partial_compare
                [ 1; 2; 3; 4 ] [ 3; 4; 5; 6 ]
              : Int.Set.t partial_order
            )];

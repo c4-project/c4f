@@ -42,7 +42,7 @@ end
 
 module type SSexpTable = sig
   include SSexp
-  include StringTable.Table with type t := t
+  include String_table.Table with type t := t
 end
 
 module type Extension = sig
@@ -63,7 +63,7 @@ end
 
 module type ExtensionTable = sig
   include Extension
-  include StringTable.Intf with type t := t
+  include String_table.Intf with type t := t
   include Identifiable.S_common with type t := t
 
   val of_string_option : string -> t option
@@ -114,11 +114,11 @@ module ExtendTable (E : SSexpTable) : ExtensionTable with type t := E.t = struct
   module Ex = Extend (E)
   include Ex
 
-  module Tbl = StringTable.Make (E)
+  module Tbl = String_table.Make (E)
   include Tbl
 
   module Id : (Identifiable.S_common with type t := E.t) =
-    StringTable.ToIdentifiable (Tbl)
+    String_table.ToIdentifiable (Tbl)
       (struct
         let compare = Ex.compare
         let hash = Ex.hash

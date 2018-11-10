@@ -87,7 +87,7 @@ module Sizable = struct
   ;;
 
   include (
-    StringTable.Make (struct
+    String_table.Make (struct
       type nonrec t = t
       let table =
         [ `Add    , "add"
@@ -102,7 +102,7 @@ module Sizable = struct
         ; `Xchg   , "xchg"
         ; `Xor    , "xor"
         ]
-    end) : StringTable.Intf with type t := t)
+    end) : String_table.Intf with type t := t)
 
   include Abstractable.Make (struct
       type nonrec t = t
@@ -133,8 +133,8 @@ module Size = struct
   [@@deriving sexp, eq]
   ;;
 
-  module Suffix_table : StringTable.Intf with type t := t =
-    StringTable.Make (struct
+  module Suffix_table : String_table.Intf with type t := t =
+    String_table.Make (struct
       type nonrec t = t
       let table =
         [ Byte, "b"
@@ -150,7 +150,7 @@ module Sized = struct
   ;;
 
   include (
-    StringTable.Make
+    String_table.Make
       (struct
         type nonrec t = t
 
@@ -160,7 +160,7 @@ module Sized = struct
             (List.cartesian_product
                Sizable.table
                Size.Suffix_table.table)
-      end) : StringTable.Intf with type t := t)
+      end) : String_table.Intf with type t := t)
 
 
   include Abstractable.Make (struct
@@ -181,7 +181,7 @@ module Basic = struct
   ;;
 
   include (
-    StringTable.Make
+    String_table.Make
       (struct
         type nonrec t = t
         let table =
@@ -191,7 +191,7 @@ module Basic = struct
           ; `Mfence, "mfence"
           ; `Nop,    "nop"
           ]
-      end) : StringTable.Intf with type t := t)
+      end) : String_table.Intf with type t := t)
 
   include Abstractable.Make (struct
       type nonrec t = t
@@ -253,7 +253,7 @@ module Condition = struct
 
   (** Intermediate table used to build the main condition table. *)
   module Inv_table =
-    StringTable.Make
+    String_table.Make
       (struct
         type t = invertible
         let table =
@@ -293,7 +293,7 @@ module Condition = struct
     ]
 
   include
-    (StringTable.Make (struct
+    (String_table.Make (struct
        type nonrec t = t
        let table =
          List.bind ~f:build_inv_condition Inv_table.table
@@ -303,7 +303,7 @@ module Condition = struct
          ; `ParityEven, "pe"
          ; `ParityOdd , "po"
          ]
-     end) : StringTable.Intf with type t := t)
+     end) : String_table.Intf with type t := t)
 end
 
 module Jump = struct
@@ -315,7 +315,7 @@ module Jump = struct
   ;;
 
   include
-    (StringTable.Make (struct
+    (String_table.Make (struct
       type nonrec t = t
 
       (* Jump instructions are always jC for some condition C, except
@@ -325,7 +325,7 @@ module Jump = struct
         (`Unconditional, "jmp")
         :: List.map ~f Condition.table
       ;;
-    end) : StringTable.Intf with type t := t)
+    end) : String_table.Intf with type t := t)
 
 
   let%expect_test "Jump: table accounts for all conditions" =

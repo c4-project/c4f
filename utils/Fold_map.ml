@@ -58,7 +58,7 @@ module Make0 (I : Basic0)
 
   let max_measure ~measure ?(default=0) xs =
     xs
-    |> max_elt ~compare:(MyFn.on measure Int.compare)
+    |> max_elt ~compare:(My_fn.on measure Int.compare)
     |> Option.value_map ~f:measure ~default:default
 
   module On_monad (MS : Monad.S) = struct
@@ -124,7 +124,7 @@ module Make1 (I : Basic1)
 
   let max_measure ~measure ?(default=0) xs =
     xs
-    |> max_elt ~compare:(MyFn.on measure Int.compare)
+    |> max_elt ~compare:(My_fn.on measure Int.compare)
     |> Option.value_map ~f:measure ~default:default
 
   let right_pad ~padding xs =

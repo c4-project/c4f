@@ -89,7 +89,7 @@ let decide_if_c infile = function
   | `Assembly -> false
   | `Infer ->
     Option.exists infile
-      ~f:(MyFilename.has_extension ~ext:"c")
+      ~f:(My_filename.has_extension ~ext:"c")
 ;;
 
 let run file_type use_herd compiler_id ~infile ~outfile o cfg =

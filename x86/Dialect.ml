@@ -58,7 +58,7 @@ end
 include M
 
 module STable =
-  StringTable.Make
+  String_table.Make
     (struct
       type nonrec t = t
       let table =
@@ -67,7 +67,7 @@ module STable =
         ; Herd7, "Herd7"
         ]
     end)
-include StringTable.ToIdentifiable(STable)(M)
+include String_table.ToIdentifiable(STable)(M)
 
 module type Has_dialect = sig
   val dialect : t

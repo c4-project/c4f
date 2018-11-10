@@ -103,7 +103,7 @@ let compare_states ~initials ~finals ~locmap ~valmap
   let f = State.map ~keyf:locmap ~valf:valmap in
   let%map finals' = Or_error.combine_errors (List.map ~f finals) in
   let result =
-    State.Set.(MyFn.on of_list partial_compare initials finals')
+    State.Set.(My_fn.on of_list partial_compare initials finals')
   in
   (result :> outcome)
 ;;

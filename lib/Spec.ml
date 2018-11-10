@@ -187,7 +187,7 @@ module Make (B : Basic) : S with type t = B.t = struct
       let open Or_error.Let_syntax in
       let%map () =
         xs
-        |> List.find_all_dups ~compare:(MyFn.on With_id.id Id.compare)
+        |> List.find_all_dups ~compare:(My_fn.on With_id.id Id.compare)
         |> List.map
           ~f:(fun x -> Or_error.error_s [%message "duplicate ID" ~id:(With_id.id x : Id.t)])
         |> Or_error.combine_errors_unit
