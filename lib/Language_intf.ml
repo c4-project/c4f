@@ -43,12 +43,12 @@ module type Basic_statement = sig
 
   (** They must allow fold-mapping over symbols... *)
   module OnSymbols
-    : Fold_map.S0 with type elt := sym and type t := t
+    : Fold_map.Container0 with type elt := sym and type t := t
   ;;
 
   (** ...and over instructions. *)
   module OnInstructions
-    : Fold_map.S0 with type elt := ins and type t := t
+    : Fold_map.Container0 with type elt := ins and type t := t
   ;;
 
   include Abstractable.S
@@ -87,10 +87,14 @@ module type Basic_instruction = sig
   ;;
 
   (** They must allow fold-mapping over symbols... *)
-  module OnSymbols : Fold_map.S0 with type elt := sym and type t := t
+  module OnSymbols :
+    Fold_map.Container0 with type elt := sym and type t := t
+  ;;
 
   (** ...and over locations. *)
-  module OnLocations : Fold_map.S0 with type elt := loc and type t := t
+  module OnLocations :
+    Fold_map.Container0 with type elt := loc and type t := t
+  ;;
 
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
   val jump : string -> t

@@ -65,7 +65,7 @@ module type Basic = sig
   (** [Program_container] describes the monadic-fold-mappable
      container that we'll be using to hold the one or more programs
      we're sanitising. *)
-  module Program_container : Utils.Fold_map.S1
+  module Program_container : Utils.Fold_map.Container1
 
   (** [split] splits an assembly script up into the one or more
       programs we'll be sanitising. *)

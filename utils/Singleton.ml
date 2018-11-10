@@ -22,18 +22,15 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** List extensions *)
+open Core
 
-(** [t] is just [list], re-exported to make this module satisfy
-    various container interfaces. *)
-type 'a t = 'a list
+type 'a t = 'a
 
-(** [My_list] contains all of the monadic fold-mappable extensions we
-     define in [Fold_map]. *)
-include Fold_map.Container1 with type 'a t := 'a t
+include Fold_map.Make_container1 (struct
+    type nonrec 'a t = 'a t
 
-(** [exclude ~f xs] is the inverse of [filter ~f xs]. *)
-val exclude : f:('a -> bool) -> 'a t -> 'a t
-
-(** [prefixes xs] returns all non-empty prefixes of [xs]. *)
-val prefixes : 'a t -> 'a t t
+    module On_monad (M : Monad.S) = struct
+      let fold_map ~f ~init x = f init x
+    end
+  end)
+;;

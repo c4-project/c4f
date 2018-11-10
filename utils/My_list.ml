@@ -24,7 +24,55 @@
 
 open Core
 
-include Fold_map.List
+type 'a t = 'a list
+
+include Fold_map.Make_container1 (struct
+    type 'a t = 'a list
+
+    module On_monad (M : Monad.S) = struct
+      let fold_map ~f ~init xs =
+        let open M.Let_syntax in
+        let%map (acc_final, xs_final) =
+          List.fold_left xs
+            ~init:(return (init, []))
+            ~f:(fun state x ->
+                let%bind (acc, xs') = state in
+                let%map  (acc', x') = f acc x in
+                (acc', x'::xs'))
+        in
+        (acc_final, List.rev xs_final)
+      ;;
+    end
+  end)
+;;
+
+let%expect_test "generated list map behaves properly" =
+  Format.printf "@[%a@]@."
+    (Format.pp_print_list Int.pp ~pp_sep:Format.pp_print_space)
+    (List.map ~f:(fun x -> x * x) [ 1; 3; 5; 7 ]);
+  [%expect {| 1 9 25 49 |}]
+;;
+
+let%expect_test "generated list count behaves properly" =
+  Format.printf "@[%d@]@." (List.count ~f:Int.is_positive [ -7; -5; -3; -1; 1; 3; 5; 7 ]);
+  [%expect {| 4 |}]
+;;
+
+let%expect_test "mapiM: returning identity on list/option" =
+  let module M = On_monad (Option) in
+  Format.printf "@[<h>%a@]@."
+    (My_format.pp_option
+       ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep String.pp))
+    (M.mapiM ~f:(fun _ k -> Some k) ["a"; "b"; "c"; "d"; "e"]);
+  [%expect {| a, b, c, d, e |}]
+
+let%expect_test "mapiM: counting upwards on list/option" =
+  let module M = On_monad (Option) in
+  Format.printf "@[<h>%a@]@."
+    (My_format.pp_option
+       ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep Int.pp))
+    (M.mapiM ~f:(fun i _ -> Some i) [3; 7; 2; 4; 42]);
+  [%expect {| 0, 1, 2, 3, 4 |}]
 
 let%expect_test "MyList: max_measure on empty list" =
   printf "%d" (max_measure ~default:1066 ~measure:Fn.id []);

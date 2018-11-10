@@ -169,8 +169,6 @@ module M = struct
       )
   ;;
 
-  module Mapper = Fold_map.List.On_monad (Or_error)
-
   type data = t (* For compatibility with Extend_tabular *)
 
   let to_table a =
@@ -179,7 +177,8 @@ module M = struct
       let open Or_error.Let_syntax in
       let%bind t = make ~header () in
       let%map (_, _, t) =
-        Mapper.foldM (files a) ~init:(None, None, t) ~f:with_file
+        My_list.With_errors.foldM (files a)
+          ~init:(None, None, t) ~f:with_file
       in
       t
     )

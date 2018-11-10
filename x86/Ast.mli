@@ -94,7 +94,7 @@ module Disp : sig
   (** [On_symbols] permits enumerating and folding over symbols inside
      a displacement. *)
   module On_symbols
-    : Fold_map.S0 with type t := t and type elt := string
+    : Fold_map.Container0 with type t := t and type elt := string
   ;;
 end
 
@@ -109,7 +109,7 @@ module Index : sig
   (** [On_registers] permits enumerating and folding over registers
      inside a displacement. *)
   module On_registers
-    : Fold_map.S0 with type t := t and type elt := Reg.t
+    : Fold_map.Container0 with type t := t and type elt := Reg.t
   ;;
 end
 
@@ -143,13 +143,13 @@ module Indirect : sig
   (** [On_registers] permits enumerating and folding over registers
      inside a memory access. *)
   module On_registers
-    : Fold_map.S0 with type t := t and type elt := Reg.t
+    : Fold_map.Container0 with type t := t and type elt := Reg.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
      a memory access. *)
   module On_symbols
-    : Fold_map.S0 with type t := t and type elt := string
+    : Fold_map.Container0 with type t := t and type elt := string
   ;;
 end
 
@@ -164,13 +164,13 @@ module Location : sig
   (** [On_registers] permits enumerating and folding over registers
      inside a location. *)
   module On_registers
-    : Fold_map.S0 with type t := t and type elt := Reg.t
+    : Fold_map.Container0 with type t := t and type elt := Reg.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
      a location. *)
   module On_symbols
-    : Fold_map.S0 with type t := t and type elt := string
+    : Fold_map.Container0 with type t := t and type elt := string
   ;;
 end
 
@@ -201,13 +201,13 @@ module Operand : sig
   (** [On_locations] permits enumerating and folding over locations
      inside an operand. *)
   module On_locations
-    : Fold_map.S0 with type t := t and type elt := Location.t
+    : Fold_map.Container0 with type t := t and type elt := Location.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
      an operand. *)
   module On_symbols
-    : Fold_map.S0 with type t := t and type elt := string
+    : Fold_map.Container0 with type t := t and type elt := string
   ;;
 end
 
@@ -231,13 +231,13 @@ module Instruction : sig
   (** [On_locations] permits enumerating and folding over locations
      inside an instruction. *)
   module On_locations
-    : Fold_map.S0 with type t := t and type elt := Location.t
+    : Fold_map.Container0 with type t := t and type elt := Location.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
      an instruction. *)
   module On_symbols
-    : Fold_map.S0 with type t := t and type elt := string
+    : Fold_map.Container0 with type t := t and type elt := string
   ;;
 end
 
@@ -255,13 +255,13 @@ module Statement : sig
   (** [On_instructions] permits enumerating and folding over
      instructions inside a statement. *)
   module On_instructions
-    : Fold_map.S0 with type t := t and type elt := Instruction.t
+    : Fold_map.Container0 with type t := t and type elt := Instruction.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
      an operand. *)
   module On_symbols
-    : Fold_map.S0 with type t := t and type elt := string
+    : Fold_map.Container0 with type t := t and type elt := string
   ;;
 end
 

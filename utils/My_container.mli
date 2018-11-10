@@ -22,18 +22,25 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** List extensions *)
+open Core
 
-(** [t] is just [list], re-exported to make this module satisfy
-    various container interfaces. *)
-type 'a t = 'a list
+(** [Extensions1] contains extensions for [Container.S1]
+   implementations. *)
+module type Extensions1 = sig
+  type 'a t
 
-(** [My_list] contains all of the monadic fold-mappable extensions we
-     define in [Fold_map]. *)
-include Fold_map.Container1 with type 'a t := 'a t
+  (** [max_measure ~measure ?default xs] measures each item in [xs]
+      according to [measure], and returns the highest measure reported.
+      If [xs] is empty, return [default] if given, and [0]
+      otherwise. *)
+  val max_measure : measure:('a -> int) -> ?default:int -> 'a t -> int
 
-(** [exclude ~f xs] is the inverse of [filter ~f xs]. *)
-val exclude : f:('a -> bool) -> 'a t -> 'a t
+  (** [any ~predicates x] tests [x] against [predicates] until one
+      returns [true], or all return [false]. *)
+  val any : predicates:('a -> bool) t -> 'a -> bool
+end
 
-(** [prefixes xs] returns all non-empty prefixes of [xs]. *)
-val prefixes : 'a t -> 'a t t
+module Extend1 :
+  functor (C : Container.S1)
+    -> Extensions1 with type 'a t := 'a C.t
+;;

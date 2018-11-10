@@ -119,14 +119,11 @@ module String_direct = Make (struct
     let abstract_demangle = List.return
     let of_string_opt = Option.some
 
-    module OnStrings = Fold_map.Make0 (struct
-        type t = string
-        module Elt = String
-
-        module On_monad (M : Monad.S) = struct
-          let fold_map ~f ~init str = M.(return init >>= Fn.flip f str)
-        end
-      end)
+    module OnStrings = struct
+      type t = string
+      type elt = string
+      include Singleton.With_elt (String)
+    end
   end)
 ;;
 

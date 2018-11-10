@@ -22,18 +22,12 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** List extensions *)
+(** [Singleton] implements [Container], [Fold_map], and
+    other such operations on single items. *)
 
-(** [t] is just [list], re-exported to make this module satisfy
-    various container interfaces. *)
-type 'a t = 'a list
+(** ['a t] is just ['a], but made to look like a container type. *)
+type 'a t = 'a
 
-(** [My_list] contains all of the monadic fold-mappable extensions we
-     define in [Fold_map]. *)
+(** We implement [Fold_map.Container1], and, by extension,
+    [Container.S1] and [My_container.Extensions1]. *)
 include Fold_map.Container1 with type 'a t := 'a t
-
-(** [exclude ~f xs] is the inverse of [filter ~f xs]. *)
-val exclude : f:('a -> bool) -> 'a t -> 'a t
-
-(** [prefixes xs] returns all non-empty prefixes of [xs]. *)
-val prefixes : 'a t -> 'a t t

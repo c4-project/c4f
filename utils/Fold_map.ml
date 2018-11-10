@@ -26,106 +26,120 @@ open Core
 
 include Fold_map_intf
 
-module Make0 (I : Basic0)
-  : S0 with type t = I.t and type elt = I.Elt.t = struct
-  type t = I.t
-  type elt = I.Elt.t
+(** Internal functor for generating several derived monadic operations
+    (monadic fold, monadic map, monadic iteration) from a monadic
+    fold-map, generic over both arity-0 and arity-1. *)
+module Derived_ops_monadic_gen (I: Generic_monadic) = struct
+  let foldM c ~init ~f =
+    I.M.(
+      I.fold_map ~init c ~f:(fun k x -> f k x >>| fun x' -> (x', x))
+      >>| fst
+    )
+  ;;
 
+  let mapM ~f c =
+    I.M.(
+      I.fold_map ~f:(fun () x -> f x >>| Tuple2.create ()) ~init:() c
+      >>| snd
+    )
+  ;;
+
+  let iterM c ~f = foldM ~init:() ~f:(Fn.const f) c
+
+  let mapiM ~f c =
+    I.M.(
+      I.fold_map ~init:0 c
+        ~f:(fun k x -> f k x >>| fun x' -> (k + 1, x'))
+      >>| snd
+    )
+  ;;
+end
+
+(** Internal functor for generating several derived non-monadic,
+   non-[Container] operations (map, iterate) from a fold-map, generic
+   over both arity-0 and arity-1. *)
+module Derived_ops_gen (I: Generic) = struct
+  (* As usual, we just use the monadic equivalents over the identity
+     monad. *)
+  module D = Derived_ops_monadic_gen (struct
+      module M = Monad.Ident
+      include I
+    end)
+  ;;
+  let iter = D.iterM
+  let map  = D.mapM
+  let mapi = D.mapiM
+end
+
+(** Inner module used to generate the input to [Container] functors
+    from non-monadic fold-maps. *)
+module Container_gen (I : Generic) : sig
+  val fold : 'a I.t -> init:'acc -> f:('acc -> 'a I.elt -> 'acc) -> 'acc
+  val iter : [> `Custom of 'a I.t -> f:('a I.elt -> unit) -> unit ]
+end = struct
+  module D = Derived_ops_monadic_gen (struct
+      module M = Monad.Ident
+      include I
+    end)
+  ;;
+  let fold = D.foldM
+  let iter = `Custom D.iterM
+end
+
+module Make_container0 (I : Basic_container0)
+  : Container0 with type t := I.t and type elt := I.Elt.t = struct
   (* We can implement the non-monadic fold-map using the identity
      monad. *)
-  include
-    ( I.On_monad (Monad.Ident)
-      : Mappable0 with type t := t and type elt := elt
-    )
+  include I.On_monad (Monad.Ident)
 
-  module M = struct
-    type nonrec t = t
-    module Elt = I.Elt
-
-    let fold c ~init ~f =
-      fst (fold_map ~f:(fun acc x -> f acc x, x) ~init c)
-    ;;
-
-    let iter' c ~f =
-      fst (fold_map ~f:(fun () x -> f x; (), x) ~init:() c)
-    ;;
-
-    let iter = `Custom iter'
+  module Gen
+    : Generic with type 'a t = I.t and type 'a elt = I.Elt.t = struct
+    type 'a t = I.t
+    type 'a elt = I.Elt.t
+    include I.On_monad (Monad.Ident)
   end
-  include Container.Make0 (M)
 
-  let map ~f c = snd (fold_map ~f:(fun () x -> (), f x) ~init:() c)
+  include Container.Make0 (struct
+      type t = I.t
+      module Elt = I.Elt
+      include Container_gen (Gen)
+    end)
 
-  let max_measure ~measure ?(default=0) xs =
-    xs
-    |> max_elt ~compare:(My_fn.on measure Int.compare)
-    |> Option.value_map ~f:measure ~default:default
+  include Derived_ops_gen (Gen)
 
   module On_monad (MS : Monad.S) = struct
     include I.On_monad (MS)
-
-    let foldM c ~init ~f =
-      MS.(
-        fold_map ~init c ~f:(fun k x -> f k x >>| fun x' -> (x', x))
-        >>| fst
-      )
-    ;;
-
-    let mapM ~f c =
-      MS.(
-        fold_map ~f:(fun () x -> f x >>| Tuple2.create ()) ~init:() c
-        >>| snd
-      )
-    ;;
-
-    let mapiM ~f c =
-      MS.(
-        fold_map ~init:0 c
-          ~f:(
-            fun k x ->
-              let open MS.Let_syntax in
-              let%map x' = f k x in (k + 1, x')
-          )
-        >>| snd
-      )
-    ;;
+    include Derived_ops_monadic_gen (struct
+        type 'a t = I.t
+        type 'a elt = I.Elt.t
+        module M = MS
+        include I.On_monad (MS)
+      end)
   end
-
-  module With_errors = On_monad (Base.Or_error)
+  module With_errors = On_monad (Core.Or_error)
 end
 
-module Make1 (I : Basic1)
-  : S1 with type 'a t = 'a I.t = struct
-  type 'a t = 'a I.t
+module Make_container1 (I : Basic_container1)
+  : Container1 with type 'a t := 'a I.t = struct
+  include I.On_monad (Monad.Ident)
 
-  (* We can implement the non-monadic fold-map using the identity
-     monad. *)
-  include
-    ( I.On_monad (Monad.Ident)
-      : Mappable1 with type 'a t := 'a t
-    )
-
-  module M = struct
-    type nonrec 'a t = 'a t
-
-    let fold c ~init ~f =
-      fst (fold_map ~f:(fun acc x -> f acc x, x) ~init c)
-    ;;
-
-    let iter' c ~f =
-      fst (fold_map ~f:(fun () x -> f x; (), x) ~init:() c)
-    ;;
-
-    let iter = `Custom iter'
+  module Gen
+    : Generic with type 'a t = 'a I.t and type 'a elt = 'a = struct
+    type 'a t = 'a I.t
+    type 'a elt = 'a
+    include I.On_monad (Monad.Ident)
   end
-  include Container.Make (M)
 
-  let map ~f c = snd (fold_map ~f:(fun () x -> (), f x) ~init:() c)
-
-  let max_measure ~measure ?(default=0) xs =
-    xs
-    |> max_elt ~compare:(My_fn.on measure Int.compare)
-    |> Option.value_map ~f:measure ~default:default
+  module C = Container.Make (struct
+      type nonrec 'a t = 'a I.t
+      include Container_gen (Gen)
+    end)
+  include C
+  include My_container.Extend1 (struct
+      type nonrec 'a t = 'a I. t
+      include C
+    end)
+  include Derived_ops_gen (Gen)
 
   let right_pad ~padding xs =
     let maxlen = max_measure ~measure:List.length xs
@@ -134,39 +148,18 @@ module Make1 (I : Basic1)
 
   module On_monad (MS : Monad.S) = struct
     include I.On_monad (MS)
-
-    let foldM c ~init ~f =
-      MS.(
-        fold_map ~init c ~f:(fun k x -> f k x >>| fun x' -> (x', x))
-        >>| fst
-      )
-    ;;
-
-    let mapM ~f c =
-      MS.(
-        fold_map ~f:(fun () x -> f x >>| Tuple2.create ()) ~init:() c
-        >>| snd
-      )
-    ;;
-
-    let mapiM ~f c =
-      MS.(
-        fold_map ~init:0 c
-          ~f:(
-            fun k x ->
-              let open MS.Let_syntax in
-              let%map x' = f k x in (k + 1, x')
-          )
-        >>| snd
-      )
-    ;;
+    include Derived_ops_monadic_gen (struct
+        type 'a t = 'a I.t
+        type 'a elt = 'a
+        module M = MS
+        include I.On_monad (MS)
+      end)
   end
-
   module With_errors = On_monad (Base.Or_error)
 
-  module To_S0 (Elt : Equal.S) =
-    Make0 (struct
-      type nonrec t = Elt.t t
+  module With_elt (Elt : Equal.S) =
+    Make_container0 (struct
+      type nonrec t = Elt.t I.t
       module Elt = Elt
 
       (* The [S0] fold-map has a strictly narrower function type than
@@ -175,60 +168,8 @@ module Make1 (I : Basic1)
     end)
 end
 
-(*
- * Implementations for common containers
- *)
-
-module List : S1 with type 'a t = 'a list =
-  Make1 (struct
-    type 'a t = 'a list
-
-    module On_monad (M : Monad.S) = struct
-      let fold_map ~f ~init xs =
-        let open M.Let_syntax in
-        let%map (acc_final, xs_final) =
-          List.fold_left xs
-            ~init:(return (init, []))
-            ~f:(fun state x ->
-                let%bind (acc, xs') = state in
-                let%map  (acc', x') = f acc x in
-                (acc', x'::xs'))
-        in
-        (acc_final, List.rev xs_final)
-      ;;
-    end
-  end)
-
-let%expect_test "generated list map behaves properly" =
-  Format.printf "@[%a@]@."
-    (Format.pp_print_list Int.pp ~pp_sep:Format.pp_print_space)
-    (List.map ~f:(fun x -> x * x) [ 1; 3; 5; 7 ]);
-  [%expect {| 1 9 25 49 |}]
-;;
-
-let%expect_test "generated list count behaves properly" =
-  Format.printf "@[%d@]@." (List.count ~f:Int.is_positive [ -7; -5; -3; -1; 1; 3; 5; 7 ]);
-  [%expect {| 4 |}]
-;;
-
-let%expect_test "mapiM: returning identity on list/option" =
-  let module M = List.On_monad (Option) in
-  Format.printf "@[<h>%a@]@."
-    (My_format.pp_option
-       ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep String.pp))
-    (M.mapiM ~f:(fun _ k -> Some k) ["a"; "b"; "c"; "d"; "e"]);
-  [%expect {| a, b, c, d, e |}]
-
-let%expect_test "mapiM: counting upwards on list/option" =
-  let module M = List.On_monad (Option) in
-  Format.printf "@[<h>%a@]@."
-    (My_format.pp_option
-       ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep Int.pp))
-    (M.mapiM ~f:(fun i _ -> Some i) [3; 7; 2; 4; 42]);
-  [%expect {| 0, 1, 2, 3, 4 |}]
-
-module Option : S1 with type 'a t = 'a option =
-  Make1 (struct
+module Option : Container1 with type 'a t := 'a option =
+  Make_container1 (struct
     type 'a t = 'a option
 
     module On_monad (M : Monad.S) = struct
@@ -241,15 +182,6 @@ module Option : S1 with type 'a t = 'a option =
               let%map  (acc', x') = f acc x in
               (acc', Some x'))
       ;;
-    end
-  end)
-
-module Singleton : S1 with type 'a t = 'a =
-  Make1 (struct
-    type 'a t = 'a
-
-    module On_monad (M : Monad.S) = struct
-      let fold_map ~f ~init x = f init x
     end
   end)
 

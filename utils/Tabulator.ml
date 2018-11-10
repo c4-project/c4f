@@ -88,8 +88,7 @@ let with_row row t =
 ;;
 
 let with_rows rows t =
-  let module Mapper = Fold_map.List.On_monad (Or_error) in
-  Mapper.foldM ~f:(Fn.flip with_row) ~init:t rows
+  My_list.With_errors.foldM ~f:(Fn.flip with_row) ~init:t rows
 ;;
 
 let with_rule rule_char t =

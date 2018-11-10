@@ -244,9 +244,6 @@ module Make (B : Basic)
     >>= (Warn |-> warn_unknown_statements)
     >>= sanitise_all_ins
 
-  let any (fs : ('a -> bool) list) (a : 'a) : bool =
-    List.exists ~f:(fun f -> f a) fs
-
   (** [irrelevant_instruction_types] lists the high-level types of
       instruction that can be thrown out when converting to a litmus
       test. *)
@@ -295,27 +292,28 @@ module Make (B : Basic)
       Ctx.is_pass_enabled Sanitiser_pass.RemoveBoundaries
     in
     let ignore_boundaries = not remove_boundaries in
-    let matchers =
+    let predicates =
       L.Statement.(
         [ is_nop
         ; is_directive
         ; is_unused_label ~ignore_boundaries ~syms
         ])
     in
-    My_list.exclude ~f:(any matchers) prog
+    My_list.exclude ~f:(My_list.any ~predicates) prog
+  ;;
 
   (** [remove_litmus_irrelevant_statements prog] completely removes
      statements in [prog] that have no use in Litmus and cannot be
      rewritten. *)
   let remove_litmus_irrelevant_statements prog =
     Ctx.return
-      (let matchers =
+      (let predicates =
          L.Statement.(
            [ instruction_is_irrelevant
            ; is_stack_manipulation
            ])
        in
-       My_list.exclude ~f:(any matchers) prog)
+       My_list.exclude ~f:(My_list.any ~predicates) prog)
 
   let remove_useless_jumps prog =
     Ctx.(
@@ -469,14 +467,14 @@ end
 
 module Make_single (H : Hook) = Make(struct
     include H
-    module Program_container = Utils.Fold_map.Singleton
+    module Program_container = Utils.Singleton
 
     let split = Or_error.return (* no operation *)
   end)
 
 module Make_multi (H : Hook) = Make(struct
     include H
-    module Program_container = Utils.Fold_map.List
+    module Program_container = Utils.My_list
 
     let split stms =
       (* Adding a nop to the start forces there to be some

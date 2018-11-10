@@ -24,97 +24,71 @@
 
 open Core
 
-(*
- * Signatures only containing the fold-map operations
- *)
+(** [Generic_monadic] is a signature describing a monadic fold-map on
+   either an arity-0 or arity-1 container.
 
-(** [C0] is a signature containing the base and element types of an
-    arity-0 container. *)
-module type C0 = sig
+    This is analogous to [Core.Container.Generic] in its relationship
+   with [S0] and [S1]. *)
+module type Generic_monadic = sig
   (** [t] is the type of container to map over. *)
-  type t
+  type 'a t
   (** [elt] is the type of element inside the container. *)
+  type 'a elt
+  (** [M] is the monad over which we're fold-mapping. *)
+  module M : Monad.S
+
+  (** [fold_map ~f ~init c] folds [f] monadically over every [t] in
+     [c], threading through an accumulator with initial value
+     [init]. *)
+  val fold_map
+    :  f    : ('acc -> 'a elt -> ('acc * 'b elt) M.t)
+    -> init : 'acc
+    -> 'a t
+    -> ('acc * 'b t) M.t
+end
+
+(** [Generic] is the non-monadic version of
+    [Generic_monadic], generated using the identity monad. *)
+module type Generic = Generic_monadic with module M := Monad.Ident
+
+(** [S0_monadic] is the signature of a monadic fold-map over
+    arity-0 containers. *)
+module type S0_monadic = sig
+  type t
   type elt
+
+  (** [S0]s can fold-map: the container type is always [t],
+      and the element type is always [elt]. *)
+  include Generic_monadic with type 'a t := t and type 'a elt := elt
 end
 
-(** [Mappable0] is the signature of a plain fold-map over
-    arity-0 containers. *)
-module type Mappable0 = sig
-  include C0
-
-  (** [fold_map ~f ~init c] folds [f] over every [t] in [c],
-      threading through an accumulator with initial value [init].
-      Order is not guaranteed. *)
-  val fold_map
-    :  f    : ('a -> elt -> ('a * elt))
-    -> init : 'a
-    -> t
-    -> ('a * t)
-end
-
-(** [Mappable1] is the signature of a plain fold-map over
+(** [S1_monadic] is the signature of a monadic fold-map over
     arity-1 containers. *)
-module type Mappable1 = sig
+module type S1_monadic = sig
   (** [t] is the type of the container to map over. *)
   type 'a t
 
-  (** [fold_map ~f ~init c] folds [f] over every [t] in [c],
-      threading through an accumulator with initial value [init].
-      Order is not guaranteed. *)
-  val fold_map
-    :  f    : ('s -> 'a -> ('s * 'b))
-    -> init : 's
-    -> 'a t
-    -> ('s * 'b t)
+  (** [S0]s can fold-map: when the container type is ['a t],
+      the element type is ['a]. *)
+  include Generic_monadic with type 'a t := 'a t and type 'a elt := 'a
 end
 
-(** [Mappable0_monadic] is the signature of a monadic fold-map over
+(** We can derive the non-monadic fold-map signatures by
+    applying the monadic ones to the identity monad. *)
+
+(** [S0] is the signature of a basic fold-map over
     arity-0 containers. *)
-module type Mappable0_monadic = sig
-  include C0
+module type S0 = S0_monadic with module M := Monad.Ident
 
-  (** [M] is the monad to map over. *)
-  module M : Monad.S
-
-  (** [fold_map ~f ~init c] folds [f] over every [t] in [c],
-      threading through an accumulator with initial value [init], and
-      also threading through a monad of type [M.t].
-      Order is not guaranteed. *)
-  val fold_map
-    :  f    : ('a -> elt -> ('a * elt) M.t)
-    -> init : 'a
-    -> t
-    -> ('a * t) M.t
-end
-
-
-(** [Mappable1_monadic] is the signature of a monadic fold-map over
+(** [S1] is the signature of a basic fold-map over
     arity-1 containers. *)
-module type Mappable1_monadic = sig
-  (** [t] is the type of the container to map over. *)
-  type 'a t
+module type S1 = S1_monadic with module M := Monad.Ident
 
-  (** [M] is the monad to map over. *)
-  module M : Monad.S
+(** Building containers from fold-mappable types *)
 
-  (** [fold_map ~f ~init c] folds [f] over every [t] in [c],
-      threading through an accumulator with initial value [init], and
-      also threading through a monad of type [M.t].
-      Order is not guaranteed. *)
-  val fold_map
-    :  f    : ('s -> 'a -> ('s * 'b) M.t)
-    -> init : 's
-    -> 'a t
-    -> ('s * 'b t) M.t
-end
-
-(*
- * Building containers from fold-mappable types
- *)
-
-(** [Basic0] is the signature that fold-mappable containers of
+(** [Basic_container0] is the signature that fold-mappable containers of
     arity 0 must implement. *)
-module type Basic0 = sig
+module type Basic_container0 = sig
   (** [t] is the container type. *)
   type t
 
@@ -124,178 +98,151 @@ module type Basic0 = sig
   (** [On_monad] implements the monadic fold-map for a given monad [M]. *)
   module On_monad
     : functor (MS : Monad.S)
-      -> Mappable0_monadic with type t := t
-                            and type elt := Elt.t
-                            and module M := MS
+      -> S0_monadic with type t := t
+                     and type elt := Elt.t
+                     and module M := MS
   ;;
 end
 
-(** [Basic1] is the signature that fold-mappable containers of
-    arity 1 must implement. *)
-module type Basic1 = sig
+(** [Basic_container1] is the signature that fold-mappable containers
+   of arity 1 must implement. *)
+module type Basic_container1 = sig
   (** [t] is the container type. *)
   type 'a t
 
   (** [On_monad] implements the monadic fold-map for a given monad [M]. *)
   module On_monad
     : functor (MS : Monad.S)
-      -> Mappable1_monadic with type 'a t := 'a t
-                            and module M := MS
-  ;;
-end
-
-(** [S0_monadic] extends [Mappable0_monadic] to contain various derived
-    operators. *)
-module type S0_monadic = sig
-  include Mappable0_monadic
-
-  (** [foldM x ~init ~f] folds the monadic computation [f] over [x],
-      starting with initial value [init], and returning the final
-      value inside the monadic effect. *)
-  val foldM
-    :  t
-    -> init : 'acc
-    -> f    : ('acc -> elt -> 'acc M.t)
-    -> 'acc M.t
-  ;;
-
-  (** [mapM ~f x] maps the monadic computation [f] over [x],
-      collecting the monadic effect and returning the result
-      inside it. *)
-  val mapM : f : (elt -> elt M.t) -> t -> t M.t
-
-  (** [mapiM ~f x] behaves as [mapM], but also supplies [f] with the
-      index of the element.  This index should match the actual
-      position of the element in the container [x]. *)
-  val mapiM : f : (int -> elt -> elt M.t) -> t -> t M.t
-end
-
-(** [S1_monadic] extends [Mappable1_monadic] to contain various derived
-    operators. *)
-module type S1_monadic = sig
-  include Mappable1_monadic
-
-  (** [foldM x ~init ~f] folds the monadic computation [f] over [x],
-      starting with initial value [init], and returning the final
-      value inside the monadic effect. *)
-  val foldM
-    :  'elt t
-    -> init : 'acc
-    -> f    : ('acc -> 'elt -> 'acc M.t)
-    -> 'acc M.t
-  ;;
-
-  (** [mapM ~f x] maps the monadic computation [f] over [x],
-      collecting the monadic effect and returning the result
-      inside it. *)
-  val mapM : f : ('a -> 'b M.t) -> 'a t -> 'b t M.t
-
-  (** [mapiM ~f x] behaves as [mapM], but also supplies [f] with the
-      index of the element.  This index should match the actual
-      position of the element in the container [x]. *)
-  val mapiM : f : (int -> 'a -> 'b M.t) -> 'a t -> 'b t M.t
-end
-
-(** [S0] is the interface of 'full' [Fold_map] implementations, eg
-    those generated by [Make], over arity-0 containers. *)
-module type S0 = sig
-  include C0
-
-  (** [On_monad] implements monadic folding and mapping operators for
-      a given monad [M]. *)
-  module On_monad
-    : functor (MS : Monad.S)
-      -> S0_monadic with type t := t
-                     and type elt := elt
-                     and module M := MS
-  ;;
-
-  include Container.S0 with type t := t and type elt := elt
-  include Mappable0    with type t := t and type elt := elt
-
-  (** [map ~f t] maps [f] across [t] without accumulating anything. *)
-  val map : f : (elt -> elt) -> t -> t
-
-  (** [max_measure ~measure ?default xs] measures each item in [xs]
-      according to [measure], and returns the highest measure reported.
-      If [xs] is empty, return [default] if given, and [0]
-      otherwise. *)
-  val max_measure : measure:(elt -> int) -> ?default:int -> t -> int
-
-  (** [With_errors] specialises [On_monad] to the error monad. *)
-  module With_errors : S0_monadic with type t := t
-                                   and type elt := elt
-                                   and module M := Or_error
-  ;;
-end
-
-(** [S1] is the interface of 'full' [Fold_map] implementations, eg
-    those generated by [Make], over arity-1 containers. *)
-module type S1 = sig
-  type 'a t
-
-  (** [On_monad] implements monadic folding and mapping operators for
-      a given monad [M]. *)
-  module On_monad
-    : functor (MS : Monad.S)
       -> S1_monadic with type 'a t := 'a t
                      and module M := MS
   ;;
+end
 
-  include Container.S1 with type 'a t := 'a t
-  include Mappable1    with type 'a t := 'a t
+(** [Generic_on_monad] extends [Generic] to contain various derived
+   operators; we use it to derive the signatures of the various
+   [On_monad] modules. *)
+module type Generic_on_monad = sig
+  include Generic_monadic
+
+  (** [foldM x ~init ~f] folds the monadic computation [f] over [x],
+      starting with initial value [init], and returning the final
+      value inside the monadic effect. *)
+  val foldM
+    :  'a t
+    -> init : 'acc
+    -> f    : ('acc -> 'a elt -> 'acc M.t)
+    -> 'acc M.t
+  ;;
+
+  (** [mapM ~f x] maps the monadic computation [f] over [x],
+      collecting the monadic effect and returning the result
+      inside it. *)
+  val mapM : f : ('a elt -> 'b elt M.t) -> 'a t -> 'b t M.t
+
+  (** [mapiM ~f x] behaves as [mapM], but also supplies [f] with the
+      index of the element.  This index should match the actual
+      position of the element in the container [x]. *)
+  val mapiM : f : (int -> 'a elt -> 'b elt M.t) -> 'a t -> 'b t M.t
+end
+
+(** [Generic_container] is a generic interface for fold-mappable
+   containers, used to build [Container0] (arity-0) and [Container1]
+   (arity-1). *)
+module type Generic_container = sig
+  type 'a t
+  type 'a elt
+
+  (** [On_monad] implements monadic folding and mapping operators for
+      a given monad [M]. *)
+  module On_monad
+    : functor (MS : Monad.S)
+      -> Generic_on_monad with type 'a t   := 'a t
+                           and type 'a elt := 'a elt
+                           and module M := MS
+  ;;
+
+  (** We can do generic container operations. *)
+  include Container.Generic with type 'a t   := 'a t
+                             and type 'a elt := 'a elt
+  (** We can do non-monadic fold-map operations. *)
+  include Generic           with type 'a t   := 'a t
+                             and type 'a elt := 'a elt
 
   (** [map ~f t] maps [f] across [t] without accumulating anything. *)
-  val map : f : ('a -> 'b) -> 'a t -> 'b t
+  val map : f : ('a elt -> 'b elt) -> 'a t -> 'b t
 
-  (** [max_measure ~measure ?default xs] measures each item in [xs]
-      according to [measure], and returns the highest measure reported.
-      If [xs] is empty, return [default] if given, and [0]
-      otherwise. *)
-  val max_measure : measure:('a -> int) -> ?default:int -> 'a t -> int
+  (** [mapi ~f t] maps [f] across [t], passing in an increasing
+      position counter. *)
+  val mapi : f : (int -> 'a elt -> 'b elt) -> 'a t -> 'b t
+
+  (** [With_errors] specialises [On_monad] to the error monad. *)
+  module With_errors : Generic_on_monad with type 'a t := 'a t
+                                         and type 'a elt := 'a elt
+                                         and module M := Or_error
+  ;;
+end
+
+(** [Container0] is a generic interface for arity-0 fold-mappable
+    containers. *)
+module type Container0 = sig
+  (** [t] is the type of the container. *)
+  type t
+  (** [elt] is the type of elements. *)
+  type elt
+
+  include Generic_container with type 'a t := t and type 'a elt := elt
+  include Container.S0 with type t := t and type elt := elt
+end
+
+(** [Container1] is a generic interface for arity-1 fold-mappable
+    containers.  It also incldues [My_container.Extensions1]. *)
+module type Container1 = sig
+  (** ['a t] is the type of the container, parametrised over the
+      element type ['a]. *)
+  type 'a t
+
+  include Generic_container with type 'a t := 'a t and type 'a elt := 'a
+  include Container.S1 with type 'a t := 'a t
+  include My_container.Extensions1 with type 'a t := 'a t
 
   (** [right_pad ~padding xs] pads every list in xs with [padding],
       ensuring all lists have equal length. *)
   val right_pad : padding:'a -> 'a list t -> 'a list t
 
-  (** [With_errors] specialises [On_monad] to the error monad. *)
-  module With_errors : S1_monadic with type 'a t := 'a t
-                                   and module M := Or_error
-  ;;
-
-  (** [To_S0 (Elt)] demotes this [S1] to an [S0] by fixing the element
-      type to that mentioned in [Elt]. *)
-  module To_S0
+  (** [With_elt (Elt)] demotes this [Container1] to a [Container0] by
+     fixing the element type to that mentioned in [Elt]. *)
+  module With_elt
     : functor (Elt : Equal.S)
-      -> S0 with type t := Elt.t t and type elt := Elt.t
+      -> Container0 with type t := Elt.t t and type elt := Elt.t
   ;;
 end
 
 (** [Fold_map] contains things to export in [Fold_map.mli]. *)
 module type Fold_map = sig
-  module type Mappable0 = Mappable0
-  module type Mappable1 = Mappable1
-  module type Mappable0_monadic = Mappable0_monadic
-  module type Mappable1_monadic = Mappable1_monadic
-  module type Basic0 = Basic0
-  module type Basic1 = Basic1
+  module type Generic = Generic
   module type S0_monadic = S0_monadic
   module type S1_monadic = S1_monadic
   module type S0 = S0
   module type S1 = S1
+  module type Generic_on_monad = Generic_on_monad
+  module type Generic_container = Generic_container
+  module type Basic_container0 = Basic_container0
+  module type Basic_container1 = Basic_container1
+  module type Container0 = Container0
+  module type Container1 = Container1
 
-  (** [Make0] takes a [Basic0] and implements all of the derived functions
-        in [S0]. *)
-  module Make0
-    : functor (I : Basic0)
-      -> S0 with type t = I.t and type elt = I.Elt.t
+  (** [Make_container0] takes a [Basic_container0] and implements all
+     of the derived functions in [Container0]. *)
+  module Make_container0
+    : functor (I : Basic_container0)
+      -> Container0 with type t := I.t and type elt := I.Elt.t
   ;;
 
-  (** [Make1] takes a [Basic1] and implements all of the derived functions
-        in [S1]. *)
-  module Make1
-    : functor (I : Basic1)
-      -> S1 with type 'a t = 'a I.t
+  (** [Make_container1] takes a [Basic_container1] and implements all
+     of the derived functions in [Container1]. *)
+  module Make_container1
+    : functor (I : Basic_container1)
+      -> Container1 with type 'a t := 'a I.t
   ;;
 
   (** [Helpers] contains utility functions for building monadic
@@ -370,23 +317,9 @@ module type Fold_map = sig
     val fold_nop : 'b -> 'a -> ('b * 'a) M.t
   end
 
-  (** Implementations for common containers
-
-      Many of these are re-exported in [MyContainers] alongside other
-      container extensions. *)
-
-  (** [List] provides monadic fold-mapping for a list of
-      elements. *)
-  module List : S1 with type 'a t = 'a list
-
   (** [Option] provides monadic fold-mapping for optional
       values. *)
-  module Option : S1 with type 'a t = 'a option
-
-  (** [Singleton] provides monadic fold-mapping over a single
-      values.  It's useful for passing a single value to something
-      that expects a fold-mappable container. *)
-  module Singleton : S1 with type 'a t = 'a
+  module Option : Container1 with type 'a t := 'a option
 
   (** [chain mapper ~f] lifts a fold-map of [f] on an inner container
      to a fold-mapping function on an outer container. *)

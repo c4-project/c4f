@@ -65,14 +65,18 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               ]
           ;;
 
-          module OnStrings = Fold_map.Make0 (struct
+          module OnStrings = struct
             type t = string
-            module Elt = String
+            type elt = string
+            include Fold_map.Make_container0 (struct
+                type t = string
+                module Elt = String
 
-            module On_monad (M : Monad.S) = struct
-              let fold_map ~f ~init sym = f init sym
-            end
-          end)
+                module On_monad (M : Monad.S) = struct
+                  let fold_map ~f ~init sym = f init sym
+                end
+              end)
+          end
         end
 
         module Location = struct
