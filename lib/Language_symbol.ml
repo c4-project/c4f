@@ -119,7 +119,7 @@ module String_direct = Make (struct
     let abstract_demangle = List.return
     let of_string_opt = Option.some
 
-    module OnStrings = struct
+    module On_strings = struct
       type t = string
       type elt = string
       include Singleton.With_elt (String)

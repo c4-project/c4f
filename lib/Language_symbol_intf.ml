@@ -43,7 +43,7 @@ module type Basic = sig
 
   (** They must allow fold-mapping over any string parts of the
       symbol. *)
-  module OnStrings
+  module On_strings
     : Fold_map.Container0 with type elt = string and type t = t
   ;;
 

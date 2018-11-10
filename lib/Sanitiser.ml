@@ -98,7 +98,7 @@ module Make (B : Basic)
         L.Location.make_heap_loc
           (sprintf "t%ss%d" name i)
       | _ -> ln
-    in L.Instruction.OnLocations.map ~f ins
+    in L.Instruction.On_locations.map ~f ins
   ;;
 
   let if_instruction_has_type ins ty ~f =
@@ -156,7 +156,7 @@ module Make (B : Basic)
          mangled version. *)
       Ctx.return sym'
     | Some _ | None ->
-      let sym' = L.Symbol.OnStrings.map ~f:mangle sym in
+      let sym' = L.Symbol.On_strings.map ~f:mangle sym in
       Ctx.redirect ~src:sym ~dst:sym' >>| fun () -> sym'
   ;;
 
@@ -187,7 +187,7 @@ module Make (B : Basic)
      every location in [loc], threading the context through
      monadically. *)
   let sanitise_all_locs =
-    let module Loc = L.Instruction.OnLocations.On_monad (Ctx) in
+    let module Loc = L.Instruction.On_locations.On_monad (Ctx) in
     Loc.mapM ~f:sanitise_loc
   ;;
 
@@ -207,7 +207,7 @@ module Make (B : Basic)
   (** [mangle_identifiers progs] reduces identifiers across a program
       container [progs] into a form that herd can parse. *)
   let mangle_identifiers progs =
-    let module Ctx_Stm_Sym = L.Statement.OnSymbols.On_monad (Ctx) in
+    let module Ctx_Stm_Sym = L.Statement.On_symbols.On_monad (Ctx) in
     (* Nested mapping:
        over symbols in statements in statement lists in programs. *)
     Ctx_Pcon.mapM progs
@@ -227,7 +227,7 @@ module Make (B : Basic)
      every instruction in [stm], threading the context through
      monadically. *)
   let sanitise_all_ins =
-    let module L = L.Statement.OnInstructions.On_monad (Ctx) in
+    let module L = L.Statement.On_instructions.On_monad (Ctx) in
     L.mapM ~f:sanitise_ins
   ;;
 
@@ -395,7 +395,7 @@ module Make (B : Basic)
     progs
     |> Program_container.to_list
     |> List.concat_map
-      ~f:(List.concat_map ~f:L.Statement.OnSymbols.to_list)
+      ~f:(List.concat_map ~f:L.Statement.On_symbols.to_list)
   ;;
 
   let make_mangle_map progs =

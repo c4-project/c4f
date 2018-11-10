@@ -65,7 +65,7 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
               ]
           ;;
 
-          module OnStrings = struct
+          module On_strings = struct
             type t = string
             type elt = string
             include Fold_map.Make_container0 (struct
@@ -342,11 +342,11 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
                 Opcode.abs_type opcode
             end)
 
-          module OnSymbols = struct
+          module On_symbols = struct
             include Ast.Instruction.On_symbols
             module Elt = Symbol
           end
-          module OnLocations = struct
+          module On_locations = struct
             include Ast.Instruction.On_locations
             module Elt = Ast.Location
           end
@@ -374,11 +374,11 @@ module Make (T : Dialect.Intf) (P : PP.Printer) = struct
             | Label l -> Label l
             | Nop -> Blank
 
-          module OnSymbols = struct
+          module On_symbols = struct
             include Ast.Statement.On_symbols
             module Elt = Symbol
           end
-          module OnInstructions = struct
+          module On_instructions = struct
             include Ast.Statement.On_instructions
             module Elt = Ast.Instruction
           end

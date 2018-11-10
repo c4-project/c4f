@@ -80,13 +80,13 @@ module Make (B : Basic)
     include B.Statement
 
     let is_jump =
-      OnInstructions.exists ~f:Instruction.is_jump
+      On_instructions.exists ~f:Instruction.is_jump
 
     let is_stack_manipulation =
-      OnInstructions.exists ~f:Instruction.is_stack_manipulation
+      On_instructions.exists ~f:Instruction.is_stack_manipulation
 
     let instruction_mem s =
-      OnInstructions.exists ~f:(Instruction.abs_type_in s)
+      On_instructions.exists ~f:(Instruction.abs_type_in s)
 
     let is_directive stm =
       match abs_type stm with
@@ -111,14 +111,14 @@ module Make (B : Basic)
       )
 
     let is_program_boundary =
-      is_label_and (OnSymbols.exists ~f:Symbol.is_program_label)
+      is_label_and (On_symbols.exists ~f:Symbol.is_program_label)
     ;;
 
     let is_unused_label ?(ignore_boundaries=false) ~syms =
       is_label_and
         (fun stm ->
            let jsyms = Abstract.Symbol.(Table.set_of_sort syms Sort.Jump) in
-           let ssyms = Symbol.Set.abstract (Symbol.Set.of_list (OnSymbols.to_list stm)) in
+           let ssyms = Symbol.Set.abstract (Symbol.Set.of_list (On_symbols.to_list stm)) in
            Abstract.Symbol.Set.disjoint jsyms ssyms
            && not (ignore_boundaries && is_program_boundary stm)
         )
@@ -127,7 +127,7 @@ module Make (B : Basic)
     let is_jump_pair x y =
       is_jump x
       && is_label y
-      && (My_fn.on (Fn.compose Symbol.Set.of_list OnSymbols.to_list)
+      && (My_fn.on (Fn.compose Symbol.Set.of_list On_symbols.to_list)
             Symbol.Set.equal) x y
     ;;
 
@@ -157,7 +157,7 @@ module Make (B : Basic)
 
   let heap_symbols prog =
     prog
-    |> List.concat_map ~f:Statement.OnInstructions.to_list
+    |> List.concat_map ~f:Statement.On_instructions.to_list
     (* In x86, at least, jumps can contain locations that look without
        context to be heap symbols.  Currently, we pessimistically
        exclude any location that's inside a jump.
@@ -165,7 +165,7 @@ module Make (B : Basic)
        Maybe, one day, we'll find an architecture that does actually
        contain heap locations in a jump, and have to re-think this. *)
     |> My_list.exclude ~f:Instruction.is_jump
-    |> List.concat_map ~f:Instruction.OnLocations.to_list
+    |> List.concat_map ~f:Instruction.On_locations.to_list
     |> List.filter_map ~f:Location.to_heap_symbol
     |> Abstract.Symbol.Set.of_list
 
@@ -177,7 +177,7 @@ module Make (B : Basic)
     |> List.filter_map
       ~f:(fun p ->
           if filter p
-          then Some (Symbol.Set.of_list (Statement.OnSymbols.to_list p))
+          then Some (Symbol.Set.of_list (Statement.On_symbols.to_list p))
           else None)
     |> Symbol.Set.union_list
     |> Symbol.Set.abstract
