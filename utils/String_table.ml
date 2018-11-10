@@ -5,7 +5,7 @@ module type Table = sig
   val table : (t, string) List.Assoc.t
 end
 
-module type Intf = sig
+module type S = sig
   include Table
   val of_string : string -> t option
   val of_string_exn : string -> t
@@ -27,33 +27,33 @@ module Make (T : Table) = struct
   let to_string_exn ?(equal = (=)) t = List.Assoc.find_exn ~equal:equal T.table t
 end
 
-(** [ToIdentifiable] produces a plain identifiable instance
-    given a string table, a comparator, and a hasher. *)
-module ToIdentifiable
-    (T : Intf)
-    (R : sig
-       val compare : T.t -> T.t -> int
-       val hash : T.t -> int
-       val hash_fold_t : Hash.state -> T.t -> Hash.state
-     end
-    )
+module type Basic_identifiable = sig
+  type t
+  include S with type t := t
+
+  val compare : t -> t -> int
+  val hash : t -> int
+  val hash_fold_t : Hash.state -> t -> Hash.state
+end
+
+module To_identifiable (T : Basic_identifiable)
   : Identifiable.S_plain with type t := T.t =
-  Identifiable.Make_plain (
-  struct
+  Identifiable.Make_plain (struct
     module M = struct
+      include T
+
       module S = struct
-        type t = T.t
+        type nonrec t = t
 
         let of_string = T.of_string_exn;;
         (* There's a cyclic dependency between the comparable we want
            to build and the sexpable we want to build, so we can't use
            'equal' here *)
-        let to_string = T.to_string_exn ~equal:(fun x y -> R.compare x y = 0);;
+        let to_string = T.to_string_exn ~equal:(fun x y -> T.compare x y = 0);;
       end
 
-      include R
       include Sexpable.Of_stringable (S)
-      include S
+      include (S : Stringable.S with type t := t)
     end
 
     include M
@@ -65,6 +65,6 @@ module ToIdentifiable
     (* Hashable *)
     include Hashable.Make_plain(M)
 
-    let module_name = "act.Utils.StringTable";;
+    let module_name = "act.Utils.String_table";;
   end
   )

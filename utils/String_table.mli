@@ -2,13 +2,13 @@
 
    Copyright (c) 2018 by Matt Windsor
 
-   Permission is hereby granted, free of charge, to any person obtaining
-   a copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to
-   permit persons to whom the Software is furnished to do so, subject to
-   the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
    The above copyright notice and this permission notice shall be
    included in all copies or substantial portions of the Software.
@@ -16,10 +16,11 @@
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-   LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-   OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 (** Case-insentitive bidirectional string lookup table modules *)
 
@@ -29,11 +30,12 @@ open Core
 module type Table = sig
   type t
 
+  (** [table] is the string table, mapping each [t] to a string. *)
   val table : (t, string) List.Assoc.t
 end
 
-(** [Intf] is the abstract interface of the string table. *)
-module type Intf = sig
+(** [S] is the signature of string tables built with [Make]. *)
+module type S = sig
   (* This lets us access the table directly. *)
   include Table
 
@@ -63,16 +65,22 @@ module type Intf = sig
 end
 
 (** [Make] lifts a [Table] into a module satisfying [Intf]. *)
-module Make : functor (T : Table) -> Intf with type t = T.t
+module Make : functor (T : Table) -> S with type t := T.t
 
-(** [ToIdentifiable] produces a plain identifiable instance
+(** [Basic_identifiable] is the signature that must be implemented
+    to use string tables as [Identifiable]s through
+    [To_identifiable]. *)
+module type Basic_identifiable = sig
+  type t
+  include S with type t := t
+
+  val compare : t -> t -> int
+  val hash : t -> int
+  val hash_fold_t : Hash.state -> t -> Hash.state
+end
+
+(** [To_identifiable] produces a plain identifiable instance
     given a string table and a comparator. *)
-module ToIdentifiable
-  : functor (T : Intf)
-    -> functor (R : sig
-                  val compare : T.t -> T.t -> int
-                  val hash : T.t -> int
-                  val hash_fold_t : Hash.state -> T.t -> Hash.state
-                end
-               )
-      -> Identifiable.S_plain with type t := T.t
+module To_identifiable
+  : functor (T : Basic_identifiable)
+    -> Identifiable.S_plain with type t := T.t

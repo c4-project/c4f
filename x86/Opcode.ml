@@ -102,7 +102,7 @@ module Sizable = struct
         ; `Xchg   , "xchg"
         ; `Xor    , "xor"
         ]
-    end) : String_table.Intf with type t := t)
+    end) : String_table.S with type t := t)
 
   include Abstractable.Make (struct
       type nonrec t = t
@@ -133,7 +133,7 @@ module Size = struct
   [@@deriving sexp, eq]
   ;;
 
-  module Suffix_table : String_table.Intf with type t := t =
+  module Suffix_table : String_table.S with type t := t =
     String_table.Make (struct
       type nonrec t = t
       let table =
@@ -160,7 +160,7 @@ module Sized = struct
             (List.cartesian_product
                Sizable.table
                Size.Suffix_table.table)
-      end) : String_table.Intf with type t := t)
+      end) : String_table.S with type t := t)
 
 
   include Abstractable.Make (struct
@@ -191,7 +191,7 @@ module Basic = struct
           ; `Mfence, "mfence"
           ; `Nop,    "nop"
           ]
-      end) : String_table.Intf with type t := t)
+      end) : String_table.S with type t := t)
 
   include Abstractable.Make (struct
       type nonrec t = t
@@ -303,7 +303,7 @@ module Condition = struct
          ; `ParityEven, "pe"
          ; `ParityOdd , "po"
          ]
-     end) : String_table.Intf with type t := t)
+     end) : String_table.S with type t := t)
 end
 
 module Jump = struct
@@ -325,7 +325,7 @@ module Jump = struct
         (`Unconditional, "jmp")
         :: List.map ~f Condition.table
       ;;
-    end) : String_table.Intf with type t := t)
+    end) : String_table.S with type t := t)
 
 
   let%expect_test "Jump: table accounts for all conditions" =

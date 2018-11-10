@@ -73,7 +73,7 @@ module Sizable : sig
       These strings _don't_ have a size suffix attached; to parse
       or emit an AT&T-style opcode with size suffix, use
       [Sized]. *)
-  include String_table.Intf with type t := t
+  include String_table.S with type t := t
   (** We can convert sizable opcodes to the act abstract form. *)
   include Abstractable.S with type t := t
                           and module Abs := Abstract.Instruction
@@ -89,7 +89,7 @@ module Size : sig
   ;;
 
   (** [Size] contains a string table for AT&T-style size suffixes. *)
-  module Suffix_table : String_table.Intf with type t := t
+  module Suffix_table : String_table.S with type t := t
 end
 
 module Sized : sig
@@ -101,7 +101,7 @@ module Sized : sig
 
   (** [Sized] contains a string table for AT&T-style size-suffixed
       opcodes. *)
-  include String_table.Intf with type t := t
+  include String_table.S with type t := t
   (** We can convert sized opcodes to the act abstract form. *)
   include Abstractable.S with type t := t
                           and module Abs := Abstract.Instruction
@@ -123,7 +123,7 @@ module Basic : sig
 
   (** [Basic] contains a string table for basic opcodes.
       This is a superset of [Sizable]'s string table. *)
-  include String_table.Intf with type t := t
+  include String_table.S with type t := t
   (** We can convert basic opcodes to the act abstract form. *)
   include Abstractable.S with type t := t
                           and module Abs := Abstract.Instruction
@@ -178,7 +178,7 @@ module Jump : sig
   ;;
 
   (** [Jump] contains a string table for jump instructions. *)
-  include String_table.Intf with type t := t
+  include String_table.S with type t := t
   (** We can convert jumps to the act abstract form. *)
   include Abstractable.S with type t := t
                           and module Abs := Abstract.Instruction
@@ -201,10 +201,10 @@ val sized : Sized.t -> t
 (** [jump j] builds a [t] from a jump opcode [j]. *)
 val jump : Jump.t -> t
 (** [directive name] builds a [t] from a directive with name
-   [name]. *)
+    [name]. *)
 val directive : string -> t
 (** [unknown mnemonic] builds a [t] from an unknown mnemonic
-   [mnemonic]. *)
+    [mnemonic]. *)
 val unknown : string -> t
 
 (** We can convert elements of [t] to the act abstract form. *)

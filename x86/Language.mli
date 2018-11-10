@@ -7,9 +7,9 @@ open Lib
    x86 assembly, as emitted by compilers like gcc. *)
 module AttFrontend : LangFrontend.Intf with type ast = Ast.t
 
-(** [Intf] is the type of language modules over the X86 AST. *)
-module type Intf = sig
-  include Dialect.Intf
+(** [S] is the signature of language modules over the X86 AST. *)
+module type S = sig
+  include Dialect.S
   include PP.Printer
   include
     Language.S
@@ -25,16 +25,16 @@ module type Intf = sig
 end
 
 (** [Att] is a language description for the AT&T dialect of x86. *)
-module ATT : Intf
+module ATT : S
 
 (** [Intel] is a language description for the Intel dialect of x86. *)
-module Intel : Intf
+module Intel : S
 
 (** [Herd7] is a language description for the Herd7 dialect of x86. *)
-module Herd7 : Intf
+module Herd7 : S
 
-(** [lang_of_dialect] gets the correct [Intf] module for a dialect. *)
-val lang_of_dialect : Dialect.t -> (module Intf)
+(** [of_dialect] gets the correct [S] module for a dialect. *)
+val of_dialect : Dialect.t -> (module S)
 
 (** [frontend_of_dialect] gets the correct frontend module for a dialect. *)
 val frontend_of_dialect : Dialect.t -> (module LangFrontend.Intf with type ast = Ast.t) Or_error.t

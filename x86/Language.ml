@@ -18,8 +18,8 @@ module AttFrontend =
         let message = ATTMessages.message;;
       end)
 
-module type Intf = sig
-  include Dialect.Intf
+module type S = sig
+  include Dialect.S
   include PP.Printer
   include
     Language.S
@@ -32,7 +32,7 @@ module type Intf = sig
   val make_jump_operand : string -> Ast.Operand.t
 end
 
-module Make (T : Dialect.Intf) (P : PP.Printer) = struct
+module Make (T : Dialect.S) (P : PP.Printer) = struct
   include T
   include P
 
@@ -460,10 +460,10 @@ let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
 
 module Herd7 = Make (Dialect.Herd7) (PP.Herd7)
 
-let lang_of_dialect = function
-  | Dialect.Att   -> (module ATT : Intf)
-  | Dialect.Intel -> (module Intel : Intf)
-  | Dialect.Herd7 -> (module Herd7 : Intf)
+let of_dialect = function
+  | Dialect.Att   -> (module ATT : S)
+  | Dialect.Intel -> (module Intel : S)
+  | Dialect.Herd7 -> (module Herd7 : S)
 ;;
 
 let frontend_of_dialect = function

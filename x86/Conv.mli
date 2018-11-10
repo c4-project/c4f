@@ -24,8 +24,8 @@
 
 (** Conversion between x86 dialects *)
 
-(** [Intf] is the interface of dialect conversion modules. *)
-module type Intf = sig
+(** [S] is the interface of dialect conversion modules. *)
+module type S = sig
   type stm
 
   (** [convert] converts a program from one dialect to another. *)
@@ -34,6 +34,6 @@ end
 
 (** [Make SD DD] makes a conversion from x86 dialect SD to dialect DD. *)
 module Make
-  : functor (SD : Language.Intf)
-    -> functor (DD : Language.Intf)
-      -> Intf with type stm = Ast.Statement.t
+  : functor (SD : Language.S)
+    -> functor (DD : Language.S)
+      -> S with type stm = Ast.Statement.t

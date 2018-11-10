@@ -24,13 +24,13 @@
 
 open Core
 
-module type Intf = sig
+module type S = sig
   type stm
 
   val convert : stm list -> stm list
 end
 
-module Make (SD : Language.Intf) (DD : Language.Intf) = struct
+module Make (SD : Language.S) (DD : Language.S) = struct
   type stm = Ast.Statement.t
 
   let swap operands =

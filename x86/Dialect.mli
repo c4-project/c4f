@@ -56,8 +56,8 @@ type t =
   | Herd7 (* Herd7 syntax (somewhere in between) *)
   [@@deriving sexp, compare, hash]
 
-(** [STable] associates each dialect with its string name. *)
-module STable : (String_table.Intf with type t = t)
+(** [Name_table] associates each dialect with its string name. *)
+module Name_table : String_table.S with type t := t
 
 include Core.Identifiable.S_plain with type t := t
 
@@ -71,8 +71,8 @@ module type Has_dialect = sig
   val dialect : t
 end
 
-(** [Intf] is the interface of modules containing x86 dialect information. *)
-module type Intf = sig
+(** [S] is the interface of modules containing x86 dialect information. *)
+module type S = sig
   include Has_dialect
 
   (** This lets us query a dialect's operand order. *)
@@ -96,10 +96,10 @@ module type Intf = sig
 end
 
 (** [ATT] describes the AT&T dialect of x86 assembly. *)
-module ATT : Intf
+module ATT : S
 
 (** [Intel] describes the Intel dialect of x86 assembly. *)
-module Intel : Intf
+module Intel : S
 
 (** [Herd7] describes the Herd7 dialect of x86 assembly. *)
-module Herd7 : Intf
+module Herd7 : S

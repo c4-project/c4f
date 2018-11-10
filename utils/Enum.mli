@@ -95,7 +95,7 @@ end
     properties gleaned from a [StringTable]. *)
 module type ExtensionTable = sig
   include Extension
-  include String_table.Intf with type t := t
+  include String_table.S with type t := t
   include Identifiable.S_common with type t := t
 
   (** [of_string_option] is the same as [of_string] in

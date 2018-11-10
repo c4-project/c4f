@@ -27,13 +27,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
     It requires an [Language.Intf] module to tell it things about the
     current x86 dialect (for example, the order of operands). *)
 module Hook
-  : functor (L : Language.Intf)
+  : functor (L : Language.S)
     -> Lib.Sanitiser.Hook with module L = L
 
 (** [Make_single] directly instantiates a single-program sanitiser for an
     [Language.Intf] module. *)
 module Make_single
-  : functor (L : Language.Intf)
+  : functor (L : Language.S)
     -> Lib.Sanitiser.S with type statement = L.Statement.t
                         and type sym = L.Symbol.t
                         and type 'a Program_container.t = 'a
@@ -43,7 +43,7 @@ module Make_single
 (** [Make_multi] directly instantiates a multi-program sanitiser for anb
     [Language.Intf] module. *)
 module Make_multi
-  : functor (L : Language.Intf)
+  : functor (L : Language.S)
     -> Lib.Sanitiser.S with type statement = L.Statement.t
                         and type sym = L.Symbol.t
                         and type 'a Program_container.t = 'a list

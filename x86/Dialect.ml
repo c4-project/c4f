@@ -57,23 +57,28 @@ end
 
 include M
 
-module STable =
-  String_table.Make
-    (struct
-      type nonrec t = t
-      let table =
-        [ Att  , "ATT"
-        ; Intel, "Intel"
-        ; Herd7, "Herd7"
-        ]
-    end)
-include String_table.ToIdentifiable(STable)(M)
+module Name_table =
+  String_table.Make (struct
+    type nonrec t = t
+    let table =
+      [ Att  , "ATT"
+      ; Intel, "Intel"
+      ; Herd7, "Herd7"
+      ]
+  end)
+;;
+
+include String_table.To_identifiable (struct
+    include M
+    include Name_table
+  end)
+;;
 
 module type Has_dialect = sig
   val dialect : t
 end
 
-module type Intf = sig
+module type S = sig
   include Has_dialect
   include Src_dst.S
 

@@ -23,7 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
-module CWarn (L : Language.Intf) = struct
+module CWarn (L : Language.S) = struct
   type t =
     | UnsupportedRegister of Ast.Reg.t
   ;;
@@ -35,7 +35,7 @@ module CWarn (L : Language.Intf) = struct
   ;;
 end
 
-module Hook (L : Language.Intf) = struct
+module Hook (L : Language.S) = struct
   open Ast
 
   module L = L
@@ -72,11 +72,10 @@ module Hook (L : Language.Intf) = struct
 
   (** [drop_unsupported_lengths] removes long-sized length suffixes on
       instructions where herd doesn't support them. *)
-  let drop_unsupported_lengths =
-    (* TODO(@MattWindsor91): ideally, we should be checking to see if
-       the operands are compatible with dropping the l. *)
-    function
+  let drop_unsupported_lengths = function
     | { Instruction.opcode = Sized (o, Long); _ } as op ->
+      (* TODO(@MattWindsor91): ideally, we should be checking to see if
+         the operands are compatible with dropping the l. *)
       begin
         match o with
         | `Cmp
@@ -166,5 +165,5 @@ module Hook (L : Language.Intf) = struct
   ;;
 end
 
-module Make_single (L : Language.Intf) = Lib.Sanitiser.Make_single (Hook (L))
-module Make_multi  (L : Language.Intf) = Lib.Sanitiser.Make_multi  (Hook (L))
+module Make_single (L : Language.S) = Lib.Sanitiser.Make_single (Hook (L))
+module Make_multi  (L : Language.S) = Lib.Sanitiser.Make_multi  (Hook (L))

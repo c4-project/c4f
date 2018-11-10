@@ -33,7 +33,7 @@ let get_runner_x86 =
       |> Result.of_option ~error:(Error.createf "Unknown X86 dialect: %s" s)
     in
     let%bind f = X86.Language.frontend_of_dialect dialect in
-    let l = X86.Language.lang_of_dialect dialect in
+    let l = X86.Language.of_dialect dialect in
     Or_error.return
       (module Asm_job.Make_runner (
           struct
