@@ -87,7 +87,7 @@ module type S = sig
   val symbolic_jump_type : [`Indirect | `Immediate ]
 end
 
-module ATT = struct
+module Att = struct
   let dialect = Att
   include Src_dst.Make (struct let operand_order = Src_dst.Src_then_dst end)
   let has_size_suffix = true

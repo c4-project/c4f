@@ -91,7 +91,7 @@ module Basic = struct
 end
 
 (* Parts specific to AT&T *)
-module ATTSpecific = struct
+module Att_specific = struct
   let pp_comment ~pp f = Format.fprintf f "@[<h># %a@]" pp
 
   let%expect_test "pp_comment: AT&T" =
@@ -204,7 +204,7 @@ module ATTSpecific = struct
 end
 
 (** Parts specific to Intel *)
-module IntelSpecific = struct
+module Intel_specific = struct
   let pp_comment ~pp f = Format.fprintf f "@[<h>; %a@]" pp
 
   let%expect_test "pp_comment: Intel" =
@@ -214,7 +214,7 @@ module IntelSpecific = struct
 end
 
 (** Parts specific to Herd7 *)
-module Herd7Specific = struct
+module Herd7_specific = struct
   let pp_comment ~pp f = Format.fprintf f "@[<h>// %a@]" pp
 
   let%expect_test "pp_comment: Herd7" =
@@ -224,7 +224,7 @@ module Herd7Specific = struct
 end
 
 (** Parts common to Intel and Herd7 *)
-module IntelAndHerd7 = struct
+module Intel_and_herd7 = struct
     let pp_reg f reg = String.pp f (Reg.to_string reg)
 
     let%expect_test "pp_reg: intel, EAX" =
@@ -429,49 +429,50 @@ module Make (D : Dialect) =
          Format.fprintf f " "; Format.pp_print_cut f ()
   end
 
-module ATT = Make(ATTSpecific)
+module Att = Make (Att_specific)
 
 let%expect_test "pp_opcode: directive" =
-  Format.printf "%a@." ATT.pp_opcode (Opcode.Directive "text");
+  Format.printf "%a@." Att.pp_opcode (Opcode.Directive "text");
   [%expect {| .text |}]
 
 let%expect_test "pp_opcode: jmp" =
-  Format.printf "%a@." ATT.pp_opcode (Opcode.Jump `Unconditional);
+  Format.printf "%a@." Att.pp_opcode (Opcode.Jump `Unconditional);
   [%expect {| jmp |}]
 
 let%expect_test "pp_opcode: jge" =
-  Format.printf "%a@." ATT.pp_opcode (Opcode.Jump (`Conditional `GreaterEqual));
+  Format.printf "%a@." Att.pp_opcode (Opcode.Jump (`Conditional `GreaterEqual));
   [%expect {| jge |}]
 
 let%expect_test "pp_opcode: jnz" =
-  Format.printf "%a@." ATT.pp_opcode (Opcode.Jump (`Conditional (`Not `Zero)));
+  Format.printf "%a@." Att.pp_opcode (Opcode.Jump (`Conditional (`Not `Zero)));
   [%expect {| jnz |}]
 
 let%expect_test "pp_opcode: mov" =
-  Format.printf "%a@." ATT.pp_opcode (Opcode.Basic `Mov);
+  Format.printf "%a@." Att.pp_opcode (Opcode.Basic `Mov);
   [%expect {| mov |}]
 
 let%expect_test "pp_opcode: movw (AT&T)" =
-  Format.printf "%a@." ATT.pp_opcode (Opcode.Sized (`Mov, Opcode.Size.Word));
+  Format.printf "%a@." Att.pp_opcode (Opcode.Sized (`Mov, Opcode.Size.Word));
   [%expect {| movw |}]
 
-module Intel = Make(struct
-    include IntelSpecific
-    include IntelAndHerd7
+module Intel = Make (struct
+    include Intel_specific
+    include Intel_and_herd7
   end)
-module Herd7 = Make(struct
-    include Herd7Specific
-    include IntelAndHerd7
+module Herd7 = Make (struct
+    include Herd7_specific
+    include Intel_and_herd7
   end)
 
 let pp_ast f ast =
   Format.pp_open_vbox f 0;
   let pps =
     match ast.syntax with
-    | Dialect.Att -> ATT.pp_statement
+    | Dialect.Att -> Att.pp_statement
     | Dialect.Intel -> Intel.pp_statement
     | Dialect.Herd7 -> Herd7.pp_statement
   in
   (* We don't print newlines out here due to nops and labels. *)
   List.iter ~f:(pps f) ast.program;
   Format.pp_close_box f ();
+;;

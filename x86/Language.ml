@@ -1,22 +1,30 @@
+(* This file is part of 'act'.
+
+   Copyright (c) 2018 by Matt Windsor
+
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
+
 open Core
 open Lib
 open Utils
-
-module AttFrontend =
-  LangFrontend.Make (
-      struct
-        type ast = Ast.t
-
-        module I = ATTParser.MenhirInterpreter
-
-        let lex =
-          let module T = ATTLexer.Make(LexUtils.Default) in
-          T.token
-
-        let parse = ATTParser.Incremental.main;;
-
-        let message = ATTMessages.message;;
-      end)
 
 module type S = sig
   include Dialect.S
@@ -395,32 +403,32 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
       end)
 end
 
-module ATT = Make (Dialect.ATT) (PP.ATT)
+module Att = Make (Dialect.Att) (PP.Att)
 
 let%expect_test "is_program_label: positive Mach-O example, AT&T" =
-  printf "%b" (ATT.Symbol.is_program_label "_P0");
+  printf "%b" (Att.Symbol.is_program_label "_P0");
   [%expect {| true |}]
 
 let%expect_test "is_program_label: positive ELF example, AT&T" =
-  printf "%b" (ATT.Symbol.is_program_label "P0");
+  printf "%b" (Att.Symbol.is_program_label "P0");
   [%expect {| true |}]
 
 let%expect_test "is_program_label: wrong suffix, Mach-O, AT&T" =
-  printf "%b" (ATT.Symbol.is_program_label "_P0P");
+  printf "%b" (Att.Symbol.is_program_label "_P0P");
   [%expect {| false |}]
 
 let%expect_test "is_program_label: wrong suffix, ELF, AT&T" =
-  printf "%b" (ATT.Symbol.is_program_label "P0P");
+  printf "%b" (Att.Symbol.is_program_label "P0P");
   [%expect {| false |}]
 
 let%expect_test "is_program_label: negative, AT&T" =
-  printf "%b" (ATT.Symbol.is_program_label "_P-1");
+  printf "%b" (Att.Symbol.is_program_label "_P-1");
   [%expect {| false |}]
 
 let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
   Format.printf "%a@."
     Abstract.Operands.pp
-    (ATT.Instruction.abs_operands
+    (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Add)
           ~operands:[ Ast.Operand.Immediate (Ast.Disp.Numeric (-16))
@@ -448,7 +456,7 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
 let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
   Format.printf "%a@."
     Abstract.Operands.pp
-    (ATT.Instruction.abs_operands
+    (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Mov)
           ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
@@ -461,14 +469,7 @@ let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
 module Herd7 = Make (Dialect.Herd7) (PP.Herd7)
 
 let of_dialect = function
-  | Dialect.Att   -> (module ATT : S)
+  | Dialect.Att   -> (module Att : S)
   | Dialect.Intel -> (module Intel : S)
   | Dialect.Herd7 -> (module Herd7 : S)
-;;
-
-let frontend_of_dialect = function
-  | Dialect.Att
-    -> Or_error.return (module AttFrontend : LangFrontend.Intf with type ast = Ast.t)
-  | d ->
-    Or_error.error "x86 dialect unsupported" d [%sexp_of: Dialect.t]
 ;;

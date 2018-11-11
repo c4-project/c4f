@@ -22,35 +22,16 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Top-level language modules for x86 *)
+(** Language frontends for x86 *)
 
-open Lib
+open Core
 
-(** [S] is the signature of language modules over the X86 AST. *)
-module type S = sig
-  include Dialect.S
-  include PP.Printer
-  include
-    Language.S
-    with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.Location.t
-     and type Instruction.t = Ast.Instruction.t
-     and type Statement.t = Ast.Statement.t
-     and type Symbol.t = string
+(** [S] is the type of x86 language frontends. *)
+module type S = Lib.Frontend.S with type ast := Ast.t
 
-  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the
-      correct abstract syntax for this version of x86. *)
-  val make_jump_operand : string -> Ast.Operand.t
-end
-
-(** [Att] is a language description for the AT&T dialect of x86. *)
+(** [Att] is a parser/lexer combination for the AT&T syntax of
+   x86 assembly, as emitted by compilers like gcc. *)
 module Att : S
 
-(** [Intel] is a language description for the Intel dialect of x86. *)
-module Intel : S
-
-(** [Herd7] is a language description for the Herd7 dialect of x86. *)
-module Herd7 : S
-
-(** [of_dialect] gets the correct [S] module for a dialect. *)
-val of_dialect : Dialect.t -> (module S)
+(** [of_dialect] gets the correct frontend module for a dialect. *)
+val of_dialect : Dialect.t -> (module S) Or_error.t

@@ -95,8 +95,8 @@ module type S = sig
   val symbolic_jump_type : [`Indirect | `Immediate ]
 end
 
-(** [ATT] describes the AT&T dialect of x86 assembly. *)
-module ATT : S
+(** [Att] describes the AT&T dialect of x86 assembly. *)
+module Att : S
 
 (** [Intel] describes the Intel dialect of x86 assembly. *)
 module Intel : S

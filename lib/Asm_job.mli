@@ -73,7 +73,9 @@ end
 (** [Runner_deps] is a signature bringing together the modules we
    need to be able to run single-file jobs. *)
 module type Runner_deps = sig
-  module Frontend : LangFrontend.Intf
+  type ast
+
+  module Frontend : Frontend.S with type ast := ast
   module Litmus : Litmus.S
   module Multi_sanitiser
     : Sanitiser.S with type statement = Litmus.Lang.Statement.t
@@ -91,7 +93,7 @@ module type Runner_deps = sig
 
   val final_convert : Litmus.Lang.Statement.t list -> Litmus.Lang.Statement.t list
 
-  val statements : Frontend.ast -> Litmus.Lang.Statement.t list
+  val statements : ast -> Litmus.Lang.Statement.t list
 end
 
 (** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)

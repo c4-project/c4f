@@ -32,11 +32,12 @@ let get_runner_x86 =
       Option.try_with (fun () -> X86.Dialect.of_string s)
       |> Result.of_option ~error:(Error.createf "Unknown X86 dialect: %s" s)
     in
-    let%bind f = X86.Language.frontend_of_dialect dialect in
+    let%bind f = X86.Frontend.of_dialect dialect in
     let l = X86.Language.of_dialect dialect in
     Or_error.return
-      (module Asm_job.Make_runner (
-          struct
+      (module Asm_job.Make_runner (struct
+            type ast = X86.Ast.t
+
             module L = (val l)
 
             module Frontend = (val f)
@@ -49,8 +50,7 @@ let get_runner_x86 =
 
             let final_convert = Conv.convert
             let statements = X86.Ast.program
-          end
-          ): Asm_job.Runner)
+          end): Asm_job.Runner)
   | _ ->
     Or_error.error_string
       "Too many arguments to x86 language; expected only one."

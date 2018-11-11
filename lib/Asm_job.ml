@@ -40,7 +40,9 @@ type output =
 ;;
 
 module type Runner_deps = sig
-  module Frontend : LangFrontend.Intf
+  type ast
+
+  module Frontend : Frontend.S with type ast := ast
   module Litmus : Litmus.S
   module Multi_sanitiser
     : Sanitiser.S with type statement = Litmus.Lang.Statement.t
@@ -58,7 +60,7 @@ module type Runner_deps = sig
 
   val final_convert : Litmus.Lang.Statement.t list -> Litmus.Lang.Statement.t list
 
-  val statements : Frontend.ast -> Litmus.Lang.Statement.t list
+  val statements : ast -> Litmus.Lang.Statement.t list
 end
 
 module type Runner = sig

@@ -24,15 +24,17 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Lexing
 open Utils
 
-type error_range = (position * position) [@@deriving sexp_of];;
+type error_range = (position * position) [@@deriving sexp_of]
 
-exception LexError of string * error_range;;
+exception LexError of string * error_range
 
 (** [lex_error error lexbuf] raises a [LexError] with the given
     error message and lexbuf. *)
-val lex_error : string -> lexbuf -> 'a;;
+val lex_error : string -> lexbuf -> 'a
 
-module type S = sig
+(** [Basic] is the signature that language frontends must implement
+    to use [Make]. *)
+module type Basic = sig
   type ast
 
   module I : MenhirLib.IncrementalEngine.INCREMENTAL_ENGINE
@@ -42,12 +44,13 @@ module type S = sig
   val message : int -> string;;
 end
 
-module type Intf = sig
+(** [S] is the signature of language frontends. *)
+module type S = sig
   (** [ast] is the type of the syntax tree outputted by the frontend. *)
   type ast
 
   include Loadable.S with type t := ast;;
 end
 
-(** [Make] lifts an instance of [S] into a frontend. *)
-module Make : functor (SI : S) -> Intf with type ast = SI.ast
+(** [Make] lifts an instance of [B] into a frontend. *)
+module Make : functor (B : Basic) -> S with type ast := B.ast

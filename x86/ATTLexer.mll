@@ -48,7 +48,7 @@ copyright notice follow. *)
   module Make(O:LexUtils.Config) = struct
     open Core
     open Lexing
-    open Lib.LangFrontend
+    open Lib.Frontend
     open ATTParser
     module LU = LexUtils.Make(O)
 }

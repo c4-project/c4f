@@ -16,7 +16,7 @@
 
 {
  open Lexing
- open Lib.LangFrontend
+ open Lib.Frontend
 
 module type Config = sig
   val debug : bool

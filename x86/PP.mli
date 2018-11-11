@@ -86,8 +86,8 @@ module type Printer = sig
   val pp_statement : Format.formatter -> Statement.t -> unit
 end
 
-(** [ATT] provides pretty-printing for AT&T-syntax x86. *)
-module ATT : Printer
+(** [Att] provides pretty-printing for AT&T-syntax x86. *)
+module Att : Printer
 (** [Intel] provides pretty-printing for Intel-syntax x86. *)
 module Intel : Printer
 (** [Herd7] provides pretty-printing for Herd-syntax x86. *)

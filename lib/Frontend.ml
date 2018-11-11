@@ -44,7 +44,7 @@ let lex_error msg lexbuf =
   raise (LexError (msg, (lexbuf.lex_start_p, lexbuf.lex_curr_p)))
 ;;
 
-module type S = sig
+module type Basic = sig
   type ast
 
   module I : MenhirLib.IncrementalEngine.INCREMENTAL_ENGINE
@@ -54,35 +54,33 @@ module type S = sig
   val message : int -> string;;
 end
 
-module type Intf = sig
+module type S = sig
   type ast
 
   include Loadable.S with type t := ast
 end
 
-module Make (SI : S) : Intf with type ast = SI.ast = struct
-  type ast = SI.ast
-
+module Make (B : Basic) : S with type ast := B.ast = struct
   let fail (_lexbuf : Lexing.lexbuf) = function
-    | SI.I.HandlingError env ->
-      let state = SI.I.current_state_number env in
-      let details = SI.message state in
+    | B.I.HandlingError env ->
+      let state = B.I.current_state_number env in
+      let details = B.message state in
       Or_error.error_s
         [%message "Parse error"
-          ~position:(SI.I.positions env : error_range)
+          ~position:(B.I.positions env : error_range)
           ~details
         ]
     | _ -> assert false
   ;;
 
   let loop lexbuf checkpoint =
-    let supplier = SI.I.lexer_lexbuf_to_supplier SI.lex lexbuf in
-    SI.I.loop_handle Or_error.return (fail lexbuf) supplier checkpoint
+    let supplier = B.I.lexer_lexbuf_to_supplier B.lex lexbuf in
+    B.I.loop_handle Or_error.return (fail lexbuf) supplier checkpoint
   ;;
 
   let parse lexbuf =
     try
-      loop lexbuf (SI.parse lexbuf.lex_curr_p)
+      loop lexbuf (B.parse lexbuf.lex_curr_p)
     with
     | LexError (details, position) ->
       Or_error.error_s
@@ -92,8 +90,8 @@ module Make (SI : S) : Intf with type ast = SI.ast = struct
         ]
   ;;
 
-  module Load : (Loadable.Basic with type t = ast) = struct
-    type t = ast;;
+  module Load : (Loadable.Basic with type t = B.ast) = struct
+    type t = B.ast
 
     let load_from_ic ?(path="(stdin)") ic =
       let lexbuf = from_channel ic in
