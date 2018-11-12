@@ -38,7 +38,7 @@ val compile_with_compiler
   -> name:string
   -> infile:string
   -> outfile:string
-  -> Spec.Id.t
+  -> Id.t
   -> Time.Span.t Or_error.t
 ;;
 

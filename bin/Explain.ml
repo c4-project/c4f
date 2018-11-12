@@ -49,7 +49,7 @@ let command =
            ~local_only:false
            ~test_compilers:false
            ~f:(fun o cfg ->
-               let id = Spec.Id.of_string compiler_id in
+               let id = Id.of_string compiler_id in
                let passes = Sanitiser_pass.(
                    if sanitise then explain else Set.empty
                  )

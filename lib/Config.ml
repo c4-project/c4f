@@ -90,8 +90,8 @@ module M = struct
     { compilers          : C.Set.t
     ; machines           : Machine.Spec.Set.t
     ; herd               : Herd.Config.t sexp_option
-    ; disabled_compilers : (Spec.Id.t, Error.t option) List.Assoc.t
-    ; disabled_machines  : (Spec.Id.t, Error.t option) List.Assoc.t
+    ; disabled_compilers : (Id.t, Error.t option) List.Assoc.t
+    ; disabled_machines  : (Id.t, Error.t option) List.Assoc.t
     }
   [@@deriving sexp, fields]
   ;;
@@ -106,7 +106,7 @@ module M = struct
   let machines_from_raw
       (hook : Machine.Spec.With_id.t hook)
       (ms : Machine.Spec.Set.t)
-    : (Machine.Spec.Set.t * (Spec.Id.t, Error.t option) List.Assoc.t) Or_error.t =
+    : (Machine.Spec.Set.t * (Id.t, Error.t option) List.Assoc.t) Or_error.t =
     let open Or_error.Let_syntax in
     Machine.Spec.Set.(
       let enabled, disabled =
@@ -140,9 +140,9 @@ module M = struct
       match Machine.Spec.Set.get enabled mach with
       | Ok m -> return (`Fst m)
       | _ ->
-        match List.Assoc.find ~equal:Spec.Id.equal disabled mach with
+        match List.Assoc.find ~equal:Id.equal disabled mach with
         | Some e -> return (`Snd (mach, e))
-        | None -> error_s [%message "Machine doesn't exist" ~id:(mach : Spec.Id.t)]
+        | None -> error_s [%message "Machine doesn't exist" ~id:(mach : Id.t)]
     )
   ;;
 
@@ -173,10 +173,10 @@ module M = struct
 
   let compilers_from_raw
       (ms : Machine.Spec.Set.t)
-      (ms_disabled : (Spec.Id.t, Error.t option) List.Assoc.t)
+      (ms_disabled : (Id.t, Error.t option) List.Assoc.t)
       (hook : C.With_id.t hook)
       (cs : Raw.C.Set.t)
-    : (C.Set.t * (Spec.Id.t, Error.t option) List.Assoc.t) Or_error.t =
+    : (C.Set.t * (Id.t, Error.t option) List.Assoc.t) Or_error.t =
     let open Or_error.Let_syntax in
     Raw.C.Set.(
       let enabled, disabled =

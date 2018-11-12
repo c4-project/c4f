@@ -275,7 +275,7 @@ let group_specs_by_machine specs =
           (Compiler.Full_spec.machine
              (Compiler.Full_spec.With_id.spec spec))
       )
-  |> Spec.Id.Map.to_alist
+  |> Id.Map.to_alist
 ;;
 
 let make_herd =

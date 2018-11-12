@@ -111,7 +111,7 @@ module Make_spec (R : Machine.Reference)
   end
 end
 
-module Cfg_spec : Spec with type Mach.t = Spec.Id.t =
+module Cfg_spec : Spec with type Mach.t = Id.t =
   Make_spec (Machine.Id_as_reference)
 ;;
 

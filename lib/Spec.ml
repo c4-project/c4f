@@ -28,64 +28,10 @@
 open Core
 open Utils
 
-module Id = struct
-  module T = struct
-    (** [t] is the type of compiler IDs. *)
-    type t = string list [@@deriving compare, hash, sexp, bin_io]
-
-    let allowed_id_splits = [ '.' ; ' '; '/'; '\\']
-
-    let of_string = String.split_on_chars ~on:allowed_id_splits
-
-    let to_string = String.concat ~sep:"."
-
-    let module_name = "act.Lib.Compiler.Id"
-  end
-
-  include T
-  include Identifiable.Make (T)
-
-  let to_string_list = Fn.id
-
-  let%expect_test "parse foo.bar.baz as a spec ID" =
-    Sexp.output_hum Out_channel.stdout
-      [%sexp (of_string "foo.bar.baz" : t)];
-    [%expect {| (foo bar baz) |}]
-  ;;
-
-  let%expect_test "parse foo/bar/baz as a spec ID" =
-    Sexp.output_hum Out_channel.stdout
-      [%sexp (of_string "foo/bar/baz" : t)];
-    [%expect {| (foo bar baz) |}]
-  ;;
-
-  let%expect_test "parse foo\\bar\\baz as a spec ID" =
-    Sexp.output_hum Out_channel.stdout
-      [%sexp (of_string "foo\\bar\\baz" : t)];
-    [%expect {| (foo bar baz) |}]
-  ;;
-
-  let%expect_test "parse 'foo bar baz' as a spec ID" =
-    Sexp.output_hum Out_channel.stdout
-      [%sexp (of_string "foo bar baz" : t)];
-    [%expect {| (foo bar baz) |}]
-  ;;
-end
-
-(** [Basic] is the basic interface of both compiler and machine
-   specifications. *)
 module type Basic = sig
-  (** [t] is the opaque type of specifications.
-      To construct a [t], read one in as an S-expression;
-      a proper constructor may appear in later revisions. *)
   type t [@@deriving sexp]
-
-  (** [enabled c] gets whether [c] is enabled. *)
   val enabled : t -> bool
-
   include Pretty_printer.S with type t := t
-
-  (** [pp_summary f spec] prints a one-line summary of [spec]. *)
   val pp_summary : Format.formatter -> t -> unit
 end
 
@@ -98,67 +44,37 @@ module type S_with_id = sig
   val to_tuple : t -> (Id.t * elt)
 end
 
-(** [S] is the top-level, outward-facing interface of both
-   compiler and machine specifications. *)
 module type S = sig
   include Basic
 
-  (** [With_id] contains types and functions for handling bundles of
-     spec ID and spec. *)
   module With_id : S_with_id with type elt = t
 
-  (** [Set] is the interface of modules for dealing with sets of
-      compiler specs. *)
   module Set : sig
     type elt = t
 
-    (** [t] is the type of sets. *)
     type t [@@deriving sexp]
 
     include Pretty_printer.S with type t := t
 
-    (** [pp_verbose verbose f specs] prints a [specs] with the level of
-        verbosity implied by [verbose]. *)
     val pp_verbose : bool -> Format.formatter -> t -> unit
-
-    (** [get specs id] tries to look up ID [id] in [specs],
-        and emits an error if it can't. *)
     val get : t -> Id.t -> elt Or_error.t
-
-    (** [of_list xs] tries to make a set from [xs].
-        It raises an error if [xs] contains duplicate IDs. *)
     val of_list : With_id.t list -> t Or_error.t
-
-    (** [partition_map specs ~f] applies a partitioning predicate [f] to the
-        specifications in [specs], returning those marked [`Fst] in
-        the first bucket and those marked [`Snd] in the second. *)
     val partition_map
       :  t
       -> f : (With_id.t -> [`Fst of 'a | `Snd of 'b])
       -> ('a list * 'b list)
     ;;
-
-    (** [group specs ~f] groups [specs] into buckets according to some
-       grouping function [f].  [f] returns specification IDs; the idea
-       is that this allows grouping of specifications by references
-        to other, larger specifications. *)
     val group
       :  t
       -> f : (With_id.t -> Id.t)
       -> t Id.Map.t
     ;;
-
-    (** [map specs ~f] applies a mapper [f] to the
-        specifications in [specs], returning the results as a list. *)
     val map
       :  t
       -> f : (With_id.t -> 'a)
       -> 'a list
     ;;
   end
-
-  (** [pp_verbose verbose f spec] prints a [spec] with the level of
-      verbosity implied by [verbose]. *)
   val pp_verbose : bool -> Format.formatter -> t -> unit
 end
 

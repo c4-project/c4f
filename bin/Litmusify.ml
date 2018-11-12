@@ -94,7 +94,7 @@ let decide_if_c infile = function
 
 let run file_type use_herd compiler_id ~infile ~outfile o cfg =
   let open Result.Let_syntax in
-  let id = Spec.Id.of_string compiler_id in
+  let id = Id.of_string compiler_id in
   let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) id in
   let cspec = Compiler.Full_spec.With_id.create ~id ~spec in
 

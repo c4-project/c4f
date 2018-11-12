@@ -1,25 +1,26 @@
 (* This file is part of 'act'.
 
-Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 open Core
 open Lib
@@ -36,21 +37,21 @@ let get_runner_x86 =
     let l = X86.Language.of_dialect dialect in
     Or_error.return
       (module Asm_job.Make_runner (struct
-            type ast = X86.Ast.t
+           type ast = X86.Ast.t
 
-            module L = (val l)
+           module L = (val l)
 
-            module Frontend = (val f)
-            module Litmus = X86.Litmus.LitmusDirect
-            module Multi_sanitiser = X86.Sanitiser.Make_multi (L)
-            module Single_sanitiser = X86.Sanitiser.Make_single (L)
-            module Explainer = Explainer.Make (L)
+           module Frontend = (val f)
+           module Litmus = X86.Litmus.LitmusDirect
+           module Multi_sanitiser = X86.Sanitiser.Make_multi (L)
+           module Single_sanitiser = X86.Sanitiser.Make_single (L)
+           module Explainer = Explainer.Make (L)
 
-            module Conv = X86.Conv.Make (L) (X86.Language.Herd7)
+           module Conv = X86.Conv.Make (L) (X86.Language.Herd7)
 
-            let final_convert = Conv.convert
-            let statements = X86.Ast.program
-          end): Asm_job.Runner)
+           let final_convert = Conv.convert
+           let statements = X86.Ast.program
+         end): Asm_job.Runner)
   | _ ->
     Or_error.error_string
       "Too many arguments to x86 language; expected only one."
@@ -121,9 +122,9 @@ let test_compiler cspec =
       (M.test ())
       "A compiler in your spec file didn't respond properly"
       (Compiler.Full_spec.With_id.id cspec)
-      [%sexp_of:Spec.Id.t]
+      [%sexp_of:Id.t]
   in
-    Some cspec
+  Some cspec
 ;;
 
 let test_machine local_only mspec =

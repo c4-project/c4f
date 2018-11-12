@@ -10,34 +10,34 @@ module File : sig
   type t
 
   (** [basename f] gets the basename of [f]. *)
-  val basename : t -> string;;
+  val basename : t -> string
 
   (** [c_path f] gets the path of the C input file for [f]. *)
-  val c_path : t -> string;;
+  val c_path : t -> string
 
   (** [litc_path f] gets the path of the C/litmus input file for
      [f]. *)
-  val litc_path : t -> string;;
+  val litc_path : t -> string
 
   (** [asm_path f] gets the path of the assembly output file for
      [f]. *)
-  val asm_path : t -> string;;
+  val asm_path : t -> string
 
   (** [lita_path f] gets the path of the assembly litmus output file
      for [f]. *)
-  val lita_path : t -> string;;
+  val lita_path : t -> string
 
   (** [herdc_path f] gets the path of the C/litmus Herd run output
      file for [f]. *)
-  val herdc_path : t -> string;;
+  val herdc_path : t -> string
 
   (** [herda_path f] gets the path of the assembly Herd run output
      file for [f]. *)
-  val herda_path : t -> string;;
+  val herda_path : t -> string
 
   (** [make ps basename] makes file-specific paths for
       basename [basename], according to pathset [ps]. *)
-  val make : ps -> string -> t;;
+  val make : ps -> string -> t
 end
 
 (** [mkdirs] tries to make the output directories
@@ -47,7 +47,7 @@ val mkdirs : t -> unit Or_error.t;;
 (** [make] constructs a [Pathset.t] from a compiler ID and
    various other paths. *)
 val make
-  :  Spec.Id.t
+  :  Id.t
   -> in_root  : string
   -> out_root : string
   -> t
@@ -56,7 +56,7 @@ val make
 (** [make_and_mkdirs] constructs a [Pathset.t] per [make], then
     tries to make the directories through [mkdirs]. *)
 val make_and_mkdirs
-  :  Spec.Id.t
+  :  Id.t
   -> in_root  : string
   -> out_root : string
   -> t Or_error.t

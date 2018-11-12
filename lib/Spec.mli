@@ -27,18 +27,6 @@
 
 open Core
 
-(** [Id] is a module for compiler and machine identifiers. *)
-module Id : sig
-  (** [t] is the type of compiler IDs. *)
-  type t
-
-  (** [to_string_list cid] returns a list of each element in [cid]'s
-     ID. *)
-  val to_string_list : t -> string list
-
-  include Identifiable.S with type t := t
-end
-
 (** [Basic] is the basic interface of both compiler and machine
    specifications. *)
 module type Basic = sig

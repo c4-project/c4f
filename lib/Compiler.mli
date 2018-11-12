@@ -112,7 +112,7 @@ module Make_spec
 (** [Cfg_spec] is a module describing compiler specs where machine
     references are unresolved IDs.  This is the format
     used in the configuration file, hence the name. *)
-module Cfg_spec : Spec with type Mach.t = Spec.Id.t
+module Cfg_spec : Spec with type Mach.t = Id.t
 
 (** [Full_spec] is a module describing compiler specs where machine
     references are inlined [MSpec.t] records. *)

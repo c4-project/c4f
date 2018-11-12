@@ -22,37 +22,19 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+(** [Id] is a module for compiler and machine identifiers.
+
+    Identifiers contain an ordered list of case-insensitive elements.
+*)
+
 open Core
-open Utils
 
-type t =
-  { vf : Format.formatter
-  ; wf : Format.formatter
-  ; ef : Format.formatter
-  }
+(** [t] is the type of compiler and machine identifiers. *)
+type t
 
-let maybe_err_formatter on =
-  if on
-  then Format.err_formatter
-  else My_format.null_formatter ()
-;;
+(** [to_string_list cid] returns a list of each element in [id].
+    ID. *)
+val to_string_list : t -> string list
 
-let make ~verbose ~warnings =
-  { vf = maybe_err_formatter verbose
-  ; wf = maybe_err_formatter warnings
-  ; ef = Format.err_formatter
-  }
-;;
-
-let log_stage o ~stage ~file compiler_id =
-  Format.fprintf o.vf "@[%s[%a]@ %s@]@."
-    stage
-    Id.pp compiler_id
-    file
-;;
-
-let print_error o =
-  Result.iter_error
-    ~f:(Format.fprintf o.ef
-          "@[act encountered a top-level error:@.@[%a@]@]@." Error.pp)
-;;
+(** We can use [t] as an [Identifiable]. *)
+include Identifiable.S with type t := t

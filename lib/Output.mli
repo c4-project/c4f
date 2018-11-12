@@ -44,7 +44,7 @@ val log_stage
   :  t
   -> stage:string
   -> file:string
-  -> Spec.Id.t
+  -> Id.t
   -> unit
 ;;
 

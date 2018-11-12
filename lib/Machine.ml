@@ -24,7 +24,6 @@
 
 open Core
 open Utils
-open Spec
 
 module type Reference = sig
   type t [@@deriving sexp]

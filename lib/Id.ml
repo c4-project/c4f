@@ -22,37 +22,49 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+(** [Spec] contains general interfaces for dealing with specifications
+    of machines and compilers. *)
+
 open Core
-open Utils
 
-type t =
-  { vf : Format.formatter
-  ; wf : Format.formatter
-  ; ef : Format.formatter
-  }
+module T = struct
+  (** [t] is the type of compiler IDs. *)
+  type t = string list [@@deriving compare, hash, sexp, bin_io]
 
-let maybe_err_formatter on =
-  if on
-  then Format.err_formatter
-  else My_format.null_formatter ()
+  let allowed_id_splits = [ '.' ; ' '; '/'; '\\']
+
+  let of_string = String.split_on_chars ~on:allowed_id_splits
+
+  let to_string = String.concat ~sep:"."
+
+  let module_name = "act.Lib.Id"
+end
+
+include T
+include Identifiable.Make (T)
+
+let to_string_list = Fn.id
+
+let%expect_test "parse foo.bar.baz as a spec ID" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "foo.bar.baz" : t)];
+  [%expect {| (foo bar baz) |}]
 ;;
 
-let make ~verbose ~warnings =
-  { vf = maybe_err_formatter verbose
-  ; wf = maybe_err_formatter warnings
-  ; ef = Format.err_formatter
-  }
+let%expect_test "parse foo/bar/baz as a spec ID" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "foo/bar/baz" : t)];
+  [%expect {| (foo bar baz) |}]
 ;;
 
-let log_stage o ~stage ~file compiler_id =
-  Format.fprintf o.vf "@[%s[%a]@ %s@]@."
-    stage
-    Id.pp compiler_id
-    file
+let%expect_test "parse foo\\bar\\baz as a spec ID" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "foo\\bar\\baz" : t)];
+  [%expect {| (foo bar baz) |}]
 ;;
 
-let print_error o =
-  Result.iter_error
-    ~f:(Format.fprintf o.ef
-          "@[act encountered a top-level error:@.@[%a@]@]@." Error.pp)
+let%expect_test "parse 'foo bar baz' as a spec ID" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "foo bar baz" : t)];
+  [%expect {| (foo bar baz) |}]
 ;;
