@@ -1,41 +1,31 @@
+(* This file is part of 'act'.
+
+   Copyright (c) 2018 by Matt Windsor
+
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
+
 open Core
 open Utils
 
-module type Basic_spec = sig
-  module Mach : Machine.Reference
-
-  type t
-
-  val enabled : t -> bool
-  val style   : t -> string
-  val emits   : t -> string list
-  val cmd     : t -> string
-  val argv    : t -> string list
-  val herd    : t -> bool
-  val machine : t -> Mach.t
-end
-
-module type S_spec = sig
-  include Basic_spec
-
-  val create
-    :  enabled : bool
-    -> style   : string
-    -> emits   : string list
-    -> cmd     : string
-    -> argv    : string list
-    -> herd    : bool
-    -> machine : Mach.t
-    -> t
-  ;;
-
-  module With_id : sig
-    include Spec.S_with_id with type elt = t
-    include Basic_spec with type t := t and module Mach := Mach
-  end
-
-  include Spec.S with type t := t and module With_id := With_id
-end
+include Compiler_intf
 
 module Make_spec (R : Machine.Reference)
   : S_spec with module Mach = R = struct
@@ -123,22 +113,6 @@ module type With_spec = sig
   val cspec : Spec.With_id.t
 end
 
-module type Basic = sig
-  val test_args : string list
-
-  val compile_args
-    :  args    : string list
-    -> emits   : string list
-    -> infile  : string
-    -> outfile : string
-    -> string list
-end
-
-module type Hooks = sig
-  val pre : infile:string -> outfile:string -> (string * string) Or_error.t
-  val post : infile:string -> outfile:string -> unit Or_error.t
-end
-
 (** [No_hooks] is a [Hooks] implementation that does nothing. *)
 module No_hooks : Hooks = struct
   let pre ~infile ~outfile = Result.return (infile, outfile)
@@ -173,11 +147,6 @@ module type Basic_with_run_info = sig
   include With_spec
   module Runner : Run.Runner
   module Hooks : Hooks
-end
-
-module type S = sig
-  val test : unit -> unit Or_error.t
-  val compile : infile:string -> outfile:string -> unit Or_error.t
 end
 
 module Make (B : Basic_with_run_info) : S = struct
