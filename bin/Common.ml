@@ -54,7 +54,7 @@ let lift_command
       ~warnings:(Standard_args.are_warnings_enabled standard_args)
   in
   Or_error.(
-    LangSupport.load_cfg
+    Language_support.load_and_process_config
       ?compiler_predicate
       ?machine_predicate
       ?with_compiler_tests
@@ -65,7 +65,7 @@ let lift_command
 
 let litmusify ?programs_only (o : Output.t) inp outp symbols spec =
   let open Result.Let_syntax in
-  let%bind runner = LangSupport.asm_runner_from_spec spec in
+  let%bind runner = Language_support.asm_runner_from_spec spec in
   let module Runner = (val runner) in
   let input =
     { Asm_job.inp

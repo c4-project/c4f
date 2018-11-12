@@ -54,7 +54,7 @@ val compiler_from_spec
   -> (module Compiler.S) Or_error.t
 ;;
 
-(** [load_cfg ?compiler_predicate ?machine_predicate
+(** [load_and_process_config ?compiler_predicate ?machine_predicate
    ?with_compiler_tests path] loads the config file at [path] and
    optionally tests all machines and compilers therein.
 
@@ -67,7 +67,7 @@ val compiler_from_spec
 
     If [with_compiler_tests] is absent, or present and true, compilers
    will be tested for reachability. *)
-val load_cfg
+val load_and_process_config
   :  ?compiler_predicate:Compiler.Property.t Blang.t
   -> ?machine_predicate:Machine.Property.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)

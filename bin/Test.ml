@@ -210,7 +210,7 @@ let run_compiler
     (o : Output.t) ~in_root ~out_root herdprog c_fnames cspec =
   let open Or_error.Let_syntax in
   let id = Compiler.Spec.With_id.id cspec in
-  let%bind c = LangSupport.compiler_from_spec cspec in
+  let%bind c = Language_support.compiler_from_spec cspec in
   let%bind paths = Pathset.make_and_mkdirs id ~in_root ~out_root in
   Pathset.pp o.vf paths;
   Format.pp_print_newline o.vf ();

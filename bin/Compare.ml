@@ -29,7 +29,7 @@ let compile o spec ~c_file =
   let open Or_error.Let_syntax in
   let infile = c_file in
   let outfile = Filename.temp_file "act" "s" in
-  let%bind c = LangSupport.compiler_from_spec spec in
+  let%bind c = Language_support.compiler_from_spec spec in
   let%map _ =
     Common.compile_with_compiler c o (Compiler.Spec.With_id.id spec)
       ~name:(Filename.basename infile)

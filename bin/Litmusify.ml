@@ -58,7 +58,7 @@ let run_compiler o cspec c_file asm_file =
       ~error:(Error.of_string "Can't output compiler result to stdout")
   in
   let name = Filename.basename infile in
-  let%bind c = LangSupport.compiler_from_spec cspec in
+  let%bind c = Language_support.compiler_from_spec cspec in
   let%map _ =
     Common.compile_with_compiler c o ~name ~infile ~outfile
       (Compiler.Spec.With_id.id cspec)

@@ -148,7 +148,7 @@ let machine_hook predicate mspec =
   )
 ;;
 
-let load_cfg
+let load_and_process_config
     ?(compiler_predicate=Blang.true_)
     ?(machine_predicate=Blang.true_)
     ?(with_compiler_tests=true) path =
