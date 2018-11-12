@@ -25,52 +25,59 @@
 open Core
 open Lib
 
-let get_runner_x86 =
-  let open Or_error.Let_syntax in
-  function
-  | [s] ->
-    let%bind dialect =
-      Option.try_with (fun () -> X86.Dialect.of_string s)
-      |> Result.of_option ~error:(Error.createf "Unknown X86 dialect: %s" s)
-    in
-    let%bind f = X86.Frontend.of_dialect dialect in
+let try_get_x86_dialect dialect =
+  dialect
+  |> X86.Dialect.Name_table.of_string
+  |> Result.of_option
+    ~error:(Error.create_s [%message "Unknown X86 dialect" ~dialect])
+;;
+
+let get_runner_x86 = function
+  | [ dialect_s ] ->
+    let open Or_error.Let_syntax in
+    let%bind dialect = try_get_x86_dialect dialect_s in
+    let%map f = X86.Frontend.of_dialect dialect in
     let l = X86.Language.of_dialect dialect in
-    Or_error.return
-      (module Asm_job.Make_runner (struct
-           type ast = X86.Ast.t
+    (module Asm_job.Make_runner (struct
+         type ast = X86.Ast.t
 
-           module L = (val l)
+         module L = (val l)
 
-           module Frontend = (val f)
-           module Litmus = X86.Litmus.LitmusDirect
-           module Multi_sanitiser = X86.Sanitiser.Make_multi (L)
-           module Single_sanitiser = X86.Sanitiser.Make_single (L)
-           module Explainer = Explainer.Make (L)
+         module Frontend = (val f)
+         module Litmus = X86.Litmus.LitmusDirect
+         module Multi_sanitiser = X86.Sanitiser.Make_multi (L)
+         module Single_sanitiser = X86.Sanitiser.Make_single (L)
+         module Explainer = Explainer.Make (L)
 
-           module Conv = X86.Conv.Make (L) (X86.Language.Herd7)
+         module Conv = X86.Conv.Make (L) (X86.Language.Herd7)
 
-           let final_convert = Conv.convert
-           let statements = X86.Ast.program
-         end): Asm_job.Runner)
-  | _ ->
+         let final_convert = Conv.convert
+         let statements = X86.Ast.program
+       end): Asm_job.Runner)
+  | [] ->
+    Or_error.error_string
+      "Not enough arguments to x86 language; expected one."
+  | _::_ ->
     Or_error.error_string
       "Too many arguments to x86 language; expected only one."
+;;
 
 let lang_procs =
   [ "x86", get_runner_x86 ]
 ;;
 
-let asm_runner_from_emits emits =
-  let open Or_error.Let_syntax in
-  let%bind lang =
-    List.hd emits
-    |> Result.of_option ~error:(Error.of_string "Missing language name")
-  in
-  let%bind proc =
-    List.Assoc.find ~equal:String.Caseless.equal lang_procs lang
-    |> Result.of_option ~error:(Error.createf "Unknown language: %s" lang)
-  in
-  proc (List.tl_exn emits)
+let try_get_lang_proc language =
+  language
+  |> List.Assoc.find ~equal:String.Caseless.equal lang_procs
+  |> Result.of_option ~error:(
+    Error.create_s [%message "Unknown language" ~language]
+  )
+;;
+
+let asm_runner_from_emits = function
+  | [] -> Or_error.error_string "Missing language name"
+  | (lang::rest) ->
+    Result.(try_get_lang_proc lang >>= (fun proc -> proc rest))
 ;;
 
 module Gcc : Compiler.Basic = struct
@@ -83,7 +90,7 @@ module Gcc : Compiler.Basic = struct
     @ [ "-o"; outfile; infile]
   ;;
 
-  let test_args = ["--version"] ;;
+  let test_args = ["--version"]
 end
 
 let style_modules =
@@ -93,7 +100,10 @@ let style_modules =
 let compiler_module_from_spec (cspec : Compiler.Spec.With_id.t) =
   let style = Compiler.Spec.With_id.style cspec in
   List.Assoc.find ~equal:String.Caseless.equal style_modules style
-  |> Result.of_option ~error:(Error.createf "Unknown compiler style: %s" style)
+  |> Result.of_option
+    ~error:(Error.create_s
+              [%message "Unknown compiler style" ~style]
+           )
 ;;
 
 let asm_runner_from_spec (cspec : Compiler.Spec.With_id.t) =
@@ -102,9 +112,7 @@ let asm_runner_from_spec (cspec : Compiler.Spec.With_id.t) =
 ;;
 
 let compiler_from_spec (cspec : Compiler.Spec.With_id.t) =
-  Compiler.from_spec
-    compiler_module_from_spec
-    cspec
+  Compiler.from_spec compiler_module_from_spec cspec
 ;;
 
 let test_compiler cspec =
