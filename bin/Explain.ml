@@ -46,8 +46,7 @@ let command =
        in
        fun () ->
          Common.lift_command standard_args
-           ~local_only:false
-           ~test_compilers:false
+           ~with_compiler_tests:false
            ~f:(fun o cfg ->
                let id = Id.of_string compiler_id in
                let passes = Sanitiser_pass.(

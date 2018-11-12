@@ -42,8 +42,9 @@ let compile_with_compiler
 ;;
 
 let lift_command
-    ?(local_only=false)
-    ?(test_compilers=false)
+    ?compiler_predicate
+    ?machine_predicate
+    ?with_compiler_tests
     ~f
     standard_args
   =
@@ -54,8 +55,9 @@ let lift_command
   in
   Or_error.(
     LangSupport.load_cfg
-      ~local_only
-      ~test_compilers
+      ?compiler_predicate
+      ?machine_predicate
+      ?with_compiler_tests
       (Standard_args.spec_file standard_args)
     >>= f o
   ) |> Output.print_error o

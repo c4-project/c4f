@@ -29,7 +29,28 @@ module type Reference = sig
   type t [@@deriving sexp]
   include Pretty_printer.S with type t := t
   val default : t
-  val is_remote : t -> bool
+  val id : t -> Id.t
+  val remoteness : t -> [`Remote | `Local | `Unknown]
+end
+
+module Property = struct
+  type t =
+    | Id of Id.Property.t
+    | Is_remote
+    | Is_local
+ [@@deriving sexp, variants]
+
+ let eval (type r) (rm : (module Reference with type t = r)) reference =
+   let module R = (val rm) in function
+     | Id prop   -> Id.Property.eval (R.id reference) prop
+     | Is_remote -> R.remoteness reference = `Remote
+     | Is_local  -> R.remoteness reference = `Local
+  ;;
+
+  let eval_b (type r) (rm : (module Reference with type t = r))
+      reference expr =
+    Blang.eval expr (eval rm reference)
+  ;;
 end
 
 module Ssh = struct
@@ -53,6 +74,16 @@ module Ssh = struct
     let host = host C.ssh
     let user = user C.ssh
   end
+end
+
+module Id : sig
+  include (module type of Id)
+  include Reference with type t := t
+end = struct
+  include Id
+  let id = Fn.id
+  let default = of_string "default"
+  let remoteness = Fn.const `Unknown
 end
 
 module Spec = struct
@@ -94,50 +125,36 @@ module Spec = struct
 
     let pp_summary = pp (* for now *)
 
-    let is_via_remote = function
-      | Local -> false
+    let via_remoteness = function
+      | Local -> `Local
       (* Technically, if we're SSHing to loopback, this isn't true,
          but I suspect it doesn't matter. *)
-      | Ssh _ -> true
+      | Ssh _ -> `Remote
     ;;
 
-    let is_remote {via; _} = is_via_remote via
+    let remoteness {via; _} = via_remoteness via
     let runner {via; _} = runner_from_via via
   end
 
-  include Spec.Make(M)
-  let via = M.via
-  let runner = M.runner
-  let is_remote = M.is_remote
+  include M
+
   let default = { M.enabled = true; via = Local }
-end
 
-(** [Id_as_reference] is an extension onto [Id] that
-    lets such items be machine references. *)
-module Id_as_reference : sig
-  include (module type of Id)
-  include Reference with type t := t
-end = struct
-  include Id
-  let default = of_string "default"
-  let is_remote = Fn.const false
-end
+  module With_id = struct
+    include Spec.With_id (M)
 
-(** [With_id_as_reference] is an extension onto [Spec.With_id] that
-    lets such items be machine references. *)
-module With_id_as_reference : sig
-  type elt = Spec.t
-  type t = Spec.With_id.t
-  include (module type of Spec.With_id with type elt := elt and type t := t)
-  include Reference with type t := t
-end = struct
-  include Spec.With_id
-  let is_remote t = Spec.is_remote (spec t)
-  let default =
-    create ~id:Id_as_reference.default ~spec:Spec.default
-  let pp f t =
-    Format.fprintf f "@[%a@ (@,%a@,)@]"
-      Id.pp   (id   t)
-      Spec.pp (spec t)
-  ;;
+    let remoteness t = M.remoteness (spec t)
+    let default =
+      create ~id:Id.default ~spec:default
+    let pp f t =
+      Format.fprintf f "@[%a@ (@,%a@,)@]"
+        Id.pp (id   t)
+        M.pp  (spec t)
+    ;;
+  end
+
+  include Spec.Make (struct
+      include M
+      module With_id = With_id
+    end)
 end

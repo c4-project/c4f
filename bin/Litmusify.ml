@@ -145,7 +145,6 @@ let command =
       in
       fun () ->
         Common.lift_command standard_args
-          ~local_only:false
-          ~test_compilers:false
+          ~with_compiler_tests:false
           ~f:(run file_type use_herd compiler_id ~infile ~outfile)
     ]

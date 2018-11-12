@@ -42,13 +42,15 @@ val compile_with_compiler
   -> Time.Span.t Or_error.t
 ;;
 
-(** [lift_command ?local_only ?test_compilers ~f standard_args] lifts
-   a command body [f], performing common book-keeping such as loading
-   and testing the configruation, creating an [Output.t], and printing
-   top-level errors. *)
+(** [lift_command ?compiler_predicate ?machine_predicate
+   ?with_compiler_tests ~f standard_args] lifts a command body [f],
+   performing common book-keeping such as loading and testing the
+   configuration, creating an [Output.t], and printing top-level
+   errors. *)
 val lift_command
-  :  ?local_only:bool (* defaults to false *)
-  -> ?test_compilers:bool (* defaults to false *)
+  :  ?compiler_predicate:Compiler.Property.t Blang.t
+  -> ?machine_predicate:Machine.Property.t Blang.t
+  -> ?with_compiler_tests:bool (* default true *)
   -> f:(Output.t -> Config.M.t -> unit Or_error.t)
   -> Standard_args.t
   -> unit

@@ -39,9 +39,48 @@ module type Reference = sig
       reference is omitted in a compiler specification. *)
   val default : t
 
-  (** [is_remote m] returns a guess as to whether machine reference
+  (** [id m] gets the machine ID of this reference. *)
+  val id : t -> Id.t
+
+  (** [remoteness m] returns a guess as to whether machine reference
       [m] is a reference to a remote machine. *)
-  val is_remote : t -> bool
+  val remoteness : t -> [`Remote | `Local | `Unknown]
+end
+
+(** [Property] contains a mini-language for querying machine
+   references, suitable for use in [Blang]. *)
+module Property : sig
+  (** [t] is the opaque type of property queries. *)
+  type t [@@deriving sexp]
+
+  (** [id] constructs a query over a machine's ID. *)
+  val id : Id.Property.t -> t
+
+  (** [is_remote] constructs a query that asks if a machine is
+     known to be remote. *)
+  val is_remote : t
+
+  (** [is_local] constructs a query that asks if a machine is
+      known to be local. *)
+  val is_local : t
+
+  (** [eval R reference property] evaluates [property] over
+      [reference], with respect to module [R]. *)
+  val eval
+    :  (module Reference with type t = 'r)
+    -> 'r
+    -> t
+    -> bool
+  ;;
+
+  (** [eval_b R reference expr] evaluates a [Blang] expression [expr]
+     over [reference], with respect to module [R]. *)
+  val eval_b
+    :  (module Reference with type t = 'r)
+    -> 'r
+    -> t Blang.t
+    -> bool
+  ;;
 end
 
 (** [Ssh] is a module defining SSH configuration. *)
@@ -66,10 +105,17 @@ module Ssh : sig
   module To_config : functor (C : sig val ssh : t end) -> Ssh.S
 end
 
+(** [Id] is an extension onto base [Id] that
+    lets such items be machine references. *)
+module Id : sig
+  include (module type of Id)
+  include Reference with type t := t
+end
+
 (** [Spec] is a module for machine specifications. *)
 module Spec : sig
   (** [t] describes a machine. *)
-  type t;;
+  type t
 
   (** [via] describes the connection to the machine. *)
   type via =
@@ -83,27 +129,13 @@ module Spec : sig
      [spec]. *)
   val runner : t -> (module Run.Runner)
 
-  (** Machine specifications are machine references... *)
-  include Reference with type t := t
-  (** ...and specifications. *)
-  include Spec.S with type t := t
+  (** [With_id] is an extension onto [Spec.With_id] that
+      lets such items be machine references. *)
+  module With_id : sig
+    include (Spec.S_with_id with type elt := t)
+    include Reference with type t := t
+  end
+
+  (** Machine specifications are specifications. *)
+  include Spec.S with type t := t and module With_id := With_id
 end
-
-(** [Id_as_reference] is an extension onto [Id] that
-    lets such items be machine references. *)
-module Id_as_reference : sig
-  include (module type of Id)
-  include Reference with type t := t
-end
-
-(** [With_id_as_reference] is an extension onto [Spec.With_id] that
-    lets such items be machine references. *)
-module With_id_as_reference : sig
-  type elt = Spec.t
-  type t = Spec.With_id.t
-  include (module type of Spec.With_id with type elt := elt
-                                        and type t := t)
-  include Reference with type t := t
-end
-
-

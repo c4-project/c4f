@@ -75,14 +75,16 @@ let command =
     ~summary:"displays the litmus output for each compiler over a C file"
     [%map_open
       let standard_args = Standard_args.get
-      and local_only = Standard_args.Other.local_only
+      and compiler_predicate = Standard_args.Other.compiler_predicate
+      and machine_predicate = Standard_args.Other.machine_predicate
       and c_file =
          anon ("C_FILE" %: string)
       in
       fun () ->
         Common.lift_command standard_args
-          ~local_only
-          ~test_compilers:true
+          ?compiler_predicate
+          ?machine_predicate
+          ~with_compiler_tests:true
           ~f:(run ~c_file)
     ]
 ;;

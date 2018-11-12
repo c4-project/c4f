@@ -332,14 +332,16 @@ let command =
              Filename.current_dir_name
              string)
           ~doc: "PATH the path under which output directories will be created"
-       and local_only = Standard_args.Other.local_only
+       and compiler_predicate = Standard_args.Other.compiler_predicate
+       and machine_predicate = Standard_args.Other.machine_predicate
        and in_root =
          anon ("RESULTS_PATH" %: string)
        in
        fun () ->
          Common.lift_command standard_args
-           ~local_only
-           ~test_compilers:true
+           ?compiler_predicate
+           ?machine_predicate
+           ~with_compiler_tests:true
            ~f:(run ~in_root ~out_root)
     ]
 ;;

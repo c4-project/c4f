@@ -121,23 +121,40 @@ let test_compiler cspec =
   Some cspec
 ;;
 
-let test_machine local_only mspec =
-  let is_remote =
-    Machine.Spec.is_remote
-      (Machine.Spec.With_id.spec mspec)
+let filter_compiler predicate cspec =
+  Option.some_if
+    (Compiler.Property.eval_b cspec predicate)
+    cspec
+;;
+
+let compiler_hook with_compiler_tests predicate cspec =
+  match filter_compiler predicate cspec with
+  | Some cspec' ->
+    if with_compiler_tests
+    then test_compiler cspec'
+    else Or_error.return (Some cspec')
+  | None ->
+    Or_error.return None
+;;
+
+
+let machine_hook predicate mspec =
+  let eval_b =
+    Machine.Property.eval_b (module Machine.Spec.With_id)
   in
-  let disabled = local_only && is_remote in
   Or_error.return (
-    (* TODO(@MattWindsor91): actually test! *)
-    Option.some_if (not disabled) mspec
+    (* TODO(@MattWindsor91): actually test the machine here! *)
+    Option.some_if (eval_b mspec predicate) mspec
   )
 ;;
 
-let load_cfg ?(local_only=false) ?(test_compilers=true) path =
+let load_cfg
+    ?(compiler_predicate=Blang.true_)
+    ?(machine_predicate=Blang.true_)
+    ?(with_compiler_tests=true) path =
   let open Or_error.Let_syntax in
   let%bind rcfg = Config.Raw.load ~path in
-  Config.M.from_raw
-    rcfg
-    ?chook:(Option.some_if test_compilers test_compiler)
-    ~mhook:(test_machine local_only)
+  let chook = compiler_hook with_compiler_tests compiler_predicate in
+  let mhook = machine_hook machine_predicate in
+  Config.M.from_raw rcfg ~chook ~mhook
 ;;

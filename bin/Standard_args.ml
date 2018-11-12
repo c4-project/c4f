@@ -26,6 +26,7 @@
    sub-commands. *)
 
 open Core
+open Lib
 
 type t =
   { verbose     : bool
@@ -52,9 +53,11 @@ let get =
         no_arg
         ~doc: "if given, suppresses all warnings"
     and spec_file =
-      flag "spec"
-        (optional_with_default default_spec_file string)
-        ~doc: "PATH the compiler spec file to use"
+      flag_optional_with_default_doc
+        "spec"
+        string [%sexp_of: string]
+        ~default:default_spec_file
+        ~doc:"PATH the compiler spec file to use"
     in
     { verbose
     ; no_warnings
@@ -66,9 +69,15 @@ let get =
 module Other = struct
   open Command.Param
 
-  let local_only =
-    flag "local-only"
-      no_arg
-      ~doc: "if given, skip all compilers on remote machines"
+  let compiler_predicate =
+    flag "filter-compilers"
+      (optional (sexp_conv [%of_sexp: Compiler.Property.t Blang.t]))
+      ~doc:"PREDICATE filter compilers using this predicate"
+  ;;
+
+  let machine_predicate =
+    flag "filter-machines"
+      (optional (sexp_conv [%of_sexp: Machine.Property.t Blang.t]))
+      ~doc:"PREDICATE filter machines using this predicate"
   ;;
 end

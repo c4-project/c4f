@@ -33,8 +33,7 @@ let command =
       let standard_args = Standard_args.get in
       fun () ->
         Common.lift_command standard_args
-          ~local_only:false
-          ~test_compilers:false
+          ~with_compiler_tests:false
           ~f:(fun _o cfg ->
               let specs = Config.M.compilers cfg in
               let verbose = Standard_args.is_verbose standard_args in

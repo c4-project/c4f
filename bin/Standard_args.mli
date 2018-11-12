@@ -26,6 +26,7 @@
    sub-commands. *)
 
 open Core
+open Lib
 
 (** [t] collects all of the standard arguments in one record. *)
 type t
@@ -49,7 +50,15 @@ val get : t Command.Param.t
     as common as the standard ones, but are still used in more than
     one sub-command. *)
 module Other : sig
-  (** [local_only] defines a parameter that can be used to make the
-      configuration loader disable compilers on non-local machines. *)
-  val local_only : bool Command.Param.t
+  (** [compiler_predicate] defines a parameter for collecting a
+      filtering predicate for compilers. *)
+  val compiler_predicate
+    : Compiler.Property.t Blang.t option Command.Param.t
+  ;;
+
+  (** [machine_predicate] defines a parameter for collecting a
+      filtering predicate for machines. *)
+  val machine_predicate
+    : Machine.Property.t Blang.t option Command.Param.t
+  ;;
 end

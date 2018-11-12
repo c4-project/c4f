@@ -54,17 +54,23 @@ val compiler_from_spec
   -> (module Compiler.S) Or_error.t
 ;;
 
-(** [load_and_test_cfg ?local_only path] loads the compiler config
-   file at [~path], and tests all machines and compilers therein.
+(** [load_cfg ?compiler_predicate ?machine_predicate
+   ?with_compiler_tests path] loads the config file at [path] and
+   optionally tests all machines and compilers therein.
 
-    If [local_only] is present and true, all remote machines will be
-   disabled.
+    If [machine_predicate] (a Blang expression) is present, only
+   machines satisfying it will be enabled.
 
-    If [test_compilers] is absent, or present and true, compilers will
-   be tested for reachability. *)
+    If [compilers_predicate] (also a Blang expression) is present,
+   only compilers satisfying it (on enabled machines) will be
+   accepted.
+
+    If [with_compiler_tests] is absent, or present and true, compilers
+   will be tested for reachability. *)
 val load_cfg
-  :  ?local_only     : bool (* default false *)
-  -> ?test_compilers : bool (* default true *)
+  :  ?compiler_predicate:Compiler.Property.t Blang.t
+  -> ?machine_predicate:Machine.Property.t Blang.t
+  -> ?with_compiler_tests:bool (* default true *)
   -> string
   -> Config.M.t Or_error.t
 ;;

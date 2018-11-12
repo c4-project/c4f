@@ -27,23 +27,6 @@
 
 open Core
 
-(** [Basic] is the basic interface of both compiler and machine
-   specifications. *)
-module type Basic = sig
-  (** [t] is the opaque type of specifications.
-      To construct a [t], read one in as an S-expression;
-      a proper constructor may appear in later revisions. *)
-  type t [@@deriving sexp]
-
-  (** [enabled c] gets whether [c] is enabled. *)
-  val enabled : t -> bool
-
-  include Pretty_printer.S with type t := t
-
-  (** [pp_summary f spec] prints a one-line summary of [spec]. *)
-  val pp_summary : Format.formatter -> t -> unit
-end
-
 (** [S_with_id] is a signature for types bundling a spec ID and
     a type. *)
 module type S_with_id = sig
@@ -67,14 +50,31 @@ module type S_with_id = sig
   val to_tuple : t -> (Id.t * elt)
 end
 
+(** [Basic] is the basic interface of both compiler and machine
+   specifications. *)
+module type Basic = sig
+  (** [t] is the opaque type of specifications.
+      To construct a [t], read one in as an S-expression;
+      a proper constructor may appear in later revisions. *)
+  type t [@@deriving sexp]
+
+  (** [With_id] contains types and functions for handling bundles of
+     spec ID and spec. *)
+  module With_id : S_with_id with type elt := t
+
+  (** [enabled c] gets whether [c] is enabled. *)
+  val enabled : t -> bool
+
+  include Pretty_printer.S with type t := t
+
+  (** [pp_summary f spec] prints a one-line summary of [spec]. *)
+  val pp_summary : Format.formatter -> t -> unit
+end
+
 (** [S] is the top-level, outward-facing interface of both
    compiler and machine specifications. *)
 module type S = sig
   include Basic
-
-  (** [With_id] contains types and functions for handling bundles of
-     spec ID and spec. *)
-  module With_id : S_with_id with type elt = t
 
   (** [Set] is the interface of modules for dealing with sets of
       compiler specs. *)
@@ -128,6 +128,20 @@ module type S = sig
     Format.formatter -> t -> unit
 end
 
+(** [With_id] is a basic implementation of [S_with_id] for specs with
+   type [B.t].
+
+    Usually, spec modules should extend [With_id] to implement the
+   various accessors they expose on the spec type itself, for
+   convenience. *)
+module With_id
+  : functor (B : Sexpable.S)
+    -> S_with_id with type elt := B.t
+;;
+
 (** [Make] makes an [S] from a [Basic]. *)
-module Make : functor (B : Basic) -> S with type t = B.t
+module Make
+  : functor (B : Basic)
+    -> S with type t := B.t and module With_id := B.With_id
+;;
 

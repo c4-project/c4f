@@ -32,9 +32,45 @@ open Core
 (** [t] is the type of compiler and machine identifiers. *)
 type t
 
-(** [to_string_list cid] returns a list of each element in [id].
-    ID. *)
+(** [to_string_list id] returns a list of each element in [id]. *)
 val to_string_list : t -> string list
+
+(** [contains id element] decides whether [id] contains the element
+    [element], modulo case. *)
+val contains : t -> string -> bool
+
+(** [is_prefix id ~prefix] decides whether [prefix] is a prefix of
+    [id].
+
+    An ID is a prefix of another ID if its list of elements is
+    a prefix of the other ID's list of elements, modulo case. *)
+val is_prefix : t -> prefix:t -> bool
 
 (** We can use [t] as an [Identifiable]. *)
 include Identifiable.S with type t := t
+
+(** [Property] contains a mini-language for querying IDs, suitable
+    for use in [Blang]. *)
+module Property : sig
+  (** [id] is a synonym for the identifier type. *)
+  type id = t
+
+  (** [t] is the opaque type of property queries. *)
+  type t [@@deriving sexp]
+
+  (** [contains str] constructs a membership test over a string [str]. *)
+  val contains : string -> t
+
+  (** [is str] constructs an equality test over a string [str]. *)
+  val is : string -> t
+
+  (** [has_prefix str] constructs a prefix test over a string [str]. *)
+  val has_prefix : string -> t
+
+  (** [eval id property] decides whether [property] holds for [id]. *)
+  val eval : id -> t -> bool
+
+  (** [eval_b id expr] evaluates a [Blang] expression [expr] over
+     [id]. *)
+  val eval_b : id -> t Blang.t -> bool
+end

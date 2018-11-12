@@ -28,13 +28,6 @@
 open Core
 open Utils
 
-module type Basic = sig
-  type t [@@deriving sexp]
-  val enabled : t -> bool
-  include Pretty_printer.S with type t := t
-  val pp_summary : Format.formatter -> t -> unit
-end
-
 module type S_with_id = sig
   type elt
   type t [@@deriving sexp]
@@ -44,10 +37,31 @@ module type S_with_id = sig
   val to_tuple : t -> (Id.t * elt)
 end
 
+module With_id (B : Sexpable.S)
+  : S_with_id with type elt := B.t = struct
+  type t =
+    { id   : Id.t
+    ; spec : B.t
+    }
+  [@@deriving fields, sexp]
+  ;;
+
+  let create = Fields.create
+
+  let to_tuple {id; spec} = (id, spec)
+end
+
+module type Basic = sig
+  type t [@@deriving sexp]
+  module With_id : S_with_id with type elt := t
+
+  val enabled : t -> bool
+  include Pretty_printer.S with type t := t
+  val pp_summary : Format.formatter -> t -> unit
+end
+
 module type S = sig
   include Basic
-
-  module With_id : S_with_id with type elt = t
 
   module Set : sig
     type elt = t
@@ -79,23 +93,9 @@ module type S = sig
 end
 
 (** [Make] makes an [S] from a [Basic]. *)
-module Make (B : Basic) : S with type t = B.t = struct
+module Make (B : Basic)
+  : S with type t := B.t and module With_id := B.With_id = struct
   include B
-
-  module With_id = struct
-    type elt = B.t
-
-    type t =
-      { id   : Id.t
-      ; spec : B.t
-      }
-    [@@deriving fields, sexp]
-    ;;
-
-    let create = Fields.create
-
-    let to_tuple {id; spec} = (id, spec)
-  end
 
   let pp_verbose verbose = if verbose then pp else pp_summary
 

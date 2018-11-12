@@ -90,7 +90,7 @@ module type S_spec = sig
   (** We extend [With_id] to include all of the accessors from
      [Basic_spec]. *)
   module With_id : sig
-    include Spec.S_with_id with type elt = t
+    include Spec.S_with_id with type elt := t
     include Basic_spec with type t := t and module Mach := Mach
   end
 
@@ -172,6 +172,34 @@ module type Compiler = sig
       references are inlined machine specs.  This is the
       form of compiler spec expected through most of act. *)
   module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t
+
+  (** [Property] contains a mini-language for querying compiler specs,
+      suitable for use in [Blang]. *)
+  module Property : sig
+    (** [t] is the opaque type of property queries. *)
+    type t [@@deriving sexp]
+
+    (** [id] constructs a query over a compiler's ID. *)
+    val id : Id.Property.t -> t
+
+    (** [machine] constructs a query over a compiler's machine. *)
+    val machine : Machine.Property.t -> t
+
+    (** [eval cspec property] evaluates [property] over [cspec]. *)
+    val eval
+      :  Spec.With_id.t
+      -> t
+      -> bool
+    ;;
+
+    (** [eval_b cspec expr] evaluates a [Blang] expression [expr] over
+       [cspec]. *)
+    val eval_b
+      :  Spec.With_id.t
+      -> t Blang.t
+      -> bool
+    ;;
+  end
 
   (** [With_spec] is an interface for modules containing a (full)
       compiler specification. *)

@@ -69,7 +69,7 @@ module Make_spec (R : Machine.Reference)
     let facts =
       List.concat
         [ if enabled spec then [] else ["(DISABLED)"]
-        ; if R.is_remote (machine spec) then [] else ["(REMOTE)"]
+        ; if R.remoteness (machine spec) = `Remote then ["(REMOTE)"] else []
         ]
     in
     Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp f facts;
@@ -77,19 +77,10 @@ module Make_spec (R : Machine.Reference)
     ;;
   end
 
-(* This large amount of module juggling exists to let us be able to
-   extend Spec.Make()'s With_id. *)
-  module MS = Spec.Make (M)
-  module Set = MS.Set
-  include (M : Basic_spec with module Mach := Mach and type t := M.t)
-  include (MS : Spec.Basic with type t := M.t)
-  type t = M.t
-
-  let create = M.Fields.create
-  let pp_verbose = MS.pp_verbose
+  include M
 
   module With_id = struct
-    include MS.With_id
+    include Spec.With_id (M)
 
     let enabled w = M.enabled (spec w)
     let style   w = M.style   (spec w)
@@ -99,15 +90,40 @@ module Make_spec (R : Machine.Reference)
     let herd    w = M.herd    (spec w)
     let machine w = M.machine (spec w)
   end
+
+  include Spec.Make (struct
+      include M
+      module With_id = With_id
+    end)
+
+  let create = M.Fields.create
 end
 
 module Cfg_spec : S_spec with type Mach.t = Id.t =
-  Make_spec (Machine.Id_as_reference)
+  Make_spec (Machine.Id)
 ;;
 
 module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t =
-  Make_spec (Machine.With_id_as_reference)
+  Make_spec (Machine.Spec.With_id)
 ;;
+
+module Property = struct
+  type t =
+    | Id      of Id.Property.t
+    | Machine of Machine.Property.t
+  [@@deriving sexp, variants]
+  ;;
+
+  let eval (cspec : Spec.With_id.t) = function
+    | Id prop      -> Id.Property.eval (Spec.With_id.id cspec) prop
+    | Machine prop -> Machine.Property.eval
+                        (module Machine.Spec.With_id)
+                        (Spec.With_id.machine cspec)
+                        prop
+  ;;
+
+  let eval_b cspec expr = Blang.eval expr (eval cspec)
+end
 
 module type With_spec = sig
   val cspec : Spec.With_id.t
