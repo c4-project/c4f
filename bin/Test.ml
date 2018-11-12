@@ -51,15 +51,15 @@ let run_herd (o : Output.t) herd arch ~input_path ~output_path =
    is [Some]), runs Herd on [infile], outputting to [outfile] and
    using models for [c_or_asm]. *)
 let try_run_herd o maybe_herd c_or_asm ~input_path ~output_path cspec =
-  let (id, spec) = Compiler.Full_spec.With_id.to_tuple cspec in
-  let should_run_herd = Compiler.Full_spec.herd spec in
+  let id = Compiler.Spec.With_id.id cspec in
+  let should_run_herd = Compiler.Spec.With_id.herd cspec in
   match should_run_herd, maybe_herd with
   | false, _ | true, None -> `Disabled
   | true, Some herd -> begin
       Output.log_stage o ~stage:"HERD" ~file:input_path id;
       let arch = match c_or_asm with
         | `C -> Herd.C
-        | `Assembly -> Assembly (Compiler.Full_spec.emits spec)
+        | `Assembly -> Assembly (Compiler.Spec.With_id.emits cspec)
       in
       run_herd o herd arch ~input_path ~output_path
     end
@@ -139,7 +139,7 @@ let litmusify_single
   (* The location symbols at the C level are each RHS of each
      pair in locs. *)
   let syms = List.map ~f:snd locations in
-  let id   = Compiler.Full_spec.With_id.id cspec in
+  let id   = Compiler.Spec.With_id.id cspec in
   let inp  = `File (Pathset.File.asm_path fs) in
   let outp = `File (Pathset.File.lita_path fs) in
   Output.log_stage o ~stage:"LITMUS" ~file:(Pathset.File.basename fs) id;
@@ -158,8 +158,8 @@ let compile_from_pathset_file
   (c  : (module Compiler.S))
   (o  : Output.t)
   (fs : Pathset.File.t)
-  (spec : Compiler.Full_spec.With_id.t) =
-  Common.compile_with_compiler c o (Compiler.Full_spec.With_id.id spec)
+  (cspec : Compiler.Spec.With_id.t) =
+  Common.compile_with_compiler c o (Compiler.Spec.With_id.id cspec)
     ~name:(Pathset.File.basename fs)
     ~infile:(Pathset.File.c_path fs)
     ~outfile:(Pathset.File.asm_path fs)
@@ -209,7 +209,7 @@ let run_single
 let run_compiler
     (o : Output.t) ~in_root ~out_root herdprog c_fnames cspec =
   let open Or_error.Let_syntax in
-  let id = Compiler.Full_spec.With_id.id cspec in
+  let id = Compiler.Spec.With_id.id cspec in
   let%bind c = LangSupport.compiler_from_spec cspec in
   let%bind paths = Pathset.make_and_mkdirs id ~in_root ~out_root in
   Pathset.pp o.vf paths;
@@ -238,7 +238,7 @@ let run_machine
   let start_time = Time.now () in
   let%map results_alist =
     specs
-    |> Compiler.Full_spec.Set.map
+    |> Compiler.Spec.Set.map
       ~f:(run_compiler o ~in_root ~out_root herdprog c_files)
     |> Or_error.combine_errors
   in
@@ -269,11 +269,10 @@ let report_spec_errors o = function
 
 let group_specs_by_machine specs =
   specs
-  |> Compiler.Full_spec.Set.group
+  |> Compiler.Spec.Set.group
     ~f:(fun spec ->
         Machine.Spec.With_id.id
-          (Compiler.Full_spec.machine
-             (Compiler.Full_spec.With_id.spec spec))
+          (Compiler.Spec.With_id.machine spec)
       )
   |> Id.Map.to_alist
 ;;

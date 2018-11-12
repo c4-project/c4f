@@ -15,7 +15,7 @@ module type Basic_spec = sig
   val machine : t -> Mach.t
 end
 
-module type Spec = sig
+module type S_spec = sig
   include Basic_spec
 
   val create
@@ -38,7 +38,7 @@ module type Spec = sig
 end
 
 module Make_spec (R : Machine.Reference)
-  : Spec with module Mach = R = struct
+  : S_spec with module Mach = R = struct
   module Mach = R
 
   module M = struct
@@ -111,16 +111,16 @@ module Make_spec (R : Machine.Reference)
   end
 end
 
-module Cfg_spec : Spec with type Mach.t = Id.t =
+module Cfg_spec : S_spec with type Mach.t = Id.t =
   Make_spec (Machine.Id_as_reference)
 ;;
 
-module Full_spec : Spec with type Mach.t = Machine.Spec.With_id.t =
+module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t =
   Make_spec (Machine.With_id_as_reference)
 ;;
 
 module type With_spec = sig
-  val cspec : Full_spec.With_id.t
+  val cspec : Spec.With_id.t
 end
 
 module type Basic = sig
@@ -183,16 +183,16 @@ end
 module Make (B : Basic_with_run_info) : S = struct
   include B
 
-  let cmd = Full_spec.cmd (Full_spec.With_id.spec B.cspec)
+  let cmd = Spec.cmd (Spec.With_id.spec B.cspec)
 
   let compile ~infile ~outfile =
     let open Or_error.Let_syntax in
     let%bind (infile', outfile') = B.Hooks.pre ~infile ~outfile in
-    let s = Full_spec.With_id.spec B.cspec in
+    let s = Spec.With_id.spec B.cspec in
     let argv =
      B.compile_args
-        ~args:(Full_spec.argv s)
-        ~emits:(Full_spec.emits s) ~infile:infile' ~outfile:outfile'
+        ~args:(Spec.argv s)
+        ~emits:(Spec.emits s) ~infile:infile' ~outfile:outfile'
     in
     let%bind () = B.Runner.run ~prog:cmd argv in
     (* NB: post intentionally gets sent the original filenames. *)
@@ -202,23 +202,23 @@ module Make (B : Basic_with_run_info) : S = struct
   let test () = B.Runner.run ~prog:cmd B.test_args
 end
 
-let runner_from_spec (cspec : Full_spec.t) =
+let runner_from_spec (cspec : Spec.t) =
   Machine.Spec.(
-    runner (With_id.spec (Full_spec.machine cspec))
+    runner (With_id.spec (Spec.machine cspec))
   )
 ;;
 
-let hooks_from_spec (cspec : Full_spec.t) =
-  match Machine.Spec.(via (With_id.spec (Full_spec.machine cspec))) with
+let hooks_from_spec (cspec : Spec.t) =
+  match Machine.Spec.(via (With_id.spec (Spec.machine cspec))) with
   | Local -> (module No_hooks : Hooks)
   | Ssh s -> (module Scp_hooks (struct let ssh = s end) : Hooks)
 ;;
 
-let from_spec f (cspec : Full_spec.With_id.t) =
+let from_spec f (cspec : Spec.With_id.t) =
   let open Or_error.Let_syntax in
   let%map s = f cspec in
-  let h = hooks_from_spec (Full_spec.With_id.spec cspec) in
-  let r = runner_from_spec (Full_spec.With_id.spec cspec) in
+  let h = hooks_from_spec (Spec.With_id.spec cspec) in
+  let r = runner_from_spec (Spec.With_id.spec cspec) in
   (module
     (Make (struct
        let cspec = cspec

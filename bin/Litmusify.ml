@@ -61,7 +61,7 @@ let run_compiler o cspec c_file asm_file =
   let%bind c = LangSupport.compiler_from_spec cspec in
   let%map _ =
     Common.compile_with_compiler c o ~name ~infile ~outfile
-      (Compiler.Full_spec.With_id.id cspec)
+      (Compiler.Spec.With_id.id cspec)
   in
   ()
 ;;
@@ -80,7 +80,7 @@ let run_herd cfg cspec lit_file outfile =
   in
   let sink = Io.Out_sink.of_option outfile in
   let%bind herd = make_herd cfg in
-  let arch = Herd.Assembly (Compiler.Full_spec.With_id.emits cspec) in
+  let arch = Herd.Assembly (Compiler.Spec.With_id.emits cspec) in
   Herd.run herd arch ~path ~sink
 ;;
 
@@ -95,8 +95,8 @@ let decide_if_c infile = function
 let run file_type use_herd compiler_id ~infile ~outfile o cfg =
   let open Result.Let_syntax in
   let id = Id.of_string compiler_id in
-  let%bind spec = Compiler.Full_spec.Set.get (Config.M.compilers cfg) id in
-  let cspec = Compiler.Full_spec.With_id.create ~id ~spec in
+  let%bind spec = Compiler.Spec.Set.get (Config.M.compilers cfg) id in
+  let cspec = Compiler.Spec.With_id.create ~id ~spec in
 
   let is_c = decide_if_c infile file_type in
 

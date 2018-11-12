@@ -38,7 +38,7 @@ let command =
           ~f:(fun _o cfg ->
               let specs = Config.M.compilers cfg in
               let verbose = Standard_args.is_verbose standard_args in
-              Compiler.Full_spec.Set.pp_verbose verbose Format.std_formatter specs;
+              Compiler.Spec.Set.pp_verbose verbose Format.std_formatter specs;
               Format.print_newline ();
               Result.ok_unit
             )

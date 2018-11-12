@@ -25,7 +25,7 @@ open Core
 open Utils
 
 module type S = sig
-  module C : Compiler.Spec
+  module C : Compiler.S_spec
 
   type t [@@deriving sexp]
 
@@ -84,7 +84,7 @@ module Part_helpers (S : Spec.S) = struct
 end
 
 module M = struct
-  module C = Compiler.Full_spec
+  module C = Compiler.Spec
 
   type t =
     { compilers          : C.Set.t

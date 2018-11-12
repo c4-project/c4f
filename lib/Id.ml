@@ -54,7 +54,6 @@ let%expect_test "equality is case-insensitive" =
   [%expect {| Equal |}]
 ;;
 
-
 let%expect_test "parse Foo.Bar.BAZ (note case) as a spec ID" =
   Sexp.output_hum Out_channel.stdout
     [%sexp (of_string "Foo.Bar.BAZ" : t)];

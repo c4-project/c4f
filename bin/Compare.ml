@@ -31,7 +31,7 @@ let compile o spec ~c_file =
   let outfile = Filename.temp_file "act" "s" in
   let%bind c = LangSupport.compiler_from_spec spec in
   let%map _ =
-    Common.compile_with_compiler c o (Compiler.Full_spec.With_id.id spec)
+    Common.compile_with_compiler c o (Compiler.Spec.With_id.id spec)
       ~name:(Filename.basename infile)
       ~infile
       ~outfile in
@@ -49,7 +49,7 @@ let litmusify o spec ~asm_file =
 
 let run_spec_on_file o spec ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@."
-    Id.pp (Compiler.Full_spec.With_id.id spec);
+    Id.pp (Compiler.Spec.With_id.id spec);
   let open Or_error.Let_syntax in
   let%bind asm_file = compile o spec ~c_file in
   let%map  _        = litmusify o spec ~asm_file in
@@ -59,7 +59,7 @@ let run_spec_on_file o spec ~c_file =
 let run_all_specs_on_file o specs ~c_file =
   Format.printf "@[<h>#@ %s@]@." c_file;
   Or_error.combine_errors_unit
-    (Compiler.Full_spec.Set.map specs
+    (Compiler.Spec.Set.map specs
        ~f:(run_spec_on_file o ~c_file)
     )
 ;;

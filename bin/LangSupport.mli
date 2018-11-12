@@ -36,7 +36,7 @@ open Lib
 (** [asm_runner_from_spec spec] generates an assembly job runner from
    [spec]. *)
 val asm_runner_from_spec
-  :  Compiler.Full_spec.With_id.t
+  :  Compiler.Spec.With_id.t
   -> (module Asm_job.Runner) Or_error.t
 ;;
 
@@ -50,7 +50,7 @@ val asm_runner_from_emits
 (** [compiler_from_spec spec] generates a compiler module from
     [spec]. *)
 val compiler_from_spec
-  :  Compiler.Full_spec.With_id.t
+  :  Compiler.Spec.With_id.t
   -> (module Compiler.S) Or_error.t
 ;;
 

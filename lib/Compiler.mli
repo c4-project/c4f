@@ -68,9 +68,11 @@ module type Basic_spec = sig
 end
 
 
-(** [Spec] is the interface of modules defining compiler
-    specification types. *)
-module type Spec = sig
+(** [S_spec] is the interface of modules defining compiler
+    specification types.
+
+    In most cases, the 'correct' spec module to use is [Spec]. *)
+module type S_spec = sig
   include Basic_spec
 
   (** [create ~enabled ~style ~emits ~cmd ~argv ~herd ~machine]
@@ -102,26 +104,27 @@ end
 (** [Make_spec] is a functor for building compiler specifications
     parametrised on machine references.
 
-    See [Cfg_spec] and [Full_spec] for implementations of this
+    See [Cfg_spec] and [Spec] for implementations of this
     functor. *)
 module Make_spec
   : functor (M : Machine.Reference)
-    -> Spec with module Mach = M
+    -> S_spec with module Mach = M
 ;;
 
 (** [Cfg_spec] is a module describing compiler specs where machine
     references are unresolved IDs.  This is the format
     used in the configuration file, hence the name. *)
-module Cfg_spec : Spec with type Mach.t = Id.t
+module Cfg_spec : S_spec with type Mach.t = Id.t
 
-(** [Full_spec] is a module describing compiler specs where machine
-    references are inlined [MSpec.t] records. *)
-module Full_spec : Spec with type Mach.t = Machine.Spec.With_id.t
+(** [Spec] is a module describing compiler specs where machine
+    references are inlined machine specs.  This is the
+    form of compiler spec expected through most of act. *)
+module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t
 
 (** [With_spec] is an interface for modules containing a (full)
     compiler specification. *)
 module type With_spec = sig
-  val cspec : Full_spec.With_id.t
+  val cspec : Spec.With_id.t
 end
 
 (*
@@ -193,6 +196,6 @@ module Make : functor (B : Basic_with_run_info) -> S
    [Basic] from a spec, and attempts to produce a first-class compiler
    module. *)
 val from_spec
-  :  (Full_spec.With_id.t -> (module Basic) Or_error.t)
-  -> Full_spec.With_id.t
+  :  (Spec.With_id.t -> (module Basic) Or_error.t)
+  -> Spec.With_id.t
   -> (module S) Or_error.t

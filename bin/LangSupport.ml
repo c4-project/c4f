@@ -90,24 +90,18 @@ let style_modules =
   [ "gcc", (module Gcc : Compiler.Basic) ]
 ;;
 
-let compiler_module_from_spec (cspec : Compiler.Full_spec.With_id.t) =
-  let style =
-    Compiler.Full_spec.style
-      (Compiler.Full_spec.With_id.spec cspec)
-  in
+let compiler_module_from_spec (cspec : Compiler.Spec.With_id.t) =
+  let style = Compiler.Spec.With_id.style cspec in
   List.Assoc.find ~equal:String.Caseless.equal style_modules style
   |> Result.of_option ~error:(Error.createf "Unknown compiler style: %s" style)
 ;;
 
-let asm_runner_from_spec (cspec : Compiler.Full_spec.With_id.t) =
-  let emits =
-    (Compiler.Full_spec.emits
-       (Compiler.Full_spec.With_id.spec cspec))
-  in
+let asm_runner_from_spec (cspec : Compiler.Spec.With_id.t) =
+  let emits = Compiler.Spec.With_id.emits cspec in
   asm_runner_from_emits emits
 ;;
 
-let compiler_from_spec (cspec : Compiler.Full_spec.With_id.t) =
+let compiler_from_spec (cspec : Compiler.Spec.With_id.t) =
   Compiler.from_spec
     compiler_module_from_spec
     cspec
@@ -121,7 +115,7 @@ let test_compiler cspec =
     Or_error.tag_arg
       (M.test ())
       "A compiler in your spec file didn't respond properly"
-      (Compiler.Full_spec.With_id.id cspec)
+      (Compiler.Spec.With_id.id cspec)
       [%sexp_of:Id.t]
   in
   Some cspec

@@ -56,10 +56,10 @@ let command =
                in
                Or_error.Let_syntax.(
                  let%bind spec =
-                   Compiler.Full_spec.Set.get (Config.M.compilers cfg) id
+                   Compiler.Spec.Set.get (Config.M.compilers cfg) id
                  in
                  let cspec =
-                   Compiler.Full_spec.With_id.create ~id ~spec
+                   Compiler.Spec.With_id.create ~id ~spec
                  in
                  let%bind runner = LangSupport.asm_runner_from_spec cspec in
                  let module Runner = (val runner) in

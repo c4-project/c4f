@@ -28,7 +28,7 @@ open Core
 
 (** [S] is the baseline interface of modules over configuration. *)
 module type S = sig
-  module C : Compiler.Spec
+  module C : Compiler.S_spec
 
   type t [@@deriving sexp]
 
@@ -54,7 +54,7 @@ end
 
 (** [M] represents fully processed act compiler configurations. *)
 module M : sig
-  include S with module C = Compiler.Full_spec
+  include S with module C = Compiler.Spec
 
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
   type 't hook = ('t -> 't option Or_error.t);;
@@ -80,7 +80,7 @@ module M : sig
       [Ok None] when the element is disabled; and
       [Error e] when the element is enabled and failing. *)
   val from_raw
-    :  ?chook:(Compiler.Full_spec.With_id.t hook)
+    :  ?chook:(Compiler.Spec.With_id.t hook)
     -> ?mhook:(Machine.Spec.With_id.t hook)
     -> Raw.t
     -> t Or_error.t
