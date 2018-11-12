@@ -133,37 +133,43 @@ let%expect_test "is_prefix: invalid prefix" =
   [%expect {| false |}]
 ;;
 
-let contains id element =
+let has_tag id element =
   List.mem id element ~equal:String.Caseless.equal
 ;;
 
-let%expect_test "contains: valid, same case" =
+let%expect_test "has_tag: valid, same case" =
   Sexp.output_hum Out_channel.stdout
-    [%sexp (contains (of_string "foo.BAR.baz") "foo" : bool) ];
+    [%sexp (has_tag (of_string "foo.BAR.baz") "foo" : bool) ];
   [%expect {| true |}]
 ;;
 
-let%expect_test "contains: valid, different case" =
+let%expect_test "has_tag: valid, different case" =
   Sexp.output_hum Out_channel.stdout
-    [%sexp (contains (of_string "foo.BAR.baz") "FOO" : bool) ];
+    [%sexp (has_tag (of_string "foo.BAR.baz") "FOO" : bool) ];
   [%expect {| true |}]
 ;;
 
-let%expect_test "contains: invalid, but is a (oversized) substring" =
+let%expect_test "has_tag: invalid, but is a (oversized) substring" =
   Sexp.output_hum Out_channel.stdout
-    [%sexp (contains (of_string "foo.BAR.baz") "foo." : bool) ];
+    [%sexp (has_tag (of_string "foo.BAR.baz") "foo." : bool) ];
   [%expect {| false |}]
 ;;
 
-let%expect_test "contains: invalid, but is a (undersized) substring" =
+let%expect_test "has_tag: invalid, but is a (undersized) substring" =
   Sexp.output_hum Out_channel.stdout
-    [%sexp (contains (of_string "foo.BAR.baz") "fo" : bool) ];
+    [%sexp (has_tag (of_string "foo.BAR.baz") "fo" : bool) ];
   [%expect {| false |}]
 ;;
 
-let%expect_test "contains: invalid, empty string" =
+let%expect_test "has_tag: invalid, multiple tags" =
   Sexp.output_hum Out_channel.stdout
-    [%sexp (contains (of_string "foo.BAR.baz") "" : bool) ];
+    [%sexp (has_tag (of_string "foo.BAR.baz") "foo.bar" : bool) ];
+  [%expect {| false |}]
+;;
+
+let%expect_test "has_tag: invalid, empty string" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (has_tag (of_string "foo.BAR.baz") "" : bool) ];
   [%expect {| false |}]
 ;;
 
@@ -174,7 +180,7 @@ module Property = struct
      we define [eval]. *)
   module M = struct
     type t =
-      | Contains   of string
+      | Has_tag    of string
       | Has_prefix of string
       | Is         of string
     [@@deriving sexp, variants]
@@ -182,7 +188,7 @@ module Property = struct
   end
 
   let eval id = function
-    | M.Contains   s -> contains id s
+    | M.Has_tag    s -> has_tag id s
     | M.Has_prefix s -> is_prefix ~prefix:(of_string s) id
     | M.Is         s -> equal (of_string s) id
 
@@ -194,7 +200,7 @@ module Property = struct
     let query =
       Blang.t_of_sexp t_of_sexp
       (Sexp.of_string
-         "(and (contains bar) (has_prefix foo))")
+         "(and (has_tag bar) (has_prefix foo))")
     in
     let id = of_string "Foo.Bar.Baz" in
     Sexp.output_hum Out_channel.stdout
@@ -205,7 +211,7 @@ module Property = struct
     let query =
       Blang.t_of_sexp t_of_sexp
       (Sexp.of_string
-         "(and (contains bar) (is foo.bar))")
+         "(and (has_tag bar) (is foo.bar))")
     in
     let id = of_string "Foo.Bar.Baz" in
     Sexp.output_hum Out_channel.stdout

@@ -24,7 +24,8 @@
 
 (** [Id] is a module for compiler and machine identifiers.
 
-    Identifiers contain an ordered list of case-insensitive elements.
+    Identifiers contain an ordered list of case-insensitive elements,
+    called 'tags'.
 *)
 
 open Core
@@ -32,18 +33,18 @@ open Core
 (** [t] is the type of compiler and machine identifiers. *)
 type t
 
-(** [to_string_list id] returns a list of each element in [id]. *)
+(** [to_string_list id] returns a list of each tag in [id]. *)
 val to_string_list : t -> string list
 
-(** [contains id element] decides whether [id] contains the element
-    [element], modulo case. *)
-val contains : t -> string -> bool
+(** [has_tag id tag] decides whether [id] contains the tag
+    [tag], modulo case. *)
+val has_tag : t -> string -> bool
 
 (** [is_prefix id ~prefix] decides whether [prefix] is a prefix of
     [id].
 
-    An ID is a prefix of another ID if its list of elements is
-    a prefix of the other ID's list of elements, modulo case. *)
+    An ID is a prefix of another ID if its list of tags is
+    a prefix of the other ID's list of tags, modulo case. *)
 val is_prefix : t -> prefix:t -> bool
 
 (** We can use [t] as an [Identifiable]. *)
@@ -58,8 +59,8 @@ module Property : sig
   (** [t] is the opaque type of property queries. *)
   type t [@@deriving sexp]
 
-  (** [contains str] constructs a membership test over a string [str]. *)
-  val contains : string -> t
+  (** [has_tag s str] constructs a membership test over a string [str]. *)
+  val has_tag : string -> t
 
   (** [is str] constructs an equality test over a string [str]. *)
   val is : string -> t
