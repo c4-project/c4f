@@ -60,7 +60,6 @@ We've tested `act` on:
 - Debian buster (x86-64): note: this is tested fairly infrequently, so
   there may be regressions compared to macOS
 
-
 ### Requirements
 
 First, you'll need:
@@ -184,15 +183,17 @@ useful for seeing, at a glance, how different compilers and
 optimisation levels influence the result.
 
 
-### `litmusify`: convert a single assembly file to a litmus test
+### `litmusify`: convert a single assembly or C file to a litmus test
 
 ```
-$ act litmusify COMPILER-NAME path/to/asm.s
+$ act litmusify COMPILER-NAME path/to/asm/or/C
 ```
 
-This asks `act` to try to convert the given assembly file into a
-Litmus test, using the spec for compiler `COMPILER-NAME` to tell it
-things about the flavour of assembly incoming.
+This asks `act` to try to convert the given file into a
+Litmus test, using the spec for compiler `COMPILER-NAME`.  If
+the file ends in `.c`, `act` will run the compiler to generate
+assembly first; otherwise, it assumes the file is already an
+assembly listing compatible with `COMPILER-NAME`'s spec.
 
 By default, the litmus test is printed on stdout.  You can use `-o
 FILE` to override, and/or `-herd` to apply `herd` directly to the
