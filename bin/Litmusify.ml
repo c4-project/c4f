@@ -92,9 +92,8 @@ let decide_if_c infile = function
       ~f:(My_filename.has_extension ~ext:"c")
 ;;
 
-let run file_type use_herd compiler_id ~infile ~outfile o cfg =
+let run file_type use_herd id ~infile ~outfile o cfg =
   let open Result.Let_syntax in
-  let id = Id.of_string compiler_id in
   let%bind spec = Compiler.Spec.Set.get (Config.M.compilers cfg) id in
   let cspec = Compiler.Spec.With_id.create ~id ~spec in
 
@@ -134,8 +133,7 @@ let command =
              in (Option.some_if asm `Assembly))
           ]
           ~if_nothing_chosen:(`Default_to `Infer)
-      and compiler_id =
-        anon ("COMPILER_ID" %: string)
+      and compiler_id = Standard_args.Other.compiler_id_anon
       and outfile =
         flag "output"
           (optional file)

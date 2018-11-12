@@ -69,6 +69,10 @@ let get =
 module Other = struct
   open Command.Param
 
+  let compiler_id_type = Arg_type.create Id.of_string
+
+  let compiler_id_anon = anon ("COMPILER_ID" %: compiler_id_type)
+
   let compiler_predicate =
     flag "filter-compilers"
       (optional (sexp_conv [%of_sexp: Compiler.Property.t Blang.t]))

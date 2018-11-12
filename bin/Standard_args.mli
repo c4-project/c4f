@@ -50,6 +50,10 @@ val get : t Command.Param.t
     as common as the standard ones, but are still used in more than
     one sub-command. *)
 module Other : sig
+  (** [compiler_id_anon] defines an anonymous, required, compiler ID
+      flag. *)
+  val compiler_id_anon : Id.t Command.Param.t
+
   (** [compiler_predicate] defines a parameter for collecting a
       filtering predicate for compilers. *)
   val compiler_predicate
