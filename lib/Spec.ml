@@ -46,6 +46,30 @@ module Id = struct
   include Identifiable.Make (T)
 
   let to_string_list = Fn.id
+
+  let%expect_test "parse foo.bar.baz as a spec ID" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp (of_string "foo.bar.baz" : t)];
+    [%expect {| (foo bar baz) |}]
+  ;;
+
+  let%expect_test "parse foo/bar/baz as a spec ID" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp (of_string "foo/bar/baz" : t)];
+    [%expect {| (foo bar baz) |}]
+  ;;
+
+  let%expect_test "parse foo\\bar\\baz as a spec ID" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp (of_string "foo\\bar\\baz" : t)];
+    [%expect {| (foo bar baz) |}]
+  ;;
+
+  let%expect_test "parse 'foo bar baz' as a spec ID" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp (of_string "foo bar baz" : t)];
+    [%expect {| (foo bar baz) |}]
+  ;;
 end
 
 (** [Basic] is the basic interface of both compiler and machine
