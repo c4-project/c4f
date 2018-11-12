@@ -40,10 +40,10 @@ let command =
         anon ("COMPILER_ID" %: string)
       and outfile =
         flag "output"
-          (optional string)
+          (optional file)
           ~doc: "FILE the explanation output file (default: stdout)"
       and infile =
-        anon (maybe ("FILE" %: string))
+        anon (maybe ("FILE" %: file))
       in
       fun () ->
         Common.lift_command standard_args

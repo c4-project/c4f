@@ -327,11 +327,10 @@ let command =
     [%map_open
        let standard_args = Standard_args.get
        and out_root =
-        flag "output"
-          (optional_with_default
-             Filename.current_dir_name
-             string)
-          ~doc: "PATH the path under which output directories will be created"
+         flag_optional_with_default_doc "output"
+           ~default:Filename.current_dir_name
+           string [%sexp_of: string]
+           ~doc: "PATH the path under which output directories will be created"
        and compiler_predicate = Standard_args.Other.compiler_predicate
        and machine_predicate = Standard_args.Other.machine_predicate
        and in_root =
