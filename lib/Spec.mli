@@ -27,14 +27,31 @@
 
 open Core
 
+(** [Common] contains the signature common both to
+    plain specification modules ([Basic]) and the with-ID forms
+    ([S_with_id]). *)
+module type Common = sig
+  (** [t] is the opaque type of specifications. *)
+  type t [@@deriving sexp]
+
+  (** [is_enabled spec] returns true if [spec] is enabled. *)
+  val is_enabled : t -> bool
+
+  include Pretty_printer.S with type t := t
+
+  (** [pp_summary f spec] prints a one-line summary of [spec]. *)
+  val pp_summary : Format.formatter -> t -> unit
+end
+
 (** [S_with_id] is a signature for types bundling a spec ID and
     a type. *)
 module type S_with_id = sig
   (** [elt] is the type of elements inside the bundle. *)
   type elt
 
-  (** [t] is the type of ID-and-element pairs. *)
-  type t [@@deriving sexp]
+  (** [t] is the opaque type of specification-ID bundles. *)
+  type t
+  include Common with type t := t
 
   (** [create ~id ~spec] creates a new [With_id.t] pair. *)
   val create : id:Id.t -> spec:elt -> t
@@ -44,31 +61,18 @@ module type S_with_id = sig
 
   (** [spec w] gets the spec component of [w]. *)
   val spec : t -> elt
-
-  (** [to_tuple w] gets the ID and spec components of [w] as a
-      tuple. *)
-  val to_tuple : t -> (Id.t * elt)
 end
 
 (** [Basic] is the basic interface of both compiler and machine
    specifications. *)
 module type Basic = sig
-  (** [t] is the opaque type of specifications.
-      To construct a [t], read one in as an S-expression;
-      a proper constructor may appear in later revisions. *)
-  type t [@@deriving sexp]
+  (** [t] is the opaque type of specifications. *)
+  type t
+  include Common with type t := t
 
   (** [With_id] contains types and functions for handling bundles of
      spec ID and spec. *)
   module With_id : S_with_id with type elt := t
-
-  (** [enabled c] gets whether [c] is enabled. *)
-  val enabled : t -> bool
-
-  include Pretty_printer.S with type t := t
-
-  (** [pp_summary f spec] prints a one-line summary of [spec]. *)
-  val pp_summary : Format.formatter -> t -> unit
 end
 
 (** [S] is the top-level, outward-facing interface of both
@@ -79,8 +83,6 @@ module type S = sig
   (** [Set] is the interface of modules for dealing with sets of
       compiler specs. *)
   module Set : sig
-    type elt = t
-
     (** [t] is the type of sets. *)
     type t [@@deriving sexp]
 
@@ -92,7 +94,7 @@ module type S = sig
 
     (** [get specs id] tries to look up ID [id] in [specs],
         and emits an error if it can't. *)
-    val get : t -> Id.t -> elt Or_error.t
+    val get : t -> Id.t -> With_id.t Or_error.t
 
     (** [of_list xs] tries to make a set from [xs].
         It raises an error if [xs] contains duplicate IDs. *)
@@ -135,8 +137,8 @@ end
    various accessors they expose on the spec type itself, for
    convenience. *)
 module With_id
-  : functor (B : Sexpable.S)
-    -> S_with_id with type elt := B.t
+  : functor (C : Common)
+    -> S_with_id with type elt := C.t
 ;;
 
 (** [Make] makes an [S] from a [Basic]. *)

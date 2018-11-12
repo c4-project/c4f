@@ -28,8 +28,8 @@ open Utils
 (** [Basic_spec] is the signature common to any sort of compiler
     specification, including [With_id] pairs.
 
-    In practice, modules implementing this will either be [Spec]
-    or [Spec.With_id]. *)
+    In practice, modules implementing this will either be [S_spec]
+    or [S_spec.With_id]. *)
 module type Basic_spec = sig
   (** [Mach] is some module for resolving references to the machine on
       which a compiler is located.  This can either be an inline
@@ -41,9 +41,6 @@ module type Basic_spec = sig
       To construct a [t], read one in as an S-expression;
       a proper constructor may appear in later revisions. *)
   type t
-
-  (** [enabled c] gets whether [c] is enabled. *)
-  val enabled : t -> bool
 
   (** [style c] gets the invocation style of [c]. *)
   val style : t -> string

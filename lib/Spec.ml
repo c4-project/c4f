@@ -28,50 +28,54 @@
 open Core
 open Utils
 
+module type Common = sig
+  type t [@@deriving sexp]
+  val is_enabled : t -> bool
+  include Pretty_printer.S with type t := t
+  val pp_summary : Format.formatter -> t -> unit
+end
+
 module type S_with_id = sig
   type elt
-  type t [@@deriving sexp]
+  type t
+  include Common with type t := t
   val create : id:Id.t -> spec:elt -> t
   val id : t -> Id.t
   val spec : t -> elt
-  val to_tuple : t -> (Id.t * elt)
 end
 
-module With_id (B : Sexpable.S)
-  : S_with_id with type elt := B.t = struct
+module With_id (C : Common)
+  : S_with_id with type elt := C.t = struct
   type t =
     { id   : Id.t
-    ; spec : B.t
+    ; spec : C.t
     }
   [@@deriving fields, sexp]
   ;;
 
   let create = Fields.create
 
-  let to_tuple {id; spec} = (id, spec)
+  let is_enabled   x = C.is_enabled   (spec x)
+  let pp_summary f x = C.pp_summary f (spec x)
+  let pp         f x = C.pp         f (spec x)
 end
 
 module type Basic = sig
-  type t [@@deriving sexp]
+  type t
+  include Common with type t := t
   module With_id : S_with_id with type elt := t
-
-  val enabled : t -> bool
-  include Pretty_printer.S with type t := t
-  val pp_summary : Format.formatter -> t -> unit
 end
 
 module type S = sig
   include Basic
 
   module Set : sig
-    type elt = t
-
     type t [@@deriving sexp]
 
     include Pretty_printer.S with type t := t
 
     val pp_verbose : bool -> Format.formatter -> t -> unit
-    val get : t -> Id.t -> elt Or_error.t
+    val get : t -> Id.t -> With_id.t Or_error.t
     val of_list : With_id.t list -> t Or_error.t
     val partition_map
       :  t
@@ -92,7 +96,6 @@ module type S = sig
   val pp_verbose : bool -> Format.formatter -> t -> unit
 end
 
-(** [Make] makes an [S] from a [Basic]. *)
 module Make (B : Basic)
   : S with type t := B.t and module With_id := B.With_id = struct
   include B
@@ -100,8 +103,6 @@ module Make (B : Basic)
   let pp_verbose verbose = if verbose then pp else pp_summary
 
   module Set = struct
-    type elt = B.t
-
     (* Wrapping this so that we can use [of_sexp] below. *)
     module SM = struct
       type t = (Id.t, B.t) List.Assoc.t [@@deriving sexp]
@@ -119,6 +120,7 @@ module Make (B : Basic)
 
     let get specs id =
       List.Assoc.find specs ~equal:(Id.equal) id
+      |> Option.map ~f:(fun spec -> With_id.create ~id ~spec)
       |> Result.of_option
         ~error:(Error.create_s [%message "unknown compiler ID" ~id:(id : Id.t)])
     ;;

@@ -42,6 +42,10 @@ module Make_spec (R : Machine.Reference)
       ; machine : Mach.t [@default Mach.default]
       } [@@deriving sexp, fields]
 
+    (* We use a different name for the getter than the one
+       [@@deriving fields] infers. *)
+    let is_enabled = enabled
+
     let pp f spec =
       Format.pp_open_vbox f 0;
       if not spec.enabled then Format.fprintf f "-- DISABLED --@,";
@@ -82,13 +86,13 @@ module Make_spec (R : Machine.Reference)
   module With_id = struct
     include Spec.With_id (M)
 
-    let enabled w = M.enabled (spec w)
-    let style   w = M.style   (spec w)
-    let emits   w = M.emits   (spec w)
-    let cmd     w = M.cmd     (spec w)
-    let argv    w = M.argv    (spec w)
-    let herd    w = M.herd    (spec w)
-    let machine w = M.machine (spec w)
+    let is_enabled w = M.is_enabled (spec w)
+    let style      w = M.style      (spec w)
+    let emits      w = M.emits      (spec w)
+    let cmd        w = M.cmd        (spec w)
+    let argv       w = M.argv       (spec w)
+    let herd       w = M.herd       (spec w)
+    let machine    w = M.machine    (spec w)
   end
 
   include Spec.Make (struct
@@ -168,7 +172,7 @@ end
 module Make (B : Basic_with_run_info) : S = struct
   include B
 
-  let cmd = Spec.cmd (Spec.With_id.spec B.cspec)
+  let cmd = Spec.With_id.cmd B.cspec
 
   let compile ~infile ~outfile =
     let open Or_error.Let_syntax in
@@ -187,23 +191,21 @@ module Make (B : Basic_with_run_info) : S = struct
   let test () = B.Runner.run ~prog:cmd B.test_args
 end
 
-let runner_from_spec (cspec : Spec.t) =
-  Machine.Spec.(
-    runner (With_id.spec (Spec.machine cspec))
-  )
+let runner_from_spec (cspec : Spec.With_id.t) =
+  Machine.Spec.With_id.runner (Spec.With_id.machine cspec)
 ;;
 
-let hooks_from_spec (cspec : Spec.t) =
-  match Machine.Spec.(via (With_id.spec (Spec.machine cspec))) with
-  | Local -> (module No_hooks : Hooks)
+let hooks_from_spec (cspec : Spec.With_id.t) =
+  match Machine.Spec.With_id.via (Spec.With_id.machine cspec) with
+  | Machine.Via.Local -> (module No_hooks : Hooks)
   | Ssh s -> (module Scp_hooks (struct let ssh = s end) : Hooks)
 ;;
 
 let from_spec f (cspec : Spec.With_id.t) =
   let open Or_error.Let_syntax in
   let%map s = f cspec in
-  let h = hooks_from_spec (Spec.With_id.spec cspec) in
-  let r = runner_from_spec (Spec.With_id.spec cspec) in
+  let h = hooks_from_spec cspec in
+  let r = runner_from_spec cspec in
   (module
     (Make (struct
        let cspec = cspec

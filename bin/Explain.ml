@@ -42,11 +42,8 @@ let run id symbols sanitise ~infile ~outfile o cfg =
       if sanitise then explain else Set.empty
     )
   in
-  let%bind spec =
+  let%bind cspec =
     Compiler.Spec.Set.get (Config.M.compilers cfg) id
-  in
-  let cspec =
-    Compiler.Spec.With_id.create ~id ~spec
   in
   let%bind runner =
     Language_support.asm_runner_from_spec cspec

@@ -112,27 +112,59 @@ module Id : sig
   include Reference with type t := t
 end
 
-(** [Spec] is a module for machine specifications. *)
-module Spec : sig
+
+(** [Via] enumerates the various methods of reaching a machine. *)
+module Via : sig
+  (** [t] is the type of a machine-reaching method. *)
+  type t =
+    | Local
+    | Ssh of Ssh.t
+  [@@deriving sexp]
+  ;;
+
+  (** [local] is a [Via] for a local machine. *)
+  val local : t
+
+  (** [ssh ssh_config] is a [Via] for a SSH connection. *)
+  val ssh : Ssh.t -> t
+
+  (** [t] can be pretty-printed. *)
+  include Pretty_printer.S with type t := t
+
+  (** [to_runner via] builds a [Run.Runner] module for a [via]. *)
+  val to_runner : t -> (module Run.Runner)
+
+  (** [remoteness via] gets an estimate of whether [via] is remote. *)
+  val remoteness : t -> [> `Local | `Remote | `Unknown]
+end
+
+(** [Basic_spec] is the signature common to any sort of machine
+    specification, including [With_id] pairs.
+
+    In practice, modules implementing this will either be [Spec]
+    or [Spec.With_id]. *)
+module type Basic_spec = sig
   (** [t] describes a machine. *)
   type t
 
-  (** [via] describes the connection to the machine. *)
-  type via =
-    | Local
-    | Ssh of Ssh.t
-  ;;
   (** [via spec] gets the [via] stanza of a machine spec [spec]. *)
-  val via : t -> via
+  val via : t -> Via.t
 
   (** [to_runner spec] gets a [Run.runner] for the machine spec
      [spec]. *)
   val runner : t -> (module Run.Runner)
+end
+
+(** [Spec] is a module for machine specifications. *)
+module Spec : sig
+  include Basic_spec
 
   (** [With_id] is an extension onto [Spec.With_id] that
-      lets such items be machine references. *)
+      lets such items be machine references, and adds all of the
+      [Spec] accessors. *)
   module With_id : sig
-    include (Spec.S_with_id with type elt := t)
+    include Spec.S_with_id with type elt := t
+    include Basic_spec with type t := t
     include Reference with type t := t
   end
 

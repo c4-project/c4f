@@ -63,9 +63,8 @@ let part_chain_fst f g x =
 module Part_helpers (S : Spec.S) = struct
   (** [part_enabled x] is a partition_map function that
       sorts [x] into [`Fst] if they're enabled and [`Snd] if not. *)
-  let part_enabled
-      (x : S.With_id.t) =
-    if (S.enabled (S.With_id.spec x))
+  let part_enabled (x : S.With_id.t) =
+    if S.With_id.is_enabled x
     then `Fst x
     else `Snd (S.With_id.id x, None)
   ;;
@@ -120,18 +119,17 @@ module M = struct
     )
   ;;
 
-  let build_compiler (rawc : Raw.C.t) (mach : Machine.Spec.t) : C.t =
-    Raw.C.(
+  let build_compiler
+      (rawc : Raw.C.With_id.t) (mach : Machine.Spec.With_id.t) : C.t =
+    Raw.C.With_id.(
       C.create
-        ~enabled:(enabled rawc)
+        ~enabled:(is_enabled rawc)
         ~style:(style rawc)
         ~emits:(emits rawc)
         ~cmd:(cmd rawc)
         ~argv:(argv rawc)
         ~herd:(herd rawc)
-        ~machine:(Machine.Spec.With_id.create
-                    ~id:(machine rawc) ~spec:mach
-                 )
+        ~machine:mach
     )
   ;;
 
@@ -147,14 +145,14 @@ module M = struct
   ;;
 
   let part_resolve enabled disabled c =
-    let machid = Raw.C.machine (Raw.C.With_id.spec c) in
-    match find_machine enabled disabled machid with
+    let machine_id = Raw.C.With_id.machine c in
+    match find_machine enabled disabled machine_id with
     | (* Machine enabled *)
       Result.Ok (`Fst mach) ->
       `Fst
         (C.With_id.create
            ~id:(Raw.C.With_id.id c)
-           ~spec:(build_compiler (Raw.C.With_id.spec c) mach))
+           ~spec:(build_compiler c mach))
     | (* Machine disabled, possibly because of error *)
       Result.Ok (`Snd (_, err)) ->
       `Snd

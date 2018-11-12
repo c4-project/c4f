@@ -86,36 +86,58 @@ end = struct
   let remoteness = Fn.const `Unknown
 end
 
-module Spec = struct
-  type via =
+module Via = struct
+  type t =
     | Local
     | Ssh of Ssh.t
-  [@@deriving sexp]
+  [@@deriving sexp, variants]
   ;;
 
-  let pp_via f = function
+  let pp f = function
     | Local -> String.pp f "local"
     | Ssh s -> Ssh.pp f s
   ;;
 
-  let runner_from_via = function
+  let to_runner = function
     | Local -> (module Run.Local : Run.Runner)
     | Ssh c -> (
-        module Utils.Ssh.Runner (Ssh.To_config (struct let ssh = c end)) : Run.Runner
+        module Utils.Ssh.Runner
+            (Ssh.To_config (struct let ssh = c end))
+          : Run.Runner
       )
   ;;
 
+  let remoteness = function
+    | Local -> `Local
+    (* Technically, if we're SSHing to loopback, this isn't true,
+       but I suspect it doesn't matter. *)
+    | Ssh _ -> `Remote
+  ;;
+end
+
+module type Basic_spec = sig
+  type t
+
+  val via : t -> Via.t
+  val runner : t -> (module Run.Runner)
+end
+
+module Spec = struct
   module M = struct
     type t =
       { enabled : bool [@default true] [@sexp_drop_default]
-      ; via     : via
+      ; via     : Via.t
       }
     [@@deriving sexp, fields]
     ;;
 
+    (* We use a different name for the getter than the one
+       [@@deriving fields] infers. *)
+    let is_enabled = enabled
+
     let pp f {via; enabled} =
       Format.pp_open_hbox f ();
-      pp_via f via;
+      Via.pp f via;
       if not enabled then begin
         Format.pp_print_space f ();
         String.pp f "(DISABLED)";
@@ -125,15 +147,8 @@ module Spec = struct
 
     let pp_summary = pp (* for now *)
 
-    let via_remoteness = function
-      | Local -> `Local
-      (* Technically, if we're SSHing to loopback, this isn't true,
-         but I suspect it doesn't matter. *)
-      | Ssh _ -> `Remote
-    ;;
-
-    let remoteness {via; _} = via_remoteness via
-    let runner {via; _} = runner_from_via via
+    let remoteness x = Via.remoteness (via x)
+    let runner     x = Via.to_runner  (via x)
   end
 
   include M
@@ -143,7 +158,11 @@ module Spec = struct
   module With_id = struct
     include Spec.With_id (M)
 
+    let is_enabled t = M.is_enabled (spec t)
     let remoteness t = M.remoteness (spec t)
+    let runner     t = M.runner     (spec t)
+    let via        t = M.via        (spec t)
+
     let default =
       create ~id:Id.default ~spec:default
     let pp f t =
