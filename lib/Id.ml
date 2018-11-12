@@ -22,14 +22,11 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** [Spec] contains general interfaces for dealing with specifications
-    of machines and compilers. *)
-
 open Core
 
 module T = struct
   (** [t] is the type of compiler IDs. *)
-  type t = string list [@@deriving compare, hash, sexp, bin_io]
+  type t = String.Caseless.t list [@@deriving compare, hash, sexp, bin_io]
 
   let allowed_id_splits = [ '.' ; ' '; '/'; '\\']
 
@@ -44,6 +41,25 @@ include T
 include Identifiable.Make (T)
 
 let to_string_list = Fn.id
+
+let%expect_test "equality is case-insensitive" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp
+      (Ordering.of_int
+         (compare
+            (of_string "foo.bar.baz")
+            (of_string "Foo.Bar.BAZ"))
+      : Ordering.t)
+    ];
+  [%expect {| Equal |}]
+;;
+
+
+let%expect_test "parse Foo.Bar.BAZ (note case) as a spec ID" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "Foo.Bar.BAZ" : t)];
+  [%expect {| (Foo Bar BAZ) |}]
+;;
 
 let%expect_test "parse foo.bar.baz as a spec ID" =
   Sexp.output_hum Out_channel.stdout
