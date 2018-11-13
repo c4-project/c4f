@@ -55,7 +55,7 @@ module type WarnIntf = sig
     (* This element isn't known to act, and its translation may be wrong. *)
     | UnknownElt of elt
     (* This element seems erroneous, and its translation may be wrong. *)
-    | ErroneousElt of elt
+    | ErroneousElt of elt * Error.t
     (* Looking up the named symbol in the assembly failed, which may
        cause the reported location table to be wrong. *)
     | SymbolRedirFail of L.Symbol.t

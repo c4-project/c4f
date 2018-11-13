@@ -51,7 +51,7 @@ module Warn (L : Language.S) (C : CustomWarnS)
   type body =
     | MissingEndLabel
     | UnknownElt of elt
-    | ErroneousElt of elt
+    | ErroneousElt of elt * Error.t
     | SymbolRedirFail of L.Symbol.t
     | Custom of C.t
 
@@ -60,8 +60,7 @@ module Warn (L : Language.S) (C : CustomWarnS)
     ; progname : string
     }
 
-  let pp_elt f =
-    function
+  let pp_elt f = function
     | Statement s -> L.Statement.pp f s
     | Instruction i | Operands i -> L.Instruction.pp f i
     | Location l -> L.Location.pp f l
@@ -80,11 +79,13 @@ module Warn (L : Language.S) (C : CustomWarnS)
       (elt_type_name elt)
       pp_elt elt
 
-  let pp_erroneous_warning f elt =
+  let pp_erroneous_warning f elt error =
     Format.fprintf f
-      "act thinks@ %s@ %a@ is@ erroneous.@ The litmus translation may be wrong."
+      "act thinks@ %s@ %a@ is@ erroneous.@ The litmus translation may be wrong.@ Reasons:@ %a"
       (elt_type_name elt)
       pp_elt elt
+      Sexp.pp_hum [%sexp (error : Error.t)]
+  ;;
 
   let pp_symbol_redir_warning f src =
     Format.fprintf f
@@ -99,7 +100,7 @@ module Warn (L : Language.S) (C : CustomWarnS)
         "act needed an end-of-program label here, but there wasn't one."
     | SymbolRedirFail src -> pp_symbol_redir_warning f src
     | UnknownElt elt -> pp_unknown_warning f elt
-    | ErroneousElt elt -> pp_erroneous_warning f elt
+    | ErroneousElt (elt, error) -> pp_erroneous_warning f elt error
     | Custom c -> C.pp f c
 
   let pp f ent =

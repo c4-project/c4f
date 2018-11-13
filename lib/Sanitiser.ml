@@ -115,33 +115,34 @@ module Make (B : Basic)
            >>| Fn.const ins))
   ;;
 
+  let warn_unknown_operands ins abs_operands =
+    if Abstract.Operands.is_part_unknown abs_operands
+    then Ctx.warn (Warn.UnknownElt (Warn.Operands ins))
+    else Ctx.return ()
+  ;;
+
+  let warn_erroneous_operands ins abs_operands =
+    Ctx_List.iterM (Abstract.Operands.errors abs_operands)
+      ~f:(fun error ->
+          Ctx.warn (Warn.ErroneousElt (Warn.Operands ins, error))
+        )
+  ;;
+
   (** [warn_operands stm] emits warnings for each instruction
      in [stm] whose operands don't have a high-level analysis,
       or are erroneous. *)
   let warn_operands ins =
     (* Don't emit warnings for unknown instructions---the
        upper warning should be enough. *)
-    let open Ctx.Let_syntax in
-    let%map () =
-      match L.Instruction.abs_type ins with
-      | Abstract.Instruction.Unknown ->
-        Ctx.return ()
-      | _ ->
-        begin
-          match L.Instruction.abs_operands ins with
-          | `Unknown
-          | `Single `Unknown
-          | `Src_dst { src = `Unknown; _ }
-          | `Src_dst { dst = `Unknown; _ } ->
-            Ctx.warn (Warn.UnknownElt (Warn.Operands ins))
-          | `Erroneous
-          | `Single `Erroneous
-          | `Src_dst { src = `Erroneous; _ }
-          | `Src_dst { dst = `Erroneous; _ } ->
-            Ctx.warn (Warn.ErroneousElt (Warn.Operands ins))
-          | `Single _ | `Src_dst _ | `Other | `None -> return ()
-        end
-    in ins
+    match L.Instruction.abs_type ins with
+    | Abstract.Instruction.Unknown ->
+      Ctx.return ins
+    | _ ->
+      let open Ctx.Let_syntax in
+      let abs_operands = L.Instruction.abs_operands ins in
+      let%bind () = warn_unknown_operands ins abs_operands in
+      let%map () = warn_erroneous_operands ins abs_operands in
+      ins
   ;;
 
   (** [mangle_and_redirect sym] mangles [sym], either by

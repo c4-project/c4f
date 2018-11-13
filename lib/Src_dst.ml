@@ -43,6 +43,7 @@ module type S = sig
   include Has_order
 
   val of_src_dst : ('o, 'o) t -> 'o list
+  val to_src_dst_or_error : 'o list -> ('o, 'o) t Or_error.t
   val to_src_dst : 'o list -> ('o, 'o) t option
   val bind_src_dst : f:(('o, 'o) t -> ('o, 'o) t option) -> 'o list -> ('o list) option
   val map_src_dst : f:(('o, 'o) t -> ('o, 'o) t) -> 'o list -> ('o list) option
@@ -58,13 +59,21 @@ module Make (H : Has_order) : S = struct
     | Dst_then_src -> [dst; src]
   ;;
 
-  let to_src_dst = function
+  let to_src_dst_or_error = function
     | [o1; o2] ->
-      (match operand_order with
-       | Src_then_dst -> Some {src = o1; dst = o2}
-       | Dst_then_src -> Some {src = o2; dst = o1})
-    | _ -> None
+      Ok (
+        match operand_order with
+        | Src_then_dst -> {src = o1; dst = o2}
+        | Dst_then_src -> {src = o2; dst = o1}
+      )
+    | xs ->
+      Or_error.error_s
+        [%message "Expected two operands"
+          ~got:(List.length xs : int)
+        ]
   ;;
+
+  let to_src_dst xs = Result.ok (to_src_dst_or_error xs)
 
   let bind_src_dst ~f xs = Option.(to_src_dst xs >>= f >>| of_src_dst)
 

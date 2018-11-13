@@ -22,6 +22,8 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+open Base
+
 (** List extensions *)
 
 (** [t] is just [list], re-exported to make this module satisfy
@@ -37,3 +39,11 @@ val exclude : f:('a -> bool) -> 'a t -> 'a t
 
 (** [prefixes xs] returns all non-empty prefixes of [xs]. *)
 val prefixes : 'a t -> 'a t t
+
+(** [one xs] returns [Ok x] if [xs] is a list containing only [x],
+    and an error otherwise. *)
+val one : 'a list -> 'a Or_error.t
+
+(** [two xs] returns [Ok (x, y)] if [xs] is a list containing only [x]
+    and [y] in that order, and an error otherwise. *)
+val two : 'a list -> ('a * 'a) Or_error.t

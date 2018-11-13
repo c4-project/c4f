@@ -37,15 +37,20 @@ module Make (SD : Language.S) (DD : Language.S) = struct
     operands
     |> SD.to_src_dst
     |> Option.value_map ~f:DD.of_src_dst ~default:operands
+  ;;
 
   (** [swap_instruction ins] does any swapping of operands needed to
      convert from [SD] to [DD]. *)
   let swap_instruction ins =
-    Ast.(
-      (* TODO(@MattWindsor91): actually check the instructions
-         are src/dst *)
-      { ins with Instruction.operands = swap ins.Instruction.operands }
-    )
+    (* Quick checking on godbolt suggests that practically every
+       two-argument x86 instruction swaps over, not just ones that
+       read from a source and write to a destination.
+
+       This may change. *)
+    let swapped_operands = swap ins.Ast.Instruction.operands
+    in { ins with Ast.Instruction.operands = swapped_operands }
+  ;;
+
 
   (** [convert_jump_operand ins] checks to see if [ins] is a jump and,
      if so, does some syntactic rearranging of the jump's destination.
@@ -67,13 +72,8 @@ module Make (SD : Language.S) (DD : Language.S) = struct
     |> convert_jump_operand
 
   let convert_statement =
-    Ast.(
-      function
-      | Statement.Instruction i ->
-        Statement.Instruction (convert_instruction i)
-      | Label _
-      | Nop as o -> o
-    )
+    Ast.Statement.On_instructions.map ~f:convert_instruction
+  ;;
 
   let convert = List.map ~f:convert_statement
 end

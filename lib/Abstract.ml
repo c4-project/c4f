@@ -131,7 +131,7 @@ end
 
 module Operands = struct
   type common =
-    [ `Erroneous
+    [ `Erroneous of Error.t
     | `Other
     | `Unknown
     ]
@@ -139,9 +139,9 @@ module Operands = struct
   ;;
 
   let pp_common f = function
-    | `Erroneous -> String.pp f "<invalid operands>"
-    | `Other     -> String.pp f "other"
-    | `Unknown   -> String.pp f "??"
+    | `Erroneous _ -> String.pp f "<invalid operands>"
+    | `Other       -> String.pp f "other"
+    | `Unknown     -> String.pp f "??"
   ;;
 
   type common_or_loc =
@@ -186,14 +186,55 @@ module Operands = struct
     [ common
     | `None
     | `Single of any
+    | `Double of any * any
     | `Src_dst of (src, dst) Src_dst.t
     ]
   [@@deriving sexp]
+
+  let rec is_part_unknown' = function
+    | `Unknown -> true
+    | `Single x -> is_part_unknown' (x :> [ t | any ])
+    | `Double (x, y) ->
+      is_part_unknown' (x :> [ t | any ])
+      || is_part_unknown' (y :> [ t | any ])
+    | `Src_dst {Src_dst.src; dst} ->
+      is_part_unknown' (src :> [ t | any ])
+      || is_part_unknown' (dst :> [t | any ])
+    | `Location _ | `Int _ | `Symbol _
+    | `None | `Other | `Erroneous _ -> false
+  ;;
+  let is_part_unknown (x : t) : bool = is_part_unknown' (x :> [ t | any ])
+
+  let rec errors' = function
+    | `Erroneous x -> [x]
+    | `Single x -> errors' (x :> [ t | any ])
+    | `Double (x, y) ->
+      errors' (x :> [ t | any ]) @ errors' (y :> [ t | any ])
+    | `Src_dst {Src_dst.src; dst} ->
+      errors' (src :> [ t | any ]) @ errors' (dst :> [t | any ])
+    | `Location _ | `Int _ | `Symbol _
+    | `None | `Other | `Unknown -> []
+  ;;
+  let errors (x : t) : Error.t list = errors' (x :> [ t | any ])
+
+  let single operand = `Single operand
+  let double op1 op2 = `Double (op1, op2)
+
+  let src_dst ~src ~dst = `Src_dst {Src_dst.src; dst}
+  let is_src_dst : t -> bool = function
+    | `Src_dst _ -> true
+    | `None | `Single _ | `Double _
+    | `Other | `Erroneous _ | `Unknown -> false
+  ;;
 
   let pp f = function
     | #common as c -> pp_common f c
     | `None -> String.pp f "none"
     | `Single x -> pp_any f x
+    | `Double (op1, op2) ->
+      Format.fprintf f "@[%a,@ %a@]"
+        pp_any op1
+        pp_any op2
     | `Src_dst { Src_dst.src; dst} ->
       Format.fprintf f "@[%a@ ->@ %a@]"
         pp_src src

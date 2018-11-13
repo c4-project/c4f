@@ -134,6 +134,14 @@ module type Generic_on_monad = sig
     -> 'acc M.t
   ;;
 
+  (** [iterM x ~f] iterates the monadic computation [f] over [x],
+      returning the final monadic effect. *)
+  val iterM
+    :  'a t
+    -> f : ('a elt -> unit M.t)
+    -> unit M.t
+  ;;
+
   (** [mapM ~f x] maps the monadic computation [f] over [x],
       collecting the monadic effect and returning the result
       inside it. *)

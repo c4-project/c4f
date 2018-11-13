@@ -76,14 +76,7 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
           module On_strings = struct
             type t = string
             type elt = string
-            include Fold_map.Make_container0 (struct
-                type t = string
-                module Elt = String
-
-                module On_monad (M : Monad.S) = struct
-                  let fold_map ~f ~init sym = f init sym
-                end
-              end)
+            include Singleton.With_elt (String)
           end
         end
 
@@ -149,47 +142,93 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
             if List.is_empty operands
             then `None
             else `Erroneous
+                (Error.create_s
+                   [%message "Expected zero operands"
+                       ~got:(operands : Ast.Operand.t list)]
+                )
+          ;;
 
           let src_operand
-            : Ast.Operand.t -> Abstract.Operands.src option = function
+            : Ast.Operand.t -> Abstract.Operands.src Or_error.t = function
             | Ast.Operand.Location s ->
-              Some (`Location (Location.abs_type s))
-            | Immediate (Ast.Disp.Numeric k) -> Some (`Int k)
-            | Immediate (Ast.Disp.Symbolic s) -> Some (`Symbol s)
-            | String _ | Typ _ | Bop _ -> Some `Other
+              Ok (`Location (Location.abs_type s))
+            | Immediate (Ast.Disp.Numeric k) -> Ok (`Int k)
+            | Immediate (Ast.Disp.Symbolic s) -> Ok (`Symbol s)
+            | String _ | Typ _ | Bop _ -> Ok `Other
           ;;
 
           let dst_operand
-            : Ast.Operand.t -> Abstract.Operands.dst option = function
+            : Ast.Operand.t -> Abstract.Operands.dst Or_error.t = function
             | Ast.Operand.Location s ->
-              Some (`Location (Location.abs_type s))
-            | Immediate _ -> None
-            | String _ | Typ _ | Bop _ -> Some `Other
+              Ok (`Location (Location.abs_type s))
+            | Immediate k ->
+              Or_error.error_s
+                [%message "Immediate values can't be destinations"
+                    ~immediate:(k : Ast.Disp.t)
+                ]
+            | String _ | Typ _ | Bop _ -> Ok `Other
+          ;;
+
+          let error_to_erroneous = function
+            | Result.Ok x -> x
+            | Error e -> `Erroneous e
           ;;
 
           let src_dst_operands (operands : Ast.Operand.t list)
             : Abstract.Operands.t =
-            let open T in
-            Option.Let_syntax.(
-              let%bind { src; dst } = to_src_dst operands in
+            error_to_erroneous (
+              let open Or_error.Let_syntax in
+              let%bind { src; dst } = T.to_src_dst_or_error operands in
               let%map src' = src_operand src
               and     dst' = dst_operand dst
               in
-              `Src_dst { Src_dst.src = src'; dst = dst' }
-            ) |> Option.value ~default:`Erroneous
+              Abstract.Operands.src_dst ~src:src' ~dst:dst'
+            )
 
-          let run_classifier operand classify =
-            classify operand
+          let classify_single operand classifiers =
+            classifiers
+            |> List.find_map ~f:(fun c -> c operand)
+            |> Result.of_option
+                 ~error:(Error.of_string "Operand type not allowed here")
+          ;;
+
+          let classify_double op1 op2 classifiers =
+            classifiers
+            |> List.find_map ~f:(fun c -> c op1 op2)
+            |> Result.of_option
+              ~error:(Error.of_string "Operand types not allowed here")
           ;;
 
           let single_operand operands ~allowed : Abstract.Operands.t =
-            match operands with
-            | [operand] ->
-              Option.value_map
-                ~f:(fun x -> `Single x)
-                ~default:`Erroneous
-                (List.find_map allowed ~f:(run_classifier operand))
-            | _ -> `Erroneous
+            error_to_erroneous
+              (let open Or_error.Let_syntax in
+               let%bind operand = My_list.one operands in
+               let%map abs_operand = classify_single operand allowed in
+               Abstract.Operands.single abs_operand
+              )
+          ;;
+
+          let double_operands operands ~allowed =
+            error_to_erroneous
+              (let open Or_error.Let_syntax in
+               let%bind (op1, op2) = My_list.two operands in
+               let%map (abs1, abs2) = classify_double op1 op2 allowed in
+               Abstract.Operands.double abs1 abs2
+              )
+          ;;
+
+          (** [pairwise_symmetric classifier_pairs] builds a list of
+             operand classifiers that permits pairs of operands ([op1],
+             [op2]) for which some [(c1, c2)] exists in
+             [classifier_pairs] where either [op1] satisfies [c1] and
+             [op2] satisfies [c2], or [op1] satisfies [c2] and [op2]
+             satisfies [c1]. *)
+          let pairwise_symmetric =
+            List.concat_map
+              ~f:(fun (c1, c2) ->
+                  [ (fun op1 op2 -> Option.both (c1 op1) (c2 op2))
+                  ; (fun op1 op2 -> Option.both (c2 op1) (c1 op2))
+                  ])
           ;;
 
           let immediate_operand = function
@@ -227,14 +266,18 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
             | String _ | Typ _ | Location (Reg _) -> None
           ;;
 
-          let basic_operands (o : [< Opcode.Basic.t])
-              (operands : Ast.Operand.t list) =
-            match o with
+          let basic_operands (operands : Ast.Operand.t list)
+            : [< Opcode.Basic.t] -> Abstract.Operands.t = function
             | `Leave
             | `Mfence
             | `Nop
             | `Ret -> zero_operands operands
             | `Add
+            | `Cmp
+              (* Though the reference manual describes CMP as
+                 having two source operands, the encoding only
+                 allows immediate values in destination
+                 position, so we return it as a src/dst. *)
             | `Sub
             | `Mov
             | `Xor -> src_dst_operands operands
@@ -249,16 +292,25 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
                 ~allowed:[ memory_operand
                          ; register_operand
                          ]
+            | `Xchg ->
+              (* Though the reference manual describes XCHG as
+                 having a source and destination operand, the two
+                 operands are symmetrical in the encoding, and
+                 both only accept destinations. *)
+              double_operands operands
+                ~allowed:(pairwise_symmetric
+                            [ (memory_operand  , register_operand)
+                            ; (register_operand, register_operand)
+                            ])
             (* TODO(@MattWindsor91): analyse other opcodes! *)
             | `Call
-            | `Cmp
-            | `Cmpxchg
-            | `Xchg -> `Unknown
+            | `Cmpxchg -> `Unknown
+          ;;
 
           let abs_operands {Ast.Instruction.opcode; operands; _} =
             match opcode with
-            | Opcode.Basic b -> basic_operands b operands
-            | Opcode.Sized (b, _) -> basic_operands b operands
+            | Opcode.Basic b -> basic_operands operands b
+            | Opcode.Sized (b, _) -> basic_operands operands b
             | Opcode.Jump _ ->
               single_operand operands ~allowed:[ jump_target_operand ]
             | Opcode.Directive _ -> `Other
@@ -290,7 +342,6 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
                     ()
                  ));
             [%expect {| sym:L1 |}]
-
 
           let%expect_test "abs_operands: pop $42 -> error" =
             Format.printf "%a@."

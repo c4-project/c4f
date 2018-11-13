@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 
 type 'a t = 'a list
 
@@ -152,4 +152,54 @@ let%expect_test "prefixes: sample list" =
               [ 1 ]
               [ 1, 2 ]
               [ 1, 2, 3 ] |}]
+;;
+
+let one = function
+  | [x] -> Ok x
+  | xs ->
+    Or_error.error_s
+      [%message "Expected one element" ~got:(List.length xs : int)]
+;;
+
+let%expect_test "one: zero elements" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (one [] : int Or_error.t)];
+  [%expect {| (Error ("Expected one element" (got 0))) |}]
+;;
+
+let%expect_test "one: one element" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (one [ 42 ] : int Or_error.t)];
+  [%expect {| (Ok 42) |}]
+;;
+
+let%expect_test "one: two elements" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (one [ 27; 53 ] : int Or_error.t)];
+  [%expect {| (Error ("Expected one element" (got 2))) |}]
+;;
+
+let two = function
+  | [x; y] -> Ok (x, y)
+  | xs ->
+    Or_error.error_s
+      [%message "Expected two elements" ~got:(List.length xs : int)]
+;;
+
+let%expect_test "one: one element" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (two [ 42 ] : (int * int) Or_error.t)];
+  [%expect {| (Error ("Expected two elements" (got 1))) |}]
+;;
+
+let%expect_test "one: two elements" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (two [ 27; 53 ] : (int * int) Or_error.t)];
+  [%expect {| (Ok (27 53)) |}]
+;;
+
+let%expect_test "one: three elements" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (two [ "veni"; "vidi"; "vici" ] : (string * string) Or_error.t)];
+  [%expect {| (Error ("Expected two elements" (got 3))) |}]
 ;;

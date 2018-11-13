@@ -119,9 +119,14 @@ end
    operand bundles. *)
 module Operands : sig
   type common =
-    [ `Erroneous
-    | `Other
-    | `Unknown
+    [ (** There was a definite error in the original assembly in
+          regards to this operand. *)
+      `Erroneous of Error.t
+    | (** This operand bundle is known and valid, but doesn't yet have
+         an abstract representation. *)
+      `Other
+    | (** This operand bundle is not yet understood by act. *)
+      `Unknown
     ]
   [@@deriving sexp]
   ;;
@@ -149,7 +154,7 @@ module Operands : sig
   [@@deriving sexp]
   ;;
 
-  (** [AbsOperands.t] is an abstracted operand bundle. *)
+  (** [t] is an abstracted operand bundle. *)
   type t =
     [ common
     (** This instruction takes no operands. *)
@@ -159,8 +164,37 @@ module Operands : sig
     (** This instruction takes a source operand and a destination
        operand. *)
     | `Src_dst of (src, dst) Src_dst.t
+      (** This instruction takes two operands, but they don't form one of
+          the specific patterns mentioned above. *)
+    | `Double of any * any
     ]
   [@@deriving sexp]
+
+  (** [is_part_unknown operands] returns true when any part of the
+      bundle [operands] is unknown. *)
+  val is_part_unknown : t -> bool
+
+  (** [errors operands] returns any errors corresponding to bad
+     operands in the bundle [operands]. *)
+  val errors : t -> Error.t list
+
+  (** [single operand] constructs an operand bundle for an instruction
+      with only one operand [operand]. *)
+  val single : any -> t
+
+  (** [src_dst ~src ~dst] constructs an operand bundle for an
+      instruction with a source operand [src] and a destination
+      operand [dst]. *)
+  val src_dst : src:src -> dst:dst -> t
+
+  (** [is_src_dst operands] returns [true] if [operands] represents a
+      bundle of source and destination operand. *)
+  val is_src_dst : t -> bool
+
+  (** [double operand] constructs an operand bundle for an instruction
+     with two operands [op1] and [op2], where the operands aren't
+     related in any more specific way (eg [src_dst]). *)
+  val double : any -> any -> t
 
   include S with type t := t
 end

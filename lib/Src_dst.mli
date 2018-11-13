@@ -32,6 +32,8 @@
     This module contains various types and module plumbing for handling
     these cases in a fairly unambiguous way. *)
 
+open Core
+
 (** [order] enumerates the different orders of operands for
     two-operand instructions. *)
 type order =
@@ -65,8 +67,14 @@ module type S = sig
      Both operands must have the same type. *)
   val of_src_dst : ('o, 'o) t -> 'o list
 
+  (** [to_src_dst_or_error ops] tries to interpret [ops] as a pair of
+     source and destination operand.  It returns an error if there are
+     too few or too many operands. *)
+  val to_src_dst_or_error : 'o list -> ('o, 'o) t Or_error.t
+
   (** [to_src_dst ops] tries to interpret [ops] as a pair of source
-     and destination operand. *)
+     and destination operand.  It differs from [to_src_dst_or_error]
+     by returning [None] rather than a full error on failure. *)
   val to_src_dst : 'o list -> ('o, 'o) t option
 
   (** [bind_src_dst ~f ops] tries to interpret [ops] as a pair of
