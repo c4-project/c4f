@@ -265,6 +265,11 @@ end
 
 module type Language = sig
   module type Basic = Basic
+  module type Basic_constant = Basic_constant
+  module type Basic_location = Basic_location
+  module type Basic_instruction = Basic_instruction
+  module type Basic_statement = Basic_statement
+
   module type S = S
 
   (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
