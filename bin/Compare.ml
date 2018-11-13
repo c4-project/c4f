@@ -52,7 +52,7 @@ let run_spec_on_file o spec ~c_file =
     Id.pp (Compiler.Spec.With_id.id spec);
   let open Or_error.Let_syntax in
   let%bind asm_file = compile o spec ~c_file in
-  let%map  _        = litmusify o spec ~asm_file in
+  let%map  _        = litmusify o (`Spec spec) ~asm_file in
   Format.printf "@[<h>```@]@."
 ;;
 

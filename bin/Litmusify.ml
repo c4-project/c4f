@@ -47,8 +47,14 @@ let lit_file use_herd maybe_outfile =
   if use_herd then Some (temp_file "litmus") else maybe_outfile
 ;;
 
-let run_compiler o cspec c_file asm_file =
+let run_compiler o target c_file asm_file =
   let open Result.Let_syntax in
+  let%bind cspec = match target with
+    | `Spec spec -> return spec
+    | `Arch _ ->
+      Or_error.error_string
+        "To litmusify a C file, you must supply a compiler ID."
+  in
   let%bind infile =
     Result.of_option c_file
       ~error:(Error.of_string "Can't read in C from stdin")
@@ -66,13 +72,13 @@ let run_compiler o cspec c_file asm_file =
   ()
 ;;
 
-let run_litmusify o cspec asm_file lit_file =
+let run_litmusify o target asm_file lit_file =
   let source = Io.In_source.of_option asm_file in
   let sink = Io.Out_sink.of_option lit_file in
-  Common.litmusify o source sink [] cspec
+  Common.litmusify o source sink [] target
 ;;
 
-let run_herd cfg cspec lit_file outfile =
+let run_herd cfg target lit_file outfile =
   let open Result.Let_syntax in
   let%bind path =
     Result.of_option lit_file
@@ -80,7 +86,7 @@ let run_herd cfg cspec lit_file outfile =
   in
   let sink = Io.Out_sink.of_option outfile in
   let%bind herd = make_herd cfg in
-  let arch = Herd.Assembly (Compiler.Spec.With_id.emits cspec) in
+  let arch = Herd.Assembly (Common.arch_of_target target) in
   Herd.run herd arch ~path ~sink
 ;;
 
@@ -92,9 +98,9 @@ let decide_if_c infile = function
       ~f:(My_filename.has_extension ~ext:"c")
 ;;
 
-let run file_type use_herd id ~infile ~outfile o cfg =
+let run file_type use_herd compiler_id_or_emits ~infile ~outfile o cfg =
   let open Result.Let_syntax in
-  let%bind cspec = Compiler.Spec.Set.get (Config.M.compilers cfg) id in
+  let%bind target = Common.get_target cfg compiler_id_or_emits in
 
   let is_c = decide_if_c infile file_type in
 
@@ -102,10 +108,10 @@ let run file_type use_herd id ~infile ~outfile o cfg =
   let lit_file = lit_file use_herd outfile in
 
   let%bind () =
-    if is_c then run_compiler o cspec infile asm_file else return ()
+    if is_c then run_compiler o target infile asm_file else return ()
   in
-  let%bind _ = run_litmusify o cspec asm_file lit_file in
-  if use_herd then run_herd cfg cspec lit_file outfile else return ()
+  let%bind _ = run_litmusify o target asm_file lit_file in
+  if use_herd then run_herd cfg target lit_file outfile else return ()
 ;;
 
 let command =
@@ -120,19 +126,17 @@ let command =
           ~doc: "if true, pipe results through herd"
       and file_type =
         choose_one
-          [ (let%map c =
-               flag "c"
-                 no_arg
-                 ~doc: "if given, assume input is C (and compile it)"
-             in (Option.some_if c `C))
-          ; (let%map asm =
-               flag "asm"
-                 no_arg
-                 ~doc: "if given, assume input is assembly"
-             in (Option.some_if asm `Assembly))
+          [ (map ~f:(Fn.flip Option.some_if `C)
+               (flag "c"
+                  no_arg
+                  ~doc: "if given, assume input is C (and compile it)"))
+          ; (map ~f:(Fn.flip Option.some_if `Assembly)
+               (flag "asm"
+                  no_arg
+                  ~doc: "if given, assume input is assembly"))
           ]
           ~if_nothing_chosen:(`Default_to `Infer)
-      and compiler_id = Standard_args.Other.compiler_id_anon
+      and compiler_id_or_arch = Standard_args.Other.compiler_id_or_arch
       and outfile =
         flag "output"
           (optional file)
@@ -143,5 +147,6 @@ let command =
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run file_type use_herd compiler_id ~infile ~outfile)
+          ~f:(run file_type use_herd compiler_id_or_arch
+                ~infile ~outfile)
     ]

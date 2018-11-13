@@ -27,6 +27,32 @@ open Core
 open Lib
 open Utils
 
+(** [get_target cfg target] processes a choice between compiler ID
+    and architecture (emits clause); if the input is a compiler
+    ID, the compiler is retrieved from [cfg]. *)
+val get_target
+  :  Config.M.t
+  -> [< `Id of Id.t | `Arch of string list ]
+  -> ( [> `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
+         Or_error.t )
+;;
+
+(** [arch_of_target target] gets the architecture (emits clause)
+   associated with a target (either a compiler spec or emits
+   clause). *)
+val arch_of_target
+  :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
+  -> string list
+;;
+
+(** [runner_of_target target] gets the [Asm_job.Runner]
+   associated with a target (either a compiler spec or emits
+   clause). *)
+val runner_of_target
+  :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
+  -> (module Asm_job.Runner) Or_error.t
+;;
+
 (** [compile_with_compiler c o ~name ~infile ~outfile compiler_id]
     compiles [infile] (with short name [name]) to [outfile], using
     compiler module [c].  In addition, it does some book-keeping
@@ -56,16 +82,16 @@ val lift_command
   -> unit
 ;;
 
-(** [litmusify ?programs_only o inp outp symbols spec] is a thin
-   wrapper around [Asm_job]'s litmusify mode that handles finding the
-   right job runner, printing warnings, and supplying the maximal pass
-   set. *)
+(** [litmusify ?programs_only o inp outp symbols spec_or_emits] is a
+   thin wrapper around [Asm_job]'s litmusify mode that handles finding
+   the right job runner, printing warnings, and supplying the maximal
+   pass set. *)
 val litmusify
   :  ?programs_only:bool
   -> Output.t
   -> Io.In_source.t
   -> Io.Out_sink.t
   -> string list
-  -> Compiler.Spec.With_id.t
+  -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list]
   -> (string, string) List.Assoc.t Or_error.t
 ;;

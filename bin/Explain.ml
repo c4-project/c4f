@@ -36,18 +36,14 @@ let print_symbol_map = function
       map
 ;;
 
-let run id symbols sanitise ~infile ~outfile o cfg =
+let run compiler_id_or_arch symbols sanitise ~infile ~outfile o cfg =
   let open Or_error.Let_syntax in
   let passes = Sanitiser_pass.(
       if sanitise then explain else Set.empty
     )
   in
-  let%bind cspec =
-    Compiler.Spec.Set.get (Config.M.compilers cfg) id
-  in
-  let%bind runner =
-    Language_support.asm_runner_from_spec cspec
-  in
+  let%bind target = Common.get_target cfg compiler_id_or_arch in
+  let%bind runner = Common.runner_of_target target in
   let module Runner = (val runner) in
   Io.(
     let input =
@@ -73,7 +69,7 @@ let command =
         flag "sanitise"
           no_arg
           ~doc: "if true, do basic sanitisation on the assembly first"
-      and compiler_id = Standard_args.Other.compiler_id_anon
+      and compiler_id_or_arch = Standard_args.Other.compiler_id_or_arch
       and symbols =
         flag_optional_with_default_doc "track"
           ~default:[]
@@ -93,6 +89,6 @@ let command =
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run compiler_id symbols sanitise ~infile ~outfile)
+          ~f:(run compiler_id_or_arch symbols sanitise ~infile ~outfile)
     ]
 ;;

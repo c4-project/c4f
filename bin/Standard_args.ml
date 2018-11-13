@@ -71,7 +71,19 @@ module Other = struct
 
   let compiler_id_type = Arg_type.create Id.of_string
 
-  let compiler_id_anon = anon ("COMPILER_ID" %: compiler_id_type)
+  let compiler_id_or_arch =
+    choose_one
+      [ map ~f:(Option.map ~f:(fun x -> `Id x))
+          (flag "compiler"
+             (optional compiler_id_type)
+             ~doc: "COMPILER_ID ID of the compiler to target")
+      ; map ~f:(Option.map ~f:(fun x -> `Arch x))
+          (flag "arch"
+             (optional (sexp_conv [%of_sexp: string list]))
+             ~doc: "EMITS_CLAUSE the architecture to target")
+      ]
+      ~if_nothing_chosen:`Raise
+  ;;
 
   let compiler_predicate =
     flag "filter-compilers"

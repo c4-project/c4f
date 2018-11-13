@@ -143,7 +143,7 @@ let litmusify_single
   let inp  = `File (Pathset.File.asm_path fs) in
   let outp = `File (Pathset.File.lita_path fs) in
   Output.log_stage o ~stage:"LITMUS" ~file:(Pathset.File.basename fs) id;
-  Common.litmusify o inp outp syms cspec
+  Common.litmusify o inp outp syms (`Spec cspec)
 ;;
 
 (** [map_location_renamings locs sym_redirects] works out the

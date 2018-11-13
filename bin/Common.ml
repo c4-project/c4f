@@ -25,6 +25,24 @@
 open Core
 open Lib
 
+let get_target cfg = function
+  | `Id id ->
+    let open Or_error.Let_syntax in
+    let%map spec = Compiler.Spec.Set.get (Config.M.compilers cfg) id in
+    `Spec spec
+  | `Arch _ as arch -> Or_error.return arch
+;;
+
+let arch_of_target = function
+  | `Spec spec -> Compiler.Spec.With_id.emits spec
+  | `Arch arch -> arch
+;;
+
+let runner_of_target = function
+  | `Spec spec -> Language_support.asm_runner_from_spec spec
+  | `Arch arch -> Language_support.asm_runner_from_emits arch
+;;
+
 let compile_with_compiler
     (c : (module Compiler.S)) o ~name ~infile ~outfile compiler_id =
   let open Or_error.Let_syntax in
@@ -63,9 +81,10 @@ let lift_command
   ) |> Output.print_error o
 ;;
 
-let litmusify ?programs_only (o : Output.t) inp outp symbols spec =
+let litmusify ?programs_only (o : Output.t) inp outp symbols
+    target =
   let open Result.Let_syntax in
-  let%bind runner = Language_support.asm_runner_from_spec spec in
+  let%bind runner = runner_of_target target in
   let module Runner = (val runner) in
   let input =
     { Asm_job.inp

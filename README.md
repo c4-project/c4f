@@ -2,12 +2,12 @@
 
 [![Build Status](https://travis-ci.com/MattWindsor91/act.svg?branch=master)](https://travis-ci.com/MattWindsor91/act)
 
-`act` is a work-in-progress automatic compiler tester for finding
+`act` is a toolbox for finding
 concurrency memory model discrepancies between C code and its
-compiled assembly.  It uses
+compiled assembly.  It can use
 [memalloy](https://github.com/JohnWickerson/memalloy) as a test-case
-generator, and will eventually generate litmus tests that can be
-used with herd7.
+generator, and generates litmus tests that can be
+used with [herd7](https://github.com/herd/herdtools7).
 
 
 ## Licence and Acknowledgements
@@ -36,8 +36,7 @@ used with herd7.
 - Other modes allow per-file sanitisation, litmus generation,
   Herd running, etc.
 
-Future versions of `act` will automate the comparison of herd output
-against the memalloy input, and support more
+Future versions of `act` will support more
 compilers/architectures/dialects/instructions/syntax.
 
 
@@ -157,7 +156,8 @@ per-compiler.
 ### `explain`: analyse assembly without conversion
 
 ```
-$ act explain COMPILER-NAME path/to/asm.s
+$ act explain -compiler COMPILER-NAME path/to/asm.s
+$ act explain -arch ARCH-NAME path/to/asm.s
 ```
 
 This asks `act` to dump out the given assembly file along with
@@ -186,25 +186,22 @@ optimisation levels influence the result.
 ### `litmusify`: convert a single assembly or C file to a litmus test
 
 ```
-$ act litmusify COMPILER-NAME path/to/asm/or/C
+$ act litmusify -compiler COMPILER-NAME path/to/asm/or/C
+$ act litmusify -arch ARCH-NAME path/to/asm
 ```
 
 This asks `act` to try to convert the given file into a
-Litmus test, using the spec for compiler `COMPILER-NAME`.  If
-the file ends in `.c`, `act` will run the compiler to generate
-assembly first; otherwise, it assumes the file is already an
-assembly listing compatible with `COMPILER-NAME`'s spec.
+Litmus test, using the spec for compiler `COMPILER-NAME` (or the
+architecture named `ARCH-NAME`).
+
+If the file ends in `.c`, `act` will run the compiler to generate
+assembly first; otherwise, it assumes the file is already an assembly
+listing compatible with the given compiler or architecture.  Note that
+trying to litmusify a `.c` file using `-arch ARCH-NAME` will fail.
 
 By default, the litmus test is printed on stdout.  You can use `-o
 FILE` to override, and/or `-herd` to apply `herd` directly to the
 generated litmus test before outputting.
-
-**NOTE**:
-Since `act` won't have any information besides that inside the
-assembly file, the litmus output won't have any postconditions or
-initial assignments, and `act` will make incomplete guesses about
-where program boundaries and interesting memory locations are.
-
 
 ### `test`: processing a memalloy run
 
