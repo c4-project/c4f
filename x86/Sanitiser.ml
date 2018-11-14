@@ -1,29 +1,32 @@
 (* This file is part of 'act'.
 
-Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 open Core
 
-module CWarn (L : Language.S) = struct
+module CWarn (Lang : Language.S) = struct
+  module Lang = Lang
+
   type t =
     | UnsupportedRegister of Ast.Reg.t
   ;;
@@ -31,7 +34,7 @@ module CWarn (L : Language.S) = struct
   let pp f = function
     | UnsupportedRegister r ->
       Format.fprintf f "@[The register@ %a@ may not be supported by Herd.@]"
-        L.pp_reg r
+        Lang.pp_reg r
   ;;
 end
 
@@ -40,7 +43,7 @@ module Hook (L : Language.S) = struct
 
   module L = L
   module W = CWarn (L)
-  module Ctx = Lib.Sanitiser_ctx.Make (L) (W)
+  module Ctx = Lib.Sanitiser_ctx.Make (W)
   module Pass = Lib.Sanitiser_pass
 
   let negate = function
@@ -91,11 +94,11 @@ module Hook (L : Language.S) = struct
     | op -> op
 
   (** [segment_offset_to_heap loc] is a contextual computation that,
-     heuristically, converts memory addresses like [GS:20] to symbolic
-     heap locations.
+      heuristically, converts memory addresses like [GS:20] to symbolic
+      heap locations.
 
       It assumes, perhaps incorrectly, that these segments aren't
-     moved, or shared per thread. *)
+      moved, or shared per thread. *)
   let segment_offset_to_heap = function
     | Location.Indirect i as l ->
       begin

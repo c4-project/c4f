@@ -74,11 +74,11 @@ end
 
 module Make_runner (B : Runner_deps) : Runner = struct
   (* Shorthand for modules we use a _lot_. *)
-  module L  = B.Litmus;;
-  module LS = L.Lang;;
-  module MS = B.Multi_sanitiser;;
-  module SS = B.Single_sanitiser;;
-  module E  = B.Explainer;;
+  module L  = B.Litmus
+  module LS = L.Lang
+  module MS = B.Multi_sanitiser
+  module SS = B.Single_sanitiser
+  module E  = B.Explainer
 
   let name_of isrc =
     Option.value (Io.In_source.file isrc) ~default:"(stdin)"

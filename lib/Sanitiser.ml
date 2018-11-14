@@ -27,9 +27,10 @@ open Utils
 
 include Sanitiser_intf
 
-module Make_null_hook (Lang : Language.S) = struct
+module Make_null_hook (Lang : Language.S)
+  : Hook with module L = Lang = struct
   module L = Lang
-  module Ctx = Sanitiser_ctx.Make (L) (Sanitiser_ctx.NoCustomWarn)
+  module Ctx = Sanitiser_ctx.Make (Sanitiser_ctx.Null_warn_hook (Lang))
 
   let on_program = Ctx.return
   let on_statement = Ctx.return
@@ -136,8 +137,7 @@ module Make (B : Basic)
     (* Don't emit warnings for unknown instructions---the
        upper warning should be enough. *)
     match L.Instruction.abs_type ins with
-    | Abstract.Instruction.Unknown ->
-      Ctx.return ins
+    | Abstract.Instruction.Unknown -> Ctx.return ins
     | _ ->
       let open Ctx.Let_syntax in
       let abs_operands = L.Instruction.abs_operands ins in
@@ -285,6 +285,10 @@ module Make (B : Basic)
     )
   ;;
 
+  let remove_statements_in prog ~where =
+    My_list.(exclude ~f:(any ~predicates:where)) prog
+  ;;
+
   (** [remove_generally_irrelevant_statements prog] completely removes
      statements in [prog] that have no use in general and cannot be
      rewritten. *)
@@ -295,28 +299,26 @@ module Make (B : Basic)
       Ctx.is_pass_enabled Sanitiser_pass.RemoveBoundaries
     in
     let ignore_boundaries = not remove_boundaries in
-    let predicates =
-      L.Statement.(
-        [ is_nop
-        ; is_directive
-        ; is_unused_label ~ignore_boundaries ~syms
-        ])
-    in
-    My_list.exclude ~f:(My_list.any ~predicates) prog
+      remove_statements_in prog
+        ~where:L.Statement.
+                 [ is_nop
+                 ; is_directive
+                 ; is_unused_label ~ignore_boundaries ~syms
+                 ]
   ;;
 
   (** [remove_litmus_irrelevant_statements prog] completely removes
      statements in [prog] that have no use in Litmus and cannot be
      rewritten. *)
   let remove_litmus_irrelevant_statements prog =
-    Ctx.return
-      (let predicates =
-         L.Statement.(
-           [ instruction_is_irrelevant
-           ; is_stack_manipulation
-           ])
-       in
-       My_list.exclude ~f:(My_list.any ~predicates) prog)
+    Ctx.return (
+      remove_statements_in prog
+        ~where:L.Statement.
+                 [ instruction_is_irrelevant
+                 ; is_stack_manipulation
+                 ]
+    )
+  ;;
 
   let remove_useless_jumps prog =
     Ctx.(
@@ -462,8 +464,8 @@ module Make (B : Basic)
     let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
     Ctx.(
       run
-      (Monadic.return (B.split stms) >>= sanitise_with_ctx symbols)
-      (initial ~passes:passes')
+        (Monadic.return (B.split stms) >>= sanitise_with_ctx symbols)
+        (initial ~passes:passes')
     )
   ;;
 end

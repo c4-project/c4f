@@ -31,39 +31,44 @@ include Sanitiser_ctx_intf
  * Warnings
  *)
 
-module NoCustomWarn : CustomWarnS = struct
+module Null_warn_hook (Lang : Language.S)
+  : Warn_hook with module Lang = Lang = struct
+  module Lang = Lang
+
   (* No warnings possible *)
   type t
   let pp _ _ = ()
 end
 
-module Warn (L : Language.S) (C : CustomWarnS)
-  : WarnIntf with module L = L and module C = C = struct
-  module L = L
-  module C = C
+module Make_warn (H : Warn_hook)
+  : Warn with module Hook = H = struct
+  module Hook = H
 
   type elt =
-    | Instruction of L.Instruction.t
-    | Statement of L.Statement.t
-    | Location of L.Location.t
-    | Operands of L.Instruction.t
+    | Instruction of H.Lang.Instruction.t
+    | Statement of H.Lang.Statement.t
+    | Location of H.Lang.Location.t
+    | Operands of H.Lang.Instruction.t
+  ;;
 
   type body =
     | MissingEndLabel
     | UnknownElt of elt
     | ErroneousElt of elt * Error.t
-    | SymbolRedirFail of L.Symbol.t
-    | Custom of C.t
+    | SymbolRedirFail of H.Lang.Symbol.t
+    | Custom of H.t
+  ;;
 
   type t =
     { body     : body
     ; progname : string
     }
+  ;;
 
   let pp_elt f = function
-    | Statement s -> L.Statement.pp f s
-    | Instruction i | Operands i -> L.Instruction.pp f i
-    | Location l -> L.Location.pp f l
+    | Statement s -> H.Lang.Statement.pp f s
+    | Instruction i | Operands i -> H.Lang.Instruction.pp f i
+    | Location l -> H.Lang.Location.pp f l
   ;;
 
   let elt_type_name = function
@@ -90,7 +95,7 @@ module Warn (L : Language.S) (C : CustomWarnS)
   let pp_symbol_redir_warning f src =
     Format.fprintf f
       "act couldn't find the symbol@ '%a'@ in the assembly.@ The litmus translation may have an incorrect location table."
-      L.Symbol.pp src
+      H.Lang.Symbol.pp src
   ;;
 
   let pp_body f =
@@ -101,7 +106,7 @@ module Warn (L : Language.S) (C : CustomWarnS)
     | SymbolRedirFail src -> pp_symbol_redir_warning f src
     | UnknownElt elt -> pp_unknown_warning f elt
     | ErroneousElt (elt, error) -> pp_erroneous_warning f elt error
-    | Custom c -> C.pp f c
+    | Custom c -> H.pp f c
 
   let pp f ent =
     Format.fprintf f "In program %s:@ " ent.progname;
@@ -123,10 +128,10 @@ let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string =
   mu prefix 0
 ;;
 
-module Make (L : Language.S) (C : CustomWarnS)
- : Intf with module Lang = L and module Warn.C = C = struct
-  module Lang = L
-  module Warn = Warn (L) (C)
+module Make (H : Warn_hook)
+ : S with module Lang = H.Lang and module Warn.Hook = H = struct
+  module Lang = H.Lang
+  module Warn = Make_warn (H)
   module Pass = Sanitiser_pass
 
   type ctx =
@@ -134,7 +139,7 @@ module Make (L : Language.S) (C : CustomWarnS)
     ; proglen   : int
     ; endlabel  : string option
     ; syms      : Abstract.Symbol.Table.t
-    ; redirects : L.Symbol.R_map.t
+    ; redirects : Lang.Symbol.R_map.t
     ; passes    : Pass.Set.t
     ; warnings  : Warn.t list
     }[@@deriving fields]
@@ -144,7 +149,7 @@ module Make (L : Language.S) (C : CustomWarnS)
     ; proglen   = 0
     ; endlabel  = None
     ; syms      = Abstract.Symbol.Table.empty
-    ; redirects = L.Symbol.R_map.make L.Symbol.Set.empty
+    ; redirects = Lang.Symbol.R_map.make Lang.Symbol.Set.empty
     ; passes
     ; warnings  = []
     }
@@ -243,25 +248,25 @@ module Make (L : Language.S) (C : CustomWarnS)
   ;;
 
   let resolve_redirect sym = function
-    | L.Symbol.R_map.Identity -> sym
+    | Lang.Symbol.R_map.Identity -> sym
     | MapsTo sym' -> sym'
   ;;
 
   let get_redirect sym =
     let open Let_syntax in
     let%map rds = peek redirects in
-    Option.map (L.Symbol.R_map.dest_of rds sym)
+    Option.map (Lang.Symbol.R_map.dest_of rds sym)
       ~f:(resolve_redirect sym)
   ;;
 
   let get_redirect_alist syms
-    : ((L.Symbol.t, L.Symbol.t) List.Assoc.t) t =
+    : ((Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t) t =
     let open Let_syntax in
     let%map rds = peek redirects in
     List.filter_map syms
       ~f:(fun sym ->
           Option.(
-            L.Symbol.R_map.dest_of rds sym
+            Lang.Symbol.R_map.dest_of rds sym
             >>| resolve_redirect sym
             >>| Tuple2.create sym
           )
@@ -276,7 +281,7 @@ module Make (L : Language.S) (C : CustomWarnS)
     Monadic.modify
       (fun ctx ->
          let open Or_error.Let_syntax in
-         let%map rds' = L.Symbol.R_map.redirect ~src ~dst rds in
+         let%map rds' = Lang.Symbol.R_map.redirect ~src ~dst rds in
          { ctx with redirects = rds' })
   ;;
 

@@ -31,23 +31,25 @@ open Utils
  * Warnings
  *)
 
-(** [CustomWarnS] is the signature that any custom sanitisation
-   warnings need to implement. *)
-module type CustomWarnS = sig
+(** [Warn_hook] is the signature for language-specific hooks
+    into the sanitiser warnings set. *)
+module type Warn_hook = sig
+  module Lang : Language.S
+
   include Pretty_printer.S
 end
 
-(** [WarnIntf] is the interface to the warnings emitted by the
+(** [Warn] is the interface to the warnings emitted by the
    sanitiser. *)
-module type WarnIntf = sig
-  module L : Language.S
-  module C : CustomWarnS
+module type Warn = sig
+  module Hook : Warn_hook
 
   type elt =
-    | Instruction of L.Instruction.t
-    | Statement of L.Statement.t
-    | Location of L.Location.t
-    | Operands of L.Instruction.t
+    | Instruction of Hook.Lang.Instruction.t
+    | Statement of Hook.Lang.Statement.t
+    | Location of Hook.Lang.Location.t
+    | Operands of Hook.Lang.Instruction.t
+  ;;
 
   type body =
     (* Something needed an end-of-program label, but there wasn't one. *)
@@ -58,9 +60,9 @@ module type WarnIntf = sig
     | ErroneousElt of elt * Error.t
     (* Looking up the named symbol in the assembly failed, which may
        cause the reported location table to be wrong. *)
-    | SymbolRedirFail of L.Symbol.t
+    | SymbolRedirFail of Hook.Lang.Symbol.t
     (* Hook for language-specific sanitiser passes to add warnings. *)
-    | Custom of C.t
+    | Custom of Hook.t
 
   type t =
     { body     : body
@@ -74,11 +76,11 @@ end
  * Context
  *)
 
-(** [Intf] is the interface to the state monad used by the sanitiser to
+(** [S] is the interface to the state monad used by the sanitiser to
     carry global information around in a sanitisation pass. *)
-module type Intf = sig
+module type S = sig
   module Lang : Language.S
-  module Warn : WarnIntf with module L = Lang
+  module Warn : Warn with module Hook.Lang = Lang
 
   type ctx
 
@@ -220,26 +222,27 @@ module type Intf = sig
 end
 
 module type Sanitiser_ctx = sig
-  module type WarnIntf = WarnIntf
-  module type CustomWarnS = CustomWarnS
-  module type Intf = Intf
+  module type Warn = Warn
+  module type Warn_hook = Warn_hook
+  module type S = S
 
-  (** [NoCustomWarn] is a dummy interface implementing [CustomWarnS]. *)
-  module NoCustomWarn : CustomWarnS
+  (** [Null_warn_hook] is a dummy functor implementing [Warn_hook]. *)
+  module Null_warn_hook
+    : functor (Lang : Language.S)
+      -> Warn_hook with module Lang = Lang
+  ;;
 
-  (** [Warn] produces a warnings module for the given language and
+  (** [Make_warn] produces a warnings module for the given language and
       custom warnings set. *)
-  module Warn
-    : functor (L : Language.S)
-      -> functor (C : CustomWarnS)
-        -> WarnIntf with module L = L and module C = C
+  module Make_warn
+    : functor (H : Warn_hook)
+      -> Warn with module Hook = H
   ;;
 
   (** [Make] builds a context monad for the given language. *)
   module Make
-    : functor (L : Language.S)
-      -> functor (C : CustomWarnS)
-        -> Intf with module Lang = L
-                 and module Warn.C = C
+    : functor (H : Warn_hook)
+      -> S with module Lang = H.Lang
+            and module Warn.Hook = H
   ;;
 end
