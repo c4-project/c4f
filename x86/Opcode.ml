@@ -468,3 +468,54 @@ include Abstractable.Make (struct
       | Unknown _   -> Unknown
     ;;
   end)
+
+let directive_of_string string =
+  Core.String.chop_prefix string ~prefix:"."
+;;
+
+let of_string string =
+  Utils.My_option.first_some_of_thunks
+    (Core.Option.
+       [ (fun () -> string |> directive_of_string >>| directive)
+       ; (fun () -> string |> Jump.of_string      >>| jump)
+       ; (fun () -> string |> Sized.of_string     >>| sized)
+       ; (fun () -> string |> Basic.of_string     >>| basic)
+       ])
+  |> Option.value ~default:(Unknown string)
+;;
+
+let%expect_test "of_string: directive" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string ".global" : t)];
+  [%expect {| (Directive global) |}]
+;;
+
+let%expect_test "of_string: conditional jump" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "jne" : t)];
+  [%expect {| (Jump (Conditional (Not Equal))) |}]
+;;
+
+let%expect_test "of_string: unconditional jump" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "JMP" : t)];
+  [%expect {| (Jump Unconditional) |}]
+;;
+
+let%expect_test "of_string: sized opcode" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "movl" : t)];
+  [%expect {| (Sized (Mov Long)) |}]
+;;
+
+let%expect_test "of_string: basic opcode" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "MOV" : t)];
+  [%expect {| (Basic Mov) |}]
+;;
+
+let%expect_test "of_string: not an opcode" =
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (of_string "bananas" : t)];
+  [%expect {| (Unknown bananas) |}]
+;;

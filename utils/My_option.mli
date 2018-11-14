@@ -33,3 +33,8 @@ type 'a t = 'a option
 (** [My_option] contains all of the monadic fold-mappable extensions
    we define in [Fold_map]. *)
 include Fold_map.Container1 with type 'a t := 'a t
+
+(** [first_some_of_thunks thunks] evaluates each thunk in [thunks] until
+    none remain (in which case, it returns [None], or one of the
+    thunks returns [Some x] (in which case, it returns [Some x]. *)
+val first_some_of_thunks : (unit -> 'a t) list -> 'a t

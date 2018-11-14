@@ -264,3 +264,7 @@ val unknown : string -> t
 include Abstractable.S with type t := t
                         and module Abs := Abstract.Instruction
 ;;
+
+(** [of_string string] parses [string] as an opcode (or opcode-like
+    entity). *)
+val of_string : string -> t

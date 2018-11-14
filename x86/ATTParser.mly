@@ -75,54 +75,37 @@ copyright notice follow. *)
 %%
 
 main:
-  | stm_list EOF
+  | program=list(stm) EOF
     {
       { syntax = Dialect.Att
-      ; program = $1
+      ; program
       }
     }
 
-stm_list:
-  | list(stm) { $1 }
-
 stm:
-  | option(instr) EOL { Core.Option.value_map ~f:Statement.instruction ~default:Statement.Nop $1 }
-  | label { Statement.Label $1 }
+  | maybe_instr=option(instr) EOL
+    {
+      Core.Option.value_map
+	maybe_instr
+	~f:Statement.instruction ~default:Statement.Nop
+    }
+  | label=label { Statement.Label label }
 
 prefix:
   | IT_LOCK { PreLock }
 
 label:
-  NAME COLON { $1 }
+  symbol=NAME COLON { symbol }
 
 opcode:
-  | NAME { Core.Option.(
-	     (Core.String.chop_prefix $1 ~prefix:"." >>| Opcode.directive)
-	     |> first_some
-	          (Opcode.Jump.of_string $1 >>| Opcode.jump)
-	     |> first_some
-	          (Opcode.Sized.of_string $1 >>| Opcode.sized)
-	     |> first_some
-	          (Opcode.Basic.of_string $1 >>| Opcode.basic)
-	     |> value ~default:(Opcode.Unknown $1)
-	   )
-	 }
+  | name=NAME { Opcode.of_string name}
 
 instr:
-  | prefix opcode separated_list (COMMA, operand)
-    { Instruction.make
-	~prefix:$1
-	~opcode:$2
-        ~operands:$3
-	()
-    }
+  | prefix=prefix opcode=opcode operands=separated_list(COMMA, operand)
+    { Instruction.make ~prefix ~opcode ~operands () }
     (* lock cmpxchgl %eax, %ebx *)
-  | opcode separated_list (COMMA, operand)
-    { Instruction.make
-	~opcode:$1
-        ~operands:$2
-	()
-    }
+  | opcode=opcode operands=separated_list(COMMA, operand)
+    { Instruction.make ~opcode ~operands () }
 
 (* Binary operator *)
 bop:
@@ -131,72 +114,73 @@ bop:
 
 (* Base/index/scale triple *)
 bis:
-  | ATT_REG
-    { (Some $1, None) }
+  | base=ATT_REG
+    { (Some base, None) }
     (* (%eax) *)
-  | option(ATT_REG) COMMA ATT_REG
-         { ($1, Some (Index.Unscaled $3)) }
+  | maybe_base=option(ATT_REG) COMMA index=ATT_REG
+         { (maybe_base, Some (Index.Unscaled index)) }
     (* (%eax, %ebx)
        (    , %ebx) *)
-  | option(ATT_REG) COMMA ATT_REG COMMA k
-         { ($1, Some (Index.Scaled ($3, $5))) }
+  | maybe_base=option(ATT_REG) COMMA index=ATT_REG COMMA scale=k
+         { (maybe_base, Some (Index.Scaled (index, scale))) }
     (* (%eax, %ebx, 2)
        (    , %ebx, 2) *)
 
 (* Segment:displacement *)
 segdisp:
-  | disp { (None, $1) }
-  | separated_pair(ATT_REG, COLON, disp) { Core.(Tuple2.map_fst ~f:Option.some $1) }
+  | disp=disp { (None, disp) }
+  | segdisp=separated_pair(ATT_REG, COLON, disp)
+    { Core.(Tuple2.map_fst ~f:Option.some segdisp) }
 
 (* Memory access: base/index/scale, displacement, or both *)
 indirect:
-  | delimited(LPAR, bis, RPAR)
+  | bis=delimited(LPAR, bis, RPAR)
     {
-      let (base, index) = $1 in
+      let (base, index) = bis in
       Indirect.make ?base ?index ()
     }
     (* (%eax, %ebx, 2) *)
-  | segdisp delimited(LPAR, bis, RPAR)
+  | segdisp=segdisp bis=delimited(LPAR, bis, RPAR)
     {
-      let (seg, disp) = $1 in
-      let (base, index) = $2 in
+      let (seg, disp) = segdisp in
+      let (base, index) = bis in
       Indirect.make ?seg ~disp ?base ?index ()
     }
     (* -8(%eax, %ebx, 2) *)
-  | segdisp
+  | segdisp=segdisp
     {
-      let (seg, disp) = $1 in
+      let (seg, disp) = segdisp in
       Indirect.make ?seg ~disp ()
     }
     (* 0x4000 *)
 
 location:
-  | indirect {Location.Indirect $1}
+  | indirect=indirect { Location.Indirect indirect }
     (* -8(%eax, %ebx, 2) *)
-  | ATT_REG {Location.Reg $1}
+  | reg=ATT_REG { Location.Reg reg }
     (* %eax *)
 
 (* Memory displacement *)
 disp:
-  | k    { Disp.Numeric $1 }
-  | NAME { Disp.Symbolic $1 }
+  | number=k    { Disp.Numeric  number }
+  | symbol=NAME { Disp.Symbolic symbol }
 
 operand:
-  | prim_operand bop operand { Operand.bop $1 $2 $3 }
-  | prim_operand { $1 }
+  | l=prim_operand op=bop r=operand { Operand.bop l op r }
+  | p=prim_operand { p }
 
 prim_operand:
-  | DOLLAR disp { Operand.immediate $2 }
+  | DOLLAR immediate=disp { Operand.immediate immediate }
     (* $10 *)
-  | STRING { Operand.string $1 }
+  | string=STRING { Operand.string string }
     (* @function *)
-  | GAS_TYPE { Operand.typ $1 }
+  | typ=GAS_TYPE { Operand.typ typ }
     (* "Hello, world!" *)
-  | location { Operand.location $1}
+  | location=location { Operand.location location }
 
 (* Numeric constant: hexadecimal or decimal *)
 k:
-  | ATT_HEX    { Core.Int.of_string ("0x" ^ $1) }
+  | hex=ATT_HEX    { Core.Int.of_string ("0x" ^ hex) }
     (* 0xDEADBEEF *)
-  | NUM        { Core.Int.of_string $1 }
+  | dec=NUM        { Core.Int.of_string dec }
     (* 42 *)

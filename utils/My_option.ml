@@ -72,6 +72,28 @@ let%expect_test "mapM: returning identity on Some/Some" =
   Format.printf "@[<h>%a@]@."
     (My_format.pp_option
        ~pp:(My_format.pp_option ~pp:String.pp))
-    (M.mapM ~f:(fun k -> Some k) (Some "hello"));
+    (M.mapM ~f:(Option.some) (Some "hello"));
+  [%expect {| hello |}]
+;;
+
+let first_some_of_thunks thunks =
+  List.fold_until thunks
+    ~init:()
+    ~f:(fun () thunk ->
+        Option.value_map (thunk ())
+          ~default:(Container.Continue_or_stop.Continue ())
+          ~f:(fun x -> Stop (Some x)))
+    ~finish:(Fn.const None)
+;;
+
+let%expect_test "first_some_of_thunks: short-circuiting works" =
+  Format.printf "@[<h>%a@]@."
+    (My_format.pp_option ~pp:String.pp)
+    (first_some_of_thunks
+       [ Fn.const None
+       ; Fn.const (Some "hello")
+       ; Fn.const (Some "world")
+       ; (fun () -> failwith "this shouldn't happen")
+       ]);
   [%expect {| hello |}]
 ;;
