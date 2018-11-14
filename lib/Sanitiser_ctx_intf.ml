@@ -24,63 +24,14 @@
 
 (** Sanitiser: context state monad: interfaces *)
 
-open Core
+open Base
 open Utils
-
-(*
- * Warnings
- *)
-
-(** [Warn_hook] is the signature for language-specific hooks
-    into the sanitiser warnings set. *)
-module type Warn_hook = sig
-  module Lang : Language.S
-
-  include Pretty_printer.S
-end
-
-(** [Warn] is the interface to the warnings emitted by the
-   sanitiser. *)
-module type Warn = sig
-  module Hook : Warn_hook
-
-  type elt =
-    | Instruction of Hook.Lang.Instruction.t
-    | Statement of Hook.Lang.Statement.t
-    | Location of Hook.Lang.Location.t
-    | Operands of Hook.Lang.Instruction.t
-  ;;
-
-  type body =
-    (* Something needed an end-of-program label, but there wasn't one. *)
-    | MissingEndLabel
-    (* This element isn't known to act, and its translation may be wrong. *)
-    | UnknownElt of elt
-    (* This element seems erroneous, and its translation may be wrong. *)
-    | ErroneousElt of elt * Error.t
-    (* Looking up the named symbol in the assembly failed, which may
-       cause the reported location table to be wrong. *)
-    | SymbolRedirFail of Hook.Lang.Symbol.t
-    (* Hook for language-specific sanitiser passes to add warnings. *)
-    | Custom of Hook.t
-
-  type t =
-    { body     : body
-    ; progname : string
-    }
-
-  include Pretty_printer.S with type t := t
-end
-
-(*
- * Context
- *)
 
 (** [S] is the interface to the state monad used by the sanitiser to
     carry global information around in a sanitisation pass. *)
 module type S = sig
   module Lang : Language.S
-  module Warn : Warn with module Hook.Lang = Lang
+  module Warn : Sanitiser_warn.S with module Hook.Lang = Lang
 
   type ctx
 
@@ -222,26 +173,11 @@ module type S = sig
 end
 
 module type Sanitiser_ctx = sig
-  module type Warn = Warn
-  module type Warn_hook = Warn_hook
   module type S = S
-
-  (** [Null_warn_hook] is a dummy functor implementing [Warn_hook]. *)
-  module Null_warn_hook
-    : functor (Lang : Language.S)
-      -> Warn_hook with module Lang = Lang
-  ;;
-
-  (** [Make_warn] produces a warnings module for the given language and
-      custom warnings set. *)
-  module Make_warn
-    : functor (H : Warn_hook)
-      -> Warn with module Hook = H
-  ;;
 
   (** [Make] builds a context monad for the given language. *)
   module Make
-    : functor (H : Warn_hook)
+    : functor (H : Sanitiser_warn.Hook)
       -> S with module Lang = H.Lang
             and module Warn.Hook = H
   ;;

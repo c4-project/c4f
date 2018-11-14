@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 open Utils
 
 include Sanitiser_intf
@@ -30,7 +30,7 @@ include Sanitiser_intf
 module Make_null_hook (Lang : Language.S)
   : Hook with module L = Lang = struct
   module L = Lang
-  module Ctx = Sanitiser_ctx.Make (Sanitiser_ctx.Null_warn_hook (Lang))
+  module Ctx = Sanitiser_ctx.Make (Sanitiser_warn.Make_null_hook (Lang))
 
   let on_program = Ctx.return
   let on_statement = Ctx.return

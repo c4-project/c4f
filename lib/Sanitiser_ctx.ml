@@ -22,101 +22,10 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 open Utils
 
 include Sanitiser_ctx_intf
-
-(*
- * Warnings
- *)
-
-module Null_warn_hook (Lang : Language.S)
-  : Warn_hook with module Lang = Lang = struct
-  module Lang = Lang
-
-  (* No warnings possible *)
-  type t
-  let pp _ _ = ()
-end
-
-module Make_warn (H : Warn_hook)
-  : Warn with module Hook = H = struct
-  module Hook = H
-
-  type elt =
-    | Instruction of H.Lang.Instruction.t
-    | Statement of H.Lang.Statement.t
-    | Location of H.Lang.Location.t
-    | Operands of H.Lang.Instruction.t
-  ;;
-
-  type body =
-    | MissingEndLabel
-    | UnknownElt of elt
-    | ErroneousElt of elt * Error.t
-    | SymbolRedirFail of H.Lang.Symbol.t
-    | Custom of H.t
-  ;;
-
-  type t =
-    { body     : body
-    ; progname : string
-    }
-  ;;
-
-  let pp_elt f = function
-    | Statement s -> H.Lang.Statement.pp f s
-    | Instruction i | Operands i -> H.Lang.Instruction.pp f i
-    | Location l -> H.Lang.Location.pp f l
-  ;;
-
-  let elt_type_name = function
-    | Statement _ -> "statement"
-    | Instruction _ -> "instruction"
-    | Operands _ -> "the operands of instruction"
-    | Location _ -> "location"
-  ;;
-
-  let pp_unknown_warning f elt =
-    Format.fprintf f
-      "act didn't understand@ %s@ %a.@ The litmus translation may be wrong."
-      (elt_type_name elt)
-      pp_elt elt
-
-  let pp_erroneous_warning f elt error =
-    Format.fprintf f
-      "act thinks@ %s@ %a@ is@ erroneous.@ The litmus translation may be wrong.@ Reasons:@ %a"
-      (elt_type_name elt)
-      pp_elt elt
-      Sexp.pp_hum [%sexp (error : Error.t)]
-  ;;
-
-  let pp_symbol_redir_warning f src =
-    Format.fprintf f
-      "act couldn't find the symbol@ '%a'@ in the assembly.@ The litmus translation may have an incorrect location table."
-      H.Lang.Symbol.pp src
-  ;;
-
-  let pp_body f =
-    function
-    | MissingEndLabel ->
-      String.pp f
-        "act needed an end-of-program label here, but there wasn't one."
-    | SymbolRedirFail src -> pp_symbol_redir_warning f src
-    | UnknownElt elt -> pp_unknown_warning f elt
-    | ErroneousElt (elt, error) -> pp_erroneous_warning f elt error
-    | Custom c -> H.pp f c
-
-  let pp f ent =
-    Format.fprintf f "In program %s:@ " ent.progname;
-    pp_body f ent.body
-end
-
-
-(*
- * Context
- *)
 
 let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string =
   let rec mu prefix count =
@@ -128,10 +37,10 @@ let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string =
   mu prefix 0
 ;;
 
-module Make (H : Warn_hook)
+module Make (H : Sanitiser_warn.Hook)
  : S with module Lang = H.Lang and module Warn.Hook = H = struct
   module Lang = H.Lang
-  module Warn = Make_warn (H)
+  module Warn = Sanitiser_warn.Make (H)
   module Pass = Sanitiser_pass
 
   type ctx =

@@ -24,7 +24,7 @@
 
 (** Assembly sanitisation *)
 
-open Core
+open Base
 
 (** [Hook] is an interface for language-specific hooks into the
     sanitisation process. *)
@@ -76,7 +76,7 @@ end
 
 (** [S] is the interface to a fully-built sanitiser. *)
 module type S = sig
-  module Warn : Sanitiser_ctx.Warn
+  module Warn : Sanitiser_warn.S
 
   type statement
   type sym
