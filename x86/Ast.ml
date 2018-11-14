@@ -44,7 +44,7 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-open Core
+open Core_kernel
 open Utils
 
 module Reg = struct
@@ -255,7 +255,7 @@ module Indirect = struct
         module F = Fold_map.Helpers (M)
 
         module D = Disp.On_symbols.On_monad (M)
-        module O = Fold_map.Option.On_monad (M)
+        module O = My_option.On_monad (M)
 
         let fold_map ~f ~init t =
           B.fold_map t
@@ -281,7 +281,7 @@ module Indirect = struct
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
         module F = Fold_map.Helpers (M)
-        module O = Fold_map.Option.On_monad (M)
+        module O = My_option.On_monad (M)
         module I = Index.On_registers.On_monad (M)
 
         let fold_map ~f ~init t =

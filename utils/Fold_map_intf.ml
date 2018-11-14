@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Base
 
 (** [Generic_monadic] is a signature describing a monadic fold-map on
    either an arity-0 or arity-1 container.
@@ -324,10 +324,6 @@ module type Fold_map = sig
         to use in monadic fold-maps, but does nothing. *)
     val fold_nop : 'b -> 'a -> ('b * 'a) M.t
   end
-
-  (** [Option] provides monadic fold-mapping for optional
-      values. *)
-  module Option : Container1 with type 'a t := 'a option
 
   (** [chain mapper ~f] lifts a fold-map of [f] on an inner container
      to a fold-mapping function on an outer container. *)

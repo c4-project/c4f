@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 
 include Fold_map_intf
 
@@ -167,23 +167,6 @@ module Make_container1 (I : Basic_container1)
       module On_monad (M : Monad.S) = On_monad (M)
     end)
 end
-
-module Option : Container1 with type 'a t := 'a option =
-  Make_container1 (struct
-    type 'a t = 'a option
-
-    module On_monad (M : Monad.S) = struct
-      let fold_map ~f ~init xo =
-        let open M.Let_syntax in
-        Option.fold xo
-          ~init:(return (init, None))
-          ~f:(fun state x ->
-              let%bind (acc , _ ) = state in
-              let%map  (acc', x') = f acc x in
-              (acc', Some x'))
-      ;;
-    end
-  end)
 
 module Helpers (M : Monad.S) = struct
   let proc_variant0 f init v =

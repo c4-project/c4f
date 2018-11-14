@@ -49,12 +49,12 @@ include Fold_map.Make_container1 (struct
 let%expect_test "generated list map behaves properly" =
   Format.printf "@[%a@]@."
     (Format.pp_print_list Int.pp ~pp_sep:Format.pp_print_space)
-    (List.map ~f:(fun x -> x * x) [ 1; 3; 5; 7 ]);
+    (map ~f:(fun x -> x * x) [ 1; 3; 5; 7 ]);
   [%expect {| 1 9 25 49 |}]
 ;;
 
 let%expect_test "generated list count behaves properly" =
-  Format.printf "@[%d@]@." (List.count ~f:Int.is_positive [ -7; -5; -3; -1; 1; 3; 5; 7 ]);
+  Format.printf "@[%d@]@." (count ~f:Int.is_positive [ -7; -5; -3; -1; 1; 3; 5; 7 ]);
   [%expect {| 4 |}]
 ;;
 
