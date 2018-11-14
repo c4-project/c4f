@@ -82,42 +82,10 @@ module Make (B : Basic) : S = struct
         )
   ;;
 
-  let src_operand
-    : Ast.Operand.t -> Abstract.Operands.src Or_error.t = function
-    | Ast.Operand.Location s ->
-      Ok (`Location (Location.abs_type s))
-    | Immediate (Ast.Disp.Numeric k) -> Ok (`Int k)
-    | Immediate (Ast.Disp.Symbolic s) -> Ok (`Symbol s)
-    | String _ | Typ _ | Bop _ -> Ok `Other
-  ;;
-
-  let dst_operand
-    : Ast.Operand.t -> Abstract.Operands.dst Or_error.t = function
-    | Ast.Operand.Location s ->
-      Ok (`Location (Location.abs_type s))
-    | Immediate k ->
-      Or_error.error_s
-        [%message "Immediate values can't be destinations"
-            ~immediate:(k : Ast.Disp.t)
-        ]
-    | String _ | Typ _ | Bop _ -> Ok `Other
-  ;;
-
   let error_to_erroneous = function
     | Result.Ok x -> x
     | Error e -> `Erroneous e
   ;;
-
-  let src_dst_operands (operands : Ast.Operand.t list)
-    : Abstract.Operands.t =
-    error_to_erroneous (
-      let open Or_error.Let_syntax in
-      let%bind { src; dst } = Dialect.to_src_dst_or_error operands in
-      let%map src' = src_operand src
-      and     dst' = dst_operand dst
-      in
-      Abstract.Operands.src_dst ~src:src' ~dst:dst'
-    )
 
   let classify_single operand classifiers =
     classifiers
@@ -133,6 +101,19 @@ module Make (B : Basic) : S = struct
       ~error:(Error.of_string "Operand types not allowed here")
   ;;
 
+  let classify_src_dst src dst classifiers =
+    let open Or_error.Let_syntax in
+    match%bind classify_double src dst classifiers with
+    | (#Abstract.Operands.src as src'),
+      (#Abstract.Operands.dst as dst') ->
+      return { Src_dst.src = src'; dst = dst' }
+    | _, not_dst ->
+      Or_error.error_s
+        [%message "Internal error: invalid destination operand type"
+            ~not_dst:(not_dst : Abstract.Operands.any)
+        ]
+  ;;
+
   let single_operand operands ~allowed : Abstract.Operands.t =
     error_to_erroneous
       (let open Or_error.Let_syntax in
@@ -142,13 +123,22 @@ module Make (B : Basic) : S = struct
       )
   ;;
 
+  let src_dst_operands operands ~allowed =
+    error_to_erroneous (
+      let open Or_error.Let_syntax in
+      let%bind { src ; dst  } = Dialect.to_src_dst_or_error operands in
+      let%map { src = src'; dst = dst' } =
+        classify_src_dst src dst allowed
+      in Abstract.Operands.src_dst ~src:src' ~dst:dst'
+    )
+
   let double_operands operands ~allowed =
-    error_to_erroneous
-      (let open Or_error.Let_syntax in
-       let%bind (op1, op2) = My_list.two operands in
-       let%map (abs1, abs2) = classify_double op1 op2 allowed in
-       Abstract.Operands.double abs1 abs2
-      )
+    error_to_erroneous (
+      let open Or_error.Let_syntax in
+      let%bind (op1, op2) = My_list.two operands in
+      let%map (abs1, abs2) = classify_double op1 op2 allowed in
+      Abstract.Operands.double abs1 abs2
+    )
   ;;
 
   (** [pairwise_symmetric classifier_pairs] builds a list of
@@ -200,45 +190,74 @@ module Make (B : Basic) : S = struct
     | String _ | Typ _ | Location (Reg _) -> None
   ;;
 
-  let basic_operands (operands : Ast.Operand.t list)
-    : [< Opcode.Basic.t] -> Abstract.Operands.t = function
-    | `Leave
-    | `Mfence
-    | `Nop
-    | `Ret -> zero_operands operands
-    | `Add
-    | `Cmp
-    (* Though the reference manual describes CMP as
-       having two source operands, the encoding only
-       allows immediate values in destination
-       position, so we return it as a src/dst. *)
-    | `Sub
-    | `Mov
-    | `Xor -> src_dst_operands operands
-    | `Push ->
-      single_operand operands
-        ~allowed:[ immediate_operand
-                 ; memory_operand
-                 ; register_operand
+  let single_spec_to_classifier = function
+    | Opcode.Operand_spec.Immediate -> immediate_operand
+    | Memory -> memory_operand
+    | Register -> register_operand
+  ;;
+
+  let rec spec_to_classifier = function
+    | Opcode.Operand_spec.Zero -> zero_operands
+    | One specs ->
+      let allowed = List.map ~f:single_spec_to_classifier specs in
+      single_operand ~allowed
+    | Symmetric specs ->
+      let allowed =
+        specs
+        |> List.map ~f:(fun (s1, s2) ->
+            ( single_spec_to_classifier s1
+            , single_spec_to_classifier s2
+            ))
+        |> pairwise_symmetric
+      in double_operands ~allowed
+    | Src_dst specs ->
+      let allowed =
+        List.map specs ~f:(fun {src; dst} ->
+            fun s d ->
+              Option.both
+                (single_spec_to_classifier src s)
+                (single_spec_to_classifier dst d)
+          )
+      in src_dst_operands ~allowed
+    | Or (spec1, spec2) -> fun operands ->
+      match spec_to_classifier spec1 operands with
+      | `Erroneous err1 -> begin
+          match spec_to_classifier spec2 operands with
+          | `Erroneous err2 ->
+            `Erroneous
+              (Error.create_s
+                 [%message
+                   "Neither of the allowed operand types matched"
+                     ~first_error:(err1 : Error.t)
+                     ~second_error:(err2 : Error.t)
                  ]
-    | `Pop ->
-      single_operand operands
-        ~allowed:[ memory_operand
-                 ; register_operand
-                 ]
-    | `Xchg ->
-      (* Though the reference manual describes XCHG as
-         having a source and destination operand, the two
-         operands are symmetrical in the encoding, and
-         both only accept destinations. *)
-      double_operands operands
-        ~allowed:(pairwise_symmetric
-                    [ (memory_operand  , register_operand)
-                    ; (register_operand, register_operand)
-                    ])
-    (* TODO(@MattWindsor91): analyse other opcodes! *)
-    | `Call
-    | `Cmpxchg -> `Unknown
+              )
+          | x -> x
+        end
+      | x -> x
+  ;;
+
+  let basic_operands_table =
+    List.map Opcode.Basic.all
+      ~f:(fun opcode ->
+          let spec =
+            opcode
+            |> Opcode.Basic.get_operand_spec
+            |> Option.value_map
+              ~f:spec_to_classifier
+              ~default:(Fn.const `Unknown)
+          in ( opcode, spec )
+        )
+  ;;
+
+  let basic_operands
+      (operands : Ast.Operand.t list)
+      (opcode : [< Opcode.Basic.t]) =
+    let classify =
+      List.Assoc.find_exn basic_operands_table
+        (opcode :> Opcode.Basic.t)
+        ~equal:(Opcode.Basic.equal)
+    in classify operands
   ;;
 
   let abs_operands {Ast.Instruction.opcode; operands; _} =

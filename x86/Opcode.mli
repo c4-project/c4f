@@ -47,10 +47,52 @@
 
 (** [Opcode] contains the x86 opcode tables, and operations on them. *)
 
+open Base
 open Lib
 open Utils
 
-(** [Sizable] enumerates X86 opcodes that may have an associated size
+(** [Operand_spec] describes the various types of operand that x86
+    instructions can have.
+
+    These specs, and their corresponding tables in the opcode modules,
+    tell [Language_instruction] which opcode types are allowed in which
+    instructions.
+
+    Jumps are a special case, and don't have operand specs; they are
+    always interpreted as taking a single operand corresponding to the
+    jump target.
+*)
+module Operand_spec : sig
+  (** [single] enumerates the possible types of operand.
+
+      At present, we don't model operand size restrictions. *)
+  type single =
+    | Immediate  (** This operand can be an immediate value (imm) *)
+    | Memory     (** This operand can be a memory reference (m) *)
+    | Register   (** This operand can be a register (r) *)
+  ;;
+
+  (** [t] describes the operands of an instruction. *)
+  type t =
+    | (** This instruction takes no operands. *)
+      Zero
+    | (** This instruction takes one operand, which may satisfy any of
+          the following specifications. *)
+      One of single list
+    | (** This instruction takes two operands, which may satisfy any
+          of the following pairwise specifications in either order. *)
+      Symmetric of (single * single) list
+    | (** This instruction takes two operands, which may satisfy any
+          of the following pairwise specifications so long as the
+          source matches the [src] side and the destination matches the
+          [dst] side. *)
+      Src_dst of (single, single) Src_dst.t list
+    | (** This instruction can match either of these descriptions. *)
+      Or of t * t
+  ;;
+end
+
+(** [Sizable] enumerates x86 opcodes that may have an associated size
     directive (Intel) or suffix (AT&T). *)
 module Sizable : sig
   type t =
@@ -77,6 +119,11 @@ module Sizable : sig
   (** We can convert sizable opcodes to the act abstract form. *)
   include Abstractable.S with type t := t
                           and module Abs := Abstract.Instruction
+
+  (** [get_operand_spec opcode] tries to get an operand spec for
+      [opcode].  It returns [None] if the opcode doesn't yet have
+      operand analysis. *)
+  val get_operand_spec : t -> Operand_spec.t option
 end
 
 (** [Size] contains an enumeration of operand sizes. *)
@@ -118,7 +165,7 @@ module Basic : sig
     | `Mfence
     | `Nop
     ]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, eq, enumerate]
   ;;
 
   (** [Basic] contains a string table for basic opcodes.
@@ -127,6 +174,12 @@ module Basic : sig
   (** We can convert basic opcodes to the act abstract form. *)
   include Abstractable.S with type t := t
                           and module Abs := Abstract.Instruction
+
+
+  (** [get_operand_spec opcode] tries to get an operand spec for
+      [opcode].  It returns [None] if the opcode doesn't yet have
+      operand analysis. *)
+  val get_operand_spec : t -> Operand_spec.t option
 end
 
 (** [Condition] describes jump conditions. *)

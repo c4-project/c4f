@@ -49,6 +49,38 @@ open Core
 open Utils
 open Lib
 
+module Operand_spec = struct
+  type single =
+    | Immediate
+    | Memory
+    | Register
+  ;;
+
+  type t =
+    | Zero
+    | One of single list
+    | Symmetric of (single * single) list
+    | Src_dst of (single, single) Src_dst.t list
+    | Or of t * t
+  ;;
+
+  (* Operand spec for 'arithmetic'-style operands (where the
+     source may be immediate).
+     We also currently use it for MOV, treating OI as I, FD as
+     RM, and TD as MR. *)
+  let arith_operands =
+    Src_dst (
+      Src_dst.
+        [ { dst = Register; src = Immediate } (* I, MI *)
+        ; { dst = Memory  ; src = Immediate } (* MI *)
+        ; { dst = Register; src = Memory    } (* RM *)
+        ; { dst = Memory  ; src = Register  } (* MR *)
+        ; { dst = Register; src = Register  } (* RM, MR *)
+        ]
+    )
+  ;;
+end
+
 (* To add a new opcode:
 
    1.  Add an entry for it into either 'Sizable.t' or 'Basic.t', in
@@ -58,11 +90,8 @@ open Lib
    2.  Add the string representation into the table below the
    enumerator.
 
-   3.  Add the appropriate classifications for the opcodes.
-
-   4.  Add classifications for the instruction's opcodes in
-   x86.Language.  (TODO(@MattWindsor91): find a way of moving this
-   classification into here.)
+   3.  Add the appropriate abstract classifications for the opcodes and
+   operands.
 
    5.  Add legs to the pattern-matches in x86.Sanitiser.  *)
 
@@ -85,6 +114,33 @@ module Sizable = struct
     ]
   [@@deriving sexp, eq, enumerate]
   ;;
+
+  (* Note: any SIZABLE opcodes not present in this table map to
+     'unknown operands'. *)
+  let operand_table : ([> t], Operand_spec.t) List.Assoc.t =
+    (* See the Intel reference manual for the source of these. *)
+    Operand_spec.
+      [ `Add    , arith_operands
+      (* TODO(@MattWindsor91): Call *)
+      ; `Cmp    , arith_operands
+      (* TODO(@MattWindsor91): Cmpxchg *)
+      ; `Mov    , arith_operands (* see arith_operand_spec comments *)
+      ; `Pop    , One [ Memory; Register ]
+      ; `Push   , One [ Memory; Register; Immediate ]
+      ; `Ret    , Or (Zero, One [ Immediate ])
+      ; `Sub    , arith_operands
+      (* Though the reference manual describes XCHG as
+         having a source and destination operand, the two
+         operands are symmetrical in the encoding, and
+         both only accept destinations. *)
+      ; `Xchg   , Symmetric [ Memory  , Register
+                            ; Register, Register
+                            ]
+      ; `Xor    , arith_operands
+      ]
+  ;;
+
+  let get_operand_spec = List.Assoc.find operand_table ~equal
 
   include (
     String_table.Make (struct
@@ -150,8 +206,7 @@ module Sized = struct
   ;;
 
   include (
-    String_table.Make
-      (struct
+    String_table.Make (struct
         type nonrec t = t
 
         let table =
@@ -179,6 +234,20 @@ module Basic = struct
     ]
   [@@deriving sexp, eq, enumerate]
   ;;
+
+  (* Note: any NON-SIZABLE opcodes not present in this table map to
+     'unknown operands'. *)
+  let operand_table : ([> t], Operand_spec.t) List.Assoc.t =
+    (* See the Intel reference manual for the source of these. *)
+    Sizable.operand_table @
+    Operand_spec.
+      [ `Leave  , Zero
+      ; `Mfence , Zero
+      ; `Nop    , Zero
+      ]
+  ;;
+
+  let get_operand_spec = List.Assoc.find operand_table ~equal
 
   include (
     String_table.Make
