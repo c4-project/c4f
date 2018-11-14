@@ -1,25 +1,26 @@
 (* This file is part of 'act'.
 
-Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 open Core
 open Utils
@@ -53,9 +54,9 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
     }
 
   (** [validate_init init] validates an incoming litmus test's
-     init block. *)
+      init block. *)
   let validate_init (init : (string, Lang.Constant.t) List.Assoc.t)
-      : unit Or_error.t =
+    : unit Or_error.t =
     let dup =
       List.find_a_dup ~compare:(fun x y -> String.compare (fst x) (fst y))
         init
@@ -73,14 +74,14 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
       dup
 
   (** [validate_programs ps] validates an incoming litmus test's
-     programs. *)
+      programs. *)
   let validate_programs = function
     | [] -> Or_error.error_string "programs are empty"
     | p::ps ->
-       let l = List.length p in
-       Result.ok_if_true
-         (List.for_all ~f:(fun p' -> List.length p' = l) ps)
-         ~error:(Error.of_string "programs must be of uniform size")
+      let l = List.length p in
+      Result.ok_if_true
+        (List.for_all ~f:(fun p' -> List.length p' = l) ps)
+        ~error:(Error.of_string "programs must be of uniform size")
   ;;
 
   (** [validate lit] validates an incoming litmus test. *)
@@ -94,11 +95,11 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
     let open Or_error.Let_syntax in
     let lit = { name; init; programs } in
     let%map () = validate lit in
-  lit
+    lit
   ;;
 
   let pp_init (f : Format.formatter)
-              (init : (string, Lang.Constant.t) List.Assoc.t)
+      (init : (string, Lang.Constant.t) List.Assoc.t)
     : unit =
     My_format.pp_c_braces
       f
@@ -109,10 +110,10 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
               Format.fprintf f "@[%s = %a;@]" l Lang.Constant.pp c
            )
            f
-          init)
+           init)
 
   let pp_instr (f : Format.formatter) =
-      Format.fprintf f "@[<h>%a@]" Lang.Statement.pp
+    Format.fprintf f "@[<h>%a@]" Lang.Statement.pp
 
   module Program_tabulator = struct
     module M  = struct

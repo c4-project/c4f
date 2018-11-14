@@ -28,7 +28,7 @@ module T = struct
   (** [t] is the type of compiler IDs. *)
   type t = String.Caseless.t list [@@deriving compare, hash, sexp, bin_io]
 
-  let allowed_id_splits = [ '.' ; ' '; '/'; '\\']
+  let allowed_id_splits = [ '.' ; ' '; '/'; '\\' ]
 
   let of_string = String.split_on_chars ~on:allowed_id_splits
 
@@ -47,7 +47,7 @@ let%expect_test "equality is case-insensitive" =
          (compare
             (of_string "foo.bar.baz")
             (of_string "Foo.Bar.BAZ"))
-      : Ordering.t)
+       : Ordering.t)
     ];
   [%expect {| Equal |}]
 ;;
@@ -199,8 +199,8 @@ module Property = struct
   let%expect_test "eval_b: sample passing expression" =
     let query =
       Blang.t_of_sexp t_of_sexp
-      (Sexp.of_string
-         "(and (has_tag bar) (has_prefix foo))")
+        (Sexp.of_string
+           "(and (has_tag bar) (has_prefix foo))")
     in
     let id = of_string "Foo.Bar.Baz" in
     Sexp.output_hum Out_channel.stdout
@@ -210,8 +210,8 @@ module Property = struct
   let%expect_test "eval_b: sample failing expression" =
     let query =
       Blang.t_of_sexp t_of_sexp
-      (Sexp.of_string
-         "(and (has_tag bar) (is foo.bar))")
+        (Sexp.of_string
+           "(and (has_tag bar) (is foo.bar))")
     in
     let id = of_string "Foo.Bar.Baz" in
     Sexp.output_hum Out_channel.stdout

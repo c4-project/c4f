@@ -54,6 +54,7 @@ let mangler =
                       ; '_', 'U' (* Underscore *)
                       ; 'Z', 'Z' (* Z *)
                       ]
+;;
 let mangle = Staged.unstage mangler
 
 let%expect_test "mangle: sample" =
@@ -204,6 +205,7 @@ module Make (B : Basic)
     >>= sanitise_all_locs
     >>= (SimplifyLitmus |-> change_ret_to_end_jump)
     >>= (SimplifyLitmus |-> change_stack_to_heap)
+  ;;
 
   (** [mangle_identifiers progs] reduces identifiers across a program
       container [progs] into a form that herd can parse. *)
