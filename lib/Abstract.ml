@@ -129,6 +129,94 @@ module Statement = struct
   end
 end
 
+
+module Symbol = struct
+  type t = string
+
+  module Set = struct
+    module S = Set.Make (String)
+    include S
+    include My_set.Extend (S)
+  end
+
+  module Sort = struct
+    module M = struct
+      type t =
+        | Jump
+        | Heap
+        | Label
+          [@@deriving enum, sexp]
+
+      let table =
+        [ Jump,  "jump"
+        ; Heap,  "heap"
+        ; Label, "label"
+        ]
+    end
+
+    include M
+    include Enum.ExtendTable (M)
+  end
+
+  module Table = struct
+    type elt = t
+
+    (* Not necessarily an associative list: each symbol might be
+       in multiple different sort buckets. *)
+    type nonrec t = (t * Sort.t) list
+
+    let empty = []
+
+    let of_sets =
+      List.concat_map
+        ~f:(fun (set, sort) ->
+            List.map ~f:(fun sym -> (sym, sort))
+              (Set.to_list set)
+          )
+    ;;
+
+    let add tbl sym sort = (sym, sort) :: tbl
+
+    let remove tbl sym sort =
+      My_list.exclude
+        ~f:(Tuple2.equal ~eq1:String.equal ~eq2:Sort.equal (sym, sort))
+        tbl
+    ;;
+
+    let set_of_sorts tbl sorts =
+      tbl
+      |> List.filter_map
+        ~f:(fun (sym, sort) ->
+            if Sort.Set.mem sorts sort then Some sym else None)
+      |> Set.of_list
+    ;;
+
+    let set_of_sort tbl sort = set_of_sorts tbl (Sort.Set.singleton sort);;
+
+    let set tbl = tbl |> List.map ~f:fst |> Set.of_list;;
+
+    let mem tbl ?sort symbol =
+      let actual_sort =
+        List.Assoc.find tbl ~equal:String.equal symbol
+      in
+      Option.is_some actual_sort
+      && (Option.is_none sort
+          || Option.equal Sort.equal sort actual_sort)
+    ;;
+  end
+
+  let program_id_of sym =
+    let open Option.Let_syntax in
+    let%bind num_s = String.chop_prefix ~prefix:"P" sym in
+    let%bind num   = Caml.int_of_string_opt num_s in
+    Option.some_if (Int.is_non_negative num) num
+  ;;
+
+  let%expect_test "program_id_of: valid" =
+    Sexp.output Out_channel.stdout [%sexp (program_id_of "P0" : int option)];
+    [%expect {| (0) |}]
+end
+
 module Operands = struct
   type common =
     [ `Erroneous of Error.t
@@ -191,31 +279,72 @@ module Operands = struct
     ]
   [@@deriving sexp]
 
-  let rec is_part_unknown' = function
-    | `Unknown -> true
-    | `Single x -> is_part_unknown' (x :> [ t | any ])
-    | `Double (x, y) ->
-      is_part_unknown' (x :> [ t | any ])
-      || is_part_unknown' (y :> [ t | any ])
-    | `Src_dst {Src_dst.src; dst} ->
-      is_part_unknown' (src :> [ t | any ])
-      || is_part_unknown' (dst :> [t | any ])
-    | `Location _ | `Int _ | `Symbol _
-    | `None | `Other | `Erroneous _ -> false
+  let to_list : t -> any list = function
+    | `None -> []
+    | `Single x -> [x]
+    | `Double (x, y) -> [x; y]
+    | `Src_dst {Src_dst.src; dst} -> [src; (dst :> any)]
+    | `Unknown | `Other | `Erroneous _ as x -> [(x :> any)]
   ;;
-  let is_part_unknown (x : t) : bool = is_part_unknown' (x :> [ t | any ])
 
-  let rec errors' = function
-    | `Erroneous x -> [x]
-    | `Single x -> errors' (x :> [ t | any ])
-    | `Double (x, y) ->
-      errors' (x :> [ t | any ]) @ errors' (y :> [ t | any ])
-    | `Src_dst {Src_dst.src; dst} ->
-      errors' (src :> [ t | any ]) @ errors' (dst :> [t | any ])
-    | `Location _ | `Int _ | `Symbol _
-    | `None | `Other | `Unknown -> []
+  let is_part_unknown (x : t) : bool =
+    let f = function
+      | `Unknown -> true
+      | `Location _ | `Int _ | `Symbol _
+      | `Other | `Erroneous _ -> false
+    in List.exists ~f (to_list x)
   ;;
-  let errors (x : t) : Error.t list = errors' (x :> [ t | any ])
+
+  let errors (x : t) : Error.t list =
+    let f = function
+      | `Erroneous x -> Some x
+      | `Location _ | `Int _ | `Symbol _
+      | `Other | `Unknown -> None
+    in List.filter_map ~f (to_list x)
+  ;;
+
+  let uses_immediate_heap_symbol operands ~syms =
+    let f = function
+      | `Symbol sym ->
+        Symbol.(Table.mem syms ~sort:Sort.Heap sym)
+      | `Location _ | `Int _
+      | `Other | `Unknown | `Erroneous _ -> false
+    in List.exists ~f (to_list operands)
+  ;;
+
+  let%expect_test "uses_immediate_heap_symbol: src/dst positive" =
+    let syms =
+      Symbol.Table.of_sets
+        [ Symbol.Set.of_list [ "foo"; "bar"; "baz" ], Symbol.Sort.Heap
+        ; Symbol.Set.of_list [ "froz" ], Symbol.Sort.Label
+        ]
+    in
+    let result = uses_immediate_heap_symbol ~syms
+        (`Src_dst
+           { src = `Symbol "foo"
+           ; dst = `Location GeneralRegister
+           })
+    in
+    Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];
+    [%expect {| true |}]
+  ;;
+
+  let%expect_test "uses_immediate_heap_symbol: src/dst negative" =
+    let syms =
+      Symbol.Table.of_sets
+        [ Symbol.Set.of_list [ "foo"; "bar"; "baz" ], Symbol.Sort.Heap
+        ; Symbol.Set.of_list [ "froz" ], Symbol.Sort.Label
+        ]
+    in
+    let result = uses_immediate_heap_symbol ~syms
+        (`Src_dst
+           { src = `Symbol "froz"
+           ; dst = `Location GeneralRegister
+           })
+    in
+    Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];
+    [%expect {| false |}]
+  ;;
 
   let single operand = `Single operand
   let double op1 op2 = `Double (op1, op2)
@@ -240,82 +369,4 @@ module Operands = struct
         pp_src src
         pp_dst dst
   ;;
-end
-
-module Symbol = struct
-  type t = string
-
-  module Set = struct
-    module S = Set.Make (String)
-    include S
-    include My_set.Extend (S)
-  end
-
-  module Sort = struct
-    module M = struct
-      type t =
-        | Jump
-        | Heap
-        | Label
-          [@@deriving enum, sexp]
-
-      let table =
-        [ Jump,  "jump"
-        ; Heap,  "heap"
-        ; Label, "label"
-        ]
-    end
-
-    include M
-    include Enum.ExtendTable (M)
-  end
-
-  module Table = struct
-    type elt = t
-
-    (* Not necessarily an associative list: each symbol might be
-       in multiple different sort buckets. *)
-    type nonrec t = (t * Sort.t) list
-
-    let empty = [];;
-
-    let of_sets =
-      List.concat_map
-        ~f:(fun (set, sort) ->
-            List.map ~f:(fun sym -> (sym, sort))
-              (Set.to_list set)
-          )
-    ;;
-
-    let add tbl sym sort = (sym, sort) :: tbl;;
-
-    let remove tbl sym sort =
-      My_list.exclude
-        ~f:(Tuple2.equal ~eq1:String.equal ~eq2:Sort.equal (sym, sort))
-        tbl
-    ;;
-
-    let set_of_sorts tbl sorts =
-      tbl
-      |> List.filter_map
-        ~f:(fun (sym, sort) ->
-            if Sort.Set.mem sorts sort then Some sym else None)
-      |> Set.of_list
-    ;;
-
-    let set_of_sort tbl sort = set_of_sorts tbl (Sort.Set.singleton sort);;
-
-    let set tbl = tbl |> List.map ~f:fst |> Set.of_list;;
-  end
-
-  let program_id_of sym =
-    let open Option.Let_syntax in
-    let%bind num_s = String.chop_prefix ~prefix:"P" sym in
-    let%bind num   = Caml.int_of_string_opt num_s in
-    Option.some_if (Int.is_non_negative num) num
-  ;;
-
-  let%expect_test "program_id_of: valid" =
-    Sexp.output Out_channel.stdout [%sexp (program_id_of "P0" : int option)];
-    [%expect {| (0) |}]
 end

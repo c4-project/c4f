@@ -225,6 +225,7 @@ module Make (B : Basic)
     | Abstract.Statement.Other ->
       let%map () = Ctx.warn (Warn.UnknownElt (Warn.Statement stm)) in stm
     | _ -> return stm
+  ;;
 
   (** [sanitise_all_ins stm] iterates instruction sanitisation over
      every instruction in [stm], threading the context through
@@ -246,6 +247,7 @@ module Make (B : Basic)
        changes to the statements. *)
     >>= (Warn |-> warn_unknown_statements)
     >>= sanitise_all_ins
+  ;;
 
   (** [irrelevant_instruction_types] lists the high-level types of
       instruction that can be thrown out when converting to a litmus
@@ -257,6 +259,7 @@ module Make (B : Basic)
         ; Stack
         ]
     )
+  ;;
 
   let instruction_is_irrelevant =
     L.Statement.instruction_mem irrelevant_instruction_types

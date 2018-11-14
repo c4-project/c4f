@@ -136,8 +136,7 @@ module Make (B : Basic)
       ; is_program_boundary    stm, `ProgBoundary
       ; is_stack_manipulation  stm, `StackManip
       ]
-      |> List.map ~f:(Tuple2.uncurry Option.some_if)
-      |> List.filter_opt
+      |> List.filter_map ~f:(Tuple2.uncurry Option.some_if)
       |> Abstract.Statement.Flag.Set.of_list
     ;;
   end

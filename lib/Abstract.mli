@@ -115,6 +115,77 @@ module Statement : sig
   end
 end
 
+module Symbol : sig
+  (** Symbols are strings. *)
+  type t = string
+
+  (** [Set] is a set module for symbols. *)
+  module Set : sig
+    include Set.S with type Elt.t = string
+    include My_set.Extensions with type t := t
+  end
+
+  (** [Sort] is a module containing an enumeration of symbol sorts. *)
+  module Sort : sig
+    type t =
+      | Jump
+      | Heap
+      | Label
+
+    include Enum.ExtensionTable with type t := t
+  end
+
+  (** [Table] is a module concerning symbol tables: many-to-many
+     mappings between symbols and sorts. *)
+  module Table : sig
+    type elt = t
+    type t
+
+    (** [empty] is the empty table. *)
+    val empty : t
+
+    (** [of_sets sets] expands a symbol-set-to-sort associative list
+       into a [t]. *)
+    val of_sets : (Set.t, Sort.t) List.Assoc.t -> t
+
+    (** [add tbl sym sort] registers [sym] as a symbol with sort
+       [sort] in [tbl], returning a new table. *)
+    val add : t -> elt -> Sort.t -> t
+
+    (** [remove tbl sym sort] de-registers [sym] as a symbol with sort
+       [sort] in [tbl], returning a new table.
+
+        If [sym] also maps to another sort, those mappings remain. *)
+    val remove : t -> elt -> Sort.t -> t
+
+    (** [set_of_sorts tbl sorts] returns all symbols in [tbl] with a
+       sort in [sorts], as a symbol set. *)
+    val set_of_sorts : t -> Sort.Set.t -> Set.t
+
+    (** [set_of_sort tbl sort] returns all symbols in [tbl] with sort
+       [sort], as a symbol set. *)
+    val set_of_sort : t -> Sort.t -> Set.t
+
+    (** [set tbl] returns all symbols in [tbl]
+       as a symbol set. *)
+    val set : t -> Set.t
+
+    (** [mem tbl ?sort symbol] checks whether [symbol] is
+        in [tbl].  If [sort] is present, we additionally
+        require that [symbol] has sort [sort] in [tbl]. *)
+    val mem : t -> ?sort:Sort.t -> elt -> bool
+  end
+
+  (*
+   * Symbol heuristics
+   *)
+
+  (** [program_id_of sym] tries to interpret [sym] as a
+      program label; if so, it returns [Some n] where [n]
+      is the underlying program ID. *)
+  val program_id_of : t -> int option
+end
+
 (** [Operands] contains types and utilities for abstracted
    operand bundles. *)
 module Operands : sig
@@ -191,76 +262,21 @@ module Operands : sig
       bundle of source and destination operand. *)
   val is_src_dst : t -> bool
 
+  (** [uses_immediate_heap_symbol operands ~syms] returns [true] if
+     [operands] contains a symbol in immediate position that,
+     according to [syms], is a heap location.  This can mean that the
+     operands' parent instruction is manipulating a heap address, for
+     instance. *)
+  val uses_immediate_heap_symbol
+    :  t
+    -> syms:Symbol.Table.t
+    -> bool
+  ;;
+
   (** [double operand] constructs an operand bundle for an instruction
      with two operands [op1] and [op2], where the operands aren't
      related in any more specific way (eg [src_dst]). *)
   val double : any -> any -> t
 
   include S with type t := t
-end
-
-module Symbol : sig
-  (** Symbols are strings. *)
-  type t = string
-
-  (** [Set] is a set module for symbols. *)
-  module Set : sig
-    include Set.S with type Elt.t = string
-    include My_set.Extensions with type t := t
-  end
-
-  (** [Sort] is a module containing an enumeration of symbol sorts. *)
-  module Sort : sig
-    type t =
-      | Jump
-      | Heap
-      | Label
-
-    include Enum.ExtensionTable with type t := t
-  end
-
-  (** [Table] is a module concerning symbol tables: many-to-many
-     mappings between symbols and sorts. *)
-  module Table : sig
-    type elt = t
-    type t
-
-    (** [empty] is the empty table. *)
-    val empty : t;;
-
-    (** [of_sets sets] expands a symbol-set-to-sort associative list
-       into a [t]. *)
-    val of_sets : (Set.t, Sort.t) List.Assoc.t -> t;;
-
-    (** [add tbl sym sort] registers [sym] as a symbol with sort
-       [sort] in [tbl], returning a new table. *)
-    val add : t -> elt -> Sort.t -> t;;
-
-    (** [remove tbl sym sort] de-registers [sym] as a symbol with sort
-       [sort] in [tbl], returning a new table.
-
-        If [sym] also maps to another sort, those mappings remain. *)
-    val remove : t -> elt -> Sort.t -> t;;
-
-    (** [set_of_sorts tbl sorts] returns all symbols in [tbl] with a
-       sort in [sorts], as a symbol set. *)
-    val set_of_sorts : t -> Sort.Set.t -> Set.t;;
-
-    (** [set_of_sort tbl sort] returns all symbols in [tbl] with sort
-       [sort], as a symbol set. *)
-    val set_of_sort : t -> Sort.t -> Set.t;;
-
-    (** [set tbl] returns all symbols in [tbl]
-       as a symbol set. *)
-    val set : t -> Set.t;;
-  end
-
-  (*
-   * Symbol heuristics
-   *)
-
-  (** [program_id_of sym] tries to interpret [sym] as a
-      program label; if so, it returns [Some n] where [n]
-      is the underlying program ID. *)
-  val program_id_of : t -> int option
 end
