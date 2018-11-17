@@ -140,7 +140,7 @@ module Disp = struct
   module Base_map (M : Monad.S) = struct
     module F = Fold_map.Helpers (M)
 
-    let fold_map
+    let fold_mapM
         ~init
         ~symbolic ~numeric
         (x : t) : ('a * t) M.t =
@@ -159,8 +159,8 @@ module Disp = struct
         module B = Base_map (M)
         module F = Fold_map.Helpers (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
             ~symbolic:f
             (* Numeric displacements, of course, have no symbols *)
@@ -180,7 +180,7 @@ module Index = struct
   module Base_map (M : Monad.S) = struct
     module F = Fold_map.Helpers (M)
 
-    let fold_map
+    let fold_mapM
         ~init
         ?(unscaled=F.fold_nop)
         ?(scaled=F.fold_nop)
@@ -201,8 +201,8 @@ module Index = struct
         module B = Base_map (M)
         module F = Fold_map.Helpers (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
             ~unscaled:f
             ~scaled:M.(fun s (r, k) -> f s r >>| (fun (s, r') -> (s, (r', k))))
@@ -228,7 +228,7 @@ module Indirect = struct
   module Base_map (M : Monad.S) = struct
     module F = Fold_map.Helpers (M)
 
-    let fold_map
+    let fold_mapM
         ~init
         ~seg ~disp ~base ~index
         indirect =
@@ -257,12 +257,10 @@ module Indirect = struct
         module D = Disp.On_symbols.On_monad (M)
         module O = My_option.On_monad (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
-            ~disp:(fun init ->
-                O.fold_map ~f:(fun init -> D.fold_map ~f ~init)
-                  ~init)
+            ~disp:(Fold_map.chain O.fold_mapM ~f:(Fold_map.chain D.fold_mapM ~f))
             (* Segments, bases, and indices have no symbols. *)
             ~seg:F.fold_nop
             ~base:F.fold_nop
@@ -284,12 +282,12 @@ module Indirect = struct
         module O = My_option.On_monad (M)
         module I = Index.On_registers.On_monad (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
-            ~seg:(fun init -> O.fold_map ~f ~init)
-            ~base:(fun init -> O.fold_map ~f ~init)
-            ~index:(fun init -> O.fold_map ~f:(fun init -> I.fold_map ~f ~init) ~init)
+            ~seg:(Fold_map.chain O.fold_mapM ~f)
+            ~base:(Fold_map.chain O.fold_mapM ~f)
+            ~index:(Fold_map.chain O.fold_mapM ~f:(Fold_map.chain I.fold_mapM ~f))
             (* Displacements have no registers. *)
             ~disp:F.fold_nop
         ;;
@@ -313,7 +311,7 @@ module Location = struct
   module Base_map (M : Monad.S) = struct
     module F = Fold_map.Helpers (M)
 
-    let fold_map ~init ~indirect ~reg
+    let fold_mapM ~init ~indirect ~reg
         x =
       Variants.map
         x
@@ -334,10 +332,10 @@ module Location = struct
 
         module I  = Indirect.On_registers.On_monad (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
-            ~indirect:(fun init -> I.fold_map ~f ~init)
+            ~indirect:(Fold_map.chain I.fold_mapM ~f)
             ~reg:f
         ;;
       end
@@ -356,10 +354,10 @@ module Location = struct
 
         module I  = Indirect.On_symbols.On_monad (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
-            ~indirect:(fun init -> I.fold_map ~f ~init)
+            ~indirect:(Fold_map.chain I.fold_mapM ~f)
             (* Registers don't have any symbols *)
             ~reg:F.fold_nop
         ;;
@@ -386,7 +384,7 @@ module Operand = struct
   module Base_map (M : Monad.S) = struct
     module F = Fold_map.Helpers (M)
 
-    let rec fold_map
+    let rec fold_mapM
         ~init
         ~location
         ~immediate
@@ -403,9 +401,9 @@ module Operand = struct
         ~bop:(F.proc_variant3
                 (fun init (l, b, r) ->
                    let open M.Let_syntax in
-                   let%bind (init, l') = fold_map ~init ~location ~immediate ~string ~typ ~bop l in
+                   let%bind (init, l') = fold_mapM ~init ~location ~immediate ~string ~typ ~bop l in
                    let%bind (init, b') = bop init b in
-                   let%map  (init, r') = fold_map ~init ~location ~immediate ~string ~typ ~bop r in
+                   let%map  (init, r') = fold_mapM ~init ~location ~immediate ~string ~typ ~bop r in
                    (init, (l', b', r')))
                 init)
 
@@ -423,8 +421,8 @@ module Operand = struct
         module B = Base_map (M)
         module F = Fold_map.Helpers (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
             ~location:f
             (* These don't contain locations: *)
@@ -451,11 +449,11 @@ module Operand = struct
         module L = Location.On_symbols.On_monad (M)
         module D = Disp.On_symbols.On_monad (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
-            ~location:(fun init -> L.fold_map ~f ~init)
-            ~immediate:(fun init -> D.fold_map ~f ~init)
+            ~location:(Fold_map.chain L.fold_mapM ~f)
+            ~immediate:(Fold_map.chain D.fold_mapM ~f)
             (* These don't contain symbols: *)
             ~string:F.fold_nop
             ~typ:F.fold_nop
@@ -516,7 +514,7 @@ module Instruction = struct
   module Base_map (M : Monad.S) = struct
     module F = Fold_map.Helpers (M)
 
-    let fold_map
+    let fold_mapM
         ~init
         ~prefix ~opcode ~operands
         ins =
@@ -543,10 +541,10 @@ module Instruction = struct
         module OS = Operand.On_symbols.On_monad (M)
         module L  = My_list.On_monad (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
-            ~operands:(Fold_map.chain L.fold_map ~f:(Fold_map.chain OS.fold_map ~f))
+            ~operands:(Fold_map.chain L.fold_mapM ~f:(Fold_map.chain OS.fold_mapM ~f))
             (* Prefixes and opcodes don't contain symbols. *)
             ~prefix:F.fold_nop
             ~opcode:F.fold_nop
@@ -568,10 +566,10 @@ module Instruction = struct
         module OL = Operand.On_locations.On_monad (M)
         module L  = My_list.On_monad (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
-            ~operands:(Fold_map.chain L.fold_map ~f:(Fold_map.chain OL.fold_map ~f))
+            ~operands:(Fold_map.chain L.fold_mapM ~f:(Fold_map.chain OL.fold_mapM ~f))
             (* Prefixes and opcodes don't contain locations. *)
             ~prefix:F.fold_nop
             ~opcode:F.fold_nop
@@ -592,7 +590,7 @@ module Statement = struct
   module Base_map (M : Monad.S) = struct
     module F = Fold_map.Helpers (M)
 
-    let fold_map ~init ~instruction ~label ~nop x =
+    let fold_mapM ~init ~instruction ~label ~nop x =
       Variants.map x
         ~instruction:(F.proc_variant1 instruction init)
         ~label:(F.proc_variant1 label init)
@@ -613,8 +611,8 @@ module Statement = struct
         module F = Fold_map.Helpers (M)
         module I = Instruction.On_symbols.On_monad (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
             ~instruction:f
             (* These don't contain instructions: *)
@@ -636,10 +634,10 @@ module Statement = struct
         module F = Fold_map.Helpers (M)
         module I = Instruction.On_symbols.On_monad (M)
 
-        let fold_map ~f ~init t =
-          B.fold_map t
+        let fold_mapM ~f ~init t =
+          B.fold_mapM t
             ~init
-            ~instruction:(Fold_map.chain I.fold_map ~f)
+            ~instruction:(Fold_map.chain I.fold_mapM ~f)
             ~label:f
             (* These don't contain symbols: *)
             ~nop:F.fold_nop

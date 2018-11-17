@@ -30,7 +30,7 @@ include Fold_map.Make_container1 (struct
     type 'a t = 'a list
 
     module On_monad (M : Monad.S) = struct
-      let fold_map ~f ~init xs =
+      let fold_mapM ~f ~init xs =
         let open M.Let_syntax in
         let%map (acc_final, xs_final) =
           List.fold_left xs

@@ -32,14 +32,14 @@ include Fold_map_intf
 module Derived_ops_monadic_gen (I: Generic_monadic) = struct
   let foldM c ~init ~f =
     I.M.(
-      I.fold_map ~init c ~f:(fun k x -> f k x >>| fun x' -> (x', x))
+      I.fold_mapM ~init c ~f:(fun k x -> f k x >>| fun x' -> (x', x))
       >>| fst
     )
   ;;
 
   let mapM ~f c =
     I.M.(
-      I.fold_map ~f:(fun () x -> f x >>| Tuple2.create ()) ~init:() c
+      I.fold_mapM ~f:(fun () x -> f x >>| Tuple2.create ()) ~init:() c
       >>| snd
     )
   ;;
@@ -48,7 +48,7 @@ module Derived_ops_monadic_gen (I: Generic_monadic) = struct
 
   let mapiM ~f c =
     I.M.(
-      I.fold_map ~init:0 c
+      I.fold_mapM ~init:0 c
         ~f:(fun k x -> f k x >>| fun x' -> (k + 1, x'))
       >>| snd
     )
@@ -64,6 +64,7 @@ module Derived_ops_gen (I: Generic) = struct
   module D = Derived_ops_monadic_gen (struct
       module M = Monad.Ident
       include I
+      let fold_mapM = I.fold_map
     end)
   ;;
   let iter = D.iterM
@@ -80,6 +81,7 @@ end = struct
   module D = Derived_ops_monadic_gen (struct
       module M = Monad.Ident
       include I
+      let fold_mapM = I.fold_map
     end)
   ;;
   let fold = D.foldM
@@ -91,12 +93,14 @@ module Make_container0 (I : Basic_container0)
   (* We can implement the non-monadic fold-map using the identity
      monad. *)
   include I.On_monad (Monad.Ident)
+  let fold_map = fold_mapM
 
   module Gen
     : Generic with type 'a t = I.t and type 'a elt = I.Elt.t = struct
     type 'a t = I.t
     type 'a elt = I.Elt.t
     include I.On_monad (Monad.Ident)
+    let fold_map = fold_mapM
   end
 
   include Container.Make0 (struct
@@ -122,12 +126,14 @@ end
 module Make_container1 (I : Basic_container1)
   : Container1 with type 'a t := 'a I.t = struct
   include I.On_monad (Monad.Ident)
+  let fold_map = fold_mapM
 
   module Gen
     : Generic with type 'a t = 'a I.t and type 'a elt = 'a = struct
     type 'a t = 'a I.t
     type 'a elt = 'a
     include I.On_monad (Monad.Ident)
+    let fold_map = fold_mapM
   end
 
   module C = Container.Make (struct

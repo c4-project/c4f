@@ -30,7 +30,7 @@ include Fold_map.Make_container1 (struct
     type 'a t = 'a option
 
     module On_monad (M : Monad.S) = struct
-      let fold_map ~f ~init xo =
+      let fold_mapM ~f ~init xo =
         let open M.Let_syntax in
         Option.fold xo
           ~init:(return (init, None))

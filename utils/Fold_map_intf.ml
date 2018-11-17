@@ -37,19 +37,33 @@ module type Generic_monadic = sig
   (** [M] is the monad over which we're fold-mapping. *)
   module M : Monad.S
 
-  (** [fold_map ~f ~init c] folds [f] monadically over every [t] in
+  (** [fold_mapM ~f ~init c] folds [f] monadically over every [t] in
      [c], threading through an accumulator with initial value
      [init]. *)
-  val fold_map
+  val fold_mapM
     :  f    : ('acc -> 'a elt -> ('acc * 'b elt) M.t)
     -> init : 'acc
     -> 'a t
     -> ('acc * 'b t) M.t
+  ;;
 end
 
-(** [Generic] is the non-monadic version of
-    [Generic_monadic], generated using the identity monad. *)
-module type Generic = Generic_monadic with module M := Monad.Ident
+(** [Generic] is the non-monadic version of [Generic_monadic]. *)
+module type Generic = sig
+  (** [t] is the type of container to map over. *)
+  type 'a t
+  (** [elt] is the type of element inside the container. *)
+  type 'a elt
+
+  (** [fold_map ~f ~init c] folds [f] over every [t] in
+     [c], threading through an accumulator with initial value [init]. *)
+  val fold_map
+    :  f    : ('acc -> 'a elt -> ('acc * 'b elt))
+    -> init : 'acc
+    -> 'a t
+    -> ('acc * 'b t)
+  ;;
+end
 
 (** [S0_monadic] is the signature of a monadic fold-map over
     arity-0 containers. *)
@@ -57,7 +71,7 @@ module type S0_monadic = sig
   type t
   type elt
 
-  (** [S0]s can fold-map: the container type is always [t],
+  (** [S0_monadic]s can fold-map: the container type is always [t],
       and the element type is always [elt]. *)
   include Generic_monadic with type 'a t := t and type 'a elt := elt
 end
@@ -68,7 +82,7 @@ module type S1_monadic = sig
   (** [t] is the type of the container to map over. *)
   type 'a t
 
-  (** [S0]s can fold-map: when the container type is ['a t],
+  (** [S1_monadic]s can fold-map: when the container type is ['a t],
       the element type is ['a]. *)
   include Generic_monadic with type 'a t := 'a t and type 'a elt := 'a
 end
@@ -78,11 +92,25 @@ end
 
 (** [S0] is the signature of a basic fold-map over
     arity-0 containers. *)
-module type S0 = S0_monadic with module M := Monad.Ident
+module type S0 = sig
+  type t
+  type elt
+
+  (** [S0]s can fold-map: the container type is always [t],
+      and the element type is always [elt]. *)
+  include Generic with type 'a t := t and type 'a elt := elt
+end
 
 (** [S1] is the signature of a basic fold-map over
     arity-1 containers. *)
-module type S1 = S1_monadic with module M := Monad.Ident
+module type S1 = sig
+   (** [t] is the type of the container to map over. *)
+  type 'a t
+
+  (** [S1]s can fold-map: when the container type is ['a t],
+      the element type is ['a]. *)
+  include Generic with type 'a t := 'a t and type 'a elt := 'a
+end
 
 (** Building containers from fold-mappable types *)
 

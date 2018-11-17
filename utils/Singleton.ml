@@ -30,7 +30,7 @@ include Fold_map.Make_container1 (struct
     type nonrec 'a t = 'a t
 
     module On_monad (M : Monad.S) = struct
-      let fold_map ~f ~init x = f init x
+      let fold_mapM ~f ~init = f init
     end
   end)
 ;;
