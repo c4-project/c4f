@@ -41,6 +41,30 @@ type t =
   }
 ;;
 
+module Litmus_format : sig
+  (** [t] is an enumeration of output formats for litmus jobs. *)
+  type t =
+    | Full           (** Output a full, herd-compatible litmus test *)
+    | Programs_only  (** Only output the program tables (eg for comparison) *)
+  [@@deriving eq]
+  ;;
+
+  (** [default] gets the default output format. *)
+  val default : t
+end
+
+module Explain_format : sig
+  (** [explain_format] is an enumeration of output formats for explain jobs. *)
+  type t =
+    | Assembly  (** Terse, but as close to parseable assembly as possible *)
+    | Detailed  (** More details than [Assembly], but verbose and free-form *)
+  [@@deriving eq]
+  ;;
+
+  (** [default] gets the default output format. *)
+  val default : t
+end
+
 (** [output] is the output of a single-file job. *)
 type output
 
@@ -55,19 +79,23 @@ val warn : output -> Format.formatter -> unit
 
 (** [Runner] is the signature of job runners. *)
 module type Runner = sig
-  (** [litmusify ?programs_only t] runs a litmusify job using [t].
-
-      If [programs_only] is present and true, the runner will only
-     output the program table---not the rest of the Litmus file.  This
-     is intended for quick comparisons and tests. *)
+  (** [litmusify ?output_format t] runs a litmusify job using [t].
+      If [output_format] is given, it overrides the default
+      ([Litmus_format.default]). *)
   val litmusify
-    :  ?programs_only:bool
+    :  ?output_format:Litmus_format.t
     -> t
     -> output Or_error.t
   ;;
 
-  (** [explain] runs an explain job. *)
-  val explain : t -> output Or_error.t
+  (** [explain ?output_format t] runs an explain job over [t].
+      If [output_format] is given, it overrides the default
+      ([Output.default]). *)
+  val explain
+    :  ?output_format:Explain_format.t
+    -> t
+    -> output Or_error.t
+  ;;
 end
 
 (** [Runner_deps] is a signature bringing together the modules we
@@ -88,7 +116,7 @@ module type Runner_deps = sig
                    and type 'a Program_container.t = 'a
   ;;
   module Explainer
-    : Explainer.S with type statement = Litmus.Lang.Statement.t
+    : Explainer.S with type statement := Litmus.Lang.Statement.t
   ;;
 
   val final_convert : Litmus.Lang.Statement.t list -> Litmus.Lang.Statement.t list

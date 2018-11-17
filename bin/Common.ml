@@ -81,7 +81,7 @@ let lift_command
   ) |> Output.print_error o
 ;;
 
-let litmusify ?programs_only (o : Output.t) inp outp symbols
+let litmusify ?output_format (o : Output.t) inp outp symbols
     target =
   let open Result.Let_syntax in
   let%bind runner = runner_of_target target in
@@ -95,7 +95,7 @@ let litmusify ?programs_only (o : Output.t) inp outp symbols
   in
   let%map output =
     Or_error.tag ~tag:"While translating assembly to litmus"
-      (Runner.litmusify ?programs_only input)
+      (Runner.litmusify ?output_format input)
   in
   Asm_job.warn output o.wf;
   Asm_job.symbol_map output

@@ -106,6 +106,7 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
             | Reg EBP -> StackPointer
             | Reg _ -> GeneralRegister
             | Indirect i -> indirect_abs_type i
+          ;;
         end)
     end
 
@@ -129,11 +130,11 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
       let label s = Ast.Statement.Label s
       let instruction = Ast.Statement.instruction
 
-      let abs_type =
-        let open Abstract.Statement in
-        function
+      module Abs = Abstract.Statement
+
+      let abs_type = function
         | Ast.Statement.Instruction { opcode = Opcode.Directive s; _ } ->
-          Directive s
+          Abs.Directive s
         | Instruction i -> Instruction (Instruction.abs_type i)
         | Label l -> Label l
         | Nop -> Blank

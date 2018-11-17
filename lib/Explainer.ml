@@ -21,77 +21,142 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
+open Core_kernel
+
+module type Basic_explanation = sig
+  type elt
+  type context
+  include Abstractable.S with type t := elt
+  include Pretty_printer.S with type t := elt
+  val abs_flags : elt -> context -> Abs.Flag.Set.t
+end
+
+module type Explanation = sig
+  type t
+  type elt
+  type context
+  include Abstractable.S with type t := t
+  include Pretty_printer.S with type t := t
+  val original : t -> elt
+  val abs_flags : t -> Abs.Flag.Set.t
+  val create : context:context -> original:elt -> t
+end
+
+module Make_explanation (B : Basic_explanation)
+  : Explanation with type elt := B.elt
+                 and type context := B.context
+                 and module Abs := B.Abs = struct
+  type t =
+    { original  : B.elt
+    ; abs_type  : B.Abs.t
+    ; abs_flags : B.Abs.Flag.Set.t
+    }
+  [@@deriving fields]
+  ;;
+
+  let create ~context ~original =
+    { original
+    ; abs_type  = B.abs_type original
+    ; abs_flags = B.abs_flags original context
+    }
+  ;;
+
+  let pp f t =
+    Format.pp_open_vbox f 0;
+    Fields.Direct.iter t
+      ~original:(fun _ _ ->
+          Format.fprintf f "@[%a@]@ " B.pp)
+      ~abs_type:(fun _ _ ->
+          Format.fprintf f "@[^--@ type:@ %a@]@ " B.Abs.pp)
+      ~abs_flags:(fun _ _ ->
+          Format.fprintf f "@[ '-@ flags:@ %a@]" B.Abs.Flag.pp_set);
+    Format.pp_close_box f ()
+  ;;
+end
 
 module type S = sig
   type statement
 
-  type stm_explanation =
-    { original : statement
-    ; abs_type : Abstract.Statement.t
-    ; flags : Abstract.Statement.Flag.Set.t
-    }
+  module Stm_explanation
+    : Explanation with type elt := statement
+                   and type context := Abstract.Symbol.Table.t
+                   and module Abs := Abstract.Statement
+  ;;
 
   type t =
-    { statements : stm_explanation list
+    { statements : Stm_explanation.t list
     }
 
   include Pretty_printer.S with type t := t
+  val pp_as_assembly : Base.Formatter.t -> t -> unit
 
   val explain : statement list -> t
 end
 
-module Make (LS : Language.S) = struct
-  type statement = LS.Statement.t
+module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
+  module Stm_explanation = Make_explanation (struct
+      module Abs = Abstract.Statement
 
-  type stm_explanation =
-    { original : statement
-    ; abs_type : Abstract.Statement.t
-    ; flags : Abstract.Statement.Flag.Set.t
-    }
+      type elt = LS.Statement.t
+      let pp = LS.Statement.pp
+      type context = Abstract.Symbol.Table.t
+
+      let abs_type = LS.Statement.abs_type
+
+      let abs_flags x syms = LS.Statement.flags ~syms x
+    end)
+  ;;
 
   type t =
-    { statements : stm_explanation list
+    { statements : Stm_explanation.t list
     }
 
   let explain_statement syms stm =
-    { original = stm
-    ; abs_type = LS.Statement.abs_type stm
-    ; flags = LS.Statement.flags ~syms stm
-    }
+    Stm_explanation.create ~context:syms ~original:stm
+  ;;
 
   let explain prog =
     let syms = LS.symbols prog in
     { statements = List.map ~f:(explain_statement syms) prog
     }
 
-  let stringify_stm_basic =
-    (* TODO(@MattWindsor91): merge with pp? *)
-    let open Abstract.Statement in
-    function
-    | Blank -> ""
+  (* TODO(@MattWindsor91): merge with pp? *)
+  let stringify_stm_basic = function
+    | Abstract.Statement.Blank -> ""
     | Directive _ -> "directive"
     | Label _ -> "label"
     | Instruction ins -> Abstract.Instruction.to_string ins
     | Other -> "??"
 
   let pp_explanation f exp =
-    Format.fprintf f "@[<--@ @[%s%a@]@]"
-      (stringify_stm_basic exp.abs_type)
-      Abstract.Statement.Flag.pp_set exp.flags
+    Stm_explanation.(
+      Format.fprintf f "@[<--@ @[%s%a@]@]"
+        (stringify_stm_basic (abs_type exp))
+        Abstract.Statement.Flag.pp_set (abs_flags exp)
+    )
+  ;;
 
   let pp_statement f exp =
     (* TODO(@MattWindsor91): emit '<-- xyz' in a comment *)
-    let open Abstract.Statement in
-    match exp.abs_type with
-    | Blank -> () (* so as not to clutter up blank lines *)
-    | _ ->
-      Format.fprintf f "@[<h>%a@ %a@]@,"
-        LS.Statement.pp exp.original
-        (LS.pp_comment ~pp:pp_explanation) exp
+    Stm_explanation.(
+      match Stm_explanation.abs_type exp with
+      | Abstract.Statement.Blank -> () (* so as not to clutter up blank lines *)
+      | _ ->
+        Format.fprintf f "@[<h>%a@ %a@]"
+          LS.Statement.pp (original exp)
+          (LS.pp_comment ~pp:pp_explanation) exp
+    )
+  ;;
+
+  let pp_as_assembly f exp =
+    Format.fprintf f "@[<v>%a@]"
+      (Format.pp_print_list pp_statement ~pp_sep:Format.pp_print_space)
+      exp.statements
+  ;;
 
   let pp f exp =
-    Format.pp_open_vbox f 0;
-    List.iter ~f:(pp_statement f) exp.statements;
-    Format.pp_close_box f ()
+    Format.fprintf f "@[<v>%a@]"
+      (Format.pp_print_list Stm_explanation.pp ~pp_sep:Format.pp_print_space)
+      exp.statements
+  ;;
 end

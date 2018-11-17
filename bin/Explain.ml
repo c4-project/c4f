@@ -36,7 +36,8 @@ let print_symbol_map = function
       map
 ;;
 
-let run compiler_id_or_arch symbols sanitise ~infile ~outfile o cfg =
+let run compiler_id_or_arch output_format symbols sanitise
+    ~infile ~outfile o cfg =
   let open Or_error.Let_syntax in
   let passes = Sanitiser_pass.(
       if sanitise then explain else Set.empty
@@ -53,7 +54,7 @@ let run compiler_id_or_arch symbols sanitise ~infile ~outfile o cfg =
       ; symbols
       }
     in
-    let%map out = Runner.explain input in
+    let%map out = Runner.explain ?output_format input in
     Asm_job.warn out o.Output.wf;
     print_symbol_map (Asm_job.symbol_map out)
   )
@@ -79,16 +80,31 @@ let command =
              string)
           [%sexp_of: string list]
           ~doc: "SYMBOLS comma-separated list of symbols to track"
+      and output_format =
+        Asm_job.Explain_format.(
+          choose_one
+            [ map ~f:(fun flag -> Option.some_if flag (Some Detailed))
+                (flag "detailed"
+                   no_arg
+                   ~doc: "Print a detailed (but long-winded) explanation")
+            ; map ~f:(fun flag -> Option.some_if flag (Some Assembly))
+                (flag "as-assembly"
+                   no_arg
+                   ~doc: "Print explanation as lightly annotated assembly")
+            ]
+            ~if_nothing_chosen:(`Default_to None)
+        )
       and outfile =
         flag "output"
           (optional file)
           ~doc: "FILE the explanation output file (default: stdout)"
-      and infile =
-        anon (maybe ("FILE" %: file))
-      in
+      and infile = anon (maybe ("FILE" %: file)) in
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run compiler_id_or_arch symbols sanitise ~infile ~outfile)
+          ~f:(run compiler_id_or_arch
+                output_format
+                symbols sanitise
+                ~infile ~outfile)
     ]
 ;;

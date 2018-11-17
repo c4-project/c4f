@@ -26,11 +26,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Utils
 
+(** [S_flag] is the baseline signature for all abstract flag types. *)
+module type S_flag = sig
+  type t
+  include Enum.Extension_table with type t := t
+end
+
+(** [No_flag] is a dummy implementation of [S_flag]. *)
+module No_flag : S_flag with type t = Nothing.t
+
 (** [S] is the baseline signature for all abstract observation
    types. *)
 module type S = sig
   type t [@@deriving sexp]
   include Pretty_printer.S with type t := t
+
+  (** [Flag] is a (potentially unpopulated) set of additional flags that
+      can be attached to an observation. *)
+  module Flag : S_flag
 end
 
 (** [S_enum] is an extended signature for abstract observation types
@@ -58,6 +71,7 @@ module Instruction : sig
     | Stack   (** stack resizing and pointer manipulation *)
     | Other   (** known, but doesn't fit in these categories *)
     | Unknown (** unclassified instruction *)
+  ;;
 
   (* Why do we have a separate [Return] type, instead of classing it
      as [Call] or [Jump]?  Two reasons:
@@ -80,6 +94,7 @@ module Location : sig
     | Heap of string     (** Named heap location *)
     | GeneralRegister    (** General-purpose register *)
     | Unknown            (** Not known *)
+  ;;
 
   include S with type t := t
 end
@@ -94,8 +109,7 @@ module Statement : sig
     | Blank
     | Label of string
     | Other
-
-  include S with type t := t
+  ;;
 
   (** [Flag] is an enumeration of various statement observations.
 
@@ -113,6 +127,8 @@ module Statement : sig
        type. *)
     include Enum.Extension_table with type t := t
   end
+
+  include S with type t := t and module Flag := Flag
 end
 
 module Symbol : sig

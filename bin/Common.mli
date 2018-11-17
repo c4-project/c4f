@@ -82,12 +82,12 @@ val lift_command
   -> unit
 ;;
 
-(** [litmusify ?programs_only o inp outp symbols spec_or_emits] is a
+(** [litmusify ?output_format inp outp symbols spec_or_emits] is a
    thin wrapper around [Asm_job]'s litmusify mode that handles finding
    the right job runner, printing warnings, and supplying the maximal
    pass set. *)
 val litmusify
-  :  ?programs_only:bool
+  :  ?output_format:Asm_job.Litmus_format.t
   -> Output.t
   -> Io.In_source.t
   -> Io.Out_sink.t

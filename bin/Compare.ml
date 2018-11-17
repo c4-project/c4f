@@ -40,7 +40,7 @@ let compile o spec ~c_file =
 
 let litmusify o spec ~asm_file =
   Common.litmusify o
-    ~programs_only:true
+    ~output_format:Asm_job.Litmus_format.Programs_only
     (`File asm_file)
     `Stdout
     []

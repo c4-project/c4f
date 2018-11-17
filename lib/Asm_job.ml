@@ -32,6 +32,24 @@ type t =
   }
 ;;
 
+module Litmus_format = struct
+  type t =
+    | Full
+    | Programs_only
+  [@@deriving eq]
+  ;;
+  let default = Full
+end
+
+module Explain_format = struct
+  type t =
+    | Assembly
+    | Detailed
+  [@@deriving eq]
+  ;;
+  let default = Assembly
+end
+
 (** [output] is the output of a single-file job. *)
 type output =
   { symbol_map : (string, string) List.Assoc.t
@@ -55,7 +73,7 @@ module type Runner_deps = sig
                    and type 'a Program_container.t = 'a
   ;;
   module Explainer
-    : Explainer.S with type statement = Litmus.Lang.Statement.t
+    : Explainer.S with type statement := Litmus.Lang.Statement.t
   ;;
 
   val final_convert : Litmus.Lang.Statement.t list -> Litmus.Lang.Statement.t list
@@ -65,11 +83,15 @@ end
 
 module type Runner = sig
   val litmusify
-    :  ?programs_only:bool
+    :  ?output_format:Litmus_format.t
     -> t
     -> output Or_error.t
   ;;
-  val explain : t -> output Or_error.t
+  val explain
+    :  ?output_format:Explain_format.t
+    -> t
+    -> output Or_error.t
+  ;;
 end
 
 module Make_runner (B : Runner_deps) : Runner = struct
@@ -126,33 +148,47 @@ module Make_runner (B : Runner_deps) : Runner = struct
     }
   ;;
 
+  let pp_for_litmus_format
+    : Litmus_format.t -> Base.Formatter.t -> L.t -> unit = function
+    | Full          -> L.pp
+    | Programs_only -> L.pp_programs
+  ;;
+
+  let make_litmus name programs =
+    Or_error.tag ~tag:"Couldn't build litmus file."
+      ( L.make ~name
+          ~init:(make_init programs)
+          ~programs:(List.map ~f:B.final_convert programs)
+      )
+  ;;
+
   let output_litmus
-    (programs_only : bool)
-    (name : string)
-    (passes : Sanitiser_pass.Set.t)
-    (symbols : LS.Symbol.t list)
-    (program : LS.Statement.t list)
-    (_osrc : Io.Out_sink.t)
-    (outp : Out_channel.t) =
+      (output_format : Litmus_format.t)
+      (name : string)
+      (passes : Sanitiser_pass.Set.t)
+      (symbols : LS.Symbol.t list)
+      (program : LS.Statement.t list)
+      (_osrc : Io.Out_sink.t)
+      (outp : Out_channel.t) =
     let open Or_error.Let_syntax in
     let%bind o = MS.sanitise ~passes ~symbols program in
     let programs = MS.Output.result o in
     let warnings = MS.Output.warnings o in
-    let%map lit =
-      Or_error.tag ~tag:"Couldn't build litmus file."
-        ( L.make ~name
-            ~init:(make_init programs)
-            ~programs:(List.map ~f:B.final_convert programs)
-        )
-    in
+    let%map lit = make_litmus name programs in
     let f = Format.formatter_of_out_channel outp in
-    let pp = if programs_only then L.pp_programs else L.pp in
-    pp f lit;
+    pp_for_litmus_format output_format f lit;
     Format.pp_print_newline f ();
     make_output name (MS.Output.redirects o) warnings
   ;;
 
+  let pp_for_explain_format
+    : Explain_format.t -> Base.Formatter.t -> E.t -> unit = function
+    | Assembly -> E.pp_as_assembly
+    | Detailed -> E.pp
+  ;;
+
   let output_explanation
+      (output_format : Explain_format.t)
       (name    : string)
       (passes  : Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
@@ -163,8 +199,8 @@ module Make_runner (B : Runner_deps) : Runner = struct
     let%map san = SS.sanitise ~passes ~symbols program in
     let exp = E.explain (SS.Output.result san) in
     let f = Format.formatter_of_out_channel outp in
-    E.pp f exp;
-    Format.pp_print_flush f ();
+    pp_for_explain_format output_format f exp;
+    Format.pp_print_newline f ();
     make_output name (SS.Output.redirects san) []
   ;;
 
@@ -190,8 +226,10 @@ module Make_runner (B : Runner_deps) : Runner = struct
       ~f:(f name t.passes symbols (B.statements asm))
   ;;
 
-  let litmusify ?(programs_only=false) =
-    run ~f:(output_litmus programs_only)
+  let litmusify ?(output_format=Litmus_format.default) =
+    run ~f:(output_litmus output_format)
   ;;
-  let explain = run ~f:output_explanation
+  let explain ?(output_format=Explain_format.default) =
+    run ~f:(output_explanation output_format)
+  ;;
 end

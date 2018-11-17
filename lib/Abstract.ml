@@ -25,9 +25,28 @@
 open Core
 open Utils
 
+module type S_flag = sig
+  type t
+  include Enum.Extension_table with type t := t
+end
+
+module No_flag : S_flag with type t = Nothing.t = struct
+  type t = Nothing.t
+  include Enum.Extend_table (struct
+      include Nothing
+      let of_enum _ = failwith "Tried to get a flag when none exist"
+      let to_enum x = Nothing.unreachable_code x
+      let min = -1
+      let max = -1
+      let table = []
+    end)
+end
+
 module type S = sig
   type t [@@deriving sexp]
   include Pretty_printer.S with type t := t
+
+  module Flag : S_flag
 end
 
 module type S_enum = sig
@@ -73,6 +92,7 @@ module Instruction = struct
 
   include M
   include Enum.Extend_table (M)
+  module Flag = No_flag
 end
 
 module Location = struct
@@ -91,6 +111,9 @@ module Location = struct
     | Heap            s -> Format.fprintf f "heap[%s]" s
     | GeneralRegister   -> String.pp      f "reg"
     | Unknown           -> String.pp      f "??"
+  ;;
+
+  module Flag = No_flag
 end
 
 module Statement = struct
@@ -128,7 +151,6 @@ module Statement = struct
     include Enum.Extend_table (M)
   end
 end
-
 
 module Symbol = struct
   type t = string
@@ -215,6 +237,8 @@ module Symbol = struct
   let%expect_test "program_id_of: valid" =
     Sexp.output Out_channel.stdout [%sexp (program_id_of "P0" : int option)];
     [%expect {| (0) |}]
+
+  module Flag = No_flag
 end
 
 module Operands = struct
@@ -369,4 +393,6 @@ module Operands = struct
         pp_src src
         pp_dst dst
   ;;
+
+  module Flag = No_flag
 end
