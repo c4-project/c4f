@@ -48,7 +48,7 @@ type t =
   | Warn
 
 (** We include the usual enum extensions for [Pass]. *)
-include Enum.ExtensionTable with type t := t
+include Enum.Extension_table with type t := t
 
 (** [explain] collects passes that are useful for explaining an
     assembly file without modifying its semantics too much. *)

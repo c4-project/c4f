@@ -32,7 +32,7 @@ end
 
 module type S_enum = sig
   include S
-  include Enum.ExtensionTable with type t := t
+  include Enum.Extension_table with type t := t
 end
 
 module Instruction = struct
@@ -72,7 +72,7 @@ module Instruction = struct
   end
 
   include M
-  include Enum.ExtendTable (M)
+  include Enum.Extend_table (M)
 end
 
 module Location = struct
@@ -125,7 +125,7 @@ module Statement = struct
     end
 
     include M
-    include Enum.ExtendTable (M)
+    include Enum.Extend_table (M)
   end
 end
 
@@ -155,7 +155,7 @@ module Symbol = struct
     end
 
     include M
-    include Enum.ExtendTable (M)
+    include Enum.Extend_table (M)
   end
 
   module Table = struct

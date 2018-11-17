@@ -108,7 +108,7 @@ module Reg = struct
   end
 
   include M
-  include Enum.ExtendTable (M)
+  include Enum.Extend_table (M)
 
   type kind =
     | Gen8 of [`Low | `High]

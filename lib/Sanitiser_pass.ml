@@ -47,7 +47,7 @@ module M = struct
 end
 
 include M
-include Enum.ExtendTable (M)
+include Enum.Extend_table (M)
 
 let explain = Set.of_list [ RemoveUseless ]
 

@@ -67,7 +67,7 @@ module Reg : sig
     | EIP
   ;;
 
-  include Enum.ExtensionTable with type t := t
+  include Enum.Extension_table with type t := t
 
   (** [kind] enumerates the general kinds of register. *)
   type kind =

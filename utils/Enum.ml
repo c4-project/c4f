@@ -22,80 +22,36 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Helper functions and modules for enums *)
+open Core_kernel
+include Enum_intf
 
-open Core
-
-module type S = sig
-  type t
-
-  val min : int
-  val max : int
-  val to_enum : t -> int
-  val of_enum : int -> t option
-end
-
-module type SSexp = sig
-  include S
-  include Sexpable.S with type t := t
-end
-
-module type SSexpTable = sig
-  include SSexp
-  include String_table.Table with type t := t
-end
-
-module type Extension = sig
-  type t
-
-  include Comparable.S with type t := t
-  include Hashable.S with type t := t
-  include Sexpable.S with type t := t
-
-  val to_enum : t -> int
-  val of_enum : int -> t option
-  val of_enum_exn : int -> t
-  val min_enum : int
-  val max_enum : int
-  val all_list : unit -> t list
-  val all_set : unit -> Set.t
-end
-
-module type ExtensionTable = sig
-  include Extension
-  include String_table.S with type t := t
-  include Identifiable.S_common with type t := t
-
-  val of_string_option : string -> t option
-  val pp_set : Format.formatter -> Set.t -> unit
-end
-
-module EnumCompare (E : SSexp)
+module Make_comparable (E : S_sexp)
   : Comparable.S with type t := E.t =
   Comparable.Make (struct
     include E
 
-    let compare x y = Int.compare (E.to_enum x) (E.to_enum y);;
+    let compare = My_fn.on E.to_enum Int.compare
   end)
+;;
 
-module EnumHash (E : SSexp)
+module Make_hashable (E : S_sexp)
   : Hashable.S with type t := E.t =
   Hashable.Make (struct
     include E
-    include EnumCompare (E)
-    let hash x = Int.hash (E.to_enum x);;
-    let hash_fold_t s x = Int.hash_fold_t s (E.to_enum x);;
+    include Make_comparable (E)
+    let hash x = Int.hash (E.to_enum x)
+    let hash_fold_t s x = Int.hash_fold_t s (E.to_enum x)
   end)
+;;
 
-module Extend (E : SSexp)
-  : Extension with type t := E.t = struct
-  include EnumCompare (E)
-  include EnumHash (E)
+module Extend (E : S_sexp) : Extension with type t := E.t = struct
+  include Make_comparable (E)
+  include Make_hashable (E)
 
   include (E : Sexpable.S with type t := E.t)
 
-  let of_enum = E.of_enum;;
-  let to_enum = E.to_enum;;
+  let of_enum = E.of_enum
+  let to_enum = E.to_enum
 
   let of_enum_exn k = Option.value_exn (of_enum k);;
 
@@ -110,7 +66,8 @@ module Extend (E : SSexp)
   let all_set () = Set.of_list (all_list ());;
 end
 
-module ExtendTable (E : SSexpTable) : ExtensionTable with type t := E.t = struct
+module Extend_table (E : S_sexp_table)
+  : Extension_table with type t := E.t = struct
   module Ex = Extend (E)
   include Ex
 

@@ -37,7 +37,7 @@ end
     that are also enumerations. *)
 module type S_enum = sig
   include S
-  include Enum.ExtensionTable with type t := t
+  include Enum.Extension_table with type t := t
 end
 
 (** [Instruction] contains types and utilities for abstracted
@@ -111,7 +111,7 @@ module Statement : sig
 
     (** [Flag] contains various enum extensions, including a [Set]
        type. *)
-    include Enum.ExtensionTable with type t := t
+    include Enum.Extension_table with type t := t
   end
 end
 
@@ -132,7 +132,7 @@ module Symbol : sig
       | Heap
       | Label
 
-    include Enum.ExtensionTable with type t := t
+    include Enum.Extension_table with type t := t
   end
 
   (** [Table] is a module concerning symbol tables: many-to-many
