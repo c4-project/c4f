@@ -22,10 +22,22 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Abstract_base
+open Core
+open Utils
 
-module Instruction = Abstract_instruction
-module Statement   = Abstract_statement
-module Symbol      = Abstract_symbol
-module Location    = Abstract_location
-module Operands    = Abstract_operands
+module type S = sig
+  type t
+  include Enum.Extension_table with type t := t
+end
+
+module None : S with type t = Nothing.t = struct
+  type t = Nothing.t
+  include Enum.Extend_table (struct
+      include Nothing
+      let of_enum _ = failwith "Tried to get a flag when none exist"
+      let to_enum x = Nothing.unreachable_code x
+      let min = -1
+      let max = -1
+      let table = []
+    end)
+end

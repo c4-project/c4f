@@ -22,10 +22,29 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Abstract_base
+open Utils
 
-module Instruction = Abstract_instruction
-module Statement   = Abstract_statement
-module Symbol      = Abstract_symbol
-module Location    = Abstract_location
-module Operands    = Abstract_operands
+(** [t] is an abstracted statement. *)
+type t =
+  | Directive of string
+  | Instruction of Abstract_instruction.t
+  | Blank
+  | Label of string
+  | Other
+;;
+
+(** [Flag] is an enumeration of various statement observations. *)
+module Flag : sig
+  type t =
+    [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
+    | `ProgBoundary  (* A label that looks like a program boundary *)
+    | `StackManip    (* A statement that only serves to manipulate
+                        the call stack *)
+    ]
+
+  (** [Flag] contains various enum extensions, including a [Set]
+      type. *)
+  include Enum.Extension_table with type t := t
+end
+
+include Abstract_base.S with type t := t and module Flag := Flag

@@ -22,10 +22,39 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Abstract_base
+open Core_kernel
+open Utils
 
-module Instruction = Abstract_instruction
-module Statement   = Abstract_statement
-module Symbol      = Abstract_symbol
-module Location    = Abstract_location
-module Operands    = Abstract_operands
+type t =
+  | Directive of string
+  | Instruction of Abstract_instruction.t
+  | Blank
+  | Label of string
+  | Other
+[@@deriving sexp]
+
+let pp f = function
+  | Blank         -> ()
+  | Directive   d -> Format.fprintf          f "directive@ (%s)" d
+  | Label       l -> Format.fprintf          f ":%s"             l
+  | Instruction i -> Abstract_instruction.pp f i
+  | Other         -> String.pp               f "??"
+
+module Flag = struct
+  module M = struct
+    type t =
+      [ `UnusedLabel
+      | `ProgBoundary
+      | `StackManip
+      ] [@@deriving enum, sexp]
+
+    let table =
+      [ `UnusedLabel, "unused label"
+      ; `ProgBoundary, "program boundary"
+      ; `StackManip, "manipulates stack"
+      ]
+  end
+
+  include M
+  include Enum.Extend_table (M)
+end

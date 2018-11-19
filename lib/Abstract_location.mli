@@ -22,10 +22,16 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Abstract_base
+(** [Abstract_location] contains types and utilities for abstracted
+    locations. *)
 
-module Instruction = Abstract_instruction
-module Statement   = Abstract_statement
-module Symbol      = Abstract_symbol
-module Location    = Abstract_location
-module Operands    = Abstract_operands
+(** [t] is an abstracted location. *)
+type t =
+  | StackPointer       (** Stack pointer *)
+  | StackOffset of int (** Absolute offset from stack pointer *)
+  | Heap of string     (** Named heap location *)
+  | GeneralRegister    (** General-purpose register *)
+  | Unknown            (** Not known *)
+;;
+
+include Abstract_base.S with type t := t

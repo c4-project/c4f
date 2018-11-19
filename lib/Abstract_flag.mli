@@ -22,10 +22,21 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Abstract_base
+(** Language abstraction layer: flags
 
-module Instruction = Abstract_instruction
-module Statement   = Abstract_statement
-module Symbol      = Abstract_symbol
-module Location    = Abstract_location
-module Operands    = Abstract_operands
+    Many elements in the abstraction layer expose a set of Boolean
+    flags, and a way to retrieve the subset of them that holds for a
+    concrete element (given some wider context).  This interface
+    declares signatures and helper modules for these flags. *)
+
+open Core_kernel
+open Utils
+
+(** [S] is the baseline signature for all abstract flag types. *)
+module type S = sig
+  type t
+  include Enum.Extension_table with type t := t
+end
+
+(** [None] is a dummy implementation of [S]. *)
+module None : S with type t = Nothing.t

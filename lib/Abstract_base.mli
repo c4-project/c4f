@@ -22,10 +22,25 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Abstract_base
+(** Language abstraction layer: base signatures *)
 
-module Instruction = Abstract_instruction
-module Statement   = Abstract_statement
-module Symbol      = Abstract_symbol
-module Location    = Abstract_location
-module Operands    = Abstract_operands
+open Base
+open Utils
+
+(** [S] is the baseline signature for all abstract observation
+    types. *)
+module type S = sig
+  type t [@@deriving sexp]
+  include Pretty_printer.S with type t := t
+
+  (** [Flag] is a (potentially unpopulated) set of additional flags that
+      can be attached to an observation. *)
+  module Flag : Abstract_flag.S
+end
+
+(** [S_enum] is an extended signature for abstract observation types
+    that are also enumerations. *)
+module type S_enum = sig
+  include S
+  include Enum.Extension_table with type t := t
+end

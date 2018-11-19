@@ -22,10 +22,23 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Abstract_base
+open Core_kernel
 
-module Instruction = Abstract_instruction
-module Statement   = Abstract_statement
-module Symbol      = Abstract_symbol
-module Location    = Abstract_location
-module Operands    = Abstract_operands
+type t =
+  | StackPointer
+  | StackOffset of int
+  | Heap of string
+  | GeneralRegister
+  | Unknown
+[@@deriving sexp]
+;;
+
+let pp f = function
+  | StackPointer      -> String.pp      f "&stack"
+  | StackOffset     i -> Format.fprintf f "stack[%d]" i
+  | Heap            s -> Format.fprintf f "heap[%s]" s
+  | GeneralRegister   -> String.pp      f "reg"
+  | Unknown           -> String.pp      f "??"
+;;
+
+module Flag = Abstract_flag.None

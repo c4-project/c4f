@@ -22,10 +22,43 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Abstract_base
+open Utils
 
-module Instruction = Abstract_instruction
-module Statement   = Abstract_statement
-module Symbol      = Abstract_symbol
-module Location    = Abstract_location
-module Operands    = Abstract_operands
+module M = struct
+  type t =
+    | Arith
+    | Call
+    | Compare
+    | Fence
+    | Jump
+    | Logical
+    | Move
+    | Nop
+    | Return
+    | Rmw
+    | Stack
+    | Other
+    | Unknown
+  [@@deriving enum, sexp]
+  ;;
+
+  let table =
+    [ Arith  , "arith"
+    ; Call   , "call"
+    ; Compare, "compare"
+    ; Fence  , "fence"
+    ; Jump   , "jump"
+    ; Logical, "logical"
+    ; Move   , "move"
+    ; Nop    , "nop"
+    ; Return , "return"
+    ; Rmw    , "RMW"
+    ; Stack  , "stack"
+    ; Other  , "other"
+    ; Unknown, "??"
+    ]
+end
+
+include M
+include Enum.Extend_table (M)
+module Flag = Abstract_flag.None

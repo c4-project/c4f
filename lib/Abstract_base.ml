@@ -22,10 +22,18 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Abstract_base
+(** Language abstraction layer: base signatures *)
 
-module Instruction = Abstract_instruction
-module Statement   = Abstract_statement
-module Symbol      = Abstract_symbol
-module Location    = Abstract_location
-module Operands    = Abstract_operands
+open Base
+open Utils
+
+module type S = sig
+  type t [@@deriving sexp]
+  include Pretty_printer.S with type t := t
+  module Flag : Abstract_flag.S
+end
+
+module type S_enum = sig
+  include S
+  include Enum.Extension_table with type t := t
+end
