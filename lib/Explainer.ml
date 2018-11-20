@@ -118,7 +118,7 @@ module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
   end
 
   module Stm_explanation = struct
-    module Flag = LS.Statement.Flag
+    module Flag = LS.Statement.Extended_flag
     module Base = Make_explanation (struct
         module Abs = Abstract.Statement
         module Flag = Flag
@@ -129,7 +129,7 @@ module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
 
         let abs_type = LS.Statement.abs_type
 
-        let abs_flags = LS.Statement.flags
+        let abs_flags = LS.Statement.extended_flags
       end)
     ;;
 

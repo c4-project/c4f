@@ -215,16 +215,20 @@ module type S = sig
         operations implicitly route through [abs_type]. *)
     include Abstract.Statement.S_properties with type t := t
 
-    (** [Flag] expands [Abstract.Statement.Flag] with an extra flag,
-        representing program boundaries. *)
-    module Flag : Abstract_flag.S with type t =
+    (** [Extended_flag] expands [Abstract.Statement.Flag] with an
+       extra flag, representing program boundaries. *)
+    module Extended_flag : Abstract_flag.S with type t =
       [ Abstract.Statement.Flag.t | `Program_boundary ]
     ;;
 
-    (** [flags stm symbol_table] behaves like
-        [Abstract.Statement.flags], but can also return
-        [`Program_boundary]. *)
-    val flags :  t -> Abstract.Symbol.Table.t -> Flag.Set.t
+    (** [extended_flags stm symbol_table] behaves like
+        [flags], but can also return the new flags in [Extended_flag].
+    *)
+    val extended_flags
+      :  t
+      -> Abstract.Symbol.Table.t
+      -> Extended_flag.Set.t
+    ;;
   end
 
   (** [symbols] retrieves the symbol table for a given program. *)

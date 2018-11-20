@@ -53,7 +53,7 @@ module Make (B : Basic)
   module Statement = struct
     include B.Statement
 
-    module Flag = struct
+    module Extended_flag = struct
       module M = struct
         type t =
           [ Abstract.Statement.Flag.t
@@ -90,13 +90,22 @@ module Make (B : Basic)
       && is_unused_label stm ~symbol_table
     ;;
 
-    let flags stm symbol_table =
+    let coerced_flags stm symbol_table =
       let abs_flags = flags stm symbol_table in
-      Flag.Set.union
-        (Flag.Set.map abs_flags ~f:(fun x -> (x :> Flag.t)))
-        (if is_program_boundary stm
-         then Flag.Set.singleton `Program_boundary
-         else Flag.Set.empty)
+      let coerce x = (x :> Extended_flag.t) in
+      Extended_flag.Set.map abs_flags ~f:coerce
+    ;;
+
+    let new_flags stm _symbol_table =
+      if is_program_boundary stm
+      then Extended_flag.Set.singleton `Program_boundary
+      else Extended_flag.Set.empty
+    ;;
+
+    let extended_flags stm symbol_table =
+      Extended_flag.Set.union
+        (coerced_flags stm symbol_table)
+        (new_flags stm symbol_table)
     ;;
   end
 
