@@ -60,25 +60,27 @@ type output =
 module type Runner_deps = sig
   type ast
 
+  module Lang : Language.S
+
   module Frontend : Frontend.S with type ast := ast
   module Litmus : Litmus.S
   module Multi_sanitiser
-    : Sanitiser.S with type statement = Litmus.Lang.Statement.t
-                   and type sym = Litmus.Lang.Symbol.t
+    : Sanitiser.S with type statement = Lang.Statement.t
+                   and type sym = Lang.Symbol.t
                    and type 'a Program_container.t = 'a list
   ;;
   module Single_sanitiser
-    : Sanitiser.S with type statement = Litmus.Lang.Statement.t
-                   and type sym = Litmus.Lang.Symbol.t
+    : Sanitiser.S with type statement = Lang.Statement.t
+                   and type sym = Lang.Symbol.t
                    and type 'a Program_container.t = 'a
   ;;
-  module Explainer
-    : Explainer.S with type statement := Litmus.Lang.Statement.t
-  ;;
+  module Explainer : Explainer.S with module Lang := Lang
 
-  val final_convert : Litmus.Lang.Statement.t list -> Litmus.Lang.Statement.t list
+  val final_convert
+    :  Lang.Statement.t list
+    -> Litmus.Lang.Statement.t list
 
-  val statements : ast -> Litmus.Lang.Statement.t list
+  val statements : ast -> Lang.Statement.t list
 end
 
 module type Runner = sig
@@ -97,7 +99,7 @@ end
 module Make_runner (B : Runner_deps) : Runner = struct
   (* Shorthand for modules we use a _lot_. *)
   module L  = B.Litmus
-  module LS = L.Lang
+  module LS = B.Lang
   module MS = B.Multi_sanitiser
   module SS = B.Single_sanitiser
   module E  = B.Explainer
@@ -113,14 +115,15 @@ module Make_runner (B : Runner_deps) : Runner = struct
       "Error while parsing assembly" iname String.sexp_of_t
   ;;
 
-  let make_init (progs : LS.Statement.t list list) : (string, LS.Constant.t) List.Assoc.t =
+  let make_init (progs : LS.Statement.t list list)
+    : (string, L.Lang.Constant.t) List.Assoc.t =
     let get_hsyms prog =
       prog
       |> LS.symbols
       |> Fn.flip Abstract.Symbol.Table.set_of_sort Abstract.Symbol.Sort.Heap
     in
     let syms = Abstract.Symbol.Set.union_list (List.map ~f:get_hsyms progs) in
-    List.map ~f:(fun s -> (s, LS.Constant.zero))
+    List.map ~f:(fun s -> (s, L.Lang.Constant.zero))
       (Abstract.Symbol.Set.to_list syms)
   ;;
 
@@ -154,7 +157,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
     | Programs_only -> L.pp_programs
   ;;
 
-  let make_litmus name programs =
+  let make_litmus name (programs : LS.Statement.t list list) =
     Or_error.tag ~tag:"Couldn't build litmus file."
       ( L.make ~name
           ~init:(make_init programs)

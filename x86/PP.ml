@@ -231,12 +231,9 @@ module Intel_and_herd7 = struct
       Format.printf "%a@." pp_reg EAX;
       [%expect {| EAX |}]
 
-    let pp_index f =
-      function
+    let pp_index f = function
       | Index.Unscaled r -> pp_reg f r
-      | Scaled (r, i) -> Format.fprintf f "%a*%d"
-                                        pp_reg r
-                                        i
+      | Scaled (r, i) -> Format.fprintf f "%a*%d" pp_reg r i
 
     let pp_indirect f indirect =
       let pp_seg f = Format.fprintf f "%a:" pp_reg in
@@ -366,9 +363,14 @@ module Make (D : Dialect) =
       Format.pp_print_char f ',';
       Format.pp_print_space f
 
-    let pp_oplist =
-      Format.pp_print_list ~pp_sep:pp_comma
-                           pp_operand
+    let pp_oplist f = function
+      | [] -> ()
+      | operands ->
+        (* Glue between operator and operands *)
+        Format.pp_print_space f ();
+        Format.pp_print_list ~pp_sep:pp_comma
+          pp_operand f operands
+    ;;
 
     (*
      * Prefixes
@@ -411,7 +413,7 @@ module Make (D : Dialect) =
 
     let pp_instruction f { Instruction.prefix; opcode; operands } =
       Format.fprintf f
-                     "@[@[%a%a@]@ %a@]"
+                     "@[@[%a%a@]%a@]"
                      (My_format.pp_option ~pp:pp_prefix) prefix
                      pp_opcode opcode
                      pp_oplist operands

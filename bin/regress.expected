@@ -13,7 +13,7 @@ xorl %EAX, %EAX # <-- logical
 movl $2, -20(%EBP) # <-- move
 movl -20(%EBP), %EAX # <-- move
 movl %EAX, y # <-- move
-mfence  # <-- fence
+mfence # <-- fence
 movl x, %EAX # <-- move
 movl %EAX, -16(%EBP) # <-- move
 movl -16(%EBP), %EAX # <-- move
@@ -23,8 +23,8 @@ xorl %GS:20, %EAX # <-- logical
 je .L2 # <-- jump
 call __stack_chk_fail # <-- call
 .L2:  # <-- label
-leave  # <-- call
-ret  # <-- return
+leave # <-- call
+ret # <-- return
 P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -35,18 +35,18 @@ xorl %EAX, %EAX # <-- logical
 movl $1, -20(%EBP) # <-- move
 movl -20(%EBP), %EAX # <-- move
 movl %EAX, x # <-- move
-mfence  # <-- fence
+mfence # <-- fence
 movl $1, -16(%EBP) # <-- move
 movl -16(%EBP), %EAX # <-- move
 movl %EAX, y # <-- move
-mfence  # <-- fence
+mfence # <-- fence
 movl -12(%EBP), %EAX # <-- move
 xorl %GS:20, %EAX # <-- logical
 je .L4 # <-- jump
 call __stack_chk_fail # <-- call
 .L4:  # <-- label
-leave  # <-- call
-ret  # <-- return
+leave # <-- call
+ret # <-- return
 ```
 ## gcc_macho_o0_moves.s
 
@@ -64,8 +64,8 @@ cmpl $1, %EAX # <-- compare
 jne L3 # <-- jump
 movl $1, _x # <-- move
 L3:  # <-- label
-leave  # <-- call
-ret  # <-- return
+leave # <-- call
+ret # <-- return
 _P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -78,10 +78,10 @@ jne L6 # <-- jump
 movl $1, -4(%EBP) # <-- move
 movl -4(%EBP), %EAX # <-- move
 movl %EAX, _y # <-- move
-mfence  # <-- fence
+mfence # <-- fence
 L6:  # <-- label
-leave  # <-- call
-ret  # <-- return
+leave # <-- call
+ret # <-- return
 ```
 
 Ran 2 test(s).

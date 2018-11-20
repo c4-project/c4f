@@ -1,25 +1,26 @@
 (* This file is part of 'act'.
 
-Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 (** High-level front-end for assembly translation jobs
 
@@ -74,7 +75,7 @@ type output
 val symbol_map : output -> (string, string) List.Assoc.t
 
 (** [warn o f] prints any warnings attached to output [o] on
-   pretty-print formatter [f]. *)
+    pretty-print formatter [f]. *)
 val warn : output -> Format.formatter -> unit
 
 (** [Runner] is the signature of job runners. *)
@@ -99,29 +100,31 @@ module type Runner = sig
 end
 
 (** [Runner_deps] is a signature bringing together the modules we
-   need to be able to run single-file jobs. *)
+    need to be able to run single-file jobs. *)
 module type Runner_deps = sig
   type ast
+
+  (** [Lang] is the main language used in the jobs, which may differ
+      from the [Litmus] language. *)
+  module Lang : Language.S
 
   module Frontend : Frontend.S with type ast := ast
   module Litmus : Litmus.S
   module Multi_sanitiser
-    : Sanitiser.S with type statement = Litmus.Lang.Statement.t
-                   and type sym = Litmus.Lang.Symbol.t
+    : Sanitiser.S with type statement = Lang.Statement.t
+                   and type sym = Lang.Symbol.t
                    and type 'a Program_container.t = 'a list
   ;;
   module Single_sanitiser
-    : Sanitiser.S with type statement = Litmus.Lang.Statement.t
-                   and type sym = Litmus.Lang.Symbol.t
+    : Sanitiser.S with type statement = Lang.Statement.t
+                   and type sym = Lang.Symbol.t
                    and type 'a Program_container.t = 'a
   ;;
-  module Explainer
-    : Explainer.S with type statement := Litmus.Lang.Statement.t
-  ;;
+  module Explainer : Explainer.S with module Lang := Lang
 
-  val final_convert : Litmus.Lang.Statement.t list -> Litmus.Lang.Statement.t list
+  val final_convert : Lang.Statement.t list -> Litmus.Lang.Statement.t list
 
-  val statements : ast -> Litmus.Lang.Statement.t list
+  val statements : ast -> Lang.Statement.t list
 end
 
 (** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)

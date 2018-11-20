@@ -23,69 +23,92 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Utils
 
 module type Basic_explanation = sig
   type elt
   type context
+  type details
   include Abstractable.S with type t := elt
   include Pretty_printer.S with type t := elt
   module Flag : Abstract_flag.S
   val abs_flags : elt -> context -> Flag.Set.t
+  val make_details : elt -> context -> details
+  val pp_details : Format.formatter -> details -> unit
 end
 
 module type Explanation = sig
   type t
   type elt
+  type details
   type context
   include Abstractable.S with type t := t
   include Pretty_printer.S with type t := t
   module Flag : Abstract_flag.S
   val original : t -> elt
+  val details : t -> details
   val abs_flags : t -> Flag.Set.t
-  val create : context:context -> original:elt -> t
+  val make : context:context -> original:elt -> t
 end
 
 module Make_explanation (B : Basic_explanation)
   : Explanation with type elt := B.elt
                  and type context := B.context
+                 and type details := B.details
                  and module Abs := B.Abs
                  and module Flag := B.Flag = struct
   type t =
     { original  : B.elt
     ; abs_type  : B.Abs.t
     ; abs_flags : B.Flag.Set.t
+    ; details   : B.details
     }
   [@@deriving fields]
   ;;
 
-  let create ~context ~original =
+  let make ~context ~original =
     { original
+    ; details   = B.make_details original context
     ; abs_type  = B.abs_type original
     ; abs_flags = B.abs_flags original context
     }
   ;;
 
   let pp f t =
-    Format.pp_open_vbox f 0;
+    Format.pp_open_vbox f 4;
     Fields.Direct.iter t
       ~original:(fun _ _ ->
-          Format.fprintf f "@[%a@]@ " B.pp)
+          Format.fprintf f "@[[@,%a]@,@]" B.pp)
       ~abs_type:(fun _ _ ->
-          Format.fprintf f "@[^--@ type:@ %a@]@ " B.Abs.pp)
-      ~abs_flags:(fun _ _ ->
-          Format.fprintf f "@[ '-@ flags:@ %a@]" B.Flag.pp_set);
+          Format.fprintf f "@ @[type:@ %a@]" B.Abs.pp)
+      ~abs_flags:(fun _ _ flags ->
+          if not (B.Flag.Set.is_empty flags)
+          then Format.fprintf f "@ @[flags:@ %a@]" B.Flag.pp_set flags)
+      ~details:(fun _ _ -> B.pp_details f);
     Format.pp_close_box f ()
   ;;
 end
 
 module type S = sig
-  type statement
+  module Lang : Language.S
 
-  module Stm_explanation
-    : Explanation with type elt := statement
-                   and type context := Abstract.Symbol.Table.t
-                   and module Abs := Abstract.Statement
-  ;;
+  module Ins_explanation : sig
+    include Explanation with type elt := Lang.Instruction.t
+                         and type context := unit
+                         and module Abs := Abstract.Instruction
+    ;;
+
+    include Abstract.Instruction.S_properties with type t := t
+  end
+
+  module Stm_explanation : sig
+    include Explanation with type elt := Lang.Statement.t
+                         and type context := Abstract.Symbol.Table.t
+                         and module Abs := Abstract.Statement
+    ;;
+
+    include Abstract.Statement.S_properties with type t := t
+  end
 
   type t =
     { statements : Stm_explanation.t list
@@ -94,46 +117,92 @@ module type S = sig
   include Pretty_printer.S with type t := t
   val pp_as_assembly : Base.Formatter.t -> t -> unit
 
-  val explain : statement list -> t
+  val explain : Lang.Statement.t list -> t
 end
 
-module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
-
+module Make (LS : Language.S) : S with module Lang := LS = struct
   module Ins_explanation = struct
     module Flag = Abstract.Instruction.Flag
-    module Base = Make_explanation (struct
-        module Abs = Abstract.Instruction
-        module Flag = Flag
+    module Base = struct
+      module Abs = Abstract.Instruction
+      module Flag = Flag
 
-        type elt = LS.Instruction.t
-        let pp = LS.Instruction.pp
-        type context = unit
+      type elt = LS.Instruction.t
+      let pp = LS.Instruction.pp
+      type context = unit
 
-        let abs_type = LS.Instruction.abs_type
-        let abs_flags = fun _ () -> Flag.Set.empty
-      end)
-    ;;
+      type details = unit
+      let make_details _ _ = ()
+      let pp_details _f () = ()
 
-    include Base
+      let abs_type = LS.Instruction.abs_type
+      let abs_flags = fun _ () -> Flag.Set.empty
+    end
+
+    type details = Base.details
+
+    include Make_explanation (Base)
+    include Abstract.Instruction.Inherit_properties
+        (Abstract.Instruction)
+        (struct
+          type nonrec t = t
+          let component = abs_type
+        end)
   end
 
   module Stm_explanation = struct
     module Flag = LS.Statement.Extended_flag
-    module Base = Make_explanation (struct
-        module Abs = Abstract.Statement
-        module Flag = Flag
+    module Base = struct
+      module Abs = Abstract.Statement
+      module Flag = Flag
 
-        type elt = LS.Statement.t
-        let pp = LS.Statement.pp
-        type context = Abstract.Symbol.Table.t
+      type elt = LS.Statement.t
+      let pp = LS.Statement.pp
+      type context = Abstract.Symbol.Table.t
 
-        let abs_type = LS.Statement.abs_type
+      type details =
+        { instructions : Ins_explanation.t list }
+      [@@deriving fields]
+      ;;
 
-        let abs_flags = LS.Statement.extended_flags
-      end)
-    ;;
+      let describe_instructions stm =
+        stm
+        |> LS.Statement.On_instructions.to_list
+        |> List.map
+          ~f:(fun original ->
+              Ins_explanation.make ~original ~context:())
+      ;;
 
-    include Base
+      let make_details stm _context =
+        { instructions = describe_instructions stm }
+      ;;
+
+      let pp_instruction_details f = function
+        | [] -> ()
+        | ins ->
+          Format.fprintf f "@,@[<v 4>Instruction details:@,%a@]"
+            (Format.pp_print_list ~pp_sep:Format.pp_print_space
+               Ins_explanation.pp) ins
+      ;;
+
+      let pp_details f =
+        Fields_of_details.Direct.iter
+          ~instructions:(fun _ _ -> pp_instruction_details f)
+      ;;
+
+      let abs_type = LS.Statement.abs_type
+      let abs_flags = LS.Statement.extended_flags
+    end
+
+    type details = Base.details
+
+    include Make_explanation (Base)
+    include Abstract.Statement.Inherit_properties
+        (Abstract.Statement)
+        (struct
+          type nonrec t = t
+          let component = abs_type
+        end)
   end
 
   type t =
@@ -141,7 +210,7 @@ module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
     }
 
   let explain_statement syms stm =
-    Stm_explanation.create ~context:syms ~original:stm
+    Stm_explanation.make ~context:syms ~original:stm
   ;;
 
   let explain prog =
@@ -178,9 +247,12 @@ module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
   ;;
 
   let pp_as_assembly f exp =
+    let non_blank_statements =
+      My_list.exclude ~f:Stm_explanation.is_blank exp.statements
+    in
     Format.fprintf f "@[<v>%a@]"
       (Format.pp_print_list pp_statement ~pp_sep:Format.pp_print_space)
-      exp.statements
+      non_blank_statements
   ;;
 
   let pp f exp =

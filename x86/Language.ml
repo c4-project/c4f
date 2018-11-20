@@ -118,13 +118,10 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
       end)
 
     module Statement = struct
-      type sym = Symbol.t
       type t = Ast.Statement.t
       let sexp_of_t = [%sexp_of: Ast.Statement.t]
       let t_of_sexp = [%of_sexp: Ast.Statement.t]
       let pp = P.pp_statement
-
-      type ins = Ast.Instruction.t
 
       let empty () = Ast.Statement.Nop
       let label s = Ast.Statement.Label s

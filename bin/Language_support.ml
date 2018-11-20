@@ -41,15 +41,15 @@ let get_runner_x86 = function
     (module Asm_job.Make_runner (struct
          type ast = X86.Ast.t
 
-         module L = (val l)
+         module Lang = (val l)
 
          module Frontend = (val f)
          module Litmus = X86.Litmus.LitmusDirect
-         module Multi_sanitiser = X86.Sanitiser.Make_multi (L)
-         module Single_sanitiser = X86.Sanitiser.Make_single (L)
-         module Explainer = Explainer.Make (L)
+         module Multi_sanitiser = X86.Sanitiser.Make_multi (Lang)
+         module Single_sanitiser = X86.Sanitiser.Make_single (Lang)
+         module Explainer = Explainer.Make (Lang)
 
-         module Conv = X86.Conv.Make (L) (X86.Language.Herd7)
+         module Conv = X86.Conv.Make (Lang) (X86.Language.Herd7)
 
          let final_convert = Conv.convert
          let statements = X86.Ast.program

@@ -156,10 +156,10 @@ module type Basic = sig
   module Constant    : Basic_constant
   module Location    : Basic_location
   module Symbol      : Language_symbol.Basic
-  module Instruction : Basic_instruction with type loc = Location.t
-                                          and type sym = Symbol.t
-  module Statement   : Basic_statement with type ins = Instruction.t
-                                        and type sym = Symbol.t
+  module Instruction : Basic_instruction with type loc := Location.t
+                                          and type sym := Symbol.t
+  module Statement   : Basic_statement with type ins := Instruction.t
+                                        and type sym := Symbol.t
 end
 
 (** [S] is the user-facing interface module for act languages.
@@ -183,8 +183,8 @@ module type S = sig
   end
 
   module Instruction : sig
-    include Basic_instruction with type loc = Location.t
-                               and type sym = Symbol.t
+    include Basic_instruction with type loc := Location.t
+                               and type sym := Symbol.t
     (** As a convenience, we can query abstract instruction properties
         directly on the concrete instruction type.  All of these
         operations implicitly route through [abs_type] and
@@ -193,8 +193,8 @@ module type S = sig
   end
 
   module Statement : sig
-    include Basic_statement with type ins = Instruction.t
-                             and type sym = Symbol.t
+    include Basic_statement with type ins := Instruction.t
+                             and type sym := Symbol.t
     (** [is_unused_ordinary_label stm ~symbol_table] tests whether
        [stm] is an unused (not-jumped-to) label that doesn't have
        special meaning to act.  It uses [~symbol_table] in the same
