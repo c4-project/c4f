@@ -25,7 +25,7 @@
 (** [t] is an abstracted statement. *)
 type t =
   | Directive of string
-  | Instruction of Abstract_instruction.with_operands
+  | Instruction of Abstract_instruction.t
   | Blank
   | Label of string
   | Other
@@ -50,10 +50,10 @@ module type S_predicates = sig
   (** [t] is the type we're querying. *)
   type t
 
-  (** We can run some instruction-level queries on an abstract
+  (** We can apply instruction predicates to an abstract
       statement; they return [false] when the statement isn't an
       instruction. *)
-  include Abstract_instruction.S_properties with type t := t
+  include Abstract_instruction.S_predicates with type t := t
 
   (** [is_directive stm] decides whether [stm] appears to be an
       assembler directive. *)
@@ -66,7 +66,7 @@ module type S_predicates = sig
       whose opcode and operands satisfy the predicate [f]. *)
   val is_instruction_where
     :  t
-    -> f:(Abstract_instruction.with_operands -> bool)
+    -> f:(Abstract_instruction.t -> bool)
     -> bool
   ;;
 
@@ -117,7 +117,7 @@ module type S_properties = sig
       [true] if [stm] is matched by any of the optional predicates. *)
   val exists
     :  ?directive:(string -> bool)
-    -> ?instruction:(Abstract_instruction.with_operands -> bool)
+    -> ?instruction:(Abstract_instruction.t -> bool)
     -> ?label:(Abstract_symbol.t -> bool)
     -> ?blank:bool
     -> ?other:bool
@@ -129,7 +129,7 @@ module type S_properties = sig
      [stm]. *)
   val iter
     :  ?directive:(string -> unit)
-    -> ?instruction:(Abstract_instruction.with_operands -> unit)
+    -> ?instruction:(Abstract_instruction.t -> unit)
     -> ?label:(Abstract_symbol.t -> unit)
     -> ?blank:(unit -> unit)
     -> ?other:(unit -> unit)

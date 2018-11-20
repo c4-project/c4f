@@ -41,21 +41,11 @@ module Make (B : Basic)
   module Instruction = struct
     include B.Instruction
 
-    let abs_type_with_operands ins =
-      Abstract_instruction.make_with_operands
-        ~opcode:(abs_type ins)
-        ~operands:(abs_operands ins)
-    ;;
-
     include Abstract_instruction.Inherit_properties
-        (struct
-          type t = Abstract_instruction.with_operands
-          include (Abstract_instruction :
-                     Abstract_instruction.S_properties with type t := t)
-        end)
+        (Abstract_instruction)
         (struct
           type nonrec t = t
-          let component = abs_type_with_operands
+          let component = abs_type
         end)
     ;;
   end
@@ -89,8 +79,6 @@ module Make (B : Basic)
           let component = abs_type
         end)
     ;;
-    let instruction_mem s =
-      On_instructions.exists ~f:(Instruction.abs_type_in s)
 
     let is_program_boundary stm =
       is_label stm

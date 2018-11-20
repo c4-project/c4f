@@ -118,7 +118,7 @@ module Sizable : sig
   include String_table.S with type t := t
   (** We can convert sizable opcodes to the act abstract form. *)
   include Abstractable.S with type t := t
-                          and module Abs := Abstract.Instruction
+                          and module Abs := Abstract.Instruction.Opcode
 
   (** [get_operand_spec opcode] tries to get an operand spec for
       [opcode].  It returns [None] if the opcode doesn't yet have
@@ -151,7 +151,7 @@ module Sized : sig
   include String_table.S with type t := t
   (** We can convert sized opcodes to the act abstract form. *)
   include Abstractable.S with type t := t
-                          and module Abs := Abstract.Instruction
+                          and module Abs := Abstract.Instruction.Opcode
 end
 
 (** [Basic] enumerates 'regular' known opcodes that are neither jumps
@@ -173,7 +173,7 @@ module Basic : sig
   include String_table.S with type t := t
   (** We can convert basic opcodes to the act abstract form. *)
   include Abstractable.S with type t := t
-                          and module Abs := Abstract.Instruction
+                          and module Abs := Abstract.Instruction.Opcode
 
 
   (** [get_operand_spec opcode] tries to get an operand spec for
@@ -234,7 +234,7 @@ module Jump : sig
   include String_table.S with type t := t
   (** We can convert jumps to the act abstract form. *)
   include Abstractable.S with type t := t
-                          and module Abs := Abstract.Instruction
+                          and module Abs := Abstract.Instruction.Opcode
 end
 
 (** [t] enumerates all possible types of opcode. *)
@@ -262,7 +262,7 @@ val unknown : string -> t
 
 (** We can convert elements of [t] to the act abstract form. *)
 include Abstractable.S with type t := t
-                        and module Abs := Abstract.Instruction
+                        and module Abs := Abstract.Instruction.Opcode
 ;;
 
 (** [of_string string] parses [string] as an opcode (or opcode-like

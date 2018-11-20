@@ -104,14 +104,16 @@ module Make (B : Basic)
   ;;
 
   let if_instruction_has_type ins ty ~f =
-    if L.Instruction.has_abs_type ty ins then f () else Ctx.return ins
+    if L.Instruction.has_opcode ~opcode:ty ins
+    then f ()
+    else Ctx.return ins
   ;;
 
   (** [warn_unknown_instructions stm] emits warnings for each
       instruction in [stm] without a high-level analysis. *)
   let warn_unknown_instructions ins =
     if_instruction_has_type ins
-     Abstract.Instruction.Unknown
+     Abstract.Instruction.Opcode.Unknown
      ~f:(Ctx.(
          fun () -> warn (Warn.UnknownElt (Warn.Instruction ins))
            >>| Fn.const ins))
@@ -136,8 +138,8 @@ module Make (B : Basic)
   let warn_operands ins =
     (* Don't emit warnings for unknown instructions---the
        upper warning should be enough. *)
-    match L.Instruction.abs_type ins with
-    | Abstract.Instruction.Unknown -> Ctx.return ins
+    match Abstract.Instruction.opcode (L.Instruction.abs_type ins) with
+    | Abstract.Instruction.Opcode.Unknown -> Ctx.return ins
     | _ ->
       let open Ctx.Let_syntax in
       let abs_operands = L.Instruction.abs_operands ins in
@@ -173,7 +175,7 @@ module Make (B : Basic)
       return (L.Instruction.jump endl)
 
   let change_ret_to_end_jump ins =
-    if_instruction_has_type ins Abstract.Instruction.Return
+    if_instruction_has_type ins Abstract.Instruction.Opcode.Return
       ~f:make_end_jump
   ;;
 
@@ -253,7 +255,7 @@ module Make (B : Basic)
       instruction that can be thrown out when converting to a litmus
       test. *)
   let irrelevant_instruction_types =
-    Abstract.Instruction.(
+    Abstract.Instruction.Opcode.(
       Set.of_list
         [ Call (* -not- Return: these need more subtle translation *)
         ; Stack
@@ -262,7 +264,7 @@ module Make (B : Basic)
   ;;
 
   let instruction_is_irrelevant =
-    L.Statement.instruction_mem irrelevant_instruction_types
+    L.Statement.opcode_in ~opcodes:irrelevant_instruction_types
 
   let measure_ctx (measurement : 'a Ctx.t) (f : 'b -> 'c Ctx.t) (x : 'b)
     : ('a * 'c * 'a) Ctx.t =

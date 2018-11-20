@@ -22,59 +22,70 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Base
-open Stdio
+open Core_kernel
 open Utils
 
-module M = struct
-  type t =
-    | Arith
-    | Call
-    | Compare
-    | Fence
-    | Jump
-    | Logical
-    | Move
-    | Nop
-    | Return
-    | Rmw
-    | Stack
-    | Other
-    | Unknown
-  [@@deriving enum, sexp]
-  ;;
+module Opcode = struct
+  module M = struct
+    type t =
+      | Arith
+      | Call
+      | Compare
+      | Fence
+      | Jump
+      | Logical
+      | Move
+      | Nop
+      | Return
+      | Rmw
+      | Stack
+      | Other
+      | Unknown
+    [@@deriving enum, sexp]
+    ;;
 
-  let table =
-    [ Arith  , "arith"
-    ; Call   , "call"
-    ; Compare, "compare"
-    ; Fence  , "fence"
-    ; Jump   , "jump"
-    ; Logical, "logical"
-    ; Move   , "move"
-    ; Nop    , "nop"
-    ; Return , "return"
-    ; Rmw    , "RMW"
-    ; Stack  , "stack"
-    ; Other  , "other"
-    ; Unknown, "??"
-    ]
+    let table =
+      [ Arith  , "arith"
+      ; Call   , "call"
+      ; Compare, "compare"
+      ; Fence  , "fence"
+      ; Jump   , "jump"
+      ; Logical, "logical"
+      ; Move   , "move"
+      ; Nop    , "nop"
+      ; Return , "return"
+      ; Rmw    , "RMW"
+      ; Stack  , "stack"
+      ; Other  , "other"
+      ; Unknown, "??"
+      ]
+  end
+  include M
+  include Enum.Extend_table (M)
+
+  module Flag = Abstract_flag.None
 end
 
-include M
-include Enum.Extend_table (M)
-
-type with_operands =
-  { opcode : t
+type t =
+  { opcode : Opcode.t
   ; operands : Abstract_operands.t
   }
 [@@deriving fields, make, sexp]
+;;
+
+let pp f ins =
+  Format.fprintf f "@[<hv>%a@ (@,%a@,)@]"
+    Opcode.pp (opcode ins)
+    Abstract_operands.pp (operands ins)
 ;;
 
 module Flag = Abstract_flag.None
 
 module type S_predicates = sig
   type t
+
+  val has_opcode : t -> opcode:Opcode.t -> bool
+  val opcode_in : t -> opcodes:Opcode.Set.t -> bool
 
   val is_jump : t -> bool
   val is_symbolic_jump : t -> bool
@@ -89,6 +100,12 @@ module Inherit_predicates
     (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
   : S_predicates with type t := I.t = struct
   open Option
+  let has_opcode x ~opcode =
+    exists ~f:(P.has_opcode ~opcode) (I.component_opt x)
+  ;;
+  let opcode_in x ~opcodes =
+    exists ~f:(P.opcode_in ~opcodes) (I.component_opt x)
+  ;;
   let is_jump x = exists ~f:P.is_jump (I.component_opt x)
   let is_nop x = exists ~f:P.is_nop (I.component_opt x)
   let is_stack_manipulation x = exists ~f:P.is_stack_manipulation (I.component_opt x)
@@ -101,10 +118,24 @@ end
 module type S_properties = sig
   type t
   include S_predicates with type t := t
+
+  val opcode : t -> Opcode.t
+  val operands : t -> Abstract_operands.t
 end
 
-module Properties : S_properties with type t := with_operands = struct
-  let is_jump { opcode; _ } = equal opcode Jump
+module Properties : S_properties with type t := t = struct
+  let opcode = opcode
+  let operands = operands
+
+  let has_opcode { opcode=actual; _ } ~opcode =
+    Opcode.equal opcode actual
+  ;;
+
+  let opcode_in { opcode=actual; _ } ~opcodes =
+    Opcode.Set.mem opcodes actual
+  ;;
+
+  let is_jump = has_opcode ~opcode:Jump
 
   let is_symbolic_jump_target_where operands ~f =
     match operands with
@@ -114,7 +145,8 @@ module Properties : S_properties with type t := with_operands = struct
   ;;
 
   let is_symbolic_jump_where { opcode; operands } ~f =
-    equal opcode Jump && is_symbolic_jump_target_where operands ~f
+    Opcode.equal opcode Jump
+    && is_symbolic_jump_target_where operands ~f
   ;;
   let is_symbolic_jump = is_symbolic_jump_where ~f:(Fn.const true)
 
@@ -122,7 +154,7 @@ module Properties : S_properties with type t := with_operands = struct
   let%expect_test "is_symbolic_jump: seemingly unconditional jump" =
     let result =
       is_symbolic_jump
-          (make_with_operands ~opcode:Jump ~operands:`None)
+          (make ~opcode:Jump ~operands:`None)
     in
     Out_channel.printf "%b" result;
     [%expect {| false |}]
@@ -131,7 +163,7 @@ module Properties : S_properties with type t := with_operands = struct
   let%expect_test "is_symbolic_jump: jump to immediate symbol" =
     let result =
       is_symbolic_jump
-          (make_with_operands
+          (make
             ~opcode:Jump
             ~operands:(`Single (`Symbol "foo")))
     in
@@ -142,7 +174,7 @@ module Properties : S_properties with type t := with_operands = struct
   let%expect_test "is_symbolic_jump: jump to heap symbol" =
     let result =
       is_symbolic_jump
-          (make_with_operands
+          (make
             ~opcode:Jump
             ~operands:(`Single
                          (`Location (Abstract_location.Heap "foo"))))
@@ -151,7 +183,7 @@ module Properties : S_properties with type t := with_operands = struct
     [%expect {| true |}]
   ;;
 
-  let is_nop { opcode; _ } = equal opcode Nop
+  let is_nop { opcode; _ } = Opcode.equal opcode Nop
 
   let is_stack_manipulation { opcode; operands } = match opcode with
     | Stack -> true
@@ -168,6 +200,9 @@ module Inherit_properties
     (P : S_properties)
     (I : Inherit.S with type c := P.t)
   : S_properties with type t := I.t = struct
+
+  let opcode x = P.opcode (I.component x)
+  let operands x = P.operands (I.component x)
 
   module I_with_c = struct
     type c = P.t

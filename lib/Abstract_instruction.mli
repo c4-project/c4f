@@ -24,54 +24,62 @@
 (** [Abstract_instruction] contains types and utilities for abstracted
     instructions. *)
 
-(** [t] is an abstracted instruction. *)
-type t =
-  | Arith   (** arithmetic *)
-  | Call    (** calling-convention related instructions *)
-  | Compare (** comparison *)
-  | Fence   (** memory fence *)
-  | Jump    (** conditional or unconditional jump *)
-  | Logical (** logical operation *)
-  | Move    (** move *)
-  | Nop     (** no operation *)
-  | Return  (** jump to caller *)
-  | Rmw     (** read-modify-write *)
-  | Stack   (** stack resizing and pointer manipulation *)
-  | Other   (** known, but doesn't fit in these categories *)
-  | Unknown (** unclassified instruction *)
-;;
+(** [Opcode] provides an abstraction over instruction opcodes. *)
+module Opcode : sig
+  (** [t] is an abstracted opcode. *)
+  type t =
+    | Arith   (** arithmetic *)
+    | Call    (** calling-convention related instructions *)
+    | Compare (** comparison *)
+    | Fence   (** memory fence *)
+    | Jump    (** conditional or unconditional jump *)
+    | Logical (** logical operation *)
+    | Move    (** move *)
+    | Nop     (** no operation *)
+    | Return  (** jump to caller *)
+    | Rmw     (** read-modify-write *)
+    | Stack   (** stack resizing and pointer manipulation *)
+    | Other   (** known, but doesn't fit in these categories *)
+    | Unknown (** unclassified instruction *)
+  ;;
 
-(** [with_operands] is an abstracted instruction with operand
-    bundle attached. *)
-type with_operands [@@deriving sexp]
+  (* Why do we have a separate [Return] type, instead of classing it
+     as [Call] or [Jump]?  Two reasons:
 
-(** [opcode] gets the opcode of a [with_operands]. *)
-val opcode : with_operands -> t
-(** [operands] gets the operands of a [with_operands]. *)
-val operands : with_operands -> Abstract_operands.t
-(** [make_with_operands ~opcode ~operands] makes a [with_operands]
+     - It has semantics roughly in between both;
+
+     - It makes it easier for us to translate returns to
+       end-of-program jumps in sanitisation.  *)
+
+  include Abstract_base.S_enum with type t := t
+end
+
+(** [t] is an abstracted instruction, including operands. *)
+type t [@@deriving sexp]
+
+include Abstract_base.S with type t := t
+
+(** [make ~opcode ~operands] makes a [t]
    from an [opcode] and an [operands] bundle. *)
-val make_with_operands
-  :  opcode:t
+val make
+  :  opcode:Opcode.t
   -> operands:Abstract_operands.t
-  -> with_operands
+  -> t
 ;;
-
-(* Why do we have a separate [Return] type, instead of classing it
-   as [Call] or [Jump]?  Two reasons:
-
-   - It has semantics roughly in between both;
-
-   - It makes it easier for us to translate returns to
-   end-of-program jumps in sanitisation.  *)
-
-include Abstract_base.S_enum with type t := t
 
 (** [S_predicates] is the signature of any module that can access
     simple predicates over an abstract instruction. *)
 module type S_predicates = sig
   (** [t] is the type we're querying. *)
   type t
+
+  (** [has_opcode ins ~opcode] tests whether [ins] has opcode
+      [opcode]. *)
+  val has_opcode : t -> opcode:Opcode.t -> bool
+
+  (** [opcode_in ins ~opcodes] tests whether [ins] has an opcode
+      in [opcodes]. *)
+  val opcode_in : t -> opcodes:Opcode.Set.t -> bool
 
   (** [is_jump ins] tests whether [ins] is a jump operation. *)
   val is_jump : t -> bool
@@ -113,6 +121,11 @@ module type S_properties = sig
 
   (** Anything that can access properties can also access predicates. *)
   include S_predicates with type t := t
+
+  (** [opcode x] gets the opcode of [x]. *)
+  val opcode : t -> Opcode.t
+  (** [operands x] gets the operands of [x]. *)
+  val operands : t -> Abstract_operands.t
 end
 
 (** [Inherit_properties] generates a [S_properties] by inheriting it
@@ -126,4 +139,4 @@ module Inherit_properties
 (** We include the functions provided in [S_properties], but define
     them over [with_operands] rather than [t].  This is because some of
     the operations require operand analysis. *)
-include S_properties with type t := with_operands
+include S_properties with type t := t

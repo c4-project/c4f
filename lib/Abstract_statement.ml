@@ -27,7 +27,7 @@ open Utils
 
 type t =
   | Directive of string
-  | Instruction of Abstract_instruction.with_operands
+  | Instruction of Abstract_instruction.t
   | Blank
   | Label of Abstract_symbol.t
   | Other
@@ -37,10 +37,7 @@ let pp f = function
   | Blank -> ()
   | Directive d -> Format.fprintf f "directive@ (%s)" d
   | Label l -> Format.fprintf f ":%s"             l
-  | Instruction ins ->
-    Format.fprintf f "@[%a@ %a@]"
-      Abstract_instruction.pp (Abstract_instruction.opcode ins)
-      Abstract_operands.pp (Abstract_instruction.operands ins)
+  | Instruction ins -> Abstract_instruction.pp f ins
   | Other -> String.pp f "??"
 ;;
 
@@ -63,12 +60,12 @@ end
 
 module type S_predicates = sig
   type t
-  include Abstract_instruction.S_properties with type t := t
+  include Abstract_instruction.S_predicates with type t := t
   val is_directive : t -> bool
   val is_instruction : t -> bool
   val is_instruction_where
     :  t
-    -> f:(Abstract_instruction.with_operands -> bool)
+    -> f:(Abstract_instruction.t -> bool)
     -> bool
   ;;
   val is_label : t -> bool
@@ -118,7 +115,7 @@ module type S_properties = sig
   include S_predicates with type t := t
   val exists
     :  ?directive:(string -> bool)
-    -> ?instruction:(Abstract_instruction.with_operands -> bool)
+    -> ?instruction:(Abstract_instruction.t -> bool)
     -> ?label:(Abstract_symbol.t -> bool)
     -> ?blank:bool
     -> ?other:bool
@@ -126,7 +123,7 @@ module type S_properties = sig
   ;;
   val iter
     :  ?directive:(string -> unit)
-    -> ?instruction:(Abstract_instruction.with_operands -> unit)
+    -> ?instruction:(Abstract_instruction.t -> unit)
     -> ?label:(Abstract_symbol.t -> unit)
     -> ?blank:(unit -> unit)
     -> ?other:(unit -> unit)
@@ -209,11 +206,7 @@ module Properties : S_properties with type t := t = struct
   let is_instruction = is_instruction_where ~f:(Fn.const true)
 
   include Abstract_instruction.Inherit_predicates
-      (struct
-        type t = Abstract_instruction.with_operands
-        include (Abstract_instruction :
-                   Abstract_instruction.S_properties with type t := t)
-      end)
+      (Abstract_instruction)
       (struct
         type nonrec t = t
         let component_opt = function

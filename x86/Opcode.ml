@@ -162,7 +162,7 @@ module Sizable = struct
 
   include Abstractable.Make (struct
       type nonrec t = t
-      module Abs = Abstract.Instruction
+      module Abs = Abstract.Instruction.Opcode
       open Abs
 
       let abs_type = function
@@ -220,7 +220,7 @@ module Sized = struct
 
   include Abstractable.Make (struct
       type nonrec t = t
-      module Abs = Abstract.Instruction
+      module Abs = Abstract.Instruction.Opcode
       let abs_type (s, _) = Sizable.abs_type s
     end)
 end
@@ -264,7 +264,7 @@ module Basic = struct
 
   include Abstractable.Make (struct
       type nonrec t = t
-      module Abs = Abstract.Instruction
+      module Abs = Abstract.Instruction.Opcode
       open Abs
 
       let abs_type = function
@@ -442,7 +442,7 @@ module Jump = struct
 
   include Abstractable.Make (struct
       type nonrec t = t
-      module Abs = Abstract.Instruction
+      module Abs = Abstract.Instruction.Opcode
       let abs_type _ = Abs.Jump
     end)
 end
@@ -458,7 +458,7 @@ type t =
 
 include Abstractable.Make (struct
     type nonrec t = t
-    module Abs = Abstract.Instruction
+    module Abs = Abstract.Instruction.Opcode
 
     let abs_type = function
       | Basic b     -> Basic.abs_type b

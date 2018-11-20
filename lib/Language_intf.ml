@@ -81,7 +81,7 @@ module type Basic_instruction = sig
   (** Languages must supply a pretty-printer for their instructions. *)
   include Pretty_printer.S with type t := t
 
-  include Abstractable.S_enum
+  include Abstractable.S
     with type t := t
      and module Abs := Abstract.Instruction
   ;;
@@ -185,14 +185,6 @@ module type S = sig
   module Instruction : sig
     include Basic_instruction with type loc = Location.t
                                and type sym = Symbol.t
-
-    (** [abs_type_with_operands ins] combines the results of
-        [abs_type ins] and [abs_operands ins]. *)
-    val abs_type_with_operands
-      :  t
-      -> Abstract.Instruction.with_operands
-    ;;
-
     (** As a convenience, we can query abstract instruction properties
         directly on the concrete instruction type.  All of these
         operations implicitly route through [abs_type] and
@@ -203,12 +195,6 @@ module type S = sig
   module Statement : sig
     include Basic_statement with type ins = Instruction.t
                              and type sym = Symbol.t
-
-    (** [instruction_mem set stm] checks whether [stm] is an
-        instruction and, if so, whether its abstract type is in the set
-        [set]. *)
-    val instruction_mem : Abstract.Instruction.Set.t -> t -> bool
-
     (** [is_unused_ordinary_label stm ~symbol_table] tests whether
        [stm] is an unused (not-jumped-to) label that doesn't have
        special meaning to act.  It uses [~symbol_table] in the same

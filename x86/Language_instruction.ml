@@ -270,11 +270,13 @@ module Make (B : Basic) : S = struct
     | Opcode.Unknown _ -> `Unknown
   ;;
 
-  include Abstractable.Make_enum (struct
+  include Abstractable.Make (struct
       type nonrec t = t
       module Abs = Abstract.Instruction
-      let abs_type ({opcode; _} : Ast.Instruction.t) =
-        Opcode.abs_type opcode
+      let abs_type ins =
+        Abs.make
+          ~opcode:(Opcode.abs_type ins.Ast.Instruction.opcode)
+          ~operands:(abs_operands ins)
     end)
 
   module On_symbols = struct

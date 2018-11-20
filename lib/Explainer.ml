@@ -154,7 +154,7 @@ module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
     | Abstract.Statement.Blank -> ""
     | Directive _ -> "directive"
     | Label _ -> "label"
-    | Instruction ins -> Abstract.Instruction.(to_string (opcode ins))
+    | Instruction ins -> Abstract.Instruction.(Opcode.to_string (opcode ins))
     | Other -> "??"
 
   let pp_explanation f exp =

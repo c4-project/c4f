@@ -135,11 +135,7 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
       let abs_type = function
         | Ast.Statement.Instruction { opcode = Opcode.Directive s; _ } ->
           Abs.Directive s
-        | Instruction i ->
-          Instruction
-            (Abstract.Instruction.make_with_operands
-               ~opcode:(Instruction.abs_type i)
-               ~operands:(Instruction.abs_operands i))
+        | Instruction i -> Instruction (Instruction.abs_type i)
         | Label l -> Label l
         | Nop -> Blank
 
