@@ -29,24 +29,24 @@ open Base
 (** [Hook] is an interface for language-specific hooks into the
     sanitisation process. *)
 module type Hook = sig
-  module L : Language.S
-  module Ctx : Sanitiser_ctx.S with module Lang = L
+  module Lang : Language.S
+  module Ctx : Sanitiser_ctx.S with module Lang := Lang
 
   (** [on_program] is a hook mapped over each the program as a
       whole. *)
-  val on_program : L.Statement.t list -> (L.Statement.t list) Ctx.t
+  val on_program : Lang.Statement.t list -> (Lang.Statement.t list) Ctx.t
 
   (** [on_statement] is a hook mapped over each statement in the
       program. *)
-  val on_statement : L.Statement.t -> L.Statement.t Ctx.t
+  val on_statement : Lang.Statement.t -> Lang.Statement.t Ctx.t
 
   (** [on_instruction] is a hook mapped over each instruction in the
       program. *)
-  val on_instruction : L.Instruction.t -> L.Instruction.t Ctx.t
+  val on_instruction : Lang.Instruction.t -> Lang.Instruction.t Ctx.t
 
   (** [on_location] is a hook mapped over each location in the
       program. *)
-  val on_location : L.Location.t -> L.Location.t Ctx.t
+  val on_location : Lang.Location.t -> Lang.Location.t Ctx.t
 end
 
 (** [Basic] describes the base functionality we need to supply to a
@@ -70,16 +70,16 @@ module type Basic = sig
   (** [split] splits an assembly script up into the one or more
       programs we'll be sanitising. *)
   val split
-    :  L.Statement.t list
-    -> L.Statement.t list Program_container.t Or_error.t
+    :  Lang.Statement.t list
+    -> Lang.Statement.t list Program_container.t Or_error.t
 end
 
 (** [S] is the interface to a fully-built sanitiser. *)
 module type S = sig
   module Warn : Sanitiser_warn.S
 
-  type statement
-  type sym
+  (** [Lang] is the language over which we are sanitising. *)
+  module Lang : Language.S
 
   (** [Program_container] describes the container that the sanitised
      program or programs are held in. *)
@@ -89,14 +89,14 @@ module type S = sig
     (** [t] is the type of (successful) sanitiser output. *)
     type t
 
-    val result : t -> statement list Program_container.t
+    val result : t -> Lang.Statement.t list Program_container.t
 
     val warnings : t -> Warn.t list
 
     val redirects
-      : t
-      -> (sym, sym)
-        List.Assoc.t
+      :  t
+      -> (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t
+    ;;
   end
 
   (** [sanitise ?passes ?symbols stms] sanitises a statement list [stms],
@@ -114,8 +114,8 @@ module type S = sig
       process. *)
   val sanitise
     :  ?passes:Sanitiser_pass.Set.t
-    -> ?symbols:sym list
-    -> statement list
+    -> ?symbols:Lang.Symbol.t list
+    -> Lang.Statement.t list
     -> Output.t Or_error.t
 end
 
@@ -129,13 +129,12 @@ module type Sanitiser = sig
   (** [Make_null_hook] makes a [Hook] that does nothing. *)
   module Make_null_hook
     : functor (L : Language.S)
-      -> Hook with module L = L
+      -> Hook with module Lang = L
 
   (** [Make] implements the assembly sanitiser for a given [Basic]. *)
   module Make :
     functor (B : Basic)
-      -> S with type statement = B.L.Statement.t
-            and type sym = B.L.Symbol.t
+      -> S with module Lang := B.Lang
             and type 'a Program_container.t = 'a B.Program_container.t
   ;;
 
@@ -144,8 +143,7 @@ module type Sanitiser = sig
      sanitised assembly back as one program. *)
   module Make_single :
     functor (H : Hook)
-      -> S with type statement = H.L.Statement.t
-            and type sym = H.L.Symbol.t
+      -> S with module Lang := H.Lang
             and type 'a Program_container.t = 'a
   ;;
 
@@ -154,8 +152,7 @@ module type Sanitiser = sig
      label-delimited programs and splitting them accordingly. *)
   module Make_multi :
     functor (H : Hook)
-      -> S with type statement = H.L.Statement.t
-            and type sym = H.L.Symbol.t
+      -> S with module Lang := H.Lang
             and type 'a Program_container.t = 'a list
   ;;
 end

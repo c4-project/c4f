@@ -28,14 +28,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
     current x86 dialect (for example, the order of operands). *)
 module Hook
   : functor (L : Language.S)
-    -> Lib.Sanitiser.Hook with module L = L
+    -> Lib.Sanitiser.Hook with module Lang := L
 
 (** [Make_single] directly instantiates a single-program sanitiser for an
     [Language.Intf] module. *)
 module Make_single
   : functor (L : Language.S)
-    -> Lib.Sanitiser.S with type statement = L.Statement.t
-                        and type sym = L.Symbol.t
+    -> Lib.Sanitiser.S with module Lang := L
                         and type 'a Program_container.t = 'a
 ;;
 
@@ -44,8 +43,7 @@ module Make_single
     [Language.Intf] module. *)
 module Make_multi
   : functor (L : Language.S)
-    -> Lib.Sanitiser.S with type statement = L.Statement.t
-                        and type sym = L.Symbol.t
+    -> Lib.Sanitiser.S with module Lang := L
                         and type 'a Program_container.t = 'a list
 ;;
 

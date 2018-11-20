@@ -41,7 +41,7 @@ end
 module Hook (L : Language.S) = struct
   open Ast
 
-  module L = L
+  module Lang = L
   module W = CWarn (L)
   module Ctx = Lib.Sanitiser_ctx.Make (W)
   module Pass = Lib.Sanitiser_pass

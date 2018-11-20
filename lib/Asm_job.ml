@@ -65,13 +65,11 @@ module type Runner_deps = sig
   module Frontend : Frontend.S with type ast := ast
   module Litmus : Litmus.S
   module Multi_sanitiser
-    : Sanitiser.S with type statement = Lang.Statement.t
-                   and type sym = Lang.Symbol.t
+    : Sanitiser.S with module Lang := Lang
                    and type 'a Program_container.t = 'a list
   ;;
   module Single_sanitiser
-    : Sanitiser.S with type statement = Lang.Statement.t
-                   and type sym = Lang.Symbol.t
+    : Sanitiser.S with module Lang := Lang
                    and type 'a Program_container.t = 'a
   ;;
   module Explainer : Explainer.S with module Lang := Lang
