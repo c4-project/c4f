@@ -23,6 +23,7 @@
    SOFTWARE. *)
 
 open Base
+open Stdio
 open Utils
 
 module M = struct
@@ -76,12 +77,14 @@ module type S_properties = sig
   type t
 
   val is_jump : t -> bool
+  val is_symbolic_jump : t -> bool
   val is_symbolic_jump_where
     : t -> f:(Abstract_symbol.t -> bool) -> bool
   ;;
   val is_nop : t -> bool
   val is_stack_manipulation : t -> bool
 end
+
 module Properties : S_properties with type t := with_operands = struct
   let is_jump { opcode; _ } = equal opcode Jump
 
@@ -95,35 +98,49 @@ module Properties : S_properties with type t := with_operands = struct
   let is_symbolic_jump_where { opcode; operands } ~f =
     equal opcode Jump && is_symbolic_jump_target_where operands ~f
   ;;
+  let is_symbolic_jump = is_symbolic_jump_where ~f:(Fn.const true)
+
+
+  let%expect_test "is_symbolic_jump: seemingly unconditional jump" =
+    let result =
+      is_symbolic_jump
+          (make_with_operands ~opcode:Jump ~operands:`None)
+    in
+    Out_channel.printf "%b" result;
+    [%expect {| false |}]
+  ;;
+
+  let%expect_test "is_symbolic_jump: jump to immediate symbol" =
+    let result =
+      is_symbolic_jump
+          (make_with_operands
+            ~opcode:Jump
+            ~operands:(`Single (`Symbol "foo")))
+    in
+    Out_channel.printf "%b" result;
+    [%expect {| true |}]
+  ;;
+
+  let%expect_test "is_symbolic_jump: jump to heap symbol" =
+    let result =
+      is_symbolic_jump
+          (make_with_operands
+            ~opcode:Jump
+            ~operands:(`Single
+                         (`Location (Abstract_location.Heap "foo"))))
+    in
+    Out_channel.printf "%b" result;
+    [%expect {| true |}]
+  ;;
 
   let is_nop { opcode; _ } = equal opcode Nop
 
-  let is_stack_arith_operands = function
-    | `Src_dst
-        { Src_dst.src = _
-        ; dst = `Location (Abstract_location.StackPointer)
-        }
-      -> true
-    | _ -> false
-  ;;
-
-  let is_stack_move_operands = function
-    | `Src_dst
-        { Src_dst.src = `Location (Abstract_location.StackPointer)
-        ; dst = _
-        }
-    | `Src_dst
-        { src = _
-        ; dst = `Location (Abstract_location.StackPointer)
-        }
-      -> true
-    | _ -> false
-  ;;
-
   let is_stack_manipulation { opcode; operands } = match opcode with
     | Stack -> true
-    | Arith -> is_stack_arith_operands operands
-    | Move  -> is_stack_move_operands operands
+    | Arith -> Abstract_operands.has_stack_pointer_dst operands
+    | Move  -> Abstract_operands.(
+        has_stack_pointer_src operands || has_stack_pointer_dst operands
+      )
     | _     -> false
   ;;
 end
@@ -139,4 +156,5 @@ module Forward_properties
   let is_nop x = F.is_nop (F.forward x)
   let is_stack_manipulation x = F.is_stack_manipulation (F.forward x)
   let is_symbolic_jump_where x ~f = F.is_symbolic_jump_where (F.forward x) ~f
+  let is_symbolic_jump x = F.is_symbolic_jump (F.forward x)
 end

@@ -85,6 +85,17 @@ type t =
   ]
 [@@deriving sexp]
 
+
+let single operand = `Single operand
+let double op1 op2 = `Double (op1, op2)
+
+let src_dst ~src ~dst = `Src_dst {Src_dst.src; dst}
+let is_src_dst : t -> bool = function
+  | `Src_dst _ -> true
+  | `None | `Single _ | `Double _
+  | `Other | `Erroneous _ | `Unknown -> false
+;;
+
 let to_list : t -> any list = function
   | `None -> []
   | `Single x -> [x]
@@ -107,6 +118,59 @@ let errors (x : t) : Error.t list =
     | `Location _ | `Int _ | `Symbol _
     | `Other | `Unknown -> None
   in List.filter_map ~f (to_list x)
+;;
+
+let has_stack_pointer_src = function
+    | `Src_dst
+        { Src_dst.src = `Location (Abstract_location.StackPointer)
+        ; dst = _
+        } -> true
+    | _ -> false
+;;
+
+let has_stack_pointer_dst = function
+  | `Src_dst
+      { Src_dst.src = _
+      ; dst = `Location (Abstract_location.StackPointer)
+      }
+    -> true
+  | _ -> false
+;;
+
+let%expect_test "has_stack_pointer_dst: positive" =
+  Utils.Io.print_bool
+    (has_stack_pointer_dst
+       (src_dst
+          ~src:(`Location (Abstract_location.GeneralRegister))
+          ~dst:(`Location (Abstract_location.StackPointer))));
+  [%expect {| true |}]
+;;
+
+let%expect_test "has_stack_pointer_dst: negative" =
+  Utils.Io.print_bool
+    (has_stack_pointer_dst
+       (src_dst
+          ~dst:(`Location (Abstract_location.GeneralRegister))
+          ~src:(`Location (Abstract_location.StackPointer))));
+  [%expect {| false |}]
+;;
+
+let%expect_test "has_stack_pointer_src: positive" =
+  Utils.Io.print_bool
+    (has_stack_pointer_src
+       (src_dst
+          ~dst:(`Location (Abstract_location.GeneralRegister))
+          ~src:(`Location (Abstract_location.StackPointer))));
+  [%expect {| true |}]
+;;
+
+let%expect_test "has_stack_pointer_src: negative" =
+  Utils.Io.print_bool
+    (has_stack_pointer_src
+       (src_dst
+          ~src:(`Location (Abstract_location.GeneralRegister))
+          ~dst:(`Location (Abstract_location.StackPointer))));
+  [%expect {| false |}]
 ;;
 
 let uses_immediate_heap_symbol operands ~syms =
@@ -152,16 +216,6 @@ let%expect_test "uses_immediate_heap_symbol: src/dst negative" =
   in
   Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];
   [%expect {| false |}]
-;;
-
-let single operand = `Single operand
-let double op1 op2 = `Double (op1, op2)
-
-let src_dst ~src ~dst = `Src_dst {Src_dst.src; dst}
-let is_src_dst : t -> bool = function
-  | `Src_dst _ -> true
-  | `None | `Single _ | `Double _
-  | `Other | `Erroneous _ | `Unknown -> false
 ;;
 
 let pp f = function

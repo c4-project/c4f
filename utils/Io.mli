@@ -97,3 +97,6 @@ val with_input_and_output
   -> Out_sink.t
   -> 'a Or_error.t
 ;;
+
+(** [print_bool b] prints the truth value of [b] to stdout. *)
+val print_bool : bool -> unit

@@ -99,6 +99,14 @@ val src_dst : src:src -> dst:dst -> t
     bundle of source and destination operand. *)
 val is_src_dst : t -> bool
 
+(** [has_stack_pointer_src operands] tests whether [operands] is a
+   source/destination pair whose source is the stack pointer. *)
+val has_stack_pointer_src : t -> bool
+
+(** [has_stack_pointer_dst operands] tests whether [operands] is a
+   source/destination pair whose destination is the stack pointer. *)
+val has_stack_pointer_dst : t -> bool
+
 (** [uses_immediate_heap_symbol operands ~syms] returns [true] if
     [operands] contains a symbol in immediate position that,
     according to [syms], is a heap location.  This can mean that the

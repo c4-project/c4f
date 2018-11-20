@@ -120,3 +120,5 @@ let with_input_and_output ~f src snk =
   In_source.with_input src
     ~f:(fun isrc' ic -> Out_sink.with_output snk ~f:(f isrc' ic))
 ;;
+
+let print_bool = Out_channel.printf "%b"

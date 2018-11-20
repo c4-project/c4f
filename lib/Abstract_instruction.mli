@@ -75,8 +75,13 @@ module type S_properties = sig
   (** [is_jump ins] tests whether [ins] is a jump operation. *)
   val is_jump : t -> bool
 
-  (** [is_symbolic_jump_where ins ~f] tests whether ins is a jump
-     to a symbol whose label matches the predicate [f]. *)
+  (** [is_symbolic_jump ins] tests whether [ins] is a jump to a
+      symbol (either immediate, or using the symbol as a heap
+      reference). *)
+  val is_symbolic_jump : t -> bool
+
+  (** [is_symbolic_jump_where ins ~f] tests whether [ins] is a jump to
+     a symbol whose label matches the predicate [f]. *)
   val is_symbolic_jump_where
     : t -> f:(Abstract_symbol.t -> bool) -> bool
   ;;

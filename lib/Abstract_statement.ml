@@ -124,6 +124,11 @@ module Properties : S_properties with type t := t = struct
   let is_jump =
     is_instruction_where ~f:Abstract_instruction.is_jump
   ;;
+  let is_symbolic_jump t =
+    is_instruction_where t
+      ~f:Abstract_instruction.is_symbolic_jump
+  ;;
+
   let is_symbolic_jump_where t ~f =
     is_instruction_where t
       ~f:(Abstract_instruction.is_symbolic_jump_where ~f)
@@ -170,6 +175,7 @@ module Forward_properties
   let is_nop x = F.is_nop (F.forward x)
   let is_stack_manipulation x = F.is_stack_manipulation (F.forward x)
   let is_jump x = F.is_jump (F.forward x)
+  let is_symbolic_jump x = F.is_symbolic_jump (F.forward x)
   let is_symbolic_jump_where x ~f = F.is_symbolic_jump_where (F.forward x) ~f
   let is_jump_pair = My_fn.on F.forward F.is_jump_pair
   let flags x = F.flags (F.forward x)
