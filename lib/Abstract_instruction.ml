@@ -22,6 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+open Base
 open Utils
 
 module M = struct
@@ -61,4 +62,81 @@ end
 
 include M
 include Enum.Extend_table (M)
+
+type with_operands =
+  { opcode : t
+  ; operands : Abstract_operands.t
+  }
+[@@deriving fields, make, sexp]
+;;
+
 module Flag = Abstract_flag.None
+
+module type S_properties = sig
+  type t
+
+  val is_jump : t -> bool
+  val is_symbolic_jump_where
+    : t -> f:(Abstract_symbol.t -> bool) -> bool
+  ;;
+  val is_nop : t -> bool
+  val is_stack_manipulation : t -> bool
+end
+module Properties : S_properties with type t := with_operands = struct
+  let is_jump { opcode; _ } = equal opcode Jump
+
+  let is_symbolic_jump_target_where operands ~f =
+    match operands with
+    | `Single (`Symbol sym)
+    | `Single (`Location (Abstract_location.Heap sym)) -> f sym
+    | _ -> false
+  ;;
+
+  let is_symbolic_jump_where { opcode; operands } ~f =
+    equal opcode Jump && is_symbolic_jump_target_where operands ~f
+  ;;
+
+  let is_nop { opcode; _ } = equal opcode Nop
+
+  let is_stack_arith_operands = function
+    | `Src_dst
+        { Src_dst.src = _
+        ; dst = `Location (Abstract_location.StackPointer)
+        }
+      -> true
+    | _ -> false
+  ;;
+
+  let is_stack_move_operands = function
+    | `Src_dst
+        { Src_dst.src = `Location (Abstract_location.StackPointer)
+        ; dst = _
+        }
+    | `Src_dst
+        { src = _
+        ; dst = `Location (Abstract_location.StackPointer)
+        }
+      -> true
+    | _ -> false
+  ;;
+
+  let is_stack_manipulation { opcode; operands } = match opcode with
+    | Stack -> true
+    | Arith -> is_stack_arith_operands operands
+    | Move  -> is_stack_move_operands operands
+    | _     -> false
+  ;;
+end
+include Properties
+
+module Forward_properties
+    (F : sig
+       include S_properties
+       type fwd
+       val forward : fwd -> t
+     end) : S_properties with type t := F.fwd = struct
+  let is_jump x = F.is_jump (F.forward x)
+  let is_nop x = F.is_nop (F.forward x)
+  let is_stack_manipulation x = F.is_stack_manipulation (F.forward x)
+  let is_symbolic_jump_where x ~f = F.is_symbolic_jump_where (F.forward x) ~f
+end

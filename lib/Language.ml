@@ -41,103 +41,69 @@ module Make (B : Basic)
   module Instruction = struct
     include B.Instruction
 
-    let is_jump = has_abs_type Abstract.Instruction.Jump
-
-    let is_stack_manipulation ins =
-      Abstract.(
-        match abs_type ins with
-        | Instruction.Stack -> true
-        | Instruction.Arith -> begin
-            (* Stack pointer movements *)
-            match abs_operands ins with
-            | `Src_dst
-                { src = _
-                ; dst = `Location (Location.StackPointer)
-                }
-              -> true
-            | _ -> false
-          end
-        | Instruction.Move -> begin
-            (* Stack pointer transfers *)
-            match abs_operands ins with
-            | `Src_dst
-                { src = `Location (Location.StackPointer)
-                ; dst = _
-                }
-            | `Src_dst
-                { src = _
-                ; dst = `Location (Location.StackPointer)
-                }
-              -> true
-            | _ -> false
-          end
-        | _ -> false
-      )
+    let abs_type_with_operands ins =
+      Abstract_instruction.make_with_operands
+        ~opcode:(abs_type ins)
+        ~operands:(abs_operands ins)
     ;;
+
+    include Abstract_instruction.Forward_properties (struct
+        type fwd = t
+        type t = Abstract_instruction.with_operands
+        include (Abstract_instruction :
+                   Abstract_instruction.S_properties with type t := t)
+        let forward = abs_type_with_operands
+      end)
   end
 
   module Statement = struct
     include B.Statement
 
-    let is_jump =
-      On_instructions.exists ~f:Instruction.is_jump
+    module Flag = struct
+      module M = struct
+        type t =
+          [ Abstract.Statement.Flag.t
+          | `Program_boundary
+          ] [@@deriving sexp, eq, enumerate]
 
-    let is_stack_manipulation =
-      On_instructions.exists ~f:Instruction.is_stack_manipulation
+        let table =
+          (Abstract.Statement.Flag.table :> (t, string) List.Assoc.t)
+          @ [ `Program_boundary, "program boundary" ]
+      end
+
+      include M
+      include Enum.Extend_table (struct
+          include M
+          include Enum.Make_from_enumerate (M)
+        end)
+    end
+
+    include Abstract_statement.Forward_properties (struct
+        type fwd = t
+        let forward = abs_type
+        include Abstract_statement
+      end)
 
     let instruction_mem s =
       On_instructions.exists ~f:(Instruction.abs_type_in s)
 
-    let is_directive stm =
-      match abs_type stm with
-      | Abstract.Statement.Directive _ -> true
-      | _ -> false
-
-    let is_label stm =
-      match abs_type stm with
-      | Abstract.Statement.Label _ -> true
-      | _ -> false
-
-    (** [is_label_and p x] returns [p x] if [x] is a label, or
-        [false] otherwise. *)
-    let is_label_and p = My_fn.conj is_label p;;
-
-    let is_nop stm =
-      Abstract.(
-        match abs_type stm with
-        | Statement.Blank -> true
-        | Statement.Instruction Instruction.Nop -> true
-        | _ -> false
-      )
-
-    let is_program_boundary =
-      is_label_and (On_symbols.exists ~f:Symbol.is_program_label)
+    let is_program_boundary stm =
+      is_label stm
+      && On_symbols.for_all stm ~f:Symbol.is_program_label
     ;;
 
-    let is_unused_label ?(ignore_boundaries=false) ~syms =
-      is_label_and
-        (fun stm ->
-           let jsyms = Abstract.Symbol.(Table.set_of_sort syms Sort.Jump) in
-           let ssyms = Symbol.Set.abstract (Symbol.Set.of_list (On_symbols.to_list stm)) in
-           Abstract.Symbol.Set.disjoint jsyms ssyms
-           && not (ignore_boundaries && is_program_boundary stm)
-        )
+    let is_unused_ordinary_label stm ~symbol_table =
+      not (is_program_boundary stm)
+      && is_unused_label stm ~symbol_table
     ;;
 
-    let is_jump_pair x y =
-      is_jump x
-      && is_label y
-      && (My_fn.on (Fn.compose Symbol.Set.of_list On_symbols.to_list)
-            Symbol.Set.equal) x y
-    ;;
-
-    let flags ~syms stm =
-      [ is_unused_label ~syms  stm, `UnusedLabel
-      ; is_program_boundary    stm, `ProgBoundary
-      ; is_stack_manipulation  stm, `StackManip
-      ]
-      |> List.filter_map ~f:(Tuple2.uncurry Option.some_if)
-      |> Abstract.Statement.Flag.Set.of_list
+    let flags stm symbol_table =
+      let abs_flags = flags stm symbol_table in
+      Flag.Set.union
+        (Flag.Set.map abs_flags ~f:(fun x -> (x :> Flag.t)))
+        (if is_program_boundary stm
+         then Flag.Set.singleton `Program_boundary
+         else Flag.Set.empty)
     ;;
   end
 

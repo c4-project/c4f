@@ -297,17 +297,22 @@ module Make (B : Basic)
      rewritten. *)
   let remove_generally_irrelevant_statements prog =
     let open Ctx.Let_syntax in
-    let%bind syms = Ctx.get_symbol_table in
+    let%bind symbol_table = Ctx.get_symbol_table in
     let%map remove_boundaries =
       Ctx.is_pass_enabled Sanitiser_pass.RemoveBoundaries
     in
-    let ignore_boundaries = not remove_boundaries in
-      remove_statements_in prog
-        ~where:L.Statement.
-                 [ is_nop
-                 ; is_directive
-                 ; is_unused_label ~ignore_boundaries ~syms
-                 ]
+    let label_check =
+      if remove_boundaries
+      then L.Statement.is_unused_label
+      else L.Statement.is_unused_ordinary_label
+    in
+    remove_statements_in prog
+      ~where:L.Statement.
+               [ is_nop
+               ; is_blank
+               ; is_directive
+               ; label_check ~symbol_table
+               ]
   ;;
 
   (** [remove_litmus_irrelevant_statements prog] completely removes

@@ -29,7 +29,8 @@ module type Basic_explanation = sig
   type context
   include Abstractable.S with type t := elt
   include Pretty_printer.S with type t := elt
-  val abs_flags : elt -> context -> Abs.Flag.Set.t
+  module Flag : Abstract_flag.S
+  val abs_flags : elt -> context -> Flag.Set.t
 end
 
 module type Explanation = sig
@@ -38,19 +39,21 @@ module type Explanation = sig
   type context
   include Abstractable.S with type t := t
   include Pretty_printer.S with type t := t
+  module Flag : Abstract_flag.S
   val original : t -> elt
-  val abs_flags : t -> Abs.Flag.Set.t
+  val abs_flags : t -> Flag.Set.t
   val create : context:context -> original:elt -> t
 end
 
 module Make_explanation (B : Basic_explanation)
   : Explanation with type elt := B.elt
                  and type context := B.context
-                 and module Abs := B.Abs = struct
+                 and module Abs := B.Abs
+                 and module Flag := B.Flag = struct
   type t =
     { original  : B.elt
     ; abs_type  : B.Abs.t
-    ; abs_flags : B.Abs.Flag.Set.t
+    ; abs_flags : B.Flag.Set.t
     }
   [@@deriving fields]
   ;;
@@ -70,7 +73,7 @@ module Make_explanation (B : Basic_explanation)
       ~abs_type:(fun _ _ ->
           Format.fprintf f "@[^--@ type:@ %a@]@ " B.Abs.pp)
       ~abs_flags:(fun _ _ ->
-          Format.fprintf f "@[ '-@ flags:@ %a@]" B.Abs.Flag.pp_set);
+          Format.fprintf f "@[ '-@ flags:@ %a@]" B.Flag.pp_set);
     Format.pp_close_box f ()
   ;;
 end
@@ -95,18 +98,22 @@ module type S = sig
 end
 
 module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
-  module Stm_explanation = Make_explanation (struct
-      module Abs = Abstract.Statement
+  module Stm_explanation = struct
+    module Flag = LS.Statement.Flag
+    include Make_explanation (struct
+        module Abs = Abstract.Statement
+        module Flag = Flag
 
-      type elt = LS.Statement.t
-      let pp = LS.Statement.pp
-      type context = Abstract.Symbol.Table.t
+        type elt = LS.Statement.t
+        let pp = LS.Statement.pp
+        type context = Abstract.Symbol.Table.t
 
-      let abs_type = LS.Statement.abs_type
+        let abs_type = LS.Statement.abs_type
 
-      let abs_flags x syms = LS.Statement.flags ~syms x
-    end)
-  ;;
+        let abs_flags = LS.Statement.flags
+      end)
+    ;;
+  end
 
   type t =
     { statements : Stm_explanation.t list
@@ -126,14 +133,14 @@ module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
     | Abstract.Statement.Blank -> ""
     | Directive _ -> "directive"
     | Label _ -> "label"
-    | Instruction ins -> Abstract.Instruction.to_string ins
+    | Instruction ins -> Abstract.Instruction.(to_string (opcode ins))
     | Other -> "??"
 
   let pp_explanation f exp =
     Stm_explanation.(
       Format.fprintf f "@[<--@ @[%s%a@]@]"
         (stringify_stm_basic (abs_type exp))
-        Abstract.Statement.Flag.pp_set (abs_flags exp)
+        Flag.pp_set (abs_flags exp)
     )
   ;;
 

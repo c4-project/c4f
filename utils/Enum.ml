@@ -44,6 +44,18 @@ module Make_hashable (E : S_sexp)
   end)
 ;;
 
+module Make_from_enumerate (E : S_enumerate)
+  : S with type t := E.t = struct
+  let min = 0
+  let max = (List.length E.all - 1)
+
+  let to_enum elt =
+    List.find_mapi_exn E.all
+      ~f:(fun i elt' -> Option.some_if (E.equal elt elt') i)
+  ;;
+  let of_enum = List.nth E.all
+end
+
 module Extend (E : S_sexp) : Extension with type t := E.t = struct
   include Make_comparable (E)
   include Make_hashable (E)

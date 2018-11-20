@@ -25,7 +25,7 @@
 open Core_kernel
 open Utils
 
-type t = string
+type t = string [@@deriving sexp, eq]
 
 module Set = struct
   module S = Set.Make (String)
@@ -85,9 +85,9 @@ module Table = struct
     |> Set.of_list
   ;;
 
-  let set_of_sort tbl sort = set_of_sorts tbl (Sort.Set.singleton sort);;
+  let set_of_sort tbl sort = set_of_sorts tbl (Sort.Set.singleton sort)
 
-  let set tbl = tbl |> List.map ~f:fst |> Set.of_list;;
+  let set tbl = tbl |> List.map ~f:fst |> Set.of_list
 
   let mem tbl ?sort symbol =
     let actual_sort =
@@ -98,16 +98,5 @@ module Table = struct
         || Option.equal Sort.equal sort actual_sort)
   ;;
 end
-
-let program_id_of sym =
-  let open Option.Let_syntax in
-  let%bind num_s = String.chop_prefix ~prefix:"P" sym in
-  let%bind num   = Caml.int_of_string_opt num_s in
-  Option.some_if (Int.is_non_negative num) num
-;;
-
-let%expect_test "program_id_of: valid" =
-  Sexp.output Out_channel.stdout [%sexp (program_id_of "P0" : int option)];
-  [%expect {| (0) |}]
 
 module Flag = Abstract_flag.None

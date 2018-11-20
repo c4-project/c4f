@@ -42,6 +42,17 @@ module type S = sig
   val of_enum : int -> t option
 end
 
+(** [S_enumerate] is a different interface for enums, compatible with
+    those derived by Jane Street's [enumerate]. *)
+module type S_enumerate = sig
+  type t
+
+  include Equal.S with type t := t
+
+  (** [all] gets a list of all elements in [t]. *)
+  val all : t list
+end
+
 (** [S_sexp] extends [S] with S-expression support,
     compatible with [deriving sexp]. *)
 module type S_sexp = sig
@@ -108,10 +119,16 @@ end
 (** [Enum] is the part of this file re-exported as [Enum.mli]. *)
 module type Enum = sig
   module type S               = S
+  module type S_enumerate     = S_enumerate
   module type S_sexp          = S_sexp
   module type S_sexp_table    = S_sexp_table
   module type Extension       = Extension
   module type Extension_table = Extension_table
+
+  (** [Make_from_enumerate] makes an [S] from an [S_enumerate]. *)
+  module Make_from_enumerate
+    : functor (E : S_enumerate) -> S with type t := E.t
+  ;;
 
   (** [Make_comparable] generates a [Comparable.S] from an [Enum.S_sexp]. *)
   module Make_comparable

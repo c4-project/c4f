@@ -186,14 +186,18 @@ module type S = sig
     include Basic_instruction with type loc = Location.t
                                and type sym = Symbol.t
 
-    (** [is_jump ins] decides whether [ins] appears to be a
-        jump instruction. *)
-    val is_jump : t -> bool
+    (** [abs_type_with_operands ins] combines the results of
+        [abs_type ins] and [abs_operands ins]. *)
+    val abs_type_with_operands
+      :  t
+      -> Abstract.Instruction.with_operands
+    ;;
 
-    (** [is_stack_manipulation ins] decides whether [ins] is a
-        stack manipulation, and therefore can be removed in litmus
-        tests. *)
-    val is_stack_manipulation : t -> bool
+    (** As a convenience, we can query abstract instruction properties
+        directly on the concrete instruction type.  All of these
+        operations implicitly route through [abs_type] and
+        [abs_operands]. *)
+    include Abstract.Instruction.S_properties with type t := t
   end
 
   module Statement : sig
@@ -205,58 +209,35 @@ module type S = sig
         [set]. *)
     val instruction_mem : Abstract.Instruction.Set.t -> t -> bool
 
-    (** [is_jump stm] decides whether [stm] appears to be a
-        jump instruction. *)
-    val is_jump : t -> bool
-
-    (** [is_stack_manipulation stm] decides whether [stm] is a
-        stack manipulation, and therefore can be removed in litmus
-        tests. *)
-    val is_stack_manipulation : t -> bool
-
-    (*
-     * Statement analysis
-     *)
-
-    (** [is_directive stm] decides whether [stm] appears to be an
-        assembler directive. *)
-    val is_directive : t -> bool
-
-    (** [is_label stm] decides whether [stm] appears to be an
-        label. *)
-    val is_label : t -> bool
-
-    (** [is_unused_label ignore_boundaries ~syms stm] decides whether
-        [stm] is a label whose symbol isn't registered as a jump
-        destination in [syms].
-
-        If [ignore_boundaries] is present and true, [is_unused_label]
-        will report program boundaries as in-use, even if they aren't
-        jumped to from [jsyms]. *)
-    val is_unused_label
-      :  ?ignore_boundaries:bool
-      -> syms:Abstract.Symbol.Table.t
-      -> t
+    (** [is_unused_ordinary_label stm ~symbol_table] tests whether
+       [stm] is an unused (not-jumped-to) label that doesn't have
+       special meaning to act.  It uses [~symbol_table] in the same
+        way as [is_unused_label]. *)
+    val is_unused_ordinary_label
+      :  t
+      -> symbol_table:Abstract.Symbol.Table.t
       -> bool
+    ;;
 
-    (** [is_jump_pair x y] returns true if [x] is a jump instruction,
-        [y] is a label, and [x] is jumping to [y]. *)
-    val is_jump_pair : t -> t -> bool
-
-    (** [is_nop stm] decides whether [stm] appears to be a NOP. *)
-    val is_nop : t -> bool
-
-    (** [is_program_boundary stm] decides whether [stm] appears to mark
-        a boundary between two Litmus programs. *)
+    (** [is_program_boundary stm] tests whether [stm] is a program
+        boundary per act's conventions. *)
     val is_program_boundary : t -> bool
 
-    (** [flags ~syms stm] summarises the above boolean functions as
-        a set of [stm_flag]s.  It uses [syms] to calculate whether
-        the statement is an unused label. *)
-    val flags
-      :  syms:Abstract.Symbol.Table.t
-      -> t
-      -> Abstract.Statement.Flag.Set.t
+    (** As a convenience, we can query abstract statement properties
+        directly on the concrete statement type.  All of these
+        operations implicitly route through [abs_type]. *)
+    include Abstract.Statement.S_properties with type t := t
+
+    (** [Flag] expands [Abstract.Statement.Flag] with an extra flag,
+        representing program boundaries. *)
+    module Flag : Abstract_flag.S with type t =
+      [ Abstract.Statement.Flag.t | `Program_boundary ]
+    ;;
+
+    (** [flags stm symbol_table] behaves like
+        [Abstract.Statement.flags], but can also return
+        [`Program_boundary]. *)
+    val flags :  t -> Abstract.Symbol.Table.t -> Flag.Set.t
   end
 
   (** [symbols] retrieves the symbol table for a given program. *)

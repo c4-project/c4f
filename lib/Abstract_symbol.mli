@@ -28,7 +28,7 @@ open Core_kernel
 open Utils
 
 (** Symbols are strings. *)
-type t = string
+type t = string [@@deriving sexp, eq]
 
 (** [Set] is a set module for symbols. *)
 module Set : sig
@@ -86,12 +86,3 @@ module Table : sig
       require that [symbol] has sort [sort] in [tbl]. *)
   val mem : t -> ?sort:Sort.t -> elt -> bool
 end
-
-  (*
-   * Symbol heuristics
-   *)
-
-(** [program_id_of sym] tries to interpret [sym] as a
-    program label; if so, it returns [Some n] where [n]
-    is the underlying program ID. *)
-val program_id_of : t -> int option

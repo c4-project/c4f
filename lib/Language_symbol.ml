@@ -26,6 +26,19 @@ include Core
 include Utils
 include Language_symbol_intf
 
+let program_id_of_demangled sym =
+  let open Option.Let_syntax in
+  let%bind num_s = String.chop_prefix ~prefix:"P" sym in
+  let%bind num   = Caml.int_of_string_opt num_s in
+  Option.some_if (Int.is_non_negative num) num
+;;
+
+let%expect_test "program_id_of_demangled: valid" =
+  Sexp.output Out_channel.stdout
+    [%sexp (program_id_of_demangled "P0" : int option)];
+  [%expect {| (0) |}]
+;;
+
 module Make (B : Basic)
   : S with type t = B.t = struct
   include B
@@ -76,6 +89,14 @@ module Make (B : Basic)
 
     let dest_of = M.find
 
+    let add_maps_to_edge ~src ~dst rmap =
+      rmap
+      |> M.set ~key:src ~data:(MapsTo dst)
+      |> M.map ~f:(function
+          | MapsTo dst' when equal_sym src dst' -> MapsTo dst
+          | x -> x)
+    ;;
+
     let redirect ~src ~dst rmap =
       Or_error.(
         if equal_sym src dst
@@ -87,25 +108,17 @@ module Make (B : Basic)
                 ~src:(src : sym)
                 ~dst:(dst : sym)
             ]
-        else
-          rmap
-          |> M.set ~key:src ~data:(MapsTo dst)
-          |> M.map ~f:(function
-              | MapsTo dst' when equal_sym src dst' -> MapsTo dst
-              | x -> x)
-          |> return
+        else return (add_maps_to_edge ~src ~dst rmap)
       )
     ;;
   end
 
   let program_id_of sym =
     let asyms = B.abstract_demangle sym in
-    let ids =
-      List.filter_map asyms ~f:Abstract.Symbol.program_id_of
-    in
+    let ids = List.filter_map asyms ~f:program_id_of_demangled in
     (* The demangled symbols should be in order of likelihood, so we
-         take a gamble on the first one being the most likely program
-         ID in case of a tie. *)
+       take a gamble on the first one being the most likely program ID
+       in case of a tie. *)
     List.hd ids
   ;;
 

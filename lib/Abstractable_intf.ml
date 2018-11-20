@@ -28,7 +28,7 @@ module type Basic = sig
   (** [t] is the concrete type. *)
   type t
 
-  module Abs : Abstract.S
+  module Abs : Abstract_base.S
 
   (** [abs_type x] gets the abstract type of [x]. *)
   val abs_type : t -> Abs.t
@@ -38,7 +38,7 @@ end
    abstract type, implementing [Abstract.S_enum], that can be
    queried. *)
 module type Basic_enum = sig
-  module Abs : Abstract.S_enum
+  module Abs : Abstract_base.S_enum
 
   include Basic with module Abs := Abs
 end

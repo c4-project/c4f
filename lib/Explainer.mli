@@ -44,9 +44,13 @@ module type Basic_explanation = sig
   (** Items of type [elt] must also be printable. *)
   include Pretty_printer.S with type t := elt
 
-  (** [abs_flags elt context] computes the set of detail flags that apply to
-      [elt] given the context [context]. *)
-  val abs_flags : elt -> context -> Abs.Flag.Set.t
+  (** [Flag] is the module containing detail flags that may be raised
+     on [elt]. *)
+  module Flag : Abstract_flag.S
+
+  (** [abs_flags elt context] computes the set of detail flags that
+     apply to [elt] given the context [context]. *)
+  val abs_flags : elt -> context -> Flag.Set.t
 end
 
 (** [Explanation] modules contain an abstract data type [t] that encapsulates
@@ -68,12 +72,16 @@ module type Explanation = sig
   (** Explanations can be pretty-printed. *)
   include Pretty_printer.S with type t := t
 
+  (** [Flag] is the module containing detail flags that may be raised
+     on the explanation's original element. *)
+  module Flag : Abstract_flag.S
+
   (** [original exp] gets the original element of an explanation [exp]. *)
   val original : t -> elt
 
   (** [abs_flags exp] gets detailed analysis of the element inside [exp] in
       the form of the abstract representation's flag set. *)
-  val abs_flags : t -> Abs.Flag.Set.t
+  val abs_flags : t -> Flag.Set.t
 
   (** [create ~context ~original] creates a [t] over [original], using
       [context] to get more detailed information than would normally be
@@ -90,6 +98,7 @@ module Make_explanation
     -> Explanation with type elt := B.elt
                     and type context := B.context
                     and module Abs := B.Abs
+                    and module Flag := B.Flag
 ;;
 
 module type S = sig
