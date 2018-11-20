@@ -85,6 +85,8 @@ end
 module Inherit_predicates
     (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
   : S_predicates with type t := I.t = struct
+  open Option
+
   include Abstract_instruction.Inherit_predicates
       (P)
       (struct
@@ -92,24 +94,21 @@ module Inherit_predicates
         let component_opt = I.component_opt
       end)
 
-  let is_directive x =
-    Option.exists ~f:P.is_directive (I.component_opt x)
-  ;;
-  let is_blank x = Option.exists ~f:P.is_blank (I.component_opt x)
-  let is_instruction x =
-    Option.exists ~f:P.is_instruction (I.component_opt x)
-  ;;
+  let is_directive x = exists ~f:P.is_directive (I.component_opt x)
+  let is_blank x = exists ~f:P.is_blank (I.component_opt x)
+  let is_instruction x = exists ~f:P.is_instruction (I.component_opt x)
   let is_instruction_where x ~f =
-    Option.exists ~f:(P.is_instruction_where ~f) (I.component_opt x)
+    exists ~f:(P.is_instruction_where ~f) (I.component_opt x)
   ;;
-  let is_label x = Option.exists ~f:P.is_label (I.component_opt x)
+  let is_label x = exists ~f:P.is_label (I.component_opt x)
   let is_unused_label x ~symbol_table =
-    Option.exists (I.component_opt x)
-      ~f:(P.is_unused_label ~symbol_table)
+    exists (I.component_opt x) ~f:(P.is_unused_label ~symbol_table)
   ;;
-  let is_label_where x ~f = Option.exists ~f:(P.is_label_where ~f) (I.component_opt x)
+  let is_label_where x ~f =
+    exists (I.component_opt x) ~f:(P.is_label_where ~f)
+  ;;
   let is_jump_pair x y =
-    Option.exists (Option.both (I.component_opt x) (I.component_opt y))
+    exists (both (I.component_opt x) (I.component_opt y))
       ~f:(Tuple2.uncurry P.is_jump_pair)
   ;;
 end
