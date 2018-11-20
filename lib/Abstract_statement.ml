@@ -61,9 +61,7 @@ module Flag = struct
   include Enum.Extend_table (M)
 end
 
-(** [S_properties] is the signature of any module that can access
-    properties of an abstract statement. *)
-module type S_properties = sig
+module type S_predicates = sig
   type t
   include Abstract_instruction.S_properties with type t := t
   val is_directive : t -> bool
@@ -74,11 +72,7 @@ module type S_properties = sig
     -> bool
   ;;
   val is_label : t -> bool
-  val is_label_where
-    :  t
-    -> f:(Abstract_symbol.t -> bool)
-    -> bool
-  ;;
+  val is_label_where : t -> f:(string -> bool) -> bool
   val is_unused_label
     : t
     -> symbol_table:Abstract_symbol.Table.t
@@ -86,10 +80,98 @@ module type S_properties = sig
   ;;
   val is_jump_pair : t -> t -> bool
   val is_blank : t -> bool
+end
+
+module Inherit_predicates
+    (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
+  : S_predicates with type t := I.t = struct
+  include Abstract_instruction.Inherit_predicates
+      (P)
+      (struct
+        type t = I.t
+        let component_opt = I.component_opt
+      end)
+
+  let is_directive x =
+    Option.exists ~f:P.is_directive (I.component_opt x)
+  ;;
+  let is_blank x = Option.exists ~f:P.is_blank (I.component_opt x)
+  let is_instruction x =
+    Option.exists ~f:P.is_instruction (I.component_opt x)
+  ;;
+  let is_instruction_where x ~f =
+    Option.exists ~f:(P.is_instruction_where ~f) (I.component_opt x)
+  ;;
+  let is_label x = Option.exists ~f:P.is_label (I.component_opt x)
+  let is_unused_label x ~symbol_table =
+    Option.exists (I.component_opt x)
+      ~f:(P.is_unused_label ~symbol_table)
+  ;;
+  let is_label_where x ~f = Option.exists ~f:(P.is_label_where ~f) (I.component_opt x)
+  let is_jump_pair x y =
+    Option.exists (Option.both (I.component_opt x) (I.component_opt y))
+      ~f:(Tuple2.uncurry P.is_jump_pair)
+  ;;
+end
+
+module type S_properties = sig
+  type t
+  include S_predicates with type t := t
+  val exists
+    :  ?directive:(string -> bool)
+    -> ?instruction:(Abstract_instruction.with_operands -> bool)
+    -> ?label:(Abstract_symbol.t -> bool)
+    -> ?blank:bool
+    -> ?other:bool
+    -> t -> bool
+  ;;
+  val iter
+    :  ?directive:(string -> unit)
+    -> ?instruction:(Abstract_instruction.with_operands -> unit)
+    -> ?label:(Abstract_symbol.t -> unit)
+    -> ?blank:(unit -> unit)
+    -> ?other:(unit -> unit)
+    -> t -> unit
+  ;;
   val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
 end
 
+module Inherit_properties
+    (P : S_properties) (I : Utils.Inherit.S with type c := P.t)
+  : S_properties with type t := I.t = struct
+
+  module I_with_c = struct
+    type c = P.t
+    include I
+  end
+  include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
+
+  let iter ?directive ?instruction ?label ?blank ?other x =
+    P.iter ?directive ?instruction ?label ?blank ?other (I.component x)
+  ;;
+  let exists ?directive ?instruction ?label ?blank ?other x =
+    P.exists ?directive ?instruction ?label ?blank ?other (I.component x)
+  ;;
+
+  let flags x = P.flags (I.component x)
+end
+
 module Properties : S_properties with type t := t = struct
+  let map
+      ~directive
+      ~instruction
+      ~label
+      ~blank
+      ~other
+      stm =
+    Variants.map stm
+      ~directive:(Fn.const directive)
+      ~instruction:(Fn.const instruction)
+      ~label:(Fn.const label)
+      ~blank:(fun _ -> blank ())
+      ~other:(fun _ -> other ())
+  ;;
+
   let exists
       ?(directive = Fn.const false)
       ?(instruction = Fn.const false)
@@ -97,12 +179,18 @@ module Properties : S_properties with type t := t = struct
       ?(blank = false)
       ?(other = false)
       stm =
-    Variants.map stm
-      ~directive:(Fn.const directive)
-      ~instruction:(Fn.const instruction)
-      ~label:(Fn.const label)
-      ~blank:(Fn.const blank)
-      ~other:(Fn.const other)
+    map stm ~directive ~instruction ~label
+      ~blank:(Fn.const blank) ~other:(Fn.const other)
+  ;;
+
+  let iter
+      ?(directive = Fn.const ())
+      ?(instruction = Fn.const ())
+      ?(label = Fn.const ())
+      ?(blank = Fn.const ())
+      ?(other = Fn.const ())
+      stm =
+    map stm ~directive ~instruction ~label ~blank ~other
   ;;
 
   let is_directive stm = exists ~directive:(Fn.const true) stm
@@ -121,26 +209,19 @@ module Properties : S_properties with type t := t = struct
   let is_instruction_where stm ~f = exists ~instruction:f stm
   let is_instruction = is_instruction_where ~f:(Fn.const true)
 
-  let is_jump =
-    is_instruction_where ~f:Abstract_instruction.is_jump
-  ;;
-  let is_symbolic_jump t =
-    is_instruction_where t
-      ~f:Abstract_instruction.is_symbolic_jump
-  ;;
-
-  let is_symbolic_jump_where t ~f =
-    is_instruction_where t
-      ~f:(Abstract_instruction.is_symbolic_jump_where ~f)
-  ;;
-
-  let is_stack_manipulation =
-    is_instruction_where ~f:Abstract_instruction.is_stack_manipulation
-  ;;
-
-  let is_nop stm =
-    is_instruction_where ~f:Abstract_instruction.is_nop stm
-  ;;
+  include Abstract_instruction.Inherit_predicates
+      (struct
+        type t = Abstract_instruction.with_operands
+        include (Abstract_instruction :
+                   Abstract_instruction.S_properties with type t := t)
+      end)
+      (struct
+        type nonrec t = t
+        let component_opt = function
+          | Instruction i -> Some i
+          | _ -> None
+        ;;
+      end)
 
   let is_jump_pair j l =
     is_symbolic_jump_where j
@@ -158,25 +239,3 @@ module Properties : S_properties with type t := t = struct
   ;;
 end
 include Properties
-
-module Forward_properties
-    (F : sig
-       include S_properties
-       type fwd
-       val forward : fwd -> t
-     end) : S_properties with type t := F.fwd = struct
-  let is_directive x = F.is_directive (F.forward x)
-  let is_blank x = F.is_blank (F.forward x)
-  let is_instruction x = F.is_instruction (F.forward x)
-  let is_instruction_where x ~f = F.is_instruction_where (F.forward x) ~f
-  let is_label x = F.is_label (F.forward x)
-  let is_unused_label x = F.is_unused_label (F.forward x)
-  let is_label_where x ~f = F.is_label_where (F.forward x) ~f
-  let is_nop x = F.is_nop (F.forward x)
-  let is_stack_manipulation x = F.is_stack_manipulation (F.forward x)
-  let is_jump x = F.is_jump (F.forward x)
-  let is_symbolic_jump x = F.is_symbolic_jump (F.forward x)
-  let is_symbolic_jump_where x ~f = F.is_symbolic_jump_where (F.forward x) ~f
-  let is_jump_pair = My_fn.on F.forward F.is_jump_pair
-  let flags x = F.flags (F.forward x)
-end

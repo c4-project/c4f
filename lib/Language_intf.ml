@@ -224,6 +224,7 @@ module type S = sig
     val is_program_boundary : t -> bool
 
     (** As a convenience, we can query abstract statement properties
+        (and, transitively, abstract instruction properties)
         directly on the concrete statement type.  All of these
         operations implicitly route through [abs_type]. *)
     include Abstract.Statement.S_properties with type t := t

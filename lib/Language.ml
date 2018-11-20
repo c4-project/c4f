@@ -47,13 +47,17 @@ module Make (B : Basic)
         ~operands:(abs_operands ins)
     ;;
 
-    include Abstract_instruction.Forward_properties (struct
-        type fwd = t
-        type t = Abstract_instruction.with_operands
-        include (Abstract_instruction :
-                   Abstract_instruction.S_properties with type t := t)
-        let forward = abs_type_with_operands
-      end)
+    include Abstract_instruction.Inherit_properties
+        (struct
+          type t = Abstract_instruction.with_operands
+          include (Abstract_instruction :
+                     Abstract_instruction.S_properties with type t := t)
+        end)
+        (struct
+          type nonrec t = t
+          let component = abs_type_with_operands
+        end)
+    ;;
   end
 
   module Statement = struct
@@ -78,12 +82,13 @@ module Make (B : Basic)
         end)
     end
 
-    include Abstract_statement.Forward_properties (struct
-        type fwd = t
-        let forward = abs_type
-        include Abstract_statement
-      end)
-
+    include Abstract_statement.Inherit_properties
+        (Abstract_statement)
+        (struct
+          type nonrec t = t
+          let component = abs_type
+        end)
+    ;;
     let instruction_mem s =
       On_instructions.exists ~f:(Instruction.abs_type_in s)
 

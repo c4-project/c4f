@@ -73,7 +73,7 @@ type with_operands =
 
 module Flag = Abstract_flag.None
 
-module type S_properties = sig
+module type S_predicates = sig
   type t
 
   val is_jump : t -> bool
@@ -83,6 +83,24 @@ module type S_properties = sig
   ;;
   val is_nop : t -> bool
   val is_stack_manipulation : t -> bool
+end
+
+module Inherit_predicates
+    (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
+  : S_predicates with type t := I.t = struct
+  open Option
+  let is_jump x = exists ~f:P.is_jump (I.component_opt x)
+  let is_nop x = exists ~f:P.is_nop (I.component_opt x)
+  let is_stack_manipulation x = exists ~f:P.is_stack_manipulation (I.component_opt x)
+  let is_symbolic_jump_where x ~f =
+    exists ~f:(P.is_symbolic_jump_where ~f) (I.component_opt x)
+  ;;
+  let is_symbolic_jump x = exists ~f:P.is_symbolic_jump (I.component_opt x)
+end
+
+module type S_properties = sig
+  type t
+  include S_predicates with type t := t
 end
 
 module Properties : S_properties with type t := with_operands = struct
@@ -146,15 +164,15 @@ module Properties : S_properties with type t := with_operands = struct
 end
 include Properties
 
-module Forward_properties
-    (F : sig
-       include S_properties
-       type fwd
-       val forward : fwd -> t
-     end) : S_properties with type t := F.fwd = struct
-  let is_jump x = F.is_jump (F.forward x)
-  let is_nop x = F.is_nop (F.forward x)
-  let is_stack_manipulation x = F.is_stack_manipulation (F.forward x)
-  let is_symbolic_jump_where x ~f = F.is_symbolic_jump_where (F.forward x) ~f
-  let is_symbolic_jump x = F.is_symbolic_jump (F.forward x)
+module Inherit_properties
+    (P : S_properties)
+    (I : Inherit.S with type c := P.t)
+  : S_properties with type t := I.t = struct
+
+  module I_with_c = struct
+    type c = P.t
+    include I
+  end
+  include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
+
 end

@@ -98,9 +98,28 @@ module type S = sig
 end
 
 module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
+
+  module Ins_explanation = struct
+    module Flag = Abstract.Instruction.Flag
+    module Base = Make_explanation (struct
+        module Abs = Abstract.Instruction
+        module Flag = Flag
+
+        type elt = LS.Instruction.t
+        let pp = LS.Instruction.pp
+        type context = unit
+
+        let abs_type = LS.Instruction.abs_type
+        let abs_flags = fun _ () -> Flag.Set.empty
+      end)
+    ;;
+
+    include Base
+  end
+
   module Stm_explanation = struct
     module Flag = LS.Statement.Flag
-    include Make_explanation (struct
+    module Base = Make_explanation (struct
         module Abs = Abstract.Statement
         module Flag = Flag
 
@@ -113,6 +132,8 @@ module Make (LS : Language.S) : S with type statement := LS.Statement.t = struct
         let abs_flags = LS.Statement.flags
       end)
     ;;
+
+    include Base
   end
 
   type t =

@@ -44,9 +44,9 @@ module Flag : sig
   include Abstract_flag.S with type t := t
 end
 
-(** [S_properties] is the signature of any module that can access
-    properties of an abstract statement. *)
-module type S_properties = sig
+(** [S_predicates] is the signature of any module that can access
+    simple predicates over an abstract statement. *)
+module type S_predicates = sig
   (** [t] is the type we're querying. *)
   type t
 
@@ -93,24 +93,63 @@ module type S_properties = sig
 
   (** [is_blank stm] tests whether [stm] is a blank statement. *)
   val is_blank : t -> bool
+end
+
+(** [Inherit_predicates] generates a [S_predicates] by inheriting it
+    from an optional component.  Each predicate returns false when the
+    component doesn't exist. *)
+module Inherit_predicates
+  : functor (P : S_predicates)
+    -> functor (I : Utils.Inherit.S_partial with type c := P.t)
+      -> S_predicates with type t := I.t
+;;
+
+(** [S_properties] is the signature of any module that can access
+    properties (including predicates) of an abstract statement. *)
+module type S_properties = sig
+  (** [t] is the type we're querying. *)
+  type t
+
+  (** Anything that can access properties can also access predicates. *)
+  include S_predicates with type t := t
+
+  (** [exists ?directive ?instruction ?label ?blank ?other stm] returns
+      [true] if [stm] is matched by any of the optional predicates. *)
+  val exists
+    :  ?directive:(string -> bool)
+    -> ?instruction:(Abstract_instruction.with_operands -> bool)
+    -> ?label:(Abstract_symbol.t -> bool)
+    -> ?blank:bool
+    -> ?other:bool
+    -> t -> bool
+  ;;
+
+  (** [iter ?directive ?instruction ?label ?blank ?other stm] executes
+     any of the optional side-effecting functions that apply to
+     [stm]. *)
+  val iter
+    :  ?directive:(string -> unit)
+    -> ?instruction:(Abstract_instruction.with_operands -> unit)
+    -> ?label:(Abstract_symbol.t -> unit)
+    -> ?blank:(unit -> unit)
+    -> ?other:(unit -> unit)
+    -> t -> unit
+  ;;
 
   (** [flags x symbol_table] gets the statement flags for [x] given
       symbol table [symbol_table]. *)
   val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
 end
 
-(** [Forward_properties F] generates a [S_properties] for a type [fwd]
-    given an [S_properties] for a type [t] and a function to project
-    [fwd] to [t]. *)
-module Forward_properties
-  : functor (F : sig
-               include S_properties
-               type fwd
-               val forward : fwd -> t
-             end)
-    -> S_properties with type t := F.fwd
+(** [Inherit_properties] generates a [S_properties] by inheriting it
+    from a component. *)
+module Inherit_properties
+  : functor (P : S_properties)
+    -> functor (I : Utils.Inherit.S with type c := P.t)
+      -> S_properties with type t := I.t
 ;;
 
+(** This module contains [S_properties] directly. *)
 include S_properties with type t := t
 
 include Abstract_base.S with type t := t and module Flag := Flag
