@@ -181,6 +181,19 @@ module type Generic_on_monad = sig
   val mapiM : f : (int -> 'a elt -> 'b elt M.t) -> 'a t -> 'b t M.t
 end
 
+(** [On_monad1] extends [Generic_on_monad] with functionality that
+    only works on arity-1 containers. *)
+module type On_monad1 = sig
+  type 'a t
+
+  include Generic_on_monad with type 'a t := 'a t and type 'a elt := 'a
+
+  (** [sequenceM x] lifts a container of monads [x] to a monad
+      containing a container, by sequencing the monadic effects from
+      left to right. *)
+  val sequenceM : 'a M.t t -> 'a t M.t
+end
+
 (** [Generic_container] is a generic interface for fold-mappable
    containers, used to build [Container0] (arity-0) and [Container1]
    (arity-1). *)
@@ -191,10 +204,10 @@ module type Generic_container = sig
   (** [On_monad] implements monadic folding and mapping operators for
       a given monad [M]. *)
   module On_monad
-    : functor (MS : Monad.S)
+    : functor (M : Monad.S)
       -> Generic_on_monad with type 'a t   := 'a t
                            and type 'a elt := 'a elt
-                           and module M := MS
+                           and module M := M
   ;;
 
   (** We can do generic container operations. *)
@@ -237,7 +250,22 @@ module type Container1 = sig
       element type ['a]. *)
   type 'a t
 
-  include Generic_container with type 'a t := 'a t and type 'a elt := 'a
+  (** [On_monad] implements monadic folding and mapping operators for
+      a given monad [M], including arity-1 specific operators. *)
+  module On_monad
+    : functor (M : Monad.S)
+      -> On_monad1 with type 'a t := 'a t and module M := M
+  (** [With_errors] is shorthand for [On_monad (Or_error)]. *)
+  module With_errors : On_monad1 with type 'a t := 'a t
+                                  and module M := Or_error
+  ;;
+
+  include Generic_container with type 'a t := 'a t
+                             and type 'a elt := 'a
+                             and module On_monad := On_monad
+                             and module With_errors := With_errors
+  ;;
+
   include Container.S1 with type 'a t := 'a t
   include My_container.Extensions1 with type 'a t := 'a t
 

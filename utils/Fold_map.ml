@@ -160,6 +160,9 @@ module Make_container1 (I : Basic_container1)
         module M = MS
         include I.On_monad (MS)
       end)
+
+    (* [sequenceM] can't be defined on arity-0 containers. *)
+    let sequenceM c = mapM ~f:(Fn.id) c
   end
   module With_errors = On_monad (Base.Or_error)
 
