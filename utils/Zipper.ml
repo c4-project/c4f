@@ -40,8 +40,8 @@ module Cell = struct
   let of_data_list = List.map ~f:make
   let to_data_list = List.map ~f:data
 
-  let mark cell new_mark =
-    { cell with marks = Int.Set.add cell.marks new_mark }
+  let mark cell ~mark =
+    { cell with marks = Int.Set.add cell.marks mark }
   ;;
 
   include Fold_map.Make_container1 (struct
@@ -62,14 +62,12 @@ end
 type 'a t =
   { left  : 'a Cell.t list
   ; right : 'a Cell.t list
-  ; mark_counter : int
   } [@@deriving fields, sexp]
 ;;
 
 let make ~left ~right =
-  { left         = Cell.of_data_list left
-  ; right        = Cell.of_data_list right
-  ; mark_counter = 0
+  { left  = Cell.of_data_list left
+  ; right = Cell.of_data_list right
   }
 ;;
 
@@ -103,7 +101,7 @@ let%expect_test "to_list-of_list idempotent on empty list" =
 
 let head zipper = List.hd (right zipper)
 
-let set_head_on_right right new_head =
+let set_head_cell_on_right right new_head =
   match right, new_head with
   | []     , None       -> []
   | []     , Some head' -> [head']
@@ -111,23 +109,12 @@ let set_head_on_right right new_head =
   | _::rest, Some head' -> head'::rest
 ;;
 
-let set_head zipper new_head =
-  { zipper with right = set_head_on_right zipper.right new_head }
+let set_head_cell zipper new_head =
+  { zipper with right = set_head_cell_on_right zipper.right new_head }
 ;;
 
 let push zipper ~value =
   { zipper with right = (Cell.make value)::zipper.right }
-;;
-
-let pop_opt zipper =
-  match zipper.right with
-  | []    -> None
-  | x::xs -> Some (x.data, { zipper with right = xs })
-;;
-
-let fetch_and_increment_mark zipper =
-  let mark = zipper.mark_counter in
-  (mark, { zipper with mark_counter = mark + 1 })
 ;;
 
 let left_length zipper = List.length zipper.left
@@ -142,9 +129,92 @@ let rev_transfer amount ~src ~dst =
     Some (src', dst')
 ;;
 
-module On_monad (M : Monad.S) = struct
+(* We split On_monad into two bits so we can use the option-monad
+   specialisation of some of the monadic operations to define some
+   of the others. *)
+module On_monad_base (M : Monad.S) = struct
   module CM = Cell.On_monad (M)
   module CO = Cell.On_monad (Option)
+
+  let popM zipper ~on_empty =
+    match zipper.right with
+    | []    -> on_empty zipper
+    | x::xs -> M.return (x.data, { zipper with right = xs })
+end
+
+module On_option_base = On_monad_base (Option)
+let pop_opt zipper =
+  On_option_base.popM ~on_empty:(Fn.const None) zipper
+;;
+
+let peek_opt ?(steps=0) zipper =
+  let open Option.Let_syntax in
+  let%map cell =
+    if steps < 0
+    then List.nth zipper.left  ((Int.abs steps) - 1)
+    else List.nth zipper.right steps
+  in
+  cell.data
+;;
+
+let%expect_test "peek_opt: default, in-bounds" =
+  let zipper = make ~left:[19; 27; 64] ~right:[101; -5; 2] in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (peek_opt zipper : int option)];
+  [%expect {| (101) |}]
+;;
+
+let%expect_test "peek_opt: default, out-of-bounds" =
+  let zipper = make ~left:[19; 27; 64] ~right:[] in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (peek_opt zipper : int option)];
+  [%expect {| () |}]
+;;
+
+let%expect_test "peek_opt: directly backwards, in-bounds" =
+  let zipper = make ~left:[19; 27; 64] ~right:[101; -5; 2] in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (peek_opt ~steps:(-1) zipper : int option)];
+  [%expect {| (19) |}]
+;;
+
+let%expect_test "peek_opt: directly backwards, out-of-bounds" =
+  let zipper = make ~left:[] ~right:[101; -5; 2] in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (peek_opt ~steps:(-1) zipper : int option)];
+  [%expect {| () |}]
+;;
+
+let%expect_test "peek_opt: several steps forwards, in-bounds" =
+  let zipper = make ~left:[19; 27; 64] ~right:[101; -5; 2] in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (peek_opt ~steps:2 zipper : int option)];
+  [%expect {| (2) |}]
+;;
+
+let%expect_test "peek_opt: several steps forwards, out-of-bounds" =
+  let zipper = make ~left:[19; 27; 64] ~right:[101; -5; 2] in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (peek_opt ~steps:3 zipper : int option)];
+  [%expect {| () |}]
+;;
+
+let%expect_test "peek_opt: several steps backwards, in-bounds" =
+  let zipper = make ~left:[19; 27; 64] ~right:[101; -5; 2] in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (peek_opt ~steps:(-3) zipper : int option)];
+  [%expect {| (64) |}]
+;;
+
+let%expect_test "peek_opt: several steps forwards, out-of-bounds" =
+  let zipper = make ~left:[19; 27; 64] ~right:[101; -5; 2] in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (peek_opt ~steps:(-4) zipper : int option)];
+  [%expect {| () |}]
+;;
+
+module On_monad (M : Monad.S) = struct
+  include On_monad_base (M)
 
   let fold_mapM_head zipper ~f ~init =
     let open M.Let_syntax in
@@ -152,13 +222,13 @@ module On_monad (M : Monad.S) = struct
     | None   -> return (init, zipper)
     | Some h ->
       let%map (init', h') = CM.fold_mapM ~f ~init h in
-      (init', set_head zipper (CO.sequenceM h'))
+      (init', set_head_cell zipper (CO.sequenceM h'))
   ;;
 
-  let popM zipper ~on_empty =
-    match pop_opt zipper with
-    | None        -> on_empty zipper
-    | Some (h, z) -> M.return (h, z)
+  let peekM ?steps zipper ~on_empty =
+    match peek_opt ?steps zipper with
+    | Some v -> M.return v
+    | None   -> on_empty zipper
   ;;
 
   let stepM ?(steps=1) zipper ~on_empty =
@@ -166,12 +236,12 @@ module On_monad (M : Monad.S) = struct
     match Ordering.of_int (Int.compare steps 0) with
     | Less ->
       (match rev_transfer amount ~src:zipper.left ~dst:zipper.right with
-       | Some (l, r) -> M.return { zipper with left = l; right = r }
+       | Some (l, r) -> M.return { left = l; right = r }
        | None -> on_empty zipper)
     | Equal -> M.return zipper
     | Greater ->
       (match rev_transfer amount ~src:zipper.right ~dst:zipper.left with
-       | Some (r, l) -> M.return { zipper with left = l; right = r }
+       | Some (r, l) -> M.return { left = l; right = r }
        | None -> on_empty zipper)
   ;;
 
@@ -182,7 +252,7 @@ module On_monad (M : Monad.S) = struct
     | Some (hd, zipper') ->
       match%bind f init hd zipper' with
       | `Stop final -> M.return final
-      | `Continue accum ->
+      | `Drop_and_continue accum ->
         foldM_until zipper' ~f ~init:accum ~finish
       | `Replace_and_continue (hd', accum) ->
         push zipper' ~value:hd'
@@ -190,19 +260,22 @@ module On_monad (M : Monad.S) = struct
         >>= foldM_until ~f ~init:accum ~finish
   ;;
 
-  let mapM_head zipper ~f ~on_empty =
+  let mapM_head_cell zipper ~f ~on_empty =
     match head zipper with
     | None   -> on_empty zipper
-    | Some h -> M.(CM.mapM ~f h >>| CO.sequenceM >>| set_head zipper)
+    | Some h -> M.(f h >>| set_head_cell zipper)
   ;;
 
-  let markM zipper ~on_empty =
-    match head zipper with
-    | None   -> on_empty zipper
-    | Some h ->
-      let (mark, zipper') = fetch_and_increment_mark zipper in
-      let h' = Cell.mark h mark in
-      M.return (mark, set_head zipper' (Some h'))
+  let mapM_head zipper ~f ~on_empty =
+    mapM_head_cell zipper
+      ~f:M.(fun h -> CM.mapM ~f h >>| CO.sequenceM)
+      ~on_empty
+  ;;
+
+  let markM zipper ~mark ~on_empty =
+    mapM_head_cell zipper
+      ~f:(fun h -> M.return (Some (Cell.mark ~mark h)))
+      ~on_empty
   ;;
 
   let recallM zipper ~mark ~on_empty =
@@ -342,7 +415,7 @@ let%expect_test "zipper: fold_until: partition on sign" =
           Or_error.return (List.rev acc, to_list zipper))
       ~f:(fun negatives k _zipper ->
           if Int.is_negative k
-          then `Continue (k::negatives)
+          then `Drop_and_continue (k::negatives)
           else `Replace_and_continue (k, negatives))
   in
   Sexp.output_hum Out_channel.stdout
@@ -350,7 +423,7 @@ let%expect_test "zipper: fold_until: partition on sign" =
   [%expect {| (Ok ((-11 -92 -6 -10) (0 2 64 92 4))) |}]
 ;;
 
-let mark zipper = On_error.markM zipper
+let mark zipper ~mark = On_error.markM zipper ~mark
     ~on_empty:(fun _ ->
         Or_error.error_string "Tried to mark an exhausted zipper")
 ;;
@@ -366,19 +439,16 @@ let%expect_test "mark/recall: valid example" =
   let open Or_error.Let_syntax in
   let zipper = of_list [19; 27; 64; 101; -5; 2] in
   let result = (
-    let%bind (m, zipper) =
+    let%bind _, zipper =
       zipper
       |> step ~steps:2 (* looking at 64 *)
-      >>= mark
-    in
-    let%bind (_, zipper) =
-      zipper
-      |> step (* looking at 101 *)
-      >>= pop (* now looking at -5 *)
+      >>= mark ~mark:1
+      >>= step (* looking at 101 *)
+      >>= pop  (* now looking at -5 *)
     in
     zipper
     |> push ~value:64 (* now looking at (another) 64 *)
-    |> recall ~mark:m (* should have jumped to first 64 *)
+    |> recall ~mark:1 (* should have jumped to first 64 *)
     >>| to_two_lists
   )
   in

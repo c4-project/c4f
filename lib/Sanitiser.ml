@@ -75,6 +75,7 @@ module Make (B : Basic)
      containers and lists *)
   module Ctx_Pcon = Program_container.On_monad (Ctx)
   module Ctx_List = My_list.On_monad (Ctx)
+  module Ctx_Zip  = Zipper.On_monad (Ctx)
 
   module Output = struct
     type t =
@@ -329,20 +330,23 @@ module Make (B : Basic)
     )
   ;;
 
+  let update_proglen_and_finish num_removed zipper =
+    Ctx.(dec_prog_length num_removed >>| fun () -> Zipper.to_list zipper)
+  ;;
+
+  let process_possible_useless_jump num_removed statement zipper =
+    match Zipper.peek_opt zipper with
+    | Some next when Lang.Statement.is_jump_pair statement next ->
+      Ctx.return (`Drop_and_continue (num_removed + 1))
+    | Some _ | None ->
+      Ctx.return (`Replace_and_continue (statement, num_removed))
+  ;;
+
   let remove_useless_jumps prog =
-    Ctx.(
-      fix ~f:(
-        fun mu (passed, remainder) ->
-          match remainder with
-          | x::x'::xs when Lang.Statement.is_jump_pair x x' ->
-            dec_prog_length >>= fun () -> mu (passed, (x'::xs))
-          | x::x'::xs ->
-            mu (x::passed, (x'::xs))
-          | [] -> return (List.rev passed, [])
-          | [x] -> return (List.rev (x::passed), [])
-      ) ([], prog)
-      >>| fst
-    )
+    Ctx_Zip.foldM_until (Zipper.of_list prog)
+      ~f:process_possible_useless_jump
+      ~init:0
+      ~finish:update_proglen_and_finish
   ;;
 
   let update_symbol_tables

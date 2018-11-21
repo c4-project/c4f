@@ -102,14 +102,21 @@ module Make (H : Sanitiser_warn.Hook)
   let get_prog_name = peek progname
 
   let get_prog_length = peek proglen
-  let dec_prog_length =
+
+  let validate_dec_prog_length_amount amount proglen =
+    Validate.name "Amount to decrement program length"
+      (Int.validate_bound amount
+         ~min:(Incl 0)
+         ~max:(Incl proglen))
+
+  let dec_prog_length amount =
+    let open Or_error.Let_syntax in
     Monadic.modify (
       fun ctx ->
-        if ctx.proglen <= 0
-        then Or_error.error_s
-            [%message "Underflow in program length"
-                ~proglen:(ctx.proglen : int)]
-        else Or_error.return { ctx with proglen = pred ctx.proglen }
+        let%map () = Validate.result
+            (validate_dec_prog_length_amount amount ctx.proglen)
+        in
+        { ctx with proglen = ctx.proglen - amount }
     )
   ;;
 

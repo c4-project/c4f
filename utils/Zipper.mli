@@ -94,6 +94,14 @@ val push : 'a t -> value:'a -> 'a t
     is the new zipper formed by removing [a]. *)
 val pop_opt : 'a t -> ('a * 'a t) option
 
+(** [peek_opt ?steps zipper] retrieves the cursor value
+    without popping it from the zipper.  If the cursor is empty,
+    [None] is returned.
+
+    If [steps] is given, it shifts the effective cursor [steps]
+    places forwards. *)
+val peek_opt : ?steps:int -> 'a t -> 'a option
+
 (** [left_length zipper] gets the length of [zipper]'s left list. *)
 val left_length : 'a t -> int
 (** [right_length zipper] gets the length of [zipper]'s right list. *)
@@ -121,6 +129,19 @@ module On_monad : functor (M : Monad.S) -> sig
     -> ('a * 'a t) M.t
   ;;
 
+  (** [peekM ?steps zipper ~on_empty] retrieves the cursor value
+      without popping it from the zipper.  If the cursor is empty,
+      [~on_empty] is executed and returned.
+
+      If [steps] is given, it shifts the effective cursor [steps]
+      places forwards. *)
+  val peekM
+    :  ?steps:int
+    -> 'a t
+    -> on_empty:('a t -> 'a M.t)
+    -> 'a M.t
+  ;;
+
   (** [stepM ?steps zipper ~on_empty] takes one or more steps across
       [zipper].  The number of steps defaults to 1 (forwards), but
       can be given by [steps]; negative numbers step backwards through
@@ -142,13 +163,13 @@ module On_monad : functor (M : Monad.S) -> sig
      zipper mid-fold, but can influence the value of the final zipper
      provided to the [finish] continuation.  At each step, [f] can
      choose to either [`Stop] the fold and return a value directly;
-     [`Continue] but drop the cursor from the final zipper; or
-     [`Replace_and_continue], giving a replacement value for the
+     [`Drop_and_continue], dropping the cursor from the final zipper;
+     or [`Replace_and_continue], giving a replacement value for the
      cursor. *)
   val foldM_until
     :  'a t
     -> f:('acc -> 'a -> 'a t -> [ `Stop of 'final
-                                | `Continue of 'acc
+                                | `Drop_and_continue of 'acc
                                 | `Replace_and_continue of 'a * 'acc
                                 ] M.t)
     -> init:'acc
@@ -171,11 +192,21 @@ module On_monad : functor (M : Monad.S) -> sig
     -> 'a t M.t
   ;;
 
+  (** [markM zipper ~mark] marks the cursor with [mark], and returns
+     the marked-up zipper.  If the cursor is empty, [on_empty] is
+      executed and returned. *)
+  val markM
+    : 'a t
+    -> mark:int
+    -> on_empty:('a t -> 'a t M.t)
+    -> 'a t M.t
+  ;;
+
   (** [recallM zipper ~mark ~on_empty] rewinds [zipper] until the
-      cursor is on an element previously marked with [mark].
+     cursor is on an element previously marked with [mark].
 
       If [recallM] runs out of left-list to rewind before finding
-      [mark], [on_empty] is executed and returned. *)
+     [mark], [on_empty] is executed and returned. *)
   val recallM
     : 'a t
     -> mark:int
@@ -215,7 +246,7 @@ val step : ?steps:int -> 'a t -> 'a t Or_error.t
 val fold_until
   :  'a t
   -> f:('acc -> 'a -> 'a t -> [ `Stop of 'final
-                              | `Continue of 'acc
+                              | `Drop_and_continue of 'acc
                               | `Replace_and_continue of 'a * 'acc
                               ])
   -> init:'acc
@@ -223,14 +254,13 @@ val fold_until
   -> 'final
 ;;
 
-(** [mark zipper] marks the cursor with a fresh integer mark, and
-    returns the pair of chosen mark and marked-up zipper.
-    If the cursor is empty, an error is returned. *)
-val mark : 'a t -> (int * 'a t) Or_error.t
+(** [mark zipper ~mark] marks the cursor with [mark], and returns the
+   marked-up zipper.  If the cursor is empty, an error is returned. *)
+val mark : 'a t -> mark:int -> 'a t Or_error.t
 
-(** [recall zipper ~mark ~on_empty] rewinds [zipper] until the
-    cursor is on an element previously marked with [mark].
+(** [recall zipper ~mark ~on_empty] rewinds [zipper] until the cursor
+   is on an element previously marked with [mark].
 
-    If [recall] runs out of left-list to rewind before finding
-    [mark], an error is returned. *)
+    If [recall] runs out of left-list to rewind before finding [mark],
+   an error is returned. *)
 val recall : 'a t -> mark:int -> 'a t Or_error.t
