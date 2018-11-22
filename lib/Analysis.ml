@@ -28,11 +28,6 @@
 open Core
 open Utils
 
-module type Timed = sig
-  type t
-  val time_taken : t -> Time.Span.t
-end
-
 module Herd = struct
   type t =
     [ Herd_output.outcome
@@ -57,31 +52,25 @@ end
 
 module File = struct
   type t =
-    { herd             : Herd.t
-    ; time_taken       : Time.Span.t
-    ; time_taken_in_cc : Time.Span.t
-    } [@@deriving sexp_of, fields]
-
-  let create = Fields.create
+    { time_taken       : Time.Span.t option
+    ; time_taken_in_cc : Time.Span.t option
+    ; herd             : Herd.t
+    } [@@deriving sexp_of, fields, make]
 end
 
 module Compiler = struct
   type t =
-    { files      : (string, File.t) List.Assoc.t
-    ; time_taken : Time.Span.t
-    } [@@deriving sexp_of, fields]
-
-  let create = Fields.create
+    { time_taken : Time.Span.t option
+    ; files      : (string, File.t) List.Assoc.t
+    } [@@deriving sexp_of, fields, make]
 end
 
 module Machine = struct
   type t =
-    { compilers  : (Id.t, Compiler.t) List.Assoc.t
-    ; time_taken : Time.Span.t
-    } [@@deriving sexp_of, fields]
+    { time_taken : Time.Span.t option
+    ; compilers  : (Id.t, Compiler.t) List.Assoc.t
+    } [@@deriving sexp_of, fields, make]
   ;;
-
-  let create = Fields.create
 
   let files m =
     List.concat_map (compilers m)
@@ -94,12 +83,10 @@ end
 
 module M = struct
   type t =
-    { machines   : (Id.t, Machine.t) List.Assoc.t
-    ; time_taken : Time.Span.t
-    } [@@deriving sexp_of, fields]
+    { time_taken : Time.Span.t option
+    ; machines   : (Id.t, Machine.t) List.Assoc.t
+    } [@@deriving sexp_of, fields, make]
   ;;
-
-  let create = Fields.create
 
   let files a =
     List.concat_map (machines a)
@@ -131,6 +118,11 @@ module M = struct
       else Tabulator.with_rule machine_rule tabulator
   ;;
 
+  let pp_span_opt f = function
+    | Some span -> Time.Span.pp f span
+    | None      -> String.pp f "-"
+  ;;
+
   let file_to_row mid cid file analysis =
     [ Fn.flip Id.pp mid
     ; Fn.flip Id.pp cid
@@ -141,8 +133,8 @@ module M = struct
        (or ignore them) here. *)
     File.Fields.Direct.to_list analysis
       ~herd:(fun _field _file h f -> Herd.pp f h)
-      ~time_taken:(fun _field _file t f -> Time.Span.pp f t)
-      ~time_taken_in_cc:(fun _field _file t f -> Time.Span.pp f t)
+      ~time_taken:(fun _field _file t f -> pp_span_opt f t)
+      ~time_taken_in_cc:(fun _field _file t f -> pp_span_opt f t)
   ;;
 
   let with_file

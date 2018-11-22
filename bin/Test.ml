@@ -198,10 +198,11 @@ let run_single
     let end_time = Time.now () in
 
     ( base
-    , Analysis.File.create
+    , Analysis.File.make
         ~herd:analysis
         ~time_taken:(Time.diff end_time start_time)
         ~time_taken_in_cc
+        ()
     )
   )
 ;;
@@ -225,9 +226,10 @@ let run_compiler
   let end_time = Time.now () in
 
   ( id
-  , Analysis.Compiler.create
+  , Analysis.Compiler.make
       ~files:results_alist
       ~time_taken:(Time.diff end_time start_time)
+      ()
   )
 ;;
 
@@ -245,9 +247,10 @@ let run_machine
   let end_time = Time.now () in
 
   ( mach_id
-  , Analysis.Machine.create
+  , Analysis.Machine.make
       ~compilers:results_alist
       ~time_taken:(Time.diff end_time start_time)
+      ()
   )
 ;;
 
@@ -308,9 +311,10 @@ let run ~in_root ~out_root o cfg =
   in
   let end_time = Time.now () in
 
-  let analysis = Analysis.create
+  let analysis = Analysis.make
                    ~machines:results_alist
                    ~time_taken:(Time.diff end_time start_time)
+                   ()
   in
 
   let%map table = Analysis.to_table analysis in

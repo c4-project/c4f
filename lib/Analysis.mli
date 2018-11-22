@@ -28,15 +28,6 @@
 open Core
 open Utils
 
-(** [Timed] is a signature for abstract data types containing a
-    time-taken span. *)
-module type Timed = sig
-  type t
-
-  (** [time_taken t] gets the time taken to produce analysis [t]. *)
-  val time_taken : t -> Time.Span.t
-end
-
 module Herd : sig
   (** [t] is the type of Herd analysis runs. *)
   type t =
@@ -51,19 +42,20 @@ module File : sig
   (** [t] is the opaque type of a single-file analysis. *)
   type t [@@deriving sexp_of]
 
-  include Timed with type t := t
+  include Timing.Timed0 with type t := t
 
   (** [herd f] gets the Herd result for file [f]. *)
   val herd : t -> Herd.t
 
-  (** [create ~herd ~time_taken ~time_taken_in_cc] creates a file
+  (** [make ?time_taken ?time_taken_in_cc ()] creates a file
      analysis given Herd analysis [herd], total time taken
       [time_taken], and time taken in the C compiler
       [time_taken_in_cc].  *)
-  val create
-    :  herd:Herd.t
-    -> time_taken:Time.Span.t
-    -> time_taken_in_cc:Time.Span.t
+  val make
+    :  ?time_taken:Time.Span.t
+    -> ?time_taken_in_cc:Time.Span.t
+    -> herd:Herd.t
+    -> unit
     -> t
 end
 
@@ -71,18 +63,19 @@ module Compiler : sig
   (** [t] is the opaque type of a single-compiler analysis. *)
   type t [@@deriving sexp_of]
 
-  include Timed with type t := t
+  include Timing.Timed0 with type t := t
 
   (** [files c] gets an associative list of all analysis results
       for files on compiler [c]. *)
   val files : t -> (string, File.t) List.Assoc.t
 
-  (** [create ~files ~time_taken] creates a compiler analysis given
+  (** [make ?time_taken ~files ()] creates a compiler analysis given
      file analyses [files] and total time taken in compiler
      [time_taken]. *)
-  val create
-    :  files      : (string, File.t) List.Assoc.t
-    -> time_taken : Time.Span.t
+  val make
+    :  ?time_taken: Time.Span.t
+    -> files: (string, File.t) List.Assoc.t
+    -> unit
     -> t
 end
 
@@ -90,7 +83,7 @@ module Machine : sig
   (** [t] is the opaque type of a machine analysis. *)
   type t [@@deriving sexp_of]
 
-  include Timed with type t := t
+  include Timing.Timed0 with type t := t
 
   (** [compilers m] gets an associative list of all analysis results
       for compilers on machine [m]. *)
@@ -100,12 +93,13 @@ module Machine : sig
      tuples for all files processed on machine [m]. *)
   val files : t -> (Id.t * string * File.t) list
 
-  (** [create ~compilers ~time_taken] creates a compiler analysis
+  (** [make ?time_taken ~compilers ()] creates a compiler analysis
      given compiler analyses [compilers] and total time taken on
      machine [time_taken]. *)
-  val create
-    :  compilers  : (Id.t, Compiler.t) List.Assoc.t
-    -> time_taken : Time.Span.t
+  val make
+    :  ?time_taken: Time.Span.t
+    -> compilers: (Id.t, Compiler.t) List.Assoc.t
+    -> unit
     -> t
   ;;
 end
@@ -113,11 +107,12 @@ end
 (** [t] is the opaque type of a full analysis. *)
 type t [@@deriving sexp_of]
 
-(** [create ~machines ~time_taken] creates a top-level analysis given
+(** [make ?time_taken ~machines ()] creates a top-level analysis given
    machine analyses [machines] and total time taken [time_taken]. *)
-val create
-  :  machines  : (Id.t, Machine.t) List.Assoc.t
-  -> time_taken : Time.Span.t
+val make
+  :  ?time_taken: Time.Span.t
+  -> machines: (Id.t, Machine.t) List.Assoc.t
+  -> unit
   -> t
 ;;
 
