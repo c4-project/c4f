@@ -25,53 +25,19 @@ open Core
 open Lib
 open Utils
 
-
-let run_compiler
-    (o : Output.t) ~in_root ~out_root herdprog c_fnames cspec =
-  (* TODO(@MattWindsor91): actually wire this up to config *)
-  let t = Timing.make_module `Enabled in
-  let module T = (val t : Timing.S) in
-  let open Or_error.Let_syntax in
-  let id = Compiler.Spec.With_id.id cspec in
-
-  let%bind c  = Language_support.compiler_from_spec cspec in
-  let%bind r  = (Language_support.asm_runner_from_spec cspec) in
-  let%bind ps = Pathset.make_and_mkdirs id ~in_root ~out_root in
-  let module TC = Tester.Make_compiler (struct
-      module T = T
-      module C = (val c)
-      module R = (val r)
-      let o        = o
-      let ps       = ps
-      let cspec    = cspec
-      let herd_opt = herdprog
-    end) in
-
-  Pathset.pp o.vf ps;
-  Format.pp_print_newline o.vf ();
-  let%map result = TC.run c_fnames in
-  (id, result)
-;;
-
 let run_machine
-    o ~in_root ~out_root herdprog c_files (mach_id, specs) =
+    o ~in_root ~out_root herd_opt c_files (mach_id, specs) =
   let open Or_error.Let_syntax in
 
-  let start_time = Time.now () in
-  let%map results_alist =
-    specs
-    |> Compiler.Spec.Set.map
-      ~f:(run_compiler o ~in_root ~out_root herdprog c_files)
-    |> Or_error.combine_errors
-  in
-  let end_time = Time.now () in
-
-  ( mach_id
-  , Analysis.Machine.make
-      ~compilers:results_alist
-      ~time_taken:(Time.diff end_time start_time)
-      ()
-  )
+  let module TM = Tester.Make_machine (struct
+      (* TODO(@MattWindsor91): wire this up to settings *)
+      module T = (val Timing.make_module `Enabled)
+      let o = o
+      let herd_opt = herd_opt
+      include Language_support
+    end) in
+  let%map analysis = TM.run ~in_root ~out_root c_files specs in
+  (mach_id, analysis)
 ;;
 
 let check_c_files_exist c_path c_files =

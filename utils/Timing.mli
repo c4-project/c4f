@@ -75,6 +75,10 @@ module type S = sig
       timestamps before and after execution. *)
   val bracket : (unit -> 'a) -> 'a t
 
+  (** [bracket_join thunk] behaves as [bracket], but returns the
+      container inside the [Or_error.t]. *)
+  val bracket_join : (unit -> 'a Or_error.t) -> 'a t Or_error.t
+
   include Timed1 with type 'a t := 'a t
   include Fold_map.Container1 with type 'a t := 'a t
 end

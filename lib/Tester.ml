@@ -24,20 +24,17 @@
 open Core_kernel
 open Utils
 
-module type Basic_machine = sig
+module type Basic = sig
   module T : Timing.S
-
-  val o        : Output.t
-  val ps       : Pathset.t
+  val o : Output.t
   val herd_opt : Herd.t option
 end
 
 module type Basic_compiler = sig
-  include Basic_machine
-
+  include Basic
   module C : Compiler.S
   module R : Asm_job.Runner
-
+  val ps : Pathset.t
   include Compiler.With_spec
 end
 
@@ -59,8 +56,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
         (f ()) "While executing tester stage"
         stage String.sexp_of_t
     in
-    let result = T.bracket f' in
-    T.With_errors.sequenceM result
+    T.bracket_join f'
   ;;
 
   (** [herd_run_result] summarises the result of running Herd. *)
@@ -260,8 +256,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     let base = Filename.chop_extension (Filename.basename c_fname) in
     let fs = Pathset.File.make ps base in
     let%map result =
-      T.With_errors.sequenceM
-        (T.bracket (fun () -> run_single_from_pathset_file fs))
+      T.bracket_join (fun () -> run_single_from_pathset_file fs)
     in
     let (herd, timings) = T.value result in
     ( base
@@ -276,17 +271,83 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   let run c_fnames =
     let open Or_error.Let_syntax in
     let%map files_and_time =
-      T.With_errors.sequenceM
-        (T.bracket (fun () ->
-             c_fnames
-             |> List.sort ~compare:Core_extended.Extended_string.collate
-             |> List.map ~f:(run_single ps)
-             |> Or_error.combine_errors
-           ))
+      T.bracket_join (fun () ->
+          c_fnames
+          |> List.sort ~compare:Core_extended.Extended_string.collate
+          |> List.map ~f:(run_single ps)
+          |> Or_error.combine_errors
+        )
     in
     Analysis.Compiler.make
       ~files:(T.value files_and_time)
       ?time_taken:(T.time_taken files_and_time)
+      ()
+  ;;
+end
+
+module type Basic_machine = sig
+  include Basic
+  val compiler_from_spec
+    :  Compiler.Spec.With_id.t
+    -> (module Compiler.S) Or_error.t
+  ;;
+  val asm_runner_from_spec
+    :  Compiler.Spec.With_id.t
+    -> (module Asm_job.Runner) Or_error.t
+  ;;
+end
+
+module type Machine = sig
+  val run
+    :  string list
+    -> Compiler.Spec.Set.t
+    -> in_root:string
+    -> out_root:string
+    -> Analysis.Machine.t Or_error.t
+  ;;
+end
+
+(** [Make_machine] makes a single-machine test runner from a
+   [Basic_machine]. *)
+module Make_machine (B : Basic_machine) : Machine = struct
+  include B
+
+  let run_compiler ~in_root ~out_root c_fnames cspec =
+    (* TODO(@MattWindsor91): actually wire this up to config *)
+    let t = Timing.make_module `Enabled in
+    let module T = (val t : Timing.S) in
+    let open Or_error.Let_syntax in
+    let id = Compiler.Spec.With_id.id cspec in
+
+    let%bind c  = B.compiler_from_spec cspec in
+    let%bind r  = B.asm_runner_from_spec cspec in
+    let%bind ps = Pathset.make_and_mkdirs id ~in_root ~out_root in
+    let module TC = Make_compiler (struct
+        include (B : Basic)
+        module C = (val c)
+        module R = (val r)
+        let ps = ps
+        let cspec = cspec
+      end) in
+    Pathset.pp o.vf ps;
+    Format.pp_print_newline o.vf ();
+    let%map result = TC.run c_fnames in
+    (id, result)
+  ;;
+
+  let run c_fnames specs ~in_root ~out_root =
+    let open Or_error.Let_syntax in
+    let%map compilers_and_time =
+      T.bracket_join (fun () ->
+          specs
+          |> Compiler.Spec.Set.map
+            ~f:(run_compiler ~in_root ~out_root c_fnames)
+          |> Or_error.combine_errors
+        )
+    in
+    Analysis.Machine.make
+      ~compilers:(T.value compilers_and_time)
+      ?time_taken:(T.time_taken compilers_and_time)
       ()
   ;;
 end

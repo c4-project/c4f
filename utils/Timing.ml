@@ -51,6 +51,7 @@ module type S = sig
 
   val value : 'a t -> 'a
   val bracket : (unit -> 'a) -> 'a t
+  val bracket_join : (unit -> 'a Or_error.t) -> 'a t Or_error.t
 
   include Timed1 with type 'a t := 'a t
   include Fold_map.Container1 with type 'a t := 'a t
@@ -84,6 +85,8 @@ module Make (T : Timer) : S = struct
           (acc, { wt with value = value' })
       end
     end)
+
+  let bracket_join thunk = With_errors.sequenceM (bracket thunk)
 end
 
 let make_timer = function
