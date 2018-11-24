@@ -22,6 +22,13 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+(** [Timing] provides high-level functionality for timing functions,
+    as well as carrying a 'time taken' span around with a value.
+
+    This module isn't intended to be particularly precise or
+    lightweight---but does support ways to disable timing at the
+    dependency-injection level. *)
+
 open Core_kernel
 
 (** [Timed1] is a signature for arity-1 things that contain a
@@ -56,9 +63,9 @@ module Null_timer : Timer
     [Time.now] for [time]. *)
 module Now_timer : Timer
 
-(** [With_timing] is a container associating an arbitrary type with a
-    timestamp. *)
-module With_timing : functor (T : Timer) -> sig
+(** [S] is a signature for containers associating an arbitrary type
+   with a timestamp. *)
+module type S = sig
   type 'a t
 
   (** [value t] gets the value inside the [With_timing] bracket. *)
@@ -69,4 +76,12 @@ module With_timing : functor (T : Timer) -> sig
   val bracket : (unit -> 'a) -> 'a t
 
   include Timed1 with type 'a t := 'a t
+  include Fold_map.Container1 with type 'a t := 'a t
 end
+
+(** [Make] makes a [Timer] from a [S]. *)
+module Make : functor (T : Timer) -> S
+
+(** [make_module status] makes a [S] module based on [status],
+    which describes what sort of timing should be used. *)
+val make_module : [`Disabled | `Enabled] -> (module S)

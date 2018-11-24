@@ -123,6 +123,27 @@ module M = struct
     | None      -> String.pp f "-"
   ;;
 
+  let results_table_names : string list Lazy.t =
+    lazy (
+      [ "Machine"
+      ; "Compiler"
+      ; "File"
+      ]
+      @
+      File.Fields.to_list
+        ~herd:(fun _ -> "Result")
+        ~time_taken:(fun _ -> "Time/total")
+        ~time_taken_in_cc:(fun _ -> "Time/CC")
+    )
+  ;;
+
+  let results_table_header =
+    lazy (
+      List.map (force results_table_names)
+        ~f:(Fn.flip String.pp)
+    )
+  ;;
+
   let file_to_row mid cid file analysis =
     [ Fn.flip Id.pp mid
     ; Fn.flip Id.pp cid
@@ -147,24 +168,10 @@ module M = struct
     >>| (fun t' -> Some mid, Some cid, t')
   ;;
 
-  let results_table_header =
-    Staged.stage
-      (List.map
-         [ "Machine"
-         ; "Compiler"
-         ; "File"
-         ; "Result"
-         ; "Time taken"
-         ; "Time compiling"
-         ]
-         ~f:(Fn.flip String.pp)
-      )
-  ;;
-
   type data = t (* For compatibility with Extend_tabular *)
 
   let to_table a =
-    let header = Staged.unstage results_table_header in
+    let header = force results_table_header in
     Tabulator.(
       let open Or_error.Let_syntax in
       let%bind t = make ~header () in

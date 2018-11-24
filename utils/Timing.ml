@@ -46,7 +46,17 @@ module Now_timer : Timer = struct
   let time () = Some (Time.now ())
 end
 
-module With_timing (T : Timer) = struct
+module type S = sig
+  type 'a t
+
+  val value : 'a t -> 'a
+  val bracket : (unit -> 'a) -> 'a t
+
+  include Timed1 with type 'a t := 'a t
+  include Fold_map.Container1 with type 'a t := 'a t
+end
+
+module Make (T : Timer) : S = struct
   type 'a t =
     { value      : 'a
     ; time_taken : Time.Span.t option
@@ -63,4 +73,22 @@ module With_timing (T : Timer) = struct
     let time_taken = make_span pre post in
     { value; time_taken }
   ;;
+
+  include Fold_map.Make_container1 (struct
+      type nonrec 'a t = 'a t
+
+      module On_monad (M : Monad.S) = struct
+        let fold_mapM ~f ~init wt =
+          let open M.Let_syntax in
+          let%map (acc, value') = f init wt.value in
+          (acc, { wt with value = value' })
+      end
+    end)
 end
+
+let make_timer = function
+  | `Disabled -> (module Null_timer : Timer)
+  | `Enabled  -> (module Now_timer  : Timer)
+;;
+
+let make_module status = (module Make (val make_timer status) : S)
