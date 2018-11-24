@@ -43,6 +43,9 @@ let runner_of_target = function
   | `Arch arch -> Language_support.asm_runner_from_emits arch
 ;;
 
+(* TODO(@MattWindsor91): these aren't as common as they used to be,
+   and might need to be scrapped or rethought. *)
+
 let compile_with_compiler
     (c : (module Compiler.S)) o ~name ~infile ~outfile compiler_id =
   let open Or_error.Let_syntax in
