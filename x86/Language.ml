@@ -185,7 +185,7 @@ let%expect_test "is_program_label: negative, AT&T" =
 
 let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
   Format.printf "%a@."
-    Abstract.Operands.pp
+    Abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Add)
@@ -198,7 +198,7 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
 
   let%expect_test "abs_operands: nop -> none" =
     Format.printf "%a@."
-      Abstract.Operands.pp
+      Abstract.Operand.Bundle.pp
       (Att.Instruction.abs_operands
          (Ast.Instruction.make
             ~opcode:(Opcode.Basic `Nop)
@@ -208,7 +208,7 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
 
   let%expect_test "abs_operands: jmp, AT&T style" =
     Format.printf "%a@."
-      Abstract.Operands.pp
+      Abstract.Operand.Bundle.pp
       (Att.Instruction.abs_operands
          (Ast.Instruction.make
             ~opcode:(Opcode.Jump `Unconditional)
@@ -224,7 +224,7 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
 
   let%expect_test "abs_operands: pop $42 -> error" =
     Format.printf "%a@."
-      Abstract.Operands.pp
+      Abstract.Operand.Bundle.pp
       (Att.Instruction.abs_operands
          (Ast.Instruction.make
             ~opcode:(Opcode.Basic `Pop)
@@ -233,11 +233,11 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
               ]
             ()
          ));
-    [%expect {| <invalid operands> |}]
+    [%expect {| <ERR: Operand type not allowed here> |}]
 
   let%expect_test "abs_operands: nop $42 -> error" =
     Format.printf "%a@."
-      Abstract.Operands.pp
+      Abstract.Operand.Bundle.pp
       (Att.Instruction.abs_operands
          (Ast.Instruction.make
             ~opcode:(Opcode.Basic `Nop)
@@ -245,11 +245,11 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
                           (Ast.Disp.Numeric 42) ]
             ()
          ));
-    [%expect {| <invalid operands> |}]
+    [%expect {| <ERR: ("Expected zero operands" (got ((Immediate (Numeric 42)))))> |}]
 
   let%expect_test "abs_operands: mov %ESP, %EBP" =
     Format.printf "%a@."
-      Abstract.Operands.pp
+      Abstract.Operand.Bundle.pp
       (Att.Instruction.abs_operands
          (Ast.Instruction.make
             ~opcode:(Opcode.Basic `Mov)
@@ -262,7 +262,7 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
 
   let%expect_test "abs_operands: movl %ESP, %EBP" =
     Format.printf "%a@."
-      Abstract.Operands.pp
+      Abstract.Operand.Bundle.pp
       (Att.Instruction.abs_operands
          (Ast.Instruction.make
             ~opcode:(Opcode.Sized (`Mov, Opcode.Size.Long))
@@ -277,7 +277,7 @@ module Intel = Make (Dialect.Intel) (PP.Intel)
 
 let%expect_test "abs_operands: add ESP, -16, Intel" =
   Format.printf "%a@."
-    Abstract.Operands.pp
+    Abstract.Operand.Bundle.pp
     (Intel.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Add)
@@ -290,7 +290,7 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
 
 let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
   Format.printf "%a@."
-    Abstract.Operands.pp
+    Abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Mov)
@@ -299,7 +299,7 @@ let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
                     ]
           ()
        ));
-  [%expect {| <invalid operands> |}]
+  [%expect {| <ERR: Operand types not allowed here> |}]
 
 module Herd7 = Make (Dialect.Herd7) (PP.Herd7)
 

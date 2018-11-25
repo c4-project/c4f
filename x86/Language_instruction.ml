@@ -72,19 +72,20 @@ module Make (B : Basic) : S = struct
   ;;
 
   let zero_operands (operands : Ast.Operand.t list)
-    : Abstract.Operands.t =
+    : Abstract.Operand.Bundle.t =
     if List.is_empty operands
-    then `None
-    else `Erroneous
-        (Error.create_s
-           [%message "Expected zero operands"
-               ~got:(operands : Ast.Operand.t list)]
-        )
+    then Abstract.Operand.Bundle.None
+    else
+      Single
+        (Erroneous
+          (Error.create_s
+             [%message "Expected zero operands"
+                 ~got:(operands : Ast.Operand.t list)]))
   ;;
 
   let error_to_erroneous = function
     | Result.Ok x -> x
-    | Error e -> `Erroneous e
+    | Error e -> Abstract.Operand.(Bundle.Single (Erroneous e))
   ;;
 
   let classify_single operand classifiers =
@@ -103,33 +104,26 @@ module Make (B : Basic) : S = struct
 
   let classify_src_dst src dst classifiers =
     let open Or_error.Let_syntax in
-    match%bind classify_double src dst classifiers with
-    | (#Abstract.Operands.src as src'),
-      (#Abstract.Operands.dst as dst') ->
-      return { Src_dst.src = src'; dst = dst' }
-    | _, not_dst ->
-      Or_error.error_s
-        [%message "Internal error: invalid destination operand type"
-            ~not_dst:(not_dst : Abstract.Operands.any)
-        ]
+    let%map (src', dst') = classify_double src dst classifiers in
+    { Src_dst.src = src'; dst = dst' }
   ;;
 
-  let single_operand operands ~allowed : Abstract.Operands.t =
+  let single_operand operands ~allowed : Abstract.Operand.Bundle.t =
     error_to_erroneous
       (let open Or_error.Let_syntax in
        let%bind operand = My_list.one operands in
        let%map abs_operand = classify_single operand allowed in
-       Abstract.Operands.single abs_operand
+       Abstract.Operand.Bundle.single abs_operand
       )
   ;;
 
   let src_dst_operands operands ~allowed =
     error_to_erroneous (
       let open Or_error.Let_syntax in
-      let%bind { src ; dst  } = Dialect.to_src_dst_or_error operands in
+      let%bind { src ; dst } = Dialect.to_src_dst_or_error operands in
       let%map { src = src'; dst = dst' } =
         classify_src_dst src dst allowed
-      in Abstract.Operands.src_dst ~src:src' ~dst:dst'
+      in Abstract.Operand.Bundle.src_dst ~src:src' ~dst:dst'
     )
 
   let double_operands operands ~allowed =
@@ -137,7 +131,7 @@ module Make (B : Basic) : S = struct
       let open Or_error.Let_syntax in
       let%bind (op1, op2) = My_list.two operands in
       let%map (abs1, abs2) = classify_double op1 op2 allowed in
-      Abstract.Operands.double abs1 abs2
+      Abstract.Operand.Bundle.double abs1 abs2
     )
   ;;
 
@@ -156,37 +150,38 @@ module Make (B : Basic) : S = struct
   ;;
 
   let immediate_operand = function
-    | Ast.Operand.Bop _ -> Some `Unknown
-    | Immediate (Ast.Disp.Numeric k) -> Some (`Int k)
-    | Immediate (Ast.Disp.Symbolic s) -> Some (`Symbol s)
+    | Ast.Operand.Bop _ -> Some Abstract.Operand.Unknown
+    | Immediate (Ast.Disp.Numeric k) -> Some (Int k)
+    | Immediate (Ast.Disp.Symbolic s) -> Some (Symbol s)
     | Location _ | String _ | Typ _ -> None
   ;;
 
   let memory_operand = function
-    | Ast.Operand.Bop _ -> Some `Unknown
+    | Ast.Operand.Bop _ -> Some Abstract.Operand.Unknown
     | Location (Ast.Location.Indirect _ as l)
-      -> Some (`Location (Location.abs_type l))
+      -> Some (Location (Location.abs_type l))
     | Location (Reg _)
     | Immediate _ | String _ | Typ _  -> None
   ;;
 
   let register_operand = function
-    | Ast.Operand.Bop _ -> Some `Unknown
+    | Ast.Operand.Bop _ -> Some Abstract.Operand.Unknown
     | Location (Ast.Location.Reg _ as l)
-      -> Some (`Location (Location.abs_type l))
+      -> Some (Location (Location.abs_type l))
     | Location (Indirect _)
     | Immediate _ | String _ | Typ _  -> None
   ;;
 
+  let jump_target_displacement = function
+    | Some (Ast.Disp.Symbolic s) -> Abstract.Operand.Symbol s
+    | _ -> Unknown
+  ;;
+
   let jump_target_operand = function
     | Ast.Operand.Location (Ast.Location.Indirect i) ->
-      begin
-        match Ast.Indirect.disp i with
-        | Some (Ast.Disp.Symbolic s) -> Some (`Symbol s)
-        | _ -> Some `Unknown
-      end
-    | Immediate (Ast.Disp.Symbolic s) -> Some (`Symbol s)
-    | Immediate (Numeric _) | Bop _ -> Some `Unknown
+      Some (jump_target_displacement (Ast.Indirect.disp i))
+    | Immediate (Ast.Disp.Symbolic s) -> Some (Symbol s)
+    | Immediate (Numeric _) | Bop _ -> Some Unknown
     | String _ | Typ _ | Location (Reg _) -> None
   ;;
 
@@ -196,42 +191,44 @@ module Make (B : Basic) : S = struct
     | Register -> register_operand
   ;;
 
+  let symmetric_specs_to_classifiers specs =
+    specs
+    |> List.map ~f:(fun (s1, s2) ->
+        ( single_spec_to_classifier s1
+        , single_spec_to_classifier s2
+        ))
+    |> pairwise_symmetric
+  ;;
+
+  let src_dst_spec_to_classifier { Src_dst.src; dst } s d =
+    Option.both
+      (single_spec_to_classifier src s)
+      (single_spec_to_classifier dst d)
+  ;;
+
   let rec spec_to_classifier = function
     | Opcode.Operand_spec.Zero -> zero_operands
     | One specs ->
       let allowed = List.map ~f:single_spec_to_classifier specs in
       single_operand ~allowed
     | Symmetric specs ->
-      let allowed =
-        specs
-        |> List.map ~f:(fun (s1, s2) ->
-            ( single_spec_to_classifier s1
-            , single_spec_to_classifier s2
-            ))
-        |> pairwise_symmetric
-      in double_operands ~allowed
+      let allowed = symmetric_specs_to_classifiers specs in
+      double_operands ~allowed
     | Src_dst specs ->
-      let allowed =
-        List.map specs ~f:(fun {src; dst} ->
-            fun s d ->
-              Option.both
-                (single_spec_to_classifier src s)
-                (single_spec_to_classifier dst d)
-          )
-      in src_dst_operands ~allowed
+      let allowed = List.map ~f:src_dst_spec_to_classifier specs in
+      src_dst_operands ~allowed
     | Or (spec1, spec2) -> fun operands ->
       match spec_to_classifier spec1 operands with
-      | `Erroneous err1 -> begin
+      | Abstract.Operand.(Bundle.Single (Erroneous err1)) -> begin
           match spec_to_classifier spec2 operands with
-          | `Erroneous err2 ->
-            `Erroneous
+          | Single (Erroneous err2) ->
+            Single (Erroneous
               (Error.create_s
                  [%message
                    "Neither of the allowed operand types matched"
                      ~first_error:(err1 : Error.t)
                      ~second_error:(err2 : Error.t)
-                 ]
-              )
+                 ]))
           | x -> x
         end
       | x -> x
@@ -245,7 +242,9 @@ module Make (B : Basic) : S = struct
             |> Opcode.Basic.get_operand_spec
             |> Option.value_map
               ~f:spec_to_classifier
-              ~default:(Fn.const `Unknown)
+              ~default:(Fn.const
+                          Abstract.Operand.(Bundle.Single Unknown)
+                       )
           in ( opcode, spec )
         )
   ;;
@@ -263,11 +262,11 @@ module Make (B : Basic) : S = struct
   let abs_operands {Ast.Instruction.opcode; operands; _} =
     match opcode with
     | Opcode.Basic b -> basic_operands operands b
-    | Opcode.Sized (b, _) -> basic_operands operands b
-    | Opcode.Jump _ ->
+    | Sized (b, _) -> basic_operands operands b
+    | Jump _ ->
       single_operand operands ~allowed:[ jump_target_operand ]
-    | Opcode.Directive _ -> `Other
-    | Opcode.Unknown _ -> `Unknown
+    | Directive _ -> Abstract.Operand.(Bundle.Single Other)
+    | Unknown _ -> Abstract.Operand.(Bundle.Single Unknown)
   ;;
 
   include Abstractable.Make (struct

@@ -28,4 +28,4 @@ module Instruction = Abstract_instruction
 module Statement   = Abstract_statement
 module Symbol      = Abstract_symbol
 module Location    = Abstract_location
-module Operands    = Abstract_operands
+module Operand     = Abstract_operand

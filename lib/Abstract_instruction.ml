@@ -68,7 +68,7 @@ end
 
 type t =
   { opcode : Opcode.t
-  ; operands : Abstract_operands.t
+  ; operands : Abstract_operand.Bundle.t
   }
 [@@deriving fields, make, sexp]
 ;;
@@ -76,7 +76,7 @@ type t =
 let pp f ins =
   Format.fprintf f "@[<hv>%a@ (@,%a@,)@]"
     Opcode.pp (opcode ins)
-    Abstract_operands.pp (operands ins)
+    Abstract_operand.Bundle.pp (operands ins)
 ;;
 
 module Flag = Abstract_flag.None
@@ -120,7 +120,7 @@ module type S_properties = sig
   include S_predicates with type t := t
 
   val opcode : t -> Opcode.t
-  val operands : t -> Abstract_operands.t
+  val operands : t -> Abstract_operand.Bundle.t
 end
 
 module Properties : S_properties with type t := t = struct
@@ -137,16 +137,9 @@ module Properties : S_properties with type t := t = struct
 
   let is_jump = has_opcode ~opcode:Jump
 
-  let is_symbolic_jump_target_where operands ~f =
-    match operands with
-    | `Single (`Symbol sym)
-    | `Single (`Location (Abstract_location.Heap sym)) -> f sym
-    | _ -> false
-  ;;
-
   let is_symbolic_jump_where { opcode; operands } ~f =
     Opcode.equal opcode Jump
-    && is_symbolic_jump_target_where operands ~f
+    && Abstract_operand.Bundle.is_single_jump_symbol_where operands ~f
   ;;
   let is_symbolic_jump = is_symbolic_jump_where ~f:(Fn.const true)
 
@@ -154,7 +147,7 @@ module Properties : S_properties with type t := t = struct
   let%expect_test "is_symbolic_jump: seemingly unconditional jump" =
     let result =
       is_symbolic_jump
-          (make ~opcode:Jump ~operands:`None)
+          (make ~opcode:Jump ~operands:Abstract_operand.Bundle.None)
     in
     Out_channel.printf "%b" result;
     [%expect {| false |}]
@@ -165,7 +158,7 @@ module Properties : S_properties with type t := t = struct
       is_symbolic_jump
           (make
             ~opcode:Jump
-            ~operands:(`Single (`Symbol "foo")))
+            ~operands:Abstract_operand.(Bundle.Single (Symbol "foo")))
     in
     Out_channel.printf "%b" result;
     [%expect {| true |}]
@@ -176,8 +169,8 @@ module Properties : S_properties with type t := t = struct
       is_symbolic_jump
           (make
             ~opcode:Jump
-            ~operands:(`Single
-                         (`Location (Abstract_location.Heap "foo"))))
+            ~operands:Abstract_operand.(Bundle.Single
+                         (Location (Abstract_location.Heap "foo"))))
     in
     Out_channel.printf "%b" result;
     [%expect {| true |}]
@@ -187,8 +180,8 @@ module Properties : S_properties with type t := t = struct
 
   let is_stack_manipulation { opcode; operands } = match opcode with
     | Stack -> true
-    | Arith -> Abstract_operands.has_stack_pointer_dst operands
-    | Move  -> Abstract_operands.(
+    | Arith -> Abstract_operand.Bundle.has_stack_pointer_dst operands
+    | Move  -> Abstract_operand.Bundle.(
         has_stack_pointer_src operands || has_stack_pointer_dst operands
       )
     | _     -> false

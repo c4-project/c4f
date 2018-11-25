@@ -117,13 +117,13 @@ module Make (B : Basic)
   ;;
 
   let warn_unknown_operands ins abs_operands =
-    if Abstract.Operands.is_part_unknown abs_operands
+    if Abstract.Operand.Bundle.is_part_unknown abs_operands
     then Ctx.warn (Warn.UnknownElt (Warn.Operands ins))
     else Ctx.return ()
   ;;
 
   let warn_erroneous_operands ins abs_operands =
-    Ctx_List.iterM (Abstract.Operands.errors abs_operands)
+    Ctx_List.iterM (Abstract.Operand.Bundle.errors abs_operands)
       ~f:(fun error ->
           Ctx.warn (Warn.ErroneousElt (Warn.Operands ins, error))
         )

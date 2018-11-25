@@ -99,9 +99,9 @@ module type Basic_instruction = sig
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
   val jump : string -> t
 
-  (** [operands ins] gets the abstracted operands of instruction
-      [ins]. *)
-  val abs_operands : t -> Abstract.Operands.t
+  (** [abs_operands ins] gets the abstracted operands of instruction
+     [ins]. *)
+  val abs_operands : t -> Abstract.Operand.Bundle.t
 end
 
 (** [Basic_location] is the signature that must be implemented by act

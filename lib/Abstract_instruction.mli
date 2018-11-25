@@ -63,7 +63,7 @@ include Abstract_base.S with type t := t
    from an [opcode] and an [operands] bundle. *)
 val make
   :  opcode:Opcode.t
-  -> operands:Abstract_operands.t
+  -> operands:Abstract_operand.Bundle.t
   -> t
 ;;
 
@@ -125,7 +125,7 @@ module type S_properties = sig
   (** [opcode x] gets the opcode of [x]. *)
   val opcode : t -> Opcode.t
   (** [operands x] gets the operands of [x]. *)
-  val operands : t -> Abstract_operands.t
+  val operands : t -> Abstract_operand.Bundle.t
 end
 
 (** [Inherit_properties] generates a [S_properties] by inheriting it

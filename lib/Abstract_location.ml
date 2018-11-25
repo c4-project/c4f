@@ -30,7 +30,7 @@ type t =
   | Heap of string
   | GeneralRegister
   | Unknown
-[@@deriving sexp]
+[@@deriving sexp, eq]
 ;;
 
 let pp f = function

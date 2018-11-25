@@ -32,6 +32,7 @@ type t =
   | Heap of string     (** Named heap location *)
   | GeneralRegister    (** General-purpose register *)
   | Unknown            (** Not known *)
+[@@deriving sexp, eq]
 ;;
 
 include Abstract_base.S with type t := t

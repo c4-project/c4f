@@ -60,7 +60,7 @@ module Make (SD : Language.S) (DD : Language.S) = struct
     if SD.Instruction.is_jump ins
     then
       match SD.Instruction.abs_operands ins with
-      | `Single (`Symbol jsym) ->
+      | Lib.Abstract.Operand.(Bundle.Single (Symbol jsym)) ->
         { ins with operands = [ DD.make_jump_operand jsym ] }
       | _ -> ins
     else ins
