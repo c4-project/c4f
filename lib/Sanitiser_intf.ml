@@ -76,10 +76,10 @@ end
 
 (** [S] is the interface to a fully-built sanitiser. *)
 module type S = sig
-  module Warn : Sanitiser_warn.S
-
   (** [Lang] is the language over which we are sanitising. *)
   module Lang : Language.S
+
+  module Warn : Sanitiser_warn.S with module Lang := Lang
 
   (** [Program_container] describes the container that the sanitised
      program or programs are held in. *)
@@ -128,8 +128,8 @@ module type Sanitiser = sig
 
   (** [Make_null_hook] makes a [Hook] that does nothing. *)
   module Make_null_hook
-    : functor (L : Language.S)
-      -> Hook with module Lang = L
+    : functor (Lang : Language.S)
+      -> Hook with module Lang = Lang
 
   (** [Make] implements the assembly sanitiser for a given [Basic]. *)
   module Make :

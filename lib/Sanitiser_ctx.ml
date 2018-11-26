@@ -37,10 +37,9 @@ let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string =
   mu prefix 0
 ;;
 
-module Make (H : Sanitiser_warn.Hook)
- : S with module Lang = H.Lang and module Warn.Hook = H = struct
-  module Lang = H.Lang
-  module Warn = Sanitiser_warn.Make (H)
+module Make (Lang : Language.S) : S with module Lang := Lang = struct
+  module Lang = Lang
+  module Warn = Sanitiser_warn.Make (Lang)
   module Pass = Sanitiser_pass
 
   type ctx =
@@ -125,12 +124,16 @@ module Make (H : Sanitiser_warn.Hook)
     if%bind is_pass_enabled pass then f a else return a
   ;;
 
-  let warn w =
+  let warn element body =
     modify (
       fun ctx ->
-        let ent = { Warn.progname = ctx.progname; body = w } in
-        { ctx with warnings = ent::ctx.warnings }
+        let warning = Warn.make ~program_name:ctx.progname ~element ~body in
+        { ctx with warnings = warning::ctx.warnings }
     )
+  ;;
+
+  let warn_if predicate element body =
+    when_m predicate ~f:(fun () -> warn element body)
   ;;
 
   let take_warnings =

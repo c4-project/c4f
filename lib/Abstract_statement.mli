@@ -28,7 +28,7 @@ type t =
   | Instruction of Abstract_instruction.t
   | Blank
   | Label of string
-  | Other
+  | Unknown
 ;;
 
 (** [Flag] is an enumeration of various statement observations. *)
@@ -93,6 +93,9 @@ module type S_predicates = sig
 
   (** [is_blank stm] tests whether [stm] is a blank statement. *)
   val is_blank : t -> bool
+
+  (** [is_unknown stm] tests whether [stm] is an unknown statement. *)
+  val is_unknown : t -> bool
 end
 
 (** [Inherit_predicates] generates a [S_predicates] by inheriting it
@@ -113,18 +116,19 @@ module type S_properties = sig
   (** Anything that can access properties can also access predicates. *)
   include S_predicates with type t := t
 
-  (** [exists ?directive ?instruction ?label ?blank ?other stm] returns
-      [true] if [stm] is matched by any of the optional predicates. *)
+  (** [exists ?directive ?instruction ?label ?blank ?unknown stm]
+     returns [true] if [stm] is matched by any of the optional
+     predicates. *)
   val exists
     :  ?directive:(string -> bool)
     -> ?instruction:(Abstract_instruction.t -> bool)
     -> ?label:(Abstract_symbol.t -> bool)
     -> ?blank:bool
-    -> ?other:bool
+    -> ?unknown:bool
     -> t -> bool
   ;;
 
-  (** [iter ?directive ?instruction ?label ?blank ?other stm] executes
+  (** [iter ?directive ?instruction ?label ?blank ?unknown stm] executes
      any of the optional side-effecting functions that apply to
      [stm]. *)
   val iter
@@ -132,7 +136,7 @@ module type S_properties = sig
     -> ?instruction:(Abstract_instruction.t -> unit)
     -> ?label:(Abstract_symbol.t -> unit)
     -> ?blank:(unit -> unit)
-    -> ?other:(unit -> unit)
+    -> ?unknown:(unit -> unit)
     -> t -> unit
   ;;
 

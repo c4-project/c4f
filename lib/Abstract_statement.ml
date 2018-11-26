@@ -30,7 +30,7 @@ type t =
   | Instruction of Abstract_instruction.t
   | Blank
   | Label of Abstract_symbol.t
-  | Other
+  | Unknown
 [@@deriving sexp, variants]
 
 let pp f = function
@@ -38,7 +38,7 @@ let pp f = function
   | Directive d -> Format.fprintf f "directive@ (%s)" d
   | Label l -> Format.fprintf f ":%s"             l
   | Instruction ins -> Abstract_instruction.pp f ins
-  | Other -> String.pp f "??"
+  | Unknown -> String.pp f "??"
 ;;
 
 module Flag = struct
@@ -77,6 +77,7 @@ module type S_predicates = sig
   ;;
   val is_jump_pair : t -> t -> bool
   val is_blank : t -> bool
+  val is_unknown : t -> bool
 end
 
 module Inherit_predicates
@@ -93,6 +94,7 @@ module Inherit_predicates
 
   let is_directive x = exists ~f:P.is_directive (I.component_opt x)
   let is_blank x = exists ~f:P.is_blank (I.component_opt x)
+  let is_unknown x = exists ~f:P.is_unknown (I.component_opt x)
   let is_instruction x = exists ~f:P.is_instruction (I.component_opt x)
   let is_instruction_where x ~f =
     exists ~f:(P.is_instruction_where ~f) (I.component_opt x)
@@ -118,7 +120,7 @@ module type S_properties = sig
     -> ?instruction:(Abstract_instruction.t -> bool)
     -> ?label:(Abstract_symbol.t -> bool)
     -> ?blank:bool
-    -> ?other:bool
+    -> ?unknown:bool
     -> t -> bool
   ;;
   val iter
@@ -126,7 +128,7 @@ module type S_properties = sig
     -> ?instruction:(Abstract_instruction.t -> unit)
     -> ?label:(Abstract_symbol.t -> unit)
     -> ?blank:(unit -> unit)
-    -> ?other:(unit -> unit)
+    -> ?unknown:(unit -> unit)
     -> t -> unit
   ;;
   val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
@@ -142,11 +144,13 @@ module Inherit_properties
   end
   include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
 
-  let iter ?directive ?instruction ?label ?blank ?other x =
-    P.iter ?directive ?instruction ?label ?blank ?other (I.component x)
+  let iter ?directive ?instruction ?label ?blank ?unknown x =
+    P.iter ?directive ?instruction ?label ?blank ?unknown
+      (I.component x)
   ;;
-  let exists ?directive ?instruction ?label ?blank ?other x =
-    P.exists ?directive ?instruction ?label ?blank ?other (I.component x)
+  let exists ?directive ?instruction ?label ?blank ?unknown x =
+    P.exists ?directive ?instruction ?label ?blank ?unknown
+      (I.component x)
   ;;
 
   let flags x = P.flags (I.component x)
@@ -158,14 +162,14 @@ module Properties : S_properties with type t := t = struct
       ~instruction
       ~label
       ~blank
-      ~other
+      ~unknown
       stm =
     Variants.map stm
       ~directive:(Fn.const directive)
       ~instruction:(Fn.const instruction)
       ~label:(Fn.const label)
       ~blank:(fun _ -> blank ())
-      ~other:(fun _ -> other ())
+      ~unknown:(fun _ -> unknown ())
   ;;
 
   let exists
@@ -173,10 +177,10 @@ module Properties : S_properties with type t := t = struct
       ?(instruction = Fn.const false)
       ?(label = Fn.const false)
       ?(blank = false)
-      ?(other = false)
+      ?(unknown = false)
       stm =
     map stm ~directive ~instruction ~label
-      ~blank:(Fn.const blank) ~other:(Fn.const other)
+      ~blank:(Fn.const blank) ~unknown:(Fn.const unknown)
   ;;
 
   let iter
@@ -184,13 +188,14 @@ module Properties : S_properties with type t := t = struct
       ?(instruction = Fn.const ())
       ?(label = Fn.const ())
       ?(blank = Fn.const ())
-      ?(other = Fn.const ())
+      ?(unknown = Fn.const ())
       stm =
-    map stm ~directive ~instruction ~label ~blank ~other
+    map stm ~directive ~instruction ~label ~blank ~unknown
   ;;
 
   let is_directive stm = exists ~directive:(Fn.const true) stm
   let is_blank stm = exists ~blank:true stm
+  let is_unknown stm = exists ~unknown:true stm
 
   let is_label_where stm ~f = exists ~label:f stm
   let is_label = is_label_where ~f:(Fn.const true)

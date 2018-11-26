@@ -27,10 +27,10 @@ open Utils
 
 include Sanitiser_intf
 
-module Make_null_hook (L : Language.S)
-  : Hook with module Lang = L = struct
-  module Lang = L
-  module Ctx = Sanitiser_ctx.Make (Sanitiser_warn.Make_null_hook (Lang))
+module Make_null_hook (Lang : Language.S)
+  : Hook with module Lang = Lang = struct
+  module Lang = Lang
+  module Ctx = Sanitiser_ctx.Make (Lang)
 
   let on_program = Ctx.return
   let on_statement = Ctx.return
@@ -63,7 +63,7 @@ let%expect_test "mangle: sample" =
   [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
 
 module Make (B : Basic)
-  : S with module Lang = B.Lang
+  : S with module Lang := B.Lang
        and type 'a Program_container.t = 'a B.Program_container.t = struct
   module Ctx = B.Ctx
   module Warn = B.Ctx.Warn
@@ -100,32 +100,32 @@ module Make (B : Basic)
     in Lang.Instruction.On_locations.map ~f ins
   ;;
 
-  let if_instruction_has_type ins ty ~f =
-    if Lang.Instruction.has_opcode ~opcode:ty ins
-    then f ()
-    else Ctx.return ins
-  ;;
-
   (** [warn_unknown_instructions stm] emits warnings for each
       instruction in [stm] without a high-level analysis. *)
   let warn_unknown_instructions ins =
-    if_instruction_has_type ins
-     Abstract.Instruction.Opcode.Unknown
-     ~f:(Ctx.(
-         fun () -> warn (Warn.UnknownElt (Warn.Instruction ins))
-           >>| Fn.const ins))
+    Ctx.(
+      warn_if
+        (Lang.Instruction.has_opcode ins
+           ~opcode:Abstract.Instruction.Opcode.Unknown)
+        (Warn.Instruction ins)
+        (Warn.not_understood ())
+      >>| fun () -> ins
+    )
   ;;
 
   let warn_unknown_operands ins abs_operands =
-    if Abstract.Operand.Bundle.is_part_unknown abs_operands
-    then Ctx.warn (Warn.UnknownElt (Warn.Operands ins))
-    else Ctx.return ()
+    Ctx.(
+      warn_if
+        (Abstract.Operand.Bundle.is_part_unknown abs_operands)
+        (Warn.Operands ins)
+        (Warn.not_understood ())
+    )
   ;;
 
   let warn_erroneous_operands ins abs_operands =
     Ctx_List.iterM (Abstract.Operand.Bundle.errors abs_operands)
       ~f:(fun error ->
-          Ctx.warn (Warn.ErroneousElt (Warn.Operands ins, error))
+          Ctx.warn (Warn.Operands ins) (Warn.erroneous error)
         )
   ;;
 
@@ -174,8 +174,10 @@ module Make (B : Basic)
       return (Lang.Instruction.jump endl)
 
   let change_ret_to_end_jump ins =
-    if_instruction_has_type ins Abstract.Instruction.Opcode.Return
-      ~f:make_end_jump
+    if Lang.Instruction.has_opcode ins
+        ~opcode:Abstract.Instruction.Opcode.Return
+    then make_end_jump ()
+    else Ctx.return ins
   ;;
 
   (** [sanitise_loc] performs sanitisation at the single location
@@ -221,11 +223,13 @@ module Make (B : Basic)
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
   let warn_unknown_statements stm =
-    let open Ctx.Let_syntax in
-    match Lang.Statement.abs_type stm with
-    | Abstract.Statement.Other ->
-      let%map () = Ctx.warn (Warn.UnknownElt (Warn.Statement stm)) in stm
-    | _ -> return stm
+    Ctx.(
+      warn_if
+        (Lang.Statement.is_unknown stm)
+        (Warn.Statement stm)
+        (Warn.not_understood ())
+      >>| fun () -> stm
+    )
   ;;
 
   (** [sanitise_all_ins stm] iterates instruction sanitisation over
@@ -431,6 +435,21 @@ module Make (B : Basic)
     |> String.Map.of_alist_reduce ~f:(fun _ y -> y)
   ;;
 
+  let warn_missing_redirect () =
+    Info.(
+      of_list
+        [ of_string "This symbol couldn't be found in the assembly."
+        ; of_string "Any state set analysis for this program may not be valid."
+        ]
+    )
+  ;;
+
+  let find_initial_redirect mangle_map src =
+    match String.Map.find mangle_map (Lang.Symbol.to_string src) with
+    | Some dst -> Ctx.redirect ~src ~dst
+    | None     -> Ctx.warn (Symbol src) (warn_missing_redirect ())
+  ;;
+
   (** [find_initial_redirects symbols] tries to find the compiler-mangled
       version of each symbol in [symbols].  In each case, it sets up a
       redirect in the redirects table.
@@ -441,15 +460,9 @@ module Make (B : Basic)
     let open Ctx in
     if List.is_empty symbols
     then return ()
-    else begin
+    else
       let mangle_map = make_mangle_map progs in
-      Ctx_List.mapM symbols ~f:(
-        fun src ->
-          match String.Map.find mangle_map (Lang.Symbol.to_string src) with
-          | Some dst -> Ctx.redirect ~src ~dst
-          | None     -> Ctx.warn (Warn.SymbolRedirFail src)
-      ) >>| (fun _ -> ())
-    end
+      Ctx_List.iterM symbols ~f:(find_initial_redirect mangle_map)
   ;;
 
   let sanitise_with_ctx symbols progs =

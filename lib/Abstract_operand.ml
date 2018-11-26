@@ -144,15 +144,27 @@ module Bundle = struct
     | None | Single _ | Double _ -> false
   ;;
 
+  let%expect_test "has_stack_pointer_src: positive" =
+    Utils.Io.print_bool
+      (has_stack_pointer_src
+         (src_dst
+            ~dst:(Location (Abstract_location.GeneralRegister))
+            ~src:(Location (Abstract_location.StackPointer))));
+    [%expect {| true |}]
+  ;;
+
+  let%expect_test "has_stack_pointer_src: negative" =
+    Utils.Io.print_bool
+      (has_stack_pointer_src
+         (src_dst
+            ~src:(Location (Abstract_location.GeneralRegister))
+            ~dst:(Location (Abstract_location.StackPointer))));
+    [%expect {| false |}]
+  ;;
+
   let has_stack_pointer_dst = function
     | Src_dst { Src_dst.dst; _ } -> is_stack_pointer dst
     | None | Single _ | Double _ -> false
-  ;;
-
-  let is_single_jump_symbol_where operands ~f =
-    match operands with
-    | Single o -> M.is_jump_symbol_where o ~f
-    | None | Src_dst _ | Double _ -> false
   ;;
 
   let%expect_test "has_stack_pointer_dst: positive" =
@@ -173,22 +185,10 @@ module Bundle = struct
     [%expect {| false |}]
   ;;
 
-  let%expect_test "has_stack_pointer_src: positive" =
-    Utils.Io.print_bool
-      (has_stack_pointer_src
-         (src_dst
-            ~dst:(Location (Abstract_location.GeneralRegister))
-            ~src:(Location (Abstract_location.StackPointer))));
-    [%expect {| true |}]
-  ;;
-
-  let%expect_test "has_stack_pointer_src: negative" =
-    Utils.Io.print_bool
-      (has_stack_pointer_src
-         (src_dst
-            ~src:(Location (Abstract_location.GeneralRegister))
-            ~dst:(Location (Abstract_location.StackPointer))));
-    [%expect {| false |}]
+  let is_single_jump_symbol_where operands ~f =
+    match operands with
+    | Single o -> M.is_jump_symbol_where o ~f
+    | None | Src_dst _ | Double _ -> false
   ;;
 
   let has_immediate_heap_symbol operands ~syms =

@@ -26,84 +26,72 @@ open Core_kernel
 
 include Sanitiser_warn_intf
 
-module Make_null_hook (Lang : Language.S)
-  : Hook with module Lang = Lang = struct
-  module Lang = Lang
-
-  (* No warnings possible *)
-  type t
-  let pp _ _ = ()
-end
-
-module Make (H : Hook)
-  : S with module Hook = H = struct
-  module Hook = H
-
+module Make (Lang : Language.S) : S with module Lang := Lang = struct
   type elt =
-    | Instruction of H.Lang.Instruction.t
-    | Statement of H.Lang.Statement.t
-    | Location of H.Lang.Location.t
-    | Operands of H.Lang.Instruction.t
-  ;;
-
-  type body =
-    | MissingEndLabel
-    | UnknownElt of elt
-    | ErroneousElt of elt * Error.t
-    | SymbolRedirFail of H.Lang.Symbol.t
-    | Custom of H.t
+    | Instruction of Lang.Instruction.t
+    | Location of Lang.Location.t
+    | Operands of Lang.Instruction.t
+    | Statement of Lang.Statement.t
+    | Symbol of Lang.Symbol.t
   ;;
 
   type t =
-    { body     : body
-    ; progname : string
+    { program_name : string
+    ; element      : elt
+    ; body         : Info.t
     }
+    [@@deriving fields, make]
   ;;
 
   let pp_elt f = function
-    | Statement s -> H.Lang.Statement.pp f s
-    | Instruction i | Operands i -> H.Lang.Instruction.pp f i
-    | Location l -> H.Lang.Location.pp f l
+    | Statement s -> Lang.Statement.pp f s
+    | Instruction i | Operands i -> Lang.Instruction.pp f i
+    | Location l -> Lang.Location.pp f l
+    | Symbol s -> Lang.Symbol.pp f s
   ;;
 
   let elt_type_name = function
-    | Statement _ -> "statement"
     | Instruction _ -> "instruction"
-    | Operands _ -> "the operands of instruction"
     | Location _ -> "location"
+    | Operands _ -> "operands of instruction"
+    | Statement _ -> "statement"
+    | Symbol _ -> "symbol"
   ;;
 
-  let pp_unknown_warning f elt =
-    Format.fprintf f
-      "act didn't understand@ %s@ %a.@ The litmus translation may be wrong."
-      (elt_type_name elt)
-      pp_elt elt
-
-  let pp_erroneous_warning f elt error =
-    Format.fprintf f
-      "act thinks@ %s@ %a@ is@ erroneous.@ The litmus translation may be wrong.@ Reasons:@ %a"
-      (elt_type_name elt)
-      pp_elt elt
-      Sexp.pp_hum [%sexp (error : Error.t)]
+  let pp f ent =
+    Format.fprintf f "@[<v>@[<h>In program %s,@ in %s@ `%a`:@]@ %a@]"
+      ent.program_name
+      (elt_type_name ent.element)
+      pp_elt ent.element
+      Info.pp ent.body
   ;;
 
+  let not_understood () =
+    Info.(
+      of_list
+        [ of_string "act didn't understand this element."
+        ; of_string "The litmus translation may be wrong."
+        ]
+    )
+  ;;
+
+  let erroneous reason =
+    Info.(
+      of_list
+        [ create_s
+            [%message "act thinks this element is erroneous."
+                ~reason:(reason : Error.t)
+            ]
+        ; of_string "The litmus translation may be wrong."
+        ]
+      )
+  ;;
+
+  (*
   let pp_symbol_redir_warning f src =
     Format.fprintf f
       "act couldn't find the symbol@ '%a'@ in the assembly.@ The litmus translation may have an incorrect location table."
-      H.Lang.Symbol.pp src
+      Lang.Symbol.pp src
   ;;
-
-  let pp_body f =
-    function
-    | MissingEndLabel ->
-      String.pp f
-        "act needed an end-of-program label here, but there wasn't one."
-    | SymbolRedirFail src -> pp_symbol_redir_warning f src
-    | UnknownElt elt -> pp_unknown_warning f elt
-    | ErroneousElt (elt, error) -> pp_erroneous_warning f elt error
-    | Custom c -> H.pp f c
-
-  let pp f ent =
-    Format.fprintf f "In program %s:@ " ent.progname;
-    pp_body f ent.body
+*)
 end

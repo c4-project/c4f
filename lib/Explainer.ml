@@ -224,7 +224,8 @@ module Make (LS : Language.S) : S with module Lang := LS = struct
     | Directive _ -> "directive"
     | Label _ -> "label"
     | Instruction ins -> Abstract.Instruction.(Opcode.to_string (opcode ins))
-    | Other -> "??"
+    | Unknown -> "??"
+  ;;
 
   let pp_explanation f exp =
     Stm_explanation.(

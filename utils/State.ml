@@ -59,6 +59,7 @@ module Make_transform (B : Basic_transform)
   end
 
   include T
+  include My_monad.Extend (T)
 
   let run f ctx = f ctx |> Inner.map ~f:snd
 

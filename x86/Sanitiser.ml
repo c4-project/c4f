@@ -24,26 +24,11 @@
 
 open Core
 
-module CWarn (Lang : Language.S) = struct
-  module Lang = Lang
-
-  type t =
-    | UnsupportedRegister of Ast.Reg.t
-  ;;
-
-  let pp f = function
-    | UnsupportedRegister r ->
-      Format.fprintf f "@[The register@ %a@ may not be supported by Herd.@]"
-        Lang.pp_reg r
-  ;;
-end
-
 module Hook (L : Language.S) = struct
   open Ast
 
   module Lang = L
-  module W = CWarn (L)
-  module Ctx = Lib.Sanitiser_ctx.Make (W)
+  module Ctx = Lib.Sanitiser_ctx.Make (Lang)
   module Pass = Lib.Sanitiser_pass
 
   let negate = function
@@ -124,15 +109,16 @@ module Hook (L : Language.S) = struct
   (** [warn_unsupported_registers reg] warns if [reg] isn't
       likely to be understood by Herd. *)
   let warn_unsupported_registers reg =
-    let open Ctx.Let_syntax in
-    let%map () =
+    Ctx.(
       match Reg.kind_of reg with
-      | Reg.Segment
-      | Reg.Gen8 _
-      | Reg.Gen16 ->
-        Ctx.warn (Custom (W.UnsupportedRegister reg))
-      | _ -> Ctx.return ()
-    in reg
+      | Segment | Gen8 _ | Gen16 ->
+        warn
+          (Warn.Location (Location.Reg reg))
+          (Info.of_string
+             "This register is unlikely to be supported by Herd")
+        >>| fun () -> reg
+      | Flags | IP | Gen32 -> return reg
+    )
   ;;
 
   let on_register reg =

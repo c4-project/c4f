@@ -26,57 +26,59 @@
 
 open Base
 
-(** [Hook] is the signature for language-specific hooks
-    into the sanitiser warnings set. *)
-module type Hook = sig
-  module Lang : Language.S
-
-  include Pretty_printer.S
-end
-
 (** [S] is the interface to the warnings emitted by the sanitiser. *)
 module type S = sig
-  module Hook : Hook
+  (** [Lang] is the language to whose elements we're attaching
+     warnings. *)
+  module Lang : Language.S
 
+  (** [elt] is the type of elements being warned about. *)
   type elt =
-    | Instruction of Hook.Lang.Instruction.t
-    | Statement of Hook.Lang.Statement.t
-    | Location of Hook.Lang.Location.t
-    | Operands of Hook.Lang.Instruction.t
+    | Instruction of Lang.Instruction.t
+    | Location of Lang.Location.t
+    | Operands of Lang.Instruction.t
+    | Statement of Lang.Statement.t
+    | Symbol of Lang.Symbol.t
   ;;
 
-  type body =
-    (* Something needed an end-of-program label, but there wasn't one. *)
-    | MissingEndLabel
-    (* This element isn't known to act, and its translation may be wrong. *)
-    | UnknownElt of elt
-    (* This element seems erroneous, and its translation may be wrong. *)
-    | ErroneousElt of elt * Error.t
-    (* Looking up the named symbol in the assembly failed, which may
-       cause the reported location table to be wrong. *)
-    | SymbolRedirFail of Hook.Lang.Symbol.t
-    (* Hook for language-specific sanitiser passes to add warnings. *)
-    | Custom of Hook.t
+  (** [t] is the opaque type of warnings. *)
+  type t
 
-  type t =
-    { body     : body
-    ; progname : string
-    }
+  (** [program_name warn] gets the name of the program [warn]
+     concerns. *)
+  val program_name : t -> string
+
+  (** [element warn] gets the element [warn] concerns. *)
+  val element : t -> elt
+
+  (** [body warn] gets [warn]'s underlying [Info.t]. *)
+  val body : t -> Info.t
+
+  (** [make ~program_name ~element ~body] creates a warning. *)
+  val make
+    :  program_name:string
+    -> element:elt
+    -> body:Info.t
+    -> t
+  ;;
+
+  (** [not_understood ()] creates a standard warning body for
+      an element that wasn't understood by act. *)
+  val not_understood : unit -> Info.t
+
+  (** [erroneous reason] creates a standard warning body for an
+     element that act thinks is erroneous, for reason [reason]. *)
+  val erroneous : Error.t -> Info.t
 
   include Pretty_printer.S with type t := t
 end
 
 module type Sanitiser_warn = sig
-  module type Hook = Hook
   module type S = S
 
-  (** [Make_null_hook] is a dummy functor implementing [Warn_hook]. *)
-  module Make_null_hook
-    : functor (Lang : Language.S)
-      -> Hook with module Lang = Lang
-  ;;
 
   (** [Make] produces a warnings module for the given
-     language-specific hook. *)
-  module Make : functor (H : Hook) -> S with module Hook = H
+     language. *)
+  module Make
+    : functor (Lang : Language.S) -> S with module Lang := Lang
 end

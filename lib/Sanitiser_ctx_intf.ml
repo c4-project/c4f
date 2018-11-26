@@ -31,7 +31,7 @@ open Utils
     carry global information around in a sanitisation pass. *)
 module type S = sig
   module Lang : Language.S
-  module Warn : Sanitiser_warn.S with module Hook.Lang = Lang
+  module Warn : Sanitiser_warn.S with module Lang := Lang
 
   type ctx
 
@@ -95,8 +95,13 @@ module type S = sig
       pass set. *)
   val (|->) : Sanitiser_pass.t -> ('a -> 'a t) -> ('a -> 'a t)
 
-  (** [warn w a] adds a warning [w] to the current context. *)
-  val warn : Warn.body -> unit t
+  (** [warn element body] adds a warning [body] to the
+     current context, concerning element [element]. *)
+  val warn : Warn.elt -> Info.t -> unit t
+
+  (** [warn_if predicate element body] behaves as [warn element body]
+      if [predicate] is true, and [return ()] otherwise. *)
+  val warn_if : bool -> Warn.elt -> Info.t -> unit t
 
   (** [take_warnings] is a contextual computation that returns the
       current warning set, while clearing it inside the context. *)
@@ -177,8 +182,6 @@ module type Sanitiser_ctx = sig
 
   (** [Make] builds a context monad for the given language. *)
   module Make
-    : functor (H : Sanitiser_warn.Hook)
-      -> S with module Lang = H.Lang
-            and module Warn.Hook = H
+    : functor (Lang : Language.S) -> S with module Lang := Lang
   ;;
 end
