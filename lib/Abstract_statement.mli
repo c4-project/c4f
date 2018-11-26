@@ -31,19 +31,6 @@ type t =
   | Unknown
 ;;
 
-(** [Flag] is an enumeration of various statement observations. *)
-module Flag : sig
-  type t =
-    [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
-    | `StackManip    (* A statement that only serves to manipulate
-                        the call stack *)
-    ]
-  [@@deriving sexp, enumerate]
-  ;;
-
-  include Abstract_flag.S with type t := t
-end
-
 (** [S_predicates] is the signature of any module that can access
     simple predicates over an abstract statement. *)
 module type S_predicates = sig
@@ -106,6 +93,19 @@ module Inherit_predicates
     -> functor (I : Utils.Inherit.S_partial with type c := P.t)
       -> S_predicates with type t := I.t
 ;;
+
+(** [Flag] is an enumeration of various statement observations. *)
+module Flag : sig
+  type t =
+    [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
+    | `StackManip    (* A statement that only serves to manipulate
+                        the call stack *)
+    ]
+  [@@deriving sexp, enumerate]
+  ;;
+
+  include Abstract_flag.S with type t := t
+end
 
 (** [S_properties] is the signature of any module that can access
     properties (including predicates) of an abstract statement. *)

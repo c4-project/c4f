@@ -125,10 +125,24 @@ module type S = sig
   (** [Lang] is the [Language.S] this explainer is targeting. *)
   module Lang : Language.S
 
+  (** [Ops_explanation] provides explanations for instruction operand
+     bundles. *)
+  module Ops_explanation : sig
+    include Explanation with type elt := Lang.Instruction.t
+                         and type context := Abstract.Symbol.Table.t
+                         and module Abs := Abstract.Operand.Bundle
+    ;;
+
+    (** As a shorthand, we can query an explanation directly for
+        properties.  This uses the explanation's stored abstract
+        representation, but bypasses its stored flags. *)
+    include Abstract.Operand.Bundle.S_properties with type t := t
+  end
+
   (** [Ins_explanation] provides explanations for instructions. *)
   module Ins_explanation : sig
     include Explanation with type elt := Lang.Instruction.t
-                         and type context := unit
+                         and type context := Abstract.Symbol.Table.t
                          and module Abs := Abstract.Instruction
     ;;
 

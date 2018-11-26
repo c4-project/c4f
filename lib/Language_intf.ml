@@ -81,6 +81,9 @@ module type Basic_instruction = sig
   (** Languages must supply a pretty-printer for their instructions. *)
   include Pretty_printer.S with type t := t
 
+  (** [pp_operands f ins] pretty-prints only the instruction operands. *)
+  val pp_operands : Format.formatter -> t -> unit
+
   include Abstractable.S
     with type t := t
      and module Abs := Abstract.Instruction
@@ -190,6 +193,13 @@ module type S = sig
         operations implicitly route through [abs_type] and
         [abs_operands]. *)
     include Abstract.Instruction.S_properties with type t := t
+
+    (** We can query abstract operand bundle properties on a concrete
+       instruction type, routing through [abs_operands]. *)
+    module On_operands :
+      Abstract_operand.Bundle.S_properties
+        with type t := t
+    ;;
   end
 
   module Statement : sig

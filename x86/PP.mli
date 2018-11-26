@@ -81,6 +81,10 @@ module type Printer = sig
   (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
   val pp_opcode : Format.formatter -> Opcode.t -> unit
 
+  (** [pp_oplist f os] pretty-prints operand list [os] on formatter
+     [f]. *)
+  val pp_oplist : Format.formatter -> Operand.t list -> unit
+
   val pp_instruction : Format.formatter -> Instruction.t -> unit
 
   val pp_statement : Format.formatter -> Statement.t -> unit

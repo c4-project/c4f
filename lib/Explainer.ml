@@ -92,9 +92,18 @@ end
 module type S = sig
   module Lang : Language.S
 
+  module Ops_explanation : sig
+    include Explanation with type elt := Lang.Instruction.t
+                         and type context := Abstract.Symbol.Table.t
+                         and module Abs := Abstract.Operand.Bundle
+    ;;
+
+    include Abstract.Operand.Bundle.S_properties with type t := t
+  end
+
   module Ins_explanation : sig
     include Explanation with type elt := Lang.Instruction.t
-                         and type context := unit
+                         and type context := Abstract.Symbol.Table.t
                          and module Abs := Abstract.Instruction
     ;;
 
@@ -120,23 +129,71 @@ module type S = sig
   val explain : Lang.Statement.t list -> t
 end
 
-module Make (LS : Language.S) : S with module Lang := LS = struct
+module Make (Lang : Language.S) : S with module Lang := Lang = struct
+  module Ops_explanation = struct
+    module Flag = Abstract.Operand.Bundle.Flag
+    module Base = struct
+      module Abs = Abstract.Operand.Bundle
+      module Flag = Flag
+
+      type elt = Lang.Instruction.t
+      let pp = Lang.Instruction.pp_operands
+      type context = Abstract.Symbol.Table.t
+
+      type details = unit
+
+      let make_details _ _ = ()
+      let pp_details _f _context = ()
+
+      let abs_type = Lang.Instruction.abs_operands
+      let abs_flags ins =
+        Abstract.Operand.Bundle.flags
+          (Lang.Instruction.abs_operands ins)
+    end
+
+    type details = Base.details
+
+    include Make_explanation (Base)
+    include Abstract.Operand.Bundle.Inherit_properties
+        (Abstract.Operand.Bundle)
+        (struct
+          type nonrec t = t
+          let component = abs_type
+        end)
+  end
+
   module Ins_explanation = struct
     module Flag = Abstract.Instruction.Flag
     module Base = struct
       module Abs = Abstract.Instruction
       module Flag = Flag
 
-      type elt = LS.Instruction.t
-      let pp = LS.Instruction.pp
-      type context = unit
+      type elt = Lang.Instruction.t
+      let pp = Lang.Instruction.pp
+      type context = Abstract.Symbol.Table.t
 
-      type details = unit
-      let make_details _ _ = ()
-      let pp_details _f () = ()
+      type details =
+        { operands : Ops_explanation.t option }
+      [@@deriving fields]
+      ;;
 
-      let abs_type = LS.Instruction.abs_type
-      let abs_flags = fun _ () -> Flag.Set.empty
+      let make_details ins context =
+        { operands =
+            if Lang.Instruction.On_operands.is_none ins
+            then None
+            else Some (Ops_explanation.make ~context ~original:ins)
+        }
+      ;;
+
+      let pp_details f { operands } =
+        My_format.pp_option f
+          ~pp:(fun f -> Format.fprintf f "@,@[<v 4>Operand details:@,%a@]"
+                 Ops_explanation.pp)
+          operands
+      ;;
+
+      let abs_type = Lang.Instruction.abs_type
+      let abs_flags = fun _ _ -> Flag.Set.empty
     end
 
     type details = Base.details
@@ -151,13 +208,13 @@ module Make (LS : Language.S) : S with module Lang := LS = struct
   end
 
   module Stm_explanation = struct
-    module Flag = LS.Statement.Extended_flag
+    module Flag = Lang.Statement.Extended_flag
     module Base = struct
       module Abs = Abstract.Statement
       module Flag = Flag
 
-      type elt = LS.Statement.t
-      let pp = LS.Statement.pp
+      type elt = Lang.Statement.t
+      let pp = Lang.Statement.pp
       type context = Abstract.Symbol.Table.t
 
       type details =
@@ -165,16 +222,20 @@ module Make (LS : Language.S) : S with module Lang := LS = struct
       [@@deriving fields]
       ;;
 
-      let describe_instructions stm =
-        stm
-        |> LS.Statement.On_instructions.to_list
-        |> List.map
-          ~f:(fun original ->
-              Ins_explanation.make ~original ~context:())
+      let describe_instructions stm context =
+        match Lang.Statement.abs_type stm with
+        | Abstract.Statement.Instruction _ ->
+          stm
+          |> Lang.Statement.On_instructions.to_list
+          |> List.map
+            ~f:(fun original ->
+                Ins_explanation.make ~original ~context)
+        | Blank | Unknown | Directive _ | Label _ -> []
       ;;
 
-      let make_details stm _context =
-        { instructions = describe_instructions stm }
+      let make_details stm context =
+        { instructions =
+            describe_instructions stm context }
       ;;
 
       let pp_instruction_details f = function
@@ -190,8 +251,8 @@ module Make (LS : Language.S) : S with module Lang := LS = struct
           ~instructions:(fun _ _ -> pp_instruction_details f)
       ;;
 
-      let abs_type = LS.Statement.abs_type
-      let abs_flags = LS.Statement.extended_flags
+      let abs_type = Lang.Statement.abs_type
+      let abs_flags = Lang.Statement.extended_flags
     end
 
     type details = Base.details
@@ -214,7 +275,7 @@ module Make (LS : Language.S) : S with module Lang := LS = struct
   ;;
 
   let explain prog =
-    let syms = LS.symbols prog in
+    let syms = Lang.symbols prog in
     { statements = List.map ~f:(explain_statement syms) prog
     }
 
@@ -238,27 +299,28 @@ module Make (LS : Language.S) : S with module Lang := LS = struct
   let pp_statement f exp =
     (* TODO(@MattWindsor91): emit '<-- xyz' in a comment *)
     Stm_explanation.(
-      match Stm_explanation.abs_type exp with
+      match abs_type exp with
       | Abstract.Statement.Blank -> () (* so as not to clutter up blank lines *)
       | _ ->
         Format.fprintf f "@[<h>%a@ %a@]"
-          LS.Statement.pp (original exp)
-          (LS.pp_comment ~pp:pp_explanation) exp
+          Lang.Statement.pp (original exp)
+          (Lang.pp_comment ~pp:pp_explanation) exp
     )
   ;;
 
+  let non_blank_statements exp =
+    My_list.exclude ~f:Stm_explanation.is_blank exp.statements
+  ;;
+
   let pp_as_assembly f exp =
-    let non_blank_statements =
-      My_list.exclude ~f:Stm_explanation.is_blank exp.statements
-    in
     Format.fprintf f "@[<v>%a@]"
       (Format.pp_print_list pp_statement ~pp_sep:Format.pp_print_space)
-      non_blank_statements
+      (non_blank_statements exp)
   ;;
 
   let pp f exp =
     Format.fprintf f "@[<v>%a@]"
       (Format.pp_print_list Stm_explanation.pp ~pp_sep:Format.pp_print_space)
-      exp.statements
+      (non_blank_statements exp)
   ;;
 end

@@ -63,6 +63,8 @@ module Make (B : Basic) : S = struct
   ;;
 
   let pp = B.Pretty.pp_instruction
+  let pp_operands f ins =
+    B.Pretty.pp_oplist f (ins.Ast.Instruction.operands)
 
   let jump l =
     Ast.Instruction.make

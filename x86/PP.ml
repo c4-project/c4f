@@ -73,6 +73,7 @@ module type Printer = sig
   val pp_operand : Format.formatter -> Operand.t -> unit
   val pp_prefix : Format.formatter -> prefix -> unit
   val pp_opcode : Format.formatter -> Opcode.t -> unit
+  val pp_oplist : Format.formatter -> Operand.t list -> unit
   val pp_instruction : Format.formatter -> Instruction.t -> unit
   val pp_statement : Format.formatter -> Statement.t -> unit
 end

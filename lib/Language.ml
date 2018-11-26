@@ -48,6 +48,15 @@ module Make (B : Basic)
           let component = abs_type
         end)
     ;;
+
+    module On_operands =
+      Abstract_operand.Bundle.Inherit_properties
+        (Abstract_operand.Bundle)
+        (struct
+          type nonrec t = t
+          let component = abs_operands
+        end)
+    ;;
   end
 
   module Statement = struct

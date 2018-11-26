@@ -67,31 +67,15 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
   ;;
 
   let not_understood () =
-    Info.(
-      of_list
-        [ of_string "act didn't understand this element."
-        ; of_string "The litmus translation may be wrong."
-        ]
-    )
+    Info.of_string "act didn't understand this element"
   ;;
 
   let erroneous reason =
-    Info.(
-      of_list
-        [ create_s
-            [%message "act thinks this element is erroneous."
-                ~reason:(reason : Error.t)
-            ]
-        ; of_string "The litmus translation may be wrong."
-        ]
-      )
+    Info.create_s
+      [%message
+        "act thinks this element is invalid"
+          ~reason:(reason : Error.t)
+      ]
   ;;
 
-  (*
-  let pp_symbol_redir_warning f src =
-    Format.fprintf f
-      "act couldn't find the symbol@ '%a'@ in the assembly.@ The litmus translation may have an incorrect location table."
-      Lang.Symbol.pp src
-  ;;
-*)
 end

@@ -46,6 +46,92 @@ module M = struct
   [@@deriving sexp, eq]
   ;;
 
+  let pp f = function
+    | Int k        -> Format.fprintf f "@[<h>$%d@]" k
+    | Erroneous e  -> Format.fprintf f "@[<h><ERR: %a>@]" Error.pp e
+    | Location loc -> Abstract_location.pp f loc
+    | Symbol s     -> Format.fprintf f "@[<h>sym:%s@]" s
+    | Other        -> String.pp f "other"
+    | Unknown      -> String.pp f "??"
+  ;;
+end
+include M
+
+module type S_predicates = sig
+  type t
+  val is_unknown : t -> bool
+  val is_stack_pointer : t -> bool
+  val is_immediate_heap_symbol
+    : t
+    -> symbol_table:Abstract_symbol.Table.t
+    -> bool
+  ;;
+  val is_jump_symbol : t -> bool
+  val is_jump_symbol_where
+    :  t
+    -> f:(Abstract_symbol.t -> bool)
+    -> bool
+  ;;
+end
+
+module Inherit_predicates
+    (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
+  : S_predicates with type t := I.t = struct
+  open Option
+
+  let is_unknown x = exists ~f:P.is_unknown (I.component_opt x)
+  let is_stack_pointer x = exists ~f:P.is_stack_pointer (I.component_opt x)
+  let is_immediate_heap_symbol x ~symbol_table =
+    exists ~f:(P.is_immediate_heap_symbol ~symbol_table) (I.component_opt x)
+  ;;
+  let is_jump_symbol x = exists ~f:P.is_jump_symbol (I.component_opt x)
+  let is_jump_symbol_where x ~f =
+    exists ~f:(P.is_jump_symbol_where ~f) (I.component_opt x)
+  ;;
+end
+
+module Flag = struct
+  module M = struct
+    type t =
+      [ `Stack_pointer
+      | `Jump_symbol
+      | `Immediate_heap_symbol
+      ]
+    [@@deriving enum, enumerate, sexp]
+    ;;
+
+    let table =
+      [ `Stack_pointer        , "stack pointer"
+      ; `Jump_symbol          , "jump symbol"
+      ; `Immediate_heap_symbol, "immediate-heap symbol"
+      ]
+  end
+
+  include M
+  include Enum.Extend_table (M)
+end
+
+module type S_properties = sig
+  type t
+  include S_predicates with type t := t
+
+  val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
+end
+
+module Inherit_properties
+    (P : S_properties) (I : Utils.Inherit.S with type c := P.t)
+  : S_properties with type t := I.t = struct
+
+  module I_with_c = struct
+    type c = P.t
+    include I
+  end
+  include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
+
+  let flags x symbol_table = P.flags (I.component x) symbol_table
+end
+
+module Properties : S_properties with type t := t = struct
   let is_unknown = function
     | Unknown -> true
     | Erroneous _ | Int _ | Location _ | Symbol _ | Other -> false
@@ -57,9 +143,9 @@ module M = struct
     | Erroneous _ | Int _ | Symbol _ | Other | Unknown -> false
   ;;
 
-  let is_immediate_heap_symbol o ~syms = match o with
+  let is_immediate_heap_symbol o ~symbol_table = match o with
     | Symbol sym ->
-      Abstract_symbol.(Table.mem syms ~sort:Sort.Heap sym)
+      Abstract_symbol.(Table.mem symbol_table ~sort:Sort.Heap sym)
     | Erroneous _ | Int _ | Location _ | Other | Unknown -> false
   ;;
 
@@ -70,16 +156,18 @@ module M = struct
     | Erroneous _ | Int _ | Other | Unknown -> false
   ;;
 
-  let pp f = function
-    | Int k        -> Format.fprintf f "@[<h>$%d@]" k
-    | Erroneous e  -> Format.fprintf f "@[<h><ERR: %a>@]" Error.pp e
-    | Location loc -> Abstract_location.pp f loc
-    | Symbol s     -> Format.fprintf f "@[<h>sym:%s@]" s
-    | Other        -> String.pp f "other"
-    | Unknown      -> String.pp f "??"
+  let is_jump_symbol = is_jump_symbol_where ~f:(Fn.const true)
+
+  let flags o symbol_table =
+    [ is_jump_symbol o, `Jump_symbol
+    ; is_immediate_heap_symbol o ~symbol_table, `Immediate_heap_symbol
+    ; is_stack_pointer o, `Stack_pointer
+    ]
+    |> List.filter_map ~f:(Tuple2.uncurry Option.some_if)
+    |> Flag.Set.of_list
   ;;
 end
-include M
+include Properties
 
 module Bundle = struct
   type elt = M.t
@@ -94,11 +182,6 @@ module Bundle = struct
 
   (* Intentionally override the [variants] version. *)
   let src_dst ~src ~dst = Src_dst { Src_dst.src; dst }
-
-  let is_src_dst : t -> bool = function
-    | Src_dst _ -> true
-    | None | Single _ | Double _ -> false
-  ;;
 
   include Fold_map.Make_container0 (struct
       module Elt = M
@@ -117,119 +200,17 @@ module Bundle = struct
                           let%bind i' , x' = f i  x in
                           let%map  i'', y' = f i' y in
                           (i'', (x', y')))
-                          init)
+                       init)
             ~src_dst:(H.proc_variant1
-                       (fun i { Src_dst.src; dst } ->
-                          let open Mo.Let_syntax in
-                          let%bind i' , src' = f i  src in
-                          let%map  i'', dst' = f i' dst in
-                          (i'', { Src_dst.src = src'; dst = dst' }))
-                          init)
+                        (fun i { Src_dst.src; dst } ->
+                           let open Mo.Let_syntax in
+                           let%bind i' , src' = f i  src in
+                           let%map  i'', dst' = f i' dst in
+                           (i'', { Src_dst.src = src'; dst = dst' }))
+                        init)
         ;;
       end
     end)
-
-  let errors bundle =
-    let f = function
-      | Erroneous e -> Some e
-      | Int _ | Symbol _ | Location _ | Unknown | Other -> None
-    in bundle |> to_list |> List.filter_map ~f
-  ;;
-
-  let is_part_unknown = exists ~f:is_unknown
-  let has_stack_pointer = exists ~f:is_stack_pointer
-
-  let has_stack_pointer_src = function
-    | Src_dst { Src_dst.src; _ } -> is_stack_pointer src
-    | None | Single _ | Double _ -> false
-  ;;
-
-  let%expect_test "has_stack_pointer_src: positive" =
-    Utils.Io.print_bool
-      (has_stack_pointer_src
-         (src_dst
-            ~dst:(Location (Abstract_location.GeneralRegister))
-            ~src:(Location (Abstract_location.StackPointer))));
-    [%expect {| true |}]
-  ;;
-
-  let%expect_test "has_stack_pointer_src: negative" =
-    Utils.Io.print_bool
-      (has_stack_pointer_src
-         (src_dst
-            ~src:(Location (Abstract_location.GeneralRegister))
-            ~dst:(Location (Abstract_location.StackPointer))));
-    [%expect {| false |}]
-  ;;
-
-  let has_stack_pointer_dst = function
-    | Src_dst { Src_dst.dst; _ } -> is_stack_pointer dst
-    | None | Single _ | Double _ -> false
-  ;;
-
-  let%expect_test "has_stack_pointer_dst: positive" =
-    Utils.Io.print_bool
-      (has_stack_pointer_dst
-         (src_dst
-            ~src:(Location (Abstract_location.GeneralRegister))
-            ~dst:(Location (Abstract_location.StackPointer))));
-    [%expect {| true |}]
-  ;;
-
-  let%expect_test "has_stack_pointer_dst: negative" =
-    Utils.Io.print_bool
-      (has_stack_pointer_dst
-         (src_dst
-            ~dst:(Location (Abstract_location.GeneralRegister))
-            ~src:(Location (Abstract_location.StackPointer))));
-    [%expect {| false |}]
-  ;;
-
-  let is_single_jump_symbol_where operands ~f =
-    match operands with
-    | Single o -> M.is_jump_symbol_where o ~f
-    | None | Src_dst _ | Double _ -> false
-  ;;
-
-  let has_immediate_heap_symbol operands ~syms =
-    exists ~f:(is_immediate_heap_symbol ~syms) operands
-  ;;
-
-  let%expect_test "has_immediate_heap_symbol: src/dst positive" =
-    let syms = Abstract_symbol.(
-        Table.of_sets
-          [ Set.of_list [ "foo"; "bar"; "baz" ], Sort.Heap
-          ; Set.of_list [ "froz" ], Sort.Label
-          ]
-      )
-    in
-    let result = has_immediate_heap_symbol ~syms
-        (Src_dst
-           { src = Symbol "foo"
-           ; dst = Location GeneralRegister
-           })
-    in
-    Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];
-    [%expect {| true |}]
-  ;;
-
-  let%expect_test "has_immediate_heap_symbol: src/dst negative" =
-    let syms = Abstract_symbol.(
-        Table.of_sets
-          [ Set.of_list [ "foo"; "bar"; "baz" ], Sort.Heap
-          ; Set.of_list [ "froz" ], Sort.Label
-          ]
-      )
-    in
-    let result = has_immediate_heap_symbol ~syms
-        (Src_dst
-           { src = Symbol "froz"
-           ; dst = Location GeneralRegister
-           })
-    in
-    Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];
-    [%expect {| false |}]
-  ;;
 
   let pp f = function
     | None -> String.pp f "none"
@@ -239,6 +220,247 @@ module Bundle = struct
     | Src_dst { Src_dst.src; dst} ->
       Format.fprintf f "@[%a@ ->@ %a@]" M.pp src M.pp dst
   ;;
-end
 
-module Flag = Abstract_flag.None
+  module type S_predicates = sig
+    type t
+    val is_none : t -> bool
+    val is_src_dst : t -> bool
+    val is_part_unknown : t -> bool
+    val has_stack_pointer : t -> bool
+    val has_stack_pointer_src : t -> bool
+    val has_stack_pointer_dst : t -> bool
+    val has_immediate_heap_symbol
+      : t
+      -> symbol_table:Abstract_symbol.Table.t
+      -> bool
+    ;;
+    val is_single_jump_symbol_where
+      :  t
+      -> f:(Abstract_symbol.t -> bool)
+      -> bool
+    ;;
+  end
+
+  module Inherit_predicates
+      (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
+    : S_predicates with type t := I.t = struct
+    open Option
+
+    let is_none x =
+      exists ~f:P.is_none (I.component_opt x)
+    ;;
+    let is_src_dst x =
+      exists ~f:P.is_src_dst (I.component_opt x)
+    ;;
+    let is_part_unknown x =
+      exists ~f:P.is_part_unknown (I.component_opt x)
+    ;;
+    let has_stack_pointer x =
+      exists ~f:P.has_stack_pointer (I.component_opt x)
+    ;;
+    let has_stack_pointer_src x =
+      exists ~f:P.has_stack_pointer_src (I.component_opt x)
+    ;;
+    let has_stack_pointer_dst x =
+      exists ~f:P.has_stack_pointer_dst (I.component_opt x)
+    ;;
+    let has_immediate_heap_symbol x ~symbol_table =
+      exists ~f:(P.has_immediate_heap_symbol ~symbol_table)
+        (I.component_opt x)
+    ;;
+    let is_single_jump_symbol_where x ~f =
+      exists ~f:(P.is_single_jump_symbol_where ~f)
+        (I.component_opt x)
+    ;;
+  end
+
+  module Flag = struct
+    module M = struct
+      type t =
+        [ `On_src  of Flag.t
+        | `On_dst  of Flag.t
+        | `On_fst  of Flag.t
+        | `On_snd  of Flag.t
+        | `On_self of Flag.t
+        ]
+      [@@deriving eq, enumerate, sexp]
+      ;;
+
+      let table =
+        List.concat_map
+          ~f:(fun (flag, str) ->
+              [ `On_src flag , str ^ " on source"
+              ; `On_dst flag , str ^ " on dest"
+              ; `On_fst flag , str ^ " on operand 1"
+              ; `On_snd flag , str ^ " on operand 2"
+              ; `On_self flag, str
+              ])
+          Flag.table
+      ;;
+    end
+
+    (* Necessary because 'enum' doesn't support argumented
+       constructors *)
+    module M2 = struct
+      include M
+      include Enum.Make_from_enumerate (M)
+    end
+
+    include M2
+    include Enum.Extend_table (M2)
+  end
+
+  module type S_properties = sig
+    type t
+    include S_predicates with type t := t
+
+    val errors : t -> Error.t list
+    val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
+  end
+
+  module Inherit_properties
+      (P : S_properties) (I : Utils.Inherit.S with type c := P.t)
+    : S_properties with type t := I.t = struct
+
+    module I_with_c = struct
+      type c = P.t
+      include I
+    end
+    include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
+
+    let errors x = P.errors (I.component x)
+    let flags x symbol_table = P.flags (I.component x) symbol_table
+  end
+
+  module Properties : S_properties with type t := t = struct
+    let is_none = function
+      | None -> true
+      | Src_dst _ | Single _ | Double _ -> false
+    ;;
+
+    let is_src_dst = function
+      | Src_dst _ -> true
+      | None | Single _ | Double _ -> false
+    ;;
+
+    let is_part_unknown = exists ~f:is_unknown
+    let has_stack_pointer = exists ~f:is_stack_pointer
+
+    let has_stack_pointer_src = function
+      | Src_dst { Src_dst.src; _ } -> is_stack_pointer src
+      | None | Single _ | Double _ -> false
+    ;;
+
+    let%expect_test "has_stack_pointer_src: positive" =
+      Utils.Io.print_bool
+        (has_stack_pointer_src
+           (src_dst
+              ~dst:(Location (Abstract_location.GeneralRegister))
+              ~src:(Location (Abstract_location.StackPointer))));
+      [%expect {| true |}]
+    ;;
+
+    let%expect_test "has_stack_pointer_src: negative" =
+      Utils.Io.print_bool
+        (has_stack_pointer_src
+           (src_dst
+              ~src:(Location (Abstract_location.GeneralRegister))
+              ~dst:(Location (Abstract_location.StackPointer))));
+      [%expect {| false |}]
+    ;;
+
+    let has_stack_pointer_dst = function
+      | Src_dst { Src_dst.dst; _ } -> is_stack_pointer dst
+      | None | Single _ | Double _ -> false
+    ;;
+
+    let%expect_test "has_stack_pointer_dst: positive" =
+      Utils.Io.print_bool
+        (has_stack_pointer_dst
+           (src_dst
+              ~src:(Location (Abstract_location.GeneralRegister))
+              ~dst:(Location (Abstract_location.StackPointer))));
+      [%expect {| true |}]
+    ;;
+
+    let%expect_test "has_stack_pointer_dst: negative" =
+      Utils.Io.print_bool
+        (has_stack_pointer_dst
+           (src_dst
+              ~dst:(Location (Abstract_location.GeneralRegister))
+              ~src:(Location (Abstract_location.StackPointer))));
+      [%expect {| false |}]
+    ;;
+
+    let has_immediate_heap_symbol operands ~symbol_table =
+      exists ~f:(is_immediate_heap_symbol ~symbol_table) operands
+    ;;
+
+    let%expect_test "has_immediate_heap_symbol: src/dst positive" =
+      let symbol_table = Abstract_symbol.(
+          Table.of_sets
+            [ Set.of_list [ "foo"; "bar"; "baz" ], Sort.Heap
+            ; Set.of_list [ "froz" ], Sort.Label
+            ]
+        )
+      in
+      let result = has_immediate_heap_symbol ~symbol_table
+          (Src_dst
+             { src = Symbol "foo"
+             ; dst = Location GeneralRegister
+             })
+      in
+      Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];
+      [%expect {| true |}]
+    ;;
+
+    let%expect_test "has_immediate_heap_symbol: src/dst negative" =
+      let symbol_table = Abstract_symbol.(
+          Table.of_sets
+            [ Set.of_list [ "foo"; "bar"; "baz" ], Sort.Heap
+            ; Set.of_list [ "froz" ], Sort.Label
+            ]
+        )
+      in
+      let result = has_immediate_heap_symbol ~symbol_table
+          (Src_dst
+             { src = Symbol "froz"
+             ; dst = Location GeneralRegister
+             })
+      in
+      Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];
+      [%expect {| false |}]
+    ;;
+
+    let is_single_jump_symbol_where operands ~f =
+      match operands with
+      | Single o -> is_jump_symbol_where o ~f
+      | None | Src_dst _ | Double _ -> false
+    ;;
+
+    let errors bundle =
+      let f = function
+        | Erroneous e -> Some e
+        | Int _ | Symbol _ | Location _ | Unknown | Other -> None
+      in bundle |> to_list |> List.filter_map ~f
+    ;;
+
+    let flags operands symbol_table =
+      Flag.Set.(
+        match operands with
+        | None -> empty
+        | Single o ->
+          map ~f:(fun x -> `On_self x) (flags o symbol_table)
+        | Double (o1, o2) ->
+          union
+            (map ~f:(fun x -> `On_fst x) (flags o1 symbol_table))
+            (map ~f:(fun x -> `On_snd x) (flags o2 symbol_table))
+        | Src_dst {src; dst} ->
+          union
+            (map ~f:(fun x -> `On_src x) (flags src symbol_table))
+            (map ~f:(fun x -> `On_dst x) (flags dst symbol_table))
+      )
+  end
+
+  include Properties
+end

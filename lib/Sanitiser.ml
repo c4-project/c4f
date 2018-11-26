@@ -129,10 +129,10 @@ module Make (B : Basic)
         )
   ;;
 
-  (** [warn_operands stm] emits warnings for each instruction
-     in [stm] whose operands don't have a high-level analysis,
-      or are erroneous. *)
-  let warn_operands ins =
+  (** [warn_unsupported_operands stm] emits warnings for each
+     instruction in [stm] whose operands don't have a high-level
+     analysis, or are erroneous. *)
+  let warn_unsupported_operands ins =
     (* Don't emit warnings for unknown instructions---the
        upper warning should be enough. *)
     Abstract.Instruction.(
@@ -145,6 +145,32 @@ module Make (B : Basic)
         let%map () = warn_erroneous_operands ins abs_operands in
         ins
     )
+  ;;
+
+  let warn_immediate_heap_symbol ins abs_operands =
+    Ctx.(
+      get_symbol_table >>= fun symbol_table ->
+      let should_warn =
+        Abstract.Operand.Bundle.has_immediate_heap_symbol abs_operands
+          ~symbol_table
+      in
+      warn_if should_warn
+        (Warn.Operands ins)
+        (Info.of_string
+           ("Operands contain a heap symbol in immediate position. "
+            ^ "This may cause problems for Herd.")
+        )
+    )
+  ;;
+
+  (** [warn_untranslated_operands stm] emits warnings for each
+     instruction in [stm] whose operands should have been lowered
+      to a Herd-compatible form, but haven't been. *)
+  let warn_untranslated_operands ins =
+    let open Ctx.Let_syntax in
+    let abs_operands = Lang.Instruction.abs_operands ins in
+    let%map () = warn_immediate_heap_symbol ins abs_operands in
+    ins
   ;;
 
   (** [mangle_and_redirect sym] mangles [sym], either by
@@ -204,10 +230,11 @@ module Make (B : Basic)
     return ins
     >>= (LangHooks      |-> B.on_instruction)
     >>= (Warn           |-> warn_unknown_instructions)
-    >>= (Warn           |-> warn_operands)
+    >>= (Warn           |-> warn_unsupported_operands)
     >>= sanitise_all_locs
     >>= (SimplifyLitmus |-> change_ret_to_end_jump)
     >>= (SimplifyLitmus |-> change_stack_to_heap)
+    >>= (Warn           |-> warn_untranslated_operands)
   ;;
 
   (** [mangle_identifiers progs] reduces identifiers across a program
