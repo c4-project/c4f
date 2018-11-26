@@ -168,7 +168,8 @@ module type S = sig
 
   (** [t] is the type of whole-program explanations. *)
   type t =
-    { statements : Stm_explanation.t list
+    { statements   : Stm_explanation.t list
+    ; symbol_table : Abstract.Symbol.Table.t
     }
 
   (** We can [pp] explanations. *)

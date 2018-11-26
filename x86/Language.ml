@@ -129,7 +129,6 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
 
       module Abs = Abstract.Statement
 
-
       include Abstractable.Make (struct
           type nonrec t = t
           module Abs = Abstract.Statement

@@ -126,7 +126,8 @@ module type S = sig
   end
 
   type t =
-    { statements : Stm_explanation.t list
+    { statements   : Stm_explanation.t list
+    ; symbol_table : Abstract.Symbol.Table.t
     }
 
   include Pretty_printer.S with type t := t
@@ -287,6 +288,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
 
   type t =
     { statements : Stm_explanation.t list
+    ; symbol_table : Abstract.Symbol.Table.t
     }
 
   let explain_statement syms stm =
@@ -294,8 +296,9 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
   ;;
 
   let explain prog =
-    let syms = Lang.symbols prog in
-    { statements = List.map ~f:(explain_statement syms) prog
+    let symbol_table = Lang.symbols prog in
+    { statements = List.map ~f:(explain_statement symbol_table) prog
+    ; symbol_table
     }
 
   let pp_generic_statement_explanation f exp =
@@ -345,8 +348,9 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
   ;;
 
   let pp f exp =
-    Format.fprintf f "@[<v>%a@]"
+    Format.fprintf f "@[<v>%a@,@,%a@]"
       (Format.pp_print_list Stm_explanation.pp ~pp_sep:Format.pp_print_space)
       (non_blank_statements exp)
+      (fun f -> Abstract.Symbol.Table.pp_as_table f) exp.symbol_table
   ;;
 end

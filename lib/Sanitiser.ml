@@ -196,8 +196,7 @@ module Make (B : Basic)
       Ctx.Monadic.return
         (Or_error.error_string
            "Tried to make an end-label jump without an end label")
-    | Some endl ->
-      return (Lang.Instruction.jump endl)
+    | Some endl -> return (Lang.Instruction.jump endl)
 
   let change_ret_to_end_jump ins =
     if Lang.Instruction.has_opcode ins

@@ -97,6 +97,46 @@ module Table = struct
     && (Option.is_none sort
         || Option.equal Sort.equal sort actual_sort)
   ;;
+
+  module Tabulate : Tabulator.Tabular with type data = t = struct
+    type data = t
+
+    let to_row (symbol, sorts) =
+      [ Fn.flip String.pp symbol
+      ; Fn.flip Sort.pp sorts
+      ]
+    ;;
+
+    let to_table table =
+      let open Result.Monad_infix in
+      Tabulator.(
+        make
+          ~header:(List.map ["Symbol"; "Sort"] ~f:(Fn.flip String.pp))
+          ~sep:" | "
+          ()
+        >>= with_rule '='
+        >>= with_rows (List.map ~f:to_row table)
+      )
+  end
+
+  include (Tabulate : Tabulator.Tabular with type data := t)
+  include Tabulator.Extend_tabular (Tabulate)
+
+  let%expect_test "Printing symbol table using tabulator" =
+    Format.printf "@[%a@]@." (fun f -> pp_as_table f)
+      Sort.[ "foo", Heap
+           ; "bar", Heap
+           ; "bar", Label
+           ; "baz", Jump
+           ];
+    [%expect {|
+      Symbol | Sort
+      ==============
+      foo    | heap
+      bar    | heap
+      bar    | label
+      baz    | jump |}]
+  ;;
 end
 
 module Flag = Abstract_flag.None

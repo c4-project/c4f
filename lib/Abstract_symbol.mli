@@ -85,4 +85,9 @@ module Table : sig
       in [tbl].  If [sort] is present, we additionally
       require that [symbol] has sort [sort] in [tbl]. *)
   val mem : t -> ?sort:Sort.t -> elt -> bool
+
+  (** Tables can be turned into [Tabulator] instances. *)
+  include Tabulator.Tabular with type data := t
+  (** They can also, therefore, be pretty-printed as tables. *)
+  include Tabulator.Tabular_extensions with type data := t
 end
