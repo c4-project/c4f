@@ -85,6 +85,20 @@ module Other = struct
       ~if_nothing_chosen:`Raise
   ;;
 
+  let file_type =
+    choose_one
+      [ (map ~f:(Fn.flip Option.some_if `C)
+           (flag "c"
+              no_arg
+              ~doc: "if given, assume input is C (and compile it)"))
+      ; (map ~f:(Fn.flip Option.some_if `Assembly)
+           (flag "asm"
+              no_arg
+              ~doc: "if given, assume input is assembly"))
+      ]
+      ~if_nothing_chosen:(`Default_to `Infer)
+  ;;
+
   let compiler_predicate =
     flag "filter-compilers"
       (optional (sexp_conv [%of_sexp: Compiler.Property.t Blang.t]))

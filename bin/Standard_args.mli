@@ -53,8 +53,12 @@ module Other : sig
   (** [compiler_id_or_arch] defines a choice between supplying a
       compiler ID, or a direct architecture. *)
   val compiler_id_or_arch
-    :  [> `Arch of string list | `Id of Id.t] Command.Param.t
+    : [> `Arch of string list | `Id of Id.t] Command.Param.t
   ;;
+
+  (** [file_type] defines parameter for specifying the file type of
+      a single input file. *)
+  val file_type : [> `Assembly | `C | `Infer] Command.Param.t
 
   (** [compiler_predicate] defines a parameter for collecting a
       filtering predicate for compilers. *)

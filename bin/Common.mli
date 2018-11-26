@@ -27,6 +27,10 @@ open Core
 open Lib
 open Utils
 
+(** [temp_file suffix] generates a temporary file name suitable for
+   act commands. *)
+val temp_file : string -> string
+
 (** [get_target cfg target] processes a choice between compiler ID
     and architecture (emits clause); if the input is a compiler
     ID, the compiler is retrieved from [cfg]. *)
@@ -53,19 +57,16 @@ val runner_of_target
   -> (module Asm_job.Runner) Or_error.t
 ;;
 
-(** [compile_with_compiler c o ~name ~infile ~outfile compiler_id]
-    compiles [infile] (with short name [name]) to [outfile], using
-    compiler module [c].  In addition, it does some book-keeping
-    and logging, including stage-logging with [compiler_id], and
-    recording and returning the duration spent in the compiler. *)
-val compile_with_compiler
-  :  (module Compiler.S)
-  -> Output.t
-  -> name:string
-  -> infile:string
-  -> outfile:string
-  -> Id.t
-  -> Time.Span.t Or_error.t
+(** [maybe_run_compiler target file_type file] compiles [file] if
+   [file_type] is [`C], or [file_type] is [`Infer] and the filename
+   ends with `.c`.  It uses [target] to compile; compilation, where
+   required, fails if [target] is not a compiler spec, or [infile] is
+   [None]. *)
+val maybe_run_compiler
+  :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
+  -> [< `Assembly | `C | `Infer]
+  -> string option
+  -> string option Or_error.t
 ;;
 
 (** [lift_command ?compiler_predicate ?machine_predicate

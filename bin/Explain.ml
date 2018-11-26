@@ -36,7 +36,7 @@ let print_symbol_map = function
       map
 ;;
 
-let run compiler_id_or_arch output_format symbols sanitise
+let run file_type compiler_id_or_arch output_format symbols sanitise
     ~infile ~outfile o cfg =
   let open Or_error.Let_syntax in
   let passes = Sanitiser_pass.(
@@ -44,11 +44,13 @@ let run compiler_id_or_arch output_format symbols sanitise
     )
   in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
-  let%bind runner = Common.runner_of_target target in
-  let module Runner = (val runner) in
+  let%bind asm_file =
+    Common.maybe_run_compiler target file_type infile
+  in
+  let%bind (module Runner) = Common.runner_of_target target in
   Io.(
     let input =
-      { Asm_job.inp = In_source.of_option infile
+      { Asm_job.inp = In_source.of_option asm_file
       ; outp = Out_sink.of_option outfile
       ; passes
       ; symbols
@@ -94,6 +96,7 @@ let command =
             ]
             ~if_nothing_chosen:(`Default_to None)
         )
+      and file_type = Standard_args.Other.file_type
       and outfile =
         flag "output"
           (optional file)
@@ -102,7 +105,9 @@ let command =
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run compiler_id_or_arch
+          ~f:(run
+                file_type
+                compiler_id_or_arch
                 output_format
                 symbols sanitise
                 ~infile ~outfile)

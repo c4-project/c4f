@@ -22,8 +22,22 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 open Lib
+open Utils
+
+let temp_file = Filename.temp_file "act"
+
+let asm_file is_c maybe_infile =
+  if is_c then Some (temp_file "s") else maybe_infile
+;;
+
+let decide_if_c infile = function
+  | `C -> true
+  | `Assembly -> false
+  | `Infer ->
+    Option.exists infile ~f:(My_filename.has_extension ~ext:"c")
+;;
 
 let get_target cfg = function
   | `Id id ->
@@ -43,23 +57,34 @@ let runner_of_target = function
   | `Arch arch -> Language_support.asm_runner_from_emits arch
 ;;
 
-(* TODO(@MattWindsor91): these aren't as common as they used to be,
-   and might need to be scrapped or rethought. *)
-
-let compile_with_compiler
-    (c : (module Compiler.S)) o ~name ~infile ~outfile compiler_id =
-  let open Or_error.Let_syntax in
-  let module C = (val c) in
-  Output.log_stage o ~stage:"CC" ~file:name compiler_id;
-
-  let start_time = Time.now () in
-  let%map () =
-    Or_error.tag ~tag:"While compiling to assembly"
-      (C.compile ~infile ~outfile)
+let run_compiler target ~infile ~outfile =
+  let open Result.Let_syntax in
+  let%bind cspec = match target with
+    | `Spec spec -> return spec
+    | `Arch _ ->
+      Or_error.error_string
+        "To litmusify a C file, you must supply a compiler ID."
   in
-  let end_time = Time.now() in
+  let%bind infile =
+    Result.of_option infile
+      ~error:(Error.of_string "Can't read in C from stdin")
+  in
+  let%bind outfile =
+    Result.of_option outfile
+      ~error:(Error.of_string "Can't output compiler result to stdout")
+  in
+  let%bind (module C) = Language_support.compiler_from_spec cspec in
+  Or_error.tag ~tag:"While compiling to assembly"
+    (C.compile ~infile ~outfile)
+;;
 
-  Time.diff end_time start_time
+let maybe_run_compiler target file_type infile =
+  let open Result.Let_syntax in
+  let is_c = decide_if_c infile file_type in
+  let outfile = asm_file is_c infile in
+  let%map () =
+    if is_c then run_compiler target ~infile ~outfile else return ()
+  in outfile
 ;;
 
 let lift_command
