@@ -58,25 +58,51 @@ module Hook (L : Language.S) = struct
         (sub_to_add_ops operands)
     | x -> x
 
+  let drop_unsupported_length_of_long = function
+      (* TODO(@MattWindsor91): ideally, we should be checking to see if
+         the operands are compatible with dropping the l. *)
+    | `Cmp
+    | `Cmpxchg
+    | `Xchg
+    | `Xor as o -> Opcode.Basic (o :> Opcode.Basic.t)
+    (* Opcodes below this line *shouldn't* have their lengths dropped. *)
+    | `Call
+    | `Ret
+    (* TODO(@MattWindsor91): some of these might also need dropping. *)
+    | `Add | `Mov | `Pop | `Push | `Sub as o -> Sized (o, Long)
+  ;;
+
   (** [drop_unsupported_lengths] removes long-sized length suffixes on
       instructions where herd doesn't support them. *)
   let drop_unsupported_lengths = function
     | { Instruction.opcode = Sized (o, Long); _ } as op ->
-      (* TODO(@MattWindsor91): ideally, we should be checking to see if
-         the operands are compatible with dropping the l. *)
-      begin
-        match o with
-        | `Cmp
-        | `Cmpxchg
-        | `Xchg
-        | `Xor -> { op with opcode = Basic (o :> Opcode.Basic.t) }
-        (* Opcodes below this line *shouldn't* have their lengths dropped. *)
-        | `Call
-        | `Ret
-        (* TODO(@MattWindsor91): some of these might also need dropping. *)
-        | `Add | `Mov | `Pop | `Push | `Sub -> op
-      end
+      { op with opcode = (drop_unsupported_length_of_long o) }
     | op -> op
+
+  let name_of_segment_offset_heap_loc segment offset program_name =
+    sprintf "t%sg%sd%d"
+      program_name
+      (Ast.Reg.to_string segment)
+      offset
+  ;;
+
+  let make_segment_offset_heap_loc segment offset =
+    Ctx.(
+      get_prog_name
+      >>| name_of_segment_offset_heap_loc segment offset
+      >>= make_fresh_heap_loc
+    )
+  ;;
+
+  let segment_offset_to_heap_of_indirect i =
+      let open Ctx.Let_syntax in
+      match Ast.Indirect.seg i, Ast.Indirect.disp i with
+      | Some s, Some (Disp.Numeric k) ->
+        let%bind l  = make_segment_offset_heap_loc s k in
+        let%map  l' = Ctx.add_symbol l Lib.Abstract.Symbol.Sort.Heap in
+        L.Location.make_heap_loc l'
+      | _ -> Ctx.return (Location.Indirect i)
+  ;;
 
   (** [segment_offset_to_heap loc] is a contextual computation that,
       heuristically, converts memory addresses like [GS:20] to symbolic
@@ -85,25 +111,8 @@ module Hook (L : Language.S) = struct
       It assumes, perhaps incorrectly, that these segments aren't
       moved, or shared per thread. *)
   let segment_offset_to_heap = function
-    | Location.Indirect i as l ->
-      begin
-        let open Ctx.Let_syntax in
-        match Ast.Indirect.seg i, Ast.Indirect.disp i with
-        | Some s, Some (Disp.Numeric k) ->
-          let%bind progname = Ctx.get_prog_name in
-          let%bind loc =
-            Ctx.make_fresh_heap_loc
-              (sprintf "t%sg%sd%d"
-                 progname
-                 (Ast.Reg.to_string s)
-                 k
-              )
-          in
-          let%map _ = Ctx.add_symbol loc Lib.Abstract.Symbol.Sort.Heap in
-          L.Location.make_heap_loc loc
-        | _ -> Ctx.return l
-      end
-    | Reg _ as l -> Ctx.return l
+    | Location.Indirect i -> segment_offset_to_heap_of_indirect i
+    | Reg _ as l          -> Ctx.return l
   ;;
 
   (** [warn_unsupported_registers reg] warns if [reg] isn't
