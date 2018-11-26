@@ -23,6 +23,7 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Utils
 
 type t =
   | StackPointer
@@ -39,6 +40,39 @@ let pp f = function
   | Heap            s -> Format.fprintf f "heap[%s]" s
   | GeneralRegister   -> String.pp      f "reg"
   | Unknown           -> String.pp      f "??"
+;;
+
+module Kind = struct
+  module M = struct
+    type t =
+      | Stack_pointer
+      | Stack_offset
+      | Heap
+      | General_register
+      | Unknown
+    [@@deriving sexp, enum]
+    ;;
+
+    let table =
+      [ Stack_pointer   , "stack pointer"
+      ; Stack_offset    , "stack offset"
+      ; Heap            , "heap"
+      ; General_register, "general register"
+      ; Unknown         , "unknown"
+      ]
+    ;;
+  end
+
+  include M
+  include Enum.Extend_table (M)
+end
+
+let kind = function
+  | StackPointer      -> Kind.Stack_pointer
+  | StackOffset     _ -> Stack_offset
+  | Heap            _ -> Heap
+  | GeneralRegister   -> General_register
+  | Unknown           -> Unknown
 ;;
 
 module Flag = Abstract_flag.None

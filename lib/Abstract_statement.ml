@@ -32,13 +32,47 @@ type t =
   | Label of Abstract_symbol.t
   | Unknown
 [@@deriving sexp, variants]
+;;
 
 let pp f = function
   | Blank -> ()
-  | Directive d -> Format.fprintf f "directive@ (%s)" d
+  | Directive d -> Format.fprintf f ".%s" d
   | Label l -> Format.fprintf f ":%s"             l
   | Instruction ins -> Abstract_instruction.pp f ins
   | Unknown -> String.pp f "??"
+;;
+
+module Kind = struct
+  module M = struct
+    type t =
+      | Directive
+      | Instruction
+      | Blank
+      | Label
+      | Unknown
+    [@@deriving enum, sexp]
+    ;;
+
+    let table =
+      [ Directive  , "directive"
+      ; Instruction, "instruction"
+      ; Blank      , "blank"
+      ; Label      , "label"
+      ; Unknown    , "unknown"
+      ]
+    ;;
+  end
+
+  include M
+  include Enum.Extend_table (M)
+end
+
+let kind = function
+  | Directive _ -> Kind.Directive
+  | Instruction _ -> Instruction
+  | Blank -> Blank
+  | Label _ -> Label
+  | Unknown -> Unknown
 ;;
 
 module Flag = struct

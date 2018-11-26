@@ -92,7 +92,7 @@ module Make (B : Basic)
     let open Ctx.Let_syntax in
     let%map name = Ctx.get_prog_name in
     let f ln =
-      match Lang.Location.abs_type ln with
+      match Lang.Location.abstract ln with
       | Abstract.Location.StackOffset i ->
         Lang.Location.make_heap_loc
           (sprintf "t%ss%d" name i)
@@ -136,7 +136,7 @@ module Make (B : Basic)
     (* Don't emit warnings for unknown instructions---the
        upper warning should be enough. *)
     Abstract.Instruction.(
-      match opcode (Lang.Instruction.abs_type ins) with
+      match Lang.Instruction.abs_kind ins with
       | Opcode.Unknown -> Ctx.return ins
       | _ ->
         let open Ctx.Let_syntax in
@@ -285,7 +285,7 @@ module Make (B : Basic)
       instruction that can be thrown out when converting to a litmus
       test. *)
   let irrelevant_instruction_types =
-    Abstract.Instruction.Opcode.(
+    Abstract.Instruction.Opcode.Kind.(
       Set.of_list
         [ Call (* -not- Return: these need more subtle translation *)
         ; Stack

@@ -45,7 +45,7 @@ module Make (B : Basic)
         (Abstract_instruction)
         (struct
           type nonrec t = t
-          let component = abs_type
+          let component = abstract
         end)
     ;;
 
@@ -85,7 +85,7 @@ module Make (B : Basic)
         (Abstract_statement)
         (struct
           type nonrec t = t
-          let component = abs_type
+          let component = abstract
         end)
     ;;
 
@@ -122,7 +122,7 @@ module Make (B : Basic)
     include B.Location
 
     let to_heap_symbol l =
-      match abs_type l with
+      match abstract l with
       | Abstract.Location.Heap s -> Some s
       | _ -> None
   end

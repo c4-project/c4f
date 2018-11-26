@@ -51,13 +51,17 @@ module Opcode : sig
      - It makes it easier for us to translate returns to
        end-of-program jumps in sanitisation.  *)
 
-  include Abstract_base.S_enum with type t := t
+  (** [Opcode] is an abstraction that is currently its own kind
+      enumeration. *)
+  include Abstract_base.S with type t := t and type Kind.t = t
 end
 
 (** [t] is an abstracted instruction, including operands. *)
 type t [@@deriving sexp]
 
-include Abstract_base.S with type t := t
+(** When using this module as an abstraction, the kind of each
+    instruction is exactly the kind of its opcode. *)
+include Abstract_base.S with type t := t and module Kind = Opcode.Kind
 
 (** [make ~opcode ~operands] makes a [t]
    from an [opcode] and an [operands] bundle. *)
@@ -75,11 +79,11 @@ module type S_predicates = sig
 
   (** [has_opcode ins ~opcode] tests whether [ins] has opcode
       [opcode]. *)
-  val has_opcode : t -> opcode:Opcode.t -> bool
+  val has_opcode : t -> opcode:Opcode.Kind.t -> bool
 
   (** [opcode_in ins ~opcodes] tests whether [ins] has an opcode
       in [opcodes]. *)
-  val opcode_in : t -> opcodes:Opcode.Set.t -> bool
+  val opcode_in : t -> opcodes:Opcode.Kind.Set.t -> bool
 
   (** [is_jump ins] tests whether [ins] is a jump operation. *)
   val is_jump : t -> bool

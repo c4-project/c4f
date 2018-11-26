@@ -22,6 +22,8 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+open Utils
+
 (** [t] is an abstracted statement. *)
 type t =
   | Directive of string
@@ -30,6 +32,21 @@ type t =
   | Label of string
   | Unknown
 ;;
+
+(** [Kind] is an enumeration over the high-level kinds of abstracted
+   statement. *)
+module Kind : sig
+  type t =
+    | Directive
+    | Instruction
+    | Blank
+    | Label
+    | Unknown
+  ;;
+
+  include Enum.S_sexp_table with type t := t
+  include Enum.Extension_table with type t := t
+end
 
 (** [S_predicates] is the signature of any module that can access
     simple predicates over an abstract statement. *)
@@ -156,4 +173,6 @@ module Inherit_properties
 (** This module contains [S_properties] directly. *)
 include S_properties with type t := t
 
-include Abstract_base.S with type t := t and module Flag := Flag
+include Abstract_base.S with type t := t
+                         and module Kind := Kind
+                         and module Flag := Flag

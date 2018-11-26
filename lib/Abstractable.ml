@@ -27,13 +27,10 @@ include Abstractable_intf
 module Make (B : Basic)
   : S with type t := B.t and module Abs := B.Abs = struct
   include B
-end
 
-module Make_enum (B : Basic_enum)
-  : S_enum with type t := B.t and module Abs := B.Abs = struct
-  include B
+  let abs_kind x = Abs.kind (abstract x)
 
-  let has_abs_type ty x = Abs.equal ty (abs_type x)
+  let has_abs_kind ty x = Abs.Kind.equal ty (abs_kind x)
 
-  let abs_type_in tys x = Abs.Set.mem tys (abs_type x)
+  let abs_kind_in tys x = Abs.Kind.Set.mem tys (abs_kind x)
 end

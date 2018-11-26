@@ -101,7 +101,7 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
           module Abs = Abstract.Location
           open Abs
 
-          let abs_type = function
+          let abstract = function
             | Ast.Location.Reg ESP
             | Reg EBP -> StackPointer
             | Reg _ -> GeneralRegister
@@ -129,12 +129,20 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
 
       module Abs = Abstract.Statement
 
-      let abs_type = function
-        | Ast.Statement.Instruction { opcode = Opcode.Directive s; _ } ->
-          Abs.Directive s
-        | Instruction i -> Instruction (Instruction.abs_type i)
-        | Label l -> Label l
-        | Nop -> Blank
+
+      include Abstractable.Make (struct
+          type nonrec t = t
+          module Abs = Abstract.Statement
+          open Abs
+
+          let abstract = function
+            | Ast.Statement.Instruction { opcode = Opcode.Directive s; _ } ->
+              Abs.Directive s
+            | Instruction i -> Instruction (Instruction.abstract i)
+            | Label l -> Label l
+            | Nop -> Blank
+        end)
+      ;;
 
       module On_symbols = struct
         include Ast.Statement.On_symbols

@@ -33,14 +33,19 @@ module type S = sig
   type t [@@deriving sexp]
   include Pretty_printer.S with type t := t
 
+  (** [Kind] contains an enumeration of all of the possible high-level
+      'kinds' of [t].  If [t] is a variant, [Kind.t] will usually be the
+      result of removing all of the arguments from [t]'s constructors. *)
+  module Kind : sig
+    type t
+    include Enum.S_sexp_table with type t := t
+    include Enum.Extension_table with type t := t
+  end
+
   (** [Flag] is a (potentially unpopulated) set of additional flags that
       can be attached to an observation. *)
   module Flag : Abstract_flag.S
-end
 
-(** [S_enum] is an extended signature for abstract observation types
-    that are also enumerations. *)
-module type S_enum = sig
-  include S
-  include Enum.Extension_table with type t := t
+  (** [kind x] gets the underlying kind of [x]. *)
+  val kind : t -> Kind.t
 end

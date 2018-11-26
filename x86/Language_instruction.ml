@@ -161,7 +161,7 @@ module Make (B : Basic) : S = struct
   let memory_operand = function
     | Ast.Operand.Bop _ -> Some Abstract.Operand.Unknown
     | Location (Ast.Location.Indirect _ as l)
-      -> Some (Location (Location.abs_type l))
+      -> Some (Location (Location.abstract l))
     | Location (Reg _)
     | Immediate _ | String _ | Typ _  -> None
   ;;
@@ -169,7 +169,7 @@ module Make (B : Basic) : S = struct
   let register_operand = function
     | Ast.Operand.Bop _ -> Some Abstract.Operand.Unknown
     | Location (Ast.Location.Reg _ as l)
-      -> Some (Location (Location.abs_type l))
+      -> Some (Location (Location.abstract l))
     | Location (Indirect _)
     | Immediate _ | String _ | Typ _  -> None
   ;;
@@ -274,9 +274,9 @@ module Make (B : Basic) : S = struct
   include Abstractable.Make (struct
       type nonrec t = t
       module Abs = Abstract.Instruction
-      let abs_type ins =
+      let abstract ins =
         Abs.make
-          ~opcode:(Opcode.abs_type ins.Ast.Instruction.opcode)
+          ~opcode:(Opcode.abstract ins.Ast.Instruction.opcode)
           ~operands:(abs_operands ins)
     end)
 

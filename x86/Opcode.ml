@@ -165,7 +165,7 @@ module Sizable = struct
       module Abs = Abstract.Instruction.Opcode
       open Abs
 
-      let abs_type = function
+      let abstract = function
         | `Add     -> Arith
         | `Call    -> Call
         | `Cmp     -> Compare
@@ -221,7 +221,7 @@ module Sized = struct
   include Abstractable.Make (struct
       type nonrec t = t
       module Abs = Abstract.Instruction.Opcode
-      let abs_type (s, _) = Sizable.abs_type s
+      let abstract (s, _) = Sizable.abstract s
     end)
 end
 
@@ -267,8 +267,8 @@ module Basic = struct
       module Abs = Abstract.Instruction.Opcode
       open Abs
 
-      let abs_type = function
-        | #Sizable.t as s -> Sizable.abs_type s
+      let abstract = function
+        | #Sizable.t as s -> Sizable.abstract s
         | `Leave  -> Call
         | `Mfence -> Fence
         | `Nop    -> Nop
@@ -443,7 +443,7 @@ module Jump = struct
   include Abstractable.Make (struct
       type nonrec t = t
       module Abs = Abstract.Instruction.Opcode
-      let abs_type _ = Abs.Jump
+      let abstract _ = Abs.Jump
     end)
 end
 
@@ -460,10 +460,10 @@ include Abstractable.Make (struct
     type nonrec t = t
     module Abs = Abstract.Instruction.Opcode
 
-    let abs_type = function
-      | Basic b     -> Basic.abs_type b
-      | Sized s     -> Sized.abs_type s
-      | Jump  j     -> Jump.abs_type j
+    let abstract = function
+      | Basic b     -> Basic.abstract b
+      | Sized s     -> Sized.abstract s
+      | Jump  j     -> Jump.abstract j
       | Directive _ -> Other
       | Unknown _   -> Unknown
     ;;

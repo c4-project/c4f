@@ -61,7 +61,17 @@ module Opcode = struct
       ]
   end
   include M
-  include Enum.Extend_table (M)
+
+  (** For now, instructions form their own kind enumeration.
+      This may change if we add more information to abstract instructions
+      later. *)
+  module Kind = struct
+    include M
+    include Enum.Extend_table (M)
+  end
+
+  let kind = Fn.id
+  let pp = Kind.pp
 
   module Flag = Abstract_flag.None
 end
@@ -73,9 +83,12 @@ type t =
 [@@deriving fields, make, sexp]
 ;;
 
+module Kind = Opcode.Kind
+let kind { opcode; _ } = Opcode.kind opcode
+
 let pp f ins =
   Format.fprintf f "@[<hv>%a@ (@,%a@,)@]"
-    Opcode.pp (opcode ins)
+    Opcode.Kind.pp (opcode ins)
     Abstract_operand.Bundle.pp (operands ins)
 ;;
 
@@ -84,8 +97,8 @@ module Flag = Abstract_flag.None
 module type S_predicates = sig
   type t
 
-  val has_opcode : t -> opcode:Opcode.t -> bool
-  val opcode_in : t -> opcodes:Opcode.Set.t -> bool
+  val has_opcode : t -> opcode:Opcode.Kind.t -> bool
+  val opcode_in : t -> opcodes:Opcode.Kind.Set.t -> bool
 
   val is_jump : t -> bool
   val is_symbolic_jump : t -> bool
@@ -128,17 +141,17 @@ module Properties : S_properties with type t := t = struct
   let operands = operands
 
   let has_opcode { opcode=actual; _ } ~opcode =
-    Opcode.equal opcode actual
+    Opcode.Kind.equal opcode actual
   ;;
 
   let opcode_in { opcode=actual; _ } ~opcodes =
-    Opcode.Set.mem opcodes actual
+    Opcode.Kind.Set.mem opcodes actual
   ;;
 
   let is_jump = has_opcode ~opcode:Jump
 
   let is_symbolic_jump_where { opcode; operands } ~f =
-    Opcode.equal opcode Jump
+    Opcode.Kind.equal opcode Jump
     && Abstract_operand.Bundle.is_single_jump_symbol_where operands ~f
   ;;
   let is_symbolic_jump = is_symbolic_jump_where ~f:(Fn.const true)
@@ -176,7 +189,7 @@ module Properties : S_properties with type t := t = struct
     [%expect {| true |}]
   ;;
 
-  let is_nop { opcode; _ } = Opcode.equal opcode Nop
+  let is_nop { opcode; _ } = Opcode.Kind.equal opcode Nop
 
   let is_stack_manipulation { opcode; operands } = match opcode with
     | Stack -> true

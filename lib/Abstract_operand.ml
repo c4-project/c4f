@@ -57,6 +57,41 @@ module M = struct
 end
 include M
 
+module Kind = struct
+  module M = struct
+    type t =
+    | Int
+    | Location
+    | Symbol
+    | Erroneous
+    | Other
+    | Unknown
+  [@@deriving enum, sexp]
+    ;;
+
+    let table =
+      [ Int      , "none"
+      ; Location , "location"
+      ; Symbol   , "symbol"
+      ; Erroneous, "erroneous"
+      ; Other    , "other"
+      ; Unknown  , "unknown"
+      ]
+    ;;
+  end
+
+  include M
+  include Enum.Extend_table (M)
+end
+let kind = function
+    | Int       _ -> Kind.Int
+    | Location  _ -> Location
+    | Symbol    _ -> Symbol
+    | Erroneous _ -> Erroneous
+    | Other       -> Other
+    | Unknown     -> Unknown
+;;
+
 module type S_predicates = sig
   type t
   val is_unknown : t -> bool
@@ -182,6 +217,35 @@ module Bundle = struct
 
   (* Intentionally override the [variants] version. *)
   let src_dst ~src ~dst = Src_dst { Src_dst.src; dst }
+
+  module Kind = struct
+    module M = struct
+      type t =
+        | None
+        | Single
+        | Double
+        | Src_dst
+      [@@deriving enum, sexp]
+      ;;
+
+      let table =
+        [ None   , "none"
+        ; Single , "single"
+        ; Double , "double"
+        ; Src_dst, "src-dst"
+        ]
+      ;;
+    end
+
+    include M
+    include Enum.Extend_table (M)
+  end
+  let kind = function
+    | None      -> Kind.None
+    | Single  _ -> Single
+    | Double  _ -> Double
+    | Src_dst _ -> Src_dst
+  ;;
 
   include Fold_map.Make_container0 (struct
       module Elt = M

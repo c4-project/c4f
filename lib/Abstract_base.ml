@@ -30,10 +30,14 @@ open Utils
 module type S = sig
   type t [@@deriving sexp]
   include Pretty_printer.S with type t := t
-  module Flag : Abstract_flag.S
-end
 
-module type S_enum = sig
-  include S
-  include Enum.Extension_table with type t := t
+  module Kind : sig
+    type t
+    include Enum.S_sexp_table with type t := t
+    include Enum.Extension_table with type t := t
+  end
+
+  module Flag : Abstract_flag.S
+
+  val kind : t -> Kind.t
 end

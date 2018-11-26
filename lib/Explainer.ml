@@ -59,17 +59,22 @@ module Make_explanation (B : Basic_explanation)
                  and module Flag := B.Flag = struct
   type t =
     { original  : B.elt
-    ; abs_type  : B.Abs.t
+    ; abstract  : B.Abs.t
+    ; abs_kind  : B.Abs.Kind.t
     ; abs_flags : B.Flag.Set.t
     ; details   : B.details
     }
   [@@deriving fields]
   ;;
 
+  let has_abs_kind k x = B.Abs.Kind.equal k x.abs_kind
+  let abs_kind_in ks x = B.Abs.Kind.Set.mem ks x.abs_kind
+
   let make ~context ~original =
     { original
     ; details   = B.make_details original context
-    ; abs_type  = B.abs_type original
+    ; abstract  = B.abstract original
+    ; abs_kind  = B.abs_kind original
     ; abs_flags = B.abs_flags original context
     }
   ;;
@@ -79,8 +84,9 @@ module Make_explanation (B : Basic_explanation)
     Fields.Direct.iter t
       ~original:(fun _ _ ->
           Format.fprintf f "@[[@,%a]@,@]" B.pp)
-      ~abs_type:(fun _ _ ->
-          Format.fprintf f "@ @[type:@ %a@]" B.Abs.pp)
+      ~abs_kind:(fun _ _ ->
+          Format.fprintf f "@ @[kind:@ %a@]" B.Abs.Kind.pp)
+      ~abstract:(fun _ _ _ -> ())
       ~abs_flags:(fun _ _ flags ->
           if not (B.Flag.Set.is_empty flags)
           then Format.fprintf f "@ @[flags:@ %a@]" B.Flag.pp_set flags)
@@ -145,7 +151,12 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
       let make_details _ _ = ()
       let pp_details _f _context = ()
 
-      let abs_type = Lang.Instruction.abs_operands
+      include Abstractable.Make (struct
+          module Abs = Abs
+          type t = elt
+          let abstract = Lang.Instruction.abs_operands
+        end)
+
       let abs_flags ins =
         Abstract.Operand.Bundle.flags
           (Lang.Instruction.abs_operands ins)
@@ -158,7 +169,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
         (Abstract.Operand.Bundle)
         (struct
           type nonrec t = t
-          let component = abs_type
+          let component = abstract
         end)
   end
 
@@ -192,7 +203,11 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
           operands
       ;;
 
-      let abs_type = Lang.Instruction.abs_type
+      include
+        ( Lang.Instruction : Abstractable.S
+          with module Abs := Abs and type t := elt
+        )
+      ;;
       let abs_flags = fun _ _ -> Flag.Set.empty
     end
 
@@ -203,7 +218,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
         (Abstract.Instruction)
         (struct
           type nonrec t = t
-          let component = abs_type
+          let component = abstract
         end)
   end
 
@@ -223,14 +238,14 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
       ;;
 
       let describe_instructions stm context =
-        match Lang.Statement.abs_type stm with
-        | Abstract.Statement.Instruction _ ->
+        match Lang.Statement.abs_kind stm with
+        | Abstract.Statement.Kind.Instruction ->
           stm
           |> Lang.Statement.On_instructions.to_list
           |> List.map
             ~f:(fun original ->
                 Ins_explanation.make ~original ~context)
-        | Blank | Unknown | Directive _ | Label _ -> []
+        | Blank | Unknown | Directive | Label -> []
       ;;
 
       let make_details stm context =
@@ -251,7 +266,11 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
           ~instructions:(fun _ _ -> pp_instruction_details f)
       ;;
 
-      let abs_type = Lang.Statement.abs_type
+      include
+        ( Lang.Statement : Abstractable.S
+          with module Abs := Abs and type t := elt
+        )
+      ;;
       let abs_flags = Lang.Statement.extended_flags
     end
 
@@ -262,7 +281,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
         (Abstract.Statement)
         (struct
           type nonrec t = t
-          let component = abs_type
+          let component = abstract
         end)
   end
 
@@ -279,28 +298,35 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     { statements = List.map ~f:(explain_statement syms) prog
     }
 
-  (* TODO(@MattWindsor91): merge with pp? *)
-  let stringify_stm_basic = function
-    | Abstract.Statement.Blank -> ""
-    | Directive _ -> "directive"
-    | Label _ -> "label"
-    | Instruction ins -> Abstract.Instruction.(Opcode.to_string (opcode ins))
-    | Unknown -> "??"
+  let pp_generic_statement_explanation f exp =
+    Stm_explanation.(
+      Format.fprintf f "@[<--@ @[%a%a@]@]"
+        Abstract.Statement.Kind.pp (abs_kind exp)
+        Flag.pp_set (abs_flags exp)
+    )
+  ;;
+
+  let pp_instruction_explanation f exp ins =
+    Ins_explanation.(
+      Format.fprintf f "@[<--@ @[%a%a%a@]@]"
+        Abstract.Instruction.Kind.pp (abs_kind ins)
+        Flag.pp_set (abs_flags ins)
+        Stm_explanation.Flag.pp_set (Stm_explanation.abs_flags exp)
+    )
   ;;
 
   let pp_explanation f exp =
-    Stm_explanation.(
-      Format.fprintf f "@[<--@ @[%s%a@]@]"
-        (stringify_stm_basic (abs_type exp))
-        Flag.pp_set (abs_flags exp)
-    )
+    match (Stm_explanation.details exp).instructions with
+    | [] -> pp_generic_statement_explanation f exp
+    (* Assume at most one instruction per statement, for now *)
+    | ins :: _ -> pp_instruction_explanation f exp ins
   ;;
 
   let pp_statement f exp =
     (* TODO(@MattWindsor91): emit '<-- xyz' in a comment *)
     Stm_explanation.(
-      match abs_type exp with
-      | Abstract.Statement.Blank -> () (* so as not to clutter up blank lines *)
+      match abs_kind exp with
+      | Abstract.Statement.Kind.Blank -> () (* so as not to clutter up blank lines *)
       | _ ->
         Format.fprintf f "@[<h>%a@ %a@]"
           Lang.Statement.pp (original exp)
