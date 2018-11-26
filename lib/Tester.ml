@@ -314,18 +314,17 @@ module Make_machine (B : Basic_machine) : Machine = struct
 
   let run_compiler ~in_root ~out_root c_fnames cspec =
     (* TODO(@MattWindsor91): actually wire this up to config *)
-    let t = Timing.make_module `Enabled in
-    let module T = (val t : Timing.S) in
+    let (module T) = Timing.make_module `Enabled in
     let open Or_error.Let_syntax in
     let id = Compiler.Spec.With_id.id cspec in
 
-    let%bind c  = B.compiler_from_spec cspec in
-    let%bind r  = B.asm_runner_from_spec cspec in
+    let%bind (module C) = B.compiler_from_spec cspec in
+    let%bind (module R) = B.asm_runner_from_spec cspec in
     let%bind ps = Pathset.make_and_mkdirs id ~in_root ~out_root in
     let module TC = Make_compiler (struct
         include (B : Basic)
-        module C = (val c)
-        module R = (val r)
+        module C = C
+        module R = R
         let ps = ps
         let cspec = cspec
       end) in

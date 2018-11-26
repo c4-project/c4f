@@ -203,14 +203,14 @@ let hooks_from_spec (cspec : Spec.With_id.t) =
 
 let from_spec f (cspec : Spec.With_id.t) =
   let open Or_error.Let_syntax in
-  let%map s = f cspec in
-  let h = hooks_from_spec cspec in
-  let r = runner_from_spec cspec in
+  let%map (module B : Basic) = f cspec in
+  let (module Hooks) = hooks_from_spec cspec in
+  let (module Runner) = runner_from_spec cspec in
   (module
     (Make (struct
        let cspec = cspec
-       include (val s : Basic)
-       module Hooks = (val h : Hooks)
-       module Runner = (val r : Run.Runner)
+       include B
+       module Hooks = Hooks
+       module Runner = Runner
      end)) : S)
 ;;

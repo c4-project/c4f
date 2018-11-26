@@ -25,10 +25,9 @@ open Core
 open Lib
 open Utils
 
-let regress_run_asm (l : (module Asm_job.Runner))
+let regress_run_asm ((module L) : (module Asm_job.Runner))
     path mode passes file =
   let open Or_error.Let_syntax in
-  let module L = (val l) in
 
   printf "## %s\n\n```\n" file;
   Out_channel.flush stdout;

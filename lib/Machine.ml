@@ -38,13 +38,13 @@ module Property = struct
     | Id of Id.Property.t
     | Is_remote
     | Is_local
- [@@deriving sexp, variants]
+  [@@deriving sexp, variants]
 
- let eval (type r) (rm : (module Reference with type t = r)) reference =
-   let module R = (val rm) in function
-     | Id prop   -> Id.Property.eval (R.id reference) prop
-     | Is_remote -> R.remoteness reference = `Remote
-     | Is_local  -> R.remoteness reference = `Local
+  let eval (type r) ((module R) : (module Reference with type t = r))
+      reference = function
+    | Id prop   -> Id.Property.eval (R.id reference) prop
+    | Is_remote -> R.remoteness reference = `Remote
+    | Is_local  -> R.remoteness reference = `Local
   ;;
 
   let eval_b (type r) (rm : (module Reference with type t = r))

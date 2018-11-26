@@ -36,14 +36,13 @@ let get_runner_x86 = function
   | [ dialect_s ] ->
     let open Or_error.Let_syntax in
     let%bind dialect = try_get_x86_dialect dialect_s in
-    let%map f = X86.Frontend.of_dialect dialect in
-    let l = X86.Language.of_dialect dialect in
+    let%map (module Frontend) = X86.Frontend.of_dialect dialect in
+    let (module Lang) = X86.Language.of_dialect dialect in
     (module Asm_job.Make_runner (struct
          type ast = X86.Ast.t
 
-         module Lang = (val l)
-
-         module Frontend = (val f)
+         module Lang = Lang
+         module Frontend = Frontend
          module Litmus = X86.Litmus.LitmusDirect
          module Multi_sanitiser = X86.Sanitiser.Make_multi (Lang)
          module Single_sanitiser = X86.Sanitiser.Make_single (Lang)
@@ -117,8 +116,7 @@ let compiler_from_spec (cspec : Compiler.Spec.With_id.t) =
 
 let test_compiler cspec =
   let open Or_error.Let_syntax in
-  let%bind m = compiler_from_spec cspec in
-  let module M = (val m) in
+  let%bind (module M) = compiler_from_spec cspec in
   let%map () =
     Or_error.tag_arg
       (M.test ())

@@ -112,8 +112,7 @@ let lift_command
 let litmusify ?output_format (o : Output.t) inp outp symbols
     target =
   let open Result.Let_syntax in
-  let%bind runner = runner_of_target target in
-  let module Runner = (val runner) in
+  let%bind (module Runner) = runner_of_target target in
   let input =
     { Asm_job.inp
     ; outp
