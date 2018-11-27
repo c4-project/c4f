@@ -125,6 +125,14 @@ module type S = sig
   (** [Lang] is the [Language.S] this explainer is targeting. *)
   module Lang : Language.S
 
+  (** [Loc_explanation] provides explanations for locations. *)
+  module Loc_explanation : sig
+    include Explanation with type elt := Lang.Location.t
+                         and type context := Abstract.Symbol.Table.t
+                         and module Abs := Abstract.Location
+    ;;
+  end
+
   (** [Ops_explanation] provides explanations for instruction operand
      bundles. *)
   module Ops_explanation : sig

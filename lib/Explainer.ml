@@ -80,23 +80,30 @@ module Make_explanation (B : Basic_explanation)
   ;;
 
   let pp f t =
-    Format.pp_open_vbox f 4;
     Fields.Direct.iter t
-      ~original:(fun _ _ ->
-          Format.fprintf f "@[[@,%a]@,@]" B.pp)
+      ~original:(fun _ _ o ->
+          Format.fprintf f "@[<hv 4>@[<hv>%a@ @]{@ " B.pp o
+        )
       ~abs_kind:(fun _ _ ->
-          Format.fprintf f "@ @[kind:@ %a@]" B.Abs.Kind.pp)
+          Format.fprintf f "@[kind:@ %a;@]@ " B.Abs.Kind.pp)
       ~abstract:(fun _ _ _ -> ())
       ~abs_flags:(fun _ _ flags ->
           if not (B.Flag.Set.is_empty flags)
-          then Format.fprintf f "@ @[flags:@ %a@]" B.Flag.pp_set flags)
+          then Format.fprintf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags)
       ~details:(fun _ _ -> B.pp_details f);
-    Format.pp_close_box f ()
+    Format.fprintf f "@]@ }"
   ;;
 end
 
 module type S = sig
   module Lang : Language.S
+
+  module Loc_explanation : sig
+    include Explanation with type elt := Lang.Location.t
+                         and type context := Abstract.Symbol.Table.t
+                         and module Abs := Abstract.Location
+    ;;
+  end
 
   module Ops_explanation : sig
     include Explanation with type elt := Lang.Instruction.t
@@ -137,6 +144,35 @@ module type S = sig
 end
 
 module Make (Lang : Language.S) : S with module Lang := Lang = struct
+  module Loc_explanation = struct
+    module Flag = Abstract.Location.Flag
+    module Base = struct
+      module Abs = Abstract.Location
+      module Flag = Flag
+
+      type elt = Lang.Location.t
+      let pp = Lang.Location.pp
+      type context = Abstract.Symbol.Table.t
+
+      type details = unit
+
+      let make_details _ _ = ()
+      let pp_details _f _context = ()
+
+      include Abstractable.Make (struct
+          module Abs = Abs
+          type t = elt
+          let abstract = Lang.Location.abstract
+        end)
+
+      let abs_flags = fun _ _ -> Flag.Set.empty
+    end
+
+    type details = Base.details
+
+    include Make_explanation (Base)
+  end
+
   module Ops_explanation = struct
     module Flag = Abstract.Operand.Bundle.Flag
     module Base = struct
@@ -185,23 +221,49 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
       type context = Abstract.Symbol.Table.t
 
       type details =
-        { operands : Ops_explanation.t option }
+        { operands  : Ops_explanation.t option
+        ; locations : Loc_explanation.t list
+        }
       [@@deriving fields]
       ;;
 
+      let make_operand_details ins context =
+        if Lang.Instruction.On_operands.is_none ins
+        then None
+        else Some (Ops_explanation.make ~context ~original:ins)
+      ;;
+
+      let make_location_details ins context =
+        let locations = Lang.Instruction.On_locations.to_list ins in
+        List.map locations
+          ~f:(fun original -> Loc_explanation.make ~context ~original)
+      ;;
+
       let make_details ins context =
-        { operands =
-            if Lang.Instruction.On_operands.is_none ins
-            then None
-            else Some (Ops_explanation.make ~context ~original:ins)
+        { operands  = make_operand_details  ins context
+        ; locations = make_location_details ins context
         }
       ;;
 
-      let pp_details f { operands } =
+      let pp_operand_details f operands =
         My_format.pp_option f
-          ~pp:(fun f -> Format.fprintf f "@,@[<v 4>Operand details:@,%a@]"
-                 Ops_explanation.pp)
+          ~pp:(fun f -> Format.fprintf f "@[<hv 4>@[<hv>operands@ @]{@ %a@]@ }"
+                  Ops_explanation.pp)
           operands
+      ;;
+
+      let pp_location_details f = function
+        | [] -> ()
+        | locations ->
+          Format.fprintf f "@[<hv 4>@[<hv>locations@ @]{@ %a@]@ }"
+            (Format.pp_print_list ~pp_sep:Format.pp_print_space
+               Loc_explanation.pp) locations
+      ;;
+
+      let pp_details f { operands; locations } =
+        Format.fprintf f "%a@ %a"
+          pp_operand_details operands
+          pp_location_details locations
       ;;
 
       include
@@ -257,7 +319,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
       let pp_instruction_details f = function
         | [] -> ()
         | ins ->
-          Format.fprintf f "@,@[<v 4>Instruction details:@,%a@]"
+          Format.fprintf f "@[<hv 4>@[<hv>instructions@ @]{@ %a@]@ }"
             (Format.pp_print_list ~pp_sep:Format.pp_print_space
                Ins_explanation.pp) ins
       ;;
