@@ -156,13 +156,24 @@ per-compiler.
 ### `explain`: analyse assembly without conversion
 
 ```
-$ act explain -compiler COMPILER-NAME path/to/asm.s
-$ act explain -arch ARCH-NAME path/to/asm.s
+$ act explain -compiler COMPILER-NAME path/to/asm/or/C
+$ act explain -arch ARCH-NAME path/to/asm
 ```
 
-This asks `act` to dump out the given assembly file along with
+This asks `act` to dump out the given file's assembly along with
 line-by-line annotations explaining how `act` categorised each line of
 assembly.  This is mostly useful for debugging what `act` is doing.
+
+If the file ends in `.c`, `act` will run the compiler to generate
+assembly first; otherwise, it assumes the file is already an assembly
+listing compatible with the given compiler or architecture.  Note that
+trying to litmusify a `.c` file using `-arch ARCH-NAME` will fail.
+
+To help `act` work out how the assembly file is manipulating memory,
+you'll need to tell it the C names of the global variables in use
+in the file.  To do so, pass them as `-cvars name1,name2,name3,etc`.
+`act` will print a warning if `-cvars` is absent or empty, but do
+a best-guess run without it.
 
 The output from `explain` on raw assembly can fill up with directives
 and unused labels and be hard to understand.  To help with this,
@@ -194,10 +205,10 @@ This asks `act` to try to convert the given file into a
 Litmus test, using the spec for compiler `COMPILER-NAME` (or the
 architecture named `ARCH-NAME`).
 
-If the file ends in `.c`, `act` will run the compiler to generate
-assembly first; otherwise, it assumes the file is already an assembly
-listing compatible with the given compiler or architecture.  Note that
-trying to litmusify a `.c` file using `-arch ARCH-NAME` will fail.
+As with `explain`, `act` accepts `.c` files here, and will
+first compile them before proceeding.  It also accepts `-cvars`
+(which is strongly recommended to get `act` to output a correct
+litmus test).
 
 By default, the litmus test is printed on stdout.  You can use `-o
 FILE` to override, and/or `-herd` to apply `herd` directly to the

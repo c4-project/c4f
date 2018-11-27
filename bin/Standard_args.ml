@@ -100,14 +100,14 @@ module Other = struct
   ;;
 
   let c_symbols =
-    flag_optional_with_default_doc "track"
+    flag_optional_with_default_doc "cvars"
       ~default:[]
       (Arg_type.comma_separated
          ~unique_values:true
          ~strip_whitespace:true
          string)
       [%sexp_of: string list]
-      ~doc: "SYMBOLS comma-separated list of symbols to track"
+      ~doc: "SYMBOLS comma-separated list of C variables to track"
   ;;
 
   let compiler_predicate =
