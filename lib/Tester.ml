@@ -273,7 +273,6 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     let%map files_and_time =
       T.bracket_join (fun () ->
           c_fnames
-          |> List.sort ~compare:Core_extended.Extended_string.collate
           |> List.map ~f:(run_single ps)
           |> Or_error.combine_errors
         )

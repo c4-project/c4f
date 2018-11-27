@@ -27,12 +27,15 @@ open Core
 
 (** [Dir] contains high-ish-level operations on directories. *)
 module Dir : sig
-  (** [get_files ~ext path] wraps [Sys.readfiles] with error handling
-      and optional extension filtering. *)
+  (** [get_files ?compare ?ext path] wraps [Sys.readfiles] with error
+     handling, optional extension filtering, and path sorting using
+      [compare] (which, by default, is ascending collation). *)
   val get_files
-    :  ?ext:string
+    :  ?compare:(string -> string -> int)
+    -> ?ext:string
     -> string
     -> string list Or_error.t
+  ;;
 end
 
 (** [CommonS] describes operations common to both input sources and

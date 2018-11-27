@@ -24,23 +24,45 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 
 module Dir = struct
-  let get_files ?ext path =
-    let open Or_error in
-    let open Or_error.Let_syntax in
-    let%map farray =
+  let default_sort_compare = Core_extended.Extended_string.collate
+
+  let filter_files ?ext farray =
+    Option.value_map
+      ~default:farray
+      ~f:(fun ext ->
+          Array.filter ~f:(My_filename.has_extension ~ext) farray)
+      ext
+  ;;
+
+  let test_files = [| "stdio.h"; "conio.h"; "main.c"; "main.o"; "README" |]
+
+  let%expect_test "filter_files: no filter" =
+    let result = filter_files test_files in
+    Sexp.output_hum Out_channel.stdout [%sexp (result : string array) ];
+    [%expect {| (stdio.h conio.h main.c main.o README) |}]
+  ;;
+
+  let%expect_test "filter_files: filter" =
+    let result = filter_files ~ext:"c" test_files in
+    Sexp.output_hum Out_channel.stdout [%sexp (result : string array) ];
+    [%expect {| (main.c) |}]
+  ;;
+
+  let readdir path =
+    Or_error.(
       tag_arg
         (try_with (fun () -> Sys.readdir path))
         "Couldn't read directory"
         path
         [%sexp_of: string]
-    in
-    let with_ext =
-      Option.value_map
-        ~default:farray
-        ~f:(fun ext ->
-            Array.filter ~f:(My_filename.has_extension ~ext) farray)
-        ext
-    in
+    )
+  ;;
+
+  let get_files ?(compare=default_sort_compare) ?ext path =
+    let open Or_error.Let_syntax in
+    let%map farray = readdir path in
+    let with_ext = filter_files ?ext farray in
+    Array.sort ~compare with_ext;
     Array.to_list with_ext
 end
 
