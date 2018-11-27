@@ -113,11 +113,11 @@ module Make_runner (B : Runner_deps) : Runner = struct
       "Error while parsing assembly" iname String.sexp_of_t
   ;;
 
-  let make_init (progs : LS.Statement.t list list)
+  let make_init (progs : MS.Output.Program.t list)
     : (string, L.Lang.Constant.t) List.Assoc.t =
     let get_hsyms prog =
       prog
-      |> LS.symbols
+      |> MS.Output.Program.symbol_table
       |> Fn.flip Abstract.Symbol.Table.set_of_sort Abstract.Symbol.Sort.Heap
     in
     let syms = Abstract.Symbol.Set.union_list (List.map ~f:get_hsyms progs) in
@@ -155,12 +155,22 @@ module Make_runner (B : Runner_deps) : Runner = struct
     | Programs_only -> L.pp_programs
   ;;
 
-  let make_litmus name (programs : LS.Statement.t list list) =
+  let make_litmus_programs (programs : MS.Output.Program.t list) =
+    List.map programs
+      ~f:(fun program ->
+          program |> MS.Output.Program.listing |> B.final_convert)
+  ;;
+
+  let make_litmus name (programs : MS.Output.Program.t list) =
     Or_error.tag ~tag:"Couldn't build litmus file."
       ( L.make ~name
           ~init:(make_init programs)
-          ~programs:(List.map ~f:B.final_convert programs)
+          ~programs:(make_litmus_programs programs)
       )
+  ;;
+
+  let collate_warnings (programs : MS.Output.Program.t list) =
+    List.concat_map programs ~f:(MS.Output.Program.warnings)
   ;;
 
   let output_litmus
@@ -173,8 +183,8 @@ module Make_runner (B : Runner_deps) : Runner = struct
       (outp : Out_channel.t) =
     let open Or_error.Let_syntax in
     let%bind o = MS.sanitise ~passes ~symbols program in
-    let programs = MS.Output.result o in
-    let warnings = MS.Output.warnings o in
+    let programs = MS.Output.programs o in
+    let warnings = collate_warnings programs in
     let%map lit = make_litmus name programs in
     let f = Format.formatter_of_out_channel outp in
     pp_for_litmus_format output_format f lit;
@@ -188,7 +198,14 @@ module Make_runner (B : Runner_deps) : Runner = struct
     | Detailed -> E.pp
   ;;
 
-  let output_explanation
+  let output_explanation output_format name outp exp redirects =
+    let f = Format.formatter_of_out_channel outp in
+    pp_for_explain_format output_format f exp;
+    Format.pp_print_newline f ();
+    make_output name redirects []
+  ;;
+
+  let run_explanation
       (output_format : Explain_format.t)
       (name    : string)
       (passes  : Sanitiser_pass.Set.t)
@@ -198,23 +215,26 @@ module Make_runner (B : Runner_deps) : Runner = struct
       (outp    : Out_channel.t) =
     let open Or_error.Let_syntax in
     let%map san = SS.sanitise ~passes ~symbols program in
-    let exp = E.explain (SS.Output.result san) in
-    let f = Format.formatter_of_out_channel outp in
-    pp_for_explain_format output_format f exp;
-    Format.pp_print_newline f ();
-    make_output name (SS.Output.redirects san) []
+    let program = SS.Output.programs san in
+    let listing = SS.Output.Program.listing program in
+    let s_table = SS.Output.Program.symbol_table program in
+    let exp = E.explain listing s_table in
+    let redirects = SS.Output.redirects san in
+    output_explanation output_format name outp exp redirects
+  ;;
+
+  let stringify_symbol sym =
+    Result.of_option (LS.Symbol.of_string_opt sym)
+      ~error:(
+        Error.create_s
+          [%message "Symbol can't be converted from string"
+              ~symbol:sym]
+      )
   ;;
 
   let stringify_symbols syms =
     syms
-    |> List.map
-      ~f:(fun s -> Result.of_option (LS.Symbol.of_string_opt s)
-             ~error:(
-               Error.create_s
-                 [%message "Symbol can't be converted from string"
-                     ~symbol:s]
-             )
-         )
+    |> List.map ~f:stringify_symbol
     |> Or_error.combine_errors
   ;;
 
@@ -231,6 +251,6 @@ module Make_runner (B : Runner_deps) : Runner = struct
     run ~f:(output_litmus output_format)
   ;;
   let explain ?(output_format=Explain_format.default) =
-    run ~f:(output_explanation output_format)
+    run ~f:(run_explanation output_format)
   ;;
 end

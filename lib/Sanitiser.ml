@@ -78,10 +78,17 @@ module Make (B : Basic)
   module Ctx_Zip  = Zipper.On_monad (Ctx)
 
   module Output = struct
+    module Program = struct
+      type t =
+        { listing      : Lang.Statement.t list
+        ; warnings     : Warn.t list
+        ; symbol_table : Abstract.Symbol.Table.t
+        } [@@deriving fields]
+    end
+
     type t =
-      { result    : Lang.Statement.t list Program_container.t
-      ; warnings  : Warn.t list
-      ; redirects : (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t
+      { programs      : Program.t Program_container.t
+      ; redirects     : (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t
       } [@@deriving fields]
   end
 
@@ -379,11 +386,18 @@ module Make (B : Basic)
       ~finish:update_proglen_and_finish
   ;;
 
-  let update_symbol_tables
+  let update_symbol_table
       (prog : Lang.Statement.t list) =
     let open Ctx.Let_syntax in
-    let%map () = Ctx.set_symbol_table (Lang.symbols prog) in
+    let%bind targets = Ctx.get_all_redirect_targets in
+    let known_heap_symbols = Lang.Symbol.Set.abstract targets in
+    let symbols' = Lang.symbols prog ~known_heap_symbols in
+    let%map () = Ctx.set_symbol_table symbols' in
     prog
+  ;;
+
+  let update_and_get_symbol_table prog =
+    Ctx.(prog |> update_symbol_table >>= fun _ -> get_symbol_table)
   ;;
 
   (** [add_end_label] adds an end-of-program label to the current
@@ -408,8 +422,8 @@ module Make (B : Basic)
     : Lang.Statement.t list Ctx.t =
     let mu prog =
       Ctx.(
-        return prog
-        >>= update_symbol_tables
+        prog
+        |>  update_symbol_table
         >>= (RemoveUseless |-> remove_generally_irrelevant_statements)
         >>= (RemoveLitmus  |-> remove_litmus_irrelevant_statements)
         >>= (RemoveUseless |-> remove_useless_jumps)
@@ -417,20 +431,22 @@ module Make (B : Basic)
     in
     proglen_fix mu prog
 
+  let program_name = sprintf "%d"
+
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program
       (i : int) (prog : Lang.Statement.t list)
     : (Lang.Statement.t list) Ctx.t =
-    let name = sprintf "%d" i in
+    let name = program_name i in
     Ctx.(
       enter_program ~name prog
       (* Initial table population. *)
-      >>= update_symbol_tables
+      >>= update_symbol_table
       >>= (SimplifyLitmus |-> add_end_label)
       >>= (LangHooks      |-> B.on_program)
       (* The language hook might have invalidated the symbol
          tables. *)
-      >>= update_symbol_tables
+      >>= update_symbol_table
       (* Need to sanitise statements first, in case the sanitisation
          pass makes irrelevant statements (like jumps) relevant
          again. *)
@@ -491,24 +507,36 @@ module Make (B : Basic)
       Ctx_List.iterM symbols ~f:(find_initial_redirect mangle_map)
   ;;
 
-  let sanitise_with_ctx symbols progs =
+  let build_single_program_output i listing =
     let open Ctx.Let_syntax in
-    let%bind () = find_initial_redirects symbols progs in
-    let%bind progs' =
-      Ctx_Pcon.mapiM ~f:sanitise_program progs
+    let name = program_name i in
+    let%bind symbol_table = update_and_get_symbol_table listing in
+    let%map  warnings     = Ctx.take_warnings name in
+    { Output.Program.listing; symbol_table; warnings }
+  ;;
+
+  let build_output c_symbols rough_listings =
+    let open Ctx.Let_syntax in
+    let listings =
+      make_programs_uniform (Lang.Statement.empty ()) rough_listings
+    in
+    let%bind programs =
+      Ctx_Pcon.mapiM ~f:build_single_program_output listings
+    in
+    let%map redirects = Ctx.get_redirect_alist c_symbols in
+    { Output.programs; redirects }
+  ;;
+
+  let sanitise_with_ctx c_symbols progs =
+    Ctx.(
+      find_initial_redirects c_symbols progs
+      >>= fun () -> Ctx_Pcon.mapiM ~f:sanitise_program progs
       (* We do this last, for two reasons: first, in case the
          instruction sanitisers have introduced invalid identifiers;
          and second, so that we know that the manglings agree across
          program boundaries.*)
       >>= Ctx.(MangleSymbols |-> mangle_identifiers)
-    in
-    let%bind warns = Ctx.take_warnings in
-    let%map redirs = Ctx.get_redirect_alist symbols in
-    Output.(
-      { result = make_programs_uniform (Lang.Statement.empty ()) progs'
-      ; warnings = warns
-      ; redirects = redirs
-      }
+      >>= build_output c_symbols
     )
   ;;
 

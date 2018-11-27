@@ -178,8 +178,9 @@ module type S = sig
       (ideally) parses as valid assembly. *)
   val pp_as_assembly : Base.Formatter.t -> t -> unit
 
-  (** [explain lst] compiles a [t] for assembly listing [lst]. *)
-  val explain : Lang.Statement.t list -> t
+  (** [explain lst symbol_table] compiles a [t] for assembly listing
+     [lst], whose symbol table is [symbol_table]. *)
+  val explain : Lang.Statement.t list -> Abstract_symbol.Table.t -> t
 end
 
 (** [Make] makes an implementation of [S] for a given language. *)

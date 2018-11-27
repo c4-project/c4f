@@ -29,7 +29,7 @@
    for symbol analysis, [Basic]; the expanded interface the rest of
    act gets, [S]; and a functor from one to the other, [Make]. *)
 
-open Core
+open Core_kernel
 open Utils
 
 (** [Basic] is the interface act languages must implement for symbol
@@ -110,6 +110,11 @@ module type R_map = sig
   (** [dest_of rmap src] gives the final destination of [src] as an
      [r_dest]. *)
   val dest_of : t -> sym -> r_dest option
+
+  (** [all_dests rmap] collects all of the destination symbols in
+      [rmap].  This is a useful approximation as to which symbols
+      are heap references. *)
+  val all_dests : t -> Set.t
 
   (** [sources_of rmap dst] gives all of the symbols that map to
       [dst] in [rmap]. *)

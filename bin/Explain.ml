@@ -36,8 +36,9 @@ let print_symbol_map = function
       map
 ;;
 
-let run file_type compiler_id_or_arch output_format symbols sanitise
+let run file_type compiler_id_or_arch output_format c_symbols sanitise
     ~infile ~outfile o cfg =
+  Common.warn_if_not_tracking_symbols o c_symbols;
   let open Or_error.Let_syntax in
   let passes = Sanitiser_pass.(
       if sanitise then explain else Set.empty
@@ -53,7 +54,7 @@ let run file_type compiler_id_or_arch output_format symbols sanitise
       { Asm_job.inp = In_source.of_option asm_file
       ; outp = Out_sink.of_option outfile
       ; passes
-      ; symbols
+      ; symbols = c_symbols
       }
     in
     let%map out = Runner.explain ?output_format input in
@@ -73,15 +74,7 @@ let command =
           no_arg
           ~doc: "if true, do basic sanitisation on the assembly first"
       and compiler_id_or_arch = Standard_args.Other.compiler_id_or_arch
-      and symbols =
-        flag_optional_with_default_doc "track"
-          ~default:[]
-          (Arg_type.comma_separated
-             ~unique_values:true
-             ~strip_whitespace:true
-             string)
-          [%sexp_of: string list]
-          ~doc: "SYMBOLS comma-separated list of symbols to track"
+      and c_symbols = Standard_args.Other.c_symbols
       and output_format =
         Asm_job.Explain_format.(
           choose_one
@@ -109,7 +102,7 @@ let command =
                 file_type
                 compiler_id_or_arch
                 output_format
-                symbols sanitise
+                c_symbols sanitise
                 ~infile ~outfile)
     ]
 ;;

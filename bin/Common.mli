@@ -27,6 +27,15 @@ open Core
 open Lib
 open Utils
 
+(** [warn_if_not_tracking_symbols o c_symbols] prints a warning on [o]
+    if [c_symbols] is empty.  The warning explains that, without any
+    C symbols to track, act may make incorrect assumptions. *)
+val warn_if_not_tracking_symbols
+  :  Output.t
+  -> string list
+  -> unit
+;;
+
 (** [temp_file suffix] generates a temporary file name suitable for
    act commands. *)
 val temp_file : string -> string

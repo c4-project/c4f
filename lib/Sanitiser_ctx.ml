@@ -49,7 +49,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     ; syms      : Abstract.Symbol.Table.t
     ; redirects : Lang.Symbol.R_map.t
     ; passes    : Pass.Set.t
-    ; warnings  : Warn.t list
+    ; warnings  : (string, Warn.t) List.Assoc.t
     }[@@deriving fields]
 
   let initial ~passes =
@@ -128,7 +128,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     modify (
       fun ctx ->
         let warning = Warn.make ~program_name:ctx.progname ~element ~body in
-        { ctx with warnings = warning::ctx.warnings }
+        { ctx with warnings = (ctx.progname, warning)::ctx.warnings }
     )
   ;;
 
@@ -136,11 +136,17 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     when_m predicate ~f:(fun () -> warn element body)
   ;;
 
-  let take_warnings =
+  let take_warnings program_name =
     make (
       fun ctx ->
-        let warnings = ctx.warnings in
-        ( { ctx with warnings = [] }, warnings )
+        let prog_warnings, rest_warnings =
+          List.partition_map ctx.warnings
+            ~f:(fun (pn, warn) ->
+                if String.equal pn program_name
+                then `Fst warn
+                else `Snd (pn, warn))
+        in
+        ( { ctx with warnings = rest_warnings }, prog_warnings )
     )
   ;;
 
@@ -191,6 +197,12 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
           )
         )
     ;;
+
+  let get_all_redirect_targets : Lang.Symbol.Set.t t =
+    let open Let_syntax in
+    let%map rds = peek redirects in
+    Lang.Symbol.R_map.all_dests rds
+  ;;
 
   let redirect ~src ~dst =
     let open Let_syntax in

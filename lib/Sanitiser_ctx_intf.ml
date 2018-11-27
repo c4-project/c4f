@@ -103,9 +103,10 @@ module type S = sig
       if [predicate] is true, and [return ()] otherwise. *)
   val warn_if : bool -> Warn.elt -> Info.t -> unit t
 
-  (** [take_warnings] is a contextual computation that returns the
-      current warning set, while clearing it inside the context. *)
-  val take_warnings : Warn.t list t
+  (** [take_warnings program_name] is a contextual computation that
+     returns the warning set for [program_name], while clearing it
+     inside the context. *)
+  val take_warnings : string -> Warn.t list t
 
   (*
    * Symbols
@@ -155,6 +156,10 @@ module type S = sig
     :  Lang.Symbol.t list
     -> (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t t
   ;;
+
+  (** [get_all_redirect_targets] gets a list of all symbols
+      currently set as the target of a redirect. *)
+  val get_all_redirect_targets : Lang.Symbol.Set.t t
 
   (** [redirect ~src ~dst] tries to redirect ~src to ~dst in the
      concrete symbol redirection table.  If the redirect causes an

@@ -89,6 +89,15 @@ module Make (B : Basic)
 
     let dest_of = M.find
 
+    let to_dest = function
+      | (src, Identity) -> src
+      | (_  , MapsTo x) -> x
+    ;;
+
+    let all_dests rmap =
+      rmap |> M.to_alist |> List.map ~f:to_dest |> Set.of_list
+    ;;
+
     let add_maps_to_edge ~src ~dst rmap =
       rmap
       |> M.set ~key:src ~data:(MapsTo dst)
@@ -140,21 +149,39 @@ module String_direct = Make (struct
   end)
 ;;
 
+let make_test_rmap () =
+  let open Or_error in
+  String_direct.R_map.(
+    (return (make (String_direct.Set.singleton "whiskey")))
+    >>= redirect ~src:"alpha"   ~dst:"alpha"
+    >>= redirect ~src:"bravo"   ~dst:"echo"
+    >>= redirect ~src:"charlie" ~dst:"echo"
+    >>= redirect ~src:"echo"    ~dst:"foxtrot"
+  )
+;;
+
+let%expect_test "String.R_map: all_dests example run" =
+  let open Or_error.Let_syntax in
+  String_direct.R_map.(
+    let r =
+      let%map map = make_test_rmap () in all_dests map
+    in
+    Sexp.output_hum
+      Out_channel.stdout
+      [%sexp ( r : String_direct.R_map.Set.t Or_error.t ) ]
+  );
+  [%expect {| (Ok (alpha foxtrot whiskey)) |}]
+;;
+
 let%expect_test "String.R_map: dest_of example run" =
   let open Or_error.Let_syntax in
   String_direct.R_map.(
     let r =
-      let%map map =
-        (return (make (String_direct.Set.singleton "whiskey")))
-        >>= redirect ~src:"alpha"   ~dst:"alpha"
-        >>= redirect ~src:"bravo"   ~dst:"echo"
-        >>= redirect ~src:"charlie" ~dst:"echo"
-        >>= redirect ~src:"echo"    ~dst:"foxtrot"
-      in
-      let alpha   = String_direct.R_map.dest_of map "alpha" in
-      let bravo   = String_direct.R_map.dest_of map "bravo" in
-      let charlie = String_direct.R_map.dest_of map "charlie" in
-      let delta   = String_direct.R_map.dest_of map "delta" in
+      let%map map = make_test_rmap () in
+      let alpha   = dest_of map "alpha" in
+      let bravo   = dest_of map "bravo" in
+      let charlie = dest_of map "charlie" in
+      let delta   = dest_of map "delta" in
       (alpha, bravo, charlie, delta)
     in
     Sexp.output_hum
@@ -168,22 +195,17 @@ let%expect_test "String.R_map: dest_of example run" =
       ]
   );
   [%expect {| (Ok ((Identity) ((MapsTo foxtrot)) ((MapsTo foxtrot)) ())) |}]
+;;
 
-let%expect_test "String.R_map: dest_of example run" =
+let%expect_test "String.R_map: sources_of example run" =
   let open Or_error.Let_syntax in
   String_direct.R_map.(
     let r =
-      let%map map =
-        (return (make (String_direct.Set.singleton "whiskey")))
-        >>= redirect ~src:"alpha"   ~dst:"alpha"
-        >>= redirect ~src:"bravo"   ~dst:"echo"
-        >>= redirect ~src:"charlie" ~dst:"echo"
-        >>= redirect ~src:"echo"    ~dst:"foxtrot"
-      in
-      let alpha   = String_direct.R_map.sources_of map "alpha" in
-      let bravo   = String_direct.R_map.sources_of map "bravo" in
-      let echo    = String_direct.R_map.sources_of map "echo" in
-      let foxtrot = String_direct.R_map.sources_of map "foxtrot" in
+      let%map map = make_test_rmap () in
+      let alpha   = sources_of map "alpha" in
+      let bravo   = sources_of map "bravo" in
+      let echo    = sources_of map "echo" in
+      let foxtrot = sources_of map "foxtrot" in
       (alpha, bravo, echo, foxtrot)
     in
     Sexp.output_hum
@@ -197,3 +219,4 @@ let%expect_test "String.R_map: dest_of example run" =
       ]
   );
   [%expect {| (Ok ((alpha) () () (bravo charlie echo))) |}]
+;;

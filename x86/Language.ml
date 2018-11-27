@@ -73,8 +73,9 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
       type t = Ast.Location.t
       let sexp_of_t = [%sexp_of: Ast.Location.t]
       let t_of_sexp = [%of_sexp: Ast.Location.t]
-
       let pp = P.pp_location
+
+      type sym = string
 
       let make_heap_loc l =
         Ast.(Location.Indirect (Indirect.make ~disp:(Disp.Symbolic l) ()))
@@ -108,6 +109,11 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
             | Indirect i -> indirect_abs_type i
           ;;
         end)
+
+      module On_symbols = struct
+        include Ast.Location.On_symbols
+        module Elt = Symbol
+      end
     end
 
     module Instruction = Language_instruction.Make (struct

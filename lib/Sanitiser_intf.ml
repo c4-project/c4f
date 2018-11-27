@@ -89,10 +89,26 @@ module type S = sig
     (** [t] is the type of (successful) sanitiser output. *)
     type t
 
-    val result : t -> Lang.Statement.t list Program_container.t
+    (** [Program] is the abstract data type of a single program's
+        sanitiser output. *)
+    module Program : sig
+      type t
 
-    val warnings : t -> Warn.t list
+      (** [listing p] gets the final sanitised program listing. *)
+      val listing : t -> Lang.Statement.t list
 
+      (** [warnings t] gets the warning list for this program. *)
+      val warnings : t -> Warn.t list
+
+      (** [symbol_table t] gets the program's final symbol table. *)
+      val symbol_table : t -> Abstract.Symbol.Table.t
+    end
+
+    (** [programs t] gets the final sanitised programs. *)
+    val programs : t -> Program.t Program_container.t
+
+    (** [redirects t] gets the final mapping from C-level symbols
+        to the symbols in [programs t]. *)
     val redirects
       :  t
       -> (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t

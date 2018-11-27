@@ -99,6 +99,17 @@ module Other = struct
       ~if_nothing_chosen:(`Default_to `Infer)
   ;;
 
+  let c_symbols =
+    flag_optional_with_default_doc "track"
+      ~default:[]
+      (Arg_type.comma_separated
+         ~unique_values:true
+         ~strip_whitespace:true
+         string)
+      [%sexp_of: string list]
+      ~doc: "SYMBOLS comma-separated list of symbols to track"
+  ;;
+
   let compiler_predicate =
     flag "filter-compilers"
       (optional (sexp_conv [%of_sexp: Compiler.Property.t Blang.t]))

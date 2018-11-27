@@ -112,8 +112,16 @@ end
 module type Basic_location = sig
   type t [@@deriving sexp]
 
+  (** [sym] is the type of concrete symbols. *)
+  type sym
+
   (** Languages must supply a pretty-printer for their locations. *)
   include Pretty_printer.S with type t := t
+
+  (** They must allow fold-mapping over symbols... *)
+  module On_symbols :
+    Fold_map.Container0 with type elt := sym and type t := t
+  ;;
 
   include Abstractable.S
     with type t := t
@@ -157,8 +165,8 @@ module type Basic = sig
   include Basic_core
 
   module Constant    : Basic_constant
-  module Location    : Basic_location
   module Symbol      : Language_symbol.Basic
+  module Location    : Basic_location with type sym := Symbol.t
   module Instruction : Basic_instruction with type loc := Location.t
                                           and type sym := Symbol.t
   module Statement   : Basic_statement with type ins := Instruction.t
@@ -178,7 +186,7 @@ module type S = sig
   module Symbol : Language_symbol.S
 
   module Location : sig
-    include Basic_location
+    include Basic_location with type sym := Symbol.t
 
     (** [to_heap_symbol l] returns [l]'s underlying abstract heap
        symbol if it is a symbolic heap reference. *)
@@ -241,8 +249,15 @@ module type S = sig
     ;;
   end
 
-  (** [symbols] retrieves the symbol table for a given program. *)
-  val symbols : Statement.t list -> Abstract.Symbol.Table.t
+  (** [symbols ~known_heap_symbols prog] calculates the symbol table
+     for [prog].  It uses [known_heap_symbols] to help work out corner
+     cases in heap symbol detection (for example, when heap references
+     are being used as immediate values). *)
+  val symbols
+    :  Statement.t list
+    -> known_heap_symbols:Abstract.Symbol.Set.t
+    -> Abstract.Symbol.Table.t
+  ;;
 end
 
 module type Language = sig

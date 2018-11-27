@@ -133,7 +133,7 @@ module type S = sig
   include Pretty_printer.S with type t := t
   val pp_as_assembly : Base.Formatter.t -> t -> unit
 
-  val explain : Lang.Statement.t list -> t
+  val explain : Lang.Statement.t list -> Abstract.Symbol.Table.t -> t
 end
 
 module Make (Lang : Language.S) : S with module Lang := Lang = struct
@@ -295,8 +295,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     Stm_explanation.make ~context:syms ~original:stm
   ;;
 
-  let explain prog =
-    let symbol_table = Lang.symbols prog in
+  let explain prog symbol_table =
     { statements = List.map ~f:(explain_statement symbol_table) prog
     ; symbol_table
     }

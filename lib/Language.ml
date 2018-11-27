@@ -131,7 +131,26 @@ module Make (B : Basic)
     include B.Constant
   end
 
-  let heap_symbols prog =
+  let heap_symbols_of_instruction ins ~known_heap_symbols =
+    let symbols_in_heap_position =
+      ins
+      |> Instruction.On_locations.to_list
+      |> List.filter_map ~f:Location.to_heap_symbol
+    in
+    let compare_against_known sym =
+      let asym = Symbol.abstract sym in
+      let is_known = Abstract.Symbol.Set.mem known_heap_symbols asym in
+      Option.some_if is_known asym
+    in
+    let symbols_matching_known =
+      ins
+      |> Instruction.On_symbols.to_list
+      |> List.filter_map ~f:compare_against_known
+    in
+    symbols_in_heap_position @ symbols_matching_known
+  ;;
+
+  let heap_symbols prog ~known_heap_symbols =
     prog
     |> List.concat_map ~f:Statement.On_instructions.to_list
     (* In x86, at least, jumps can contain locations that look without
@@ -141,8 +160,8 @@ module Make (B : Basic)
        Maybe, one day, we'll find an architecture that does actually
        contain heap locations in a jump, and have to re-think this. *)
     |> My_list.exclude ~f:Instruction.is_jump
-    |> List.concat_map ~f:Instruction.On_locations.to_list
-    |> List.filter_map ~f:Location.to_heap_symbol
+    |> List.concat_map
+      ~f:(heap_symbols_of_instruction ~known_heap_symbols)
     |> Abstract.Symbol.Set.of_list
 
   (** [symbols_in_statements_where filter prog] collects all
@@ -162,12 +181,12 @@ module Make (B : Basic)
   let jump_symbols = symbols_in_statements_where Statement.is_jump
   let label_symbols = symbols_in_statements_where Statement.is_label
 
-  let symbols prog =
+  let symbols prog ~known_heap_symbols =
     Abstract.(
       Symbol.Table.of_sets
-        [ heap_symbols  prog, Symbol.Sort.Heap
-        ; jump_symbols  prog, Symbol.Sort.Jump
-        ; label_symbols prog, Symbol.Sort.Label
+        [ heap_symbols  prog ~known_heap_symbols, Symbol.Sort.Heap
+        ; jump_symbols  prog                    , Symbol.Sort.Jump
+        ; label_symbols prog                    , Symbol.Sort.Label
         ]
     )
   ;;

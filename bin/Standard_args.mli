@@ -56,9 +56,13 @@ module Other : sig
     : [> `Arch of string list | `Id of Id.t] Command.Param.t
   ;;
 
-  (** [file_type] defines parameter for specifying the file type of
+  (** [file_type] defines a parameter for specifying the file type of
       a single input file. *)
   val file_type : [> `Assembly | `C | `Infer] Command.Param.t
+
+  (** [c_symbols] defines a parameter for collecting a list of
+      C symbols to track during sanitisation. *)
+  val c_symbols : string list Command.Param.t
 
   (** [compiler_predicate] defines a parameter for collecting a
       filtering predicate for compilers. *)
