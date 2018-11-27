@@ -83,8 +83,70 @@ L6:  # <-- label
 leave # <-- call
 ret # <-- return
 ```
+## clang_macho_o3_xchg.s
 
-Ran 2 test(s).
+```
+_P0:  # <-- label (unused label, program boundary)
+pushl %EBP # <-- stack (manipulates stack)
+movl %ESP, %EBP # <-- move (manipulates stack)
+movl $2, %EAX # <-- move
+xchgl %EAX, _x # <-- RMW
+movl $1, %EAX # <-- move
+xchgl %EAX, _y # <-- RMW
+popl %EBP # <-- stack (manipulates stack)
+retl # <-- return
+_P1:  # <-- label (unused label, program boundary)
+pushl %EBP # <-- stack (manipulates stack)
+movl %ESP, %EBP # <-- move (manipulates stack)
+movl $2, %EAX # <-- move
+xchgl %EAX, _y # <-- RMW
+movl $1, %EAX # <-- move
+xchgl %EAX, _x # <-- RMW
+popl %EBP # <-- stack (manipulates stack)
+retl # <-- return
+```
+## gcc_macho_o0_immediate_heap.s
+
+```
+_P0:  # <-- label (unused label, program boundary)
+pushl %EBP # <-- stack (manipulates stack)
+movl %ESP, %EBP # <-- move (manipulates stack)
+subl $16, %ESP # <-- arith (manipulates stack)
+movl $_x, -4(%EBP) # <-- move
+movl -4(%EBP), %EAX # <-- move
+movl (%EAX), %EAX # <-- move
+movl %EAX, -12(%EBP) # <-- move
+movl -12(%EBP), %EAX # <-- move
+movl %EAX, _t0r0 # <-- move
+movl $_y, -8(%EBP) # <-- move
+movl $1, -16(%EBP) # <-- move
+movl -16(%EBP), %EAX # <-- move
+movl %EAX, %EDX # <-- move
+movl -8(%EBP), %EAX # <-- move
+movl %EDX, (%EAX) # <-- move
+leave # <-- call
+ret # <-- return
+_P1:  # <-- label (unused label, program boundary)
+pushl %EBP # <-- stack (manipulates stack)
+movl %ESP, %EBP # <-- move (manipulates stack)
+subl $16, %ESP # <-- arith (manipulates stack)
+movl $_y, -4(%EBP) # <-- move
+movl $2, -12(%EBP) # <-- move
+movl -12(%EBP), %EAX # <-- move
+movl %EAX, %EDX # <-- move
+movl -4(%EBP), %EAX # <-- move
+movl %EDX, (%EAX) # <-- move
+movl $_x, -8(%EBP) # <-- move
+movl $1, -16(%EBP) # <-- move
+movl -16(%EBP), %EAX # <-- move
+movl %EAX, %EDX # <-- move
+movl -8(%EBP), %EAX # <-- move
+movl %EDX, (%EAX) # <-- move
+leave # <-- call
+ret # <-- return
+```
+
+Ran 4 test(s).
 
 # Litmusifier tests
 
@@ -148,7 +210,56 @@ L3:                | mfence             ;
 
 locations [ZUt0r0; ZUt1r0; ZUx; ZUy; t0sZM4; t1sZM4]
 ```
+## clang_macho_o3_xchg.s
 
-Ran 2 test(s).
+```
+X86 clang_macho_o3_xchg.s
+
+{ ZUx = 0; ZUy = 0; }
+
+P0              | P1              ;
+movl EAX, 2     | movl EAX, 2     ;
+xchg [ZUx], EAX | xchg [ZUy], EAX ;
+movl EAX, 1     | movl EAX, 1     ;
+xchg [ZUy], EAX | xchg [ZUx], EAX ;
+
+locations [ZUx; ZUy]
+```
+## gcc_macho_o0_immediate_heap.s
+
+```
+X86 gcc_macho_o0_immediate_heap.s
+
+{
+    ZUt0r0 = 0;
+    t0sZM12 = 0;
+    t0sZM16 = 0;
+    t0sZM4 = 0;
+    t0sZM8 = 0;
+    t1sZM12 = 0;
+    t1sZM16 = 0;
+    t1sZM4 = 0;
+    t1sZM8 = 0;
+}
+
+P0                  | P1                  ;
+movl [t0sZM4], ZUx  | movl [t1sZM4], ZUy  ;
+movl EAX, [t0sZM4]  | movl [t1sZM12], 2   ;
+movl EAX, [EAX]     | movl EAX, [t1sZM12] ;
+movl [t0sZM12], EAX | movl EDX, EAX       ;
+movl EAX, [t0sZM12] | movl EAX, [t1sZM4]  ;
+movl [ZUt0r0], EAX  | movl [EAX], EDX     ;
+movl [t0sZM8], ZUy  | movl [t1sZM8], ZUx  ;
+movl [t0sZM16], 1   | movl [t1sZM16], 1   ;
+movl EAX, [t0sZM16] | movl EAX, [t1sZM16] ;
+movl EDX, EAX       | movl EDX, EAX       ;
+movl EAX, [t0sZM8]  | movl EAX, [t1sZM8]  ;
+movl [EAX], EDX     | movl [EAX], EDX     ;
+
+locations [ZUt0r0; t0sZM12; t0sZM16; t0sZM4; t0sZM8; t1sZM12; t1sZM16;
+           t1sZM4; t1sZM8]
+```
+
+Ran 4 test(s).
 
 

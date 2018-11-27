@@ -15,7 +15,9 @@
   (with-stdout-to regress.output
    (run act regress "tests")))
  (deps
+  "tests/asm/x86/att/clang_macho_o3_xchg.s"
   "tests/asm/x86/att/gcc_macho_o0_moves.s"
+  "tests/asm/x86/att/gcc_macho_o0_immediate_heap.s"
   "tests/asm/x86/att/gcc_elf_o0_stackchk.s")
 )
 
