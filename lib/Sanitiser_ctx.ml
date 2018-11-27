@@ -44,7 +44,6 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
 
   type ctx =
     { progname  : string
-    ; proglen   : int
     ; endlabel  : string option
     ; syms      : Abstract.Symbol.Table.t
     ; redirects : Lang.Symbol.R_map.t
@@ -54,7 +53,6 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
 
   let initial ~passes =
     { progname  = "(no program)"
-    ; proglen   = 0
     ; endlabel  = None
     ; syms      = Abstract.Symbol.Table.empty
     ; redirects = Lang.Symbol.R_map.make Lang.Symbol.Set.empty
@@ -75,7 +73,6 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     modify (
       fun ctx ->
         { ctx with progname = name
-                 ; proglen = List.length prog
                  ; endlabel = None
                  ; syms = Abstract.Symbol.Table.empty }
     ) >>| fun () -> prog
@@ -93,31 +90,11 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
                 ~replaced:lbl]
         | None ->
           Or_error.return
-            { ctx with proglen = succ ctx.proglen;
-                       endlabel = Some lbl }
+            { ctx with endlabel = Some lbl }
     )
   ;;
 
   let get_prog_name = peek progname
-
-  let get_prog_length = peek proglen
-
-  let validate_dec_prog_length_amount amount proglen =
-    Validate.name "Amount to decrement program length"
-      (Int.validate_bound amount
-         ~min:(Incl 0)
-         ~max:(Incl proglen))
-
-  let dec_prog_length amount =
-    let open Or_error.Let_syntax in
-    Monadic.modify (
-      fun ctx ->
-        let%map () = Validate.result
-            (validate_dec_prog_length_amount amount ctx.proglen)
-        in
-        { ctx with proglen = ctx.proglen - amount }
-    )
-  ;;
 
   let (|->) pass f a =
     let open Let_syntax in

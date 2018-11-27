@@ -107,6 +107,16 @@ val left_length : 'a t -> int
 (** [right_length zipper] gets the length of [zipper]'s right list. *)
 val right_length : 'a t -> int
 
+(** [fold_outcome] is the type of instructions returned by functions
+   used with [fold_untilM] and [fold_until]. *)
+type ('a, 'acc, 'final) fold_outcome =
+  [ `Stop of 'final          (** Stop folding and immediately return *)
+  | `Drop of            'acc (** Drop the cursor and continue *)
+  | `Swap of       'a * 'acc (** Replace cursor with a new value *)
+  | `Mark of int * 'a * 'acc (** Replace, and mark, the cursor *)
+  ]
+;;
+
 (** [On_monad] provides various zipper operations parametrised by
     a monad. *)
 module On_monad : functor (M : Monad.S) -> sig
@@ -161,17 +171,11 @@ module On_monad : functor (M : Monad.S) -> sig
       [f] receives the current accumulator, current cursor, and zipper
      with cursor popped at each stage.  It can't directly modify the
      zipper mid-fold, but can influence the value of the final zipper
-     provided to the [finish] continuation.  At each step, [f] can
-     choose to either [`Stop] the fold and return a value directly;
-     [`Drop_and_continue], dropping the cursor from the final zipper;
-     or [`Replace_and_continue], giving a replacement value for the
-     cursor. *)
+     provided to the [finish] continuation by using the various legs
+     of [fold_outcome]. *)
   val foldM_until
     :  'a t
-    -> f:('acc -> 'a -> 'a t -> [ `Stop of 'final
-                                | `Drop_and_continue of 'acc
-                                | `Replace_and_continue of 'a * 'acc
-                                ] M.t)
+    -> f:('acc -> 'a -> 'a t -> ('a, 'acc, 'final) fold_outcome M.t)
     -> init:'acc
     -> finish:('acc -> 'a t -> 'final M.t)
     -> 'final M.t
@@ -238,17 +242,11 @@ val step : ?steps:int -> 'a t -> 'a t Or_error.t
     [f] receives the current accumulator, current cursor, and zipper
    with cursor popped at each stage.  It can't directly modify the
    zipper mid-fold, but can influence the value of the final zipper
-   provided to the [finish] continuation.  At each step, [f] can
-   choose to either [`Stop] the fold and return a value directly;
-   [`Continue] but drop the cursor from the final zipper; or
-   [`Replace_and_continue], giving a replacement value for the
-   cursor. *)
+   provided to the [finish] continuation by using the various legs of
+   [fold_outcome]. *)
 val fold_until
   :  'a t
-  -> f:('acc -> 'a -> 'a t -> [ `Stop of 'final
-                              | `Drop_and_continue of 'acc
-                              | `Replace_and_continue of 'a * 'acc
-                              ])
+  -> f:('acc -> 'a -> 'a t -> ('a, 'acc, 'final) fold_outcome)
   -> init:'acc
   -> finish:('acc -> 'a t -> 'final)
   -> 'final

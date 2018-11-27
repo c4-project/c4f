@@ -303,25 +303,22 @@ module Make (B : Basic)
     Lang.Statement.opcode_in ~opcodes:irrelevant_instruction_types
   ;;
 
-  let measure_ctx (measurement : 'a Ctx.t) (f : 'b -> 'c Ctx.t) (x : 'b)
-    : ('a * 'c * 'a) Ctx.t =
-    let open Ctx.Let_syntax in
-    let%bind pre    = measurement in
-    let%bind result = f x in
-    let%map  post   = measurement in
-    (pre, result, post)
+  let rec length_compare xs ys =
+    match xs, ys with
+    | []    , []     -> 0
+    | _::_  , []     -> 1
+    | []    , _::_   -> -1
+    | _::xs', _::ys' -> length_compare xs' ys'
   ;;
 
   (** [proglen_fix f prog] runs [f] on [prog] until the
-      reported program length no longer changes. *)
+      program length no longer changes. *)
   let proglen_fix f =
     Ctx.fix ~f:(
       fun mu prog ->
         let open Ctx.Let_syntax in
-        let%bind (proglen, prog', proglen') =
-          measure_ctx Ctx.get_prog_length f prog
-        in
-        if Int.equal proglen proglen'
+        let%bind prog' = f prog in
+        if length_compare prog prog' = 0
         then Ctx.return prog'
         else mu prog'
     )
@@ -367,23 +364,19 @@ module Make (B : Basic)
     )
   ;;
 
-  let update_proglen_and_finish num_removed zipper =
-    Ctx.(dec_prog_length num_removed >>| fun () -> Zipper.to_list zipper)
-  ;;
-
-  let process_possible_useless_jump num_removed statement zipper =
+  let process_possible_useless_jump () statement zipper =
     match Zipper.peek_opt zipper with
     | Some next when Lang.Statement.is_jump_pair statement next ->
-      Ctx.return (`Drop_and_continue (num_removed + 1))
+      Ctx.return (`Drop ())
     | Some _ | None ->
-      Ctx.return (`Replace_and_continue (statement, num_removed))
+      Ctx.return (`Swap (statement, ()))
   ;;
 
   let remove_useless_jumps prog =
     Ctx_Zip.foldM_until (Zipper.of_list prog)
       ~f:process_possible_useless_jump
-      ~init:0
-      ~finish:update_proglen_and_finish
+      ~init:()
+      ~finish:(fun () zipper -> Ctx.return (Zipper.to_list zipper))
   ;;
 
   let update_symbol_table

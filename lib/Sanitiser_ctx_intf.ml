@@ -74,14 +74,6 @@ module type S = sig
      program's name. *)
   val get_prog_name : string t
 
-  (** [get_prog_length] is a contextual computation that returns the
-     program's length. *)
-  val get_prog_length : int t
-
-  (** [dec_prog_length amount] is a contextual computation that
-     decrements the program's length by [amount]. *)
-  val dec_prog_length : int -> unit t
-
   (*
    * Conditional execution
    *)

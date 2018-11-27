@@ -213,6 +213,16 @@ let%expect_test "peek_opt: several steps forwards, out-of-bounds" =
   [%expect {| () |}]
 ;;
 
+(** [fold_outcome] is the type of instructions returned by functions
+   used with [fold_untilM] and [fold_until]. *)
+type ('a, 'acc, 'final) fold_outcome =
+  [ `Stop of 'final          (** Stop folding and immediately return *)
+  | `Drop of            'acc (** Drop the cursor and continue *)
+  | `Swap of       'a * 'acc (** Replace cursor with a new value *)
+  | `Mark of int * 'a * 'acc (** Replace, and mark, the cursor *)
+  ]
+;;
+
 module On_monad (M : Monad.S) = struct
   include On_monad_base (M)
 
@@ -245,21 +255,6 @@ module On_monad (M : Monad.S) = struct
        | None -> on_empty zipper)
   ;;
 
-  let rec foldM_until zipper ~f ~init ~finish =
-    let open M.Let_syntax in
-    match pop_opt zipper with
-    | None -> finish init zipper
-    | Some (hd, zipper') ->
-      match%bind f init hd zipper' with
-      | `Stop final -> M.return final
-      | `Drop_and_continue accum ->
-        foldM_until zipper' ~f ~init:accum ~finish
-      | `Replace_and_continue (hd', accum) ->
-        push zipper' ~value:hd'
-        |>  stepM ~on_empty:M.return
-        >>= foldM_until ~f ~init:accum ~finish
-  ;;
-
   let mapM_head_cell zipper ~f ~on_empty =
     match head zipper with
     | None   -> on_empty zipper
@@ -276,6 +271,26 @@ module On_monad (M : Monad.S) = struct
     mapM_head_cell zipper
       ~f:(fun h -> M.return (Some (Cell.mark ~mark h)))
       ~on_empty
+  ;;
+
+  let rec foldM_until zipper ~f ~init ~finish =
+    let open M.Let_syntax in
+    match pop_opt zipper with
+    | None -> finish init zipper
+    | Some (hd, zipper') ->
+      match%bind f init hd zipper' with
+      | `Stop final -> M.return final
+      | `Drop accum ->
+        foldM_until zipper' ~f ~init:accum ~finish
+      | `Mark (mark, hd', accum) ->
+        push zipper' ~value:hd'
+        |>  markM ~mark ~on_empty:M.return
+        >>= stepM ~on_empty:M.return
+        >>= foldM_until ~f ~init:accum ~finish
+      | `Swap (hd', accum) ->
+        push zipper' ~value:hd'
+        |>  stepM ~on_empty:M.return
+        >>= foldM_until ~f ~init:accum ~finish
   ;;
 
   let recallM zipper ~mark ~on_empty =
@@ -415,8 +430,8 @@ let%expect_test "zipper: fold_until: partition on sign" =
           Or_error.return (List.rev acc, to_list zipper))
       ~f:(fun negatives k _zipper ->
           if Int.is_negative k
-          then `Drop_and_continue (k::negatives)
-          else `Replace_and_continue (k, negatives))
+          then `Drop (k::negatives)
+          else `Swap (k, negatives))
   in
   Sexp.output_hum Out_channel.stdout
     [%sexp (lists : (int list * int list) Or_error.t)];
