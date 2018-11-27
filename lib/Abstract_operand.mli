@@ -182,13 +182,13 @@ module Bundle : sig
         contains a stack pointer. *)
     val has_stack_pointer : t -> bool
 
-    (** [has_stack_pointer_src bundle] tests whether [bundle] is a
-        source/destination pair whose source is the stack pointer. *)
-    val has_stack_pointer_src : t -> bool
+    (** [has_src_where bundle ~f] tests whether [bundle] is a
+        source/destination pair whose source satisfies [f]. *)
+    val has_src_where : t -> f:(elt -> bool) -> bool
 
-    (** [has_stack_pointer_dst bundle] tests whether [bundle] is a
-        source/destination pair whose destination is the stack pointer. *)
-    val has_stack_pointer_dst : t -> bool
+    (** [has_dst_where bundle ~f] tests whether [bundle] is a
+        source/destination pair whose source satisfies [f]. *)
+    val has_dst_where : t -> f:(elt -> bool) -> bool
 
     (** [has_immediate_heap_symbol bundle ~symbol_table] returns
        [true] if any operand in [bundle] matches

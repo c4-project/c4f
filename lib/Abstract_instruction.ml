@@ -193,10 +193,10 @@ module Properties : S_properties with type t := t = struct
 
   let is_stack_manipulation { opcode; operands } = match opcode with
     | Stack -> true
-    | Arith -> Abstract_operand.Bundle.has_stack_pointer_dst operands
-    | Move  -> Abstract_operand.Bundle.(
-        has_stack_pointer_src operands || has_stack_pointer_dst operands
+    | Arith -> Abstract_operand.(
+        Bundle.has_dst_where ~f:is_stack_pointer operands
       )
+    | Move  -> Abstract_operand.Bundle.has_stack_pointer operands
     | _     -> false
   ;;
 end

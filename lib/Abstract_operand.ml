@@ -291,8 +291,8 @@ module Bundle = struct
     val is_src_dst : t -> bool
     val is_part_unknown : t -> bool
     val has_stack_pointer : t -> bool
-    val has_stack_pointer_src : t -> bool
-    val has_stack_pointer_dst : t -> bool
+    val has_src_where : t -> f:(elt -> bool) -> bool
+    val has_dst_where : t -> f:(elt -> bool) -> bool
     val has_immediate_heap_symbol
       : t
       -> symbol_table:Abstract_symbol.Table.t
@@ -322,11 +322,11 @@ module Bundle = struct
     let has_stack_pointer x =
       exists ~f:P.has_stack_pointer (I.component_opt x)
     ;;
-    let has_stack_pointer_src x =
-      exists ~f:P.has_stack_pointer_src (I.component_opt x)
+    let has_src_where x ~f =
+      exists ~f:(P.has_src_where ~f) (I.component_opt x)
     ;;
-    let has_stack_pointer_dst x =
-      exists ~f:P.has_stack_pointer_dst (I.component_opt x)
+    let has_dst_where x ~f =
+      exists ~f:(P.has_dst_where ~f) (I.component_opt x)
     ;;
     let has_immediate_heap_symbol x ~symbol_table =
       exists ~f:(P.has_immediate_heap_symbol ~symbol_table)
@@ -410,46 +410,46 @@ module Bundle = struct
     let is_part_unknown = exists ~f:is_unknown
     let has_stack_pointer = exists ~f:is_stack_pointer
 
-    let has_stack_pointer_src = function
-      | Src_dst { Src_dst.src; _ } -> is_stack_pointer src
+    let has_src_where operands ~f = match operands with
+      | Src_dst { Src_dst.src; _ } -> f src
       | None | Single _ | Double _ -> false
     ;;
 
-    let%expect_test "has_stack_pointer_src: positive" =
+    let%expect_test "has_src_where is_stack_pointer: positive" =
       Utils.Io.print_bool
-        (has_stack_pointer_src
+        (has_src_where ~f:is_stack_pointer
            (src_dst
               ~dst:(Location (Abstract_location.GeneralRegister))
               ~src:(Location (Abstract_location.StackPointer))));
       [%expect {| true |}]
     ;;
 
-    let%expect_test "has_stack_pointer_src: negative" =
+    let%expect_test "has_src_where is_stack_pointer: negative" =
       Utils.Io.print_bool
-        (has_stack_pointer_src
+        (has_src_where ~f:is_stack_pointer
            (src_dst
               ~src:(Location (Abstract_location.GeneralRegister))
               ~dst:(Location (Abstract_location.StackPointer))));
       [%expect {| false |}]
     ;;
 
-    let has_stack_pointer_dst = function
-      | Src_dst { Src_dst.dst; _ } -> is_stack_pointer dst
+    let has_dst_where operands ~f = match operands with
+      | Src_dst { Src_dst.dst; _ } -> f dst
       | None | Single _ | Double _ -> false
     ;;
 
-    let%expect_test "has_stack_pointer_dst: positive" =
+    let%expect_test "has_dst_where is_stack_pointer: positive" =
       Utils.Io.print_bool
-        (has_stack_pointer_dst
+        (has_dst_where ~f:is_stack_pointer
            (src_dst
               ~src:(Location (Abstract_location.GeneralRegister))
               ~dst:(Location (Abstract_location.StackPointer))));
       [%expect {| true |}]
     ;;
 
-    let%expect_test "has_stack_pointer_dst: negative" =
+    let%expect_test "has_dst_where is_stack_pointer: negative" =
       Utils.Io.print_bool
-        (has_stack_pointer_dst
+        (has_dst_where ~f:is_stack_pointer
            (src_dst
               ~dst:(Location (Abstract_location.GeneralRegister))
               ~src:(Location (Abstract_location.StackPointer))));
