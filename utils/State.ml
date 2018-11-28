@@ -58,7 +58,8 @@ module Make2_transform (M : Monad.S)
 
   include T
 
-  let run f ctx = f ctx |> Inner.map ~f:snd
+  let run' f ctx = f ctx
+  let run  f ctx = f ctx |> Inner.map ~f:snd
 
   module Monadic = struct
     let make = Fn.id
