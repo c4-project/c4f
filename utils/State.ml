@@ -26,19 +26,17 @@ open Core
 
 include State_intf
 
-(* We implement [Make] in terms of [Make_transform] and the identity
-   monad, for simplicity. *)
-
-module Make_transform (B : Basic_transform)
-  : S_transform with type state = B.t and module Inner = B.Inner = struct
-  type state = B.t
-  module Inner = B.Inner
+(* We implement all of the various monads and functors in terms of
+   [Make2_transform], for simplicity. *)
+module Make2_transform (M : Monad.S)
+  : S2_transform with module Inner = M = struct
+  module Inner = M
 
   module T = struct
-    type 'a t = (state -> (state * 'a) Inner.t)
+    type ('a, 's) t = ('s -> ('s * 'a) Inner.t)
 
-    include Monad.Make (struct
-        type nonrec 'a t = 'a t
+    include Monad.Make2 (struct
+        type nonrec ('a, 's) t = ('a, 's) t
 
         let map' wc ~f state =
           let open Inner.Let_syntax in
@@ -59,7 +57,6 @@ module Make_transform (B : Basic_transform)
   end
 
   include T
-  include My_monad.Extend (T)
 
   let run f ctx = f ctx |> Inner.map ~f:snd
 
@@ -99,7 +96,47 @@ module Make_transform (B : Basic_transform)
   ;;
 end
 
-module Make (B : Basic)
+module M2 : S2 = Make2_transform (Monad.Ident)
+
+module To_S_transform (M : S2_transform) (B : Base.T)
+  : S_transform with type state = B.t and module Inner = M.Inner = struct
+  type state = B.t
+
+  module M1 = struct
+    type 'a t = ('a, state) M.t
+    include My_monad.S2_to_S (M) (B)
+  end
+  include M1
+  include My_monad.Extend (M1)
+
+  include (M : Generic_transform with type ('a, 's) t := 'a t
+                                  and type 's state := state
+                                  and module Inner = M.Inner)
+
+end
+
+module Make_transform (B : Basic_transform)
+  : S_transform with type state = B.t and module Inner = B.Inner =
+  To_S_transform (Make2_transform (B.Inner)) (B)
+;;
+
+module To_S (M : S2) (B : Base.T)
+  : S with type state = B.t = struct
+  type state = B.t
+
+  module M1 = struct
+    type 'a t = ('a, state) M.t
+    include My_monad.S2_to_S (M) (B)
+  end
+  include M1
+  include My_monad.Extend (M1)
+
+  include (M : Generic with type ('a, 's) t := 'a t
+                        and type 'a final := 'a
+                        and type 's state := state)
+end
+
+module Make (B : T)
   : S with type state = B.t =
   Make_transform (struct
     type t = B.t

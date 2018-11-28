@@ -44,3 +44,10 @@ module Extend
   : functor (M : Monad.S) -> Extensions with type 'a t := 'a M.t
 ;;
 
+(** [S2_to_S] demotes an arity-2 monad [M] to an arity-1 one,
+    fixing its second type to be [B.t]. *)
+module S2_to_S
+  : functor (M : Monad.S2)
+    -> functor (B : T)
+      -> Monad.S with type 'a t := ('a, B.t) M.t
+;;

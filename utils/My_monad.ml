@@ -35,3 +35,13 @@ module Extend (M : Monad.S) : Extensions with type 'a t := 'a M.t = struct
   let when_m predicate ~f = if predicate then f () else M.return ()
   let unless_m predicate ~f = if predicate then M.return () else f ()
 end
+
+module S2_to_S (M : Monad.S2) (B : T)
+  : Monad.S with type 'a t := ('a, B.t) M.t =
+  Monad.Make (struct
+    type 'a t = ('a, B.t) M.t
+    let map = `Custom M.map
+    let return = M.return
+    let bind = M.bind
+  end)
+;;

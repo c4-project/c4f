@@ -22,34 +22,48 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Haskell-style state monads and monad transformers *)
+(** Haskell-style state monads and monad transformers
+
+    State monads form a way to thread a modifiable, readable state
+   record through a computation without resorting to mutability.  At
+   any point in a state-monad computation, we can [peek] at the
+   present value of the state, or [modify] it, or do both. *)
 
 open Core
 
-(** [S_common] is the signature common to [S] and [S_transform]. *)
-module type S_common = sig
-  (** Both [S] and [S_transform] are extended monads. *)
-  include Monad.S
-  include My_monad.Extensions with type 'a t := 'a t
-
-  (** [state] is the type of the inner state record. *)
-  type state
-
-  (*
-   * Building stateful computations
-   *)
+(** [Generic_builders] contains generic versions of the 'builder'
+    functions common to all state monad signatures. *)
+module type Generic_builders = sig
+  (** [t] is the type of the state monad. *)
+  type ('a, 's) t
+  (** [final] is the type of returned results.  In transformers, this
+     becomes ['a Inner.t]; otherwise, it becomes just ['a]. *)
+  type 'a final
+  (** [state] is the type used to represent the state outside of its
+     monad.  In [S], ['s state] becomes [x] for some type [x]; in
+     [S2], ['s state] becomes ['s]. *)
+  type 's state
 
   (** [make] creates a context-sensitive computation that can modify
       both the current context and the data passing through. *)
-  val make : (state -> (state * 'a)) -> 'a t
+  val make : ('s state -> ('s state * 'a) final) -> ('a, 's) t
 
   (** [peek] creates a context-sensitive computation that can look at
       the current context, but not modify it. *)
-  val peek : (state -> 'a) -> 'a t
+  val peek : ('s state -> 'a final) -> ('a, 's) t
 
   (** [modify] creates a context-sensitive computation that can look at
       and modify the current context. *)
-  val modify : (state -> state) -> unit t
+  val modify : ('s state -> 's state final) -> (unit, 's) t
+
+  (** [return] lifts a value or monad into a stateful computation. *)
+  val return : 'a final -> ('a, 's) t
+end
+
+(** [Generic] contains the signature bits common to all state monad
+    signatures. *)
+module type Generic = sig
+  include Generic_builders
 
   (** [fix ~f init] builds a fixed point on [f].
 
@@ -59,92 +73,109 @@ module type S_common = sig
 
       To begin with, [f] is applied to [mu] and [init]. *)
   val fix
-    :  f : (('a -> 'a t) -> 'a -> 'a t)
+    :  f : (('a -> ('a, 's) t) -> 'a -> ('a, 's) t)
     -> 'a
-    -> 'a t
+    -> ('a, 's) t
   ;;
-end
-
-(** [S] is the signature of state monads.
-
-    State monads form a way to thread a modifiable, readable state
-   record through a computation without resorting to mutability.  At
-   any point in a state-monad computation, we can [peek] at the
-   present value of the state, or [modify] it, or do both. *)
-module type S = sig
-  include S_common
-
-  (*
-   * Running a stateful computation
-   *)
 
   (** [run] unfolds a [t] into a function from context
       to final result.  To get the final context, call [peek]
       at the end of the computation. *)
-  val run : 'a t -> state -> 'a
+  val run : ('a, 's) t -> 's state -> 'a final
 end
 
-(** [S_transform] is the signature of state monad transformers.
 
-    Unlike an [S] monad, each [S_transform] computation returns its
-   value inside another monad---for example, [Or_error].  We can use
-   this to build computations that are both stateful and can fail, for
-   instance. *)
-module type S_transform = sig
-  include S_common
+(** [Generic_transform] contains the signature bits common to all
+   state transformers. *)
+module type Generic_transform = sig
+  include Generic_builders with type 'a final := 'a
 
   (** [Inner] is the monad to which we're adding state. *)
   module Inner : Monad.S
+
+  (** [fix ~f init] builds a fixed point on [f].
+
+      At each step, [f] is passed a continuation [mu] and a value [a].
+      It may choose to return a recursive application of [mu], or
+      some value derived from [a].
+
+      To begin with, [f] is applied to [mu] and [init]. *)
+  val fix
+    :  f : (('a -> ('a, 's) t) -> 'a -> ('a, 's) t)
+    -> 'a
+    -> ('a, 's) t
+  ;;
+
+  (** [run] unfolds a [t] into a function from context
+      to final result.  To get the final context, call [peek]
+      at the end of the computation. *)
+  val run : ('a, 's) t -> 's state -> 'a Inner.t
 
   (** [Monadic] contains a version of the state monad interface that
       can interact with the inner monad ([Inner]) this state transformer is
       overlaying.
 
       Typically, this will be an error monad, like [Or_error]. *)
-  module Monadic : sig
-    (** [make] creates a stateful computation that produces a
-       computation in the [Inner] monad.  This computation can modify
-       both the current state and the data passing through. *)
-    val make : (state -> (state * 'a) Inner.t) -> 'a t
-
-    (** [peek] creates a stateful computation that produces a
-       computation in the [Inner] monad.  This computation can see the
-       current state, but not modify it. *)
-    val peek : (state -> 'a Inner.t) -> 'a t
-
-    (** [modify] creates a stateful computation that produces a
-       computation in the [Inner] monad.  This computation can look at
-       and modify the current context. *)
-    val modify : (state -> state Inner.t) -> unit t
-
-    (** [return] lifts an [Inner] computation into a stateful one.
-
-        For example, in [Or_error], this lifts a possibly-failing
-        computation to a context-sensitive one. *)
-    val return : 'a Inner.t -> 'a t
-  end
-
-  (*
-   * Running a stateful computation
-   *)
-
-  (** [run] unfolds a [t] into a function from context
-      to final result.  To get the final context, call [peek]
-      at the end of the computation. *)
-  val run : 'a t -> state -> 'a Inner.t
+  module Monadic : Generic_builders with type 'a state := 'a state
+                                     and type 'a final := 'a Inner.t
+                                     and type ('a, 's) t := ('a, 's) t
 end
 
-(** [Basic] is the signature that must be implemented by
-    state systems being lifted into [S] instances. *)
-module type Basic = Base.T.T
+(** [S] is the signature of state monads parametrised over their
+    value, but with a fixed state type. *)
+module type S = sig
+  (** [state] is the fixed state type. *)
+  type state
+
+  include Monad.S
+  include My_monad.Extensions with type 'a t := 'a t
+  include Generic with type ('a, 's) t := 'a t
+                   and type 's state := state
+                   and type 'a final := 'a
+end
+
+(** [S2] is the signature of state monads parametrised over both
+    value and state types. *)
+module type S2 = sig
+  include Monad.S2
+  include Generic with type ('a, 's) t := ('a, 's) t
+                   and type 's state := 's
+                   and type 'a final := 'a
+end
+
+(** [S_transform] is the signature of state monad transformers with a
+    fixed state type.
+
+    Unlike an [S] monad, each [S_transform] computation returns its
+   value inside another monad---for example, [Or_error].  We can use
+   this to build computations that are both stateful and can fail, for
+   instance. *)
+module type S_transform = sig
+  (** [state] is the fixed state type. *)
+  type state
+
+  include Monad.S
+  include My_monad.Extensions with type 'a t := 'a t
+  include Generic_transform with type ('a, 's) t := 'a t
+                             and type 's state := state
+end
 
 (** [Basic_transform] is the signature that must be implemented
     by state systems being lifted into [S_transform] instances. *)
 module type Basic_transform = sig
-  include Basic
+  (** [t] is the type of the state. *)
+  type t
 
   (** [Inner] is the monad to which we're adding state. *)
   module Inner : Monad.S
+end
+
+(** [S2_transform] is the signature of state transformers parametrised
+   over both value and state types. *)
+module type S2_transform = sig
+  include Monad.S2
+  include Generic_transform with type ('a, 's) t := ('a, 's) t
+                             and type 's state := 's
 end
 
 (** [State] is the part of this interface file that appears in
@@ -152,11 +183,35 @@ end
 module type State = sig
   module type S = S
   module type S_transform = S_transform
-  module type Basic = Basic
+  module type S2 = S2
+  module type S2_transform = S2_transform
   module type Basic_transform = Basic_transform
 
-  (** [Make] makes an [S] from a [Basic]. *)
-  module Make : functor (B : Basic) -> S with type state = B.t
+  (** [M2] is a basic implementation of [S2]. *)
+  module M2 : S2
+
+  (** [To_S_transform] flattens a [S2_transform] into an [S_transform]
+     by fixing the state type to [B.t]. *)
+  module To_S_transform
+    : functor (M : S2_transform)
+      -> functor (B : Base.T) -> S_transform with type state = B.t
+  ;;
+
+  (** [To_S] flattens a [S2] into an [S] by fixing the state type
+      to [B.t]. *)
+  module To_S
+    : functor (M : S2)
+      -> functor (B : Base.T) -> S with type state = B.t
+  ;;
+
+  (** [Make2_transform] makes an [S2_transform] from a [Monad.S]. *)
+  module Make2_transform
+    : functor (M : Monad.S)
+      -> S2_transform with module Inner = M
+  ;;
+
+  (** [Make] makes an [S] from a single state type. *)
+  module Make : functor (B : Base.T.T) -> S with type state = B.t
 
   (** [Make_transform] makes an [S_transform] from a
      [Basic_transform]. *)
