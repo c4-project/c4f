@@ -100,28 +100,9 @@ module Make_transform (B : Basic_transform)
 end
 
 module Make (B : Basic)
-  : S with type state = B.t = struct
-  include Make_transform (struct
-      type t = B.t
-      module Inner = Monad.Ident
-    end)
-
-  let on_fold_map
-      (mapper : (state, 'a, 'b) fold_mapper)
-      (comp   : ('a -> 'a t))
-      (coll   : 'b) =
-    make
-      (fun ctx ->
-         mapper coll
-         ~init:ctx
-         ~f:(fun ctx' b ->
-             run
-               (let open Let_syntax in
-                let%bind b' = comp b in
-                let%map ctx'' = peek Fn.id in
-                (ctx'', b')
-               )
-               ctx')
-      )
-end
+  : S with type state = B.t =
+  Make_transform (struct
+    type t = B.t
+    module Inner = Monad.Ident
+  end)
 ;;

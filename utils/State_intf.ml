@@ -26,14 +26,6 @@
 
 open Core
 
-(** [fold_mapper] is the type of fold-mapping functions. *)
-type ('s, 't, 'c) fold_mapper =
-  f : ('s -> 't -> ('s * 't))
-  -> init : 's
-  -> 'c
-  -> ('s * 'c)
-;;
-
 (** [S_common] is the signature common to [S] and [S_transform]. *)
 module type S_common = sig
   (** Both [S] and [S_transform] are extended monads. *)
@@ -90,11 +82,6 @@ module type S = sig
       to final result.  To get the final context, call [peek]
       at the end of the computation. *)
   val run : 'a t -> state -> 'a
-
-  (** [on_fold_map] lifts a stateful computation over a fold-mapper. *)
-  val on_fold_map
-    : (state, 'a, 'b) fold_mapper -> ('a -> 'a t) -> 'b -> 'b t
-  ;;
 end
 
 (** [S_transform] is the signature of state monad transformers.
