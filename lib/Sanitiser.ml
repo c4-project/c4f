@@ -98,12 +98,12 @@ module Make (B : Basic)
   let change_stack_to_heap ins =
     let open Ctx.Let_syntax in
     let%map name = Ctx.get_prog_name in
-    let f ln =
-      match Lang.Location.abstract ln with
-      | Abstract.Location.StackOffset i ->
-        Lang.Location.make_heap_loc
-          (sprintf "t%ss%d" name i)
-      | _ -> ln
+    let f loc = match Lang.Location.as_stack_offset loc with
+      | Some (Abstract.Location.Address.Int i) ->
+        Lang.Location.make_heap_loc (sprintf "t%ss%d" name i)
+      | Some (Abstract.Location.Address.Symbol s) ->
+        Lang.Location.make_heap_loc (sprintf "t%ss%s" name s)
+      | None -> loc
     in Lang.Instruction.On_locations.map ~f ins
   ;;
 
@@ -378,6 +378,86 @@ module Make (B : Basic)
       ~init:()
       ~finish:(fun () zipper -> Ctx.return (Zipper.to_list zipper))
   ;;
+
+  (*
+  module Deref_chain_elimination = struct
+    let is_move =
+      Abstract.Instruction.has_opcode
+        ~opcode:Abstract.Instruction.Opcode.Move
+    ;;
+
+    let operands_as_chain_start src dst symbol_table =
+      let open Option.Let_syntax in
+      let is_immediate_heap_src =
+        Abstract.Operand.is_immediate_heap_symbol ~symbol_table src
+      in
+      let%bind dst = Option.some_if is_immediate_heap_src dst in
+      match dst with
+      | Abstract.Operand.Location loc -> Some loc
+      | _ -> None
+    ;;
+
+    let instruction_as_chain_start ins symbol_table =
+      let open Option.Let_syntax in
+      let%bind ins = Option.some_if (is_move ins) ins in
+      match Abstract.Instruction.operands ins with
+      | Src_dst { src; dst } ->
+        operands_as_chain_start src dst symbol_table
+      | _ -> None
+    ;;
+
+    let as_chain_start stm =
+      Ctx.(
+        get_symbol_table >>| fun symbol_table ->
+        match stm with
+        | Abstract.Statement.Instruction ins ->
+          instruction_as_chain_start ins symbol_table
+        | _ -> None
+      )
+    ;;
+
+
+    let as_chain_item stm src_loc =
+      Ctx.(
+        get_symbol_table >>| fun symbol_table ->
+        match stm with
+        | Abstract.Statement.Instruction ins ->
+          instruction_as_chain_item ins symbol_table
+        | _ -> None
+      )
+    ;;
+
+    let start_mark  = 1
+    let finish_mark = 2
+
+    let variable_deref_chain_iter_find current zipper =
+      let open Ctx.Let_syntax in
+      let abs_current = Lang.Statement.abstract current in
+      match%map as_chain_start abs_current with
+      | Some loc -> `Mark (start_mark, `Found loc)
+      | None     -> `Replace (current, `Not_found)
+    ;;
+
+  let variable_deref_chain_iter_process loc current zipper =
+  ;;
+
+  let variable_deref_chain_iter state current zipper =
+
+    match state with
+    | `Not_found_yet ->
+      variable_deref_chain_iter_find num_removed abs_current zipper
+    | `Found var ->
+      variable_deref_chain_iter_process
+        var num_removed abs_current zipper
+    ;;
+
+  let simplify_variable_deref_chains prog_zipper =
+    Ctx_Zip.foldM_until prog_zipper
+      ~f:variable_deref_chain_iter
+      ~init:`Not_found_yet
+      ~finish:(fun _ zipper -> Ctx.return zipper)
+  ;;
+  end *)
 
   let update_symbol_table
       (prog : Lang.Statement.t list) =

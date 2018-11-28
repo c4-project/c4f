@@ -121,10 +121,13 @@ module Make (B : Basic)
   module Location = struct
     include B.Location
 
-    let to_heap_symbol l =
-      match abstract l with
-      | Abstract.Location.Heap s -> Some s
-      | _ -> None
+    include Abstract_location.Inherit_predicates
+        (Abstract_location)
+        (struct
+          type nonrec t = t
+          let component_opt x = Some (abstract x)
+        end)
+    ;;
   end
 
   module Constant = struct
@@ -135,7 +138,7 @@ module Make (B : Basic)
     let symbols_in_heap_position =
       ins
       |> Instruction.On_locations.to_list
-      |> List.filter_map ~f:Location.to_heap_symbol
+      |> List.filter_map ~f:Location.as_heap_symbol
     in
     let compare_against_known sym =
       let asym = Symbol.abstract sym in

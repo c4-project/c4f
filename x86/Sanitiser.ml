@@ -117,17 +117,22 @@ module Hook (L : Language.S) = struct
 
   (** [warn_unsupported_registers reg] warns if [reg] isn't
       likely to be understood by Herd. *)
-  let warn_unsupported_registers reg =
-    Ctx.(
-      match Reg.kind_of reg with
-      | Segment | Gen8 _ | Gen16 ->
+  let warn_unsupported_registers
+    : Ast.Reg.t -> Ast.Reg.t Ctx.t = function
+    | #Ast.Reg.seg
+    | #Ast.Reg.gp8
+    | #Ast.Reg.gp16
+    | #Ast.Reg.sp16 as reg ->
+      Ctx.(
         warn
           (Warn.Location (Location.Reg reg))
           (Info.of_string
              "This register is unlikely to be supported by Herd")
         >>| fun () -> reg
-      | Flags | IP | Gen32 -> return reg
-    )
+      )
+    | #Ast.Reg.gp32
+    | #Ast.Reg.sp32
+    | #Ast.Reg.flag as reg -> Ctx.return reg
   ;;
 
   let on_register reg =

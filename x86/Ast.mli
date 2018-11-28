@@ -3,7 +3,7 @@ This file is part of 'act'.
 
 Copyright (c) 2018 by Matt Windsor
    (parts (c) 2010-2018 Institut National de Recherche en Informatique et
-	                en Automatique, Jade Alglave, and Luc Maranget)
+en Automatique, Jade Alglave, and Luc Maranget)
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -49,38 +49,94 @@ copyright notice follow. *)
 open Utils
 
 (** [Reg] contains types and functions for dealing with x86 registers
-   in the abstract syntax. *)
+    in the abstract syntax. *)
 module Reg : sig
-  (** [t] enumerates all commonly used registers available in 32-bit
-     x86. *)
-  type t =
-    | AH | AL | AX | EAX
-    | BH | BL | BX | EBX
-    | CH | CL | CX | ECX
-    | DH | DL | DX | EDX
-    | BP | EBP
-    | SI | ESI
-    | DI | EDI
-    | SP | ESP
-    | CS | DS | SS | ES | FS | GS
-    | CF | PF | AF | ZF | SF | OF
-    | EIP
+  (** [gp8h] enumerates the 8-bit 'high' general-purpose registers. *)
+  type gp8h =
+    [ `AH | `BH | `CH | `DH ]
+  [@@deriving eq, sexp]
   ;;
+
+  (** [gp8l] enumerates the 8-bit 'low' general-purpose registers. *)
+  type gp8l =
+    [ `AL | `BL | `CL | `DL ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [gp8] enumerates the 8-bit general-purpose registers. *)
+  type gp8 =
+    [ gp8h | gp8l ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [gp16] enumerates the 16-bit general-purpose registers. *)
+  type gp16 =
+    [ `AX | `BX | `CX | `DX ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [gp32] enumerates the 32-bit general-purpose registers. *)
+  type gp32 =
+    [ `EAX | `EBX | `ECX | `EDX ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [gp] enumerates the general-purpose registers. *)
+  type gp =
+    [ gp8 | gp16 | gp32 ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [seg] enumerates the segment registers. *)
+  type seg =
+    [ `CS | `DS | `SS | `ES | `FS | `GS ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [flag] enumerates the flag registers. *)
+  type flag =
+    [ `CF | `PF | `AF | `ZF | `SF | `OF ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [sp16] enumerates the 16-bit special purpose registers. *)
+  type sp16 =
+    [ seg | `BP | `SP | `SI | `DI ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [sp32] enumerates the 32-bit special-purpose registers. *)
+  type sp32 =
+    [ `EIP | `EBP | `ESP | `ESI | `EDI ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [sp] enumerates the special-purpose registers. *)
+  type sp =
+    [ sp16 | sp32 ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [reg8] enumerates all 8-bit registers. *)
+  type reg8 = gp8
+
+  (** [reg16] enumerates all 16-bit registers. *)
+  type reg16 =
+    [ gp16 | sp16 ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [reg32] enumerates all 32-bit registers. *)
+  type reg32 =
+    [ gp32 | sp32 ]
+  [@@deriving enumerate, eq, sexp]
+  ;;
+
+  (** [t] enumerates all commonly used registers available in 32-bit
+      x86. *)
+  type t = [ reg8 | reg16 | reg32 | flag ]
 
   include Enum.Extension_table with type t := t
-
-  (** [kind] enumerates the general kinds of register. *)
-  type kind =
-    | Gen8 of [`Low | `High]  (** General-purpose 8bit  (xH or xL) *)
-    | Gen16                   (** General-purpose 16bit (usually xX) *)
-    | Gen32                   (** General-purpose 32bit (usually ExX) *)
-    | Segment                 (** Segment register *)
-    | Flags                   (** Flag from the flag register *)
-    | IP                      (** Instruction pointer *)
-  ;;
-
-  (** [kind_of r] gets the kind of register [r]. *)
-  val kind_of : t -> kind
 end
 
 (** [Disp] concerns displacements. *)
@@ -92,7 +148,7 @@ module Disp : sig
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
-     a displacement. *)
+      a displacement. *)
   module On_symbols
     : Fold_map.Container0 with type t := t and type elt := string
   ;;
@@ -107,7 +163,7 @@ module Index : sig
   ;;
 
   (** [On_registers] permits enumerating and folding over registers
-     inside a displacement. *)
+      inside a displacement. *)
   module On_registers
     : Fold_map.Container0 with type t := t and type elt := Reg.t
   ;;
@@ -141,13 +197,13 @@ module Indirect : sig
   val index : t -> Index.t option;;
 
   (** [On_registers] permits enumerating and folding over registers
-     inside a memory access. *)
+      inside a memory access. *)
   module On_registers
     : Fold_map.Container0 with type t := t and type elt := Reg.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
-     a memory access. *)
+      a memory access. *)
   module On_symbols
     : Fold_map.Container0 with type t := t and type elt := string
   ;;
@@ -162,13 +218,13 @@ module Location : sig
   [@@deriving sexp, eq]
 
   (** [On_registers] permits enumerating and folding over registers
-     inside a location. *)
+      inside a location. *)
   module On_registers
     : Fold_map.Container0 with type t := t and type elt := Reg.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
-     a location. *)
+      a location. *)
   module On_symbols
     : Fold_map.Container0 with type t := t and type elt := string
   ;;
@@ -199,13 +255,13 @@ module Operand : sig
   val bop : t -> bop -> t -> t
 
   (** [On_locations] permits enumerating and folding over locations
-     inside an operand. *)
+      inside an operand. *)
   module On_locations
     : Fold_map.Container0 with type t := t and type elt := Location.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
-     an operand. *)
+      an operand. *)
   module On_symbols
     : Fold_map.Container0 with type t := t and type elt := string
   ;;
@@ -216,7 +272,7 @@ type prefix =
 [@@deriving sexp]
 
 (** [Instruction] contains the instruction type and related
-   operations. *)
+    operations. *)
 module Instruction : sig
   (** [t] is the type of instructions (and instruction-like things,
       such as directives). *)
@@ -229,13 +285,13 @@ module Instruction : sig
   ;;
 
   (** [On_locations] permits enumerating and folding over locations
-     inside an instruction. *)
+      inside an instruction. *)
   module On_locations
     : Fold_map.Container0 with type t := t and type elt := Location.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
-     an instruction. *)
+      an instruction. *)
   module On_symbols
     : Fold_map.Container0 with type t := t and type elt := string
   ;;
@@ -253,13 +309,13 @@ module Statement : sig
   val instruction : Instruction.t -> t
 
   (** [On_instructions] permits enumerating and folding over
-     instructions inside a statement. *)
+      instructions inside a statement. *)
   module On_instructions
     : Fold_map.Container0 with type t := t and type elt := Instruction.t
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
-     an operand. *)
+      an operand. *)
   module On_symbols
     : Fold_map.Container0 with type t := t and type elt := string
   ;;

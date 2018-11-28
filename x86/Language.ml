@@ -81,31 +81,45 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
         Ast.(Location.Indirect (Indirect.make ~disp:(Disp.Symbolic l) ()))
       ;;
 
+      let register_abs_type
+        : Ast.Reg.t -> Abstract.Location.Register.t = function
+        (* Technically, [E]SP is the 'stack pointer' on x86.  However,
+           stack offsets generally descend from [E]BP, so we
+           map it to the 'abstract' stack pointer. *)
+        | `BP | `EBP | `SP | `ESP -> Stack_pointer
+        | #Ast.Reg.gp as reg -> General (Ast.Reg.to_string reg)
+        | #Ast.Reg.sp | #Ast.Reg.flag -> Unknown
+      ;;
+
+      let disp_abs_type
+        : Ast.Disp.t -> Abstract.Location.Address.t = function
+        | Ast.Disp.Numeric k -> Abstract.Location.Address.Int k
+        | Ast.Disp.Symbolic k -> Abstract.Location.Address.Symbol k
+      ;;
+
       let indirect_abs_type (i : Ast.Indirect.t) =
         let open Abstract.Location in
         let open Ast.Indirect in
         match (seg i), (disp i), (base i), (index i) with
-        (* Typically, [ EBP - i ] is a stack location: EBP is the
-           frame pointer, and the x86 stack grows downwards. *)
-        | None, Some (Ast.Disp.Numeric i), Some EBP, None ->
-          StackOffset i
-        (* This is the same as [ EBP - 0 ]. *)
-        | None, None, Some ESP, None ->
-          StackOffset 0
+        | None, disp, Some b, None ->
+          let reg = register_abs_type b in
+          let offset =
+            Option.value_map disp ~f:disp_abs_type
+              ~default:(Abstract_location.Address.Int 0)
+          in
+          Abstract.Location.Register_indirect { reg; offset }
         (* This may be over-optimistic. *)
-        | None, Some (Symbolic s), None, None ->
-          Heap s
+        | None, Some d, None, None ->
+          Abstract.Location.Heap (disp_abs_type d)
         | _, _, _, _ -> Unknown
 
       include Abstractable.Make (struct
           type nonrec t = t
           module Abs = Abstract.Location
-          open Abs
 
           let abstract = function
-            | Ast.Location.Reg ESP
-            | Reg EBP -> StackPointer
-            | Reg _ -> GeneralRegister
+            | Ast.Location.Reg reg ->
+              Abs.Register_direct (register_abs_type reg)
             | Indirect i -> indirect_abs_type i
           ;;
         end)
@@ -203,11 +217,11 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Add)
           ~operands:[ Ast.Operand.Immediate (Ast.Disp.Numeric (-16))
-                    ; Ast.Operand.Location (Ast.Location.Reg ESP)
+                    ; Ast.Operand.Location (Ast.Location.Reg `ESP)
                     ]
           ()
        ));
-  [%expect {| $-16 -> &stack |}]
+  [%expect {| $-16 -> reg:sp |}]
 
   let%expect_test "abs_operands: nop -> none" =
     Format.printf "%a@."
@@ -266,12 +280,12 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
       (Att.Instruction.abs_operands
          (Ast.Instruction.make
             ~opcode:(Opcode.Basic `Mov)
-            ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
-                      ; Ast.Operand.Location (Ast.Location.Reg EBP)
+            ~operands:[ Ast.Operand.Location (Ast.Location.Reg `ESP)
+                      ; Ast.Operand.Location (Ast.Location.Reg `EBP)
                       ]
             ()
          ));
-    [%expect {| &stack -> &stack |}]
+    [%expect {| reg:sp -> reg:sp |}]
 
   let%expect_test "abs_operands: movl %ESP, %EBP" =
     Format.printf "%a@."
@@ -279,12 +293,12 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
       (Att.Instruction.abs_operands
          (Ast.Instruction.make
             ~opcode:(Opcode.Sized (`Mov, Opcode.Size.Long))
-            ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
-                      ; Ast.Operand.Location (Ast.Location.Reg EBP)
+            ~operands:[ Ast.Operand.Location (Ast.Location.Reg `ESP)
+                      ; Ast.Operand.Location (Ast.Location.Reg `EBP)
                       ]
             ()
          ));
-    [%expect {| &stack -> &stack |}]
+    [%expect {| reg:sp -> reg:sp |}]
 
 module Intel = Make (Dialect.Intel) (PP.Intel)
 
@@ -294,12 +308,12 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
     (Intel.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Add)
-          ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
+          ~operands:[ Ast.Operand.Location (Ast.Location.Reg `ESP)
                     ; Ast.Operand.Immediate (Ast.Disp.Numeric (-16))
                     ]
           ()
        ));
-  [%expect {| $-16 -> &stack |}]
+  [%expect {| $-16 -> reg:sp |}]
 
 let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
   Format.printf "%a@."
@@ -307,7 +321,7 @@ let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Mov)
-          ~operands:[ Ast.Operand.Location (Ast.Location.Reg ESP)
+          ~operands:[ Ast.Operand.Location (Ast.Location.Reg `ESP)
                     ; Ast.Operand.Immediate (Ast.Disp.Numeric 1)
                     ]
           ()

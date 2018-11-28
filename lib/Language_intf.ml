@@ -188,18 +188,16 @@ module type S = sig
   module Location : sig
     include Basic_location with type sym := Symbol.t
 
-    (** [to_heap_symbol l] returns [l]'s underlying abstract heap
-       symbol if it is a symbolic heap reference. *)
-    val to_heap_symbol : t -> Abstract.Symbol.t option
+    (** We can query abstract properties directly on the concrete
+       location type. *)
+    include Abstract.Location.S_predicates with type t := t
   end
 
   module Instruction : sig
     include Basic_instruction with type loc := Location.t
                                and type sym := Symbol.t
-    (** As a convenience, we can query abstract instruction properties
-        directly on the concrete instruction type.  All of these
-        operations implicitly route through [abs_type] and
-        [abs_operands]. *)
+    (** We can query abstract properties directly on the concrete
+       instruction type. *)
     include Abstract.Instruction.S_properties with type t := t
 
     (** We can query abstract operand bundle properties on a concrete
@@ -227,10 +225,9 @@ module type S = sig
         boundary per act's conventions. *)
     val is_program_boundary : t -> bool
 
-    (** As a convenience, we can query abstract statement properties
+    (** We can query abstract properties
         (and, transitively, abstract instruction properties)
-        directly on the concrete statement type.  All of these
-        operations implicitly route through [abs_type]. *)
+        directly on the concrete statement type. *)
     include Abstract.Statement.S_properties with type t := t
 
     (** [Extended_flag] expands [Abstract.Statement.Flag] with an

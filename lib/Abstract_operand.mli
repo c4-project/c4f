@@ -49,13 +49,13 @@ module type S_predicates = sig
   (** [t] is the type we're querying. *)
   type t
 
+  (** Any predicate on a location also works on an operand; it
+      responds negatively if the operand isn't a location. *)
+  include Abstract_location.S_predicates with type t := t
+
   (** [is_unknown] tests whether [operand] is unknown (has no abstract
       representation). *)
   val is_unknown : t -> bool
-
-  (** [is_stack_pointer operand] tests whether [operand] is a
-      reference to the stack pointer. *)
-  val is_stack_pointer : t -> bool
 
   (** [is_immediate_heap_symbol operand ~symbol_table] returns [true]
      if any [operand] is a symbol in immediate position that,

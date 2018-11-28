@@ -104,7 +104,7 @@ module Att_specific = struct
     Format.fprintf f "@[%%%s@]" (Reg.to_string reg)
 
   let%expect_test "pp_reg: AT&T, ESP" =
-    Format.printf "%a@." pp_reg ESP;
+    Format.printf "%a@." pp_reg `ESP;
     [%expect {| %ESP |}]
 
   let pp_index f = function
@@ -149,7 +149,7 @@ module Att_specific = struct
     Format.printf "%a@." pp_indirect
       (Indirect.make
          ~disp:(Disp.Numeric 76)
-         ~base:EAX
+         ~base:`EAX
          ());
     [%expect {| 76(%EAX) |}]
 
@@ -164,14 +164,14 @@ module Att_specific = struct
     Format.printf "%a@." pp_indirect
       (Indirect.make
          ~disp:(Disp.Numeric (-42))
-         ~base:ECX
+         ~base:`ECX
          ());
     [%expect {| -42(%ECX) |}]
 
   let%expect_test "pp_indirect: AT&T, base only" =
     Format.printf "%a@." pp_indirect
       (Indirect.make
-         ~base:EDX
+         ~base:`EDX
          ());
     [%expect {| (%EDX) |}]
 
@@ -179,7 +179,7 @@ module Att_specific = struct
     Format.printf "%a@." pp_indirect
       (Indirect.make
          ~disp:(Disp.Numeric 0)
-         ~base:EDX
+         ~base:`EDX
          ());
     [%expect {| (%EDX) |}]
 
@@ -229,7 +229,7 @@ module Intel_and_herd7 = struct
     let pp_reg f reg = String.pp f (Reg.to_string reg)
 
     let%expect_test "pp_reg: intel, EAX" =
-      Format.printf "%a@." pp_reg EAX;
+      Format.printf "%a@." pp_reg `EAX;
       [%expect {| EAX |}]
 
     let pp_index f = function
@@ -279,7 +279,7 @@ module Intel_and_herd7 = struct
       Format.printf "%a@." pp_indirect
         (Indirect.make
            ~disp:(Disp.Numeric 76)
-           ~base:EAX
+           ~base:`EAX
            ());
       [%expect {| [EAX+76] |}]
 
@@ -294,14 +294,14 @@ module Intel_and_herd7 = struct
       Format.printf "%a@." pp_indirect
         (Indirect.make
            ~disp:(Disp.Numeric (-42))
-           ~base:ECX
+           ~base:`ECX
            ());
       [%expect {| [ECX-42] |}]
 
     let%expect_test "pp_indirect: Intel, base only" =
       Format.printf "%a@." pp_indirect
         (Indirect.make
-           ~base:EDX
+           ~base:`EDX
            ());
       [%expect {| [EDX] |}]
 
@@ -309,7 +309,7 @@ module Intel_and_herd7 = struct
       Format.printf "%a@." pp_indirect
         (Indirect.make
            ~disp:(Disp.Numeric 0)
-           ~base:EDX
+           ~base:`EDX
            ());
       [%expect {| [EDX] |}]
 

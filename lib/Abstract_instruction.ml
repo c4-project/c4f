@@ -182,8 +182,11 @@ module Properties : S_properties with type t := t = struct
       is_symbolic_jump
           (make
             ~opcode:Jump
-            ~operands:Abstract_operand.(Bundle.Single
-                         (Location (Abstract_location.Heap "foo"))))
+            ~operands:Abstract_operand.(
+                Bundle.Single
+                  (Location
+                     (Abstract_location.(Heap
+                                           (Address.Symbol "foo"))))))
     in
     Out_channel.printf "%b" result;
     [%expect {| true |}]

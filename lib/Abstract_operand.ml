@@ -94,8 +94,9 @@ let kind = function
 
 module type S_predicates = sig
   type t
+  include Abstract_location.S_predicates with type t := t
+
   val is_unknown : t -> bool
-  val is_stack_pointer : t -> bool
   val is_immediate_heap_symbol
     : t
     -> symbol_table:Abstract_symbol.Table.t
@@ -112,10 +113,16 @@ end
 module Inherit_predicates
     (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
   : S_predicates with type t := I.t = struct
+  include Abstract_location.Inherit_predicates
+      (P)
+      (struct
+        type t = I.t
+        let component_opt = I.component_opt
+      end)
+
   open Option
 
   let is_unknown x = exists ~f:P.is_unknown (I.component_opt x)
-  let is_stack_pointer x = exists ~f:P.is_stack_pointer (I.component_opt x)
   let is_immediate_heap_symbol x ~symbol_table =
     exists ~f:(P.is_immediate_heap_symbol ~symbol_table) (I.component_opt x)
   ;;
@@ -167,15 +174,22 @@ module Inherit_properties
 end
 
 module Properties : S_properties with type t := t = struct
+  (* TODO(@MattWindsor91): expose this properly? *)
+  let as_location = function
+    | Location l -> Some l
+    | _ -> None
+  ;;
+
+  include Abstract_location.Inherit_predicates
+      (Abstract_location)
+      (struct
+        type nonrec t = t
+        let component_opt = as_location
+      end)
+
   let is_unknown = function
     | Unknown -> true
     | Erroneous _ | Int _ | Location _ | Symbol _ | Other -> false
-  ;;
-
-  let is_stack_pointer = function
-    | Location (Abstract_location.StackPointer) -> true
-    | Location _
-    | Erroneous _ | Int _ | Symbol _ | Other | Unknown -> false
   ;;
 
   let is_immediate_heap_symbol o ~symbol_table = match o with
@@ -186,7 +200,7 @@ module Properties : S_properties with type t := t = struct
 
   let is_jump_symbol_where o ~f = match o with
     | Symbol sym
-    | Location (Abstract_location.Heap sym) -> f sym
+    | Location (Abstract_location.Heap (Symbol sym)) -> f sym
     | Location _
     | Erroneous _ | Int _ | Other | Unknown -> false
   ;;
@@ -419,8 +433,8 @@ module Bundle = struct
       Utils.Io.print_bool
         (has_src_where ~f:is_stack_pointer
            (src_dst
-              ~dst:(Location (Abstract_location.GeneralRegister))
-              ~src:(Location (Abstract_location.StackPointer))));
+              ~dst:(Location (Abstract_location.(Register_direct (Register.General "EAX"))))
+              ~src:(Location (Abstract_location.(Register_direct (Register.Stack_pointer))))));
       [%expect {| true |}]
     ;;
 
@@ -428,8 +442,8 @@ module Bundle = struct
       Utils.Io.print_bool
         (has_src_where ~f:is_stack_pointer
            (src_dst
-              ~src:(Location (Abstract_location.GeneralRegister))
-              ~dst:(Location (Abstract_location.StackPointer))));
+              ~src:(Location (Abstract_location.(Register_direct(Register.General "EAX"))))
+              ~dst:(Location (Abstract_location.(Register_direct (Register.Stack_pointer))))));
       [%expect {| false |}]
     ;;
 
@@ -442,8 +456,8 @@ module Bundle = struct
       Utils.Io.print_bool
         (has_dst_where ~f:is_stack_pointer
            (src_dst
-              ~src:(Location (Abstract_location.GeneralRegister))
-              ~dst:(Location (Abstract_location.StackPointer))));
+              ~src:(Location (Abstract_location.(Register_direct (Register.General "EAX"))))
+              ~dst:(Location (Abstract_location.(Register_direct (Register.Stack_pointer))))));
       [%expect {| true |}]
     ;;
 
@@ -451,8 +465,8 @@ module Bundle = struct
       Utils.Io.print_bool
         (has_dst_where ~f:is_stack_pointer
            (src_dst
-              ~dst:(Location (Abstract_location.GeneralRegister))
-              ~src:(Location (Abstract_location.StackPointer))));
+              ~dst:(Location (Abstract_location.(Register_direct (Register.General "EAX"))))
+              ~src:(Location (Abstract_location.(Register_direct (Register.Stack_pointer))))));
       [%expect {| false |}]
     ;;
 
@@ -471,7 +485,7 @@ module Bundle = struct
       let result = has_immediate_heap_symbol ~symbol_table
           (Src_dst
              { src = Symbol "foo"
-             ; dst = Location GeneralRegister
+             ; dst = Location (Abstract_location.(Register_direct (Register.General "EAX")))
              })
       in
       Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];
@@ -489,7 +503,7 @@ module Bundle = struct
       let result = has_immediate_heap_symbol ~symbol_table
           (Src_dst
              { src = Symbol "froz"
-             ; dst = Location GeneralRegister
+             ; dst = Location (Abstract_location.(Register_direct (Register.General "EAX")))
              })
       in
       Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];

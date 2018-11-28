@@ -3,7 +3,7 @@ This file is part of 'act'.
 
 Copyright (c) 2018 by Matt Windsor
    (parts (c) 2010-2018 Institut National de Recherche en Informatique et
-	                en Automatique, Jade Alglave, and Luc Maranget)
+en Automatique, Jade Alglave, and Luc Maranget)
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -49,84 +49,129 @@ open Utils
 
 module Reg = struct
   module M = struct
-    (* Ordered as in Intel manual *)
-    type t =
-      | AH | AL | AX | EAX
-      | BH | BL | BX | EBX
-      | CH | CL | CX | ECX
-      | DH | DL | DX | EDX
-      | BP | EBP
-      | SI | ESI
-      | DI | EDI
-      | SP | ESP
-      | CS | DS | SS | ES | FS | GS
-      | CF | PF | AF | ZF | SF | OF
-      | EIP
-    [@@deriving enum, sexp]
+    type gp8h =
+      [ `AH | `BH | `CH | `DH ]
+    [@@deriving enumerate, eq, sexp]
     ;;
 
-    let table =
-      [ AH , "AH"
-      ; AL , "AL"
-      ; AX , "AX"
-      ; EAX, "EAX"
-      ; BH , "BH"
-      ; BL , "BL"
-      ; BX , "BX"
-      ; EBX, "EBX"
-      ; CH , "CH"
-      ; CL , "CL"
-      ; CX , "CX"
-      ; ECX, "ECX"
-      ; DH , "DH"
-      ; DL , "DL"
-      ; DX , "DX"
-      ; EDX, "EDX"
-      ; BP , "BP"
-      ; EBP, "EBP"
-      ; SI , "SI"
-      ; ESI, "ESI"
-      ; DI , "DI"
-      ; EDI, "EDI"
-      ; SP , "SP"
-      ; ESP, "ESP"
-      ; CS , "CS"
-      ; DS , "DS"
-      ; SS , "SS"
-      ; ES , "ES"
-      ; FS , "FS"
-      ; GS , "GS"
-      ; CF , "CF"
-      ; PF , "PF"
-      ; AF , "AF"
-      ; ZF , "ZF"
-      ; SF , "SF"
-      ; OF , "OF"
-      ; EIP, "EIP"
+    type gp8l =
+      [ `AL | `BL | `CL | `DL ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type gp8 =
+      [ gp8h | gp8l ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type gp16 =
+      [ `AX | `BX | `CX | `DX ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type gp32 =
+      [ `EAX | `EBX | `ECX | `EDX ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type gp =
+      [ gp8 | gp16 | gp32 ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type seg =
+      [ `CS | `DS | `SS | `ES | `FS | `GS ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type flag =
+      [ `CF | `PF | `AF | `ZF | `SF | `OF ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type sp16 =
+      [ seg | `BP | `SP | `SI | `DI ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type sp32 =
+      [ `EIP | `EBP | `ESP | `ESI | `EDI ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type sp =
+      [ sp16 | sp32 ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type reg8 = gp8
+
+    type reg16 =
+      [ gp16 | sp16 ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type reg32 =
+      [ gp32 | sp32 ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    type t =
+      [ gp8 (* can't use reg8 here, it breaks sexp *)
+      | reg16
+      | reg32
+      | flag
+      ]
+    [@@deriving enumerate, eq, sexp]
+    ;;
+
+    let table : (t, string) List.Assoc.t =
+      [ `AH , "AH"
+      ; `AL , "AL"
+      ; `AX , "AX"
+      ; `EAX, "EAX"
+      ; `BH , "BH"
+      ; `BL , "BL"
+      ; `BX , "BX"
+      ; `EBX, "EBX"
+      ; `CH , "CH"
+      ; `CL , "CL"
+      ; `CX , "CX"
+      ; `ECX, "ECX"
+      ; `DH , "DH"
+      ; `DL , "DL"
+      ; `DX , "DX"
+      ; `EDX, "EDX"
+      ; `BP , "BP"
+      ; `EBP, "EBP"
+      ; `SI , "SI"
+      ; `ESI, "ESI"
+      ; `DI , "DI"
+      ; `EDI, "EDI"
+      ; `SP , "SP"
+      ; `ESP, "ESP"
+      ; `CS , "CS"
+      ; `DS , "DS"
+      ; `SS , "SS"
+      ; `ES , "ES"
+      ; `FS , "FS"
+      ; `GS , "GS"
+      ; `CF , "CF"
+      ; `PF , "PF"
+      ; `AF , "AF"
+      ; `ZF , "ZF"
+      ; `SF , "SF"
+      ; `OF , "OF"
+      ; `EIP, "EIP"
       ]
     ;;
   end
 
   include M
-  include Enum.Extend_table (M)
-
-  type kind =
-    | Gen8 of [`Low | `High]
-    | Gen16
-    | Gen32
-    | Segment
-    | Flags
-    | IP
-  ;;
-
-  let kind_of : t -> kind = function
-    | EAX | EBX | ECX | EDX | ESI | EDI | EBP | ESP -> Gen32
-    | AX | BX | CX | DX | SI | DI | BP | SP -> Gen16
-    | AH | BH | CH | DH -> Gen8 `High
-    | AL | BL | CL | DL -> Gen8 `Low
-    | CS | DS | SS | ES | FS | GS -> Segment
-    | CF | PF | AF | ZF | SF | OF -> Flags
-    | EIP -> IP
+  include Enum.Extend_table (struct
+      include M
+      include Enum.Make_from_enumerate (M)
+    end)
   ;;
 end
 
