@@ -28,7 +28,7 @@ module type Basic = sig
   (** [t] is the concrete type. *)
   type t
 
-  module Abs : Abstract_base.S
+  module Abs : Node.S
 
   (** [abstract x] gets the abstract form of [x]. *)
   val abstract : t -> Abs.t

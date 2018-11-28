@@ -48,7 +48,6 @@
 (** [Opcode] contains the x86 opcode tables, and operations on them. *)
 
 open Base
-open Lib
 open Utils
 
 (** [Operand_spec] describes the various types of operand that x86
@@ -117,8 +116,10 @@ module Sizable : sig
       [Sized]. *)
   include String_table.S with type t := t
   (** We can convert sizable opcodes to the act abstract form. *)
-  include Abstractable.S with type t := t
-                          and module Abs := Abstract.Instruction.Opcode
+  include Abstract.Abstractable.S
+    with type t := t
+     and module Abs := Abstract.Instruction.Opcode
+  ;;
 
   (** [get_operand_spec opcode] tries to get an operand spec for
       [opcode].  It returns [None] if the opcode doesn't yet have
@@ -150,8 +151,10 @@ module Sized : sig
       opcodes. *)
   include String_table.S with type t := t
   (** We can convert sized opcodes to the act abstract form. *)
-  include Abstractable.S with type t := t
-                          and module Abs := Abstract.Instruction.Opcode
+  include Abstract.Abstractable.S
+    with type t := t
+     and module Abs := Abstract.Instruction.Opcode
+  ;;
 end
 
 (** [Basic] enumerates 'regular' known opcodes that are neither jumps
@@ -172,9 +175,10 @@ module Basic : sig
       This is a superset of [Sizable]'s string table. *)
   include String_table.S with type t := t
   (** We can convert basic opcodes to the act abstract form. *)
-  include Abstractable.S with type t := t
-                          and module Abs := Abstract.Instruction.Opcode
-
+  include Abstract.Abstractable.S
+    with type t := t
+     and module Abs := Abstract.Instruction.Opcode
+  ;;
 
   (** [get_operand_spec opcode] tries to get an operand spec for
       [opcode].  It returns [None] if the opcode doesn't yet have
@@ -233,8 +237,9 @@ module Jump : sig
   (** [Jump] contains a string table for jump instructions. *)
   include String_table.S with type t := t
   (** We can convert jumps to the act abstract form. *)
-  include Abstractable.S with type t := t
-                          and module Abs := Abstract.Instruction.Opcode
+  include Abstract.Abstractable.S
+    with type t := t
+     and module Abs := Abstract.Instruction.Opcode
 end
 
 (** [t] enumerates all possible types of opcode. *)
@@ -261,8 +266,9 @@ val directive : string -> t
 val unknown : string -> t
 
 (** We can convert elements of [t] to the act abstract form. *)
-include Abstractable.S with type t := t
-                        and module Abs := Abstract.Instruction.Opcode
+include Abstract.Abstractable.S
+  with type t := t
+   and module Abs := Abstract.Instruction.Opcode
 ;;
 
 (** [of_string string] parses [string] as an opcode (or opcode-like

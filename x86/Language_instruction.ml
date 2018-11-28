@@ -22,8 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
-open Lib
+open Base
 open Utils
 
 (* All expects tests for this module are attached to the concrete
@@ -271,7 +270,7 @@ module Make (B : Basic) : S = struct
     | Unknown _ -> Abstract.Operand.(Bundle.Single Unknown)
   ;;
 
-  include Abstractable.Make (struct
+  include Abstract.Abstractable.Make (struct
       type nonrec t = t
       module Abs = Abstract.Instruction
       let abstract ins =

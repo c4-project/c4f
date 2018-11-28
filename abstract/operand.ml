@@ -38,8 +38,8 @@ module M = struct
 
   type t =
     | Int of int
-    | Location of Abstract_location.t
-    | Symbol of Abstract_symbol.t
+    | Location of Location.t
+    | Symbol of Symbol.t
     | Erroneous of err
     | Other
     | Unknown
@@ -49,7 +49,7 @@ module M = struct
   let pp f = function
     | Int k        -> Format.fprintf f "@[<h>$%d@]" k
     | Erroneous e  -> Format.fprintf f "@[<h><ERR: %a>@]" Error.pp e
-    | Location loc -> Abstract_location.pp f loc
+    | Location loc -> Location.pp f loc
     | Symbol s     -> Format.fprintf f "@[<h>sym:%s@]" s
     | Other        -> String.pp f "other"
     | Unknown      -> String.pp f "??"
@@ -94,18 +94,18 @@ let kind = function
 
 module type S_predicates = sig
   type t
-  include Abstract_location.S_predicates with type t := t
+  include Location.S_predicates with type t := t
 
   val is_unknown : t -> bool
   val is_immediate_heap_symbol
     : t
-    -> symbol_table:Abstract_symbol.Table.t
+    -> symbol_table:Symbol.Table.t
     -> bool
   ;;
   val is_jump_symbol : t -> bool
   val is_jump_symbol_where
     :  t
-    -> f:(Abstract_symbol.t -> bool)
+    -> f:(Symbol.t -> bool)
     -> bool
   ;;
 end
@@ -113,7 +113,7 @@ end
 module Inherit_predicates
     (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
   : S_predicates with type t := I.t = struct
-  include Abstract_location.Inherit_predicates
+  include Location.Inherit_predicates
       (P)
       (struct
         type t = I.t
@@ -157,7 +157,7 @@ module type S_properties = sig
   type t
   include S_predicates with type t := t
 
-  val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
+  val flags : t -> Symbol.Table.t -> Flag.Set.t
 end
 
 module Inherit_properties
@@ -180,8 +180,8 @@ module Properties : S_properties with type t := t = struct
     | _ -> None
   ;;
 
-  include Abstract_location.Inherit_predicates
-      (Abstract_location)
+  include Location.Inherit_predicates
+      (Location)
       (struct
         type nonrec t = t
         let component_opt = as_location
@@ -194,13 +194,13 @@ module Properties : S_properties with type t := t = struct
 
   let is_immediate_heap_symbol o ~symbol_table = match o with
     | Symbol sym ->
-      Abstract_symbol.(Table.mem symbol_table ~sort:Sort.Heap sym)
+      Symbol.(Table.mem symbol_table ~sort:Sort.Heap sym)
     | Erroneous _ | Int _ | Location _ | Other | Unknown -> false
   ;;
 
   let is_jump_symbol_where o ~f = match o with
     | Symbol sym
-    | Location (Abstract_location.Heap (Symbol sym)) -> f sym
+    | Location (Location.Heap (Symbol sym)) -> f sym
     | Location _
     | Erroneous _ | Int _ | Other | Unknown -> false
   ;;
@@ -309,12 +309,12 @@ module Bundle = struct
     val has_dst_where : t -> f:(elt -> bool) -> bool
     val has_immediate_heap_symbol
       : t
-      -> symbol_table:Abstract_symbol.Table.t
+      -> symbol_table:Symbol.Table.t
       -> bool
     ;;
     val is_single_jump_symbol_where
       :  t
-      -> f:(Abstract_symbol.t -> bool)
+      -> f:(Symbol.t -> bool)
       -> bool
     ;;
   end
@@ -393,7 +393,7 @@ module Bundle = struct
     include S_predicates with type t := t
 
     val errors : t -> Error.t list
-    val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
+    val flags : t -> Symbol.Table.t -> Flag.Set.t
   end
 
   module Inherit_properties
@@ -433,8 +433,8 @@ module Bundle = struct
       Utils.Io.print_bool
         (has_src_where ~f:is_stack_pointer
            (src_dst
-              ~dst:(Location (Abstract_location.(Register_direct (Register.General "EAX"))))
-              ~src:(Location (Abstract_location.(Register_direct (Register.Stack_pointer))))));
+              ~dst:(Location (Location.(Register_direct (Register.General "EAX"))))
+              ~src:(Location (Location.(Register_direct (Register.Stack_pointer))))));
       [%expect {| true |}]
     ;;
 
@@ -442,8 +442,8 @@ module Bundle = struct
       Utils.Io.print_bool
         (has_src_where ~f:is_stack_pointer
            (src_dst
-              ~src:(Location (Abstract_location.(Register_direct(Register.General "EAX"))))
-              ~dst:(Location (Abstract_location.(Register_direct (Register.Stack_pointer))))));
+              ~src:(Location (Location.(Register_direct(Register.General "EAX"))))
+              ~dst:(Location (Location.(Register_direct (Register.Stack_pointer))))));
       [%expect {| false |}]
     ;;
 
@@ -456,8 +456,8 @@ module Bundle = struct
       Utils.Io.print_bool
         (has_dst_where ~f:is_stack_pointer
            (src_dst
-              ~src:(Location (Abstract_location.(Register_direct (Register.General "EAX"))))
-              ~dst:(Location (Abstract_location.(Register_direct (Register.Stack_pointer))))));
+              ~src:(Location (Location.(Register_direct (Register.General "EAX"))))
+              ~dst:(Location (Location.(Register_direct (Register.Stack_pointer))))));
       [%expect {| true |}]
     ;;
 
@@ -465,8 +465,8 @@ module Bundle = struct
       Utils.Io.print_bool
         (has_dst_where ~f:is_stack_pointer
            (src_dst
-              ~dst:(Location (Abstract_location.(Register_direct (Register.General "EAX"))))
-              ~src:(Location (Abstract_location.(Register_direct (Register.Stack_pointer))))));
+              ~dst:(Location (Location.(Register_direct (Register.General "EAX"))))
+              ~src:(Location (Location.(Register_direct (Register.Stack_pointer))))));
       [%expect {| false |}]
     ;;
 
@@ -475,7 +475,7 @@ module Bundle = struct
     ;;
 
     let%expect_test "has_immediate_heap_symbol: src/dst positive" =
-      let symbol_table = Abstract_symbol.(
+      let symbol_table = Symbol.(
           Table.of_sets
             [ Set.of_list [ "foo"; "bar"; "baz" ], Sort.Heap
             ; Set.of_list [ "froz" ], Sort.Label
@@ -485,7 +485,7 @@ module Bundle = struct
       let result = has_immediate_heap_symbol ~symbol_table
           (Src_dst
              { src = Symbol "foo"
-             ; dst = Location (Abstract_location.(Register_direct (Register.General "EAX")))
+             ; dst = Location (Location.(Register_direct (Register.General "EAX")))
              })
       in
       Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];
@@ -493,7 +493,7 @@ module Bundle = struct
     ;;
 
     let%expect_test "has_immediate_heap_symbol: src/dst negative" =
-      let symbol_table = Abstract_symbol.(
+      let symbol_table = Symbol.(
           Table.of_sets
             [ Set.of_list [ "foo"; "bar"; "baz" ], Sort.Heap
             ; Set.of_list [ "froz" ], Sort.Label
@@ -503,7 +503,7 @@ module Bundle = struct
       let result = has_immediate_heap_symbol ~symbol_table
           (Src_dst
              { src = Symbol "froz"
-             ; dst = Location (Abstract_location.(Register_direct (Register.General "EAX")))
+             ; dst = Location (Location.(Register_direct (Register.General "EAX")))
              })
       in
       Sexp.output_hum Out_channel.stdout [%sexp (result : bool)];

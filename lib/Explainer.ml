@@ -29,9 +29,9 @@ module type Basic_explanation = sig
   type elt
   type context
   type details
-  include Abstractable.S with type t := elt
+  include Abstract.Abstractable.S with type t := elt
   include Pretty_printer.S with type t := elt
-  module Flag : Abstract_flag.S
+  module Flag : Abstract.Flag_enum.S
   val abs_flags : elt -> context -> Flag.Set.t
   val make_details : elt -> context -> details
   val pp_details : Format.formatter -> details -> unit
@@ -42,9 +42,9 @@ module type Explanation = sig
   type elt
   type details
   type context
-  include Abstractable.S with type t := t
+  include Abstract.Abstractable.S with type t := t
   include Pretty_printer.S with type t := t
-  module Flag : Abstract_flag.S
+  module Flag : Abstract.Flag_enum.S
   val original : t -> elt
   val details : t -> details
   val abs_flags : t -> Flag.Set.t
@@ -159,7 +159,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
       let make_details _ _ = ()
       let pp_details _f _context = ()
 
-      include Abstractable.Make (struct
+      include Abstract.Abstractable.Make (struct
           module Abs = Abs
           type t = elt
           let abstract = Lang.Location.abstract
@@ -188,7 +188,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
       let make_details _ _ = ()
       let pp_details _f _context = ()
 
-      include Abstractable.Make (struct
+      include Abstract.Abstractable.Make (struct
           module Abs = Abs
           type t = elt
           let abstract = Lang.Instruction.abs_operands
@@ -267,7 +267,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
       ;;
 
       include
-        ( Lang.Instruction : Abstractable.S
+        ( Lang.Instruction : Abstract.Abstractable.S
           with module Abs := Abs and type t := elt
         )
       ;;
@@ -330,7 +330,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
       ;;
 
       include
-        ( Lang.Statement : Abstractable.S
+        ( Lang.Statement : Abstract.Abstractable.S
           with module Abs := Abs and type t := elt
         )
       ;;

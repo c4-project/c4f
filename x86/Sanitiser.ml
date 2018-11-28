@@ -99,7 +99,7 @@ module Hook (L : Language.S) = struct
       match Ast.Indirect.seg i, Ast.Indirect.disp i with
       | Some s, Some (Disp.Numeric k) ->
         let%bind l  = make_segment_offset_heap_loc s k in
-        let%map  l' = Ctx.add_symbol l Lib.Abstract.Symbol.Sort.Heap in
+        let%map  l' = Ctx.add_symbol l Abstract.Symbol.Sort.Heap in
         L.Location.make_heap_loc l'
       | _ -> Ctx.return (Location.Indirect i)
   ;;

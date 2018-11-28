@@ -37,7 +37,7 @@ module type S = sig
     include Enum.Extension_table with type t := t
   end
 
-  module Flag : Abstract_flag.S
+  module Flag : Flag_enum.S
 
   val kind : t -> Kind.t
 end

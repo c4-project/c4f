@@ -47,7 +47,6 @@ copyright notice follow. *)
 (** Enumeration of, and facts about, x86 dialects *)
 
 open Utils
-open Lib
 
 (** [t] enumerates the various dialects of x86 syntax. *)
 type t =

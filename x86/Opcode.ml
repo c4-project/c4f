@@ -47,7 +47,6 @@
 
 open Core
 open Utils
-open Lib
 
 module Operand_spec = struct
   type single =
@@ -160,7 +159,7 @@ module Sizable = struct
         ]
     end) : String_table.S with type t := t)
 
-  include Abstractable.Make (struct
+  include Abstract.Abstractable.Make (struct
       type nonrec t = t
       module Abs = Abstract.Instruction.Opcode
       open Abs
@@ -216,13 +215,14 @@ module Sized = struct
                Sizable.table
                Size.Suffix_table.table)
       end) : String_table.S with type t := t)
+  ;;
 
-
-  include Abstractable.Make (struct
+  include Abstract.Abstractable.Make (struct
       type nonrec t = t
       module Abs = Abstract.Instruction.Opcode
       let abstract (s, _) = Sizable.abstract s
     end)
+  ;;
 end
 
 module Basic = struct
@@ -262,7 +262,7 @@ module Basic = struct
           ]
       end) : String_table.S with type t := t)
 
-  include Abstractable.Make (struct
+  include Abstract.Abstractable.Make (struct
       type nonrec t = t
       module Abs = Abstract.Instruction.Opcode
       open Abs
@@ -440,7 +440,7 @@ module Jump = struct
       (Conditional ParityEven) -> jpe
       (Conditional ParityOdd) -> jpo |}]
 
-  include Abstractable.Make (struct
+  include Abstract.Abstractable.Make (struct
       type nonrec t = t
       module Abs = Abstract.Instruction.Opcode
       let abstract _ = Abs.Jump
@@ -456,7 +456,7 @@ type t =
 [@@deriving sexp, eq, variants]
 ;;
 
-include Abstractable.Make (struct
+include Abstract.Abstractable.Make (struct
     type nonrec t = t
     module Abs = Abstract.Instruction.Opcode
 

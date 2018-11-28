@@ -139,4 +139,4 @@ module Table = struct
   ;;
 end
 
-module Flag = Abstract_flag.None
+module Flag = Flag_enum.None

@@ -1,12 +1,10 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name lib)
+ (name abstract)
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
  (libraries
-  abstract
   utils
-  core
-  menhirLib))
+  core_kernel))

@@ -41,8 +41,8 @@ module Make (B : Basic)
   module Instruction = struct
     include B.Instruction
 
-    include Abstract_instruction.Inherit_properties
-        (Abstract_instruction)
+    include Abstract.Instruction.Inherit_properties
+        (Abstract.Instruction)
         (struct
           type nonrec t = t
           let component = abstract
@@ -50,8 +50,8 @@ module Make (B : Basic)
     ;;
 
     module On_operands =
-      Abstract_operand.Bundle.Inherit_properties
-        (Abstract_operand.Bundle)
+      Abstract.Operand.Bundle.Inherit_properties
+        (Abstract.Operand.Bundle)
         (struct
           type nonrec t = t
           let component = abs_operands
@@ -81,8 +81,8 @@ module Make (B : Basic)
         end)
     end
 
-    include Abstract_statement.Inherit_properties
-        (Abstract_statement)
+    include Abstract.Statement.Inherit_properties
+        (Abstract.Statement)
         (struct
           type nonrec t = t
           let component = abstract
@@ -121,8 +121,8 @@ module Make (B : Basic)
   module Location = struct
     include B.Location
 
-    include Abstract_location.Inherit_predicates
-        (Abstract_location)
+    include Abstract.Location.Inherit_predicates
+        (Abstract.Location)
         (struct
           type nonrec t = t
           let component_opt x = Some (abstract x)

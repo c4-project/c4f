@@ -45,7 +45,6 @@ copyright notice follow. *)
 (****************************************************************************)
 
 open Utils
-open Lib
 
 module M = struct
   type t =

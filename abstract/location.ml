@@ -43,7 +43,7 @@ end
 module Address = struct
   type t =
     | Int of int
-    | Symbol of Abstract_symbol.t
+    | Symbol of Symbol.t
   [@@deriving sexp, eq]
   ;;
 
@@ -69,9 +69,9 @@ module type S_predicates = sig
   val is_stack_offset : t -> bool
   val is_stack_offset_where : t -> f:(Address.t -> bool) -> bool
 
-  val as_heap_symbol : t -> Abstract_symbol.t option
+  val as_heap_symbol : t -> Symbol.t option
   val is_heap_symbol : t -> bool
-  val is_heap_symbol_where : t -> f:(Abstract_symbol.t -> bool) -> bool
+  val is_heap_symbol_where : t -> f:(Symbol.t -> bool) -> bool
 end
 
 module Inherit_predicates
@@ -167,4 +167,4 @@ let kind = function
   | Unknown             -> Unknown
 ;;
 
-module Flag = Abstract_flag.None
+module Flag = Flag_enum.None

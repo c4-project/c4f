@@ -53,7 +53,7 @@ module Opcode : sig
 
   (** [Opcode] is an abstraction that is currently its own kind
       enumeration. *)
-  include Abstract_base.S with type t := t and type Kind.t = t
+  include Node.S with type t := t and type Kind.t = t
 end
 
 (** [t] is an abstracted instruction, including operands. *)
@@ -61,13 +61,13 @@ type t [@@deriving sexp]
 
 (** When using this module as an abstraction, the kind of each
     instruction is exactly the kind of its opcode. *)
-include Abstract_base.S with type t := t and module Kind = Opcode.Kind
+include Node.S with type t := t and module Kind = Opcode.Kind
 
 (** [make ~opcode ~operands] makes a [t]
    from an [opcode] and an [operands] bundle. *)
 val make
   :  opcode:Opcode.t
-  -> operands:Abstract_operand.Bundle.t
+  -> operands:Operand.Bundle.t
   -> t
 ;;
 
@@ -95,9 +95,7 @@ module type S_predicates = sig
 
   (** [is_symbolic_jump_where ins ~f] tests whether [ins] is a jump to
      a symbol whose label matches the predicate [f]. *)
-  val is_symbolic_jump_where
-    : t -> f:(Abstract_symbol.t -> bool) -> bool
-  ;;
+  val is_symbolic_jump_where : t -> f:(Symbol.t -> bool) -> bool
 
   (** [is_nop ins] tests whether the [ins] is a no-operation. *)
   val is_nop : t -> bool
@@ -129,7 +127,7 @@ module type S_properties = sig
   (** [opcode x] gets the opcode of [x]. *)
   val opcode : t -> Opcode.t
   (** [operands x] gets the operands of [x]. *)
-  val operands : t -> Abstract_operand.Bundle.t
+  val operands : t -> Operand.Bundle.t
 end
 
 (** [Inherit_properties] generates a [S_properties] by inheriting it

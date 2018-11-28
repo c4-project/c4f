@@ -46,7 +46,7 @@ module Address : sig
   (** [t] is the type of abstracted addresses and address offsets. *)
   type t =
     | Int of int
-    | Symbol of Abstract_symbol.t
+    | Symbol of Symbol.t
   [@@deriving sexp, eq]
   ;;
 
@@ -86,14 +86,14 @@ module type S_predicates = sig
 
   (** [as_heap_symbol loc] returns [Some k] when [loc] is a
       symbolic heap address, and [None] otherwise. *)
-  val as_heap_symbol : t -> Abstract_symbol.t option
+  val as_heap_symbol : t -> Symbol.t option
 
   (** [is_heap_symbol loc ~f] tests whether [loc] is a heap symbol. *)
   val is_heap_symbol : t -> bool
 
   (** [is_heap_symbol_where loc ~f] tests whether [loc] is a
       heap symbol whose offset satisfies [f]. *)
-  val is_heap_symbol_where : t -> f:(Abstract_symbol.t -> bool) -> bool
+  val is_heap_symbol_where : t -> f:(Symbol.t -> bool) -> bool
 end
 
 (** [Inherit_predicates] generates a [S_predicates] by inheriting it
@@ -120,4 +120,4 @@ end
 (** This module contains [S_predicates] directly. *)
 include S_predicates with type t := t
 
-include Abstract_base.S with type t := t and module Kind := Kind
+include Node.S with type t := t and module Kind := Kind

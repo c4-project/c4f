@@ -27,9 +27,9 @@ open Utils
 
 type t =
   | Directive of string
-  | Instruction of Abstract_instruction.t
+  | Instruction of Instruction.t
   | Blank
-  | Label of Abstract_symbol.t
+  | Label of Symbol.t
   | Unknown
 [@@deriving sexp, variants]
 ;;
@@ -38,7 +38,7 @@ let pp f = function
   | Blank -> ()
   | Directive d -> Format.fprintf f ".%s" d
   | Label l -> Format.fprintf f ":%s"             l
-  | Instruction ins -> Abstract_instruction.pp f ins
+  | Instruction ins -> Instruction.pp f ins
   | Unknown -> String.pp f "??"
 ;;
 
@@ -94,19 +94,19 @@ end
 
 module type S_predicates = sig
   type t
-  include Abstract_instruction.S_predicates with type t := t
+  include Instruction.S_predicates with type t := t
   val is_directive : t -> bool
   val is_instruction : t -> bool
   val is_instruction_where
     :  t
-    -> f:(Abstract_instruction.t -> bool)
+    -> f:(Instruction.t -> bool)
     -> bool
   ;;
   val is_label : t -> bool
   val is_label_where : t -> f:(string -> bool) -> bool
   val is_unused_label
     : t
-    -> symbol_table:Abstract_symbol.Table.t
+    -> symbol_table:Symbol.Table.t
     -> bool
   ;;
   val is_jump_pair : t -> t -> bool
@@ -119,7 +119,7 @@ module Inherit_predicates
   : S_predicates with type t := I.t = struct
   open Option
 
-  include Abstract_instruction.Inherit_predicates
+  include Instruction.Inherit_predicates
       (P)
       (struct
         type t = I.t
@@ -151,21 +151,21 @@ module type S_properties = sig
   include S_predicates with type t := t
   val exists
     :  ?directive:(string -> bool)
-    -> ?instruction:(Abstract_instruction.t -> bool)
-    -> ?label:(Abstract_symbol.t -> bool)
+    -> ?instruction:(Instruction.t -> bool)
+    -> ?label:(Symbol.t -> bool)
     -> ?blank:bool
     -> ?unknown:bool
     -> t -> bool
   ;;
   val iter
     :  ?directive:(string -> unit)
-    -> ?instruction:(Abstract_instruction.t -> unit)
-    -> ?label:(Abstract_symbol.t -> unit)
+    -> ?instruction:(Instruction.t -> unit)
+    -> ?label:(Symbol.t -> unit)
     -> ?blank:(unit -> unit)
     -> ?unknown:(unit -> unit)
     -> t -> unit
   ;;
-  val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
+  val flags : t -> Symbol.Table.t -> Flag.Set.t
 end
 
 module Inherit_properties
@@ -235,7 +235,7 @@ module Properties : S_properties with type t := t = struct
   let is_label = is_label_where ~f:(Fn.const true)
   let is_unused_label stm ~symbol_table =
     is_label_where stm ~f:(fun label ->
-        Abstract_symbol.(
+        Symbol.(
           not (Table.mem symbol_table label ~sort:Sort.Jump)
         )
       )
@@ -244,8 +244,8 @@ module Properties : S_properties with type t := t = struct
   let is_instruction_where stm ~f = exists ~instruction:f stm
   let is_instruction = is_instruction_where ~f:(Fn.const true)
 
-  include Abstract_instruction.Inherit_predicates
-      (Abstract_instruction)
+  include Instruction.Inherit_predicates
+      (Instruction)
       (struct
         type nonrec t = t
         let component_opt = function
@@ -257,7 +257,7 @@ module Properties : S_properties with type t := t = struct
   let is_jump_pair j l =
     is_symbolic_jump_where j
       ~f:(fun j_sym ->
-          is_label_where l ~f:(Abstract_symbol.equal j_sym)
+          is_label_where l ~f:(Symbol.equal j_sym)
         )
   ;;
 

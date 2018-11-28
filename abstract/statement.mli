@@ -27,7 +27,7 @@ open Utils
 (** [t] is an abstracted statement. *)
 type t =
   | Directive of string
-  | Instruction of Abstract_instruction.t
+  | Instruction of Instruction.t
   | Blank
   | Label of string
   | Unknown
@@ -57,7 +57,7 @@ module type S_predicates = sig
   (** We can apply instruction predicates to an abstract
       statement; they return [false] when the statement isn't an
       instruction. *)
-  include Abstract_instruction.S_predicates with type t := t
+  include Instruction.S_predicates with type t := t
 
   (** [is_directive stm] decides whether [stm] appears to be an
       assembler directive. *)
@@ -70,7 +70,7 @@ module type S_predicates = sig
       whose opcode and operands satisfy the predicate [f]. *)
   val is_instruction_where
     :  t
-    -> f:(Abstract_instruction.t -> bool)
+    -> f:(Instruction.t -> bool)
     -> bool
   ;;
 
@@ -87,7 +87,7 @@ module type S_predicates = sig
       destination in [symbol_table]. *)
   val is_unused_label
     : t
-    -> symbol_table:Abstract_symbol.Table.t
+    -> symbol_table:Symbol.Table.t
     -> bool
   ;;
 
@@ -121,7 +121,7 @@ module Flag : sig
   [@@deriving sexp, enumerate]
   ;;
 
-  include Abstract_flag.S with type t := t
+  include Flag_enum.S with type t := t
 end
 
 (** [S_properties] is the signature of any module that can access
@@ -138,8 +138,8 @@ module type S_properties = sig
      predicates. *)
   val exists
     :  ?directive:(string -> bool)
-    -> ?instruction:(Abstract_instruction.t -> bool)
-    -> ?label:(Abstract_symbol.t -> bool)
+    -> ?instruction:(Instruction.t -> bool)
+    -> ?label:(Symbol.t -> bool)
     -> ?blank:bool
     -> ?unknown:bool
     -> t -> bool
@@ -150,8 +150,8 @@ module type S_properties = sig
      [stm]. *)
   val iter
     :  ?directive:(string -> unit)
-    -> ?instruction:(Abstract_instruction.t -> unit)
-    -> ?label:(Abstract_symbol.t -> unit)
+    -> ?instruction:(Instruction.t -> unit)
+    -> ?label:(Symbol.t -> unit)
     -> ?blank:(unit -> unit)
     -> ?unknown:(unit -> unit)
     -> t -> unit
@@ -159,7 +159,7 @@ module type S_properties = sig
 
   (** [flags x symbol_table] gets the statement flags for [x] given
       symbol table [symbol_table]. *)
-  val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
+  val flags : t -> Symbol.Table.t -> Flag.Set.t
 end
 
 (** [Inherit_properties] generates a [S_properties] by inheriting it
@@ -173,6 +173,7 @@ module Inherit_properties
 (** This module contains [S_properties] directly. *)
 include S_properties with type t := t
 
-include Abstract_base.S with type t := t
-                         and module Kind := Kind
-                         and module Flag := Flag
+include Node.S with type t := t
+                and module Kind := Kind
+                and module Flag := Flag
+;;

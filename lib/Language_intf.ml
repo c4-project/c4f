@@ -51,7 +51,7 @@ module type Basic_statement = sig
     : Fold_map.Container0 with type elt := ins and type t := t
   ;;
 
-  include Abstractable.S
+  include Abstract.Abstractable.S
     with type t := t
      and module Abs := Abstract.Statement
   ;;
@@ -84,7 +84,7 @@ module type Basic_instruction = sig
   (** [pp_operands f ins] pretty-prints only the instruction operands. *)
   val pp_operands : Format.formatter -> t -> unit
 
-  include Abstractable.S
+  include Abstract.Abstractable.S
     with type t := t
      and module Abs := Abstract.Instruction
   ;;
@@ -123,7 +123,7 @@ module type Basic_location = sig
     Fold_map.Container0 with type elt := sym and type t := t
   ;;
 
-  include Abstractable.S
+  include Abstract.Abstractable.S
     with type t := t
      and module Abs := Abstract.Location
   ;;
@@ -203,7 +203,7 @@ module type S = sig
     (** We can query abstract operand bundle properties on a concrete
        instruction type, routing through [abs_operands]. *)
     module On_operands :
-      Abstract_operand.Bundle.S_properties
+      Abstract.Operand.Bundle.S_properties
         with type t := t
     ;;
   end
@@ -232,7 +232,7 @@ module type S = sig
 
     (** [Extended_flag] expands [Abstract.Statement.Flag] with an
        extra flag, representing program boundaries. *)
-    module Extended_flag : Abstract_flag.S with type t =
+    module Extended_flag : Abstract.Flag_enum.S with type t =
       [ Abstract.Statement.Flag.t | `Program_boundary ]
     ;;
 

@@ -105,7 +105,7 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
           let reg = register_abs_type b in
           let offset =
             Option.value_map disp ~f:disp_abs_type
-              ~default:(Abstract_location.Address.Int 0)
+              ~default:(Abstract.Location.Address.Int 0)
           in
           Abstract.Location.Register_indirect { reg; offset }
         (* This may be over-optimistic. *)
@@ -113,7 +113,7 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
           Abstract.Location.Heap (disp_abs_type d)
         | _, _, _, _ -> Unknown
 
-      include Abstractable.Make (struct
+      include Abstract.Abstractable.Make (struct
           type nonrec t = t
           module Abs = Abstract.Location
 
@@ -149,7 +149,7 @@ module Make (T : Dialect.S) (P : PP.Printer) = struct
 
       module Abs = Abstract.Statement
 
-      include Abstractable.Make (struct
+      include Abstract.Abstractable.Make (struct
           type nonrec t = t
           module Abs = Abstract.Statement
           open Abs

@@ -30,8 +30,8 @@ open Utils
 (** [t] is the type of single operands. *)
 type t =
   | Int of int
-  | Location of Abstract_location.t
-  | Symbol of Abstract_symbol.t
+  | Location of Location.t
+  | Symbol of Symbol.t
   (** This operand appears to be incorrect: an error message is
       enclosed in S-expression form. *)
   | Erroneous of Error.t
@@ -51,7 +51,7 @@ module type S_predicates = sig
 
   (** Any predicate on a location also works on an operand; it
       responds negatively if the operand isn't a location. *)
-  include Abstract_location.S_predicates with type t := t
+  include Location.S_predicates with type t := t
 
   (** [is_unknown] tests whether [operand] is unknown (has no abstract
       representation). *)
@@ -64,7 +64,7 @@ module type S_predicates = sig
      instance. *)
   val is_immediate_heap_symbol
     :  t
-    -> symbol_table:Abstract_symbol.Table.t
+    -> symbol_table:Symbol.Table.t
     -> bool
   ;;
 
@@ -77,7 +77,7 @@ module type S_predicates = sig
       location), and, if so, whether it matches predicate [f]. *)
   val is_jump_symbol_where
     :  t
-    -> f:(Abstract_symbol.t -> bool)
+    -> f:(Symbol.t -> bool)
     -> bool
   ;;
 end
@@ -101,7 +101,7 @@ module Flag : sig
   [@@deriving sexp, enumerate]
   ;;
 
-  include Abstract_flag.S with type t := t
+  include Flag_enum.S with type t := t
 end
 
 (** [S_properties] is the signature of any module that can access
@@ -115,7 +115,7 @@ module type S_properties = sig
 
   (** [flags x symbol_table] gets the statement flags for [x] given
       symbol table [symbol_table]. *)
-  val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
+  val flags : t -> Symbol.Table.t -> Flag.Set.t
 end
 
 (** [Inherit_properties] generates a [S_properties] by inheriting it
@@ -129,7 +129,7 @@ module Inherit_properties
 (** This module contains [S_properties] directly. *)
 include S_properties with type t := t
 
-include Abstract_base.S with type t := t and module Flag := Flag
+include Node.S with type t := t and module Flag := Flag
 
 (** [Bundle] is the abstract data type of collections of operands,
     such as those attached to an instruction. *)
@@ -195,7 +195,7 @@ module Bundle : sig
        [is_immediate_heap_symbol ~syms]. *)
     val has_immediate_heap_symbol
       :  t
-      -> symbol_table:Abstract_symbol.Table.t
+      -> symbol_table:Symbol.Table.t
       -> bool
     ;;
 
@@ -204,7 +204,7 @@ module Bundle : sig
         [is_jump_symbol_where ~f]. *)
     val is_single_jump_symbol_where
       :  t
-      -> f:(Abstract_symbol.t -> bool)
+      -> f:(Symbol.t -> bool)
       -> bool
     ;;
   end
@@ -231,7 +231,7 @@ module Bundle : sig
     [@@deriving sexp, enumerate]
     ;;
 
-    include Abstract_flag.S with type t := t
+    include Flag_enum.S with type t := t
   end
 
   (** [S_properties] is the signature of any module that can access
@@ -250,7 +250,7 @@ module Bundle : sig
 
     (** [flags x symbol_table] gets the statement flags for [x] given
         symbol table [symbol_table]. *)
-    val flags : t -> Abstract_symbol.Table.t -> Flag.Set.t
+    val flags : t -> Symbol.Table.t -> Flag.Set.t
   end
 
   (** [Inherit_properties] generates a [S_properties] by inheriting it
@@ -265,6 +265,6 @@ module Bundle : sig
   include S_properties with type t := t
   (** Operand bundles are traversable containers. *)
   include Fold_map.Container0 with type elt := elt and type t := t
-  include Abstract_base.S with type t := t and module Flag := Flag
+  include Node.S with type t := t and module Flag := Flag
   include Pretty_printer.S with type t := t
 end

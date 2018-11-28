@@ -44,14 +44,14 @@ module type Basic_explanation = sig
   type details
 
   (** Items of type [elt] must be abstractable. *)
-  include Abstractable.S with type t := elt
+  include Abstract.Abstractable.S with type t := elt
 
   (** Items of type [elt] must also be printable. *)
   include Pretty_printer.S with type t := elt
 
   (** [Flag] is the module containing detail flags that may be raised
       on [elt]. *)
-  module Flag : Abstract_flag.S
+  module Flag : Abstract.Flag_enum.S
 
   (** [abs_flags elt context] computes the set of detail flags that
       apply to [elt] given the context [context]. *)
@@ -83,14 +83,14 @@ module type Explanation = sig
   type details
 
   (** Each [t] inherits the abstract type projection of its underlying [exp]. *)
-  include Abstractable.S with type t := t
+  include Abstract.Abstractable.S with type t := t
 
   (** Explanations can be pretty-printed. *)
   include Pretty_printer.S with type t := t
 
   (** [Flag] is the module containing detail flags that may be raised
       on the explanation's original element. *)
-  module Flag : Abstract_flag.S
+  module Flag : Abstract.Flag_enum.S
 
   (** [original exp] gets the original element of an explanation [exp]. *)
   val original : t -> elt
@@ -188,7 +188,7 @@ module type S = sig
 
   (** [explain lst symbol_table] compiles a [t] for assembly listing
      [lst], whose symbol table is [symbol_table]. *)
-  val explain : Lang.Statement.t list -> Abstract_symbol.Table.t -> t
+  val explain : Lang.Statement.t list -> Abstract.Symbol.Table.t -> t
 end
 
 (** [Make] makes an implementation of [S] for a given language. *)
