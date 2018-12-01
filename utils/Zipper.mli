@@ -120,51 +120,41 @@ type ('a, 'acc, 'final) fold_outcome =
 (** [On_monad] provides various zipper operations parametrised by
     a monad. *)
 module On_monad : functor (M : Monad.S) -> sig
-  (** [fold_mapM_head zipper ~f ~init] performs a fold-mapping
-      operation over [zipper]'s cursor.  If [zipper]'s cursor
-      is empty, [fold_mapM_head] returns [M.return (init, zipper)]. *)
-  val fold_mapM_head
-    : 'a t
-    -> f:('acc -> 'a -> ('acc * 'a option) M.t)
-    -> init:'acc
-    -> ('acc * 'a t) M.t
-  ;;
-
-  (** [popM zipper ~on_empty] behaves like [pop_opt], but executes a
-      monadic action [on_empty] instead of returning [None] when the
-      cursor is empty. *)
-  val popM
+  (** [pop_m zipper ~on_empty] behaves like [pop_opt], but executes a
+     monadic action [on_empty] instead of returning [None] when the
+     cursor is empty. *)
+  val pop_m
     : 'a t
     -> on_empty:('a t -> ('a * 'a t) M.t)
     -> ('a * 'a t) M.t
   ;;
 
-  (** [peekM ?steps zipper ~on_empty] retrieves the cursor value
+  (** [peek_m ?steps zipper ~on_empty] retrieves the cursor value
       without popping it from the zipper.  If the cursor is empty,
       [~on_empty] is executed and returned.
 
       If [steps] is given, it shifts the effective cursor [steps]
       places forwards. *)
-  val peekM
+  val peek_m
     :  ?steps:int
     -> 'a t
     -> on_empty:('a t -> 'a M.t)
     -> 'a M.t
   ;;
 
-  (** [stepM ?steps zipper ~on_empty] takes one or more steps across
+  (** [step_m ?steps zipper ~on_empty] takes one or more steps across
       [zipper].  The number of steps defaults to 1 (forwards), but
       can be given by [steps]; negative numbers step backwards through
       the zipper.  If the number of steps exceeds the bounds of the
       zipper, [on_empty] is executed and returned. *)
-  val stepM
+  val step_m
     :  ?steps:int
     -> 'a t
     -> on_empty:('a t -> 'a t M.t)
     -> 'a t M.t
   ;;
 
-  (** [foldM_until zipper ~f ~init ~finish] behaves conceptually like
+  (** [fold_m_until zipper ~f ~init ~finish] behaves conceptually like
      [List.fold_until], but folds [f] monadically through the
      remaining elements of a zipper.
 
@@ -173,7 +163,7 @@ module On_monad : functor (M : Monad.S) -> sig
      zipper mid-fold, but can influence the value of the final zipper
      provided to the [finish] continuation by using the various legs
      of [fold_outcome]. *)
-  val foldM_until
+  val fold_m_until
     :  'a t
     -> f:('acc -> 'a -> 'a t -> ('a, 'acc, 'final) fold_outcome M.t)
     -> init:'acc
@@ -181,7 +171,7 @@ module On_monad : functor (M : Monad.S) -> sig
     -> 'final M.t
   ;;
 
-  (** [mapM_head zipper ~f ~on_empty] monadically maps [f] across the
+  (** [map_m_head zipper ~f ~on_empty] monadically maps [f] across the
       cursor of [zipper].
 
       [f] returns the new value of the cursor, or [None] to drop
@@ -189,29 +179,29 @@ module On_monad : functor (M : Monad.S) -> sig
 
       If [zipper] doesn't have a cursor, [on_empty] is executed and
       returned. *)
-  val mapM_head
+  val map_m_head
     :  'a t
     -> f:('a -> 'a option M.t)
     -> on_empty:('a t -> 'a t M.t)
     -> 'a t M.t
   ;;
 
-  (** [markM zipper ~mark] marks the cursor with [mark], and returns
+  (** [mark_m zipper ~mark] marks the cursor with [mark], and returns
      the marked-up zipper.  If the cursor is empty, [on_empty] is
       executed and returned. *)
-  val markM
+  val mark_m
     : 'a t
     -> mark:int
     -> on_empty:('a t -> 'a t M.t)
     -> 'a t M.t
   ;;
 
-  (** [recallM zipper ~mark ~on_empty] rewinds [zipper] until the
+  (** [recall_m zipper ~mark ~on_empty] rewinds [zipper] until the
      cursor is on an element previously marked with [mark].
 
-      If [recallM] runs out of left-list to rewind before finding
+      If [recall_m] runs out of left-list to rewind before finding
      [mark], [on_empty] is executed and returned. *)
-  val recallM
+  val recall_m
     : 'a t
     -> mark:int
     -> on_empty:('a t -> 'a t M.t)

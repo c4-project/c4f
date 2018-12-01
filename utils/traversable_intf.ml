@@ -42,9 +42,9 @@ module type Generic_monadic = sig
   (** [M] is the monad over which we're fold-mapping. *)
   module M : Monad.S
 
-  (** [mapM c ~f] maps [f] over every [t] in [c], threading through
+  (** [map_m c ~f] maps [f] over every [t] in [c], threading through
      monadic state. *)
-  val mapM : 'a t -> f:('a elt -> 'b elt M.t) -> 'b t M.t
+  val map_m : 'a t -> f:('a elt -> 'b elt M.t) -> 'b t M.t
 end
 
 (** [Generic] is the non-monadic version of [Generic_monadic]. *)
@@ -142,38 +142,38 @@ end
 module type Generic_on_monad = sig
   include Generic_monadic
 
-  (** [fold_mapM c ~f ~init] folds [f] monadically over every [t] in
+  (** [fold_map_m c ~f ~init] folds [f] monadically over every [t] in
      [c], threading through an accumulator with initial value
      [init]. *)
-  val fold_mapM
+  val fold_map_m
     :  'a t
     -> f    : ('acc -> 'a elt -> ('acc * 'b elt) M.t)
     -> init : 'acc
     -> ('acc * 'b t) M.t
   ;;
 
-  (** [foldM x ~init ~f] folds the monadic computation [f] over [x],
+  (** [fold_m x ~init ~f] folds the monadic computation [f] over [x],
       starting with initial value [init], and returning the final
       value inside the monadic effect. *)
-  val foldM
+  val fold_m
     :  'a t
     -> init : 'acc
     -> f    : ('acc -> 'a elt -> 'acc M.t)
     -> 'acc M.t
   ;;
 
-  (** [iterM x ~f] iterates the monadic computation [f] over [x],
+  (** [iter_m x ~f] iterates the monadic computation [f] over [x],
       returning the final monadic effect. *)
-  val iterM
+  val iter_m
     :  'a t
     -> f : ('a elt -> unit M.t)
     -> unit M.t
   ;;
 
-  (** [mapiM ~f x] behaves as [mapM], but also supplies [f] with the
+  (** [mapi_m ~f x] behaves as [mapM], but also supplies [f] with the
       index of the element.  This index should match the actual
       position of the element in the container [x]. *)
-  val mapiM : f : (int -> 'a elt -> 'b elt M.t) -> 'a t -> 'b t M.t
+  val mapi_m : f : (int -> 'a elt -> 'b elt M.t) -> 'a t -> 'b t M.t
 end
 
 (** [On_monad1] extends [Generic_on_monad] with functionality that
@@ -183,18 +183,17 @@ module type On_monad1 = sig
 
   include Generic_on_monad with type 'a t := 'a t and type 'a elt := 'a
 
-  (** [sequenceM x] lifts a container of monads [x] to a monad
+  (** [sequence_m x] lifts a container of monads [x] to a monad
       containing a container, by sequencing the monadic effects from
       left to right. *)
-  val sequenceM : 'a M.t t -> 'a t M.t
+  val sequence_m : 'a M.t t -> 'a t M.t
 end
 
 (** [Generic_container] is a generic interface for traversable
    containers, used to build [Container0] (arity-0) and [Container1]
    (arity-1). *)
 module type Generic_container = sig
-  type 'a t
-  type 'a elt
+  include Generic_types
 
   (** [On_monad] implements monadic traversal operators for
       a given monad [M]. *)

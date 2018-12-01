@@ -30,7 +30,7 @@ include Traversable.Make_container1 (struct
     type nonrec 'a t = 'a t
 
     module On_monad (M : Monad.S) = struct
-      let mapM x ~f = f x
+      let map_m x ~f = f x
     end
   end)
 ;;

@@ -130,7 +130,7 @@ module Make (B : Basic)
   ;;
 
   let warn_erroneous_operands ins abs_operands =
-    Ctx_List.iterM (Abstract.Operand.Bundle.errors abs_operands)
+    Ctx_List.iter_m (Abstract.Operand.Bundle.errors abs_operands)
       ~f:(fun error ->
           Ctx.warn (Warn.Operands ins) (Warn.erroneous error)
         )
@@ -225,7 +225,7 @@ module Make (B : Basic)
      monadically. *)
   let sanitise_all_locs =
     let module Loc = Lang.Instruction.On_locations.On_monad (Ctx) in
-    Loc.mapM ~f:sanitise_loc
+    Loc.map_m ~f:sanitise_loc
   ;;
 
   (** [sanitise_ins] performs sanitisation at the single instruction
@@ -249,8 +249,8 @@ module Make (B : Basic)
     let module Ctx_Stm_Sym = Lang.Statement.On_symbols.On_monad (Ctx) in
     (* Nested mapping:
        over symbols in statements in statement lists in programs. *)
-    Ctx_Pcon.mapM progs
-      ~f:(Ctx_List.mapM ~f:(Ctx_Stm_Sym.mapM ~f:mangle_and_redirect))
+    Ctx_Pcon.map_m progs
+      ~f:(Ctx_List.map_m ~f:(Ctx_Stm_Sym.map_m ~f:mangle_and_redirect))
   ;;
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
@@ -270,7 +270,7 @@ module Make (B : Basic)
      monadically. *)
   let sanitise_all_ins =
     let module L = Lang.Statement.On_instructions.On_monad (Ctx) in
-    L.mapM ~f:sanitise_ins
+    L.map_m ~f:sanitise_ins
   ;;
 
   (** [sanitise_stm] performs sanitisation at the single statement
@@ -373,7 +373,7 @@ module Make (B : Basic)
   ;;
 
   let remove_useless_jumps prog =
-    Ctx_Zip.foldM_until (Zipper.of_list prog)
+    Ctx_Zip.fold_m_until (Zipper.of_list prog)
       ~f:process_possible_useless_jump
       ~init:()
       ~finish:(fun () zipper -> Ctx.return (Zipper.to_list zipper))
@@ -523,7 +523,7 @@ module Make (B : Basic)
       (* Need to sanitise statements first, in case the sanitisation
          pass makes irrelevant statements (like jumps) relevant
          again. *)
-      >>= Ctx_List.mapiM ~f:sanitise_stm
+      >>= Ctx_List.mapi_m ~f:sanitise_stm
       >>= remove_fix
     )
   ;;
@@ -577,7 +577,7 @@ module Make (B : Basic)
     then return ()
     else
       let mangle_map = make_mangle_map progs in
-      Ctx_List.iterM symbols ~f:(find_initial_redirect mangle_map)
+      Ctx_List.iter_m symbols ~f:(find_initial_redirect mangle_map)
   ;;
 
   let build_single_program_output i listing =
@@ -594,7 +594,7 @@ module Make (B : Basic)
       make_programs_uniform (Lang.Statement.empty ()) rough_listings
     in
     let%bind programs =
-      Ctx_Pcon.mapiM ~f:build_single_program_output listings
+      Ctx_Pcon.mapi_m ~f:build_single_program_output listings
     in
     let%map redirects = Ctx.get_redirect_alist c_symbols in
     { Output.programs; redirects }
@@ -603,7 +603,7 @@ module Make (B : Basic)
   let sanitise_with_ctx c_symbols progs =
     Ctx.(
       find_initial_redirects c_symbols progs
-      >>= fun () -> Ctx_Pcon.mapiM ~f:sanitise_program progs
+      >>= fun () -> Ctx_Pcon.mapi_m ~f:sanitise_program progs
       (* We do this last, for two reasons: first, in case the
          instruction sanitisers have introduced invalid identifiers;
          and second, so that we know that the manglings agree across

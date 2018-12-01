@@ -30,7 +30,7 @@ include Traversable.Make_container1 (struct
     type 'a t = 'a option
 
     module On_monad (M : Monad.S) = struct
-      let mapM xo ~f =
+      let map_m xo ~f =
         let open M.Let_syntax in
         Option.fold xo
           ~init:(return None)
@@ -72,7 +72,7 @@ let%expect_test "mapM: returning identity on Some/Some" =
   Format.printf "@[<h>%a@]@."
     (My_format.pp_option
        ~pp:(My_format.pp_option ~pp:String.pp))
-    (M.mapM ~f:(Option.some) (Some "hello"));
+    (M.map_m ~f:(Option.some) (Some "hello"));
   [%expect {| hello |}]
 ;;
 

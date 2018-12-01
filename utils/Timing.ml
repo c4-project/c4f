@@ -79,13 +79,13 @@ module Make (T : Timer) : S = struct
       type nonrec 'a t = 'a t
 
       module On_monad (M : Monad.S) = struct
-        let mapM wt ~f =
+        let map_m wt ~f =
           M.(f wt.value >>| fun v -> { wt with value = v })
         ;;
       end
     end)
 
-  let bracket_join thunk = With_errors.sequenceM (bracket thunk)
+  let bracket_join thunk = With_errors.sequence_m (bracket thunk)
 end
 
 let make_timer = function

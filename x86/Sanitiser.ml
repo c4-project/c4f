@@ -144,7 +144,7 @@ module Hook (L : Language.S) = struct
 
   let through_all_registers loc =
     let module F = Location.On_registers.On_monad (Ctx) in
-    F.mapM ~f:on_register loc
+    F.map_m ~f:on_register loc
   ;;
 
   let on_statement = Ctx.return

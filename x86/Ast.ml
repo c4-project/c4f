@@ -185,7 +185,7 @@ module Disp = struct
   module Base_map (M : Monad.S) = struct
     module F = Traversable.Helpers (M)
 
-    let mapM (x : t) ~symbolic ~numeric : t M.t =
+    let map_m (x : t) ~symbolic ~numeric : t M.t =
       Variants.map x
         ~symbolic:(F.proc_variant1 symbolic)
         ~numeric:(F.proc_variant1 numeric)
@@ -201,8 +201,8 @@ module Disp = struct
         module B = Base_map (M)
         module F = Traversable.Helpers (M)
 
-        let mapM t ~f =
-          B.mapM t
+        let map_m t ~f =
+          B.map_m t
             ~symbolic:f
             (* Numeric displacements, of course, have no symbols *)
             ~numeric:M.return
@@ -221,7 +221,7 @@ module Index = struct
   module Base_map (M : Monad.S) = struct
     module F = Traversable.Helpers (M)
 
-    let mapM (x : t) ~unscaled ~scaled : t M.t =
+    let map_m (x : t) ~unscaled ~scaled : t M.t =
       Variants.map x
         ~unscaled:(F.proc_variant1 unscaled)
         ~scaled:(F.proc_variant2 scaled)
@@ -238,8 +238,8 @@ module Index = struct
         module B = Base_map (M)
         module F = Traversable.Helpers (M)
 
-        let mapM t ~f =
-          B.mapM t
+        let map_m t ~f =
+          B.map_m t
             ~unscaled:f
             ~scaled:M.(fun (r, k) -> f r >>| (fun r' -> (r', k)))
         ;;
@@ -264,7 +264,7 @@ module Indirect = struct
   module Base_map (M : Monad.S) = struct
     module F = Traversable.Helpers (M)
 
-    let mapM indirect ~seg ~disp ~base ~index =
+    let map_m indirect ~seg ~disp ~base ~index =
       Fields.fold
         ~init:(M.return indirect)
         ~seg:(F.proc_field seg)
@@ -289,9 +289,9 @@ module Indirect = struct
         module D = Disp.On_symbols.On_monad (M)
         module O = My_option.On_monad (M)
 
-        let mapM t ~f =
-          B.mapM t
-            ~disp:(O.mapM ~f:(D.mapM ~f))
+        let map_m t ~f =
+          B.map_m t
+            ~disp:(O.map_m ~f:(D.map_m ~f))
             (* Segments, bases, and indices have no symbols. *)
             ~seg:M.return
             ~base:M.return
@@ -313,11 +313,11 @@ module Indirect = struct
         module O = My_option.On_monad (M)
         module I = Index.On_registers.On_monad (M)
 
-        let mapM t ~f =
-          B.mapM t
-            ~seg:(O.mapM ~f)
-            ~base:(O.mapM ~f)
-            ~index:(O.mapM ~f:(I.mapM ~f))
+        let map_m t ~f =
+          B.map_m t
+            ~seg:(O.map_m ~f)
+            ~base:(O.map_m ~f)
+            ~index:(O.map_m ~f:(I.map_m ~f))
             (* Displacements have no registers. *)
             ~disp:M.return
         ;;
@@ -341,7 +341,7 @@ module Location = struct
   module Base_map (M : Monad.S) = struct
     module F = Traversable.Helpers (M)
 
-    let mapM x ~indirect ~reg =
+    let map_m x ~indirect ~reg =
       Variants.map
         x
         ~indirect:(F.proc_variant1 indirect)
@@ -360,7 +360,7 @@ module Location = struct
         module F = Traversable.Helpers (M)
         module I = Indirect.On_registers.On_monad (M)
 
-        let mapM t ~f = B.mapM t ~indirect:(I.mapM ~f) ~reg:f
+        let map_m t ~f = B.map_m t ~indirect:(I.map_m ~f) ~reg:f
       end
     end)
   ;;
@@ -376,9 +376,9 @@ module Location = struct
         module F = Traversable.Helpers (M)
         module I = Indirect.On_symbols.On_monad (M)
 
-        let mapM t ~f =
-          B.mapM t
-            ~indirect:(I.mapM ~f)
+        let map_m t ~f =
+          B.map_m t
+            ~indirect:(I.map_m ~f)
             (* Registers don't have any symbols *)
             ~reg:M.return
         ;;
@@ -405,7 +405,7 @@ module Operand = struct
   module Base_map (M : Monad.S) = struct
     module F = Traversable.Helpers (M)
 
-    let rec mapM
+    let rec map_m
       (x : t)
         ~location
         ~immediate
@@ -422,9 +422,9 @@ module Operand = struct
         ~bop:(F.proc_variant3
                 (fun (l, b, r) ->
                    let open M.Let_syntax in
-                   let%bind l' = mapM ~location ~immediate ~string ~typ ~bop l in
+                   let%bind l' = map_m ~location ~immediate ~string ~typ ~bop l in
                    let%bind b' = bop b in
-                   let%map  r' = mapM ~location ~immediate ~string ~typ ~bop r in
+                   let%map  r' = map_m ~location ~immediate ~string ~typ ~bop r in
                    (l', b', r')))
     ;;
   end
@@ -440,8 +440,8 @@ module Operand = struct
         module B = Base_map (M)
         module F = Traversable.Helpers (M)
 
-        let mapM t ~f =
-          B.mapM t
+        let map_m t ~f =
+          B.map_m t
             ~location:f
             (* These don't contain locations: *)
             ~immediate:M.return
@@ -467,10 +467,10 @@ module Operand = struct
         module L = Location.On_symbols.On_monad (M)
         module D = Disp.On_symbols.On_monad (M)
 
-        let mapM t ~f =
-          B.mapM t
-            ~location:(L.mapM ~f)
-            ~immediate:(D.mapM ~f)
+        let map_m t ~f =
+          B.map_m t
+            ~location:(L.map_m ~f)
+            ~immediate:(D.map_m ~f)
             (* These don't contain symbols: *)
             ~string:M.return
             ~typ:M.return
@@ -531,7 +531,7 @@ module Instruction = struct
   module Base_map (M : Monad.S) = struct
     module F = Traversable.Helpers (M)
 
-    let mapM ins ~prefix ~opcode ~operands =
+    let map_m ins ~prefix ~opcode ~operands =
       Fields.fold
         ~init:(M.return ins)
         ~prefix:(F.proc_field prefix)
@@ -554,9 +554,9 @@ module Instruction = struct
         module OS = Operand.On_symbols.On_monad (M)
         module L  = My_list.On_monad (M)
 
-        let mapM t ~f =
-          B.mapM t
-            ~operands:(L.mapM ~f:(OS.mapM ~f))
+        let map_m t ~f =
+          B.map_m t
+            ~operands:(L.map_m ~f:(OS.map_m ~f))
             (* Prefixes and opcodes don't contain symbols. *)
             ~prefix:M.return
             ~opcode:M.return
@@ -578,9 +578,9 @@ module Instruction = struct
         module OL = Operand.On_locations.On_monad (M)
         module L  = My_list.On_monad (M)
 
-        let mapM t ~f =
-          B.mapM t
-            ~operands:(L.mapM ~f:(OL.mapM ~f))
+        let map_m t ~f =
+          B.map_m t
+            ~operands:(L.map_m ~f:(OL.map_m ~f))
             (* Prefixes and opcodes don't contain locations. *)
             ~prefix:M.return
             ~opcode:M.return
@@ -601,7 +601,7 @@ module Statement = struct
   module Base_map (M : Monad.S) = struct
     module F = Traversable.Helpers (M)
 
-    let mapM x ~instruction ~label ~nop =
+    let map_m x ~instruction ~label ~nop =
       Variants.map x
         ~instruction:(F.proc_variant1 instruction)
         ~label:(F.proc_variant1 label)
@@ -622,8 +622,8 @@ module Statement = struct
         module F = Traversable.Helpers (M)
         module I = Instruction.On_symbols.On_monad (M)
 
-        let mapM t ~f =
-          B.mapM t
+        let map_m t ~f =
+          B.map_m t
             ~instruction:f
             (* These don't contain instructions: *)
             ~label:M.return
@@ -644,9 +644,9 @@ module Statement = struct
         module F = Traversable.Helpers (M)
         module I = Instruction.On_symbols.On_monad (M)
 
-        let mapM t ~f =
-          B.mapM t
-            ~instruction:(I.mapM ~f)
+        let map_m t ~f =
+          B.map_m t
+            ~instruction:(I.map_m ~f)
             ~label:f
             (* These don't contain symbols: *)
             ~nop:M.return

@@ -50,26 +50,26 @@ module Derived_ops_monadic_gen
 
   module IM = I.On_monad (M)
 
-  let fold_mapM (type acc) c ~f ~init =
+  let fold_map_m (type acc) c ~f ~init =
     let module SM' = State.To_S_transform (SM) (struct type t = acc end) in
     let module ISM = I.On_monad (SM') in
-    SM.run' (ISM.mapM ~f:(fun x -> SM.Monadic.make (fun s -> f s x)) c) init
+    SM.run' (ISM.map_m ~f:(fun x -> SM.Monadic.make (fun s -> f s x)) c) init
   ;;
 
-  let foldM c ~init ~f =
+  let fold_m c ~init ~f =
     M.(
-      fold_mapM ~init c ~f:(fun k x -> f k x >>| fun x' -> (x', x))
+      fold_map_m ~init c ~f:(fun k x -> f k x >>| fun x' -> (x', x))
       >>| fst
     )
   ;;
 
-  let iterM c ~f =
-    M.(IM.mapM ~f:(fun x -> M.(f x >>| fun () -> x)) c >>| fun _ -> ())
+  let iter_m c ~f =
+    M.(IM.map_m ~f:(fun x -> M.(f x >>| fun () -> x)) c >>| fun _ -> ())
   ;;
 
-  let mapiM ~f c =
+  let mapi_m ~f c =
     M.(
-      fold_mapM ~init:0 c
+      fold_map_m ~init:0 c
         ~f:(fun k x -> f k x >>| fun x' -> (k + 1, x'))
       >>| snd
     )
@@ -83,8 +83,8 @@ module Derived_ops_gen (I : Derived_ops_maker) = struct
   (* As usual, we just use the monadic equivalents over the identity
      monad. *)
   module D = Derived_ops_monadic_gen (I) (Monad.Ident)
-  let fold_map = D.fold_mapM
-  let mapi     = D.mapiM
+  let fold_map = D.fold_map_m
+  let mapi     = D.mapi_m
 end
 
 (** [Container_gen] is an internal functor used to generate the input
@@ -94,8 +94,8 @@ module Container_gen (I : Derived_ops_maker) : sig
   val iter : [> `Custom of 'a I.t -> f:('a I.elt -> unit) -> unit ]
 end = struct
   module D = Derived_ops_monadic_gen (I) (Monad.Ident)
-  let fold = D.foldM
-  let iter = `Custom D.iterM
+  let fold = D.fold_m
+  let iter = `Custom D.iter_m
 end
 
 module Make_container0 (I : Basic_container0)
@@ -110,7 +110,7 @@ module Make_container0 (I : Basic_container0)
 
   (* We can implement the non-monadic map using the identity monad. *)
   module Ident = I.On_monad (Monad.Ident)
-  let map = Ident.mapM
+  let map = Ident.map_m
   include Derived_ops_gen (Maker)
 
   include Container.Make0 (struct
@@ -137,7 +137,7 @@ module Make_container1 (I : Basic_container1)
   end
 
   module Ident = I.On_monad (Monad.Ident)
-  let map = Ident.mapM
+  let map = Ident.map_m
   include Derived_ops_gen (Maker)
 
   module C = Container.Make (struct
@@ -159,8 +159,8 @@ module Make_container1 (I : Basic_container1)
     include I.On_monad (MS)
     include Derived_ops_monadic_gen (Maker) (MS)
 
-    (* [sequenceM] can't be defined on arity-0 containers. *)
-    let sequenceM c = mapM ~f:(Fn.id) c
+    (* [sequence_m] can't be defined on arity-0 containers. *)
+    let sequence_m c = map_m ~f:(Fn.id) c
   end
   module With_errors = On_monad (Base.Or_error)
 

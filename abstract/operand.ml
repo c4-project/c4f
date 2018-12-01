@@ -268,7 +268,7 @@ module Bundle = struct
       module On_monad (Mo : Monad.S) = struct
         module H = Traversable.Helpers (Mo)
 
-        let mapM bundle ~f =
+        let map_m bundle ~f =
           Variants.map bundle
             ~none:(H.proc_variant0 Mo.return)
             ~single:(H.proc_variant1 f)

@@ -30,7 +30,7 @@ include Traversable.Make_container1 (struct
     type 'a t = 'a list
 
     module On_monad (M : Monad.S) = struct
-      let mapM xs ~f =
+      let map_m xs ~f =
         let open M.Let_syntax in
         let%map xs_final =
           List.fold_left xs
@@ -63,7 +63,7 @@ let%expect_test "mapiM: returning identity on list/option" =
   Format.printf "@[<h>%a@]@."
     (My_format.pp_option
        ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep String.pp))
-    (M.mapiM ~f:(fun _ k -> Some k) ["a"; "b"; "c"; "d"; "e"]);
+    (M.mapi_m ~f:(fun _ k -> Some k) ["a"; "b"; "c"; "d"; "e"]);
   [%expect {| a, b, c, d, e |}]
 
 let%expect_test "mapiM: counting upwards on list/option" =
@@ -71,7 +71,7 @@ let%expect_test "mapiM: counting upwards on list/option" =
   Format.printf "@[<h>%a@]@."
     (My_format.pp_option
        ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep Int.pp))
-    (M.mapiM ~f:(fun i _ -> Some i) [3; 7; 2; 4; 42]);
+    (M.mapi_m ~f:(fun i _ -> Some i) [3; 7; 2; 4; 42]);
   [%expect {| 0, 1, 2, 3, 4 |}]
 
 let%expect_test "MyList: max_measure on empty list" =
@@ -120,7 +120,7 @@ let%expect_test "mapM: list" =
   let module M = On_monad (List) in
   Format.printf "@[<h>%a@]@."
     (My_format.pp_listlist ~pp:Int.pp)
-    (List.bind ~f:(M.mapM ~f:(fun k -> [k; 0]))
+    (List.bind ~f:(M.map_m ~f:(fun k -> [k; 0]))
        ([[1; 2; 3]]));
   [%expect {|
               [ 1, 2, 3 ]
