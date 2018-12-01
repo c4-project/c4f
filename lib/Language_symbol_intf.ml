@@ -1,4 +1,3 @@
-
 (* This file is part of 'act'.
 
    Copyright (c) 2018 by Matt Windsor
@@ -41,10 +40,10 @@ module type Basic = sig
   (** Languages must supply a pretty-printer for their symbols. *)
   include Pretty_printer.S with type t := t
 
-  (** They must allow fold-mapping over any string parts of the
+  (** They must allow traversal over any string parts of the
       symbol. *)
   module On_strings
-    : Fold_map.Container0 with type elt = string and type t = t
+    : Traversable.Container0 with type elt = string and type t = t
   ;;
 
   (** [abstract sym] promotes [sym] to an abstract symbol without any

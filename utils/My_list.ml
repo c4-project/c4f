@@ -26,21 +26,21 @@ open Core_kernel
 
 type 'a t = 'a list
 
-include Fold_map.Make_container1 (struct
+include Traversable.Make_container1 (struct
     type 'a t = 'a list
 
     module On_monad (M : Monad.S) = struct
-      let fold_mapM ~f ~init xs =
+      let mapM xs ~f =
         let open M.Let_syntax in
-        let%map (acc_final, xs_final) =
+        let%map xs_final =
           List.fold_left xs
-            ~init:(return (init, []))
+            ~init:(return [])
             ~f:(fun state x ->
-                let%bind (acc, xs') = state in
-                let%map  (acc', x') = f acc x in
-                (acc', x'::xs'))
+                let%bind xs' = state in
+                let%map  x'  = f x in
+                x' :: xs')
         in
-        (acc_final, List.rev xs_final)
+        List.rev xs_final
       ;;
     end
   end)

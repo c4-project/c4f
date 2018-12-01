@@ -26,18 +26,18 @@ open Core_kernel
 
 type 'a t = 'a option
 
-include Fold_map.Make_container1 (struct
+include Traversable.Make_container1 (struct
     type 'a t = 'a option
 
     module On_monad (M : Monad.S) = struct
-      let fold_mapM ~f ~init xo =
+      let mapM xo ~f =
         let open M.Let_syntax in
         Option.fold xo
-          ~init:(return (init, None))
+          ~init:(return None)
           ~f:(fun state x ->
-              let%bind (acc , _ ) = state in
-              let%map  (acc', x') = f acc x in
-              (acc', Some x'))
+              let%bind _ = state in
+              let%map  x' = f x in
+              Some x')
       ;;
     end
   end)

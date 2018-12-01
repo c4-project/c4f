@@ -44,15 +44,12 @@ module Cell = struct
     { cell with marks = Int.Set.add cell.marks mark }
   ;;
 
-  include Fold_map.Make_container1 (struct
+  include Traversable.Make_container1 (struct
       type nonrec 'a t = 'a t
 
       module On_monad (M : Monad.S) = struct
-        let fold_mapM ~f ~init cell =
-          M.(
-            f init cell.data >>|
-            Tuple2.map_snd ~f:(fun d -> { cell with data = d })
-          )
+        let mapM cell ~f =
+          M.(f cell.data >>| fun d -> { cell with data = d })
         ;;
       end
     end)

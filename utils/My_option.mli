@@ -30,9 +30,8 @@ open Base
     various container interfaces. *)
 type 'a t = 'a option
 
-(** [My_option] contains all of the monadic fold-mappable extensions
-   we define in [Fold_map]. *)
-include Fold_map.Container1 with type 'a t := 'a t
+(** Options are traversable containers. *)
+include Traversable.Container1 with type 'a t := 'a t
 
 (** [first_some_of_thunks thunks] evaluates each thunk in [thunks] until
     none remain (in which case, it returns [None], or one of the

@@ -261,31 +261,29 @@ module Bundle = struct
     | Src_dst _ -> Src_dst
   ;;
 
-  include Fold_map.Make_container0 (struct
+  include Traversable.Make_container0 (struct
       module Elt = M
       type nonrec t = t
 
       module On_monad (Mo : Monad.S) = struct
-        module H = Fold_map.Helpers (Mo)
+        module H = Traversable.Helpers (Mo)
 
-        let fold_mapM ~f ~init bundle =
+        let mapM bundle ~f =
           Variants.map bundle
-            ~none:(H.proc_variant0 H.fold_nop init)
-            ~single:(H.proc_variant1 f init)
+            ~none:(H.proc_variant0 Mo.return)
+            ~single:(H.proc_variant1 f)
             ~double:(H.proc_variant2
-                       (fun i (x, y) ->
+                       (fun (x, y) ->
                           let open Mo.Let_syntax in
-                          let%bind i' , x' = f i  x in
-                          let%map  i'', y' = f i' y in
-                          (i'', (x', y')))
-                       init)
+                          let%bind x' = f x in
+                          let%map  y' = f y in
+                          (x', y')))
             ~src_dst:(H.proc_variant1
-                        (fun i { Src_dst.src; dst } ->
+                        (fun { Src_dst.src; dst } ->
                            let open Mo.Let_syntax in
-                           let%bind i' , src' = f i  src in
-                           let%map  i'', dst' = f i' dst in
-                           (i'', { Src_dst.src = src'; dst = dst' }))
-                        init)
+                           let%bind src' = f src in
+                           let%map  dst' = f dst in
+                           { Src_dst.src = src'; dst = dst' }))
         ;;
       end
     end)

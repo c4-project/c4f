@@ -30,9 +30,8 @@ open Base
     various container interfaces. *)
 type 'a t = 'a list
 
-(** [My_list] contains all of the monadic fold-mappable extensions we
-     define in [Fold_map]. *)
-include Fold_map.Container1 with type 'a t := 'a t
+(** [My_list] is a traversable container. *)
+include Traversable.Container1 with type 'a t := 'a t
 
 (** [exclude ~f xs] is the inverse of [filter ~f xs]. *)
 val exclude : f:('a -> bool) -> 'a t -> 'a t

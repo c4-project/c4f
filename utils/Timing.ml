@@ -54,7 +54,7 @@ module type S = sig
   val bracket_join : (unit -> 'a Or_error.t) -> 'a t Or_error.t
 
   include Timed1 with type 'a t := 'a t
-  include Fold_map.Container1 with type 'a t := 'a t
+  include Traversable.Container1 with type 'a t := 'a t
 end
 
 module Make (T : Timer) : S = struct
@@ -75,14 +75,13 @@ module Make (T : Timer) : S = struct
     { value; time_taken }
   ;;
 
-  include Fold_map.Make_container1 (struct
+  include Traversable.Make_container1 (struct
       type nonrec 'a t = 'a t
 
       module On_monad (M : Monad.S) = struct
-        let fold_mapM ~f ~init wt =
-          let open M.Let_syntax in
-          let%map (acc, value') = f init wt.value in
-          (acc, { wt with value = value' })
+        let mapM wt ~f =
+          M.(f wt.value >>| fun v -> { wt with value = v })
+        ;;
       end
     end)
 

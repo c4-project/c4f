@@ -41,14 +41,14 @@ module type Basic_statement = sig
   (** Languages must supply a pretty-printer for their statements. *)
   include Pretty_printer.S with type t := t
 
-  (** They must allow fold-mapping over symbols... *)
+  (** They must allow traversal over symbols... *)
   module On_symbols
-    : Fold_map.Container0 with type elt := sym and type t := t
+    : Traversable.Container0 with type elt := sym and type t := t
   ;;
 
   (** ...and over instructions. *)
   module On_instructions
-    : Fold_map.Container0 with type elt := ins and type t := t
+    : Traversable.Container0 with type elt := ins and type t := t
   ;;
 
   include Abstract.Abstractable.S
@@ -89,14 +89,14 @@ module type Basic_instruction = sig
      and module Abs := Abstract.Instruction
   ;;
 
-  (** They must allow fold-mapping over symbols... *)
+  (** They must allow traversal over symbols... *)
   module On_symbols :
-    Fold_map.Container0 with type elt := sym and type t := t
+    Traversable.Container0 with type elt := sym and type t := t
   ;;
 
   (** ...and over locations. *)
   module On_locations :
-    Fold_map.Container0 with type elt := loc and type t := t
+    Traversable.Container0 with type elt := loc and type t := t
   ;;
 
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
@@ -118,9 +118,9 @@ module type Basic_location = sig
   (** Languages must supply a pretty-printer for their locations. *)
   include Pretty_printer.S with type t := t
 
-  (** They must allow fold-mapping over symbols... *)
+  (** They must allow traversal over symbols... *)
   module On_symbols :
-    Fold_map.Container0 with type elt := sym and type t := t
+    Traversable.Container0 with type elt := sym and type t := t
   ;;
 
   include Abstract.Abstractable.S

@@ -24,74 +24,63 @@
 
 open Base
 
-(** [Generic_monadic] is a signature describing a monadic fold-map on
+module type Generic_types = sig
+  (** [t] is the type of container to map over. *)
+  type 'a t
+  (** [elt] is the type of element inside the container. *)
+  type 'a elt
+end
+
+(** [Generic_monadic] is a signature describing a monadic traversal on
    either an arity-0 or arity-1 container.
 
     This is analogous to [Core.Container.Generic] in its relationship
    with [S0] and [S1]. *)
 module type Generic_monadic = sig
-  (** [t] is the type of container to map over. *)
-  type 'a t
-  (** [elt] is the type of element inside the container. *)
-  type 'a elt
+  include Generic_types
+
   (** [M] is the monad over which we're fold-mapping. *)
   module M : Monad.S
 
-  (** [fold_mapM ~f ~init c] folds [f] monadically over every [t] in
-     [c], threading through an accumulator with initial value
-     [init]. *)
-  val fold_mapM
-    :  f    : ('acc -> 'a elt -> ('acc * 'b elt) M.t)
-    -> init : 'acc
-    -> 'a t
-    -> ('acc * 'b t) M.t
-  ;;
+  (** [mapM c ~f] maps [f] over every [t] in [c], threading through
+     monadic state. *)
+  val mapM : 'a t -> f:('a elt -> 'b elt M.t) -> 'b t M.t
 end
 
 (** [Generic] is the non-monadic version of [Generic_monadic]. *)
 module type Generic = sig
-  (** [t] is the type of container to map over. *)
-  type 'a t
-  (** [elt] is the type of element inside the container. *)
-  type 'a elt
+  include Generic_types
 
-  (** [fold_map ~f ~init c] folds [f] over every [t] in
-     [c], threading through an accumulator with initial value [init]. *)
-  val fold_map
-    :  f    : ('acc -> 'a elt -> ('acc * 'b elt))
-    -> init : 'acc
-    -> 'a t
-    -> ('acc * 'b t)
-  ;;
+  (** [map c ~f] maps [f] over every [t] in [c]. *)
+  val map : 'a t -> f:('a elt -> 'b elt) -> 'b t
 end
 
-(** [S0_monadic] is the signature of a monadic fold-map over
+(** [S0_monadic] is the signature of a monadic traversal over
     arity-0 containers. *)
 module type S0_monadic = sig
   type t
   type elt
 
-  (** [S0_monadic]s can fold-map: the container type is always [t],
+  (** [S0_monadic]s can traverse: the container type is always [t],
       and the element type is always [elt]. *)
   include Generic_monadic with type 'a t := t and type 'a elt := elt
 end
 
-(** [S1_monadic] is the signature of a monadic fold-map over
-    arity-1 containers. *)
+(** [S1_monadic] is the signature of a monadic traversal over arity-1
+   containers. *)
 module type S1_monadic = sig
   (** [t] is the type of the container to map over. *)
   type 'a t
 
-  (** [S1_monadic]s can fold-map: when the container type is ['a t],
+  (** [S1_monadic]s can traverse: when the container type is ['a t],
       the element type is ['a]. *)
   include Generic_monadic with type 'a t := 'a t and type 'a elt := 'a
 end
 
-(** We can derive the non-monadic fold-map signatures by
+(** We can derive the non-monadic map signatures by
     applying the monadic ones to the identity monad. *)
 
-(** [S0] is the signature of a basic fold-map over
-    arity-0 containers. *)
+(** [S0] is the signature of a basic map over arity-0 containers. *)
 module type S0 = sig
   type t
   type elt
@@ -101,8 +90,7 @@ module type S0 = sig
   include Generic with type 'a t := t and type 'a elt := elt
 end
 
-(** [S1] is the signature of a basic fold-map over
-    arity-1 containers. *)
+(** [S1] is the signature of a basic map over arity-1 containers. *)
 module type S1 = sig
    (** [t] is the type of the container to map over. *)
   type 'a t
@@ -112,10 +100,10 @@ module type S1 = sig
   include Generic with type 'a t := 'a t and type 'a elt := 'a
 end
 
-(** Building containers from fold-mappable types *)
+(** Building containers from traversable types *)
 
-(** [Basic_container0] is the signature that fold-mappable containers of
-    arity 0 must implement. *)
+(** [Basic_container0] is the signature that traversable containers of
+   arity 0 must implement. *)
 module type Basic_container0 = sig
   (** [t] is the container type. *)
   type t
@@ -123,7 +111,8 @@ module type Basic_container0 = sig
   (** [Elt] contains the element type, which must have equality. *)
   module Elt : Equal.S
 
-  (** [On_monad] implements the monadic fold-map for a given monad [M]. *)
+  (** [On_monad] implements the monadic traversal for a given monad
+     [M]. *)
   module On_monad
     : functor (MS : Monad.S)
       -> S0_monadic with type t := t
@@ -132,13 +121,14 @@ module type Basic_container0 = sig
   ;;
 end
 
-(** [Basic_container1] is the signature that fold-mappable containers
+(** [Basic_container1] is the signature that traversable containers
    of arity 1 must implement. *)
 module type Basic_container1 = sig
   (** [t] is the container type. *)
   type 'a t
 
-  (** [On_monad] implements the monadic fold-map for a given monad [M]. *)
+  (** [On_monad] implements the monadic traversable for a given monad
+     [M]. *)
   module On_monad
     : functor (MS : Monad.S)
       -> S1_monadic with type 'a t := 'a t
@@ -151,6 +141,16 @@ end
    [On_monad] modules. *)
 module type Generic_on_monad = sig
   include Generic_monadic
+
+  (** [fold_mapM c ~f ~init] folds [f] monadically over every [t] in
+     [c], threading through an accumulator with initial value
+     [init]. *)
+  val fold_mapM
+    :  'a t
+    -> f    : ('acc -> 'a elt -> ('acc * 'b elt) M.t)
+    -> init : 'acc
+    -> ('acc * 'b t) M.t
+  ;;
 
   (** [foldM x ~init ~f] folds the monadic computation [f] over [x],
       starting with initial value [init], and returning the final
@@ -169,11 +169,6 @@ module type Generic_on_monad = sig
     -> f : ('a elt -> unit M.t)
     -> unit M.t
   ;;
-
-  (** [mapM ~f x] maps the monadic computation [f] over [x],
-      collecting the monadic effect and returning the result
-      inside it. *)
-  val mapM : f : ('a elt -> 'b elt M.t) -> 'a t -> 'b t M.t
 
   (** [mapiM ~f x] behaves as [mapM], but also supplies [f] with the
       index of the element.  This index should match the actual
@@ -194,14 +189,14 @@ module type On_monad1 = sig
   val sequenceM : 'a M.t t -> 'a t M.t
 end
 
-(** [Generic_container] is a generic interface for fold-mappable
+(** [Generic_container] is a generic interface for traversable
    containers, used to build [Container0] (arity-0) and [Container1]
    (arity-1). *)
 module type Generic_container = sig
   type 'a t
   type 'a elt
 
-  (** [On_monad] implements monadic folding and mapping operators for
+  (** [On_monad] implements monadic traversal operators for
       a given monad [M]. *)
   module On_monad
     : functor (M : Monad.S)
@@ -213,12 +208,19 @@ module type Generic_container = sig
   (** We can do generic container operations. *)
   include Container.Generic with type 'a t   := 'a t
                              and type 'a elt := 'a elt
-  (** We can do non-monadic fold-map operations. *)
+
+  (** We can do non-monadic mapping operations. *)
   include Generic           with type 'a t   := 'a t
                              and type 'a elt := 'a elt
 
-  (** [map ~f t] maps [f] across [t] without accumulating anything. *)
-  val map : f : ('a elt -> 'b elt) -> 'a t -> 'b t
+  (** [fold_map c ~f ~init] folds [f] over every [t] in [c], threading
+     through an accumulator with initial value [init]. *)
+  val fold_map
+    :  'a t
+    -> f    : ('acc -> 'a elt -> ('acc * 'b elt))
+    -> init : 'acc
+    -> ('acc * 'b t)
+  ;;
 
   (** [mapi ~f t] maps [f] across [t], passing in an increasing
       position counter. *)
@@ -231,7 +233,7 @@ module type Generic_container = sig
   ;;
 end
 
-(** [Container0] is a generic interface for arity-0 fold-mappable
+(** [Container0] is a generic interface for arity-0 traversable
     containers. *)
 module type Container0 = sig
   (** [t] is the type of the container. *)
@@ -243,7 +245,7 @@ module type Container0 = sig
   include Container.S0 with type t := t and type elt := elt
 end
 
-(** [Container1] is a generic interface for arity-1 fold-mappable
+(** [Container1] is a generic interface for arity-1 traversable
     containers.  It also incldues [My_container.Extensions1]. *)
 module type Container1 = sig
   (** ['a t] is the type of the container, parametrised over the
@@ -281,8 +283,8 @@ module type Container1 = sig
   ;;
 end
 
-(** [Fold_map] contains things to export in [Fold_map.mli]. *)
-module type Fold_map = sig
+(** [Traversable] contains things to export in [Traversable.mli]. *)
+module type Traversable = sig
   module type Generic = Generic
   module type S0_monadic = S0_monadic
   module type S1_monadic = S1_monadic
@@ -309,84 +311,66 @@ module type Fold_map = sig
       -> Container1 with type 'a t := 'a I.t
   ;;
 
-  (** [Helpers] contains utility functions for building monadic
-     [Fold_map]s.
+  (** [Helpers] contains utility functions for building traversals.
 
       Functions beginning [proc_variant] are useful for building
-     fold-map functions on top of Variantslib's [map] function.  The
-     function [proc_field] is useful for building fold-map functions
-     on top of Fieldslib's [fold] function. *)
+      traversal functions on top of Variantslib's [map] function.  The
+      function [proc_field] is useful for building fold-map functions
+      on top of Fieldslib's [fold] function. *)
   module Helpers : functor (M : Monad.S) -> sig
-    (** [proc_variant0 f init variant] lifts a fold-map operation into
-       a fold-map operation over a nullary variant constructor
-       [variant], using the Variantslib folder. *)
+    (** [traversal] is shorthand for a traversal function over [M]. *)
+    type 'a traversal = ('a -> 'a M.t)
+
+
+    (** [proc_variant0 f variant] lifts a traversal [f] over a
+       Variantslib nullary variant constructor [variant]. *)
     val proc_variant0
-      :  ('acc -> unit -> ('acc * unit) M.t)
-      -> 'acc
-      -> 'a Base.Variant.t
-      -> ('acc * 'a) M.t
+      :  unit traversal
+      -> 'cont Base.Variant.t
+      -> 'cont M.t
     ;;
 
-    (** [proc_variant1 f init variant a] lifts a fold-map operation
-       [f] with initial accumulator [init] over a Variantslib unary
-       variant constructor [variant] with argument [a]. *)
+    (** [proc_variant1 f variant a] lifts a traversal [f] over a
+       Variantslib unary variant constructor [variant] with argument
+       [a]. *)
     val proc_variant1
-      :  ('acc -> 'a -> ('acc * 'a) M.t)
-      -> 'acc
-      -> ('a -> 'b) Base.Variant.t
+      :  'a traversal
+      -> ('a -> 'cont) Base.Variant.t
       -> 'a
-      -> ('acc * 'b) M.t
+      -> 'cont M.t
     ;;
 
-    (** [proc_variant2 f init variant a b] lifts a fold-map operation
-       [f] with initial accumulator [init] over a Variantslib binary
-       variant constructor [variant] with arguments [a] and [b]. *)
+    (** [proc_variant2 f variant a b] lifts a traversal [f] over a
+       Variantslib binary variant constructor [variant] with arguments
+       [a] and [b]. *)
     val proc_variant2
-      :  ('acc -> ('a * 'b) -> ('acc * ('a * 'b)) M.t)
-      -> 'acc
-      -> ('a -> 'b -> 'c) Base.Variant.t
+      : ('a * 'b) traversal
+      -> ('a -> 'b -> 'cont) Base.Variant.t
       -> 'a
       -> 'b
-      -> ('acc * 'c) M.t
+      -> 'cont M.t
     ;;
 
-    (** [proc_variant3 f init variant a b c] lifts a fold-map
-       operation [f] with initial accumulator [init] over a
+    (** [proc_variant3 f variant a b c] lifts a traversal [f] over a
        Variantslib ternary variant constructor [variant] with
        arguments [a], [b], and [c]. *)
     val proc_variant3
-      :  ('acc -> ('a * 'b * 'c) -> ('acc * ('a * 'b * 'c)) M.t)
-      -> 'acc
-      -> ('a -> 'b -> 'c -> 'd) Base.Variant.t
+      :  ('a * 'b * 'c) traversal
+      -> ('a -> 'b -> 'c -> 'cont) Base.Variant.t
       -> 'a
       -> 'b
       -> 'c
-      -> ('acc * 'd) M.t
+      -> 'cont M.t
     ;;
 
-    (** [proc_field f state field container original] lifts a fold-map
-       operation [f] to a form comparible with Fieldslib's [fold]
+    (** [proc_field f state field container original] lifts a
+       traversal [f] to a form comparible with Fieldslib's [fold]
        function. *)
     val proc_field
-      :  ('acc -> 'elt -> ('acc * 'elt) M.t)
-      -> ('acc * 't) M.t
-      -> ([> `Set_and_create], 't, 'elt) Field.t_with_perm
-      -> 't (** Unused, but needed for Fieldslib compatibility *)
-      -> 'elt
-      -> ('acc * 't) M.t
+      :  'elt traversal
+      -> 'cont M.t
+      -> ([> `Set_and_create], 'cont, 'elt) Field.t_with_perm
+      -> 'cont M.t
     ;;
-
-    (** [fold_nop state item] is a function that has the right signature
-        to use in monadic fold-maps, but does nothing. *)
-    val fold_nop : 'b -> 'a -> ('b * 'a) M.t
   end
-
-  (** [chain mapper ~f] lifts a fold-map of [f] on an inner container
-     to a fold-mapping function on an outer container. *)
-  val chain
-    :  (f:'f -> init:'i -> 'result)
-    -> f : 'f
-    -> 'i
-    -> 'result
-  ;;
 end

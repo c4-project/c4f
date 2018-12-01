@@ -264,7 +264,7 @@ module Bundle : sig
   (** This module contains [S_properties] directly. *)
   include S_properties with type t := t
   (** Operand bundles are traversable containers. *)
-  include Fold_map.Container0 with type elt := elt and type t := t
+  include Traversable.Container0 with type elt := elt and type t := t
   include Node.S with type t := t and module Flag := Flag
   include Pretty_printer.S with type t := t
 end

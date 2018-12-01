@@ -22,6 +22,10 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Building containers over monadic fold-map operations *)
+(** [Traversable] provides signatures and functors for containers and
+    data structures that can be 'traversed': mapped across with a
+    monadic side-effect.
 
-include Fold_map_intf.Fold_map
+    It resembles the Haskell Traversable typeclass. *)
+
+include Traversable_intf.Traversable

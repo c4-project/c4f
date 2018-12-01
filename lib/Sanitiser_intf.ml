@@ -62,10 +62,10 @@ end
 module type Basic = sig
   include Hook
 
-  (** [Program_container] describes the monadic-fold-mappable
+  (** [Program_container] describes the traversable
      container that we'll be using to hold the one or more programs
      we're sanitising. *)
-  module Program_container : Utils.Fold_map.Container1
+  module Program_container : Utils.Traversable.Container1
 
   (** [split] splits an assembly script up into the one or more
       programs we'll be sanitising. *)

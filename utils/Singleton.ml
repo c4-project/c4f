@@ -26,11 +26,11 @@ open Core
 
 type 'a t = 'a
 
-include Fold_map.Make_container1 (struct
+include Traversable.Make_container1 (struct
     type nonrec 'a t = 'a t
 
     module On_monad (M : Monad.S) = struct
-      let fold_mapM ~f ~init = f init
+      let mapM x ~f = f x
     end
   end)
 ;;

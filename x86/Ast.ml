@@ -183,33 +183,29 @@ module Disp = struct
 
   (** Base mapper for displacements *)
   module Base_map (M : Monad.S) = struct
-    module F = Fold_map.Helpers (M)
+    module F = Traversable.Helpers (M)
 
-    let fold_mapM
-        ~init
-        ~symbolic ~numeric
-        (x : t) : ('a * t) M.t =
+    let mapM (x : t) ~symbolic ~numeric : t M.t =
       Variants.map x
-        ~symbolic:(F.proc_variant1 symbolic init)
-        ~numeric:(F.proc_variant1 numeric init)
+        ~symbolic:(F.proc_variant1 symbolic)
+        ~numeric:(F.proc_variant1 numeric)
     ;;
   end
 
-  module On_symbols : Fold_map.Container0 with type t := t and type elt := string =
-    Fold_map.Make_container0 (struct
+  module On_symbols : Traversable.Container0 with type t := t and type elt := string =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
+        let mapM t ~f =
+          B.mapM t
             ~symbolic:f
             (* Numeric displacements, of course, have no symbols *)
-            ~numeric:F.fold_nop
+            ~numeric:M.return
         ;;
       end
     end)
@@ -223,34 +219,29 @@ module Index = struct
 
   (** Base mapper for indices *)
   module Base_map (M : Monad.S) = struct
-    module F = Fold_map.Helpers (M)
+    module F = Traversable.Helpers (M)
 
-    let fold_mapM
-        ~init
-        ?(unscaled=F.fold_nop)
-        ?(scaled=F.fold_nop)
-        (x : t) : ('a * t) M.t =
+    let mapM (x : t) ~unscaled ~scaled : t M.t =
       Variants.map x
-        ~unscaled:(F.proc_variant1 unscaled init)
-        ~scaled:(F.proc_variant2 scaled init)
+        ~unscaled:(F.proc_variant1 unscaled)
+        ~scaled:(F.proc_variant2 scaled)
     ;;
   end
 
   (** Recursive mapper for registers *)
-  module On_registers : Fold_map.Container0 with type t := t and type elt := Reg.t =
-    Fold_map.Make_container0 (struct
+  module On_registers : Traversable.Container0 with type t := t and type elt := Reg.t =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Reg
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
+        let mapM t ~f =
+          B.mapM t
             ~unscaled:f
-            ~scaled:M.(fun s (r, k) -> f s r >>| (fun (s, r') -> (s, (r', k))))
+            ~scaled:M.(fun (r, k) -> f r >>| (fun r' -> (r', k)))
         ;;
       end
     end)
@@ -271,15 +262,11 @@ module Indirect = struct
 
   (** Base mapper for memory addresses *)
   module Base_map (M : Monad.S) = struct
-    module F = Fold_map.Helpers (M)
+    module F = Traversable.Helpers (M)
 
-    let fold_mapM
-        ~init
-        ~seg ~disp ~base ~index
-        indirect =
-      Fields.Direct.fold
-        indirect
-        ~init:M.(return (init, indirect))
+    let mapM indirect ~seg ~disp ~base ~index =
+      Fields.fold
+        ~init:(M.return indirect)
         ~seg:(F.proc_field seg)
         ~disp:(F.proc_field disp)
         ~base:(F.proc_field base)
@@ -289,52 +276,50 @@ module Indirect = struct
 
   (** Recursive mapper for symbols *)
   module On_symbols
-    : Fold_map.Container0 with type t := t and type elt := string =
-    Fold_map.Make_container0 (struct
+    : Traversable.Container0 with type t := t and type elt := string =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
       module Set = String.Set
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
 
         module D = Disp.On_symbols.On_monad (M)
         module O = My_option.On_monad (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
-            ~disp:(Fold_map.chain O.fold_mapM ~f:(Fold_map.chain D.fold_mapM ~f))
+        let mapM t ~f =
+          B.mapM t
+            ~disp:(O.mapM ~f:(D.mapM ~f))
             (* Segments, bases, and indices have no symbols. *)
-            ~seg:F.fold_nop
-            ~base:F.fold_nop
-            ~index:F.fold_nop
+            ~seg:M.return
+            ~base:M.return
+            ~index:M.return
         ;;
       end
     end)
 
   (** Recursive mapper for registers *)
   module On_registers
-    : Fold_map.Container0 with type t := t and type elt := Reg.t =
-    Fold_map.Make_container0 (struct
+    : Traversable.Container0 with type t := t and type elt := Reg.t =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Reg
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
         module O = My_option.On_monad (M)
         module I = Index.On_registers.On_monad (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
-            ~seg:(Fold_map.chain O.fold_mapM ~f)
-            ~base:(Fold_map.chain O.fold_mapM ~f)
-            ~index:(Fold_map.chain O.fold_mapM ~f:(Fold_map.chain I.fold_mapM ~f))
+        let mapM t ~f =
+          B.mapM t
+            ~seg:(O.mapM ~f)
+            ~base:(O.mapM ~f)
+            ~index:(O.mapM ~f:(I.mapM ~f))
             (* Displacements have no registers. *)
-            ~disp:F.fold_nop
+            ~disp:M.return
         ;;
       end
     end)
@@ -354,57 +339,48 @@ module Location = struct
 
   (** Base mapper for locations *)
   module Base_map (M : Monad.S) = struct
-    module F = Fold_map.Helpers (M)
+    module F = Traversable.Helpers (M)
 
-    let fold_mapM ~init ~indirect ~reg
-        x =
+    let mapM x ~indirect ~reg =
       Variants.map
         x
-        ~indirect:(F.proc_variant1 indirect init)
-        ~reg:(F.proc_variant1 reg init)
+        ~indirect:(F.proc_variant1 indirect)
+        ~reg:(F.proc_variant1 reg)
     ;;
   end
 
   module On_registers
-    : Fold_map.Container0 with type t := t and type elt := Reg.t =
-    Fold_map.Make_container0 (struct
+    : Traversable.Container0 with type t := t and type elt := Reg.t =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Reg
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
+        module I = Indirect.On_registers.On_monad (M)
 
-        module I  = Indirect.On_registers.On_monad (M)
-
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
-            ~indirect:(Fold_map.chain I.fold_mapM ~f)
-            ~reg:f
-        ;;
+        let mapM t ~f = B.mapM t ~indirect:(I.mapM ~f) ~reg:f
       end
     end)
   ;;
 
   module On_symbols
-    : Fold_map.Container0 with type t := t and type elt := string =
-    Fold_map.Make_container0 (struct
+    : Traversable.Container0 with type t := t and type elt := string =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
+        module I = Indirect.On_symbols.On_monad (M)
 
-        module I  = Indirect.On_symbols.On_monad (M)
-
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
-            ~indirect:(Fold_map.chain I.fold_mapM ~f)
+        let mapM t ~f =
+          B.mapM t
+            ~indirect:(I.mapM ~f)
             (* Registers don't have any symbols *)
-            ~reg:F.fold_nop
+            ~reg:M.return
         ;;
       end
     end)
@@ -427,82 +403,78 @@ module Operand = struct
 
   (** Base mapper for operands *)
   module Base_map (M : Monad.S) = struct
-    module F = Fold_map.Helpers (M)
+    module F = Traversable.Helpers (M)
 
-    let rec fold_mapM
-        ~init
+    let rec mapM
+      (x : t)
         ~location
         ~immediate
         ~string
         ~typ
         ~bop
-        (x : t) : ('a * t) M.t =
+      : t M.t =
       Variants.map
         x
-        ~location:(F.proc_variant1 location init)
-        ~immediate:(F.proc_variant1 immediate init)
-        ~string:(F.proc_variant1 string init)
-        ~typ:(F.proc_variant1 typ init)
+        ~location:(F.proc_variant1 location)
+        ~immediate:(F.proc_variant1 immediate)
+        ~string:(F.proc_variant1 string)
+        ~typ:(F.proc_variant1 typ)
         ~bop:(F.proc_variant3
-                (fun init (l, b, r) ->
+                (fun (l, b, r) ->
                    let open M.Let_syntax in
-                   let%bind (init, l') = fold_mapM ~init ~location ~immediate ~string ~typ ~bop l in
-                   let%bind (init, b') = bop init b in
-                   let%map  (init, r') = fold_mapM ~init ~location ~immediate ~string ~typ ~bop r in
-                   (init, (l', b', r')))
-                init)
-
+                   let%bind l' = mapM ~location ~immediate ~string ~typ ~bop l in
+                   let%bind b' = bop b in
+                   let%map  r' = mapM ~location ~immediate ~string ~typ ~bop r in
+                   (l', b', r')))
     ;;
   end
 
   (** Recursive mapper for locations in operands *)
   module On_locations
-    : Fold_map.Container0 with type t := t and type elt := Location.t =
-    Fold_map.Make_container0 (struct
+    : Traversable.Container0 with type t := t and type elt := Location.t =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Location
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
+        let mapM t ~f =
+          B.mapM t
             ~location:f
             (* These don't contain locations: *)
-            ~immediate:F.fold_nop
-            ~string:F.fold_nop
-            ~typ:F.fold_nop
-            ~bop:F.fold_nop (* NB: this folds over the operator *)
+            ~immediate:M.return
+            ~string:M.return
+            ~typ:M.return
+            ~bop:M.return (* NB: this folds over the operator *)
         ;;
       end
     end)
 
   (** Recursive mapper for symbols in operands *)
   module On_symbols
-    : Fold_map.Container0 with type t := t and type elt := string =
-    Fold_map.Make_container0 (struct
+    : Traversable.Container0 with type t := t and type elt := string =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
       module Set = String.Set
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
 
         module L = Location.On_symbols.On_monad (M)
         module D = Disp.On_symbols.On_monad (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
-            ~location:(Fold_map.chain L.fold_mapM ~f)
-            ~immediate:(Fold_map.chain D.fold_mapM ~f)
+        let mapM t ~f =
+          B.mapM t
+            ~location:(L.mapM ~f)
+            ~immediate:(D.mapM ~f)
             (* These don't contain symbols: *)
-            ~string:F.fold_nop
-            ~typ:F.fold_nop
-            ~bop:F.fold_nop (* NB: this folds over the operator *)
+            ~string:M.return
+            ~typ:M.return
+            ~bop:M.return (* NB: this folds over the operator *)
         ;;
       end
     end)
@@ -557,15 +529,11 @@ module Instruction = struct
 
   (** Base mapper for instructions *)
   module Base_map (M : Monad.S) = struct
-    module F = Fold_map.Helpers (M)
+    module F = Traversable.Helpers (M)
 
-    let fold_mapM
-        ~init
-        ~prefix ~opcode ~operands
-        ins =
-      Fields.Direct.fold
-        ins
-        ~init:M.(return (init, ins))
+    let mapM ins ~prefix ~opcode ~operands =
+      Fields.fold
+        ~init:(M.return ins)
         ~prefix:(F.proc_field prefix)
         ~opcode:(F.proc_field opcode)
         ~operands:(F.proc_field operands)
@@ -574,25 +542,24 @@ module Instruction = struct
 
   (** Recursive mapper for symbols in instructions *)
   module On_symbols
-    : Fold_map.Container0 with type t := t and type elt := string =
-    Fold_map.Make_container0 (struct
+    : Traversable.Container0 with type t := t and type elt := string =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
       module Set = String.Set
 
       module On_monad (M : Monad.S) = struct
         module B  = Base_map (M)
-        module F  = Fold_map.Helpers (M)
+        module F  = Traversable.Helpers (M)
         module OS = Operand.On_symbols.On_monad (M)
         module L  = My_list.On_monad (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
-            ~operands:(Fold_map.chain L.fold_mapM ~f:(Fold_map.chain OS.fold_mapM ~f))
+        let mapM t ~f =
+          B.mapM t
+            ~operands:(L.mapM ~f:(OS.mapM ~f))
             (* Prefixes and opcodes don't contain symbols. *)
-            ~prefix:F.fold_nop
-            ~opcode:F.fold_nop
+            ~prefix:M.return
+            ~opcode:M.return
         ;;
       end
     end)
@@ -600,24 +567,23 @@ module Instruction = struct
 
   (** Recursive mapper for locations in instructions *)
   module On_locations
-    : Fold_map.Container0 with type t := t and type elt := Location.t =
-    Fold_map.Make_container0 (struct
+    : Traversable.Container0 with type t := t and type elt := Location.t =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Location
 
       module On_monad (M : Monad.S) = struct
         module B  = Base_map (M)
-        module F  = Fold_map.Helpers (M)
+        module F  = Traversable.Helpers (M)
         module OL = Operand.On_locations.On_monad (M)
         module L  = My_list.On_monad (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
-            ~operands:(Fold_map.chain L.fold_mapM ~f:(Fold_map.chain OL.fold_mapM ~f))
+        let mapM t ~f =
+          B.mapM t
+            ~operands:(L.mapM ~f:(OL.mapM ~f))
             (* Prefixes and opcodes don't contain locations. *)
-            ~prefix:F.fold_nop
-            ~opcode:F.fold_nop
+            ~prefix:M.return
+            ~opcode:M.return
         ;;
       end
     end)
@@ -633,59 +599,57 @@ module Statement = struct
 
   (** Base mapper for statements *)
   module Base_map (M : Monad.S) = struct
-    module F = Fold_map.Helpers (M)
+    module F = Traversable.Helpers (M)
 
-    let fold_mapM ~init ~instruction ~label ~nop x =
+    let mapM x ~instruction ~label ~nop =
       Variants.map x
-        ~instruction:(F.proc_variant1 instruction init)
-        ~label:(F.proc_variant1 label init)
-        ~nop:(F.proc_variant0 nop init)
+        ~instruction:(F.proc_variant1 instruction)
+        ~label:(F.proc_variant1 label)
+        ~nop:(F.proc_variant0 nop)
     ;;
   end
 
   (** Recursive mapper for instructions in statements *)
   module On_instructions
-    : Fold_map.Container0 with type t := t
+    : Traversable.Container0 with type t := t
                            and type elt := Instruction.t =
-    Fold_map.Make_container0 (struct
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Instruction
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
         module I = Instruction.On_symbols.On_monad (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
+        let mapM t ~f =
+          B.mapM t
             ~instruction:f
             (* These don't contain instructions: *)
-            ~label:F.fold_nop
-            ~nop:F.fold_nop
+            ~label:M.return
+            ~nop:M.return
         ;;
       end
     end)
 
   (** Recursive mapper for symbols in statements *)
   module On_symbols
-    : Fold_map.Container0 with type t := t and type elt := string =
-    Fold_map.Make_container0 (struct
+    : Traversable.Container0 with type t := t and type elt := string =
+    Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Fold_map.Helpers (M)
+        module F = Traversable.Helpers (M)
         module I = Instruction.On_symbols.On_monad (M)
 
-        let fold_mapM ~f ~init t =
-          B.fold_mapM t
-            ~init
-            ~instruction:(Fold_map.chain I.fold_mapM ~f)
+        let mapM t ~f =
+          B.mapM t
+            ~instruction:(I.mapM ~f)
             ~label:f
             (* These don't contain symbols: *)
-            ~nop:F.fold_nop
+            ~nop:M.return
         ;;
       end
     end)

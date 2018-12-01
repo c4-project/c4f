@@ -100,7 +100,9 @@ end
 module M2 : S2 = Make2_transform (Monad.Ident)
 
 module To_S_transform (M : S2_transform) (B : Base.T)
-  : S_transform with type state = B.t and module Inner = M.Inner = struct
+  : S_transform with type state = B.t
+                 and type 'a t = ('a, B.t) M.t
+                 and module Inner = M.Inner = struct
   type state = B.t
 
   module M1 = struct
@@ -122,7 +124,8 @@ module Make_transform (B : Basic_transform)
 ;;
 
 module To_S (M : S2) (B : Base.T)
-  : S with type state = B.t = struct
+  : S with type state = B.t
+       and type 'a t = ('a, B.t) M.t = struct
   type state = B.t
 
   module M1 = struct

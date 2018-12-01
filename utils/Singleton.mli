@@ -28,6 +28,6 @@
 (** ['a t] is just ['a], but made to look like a container type. *)
 type 'a t = 'a
 
-(** We implement [Fold_map.Container1], and, by extension,
+(** We implement [Traversable.Container1], and, by extension,
     [Container.S1] and [My_container.Extensions1]. *)
-include Fold_map.Container1 with type 'a t := 'a t
+include Traversable.Container1 with type 'a t := 'a t

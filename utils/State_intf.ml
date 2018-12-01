@@ -227,7 +227,10 @@ module type State = sig
      by fixing the state type to [B.t]. *)
   module To_S_transform
     : functor (M : S2_transform)
-      -> functor (B : Base.T) -> S_transform with type state = B.t
+      -> functor (B : Base.T)
+        -> S_transform with type state = B.t
+                        and type 'a t = ('a, B.t) M.t
+                        and module Inner = M.Inner
   ;;
 
   (** [To_S] flattens a [S2] into an [S] by fixing the state type
@@ -235,6 +238,7 @@ module type State = sig
   module To_S
     : functor (M : S2)
       -> functor (B : Base.T) -> S with type state = B.t
+                                    and type 'a t = ('a, B.t) M.t
   ;;
 
   (** [Make2_transform] makes an [S2_transform] from a [Monad.S]. *)

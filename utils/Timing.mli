@@ -80,7 +80,7 @@ module type S = sig
   val bracket_join : (unit -> 'a Or_error.t) -> 'a t Or_error.t
 
   include Timed1 with type 'a t := 'a t
-  include Fold_map.Container1 with type 'a t := 'a t
+  include Traversable.Container1 with type 'a t := 'a t
 end
 
 (** [Make] makes a [Timer] from a [S]. *)
