@@ -30,13 +30,13 @@ include Traversable_intf
    implementing the derived operations (fold-map, fold, iterate) in an
    arity-generic way. *)
 module type Derived_ops_maker = sig
-  include Generic_types
+  include Mappable.Generic_types
 
   module On_monad :
     functor (M : Monad.S) ->
-      (Generic_monadic with module M := M
-                        and type 'a t := 'a t
-                        and type 'a elt := 'a elt)
+      (Generic with module M := M
+                and type 'a t := 'a t
+                and type 'a elt := 'a elt)
 end
 
 (** [Derived_ops_monadic_gen] is an internal functor used to generate
@@ -145,15 +145,11 @@ module Make_container1 (I : Basic_container1)
       include Container_gen (Maker)
     end)
   include C
-  include My_container.Extend1 (struct
+  include Mappable.Extend1 (struct
       type nonrec 'a t = 'a I.t
+      let map = map
       include C
     end)
-
-  let right_pad ~padding xs =
-    let maxlen = max_measure ~measure:List.length xs
-    and f = Fn.const padding
-    in map ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f) xs
 
   module On_monad (MS : Monad.S) = struct
     include I.On_monad (MS)

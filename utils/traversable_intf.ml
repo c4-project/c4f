@@ -24,20 +24,13 @@
 
 open Base
 
-module type Generic_types = sig
-  (** [t] is the type of container to map over. *)
-  type 'a t
-  (** [elt] is the type of element inside the container. *)
-  type 'a elt
-end
-
-(** [Generic_monadic] is a signature describing a monadic traversal on
+(** [Generic] is a signature describing a monadic traversal on
    either an arity-0 or arity-1 container.
 
-    This is analogous to [Core.Container.Generic] in its relationship
+    This is analogous to [Mappable.Generic] in its relationship
    with [S0] and [S1]. *)
-module type Generic_monadic = sig
-  include Generic_types
+module type Generic = sig
+  include Mappable.Generic_types
 
   (** [M] is the monad over which we're fold-mapping. *)
   module M : Monad.S
@@ -47,55 +40,22 @@ module type Generic_monadic = sig
   val map_m : 'a t -> f:('a elt -> 'b elt M.t) -> 'b t M.t
 end
 
-(** [Generic] is the non-monadic version of [Generic_monadic]. *)
-module type Generic = sig
-  include Generic_types
-
-  (** [map c ~f] maps [f] over every [t] in [c]. *)
-  val map : 'a t -> f:('a elt -> 'b elt) -> 'b t
-end
-
-(** [S0_monadic] is the signature of a monadic traversal over
-    arity-0 containers. *)
-module type S0_monadic = sig
-  type t
-  type elt
-
-  (** [S0_monadic]s can traverse: the container type is always [t],
-      and the element type is always [elt]. *)
-  include Generic_monadic with type 'a t := t and type 'a elt := elt
-end
-
-(** [S1_monadic] is the signature of a monadic traversal over arity-1
+(** [S0] is the signature of a monadic traversal over arity-0
    containers. *)
-module type S1_monadic = sig
-  (** [t] is the type of the container to map over. *)
-  type 'a t
-
-  (** [S1_monadic]s can traverse: when the container type is ['a t],
-      the element type is ['a]. *)
-  include Generic_monadic with type 'a t := 'a t and type 'a elt := 'a
-end
-
-(** We can derive the non-monadic map signatures by
-    applying the monadic ones to the identity monad. *)
-
-(** [S0] is the signature of a basic map over arity-0 containers. *)
 module type S0 = sig
   type t
   type elt
 
-  (** [S0]s can fold-map: the container type is always [t],
-      and the element type is always [elt]. *)
   include Generic with type 'a t := t and type 'a elt := elt
 end
 
-(** [S1] is the signature of a basic map over arity-1 containers. *)
+(** [S1] is the signature of a monadic traversal over arity-1
+   containers. *)
 module type S1 = sig
-   (** [t] is the type of the container to map over. *)
+  (** [t] is the type of the container to map over. *)
   type 'a t
 
-  (** [S1]s can fold-map: when the container type is ['a t],
+  (** [S1]s can traverse: when the container type is ['a t],
       the element type is ['a]. *)
   include Generic with type 'a t := 'a t and type 'a elt := 'a
 end
@@ -115,9 +75,9 @@ module type Basic_container0 = sig
      [M]. *)
   module On_monad
     : functor (MS : Monad.S)
-      -> S0_monadic with type t := t
-                     and type elt := Elt.t
-                     and module M := MS
+      -> S0 with type t := t
+             and type elt := Elt.t
+             and module M := MS
   ;;
 end
 
@@ -131,8 +91,8 @@ module type Basic_container1 = sig
      [M]. *)
   module On_monad
     : functor (MS : Monad.S)
-      -> S1_monadic with type 'a t := 'a t
-                     and module M := MS
+      -> S1 with type 'a t := 'a t
+             and module M := MS
   ;;
 end
 
@@ -140,7 +100,7 @@ end
    operators; we use it to derive the signatures of the various
    [On_monad] modules. *)
 module type Generic_on_monad = sig
-  include Generic_monadic
+  include Generic
 
   (** [fold_map_m c ~f ~init] folds [f] monadically over every [t] in
      [c], threading through an accumulator with initial value
@@ -193,7 +153,7 @@ end
    containers, used to build [Container0] (arity-0) and [Container1]
    (arity-1). *)
 module type Generic_container = sig
-  include Generic_types
+  include Mappable.Generic_types
 
   (** [On_monad] implements monadic traversal operators for
       a given monad [M]. *)
@@ -209,8 +169,8 @@ module type Generic_container = sig
                              and type 'a elt := 'a elt
 
   (** We can do non-monadic mapping operations. *)
-  include Generic           with type 'a t   := 'a t
-                             and type 'a elt := 'a elt
+  include Mappable.Generic with type 'a t   := 'a t
+                            and type 'a elt := 'a elt
 
   (** [fold_map c ~f ~init] folds [f] over every [t] in [c], threading
      through an accumulator with initial value [init]. *)
@@ -241,7 +201,7 @@ module type Container0 = sig
   type elt
 
   include Generic_container with type 'a t := t and type 'a elt := elt
-  include Container.S0 with type t := t and type elt := elt
+  include Mappable.S0_container with type t := t and type elt := elt
 end
 
 (** [Container1] is a generic interface for arity-1 traversable
@@ -267,12 +227,8 @@ module type Container1 = sig
                              and module With_errors := With_errors
   ;;
 
-  include Container.S1 with type 'a t := 'a t
-  include My_container.Extensions1 with type 'a t := 'a t
-
-  (** [right_pad ~padding xs] pads every list in xs with [padding],
-      ensuring all lists have equal length. *)
-  val right_pad : padding:'a -> 'a list t -> 'a list t
+  include Mappable.S1_container with type 'a t := 'a t
+  include Mappable.Extensions1 with type 'a t := 'a t
 
   (** [With_elt (Elt)] demotes this [Container1] to a [Container0] by
      fixing the element type to that mentioned in [Elt]. *)
@@ -285,8 +241,6 @@ end
 (** [Traversable] contains things to export in [Traversable.mli]. *)
 module type Traversable = sig
   module type Generic = Generic
-  module type S0_monadic = S0_monadic
-  module type S1_monadic = S1_monadic
   module type S0 = S0
   module type S1 = S1
   module type Generic_on_monad = Generic_on_monad
