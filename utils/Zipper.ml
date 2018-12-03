@@ -287,22 +287,63 @@ module On_monad (M : Monad.S) = struct
       | Some h when Int.Set.mem (Cell.marks h) mark ->
         M.return zipper'
       | Some _ | None ->
-        M.(step_m ~steps:(-1) zipper ~on_empty >>= mu)
+        M.(step_m ~steps:(-1) zipper' ~on_empty >>= mu)
     in mu zipper
+  ;;
+
+  let delete_to_mark_m zipper ~mark ~on_empty =
+    let open M.Let_syntax in
+    let%map recalled_zipper = recall_m zipper ~mark ~on_empty in
+    let amount_to_delete =
+      left_length zipper - left_length recalled_zipper
+    in
+    { zipper with left = List.drop zipper.left amount_to_delete }
   ;;
 end
 
 module On_ident = On_monad (Monad.Ident)
 module On_error = On_monad (Or_error)
 
+let to_two_lists zipper = (left_list zipper, right_list zipper)
+
 let map_head = On_ident.map_m_head ~on_empty:Fn.id
+
+let%expect_test "map_head, present head, no removal" =
+  let zipper  = make ~left:[19; 27; 64] ~right:[101; -5; 2] in
+  let zipper' = map_head ~f:(fun x -> Some (x * 2)) zipper in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (to_two_lists zipper' : (int list * int list))];
+  [%expect {| ((19 27 64) (202 -5 2)) |}]
+;;
+
+let%expect_test "map_head, present head, removal" =
+  let zipper  = make ~left:[19; 27; 64] ~right:[101; -5; 2] in
+  let zipper' = map_head ~f:(Fn.const None) zipper in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (to_two_lists zipper' : (int list * int list))];
+  [%expect {| ((19 27 64) (-5 2)) |}]
+;;
+
+let%expect_test "map_head, absent head, no removal" =
+  let zipper  = make ~left:[19; 27; 64] ~right:[] in
+  let zipper' = map_head ~f:(fun x -> Some (x * 2)) zipper in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (to_two_lists zipper' : (int list * int list))];
+  [%expect {| ((19 27 64) ()) |}]
+;;
+
+let%expect_test "map_head, absent head, removal" =
+  let zipper  = make ~left:[19; 27; 64] ~right:[] in
+  let zipper' = map_head ~f:(Fn.const None) zipper in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (to_two_lists zipper' : (int list * int list))];
+  [%expect {| ((19 27 64) ()) |}]
+;;
 
 let pop zipper = On_error.pop_m zipper
     ~on_empty:(fun _ ->
         Or_error.error_string "Tried to pop an exhausted zipper")
 ;;
-
-let to_two_lists zipper = (left_list zipper, right_list zipper)
 
 let%expect_test "zipper: pop non-empty" =
   let zipper = make ~left:[19; 27; 64] ~right:[101; -5; 2] in
@@ -431,31 +472,76 @@ let mark zipper ~mark = On_error.mark_m zipper ~mark
         Or_error.error_string "Tried to mark an exhausted zipper")
 ;;
 
+let mark_not_found mark =
+  Or_error.error_s
+    [%message "Couldn't find requested mark" ~mark:(mark : int)]
+;;
+
 let recall zipper ~mark = On_error.recall_m zipper ~mark
-    ~on_empty:(fun _ ->
-        Or_error.error_s
-          [%message "Couldn't find requested mark" ~mark:(mark : int)]
-      )
+    ~on_empty:(fun _ -> mark_not_found mark)
+;;
+
+let mark_recall_example () =
+  Or_error.(
+    of_list [19; 27; 64; 101; -5; 2]
+    |> step ~steps:2 (* looking at 64 *)
+    >>= mark ~mark:1
+    >>= step (* looking at 101 *)
+    >>= pop  (* now looking at -5 *)
+    >>| Tuple2.get2
+  )
+;;
+
+let%expect_test "mark/recall example (without marking or recalling)" =
+  let result = Or_error.(mark_recall_example () >>| to_two_lists) in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (result : (int list * int list) Or_error.t)];
+  [%expect {| (Ok ((64 27 19) (-5 2))) |}]
 ;;
 
 let%expect_test "mark/recall: valid example" =
-  let open Or_error.Let_syntax in
-  let zipper = of_list [19; 27; 64; 101; -5; 2] in
-  let result = (
-    let%bind _, zipper =
-      zipper
-      |> step ~steps:2 (* looking at 64 *)
-      >>= mark ~mark:1
-      >>= step (* looking at 101 *)
-      >>= pop  (* now looking at -5 *)
-    in
-    zipper
-    |> push ~value:64 (* now looking at (another) 64 *)
-    |> recall ~mark:1 (* should have jumped to first 64 *)
+  let result = Or_error.(
+    mark_recall_example ()
+    >>| push ~value:64 (* now looking at (another) 64 *)
+    >>= recall ~mark:1 (* should have jumped to first 64 *)
     >>| to_two_lists
   )
   in
   Sexp.output_hum Out_channel.stdout
     [%sexp (result : (int list * int list) Or_error.t)];
   [%expect {| (Ok ((27 19) (64 64 -5 2))) |}]
+;;
+
+
+let delete_to_mark zipper ~mark =
+  On_error.delete_to_mark_m zipper ~mark
+    ~on_empty:(fun _ -> mark_not_found mark)
+;;
+
+let%expect_test "mark/delete_to_mark_incl: valid example" =
+  let result = Or_error.(
+    mark_recall_example ()
+    >>| push ~value:27
+    >>| push ~value:53
+    >>= step ~steps:2
+    >>= delete_to_mark ~mark:1
+    >>| to_two_lists
+  )
+  in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (result : (int list * int list) Or_error.t)];
+  [%expect {| (Ok ((27 19) (-5 2))) |}]
+;;
+
+
+let%expect_test "mark/delete_to_mark_incl: deleting to non-existent mark" =
+  let result = Or_error.(
+    mark_recall_example ()
+    >>= delete_to_mark ~mark:2
+    >>| to_two_lists
+  )
+  in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (result : (int list * int list) Or_error.t)];
+  [%expect {| (Error ("Couldn't find requested mark" (mark 2))) |}]
 ;;

@@ -207,6 +207,19 @@ module On_monad : functor (M : Monad.S) -> sig
     -> on_empty:('a t -> 'a t M.t)
     -> 'a t M.t
   ;;
+
+  (** [delete_to_mark_m zipper ~mark ~on_empty] deletes every item in
+     the left-list up to, and including, the element previously marked
+     with [mark].
+
+      If [delete_to_mark_m] runs out of left-list to rewind before
+     finding [mark], [on_empty] is executed and returned. *)
+  val delete_to_mark_m
+    : 'a t
+    -> mark:int
+    -> on_empty:('a t -> 'a t M.t)
+    -> 'a t M.t
+  ;;
 end
 
 (** [map_head zipper ~f] maps [f] across the cursor of [zipper], if it
@@ -252,3 +265,12 @@ val mark : 'a t -> mark:int -> 'a t Or_error.t
     If [recall] runs out of left-list to rewind before finding [mark],
    an error is returned. *)
 val recall : 'a t -> mark:int -> 'a t Or_error.t
+
+(** [delete_to_mark zipper ~mark ~on_empty] deletes every item in the
+   left-list up to, and including, the element previously marked with
+   [mark].
+
+    If [delete_to_mark] runs out of left-list to rewind before finding
+   [mark], an error is returned. *)
+val delete_to_mark : 'a t -> mark:int -> 'a t Or_error.t
+
