@@ -72,6 +72,8 @@ module type S_predicates = sig
   val as_heap_symbol : t -> Symbol.t option
   val is_heap_symbol : t -> bool
   val is_heap_symbol_where : t -> f:(Symbol.t -> bool) -> bool
+
+  val is_dereference : t -> t -> bool
 end
 
 module Inherit_predicates
@@ -92,6 +94,11 @@ module Inherit_predicates
     Option.exists (I.component_opt x) ~f:(P.is_heap_symbol_where ~f)
   let is_heap_symbol x =
     Option.exists (I.component_opt x) ~f:P.is_heap_symbol
+  let is_dereference src dst =
+    Option.exists
+      (Option.both (I.component_opt src) (I.component_opt dst))
+      ~f:(Tuple2.uncurry P.is_dereference)
+  ;;
 end
 
 module Predicates : S_predicates with type t := t = struct
@@ -117,6 +124,14 @@ module Predicates : S_predicates with type t := t = struct
   ;;
   let is_heap_symbol_where l ~f = Option.exists ~f (as_heap_symbol l)
   let is_heap_symbol = is_heap_symbol_where ~f:(Fn.const true)
+
+  let is_dereference src dst =
+    match src, dst with
+    | Register_indirect { reg = src_reg; offset = Int 0 },
+      Register_direct   dest_reg ->
+      Register.equal src_reg dest_reg
+    | _, _ -> false
+  ;;
 end
 include Predicates
 

@@ -94,6 +94,10 @@ module type S_predicates = sig
   (** [is_heap_symbol_where loc ~f] tests whether [loc] is a
       heap symbol whose offset satisfies [f]. *)
   val is_heap_symbol_where : t -> f:(Symbol.t -> bool) -> bool
+
+  (** [is_dereference src dst] tests whether [src] is an indirect
+      location routing through a location equal to [dst]. *)
+  val is_dereference : t -> t -> bool
 end
 
 (** [Inherit_predicates] generates a [S_predicates] by inheriting it

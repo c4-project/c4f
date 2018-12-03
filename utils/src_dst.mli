@@ -50,6 +50,12 @@ type ('s, 'd) t =
 [@@deriving sexp]
 ;;
 
+(** [src sd] gets the source of [sd]. *)
+val src : ('s, 'd) t -> 's
+
+(** [dst sd] gets the source of [sd]. *)
+val dst : ('s, 'd) t -> 'd
+
 (** [Has_order] is a module signature for things that have a particular
     ordering for two-operand instructions. *)
 module type Has_order = sig

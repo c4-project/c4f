@@ -287,4 +287,51 @@ module Make (B : Basic) : S = struct
     include Ast.Instruction.On_locations
     module Elt = Ast.Location
   end
+
+  let as_move_operands {Ast.Instruction.opcode; operands; _} =
+    let open Option.Let_syntax in
+    let%bind ops =
+      match opcode with
+      | Opcode.Basic `Mov | Sized (`Mov, _) -> Some operands
+      | _ -> None
+    in
+    Dialect.to_src_dst ops
+  ;;
+
+  let as_location = function
+    | Ast.Operand.Location l -> Some l
+    | Bop _ | Immediate _ | String _ | Typ _ -> None
+  ;;
+
+  let as_immediate_symbol = function
+    | Ast.Operand.Immediate (Ast.Disp.Symbolic l) -> Some l
+    | Bop _ | Immediate _ | Location _ | String _ | Typ _ -> None
+  ;;
+
+  let as_move_src_symbol ins =
+    Option.(ins |> as_move_operands >>| Src_dst.src >>= as_immediate_symbol)
+  ;;
+
+  let as_move_src_location ins =
+    Option.(ins |> as_move_operands >>| Src_dst.src >>= as_location)
+  ;;
+
+  let as_move_dst_location ins =
+    Option.(ins |> as_move_operands >>| Src_dst.dst >>= as_location)
+  ;;
+
+  let location_move ~src ~dst =
+    (* TODO(@MattWindsor91): make sure src and dest are valid. *)
+    Or_error.return (
+      Ast.Instruction.make
+        ~opcode:(Basic `Mov)
+        ~operands:(
+          Dialect.of_src_dst
+            { src = Ast.Operand.Location src
+            ; dst = Location dst
+            }
+        )
+        ()
+    )
+    ;;
 end

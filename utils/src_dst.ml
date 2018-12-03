@@ -33,7 +33,7 @@ type ('s, 'd) t =
   { src : 's
   ; dst : 'd
   }
-  [@@deriving sexp]
+  [@@deriving sexp, fields]
 
 module type Has_order = sig
   val operand_order : order

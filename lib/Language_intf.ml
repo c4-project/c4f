@@ -102,6 +102,26 @@ module type Basic_instruction = sig
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
   val jump : string -> t
 
+  (** [location_move ~src ~dst] tries to build a move from location
+     [src] to location [dst].  It can fail if the resulting movement
+     is inexpressible in this language. *)
+  val location_move : src:loc -> dst:loc -> t Or_error.t
+
+  (** [as_move_src_symbol ins] tries to interpret [ins] as a move
+     instruction with an immediate symbol as its source, and, if it
+     is, returns that source. *)
+  val as_move_src_symbol : t -> sym option
+
+  (** [as_move_src_location ins] tries to interpret [ins] as a move
+      instruction with a location as its source, and, if it is,
+      returns that source. *)
+  val as_move_src_location : t -> loc option
+
+  (** [as_move_dst_location ins] tries to interpret [ins] as a move
+      instruction with a location as its destination, and, if it is,
+      returns that destination. *)
+  val as_move_dst_location : t -> loc option
+
   (** [abs_operands ins] gets the abstracted operands of instruction
      [ins]. *)
   val abs_operands : t -> Abstract.Operand.Bundle.t
@@ -129,8 +149,8 @@ module type Basic_location = sig
   ;;
 
   (** [make_heap_loc sym] creates a location referencing a symbolic heap
-      location named [sym]. *)
-  val make_heap_loc : string -> t
+      location [sym]. *)
+  val make_heap_loc : sym -> t
 end
 
 (** [Basic_constant] is the signature that must be implemented by act

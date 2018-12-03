@@ -96,6 +96,8 @@ module type S_predicates = sig
   type t
   include Location.S_predicates with type t := t
 
+  val as_location : t -> Location.t option
+
   val is_unknown : t -> bool
   val is_immediate_heap_symbol
     : t
@@ -122,6 +124,7 @@ module Inherit_predicates
 
   open Option
 
+  let as_location x = bind ~f:P.as_location (I.component_opt x)
   let is_unknown x = exists ~f:P.is_unknown (I.component_opt x)
   let is_immediate_heap_symbol x ~symbol_table =
     exists ~f:(P.is_immediate_heap_symbol ~symbol_table) (I.component_opt x)
@@ -174,7 +177,6 @@ module Inherit_properties
 end
 
 module Properties : S_properties with type t := t = struct
-  (* TODO(@MattWindsor91): expose this properly? *)
   let as_location = function
     | Location l -> Some l
     | _ -> None

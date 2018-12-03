@@ -53,8 +53,12 @@ module type S_predicates = sig
       responds negatively if the operand isn't a location. *)
   include Location.S_predicates with type t := t
 
-  (** [is_unknown] tests whether [operand] is unknown (has no abstract
-      representation). *)
+  (** [as_location operand] returns [Some loc] if [operand] is a
+      location with value [loc], and [None] otherwise. *)
+  val as_location : t -> Location.t option
+
+  (** [is_unknown operand] tests whether [operand] is unknown (has no
+     abstract representation). *)
   val is_unknown : t -> bool
 
   (** [is_immediate_heap_symbol operand ~symbol_table] returns [true]

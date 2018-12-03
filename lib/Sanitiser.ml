@@ -76,6 +76,7 @@ module Make (B : Basic)
   module Ctx_Pcon = Program_container.On_monad (Ctx)
   module Ctx_List = My_list.On_monad (Ctx)
   module Ctx_Zip  = Zipper.On_monad (Ctx)
+  module Ctx_Loc  = Lang.Instruction.On_locations.On_monad (Ctx)
 
   module Output = struct
     module Program = struct
@@ -95,16 +96,34 @@ module Make (B : Basic)
   let make_programs_uniform nop ps =
     B.Program_container.right_pad ~padding:nop ps
 
+  let symbol_from_string string =
+    Ctx.Monadic.return
+      (Result.of_option
+         (Lang.Symbol.of_string_opt string)
+         ~error:(
+           Error.create_s
+             [%message "Couldn't convert string to symbol" ~string]
+         )
+      )
+  ;;
+
+  let address_to_string = function
+    | Abstract.Location.Address.Int i -> Int.to_string i
+    | Symbol s -> s
+  ;;
+
   let change_stack_to_heap ins =
     let open Ctx.Let_syntax in
-    let%map name = Ctx.get_prog_name in
+    let%bind name = Ctx.get_prog_name in
     let f loc = match Lang.Location.as_stack_offset loc with
-      | Some (Abstract.Location.Address.Int i) ->
-        Lang.Location.make_heap_loc (sprintf "t%ss%d" name i)
-      | Some (Abstract.Location.Address.Symbol s) ->
-        Lang.Location.make_heap_loc (sprintf "t%ss%s" name s)
-      | None -> loc
-    in Lang.Instruction.On_locations.map ~f ins
+      | Some offset ->
+        let symbol_str =
+          sprintf "t%ss%s" name (address_to_string offset)
+        in
+        let%map symbol = symbol_from_string symbol_str in
+        Lang.Location.make_heap_loc symbol
+      | None -> Ctx.return loc
+    in Ctx_Loc.map_m ~f ins
   ;;
 
   (** [warn_unknown_instructions stm] emits warnings for each
@@ -223,10 +242,7 @@ module Make (B : Basic)
   (** [sanitise_all_locs loc] iterates location sanitisation over
      every location in [loc], threading the context through
      monadically. *)
-  let sanitise_all_locs =
-    let module Loc = Lang.Instruction.On_locations.On_monad (Ctx) in
-    Loc.map_m ~f:sanitise_loc
-  ;;
+  let sanitise_all_locs = Ctx_Loc.map_m ~f:sanitise_loc
 
   (** [sanitise_ins] performs sanitisation at the single instruction
       level. *)
@@ -379,85 +395,158 @@ module Make (B : Basic)
       ~finish:(fun () zipper -> Ctx.return (Zipper.to_list zipper))
   ;;
 
-  (*
   module Deref_chain_elimination = struct
     let is_move =
-      Abstract.Instruction.has_opcode
+      Lang.Instruction.has_opcode
         ~opcode:Abstract.Instruction.Opcode.Move
     ;;
 
-    let operands_as_chain_start src dst symbol_table =
+    let operands_as_chain_start ins symbol_table { Src_dst.src; dst } =
       let open Option.Let_syntax in
       let is_immediate_heap_src =
         Abstract.Operand.is_immediate_heap_symbol ~symbol_table src
       in
-      let%bind dst = Option.some_if is_immediate_heap_src dst in
-      match dst with
-      | Abstract.Operand.Location loc -> Some loc
-      | _ -> None
+      let%bind dst_loc = Abstract.Operand.as_location dst in
+      Option.some_if is_immediate_heap_src (ins, dst_loc)
     ;;
 
-    let instruction_as_chain_start ins symbol_table =
+    let as_move_with_abstract_operands ins =
       let open Option.Let_syntax in
       let%bind ins = Option.some_if (is_move ins) ins in
-      match Abstract.Instruction.operands ins with
-      | Src_dst { src; dst } ->
-        operands_as_chain_start src dst symbol_table
+      match Lang.Instruction.operands ins with
+      | Src_dst sd -> Some sd
       | _ -> None
     ;;
 
-    let as_chain_start stm =
-      Ctx.(
-        get_symbol_table >>| fun symbol_table ->
-        match stm with
-        | Abstract.Statement.Instruction ins ->
-          instruction_as_chain_start ins symbol_table
-        | _ -> None
+    let instruction_as_chain_start symbol_table ins =
+      Option.(
+        ins
+        |> as_move_with_abstract_operands
+        >>= operands_as_chain_start ins symbol_table
       )
     ;;
 
+    let as_chain_start symbol_table stm =
+      Lang.Statement.On_instructions.find_map stm
+        ~f:(instruction_as_chain_start symbol_table)
+    ;;
 
-    let as_chain_item stm src_loc =
-      Ctx.(
-        get_symbol_table >>| fun symbol_table ->
-        match stm with
-        | Abstract.Statement.Instruction ins ->
-          instruction_as_chain_item ins symbol_table
-        | _ -> None
+    let locations_as_chain_end ins src last =
+      if Abstract.Location.is_dereference src last
+      then Some (`End ins)
+      else None
+    ;;
+
+    let locations_as_chain_item ins src dst last =
+      if Abstract.Location.equal src last
+      then Some (`Step dst)
+      else locations_as_chain_end ins src last
+    ;;
+
+    let operands_as_chain_item ins last_loc { Src_dst.src; dst } =
+      let open Option.Let_syntax in
+      let%bind src_loc = Abstract.Operand.as_location src in
+      let%bind dst_loc = Abstract.Operand.as_location dst in
+      locations_as_chain_item ins src_loc dst_loc last_loc
+    ;;
+
+    let instruction_as_chain_item last_loc ins =
+      Option.(
+        ins
+        |> as_move_with_abstract_operands
+        >>= operands_as_chain_item ins last_loc
       )
     ;;
 
-    let start_mark  = 1
-    let finish_mark = 2
+    let as_chain_item stm last_loc =
+      Lang.Statement.On_instructions.find_map stm
+        ~f:(instruction_as_chain_item last_loc)
+    ;;
 
-    let variable_deref_chain_iter_find current zipper =
+    let start_mark = 1
+
+    let variable_deref_chain_iter_find symbol_table current =
+      match as_chain_start symbol_table current with
+      | Some (ins, dst) -> `Mark (start_mark, current, `Found (ins, dst))
+      | None            -> `Swap (current, `Not_found)
+    ;;
+
+    let make_sanitised_move first_move final_move =
+      let open Option.Let_syntax in
+      Lang.Instruction.(
+        let%bind src_sym = as_move_src_symbol   first_move
+        and      dst     = as_move_dst_location final_move in
+        let      src     = Lang.Location.make_heap_loc src_sym in
+        let%map  ins = Or_error.ok (location_move ~src ~dst) in
+        Lang.Statement.instruction ins
+      )
+    ;;
+
+    module Zip_opt = Zipper.On_monad (Option)
+
+    let make_truncated_zipper zipper first_move final_move =
+      let open Option.Let_syntax in
+      let%bind move = make_sanitised_move first_move final_move in
+      zipper
+      |> Zipper.push ~value:move
+      |> Zip_opt.delete_to_mark_m
+        ~mark:start_mark ~on_empty:(Fn.const None)
+    ;;
+
+    let handle_complete_chain current zipper first_src final_dst =
+      (** TODO(@MattWindsor91): propagate errors here as warnings. *)
+      let zipper' =
+        Option.value ~default:(Zipper.push zipper ~value:current)
+          (make_truncated_zipper zipper first_src final_dst)
+      in `Stop zipper'
+    ;;
+
+    let handle_broken_chain current zipper =
+      `Stop (Zipper.push zipper ~value:current)
+    ;;
+
+    let variable_deref_chain_iter_process first_move last_loc current zipper =
+      match as_chain_item current last_loc with
+      | Some (`Step next_loc) ->
+        `Swap (current, `Found (first_move, next_loc))
+      | Some (`End final_move) ->
+        handle_complete_chain current zipper first_move final_move
+      | None -> handle_broken_chain current zipper
+    ;;
+
+    let variable_deref_chain_iter state current zipper =
+      Ctx.(
+        get_symbol_table >>| fun symbol_table ->
+        match state with
+        | `Not_found ->
+          variable_deref_chain_iter_find
+            symbol_table current
+        | `Found (first_src, last_loc) ->
+          variable_deref_chain_iter_process
+            first_src last_loc current zipper
+      )
+    ;;
+
+    let run_once_on_zipper prog_zipper =
+      Ctx_Zip.fold_m_until prog_zipper
+        ~f:variable_deref_chain_iter
+        ~init:`Not_found
+        ~finish:(fun _ zipper -> Ctx.return zipper)
+    ;;
+
+    let rec mu zipper =
       let open Ctx.Let_syntax in
-      let abs_current = Lang.Statement.abstract current in
-      match%map as_chain_start abs_current with
-      | Some loc -> `Mark (start_mark, `Found loc)
-      | None     -> `Replace (current, `Not_found)
+      if Zipper.right_length zipper = 0
+      then return zipper
+      else (
+        let%bind zipper' = run_once_on_zipper zipper in
+        assert Zipper.(right_length zipper' < right_length zipper);
+        mu zipper'
+      )
     ;;
 
-  let variable_deref_chain_iter_process loc current zipper =
-  ;;
-
-  let variable_deref_chain_iter state current zipper =
-
-    match state with
-    | `Not_found_yet ->
-      variable_deref_chain_iter_find num_removed abs_current zipper
-    | `Found var ->
-      variable_deref_chain_iter_process
-        var num_removed abs_current zipper
-    ;;
-
-  let simplify_variable_deref_chains prog_zipper =
-    Ctx_Zip.foldM_until prog_zipper
-      ~f:variable_deref_chain_iter
-      ~init:`Not_found_yet
-      ~finish:(fun _ zipper -> Ctx.return zipper)
-  ;;
-  end *)
+    let run prog = Ctx.(prog |> Zipper.of_list |> mu >>| Zipper.to_list)
+  end
 
   let update_symbol_table
       (prog : Lang.Statement.t list) =
@@ -473,6 +562,16 @@ module Make (B : Basic)
     Ctx.(prog |> update_symbol_table >>= fun _ -> get_symbol_table)
   ;;
 
+  let generate_and_add_end_label (prog : Lang.Statement.t list)
+    : (Lang.Statement.t list) Ctx.t =
+    let open Ctx.Let_syntax in
+      let%bind progname = Ctx.get_prog_name in
+      let prefix = "END" ^ progname in
+      let%bind lbl = Ctx.make_fresh_label prefix in
+      let%map () = Ctx.set_end_label lbl in
+      prog @ [Lang.Statement.label lbl]
+  ;;
+
   (** [add_end_label] adds an end-of-program label to the current
      program. *)
   let add_end_label (prog : Lang.Statement.t list)
@@ -481,12 +580,7 @@ module Make (B : Basic)
     (* Don't generate duplicate endlabels! *)
     match%bind Ctx.get_end_label with
     | Some _ -> return prog
-    | None ->
-      let%bind progname = Ctx.get_prog_name in
-      let prefix = "END" ^ progname in
-      let%bind lbl = Ctx.make_fresh_label prefix in
-      let%map () = Ctx.set_end_label lbl in
-      prog @ [Lang.Statement.label lbl]
+    | None -> generate_and_add_end_label prog
   ;;
 
   (** [remove_fix prog] performs a loop of statement-removing
@@ -520,6 +614,7 @@ module Make (B : Basic)
       (* The language hook might have invalidated the symbol
          tables. *)
       >>= update_symbol_table
+      >>= (SimplifyLitmus |-> Deref_chain_elimination.run)
       (* Need to sanitise statements first, in case the sanitisation
          pass makes irrelevant statements (like jumps) relevant
          again. *)
