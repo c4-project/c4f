@@ -31,11 +31,11 @@ let warn_if_not_tracking_symbols (o : Output.t) = function
     Format.fprintf o.wf
       "@[%a@]@."
       (Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp)
-      [ "The set of locations being tracked from the C file is empty."
+      [ "The set of known C variables is empty."
       ; "This can lead to `act` making incorrect assumptions;"
       ; "for example, it may fail to work out which assembly symbols"
       ; "refer to heap locations."
-      ; "To fix this, specify `-track 'symbol1,symbol2,etc'`."
+      ; "To fix this, specify `-cvars 'symbol1,symbol2,etc'`."
       ]
   | _ :: _ -> ()
 ;;
