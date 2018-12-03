@@ -22,36 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** [Sanitiser_pass] contains an enumeration [t] of high-level passes
-   that can be enabled or disabled. *)
+(** [Sanitiser_base] contains the base signatures shared by each
+    sanitiser pass. *)
 
-open Utils
-
-(** [Pass] enumerates the various high-level sanitisation passes. *)
-type t =
-  (* Run language-specific hooks. *)
-  | LangHooks
-  (* Mangle symbols to ensure litmus tools can lex them. *)
-  | MangleSymbols
-  (* Remove program boundaries.  (If this pass isn't active,
-     program boundaries are retained even if they're not
-     jumped to. *)
-  | RemoveBoundaries
-  (* Remove elements that have an effect in the assembly, but said
-     effect isn't captured in the litmus test. *)
-  | RemoveLitmus
-  (* Remove elements with no (direct) effect in the assembly. *)
-  | RemoveUseless
-  (* Simplify elements that aren't directly understandable by
-     litmus tools. *)
-  | SimplifyLitmus
-  (* Warn about things the sanitiser doesn't understand. *)
-  | Warn
-
-(** We include the usual enum extensions for [Pass]. *)
-include Enum.Extension_table with type t := t
-
-(** [explain] collects passes that are useful for explaining an
-    assembly file without modifying its semantics too much. *)
-val explain : Set.t
-
+include (module type of Sanitiser_base_intf)

@@ -25,18 +25,15 @@
 open Core_kernel
 open Utils
 
-module type Basic = sig
-  module Lang : Language.S
-  module Ctx : Sanitiser_ctx.S with module Lang := Lang
-end
-
-module type S = sig
-  include Basic
-
-  val run : Lang.Statement.t list -> Lang.Statement.t list Ctx.t
-end
-
 module Portable = struct
+  module Zip_opt = Zipper.On_monad (Option)
+
+  type 'ins chain_item =
+    | End of 'ins
+    | Step of Abstract.Location.t
+  [@@deriving sexp]
+  ;;
+
   let operands_as_chain_start ins symbol_table { Src_dst.src; dst } =
     let open Option.Let_syntax in
     let is_immediate_heap_src =
@@ -46,26 +43,114 @@ module Portable = struct
     Option.some_if is_immediate_heap_src (ins, dst_loc)
   ;;
 
-  let locations_as_chain_end ins src last =
-    if Abstract.Location.is_dereference src last
-    then Some (`End ins)
+  let chain_end_of_locations ins src last_dst =
+    if Abstract.Location.is_dereference src last_dst
+    then Some (End ins)
     else None
   ;;
 
-  let locations_as_chain_item ins src dst last =
-    if Abstract.Location.equal src last
-    then Some (`Step dst)
-    else locations_as_chain_end ins src last
+  let chain_item_of_locations ins locs last_dst =
+    let src = Src_dst.src locs in
+    if Abstract.Location.equal src last_dst
+    then Some (Step (Src_dst.dst locs))
+    else chain_end_of_locations ins src last_dst
+  ;;
+
+  let%expect_test "chain_item_of_locations: chain step" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp
+        (Abstract.Location.(
+            chain_item_of_locations 10
+              { src = Heap (Address.Int 20)
+              ; dst = Heap (Address.Int 10)
+              }
+              (Heap (Address.Int 20))
+          ) : int chain_item option)];
+    [%expect {| ((Step (Heap (Int 10)))) |}]
+  ;;
+
+  let%expect_test "chain_item_of_locations: chain end" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp
+        (Abstract.Location.(
+            chain_item_of_locations 10
+              { src = Register_indirect
+                    { reg = General "eax"; offset = Int 0 }
+              ; dst = Heap (Address.Int 10)
+              }
+              (Register_direct (General "eax"))
+          ) : int chain_item option)];
+    [%expect {| ((End 10)) |}]
+  ;;
+
+  let%expect_test "chain_item_of_locations: chain break" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp
+        (Abstract.Location.(
+            chain_item_of_locations 10
+              { src = Register_indirect
+                    { reg = General "eax"; offset = Int 0 }
+              ; dst = Heap (Address.Int 10)
+              }
+              (Register_direct (General "esi"))
+          ) : int chain_item option)];
+    [%expect {| () |}]
+  ;;
+
+  let chain_item_of_operands ins last_dst { Src_dst.src; dst } =
+    let open Option.Let_syntax in
+    let%bind src_loc = Abstract.Operand.as_location src in
+    let%bind dst_loc = Abstract.Operand.as_location dst in
+    chain_item_of_locations ins
+      { src = src_loc; dst = dst_loc } last_dst
+  ;;
+
+  let start_mark = 1
+
+  let replace_chain_with value zipper =
+    zipper
+    |> Zipper.push ~value
+    |> Zip_opt.delete_to_mark_m
+      ~mark:start_mark ~on_empty:(Fn.const None)
+  ;;
+
+  let%expect_test "replace_chain_with_value: positive" =
+    let open Option.Monad_infix in
+    let result =
+      Zipper.of_list [ 10; 40; 32; 9; 174; -12 ]
+      |> Zip_opt.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 32 *)
+      >>= Zip_opt.mark_m ~mark:start_mark ~on_empty:(Fn.const None)
+      >>= Zip_opt.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 174 *)
+      >>= replace_chain_with 64
+      >>| Zipper.to_list
+    in
+    Sexp.output_hum Out_channel.stdout
+      [%sexp (result : int list option) ];
+    [%expect {| ((10 40 64 174 -12)) |}]
+  ;;
+
+  let%expect_test "replace_chain_with_value: missing mark" =
+    let open Option.Monad_infix in
+    let result =
+      Zipper.of_list [ 10; 40; 32; 9; 174; -12 ]
+      |> Zip_opt.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 32 *)
+      >>= Zip_opt.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 174 *)
+      >>= replace_chain_with 64
+      >>| Zipper.to_list
+    in
+    Sexp.output_hum Out_channel.stdout
+      [%sexp (result : int list option) ];
+    [%expect {| () |}]
   ;;
 end
 
-module Make (B : Basic) : S with module Lang := B.Lang
-                             and module Ctx := B.Ctx = struct
+module Make (B : Sanitiser_base.Basic) :
+  Sanitiser_base.S_program with module Lang := B.Lang
+                            and module Ctx := B.Ctx = struct
   include B
   include Portable
 
-  module Ctx_Zip  = Zipper.On_monad (Ctx)
-  module Zip_opt = Zipper.On_monad (Option)
+  module Ctx_Zip = Zipper.On_monad (Ctx)
 
   let is_move =
     Lang.Instruction.has_opcode
@@ -93,18 +178,11 @@ module Make (B : Basic) : S with module Lang := B.Lang
       ~f:(instruction_as_chain_start symbol_table)
   ;;
 
-  let operands_as_chain_item ins last_loc { Src_dst.src; dst } =
-    let open Option.Let_syntax in
-    let%bind src_loc = Abstract.Operand.as_location src in
-    let%bind dst_loc = Abstract.Operand.as_location dst in
-    locations_as_chain_item ins src_loc dst_loc last_loc
-  ;;
-
   let instruction_as_chain_item last_loc ins =
     Option.(
       ins
       |> as_move_with_abstract_operands
-      >>= operands_as_chain_item ins last_loc
+      >>= chain_item_of_operands ins last_loc
     )
   ;;
 
@@ -113,9 +191,7 @@ module Make (B : Basic) : S with module Lang := B.Lang
       ~f:(instruction_as_chain_item last_loc)
   ;;
 
-  let start_mark = 1
-
-  let variable_deref_chain_iter_find symbol_table current =
+  let find_chain_start symbol_table current =
     match as_chain_start symbol_table current with
     | Some (ins, dst) -> `Mark (start_mark, current, `Found (ins, dst))
     | None            -> `Swap (current, `Not_found)
@@ -132,20 +208,17 @@ module Make (B : Basic) : S with module Lang := B.Lang
     )
   ;;
 
-  let make_truncated_zipper zipper first_move final_move =
+  let make_sanitised_zipper zipper first_move final_move =
     let open Option.Let_syntax in
     let%bind move = make_sanitised_move first_move final_move in
-    zipper
-    |> Zipper.push ~value:move
-    |> Zip_opt.delete_to_mark_m
-      ~mark:start_mark ~on_empty:(Fn.const None)
+    replace_chain_with move zipper
   ;;
 
   let handle_complete_chain current zipper first_src final_dst =
     (** TODO(@MattWindsor91): propagate errors here as warnings. *)
     let zipper' =
       Option.value ~default:(Zipper.push zipper ~value:current)
-        (make_truncated_zipper zipper first_src final_dst)
+        (make_sanitised_zipper zipper first_src final_dst)
     in `Stop zipper'
   ;;
 
@@ -153,38 +226,35 @@ module Make (B : Basic) : S with module Lang := B.Lang
     `Stop (Zipper.push zipper ~value:current)
   ;;
 
-  let variable_deref_chain_iter_process first_move last_loc current zipper =
+  let find_chain_step first_move last_loc current zipper =
     match as_chain_item current last_loc with
-    | Some (`Step next_loc) ->
+    | Some (Step next_loc) ->
       `Swap (current, `Found (first_move, next_loc))
-    | Some (`End final_move) ->
+    | Some (End final_move) ->
       handle_complete_chain current zipper first_move final_move
     | None -> handle_broken_chain current zipper
   ;;
 
-  let variable_deref_chain_iter state current zipper =
+  let chain_iter state current zipper =
     Ctx.(
       get_symbol_table >>| fun symbol_table ->
       match state with
-      | `Not_found ->
-        variable_deref_chain_iter_find
-          symbol_table current
-      | `Found (first_src, last_loc) ->
-        variable_deref_chain_iter_process
-          first_src last_loc current zipper
+      | `Not_found -> find_chain_start symbol_table current
+      | `Found (first_src, last_dst) ->
+        find_chain_step first_src last_dst current zipper
     )
   ;;
 
   let run_once_on_zipper prog_zipper =
     Ctx_Zip.fold_m_until prog_zipper
-      ~f:variable_deref_chain_iter
+      ~f:chain_iter
       ~init:`Not_found
       ~finish:(fun _ zipper -> Ctx.return zipper)
   ;;
 
   let rec mu zipper =
     let open Ctx.Let_syntax in
-    if Zipper.right_length zipper = 0
+    if Zipper.is_at_end zipper
     then return zipper
     else (
       let%bind zipper' = run_once_on_zipper zipper in
@@ -193,5 +263,7 @@ module Make (B : Basic) : S with module Lang := B.Lang
     )
   ;;
 
-  let run prog = Ctx.(prog |> Zipper.of_list |> mu >>| Zipper.to_list)
+  let on_program prog =
+    Ctx.(prog |> Zipper.of_list |> mu >>| Zipper.to_list)
+  ;;
 end

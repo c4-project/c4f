@@ -89,6 +89,10 @@ val to_list : 'a t -> 'a list
    so on. *)
 val push : 'a t -> value:'a -> 'a t
 
+(** [push_left zipper ~value] pushes [value] into [zipper] just to the
+   left of the cursor. *)
+val push_left : 'a t -> value:'a -> 'a t
+
 (** [pop_opt zipper] returns [None] if [zipper] has no cursor, or
     [Some (a, zipper')] where [a] is [zipper]'s cursor and [zipper']
     is the new zipper formed by removing [a]. *)
@@ -106,6 +110,14 @@ val peek_opt : ?steps:int -> 'a t -> 'a option
 val left_length : 'a t -> int
 (** [right_length zipper] gets the length of [zipper]'s right list. *)
 val right_length : 'a t -> int
+
+(** [is_at_start zipper] tests whether [zipper]'s left list is
+   empty. *)
+val is_at_start : 'a t -> bool
+
+(** [is_at_end zipper] tests whether [zipper]'s right list is
+   empty. *)
+val is_at_end : 'a t -> bool
 
 (** [fold_outcome] is the type of instructions returned by functions
    used with [fold_untilM] and [fold_until]. *)

@@ -63,3 +63,4 @@ let%expect_test "all passes accounted for" =
     remove-useless
     simplify-litmus
     warn |}]
+;;

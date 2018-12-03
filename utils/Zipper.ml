@@ -117,6 +117,30 @@ let push zipper ~value =
 let left_length zipper = List.length zipper.left
 let right_length zipper = List.length zipper.right
 
+let is_at_start zipper = List.is_empty zipper.left
+
+let%expect_test "is_at_start: positive" =
+  printf "%b" (is_at_start (make ~left:[] ~right:[1; 2; 3]));
+  [%expect {| true |}]
+;;
+
+let%expect_test "is_at_start: negative" =
+  printf "%b" (is_at_start (make ~left:[1] ~right:[2; 3]));
+  [%expect {| false |}]
+;;
+
+let is_at_end zipper = List.is_empty zipper.right
+
+let%expect_test "is_at_end: positive" =
+  printf "%b" (is_at_end (make ~left:[1; 2; 3] ~right:[]));
+  [%expect {| true |}]
+;;
+
+let%expect_test "is_at_end: negative" =
+  printf "%b" (is_at_end (make ~left:[1; 2] ~right:[3]));
+  [%expect {| false |}]
+;;
+
 let rev_transfer amount ~src ~dst =
   if Int.(List.length src < amount)
   then None
@@ -243,6 +267,10 @@ module On_monad (M : Monad.S) = struct
        | None -> on_empty zipper)
   ;;
 
+  let push_left_m zipper ~value ~on_empty =
+    push zipper ~value |> step_m ~on_empty
+  ;;
+
   let map_m_head_cell zipper ~f ~on_empty =
     match head zipper with
     | None   -> on_empty zipper
@@ -276,8 +304,7 @@ module On_monad (M : Monad.S) = struct
         >>= step_m ~on_empty:M.return
         >>= fold_m_until ~f ~init:accum ~finish
       | `Swap (hd', accum) ->
-        push zipper' ~value:hd'
-        |>  step_m ~on_empty:M.return
+        push_left_m zipper' ~value:hd' ~on_empty:M.return
         >>= fold_m_until ~f ~init:accum ~finish
   ;;
 
@@ -448,6 +475,23 @@ let%expect_test "zipper: step backwards multiple, just-out-of-bounds" =
       (right_bound 3))) |}]
 ;;
 
+(* Pushing left shouldn't fail, since the right list will always be
+   nonempty after the push. *)
+let push_left = On_ident.push_left_m ~on_empty:(fun _ -> assert false)
+
+let%expect_test "push_left: example" =
+  let zipper = of_list [0; 2; -11; 64; 92; -92; 4; -6; -10] in
+  let lists =
+    zipper
+    |> push_left ~value:27
+    |> push_left ~value:53
+    |> to_two_lists
+  in
+  Sexp.output_hum Out_channel.stdout
+    [%sexp (lists : (int list * int list))];
+  [%expect {| ((53 27) (0 2 -11 64 92 -92 4 -6 -10)) |}]
+;;
+
 let fold_until = On_ident.fold_m_until
 
 let%expect_test "zipper: fold_until: partition on sign" =
@@ -521,9 +565,8 @@ let delete_to_mark zipper ~mark =
 let%expect_test "mark/delete_to_mark_incl: valid example" =
   let result = Or_error.(
     mark_recall_example ()
-    >>| push ~value:27
-    >>| push ~value:53
-    >>= step ~steps:2
+    >>| push_left ~value:27
+    >>| push_left ~value:53
     >>= delete_to_mark ~mark:1
     >>| to_two_lists
   )

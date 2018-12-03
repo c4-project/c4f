@@ -34,17 +34,7 @@
     to read events.  Chains corresponding to write events are harder
     to detect, but will be supported eventually. *)
 
-module type Basic = sig
-  module Lang : Language.S
-  module Ctx : Sanitiser_ctx.S with module Lang := Lang
-end
-
-module type S = sig
-  include Basic
-
-  val run : Lang.Statement.t list -> Lang.Statement.t list Ctx.t
-end
-
-module Make (B : Basic)
-  : S with module Lang := B.Lang and module Ctx := B.Ctx
+module Make (B : Sanitiser_base.Basic)
+  : Sanitiser_base.S_program with module Lang := B.Lang
+                              and module Ctx := B.Ctx
 ;;

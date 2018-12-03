@@ -463,7 +463,7 @@ module Make (B : Basic)
       (* The language hook might have invalidated the symbol
          tables. *)
       >>= update_symbol_table
-      >>= (SimplifyLitmus |-> Deref.run)
+      >>= (SimplifyLitmus |-> Deref.on_program)
       (* Need to sanitise statements first, in case the sanitisation
          pass makes irrelevant statements (like jumps) relevant
          again. *)

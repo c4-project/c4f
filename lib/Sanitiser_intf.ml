@@ -29,24 +29,19 @@ open Base
 (** [Hook] is an interface for language-specific hooks into the
     sanitisation process. *)
 module type Hook = sig
-  module Lang : Language.S
-  module Ctx : Sanitiser_ctx.S with module Lang := Lang
-
-  (** [on_program] is a hook mapped over each the program as a
-      whole. *)
-  val on_program : Lang.Statement.t list -> (Lang.Statement.t list) Ctx.t
-
-  (** [on_statement] is a hook mapped over each statement in the
-      program. *)
-  val on_statement : Lang.Statement.t -> Lang.Statement.t Ctx.t
-
-  (** [on_instruction] is a hook mapped over each instruction in the
-      program. *)
-  val on_instruction : Lang.Instruction.t -> Lang.Instruction.t Ctx.t
-
-  (** [on_location] is a hook mapped over each location in the
-      program. *)
-  val on_location : Lang.Location.t -> Lang.Location.t Ctx.t
+  include Sanitiser_base.Basic
+  include Sanitiser_base.S_program with module Lang := Lang
+                                     and module Ctx := Ctx
+  ;;
+  include Sanitiser_base.S_statement with module Lang := Lang
+                                       and module Ctx := Ctx
+  ;;
+  include Sanitiser_base.S_instruction with module Lang := Lang
+                                        and module Ctx := Ctx
+  ;;
+  include Sanitiser_base.S_location with module Lang := Lang
+                                     and module Ctx := Ctx
+  ;;
 end
 
 (** [Basic] describes the base functionality we need to supply to a
