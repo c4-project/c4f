@@ -34,6 +34,12 @@ type ('s, 'd) t =
   ; dst : 'd
   }
   [@@deriving sexp, fields]
+;;
+
+let get (sd : ('o, 'o) t) = function
+  | `Src -> sd.src
+  | `Dst -> sd.dst
+;;
 
 module type Has_order = sig
   val operand_order : order

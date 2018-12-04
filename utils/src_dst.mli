@@ -53,8 +53,13 @@ type ('s, 'd) t =
 (** [src sd] gets the source of [sd]. *)
 val src : ('s, 'd) t -> 's
 
-(** [dst sd] gets the source of [sd]. *)
+(** [dst sd] gets the destination of [sd]. *)
 val dst : ('s, 'd) t -> 'd
+
+(** [get sd pos] gets the the source of [sd] if [pos] is [`Src], or
+    the destination if [pos] is [`Dst].  The types of source and
+    destination must be the same. *)
+val get : ('o, 'o) t -> [< `Src | `Dst ] -> 'o
 
 (** [Has_order] is a module signature for things that have a particular
     ordering for two-operand instructions. *)
