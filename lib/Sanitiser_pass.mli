@@ -29,24 +29,31 @@ open Utils
 
 (** [Pass] enumerates the various high-level sanitisation passes. *)
 type t =
-  (* Run language-specific hooks. *)
-  | LangHooks
-  (* Mangle symbols to ensure litmus tools can lex them. *)
-  | MangleSymbols
-  (* Remove program boundaries.  (If this pass isn't active,
-     program boundaries are retained even if they're not
-     jumped to. *)
-  | RemoveBoundaries
-  (* Remove elements that have an effect in the assembly, but said
-     effect isn't captured in the litmus test. *)
-  | RemoveLitmus
-  (* Remove elements with no (direct) effect in the assembly. *)
-  | RemoveUseless
-  (* Simplify elements that aren't directly understandable by
-     litmus tools. *)
-  | SimplifyLitmus
-  (* Warn about things the sanitiser doesn't understand. *)
-  | Warn
+  | Language_hooks (** Run language-specific hooks.
+
+                       Said hooks may be further categorised into
+                      passes, so enabling [Language_hooks] on its own
+                      won't enable all language-specific passes. *)
+  | Mangle_symbols (** Mangle symbols to ensure litmus tools can lex
+                      them. *)
+  | Remove_boundaries (** Remove program boundaries.
+
+                          (If this pass isn't active, program
+                         boundaries are retained even if they're not
+                         jumped to. *)
+  | Remove_litmus (** Remove elements that have an effect in the
+                     assembly, but said effect isn't captured in the
+                     litmus test. *)
+  | Remove_useless (** Remove elements with no (direct) effect in the
+                      assembly. *)
+  | Simplify_deref_chains (** Replace 'deref chains' with direct
+                             movements.  This is a fairly heavyweight
+                             change. *)
+  | Simplify_litmus (** Perform relatively minor simplifications on
+                       elements that aren't directly understandable by
+                       litmus tools. *)
+  | Warn  (** Warn about things the sanitiser doesn't understand. *)
+;;
 
 (** We include the usual enum extensions for [Pass]. *)
 include Enum.Extension_table with type t := t
@@ -55,3 +62,6 @@ include Enum.Extension_table with type t := t
     assembly file without modifying its semantics too much. *)
 val explain : Set.t
 
+(** [standard] collects passes that are considered safe for
+    general litmusification. *)
+val standard : Set.t

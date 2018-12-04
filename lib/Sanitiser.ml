@@ -237,7 +237,7 @@ module Make (B : Basic)
     let open Ctx in
     let open Sanitiser_pass in
     return loc
-    >>= (LangHooks      |-> B.on_location)
+    >>= (Language_hooks |-> B.on_location)
 
   (** [sanitise_all_locs loc] iterates location sanitisation over
      every location in [loc], threading the context through
@@ -250,13 +250,13 @@ module Make (B : Basic)
     let open Ctx in
     let open Sanitiser_pass in
     return ins
-    >>= (LangHooks      |-> B.on_instruction)
-    >>= (Warn           |-> warn_unknown_instructions)
-    >>= (Warn           |-> warn_unsupported_operands)
+    >>= (Language_hooks  |-> B.on_instruction)
+    >>= (Warn            |-> warn_unknown_instructions)
+    >>= (Warn            |-> warn_unsupported_operands)
     >>= sanitise_all_locs
-    >>= (SimplifyLitmus |-> change_ret_to_end_jump)
-    >>= (SimplifyLitmus |-> change_stack_to_heap)
-    >>= (Warn           |-> warn_untranslated_operands)
+    >>= (Simplify_litmus |-> change_ret_to_end_jump)
+    >>= (Simplify_litmus |-> change_stack_to_heap)
+    >>= (Warn            |-> warn_untranslated_operands)
   ;;
 
   (** [mangle_identifiers progs] reduces identifiers across a program
@@ -295,7 +295,7 @@ module Make (B : Basic)
     let open Ctx in
     let open Sanitiser_pass in
     return stm
-    >>= (LangHooks |-> B.on_statement)
+    >>= (Language_hooks |-> B.on_statement)
     (* Do warnings after the language-specific hook has done any
        reduction necessary, but before we start making broad-brush
        changes to the statements. *)
@@ -351,7 +351,7 @@ module Make (B : Basic)
     let open Ctx.Let_syntax in
     let%bind symbol_table = Ctx.get_symbol_table in
     let%map remove_boundaries =
-      Ctx.is_pass_enabled Sanitiser_pass.RemoveBoundaries
+      Ctx.is_pass_enabled Sanitiser_pass.Remove_boundaries
     in
     let label_check =
       if remove_boundaries
@@ -440,9 +440,9 @@ module Make (B : Basic)
       Ctx.(
         prog
         |>  update_symbol_table
-        >>= (RemoveUseless |-> remove_generally_irrelevant_statements)
-        >>= (RemoveLitmus  |-> remove_litmus_irrelevant_statements)
-        >>= (RemoveUseless |-> remove_useless_jumps)
+        >>= (Remove_useless |-> remove_generally_irrelevant_statements)
+        >>= (Remove_litmus  |-> remove_litmus_irrelevant_statements)
+        >>= (Remove_useless |-> remove_useless_jumps)
       )
     in
     proglen_fix mu prog
@@ -458,12 +458,12 @@ module Make (B : Basic)
       enter_program ~name prog
       (* Initial table population. *)
       >>= update_symbol_table
-      >>= (SimplifyLitmus |-> add_end_label)
-      >>= (LangHooks      |-> B.on_program)
+      >>= (Simplify_litmus |-> add_end_label)
+      >>= (Language_hooks  |-> B.on_program)
       (* The language hook might have invalidated the symbol
          tables. *)
       >>= update_symbol_table
-      >>= (SimplifyLitmus |-> Deref.on_program)
+      >>= (Simplify_deref_chains |-> Deref.on_program)
       (* Need to sanitise statements first, in case the sanitisation
          pass makes irrelevant statements (like jumps) relevant
          again. *)
@@ -552,7 +552,7 @@ module Make (B : Basic)
          instruction sanitisers have introduced invalid identifiers;
          and second, so that we know that the manglings agree across
          program boundaries.*)
-      >>= Ctx.(MangleSymbols |-> mangle_identifiers)
+      >>= Ctx.(Mangle_symbols |-> mangle_identifiers)
       >>= build_output c_symbols
     )
   ;;

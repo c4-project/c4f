@@ -26,41 +26,45 @@ open Utils
 
 module M = struct
   type t =
-    | LangHooks
-    | MangleSymbols
-    | RemoveBoundaries
-    | RemoveLitmus
-    | RemoveUseless
-    | SimplifyLitmus
+    | Language_hooks
+    | Mangle_symbols
+    | Remove_boundaries
+    | Remove_litmus
+    | Remove_useless
+    | Simplify_deref_chains
+    | Simplify_litmus
     | Warn
   [@@deriving enum, sexp]
 
   let table =
-    [ LangHooks       , "lang-hooks"
-    ; MangleSymbols   , "mangle-symbols"
-    ; RemoveBoundaries, "remove-boundaries"
-    ; RemoveLitmus    , "remove-litmus"
-    ; RemoveUseless   , "remove-useless"
-    ; SimplifyLitmus  , "simplify-litmus"
-    ; Warn            , "warn"
+    [ Language_hooks       , "language-hooks"
+    ; Mangle_symbols       , "mangle-symbols"
+    ; Remove_boundaries    , "remove-boundaries"
+    ; Remove_litmus        , "remove-litmus"
+    ; Remove_useless       , "remove-useless"
+    ; Simplify_deref_chains, "simplify-deref-chains"
+    ; Simplify_litmus      , "simplify-litmus"
+    ; Warn                 , "warn"
     ]
 end
 
 include M
 include Enum.Extend_table (M)
 
-let explain = Set.of_list [ RemoveUseless ]
-
 let%expect_test "all passes accounted for" =
   Format.printf "@[<v>%a@]@."
     (Format.pp_print_list ~pp_sep:Format.pp_print_cut pp)
     (all_list ());
   [%expect {|
-    lang-hooks
+    language-hooks
     mangle-symbols
     remove-boundaries
     remove-litmus
     remove-useless
+    simplify-deref-chains
     simplify-litmus
     warn |}]
 ;;
+
+let explain = Set.of_list [ Remove_useless ]
+let standard = all_set ()
