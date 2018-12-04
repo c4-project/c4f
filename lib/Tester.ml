@@ -198,7 +198,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
            let input =
              { inp     = `File (P_file.asm_path fs)
              ; outp    = `File (P_file.lita_path fs)
-             ; passes  = Sanitiser_pass.all_set ()
+             ; passes  = Sanitiser_pass.standard
              ; symbols = List.map ~f:snd locations
              }
            in

@@ -558,7 +558,7 @@ module Make (B : Basic)
   ;;
 
   let sanitise ?passes ?(symbols=[]) stms =
-    let passes' = Option.value ~default:(Sanitiser_pass.all_set ()) passes in
+    let passes' = Option.value ~default:(Sanitiser_pass.standard) passes in
     Ctx.(
       run
         (Monadic.return (B.split stms) >>= sanitise_with_ctx symbols)

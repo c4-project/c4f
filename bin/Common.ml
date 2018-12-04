@@ -130,7 +130,7 @@ let litmusify ?output_format (o : Output.t) inp outp symbols
   let input =
     { Asm_job.inp
     ; outp
-    ; passes = Sanitiser_pass.all_set ()
+    ; passes = Sanitiser_pass.standard
     ; symbols
     }
   in

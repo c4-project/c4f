@@ -73,7 +73,7 @@ let regress_explain =
 
 let regress_litmusify =
   regress_run_asm_many "Litmusifier" `Litmusify
-    (Sanitiser_pass.all_set ())
+    (Sanitiser_pass.standard)
 ;;
 
 let regress test_path =
