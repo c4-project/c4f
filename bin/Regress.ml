@@ -26,9 +26,27 @@ open Core
 open Lib
 open Utils
 
+type spec =
+  { cvars : string list
+  }
+[@@deriving sexp]
+;;
+
+let find_spec specs file =
+  file
+  |> List.Assoc.find specs ~equal:(String.Caseless.equal)
+  |> Result.of_option
+    ~error:(
+      Error.create_s
+        [%message "File mentioned in spec is missing" ~file]
+    )
+;;
+
 let regress_run_asm ((module L) : (module Asm_job.Runner))
-    path mode passes file =
+    path mode specs passes file =
   let open Or_error.Let_syntax in
+
+  let%bind spec = find_spec specs file in
 
   printf "## %s\n\n```\n" file;
   Out_channel.flush stdout;
@@ -37,7 +55,7 @@ let regress_run_asm ((module L) : (module Asm_job.Runner))
     { Asm_job.inp = `File (path ^/ file)
     ; outp = `Stdout
     ; passes
-    ; symbols = [] (* TODO(@MattWindsor91): exercise this? *)
+    ; symbols = spec.cvars
     }
   in
 
@@ -50,6 +68,37 @@ let regress_run_asm ((module L) : (module Asm_job.Runner))
   printf "```\n";
 ;;
 
+let read_specs path =
+  let spec_file = path ^/ "spec" in
+  Or_error.try_with
+    (fun () ->
+       Sexp.load_sexp_conv_exn spec_file
+         [%of_sexp: (string, spec) List.Assoc.t]
+    )
+;;
+
+let diff_to_error = function
+  | First file ->
+    Or_error.error_s
+      [%message "File mentioned in test spec, but doesn't exist"
+          ~file
+      ]
+  | Second file ->
+    Or_error.error_s
+      [%message "File in test directory, but doesn't have a spec"
+          ~file
+      ]
+;;
+
+let check_files_against_specs specs test_files =
+  let spec_set = specs |> List.map ~f:fst |> String.Set.of_list in
+  let files_set = test_files |> String.Set.of_list in
+  String.Set.symmetric_diff spec_set files_set
+  |> Sequence.map ~f:diff_to_error
+  |> Sequence.to_list
+  |> Or_error.combine_errors_unit
+;;
+
 let regress_run_asm_many modename mode passes test_path =
   let open Or_error.Let_syntax in
 
@@ -58,12 +107,14 @@ let regress_run_asm_many modename mode passes test_path =
   let emits = ["x86"; "att"] in
   let path = My_filename.concat_list ([test_path; "asm"] @ emits) in
   let%bind l = Language_support.asm_runner_from_emits emits in
-  let%bind testfiles = Io.Dir.get_files ~ext:"s" path in
-  let results = List.map testfiles
-      ~f:(regress_run_asm l path mode passes)
+  let%bind specs = read_specs path in
+  let%bind test_files = Io.Dir.get_files ~ext:"s" path in
+  let%bind () = check_files_against_specs specs test_files in
+  let results = List.map test_files
+      ~f:(regress_run_asm l path mode specs passes)
   in
   let%map () = Or_error.combine_errors_unit results in
-  printf "\nRan %d test(s).\n\n" (List.length testfiles)
+  printf "\nRan %d test(s).\n\n" (List.length test_files)
 ;;
 
 let regress_explain =
