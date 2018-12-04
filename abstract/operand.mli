@@ -61,6 +61,10 @@ module type S_predicates = sig
      abstract representation). *)
   val is_unknown : t -> bool
 
+  (** [is_immediate operand] tests whether [operand] is an immediate
+      value (an integer or symbol, etc.). *)
+  val is_immediate : t -> bool
+
   (** [is_immediate_heap_symbol operand ~symbol_table] returns [true]
      if any [operand] is a symbol in immediate position that,
      according to [syms], is a heap location.  This can mean that the

@@ -99,6 +99,7 @@ module type S_predicates = sig
   val as_location : t -> Location.t option
 
   val is_unknown : t -> bool
+  val is_immediate : t -> bool
   val is_immediate_heap_symbol
     : t
     -> symbol_table:Symbol.Table.t
@@ -126,6 +127,7 @@ module Inherit_predicates
 
   let as_location x = bind ~f:P.as_location (I.component_opt x)
   let is_unknown x = exists ~f:P.is_unknown (I.component_opt x)
+  let is_immediate x = exists ~f:P.is_immediate (I.component_opt x)
   let is_immediate_heap_symbol x ~symbol_table =
     exists ~f:(P.is_immediate_heap_symbol ~symbol_table) (I.component_opt x)
   ;;
@@ -192,6 +194,32 @@ module Properties : S_properties with type t := t = struct
   let is_unknown = function
     | Unknown -> true
     | Erroneous _ | Int _ | Location _ | Symbol _ | Other -> false
+  ;;
+
+  let is_immediate = function
+    | Int _ | Symbol _ -> true
+    | Other | Unknown | Location _ | Erroneous _ -> false
+  ;;
+
+  let%expect_test "is_immediate: integer" =
+    printf "%b" (is_immediate (Int 42));
+    [%expect {| true |}]
+  ;;
+
+  let%expect_test "is_immediate: symbol" =
+    printf "%b" (is_immediate (Symbol "keepo"));
+    [%expect {| true |}]
+  ;;
+
+  let%expect_test "is_immediate: location" =
+    printf "%b" (is_immediate (Location (Heap (Symbol "kappa"))));
+    [%expect {| false |}]
+  ;;
+
+
+  let%expect_test "is_immediate: unknown" =
+    printf "%b" (is_immediate Unknown);
+    [%expect {| false |}]
   ;;
 
   let is_immediate_heap_symbol o ~symbol_table = match o with
