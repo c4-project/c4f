@@ -22,41 +22,40 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** x86 language: instruction analysis
+(** Language abstraction layer: constant analysis
 
-    This is the part of the x86 language definition that implements
-    opcode and operand abstraction, as well as various instruction-level
-    constructors. *)
+    This module contains the interface act languages must implement
+    for constant analysis, [Basic]; the expanded interface the rest of
+    act gets, [S]; and a functor from one to the other, [Make]. *)
 
-(** [Basic] collects all of the prerequisite modules needed to make the
-    [Instruction] part of an x86 [Language.S] module. *)
+open Core_kernel
+
+(** [Basic] is the interface act languages must implement for
+    constant analysis. *)
 module type Basic = sig
-  module Dialect : Dialect.S
-  module Pretty : PP.Printer
-  module Symbol : Lib.Language_symbol.Basic
-    with type t := string
-  ;;
-  module Location : Lib.Language_location.Basic
-    with type t := Ast.Location.t
-  ;;
+  (** [t] is the type of constants. *)
+  type t [@@deriving sexp]
+
+  (** Languages must supply a pretty-printer for their constants. *)
+  include Pretty_printer.S with type t := t
+
+  (** [zero] is a constant representing numeric zero. *)
+  val zero : t
 end
 
-(** [S] is the signature of a module produced using [Make]. *)
+(** [S] is an expanded interface onto an act language's constant
+    analysis. *)
 module type S = sig
-  include Lib.Language_instruction.Basic
-    with type t = Ast.Instruction.t
-     and type con = Ast.Operand.t
-     and type sym = string
-     and type loc = Ast.Location.t
-  ;;
-
-  (** [make_jump_operand sym] turns [sym] into a jump operand.
-
-      This is, at time of writing, part of [Language.Basic] rather
-     than being part of the instruction setup, but this may change in
-     future. *)
-  val make_jump_operand : string -> Ast.Operand.t
+  include Basic
 end
 
-(** [Make (B)] generates a [S] from a [Basic] [B]. *)
-module Make : functor (B : Basic) -> S
+(** [Language_constant] is the interface exposed in the main mli
+   file. *)
+module type Language_constant = sig
+  module type Basic = Basic
+  module type S = S
+
+  (** [Make] produces an instance of [S] from an instance of
+     [Basic]. *)
+  module Make : functor (B : Basic) -> S with type t = B.t
+end

@@ -23,14 +23,13 @@
    SOFTWARE. *)
 
 open Core
-open Lib
 open Utils
 
 module type S = sig
   include Dialect.S
   include PP.Printer
   include
-    Language.S
+    Lib.Language.S
     with type Constant.t = Ast.Operand.t
      and type Location.t = Ast.Location.t
      and type Instruction.t = Ast.Instruction.t
@@ -183,7 +182,7 @@ module Make (T : Dialect.S) (P : PP.Printer) : S = struct
     end
   end
 
-  include Language.Make (Basic)
+  include Lib.Language.Make (Basic)
 
   let make_jump_operand = Basic.Instruction.make_jump_operand
 end

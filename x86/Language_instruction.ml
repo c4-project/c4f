@@ -32,14 +32,16 @@ module type Basic = sig
   module Dialect : Dialect.S
   module Pretty : PP.Printer
   module Symbol : Lib.Language_symbol.Basic with type t := string
-  module Location : Lib.Language.Basic_location with type t := Ast.Location.t
+  module Location : Lib.Language_location.Basic with type t := Ast.Location.t
 end
 
 module type S = sig
-  include Lib.Language.Basic_instruction with type t = Ast.Instruction.t
-                                          and type con = Ast.Operand.t
-                                          and type sym = string
-                                          and type loc = Ast.Location.t
+  include Lib.Language_instruction.Basic
+    with type t = Ast.Instruction.t
+     and type con = Ast.Operand.t
+     and type sym = string
+     and type loc = Ast.Location.t
+  ;;
 
   val make_jump_operand : string -> Ast.Operand.t
 end

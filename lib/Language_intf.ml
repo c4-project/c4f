@@ -23,156 +23,6 @@
 
 (** High-level interface to languages supported by act *)
 
-open Core
-open Utils
-
-(** [Basic_statement] is the signature that must be implemented by act
-   languages in regards to their statement types. *)
-module type Basic_statement = sig
-  (** [t] is the type of statements. *)
-  type t [@@deriving sexp]
-
-  (** [ins] is the type of instructions inside statements. *)
-  type ins
-
-  (** [sym] is the type of concrete symbols. *)
-  type sym
-
-  (** Languages must supply a pretty-printer for their statements. *)
-  include Pretty_printer.S with type t := t
-
-  (** They must allow traversal over symbols... *)
-  module On_symbols
-    : Traversable.Container0 with type elt := sym and type t := t
-  ;;
-
-  (** ...and over instructions. *)
-  module On_instructions
-    : Traversable.Container0 with type elt := ins and type t := t
-  ;;
-
-  include Abstract.Abstractable.S
-    with type t := t
-     and module Abs := Abstract.Statement
-  ;;
-
-  (** [empty] builds an empty statement. *)
-  val empty : unit -> t
-
-  (** [label] builds a label with the given symbol. *)
-  val label : string -> t
-
-  (** [instruction] builds an instruction statement. *)
-  val instruction : ins -> t
-end
-
-(** [Basic_instruction] is the signature that must be implemented by act
-   languages in regards to their instruction types. *)
-module type Basic_instruction = sig
-  (** [t] is the type of instructions. *)
-  type t [@@deriving sexp]
-
-  (** [con] is the type of constants. *)
-  type con
-
-  (** [loc] is the type of locations inside instructions. *)
-  type loc
-
-  (** [sym] is the type of concrete symbols. *)
-  type sym
-
-  (** Languages must supply a pretty-printer for their instructions. *)
-  include Pretty_printer.S with type t := t
-
-  (** [pp_operands f ins] pretty-prints only the instruction operands. *)
-  val pp_operands : Format.formatter -> t -> unit
-
-  include Abstract.Abstractable.S
-    with type t := t
-     and module Abs := Abstract.Instruction
-  ;;
-
-  (** They must allow traversal over symbols... *)
-  module On_symbols :
-    Traversable.Container0 with type elt := sym and type t := t
-  ;;
-
-  (** ...and over locations. *)
-  module On_locations :
-    Traversable.Container0 with type elt := loc and type t := t
-  ;;
-
-  (** [jump sym] builds an unconditional jump to symbol [sym]. *)
-  val jump : string -> t
-
-  (** [immediate_move ~src ~dst] tries to build a move of immediate
-     value [src] into location [dst].  It can fail if the resulting
-     movement is inexpressible in this language. *)
-  val immediate_move : src:con -> dst:loc -> t Or_error.t
-
-  (** [location_move ~src ~dst] tries to build a move from location
-     [src] to location [dst].  It can fail if the resulting movement
-     is inexpressible in this language. *)
-  val location_move : src:loc -> dst:loc -> t Or_error.t
-
-  (** [as_move_immediate ins pos] tries to interpret [ins] as a
-     move instruction with an immediate value (symbol, integer, etc)
-     in position [pos], and, if it is, returns that value. *)
-  val as_move_immediate : t -> [< `Src | `Dst ] -> con option
-
-  (** [as_move_symbol ins] tries to interpret [ins] as a move
-     instruction with an immediate symbol in position [pos], and, if
-     it is, returns that symbol. *)
-  val as_move_symbol : t -> [< `Src | `Dst ] -> sym option
-
-  (** [as_move_location ins] tries to interpret [ins] as a move
-      instruction with a location in position [pos], and, if it is,
-      returns that location. *)
-  val as_move_location : t -> [< `Src | `Dst ] -> loc option
-
-  (** [abs_operands ins] gets the abstracted operands of instruction
-     [ins]. *)
-  val abs_operands : t -> Abstract.Operand.Bundle.t
-end
-
-(** [Basic_location] is the signature that must be implemented by act
-   languages in regards to their location types. *)
-module type Basic_location = sig
-  type t [@@deriving sexp]
-
-  (** [sym] is the type of concrete symbols. *)
-  type sym
-
-  (** Languages must supply a pretty-printer for their locations. *)
-  include Pretty_printer.S with type t := t
-
-  (** They must allow traversal over symbols... *)
-  module On_symbols :
-    Traversable.Container0 with type elt := sym and type t := t
-  ;;
-
-  include Abstract.Abstractable.S
-    with type t := t
-     and module Abs := Abstract.Location
-  ;;
-
-  (** [make_heap_loc sym] creates a location referencing a symbolic heap
-      location [sym]. *)
-  val make_heap_loc : sym -> t
-end
-
-(** [Basic_constant] is the signature that must be implemented by act
-   languages in regards to their constant types. *)
-module type Basic_constant = sig
-  type t [@@deriving sexp]
-
-  (** Languages must supply a pretty-printer for their constants. *)
-  include Pretty_printer.S with type t := t
-
-  (** [zero] is a constant representing numeric zero. *)
-  val zero : t
-end
-
 (** [Basic_core] is the signature that act languages must implement
     in regards to miscellaneous facts about the language. *)
 module type Basic_core = sig
@@ -192,14 +42,19 @@ end
 module type Basic = sig
   include Basic_core
 
-  module Constant    : Basic_constant
+  module Constant    : Language_constant.Basic
   module Symbol      : Language_symbol.Basic
-  module Location    : Basic_location with type sym := Symbol.t
-  module Instruction : Basic_instruction with type con := Constant.t
-                                          and type loc := Location.t
-                                          and type sym := Symbol.t
-  module Statement   : Basic_statement with type ins := Instruction.t
-                                        and type sym := Symbol.t
+  module Location    : Language_location.Basic
+    with type sym := Symbol.t
+  module Instruction : Language_instruction.Basic
+    with type con := Constant.t
+     and type loc := Location.t
+     and type sym := Symbol.t
+  ;;
+  module Statement : Language_statement.Basic
+    with type ins := Instruction.t
+     and type sym := Symbol.t
+  ;;
 end
 
 (** [S] is the user-facing interface module for act languages.
@@ -208,73 +63,21 @@ end
 module type S = sig
   include Basic_core
 
-  module Constant : sig
-    include Basic_constant
-  end
-
+  module Constant : Language_constant.S
   module Symbol : Language_symbol.S
+  module Location : Language_location.S
+    with module Symbol = Symbol
+  ;;
+  module Instruction : Language_instruction.S
+    with module Constant = Constant
+     and module Location = Location
+     and module Symbol   = Symbol
+  ;;
 
-  module Location : sig
-    include Basic_location with type sym := Symbol.t
-
-    (** We can query abstract properties directly on the concrete
-       location type. *)
-    include Abstract.Location.S_predicates with type t := t
-  end
-
-  module Instruction : sig
-    include Basic_instruction with type con := Constant.t
-                               and type loc := Location.t
-                               and type sym := Symbol.t
-    (** We can query abstract properties directly on the concrete
-       instruction type. *)
-    include Abstract.Instruction.S_properties with type t := t
-
-    (** We can query abstract operand bundle properties on a concrete
-       instruction type, routing through [abs_operands]. *)
-    module On_operands :
-      Abstract.Operand.Bundle.S_properties
-        with type t := t
-    ;;
-  end
-
-  module Statement : sig
-    include Basic_statement with type ins := Instruction.t
-                             and type sym := Symbol.t
-    (** [is_unused_ordinary_label stm ~symbol_table] tests whether
-       [stm] is an unused (not-jumped-to) label that doesn't have
-       special meaning to act.  It uses [~symbol_table] in the same
-        way as [is_unused_label]. *)
-    val is_unused_ordinary_label
-      :  t
-      -> symbol_table:Abstract.Symbol.Table.t
-      -> bool
-    ;;
-
-    (** [is_program_boundary stm] tests whether [stm] is a program
-        boundary per act's conventions. *)
-    val is_program_boundary : t -> bool
-
-    (** We can query abstract properties
-        (and, transitively, abstract instruction properties)
-        directly on the concrete statement type. *)
-    include Abstract.Statement.S_properties with type t := t
-
-    (** [Extended_flag] expands [Abstract.Statement.Flag] with an
-       extra flag, representing program boundaries. *)
-    module Extended_flag : Abstract.Flag_enum.S with type t =
-      [ Abstract.Statement.Flag.t | `Program_boundary ]
-    ;;
-
-    (** [extended_flags stm symbol_table] behaves like
-        [flags], but can also return the new flags in [Extended_flag].
-    *)
-    val extended_flags
-      :  t
-      -> Abstract.Symbol.Table.t
-      -> Extended_flag.Set.t
-    ;;
-  end
+  module Statement : Language_statement.S
+    with module Instruction = Instruction
+     and module Symbol      = Symbol
+  ;;
 
   (** [symbols ~known_heap_symbols prog] calculates the symbol table
      for [prog].  It uses [known_heap_symbols] to help work out corner
@@ -289,11 +92,6 @@ end
 
 module type Language = sig
   module type Basic = Basic
-  module type Basic_constant = Basic_constant
-  module type Basic_location = Basic_location
-  module type Basic_instruction = Basic_instruction
-  module type Basic_statement = Basic_statement
-
   module type S = S
 
   (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
