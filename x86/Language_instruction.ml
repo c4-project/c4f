@@ -37,6 +37,7 @@ end
 
 module type S = sig
   include Lib.Language.Basic_instruction with type t = Ast.Instruction.t
+                                          and type con = Ast.Operand.t
                                           and type sym = string
                                           and type loc = Ast.Location.t
 
@@ -49,6 +50,7 @@ module Make (B : Basic) : S = struct
 
   type sym = string
   type loc = Ast.Location.t
+  type con = Ast.Operand.t
 
   let make_jump_operand jsym =
     Ast.(
@@ -308,30 +310,46 @@ module Make (B : Basic) : S = struct
     | Bop _ | Immediate _ | Location _ | String _ | Typ _ -> None
   ;;
 
-  let as_move_src_symbol ins =
-    Option.(ins |> as_move_operands >>| Src_dst.src >>= as_immediate_symbol)
+  let as_immediate = function
+    | Ast.Operand.Immediate _ as l -> Some l
+    | Bop _ | Location _ | String _ | Typ _ -> None
   ;;
 
-  let as_move_src_location ins =
-    Option.(ins |> as_move_operands >>| Src_dst.src >>= as_location)
+  let as_move_elt pos ins =
+    Option.(ins |> as_move_operands >>| (Fn.flip Src_dst.get pos))
   ;;
 
-  let as_move_dst_location ins =
-    Option.(ins |> as_move_operands >>| Src_dst.dst >>= as_location)
+  let as_move_immediate ins pos =
+    Option.(ins |> as_move_elt pos >>= as_immediate)
   ;;
 
-  let location_move ~src ~dst =
+  let as_move_symbol ins pos =
+    Option.(ins |> as_move_elt pos >>= as_immediate_symbol)
+  ;;
+
+  let as_move_location ins pos =
+    Option.(ins |> as_move_elt pos >>= as_location)
+  ;;
+
+  let make_move ~src ~dst =
     (* TODO(@MattWindsor91): make sure src and dest are valid. *)
     Or_error.return (
       Ast.Instruction.make
         ~opcode:(Basic `Mov)
-        ~operands:(
-          Dialect.of_src_dst
-            { src = Ast.Operand.Location src
-            ; dst = Location dst
-            }
-        )
+        ~operands:(Dialect.of_src_dst { src ; dst})
         ()
     )
-    ;;
+  ;;
+
+  let location_move ~src ~dst =
+    make_move
+      ~src:(Ast.Operand.Location src)
+      ~dst:(Location dst)
+  ;;
+
+  let immediate_move ~src ~dst =
+    make_move
+      ~src
+      ~dst:(Location dst)
+  ;;
 end

@@ -25,12 +25,10 @@
 open Core_kernel
 open Utils
 
-module Portable = struct
-  module Zip_opt = Zipper.On_monad (Option)
-
-  (** [state] is the internal state of the deref chain finder at any
-     given time, parametrised on the type of concrete instructions. *)
-  type 'ins state =
+module State = struct
+  (** [t] is the internal state of the deref chain finder at any
+      given time, parametrised on the type of concrete instructions. *)
+  type 'ins t =
     | Read of
         { first_target_src : 'ins
         ; last_target_dst  : Abstract.Location.t
@@ -44,72 +42,122 @@ module Portable = struct
   [@@deriving sexp]
   ;;
 
-  (** [chain_item] is the type returned by the chain item finder on
-     each valid chain item, parametrised on the type of concrete
-     instructions. *)
-  type 'ins chain_item =
+  let update_with_target state new_dst =
+    Some
+      (match state with
+       | Read  r -> Read  { r with last_target_dst = new_dst }
+       | Write w -> Write { w with last_target_dst = new_dst }
+      )
+  ;;
+
+  let update_with_value state new_dst = match state with
+    | Read _ -> None
+    | Write w -> Some (Write { w with last_value_dst = new_dst })
+  ;;
+
+  let to_write state first_value_src last_value_dst = match state with
+    | Read { first_target_src; last_target_dst } ->
+      Some (Write { first_target_src
+                  ; last_target_dst
+                  ; first_value_src
+                  ; last_value_dst
+                  })
+    | Write _ -> None
+  ;;
+
+  let initial first_target_src last_target_dst =
+    Read { first_target_src; last_target_dst }
+  ;;
+end
+
+(** [Chain_item] contains types and functions for interpreting
+   instructions as items in the middle of an ongoing deref chain. *)
+module Chain_item = struct
+  (** [t] is the type returned by the chain item finder on each valid
+     chain item, parametrised on the type of concrete instructions. *)
+  type 'ins t =
     | End of 'ins
+    | New_write of 'ins * Abstract.Location.t
     | Target_step of Abstract.Location.t
     | Value_step of Abstract.Location.t
   [@@deriving sexp]
   ;;
 
-  let operands_as_chain_start ins symbol_table { Src_dst.src; dst } =
-    let open Option.Let_syntax in
-    let is_immediate_heap_src =
-      Abstract.Operand.is_immediate_heap_symbol ~symbol_table src
-    in
-    let%bind dst_loc = Abstract.Operand.as_location dst in
-    Option.some_if is_immediate_heap_src (ins, dst_loc)
+  let is_read_end { Src_dst.src; _ } last_target_dst =
+    Abstract.Location.is_dereference src last_target_dst
   ;;
 
-  let is_chain_end { Src_dst.src; dst } = function
-    | Read { last_target_dst; _ } ->
-      Abstract.Location.is_dereference src last_target_dst
+  let is_write_end { Src_dst.src; dst }
+      ~last_target_dst ~last_value_dst =
+    Abstract.Location.(
+      is_dereference dst last_target_dst
+      && equal src last_value_dst
+    )
+  ;;
+
+  let%expect_test "is_write_end: valid write end" =
+    printf "%b"
+      (is_write_end
+         { src = Heap (Int 20)
+         ; dst = Register_indirect { reg = General "eax"; offset = Int 0 }
+         }
+         ~last_target_dst:(Register_direct (General "eax"))
+         ~last_value_dst:(Heap (Int 20))
+      );
+    [%expect {| true |}]
+  ;;
+
+  let is_end locs = function
+    | State.Read { last_target_dst; _ } ->
+      is_read_end locs last_target_dst
     | Write { last_target_dst; last_value_dst; _ } ->
-      Abstract.Location.is_dereference dst last_target_dst
-      && Abstract.Location.equal src last_value_dst
+      is_write_end locs ~last_target_dst ~last_value_dst
   ;;
 
-  let chain_end_of_locations ins locs state =
-    if is_chain_end locs state then Some (End ins) else None
+  let end_of_locations ins locs state =
+    if is_end locs state then Some (End ins) else None
   ;;
 
-  let chain_step_of_locations { Src_dst.src; dst } = function
-    | Read { last_target_dst; _ }
+  let step_of_locations { Src_dst.src; dst } = function
+    | State.Read { last_target_dst; _ }
     | Write { last_target_dst; _ }
-        when Abstract.Location.equal src last_target_dst ->
-        Some (Target_step dst)
+      when Abstract.Location.equal src last_target_dst ->
+      Some (Target_step dst)
+    | Write { last_value_dst; _ }
+      when Abstract.Location.equal src last_value_dst ->
+      Some (Value_step dst)
     | Read _ | Write _ -> None
   ;;
 
-  let chain_item_of_locations ins locs state =
+  let of_locations ins locs state =
+    (* Note: these two classifications overlap somewhat, so the
+       order of end before step is deliberate. *)
     My_option.first_some_of_thunks
-      [ (fun () -> chain_step_of_locations locs state)
-      ; (fun () -> chain_end_of_locations ins locs state)
+      [ (fun () -> end_of_locations ins locs state)
+      ; (fun () -> step_of_locations locs state)
       ]
   ;;
 
-  let%expect_test "chain_item_of_locations: read chain step" =
+  let%expect_test "of_locations: read chain step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
         (Abstract.Location.(
-            chain_item_of_locations 10
+            of_locations 10
               { src = Heap (Address.Int 20)
               ; dst = Heap (Address.Int 10)
               }
               (Read { first_target_src = 15
                     ; last_target_dst  = Heap (Address.Int 20)
                     })
-          ) : int chain_item option)];
+          ) : int t option)];
     [%expect {| ((Target_step (Heap (Int 10)))) |}]
   ;;
 
-  let%expect_test "chain_item_of_locations: read chain end" =
+  let%expect_test "of_locations: read chain end" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
         (Abstract.Location.(
-            chain_item_of_locations 10
+            of_locations 10
               { src = Register_indirect
                     { reg = General "eax"; offset = Int 0 }
               ; dst = Heap (Address.Int 10)
@@ -118,15 +166,15 @@ module Portable = struct
                     ; last_target_dst  =
                         (Register_direct (General "eax"))
                     })
-          ) : int chain_item option)];
+          ) : int t option)];
     [%expect {| ((End 10)) |}]
   ;;
 
-  let%expect_test "chain_item_of_locations: chain break" =
+  let%expect_test "of_locations: chain break" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
         (Abstract.Location.(
-            chain_item_of_locations 10
+            of_locations 10
               { src = Register_indirect
                     { reg = General "eax"; offset = Int 0 }
               ; dst = Heap (Address.Int 10)
@@ -135,16 +183,115 @@ module Portable = struct
                     ; last_target_dst  =
                         (Register_direct (General "esi"))
                     })
-          ) : int chain_item option)];
+          ) : int t option)];
     [%expect {| () |}]
   ;;
 
-  let chain_item_of_operands ins last_dst { Src_dst.src; dst } =
+
+  let%expect_test "of_locations: write chain target step" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp
+        (Abstract.Location.(
+            of_locations 10
+              { src = Heap (Address.Int 20)
+              ; dst = Heap (Address.Int 10)
+              }
+              (Write
+                 { first_target_src = 15
+                 ; first_value_src  = 25
+                 ; last_target_dst  = Heap (Address.Int 20)
+                 ; last_value_dst   = Heap (Address.Int 40)
+                 })
+          ) : int t option)];
+    [%expect {| ((Target_step (Heap (Int 10)))) |}]
+  ;;
+
+  let%expect_test "of_locations: write chain value step" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp
+        (Abstract.Location.(
+            of_locations 10
+              { src = Heap (Address.Int 40)
+              ; dst = Heap (Address.Int 10)
+              }
+              (Write
+                 { first_target_src = 15
+                 ; first_value_src  = 25
+                 ; last_target_dst  = Heap (Address.Int 20)
+                 ; last_value_dst   = Heap (Address.Int 40)
+                 })
+          ) : int t option)];
+    [%expect {| ((Value_step (Heap (Int 10)))) |}]
+  ;;
+
+  let%expect_test "of_locations: write chain end" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp
+        (Abstract.Location.(
+            of_locations 10
+              { src = Heap (Address.Int 10)
+              ; dst = Register_indirect
+                    { reg = General "eax"; offset = Int 0 }
+              }
+              (Write
+                 { first_target_src = 15
+                 ; first_value_src  = 25
+                 ; last_target_dst  =
+                        (Register_direct (General "eax"))
+                 ; last_value_dst   = Heap (Address.Int 10)
+                 })
+          ) : int t option)];
+    [%expect {| ((End 10)) |}]
+  ;;
+
+  let of_operands_as_locations ins { Src_dst.src; dst } state =
     let open Option.Let_syntax in
-    let%bind src_loc = Abstract.Operand.as_location src in
+    let%bind src_loc = Abstract.Operand.as_location src
+    and      dst_loc = Abstract.Operand.as_location dst in
+    of_locations ins { src = src_loc; dst = dst_loc } state
+  ;;
+
+  let as_possible_new_write ins { Src_dst.src; dst } =
+    if Abstract.Operand.is_immediate src
+    then (
+      let open Option.Let_syntax in
+      let%map dst_loc = Abstract.Operand.as_location dst in
+      New_write (ins, dst_loc)
+    ) else None
+  ;;
+
+  let%expect_test "as_possible_new_write: valid example" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp
+        (Abstract.Location.(
+            as_possible_new_write 10
+              { src = Int 32
+              ; dst = Location
+                    (Register_indirect
+                       { reg = General "eax"; offset = Int 0 })
+              }
+          ) : int t option)];
+    [%expect {| ((New_write 10 (Register_indirect (reg (General eax)) (offset (Int 0))))) |}]
+  ;;
+
+  let of_operands ins locs state =
+    My_option.first_some_of_thunks
+      [ (fun () -> of_operands_as_locations ins locs state)
+      ; (fun () -> as_possible_new_write ins locs)
+      ]
+  ;;
+end
+
+module Portable = struct
+  module Zip_opt = Zipper.On_monad (Option)
+
+  let operands_as_chain_start ins symbol_table { Src_dst.src; dst } =
+    let open Option.Let_syntax in
+    let is_immediate_heap_src =
+      Abstract.Operand.is_immediate_heap_symbol ~symbol_table src
+    in
     let%bind dst_loc = Abstract.Operand.as_location dst in
-    chain_item_of_locations ins
-      { src = src_loc; dst = dst_loc } last_dst
+    Option.some_if is_immediate_heap_src (ins, dst_loc)
   ;;
 
   let start_mark = 1
@@ -189,25 +336,25 @@ module Portable = struct
     `Stop (Zipper.push zipper ~value:current)
   ;;
 
-  let update_state_with_target state new_dst = match state with
-    | Read r -> Read { r with last_target_dst = new_dst }
-    | Write w -> Write { w with last_target_dst = new_dst }
+  let try_update_state_and_continue state_maybe current zipper =
+    match state_maybe with
+    | Some state' -> `Swap (current, `Found state')
+    | None -> handle_broken_chain current zipper
   ;;
 
-  let update_state_with_value state new_dst = match state with
-    | Read _ -> None
-    | Write w -> Some (Write { w with last_value_dst = new_dst })
-  ;;
-
-  let handle_target_step state current new_dst =
-    let state' = update_state_with_target state new_dst in
-    `Swap (current, `Found state')
+  let handle_target_step state current zipper new_dst =
+    let state_maybe = State.update_with_target state new_dst in
+    try_update_state_and_continue state_maybe current zipper
   ;;
 
   let handle_value_step state current zipper new_dst =
-    match update_state_with_value state new_dst with
-    | Some state' -> `Swap (current, `Found state')
-    | None -> handle_broken_chain current zipper
+    let state_maybe = State.update_with_value state new_dst in
+    try_update_state_and_continue state_maybe current zipper
+  ;;
+
+  let handle_new_write current zipper ins value_dst state =
+    let state_maybe = State.to_write state ins value_dst in
+    try_update_state_and_continue state_maybe current zipper
   ;;
 end
 
@@ -245,67 +392,84 @@ module Make (B : Sanitiser_base.Basic) :
       ~f:(instruction_as_chain_start symbol_table)
   ;;
 
-  let instruction_as_chain_item last_loc ins =
-    Option.(
-      ins
-      |> as_move_with_abstract_operands
-      >>= chain_item_of_operands ins last_loc
-    )
+  let instruction_as_chain_item state ins =
+    let open Option.Let_syntax in
+    let%bind locs = as_move_with_abstract_operands ins in
+    Chain_item.of_operands ins locs state
   ;;
 
-  let as_chain_item stm last_loc =
+  let as_chain_item stm state =
     Lang.Statement.On_instructions.find_map stm
-      ~f:(instruction_as_chain_item last_loc)
-  ;;
-
-  let make_state first_target_src last_target_dst =
-    Read { first_target_src; last_target_dst }
+      ~f:(instruction_as_chain_item state)
   ;;
 
   let find_chain_start symbol_table current =
     match as_chain_start symbol_table current with
     | Some (ins, dst) ->
-      let state = make_state ins dst in
+      let state = State.initial ins dst in
       `Mark (start_mark, current, `Found state)
     | None            -> `Swap (current, `Not_found)
   ;;
 
-  let make_sanitised_move first_move final_move =
+  module Direct_move = struct
+    let make_read first_move final_move =
+      let open Option.Let_syntax in
+      Lang.Instruction.(
+        let%bind src_sym = as_move_symbol   first_move `Src
+        and      dst     = as_move_location final_move `Dst in
+        let      src     = Lang.Location.make_heap_loc src_sym in
+        let%map  ins     = Or_error.ok (location_move ~src ~dst) in
+        Lang.Statement.instruction ins
+      )
+    ;;
+
+    let make_write first_move final_move =
+      let open Option.Let_syntax in
+      Lang.Instruction.(
+        let%bind src     = as_move_immediate first_move `Src
+        and      dst_sym = as_move_symbol final_move `Src in
+        let      dst     = Lang.Location.make_heap_loc dst_sym in
+        let%map  ins = Or_error.ok (immediate_move ~src ~dst) in
+        Lang.Statement.instruction ins
+      )
+    ;;
+
+    let make final_move = function
+      (* TODO(@MattWindsor91): propagate errors here as warnings. *)
+      | State.Read { first_target_src; _ } ->
+        make_read first_target_src final_move
+      | Write { first_value_src; first_target_src; _ } ->
+        make_write first_value_src first_target_src
+  ;;
+  end
+
+  let handle_complete_chain_opt zipper final_ins state =
     let open Option.Let_syntax in
-    Lang.Instruction.(
-      let%bind src_sym = as_move_src_symbol   first_move
-      and      dst     = as_move_dst_location final_move in
-      let      src     = Lang.Location.make_heap_loc src_sym in
-      let%map  ins = Or_error.ok (location_move ~src ~dst) in
-      Lang.Statement.instruction ins
-    )
+    let%bind move    = Direct_move.make final_ins state in
+    let%map  zipper' = replace_chain_with move zipper in
+    `Stop zipper'
+
+  let handle_complete_chain current zipper final_ins state =
+    Option.value
+      ~default:(`Stop (Zipper.push ~value:current zipper))
+      (handle_complete_chain_opt zipper final_ins state)
   ;;
 
-  let make_sanitised_zipper zipper first_move final_move =
-    let open Option.Let_syntax in
-    let%bind move = make_sanitised_move first_move final_move in
-    replace_chain_with move zipper
-  ;;
-
-  let handle_complete_chain current zipper final_ins = function
-    (* TODO(@MattWindsor91): propagate errors here as warnings. *)
-    | Read { first_target_src; _ } ->
-      let zipper' =
-        Option.value ~default:(Zipper.push zipper ~value:current)
-          (make_sanitised_zipper zipper first_target_src final_ins)
-      in `Stop zipper'
-    | Write _ -> failwith "unimplemented"
-  ;;
-
-  let find_chain_step state current zipper =
-    match as_chain_item current state with
-    | Some (Target_step new_dst) ->
-      handle_target_step state current new_dst
-    | Some (Value_step new_dst) ->
+  let handle_chain_item state current zipper = function
+    | Chain_item.Target_step new_dst ->
+      handle_target_step state current zipper new_dst
+    | Value_step new_dst ->
       handle_value_step state current zipper new_dst
-    | Some (End final_move) ->
+    | End final_move ->
       handle_complete_chain current zipper final_move state
-    | None -> handle_broken_chain current zipper
+    | New_write (ins, value_dst) ->
+      handle_new_write current zipper ins value_dst state
+  ;;
+
+  let find_next_chain_item state current zipper =
+    match as_chain_item current state with
+    | Some item -> handle_chain_item state current zipper item
+    | None      -> handle_broken_chain current zipper
   ;;
 
   let chain_iter state current zipper =
@@ -313,7 +477,7 @@ module Make (B : Sanitiser_base.Basic) :
       get_symbol_table >>| fun symbol_table ->
       match state with
       | `Not_found -> find_chain_start symbol_table current
-      | `Found state -> find_chain_step state current zipper
+      | `Found state -> find_next_chain_item state current zipper
     )
   ;;
 

@@ -40,7 +40,7 @@ module type S = sig
   val make_jump_operand : string -> Ast.Operand.t
 end
 
-module Make (T : Dialect.S) (P : PP.Printer) = struct
+module Make (T : Dialect.S) (P : PP.Printer) : S = struct
   include T
   include P
 

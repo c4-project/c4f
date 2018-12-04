@@ -40,8 +40,9 @@ end
 (** [S] is the signature of a module produced using [Make]. *)
 module type S = sig
   include Lib.Language.Basic_instruction with type t = Ast.Instruction.t
-                                      and type sym = string
-                                      and type loc = Ast.Location.t
+                                          and type con = Ast.Operand.t
+                                          and type sym = string
+                                          and type loc = Ast.Location.t
 
   (** [make_jump_operand sym] turns [sym] into a jump operand.
 

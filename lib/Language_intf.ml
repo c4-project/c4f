@@ -72,6 +72,9 @@ module type Basic_instruction = sig
   (** [t] is the type of instructions. *)
   type t [@@deriving sexp]
 
+  (** [con] is the type of constants. *)
+  type con
+
   (** [loc] is the type of locations inside instructions. *)
   type loc
 
@@ -102,25 +105,30 @@ module type Basic_instruction = sig
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
   val jump : string -> t
 
+  (** [immediate_move ~src ~dst] tries to build a move of immediate
+     value [src] into location [dst].  It can fail if the resulting
+     movement is inexpressible in this language. *)
+  val immediate_move : src:con -> dst:loc -> t Or_error.t
+
   (** [location_move ~src ~dst] tries to build a move from location
      [src] to location [dst].  It can fail if the resulting movement
      is inexpressible in this language. *)
   val location_move : src:loc -> dst:loc -> t Or_error.t
 
-  (** [as_move_src_symbol ins] tries to interpret [ins] as a move
-     instruction with an immediate symbol as its source, and, if it
-     is, returns that source. *)
-  val as_move_src_symbol : t -> sym option
+  (** [as_move_immediate ins pos] tries to interpret [ins] as a
+     move instruction with an immediate value (symbol, integer, etc)
+     in position [pos], and, if it is, returns that value. *)
+  val as_move_immediate : t -> [< `Src | `Dst ] -> con option
 
-  (** [as_move_src_location ins] tries to interpret [ins] as a move
-      instruction with a location as its source, and, if it is,
-      returns that source. *)
-  val as_move_src_location : t -> loc option
+  (** [as_move_symbol ins] tries to interpret [ins] as a move
+     instruction with an immediate symbol in position [pos], and, if
+     it is, returns that symbol. *)
+  val as_move_symbol : t -> [< `Src | `Dst ] -> sym option
 
-  (** [as_move_dst_location ins] tries to interpret [ins] as a move
-      instruction with a location as its destination, and, if it is,
-      returns that destination. *)
-  val as_move_dst_location : t -> loc option
+  (** [as_move_location ins] tries to interpret [ins] as a move
+      instruction with a location in position [pos], and, if it is,
+      returns that location. *)
+  val as_move_location : t -> [< `Src | `Dst ] -> loc option
 
   (** [abs_operands ins] gets the abstracted operands of instruction
      [ins]. *)
@@ -187,7 +195,8 @@ module type Basic = sig
   module Constant    : Basic_constant
   module Symbol      : Language_symbol.Basic
   module Location    : Basic_location with type sym := Symbol.t
-  module Instruction : Basic_instruction with type loc := Location.t
+  module Instruction : Basic_instruction with type con := Constant.t
+                                          and type loc := Location.t
                                           and type sym := Symbol.t
   module Statement   : Basic_statement with type ins := Instruction.t
                                         and type sym := Symbol.t
@@ -214,7 +223,8 @@ module type S = sig
   end
 
   module Instruction : sig
-    include Basic_instruction with type loc := Location.t
+    include Basic_instruction with type con := Constant.t
+                               and type loc := Location.t
                                and type sym := Symbol.t
     (** We can query abstract properties directly on the concrete
        instruction type. *)
