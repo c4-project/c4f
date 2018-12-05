@@ -37,10 +37,11 @@ let make_herd cfg =
   Herd.create ~config:herd_cfg
 ;;
 
-let run_litmusify o target c_symbols asm_file lit_file =
+let run_litmusify o passes target c_symbols
+    asm_file lit_file =
   let source = Io.In_source.of_option asm_file in
   let sink = Io.Out_sink.of_option lit_file in
-  Common.litmusify o source sink c_symbols target
+  Common.litmusify o passes source sink c_symbols target
 ;;
 
 let run_herd cfg target lit_file outfile =
@@ -59,7 +60,8 @@ let lit_file use_herd maybe_outfile =
   if use_herd then Some (Common.temp_file "litmus") else maybe_outfile
 ;;
 
-let run file_type use_herd compiler_id_or_emits c_symbols
+let run file_type use_herd compiler_id_or_emits
+    c_symbols
     ~infile ~outfile o cfg =
   Common.warn_if_not_tracking_symbols o c_symbols;
   let open Result.Let_syntax in
@@ -68,7 +70,10 @@ let run file_type use_herd compiler_id_or_emits c_symbols
     Common.maybe_run_compiler target file_type infile
   in
   let lit_file = lit_file use_herd outfile in
-  let%bind _ = run_litmusify o target c_symbols asm_file lit_file in
+  let passes =
+    Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
+  in
+  let%bind _ = run_litmusify o passes target c_symbols asm_file lit_file in
   if use_herd then run_herd cfg target lit_file outfile else return ()
 ;;
 
@@ -78,6 +83,7 @@ let command =
     ~summary:"converts an assembly file to a litmus test"
     [%map_open
       let standard_args = Standard_args.get
+      and sanitiser_passes = Standard_args.Other.sanitiser_passes
       and use_herd =
         flag "herd"
           no_arg
@@ -92,7 +98,9 @@ let command =
       and infile = anon (maybe ("FILE" %: file)) in
       fun () ->
         Common.lift_command standard_args
+          ?sanitiser_passes
           ~with_compiler_tests:false
-          ~f:(run file_type use_herd compiler_id_or_arch c_symbols
+          ~f:(run
+                file_type use_herd compiler_id_or_arch c_symbols
                 ~infile ~outfile)
     ]

@@ -26,13 +26,18 @@ open Lib
 open Utils
 
 let run_machine
-    o ~in_root ~out_root herd_opt c_files (mach_id, specs) =
+    o should_time cfg
+    ~in_root ~out_root herd_opt c_files (mach_id, specs) =
   let open Or_error.Let_syntax in
 
+  let timing_cfg = if should_time then `Enabled else `Disabled in
+
   let module TM = Tester.Make_machine (struct
-      (* TODO(@MattWindsor91): wire this up to settings *)
-      module T = (val Timing.make_module `Enabled)
+      module T = (val Timing.make_module timing_cfg)
       let o = o
+      let sanitiser_passes =
+        Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
+      ;;
       let herd_opt = herd_opt
       include Language_support
     end) in
@@ -74,7 +79,7 @@ let make_herd =
   )
 ;;
 
-let run ~in_root ~out_root o cfg =
+let run should_time ~in_root ~out_root o cfg =
   let open Or_error.Let_syntax in
 
   let specs = Config.M.compilers cfg in
@@ -92,7 +97,8 @@ let run ~in_root ~out_root o cfg =
   let start_time = Time.now () in
   let%bind results_alist =
     specs_by_machine
-    |> List.map ~f:(run_machine o ~in_root ~out_root herd c_files)
+    |> List.map
+      ~f:(run_machine o should_time cfg ~in_root ~out_root herd c_files)
     |> Or_error.combine_errors
   in
   let end_time = Time.now () in
@@ -120,7 +126,12 @@ let command =
         flag_optional_with_default_doc "output"
           ~default:Filename.current_dir_name
           string [%sexp_of: string]
-          ~doc: "PATH the path under which output directories will be created"
+          ~doc:"PATH the path under which output directories will be created"
+      and time =
+        flag "time"
+          no_arg
+          ~doc:"if given, measure and report times"
+      and sanitiser_passes = Standard_args.Other.sanitiser_passes
       and compiler_predicate = Standard_args.Other.compiler_predicate
       and machine_predicate = Standard_args.Other.machine_predicate
       and in_root =
@@ -130,7 +141,8 @@ let command =
         Common.lift_command standard_args
           ?compiler_predicate
           ?machine_predicate
+          ?sanitiser_passes
           ~with_compiler_tests:true
-          ~f:(run ~in_root ~out_root)
+          ~f:(run time ~in_root ~out_root)
     ]
 ;;

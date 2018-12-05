@@ -74,6 +74,10 @@ let pp_listed_details name pp_item f = function
   | ts -> Fmt.(pp_named_details name (list ~sep:comma pp_item)) f ts
 ;;
 
+let pp_set_adj pp_set f set =
+  if not (Set.is_empty set) then Fmt.(prefix sp pp_set) f set
+;;
+
 module Make_explanation (B : Basic_explanation)
   : Explanation with type elt := B.elt
                  and type context := B.context
@@ -378,7 +382,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     Stm_explanation.(
       Fmt.pf f "@[<--@ @[%a%a@]@]"
         Abstract.Statement.Kind.pp (abs_kind exp)
-        Flag.pp_set (abs_flags exp)
+        (pp_set_adj Flag.pp_set) (abs_flags exp)
     )
   ;;
 
@@ -386,8 +390,10 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     Ins_explanation.(
       Fmt.pf f "@[<--@ @[%a%a%a@]@]"
         Abstract.Instruction.Kind.pp (abs_kind ins)
-        Flag.pp_set (abs_flags ins)
-        Stm_explanation.Flag.pp_set (Stm_explanation.abs_flags exp)
+        (pp_set_adj Flag.pp_set)
+        (abs_flags ins)
+        (pp_set_adj Stm_explanation.Flag.pp_set)
+        (Stm_explanation.abs_flags exp)
     )
   ;;
 

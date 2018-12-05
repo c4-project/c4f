@@ -138,7 +138,7 @@ module Hook (L : Language.S) = struct
   let on_register reg =
     Ctx.(
       return reg
-      >>= (Pass.Warn |-> warn_unsupported_registers)
+      >>= (`Warn |-> warn_unsupported_registers)
     )
   ;;
 

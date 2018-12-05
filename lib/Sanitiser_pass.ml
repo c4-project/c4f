@@ -22,29 +22,31 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+open Core_kernel
 open Utils
 
 module M = struct
   type t =
-    | Language_hooks
-    | Mangle_symbols
-    | Remove_boundaries
-    | Remove_litmus
-    | Remove_useless
-    | Simplify_deref_chains
-    | Simplify_litmus
-    | Warn
+    [ `Language_hooks
+    | `Mangle_symbols
+    | `Remove_boundaries
+    | `Remove_litmus
+    | `Remove_useless
+    | `Simplify_deref_chains
+    | `Simplify_litmus
+    | `Warn
+    ]
   [@@deriving enum, sexp]
 
   let table =
-    [ Language_hooks       , "language-hooks"
-    ; Mangle_symbols       , "mangle-symbols"
-    ; Remove_boundaries    , "remove-boundaries"
-    ; Remove_litmus        , "remove-litmus"
-    ; Remove_useless       , "remove-useless"
-    ; Simplify_deref_chains, "simplify-deref-chains"
-    ; Simplify_litmus      , "simplify-litmus"
-    ; Warn                 , "warn"
+    [ `Language_hooks       , "language-hooks"
+    ; `Mangle_symbols       , "mangle-symbols"
+    ; `Remove_boundaries    , "remove-boundaries"
+    ; `Remove_litmus        , "remove-litmus"
+    ; `Remove_useless       , "remove-useless"
+    ; `Simplify_deref_chains, "simplify-deref-chains"
+    ; `Simplify_litmus      , "simplify-litmus"
+    ; `Warn                 , "warn"
     ]
 end
 
@@ -66,5 +68,45 @@ let%expect_test "all passes accounted for" =
     warn |}]
 ;;
 
-let explain = Set.of_list [ Remove_useless ]
+let all_lazy = lazy (all_set ())
+
+let explain = Set.of_list [ `Remove_useless ]
 let standard = all_set ()
+
+module Selector = struct
+  type elt = M.t
+
+  type category =
+    [ `Standard
+    | `Explain
+    ]
+  [@@deriving sexp]
+  ;;
+
+  type t =
+    [ M.t
+    | category
+    | `Default
+    ]
+  [@@deriving sexp]
+  ;;
+
+  let eval (default : Set.t) : t -> Set.t = function
+    | #elt as pass -> Set.singleton pass
+    | `Standard -> standard
+    | `Explain  -> explain
+    | `Default  -> default
+  ;;
+
+  let eval_b pred ~default =
+    Blang.eval_set ~universe:all_lazy (eval default) pred
+
+  let%expect_test "eval_b: standard and not explain" =
+    let blang = Blang.O.((base `Standard) && not (base `Explain)) in
+    Sexp.output_hum Out_channel.stdout
+      [%sexp (eval_b blang ~default:Set.empty : Set.t)];
+    [%expect {|
+      (language-hooks mangle-symbols remove-boundaries remove-litmus
+       simplify-deref-chains simplify-litmus warn) |}]
+  ;;
+end

@@ -23,7 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Glue code common to all top-level commands *)
 
-open Core
+open Core_kernel
 open Lib
 open Utils
 
@@ -79,26 +79,28 @@ val maybe_run_compiler
 ;;
 
 (** [lift_command ?compiler_predicate ?machine_predicate
-   ?with_compiler_tests ~f standard_args] lifts a command body [f],
-   performing common book-keeping such as loading and testing the
-   configuration, creating an [Output.t], and printing top-level
-   errors. *)
+   ?sanitiser_passes ?with_compiler_tests ~f standard_args] lifts a
+   command body [f], performing common book-keeping such as loading
+   and testing the configuration, creating an [Output.t], and printing
+   top-level errors. *)
 val lift_command
   :  ?compiler_predicate:Compiler.Property.t Blang.t
   -> ?machine_predicate:Machine.Property.t Blang.t
+  -> ?sanitiser_passes:Sanitiser_pass.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> f:(Output.t -> Config.M.t -> unit Or_error.t)
   -> Standard_args.t
   -> unit
 ;;
 
-(** [litmusify ?output_format inp outp symbols spec_or_emits] is a
-   thin wrapper around [Asm_job]'s litmusify mode that handles finding
-   the right job runner, printing warnings, and supplying the maximal
-   pass set. *)
+(** [litmusify ?output_format o passes inp outp symbols
+   spec_or_emits] is a thin wrapper around [Asm_job]'s litmusify mode
+   that handles finding the right job runner, printing warnings, and
+   supplying the maximal pass set. *)
 val litmusify
   :  ?output_format:Asm_job.Litmus_format.t
   -> Output.t
+  -> Sanitiser_pass.Set.t
   -> Io.In_source.t
   -> Io.Out_sink.t
   -> string list

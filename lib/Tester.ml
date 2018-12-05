@@ -28,6 +28,7 @@ module type Basic = sig
   module T : Timing.S
   val o : Output.t
   val herd_opt : Herd.t option
+  val sanitiser_passes : Sanitiser_pass.Set.t
 end
 
 module type Basic_compiler = sig
@@ -198,7 +199,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
            let input =
              { inp     = `File (P_file.asm_path fs)
              ; outp    = `File (P_file.lita_path fs)
-             ; passes  = Sanitiser_pass.standard
+             ; passes  = sanitiser_passes
              ; symbols = List.map ~f:snd locations
              }
            in

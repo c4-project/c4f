@@ -43,6 +43,15 @@ module type S = sig
   (** [machines c] gets the set of all active machines in
       configuration [c]. *)
   val machines : t -> Machine.Spec.Set.t
+
+  (** [sanitiser_passes c ~default] gets the set of requested
+      sanitiser passes, given the default set [default] for the
+      current context. *)
+  val sanitiser_passes
+    :  t
+    -> default:Sanitiser_pass.Set.t
+    -> Sanitiser_pass.Set.t
+  ;;
 end
 
 (** [Raw] represents act configuration loaded directly from a spec
@@ -67,12 +76,14 @@ module M : sig
       the given config, along with any reason why. *)
   val disabled_machines : t -> (Id.t * Error.t option) list
 
-  (** [from_raw c ?chook ?mhook] takes a raw config [t] and processes it by:
+  (** [from_raw c ?chook ?mhook ?phook] takes a raw config [t] and
+      processes it by:
 
       - applying the given testing hooks onto the compilers and machines, and
       disabling any that fail;
       - resolving machine references, and disabling any
-      broken ones.
+      broken ones;
+      - installing [phook] as the sanitiser pass selector.
 
       Testing hooks are optional (and default to passing the compiler
       or machine through unaltered), and should return
@@ -82,6 +93,7 @@ module M : sig
   val from_raw
     :  ?chook:(Compiler.Spec.With_id.t hook)
     -> ?mhook:(Machine.Spec.With_id.t hook)
+    -> ?phook:(default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t)
     -> Raw.t
     -> t Or_error.t
   ;;

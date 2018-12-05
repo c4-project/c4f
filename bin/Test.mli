@@ -26,11 +26,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lib
 
-(** [run ~in_root ~out_root o cfg] runs the memalloy
+(** [run should_time ~in_root ~out_root o cfg] runs the memalloy
    frontend.  It assumes that [in_root] points to a memalloy (or
     compatible) results directory, and outputs results in [out_root]. *)
 val run
-  :  in_root:string
+  :  bool
+  -> in_root:string
   -> out_root:string
   -> Output.t
   -> Config.M.t

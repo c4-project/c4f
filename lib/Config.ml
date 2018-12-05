@@ -32,6 +32,11 @@ module type S = sig
   val herd : t -> Herd.Config.t option
   val compilers : t -> C.Set.t
   val machines : t -> Machine.Spec.Set.t
+  val sanitiser_passes
+    :  t
+    -> default:Sanitiser_pass.Set.t
+    -> Sanitiser_pass.Set.t
+  ;;
 end
 
 module Raw = struct
@@ -46,6 +51,8 @@ module Raw = struct
       }
     [@@deriving sexp, fields]
     ;;
+
+    let sanitiser_passes _ ~default = default
   end
 
   include CI
@@ -89,18 +96,19 @@ module M = struct
     { compilers          : C.Set.t
     ; machines           : Machine.Spec.Set.t
     ; herd               : Herd.Config.t sexp_option
+    ; sanitiser_passes   : (default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t)
     ; disabled_compilers : (Id.t, Error.t option) List.Assoc.t
     ; disabled_machines  : (Id.t, Error.t option) List.Assoc.t
     }
   [@@deriving sexp, fields]
   ;;
 
-  module RP = Part_helpers (Raw.C);;
-  module CP = Part_helpers (C);;
-  module MP = Part_helpers (Machine.Spec);;
+  module RP = Part_helpers (Raw.C)
+  module CP = Part_helpers (C)
+  module MP = Part_helpers (Machine.Spec)
 
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
-  type 't hook = ('t -> 't option Or_error.t);;
+  type 't hook = ('t -> 't option Or_error.t)
 
   let machines_from_raw
       (hook : Machine.Spec.With_id.t hook)
@@ -199,6 +207,7 @@ module M = struct
   let from_raw
       ?(chook=(Fn.compose Result.return Option.some))
       ?(mhook=(Fn.compose Result.return Option.some))
+      ?(phook=(fun ~default -> default))
       (c : Raw.t)
     : t Or_error.t =
     let open Or_error.Let_syntax in
@@ -211,6 +220,7 @@ module M = struct
     ; machines
     ; disabled_compilers
     ; disabled_machines
+    ; sanitiser_passes=phook
     ; herd = Raw.herd c
     }
   ;;

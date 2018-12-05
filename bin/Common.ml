@@ -104,6 +104,7 @@ let maybe_run_compiler target file_type infile =
 let lift_command
     ?compiler_predicate
     ?machine_predicate
+    ?sanitiser_passes
     ?with_compiler_tests
     ~f
     standard_args
@@ -117,20 +118,21 @@ let lift_command
     Language_support.load_and_process_config
       ?compiler_predicate
       ?machine_predicate
+      ?sanitiser_passes
       ?with_compiler_tests
       (Standard_args.spec_file standard_args)
     >>= f o
   ) |> Output.print_error o
 ;;
 
-let litmusify ?output_format (o : Output.t) inp outp symbols
-    target =
+let litmusify ?output_format (o : Output.t)
+    passes inp outp symbols target =
   let open Result.Let_syntax in
   let%bind (module Runner) = runner_of_target target in
   let input =
     { Asm_job.inp
     ; outp
-    ; passes = Sanitiser_pass.standard
+    ; passes
     ; symbols
     }
   in

@@ -36,13 +36,12 @@ let print_symbol_map = function
       map
 ;;
 
-let run file_type compiler_id_or_arch output_format c_symbols sanitise
+let run file_type compiler_id_or_arch output_format c_symbols
     ~infile ~outfile o cfg =
   Common.warn_if_not_tracking_symbols o c_symbols;
   let open Or_error.Let_syntax in
-  let passes = Sanitiser_pass.(
-      if sanitise then explain else Set.empty
-    )
+  let passes =
+    Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.Set.empty
   in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
   let%bind asm_file =
@@ -69,10 +68,7 @@ let command =
     ~summary:"explains act's understanding of an assembly file"
     [%map_open
       let standard_args = Standard_args.get
-      and sanitise =
-        flag "sanitise"
-          no_arg
-          ~doc: "if true, do basic sanitisation on the assembly first"
+      and sanitiser_passes = Standard_args.Other.sanitiser_passes
       and compiler_id_or_arch = Standard_args.Other.compiler_id_or_arch
       and c_symbols = Standard_args.Other.c_symbols
       and output_format =
@@ -97,12 +93,13 @@ let command =
       and infile = anon (maybe ("FILE" %: file)) in
       fun () ->
         Common.lift_command standard_args
+          ?sanitiser_passes
           ~with_compiler_tests:false
           ~f:(run
                 file_type
                 compiler_id_or_arch
                 output_format
-                c_symbols sanitise
+                c_symbols
                 ~infile ~outfile)
     ]
 ;;

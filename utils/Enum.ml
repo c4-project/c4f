@@ -116,9 +116,5 @@ module Extend_table (E : S_table)
 
   let of_string_option = Tbl.of_string
 
-  let pp_set f set =
-    match Set.to_list set with
-    | [] -> ()
-    | xs -> Fmt.(parens (box (list ~sep:comma pp))) f xs
-  ;;
+  let pp_set = Fmt.(using Set.to_list (parens (box (list ~sep:comma pp))))
 end

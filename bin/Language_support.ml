@@ -157,10 +157,12 @@ let machine_hook predicate mspec =
 let load_and_process_config
     ?(compiler_predicate=Blang.true_)
     ?(machine_predicate=Blang.true_)
+    ?(sanitiser_passes=Blang.base `Default)
     ?(with_compiler_tests=true) path =
   let open Or_error.Let_syntax in
   let%bind rcfg = Config.Raw.load ~path in
   let chook = compiler_hook with_compiler_tests compiler_predicate in
   let mhook = machine_hook machine_predicate in
-  Config.M.from_raw rcfg ~chook ~mhook
+  let phook = Sanitiser_pass.Selector.eval_b sanitiser_passes in
+  Config.M.from_raw rcfg ~chook ~mhook ~phook
 ;;

@@ -64,6 +64,12 @@ module Other : sig
       C symbols to track during sanitisation. *)
   val c_symbols : string list Command.Param.t
 
+  (** [sanitiser_passes] defines a parameter for collecting a selector
+     predicate for sanitiser passes. *)
+  val sanitiser_passes
+    : Sanitiser_pass.Selector.t Blang.t option Command.Param.t
+  ;;
+
   (** [compiler_predicate] defines a parameter for collecting a
       filtering predicate for compilers. *)
   val compiler_predicate

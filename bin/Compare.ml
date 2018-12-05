@@ -34,35 +34,35 @@ let compile spec ~c_file =
     ~error:(Error.of_string "Internal error: expected an output file")
 ;;
 
-let litmusify o spec ~asm_file =
+let litmusify o passes spec ~asm_file =
   Common.litmusify o
     ~output_format:Asm_job.Litmus_format.Programs_only
+    passes
     (`File asm_file)
     `Stdout
     []
     spec
 ;;
 
-let run_spec_on_file o spec ~c_file =
+let run_spec_on_file o passes spec ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@."
     Id.pp (Compiler.Spec.With_id.id spec);
   let open Or_error.Let_syntax in
   let%bind asm_file = compile spec ~c_file in
-  let%map  _        = litmusify o (`Spec spec) ~asm_file in
+  let%map  _        = litmusify o passes (`Spec spec) ~asm_file in
   Format.printf "@[<h>```@]@."
-;;
-
-let run_all_specs_on_file o specs ~c_file =
-  Format.printf "@[<h>#@ %s@]@." c_file;
-  Or_error.combine_errors_unit
-    (Compiler.Spec.Set.map specs
-       ~f:(run_spec_on_file o ~c_file)
-    )
 ;;
 
 let run o cfg ~c_file =
   let specs = Config.M.compilers cfg in
-  run_all_specs_on_file o specs ~c_file
+  let passes =
+    Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
+  in
+  Format.printf "@[<h>#@ %s@]@." c_file;
+  Or_error.combine_errors_unit
+    (Compiler.Spec.Set.map specs
+       ~f:(run_spec_on_file o passes ~c_file)
+    )
 ;;
 
 let command =
@@ -71,14 +71,16 @@ let command =
     ~summary:"displays the litmus output for each compiler over a C file"
     [%map_open
       let standard_args = Standard_args.get
+      and sanitiser_passes = Standard_args.Other.sanitiser_passes
       and compiler_predicate = Standard_args.Other.compiler_predicate
       and machine_predicate = Standard_args.Other.machine_predicate
-      and c_file = anon ("C_FILE" %: file)
+      and c_file = anon ("FILE" %: file)
       in
       fun () ->
         Common.lift_command standard_args
           ?compiler_predicate
           ?machine_predicate
+          ?sanitiser_passes
           ~with_compiler_tests:true
           ~f:(run ~c_file)
     ]

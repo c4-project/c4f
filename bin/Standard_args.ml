@@ -110,6 +110,12 @@ module Other = struct
       ~doc: "SYMBOLS comma-separated list of C variables to track"
   ;;
 
+  let sanitiser_passes =
+    flag "sanitiser-passes"
+      (optional (sexp_conv [%of_sexp: Sanitiser_pass.Selector.t Blang.t]))
+      ~doc:"PREDICATE select which sanitiser passes to use"
+  ;;
+
   let compiler_predicate =
     flag "filter-compilers"
       (optional (sexp_conv [%of_sexp: Compiler.Property.t Blang.t]))

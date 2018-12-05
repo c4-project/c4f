@@ -55,21 +55,26 @@ val compiler_from_spec
 ;;
 
 (** [load_and_process_config ?compiler_predicate ?machine_predicate
-   ?with_compiler_tests path] loads the config file at [path] and
-   optionally tests all machines and compilers therein.
+   ?sanitiser_passes ?with_compiler_tests path] loads the config file
+   at [path] and optionally tests all machines and compilers therein.
 
-    If [machine_predicate] (a Blang expression) is present, only
-   machines satisfying it will be enabled.
-
-    If [compilers_predicate] (also a Blang expression) is present,
+    If [compiler_predicate] (a Blang expression) is present,
    only compilers satisfying it (on enabled machines) will be
    accepted.
+
+    If [machine_predicate] (also a Blang expression) is present, only
+   machines satisfying it will be enabled.
+
+    If [sanitiser_passes] (another Blang expression) is present, the
+    sanitiser pass override in the final config will be set to
+    the result of evaluating that expression.
 
     If [with_compiler_tests] is absent, or present and true, compilers
    will be tested for reachability. *)
 val load_and_process_config
   :  ?compiler_predicate:Compiler.Property.t Blang.t
   -> ?machine_predicate:Machine.Property.t Blang.t
+  -> ?sanitiser_passes:Sanitiser_pass.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> string
   -> Config.M.t Or_error.t

@@ -49,6 +49,10 @@ module type Basic = sig
 
   (** [herd_opt], if present, tells the tester how to run Herd. *)
   val herd_opt : Herd.t option
+
+  (** [sanitiser_passes] is the set of sanitiser passes the tester
+      should use. *)
+  val sanitiser_passes : Sanitiser_pass.Set.t
 end
 
 (** [Basic_compiler] contains all the various modules and components
