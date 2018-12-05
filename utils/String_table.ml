@@ -36,22 +36,24 @@ module type Basic_identifiable = sig
   val hash_fold_t : Hash.state -> t -> Hash.state
 end
 
+module To_stringable (T : Basic_identifiable)
+  : Stringable.S with type t = T.t = struct
+  type t = T.t
+
+  let of_string = T.of_string_exn
+  (* There's a cyclic dependency between the comparable we want
+     to build and the sexpable we want to build, so we can't use
+     'equal' here *)
+  let to_string = T.to_string_exn ~equal:(fun x y -> T.compare x y = 0)
+end
+
 module To_identifiable (T : Basic_identifiable)
   : Identifiable.S_plain with type t := T.t =
   Identifiable.Make_plain (struct
     module M = struct
       include T
 
-      module S = struct
-        type nonrec t = t
-
-        let of_string = T.of_string_exn;;
-        (* There's a cyclic dependency between the comparable we want
-           to build and the sexpable we want to build, so we can't use
-           'equal' here *)
-        let to_string = T.to_string_exn ~equal:(fun x y -> T.compare x y = 0);;
-      end
-
+      module S = To_stringable (T)
       include Sexpable.Of_stringable (S)
       include (S : Stringable.S with type t := t)
     end

@@ -38,7 +38,7 @@ module type S = sig
       result of removing all of the arguments from [t]'s constructors. *)
   module Kind : sig
     type t
-    include Enum.S_sexp_table with type t := t
+    include Enum.S_table with type t := t
     include Enum.Extension_table with type t := t
   end
 

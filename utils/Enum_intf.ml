@@ -60,9 +60,12 @@ module type S_sexp = sig
   include Sexpable.S with type t := t
 end
 
-(** [S_sexp_table] extends [S_sexp] with a string table. *)
-module type S_sexp_table = sig
-  include S_sexp
+(** [S_table] extends [S] with a string table.
+
+    [S_table] doesn't contain [Sexpable], as we derive it from the
+    string table itself. *)
+module type S_table = sig
+  include S
   include String_table.Table with type t := t
 end
 
@@ -121,7 +124,7 @@ module type Enum = sig
   module type S               = S
   module type S_enumerate     = S_enumerate
   module type S_sexp          = S_sexp
-  module type S_sexp_table    = S_sexp_table
+  module type S_table         = S_table
   module type Extension       = Extension
   module type Extension_table = Extension_table
 
@@ -148,7 +151,7 @@ module type Enum = sig
 
   (** [Extend] makes an enum extension with table support. *)
   module Extend_table
-    : functor (E : S_sexp_table)
+    : functor (E : S_table)
       -> Extension_table with type t := E.t
   ;;
 end

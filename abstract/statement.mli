@@ -44,7 +44,7 @@ module Kind : sig
     | Unknown
   ;;
 
-  include Enum.S_sexp_table with type t := t
+  include Enum.S_table with type t := t
   include Enum.Extension_table with type t := t
 end
 

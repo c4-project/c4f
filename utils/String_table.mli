@@ -79,8 +79,16 @@ module type Basic_identifiable = sig
   val hash_fold_t : Hash.state -> t -> Hash.state
 end
 
+(** [To_stringable] produces a plain stringable instance
+    given a string table and a comparator. *)
+module To_stringable
+  : functor (T : Basic_identifiable)
+    -> Stringable.S with type t := T.t
+;;
+
 (** [To_identifiable] produces a plain identifiable instance
     given a string table and a comparator. *)
 module To_identifiable
   : functor (T : Basic_identifiable)
     -> Identifiable.S_plain with type t := T.t
+;;

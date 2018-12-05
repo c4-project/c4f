@@ -25,12 +25,17 @@
 open Core_kernel
 include Enum_intf
 
+module Make_compare_hash_basic (E : S) = struct
+  let compare = My_fn.on E.to_enum Int.compare
+  let hash x = Int.hash (E.to_enum x)
+  let hash_fold_t s x = Int.hash_fold_t s (E.to_enum x)
+end
+
 module Make_comparable (E : S_sexp)
   : Comparable.S with type t := E.t =
   Comparable.Make (struct
     include E
-
-    let compare = My_fn.on E.to_enum Int.compare
+    include Make_compare_hash_basic (E)
   end)
 ;;
 
@@ -39,8 +44,7 @@ module Make_hashable (E : S_sexp)
   Hashable.Make (struct
     include E
     include Make_comparable (E)
-    let hash x = Int.hash (E.to_enum x)
-    let hash_fold_t s x = Int.hash_fold_t s (E.to_enum x)
+    include Make_compare_hash_basic (E)
   end)
 ;;
 
@@ -78,25 +82,39 @@ module Extend (E : S_sexp) : Extension with type t := E.t = struct
   let all_set () = Set.of_list (all_list ());;
 end
 
-module Extend_table (E : S_sexp_table)
+module Extend_table (E : S_table)
   : Extension_table with type t := E.t = struct
-  module Ex = Extend (E)
-  include Ex
-
   module Tbl = String_table.Make (E)
   include Tbl
 
+  module Basic_id = struct
+    type t = E.t
+    include Tbl
+    include Make_compare_hash_basic (E)
+  end
+
   module Id : (Identifiable.S_common with type t := E.t) =
-    String_table.To_identifiable (struct
-      type t = E.t
-      include Tbl
-      let compare = Ex.compare
-      let hash = Ex.hash
-      let hash_fold_t = Ex.hash_fold_t
-    end)
+    String_table.To_identifiable (Basic_id)
   include Id
 
-  let of_string_option = Tbl.of_string;;
+  (* Identifiable, for some reason, doesn't contain both sides
+     of sexp conversion, so we have to manually retrieve
+     [t_of_sexp] ourselves. *)
+  module Sexp = struct
+    module Sexp = Sexpable.Of_stringable (struct
+        type t = E.t
+        include String_table.To_stringable (Basic_id)
+      end)
+    let sexp_of_t = Id.sexp_of_t
+    let t_of_sexp = Sexp.t_of_sexp
+  end
+
+  include Extend (struct
+      include E
+      include Sexp
+    end)
+
+  let of_string_option = Tbl.of_string
 
   let pp_set f set =
     match Set.to_list set with
