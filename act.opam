@@ -17,6 +17,7 @@ depends: [
   "ppx_sexp_message" {build}
   "core" {>= "v0.11" & < "v0.12"}
   "core_extended" {>= "v0.11" & < "v0.12"}
+  "fmt" {>= "0.8.5" & < "0.9"}
   "menhir" {>= "20181113"}
 ]
 build: ["dune" "build" "-p" name "-j" jobs]

@@ -6,7 +6,8 @@
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
  (libraries
+  fmt
+  menhirLib
   abstract
   utils
-  core
-  menhirLib))
+  core))

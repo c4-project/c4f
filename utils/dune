@@ -7,5 +7,6 @@
   (pps ppx_deriving.std ppx_expect ppx_jane))
  (libraries
   core
-  core_extended))
+  core_extended
+  fmt))
 

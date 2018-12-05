@@ -34,7 +34,7 @@ module type Basic_explanation = sig
   module Flag : Abstract.Flag_enum.S
   val abs_flags : elt -> context -> Flag.Set.t
   val make_details : elt -> context -> details
-  val pp_details : Format.formatter -> details -> unit
+  val pp_details : Base.Formatter.t -> details -> unit
 end
 
 module type Explanation = sig
@@ -50,6 +50,29 @@ module type Explanation = sig
   val abs_flags : t -> Flag.Set.t
   val make : context:context -> original:elt -> t
 end
+
+let pp_details pp_header pp_body =
+  Fmt.(
+    hvbox ~indent:4
+      (append
+         (suffix sp (hvbox pp_header))
+         (braces pp_body)
+      )
+  )
+;;
+
+let pp_named_details name pp_body f t =
+  Fmt.(pp_details (const string name) pp_body f ((), t))
+;;
+
+let pp_optional_details name pp_item =
+  Fmt.option (pp_named_details name pp_item)
+;;
+
+let pp_listed_details name pp_item f = function
+  | [] -> ()
+  | ts -> Fmt.(pp_named_details name (list ~sep:comma pp_item)) f ts
+;;
 
 module Make_explanation (B : Basic_explanation)
   : Explanation with type elt := B.elt
@@ -79,20 +102,20 @@ module Make_explanation (B : Basic_explanation)
     }
   ;;
 
-  let pp f t =
-    Fields.Direct.iter t
-      ~original:(fun _ _ o ->
-          Format.fprintf f "@[<hv 4>@[<hv>%a@ @]{@ " B.pp o
-        )
-      ~abs_kind:(fun _ _ ->
-          Format.fprintf f "@[kind:@ %a;@]@ " B.Abs.Kind.pp)
-      ~abstract:(fun _ _ _ -> ())
-      ~abs_flags:(fun _ _ flags ->
-          if not (B.Flag.Set.is_empty flags)
-          then Format.fprintf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags)
-      ~details:(fun _ _ -> B.pp_details f);
-    Format.fprintf f "@]@ }"
+  let pp_body f t =
+    Fmt.(
+      Fields.Direct.iter t
+        ~original:(fun _ _ _ -> ())
+        ~abs_kind:(fun _ _ -> pf f "@[kind:@ %a;@]@ " B.Abs.Kind.pp)
+        ~abstract:(fun _ _ _ -> ())
+        ~abs_flags:(fun _ _ flags ->
+            if not (B.Flag.Set.is_empty flags)
+            then pf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags)
+        ~details:(fun _ _ -> B.pp_details f);
+    )
   ;;
+
+  let pp f t = pp_details B.pp pp_body f (original t, t)
 end
 
 module type S = sig
@@ -245,23 +268,16 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
         }
       ;;
 
-      let pp_operand_details f operands =
-        My_format.pp_option f
-          ~pp:(fun f -> Format.fprintf f "@[<hv 4>@[<hv>operands@ @]{@ %a@]@ }"
-                  Ops_explanation.pp)
-          operands
+      let pp_operand_details =
+        pp_optional_details "operands" Ops_explanation.pp
       ;;
 
-      let pp_location_details f = function
-        | [] -> ()
-        | locations ->
-          Format.fprintf f "@[<hv 4>@[<hv>locations@ @]{@ %a@]@ }"
-            (Format.pp_print_list ~pp_sep:Format.pp_print_space
-               Loc_explanation.pp) locations
+      let pp_location_details =
+        pp_listed_details "location" Loc_explanation.pp
       ;;
 
       let pp_details f { operands; locations } =
-        Format.fprintf f "%a@ %a"
+        Fmt.pf f "%a@ %a"
           pp_operand_details operands
           pp_location_details locations
       ;;
@@ -316,12 +332,8 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
             describe_instructions stm context }
       ;;
 
-      let pp_instruction_details f = function
-        | [] -> ()
-        | ins ->
-          Format.fprintf f "@[<hv 4>@[<hv>instructions@ @]{@ %a@]@ }"
-            (Format.pp_print_list ~pp_sep:Format.pp_print_space
-               Ins_explanation.pp) ins
+      let pp_instruction_details =
+        pp_listed_details "instruction" Ins_explanation.pp
       ;;
 
       let pp_details f =
@@ -364,7 +376,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
 
   let pp_generic_statement_explanation f exp =
     Stm_explanation.(
-      Format.fprintf f "@[<--@ @[%a%a@]@]"
+      Fmt.pf f "@[<--@ @[%a%a@]@]"
         Abstract.Statement.Kind.pp (abs_kind exp)
         Flag.pp_set (abs_flags exp)
     )
@@ -372,7 +384,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
 
   let pp_instruction_explanation f exp ins =
     Ins_explanation.(
-      Format.fprintf f "@[<--@ @[%a%a%a@]@]"
+      Fmt.pf f "@[<--@ @[%a%a%a@]@]"
         Abstract.Instruction.Kind.pp (abs_kind ins)
         Flag.pp_set (abs_flags ins)
         Stm_explanation.Flag.pp_set (Stm_explanation.abs_flags exp)
@@ -392,7 +404,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
       match abs_kind exp with
       | Abstract.Statement.Kind.Blank -> () (* so as not to clutter up blank lines *)
       | _ ->
-        Format.fprintf f "@[<h>%a@ %a@]"
+        Fmt.pf f "@[<h>%a@ %a@]"
           Lang.Statement.pp (original exp)
           (Lang.pp_comment ~pp:pp_explanation) exp
     )
@@ -402,16 +414,16 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     My_list.exclude ~f:Stm_explanation.is_blank exp.statements
   ;;
 
-  let pp_as_assembly f exp =
-    Format.fprintf f "@[<v>%a@]"
-      (Format.pp_print_list pp_statement ~pp_sep:Format.pp_print_space)
-      (non_blank_statements exp)
+  let pp_as_assembly =
+    Fmt.(vbox (using non_blank_statements (list pp_statement ~sep:sp)))
   ;;
 
   let pp f exp =
-    Format.fprintf f "@[<v>%a@,@,%a@]"
-      (Format.pp_print_list Stm_explanation.pp ~pp_sep:Format.pp_print_space)
+    Fmt.(
+      pf f "@[<v>%a@,@,%a@]"
+      (list Stm_explanation.pp ~sep:sp)
       (non_blank_statements exp)
       (fun f -> Abstract.Symbol.Table.pp_as_table f) exp.symbol_table
+    )
   ;;
 end

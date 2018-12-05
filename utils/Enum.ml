@@ -119,12 +119,6 @@ module Extend_table (E : S_table)
   let pp_set f set =
     match Set.to_list set with
     | [] -> ()
-    | xs ->
-      Format.pp_print_space f ();
-      Format.pp_print_char f '(';
-      Format.pp_open_hovbox f 0;
-      Format.pp_print_list ~pp_sep:My_format.pp_csep pp f xs;
-      Format.pp_close_box f ();
-      Format.pp_print_char f ')'
+    | xs -> Fmt.(parens (box (list ~sep:comma pp))) f xs
   ;;
 end
