@@ -44,8 +44,7 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-open Core
-open Utils
+open Base
 open Ast
 
 let disp_positive =
@@ -55,12 +54,12 @@ let disp_positive =
   | _ -> true
 
 module type Dialect = sig
-  val pp_reg : Format.formatter -> Reg.t -> unit
-  val pp_indirect : Format.formatter -> Indirect.t -> unit
-  val pp_immediate : Format.formatter -> Disp.t -> unit
+  val pp_reg : Formatter.t -> Reg.t -> unit
+  val pp_indirect : Formatter.t -> Indirect.t -> unit
+  val pp_immediate : Formatter.t -> Disp.t -> unit
   val pp_comment
-    :  pp:(Format.formatter -> 'a -> unit)
-    -> Format.formatter
+    :  pp:(Formatter.t -> 'a -> unit)
+    -> Formatter.t
     -> 'a
     -> unit
 end
@@ -68,14 +67,14 @@ end
 module type Printer = sig
   include Dialect
 
-  val pp_location : Format.formatter -> Location.t -> unit
-  val pp_bop : Format.formatter -> Operand.bop -> unit
-  val pp_operand : Format.formatter -> Operand.t -> unit
-  val pp_prefix : Format.formatter -> prefix -> unit
-  val pp_opcode : Format.formatter -> Opcode.t -> unit
-  val pp_oplist : Format.formatter -> Operand.t list -> unit
-  val pp_instruction : Format.formatter -> Instruction.t -> unit
-  val pp_statement : Format.formatter -> Statement.t -> unit
+  val pp_location : Formatter.t -> Location.t -> unit
+  val pp_bop : Formatter.t -> Operand.bop -> unit
+  val pp_operand : Formatter.t -> Operand.t -> unit
+  val pp_prefix : Formatter.t -> prefix -> unit
+  val pp_opcode : Formatter.t -> Opcode.t -> unit
+  val pp_oplist : Formatter.t -> Operand.t list -> unit
+  val pp_instruction : Formatter.t -> Instruction.t -> unit
+  val pp_statement : Formatter.t -> Statement.t -> unit
 end
 
 (* Parts specific to all dialects *)
@@ -84,47 +83,44 @@ module Basic = struct
      * Displacements
      *)
 
-  let pp_disp ?(show_zero = true) f =
-    function
-    | Disp.Symbolic s -> Format.pp_print_string f s
+  let pp_disp ?(show_zero = true) f = function
+    | Disp.Symbolic s -> Fmt.string f s
     | Disp.Numeric  0 when not show_zero -> ()
-    | Disp.Numeric  k -> Format.pp_print_int    f k
+    | Disp.Numeric  k -> Fmt.int f k
 end
 
 (* Parts specific to AT&T *)
 module Att_specific = struct
-  let pp_comment ~pp f = Format.fprintf f "@[<h># %a@]" pp
+  let pp_comment ~pp f = Fmt.pf f "@[<h># %a@]" pp
 
   let%expect_test "pp_comment: AT&T" =
-    Format.printf "%a@."
+    Fmt.pr "%a@."
       (pp_comment ~pp:String.pp) "AT&T comment";
     [%expect {| # AT&T comment |}]
 
   let pp_reg f reg =
-    Format.fprintf f "@[%%%s@]" (Reg.to_string reg)
+    Fmt.pf f "@[%%%s@]" (Reg.to_string reg)
 
   let%expect_test "pp_reg: AT&T, ESP" =
-    Format.printf "%a@." pp_reg `ESP;
+    Fmt.pr "%a@." pp_reg `ESP;
     [%expect {| %ESP |}]
 
   let pp_index f = function
     | Index.Unscaled r -> pp_reg f r
-    | Scaled (r, i) -> Format.fprintf f "%a,@ %d"
+    | Scaled (r, i) -> Fmt.pf f "%a,@ %d"
                          pp_reg r
                          i
 
   let pp_indirect f indirect =
-    let pp_seg f = Format.fprintf f "%a:" pp_reg in
+    let pp_seg f = Fmt.pf f "%a:" pp_reg in
 
     let pp_bis f bo iso =
       match bo, iso with
       | None  , None -> ()
       | Some b, None ->
-        Format.fprintf f "(%a)"
-          pp_reg b
+        Fmt.pf f "(%a)" pp_reg b
       | _     , Some i ->
-        Format.fprintf f "(%a,%a)"
-          (My_format.pp_option ~pp:pp_reg) bo
+        Fmt.(pf f "(%a,%a)" (option pp_reg)) bo
           pp_index i
     in
 
@@ -133,20 +129,20 @@ module Att_specific = struct
     let in_disp  = Indirect.disp  indirect in
     let in_index = Indirect.index indirect in
 
-    My_format.pp_option f ~pp:pp_seg in_seg;
-    let show_zero = in_base = None && in_index = None in
-    My_format.pp_option f ~pp:(Basic.pp_disp ~show_zero) in_disp;
+    Fmt.option pp_seg f in_seg;
+    let show_zero = Option.(is_none in_base && is_none in_index) in
+    Fmt.option (Basic.pp_disp ~show_zero) f in_disp;
     pp_bis f in_base in_index
 
   let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
-    Format.printf "%a@." pp_indirect
+    Fmt.pr "%a@." pp_indirect
       (Indirect.make
          ~disp:(Disp.Numeric 2001)
          ());
     [%expect {| 2001 |}]
 
   let%expect_test "pp_indirect: AT&T, +ve disp and base" =
-    Format.printf "%a@." pp_indirect
+    Fmt.pr "%a@." pp_indirect
       (Indirect.make
          ~disp:(Disp.Numeric 76)
          ~base:`EAX
@@ -154,14 +150,14 @@ module Att_specific = struct
     [%expect {| 76(%EAX) |}]
 
   let%expect_test "pp_indirect: AT&T, zero disp only" =
-    Format.printf "%a@." pp_indirect
+    Fmt.pr "%a@." pp_indirect
       (Indirect.make
          ~disp:(Disp.Numeric 0)
          ());
     [%expect {| 0 |}]
 
   let%expect_test "pp_indirect: AT&T, -ve disp and base" =
-    Format.printf "%a@." pp_indirect
+    Fmt.pr "%a@." pp_indirect
       (Indirect.make
          ~disp:(Disp.Numeric (-42))
          ~base:`ECX
@@ -169,57 +165,57 @@ module Att_specific = struct
     [%expect {| -42(%ECX) |}]
 
   let%expect_test "pp_indirect: AT&T, base only" =
-    Format.printf "%a@." pp_indirect
+    Fmt.pr "%a@." pp_indirect
       (Indirect.make
          ~base:`EDX
          ());
     [%expect {| (%EDX) |}]
 
   let%expect_test "pp_indirect: AT&T, zero disp and base" =
-    Format.printf "%a@." pp_indirect
+    Fmt.pr "%a@." pp_indirect
       (Indirect.make
          ~disp:(Disp.Numeric 0)
          ~base:`EDX
          ());
     [%expect {| (%EDX) |}]
 
-  let pp_immediate f = Format.fprintf f "@[$%a@]"
+  let pp_immediate f = Fmt.pf f "@[$%a@]"
       (Basic.pp_disp ~show_zero:true)
 
   let%expect_test "pp_immediate: AT&T, positive number" =
-    Format.printf "%a@." pp_immediate (Disp.Numeric 24);
+    Fmt.pr "%a@." pp_immediate (Disp.Numeric 24);
     [%expect {| $24 |}]
 
   let%expect_test "pp_immediate: AT&T, zero" =
-    Format.printf "%a@." pp_immediate (Disp.Numeric 0);
+    Fmt.pr "%a@." pp_immediate (Disp.Numeric 0);
     [%expect {| $0 |}]
 
   let%expect_test "pp_immediate: AT&T, negative number" =
-    Format.printf "%a@." pp_immediate (Disp.Numeric (-42));
+    Fmt.pr "%a@." pp_immediate (Disp.Numeric (-42));
     [%expect {| $-42 |}]
 
 
   let%expect_test "pp_immediate: AT&T, symbolic" =
-    Format.printf "%a@." pp_immediate (Disp.Symbolic "kappa");
+    Fmt.pr "%a@." pp_immediate (Disp.Symbolic "kappa");
     [%expect {| $kappa |}]
 end
 
 (** Parts specific to Intel *)
 module Intel_specific = struct
-  let pp_comment ~pp f = Format.fprintf f "@[<h>; %a@]" pp
+  let pp_comment ~pp f = Fmt.pf f "@[<h>; %a@]" pp
 
   let%expect_test "pp_comment: Intel" =
-    Format.printf "%a@."
+    Fmt.pr "%a@."
       (pp_comment ~pp:String.pp) "intel comment";
     [%expect {| ; intel comment |}]
 end
 
 (** Parts specific to Herd7 *)
 module Herd7_specific = struct
-  let pp_comment ~pp f = Format.fprintf f "@[<h>// %a@]" pp
+  let pp_comment ~pp f = Fmt.pf f "@[<h>// %a@]" pp
 
   let%expect_test "pp_comment: Herd7" =
-    Format.printf "%a@."
+    Fmt.pr "%a@."
       (pp_comment ~pp:String.pp) "herd comment";
     [%expect {| // herd comment |}]
 end
@@ -229,54 +225,56 @@ module Intel_and_herd7 = struct
     let pp_reg f reg = String.pp f (Reg.to_string reg)
 
     let%expect_test "pp_reg: intel, EAX" =
-      Format.printf "%a@." pp_reg `EAX;
+      Fmt.pr "%a@." pp_reg `EAX;
       [%expect {| EAX |}]
 
     let pp_index f = function
       | Index.Unscaled r -> pp_reg f r
-      | Scaled (r, i) -> Format.fprintf f "%a*%d" pp_reg r i
+      | Scaled (r, i) -> Fmt.pf f "%a*%d" pp_reg r i
 
-    let pp_indirect f indirect =
-      let pp_seg f = Format.fprintf f "%a:" pp_reg in
+    let pp_seg f = Fmt.pf f "%a:" pp_reg
 
-      Format.pp_open_box f 0;
-      Format.pp_print_char f '[';
+    let pp_indirect =
+      Fmt.(
+        box (
+          brackets (
+            fun f indirect ->
+              let in_seg   = Indirect.seg   indirect in
+              let in_base  = Indirect.base  indirect in
+              let in_disp  = Indirect.disp  indirect in
+              let in_index = Indirect.index indirect in
 
-      let in_seg   = Indirect.seg   indirect in
-      let in_base  = Indirect.base  indirect in
-      let in_disp  = Indirect.disp  indirect in
-      let in_index = Indirect.index indirect in
+              (* seg:base+index*scale+disp *)
 
-      (* seg:base+index*scale+disp *)
+              option pp_seg f in_seg;
+              option pp_reg f in_base;
 
-      My_format.pp_option f ~pp:pp_seg in_seg;
+              let plus_between_b_i =
+                Option.(is_some in_base && is_some in_index)
+              in if plus_between_b_i then char f '+';
 
-      My_format.pp_option f ~pp:pp_reg in_base;
+              option pp_index f in_index;
 
-      let plus_between_b_i = in_base <> None && in_index <> None in
-      if plus_between_b_i then Format.pp_print_char f '+';
+              let plus_between_bis_d =
+                Option.(is_some in_base || is_some in_index)
+                && disp_positive in_disp
+              in if plus_between_bis_d then char f '+';
 
-      My_format.pp_option f ~pp:pp_index in_index;
-
-      let plus_between_bis_d =
-        (in_base <> None || in_index <> None)
-        && disp_positive in_disp
-      in
-      if plus_between_bis_d then Format.pp_print_char f '+';
-
-      let show_zero = in_base = None && in_index = None in
-      My_format.pp_option f ~pp:(Basic.pp_disp ~show_zero) in_disp;
-
-      Format.pp_print_char f ']';
-      Format.pp_close_box f ()
+              let show_zero =
+                Option.(is_none in_base && is_none in_index)
+              in option (Basic.pp_disp ~show_zero) f in_disp
+          )
+        )
+      )
+    ;;
 
     let%expect_test "pp_indirect: intel, +ve numeric displacement only" =
-      Format.printf "%a@." pp_indirect
+      Fmt.pr "%a@." pp_indirect
         (Indirect.make ~disp:(Disp.Numeric 2001) ());
       [%expect {| [2001] |}]
 
     let%expect_test "pp_indirect: Intel, +ve disp and base" =
-      Format.printf "%a@." pp_indirect
+      Fmt.pr "%a@." pp_indirect
         (Indirect.make
            ~disp:(Disp.Numeric 76)
            ~base:`EAX
@@ -285,13 +283,13 @@ module Intel_and_herd7 = struct
 
 
     let%expect_test "pp_indirect: Intel, zero disp only" =
-      Format.printf "%a@." pp_indirect
+      Fmt.pr "%a@." pp_indirect
         (Indirect.make ~disp:(Disp.Numeric 0) ());
       [%expect {| [0] |}]
 
 
     let%expect_test "pp_indirect: Intel, +ve disp and base" =
-      Format.printf "%a@." pp_indirect
+      Fmt.pr "%a@." pp_indirect
         (Indirect.make
            ~disp:(Disp.Numeric (-42))
            ~base:`ECX
@@ -299,14 +297,14 @@ module Intel_and_herd7 = struct
       [%expect {| [ECX-42] |}]
 
     let%expect_test "pp_indirect: Intel, base only" =
-      Format.printf "%a@." pp_indirect
+      Fmt.pr "%a@." pp_indirect
         (Indirect.make
            ~base:`EDX
            ());
       [%expect {| [EDX] |}]
 
     let%expect_test "pp_indirect: Intel, zero disp and base" =
-      Format.printf "%a@." pp_indirect
+      Fmt.pr "%a@." pp_indirect
         (Indirect.make
            ~disp:(Disp.Numeric 0)
            ~base:`EDX
@@ -326,8 +324,8 @@ module Make (D : Dialect) =
      *)
 
     let pp_bop f = function
-      | Operand.BopPlus -> Format.pp_print_char f '+'
-      | BopMinus -> Format.pp_print_char f '-'
+      | Operand.BopPlus -> Fmt.char f '+'
+      | BopMinus -> Fmt.char f '-'
 
     (*
      * Operands
@@ -350,27 +348,22 @@ module Make (D : Dialect) =
       | Operand.Location l -> pp_location f l;
       | Operand.Immediate d -> pp_immediate f d;
       | Operand.String s ->
-         Format.fprintf f "\"%s\"" (Staged.unstage string_escape s)
+         Fmt.pf f "\"%s\"" (Staged.unstage string_escape s)
       | Operand.Typ ty ->
-         Format.fprintf f "@@%s" ty
+         Fmt.pf f "@@%s" ty
       | Operand.Bop (l, b, r) ->
-         Format.pp_open_box f 0;
-         pp_operand f l;
-         pp_bop f b;
-         pp_operand f r;
-         Format.pp_close_box f ()
-
-    let pp_comma f =
-      Format.pp_print_char f ',';
-      Format.pp_print_space f
+        Fmt.box pp_bop_operand f (l, b, r)
+    and pp_bop_operand f (l, b, r) =
+      pp_operand f l;
+      pp_bop f b;
+      pp_operand f r
+    ;;
 
     let pp_oplist f = function
       | [] -> ()
       | operands ->
         (* Glue between operator and operands *)
-        Format.pp_print_space f ();
-        Format.pp_print_list ~pp_sep:pp_comma
-          pp_operand f operands
+        Fmt.(prefix sp (list ~sep:comma pp_operand)) f operands
     ;;
 
     (*
@@ -380,16 +373,14 @@ module Make (D : Dialect) =
     let prefix_string = function
       | PreLock -> "lock"
 
-    let pp_prefix f p =
-      Format.pp_print_string f (prefix_string p);
-      Format.pp_print_space f ()
+    let pp_prefix = Fmt.(suffix sp (using prefix_string string))
 
     (*
      * Opcodes
      *)
 
     let pp_opcode f = function
-      | Opcode.Directive s -> Format.fprintf f ".%s" s
+      | Opcode.Directive s -> Fmt.pf f ".%s" s
       | Unknown s -> String.pp f s
       | Basic opc ->
          opc
@@ -412,50 +403,51 @@ module Make (D : Dialect) =
      * Instructions
      *)
 
-    let pp_instruction f { Instruction.prefix; opcode; operands } =
-      Format.fprintf f
-                     "@[@[%a%a@]%a@]"
-                     (My_format.pp_option ~pp:pp_prefix) prefix
-                     pp_opcode opcode
-                     pp_oplist operands
+    let pp_instruction f { Instruction.prefix = p; opcode; operands } =
+      Fmt.(
+        pf f "@[@[%a%a@]%a@]"
+          (option pp_prefix) p
+          pp_opcode opcode
+          pp_oplist operands
+      )
 
     (*
      * Statements
      *)
 
     let pp_statement f = function
-      | Statement.Instruction i -> pp_instruction f i; Format.pp_print_cut f ()
-      | Label l -> Format.fprintf f "@[%s:@ @]" l
+      | Statement.Instruction i -> pp_instruction f i; Fmt.cut f ()
+      | Label l -> Fmt.pf f "@[%s:@ @]" l
       | Nop ->
          (* This blank space is deliberate, to make tabstops move across
         properly in litmus printing. *)
-         Format.fprintf f " "; Format.pp_print_cut f ()
+         Fmt.pf f " "; Fmt.cut f ()
   end
 
 module Att = Make (Att_specific)
 
 let%expect_test "pp_opcode: directive" =
-  Format.printf "%a@." Att.pp_opcode (Opcode.Directive "text");
+  Fmt.pr "%a@." Att.pp_opcode (Opcode.Directive "text");
   [%expect {| .text |}]
 
 let%expect_test "pp_opcode: jmp" =
-  Format.printf "%a@." Att.pp_opcode (Opcode.Jump `Unconditional);
+  Fmt.pr "%a@." Att.pp_opcode (Opcode.Jump `Unconditional);
   [%expect {| jmp |}]
 
 let%expect_test "pp_opcode: jge" =
-  Format.printf "%a@." Att.pp_opcode (Opcode.Jump (`Conditional `GreaterEqual));
+  Fmt.pr "%a@." Att.pp_opcode (Opcode.Jump (`Conditional `GreaterEqual));
   [%expect {| jge |}]
 
 let%expect_test "pp_opcode: jnz" =
-  Format.printf "%a@." Att.pp_opcode (Opcode.Jump (`Conditional (`Not `Zero)));
+  Fmt.pr "%a@." Att.pp_opcode (Opcode.Jump (`Conditional (`Not `Zero)));
   [%expect {| jnz |}]
 
 let%expect_test "pp_opcode: mov" =
-  Format.printf "%a@." Att.pp_opcode (Opcode.Basic `Mov);
+  Fmt.pr "%a@." Att.pp_opcode (Opcode.Basic `Mov);
   [%expect {| mov |}]
 
 let%expect_test "pp_opcode: movw (AT&T)" =
-  Format.printf "%a@." Att.pp_opcode (Opcode.Sized (`Mov, Opcode.Size.Word));
+  Fmt.pr "%a@." Att.pp_opcode (Opcode.Sized (`Mov, Opcode.Size.Word));
   [%expect {| movw |}]
 
 module Intel = Make (struct
@@ -467,15 +459,15 @@ module Herd7 = Make (struct
     include Intel_and_herd7
   end)
 
-let pp_ast f ast =
-  Format.pp_open_vbox f 0;
-  let pps =
-    match ast.syntax with
-    | Dialect.Att -> Att.pp_statement
-    | Dialect.Intel -> Intel.pp_statement
-    | Dialect.Herd7 -> Herd7.pp_statement
-  in
-  (* We don't print newlines out here due to nops and labels. *)
-  List.iter ~f:(pps f) ast.program;
-  Format.pp_close_box f ();
+let pp_ast =
+  Fmt.box (fun f ast ->
+      let pps =
+        match ast.syntax with
+        | Dialect.Att -> Att.pp_statement
+        | Dialect.Intel -> Intel.pp_statement
+        | Dialect.Herd7 -> Herd7.pp_statement
+      in
+      (* We don't print newlines out here due to nops and labels. *)
+      List.iter ~f:(pps f) ast.program
+    )
 ;;

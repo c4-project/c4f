@@ -47,35 +47,30 @@ include Traversable.Make_container1 (struct
 ;;
 
 let%expect_test "generated list map behaves properly" =
-  Format.printf "@[%a@]@."
-    (Format.pp_print_list Int.pp ~pp_sep:Format.pp_print_space)
+  Fmt.(pr "@[%a@]@." (list ~sep:sp int))
     (map ~f:(fun x -> x * x) [ 1; 3; 5; 7 ]);
   [%expect {| 1 9 25 49 |}]
 ;;
 
 let%expect_test "generated list count behaves properly" =
-  Format.printf "@[%d@]@." (count ~f:Int.is_positive [ -7; -5; -3; -1; 1; 3; 5; 7 ]);
+  Fmt.pr "@[%d@]@." (count ~f:Int.is_positive [ -7; -5; -3; -1; 1; 3; 5; 7 ]);
   [%expect {| 4 |}]
 ;;
 
 let%expect_test "mapiM: returning identity on list/option" =
   let module M = On_monad (Option) in
-  Format.printf "@[<h>%a@]@."
-    (My_format.pp_option
-       ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep String.pp))
+  Fmt.(pr "@[<h>%a@]@." (option (list ~sep:comma string)))
     (M.mapi_m ~f:(fun _ k -> Some k) ["a"; "b"; "c"; "d"; "e"]);
   [%expect {| a, b, c, d, e |}]
 
 let%expect_test "mapiM: counting upwards on list/option" =
   let module M = On_monad (Option) in
-  Format.printf "@[<h>%a@]@."
-    (My_format.pp_option
-       ~pp:(Format.pp_print_list ~pp_sep:My_format.pp_csep Int.pp))
+  Fmt.(pr "@[<h>%a@]@." (option (list ~sep:comma int)))
     (M.mapi_m ~f:(fun i _ -> Some i) [3; 7; 2; 4; 42]);
   [%expect {| 0, 1, 2, 3, 4 |}]
 
 let%expect_test "MyList: max_measure on empty list" =
-  printf "%d" (max_measure ~default:1066 ~measure:Fn.id []);
+  Fmt.pr "%d@." (max_measure ~default:1066 ~measure:Fn.id []);
   [%expect {| 1066 |}]
 ;;
 
@@ -85,19 +80,17 @@ let%expect_test "MyList: exclude -ve numbers" =
   let excluded = exclude ~f:Int.is_negative
       [1; -1; 2; 10; -49; 0; 64]
   in
-  Format.printf "@[%a@]@."
-    (Format.pp_print_list ~pp_sep:My_format.pp_csep Int.pp) excluded;
+  Fmt.(pr "@[%a@]@." (list ~sep:comma int)) excluded;
   [%expect {| 1, 2, 10, 0, 64 |}]
 ;;
 
 let%expect_test "MyList: right_pad empty list" =
-  Format.printf "@[%a@]@."
-    (My_format.pp_listlist ~pp:Int.pp) (right_pad ~padding:2 []);
+  Fmt.pr "@[%a@]@." (My_format.pp_listlist ~pp:Int.pp) (right_pad ~padding:2 []);
   [%expect {||}]
 ;;
 
 let%expect_test "MyList: right_pad example list" =
-  Format.printf "@[%a@]@."
+  Fmt.pr "@[%a@]@."
     (My_format.pp_listlist ~pp:Int.pp)
     (right_pad ~padding:6
        [ [0; 8; 0; 0]
@@ -108,29 +101,29 @@ let%expect_test "MyList: right_pad example list" =
        ; [3]
        ]);
   [%expect {|
-                [ 0, 8, 0, 0, 6 ]
-                [ 9, 9, 9, 6, 6 ]
-                [ 8, 8, 1, 9, 9 ]
-                [ 9, 1, 1, 9, 6 ]
-                [ 7, 2, 5, 6, 6 ]
-                [ 3, 6, 6, 6, 6 ] |}]
+                [0, 8, 0, 0, 6]
+                [9, 9, 9, 6, 6]
+                [8, 8, 1, 9, 9]
+                [9, 1, 1, 9, 6]
+                [7, 2, 5, 6, 6]
+                [3, 6, 6, 6, 6] |}]
 ;;
 
 let%expect_test "mapM: list" =
   let module M = On_monad (List) in
-  Format.printf "@[<h>%a@]@."
+  Fmt.pr "@[<h>%a@]@."
     (My_format.pp_listlist ~pp:Int.pp)
     (List.bind ~f:(M.map_m ~f:(fun k -> [k; 0]))
        ([[1; 2; 3]]));
   [%expect {|
-              [ 1, 2, 3 ]
-              [ 1, 2, 0 ]
-              [ 1, 0, 3 ]
-              [ 1, 0, 0 ]
-              [ 0, 2, 3 ]
-              [ 0, 2, 0 ]
-              [ 0, 0, 3 ]
-              [ 0, 0, 0 ] |}]
+              [1, 2, 3]
+              [1, 2, 0]
+              [1, 0, 3]
+              [1, 0, 0]
+              [0, 2, 3]
+              [0, 2, 0]
+              [0, 0, 3]
+              [0, 0, 0] |}]
 ;;
 
 let prefixes xs =
@@ -138,20 +131,18 @@ let prefixes xs =
 ;;
 
 let%expect_test "prefixes: empty list" =
-  Format.printf "@[<h>%a@]@."
-    (My_format.pp_listlist ~pp:Int.pp)
-    (prefixes []);
+  Fmt.pr "@[<h>%a@]@." (My_format.pp_listlist ~pp:Int.pp) (prefixes []);
   [%expect {||}]
 ;;
 
 let%expect_test "prefixes: sample list" =
-  Format.printf "@[<h>%a@]@."
+  Fmt.pr "@[<h>%a@]@."
     (My_format.pp_listlist ~pp:Int.pp)
     (prefixes [1; 2; 3]);
   [%expect {|
-              [ 1 ]
-              [ 1, 2 ]
-              [ 1, 2, 3 ] |}]
+              [1]
+              [1, 2]
+              [1, 2, 3] |}]
 ;;
 
 let one = function

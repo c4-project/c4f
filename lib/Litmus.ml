@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Base
 open Utils
 
 module type S = sig
@@ -35,7 +35,7 @@ module type S = sig
     }
 
   include Pretty_printer.S with type t := t
-  val pp_programs : Format.formatter -> t -> unit
+  val pp_programs : Formatter.t -> t -> unit
 
   val make
     :  name:string
@@ -98,22 +98,20 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
     lit
   ;;
 
-  let pp_init (f : Format.formatter)
-      (init : (string, Lang.Constant.t) List.Assoc.t)
-    : unit =
+  let pp_init
+    :  Formatter.t
+    -> (string, Lang.Constant.t) List.Assoc.t
+    -> unit =
     My_format.pp_c_braces
-      f
-      (fun f ->
-         Format.pp_print_list
-           ~pp_sep:Format.pp_print_space
-           (fun f (l, c) ->
-              Format.fprintf f "@[%s = %a;@]" l Lang.Constant.pp c
-           )
-           f
-           init)
+      (Fmt.(
+          list ~sep:sp
+            (fun f (l, c) -> pf f "@[%s = %a;@]" l Lang.Constant.pp c)
+         )
+      )
+  ;;
 
-  let pp_instr (f : Format.formatter) =
-    Format.fprintf f "@[<h>%a@]" Lang.Statement.pp
+  let pp_instr (f : Formatter.t) =
+    Fmt.pf f "@[<h>%a@]" Lang.Statement.pp
 
   module Program_tabulator = struct
     module M  = struct
@@ -123,7 +121,7 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
         let open Or_error.Let_syntax in
 
         let program_names =
-          List.mapi ~f:(fun i _ -> sprintf "P%d" i) programs
+          List.mapi ~f:(fun i _ -> Printf.sprintf "P%d" i) programs
         in
         let header : Tabulator.row =
           List.map ~f:(Fn.flip String.pp) program_names
@@ -154,7 +152,7 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
   let pp_programs_inner =
     Program_tabulator.pp_as_table
       ~on_error:(fun f e ->
-          Format.fprintf f
+          Fmt.pf f
             "@[<@ error printing table:@ %a@ >@]"
             Error.pp e)
   ;;
@@ -162,20 +160,19 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
   let pp_programs f t = pp_programs_inner f t.programs
 
   let pp_location_stanza f init =
-    Format.fprintf f "@[<h>locations@ [@[%a@]]@]"
-      ( Format.pp_print_list
-          ~pp_sep:(fun f () -> Format.fprintf f ";@ ")
-          String.pp
-      )
-      (List.map ~f:fst init)
+    Fmt.(
+      pf f "@[<h>locations@ [@[%a@]]@]"
+        (list ~sep:(fun f () -> pf f ";@ ") string)
+    ) (List.map ~f:fst init)
+  ;;
 
   let pp_body_validated f litmus =
     pp_init f (litmus.init);
-    Format.pp_print_cut f ();
-    Format.pp_print_cut f ();
+    Fmt.cut f ();
+    Fmt.cut f ();
     pp_programs_inner f (litmus.programs);
-    Format.pp_print_cut f ();
-    Format.pp_print_cut f ();
+    Fmt.cut f ();
+    Fmt.cut f ();
     (* This just repeats information already in the initialiser,
        but herd7 seems to need either a location stanza or a
        precondition, and this is always guaranteed to exist. *)
@@ -184,12 +181,16 @@ module Make (Lang : Language.S) : S with module Lang = Lang = struct
   let pp_body f litmus =
     match validate litmus with
     | Ok _ -> pp_body_validated f litmus
-    | Error err -> Format.fprintf f "[@(*@ @[<hov>Invalid litmus file:@ %a@] *)@]@,"
+    | Error err -> Fmt.pf f "[@(*@ @[<hov>Invalid litmus file:@ %a@] *)@]@,"
                      Error.pp err
 
-  let pp f litmus =
-    Format.pp_open_vbox f 0;
-    Format.fprintf f "@[%s@ %s@]@,@," Lang.name litmus.name;
-    pp_body f litmus;
-    Format.pp_close_box f ()
+  let pp =
+    Fmt.(
+      vbox (
+        fun f litmus ->
+          Fmt.pf f "@[%s@ %s@]@,@," Lang.name litmus.name;
+          pp_body f litmus
+      )
+    )
+  ;;
 end

@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core_kernel
+open Base
 
 type 'a t = 'a option
 
@@ -44,34 +44,28 @@ include Traversable.Make_container1 (struct
 ;;
 
 let%expect_test "generated option map behaves properly: Some" =
-  Format.printf "@[%a@]@."
-    (My_format.pp_option ~pp:Int.pp)
-    (map ~f:(fun x -> x * x) (Some 12));
+  Fmt.(pr "@[%a@]@." (option int)) (map ~f:(fun x -> x * x) (Some 12));
   [%expect {| 144 |}]
 ;;
 
 let%expect_test "generated option map behaves properly: None" =
-  Format.printf "@[%a@]@."
-    (My_format.pp_option ~pp:Int.pp)
-    (map ~f:(fun x -> x * x) None);
+  Fmt.(pr "@[%a@]@." (option int)) (map ~f:(fun x -> x * x) None);
   [%expect {| |}]
 ;;
 
 let%expect_test "generated option count behaves properly: Some/yes" =
-  Format.printf "@[%d@]@." (count ~f:Int.is_positive (Some 42));
+  Fmt.pr "@[%d@]@." (count ~f:Int.is_positive (Some 42));
   [%expect {| 1 |}]
 ;;
 
 let%expect_test "generated option count behaves properly: Some/no" =
-  Format.printf "@[%d@]@." (count ~f:Int.is_positive (Some (-42)));
+  Fmt.pr "@[%d@]@." (count ~f:Int.is_positive (Some (-42)));
   [%expect {| 0 |}]
 ;;
 
 let%expect_test "mapM: returning identity on Some/Some" =
   let module M = On_monad (Option) in
-  Format.printf "@[<h>%a@]@."
-    (My_format.pp_option
-       ~pp:(My_format.pp_option ~pp:String.pp))
+  Fmt.(pr "@[<h>%a@]@." (option (option string)))
     (M.map_m ~f:(Option.some) (Some "hello"));
   [%expect {| hello |}]
 ;;
@@ -87,8 +81,7 @@ let first_some_of_thunks thunks =
 ;;
 
 let%expect_test "first_some_of_thunks: short-circuiting works" =
-  Format.printf "@[<h>%a@]@."
-    (My_format.pp_option ~pp:String.pp)
+  Fmt.(pr "@[<h>%a@]@." (option string))
     (first_some_of_thunks
        [ Fn.const None
        ; Fn.const (Some "hello")
