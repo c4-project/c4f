@@ -60,7 +60,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     ; warnings  = []
     }
 
-  include State.Make_transform (struct
+  include State_transform.Make (struct
       type t = ctx
       module Inner = Or_error
     end)

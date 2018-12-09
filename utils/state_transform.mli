@@ -22,9 +22,9 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Haskell-style state monads *)
+(** Haskell-style state transformers *)
 
-(** The actual interface of [State] is kept in [State_intf];
-    that way, both this and the implementation can include the same
-    module type declarations. *)
-include State_intf.State
+(** The actual interface of [State_transform] is kept in
+   [State_transform_intf]; that way, both this and the implementation
+   can include the same module type declarations. *)
+include State_transform_intf.State_transform

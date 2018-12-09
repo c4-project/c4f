@@ -46,12 +46,12 @@ end
 module Derived_ops_monadic_gen
     (I : Derived_ops_maker) (M : Monad.S) = struct
   (* We use the state monad to implement fold-map. *)
-  module SM = State.Make2_transform (M)
+  module SM = State_transform.Make2 (M)
 
   module IM = I.On_monad (M)
 
   let fold_map_m (type acc) c ~f ~init =
-    let module SM' = State.To_S_transform (SM) (struct type t = acc end) in
+    let module SM' = State_transform.To_S (SM) (struct type t = acc end) in
     let module ISM = I.On_monad (SM') in
     SM.run' (ISM.map_m ~f:(fun x -> SM.Monadic.make (fun s -> f s x)) c) init
   ;;
