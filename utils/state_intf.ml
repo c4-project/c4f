@@ -191,6 +191,8 @@ module type S_transform = sig
   include My_monad.Extensions with type 'a t := 'a t
   include Generic_transform with type ('a, 's) t := 'a t
                              and type 's state := state
+  include Monad_transform.S_fixed with type 'a t := 'a t
+                                   and module Inner := Inner
 end
 
 (** [Basic_transform] is the signature that must be implemented

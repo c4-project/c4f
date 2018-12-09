@@ -112,6 +112,8 @@ module To_S_transform (M : S2_transform) (B : Base.T)
   include M1
   include My_monad.Extend (M1)
 
+  let lift = M.return
+
   include (M : Generic_transform with type ('a, 's) t := 'a t
                                   and type 's state := state
                                   and module Inner = M.Inner)
