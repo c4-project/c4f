@@ -70,6 +70,42 @@ call __stack_chk_fail # <-- call
 leave # <-- call
 ret # <-- return
 ```
+## gcc_macho_o0_deref_cmpxchg.s
+
+```
+_P0:  # <-- label (unused label, program boundary)
+pushl %EBP # <-- stack (manipulates stack)
+movl %ESP, %EBP # <-- move (manipulates stack)
+subl $16, %ESP # <-- arith (manipulates stack)
+movl $0, _t0r0 # <-- move
+movl $_x, -4(%EBP) # <-- move
+movl $2, -8(%EBP) # <-- move
+movl -8(%EBP), %EAX # <-- move
+movl %EAX, %EDX # <-- move
+movl -4(%EBP), %ECX # <-- move
+movl _t0r0, %EAX # <-- move
+lock cmpxchgl %EDX, (%ECX) # <-- RMW
+movl %EAX, %EDX # <-- move
+sete %AL # <-- ??
+testb %AL, %AL # <-- ??
+jne L3 # <-- jump
+movl %EDX, _t0r0 # <-- move
+L3:  # <-- label
+leave # <-- call
+ret # <-- return
+_P1:  # <-- label (unused label, program boundary)
+pushl %EBP # <-- stack (manipulates stack)
+movl %ESP, %EBP # <-- move (manipulates stack)
+subl $16, %ESP # <-- arith (manipulates stack)
+movl $_x, -4(%EBP) # <-- move
+movl $1, -8(%EBP) # <-- move
+movl -8(%EBP), %EAX # <-- move
+movl %EAX, %EDX # <-- move
+movl -4(%EBP), %EAX # <-- move
+movl %EDX, (%EAX) # <-- move
+leave # <-- call
+ret # <-- return
+```
 ## gcc_macho_o0_deref_write.s
 
 ```
@@ -185,7 +221,7 @@ leave # <-- call
 ret # <-- return
 ```
 
-Ran 5 test(s).
+Ran 6 test(s).
 
 # Litmusifier tests
 
@@ -242,6 +278,31 @@ xor EAX, [t0gGSd201]  | xor EAX, [t1gGSd201]  ;
 
 locations [t0gGSd200; t0gGSd201; t0r0; t0sZM12; t0sZM16; t0sZM20; t1gGSd200;
            t1gGSd201; t1sZM12; t1sZM16; t1sZM20; x; y]
+```
+## gcc_macho_o0_deref_cmpxchg.s
+
+```
+X86 gcc_macho_o0_deref_cmpxchg.s
+
+{ ZUt0r0 = 0; ZUx = 0; t0sZM4 = 0; t0sZM8 = 0; }
+
+P0                      | P1           ;
+movl [ZUt0r0], 0        | mov [ZUx], 1 ;
+movl [t0sZM4], ZUx      |              ;
+movl [t0sZM8], 2        |              ;
+movl EAX, [t0sZM8]      |              ;
+movl EDX, EAX           |              ;
+movl ECX, [t0sZM4]      |              ;
+movl EAX, [ZUt0r0]      |              ;
+lock cmpxchg [ECX], EDX |              ;
+movl EDX, EAX           |              ;
+sete AL                 |              ;
+testb AL, AL            |              ;
+jne L3                  |              ;
+movl [ZUt0r0], EDX      |              ;
+L3:                     |              ;
+
+locations [ZUt0r0; ZUx; t0sZM4; t0sZM8]
 ```
 ## gcc_macho_o0_deref_write.s
 
@@ -301,6 +362,6 @@ L3:                | mfence             ;
 locations [ZUt0r0; ZUt1r0; ZUx; ZUy; t0sZM4; t1sZM4]
 ```
 
-Ran 5 test(s).
+Ran 6 test(s).
 
 
