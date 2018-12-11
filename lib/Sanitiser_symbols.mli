@@ -22,4 +22,20 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Sanitiser_base_intf
+(** Sanitiser passes for global symbol renaming
+
+    This module provides a global sanitiser pass that performs two
+    renaming sub-passes on all symbols:
+
+    - [`Unmangle_symbols]: replace compiler-mangled symbols
+    with their original C identifiers where doing so is unambiguous;
+    - [`Escape_symbols]: replace characters in symbols that are
+    difficult for Herd-like programs to parse with less human-readable
+    (but more machine-readable) equivalents. *)
+
+module Make (B : Sanitiser_base.Basic)
+  : Sanitiser_base.S_all
+    with module Lang := B.Lang
+     and module Ctx := B.Ctx
+     and module Program_container := B.Program_container
+;;

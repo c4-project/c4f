@@ -27,44 +27,22 @@ open Utils
 
 include Sanitiser_intf
 
-module Make_null_hook (Lang : Language.S)
-  : Hook with module Lang = Lang = struct
+module Make_null_hook (Lang : Language.S) (P : Traversable.Container1)
+  : Hook with module Lang = Lang and module Program_container = P = struct
   module Lang = Lang
   module Ctx = Sanitiser_ctx.Make (Lang)
+  module Program_container = P
 
+  let on_all = Ctx.return
   let on_program = Ctx.return
   let on_statement = Ctx.return
   let on_instruction = Ctx.return
   let on_location = Ctx.return
 end
 
-let mangler =
-  (* We could always just use something like Base36 here, but this
-     seems a bit more human-readable. *)
-  String.Escaping.escape_gen_exn
-    ~escape_char:'Z'
-    (* We escape some things that couldn't possibly appear in legal
-       x86 assembler, but _might_ be generated during sanitisation. *)
-    ~escapeworthy_map:[ '+', 'A' (* Add *)
-                      ; ',', 'C' (* Comma *)
-                      ; '$', 'D' (* Dollar *)
-                      ; '.', 'F' (* Full stop *)
-                      ; '-', 'M' (* Minus *)
-                      ; '%', 'P' (* Percent *)
-                      ; '@', 'T' (* aT *)
-                      ; '_', 'U' (* Underscore *)
-                      ; 'Z', 'Z' (* Z *)
-                      ]
-;;
-let mangle = Staged.unstage mangler
-
-let%expect_test "mangle: sample" =
-  print_string (mangle "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet");
-  [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
-
 module Make (B : Basic)
   : S with module Lang := B.Lang
-       and type 'a Program_container.t = 'a B.Program_container.t = struct
+       and module Program_container = B.Program_container = struct
   module Ctx = B.Ctx
   module Warn = B.Ctx.Warn
   module Lang = B.Lang
@@ -242,32 +220,6 @@ module Make (B : Basic)
     >>= (`Warn            |-> warn_untranslated_operands)
   ;;
 
-  module Ctx_Stm_Sym = Lang.Statement.On_symbols.On_monad (Ctx)
-  let over_all_symbols progs ~f =
-    (* Nested mapping:
-       over symbols in statements in statement lists in programs. *)
-    Ctx_Pcon.map_m progs
-      ~f:(Ctx_List.map_m ~f:(Ctx_Stm_Sym.map_m ~f))
-
-  (** [escape_and_redirect sym] mangles [sym], either by
-      generating and installing a new mangling into
-      the redirects table if none already exists; or by
-      fetching the existing mangle. *)
-  let escape_and_redirect sym =
-    let open Ctx.Let_syntax in
-    match%bind Ctx.get_redirect sym with
-    | Some sym' when not (Lang.Symbol.equal sym sym') ->
-      (* There's an existing redirect, so we assume it's a
-         mangled version. *)
-      Ctx.return sym'
-    | Some _ | None ->
-      let sym' = Lang.Symbol.On_strings.map ~f:mangle sym in
-      Ctx.redirect ~src:sym ~dst:sym' >>| fun () -> sym'
-  ;;
-
-  (** [escape_symbols progs] reduces identifiers across a program
-      container [progs] into a form that herd can parse. *)
-  let escape_symbols = over_all_symbols ~f:escape_and_redirect
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
@@ -394,7 +346,8 @@ module Make (B : Basic)
       ~finish:(fun () zipper -> Ctx.return (Zip.to_list zipper))
   ;;
 
-  module Deref = Sanitiser_deref.Make (B)
+  module Deref   = Sanitiser_deref.Make (B)
+  module Symbols = Sanitiser_symbols.Make (B)
 
   let update_symbol_table
       (prog : Lang.Statement.t list) =
@@ -543,12 +496,6 @@ module Make (B : Basic)
     { Output.programs; redirects }
   ;;
 
-  let sanitise_all_symbols progs =
-    Ctx.(
-      progs
-      |>  (`Escape_symbols |-> escape_symbols)
-    )
-  ;;
 
   let sanitise_with_ctx c_symbols progs =
     Ctx.(
@@ -558,7 +505,7 @@ module Make (B : Basic)
          instruction sanitisers have introduced invalid identifiers;
          and second, so that we know that the symbol changes agree across
          program boundaries.*)
-      >>= sanitise_all_symbols
+      >>= Symbols.on_all
       >>= build_output c_symbols
     )
   ;;
@@ -573,16 +520,18 @@ module Make (B : Basic)
   ;;
 end
 
-module Make_single (H : Hook) = Make(struct
-    include H
-    module Program_container = Utils.Singleton
+module Make_single (H : Hook_maker)
+  : S with module Lang := H(Utils.Singleton).Lang
+       and type 'a Program_container.t = 'a = Make (struct
+    include H (Utils.Singleton)
 
     let split = Or_error.return (* no operation *)
   end)
 
-module Make_multi (H : Hook) = Make(struct
-    include H
-    module Program_container = Utils.My_list
+module Make_multi (H : Hook_maker)
+  : S with module Lang := H(Utils.My_list).Lang
+       and type 'a Program_container.t = 'a list = Make (struct
+    include H (Utils.My_list)
 
     let split stms =
       (* Adding a nop to the start forces there to be some

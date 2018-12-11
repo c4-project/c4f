@@ -30,19 +30,38 @@ open Base
     sanitisation process. *)
 module type Hook = sig
   include Sanitiser_base.Basic
-  include Sanitiser_base.S_program with module Lang := Lang
-                                     and module Ctx := Ctx
+  include Sanitiser_base.S_all
+    with module Lang := Lang
+     and module Ctx := Ctx
+     and module Program_container := Program_container
   ;;
-  include Sanitiser_base.S_statement with module Lang := Lang
-                                       and module Ctx := Ctx
+  include Sanitiser_base.S_program
+    with module Lang := Lang
+     and module Ctx := Ctx
+     and module Program_container := Program_container
   ;;
-  include Sanitiser_base.S_instruction with module Lang := Lang
-                                        and module Ctx := Ctx
+  include Sanitiser_base.S_statement
+    with module Lang := Lang
+     and module Ctx := Ctx
+     and module Program_container := Program_container
   ;;
-  include Sanitiser_base.S_location with module Lang := Lang
-                                     and module Ctx := Ctx
+  include Sanitiser_base.S_instruction
+    with module Lang := Lang
+     and module Ctx := Ctx
+     and module Program_container := Program_container
+  ;;
+  include Sanitiser_base.S_location
+    with module Lang := Lang
+     and module Ctx := Ctx
+     and module Program_container := Program_container
   ;;
 end
+
+module type Hook_maker =
+  functor (P : Utils.Traversable.Container1)
+    -> Hook with module Program_container = P
+(** [Hook_maker] is the type of functors that generate hooks given a
+    program container. *)
 
 (** [Basic] describes the base functionality we need to supply to a
     sanitiser.
@@ -56,11 +75,6 @@ end
     more easily. *)
 module type Basic = sig
   include Hook
-
-  (** [Program_container] describes the traversable
-     container that we'll be using to hold the one or more programs
-     we're sanitising. *)
-  module Program_container : Utils.Traversable.Container1
 
   (** [split] splits an assembly script up into the one or more
       programs we'll be sanitising. *)
@@ -137,33 +151,27 @@ module type Sanitiser = sig
   module type Basic = Basic
   module type S = S
 
-  (** [Make_null_hook] makes a [Hook] that does nothing. *)
   module Make_null_hook
-    : functor (Lang : Language.S)
-      -> Hook with module Lang = Lang
+      (Lang : Language.S) (P : Utils.Traversable.Container1)
+    : Hook with module Lang = Lang and module Program_container = P
+  (** [Make_null_hook] makes a [Hook] that does nothing. *)
 
+  module Make (B : Basic)
+    : S with module Lang := B.Lang
+         and type 'a Program_container.t = 'a B.Program_container.t
   (** [Make] implements the assembly sanitiser for a given [Basic]. *)
-  module Make :
-    functor (B : Basic)
-      -> S with module Lang := B.Lang
-            and type 'a Program_container.t = 'a B.Program_container.t
-  ;;
 
+  module Make_single (H : Hook_maker)
+    : S with module Lang := H(Utils.Singleton).Lang
+         and type 'a Program_container.t = 'a
   (** [Make_single] implements the assembly sanitiser for a given
-     [Hook], performing no program splitting and returning the
+     [Hook_maker], performing no program splitting and returning the
      sanitised assembly back as one program. *)
-  module Make_single :
-    functor (H : Hook)
-      -> S with module Lang := H.Lang
-            and type 'a Program_container.t = 'a
-  ;;
 
+  module Make_multi (H : Hook_maker)
+    : S with module Lang := H(Utils.My_list).Lang
+         and type 'a Program_container.t = 'a list
   (** [Make_multi] implements the assembly sanitiser for a given
-     [Hook], treating the incoming assembly as holding multiple
+     [Hook_maker], treating the incoming assembly as holding multiple
      label-delimited programs and splitting them accordingly. *)
-  module Make_multi :
-    functor (H : Hook)
-      -> S with module Lang := H.Lang
-            and type 'a Program_container.t = 'a list
-  ;;
 end

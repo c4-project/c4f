@@ -22,23 +22,30 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+open Utils
+
 (** [Basic] is the standard input signature for functors creating
     sanitiser passes. *)
 module type Basic = sig
-  (** [Lang] provides language-specific functionality. *)
   module Lang : Language.S
+  (** [Lang] provides language-specific functionality. *)
 
+
+  module Ctx : Sanitiser_ctx.S with module Lang := Lang
   (** [Ctx] is the sanitiser's state monad, specialised over
      [Lang]. *)
-  module Ctx : Sanitiser_ctx.S with module Lang := Lang
+
+  module Program_container : Traversable.Container1
+  (** [Program_container] is the container used to hold the one or more
+      programs being sanitised. *)
 end
 
 (** [S_location] is the standard signature for location passes. *)
 module type S_location = sig
   include Basic
 
-  (** [on_location loc] runs this sanitiser pass over [loc]. *)
   val on_location : Lang.Location.t -> Lang.Location.t Ctx.t
+  (** [on_location loc] runs this sanitiser pass over [loc]. *)
 end
 
 (** [S_instruction] is the standard signature for instruction
@@ -46,23 +53,33 @@ end
 module type S_instruction = sig
   include Basic
 
-  (** [on_instruction ins] runs this sanitiser pass over [ins]. *)
   val on_instruction : Lang.Instruction.t -> Lang.Instruction.t Ctx.t
+  (** [on_instruction ins] runs this sanitiser pass over [ins]. *)
 end
 
 (** [S_statement] is the standard signature for statement passes. *)
 module type S_statement = sig
   include Basic
 
-  (** [on_statement stm] runs this sanitiser pass over [stm]. *)
   val on_statement : Lang.Statement.t -> Lang.Statement.t Ctx.t
+  (** [on_statement stm] runs this sanitiser pass over [stm]. *)
 end
 
-(** [S_program] is the standard signature for whole-program
-    passes. *)
+(** [S_program] is the standard signature for program passes. *)
 module type S_program = sig
   include Basic
 
-  (** [on_program prog] runs this sanitiser pass over [prog]. *)
   val on_program : Lang.Statement.t list -> Lang.Statement.t list Ctx.t
+  (** [on_program prog] runs this sanitiser pass over [prog]. *)
+end
+
+(** [S_all] is the standard signature for passes over a
+    program container. *)
+module type S_all = sig
+  include Basic
+
+  val on_all
+    :  Lang.Statement.t list Program_container.t
+    -> Lang.Statement.t list Program_container.t Ctx.t
+  (** [on_all progs] runs this sanitiser pass over [progs]. *)
 end

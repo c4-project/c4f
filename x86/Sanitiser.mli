@@ -24,26 +24,27 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 (** x86-specific functionality for act's sanitiser *)
 
 (** [Hook] implements x86-specific sanitisation passes.
-    It requires an [Language.Intf] module to tell it things about the
+    It requires an [Language.S] module to tell it things about the
     current x86 dialect (for example, the order of operands). *)
-module Hook
-  : functor (L : Language.S)
-    -> Lib.Sanitiser.Hook with module Lang := L
+module Hook (L : Language.S) (P : Utils.Traversable.Container1)
+  : Lib.Sanitiser.Hook with module Lang := L
+                        and module Program_container = P
+;;
 
-(** [Make_single] directly instantiates a single-program sanitiser for an
-    [Language.Intf] module. *)
+
 module Make_single
   : functor (L : Language.S)
     -> Lib.Sanitiser.S with module Lang := L
                         and type 'a Program_container.t = 'a
-;;
-
-
-(** [Make_multi] directly instantiates a multi-program sanitiser for anb
+(** [Make_single] directly instantiates a single-program sanitiser for an
     [Language.Intf] module. *)
+
+
+
 module Make_multi
   : functor (L : Language.S)
     -> Lib.Sanitiser.S with module Lang := L
                         and type 'a Program_container.t = 'a list
-;;
+(** [Make_multi] directly instantiates a multi-program sanitiser for anb
+    [Language.Intf] module. *)
 

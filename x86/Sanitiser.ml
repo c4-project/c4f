@@ -24,12 +24,13 @@
 
 open Core
 
-module Hook (L : Language.S) = struct
+module Hook (L : Language.S) (P : Utils.Traversable.Container1) = struct
   open Ast
 
   module Lang = L
   module Ctx = Lib.Sanitiser_ctx.Make (Lang)
   module Pass = Lib.Sanitiser_pass
+  module Program_container = P
 
   let negate = function
     | Disp.Numeric k -> Operand.Immediate (Disp.Numeric (-k))
@@ -148,8 +149,8 @@ module Hook (L : Language.S) = struct
   ;;
 
   let on_statement = Ctx.return
-
   let on_program = Ctx.return
+  let on_all = Ctx.return
 
   let on_location loc =
     Ctx.(
