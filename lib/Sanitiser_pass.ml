@@ -27,25 +27,27 @@ open Utils
 
 module M = struct
   type t =
-    [ `Language_hooks
-    | `Mangle_symbols
+    [ `Escape_symbols
+    | `Language_hooks
     | `Remove_boundaries
     | `Remove_litmus
     | `Remove_useless
     | `Simplify_deref_chains
     | `Simplify_litmus
+    | `Unmangle_symbols
     | `Warn
     ]
   [@@deriving enum, sexp]
 
   let table =
-    [ `Language_hooks       , "language-hooks"
-    ; `Mangle_symbols       , "mangle-symbols"
+    [ `Escape_symbols       , "escape-symbols"
+    ; `Language_hooks       , "language-hooks"
     ; `Remove_boundaries    , "remove-boundaries"
     ; `Remove_litmus        , "remove-litmus"
     ; `Remove_useless       , "remove-useless"
     ; `Simplify_deref_chains, "simplify-deref-chains"
     ; `Simplify_litmus      , "simplify-litmus"
+    ; `Unmangle_symbols     , "unmangle-symbols"
     ; `Warn                 , "warn"
     ]
 end
@@ -58,13 +60,14 @@ let%expect_test "all passes accounted for" =
     (Format.pp_print_list ~pp_sep:Format.pp_print_cut pp)
     (all_list ());
   [%expect {|
+    escape-symbols
     language-hooks
-    mangle-symbols
     remove-boundaries
     remove-litmus
     remove-useless
     simplify-deref-chains
     simplify-litmus
+    unmangle-symbols
     warn |}]
 ;;
 
@@ -106,7 +109,7 @@ module Selector = struct
     Sexp.output_hum Out_channel.stdout
       [%sexp (eval_b blang ~default:Set.empty : Set.t)];
     [%expect {|
-      (language-hooks mangle-symbols remove-boundaries remove-litmus
-       simplify-deref-chains simplify-litmus warn) |}]
+      (escape-symbols language-hooks remove-boundaries remove-litmus
+       simplify-deref-chains simplify-litmus unmangle-symbols warn) |}]
   ;;
 end

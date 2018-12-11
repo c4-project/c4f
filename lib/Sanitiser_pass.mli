@@ -30,49 +30,54 @@ open Utils
 
 (** [t] enumerates the various high-level sanitisation passes. *)
 type t =
-  [ `Language_hooks (** Run language-specific hooks.
+  [ `Escape_symbols
+  (** Mangle symbols to ensure litmus tools can lex them. *)
+  | `Language_hooks
+  (** Run language-specific hooks.
 
-                        Said hooks may be further categorised into
-                       passes, so enabling [Language_hooks] on its own
-                       won't enable all language-specific passes. *)
-  | `Mangle_symbols (** Mangle symbols to ensure litmus tools can lex
-                       them. *)
-  | `Remove_boundaries (** Remove program boundaries.
+      Said hooks may be further categorised into passes, so enabling
+      [Language_hooks] on its own won't enable all language-specific
+      passes. *)
+  | `Remove_boundaries
+  (** Remove program boundaries.
 
-                          If this pass isn't active, program
-                          boundaries are retained even if they're not
-                          jumped to. *)
-  | `Remove_litmus (** Remove elements that have an effect in the
-                      assembly, but said effect isn't captured in the
-                      litmus test. *)
-  | `Remove_useless (** Remove elements with no (direct) effect in the
-                       assembly. *)
-  | `Simplify_deref_chains (** Replace 'deref chains' with direct
-                              movements.  This is a fairly heavyweight
-                              change. *)
-  | `Simplify_litmus (** Perform relatively minor simplifications on
-                        elements that aren't directly understandable
-                        by litmus tools. *)
-  | `Warn  (** Warn about things the sanitiser doesn't understand. *)
+      If this pass isn't active, program boundaries are retained even
+      if they're not jumped to. *)
+  | `Remove_litmus
+  (** Remove elements that have an effect in the assembly, but said
+      effect isn't captured in the litmus test. *)
+  | `Remove_useless
+  (** Remove elements with no (direct) effect in the assembly. *)
+  | `Simplify_deref_chains
+  (** Replace 'deref chains' with direct movements.  This is a fairly
+      heavyweight change. *)
+  | `Simplify_litmus
+  (** Perform relatively minor simplifications on elements that aren't
+      directly understandable by litmus tools. *)
+  | `Unmangle_symbols
+  (** Where possible, replace symbols with their original C
+     identifiers. *)
+  | `Warn
+    (** Warn about things the sanitiser doesn't understand. *)
   ]
 ;;
 
-(** We include the usual enum extensions for [Pass]. *)
 include Enum.Extension_table with type t := t
+(** We include the usual enum extensions for [Pass]. *)
 
+val explain : Set.t
 (** [explain] collects passes that are useful for explaining an
     assembly file without modifying its semantics too much. *)
-val explain : Set.t
 
+val standard : Set.t
 (** [standard] collects passes that are considered safe for
     general litmusification. *)
-val standard : Set.t
 
 (** [Select_lang] exposes a [Blang]-based language for selecting
     sanitiser passes. *)
 module Selector : sig
-  (** [elt] is just a renaming of the outermost [t]. *)
   type elt = t
+  (** [elt] is just a renaming of the outermost [t]. *)
 
   (** [category] enumerates the various top-level categories of
      passes. *)

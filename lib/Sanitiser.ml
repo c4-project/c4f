@@ -200,22 +200,6 @@ module Make (B : Basic)
     ins
   ;;
 
-  (** [mangle_and_redirect sym] mangles [sym], either by
-      generating and installing a new mangling into
-      the redirects table if none already exists; or by
-      fetching the existing mangle. *)
-  let mangle_and_redirect sym =
-    let open Ctx.Let_syntax in
-    match%bind Ctx.get_redirect sym with
-    | Some sym' when not (Lang.Symbol.equal sym sym') ->
-      (* There's an existing redirect, so we assume it's a
-         mangled version. *)
-      Ctx.return sym'
-    | Some _ | None ->
-      let sym' = Lang.Symbol.On_strings.map ~f:mangle sym in
-      Ctx.redirect ~src:sym ~dst:sym' >>| fun () -> sym'
-  ;;
-
   let make_end_jump () =
     let open Ctx.Let_syntax in
     match%bind Ctx.get_end_label with
@@ -258,15 +242,32 @@ module Make (B : Basic)
     >>= (`Warn            |-> warn_untranslated_operands)
   ;;
 
-  (** [mangle_identifiers progs] reduces identifiers across a program
-      container [progs] into a form that herd can parse. *)
-  let mangle_identifiers progs =
-    let module Ctx_Stm_Sym = Lang.Statement.On_symbols.On_monad (Ctx) in
+  module Ctx_Stm_Sym = Lang.Statement.On_symbols.On_monad (Ctx)
+  let over_all_symbols progs ~f =
     (* Nested mapping:
        over symbols in statements in statement lists in programs. *)
     Ctx_Pcon.map_m progs
-      ~f:(Ctx_List.map_m ~f:(Ctx_Stm_Sym.map_m ~f:mangle_and_redirect))
+      ~f:(Ctx_List.map_m ~f:(Ctx_Stm_Sym.map_m ~f))
+
+  (** [escape_and_redirect sym] mangles [sym], either by
+      generating and installing a new mangling into
+      the redirects table if none already exists; or by
+      fetching the existing mangle. *)
+  let escape_and_redirect sym =
+    let open Ctx.Let_syntax in
+    match%bind Ctx.get_redirect sym with
+    | Some sym' when not (Lang.Symbol.equal sym sym') ->
+      (* There's an existing redirect, so we assume it's a
+         mangled version. *)
+      Ctx.return sym'
+    | Some _ | None ->
+      let sym' = Lang.Symbol.On_strings.map ~f:mangle sym in
+      Ctx.redirect ~src:sym ~dst:sym' >>| fun () -> sym'
   ;;
+
+  (** [escape_symbols progs] reduces identifiers across a program
+      container [progs] into a form that herd can parse. *)
+  let escape_symbols = over_all_symbols ~f:escape_and_redirect
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
@@ -542,15 +543,22 @@ module Make (B : Basic)
     { Output.programs; redirects }
   ;;
 
+  let sanitise_all_symbols progs =
+    Ctx.(
+      progs
+      |>  (`Escape_symbols |-> escape_symbols)
+    )
+  ;;
+
   let sanitise_with_ctx c_symbols progs =
     Ctx.(
       find_initial_redirects c_symbols progs
       >>= fun () -> Ctx_Pcon.mapi_m ~f:sanitise_program progs
       (* We do this last, for two reasons: first, in case the
          instruction sanitisers have introduced invalid identifiers;
-         and second, so that we know that the manglings agree across
+         and second, so that we know that the symbol changes agree across
          program boundaries.*)
-      >>= Ctx.(`Mangle_symbols |-> mangle_identifiers)
+      >>= sanitise_all_symbols
       >>= build_output c_symbols
     )
   ;;
