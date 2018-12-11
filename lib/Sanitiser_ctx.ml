@@ -46,15 +46,17 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     { progname  : string
     ; endlabel  : string option
     ; syms      : Abstract.Symbol.Table.t
+    ; variables : Lang.Symbol.Set.t
     ; redirects : Lang.Symbol.R_map.t
     ; passes    : Pass.Set.t
     ; warnings  : (string, Warn.t) List.Assoc.t
     }[@@deriving fields]
 
-  let initial ~passes =
+  let initial ~passes ~variables =
     { progname  = "(no program)"
     ; endlabel  = None
     ; syms      = Abstract.Symbol.Table.empty
+    ; variables
     ; redirects = Lang.Symbol.R_map.make Lang.Symbol.Set.empty
     ; passes
     ; warnings  = []
@@ -154,11 +156,19 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     | MapsTo sym' -> sym'
   ;;
 
+  let get_variables = peek variables
+
   let get_redirect sym =
     let open Let_syntax in
     let%map rds = peek redirects in
     Option.map (Lang.Symbol.R_map.dest_of rds sym)
       ~f:(resolve_redirect sym)
+  ;;
+
+  let get_redirect_sources sym =
+    let open Let_syntax in
+    let%map rds = peek redirects in
+    Lang.Symbol.R_map.sources_of rds sym
   ;;
 
   let get_redirect_alist syms

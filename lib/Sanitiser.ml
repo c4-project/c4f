@@ -467,13 +467,15 @@ module Make (B : Basic)
 
       If it fails to find at least one of the symbols, it'll raise a
       warning. *)
-  let find_initial_redirects symbols progs =
-    let open Ctx in
-    if List.is_empty symbols
-    then return ()
-    else
-      let mangle_map = make_mangle_map progs in
-      Ctx_List.iter_m symbols ~f:(find_initial_redirect mangle_map)
+  let find_initial_redirects progs =
+    let open Ctx.Let_syntax in
+    let%bind symbols = Ctx.get_variables in
+    Ctx.unless_m (Set.is_empty symbols)
+      ~f:(fun () ->
+          let mangle_map = make_mangle_map progs in
+          Ctx_List.iter_m (Set.to_list symbols)
+            ~f:(find_initial_redirect mangle_map)
+        )
   ;;
 
   let build_single_program_output i listing =
@@ -484,7 +486,7 @@ module Make (B : Basic)
     { Output.Program.listing; symbol_table; warnings }
   ;;
 
-  let build_output c_symbols rough_listings =
+  let build_output rough_listings =
     let open Ctx.Let_syntax in
     let listings =
       make_programs_uniform (Lang.Statement.empty ()) rough_listings
@@ -492,30 +494,33 @@ module Make (B : Basic)
     let%bind programs =
       Ctx_Pcon.mapi_m ~f:build_single_program_output listings
     in
-    let%map redirects = Ctx.get_redirect_alist c_symbols in
+    let%bind var_set  = Ctx.get_variables in
+    let      var_list = Set.to_list var_set in
+    let%map redirects = Ctx.get_redirect_alist var_list in
     { Output.programs; redirects }
   ;;
 
 
-  let sanitise_with_ctx c_symbols progs =
+  let sanitise_with_ctx progs =
     Ctx.(
-      find_initial_redirects c_symbols progs
+      find_initial_redirects progs
       >>= fun () -> Ctx_Pcon.mapi_m ~f:sanitise_program progs
       (* We do this last, for two reasons: first, in case the
-         instruction sanitisers have introduced invalid identifiers;
+         instruction sanitisers have introduced invalid variables;
          and second, so that we know that the symbol changes agree across
          program boundaries.*)
       >>= Symbols.on_all
-      >>= build_output c_symbols
+      >>= build_output
     )
   ;;
 
   let sanitise ?passes ?(symbols=[]) stms =
     let passes' = Option.value ~default:(Sanitiser_pass.standard) passes in
+    let variables = Lang.Symbol.Set.of_list symbols in
     Ctx.(
       run
-        (Monadic.return (B.split stms) >>= sanitise_with_ctx symbols)
-        (initial ~passes:passes')
+        (Monadic.return (B.split stms) >>= sanitise_with_ctx)
+        (initial ~passes:passes' ~variables)
     )
   ;;
 end

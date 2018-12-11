@@ -101,8 +101,9 @@ module Make (B : Basic)
     let add_maps_to_edge ~src ~dst rmap =
       rmap
       |> M.set ~key:src ~data:(MapsTo dst)
-      |> M.map ~f:(function
-          | MapsTo dst' when equal_sym src dst' -> MapsTo dst
+      |> M.mapi ~f:(fun ~key ~data -> match data with
+          | MapsTo dst' when equal_sym src dst' ->
+            if equal_sym key dst then Identity else MapsTo dst
           | x -> x)
     ;;
 
@@ -110,14 +111,7 @@ module Make (B : Basic)
       Or_error.(
         if equal_sym src dst
         then return (M.set rmap ~key:src ~data:Identity)
-        else if Option.is_some (Map.find rmap dst)
-        then
-          error_s
-            [%message "Tried to redirect to an existing source"
-                ~src:(src : sym)
-                ~dst:(dst : sym)
-            ]
-        else return (add_maps_to_edge ~src ~dst rmap)
+        else  return (add_maps_to_edge ~src ~dst rmap)
       )
     ;;
   end
@@ -157,6 +151,8 @@ let make_test_rmap () =
     >>= redirect ~src:"bravo"   ~dst:"echo"
     >>= redirect ~src:"charlie" ~dst:"echo"
     >>= redirect ~src:"echo"    ~dst:"foxtrot"
+    >>= redirect ~src:"delta"   ~dst:"kilo"
+    >>= redirect ~src:"kilo"    ~dst:"delta"
   )
 ;;
 
@@ -170,7 +166,7 @@ let%expect_test "String.R_map: all_dests example run" =
       Out_channel.stdout
       [%sexp ( r : String_direct.R_map.Set.t Or_error.t ) ]
   );
-  [%expect {| (Ok (alpha foxtrot whiskey)) |}]
+  [%expect {| (Ok (alpha delta foxtrot whiskey)) |}]
 ;;
 
 let%expect_test "String.R_map: dest_of example run" =
@@ -194,7 +190,7 @@ let%expect_test "String.R_map: dest_of example run" =
              )
       ]
   );
-  [%expect {| (Ok ((Identity) ((MapsTo foxtrot)) ((MapsTo foxtrot)) ())) |}]
+  [%expect {| (Ok ((Identity) ((MapsTo foxtrot)) ((MapsTo foxtrot)) (Identity))) |}]
 ;;
 
 let%expect_test "String.R_map: sources_of example run" =
