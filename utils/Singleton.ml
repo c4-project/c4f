@@ -24,7 +24,7 @@
 
 open Core
 
-type 'a t = 'a
+type 'a t = 'a [@@deriving sexp]
 
 include Traversable.Make_container1 (struct
     type nonrec 'a t = 'a t

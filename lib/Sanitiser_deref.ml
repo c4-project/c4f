@@ -25,6 +25,15 @@
 open Core_kernel
 open Utils
 
+module Mark = struct
+  module M = struct
+    type t = [ `Start_of_chain ] [@@deriving compare, sexp]
+  end
+  include M
+  include Comparable.Make (M)
+end
+module Zip = Zipper.Make_marked (Mark)
+
 module State = struct
   (** [t] is the internal state of the deref chain finder at any
       given time, parametrised on the type of concrete instructions. *)
@@ -315,8 +324,6 @@ module Chain_item = struct
 end
 
 module Portable = struct
-  module Zip_opt = Zipper.On_monad (Option)
-
   let operands_as_chain_start ins symbol_table { Src_dst.src; dst } =
     let open Option.Let_syntax in
     let is_immediate_heap_src =
@@ -326,25 +333,23 @@ module Portable = struct
     Option.some_if is_immediate_heap_src (ins, dst_loc)
   ;;
 
-  let start_mark = 1
-
   let replace_chain_with value zipper =
-    zipper
-    |> Zipper.push ~value
-    |> Zip_opt.delete_to_mark_m
-      ~mark:start_mark ~on_empty:(Fn.const None)
+    Zip.(
+      zipper |> push ~value |> On_option.delete_to_mark_m
+        ~mark:`Start_of_chain ~on_empty:(Fn.const None)
+    )
   ;;
 
   let%expect_test "replace_chain_with_value: positive" =
     let open Option.Monad_infix in
-    let result =
-      Zipper.of_list [ 10; 40; 32; 9; 174; -12 ]
-      |> Zip_opt.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 32 *)
-      >>= Zip_opt.mark_m ~mark:start_mark ~on_empty:(Fn.const None)
-      >>= Zip_opt.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 174 *)
+    let result = Zip.(
+      of_list [ 10; 40; 32; 9; 174; -12 ]
+      |>  On_option.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 32 *)
+      >>= On_option.mark_m ~mark:`Start_of_chain ~on_empty:(Fn.const None)
+      >>= On_option.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 174 *)
       >>= replace_chain_with 64
-      >>| Zipper.to_list
-    in
+      >>| to_list
+    ) in
     Sexp.output_hum Out_channel.stdout
       [%sexp (result : int list option) ];
     [%expect {| ((10 40 64 174 -12)) |}]
@@ -352,20 +357,20 @@ module Portable = struct
 
   let%expect_test "replace_chain_with_value: missing mark" =
     let open Option.Monad_infix in
-    let result =
-      Zipper.of_list [ 10; 40; 32; 9; 174; -12 ]
-      |> Zip_opt.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 32 *)
-      >>= Zip_opt.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 174 *)
+    let result = Zip.(
+      of_list [ 10; 40; 32; 9; 174; -12 ]
+      |>  On_option.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 32 *)
+      >>= On_option.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 174 *)
       >>= replace_chain_with 64
-      >>| Zipper.to_list
-    in
+      >>| to_list
+    ) in
     Sexp.output_hum Out_channel.stdout
       [%sexp (result : int list option) ];
     [%expect {| () |}]
   ;;
 
   let handle_broken_chain current zipper =
-    `Stop (Zipper.push zipper ~value:current)
+    `Stop (Zip.push zipper ~value:current)
   ;;
 
   let try_update_state_and_continue state_maybe current zipper =
@@ -396,7 +401,7 @@ module Make (B : Sanitiser_base.Basic) :
   include B
   include Portable
 
-  module Ctx_Zip = Zipper.On_monad (Ctx)
+  module Ctx_Zip = Zip.On_monad (Ctx)
 
   let is_move =
     Lang.Instruction.has_opcode
@@ -437,8 +442,8 @@ module Make (B : Sanitiser_base.Basic) :
     match as_chain_start symbol_table current with
     | Some (ins, dst) ->
       let state = State.initial ins dst in
-      `Mark (start_mark, current, `Found state)
-    | None            -> `Swap (current, `Not_found)
+      `Mark (`Start_of_chain, current, `Found state)
+    | None -> `Swap (current, `Not_found)
   ;;
 
   module Direct_move = struct
@@ -481,7 +486,7 @@ module Make (B : Sanitiser_base.Basic) :
 
   let handle_complete_chain current zipper final_ins state =
     Option.value
-      ~default:(`Stop (Zipper.push ~value:current zipper))
+      ~default:(`Stop (Zip.push ~value:current zipper))
       (handle_complete_chain_opt zipper final_ins state)
   ;;
 
@@ -520,16 +525,14 @@ module Make (B : Sanitiser_base.Basic) :
 
   let rec mu zipper =
     let open Ctx.Let_syntax in
-    if Zipper.is_at_end zipper
+    if Zip.is_at_end zipper
     then return zipper
     else (
       let%bind zipper' = run_once_on_zipper zipper in
-      assert Zipper.(right_length zipper' < right_length zipper);
+      assert Zip.(right_length zipper' < right_length zipper);
       mu zipper'
     )
   ;;
 
-  let on_program prog =
-    Ctx.(prog |> Zipper.of_list |> mu >>| Zipper.to_list)
-  ;;
+  let on_program prog = Ctx.(prog |> Zip.of_list |> mu >>| Zip.to_list)
 end

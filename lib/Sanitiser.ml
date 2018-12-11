@@ -73,9 +73,10 @@ module Make (B : Basic)
 
   (* Modules for building context-sensitive traversals over program
      containers and lists *)
+  module Zip      = Zipper.Int_mark_zipper (* for now *)
   module Ctx_Pcon = Program_container.On_monad (Ctx)
   module Ctx_List = My_list.On_monad (Ctx)
-  module Ctx_Zip  = Zipper.On_monad (Ctx)
+  module Ctx_Zip  = Zip.On_monad (Ctx)
   module Ctx_Loc  = Lang.Instruction.On_locations.On_monad (Ctx)
 
   module Output = struct
@@ -378,7 +379,7 @@ module Make (B : Basic)
   ;;
 
   let process_possible_useless_jump () statement zipper =
-    match Zipper.peek_opt zipper with
+    match Zip.peek_opt zipper with
     | Some next when Lang.Statement.is_jump_pair statement next ->
       Ctx.return (`Drop ())
     | Some _ | None ->
@@ -386,10 +387,10 @@ module Make (B : Basic)
   ;;
 
   let remove_useless_jumps prog =
-    Ctx_Zip.fold_m_until (Zipper.of_list prog)
+    Ctx_Zip.fold_m_until (Zip.of_list prog)
       ~f:process_possible_useless_jump
       ~init:()
-      ~finish:(fun () zipper -> Ctx.return (Zipper.to_list zipper))
+      ~finish:(fun () zipper -> Ctx.return (Zip.to_list zipper))
   ;;
 
   module Deref = Sanitiser_deref.Make (B)
