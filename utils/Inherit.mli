@@ -59,3 +59,24 @@ module Make_partial
   : functor (I : S)
     -> S_partial with type t = I.t and type c = I.c
 ;;
+
+(** {2 Helpers for building inheritance modules} *)
+
+(** [Helpers] produces helper functions for forwarding through an
+    {{!S}S}. *)
+module Helpers (I : S) : sig
+  val forward : (I.c -> 'a) -> I.t -> 'a
+  (** [forward f t] lifts the component accessor [f] over [t]. *)
+end
+
+(** [Partial_helpers] produces helper functions for forwarding through
+   an {{!S_partial}S_partial}. *)
+module Partial_helpers (I : S_partial) : sig
+  val forward_bool : (I.c -> bool) -> I.t -> bool
+  (** [forward_bool f t] is [false] if [t] doesn't have the required
+     component, and [f c] if it does (and that component is [c]). *)
+
+  val forward_bind : (I.c -> 'a option) -> I.t -> 'a option
+  (** [forward_bind f t] is [None] if [t] doesn't have the required
+     component, and [f c] if it does (and that component is [c]). *)
+end

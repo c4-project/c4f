@@ -118,7 +118,8 @@ module Chain_item = struct
     if is_end locs state then Some (End ins) else None
   ;;
 
-  let step_of_locations { Src_dst.src; dst } = function
+  let step_of_locations is_move { Src_dst.src; dst } = function
+    | _ when not is_move -> None
     | State.Read { last_target_dst; _ }
     | Write { last_target_dst; _ }
       when Abstract.Location.equal src last_target_dst ->
@@ -129,12 +130,12 @@ module Chain_item = struct
     | Read _ | Write _ -> None
   ;;
 
-  let of_locations ins locs state =
+  let of_locations ins is_move locs state =
     (* Note: these two classifications overlap somewhat, so the
        order of end before step is deliberate. *)
     My_option.first_some_of_thunks
       [ (fun () -> end_of_locations ins locs state)
-      ; (fun () -> step_of_locations locs state)
+      ; (fun () -> step_of_locations is_move locs state)
       ]
   ;;
 
@@ -142,7 +143,7 @@ module Chain_item = struct
     Sexp.output_hum Out_channel.stdout
       [%sexp
         (Abstract.Location.(
-            of_locations 10
+            of_locations 10 true
               { src = Heap (Address.Int 20)
               ; dst = Heap (Address.Int 10)
               }
@@ -153,11 +154,43 @@ module Chain_item = struct
     [%expect {| ((Target_step (Heap (Int 10)))) |}]
   ;;
 
+  let%expect_test "of_locations: not a move, so not a valid step" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp
+        (Abstract.Location.(
+            of_locations 10 false
+              { src = Heap (Address.Int 20)
+              ; dst = Heap (Address.Int 10)
+              }
+              (Read { first_target_src = 15
+                    ; last_target_dst  = Heap (Address.Int 20)
+                    })
+          ) : int t option)];
+    [%expect {| () |}]
+  ;;
+
   let%expect_test "of_locations: read chain end" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
         (Abstract.Location.(
-            of_locations 10
+            of_locations 10 true
+              { src = Register_indirect
+                    { reg = General "eax"; offset = Int 0 }
+              ; dst = Heap (Address.Int 10)
+              }
+              (Read { first_target_src = 15
+                    ; last_target_dst  =
+                        (Register_direct (General "eax"))
+                    })
+          ) : int t option)];
+    [%expect {| ((End 10)) |}]
+  ;;
+
+  let%expect_test "of_locations: read chain end, not a move" =
+    Sexp.output_hum Out_channel.stdout
+      [%sexp
+        (Abstract.Location.(
+            of_locations 10 false
               { src = Register_indirect
                     { reg = General "eax"; offset = Int 0 }
               ; dst = Heap (Address.Int 10)
@@ -174,7 +207,7 @@ module Chain_item = struct
     Sexp.output_hum Out_channel.stdout
       [%sexp
         (Abstract.Location.(
-            of_locations 10
+            of_locations 10 true
               { src = Register_indirect
                     { reg = General "eax"; offset = Int 0 }
               ; dst = Heap (Address.Int 10)
@@ -187,12 +220,11 @@ module Chain_item = struct
     [%expect {| () |}]
   ;;
 
-
   let%expect_test "of_locations: write chain target step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
         (Abstract.Location.(
-            of_locations 10
+            of_locations 10 true
               { src = Heap (Address.Int 20)
               ; dst = Heap (Address.Int 10)
               }
@@ -210,7 +242,7 @@ module Chain_item = struct
     Sexp.output_hum Out_channel.stdout
       [%sexp
         (Abstract.Location.(
-            of_locations 10
+            of_locations 10 true
               { src = Heap (Address.Int 40)
               ; dst = Heap (Address.Int 10)
               }
@@ -228,7 +260,7 @@ module Chain_item = struct
     Sexp.output_hum Out_channel.stdout
       [%sexp
         (Abstract.Location.(
-            of_locations 10
+            of_locations 10 true
               { src = Heap (Address.Int 10)
               ; dst = Register_indirect
                     { reg = General "eax"; offset = Int 0 }
@@ -244,11 +276,11 @@ module Chain_item = struct
     [%expect {| ((End 10)) |}]
   ;;
 
-  let of_operands_as_locations ins { Src_dst.src; dst } state =
+  let of_operands_as_locations ins is_move { Src_dst.src; dst } state =
     let open Option.Let_syntax in
     let%bind src_loc = Abstract.Operand.as_location src
     and      dst_loc = Abstract.Operand.as_location dst in
-    of_locations ins { src = src_loc; dst = dst_loc } state
+    of_locations ins is_move { src = src_loc; dst = dst_loc } state
   ;;
 
   let as_possible_new_write ins { Src_dst.src; dst } =
@@ -274,9 +306,9 @@ module Chain_item = struct
     [%expect {| ((New_write 10 (Register_indirect (reg (General eax)) (offset (Int 0))))) |}]
   ;;
 
-  let of_operands ins locs state =
+  let of_operands ins is_move locs state =
     My_option.first_some_of_thunks
-      [ (fun () -> of_operands_as_locations ins locs state)
+      [ (fun () -> of_operands_as_locations ins is_move locs state)
       ; (fun () -> as_possible_new_write ins locs)
       ]
   ;;
@@ -374,9 +406,7 @@ module Make (B : Sanitiser_base.Basic) :
   let as_move_with_abstract_operands ins =
     let open Option.Let_syntax in
     let%bind ins = Option.some_if (is_move ins) ins in
-    match Lang.Instruction.operands ins with
-    | Src_dst sd -> Some sd
-    | _ -> None
+    Lang.Instruction.On_operands.as_src_dst ins
   ;;
 
   let instruction_as_chain_start symbol_table ins =
@@ -394,8 +424,8 @@ module Make (B : Sanitiser_base.Basic) :
 
   let instruction_as_chain_item state ins =
     let open Option.Let_syntax in
-    let%bind locs = as_move_with_abstract_operands ins in
-    Chain_item.of_operands ins locs state
+    let%bind locs = Lang.Instruction.On_operands.as_src_dst ins in
+    Chain_item.of_operands ins (is_move ins) locs state
   ;;
 
   let as_chain_item stm state =

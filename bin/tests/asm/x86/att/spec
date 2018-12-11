@@ -3,6 +3,8 @@
   ((cvars (x y))))
  ("gcc_elf_o0_stackchk.s"
   ((cvars (x y))))
+ ("gcc_macho_o0_deref_cmpxchg.s"
+  ((cvars (x y))))
  ("gcc_macho_o0_deref_write.s"
   ((cvars (x y))))
  ("gcc_macho_o0_immediate_heap.s"

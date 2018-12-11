@@ -22,6 +22,8 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+open Base
+
 module type S = sig
   type t
   type c
@@ -41,3 +43,11 @@ module Make_partial (I : S)
   let component_opt x = Some (I.component x)
 end
 
+module Helpers (I : S) = struct
+  let forward f x = f (I.component x)
+end
+
+module Partial_helpers (I : S_partial) = struct
+  let forward_bool f x = Option.exists ~f (I.component_opt x)
+  let forward_bind f x = Option.bind ~f (I.component_opt x)
+end

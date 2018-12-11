@@ -330,6 +330,7 @@ module Bundle = struct
   module type S_predicates = sig
     type t
     val is_none : t -> bool
+    val as_src_dst : t -> (elt, elt) Src_dst.t option
     val is_src_dst : t -> bool
     val is_part_unknown : t -> bool
     val has_stack_pointer : t -> bool
@@ -350,33 +351,24 @@ module Bundle = struct
   module Inherit_predicates
       (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
     : S_predicates with type t := I.t = struct
-    open Option
+    module H = Utils.Inherit.Partial_helpers (struct
+        type c = P.t
+        include I
+      end)
+    ;;
 
-    let is_none x =
-      exists ~f:P.is_none (I.component_opt x)
-    ;;
-    let is_src_dst x =
-      exists ~f:P.is_src_dst (I.component_opt x)
-    ;;
-    let is_part_unknown x =
-      exists ~f:P.is_part_unknown (I.component_opt x)
-    ;;
-    let has_stack_pointer x =
-      exists ~f:P.has_stack_pointer (I.component_opt x)
-    ;;
-    let has_src_where x ~f =
-      exists ~f:(P.has_src_where ~f) (I.component_opt x)
-    ;;
-    let has_dst_where x ~f =
-      exists ~f:(P.has_dst_where ~f) (I.component_opt x)
-    ;;
+    let is_none = H.forward_bool P.is_none
+    let as_src_dst = H.forward_bind P.as_src_dst
+    let is_src_dst = H.forward_bool P.is_src_dst
+    let is_part_unknown = H.forward_bool P.is_part_unknown
+    let has_stack_pointer = H.forward_bool P.has_stack_pointer
+    let has_src_where x ~f = H.forward_bool (P.has_src_where ~f) x
+    let has_dst_where x ~f = H.forward_bool (P.has_dst_where ~f) x
     let has_immediate_heap_symbol x ~symbol_table =
-      exists ~f:(P.has_immediate_heap_symbol ~symbol_table)
-        (I.component_opt x)
+      H.forward_bool (P.has_immediate_heap_symbol ~symbol_table) x
     ;;
     let is_single_jump_symbol_where x ~f =
-      exists ~f:(P.is_single_jump_symbol_where ~f)
-        (I.component_opt x)
+      H.forward_bool (P.is_single_jump_symbol_where ~f) x
     ;;
   end
 
@@ -442,6 +434,11 @@ module Bundle = struct
     let is_none = function
       | None -> true
       | Src_dst _ | Single _ | Double _ -> false
+    ;;
+
+    let as_src_dst = function
+      | Src_dst x -> Some x
+      | None | Single _ | Double _ -> None
     ;;
 
     let is_src_dst = function
