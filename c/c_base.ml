@@ -212,7 +212,7 @@ let dump_instruction = do_dump_instruction ""
 let pp_instruction _mode = dump_instruction
 
 let allowed_for_symb = List.map ~f:(fun x -> "r"^(string_of_int x))
-                                (Misc.interval 0 64)
+                                (List.range 0 64)
 
 let fold_regs (_fc,_fs) acc _ins = acc
 let map_regs _fc _fs ins = ins
@@ -415,7 +415,7 @@ let rec subst env i = match i with
     subst { env with args = frame; } body
 
 let expand ms = match ms with
-| [] -> Misc.identity
+| [] -> Fn.id
 | _  ->
     let env = List.fold_left ~f:(fun e m -> add m e) ~init:env_empty ms in
     pseudo_map (subst env)

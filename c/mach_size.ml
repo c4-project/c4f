@@ -14,12 +14,14 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
+open Core_kernel
+
 type sz = Byte | Short | Word | Quad
 type t = sz
 
 let tags = ["byte";"short";"word";"quad";]
 
-let parse tag = match Misc.lowercase tag with
+let parse tag = match String.lowercase tag with
 | "byte" -> Some Byte
 | "short" -> Some Short
 | "word" -> Some Word
