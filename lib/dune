@@ -11,3 +11,6 @@
   abstract
   utils
   core))
+
+(ocamllex
+ (modules lex_utils))

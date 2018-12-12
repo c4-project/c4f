@@ -15,11 +15,9 @@
 (****************************************************************************)
 
 {
-module Make(O:LexUtils.Config) = struct
 open Parser
-open Lexing
 open Lex_misc
-module LU = LexUtils.Make(O)
+open Lib
 
 (* Compiled efficiently by the next version of ocaml *)
 let tr_name s = match s with
@@ -102,8 +100,8 @@ let num = digit+
 rule token deep = parse
 | [' ''\t''\r']+ { token deep lexbuf }
 | '\n' { incr_lineno lexbuf ; token deep lexbuf ; }
-| "/*" { LU.skip_c_comment lexbuf ; token deep lexbuf }
-| "//" { LU.skip_c_line_comment lexbuf ; token deep lexbuf }
+| "/*" { Lex_utils.skip_c_comment lexbuf ; token deep lexbuf }
+| "//" { Lex_utils.skip_c_line_comment lexbuf ; token deep lexbuf }
 | '-' ? num as x { CONSTANT x }
 | 'P' (num as x) { PROC (int_of_string x) }
 | ';' { SEMI }
@@ -159,21 +157,3 @@ and get_body i buf = parse
     }
 | eof { Lex_misc.error "eof in body" lexbuf }
 | _ as lxm { Buffer.add_char buf lxm; get_body i buf lexbuf }
-
-{
-
-let token deep lexbuf =
-   let tok = token deep lexbuf in
-   if O.debug then begin
-     Printf.eprintf
-       "%a: Lexed '%s'\n"
-       Pos.pp_pos2
-       (lexeme_start_p lexbuf,lexeme_end_p lexbuf)
-       (lexeme lexbuf)
-   end ;
-   tok
-
-
-end
-
-}

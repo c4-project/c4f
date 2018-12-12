@@ -11,8 +11,7 @@
    lib
    utils
    menhirLib))
-(ocamllex
- (modules lexer lexUtils))
+(ocamllex (modules lexer))
 (menhir
  (infer false)
  (flags "--table")

@@ -12,7 +12,7 @@
    utils
    menhirLib))
 (ocamllex
- (modules ATTLexer lexUtils))
+ (modules ATTLexer))
 (menhir
  (infer false)
  (flags "--table")

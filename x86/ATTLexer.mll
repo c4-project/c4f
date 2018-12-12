@@ -45,13 +45,13 @@ copyright notice follow. *)
 (****************************************************************************)
 
 {
-  module Make(O:LexUtils.Config) = struct
-    open Core
-    open Lexing
-    open Lib.Frontend
-    open ATTParser
-    module LU = LexUtils.Make(O)
+open Core
+open Lexing
+open Lib.Frontend
+open Lib.Lex_utils
+open ATTParser
 }
+
 let digit = [ '0'-'9' ]
 let hex   = [ '0'-'9' 'a'-'f' 'A'-'F' ]
 let alpha = [ 'a'-'z' 'A'-'Z' ]
@@ -68,8 +68,8 @@ let hexnum = hex+
 rule token = parse
 | [' ''\t''\r'] { token lexbuf }
 | '\n'      { new_line lexbuf; EOL }
-| "/*"      { LU.skip_c_comment lexbuf ; token lexbuf }
-| '#'       { LU.skip_c_line_comment lexbuf ; EOL }
+| "/*"      { skip_c_comment lexbuf ; token lexbuf }
+| '#'       { skip_c_line_comment lexbuf ; EOL }
 | '-' ? num as x { NUM x }
 | '$' { DOLLAR }
 | "0x" (hexnum as x) { ATT_HEX x }
@@ -100,8 +100,3 @@ and read_string buf
   | '\\' '0' { Buffer.add_char buf '\x00'; read_string buf lexbuf }
   | [^ '"' '\\']+ { Buffer.add_string buf (Lexing.lexeme lexbuf); read_string buf lexbuf }
   | _ { lex_error ("Invalid string character: " ^ Lexing.lexeme lexbuf) lexbuf }
-
-{
-end
-}
-

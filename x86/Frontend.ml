@@ -27,20 +27,15 @@ open Core
 module type S = Lib.Frontend.S with type ast := Ast.t
 
 module Att : S =
-  Lib.Frontend.Make (
-      struct
-        type ast = Ast.t
+  Lib.Frontend.Make (struct
+    type ast = Ast.t
 
-        module I = ATTParser.MenhirInterpreter
+    module I = ATTParser.MenhirInterpreter
 
-        let lex =
-          let module T = ATTLexer.Make(LexUtils.Default) in
-          T.token
-
-        let parse = ATTParser.Incremental.main;;
-
-        let message = ATTMessages.message;;
-      end)
+    let lex = ATTLexer.token
+    let parse = ATTParser.Incremental.main
+    let message = ATTMessages.message
+  end)
 ;;
 
 let of_dialect = function
