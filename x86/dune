@@ -22,4 +22,4 @@
 ;; They're probably not as portable as they could be.
 (rule
  (targets ATTMessages.ml)
- (action (system "%{bin:menhir} --compile-errors %{dep:ATT.messages} ATTParser.mly > %{targets}")))
+ (action (with-stdout-to "%{targets}" (run "%{bin:menhir}" "--compile-errors" "%{dep:ATT.messages}" "ATTParser.mly"))))
