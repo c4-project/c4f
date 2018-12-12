@@ -14,6 +14,8 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
+open Core_kernel
+
 (* The basic types of architectures and semantics, just parsed *)
 
 type maybev = Parsed_constant.v
@@ -71,7 +73,7 @@ let as_local_proc i syms = function
   | Location_reg (j,reg) -> if i=j then Some reg else None
   | Location_global _|Location_deref _ -> None
   | Location_sreg reg ->
-      if String_set.mem reg syms then
+      if String.Set.mem syms reg then
         Some (Misc.dump_symbolic reg)
       else None
 
@@ -96,8 +98,8 @@ let pp_atom (loc,v) =
   sprintf "%s=%s" (dump_location loc) (Parsed_constant.pp_v v)
 
 let pp_outcome o =
-  String.concat " "
-    (List.map (fun a -> sprintf "%s;" (pp_atom a)) o)
+  String.concat ~sep:" "
+    (List.map ~f:(fun a -> sprintf "%s;" (pp_atom a)) o)
 
 type run_type =
   | TyDef | TyDefPointer
@@ -178,9 +180,7 @@ let mach2generic parser lexer buff =
 
 let hash_key =  "Hash"
 
-let get_hash p =
-  try Some (List.assoc hash_key p.info)
-  with Not_found -> None
+let get_hash p = List.Assoc.find ~equal:String.equal p.info hash_key
 
 let rec set_hash_rec h = function
   | [] -> [hash_key,h]
@@ -189,7 +189,5 @@ let rec set_hash_rec h = function
 
 let set_hash p h = { p with info = set_hash_rec  h p.info; }
 
-let get_info p key =
-  try Some (List.assoc key p.info)
-  with Not_found -> None
-  
+let get_info p key = List.Assoc.find ~equal:String.equal p.info key
+

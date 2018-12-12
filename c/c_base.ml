@@ -13,7 +13,8 @@
 (* license as circulated by CEA, CNRS and INRIA at the following URL        *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
-open Printf
+
+open Core_kernel
 
 let string_of_annot = Mem_order_or_annot.pp_annot
 
@@ -27,7 +28,7 @@ let symb_reg_name r =
   let len = String.length r in
   assert (len > 0) ;
   match r.[0] with
-  | '%' -> Some (String.sub r 1 (len-1))
+  | '%' -> Some (String.drop_prefix r 1)
   | _ -> None
 
 let symb_reg r = sprintf "%%%s" r
@@ -152,7 +153,7 @@ let rec dump_expr =
           (string_of_annot a)
           (dump_expr loc)
 
-and dump_args es = String.concat "," (List.map dump_expr es)
+and dump_args es = String.concat ~sep:"," (List.map ~f:dump_expr es)
 
 let rec do_dump_instruction indent =
   let pindent fmt = ksprintf (fun msg -> indent ^ msg) fmt in
@@ -160,12 +161,12 @@ let rec do_dump_instruction indent =
   function
   | Fence b -> indent ^ pp_barrier b^";"
   | Seq (l,false) ->
-      String.concat "\n"
-        (List.map (do_dump_instruction indent) l)
+      String.concat ~sep:"\n"
+        (List.map ~f:(do_dump_instruction indent) l)
   | Seq (l,true) ->
       let seq =
-        String.concat ""
-          (List.map (do_dump_instruction (indent^"  ")) l) in
+        String.concat ~sep:""
+          (List.map ~f:(do_dump_instruction (indent^"  ")) l) in
       indent ^ "{\n" ^ seq ^ indent ^ "}\n"
   | If(c,t,e) ->
      let els =  match e with
@@ -210,7 +211,7 @@ let dump_instruction = do_dump_instruction ""
 
 let pp_instruction _mode = dump_instruction
 
-let allowed_for_symb = List.map (fun x -> "r"^(string_of_int x))
+let allowed_for_symb = List.map ~f:(fun x -> "r"^(string_of_int x))
                                 (Misc.interval 0 64)
 
 let fold_regs (_fc,_fs) acc _ins = acc
@@ -240,7 +241,7 @@ include Pseudo.Make
             CmpExchange(parsed_expr_tr e1,parsed_expr_tr e2,parsed_expr_tr e3,a)
         | Fetch(l,op,e,mo) ->
             Fetch(parsed_expr_tr l,op,parsed_expr_tr e,mo)
-        | ECall (f,es) -> ECall (f,List.map parsed_expr_tr es)
+        | ECall (f,es) -> ECall (f,List.map ~f:parsed_expr_tr es)
         | ECas (e1,e2,e3,mo1,mo2,strong) ->
             ECas
               (parsed_expr_tr e1,parsed_expr_tr e2,parsed_expr_tr e3,
@@ -256,7 +257,7 @@ include Pseudo.Make
 
       and parsed_tr = function
         | Fence _|DeclReg _ as i -> i
-        | Seq(li,b) -> Seq(List.map parsed_tr li,b)
+        | Seq(li,b) -> Seq(List.map ~f:parsed_tr li,b)
         | If(e,it,ie) ->
             let tr_ie = match ie with
             | None -> None
@@ -270,7 +271,7 @@ include Pseudo.Make
         | AtomicOp(l,op,e) -> AtomicOp(parsed_expr_tr l,op,parsed_expr_tr e)
         | InstrSRCU(e,a) -> InstrSRCU(parsed_expr_tr e,a)
         | Symb _ -> Warn.fatal "No term variable allowed"
-        | PCall (f,es) -> PCall (f,List.map parsed_expr_tr es)
+        | PCall (f,es) -> PCall (f,List.map ~f:parsed_expr_tr es)
 
       let get_naccesses =
 
@@ -285,7 +286,7 @@ include Pseudo.Make
               get_exp (get_exp (k+2) e) loc
           | AtomicAddUnless (loc,a,u,_) ->
               get_exp (get_exp (get_exp (k+2) u) a) loc
-          | ECall (_,es) -> List.fold_left get_exp k es
+          | ECall (_,es) -> List.fold_left ~f:get_exp ~init:k es
           | CmpExchange (e1,e2,e3,_)
           | ECas (e1,e2,e3,_,_,_) ->
               let k = get_exp k e1 in
@@ -297,7 +298,7 @@ include Pseudo.Make
 
         let rec get_rec k = function
           | Fence _|Symb _ | DeclReg _ -> k
-          | Seq (seq,_) -> List.fold_left get_rec k seq
+          | Seq (seq,_) -> List.fold_left ~f:get_rec ~init:k seq
           | If (cond,ifso,ifno) ->
               let k = get_exp k cond in
               get_opt (get_rec k ifso) ifno
@@ -306,7 +307,7 @@ include Pseudo.Make
           | AtomicOp(loc,_,e) -> get_exp (get_exp k loc) e
           | Lock (e,_)|Unlock (e,_) -> get_exp (k+1) e
           | InstrSRCU(e,_) -> get_exp (k+1) e
-          | PCall (_,es) ->  List.fold_left get_exp k es
+          | PCall (_,es) ->  List.fold_left ~f:get_exp ~init:k es
 
         and get_opt k = function
           | None -> k
@@ -328,37 +329,37 @@ type macro =
   | PDef of string * string list * instruction
 
 type env_macro =
-  { expr : (string list * expression) String_map.t ;
-    proc : (string list * instruction) String_map.t ;
-    args : expression String_map.t ; }
+  { expr : (string list * expression) String.Map.t ;
+    proc : (string list * instruction) String.Map.t ;
+    args : expression String.Map.t ; }
 
 let env_empty =
   {
-   expr = String_map.empty;
-   proc = String_map.empty;
-   args = String_map.empty;
+   expr = String.Map.empty;
+   proc = String.Map.empty;
+   args = String.Map.empty;
  }
 
 let add m env =  match m with
 | EDef (f,args,e) ->
-    { env with expr = String_map.add f (args,e) env.expr ; }
+    { env with expr = String.Map.add_exn env.expr ~key:f ~data:(args,e) ; }
 | PDef (f,args,body) ->
-    { env with proc = String_map.add f (args,body) env.proc ; }
+    { env with proc = String.Map.add_exn env.proc ~key:f ~data:(args,body) ; }
 
 let find_macro f env =
-  try String_map.find f env with
-  | Not_found ->
-      Warn.user_error "Unknown macro %s" f
+  match String.Map.find env f with
+  | Some x -> x
+  | None -> Warn.user_error "Unknown macro %s" f
 
 let rec build_frame f tr xs es = match xs,es with
-| [],[] -> String_map.empty
-| x::xs,e::es -> String_map.add x (tr e) (build_frame f tr xs es)
+| [],[] -> String.Map.empty
+| x::xs,e::es -> String.Map.add_exn (build_frame f tr xs es) ~key:x ~data:(tr e)
 | _,_ -> Warn.user_error "Argument mismatch for macro %s" f
 
 
 let rec subst_expr env e = match e with
 | LoadReg r ->
-    begin try String_map.find r env.args with Not_found -> e end
+  Option.value ~default:e (String.Map.find env.args r)
 | LoadMem (loc,mo) -> LoadMem (subst_expr env loc,mo)
 | Const _ -> e
 | Op (op,e1,e2) -> Op (op,subst_expr env e1,subst_expr env e2)
@@ -386,22 +387,22 @@ let rec subst_expr env e = match e with
 
 let rec subst env i = match i with
 | Fence _|Symb _|DeclReg _ -> i
-| Seq (is,b) -> Seq (List.map (subst env) is,b)
+| Seq (is,b) -> Seq (List.map ~f:(subst env) is,b)
 | If (c,ifso,None) ->
     If (subst_expr env c,subst env ifso,None)
 | If (c,ifso,Some ifno) ->
     If (subst_expr env c,subst env ifso,Some (subst env ifno))
 | StoreReg (ot,r,e) ->
-    let e = subst_expr env e in
-    begin try
-      match String_map.find r env.args with
-      | LoadReg r -> StoreReg (ot,r,e)
-      | LoadMem (loc,mo) -> StoreMem (loc,e,mo)
-      | e ->
-          Warn.user_error
-            "Bad lvalue '%s' while substituting macro argument %s"
-            (dump_expr e) r
-    with Not_found -> StoreReg (ot,r,e) end
+    let e = subst_expr env e in begin
+      match String.Map.find env.args r with
+      | Some (LoadReg r) -> StoreReg (ot,r,e)
+      | Some (LoadMem (loc,mo)) -> StoreMem (loc,e,mo)
+      | Some e ->
+        Warn.user_error
+          "Bad lvalue '%s' while substituting macro argument %s"
+          (dump_expr e) r
+      | None -> StoreReg (ot,r,e)
+    end
 | StoreMem (loc,e,mo) ->
     StoreMem (subst_expr env loc,subst_expr env e,mo)
 | Lock (loc,k) -> Lock (subst_expr env loc,k)
@@ -416,5 +417,5 @@ let rec subst env i = match i with
 let expand ms = match ms with
 | [] -> Misc.identity
 | _  ->
-    let env = List.fold_left (fun e m -> add m e) env_empty ms in
+    let env = List.fold_left ~f:(fun e m -> add m e) ~init:env_empty ms in
     pseudo_map (subst env)

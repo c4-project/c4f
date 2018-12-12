@@ -14,6 +14,8 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
+open Core_kernel
+
 (** The basic types of architectures and semantics, just parsed *)
 
 type maybev = Parsed_constant.v
@@ -30,7 +32,7 @@ val location_compare : location -> location -> int
 val dump_location : location -> string
 val dump_rval : location -> string
 val is_global : location -> bool
-val as_local_proc : int -> String_set.t -> location -> reg option
+val as_local_proc : int -> String.Set.t -> location -> reg option
 
 module LocSet : My_set.S with type elt = location
 module LocMap : My_map.S with type key = location
