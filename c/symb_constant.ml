@@ -14,11 +14,13 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
+open Core_kernel
+
 module Make(Scalar:Scalar.S) = struct
 
   module Scalar = Scalar
 
-  type v = Scalar.t Constant.t
+  type v = Scalar.t Constant.t [@@deriving sexp]
   open Constant
 
   let intToV i = Concrete (Scalar.of_int i)

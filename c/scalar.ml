@@ -14,11 +14,11 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-
 module type S = sig
 
 (* Business as usual *)
-  type  t
+  type  t [@@deriving sexp, compare]
+
   val machsize : Mach_size.sz
 
   val zero : t val one : t
@@ -27,8 +27,6 @@ module type S = sig
   val pp : bool -> t -> string
   val of_int : int -> t
   val to_int : t -> int (* Hum *)
-
-  val compare : t -> t -> int
 
 (* Operations *)
   val add : t -> t -> t

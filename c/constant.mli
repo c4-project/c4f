@@ -19,6 +19,7 @@
 type 'scalar t =
   | Concrete of 'scalar
   | Symbolic  of string * int
+[@@deriving sexp]
 
 module type S =  sig
 

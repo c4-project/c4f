@@ -14,11 +14,14 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
+open Core_kernel
+
 (** Constants in code *)
 
 type 'scalar t =
   | Concrete of 'scalar
   | Symbolic  of string * int
+[@@deriving sexp]
 
 module type S =  sig
 

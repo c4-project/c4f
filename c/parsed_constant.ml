@@ -14,14 +14,15 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
+open Core_kernel
+
 module String_scalar = struct
-  type t = string
+  type t = string [@@deriving sexp, compare]
   let machsize = Mach_size.Quad
 
   let zero = "0" and one = "1"
 
   let of_string s = s
-  let compare = String.compare
   let to_int k = int_of_string k
   let of_int i = Printf.sprintf "%i" i
   let pp _ s = s
