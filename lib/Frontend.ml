@@ -49,9 +49,9 @@ module type Basic = sig
 
   module I : MenhirLib.IncrementalEngine.INCREMENTAL_ENGINE
 
-  val lex : lexbuf -> I.token;;
-  val parse : position -> ast I.checkpoint;;
-  val message : int -> string;;
+  val lex : lexbuf -> I.token
+  val parse : position -> ast I.checkpoint
+  val message : int -> string
 end
 
 module type S = sig

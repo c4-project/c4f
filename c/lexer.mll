@@ -16,8 +16,7 @@
 
 {
 open Parser
-open Lex_misc
-open Lib
+open Lexing
 
 (* Compiled efficiently by the next version of ocaml *)
 let tr_name s = match s with
@@ -99,9 +98,9 @@ let num = digit+
 
 rule token = parse
 | [' ''\t''\r']+ { token lexbuf }
-| '\n' { incr_lineno lexbuf ; token lexbuf ; }
-| "/*" { Lex_utils.skip_c_comment lexbuf ; token lexbuf }
-| "//" { Lex_utils.skip_c_line_comment lexbuf ; token lexbuf }
+| '\n' { new_line lexbuf ; token lexbuf }
+| "/*" { Lib.Lex_utils.skip_c_comment lexbuf ; token lexbuf }
+| "//" { Lib.Lex_utils.skip_c_line_comment lexbuf ; token lexbuf }
 | '-' ? num as x { CONSTANT x }
 | 'P' (num as x) { PROC (int_of_string x) }
 | ';' { SEMI }
@@ -134,4 +133,4 @@ rule token = parse
 | '%' name as s { IDENTIFIER s }
 | name as x   { tr_name x  }
 | eof { EOF }
-| "" { Lex_misc.error "C lexer" lexbuf }
+| _ { Lib.Frontend.lex_error ("Unexpected char: " ^ lexeme lexbuf) lexbuf }
