@@ -18,7 +18,7 @@ depends: [
   "core_extended" {>= "v0.11" & < "v0.12"}
   "fmt" {>= "0.8.5" & < "0.9"}
   "menhir" {>= "20181113"}
-  "travesty" {>= "v0.1.3" & < "v0.2"}
+  "travesty" {>= "0.1.3" & < "0.2"}
 ]
 build: ["dune" "build" "-p" name "-j" jobs]
 run-test: ["dune" "runtest" "-p" name "-j" jobs]
