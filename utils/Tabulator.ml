@@ -88,7 +88,7 @@ let with_row row t =
 ;;
 
 let with_rows rows t =
-  My_list.With_errors.fold_m ~f:(Fn.flip with_row) ~init:t rows
+  Travesty.T_list.With_errors.fold_m ~f:(Fn.flip with_row) ~init:t rows
 ;;
 
 let with_rule rule_char t =

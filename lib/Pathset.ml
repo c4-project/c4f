@@ -70,7 +70,7 @@ let mkdir (path : string) =
 ;;
 
 let subpaths (path : string list) : string list =
-  List.map ~f:My_filename.concat_list (My_list.prefixes path)
+  List.map ~f:My_filename.concat_list (Travesty.T_list.prefixes path)
 ;;
 
 let mkdir_p (path : string list) =

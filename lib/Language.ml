@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core
-open Utils
 
 include Language_intf
 
@@ -83,7 +82,7 @@ module Make (B : Basic)
 
        Maybe, one day, we'll find an architecture that does actually
        contain heap locations in a jump, and have to re-think this. *)
-    |> My_list.exclude ~f:Instruction.is_jump
+    |> Travesty.T_list.exclude ~f:Instruction.is_jump
     |> List.concat_map
       ~f:(heap_symbols_of_instruction ~known_heap_symbols)
     |> Abstract.Symbol.Set.of_list

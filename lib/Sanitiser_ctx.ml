@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core_kernel
-open Utils
 
 include Sanitiser_ctx_intf
 
@@ -62,7 +61,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     ; warnings  = []
     }
 
-  include State_transform.Make (struct
+  include Travesty.State_transform.Make (struct
       type t = ctx
       module Inner = Or_error
     end)

@@ -27,7 +27,8 @@ open Utils
 
 include Sanitiser_intf
 
-module Make_null_hook (Lang : Language.S) (P : Traversable.Container1)
+module Make_null_hook
+    (Lang : Language.S) (P : Travesty.Traversable.S1_container)
   : Hook with module Lang = Lang and module Program_container = P = struct
   module Lang = Lang
   module Ctx = Sanitiser_ctx.Make (Lang)
@@ -53,7 +54,7 @@ module Make (B : Basic)
      containers and lists *)
   module Zip      = Zipper.Int_mark_zipper (* for now *)
   module Ctx_Pcon = Program_container.On_monad (Ctx)
-  module Ctx_List = My_list.On_monad (Ctx)
+  module Ctx_List = Travesty.T_list.On_monad (Ctx)
   module Ctx_Zip  = Zip.On_monad (Ctx)
   module Ctx_Loc  = Lang.Instruction.On_locations.On_monad (Ctx)
 
@@ -292,7 +293,7 @@ module Make (B : Basic)
   ;;
 
   let remove_statements_in prog ~where =
-    My_list.(exclude ~f:(any ~predicates:where)) prog
+    Travesty.T_list.(exclude ~f:(any ~predicates:where)) prog
   ;;
 
   (** [remove_generally_irrelevant_statements prog] completely removes
@@ -526,17 +527,17 @@ module Make (B : Basic)
 end
 
 module Make_single (H : Hook_maker)
-  : S with module Lang := H(Utils.Singleton).Lang
+  : S with module Lang := H(Travesty.Singleton).Lang
        and type 'a Program_container.t = 'a = Make (struct
-    include H (Utils.Singleton)
+    include H (Travesty.Singleton)
 
     let split = Or_error.return (* no operation *)
   end)
 
 module Make_multi (H : Hook_maker)
-  : S with module Lang := H(Utils.My_list).Lang
+  : S with module Lang := H(Travesty.T_list).Lang
        and type 'a Program_container.t = 'a list = Make (struct
-    include H (Utils.My_list)
+    include H (Travesty.T_list)
 
     let split stms =
       (* Adding a nop to the start forces there to be some

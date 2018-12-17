@@ -22,19 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core_kernel
+(** Language frontend for C *)
 
-module type S_fixed = sig
-  type 'a t
-
-  module Inner : Monad.S
-  val lift : 'a Inner.t -> 'a Inner.t t
-end
-
-module type S = sig
-  type 'a t
-
-  module On_monad (M : Monad.S) : S_fixed with type 'a t := 'a t
-                                           and module Inner := M
-  ;;
-end
+include Lib.Frontend.S
+  with type ast := (C_base.pseudo list) Ast.test list

@@ -25,7 +25,6 @@
 (** Sanitiser: context state monad: interfaces *)
 
 open Base
-open Utils
 
 (** [S] is the interface to the state monad used by the sanitiser to
     carry global information around in a sanitisation pass. *)
@@ -35,8 +34,8 @@ module type S = sig
 
   type ctx
 
-  include State_transform.S with type state := ctx
-                             and module Inner := Or_error
+  include Travesty.State_transform.S with type state := ctx
+                                      and module Inner := Or_error
   (** [S] includes a state transformer, [t],
       with an inner error monad. *)
 

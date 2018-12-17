@@ -30,12 +30,11 @@
     declares signatures and helper modules for these flags. *)
 
 open Core_kernel
-open Utils
 
 (** [S] is the baseline signature for all abstract flag types. *)
 module type S = sig
   type t
-  include Enum.Extension_table with type t := t
+  include Utils.Enum.Extension_table with type t := t
 end
 
 (** [None] is a dummy implementation of [S]. *)

@@ -23,10 +23,11 @@
    SOFTWARE. *)
 
 open Core_kernel
+
 include Enum_intf
 
 module Make_compare_hash_basic (E : S) = struct
-  let compare = My_fn.on E.to_enum Int.compare
+  let compare = Travesty.T_fn.on E.to_enum Int.compare
   let hash x = Int.hash (E.to_enum x)
   let hash_fold_t s x = Int.hash_fold_t s (E.to_enum x)
 end

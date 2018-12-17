@@ -26,7 +26,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 (** [Hook] implements x86-specific sanitisation passes.
     It requires an [Language.S] module to tell it things about the
     current x86 dialect (for example, the order of operands). *)
-module Hook (L : Language.S) (P : Utils.Traversable.Container1)
+module Hook (L : Language.S) (P : Travesty.Traversable.S1_container)
   : Lib.Sanitiser.Hook with module Lang := L
                         and module Program_container = P
 ;;

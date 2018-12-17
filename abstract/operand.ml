@@ -24,6 +24,7 @@
 
 open Core_kernel
 open Utils
+open Travesty
 
 (* Define this in a separate module so we can include it as
    [Elt] below. *)
@@ -32,7 +33,7 @@ module M = struct
      and [equal] in ppx_compare hasn't stabilised yet, so we have
      to do this dance to implement error equality. *)
   type err = Error.t
-  let equal_err = My_fn.on Error.sexp_of_t Sexp.equal
+  let equal_err = T_fn.on Error.sexp_of_t Sexp.equal
   let err_of_sexp = Error.t_of_sexp
   let sexp_of_err = Error.sexp_of_t
 

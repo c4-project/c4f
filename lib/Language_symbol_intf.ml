@@ -43,7 +43,7 @@ module type Basic = sig
   (** They must allow traversal over any string parts of the
       symbol. *)
   module On_strings
-    : Traversable.Container0 with type elt = string and type t = t
+    : Travesty.Traversable.S0_container with type elt = string and type t = t
   ;;
 
   (** [abstract sym] promotes [sym] to an abstract symbol without any

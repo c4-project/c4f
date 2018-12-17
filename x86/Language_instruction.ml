@@ -116,7 +116,7 @@ module Make (B : Basic) : S = struct
   let single_operand operands ~allowed : Abstract.Operand.Bundle.t =
     error_to_erroneous
       (let open Or_error.Let_syntax in
-       let%bind operand = My_list.one operands in
+       let%bind operand = Travesty.T_list.one operands in
        let%map abs_operand = classify_single operand allowed in
        Abstract.Operand.Bundle.single abs_operand
       )
@@ -134,7 +134,7 @@ module Make (B : Basic) : S = struct
   let double_operands operands ~allowed =
     error_to_erroneous (
       let open Or_error.Let_syntax in
-      let%bind (op1, op2) = My_list.two operands in
+      let%bind (op1, op2) = Travesty.T_list.two operands in
       let%map (abs1, abs2) = classify_double op1 op2 allowed in
       Abstract.Operand.Bundle.double abs1 abs2
     )

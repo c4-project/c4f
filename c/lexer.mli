@@ -14,5 +14,4 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-val token : bool -> Lexing.lexbuf -> Parser.token
-
+val token : Lexing.lexbuf -> Parser.token

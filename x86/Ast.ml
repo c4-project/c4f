@@ -46,6 +46,7 @@ copyright notice follow. *)
 
 open Core_kernel
 open Utils
+open Travesty
 
 module Reg = struct
   module M = struct
@@ -192,7 +193,8 @@ module Disp = struct
     ;;
   end
 
-  module On_symbols : Traversable.Container0 with type t := t and type elt := string =
+  module On_symbols : Traversable.S0_container with type t := t
+                                                and type elt := string =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
@@ -229,7 +231,8 @@ module Index = struct
   end
 
   (** Recursive mapper for registers *)
-  module On_registers : Traversable.Container0 with type t := t and type elt := Reg.t =
+  module On_registers : Traversable.S0_container with type t := t
+                                                  and type elt := Reg.t =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Reg
@@ -276,7 +279,8 @@ module Indirect = struct
 
   (** Recursive mapper for symbols *)
   module On_symbols
-    : Traversable.Container0 with type t := t and type elt := string =
+    : Traversable.S0_container with type t := t
+                                and type elt := string =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
@@ -287,7 +291,7 @@ module Indirect = struct
         module F = Traversable.Helpers (M)
 
         module D = Disp.On_symbols.On_monad (M)
-        module O = My_option.On_monad (M)
+        module O = T_option.On_monad (M)
 
         let map_m t ~f =
           B.map_m t
@@ -302,7 +306,7 @@ module Indirect = struct
 
   (** Recursive mapper for registers *)
   module On_registers
-    : Traversable.Container0 with type t := t and type elt := Reg.t =
+    : Traversable.S0_container with type t := t and type elt := Reg.t =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Reg
@@ -310,7 +314,7 @@ module Indirect = struct
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
         module F = Traversable.Helpers (M)
-        module O = My_option.On_monad (M)
+        module O = T_option.On_monad (M)
         module I = Index.On_registers.On_monad (M)
 
         let map_m t ~f =
@@ -350,7 +354,7 @@ module Location = struct
   end
 
   module On_registers
-    : Traversable.Container0 with type t := t and type elt := Reg.t =
+    : Traversable.S0_container with type t := t and type elt := Reg.t =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Reg
@@ -366,7 +370,7 @@ module Location = struct
   ;;
 
   module On_symbols
-    : Traversable.Container0 with type t := t and type elt := string =
+    : Traversable.S0_container with type t := t and type elt := string =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
@@ -431,7 +435,7 @@ module Operand = struct
 
   (** Recursive mapper for locations in operands *)
   module On_locations
-    : Traversable.Container0 with type t := t and type elt := Location.t =
+    : Traversable.S0_container with type t := t and type elt := Location.t =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Location
@@ -454,16 +458,13 @@ module Operand = struct
 
   (** Recursive mapper for symbols in operands *)
   module On_symbols
-    : Traversable.Container0 with type t := t and type elt := string =
+    : Traversable.S0_container with type t := t and type elt := string =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
-      module Set = String.Set
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Traversable.Helpers (M)
-
         module L = Location.On_symbols.On_monad (M)
         module D = Disp.On_symbols.On_monad (M)
 
@@ -542,7 +543,7 @@ module Instruction = struct
 
   (** Recursive mapper for symbols in instructions *)
   module On_symbols
-    : Traversable.Container0 with type t := t and type elt := string =
+    : Traversable.S0_container with type t := t and type elt := string =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
@@ -552,7 +553,7 @@ module Instruction = struct
         module B  = Base_map (M)
         module F  = Traversable.Helpers (M)
         module OS = Operand.On_symbols.On_monad (M)
-        module L  = My_list.On_monad (M)
+        module L  = T_list.On_monad (M)
 
         let map_m t ~f =
           B.map_m t
@@ -567,7 +568,7 @@ module Instruction = struct
 
   (** Recursive mapper for locations in instructions *)
   module On_locations
-    : Traversable.Container0 with type t := t and type elt := Location.t =
+    : Traversable.S0_container with type t := t and type elt := Location.t =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = Location
@@ -576,7 +577,7 @@ module Instruction = struct
         module B  = Base_map (M)
         module F  = Traversable.Helpers (M)
         module OL = Operand.On_locations.On_monad (M)
-        module L  = My_list.On_monad (M)
+        module L  = T_list.On_monad (M)
 
         let map_m t ~f =
           B.map_m t
@@ -611,7 +612,7 @@ module Statement = struct
 
   (** Recursive mapper for instructions in statements *)
   module On_instructions
-    : Traversable.Container0 with type t := t
+    : Traversable.S0_container with type t := t
                            and type elt := Instruction.t =
     Traversable.Make_container0 (struct
       type nonrec t = t
@@ -634,7 +635,7 @@ module Statement = struct
 
   (** Recursive mapper for symbols in statements *)
   module On_symbols
-    : Traversable.Container0 with type t := t and type elt := string =
+    : Traversable.S0_container with type t := t and type elt := string =
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String

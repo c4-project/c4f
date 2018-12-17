@@ -24,7 +24,8 @@
 
 open Core
 
-module Hook (L : Language.S) (P : Utils.Traversable.Container1) = struct
+module Hook
+    (L : Language.S) (P : Travesty.Traversable.S1_container) = struct
   open Ast
 
   module Lang = L

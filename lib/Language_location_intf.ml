@@ -30,7 +30,6 @@
    one to the other, [Make]. *)
 
 open Core_kernel
-open Utils
 
 (** [Basic] is the interface act languages must implement for
     location analysis. *)
@@ -46,7 +45,7 @@ module type Basic = sig
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
-    Traversable.Container0 with type elt := sym and type t := t
+    Travesty.Traversable.S0_container with type elt := sym and type t := t
   ;;
 
   include Abstract.Abstractable.S

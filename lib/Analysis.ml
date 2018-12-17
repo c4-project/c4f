@@ -176,7 +176,7 @@ module M = struct
       let open Or_error.Let_syntax in
       let%bind t = make ~header () in
       let%map (_, _, t) =
-        My_list.With_errors.fold_m (files a)
+        Travesty.T_list.With_errors.fold_m (files a)
           ~init:(None, None, t) ~f:with_file
       in
       t

@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core_kernel
-open Utils
 
 (** Sanitiser passes for global symbol renaming
 
@@ -67,7 +66,7 @@ module Make (B : Sanitiser_base.Basic)
      and module Program_container := B.Program_container = struct
   include B
   module Ctx_Pcon    = Program_container.On_monad (Ctx)
-  module Ctx_List    = My_list.On_monad (Ctx)
+  module Ctx_List    = Travesty.T_list.On_monad (Ctx)
   module Ctx_Stm_Sym = Lang.Statement.On_symbols.On_monad (Ctx)
 
   let over_all_symbols progs ~f =

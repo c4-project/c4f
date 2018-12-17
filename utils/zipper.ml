@@ -33,7 +33,7 @@ module type Basic_cell = sig
   val of_data_list : 'a list -> 'a t list
   val to_data_list : 'a t list -> 'a list
 
-  include Traversable.Container1 with type 'a t := 'a t
+  include Travesty.Traversable.S1_container with type 'a t := 'a t
 end
 
 let rev_transfer amount ~src ~dst =
@@ -188,7 +188,7 @@ module Make (Cell : Basic_cell) = struct
 end
 
 module Plain_cell : Basic_cell = struct
-  include Singleton
+  include Travesty.Singleton
   let make = Fn.id
   let data = Fn.id
   let of_data_list = Fn.id
@@ -444,7 +444,7 @@ module Make_marked_cell (Mark : Basic_mark) = struct
     { cell with marks = Mark.Set.add cell.marks mark }
   ;;
 
-  include Traversable.Make_container1 (struct
+  include Travesty.Traversable.Make_container1 (struct
       type nonrec 'a t = 'a t
 
       module On_monad (M : Monad.S) = struct

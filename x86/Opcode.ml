@@ -474,7 +474,7 @@ let directive_of_string string =
 ;;
 
 let of_string string =
-  Utils.My_option.first_some_of_thunks
+  Travesty.T_option.first_some_of_thunks
     (Core.Option.
        [ (fun () -> string |> directive_of_string >>| directive)
        ; (fun () -> string |> Jump.of_string      >>| jump)

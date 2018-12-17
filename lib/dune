@@ -10,6 +10,7 @@
   menhirLib
   abstract
   utils
+  travesty
   core))
 
 (ocamllex

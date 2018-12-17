@@ -22,10 +22,13 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** [Traversable] provides signatures and functors for containers and
-    data structures that can be 'traversed': mapped across with a
-    monadic side-effect.
+include Lib.Frontend.Make (struct
+    type ast = (C_base.pseudo list) Ast.test list
 
-    It resembles the Haskell Traversable typeclass. *)
+    module I = Parser.MenhirInterpreter
 
-include Traversable_intf.Traversable
+    let lex = Lexer.token
+    let parse = Parser.Incremental.main
+    let message = C_messages.message
+  end)
+;;

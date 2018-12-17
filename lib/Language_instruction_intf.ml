@@ -30,7 +30,6 @@
    one to the other, [Make]. *)
 
 open Core_kernel
-open Utils
 
 (** [Basic] is the interface act languages must implement for instruction
    analysis. *)
@@ -60,12 +59,12 @@ module type Basic = sig
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
-    Traversable.Container0 with type elt := sym and type t := t
+    Travesty.Traversable.S0_container with type elt := sym and type t := t
   ;;
 
   (** ...and over locations. *)
   module On_locations :
-    Traversable.Container0 with type elt := loc and type t := t
+    Travesty.Traversable.S0_container with type elt := loc and type t := t
   ;;
 
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)

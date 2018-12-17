@@ -38,11 +38,6 @@ open Mem_order_or_annot
 %token (* CONST *) VOLATILE
 %token STRUCT
 
-/* For shallow parsing */
-%token <string> BODY
-%type <string Ast.t list> shallow_main
-%start shallow_main
-
 /* For deep parsing */
 %token <string> CONSTANT
 (* %token NULL *)
@@ -71,14 +66,8 @@ open Mem_order_or_annot
 %nonassoc CAST
 %nonassoc PREC_BASE
 
-%type <(C_base.pseudo list) Ast.test list> deep_main
-%start deep_main
-
-%type <C_base.pseudo list> pseudo_seq
-%start pseudo_seq
-
-(*%type <C_base.macro list> macros
-%start macros*)
+%type <(C_base.pseudo list) Ast.test list> main
+%start main
 
 %%
 
@@ -118,12 +107,6 @@ base:
 ty_attr:
 | { "" }
 
-shallow_main:
-| EOF { [] }
-| BODY shallow_main { Ast.Global $1 :: $2 }
-| voidopt PROC LPAR parameter_list RPAR BODY shallow_main
-    { Ast.Test {Ast.proc = $2; params = $4; body = $6} :: $7 }
-
 voidopt:
 | VOID { () }
 | { () }
@@ -146,8 +129,6 @@ annot_base :
 | LOCK       { "lock" }
 | UNLOCK     { "unlock" }
 | IDENTIFIER { $1 }
-
-
 
 annot_list:
 | annot COMMA annot_list
@@ -289,28 +270,5 @@ trans_unit:
 | trans_unit function_def
   { $1 @ [$2] }
 
-deep_main:
+main:
 | trans_unit EOF { $1 }
-
-(*
-formals_ne:
-| IDENTIFIER { [ $1 ] }
-| IDENTIFIER COMMA formals_ne { $1 :: $3 }
-
-formals:
-| { [] }
-| formals_ne { $1 }
-
-body:
-| LBRACE ins_seq RBRACE { Seq ($2,true) }
-
-
-macro:
-| IDENTIFIER LPAR formals RPAR expr { EDef ($1,$3,$5) }
-| IDENTIFIER LPAR formals RPAR body { PDef ($1,$3,$5) }
-
-macros:
-| { [] }
-| macro macros
-    { $1 :: $2 }
-*)

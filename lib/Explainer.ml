@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core_kernel
-open Utils
 
 module type Basic_explanation = sig
   type elt
@@ -417,7 +416,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
   ;;
 
   let non_blank_statements exp =
-    My_list.exclude ~f:Stm_explanation.is_blank exp.statements
+    Travesty.T_list.exclude ~f:Stm_explanation.is_blank exp.statements
   ;;
 
   let pp_as_assembly =

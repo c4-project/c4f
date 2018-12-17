@@ -22,8 +22,6 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Utils
-
 (** [Basic] is the standard input signature for functors creating
     sanitiser passes. *)
 module type Basic = sig
@@ -35,7 +33,7 @@ module type Basic = sig
   (** [Ctx] is the sanitiser's state monad, specialised over
      [Lang]. *)
 
-  module Program_container : Traversable.Container1
+  module Program_container : Travesty.Traversable.S1_container
   (** [Program_container] is the container used to hold the one or more
       programs being sanitised. *)
 end

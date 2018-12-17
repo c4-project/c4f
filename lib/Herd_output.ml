@@ -103,7 +103,7 @@ let compare_states ~initials ~finals ~locmap ~valmap
   let f = State.map ~keyf:locmap ~valf:valmap in
   let%map finals' = Or_error.combine_errors (List.map ~f finals) in
   let result =
-    State.Set.(My_fn.on of_list partial_compare initials finals')
+    State.Set.(Travesty.T_fn.on of_list partial_compare initials finals')
   in
   (result :> outcome)
 ;;
@@ -215,7 +215,7 @@ let process_state n herd line =
     Or_error.(
       line
       |> String.split ~on:';'
-      |> My_list.exclude ~f:String.is_empty (* Drop trailing ; *)
+      |> Travesty.T_list.exclude ~f:String.is_empty (* Drop trailing ; *)
       |> List.map ~f:proc_binding
       |> Result.all
       >>= State.of_alist

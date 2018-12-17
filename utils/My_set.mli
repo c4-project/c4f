@@ -24,7 +24,7 @@
 
 (** Set extensions *)
 
-open Core
+open Core_kernel
 
 (** ['a partial_order] is the type of returns from [partial_compare],
     where ['a] is the set type under comparison. *)

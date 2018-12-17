@@ -26,12 +26,12 @@
 
 open Core
 
-(** [S] is the type of x86 language frontends. *)
 module type S = Lib.Frontend.S with type ast := Ast.t
+(** [S] is the type of x86 language frontends. *)
 
+module Att : S
 (** [Att] is a parser/lexer combination for the AT&T syntax of
    x86 assembly, as emitted by compilers like gcc. *)
-module Att : S
 
-(** [of_dialect] gets the correct frontend module for a dialect. *)
 val of_dialect : Dialect.t -> (module S) Or_error.t
+(** [of_dialect] gets the correct frontend module for a dialect. *)

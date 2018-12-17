@@ -58,7 +58,7 @@ module type Hook = sig
 end
 
 module type Hook_maker =
-  functor (P : Utils.Traversable.Container1)
+  functor (P : Travesty.Traversable.S1_container)
     -> Hook with module Program_container = P
 (** [Hook_maker] is the type of functors that generate hooks given a
     program container. *)
@@ -152,7 +152,7 @@ module type Sanitiser = sig
   module type S = S
 
   module Make_null_hook
-      (Lang : Language.S) (P : Utils.Traversable.Container1)
+      (Lang : Language.S) (P : Travesty.Traversable.S1_container)
     : Hook with module Lang = Lang and module Program_container = P
   (** [Make_null_hook] makes a [Hook] that does nothing. *)
 
@@ -162,14 +162,14 @@ module type Sanitiser = sig
   (** [Make] implements the assembly sanitiser for a given [Basic]. *)
 
   module Make_single (H : Hook_maker)
-    : S with module Lang := H(Utils.Singleton).Lang
+    : S with module Lang := H(Travesty.Singleton).Lang
          and type 'a Program_container.t = 'a
   (** [Make_single] implements the assembly sanitiser for a given
      [Hook_maker], performing no program splitting and returning the
      sanitised assembly back as one program. *)
 
   module Make_multi (H : Hook_maker)
-    : S with module Lang := H(Utils.My_list).Lang
+    : S with module Lang := H(Travesty.T_list).Lang
          and type 'a Program_container.t = 'a list
   (** [Make_multi] implements the assembly sanitiser for a given
      [Hook_maker], treating the incoming assembly as holding multiple

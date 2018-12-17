@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core
-open Utils
 
 module type S = sig
   include Dialect.S
@@ -64,7 +63,7 @@ module Make (T : Dialect.S) (P : PP.Printer) : S = struct
       module On_strings = struct
         type t = string
         type elt = string
-        include Singleton.With_elt (String)
+        include Travesty.Singleton.With_elt (String)
       end
     end
 

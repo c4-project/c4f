@@ -97,11 +97,11 @@ let alpha = ['a'-'z' 'A'-'Z']
 let name = (alpha | '_') (alpha|digit|'_')*
 let num = digit+
 
-rule token deep = parse
-| [' ''\t''\r']+ { token deep lexbuf }
-| '\n' { incr_lineno lexbuf ; token deep lexbuf ; }
-| "/*" { Lex_utils.skip_c_comment lexbuf ; token deep lexbuf }
-| "//" { Lex_utils.skip_c_line_comment lexbuf ; token deep lexbuf }
+rule token = parse
+| [' ''\t''\r']+ { token lexbuf }
+| '\n' { incr_lineno lexbuf ; token lexbuf ; }
+| "/*" { Lex_utils.skip_c_comment lexbuf ; token lexbuf }
+| "//" { Lex_utils.skip_c_line_comment lexbuf ; token lexbuf }
 | '-' ? num as x { CONSTANT x }
 | 'P' (num as x) { PROC (int_of_string x) }
 | ';' { SEMI }
@@ -116,11 +116,7 @@ rule token deep = parse
 | '&' { LAND }
 | '(' { LPAR }
 | ')' { RPAR }
-| '{' { if deep then LBRACE else begin
-          let buf = Buffer.create 4096 in
-          get_body 0 buf lexbuf;
-          BODY (Buffer.contents buf)
-        end }
+| '{' { LBRACE }
 | '}' { RBRACE }
 (*| "while" { WHILE }*)
 | "if"    { IF }
@@ -139,21 +135,3 @@ rule token deep = parse
 | name as x   { tr_name x  }
 | eof { EOF }
 | "" { Lex_misc.error "C lexer" lexbuf }
-
-and get_body i buf = parse
-| '\n' as lxm
-    { incr_lineno lexbuf;
-      Buffer.add_char buf lxm ;
-      get_body i buf lexbuf ; }
-| '{' as lxm
-    { Buffer.add_char buf lxm;
-      get_body (succ i) buf lexbuf
-    }
-| '}' as lxm
-    { if i > 0 then begin
-       Buffer.add_char buf lxm;
-       get_body (pred i) buf lexbuf
-     end
-    }
-| eof { Lex_misc.error "eof in body" lexbuf }
-| _ as lxm { Buffer.add_char buf lxm; get_body i buf lexbuf }

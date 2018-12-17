@@ -54,7 +54,7 @@ module type S = sig
   val bracket_join : (unit -> 'a Or_error.t) -> 'a t Or_error.t
 
   include Timed1 with type 'a t := 'a t
-  include Traversable.Container1 with type 'a t := 'a t
+  include Travesty.Traversable.S1_container with type 'a t := 'a t
 end
 
 module Make (T : Timer) : S = struct
@@ -75,7 +75,7 @@ module Make (T : Timer) : S = struct
     { value; time_taken }
   ;;
 
-  include Traversable.Make_container1 (struct
+  include Travesty.Traversable.Make_container1 (struct
       type nonrec 'a t = 'a t
 
       module On_monad (M : Monad.S) = struct
