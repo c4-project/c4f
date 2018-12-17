@@ -1,5 +1,4 @@
 (executable
-  (name main)
   (public_name act)
   (preprocess (pps ppx_jane))
   (libraries

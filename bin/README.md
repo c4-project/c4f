@@ -2,7 +2,7 @@
 
 The top-level parts of `act` live here, including:
 
-- the entry point, `main.ml`;
+- the entry point, `act.ml`;
 - the sub-command implementations;
 - glue code to connect the top-level to the language and compiler
   specific modules;
