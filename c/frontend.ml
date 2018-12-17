@@ -23,12 +23,12 @@
    SOFTWARE. *)
 
 include Lib.Frontend.Make (struct
-    type ast = (C_base.pseudo list) Ast.test list
+    type ast = Ast.Translation_unit.t
 
     module I = Parser.MenhirInterpreter
 
     let lex = Lexer.token
-    let parse = Parser.Incremental.main
+    let parse = Parser.Incremental.translation_unit
     let message = C_messages.message
   end)
 ;;

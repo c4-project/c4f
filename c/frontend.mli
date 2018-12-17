@@ -25,4 +25,4 @@
 (** Language frontend for C *)
 
 include Lib.Frontend.S
-  with type ast := (C_base.pseudo list) Ast.test list
+  with type ast := Ast.Translation_unit.t

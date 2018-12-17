@@ -37,7 +37,6 @@ module Constant = struct
     | Char    of char
     | Float   of float
     | Integer of int
-    | String  of string
   ;;
 end
 
@@ -59,6 +58,7 @@ module Operator = struct
 
   type bin =
     [ assign
+    | `Comma
     | `Mul
     | `Div
     | `Mod
@@ -151,7 +151,12 @@ module type S_expr = sig
     | Prefix      of Operator.pre * t
     | Postfix     of t * Operator.post
     | Binary      of t * Operator.bin * t
+    | Ternary     of { cond   : t
+                     ; t_expr : t
+                     ; f_expr : t
+                     }
     | Cast        of ty * t
+    | Call        of { func : t; arguments : t list}
     | Subscript   of { array : t; index : t }
     | Field       of { value  : t
                      ; field  : Identifier.t
@@ -178,7 +183,7 @@ module type S_direct_declarator = sig
     | Id of Identifier.t
     | Bracket of dec
     | Array of t * expr option
-    | Fun_decl of t * par list
+    | Fun_decl of t * par
     | Fun_call of t * Identifier.t list
   ;;
 end
@@ -239,7 +244,7 @@ module type S_direct_abs_declarator = sig
   type t =
     | Bracket of dec
     | Array of t option * expr option
-    | Fun_decl of t option * par list
+    | Fun_decl of t option * par option
   ;;
 end
 
@@ -258,7 +263,12 @@ module rec Expr : S_expr
     | Prefix      of Operator.pre * t
     | Postfix     of t * Operator.post
     | Binary      of t * Operator.bin * t
+    | Ternary     of { cond   : t
+                     ; t_expr : t
+                     ; f_expr : t
+                     }
     | Cast        of Type_name.t * t
+    | Call        of { func : t; arguments : t list}
     | Subscript   of { array : t; index : t }
     | Field       of { value  : t
                      ; field  : Identifier.t
@@ -325,10 +335,10 @@ and Type_spec : S_type_spec
   ;;
 end
 and Type_name : S_decl
-  with type q := Decl_spec.t
+  with type q := [ Type_spec.t | Type_qual.t ]
    and type d := Abs_declarator.t option = struct
   type t =
-    { qualifiers : Decl_spec.t list
+    { qualifiers : [ Type_spec.t | Type_qual.t ] list
     ; declarator : Abs_declarator.t option
     }
   ;;
@@ -372,32 +382,27 @@ and Param_decl : S_decl
     }
   ;;
 end
-and Param : sig
-  type t = Param_decl.t list
-end = struct
-  type t = Param_decl.t list
-end
-and Param_type : sig
+and Param_type_list : sig
   type t =
-    { params : Param.t list
+    { params : Param_decl.t list
     ; style  : [`Normal | `Variadic]
     }
 end = struct
   type t =
-    { params : Param.t list
+    { params : Param_decl.t list
     ; style  : [`Normal | `Variadic]
     }
   ;;
 end
 and Direct_declarator : S_direct_declarator
   with type dec  := Declarator.t
-   and type par  := Param_type.t
+   and type par  := Param_type_list.t
    and type expr := Expr.t = struct
   type t =
     | Id of Identifier.t
     | Bracket of Declarator.t
     | Array of t * Expr.t option
-    | Fun_decl of t * Param_type.t list
+    | Fun_decl of t * Param_type_list.t
     | Fun_call of t * Identifier.t list
 end
 and Declarator : S_declarator
@@ -418,12 +423,12 @@ and Struct_declarator : S_struct_declarator
 end
 and Direct_abs_declarator : S_direct_abs_declarator
   with type dec  := Abs_declarator.t
-   and type par  := Param_type.t
+   and type par  := Param_type_list.t
    and type expr := Expr.t = struct
   type t =
     | Bracket of Abs_declarator.t
     | Array of t option * Expr.t option
-    | Fun_decl of t option * Param_type.t list
+    | Fun_decl of t option * Param_type_list.t option
 end
 and Abs_declarator
   : S_abs_declarator with type ddec := Direct_abs_declarator.t = struct
@@ -487,6 +492,10 @@ module type S_stm = sig
         ; update : Expr.t option
         ; body   : t
         }
+    | Goto of Identifier.t
+    | Continue
+    | Break
+    | Return of Expr.t option
 end
 
 module type S_compound_stm = sig
@@ -519,6 +528,10 @@ module rec Stm : S_stm
         ; update : Expr.t option
         ; body   : t
         }
+    | Goto of Identifier.t
+    | Continue
+    | Break
+    | Return of Expr.t option
 end
 and Compound_stm : S_compound_stm
   with type stm := Stm.t = struct
