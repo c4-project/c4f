@@ -125,6 +125,11 @@ rule token typedefs = parse
 | "--" { SUBSUB }
 | '.' {DOT}
 
+| '#' { Lib.Frontend.lex_error
+          ("C preprocessor directives aren't supported directly.")
+          lexbuf
+      }
+
 (* Litmus extensions *)
 | "/\\" { LIT_AND }
 | "\\/" { LIT_OR }
