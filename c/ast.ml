@@ -97,12 +97,28 @@ module Operator = struct
 end
 
 module type S_decl = sig
-  type q
-  type d
+  type qual
+  type decl
 
   type t =
-    { qualifiers : q list
-    ; declarator : d
+    { qualifiers : qual list
+    ; declarator : decl
+    }
+  [@@deriving sexp]
+  ;;
+end
+
+module type Basic_decl = sig
+  type qual [@@deriving sexp] (** Type of qualifiers *)
+  type decl [@@deriving sexp] (** Type of declarators *)
+end
+
+module Make_decl (B : Basic_decl) : S_decl
+  with type qual := B.qual
+   and type decl := B.decl = struct
+  type t =
+    { qualifiers : B.qual list
+    ; declarator : B.decl
     }
   [@@deriving sexp]
   ;;
@@ -228,20 +244,38 @@ module type S_type_spec = sig
   ;;
 end
 
+module type Basic_composite_spec = sig
+  type ty [@@deriving sexp]
+  type decl [@@deriving sexp]
+end
+
 module type S_composite_spec = sig
   type ty
-  type dec
+  type decl
 
   type t =
     | Literal of
         { ty       : ty
         ; name_opt : Identifier.t option
-        ; decls    : dec list
+        ; decls    : decl list
         }
     | Named of ty * Identifier.t
   [@@deriving sexp]
 end
 
+module Make_composite_spec (B : Basic_composite_spec)
+  : S_composite_spec
+    with type ty   := B.ty
+     and type decl := B.decl = struct
+  type t =
+    | Literal of
+        { ty       : B.ty
+        ; name_opt : Identifier.t option
+        ; decls    : B.decl list
+        }
+    | Named of B.ty * Identifier.t
+  [@@deriving sexp]
+end
 
 module type S_direct_abs_declarator = sig
   type dec
@@ -306,30 +340,18 @@ end = struct
   [@@deriving sexp]
   ;;
 end
-and Enum_spec
-  : S_composite_spec
-    with type ty  := [`Enum]
-     and type dec := Enumerator.t = struct
-  type t =
-    | Literal of
-        { ty       : [`Enum]
-        ; name_opt : Identifier.t option
-        ; decls    : Enumerator.t list
-        }
-    | Named of [`Enum] * Identifier.t
-  [@@deriving sexp]
-  ;;
-end
+and Enum_spec : S_composite_spec
+  with type ty  := [`Enum]
+   and type decl := Enumerator.t = Make_composite_spec (struct
+    type ty   = [`Enum]      [@@deriving sexp]
+    type decl = Enumerator.t [@@deriving sexp]
+  end)
 and Struct_decl : S_decl
-  with type q := [ Type_spec.t | Type_qual.t ]
-   and type d := Struct_declarator.t list = struct
-  type t =
-    { qualifiers : [ Type_spec.t | Type_qual.t ] list
-    ; declarator : Struct_declarator.t list
-    }
-  [@@deriving sexp]
-  ;;
-end
+  with type qual := [ Type_spec.t | Type_qual.t ]
+   and type decl := Struct_declarator.t list = Make_decl (struct
+    type qual = [ Type_spec.t | Type_qual.t ] [@@deriving sexp]
+    type decl = Struct_declarator.t list [@@deriving sexp]
+  end)
 and Type_spec : S_type_spec
   with type su := Struct_or_union_spec.t
    and type en := Enum_spec.t = struct
@@ -351,27 +373,18 @@ and Type_spec : S_type_spec
   ;;
 end
 and Type_name : S_decl
-  with type q := [ Type_spec.t | Type_qual.t ]
-   and type d := Abs_declarator.t option = struct
-  type t =
-    { qualifiers : [ Type_spec.t | Type_qual.t ] list
-    ; declarator : Abs_declarator.t option
-    }
-  [@@deriving sexp]
-  ;;
-end
+  with type qual := [ Type_spec.t | Type_qual.t ]
+   and type decl := Abs_declarator.t option =
+  Make_decl (struct
+    type qual = [ Type_spec.t | Type_qual.t ] [@@deriving sexp]
+    type decl = Abs_declarator.t option [@@deriving sexp]
+  end)
 and Struct_or_union_spec : S_composite_spec
   with type ty  := [`Struct | `Union]
-   and type dec := Struct_decl.t = struct
-  type t =
-    | Literal of
-        { ty       : [`Struct | `Union]
-        ; name_opt : Identifier.t option
-        ; decls    : Struct_decl.t list
-        }
-    | Named of [`Struct | `Union] * Identifier.t
-  [@@deriving sexp]
-end
+   and type decl := Struct_decl.t = Make_composite_spec (struct
+    type ty   = [`Struct | `Union] [@@deriving sexp]
+    type decl = Struct_decl.t [@@deriving sexp]
+end)
 and Decl_spec : sig
   type t =
     [ Storage_class_spec.t
@@ -390,19 +403,15 @@ end = struct
   ;;
 end
 and Param_decl : S_decl
-  with type q := Decl_spec.t
-   and type d := [ `Concrete of Declarator.t
-                 | `Abstract of Abs_declarator.t option
-                 ] = struct
-  type t =
-    { qualifiers : Decl_spec.t list
-    ; declarator : [ `Concrete of Declarator.t
-                   | `Abstract of Abs_declarator.t option
-                   ]
-    }
-  [@@deriving sexp]
-  ;;
-end
+  with type qual := Decl_spec.t
+   and type decl := [ `Concrete of Declarator.t
+                    | `Abstract of Abs_declarator.t option
+                    ] = Make_decl (struct
+    type qual = Decl_spec.t [@@deriving sexp]
+    type decl = [ `Concrete of Declarator.t
+                | `Abstract of Abs_declarator.t option
+                ] [@@deriving sexp]
+  end)
 and Param_type_list : sig
   type t =
     { params : Param_decl.t list
@@ -485,16 +494,11 @@ module Init_declarator = struct
   ;;
 end
 
-module Decl : S_decl
-  with type q := Decl_spec.t
-   and type d := Init_declarator.t list = struct
-  type t =
-    { qualifiers  : Decl_spec.t list
-    ; declarator  : Init_declarator.t list
-    }
-  [@@deriving sexp]
-  ;;
-end
+module Decl = Make_decl (struct
+    type qual = Decl_spec.t [@@deriving sexp]
+    type decl = Init_declarator.t list [@@deriving sexp]
+  end)
+;;
 
 module Label = struct
   type t =

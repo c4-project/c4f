@@ -130,12 +130,12 @@ module Storage_class_spec : sig
 end
 
 module type S_decl = sig
-  type q
-  type d
+  type qual
+  type decl
 
   type t =
-    { qualifiers : q list
-    ; declarator : d
+    { qualifiers : qual list
+    ; declarator : decl
     }
   [@@deriving sexp]
   ;;
@@ -226,13 +226,13 @@ end
 
 module type S_composite_spec = sig
   type ty
-  type dec
+  type decl
 
   type t =
     | Literal of
         { ty       : ty
         ; name_opt : Identifier.t option
-        ; decls    : dec list
+        ; decls    : decl list
         }
     | Named of ty * Identifier.t
   [@@deriving sexp]
@@ -274,24 +274,24 @@ and Enumerator : sig
 end
 and Enum_spec
   : (S_composite_spec
-     with type ty  := [`Enum]
-      and type dec := Enumerator.t)
+     with type ty   := [`Enum]
+      and type decl := Enumerator.t)
 and Struct_decl
   : (S_decl
-     with type q := [ Type_spec.t | Type_qual.t ]
-      and type d := Struct_declarator.t list)
+     with type qual := [ Type_spec.t | Type_qual.t ]
+      and type decl := Struct_declarator.t list)
 and Type_spec
   : (S_type_spec
      with type su := Struct_or_union_spec.t
       and type en := Enum_spec.t)
 and Type_name
   : (S_decl
-     with type q := [ Type_spec.t | Type_qual.t ]
-      and type d := Abs_declarator.t option)
+     with type qual := [ Type_spec.t | Type_qual.t ]
+      and type decl := Abs_declarator.t option)
 and Struct_or_union_spec
   : (S_composite_spec
-     with type ty  := [`Struct | `Union]
-      and type dec := Struct_decl.t)
+     with type ty   := [`Struct | `Union]
+      and type decl := Struct_decl.t)
 and Decl_spec : sig
   type t =
     [ Storage_class_spec.t
@@ -303,10 +303,10 @@ and Decl_spec : sig
 end
 and Param_decl
   : (S_decl
-     with type q := Decl_spec.t
-      and type d := [ `Concrete of Declarator.t
-                    | `Abstract of Abs_declarator.t option
-                    ])
+     with type qual := Decl_spec.t
+      and type decl := [ `Concrete of Declarator.t
+                       | `Abstract of Abs_declarator.t option
+                       ])
 and Param_type_list : sig
   type t =
     { params : Param_decl.t list
@@ -354,8 +354,8 @@ module Init_declarator : sig
 end
 
 module Decl : S_decl
-  with type q := Decl_spec.t
-   and type d := Init_declarator.t list
+  with type qual := Decl_spec.t
+   and type decl := Init_declarator.t list
 ;;
 
 module Label : sig
