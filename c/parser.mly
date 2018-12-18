@@ -47,8 +47,13 @@
 %token ADD SUB
 %token STAR DIV MOD
 
+%token LIT_EXISTS LIT_AND LIT_OR
+
 %type <Ast.Translation_unit.t> translation_unit
 %start translation_unit
+
+%type <Ast.Litmus.t> litmus
+%start litmus
 
 %%
 
@@ -76,12 +81,43 @@
 %inline endsemi(x):
   | xs = terminated(x, SEMI) { xs }
 
+litmus:
+  | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF
+    { { Ast.Litmus.language; name; decls } }
+
+litmus_declaration:
+  | decl = external_declaration { decl :> Ast.Litmus_decl.t }
+  | decl = litmus_initialiser   { `Init decl }
+  | post = litmus_postcondition { `Post post }
+
+litmus_initialiser:
+  | xs = braced(list(endsemi(assignment_expression))) { xs }
+
+litmus_quantifier:
+  | LIT_EXISTS { `Exists }
+
+litmus_postcondition:
+  | quantifier = litmus_quantifier; predicate = parened(litmus_disjunct)
+    { { Ast.Litmus_post.quantifier; predicate } }
+
+litmus_disjunct:
+  | e = litmus_conjunct { e }
+  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct { Ast.Litmus_pred.Or (l, r) }
+
+litmus_conjunct:
+  | e = litmus_equality { e }
+  | l = litmus_conjunct; LIT_AND; r = litmus_equality { Ast.Litmus_pred.And (l, r) }
+
+litmus_equality:
+  | e = parened(litmus_disjunct) { Ast.Litmus_pred.Bracket (e) }
+  | l = IDENTIFIER; EQ_OP; r = constant { Ast.Litmus_pred.Eq (l, r) }
+
 translation_unit:
   | decls = external_declaration+ EOF { decls }
 
 external_declaration:
-  | func = function_definition { Ast.External_decl.Fun  func }
-  | decl = declaration         { Ast.External_decl.Decl decl }
+  | func = function_definition { `Fun  func }
+  | decl = declaration         { `Decl decl }
 
 function_definition:
   | decl_specs = declaration_specifier*; signature = declarator; decls = declaration*; body = compound_statement
@@ -122,9 +158,9 @@ type_qualifier:
   | VOLATILE { `Volatile }
 
 struct_or_union_specifier:
-  | ty = struct_or_union; name_opt = IDENTIFIER?; decls = braced(struct_declaration+)
+  | ty = struct_or_union; name_opt = identifier?; decls = braced(struct_declaration+)
     { Ast.Struct_or_union_spec.Literal { ty; name_opt; decls } }
-  | ty = struct_or_union; name = IDENTIFIER
+  | ty = struct_or_union; name = identifier
     { Ast.Struct_or_union_spec.Named ( ty, name ) }
 
 struct_or_union:
@@ -150,13 +186,13 @@ struct_declarator:
     { Ast.Struct_declarator.Bitfield (decl, length) }
 
 enum_specifier:
-  | ENUM; name_opt = IDENTIFIER?; decls = braced(clist(enumerator))
+  | ENUM; name_opt = identifier?; decls = braced(clist(enumerator))
     { Ast.Enum_spec.Literal { ty = `Enum; name_opt; decls } }
-  | ENUM; name = IDENTIFIER
+  | ENUM; name = identifier
     { Ast.Enum_spec.Literal { ty = `Enum; name_opt = Some name; decls = [] } }
 
 enumerator:
-  | name = IDENTIFIER; value = option(preceded(EQ, constant_expression))
+  | name = identifier; value = option(preceded(EQ, constant_expression))
     { { Ast.Enumerator.name; value } }
 
 declarator:
@@ -164,7 +200,7 @@ declarator:
     { { Ast.Declarator.pointer; direct } }
 
 direct_declarator:
-  | id = IDENTIFIER
+  | id = identifier
     { Ast.Direct_declarator.Id id }
   | d = parened(declarator)
     { Ast.Direct_declarator.Bracket d }
@@ -172,7 +208,7 @@ direct_declarator:
     { Ast.Direct_declarator.Array (lhs, index) }
   | lhs = direct_declarator; pars = parened(parameter_type_list)
     { Ast.Direct_declarator.Fun_decl (lhs, pars) }
-  | lhs = direct_declarator; pars = parened(clist(IDENTIFIER))
+  | lhs = direct_declarator; pars = parened(clist(identifier))
     { Ast.Direct_declarator.Fun_call (lhs, pars) }
 
 pointer:
@@ -224,7 +260,7 @@ statement:
   | s = jump_statement       { s }
 
 labelled_statement:
-  | id = IDENTIFIER; COLON; s = statement { Ast.Stm.Label (Ast.Label.Normal id, s) }
+  | id = identifier; COLON; s = statement { Ast.Stm.Label (Ast.Label.Normal id, s) }
   | CASE; cond = constant_expression; s = statement { Ast.Stm.Label (Ast.Label.Case cond, s) }
   | DEFAULT; COLON; s = statement { Ast.Stm.Label (Ast.Label.Default, s) }
 
@@ -250,7 +286,7 @@ iteration_statement:
     { Ast.Stm.For { init; cond; update; body } }
 
 jump_statement:
-  | GOTO; id = IDENTIFIER { Ast.Stm.Goto id }
+  | GOTO; id = identifier { Ast.Stm.Goto id }
   | CONTINUE { Ast.Stm.Continue }
   | BREAK { Ast.Stm.Break }
   | RETURN; ret = expression? { Ast.Stm.Return ret }
@@ -395,7 +431,7 @@ postfix_expression:
     { Ast.Expr.Subscript { array; index } }
   | func = postfix_expression; arguments = parened(argument_expression_list)
     { Ast.Expr.Call { func; arguments } }
-  | value = postfix_expression; access = field_access; field = IDENTIFIER
+  | value = postfix_expression; access = field_access; field = identifier
     { Ast.Expr.Field { value; field; access } }
   | e = postfix_expression; o = inc_or_dec_operator
     { Ast.Expr.Postfix (e, o) }
@@ -406,7 +442,7 @@ argument_expression_list:
   | x = assignment_expression; COMMA; xs = argument_expression_list { x::xs }
 
 primary_expression:
-  | i = IDENTIFIER          { Ast.Expr.Identifier i }
+  | i = identifier          { Ast.Expr.Identifier i }
   | k = constant            { Ast.Expr.Constant   k }
   | s = STRING              { Ast.Expr.String     s }
   | e = parened(expression) { Ast.Expr.Brackets   e }
@@ -415,3 +451,8 @@ constant:
   | i = INT_LIT   { Ast.Constant.Integer i }
   | c = CHAR_LIT  { Ast.Constant.Char    c }
   | f = FLOAT_LIT { Ast.Constant.Float   f }
+
+identifier:
+  | i = IDENTIFIER { i }
+(* Contextual keywords. *)
+  | LIT_EXISTS { "exists" }

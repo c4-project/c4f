@@ -22,7 +22,12 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Language frontend for C *)
+(** Language frontends for C *)
 
-include Lib.Frontend.S
-  with type ast := Ast.Translation_unit.t
+module Normal :
+  Lib.Frontend.S with type ast := Ast.Translation_unit.t
+(** Frontend for 'normal' C (C89 at time of writing). *)
+
+module Litmus :
+  Lib.Frontend.S with type ast := Ast.Litmus.t
+(** Frontend for C-based litmus tests. *)

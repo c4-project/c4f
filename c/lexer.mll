@@ -15,11 +15,12 @@
 (****************************************************************************)
 
 {
+open Core_kernel
 open Parser
 open Lexing
 
 (* Compiled efficiently by the next version of ocaml *)
-let tr_name s = match s with
+let tr_name typedefs s = match s with
 | "volatile" -> VOLATILE
 | "auto" -> AUTO
 | "char" -> CHAR
@@ -47,7 +48,10 @@ let tr_name s = match s with
 | "case" -> CASE
 | "default" -> DEFAULT
 | "void" -> VOID
+(* Litmus extensions *)
+| "exists" -> LIT_EXISTS
 (* Others *)
+| x when String.Set.mem typedefs x -> TYPEDEF_NAME x
 | x -> IDENTIFIER x
 }
 
@@ -56,11 +60,11 @@ let alpha = ['a'-'z' 'A'-'Z']
 let name = (alpha | '_') (alpha|digit|'_')*
 let num = digit+
 
-rule token = parse
-| [' ''\t''\r']+ { token lexbuf }
-| '\n' { new_line lexbuf ; token lexbuf }
-| "/*" { Lib.Lex_utils.skip_c_comment lexbuf ; token lexbuf }
-| "//" { Lib.Lex_utils.skip_c_line_comment lexbuf ; token lexbuf }
+rule token typedefs = parse
+| [' ''\t''\r']+ { token typedefs lexbuf }
+| '\n' { new_line lexbuf ; token typedefs lexbuf }
+| "/*" { Lib.Lex_utils.skip_c_comment lexbuf ; token typedefs lexbuf }
+| "//" { Lib.Lex_utils.skip_c_line_comment lexbuf ; token typedefs lexbuf }
 | '-' ? num as x { INT_LIT (Core.Int.of_string x) }
 | ';' { SEMI }
 | ',' { COMMA }
@@ -120,6 +124,11 @@ rule token = parse
 | "++" { ADDADD }
 | "--" { SUBSUB }
 | '.' {DOT}
-| name as x { tr_name x }
+
+(* Litmus extensions *)
+| "/\\" { LIT_AND }
+| "\\/" { LIT_OR }
+
+| name as x { tr_name typedefs x }
 | eof { EOF }
 | _ { Lib.Frontend.lex_error ("Unexpected char: " ^ lexeme lexbuf) lexbuf }

@@ -554,11 +554,47 @@ end
 
 module External_decl = struct
   type t =
-    | Fun  of Function_def.t
-    | Decl of Decl.t
+    [ `Fun of Function_def.t
+    | `Decl of Decl.t
+    ]
   ;;
 end
 
 module Translation_unit = struct
   type t = External_decl.t list
+end
+
+module Litmus_pred = struct
+  type t =
+    | Bracket of t
+    | Or of t * t
+    | And of t * t
+    | Eq of Identifier.t * Constant.t
+  ;;
+end
+
+module Litmus_post = struct
+  type t =
+    { quantifier : [ `Exists ]
+    ; predicate  : Litmus_pred.t
+    }
+  ;;
+end
+
+module Litmus_decl = struct
+  type t =
+    [ External_decl.t
+    | `Init of Expr.t list
+    | `Post of Litmus_post.t
+    ]
+  ;;
+end
+
+module Litmus = struct
+  type t =
+    { language : string
+    ; name     : string
+    ; decls    : Litmus_decl.t list
+    }
+  ;;
 end

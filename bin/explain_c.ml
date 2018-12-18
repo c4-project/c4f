@@ -29,7 +29,7 @@ let run ~infile ~outfile _o _cfg =
   let is = Io.In_source.of_option infile in
   ignore outfile;
   Or_error.(
-    C.Frontend.load_from_isrc is
+    C.Frontend.Litmus.load_from_isrc is
     >>| fun _ -> ()
   )
 ;;

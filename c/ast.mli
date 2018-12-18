@@ -403,11 +403,47 @@ end
 
 module External_decl : sig
   type t =
-    | Fun  of Function_def.t
-    | Decl of Decl.t
+    [ `Fun  of Function_def.t
+    | `Decl of Decl.t
+    ]
   ;;
 end
 
 module Translation_unit : sig
   type t = External_decl.t list
+end
+
+module Litmus_pred : sig
+  type t =
+    | Bracket of t
+    | Or of t * t
+    | And of t * t
+    | Eq of Identifier.t * Constant.t
+  ;;
+end
+
+module Litmus_post : sig
+  type t =
+    { quantifier : [ `Exists ]
+    ; predicate  : Litmus_pred.t
+    }
+  ;;
+end
+
+module Litmus_decl : sig
+  type t =
+    [ External_decl.t
+    | `Init of Expr.t list
+    | `Post of Litmus_post.t
+    ]
+  ;;
+end
+
+module Litmus : sig
+  type t =
+    { language : string
+    ; name     : string
+    ; decls    : Litmus_decl.t list
+    }
+  ;;
 end
