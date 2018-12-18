@@ -83,6 +83,14 @@ open Ast
 %inline endsemi(x):
   | xs = terminated(x, SEMI) { xs }
 
+%inline left_binop(this_level, next_level, op):
+  | e = next_level { e }
+  | l = this_level; o = op; r = next_level { Expr.Binary (l, o, r) }
+
+%inline right_binop(this_level, next_level, op):
+  | e = next_level { e }
+  | l = next_level; o = op; r = this_level { Expr.Binary (l, o, r) }
+
 litmus:
   | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF
     { { Litmus.Test.language; name; decls } }
@@ -134,9 +142,10 @@ declaration:
     { { Decl.qualifiers; declarator } }
 
 declaration_specifier:
-  | spec = storage_class_specifier { spec :> [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] }
-  | spec = type_specifier          { spec :> [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] }
-  | qual = type_qualifier          { qual :> [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] }
+  | spec = storage_class_specifier
+  | spec = type_specifier
+  | spec = type_qualifier
+    { spec :> [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] }
 
 storage_class_specifier:
   | AUTO     { `Auto }
@@ -182,8 +191,9 @@ struct_declaration:
     { { Struct_decl.qualifiers; declarator } }
 
 specifier_qualifier:
-  | spec = type_specifier { spec :> [ Type_spec.t | Type_qual.t ] }
-  | qual = type_qualifier { qual :> [ Type_spec.t | Type_qual.t ] }
+  | spec = type_specifier
+  | spec = type_qualifier
+    { spec :> [ Type_spec.t | Type_qual.t ] }
 
 struct_declarator:
   | decl = declarator
@@ -298,15 +308,10 @@ jump_statement:
   | RETURN; ret = expression? { Stm.Return ret }
 
 expression:
-  | e = assignment_expression { e }
-  | l = expression; COMMA; r = assignment_expression
-    { Expr.Binary (l, `Comma, r) }
+  | e = left_binop(expression, assignment_expression, COMMA {`Comma}) { e }
 
 assignment_expression:
-  | e = conditional_expression { e }
-  | l = unary_expression; o = assignment_operator; r = assignment_expression
-    { Expr.Binary (l, o, r) }
-
+  | e = right_binop(assignment_expression, conditional_expression, assignment_operator) { e }
 assignment_operator:
   | EQ      { `Assign }
   | STAR_EQ { `Assign_mul }
@@ -329,77 +334,52 @@ constant_expression:
   | e = conditional_expression { e }
 
 logical_or_expression:
-  | e = logical_and_expression { e }
-  | l = logical_or_expression; LOR; r = logical_and_expression
-    { Expr.Binary (l, `Lor, r) }
+  | e = left_binop(logical_or_expression, logical_and_expression, LOR { `Lor }) { e }
 
 logical_and_expression:
-  | e = inclusive_or_expression { e }
-  | l = logical_and_expression; LAND; r = inclusive_or_expression
-    { Expr.Binary (l, `Land, r) }
+  | e = left_binop(logical_and_expression, inclusive_or_expression, LAND { `Land }) { e }
 
 inclusive_or_expression:
-  | e = exclusive_or_expression { e }
-  | l = inclusive_or_expression; PIPE; r = exclusive_or_expression
-    { Expr.Binary (l, `Or, r) }
+  | e = left_binop(inclusive_or_expression, exclusive_or_expression, PIPE { `Or }) { e }
 
 exclusive_or_expression:
-  | e = and_expression { e }
-  | l = exclusive_or_expression; XOR; r = and_expression
-    { Expr.Binary (l, `Xor, r) }
+  | e = left_binop(exclusive_or_expression, and_expression, XOR { `Xor }) { e }
 
 and_expression:
-  | e = equality_expression { e }
-  | l = and_expression; AND; r = equality_expression
-    { Expr.Binary (l, `And, r) }
+  | e = left_binop(and_expression, equality_expression, AND { `And }) { e }
 
-equality_op:
+equality_expression:
+  | e = left_binop(equality_expression, relational_expression, equality_operator) { e }
+equality_operator:
   | EQ_OP  { `Eq } (* == *)
   | NEQ_OP { `Ne } (* != *)
 
-equality_expression:
-  | e = relational_expression { e }
-  | l = equality_expression; o = equality_op; r = relational_expression
-    { Expr.Binary (l, o, r) }
-
-relational_op:
+relational_expression:
+  | e = left_binop(relational_expression, shift_expression, relational_operator) { e }
+relational_operator:
   | LT { `Lt } (* < *)
   | LE { `Le } (* <= *)
   | GE { `Ge } (* >= *)
   | GT { `Gt } (* > *)
 
-relational_expression:
-  | e = shift_expression { e }
-  | l = relational_expression; o = relational_op; r = shift_expression
-    { Expr.Binary (l, o, r) }
-
-shift_op:
+shift_expression:
+  | e = left_binop(shift_expression, additive_expression, shift_operator) { e }
+shift_operator:
   | SHL { `Shl } (* << *)
   | SHR { `Shr } (* >> *)
 
-shift_expression:
-  | e = additive_expression { e }
-  | l = shift_expression; o = shift_op; r = additive_expression
-    { Expr.Binary (l, o, r) }
-
-additive_op:
+additive_expression:
+  | e = left_binop(additive_expression, multiplicative_expression, additive_operator) { e }
+additive_operator:
   | ADD { `Add } (* + *)
   | SUB { `Sub } (* - *)
 
-additive_expression:
-  | e = multiplicative_expression { e }
-  | l = additive_expression; o = additive_op; r = multiplicative_expression
-    { Expr.Binary (l, o, r) }
-
-multiplicative_op:
+multiplicative_expression:
+  | e = left_binop(multiplicative_expression, cast_expression, multiplicative_operator) { e }
+multiplicative_operator:
   | STAR { `Mul } (* * *)
   | DIV  { `Div } (* / *)
   | MOD  { `Mod } (* % *)
-
-multiplicative_expression:
-  | e = cast_expression { e }
-  | l = multiplicative_expression; o = multiplicative_op; r = cast_expression
-    { Expr.Binary (l, o, r) }
 
 cast_expression:
   | e = unary_expression { e }
