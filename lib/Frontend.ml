@@ -26,19 +26,41 @@ open Core
 open Utils
 open Lexing
 
-type error_range = (Lexing.position * Lexing.position);;
+module Error_range = struct
+  module M = struct
+    type t = (Lexing.position * Lexing.position)
 
-let sexp_of_error_range ((from, until) : error_range) : Sexp.t =
-  Sexp.of_string
-    (sprintf "%s:%d:%d-%d:%d"
-       from.pos_fname
-       from.pos_lnum
-       (from.pos_cnum - from.pos_bol)
-       until.pos_lnum
-       (until.pos_cnum - until.pos_bol))
-;;
+    let from_file  (from, _) = from.pos_fname
 
-exception LexError of string * error_range
+    let from_line  (from, _) = from.pos_lnum
+    let until_line (_, until) = until.pos_lnum
+
+    let column lpos = (lpos.pos_cnum - lpos.pos_bol) + 1
+    let from_column  (from, _) = column from
+    let until_column (_, until) = column until
+
+    let file_from_until pos =
+      (* assuming both positions refer to the same file *)
+      ( from_file pos
+      , ( ( from_line pos, from_column pos )
+        , ( until_line pos, until_column pos )
+        )
+      )
+    ;;
+
+    let colon = Fmt.(const char ':')
+
+    let pp =
+      Fmt.(using file_from_until (pair ~sep:colon string text_loc))
+
+    let to_string = Fmt.to_to_string pp
+    let of_string _ = failwith "unimplemented"
+  end
+  include M
+  include Sexpable.Of_stringable (M)
+end
+
+exception LexError of string * Error_range.t
 
 let lex_error msg lexbuf =
   raise (LexError (msg, (lexbuf.lex_start_p, lexbuf.lex_curr_p)))
@@ -67,7 +89,7 @@ module Make (B : Basic) : S with type ast := B.ast = struct
       let details = B.message state in
       Or_error.error_s
         [%message "Parse error"
-          ~position:(B.I.positions env : error_range)
+          ~position:(B.I.positions env : Error_range.t)
           ~details
         ]
     | _ -> assert false
@@ -85,7 +107,7 @@ module Make (B : Basic) : S with type ast := B.ast = struct
     | LexError (details, position) ->
       Or_error.error_s
         [%message "Lexing error"
-            ~position:(position : error_range)
+            ~position:(position : Error_range.t)
             ~details
         ]
   ;;
