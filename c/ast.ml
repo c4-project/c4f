@@ -385,29 +385,12 @@ and Struct_or_union_spec : S_composite_spec
     type ty   = [`Struct | `Union] [@@deriving sexp]
     type decl = Struct_decl.t [@@deriving sexp]
 end)
-and Decl_spec : sig
-  type t =
-    [ Storage_class_spec.t
-    | Type_spec.t
-    | Type_qual.t
-    ]
-  [@@deriving sexp]
-  ;;
-end = struct
-  type t =
-    [ Storage_class_spec.t
-    | Type_spec.t
-    | Type_qual.t
-    ]
-  [@@deriving sexp]
-  ;;
-end
 and Param_decl : S_decl
-  with type qual := Decl_spec.t
+  with type qual := [ Storage_class_spec.t | Type_spec.t | Type_qual.t ]
    and type decl := [ `Concrete of Declarator.t
                     | `Abstract of Abs_declarator.t option
                     ] = Make_decl (struct
-    type qual = Decl_spec.t [@@deriving sexp]
+    type qual = [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] [@@deriving sexp]
     type decl = [ `Concrete of Declarator.t
                 | `Abstract of Abs_declarator.t option
                 ] [@@deriving sexp]
@@ -495,7 +478,7 @@ module Init_declarator = struct
 end
 
 module Decl = Make_decl (struct
-    type qual = Decl_spec.t [@@deriving sexp]
+    type qual = [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] [@@deriving sexp]
     type decl = Init_declarator.t list [@@deriving sexp]
   end)
 ;;
@@ -587,7 +570,7 @@ end
 
 module Function_def = struct
   type t =
-    { decl_specs : Decl_spec.t list
+    { decl_specs : [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] list
     ; signature  : Declarator.t
     ; decls      : Decl.t list
     ; body       : Compound_stm.t
