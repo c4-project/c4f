@@ -27,10 +27,16 @@ open Utils
 
 let run ~infile ~outfile _o _cfg =
   let is = Io.In_source.of_option infile in
+  let os = Io.Out_sink.of_option outfile in
   ignore outfile;
   Or_error.(
     C.Frontend.Litmus.load_from_isrc is
-    >>| fun _ -> ()
+    >>= fun ast ->
+    Io.Out_sink.with_output os
+      ~f:(fun _ oc ->
+          Sexp.output_hum oc [%sexp (ast : C.Ast.Litmus.Test.t) ];
+          Result.ok_unit
+        )
   )
 ;;
 

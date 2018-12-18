@@ -14,10 +14,13 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
+open Core_kernel
+
 (* New AST, under construction *)
 
 module Identifier = struct
   type t = string
+    [@@deriving sexp]
 end
 
 module Constant = struct
@@ -25,6 +28,7 @@ module Constant = struct
     | Char    of char
     | Float   of float
     | Integer of int
+  [@@deriving sexp]
   ;;
 end
 
@@ -42,6 +46,7 @@ module Operator = struct
     | `Assign_xor
     | `Assign_or
     ]
+  [@@deriving sexp]
   ;;
 
   type bin =
@@ -66,6 +71,7 @@ module Operator = struct
     | `Gt
     | `Ne
     ]
+  [@@deriving sexp]
   ;;
 
   type pre =
@@ -79,12 +85,14 @@ module Operator = struct
     | `Not        (* ~ *)
     | `Lnot       (* ! *)
     ]
+  [@@deriving sexp]
   ;;
 
   type post =
     [ `Inc (* ++ *)
     | `Dec (* -- *)
     ]
+  [@@deriving sexp]
   ;;
 end
 
@@ -96,6 +104,7 @@ module type S_decl = sig
     { qualifiers : q list
     ; declarator : d
     }
+  [@@deriving sexp]
   ;;
 end
 
@@ -104,6 +113,7 @@ module Type_qual = struct
     [ `Const
     | `Volatile
     ]
+  [@@deriving sexp]
   ;;
 end
 
@@ -119,6 +129,7 @@ module Prim_type = struct
     | `Signed
     | `Unsigned
     ]
+  [@@deriving sexp]
 end
 
 module Storage_class_spec = struct
@@ -129,6 +140,7 @@ module Storage_class_spec = struct
     | `Extern
     | `Typedef
     ]
+  [@@deriving sexp]
   ;;
 end
 
@@ -155,11 +167,13 @@ module type S_expr = sig
     | String      of String.t
     | Constant    of Constant.t
     | Brackets    of t
+  [@@deriving sexp]
   ;;
 end
 
 module Pointer = struct
   type t = (Type_qual.t list) list
+  [@@deriving sexp]
 end
 
 module type S_direct_declarator = sig
@@ -173,6 +187,7 @@ module type S_direct_declarator = sig
     | Array of t * expr option
     | Fun_decl of t * par
     | Fun_call of t * Identifier.t list
+  [@@deriving sexp]
   ;;
 end
 
@@ -183,6 +198,7 @@ module type S_declarator = sig
     { pointer : Pointer.t option
     ; direct  : ddec
     }
+  [@@deriving sexp]
   ;;
 end
 
@@ -193,6 +209,7 @@ module type S_struct_declarator = sig
   type t =
     | Regular of dec
     | Bitfield of dec option * expr
+  [@@deriving sexp]
   ;;
 end
 
@@ -207,6 +224,7 @@ module type S_type_spec = sig
     | `Enum of en
     | `Defined_type of Identifier.t
     ]
+  [@@deriving sexp]
   ;;
 end
 
@@ -221,6 +239,7 @@ module type S_composite_spec = sig
         ; decls    : dec list
         }
     | Named of ty * Identifier.t
+  [@@deriving sexp]
 end
 
 
@@ -233,6 +252,7 @@ module type S_direct_abs_declarator = sig
     | Bracket of dec
     | Array of t option * expr option
     | Fun_decl of t option * par option
+  [@@deriving sexp]
   ;;
 end
 
@@ -242,6 +262,7 @@ module type S_abs_declarator = sig
   type t =
     | Pointer of Pointer.t
     | Direct of Pointer.t option * ddec
+  [@@deriving sexp]
   ;;
 end
 
@@ -267,6 +288,7 @@ module rec Expr : S_expr
     | String      of String.t
     | Constant    of Constant.t
     | Brackets    of t
+  [@@deriving sexp]
   ;;
 end
 and Enumerator : sig
@@ -274,12 +296,14 @@ and Enumerator : sig
     { name  : Identifier.t
     ; value : Expr.t option
     }
+  [@@deriving sexp]
   ;;
 end = struct
   type t =
     { name  : Identifier.t
     ; value : Expr.t option
     }
+  [@@deriving sexp]
   ;;
 end
 and Enum_spec
@@ -293,6 +317,8 @@ and Enum_spec
         ; decls    : Enumerator.t list
         }
     | Named of [`Enum] * Identifier.t
+  [@@deriving sexp]
+  ;;
 end
 and Struct_decl : S_decl
   with type q := [ Type_spec.t | Type_qual.t ]
@@ -301,6 +327,7 @@ and Struct_decl : S_decl
     { qualifiers : [ Type_spec.t | Type_qual.t ] list
     ; declarator : Struct_declarator.t list
     }
+  [@@deriving sexp]
   ;;
 end
 and Type_spec : S_type_spec
@@ -320,6 +347,7 @@ and Type_spec : S_type_spec
     | `Enum of Enum_spec.t
     | `Defined_type of Identifier.t
     ]
+  [@@deriving sexp]
   ;;
 end
 and Type_name : S_decl
@@ -329,6 +357,7 @@ and Type_name : S_decl
     { qualifiers : [ Type_spec.t | Type_qual.t ] list
     ; declarator : Abs_declarator.t option
     }
+  [@@deriving sexp]
   ;;
 end
 and Struct_or_union_spec : S_composite_spec
@@ -341,6 +370,7 @@ and Struct_or_union_spec : S_composite_spec
         ; decls    : Struct_decl.t list
         }
     | Named of [`Struct | `Union] * Identifier.t
+  [@@deriving sexp]
 end
 and Decl_spec : sig
   type t =
@@ -348,6 +378,7 @@ and Decl_spec : sig
     | Type_spec.t
     | Type_qual.t
     ]
+  [@@deriving sexp]
   ;;
 end = struct
   type t =
@@ -355,6 +386,7 @@ end = struct
     | Type_spec.t
     | Type_qual.t
     ]
+  [@@deriving sexp]
   ;;
 end
 and Param_decl : S_decl
@@ -368,6 +400,7 @@ and Param_decl : S_decl
                    | `Abstract of Abs_declarator.t option
                    ]
     }
+  [@@deriving sexp]
   ;;
 end
 and Param_type_list : sig
@@ -375,11 +408,14 @@ and Param_type_list : sig
     { params : Param_decl.t list
     ; style  : [`Normal | `Variadic]
     }
+  [@@deriving sexp]
+  ;;
 end = struct
   type t =
     { params : Param_decl.t list
     ; style  : [`Normal | `Variadic]
     }
+  [@@deriving sexp]
   ;;
 end
 and Direct_declarator : S_direct_declarator
@@ -392,6 +428,7 @@ and Direct_declarator : S_direct_declarator
     | Array of t * Expr.t option
     | Fun_decl of t * Param_type_list.t
     | Fun_call of t * Identifier.t list
+  [@@deriving sexp]
 end
 and Declarator : S_declarator
   with type ddec := Direct_declarator.t = struct
@@ -399,6 +436,7 @@ and Declarator : S_declarator
     { pointer : Pointer.t option
     ; direct  : Direct_declarator.t
     }
+  [@@deriving sexp]
   ;;
 end
 and Struct_declarator : S_struct_declarator
@@ -407,6 +445,7 @@ and Struct_declarator : S_struct_declarator
   type t =
     | Regular of Declarator.t
     | Bitfield of Declarator.t option * Expr.t
+  [@@deriving sexp]
   ;;
 end
 and Direct_abs_declarator : S_direct_abs_declarator
@@ -417,12 +456,15 @@ and Direct_abs_declarator : S_direct_abs_declarator
     | Bracket of Abs_declarator.t
     | Array of t option * Expr.t option
     | Fun_decl of t option * Param_type_list.t option
+  [@@deriving sexp]
+  ;;
 end
 and Abs_declarator
   : S_abs_declarator with type ddec := Direct_abs_declarator.t = struct
   type t =
     | Pointer of Pointer.t
     | Direct of Pointer.t option * Direct_abs_declarator.t
+  [@@deriving sexp]
   ;;
 end
 
@@ -430,6 +472,7 @@ module Initialiser = struct
   type t =
     | Assign of Expr.t
     | List of t list
+  [@@deriving sexp]
   ;;
 end
 
@@ -438,6 +481,7 @@ module Init_declarator = struct
     { declarator : Declarator.t
     ; initialiser : Initialiser.t option
     }
+  [@@deriving sexp]
   ;;
 end
 
@@ -448,6 +492,7 @@ module Decl : S_decl
     { qualifiers  : Decl_spec.t list
     ; declarator  : Init_declarator.t list
     }
+  [@@deriving sexp]
   ;;
 end
 
@@ -456,6 +501,7 @@ module Label = struct
     | Normal of Identifier.t
     | Case   of Expr.t
     | Default
+  [@@deriving sexp]
   ;;
 end
 
@@ -484,6 +530,7 @@ module type S_stm = sig
     | Continue
     | Break
     | Return of Expr.t option
+  [@@deriving sexp]
 end
 
 module type S_compound_stm = sig
@@ -493,6 +540,7 @@ module type S_compound_stm = sig
     { decls : Decl.t list
     ; stms  : stm list
     }
+  [@@deriving sexp]
   ;;
 end
 
@@ -520,6 +568,8 @@ module rec Stm : S_stm
     | Continue
     | Break
     | Return of Expr.t option
+  [@@deriving sexp]
+  ;;
 end
 and Compound_stm : S_compound_stm
   with type stm := Stm.t = struct
@@ -527,6 +577,7 @@ and Compound_stm : S_compound_stm
     { decls : Decl.t list
     ; stms  : Stm.t list
     }
+  [@@deriving sexp]
   ;;
 end
 
@@ -537,6 +588,7 @@ module Function_def = struct
     ; decls      : Decl.t list
     ; body       : Compound_stm.t
     }
+  [@@deriving sexp]
   ;;
 end
 
@@ -545,11 +597,14 @@ module External_decl = struct
     [ `Fun of Function_def.t
     | `Decl of Decl.t
     ]
+  [@@deriving sexp]
   ;;
 end
 
 module Translation_unit = struct
   type t = External_decl.t list
+  [@@deriving sexp]
+  ;;
 end
 
 module Litmus = struct
@@ -557,6 +612,7 @@ module Litmus = struct
     type t =
       | Local of int * Identifier.t
       | Global of Identifier.t
+    [@@deriving sexp]
     ;;
   end
 
@@ -566,6 +622,7 @@ module Litmus = struct
       | Or of t * t
       | And of t * t
       | Eq of Id.t * Constant.t
+    [@@deriving sexp]
     ;;
   end
 
@@ -574,6 +631,7 @@ module Litmus = struct
       { quantifier : [ `Exists ]
       ; predicate  : Pred.t
       }
+    [@@deriving sexp]
     ;;
   end
 
@@ -583,6 +641,7 @@ module Litmus = struct
       | `Init of Expr.t list
       | `Post of Post.t
       ]
+    [@@deriving sexp]
     ;;
   end
 
@@ -592,6 +651,7 @@ module Litmus = struct
       ; name     : string
       ; decls    : Decl.t list
       }
+    [@@deriving sexp]
     ;;
   end
 end
