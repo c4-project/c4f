@@ -552,37 +552,46 @@ module Translation_unit = struct
   type t = External_decl.t list
 end
 
-module Litmus_pred = struct
-  type t =
-    | Bracket of t
-    | Or of t * t
-    | And of t * t
-    | Eq of Identifier.t * Constant.t
-  ;;
-end
-
-module Litmus_post = struct
-  type t =
-    { quantifier : [ `Exists ]
-    ; predicate  : Litmus_pred.t
-    }
-  ;;
-end
-
-module Litmus_decl = struct
-  type t =
-    [ External_decl.t
-    | `Init of Expr.t list
-    | `Post of Litmus_post.t
-    ]
-  ;;
-end
-
 module Litmus = struct
-  type t =
-    { language : string
-    ; name     : string
-    ; decls    : Litmus_decl.t list
-    }
-  ;;
+  module Id = struct
+    type t =
+      | Local of int * Identifier.t
+      | Global of Identifier.t
+    ;;
+  end
+
+  module Pred = struct
+    type t =
+      | Bracket of t
+      | Or of t * t
+      | And of t * t
+      | Eq of Id.t * Constant.t
+    ;;
+  end
+
+  module Post = struct
+    type t =
+      { quantifier : [ `Exists ]
+      ; predicate  : Pred.t
+      }
+    ;;
+  end
+
+  module Decl = struct
+    type t =
+      [ External_decl.t
+      | `Init of Expr.t list
+      | `Post of Post.t
+      ]
+    ;;
+  end
+
+  module Test = struct
+    type t =
+      { language : string
+      ; name     : string
+      ; decls    : Decl.t list
+      }
+    ;;
+  end
 end

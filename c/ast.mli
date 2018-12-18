@@ -401,37 +401,46 @@ module Translation_unit : sig
   type t = External_decl.t list
 end
 
-module Litmus_pred : sig
-  type t =
-    | Bracket of t
-    | Or of t * t
-    | And of t * t
-    | Eq of Identifier.t * Constant.t
-  ;;
-end
-
-module Litmus_post : sig
-  type t =
-    { quantifier : [ `Exists ]
-    ; predicate  : Litmus_pred.t
-    }
-  ;;
-end
-
-module Litmus_decl : sig
-  type t =
-    [ External_decl.t
-    | `Init of Expr.t list
-    | `Post of Litmus_post.t
-    ]
-  ;;
-end
-
 module Litmus : sig
-  type t =
-    { language : string
-    ; name     : string
-    ; decls    : Litmus_decl.t list
-    }
-  ;;
+  module Id : sig
+    type t =
+      | Local of int * Identifier.t
+      | Global of Identifier.t
+    ;;
+  end
+
+  module Pred : sig
+    type t =
+      | Bracket of t
+      | Or of t * t
+      | And of t * t
+      | Eq of Id.t * Constant.t
+    ;;
+  end
+
+  module Post : sig
+    type t =
+      { quantifier : [ `Exists ]
+      ; predicate  : Pred.t
+      }
+    ;;
+  end
+
+  module Decl : sig
+    type t =
+      [ External_decl.t
+      | `Init of Expr.t list
+      | `Post of Post.t
+      ]
+    ;;
+  end
+
+  module Test : sig
+    type t =
+      { language : string
+      ; name     : string
+      ; decls    : Decl.t list
+      }
+    ;;
+  end
 end

@@ -29,5 +29,5 @@ module Normal :
 (** Frontend for 'normal' C (C89 at time of writing). *)
 
 module Litmus :
-  Lib.Frontend.S with type ast := Ast.Litmus.t
+  Lib.Frontend.S with type ast := Ast.Litmus.Test.t
 (** Frontend for C-based litmus tests. *)

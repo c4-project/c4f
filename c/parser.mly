@@ -52,7 +52,7 @@
 %type <Ast.Translation_unit.t> translation_unit
 %start translation_unit
 
-%type <Ast.Litmus.t> litmus
+%type <Ast.Litmus.Test.t> litmus
 %start litmus
 
 %%
@@ -83,10 +83,10 @@
 
 litmus:
   | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF
-    { { Ast.Litmus.language; name; decls } }
+    { { Ast.Litmus.Test.language; name; decls } }
 
 litmus_declaration:
-  | decl = external_declaration { decl :> Ast.Litmus_decl.t }
+  | decl = external_declaration { decl :> Ast.Litmus.Decl.t }
   | decl = litmus_initialiser   { `Init decl }
   | post = litmus_postcondition { `Post post }
 
@@ -98,19 +98,23 @@ litmus_quantifier:
 
 litmus_postcondition:
   | quantifier = litmus_quantifier; predicate = parened(litmus_disjunct)
-    { { Ast.Litmus_post.quantifier; predicate } }
+    { { Ast.Litmus.Post.quantifier; predicate } }
 
 litmus_disjunct:
   | e = litmus_conjunct { e }
-  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct { Ast.Litmus_pred.Or (l, r) }
+  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct { Ast.Litmus.Pred.Or (l, r) }
 
 litmus_conjunct:
   | e = litmus_equality { e }
-  | l = litmus_conjunct; LIT_AND; r = litmus_equality { Ast.Litmus_pred.And (l, r) }
+  | l = litmus_conjunct; LIT_AND; r = litmus_equality { Ast.Litmus.Pred.And (l, r) }
 
 litmus_equality:
-  | e = parened(litmus_disjunct) { Ast.Litmus_pred.Bracket (e) }
-  | l = IDENTIFIER; EQ_OP; r = constant { Ast.Litmus_pred.Eq (l, r) }
+  | e = parened(litmus_disjunct) { Ast.Litmus.Pred.Bracket (e) }
+  | l = litmus_identifier; EQ_OP; r = constant { Ast.Litmus.Pred.Eq (l, r) }
+
+litmus_identifier:
+  | i = IDENTIFIER                     { Ast.Litmus.Id.Global (i) }
+  | t = INT_LIT; COLON; i = IDENTIFIER { Ast.Litmus.Id.Local (t, i) }
 
 translation_unit:
   | decls = external_declaration+ EOF { decls }
