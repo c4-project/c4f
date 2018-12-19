@@ -76,8 +76,8 @@ nonexistent `menhirLib` one!).
 
 ### Preparation
 
-First, copy `bin/compiler.spec.example` somewhere (by default, `act`
-looks for it in `./compiler.spec`), and adjust to your needs.
+First, copy `bin/act.conf.example` somewhere (by default, `act`
+looks for it in `./act.conf`), and adjust to your needs.
 
 
 ### Running
@@ -93,7 +93,7 @@ To start with, try:
 $ dune exec act -- specs
 ```
 
-This will read in your `compiler.spec` file, and, if all is well,
+This will read in your `act.conf` file, and, if all is well,
 output the available compilers.
 
 
@@ -220,13 +220,13 @@ generated litmus test before outputting.
 $ act test path/to/memalloy/results
 ```
 
-This asks `act` to run the compilers listed in `./compiler.spec` on
+This asks `act` to run the compilers listed in `./act.conf` on
 the witnesses in `path/to/memalloy/results/C`, then convert them into
 litmus tests in the same way that `litmusify` would.
 
 By default, `act` will dump its results in directories in the current
 working directory.  The directory structure corresponds to the
-identifiers in `./compiler.spec`: for example, `(local gcc x86 O3)`
+identifiers in `./act.conf`: for example, `local.gcc.x86.O3)`
 will emit assembly in `./local/gcc/x86/O3/asm`, and
 litmus tests in `./local/gcc/x86/O3/litmus`.
 

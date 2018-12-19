@@ -74,6 +74,16 @@ and skip_string = parse
   | eof 	{ lex_error "eof in skip_string" lexbuf }
   | _ 		{ skip_string lexbuf}
 
+(* per 'Real World OCaml' *)
+and read_string_inner tok buf = parse
+  | '"' { tok (Buffer.contents buf) }
+  | '\\' '\\' { Buffer.add_char buf '\\'; read_string_inner tok buf lexbuf }
+  | '\\' '0' { Buffer.add_char buf '\x00'; read_string_inner tok buf lexbuf }
+  | [^ '"' '\\']+ { Buffer.add_string buf (Lexing.lexeme lexbuf); read_string_inner tok buf lexbuf }
+  | _ { lex_error ("Invalid string character: " ^ Lexing.lexeme lexbuf) lexbuf }
+
 {
 let skip_ml_comment = skip_ml_comment 1
+
+let read_string tok = read_string_inner tok (Buffer.create 17)
 }

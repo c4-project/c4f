@@ -1,0 +1,122 @@
+# This is an example of an act config file.
+# It tells act which compilers to run, how to run them, and where to find
+# the various external tools it uses.
+#
+# Any run of characters from a # to the end of the line is a comment.
+
+# The `herd` block tells act how to find and use Herd.
+# If you omit this block, Herd analysis gets disabled.
+herd {
+  # 'cmd' tells us where Herd is.
+  # You can omit this if herd7 is on PATH.
+  cmd "herd7"
+
+  # `c_model` overrides Herd's choice of cat model when reading in C
+  # litmus tests.
+  # You can omit this if you intend to use the normal model.
+  c_model "c11_lahav.cat"
+
+  # Each 'asm_model' overrides Herd's choice of model when reading in
+  # litmus tests for a particular architecture (given by a dotted identifier).
+  # Again, you can omit these if you intend to use the normal models.
+  asm_model x86.att   "x86_example.cat"
+  asm_model x86.intel "x86_example.cat"
+}
+
+# Each `machine IDENTIFIER` block tells act about a machine, giving it the
+# dotted identifier IDENTIFIER.
+#
+# The machine with identifier `default` is special---it's the machine that
+# compilers run on if not specifically tied to one.  It needs defining, so
+# we'll define it first.
+machine default {
+  # The `via` directive tells act how to reach this machine.
+  # `via local` tells act the machine is the one on which act is running.
+  via local
+}
+
+# Suppose we want to run compilers on a remote machine.
+# We can do so by using 'via ssh'.  Here's an example:
+machine example {
+  # We can disable machines using `enabled off` (or `false`, or `no`).
+  # You can also put `enabled on` (or `true`, or `yes`), but it's redundant.
+  enabled off
+
+  # Most of this is self-explanatory, except for `copy to`.
+  # This tells act where, on the remote system, to copy work for
+  # the remote compiler to run, and where to expect the remote
+  # system to put its results.  It should be writable, but
+  # there otherwise aren't any real requirements.
+  via ssh {
+    host "example.com"
+    user "johndoe"  # optional, defaults to current local user
+    copy to "/home/johndoe/actscratch"
+  }
+
+  # Some notes about act's SSH support:
+  #
+  # - act won't ask for a password or passphrase---it'll only work
+  #   if you have some sort of non-interactive authentication
+  #   mechanism (such as public-key with the key added to your
+  #   current agent).
+  #
+  # - act doesn't clean up the copy_dir after use, nor will it make
+  #   the copy_dir if it doesn't already exist.
+  #
+  # - act currently establishes three SSH connections per
+  #   compilation: one for the compiler, and two to SCP the results
+  #   across.  This may get optimised in future versions, but, until
+  #   then, be warned that the process may be slow and
+  #   traffic-intensive.
+}
+
+# Now, we define the compilers themselves.
+#
+# This block specifies a compiler we'll call `gcc.x86`.  Compiler
+# IDs are dot-separated lists; each item in the list corresponds to a level
+# in the directory hierarchy act builds in `test` mode.
+#
+# Whenever you want to refer to a compiler by identifier on an act
+# command line, you need to join the list elements with one of the
+# following characters: '.', ' ', '/', or '\'.  For example, you
+# could refer to this compiler as 'gcc/x86'.
+compiler gcc.x86 {
+  # As with machines, 'enabled BOOL' enables or disables a
+  # compiler.  If a compiler is enabled, but its machine isn't,
+  # the compiler won't run.
+  enabled on  # optional, defaults to `on`
+
+  # `style` tells us what sort of interface the compiler exposes.
+  #
+  # Currently, we only support `gcc` here; later, we might have
+  # support for MSVC, etc.
+  #
+  # act runs some lightweight checks to make sure that the
+  # compiler actually obeys the style choice.
+  style gcc
+
+  # `emits` tells act which language the compiler is emitting.
+  # Each language may have a sub-dialect, in which case 'emits' is
+  # a dotted identifier.
+  # Currently, we only support `(x86 att)' (AT&T syntax x86).
+  emits x86.att
+
+  # 'cmd' gives the command name for the compiler.  This should
+  # point to somewhere in the user's PATH, or be an absolute path.
+  cmd "gcc"
+
+  # 'argv' gives the list of arguments to the compiler.
+  # Internally, act adds its own arguments, so don't assume that these are the
+  # only ones.
+  argv "-m32" "-DNO_PTHREADS"
+
+  # To tell act not to run herd automatically on test runs,
+  # change this to `herd off`.
+  #
+  # Note that herd always runs locally, even on remote targets.
+  herd on  # optional, defaults to 'on'
+
+  # By default, act assumes the compiler exists on the default machine.
+  # To override this, add `machine ID`.
+  machine default  # optional, defaults to `default`
+}

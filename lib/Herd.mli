@@ -37,6 +37,14 @@ module Config : sig
     ; asm_models : (string list, string) List.Assoc.t
     } [@@deriving sexp]
   ;;
+
+  val create
+    :  ?cmd:string
+    -> ?c_model:string
+    -> ?asm_models:((string list, string) List.Assoc.t)
+    -> unit
+    -> t
+  ;;
 end
 
 (** [t] is an opaque type representing a configured and validated

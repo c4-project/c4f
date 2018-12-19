@@ -58,6 +58,14 @@ end
     file, without any compiler testing or expansion. *)
 module Raw : sig
   include S with module C = Compiler.Cfg_spec
+
+  val create
+    :  ?herd:Herd.Config.t
+    -> compilers:Compiler.Cfg_spec.Set.t
+    -> machines:Machine.Spec.Set.t
+    -> t
+  ;;
+
   include Utils.Loadable.S with type t := t
 end
 

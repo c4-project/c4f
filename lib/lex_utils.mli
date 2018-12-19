@@ -63,3 +63,7 @@ val skip_c_line_comment : lexbuf -> unit
 val skip_string : lexbuf -> unit
 (** [skip_string lexbuf] lexes the body of a double-quoted string,
    discarding it. *)
+
+val read_string : (string -> 'a) -> lexbuf -> 'a
+(** [read_string token lexbuf] lexes the body of a double-quoted string,
+   feeding it to the token constructor [token]. *)

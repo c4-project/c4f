@@ -1,25 +1,26 @@
 (* This file is part of 'act'.
 
-Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 open Core
 open Utils
@@ -40,8 +41,7 @@ module type S = sig
 end
 
 module Raw = struct
-  module CI
-    : S with module C = Compiler.Cfg_spec = struct
+  module CI = struct
     module C = Compiler.Cfg_spec
 
     type t =
@@ -52,11 +52,151 @@ module Raw = struct
     [@@deriving sexp, fields]
     ;;
 
+    let create ?herd ~compilers ~machines = Fields.create ~herd ~compilers ~machines
+
     let sanitiser_passes _ ~default = default
   end
 
   include CI
-  include Loadable.Of_sexpable (CI)
+
+  (** Reading in config from a Config_ast *)
+  module File = struct
+    let find_at_most_one items ~item_name ~f ~on_empty =
+      Or_error.(
+        match List.filter_map items ~f with
+        | []  -> on_empty
+        | [x] -> return x
+        | _   -> errorf "Duplicate %s" item_name
+      )
+    ;;
+
+    let find_one items ~item_name ~f =
+      find_at_most_one items ~item_name ~f
+        ~on_empty:(Or_error.errorf "Expected at least one %s" item_name)
+    ;;
+
+    let ssh (items : Config_ast.Ssh.t list) =
+      let open Or_error.Let_syntax in
+      let%map  user = find_one items ~item_name:"user"
+          ~f:(function User u -> Some u | _ -> None)
+      and      host = find_one items ~item_name:"host"
+          ~f:(function Host h -> Some h | _ -> None)
+      and  copy_dir = find_one items ~item_name:"copy to"
+          ~f:(function Copy_to c -> Some c | _ -> None)
+      in Machine.Ssh.create ~user ~host ~copy_dir
+    ;;
+
+    let via = function
+      | Config_ast.Via.Local -> Or_error.return Machine.Via.Local
+      | Ssh items -> Or_error.(ssh items >>| Machine.Via.ssh)
+    ;;
+
+    let machine (items : Config_ast.Machine.t list) =
+      let open Or_error.Let_syntax in
+      let%bind enabled =
+        find_at_most_one items ~item_name:"enabled"
+          ~f:(function Enabled b -> Some b | _ -> None)
+          ~on_empty:(Or_error.return true)
+      and via_raw = find_one items ~item_name:"via"
+          ~f:(function Via v -> Some v | _ -> None)
+      in
+      let%map via = via via_raw in
+      Machine.Spec.create ~enabled ~via
+    ;;
+
+    let compiler (items : Config_ast.Compiler.t list) =
+      let open Or_error.Let_syntax in
+      let%map enabled =
+        find_at_most_one items ~item_name:"enabled"
+          ~f:(function Enabled b -> Some b | _ -> None)
+          ~on_empty:(Or_error.return true)
+      and style = find_one items ~item_name:"style"
+          ~f:(function Style s -> Some (Id.to_string s) | _ -> None)
+      and emits = find_one items ~item_name:"emits"
+          ~f:(function Emits e -> Some (Id.to_string_list e) | _ -> None)
+      and cmd   = find_one items ~item_name:"cmd"
+          ~f:(function Cmd c -> Some c | _ -> None)
+      and argv  = find_one items ~item_name:"argv"
+          ~f:(function Argv v -> Some v | _ -> None)
+      and herd  = find_at_most_one items ~item_name:"herd"
+          ~f:(function Herd h -> Some h | _ -> None)
+          ~on_empty:(return true)
+      and machine = find_at_most_one items ~item_name:"copy to"
+          ~f:(function Machine m -> Some m | _ -> None)
+          ~on_empty:(return Machine.Id.default)
+      in
+      Compiler.Cfg_spec.create ~enabled ~style ~emits ~cmd ~argv ~herd ~machine
+    ;;
+
+    let herd (items : Config_ast.Herd.t list) =
+      let open Or_error.Let_syntax in
+      let%map cmd = find_at_most_one items ~item_name:"cmd"
+          ~f:(function Cmd c -> Some (Some c) | _ -> None)
+          ~on_empty:(return None)
+      and c_model = find_at_most_one items ~item_name:"c_model"
+          ~f:(function C_model c -> Some (Some c) | _ -> None)
+          ~on_empty:(return None)
+      in
+      let asm_models = List.filter_map items
+          ~f:(function Asm_model (k, v) -> Some (Id.to_string_list k, v) | _ -> None)
+      in
+      Herd.Config.create ?c_model ~asm_models ?cmd ()
+    ;;
+
+    let build_herd (items : Config_ast.t) =
+      let open Or_error.Let_syntax in
+      let herd_ast_result =
+        (find_at_most_one items ~item_name:"herd"
+           ~f:(function Herd h -> Some (Some h) | _ -> None)
+           ~on_empty:(return None))
+      in
+      match%bind herd_ast_result with
+      | Some herd_ast -> herd herd_ast >>| Option.some
+      | None          -> return None
+    ;;
+
+    let build_machines (items : Config_ast.t) =
+      let open Or_error.Let_syntax in
+      items
+      |> List.filter_map
+        ~f:(function Machine (id, spec_ast) -> Some (id, spec_ast) | _ -> None)
+      |> Travesty.T_list.With_errors.map_m
+        ~f:(fun (id, spec_ast) ->
+            let%map spec = machine spec_ast in
+            Machine.Spec.With_id.create ~id ~spec)
+      >>= Machine.Spec.Set.of_list
+    ;;
+
+    let build_compilers (items : Config_ast.t) =
+      let open Or_error.Let_syntax in
+      items
+      |> List.filter_map
+        ~f:(function Compiler (id, spec_ast) -> Some (id, spec_ast) | _ -> None)
+      |> Travesty.T_list.With_errors.map_m
+        ~f:(fun (id, spec_ast) ->
+            let%map spec = compiler spec_ast in
+            Compiler.Cfg_spec.With_id.create ~id ~spec)
+      >>= Compiler.Cfg_spec.Set.of_list
+    ;;
+
+    let main (items : Config_ast.t) =
+      let open Or_error.Let_syntax in
+      let%map herd  = build_herd items
+      and machines  = build_machines items
+      and compilers = build_compilers items in
+      create ?herd ~machines ~compilers
+    ;;
+  end
+
+  include Loadable.Make_chain
+      (struct
+        type t = Config_ast.t
+        include Config_frontend
+      end)
+      (struct
+        type dst = t
+        let f = File.main
+      end)
 end
 
 let part_chain_fst f g x =
@@ -201,7 +341,7 @@ module M = struct
       (* TODO(@MattWindsor91): move compiler testing here. *)
       let%map enabled' = C.Set.of_list enabled in
       (enabled', disabled)
-  )
+    )
   ;;
 
   let from_raw

@@ -13,5 +13,16 @@
   travesty
   core))
 
+;; Config file parser
+
+(menhir
+ (infer false)
+ (flags "--table")
+ (modules config_parser))
+
 (ocamllex
- (modules lex_utils))
+ (modules lex_utils config_lexer))
+
+(rule
+ (targets config_messages.ml)
+ (action (with-stdout-to "%{targets}" (run "%{bin:menhir}" "--compile-errors" "%{dep:config.messages}" "config_parser.mly"))))

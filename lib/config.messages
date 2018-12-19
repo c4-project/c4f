@@ -1,0 +1,428 @@
+main: COMPILER IDENTIFIER LBRACE ARGV VIA
+##
+## Ends in an error in state: 59.
+##
+## argv -> ARGV . nonempty_list(STRING) [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## ARGV
+##
+
+Expected at least one quoted string after `argv`
+
+main: COMPILER IDENTIFIER LBRACE EMITS VIA
+##
+## Ends in an error in state: 57.
+##
+## compiler_item -> EMITS . IDENTIFIER [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## EMITS
+##
+main: COMPILER IDENTIFIER LBRACE MACHINE VIA
+##
+## Ends in an error in state: 55.
+##
+## compiler_item -> MACHINE . IDENTIFIER [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## MACHINE
+##
+main: COMPILER IDENTIFIER LBRACE STYLE VIA
+##
+## Ends in an error in state: 53.
+##
+## compiler_item -> STYLE . IDENTIFIER [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## STYLE
+##
+
+Expected a valid identifier
+
+main: COMPILER IDENTIFIER LBRACE VIA
+##
+## Ends in an error in state: 52.
+##
+## id_stanza(COMPILER,id_or_default,compiler_item) -> COMPILER id_or_default LBRACE . separated_nonempty_list(EOL,option(compiler_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## COMPILER id_or_default LBRACE
+##
+main: COMPILER IDENTIFIER LBRACE STYLE IDENTIFIER EOL VIA
+##
+## Ends in an error in state: 66.
+##
+## separated_nonempty_list(EOL,option(compiler_item)) -> option(compiler_item) EOL . separated_nonempty_list(EOL,option(compiler_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(compiler_item) EOL
+##
+
+Expected a valid compiler configuration item; for example:
+- `enabled BOOL`
+- `cmd "COMMAND"`
+- `argv "ARG" "ARG" ...`
+- `style STYLE-ID`
+- `emits ARCH-ID`
+
+main: HERD VIA
+##
+## Ends in an error in state: 34.
+##
+## simple_stanza(HERD,herd_item) -> HERD . LBRACE separated_nonempty_list(EOL,option(herd_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## HERD
+##
+main: MACHINE IDENTIFIER LBRACE VIA SSH VIA
+##
+## Ends in an error in state: 7.
+##
+## simple_stanza(SSH,ssh_item) -> SSH . LBRACE separated_nonempty_list(EOL,option(ssh_item)) RBRACE [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## SSH
+##
+
+Expected an opening brace after the block name
+
+main: COMPILER IDENTIFIER VIA
+##
+## Ends in an error in state: 51.
+##
+## id_stanza(COMPILER,id_or_default,compiler_item) -> COMPILER id_or_default . LBRACE separated_nonempty_list(EOL,option(compiler_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## COMPILER id_or_default
+##
+main: MACHINE IDENTIFIER VIA
+##
+## Ends in an error in state: 4.
+##
+## id_stanza(MACHINE,id_or_default,machine_item) -> MACHINE id_or_default . LBRACE separated_nonempty_list(EOL,option(machine_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## MACHINE id_or_default
+##
+
+Expected an opening brace after the identifier
+
+main: COMPILER VIA
+##
+## Ends in an error in state: 50.
+##
+## id_stanza(COMPILER,id_or_default,compiler_item) -> COMPILER . id_or_default LBRACE separated_nonempty_list(EOL,option(compiler_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## COMPILER
+##
+
+Expected a valid compiler identifier after `compiler`
+
+main: HERD LBRACE ASM_MODEL IDENTIFIER VIA
+##
+## Ends in an error in state: 41.
+##
+## herd_item -> ASM_MODEL IDENTIFIER . STRING [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## ASM_MODEL IDENTIFIER
+##
+
+Expected a quoted filename for this assembly model (after the architecture ID)
+
+main: HERD LBRACE ASM_MODEL VIA
+##
+## Ends in an error in state: 40.
+##
+## herd_item -> ASM_MODEL . IDENTIFIER STRING [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## ASM_MODEL
+##
+
+Expected an architecture ID for this assembly model
+
+main: HERD LBRACE CMD VIA
+##
+## Ends in an error in state: 38.
+##
+## cmd -> CMD . STRING [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## CMD
+##
+
+Expected a quoted command name or path
+
+main: HERD LBRACE C_MODEL STRING VIA
+##
+## Ends in an error in state: 45.
+##
+## separated_nonempty_list(EOL,option(herd_item)) -> option(herd_item) . [ RBRACE ]
+## separated_nonempty_list(EOL,option(herd_item)) -> option(herd_item) . EOL separated_nonempty_list(EOL,option(herd_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(herd_item)
+##
+main: COMPILER IDENTIFIER LBRACE STYLE IDENTIFIER VIA
+##
+## Ends in an error in state: 65.
+##
+## separated_nonempty_list(EOL,option(compiler_item)) -> option(compiler_item) . [ RBRACE ]
+## separated_nonempty_list(EOL,option(compiler_item)) -> option(compiler_item) . EOL separated_nonempty_list(EOL,option(compiler_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(compiler_item)
+##
+main: MACHINE IDENTIFIER LBRACE VIA LOCAL VIA
+##
+## Ends in an error in state: 29.
+##
+## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) . [ RBRACE ]
+## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) . EOL separated_nonempty_list(EOL,option(machine_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(machine_item)
+##
+main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE USER STRING VIA
+##
+## Ends in an error in state: 19.
+##
+## separated_nonempty_list(EOL,option(ssh_item)) -> option(ssh_item) . [ RBRACE ]
+## separated_nonempty_list(EOL,option(ssh_item)) -> option(ssh_item) . EOL separated_nonempty_list(EOL,option(ssh_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(ssh_item)
+##
+
+Expected a closing brace (to terminate this block), or a newline
+
+main: COMPILER IDENTIFIER LBRACE ARGV STRING VIA
+##
+## Ends in an error in state: 60.
+##
+## nonempty_list(STRING) -> STRING . [ RBRACE EOL ]
+## nonempty_list(STRING) -> STRING . nonempty_list(STRING) [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## STRING
+##
+
+Expected a closing brace (to terminate this block), another string, or a newline
+
+main: HERD LBRACE RBRACE VIA
+##
+## Ends in an error in state: 76.
+##
+## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . [ EOF ]
+## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) . EOL separated_nonempty_list(EOL,option(top_stanza)) [ EOF ]
+##
+## The known suffix of the stack is as follows:
+## option(top_stanza)
+##
+
+Top-level items must be separated by newlines
+
+main: HERD LBRACE C_MODEL VIA
+##
+## Ends in an error in state: 36.
+##
+## herd_item -> C_MODEL . STRING [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## C_MODEL
+##
+
+Expected a quoted filename for the C model
+
+main: HERD LBRACE VIA
+##
+## Ends in an error in state: 35.
+##
+## simple_stanza(HERD,herd_item) -> HERD LBRACE . separated_nonempty_list(EOL,option(herd_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## HERD LBRACE
+##
+main: HERD LBRACE C_MODEL STRING EOL VIA
+##
+## Ends in an error in state: 46.
+##
+## separated_nonempty_list(EOL,option(herd_item)) -> option(herd_item) EOL . separated_nonempty_list(EOL,option(herd_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(herd_item) EOL
+##
+
+Expected a valid Herd configuration item; for example:
+- `cmd "/path/to/herd"`
+- `c_model "/path/to/C/model.cat"`
+- `asm_model ARCH-ID "/path/to/asm/model.cat"`
+
+main: MACHINE IDENTIFIER LBRACE ENABLED VIA
+##
+## Ends in an error in state: 25.
+##
+## enabled -> ENABLED . BOOL [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## ENABLED
+##
+main: COMPILER IDENTIFIER LBRACE HERD VIA
+##
+## Ends in an error in state: 57.
+##
+## compiler_item -> HERD . BOOL [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## HERD
+##
+
+Expected a Boolean (eg `true`, `false`, `yes`, `no`, `on`, or `off`)
+
+main: MACHINE IDENTIFIER LBRACE USER
+##
+## Ends in an error in state: 5.
+##
+## id_stanza(MACHINE,id_or_default,machine_item) -> MACHINE id_or_default LBRACE . separated_nonempty_list(EOL,option(machine_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## MACHINE id_or_default LBRACE
+##
+main: MACHINE IDENTIFIER LBRACE VIA LOCAL EOL USER
+##
+## Ends in an error in state: 30.
+##
+## separated_nonempty_list(EOL,option(machine_item)) -> option(machine_item) EOL . separated_nonempty_list(EOL,option(machine_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(machine_item) EOL
+##
+
+Expected a valid machine configuration item; for example:
+- `enabled BOOL`
+- `via local`
+- `via ssh { SSH-CONFIG }`
+
+main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE VIA
+##
+## Ends in an error in state: 8.
+##
+## simple_stanza(SSH,ssh_item) -> SSH LBRACE . separated_nonempty_list(EOL,option(ssh_item)) RBRACE [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## SSH LBRACE
+##
+main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE USER STRING EOL VIA
+##
+## Ends in an error in state: 20.
+##
+## separated_nonempty_list(EOL,option(ssh_item)) -> option(ssh_item) EOL . separated_nonempty_list(EOL,option(ssh_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(ssh_item) EOL
+##
+
+Expected a valid SSH configuration item; for example:
+- `user "USERNAME"`
+- `host "HOSTNAME"`
+- `copy to "REMOTE-PATH"`
+
+
+main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE COPY TO VIA
+##
+## Ends in an error in state: 14.
+##
+## ssh_item -> COPY TO . STRING [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## COPY TO
+##
+
+Expected a quoted path after `copy to`
+
+main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE COPY VIA
+##
+## Ends in an error in state: 13.
+##
+## ssh_item -> COPY . TO STRING [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## COPY
+##
+
+Expected `copy to`
+
+main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE HOST VIA
+##
+## Ends in an error in state: 11.
+##
+## ssh_item -> HOST . STRING [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## HOST
+##
+
+Expected a quoted hostname string
+
+main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE USER VIA
+##
+## Ends in an error in state: 9.
+##
+## ssh_item -> USER . STRING [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## USER
+##
+
+Expected a quoted username string
+
+main: MACHINE IDENTIFIER LBRACE VIA VIA
+##
+## Ends in an error in state: 6.
+##
+## machine_item -> VIA . via_stanza [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## VIA
+##
+
+Expected a valid `via` stanza: either `local` or `ssh { SSH-CONFIG }`
+
+main: MACHINE VIA
+##
+## Ends in an error in state: 1.
+##
+## id_stanza(MACHINE,id_or_default,machine_item) -> MACHINE . id_or_default LBRACE separated_nonempty_list(EOL,option(machine_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## MACHINE
+##
+
+Expected a identifier, or `default`, after `machine`
+
+main: VIA
+##
+## Ends in an error in state: 0.
+##
+## main' -> . main [ # ]
+##
+## The known suffix of the stack is as follows:
+##
+##
+main: HERD LBRACE RBRACE EOL TO
+##
+## Ends in an error in state: 77.
+##
+## separated_nonempty_list(EOL,option(top_stanza)) -> option(top_stanza) EOL . separated_nonempty_list(EOL,option(top_stanza)) [ EOF ]
+##
+## The known suffix of the stack is as follows:
+## option(top_stanza) EOL
+##
+
+Expected a valid top-level item; for example:
+- `herd { ... }`
+- `machine ID { ... }`
+- `compiler ID { ... }`

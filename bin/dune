@@ -23,9 +23,9 @@
  (targets specs.output)
  (action
   (with-stdout-to specs.output
-   (run act specs "-verbose" "-spec" "compiler.spec.example")))
+   (run act specs "-verbose" "-spec" "act.conf.example")))
  (deps
-  "compiler.spec.example")
+  "act.conf.example")
 )
 
 (alias

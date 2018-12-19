@@ -32,19 +32,15 @@ open Core
 (** [Basic] is an interface to be implemented by anything using
     [Make]. *)
 module type Basic = sig
-  (** [t] is the type to load. *)
-  type t
+  type t (** The type to load. *)
 
-  (** [load_from_string s] loads a [t] directly from a string [s]. *)
   val load_from_string : string -> t Or_error.t;;
+  (** [load_from_string s] loads a [t] directly from a string [s]. *)
 
+  val load_from_ic : ?path:string -> In_channel.t -> t Or_error.t
   (** [load_from_ic ?path ic] loads a [t] from an input channel [ic].
       If [ic] comes from a file with a given path, [path] should be
       set to [Some x] where [x] is that path. *)
-  val load_from_ic
-    :  ?path:string
-    -> In_channel.t
-    -> t Or_error.t;;
 end
 
 (** [S] is an interface for modules whose main type can
@@ -52,16 +48,36 @@ end
 module type S = sig
   include Basic
 
+  val load_from_isrc : Io.In_source.t -> t Or_error.t
   (** [load_from_isrc is] loads a [t] from an input source [is]. *)
-  val load_from_isrc : Io.In_source.t -> t Or_error.t;;
 
+  val load : path:string -> t Or_error.t
   (** [load ~path] loads a [t] from a file named [path]. *)
-  val load : path:string -> t Or_error.t;;
 end
 
+module Make (B : Basic) : S with type t := B.t
 (** [Make] extends a [Basic] into an [S]. *)
-module Make : functor (B : Basic) -> S with type t := B.t
 
+(** {2 Loading from standard formats} *)
+
+module Of_sexpable (B : Sexpable.S) : S with type t := B.t
 (** [Of_sexpable] extends a [Sexpable] into an [S]; the added
     methods load S-expressions. *)
-module Of_sexpable : functor (B : Sexpable.S) -> S with type t := B.t
+
+(** {2 Chaining} *)
+
+(** Signature of modules that explain how to post-process the result of
+    a loadable. *)
+module type Basic_chain = sig
+  type src (** Type of the original loadable *)
+  type dst (** Type of the new loadable *)
+
+  val f : src -> dst Or_error.t
+  (** [f src] is a potentially-failing transformation from [src] to a
+     member of [dst]. *)
+end
+
+module Make_chain (B : Basic) (C : Basic_chain with type src := B.t)
+  : S with type t := C.dst
+(** Makes a new {{!S}S} from chaining a basic loadable [B] to a
+    transformation function described in [C]. *)

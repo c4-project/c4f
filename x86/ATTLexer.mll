@@ -85,18 +85,9 @@ rule token = parse
 | ':' { COLON }
 | '+' { PLUS }
 | '-' { MINUS }
-| '"' { read_string (Buffer.create 17) lexbuf }
+| '"' { read_string (fun x -> STRING x) lexbuf }
 | "lock" { IT_LOCK }
 | name as x { NAME x }
 | '@' name as x { GAS_TYPE x }
 | eof { EOF }
 | _ { lex_error ("Unexpected char: " ^ Lexing.lexeme lexbuf) lexbuf }
-
-(* per 'Real World OCaml' *)
-and read_string buf
-  = parse
-  | '"' { STRING (Buffer.contents buf) }
-  | '\\' '\\' { Buffer.add_char buf '\\'; read_string buf lexbuf }
-  | '\\' '0' { Buffer.add_char buf '\x00'; read_string buf lexbuf }
-  | [^ '"' '\\']+ { Buffer.add_string buf (Lexing.lexeme lexbuf); read_string buf lexbuf }
-  | _ { lex_error ("Invalid string character: " ^ Lexing.lexeme lexbuf) lexbuf }

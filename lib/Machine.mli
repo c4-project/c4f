@@ -159,6 +159,17 @@ end
 module Spec : sig
   include Basic_spec
 
+ (** [create ~enabled ~via]
+      creates a machine spec with the given fields.
+
+      These fields are subject to change, and as such [create] is an
+      unstable API. *)
+  val create
+    :  enabled : bool
+    -> via     : Via.t
+    -> t
+  ;;
+
   (** [With_id] is an extension onto [Spec.With_id] that
       lets such items be machine references, and adds all of the
       [Spec] accessors. *)

@@ -39,7 +39,7 @@ let is_verbose t = t.verbose
 let are_warnings_enabled t = not t.no_warnings
 let spec_file t = t.spec_file
 
-let default_spec_file = "compiler.spec"
+let default_spec_file = "act.conf"
 
 let get =
   let open Command.Let_syntax in

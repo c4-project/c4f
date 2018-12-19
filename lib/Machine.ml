@@ -131,6 +131,8 @@ module Spec = struct
     [@@deriving sexp, fields]
     ;;
 
+    let create = Fields.create
+
     (* We use a different name for the getter than the one
        [@@deriving fields] infers. *)
     let is_enabled = enabled

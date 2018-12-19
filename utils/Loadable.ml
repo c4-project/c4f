@@ -31,17 +31,18 @@ open Core
 
 module type Basic = sig
   type t
-  val load_from_string : string -> t Or_error.t;;
+  val load_from_string : string -> t Or_error.t
   val load_from_ic
     :  ?path:string
     -> In_channel.t
-    -> t Or_error.t;;
+    -> t Or_error.t
+  ;;
 end
 
 module type S = sig
   include Basic
-  val load_from_isrc : Io.In_source.t -> t Or_error.t;;
-  val load : path:string -> t Or_error.t;;
+  val load_from_isrc : Io.In_source.t -> t Or_error.t
+  val load : path:string -> t Or_error.t
 end
 
 module Make (B : Basic) : S with type t := B.t = struct
@@ -52,8 +53,29 @@ module Make (B : Basic) : S with type t := B.t = struct
       ~f:(fun is ic -> load_from_ic ?path:(Io.In_source.file is) ic)
   ;;
 
-  let load ~path = load_from_isrc (`File path);;
+  let load ~path = load_from_isrc (`File path)
 end
+
+module type Basic_chain = sig
+  type src
+  type dst
+
+  val f : src -> dst Or_error.t
+end
+
+module Make_chain (B : Basic) (C : Basic_chain with type src := B.t)
+  : S with type t := C.dst
+  = Make (struct
+    type t = C.dst
+
+    let load_from_string str =
+      Or_error.(str |> B.load_from_string >>= C.f)
+    ;;
+    let load_from_ic ?path ic =
+      Or_error.(B.load_from_ic ?path ic >>= C.f)
+    ;;
+  end)
+;;
 
 module Of_sexpable (B : Sexpable.S) : S with type t := B.t
   = Make (struct

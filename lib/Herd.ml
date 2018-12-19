@@ -30,8 +30,10 @@ module Config = struct
     { cmd        : string [@default "herd7"] [@drop_if_default]
     ; c_model    : string sexp_option
     ; asm_models : (string list, string) List.Assoc.t [@default []] [@drop_if_default]
-    } [@@deriving sexp]
+    } [@@deriving sexp, make]
   ;;
+
+  let create ?cmd ?c_model ?asm_models = make ?cmd ~c_model ?asm_models
 end
 
 type t =
