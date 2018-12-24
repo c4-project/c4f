@@ -41,7 +41,9 @@ let get_runner_x86 = function
     (module Asm_job.Make_runner (struct
          type ast = X86.Ast.t
 
-         module Lang = Lang
+         module Src_lang = Lang
+         module Dst_lang = X86.Language.Herd7
+
          module Frontend = Frontend
          module Litmus = X86.Litmus.LitmusDirect
          module Multi_sanitiser = X86.Sanitiser.Make_multi (Lang)

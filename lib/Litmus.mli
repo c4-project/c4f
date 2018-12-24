@@ -26,13 +26,27 @@
 
 open Core
 
-(*
- * Litmus AST module
- *)
+(** Signature containing just the parts of an act language needed
+    for building Litmus file ASTs. *)
+module type Basic = sig
+  val name : string
+
+  (** Abstract type of constant syntax *)
+  module Constant : sig
+    type t [@@deriving sexp]
+    include Pretty_printer.S with type t := t
+  end
+
+  (** Abstract type of statement syntax *)
+  module Statement : sig
+    type t [@@deriving sexp]
+    include Pretty_printer.S with type t := t
+  end
+end
 
 (** [S] is the interface for litmus AST modules. *)
 module type S = sig
-  module Lang : Language.S
+  module Lang : Basic
 
   type t =
     { name : string
@@ -56,10 +70,7 @@ module type S = sig
   ;;
 end
 
+module Make (Lang : Basic) : S with module Lang = Lang
 (** [Make] is a functor that, given a language described by
-    [Language.Intf], produces a module type for litmus test syntax
+    [Basic], produces a module type for litmus test syntax
     trees, as well as operations for pretty-printing it. *)
-module Make
-  : functor (Lang : Language.S)
-    -> S with module Lang = Lang
-;;

@@ -60,25 +60,26 @@ type output =
 module type Runner_deps = sig
   type ast
 
-  module Lang : Language.S
+  module Src_lang : Language.S
+  module Dst_lang : Language.S
 
   module Frontend : Frontend.S with type ast := ast
-  module Litmus : Litmus.S
+  module Litmus : Litmus.S with module Lang := Dst_lang
   module Multi_sanitiser
-    : Sanitiser.S with module Lang := Lang
+    : Sanitiser.S with module Lang := Src_lang
                    and type 'a Program_container.t = 'a list
   ;;
   module Single_sanitiser
-    : Sanitiser.S with module Lang := Lang
+    : Sanitiser.S with module Lang := Src_lang
                    and type 'a Program_container.t = 'a
   ;;
-  module Explainer : Explainer.S with module Lang := Lang
+  module Explainer : Explainer.S with module Lang := Src_lang
 
   val final_convert
-    :  Lang.Statement.t list
-    -> Litmus.Lang.Statement.t list
+    :  Src_lang.Statement.t list
+    -> Dst_lang.Statement.t list
 
-  val statements : ast -> Lang.Statement.t list
+  val statements : ast -> Src_lang.Statement.t list
 end
 
 module type Runner = sig
@@ -97,7 +98,8 @@ end
 module Make_runner (B : Runner_deps) : Runner = struct
   (* Shorthand for modules we use a _lot_. *)
   module L  = B.Litmus
-  module LS = B.Lang
+  module LS = B.Src_lang
+  module LD = B.Dst_lang
   module MS = B.Multi_sanitiser
   module SS = B.Single_sanitiser
   module E  = B.Explainer
@@ -114,14 +116,14 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let make_init (progs : MS.Output.Program.t list)
-    : (string, L.Lang.Constant.t) List.Assoc.t =
+    : (string, LD.Constant.t) List.Assoc.t =
     let get_hsyms prog =
       prog
       |> MS.Output.Program.symbol_table
       |> Fn.flip Abstract.Symbol.Table.set_of_sort Abstract.Symbol.Sort.Heap
     in
     let syms = Abstract.Symbol.Set.union_list (List.map ~f:get_hsyms progs) in
-    List.map ~f:(fun s -> (s, L.Lang.Constant.zero))
+    List.map ~f:(fun s -> (s, LD.Constant.zero))
       (Abstract.Symbol.Set.to_list syms)
   ;;
 

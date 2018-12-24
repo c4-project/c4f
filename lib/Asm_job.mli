@@ -104,25 +104,30 @@ end
 module type Runner_deps = sig
   type ast
 
-  (** [Lang] is the main language used in the jobs, which may differ
+  module Src_lang : Language.S
+  (** [Src_lang] is the main language used in the jobs, which may differ
       from the [Litmus] language. *)
-  module Lang : Language.S
+
+  module Dst_lang : Language.S
+  (** [Dst_lang] is the language used in emitted Litmus tests. *)
 
   module Frontend : Frontend.S with type ast := ast
-  module Litmus : Litmus.S
+  module Litmus : Litmus.S with module Lang := Dst_lang
   module Multi_sanitiser
-    : Sanitiser.S with module Lang := Lang
+    : Sanitiser.S with module Lang := Src_lang
                    and type 'a Program_container.t = 'a list
   ;;
   module Single_sanitiser
-    : Sanitiser.S with module Lang := Lang
+    : Sanitiser.S with module Lang := Src_lang
                    and type 'a Program_container.t = 'a
   ;;
-  module Explainer : Explainer.S with module Lang := Lang
+  module Explainer : Explainer.S with module Lang := Src_lang
 
-  val final_convert : Lang.Statement.t list -> Litmus.Lang.Statement.t list
+  val final_convert
+    :  Src_lang.Statement.t list
+    -> Dst_lang.Statement.t list
 
-  val statements : ast -> Lang.Statement.t list
+  val statements : ast -> Src_lang.Statement.t list
 end
 
 (** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)

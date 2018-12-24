@@ -25,8 +25,22 @@
 open Base
 open Utils
 
+module type Basic = sig
+  val name : string
+
+  module Constant : sig
+    type t [@@deriving sexp]
+    include Pretty_printer.S with type t := t
+  end
+
+  module Statement : sig
+    type t [@@deriving sexp]
+    include Pretty_printer.S with type t := t
+  end
+end
+
 module type S = sig
-  module Lang : Language.S
+  module Lang : Basic
 
   type t =
     { name : string
@@ -44,7 +58,7 @@ module type S = sig
     -> t Or_error.t
 end
 
-module Make (Lang : Language.S) : S with module Lang = Lang = struct
+module Make (Lang : Basic) : S with module Lang = Lang = struct
   module Lang = Lang
 
   type t =
