@@ -42,25 +42,66 @@ module type Basic = sig
   end
 end
 
-(** [S] is the interface for litmus AST modules. *)
+(** The interface for litmus AST modules.
+
+    AST modules contain, effectively, two litmus ASTs: the raw AST that
+    can contain any number of possibly ill-formed elements in any order,
+    and a 'validated' subset that obeys various invariants. *)
 module type S = sig
   module Lang : Basic
 
+  module Id : sig
+    type t =
+      | Local of int * string
+      | Global of string
+    [@@deriving sexp]
+    ;;
+  end
+
+  module Pred : sig
+    type t =
+      | Bracket of t
+      | Or of t * t
+      | And of t * t
+      | Eq of Id.t * Lang.Constant.t
+    [@@deriving sexp]
+    ;;
+  end
+
+  module Post : sig
+    type t =
+      { quantifier : [ `Exists ]
+      ; predicate  : Pred.t
+      }
+    [@@deriving sexp]
+    ;;
+  end
+
+  module Decl : sig
+    type t =
+      | Program of { name : string; statements : Lang.Statement.t list }
+      | Init    of { id : string; value : Lang.Constant.t }
+      | Post of Post.t
+    [@@deriving sexp]
+    ;;
+  end
+
   type t =
-    { name : string
-    ; init : ((string, Lang.Constant.t) List.Assoc.t) (* Initial heap *)
-    ; programs : Lang.Statement.t list list
+    { language : string
+    ; name     : string
+    ; decls    : Decl.t list
     }
+    [@@deriving sexp]
+  (** The type of (non-validated) litmus ASTs. *)
 
-  val make
-    :  name:string
-    -> init:((string, Lang.Constant.t) List.Assoc.t)
-    -> programs:Lang.Statement.t list list
-    -> t
-  (** [make] builds an unvalidated [t] from a name [name], initialiser
-      [init], and program list [programs]. *)
+  (* TODO(@MattWindsor91): expose constructors *)
 
-  (** Validated litmus ASTs *)
+  (** Validated litmus ASTs.
+
+      A 'valid' litmus AST is one that has a well-formed name, the
+      correct language, exactly one init block, at most one
+      postcondition block, and a set of appropriately named programs.
+  *)
   module Validated : sig
     type t
     (** The abstract type of a validated litmus AST. *)
@@ -70,16 +111,18 @@ module type S = sig
     val programs : t -> Lang.Statement.t list list
 
     (** For pretty-printing, use one of the functors in [Pp]. *)
+
+    val make
+      :  name:string
+      -> init:((string, Lang.Constant.t) List.Assoc.t)
+      -> programs:Lang.Statement.t list list
+      -> t Or_error.t
+      (** [make ~name ~init ~programs] directly constructs a validated
+         AST with the given fields.  It may fail if the result fails
+         validation. *)
   end
 
-  val validate : t -> Validated.t Or_error.t
+(*  val validate : t -> Validated.t Or_error.t
   (** [validate lit] tries to validate a litmus AST.
-      It may fail if the input isn't a valid Litmus program. *)
-
-  val make_and_validate
-    :  name:string
-    -> init:((string, Lang.Constant.t) List.Assoc.t)
-    -> programs:Lang.Statement.t list list
-    -> Validated.t Or_error.t
-    (** [make_and_validate] combines [make] and [validate]. *)
+      It may fail if the input isn't a valid Litmus program. *) *)
 end

@@ -172,7 +172,8 @@ module Make_runner (B : Runner_deps) : Runner = struct
 
   let make_litmus name (programs : MS.Output.Program.t list) =
     Or_error.tag ~tag:"Couldn't build litmus file."
-      ( L.make_and_validate ~name
+      ( L.Validated.make
+          ~name
           ~init:(make_init programs)
           ~programs:(make_litmus_programs programs)
       )
