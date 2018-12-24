@@ -64,7 +64,7 @@ module type Runner_deps = sig
   module Dst_lang : Language.S
 
   module Frontend : Frontend.S with type ast := ast
-  module Litmus : Litmus.S with module Lang := Dst_lang
+  module Litmus : Litmus.Ast.S with module Lang := Dst_lang
   module Multi_sanitiser
     : Sanitiser.S with module Lang := Src_lang
                    and type 'a Program_container.t = 'a list

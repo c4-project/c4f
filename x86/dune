@@ -9,6 +9,7 @@
    core
    abstract
    lib
+   litmus
    utils
    menhirLib))
 (ocamllex

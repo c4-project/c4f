@@ -9,6 +9,7 @@
   fmt
   menhirLib
   abstract
+  litmus
   utils
   travesty
   core))

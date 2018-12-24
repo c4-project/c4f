@@ -45,7 +45,7 @@ let get_runner_x86 = function
          module Dst_lang = X86.Language.Herd7
 
          module Frontend = Frontend
-         module Litmus = X86.Litmus.LitmusDirect
+         module Litmus = Litmus.Ast.Make (Dst_lang)
          module Multi_sanitiser = X86.Sanitiser.Make_multi (Lang)
          module Single_sanitiser = X86.Sanitiser.Make_single (Lang)
          module Explainer = Explainer.Make (Lang)
