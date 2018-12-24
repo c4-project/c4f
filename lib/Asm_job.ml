@@ -152,9 +152,9 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let pp_for_litmus_format
-    : Litmus_format.t -> Base.Formatter.t -> L.t -> unit = function
-    | Full          -> L.pp
-    | Programs_only -> L.pp_programs
+    : Litmus_format.t -> Base.Formatter.t -> L.Validated.t -> unit = function
+    | Full          -> L.Validated.pp
+    | Programs_only -> L.Validated.pp_programs
   ;;
 
   let make_litmus_programs (programs : MS.Output.Program.t list) =
@@ -165,7 +165,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
 
   let make_litmus name (programs : MS.Output.Program.t list) =
     Or_error.tag ~tag:"Couldn't build litmus file."
-      ( L.make ~name
+      ( L.make_and_validate ~name
           ~init:(make_init programs)
           ~programs:(make_litmus_programs programs)
       )

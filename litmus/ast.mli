@@ -24,51 +24,10 @@
 
 (** Top-level AST for Litmus files *)
 
-open Core
-
-(** Signature containing just the parts of an act language needed
-    for building Litmus file ASTs. *)
-module type Basic = sig
-  val name : string
-
-  (** Abstract type of constant syntax *)
-  module Constant : sig
-    type t [@@deriving sexp]
-    include Pretty_printer.S with type t := t
-  end
-
-  (** Abstract type of statement syntax *)
-  module Statement : sig
-    type t [@@deriving sexp]
-    include Pretty_printer.S with type t := t
-  end
-end
-
-(** [S] is the interface for litmus AST modules. *)
-module type S = sig
-  module Lang : Basic
-
-  type t =
-    { name : string
-    ; init : ((string, Lang.Constant.t) List.Assoc.t) (* Initial heap *)
-    ; programs : Lang.Statement.t list list
-    }
-
-  include Pretty_printer.S with type t := t
-
-  (** [pp_programs f t] pretty-prints [t]'s program (only) to [f]. *)
-  val pp_programs : Format.formatter -> t -> unit
-
-  (** [make] tries to build a [t] from a name [name], initialiser
-      [init], and program list [programs].  It returns a result,
-      as it may fail if the input isn't a valid Litmus program. *)
-  val make
-    :  name:string
-    -> init:((string, Lang.Constant.t) List.Assoc.t)
-    -> programs:Lang.Statement.t list list
-    -> t Or_error.t
-  ;;
-end
+include module type of Ast_intf
+(** As usual, we store the signatures for [Ast] in a separate
+   implementation module, and include them in both sides of this
+   module. *)
 
 module Make (Lang : Basic) : S with module Lang = Lang
 (** [Make] is a functor that, given a language described by
