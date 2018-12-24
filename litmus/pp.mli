@@ -22,14 +22,13 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Top-level AST for Litmus tests *)
+(** Pretty-printers for Litmus tests *)
 
-include module type of Ast_intf
-(** As usual, we store the signatures for [Ast] in a separate
+include module type of Pp_intf
+(** As usual, we store the signatures for [Pp] in a separate
    implementation module, and include them in both sides of this
    module. *)
 
-module Make (Lang : Basic) : S with module Lang := Lang
-(** [Make] is a functor that, given a language described by
-    [Basic], produces a module type for litmus test syntax
-    trees, as well as operations for pretty-printing it. *)
+module Make_tabular (Ast : Ast.S) : S with module Ast = Ast
+(** [Make_tabular] makes a pretty-printer for a Litmus AST that
+    outputs programs as tables. *)

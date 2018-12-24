@@ -22,14 +22,14 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Top-level AST for Litmus tests *)
+open Base
 
-include module type of Ast_intf
-(** As usual, we store the signatures for [Ast] in a separate
-   implementation module, and include them in both sides of this
-   module. *)
+module type S = sig
+  module Ast : Ast.S
 
-module Make (Lang : Basic) : S with module Lang := Lang
-(** [Make] is a functor that, given a language described by
-    [Basic], produces a module type for litmus test syntax
-    trees, as well as operations for pretty-printing it. *)
+  include Pretty_printer.S with type t := Ast.Validated.t
+
+  val pp_programs :  Formatter.t -> Ast.Validated.t -> unit
+  (** [pp_programs f ast] prints the program table of [ast] on
+     formatter [f], omitting all of the other parts of the AST. *)
+end

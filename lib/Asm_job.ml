@@ -64,7 +64,13 @@ module type Runner_deps = sig
   module Dst_lang : Language.S
 
   module Frontend : Frontend.S with type ast := ast
-  module Litmus : Litmus.Ast.S with module Lang := Dst_lang
+
+  module Litmus_ast : Litmus.Ast.S with module Lang := Dst_lang
+  module Litmus_pp : Litmus.Pp.S
+    with module Ast.Lang := Dst_lang
+     and module Ast.Validated := Litmus_ast.Validated
+  ;;
+
   module Multi_sanitiser
     : Sanitiser.S with module Lang := Src_lang
                    and type 'a Program_container.t = 'a list
@@ -97,7 +103,8 @@ end
 
 module Make_runner (B : Runner_deps) : Runner = struct
   (* Shorthand for modules we use a _lot_. *)
-  module L  = B.Litmus
+  module L  = B.Litmus_ast
+  module LP = B.Litmus_pp
   module LS = B.Src_lang
   module LD = B.Dst_lang
   module MS = B.Multi_sanitiser
@@ -153,8 +160,8 @@ module Make_runner (B : Runner_deps) : Runner = struct
 
   let pp_for_litmus_format
     : Litmus_format.t -> Base.Formatter.t -> L.Validated.t -> unit = function
-    | Full          -> L.Validated.pp
-    | Programs_only -> L.Validated.pp_programs
+    | Full          -> LP.pp
+    | Programs_only -> LP.pp_programs
   ;;
 
   let make_litmus_programs (programs : MS.Output.Program.t list) =

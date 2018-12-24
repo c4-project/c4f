@@ -112,7 +112,13 @@ module type Runner_deps = sig
   (** [Dst_lang] is the language used in emitted Litmus tests. *)
 
   module Frontend : Frontend.S with type ast := ast
-  module Litmus : Litmus.Ast.S with module Lang := Dst_lang
+
+  module Litmus_ast : Litmus.Ast.S with module Lang := Dst_lang
+  module Litmus_pp : Litmus.Pp.S
+    with module Ast.Lang := Dst_lang
+     and module Ast.Validated := Litmus_ast.Validated
+  ;;
+
   module Multi_sanitiser
     : Sanitiser.S with module Lang := Src_lang
                    and type 'a Program_container.t = 'a list
@@ -131,4 +137,4 @@ module type Runner_deps = sig
 end
 
 (** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)
-module Make_runner : functor (R : Runner_deps) -> Runner
+module Make_runner (R : Runner_deps) : Runner

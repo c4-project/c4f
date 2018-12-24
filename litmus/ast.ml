@@ -23,11 +23,10 @@
    SOFTWARE. *)
 
 open Base
-open Utils
 
 include Ast_intf
 
-module Make (Lang : Basic) : S with module Lang = Lang = struct
+module Make (Lang : Basic) : S with module Lang := Lang = struct
   module Lang = Lang
 
   type t =
@@ -44,97 +43,6 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     let name = name
     let init = init
     let programs = programs
-
-    let pp_init
-      :  Formatter.t
-        -> (string, Lang.Constant.t) List.Assoc.t
-        -> unit =
-      My_format.pp_c_braces
-        (Fmt.(
-            list ~sep:sp
-              (fun f (l, c) -> pf f "@[%s = %a;@]" l Lang.Constant.pp c)
-          )
-        )
-    ;;
-
-    let pp_instr (f : Formatter.t) =
-      Fmt.pf f "@[<h>%a@]" Lang.Statement.pp
-
-    module Program_tabulator = struct
-      module M  = struct
-        type data = Lang.Statement.t list list
-
-        let to_table programs =
-          let open Or_error.Let_syntax in
-
-          let program_names =
-            List.mapi ~f:(fun i _ -> Printf.sprintf "P%d" i) programs
-          in
-          let header : Tabulator.row =
-            List.map ~f:(Fn.flip String.pp) program_names
-          in
-
-          let%bind programs' =
-            Result.of_option (List.transpose programs)
-              ~error:(
-                Error.create_s
-                  [%message "Couldn't transpose program table"
-                      ~table:(programs : Lang.Statement.t list list)]
-              )
-          in
-          let rows =
-            List.map ~f:(List.map ~f:(Fn.flip pp_instr)) programs'
-          in
-
-          Tabulator.(
-            make ~sep:" | " ~terminator:" ;" ~header ()
-            >>= with_rows rows
-          )
-      end
-
-      include M
-      include Tabulator.Extend_tabular (M)
-    end
-
-    let pp_programs_inner =
-      Program_tabulator.pp_as_table
-        ~on_error:(fun f e ->
-            Fmt.pf f
-              "@[<@ error printing table:@ %a@ >@]"
-              Error.pp e)
-    ;;
-
-    let pp_programs f t = pp_programs_inner f t.programs
-
-    let pp_location_stanza f init =
-      Fmt.(
-        pf f "@[<h>locations@ [@[%a@]]@]"
-          (list ~sep:(fun f () -> pf f ";@ ") string)
-      ) (List.map ~f:fst init)
-    ;;
-
-    let pp_body f litmus =
-      pp_init f (litmus.init);
-      Fmt.cut f ();
-      Fmt.cut f ();
-      pp_programs_inner f (litmus.programs);
-      Fmt.cut f ();
-      Fmt.cut f ();
-      (* This just repeats information already in the initialiser,
-         but herd7 seems to need either a location stanza or a
-         precondition, and this is always guaranteed to exist. *)
-      pp_location_stanza f (litmus.init)
-    ;;
-
-    let pp =
-      Fmt.(
-        vbox (
-          fun f litmus ->
-            Fmt.pf f "@[%s@ %s@]@,@," Lang.name litmus.name;
-            pp_body f litmus
-        )
-      )
-    ;;
   end
 
   (** [validate_init init] validates an incoming litmus test's

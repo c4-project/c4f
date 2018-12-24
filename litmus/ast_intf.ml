@@ -69,10 +69,7 @@ module type S = sig
     val init     : t -> (string, Lang.Constant.t) List.Assoc.t
     val programs : t -> Lang.Statement.t list list
 
-    include Pretty_printer.S with type t := t
-
-    (** [pp_programs f t] pretty-prints [t]'s program (only) to [f]. *)
-    val pp_programs : Formatter.t -> t -> unit
+    (** For pretty-printing, use one of the functors in [Pp]. *)
   end
 
   val validate : t -> Validated.t Or_error.t

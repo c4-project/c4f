@@ -45,12 +45,16 @@ let get_runner_x86 = function
          module Dst_lang = X86.Language.Herd7
 
          module Frontend = Frontend
-         module Litmus = Litmus.Ast.Make (Dst_lang)
-         module Multi_sanitiser = X86.Sanitiser.Make_multi (Lang)
-         module Single_sanitiser = X86.Sanitiser.Make_single (Lang)
-         module Explainer = Explainer.Make (Lang)
+         module Litmus_ast = Litmus.Ast.Make (Dst_lang)
+         module Litmus_pp = Litmus.Pp.Make_tabular (struct
+             include Litmus_ast
+             module Lang = Dst_lang
+           end)
+         module Multi_sanitiser = X86.Sanitiser.Make_multi (Src_lang)
+         module Single_sanitiser = X86.Sanitiser.Make_single (Src_lang)
+         module Explainer = Explainer.Make (Src_lang)
 
-         module Conv = X86.Conv.Make (Lang) (X86.Language.Herd7)
+         module Conv = X86.Conv.Make (Src_lang) (Dst_lang)
 
          let final_convert = Conv.convert
          let statements = X86.Ast.program
