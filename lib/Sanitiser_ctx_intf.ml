@@ -50,10 +50,7 @@ module type S = sig
    * Program properties
    *)
 
-  val enter_program
-    :  name : string
-    -> Lang.Statement.t list
-    -> (Lang.Statement.t list) t
+  val enter_program : name:string -> Lang.Program.t -> Lang.Program.t t
   (** [enter_program ~name ~len] is a contextual computation that
       tells the context we've entered a new program with name
       [name] and body [body].  Any previous program state is

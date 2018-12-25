@@ -39,8 +39,7 @@ let%expect_test "program_id_of_demangled: valid" =
   [%expect {| (0) |}]
 ;;
 
-module Make (B : Basic)
-  : S with type t = B.t = struct
+module Make (B : Basic) : S with type t = B.t = struct
   include B
 
   module Comp = struct
@@ -137,7 +136,6 @@ module String_direct = Make (struct
 
     module On_strings = struct
       type t = string
-      type elt = string
       include Travesty.Singleton.With_elt (String)
     end
   end)

@@ -88,6 +88,10 @@ module type Printer = sig
   val pp_instruction : Format.formatter -> Instruction.t -> unit
 
   val pp_statement : Format.formatter -> Statement.t -> unit
+
+  val pp : Format.formatter -> t -> unit
+  (** [pp f ast] pretty-prints [ast] on formatter [f].
+      It ignores any dialect information. *)
 end
 
 (** [Att] provides pretty-printing for AT&T-syntax x86. *)

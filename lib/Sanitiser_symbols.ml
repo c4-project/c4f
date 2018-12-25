@@ -65,15 +65,13 @@ module Make (B : Sanitiser_base.Basic)
      and module Ctx := B.Ctx
      and module Program_container := B.Program_container = struct
   include B
-  module Ctx_Pcon    = Program_container.On_monad (Ctx)
-  module Ctx_List    = Travesty.T_list.On_monad (Ctx)
-  module Ctx_Stm_Sym = Lang.Statement.On_symbols.On_monad (Ctx)
+  module Ctx_Pcon     = Program_container.On_monad (Ctx)
+  module Ctx_Prog_Sym = Lang.Program.On_symbols.On_monad (Ctx)
 
   let over_all_symbols progs ~f =
     (* Nested mapping:
        over symbols in statements in statement lists in programs. *)
-    Ctx_Pcon.map_m progs
-      ~f:(Ctx_List.map_m ~f:(Ctx_Stm_Sym.map_m ~f))
+    Ctx_Pcon.map_m progs ~f:(Ctx_Prog_Sym.map_m ~f)
 
   let get_existing_redirect_or sym ~f =
     let open Ctx.Let_syntax in

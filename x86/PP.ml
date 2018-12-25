@@ -75,6 +75,7 @@ module type Printer = sig
   val pp_oplist : Formatter.t -> Operand.t list -> unit
   val pp_instruction : Formatter.t -> Instruction.t -> unit
   val pp_statement : Formatter.t -> Statement.t -> unit
+  val pp : Formatter.t -> t -> unit
 end
 
 (* Parts specific to all dialects *)
@@ -421,7 +422,10 @@ module Make (D : Dialect) =
       | Nop ->
          (* This blank space is deliberate, to make tabstops move across
         properly in litmus printing. *)
-         Fmt.pf f " "; Fmt.cut f ()
+        Fmt.pf f " "; Fmt.cut f ()
+
+    (* We don't print newlines out here due to nops and labels. *)
+    let pp = Fmt.(using (fun ast -> ast.program) (list pp_statement))
   end
 
 module Att = Make (Att_specific)
@@ -463,11 +467,10 @@ let pp_ast =
   Fmt.box (fun f ast ->
       let pps =
         match ast.syntax with
-        | Dialect.Att -> Att.pp_statement
-        | Dialect.Intel -> Intel.pp_statement
-        | Dialect.Herd7 -> Herd7.pp_statement
+        | Dialect.Att -> Att.pp
+        | Dialect.Intel -> Intel.pp
+        | Dialect.Herd7 -> Herd7.pp
       in
-      (* We don't print newlines out here due to nops and labels. *)
-      List.iter ~f:(pps f) ast.program
+      pps f ast
     )
 ;;

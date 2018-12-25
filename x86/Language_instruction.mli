@@ -46,8 +46,8 @@ module type S = sig
   include Lib.Language_instruction.Basic
     with type t = Ast.Instruction.t
      and type con = Ast.Operand.t
-     and type sym = string
-     and type loc = Ast.Location.t
+     and type Sym.t = string
+     and type Loc.t = Ast.Location.t
   ;;
 
   (** [make_jump_operand sym] turns [sym] into a jump operand.

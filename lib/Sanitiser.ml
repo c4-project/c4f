@@ -57,11 +57,14 @@ module Make (B : Basic)
   module Ctx_List = Travesty.T_list.On_monad (Ctx)
   module Ctx_Zip  = Zip.On_monad (Ctx)
   module Ctx_Loc  = Lang.Instruction.On_locations.On_monad (Ctx)
+  module Ctx_Lst  = Lang.Program.On_listings.On_monad (Ctx)
+  module Ctx_Stm  = Lang.Program.On_statements.On_monad (Ctx)
+
 
   module Output = struct
     module Program = struct
       type t =
-        { listing      : Lang.Statement.t list
+        { listing      : Lang.Program.t
         ; warnings     : Warn.t list
         ; symbol_table : Abstract.Symbol.Table.t
         } [@@deriving fields]
@@ -73,8 +76,38 @@ module Make (B : Basic)
       } [@@deriving fields]
   end
 
-  let make_programs_uniform nop ps =
-    B.Program_container.right_pad ~padding:nop ps
+  module PC_listings = Travesty.Traversable.Chain0
+      (struct
+        type t = Lang.Program.t Program_container.t
+        include B.Program_container.With_elt (Lang.Program)
+      end)
+      (Lang.Program.On_listings)
+  ;;
+  module PC_listings_cont = Travesty.Traversable.Make_container0
+      (struct
+        type t = Lang.Program.t Program_container.t
+        include PC_listings
+      end)
+  module Ctx_PC = PC_listings.On_monad (Ctx)
+
+  (* TODO(@MattWindsor91): the two functions below are adapted forms of
+     Travesty extensions that don't (yet) appear for the program container
+     modules we have above.  Eventually it'd be nice for them to be in
+     Travesty itself. *)
+
+  let max_measure ~measure ?(default=0) xs =
+    xs
+    |> PC_listings_cont.max_elt ~compare:(Travesty.T_fn.on measure Int.compare)
+    |> Option.value_map ~f:measure ~default
+  ;;
+
+  let right_pad ~padding xs =
+    let maxlen = max_measure ~measure:List.length xs
+    and f = Fn.const padding
+    in PC_listings_cont.map ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f) xs
+  ;;
+
+  let make_programs_uniform nop ps = right_pad ~padding:nop ps
 
   let symbol_from_string string =
     Ctx.Monadic.return
@@ -270,30 +303,24 @@ module Make (B : Basic)
   let instruction_is_irrelevant =
     Lang.Statement.opcode_in ~opcodes:irrelevant_instruction_types
   ;;
-
-  let rec length_compare xs ys =
-    match xs, ys with
-    | []    , []     -> 0
-    | _::_  , []     -> 1
-    | []    , _::_   -> -1
-    | _::xs', _::ys' -> length_compare xs' ys'
-  ;;
-
   (** [proglen_fix f prog] runs [f] on [prog] until the
       program length no longer changes. *)
-  let proglen_fix f =
-    Ctx.fix ~f:(
-      fun mu prog ->
-        let open Ctx.Let_syntax in
-        let%bind prog' = f prog in
-        if length_compare prog prog' = 0
-        then Ctx.return prog'
-        else mu prog'
+  let proglen_fix f prog =
+    Ctx.(
+      fix ~f:(
+        fun mu (prog, len) ->
+          let open Ctx.Let_syntax in
+          let%bind prog' = f prog in
+          let len' = Lang.Program.On_statements.length prog' in
+          if len = len' then Ctx.return (prog', len') else mu (prog', len')
+      ) (prog, -1)
+      >>| fst
     )
   ;;
 
   let remove_statements_in prog ~where =
-    Travesty.T_list.(exclude ~f:(any ~predicates:where)) prog
+    Lang.Program.On_statements.exclude prog
+      ~f:(Travesty.T_list.any ~predicates:where)
   ;;
 
   (** [remove_generally_irrelevant_statements prog] completely removes
@@ -340,44 +367,47 @@ module Make (B : Basic)
       Ctx.return (`Swap (statement, ()))
   ;;
 
-  let remove_useless_jumps prog =
-    Ctx_Zip.fold_m_until (Zip.of_list prog)
+  let remove_useless_jumps_in_listing lst =
+    Ctx_Zip.fold_m_until (Zip.of_list lst)
       ~f:process_possible_useless_jump
       ~init:()
       ~finish:(fun () zipper -> Ctx.return (Zip.to_list zipper))
   ;;
 
+  let remove_useless_jumps =
+    Ctx_Lst.map_m ~f:remove_useless_jumps_in_listing
+  ;;
+
   module Deref   = Sanitiser_deref.Make (B)
   module Symbols = Sanitiser_symbols.Make (B)
 
-  let update_symbol_table
-      (prog : Lang.Statement.t list) =
+  let update_symbol_table (prog : Lang.Program.t) =
     let open Ctx.Let_syntax in
     let%bind targets = Ctx.get_all_redirect_targets in
     let known_heap_symbols = Lang.Symbol.Set.abstract targets in
-    let symbols' = Lang.symbols prog ~known_heap_symbols in
-    let%map () = Ctx.set_symbol_table symbols' in
-    prog
+    let symbols' = Lang.Program.symbols prog ~known_heap_symbols in
+    Ctx.set_symbol_table symbols'
   ;;
 
   let update_and_get_symbol_table prog =
     Ctx.(prog |> update_symbol_table >>= fun _ -> get_symbol_table)
   ;;
 
-  let generate_and_add_end_label (prog : Lang.Statement.t list)
-    : (Lang.Statement.t list) Ctx.t =
+  let generate_and_add_end_label (prog : Lang.Program.t)
+    : Lang.Program.t Ctx.t =
     let open Ctx.Let_syntax in
-      let%bind progname = Ctx.get_prog_name in
-      let prefix = "END" ^ progname in
-      let%bind lbl = Ctx.make_fresh_label prefix in
-      let%map () = Ctx.set_end_label lbl in
-      prog @ [Lang.Statement.label lbl]
+    let%bind progname = Ctx.get_prog_name in
+    let prefix = "END" ^ progname in
+    let%bind lbl = Ctx.make_fresh_label prefix in
+    let%map () = Ctx.set_end_label lbl in
+    Lang.Program.On_listings.map prog
+      ~f:(fun s -> s @ [Lang.Statement.label lbl])
   ;;
 
   (** [add_end_label] adds an end-of-program label to the current
      program. *)
-  let add_end_label (prog : Lang.Statement.t list)
-    : (Lang.Statement.t list) Ctx.t =
+  let add_end_label (prog : Lang.Program.t)
+    : Lang.Program.t Ctx.t =
     let open Ctx.Let_syntax in
     (* Don't generate duplicate endlabels! *)
     match%bind Ctx.get_end_label with
@@ -387,12 +417,11 @@ module Make (B : Basic)
 
   (** [remove_fix prog] performs a loop of statement-removing
      operations until we reach a fixed point in the program length. *)
-  let remove_fix (prog : Lang.Statement.t list)
-    : Lang.Statement.t list Ctx.t =
-    let mu prog =
+  let remove_fix (prog : Lang.Program.t) : Lang.Program.t Ctx.t =
+    let mu (prog : Lang.Program.t) : Lang.Program.t Ctx.t =
       Ctx.(
         prog
-        |>  update_symbol_table
+        |>  tee_m ~f:update_symbol_table
         >>= (`Remove_useless |-> remove_generally_irrelevant_statements)
         >>= (`Remove_litmus  |-> remove_litmus_irrelevant_statements)
         >>= (`Remove_useless |-> remove_useless_jumps)
@@ -400,39 +429,40 @@ module Make (B : Basic)
     in
     proglen_fix mu prog
 
-  let program_name = sprintf "%d"
+  let program_name i program =
+    Option.value (Lang.Program.name program) ~default:(sprintf "%d" i)
 
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program
-      (i : int) (prog : Lang.Statement.t list)
-    : (Lang.Statement.t list) Ctx.t =
-    let name = program_name i in
+      (i : int) (prog : Lang.Program.t)
+    : Lang.Program.t Ctx.t =
+    let name = program_name i prog in
     Ctx.(
       enter_program ~name prog
       (* Initial table population. *)
-      >>= update_symbol_table
+      >>= tee_m ~f:update_symbol_table
       >>= (`Simplify_litmus |-> add_end_label)
       >>= (`Language_hooks  |-> B.on_program)
       (* The language hook might have invalidated the symbol
          tables. *)
-      >>= update_symbol_table
+      >>= tee_m ~f:update_symbol_table
       >>= (`Simplify_deref_chains |-> Deref.on_program)
       (* Need to sanitise statements first, in case the sanitisation
          pass makes irrelevant statements (like jumps) relevant
          again. *)
-      >>= Ctx_List.mapi_m ~f:sanitise_stm
+      >>= Ctx_Stm.mapi_m ~f:sanitise_stm
       >>= remove_fix
     )
   ;;
 
-  let all_symbols_in progs =
+  let all_symbols_in (progs : Lang.Program.t Program_container.t) =
     progs
     |> Program_container.to_list
     |> List.concat_map
-      ~f:(List.concat_map ~f:Lang.Statement.On_symbols.to_list)
+      ~f:(Lang.Program.On_symbols.to_list)
   ;;
 
-  let make_mangle_map progs =
+  let make_mangle_map (progs : Lang.Program.t Program_container.t) =
     let all_symbols = all_symbols_in progs in
     (* Build a map src->dst, where each dst is a symbol in the
        assembly, and src is one possible demangling of dst.
@@ -468,7 +498,8 @@ module Make (B : Basic)
 
       If it fails to find at least one of the symbols, it'll raise a
       warning. *)
-  let find_initial_redirects progs =
+  let find_initial_redirects
+      (progs : Lang.Program.t Program_container.t) =
     let open Ctx.Let_syntax in
     let%bind symbols = Ctx.get_variables in
     Ctx.unless_m (Set.is_empty symbols)
@@ -481,7 +512,7 @@ module Make (B : Basic)
 
   let build_single_program_output i listing =
     let open Ctx.Let_syntax in
-    let name = program_name i in
+    let name = program_name i listing in
     let%bind symbol_table = update_and_get_symbol_table listing in
     let%map  warnings     = Ctx.take_warnings name in
     { Output.Program.listing; symbol_table; warnings }
@@ -502,7 +533,7 @@ module Make (B : Basic)
   ;;
 
 
-  let sanitise_with_ctx progs =
+  let sanitise_with_ctx (progs : Lang.Program.t Program_container.t) =
     Ctx.(
       find_initial_redirects progs
       >>= fun () -> Ctx_Pcon.mapi_m ~f:sanitise_program progs
@@ -515,12 +546,12 @@ module Make (B : Basic)
     )
   ;;
 
-  let sanitise ?passes ?(symbols=[]) stms =
+  let sanitise ?passes ?(symbols=[]) (prog : Lang.Program.t) =
     let passes' = Option.value ~default:(Sanitiser_pass.standard) passes in
     let variables = Lang.Symbol.Set.of_list symbols in
     Ctx.(
       run
-        (Monadic.return (B.split stms) >>= sanitise_with_ctx)
+        (Monadic.return (B.split prog) >>= sanitise_with_ctx)
         (initial ~passes:passes' ~variables)
     )
   ;;
@@ -539,14 +570,5 @@ module Make_multi (H : Hook_maker)
        and type 'a Program_container.t = 'a list = Make (struct
     include H (Travesty.T_list)
 
-    let split stms =
-      (* Adding a nop to the start forces there to be some
-         instructions before the first program, meaning we can
-         simplify discarding such instructions. *)
-      let progs =
-        (Lang.Statement.empty() :: stms)
-        |> List.group ~break:(Fn.const Lang.Statement.is_program_boundary)
-      in
-      Or_error.return (List.drop progs 1)
-      (* TODO(MattWindsor91): divine the end of the program. *)
+    let split = Lang.Program.split_on_boundaries
   end)

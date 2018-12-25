@@ -57,7 +57,7 @@ let get_runner_x86 = function
          module Conv = X86.Conv.Make (Src_lang) (Dst_lang)
 
          let final_convert = Conv.convert
-         let statements = X86.Ast.program
+         let program = Fn.id
        end): Asm_job.Runner)
   | [] ->
     Or_error.error_string

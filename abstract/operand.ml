@@ -250,8 +250,6 @@ end
 include Properties
 
 module Bundle = struct
-  type elt = M.t
-
   type t =
     | None
     | Single of M.t

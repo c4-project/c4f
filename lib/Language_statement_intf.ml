@@ -34,27 +34,27 @@ open Core_kernel
 (** [Basic] is the interface act languages must implement for
     statement analysis. *)
 module type Basic = sig
-  (** [t] is the type of statements. *)
-  type t [@@deriving sexp]
+  type t [@@deriving sexp, eq]
+  (** The type of statements, which must be sexpable and equatable. *)
 
-  (** [ins] is the type of instructions inside statements. *)
-  type ins
+  module Ins : Equal.S
+  (** Type of instructions inside statements. *)
 
-  (** [sym] is the type of concrete symbols. *)
-  type sym
+  module Sym : Equal.S
+  (** Type of concrete symbols. *)
 
-  (** Languages must supply a pretty-printer for their statements. *)
   include Pretty_printer.S with type t := t
+  (** Languages must supply a pretty-printer for their statements. *)
 
   (** They must allow traversal over symbols... *)
   module On_symbols
-    : Travesty.Traversable.S0_container with type elt := sym
+    : Travesty.Traversable.S0_container with module Elt = Sym
                                          and type t := t
   ;;
 
   (** ...and over instructions. *)
   module On_instructions
-    : Travesty.Traversable.S0_container with type elt := ins
+    : Travesty.Traversable.S0_container with module Elt = Ins
                                          and type t := t
   ;;
 
@@ -70,18 +70,17 @@ module type Basic = sig
   val label : string -> t
 
   (** [instruction] builds an instruction statement. *)
-  val instruction : ins -> t
+  val instruction : Ins.t -> t
 end
 
 
 (** [Basic_with_modules] extends [Basic] with the fully expanded
     language abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
-  module Symbol : Language_symbol.S
   module Instruction : Language_instruction.S
 
-  include Basic with type sym := Symbol.t
-                 and type ins := Instruction.t
+  include Basic with module Sym := Instruction.Symbol
+                 and module Ins := Instruction
 end
 
 (** [S] is an expanded interface onto an act language's statement
@@ -122,20 +121,4 @@ module type S = sig
     -> Abstract.Symbol.Table.t
     -> Extended_flag.Set.t
   ;;
-end
-
-(** [Language_statement] is the interface exposed in the main mli
-   file. *)
-module type Language_statement = sig
-  module type Basic = Basic
-  module type Basic_with_modules = Basic_with_modules
-  module type S = S
-
-  (** [Make] produces an instance of [S] from an instance of
-     [Basic_with_modules]. *)
-  module Make :
-    functor (B : Basic_with_modules)
-      -> S with type t = B.t
-            and module Symbol = B.Symbol
-            and module Instruction = B.Instruction
 end

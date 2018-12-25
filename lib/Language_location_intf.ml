@@ -35,17 +35,18 @@ open Core_kernel
     location analysis. *)
 module type Basic = sig
   (** [t] is the type of locations. *)
-  type t [@@deriving sexp]
+  type t [@@deriving sexp, eq]
 
-  (** [sym] is the type of concrete symbols. *)
-  type sym
+  module Sym : Equal.S
+  (** Type of concrete symbols. *)
 
   (** Languages must supply a pretty-printer for their locations. *)
   include Pretty_printer.S with type t := t
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
-    Travesty.Traversable.S0_container with type elt := sym and type t := t
+    Travesty.Traversable.S0_container with module Elt = Sym
+                                       and type t := t
   ;;
 
   include Abstract.Abstractable.S
@@ -55,7 +56,7 @@ module type Basic = sig
 
   (** [make_heap_loc sym] creates a location referencing a symbolic heap
       location [sym]. *)
-  val make_heap_loc : sym -> t
+  val make_heap_loc : Sym.t -> t
 end
 
 (** [Basic_with_modules] extends [Basic] with the fully expanded
@@ -63,7 +64,7 @@ end
 module type Basic_with_modules = sig
   module Symbol : Language_symbol.S
 
-  include Basic with type sym := Symbol.t
+  include Basic with module Sym := Symbol
 end
 
 (** [S] is an expanded interface onto an act language's location
@@ -85,9 +86,8 @@ module type Language_location = sig
 
   (** [Make] produces an instance of [S] from an instance of
      [Basic_with_modules]. *)
-  module Make
-    : functor (B : Basic_with_modules)
-      -> S with type t = B.t
-            and module Symbol = B.Symbol
+  module Make (B : Basic_with_modules)
+    : S with type t = B.t
+         and module Symbol = B.Symbol
   ;;
 end

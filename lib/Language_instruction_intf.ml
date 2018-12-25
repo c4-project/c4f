@@ -34,17 +34,17 @@ open Core_kernel
 (** [Basic] is the interface act languages must implement for instruction
    analysis. *)
 module type Basic = sig
-  (** [t] is the type of instructions. *)
-  type t [@@deriving sexp]
+  type t [@@deriving sexp, eq]
+  (** Type of instructions. *)
 
   (** [con] is the type of constants. *)
   type con
 
-  (** [loc] is the type of locations inside instructions. *)
-  type loc
+  (** The type of locations inside instructions. *)
+  module Loc : Equal.S
 
-  (** [sym] is the type of concrete symbols. *)
-  type sym
+  (** The type of concrete symbols. *)
+  module Sym : Equal.S
 
   (** Languages must supply a pretty-printer for their instructions. *)
   include Pretty_printer.S with type t := t
@@ -59,12 +59,14 @@ module type Basic = sig
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
-    Travesty.Traversable.S0_container with type elt := sym and type t := t
+    Travesty.Traversable.S0_container with module Elt = Sym
+                                       and type t := t
   ;;
 
   (** ...and over locations. *)
   module On_locations :
-    Travesty.Traversable.S0_container with type elt := loc and type t := t
+    Travesty.Traversable.S0_container with module Elt = Loc
+                                       and type t := t
   ;;
 
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
@@ -73,12 +75,12 @@ module type Basic = sig
   (** [immediate_move ~src ~dst] tries to build a move of immediate
      value [src] into location [dst].  It can fail if the resulting
      movement is inexpressible in this language. *)
-  val immediate_move : src:con -> dst:loc -> t Or_error.t
+  val immediate_move : src:con -> dst:Loc.t -> t Or_error.t
 
   (** [location_move ~src ~dst] tries to build a move from location
      [src] to location [dst].  It can fail if the resulting movement
      is inexpressible in this language. *)
-  val location_move : src:loc -> dst:loc -> t Or_error.t
+  val location_move : src:Loc.t -> dst:Loc.t -> t Or_error.t
 
   (** [as_move_immediate ins pos] tries to interpret [ins] as a
      move instruction with an immediate value (symbol, integer, etc)
@@ -88,12 +90,12 @@ module type Basic = sig
   (** [as_move_symbol ins] tries to interpret [ins] as a move
      instruction with an immediate symbol in position [pos], and, if
      it is, returns that symbol. *)
-  val as_move_symbol : t -> [< `Src | `Dst ] -> sym option
+  val as_move_symbol : t -> [< `Src | `Dst ] -> Sym.t option
 
   (** [as_move_location ins] tries to interpret [ins] as a move
       instruction with a location in position [pos], and, if it is,
       returns that location. *)
-  val as_move_location : t -> [< `Src | `Dst ] -> loc option
+  val as_move_location : t -> [< `Src | `Dst ] -> Loc.t option
 
   (** [abs_operands ins] gets the abstracted operands of instruction
      [ins]. *)
@@ -159,9 +161,9 @@ module type Basic_with_modules = sig
   module Location : Language_location.S
   module Symbol   : Language_symbol.S
 
-  include Basic with type con := Constant.t
-                 and type loc := Location.t
-                 and type sym := Symbol.t
+  include Basic with type   con := Constant.t
+                 and module Loc := Location
+                 and module Sym := Symbol
 end
 
 (** [S] is an expanded interface onto an act language's instruction
@@ -190,11 +192,10 @@ module type Language_instruction = sig
 
   (** [Make] produces an instance of [S] from an instance of
      [Basic_with_modules]. *)
-  module Make
-    : functor (B : Basic_with_modules)
-      -> S with type t = B.t
-            and module Constant = B.Constant
-            and module Location = B.Location
-            and module Symbol   = B.Symbol
+  module Make (B : Basic_with_modules)
+    : S with type t = B.t
+         and module Constant = B.Constant
+         and module Location = B.Location
+         and module Symbol   = B.Symbol
   ;;
 end

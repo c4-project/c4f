@@ -39,8 +39,8 @@ module type S = sig
   include Lib.Language_instruction.Basic
     with type t = Ast.Instruction.t
      and type con = Ast.Operand.t
-     and type sym = string
-     and type loc = Ast.Location.t
+     and type Sym.t = string
+     and type Loc.t = Ast.Location.t
   ;;
 
   val make_jump_operand : string -> Ast.Operand.t
@@ -49,9 +49,10 @@ end
 module Make (B : Basic) : S = struct
   include B
   include (Ast.Instruction : Sexpable.S with type t = Ast.Instruction.t)
+  include (Ast.Instruction : Equal.S with type t := Ast.Instruction.t)
 
-  type sym = string
-  type loc = Ast.Location.t
+  module Sym = String
+  module Loc = Ast.Location
   type con = Ast.Operand.t
 
   let make_jump_operand jsym =
@@ -283,14 +284,8 @@ module Make (B : Basic) : S = struct
           ~operands:(abs_operands ins)
     end)
 
-  module On_symbols = struct
-    include Ast.Instruction.On_symbols
-    module Elt = Symbol
-  end
-  module On_locations = struct
-    include Ast.Instruction.On_locations
-    module Elt = Ast.Location
-  end
+  module On_symbols = Ast.Instruction.On_symbols
+  module On_locations = Ast.Instruction.On_locations
 
   let as_move_operands {Ast.Instruction.opcode; operands; _} =
     let open Option.Let_syntax in

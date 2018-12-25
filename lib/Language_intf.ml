@@ -45,15 +45,18 @@ module type Basic = sig
   module Constant    : Language_constant.Basic
   module Symbol      : Language_symbol.Basic
   module Location    : Language_location.Basic
-    with type sym := Symbol.t
+    with module Sym := Symbol
   module Instruction : Language_instruction.Basic
-    with type con := Constant.t
-     and type loc := Location.t
-     and type sym := Symbol.t
+    with type con = Constant.t
+     and module Loc := Location
+     and module Sym := Symbol
   ;;
   module Statement : Language_statement.Basic
-    with type ins := Instruction.t
-     and type sym := Symbol.t
+    with module Ins := Instruction
+     and module Sym := Symbol
+  ;;
+  module Program : Language_program.Basic
+    with type stm := Statement.t
   ;;
 end
 
@@ -73,20 +76,11 @@ module type S = sig
      and module Location = Location
      and module Symbol   = Symbol
   ;;
-
   module Statement : Language_statement.S
     with module Instruction = Instruction
-     and module Symbol      = Symbol
   ;;
-
-  (** [symbols ~known_heap_symbols prog] calculates the symbol table
-     for [prog].  It uses [known_heap_symbols] to help work out corner
-     cases in heap symbol detection (for example, when heap references
-     are being used as immediate values). *)
-  val symbols
-    :  Statement.t list
-    -> known_heap_symbols:Abstract.Symbol.Set.t
-    -> Abstract.Symbol.Table.t
+  module Program : Language_program.S
+    with module Statement = Statement
   ;;
 end
 
@@ -94,11 +88,12 @@ module type Language = sig
   module type Basic = Basic
   module type S = S
 
-  (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
-  module Make : functor (B : Basic) ->
+  module Make (B : Basic) :
     S with type Constant.t    = B.Constant.t
        and type Location.t    = B.Location.t
        and type Instruction.t = B.Instruction.t
+       and type Program.t     = B.Program.t
        and type Statement.t   = B.Statement.t
        and type Symbol.t      = B.Symbol.t
+       (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
 end

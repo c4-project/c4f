@@ -67,7 +67,7 @@ end
 module type S_program = sig
   include Basic
 
-  val on_program : Lang.Statement.t list -> Lang.Statement.t list Ctx.t
+  val on_program : Lang.Program.t -> Lang.Program.t Ctx.t
   (** [on_program prog] runs this sanitiser pass over [prog]. *)
 end
 
@@ -77,7 +77,7 @@ module type S_all = sig
   include Basic
 
   val on_all
-    :  Lang.Statement.t list Program_container.t
-    -> Lang.Statement.t list Program_container.t Ctx.t
+    :  Lang.Program.t Program_container.t
+    -> Lang.Program.t Program_container.t Ctx.t
   (** [on_all progs] runs this sanitiser pass over [progs]. *)
 end

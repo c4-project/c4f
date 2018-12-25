@@ -79,8 +79,8 @@ module type Basic = sig
   (** [split] splits an assembly script up into the one or more
       programs we'll be sanitising. *)
   val split
-    :  Lang.Statement.t list
-    -> Lang.Statement.t list Program_container.t Or_error.t
+    :  Lang.Program.t
+    -> Lang.Program.t Program_container.t Or_error.t
 end
 
 (** [S] is the interface to a fully-built sanitiser. *)
@@ -104,7 +104,7 @@ module type S = sig
       type t
 
       (** [listing p] gets the final sanitised program listing. *)
-      val listing : t -> Lang.Statement.t list
+      val listing : t -> Lang.Program.t
 
       (** [warnings t] gets the warning list for this program. *)
       val warnings : t -> Warn.t list
@@ -140,7 +140,7 @@ module type S = sig
   val sanitise
     :  ?passes:Sanitiser_pass.Set.t
     -> ?symbols:Lang.Symbol.t list
-    -> Lang.Statement.t list
+    -> Lang.Program.t
     -> Output.t Or_error.t
 end
 

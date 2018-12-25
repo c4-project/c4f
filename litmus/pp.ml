@@ -69,7 +69,7 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
     include Tabulator.Extend_tabular (M)
   end
 
-  let pp_programs_inner =
+  let pp_listings : Ast.Lang.Statement.t list list Fmt.t =
     Program_tabulator.pp_as_table
       ~on_error:(fun f e ->
           Fmt.pf f
@@ -77,10 +77,7 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
             Error.pp e)
   ;;
 
-  let pp_init
-    :  Formatter.t
-      -> (string, Ast.Lang.Constant.t) List.Assoc.t
-      -> unit =
+  let pp_init : (string, Ast.Lang.Constant.t) List.Assoc.t Fmt.t =
     My_format.pp_c_braces
       (Fmt.(
           list ~sep:sp
@@ -89,7 +86,11 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
       )
   ;;
 
-  let pp_programs f t = pp_programs_inner f (Ast.Validated.programs t)
+  let pp_programs_inner : Ast.Lang.Program.t list Fmt.t =
+    Fmt.using (List.map ~f:(Ast.Lang.Program.listing)) pp_listings
+
+  let pp_programs : Ast.Validated.t Fmt.t =
+    Fmt.using Ast.Validated.programs pp_programs_inner
 
   let pp_location_stanza f init =
     Fmt.(

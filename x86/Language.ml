@@ -33,6 +33,7 @@ module type S = sig
      and type Location.t = Ast.Location.t
      and type Instruction.t = Ast.Instruction.t
      and type Statement.t = Ast.Statement.t
+     and type Program.t = Ast.t
      and type Symbol.t = string
 
   val make_jump_operand : string -> Ast.Operand.t
@@ -62,18 +63,15 @@ module Make (T : Dialect.S) (P : PP.Printer) : S = struct
 
       module On_strings = struct
         type t = string
-        type elt = string
         include Travesty.Singleton.With_elt (String)
       end
     end
 
     module Location = struct
-      type t = Ast.Location.t
-      let sexp_of_t = [%sexp_of: Ast.Location.t]
-      let t_of_sexp = [%of_sexp: Ast.Location.t]
+      type t = Ast.Location.t [@@deriving sexp, eq]
       let pp = P.pp_location
 
-      type sym = string
+      module Sym = Symbol
 
       let make_heap_loc l =
         Ast.(Location.Indirect (Indirect.make ~disp:(Disp.Symbolic l) ()))
@@ -122,10 +120,7 @@ module Make (T : Dialect.S) (P : PP.Printer) : S = struct
           ;;
         end)
 
-      module On_symbols = struct
-        include Ast.Location.On_symbols
-        module Elt = Symbol
-      end
+      module On_symbols = Ast.Location.On_symbols
     end
 
     module Instruction = Language_instruction.Make (struct
@@ -136,9 +131,7 @@ module Make (T : Dialect.S) (P : PP.Printer) : S = struct
       end)
 
     module Statement = struct
-      type t = Ast.Statement.t
-      let sexp_of_t = [%sexp_of: Ast.Statement.t]
-      let t_of_sexp = [%of_sexp: Ast.Statement.t]
+      type t = Ast.Statement.t [@@deriving sexp, eq]
       let pp = P.pp_statement
 
       let empty () = Ast.Statement.Nop
@@ -161,14 +154,25 @@ module Make (T : Dialect.S) (P : PP.Printer) : S = struct
         end)
       ;;
 
-      module On_symbols = struct
-        include Ast.Statement.On_symbols
-        module Elt = Symbol
-      end
-      module On_instructions = struct
-        include Ast.Statement.On_instructions
-        module Elt = Ast.Instruction
-      end
+      module On_symbols = Ast.Statement.On_symbols
+      module On_instructions = Ast.Statement.On_instructions
+    end
+
+    module Program = struct
+      type t = Ast.t [@@deriving sexp, eq]
+      let pp = P.pp
+
+      let name = Fn.const None
+
+      module On_listings = Ast.On_listings
+
+      let split prog ~f =
+        let open Or_error.Let_syntax in
+        let     body    = Ast.program prog in
+        let%map bodies' = f body in
+        List.map bodies'
+          ~f:(fun body' -> { prog with program = body' })
+      ;;
     end
 
     module Constant = struct

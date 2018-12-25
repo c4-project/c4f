@@ -29,9 +29,10 @@ include Language_statement_intf
 
 module Make (B : Basic_with_modules)
   : S with type t = B.t
-       and module Symbol = B.Symbol
        and module Instruction = B.Instruction = struct
     include B
+
+    module Symbol = Instruction.Symbol
 
     module Extended_flag = struct
       module M = struct

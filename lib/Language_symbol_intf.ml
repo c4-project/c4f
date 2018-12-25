@@ -43,7 +43,8 @@ module type Basic = sig
   (** They must allow traversal over any string parts of the
       symbol. *)
   module On_strings
-    : Travesty.Traversable.S0_container with type elt = string and type t = t
+    : Travesty.Traversable.S0_container with type Elt.t = String.t
+                                         and type t = t
   ;;
 
   (** [abstract sym] promotes [sym] to an abstract symbol without any
@@ -161,5 +162,5 @@ module type Language_symbol = sig
   module type S = S
 
   (** [Make] produces an instance of [S] from an instance of [Basic]. *)
-  module Make : functor (B : Basic) -> S with type t = B.t
+  module Make (B : Basic) : S with type t = B.t
 end

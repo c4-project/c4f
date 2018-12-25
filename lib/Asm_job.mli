@@ -130,10 +130,10 @@ module type Runner_deps = sig
   module Explainer : Explainer.S with module Lang := Src_lang
 
   val final_convert
-    :  Src_lang.Statement.t list
-    -> Dst_lang.Statement.t list
+    :  Src_lang.Program.t
+    -> Dst_lang.Program.t
 
-  val statements : ast -> Src_lang.Statement.t list
+  val program : ast -> Src_lang.Program.t
 end
 
 (** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)

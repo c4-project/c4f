@@ -58,7 +58,7 @@ module Make (Lang : Basic) : S with module Lang := Lang = struct
 
   module Decl = struct
     type t =
-      | Program of { name : string; statements : Lang.Statement.t list }
+      | Program of Lang.Program.t
       | Init    of { id : string; value : Lang.Constant.t }
       | Post of Post.t
     [@@deriving sexp]
@@ -77,7 +77,7 @@ module Make (Lang : Basic) : S with module Lang := Lang = struct
     type t =
       { name : string
       ; init : ((string, Lang.Constant.t) List.Assoc.t)
-      ; programs : Lang.Statement.t list list
+      ; programs : Lang.Program.t list
       } [@@deriving fields]
     ;;
 
@@ -102,11 +102,14 @@ module Make (Lang : Basic) : S with module Lang := Lang = struct
         ~f:dup_to_err
         dup
 
+    let program_length p =
+      List.length (Lang.Program.listing p)
+
     let is_uniform = function
       | [] -> true
       | p::ps ->
-        let l = List.length p in
-        List.for_all ~f:(fun p' -> List.length p' = l) ps
+        let l = program_length p in
+        List.for_all ~f:(fun p' -> program_length p' = l) ps
     ;;
 
     let validate_name =
@@ -115,7 +118,7 @@ module Make (Lang : Basic) : S with module Lang := Lang = struct
 
     (** [validate_programs ps] validates an incoming litmus test's
         programs. *)
-    let validate_programs =
+    let validate_programs : Lang.Program.t list Validate.check =
       let module V = Validate in
       V.all
         [ V.booltest (Fn.non List.is_empty) ~if_false:"programs are empty"

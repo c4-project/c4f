@@ -35,9 +35,23 @@ module type Basic = sig
     include Pretty_printer.S with type t := t
   end
 
-  (** Abstract type of statement syntax *)
+  (** Abstract type of statements. *)
   module Statement : sig
     type t [@@deriving sexp]
+    include Pretty_printer.S with type t := t
+  end
+
+  (** Abstract type of programs. *)
+  module Program : sig
+    type t [@@deriving sexp]
+
+    val name : t -> string option
+    (** [name program] gets the declared name of [program], if it has
+       one. *)
+
+    val listing : t -> Statement.t list
+    (** [listing program] gets [program]'s statement listing. *)
+
     include Pretty_printer.S with type t := t
   end
 end
@@ -79,7 +93,7 @@ module type S = sig
 
   module Decl : sig
     type t =
-      | Program of { name : string; statements : Lang.Statement.t list }
+      | Program of Lang.Program.t
       | Init    of { id : string; value : Lang.Constant.t }
       | Post of Post.t
     [@@deriving sexp]
@@ -108,14 +122,14 @@ module type S = sig
 
     val name     : t -> string
     val init     : t -> (string, Lang.Constant.t) List.Assoc.t
-    val programs : t -> Lang.Statement.t list list
+    val programs : t -> Lang.Program.t list
 
     (** For pretty-printing, use one of the functors in [Pp]. *)
 
     val make
       :  name:string
       -> init:((string, Lang.Constant.t) List.Assoc.t)
-      -> programs:Lang.Statement.t list list
+      -> programs:Lang.Program.t list
       -> t Or_error.t
       (** [make ~name ~init ~programs] directly constructs a validated
          AST with the given fields.  It may fail if the result fails

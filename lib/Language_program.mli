@@ -22,12 +22,11 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Language abstraction layer: Statements *)
+(** Language abstraction layer: Programs *)
 
-include module type of Language_statement_intf
+include module type of Language_program_intf
 
 module Make (B : Basic_with_modules)
   : S with type t = B.t
-       and module Instruction = B.Instruction
-(** [Make] produces an instance of [S] from an instance of
-    [Basic_with_modules]. *)
+       and module Statement = B.Statement
+(** [Make] makes an [S] from a [Basic_with_modules]. *)

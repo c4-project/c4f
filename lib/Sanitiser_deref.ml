@@ -534,5 +534,9 @@ module Make (B : Sanitiser_base.Basic) :
     )
   ;;
 
-  let on_program prog = Ctx.(prog |> Zip.of_list |> mu >>| Zip.to_list)
+  let on_listing lst = Ctx.(lst |> Zip.of_list |> mu >>| Zip.to_list)
+
+  module PL = Lang.Program.On_listings.On_monad (Ctx)
+
+  let on_program = PL.map_m ~f:on_listing
 end

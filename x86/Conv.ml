@@ -25,13 +25,12 @@
 open Core
 
 module type S = sig
-  type stm
-
-  val convert : stm list -> stm list
+  type ast
+  val convert : ast -> ast
 end
 
 module Make (SD : Language.S) (DD : Language.S) = struct
-  type stm = Ast.Statement.t
+  type ast = Ast.t
 
   let swap operands =
     operands
@@ -75,5 +74,10 @@ module Make (SD : Language.S) (DD : Language.S) = struct
     Ast.Statement.On_instructions.map ~f:convert_instruction
   ;;
 
-  let convert = List.map ~f:convert_statement
+  let convert_listing = List.map ~f:convert_statement
+
+  let convert { Ast.program; _ } =
+    (* TODO(@MattWindsor91): check the source dialect. *)
+    let program' = convert_listing program in
+    { Ast.syntax = DD.dialect; program = program' }
 end

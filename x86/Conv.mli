@@ -26,14 +26,11 @@
 
 (** [S] is the interface of dialect conversion modules. *)
 module type S = sig
-  type stm
+  type ast
 
   (** [convert] converts a program from one dialect to another. *)
-  val convert : stm list -> stm list
+  val convert : ast -> ast
 end
 
 (** [Make SD DD] makes a conversion from x86 dialect SD to dialect DD. *)
-module Make
-  : functor (SD : Language.S)
-    -> functor (DD : Language.S)
-      -> S with type stm = Ast.Statement.t
+module Make (SD : Language.S) (DD : Language.S) : S with type ast = Ast.t

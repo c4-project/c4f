@@ -82,10 +82,10 @@ module type Runner_deps = sig
   module Explainer : Explainer.S with module Lang := Src_lang
 
   val final_convert
-    :  Src_lang.Statement.t list
-    -> Dst_lang.Statement.t list
+    :  Src_lang.Program.t
+    -> Dst_lang.Program.t
 
-  val statements : ast -> Src_lang.Statement.t list
+  val program : ast -> Src_lang.Program.t
 end
 
 module type Runner = sig
@@ -188,7 +188,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
       (name : string)
       (passes : Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
-      (program : LS.Statement.t list)
+      (program : LS.Program.t)
       (_osrc : Io.Out_sink.t)
       (outp : Out_channel.t) =
     let open Or_error.Let_syntax in
@@ -220,7 +220,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
       (name    : string)
       (passes  : Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
-      (program : LS.Statement.t list)
+      (program : LS.Program.t)
       (_osrc   : Io.Out_sink.t)
       (outp    : Out_channel.t) =
     let open Or_error.Let_syntax in
@@ -254,7 +254,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
     let%bind asm = Io.In_source.with_input ~f:parse t.inp in
     let%bind symbols = stringify_symbols t.symbols in
     Io.Out_sink.with_output t.outp
-      ~f:(f name t.passes symbols (B.statements asm))
+      ~f:(f name t.passes symbols (B.program asm))
   ;;
 
   let litmusify ?(output_format=Litmus_format.default) =
