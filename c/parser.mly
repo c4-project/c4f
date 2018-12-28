@@ -54,7 +54,7 @@ open Ast
 %type <Ast.Translation_unit.t> translation_unit
 %start translation_unit
 
-%type <Ast.Litmus.Test.t> litmus
+%type <Ast.Litmus.t> litmus
 %start litmus
 
 %%
@@ -93,15 +93,18 @@ open Ast
 
 litmus:
   | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF
-    { { Litmus.Test.language; name; decls } }
+    { { Litmus.language; name; decls } }
 
 litmus_declaration:
-  | decl = external_declaration { decl :> Litmus.Decl.t }
-  | decl = litmus_initialiser   { `Init decl }
-  | post = litmus_postcondition { `Post post }
+  | decl = function_definition  { Litmus.Decl.Program decl }
+  | decl = litmus_initialiser   { Litmus.Decl.Init decl }
+  | post = litmus_postcondition { Litmus.Decl.Post post }
+
+litmus_init_stm:
+  | id = identifier; EQ; value = constant { { Litmus.Init.id; value } }
 
 litmus_initialiser:
-  | xs = braced(list(endsemi(assignment_expression))) { xs }
+  | xs = braced(list(endsemi(litmus_init_stm))) { xs }
 
 litmus_quantifier:
   | LIT_EXISTS { `Exists }
@@ -283,9 +286,15 @@ labelled_statement:
 expression_statement:
   | e = endsemi(expression?) { Stm.Expr e }
 
+(* NB: this is (draft) C99.  Eventually, the rest of the grammar should be! *)
+
+block_item:
+  | decl = declaration { `Decl decl }
+  | stm  = statement   { `Stm  stm  }
+
 compound_statement:
-  | LBRACE; decls = declaration*; stms = statement*; RBRACE
-    { { Compound_stm.decls; stms } }
+  | LBRACE; items = block_item*; RBRACE
+    { items }
 
 selection_statement:
   | IF; cond = parened(expression); t_branch = statement; f_branch = option(preceded(ELSE, statement))

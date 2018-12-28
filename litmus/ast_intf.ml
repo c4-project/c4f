@@ -91,10 +91,16 @@ module type S = sig
     ;;
   end
 
+  module Init : sig
+    type elt = { id : string; value : Lang.Constant.t } [@@deriving sexp]
+
+    type t = elt list [@@deriving sexp]
+  end
+
   module Decl : sig
     type t =
       | Program of Lang.Program.t
-      | Init    of { id : string; value : Lang.Constant.t }
+      | Init    of Init.t
       | Post of Post.t
     [@@deriving sexp]
     ;;

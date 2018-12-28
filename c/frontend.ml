@@ -44,7 +44,7 @@ let litmus_predefined_types =
 
 module Litmus =
   Lib.Frontend.Make (struct
-    type ast = Ast.Litmus.Test.t
+    type ast = Ast.Litmus.t
 
     module I = Parser.MenhirInterpreter
 

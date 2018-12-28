@@ -205,6 +205,8 @@ module type S_direct_declarator = sig
     | Fun_call of t * Identifier.t list
   [@@deriving sexp]
   ;;
+
+  val identifier : t -> Identifier.t
 end
 
 module type S_declarator = sig
@@ -216,6 +218,8 @@ module type S_declarator = sig
     }
   [@@deriving sexp]
   ;;
+
+  val identifier : t -> Identifier.t
 end
 
 module type S_struct_declarator = sig
@@ -421,6 +425,14 @@ and Direct_declarator : S_direct_declarator
     | Fun_decl of t * Param_type_list.t
     | Fun_call of t * Identifier.t list
   [@@deriving sexp]
+
+  let rec identifier = function
+    | Id x -> x
+    | Bracket d -> Declarator.identifier d
+    | Array (t, _) -> identifier t
+    | Fun_decl (t, _) -> identifier t
+    | Fun_call (t, _) -> identifier t
+  ;;
 end
 and Declarator : S_declarator
   with type ddec := Direct_declarator.t = struct
@@ -430,6 +442,8 @@ and Declarator : S_declarator
     }
   [@@deriving sexp]
   ;;
+
+  let identifier { direct; _ } = Direct_declarator.identifier direct
 end
 and Struct_declarator : S_struct_declarator
   with type dec  := Declarator.t
@@ -523,12 +537,8 @@ end
 module type S_compound_stm = sig
   type stm
 
-  type t =
-    { decls : Decl.t list
-    ; stms  : stm list
-    }
-  [@@deriving sexp]
-  ;;
+  (* C99 style *)
+  type t = [`Stm of stm | `Decl of Decl.t] list [@@deriving sexp]
 end
 
 module rec Stm : S_stm
@@ -560,12 +570,7 @@ module rec Stm : S_stm
 end
 and Compound_stm : S_compound_stm
   with type stm := Stm.t = struct
-  type t =
-    { decls : Decl.t list
-    ; stms  : Stm.t list
-    }
-  [@@deriving sexp]
-  ;;
+  type t = [`Stm of Stm.t | `Decl of Decl.t] list [@@deriving sexp]
 end
 
 module Function_def = struct
@@ -594,51 +599,33 @@ module Translation_unit = struct
   ;;
 end
 
-module Litmus = struct
-  module Id = struct
-    type t =
-      | Local of int * Identifier.t
-      | Global of Identifier.t
-    [@@deriving sexp]
-    ;;
-  end
+module Litmus_lang : Litmus.Ast.Basic
+  with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
+   and type Program.t = Function_def.t
+   and type Constant.t = Constant.t = (struct
+    let name = "C"
 
-  module Pred = struct
-    type t =
-      | Bracket of t
-      | Or of t * t
-      | And of t * t
-      | Eq of Id.t * Constant.t
-    [@@deriving sexp]
-    ;;
-  end
+    module Constant = struct
+      include Constant
+      let pp _ _ = failwith "unimplemented"
+    end
 
-  module Post = struct
-    type t =
-      { quantifier : [ `Exists ]
-      ; predicate  : Pred.t
-      }
-    [@@deriving sexp]
-    ;;
-  end
+    module Statement = struct
+      type t = [`Stm of Stm.t | `Decl of Decl.t] [@@deriving sexp]
+      let pp _ _ = failwith "unimplemented"
+    end
 
-  module Decl = struct
-    type t =
-      [ External_decl.t
-      | `Init of Expr.t list
-      | `Post of Post.t
-      ]
-    [@@deriving sexp]
-    ;;
-  end
+    module Program = struct
+      include Function_def
 
-  module Test = struct
-    type t =
-      { language : string
-      ; name     : string
-      ; decls    : Decl.t list
-      }
-    [@@deriving sexp]
-    ;;
-  end
-end
+      let name x = Some (Declarator.identifier x.signature)
+
+      let pp _ _ = failwith "unimplemented"
+
+      let listing x = x.body
+    end
+  end)
+
+
+module Litmus : Litmus.Ast.S
+  with module Lang := Litmus_lang = Litmus.Ast.Make (Litmus_lang)

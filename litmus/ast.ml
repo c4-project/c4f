@@ -56,10 +56,16 @@ module Make (Lang : Basic) : S with module Lang := Lang = struct
     ;;
   end
 
+  module Init = struct
+    type elt = { id : string; value : Lang.Constant.t } [@@deriving sexp]
+
+    type t = elt list [@@deriving sexp]
+  end
+
   module Decl = struct
     type t =
       | Program of Lang.Program.t
-      | Init    of { id : string; value : Lang.Constant.t }
+      | Init    of Init.t
       | Post of Post.t
     [@@deriving sexp]
     ;;

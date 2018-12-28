@@ -951,19 +951,6 @@ translation_unit: LIT_EXISTS LBRACK SIZEOF LPAR CHAR RPAR AND XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE 108>
 
-translation_unit: LIT_EXISTS LBRACK SIZEOF LPAR CHAR RPAR SUB SIZEOF LPAR CHAR RPAR VOLATILE
-##
-## Ends in an error in state: 134.
-##
-## additive_expression -> additive_expression additive_operator multiplicative_expression . [ XOR_EQ XOR WHILE SWITCH SUB_EQ SUBSUB SUB STRING STAR_EQ STAR SIZEOF SHR_EQ SHR SHL_EQ SHL SEMI RPAR RETURN RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LNOT LIT_EXISTS LE LBRACE LAND INT_LIT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT EQ_OP EQ ELSE DOT DO DIV_EQ DIV DEFAULT CONTINUE COMMA COLON CHAR_LIT CASE BREAK ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## multiplicative_expression -> multiplicative_expression . multiplicative_operator cast_expression [ XOR_EQ XOR WHILE SWITCH SUB_EQ SUBSUB SUB STRING STAR_EQ STAR SIZEOF SHR_EQ SHR SHL_EQ SHL SEMI RPAR RETURN RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LNOT LIT_EXISTS LE LBRACE LAND INT_LIT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT EQ_OP EQ ELSE DOT DO DIV_EQ DIV DEFAULT CONTINUE COMMA COLON CHAR_LIT CASE BREAK ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-##
-## The known suffix of the stack is as follows:
-## additive_expression additive_operator multiplicative_expression
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE 85>
-
 translation_unit: LIT_EXISTS LBRACK SIZEOF LPAR CHAR RPAR SUB XOR_EQ
 ##
 ## Ends in an error in state: 133.
@@ -975,19 +962,6 @@ translation_unit: LIT_EXISTS LBRACK SIZEOF LPAR CHAR RPAR SUB XOR_EQ
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE 84>
-
-translation_unit: LIT_EXISTS LBRACK SIZEOF LPAR CHAR RPAR VOLATILE
-##
-## Ends in an error in state: 123.
-##
-## additive_expression -> multiplicative_expression . [ XOR_EQ XOR WHILE SWITCH SUB_EQ SUBSUB SUB STRING STAR_EQ STAR SIZEOF SHR_EQ SHR SHL_EQ SHL SEMI RPAR RETURN RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LNOT LIT_EXISTS LE LBRACE LAND INT_LIT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT EQ_OP EQ ELSE DOT DO DIV_EQ DIV DEFAULT CONTINUE COMMA COLON CHAR_LIT CASE BREAK ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## multiplicative_expression -> multiplicative_expression . multiplicative_operator cast_expression [ XOR_EQ XOR WHILE SWITCH SUB_EQ SUBSUB SUB STRING STAR_EQ STAR SIZEOF SHR_EQ SHR SHL_EQ SHL SEMI RPAR RETURN RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LNOT LIT_EXISTS LE LBRACE LAND INT_LIT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT EQ_OP EQ ELSE DOT DO DIV_EQ DIV DEFAULT CONTINUE COMMA COLON CHAR_LIT CASE BREAK ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-##
-## The known suffix of the stack is as follows:
-## multiplicative_expression
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE 71>
 
 translation_unit: LIT_EXISTS LBRACK SIZEOF LPAR VOLATILE STAR COMMA
 ##
@@ -1269,38 +1243,6 @@ translation_unit: LIT_EXISTS LBRACK STRING QUESTION XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE 95>
 
-translation_unit: LIT_EXISTS LBRACK STRING RBRACE
-##
-## Ends in an error in state: 198.
-##
-## direct_declarator -> direct_declarator LBRACK option(constant_expression) . RBRACK [ VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF STRUCT STATIC SIGNED SHORT SEMI RPAR REGISTER LPAR LONG LBRACK LBRACE INT FLOAT EXTERN EQ ENUM DOUBLE CONST COMMA COLON CHAR AUTO ]
-##
-## The known suffix of the stack is as follows:
-## direct_declarator LBRACK option(constant_expression)
-##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 52, spurious reduction of production unary_expression -> postfix_expression 
-## In state 50, spurious reduction of production cast_expression -> unary_expression 
-## In state 129, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 123, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 142, spurious reduction of production shift_expression -> additive_expression 
-## In state 119, spurious reduction of production relational_expression -> shift_expression 
-## In state 135, spurious reduction of production equality_expression -> relational_expression 
-## In state 153, spurious reduction of production and_expression -> equality_expression 
-## In state 161, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 162, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 163, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 147, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 145, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 187, spurious reduction of production constant_expression -> conditional_expression 
-## In state 186, spurious reduction of production option(constant_expression) -> constant_expression 
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE 199>
-
 translation_unit: LIT_EXISTS LBRACK STRING SHR XOR_EQ
 ##
 ## Ends in an error in state: 122.
@@ -1312,19 +1254,6 @@ translation_unit: LIT_EXISTS LBRACK STRING SHR XOR_EQ
 ##
 
 <YOUR SYNTAX ERROR MESSAGE HERE 70>
-
-translation_unit: LIT_EXISTS LBRACK STRING SUBSUB VOLATILE
-##
-## Ends in an error in state: 223.
-##
-## postfix_expression -> postfix_expression inc_or_dec_operator . [ XOR_EQ XOR WHILE SWITCH SUB_EQ SUBSUB SUB STRING STAR_EQ STAR SIZEOF SHR_EQ SHR SHL_EQ SHL SEMI RPAR RETURN RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LNOT LIT_EXISTS LE LBRACE LAND INT_LIT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT EQ_OP EQ ELSE DOT DO DIV_EQ DIV DEFAULT CONTINUE COMMA COLON CHAR_LIT CASE BREAK ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
-## unary_operator_unary -> inc_or_dec_operator . [ SUBSUB SUB STRING STAR SIZEOF NOT LPAR LNOT LIT_EXISTS INT_LIT IDENTIFIER FLOAT_LIT CHAR_LIT AND ADDADD ADD ]
-##
-## The known suffix of the stack is as follows:
-## postfix_expression inc_or_dec_operator
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE 224>
 
 translation_unit: LIT_EXISTS LBRACK STRING VOLATILE
 ##
@@ -1764,25 +1693,6 @@ translation_unit: LIT_EXISTS VOLATILE RPAR
 
 <YOUR SYNTAX ERROR MESSAGE HERE 245>
 
-translation_unit: LIT_EXISTS VOLATILE SEMI INT_LIT
-##
-## Ends in an error in state: 290.
-##
-## function_definition -> list(declaration_specifier) declarator list(declaration) . compound_statement [ VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF STRUCT STATIC STAR SIGNED SHORT REGISTER LPAR LONG LIT_EXISTS LBRACE INT IDENTIFIER FLOAT EXTERN EOF ENUM DOUBLE CONST CHAR AUTO ]
-##
-## The known suffix of the stack is as follows:
-## list(declaration_specifier) declarator list(declaration)
-##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 354, spurious reduction of production list(declaration) -> 
-## In state 355, spurious reduction of production list(declaration) -> declaration list(declaration) 
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE 287>
-
 translation_unit: LIT_EXISTS VOLATILE SEMI XOR_EQ
 ##
 ## Ends in an error in state: 354.
@@ -2096,49 +2006,6 @@ translation_unit: XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE 360>
 
-litmus: IDENTIFIER IDENTIFIER LBRACE STRING SEMI XOR_EQ
-##
-## Ends in an error in state: 240.
-##
-## list(endsemi(assignment_expression)) -> assignment_expression SEMI . list(endsemi(assignment_expression)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## assignment_expression SEMI
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE 241>
-
-litmus: IDENTIFIER IDENTIFIER LBRACE STRING WHILE
-##
-## Ends in an error in state: 239.
-##
-## list(endsemi(assignment_expression)) -> assignment_expression . SEMI list(endsemi(assignment_expression)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## assignment_expression
-##
-## WARNING: This example involves spurious reductions.
-## This implies that, although the LR(1) items shown above provide an
-## accurate view of the past (what has been recognized so far), they
-## may provide an INCOMPLETE view of the future (what was expected next).
-## In state 52, spurious reduction of production unary_expression -> postfix_expression 
-## In state 50, spurious reduction of production cast_expression -> unary_expression 
-## In state 129, spurious reduction of production multiplicative_expression -> cast_expression 
-## In state 123, spurious reduction of production additive_expression -> multiplicative_expression 
-## In state 142, spurious reduction of production shift_expression -> additive_expression 
-## In state 119, spurious reduction of production relational_expression -> shift_expression 
-## In state 135, spurious reduction of production equality_expression -> relational_expression 
-## In state 153, spurious reduction of production and_expression -> equality_expression 
-## In state 161, spurious reduction of production exclusive_or_expression -> and_expression 
-## In state 162, spurious reduction of production inclusive_or_expression -> exclusive_or_expression 
-## In state 163, spurious reduction of production logical_and_expression -> inclusive_or_expression 
-## In state 147, spurious reduction of production logical_or_expression -> logical_and_expression 
-## In state 145, spurious reduction of production conditional_expression -> logical_or_expression 
-## In state 166, spurious reduction of production assignment_expression -> conditional_expression 
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE 240>
-
 litmus: IDENTIFIER IDENTIFIER LBRACE XOR_EQ
 ##
 ## Ends in an error in state: 16.
@@ -2286,19 +2153,6 @@ litmus: IDENTIFIER IDENTIFIER LIT_EXISTS XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE 265>
 
-litmus: IDENTIFIER IDENTIFIER VOLATILE SEMI XOR_EQ
-##
-## Ends in an error in state: 286.
-##
-## nonempty_list(litmus_declaration) -> litmus_declaration . [ EOF ]
-## nonempty_list(litmus_declaration) -> litmus_declaration . nonempty_list(litmus_declaration) [ EOF ]
-##
-## The known suffix of the stack is as follows:
-## litmus_declaration
-##
-
-<YOUR SYNTAX ERROR MESSAGE HERE 283>
-
 litmus: IDENTIFIER IDENTIFIER XOR_EQ
 ##
 ## Ends in an error in state: 2.
@@ -2335,3 +2189,130 @@ litmus: XOR_EQ
 
 <YOUR SYNTAX ERROR MESSAGE HERE 0>
 
+litmus: IDENTIFIER IDENTIFIER LBRACE LIT_EXISTS EQ CHAR_LIT XOR_EQ
+##
+## Ends in an error in state: 19.
+##
+## list(endsemi(litmus_init_stm)) -> litmus_init_stm . SEMI list(endsemi(litmus_init_stm)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## litmus_init_stm
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE A1>
+
+litmus: IDENTIFIER IDENTIFIER LBRACE LIT_EXISTS EQ CHAR_LIT SEMI XOR_EQ
+##
+## Ends in an error in state: 20.
+##
+## list(endsemi(litmus_init_stm)) -> litmus_init_stm SEMI . list(endsemi(litmus_init_stm)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## litmus_init_stm SEMI
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE A2>
+
+litmus: IDENTIFIER IDENTIFIER LBRACE LIT_EXISTS XOR_EQ
+##
+## Ends in an error in state: 22.
+##
+## litmus_init_stm -> identifier . EQ constant [ SEMI ]
+##
+## The known suffix of the stack is as follows:
+## identifier
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE A3>
+
+litmus: IDENTIFIER IDENTIFIER LBRACE LIT_EXISTS EQ XOR_EQ
+##
+## Ends in an error in state: 23.
+##
+## litmus_init_stm -> identifier EQ . constant [ SEMI ]
+##
+## The known suffix of the stack is as follows:
+## identifier EQ
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE A4>
+
+litmus: IDENTIFIER IDENTIFIER LBRACE RBRACE XOR_EQ
+##
+## Ends in an error in state: 269.
+##
+## nonempty_list(litmus_declaration) -> litmus_declaration . [ EOF ]
+## nonempty_list(litmus_declaration) -> litmus_declaration . nonempty_list(litmus_declaration) [ EOF ]
+##
+## The known suffix of the stack is as follows:
+## litmus_declaration
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE A5>
+
+litmus: IDENTIFIER IDENTIFIER VOLATILE XOR_EQ
+##
+## Ends in an error in state: 362.
+##
+## list(declaration_specifier) -> declaration_specifier . list(declaration_specifier) [ STAR LPAR LIT_EXISTS IDENTIFIER ]
+##
+## The known suffix of the stack is as follows:
+## declaration_specifier
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE A6>
+
+translation_unit: LIT_EXISTS LBRACK STRING LIT_OR
+##
+## Ends in an error in state: 121.
+##
+## postfix_expression -> postfix_expression . expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## postfix_expression -> postfix_expression . LPAR argument_expression_list RPAR [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## postfix_expression -> postfix_expression . field_access identifier [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## postfix_expression -> postfix_expression . inc_or_dec_operator [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## unary_expression -> postfix_expression . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+##
+## The known suffix of the stack is as follows:
+## postfix_expression
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE B1>
+
+translation_unit: LIT_EXISTS LBRACK SIZEOF LPAR CHAR RPAR LIT_OR
+##
+## Ends in an error in state: 133.
+##
+## additive_expression -> multiplicative_expression . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## multiplicative_expression -> multiplicative_expression . multiplicative_operator cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+##
+## The known suffix of the stack is as follows:
+## multiplicative_expression
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE B2>
+
+translation_unit: LIT_EXISTS LBRACK SIZEOF LPAR CHAR RPAR SUB SIZEOF LPAR CHAR RPAR LIT_OR
+##
+## Ends in an error in state: 144.
+##
+## additive_expression -> additive_expression additive_operator multiplicative_expression . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## multiplicative_expression -> multiplicative_expression . multiplicative_operator cast_expression [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+##
+## The known suffix of the stack is as follows:
+## additive_expression additive_operator multiplicative_expression
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE B3>
+
+translation_unit: LIT_EXISTS LBRACK STRING SUBSUB LIT_OR
+##
+## Ends in an error in state: 210.
+##
+## postfix_expression -> postfix_expression inc_or_dec_operator . [ XOR_EQ XOR WHILE VOLATILE VOID UNSIGNED UNION TYPEDEF_NAME TYPEDEF SWITCH SUB_EQ SUBSUB SUB STRUCT STRING STATIC STAR_EQ STAR SIZEOF SIGNED SHR_EQ SHR SHORT SHL_EQ SHL SEMI RPAR RETURN REGISTER RBRACK RBRACE QUESTION PIPE_EQ PIPE NOT NEQ_OP MOD_EQ MOD LT LPAR LOR LONG LNOT LIT_EXISTS LE LBRACE LAND INT_LIT INT IF IDENTIFIER GT GOTO GE FOR FLOAT_LIT FLOAT EXTERN EQ_OP EQ ENUM ELSE DOUBLE DOT DO DIV_EQ DIV DEFAULT CONTINUE CONST COMMA COLON CHAR_LIT CHAR CASE BREAK AUTO ARROW AND_EQ AND ADD_EQ ADDADD ADD ]
+## unary_operator_unary -> inc_or_dec_operator . [ SUBSUB SUB STRING STAR SIZEOF NOT LPAR LNOT LIT_EXISTS INT_LIT IDENTIFIER FLOAT_LIT CHAR_LIT AND ADDADD ADD ]
+##
+## The known suffix of the stack is as follows:
+## postfix_expression inc_or_dec_operator
+##
+
+<YOUR SYNTAX ERROR MESSAGE HERE B4>

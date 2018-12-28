@@ -186,6 +186,9 @@ module type S_direct_declarator = sig
     | Fun_call of t * Identifier.t list
   [@@deriving sexp]
   ;;
+
+  val identifier : t -> Identifier.t
+  (** [identifier ddec] gets the underlying identifier of [ddec]. *)
 end
 
 module type S_declarator = sig
@@ -197,6 +200,9 @@ module type S_declarator = sig
     }
   [@@deriving sexp]
   ;;
+
+  val identifier : t -> Identifier.t
+  (** [identifier dec] gets the underlying identifier of [dec]. *)
 end
 
 module type S_struct_declarator = sig
@@ -392,12 +398,11 @@ end
 module type S_compound_stm = sig
   type stm
 
-  type t =
-    { decls : Decl.t list
-    ; stms  : stm list
-    }
-  [@@deriving sexp]
-  ;;
+  (* TODO(@MattWindsor91): this is the C99 definition of compound
+     statements, but everything else (including the parser!) targets
+     C89. *)
+
+  type t = [`Stm of stm | `Decl of Decl.t] list [@@deriving sexp]
 end
 
 module rec Stm : (S_stm with type com := Compound_stm.t)
@@ -430,51 +435,11 @@ module Translation_unit : sig
   ;;
 end
 
-module Litmus : sig
-  module Id : sig
-    type t =
-      | Local of int * Identifier.t
-      | Global of Identifier.t
-    [@@deriving sexp]
-    ;;
-  end
+module Litmus_lang : Litmus.Ast.Basic
+  with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
+   and type Program.t = Function_def.t
+   and type Constant.t = Constant.t
+;;
 
-  module Pred : sig
-    type t =
-      | Bracket of t
-      | Or of t * t
-      | And of t * t
-      | Eq of Id.t * Constant.t
-    [@@deriving sexp]
-    ;;
-  end
+module Litmus : Litmus.Ast.S with module Lang := Litmus_lang
 
-  module Post : sig
-    type t =
-      { quantifier : [ `Exists ]
-      ; predicate  : Pred.t
-      }
-    [@@deriving sexp]
-    ;;
-  end
-
-  module Decl : sig
-    type t =
-      [ External_decl.t
-      | `Init of Expr.t list
-      | `Post of Post.t
-      ]
-    [@@deriving sexp]
-    ;;
-  end
-
-  module Test : sig
-    type t =
-      { language : string
-      ; name     : string
-      ; decls    : Decl.t list
-      }
-    [@@deriving sexp]
-    ;;
-  end
-end
