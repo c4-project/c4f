@@ -25,50 +25,8 @@
 open Core
 open Lib
 
-let try_get_x86_dialect dialect =
-  dialect
-  |> X86.Dialect.Name_table.of_string
-  |> Result.of_option
-    ~error:(Error.create_s [%message "Unknown X86 dialect" ~dialect])
-;;
-
-let get_runner_x86 = function
-  | [ dialect_s ] ->
-    let open Or_error.Let_syntax in
-    let%bind dialect = try_get_x86_dialect dialect_s in
-    let%map (module Frontend) = X86.Frontend.of_dialect dialect in
-    let (module Lang) = X86.Language.of_dialect dialect in
-    (module Asm_job.Make_runner (struct
-         type ast = X86.Ast.t
-
-         module Src_lang = Lang
-         module Dst_lang = X86.Language.Herd7
-
-         module Frontend = Frontend
-         module Litmus_ast = Litmus.Ast.Make (Dst_lang)
-         module Litmus_pp = Litmus.Pp.Make_tabular (struct
-             include Litmus_ast
-             module Lang = Dst_lang
-           end)
-         module Multi_sanitiser = X86.Sanitiser.Make_multi (Src_lang)
-         module Single_sanitiser = X86.Sanitiser.Make_single (Src_lang)
-         module Explainer = Explainer.Make (Src_lang)
-
-         module Conv = X86.Conv.Make (Src_lang) (Dst_lang)
-
-         let final_convert = Conv.convert
-         let program = Fn.id
-       end): Asm_job.Runner)
-  | [] ->
-    Or_error.error_string
-      "Not enough arguments to x86 language; expected one."
-  | _::_ ->
-    Or_error.error_string
-      "Too many arguments to x86 language; expected only one."
-;;
-
 let lang_procs =
-  [ "x86", get_runner_x86 ]
+  [ "x86", X86.Asm_job.get_runner ]
 ;;
 
 let try_get_lang_proc language =
