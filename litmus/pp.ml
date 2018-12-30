@@ -54,17 +54,38 @@ module Make_common (B : Basic) = struct
     ) (List.map ~f:fst init)
   ;;
 
+  let pp_quantifier f = function
+    | `Exists -> Fmt.string f "exists"
+  ;;
+
+  let pp_id (f : Formatter.t) : B.Ast.Id.t -> unit = function
+    | Local (tid, str) -> Fmt.pf f "%d:%s" tid str
+    | Global      str  -> Fmt.string f str
+  ;;
+
+  let rec pp_predicate f : B.Ast.Pred.t -> unit = function
+    | Bracket pred -> Fmt.parens pp_predicate f pred
+    | Or  (l, r) -> Fmt.pf f "%a@ \\/@ %a" pp_predicate l pp_predicate r
+    | And (l, r) -> Fmt.pf f "%a@ /\\@ %a" pp_predicate l pp_predicate r
+    | Eq  (i, c) -> Fmt.pf f "%a@ ==@ %a" pp_id i B.Ast.Lang.Constant.pp c
+  ;;
+
+  let pp_post f { B.Ast.Post.quantifier; predicate } =
+    Fmt.(box (pair ~sep:sp pp_quantifier (parens pp_predicate)))
+      f (quantifier, predicate)
+  ;;
+
   let pp_body f litmus =
-    pp_init f (B.Ast.Validated.init litmus);
-    Fmt.cut f ();
-    Fmt.cut f ();
-    pp_programs f litmus;
-    Fmt.cut f ();
-    Fmt.cut f ();
-    (* This just repeats information already in the initialiser,
-       but herd7 seems to need either a location stanza or a
-       precondition, and this is always guaranteed to exist. *)
-    pp_location_stanza f (B.Ast.Validated.init litmus)
+    Fmt.(
+      pf f "%a@,@,%a@,@,%a%a"
+        pp_init (B.Ast.Validated.init litmus)
+        pp_programs litmus
+        (* This just repeats information already in the initialiser,
+           but herd7 seems to need either a location stanza or a
+           precondition, and this is always guaranteed to exist. *)
+        pp_location_stanza (B.Ast.Validated.init litmus)
+        (option (prefix (unit "@,@,") pp_post)) (B.Ast.Validated.post litmus)
+    )
   ;;
 
   let pp =

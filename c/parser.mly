@@ -97,9 +97,9 @@ litmus:
     { { Litmus.language; name; decls } }
 
 litmus_declaration:
-  | decl = function_definition  { Litmus.Decl.Program decl }
   | decl = litmus_initialiser   { Litmus.Decl.Init decl }
   | post = litmus_postcondition { Litmus.Decl.Post post }
+  | decl = function_definition  { Litmus.Decl.Program decl }
 
 litmus_init_stm:
   | id = identifier; EQ; value = constant { { Litmus.Init.id; value } }

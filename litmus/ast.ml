@@ -66,7 +66,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     type t =
       | Program of Lang.Program.t
       | Init    of Init.t
-      | Post of Post.t
+      | Post    of Post.t
     [@@deriving sexp]
     ;;
   end
@@ -81,12 +81,12 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
   module Validated = struct
     type t =
-      { name : string
-      ; init : ((string, Lang.Constant.t) List.Assoc.t)
+      { name     : string
+      ; init     : ((string, Lang.Constant.t) List.Assoc.t)
       ; programs : Lang.Program.t list
-      } [@@deriving fields]
+      ; post     : Post.t option
+      } [@@deriving fields, sexp]
     ;;
-
 
     (** [validate_init init] validates an incoming litmus test's
         init block. *)
@@ -103,14 +103,11 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
               ~value:(v : Lang.Constant.t)
           ]
       in
-      Option.value_map
-        ~default:(V.pass)
-        ~f:dup_to_err
-        dup
+      Option.value_map ~default:(V.pass) ~f:dup_to_err dup
 
     let validate_name =
-      let module V = Validate in
-      V.booltest (Fn.non String.is_empty) ~if_false:"name is empty"
+      Validate.booltest (Fn.non String.is_empty) ~if_false:"name is empty"
+    ;;
 
     (** [validate_programs ps] validates an incoming litmus test's
         programs. *)
@@ -118,7 +115,13 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       let module V = Validate in
       V.all
         [ V.booltest (Fn.non List.is_empty) ~if_false:"programs are empty"
+        (* TODO(@MattWindsor91): duplicate name checking *)
         ]
+    ;;
+
+    let validate_post : Post.t option Validate.check =
+      (* TODO(@MattWindsor91): actual validation here? *)
+      Fn.const Validate.pass
     ;;
 
     let validate_inner t =
@@ -129,6 +132,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
            ~name:(w validate_name)
            ~init:(w validate_init)
            ~programs:(w validate_programs)
+           ~post:(w validate_post)
         )
     ;;
 
@@ -136,24 +140,30 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       Validate.valid_or_error lit validate_inner
     ;;
 
-    let make ~name ~init ~programs =
-      validate (Fields.create ~name ~init ~programs)
+    let make ?post ~name ~init ~programs () =
+      validate (Fields.create ~post ~name ~init ~programs)
     ;;
   end
 
   let get_programs (decls : Decl.t list) : Lang.Program.t list Or_error.t =
     decls
-    |> List.filter_map ~f:(function | Program p -> Some p | _ -> None)
+    |> List.filter_map ~f:(function Program p -> Some p | _ -> None)
     |> Or_error.return
   ;;
 
   let get_init (decls : Decl.t list) : (string, Lang.Constant.t) List.Assoc.t Or_error.t =
     Or_error.(
       decls
-      |>  List.filter_map ~f:(function | Init p -> Some p | _ -> None)
+      |>  List.filter_map ~f:(function Init p -> Some p | _ -> None)
       |>  Travesty.T_list.one
       >>| List.map ~f:(fun { Init.id; value } -> (id, value))
     )
+  ;;
+
+  let get_post (decls : Decl.t list) : Post.t option Or_error.t =
+    decls
+    |> List.filter_map ~f:(function Post p -> Some p | _ -> None)
+    |> Travesty.T_list.at_most_one
   ;;
 
   let validate_language : string Validate.check =
@@ -171,7 +181,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
     let%bind programs = get_programs   decls    in
     let%bind init     = get_init       decls    in
+    let%bind post     = get_post       decls    in
     let%bind _        = check_language language in
-    Validated.make ~name ~init ~programs
+    Validated.make ~name ~init ?post ~programs ()
   ;;
 end

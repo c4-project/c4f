@@ -128,21 +128,33 @@ module type S = sig
       postcondition block, and a set of appropriately named programs.
   *)
   module Validated : sig
-    type t
+    type t [@@deriving sexp_of]
     (** The abstract type of a validated litmus AST. *)
 
     val name     : t -> string
+    (** [name test] gets the name of [test]. *)
+
     val init     : t -> (string, Lang.Constant.t) List.Assoc.t
+    (** [init test] gets the initialiser in [test]. *)
+
     val programs : t -> Lang.Program.t list
+    (** [programs test] gets the program listings in [test], in
+        left-right or top-bottom order. *)
+
+    val post     : t -> Post.t option
+    (** [post test] gets the postcondition of [test], if one
+       exists. *)
 
     (** For pretty-printing, use one of the functors in [Pp]. *)
 
     val make
-      :  name:string
+      :  ?post:Post.t
+      -> name:string
       -> init:((string, Lang.Constant.t) List.Assoc.t)
       -> programs:Lang.Program.t list
+      -> unit
       -> t Or_error.t
-      (** [make ~name ~init ~programs] directly constructs a validated
+      (** [make ?post ~name ~init ~programs ()] directly constructs a validated
          AST with the given fields.  It may fail if the result fails
          validation. *)
   end

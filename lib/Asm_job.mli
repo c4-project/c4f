@@ -113,11 +113,9 @@ module type Runner_deps = sig
 
   module Frontend : Frontend.S with type ast := ast
 
-  module Litmus_ast : Litmus.Ast.S with module Lang := Dst_lang
-  module Litmus_pp : Litmus.Pp.S
-    with module Ast.Lang := Dst_lang
-     and module Ast.Validated := Litmus_ast.Validated
-  ;;
+  module Litmus_ast : Litmus.Ast.S with type Lang.Program.t = Dst_lang.Program.t
+                                    and type Lang.Constant.t = Dst_lang.Constant.t
+  module Litmus_pp : Litmus.Pp.S with module Ast = Litmus_ast
 
   module Multi_sanitiser
     : Sanitiser.S with module Lang := Src_lang

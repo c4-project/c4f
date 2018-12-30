@@ -729,12 +729,22 @@ module Function_def = struct
   [@@deriving sexp]
   ;;
 
+  let pp_oldstyle_decl_list : Decl.t list Fmt.t =
+    Fmt.(
+      using
+        (function [] -> None | x -> Some x)
+        (option
+           (prefix (unit "@ ") (list ~sep:sp Decl.pp))
+        )
+    )
+  ;;
+
   let pp (f : Base.Formatter.t) { decl_specs; signature; decls; body } : unit =
     Fmt.(
-      pf f "%a@ %a@ %a@ %a"
-        (list ~sep:sp Decl_spec.pp) decl_specs
+      pf f "%a@ %a%a@ %a"
+        (box (list ~sep:sp Decl_spec.pp)) decl_specs
         Declarator.pp signature
-        (list ~sep:sp Decl.pp) decls
+        pp_oldstyle_decl_list decls
         Compound_stm.pp body
     )
 end
