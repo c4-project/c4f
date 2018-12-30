@@ -356,9 +356,35 @@ module Parametric = struct
       ;;
     end
   end
+
+  module Param_type_list = struct
+    module type S = S_param_type_list
+
+    module Make (P : Ast_node) : S with type pdecl := P.t = struct
+      type t =
+        { params : P.t list
+        ; style  : [`Normal | `Variadic]
+        }
+      [@@deriving sexp]
+      ;;
+
+      let pp_style f = function
+        | `Normal -> Fmt.nop f ()
+        | `Variadic -> Fmt.unit "@ ,@ ..." f ()
+      ;;
+
+      let pp =
+        Fmt.(
+          using (fun { params; style } -> (params, style))
+            (append (list ~sep:comma P.pp) pp_style)
+        )
+      ;;
+    end
+  end
 end
 
-module rec Expr : S_expr with module Ty := Type_name =
+module rec Expr
+  : Parametric.Expr.S with module Ty := Type_name =
   Parametric.Expr.Make (Type_name)
 and Enumerator : sig
   type t =
@@ -486,33 +512,16 @@ and Param_decl
       ;;
     end
   end)
-and Param_type_list : S_param_type_list with type pdecl := Param_decl.t = struct
-  type t =
-    { params : Param_decl.t list
-    ; style  : [`Normal | `Variadic]
-    }
-  [@@deriving sexp]
-  ;;
-
-  let pp_style f = function
-    | `Normal -> Fmt.nop f ()
-    | `Variadic -> Fmt.unit "@ ,@ ..." f ()
-  ;;
-
-  let pp =
-    Fmt.(
-      using (fun { params; style } -> (params, style))
-        (append (list ~sep:comma Param_decl.pp) pp_style)
-    )
-  ;;
-end
+and Param_type_list
+  : Parametric.Param_type_list.S with type pdecl := Param_decl.t =
+  Parametric.Param_type_list.Make (Param_decl)
 and Direct_declarator
   : Parametric.Direct_declarator.S with type dec  := Declarator.t
                                     and type par  := Param_type_list.t
                                     and type expr := Expr.t =
   Parametric.Direct_declarator.Make (struct
-    module Dec = Declarator
-    module Par = Param_type_list
+    module Dec  = Declarator
+    module Par  = Param_type_list
     module Expr = Expr
   end)
 and Declarator
@@ -520,7 +529,7 @@ and Declarator
   Parametric.Declarator.Make (Direct_declarator)
 and Struct_declarator
   : Parametric.Struct_declarator.S
-    with type dec := Declarator.t
+    with type dec  := Declarator.t
      and type expr := Expr.t =
   Parametric.Struct_declarator.Make (struct
     module Dec  = Declarator
