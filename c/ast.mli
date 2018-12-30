@@ -105,14 +105,7 @@ module Decl : S_g_decl
    and type decl := Init_declarator.t list
 ;;
 
-module Label : sig
-  type t =
-    | Normal of Identifier.t
-    | Case   of Expr.t
-    | Default
-  [@@deriving sexp]
-  ;;
-end
+module Label : S_label with type expr := Expr.t
 
 module type S_stm = sig
   type com

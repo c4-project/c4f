@@ -268,6 +268,27 @@ module Parametric = struct
       ;;
     end
   end
+
+  module Label = struct
+    module type S = S_label
+
+    module Make (E : Ast_node) : S with type expr := E.t = struct
+      type t =
+        | Normal of Identifier.t
+        | Case   of E.t
+        | Default
+      [@@deriving sexp]
+      ;;
+
+      let pp_body (f : Base.Formatter.t) : t -> unit = function
+        | Normal id -> Identifier.pp f id
+        | Case expr -> Fmt.pf f "case@ %a" E.pp expr
+        | Default   -> Fmt.string f "default"
+      ;;
+
+      let pp : t Fmt.t = Fmt.(suffix (unit ":") pp_body)
+    end
+  end
 end
 
 module rec Expr : S_expr with module Ty := Type_name = struct
@@ -550,14 +571,7 @@ module Decl = Parametric.G_decl.Make (struct
   end)
 ;;
 
-module Label = struct
-  type t =
-    | Normal of Identifier.t
-    | Case   of Expr.t
-    | Default
-  [@@deriving sexp]
-  ;;
-end
+module Label = Parametric.Label.Make (Expr)
 
 module type S_stm = sig
   type com

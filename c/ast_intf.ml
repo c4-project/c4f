@@ -194,6 +194,20 @@ module type S_expr = sig
   include Ast_node with type t := t
 end
 
+(** Signature of labels *)
+module type S_label = sig
+  type expr (** Type of expressions used in case labels *)
+
+  type t =
+    | Normal of Identifier.t
+    | Case   of expr
+    | Default
+  [@@deriving sexp]
+  ;;
+
+  include Ast_node with type t := t
+end
+
 (** Signature of type specifiers *)
 module type S_type_spec = sig
   type su (** Type of struct-or-union specifiers *)
