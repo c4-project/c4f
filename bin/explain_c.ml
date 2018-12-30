@@ -34,8 +34,7 @@ let run ~infile ~outfile _o _cfg =
     >>= fun ast ->
     Io.Out_sink.with_output os
       ~f:(fun _ oc ->
-          Sexp.output_hum oc [%sexp (ast : C.Ast.Litmus.t) ];
-          Result.ok_unit
+          ast |> C.Ast.Litmus.validate >>| Fmt.pf (Format.formatter_of_out_channel oc) "%a" C.Ast.Litmus.pp;
         )
   )
 ;;

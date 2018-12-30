@@ -158,5 +158,8 @@ module Litmus_lang : Litmus.Ast.Basic
    and type Constant.t = Constant.t
 ;;
 
-module Litmus : Litmus.Ast.S with module Lang := Litmus_lang
+module Litmus : sig
+  include Litmus.Ast.S with module Lang := Litmus_lang
+  include Base.Pretty_printer.S with type t := Validated.t
+end
 

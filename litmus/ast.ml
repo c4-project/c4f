@@ -26,7 +26,7 @@ open Base
 
 include Ast_intf
 
-module Make (Lang : Basic) : S with module Lang := Lang = struct
+module Make (Lang : Basic) : S with module Lang = Lang = struct
   module Lang = Lang
 
   module Id = struct
@@ -108,16 +108,6 @@ module Make (Lang : Basic) : S with module Lang := Lang = struct
         ~f:dup_to_err
         dup
 
-    let program_length p =
-      List.length (Lang.Program.listing p)
-
-    let is_uniform = function
-      | [] -> true
-      | p::ps ->
-        let l = program_length p in
-        List.for_all ~f:(fun p' -> program_length p' = l) ps
-    ;;
-
     let validate_name =
       let module V = Validate in
       V.booltest (Fn.non String.is_empty) ~if_false:"name is empty"
@@ -128,7 +118,6 @@ module Make (Lang : Basic) : S with module Lang := Lang = struct
       let module V = Validate in
       V.all
         [ V.booltest (Fn.non List.is_empty) ~if_false:"programs are empty"
-        ; V.booltest is_uniform ~if_false:"programs must be uniform"
         ]
     ;;
 
@@ -151,4 +140,38 @@ module Make (Lang : Basic) : S with module Lang := Lang = struct
       validate (Fields.create ~name ~init ~programs)
     ;;
   end
+
+  let get_programs (decls : Decl.t list) : Lang.Program.t list Or_error.t =
+    decls
+    |> List.filter_map ~f:(function | Program p -> Some p | _ -> None)
+    |> Or_error.return
+  ;;
+
+  let get_init (decls : Decl.t list) : (string, Lang.Constant.t) List.Assoc.t Or_error.t =
+    Or_error.(
+      decls
+      |>  List.filter_map ~f:(function | Init p -> Some p | _ -> None)
+      |>  Travesty.T_list.one
+      >>| List.map ~f:(fun { Init.id; value } -> (id, value))
+    )
+  ;;
+
+  let validate_language : string Validate.check =
+    Validate.booltest
+      (String.Caseless.equal Lang.name)
+      ~if_false:"incorrect language"
+  ;;
+
+  let check_language (language : string) =
+    Validate.valid_or_error language validate_language
+  ;;
+
+  let validate ({ language; name; decls } : t) : Validated.t Or_error.t =
+    let open Or_error.Let_syntax in
+
+    let%bind programs = get_programs   decls    in
+    let%bind init     = get_init       decls    in
+    let%bind _        = check_language language in
+    Validated.make ~name ~init ~programs
+  ;;
 end

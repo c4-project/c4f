@@ -47,6 +47,12 @@ module List_of (N : Ast_node) (S : Sep)
   let pp = Fmt.list ~sep:S.sep N.pp
 end
 
+module End_semi (N : Ast_node)
+  : Ast_node with type t = N.t = struct
+  type t = N.t [@@deriving sexp]
+  let pp = Fmt.suffix (Fmt.unit ";") N.pp
+end
+
 (** AST nodes parametrised to break dependency cycles.
 
     Since the C AST is inherently mutually recursive, we build the
@@ -492,7 +498,7 @@ module Parametric = struct
       type t = Elt.t list [@@deriving sexp]
 
       let pp : t Fmt.t =
-        Utils.My_format.pp_c_braces (Fmt.list ~sep:Fmt.sp Elt.pp)
+        Utils.My_format.pp_c_braces Fmt.(list ~sep:sp (box Elt.pp))
     end
   end
 end
@@ -690,7 +696,7 @@ end
 
 module Decl = Parametric.G_decl.Make (struct
     module Qual = Decl_spec
-    module Decl = List_of (Init_declarator) (Space)
+    module Decl = End_semi (List_of (Init_declarator) (Comma))
   end)
 ;;
 
@@ -763,7 +769,10 @@ module Litmus_lang : Litmus.Ast.Basic
 
     module Constant = Constant
 
-    module Statement = Compound_stm.Elt
+    module Statement = struct
+      include Compound_stm.Elt
+      let empty () = `Stm (Stm.Expr None)
+    end
 
     module Program = struct
       include Function_def
@@ -774,6 +783,8 @@ module Litmus_lang : Litmus.Ast.Basic
   end)
 
 
-module Litmus : Litmus.Ast.S with module Lang := Litmus_lang =
-  Litmus.Ast.Make (Litmus_lang)
-;;
+module Litmus = struct
+  module A = Litmus.Ast.Make (Litmus_lang)
+  include A
+  include Litmus.Pp.Make_sequential (A)
+end

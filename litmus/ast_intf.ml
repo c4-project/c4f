@@ -28,6 +28,7 @@ open Base
     for building Litmus file ASTs. *)
 module type Basic = sig
   val name : string
+  (** [name] is the Herd name of the language. *)
 
   (** Abstract type of constant syntax *)
   module Constant : sig
@@ -39,6 +40,10 @@ module type Basic = sig
   module Statement : sig
     type t [@@deriving sexp]
     include Pretty_printer.S with type t := t
+
+    val empty : unit -> t
+    (** [empty ()] is a blank statement, used to fill up non-uniform
+       Litmus tests when pretty-printing them. *)
   end
 
   (** Abstract type of programs. *)
@@ -142,7 +147,7 @@ module type S = sig
          validation. *)
   end
 
-(*  val validate : t -> Validated.t Or_error.t
+  val validate : t -> Validated.t Or_error.t
   (** [validate lit] tries to validate a litmus AST.
-      It may fail if the input isn't a valid Litmus program. *) *)
+      It may fail if the input isn't a valid Litmus program. *)
 end

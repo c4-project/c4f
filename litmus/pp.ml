@@ -27,70 +27,25 @@ open Utils
 
 include Pp_intf
 
-module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
-  module Ast = Ast
+module type Basic = sig
+  module Ast : Ast.S
 
-  let pp_instr (f : Formatter.t) =
-    Fmt.pf f "@[<h>%a@]" Ast.Lang.Statement.pp
+  val pp_programs_inner : Ast.Lang.Program.t list Fmt.t
+end
 
-  module Program_tabulator = struct
-    module M  = struct
-      type data = Ast.Lang.Statement.t list list
+(** Makes the bits of a litmus AST that are common to all styles. *)
+module Make_common (B : Basic) = struct
+  let pp_programs : B.Ast.Validated.t Fmt.t =
+    Fmt.using B.Ast.Validated.programs B.pp_programs_inner
 
-      let to_table programs =
-        let open Or_error.Let_syntax in
-
-        let program_names =
-          List.mapi ~f:(fun i _ -> Printf.sprintf "P%d" i) programs
-        in
-        let header : Tabulator.row =
-          List.map ~f:(Fn.flip String.pp) program_names
-        in
-
-        let%bind programs' =
-          Result.of_option (List.transpose programs)
-            ~error:(
-              Error.create_s
-                [%message "Couldn't transpose program table"
-                    ~table:(programs : Ast.Lang.Statement.t list list)]
-            )
-        in
-        let rows =
-          List.map ~f:(List.map ~f:(Fn.flip pp_instr)) programs'
-        in
-
-        Tabulator.(
-          make ~sep:" | " ~terminator:" ;" ~header ()
-          >>= with_rows rows
-        )
-    end
-
-    include M
-    include Tabulator.Extend_tabular (M)
-  end
-
-  let pp_listings : Ast.Lang.Statement.t list list Fmt.t =
-    Program_tabulator.pp_as_table
-      ~on_error:(fun f e ->
-          Fmt.pf f
-            "@[<@ error printing table:@ %a@ >@]"
-            Error.pp e)
-  ;;
-
-  let pp_init : (string, Ast.Lang.Constant.t) List.Assoc.t Fmt.t =
+  let pp_init : (string, B.Ast.Lang.Constant.t) List.Assoc.t Fmt.t =
     My_format.pp_c_braces
       (Fmt.(
           list ~sep:sp
-            (fun f (l, c) -> pf f "@[%s = %a;@]" l Ast.Lang.Constant.pp c)
+            (fun f (l, c) -> pf f "@[%s = %a;@]" l B.Ast.Lang.Constant.pp c)
         )
       )
   ;;
-
-  let pp_programs_inner : Ast.Lang.Program.t list Fmt.t =
-    Fmt.using (List.map ~f:(Ast.Lang.Program.listing)) pp_listings
-
-  let pp_programs : Ast.Validated.t Fmt.t =
-    Fmt.using Ast.Validated.programs pp_programs_inner
 
   let pp_location_stanza f init =
     Fmt.(
@@ -100,7 +55,7 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
   ;;
 
   let pp_body f litmus =
-    pp_init f (Ast.Validated.init litmus);
+    pp_init f (B.Ast.Validated.init litmus);
     Fmt.cut f ();
     Fmt.cut f ();
     pp_programs f litmus;
@@ -109,7 +64,7 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
     (* This just repeats information already in the initialiser,
        but herd7 seems to need either a location stanza or a
        precondition, and this is always guaranteed to exist. *)
-    pp_location_stanza f (Ast.Validated.init litmus)
+    pp_location_stanza f (B.Ast.Validated.init litmus)
   ;;
 
   let pp =
@@ -117,9 +72,92 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
       vbox (
         fun f litmus ->
           Fmt.pf f "@[%s@ %s@]@,@,"
-            Ast.Lang.name (Ast.Validated.name litmus);
+            B.Ast.Lang.name (B.Ast.Validated.name litmus);
           pp_body f litmus
       )
     )
+  ;;
+end
+
+module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
+  module Ast = Ast
+
+  module Specific = struct
+    let pp_instr (f : Formatter.t) =
+      Fmt.pf f "@[<h>%a@]" Ast.Lang.Statement.pp
+
+    module Program_tabulator = struct
+      module M  = struct
+        type data = Ast.Lang.Statement.t list list
+
+        let to_table programs =
+          let open Or_error.Let_syntax in
+
+          let program_names =
+            List.mapi ~f:(fun i _ -> Printf.sprintf "P%d" i) programs
+          in
+          let header : Tabulator.row =
+            List.map ~f:(Fn.flip String.pp) program_names
+          in
+
+          let%bind programs' =
+            Result.of_option (List.transpose programs)
+              ~error:(
+                Error.create_s
+                  [%message "Couldn't transpose program table"
+                      ~table:(programs : Ast.Lang.Statement.t list list)]
+              )
+          in
+          let rows =
+            List.map ~f:(List.map ~f:(Fn.flip pp_instr)) programs'
+          in
+
+          Tabulator.(
+            make ~sep:" | " ~terminator:" ;" ~header ()
+            >>= with_rows rows
+          )
+      end
+
+      include M
+      include Tabulator.Extend_tabular (M)
+    end
+
+    let pp_listings : Ast.Lang.Statement.t list list Fmt.t =
+      Program_tabulator.pp_as_table
+        ~on_error:(fun f e ->
+            Fmt.pf f
+              "@[<@ error printing table:@ %a@ >@]"
+              Error.pp e)
+    ;;
+
+    let get_listings (progs : Ast.Lang.Program.t list)
+        : Ast.Lang.Statement.t list list =
+      progs
+      |> List.map ~f:Ast.Lang.Program.listing
+      |> Travesty.T_list.right_pad ~padding:(Ast.Lang.Statement.empty ())
+    ;;
+
+    let pp_programs_inner : Ast.Lang.Program.t list Fmt.t =
+      Fmt.using get_listings pp_listings
+  end
+  include Make_common (struct
+      module Ast = Ast
+      include Specific
+    end)
+  ;;
+end
+
+module Make_sequential (Ast : Ast.S) : S with module Ast = Ast = struct
+  module Ast = Ast
+
+  module Specific = struct
+    let pp_programs_inner : Ast.Lang.Program.t list Fmt.t =
+      Fmt.list ~sep:(Fmt.unit "@ @ ") Ast.Lang.Program.pp
+  end
+
+  include Make_common (struct
+      module Ast = Ast
+      include Specific
+    end)
   ;;
 end

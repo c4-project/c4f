@@ -31,4 +31,12 @@ include module type of Pp_intf
 
 module Make_tabular (Ast : Ast.S) : S with module Ast = Ast
 (** [Make_tabular] makes a pretty-printer for a Litmus AST that
-    outputs programs as tables. *)
+    outputs programs as tables.
+
+    This is useful for assembly languages. *)
+
+module Make_sequential (Ast : Ast.S) : S with module Ast = Ast
+(** [Make_sequential] makes a pretty-printer for a Litmus AST that
+    directly outputs each program AST in sequence.
+
+    This is useful for languages like C. *)

@@ -43,10 +43,7 @@ let get_runner_from_dialect dialect =
 
        module Frontend = Frontend
        module Litmus_ast = Litmus.Ast.Make (Dst_lang)
-       module Litmus_pp = Litmus.Pp.Make_tabular (struct
-           include Litmus_ast
-           module Lang = Dst_lang
-         end)
+       module Litmus_pp = Litmus.Pp.Make_tabular (Litmus_ast)
        module Multi_sanitiser = Sanitiser.Make_multi (Src_lang)
        module Single_sanitiser = Sanitiser.Make_single (Src_lang)
        module Explainer = Lib.Explainer.Make (Src_lang)
