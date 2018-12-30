@@ -89,6 +89,8 @@ module Initialiser : sig
     | List of t list
   [@@deriving sexp]
   ;;
+
+  include Ast_node with type t := t
 end
 
 module Init_declarator : sig
@@ -98,6 +100,8 @@ module Init_declarator : sig
     }
   [@@deriving sexp]
   ;;
+
+  include Ast_node with type t := t
 end
 
 module Decl : S_g_decl
@@ -125,6 +129,8 @@ module Function_def : sig
     }
   [@@deriving sexp]
   ;;
+
+  include Ast_node with type t := t
 end
 
 module External_decl : sig
@@ -134,12 +140,16 @@ module External_decl : sig
     ]
   [@@deriving sexp]
   ;;
+
+  include Ast_node with type t := t
 end
 
 module Translation_unit : sig
   type t = External_decl.t list
   [@@deriving sexp]
   ;;
+
+  include Ast_node with type t := t
 end
 
 module Litmus_lang : Litmus.Ast.Basic

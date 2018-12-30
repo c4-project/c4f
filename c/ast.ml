@@ -481,17 +481,18 @@ module Parametric = struct
     module Make (B : Basic)
         : S with type decl := B.Decl.t
              and type stm  := B.Stm.t = struct
-      type elt = [`Stm of B.Stm.t | `Decl of B.Decl.t] [@@deriving sexp]
+      module Elt = struct
+        type t = [`Stm of B.Stm.t | `Decl of B.Decl.t] [@@deriving sexp]
+        let pp (f : Base.Formatter.t) : t -> unit = function
+          | `Stm  s -> B.Stm.pp  f s
+          | `Decl d -> B.Decl.pp f d
+        ;;
+      end
 
-      type t = elt list [@@deriving sexp]
-
-      let pp_elt (f : Base.Formatter.t) : elt -> unit = function
-        | `Stm  s -> B.Stm.pp  f s
-        | `Decl d -> B.Decl.pp f d
-      ;;
+      type t = Elt.t list [@@deriving sexp]
 
       let pp : t Fmt.t =
-        Utils.My_format.pp_c_braces (Fmt.list ~sep:Fmt.sp pp_elt)
+        Utils.My_format.pp_c_braces (Fmt.list ~sep:Fmt.sp Elt.pp)
     end
   end
 end
@@ -721,6 +722,15 @@ module Function_def = struct
     }
   [@@deriving sexp]
   ;;
+
+  let pp (f : Base.Formatter.t) { decl_specs; signature; decls; body } : unit =
+    Fmt.(
+      pf f "%a@ %a@ %a@ %a"
+        (list ~sep:sp Decl_spec.pp) decl_specs
+        Declarator.pp signature
+        (list ~sep:sp Decl.pp) decls
+        Compound_stm.pp body
+    )
 end
 
 module External_decl = struct
@@ -730,12 +740,19 @@ module External_decl = struct
     ]
   [@@deriving sexp]
   ;;
+
+  let pp (f : Base.Formatter.t) : t -> unit = function
+    | `Fun  fn -> Function_def.pp f fn
+    | `Decl d  -> Decl.pp f d
+  ;;
 end
 
 module Translation_unit = struct
   type t = External_decl.t list
   [@@deriving sexp]
   ;;
+
+  let pp : t Fmt.t = Fmt.(vbox (list ~sep:sp External_decl.pp))
 end
 
 module Litmus_lang : Litmus.Ast.Basic
@@ -744,23 +761,14 @@ module Litmus_lang : Litmus.Ast.Basic
    and type Constant.t = Constant.t = (struct
     let name = "C"
 
-    module Constant = struct
-      include Constant
-      let pp _ _ = failwith "unimplemented"
-    end
+    module Constant = Constant
 
-    module Statement = struct
-      type t = [`Stm of Stm.t | `Decl of Decl.t] [@@deriving sexp]
-      let pp _ _ = failwith "unimplemented"
-    end
+    module Statement = Compound_stm.Elt
 
     module Program = struct
       include Function_def
 
       let name x = Some (Declarator.identifier x.signature)
-
-      let pp _ _ = failwith "unimplemented"
-
       let listing x = x.body
     end
   end)

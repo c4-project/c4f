@@ -213,9 +213,11 @@ module type S_compound_stm = sig
   type decl (** Type of declarations *)
   type stm  (** Type of statements *)
 
+  module Elt : Ast_node with type t = [`Stm of stm | `Decl of decl]
+
   (* TODO(@MattWindsor91): this is the C99 definition of compound
      statements, but everything else targets C89. *)
-  type t = [`Stm of stm | `Decl of decl] list [@@deriving sexp]
+  type t = Elt.t list [@@deriving sexp]
 
   include Ast_node with type t := t
 end
