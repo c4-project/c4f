@@ -24,7 +24,7 @@ SOFTWARE. *)
 
 %token (* delimiters *) LBRACE RBRACE EOF EOL
 %token (* main groups *) MACHINE COMPILER
-%token (* program subgroups *) HERD
+%token (* program subgroups *) CPP HERD
 %token (* common keywords *) ENABLED CMD ARGV DEFAULT
 %token (* Herd-specific keywords *) ASM_MODEL C_MODEL
 %token (* machine-specific keywords *) VIA SSH HOST USER COPY TO LOCAL
@@ -59,9 +59,17 @@ main:
   | stanzas = line_list(top_stanza); EOF { stanzas }
 
 top_stanza:
+  | c = cpp_stanza      {                 Config_ast.Top.Cpp      c      }
   | h = herd_stanza     {                 Config_ast.Top.Herd     h      }
   | x = machine_stanza  { let i, m = x in Config_ast.Top.Machine  (i, m) }
   | x = compiler_stanza { let i, c = x in Config_ast.Top.Compiler (i, c) }
+
+cpp_stanza:
+  | items = simple_stanza(CPP, cpp_item) { items }
+
+cpp_item:
+  | b = enabled { Config_ast.Cpp.Enabled b }
+  | c = cmd     { Config_ast.Cpp.Cmd c }
 
 herd_stanza:
   | items = simple_stanza(HERD, herd_item) { items }

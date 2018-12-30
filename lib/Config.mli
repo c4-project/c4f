@@ -24,43 +24,26 @@
 
 (** Modules for dealing with act's top-level configuration *)
 
-open Core
+open Base
 
-(** [S] is the baseline interface of modules over configuration. *)
-module type S = sig
-  module C : Compiler.S_spec
+include module type of Config_intf
 
-  type t [@@deriving sexp]
+module Cpp : sig
+  include S_program
 
-  (** [herd c] gets the Herd config, if any, to use for configuration
-      [c]. *)
-  val herd : t -> Herd.Config.t option
-
-  (** [compilers c] gets the set of all active compilers in
-      configuration [c]. *)
-  val compilers : t -> C.Set.t
-
-  (** [machines c] gets the set of all active machines in
-      configuration [c]. *)
-  val machines : t -> Machine.Spec.Set.t
-
-  (** [sanitiser_passes c ~default] gets the set of requested
-      sanitiser passes, given the default set [default] for the
-      current context. *)
-  val sanitiser_passes
-    :  t
-    -> default:Sanitiser_pass.Set.t
-    -> Sanitiser_pass.Set.t
-  ;;
+  val make : enabled:bool -> ?cmd:string -> unit -> t
+  (** [make ~enabled ?cmd ()] makes a CPP configuration block. *)
 end
+(** [Cpp] is the type of C preprocessor configurations. *)
 
 (** [Raw] represents act configuration loaded directly from a spec
     file, without any compiler testing or expansion. *)
 module Raw : sig
-  include S with module C = Compiler.Cfg_spec
+  include S with module CSpec := Compiler.Cfg_spec and module Cpp := Cpp
 
   val create
-    :  ?herd:Herd.Config.t
+    :  ?cpp:Cpp.t
+    -> ?herd:Herd.Config.t
     -> compilers:Compiler.Cfg_spec.Set.t
     -> machines:Machine.Spec.Set.t
     -> t
@@ -71,18 +54,18 @@ end
 
 (** [M] represents fully processed act compiler configurations. *)
 module M : sig
-  include S with module C = Compiler.Spec
+  include S with module CSpec := Compiler.Spec and module Cpp := Cpp
 
+  type 't hook = ('t -> 't option Or_error.t)
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
-  type 't hook = ('t -> 't option Or_error.t);;
 
+  val disabled_compilers : t -> (Id.t * Error.t option) list
   (** [disabled_compilers c] reports all disabled compiler IDs in
       the given config, along with any reason why. *)
-  val disabled_compilers : t -> (Id.t * Error.t option) list
 
+  val disabled_machines : t -> (Id.t * Error.t option) list
   (** [disabled_machines c] reports all disabled machines in
       the given config, along with any reason why. *)
-  val disabled_machines : t -> (Id.t * Error.t option) list
 
   (** [from_raw c ?chook ?mhook ?phook] takes a raw config [t] and
       processes it by:

@@ -66,6 +66,15 @@ Expected a valid compiler configuration item; for example:
 - `style STYLE-ID`
 - `emits ARCH-ID`
 
+main: CPP VIA
+##
+## Ends in an error in state: 50.
+##
+## simple_stanza(CPP,cpp_item) -> CPP . LBRACE separated_nonempty_list(EOL,option(cpp_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## CPP
+##
 main: HERD VIA
 ##
 ## Ends in an error in state: 34.
@@ -156,6 +165,16 @@ main: HERD LBRACE CMD VIA
 
 Expected a quoted command name or path
 
+main: CPP LBRACE ENABLED BOOL VIA
+##
+## Ends in an error in state: 54.
+##
+## separated_nonempty_list(EOL,option(cpp_item)) -> option(cpp_item) . [ RBRACE ]
+## separated_nonempty_list(EOL,option(cpp_item)) -> option(cpp_item) . EOL separated_nonempty_list(EOL,option(cpp_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(cpp_item)
+##
 main: HERD LBRACE C_MODEL STRING VIA
 ##
 ## Ends in an error in state: 45.
@@ -211,6 +230,30 @@ main: COMPILER IDENTIFIER LBRACE ARGV STRING VIA
 ##
 
 Expected a closing brace (to terminate this block), another string, or a newline
+
+
+main: CPP LBRACE EOL VIA
+##
+## Ends in an error in state: 55.
+##
+## separated_nonempty_list(EOL,option(cpp_item)) -> option(cpp_item) EOL . separated_nonempty_list(EOL,option(cpp_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(cpp_item) EOL
+##
+main: CPP LBRACE VIA
+##
+## Ends in an error in state: 51.
+##
+## simple_stanza(CPP,cpp_item) -> CPP LBRACE . separated_nonempty_list(EOL,option(cpp_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## CPP LBRACE
+##
+
+Expected a valid C preprocessor configuration item; for example:
+- `cmd "/path/to/cpp"`
+- `enabled BOOL`
 
 main: HERD LBRACE RBRACE VIA
 ##

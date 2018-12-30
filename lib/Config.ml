@@ -25,22 +25,29 @@
 open Core
 open Utils
 
-module type S = sig
-  module C : Compiler.S_spec
+include Config_intf
 
-  type t [@@deriving sexp]
-
-  val herd : t -> Herd.Config.t option
-  val compilers : t -> C.Set.t
-  val machines : t -> Machine.Spec.Set.t
-  val sanitiser_passes
-    :  t
-    -> default:Sanitiser_pass.Set.t
-    -> Sanitiser_pass.Set.t
+module Cpp = struct
+  type t =
+    { enabled : bool
+    ; cmd     : string option
+    }
+  [@@deriving sexp, fields, make]
   ;;
+
+  let default () =
+    { enabled = true
+    ; cmd     = None
+    }
+  ;;
+
+  let cmd (* override *) t = Option.value ~default:"cpp" (cmd t)
+  let argv : t -> string list = Fn.const []
 end
 
 module Raw = struct
+  module Cpp = Cpp
+
   module CI = struct
     module C = Compiler.Cfg_spec
 
@@ -48,11 +55,14 @@ module Raw = struct
       { compilers : C.Set.t
       ; machines  : Machine.Spec.Set.t
       ; herd      : Herd.Config.t sexp_option
+      ; cpp       : Cpp.t sexp_option
       }
     [@@deriving sexp, fields]
     ;;
 
-    let create ?herd ~compilers ~machines = Fields.create ~herd ~compilers ~machines
+    let create ?cpp ?herd ~compilers ~machines =
+      Fields.create ~cpp ~herd ~compilers ~machines
+    ;;
 
     let sanitiser_passes _ ~default = default
   end
@@ -128,6 +138,17 @@ module Raw = struct
       Compiler.Cfg_spec.create ~enabled ~style ~emits ~cmd ~argv ~herd ~machine
     ;;
 
+    let cpp (items : Config_ast.Cpp.t list) =
+      let open Or_error.Let_syntax in
+      let%map cmd = find_at_most_one items ~item_name:"cmd"
+          ~f:(function Cmd c -> Some (Some c) | _ -> None)
+          ~on_empty:(return None)
+      and enabled = find_at_most_one items ~item_name:"enabled"
+          ~f:(function Enabled b -> Some b | _ -> None)
+          ~on_empty:(return true)
+      in Cpp.make ~enabled ?cmd ()
+    ;;
+
     let herd (items : Config_ast.Herd.t list) =
       let open Or_error.Let_syntax in
       let%map cmd = find_at_most_one items ~item_name:"cmd"
@@ -141,6 +162,18 @@ module Raw = struct
           ~f:(function Asm_model (k, v) -> Some (Id.to_string_list k, v) | _ -> None)
       in
       Herd.Config.create ?c_model ~asm_models ?cmd ()
+    ;;
+
+    let build_cpp (items : Config_ast.t) =
+      let open Or_error.Let_syntax in
+      let cpp_ast_result =
+        (find_at_most_one items ~item_name:"cpp"
+           ~f:(function Cpp h -> Some (Some h) | _ -> None)
+           ~on_empty:(return None))
+      in
+      match%bind cpp_ast_result with
+      | Some cpp_ast -> cpp cpp_ast >>| Option.some
+      | None         -> return None
     ;;
 
     let build_herd (items : Config_ast.t) =
@@ -181,10 +214,11 @@ module Raw = struct
 
     let main (items : Config_ast.t) =
       let open Or_error.Let_syntax in
-      let%map herd  = build_herd items
+      let%map cpp   = build_cpp items
+      and herd      = build_herd items
       and machines  = build_machines items
       and compilers = build_compilers items in
-      create ?herd ~machines ~compilers
+      create ?cpp ?herd ~machines ~compilers
     ;;
   end
 
@@ -235,6 +269,7 @@ module M = struct
   type t =
     { compilers          : C.Set.t
     ; machines           : Machine.Spec.Set.t
+    ; cpp                : Cpp.t sexp_option
     ; herd               : Herd.Config.t sexp_option
     ; sanitiser_passes   : (default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t)
     ; disabled_compilers : (Id.t, Error.t option) List.Assoc.t
@@ -361,6 +396,7 @@ module M = struct
     ; disabled_compilers
     ; disabled_machines
     ; sanitiser_passes=phook
+    ; cpp = Raw.cpp c
     ; herd = Raw.herd c
     }
   ;;

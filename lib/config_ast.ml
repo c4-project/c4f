@@ -22,6 +22,13 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+module Cpp = struct
+  type t =
+    | Cmd of string
+    | Enabled of bool
+  ;;
+end
+
 module Herd = struct
   type t =
     | Cmd of string
@@ -66,6 +73,7 @@ end
 
 module Top = struct
   type t =
+    | Cpp of Cpp.t list
     | Herd of Herd.t list
     | Machine of Id.t * Machine.t list
     | Compiler of Id.t * Compiler.t list

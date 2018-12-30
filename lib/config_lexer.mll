@@ -37,6 +37,7 @@ let keywords = lazy
       ; "asm_model", ASM_MODEL
       ; "c_model", C_MODEL
       ; "cmd", CMD
+      ; "cpp", CPP
       ; "compiler", COMPILER
       ; "copy", COPY
       ; "default", DEFAULT

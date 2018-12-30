@@ -28,6 +28,14 @@
     {{!Config.File}config module proper} uses it to build a raw
     config. *)
 
+(** Items in a C-preprocessor stanza *)
+module Cpp : sig
+  type t =
+    | Cmd of string
+    | Enabled of bool
+  ;;
+end
+
 (** Items in a Herd stanza *)
 module Herd : sig
   type t =
@@ -78,6 +86,7 @@ end
 (** Items at the top level *)
 module Top : sig
   type t =
+    | Cpp of Cpp.t list
     | Herd of Herd.t list
     | Machine of Id.t * Machine.t list
     | Compiler of Id.t * Compiler.t list
