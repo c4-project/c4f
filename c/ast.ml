@@ -289,71 +289,77 @@ module Parametric = struct
       let pp : t Fmt.t = Fmt.(suffix (unit ":") pp_body)
     end
   end
+
+  module Expr = struct
+    module type S = S_expr
+    module Make (T : Ast_node) : S with module Ty := T = struct
+      type t =
+        | Prefix      of Operators.Pre.t * t
+        | Postfix     of t * Operators.Post.t
+        | Binary      of t * Operators.Bin.t * t
+        | Ternary     of { cond   : t
+                         ; t_expr : t
+                         ; f_expr : t
+                         }
+        | Cast        of T.t * t
+        | Call        of { func : t; arguments : t list}
+        | Subscript   of (t, t) Array.t
+        | Field       of { value  : t
+                         ; field  : Identifier.t
+                         ; access : [ `Direct (* . *) | `Deref (* -> *) ]
+                         }
+        | Sizeof_type of T.t
+        | Identifier  of Identifier.t
+        | String      of String.t
+        | Constant    of Constant.t
+        | Brackets    of t
+      [@@deriving sexp]
+      ;;
+
+      let rec pp f : t -> unit = function
+        | Prefix (pre, t) -> Fmt.append Operators.Pre.pp pp f (pre, t)
+        | Postfix (t, post) -> Fmt.append pp Operators.Post.pp f (t, post)
+        | Binary (l, bin, r) ->
+          Fmt.pf f "%a@ %a@ %a"
+            pp l
+            Operators.Bin.pp bin
+            pp r
+        | Ternary { cond; t_expr; f_expr } ->
+          Fmt.pf f "%a@ ?@ %a@ :@ %a"
+            pp cond
+            pp t_expr
+            pp f_expr
+        | Cast (ty, t) ->
+          Fmt.(
+            pf f "%a%a"
+              (parens T.pp) ty
+              pp t
+          )
+        | Call { func; arguments } ->
+          Fmt.(
+            pf f "%a%a"
+              pp func
+              (parens (list ~sep:comma pp)) arguments
+          )
+        | Subscript a -> Array.pp pp pp f a
+        | Field { value; field; access = `Direct } ->
+          Fmt.pf f "%a.%s" pp value field
+        | Field { value; field; access = `Deref } ->
+          Fmt.pf f "%a->%s" pp value field
+        | Sizeof_type ty ->
+          Fmt.(pf f "sizeof%a" (parens T.pp) ty)
+        | Identifier id -> Fmt.string f id
+        | String s -> (* TODO(@MattWindsor91): escape sequences *)
+          Fmt.(quote ~mark:"\"" string) f s
+        | Constant k -> Constant.pp f k
+        | Brackets t -> Fmt.brackets pp f t
+      ;;
+    end
+  end
 end
 
-module rec Expr : S_expr with module Ty := Type_name = struct
-  type t =
-    | Prefix      of Operators.Pre.t * t
-    | Postfix     of t * Operators.Post.t
-    | Binary      of t * Operators.Bin.t * t
-    | Ternary     of { cond   : t
-                     ; t_expr : t
-                     ; f_expr : t
-                     }
-    | Cast        of Type_name.t * t
-    | Call        of { func : t; arguments : t list}
-    | Subscript   of (t, t) Array.t
-    | Field       of { value  : t
-                     ; field  : Identifier.t
-                     ; access : [ `Direct (* . *) | `Deref (* -> *) ]
-                     }
-    | Sizeof_type of Type_name.t
-    | Identifier  of Identifier.t
-    | String      of String.t
-    | Constant    of Constant.t
-    | Brackets    of t
-  [@@deriving sexp]
-  ;;
-
-  let rec pp f : t -> unit = function
-    | Prefix (pre, t) -> Fmt.append Operators.Pre.pp pp f (pre, t)
-    | Postfix (t, post) -> Fmt.append pp Operators.Post.pp f (t, post)
-    | Binary (l, bin, r) ->
-      Fmt.pf f "%a@ %a@ %a"
-        pp l
-        Operators.Bin.pp bin
-        pp r
-    | Ternary { cond; t_expr; f_expr } ->
-      Fmt.pf f "%a@ ?@ %a@ :@ %a"
-        pp cond
-        pp t_expr
-        pp f_expr
-    | Cast (ty, t) ->
-      Fmt.(
-        pf f "%a%a"
-        (parens Type_name.pp) ty
-        pp t
-      )
-    | Call { func; arguments } ->
-      Fmt.(
-        pf f "%a%a"
-          pp func
-          (parens (list ~sep:comma pp)) arguments
-      )
-    | Subscript a -> Array.pp pp pp f a
-    | Field { value; field; access = `Direct } ->
-      Fmt.pf f "%a.%s" pp value field
-    | Field { value; field; access = `Deref } ->
-      Fmt.pf f "%a->%s" pp value field
-    | Sizeof_type ty ->
-      Fmt.(pf f "sizeof%a" (parens Type_name.pp) ty)
-    | Identifier id -> Fmt.string f id
-    | String s -> (* TODO(@MattWindsor91): escape sequences *)
-      Fmt.(quote ~mark:"\"" string) f s
-    | Constant k -> Constant.pp f k
-    | Brackets t -> Fmt.brackets pp f t
-  ;;
-end
+module rec Expr : S_expr with module Ty := Type_name =
+  Parametric.Expr.Make (Type_name)
 and Enumerator : sig
   type t =
     { name  : Identifier.t
