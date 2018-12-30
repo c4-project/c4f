@@ -15,7 +15,8 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-open Ast
+    open Ast
+    open Ast_basic
 
 %}
 
@@ -176,10 +177,10 @@ type_qualifier:
   | VOLATILE { `Volatile }
 
 struct_or_union_specifier:
-  | ty = struct_or_union; name_opt = identifier?; decls = braced(struct_declaration+)
-    { Struct_or_union_spec.Literal { ty; name_opt; decls } }
-  | ty = struct_or_union; name = identifier
-    { Struct_or_union_spec.Named ( ty, name ) }
+  | kind = struct_or_union; name_opt = identifier?; decls = braced(struct_declaration+)
+    { Struct_or_union_spec.Literal { kind; name_opt; decls } }
+  | kind = struct_or_union; name = identifier
+    { Struct_or_union_spec.Named ( kind, name ) }
 
 struct_or_union:
   | STRUCT { `Struct }
@@ -206,9 +207,9 @@ struct_declarator:
 
 enum_specifier:
   | ENUM; name_opt = identifier?; decls = braced(clist(enumerator))
-    { Enum_spec.Literal { ty = `Enum; name_opt; decls } }
+    { Enum_spec.Literal { kind = `Enum; name_opt; decls } }
   | ENUM; name = identifier
-    { Enum_spec.Literal { ty = `Enum; name_opt = Some name; decls = [] } }
+    { Enum_spec.Literal { kind = `Enum; name_opt = Some name; decls = [] } }
 
 enumerator:
   | name = identifier; value = option(preceded(EQ, constant_expression))
@@ -223,8 +224,8 @@ direct_declarator:
     { Direct_declarator.Id id }
   | d = parened(declarator)
     { Direct_declarator.Bracket d }
-  | lhs = direct_declarator; index = bracketed(constant_expression?)
-    { Direct_declarator.Array (lhs, index) }
+  | array = direct_declarator; index = bracketed(constant_expression?)
+    { Direct_declarator.Array { Array.array; index } }
   | lhs = direct_declarator; pars = parened(parameter_type_list)
     { Direct_declarator.Fun_decl (lhs, pars) }
   | lhs = direct_declarator; pars = parened(clist(identifier))
@@ -265,8 +266,8 @@ abstract_declarator:
 direct_abstract_declarator:
   | d = parened(abstract_declarator)
     { Direct_abs_declarator.Bracket d }
-  | lhs = direct_abstract_declarator?; index = bracketed(constant_expression?)
-    { Direct_abs_declarator.Array (lhs, index) }
+  | array = direct_abstract_declarator?; index = bracketed(constant_expression?)
+    { Direct_abs_declarator.Array { Array.array; index } }
   | lhs = direct_abstract_declarator?; pars = parened(parameter_type_list?)
     { Direct_abs_declarator.Fun_decl (lhs, pars) }
 
@@ -399,7 +400,7 @@ inc_or_dec_operator:
   | SUBSUB { `Dec } (* -- *)
 
 unary_operator_unary:
-  | o = inc_or_dec_operator { o :> Operator.pre }
+  | o = inc_or_dec_operator { o :> Operators.Pre.t }
   | SIZEOF { `Sizeof_val }
 
 unary_operator_cast:
@@ -413,7 +414,7 @@ unary_operator_cast:
 unary_expression:
   | e = postfix_expression { e }
   | o = unary_operator_unary; e = unary_expression { Expr.Prefix (o, e) }
-  | o = unary_operator_cast; e = cast_expression { Expr.Prefix ((o :> Operator.pre), e) }
+  | o = unary_operator_cast; e = cast_expression { Expr.Prefix ((o :> Operators.Pre.t), e) }
   | SIZEOF; ty = parened(type_name) { Expr.Sizeof_type (ty) }
 
 field_access:
