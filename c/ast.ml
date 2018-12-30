@@ -381,10 +381,123 @@ module Parametric = struct
       ;;
     end
   end
+
+  module Stm = struct
+    module type S = S_stm
+
+    module type Basic = sig
+      module Com  : Ast_node
+      module Expr : Ast_node
+      module Lbl  : Ast_node
+    end
+
+    module Make (B : Basic)
+        : S with type com  := B.Com.t
+             and type expr := B.Expr.t
+             and type lbl  := B.Lbl.t = struct
+      type t =
+        | Label of B.Lbl.t * t
+        | Expr of B.Expr.t option
+        | Compound of B.Com.t
+        | If of
+            { cond : B.Expr.t
+            ; t_branch : t
+            ; f_branch : t option
+            }
+        | Switch of B.Expr.t * t
+        | While of B.Expr.t * t
+        | Do_while of t * B.Expr.t
+        | For of
+            { init   : B.Expr.t option
+            ; cond   : B.Expr.t option
+            ; update : B.Expr.t option
+            ; body   : t
+            }
+        | Goto of Identifier.t
+        | Continue
+        | Break
+        | Return of B.Expr.t option
+      [@@deriving sexp]
+      ;;
+
+      let rec pp (f : Base.Formatter.t) : t -> unit = function
+        | Label (label, labelled) ->
+          Fmt.(pair ~sep:sp B.Lbl.pp pp f (label, labelled))
+        | Expr e ->
+          Fmt.(suffix (unit ";") (option B.Expr.pp) f e)
+        | Compound com -> B.Com.pp f com
+        | If { cond; t_branch; f_branch } ->
+          Fmt.(
+            pf f "if@ (%a)@ %a%a"
+              B.Expr.pp cond
+              pp t_branch
+              (option (prefix (unit "@ else@ ") pp)) f_branch
+          )
+        | Switch (cond, rest) ->
+          Fmt.(
+            pf f "switch@ (%a)@ %a"
+              B.Expr.pp cond
+              pp rest
+          )
+        | Continue -> Fmt.unit "continue;" f ()
+        | Break -> Fmt.unit "break;" f ()
+        | While (cond, body) ->
+          Fmt.(
+            pf f "while@ (%a)@ %a"
+              B.Expr.pp cond
+              pp body
+          )
+        | Do_while (body, cond) ->
+          Fmt.(
+            pf f "do@ %a@ while@ (%a);"
+              pp body
+              B.Expr.pp cond
+          )
+        | For { init; cond; update; body } ->
+          Fmt.(
+            pf f "for@ (%a;@ %a;@ %a)@ %a"
+              (option B.Expr.pp) init
+              (option B.Expr.pp) cond
+              (option B.Expr.pp) update
+              pp body
+          )
+        | Goto label -> Fmt.pf f "goto@ %s;" label
+        | Return expr ->
+          Fmt.(
+            pf f "return@ %a;"
+              (option B.Expr.pp) expr
+          )
+    end
+  end
+
+  module Compound_stm = struct
+    module type S = S_compound_stm
+
+    module type Basic = sig
+      module Decl : Ast_node
+      module Stm  : Ast_node
+    end
+
+    module Make (B : Basic)
+        : S with type decl := B.Decl.t
+             and type stm  := B.Stm.t = struct
+      type elt = [`Stm of B.Stm.t | `Decl of B.Decl.t] [@@deriving sexp]
+
+      type t = elt list [@@deriving sexp]
+
+      let pp_elt (f : Base.Formatter.t) : elt -> unit = function
+        | `Stm  s -> B.Stm.pp  f s
+        | `Decl d -> B.Decl.pp f d
+      ;;
+
+      let pp : t Fmt.t =
+        Utils.My_format.pp_c_braces (Fmt.list ~sep:Fmt.sp pp_elt)
+    end
+  end
 end
 
 module rec Expr
-  : Parametric.Expr.S with module Ty := Type_name =
+  : S_expr with module Ty := Type_name =
   Parametric.Expr.Make (Type_name)
 and Enumerator : sig
   type t =
@@ -411,9 +524,8 @@ end = struct
   ;;
 end
 and Enum_spec
-  : Parametric.Composite_spec.S
-    with type kind := [`Enum]
-     and type decl := Enumerator.t =
+  : S_composite_spec with type kind := [`Enum]
+                      and type decl := Enumerator.t =
   Parametric.Composite_spec.Make (struct
     module Kind = struct
       type t = [`Enum] [@@deriving sexp]
@@ -422,9 +534,8 @@ and Enum_spec
     module Decl = Enumerator
   end)
 and Struct_decl
-  : Parametric.G_decl.S
-    with type qual := Spec_or_qual.t
-     and type decl := Struct_declarator.t list =
+  : S_g_decl with type qual := Spec_or_qual.t
+              and type decl := Struct_declarator.t list =
   Parametric.G_decl.Make (struct
     module Qual = Spec_or_qual
     module Decl = List_of (Struct_declarator) (Space)
@@ -468,17 +579,15 @@ and Decl_spec : Ast_node
   ;;
 end
 and Type_name
-  : Parametric.G_decl.S
-    with type qual := Spec_or_qual.t
-     and type decl := Abs_declarator.t option =
+  : S_g_decl with type qual := Spec_or_qual.t
+              and type decl := Abs_declarator.t option =
   Parametric.G_decl.Make (struct
     module Qual = Spec_or_qual
     module Decl = Optional (Abs_declarator)
   end)
 and Struct_or_union_spec
-  : Parametric.Composite_spec.S
-    with type kind := [`Struct | `Union]
-     and type decl := Struct_decl.t =
+  : S_composite_spec with type kind := [`Struct | `Union]
+                      and type decl := Struct_decl.t =
   Parametric.Composite_spec.Make (struct
     module Kind = struct
       type t  = [`Struct | `Union] [@@deriving sexp]
@@ -494,11 +603,10 @@ and Struct_or_union_spec
     module Decl = Struct_decl
 end)
 and Param_decl
-  : Parametric.G_decl.S
-    with type qual := Decl_spec.t
-     and type decl := [ `Concrete of Declarator.t
-                      | `Abstract of Abs_declarator.t option
-                      ] =
+  : S_g_decl with type qual := Decl_spec.t
+              and type decl := [ `Concrete of Declarator.t
+                               | `Abstract of Abs_declarator.t option
+                               ] =
   Parametric.G_decl.Make (struct
     module Qual = Decl_spec
     module Decl = struct
@@ -516,9 +624,9 @@ and Param_type_list
   : Parametric.Param_type_list.S with type pdecl := Param_decl.t =
   Parametric.Param_type_list.Make (Param_decl)
 and Direct_declarator
-  : Parametric.Direct_declarator.S with type dec  := Declarator.t
-                                    and type par  := Param_type_list.t
-                                    and type expr := Expr.t =
+  : S_direct_declarator with type dec  := Declarator.t
+                         and type par  := Param_type_list.t
+                         and type expr := Expr.t =
   Parametric.Direct_declarator.Make (struct
     module Dec  = Declarator
     module Par  = Param_type_list
@@ -528,15 +636,14 @@ and Declarator
   : Parametric.Declarator.S with type ddec := Direct_declarator.t =
   Parametric.Declarator.Make (Direct_declarator)
 and Struct_declarator
-  : Parametric.Struct_declarator.S
-    with type dec  := Declarator.t
-     and type expr := Expr.t =
+  : S_struct_declarator with type dec  := Declarator.t
+                         and type expr := Expr.t =
   Parametric.Struct_declarator.Make (struct
     module Dec  = Declarator
     module Expr = Expr
   end)
 and Direct_abs_declarator
-  : Parametric.Direct_abs_declarator.S
+  : S_direct_abs_declarator
     with type dec  := Abs_declarator.t
      and type par  := Param_type_list.t
      and type expr := Expr.t =
@@ -588,72 +695,22 @@ module Decl = Parametric.G_decl.Make (struct
 
 module Label = Parametric.Label.Make (Expr)
 
-module type S_stm = sig
-  type com
-
-  type t =
-    | Label of Label.t * t
-    | Expr of Expr.t option
-    | Compound of com
-    | If of
-        { cond : Expr.t
-        ; t_branch : t
-        ; f_branch : t option
-        }
-    | Switch of Expr.t * t
-    | While of Expr.t * t
-    | Do_while of t * Expr.t
-    | For of
-        { init   : Expr.t option
-        ; cond   : Expr.t option
-        ; update : Expr.t option
-        ; body   : t
-        }
-    | Goto of Identifier.t
-    | Continue
-    | Break
-    | Return of Expr.t option
-  [@@deriving sexp]
-end
-
-module type S_compound_stm = sig
-  type stm
-
-  (* C99 style *)
-  type t = [`Stm of stm | `Decl of Decl.t] list [@@deriving sexp]
-end
-
-module rec Stm : S_stm
-  with type com := Compound_stm.t = struct
-  type t =
-    | Label of Label.t * t
-    | Expr of Expr.t option
-    | Compound of Compound_stm.t
-    | If of
-        { cond : Expr.t
-        ; t_branch : t
-        ; f_branch : t option
-        }
-    | Switch of Expr.t * t
-    | While of Expr.t * t
-    | Do_while of t * Expr.t
-    | For of
-        { init   : Expr.t option
-        ; cond   : Expr.t option
-        ; update : Expr.t option
-        ; body   : t
-        }
-    | Goto of Identifier.t
-    | Continue
-    | Break
-    | Return of Expr.t option
-  [@@deriving sexp]
-  ;;
-end
-and Compound_stm : S_compound_stm
-  with type stm := Stm.t = struct
-  type t = [`Stm of Stm.t | `Decl of Decl.t] list [@@deriving sexp]
-end
+module rec Stm
+  : S_stm with type com  := Compound_stm.t
+           and type expr := Expr.t
+           and type lbl  := Label.t =
+  Parametric.Stm.Make (struct
+    module Com  = Compound_stm
+    module Expr = Expr
+    module Lbl  = Label
+  end)
+and Compound_stm
+  : S_compound_stm with type decl := Decl.t
+                    and type stm  := Stm.t =
+  Parametric.Compound_stm.Make (struct
+    module Decl = Decl
+    module Stm  = Stm
+  end)
 
 module Function_def = struct
   type t =

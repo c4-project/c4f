@@ -208,6 +208,51 @@ module type S_label = sig
   include Ast_node with type t := t
 end
 
+(** Signature of compound statements *)
+module type S_compound_stm = sig
+  type decl (** Type of declarations *)
+  type stm  (** Type of statements *)
+
+  (* TODO(@MattWindsor91): this is the C99 definition of compound
+     statements, but everything else targets C89. *)
+  type t = [`Stm of stm | `Decl of decl] list [@@deriving sexp]
+
+  include Ast_node with type t := t
+end
+
+(** Signature of statements *)
+module type S_stm = sig
+  type com  (** Type of compound statements *)
+  type expr (** Type of expressions *)
+  type lbl  (** Type of labels *)
+
+  type t =
+    | Label of lbl * t
+    | Expr of expr option
+    | Compound of com
+    | If of
+        { cond : expr
+        ; t_branch : t
+        ; f_branch : t option
+        }
+    | Switch of expr * t
+    | While of expr * t
+    | Do_while of t * expr
+    | For of
+        { init   : expr option
+        ; cond   : expr option
+        ; update : expr option
+        ; body   : t
+        }
+    | Goto of Identifier.t
+    | Continue
+    | Break
+    | Return of expr option
+  [@@deriving sexp]
+
+  include Ast_node with type t := t
+end
+
 (** Signature of type specifiers *)
 module type S_type_spec = sig
   type su (** Type of struct-or-union specifiers *)

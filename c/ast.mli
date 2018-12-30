@@ -107,47 +107,13 @@ module Decl : S_g_decl
 
 module Label : S_label with type expr := Expr.t
 
-module type S_stm = sig
-  type com
-
-  type t =
-    | Label of Label.t * t
-    | Expr of Expr.t option
-    | Compound of com
-    | If of
-        { cond : Expr.t
-        ; t_branch : t
-        ; f_branch : t option
-        }
-    | Switch of Expr.t * t
-    | While of Expr.t * t
-    | Do_while of t * Expr.t
-    | For of
-        { init   : Expr.t option
-        ; cond   : Expr.t option
-        ; update : Expr.t option
-        ; body   : t
-        }
-    | Goto of Identifier.t
-    | Continue
-    | Break
-    | Return of Expr.t option
-  [@@deriving sexp]
-  ;;
-end
-
-module type S_compound_stm = sig
-  type stm
-
-  (* TODO(@MattWindsor91): this is the C99 definition of compound
-     statements, but everything else (including the parser!) targets
-     C89. *)
-
-  type t = [`Stm of stm | `Decl of Decl.t] list [@@deriving sexp]
-end
-
-module rec Stm : (S_stm with type com := Compound_stm.t)
-and Compound_stm : (S_compound_stm with type stm := Stm.t)
+module rec Stm
+  : (S_stm with type com  := Compound_stm.t
+            and type expr := Expr.t
+            and type lbl  := Label.t)
+and Compound_stm
+  : (S_compound_stm with type decl := Decl.t
+                     and type stm := Stm.t)
 ;;
 
 module Function_def : sig
