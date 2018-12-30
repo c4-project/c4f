@@ -69,6 +69,12 @@ let get =
 module Other = struct
   open Command.Param
 
+  let flag_to_enum_choice (enum : 'a) (str : string) ~(doc : string)
+    : 'a option t =
+    (map ~f:(Fn.flip Option.some_if enum)
+       (flag str no_arg ~doc))
+  ;;
+
   let compiler_id_type = Arg_type.create Id.of_string
 
   let compiler_id_or_arch =
@@ -87,14 +93,10 @@ module Other = struct
 
   let file_type =
     choose_one
-      [ (map ~f:(Fn.flip Option.some_if `C)
-           (flag "c"
-              no_arg
-              ~doc: "if given, assume input is C (and compile it)"))
-      ; (map ~f:(Fn.flip Option.some_if `Assembly)
-           (flag "asm"
-              no_arg
-              ~doc: "if given, assume input is assembly"))
+      [ flag_to_enum_choice `C "c"
+          ~doc:"if given, assume input is C (and compile it)"
+      ; flag_to_enum_choice `Assembly "asm"
+          ~doc:"if given, assume input is assembly"
       ]
       ~if_nothing_chosen:(`Default_to `Infer)
   ;;

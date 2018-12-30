@@ -27,62 +27,57 @@ open Core_kernel
 open Lib
 open Utils
 
-(** [warn_if_not_tracking_symbols o c_symbols] prints a warning on [o]
-    if [c_symbols] is empty.  The warning explains that, without any
-    C symbols to track, act may make incorrect assumptions. *)
 val warn_if_not_tracking_symbols
   :  Output.t
   -> string list
   -> unit
-;;
+(** [warn_if_not_tracking_symbols o c_symbols] prints a warning on [o]
+    if [c_symbols] is empty.  The warning explains that, without any
+    C symbols to track, act may make incorrect assumptions. *)
 
+val temp_file : string -> string
 (** [temp_file suffix] generates a temporary file name suitable for
    act commands. *)
-val temp_file : string -> string
 
-(** [get_target cfg target] processes a choice between compiler ID
-    and architecture (emits clause); if the input is a compiler
-    ID, the compiler is retrieved from [cfg]. *)
+val decide_if_c : string option -> [> `C | `Infer] -> bool
+(** [decide_if_c infile filetype] decides whether [infile] is a C
+    file---from its extension if [filetype] is [`Infer], or
+    by whether or not [filetype] is [`C]. *)
+
 val get_target
   :  Config.M.t
   -> [< `Id of Id.t | `Arch of string list ]
   -> ( [> `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
          Or_error.t )
-;;
+(** [get_target cfg target] processes a choice between compiler ID
+    and architecture (emits clause); if the input is a compiler
+    ID, the compiler is retrieved from [cfg]. *)
 
-(** [arch_of_target target] gets the architecture (emits clause)
-   associated with a target (either a compiler spec or emits
-   clause). *)
 val arch_of_target
   :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
   -> string list
-;;
-
-(** [runner_of_target target] gets the [Asm_job.Runner]
+(** [arch_of_target target] gets the architecture (emits clause)
    associated with a target (either a compiler spec or emits
    clause). *)
+
 val runner_of_target
   :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
   -> (module Asm_job.Runner) Or_error.t
-;;
+(** [runner_of_target target] gets the [Asm_job.Runner]
+   associated with a target (either a compiler spec or emits
+   clause). *)
 
+val maybe_run_compiler
+  :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
+  -> [> `Assembly | `C | `Infer]
+  -> string option
+  -> string option Or_error.t
 (** [maybe_run_compiler target file_type file] compiles [file] if
    [file_type] is [`C], or [file_type] is [`Infer] and the filename
    ends with `.c`.  It uses [target] to compile; compilation, where
    required, fails if [target] is not a compiler spec, or [infile] is
    [None]. *)
-val maybe_run_compiler
-  :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
-  -> [< `Assembly | `C | `Infer]
-  -> string option
-  -> string option Or_error.t
-;;
 
-(** [lift_command ?compiler_predicate ?machine_predicate
-   ?sanitiser_passes ?with_compiler_tests ~f standard_args] lifts a
-   command body [f], performing common book-keeping such as loading
-   and testing the configuration, creating an [Output.t], and printing
-   top-level errors. *)
 val lift_command
   :  ?compiler_predicate:Compiler.Property.t Blang.t
   -> ?machine_predicate:Machine.Property.t Blang.t
@@ -91,12 +86,12 @@ val lift_command
   -> f:(Output.t -> Config.M.t -> unit Or_error.t)
   -> Standard_args.t
   -> unit
-;;
+(** [lift_command ?compiler_predicate ?machine_predicate
+   ?sanitiser_passes ?with_compiler_tests ~f standard_args] lifts a
+   command body [f], performing common book-keeping such as loading
+   and testing the configuration, creating an [Output.t], and printing
+   top-level errors. *)
 
-(** [litmusify ?output_format o passes inp outp symbols
-   spec_or_emits] is a thin wrapper around [Asm_job]'s litmusify mode
-   that handles finding the right job runner, printing warnings, and
-   supplying the maximal pass set. *)
 val litmusify
   :  ?output_format:Asm_job.Litmus_format.t
   -> Output.t
@@ -106,4 +101,7 @@ val litmusify
   -> string list
   -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list]
   -> (string, string) List.Assoc.t Or_error.t
-;;
+(** [litmusify ?output_format o passes inp outp symbols
+   spec_or_emits] is a thin wrapper around [Asm_job]'s litmusify mode
+   that handles finding the right job runner, printing warnings, and
+   supplying the maximal pass set. *)

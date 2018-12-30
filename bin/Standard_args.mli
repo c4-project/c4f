@@ -50,35 +50,37 @@ val get : t Command.Param.t
     as common as the standard ones, but are still used in more than
     one sub-command. *)
 module Other : sig
-  (** [compiler_id_or_arch] defines a choice between supplying a
-      compiler ID, or a direct architecture. *)
+  val flag_to_enum_choice
+    : 'a -> string -> doc:string -> 'a option Command.Param.t
+  (** [flag_to_enum_choice enum str ~doc] is a helper for implementing
+     choose-one choices between multiple flags where each flag [str]
+      corresponds to an enum variant [enum]. *)
+
   val compiler_id_or_arch
     : [> `Arch of string list | `Id of Id.t] Command.Param.t
-  ;;
+  (** [compiler_id_or_arch] defines a choice between supplying a
+      compiler ID, or a direct architecture. *)
 
+  val file_type : [> `Assembly | `C | `Infer] Command.Param.t
   (** [file_type] defines a parameter for specifying the file type of
       a single input file. *)
-  val file_type : [> `Assembly | `C | `Infer] Command.Param.t
 
+  val c_symbols : string list Command.Param.t
   (** [c_symbols] defines a parameter for collecting a list of
       C symbols to track during sanitisation. *)
-  val c_symbols : string list Command.Param.t
 
-  (** [sanitiser_passes] defines a parameter for collecting a selector
-     predicate for sanitiser passes. *)
   val sanitiser_passes
     : Sanitiser_pass.Selector.t Blang.t option Command.Param.t
-  ;;
+  (** [sanitiser_passes] defines a parameter for collecting a selector
+     predicate for sanitiser passes. *)
 
-  (** [compiler_predicate] defines a parameter for collecting a
-      filtering predicate for compilers. *)
   val compiler_predicate
     : Compiler.Property.t Blang.t option Command.Param.t
-  ;;
+  (** [compiler_predicate] defines a parameter for collecting a
+      filtering predicate for compilers. *)
 
-  (** [machine_predicate] defines a parameter for collecting a
-      filtering predicate for machines. *)
   val machine_predicate
     : Machine.Property.t Blang.t option Command.Param.t
-  ;;
+  (** [machine_predicate] defines a parameter for collecting a
+      filtering predicate for machines. *)
 end

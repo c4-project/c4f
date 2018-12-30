@@ -46,11 +46,12 @@ let asm_file is_c maybe_infile =
   if is_c then Some (temp_file "s") else maybe_infile
 ;;
 
-let decide_if_c infile = function
+let decide_if_c (infile : string option)
+  : [> `C | `Infer] -> bool = function
   | `C -> true
-  | `Assembly -> false
   | `Infer ->
     Option.exists infile ~f:(My_filename.has_extension ~ext:"c")
+  | _ -> false
 ;;
 
 let get_target cfg = function

@@ -25,10 +25,19 @@
 open Core
 open Utils
 
-let run ~infile ~outfile _o _cfg =
-  let is = Io.In_source.of_option infile in
-  let os = Io.Out_sink.of_option outfile in
-  ignore outfile;
+let run_c is os =
+  Or_error.(
+    C.Frontend.Normal.load_from_isrc is
+    >>= fun ast ->
+    Io.Out_sink.with_output os
+      ~f:(fun _ oc ->
+          Fmt.pf (Format.formatter_of_out_channel oc) "%a@." C.Ast.Translation_unit.pp ast;
+          Result.ok_unit
+        )
+  )
+;;
+
+let run_litmus is os =
   Or_error.(
     C.Frontend.Litmus.load_from_isrc is
     >>= fun ast ->
@@ -38,6 +47,13 @@ let run ~infile ~outfile _o _cfg =
           Fmt.pf (Format.formatter_of_out_channel oc) "%a@." C.Ast.Litmus.pp
         )
   )
+;;
+
+let run file_type ~infile ~outfile _o _cfg =
+  let is = Io.In_source.of_option infile in
+  let os = Io.Out_sink.of_option outfile in
+  let is_c = Common.decide_if_c infile file_type in
+  (if is_c then run_c else run_litmus) is os
 ;;
 
 let command =
@@ -50,10 +66,18 @@ let command =
         flag "output"
           (optional file)
           ~doc: "FILE the explanation output file (default: stdout)"
+      and file_type =
+        choose_one
+          [ Standard_args.Other.flag_to_enum_choice `C "c"
+              ~doc:"if given, assume input is raw C"
+          ; Standard_args.Other.flag_to_enum_choice `Litmus "litmus"
+              ~doc:"if given, assume input is a C litmus test"
+          ]
+          ~if_nothing_chosen:(`Default_to `Infer)
       and infile = anon (maybe ("FILE" %: file)) in
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run ~infile ~outfile)
+          ~f:(run file_type ~infile ~outfile)
     ]
 ;;

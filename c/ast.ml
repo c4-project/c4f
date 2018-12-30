@@ -19,9 +19,7 @@ open Ast_basic
 
 include Ast_intf
 
-
 let pp_assign_rhs (pp : 'a Fmt.t) : 'a Fmt.t = Fmt.(prefix (unit "@ =@ ") pp)
-
 
 let pp_opt_assign (ppl : 'l Fmt.t) (ppr : 'r Fmt.t)
   : ('l * 'r option) Fmt.t =
@@ -747,6 +745,7 @@ module Function_def = struct
         pp_oldstyle_decl_list decls
         Compound_stm.pp body
     )
+  ;;
 end
 
 module External_decl = struct
