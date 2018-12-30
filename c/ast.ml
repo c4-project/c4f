@@ -772,6 +772,7 @@ module Litmus_lang : Litmus.Ast.Basic
     module Statement = struct
       include Compound_stm.Elt
       let empty () = `Stm (Stm.Expr None)
+      let make_uniform = Travesty.T_list.right_pad ~padding:(empty ())
     end
 
     module Program = struct

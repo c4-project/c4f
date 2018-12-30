@@ -88,4 +88,8 @@ module Make (B : Basic_with_modules)
         (coerced_flags stm symbol_table)
         (new_flags stm symbol_table)
     ;;
+
+    let make_uniform : t list list -> t list list =
+      Travesty.T_list.right_pad ~padding:(empty ())
+    ;;
   end

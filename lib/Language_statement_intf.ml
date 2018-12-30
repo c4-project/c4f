@@ -121,4 +121,8 @@ module type S = sig
     -> Abstract.Symbol.Table.t
     -> Extended_flag.Set.t
   ;;
+
+  val make_uniform : t list list -> t list list
+  (** [make_uniform listings] pads each listing in [listing] to the
+      same length, using [empty ()] as the filler. *)
 end

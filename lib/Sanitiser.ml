@@ -107,8 +107,6 @@ module Make (B : Basic)
     in PC_listings_cont.map ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f) xs
   ;;
 
-  let make_programs_uniform nop ps = right_pad ~padding:nop ps
-
   let symbol_from_string string =
     Ctx.Monadic.return
       (Result.of_option
@@ -518,11 +516,12 @@ module Make (B : Basic)
     { Output.Program.listing; symbol_table; warnings }
   ;;
 
-  let build_output rough_listings =
+  let make_programs_uniform ps = right_pad ~padding:(Lang.Statement.empty ()) ps
+
+  let build_output (rough_programs : Lang.Program.t Program_container.t) =
     let open Ctx.Let_syntax in
-    let listings =
-      make_programs_uniform (Lang.Statement.empty ()) rough_listings
-    in
+    (* TODO: this should be the same as Language.make_uniform *)
+    let listings = make_programs_uniform rough_programs in
     let%bind programs =
       Ctx_Pcon.mapi_m ~f:build_single_program_output listings
     in

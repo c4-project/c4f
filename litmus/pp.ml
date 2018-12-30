@@ -130,15 +130,15 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
               Error.pp e)
     ;;
 
-    let get_listings (progs : Ast.Lang.Program.t list)
+    let get_uniform_listings (progs : Ast.Lang.Program.t list)
         : Ast.Lang.Statement.t list list =
       progs
       |> List.map ~f:Ast.Lang.Program.listing
-      |> Travesty.T_list.right_pad ~padding:(Ast.Lang.Statement.empty ())
+      |> Ast.Lang.Statement.make_uniform
     ;;
 
     let pp_programs_inner : Ast.Lang.Program.t list Fmt.t =
-      Fmt.using get_listings pp_listings
+      Fmt.using get_uniform_listings pp_listings
   end
   include Make_common (struct
       module Ast = Ast

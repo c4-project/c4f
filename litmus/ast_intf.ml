@@ -41,9 +41,9 @@ module type Basic = sig
     type t [@@deriving sexp]
     include Pretty_printer.S with type t := t
 
-    val empty : unit -> t
-    (** [empty ()] is a blank statement, used to fill up non-uniform
-       Litmus tests when pretty-printing them. *)
+    val make_uniform : t list list -> t list list
+    (** [make_uniform listings] pads each listing in [listing] to the
+        same length. *)
   end
 
   (** Abstract type of programs. *)
