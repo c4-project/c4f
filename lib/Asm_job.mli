@@ -80,23 +80,21 @@ val warn : output -> Format.formatter -> unit
 
 (** [Runner] is the signature of job runners. *)
 module type Runner = sig
-  (** [litmusify ?output_format t] runs a litmusify job using [t].
-      If [output_format] is given, it overrides the default
-      ([Litmus_format.default]). *)
   val litmusify
     :  ?output_format:Litmus_format.t
     -> t
-    -> output Or_error.t
-  ;;
-
-  (** [explain ?output_format t] runs an explain job over [t].
+    -> (string option * output) Or_error.t
+  (** [litmusify ?output_format t] runs a litmusify job using [t].
       If [output_format] is given, it overrides the default
-      ([Output.default]). *)
+      ([Litmus_format.default]). *)
+
   val explain
     :  ?output_format:Explain_format.t
     -> t
-    -> output Or_error.t
-  ;;
+    -> (string option * output) Or_error.t
+  (** [explain ?output_format t] runs an explain job over [t].
+      If [output_format] is given, it overrides the default
+      ([Output.default]). *)
 end
 
 (** [Runner_deps] is a signature bringing together the modules we

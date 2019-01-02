@@ -90,6 +90,6 @@ let run t arch ~path ~sink =
 
 let run_and_load_results t arch ~input_path ~output_path =
   let open Or_error.Let_syntax in
-  let%bind () = run t arch ~path:input_path ~sink:(`File output_path) in
+  let%bind (_path, ()) = run t arch ~path:input_path ~sink:(Io.Out_sink.file output_path) in
   Herd_output.load ~path:output_path
 ;;

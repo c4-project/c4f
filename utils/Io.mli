@@ -25,81 +25,76 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
+include module type of Io_intf
+
 (** [Dir] contains high-ish-level operations on directories. *)
 module Dir : sig
-  (** [get_files ?compare ?ext path] wraps [Sys.readfiles] with error
-     handling, optional extension filtering, and path sorting using
-      [compare] (which, by default, is ascending collation). *)
   val get_files
     :  ?compare:(string -> string -> int)
     -> ?ext:string
     -> string
     -> string list Or_error.t
-  ;;
-end
-
-(** [CommonS] describes operations common to both input sources and
-   output sinks. *)
-module type CommonS = sig
-  type t
-
-  (** [of_option n] treats [n] as a filename if it's [Some], and
-      as a standard stream otherwise. *)
-  val of_option : string option -> t;;
-
-  (** [file t] returns [Some f] if [t] is a file with path [f],
-      and [None] otherwise. *)
-  val file : t -> string option;;
+  (** [get_files ?compare ?ext path] wraps [Sys.readfiles] with error
+     handling, optional extension filtering, and path sorting using
+      [compare] (which, by default, is ascending collation). *)
 end
 
 (** [In_source] describes input sources. *)
 module In_source : sig
-  type t =
-    [ `File of string
-    | `Stdin
-    ]
+  type t
+  (** The opaque type of input sources. *)
 
-  include Pretty_printer.S with type t := t
-  include Sexpable.S with type t := t
-  include CommonS with type t := t
+  val file : string -> t
+  (** [file fname] creates an input source for a given filename. *)
 
-  (** [with_input ~f iname] runs [f] connected to the input channel
-      pointed to by [iname]. *)
+  val stdin : t
+  (** [stdin] is the standard input source. *)
+
+  include Common with type t := t
+
   val with_input
-    :  f:(t -> In_channel.t -> 'a Or_error.t)
-    -> t
+    :  t
+    -> f:(t -> In_channel.t -> 'a Or_error.t)
     -> 'a Or_error.t
+  (** [with_input iname ~f] runs [f] connected to the input channel
+      pointed to by [iname]. *)
 end
 
 (** [Out_sink] describes output sinks. *)
 module Out_sink : sig
-  type t =
-    [ `File of string
-    | `Stdout
-    ]
+  type t
+  (** The opaque type of output sinks. *)
 
-  include Pretty_printer.S with type t := t
-  include Sexpable.S with type t := t
-  include CommonS with type t := t
+  val file : string -> t
+  (** [file fname] creates an output sink for a given filename. *)
 
-  (** [with_output ~f oname] runs [f] connected to the output channel
-      pointed to by [oname]. *)
+  val stdout : t
+  (** [stdout] is the standard output sink. *)
+
+  val temp : prefix:string -> ext:string -> t
+  (** [temp ~prefix ~ext] creates an output sink for a temporary
+      file with the given prefix and extension. *)
+
+  include Common with type t := t
+
   val with_output
-    :  f:(t -> Out_channel.t -> 'a Or_error.t)
-    -> t
-    -> 'a Or_error.t
+    :  t
+    -> f:(t -> Out_channel.t -> 'a Or_error.t)
+    -> (string option * 'a) Or_error.t
+  (** [with_output oname ~f] runs [f] connected to the output channel
+      pointed to by [oname].  It returns both the output filename
+      (if any) and the result of [f]. *)
 end
 
-(** [with_input_and_output f i o] runs [f] with the appropriate
-    channels pointed to by [i] and [o]. *)
 val with_input_and_output
-  :  f:(In_source.t -> In_channel.t ->
+  :  In_source.t
+  -> Out_sink.t
+  -> f:(In_source.t -> In_channel.t ->
         Out_sink.t -> Out_channel.t ->
         'a Or_error.t)
-  -> In_source.t
-  -> Out_sink.t
-  -> 'a Or_error.t
-;;
+  -> (string option * 'a) Or_error.t
+(** [with_input_and_output i o ~f] runs [f] with the appropriate
+    channels pointed to by [i] and [o]. *)
 
-(** [print_bool b] prints the truth value of [b] to stdout. *)
 val print_bool : bool -> unit
+(** [print_bool b] prints the truth value of [b] to stdout. *)

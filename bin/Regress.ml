@@ -52,8 +52,8 @@ let regress_run_asm ((module L) : (module Asm_job.Runner))
   Out_channel.flush stdout;
 
   let input =
-    { Asm_job.inp = `File (path ^/ file)
-    ; outp = `Stdout
+    { Asm_job.inp = Io.In_source.file (path ^/ file)
+    ; outp = Io.Out_sink.stdout
     ; passes
     ; symbols = spec.cvars
     }

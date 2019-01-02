@@ -34,6 +34,7 @@ let run_c is os =
           Fmt.pf (Format.formatter_of_out_channel oc) "%a@." C.Ast.Translation_unit.pp ast;
           Result.ok_unit
         )
+    >>| snd
   )
 ;;
 
@@ -46,6 +47,7 @@ let run_litmus is os =
           ast |> C.Ast.Litmus.validate >>|
           Fmt.pf (Format.formatter_of_out_channel oc) "%a@." C.Ast.Litmus.pp
         )
+    >>| snd
   )
 ;;
 

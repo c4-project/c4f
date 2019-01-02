@@ -197,13 +197,13 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
       (fun () ->
          Asm_job.(
            let input =
-             { inp     = `File (P_file.asm_path fs)
-             ; outp    = `File (P_file.lita_path fs)
+             { inp     = Io.In_source.file (P_file.asm_path fs)
+             ; outp    = Io.Out_sink.file (P_file.lita_path fs)
              ; passes  = sanitiser_passes
              ; symbols = List.map ~f:snd locations
              }
            in
-           let%map output = R.litmusify input in
+           let%map (_, output) = R.litmusify input in
            warn output o.wf;
            symbol_map output
          ))

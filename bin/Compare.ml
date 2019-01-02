@@ -24,6 +24,7 @@
 
 open Core
 open Lib
+open Utils
 
 let compile spec ~c_file =
   let open Or_error.Let_syntax in
@@ -38,8 +39,8 @@ let litmusify o passes spec ~asm_file =
   Common.litmusify o
     ~output_format:Asm_job.Litmus_format.Programs_only
     passes
-    (`File asm_file)
-    `Stdout
+    (Io.In_source.file asm_file)
+    Io.Out_sink.stdout
     []
     spec
 ;;

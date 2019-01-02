@@ -56,7 +56,7 @@ let run file_type compiler_id_or_arch output_format c_symbols
       ; symbols = c_symbols
       }
     in
-    let%map out = Runner.explain ?output_format input in
+    let%map (_, out) = Runner.explain ?output_format input in
     Asm_job.warn out o.Output.wf;
     print_symbol_map (Asm_job.symbol_map out)
   )

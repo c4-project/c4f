@@ -50,10 +50,10 @@ module Make (B : Basic) : S with type t := B.t = struct
 
   let load_from_isrc =
     Io.In_source.with_input
-      ~f:(fun is ic -> load_from_ic ?path:(Io.In_source.file is) ic)
+      ~f:(fun is ic -> load_from_ic ?path:(Io.In_source.to_file is) ic)
   ;;
 
-  let load ~path = load_from_isrc (`File path)
+  let load ~path = load_from_isrc (Io.In_source.file path)
 end
 
 module type Basic_chain = sig

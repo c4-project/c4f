@@ -137,7 +137,7 @@ let litmusify ?output_format (o : Output.t)
     ; symbols
     }
   in
-  let%map output =
+  let%map (_, output) =
     Or_error.tag ~tag:"While translating assembly to litmus"
       (Runner.litmusify ?output_format input)
   in

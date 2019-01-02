@@ -53,7 +53,7 @@ let run_herd cfg target lit_file outfile =
   let sink = Io.Out_sink.of_option outfile in
   let%bind herd = make_herd cfg in
   let arch = Herd.Assembly (Common.arch_of_target target) in
-  Herd.run herd arch ~path ~sink
+  let%map (_, ()) = Herd.run herd arch ~path ~sink in ()
 ;;
 
 let lit_file use_herd maybe_outfile =
@@ -74,7 +74,8 @@ let run file_type use_herd compiler_id_or_emits
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
   let%bind _ = run_litmusify o passes target c_symbols asm_file lit_file in
-  if use_herd then run_herd cfg target lit_file outfile else return ()
+  Travesty.T_or_error.when_m use_herd
+    ~f:(fun () -> run_herd cfg target lit_file outfile)
 ;;
 
 let command =

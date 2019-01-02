@@ -1,25 +1,26 @@
 (* This file is part of 'act'.
 
-Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 open Core
 open Utils
@@ -90,12 +91,12 @@ module type Runner = sig
   val litmusify
     :  ?output_format:Litmus_format.t
     -> t
-    -> output Or_error.t
+    -> (string option * output) Or_error.t
   ;;
   val explain
     :  ?output_format:Explain_format.t
     -> t
-    -> output Or_error.t
+    -> (string option * output) Or_error.t
   ;;
 end
 
@@ -109,12 +110,8 @@ module Make_runner (B : Runner_deps) : Runner = struct
   module SS = B.Single_sanitiser
   module E  = B.Explainer
 
-  let name_of isrc =
-    Option.value (Io.In_source.file isrc) ~default:"(stdin)"
-  ;;
-
   let parse isrc inp =
-    let iname = name_of isrc in
+    let iname = Io.In_source.to_string isrc in
     Or_error.tag_arg
       (B.Frontend.load_from_ic ~path:iname inp)
       "Error while parsing assembly" iname String.sexp_of_t
@@ -249,7 +246,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
 
   let run ~f t =
     let open Result.Let_syntax in
-    let name = Filename.basename (name_of t.inp) in
+    let name = Filename.basename (Io.In_source.to_string t.inp) in
     let%bind asm = Io.In_source.with_input ~f:parse t.inp in
     let%bind symbols = stringify_symbols t.symbols in
     Io.Out_sink.with_output t.outp

@@ -71,7 +71,7 @@ val run
   -> arch
   -> path:string
   -> sink:Io.Out_sink.t
-  -> unit Or_error.t
+  -> (string option * unit) Or_error.t
 ;;
 
 (** [run_and_load_results t arch ~input_path ~output_path] behaves

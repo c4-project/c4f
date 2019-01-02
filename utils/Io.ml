@@ -23,6 +23,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
 
+include Io_intf
+
 module Dir = struct
   let default_sort_compare = Core_extended.Extended_string.collate
 
@@ -66,40 +68,39 @@ module Dir = struct
     Array.to_list with_ext
 end
 
-module type CommonS = sig
-  type t
-  val of_option : string option -> t;;
-  val file : t -> string option;;
-end
-
 module In_source = struct
   type t =
-    [ `File of string
-    | `Stdin
-    ] [@@deriving sexp]
-
-  let pp f = function
-    | `File s -> String.pp f s
-    | `Stdin  -> String.pp f "(stdin)"
+    | File of string
+    | Stdin
+  [@@deriving sexp, variants]
   ;;
 
-  let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdin;;
-
-  let file = function
-    | `File f -> Some f
-    | `Stdin -> None
+  let to_string : t -> string = function
+    | File s -> s
+    | Stdin  -> "(stdin)"
   ;;
 
-  let with_input ~f src =
+  let pp : t Fmt.t = Fmt.of_to_string to_string
+
+  let of_option : string option -> t =
+    Option.value_map ~f:file ~default:stdin
+  ;;
+
+  let to_file : t -> string option = function
+    | File f -> Some f
+    | Stdin  -> None
+  ;;
+
+  let with_input (src : t) ~f =
     Or_error.(
       match src with
-      | `File s ->
+      | File s ->
         tag_arg
           (try_with_join (fun _ -> In_channel.with_file s ~f:(f src)))
           "While reading from file:"
           s
           [%sexp_of: string]
-      | `Stdin ->
+      | Stdin ->
         tag ~tag:"While reading from standard input:"
           (try_with_join (fun _ -> f src In_channel.stdin))
     )
@@ -108,37 +109,62 @@ end
 
 module Out_sink = struct
   type t =
-    [ `File of string
-    | `Stdout
-    ] [@@deriving sexp]
-
-  let pp f = function
-    | `File s -> String.pp f s
-    | `Stdout -> String.pp f "(stdout)"
+    | File of string
+    | Stdout
+    | Temp of { prefix : string
+              ; ext    : string
+              }
+  [@@deriving sexp, variants]
   ;;
 
-  let of_option = Option.value_map ~f:(fun s -> `File s) ~default:`Stdout
-
-  let file = function
-    | `File f -> Some f
-    | `Stdout -> None
+  let to_string : t -> string = function
+    | File s -> s
+    | Stdout -> "(stdout)"
+    | Temp _ -> "(temp)"
   ;;
 
-  let with_output ~f snk =
-    Or_error.(
-      match snk with
-      | `File s ->
-        tag_arg
-          (try_with_join (fun _ -> Out_channel.with_file s ~f:(f snk)))
-          "While writing to file:"
-          s
-          [%sexp_of: string]
-      | `Stdout ->
-        try_with_join (fun _ -> f snk Out_channel.stdout)
-    )
+  let pp : t Fmt.t = Fmt.of_to_string to_string
+
+  let of_option : string option -> t =
+    Option.value_map ~f:file ~default:stdout
+  ;;
+
+  let to_file = function
+    | File f -> Some f
+    | Stdout -> None
+    | Temp _ -> None
+  ;;
+
+  let with_file_output f filename =
+    let open Or_error in
+    let open Or_error.Let_syntax in
+    let%map result =
+      tag_arg
+        (try_with_join (fun _ -> Out_channel.with_file filename ~f))
+        "While writing to file:"
+        filename
+        [%sexp_of: string]
+    in (Some filename, result)
+  ;;
+
+  let with_stdout_output f =
+    let open Or_error in
+    let open Or_error.Let_syntax in
+    let%map result = try_with_join (fun _ -> f Out_channel.stdout)
+    in (None, result)
+  ;;
+
+  let with_output (snk : t) ~f : (string option * 'a) Or_error.t =
+    let fs = f snk in
+    match snk with
+    | File s -> with_file_output fs s
+    | Stdout -> with_stdout_output fs
+    | Temp { prefix; ext } ->
+      with_file_output fs (Filename.temp_file prefix ext)
+  ;;
 end
 
-let with_input_and_output ~f src snk =
+let with_input_and_output src snk ~f =
   In_source.with_input src
     ~f:(fun isrc' ic -> Out_sink.with_output snk ~f:(f isrc' ic))
 ;;
