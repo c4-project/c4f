@@ -75,12 +75,16 @@ module Out_sink : sig
   (** [temp ~prefix ~ext] creates an output sink for a temporary
       file with the given prefix and extension. *)
 
+  val as_in_source : t -> In_source.t Or_error.t
+  (** [as_in_source sink] tries to get an input source pointing to the
+      same data as [sink]. *)
+
   include Common with type t := t
 
   val with_output
     :  t
     -> f:(t -> Out_channel.t -> 'a Or_error.t)
-    -> (string option * 'a) Or_error.t
+    -> (Fpath.t option * 'a) Or_error.t
   (** [with_output oname ~f] runs [f] connected to the output channel
       pointed to by [oname].  It returns both the output filename
       (if any) and the result of [f]. *)
@@ -100,7 +104,7 @@ val with_input_and_output
   -> f:(In_source.t -> In_channel.t ->
         Out_sink.t -> Out_channel.t ->
         'a Or_error.t)
-  -> (string option * 'a) Or_error.t
+  -> (Fpath.t option * 'a) Or_error.t
 (** [with_input_and_output i o ~f] runs [f] with the appropriate
     channels pointed to by [i] and [o]. *)
 

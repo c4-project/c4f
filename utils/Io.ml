@@ -125,7 +125,7 @@ module In_source = struct
     | Stdin  -> None
   ;;
 
-  let to_file_err (src : t) :Fpath.t Or_error.t =
+  let to_file_err (src : t) : Fpath.t Or_error.t =
     Result.of_option (to_file src)
       ~error:(Error.createf "Must read from a file, got %s" (to_string src))
   ;;
@@ -151,16 +151,22 @@ module Out_sink = struct
   type t =
     | File of Fpath.t
     | Stdout
-    | Temp of { prefix : string
-              ; ext    : string
-              }
   [@@deriving variants]
+  ;;
+
+  let temp ~(prefix : string) ~(ext : string) : t =
+    file (Fpath.v (Filename.temp_file prefix ext))
   ;;
 
   let to_string : t -> string = function
     | File s -> Fpath.to_string s
     | Stdout -> "(stdout)"
-    | Temp _ -> "(temp)"
+  ;;
+
+  let as_in_source : t -> In_source.t Or_error.t = function
+    | File f -> Or_error.return (In_source.file f)
+    | x ->
+      Or_error.errorf "Can't use %s as an input source" (to_string x)
   ;;
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
@@ -178,7 +184,6 @@ module Out_sink = struct
   let to_file : t -> Fpath.t option = function
     | File f -> Some f
     | Stdout -> None
-    | Temp _ -> None
   ;;
 
   let to_file_err (src : t) : Fpath.t Or_error.t =
@@ -186,16 +191,17 @@ module Out_sink = struct
       ~error:(Error.createf "Must write to a file, got %s" (to_string src))
   ;;
 
-  let with_file_output f filename =
+  let with_file_output f (fpath : Fpath.t) =
     let open Or_error in
     let open Or_error.Let_syntax in
+    let fpath_raw = Fpath.to_string fpath in
     let%map result =
       tag_arg
-        (try_with_join (fun _ -> Out_channel.with_file filename ~f))
+        (try_with_join (fun _ -> Out_channel.with_file fpath_raw ~f))
         "While writing to file:"
-        filename
+        fpath_raw
         [%sexp_of: string]
-    in (Some filename, result)
+    in (Some fpath, result)
   ;;
 
   let with_stdout_output f =
@@ -205,17 +211,18 @@ module Out_sink = struct
     in (None, result)
   ;;
 
-  let with_output (snk : t) ~f : (string option * 'a) Or_error.t =
+  let with_output (snk : t) ~f : (Fpath.t option * 'a) Or_error.t =
     let fs = f snk in
     match snk with
-    | File fpath -> with_file_output fs (Fpath.to_string fpath)
+    | File fpath -> with_file_output fs fpath
     | Stdout -> with_stdout_output fs
-    | Temp { prefix; ext } ->
-      with_file_output fs (Filename.temp_file prefix ext)
   ;;
 end
 
-let with_input_and_output src snk ~f =
+let with_input_and_output
+    (src : In_source.t) (snk : Out_sink.t)
+    ~f
+  : (Fpath.t option * 'a) Or_error.t =
   In_source.with_input src
     ~f:(fun isrc' ic -> Out_sink.with_output snk ~f:(f isrc' ic))
 ;;

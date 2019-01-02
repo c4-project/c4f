@@ -91,12 +91,12 @@ module type Runner = sig
   val litmusify
     :  ?output_format:Litmus_format.t
     -> t
-    -> (string option * output) Or_error.t
+    -> (Fpath.t option * output) Or_error.t
   ;;
   val explain
     :  ?output_format:Explain_format.t
     -> t
-    -> (string option * output) Or_error.t
+    -> (Fpath.t option * output) Or_error.t
   ;;
 end
 
@@ -218,7 +218,8 @@ module Make_runner (B : Runner_deps) : Runner = struct
       (symbols : LS.Symbol.t list)
       (program : LS.Program.t)
       (_osrc   : Io.Out_sink.t)
-      (outp    : Out_channel.t) =
+      (outp    : Out_channel.t)
+    : output Or_error.t =
     let open Or_error.Let_syntax in
     let%map san = SS.sanitise ~passes ~symbols program in
     let program = SS.Output.programs san in
@@ -244,7 +245,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
     |> Or_error.combine_errors
   ;;
 
-  let run ~f t =
+  let run ~f t : (Fpath.t option * output) Or_error.t =
     let open Result.Let_syntax in
     let name = Filename.basename (Io.In_source.to_string t.inp) in
     let%bind asm = Io.In_source.with_input ~f:parse t.inp in
@@ -253,10 +254,12 @@ module Make_runner (B : Runner_deps) : Runner = struct
       ~f:(f name t.passes symbols (B.program asm))
   ;;
 
-  let litmusify ?(output_format=Litmus_format.default) =
+  let litmusify ?(output_format=Litmus_format.default)
+    : t -> (Fpath.t option * output) Or_error.t =
     run ~f:(output_litmus output_format)
   ;;
-  let explain ?(output_format=Explain_format.default) =
+  let explain ?(output_format=Explain_format.default)
+    : t -> (Fpath.t option * output) Or_error.t =
     run ~f:(run_explanation output_format)
   ;;
 end
