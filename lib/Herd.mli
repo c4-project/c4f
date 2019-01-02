@@ -69,7 +69,7 @@ type arch =
 val run
   :  t
   -> arch
-  -> path:string
+  -> path:Fpath.t
   -> sink:Io.Out_sink.t
   -> (string option * unit) Or_error.t
 ;;
@@ -81,7 +81,7 @@ val run
 val run_and_load_results
   :  t
   -> arch
-  -> input_path:string
-  -> output_path:string
+  -> input_path:Fpath.t
+  -> output_path:Fpath.t
   -> Herd_output.t Or_error.t
 ;;

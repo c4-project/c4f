@@ -76,6 +76,6 @@ val load_and_process_config
   -> ?machine_predicate:Machine.Property.t Blang.t
   -> ?sanitiser_passes:Sanitiser_pass.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
-  -> string
+  -> Fpath.t
   -> Config.M.t Or_error.t
 ;;

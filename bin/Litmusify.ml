@@ -38,33 +38,34 @@ let make_herd cfg =
 ;;
 
 let run_litmusify o passes target c_symbols
-    asm_file lit_file =
-  let source = Io.In_source.of_option asm_file in
-  let sink = Io.Out_sink.of_option lit_file in
-  Common.litmusify o passes source sink c_symbols target
+    (asm_file : Fpath.t option) (lit_file : Io.Out_sink.t) =
+  let source = Io.In_source.of_fpath_opt asm_file in
+  Common.litmusify o passes source lit_file c_symbols target
 ;;
 
-let run_herd cfg target lit_file outfile =
+let run_herd cfg target (lit_file : Io.Out_sink.t) (outfile : Fpath.t option) =
   let open Result.Let_syntax in
-  let%bind path =
-    Result.of_option lit_file
-      ~error:(Error.of_string "Can't read in litmus from stdin")
-  in
-  let sink = Io.Out_sink.of_option outfile in
+  let%bind path = Io.Out_sink.to_file_err lit_file in
+  let      sink = Io.Out_sink.of_fpath_opt outfile in
   let%bind herd = make_herd cfg in
   let arch = Herd.Assembly (Common.arch_of_target target) in
   let%map (_, ()) = Herd.run herd arch ~path ~sink in ()
 ;;
 
-let lit_file use_herd maybe_outfile =
-  if use_herd then Some (Common.temp_file "litmus") else maybe_outfile
+let lit_file use_herd (maybe_outfile : Fpath.t option) : Io.Out_sink.t =
+  if use_herd
+  then Io.Out_sink.temp ~prefix:"litmus" ~ext:""
+  else Io.Out_sink.of_fpath_opt maybe_outfile
 ;;
 
 let run file_type use_herd compiler_id_or_emits
     c_symbols
-    ~infile ~outfile o cfg =
+    ~(infile_raw : string option)
+    ~(outfile_raw : string option) o cfg =
   Common.warn_if_not_tracking_symbols o c_symbols;
   let open Result.Let_syntax in
+  let%bind infile  = Io.fpath_of_string_option infile_raw in
+  let%bind outfile = Io.fpath_of_string_option outfile_raw in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
   let%bind asm_file =
     Common.maybe_run_compiler target file_type infile
@@ -92,16 +93,16 @@ let command =
       and file_type = Standard_args.Other.file_type
       and compiler_id_or_arch = Standard_args.Other.compiler_id_or_arch
       and c_symbols = Standard_args.Other.c_symbols
-      and outfile =
+      and outfile_raw =
         flag "output"
           (optional file)
           ~doc: "FILE the litmus output file (default: stdout)"
-      and infile = anon (maybe ("FILE" %: file)) in
+      and infile_raw = anon (maybe ("FILE" %: file)) in
       fun () ->
         Common.lift_command standard_args
           ?sanitiser_passes
           ~with_compiler_tests:false
           ~f:(run
                 file_type use_herd compiler_id_or_arch c_symbols
-                ~infile ~outfile)
+                ~infile_raw ~outfile_raw)
     ]

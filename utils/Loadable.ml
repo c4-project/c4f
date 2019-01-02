@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,45 +22,25 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** [Loadable] contains signatures for abstract data types that can
-    be loaded from a file or string, and functors for adding
-    convenience functions to such types for loading from a variety of
-    sources. *)
-
 open Core
 
-module type Basic = sig
-  type t
-  val load_from_string : string -> t Or_error.t
-  val load_from_ic
-    :  ?path:string
-    -> In_channel.t
-    -> t Or_error.t
-  ;;
-end
-
-module type S = sig
-  include Basic
-  val load_from_isrc : Io.In_source.t -> t Or_error.t
-  val load : path:string -> t Or_error.t
-end
+include Loadable_intf
 
 module Make (B : Basic) : S with type t := B.t = struct
   include B
 
+  let path_of_is (is : Io.In_source.t) : string option =
+    is
+    |> Io.In_source.to_file
+    |> Option.map ~f:Fpath.to_string
+  ;;
+
   let load_from_isrc =
     Io.In_source.with_input
-      ~f:(fun is ic -> load_from_ic ?path:(Io.In_source.to_file is) ic)
+      ~f:(fun is ic -> load_from_ic ?path:(path_of_is is) ic)
   ;;
 
   let load ~path = load_from_isrc (Io.In_source.file path)
-end
-
-module type Basic_chain = sig
-  type src
-  type dst
-
-  val f : src -> dst Or_error.t
 end
 
 module Make_chain (B : Basic) (C : Basic_chain with type src := B.t)

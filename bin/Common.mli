@@ -39,7 +39,7 @@ val temp_file : string -> string
 (** [temp_file suffix] generates a temporary file name suitable for
    act commands. *)
 
-val decide_if_c : string option -> [> `C | `Infer] -> bool
+val decide_if_c : Fpath.t option -> [> `C | `Infer] -> bool
 (** [decide_if_c infile filetype] decides whether [infile] is a C
     file---from its extension if [filetype] is [`Infer], or
     by whether or not [filetype] is [`C]. *)
@@ -70,8 +70,8 @@ val runner_of_target
 val maybe_run_compiler
   :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
   -> [> `Assembly | `C | `Infer]
-  -> string option
-  -> string option Or_error.t
+  -> Fpath.t option
+  -> Fpath.t option Or_error.t
 (** [maybe_run_compiler target file_type file] compiles [file] if
    [file_type] is [`C], or [file_type] is [`Infer] and the filename
    ends with `.c`.  It uses [target] to compile; compilation, where

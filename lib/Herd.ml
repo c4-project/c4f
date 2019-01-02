@@ -58,28 +58,29 @@ let model_for_arch t = function
       ~equal:(List.equal ~equal:String.Caseless.equal)
 ;;
 
-let make_argv model path =
+let make_argv model (path : Fpath.t) =
   List.concat
     [ Option.value_map model
         ~f:(fun m -> [ "-model"; m ])
         ~default:[]
-    ; [ path ]
+    ; [ Fpath.to_string path ]
     ]
 ;;
 
 let%expect_test "make_argv: no model" =
-  let argv = make_argv None "/foo/bar/herd7" in
+  let argv = make_argv None (Fpath.v "herd7") in
   Sexp.output_hum Out_channel.stdout [%sexp (argv : string list)];
-  [%expect {| (/foo/bar/herd7) |}]
+  [%expect {| (herd7) |}]
 ;;
 
 let%expect_test "make_argv: override model" =
-  let argv = make_argv (Some "c11_lahav.cat") "/foo/bar/herd7" in
+  let argv = make_argv (Some "c11_lahav.cat") (Fpath.v "herd7") in
   Sexp.output_hum Out_channel.stdout [%sexp (argv : string list)];
-  [%expect {| (-model c11_lahav.cat /foo/bar/herd7) |}]
+  [%expect {| (-model c11_lahav.cat herd7) |}]
 ;;
 
-let run t arch ~path ~sink =
+let run t arch
+    ~(path : Fpath.t) ~sink =
   let model = model_for_arch t arch in
   let prog = t.config.cmd in
   let argv = make_argv model path in
@@ -88,7 +89,8 @@ let run t arch ~path ~sink =
     (Io.Out_sink.with_output sink ~f)
 ;;
 
-let run_and_load_results t arch ~input_path ~output_path =
+let run_and_load_results t arch
+    ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
   let open Or_error.Let_syntax in
   let%bind (_path, ()) = run t arch ~path:input_path ~sink:(Io.Out_sink.file output_path) in
   Herd_output.load ~path:output_path

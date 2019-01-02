@@ -30,10 +30,10 @@ include module type of Io_intf
 (** [Dir] contains high-ish-level operations on directories. *)
 module Dir : sig
   val get_files
-    :  ?compare:(string -> string -> int)
+    :  ?compare:(Fpath.t -> Fpath.t -> int)
     -> ?ext:string
-    -> string
-    -> string list Or_error.t
+    -> Fpath.t
+    -> Fpath.t list Or_error.t
   (** [get_files ?compare ?ext path] wraps [Sys.readfiles] with error
      handling, optional extension filtering, and path sorting using
       [compare] (which, by default, is ascending collation). *)
@@ -44,7 +44,7 @@ module In_source : sig
   type t
   (** The opaque type of input sources. *)
 
-  val file : string -> t
+  val file : Fpath.t -> t
   (** [file fname] creates an input source for a given filename. *)
 
   val stdin : t
@@ -65,7 +65,7 @@ module Out_sink : sig
   type t
   (** The opaque type of output sinks. *)
 
-  val file : string -> t
+  val file : Fpath.t -> t
   (** [file fname] creates an output sink for a given filename. *)
 
   val stdout : t
@@ -85,6 +85,14 @@ module Out_sink : sig
       pointed to by [oname].  It returns both the output filename
       (if any) and the result of [f]. *)
 end
+
+val fpath_of_string : string -> Fpath.t Or_error.t
+(** [fpath_of_string str] is [Fpath.of_string str], but with the
+    error changed to an [Or_error.t]. *)
+
+val fpath_of_string_option : string option -> Fpath.t option Or_error.t
+(** [fpath_of_string_option str_opt] lifts [fpath_of_string] over
+    optional strings. *)
 
 val with_input_and_output
   :  In_source.t

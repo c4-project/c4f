@@ -3,11 +3,11 @@ open Utils
 
 module M = struct
   type t =
-    { c_path    : string list
-    ; litc_path : string list
-    ; asm_path  : string list
-    ; lita_path : string list
-    ; herd_path : string list
+    { c_path    : Fpath.t
+    ; litc_path : Fpath.t
+    ; asm_path  : Fpath.t
+    ; lita_path : Fpath.t
+    ; herd_path : Fpath.t
     } [@@deriving fields]
 end
 include M
@@ -17,23 +17,23 @@ module File = struct
 
   type t =
     { basename   : string
-    ; c_path     : string
-    ; litc_path  : string
-    ; asm_path   : string
-    ; lita_path  : string
-    ; herdc_path : string
-    ; herda_path : string
+    ; c_path     : Fpath.t
+    ; litc_path  : Fpath.t
+    ; asm_path   : Fpath.t
+    ; lita_path  : Fpath.t
+    ; herdc_path : Fpath.t
+    ; herda_path : Fpath.t
     } [@@deriving fields]
 
-  let make ps basename =
-    let lcat = My_filename.concat_list in
-    { basename
-    ; c_path     = lcat (M.c_path    ps @ [basename ^ ".c"])
-    ; litc_path  = lcat (M.litc_path ps @ [basename ^ ".litmus"])
-    ; asm_path   = lcat (M.asm_path  ps @ [basename ^ ".s"])
-    ; lita_path  = lcat (M.lita_path ps @ [basename ^ ".s.litmus"])
-    ; herdc_path = lcat (M.herd_path ps @ [basename ^ ".herd.txt"])
-    ; herda_path = lcat (M.herd_path ps @ [basename ^ ".s.herd.txt"])
+  let make ps (name : string) =
+    Fpath.
+    { basename   = name
+    ; c_path     = M.c_path ps    / name + ".c"
+    ; litc_path  = M.litc_path ps / name + ".litmus"
+    ; asm_path   = M.asm_path  ps / name + ".s"
+    ; lita_path  = M.lita_path ps / name + ".s.litmus"
+    ; herdc_path = M.herd_path ps / name + ".herd.txt"
+    ; herda_path = M.herd_path ps / name + ".s.herd.txt"
     }
   ;;
 end
@@ -69,15 +69,15 @@ let mkdir (path : string) =
   | Nothing -> Or_error.try_with (fun () -> Unix.mkdir path)
 ;;
 
-let subpaths (path : string list) : string list =
-  List.map ~f:My_filename.concat_list (Travesty.T_list.prefixes path)
+let subpaths (path : Fpath.t) : string list =
+  List.map ~f:My_filename.concat_list (Travesty.T_list.prefixes (Fpath.segs path))
 ;;
 
-let mkdir_p (path : string list) =
+let mkdir_p (path : Fpath.t) =
   Or_error.all_unit (List.map ~f:mkdir (subpaths path))
 ;;
 
-let all_paths (ps : t) : (string, string list) List.Assoc.t =
+let all_paths (ps : t) : (string, Fpath.t) List.Assoc.t =
   let to_pair fld = (Field.name fld, Field.get fld ps) in
   Fields.to_list
     ~c_path:to_pair
@@ -99,21 +99,41 @@ let mkdirs ps =
   )
 ;;
 
+let make_id_path init id =
+  let segs = Id.to_string_list id in
+  List.fold ~init ~f:(Fpath.add_seg) segs
+;;
+
+let%expect_test "make_id_path: folds in correct direction" =
+  let id = Id.of_string "foo.bar.baz" in
+  let init = Fpath.v "." in
+  Io.print_bool
+    (Fpath.equal
+       (make_id_path init id)
+       Fpath.(init / "foo" / "bar" / "baz")
+    );
+  [%expect {| true |}]
+;;
+
 let make id ~in_root ~out_root =
-  { c_path    = [in_root; "C"]
-  ; litc_path = [in_root; "Litmus"]
-  ; asm_path  = [out_root] @ (Id.to_string_list id) @ ["asm"]
-  ; lita_path = [out_root] @ (Id.to_string_list id) @ ["litmus"]
-  ; herd_path = [out_root] @ (Id.to_string_list id) @ ["herd"]
+  let id_path = make_id_path out_root id in
+  Fpath.
+  { c_path    = in_root / "C"
+  ; litc_path = in_root / "Litmus"
+  ; asm_path  = id_path / "asm"
+  ; lita_path = id_path / "litmus"
+  ; herd_path = id_path / "herd"
   }
 ;;
 
 let%expect_test "all_paths of make" =
   let id = Id.of_string "foo.bar.baz" in
-  let ps = make id ~in_root:"inputs" ~out_root:"outputs" in
+  let ps = make id ~in_root:(Fpath.v "inputs") ~out_root:(Fpath.v "outputs") in
+  let all = all_paths ps in
+  let all_str = List.Assoc.map ~f:Fpath.segs all in
   Format.printf "@[%a@]@."
     Sexp.pp_hum
-    [%sexp (all_paths ps : (string, string list) List.Assoc.t)];
+    [%sexp (all_str : (string, string list) List.Assoc.t)];
   [%expect {|
     ((c_path (inputs C)) (litc_path (inputs Litmus))
      (asm_path (outputs foo bar baz asm))
@@ -136,7 +156,7 @@ let pp f ps =
     ~pp_sep:Format.pp_print_cut
     p
     f
-    (all_paths ps);
+    (List.Assoc.map ~f:Fpath.segs (all_paths ps));
 
   Format.pp_close_box f ()
 ;;

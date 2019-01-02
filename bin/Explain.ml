@@ -37,9 +37,12 @@ let print_symbol_map = function
 ;;
 
 let run file_type compiler_id_or_arch output_format c_symbols
-    ~infile ~outfile o cfg =
+    ~(infile_raw : string option) ~(outfile_raw : string option) o cfg =
   Common.warn_if_not_tracking_symbols o c_symbols;
   let open Or_error.Let_syntax in
+  let%bind outfile = Io.fpath_of_string_option outfile_raw
+  and      infile  = Io.fpath_of_string_option infile_raw
+  in
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.Set.empty
   in
@@ -47,11 +50,12 @@ let run file_type compiler_id_or_arch output_format c_symbols
   let%bind asm_file =
     Common.maybe_run_compiler target file_type infile
   in
+  let inp = Io.In_source.of_fpath_opt asm_file in
   let%bind (module Runner) = Common.runner_of_target target in
   Io.(
     let input =
-      { Asm_job.inp = In_source.of_option asm_file
-      ; outp = Out_sink.of_option outfile
+      { Asm_job.inp
+      ; outp = Out_sink.of_fpath_opt outfile
       ; passes
       ; symbols = c_symbols
       }
@@ -86,11 +90,11 @@ let command =
             ~if_nothing_chosen:(`Default_to None)
         )
       and file_type = Standard_args.Other.file_type
-      and outfile =
+      and outfile_raw =
         flag "output"
           (optional file)
           ~doc: "FILE the explanation output file (default: stdout)"
-      and infile = anon (maybe ("FILE" %: file)) in
+      and infile_raw = anon (maybe ("FILE" %: file)) in
       fun () ->
         Common.lift_command standard_args
           ?sanitiser_passes
@@ -100,6 +104,6 @@ let command =
                 compiler_id_or_arch
                 output_format
                 c_symbols
-                ~infile ~outfile)
+                ~infile_raw ~outfile_raw)
     ]
 ;;

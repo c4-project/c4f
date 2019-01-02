@@ -135,30 +135,37 @@ end
 
 (** [No_hooks] is a [Hooks] implementation that does nothing. *)
 module No_hooks : Hooks = struct
-  let pre ~infile ~outfile = Result.return (infile, outfile)
-  let post ~infile ~outfile = ignore infile; ignore outfile; Result.ok_unit
+  let pre ~(infile : Fpath.t) ~(outfile : Fpath.t) : (string * string) Or_error.t =
+    Result.return (Fpath.to_string infile, Fpath.to_string outfile)
+  ;;
+  let post ~(infile : Fpath.t) ~(outfile : Fpath.t) : unit Or_error.t =
+    ignore infile; ignore outfile; Result.ok_unit
+  ;;
 end
 
 (** [Scp_hooks] is a [Hooks] implementation that copies infile and outfile
     to and from a remote directory. *)
 module Scp_hooks (C : sig val ssh: Machine.Ssh.t end) : Hooks = struct
-  let remote_name_of file =
-    Filename.concat (Machine.Ssh.copy_dir C.ssh) (Filename.basename file)
+  let remote_name_of (file : Fpath.t) : string =
+    (* Assuming that scp always supports unix-style paths *)
+    sprintf "%s/%s" (Machine.Ssh.copy_dir C.ssh) (Fpath.basename file)
   ;;
 
   module Scp = Ssh.Scp (Machine.Ssh.To_config (C))
 
-  let pre ~infile ~outfile =
+  let pre ~(infile : Fpath.t) ~(outfile : Fpath.t) : (string * string) Or_error.t =
     let open Or_error.Let_syntax in
-    let%map () =
-      Scp.send ~local:infile ~remote:(remote_name_of infile)
-    in
-    (remote_name_of infile, remote_name_of outfile)
+    let local = Fpath.to_string infile in
+    let remote = remote_name_of infile in
+    let%map () = Scp.send ~local ~remote in
+    (remote, remote_name_of outfile)
   ;;
 
-  let post ~infile ~outfile =
+  let post ~(infile : Fpath.t) ~(outfile : Fpath.t) : unit Or_error.t =
     ignore infile;
-    Scp.receive ~remote:(remote_name_of outfile) ~local:outfile
+    let remote = remote_name_of outfile in
+    let local = Fpath.to_string outfile in
+    Scp.receive ~remote ~local
   ;;
 end
 

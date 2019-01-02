@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -122,7 +122,8 @@ let load_and_process_config
     ?(compiler_predicate=Blang.true_)
     ?(machine_predicate=Blang.true_)
     ?(sanitiser_passes=Blang.base `Default)
-    ?(with_compiler_tests=true) path =
+    ?(with_compiler_tests=true)
+    (path : Fpath.t) =
   let open Or_error.Let_syntax in
   let%bind rcfg = Config.Raw.load ~path in
   let chook = compiler_hook with_compiler_tests compiler_predicate in

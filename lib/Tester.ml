@@ -24,24 +24,7 @@
 open Core_kernel
 open Utils
 
-module type Basic = sig
-  module T : Timing.S
-  val o : Output.t
-  val herd_opt : Herd.t option
-  val sanitiser_passes : Sanitiser_pass.Set.t
-end
-
-module type Basic_compiler = sig
-  include Basic
-  module C : Compiler.S
-  module R : Asm_job.Runner
-  val ps : Pathset.t
-  include Compiler.With_spec
-end
-
-module type Compiler = sig
-  val run : string list -> Analysis.Compiler.t Or_error.t
-end
+include Tester_intf
 
 module Make_compiler (B : Basic_compiler) : Compiler = struct
   include B
@@ -68,7 +51,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     ]
   ;;
 
-  let run_herd herd arch ~input_path ~output_path =
+  let run_herd herd arch ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
     let result =
       Or_error.tag ~tag:"While running herd"
         (Herd.run_and_load_results herd arch ~input_path ~output_path)
@@ -252,9 +235,9 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     (analysis, timings)
   ;;
 
-  let run_single (ps : Pathset.t) c_fname =
+  let run_single (ps : Pathset.t) (c_fname : Fpath.t) =
     let open Or_error.Let_syntax in
-    let base = Filename.chop_extension (Filename.basename c_fname) in
+    let base = Fpath.(c_fname |> rem_ext |> filename) in
     let fs = Pathset.File.make ps base in
     let%map result =
       T.bracket_join (fun () -> run_single_from_pathset_file fs)
@@ -285,34 +268,12 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   ;;
 end
 
-module type Basic_machine = sig
-  include Basic
-  val compiler_from_spec
-    :  Compiler.Spec.With_id.t
-    -> (module Compiler.S) Or_error.t
-  ;;
-  val asm_runner_from_spec
-    :  Compiler.Spec.With_id.t
-    -> (module Asm_job.Runner) Or_error.t
-  ;;
-end
-
-module type Machine = sig
-  val run
-    :  string list
-    -> Compiler.Spec.Set.t
-    -> in_root:string
-    -> out_root:string
-    -> Analysis.Machine.t Or_error.t
-  ;;
-end
-
 (** [Make_machine] makes a single-machine test runner from a
    [Basic_machine]. *)
 module Make_machine (B : Basic_machine) : Machine = struct
   include B
 
-  let run_compiler ~in_root ~out_root c_fnames cspec =
+  let run_compiler ~(in_root : Fpath.t) ~(out_root : Fpath.t) c_fnames cspec =
     (* TODO(@MattWindsor91): actually wire this up to config *)
     let (module T) = Timing.make_module `Enabled in
     let open Or_error.Let_syntax in
@@ -334,7 +295,7 @@ module Make_machine (B : Basic_machine) : Machine = struct
     (id, result)
   ;;
 
-  let run c_fnames specs ~in_root ~out_root =
+  let run c_fnames specs ~(in_root : Fpath.t) ~(out_root : Fpath.t) =
     let open Or_error.Let_syntax in
     let%map compilers_and_time =
       T.bracket_join (fun () ->

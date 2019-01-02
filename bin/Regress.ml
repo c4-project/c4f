@@ -32,7 +32,8 @@ type spec =
 [@@deriving sexp]
 ;;
 
-let find_spec specs file =
+let find_spec specs (path : Fpath.t) =
+  let file = Fpath.to_string path in
   file
   |> List.Assoc.find specs ~equal:(String.Caseless.equal)
   |> Result.of_option
@@ -43,16 +44,15 @@ let find_spec specs file =
 ;;
 
 let regress_run_asm ((module L) : (module Asm_job.Runner))
-    path mode specs passes file =
+    (path : Fpath.t) mode specs passes (file : Fpath.t) =
   let open Or_error.Let_syntax in
 
   let%bind spec = find_spec specs file in
 
-  printf "## %s\n\n```\n" file;
-  Out_channel.flush stdout;
+  Fmt.pr "## %a\n\n```\n@." Fpath.pp file;
 
   let input =
-    { Asm_job.inp = Io.In_source.file (path ^/ file)
+    { Asm_job.inp = Io.In_source.file Fpath.(path // file)
     ; outp = Io.Out_sink.stdout
     ; passes
     ; symbols = spec.cvars
@@ -69,10 +69,10 @@ let regress_run_asm ((module L) : (module Asm_job.Runner))
 ;;
 
 let read_specs path =
-  let spec_file = path ^/ "spec" in
+  let spec_file = Fpath.(path / "spec") in
   Or_error.try_with
     (fun () ->
-       Sexp.load_sexp_conv_exn spec_file
+       Sexp.load_sexp_conv_exn (Fpath.to_string spec_file)
          [%of_sexp: (string, spec) List.Assoc.t]
     )
 ;;
@@ -90,9 +90,13 @@ let diff_to_error = function
       ]
 ;;
 
-let check_files_against_specs specs test_files =
+let check_files_against_specs specs (test_paths : Fpath.t list) =
   let spec_set = specs |> List.map ~f:fst |> String.Set.of_list in
-  let files_set = test_files |> String.Set.of_list in
+  let files_set =
+    test_paths
+    |> List.map ~f:Fpath.to_string
+    |> String.Set.of_list
+  in
   String.Set.symmetric_diff spec_set files_set
   |> Sequence.map ~f:diff_to_error
   |> Sequence.to_list
@@ -105,7 +109,7 @@ let regress_run_asm_many modename mode passes test_path =
   printf "# %s tests\n\n" modename;
 
   let emits = ["x86"; "att"] in
-  let path = My_filename.concat_list ([test_path; "asm"] @ emits) in
+  let path = Fpath.(v test_path / "asm" / "x86" / "att") in
   let%bind l = Language_support.asm_runner_from_emits emits in
   let%bind specs = read_specs path in
   let%bind test_files = Io.Dir.get_files ~ext:"s" path in

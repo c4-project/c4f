@@ -51,10 +51,12 @@ let run_litmus is os =
   )
 ;;
 
-let run file_type ~infile ~outfile _o _cfg =
-  let is = Io.In_source.of_option infile in
-  let os = Io.Out_sink.of_option outfile in
-  let is_c = Common.decide_if_c infile file_type in
+let run file_type ~infile_raw ~outfile_raw _o _cfg =
+  let open Or_error.Let_syntax in
+  let%bind infile = Io.fpath_of_string_option infile_raw in
+  let      is     = Io.In_source.of_fpath_opt infile in
+  let%bind os     = Io.Out_sink.of_string_opt outfile_raw in
+  let      is_c   = Common.decide_if_c infile file_type in
   (if is_c then run_c else run_litmus) is os
 ;;
 
@@ -64,7 +66,7 @@ let command =
     ~summary:"explains act's understanding of a C file"
     [%map_open
       let standard_args = Standard_args.get
-      and outfile =
+      and outfile_raw =
         flag "output"
           (optional file)
           ~doc: "FILE the explanation output file (default: stdout)"
@@ -76,10 +78,10 @@ let command =
               ~doc:"if given, assume input is a C litmus test"
           ]
           ~if_nothing_chosen:(`Default_to `Infer)
-      and infile = anon (maybe ("FILE" %: file)) in
+      and infile_raw = anon (maybe ("FILE" %: file)) in
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run file_type ~infile ~outfile)
+          ~f:(run file_type ~infile_raw ~outfile_raw)
     ]
 ;;

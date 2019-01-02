@@ -123,12 +123,12 @@ module type Hooks = sig
   (** [pre ~infile ~outfile] is run before compiling, and, if the
       hook is successful, returns the new infile and outfile to use
       for the compilation. *)
-  val pre : infile:string -> outfile:string -> (string * string) Or_error.t
+  val pre : infile:Fpath.t -> outfile:Fpath.t -> (string * string) Or_error.t
 
   (** [post ~infile ~outfile] is run after a successful compile.
       It receives the *original* input and output file names---not the
       ones returned by [pre]. *)
-  val post : infile:string -> outfile:string -> unit Or_error.t
+  val post : infile:Fpath.t -> outfile:Fpath.t -> unit Or_error.t
 end
 
 (** [S] is the outward-facing interface of compiler modules. *)
@@ -138,7 +138,7 @@ module type S = sig
 
   (** [compile ~infile ~outfile] runs the compiler on [infile],
       emitting assembly to [outfile] and returning any errors that arise. *)
-  val compile : infile:string -> outfile:string -> unit Or_error.t
+  val compile : infile:Fpath.t -> outfile:Fpath.t -> unit Or_error.t
 end
 
 (** [Compiler] is the part of the interface re-exported as

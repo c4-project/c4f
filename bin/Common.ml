@@ -42,15 +42,14 @@ let warn_if_not_tracking_symbols (o : Output.t) = function
 
 let temp_file = Filename.temp_file "act"
 
-let asm_file is_c maybe_infile =
-  if is_c then Some (temp_file "s") else maybe_infile
+let asm_file is_c (maybe_infile : Fpath.t option) =
+  if is_c then Some (Fpath.v (temp_file "s")) else maybe_infile
 ;;
 
-let decide_if_c (infile : string option)
+let decide_if_c (infile : Fpath.t option)
   : [> `C | `Infer] -> bool = function
   | `C -> true
-  | `Infer ->
-    Option.exists infile ~f:(My_filename.has_extension ~ext:"c")
+  | `Infer -> Option.exists infile ~f:(Fpath.has_ext "c")
   | _ -> false
 ;;
 
@@ -72,7 +71,9 @@ let runner_of_target = function
   | `Arch arch -> Language_support.asm_runner_from_emits arch
 ;;
 
-let run_compiler target ~infile ~outfile =
+let run_compiler target
+    ~(infile_raw : string option)
+    ~(outfile_raw : string option) =
   let open Result.Let_syntax in
   let%bind cspec = match target with
     | `Spec spec -> return spec
@@ -81,24 +82,28 @@ let run_compiler target ~infile ~outfile =
         "To litmusify a C file, you must supply a compiler ID."
   in
   let%bind infile =
-    Result.of_option infile
-      ~error:(Error.of_string "Can't read in C from stdin")
+    Io.In_source.(infile_raw |> of_string_opt >>= to_file_err)
   in
   let%bind outfile =
-    Result.of_option outfile
-      ~error:(Error.of_string "Can't output compiler result to stdout")
+    Io.Out_sink.(outfile_raw |> of_string_opt >>= to_file_err)
   in
   let%bind (module C) = Language_support.compiler_from_spec cspec in
   Or_error.tag ~tag:"While compiling to assembly"
     (C.compile ~infile ~outfile)
 ;;
 
-let maybe_run_compiler target file_type infile =
+let maybe_run_compiler
+    (target : [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ])
+    (file_type : [> `Assembly | `C | `Infer])
+    (infile : Fpath.t option)
+  : Fpath.t option Or_error.t =
   let open Result.Let_syntax in
   let is_c = decide_if_c infile file_type in
   let outfile = asm_file is_c infile in
+  let infile_raw = Option.map ~f:Fpath.to_string infile in
+  let outfile_raw = Option.map ~f:Fpath.to_string outfile in
   let%map () =
-    if is_c then run_compiler target ~infile ~outfile else return ()
+    if is_c then run_compiler target ~infile_raw ~outfile_raw else return ()
   in outfile
 ;;
 
@@ -116,12 +121,13 @@ let lift_command
       ~warnings:(Standard_args.are_warnings_enabled standard_args)
   in
   Or_error.(
-    Language_support.load_and_process_config
+    (Standard_args.spec_file standard_args)
+    |> Io.fpath_of_string
+    >>= Language_support.load_and_process_config
       ?compiler_predicate
       ?machine_predicate
       ?sanitiser_passes
       ?with_compiler_tests
-      (Standard_args.spec_file standard_args)
     >>= f o
   ) |> Output.print_error o
 ;;

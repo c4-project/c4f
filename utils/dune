@@ -9,4 +9,5 @@
   travesty
   core
   core_extended
+  fpath
   fmt))

@@ -54,12 +54,14 @@ let run_spec_on_file o passes spec ~c_file =
   Format.printf "@[<h>```@]@."
 ;;
 
-let run o cfg ~c_file =
+let run o cfg ~(c_file_raw : string) =
+  let open Or_error.Let_syntax in
+  let%bind c_file = Io.fpath_of_string c_file_raw in
   let specs = Config.M.compilers cfg in
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
-  Format.printf "@[<h>#@ %s@]@." c_file;
+  Fmt.pr "@[<h>#@ %a@]@." Fpath.pp c_file;
   Or_error.combine_errors_unit
     (Compiler.Spec.Set.map specs
        ~f:(run_spec_on_file o passes ~c_file)
@@ -75,7 +77,7 @@ let command =
       and sanitiser_passes = Standard_args.Other.sanitiser_passes
       and compiler_predicate = Standard_args.Other.compiler_predicate
       and machine_predicate = Standard_args.Other.machine_predicate
-      and c_file = anon ("FILE" %: file)
+      and c_file_raw = anon ("FILE" %: file)
       in
       fun () ->
         Common.lift_command standard_args
@@ -83,6 +85,6 @@ let command =
           ?machine_predicate
           ?sanitiser_passes
           ~with_compiler_tests:true
-          ~f:(run ~c_file)
+          ~f:(run ~c_file_raw)
     ]
 ;;

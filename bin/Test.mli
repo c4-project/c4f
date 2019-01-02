@@ -26,16 +26,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Lib
 
-(** [run should_time ~in_root ~out_root o cfg] runs the memalloy
-   frontend.  It assumes that [in_root] points to a memalloy (or
-    compatible) results directory, and outputs results in [out_root]. *)
+(** [run should_time ~in_root_raw ~out_root_raw o cfg] runs the
+   memalloy frontend.  It assumes that [in_root] points to a memalloy
+   (or compatible) results directory, and outputs results in
+   [out_root]. *)
 val run
   :  bool
-  -> in_root:string
-  -> out_root:string
+  -> in_root_raw:string
+  -> out_root_raw:string
   -> Output.t
   -> Config.M.t
   -> unit Or_error.t
+;;
 
 (** [command] packages up the memalloy command as a [Command.t]. *)
 val command : Command.t
