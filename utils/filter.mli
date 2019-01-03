@@ -33,37 +33,43 @@ open Base
 include module type of Filter_intf
 
 val lift_to_raw_strings
-  :  f:(Io.In_source.t -> Io.Out_sink.t -> 'a Or_error.t)
+  :  f:('i -> Io.In_source.t -> Io.Out_sink.t -> 'o Or_error.t)
+  -> 'i
   -> infile:string option
   -> outfile:string option
-  -> 'a Or_error.t
+  -> 'o Or_error.t
 ;;
 
 val lift_to_fpaths
-  :  f:(Io.In_source.t -> Io.Out_sink.t -> 'a Or_error.t)
+  :  f:('i -> Io.In_source.t -> Io.Out_sink.t -> 'o Or_error.t)
+  -> 'i
   -> infile:Fpath.t option
   -> outfile:Fpath.t option
-  -> 'a Or_error.t
+  -> 'o Or_error.t
 ;;
 
-module Make (B : Basic) : S with type aux = B.aux
+module Make (B : Basic) : S with type aux_i = B.aux_i
+                             and type aux_o = B.aux_o
 (** Makes a filter from a {{!Basic}Basic}. *)
 
 module Make_in_file_only (B : Basic_in_file_only)
-  : S with type aux = B.aux
+  : S with type aux_i = B.aux_i and type aux_o = B.aux_o
 (** Makes a filter from a {{!Basic_in_file_only}Basic_in_file_only}. *)
 
 module Make_files_only (B : Basic_files_only)
-  : S with type aux = B.aux
+  : S with type aux_i = B.aux_i and type aux_o = B.aux_o
 (** Makes a filter from a {{!Basic_in_file_only}Basic_files_only}. *)
 
-module Chain (A : S) (B : S) : S with type aux = (A.aux * B.aux)
+module Chain (A : S) (B : S) : S with type aux_i = (A.aux_i * B.aux_i)
+                                  and type aux_o = (A.aux_o * B.aux_o)
 (** Chains two filters together using temporary files. *)
 
 module Chain_conditional_first (B : Basic_chain_conditional)
-  : S with type aux = (B.First.aux option * B.Second.aux)
+  : S with type aux_i = (B.First.aux_i        * B.Second.aux_i)
+       and type aux_o = (B.First.aux_o option * B.Second.aux_o)
 (** Chains an optional filter onto a mandatory one. *)
 
 module Chain_conditional_second (B : Basic_chain_conditional)
-  : S with type aux = (B.First.aux * B.Second.aux option)
+  : S with type aux_i = (B.First.aux_i * B.Second.aux_i       )
+       and type aux_o = (B.First.aux_o * B.Second.aux_o option)
 (** Chains a mandatory filter onto an optional one. *)

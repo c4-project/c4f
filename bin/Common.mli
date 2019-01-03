@@ -64,10 +64,12 @@ val runner_of_target
    clause). *)
 
 val maybe_run_compiler
-  :  (module Filter.S with type aux = 'aux)
+  :  (module Filter.S with type aux_i = 'i and type aux_o = 'o)
   -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list > `Spec ]
   -> [> `Assembly | `C | `Infer]
-  -> (module Filter.S with type aux = (unit option * 'aux)) Or_error.t
+  -> ( module Filter.S with type aux_i = (unit * 'i)
+                        and type aux_o = (unit option * 'o)
+     ) Or_error.t
 (** [maybe_run_compiler target file_type file] produces a filter that
    compiles [file] if [file_type] is [`C], or [file_type] is [`Infer]
    and the filename ends with `.c`.  It uses [target] to compile;
@@ -114,5 +116,6 @@ val litmusify_filter
   -> Sanitiser_pass.Set.t
   -> string list
   -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list]
-  -> (module Filter.S with type aux = (string, string) List.Assoc.t)
+  -> ( module Filter.S with type aux_i = unit
+                        and type aux_o = (string, string) List.Assoc.t)
 ;;

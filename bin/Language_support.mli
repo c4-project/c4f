@@ -55,7 +55,9 @@ val compiler_from_spec
 
 val compiler_filter_from_spec
   :  Compiler.Spec.With_id.t
-  -> (module Utils.Filter.S with type aux = unit) Or_error.t
+  -> ( module Utils.Filter.S with type aux_i = unit
+                              and type aux_o = unit
+     ) Or_error.t
 (** [compiler_filter_from_spec spec] wraps
     [compiler_from_spec spec] in the [Utils.Filter.S] interface. *)
 

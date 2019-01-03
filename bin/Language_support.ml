@@ -80,17 +80,20 @@ let compiler_from_spec (cspec : Compiler.Spec.With_id.t) =
 
 let compiler_filter_from_spec
     (cspec : Compiler.Spec.With_id.t)
-  : (module Utils.Filter.S with type aux = unit) Or_error.t =
+  : ( module Utils.Filter.S with type aux_i = unit
+                             and type aux_o = unit
+    ) Or_error.t =
   let open Or_error.Let_syntax in
   let%map (module Com) = compiler_from_spec cspec in
   (module
     (Utils.Filter.Make_files_only
        (struct
-         type aux = unit
-         let run = Com.compile
+         type aux_i = unit
+         type aux_o = unit
+         let run () = Com.compile
        end)
     )
-    : Utils.Filter.S with type aux = unit
+    : Utils.Filter.S with type aux_i = unit and type aux_o = unit
   )
 ;;
 

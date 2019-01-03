@@ -25,63 +25,85 @@ open Stdio
 open Base
 
 module type Basic = sig
-  type aux
+  type aux_i
+  (** Type of any auxiliary state consumed by this filter. *)
+
+  type aux_o
+  (** Type of any auxiliary state built by this filter. *)
+
 
   val run
-    :  Io.In_source.t
+    :  aux_i
+    -> Io.In_source.t
     -> In_channel.t
     -> Io.Out_sink.t
     -> Out_channel.t
-    -> aux Or_error.t
+    -> aux_o Or_error.t
   ;;
 end
 
 module type Basic_in_file_only = sig
-  type aux
+  type aux_i
+  (** Type of any auxiliary state consumed by this filter. *)
+
+  type aux_o
+  (** Type of any auxiliary state built by this filter. *)
 
   val run
-    :  Fpath.t
+    :  aux_i
+    -> Fpath.t
     -> Io.Out_sink.t
     -> Out_channel.t
-    -> aux Or_error.t
+    -> aux_o Or_error.t
   ;;
 end
 
 module type Basic_files_only = sig
-  type aux
+  type aux_i
+  (** Type of any auxiliary state consumed by this filter. *)
+
+  type aux_o
+  (** Type of any auxiliary state built by this filter. *)
 
   val run
-    :  infile:Fpath.t
+    :  aux_i
+    -> infile:Fpath.t
     -> outfile:Fpath.t
-    -> aux Or_error.t
+    -> aux_o Or_error.t
   ;;
 end
 
 module type S = sig
-  type aux
+  type aux_i
+  (** Type of any auxiliary state consumed by this filter. *)
+
+  type aux_o
   (** Type of any auxiliary state built by this filter. *)
 
   val run
-    :  Io.In_source.t
+    :  aux_i
+    -> Io.In_source.t
     -> Io.Out_sink.t
-    -> aux Or_error.t
-  (** [run source sink] runs this filter on [source], outputs to
-     [sink], and returns any auxiliary state on success. *)
+    -> aux_o Or_error.t
+  (** [run aux source sink] runs this filter on [source], outputs to
+     [sink], reads and returns any auxiliary state on success. *)
 
   val run_from_fpaths
-    :  infile:Fpath.t option
+    :  aux_i
+    -> infile:Fpath.t option
     -> outfile:Fpath.t option
-    -> aux Or_error.t
-  (** [run_from_string_paths ~infile ~outfile] runs this filter on
+    -> aux_o Or_error.t
+  (** [run_from_fpaths aux ~infile ~outfile] runs this filter on
      [infile] (if [None], use stdin), outputs to [outfile] (if [None],
      use stdout), and returns any auxiliary state on success. *)
 
   val run_from_string_paths
-    :  infile:string option
+    :  aux_i
+    -> infile:string option
     -> outfile:string option
-    -> aux Or_error.t
-    (** [run_from_string_paths ~infile ~outfile] runs this filter on
-       [infile] (if [None], use stdin), outputs to [outfile] (if
+    -> aux_o Or_error.t
+    (** [run_from_string_paths aux ~infile ~outfile] runs this filter
+       on [infile] (if [None], use stdin), outputs to [outfile] (if
        [None], use stdout), and returns any auxiliary state on
        success. *)
 end

@@ -74,23 +74,28 @@ let ensure_spec : [> `Spec of Compiler.Spec.With_id.t]
 ;;
 
 let maybe_run_compiler
-  (type aux)
-  (module Onto : Filter.S with type aux = aux)
+  (type aux_i)
+  (type aux_o)
+  (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
   (target : [< `Spec of Compiler.Spec.With_id.t | `Arch of string list > `Spec ])
   (file_type : [> `Assembly | `C | `Infer])
-  : (module Filter.S with type aux = (unit option * aux)) Or_error.t =
+  : ( module Filter.S with type aux_i = (unit        * aux_i)
+                       and type aux_o = (unit option * aux_o)
+    ) Or_error.t =
   let open Result.Let_syntax in
   let%bind cspec = ensure_spec target in
   let%map (module C) = Language_support.compiler_filter_from_spec cspec in
   let should_run_compiler isrc
     = decide_if_c (Io.In_source.to_file isrc) file_type
   in
-  (module
+  ( module
     Filter.Chain_conditional_first (struct
       module First = C
       module Second = Onto
       let condition src _snk = should_run_compiler src
-    end) : Filter.S with type aux = (unit option * aux))
+    end) : Filter.S with type aux_i = (unit        * aux_i)
+                     and type aux_o = (unit option * aux_o)
+  )
 ;;
 
 let lift_command
@@ -139,12 +144,17 @@ let litmusify ?output_format (o : Output.t)
 ;;
 
 let litmusify_filter ?output_format (o : Output.t) passes symbols target
-  : (module Filter.S with type aux = (string, string) List.Assoc.t) =
-  (module
+  : ( module Filter.S with type aux_i = unit
+                       and type aux_o = (string, string) List.Assoc.t
+    ) =
+  ( module
     (struct
-      type aux = (string, string) List.Assoc.t
-      let run = litmusify ?output_format o passes symbols target
+      type aux_i = unit
+      type aux_o = (string, string) List.Assoc.t
+      let run () = litmusify ?output_format o passes symbols target
       let run_from_string_paths = Filter.lift_to_raw_strings ~f:run
       let run_from_fpaths       = Filter.lift_to_fpaths ~f:run
-    end) : Filter.S with type aux = (string, string) List.Assoc.t)
+    end) : Filter.S with type aux_i = unit
+                     and type aux_o = (string, string) List.Assoc.t
+  )
 ;;

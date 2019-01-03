@@ -41,8 +41,9 @@ let explain_filter output_format passes c_symbols target =
   let%map (module Runner) = Common.runner_of_target target in
   (module
     (struct
-      type aux = Asm_job.output
-      let run inp outp =
+      type aux_i = unit
+      type aux_o = Asm_job.output
+      let run () inp outp =
         let input =
           { Asm_job.inp
           ; outp
@@ -56,7 +57,7 @@ let explain_filter output_format passes c_symbols target =
       let run_from_string_paths = Filter.lift_to_raw_strings ~f:run
       let run_from_fpaths       = Filter.lift_to_fpaths ~f:run
     end)
-  : Filter.S with type aux = Asm_job.output)
+  : Filter.S with type aux_i = unit and type aux_o = Asm_job.output)
 ;;
 
 let run file_type compiler_id_or_arch output_format c_symbols
@@ -67,13 +68,13 @@ let run file_type compiler_id_or_arch output_format c_symbols
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.explain
   in
-  let%bind (module Exp : Filter.S with type aux = Asm_job.output)
-    = explain_filter output_format passes c_symbols target
+  let%bind (module Exp) =
+    explain_filter output_format passes c_symbols target
   in
-  let%bind (module Flt : Filter.S with type aux = (unit option * Asm_job.output)) =
+  let%bind (module Flt) =
     Common.maybe_run_compiler (module Exp) target file_type
   in
-  let%map (_, out) = Flt.run_from_string_paths ~infile:infile_raw ~outfile:outfile_raw in
+  let%map (_, out) = Flt.run_from_string_paths ((),()) ~infile:infile_raw ~outfile:outfile_raw in
   Asm_job.warn out o.Output.wf;
   print_symbol_map (Asm_job.symbol_map out)
 ;;

@@ -55,24 +55,27 @@ let run file_type use_herd compiler_id_or_emits
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
-  let (module Lit : Filter.S with type aux = (string, string) List.Assoc.t)
+  let (module Lit)
     = Common.litmusify_filter o passes c_symbols target
   in
-  let%bind (module Comp_lit : Filter.S with type aux = (unit option * (string, string) List.Assoc.t)) =
+  let%bind (module Comp_lit) =
     Common.maybe_run_compiler (module Lit) target file_type
   in
-  let (module Flt : Filter.S with type aux = ((unit option * (string, string) List.Assoc.t) * unit option)) =
+  let ( module Flt : Filter.S with type aux_i = ((unit * unit) * unit)
+                               and type aux_o = ((unit option * (string, string) List.Assoc.t) * unit option)
+      ) =
     (module
       Filter.Chain_conditional_second (struct
         let condition _ _ = use_herd
         module First = Comp_lit
         module Second = Filter.Make_in_file_only (struct
-            type aux = unit
-            let run = run_herd cfg target
+            type aux_i = unit
+            type aux_o = unit
+            let run () = run_herd cfg target
           end)
       end))
   in
-  let%map _ = Flt.run_from_string_paths ~infile:infile_raw ~outfile:outfile_raw in
+  let%map _ = Flt.run_from_string_paths (((),()),()) ~infile:infile_raw ~outfile:outfile_raw in
   ()
 ;;
 

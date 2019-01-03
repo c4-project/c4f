@@ -41,6 +41,7 @@ let litmusify o passes spec c_file =
     Common.maybe_run_compiler (module Lit) (`Spec spec) `C
   in
   Comp_lit.run
+    ((),())
     (Io.In_source.file c_file)
     (Io.Out_sink.stdout)
 ;;
