@@ -46,6 +46,7 @@ let keywords = lazy
       ; "false", BOOL false
       ; "herd", HERD
       ; "host", HOST
+      ; "litmus", LITMUS
       ; "local", LOCAL
       ; "machine", MACHINE
       ; "no", BOOL false

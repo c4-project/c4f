@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,70 +22,21 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-module Cpp = struct
-  type t =
-    | Cmd of string
-    | Argv of string list
-    | Enabled of bool
-  ;;
+(** Interaction with the 'Litmus' tool.
+
+    This is the tool that supports running of Litmus tests on
+    real hardware, and not to be confused with the tests itself. *)
+
+open Base
+
+module Config : sig
+  type t [@@deriving sexp]
+  (** The opaque type of Litmus configuration. *)
+
+  include Pretty_printer.S with type t := t
+
+  val create : ?cmd:string -> unit -> t
+  (** [create ?cmd] creates a Litmus-tool config. *)
 end
 
-module Litmus = struct
-  type t =
-    | Cmd of string
-  ;;
-end
-
-module Herd = struct
-  type t =
-    | Cmd of string
-    | C_model of string
-    | Asm_model of Id.t * string
-  ;;
-end
-
-module Ssh = struct
-  type t =
-    | User of string
-    | Host of string
-    | Copy_to of string
-  ;;
-end
-
-module Via = struct
-  type t =
-    | Local
-    | Ssh of Ssh.t list
-  ;;
-end
-
-module Machine = struct
-  type t =
-    | Enabled of bool
-    | Via     of Via.t
-    | Litmus  of Litmus.t list
-  ;;
-end
-
-module Compiler = struct
-  type t =
-    | Enabled of bool
-    | Style   of Id.t
-    | Emits   of Id.t
-    | Cmd     of string
-    | Argv    of string list
-    | Herd    of bool
-    | Machine of Id.t
-  ;;
-end
-
-module Top = struct
-  type t =
-    | Cpp      of Cpp.t list
-    | Herd     of Herd.t list
-    | Machine  of Id.t * Machine.t list
-    | Compiler of Id.t * Compiler.t list
-  ;;
-end
-
-type t = Top.t list
+(* TODO *)

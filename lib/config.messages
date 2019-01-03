@@ -93,6 +93,15 @@ main: MACHINE IDENTIFIER LBRACE VIA SSH VIA
 ## The known suffix of the stack is as follows:
 ## SSH
 ##
+main: MACHINE IDENTIFIER LBRACE LITMUS VIA
+##
+## Ends in an error in state: 25.
+##
+## simple_stanza(LITMUS,litmus_item) -> LITMUS . LBRACE separated_nonempty_list(EOL,option(litmus_item)) RBRACE [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## LITMUS
+##
 
 Expected an opening brace after the block name
 
@@ -215,6 +224,17 @@ main: MACHINE IDENTIFIER LBRACE VIA SSH LBRACE USER STRING VIA
 ## The known suffix of the stack is as follows:
 ## option(ssh_item)
 ##
+main: MACHINE IDENTIFIER LBRACE LITMUS LBRACE CMD STRING VIA
+##
+## Ends in an error in state: 31.
+##
+## separated_nonempty_list(EOL,option(litmus_item)) -> option(litmus_item) . [ RBRACE ]
+## separated_nonempty_list(EOL,option(litmus_item)) -> option(litmus_item) . EOL separated_nonempty_list(EOL,option(litmus_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(litmus_item)
+##
+
 
 Expected a closing brace (to terminate this block), or a newline
 
@@ -433,6 +453,27 @@ main: MACHINE IDENTIFIER LBRACE VIA VIA
 ##
 
 Expected a valid `via` stanza: either `local` or `ssh { SSH-CONFIG }`
+
+main: MACHINE IDENTIFIER LBRACE LITMUS LBRACE VIA
+##
+## Ends in an error in state: 26.
+##
+## simple_stanza(LITMUS,litmus_item) -> LITMUS LBRACE . separated_nonempty_list(EOL,option(litmus_item)) RBRACE [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## LITMUS LBRACE
+##
+main: MACHINE IDENTIFIER LBRACE LITMUS LBRACE EOL VIA
+##
+## Ends in an error in state: 32.
+##
+## separated_nonempty_list(EOL,option(litmus_item)) -> option(litmus_item) EOL . separated_nonempty_list(EOL,option(litmus_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(litmus_item) EOL
+##
+
+Expected a valid litmus tool configuration item, for example `cmd "COMMAND"`
 
 main: MACHINE VIA
 ##

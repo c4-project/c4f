@@ -83,17 +83,35 @@ module Raw = struct
       | Ssh items -> Or_error.(ssh items >>| Machine.Via.ssh)
     ;;
 
-    let machine (items : Config_ast.Machine.t list) =
+    let litmus (items : Config_ast.Litmus.t list)
+      : Litmus_tool.Config.t Or_error.t  =
+      let open Or_error.Let_syntax in
+      let%map cmd = find_at_most_one items ~item_name:"cmd"
+          ~f:(function Cmd c -> Some (Some c) (* | _ -> None *))
+          ~on_empty:(return None)
+      in
+      Litmus_tool.Config.create ?cmd ()
+    ;;
+
+    let machine (items : Config_ast.Machine.t list)
+      : Machine.Spec.t Or_error.t =
       let open Or_error.Let_syntax in
       let%bind enabled =
         find_at_most_one items ~item_name:"enabled"
           ~f:(function Enabled b -> Some b | _ -> None)
           ~on_empty:(Or_error.return true)
+      and litmus_raw =
+        (find_at_most_one items ~item_name:"litmus"
+           ~f:(function Litmus h -> Some (Some h) | _ -> None)
+           ~on_empty:(return None))
       and via_raw = find_one items ~item_name:"via"
           ~f:(function Via v -> Some v | _ -> None)
       in
-      let%map via = via via_raw in
-      Machine.Spec.create ~enabled ~via
+      let%map litmus =
+        Travesty.T_option.With_errors.map_m ~f:litmus litmus_raw
+      and     via    = via via_raw
+      in
+      Machine.Spec.make ?litmus ~enabled ~via ()
     ;;
 
     let compiler (items : Config_ast.Compiler.t list) =

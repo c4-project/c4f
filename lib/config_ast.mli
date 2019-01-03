@@ -37,6 +37,13 @@ module Cpp : sig
   ;;
 end
 
+(** Items in a Litmus stanza *)
+module Litmus : sig
+  type t =
+    | Cmd of string
+  ;;
+end
+
 (** Items in a Herd stanza *)
 module Herd : sig
   type t =
@@ -67,8 +74,12 @@ end
 module Machine : sig
   type t =
     | Enabled of bool
-    | Via of Via.t
-  ;;
+    (** Whether or not the machine is enabled. *)
+    | Via     of Via.t
+    (** Where the machine is located. *)
+    | Litmus  of Litmus.t list
+    (** Information about how to run `litmus` on this machine. *)
+    (** Type of machine stanza items. *)
 end
 
 (** Items in a compiler stanza *)
@@ -87,9 +98,9 @@ end
 (** Items at the top level *)
 module Top : sig
   type t =
-    | Cpp of Cpp.t list
-    | Herd of Herd.t list
-    | Machine of Id.t * Machine.t list
+    | Cpp      of Cpp.t list
+    | Herd     of Herd.t list
+    | Machine  of Id.t * Machine.t list
     | Compiler of Id.t * Compiler.t list
   ;;
 end

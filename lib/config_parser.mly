@@ -24,7 +24,7 @@ SOFTWARE. *)
 
 %token (* delimiters *) LBRACE RBRACE EOF EOL
 %token (* main groups *) MACHINE COMPILER
-%token (* program subgroups *) CPP HERD
+%token (* program subgroups *) CPP HERD LITMUS
 %token (* common keywords *) ENABLED CMD ARGV DEFAULT
 %token (* Herd-specific keywords *) ASM_MODEL C_MODEL
 %token (* machine-specific keywords *) VIA SSH HOST USER COPY TO LOCAL
@@ -72,6 +72,12 @@ cpp_item:
   | c = cmd     { Config_ast.Cpp.Cmd     c  }
   | vs = argv   { Config_ast.Cpp.Argv    vs }
 
+litmus_stanza:
+  | items = simple_stanza(LITMUS, litmus_item) { items }
+
+litmus_item:
+  | c = cmd                               { Config_ast.Litmus.Cmd c }
+
 herd_stanza:
   | items = simple_stanza(HERD, herd_item) { items }
 
@@ -89,7 +95,8 @@ machine_stanza:
 
 machine_item:
   | b = enabled         { Config_ast.Machine.Enabled b }
-  | VIA; v = via_stanza { Config_ast.Machine.Via v }
+  | VIA; v = via_stanza { Config_ast.Machine.Via     v }
+  | l = litmus_stanza   { Config_ast.Machine.Litmus  l }
 
 via_stanza:
   | LOCAL                                { Config_ast.Via.Local }

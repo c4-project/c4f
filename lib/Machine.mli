@@ -159,15 +159,17 @@ end
 module Spec : sig
   include Basic_spec
 
- (** [create ~enabled ~via]
-      creates a machine spec with the given fields.
-
-      These fields are subject to change, and as such [create] is an
-      unstable API. *)
-  val create
-    :  enabled : bool
-    -> via     : Via.t
+  val make
+    :  ?enabled:bool
+    -> ?via:Via.t
+    -> ?litmus:Litmus_tool.Config.t
+    -> unit
     -> t
+    (** [make ?enabled ?via ?litmus ()] creates a machine spec with
+       the given fields.
+
+      These fields are subject to change, and as such [make] is an
+       unstable API. *)
   ;;
 
   (** [With_id] is an extension onto [Spec.With_id] that

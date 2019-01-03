@@ -127,24 +127,27 @@ module Spec = struct
     type t =
       { enabled : bool [@default true] [@sexp_drop_default]
       ; via     : Via.t
+      ; litmus  : Litmus_tool.Config.t sexp_option
       }
-    [@@deriving sexp, fields]
+    [@@deriving sexp, fields, make]
     ;;
 
-    let create = Fields.create
+    let make ?enabled ?(via=Via.local) ?litmus () (* override *) =
+      make ?enabled ~via ~litmus ()
+    ;;
 
     (* We use a different name for the getter than the one
        [@@deriving fields] infers. *)
     let is_enabled = enabled
 
-    let pp f {via; enabled} =
-      Format.pp_open_hbox f ();
-      Via.pp f via;
-      if not enabled then begin
-        Format.pp_print_space f ();
-        String.pp f "(DISABLED)";
-      end;
-      Format.pp_close_box f ()
+    let pp = Fmt.hbox
+        (fun f {via; enabled; litmus} ->
+           Via.pp f via;
+           if not enabled then begin
+             Format.pp_print_space f ();
+             String.pp f "(DISABLED)";
+           end;
+           Fmt.option Litmus_tool.Config.pp f litmus)
     ;;
 
     let pp_summary = pp (* for now *)
@@ -155,7 +158,7 @@ module Spec = struct
 
   include M
 
-  let default = { M.enabled = true; via = Local }
+  let default = { M.enabled = true; via = Local; litmus = None }
 
   module With_id = struct
     include Spec.With_id (M)
