@@ -26,6 +26,16 @@ open Core_kernel
 open Lib
 open Utils
 
+type target =
+  [ `Spec of Compiler.Spec.With_id.t
+  | `Arch of string list
+  ]
+;;
+
+type file_type =
+  [`Assembly | `C | `Infer]
+;;
+
 let warn_if_not_tracking_symbols (o : Output.t) = function
   | [] ->
     Format.fprintf o.wf
@@ -55,12 +65,12 @@ let get_target cfg = function
   | `Arch _ as arch -> Or_error.return arch
 ;;
 
-let arch_of_target = function
+let arch_of_target : target -> string list = function
   | `Spec spec -> Compiler.Spec.With_id.emits spec
   | `Arch arch -> arch
 ;;
 
-let runner_of_target = function
+let runner_of_target : target -> (module Asm_job.Runner) Or_error.t = function
   | `Spec spec -> Language_support.asm_runner_from_spec spec
   | `Arch arch -> Language_support.asm_runner_from_emits arch
 ;;
@@ -73,12 +83,12 @@ let ensure_spec : [> `Spec of Compiler.Spec.With_id.t]
         "To handle C files, you must supply a compiler ID."
 ;;
 
-let maybe_run_compiler
+let chain_with_compiler
   (type aux_i)
   (type aux_o)
-  (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-  (target : [< `Spec of Compiler.Spec.With_id.t | `Arch of string list > `Spec ])
+  (target : target)
   (file_type : [> `Assembly | `C | `Infer])
+  (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
   : ( module Filter.S with type aux_i = (unit        * aux_i)
                        and type aux_o = (unit option * aux_o)
     ) Or_error.t =
@@ -121,40 +131,4 @@ let lift_command
       ?with_compiler_tests
     >>= f o
   ) |> Output.print_error o
-;;
-
-let litmusify ?output_format (o : Output.t)
-    passes symbols target inp outp
-    : (string, string) List.Assoc.t Or_error.t =
-  let open Result.Let_syntax in
-  let%bind (module Runner) = runner_of_target target in
-  let input =
-    { Asm_job.inp
-    ; outp
-    ; passes
-    ; symbols
-    }
-  in
-  let%map output =
-    Or_error.tag ~tag:"While translating assembly to litmus"
-      (Runner.litmusify ?output_format input)
-  in
-  Asm_job.warn output o.wf;
-  Asm_job.symbol_map output
-;;
-
-let litmusify_filter ?output_format (o : Output.t) passes symbols target
-  : ( module Filter.S with type aux_i = unit
-                       and type aux_o = (string, string) List.Assoc.t
-    ) =
-  ( module
-    (struct
-      type aux_i = unit
-      type aux_o = (string, string) List.Assoc.t
-      let run () = litmusify ?output_format o passes symbols target
-      let run_from_string_paths = Filter.lift_to_raw_strings ~f:run
-      let run_from_fpaths       = Filter.lift_to_fpaths ~f:run
-    end) : Filter.S with type aux_i = unit
-                     and type aux_o = (string, string) List.Assoc.t
-  )
 ;;

@@ -23,29 +23,22 @@
    SOFTWARE. *)
 
 open Base
+open Utils
 
 (** Generalised signature of job runners. *)
 module type Gen_runner = sig
-  type inp  (** Type of input *)
-  type aux  (** Type of auxiliary output *)
-  type lfmt (** Type of Litmus formats *)
-  type efmt (** Type of explainer formats *)
+  type 'fmt inp  (** Type of input, parametrised over format enum *)
+  type aux       (** Type of auxiliary output *)
+  type lfmt      (** Type of Litmus formats *)
+  type efmt      (** Type of explainer formats *)
 
-  val litmusify
-    :  ?output_format:lfmt
-    -> inp
-    -> aux Or_error.t
-  (** [litmusify ?output_format t] runs a litmusify job using [t].
-      If [output_format] is given, it overrides the default
-      ([Litmus_format.default]). *)
+  module Litmusify : Filter.S with type aux_i = lfmt inp
+                               and type aux_o = aux
+  (** [Litmusify] is a filter that runs a litmusifying job. *)
 
-  val explain
-    :  ?output_format:efmt
-    -> inp
-    -> aux Or_error.t
-  (** [explain ?output_format t] runs an explain job over [t].
-      If [output_format] is given, it overrides the default
-      ([Output.default]). *)
+  module Explain : Filter.S with type aux_i = efmt inp
+                             and type aux_o = aux
+  (** [Explain] is a filter that runs an assembly explanation job. *)
 end
 
 (** [Runner_deps] is a signature bringing together the modules we

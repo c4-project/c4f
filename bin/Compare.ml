@@ -28,22 +28,26 @@ open Utils
 
 
 let litmusify o passes spec c_file =
+  let target = `Spec spec in
+  let litmus_job =
+    Asm_job.(make ~format:(Litmus_format.Programs_only) ~passes ())
+  in
   let open Or_error.Let_syntax in
-  let (module Lit) =
-    Common.litmusify_filter
-      ~output_format:Asm_job.Litmus_format.Programs_only
-      o
-      passes
-      []
-      (`Spec spec)
-  in
   let%bind (module Comp_lit) =
-    Common.maybe_run_compiler (module Lit) (`Spec spec) `C
+    Common.(
+      target
+      |>  runner_of_target
+      >>| Asm_job.get_litmusify
+      >>= chain_with_compiler target `C
+    )
   in
-  Comp_lit.run
-    ((),())
-    (Io.In_source.file c_file)
-    (Io.Out_sink.stdout)
+  let%map (_, out) =
+    Comp_lit.run
+      ((), litmus_job)
+      (Io.In_source.file c_file)
+      (Io.Out_sink.stdout)
+  in
+  Asm_job.warn out (o.Output.wf)
 ;;
 
 let run_spec_on_file o passes spec ~c_file =

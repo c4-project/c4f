@@ -31,18 +31,20 @@
     the jobs. *)
 
 open Core
-open Utils
 
 include module type of Asm_job_intf
 
 (** [t] is a description of a single-file job. *)
-type t =
-  { inp     : Io.In_source.t
-  ; outp    : Io.Out_sink.t
-  ; passes  : Sanitiser_pass.Set.t
-  ; symbols : string list
-  }
-;;
+type 'fmt t
+
+val make
+  :  ?format:'fmt
+  -> ?passes:Sanitiser_pass.Set.t
+  -> ?symbols:string list
+  -> unit
+  -> 'fmt t
+(** [make ?format ?passes ?symbols ()] makes a job description. *)
+
 
 module Litmus_format : sig
   (** [t] is an enumeration of output formats for litmus jobs. *)
@@ -81,7 +83,7 @@ val symbol_map : output -> (string, string) List.Assoc.t
 val warn : output -> Format.formatter -> unit
 
 module type Runner =
-  Gen_runner with type inp := t
+  Gen_runner with type 'fmt inp := 'fmt t
               and type aux := output
               and type lfmt := Litmus_format.t
               and type efmt := Explain_format.t
@@ -89,3 +91,19 @@ module type Runner =
 
 module Make_runner (R : Runner_deps) : Runner
 (** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)
+
+(** {2 First-class wrappers for getting job runners } *)
+
+val get_litmusify
+  :  (module Runner)
+  -> (module Utils.Filter.S with type aux_i = Litmus_format.t t
+                             and type aux_o = output
+     )
+(** [get_litmusify Runner] is [Runner.Litmusify]. *)
+
+val get_explain
+  :  (module Runner)
+  -> (module Utils.Filter.S with type aux_i = Explain_format.t t
+                             and type aux_o = output
+     )
+(** [get_explain Runner] is [Runner.Explain]. *)

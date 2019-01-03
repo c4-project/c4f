@@ -43,25 +43,44 @@ let find_spec specs (path : Fpath.t) =
     )
 ;;
 
+let validate_path_and_file :
+  (Fpath.t * Fpath.t) Validate.check =
+  Validate.(
+    pair
+      ~fst:(booltest Fpath.is_dir_path ~if_false:"path should be a directory")
+      ~snd:(booltest Fpath.is_file_path ~if_false:"file should be a file")
+  )
+;;
+
 let regress_run_asm ((module L) : (module Asm_job.Runner))
     (path : Fpath.t) mode specs passes (file : Fpath.t) =
   let open Or_error.Let_syntax in
+
+  let%bind filepath =
+    Validate.valid_or_error (path, file) validate_path_and_file
+    >>| Tuple2.uncurry Fpath.append
+  in
 
   let%bind spec = find_spec specs file in
 
   Fmt.pr "## %a\n\n```\n@." Fpath.pp file;
 
   let input =
-    { Asm_job.inp = Io.In_source.file Fpath.(path // file)
-    ; outp = Io.Out_sink.stdout
-    ; passes
-    ; symbols = spec.cvars
-    }
+    Asm_job.make ~passes ~symbols:spec.cvars
   in
 
-  let%map _ = match mode with
-    | `Litmusify -> L.litmusify input
-    | `Explain   -> L.explain input
+  let%map _ =
+    match mode with
+    | `Litmusify ->
+      L.Litmusify.run_from_fpaths
+        (input ())
+        ~infile:(Some filepath)
+        ~outfile:None
+    | `Explain ->
+      L.Explain.run_from_fpaths
+        (input ())
+        ~infile:(Some filepath)
+        ~outfile:None
   in
 
   Out_channel.flush stdout;
@@ -109,7 +128,7 @@ let regress_run_asm_many modename mode passes test_path =
   printf "# %s tests\n\n" modename;
 
   let emits = ["x86"; "att"] in
-  let path = Fpath.(v test_path / "asm" / "x86" / "att") in
+  let path = Fpath.(v test_path / "asm" / "x86" / "att" / "") in
   let%bind l = Language_support.asm_runner_from_emits emits in
   let%bind specs = read_specs path in
   let%bind test_files = Io.Dir.get_files ~ext:"s" path in

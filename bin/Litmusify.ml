@@ -45,6 +45,25 @@ let run_herd cfg target (path : Fpath.t) (sink : Io.Out_sink.t) _chan
   Herd.run herd arch ~path ~sink
 ;;
 
+let chain_on_herd use_herd cfg target
+    (type i)
+    (type o)
+    (module M : Filter.S with type aux_i = i and type aux_o = o)
+  : ( module
+      Filter.S with type aux_i = (i * unit)
+                and type aux_o = (o * unit option)
+    ) =
+  (module
+    Filter.Chain_conditional_second (struct
+      let condition _ _ = use_herd
+      module First = M
+      module Second = Filter.Make_in_file_only (struct
+          type aux_i = unit
+          type aux_o = unit
+          let run () = run_herd cfg target
+        end)
+    end))
+
 let run file_type use_herd compiler_id_or_emits
     c_symbols
     ~(infile_raw : string option)
@@ -55,27 +74,19 @@ let run file_type use_herd compiler_id_or_emits
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
-  let (module Lit)
-    = Common.litmusify_filter o passes c_symbols target
+  let litmus_job = Asm_job.make ~passes ~symbols:c_symbols () in
+  let%bind (module Flt) =
+    Common.(
+      target
+      |>  runner_of_target
+      >>| Asm_job.get_litmusify
+      >>= chain_with_compiler target file_type
+      >>| chain_on_herd use_herd cfg target
+    )
   in
-  let%bind (module Comp_lit) =
-    Common.maybe_run_compiler (module Lit) target file_type
-  in
-  let ( module Flt : Filter.S with type aux_i = ((unit * unit) * unit)
-                               and type aux_o = ((unit option * (string, string) List.Assoc.t) * unit option)
-      ) =
-    (module
-      Filter.Chain_conditional_second (struct
-        let condition _ _ = use_herd
-        module First = Comp_lit
-        module Second = Filter.Make_in_file_only (struct
-            type aux_i = unit
-            type aux_o = unit
-            let run () = run_herd cfg target
-          end)
-      end))
-  in
-  let%map _ = Flt.run_from_string_paths (((),()),()) ~infile:infile_raw ~outfile:outfile_raw in
+  let%map _ =
+    Flt.run_from_string_paths (((), litmus_job), ())
+      ~infile:infile_raw ~outfile:outfile_raw in
   ()
 ;;
 

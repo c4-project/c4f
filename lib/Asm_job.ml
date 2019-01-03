@@ -27,12 +27,12 @@ open Utils
 
 include Asm_job_intf
 
-type t =
-  { inp     : Io.In_source.t
-  ; outp    : Io.Out_sink.t
-  ; passes  : Sanitiser_pass.Set.t
+type 'fmt t =
+  { format  : 'fmt option
+  ; passes  : Sanitiser_pass.Set.t [@default Sanitiser_pass.standard]
   ; symbols : string list
   }
+[@@deriving make]
 ;;
 
 module Litmus_format = struct
@@ -61,7 +61,7 @@ type output =
 ;;
 
 module type Runner =
-  Gen_runner with type inp := t
+  Gen_runner with type 'fmt inp := 'fmt t
               and type aux := output
               and type lfmt := Litmus_format.t
               and type efmt := Explain_format.t
@@ -147,13 +147,14 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let output_litmus
-      (output_format : Litmus_format.t)
+      ?(output_format : Litmus_format.t = Litmus_format.default)
       (name : string)
       (passes : Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
       (program : LS.Program.t)
       (_osrc : Io.Out_sink.t)
-      (outp : Out_channel.t) =
+      (outp : Out_channel.t)
+    : output Or_error.t =
     let open Or_error.Let_syntax in
     let%bind o = MS.sanitise ~passes ~symbols program in
     let programs = MS.Output.programs o in
@@ -179,7 +180,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let run_explanation
-      (output_format : Explain_format.t)
+      ?(output_format : Explain_format.t = Explain_format.default)
       (name    : string)
       (passes  : Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
@@ -212,21 +213,43 @@ module Make_runner (B : Runner_deps) : Runner = struct
     |> Or_error.combine_errors
   ;;
 
-  let run ~f t : output Or_error.t =
+  let run ~f t inp ic outp oc : output Or_error.t =
     let open Result.Let_syntax in
-    let name = Filename.basename (Io.In_source.to_string t.inp) in
-    let%bind asm = Io.In_source.with_input ~f:parse t.inp in
+    let name = Filename.basename (Io.In_source.to_string inp) in
+    let%bind asm = parse inp ic in
     let%bind symbols = stringify_symbols t.symbols in
-    Io.Out_sink.with_output t.outp
-      ~f:(f name t.passes symbols (B.program asm))
+    f ?output_format:t.format name t.passes symbols (B.program asm) outp oc
   ;;
 
-  let litmusify ?(output_format=Litmus_format.default)
-    : t -> output Or_error.t =
-    run ~f:(output_litmus output_format)
+  module Litmusify : Filter.S with type aux_i = Litmus_format.t t
+                               and type aux_o = output =
+    Filter.Make (struct
+      type aux_i = Litmus_format.t t
+      type aux_o = output
+
+      let run = run ~f:output_litmus
+    end)
   ;;
-  let explain ?(output_format=Explain_format.default)
-    : t -> output Or_error.t =
-    run ~f:(run_explanation output_format)
+
+  module Explain : Filter.S with type aux_i = Explain_format.t t
+                             and type aux_o = output =
+    Filter.Make (struct
+      type aux_i = Explain_format.t t
+      type aux_o = output
+
+      let run = run ~f:run_explanation
+    end)
   ;;
 end
+
+let get_litmusify (module Runner : Runner)
+  : ( module Filter.S with type aux_i = Litmus_format.t t
+                       and type aux_o = output
+    ) = (module Runner.Litmusify)
+;;
+
+let get_explain (module Runner : Runner)
+  : ( module Filter.S with type aux_i = Explain_format.t t
+                       and type aux_o = output
+    ) = (module Runner.Explain)
+;;

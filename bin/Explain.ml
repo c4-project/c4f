@@ -24,7 +24,6 @@
 
 open Core
 open Lib
-open Utils
 
 let print_symbol_map = function
   | [] -> ()
@@ -36,30 +35,6 @@ let print_symbol_map = function
       map
 ;;
 
-let explain_filter output_format passes c_symbols target =
-  let open Or_error.Let_syntax in
-  let%map (module Runner) = Common.runner_of_target target in
-  (module
-    (struct
-      type aux_i = unit
-      type aux_o = Asm_job.output
-      let run () inp outp =
-        let input =
-          { Asm_job.inp
-          ; outp
-          ; passes
-          ; symbols = c_symbols
-          }
-        in
-        Runner.explain ?output_format input
-      ;;
-
-      let run_from_string_paths = Filter.lift_to_raw_strings ~f:run
-      let run_from_fpaths       = Filter.lift_to_fpaths ~f:run
-    end)
-  : Filter.S with type aux_i = unit and type aux_o = Asm_job.output)
-;;
-
 let run file_type compiler_id_or_arch output_format c_symbols
     ~(infile_raw : string option) ~(outfile_raw : string option) o cfg =
   Common.warn_if_not_tracking_symbols o c_symbols;
@@ -68,13 +43,21 @@ let run file_type compiler_id_or_arch output_format c_symbols
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.explain
   in
+  let explain_job =
+    Asm_job.make ?format:output_format ~symbols:c_symbols ~passes ()
+  in
   let%bind (module Exp) =
-    explain_filter output_format passes c_symbols target
+    Common.(
+      target
+      |>  runner_of_target
+      >>| Asm_job.get_explain
+      >>= chain_with_compiler target file_type
+    )
   in
-  let%bind (module Flt) =
-    Common.maybe_run_compiler (module Exp) target file_type
+  let%map (_, out) =
+    Exp.run_from_string_paths ((), explain_job)
+      ~infile:infile_raw ~outfile:outfile_raw
   in
-  let%map (_, out) = Flt.run_from_string_paths ((),()) ~infile:infile_raw ~outfile:outfile_raw in
   Asm_job.warn out o.Output.wf;
   print_symbol_map (Asm_job.symbol_map out)
 ;;

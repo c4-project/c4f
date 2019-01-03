@@ -27,6 +27,14 @@ open Core_kernel
 open Lib
 open Utils
 
+type target =
+  [ `Spec of Compiler.Spec.With_id.t
+  | `Arch of string list
+  ]
+
+type file_type =
+  [`Assembly | `C | `Infer]
+
 val warn_if_not_tracking_symbols
   :  Output.t
   -> string list
@@ -43,38 +51,31 @@ val decide_if_c : Fpath.t option -> [> `C | `Infer] -> bool
 val get_target
   :  Config.M.t
   -> [< `Id of Id.t | `Arch of string list ]
-  -> ( [> `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
-         Or_error.t )
+  -> target Or_error.t
 (** [get_target cfg target] processes a choice between compiler ID
     and architecture (emits clause); if the input is a compiler
     ID, the compiler is retrieved from [cfg]. *)
 
-val arch_of_target
-  :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
-  -> string list
+val arch_of_target : target -> string list
 (** [arch_of_target target] gets the architecture (emits clause)
    associated with a target (either a compiler spec or emits
    clause). *)
 
-val runner_of_target
-  :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
-  -> (module Asm_job.Runner) Or_error.t
+val runner_of_target : target -> (module Asm_job.Runner) Or_error.t
 (** [runner_of_target target] gets the [Asm_job.Runner]
    associated with a target (either a compiler spec or emits
    clause). *)
 
-val maybe_run_compiler
-  :  (module Filter.S with type aux_i = 'i and type aux_o = 'o)
-  -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list > `Spec ]
-  -> [> `Assembly | `C | `Infer]
+val chain_with_compiler
+  :  target
+  -> file_type
+  -> ( module Filter.S with type aux_i = 'i and type aux_o = 'o )
   -> ( module Filter.S with type aux_i = (unit * 'i)
                         and type aux_o = (unit option * 'o)
      ) Or_error.t
-(** [maybe_run_compiler target file_type file] produces a filter that
-   compiles [file] if [file_type] is [`C], or [file_type] is [`Infer]
-   and the filename ends with `.c`.  It uses [target] to compile;
-   compilation, where required, fails if [target] is not a compiler
-   spec, or [infile] is [None]. *)
+(** [chain_with compiler target file_type to_chain] finds the correct
+    compiler filter for [target] (or none, depending on [file_type]),
+    then chains it onto [to_chain]. *)
 
 val ensure_spec
   :  [> `Spec of Compiler.Spec.With_id.t]
@@ -95,27 +96,3 @@ val lift_command
    command body [f], performing common book-keeping such as loading
    and testing the configuration, creating an [Output.t], and printing
    top-level errors. *)
-
-val litmusify
-  :  ?output_format:Asm_job.Litmus_format.t
-  -> Output.t
-  -> Sanitiser_pass.Set.t
-  -> string list
-  -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list]
-  -> Io.In_source.t
-  -> Io.Out_sink.t
-  -> (string, string) List.Assoc.t Or_error.t
-(** [litmusify ?output_format o passes symbols
-   spec_or_emits inp outp] is a thin wrapper around [Asm_job]'s litmusify mode
-   that handles finding the right job runner, printing warnings, and
-   supplying the maximal pass set. *)
-
-val litmusify_filter
-  :  ?output_format:Asm_job.Litmus_format.t
-  -> Output.t
-  -> Sanitiser_pass.Set.t
-  -> string list
-  -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list]
-  -> ( module Filter.S with type aux_i = unit
-                        and type aux_o = (string, string) List.Assoc.t)
-;;

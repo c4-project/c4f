@@ -178,18 +178,15 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     let open Or_error.Let_syntax in
     bracket ~stage:"LITMUS" ~file:(P_file.basename fs)
       (fun () ->
-         Asm_job.(
-           let input =
-             { inp     = Io.In_source.file (P_file.asm_path fs)
-             ; outp    = Io.Out_sink.file (P_file.lita_path fs)
-             ; passes  = sanitiser_passes
-             ; symbols = List.map ~f:snd locations
-             }
-           in
-           let%map output = R.litmusify input in
-           warn output o.wf;
-           symbol_map output
-         ))
+         let%map output =
+           R.Litmusify.run_from_fpaths
+             (Asm_job.make ~passes:sanitiser_passes ~symbols:(List.map ~f:snd locations) ())
+             ~infile:(Some (P_file.asm_path fs))
+             ~outfile:(Some (P_file.lita_path fs))
+         in
+         Asm_job.warn output o.wf;
+         Asm_job.symbol_map output
+      )
   ;;
 
   let c_herd_on_pathset_file fs =
