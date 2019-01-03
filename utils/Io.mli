@@ -1,25 +1,26 @@
 (* This file is part of 'act'.
 
-Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE. *)
 
 (** Various input/output helpers *)
 
@@ -84,10 +85,9 @@ module Out_sink : sig
   val with_output
     :  t
     -> f:(t -> Out_channel.t -> 'a Or_error.t)
-    -> (Fpath.t option * 'a) Or_error.t
+    -> 'a Or_error.t
   (** [with_output oname ~f] runs [f] connected to the output channel
-      pointed to by [oname].  It returns both the output filename
-      (if any) and the result of [f]. *)
+      pointed to by [oname].  It returns the result of [f]. *)
 end
 
 val fpath_of_string : string -> Fpath.t Or_error.t
@@ -104,7 +104,7 @@ val with_input_and_output
   -> f:(In_source.t -> In_channel.t ->
         Out_sink.t -> Out_channel.t ->
         'a Or_error.t)
-  -> (Fpath.t option * 'a) Or_error.t
+  -> 'a Or_error.t
 (** [with_input_and_output i o ~f] runs [f] with the appropriate
     channels pointed to by [i] and [o]. *)
 

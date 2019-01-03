@@ -40,12 +40,6 @@ let warn_if_not_tracking_symbols (o : Output.t) = function
   | _ :: _ -> ()
 ;;
 
-let temp_file = Filename.temp_file "act"
-
-let asm_file is_c (maybe_infile : Fpath.t option) =
-  if is_c then Some (Fpath.v (temp_file "s")) else maybe_infile
-;;
-
 let decide_if_c (infile : Fpath.t option)
   : [> `C | `Infer] -> bool = function
   | `C -> true
@@ -71,40 +65,32 @@ let runner_of_target = function
   | `Arch arch -> Language_support.asm_runner_from_emits arch
 ;;
 
-let run_compiler target
-    ~(infile_raw : string option)
-    ~(outfile_raw : string option) =
-  let open Result.Let_syntax in
-  let%bind cspec = match target with
-    | `Spec spec -> return spec
-    | `Arch _ ->
+let ensure_spec : [> `Spec of Compiler.Spec.With_id.t]
+  -> Compiler.Spec.With_id.t Or_error.t = function
+    | `Spec spec -> Or_error.return spec
+    | _ ->
       Or_error.error_string
-        "To litmusify a C file, you must supply a compiler ID."
-  in
-  let%bind infile =
-    Io.In_source.(infile_raw |> of_string_opt >>= to_file_err)
-  in
-  let%bind outfile =
-    Io.Out_sink.(outfile_raw |> of_string_opt >>= to_file_err)
-  in
-  let%bind (module C) = Language_support.compiler_from_spec cspec in
-  Or_error.tag ~tag:"While compiling to assembly"
-    (C.compile ~infile ~outfile)
+        "To handle C files, you must supply a compiler ID."
 ;;
 
 let maybe_run_compiler
-    (target : [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ])
-    (file_type : [> `Assembly | `C | `Infer])
-    (infile : Fpath.t option)
-  : Fpath.t option Or_error.t =
+  (type aux)
+  (module Onto : Filter.S with type aux = aux)
+  (target : [< `Spec of Compiler.Spec.With_id.t | `Arch of string list > `Spec ])
+  (file_type : [> `Assembly | `C | `Infer])
+  : (module Filter.S with type aux = (unit option * aux)) Or_error.t =
   let open Result.Let_syntax in
-  let is_c = decide_if_c infile file_type in
-  let outfile = asm_file is_c infile in
-  let infile_raw = Option.map ~f:Fpath.to_string infile in
-  let outfile_raw = Option.map ~f:Fpath.to_string outfile in
-  let%map () =
-    if is_c then run_compiler target ~infile_raw ~outfile_raw else return ()
-  in outfile
+  let%bind cspec = ensure_spec target in
+  let%map (module C) = Language_support.compiler_filter_from_spec cspec in
+  let should_run_compiler isrc
+    = decide_if_c (Io.In_source.to_file isrc) file_type
+  in
+  (module
+    Filter.Chain_conditional_first (struct
+      module First = C
+      module Second = Onto
+      let condition src _snk = should_run_compiler src
+    end) : Filter.S with type aux = (unit option * aux))
 ;;
 
 let lift_command
@@ -133,7 +119,8 @@ let lift_command
 ;;
 
 let litmusify ?output_format (o : Output.t)
-    passes inp outp symbols target =
+    passes symbols target inp outp
+    : (string, string) List.Assoc.t Or_error.t =
   let open Result.Let_syntax in
   let%bind (module Runner) = runner_of_target target in
   let input =
@@ -143,10 +130,21 @@ let litmusify ?output_format (o : Output.t)
     ; symbols
     }
   in
-  let%map (_, output) =
+  let%map output =
     Or_error.tag ~tag:"While translating assembly to litmus"
       (Runner.litmusify ?output_format input)
   in
   Asm_job.warn output o.wf;
   Asm_job.symbol_map output
+;;
+
+let litmusify_filter ?output_format (o : Output.t) passes symbols target
+  : (module Filter.S with type aux = (string, string) List.Assoc.t) =
+  (module
+    (struct
+      type aux = (string, string) List.Assoc.t
+      let run = litmusify ?output_format o passes symbols target
+      let run_from_string_paths = Filter.lift_to_raw_strings ~f:run
+      let run_from_fpaths       = Filter.lift_to_fpaths ~f:run
+    end) : Filter.S with type aux = (string, string) List.Assoc.t)
 ;;

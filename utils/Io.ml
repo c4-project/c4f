@@ -192,26 +192,21 @@ module Out_sink = struct
   ;;
 
   let with_file_output f (fpath : Fpath.t) =
-    let open Or_error in
-    let open Or_error.Let_syntax in
     let fpath_raw = Fpath.to_string fpath in
-    let%map result =
+    Or_error.(
       tag_arg
         (try_with_join (fun _ -> Out_channel.with_file fpath_raw ~f))
         "While writing to file:"
         fpath_raw
         [%sexp_of: string]
-    in (Some fpath, result)
+    )
   ;;
 
   let with_stdout_output f =
-    let open Or_error in
-    let open Or_error.Let_syntax in
-    let%map result = try_with_join (fun _ -> f Out_channel.stdout)
-    in (None, result)
+    Or_error.try_with_join (fun _ -> f Out_channel.stdout)
   ;;
 
-  let with_output (snk : t) ~f : (Fpath.t option * 'a) Or_error.t =
+  let with_output (snk : t) ~f : 'a Or_error.t =
     let fs = f snk in
     match snk with
     | File fpath -> with_file_output fs fpath
@@ -222,7 +217,7 @@ end
 let with_input_and_output
     (src : In_source.t) (snk : Out_sink.t)
     ~f
-  : (Fpath.t option * 'a) Or_error.t =
+  : 'a Or_error.t =
   In_source.with_input src
     ~f:(fun isrc' ic -> Out_sink.with_output snk ~f:(f isrc' ic))
 ;;

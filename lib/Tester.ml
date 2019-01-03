@@ -186,7 +186,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
              ; symbols = List.map ~f:snd locations
              }
            in
-           let%map (_, output) = R.litmusify input in
+           let%map output = R.litmusify input in
            warn output o.wf;
            symbol_map output
          ))

@@ -35,10 +35,6 @@ val warn_if_not_tracking_symbols
     if [c_symbols] is empty.  The warning explains that, without any
     C symbols to track, act may make incorrect assumptions. *)
 
-val temp_file : string -> string
-(** [temp_file suffix] generates a temporary file name suitable for
-   act commands. *)
-
 val decide_if_c : Fpath.t option -> [> `C | `Infer] -> bool
 (** [decide_if_c infile filetype] decides whether [infile] is a C
     file---from its extension if [filetype] is [`Infer], or
@@ -68,15 +64,21 @@ val runner_of_target
    clause). *)
 
 val maybe_run_compiler
-  :  [< `Spec of Compiler.Spec.With_id.t | `Arch of string list ]
+  :  (module Filter.S with type aux = 'aux)
+  -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list > `Spec ]
   -> [> `Assembly | `C | `Infer]
-  -> Fpath.t option
-  -> Fpath.t option Or_error.t
-(** [maybe_run_compiler target file_type file] compiles [file] if
-   [file_type] is [`C], or [file_type] is [`Infer] and the filename
-   ends with `.c`.  It uses [target] to compile; compilation, where
-   required, fails if [target] is not a compiler spec, or [infile] is
-   [None]. *)
+  -> (module Filter.S with type aux = (unit option * 'aux)) Or_error.t
+(** [maybe_run_compiler target file_type file] produces a filter that
+   compiles [file] if [file_type] is [`C], or [file_type] is [`Infer]
+   and the filename ends with `.c`.  It uses [target] to compile;
+   compilation, where required, fails if [target] is not a compiler
+   spec, or [infile] is [None]. *)
+
+val ensure_spec
+  :  [> `Spec of Compiler.Spec.With_id.t]
+  -> Compiler.Spec.With_id.t Or_error.t
+(** [ensure_spec maybe_spec] checks that [maybe_spec] is, indeed,
+    a spec. *)
 
 val lift_command
   :  ?compiler_predicate:Compiler.Property.t Blang.t
@@ -96,12 +98,21 @@ val litmusify
   :  ?output_format:Asm_job.Litmus_format.t
   -> Output.t
   -> Sanitiser_pass.Set.t
-  -> Io.In_source.t
-  -> Io.Out_sink.t
   -> string list
   -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list]
+  -> Io.In_source.t
+  -> Io.Out_sink.t
   -> (string, string) List.Assoc.t Or_error.t
-(** [litmusify ?output_format o passes inp outp symbols
-   spec_or_emits] is a thin wrapper around [Asm_job]'s litmusify mode
+(** [litmusify ?output_format o passes symbols
+   spec_or_emits inp outp] is a thin wrapper around [Asm_job]'s litmusify mode
    that handles finding the right job runner, printing warnings, and
    supplying the maximal pass set. *)
+
+val litmusify_filter
+  :  ?output_format:Asm_job.Litmus_format.t
+  -> Output.t
+  -> Sanitiser_pass.Set.t
+  -> string list
+  -> [< `Spec of Compiler.Spec.With_id.t | `Arch of string list]
+  -> (module Filter.S with type aux = (string, string) List.Assoc.t)
+;;

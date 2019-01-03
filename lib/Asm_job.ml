@@ -25,6 +25,8 @@
 open Core
 open Utils
 
+include Asm_job_intf
+
 type t =
   { inp     : Io.In_source.t
   ; outp    : Io.Out_sink.t
@@ -58,47 +60,12 @@ type output =
   } [@@deriving fields]
 ;;
 
-module type Runner_deps = sig
-  type ast
-
-  module Src_lang : Language.S
-  module Dst_lang : Language.S
-
-  module Frontend : Frontend.S with type ast := ast
-
-  module Litmus_ast : Litmus.Ast.S with type Lang.Program.t = Dst_lang.Program.t
-                                    and type Lang.Constant.t = Dst_lang.Constant.t
-  module Litmus_pp : Litmus.Pp.S with module Ast = Litmus_ast
-
-  module Multi_sanitiser
-    : Sanitiser.S with module Lang := Src_lang
-                   and type 'a Program_container.t = 'a list
-  ;;
-  module Single_sanitiser
-    : Sanitiser.S with module Lang := Src_lang
-                   and type 'a Program_container.t = 'a
-  ;;
-  module Explainer : Explainer.S with module Lang := Src_lang
-
-  val final_convert
-    :  Src_lang.Program.t
-    -> Dst_lang.Program.t
-
-  val program : ast -> Src_lang.Program.t
-end
-
-module type Runner = sig
-  val litmusify
-    :  ?output_format:Litmus_format.t
-    -> t
-    -> (Fpath.t option * output) Or_error.t
-  ;;
-  val explain
-    :  ?output_format:Explain_format.t
-    -> t
-    -> (Fpath.t option * output) Or_error.t
-  ;;
-end
+module type Runner =
+  Gen_runner with type inp := t
+              and type aux := output
+              and type lfmt := Litmus_format.t
+              and type efmt := Explain_format.t
+;;
 
 module Make_runner (B : Runner_deps) : Runner = struct
   (* Shorthand for modules we use a _lot_. *)
@@ -245,7 +212,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
     |> Or_error.combine_errors
   ;;
 
-  let run ~f t : (Fpath.t option * output) Or_error.t =
+  let run ~f t : output Or_error.t =
     let open Result.Let_syntax in
     let name = Filename.basename (Io.In_source.to_string t.inp) in
     let%bind asm = Io.In_source.with_input ~f:parse t.inp in
@@ -255,11 +222,11 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let litmusify ?(output_format=Litmus_format.default)
-    : t -> (Fpath.t option * output) Or_error.t =
+    : t -> output Or_error.t =
     run ~f:(output_litmus output_format)
   ;;
   let explain ?(output_format=Explain_format.default)
-    : t -> (Fpath.t option * output) Or_error.t =
+    : t -> output Or_error.t =
     run ~f:(run_explanation output_format)
   ;;
 end

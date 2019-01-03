@@ -52,7 +52,7 @@ let get_runner_from_dialect dialect =
 
        let final_convert = Conv.convert
        let program = Fn.id
-     end): Lib.Asm_job.Runner)
+     end) : Lib.Asm_job.Runner)
 ;;
 
 let get_runner emits_tail =

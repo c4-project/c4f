@@ -47,12 +47,17 @@ val asm_runner_from_emits
   -> (module Asm_job.Runner) Or_error.t
 ;;
 
-(** [compiler_from_spec spec] generates a compiler module from
-    [spec]. *)
 val compiler_from_spec
   :  Compiler.Spec.With_id.t
   -> (module Compiler.S) Or_error.t
-;;
+(** [compiler_from_spec spec] generates a compiler module from
+    [spec]. *)
+
+val compiler_filter_from_spec
+  :  Compiler.Spec.With_id.t
+  -> (module Utils.Filter.S with type aux = unit) Or_error.t
+(** [compiler_filter_from_spec spec] wraps
+    [compiler_from_spec spec] in the [Utils.Filter.S] interface. *)
 
 (** [load_and_process_config ?compiler_predicate ?machine_predicate
    ?sanitiser_passes ?with_compiler_tests path] loads the config file

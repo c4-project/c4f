@@ -26,31 +26,30 @@ open Core
 open Lib
 open Utils
 
-let compile spec ~c_file =
-  let open Or_error.Let_syntax in
-  let%bind maybe_outfile =
-    Common.maybe_run_compiler (`Spec spec) `C (Some c_file)
-  in
-  Result.of_option maybe_outfile
-    ~error:(Error.of_string "Internal error: expected an output file")
-;;
 
-let litmusify o passes spec ~asm_file =
-  Common.litmusify o
-    ~output_format:Asm_job.Litmus_format.Programs_only
-    passes
-    (Io.In_source.file asm_file)
-    Io.Out_sink.stdout
-    []
-    spec
+let litmusify o passes spec c_file =
+  let open Or_error.Let_syntax in
+  let (module Lit) =
+    Common.litmusify_filter
+      ~output_format:Asm_job.Litmus_format.Programs_only
+      o
+      passes
+      []
+      (`Spec spec)
+  in
+  let%bind (module Comp_lit) =
+    Common.maybe_run_compiler (module Lit) (`Spec spec) `C
+  in
+  Comp_lit.run
+    (Io.In_source.file c_file)
+    (Io.Out_sink.stdout)
 ;;
 
 let run_spec_on_file o passes spec ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@."
     Id.pp (Compiler.Spec.With_id.id spec);
   let open Or_error.Let_syntax in
-  let%bind asm_file = compile spec ~c_file in
-  let%map  _        = litmusify o passes (`Spec spec) ~asm_file in
+  let%map  _  = litmusify o passes spec c_file in
   Format.printf "@[<h>```@]@."
 ;;
 

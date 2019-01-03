@@ -36,34 +36,46 @@ let print_symbol_map = function
       map
 ;;
 
+let explain_filter output_format passes c_symbols target =
+  let open Or_error.Let_syntax in
+  let%map (module Runner) = Common.runner_of_target target in
+  (module
+    (struct
+      type aux = Asm_job.output
+      let run inp outp =
+        let input =
+          { Asm_job.inp
+          ; outp
+          ; passes
+          ; symbols = c_symbols
+          }
+        in
+        Runner.explain ?output_format input
+      ;;
+
+      let run_from_string_paths = Filter.lift_to_raw_strings ~f:run
+      let run_from_fpaths       = Filter.lift_to_fpaths ~f:run
+    end)
+  : Filter.S with type aux = Asm_job.output)
+;;
+
 let run file_type compiler_id_or_arch output_format c_symbols
     ~(infile_raw : string option) ~(outfile_raw : string option) o cfg =
   Common.warn_if_not_tracking_symbols o c_symbols;
   let open Or_error.Let_syntax in
-  let%bind outfile = Io.fpath_of_string_option outfile_raw
-  and      infile  = Io.fpath_of_string_option infile_raw
-  in
-  let passes =
-    Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.Set.empty
-  in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
-  let%bind asm_file =
-    Common.maybe_run_compiler target file_type infile
+  let passes =
+    Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.explain
   in
-  let inp = Io.In_source.of_fpath_opt asm_file in
-  let%bind (module Runner) = Common.runner_of_target target in
-  Io.(
-    let input =
-      { Asm_job.inp
-      ; outp = Out_sink.of_fpath_opt outfile
-      ; passes
-      ; symbols = c_symbols
-      }
-    in
-    let%map (_, out) = Runner.explain ?output_format input in
-    Asm_job.warn out o.Output.wf;
-    print_symbol_map (Asm_job.symbol_map out)
-  )
+  let%bind (module Exp : Filter.S with type aux = Asm_job.output)
+    = explain_filter output_format passes c_symbols target
+  in
+  let%bind (module Flt : Filter.S with type aux = (unit option * Asm_job.output)) =
+    Common.maybe_run_compiler (module Exp) target file_type
+  in
+  let%map (_, out) = Flt.run_from_string_paths ~infile:infile_raw ~outfile:outfile_raw in
+  Asm_job.warn out o.Output.wf;
+  print_symbol_map (Asm_job.symbol_map out)
 ;;
 
 let command =

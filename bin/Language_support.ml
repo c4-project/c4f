@@ -78,6 +78,22 @@ let compiler_from_spec (cspec : Compiler.Spec.With_id.t) =
   Compiler.from_spec compiler_module_from_spec cspec
 ;;
 
+let compiler_filter_from_spec
+    (cspec : Compiler.Spec.With_id.t)
+  : (module Utils.Filter.S with type aux = unit) Or_error.t =
+  let open Or_error.Let_syntax in
+  let%map (module Com) = compiler_from_spec cspec in
+  (module
+    (Utils.Filter.Make_files_only
+       (struct
+         type aux = unit
+         let run = Com.compile
+       end)
+    )
+    : Utils.Filter.S with type aux = unit
+  )
+;;
+
 let test_compiler cspec =
   let open Or_error.Let_syntax in
   let%bind (module M) = compiler_from_spec cspec in

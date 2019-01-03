@@ -80,7 +80,7 @@ let%expect_test "make_argv: override model" =
 ;;
 
 let run t arch
-    ~(path : Fpath.t) ~sink =
+    ~(path : Fpath.t) ~sink : unit Or_error.t =
   let model = model_for_arch t arch in
   let prog = t.config.cmd in
   let argv = make_argv model path in
@@ -92,6 +92,6 @@ let run t arch
 let run_and_load_results t arch
     ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
   let open Or_error.Let_syntax in
-  let%bind (_path, ()) = run t arch ~path:input_path ~sink:(Io.Out_sink.file output_path) in
+  let%bind () = run t arch ~path:input_path ~sink:(Io.Out_sink.file output_path) in
   Herd_output.load ~path:output_path
 ;;

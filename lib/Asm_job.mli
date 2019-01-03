@@ -33,6 +33,8 @@
 open Core
 open Utils
 
+include module type of Asm_job_intf
+
 (** [t] is a description of a single-file job. *)
 type t =
   { inp     : Io.In_source.t
@@ -78,59 +80,12 @@ val symbol_map : output -> (string, string) List.Assoc.t
     pretty-print formatter [f]. *)
 val warn : output -> Format.formatter -> unit
 
-(** [Runner] is the signature of job runners. *)
-module type Runner = sig
-  val litmusify
-    :  ?output_format:Litmus_format.t
-    -> t
-    -> (Fpath.t option * output) Or_error.t
-  (** [litmusify ?output_format t] runs a litmusify job using [t].
-      If [output_format] is given, it overrides the default
-      ([Litmus_format.default]). *)
+module type Runner =
+  Gen_runner with type inp := t
+              and type aux := output
+              and type lfmt := Litmus_format.t
+              and type efmt := Explain_format.t
+(** Signature of job runners. *)
 
-  val explain
-    :  ?output_format:Explain_format.t
-    -> t
-    -> (Fpath.t option * output) Or_error.t
-  (** [explain ?output_format t] runs an explain job over [t].
-      If [output_format] is given, it overrides the default
-      ([Output.default]). *)
-end
-
-(** [Runner_deps] is a signature bringing together the modules we
-    need to be able to run single-file jobs. *)
-module type Runner_deps = sig
-  type ast
-
-  module Src_lang : Language.S
-  (** [Src_lang] is the main language used in the jobs, which may differ
-      from the [Litmus] language. *)
-
-  module Dst_lang : Language.S
-  (** [Dst_lang] is the language used in emitted Litmus tests. *)
-
-  module Frontend : Frontend.S with type ast := ast
-
-  module Litmus_ast : Litmus.Ast.S with type Lang.Program.t = Dst_lang.Program.t
-                                    and type Lang.Constant.t = Dst_lang.Constant.t
-  module Litmus_pp : Litmus.Pp.S with module Ast = Litmus_ast
-
-  module Multi_sanitiser
-    : Sanitiser.S with module Lang := Src_lang
-                   and type 'a Program_container.t = 'a list
-  ;;
-  module Single_sanitiser
-    : Sanitiser.S with module Lang := Src_lang
-                   and type 'a Program_container.t = 'a
-  ;;
-  module Explainer : Explainer.S with module Lang := Src_lang
-
-  val final_convert
-    :  Src_lang.Program.t
-    -> Dst_lang.Program.t
-
-  val program : ast -> Src_lang.Program.t
-end
-
-(** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)
 module Make_runner (R : Runner_deps) : Runner
+(** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)

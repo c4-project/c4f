@@ -37,25 +37,12 @@ let make_herd cfg =
   Herd.create ~config:herd_cfg
 ;;
 
-let run_litmusify o passes target c_symbols
-    (asm_file : Fpath.t option) (lit_file : Io.Out_sink.t) =
-  let source = Io.In_source.of_fpath_opt asm_file in
-  Common.litmusify o passes source lit_file c_symbols target
-;;
-
-let run_herd cfg target (lit_file : Io.Out_sink.t) (outfile : Fpath.t option) =
+let run_herd cfg target (path : Fpath.t) (sink : Io.Out_sink.t) _chan
+  : unit Or_error.t =
   let open Result.Let_syntax in
-  let%bind path = Io.Out_sink.to_file_err lit_file in
-  let      sink = Io.Out_sink.of_fpath_opt outfile in
   let%bind herd = make_herd cfg in
   let arch = Herd.Assembly (Common.arch_of_target target) in
-  let%map (_, ()) = Herd.run herd arch ~path ~sink in ()
-;;
-
-let lit_file use_herd (maybe_outfile : Fpath.t option) : Io.Out_sink.t =
-  if use_herd
-  then Io.Out_sink.temp ~prefix:"litmus" ~ext:""
-  else Io.Out_sink.of_fpath_opt maybe_outfile
+  Herd.run herd arch ~path ~sink
 ;;
 
 let run file_type use_herd compiler_id_or_emits
@@ -64,19 +51,29 @@ let run file_type use_herd compiler_id_or_emits
     ~(outfile_raw : string option) o cfg =
   Common.warn_if_not_tracking_symbols o c_symbols;
   let open Result.Let_syntax in
-  let%bind infile  = Io.fpath_of_string_option infile_raw in
-  let%bind outfile = Io.fpath_of_string_option outfile_raw in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
-  let%bind asm_file =
-    Common.maybe_run_compiler target file_type infile
-  in
-  let lit_file = lit_file use_herd outfile in
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
-  let%bind _ = run_litmusify o passes target c_symbols asm_file lit_file in
-  Travesty.T_or_error.when_m use_herd
-    ~f:(fun () -> run_herd cfg target lit_file outfile)
+  let (module Lit : Filter.S with type aux = (string, string) List.Assoc.t)
+    = Common.litmusify_filter o passes c_symbols target
+  in
+  let%bind (module Comp_lit : Filter.S with type aux = (unit option * (string, string) List.Assoc.t)) =
+    Common.maybe_run_compiler (module Lit) target file_type
+  in
+  let (module Flt : Filter.S with type aux = ((unit option * (string, string) List.Assoc.t) * unit option)) =
+    (module
+      Filter.Chain_conditional_second (struct
+        let condition _ _ = use_herd
+        module First = Comp_lit
+        module Second = Filter.Make_in_file_only (struct
+            type aux = unit
+            let run = run_herd cfg target
+          end)
+      end))
+  in
+  let%map _ = Flt.run_from_string_paths ~infile:infile_raw ~outfile:outfile_raw in
+  ()
 ;;
 
 let command =
