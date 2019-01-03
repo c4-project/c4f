@@ -27,26 +27,8 @@ open Utils
 
 include Config_intf
 
-module Cpp = struct
-  type t =
-    { enabled : bool
-    ; cmd     : string option
-    }
-  [@@deriving sexp, fields, make]
-  ;;
-
-  let default () =
-    { enabled = true
-    ; cmd     = None
-    }
-  ;;
-
-  let cmd (* override *) t = Option.value ~default:"cpp" (cmd t)
-  let argv : t -> string list = Fn.const []
-end
-
 module Raw = struct
-  module Cpp = Cpp
+  module Cpp = Cpp.Config
 
   module CI = struct
     module C = Compiler.Cfg_spec
@@ -126,8 +108,9 @@ module Raw = struct
           ~f:(function Emits e -> Some (Id.to_string_list e) | _ -> None)
       and cmd   = find_one items ~item_name:"cmd"
           ~f:(function Cmd c -> Some c | _ -> None)
-      and argv  = find_one items ~item_name:"argv"
+      and argv  = find_at_most_one items ~item_name:"argv"
           ~f:(function Argv v -> Some v | _ -> None)
+          ~on_empty:(return [])
       and herd  = find_at_most_one items ~item_name:"herd"
           ~f:(function Herd h -> Some h | _ -> None)
           ~on_empty:(return true)
@@ -143,10 +126,13 @@ module Raw = struct
       let%map cmd = find_at_most_one items ~item_name:"cmd"
           ~f:(function Cmd c -> Some (Some c) | _ -> None)
           ~on_empty:(return None)
+      and argv  = find_at_most_one items ~item_name:"argv"
+          ~f:(function Argv v -> Some (Some v) | _ -> None)
+          ~on_empty:(return None)
       and enabled = find_at_most_one items ~item_name:"enabled"
           ~f:(function Enabled b -> Some b | _ -> None)
           ~on_empty:(return true)
-      in Cpp.make ~enabled ?cmd ()
+      in Cpp.make ~enabled ?cmd ?argv ()
     ;;
 
     let herd (items : Config_ast.Herd.t list) =
@@ -269,7 +255,7 @@ module M = struct
   type t =
     { compilers          : C.Set.t
     ; machines           : Machine.Spec.Set.t
-    ; cpp                : Cpp.t sexp_option
+    ; cpp                : Cpp.Config.t sexp_option
     ; herd               : Herd.Config.t sexp_option
     ; sanitiser_passes   : (default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t)
     ; disabled_compilers : (Id.t, Error.t option) List.Assoc.t

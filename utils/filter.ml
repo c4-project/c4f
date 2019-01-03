@@ -115,17 +115,20 @@ end
 
 module Chain_conditional_core (B : sig
     module BCC : Basic_chain_conditional
-    type aux_i
     type aux_o
-    val run_chained : aux_i -> Io.In_source.t -> Io.Out_sink.t -> aux_o Or_error.t
-    val run_unchained : aux_i -> Io.In_source.t -> Io.Out_sink.t -> aux_o Or_error.t
+    val run_chained
+      : BCC.First.aux_i -> BCC.Second.aux_i -> Io.In_source.t -> Io.Out_sink.t -> aux_o Or_error.t
+    val run_unchained
+      : BCC.First.aux_i -> BCC.Second.aux_i -> Io.In_source.t -> Io.Out_sink.t -> aux_o Or_error.t
   end) = struct
-  type aux_i = B.aux_i
+  type aux_i = (B.BCC.First.aux_i * B.BCC.Second.aux_i)
   type aux_o = B.aux_o
 
-  let run aux_in src snk =
-    (if B.BCC.condition src snk then B.run_chained else B.run_unchained)
-      aux_in src snk
+  let run (a_in, b_in) src snk =
+    ( if   B.BCC.condition a_in b_in src snk
+      then B.run_chained
+      else B.run_unchained
+    ) a_in b_in src snk
   ;;
 
   let run_from_string_paths = lift_to_raw_strings ~f:run
@@ -137,18 +140,17 @@ module Chain_conditional_first (B : Basic_chain_conditional)
        and type aux_o = (B.First.aux_o option * B.Second.aux_o) =
   Chain_conditional_core (struct
     module BCC = B
-    type aux_i = (B.First.aux_i        * B.Second.aux_i)
     type aux_o = (B.First.aux_o option * B.Second.aux_o)
 
     module Chained = Chain (B.First) (B.Second)
 
-    let run_chained (a_in, b_in) src snk =
+    let run_chained a_in b_in src snk =
       let open Or_error.Let_syntax in
       let%map (a_out, b_out) = Chained.run (a_in, b_in) src snk in
       (Some a_out, b_out)
     ;;
 
-    let run_unchained (_, b_in) src snk =
+    let run_unchained _ b_in src snk =
       let open Or_error.Let_syntax in
       let%map b_out = B.Second.run b_in src snk in
       (None, b_out)
@@ -161,18 +163,17 @@ module Chain_conditional_second (B : Basic_chain_conditional)
        and type aux_o = (B.First.aux_o * B.Second.aux_o option) =
   Chain_conditional_core (struct
     module BCC = B
-    type aux_i = (B.First.aux_i * B.Second.aux_i       )
     type aux_o = (B.First.aux_o * B.Second.aux_o option)
 
     module Chained = Chain (B.First) (B.Second)
 
-    let run_chained (a_in, b_in) src snk =
+    let run_chained a_in b_in src snk =
       let open Or_error.Let_syntax in
       let%map (a_out, b_out) = Chained.run (a_in, b_in) src snk in
       (a_out, Some b_out)
     ;;
 
-    let run_unchained (a_in, _) src snk =
+    let run_unchained a_in _ src snk =
       let open Or_error.Let_syntax in
       let%map a_out = B.First.run a_in src snk in
       (a_out, None)

@@ -26,7 +26,7 @@ open Core
 open Lib
 open Utils
 
-let chain_on_herd use_herd
+let chain_on_herd (use_herd : bool)
     (type i)
     (type o)
     (module M : Filter.S with type aux_i = i and type aux_o = o)
@@ -36,7 +36,7 @@ let chain_on_herd use_herd
     ) =
   (module
     Filter.Chain_conditional_second (struct
-      let condition _ _ = use_herd
+      let condition _ _ _ _ = use_herd
       module First = M
       module Second = Herd.Filter
     end))

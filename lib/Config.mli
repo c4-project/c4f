@@ -28,21 +28,13 @@ open Base
 
 include module type of Config_intf
 
-module Cpp : sig
-  include S_program
-
-  val make : enabled:bool -> ?cmd:string -> unit -> t
-  (** [make ~enabled ?cmd ()] makes a CPP configuration block. *)
-end
-(** [Cpp] is the type of C preprocessor configurations. *)
-
 (** [Raw] represents act configuration loaded directly from a spec
     file, without any compiler testing or expansion. *)
 module Raw : sig
-  include S with module CSpec := Compiler.Cfg_spec and module Cpp := Cpp
+  include S with module CSpec := Compiler.Cfg_spec and module Cpp := Cpp.Config
 
   val create
-    :  ?cpp:Cpp.t
+    :  ?cpp:Cpp.Config.t
     -> ?herd:Herd.Config.t
     -> compilers:Compiler.Cfg_spec.Set.t
     -> machines:Machine.Spec.Set.t
@@ -54,7 +46,7 @@ end
 
 (** [M] represents fully processed act compiler configurations. *)
 module M : sig
-  include S with module CSpec := Compiler.Spec and module Cpp := Cpp
+  include S with module CSpec := Compiler.Spec and module Cpp := Cpp.Config
 
   type 't hook = ('t -> 't option Or_error.t)
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)

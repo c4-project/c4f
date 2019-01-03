@@ -113,8 +113,13 @@ module type Basic_chain_conditional = sig
   module First  : S (** The first filter. *)
   module Second : S (** The second filter. *)
 
-  val condition : Io.In_source.t -> Io.Out_sink.t -> bool
-  (** [condition src snk] should return [true] when the optional
+  val condition
+    :  First.aux_i
+    -> Second.aux_i
+    -> Io.In_source.t
+    -> Io.Out_sink.t
+    -> bool
+  (** [condition a_aux b_aux src snk] should return [true] when the optional
      filter should be run (which filter this is depends on the
      functor). *)
 end

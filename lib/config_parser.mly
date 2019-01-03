@@ -68,8 +68,9 @@ cpp_stanza:
   | items = simple_stanza(CPP, cpp_item) { items }
 
 cpp_item:
-  | b = enabled { Config_ast.Cpp.Enabled b }
-  | c = cmd     { Config_ast.Cpp.Cmd c }
+  | b = enabled { Config_ast.Cpp.Enabled b  }
+  | c = cmd     { Config_ast.Cpp.Cmd     c  }
+  | vs = argv   { Config_ast.Cpp.Argv    vs }
 
 herd_stanza:
   | items = simple_stanza(HERD, herd_item) { items }

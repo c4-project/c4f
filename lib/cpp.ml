@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,63 +22,46 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-module Cpp = struct
+open Core_kernel
+open Utils
+
+module Config = struct
   type t =
-    | Cmd of string
-    | Argv of string list
-    | Enabled of bool
+    { enabled : bool
+    ; cmd     : string option
+    ; argv    : string list
+    }
+  [@@deriving sexp, fields, make]
   ;;
+
+  let default () =
+    { enabled = true
+    ; cmd     = None
+    ; argv    = []
+    }
+  ;;
+
+  let cmd (* override *) t = Option.value ~default:"cpp" (cmd t)
 end
 
-module Herd = struct
-  type t =
-    | Cmd of string
-    | C_model of string
-    | Asm_model of Id.t * string
-  ;;
-end
+module Filter : Filter.S with type aux_i = Config.t
+                          and type aux_o = unit =
+  Filter.Make_in_file_only (struct
+    type aux_i = Config.t
+    type aux_o = unit
 
-module Ssh = struct
-  type t =
-    | User of string
-    | Host of string
-    | Copy_to of string
-  ;;
-end
+    let run cfg infile _dst (oc : Out_channel.t) =
+      let argv = Config.argv cfg @ [ Fpath.to_string infile ] in
+      Run.Local.run ~oc ~prog:(Config.cmd cfg) argv
+    ;;
+  end)
 
-module Via = struct
-  type t =
-    | Local
-    | Ssh of Ssh.t list
-  ;;
-end
+module Chain_filter (Dest : Utils.Filter.S) :
+  Utils.Filter.S with type aux_i = (Config.t * Dest.aux_i)
+                  and type aux_o = (unit option * Dest.aux_o) =
+  Utils.Filter.Chain_conditional_first (struct
+    module First = Filter
+    module Second = Dest
 
-module Machine = struct
-  type t =
-    | Enabled of bool
-    | Via of Via.t
-  ;;
-end
-
-module Compiler = struct
-  type t =
-    | Enabled of bool
-    | Style   of Id.t
-    | Emits   of Id.t
-    | Cmd     of string
-    | Argv    of string list
-    | Herd    of bool
-    | Machine of Id.t
-  ;;
-end
-
-module Top = struct
-  type t =
-    | Cpp of Cpp.t list
-    | Herd of Herd.t list
-    | Machine of Id.t * Machine.t list
-    | Compiler of Id.t * Compiler.t list
-  ;;
-end
-
-type t = Top.t list
+    let condition cfg _ _ _ = Config.enabled cfg
+  end)

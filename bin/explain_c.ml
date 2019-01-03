@@ -25,37 +25,51 @@
 open Core
 open Utils
 
-let run_c is os =
-  Or_error.(
-    C.Frontend.Normal.load_from_isrc is
-    >>= fun ast ->
-    Io.Out_sink.with_output os
-      ~f:(fun _ oc ->
-          Fmt.pf (Format.formatter_of_out_channel oc) "%a@." C.Ast.Translation_unit.pp ast;
-          Result.ok_unit
-        )
-  )
+module Normal_C : Filter.S with type aux_i = unit and type aux_o = unit =
+  Filter.Make (struct
+    type aux_i = unit
+    type aux_o = unit
+
+    let run () is ic _ oc =
+      Or_error.(
+        C.Frontend.Normal.load_from_ic ~path:(Io.In_source.to_string is) ic
+        >>| Fmt.pf (Format.formatter_of_out_channel oc) "%a@." C.Ast.Translation_unit.pp
+      )
+    ;;
+  end)
+
+module Litmus : Filter.S with type aux_i = unit and type aux_o = unit =
+  Filter.Make (struct
+    type aux_i = unit
+    type aux_o = unit
+
+    let run () is ic _ oc =
+      Or_error.(
+        C.Frontend.Litmus.load_from_ic ~path:(Io.In_source.to_string is) ic
+        >>= C.Ast.Litmus.validate
+        >>| Fmt.pf (Format.formatter_of_out_channel oc) "%a@." C.Ast.Litmus.pp
+      )
+    ;;
+  end)
+
+let c_module is_c
+  : (module Filter.S with type aux_i = unit and type aux_o = unit) =
+  if is_c then (module Normal_C) else (module Litmus)
 ;;
 
-let run_litmus is os =
-  Or_error.(
-    C.Frontend.Litmus.load_from_isrc is
-    >>= fun ast ->
-    Io.Out_sink.with_output os
-      ~f:(fun _ oc ->
-          ast |> C.Ast.Litmus.validate >>|
-          Fmt.pf (Format.formatter_of_out_channel oc) "%a@." C.Ast.Litmus.pp
-        )
-  )
-;;
-
-let run file_type ~infile_raw ~outfile_raw _o _cfg =
+let run file_type ~(infile_raw : string option) ~(outfile_raw : string option) _o cfg =
   let open Or_error.Let_syntax in
-  let%bind infile = Io.fpath_of_string_option infile_raw in
-  let      is     = Io.In_source.of_fpath_opt infile in
-  let%bind os     = Io.Out_sink.of_string_opt outfile_raw in
-  let      is_c   = Common.decide_if_c infile file_type in
-  (if is_c then run_c else run_litmus) is os
+  let%bind infile  = Io.fpath_of_string_option infile_raw in
+  let%bind outfile = Io.fpath_of_string_option outfile_raw in
+  let      is_c    = Common.decide_if_c infile file_type in
+  let      cpp_cfg =
+    Option.value (Lib.Config.M.cpp cfg) ~default:(Lib.Cpp.Config.default ())
+  in
+  let (module M)   = c_module is_c in
+  let module Cpp_M = Lib.Cpp.Chain_filter (M) in
+  let%map (_, ()) =
+    Cpp_M.run_from_fpaths (cpp_cfg, ()) ~infile ~outfile
+  in ()
 ;;
 
 let command =

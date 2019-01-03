@@ -78,3 +78,13 @@ module Of_sexpable (B : Sexpable.S) : S with type t := B.t
     ;;
   end)
 ;;
+
+module To_filter (L : S) : Filter.S with type aux_i = unit
+                                     and type aux_o = L.t =
+  Filter.Make (struct
+    type aux_i = unit
+    type aux_o = L.t
+
+    let run () _src ic _sink _oc = L.load_from_ic ic
+  end)
+;;

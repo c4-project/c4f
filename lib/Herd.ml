@@ -90,11 +90,11 @@ module Filter : Filter.S with type aux_i = t
     let run (ctx : t) (path : Fpath.t)
         (_sink : Io.Out_sink.t) (oc : Out_channel.t)
       : unit Or_error.t =
-  let model = model_for_arch ctx in
-  let prog = ctx.config.cmd in
-  let argv = make_argv model path in
-  Or_error.tag ~tag:"While running herd"
-    (Run.Local.run ~oc ~prog argv)
+      let model = model_for_arch ctx in
+      let prog = ctx.config.cmd in
+      let argv = make_argv model path in
+      Or_error.tag ~tag:"While running herd"
+        (Run.Local.run ~oc ~prog argv)
   end)
 
 let run (ctx : t)

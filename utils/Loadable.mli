@@ -46,3 +46,10 @@ module Make_chain (B : Basic) (C : Basic_chain with type src := B.t)
   : S with type t := C.dst
 (** Makes a new {{!S}S} from chaining a basic loadable [B] to a
     transformation function described in [C]. *)
+
+(** {2 Interoperability with filters } *)
+
+module To_filter (L : S) : Filter.S with type aux_i = unit
+                                     and type aux_o = L.t
+(** Lifts a {{!S}S} to a {{!Filter.S}Filter.S} that outputs nothing to
+    its target file and returns the loaded data as auxiliary output. *)

@@ -32,6 +32,7 @@
 module Cpp : sig
   type t =
     | Cmd of string
+    | Argv of string list
     | Enabled of bool
   ;;
 end

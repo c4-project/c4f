@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,63 +22,33 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-module Cpp = struct
-  type t =
-    | Cmd of string
-    | Argv of string list
-    | Enabled of bool
-  ;;
+(** Interacting with a C preprocessor *)
+
+open Utils
+
+(** Abstract type of C preprocessor configurations. *)
+module Config : sig
+  include Config_intf.S_program
+
+  val make
+    :  enabled:bool
+    -> ?cmd:string
+    -> ?argv:string list
+    -> unit
+    -> t
+  (** [make ~enabled ?cmd ?argv ()] makes a CPP configuration block. *)
 end
 
-module Herd = struct
-  type t =
-    | Cmd of string
-    | C_model of string
-    | Asm_model of Id.t * string
-  ;;
-end
+(** {2 Filters} *)
 
-module Ssh = struct
-  type t =
-    | User of string
-    | Host of string
-    | Copy_to of string
-  ;;
-end
+module Filter : Filter.S with type aux_i = Config.t
+                          and type aux_o = unit
+(** [Filter] exposes a filter interface onto a configured C
+   preprocessor. *)
 
-module Via = struct
-  type t =
-    | Local
-    | Ssh of Ssh.t list
-  ;;
-end
-
-module Machine = struct
-  type t =
-    | Enabled of bool
-    | Via of Via.t
-  ;;
-end
-
-module Compiler = struct
-  type t =
-    | Enabled of bool
-    | Style   of Id.t
-    | Emits   of Id.t
-    | Cmd     of string
-    | Argv    of string list
-    | Herd    of bool
-    | Machine of Id.t
-  ;;
-end
-
-module Top = struct
-  type t =
-    | Cpp of Cpp.t list
-    | Herd of Herd.t list
-    | Machine of Id.t * Machine.t list
-    | Compiler of Id.t * Compiler.t list
-  ;;
-end
-
-type t = Top.t list
+module Chain_filter (Dest : Utils.Filter.S) :
+  Utils.Filter.S with type aux_i = (Config.t * Dest.aux_i)
+                  and type aux_o = (unit option * Dest.aux_o)
+(** [Chain_filter] exposes a filter that attaches in front of another
+    filter [Dest] (that reads in C programs) and performs C
+    preprocessing beforehand if the given config enables it. *)

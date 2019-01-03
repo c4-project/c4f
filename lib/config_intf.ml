@@ -24,7 +24,7 @@
 
 (** Baseline interface for program interaction. *)
 module type S_program = sig
-  type t
+  type t [@@deriving sexp]
   (** The type of program configuration. *)
 
   val default : unit -> t

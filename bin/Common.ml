@@ -102,7 +102,7 @@ let chain_with_compiler
     Filter.Chain_conditional_first (struct
       module First = C
       module Second = Onto
-      let condition src _snk = should_run_compiler src
+      let condition _ _ src _snk = should_run_compiler src
     end) : Filter.S with type aux_i = (unit        * aux_i)
                      and type aux_o = (unit option * aux_o)
   )
