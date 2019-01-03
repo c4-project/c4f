@@ -51,15 +51,15 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     ]
   ;;
 
-  let run_herd herd arch ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
+  let run_herd herd ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
     let result =
       Or_error.tag ~tag:"While running herd"
-        (Herd.run_and_load_results herd arch ~input_path ~output_path)
+        (Herd.run_and_load_results herd ~input_path ~output_path)
     in
     match result with
     | Result.Ok herd -> `Success herd
     | Result.Error err ->
-      Format.fprintf o.wf "@[<v 4>Herd analysis error:@,%a@]@."
+      Fmt.pf o.wf "@[<v 4>Herd analysis error:@,%a@]@."
         Error.pp err;
       `Errored
   ;;
@@ -69,16 +69,24 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     | `Assembly -> Assembly emits
   ;;
 
+  let should_run_herd = C_id.herd cspec
+
   (** [try_run_herd arch ~input_path ~output_path]
-      sees if [cspec] asked for a Herd run and, if so (and [herd_opt]
+      sees if [cspec] asked for a Herd run and, if so (and [herd_cfg]
       is [Some]), runs Herd on [infile], outputting to [outfile] and
       using models for [c_or_asm]. *)
   let try_run_herd c_or_asm ~input_path ~output_path =
-    let should_run_herd = C_id.herd cspec in
-    match should_run_herd, herd_opt with
+    match should_run_herd, herd_cfg with
     | false, _ | true, None -> `Disabled
-    | true, Some herd ->
-      run_herd herd (make_herd_arch c_or_asm) ~input_path ~output_path
+    | true, Some config ->
+      let arch = make_herd_arch c_or_asm in
+      match Herd.create ~config ~arch with
+      | Ok herd ->
+        run_herd herd ~input_path ~output_path
+      | Error e ->
+        Fmt.pf o.wf "@[<v 4>Herd configuration error:@,%a@]@."
+          Error.pp e;
+        `Errored
   ;;
 
   (** [lower_thread_local_symbol] converts thread-local symbols of the

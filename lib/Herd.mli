@@ -51,10 +51,6 @@ end
     Herd interface. *)
 type t
 
-(** [create ~config] validates [config] and, if successful, creates a
-    [t]. *)
-val create : config:Config.t -> t Or_error.t
-
 (** [arch] tells a Herd run which architecture it should model, and,
    therefore, which model file to load. *)
 type arch =
@@ -62,25 +58,31 @@ type arch =
   | Assembly of string list
 ;;
 
-(** [run t arch ~path ~sink] runs Herd (represented by [t]) on the
+(** [create ~config ~arch] validates [config] and [arch] and, if
+   successful, creates a [t]. *)
+val create : config:Config.t -> arch:arch -> t Or_error.t
+
+(** [run ctx ~path ~sink] runs Herd (represented by [ctx]) on the
    Litmus test at [path] using the model and other configuration for
    architecture [arch].  It outputs the results to [sink], but doesn't
    analyse them. *)
 val run
   :  t
-  -> arch
   -> path:Fpath.t
   -> sink:Io.Out_sink.t
   -> unit Or_error.t
 ;;
 
-(** [run_and_load_results t arch ~input_path ~output_path] behaves
+module Filter : Filter.S with type aux_i = t
+                          and type aux_o = unit
+  (** [run], but bundled up as a [Filter] for use in chains. *)
+
+(** [run_and_load_results ctx ~input_path ~output_path] behaves
    like [run], but then reads [output_path] back in as a
    [Herd_output.t].  This requires [output_path] to point to a file,
    rather than being any [Out_sink.t]. *)
 val run_and_load_results
   :  t
-  -> arch
   -> input_path:Fpath.t
   -> output_path:Fpath.t
   -> Herd_output.t Or_error.t

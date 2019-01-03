@@ -36,25 +36,27 @@ module Config = struct
   let create ?cmd ?c_model ?asm_models = make ?cmd ~c_model ?asm_models
 end
 
-type t =
-  { config: Config.t
-  }
-;;
-
-let create ~config =
-  (** TODO(@MattWindsor91): validate config *)
-  Or_error.return { config }
-;;
-
 type arch =
   | C
   | Assembly of string list
 ;;
 
-let model_for_arch t = function
-  | C -> t.config.c_model
+type t =
+  { config: Config.t
+  ; arch  : arch
+  }
+  [@@deriving make]
+;;
+
+let create ~config ~arch =
+  (** TODO(@MattWindsor91): validate config *)
+  Or_error.return (make ~config ~arch)
+;;
+
+let model_for_arch { config; arch } = match arch with
+  | C -> config.c_model
   | Assembly emits_spec ->
-    List.Assoc.find t.config.asm_models emits_spec
+    List.Assoc.find config.asm_models emits_spec
       ~equal:(List.equal ~equal:String.Caseless.equal)
 ;;
 
@@ -79,19 +81,33 @@ let%expect_test "make_argv: override model" =
   [%expect {| (-model c11_lahav.cat herd7) |}]
 ;;
 
-let run t arch
-    ~(path : Fpath.t) ~sink : unit Or_error.t =
-  let model = model_for_arch t arch in
-  let prog = t.config.cmd in
+module Filter : Filter.S with type aux_i = t
+                          and type aux_o = unit =
+  Filter.Make_in_file_only (struct
+    type aux_i = t
+    type aux_o = unit
+
+    let run (ctx : t) (path : Fpath.t)
+        (_sink : Io.Out_sink.t) (oc : Out_channel.t)
+      : unit Or_error.t =
+  let model = model_for_arch ctx in
+  let prog = ctx.config.cmd in
   let argv = make_argv model path in
-  let f _ oc = Run.Local.run ~oc ~prog argv in
   Or_error.tag ~tag:"While running herd"
-    (Io.Out_sink.with_output sink ~f)
+    (Run.Local.run ~oc ~prog argv)
+  end)
+
+let run (ctx : t)
+    ~(path : Fpath.t) ~sink : unit Or_error.t =
+  Filter.run
+    ctx
+    (Io.In_source.of_fpath path)
+    sink
 ;;
 
-let run_and_load_results t arch
+let run_and_load_results (ctx : t)
     ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
   let open Or_error.Let_syntax in
-  let%bind () = run t arch ~path:input_path ~sink:(Io.Out_sink.file output_path) in
+  let%bind () = run ctx ~path:input_path ~sink:(Io.Out_sink.file output_path) in
   Herd_output.load ~path:output_path
 ;;

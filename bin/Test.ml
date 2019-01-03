@@ -28,7 +28,7 @@ open Utils
 let run_machine
     o should_time cfg
     ~(in_root : Fpath.t) ~(out_root : Fpath.t)
-    herd_opt (c_files : Fpath.t list) (mach_id, specs) =
+    (c_files : Fpath.t list) (mach_id, specs) =
   let open Or_error.Let_syntax in
 
   let timing_cfg = if should_time then `Enabled else `Disabled in
@@ -39,7 +39,7 @@ let run_machine
       let sanitiser_passes =
         Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
       ;;
-      let herd_opt = herd_opt
+      let herd_cfg = Config.M.herd cfg
       include Language_support
     end) in
   let%map analysis = TM.run ~in_root ~out_root c_files specs in
@@ -72,14 +72,6 @@ let group_specs_by_machine specs =
   |> Id.Map.to_alist
 ;;
 
-let make_herd =
-  Or_error.(
-    Option.value_map
-      ~default:(return None)
-      ~f:(fun config -> Herd.create ~config >>| Option.some)
-  )
-;;
-
 let run should_time ~(in_root_raw : string) ~(out_root_raw : string) o cfg =
   let open Or_error.Let_syntax in
   let%bind in_root  = Io.fpath_of_string in_root_raw
@@ -88,8 +80,6 @@ let run should_time ~(in_root_raw : string) ~(out_root_raw : string) o cfg =
   let specs = Config.M.compilers cfg in
   report_spec_errors o
     (List.filter_map ~f:snd (Config.M.disabled_compilers cfg));
-
-  let%bind herd = make_herd (Config.M.herd cfg) in
 
   let c_path = Fpath.(in_root / "C") in
   let%bind c_files = Io.Dir.get_files c_path ~ext:"c" in
@@ -101,7 +91,7 @@ let run should_time ~(in_root_raw : string) ~(out_root_raw : string) o cfg =
   let%bind results_alist =
     specs_by_machine
     |> List.map
-      ~f:(run_machine o should_time cfg ~in_root ~out_root herd c_files)
+      ~f:(run_machine o should_time cfg ~in_root ~out_root c_files)
     |> Or_error.combine_errors
   in
   let end_time = Time.now () in
