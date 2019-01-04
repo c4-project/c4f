@@ -51,6 +51,41 @@ module Property = struct
       reference expr =
     Blang.eval expr (eval rm reference)
   ;;
+
+  let tree_docs : Property.Tree_doc.t =
+    [ "id",
+      { args = [ "PROPERTY" ]
+      ; details =
+          {| See 'identifier predicates'. |}
+      }
+    ; "is_remote",
+      { args = []
+      ; details =
+          {| Selects machines that are known to be remote. |}
+      }
+    ; "is_local",
+      { args = []
+      ; details =
+          {| Selects machines that are known to be local. |}
+      }
+    ]
+  ;;
+
+  let pp_tree : unit Fmt.t =
+    Property.Tree_doc.pp tree_docs
+      (List.map ~f:fst Variants.descriptions)
+  ;;
+
+  let%expect_test "all properties have documentation" =
+    let num_passes =
+      Variants.descriptions
+      |> List.map ~f:fst
+      |> List.map ~f:(List.Assoc.mem tree_docs ~equal:String.Caseless.equal)
+      |> List.count ~f:not
+    in
+    Fmt.pr "@[<v>%d@]@." num_passes;
+    [%expect {| 0 |}]
+  ;;
 end
 
 module Ssh = struct

@@ -194,6 +194,42 @@ module Property = struct
 
   include M
 
+  let tree_docs : Property.Tree_doc.t =
+    [ "has_tag",
+      { args = [ "STRING" ]
+      ; details =
+          {| Requires that any of the dot-separated items in this ID
+             matches the argument. |}
+      }
+    ; "has_prefix",
+      { args = [ "PARTIAL-ID" ]
+      ; details =
+          {| Requires that the ID starts with the argument. |}
+      }
+    ; "is",
+      { args = [ "ID" ]
+      ; details =
+          {| Requires that the ID directly matches the argument. |}
+      }
+    ]
+  ;;
+
+  let pp_tree : unit Fmt.t =
+    Property.Tree_doc.pp tree_docs
+      (List.map ~f:fst Variants.descriptions)
+  ;;
+
+  let%expect_test "all properties have documentation" =
+    let num_passes =
+      Variants.descriptions
+      |> List.map ~f:fst
+      |> List.map ~f:(List.Assoc.mem tree_docs ~equal:String.Caseless.equal)
+      |> List.count ~f:not
+    in
+    Fmt.pr "@[<v>%d@]@." num_passes;
+    [%expect {| 0 |}]
+  ;;
+
   let eval_b id expr = Blang.eval expr (eval id)
 
   let%expect_test "eval_b: sample passing expression" =

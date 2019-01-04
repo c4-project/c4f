@@ -22,8 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
-open Utils
+open Base
 
 (** [Basic_spec] is the signature common to any sort of compiler
     specification, including [With_id] pairs.
@@ -139,91 +138,4 @@ module type S = sig
   (** [compile ~infile ~outfile] runs the compiler on [infile],
       emitting assembly to [outfile] and returning any errors that arise. *)
   val compile : infile:Fpath.t -> outfile:Fpath.t -> unit Or_error.t
-end
-
-(** [Compiler] is the part of the interface re-exported as
-    [Compiler.mli]. *)
-module type Compiler = sig
-  module type Basic_spec = Basic_spec
-  module type S_spec = S_spec
-  module type Basic = Basic
-  module type Hooks = Hooks
-  module type S = S
-
-  (** [Make_spec] is a functor for building compiler specifications
-      parametrised on machine references.
-
-      See [Cfg_spec] and [Spec] for implementations of this
-      functor. *)
-  module Make_spec
-    : functor (M : Machine.Reference)
-      -> S_spec with module Mach = M
-  ;;
-
-  (** [Cfg_spec] is a module describing compiler specs where machine
-      references are unresolved IDs.  This is the format
-      used in the configuration file, hence the name. *)
-  module Cfg_spec : S_spec with type Mach.t = Id.t
-
-  (** [Spec] is a module describing compiler specs where machine
-      references are inlined machine specs.  This is the
-      form of compiler spec expected through most of act. *)
-  module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t
-
-  (** [Property] contains a mini-language for querying compiler specs,
-      suitable for use in [Blang]. *)
-  module Property : sig
-    (** [t] is the opaque type of property queries. *)
-    type t [@@deriving sexp]
-
-    (** [id] constructs a query over a compiler's ID. *)
-    val id : Id.Property.t -> t
-
-    (** [machine] constructs a query over a compiler's machine. *)
-    val machine : Machine.Property.t -> t
-
-    (** [eval cspec property] evaluates [property] over [cspec]. *)
-    val eval
-      :  Spec.With_id.t
-      -> t
-      -> bool
-    ;;
-
-    (** [eval_b cspec expr] evaluates a [Blang] expression [expr] over
-       [cspec]. *)
-    val eval_b
-      :  Spec.With_id.t
-      -> t Blang.t
-      -> bool
-    ;;
-  end
-
-  (** [With_spec] is an interface for modules containing a (full)
-      compiler specification. *)
-  module type With_spec = sig
-    val cspec : Spec.With_id.t
-  end
-
-  (** [Basic_with_run_info] is a signature collecting both a base
-      compiler specification and context about how to run the
-      compiler. *)
-  module type Basic_with_run_info = sig
-    include Basic
-    include With_spec
-    module Runner : Run.Runner
-    module Hooks : Hooks
-  end
-
-  (** [Make] produces a runnable compiler satisfying [S] from a
-      [Basic_with_run_info]. *)
-  module Make : functor (B : Basic_with_run_info) -> S
-
-  (** [from_spec f spec] takes a function that generates a first-class
-     [Basic] from a spec, and attempts to produce a first-class
-     compiler module. *)
-  val from_spec
-    :  (Spec.With_id.t -> (module Basic) Or_error.t)
-    -> Spec.With_id.t
-    -> (module S) Or_error.t
-
 end

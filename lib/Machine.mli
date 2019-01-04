@@ -81,6 +81,8 @@ module Property : sig
     -> t Blang.t
     -> bool
   ;;
+
+  include Property.S with type t := t
 end
 
 (** [Ssh] is a module defining SSH configuration. *)

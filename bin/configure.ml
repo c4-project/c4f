@@ -34,7 +34,7 @@ let run_list_compilers
   Result.ok_unit
 ;;
 
-let list_compilers_command =
+let list_compilers_command : Command.t =
   let open Command.Let_syntax in
   Command.basic
     ~summary:"outputs information about the current compiler specs"
@@ -47,9 +47,50 @@ let list_compilers_command =
     ]
 ;;
 
-let command =
+let predicate_lists : (string, (module Property.S)) List.Assoc.t =
+  [ "Compiler predicates (-filter-compilers)", (module Compiler.Property)
+  ; "Machine predicates (-filter-machines)", (module Machine.Property)
+  ; "Identifier predicates", (module Id.Property)
+  ; "Sanitiser passes (-sanitiser-passes)", (module Sanitiser_pass.Selector)
+  ]
+;;
+
+let pp_tree_module : (module Property.S) Fmt.t =
+  fun f (module M) -> M.pp_tree f ()
+;;
+
+let run_list_predicates
+    (_o : Output.t) (_cfg : Lib.Config.M.t)
+  : unit Or_error.t =
+  Fmt.(
+    pr "@[<v>%a@]@."
+      (list ~sep:(unit "@,@,")
+         (vbox ~indent:2
+            (pair ~sep:sp (suffix (unit ":") string) pp_tree_module)
+         )
+      )
+      predicate_lists
+  );
+  Result.ok_unit
+;;
+
+let list_predicates_command : Command.t =
+  let open Command.Let_syntax in
+  Command.basic
+    ~summary:"describes the filtering predicate languages"
+    [%map_open
+      let standard_args = Standard_args.get in
+      fun () ->
+        Common.lift_command standard_args
+          ~with_compiler_tests:false
+          ~f:run_list_predicates
+    ]
+;;
+
+let command : Command.t =
   Command.group
     ~summary:"Commands for dealing with act configuration"
     [ "list-compilers", list_compilers_command
+    ; "list-predicates", list_predicates_command
     ]
 ;;

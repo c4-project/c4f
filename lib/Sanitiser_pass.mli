@@ -73,30 +73,34 @@ val standard : Set.t
 (** [standard] collects passes that are considered safe for
     general litmusification. *)
 
-(** [Select_lang] exposes a [Blang]-based language for selecting
-    sanitiser passes. *)
+(** A [Blang]-based language for selecting sanitiser passes. *)
 module Selector : sig
   type elt = t
   (** [elt] is just a renaming of the outermost [t]. *)
 
-  (** [category] enumerates the various top-level categories of
-     passes. *)
-  type category =
-    [ `Standard
-    | `Explain
+  (** Enumerates the various top-level categories of passes. *)
+  module Category : sig
+    type t =
+      [ `Standard
+      | `Explain
+      ]
+    [@@deriving sexp]
+    ;;
+  end
+
+  (** [t] is the base element type of the language. *)
+  type t =
+    [ elt        (** Select an individual item *)
+    | Category.t (** Select an entire category *)
+    | `Default   (** Select whichever set is the default for the given
+                     act command *)
     ]
   [@@deriving sexp]
   ;;
 
-  (** [t] is the base element type of the language. *)
-  type t =
-    [ elt      (** Select an individual item *)
-    | category (** Select an entire category *)
-    | `Default (** Select whichever set is the default for the given
-                   act command *)
-    ]
-  [@@deriving sexp]
-  ;;
+  include Property.S with type t := t
+  (** This module implements the usual interface for looking up
+      predicate documentation. *)
 
   (** [eval_b stm ~default] evaluates a [Blang] statement [stm],
       mapping `Default` to the set [default]. *)

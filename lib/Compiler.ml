@@ -68,16 +68,14 @@ module Make_spec (R : Machine.Reference)
       Format.pp_close_box f ()
     ;;
 
-    let pp_summary f spec =
-    Format.pp_open_hbox f ();
-    let facts =
-      List.concat
-        [ if enabled spec then [] else ["(DISABLED)"]
-        ; if R.remoteness (machine spec) = `Remote then ["(REMOTE)"] else []
-        ]
-    in
-    Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp f facts;
-    Format.pp_close_box f ()
+    let pp_summary =
+      let facts spec =
+        List.concat
+          [ if enabled spec then [] else ["(DISABLED)"]
+          ; if R.remoteness (machine spec) = `Remote then ["(REMOTE)"] else []
+          ]
+      in
+      Fmt.(using facts (hbox (list ~sep:sp string)))
     ;;
   end
 
@@ -116,6 +114,36 @@ module Property = struct
     | Id      of Id.Property.t
     | Machine of Machine.Property.t
   [@@deriving sexp, variants]
+  ;;
+
+  let tree_docs : Property.Tree_doc.t =
+    [ "id",
+      { args = [ "PROPERTY" ]
+      ; details =
+          {| See 'identifier predicates'. |}
+      }
+    ; "machine",
+      { args = [ "PROPERTY" ]
+      ; details =
+          {| See 'machine predicates'. |}
+      }
+    ]
+  ;;
+
+  let pp_tree : unit Fmt.t =
+    Property.Tree_doc.pp tree_docs
+      (List.map ~f:fst Variants.descriptions)
+  ;;
+
+  let%expect_test "all properties have documentation" =
+    let num_passes =
+      Variants.descriptions
+      |> List.map ~f:fst
+      |> List.map ~f:(List.Assoc.mem tree_docs ~equal:String.Caseless.equal)
+      |> List.count ~f:not
+    in
+    Fmt.pr "@[<v>%d@]@." num_passes;
+    [%expect {| 0 |}]
   ;;
 
   let eval (cspec : Spec.With_id.t) = function

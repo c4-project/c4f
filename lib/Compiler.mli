@@ -25,7 +25,77 @@
 (** [Compiler] contains the high-level interface for specifying and
     invoking compilers. *)
 
-(** To reduce duplication, we describe [Compiler] in
+open Core_kernel
+open Utils
+
+(** To reduce duplication, we describe the module types of [Compiler] in
     [Compiler_intf], and import parts of it both here and in the
     implementation. *)
-include Compiler_intf.Compiler
+include module type of Compiler_intf
+
+module Make_spec (M : Machine.Reference) : S_spec with module Mach = M
+(** [Make_spec] is a functor for building compiler specifications
+    parametrised on machine references.
+
+    See [Cfg_spec] and [Spec] for implementations of this
+    functor. *)
+
+module Cfg_spec : S_spec with type Mach.t = Id.t
+(** [Cfg_spec] is a module describing compiler specs where machine
+    references are unresolved IDs.  This is the format
+    used in the configuration file, hence the name. *)
+
+module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t
+(** [Spec] is a module describing compiler specs where machine
+    references are inlined machine specs.  This is the
+    form of compiler spec expected through most of act. *)
+
+(** [Property] contains a mini-language for querying compiler specs,
+    suitable for use in [Blang]. *)
+module Property : sig
+  type t [@@deriving sexp]
+  (** [t] is the opaque type of property queries. *)
+
+  val id : Id.Property.t -> t
+  (** [id] constructs a query over a compiler's ID. *)
+
+  val machine : Machine.Property.t -> t
+  (** [machine] constructs a query over a compiler's machine. *)
+
+  val eval : Spec.With_id.t -> t -> bool
+  (** [eval cspec property] evaluates [property] over [cspec]. *)
+
+  (** [eval_b cspec expr] evaluates a [Blang] expression [expr] over
+      [cspec]. *)
+  val eval_b : Spec.With_id.t -> t Blang.t -> bool
+
+  include Property.S with type t := t
+end
+
+(** [With_spec] is an interface for modules containing a (full)
+    compiler specification. *)
+module type With_spec = sig
+  val cspec : Spec.With_id.t
+end
+
+(** [Basic_with_run_info] is a signature collecting both a base
+    compiler specification and context about how to run the
+    compiler. *)
+module type Basic_with_run_info = sig
+  include Basic
+  include With_spec
+  module Runner : Run.Runner
+  module Hooks : Hooks
+end
+
+module Make (B : Basic_with_run_info) : S
+(** [Make] produces a runnable compiler satisfying [S] from a
+    [Basic_with_run_info]. *)
+
+val from_spec
+  :  (Spec.With_id.t -> (module Basic) Or_error.t)
+  -> Spec.With_id.t
+  -> (module S) Or_error.t
+(** [from_spec f spec] takes a function that generates a first-class
+    [Basic] from a spec, and attempts to produce a first-class
+    compiler module. *)
