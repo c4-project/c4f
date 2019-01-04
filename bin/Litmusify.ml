@@ -26,20 +26,33 @@ open Core
 open Lib
 open Utils
 
-let chain_on_herd (use_herd : bool)
+let chain_on_herd
     (type i)
     (type o)
     (module M : Filter.S with type aux_i = i and type aux_o = o)
   : ( module
-      Filter.S with type aux_i = (i * Herd.t)
+      Filter.S with type aux_i = (i * Herd.t option)
                 and type aux_o = (o * unit option)
     ) =
   (module
     Filter.Chain_conditional_second (struct
-      let condition _ _ _ _ = use_herd
+      type aux_i_combi = (i * Herd.t option)
+
+      let select (rest, herd) (_ : Io.In_source.t) (_ : Io.Out_sink.t) =
+        match herd with
+        | Some h -> `Both (rest, h)
+        | None   -> `One  rest
       module First = M
       module Second = Herd.Filter
     end))
+;;
+
+let maybe_create_herd (use_herd : bool) (config : Herd.Config.t) arch =
+  Or_error.(
+    if use_herd
+    then Herd.create ~config ~arch >>| Option.some
+    else return None
+  )
 ;;
 
 let run file_type use_herd compiler_id_or_emits
@@ -58,8 +71,8 @@ let run file_type use_herd compiler_id_or_emits
       target
       |>  runner_of_target
       >>| Asm_job.get_litmusify
-      >>= chain_with_compiler target file_type
-      >>| chain_on_herd use_herd
+      >>= chain_with_compiler target
+      >>| chain_on_herd
     )
   in
   let%bind herd_cfg =
@@ -69,9 +82,9 @@ let run file_type use_herd compiler_id_or_emits
              )
   in
   let arch = Herd.Assembly (Common.arch_of_target target) in
-  let%bind herd = Herd.create ~config:herd_cfg ~arch in
+  let%bind herd = maybe_create_herd use_herd herd_cfg arch in
   let%map _ =
-    Flt.run_from_string_paths (((), litmus_job), herd)
+    Flt.run_from_string_paths ((file_type, litmus_job), herd)
       ~infile:infile_raw ~outfile:outfile_raw in
   ()
 ;;

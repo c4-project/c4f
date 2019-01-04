@@ -64,12 +64,12 @@ module Chain (A : S) (B : S) : S with type aux_i = (A.aux_i * B.aux_i)
                                   and type aux_o = (A.aux_o * B.aux_o)
 (** Chains two filters together using temporary files. *)
 
-module Chain_conditional_first (B : Basic_chain_conditional)
-  : S with type aux_i = (B.First.aux_i        * B.Second.aux_i)
+module Chain_conditional_first (B : Basic_chain_conditional_first)
+  : S with type aux_i = B.aux_i_combi
        and type aux_o = (B.First.aux_o option * B.Second.aux_o)
 (** Chains an optional filter onto a mandatory one. *)
 
-module Chain_conditional_second (B : Basic_chain_conditional)
-  : S with type aux_i = (B.First.aux_i * B.Second.aux_i       )
+module Chain_conditional_second (B : Basic_chain_conditional_second)
+  : S with type aux_i = B.aux_i_combi
        and type aux_o = (B.First.aux_o * B.Second.aux_o option)
 (** Chains a mandatory filter onto an optional one. *)

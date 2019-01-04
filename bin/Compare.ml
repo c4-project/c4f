@@ -38,12 +38,12 @@ let litmusify o passes spec c_file =
       target
       |>  runner_of_target
       >>| Asm_job.get_litmusify
-      >>= chain_with_compiler target `C
+      >>= chain_with_compiler target
     )
   in
   let%map (_, out) =
     Comp_lit.run
-      ((), litmus_job)
+      (`C, litmus_job)
       (Io.In_source.file c_file)
       (Io.Out_sink.stdout)
   in

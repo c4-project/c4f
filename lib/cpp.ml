@@ -63,5 +63,10 @@ module Chain_filter (Dest : Utils.Filter.S) :
     module First = Filter
     module Second = Dest
 
-    let condition cfg _ _ _ = Config.enabled cfg
+    type aux_i_combi = (Config.t * Dest.aux_i)
+    let select (cfg, rest) (_ : Io.In_source.t) (_ : Io.Out_sink.t) =
+      if Config.enabled cfg
+      then `Both (cfg, rest)
+      else `One  rest
+    ;;
   end)

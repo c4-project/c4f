@@ -113,13 +113,33 @@ module type Basic_chain_conditional = sig
   module First  : S (** The first filter. *)
   module Second : S (** The second filter. *)
 
-  val condition
-    :  First.aux_i
-    -> Second.aux_i
+  type aux_i_combi  (** Combined auxiliary input. *)
+  type aux_i_single (** Auxiliary input used when not chaining. *)
+
+  val select
+    :  aux_i_combi
     -> Io.In_source.t
     -> Io.Out_sink.t
-    -> bool
+    -> [`Both of (First.aux_i * Second.aux_i) | `One of aux_i_single]
   (** [condition a_aux b_aux src snk] should return [true] when the optional
      filter should be run (which filter this is depends on the
      functor). *)
+end
+
+(** Signature of inputs needed to build a conditional chain with
+    the first filter being conditional. *)
+module type Basic_chain_conditional_first = sig
+  module Second : S (** The second filter. *)
+  include Basic_chain_conditional
+    with module Second := Second
+     and type aux_i_single := Second.aux_i
+end
+
+(** Signature of inputs needed to build a conditional chain with
+    the second filter being conditional. *)
+module type Basic_chain_conditional_second = sig
+  module First : S (** The first filter. *)
+  include Basic_chain_conditional
+    with module First := First
+     and type aux_i_single := First.aux_i
 end

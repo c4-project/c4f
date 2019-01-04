@@ -51,11 +51,11 @@ let run file_type compiler_id_or_arch output_format c_symbols
       target
       |>  runner_of_target
       >>| Asm_job.get_explain
-      >>= chain_with_compiler target file_type
+      >>= chain_with_compiler target
     )
   in
   let%map (_, out) =
-    Exp.run_from_string_paths ((), explain_job)
+    Exp.run_from_string_paths (file_type, explain_job)
       ~infile:infile_raw ~outfile:outfile_raw
   in
   Asm_job.warn out o.Output.wf;

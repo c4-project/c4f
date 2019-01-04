@@ -68,14 +68,13 @@ val runner_of_target : target -> (module Asm_job.Runner) Or_error.t
 
 val chain_with_compiler
   :  target
-  -> file_type
-  -> ( module Filter.S with type aux_i = 'i and type aux_o = 'o )
-  -> ( module Filter.S with type aux_i = (unit * 'i)
-                        and type aux_o = (unit option * 'o)
+  -> (module Filter.S with type aux_i = 'aux_i and type aux_o = 'aux_o)
+  -> (module Filter.S with type aux_i = ([ `Assembly | `C | `Infer ] * 'aux_i)
+                       and type aux_o = (unit option * 'aux_o)
      ) Or_error.t
-(** [chain_with compiler target file_type to_chain] finds the correct
-    compiler filter for [target] (or none, depending on [file_type]),
-    then chains it onto [to_chain]. *)
+(** [chain_with compiler target to_chain] finds the correct
+    compiler filter for [target],
+    then chains it onto [to_chain] conditional on the incoming file type. *)
 
 val ensure_spec
   :  [> `Spec of Compiler.Spec.With_id.t]

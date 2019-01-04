@@ -83,28 +83,40 @@ let ensure_spec : [> `Spec of Compiler.Spec.With_id.t]
         "To handle C files, you must supply a compiler ID."
 ;;
 
+module Chain_with_compiler
+    (Comp : Filter.S with type aux_i = unit and type aux_o = unit)
+    (Onto : Filter.S)
+  : Filter.S with type aux_i = ([ `Assembly | `C | `Infer ] * Onto.aux_i)
+              and type aux_o = (unit option * Onto.aux_o) =
+  Filter.Chain_conditional_first (struct
+    module First  = Comp
+    module Second = Onto
+    type aux_i_combi = ([`Assembly | `C | `Infer] * Onto.aux_i)
+
+    let should_run_compiler isrc : [`Assembly | `C | `Infer] -> bool
+      = decide_if_c (Io.In_source.to_file isrc)
+
+    let select (file_type, rest) src _snk =
+      if should_run_compiler src file_type
+      then `Both ((), rest)
+      else `One  rest
+  end)
+;;
+
 let chain_with_compiler
   (type aux_i)
   (type aux_o)
   (target : target)
-  (file_type : [> `Assembly | `C | `Infer])
   (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-  : ( module Filter.S with type aux_i = (unit        * aux_i)
+  : ( module Filter.S with type aux_i = ([ `Assembly | `C | `Infer ] * aux_i)
                        and type aux_o = (unit option * aux_o)
     ) Or_error.t =
   let open Result.Let_syntax in
   let%bind cspec = ensure_spec target in
   let%map (module C) = Language_support.compiler_filter_from_spec cspec in
-  let should_run_compiler isrc
-    = decide_if_c (Io.In_source.to_file isrc) file_type
-  in
-  ( module
-    Filter.Chain_conditional_first (struct
-      module First = C
-      module Second = Onto
-      let condition _ _ src _snk = should_run_compiler src
-    end) : Filter.S with type aux_i = (unit        * aux_i)
-                     and type aux_o = (unit option * aux_o)
+  (module Chain_with_compiler (C) (Onto)
+     : Filter.S with type aux_i = ([ `Assembly | `C | `Infer ] * aux_i)
+                 and type aux_o = (unit option * aux_o)
   )
 ;;
 

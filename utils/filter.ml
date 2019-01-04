@@ -119,27 +119,30 @@ module Chain_conditional_core (B : sig
     val run_chained
       : BCC.First.aux_i -> BCC.Second.aux_i -> Io.In_source.t -> Io.Out_sink.t -> aux_o Or_error.t
     val run_unchained
-      : BCC.First.aux_i -> BCC.Second.aux_i -> Io.In_source.t -> Io.Out_sink.t -> aux_o Or_error.t
+      : BCC.aux_i_single -> Io.In_source.t -> Io.Out_sink.t -> aux_o Or_error.t
   end) = struct
-  type aux_i = (B.BCC.First.aux_i * B.BCC.Second.aux_i)
+  type aux_i = B.BCC.aux_i_combi
   type aux_o = B.aux_o
 
-  let run (a_in, b_in) src snk =
-    ( if   B.BCC.condition a_in b_in src snk
-      then B.run_chained
-      else B.run_unchained
-    ) a_in b_in src snk
+  let run (aux_in : aux_i) src snk =
+    ( match B.BCC.select aux_in src snk with
+      | `Both (a_in, b_in) -> B.run_chained a_in b_in
+      | `One  aux_in'      -> B.run_unchained aux_in'
+    ) src snk
   ;;
 
   let run_from_string_paths = lift_to_raw_strings ~f:run
   let run_from_fpaths       = lift_to_fpaths ~f:run
 end
 
-module Chain_conditional_first (B : Basic_chain_conditional)
-  : S with type aux_i = (B.First.aux_i        * B.Second.aux_i)
+module Chain_conditional_first (B : Basic_chain_conditional_first)
+  : S with type aux_i = B.aux_i_combi
        and type aux_o = (B.First.aux_o option * B.Second.aux_o) =
   Chain_conditional_core (struct
-    module BCC = B
+    module BCC = struct
+      include B
+      type aux_i_single = B.Second.aux_i
+    end
     type aux_o = (B.First.aux_o option * B.Second.aux_o)
 
     module Chained = Chain (B.First) (B.Second)
@@ -150,7 +153,7 @@ module Chain_conditional_first (B : Basic_chain_conditional)
       (Some a_out, b_out)
     ;;
 
-    let run_unchained _ b_in src snk =
+    let run_unchained b_in src snk =
       let open Or_error.Let_syntax in
       let%map b_out = B.Second.run b_in src snk in
       (None, b_out)
@@ -158,11 +161,14 @@ module Chain_conditional_first (B : Basic_chain_conditional)
   end)
 ;;
 
-module Chain_conditional_second (B : Basic_chain_conditional)
-  : S with type aux_i = (B.First.aux_i * B.Second.aux_i       )
+module Chain_conditional_second (B : Basic_chain_conditional_second)
+  : S with type aux_i = B.aux_i_combi
        and type aux_o = (B.First.aux_o * B.Second.aux_o option) =
   Chain_conditional_core (struct
-    module BCC = B
+    module BCC = struct
+      include B
+      type aux_i_single = B.First.aux_i
+    end
     type aux_o = (B.First.aux_o * B.Second.aux_o option)
 
     module Chained = Chain (B.First) (B.Second)
@@ -173,7 +179,7 @@ module Chain_conditional_second (B : Basic_chain_conditional)
       (a_out, Some b_out)
     ;;
 
-    let run_unchained a_in _ src snk =
+    let run_unchained a_in src snk =
       let open Or_error.Let_syntax in
       let%map a_out = B.First.run a_in src snk in
       (a_out, None)
