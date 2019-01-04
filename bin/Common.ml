@@ -60,7 +60,7 @@ let decide_if_c (infile : Fpath.t option)
 let get_target cfg = function
   | `Id id ->
     let open Or_error.Let_syntax in
-    let%map spec = Compiler.Spec.Set.get (Config.M.compilers cfg) id in
+    let%map spec = Compiler.Spec.Set.get (Lib.Config.M.compilers cfg) id in
     `Spec spec
   | `Arch _ as arch -> Or_error.return arch
 ;;
@@ -134,7 +134,7 @@ let lift_command
       ~warnings:(Standard_args.are_warnings_enabled standard_args)
   in
   Or_error.(
-    (Standard_args.spec_file standard_args)
+    (Standard_args.config_file standard_args)
     |> Io.fpath_of_string
     >>= Language_support.load_and_process_config
       ?compiler_predicate

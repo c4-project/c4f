@@ -31,15 +31,15 @@ open Lib
 type t =
   { verbose     : bool
   ; no_warnings : bool
-  ; spec_file   : string
+  ; config_file : string
   }
 ;;
 
 let is_verbose t = t.verbose
 let are_warnings_enabled t = not t.no_warnings
-let spec_file t = t.spec_file
+let config_file t = t.config_file
 
-let default_spec_file = "act.conf"
+let default_config_file = "act.conf"
 
 let get =
   let open Command.Let_syntax in
@@ -52,16 +52,16 @@ let get =
       flag "no-warnings"
         no_arg
         ~doc: "if given, suppresses all warnings"
-    and spec_file =
+    and config_file =
       flag_optional_with_default_doc
-        "spec"
+        "config"
         string [%sexp_of: string]
-        ~default:default_spec_file
-        ~doc:"PATH the compiler spec file to use"
+        ~default:default_config_file
+        ~doc:"PATH the act.conf file to use"
     in
     { verbose
     ; no_warnings
-    ; spec_file
+    ; config_file
     }
   ]
 ;;

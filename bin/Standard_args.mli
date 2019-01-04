@@ -39,8 +39,8 @@ val is_verbose : t -> bool
    switched on. *)
 val are_warnings_enabled : t -> bool
 
-(** [spec_file t] gets the specification file according to [t]. *)
-val spec_file : t -> string
+(** [config_file t] gets the configuration file according to [t]. *)
+val config_file : t -> string
 
 (** [get] is a [Command.Param.t] that describes how to get the standard
     arguments at the command line. *)

@@ -25,7 +25,16 @@
 open Core
 open Lib
 
-let command =
+let run_list_compilers
+    (standard_args : Standard_args.t) (_o : Output.t) (cfg : Lib.Config.M.t)
+  : unit Or_error.t =
+  let compilers = Lib.Config.M.compilers cfg in
+  let verbose = Standard_args.is_verbose standard_args in
+  Fmt.pr "@[<v>%a@]@." (Compiler.Spec.Set.pp_verbose verbose) compilers;
+  Result.ok_unit
+;;
+
+let list_compilers_command =
   let open Command.Let_syntax in
   Command.basic
     ~summary:"outputs information about the current compiler specs"
@@ -34,12 +43,13 @@ let command =
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(fun _o cfg ->
-              let specs = Config.M.compilers cfg in
-              let verbose = Standard_args.is_verbose standard_args in
-              Compiler.Spec.Set.pp_verbose verbose Format.std_formatter specs;
-              Format.print_newline ();
-              Result.ok_unit
-            )
+          ~f:(run_list_compilers standard_args)
+    ]
+;;
+
+let command =
+  Command.group
+    ~summary:"Commands for dealing with act configuration"
+    [ "list-compilers", list_compilers_command
     ]
 ;;

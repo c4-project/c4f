@@ -49,7 +49,7 @@ val decide_if_c : Fpath.t option -> [> `C | `Infer] -> bool
     by whether or not [filetype] is [`C]. *)
 
 val get_target
-  :  Config.M.t
+  :  Lib.Config.M.t
   -> [< `Id of Id.t | `Arch of string list ]
   -> target Or_error.t
 (** [get_target cfg target] processes a choice between compiler ID
@@ -87,7 +87,7 @@ val lift_command
   -> ?machine_predicate:Machine.Property.t Blang.t
   -> ?sanitiser_passes:Sanitiser_pass.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
-  -> f:(Output.t -> Config.M.t -> unit Or_error.t)
+  -> f:(Output.t -> Lib.Config.M.t -> unit Or_error.t)
   -> Standard_args.t
   -> unit
 (** [lift_command ?compiler_predicate ?machine_predicate

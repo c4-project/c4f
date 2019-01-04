@@ -33,7 +33,7 @@ let command =
     ; "explain-c", Explain_c.command
     ; "litmusify", Litmusify.command
     ; "test"     , Test.command
-    ; "specs"    , Specs.command
+    ; "configure", Configure.command
     ; "regress"  , Regress.command
     ]
 

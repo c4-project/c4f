@@ -90,7 +90,7 @@ trying to parse the arguments itself.)
 To start with, try:
 
 ```
-$ dune exec act -- specs
+$ dune exec act -- configure list-compilers
 ```
 
 This will read in your `act.conf` file, and, if all is well,
@@ -124,7 +124,7 @@ discrepancies in `act`'s output as diffs.
 
 `act` has several different subcommands:
 
-- `specs`: displaying information about the compiler spec file;
+- `configure`: displaying information about the `act.conf` file;
 - `compare`: comparing the litmusified assembly output for each
   compiler over the same test case;
 - `explain`: asking `act` to explain every line in an assembly file
@@ -142,14 +142,14 @@ your `PATH`.  If you want to try a command against your working source
 copy of `act` without installing, replace `act` with `dune exec act
 --` in the commands below.
 
-### `specs`: display compiler specs
+### `configure list-compilers`: list available compilers
 
 ```
-$ act specs
+$ act configure list-compilers
 ```
 
 This asks `act` to list all the compilers it knows about from reading
-in a spec file.  Pass `-verbose` to print out more information
+in a config file.  Pass `-verbose` to print out more information
 per-compiler.
 
 
@@ -188,7 +188,7 @@ $ act compare path/to/C/file.c
 ```
 
 This asks `act` to run the compile-sanitise process for the given
-C file, for each compiler in the spec file, and output the Litmus
+C file, for each compiler in the config file, and output the Litmus
 program tables for each compiler as a Markdown document.  This is
 useful for seeing, at a glance, how different compilers and
 optimisation levels influence the result.
