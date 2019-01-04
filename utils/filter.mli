@@ -73,3 +73,8 @@ module Chain_conditional_second (B : Basic_chain_conditional_second)
   : S with type aux_i = B.aux_i_combi
        and type aux_o = (B.First.aux_o * B.Second.aux_o option)
 (** Chains a mandatory filter onto an optional one. *)
+
+module Adapt (B : Basic_adapt)
+  : S with type aux_i = B.aux_i and type aux_o = B.aux_o
+(** Adapts the auxiliary types of an existing filter, performing
+    partial mappings to and from a new pair of auxiliary types. *)

@@ -143,3 +143,17 @@ module type Basic_chain_conditional_second = sig
     with module First := First
      and type aux_i_single := First.aux_i
 end
+
+(** Signature of inputs needed to adapt a filter. *)
+module type Basic_adapt = sig
+  module Original : S (** The original filter. *)
+
+  type aux_i (** The new input type. *)
+  type aux_o (** The new output type. *)
+
+  val adapt_i : aux_i -> Original.aux_i Or_error.t
+  (** [adapt_i aux] tries to adapt the new input type to the old one. *)
+
+  val adapt_o : Original.aux_o -> aux_o Or_error.t
+  (** [adapt_i aux] tries to adapt the old output type to the new one. *)
+end

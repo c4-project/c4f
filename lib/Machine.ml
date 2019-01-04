@@ -119,6 +119,7 @@ module type Basic_spec = sig
   type t
 
   val via : t -> Via.t
+  val litmus : t -> Litmus_tool.Config.t option
   val runner : t -> (module Run.Runner)
 end
 
@@ -140,14 +141,17 @@ module Spec = struct
        [@@deriving fields] infers. *)
     let is_enabled = enabled
 
-    let pp = Fmt.hbox
-        (fun f {via; enabled; litmus} ->
-           Via.pp f via;
-           if not enabled then begin
-             Format.pp_print_space f ();
-             String.pp f "(DISABLED)";
-           end;
-           Fmt.option Litmus_tool.Config.pp f litmus)
+    let pp_enabled (f : Base.Formatter.t) : bool -> unit = function
+      | true  -> ()
+      | false -> Fmt.unit "@ (DISABLED)" f ()
+    ;;
+
+    let pp = Fmt.(
+        hbox (
+          using (fun { via; enabled; _ } -> (via, enabled))
+            (append Via.pp pp_enabled)
+        )
+      )
     ;;
 
     let pp_summary = pp (* for now *)
@@ -166,6 +170,7 @@ module Spec = struct
     let is_enabled t = M.is_enabled (spec t)
     let remoteness t = M.remoteness (spec t)
     let runner     t = M.runner     (spec t)
+    let litmus     t = M.litmus     (spec t)
     let via        t = M.via        (spec t)
 
     let default =

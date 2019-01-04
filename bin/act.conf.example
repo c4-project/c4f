@@ -33,6 +33,13 @@ machine default {
   # The `via` directive tells act how to reach this machine.
   # `via local` tells act the machine is the one on which act is running.
   via local
+
+  # As well as Herd, `act` has some support for the Litmus7 tool.
+  # Since Litmus7 runs litmus tests on a specific machine, we configure
+  # it at the machine level.
+  litmus {
+    cmd "litmus7"
+  }
 }
 
 # Suppose we want to run compilers on a remote machine.

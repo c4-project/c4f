@@ -28,6 +28,7 @@
     real hardware, and not to be confused with the tests itself. *)
 
 open Base
+open Utils
 
 module Config : sig
   type t [@@deriving sexp]
@@ -39,4 +40,6 @@ module Config : sig
   (** [create ?cmd] creates a Litmus-tool config. *)
 end
 
-(* TODO *)
+module Filter : Filter.S with type aux_i = Config.t
+                          and type aux_o = unit
+(** Interface for running litmus as a filter. *)

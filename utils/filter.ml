@@ -185,3 +185,21 @@ module Chain_conditional_second (B : Basic_chain_conditional_second)
       (a_out, None)
   end)
 ;;
+
+module Adapt (B : Basic_adapt)
+  : S with type aux_i = B.aux_i
+       and type aux_o = B.aux_o = struct
+  type aux_i = B.aux_i
+  type aux_o = B.aux_o
+
+  let run (new_i : aux_i) (src : Io.In_source.t) (sink : Io.Out_sink.t)
+    : aux_o Or_error.t =
+    let open Or_error.Let_syntax in
+    let%bind old_i = B.adapt_i new_i in
+    let%bind old_o = B.Original.run old_i src sink in
+    B.adapt_o old_o
+  ;;
+
+  let run_from_string_paths = lift_to_raw_strings ~f:run
+  let run_from_fpaths       = lift_to_fpaths ~f:run
+end

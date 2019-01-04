@@ -144,15 +144,20 @@ end
     In practice, modules implementing this will either be [Spec]
     or [Spec.With_id]. *)
 module type Basic_spec = sig
-  (** [t] describes a machine. *)
   type t
+  (** [t] describes a machine. *)
 
-  (** [via spec] gets the [via] stanza of a machine spec [spec]. *)
   val via : t -> Via.t
+  (** [via spec] gets the [via] stanza of a machine spec [spec]. *)
 
+  val litmus : t -> Litmus_tool.Config.t option
+  (** [litmus spec] gets any available configuration in [spec] for
+      the Litmus tool. *)
+
+  val runner : t -> (module Run.Runner)
   (** [to_runner spec] gets a [Run.runner] for the machine spec
      [spec]. *)
-  val runner : t -> (module Run.Runner)
+
 end
 
 (** [Spec] is a module for machine specifications. *)

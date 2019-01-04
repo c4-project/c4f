@@ -23,6 +23,8 @@
    SOFTWARE. *)
 
 open Base
+open Stdio
+open Utils
 
 module Config = struct
   type t =
@@ -36,5 +38,19 @@ module Config = struct
 
   let create = make
 end
+
+module Filter : Filter.S with type aux_i = Config.t
+                          and type aux_o = unit =
+  Filter.Make_in_file_only (struct
+    type aux_i = Config.t
+    type aux_o = unit
+
+    let run (config : Config.t) (path : Fpath.t)
+        (_sink : Io.Out_sink.t) (oc : Out_channel.t)
+      : unit Or_error.t =
+      let prog = config.cmd in
+      Or_error.tag ~tag:"While running litmus"
+        (Run.Local.run ~oc ~prog [ Fpath.to_string path ])
+  end)
 
 (* TODO *)
