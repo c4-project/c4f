@@ -1,0 +1,42 @@
+C iriw
+
+// Example given in Manerkar et al., 'Counterexamples and Proof
+// Loophole for the C/C++ to POWER and ARMv7 Trailing-Sync Compiler
+// Mappings' (preprint: https://arxiv.org/pdf/1611.01507v1.pdf)
+
+{
+  x = 0;
+  y = 0;
+}
+
+void
+P0(atomic_int *x, atomic_int *y)
+{
+  atomic_store_explicit(x, 1, memory_order_seq_cst);
+}
+
+void
+P1(atomic_int *x, atomic_int *y)
+{
+  atomic_store_explicit(y, 1, memory_order_seq_cst);
+}
+
+void
+P2(atomic_int *x, atomic_int *y)
+{
+  int r0;
+  int r1;
+  r0 = atomic_load_explicit(x, memory_order_acquire);
+  r1 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+
+void
+P3(atomic_int *x, atomic_int *y)
+{
+  int r0;
+  int r1;
+  r0 = atomic_load_explicit(y, memory_order_acquire);
+  r1 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+exists (2:r0 == 1 /\ 2:r1 == 0 /\ 3:r0 == 1 /\ 3:r1 == 0)

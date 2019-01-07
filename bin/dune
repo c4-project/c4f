@@ -16,6 +16,7 @@
    (run act regress "tests")))
  (deps
   "tests/asm/x86/att/spec"
+  (glob_files "tests/litmus/*.litmus")
   (glob_files "tests/asm/x86/att/*.s"))
 )
 
