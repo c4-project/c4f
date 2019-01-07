@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Base
+open Core_kernel
 
 include Ast_intf
 
@@ -185,4 +185,60 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     let%bind _        = check_language language in
     Validated.make ~name ~init ?post ~programs ()
   ;;
+end
+
+module Convert (B : Basic_convert) = struct
+  let convert_programs (ps : B.From.Lang.Program.t list)
+    : B.To.Lang.Program.t list Or_error.t =
+    ps
+    |> List.map ~f:B.program
+    |> Or_error.combine_errors
+  ;;
+
+  let convert_init (init : (string, B.From.Lang.Constant.t) List.Assoc.t)
+    : (string, B.To.Lang.Constant.t) List.Assoc.t Or_error.t =
+    init
+    |> List.map
+      ~f:(fun (k, v) -> Or_error.(B.constant v >>| Tuple2.create k))
+    |> Or_error.combine_errors
+  ;;
+
+  let convert_id
+    : B.From.Id.t -> B.To.Id.t = function
+    | Local (thr, id) -> Local (thr, id)
+    | Global id -> Global id
+  ;;
+
+  let rec convert_pred
+    : B.From.Pred.t -> B.To.Pred.t Or_error.t = function
+    | Bracket x ->
+      Or_error.(x |> convert_pred >>| fun x' -> B.To.Pred.Bracket x')
+    | Or (l, r) ->
+      Or_error.map2 (convert_pred l) (convert_pred r)
+        ~f:(fun l' r' -> B.To.Pred.Or (l', r'))
+    | And (l, r) ->
+      Or_error.map2 (convert_pred l) (convert_pred r)
+        ~f:(fun l' r' -> B.To.Pred.And (l', r'))
+    | Eq (id, k) ->
+      let id' = convert_id id in
+      Or_error.(k |> B.constant >>| fun k' -> B.To.Pred.Eq (id', k'))
+  ;;
+
+  let convert_post (post : B.From.Post.t) : B.To.Post.t Or_error.t =
+    let open Or_error.Let_syntax in
+    let%map predicate = convert_pred (post.predicate) in
+    { B.To.Post.quantifier = post.quantifier; predicate }
+  ;;
+
+  let convert (old : B.From.Validated.t) : B.To.Validated.t Or_error.t =
+    let name         = B.From.Validated.name     old in
+    let old_init     = B.From.Validated.init     old in
+    let old_post     = B.From.Validated.post     old in
+    let old_programs = B.From.Validated.programs old in
+    let open Or_error.Let_syntax in
+    let%bind init     = convert_init old_init
+    and      post     = Travesty.T_option.With_errors.map_m old_post
+        ~f:convert_post
+    and      programs = convert_programs old_programs
+    in B.To.Validated.make ~name ~init ?post ~programs ()
 end

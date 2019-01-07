@@ -61,6 +61,8 @@ module type Basic = sig
   end
 end
 
+(** {2 AST modules *)
+
 (** The interface for litmus AST modules.
 
     AST modules contain, effectively, two litmus ASTs: the raw AST that
@@ -162,4 +164,20 @@ module type S = sig
   val validate : t -> Validated.t Or_error.t
   (** [validate lit] tries to validate a litmus AST.
       It may fail if the input isn't a valid Litmus program. *)
+end
+
+(** {2 Conversion} *)
+
+(** Signature of inputs to the [Convert] functor. *)
+module type Basic_convert = sig
+  module From : S
+  (** The Litmus language from which we're converting. *)
+  module To : S
+  (** The Litmus language to which we're converting. *)
+
+  val constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t
+  (** [constant k] tries to convert [k] to the new language. *)
+
+  val program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t
+  (** [constant k] tries to convert [k] to the new language. *)
 end

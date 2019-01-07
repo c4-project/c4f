@@ -31,7 +31,11 @@ let map_combine
   |> Or_error.combine_errors
 ;;
 
+type 'a named = (Ast_basic.Identifier.t * 'a)
+[@@deriving sexp]
+
 type 'a id_assoc = (Ast_basic.Identifier.t, 'a) List.Assoc.t
+[@@deriving sexp]
 
 module Type = struct
   type t =
@@ -62,6 +66,7 @@ module Statement = struct
     | Assign of { lvalue : Ast_basic.Identifier.t
                 ; rvalue : Expression.t
                 }
+    | Nop
   [@@deriving sexp, variants]
   ;;
 end
@@ -72,6 +77,7 @@ module Function = struct
     ; body_decls : Initialiser.t id_assoc
     ; body_stms  : Statement.t list
     }
+  [@@deriving sexp, fields]
   ;;
 end
 
@@ -80,6 +86,7 @@ module Program = struct
     { globals   : Initialiser.t id_assoc
     ; functions : Function.t id_assoc
     }
+  [@@deriving sexp, fields]
   ;;
 end
 
@@ -140,6 +147,7 @@ module Reify = struct
   let stm : Statement.t -> Ast.Stm.t = function
     | Assign { lvalue; rvalue } ->
       Expr (Some (Binary (Identifier lvalue, `Assign, expr rvalue)))
+    | Nop -> Expr None
   ;;
 
   let func_body
@@ -164,6 +172,45 @@ module Reify = struct
       ; List.map ~f:(Tuple2.uncurry func) prog.functions
       ]
   ;;
+end
+
+module Litmus_lang : Litmus.Ast.Basic
+  with type Statement.t = [`Stm of Statement.t | `Decl of Initialiser.t named]
+   and type Program.t = Function.t named
+   and type Constant.t = Ast_basic.Constant.t = (struct
+    module Constant = Ast_basic.Constant
+
+    module Statement = struct
+      type t = [`Stm of Statement.t | `Decl of Initialiser.t named]
+      [@@deriving sexp]
+      let pp =
+        Fmt.using
+          (function
+            | `Decl (id, init) -> `Decl (Reify.decl id init)
+            | `Stm stm         -> `Stm  (Reify.stm stm))
+          Ast.Litmus_lang.Statement.pp
+
+      let empty () = `Stm (Statement.nop)
+      let make_uniform = Travesty.T_list.right_pad ~padding:(empty ())
+    end
+
+    module Program = struct
+      type t = Function.t named [@@deriving sexp]
+      let name (n, _) = Some n
+      let listing (_, fn) =
+        List.map (Function.body_decls fn) ~f:(fun x -> `Decl x)
+        @ List.map (Function.body_stms fn) ~f:(fun x -> `Stm x)
+      let pp = Fmt.(using (Tuple2.uncurry Reify.func) Ast.External_decl.pp)
+    end
+
+    let name = "C"
+  end)
+
+
+module Litmus_ast = struct
+  module A = Litmus.Ast.Make (Litmus_lang)
+  include A
+  include Litmus.Pp.Make_sequential (A)
 end
 
 module Convert = struct
@@ -277,5 +324,23 @@ module Convert = struct
     let%bind decls = map_combine ~f:decl ast_decls in
     let%map  funs = map_combine ~f:func ast_funs in
     { Program.globals = decls; functions = funs }
+  ;;
+
+  module Litmus_conv = Litmus.Ast.Convert (struct
+      module From = struct
+        include Ast.Litmus
+        module Lang = Ast.Litmus_lang
+      end
+      module To = Litmus_ast
+
+      let program = func
+      let constant = Or_error.return
+    end)
+  ;;
+
+  let litmus
+    : Ast.Litmus.Validated.t
+      -> Litmus_ast.Validated.t Or_error.t =
+    Litmus_conv.convert
   ;;
 end

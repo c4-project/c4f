@@ -96,12 +96,18 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = unit =
 module Litmus : Filter.S with type aux_i = mode and type aux_o = unit =
   Make (struct
     type ast = C.Ast.Litmus.t
-    type t = C.Ast.Litmus.Validated.t
-    type del = C.Ast.Translation_unit.t
+    type t = C.Mini.Litmus_ast.Validated.t
+    type del = C.Mini.Program.t
 
     module Frontend = C.Frontend.Litmus
-    let pp = C.Ast.Litmus.pp
-    let process = C.Ast.Litmus.validate
+    let pp = C.Mini.Litmus_ast.pp
+    let process lit =
+      Or_error.(
+        lit
+        |>  C.Ast.Litmus.validate
+        >>= C.Mini.Convert.litmus
+      )
+    ;;
 
     let prelude : string list =
       [ "// <!> Auto-generated from a litmus test by act."
@@ -113,11 +119,13 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = unit =
       Fmt.(const (vbox (list ~sep:sp string)) prelude)
     ;;
 
-    let pp_del : C.Ast.Translation_unit.t Fmt.t =
-      Fmt.(prefix pp_prelude (vbox C.Ast.Translation_unit.pp))
+    let pp_del : C.Mini.Program.t Fmt.t =
+      Fmt.(prefix pp_prelude
+             (using C.Mini.Reify.program
+                (vbox C.Ast.Translation_unit.pp)))
     ;;
 
-    let delitmus = C.Delitmus.run
+    let delitmus = Fn.const (Or_error.error_string "soon")
   end)
 
 let c_module is_c

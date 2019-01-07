@@ -24,6 +24,8 @@
 
 (** Top-level AST for Litmus tests *)
 
+open Base
+
 include module type of Ast_intf
 (** As usual, we store the signatures for [Ast] in a separate
    implementation module, and include them in both sides of this
@@ -33,3 +35,9 @@ module Make (Lang : Basic) : S with module Lang = Lang
 (** [Make] is a functor that, given a language described by
     [Basic], produces a module type for litmus test syntax
     trees, as well as operations for pretty-printing it. *)
+
+module Convert (B : Basic_convert) : sig
+  val convert : B.From.Validated.t -> B.To.Validated.t Or_error.t
+end
+(** A functor that constructs a partial conversion function from one
+    Litmus AST to another. *)

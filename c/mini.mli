@@ -66,19 +66,46 @@ module Program : sig
   type t
 end
 
-(** Reifying a mini-model into an AST *)
+(** Functions for reifying a mini-model into an AST. *)
 module Reify : sig
   val func : Ast_basic.Identifier.t -> Function.t -> Ast.External_decl.t
 
   val program : Program.t -> Ast.Translation_unit.t
 end
 
+(** The mini-model, packaged up as a Litmus language.
+
+    This language uses {{!Reify}Reify} for all of its pretty-printing
+    needs. *)
+module Litmus_lang : Litmus.Ast.Basic
+  with type Statement.t =
+         [ `Stm of Statement.t
+         | `Decl of (Ast_basic.Identifier.t * Initialiser.t)
+         ]
+   and type Program.t = (Ast_basic.Identifier.t * Function.t)
+   and type Constant.t = Ast_basic.Constant.t
+;;
+
+(** The mini-model's full Litmus AST module. *)
+module Litmus_ast : sig
+  include Litmus.Ast.S with module Lang := Litmus_lang
+  include Base.Pretty_printer.S with type t := Validated.t
+end
+
+
 (** Converting an AST into the mini-model *)
 module Convert : sig
   val func
     :  Ast.Function_def.t
     -> (Ast_basic.Identifier.t * Function.t) Or_error.t
-  ;;
+  (** [func ast] tries to interpret a C function definition AST
+      as a mini-model function. *)
 
   val translation_unit : Ast.Translation_unit.t -> Program.t Or_error.t
+  (** [translation_unit ast] tries to interpret a C translation unit AST
+      as a mini-model program. *)
+
+  val litmus : Ast.Litmus.Validated.t -> Litmus_ast.Validated.t Or_error.t
+  (** [litmus test] tries to interpret a Litmus test over the full C AST
+      as one over the mini-model. *)
 end
