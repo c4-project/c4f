@@ -32,15 +32,21 @@ and Enum_spec
       and type decl := Enumerator.t)
 and Struct_decl
   : (S_g_decl
-     with type qual := [ Type_spec.t | Type_qual.t ]
+     with type qual := Spec_or_qual.t
       and type decl := Struct_declarator.t list)
 and Type_spec
   : (S_type_spec
      with type su := Struct_or_union_spec.t
       and type en := Enum_spec.t)
+and Spec_or_qual
+  : (Ast_node
+     with type t = [ Type_spec.t | Type_qual.t ])
+and Decl_spec
+  : (Ast_node
+     with type t = [ Storage_class_spec.t | Type_spec.t | Type_qual.t ])
 and Type_name
   : (S_g_decl
-     with type qual := [ Type_spec.t | Type_qual.t ]
+     with type qual := Spec_or_qual.t
       and type decl := Abs_declarator.t option)
 and Struct_or_union_spec
   : (S_composite_spec
@@ -48,8 +54,7 @@ and Struct_or_union_spec
       and type decl := Struct_decl.t)
 and Param_decl
   : (S_g_decl
-     with type qual :=
-       [ Storage_class_spec.t | Type_spec.t | Type_qual.t ]
+     with type qual := Decl_spec.t
       and type decl :=
         [ `Concrete of Declarator.t
         | `Abstract of Abs_declarator.t option
@@ -105,7 +110,7 @@ module Init_declarator : sig
 end
 
 module Decl : S_g_decl
-  with type qual := [ Storage_class_spec.t | Type_spec.t | Type_qual.t ]
+  with type qual := Decl_spec.t
    and type decl := Init_declarator.t list
 ;;
 
@@ -122,7 +127,7 @@ and Compound_stm
 
 module Function_def : sig
   type t =
-    { decl_specs : [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] list
+    { decl_specs : Decl_spec.t list
     ; signature  : Declarator.t
     ; decls      : Decl.t list
     ; body       : Compound_stm.t

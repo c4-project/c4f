@@ -79,12 +79,12 @@ module Make (B : Basic)
 module Normal_C : Filter.S with type aux_i = mode and type aux_o = unit =
   Make (struct
     type ast = C.Ast.Translation_unit.t
-    type t = ast
+    type t = C.Mini.Program.t
     type del = Nothing.t (* Can't delitmus a C file *)
 
     module Frontend = C.Frontend.Normal
-    let pp = C.Ast.Translation_unit.pp
-    let process = Or_error.return
+    let pp = Fmt.using C.Mini.Reify.program C.Ast.Translation_unit.pp
+    let process = C.Mini.Convert.translation_unit
 
     let delitmus (_ : t) : del Or_error.t =
       Or_error.error_string "Can't delitmus a normal C file"
