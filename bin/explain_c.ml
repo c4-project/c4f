@@ -114,10 +114,10 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = unit =
     ;;
 
     let pp_del : C.Ast.Translation_unit.t Fmt.t =
-      Fmt.(prefix pp_prelude C.Ast.Translation_unit.pp)
+      Fmt.(prefix pp_prelude (vbox C.Ast.Translation_unit.pp))
     ;;
 
-    let delitmus _test = Or_error.error_string "unimplemented"
+    let delitmus = C.Delitmus.run
   end)
 
 let c_module is_c
