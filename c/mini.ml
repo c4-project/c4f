@@ -54,16 +54,24 @@ module Initialiser = struct
   ;;
 end
 
+module Lvalue = struct
+  type t =
+    | Variable of Ast_basic.Identifier.t
+    | Deref    of t
+  [@@deriving sexp, variants]
+end
+
 module Expression = struct
   type t =
     | Constant of Ast_basic.Constant.t
+    | Lvalue   of Lvalue.t
   [@@deriving sexp, variants]
   ;;
 end
 
 module Statement = struct
   type t =
-    | Assign of { lvalue : Ast_basic.Identifier.t
+    | Assign of { lvalue : Lvalue.t
                 ; rvalue : Expression.t
                 }
     | Nop
@@ -140,13 +148,19 @@ module Reify = struct
     }
   ;;
 
+  let rec lvalue_to_expr : Lvalue.t -> Ast.Expr.t = function
+    | Variable v -> Identifier v
+    | Deref    l -> Prefix (`Deref, lvalue_to_expr l)
+  ;;
+
   let expr : Expression.t -> Ast.Expr.t = function
     | Constant k -> Constant k
+    | Lvalue l -> lvalue_to_expr l
   ;;
 
   let stm : Statement.t -> Ast.Stm.t = function
     | Assign { lvalue; rvalue } ->
-      Expr (Some (Binary (Identifier lvalue, `Assign, expr rvalue)))
+      Expr (Some (Binary (lvalue_to_expr lvalue, `Assign, expr rvalue)))
     | Nop -> Expr None
   ;;
 
@@ -245,6 +259,21 @@ module Convert = struct
       )
   ;;
 
+  (** [ensure_statements xs] makes sure that each member of [xs] is a
+     statement. *)
+  let ensure_statements
+    : Ast.Compound_stm.Elt.t list
+      -> Ast.Stm.t list Or_error.t =
+    map_combine
+      ~f:(
+        function
+        | `Stm f -> Or_error.return f
+        | d      -> Or_error.error_s
+                      [%message "Expected a statement"
+                        ~got:(d : Ast.Compound_stm.Elt.t) ]
+      )
+  ;;
+
   let defined_types : (string, Type.t) List.Assoc.t =
     [ "atomic_int", Atomic_int ]
 
@@ -273,10 +302,13 @@ module Convert = struct
             ~got:(spec : Ast_basic.Storage_class_spec.t)]
   ;;
 
-  let name_of_declarator : Ast.Declarator.t ->
+  let declarator_to_id : Ast.Declarator.t ->
     Ast_basic.Identifier.t Or_error.t = function
-    | { pointer = Some _; _ } ->
-      Or_error.error_string "Pointers not supported yet"
+    | { pointer = Some _; _ } as decl ->
+      Or_error.error_s
+        [%message "Pointers not supported yet"
+            ~declarator:(decl : Ast.Declarator.t)
+        ]
     | { pointer = None;
         direct  = Id id } ->
       Or_error.return id
@@ -305,25 +337,147 @@ module Convert = struct
     let open Or_error.Let_syntax in
     let%bind ty    = qualifiers_to_type d.qualifiers in
     let%bind idecl = Travesty.T_list.one d.declarator in
-    let%bind name  = name_of_declarator idecl.declarator in
+    let%bind name  = declarator_to_id idecl.declarator in
     let%map  value = Travesty.T_option.With_errors.map_m idecl.initialiser
         ~f:value_of_initialiser
     in
     (name, { Initialiser.ty; value })
   ;;
 
-  let func (_f : Ast.Function_def.t)
+  let validate_func_void_type (f : Ast.Function_def.t)
+    : Validate.t =
+    match f.decl_specs with
+    | [ `Void ] -> Validate.pass
+    | xs -> Validate.fail_s
+              [%message "Expected 'void'"
+                ~got:(xs : Ast.Decl_spec.t list)]
+  ;;
+
+  let validate_func_no_knr : Ast.Function_def.t Validate.check =
+    Validate.booltest
+      (fun f -> List.is_empty f.Ast.Function_def.decls)
+      ~if_false:"K&R style function definitions not supported"
+  ;;
+
+  let validate_func : Ast.Function_def.t Validate.check =
+    Validate.all
+      [ validate_func_void_type
+      ; validate_func_no_knr
+      ]
+  ;;
+
+  let param_decl : Ast.Param_decl.t -> Type.t named Or_error.t =
+    function
+    | { declarator = `Abstract _; _ } ->
+      Or_error.error_string
+        "Abstract parameter declarators not supported"
+    | { qualifiers; declarator = `Concrete declarator } ->
+      let open Or_error.Let_syntax in
+      let%map ty = qualifiers_to_type qualifiers
+      and     id = declarator_to_id declarator
+      in (id, ty)
+  ;;
+
+  let param_type_list : Ast.Param_type_list.t ->
+    Type.t id_assoc Or_error.t = function
+    | { style = `Variadic; _ } ->
+      Or_error.error_string "Variadic arguments not supported"
+    | { style = `Normal; params } ->
+      map_combine ~f:param_decl params
+  ;;
+
+  let func_signature : Ast.Declarator.t ->
+    (Ast_basic.Identifier.t * Type.t id_assoc) Or_error.t = function
+    | { pointer = Some _; _ } ->
+      Or_error.error_string "Pointers not supported yet"
+    | { pointer = None;
+        direct  = Fun_decl (Id name, param_list) } ->
+      Or_error.(
+        param_list |> param_type_list >>| Tuple2.create name
+      )
+    | x ->
+      Or_error.error_s
+        [%message "Unsupported function declarator"
+            ~got:(x.direct : Ast.Direct_declarator.t)
+        ]
+  ;;
+
+  let rec expr_to_lvalue
+    : Ast.Expr.t -> Lvalue.t Or_error.t = function
+    | Identifier id   -> Or_error.return (Lvalue.variable id)
+    | Brackets expr -> expr_to_lvalue expr
+    | Prefix (`Deref, expr) ->
+      Or_error.(expr |> expr_to_lvalue >>| Lvalue.deref)
+    | Prefix _ | Postfix _ | Binary _ | Ternary _ | Cast _
+    | Call _ | Subscript _ | Field _ | Sizeof_type _ | String _ | Constant _
+      as e ->
+      Or_error.error_s
+        [%message "Expected an lvalue here" ~got:(e : Ast.Expr.t)]
+  ;;
+
+  let rec expr
+    : Ast.Expr.t -> Expression.t Or_error.t = function
+    | Constant k -> Or_error.return (Expression.constant k)
+    | Brackets e -> expr e
+    | Prefix (`Deref, expr) ->
+      Or_error.(expr |> expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
+    | Prefix _ | Postfix _ | Binary _ | Ternary _ | Cast _
+    | Call _ | Subscript _ | Field _ | Sizeof_type _ | String _ | Identifier _
+      as e ->
+      Or_error.error_s
+        [%message "Unsupported expression" ~got:(e : Ast.Expr.t)]
+  ;;
+
+  let expr_stm : Ast.Expr.t -> Statement.t Or_error.t = function
+    | Binary (l, `Assign, r) ->
+      let open Or_error.Let_syntax in
+      let%map lvalue = expr_to_lvalue l
+      and     rvalue = expr r
+      in Statement.assign ~lvalue ~rvalue
+    | Brackets _ | Constant _
+    | Prefix _ | Postfix _ | Binary _ | Ternary _ | Cast _
+    | Call _ | Subscript _ | Field _ | Sizeof_type _ | String _ | Identifier _
+      as e ->
+      Or_error.error_s
+        [%message "Unsupported expression statement" ~got:(e : Ast.Expr.t)]
+  ;;
+
+  let stm : Ast.Stm.t -> Statement.t Or_error.t = function
+    | Expr None -> Or_error.return Statement.nop
+    | Expr (Some e) -> expr_stm e
+    | Continue | Break | Return _ | Label _ | Compound _
+    | If _ | Switch _ | While _ | Do_while _ | For _ | Goto _
+        as s ->
+      Or_error.error_s
+        [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]
+  ;;
+
+  let func_body (body : Ast.Compound_stm.t)
+    : (Initialiser.t id_assoc * Statement.t list) Or_error.t =
+    let open Or_error.Let_syntax in
+    let%bind (ast_decls, ast_nondecls) = sift_decls body in
+    let%bind ast_stms = ensure_statements ast_nondecls in
+    let%map  decls = map_combine ~f:decl ast_decls
+    and      stms  = map_combine ~f:stm  ast_stms
+    in (decls, stms)
+  ;;
+
+  let func (f : Ast.Function_def.t)
     : (Ast_basic.Identifier.t * Function.t) Or_error.t =
-    Or_error.unimplemented "soon"
+    let open Or_error.Let_syntax in
+    let%bind () = Validate.result (validate_func f) in
+    let%map  (name, parameters)      = func_signature f.signature
+    and      (body_decls, body_stms) = func_body f.body
+    in (name, { Function.parameters; body_decls; body_stms })
   ;;
 
   let translation_unit (prog : Ast.Translation_unit.t) : Program.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind (ast_decls, ast_nondecls) = sift_decls prog in
     let%bind ast_funs = ensure_functions ast_nondecls in
-    let%bind decls = map_combine ~f:decl ast_decls in
-    let%map  funs = map_combine ~f:func ast_funs in
-    { Program.globals = decls; functions = funs }
+    let%map  decls = map_combine ~f:decl ast_decls
+    and      funs  = map_combine ~f:func ast_funs
+    in { Program.globals = decls; functions = funs }
   ;;
 
   module Litmus_conv = Litmus.Ast.Convert (struct

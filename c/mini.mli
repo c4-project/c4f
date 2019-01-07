@@ -44,6 +44,11 @@ module Initialiser : sig
   type t
 end
 
+(** Somewhere assignable (a variable, or dereference thereof). *)
+module Lvalue : sig
+  type t [@@deriving sexp]
+end
+
 module Expression : sig
   type t [@@deriving sexp]
 
@@ -51,19 +56,23 @@ module Expression : sig
   (** [constant k] lifts a C constant [k] to an expression. *)
 end
 
+(** A statement.
+
+    We treat some things that are technically expressions in C as
+    statements, for simplicity. *)
 module Statement : sig
   type t [@@deriving sexp]
 
-  val assign : lvalue:Ast_basic.Identifier.t -> rvalue:Expression.t -> t
-  (** [assign ~lvalue ~rvalue] lifts a C assignment to an expression. *)
+  val assign : lvalue:Lvalue.t -> rvalue:Expression.t -> t
+  (** [assign ~lvalue ~rvalue] lifts a C assignment to a statement. *)
 end
 
 module Function : sig
-  type t
+  type t [@@deriving sexp]
 end
 
 module Program : sig
-  type t
+  type t [@@deriving sexp]
 end
 
 (** Functions for reifying a mini-model into an AST. *)
