@@ -63,7 +63,7 @@ let regress_run_asm ((module L) : (module Asm_job.Runner))
 
   let%bind spec = find_spec specs file in
 
-  Fmt.pr "## %a\n\n```\n@." Fpath.pp file;
+  Fmt.pr "## %a\n\n```@." Fpath.pp file;
 
   let input =
     Asm_job.make ~passes ~symbols:spec.cvars
@@ -122,13 +122,13 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Or_error.combine_errors_unit
 ;;
 
-let regress_run_asm_many modename mode passes test_path =
+let regress_run_asm_many (modename :string) mode passes (test_path : Fpath.t) =
   let open Or_error.Let_syntax in
 
   printf "# %s tests\n\n" modename;
 
   let emits = ["x86"; "att"] in
-  let path = Fpath.(v test_path / "asm" / "x86" / "att" / "") in
+  let path = Fpath.(test_path / "asm" / "x86" / "att" / "") in
   let%bind l = Language_support.asm_runner_from_emits emits in
   let%bind specs = read_specs path in
   let%bind test_files = Io.Dir.get_files ~ext:"s" path in
@@ -137,34 +137,47 @@ let regress_run_asm_many modename mode passes test_path =
       ~f:(regress_run_asm l path mode specs passes)
   in
   let%map () = Or_error.combine_errors_unit results in
-  printf "\nRan %d test(s).\n\n" (List.length test_files)
+  printf "\nRan %d test(s).\n" (List.length test_files)
 ;;
 
-let regress_explain =
+let regress_explain : Fpath.t -> unit Or_error.t =
   regress_run_asm_many "Explainer" `Explain
     (Sanitiser_pass.explain)
 ;;
 
-let regress_litmusify =
+let regress_litmusify : Fpath.t -> unit Or_error.t =
   regress_run_asm_many "Litmusifier" `Litmusify
     (Sanitiser_pass.standard)
 ;;
 
-let regress test_path =
-  let open Or_error.Let_syntax in
-  let%bind () = regress_explain test_path in
-  let%map  () = regress_litmusify test_path in
-  Out_channel.newline stdout
-;;
-
-let command =
+let make_regress_command ~(summary : string)
+    (regress_function : Fpath.t -> unit Or_error.t)
+  : Command.t =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"runs regression tests"
+    ~summary
     [%map_open
-      let test_path = anon ("TEST_PATH" %: string) in
+      let test_path_raw = anon ("TEST_PATH" %: string) in
        fun () ->
          let o = Output.make ~verbose:false ~warnings:true in
-         regress test_path |> Output.print_error o
+         Or_error.(
+           test_path_raw
+           |>  Io.fpath_of_string
+           >>= regress_function
+         ) |> Output.print_error o
+    ]
+;;
+
+let command : Command.t =
+  Command.group
+    ~summary:"runs regression tests"
+    [ "explain",
+      make_regress_command
+        ~summary:"runs explainer regressions"
+        regress_explain
+    ; "litmusify",
+      make_regress_command
+        ~summary:"runs litmusifier regressions"
+        regress_litmusify
     ]
 ;;

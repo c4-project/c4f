@@ -10,15 +10,32 @@
     unix))
 
 (rule
- (targets regress.output)
+ (targets explain.regress.output)
  (action
-  (with-stdout-to regress.output
-   (run act regress "tests")))
+  (with-stdout-to explain.regress.output
+   (run act regress "explain" "tests")))
  (deps
   "tests/asm/x86/att/spec"
-  (glob_files "tests/litmus/*.litmus")
   (glob_files "tests/asm/x86/att/*.s"))
 )
+(alias
+ (name runtest)
+ (action (diff explain.regress.expected explain.regress.output)
+))
+
+(rule
+ (targets litmusify.regress.output)
+ (action
+  (with-stdout-to litmusify.regress.output
+   (run act regress "litmusify" "tests")))
+ (deps
+  "tests/asm/x86/att/spec"
+  (glob_files "tests/asm/x86/att/*.s"))
+)
+(alias
+ (name runtest)
+ (action (diff litmusify.regress.expected litmusify.regress.output)
+))
 
 (rule
  (targets specs.output)
@@ -28,13 +45,7 @@
  (deps
   "act.conf.example")
 )
-
 (alias
  (name runtest)
  (action (diff specs.expected specs.output)
-))
-
-(alias
- (name runtest)
- (action (diff regress.expected regress.output)
 ))
