@@ -37,6 +37,32 @@ type 'a named = (Ast_basic.Identifier.t * 'a)
 type 'a id_assoc = (Ast_basic.Identifier.t, 'a) List.Assoc.t
 [@@deriving sexp]
 
+module Mem_order = struct
+  module M = struct
+    type t =
+      | Seq_cst
+      | Release
+      | Acquire
+      | Rel_acq
+      | Relaxed
+      | Consume
+    [@@deriving enum]
+    ;;
+
+    let table =
+      [ Seq_cst, "memory_order_seq_cst"
+      ; Release, "memory_order_release"
+      ; Acquire, "memory_order_acquire"
+      ; Rel_acq, "memory_order_rel_acq"
+      ; Relaxed, "memory_order_relaxed"
+      ; Consume, "memory_order_consume"
+      ]
+    ;;
+  end
+  include M
+  include Utils.Enum.Extend_table (M)
+end
+
 module Type = struct
   type basic =
     | Int
@@ -69,8 +95,13 @@ end
 
 module Expression = struct
   type t =
-    | Constant of Ast_basic.Constant.t
-    | Lvalue   of Lvalue.t
+    | Constant    of Ast_basic.Constant.t
+    | Lvalue      of Lvalue.t
+    | Equals      of t * t
+    | Atomic_load of
+        { src   : Lvalue.t
+        ; order : Mem_order.t
+        }
   [@@deriving sexp, variants]
   ;;
 end
@@ -80,7 +111,16 @@ module Statement = struct
     | Assign of { lvalue : Lvalue.t
                 ; rvalue : Expression.t
                 }
+    | Atomic_store of
+        { src   : Expression.t
+        ; dst   : Lvalue.t
+        ; order : Mem_order.t
+        }
     | Nop
+    | If of { cond     : Expression.t
+            ; t_branch : t
+            ; f_branch : t option
+            }
   [@@deriving sexp, variants]
   ;;
 end
@@ -171,14 +211,42 @@ module Reify = struct
     | Deref    l -> Prefix (`Deref, lvalue_to_expr l)
   ;;
 
-  let expr : Expression.t -> Ast.Expr.t = function
-    | Constant k -> Constant k
-    | Lvalue l -> lvalue_to_expr l
+  let mem_order_to_expr (mo : Mem_order.t) : Ast.Expr.t =
+    Identifier (Mem_order.to_string mo)
   ;;
 
-  let stm : Statement.t -> Ast.Stm.t = function
+  let rec expr : Expression.t -> Ast.Expr.t = function
+    | Constant k -> Constant k
+    | Lvalue l -> lvalue_to_expr l
+    | Equals (l, r) -> Binary (expr l, `Eq, expr r)
+    | Atomic_load { src; order } ->
+      Call { func      = Identifier "atomic_load_explicit"
+           ; arguments = [ lvalue_to_expr src
+                         ; mem_order_to_expr order
+                         ]
+           }
+  ;;
+
+  let rec stm : Statement.t -> Ast.Stm.t = function
     | Assign { lvalue; rvalue } ->
       Expr (Some (Binary (lvalue_to_expr lvalue, `Assign, expr rvalue)))
+    | Atomic_store { dst; src; order } ->
+      Expr
+        (Some
+           (Call
+              { func      = Identifier "atomic_store_explicit"
+              ; arguments = [ lvalue_to_expr dst
+                            ; expr src
+                            ; mem_order_to_expr order
+                            ]
+              }
+           )
+        )
+    | If { cond; t_branch; f_branch } ->
+      If { cond = expr cond
+         ; t_branch = stm t_branch
+         ; f_branch = Option.map ~f:stm f_branch
+         }
     | Nop -> Expr None
   ;;
 
@@ -442,38 +510,143 @@ module Convert = struct
         [%message "Expected an lvalue here" ~got:(e : Ast.Expr.t)]
   ;;
 
+  let expr_to_identifier
+      (expr : Ast.Expr.t) : Ast_basic.Identifier.t Or_error.t =
+    let open Or_error.Let_syntax in
+    match%bind expr_to_lvalue expr with
+    | Variable var -> return var
+    | Deref _ as lv ->
+      Or_error.error_s
+        [%message "Expected identifier" ~got:(lv : Lvalue.t)]
+  ;;
+
+  let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =
+    let open Or_error.Let_syntax in
+    let%bind id = expr_to_identifier expr in
+    id
+    |> Mem_order.of_string_option
+    |> Result.of_option
+      ~error:(
+        Error.create_s
+          [%message "Unsupported memory order" ~got:(id : Ast_basic.Identifier.t)]
+      )
+  ;;
+
+  (** [call call_table func arguments] models a function call with
+      function [func] and arguments [arguments], using the modellers
+      in [call_table]. *)
+  let call
+      (call_table : (Ast.Expr.t list -> 'a Or_error.t) id_assoc)
+      (func : Ast.Expr.t)
+      (arguments : Ast.Expr.t list)
+    : 'a Or_error.t =
+    let open Or_error.Let_syntax in
+      let%bind func_name = expr_to_identifier func in
+      let%bind call_handler =
+        func_name
+        |> List.Assoc.find ~equal:String.equal call_table
+        |> Result.of_option
+          ~error:(
+            Error.create_s
+              [%message "Unsupported function in expression position"
+                  ~got:func_name
+              ]
+          )
+      in call_handler arguments
+  ;;
+
   let rec expr
-    : Ast.Expr.t -> Expression.t Or_error.t = function
-    | Constant k -> Or_error.return (Expression.constant k)
+    : Ast.Expr.t -> Expression.t Or_error.t =
+    let open Or_error.Let_syntax in
+    let model_binary l op r =
+      let%bind l' = expr l
+      and      r' = expr r
+      in
+      match op with
+      | `Eq -> return (Expression.equals l' r')
+      | _   -> Or_error.error_s
+                 [%message "Unsupported binary operator" ~got:(op : Ast_basic.Operators.Bin.t)]
+    in
+    let model_atomic_load_explicit = function
+      | [ raw_src; raw_mo ] ->
+        let%map src   = expr_to_lvalue raw_src
+        and     order = expr_to_memory_order raw_mo
+        in Expression.atomic_load ~src ~order
+      | args ->
+        Or_error.error_s
+          [%message "Invalid arguments to atomic_load_explicit"
+              ~got:(args : Ast.Expr.t list)
+          ]
+    in
+    let call_table =
+      [ "atomic_load_explicit", model_atomic_load_explicit ]
+    in
+    let model_call = call call_table
+    in
+    function
     | Brackets e -> expr e
+    | Binary (l, op, r) -> model_binary l op r
+    | Constant k -> Or_error.return (Expression.constant k)
+    | Identifier id ->
+      Or_error.return (Expression.lvalue (Lvalue.variable id))
     | Prefix (`Deref, expr) ->
       Or_error.(expr |> expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
-    | Prefix _ | Postfix _ | Binary _ | Ternary _ | Cast _
-    | Call _ | Subscript _ | Field _ | Sizeof_type _ | String _ | Identifier _
+    | Call { func; arguments } -> model_call func arguments
+    | Prefix _ | Postfix _ | Ternary _ | Cast _
+    | Subscript _ | Field _ | Sizeof_type _ | String _
       as e ->
       Or_error.error_s
         [%message "Unsupported expression" ~got:(e : Ast.Expr.t)]
   ;;
 
-  let expr_stm : Ast.Expr.t -> Statement.t Or_error.t = function
+  let expr_stm : Ast.Expr.t -> Statement.t Or_error.t =
+    let open Or_error.Let_syntax in
+    let model_atomic_store_explicit = function
+      | [ raw_dst; raw_src; raw_mo ] ->
+        let%map dst   = expr_to_lvalue raw_dst
+        and     src   = expr raw_src
+        and     order = expr_to_memory_order raw_mo
+        in Statement.atomic_store ~dst ~src ~order
+      | args ->
+        Or_error.error_s
+          [%message "Invalid arguments to atomic_store_explicit"
+              ~got:(args : Ast.Expr.t list)
+          ]
+    in
+    let call_table =
+      [ "atomic_store_explicit", model_atomic_store_explicit ]
+    in
+    let model_call = call call_table
+    in
+    function
     | Binary (l, `Assign, r) ->
-      let open Or_error.Let_syntax in
       let%map lvalue = expr_to_lvalue l
       and     rvalue = expr r
       in Statement.assign ~lvalue ~rvalue
+    | Call { func; arguments } -> model_call func arguments
     | Brackets _ | Constant _
     | Prefix _ | Postfix _ | Binary _ | Ternary _ | Cast _
-    | Call _ | Subscript _ | Field _ | Sizeof_type _ | String _ | Identifier _
+    | Subscript _ | Field _ | Sizeof_type _ | String _ | Identifier _
       as e ->
       Or_error.error_s
         [%message "Unsupported expression statement" ~got:(e : Ast.Expr.t)]
   ;;
 
-  let stm : Ast.Stm.t -> Statement.t Or_error.t = function
+  let rec stm : Ast.Stm.t -> Statement.t Or_error.t =
+    let model_if old_cond old_t_branch old_f_branch =
+      let open Or_error.Let_syntax in
+      let%map cond = expr old_cond
+      and     t_branch = stm old_t_branch
+      and     f_branch =
+        Travesty.T_option.With_errors.map_m old_f_branch ~f:stm
+      in Statement.If { cond; t_branch; f_branch }
+    in
+    function
     | Expr None -> Or_error.return Statement.nop
     | Expr (Some e) -> expr_stm e
+    | If { cond; t_branch; f_branch } -> model_if cond t_branch f_branch
     | Continue | Break | Return _ | Label _ | Compound _
-    | If _ | Switch _ | While _ | Do_while _ | For _ | Goto _
+    | Switch _ | While _ | Do_while _ | For _ | Goto _
         as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]
