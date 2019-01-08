@@ -43,49 +43,6 @@ let find_spec specs (path : Fpath.t) =
     )
 ;;
 
-let validate_path_and_file :
-  (Fpath.t * Fpath.t) Validate.check =
-  Validate.(
-    pair
-      ~fst:(booltest Fpath.is_dir_path ~if_false:"path should be a directory")
-      ~snd:(booltest Fpath.is_file_path ~if_false:"file should be a file")
-  )
-;;
-
-let regress_run_asm ((module L) : (module Asm_job.Runner))
-    (path : Fpath.t) mode specs passes (file : Fpath.t) =
-  let open Or_error.Let_syntax in
-
-  let%bind filepath =
-    Validate.valid_or_error (path, file) validate_path_and_file
-    >>| Tuple2.uncurry Fpath.append
-  in
-
-  let%bind spec = find_spec specs file in
-
-  Fmt.pr "## %a\n\n```@." Fpath.pp file;
-
-  let input =
-    Asm_job.make ~passes ~symbols:spec.cvars
-  in
-
-  let%map _ =
-    match mode with
-    | `Litmusify ->
-      L.Litmusify.run_from_fpaths
-        (input ())
-        ~infile:(Some filepath)
-        ~outfile:None
-    | `Explain ->
-      L.Explain.run_from_fpaths
-        (input ())
-        ~infile:(Some filepath)
-        ~outfile:None
-  in
-
-  Out_channel.flush stdout;
-  printf "```\n";
-;;
 
 let read_specs path =
   let spec_file = Fpath.(path / "spec") in
@@ -109,6 +66,23 @@ let diff_to_error = function
       ]
 ;;
 
+let validate_path_and_file :
+  (Fpath.t * Fpath.t) Validate.check =
+  Validate.(
+    pair
+      ~fst:(booltest Fpath.is_dir_path ~if_false:"path should be a directory")
+      ~snd:(booltest Fpath.is_file_path ~if_false:"file should be a file")
+  )
+;;
+
+let to_full_path ~(dir : Fpath.t) ~(file : Fpath.t)
+  : Fpath.t Or_error.t =
+  Or_error.(
+    Validate.valid_or_error (dir, file) validate_path_and_file
+    >>| Tuple2.uncurry Fpath.append
+  )
+;;
+
 let check_files_against_specs specs (test_paths : Fpath.t list) =
   let spec_set = specs |> List.map ~f:fst |> String.Set.of_list in
   let files_set =
@@ -122,22 +96,57 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Or_error.combine_errors_unit
 ;;
 
-let regress_run_asm_many (modename :string) mode passes (test_path : Fpath.t) =
+let regress_run_asm ((module L) : (module Asm_job.Runner))
+    (dir : Fpath.t) mode specs passes (file : Fpath.t) =
   let open Or_error.Let_syntax in
+  let%bind filepath = to_full_path ~dir ~file in
+  let%bind spec = find_spec specs file in
 
-  printf "# %s tests\n\n" modename;
+  let input =
+    Asm_job.make ~passes ~symbols:spec.cvars
+  in
+  let%map _ = match mode with
+  | `Litmusify ->
+    L.Litmusify.run_from_fpaths
+      (input ())
+      ~infile:(Some filepath)
+      ~outfile:None
+  | `Explain ->
+    L.Explain.run_from_fpaths
+      (input ())
+      ~infile:(Some filepath)
+      ~outfile:None
+  in ()
+;;
 
+let regress_on_files (bin_name : string) (test_dir : Fpath.t) (ext : string)
+    ~(f : Fpath.t -> unit Or_error.t)
+  : unit Or_error.t =
+  let open Or_error.Let_syntax in
+  printf "# %s tests\n\n" bin_name;
+  let%bind test_files = Io.Dir.get_files ~ext test_dir in
+  let results = List.map test_files ~f:(
+      fun file ->
+        Fmt.pr "## %a\n\n```@." Fpath.pp file;
+        Out_channel.flush stdout;
+        let%map () = f file in
+        printf "```\n"
+    ) in
+  let%map () = Or_error.combine_errors_unit results in
+  printf "\nRan %d test(s).\n" (List.length test_files)
+;;
+
+let regress_run_asm_many (modename : string) mode passes (test_path : Fpath.t)
+  : unit Or_error.t =
+  let open Or_error.Let_syntax in
   let emits = ["x86"; "att"] in
   let path = Fpath.(test_path / "asm" / "x86" / "att" / "") in
   let%bind l = Language_support.asm_runner_from_emits emits in
   let%bind specs = read_specs path in
   let%bind test_files = Io.Dir.get_files ~ext:"s" path in
   let%bind () = check_files_against_specs specs test_files in
-  let results = List.map test_files
-      ~f:(regress_run_asm l path mode specs passes)
-  in
-  let%map () = Or_error.combine_errors_unit results in
-  printf "\nRan %d test(s).\n" (List.length test_files)
+  regress_on_files modename path "s"
+    ~f:(regress_run_asm l path mode specs passes)
 ;;
 
 let regress_explain : Fpath.t -> unit Or_error.t =
@@ -148,6 +157,19 @@ let regress_explain : Fpath.t -> unit Or_error.t =
 let regress_litmusify : Fpath.t -> unit Or_error.t =
   regress_run_asm_many "Litmusifier" `Litmusify
     (Sanitiser_pass.standard)
+;;
+
+let delitmus_file (dir : Fpath.t) (file : Fpath.t) : unit Or_error.t =
+  let open Or_error.Let_syntax in
+  let%bind path = to_full_path ~dir ~file in
+  C.Filters.Litmus.run_from_fpaths C.Filters.Delitmus
+    ~infile:(Some path)
+    ~outfile:None
+;;
+
+let regress_delitmus (test_dir : Fpath.t) : unit Or_error.t =
+  regress_on_files "Delitmus" test_dir "litmus"
+    ~f:(delitmus_file test_dir)
 ;;
 
 let make_regress_command ~(summary : string)
@@ -179,5 +201,9 @@ let command : Command.t =
       make_regress_command
         ~summary:"runs litmusifier regressions"
         regress_litmusify
+    ; "delitmus",
+      make_regress_command
+        ~summary:"runs de-litmus regressions"
+        regress_delitmus
     ]
 ;;

@@ -38,6 +38,19 @@
 ))
 
 (rule
+ (targets delitmus.regress.output)
+ (action
+  (with-stdout-to delitmus.regress.output
+   (run act regress "delitmus" "tests/litmus/")))
+ (deps
+  (glob_files "tests/litmus/*.litmus"))
+)
+(alias
+ (name runtest)
+ (action (diff delitmus.regress.expected delitmus.regress.output)
+))
+
+(rule
  (targets specs.output)
  (action
   (with-stdout-to specs.output
