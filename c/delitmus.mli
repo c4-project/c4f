@@ -26,5 +26,5 @@
 
 open Base
 
-val run : Ast.Litmus.Validated.t -> Ast.Translation_unit.t Or_error.t
+val run : Mini.Litmus_ast.Validated.t -> Mini.Program.t Or_error.t
 (** [run litmus] runs de-litmusification on [litmus]. *)

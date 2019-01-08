@@ -24,38 +24,26 @@
 
 open Core_kernel
 
-(** [make_init_global name value] converts a single Litmus initialiser
-    to a global variable declaration. *)
-let make_init_global (name : string) (value : Ast_basic.Constant.t)
-  : Ast.External_decl.t Or_error.t =
-  Or_error.return
-    Ast.(
-      `Decl
-        { Decl.qualifiers = [ `Int ]
-        ; declarator = [ { declarator =
-                             { pointer = None
-                             ; direct = Id name
-                             }
-                         ; initialiser = Some (Assign (Constant value))
-                         }
-                       ]
-        }
-    )
+let make_atomic_int_initialiser (value : Ast_basic.Constant.t) =
+  (* NB: Apparently, we don't need ATOMIC_VAR_INIT here:
+     every known C11 compiler can make do without it, and as a result
+     it's obsolete as of C17. *)
+  Mini.Initialiser.make ~ty:Mini.Type.atomic_int ~value ()
 ;;
 
 (** [make_init_globals init] converts a Litmus initialiser list to
     a set of global variable declarations. *)
 let make_init_globals (init : (string, Ast_basic.Constant.t) List.Assoc.t)
-  : Ast.External_decl.t list Or_error.t =
+  : (Ast_basic.Identifier.t, Mini.Initialiser.t) List.Assoc.t Or_error.t =
   init
-  |> List.map ~f:(Tuple2.uncurry make_init_global)
-  |> Or_error.combine_errors
+  |> List.Assoc.map ~f:make_atomic_int_initialiser
+  |> Or_error.return
 ;;
 
-let run (input : Ast.Litmus.Validated.t)
-  : Ast.Translation_unit.t Or_error.t =
+let run (input : Mini.Litmus_ast.Validated.t)
+  : Mini.Program.t Or_error.t =
   let open Or_error.Let_syntax in
-  let init = Ast.Litmus.Validated.init input in
-  let%map init_globals = make_init_globals init in
-  init_globals
+  let init = Mini.Litmus_ast.Validated.init input in
+  let%map globals = make_init_globals init in
+  Mini.Program.make ~globals ~functions:[]
 ;;

@@ -38,10 +38,20 @@ open Base
 
 module Type : sig
   type t
+
+  val int : t
+  (** [int] is the int type. *)
+
+  val atomic_int : t
+  (** [atomic_int] is the atomic_int type. *)
 end
 
 module Initialiser : sig
   type t
+
+  val make : ty:Type.t -> ?value:Ast_basic.Constant.t -> unit -> t
+  (** [make ~ty ?value ()] makes an initialiser with type [ty] and
+      optional initialised value [value]. *)
 end
 
 (** Somewhere assignable (a variable, or dereference thereof). *)
@@ -73,6 +83,13 @@ end
 
 module Program : sig
   type t [@@deriving sexp]
+
+  val make
+   :  globals:(Ast_basic.Identifier.t, Initialiser.t) List.Assoc.t
+   -> functions:(Ast_basic.Identifier.t, Function.t) List.Assoc.t
+   -> t
+   (** [make ~globals ~functions] makes a program with global variable
+       declarations [globals] and function definitions [functions]. *)
 end
 
 (** Functions for reifying a mini-model into an AST. *)

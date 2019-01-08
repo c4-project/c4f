@@ -125,7 +125,7 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = unit =
                 (vbox C.Ast.Translation_unit.pp)))
     ;;
 
-    let delitmus = Fn.const (Or_error.error_string "soon")
+    let delitmus = C.Delitmus.run
   end)
 
 let c_module is_c

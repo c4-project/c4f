@@ -75,6 +75,9 @@ module Type = struct
     | Pointer_to of basic
   [@@deriving sexp]
   ;;
+
+  let int : t = Normal Int
+  let atomic_int : t = Normal Atomic_int
 end
 
 module Initialiser = struct
@@ -82,7 +85,7 @@ module Initialiser = struct
     { ty    : Type.t
     ; value : Ast_basic.Constant.t option
     }
-  [@@deriving sexp]
+  [@@deriving sexp, make]
   ;;
 end
 
@@ -140,7 +143,7 @@ module Program = struct
     { globals   : Initialiser.t id_assoc
     ; functions : Function.t id_assoc
     }
-  [@@deriving sexp, fields]
+  [@@deriving sexp, fields, make]
   ;;
 end
 
