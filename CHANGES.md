@@ -1,5 +1,10 @@
 # Unreleased
 
+- Split `act regress` into several subcommands, and include a `delitmus`
+  regression test set.
+- New `act c delitmus`, which tries to convert a C/Litmus test into
+  compileable C11.  There is also an `act c explain`, but at this stage it's
+  fairly pointless.
 - New `act configure list-predicates`, which describes the languages accepted
   by the filtering predicate commands.
 - Moved `act specs` to `act configure list-compilers`.
