@@ -311,11 +311,10 @@ module Constant = struct
     | Integer i -> Fmt.int f i
 end
 
-module Identifier : Ast_node_with_identifier with type t = string = struct
-  type t = string [@@deriving sexp]
+module Identifier = struct
+  type t = string [@@deriving sexp, eq]
 
   let identifier = Fn.id
-
   let pp = Fmt.string
 end
 

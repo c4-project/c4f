@@ -24,6 +24,8 @@
 
 open Core_kernel
 
+include Ast_basic
+
 let map_combine
     (xs : 'a list) ~(f : 'a -> 'b Or_error.t) : 'b list Or_error.t =
   xs
@@ -31,10 +33,10 @@ let map_combine
   |> Or_error.combine_errors
 ;;
 
-type 'a named = (Ast_basic.Identifier.t * 'a)
+type 'a named = (Identifier.t * 'a)
 [@@deriving sexp]
 
-type 'a id_assoc = (Ast_basic.Identifier.t, 'a) List.Assoc.t
+type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t
 [@@deriving sexp]
 
 module Mem_order = struct
@@ -83,7 +85,7 @@ end
 module Initialiser = struct
   type t =
     { ty    : Type.t
-    ; value : Ast_basic.Constant.t option
+    ; value : Constant.t option
     }
   [@@deriving sexp, make]
   ;;
@@ -91,22 +93,142 @@ end
 
 module Lvalue = struct
   type t =
-    | Variable of Ast_basic.Identifier.t
+    | Variable of Identifier.t
     | Deref    of t
-  [@@deriving sexp, variants]
+  [@@deriving sexp, variants, eq]
+
+  module On_identifiers
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = Identifier.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Identifier
+
+      module On_monad (M : Monad.S) = struct
+        module F = Travesty.Traversable.Helpers (M)
+
+        let rec map_m x ~f =
+          Variants.map x
+            ~variable:(F.proc_variant1 f)
+            ~deref:(F.proc_variant1 (map_m ~f))
+      end
+  end)
+
+  let rec underlying_variable : t -> Identifier.t = function
+    | Variable id -> id
+    | Deref    t  -> underlying_variable t
+  ;;
+end
+
+module Address = struct
+  type t =
+    | Lvalue of Lvalue.t
+    | Ref    of t
+  [@@deriving sexp, variants, eq]
+
+  module On_lvalues
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Lvalue
+
+      module On_monad (M : Monad.S) = struct
+        module F = Travesty.Traversable.Helpers (M)
+
+        let rec map_m x ~f =
+          Variants.map x
+            ~lvalue:(F.proc_variant1 f)
+            ~ref:(F.proc_variant1 (map_m ~f))
+      end
+  end)
+
+  let rec underlying_variable : t -> Identifier.t = function
+    | Lvalue lv -> Lvalue.underlying_variable lv
+    | Ref    t  -> underlying_variable t
+  ;;
 end
 
 module Expression = struct
   type t =
-    | Constant    of Ast_basic.Constant.t
+    | Constant    of Constant.t
     | Lvalue      of Lvalue.t
     | Equals      of t * t
     | Atomic_load of
-        { src   : Lvalue.t
+        { src   : Address.t
         ; order : Mem_order.t
         }
   [@@deriving sexp, variants]
   ;;
+
+  module On_addresses
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Address
+
+      module On_monad (M : Monad.S) = struct
+        module F = Travesty.Traversable.Helpers (M)
+
+        let rec map_m x ~f =
+          Variants.map x
+            ~constant:(F.proc_variant1 M.return)
+            ~lvalue:(F.proc_variant1 M.return)
+            ~equals:(F.proc_variant2
+                       (fun (l, r) ->
+                          let open M.Let_syntax in
+                          let%bind l' = map_m l ~f in
+                          let%map  r' = map_m r ~f in
+                          (l', r')))
+            ~atomic_load:(
+              fun v ~src ~order ->
+                let open M.Let_syntax in
+                let%map src' = f src in
+                v.constructor ~src:src' ~order
+            )
+      end
+  end)
+
+  module On_lvalues
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Lvalue
+
+      module On_monad (M : Monad.S) = struct
+        module A = Address.On_lvalues.On_monad (M)
+        module F = Travesty.Traversable.Helpers (M)
+
+        let rec map_m x ~f =
+          Variants.map x
+            ~constant:(F.proc_variant1 M.return)
+            ~lvalue:(F.proc_variant1 f)
+            ~equals:(F.proc_variant2
+                       (fun (l, r) ->
+                          let open M.Let_syntax in
+                          let%bind l' = map_m l ~f in
+                          let%map  r' = map_m r ~f in
+                          (l', r')))
+            ~atomic_load:(
+              fun v ~src ~order ->
+                let open M.Let_syntax in
+                let%map src' = A.map_m ~f src in
+                v.constructor ~src:src' ~order
+            )
+      end
+  end)
+
+  module On_identifiers
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = Identifier.t =
+    Travesty.Traversable.Chain0
+      (struct
+        type nonrec t = t
+        include On_lvalues
+      end)
+      (Lvalue.On_identifiers)
 end
 
 module Statement = struct
@@ -116,16 +238,133 @@ module Statement = struct
                 }
     | Atomic_store of
         { src   : Expression.t
-        ; dst   : Lvalue.t
+        ; dst   : Address.t
         ; order : Mem_order.t
         }
     | Nop
-    | If of { cond     : Expression.t
-            ; t_branch : t
-            ; f_branch : t option
-            }
+    | If_stm of { cond     : Expression.t
+                ; t_branch : t
+                ; f_branch : t option
+                }
   [@@deriving sexp, variants]
   ;;
+
+  module Base_map (M : Monad.S) = struct
+    module F = Travesty.Traversable.Helpers (M)
+
+    let bmap x ~assign ~atomic_store ~if_stm =
+      let open M.Let_syntax in
+      Variants.map x
+        ~assign:(
+          fun v ~lvalue ~rvalue ->
+            let%map (lvalue', rvalue') = assign ~lvalue ~rvalue in
+            v.constructor ~lvalue:lvalue' ~rvalue:rvalue'
+        )
+        ~atomic_store:(
+          fun v ~src ~dst ~order ->
+            let%map (src', dst') = atomic_store ~src ~dst in
+            v.constructor ~src:src' ~dst:dst' ~order
+        )
+        ~if_stm:(
+          fun v ~cond ~t_branch ~f_branch ->
+            let%map (cond', t_branch', f_branch') =
+              if_stm ~cond ~t_branch ~f_branch in
+            v.constructor
+              ~cond:cond' ~t_branch:t_branch' ~f_branch:f_branch'
+        )
+        ~nop:(F.proc_variant0 M.return)
+    ;;
+  end
+
+  module On_lvalues
+    : Travesty.Traversable.S0_container
+        with type t := t
+         and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Lvalue
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module A = Address.On_lvalues.On_monad (M)
+        module E = Expression.On_lvalues.On_monad (M)
+        module O = Travesty.T_option.On_monad (M)
+
+        let both (x : 'a M.t) (y : 'b M.t) : ('a * 'b) M.t =
+          let open M.Let_syntax in
+          let%bind x' = x in
+          let%map  y' = y in
+          (x', y')
+        ;;
+
+        let rec map_m x ~f =
+          B.bmap x
+            ~assign:(
+              fun ~lvalue ~rvalue -> both (f lvalue) (E.map_m ~f rvalue)
+            )
+            ~atomic_store:(
+              fun ~src ~dst ->
+                both (E.map_m ~f src) (A.map_m ~f dst)
+            )
+            ~if_stm:(
+              fun ~cond ~t_branch ~f_branch ->
+                let open M.Let_syntax in
+                let%bind cond'     = E.map_m ~f cond in
+                let%bind t_branch' = map_m t_branch ~f in
+                let%map  f_branch' = O.map_m f_branch ~f:(map_m ~f) in
+                (cond', t_branch', f_branch')
+            )
+      end
+  end)
+
+  module On_addresses
+    : Travesty.Traversable.S0_container
+        with type t := t
+         and type Elt.t = Address.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Address
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module E = Expression.On_addresses.On_monad (M)
+        module O = Travesty.T_option.On_monad (M)
+
+        let both (x : 'a M.t) (y : 'b M.t) : ('a * 'b) M.t =
+          let open M.Let_syntax in
+          let%bind x' = x in
+          let%map  y' = y in
+          (x', y')
+        ;;
+
+        let rec map_m x ~f =
+          B.bmap x
+            ~assign:(fun ~lvalue ~rvalue ->
+                both (M.return lvalue) (E.map_m ~f rvalue))
+            ~atomic_store:(
+              fun ~src ~dst -> both (E.map_m ~f src) (f dst)
+            )
+            ~if_stm:(
+              fun ~cond ~t_branch ~f_branch ->
+                let open M.Let_syntax in
+                let%bind cond'     = E.map_m ~f cond in
+                let%bind t_branch' = map_m t_branch ~f in
+                let%map  f_branch' = O.map_m f_branch ~f:(map_m ~f) in
+                (cond', t_branch', f_branch')
+            )
+      end
+  end)
+
+  module On_identifiers
+    : Travesty.Traversable.S0_container
+        with type t := t
+         and type Elt.t = Identifier.t =
+    Travesty.Traversable.Chain0
+      (struct
+        type nonrec t = t
+        include On_lvalues
+      end)
+      (Lvalue.On_identifiers)
 end
 
 module Function = struct
@@ -136,6 +375,16 @@ module Function = struct
     }
   [@@deriving sexp, fields]
   ;;
+
+  let map (func : t)
+      ~(parameters : (Type.t id_assoc -> Type.t id_assoc))
+      ~(body_decls : (Initialiser.t id_assoc -> Initialiser.t id_assoc))
+      ~(body_stms  : (Statement.t list -> Statement.t list))
+    : t =
+    Fields.Direct.map func
+      ~parameters:(fun _ _ -> parameters)
+      ~body_decls:(fun _ _ -> body_decls)
+      ~body_stms:(fun _ _ -> body_stms)
 end
 
 module Program = struct
@@ -148,7 +397,7 @@ module Program = struct
 end
 
 module Reify = struct
-  let to_initialiser (value : Ast_basic.Constant.t) : Ast.Initialiser.t =
+  let to_initialiser (value : Constant.t) : Ast.Initialiser.t =
     Assign (Constant value)
   ;;
 
@@ -162,18 +411,18 @@ module Reify = struct
     | Pointer_to x -> basic_type_to_spec x
   ;;
 
-  let type_to_pointer : Type.t -> Ast_basic.Pointer.t option = function
+  let type_to_pointer : Type.t -> Pointer.t option = function
     | Normal     _ -> None
     | Pointer_to _ -> Some [[]]
   ;;
 
   let id_declarator
-      (ty : Type.t) (id : Ast_basic.Identifier.t)
+      (ty : Type.t) (id : Identifier.t)
     : Ast.Declarator.t =
     { pointer = type_to_pointer ty; direct = Id id }
   ;;
 
-  let decl (id : Ast_basic.Identifier.t) (elt : Initialiser.t) : Ast.Decl.t =
+  let decl (id : Identifier.t) (elt : Initialiser.t) : Ast.Decl.t =
     { qualifiers = [ type_to_spec elt.ty ]
     ; declarator = [ { declarator  = id_declarator elt.ty id
                      ; initialiser = Option.map ~f:to_initialiser elt.value
@@ -186,7 +435,7 @@ module Reify = struct
   ;;
 
   let func_parameter
-      (id : Ast_basic.Identifier.t)
+      (id : Identifier.t)
       (ty : Type.t)
     : Ast.Param_decl.t =
     { qualifiers = [ type_to_spec ty ]
@@ -201,7 +450,7 @@ module Reify = struct
   ;;
 
   let func_signature
-      (id : Ast_basic.Identifier.t)
+      (id : Identifier.t)
       (parameters : Type.t id_assoc)
     : Ast.Declarator.t =
     { pointer = None
@@ -214,6 +463,11 @@ module Reify = struct
     | Deref    l -> Prefix (`Deref, lvalue_to_expr l)
   ;;
 
+  let rec address_to_expr : Address.t -> Ast.Expr.t = function
+    | Lvalue v -> lvalue_to_expr v
+    | Ref    l -> Prefix (`Ref, address_to_expr l)
+  ;;
+
   let mem_order_to_expr (mo : Mem_order.t) : Ast.Expr.t =
     Identifier (Mem_order.to_string mo)
   ;;
@@ -224,7 +478,7 @@ module Reify = struct
     | Equals (l, r) -> Binary (expr l, `Eq, expr r)
     | Atomic_load { src; order } ->
       Call { func      = Identifier "atomic_load_explicit"
-           ; arguments = [ lvalue_to_expr src
+           ; arguments = [ address_to_expr src
                          ; mem_order_to_expr order
                          ]
            }
@@ -238,14 +492,14 @@ module Reify = struct
         (Some
            (Call
               { func      = Identifier "atomic_store_explicit"
-              ; arguments = [ lvalue_to_expr dst
+              ; arguments = [ address_to_expr dst
                             ; expr src
                             ; mem_order_to_expr order
                             ]
               }
            )
         )
-    | If { cond; t_branch; f_branch } ->
+    | If_stm { cond; t_branch; f_branch } ->
       If { cond = expr cond
          ; t_branch = stm t_branch
          ; f_branch = Option.map ~f:stm f_branch
@@ -259,7 +513,7 @@ module Reify = struct
     : Ast.Compound_stm.t =
     decls ds @ List.map ~f:(fun x -> `Stm (stm x)) ss
 
-  let func (id : Ast_basic.Identifier.t) (def : Function.t)
+  let func (id : Identifier.t) (def : Function.t)
     : Ast.External_decl.t =
     `Fun
       { decl_specs = [ `Void ]
@@ -280,8 +534,8 @@ end
 module Litmus_lang : Litmus.Ast.Basic
   with type Statement.t = [`Stm of Statement.t | `Decl of Initialiser.t named]
    and type Program.t = Function.t named
-   and type Constant.t = Ast_basic.Constant.t = (struct
-    module Constant = Ast_basic.Constant
+   and type Constant.t = Constant.t = (struct
+    module Constant = Constant
 
     module Statement = struct
       type t = [`Stm of Statement.t | `Decl of Initialiser.t named]
@@ -381,18 +635,18 @@ module Convert = struct
       Or_error.error_s
         [%message "This type isn't supported (yet)"
             ~got:(spec : Ast.Type_spec.t)]
-    | #Ast_basic.Type_qual.t as qual ->
+    | #Type_qual.t as qual ->
       Or_error.error_s
         [%message "This type qualifier isn't supported (yet)"
-            ~got:(qual : Ast_basic.Type_qual.t)]
-    | #Ast_basic.Storage_class_spec.t as spec ->
+            ~got:(qual : Type_qual.t)]
+    | #Storage_class_spec.t as spec ->
       Or_error.error_s
         [%message "This storage-class specifier isn't supported (yet)"
-            ~got:(spec : Ast_basic.Storage_class_spec.t)]
+            ~got:(spec : Storage_class_spec.t)]
   ;;
 
   let declarator_to_id : Ast.Declarator.t ->
-    (Ast_basic.Identifier.t * bool) Or_error.t = function
+    (Identifier.t * bool) Or_error.t = function
     | { pointer = Some [[]];
         direct = Id id } ->
       Or_error.return (id, true)
@@ -412,7 +666,7 @@ module Convert = struct
   ;;
 
   let value_of_initialiser
-    : Ast.Initialiser.t -> Ast_basic.Constant.t Or_error.t = function
+    : Ast.Initialiser.t -> Constant.t Or_error.t = function
     | Assign (Constant v) -> Or_error.return v
     | Assign x ->
       Or_error.error_s
@@ -429,7 +683,7 @@ module Convert = struct
   (** [decl d] translates a declaration into an identifier-initialiser
      pair. *)
   let decl (d : Ast.Decl.t)
-    : (Ast_basic.Identifier.t * Initialiser.t) Or_error.t =
+    : (Identifier.t * Initialiser.t) Or_error.t =
     let open Or_error.Let_syntax in
     let%bind basic_type         = qualifiers_to_basic_type d.qualifiers in
     let%bind idecl              = Travesty.T_list.one d.declarator in
@@ -485,7 +739,7 @@ module Convert = struct
   ;;
 
   let func_signature : Ast.Declarator.t ->
-    (Ast_basic.Identifier.t * Type.t id_assoc) Or_error.t = function
+    (Identifier.t * Type.t id_assoc) Or_error.t = function
     | { pointer = Some _; _ } ->
       Or_error.error_string "Pointers not supported yet"
     | { pointer = None;
@@ -513,8 +767,16 @@ module Convert = struct
         [%message "Expected an lvalue here" ~got:(e : Ast.Expr.t)]
   ;;
 
+  let rec expr_to_address
+    : Ast.Expr.t -> Address.t Or_error.t = function
+    | Prefix (`Ref, expr) ->
+      Or_error.(expr |> expr_to_address >>| Address.ref)
+    | expr ->
+      Or_error.(expr |> expr_to_lvalue >>| Address.lvalue)
+  ;;
+
   let expr_to_identifier
-      (expr : Ast.Expr.t) : Ast_basic.Identifier.t Or_error.t =
+      (expr : Ast.Expr.t) : Identifier.t Or_error.t =
     let open Or_error.Let_syntax in
     match%bind expr_to_lvalue expr with
     | Variable var -> return var
@@ -531,7 +793,7 @@ module Convert = struct
     |> Result.of_option
       ~error:(
         Error.create_s
-          [%message "Unsupported memory order" ~got:(id : Ast_basic.Identifier.t)]
+          [%message "Unsupported memory order" ~got:(id : Identifier.t)]
       )
   ;;
 
@@ -568,11 +830,11 @@ module Convert = struct
       match op with
       | `Eq -> return (Expression.equals l' r')
       | _   -> Or_error.error_s
-                 [%message "Unsupported binary operator" ~got:(op : Ast_basic.Operators.Bin.t)]
+                 [%message "Unsupported binary operator" ~got:(op : Operators.Bin.t)]
     in
     let model_atomic_load_explicit = function
       | [ raw_src; raw_mo ] ->
-        let%map src   = expr_to_lvalue raw_src
+        let%map src   = expr_to_address raw_src
         and     order = expr_to_memory_order raw_mo
         in Expression.atomic_load ~src ~order
       | args ->
@@ -606,7 +868,7 @@ module Convert = struct
     let open Or_error.Let_syntax in
     let model_atomic_store_explicit = function
       | [ raw_dst; raw_src; raw_mo ] ->
-        let%map dst   = expr_to_lvalue raw_dst
+        let%map dst   = expr_to_address raw_dst
         and     src   = expr raw_src
         and     order = expr_to_memory_order raw_mo
         in Statement.atomic_store ~dst ~src ~order
@@ -642,7 +904,7 @@ module Convert = struct
       and     t_branch = stm old_t_branch
       and     f_branch =
         Travesty.T_option.With_errors.map_m old_f_branch ~f:stm
-      in Statement.If { cond; t_branch; f_branch }
+      in Statement.If_stm { cond; t_branch; f_branch }
     in
     function
     | Expr None -> Or_error.return Statement.nop
@@ -666,7 +928,7 @@ module Convert = struct
   ;;
 
   let func (f : Ast.Function_def.t)
-    : (Ast_basic.Identifier.t * Function.t) Or_error.t =
+    : (Identifier.t * Function.t) Or_error.t =
     let open Or_error.Let_syntax in
     let%bind () = Validate.result (validate_func f) in
     let%map  (name, parameters)      = func_signature f.signature

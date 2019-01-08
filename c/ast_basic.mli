@@ -49,6 +49,8 @@
     We declare these separately from the {{!Ast}rest of the AST} to
     break dependency cycles. *)
 
+open Base
+
 include module type of Ast_basic_intf
 (** As usual, the signatures are in a separate 'intf' module. *)
 
@@ -202,7 +204,10 @@ module Constant : sig
 end
 
 (** AST node for identifiers *)
-module Identifier : Ast_node_with_identifier with type t = string
+module Identifier : sig
+  type t = string [@@deriving eq]
+  include Ast_node_with_identifier with type t := t
+end
 
 (** Ast node for pointers *)
 module Pointer : Ast_node with type t = (Type_qual.t list) list

@@ -82,9 +82,11 @@ module Parametric = struct
         Fmt.(
           using
             (fun { qualifiers; declarator } -> (qualifiers, declarator))
-            (pair ~sep:sp
-               (list ~sep:sp B.Qual.pp)
-               B.Decl.pp
+            (hvbox
+               (pair ~sep:sp
+                  (box (list ~sep:sp B.Qual.pp))
+                  (box B.Decl.pp)
+               )
             )
         )
     end

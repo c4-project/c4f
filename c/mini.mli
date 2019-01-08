@@ -36,6 +36,11 @@
 
 open Base
 
+include module type of Ast_basic
+
+type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t
+(** Shorthand for associative lists with identifier keys. *)
+
 module Type : sig
   type t
 
@@ -49,7 +54,7 @@ end
 module Initialiser : sig
   type t
 
-  val make : ty:Type.t -> ?value:Ast_basic.Constant.t -> unit -> t
+  val make : ty:Type.t -> ?value:Constant.t -> unit -> t
   (** [make ~ty ?value ()] makes an initialiser with type [ty] and
       optional initialised value [value]. *)
 end
@@ -57,12 +62,53 @@ end
 (** Somewhere assignable (a variable, or dereference thereof). *)
 module Lvalue : sig
   type t [@@deriving sexp]
+
+  module On_identifiers
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = Identifier.t
+  (** Traversing over identifiers in lvalues. *)
+
+  val underlying_variable : t -> Identifier.t
+  (** [underlying_variable t] gets the underlying variable name of
+     [t]. *)
+end
+
+(** An address (a lvalue, or reference thereto). *)
+module Address : sig
+  type t [@@deriving sexp]
+
+  module On_lvalues
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = Lvalue.t
+  (** Traversing over lvalues in addresses. *)
+
+  val ref : t -> t
+  (** [ref t] constructs a &-reference to [t]. *)
+
+  val underlying_variable : t -> Identifier.t
+  (** [underlying_variable t] gets the underlying variable name of
+     [t]. *)
 end
 
 module Expression : sig
   type t [@@deriving sexp]
 
-  val constant : Ast_basic.Constant.t -> t
+  module On_addresses
+    : Travesty.Traversable.S0_container
+        with type t := t and type Elt.t = Address.t
+  (** Traversing over atomic-action addresses in expressions. *)
+
+  module On_identifiers
+    : Travesty.Traversable.S0_container
+        with type t := t and type Elt.t = Identifier.t
+  (** Traversing over identifiers in expressions. *)
+
+  module On_lvalues
+    : Travesty.Traversable.S0_container
+        with type t := t and type Elt.t = Lvalue.t
+  (** Traversing over lvalues in expressions. *)
+
+  val constant : Constant.t -> t
   (** [constant k] lifts a C constant [k] to an expression. *)
 end
 
@@ -73,20 +119,48 @@ end
 module Statement : sig
   type t [@@deriving sexp]
 
+  module On_addresses
+    : Travesty.Traversable.S0_container
+        with type t := t and type Elt.t = Address.t
+  (** Traversing over atomic-action addresses in statements. *)
+
+  module On_identifiers
+    : Travesty.Traversable.S0_container
+        with type t := t and type Elt.t = Identifier.t
+  (** Traversing over identifiers in statements. *)
+
+  module On_lvalues
+    : Travesty.Traversable.S0_container
+        with type t := t and type Elt.t = Lvalue.t
+  (** Traversing over lvalues in statements. *)
+
   val assign : lvalue:Lvalue.t -> rvalue:Expression.t -> t
   (** [assign ~lvalue ~rvalue] lifts a C assignment to a statement. *)
 end
 
 module Function : sig
   type t [@@deriving sexp]
+
+  val body_decls : t -> Initialiser.t id_assoc
+    (** [body_decls func] gets [func]'s in-body variable
+       declarations. *)
+
+  val map
+    :  t
+    -> parameters:(Type.t id_assoc -> Type.t id_assoc)
+    -> body_decls:(Initialiser.t id_assoc -> Initialiser.t id_assoc)
+    -> body_stms:(Statement.t list -> Statement.t list)
+    -> t
+    (** [map func ~parameters ~body_decls ~body_stms] runs the given
+        functions over the respective parts of a function. *)
 end
 
 module Program : sig
   type t [@@deriving sexp]
 
   val make
-   :  globals:(Ast_basic.Identifier.t, Initialiser.t) List.Assoc.t
-   -> functions:(Ast_basic.Identifier.t, Function.t) List.Assoc.t
+   :  globals:(Initialiser.t id_assoc)
+   -> functions:(Function.t id_assoc)
    -> t
    (** [make ~globals ~functions] makes a program with global variable
        declarations [globals] and function definitions [functions]. *)
@@ -94,7 +168,7 @@ end
 
 (** Functions for reifying a mini-model into an AST. *)
 module Reify : sig
-  val func : Ast_basic.Identifier.t -> Function.t -> Ast.External_decl.t
+  val func : Identifier.t -> Function.t -> Ast.External_decl.t
 
   val program : Program.t -> Ast.Translation_unit.t
 end
@@ -106,10 +180,10 @@ end
 module Litmus_lang : Litmus.Ast.Basic
   with type Statement.t =
          [ `Stm of Statement.t
-         | `Decl of (Ast_basic.Identifier.t * Initialiser.t)
+         | `Decl of (Identifier.t * Initialiser.t)
          ]
-   and type Program.t = (Ast_basic.Identifier.t * Function.t)
-   and type Constant.t = Ast_basic.Constant.t
+   and type Program.t = (Identifier.t * Function.t)
+   and type Constant.t = Constant.t
 ;;
 
 (** The mini-model's full Litmus AST module. *)
@@ -123,7 +197,7 @@ end
 module Convert : sig
   val func
     :  Ast.Function_def.t
-    -> (Ast_basic.Identifier.t * Function.t) Or_error.t
+    -> (Identifier.t * Function.t) Or_error.t
   (** [func ast] tries to interpret a C function definition AST
       as a mini-model function. *)
 
