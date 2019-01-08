@@ -38,9 +38,15 @@ type 'a id_assoc = (Ast_basic.Identifier.t, 'a) List.Assoc.t
 [@@deriving sexp]
 
 module Type = struct
-  type t =
+  type basic =
     | Int
     | Atomic_int
+  [@@deriving sexp]
+  ;;
+
+  type t =
+    | Normal of basic
+    | Pointer_to of basic
   [@@deriving sexp]
   ;;
 end
@@ -103,18 +109,30 @@ module Reify = struct
     Assign (Constant value)
   ;;
 
-  let type_to_spec : Type.t -> [> Ast.Type_spec.t] = function
+  let basic_type_to_spec : Type.basic -> [> Ast.Type_spec.t] = function
     | Int -> `Int
     | Atomic_int -> `Defined_type "atomic_int"
   ;;
 
-  let id_declarator (id : Ast_basic.Identifier.t) : Ast.Declarator.t =
-    { pointer = None; direct = Id id }
+  let type_to_spec : Type.t -> [> Ast.Type_spec.t] = function
+    | Normal     x
+    | Pointer_to x -> basic_type_to_spec x
+  ;;
+
+  let type_to_pointer : Type.t -> Ast_basic.Pointer.t option = function
+    | Normal     _ -> None
+    | Pointer_to _ -> Some [[]]
+  ;;
+
+  let id_declarator
+      (ty : Type.t) (id : Ast_basic.Identifier.t)
+    : Ast.Declarator.t =
+    { pointer = type_to_pointer ty; direct = Id id }
   ;;
 
   let decl (id : Ast_basic.Identifier.t) (elt : Initialiser.t) : Ast.Decl.t =
     { qualifiers = [ type_to_spec elt.ty ]
-    ; declarator = [ { declarator  = id_declarator id
+    ; declarator = [ { declarator  = id_declarator elt.ty id
                      ; initialiser = Option.map ~f:to_initialiser elt.value
                      }
                    ]
@@ -129,7 +147,7 @@ module Reify = struct
       (ty : Type.t)
     : Ast.Param_decl.t =
     { qualifiers = [ type_to_spec ty ]
-    ; declarator = `Concrete (id_declarator id)
+    ; declarator = `Concrete (id_declarator ty id)
     }
 
   let func_parameters
@@ -274,11 +292,11 @@ module Convert = struct
       )
   ;;
 
-  let defined_types : (string, Type.t) List.Assoc.t =
+  let defined_types : (string, Type.basic) List.Assoc.t =
     [ "atomic_int", Atomic_int ]
 
-  let qualifiers_to_type (quals : [> Ast.Decl_spec.t ] list)
-    : Type.t Or_error.t =
+  let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t ] list)
+    : Type.basic Or_error.t =
     let open Or_error.Let_syntax in
     match%bind Travesty.T_list.one quals with
     | `Int -> return Type.Int
@@ -303,15 +321,18 @@ module Convert = struct
   ;;
 
   let declarator_to_id : Ast.Declarator.t ->
-    Ast_basic.Identifier.t Or_error.t = function
+    (Ast_basic.Identifier.t * bool) Or_error.t = function
+    | { pointer = Some [[]];
+        direct = Id id } ->
+      Or_error.return (id, true)
     | { pointer = Some _; _ } as decl ->
       Or_error.error_s
-        [%message "Pointers not supported yet"
+        [%message "Complex pointers not supported yet"
             ~declarator:(decl : Ast.Declarator.t)
         ]
     | { pointer = None;
         direct  = Id id } ->
-      Or_error.return id
+      Or_error.return (id, false)
     | x ->
       Or_error.error_s
         [%message "Unsupported direct declarator"
@@ -330,17 +351,22 @@ module Convert = struct
       Or_error.error_string "List initialisers not supported"
   ;;
 
+  let make_type (basic_type : Type.basic) (is_pointer : bool) : Type.t =
+    if is_pointer then Pointer_to basic_type else Normal basic_type
+  ;;
+
   (** [decl d] translates a declaration into an identifier-initialiser
      pair. *)
   let decl (d : Ast.Decl.t)
     : (Ast_basic.Identifier.t * Initialiser.t) Or_error.t =
     let open Or_error.Let_syntax in
-    let%bind ty    = qualifiers_to_type d.qualifiers in
-    let%bind idecl = Travesty.T_list.one d.declarator in
-    let%bind name  = declarator_to_id idecl.declarator in
+    let%bind basic_type         = qualifiers_to_basic_type d.qualifiers in
+    let%bind idecl              = Travesty.T_list.one d.declarator in
+    let%bind (name, is_pointer) = declarator_to_id idecl.declarator in
     let%map  value = Travesty.T_option.With_errors.map_m idecl.initialiser
         ~f:value_of_initialiser
     in
+    let ty = make_type basic_type is_pointer in
     (name, { Initialiser.ty; value })
   ;;
 
@@ -373,9 +399,10 @@ module Convert = struct
         "Abstract parameter declarators not supported"
     | { qualifiers; declarator = `Concrete declarator } ->
       let open Or_error.Let_syntax in
-      let%map ty = qualifiers_to_type qualifiers
-      and     id = declarator_to_id declarator
-      in (id, ty)
+      let%map basic_type       = qualifiers_to_basic_type qualifiers
+      and     (id, is_pointer) = declarator_to_id declarator
+      in
+      let ty = make_type basic_type is_pointer in (id, ty)
   ;;
 
   let param_type_list : Ast.Param_type_list.t ->
