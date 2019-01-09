@@ -43,16 +43,15 @@ val warn_if_not_tracking_symbols
     if [c_symbols] is empty.  The warning explains that, without any
     C symbols to track, act may make incorrect assumptions. *)
 
-val decide_if_c : Fpath.t option -> [> `C | `C_litmus | `Infer] -> bool
-(** [decide_if_c infile filetype] decides whether [infile] is a C
+val is_c : Io.In_source.t -> [> `C | `Infer] -> bool
+(** [is_c infile filetype] decides whether [infile] is a C
     file---from its extension if [filetype] is [`Infer], or
-    by whether or not [filetype] is [`C] or [`C_litmus]. *)
+    by whether or not [filetype] is [`C]. *)
 
-val decide_if_c_litmus : Fpath.t option -> [> `C_litmus | `Infer] -> bool
-(** [decide_if_c infile filetype] decides whether [infile] is a C/litmus
+val is_c_litmus : Io.In_source.t -> [> `C_litmus | `Infer] -> bool
+(** [is_c_litmus infile filetype] decides whether [infile] is a C/litmus
     file---from its extension if [filetype] is [`Infer], or
     by whether or not [filetype] is [`C_litmus]. *)
-
 
 val get_target
   :  Lib.Config.M.t

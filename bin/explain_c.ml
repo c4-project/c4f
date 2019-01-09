@@ -52,16 +52,16 @@ let delitmus_command : Command.t =
 
 let run file_type ~(infile_raw : string option) ~(outfile_raw : string option) _o cfg =
   let open Or_error.Let_syntax in
-  let%bind infile  = Io.fpath_of_string_option infile_raw in
-  let%bind outfile = Io.fpath_of_string_option outfile_raw in
-  let      is_c    = Common.decide_if_c infile file_type in
+  let%bind infile  = Io.In_source.of_string_opt infile_raw in
+  let%bind outfile = Io.Out_sink.of_string_opt outfile_raw in
+  let      is_c    = Common.is_c infile file_type in
   let      cpp_cfg =
     Option.value (Lib.Config.M.cpp cfg) ~default:(Lib.Cpp.Config.default ())
   in
   let (module M)   = C.Filters.c_module is_c in
   let module Cpp_M = Lib.Cpp.Chain_filter (M) in
   let%map (_, ()) =
-    Cpp_M.run_from_fpaths (cpp_cfg, Print) ~infile ~outfile
+    Cpp_M.run (cpp_cfg, Print) infile outfile
   in ()
 ;;
 

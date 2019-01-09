@@ -53,6 +53,7 @@ module Make (B : Basic)
   Filter.Make (struct
     type aux_i = mode
     type aux_o = unit
+    let name = "C transformer"
 
     let tmp_file_ext ({ aux; _ } : mode Filter.ctx) : string =
       match aux with

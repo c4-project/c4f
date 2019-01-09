@@ -95,6 +95,8 @@ module Other = struct
     choose_one
       [ flag_to_enum_choice `C "c"
           ~doc:"if given, assume input is C (and compile it)"
+      ; flag_to_enum_choice `C_litmus "c-litmus"
+          ~doc:"if given, assume input is C/litmus (and delitmusify and compile it)"
       ; flag_to_enum_choice `Assembly "asm"
           ~doc:"if given, assume input is assembly"
       ]

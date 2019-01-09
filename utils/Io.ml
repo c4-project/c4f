@@ -99,13 +99,41 @@ end
 module In_source = struct
   type t =
     | File of Fpath.t
-    | Stdin
+    | Fd of { fildes : Unix.File_descr.t; file_type : string option }
+    | Stdin of { file_type : string option }
   [@@deriving variants]
   ;;
 
+  (* overrides to lift options into optional arguments *)
+  let fd ?file_type fildes : t = fd ~fildes ~file_type
+  let stdin ?file_type () : t = stdin ~file_type
+
+  let file_type : t -> string option = function
+    | File  fp -> Option.some_if
+                    (Fpath.exists_ext fp)
+                    (String.lstrip ~drop:(Char.equal '.')
+                       (Fpath.get_ext fp)
+                    )
+    | Fd    fd -> fd.file_type
+    | Stdin sd -> sd.file_type
+  ;;
+
+  let%expect_test "file_type: file with two extensions" =
+    Fmt.(pr "%a@." (option string))
+      (file_type (file (Fpath.v "iriw.c.litmus")));
+    [%expect {| litmus |}]
+  ;;
+
+  let%expect_test "file_type: stdin with specific type" =
+    Fmt.(pr "%a@." (option string))
+      (file_type (stdin ~file_type:"litmus" ()));
+    [%expect {| litmus |}]
+  ;;
+
   let to_string : t -> string = function
-    | File s -> Fpath.to_string s
-    | Stdin  -> "(stdin)"
+    | File s  -> Fpath.to_string s
+    | Fd fd   -> Unix.File_descr.to_string fd.fildes
+    | Stdin _ -> "(stdin)"
   ;;
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
@@ -113,16 +141,16 @@ module In_source = struct
   let of_fpath : Fpath.t -> t = file
 
   let of_fpath_opt : Fpath.t option -> t =
-    Option.value_map ~f:file ~default:stdin
+    Option.value_map ~f:file ~default:(stdin ())
   ;;
 
   let of_string_opt : string option -> t Or_error.t =
-    lift_fpath_str file stdin
+    lift_fpath_str file (stdin ())
   ;;
 
   let to_file : t -> Fpath.t option = function
     | File f -> Some f
-    | Stdin  -> None
+    | Stdin _ | Fd _ -> None
   ;;
 
   let to_file_err (src : t) : Fpath.t Or_error.t =
@@ -140,7 +168,16 @@ module In_source = struct
           "While reading from file:"
           s
           [%sexp_of: string]
-      | Stdin ->
+      | Fd { fildes = fd; _ } ->
+        tag_arg
+          (try_with_join (fun _ ->
+               let ic = Unix.in_channel_of_descr fd in f src ic
+             )
+          )
+          "While reading from file descriptor:"
+          fd
+          [%sexp_of: Unix.File_descr.t]
+      | Stdin _ ->
         tag ~tag:"While reading from standard input:"
           (try_with_join (fun _ -> f src In_channel.stdin))
     )
@@ -150,6 +187,7 @@ end
 module Out_sink = struct
   type t =
     | File of Fpath.t
+    | Fd of Unix.File_descr.t
     | Stdout
   [@@deriving variants]
   ;;
@@ -160,6 +198,7 @@ module Out_sink = struct
 
   let to_string : t -> string = function
     | File s -> Fpath.to_string s
+    | Fd fd  -> Unix.File_descr.to_string fd
     | Stdout -> "(stdout)"
   ;;
 
@@ -183,7 +222,7 @@ module Out_sink = struct
 
   let to_file : t -> Fpath.t option = function
     | File f -> Some f
-    | Stdout -> None
+    | Fd _ | Stdout -> None
   ;;
 
   let to_file_err (src : t) : Fpath.t Or_error.t =
@@ -191,7 +230,7 @@ module Out_sink = struct
       ~error:(Error.createf "Must write to a file, got %s" (to_string src))
   ;;
 
-  let with_file_output f (fpath : Fpath.t) =
+  let with_file_output (fpath : Fpath.t) f =
     let fpath_raw = Fpath.to_string fpath in
     Or_error.(
       tag_arg
@@ -202,15 +241,23 @@ module Out_sink = struct
     )
   ;;
 
+  let with_fd_output (fd : Unix.File_descr.t) f =
+    Or_error.try_with_join
+      (fun _ ->
+         let oc = Unix.out_channel_of_descr fd in f oc
+      )
+
+
   let with_stdout_output f =
     Or_error.try_with_join (fun _ -> f Out_channel.stdout)
   ;;
 
   let with_output (snk : t) ~f : 'a Or_error.t =
-    let fs = f snk in
-    match snk with
-    | File fpath -> with_file_output fs fpath
-    | Stdout -> with_stdout_output fs
+    (match snk with
+     | File fpath -> with_file_output fpath
+     | Fd fd -> with_fd_output fd
+     | Stdout -> with_stdout_output
+    ) (f snk)
   ;;
 end
 

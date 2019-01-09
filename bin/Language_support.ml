@@ -90,6 +90,7 @@ let compiler_filter_from_spec
        (struct
          type aux_i = unit
          type aux_o = unit
+         let name = "C compiler"
          let tmp_file_ext = Fn.const "s"
          let run _ = Com.compile
        end)

@@ -84,6 +84,7 @@ module To_filter (L : S) : Filter.S with type aux_i = unit
   Filter.Make (struct
     type aux_i = unit
     type aux_o = L.t
+    let name = "(loading)"
 
     let tmp_file_ext = Fn.const "tmp"
 

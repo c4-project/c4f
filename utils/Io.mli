@@ -48,8 +48,23 @@ module In_source : sig
   val file : Fpath.t -> t
   (** [file fname] creates an input source for a given filename. *)
 
-  val stdin : t
-  (** [stdin] is the standard input source. *)
+  val fd : ?file_type:string -> Unix.File_descr.t -> t
+  (** [fd ?file_type fildes] creates an input source for a given file
+     descriptor.
+
+      If [file_type] is given, it is reported as the file type of the
+     descriptor, in the same way as the extension of a [file]. *)
+
+  val stdin : ?file_type:string -> unit -> t
+  (** [stdin] is the standard input source.
+
+      If [file_type] is given, it is reported as the file type of
+     standard input, in the same way as the extension of a [file]. *)
+
+  val file_type : t -> string option
+  (** [file_type src] gets the file type of [src].  This is the
+      file extension for [file]s, and the optional provided extension
+      otherwise. *)
 
   include Common with type t := t
 
@@ -68,6 +83,9 @@ module Out_sink : sig
 
   val file : Fpath.t -> t
   (** [file fname] creates an output sink for a given filename. *)
+
+  val fd : Unix.File_descr.t -> t
+  (** [fd fildes] creates an output sink for a given file descriptor. *)
 
   val stdout : t
   (** [stdout] is the standard output sink. *)

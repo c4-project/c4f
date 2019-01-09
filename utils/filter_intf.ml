@@ -41,7 +41,10 @@ module type Common = sig
   type aux_o
   (** Type of any auxiliary state built by this filter. *)
 
-  val tmp_file_ext :  aux_i ctx -> string
+  val name : string
+  (** [name] is the name of this filter. *)
+
+  val tmp_file_ext : aux_i ctx -> string
   (** [tmp_file_ext ctx] gives the extension that any temporary files
      output by this filter should have, given the context [ctx]. *)
 end
@@ -89,6 +92,10 @@ module type S = sig
   val file_input_only : aux_i ctx -> bool
   (** [file_input_only ctx] returns whether, given the context [ctx],
      this filter only accepts files. *)
+
+  val file_output_only : aux_i ctx -> bool
+  (** [file_output_only ctx] returns whether, given the context [ctx],
+     this filter can only output files. *)
 
   val run
     :  aux_i

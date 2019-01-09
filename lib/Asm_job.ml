@@ -226,6 +226,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
     Filter.Make (struct
       type aux_i = Litmus_format.t t
       type aux_o = output
+      let name = "Litmusifier"
       let tmp_file_ext = Fn.const "litmus"
 
       let run = run ~f:output_litmus
@@ -238,6 +239,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
       type aux_i = Explain_format.t t
       type aux_o = output
       let tmp_file_ext = Fn.const "s"
+      let name = "Explainer"
 
       let run = run ~f:run_explanation
     end)

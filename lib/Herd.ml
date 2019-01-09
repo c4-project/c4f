@@ -86,6 +86,7 @@ module Filter : Filter.S with type aux_i = t
   Filter.Make_in_file_only (struct
     type aux_i = t
     type aux_o = unit
+    let name = "Herd tool"
 
     let tmp_file_ext = Fn.const "txt"
 

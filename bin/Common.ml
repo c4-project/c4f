@@ -50,18 +50,19 @@ let warn_if_not_tracking_symbols (o : Output.t) = function
   | _ :: _ -> ()
 ;;
 
-let decide_if_c (infile : Fpath.t option)
+let is_c (src : Io.In_source.t)
   : [> `C | `Infer] -> bool = function
   | `C -> true
-  | `Infer -> Option.exists infile ~f:(Fpath.has_ext "c")
+  | `Infer -> Option.exists (Io.In_source.file_type src)
+                ~f:(String.equal "c")
   | _ -> false
 ;;
 
-let decide_if_c_litmus (infile : Fpath.t option)
+let is_c_litmus (src : Io.In_source.t)
   : [> `C_litmus | `Infer] -> bool = function
   | `C_litmus -> true
-  | `Infer -> Option.exists infile
-                ~f:(Fpath.has_ext "litmus")
+  | `Infer -> Option.exists (Io.In_source.file_type src)
+                ~f:(String.equal "litmus")
   | _ -> false
 ;;
 
@@ -101,13 +102,8 @@ module Chain_with_compiler
     module Second = Onto
     type aux_i_combi = (file_type * Onto.aux_i)
 
-    let should_run_compiler isrc : file_type -> bool
-      = decide_if_c (Io.In_source.to_file isrc)
-
     let select { Filter.aux = (file_type, rest); src; _ } =
-      if should_run_compiler src file_type
-      then `Both ((), rest)
-      else `One  rest
+      if is_c src file_type then `Both ((), rest) else `One rest
   end)
 ;;
 
@@ -137,11 +133,8 @@ module Chain_with_delitmus
     module Second = Onto
     type aux_i_combi = (file_type * Onto.aux_i)
 
-    let should_run_delitmus isrc : file_type -> bool
-      = decide_if_c_litmus (Io.In_source.to_file isrc)
-
     let select { Filter.aux = (file_type, rest); src; _ } =
-      if should_run_delitmus src file_type
+      if is_c_litmus src file_type
       then `Both (C.Filters.Delitmus, rest)
       else `One  rest
   end)

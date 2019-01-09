@@ -61,7 +61,7 @@ module Other : sig
   (** [compiler_id_or_arch] defines a choice between supplying a
       compiler ID, or a direct architecture. *)
 
-  val file_type : [> `Assembly | `C | `Infer] Command.Param.t
+  val file_type : [> `C_litmus | `Assembly | `C | `Infer] Command.Param.t
   (** [file_type] defines a parameter for specifying the file type of
       a single input file. *)
 

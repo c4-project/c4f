@@ -87,6 +87,7 @@ module Post_filter = struct
     Filter.Make (struct
       type aux_i = cfg
       type aux_o = unit
+      let name = "dummy"
 
       let tmp_file_ext = Fn.const "tmp"
 
@@ -193,8 +194,13 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
     )
   in
   let%bind pf_cfg = Post_filter.make_config cfg target filter in
+  let inner_file_type =
+    match file_type with
+    | `C_litmus -> `C
+    | x         -> x
+  in
   let%map _ =
-    Flt.run_from_string_paths ((file_type, (file_type, litmus_job)), pf_cfg)
+    Flt.run_from_string_paths ((file_type, (inner_file_type, litmus_job)), pf_cfg)
       ~infile:infile_raw ~outfile:outfile_raw in
   ()
 ;;

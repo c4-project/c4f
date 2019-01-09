@@ -54,9 +54,13 @@ module Make (B : Basic) : S with type aux_i = B.aux_i
   include B
 
   let file_input_only = Fn.const false
+  let file_output_only = Fn.const false
 
-  let run aux = Io.with_input_and_output
-      ~f:(fun src ic sink -> B.run { aux; src; sink } ic)
+  let run aux src snk =
+    Or_error.tag ~tag:(Printf.sprintf "In filter '%s'" name)
+      (Io.with_input_and_output
+         ~f:(fun src ic sink -> B.run { aux; src; sink } ic)
+      src snk)
 
   let run_from_string_paths = lift_to_raw_strings ~f:run
   let run_from_fpaths       = lift_to_fpaths ~f:run
@@ -67,14 +71,18 @@ module Make_in_file_only (B : Basic_in_file_only)
        and type aux_o = B.aux_o = struct
   include B
 
-  let file_input_only = Fn.const true
+  let file_input_only  = Fn.const true
+  let file_output_only = Fn.const false
 
   let run aux src sink =
-    (* TODO(@MattWindsor91): copy stdin to temporary file? *)
-    let open Or_error.Let_syntax in
-    let%bind in_file = Io.In_source.to_file_err src in
-    Io.Out_sink.with_output sink
-      ~f:(fun _ -> B.run { aux; src; sink } in_file)
+    Or_error.tag ~tag:(Printf.sprintf "In filter '%s'" name)
+      ((* TODO(@MattWindsor91): copy stdin to temporary file? *)
+        let open Or_error.Let_syntax in
+        let%bind in_file = Io.In_source.to_file_err src in
+        (Io.Out_sink.with_output sink
+           ~f:(fun _ -> B.run { aux; src; sink } in_file)
+        )
+      )
   ;;
 
   let run_from_string_paths = lift_to_raw_strings ~f:run
@@ -86,13 +94,16 @@ module Make_files_only (B : Basic_files_only)
        and type aux_o = B.aux_o = struct
   include B
 
-  let file_input_only = Fn.const true
+  let file_input_only  = Fn.const true
+  let file_output_only = Fn.const true
 
   let run aux src sink =
-    let open Or_error.Let_syntax in
-    let%bind infile  = Io.In_source.to_file_err src
-    and      outfile = Io.Out_sink.to_file_err sink in
-    B.run { aux; src; sink } ~infile ~outfile
+    Or_error.tag ~tag:(Printf.sprintf "In filter '%s'" name)
+      (let open Or_error.Let_syntax in
+       let%bind infile  = Io.In_source.to_file_err src
+       and      outfile = Io.Out_sink.to_file_err sink in
+       B.run { aux; src; sink } ~infile ~outfile
+      )
   ;;
 
   let run_from_string_paths = lift_to_raw_strings ~f:run
@@ -105,21 +116,52 @@ module Chain (A : S) (B : S)
   type aux_i = A.aux_i * B.aux_i
   type aux_o = A.aux_o * B.aux_o
 
+  let name = Printf.sprintf "(%s | %s)" A.name B.name
+
   let file_input_only { aux = (a_aux, _); src; sink } : bool =
     A.file_input_only { aux = a_aux; src; sink }
+
+  let file_output_only { aux = (_, b_aux); src; sink } : bool =
+    B.file_output_only { aux = b_aux; src; sink }
 
   let tmp_file_ext { aux = (_, b_aux); src; sink } =
     B.tmp_file_ext { aux = b_aux; src; sink }
 
-  let run (a_aux, b_aux) src sink =
+  (** [can_use_pipes a_ctx b_cts] checks whether we can use Unix pipes
+     instead of temporary files. *)
+  let can_use_pipes a_ctx b_ctx =
+    not
+      ( A.file_output_only a_ctx
+        || B.file_input_only b_ctx
+      )
+  ;;
+
+  let make_pipe a_ctx =
     let open Or_error.Let_syntax in
-    let tmp_ext = A.tmp_file_ext { aux = a_aux; src; sink } in
-    let      tmp_out =
+    let file_type = A.tmp_file_ext a_ctx in
+    let%map (pipe_out, pipe_in) = Or_error.try_with Unix.pipe in
+    (Io.Out_sink.fd pipe_in, Io.In_source.fd ~file_type pipe_out)
+  ;;
+
+  let make_temp a_ctx =
+    let open Or_error.Let_syntax in
+    let tmp_ext = A.tmp_file_ext a_ctx in
+    let tmp_out =
       Io.Out_sink.temp ~prefix:"act" ~ext:tmp_ext in
-    let%bind tmp_in  =
+    let%map tmp_in =
       Io.Out_sink.as_in_source tmp_out in
-    let%bind a_output = A.run a_aux src tmp_out in
-    let%map  b_output = B.run b_aux tmp_in sink in
+    (tmp_out, tmp_in)
+  ;;
+
+  let run (a_aux, b_aux) src sink =
+    let a_ctx = { aux = a_aux; src; sink } in
+    let b_ctx = { aux = b_aux; src; sink } in
+    let open Or_error.Let_syntax in
+    let make = if can_use_pipes a_ctx b_ctx then make_pipe else make_temp in
+    let%bind (a_out, b_in) = make a_ctx
+    in
+    let%bind a_output = A.run a_aux src a_out in
+    let%map  b_output = B.run b_aux b_in sink in
     (a_output, b_output)
   ;;
 
@@ -131,7 +173,11 @@ module Chain_conditional_core (B : sig
     module BCC : Basic_chain_conditional
     type aux_o
 
+    val name : string
+
     val file_input_only : BCC.aux_i_combi ctx -> bool
+    val file_output_only : BCC.aux_i_combi ctx -> bool
+
     val tmp_file_ext : BCC.aux_i_combi ctx -> string
 
     val run_chained
@@ -141,7 +187,9 @@ module Chain_conditional_core (B : sig
   end) = struct
   type aux_i = B.BCC.aux_i_combi
   type aux_o = B.aux_o
+  let name = B.name
   let file_input_only = B.file_input_only
+  let file_output_only = B.file_output_only
   let tmp_file_ext = B.tmp_file_ext
 
   let run (aux : aux_i) src sink =
@@ -167,11 +215,13 @@ module Chain_conditional_first (B : Basic_chain_conditional_first)
 
     module Chained = Chain (B.First) (B.Second)
 
+    let name = Printf.sprintf "(%s? | %s)" B.First.name B.Second.name
+
     (* File input depends on the _first_ filter, which may
        or may not be running. *)
     let file_input_only ({ src; sink; _ } as ctx) : bool =
       match BCC.select ctx with
-      | `Both (aux, _) -> B.First.file_input_only { aux; src; sink }
+      | `Both (aux, _) -> B.First.file_input_only  { aux; src; sink }
       | `One  aux      -> B.Second.file_input_only { aux; src; sink }
     ;;
 
@@ -181,6 +231,13 @@ module Chain_conditional_first (B : Basic_chain_conditional_first)
       match BCC.select ctx with
       | `Both (_, aux)
       | `One  aux -> B.Second.tmp_file_ext { aux; src; sink }
+    ;;
+
+    (* Same with file output *)
+    let file_output_only ({ src; sink; _ } as ctx) : bool =
+      match BCC.select ctx with
+      | `Both (_, aux)
+      | `One  aux -> B.Second.file_output_only { aux; src; sink }
     ;;
 
     let run_chained a_in b_in src snk =
@@ -209,6 +266,8 @@ module Chain_conditional_second (B : Basic_chain_conditional_second)
 
     module Chained = Chain (B.First) (B.Second)
 
+    let name = Printf.sprintf "(%s | %s?)" B.First.name B.Second.name
+
     (* File input depends on the _first_ filter, which is always
        running. *)
     let file_input_only ({ src; sink; _ } as ctx) : bool =
@@ -222,9 +281,15 @@ module Chain_conditional_second (B : Basic_chain_conditional_second)
     let tmp_file_ext ({ src; sink; _ } as ctx) : string =
       match BCC.select ctx with
       | `Both (_, aux) -> B.Second.tmp_file_ext { aux; src; sink }
-      | `One  aux -> B.First.tmp_file_ext { aux; src; sink }
+      | `One  aux      -> B.First.tmp_file_ext  { aux; src; sink }
     ;;
 
+    (* Same with file output. *)
+    let file_output_only ({ src; sink; _ } as ctx) : bool =
+      match BCC.select ctx with
+      | `Both (_, aux) -> B.Second.file_output_only { aux; src; sink }
+      | `One  aux      -> B.First.file_output_only  { aux; src; sink }
+    ;;
 
     let run_chained a_in b_in src snk =
       let open Or_error.Let_syntax in
@@ -244,6 +309,7 @@ module Adapt (B : Basic_adapt)
        and type aux_o = B.aux_o = struct
   type aux_i = B.aux_i
   type aux_o = B.aux_o
+  let name = B.Original.name
 
   (* What we do in these two accessors when adapt fails shouldn't
      matter, as the actual filter run will fail. *)
@@ -251,6 +317,12 @@ module Adapt (B : Basic_adapt)
   let file_input_only { aux = new_i; src; sink } : bool =
     match B.adapt_i new_i with
     | Result.Ok aux -> B.Original.file_input_only { aux; src; sink }
+    | Result.Error _ -> false
+  ;;
+
+  let file_output_only { aux = new_i; src; sink } : bool =
+    match B.adapt_i new_i with
+    | Result.Ok aux -> B.Original.file_output_only { aux; src; sink }
     | Result.Error _ -> false
   ;;
 

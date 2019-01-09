@@ -49,6 +49,7 @@ module Filter : Filter.S with type aux_i = Config.t
   Filter.Make_in_file_only (struct
     type aux_i = Config.t
     type aux_o = unit
+    let name = "C preprocessor"
 
     let tmp_file_ext = Fn.const "c"
 
