@@ -24,49 +24,59 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Stdio
 open Base
 
+type 'aux ctx =
+  { aux  : 'aux
+  ; src  : Io.In_source.t
+  ; sink : Io.Out_sink.t
+  }
+(** Collection of all the context used by filters to make
+    internal decisions. *)
+
+(** Types and values common to both the basic and full filter
+    signatures. *)
+module type Common = sig
+  type aux_i
+  (** Type of any auxiliary state consumed by this filter. *)
+
+  type aux_o
+  (** Type of any auxiliary state built by this filter. *)
+
+  val tmp_file_ext :  aux_i ctx -> string
+  (** [tmp_file_ext ctx] gives the extension that any temporary files
+     output by this filter should have, given the context [ctx]. *)
+end
+
 module type Basic = sig
-  type aux_i
-  (** Type of any auxiliary state consumed by this filter. *)
-
-  type aux_o
-  (** Type of any auxiliary state built by this filter. *)
-
+  include Common
 
   val run
-    :  aux_i
-    -> Io.In_source.t
+    :  aux_i ctx
     -> In_channel.t
-    -> Io.Out_sink.t
     -> Out_channel.t
     -> aux_o Or_error.t
   ;;
 end
 
+(** Input signature for filters that require physical files in input
+    position. *)
 module type Basic_in_file_only = sig
-  type aux_i
-  (** Type of any auxiliary state consumed by this filter. *)
-
-  type aux_o
-  (** Type of any auxiliary state built by this filter. *)
+  include Common
 
   val run
-    :  aux_i
+    :  aux_i ctx
     -> Fpath.t
-    -> Io.Out_sink.t
     -> Out_channel.t
     -> aux_o Or_error.t
   ;;
 end
 
+(** Input signature for filters that require physical files in both
+    input and output position. *)
 module type Basic_files_only = sig
-  type aux_i
-  (** Type of any auxiliary state consumed by this filter. *)
-
-  type aux_o
-  (** Type of any auxiliary state built by this filter. *)
+  include Common
 
   val run
-    :  aux_i
+    :  aux_i ctx
     -> infile:Fpath.t
     -> outfile:Fpath.t
     -> aux_o Or_error.t
@@ -74,11 +84,11 @@ module type Basic_files_only = sig
 end
 
 module type S = sig
-  type aux_i
-  (** Type of any auxiliary state consumed by this filter. *)
+  include Common
 
-  type aux_o
-  (** Type of any auxiliary state built by this filter. *)
+  val file_input_only : aux_i ctx -> bool
+  (** [file_input_only ctx] returns whether, given the context [ctx],
+     this filter only accepts files. *)
 
   val run
     :  aux_i
@@ -117,11 +127,9 @@ module type Basic_chain_conditional = sig
   type aux_i_single (** Auxiliary input used when not chaining. *)
 
   val select
-    :  aux_i_combi
-    -> Io.In_source.t
-    -> Io.Out_sink.t
+    :  aux_i_combi ctx
     -> [`Both of (First.aux_i * Second.aux_i) | `One of aux_i_single]
-  (** [condition a_aux b_aux src snk] should return [true] when the optional
+  (** [select ctx] should return [`Both] when the optional
      filter should be run (which filter this is depends on the
      functor). *)
 end

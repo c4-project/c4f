@@ -45,10 +45,12 @@ module Filter : Filter.S with type aux_i = Config.t
     type aux_i = Config.t
     type aux_o = unit
 
-    let run (config : Config.t) (path : Fpath.t)
-        (_sink : Io.Out_sink.t) (oc : Out_channel.t)
+    let tmp_file_ext = Fn.const "txt"
+
+    let run ( { aux; _ } : Config.t Filter.ctx) (path : Fpath.t)
+        (oc : Out_channel.t)
       : unit Or_error.t =
-      let prog = config.cmd in
+      let prog = aux.cmd in
       Or_error.tag ~tag:"While running litmus"
         (Run.Local.run ~oc ~prog [ Fpath.to_string path ])
   end)

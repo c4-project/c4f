@@ -33,7 +33,7 @@ type target =
 ;;
 
 type file_type =
-  [`Assembly | `C | `Infer]
+  [`Assembly | `C | `C_litmus | `Infer]
 ;;
 
 let warn_if_not_tracking_symbols (o : Output.t) = function
@@ -54,6 +54,14 @@ let decide_if_c (infile : Fpath.t option)
   : [> `C | `Infer] -> bool = function
   | `C -> true
   | `Infer -> Option.exists infile ~f:(Fpath.has_ext "c")
+  | _ -> false
+;;
+
+let decide_if_c_litmus (infile : Fpath.t option)
+  : [> `C_litmus | `Infer] -> bool = function
+  | `C_litmus -> true
+  | `Infer -> Option.exists infile
+                ~f:(Fpath.has_ext "litmus")
   | _ -> false
 ;;
 
@@ -86,17 +94,17 @@ let ensure_spec : [> `Spec of Compiler.Spec.With_id.t]
 module Chain_with_compiler
     (Comp : Filter.S with type aux_i = unit and type aux_o = unit)
     (Onto : Filter.S)
-  : Filter.S with type aux_i = ([ `Assembly | `C | `Infer ] * Onto.aux_i)
+  : Filter.S with type aux_i = (file_type * Onto.aux_i)
               and type aux_o = (unit option * Onto.aux_o) =
   Filter.Chain_conditional_first (struct
     module First  = Comp
     module Second = Onto
-    type aux_i_combi = ([`Assembly | `C | `Infer] * Onto.aux_i)
+    type aux_i_combi = (file_type * Onto.aux_i)
 
-    let should_run_compiler isrc : [`Assembly | `C | `Infer] -> bool
+    let should_run_compiler isrc : file_type -> bool
       = decide_if_c (Io.In_source.to_file isrc)
 
-    let select (file_type, rest) src _snk =
+    let select { Filter.aux = (file_type, rest); src; _ } =
       if should_run_compiler src file_type
       then `Both ((), rest)
       else `One  rest
@@ -108,14 +116,46 @@ let chain_with_compiler
   (type aux_o)
   (target : target)
   (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-  : ( module Filter.S with type aux_i = ([ `Assembly | `C | `Infer ] * aux_i)
+  : ( module Filter.S with type aux_i = (file_type * aux_i)
                        and type aux_o = (unit option * aux_o)
     ) Or_error.t =
   let open Result.Let_syntax in
   let%bind cspec = ensure_spec target in
   let%map (module C) = Language_support.compiler_filter_from_spec cspec in
   (module Chain_with_compiler (C) (Onto)
-     : Filter.S with type aux_i = ([ `Assembly | `C | `Infer ] * aux_i)
+     : Filter.S with type aux_i = (file_type * aux_i)
+                 and type aux_o = (unit option * aux_o)
+  )
+;;
+
+module Chain_with_delitmus
+    (Onto  : Filter.S)
+  : Filter.S with type aux_i = (file_type * Onto.aux_i)
+              and type aux_o = (unit option * Onto.aux_o) =
+  Filter.Chain_conditional_first (struct
+    module First  = C.Filters.Litmus
+    module Second = Onto
+    type aux_i_combi = (file_type * Onto.aux_i)
+
+    let should_run_delitmus isrc : file_type -> bool
+      = decide_if_c_litmus (Io.In_source.to_file isrc)
+
+    let select { Filter.aux = (file_type, rest); src; _ } =
+      if should_run_delitmus src file_type
+      then `Both (C.Filters.Delitmus, rest)
+      else `One  rest
+  end)
+;;
+
+let chain_with_delitmus
+  (type aux_i)
+  (type aux_o)
+  (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
+  : ( module Filter.S with type aux_i = (file_type * aux_i)
+                       and type aux_o = (unit option * aux_o)
+    ) =
+  (module Chain_with_delitmus (Onto)
+     : Filter.S with type aux_i = (file_type * aux_i)
                  and type aux_o = (unit option * aux_o)
   )
 ;;

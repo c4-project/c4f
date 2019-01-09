@@ -213,12 +213,12 @@ module Make_runner (B : Runner_deps) : Runner = struct
     |> Or_error.combine_errors
   ;;
 
-  let run ~f t inp ic outp oc : output Or_error.t =
+  let run ~f { Filter.aux; src; sink } ic oc : output Or_error.t =
     let open Result.Let_syntax in
-    let name = Filename.basename (Io.In_source.to_string inp) in
-    let%bind asm = parse inp ic in
-    let%bind symbols = stringify_symbols t.symbols in
-    f ?output_format:t.format name t.passes symbols (B.program asm) outp oc
+    let name = Filename.basename (Io.In_source.to_string src) in
+    let%bind asm = parse src ic in
+    let%bind symbols = stringify_symbols aux.symbols in
+    f ?output_format:aux.format name aux.passes symbols (B.program asm) sink oc
   ;;
 
   module Litmusify : Filter.S with type aux_i = Litmus_format.t t
@@ -226,6 +226,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
     Filter.Make (struct
       type aux_i = Litmus_format.t t
       type aux_o = output
+      let tmp_file_ext = Fn.const "litmus"
 
       let run = run ~f:output_litmus
     end)
@@ -236,6 +237,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
     Filter.Make (struct
       type aux_i = Explain_format.t t
       type aux_o = output
+      let tmp_file_ext = Fn.const "s"
 
       let run = run ~f:run_explanation
     end)

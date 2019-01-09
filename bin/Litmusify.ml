@@ -88,11 +88,11 @@ module Post_filter = struct
       type aux_i = cfg
       type aux_o = unit
 
+      let tmp_file_ext = Fn.const "tmp"
+
       let run
-          (_ : cfg)
-          (_ : Io.In_source.t)
+          (_ : cfg Filter.ctx)
           (_ : In_channel.t)
-          (_ : Io.Out_sink.t)
           (_ : Out_channel.t)
         : unit Err.t =
         Err.error_string
@@ -119,7 +119,7 @@ module Post_filter = struct
       Filter.Chain_conditional_second (struct
         type aux_i_combi = (i * cfg)
 
-        let select (rest, cfg) (_ : Io.In_source.t) (_ : Io.Out_sink.t) =
+        let select { Filter.aux = (rest, cfg); _ } =
           match cfg with
           | `None -> `One rest
           | `Herd _ | `Litmus _ -> `Both (rest, cfg)
@@ -188,12 +188,13 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
       |>  runner_of_target
       >>| Asm_job.get_litmusify
       >>= chain_with_compiler target
+      >>| chain_with_delitmus
       >>| Post_filter.chain filter
     )
   in
   let%bind pf_cfg = Post_filter.make_config cfg target filter in
   let%map _ =
-    Flt.run_from_string_paths ((file_type, litmus_job), pf_cfg)
+    Flt.run_from_string_paths ((file_type, (file_type, litmus_job)), pf_cfg)
       ~infile:infile_raw ~outfile:outfile_raw in
   ()
 ;;

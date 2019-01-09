@@ -32,6 +32,8 @@ module type Basic = sig
 
   module Frontend : Lib.Frontend.S with type ast := ast
 
+  val normal_tmp_file_ext : string
+
   val process : ast -> t Or_error.t
 
   include Pretty_printer.S with type t := t
@@ -52,6 +54,12 @@ module Make (B : Basic)
     type aux_i = mode
     type aux_o = unit
 
+    let tmp_file_ext ({ aux; _ } : mode Filter.ctx) : string =
+      match aux with
+      | Print -> B.normal_tmp_file_ext
+      | Delitmus -> "c"
+    ;;
+
     let run_delitmus
         (is : Io.In_source.t) (ic : In_channel.t) (oc : Out_channel.t) =
       Or_error.(
@@ -71,9 +79,9 @@ module Make (B : Basic)
       )
     ;;
 
-    let run mode is ic _ oc = match mode with
-      | Print -> run_print is ic oc
-      | Delitmus -> run_delitmus is ic oc
+    let run { Filter.aux; src; _ } ic oc = match aux with
+      | Print -> run_print src ic oc
+      | Delitmus -> run_delitmus src ic oc
     ;;
   end)
 
@@ -82,6 +90,8 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = unit =
     type ast = Ast.Translation_unit.t
     type t = Mini.Program.t
     type del = Nothing.t (* Can't delitmus a C file *)
+
+    let normal_tmp_file_ext = "c"
 
     module Frontend = Frontend.Normal
     let pp = Fmt.using Mini.Reify.program Ast.Translation_unit.pp
@@ -100,6 +110,8 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = unit =
     type ast = Ast.Litmus.t
     type t = Mini.Litmus_ast.Validated.t
     type del = Mini.Program.t
+
+    let normal_tmp_file_ext = "litmus"
 
     module Frontend = Frontend.Litmus
     let pp = Mini.Litmus_ast.pp

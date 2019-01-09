@@ -33,7 +33,7 @@ type target =
   ]
 
 type file_type =
-  [`Assembly | `C | `Infer]
+  [`Assembly | `C | `C_litmus | `Infer]
 
 val warn_if_not_tracking_symbols
   :  Output.t
@@ -43,10 +43,16 @@ val warn_if_not_tracking_symbols
     if [c_symbols] is empty.  The warning explains that, without any
     C symbols to track, act may make incorrect assumptions. *)
 
-val decide_if_c : Fpath.t option -> [> `C | `Infer] -> bool
+val decide_if_c : Fpath.t option -> [> `C | `C_litmus | `Infer] -> bool
 (** [decide_if_c infile filetype] decides whether [infile] is a C
     file---from its extension if [filetype] is [`Infer], or
-    by whether or not [filetype] is [`C]. *)
+    by whether or not [filetype] is [`C] or [`C_litmus]. *)
+
+val decide_if_c_litmus : Fpath.t option -> [> `C_litmus | `Infer] -> bool
+(** [decide_if_c infile filetype] decides whether [infile] is a C/litmus
+    file---from its extension if [filetype] is [`Infer], or
+    by whether or not [filetype] is [`C_litmus]. *)
+
 
 val get_target
   :  Lib.Config.M.t
@@ -69,12 +75,28 @@ val runner_of_target : target -> (module Asm_job.Runner) Or_error.t
 val chain_with_compiler
   :  target
   -> (module Filter.S with type aux_i = 'aux_i and type aux_o = 'aux_o)
-  -> (module Filter.S with type aux_i = ([ `Assembly | `C | `Infer ] * 'aux_i)
+  -> (module Filter.S with type aux_i = (file_type * 'aux_i)
                        and type aux_o = (unit option * 'aux_o)
      ) Or_error.t
 (** [chain_with compiler target to_chain] finds the correct
     compiler filter for [target],
     then chains it onto [to_chain] conditional on the incoming file type. *)
+
+module Chain_with_delitmus
+    (Onto  : Filter.S)
+  : Filter.S with type aux_i = (file_type * Onto.aux_i)
+              and type aux_o = (unit option * Onto.aux_o)
+(** Chain a delitmusing pass onto [Onto] conditional on the incoming
+   file type. *)
+
+val chain_with_delitmus
+  :  (module Filter.S with type aux_i = 'i and type aux_o = 'o)
+  -> ( module Filter.S with type aux_i = (file_type * 'i)
+                        and type aux_o = (unit option * 'o)
+     )
+(** [chain_with_delitmus onto] is [Chain_with_delitmus], but lifted to
+   first-class modules for conveniently slotting into chain builder
+   pipelines. *)
 
 val ensure_spec
   :  [> `Spec of Compiler.Spec.With_id.t]

@@ -90,7 +90,8 @@ let compiler_filter_from_spec
        (struct
          type aux_i = unit
          type aux_o = unit
-         let run () = Com.compile
+         let tmp_file_ext = Fn.const "s"
+         let run _ = Com.compile
        end)
     )
     : Utils.Filter.S with type aux_i = unit and type aux_o = unit

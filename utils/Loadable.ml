@@ -85,6 +85,8 @@ module To_filter (L : S) : Filter.S with type aux_i = unit
     type aux_i = unit
     type aux_o = L.t
 
-    let run () _src ic _sink _oc = L.load_from_ic ic
+    let tmp_file_ext = Fn.const "tmp"
+
+    let run _ctx ic _oc = L.load_from_ic ic
   end)
 ;;

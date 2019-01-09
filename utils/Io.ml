@@ -155,7 +155,7 @@ module Out_sink = struct
   ;;
 
   let temp ~(prefix : string) ~(ext : string) : t =
-    file (Fpath.v (Filename.temp_file prefix ext))
+    file (Fpath.v (Filename.temp_file prefix ("." ^ ext)))
   ;;
 
   let to_string : t -> string = function

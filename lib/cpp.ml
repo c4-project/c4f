@@ -50,9 +50,11 @@ module Filter : Filter.S with type aux_i = Config.t
     type aux_i = Config.t
     type aux_o = unit
 
-    let run cfg infile _dst (oc : Out_channel.t) =
-      let argv = Config.argv cfg @ [ Fpath.to_string infile ] in
-      Run.Local.run ~oc ~prog:(Config.cmd cfg) argv
+    let tmp_file_ext = Fn.const "c"
+
+    let run { Filter.aux; _ } infile (oc : Out_channel.t) =
+      let argv = Config.argv aux @ [ Fpath.to_string infile ] in
+      Run.Local.run ~oc ~prog:(Config.cmd aux) argv
     ;;
   end)
 
@@ -64,7 +66,7 @@ module Chain_filter (Dest : Utils.Filter.S) :
     module Second = Dest
 
     type aux_i_combi = (Config.t * Dest.aux_i)
-    let select (cfg, rest) (_ : Io.In_source.t) (_ : Io.Out_sink.t) =
+    let select { Utils.Filter.aux = (cfg, rest); _ } =
       if Config.enabled cfg
       then `Both (cfg, rest)
       else `One  rest
