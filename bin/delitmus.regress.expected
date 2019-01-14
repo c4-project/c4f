@@ -30,5 +30,31 @@ P3()
     t3r0 = atomic_load_explicit(&y, memory_order_acquire);
 }
 ```
+## rwc.c.litmus
 
-Ran 1 test(s).
+```
+// <!> Auto-generated from a litmus test by act.
+#include <stdatomic.h>
+atomic_int x = 0;
+atomic_int y = 0;
+int t1r1 = 0;
+int t1r0 = 0;
+int t2r0 = 0;
+void
+P0()
+{ atomic_store_explicit(&x, 1, memory_order_seq_cst); }
+void
+P1()
+{
+    t1r1 = atomic_load_explicit(&y, memory_order_seq_cst);
+    t1r0 = atomic_load_explicit(&x, memory_order_acquire);
+}
+void
+P2()
+{
+    t2r0 = atomic_load_explicit(&x, memory_order_seq_cst);
+    atomic_store_explicit(&y, 1, memory_order_seq_cst);
+}
+```
+
+Ran 2 test(s).
