@@ -356,6 +356,15 @@ module M = struct
         )
   ;;
 
+  let require_herd (conf : t) : Herd.Config.t Or_error.t =
+    conf
+    |> herd
+    |> Result.of_option
+      ~error:(Error.of_string
+                "This config file doesn't have Herd configuration."
+             )
+  ;;
+
   let compilers_from_raw
       (ms : Machine.Spec.Set.t)
       (ms_disabled : (Id.t, Error.t option) List.Assoc.t)

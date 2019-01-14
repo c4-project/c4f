@@ -131,12 +131,7 @@ module Post_filter = struct
   let herd_config (cfg : Config.M.t) (target : Common.target)
     : Herd.t Err.t =
     let open Err.Let_syntax in
-    let%bind herd_cfg =
-      Result.of_option (Config.M.herd cfg)
-        ~error:(Error.of_string
-                  "No Herd stanza in configuration"
-               )
-    in
+    let%bind herd_cfg = Config.M.require_herd cfg in
     let arch = Herd.Assembly (Common.arch_of_target target) in
     Herd.create ~config:herd_cfg ~arch
   ;;

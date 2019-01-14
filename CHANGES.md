@@ -1,5 +1,8 @@
 # Unreleased
 
+- Added new `act tool` command, which will eventually allow free-form running
+  of the various tools act wraps.  Currently it supports herd
+  (`act tool herd`), but doesn't do anything special.
 - Litmusify: added `-exists` flag to feed in a Litmus postcondition.
   (This currently has to target the sanitised Litmus variables directly;
   no redirection following is done yet.)

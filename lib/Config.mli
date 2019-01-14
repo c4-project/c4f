@@ -59,6 +59,10 @@ module M : sig
   (** [disabled_machines c] reports all disabled machines in
       the given config, along with any reason why. *)
 
+  val require_herd : t -> Herd.Config.t Or_error.t
+  (** [require_herd c] behaves as [herd c], but raises a descriptive
+     error if [c] has no Herd configuration. *)
+
   (** [from_raw c ?chook ?mhook ?phook] takes a raw config [t] and
       processes it by:
 

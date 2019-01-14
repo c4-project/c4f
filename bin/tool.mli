@@ -22,21 +22,9 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Main entry point into act *)
+(** The 'tool' command *)
 
 open Core
 
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    [ "c"        , Explain_c.command
-    ; "compare"  , Compare.command
-    ; "configure", Configure.command
-    ; "explain"  , Explain.command
-    ; "litmusify", Litmusify.command
-    ; "regress"  , Regress.command
-    ; "test"     , Test.command
-    ; "tool"     , Tool.command
-    ]
-
-let () = Command.run command
+(** [command] is the top-level 'tool' command. *)
+val command : Command.t

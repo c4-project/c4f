@@ -22,21 +22,33 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Main entry point into act *)
-
 open Core
+open Lib
 
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    [ "c"        , Explain_c.command
-    ; "compare"  , Compare.command
-    ; "configure", Configure.command
-    ; "explain"  , Explain.command
-    ; "litmusify", Litmusify.command
-    ; "regress"  , Regress.command
-    ; "test"     , Test.command
-    ; "tool"     , Tool.command
+let run_herd ?(argv = []) (_o : Output.t) (cfg : Config.M.t)
+  : unit Or_error.t =
+  let open Or_error.Let_syntax in
+  let%bind herd = Config.M.require_herd cfg in
+  Utils.Run.Local.run ~oc:stdout ~prog:herd.cmd argv
+;;
+
+let herd_command : Command.t =
+  let open Command.Let_syntax in
+  Command.basic
+    ~summary:"runs Herd with the configured models"
+    [%map_open
+      let standard_args = Standard_args.get
+      and argv = flag "--" Command.Flag.escape ~doc:"STRINGS Arguments to send to Herd directly." in
+      fun () ->
+        Common.lift_command standard_args
+          ~with_compiler_tests:false
+          ~f:(run_herd ?argv)
     ]
+;;
 
-let () = Command.run command
+let command : Command.t =
+  Command.group
+    ~summary:"Run act tools directly"
+    [ "herd", herd_command
+    ]
+;;
