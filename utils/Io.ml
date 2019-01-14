@@ -99,13 +99,11 @@ end
 module In_source = struct
   type t =
     | File of Fpath.t
-    | Fd of { fildes : Unix.File_descr.t; file_type : string option }
     | Stdin of { file_type : string option }
   [@@deriving variants]
   ;;
 
   (* overrides to lift options into optional arguments *)
-  let fd ?file_type fildes : t = fd ~fildes ~file_type
   let stdin ?file_type () : t = stdin ~file_type
 
   let file_type : t -> string option = function
@@ -114,7 +112,6 @@ module In_source = struct
                     (String.lstrip ~drop:(Char.equal '.')
                        (Fpath.get_ext fp)
                     )
-    | Fd    fd -> fd.file_type
     | Stdin sd -> sd.file_type
   ;;
 
@@ -132,7 +129,6 @@ module In_source = struct
 
   let to_string : t -> string = function
     | File s  -> Fpath.to_string s
-    | Fd fd   -> Unix.File_descr.to_string fd.fildes
     | Stdin _ -> "(stdin)"
   ;;
 
@@ -150,7 +146,7 @@ module In_source = struct
 
   let to_file : t -> Fpath.t option = function
     | File f -> Some f
-    | Stdin _ | Fd _ -> None
+    | Stdin _ -> None
   ;;
 
   let to_file_err (src : t) : Fpath.t Or_error.t =
@@ -168,15 +164,6 @@ module In_source = struct
           "While reading from file:"
           s
           [%sexp_of: string]
-      | Fd { fildes = fd; _ } ->
-        tag_arg
-          (try_with_join (fun _ ->
-               let ic = Unix.in_channel_of_descr fd in f src ic
-             )
-          )
-          "While reading from file descriptor:"
-          fd
-          [%sexp_of: Unix.File_descr.t]
       | Stdin _ ->
         tag ~tag:"While reading from standard input:"
           (try_with_join (fun _ -> f src In_channel.stdin))
@@ -187,7 +174,6 @@ end
 module Out_sink = struct
   type t =
     | File of Fpath.t
-    | Fd of Unix.File_descr.t
     | Stdout
   [@@deriving variants]
   ;;
@@ -198,7 +184,6 @@ module Out_sink = struct
 
   let to_string : t -> string = function
     | File s -> Fpath.to_string s
-    | Fd fd  -> Unix.File_descr.to_string fd
     | Stdout -> "(stdout)"
   ;;
 
@@ -222,7 +207,7 @@ module Out_sink = struct
 
   let to_file : t -> Fpath.t option = function
     | File f -> Some f
-    | Fd _ | Stdout -> None
+    | Stdout -> None
   ;;
 
   let to_file_err (src : t) : Fpath.t Or_error.t =
@@ -241,13 +226,6 @@ module Out_sink = struct
     )
   ;;
 
-  let with_fd_output (fd : Unix.File_descr.t) f =
-    Or_error.try_with_join
-      (fun _ ->
-         let oc = Unix.out_channel_of_descr fd in f oc
-      )
-
-
   let with_stdout_output f =
     Or_error.try_with_join (fun _ -> f Out_channel.stdout)
   ;;
@@ -255,7 +233,6 @@ module Out_sink = struct
   let with_output (snk : t) ~f : 'a Or_error.t =
     (match snk with
      | File fpath -> with_file_output fpath
-     | Fd fd -> with_fd_output fd
      | Stdout -> with_stdout_output
     ) (f snk)
   ;;

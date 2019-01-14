@@ -89,14 +89,6 @@ end
 module type S = sig
   include Common
 
-  val file_input_only : aux_i ctx -> bool
-  (** [file_input_only ctx] returns whether, given the context [ctx],
-     this filter only accepts files. *)
-
-  val file_output_only : aux_i ctx -> bool
-  (** [file_output_only ctx] returns whether, given the context [ctx],
-     this filter can only output files. *)
-
   val run
     :  aux_i
     -> Io.In_source.t
