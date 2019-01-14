@@ -65,44 +65,50 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     ;;
   end
 
-  module Pred = struct
-    type elt =
+  module Pred_elt = struct
+    type t =
       | Eq of Id.t * Lang.Constant.t
     [@@deriving sexp, compare, eq]
 
-    let anonymise = function
-      | Eq (x, y) -> (x, y)
-    ;;
+    module Quickcheck : Quickcheck.S with type t := t = struct
+      module G = Quickcheck.Generator
+      module O = Quickcheck.Observer
+      module S = Quickcheck.Shrinker
 
-    let deanonymise (x, y) = Eq (x, y)
+      let anonymise = function
+        | Eq (x, y) -> (x, y)
+      ;;
 
-    let gen_elt : elt Quickcheck.Generator.t =
-      let module G = Quickcheck.Generator in
-      G.map ~f:deanonymise
-        (G.tuple2 Id.gen Lang.Constant.gen)
-    ;;
+      let deanonymise (x, y) = Eq (x, y)
 
-    let obs_elt : elt Quickcheck.Observer.t =
-      let module O = Quickcheck.Observer in
-      O.unmap ~f:anonymise
-        (O.tuple2 Id.obs Lang.Constant.obs)
-    ;;
+      let gen : t G.t =
+        G.map ~f:deanonymise
+          (G.tuple2 Id.gen Lang.Constant.gen)
+      ;;
 
-    let shrinker_elt : elt Quickcheck.Shrinker.t =
-      let module S = Quickcheck.Shrinker in
-      S.map ~f:deanonymise ~f_inverse:anonymise
-        (S.tuple2 Id.shrinker Lang.Constant.shrinker)
-    ;;
+      let obs : t O.t =
+        O.unmap ~f:anonymise
+          (O.tuple2 Id.obs Lang.Constant.obs)
+      ;;
 
+      let shrinker : t S.t =
+        S.map ~f:deanonymise ~f_inverse:anonymise
+          (S.tuple2 Id.shrinker Lang.Constant.shrinker)
+      ;;
+    end
+    include Quickcheck
+  end
+
+  module Pred = struct
     type t =
       | Bracket of t
       | Or of t * t
       | And of t * t
-      | Elt of elt
+      | Elt of Pred_elt.t
     [@@deriving sexp, compare, eq]
     ;;
 
-    let rec of_blang : elt Blang.t -> t Or_error.t = function
+    let rec of_blang : Pred_elt.t Blang.t -> t Or_error.t = function
       | And (l, r) ->
         let open Or_error.Let_syntax in
         let%map l' = of_blang l
@@ -118,10 +124,10 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         Or_error.error_s
           [%message
             "This Blang element isn't supported in Litmus predicates"
-              ~element:(b : elt Blang.t)]
+              ~element:(b : Pred_elt.t Blang.t)]
     ;;
 
-    let rec to_blang : t -> elt Blang.t = function
+    let rec to_blang : t -> Pred_elt.t Blang.t = function
       | Bracket x -> to_blang x
       | Or (l, r) -> Blang.O.(to_blang l || to_blang r)
       | And (l, r) -> Blang.O.(to_blang l && to_blang r)
@@ -136,6 +142,10 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     ;;
 
     module Quickcheck : Quickcheck.S with type t := t = struct
+      module G = Quickcheck.Generator
+      module O = Quickcheck.Observer
+      module S = Quickcheck.Shrinker
+
       let anonymise = function
         | Bracket x  -> `A x
         | Or (l, r)  -> `B ((l, r))
@@ -150,10 +160,9 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         | `D x        -> Elt x
       ;;
 
-      let gen : t Quickcheck.Generator.t =
-        let module G = Quickcheck.Generator in
+      let gen : t G.t =
         G.recursive_union
-          [ G.map ~f:(fun x -> Elt x) gen_elt ]
+          [ G.map ~f:(fun x -> Elt x) Pred_elt.gen ]
           ~f:(fun mu ->
               [ G.map ~f:(fun x -> Bracket x) mu
               ; G.map2 ~f:(fun x y -> And (x, y)) mu mu
@@ -161,8 +170,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
               ])
       ;;
 
-      let obs : t Quickcheck.Observer.t =
-        let module O = Quickcheck.Observer in
+      let obs : t O.t =
         O.fixed_point
           (fun mu ->
              O.unmap ~f:anonymise
@@ -170,11 +178,10 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
                   mu
                   (O.tuple2 mu mu)
                   (O.tuple2 mu mu)
-                  obs_elt))
+                  Pred_elt.obs))
       ;;
 
-      let shrinker : t Quickcheck.Shrinker.t =
-        let module S = Quickcheck.Shrinker in
+      let shrinker : t S.t =
         S.fixed_point
           (fun mu ->
              S.map ~f:deanonymise ~f_inverse:anonymise
@@ -182,7 +189,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
                   mu
                   (S.tuple2 mu mu)
                   (S.tuple2 mu mu)
-                  shrinker_elt))
+                  Pred_elt.shrinker))
       ;;
     end
     include Quickcheck

@@ -124,7 +124,7 @@ litmus_conjunct:
 
 litmus_equality:
   | e = parened(litmus_disjunct) { Litmus.Pred.Bracket (e) }
-  | l = litmus_identifier; EQ_OP; r = constant { Litmus.Pred.Elt (Litmus.Pred.Eq (l, r)) }
+  | l = litmus_identifier; EQ_OP; r = constant { Litmus.Pred.Elt (Litmus.Pred_elt.Eq (l, r)) }
 
 litmus_identifier:
   | i = IDENTIFIER                     { Litmus.Id.Global (i) }

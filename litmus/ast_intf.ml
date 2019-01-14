@@ -82,35 +82,41 @@ module type S = sig
     ;;
   end
 
-  module Pred : sig
-    type elt =
+  (** Type of basic elements inside a Litmus predicate.
+
+      The distinction between [Pred_elt] and {{!Pred}Pred} mainly
+     exists to make conversion to and from other languages, like
+     [Blang], easier. *)
+  module Pred_elt : sig
+    type t =
       | Eq of Id.t * Lang.Constant.t
     [@@deriving sexp, compare, eq]
-    (** Type of basic elements inside a Litmus predicate.
 
-        The distinction between [elt] and {{!t}t} mainly exists to
-       make conversion to and from other languages, like [Blang],
-       easier. *)
+    include Quickcheck.S with type t := t
+    (** Predicate elements come with a quickcheck generator. *)
+  end
 
+  module Pred : sig
     type t =
       | Bracket of t
       | Or of t * t
       | And of t * t
-      | Elt of elt
+      | Elt of Pred_elt.t
     [@@deriving sexp, compare, eq]
     (** Type of Litmus predicates. *)
 
     val debracket : t -> t
     (** [debracket pred] removes any brackets in [pred]. *)
 
-    val of_blang : elt Core_kernel.Blang.t -> t Or_error.t
+    val of_blang : Pred_elt.t Blang.t -> t Or_error.t
     (** [of_blang blang] converts [blang], a Blang expression over
-       {{!elt}elt}, to a {{!t}t}.  It may fail if the expression
-       contains elements inexpressible in the Litmus syntax. *)
+       {{!Pred_elt.t}Pred_elt}, to a {{!t}t}.  It may fail if the
+       expression contains elements inexpressible in the Litmus
+       syntax. *)
 
-    val to_blang : t -> elt Core_kernel.Blang.t
+    val to_blang : t -> Pred_elt.t Blang.t
     (** [of_blang pred] converts a [pred] to Blang expression over
-       {{!elt}elt}. *)
+       {{!Pred_elt.t}Pred_elt}. *)
 
     include Quickcheck.S with type t := t
     (** Predicates come with a quickcheck generator. *)
