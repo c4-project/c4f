@@ -34,40 +34,66 @@ open Core
 
 include module type of Asm_job_intf
 
+type 'cfg t
 (** [t] is a description of a single-file job. *)
-type 'fmt t
 
 val make
-  :  ?format:'fmt
+  :  ?config:'cfg
   -> ?passes:Sanitiser_pass.Set.t
   -> ?symbols:string list
   -> unit
-  -> 'fmt t
-(** [make ?format ?passes ?symbols ()] makes a job description. *)
+  -> 'cfg t
+(** [make ?config ?passes ?symbols ()] makes a job description. *)
 
 
-module Litmus_format : sig
-  (** [t] is an enumeration of output formats for litmus jobs. *)
-  type t =
-    | Full           (** Output a full, herd-compatible litmus test *)
-    | Programs_only  (** Only output the program tables (eg for comparison) *)
-  [@@deriving eq]
-  ;;
+module Litmus_config : sig
+  module Format : sig
+    type t =
+      | Full           (** Output a full, herd-compatible litmus test *)
+      | Programs_only  (** Only output the program tables (eg for comparison) *)
+    [@@deriving eq]
+    (** [t] is an enumeration of output formats for litmus jobs. *)
 
-  (** [default] gets the default output format. *)
+
+    val default : t
+    (** [default] gets the default output format. *)
+  end
+
+  type t [@@deriving eq, sexp]
+
+  val make
+    :  ?format:Format.t
+    -> ?post_sexp:([ `Exists of Sexp.t ])
+    -> unit
+    -> t
+  (** [make ?format ?post_sexp ()] builds a [Litmus_config] with the
+     given parameters. *)
+
   val default : t
+  (** [default] gets the default Litmus job configuration. *)
 end
 
-module Explain_format : sig
-  (** [explain_format] is an enumeration of output formats for explain jobs. *)
-  type t =
-    | Assembly  (** Terse, but as close to parseable assembly as possible *)
-    | Detailed  (** More details than [Assembly], but verbose and free-form *)
-  [@@deriving eq]
-  ;;
+module Explain_config : sig
+  module Format : sig
+    (** [t] is an enumeration of output formats for explain jobs. *)
+    type t =
+      | Assembly  (** Terse, but as close to parseable assembly as possible *)
+      | Detailed  (** More details than [Assembly], but verbose and free-form *)
+    [@@deriving eq]
+    ;;
 
-  (** [default] gets the default output format. *)
+    val default : t
+    (** [default] gets the default output format. *)
+  end
+
+  type t [@@deriving eq, sexp]
+
+  val make : ?format:Format.t -> unit -> t
+  (** [make ?format ()] builds an [Explain_config] with the given
+     parameters. *)
+
   val default : t
+  (** [default] gets the default explainer job configuration. *)
 end
 
 (** [output] is the output of a single-file job. *)
@@ -83,10 +109,10 @@ val symbol_map : output -> (string, string) List.Assoc.t
 val warn : output -> Format.formatter -> unit
 
 module type Runner =
-  Gen_runner with type 'fmt inp := 'fmt t
-              and type aux := output
-              and type lfmt := Litmus_format.t
-              and type efmt := Explain_format.t
+  Gen_runner with type 'cfg inp := 'cfg t
+              and type aux      := output
+              and type lcfg     := Litmus_config.t
+              and type ecfg     := Explain_config.t
 (** Signature of job runners. *)
 
 module Make_runner (R : Runner_deps) : Runner
@@ -96,14 +122,14 @@ module Make_runner (R : Runner_deps) : Runner
 
 val get_litmusify
   :  (module Runner)
-  -> (module Utils.Filter.S with type aux_i = Litmus_format.t t
+  -> (module Utils.Filter.S with type aux_i = Litmus_config.t t
                              and type aux_o = output
      )
 (** [get_litmusify Runner] is [Runner.Litmusify]. *)
 
 val get_explain
   :  (module Runner)
-  -> (module Utils.Filter.S with type aux_i = Explain_format.t t
+  -> (module Utils.Filter.S with type aux_i = Explain_config.t t
                              and type aux_o = output
      )
 (** [get_explain Runner] is [Runner.Explain]. *)

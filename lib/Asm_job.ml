@@ -27,30 +27,51 @@ open Utils
 
 include Asm_job_intf
 
-type 'fmt t =
-  { format  : 'fmt option
+type 'cfg t =
+  { config  : 'cfg option
   ; passes  : Sanitiser_pass.Set.t [@default Sanitiser_pass.standard]
   ; symbols : string list
   }
 [@@deriving make]
 ;;
 
-module Litmus_format = struct
+module Litmus_config = struct
+  module Format = struct
+    type t =
+      | Full
+      | Programs_only
+    [@@deriving sexp, eq]
+    ;;
+    let default = Full
+  end
+
   type t =
-    | Full
-    | Programs_only
-  [@@deriving eq]
+    { format    : Format.t [@default Format.default]
+    ; post_sexp : [ `Exists of Sexp.t ] option
+    }
+  [@@deriving sexp, eq, make]
   ;;
-  let default = Full
+
+  let default : t = make ()
 end
 
-module Explain_format = struct
+module Explain_config = struct
+  module Format = struct
+    type t =
+      | Assembly
+      | Detailed
+    [@@deriving sexp, eq]
+    ;;
+    let default = Assembly
+  end
+
   type t =
-    | Assembly
-    | Detailed
-  [@@deriving eq]
+    { format : Format.t [@default Format.default]
+    }
+  [@@deriving sexp, eq, make]
   ;;
-  let default = Assembly
+
+  let default : t = make ()
 end
 
 (** [output] is the output of a single-file job. *)
@@ -63,8 +84,8 @@ type output =
 module type Runner =
   Gen_runner with type 'fmt inp := 'fmt t
               and type aux := output
-              and type lfmt := Litmus_format.t
-              and type efmt := Explain_format.t
+              and type lcfg := Litmus_config.t
+              and type ecfg := Explain_config.t
 ;;
 
 module Make_runner (B : Runner_deps) : Runner = struct
@@ -121,7 +142,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let pp_for_litmus_format
-    : Litmus_format.t -> Base.Formatter.t -> L.Validated.t -> unit = function
+    : Litmus_config.Format.t -> L.Validated.t Fmt.t = function
     | Full          -> LP.pp
     | Programs_only -> LP.pp_programs
   ;;
@@ -132,12 +153,16 @@ module Make_runner (B : Runner_deps) : Runner = struct
           program |> MS.Output.Program.listing |> B.final_convert)
   ;;
 
-  let make_litmus name (programs : MS.Output.Program.t list) =
+  let make_litmus
+      (name : string)
+      (programs : MS.Output.Program.t list)
+      (post : L.Post.t option) =
     Or_error.tag ~tag:"Couldn't build litmus file."
       ( L.Validated.make
           ~name
           ~init:(make_init programs)
           ~programs:(make_litmus_programs programs)
+          ?post
           ()
       )
   ;;
@@ -146,8 +171,21 @@ module Make_runner (B : Runner_deps) : Runner = struct
     List.concat_map programs ~f:(MS.Output.Program.warnings)
   ;;
 
+  let make_post (_redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+    : [ `Exists of Sexp.t ] -> L.Post.t Or_error.t = function
+    | `Exists sexp ->
+      let open Or_error.Let_syntax in
+      let%bind blang =
+        Or_error.try_with
+          (fun () ->Blang.t_of_sexp [%of_sexp: L.Pred_elt.t] sexp)
+      in
+      (* TODO: use redirects *)
+      let%map predicate = L.Pred.of_blang blang in
+      { L.Post.quantifier = `Exists; predicate }
+  ;;
+
   let output_litmus
-      ?(output_format : Litmus_format.t = Litmus_format.default)
+      ?(config : Litmus_config.t = Litmus_config.default)
       (name : string)
       (passes : Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
@@ -157,17 +195,22 @@ module Make_runner (B : Runner_deps) : Runner = struct
     : output Or_error.t =
     let open Or_error.Let_syntax in
     let%bind o = MS.sanitise ~passes ~symbols program in
+    let redirects = MS.Output.redirects o in
     let programs = MS.Output.programs o in
     let warnings = collate_warnings programs in
-    let%map lit = make_litmus name programs in
+    let%bind post =
+      Travesty.T_option.With_errors.map_m config.post_sexp
+        ~f:(make_post redirects)
+    in
+    let%map lit = make_litmus name programs post in
     let f = Format.formatter_of_out_channel outp in
-    pp_for_litmus_format output_format f lit;
+    pp_for_litmus_format config.format f lit;
     Format.pp_print_newline f ();
     make_output name (MS.Output.redirects o) warnings
   ;;
 
   let pp_for_explain_format
-    : Explain_format.t -> Base.Formatter.t -> E.t -> unit = function
+    : Explain_config.Format.t -> E.t Fmt.t = function
     | Assembly -> E.pp_as_assembly
     | Detailed -> E.pp
   ;;
@@ -180,7 +223,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let run_explanation
-      ?(output_format : Explain_format.t = Explain_format.default)
+      ?(config : Explain_config.t = Explain_config.default)
       (name    : string)
       (passes  : Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
@@ -195,7 +238,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
     let s_table = SS.Output.Program.symbol_table program in
     let exp = E.explain listing s_table in
     let redirects = SS.Output.redirects san in
-    output_explanation output_format name outp exp redirects
+    output_explanation config.format name outp exp redirects
   ;;
 
   let stringify_symbol sym =
@@ -218,13 +261,13 @@ module Make_runner (B : Runner_deps) : Runner = struct
     let name = Filename.basename (Io.In_source.to_string src) in
     let%bind asm = parse src ic in
     let%bind symbols = stringify_symbols aux.symbols in
-    f ?output_format:aux.format name aux.passes symbols (B.program asm) sink oc
+    f ?config:aux.config name aux.passes symbols (B.program asm) sink oc
   ;;
 
-  module Litmusify : Filter.S with type aux_i = Litmus_format.t t
+  module Litmusify : Filter.S with type aux_i = Litmus_config.t t
                                and type aux_o = output =
     Filter.Make (struct
-      type aux_i = Litmus_format.t t
+      type aux_i = Litmus_config.t t
       type aux_o = output
       let name = "Litmusifier"
       let tmp_file_ext = Fn.const "litmus"
@@ -233,10 +276,10 @@ module Make_runner (B : Runner_deps) : Runner = struct
     end)
   ;;
 
-  module Explain : Filter.S with type aux_i = Explain_format.t t
+  module Explain : Filter.S with type aux_i = Explain_config.t t
                              and type aux_o = output =
     Filter.Make (struct
-      type aux_i = Explain_format.t t
+      type aux_i = Explain_config.t t
       type aux_o = output
       let tmp_file_ext = Fn.const "s"
       let name = "Explainer"
@@ -247,13 +290,13 @@ module Make_runner (B : Runner_deps) : Runner = struct
 end
 
 let get_litmusify (module Runner : Runner)
-  : ( module Filter.S with type aux_i = Litmus_format.t t
+  : ( module Filter.S with type aux_i = Litmus_config.t t
                        and type aux_o = output
     ) = (module Runner.Litmusify)
 ;;
 
 let get_explain (module Runner : Runner)
-  : ( module Filter.S with type aux_i = Explain_format.t t
+  : ( module Filter.S with type aux_i = Explain_config.t t
                        and type aux_o = output
     ) = (module Runner.Explain)
 ;;

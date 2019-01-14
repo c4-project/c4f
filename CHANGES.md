@@ -1,5 +1,8 @@
 # Unreleased
 
+- Litmusify: added `-exists` flag to feed in a Litmus postcondition.
+  (This currently has to target the sanitised Litmus variables directly;
+  no redirection following is done yet.)
 - Split `act regress` into several subcommands, and include a `delitmus`
   regression test set.
 - New `act c delitmus`, which tries to convert a C/Litmus test into

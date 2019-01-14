@@ -173,7 +173,8 @@ module Post_filter = struct
 end
 
 let run file_type (filter : Post_filter.t) compiler_id_or_emits
-    c_symbols
+    (c_symbols : string list)
+    (post_sexp : [ `Exists of Sexp.t ] option)
     ~(infile_raw : string option)
     ~(outfile_raw : string option) o cfg =
   Common.warn_if_not_tracking_symbols o c_symbols;
@@ -182,7 +183,8 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
-  let litmus_job = Asm_job.make ~passes ~symbols:c_symbols () in
+  let config = Asm_job.Litmus_config.make ?post_sexp () in
+  let litmus_job = Asm_job.make ~passes ~config ~symbols:c_symbols () in
   let%bind (module Flt) =
     Common.(
       target
@@ -224,6 +226,16 @@ let command =
       and file_type = Standard_args.Other.file_type
       and compiler_id_or_arch = Standard_args.Other.compiler_id_or_arch
       and c_symbols = Standard_args.Other.c_symbols
+      and post_sexp =
+        choose_one
+          [ map ~f:(Option.map ~f:(fun x -> Some (`Exists x)))
+              (flag "exists"
+                 (* We can't actually type-check the postcondition until we
+                    have a target language! *)
+                 (optional sexp)
+                 ~doc: "PREDICATE an 'exists' postcondition to attach to the resulting Litmus test")
+          ]
+          ~if_nothing_chosen:(`Default_to None)
       and outfile_raw =
         flag "output"
           (optional file)
@@ -235,5 +247,6 @@ let command =
           ~with_compiler_tests:false
           ~f:(run
                 file_type filter compiler_id_or_arch c_symbols
+                post_sexp
                 ~infile_raw ~outfile_raw)
     ]

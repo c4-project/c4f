@@ -43,8 +43,9 @@ let run file_type compiler_id_or_arch output_format c_symbols
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.explain
   in
+  let config = Asm_job.Explain_config.make ?format:output_format () in
   let explain_job =
-    Asm_job.make ?format:output_format ~symbols:c_symbols ~passes ()
+    Asm_job.make ~config ~symbols:c_symbols ~passes ()
   in
   let%bind (module Exp) =
     Common.(
@@ -72,7 +73,7 @@ let command =
       and compiler_id_or_arch = Standard_args.Other.compiler_id_or_arch
       and c_symbols = Standard_args.Other.c_symbols
       and output_format =
-        Asm_job.Explain_format.(
+        Asm_job.Explain_config.Format.(
           choose_one
             [ map ~f:(fun flag -> Option.some_if flag (Some Detailed))
                 (flag "detailed"

@@ -29,14 +29,14 @@ open Utils
 module type Gen_runner = sig
   type 'fmt inp  (** Type of input, parametrised over format enum *)
   type aux       (** Type of auxiliary output *)
-  type lfmt      (** Type of Litmus formats *)
-  type efmt      (** Type of explainer formats *)
+  type lcfg      (** Type of Litmus-specific config *)
+  type ecfg      (** Type of explainer-specific config *)
 
-  module Litmusify : Filter.S with type aux_i = lfmt inp
+  module Litmusify : Filter.S with type aux_i = lcfg inp
                                and type aux_o = aux
   (** [Litmusify] is a filter that runs a litmusifying job. *)
 
-  module Explain : Filter.S with type aux_i = efmt inp
+  module Explain : Filter.S with type aux_i = ecfg inp
                              and type aux_o = aux
   (** [Explain] is a filter that runs an assembly explanation job. *)
 end

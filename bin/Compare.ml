@@ -26,12 +26,10 @@ open Core
 open Lib
 open Utils
 
-
 let litmusify o passes spec c_file =
   let target = `Spec spec in
-  let litmus_job =
-    Asm_job.(make ~format:(Litmus_format.Programs_only) ~passes ())
-  in
+  let config = Asm_job.Litmus_config.make ~format:Programs_only () in
+  let litmus_job = Asm_job.(make ~config ~passes ()) in
   let open Or_error.Let_syntax in
   let%bind (module Comp_lit) =
     Common.(
