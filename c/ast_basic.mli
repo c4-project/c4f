@@ -49,7 +49,7 @@
     We declare these separately from the {{!Ast}rest of the AST} to
     break dependency cycles. *)
 
-open Base
+open Core_kernel
 
 include module type of Ast_basic_intf
 (** As usual, the signatures are in a separate 'intf' module. *)
@@ -198,15 +198,28 @@ module Constant : sig
     | Char    of char
     | Float   of float
     | Integer of int
-  [@@deriving sexp]
+  [@@deriving sexp, eq, compare]
   ;;
   include Ast_node with type t := t
+
+  include Quickcheck.S with type t := t
 end
 
 (** AST node for identifiers *)
 module Identifier : sig
   type t = string [@@deriving eq]
+
+  val validate : t Validate.check
+  (** [validate id] checks whether [id] is a valid C identifier. *)
+
+  val is_valid : t -> bool
+  (** [is_valid id] is [true] when [validate id] passes, and
+         [false] otherwise. *)
+
   include Ast_node_with_identifier with type t := t
+
+  include Quickcheck.S with type t := t
+
 end
 
 (** Ast node for pointers *)

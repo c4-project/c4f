@@ -800,3 +800,30 @@ module Litmus = struct
   include A
   include Litmus.Pp.Make_sequential (A)
 end
+
+(** {2 Quickcheck tests} *)
+
+let%test_unit "generator generates only valid identifiers" =
+    Quickcheck.test
+      ~shrinker:Identifier.shrinker
+      ~sexp_of:[%sexp_of: Identifier.t]
+      Identifier.gen
+      ~f:([%test_pred: Identifier.t] Identifier.is_valid)
+;;
+
+let%test_unit "debracket is idempotent" =
+  let module P = Litmus.Pred in
+  Quickcheck.test ~shrinker:P.shrinker ~sexp_of:[%sexp_of: P.t] P.gen
+    ~f:(fun pred ->
+        [%test_eq: P.t]
+          (P.debracket pred) (P.debracket (P.debracket pred))
+      )
+;;
+
+let%test_unit "litmus to blang to litmus round-trip" =
+  let module P = Litmus.Pred in
+  Quickcheck.test ~shrinker:P.shrinker ~sexp_of:[%sexp_of: P.t] P.gen
+    ~f:(fun pred ->
+        let blang = P.to_blang pred in
+        let pred' = Or_error.ok_exn (P.of_blang blang) in
+        [%test_eq: P.t] (P.debracket pred) pred')

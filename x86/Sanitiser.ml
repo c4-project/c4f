@@ -37,7 +37,7 @@ module Hook
     | Disp.Numeric k -> Operand.Immediate (Disp.Numeric (-k))
     | Symbolic s ->
       Operand.Bop ( Operand.Immediate (Numeric 0)
-                  , Operand.BopMinus
+                  , Bop.Minus
                   , Operand.Immediate (Symbolic s)
                   )
 

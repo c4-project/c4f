@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Base
+open Core_kernel
 
 (** Signature containing just the parts of an act language needed
     for building Litmus file ASTs. *)
@@ -32,8 +32,11 @@ module type Basic = sig
 
   (** Abstract type of constant syntax *)
   module Constant : sig
-    type t [@@deriving sexp]
+    type t [@@deriving compare, eq, sexp]
     include Pretty_printer.S with type t := t
+
+    include Quickcheck.S with type t := t
+    (** Constants must come with a quickcheck generator. *)
   end
 
   (** Abstract type of statements. *)
@@ -61,7 +64,7 @@ module type Basic = sig
   end
 end
 
-(** {2 AST modules *)
+(** {2 AST modules} *)
 
 (** The interface for litmus AST modules.
 
@@ -75,18 +78,42 @@ module type S = sig
     type t =
       | Local of int * string
       | Global of string
-    [@@deriving sexp]
+    [@@deriving sexp, compare, eq]
     ;;
   end
 
   module Pred : sig
+    type elt =
+      | Eq of Id.t * Lang.Constant.t
+    [@@deriving sexp, compare, eq]
+    (** Type of basic elements inside a Litmus predicate.
+
+        The distinction between [elt] and {{!t}t} mainly exists to
+       make conversion to and from other languages, like [Blang],
+       easier. *)
+
     type t =
       | Bracket of t
       | Or of t * t
       | And of t * t
-      | Eq of Id.t * Lang.Constant.t
-    [@@deriving sexp]
-    ;;
+      | Elt of elt
+    [@@deriving sexp, compare, eq]
+    (** Type of Litmus predicates. *)
+
+    val debracket : t -> t
+    (** [debracket pred] removes any brackets in [pred]. *)
+
+    val of_blang : elt Core_kernel.Blang.t -> t Or_error.t
+    (** [of_blang blang] converts [blang], a Blang expression over
+       {{!elt}elt}, to a {{!t}t}.  It may fail if the expression
+       contains elements inexpressible in the Litmus syntax. *)
+
+    val to_blang : t -> elt Core_kernel.Blang.t
+    (** [of_blang pred] converts a [pred] to Blang expression over
+       {{!elt}elt}. *)
+
+    include Quickcheck.S with type t := t
+    (** Predicates come with a quickcheck generator. *)
   end
 
   module Post : sig

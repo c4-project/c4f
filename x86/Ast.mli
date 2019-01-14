@@ -46,6 +46,7 @@ copyright notice follow. *)
 
 (** Generic, low-level abstract syntax tree for AT&T and Intel x86 *)
 
+open Core_kernel
 open Utils
 
 (** [Reg] contains types and functions for dealing with x86 registers
@@ -144,7 +145,7 @@ module Disp : sig
   type t =
     | Symbolic of string
     | Numeric of int
-  [@@deriving sexp, eq]
+  [@@deriving sexp, eq, compare]
   ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
@@ -153,14 +154,16 @@ module Disp : sig
     : Travesty.Traversable.S0_container with type t := t
                                          and type Elt.t = string
   ;;
+
+  include Quickcheck.S with type t := t
 end
 
 (** [Index] concerns index-scale pairs. *)
 module Index : sig
   type t =
     | Unscaled of Reg.t
-    | Scaled of Reg.t * int
-  [@@deriving sexp, eq]
+    | Scaled   of Reg.t * int
+  [@@deriving sexp, eq, compare]
   ;;
 
   (** [On_registers] permits enumerating and folding over registers
@@ -169,6 +172,8 @@ module Index : sig
     : Travesty.Traversable.S0_container with type t := t
                                          and type Elt.t = Reg.t
   ;;
+
+  include Quickcheck.S with type t := t
 end
 
 module Indirect : sig
@@ -211,6 +216,8 @@ module Indirect : sig
     : Travesty.Traversable.S0_container with type t := t
                                          and type Elt.t = string
   ;;
+
+  include Quickcheck.S with type t := t
 end
 
 (** [Location] enumerates memory locations: either
@@ -219,7 +226,7 @@ module Location : sig
   type t =
     | Indirect of Indirect.t
     | Reg of Reg.t
-  [@@deriving sexp, eq]
+  [@@deriving sexp, eq, compare]
 
   (** [On_registers] permits enumerating and folding over registers
       inside a location. *)
@@ -234,45 +241,50 @@ module Location : sig
     : Travesty.Traversable.S0_container with type t := t
                                          and type Elt.t = string
   ;;
+
+  include Quickcheck.S with type t := t
+end
+
+module Bop : sig
+  type t =
+    | Plus
+    | Minus
+  [@@deriving sexp]
+  ;;
+
+  include Enum.Extension_table with type t := t
+  include Quickcheck.S with type t := t
 end
 
 module Operand : sig
-  type bop =
-    | BopPlus
-    | BopMinus
-  [@@deriving sexp, eq]
-  ;;
-
   type t =
     | Location of Location.t
     | Immediate of Disp.t
     | String of string
-    | Typ of string (* Type annotation *)
-    | Bop of t * bop * t
-  [@@deriving sexp, eq]
+    | Typ of string (** Type annotation *)
+    | Bop of t * Bop.t * t
+  [@@deriving sexp, eq, compare]
   ;;
-
-  (* Constructors *)
 
   val location : Location.t -> t
   val immediate : Disp.t -> t
   val string : string -> t
   val typ : string -> t
-  val bop : t -> bop -> t -> t
+  val bop : t -> Bop.t -> t -> t
 
-  (** [On_locations] permits enumerating and folding over locations
-      inside an operand. *)
+  include Quickcheck.S with type t := t
+
   module On_locations
     : Travesty.Traversable.S0_container with type t := t
                                          and type Elt.t = Location.t
-  ;;
+  (** [On_locations] permits enumerating and folding over locations
+      inside an operand. *)
 
-  (** [On_symbols] permits enumerating and folding over symbols inside
-      an operand. *)
   module On_symbols
     : Travesty.Traversable.S0_container with type t := t
                                          and type Elt.t = string
-  ;;
+  (** [On_symbols] permits enumerating and folding over symbols inside
+      an operand. *)
 end
 
 type prefix =
@@ -292,19 +304,17 @@ module Instruction : sig
   [@@deriving sexp, eq, make]
   ;;
 
-  (** [On_locations] permits enumerating and folding over locations
-      inside an instruction. *)
   module On_locations
     : Travesty.Traversable.S0_container with type t := t
                                          and type Elt.t = Location.t
-  ;;
+  (** [On_locations] permits enumerating and folding over locations
+      inside an instruction. *)
 
-  (** [On_symbols] permits enumerating and folding over symbols inside
-      an instruction. *)
   module On_symbols
     : Travesty.Traversable.S0_container with type t := t
                                          and type Elt.t = string
-  ;;
+  (** [On_symbols] permits enumerating and folding over symbols inside
+      an instruction. *)
 end
 
 module Statement : sig

@@ -109,8 +109,8 @@ instr:
 
 (* Binary operator *)
 bop:
-  | PLUS { Operand.BopPlus }
-  | MINUS { Operand.BopMinus }
+  | PLUS { Bop.Plus }
+  | MINUS { Bop.Minus }
 
 (* Base/index/scale triple *)
 bis:

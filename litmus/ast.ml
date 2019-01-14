@@ -33,18 +33,159 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     type t =
       | Local of int * string
       | Global of string
-    [@@deriving sexp]
+    [@@deriving sexp, eq, compare, variants]
+    ;;
+
+    let anonymise = function
+      | Local  (int, str) -> `A ((int, str))
+      | Global str        -> `B str
+    ;;
+
+    let deanonymise = function
+      | `A ((int, str)) -> Local (int, str)
+      | `B str          -> Global str
+    ;;
+
+    let gen : t Quickcheck.Generator.t =
+      let module G = Quickcheck.Generator in
+      G.map ~f:deanonymise
+        (G.variant2 (G.tuple2 Int.gen String.gen) String.gen)
+    ;;
+
+    let obs : t Quickcheck.Observer.t =
+      let module O = Quickcheck.Observer in
+      O.unmap ~f:anonymise
+        (O.variant2 (O.tuple2 Int.obs String.obs) String.obs)
+    ;;
+
+    let shrinker : t Quickcheck.Shrinker.t =
+      let module S = Quickcheck.Shrinker in
+      S.map ~f:deanonymise ~f_inverse:anonymise
+        (S.variant2 (S.tuple2 Int.shrinker String.shrinker) String.shrinker)
     ;;
   end
 
   module Pred = struct
+    type elt =
+      | Eq of Id.t * Lang.Constant.t
+    [@@deriving sexp, compare, eq]
+
+    let anonymise = function
+      | Eq (x, y) -> (x, y)
+    ;;
+
+    let deanonymise (x, y) = Eq (x, y)
+
+    let gen_elt : elt Quickcheck.Generator.t =
+      let module G = Quickcheck.Generator in
+      G.map ~f:deanonymise
+        (G.tuple2 Id.gen Lang.Constant.gen)
+    ;;
+
+    let obs_elt : elt Quickcheck.Observer.t =
+      let module O = Quickcheck.Observer in
+      O.unmap ~f:anonymise
+        (O.tuple2 Id.obs Lang.Constant.obs)
+    ;;
+
+    let shrinker_elt : elt Quickcheck.Shrinker.t =
+      let module S = Quickcheck.Shrinker in
+      S.map ~f:deanonymise ~f_inverse:anonymise
+        (S.tuple2 Id.shrinker Lang.Constant.shrinker)
+    ;;
+
     type t =
       | Bracket of t
       | Or of t * t
       | And of t * t
-      | Eq of Id.t * Lang.Constant.t
-    [@@deriving sexp]
+      | Elt of elt
+    [@@deriving sexp, compare, eq]
     ;;
+
+    let rec of_blang : elt Blang.t -> t Or_error.t = function
+      | And (l, r) ->
+        let open Or_error.Let_syntax in
+        let%map l' = of_blang l
+        and     r' = of_blang r
+        in And (l', r')
+      | Or (l, r) ->
+        let open Or_error.Let_syntax in
+        let%map l' = of_blang l
+        and     r' = of_blang r
+        in Or (l', r')
+      | Base x -> Or_error.return (Elt x)
+      | True | False | Not _ | If _ as b ->
+        Or_error.error_s
+          [%message
+            "This Blang element isn't supported in Litmus predicates"
+              ~element:(b : elt Blang.t)]
+    ;;
+
+    let rec to_blang : t -> elt Blang.t = function
+      | Bracket x -> to_blang x
+      | Or (l, r) -> Blang.O.(to_blang l || to_blang r)
+      | And (l, r) -> Blang.O.(to_blang l && to_blang r)
+      | Elt x -> Blang.base x
+    ;;
+
+    let rec debracket : t -> t = function
+      | Bracket x  -> debracket x
+      | Or  (l, r) -> Or  (debracket l, debracket r)
+      | And (l, r) -> And (debracket l, debracket r)
+      | Elt x      -> Elt x
+    ;;
+
+    module Quickcheck : Quickcheck.S with type t := t = struct
+      let anonymise = function
+        | Bracket x  -> `A x
+        | Or (l, r)  -> `B ((l, r))
+        | And (l, r) -> `C ((l, r))
+        | Elt x      -> `D x
+      ;;
+
+      let deanonymise = function
+        | `A x        -> Bracket x
+        | `B ((l, r)) -> Or (l, r)
+        | `C ((l, r)) -> And (l, r)
+        | `D x        -> Elt x
+      ;;
+
+      let gen : t Quickcheck.Generator.t =
+        let module G = Quickcheck.Generator in
+        G.recursive_union
+          [ G.map ~f:(fun x -> Elt x) gen_elt ]
+          ~f:(fun mu ->
+              [ G.map ~f:(fun x -> Bracket x) mu
+              ; G.map2 ~f:(fun x y -> And (x, y)) mu mu
+              ; G.map2 ~f:(fun x y -> Or (x, y)) mu mu
+              ])
+      ;;
+
+      let obs : t Quickcheck.Observer.t =
+        let module O = Quickcheck.Observer in
+        O.fixed_point
+          (fun mu ->
+             O.unmap ~f:anonymise
+               (O.variant4
+                  mu
+                  (O.tuple2 mu mu)
+                  (O.tuple2 mu mu)
+                  obs_elt))
+      ;;
+
+      let shrinker : t Quickcheck.Shrinker.t =
+        let module S = Quickcheck.Shrinker in
+        S.fixed_point
+          (fun mu ->
+             S.map ~f:deanonymise ~f_inverse:anonymise
+               (S.variant4
+                  mu
+                  (S.tuple2 mu mu)
+                  (S.tuple2 mu mu)
+                  shrinker_elt))
+      ;;
+    end
+    include Quickcheck
   end
 
   module Post = struct
@@ -219,9 +360,9 @@ module Convert (B : Basic_convert) = struct
     | And (l, r) ->
       Or_error.map2 (convert_pred l) (convert_pred r)
         ~f:(fun l' r' -> B.To.Pred.And (l', r'))
-    | Eq (id, k) ->
+    | Elt (Eq (id, k)) ->
       let id' = convert_id id in
-      Or_error.(k |> B.constant >>| fun k' -> B.To.Pred.Eq (id', k'))
+      Or_error.(k |> B.constant >>| fun k' -> B.To.Pred.(Elt (Eq (id', k'))))
   ;;
 
   let convert_post (post : B.From.Post.t) : B.To.Post.t Or_error.t =

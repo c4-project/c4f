@@ -34,10 +34,14 @@ open Core_kernel
     constant analysis. *)
 module type Basic = sig
   (** [t] is the type of constants. *)
-  type t [@@deriving sexp]
+  type t [@@deriving compare, eq, sexp]
 
-  (** Languages must supply a pretty-printer for their constants. *)
   include Pretty_printer.S with type t := t
+  (** Languages must supply a pretty-printer for their constants. *)
+
+  include Quickcheck.S with type t := t
+  (** Languages must supply a Quickcheck generator for their
+     constants. *)
 
   (** [zero] is a constant representing numeric zero. *)
   val zero : t
@@ -47,15 +51,4 @@ end
     analysis. *)
 module type S = sig
   include Basic
-end
-
-(** [Language_constant] is the interface exposed in the main mli
-   file. *)
-module type Language_constant = sig
-  module type Basic = Basic
-  module type S = S
-
-  (** [Make] produces an instance of [S] from an instance of
-     [Basic]. *)
-  module Make : functor (B : Basic) -> S with type t = B.t
 end

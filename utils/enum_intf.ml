@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 
 (** [S] is an interface for enums, compatible with those derived by
    ppx_deriving's enum plugin. *)
@@ -77,6 +77,7 @@ module type Extension = sig
   include Comparable.S with type t := t
   include Hashable.S with type t := t
   include Sexpable.S with type t := t
+  include Quickcheck.S with type t := t
 
   (** [to_enum x] converts [x] to its index. *)
   val to_enum : t -> int

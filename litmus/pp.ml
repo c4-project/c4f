@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -67,7 +67,8 @@ module Make_common (B : Basic) = struct
     | Bracket pred -> Fmt.parens pp_predicate f pred
     | Or  (l, r) -> Fmt.pf f "%a@ \\/@ %a" pp_predicate l pp_predicate r
     | And (l, r) -> Fmt.pf f "%a@ /\\@ %a" pp_predicate l pp_predicate r
-    | Eq  (i, c) -> Fmt.pf f "%a@ ==@ %a" pp_id i B.Ast.Lang.Constant.pp c
+    | Elt (Eq (i, c)) ->
+      Fmt.pf f "%a@ ==@ %a" pp_id i B.Ast.Lang.Constant.pp c
   ;;
 
   let pp_post f { B.Ast.Post.quantifier; predicate } =

@@ -22,10 +22,9 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Language abstraction layer: Constants
+(** Language abstraction layer: Constants *)
 
-    To avoid duplication, this interface just includes
-    [Language_constant_intf.Language_constant].  See that module for
-    documentation. *)
+include module type of Language_constant_intf
 
-include Language_constant_intf.Language_constant
+module Make (B : Basic) : S with type t = B.t
+(** [Make] produces an instance of [S] from an instance of [Basic]. *)

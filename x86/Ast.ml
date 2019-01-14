@@ -180,7 +180,7 @@ module Disp = struct
   type t =
     | Symbolic of string
     | Numeric of int
-  [@@deriving sexp, variants, eq]
+  [@@deriving sexp, variants, eq, compare]
 
   (** Base mapper for displacements *)
   module Base_map (M : Monad.S) = struct
@@ -211,13 +211,46 @@ module Disp = struct
         ;;
       end
     end)
+
+  module Quickcheck : (Quickcheck.S with type t := t) = struct
+    module G = Quickcheck.Generator
+    module O = Quickcheck.Observer
+    module S = Quickcheck.Shrinker
+
+    let anonymise = function
+      | Symbolic sym -> `A sym
+      | Numeric  int -> `B int
+    ;;
+
+    let deanonymise = function
+      | `A sym -> Symbolic sym
+      | `B int -> Numeric  int
+    ;;
+
+    let gen : t G.t =
+      (* TODO(@MattWindsor91): generate valid symbols only? *)
+      G.map ~f:deanonymise
+        (G.variant2 String.gen Int.gen)
+    ;;
+
+    let obs : t O.t =
+      O.unmap ~f:anonymise
+        (O.variant2 String.obs Int.obs)
+    ;;
+
+    let shrinker : t S.t =
+      S.map ~f:deanonymise ~f_inverse:anonymise
+        (S.variant2 String.shrinker Int.shrinker)
+    ;;
+  end
+  include Quickcheck
 end
 
 module Index = struct
   type t =
     | Unscaled of Reg.t
     | Scaled of Reg.t * int
-  [@@deriving sexp, variants, eq]
+  [@@deriving sexp, variants, eq, compare]
 
   (** Base mapper for indices *)
   module Base_map (M : Monad.S) = struct
@@ -248,6 +281,45 @@ module Index = struct
         ;;
       end
     end)
+
+  module Quickcheck : (Quickcheck.S with type t := t) = struct
+    module G = Quickcheck.Generator
+    module O = Quickcheck.Observer
+    module S = Quickcheck.Shrinker
+
+    let anonymise = function
+      | Unscaled reg      -> `A reg
+      | Scaled   (reg, s) -> `B ((reg, s))
+    ;;
+
+    let deanonymise = function
+      | `A reg        -> Unscaled reg
+      | `B ((reg, s)) -> Scaled   (reg, s)
+    ;;
+
+    let gen : t G.t =
+      G.map ~f:deanonymise
+        (G.variant2
+           Reg.gen
+           (* TODO(@MattWindsor91): sensible indexes? *)
+           (G.tuple2 Reg.gen G.small_positive_int))
+    ;;
+
+    let obs : t O.t =
+      O.unmap ~f:anonymise
+        (O.variant2
+           Reg.obs
+           (O.tuple2 Reg.obs Int.obs))
+    ;;
+
+    let shrinker : t S.t =
+      S.map ~f:deanonymise ~f_inverse:anonymise
+        (S.variant2
+           Reg.shrinker
+           (S.tuple2 Reg.shrinker Int.shrinker))
+    ;;
+  end
+  include Quickcheck
 end
 
 (*
@@ -261,7 +333,7 @@ module Indirect = struct
     ; base   : Reg.t   option
     ; index  : Index.t option
     }
-  [@@deriving sexp, eq, fields, make]
+  [@@deriving sexp, eq, compare, fields, make]
 
   (** Base mapper for memory addresses *)
   module Base_map (M : Monad.S) = struct
@@ -328,18 +400,50 @@ module Indirect = struct
       end
     end)
   ;;
+
+  let of_tuple ( seg, base, index, disp ) = { seg; base; index; disp }
+  let to_tuple { seg; base; index; disp } = ( seg, base, index, disp )
+
+  module Quickcheck : (Quickcheck.S with type t := t) = struct
+    module G = Quickcheck.Generator
+    module O = Quickcheck.Observer
+    module S = Quickcheck.Shrinker
+
+    let gen : t G.t =
+      let open G.Let_syntax in
+      let%map seg   = Option.gen Reg.gen
+      and     base  = Option.gen Reg.gen
+      and     index = Option.gen Index.gen
+      and     disp  = Option.gen Disp.gen
+      in { seg; base; index; disp }
+    ;;
+
+    let obs : t O.t =
+      O.unmap ~f:to_tuple
+        (O.tuple4
+           (Option.obs Reg.obs)
+           (Option.obs Reg.obs)
+           (Option.obs Index.obs)
+           (Option.obs Disp.obs))
+    ;;
+
+    let shrinker : t S.t =
+      S.map ~f:of_tuple ~f_inverse:to_tuple
+        (S.tuple4
+           (Option.shrinker Reg.shrinker)
+           (Option.shrinker Reg.shrinker)
+           (Option.shrinker Index.shrinker)
+           (Option.shrinker Disp.shrinker))
+    ;;
+  end
+  include Quickcheck
 end
-
-(*
- * Locations
- *)
-
 
 module Location = struct
   type t =
     | Indirect of Indirect.t
     | Reg of Reg.t
-  [@@deriving sexp, variants, eq]
+  [@@deriving sexp, variants, eq, compare]
 
   (** Base mapper for locations *)
   module Base_map (M : Monad.S) = struct
@@ -389,21 +493,66 @@ module Location = struct
       end
     end)
   ;;
+
+
+  module Quickcheck : (Quickcheck.S with type t := t) = struct
+    module G = Quickcheck.Generator
+    module O = Quickcheck.Observer
+    module S = Quickcheck.Shrinker
+
+    let anonymise = function
+      | Indirect ind -> `A ind
+      | Reg      reg -> `B reg
+    ;;
+
+    let deanonymise = function
+      | `A ind -> Indirect ind
+      | `B reg -> Reg      reg
+    ;;
+
+    let gen : t G.t =
+      G.map ~f:deanonymise (G.variant2 Indirect.gen Reg.gen)
+    ;;
+
+    let obs : t O.t =
+      O.unmap ~f:anonymise (O.variant2 Indirect.obs Reg.obs)
+    ;;
+
+    let shrinker : t S.t =
+      S.map ~f:deanonymise ~f_inverse:anonymise
+        (S.variant2 Indirect.shrinker Reg.shrinker)
+    ;;
+  end
+  include Quickcheck
 end
 
-module Operand = struct
-  type bop =
-    | BopPlus
-    | BopMinus
-  [@@deriving sexp, eq]
+module Bop = struct
+  module M = struct
+    type t =
+      | Plus
+      | Minus
+    [@@deriving enum]
+    ;;
 
+    let table =
+      [ Plus , "+"
+      ; Minus, "-"
+      ]
+    ;;
+  end
+  include M
+  include Enum.Extend_table (M)
+end
+
+
+module Operand = struct
   type t =
     | Location of Location.t
     | Immediate of Disp.t
     | String of string
     | Typ of string
-    | Bop of t * bop * t
-  [@@deriving sexp, variants, eq]
+    | Bop of t * Bop.t * t
+  [@@deriving sexp, variants, eq, compare]
 
   (** Base mapper for operands *)
   module Base_map (M : Monad.S) = struct
@@ -481,14 +630,67 @@ module Operand = struct
     end)
   ;;
 
+  module Quickcheck : (Quickcheck.S with type t := t) = struct
+    module G = Quickcheck.Generator
+    module O = Quickcheck.Observer
+    module S = Quickcheck.Shrinker
+
+    let anonymise = function
+      | Location  loc       -> `A loc
+      | Immediate disp      -> `B disp
+      | String    str       -> `C str
+      | Typ       typ       -> `D typ
+      | Bop       (l, b, r) -> `E ((l, b, r))
+    ;;
+
+    let deanonymise = function
+      | `A loc         -> Location loc
+      | `B disp        -> Immediate disp
+      | `C str         -> String str
+      | `D typ         -> Typ typ
+      | `E ((l, b, r)) -> Bop (l, b, r)
+    ;;
+
+    let gen : t G.t =
+      G.recursive_union
+        [ G.map ~f:deanonymise
+            (G.variant4 Location.gen Disp.gen String.gen String.gen)
+        ]
+        ~f:(fun mu ->
+            [ G.map ~f:(fun (l, b, r) -> Bop (l, b, r))
+                (G.tuple3 mu Bop.gen mu)
+            ])
+    ;;
+
+    let obs : t O.t =
+      O.fixed_point
+        (fun mu ->
+           O.unmap ~f:anonymise
+             (O.variant5
+                Location.obs Disp.obs String.obs String.obs
+                (O.tuple3 mu Bop.obs mu)))
+    ;;
+
+    let shrinker : t S.t =
+      S.fixed_point
+        (fun mu ->
+           S.map ~f:deanonymise ~f_inverse:anonymise
+             (S.variant5
+                Location.shrinker Disp.shrinker
+                String.shrinker String.shrinker
+                (S.tuple3 mu Bop.shrinker mu)))
+    ;;
+  end
+  include Quickcheck
+
   let%expect_test "symbol fold over bop" =
     let ast =
       bop
         (bop
            (immediate (Disp.Symbolic "a"))
-           BopPlus
+           Bop.Plus
            (immediate (Disp.Symbolic "b")))
-        BopMinus
+        Bop.Minus
         (location
            (Location.Indirect (Indirect.make ~disp:(Disp.Symbolic "c") ())))
     in
@@ -499,7 +701,7 @@ module Operand = struct
       Sexp.pp_hum [%sexp (ast' : t)];
     [%expect {|
       Total: 3
-      (Bop (Bop (Immediate (Symbolic A)) BopPlus (Immediate (Symbolic B))) BopMinus
+      (Bop (Bop (Immediate (Symbolic A)) + (Immediate (Symbolic B))) -
        (Location (Indirect ((seg ()) (disp ((Symbolic C))) (base ()) (index ()))))) |}]
   ;;
 end

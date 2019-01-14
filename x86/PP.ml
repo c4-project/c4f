@@ -54,28 +54,24 @@ let disp_positive =
   | _ -> true
 
 module type Dialect = sig
-  val pp_reg : Formatter.t -> Reg.t -> unit
-  val pp_indirect : Formatter.t -> Indirect.t -> unit
-  val pp_immediate : Formatter.t -> Disp.t -> unit
-  val pp_comment
-    :  pp:(Formatter.t -> 'a -> unit)
-    -> Formatter.t
-    -> 'a
-    -> unit
+  val pp_reg : Reg.t Fmt.t
+  val pp_indirect : Indirect.t Fmt.t
+  val pp_immediate : Disp.t Fmt.t
+  val pp_comment : pp:('a Fmt.t) -> 'a Fmt.t
 end
 
 module type Printer = sig
   include Dialect
 
-  val pp_location : Formatter.t -> Location.t -> unit
-  val pp_bop : Formatter.t -> Operand.bop -> unit
-  val pp_operand : Formatter.t -> Operand.t -> unit
-  val pp_prefix : Formatter.t -> prefix -> unit
-  val pp_opcode : Formatter.t -> Opcode.t -> unit
-  val pp_oplist : Formatter.t -> Operand.t list -> unit
-  val pp_instruction : Formatter.t -> Instruction.t -> unit
-  val pp_statement : Formatter.t -> Statement.t -> unit
-  val pp : Formatter.t -> t -> unit
+  val pp_location : Location.t Fmt.t
+  val pp_bop : Bop.t Fmt.t
+  val pp_operand : Operand.t Fmt.t
+  val pp_prefix : prefix Fmt.t
+  val pp_opcode : Opcode.t Fmt.t
+  val pp_oplist : Operand.t list Fmt.t
+  val pp_instruction : Instruction.t Fmt.t
+  val pp_statement : Statement.t Fmt.t
+  val pp : t Fmt.t
 end
 
 (* Parts specific to all dialects *)
@@ -324,9 +320,9 @@ module Make (D : Dialect) =
      * Operators
      *)
 
-    let pp_bop f = function
-      | Operand.BopPlus -> Fmt.char f '+'
-      | BopMinus -> Fmt.char f '-'
+    let pp_bop (f : Formatter.t) : Bop.t -> unit = function
+      | Plus -> Fmt.char f '+'
+      | Minus -> Fmt.char f '-'
 
     (*
      * Operands

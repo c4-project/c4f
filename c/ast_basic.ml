@@ -44,7 +44,7 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-open Base
+open Core_kernel
 
 include Ast_basic_intf
 
@@ -296,7 +296,7 @@ module Constant = struct
     | Char    of char
     | Float   of float
     | Integer of int
-  [@@deriving sexp]
+  [@@deriving sexp, variants, eq, compare]
   ;;
 
   (* TODO(@MattWindsor91): escaping *)
@@ -309,6 +309,34 @@ module Constant = struct
     | Char c -> pp_char f c
     | Float d -> Fmt.float f d
     | Integer i -> Fmt.int f i
+
+  let anonymise = function
+    | Char c    -> `A c
+    | Float f   -> `B f
+    | Integer i -> `C i
+  ;;
+
+  let deanonymise = function
+    | `A c -> Char c
+    | `B f -> Float f
+    | `C i -> Integer i
+  ;;
+
+  let gen : t Quickcheck.Generator.t =
+    let module G = Quickcheck.Generator in
+    G.map ~f:deanonymise (G.variant3 Char.gen Float.gen Int.gen)
+  ;;
+
+  let obs : t Quickcheck.Observer.t =
+    let module O = Quickcheck.Observer in
+    O.unmap (O.variant3 Char.obs Float.obs Int.obs)
+      ~f:anonymise
+  ;;
+
+  let shrinker : t Quickcheck.Shrinker.t =
+    let module S = Quickcheck.Shrinker in
+    S.map ~f:deanonymise ~f_inverse:anonymise
+      (S.variant3 Char.shrinker Float.shrinker Int.shrinker)
 end
 
 module Identifier = struct
@@ -316,6 +344,63 @@ module Identifier = struct
 
   let identifier = Fn.id
   let pp = Fmt.string
+
+  let gen : t Quickcheck.Generator.t =
+    let module G = Quickcheck.Generator in
+    let open G.Let_syntax in
+    let initial =
+      G.union
+         [ Char.gen_alpha
+         ; G.return '_'
+         ]
+    in
+    let%bind chr = initial in
+    let%map rest =
+      String.gen'
+        (G.union
+           [ Char.gen_alphanum
+           ; G.return '_'
+           ]
+        )
+    in String.of_char chr ^ rest
+
+  let validate_initial_char : char Validate.check =
+    Validate.booltest
+      (Travesty.T_fn.disj Char.is_alpha (Char.equal '_'))
+      ~if_false:"Invalid initial character."
+  ;;
+
+  let validate_char : char Validate.check =
+    Validate.booltest
+      (Travesty.T_fn.disj Char.is_alphanum (Char.equal '_'))
+      ~if_false:"Invalid character."
+  ;;
+
+  let validate : t Validate.check =
+    fun id ->
+      match String.to_list id with
+      | [] -> Validate.fail_s
+                [%message "Identifiers can't be empty"
+                  ~id]
+      | c :: cs ->
+        Validate.of_list
+          (validate_initial_char c :: List.map ~f:validate_char cs)
+  ;;
+
+  let is_valid (id : t) : bool =
+    Or_error.is_ok (Validate.result (validate id))
+  ;;
+
+  let obs : t Quickcheck.Observer.t = String.obs
+
+  let shrinker : t Quickcheck.Shrinker.t =
+    Quickcheck.Shrinker.create
+      (fun ident ->
+         ident
+         |> Quickcheck.Shrinker.shrink String.shrinker
+         |> Sequence.filter ~f:is_valid
+      )
+  ;;
 end
 
 module Pointer : Ast_node with type t = (Type_qual.t list) list = struct

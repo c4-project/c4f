@@ -49,6 +49,28 @@ module Make_hashable (E : S_sexp)
   end)
 ;;
 
+module Make_quickcheck (E : S)
+  : Quickcheck.S with type t := E.t = struct
+  module G = Quickcheck.Generator
+  module O = Quickcheck.Observer
+  module S = Quickcheck.Shrinker
+
+  let of_enum_exn x =
+    x |> E.of_enum |> Option.value_exn
+  ;;
+
+  let gen =
+    G.map ~f:of_enum_exn
+      (Int.gen_uniform_incl E.min E.max)
+  ;;
+
+  let obs =
+    O.enum (E.max - 1) ~f:(fun x -> E.to_enum x - E.min)
+  ;;
+
+  let shrinker = S.empty ()
+end
+
 module Make_from_enumerate (E : S_enumerate)
   : S with type t := E.t = struct
   let min = 0
@@ -64,16 +86,17 @@ end
 module Extend (E : S_sexp) : Extension with type t := E.t = struct
   include Make_comparable (E)
   include Make_hashable (E)
+  include Make_quickcheck (E)
 
   include (E : Sexpable.S with type t := E.t)
 
   let of_enum = E.of_enum
   let to_enum = E.to_enum
 
-  let of_enum_exn k = Option.value_exn (of_enum k);;
+  let of_enum_exn k = Option.value_exn (of_enum k)
 
-  let min_enum = E.min;;
-  let max_enum = E.max;;
+  let min_enum = E.min
+  let max_enum = E.max
 
   let all_list () =
     List.map ~f:of_enum_exn
