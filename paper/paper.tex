@@ -124,16 +124,16 @@ Concurrency is an increasingly central part of the programming landscape, but it
 Existing compiler-testing techniques such as \emph{equivalence modulo inputs}~\cite{le+14} do not straightforwardly apply because they assume deterministic testcases.
 Moreover, if a bug depends on some architectural flexibility that a particular target machine happens not to exploit, then that bug may \emph{never} be observable through conventional testing.
 
-Our idea for dealing with both of these difficulties is
+Our idea for dealing with both of these difficulties is:
 \begin{itemize}
 
 \item to generate a small testcase that probes a corner case of C's concurrency semantics,
-\item to `fuzz' the test case in a manner designed to confuse compilers while ensuring that the test should still pass, and then either
+\item to `fuzz' the testcase in a manner designed to confuse compilers while ensuring that the test should still pass, and then either
 \begin{itemize}
-\item to exhaustively simulate the allowed behaviours of the compiled assembly according to the target architecture's memory model, or
-\item to execute the compiled assembly within a stressful environment on a real machine,
+\item to exhaustively simulate the compiled assembly under the target architecture's memory model, or
+\item to repeatedly execute the compiled assembly in a stressful environment on a real machine,
 \end{itemize}
-with the hope of detecting a behaviour that violates the original testcase.
+with the hope, in both cases, of detecting a behaviour that violates the original testcase.
 \end{itemize}
 
 The detailed toolflow is depicted in Fig.~\ref{fig:flow} and explained below.
@@ -152,30 +152,36 @@ arr/.style={->},
 \centering
 \begin{tikzpicture}
 \node[tra] (tcg) at (0,3) {\tstack{testcase \\ generator}};
-\node[tra] (bas) at (0,0) {\tstack{bastardiser}};
-\node[tra] (cut) at (5.5,0) {\tstack{compiler-under-test}};
-\node[tra] (lit) at (11,0) {\tstack{stress-testing \\ environment}};
-\node[tra] (cmp) at (5.5,3) {\tstack{comparator}};
+\node[tra] (csim) at (2.5,3) {\tstack{C simulator}};
+\node[tra] (bas) at (0,0.5) {\tstack{bastardiser}};
+\node[tra] (cut) at (5.5,0.5) {\tstack{compiler-under-test}};
+\node[tra] (lit) at (11,0.5) {\tstack{stress-testing \\ environment}};
+\node[tra] (cmp) at (6,3) {\tstack{$\supseteq$}};
 \node[tra] (sim) at (11,3) {\tstack{assembly \\ simulator}};
-\node (cmm) at (0,5) {C memory model};
-\node (bug) at (5.5,5) {bug?};
+\node[tra] (cup) at (7.5,3) {$\cup$};
+\node (cmm) at (0,4.5) {C memory model};
+\node (bug) at (6,4.5) {bug?};
 
-\draw[arr] (tcg) to [auto] node {\tstack{plain C program}} (bas);
+\draw[arr] (tcg.south east) to [out=-45, in=90, auto, swap, pos=0.7] node {\tstack{plain C \\ program}} (bas);
 \draw[arr] (bas) to [auto] node {\tstack{complicated \\ C program}} (cut);
 \draw[arr] (cut) to [out=0, in=-120] (sim);
 \draw[arr] (cut) to [auto, swap] node {assembly program} (lit);
-\draw[arr] (lit) to [auto, in=0, out=120] node {\tstack{outcomes actually \\ observed on machine}} ([yshift=-1mm]cmp.east);
-\draw[arr] (sim) to [auto, swap] node {\tstack{outcomes allowed \\ by architecture}} (cmp);
-\draw[arr] (tcg) to [auto] node {\tstack{outcomes \\ allowed in C}} (cmp);
+\draw[arr] (lit) to [auto, in=0, out=120] node [inner sep=0pt] {\tstack{outcomes actually \\ observed on machine}} ([yshift=-1mm]cup.east);
+\draw[arr] (sim) to [auto, swap] node {\tstack{outcomes \\ allowed by \\ architecture}} (cup);
+\draw[arr] (tcg.south east) to[out=-45, in=-135] (csim);
+\draw[arr] (csim) to [auto] node {\tstack{outcomes \\ allowed \\ in C}} (cmp);
+\draw[arr] (cup) to (cmp);
 \draw[arr] (cmp) to (bug);
 \draw[arr] (cmm) to (tcg);
+\draw[arr] (cmm) to[bend left] (csim);
 
 \mklab{1}{tcg};
-\mklab{2}{bas};
-\mklab{3}{cut};
-\mklab{4a}{sim};
-\mklab{4b}{lit};
-\mklab{5}{cmp};
+\mklab{2}{csim};
+\mklab{3}{bas};
+\mklab{4}{cut};
+\mklab{5a}{sim};
+\mklab{5b}{lit};
+\mklab{6}{cmp};
 
 
 \end{tikzpicture}
@@ -193,22 +199,25 @@ We generate a concurrent C testcase -- that is, a multi-threaded C program toget
 This step will build upon a method by \citet{lustig+17} for generating a corpus of C testcases that exercises every aspect of the C memory model.
 
 \item[\blacknum{2}]
-We apply various mutations to these testcases (such as dead-code introduction~\cite{lidbury+15}) in the hope of coaxing the compiler-under-test into revealing bugs.
-These mutations are designed not to interfere with the functionality of the original program, so that the postcondition should still hold. 
+We simulate the C program using {\sc herd}. This determines the set of outcomes that are allowed by the C memory model.
 
 \item[\blacknum{3}]
+We apply various mutations to the testcase (such as dead-code introduction~\cite{lidbury+15}) in the hope of coaxing the compiler-under-test into revealing bugs.
+These mutations are designed not to interfere with the functionality of the original program, which means that the postcondition generated by step \blacknum{2} should still hold.
+
+\item[\blacknum{4}]
 We compile the testcase into assembly. Our flow then bifurcates depending on which mode it is running in.
 
-\item[\blacknum{4a}]
-In the first mode, we simulate the generated assembly under the target architecture's memory model, using an extended version of {\sc herd}.  Automatically converting the compiler-generated assembly into the \texttt{litmus} format accepted by {\sc herd} is a cumbersome task.
+\item[\blacknum{5a}]
+In the first mode, we simulate the generated assembly under the target architecture's memory model, using (an extended version of) {\sc herd}.  Automatically converting the compiler-generated assembly into the \texttt{litmus} format accepted by {\sc herd} is a cumbersome task.
 
-\item[\blacknum{4b}]
+\item[\blacknum{5b}]
 In the second mode, we execute the generated assembly on a real machine.
 This is done in a `stressful' environment; that is, the assembly is run many times, in the presence of many concurrent threads hammering on the memory system in various ways.
 This step builds on the techniques used in the Litmus tool of \citet{alglave+11a}.
 
-\item[\blacknum{5}]
-If any outcome produced by step \blacknum{4a} or \blacknum{4b} is not allowed at the C level, we report a bug.
+\item[\blacknum{6}]
+If any outcome produced by step \blacknum{5a} or \blacknum{5b} is not allowed at the C level, we report a bug.
 
 \end{itemize}
 
