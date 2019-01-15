@@ -14,3 +14,17 @@ build:
 .PHONY: test
 test:
 	dune runtest --force
+
+#
+# Commands for making the act paper
+# (These aren't run by default)
+#
+
+paper: paper/paper.pdf
+
+paper/paper.pdf: paper/paper.tex
+	cd paper && latexmk -pdf paper
+
+.PHONY: clean-paper
+clean-paper:
+	cd paper && latexmk -C paper
