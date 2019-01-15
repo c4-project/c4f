@@ -1,0 +1,217 @@
+\documentclass[acmsmall,review]{acmart}
+\settopmatter{printfolios=true,printccs=false,printacmref=false}
+
+\acmJournal{PACMPL}
+\acmVolume{1}
+\acmNumber{POPL}
+\acmArticle{1}
+\acmYear{2019}
+\acmMonth{1}
+\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+\startPage{1}
+
+
+\setcopyright{none}
+
+\bibliographystyle{ACM-Reference-Format}
+\citestyle{acmauthoryear}   %% For author/year citations
+
+\usepackage{booktabs}
+\usepackage{mathtools} % for \clap, etc.
+\usepackage{soul}      % for \ul, etc.
+\usepackage{subcaption}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.geometric}
+
+\newcommand\blacknum[1]{%
+\begin{tikzpicture}[baseline=-0.3em]%
+\node[circle, draw=none, fill=black, inner sep=0pt, outer sep=0pt, minimum
+size=0.9em](a){%
+\clap{\textcolor{white}{\tiny\sf\bfseries #1}}
+};%
+\end{tikzpicture}%
+}
+
+\newcounter{ctrb}
+\setcounter{ctrb}{0}
+\newcommand\labelb[1]{%
+\refstepcounter{ctrb}%
+\label{#1}%
+\blacknum{\thectrb}
+}
+\newcommand\refb[1]{\blacknum{\ref{#1}}}
+
+\newcommand\tstack[1]{\begin{tabular}{@{}l@{}}#1\end{tabular}}
+
+\newcommand\JWComment[1]{\textcolor{red}{{\bf [[JW:} #1{\bf ]]}}}
+
+
+\begin{document}
+
+%% Title information
+\title{Checking the Compilation of C Concurrency}  
+
+\author{Matthew Windsor}
+\affiliation{
+  \institution{Imperial College London}
+}
+
+\author{Alastair F. Donaldson}
+\affiliation{
+  \institution{Imperial College London}
+}
+\affiliation{
+  \institution{Google}
+}
+
+\author{John Wickerson}
+\affiliation{
+  \institution{Imperial College London}
+}
+
+\begin{abstract}
+Text of abstract \ldots.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+
+Atomic memory operations (`atomics') are a key programming construct in the world's most efficient concurrent algorithms, such as those for graph analysis of social networks~\cite{lenharth+16}.
+Recognising this, mainstream languages like C, C++, and Java now offer built-in support for a range of atomics.
+
+However, the concurrency semantics of these languages are notoriously complicated, so it is difficult to be sure that these constructs are implemented correctly by compilers.
+Compiler bugs are particularly egregious because they undermine source-level analyses such as those done by Facebook's {\sc infer}~\cite{calcagno+15}.
+
+This paper develops a technique and toolflow for testing that C concurrency is compiled correctly.
+
+\subsection{State of the Art}
+
+Compiler correctness is an active area of research, but there is no existing way to \ul{automatically} validate that \ul{concurrency} constructs (including atomics) are compiled correctly by \ul{mainstream} compilers.
+
+\begin{itemize}
+
+\item
+Several tools (e.g.~\cite{lopes+15}) have been effective at finding miscompilations of \emph{sequential} programs; our work aims to find miscompilations of \emph{concurrent} programs.
+
+\item
+CompcertTSO~\cite{sevcik+11} compiles concurrent C to x86, and has been \emph{proven} correct.
+However, similar proofs about mainstream compilers would be infeasible.
+Our work treats the compiler as a black box, and hence will be able to keep up with rapidly evolving compilers.
+
+\item
+\citet{lidbury+15} have applied random testing to OpenCL compilers, but the concurrent testcases they use are deterministic by construction, unlike real-world examples.
+Our work involves testing compilers on more general concurrent code.
+
+\item
+\citet{morisset+13} have used random testing to check that \texttt{gcc} preserves C's concurrency semantics.
+However, they cannot assess the correctness of compiler transformations that involve atomics, which we do.
+Moreover, they only generate sequential testcases, whereas our work involves validating transformations involving multiple threads.
+
+\item
+\citet{chakraborty+16} check whether LLVM transformations preserve C's concurrency semantics; our work involves checking the correctness of the entire compilation process from source to assembly.
+
+\item Several authors have assessed the correctness of compiler \emph{mappings}, whether by proof~\cite{batty+11, batty+12} or by automatic checking~\cite{wickerson+17, trippel+17}.
+However, these mappings are only an abstraction of the full compiler; our work involves checking that mainstream compilers actually implement these mappings correctly in the presence of additional optimisations.
+
+\end{itemize}
+
+\subsection{Our work}
+
+Concurrency is an increasingly central part of the programming landscape, but it is difficult to test because of its inherent nondeterminism.
+Existing compiler-testing techniques such as \emph{equivalence modulo inputs}~\cite{le+14} do not straightforwardly apply because they assume deterministic testcases.
+Moreover, if a bug depends on some architectural flexibility that a particular target machine happens not to exploit, then that bug may \emph{never} be observable through conventional testing.
+
+Our idea for dealing with both of these difficulties is
+\begin{itemize}
+
+\item to generate a small testcase that probes a corner case of C's concurrency semantics,
+\item to `fuzz' the test case in a manner designed to confuse compilers while ensuring that the test should still pass, and then either
+\begin{itemize}
+\item to exhaustively simulate the allowed behaviours of the compiled assembly according to the target architecture's memory model, or
+\item to execute the compiled assembly within a stressful environment on a real machine,
+\end{itemize}
+with the hope of detecting a behaviour that violates the original testcase.
+\end{itemize}
+
+The detailed toolflow is depicted in Fig.~\ref{fig:flow} and explained below.
+
+\begin{figure*}
+
+\newcommand\mklab[2]{\node[anchor=center, inner sep=0mm] at (#2.north west) {\blacknum{#1}};}
+
+\tikzset{
+tra/.style={draw=black},
+obj/.style={draw=none, fill=black!20, rounded corners},
+dec/.style={draw=black, diamond},
+arr/.style={->},
+}
+
+\centering
+\begin{tikzpicture}
+\node[tra] (tcg) at (0,3) {\tstack{testcase \\ generator}};
+\node[tra] (bas) at (0,0) {\tstack{bastardiser}};
+\node[tra] (cut) at (5.5,0) {\tstack{compiler-under-test}};
+\node[tra] (lit) at (11,0) {\tstack{stress-testing \\ environment}};
+\node[tra] (cmp) at (5.5,3) {\tstack{comparator}};
+\node[tra] (sim) at (11,3) {\tstack{assembly \\ simulator}};
+\node (cmm) at (0,5) {C memory model};
+\node (bug) at (5.5,5) {bug?};
+
+\draw[arr] (tcg) to [auto] node {\tstack{plain C program}} (bas);
+\draw[arr] (bas) to [auto] node {\tstack{complicated \\ C program}} (cut);
+\draw[arr] (cut) to [out=0, in=-120] (sim);
+\draw[arr] (cut) to [auto, swap] node {assembly program} (lit);
+\draw[arr] (lit) to [auto, in=0, out=120] node {\tstack{outcomes actually \\ observed on machine}} ([yshift=-1mm]cmp.east);
+\draw[arr] (sim) to [auto, swap] node {\tstack{outcomes allowed \\ by architecture}} (cmp);
+\draw[arr] (tcg) to [auto] node {\tstack{outcomes \\ allowed in C}} (cmp);
+\draw[arr] (cmp) to (bug);
+\draw[arr] (cmm) to (tcg);
+
+\mklab{1}{tcg};
+\mklab{2}{bas};
+\mklab{3}{cut};
+\mklab{4a}{sim};
+\mklab{4b}{lit};
+\mklab{5}{cmp};
+
+
+\end{tikzpicture}
+
+\caption{Our compiler-testing infrastructure}
+\label{fig:flow}
+\end{figure*}
+
+
+
+\begin{itemize}
+
+\item[\blacknum{1}]
+We generate a concurrent C testcase -- that is, a multi-threaded C program together with a postcondition that describes the set of outcomes that the C memory model allows.
+This step will build upon a method by \citet{lustig+17} for generating a corpus of C testcases that exercises every aspect of the C memory model.
+
+\item[\blacknum{2}]
+We apply various mutations to these testcases (such as dead-code introduction~\cite{lidbury+15}) in the hope of coaxing the compiler-under-test into revealing bugs.
+These mutations are designed not to interfere with the functionality of the original program, so that the postcondition should still hold. 
+
+\item[\blacknum{3}]
+We compile the testcase into assembly. Our flow then bifurcates depending on which mode it is running in.
+
+\item[\blacknum{4a}]
+In the first mode, we simulate the generated assembly under the target architecture's memory model, using an extended version of {\sc herd}.  Automatically converting the compiler-generated assembly into the \texttt{litmus} format accepted by {\sc herd} is a cumbersome task.
+
+\item[\blacknum{4b}]
+In the second mode, we execute the generated assembly on a real machine.
+This is done in a `stressful' environment; that is, the assembly is run many times, in the presence of many concurrent threads hammering on the memory system in various ways.
+This step builds on the techniques used in the Litmus tool of \citet{alglave+11a}.
+
+\item[\blacknum{5}]
+If any outcome produced by step \blacknum{4a} or \blacknum{4b} is not allowed at the C level, we report a bug.
+
+\end{itemize}
+
+\bibliography{paper}
+
+\end{document}
