@@ -53,41 +53,17 @@ let pscf = [SC & F]; (hb | hb;eco;hb); [SC & F]
 let psc = pscb | pscf
 
 (** Consistency predicates *)
-                   
+
 irreflexive hb; eco? as Coherence
 empty rmw & (fr;mo) as Atomicity
 acyclic psc as SC
 acyclic sb | rf as NoThinAir
 
-(*
 (** Race-freedom predicates *)
-           
+
 let cnf = ((W*R) | (R*W) | (W*W)) & sloc \ id
 let dr = cnf \ (A*A) \ hb \ hb^-1
-*)
-
-undefined_unless empty dr as DataRace
 
 (*
-(** Deadness *)
-                                                                 
-(* no "if(r==0)" *)
-deadness_requires empty if_zero as No_If_Zero 
-
-(* coherence edges are forced *)
-deadness_requires empty unforced_co as Forced_Co
-
-(* external control dependency *)
-let cde = ((rf \ thd) | ctrl)* ; ctrl
-(* dependable release sequence *)
-let drs = rs \ ([R]; !cde)
-(* dependable synchronises-with *)
-let dsw = sw & (((fsb?; [REL]; drs?) \ (!ctrl; !cde)) ; rf)		 
-(* dependable happens-before *)
-let dhb = po?; (dsw;ctrl)*
-(* potential data race *)
-let pdr = cnf \ (A*A)
-
-
-deadness_requires empty pdr \ (dhb | dhb^-1) as Dead_Pdr
+undefined_unless empty dr as DataRace
 *)

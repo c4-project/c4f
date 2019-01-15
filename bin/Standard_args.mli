@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -56,8 +56,13 @@ module Other : sig
      choose-one choices between multiple flags where each flag [str]
       corresponds to an enum variant [enum]. *)
 
+  val arch
+    : ?name:string -> ?doc:string -> unit -> Id.t option Command.Param.t
+  (** [arch ?name ?doc ()] produces a parameter, normally named [-arch]
+      but overridable by [name], that accepts an architecture ID. *)
+
   val compiler_id_or_arch
-    : [> `Arch of string list | `Id of Id.t] Command.Param.t
+    : [> `Arch of Id.t | `Id of Id.t] Command.Param.t
   (** [compiler_id_or_arch] defines a choice between supplying a
       compiler ID, or a direct architecture. *)
 

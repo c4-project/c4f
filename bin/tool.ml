@@ -25,24 +25,35 @@
 open Core
 open Lib
 
-let run_herd ?(argv = []) (_o : Output.t) (cfg : Config.M.t)
+let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Config.M.t)
   : unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind herd = Config.M.require_herd cfg in
-  Utils.Run.Local.run ~oc:stdout ~prog:herd.cmd argv
+  Herd.run_direct ?arch herd argv
 ;;
 
 let herd_command : Command.t =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"runs Herd with the configured models"
+    ~summary:"runs Herd"
     [%map_open
       let standard_args = Standard_args.get
+      and arch =
+        choose_one
+          [ Standard_args.Other.flag_to_enum_choice (Some Herd.C) "-c"
+              ~doc:"Use the act.conf-configured model for C"
+          ; map ~f:(Option.map ~f:(fun x -> Some (Herd.Assembly x)))
+              (Standard_args.Other.arch
+                 ~doc:"Use the act.conf-configured model for this architecture"
+                 ()
+              )
+          ]
+          ~if_nothing_chosen:(`Default_to None)
       and argv = flag "--" Command.Flag.escape ~doc:"STRINGS Arguments to send to Herd directly." in
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run_herd ?argv)
+          ~f:(run_herd ?arch ?argv)
     ]
 ;;
 

@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -40,12 +40,9 @@ val asm_runner_from_spec
   -> (module Asm_job.Runner) Or_error.t
 ;;
 
-(** [asm_runner_from_emits emits] generates an assembly job runner
-   from an emits clause [emits]. *)
-val asm_runner_from_emits
-  :  string list
-  -> (module Asm_job.Runner) Or_error.t
-;;
+val asm_runner_from_arch : Id.t -> (module Asm_job.Runner) Or_error.t
+(** [asm_runner_from_arch arch] generates an assembly job runner
+   from an architecture ID [arch]. *)
 
 val compiler_from_spec
   :  Compiler.Spec.With_id.t

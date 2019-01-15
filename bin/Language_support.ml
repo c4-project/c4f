@@ -37,7 +37,8 @@ let try_get_lang_proc language =
   )
 ;;
 
-let asm_runner_from_emits = function
+let asm_runner_from_arch (arch : Id.t) =
+  match Id.to_string_list arch with
   | [] -> Or_error.error_string "Missing language name"
   | (lang::rest) ->
     Result.(try_get_lang_proc lang >>= (fun proc -> proc rest))
@@ -70,8 +71,8 @@ let compiler_module_from_spec (cspec : Compiler.Spec.With_id.t) =
 ;;
 
 let asm_runner_from_spec (cspec : Compiler.Spec.With_id.t) =
-  let emits = Compiler.Spec.With_id.emits cspec in
-  asm_runner_from_emits emits
+  let arch = Compiler.Spec.With_id.emits cspec in
+  asm_runner_from_arch arch
 ;;
 
 let compiler_from_spec (cspec : Compiler.Spec.With_id.t) =

@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -139,9 +139,9 @@ let regress_on_files (bin_name : string) (test_dir : Fpath.t) (ext : string)
 let regress_run_asm_many (modename : string) mode passes (test_path : Fpath.t)
   : unit Or_error.t =
   let open Or_error.Let_syntax in
-  let emits = ["x86"; "att"] in
+  let arch = Id.of_string "x86.att" in
   let path = Fpath.(test_path / "asm" / "x86" / "att" / "") in
-  let%bind l = Language_support.asm_runner_from_emits emits in
+  let%bind l = Language_support.asm_runner_from_arch arch in
   let%bind specs = read_specs path in
   let%bind test_files = Io.Dir.get_files ~ext:"s" path in
   let%bind () = check_files_against_specs specs test_files in

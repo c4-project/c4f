@@ -1,6 +1,6 @@
 gcc.x86:
  Style: gcc
- Emits: x86 att
+ Emits: x86.att
  Command: gcc -m32 -DNO_PTHREADS
  Machine: default (local)
  Herd: yes

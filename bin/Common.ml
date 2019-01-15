@@ -28,7 +28,7 @@ open Utils
 
 type target =
   [ `Spec of Compiler.Spec.With_id.t
-  | `Arch of string list
+  | `Arch of Id.t
   ]
 ;;
 
@@ -74,14 +74,14 @@ let get_target cfg = function
   | `Arch _ as arch -> Or_error.return arch
 ;;
 
-let arch_of_target : target -> string list = function
+let arch_of_target : target -> Id.t = function
   | `Spec spec -> Compiler.Spec.With_id.emits spec
   | `Arch arch -> arch
 ;;
 
 let runner_of_target : target -> (module Asm_job.Runner) Or_error.t = function
   | `Spec spec -> Language_support.asm_runner_from_spec spec
-  | `Arch arch -> Language_support.asm_runner_from_emits arch
+  | `Arch arch -> Language_support.asm_runner_from_arch arch
 ;;
 
 let ensure_spec : [> `Spec of Compiler.Spec.With_id.t]
