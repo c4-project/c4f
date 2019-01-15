@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,15 +22,21 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 open Utils
 
-module type Reference = sig
-  type t [@@deriving sexp]
-  include Pretty_printer.S with type t := t
-  val default : t
-  val id : t -> Id.t
-  val remoteness : t -> [`Remote | `Local | `Unknown]
+include Machine_intf
+
+module Forward_basic_spec
+    (I : Inherit.S)
+    (B : Basic_spec with type t := I.c)
+  : Basic_spec with type t := I.t and type via := B.via = struct
+  module H = Inherit.Helpers (I)
+
+  let runner        = H.forward B.runner
+  let litmus        = H.forward B.litmus
+  let ensure_litmus = H.forward B.ensure_litmus
+  let via           = H.forward B.via
 end
 
 module Property = struct
@@ -150,14 +156,6 @@ module Via = struct
   ;;
 end
 
-module type Basic_spec = sig
-  type t
-
-  val via : t -> Via.t
-  val litmus : t -> Litmus_tool.Config.t option
-  val runner : t -> (module Run.Runner)
-end
-
 module Spec = struct
   module M = struct
     type t =
@@ -175,6 +173,15 @@ module Spec = struct
     (* We use a different name for the getter than the one
        [@@deriving fields] infers. *)
     let is_enabled = enabled
+
+    let ensure_litmus (spec : t) : Litmus_tool.Config.t Or_error.t =
+      spec
+      |> litmus
+      |> Result.of_option ~error:(
+        Error.of_string
+          "This machine doesn't have a valid litmus configuration."
+      )
+    ;;
 
     let pp_enabled (f : Base.Formatter.t) : bool -> unit = function
       | true  -> ()
@@ -202,11 +209,18 @@ module Spec = struct
   module With_id = struct
     include Spec.With_id (M)
 
+    include Forward_basic_spec (struct
+        type nonrec t = t
+        type c = M.t
+        let component = spec
+      end) (struct
+        type via = Via.t
+        include M
+      end)
+    ;;
+
     let is_enabled t = M.is_enabled (spec t)
     let remoteness t = M.remoteness (spec t)
-    let runner     t = M.runner     (spec t)
-    let litmus     t = M.litmus     (spec t)
-    let via        t = M.via        (spec t)
 
     let default =
       create ~id:Id.default ~spec:default

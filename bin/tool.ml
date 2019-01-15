@@ -57,9 +57,33 @@ let herd_command : Command.t =
     ]
 ;;
 
+let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Config.M.t)
+  : unit Or_error.t =
+  let open Or_error.Let_syntax in
+  let machines = Config.M.machines cfg in
+  let%bind machine = Machine.Spec.Set.get machines Machine.Id.default in
+  let%bind litmus_cfg = Machine.Spec.With_id.ensure_litmus machine in
+  Litmus_tool.run_direct litmus_cfg argv
+;;
+
+let litmus_command : Command.t =
+  let open Command.Let_syntax in
+  Command.basic
+    ~summary:"runs Litmus locally"
+    [%map_open
+      let standard_args = Standard_args.get
+      and argv = flag "--" Command.Flag.escape ~doc:"STRINGS Arguments to send to Herd directly." in
+      fun () ->
+        Common.lift_command standard_args
+          ~with_compiler_tests:false
+          ~f:(run_litmus_locally ?argv)
+    ]
+;;
+
 let command : Command.t =
   Command.group
     ~summary:"Run act tools directly"
-    [ "herd", herd_command
+    [ "herd"  , herd_command
+    ; "litmus", litmus_command
     ]
 ;;

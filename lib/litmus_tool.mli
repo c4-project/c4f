@@ -40,6 +40,15 @@ module Config : sig
   (** [create ?cmd] creates a Litmus-tool config. *)
 end
 
+val run_direct
+  :  ?oc:Stdio.Out_channel.t
+  -> Config.t
+  -> string list
+  -> unit Or_error.t
+(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration
+    [cfg] and arguments [argv], and outputs its results to [oc]
+    (or stdout if [oc] is absent). *)
+
 module Filter : Filter.S with type aux_i = Config.t
                           and type aux_o = unit
 (** Interface for running litmus as a filter. *)

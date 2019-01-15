@@ -25,27 +25,10 @@
 (** [Machine] contains the high-level interface for specifying and
     interacting with machines. *)
 
-open Core
+open Core_kernel
 open Utils
 
-(** [Reference] is the signature of references to machines. *)
-module type Reference = sig
-  (** [t] is the type of machine references. *)
-  type t [@@deriving sexp]
-
-  include Pretty_printer.S with type t := t
-
-  (** [default] is the default machine reference, used whenever a
-      reference is omitted in a compiler specification. *)
-  val default : t
-
-  (** [id m] gets the machine ID of this reference. *)
-  val id : t -> Id.t
-
-  (** [remoteness m] returns a guess as to whether machine reference
-      [m] is a reference to a remote machine. *)
-  val remoteness : t -> [`Remote | `Local | `Unknown]
-end
+include module type of Machine_intf
 
 (** [Property] contains a mini-language for querying machine
    references, suitable for use in [Blang]. *)
@@ -140,31 +123,9 @@ module Via : sig
   val remoteness : t -> [> `Local | `Remote | `Unknown]
 end
 
-(** [Basic_spec] is the signature common to any sort of machine
-    specification, including [With_id] pairs.
-
-    In practice, modules implementing this will either be [Spec]
-    or [Spec.With_id]. *)
-module type Basic_spec = sig
-  type t
-  (** [t] describes a machine. *)
-
-  val via : t -> Via.t
-  (** [via spec] gets the [via] stanza of a machine spec [spec]. *)
-
-  val litmus : t -> Litmus_tool.Config.t option
-  (** [litmus spec] gets any available configuration in [spec] for
-      the Litmus tool. *)
-
-  val runner : t -> (module Run.Runner)
-  (** [to_runner spec] gets a [Run.runner] for the machine spec
-     [spec]. *)
-
-end
-
 (** [Spec] is a module for machine specifications. *)
 module Spec : sig
-  include Basic_spec
+  include Basic_spec with type via := Via.t
 
   val make
     :  ?enabled:bool
@@ -184,7 +145,7 @@ module Spec : sig
       [Spec] accessors. *)
   module With_id : sig
     include Spec.S_with_id with type elt := t
-    include Basic_spec with type t := t
+    include Basic_spec with type t := t and type via := Via.t
     include Reference with type t := t
   end
 

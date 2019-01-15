@@ -39,6 +39,14 @@ module Config = struct
   let create = make
 end
 
+let run_direct
+    ?(oc : Out_channel.t = stdout) (cfg : Config.t) (argv : string list)
+  : unit Or_error.t =
+      let prog = cfg.cmd in
+      Or_error.tag ~tag:"While running litmus"
+        (Run.Local.run ~oc ~prog argv)
+;;
+
 module Filter : Filter.S with type aux_i = Config.t
                           and type aux_o = unit =
   Filter.Make_in_file_only (struct
@@ -51,9 +59,7 @@ module Filter : Filter.S with type aux_i = Config.t
     let run ( { aux; _ } : Config.t Filter.ctx) (path : Fpath.t)
         (oc : Out_channel.t)
       : unit Or_error.t =
-      let prog = aux.cmd in
-      Or_error.tag ~tag:"While running litmus"
-        (Run.Local.run ~oc ~prog [ Fpath.to_string path ])
+      run_direct ~oc aux [ Fpath.to_string path ]
   end)
 
 (* TODO *)
