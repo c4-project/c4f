@@ -60,6 +60,12 @@ module Make_files_only (B : Basic_files_only)
   : S with type aux_i = B.aux_i and type aux_o = B.aux_o
 (** Makes a filter from a {{!Basic_in_file_only}Basic_files_only}. *)
 
+module Make_on_runner (R : Basic_on_runner)
+  : S with type aux_i = R.aux_i
+       and type aux_o = unit
+(** Makes an in-file-only filter by combining a {{!Runner.S}runner} and
+    some program accessors. *)
+
 module Chain (A : S) (B : S) : S with type aux_i = (A.aux_i * B.aux_i)
                                   and type aux_o = (A.aux_o * B.aux_o)
 (** Chains two filters together using temporary files. *)

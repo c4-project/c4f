@@ -320,3 +320,17 @@ module Adapt (B : Basic_adapt)
   let run_from_string_paths = lift_to_raw_strings ~f:run
   let run_from_fpaths       = lift_to_fpaths ~f:run
 end
+
+module Make_on_runner (R : Basic_on_runner)
+  : S with type aux_i = R.aux_i
+       and type aux_o = unit = Make_in_file_only (struct
+    include R
+    type aux_o = unit
+
+    let run ({ aux; _ } : aux_i ctx) (infile : Fpath.t) (oc : Stdio.Out_channel.t)
+        : unit Or_error.t =
+      let prog = R.prog aux in
+      let argv = R.argv aux infile in
+      R.Runner.run ~oc ~prog argv
+    ;;
+end)

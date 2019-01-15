@@ -80,32 +80,37 @@ let%expect_test "make_argv: override model" =
   [%expect {| (-model c11_lahav.cat herd7) |}]
 ;;
 
+let make_argv_from_config
+    (config : Config.t) (arch : arch option) (rest : string list) =
+  let model = Option.bind ~f:(model_for_arch config) arch in
+  make_argv ?model rest
+;;
+
 let run_direct
     ?(arch : arch option)
     ?(oc : Out_channel.t = Out_channel.stdout)
     (config : Config.t)
     (argv : string list) : unit Or_error.t =
   let prog = config.cmd in
-  let model = Option.bind ~f:(model_for_arch config) arch in
-  let argv' = make_argv ?model argv in
+  let argv' = make_argv_from_config config arch argv in
   Or_error.tag ~tag:"While running herd"
     (Runner.Local.run ~oc ~prog argv')
 ;;
 
 module Filter : Filter.S with type aux_i = t
                           and type aux_o = unit =
-  Filter.Make_in_file_only (struct
-    type aux_i = t
-    type aux_o = unit
-    let name = "Herd tool"
+  Filter.Make_on_runner (struct
+    module Runner = Runner.Local
 
+    type aux_i = t
+    let name = "Herd tool"
     let tmp_file_ext = Fn.const "txt"
 
-    let run ({ aux; _ } : t Filter.ctx) (path : Fpath.t)
-        (oc : Out_channel.t)
-      : unit Or_error.t =
+    let prog t = t.config.cmd
+    let argv t path =
       let path' = Fpath.to_string path in
-      run_direct ~arch:aux.arch ~oc aux.config [ path' ]
+      make_argv_from_config t.config (Some t.arch) [ path' ]
+    ;;
   end)
 
 let run (ctx : t) ~(path : Fpath.t) ~(sink : Io.Out_sink.t)

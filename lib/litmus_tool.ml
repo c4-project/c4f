@@ -49,17 +49,15 @@ let run_direct
 
 module Filter : Filter.S with type aux_i = Config.t
                           and type aux_o = unit =
-  Filter.Make_in_file_only (struct
-    type aux_i = Config.t
-    type aux_o = unit
-    let name = "Litmus tool"
+  Filter.Make_on_runner (struct
+    module Runner = Runner.Local
 
+    type aux_i = Config.t
+    let name = "Litmus tool"
     let tmp_file_ext = Fn.const "txt"
 
-    let run ( { aux; _ } : Config.t Filter.ctx) (path : Fpath.t)
-        (oc : Out_channel.t)
-      : unit Or_error.t =
-      run_direct ~oc aux [ Fpath.to_string path ]
+    let prog (cfg : Config.t) = cfg.cmd
+    let argv _cfg (path : Fpath.t) = [ Fpath.to_string path ]
   end)
 
 (* TODO *)

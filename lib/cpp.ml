@@ -46,17 +46,13 @@ end
 
 module Filter : Filter.S with type aux_i = Config.t
                           and type aux_o = unit =
-  Filter.Make_in_file_only (struct
+  Filter.Make_on_runner (struct
+    module Runner = Runner.Local
     type aux_i = Config.t
-    type aux_o = unit
     let name = "C preprocessor"
-
     let tmp_file_ext = Fn.const "c"
-
-    let run { Filter.aux; _ } infile (oc : Out_channel.t) =
-      let argv = Config.argv aux @ [ Fpath.to_string infile ] in
-      Runner.Local.run ~oc ~prog:(Config.cmd aux) argv
-    ;;
+    let prog = Config.cmd
+    let argv aux infile = Config.argv aux @ [ Fpath.to_string infile ]
   end)
 
 module Chain_filter (Dest : Utils.Filter.S) :
