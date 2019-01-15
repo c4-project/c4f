@@ -116,8 +116,8 @@ module Via : sig
   (** [t] can be pretty-printed. *)
   include Pretty_printer.S with type t := t
 
-  (** [to_runner via] builds a [Run.Runner] module for a [via]. *)
-  val to_runner : t -> (module Run.Runner)
+  (** [to_runner via] builds a runner module for a [via]. *)
+  val to_runner : t -> (module Runner.S)
 
   (** [remoteness via] gets an estimate of whether [via] is remote. *)
   val remoteness : t -> [> `Local | `Remote | `Unknown]

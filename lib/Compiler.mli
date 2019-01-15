@@ -84,7 +84,7 @@ end
 module type Basic_with_run_info = sig
   include Basic
   include With_spec
-  module Runner : Run.Runner
+  module Runner : Runner.S
   module Hooks : Hooks
 end
 

@@ -24,42 +24,35 @@
 
 open Base
 open Stdio
-open Utils
 
-module Config = struct
-  type t =
-    { cmd        : string [@default "litmus7"] [@drop_if_default]
-    } [@@deriving sexp, make]
-  ;;
+(** Signature that runner modules must implement to use
+   {{!Run.Make}Make}. *)
+module type Basic = sig
+  val run_batch
+    :  ?oc:Out_channel.t
+    -> prog:string
+    -> string list list
+    -> unit Or_error.t
+    (** [run_batch ?oc ~prog argss] runs [prog] on each argument
+       vector in [argss], waiting for each invocation to complete in
+       sequence, and collecting any errors as [Error.t]s.
 
-  let pp f { cmd } =
-    Fmt.pf f "litmus (%s)" cmd
-  ;;
-
-  let create = make
+        If [oc] is given, each process's standard output will be
+       copied line-by-line to it as it ends. *)
 end
 
-let run_direct
-    ?(oc : Out_channel.t = stdout) (cfg : Config.t) (argv : string list)
-  : unit Or_error.t =
-      let prog = cfg.cmd in
-      Or_error.tag ~tag:"While running litmus"
-        (Runner.Local.run ~oc ~prog argv)
-;;
+(** Outward-facing interface of process runners. *)
+module type S = sig
+  include Basic
 
-module Filter : Filter.S with type aux_i = Config.t
-                          and type aux_o = unit =
-  Filter.Make_in_file_only (struct
-    type aux_i = Config.t
-    type aux_o = unit
-    let name = "Litmus tool"
+  val run
+    :  ?oc:Out_channel.t
+    -> prog:string
+    -> string list
+    -> unit Or_error.t
+  (** [run ?oc ~prog ~args] runs the given program, waits for it to
+      complete, and translates any errors to [Error.t].
 
-    let tmp_file_ext = Fn.const "txt"
-
-    let run ( { aux; _ } : Config.t Filter.ctx) (path : Fpath.t)
-        (oc : Out_channel.t)
-      : unit Or_error.t =
-      run_direct ~oc aux [ Fpath.to_string path ]
-  end)
-
-(* TODO *)
+      If [oc] is given, the process's standard output will be copied
+      line-by-line to it at the end. *)
+end

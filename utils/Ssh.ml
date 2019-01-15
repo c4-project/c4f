@@ -28,6 +28,8 @@
 open Core
 open Core_extended
 
+module R = Runner
+
 type t =
   { user     : string sexp_option
   ; host     : string
@@ -47,10 +49,10 @@ module Make (C : sig val ssh : t end) = struct
   let user = user C.ssh
 end
 
-module Runner (Conf : S) : Run.Runner = struct
+module Runner (Conf : S) : Runner.S = Runner.Make (struct
   open Conf
 
-  let run ?oc ~prog args =
+  let run_one oc prog args =
     let open Or_error in
     let open Or_error.Let_syntax in
     let%map output =
@@ -66,7 +68,13 @@ module Runner (Conf : S) : Run.Runner = struct
     Option.iter
       ~f:(fun o -> Out_channel.output_lines o output)
       oc
-end
+  ;;
+
+  let run_batch ?oc ~prog argss =
+    let results = List.map ~f:(run_one oc prog) argss in
+    Or_error.combine_errors_unit results
+  ;;
+end)
 
 module Scp (Conf : S) = struct
   open Conf
@@ -91,7 +99,7 @@ module Scp (Conf : S) = struct
   let receive ~remote ~local =
     (* We need to make our own implementation of backwards scp,
        which is flaky. *)
-    Run.Local.run
+    R.Local.run
       ~prog:"scp"
       [ "-q" (* quiet mode *)
       ; "-B" (* batch mode *)

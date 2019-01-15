@@ -89,7 +89,7 @@ let run_direct
   let model = Option.bind ~f:(model_for_arch config) arch in
   let argv' = make_argv ?model argv in
   Or_error.tag ~tag:"While running herd"
-    (Run.Local.run ~oc ~prog argv')
+    (Runner.Local.run ~oc ~prog argv')
 ;;
 
 module Filter : Filter.S with type aux_i = t

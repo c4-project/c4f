@@ -67,8 +67,8 @@ module type Basic_spec = sig
   (** [ensure_litmus spec] behaves as [litmus spec], but returns a
       descriptive error if the Litmus configuration is missing. *)
 
-  val runner : t -> (module Run.Runner)
-  (** [to_runner spec] gets a [Run.runner] for the machine spec
+  val runner : t -> (module Runner.S)
+  (** [to_runner spec] gets a runner for the machine spec
      [spec]. *)
 
 end

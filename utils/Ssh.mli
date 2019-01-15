@@ -50,10 +50,10 @@ module type S = sig
 end
 
 (** [Make] makes an [S] from a [t]. *)
-module Make : functor (Conf : sig val ssh : t end) -> S
+module Make (Conf : sig val ssh : t end) : S
 
 (** [Runner] provides a [Run.Runner] using the given SSH config. *)
-module Runner : functor (Conf : S) -> Run.Runner
+module Runner (Conf : S) : Runner.S
 
 (** [Scp] provides SCP file transfer operations, given an [S]. *)
 module Scp (Conf : S) : sig

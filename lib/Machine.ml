@@ -140,11 +140,11 @@ module Via = struct
   ;;
 
   let to_runner = function
-    | Local -> (module Run.Local : Run.Runner)
+    | Local -> (module Runner.Local : Runner.S)
     | Ssh c -> (
         module Utils.Ssh.Runner
             (Ssh.To_config (struct let ssh = c end))
-          : Run.Runner
+          : Runner.S
       )
   ;;
 

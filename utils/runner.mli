@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,44 +22,12 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Base
-open Stdio
-open Utils
+(** Quick and easy process running *)
 
-module Config = struct
-  type t =
-    { cmd        : string [@default "litmus7"] [@drop_if_default]
-    } [@@deriving sexp, make]
-  ;;
+include module type of Runner_intf
 
-  let pp f { cmd } =
-    Fmt.pf f "litmus (%s)" cmd
-  ;;
+(** Makes a {!{S}S} from a {{!{Basic}}. *)
+module Make (B : Basic) : S
 
-  let create = make
-end
-
-let run_direct
-    ?(oc : Out_channel.t = stdout) (cfg : Config.t) (argv : string list)
-  : unit Or_error.t =
-      let prog = cfg.cmd in
-      Or_error.tag ~tag:"While running litmus"
-        (Runner.Local.run ~oc ~prog argv)
-;;
-
-module Filter : Filter.S with type aux_i = Config.t
-                          and type aux_o = unit =
-  Filter.Make_in_file_only (struct
-    type aux_i = Config.t
-    type aux_o = unit
-    let name = "Litmus tool"
-
-    let tmp_file_ext = Fn.const "txt"
-
-    let run ( { aux; _ } : Config.t Filter.ctx) (path : Fpath.t)
-        (oc : Out_channel.t)
-      : unit Or_error.t =
-      run_direct ~oc aux [ Fpath.to_string path ]
-  end)
-
-(* TODO *)
+(** [Local] just runs commands on the local machine. *)
+module Local : S

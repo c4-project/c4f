@@ -55,7 +55,7 @@ module Filter : Filter.S with type aux_i = Config.t
 
     let run { Filter.aux; _ } infile (oc : Out_channel.t) =
       let argv = Config.argv aux @ [ Fpath.to_string infile ] in
-      Run.Local.run ~oc ~prog:(Config.cmd aux) argv
+      Runner.Local.run ~oc ~prog:(Config.cmd aux) argv
     ;;
   end)
 
