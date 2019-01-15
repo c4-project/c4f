@@ -29,7 +29,7 @@ open Utils
 
 type target =
   [ `Spec of Compiler.Spec.With_id.t
-  | `Arch of string list
+  | `Arch of Id.t
   ]
 
 type file_type =
@@ -55,14 +55,14 @@ val is_c_litmus : Io.In_source.t -> [> `C_litmus | `Infer] -> bool
 
 val get_target
   :  Lib.Config.M.t
-  -> [< `Id of Id.t | `Arch of string list ]
+  -> [< `Id of Id.t | `Arch of Id.t ]
   -> target Or_error.t
 (** [get_target cfg target] processes a choice between compiler ID
-    and architecture (emits clause); if the input is a compiler
+    and architecture ID; if the input is a compiler
     ID, the compiler is retrieved from [cfg]. *)
 
-val arch_of_target : target -> string list
-(** [arch_of_target target] gets the architecture (emits clause)
+val arch_of_target : target -> Id.t
+(** [arch_of_target target] gets the architecture Id
    associated with a target (either a compiler spec or emits
    clause). *)
 

@@ -35,7 +35,7 @@ module Make_spec (R : Machine.Reference)
     type t =
       { enabled : bool [@default true] [@sexp_drop_default]
       ; style   : string
-      ; emits   : string sexp_list
+      ; emits   : Id.t
       ; cmd     : string
       ; argv    : string sexp_list
       ; herd    : bool [@default true] [@sexp_drop_default]
@@ -51,11 +51,7 @@ module Make_spec (R : Machine.Reference)
       if not spec.enabled then Format.fprintf f "-- DISABLED --@,";
       My_format.pp_kv f "Style" String.pp spec.style;
       Format.pp_print_cut f ();
-      My_format.pp_kv f "Emits"
-        (Format.pp_print_list
-           ~pp_sep:(Format.pp_print_space)
-           String.pp)
-        spec.emits;
+      My_format.pp_kv f "Emits" Id.pp spec.emits;
       Format.pp_print_cut f ();
       My_format.pp_kv f "Command"
         (Format.pp_print_list ~pp_sep:(Format.pp_print_space) String.pp)

@@ -123,7 +123,7 @@ module Raw = struct
       and style = find_one items ~item_name:"style"
           ~f:(function Style s -> Some (Id.to_string s) | _ -> None)
       and emits = find_one items ~item_name:"emits"
-          ~f:(function Emits e -> Some (Id.to_string_list e) | _ -> None)
+          ~f:(function Emits e -> Some e | _ -> None)
       and cmd   = find_one items ~item_name:"cmd"
           ~f:(function Cmd c -> Some c | _ -> None)
       and argv  = find_at_most_one items ~item_name:"argv"
@@ -163,7 +163,7 @@ module Raw = struct
           ~on_empty:(return None)
       in
       let asm_models = List.filter_map items
-          ~f:(function Asm_model (k, v) -> Some (Id.to_string_list k, v) | _ -> None)
+          ~f:(function Asm_model (k, v) -> Some (k, v) | _ -> None)
       in
       Herd.Config.create ?c_model ~asm_models ?cmd ()
     ;;

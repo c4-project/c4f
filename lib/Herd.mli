@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -34,14 +34,14 @@ module Config : sig
   type t =
     { cmd        : string
     ; c_model    : string option
-    ; asm_models : (string list, string) List.Assoc.t
+    ; asm_models : (Id.t, string) List.Assoc.t
     } [@@deriving sexp]
   ;;
 
   val create
     :  ?cmd:string
     -> ?c_model:string
-    -> ?asm_models:((string list, string) List.Assoc.t)
+    -> ?asm_models:((Id.t, string) List.Assoc.t)
     -> unit
     -> t
   ;;
@@ -55,35 +55,50 @@ type t
    therefore, which model file to load. *)
 type arch =
   | C
-  | Assembly of string list
+  | Assembly of Id.t
 ;;
 
+val create : config:Config.t -> arch:arch -> t Or_error.t
 (** [create ~config ~arch] validates [config] and [arch] and, if
    successful, creates a [t]. *)
-val create : config:Config.t -> arch:arch -> t Or_error.t
 
-(** [run ctx ~path ~sink] runs Herd (represented by [ctx]) on the
-   Litmus test at [path] using the model and other configuration for
-   architecture [arch].  It outputs the results to [sink], but doesn't
-   analyse them. *)
+val run_direct
+  :  ?arch:arch
+  -> ?oc:Out_channel.t
+  -> Config.t
+  -> string list
+  -> unit Or_error.t
+(** [run_direct ?arch ?oc config argv] runs the Herd binary
+    configured in [config], with the arguments in [argv] plus,
+    if [arch] is present, any arguments required to effect
+    [config]'s configuration for [arch] (like model overrides etc.).
+    Any output will be sent to [oc], or standard output if [oc]
+    is absent.
+
+    Most Herd use-cases should use {{!run}run} or {{!Filter}Filter}
+    instead -- this is a lower-level function intended for things
+    like the `act tool` command. *)
+
 val run
   :  t
   -> path:Fpath.t
   -> sink:Io.Out_sink.t
   -> unit Or_error.t
-;;
+(** [run ctx ~path ~sink] runs Herd (represented by [ctx]) on the
+   Litmus test at [path] using the model and other configuration for
+   architecture [arch].  It outputs the results to [sink], but doesn't
+   analyse them. *)
 
 module Filter : Filter.S with type aux_i = t
                           and type aux_o = unit
   (** [run], but bundled up as a [Filter] for use in chains. *)
 
-(** [run_and_load_results ctx ~input_path ~output_path] behaves
-   like [run], but then reads [output_path] back in as a
-   [Herd_output.t].  This requires [output_path] to point to a file,
-   rather than being any [Out_sink.t]. *)
 val run_and_load_results
   :  t
   -> input_path:Fpath.t
   -> output_path:Fpath.t
   -> Herd_output.t Or_error.t
-;;
+(** [run_and_load_results ctx ~input_path ~output_path] behaves
+   like [run], but then reads [output_path] back in as a
+   [Herd_output.t].  This requires [output_path] to point to a file,
+   rather than being any [Out_sink.t]. *)

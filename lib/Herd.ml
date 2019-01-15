@@ -27,9 +27,11 @@ open Utils
 
 module Config = struct
   type t =
-    { cmd        : string [@default "herd7"] [@drop_if_default]
+    { cmd        : string
+          [@default "herd7"] [@drop_if_default]
     ; c_model    : string sexp_option
-    ; asm_models : (string list, string) List.Assoc.t [@default []] [@drop_if_default]
+    ; asm_models : (Id.t, string) List.Assoc.t
+          [@default []] [@drop_if_default]
     } [@@deriving sexp, make]
   ;;
 
@@ -38,7 +40,7 @@ end
 
 type arch =
   | C
-  | Assembly of string list
+  | Assembly of Id.t
 ;;
 
 type t =
@@ -53,32 +55,41 @@ let create ~config ~arch =
   Or_error.return (make ~config ~arch)
 ;;
 
-let model_for_arch { config; arch } = match arch with
+let model_for_arch (config : Config.t) = function
   | C -> config.c_model
   | Assembly emits_spec ->
-    List.Assoc.find config.asm_models emits_spec
-      ~equal:(List.equal ~equal:String.Caseless.equal)
+    List.Assoc.find config.asm_models emits_spec ~equal:(Id.equal)
 ;;
 
-let make_argv model (path : Fpath.t) =
-  List.concat
-    [ Option.value_map model
+let make_argv ?(model : string option) (rest : string list) =
+    ( Option.value_map model
         ~f:(fun m -> [ "-model"; m ])
         ~default:[]
-    ; [ Fpath.to_string path ]
-    ]
+    ) @ rest
 ;;
 
 let%expect_test "make_argv: no model" =
-  let argv = make_argv None (Fpath.v "herd7") in
+  let argv = make_argv [ "herd7" ] in
   Sexp.output_hum Out_channel.stdout [%sexp (argv : string list)];
   [%expect {| (herd7) |}]
 ;;
 
 let%expect_test "make_argv: override model" =
-  let argv = make_argv (Some "c11_lahav.cat") (Fpath.v "herd7") in
+  let argv = make_argv ~model:("c11_lahav.cat") [ "herd7" ] in
   Sexp.output_hum Out_channel.stdout [%sexp (argv : string list)];
   [%expect {| (-model c11_lahav.cat herd7) |}]
+;;
+
+let run_direct
+    ?(arch : arch option)
+    ?(oc : Out_channel.t = Out_channel.stdout)
+    (config : Config.t)
+    (argv : string list) : unit Or_error.t =
+  let prog = config.cmd in
+  let model = Option.bind ~f:(model_for_arch config) arch in
+  let argv' = make_argv ?model argv in
+  Or_error.tag ~tag:"While running herd"
+    (Run.Local.run ~oc ~prog argv')
 ;;
 
 module Filter : Filter.S with type aux_i = t
@@ -93,24 +104,20 @@ module Filter : Filter.S with type aux_i = t
     let run ({ aux; _ } : t Filter.ctx) (path : Fpath.t)
         (oc : Out_channel.t)
       : unit Or_error.t =
-      let model = model_for_arch aux in
-      let prog = aux.config.cmd in
-      let argv = make_argv model path in
-      Or_error.tag ~tag:"While running herd"
-        (Run.Local.run ~oc ~prog argv)
+      let path' = Fpath.to_string path in
+      run_direct ~arch:aux.arch ~oc aux.config [ path' ]
   end)
 
-let run (ctx : t)
-    ~(path : Fpath.t) ~sink : unit Or_error.t =
-  Filter.run
-    ctx
-    (Io.In_source.of_fpath path)
-    sink
+let run (ctx : t) ~(path : Fpath.t) ~(sink : Io.Out_sink.t)
+  : unit Or_error.t =
+  Filter.run ctx (Io.In_source.of_fpath path) sink
 ;;
 
-let run_and_load_results (ctx : t)
-    ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
+let run_and_load_results
+    (ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
   let open Or_error.Let_syntax in
-  let%bind () = run ctx ~path:input_path ~sink:(Io.Out_sink.file output_path) in
+  let%bind () =
+    run ctx ~path:input_path ~sink:(Io.Out_sink.file output_path)
+  in
   Herd_output.load ~path:output_path
 ;;

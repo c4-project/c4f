@@ -45,7 +45,7 @@ module type Basic_spec = sig
   val style : t -> string
 
   (** [emits c] gets the architecture emitted by [c]. *)
-  val emits : t -> string list
+  val emits : t -> Id.t
 
   (** [cmd] gets the command used to invoke [c]. *)
   val cmd : t -> string
@@ -75,7 +75,7 @@ module type S_spec = sig
   val create
     :  enabled : bool
     -> style   : string
-    -> emits   : string list
+    -> emits   : Id.t
     -> cmd     : string
     -> argv    : string list
     -> herd    : bool
@@ -107,7 +107,7 @@ module type Basic = sig
       argument vector to send to the compiler. *)
   val compile_args
     :  args    : string list
-    -> emits   : string list
+    -> emits   : Id.t
     -> infile  : string
     -> outfile : string
     -> string list

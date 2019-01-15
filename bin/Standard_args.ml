@@ -76,6 +76,17 @@ module Other = struct
   ;;
 
   let compiler_id_type = Arg_type.create Id.of_string
+  let arch_type = Arg_type.create Id.of_string
+
+  let arch
+      ?(name : string = "-arch")
+      ?(doc : string = "the architecture to target")
+      ()
+    : Id.t option Command.Param.t =
+    (flag name
+       (optional arch_type)
+       ~doc:("ARCH_ID " ^ doc))
+  ;;
 
   let compiler_id_or_arch =
     choose_one
@@ -83,10 +94,7 @@ module Other = struct
           (flag "compiler"
              (optional compiler_id_type)
              ~doc: "COMPILER_ID ID of the compiler to target")
-      ; map ~f:(Option.map ~f:(fun x -> `Arch x))
-          (flag "arch"
-             (optional (sexp_conv [%of_sexp: string list]))
-             ~doc: "EMITS_CLAUSE the architecture to target")
+      ; map ~f:(Option.map ~f:(fun x -> `Arch x)) (arch ())
       ]
       ~if_nothing_chosen:`Raise
   ;;
