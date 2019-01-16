@@ -47,10 +47,10 @@ let run_direct
         (Runner.Local.run ~oc ~prog argv)
 ;;
 
-module Filter : Filter.S with type aux_i = Config.t
-                          and type aux_o = unit =
+module Filter (R : Runner.S)
+  : Filter.S with type aux_i = Config.t and type aux_o = unit =
   Filter.Make_on_runner (struct
-    module Runner = Runner.Local
+    module Runner = R
 
     type aux_i = Config.t
     let name = "Litmus tool"

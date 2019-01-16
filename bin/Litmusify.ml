@@ -63,9 +63,9 @@ module Post_filter = struct
     end)
 
   (** Adapts the Litmus-tool filter to try extract its config from a [cfg]. *)
-  module Litmus_filter : S =
+  module Litmus_filter (R : Runner.S) : S =
     Filter.Adapt (struct
-      module Original = Litmus_tool.Filter
+      module Original = Litmus_tool.Filter (R)
 
       type aux_i = cfg
       type aux_o = unit
@@ -100,9 +100,12 @@ module Post_filter = struct
           "Internal error: tried to postprocess litmus with no filter"
     end)
 
-  let make : t -> (module S) = function
+  (** [make mach_runner which] makes a post-filter module based on the
+      request [which].  If the post-filter is Litmus, then it is set up
+      to run using [mach_runner]; other post-filters are run locally. *)
+  let make (module Mach_runner : Runner.S) : t -> (module S) = function
     | `Herd   -> (module Herd_filter)
-    | `Litmus -> (module Litmus_filter)
+    | `Litmus -> (module Litmus_filter (Mach_runner))
     | `None   -> (module Dummy)
   ;;
 
@@ -110,12 +113,13 @@ module Post_filter = struct
       (type i)
       (type o)
       (filter : t)
+      (module R : Runner.S)
       (module M : Filter.S with type aux_i = i and type aux_o = o)
     : ( module
         Filter.S with type aux_i = (i * cfg)
                   and type aux_o = (o * unit option)
       ) =
-    let (module Post) = make filter in
+    let (module Post) = make (module R) filter in
     (module
       Filter.Chain_conditional_second (struct
         type aux_i_combi = (i * cfg)
@@ -175,6 +179,8 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
   Common.warn_if_not_tracking_symbols o c_symbols;
   let open Result.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
+  let%bind tgt_machine = Post_filter.machine_of_target cfg target in
+  let tgt_runner = Machine.Spec.With_id.runner tgt_machine in
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
@@ -187,7 +193,7 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
       >>| Asm_job.get_litmusify
       >>= chain_with_compiler target
       >>| chain_with_delitmus
-      >>| Post_filter.chain filter
+      >>| Post_filter.chain filter tgt_runner
     )
   in
   let%bind pf_cfg = Post_filter.make_config cfg target filter in

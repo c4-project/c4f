@@ -49,6 +49,6 @@ val run_direct
     [cfg] and arguments [argv], and outputs its results to [oc]
     (or stdout if [oc] is absent). *)
 
-module Filter : Filter.S with type aux_i = Config.t
-                          and type aux_o = unit
+module Filter (R : Runner.S)
+  : Filter.S with type aux_i = Config.t and type aux_o = unit
 (** Interface for running litmus as a filter. *)
