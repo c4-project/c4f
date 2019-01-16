@@ -177,7 +177,7 @@ module type Basic_on_runner = sig
   (** [prog aux] gets the program to run, given the auxiliary
      input [aux]. *)
 
-  val argv : aux_i -> Fpath.t -> string list
+  val argv : aux_i -> string -> string list
   (** [argv aux file] gets the argument vector to supply, given the
      auxiliary input [aux] and input file [file]. *)
 end

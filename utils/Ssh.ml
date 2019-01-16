@@ -28,6 +28,8 @@
 open Core
 open Core_extended
 
+include Ssh_intf
+
 module R = Runner
 
 type t =
@@ -39,18 +41,141 @@ type t =
 (* The use of 'sexp_option' above makes deriving this impossible. *)
 let create ?user ~host = Fields.create ~user ~host
 
-module type S = sig
-  val host : string
-  val user : string sexp_option
-end
-
-module Make (C : sig val ssh : t end) = struct
+module Make (C : sig val ssh : t end) : S = struct
   let host = host C.ssh
   let user = user C.ssh
 end
 
-module Runner (Conf : S) : Runner.S = Runner.Make (struct
+module Scp (Conf : S) = struct
   open Conf
+
+  let send ~(recurse : bool) ~(local : Fpath.t) ~(remote : string) =
+    let local_str = Fpath.to_string local in
+    (* Core_extended has scp, but it only goes in one direction. *)
+    Or_error.(
+      try_with
+        (fun () ->
+           Core_extended.Shell.scp ?user ~recurse ~host local_str remote
+        )
+    )
+  ;;
+
+  let scp_stanza file =
+    (* TODO(@MattWindsor91): escaping? *)
+    match user with
+    | None -> sprintf "%s:%s" host file
+    | Some u -> sprintf "%s@%s:%s" u host file
+  ;;
+
+  let receive ~(recurse : bool) ~(remote : string) ~(local : Fpath.t) =
+    (* We need to make our own implementation of backwards scp,
+       which is flaky. *)
+    let flags =
+      [ "-q" (* quiet mode *)
+      ; "-B" (* batch mode *)
+      ]
+      @ if recurse then [ "-r" (* recursive *) ] else []
+    in
+    let argv = flags @ [ scp_stanza remote; Fpath.to_string local ] in
+    R.Local.run ~prog:"scp" argv
+  ;;
+end
+
+module Runner (Conf : Basic_runner) : R.S =
+  R.Make (struct
+    open Conf
+
+    module Scp = Scp (Conf)
+
+    let remote_file_name (local_path : Fpath.t)
+      : string =
+      (* Assuming that scp always supports unix-style paths *)
+      let remote_dir = Conf.remote_dir local_path in
+      let local_file = Fpath.filename local_path in
+      sprintf "%s/%s" remote_dir local_file
+    ;;
+
+    let map2_err (xs : 'a list) (ys : 'b list)
+        ~(f : 'a -> 'b -> 'c)
+        ~(error : Error.t)
+      : 'c list Or_error.t =
+      let map_result = List.map2 xs ys ~f in
+      match map_result with
+      | Ok xs -> Or_error.return xs
+      | Unequal_lengths ->
+        Result.Error error
+    ;;
+
+    let scp_files
+        ~(action : local:Fpath.t -> remote:string -> unit Or_error.t)
+        (locals : Fpath.t list) (remotes : string list)
+      : unit Or_error.t =
+      Or_error.(
+        map2_err locals remotes
+          ~f:(fun local remote -> action ~local ~remote)
+          ~error:(Error.of_string
+                    "Internal: file list length changed.")
+        >>= combine_errors_unit
+      )
+    ;;
+
+    let copy_spec_to_remote
+      : Fpath.t Copy_spec.t -> string Copy_spec.t = function
+      | Directory local ->
+        Directory (Conf.remote_dir local)
+      | Files fs ->
+        Files (List.map ~f:remote_file_name fs)
+      | Nothing -> Nothing
+    ;;
+
+    let scp_spec
+      ~(dir_action  : local:Fpath.t -> remote:string -> unit Or_error.t)
+      ~(file_action : local:Fpath.t -> remote:string -> unit Or_error.t)
+      (cs : Fpath.t Copy_spec.t) : string Copy_spec.t Or_error.t =
+      let open Or_error.Let_syntax in
+      let rcs = copy_spec_to_remote cs in
+      let%map () =
+        match cs, copy_spec_to_remote cs with
+        | Directory local, Directory remote ->
+          dir_action ~local ~remote
+        | Files lfs, Files rfs ->
+          scp_files ~action:file_action lfs rfs
+        | Nothing, Nothing -> Result.ok_unit
+        | _, _ ->
+          Or_error.error_string
+            {| Internal error: copy_spec_to_remote produced a different
+               type of copy spec than the input. |}
+      in rcs
+    ;;
+
+    let scp_send_spec
+      : Fpath.t Copy_spec.t -> string Copy_spec.t Or_error.t =
+      scp_spec
+        ~dir_action:(Scp.send ~recurse:true)
+        ~file_action:(Scp.send ~recurse:false)
+    ;;
+
+    let scp_receive_spec
+      : Fpath.t Copy_spec.t -> string Copy_spec.t Or_error.t =
+      scp_spec
+        ~dir_action:(fun ~local ~remote -> Scp.receive ~recurse:true ~remote ~local)
+        ~file_action:(fun ~local ~remote -> Scp.receive ~recurse:false ~remote ~local)
+    ;;
+
+    let pre (cs_pair : Fpath.t Copy_spec.Pair.t)
+      : string Copy_spec.Pair.t Or_error.t =
+      let open Or_error.Let_syntax in
+      let%bind () = Copy_spec.validate_local cs_pair.input in
+      let%map input' = scp_send_spec cs_pair.input in
+      let output' = copy_spec_to_remote cs_pair.output in
+      { Copy_spec.Pair.input = input'; output = output' }
+    ;;
+
+    let post (cs : Fpath.t Copy_spec.t) : unit Or_error.t =
+      let open Or_error.Let_syntax in
+      let%bind _ = scp_receive_spec cs in
+      Copy_spec.validate_local cs
+    ;;
 
   let run_one oc prog args =
     let open Or_error in
@@ -70,41 +195,8 @@ module Runner (Conf : S) : Runner.S = Runner.Make (struct
       oc
   ;;
 
-  let run_batch ?oc ~prog argss =
+  let run_batch ?oc (argss : string list list) ~prog =
     let results = List.map ~f:(run_one oc prog) argss in
     Or_error.combine_errors_unit results
   ;;
 end)
-
-module Scp (Conf : S) = struct
-  open Conf
-
-  let send ~local ~remote =
-  (* Core_extended has scp, but it only goes in one direction. *)
-  Or_error.(
-    try_with
-      (fun () ->
-         Core_extended.Shell.scp ?user ~host local remote
-      )
-  )
-  ;;
-
-  let scp_stanza file =
-    (* TODO(@MattWindsor91): escaping? *)
-    match user with
-    | None -> sprintf "%s:%s" host file
-    | Some u -> sprintf "%s@%s:%s" u host file
-  ;;
-
-  let receive ~remote ~local =
-    (* We need to make our own implementation of backwards scp,
-       which is flaky. *)
-    R.Local.run
-      ~prog:"scp"
-      [ "-q" (* quiet mode *)
-      ; "-B" (* batch mode *)
-      ; scp_stanza remote
-      ; local
-      ]
-  ;;
-end

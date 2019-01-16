@@ -22,42 +22,20 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Base
-open Stdio
-open Utils
+(** Signature of modules that embed an SSH configuration. *)
+module type S = sig
+  val host : string
+  (** [host] is the configured SSH host. *)
 
-module Config = struct
-  type t =
-    { cmd        : string [@default "litmus7"] [@drop_if_default]
-    } [@@deriving sexp, make]
-  ;;
-
-  let pp f { cmd } =
-    Fmt.pf f "litmus (%s)" cmd
-  ;;
-
-  let create = make
+  val user : string option
+  (** [user] is the configured SSH user, if any. *)
 end
 
-let run_direct
-    ?(oc : Out_channel.t = stdout) (cfg : Config.t) (argv : string list)
-  : unit Or_error.t =
-      let prog = cfg.cmd in
-      Or_error.tag ~tag:"While running litmus"
-        (Runner.Local.run ~oc ~prog argv)
-;;
+(** Signature of input used to construct a SSH runner. *)
+module type Basic_runner = sig
+  include S
 
-module Filter : Filter.S with type aux_i = Config.t
-                          and type aux_o = unit =
-  Filter.Make_on_runner (struct
-    module Runner = Runner.Local
-
-    type aux_i = Config.t
-    let name = "Litmus tool"
-    let tmp_file_ext = Fn.const "txt"
-
-    let prog (cfg : Config.t) = cfg.cmd
-    let argv _cfg (path : string) = [ path ]
-  end)
-
-(* TODO *)
+  val remote_dir : Fpath.t -> string
+  (** [remote_dir local_path] gets the remote directory in which the file
+      pointed to by [local_path] should be placed. *)
+end

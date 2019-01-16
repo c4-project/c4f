@@ -108,8 +108,7 @@ module Filter : Filter.S with type aux_i = t
 
     let prog t = t.config.cmd
     let argv t path =
-      let path' = Fpath.to_string path in
-      make_argv_from_config t.config (Some t.arch) [ path' ]
+      make_argv_from_config t.config (Some t.arch) [ path ]
     ;;
   end)
 

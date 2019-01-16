@@ -27,51 +27,42 @@
 
 open Core
 
-(** [t] contains a SSH hostname and optional user. *)
+include module type of Ssh_intf
+
+(** {2 SSH configuration records} *)
+
 type t
+(** [t] contains a SSH hostname and optional user. *)
 
-(** [host ssh] gets the configured host for [ssh]. *)
 val host : t -> string
+(** [host ssh] gets the configured host for [ssh]. *)
 
-(** [user ssh] gets the configured user, if any, for [ssh]. *)
 val user : t -> string option
+(** [user ssh] gets the configured user, if any, for [ssh]. *)
 
+val create : ?user:string -> host:string -> t
 (** [create ?user ~host] creates a [t] for connecting to [host],
     optionally as user [user]. *)
-val create : ?user:string -> host:string -> t
 
-(** [S] is the signature of modules that embed an SSH configuration. *)
-module type S = sig
-  (** [host] is the configured SSH host. *)
-  val host : string
+(** {2 Functors} *)
 
-  (** [user] is the configured SSH user, if any. *)
-  val user : string option
-end
-
-(** [Make] makes an [S] from a [t]. *)
 module Make (Conf : sig val ssh : t end) : S
+(** [Make] makes an [S] from a [t]. *)
 
+module Runner (Conf : Basic_runner) : Runner.S
 (** [Runner] provides a [Run.Runner] using the given SSH config. *)
-module Runner (Conf : S) : Runner.S
 
 (** [Scp] provides SCP file transfer operations, given an [S]. *)
 module Scp (Conf : S) : sig
-  (** [scp_send ~local ~remote] tries to copy the local path [local]
-      to the remote host at path [remote] using
-      scp. *)
   val send
-    :  local  : string
-    -> remote : string
-    -> unit Or_error.t
-  ;;
+    : recurse:bool -> local:Fpath.t -> remote:string -> unit Or_error.t
+  (** [send ~recurse ~local ~remote] tries to copy the local path
+     [local] to the remote host at path [remote] using scp.
+     [recurse], if true, turns on the recursive copy flag. *)
 
-(** [receive ~remote ~local] tries to copy the path [remote] on
-    the remote host to the local path [local] using
-    scp. *)
   val receive
-    :  remote : string
-    -> local  : string
-    -> unit Or_error.t
-  ;;
+    : recurse:bool -> remote:string -> local:Fpath.t -> unit Or_error.t
+    (** [receive ~recurse ~remote ~local] tries to copy the path
+       [remote] on the remote host to the local path [local] using
+       scp.  [recurse], if true, turns on the recursive copy flag. *)
 end

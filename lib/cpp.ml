@@ -52,7 +52,7 @@ module Filter : Filter.S with type aux_i = Config.t
     let name = "C preprocessor"
     let tmp_file_ext = Fn.const "c"
     let prog = Config.cmd
-    let argv aux infile = Config.argv aux @ [ Fpath.to_string infile ]
+    let argv aux (infile : string) = Config.argv aux @ [ infile ]
   end)
 
 module Chain_filter (Dest : Utils.Filter.S) :

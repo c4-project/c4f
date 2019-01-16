@@ -113,23 +113,6 @@ module type Basic = sig
     -> string list
 end
 
-(** [Hooks] is the signature of mechanisms used to tell compilers to
-    do something before/after a compilation.
-
-    The main use of this module is to set up file transfers when doing
-    remote compilation. *)
-module type Hooks = sig
-  (** [pre ~infile ~outfile] is run before compiling, and, if the
-      hook is successful, returns the new infile and outfile to use
-      for the compilation. *)
-  val pre : infile:Fpath.t -> outfile:Fpath.t -> (string * string) Or_error.t
-
-  (** [post ~infile ~outfile] is run after a successful compile.
-      It receives the *original* input and output file names---not the
-      ones returned by [pre]. *)
-  val post : infile:Fpath.t -> outfile:Fpath.t -> unit Or_error.t
-end
-
 (** [S] is the outward-facing interface of compiler modules. *)
 module type S = sig
   (** [test ()] tests that the compiler is working. *)

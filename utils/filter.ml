@@ -324,13 +324,31 @@ end
 module Make_on_runner (R : Basic_on_runner)
   : S with type aux_i = R.aux_i
        and type aux_o = unit = Make_in_file_only (struct
+    let get_file
+      : string Copy_spec.t -> string Or_error.t = function
+      | Files fs -> Travesty.T_list.one fs
+      | Directory _ -> Or_error.error_string "Expected one file; got directory"
+      | Nothing -> Or_error.error_string "Expected one file; got nothing"
+    ;;
+
+    let make_argv
+      (aux : R.aux_i)
+      ~(input : string Copy_spec.t)
+      ~(output : string Copy_spec.t) : string list Or_error.t =
+      ignore output;
+      let open Or_error.Let_syntax in
+      let%map file = get_file input in
+      R.argv aux file
+    ;;
+
     include R
     type aux_o = unit
 
     let run ({ aux; _ } : aux_i ctx) (infile : Fpath.t) (oc : Stdio.Out_channel.t)
         : unit Or_error.t =
       let prog = R.prog aux in
-      let argv = R.argv aux infile in
-      R.Runner.run ~oc ~prog argv
+      R.Runner.run_with_copy ~oc ~prog
+        { input = Copy_spec.file infile; output = Copy_spec.nothing}
+        (make_argv aux)
     ;;
 end)

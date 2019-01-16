@@ -157,47 +157,10 @@ module type With_spec = sig
   val cspec : Spec.With_id.t
 end
 
-(** [No_hooks] is a [Hooks] implementation that does nothing. *)
-module No_hooks : Hooks = struct
-  let pre ~(infile : Fpath.t) ~(outfile : Fpath.t) : (string * string) Or_error.t =
-    Result.return (Fpath.to_string infile, Fpath.to_string outfile)
-  ;;
-  let post ~(infile : Fpath.t) ~(outfile : Fpath.t) : unit Or_error.t =
-    ignore infile; ignore outfile; Result.ok_unit
-  ;;
-end
-
-(** [Scp_hooks] is a [Hooks] implementation that copies infile and outfile
-    to and from a remote directory. *)
-module Scp_hooks (C : sig val ssh: Machine.Ssh.t end) : Hooks = struct
-  let remote_name_of (file : Fpath.t) : string =
-    (* Assuming that scp always supports unix-style paths *)
-    sprintf "%s/%s" (Machine.Ssh.copy_dir C.ssh) (Fpath.basename file)
-  ;;
-
-  module Scp = Ssh.Scp (Machine.Ssh.To_config (C))
-
-  let pre ~(infile : Fpath.t) ~(outfile : Fpath.t) : (string * string) Or_error.t =
-    let open Or_error.Let_syntax in
-    let local = Fpath.to_string infile in
-    let remote = remote_name_of infile in
-    let%map () = Scp.send ~local ~remote in
-    (remote, remote_name_of outfile)
-  ;;
-
-  let post ~(infile : Fpath.t) ~(outfile : Fpath.t) : unit Or_error.t =
-    ignore infile;
-    let remote = remote_name_of outfile in
-    let local = Fpath.to_string outfile in
-    Scp.receive ~remote ~local
-  ;;
-end
-
 module type Basic_with_run_info = sig
   include Basic
   include With_spec
   module Runner : Runner.S
-  module Hooks : Hooks
 end
 
 module Make (B : Basic_with_run_info) : S = struct
@@ -205,18 +168,24 @@ module Make (B : Basic_with_run_info) : S = struct
 
   let cmd = Spec.With_id.cmd B.cspec
 
-  let compile ~infile ~outfile =
-    let open Or_error.Let_syntax in
-    let%bind (infile', outfile') = B.Hooks.pre ~infile ~outfile in
+  let compile ~(infile : Fpath.t) ~(outfile : Fpath.t) =
     let s = Spec.With_id.spec B.cspec in
-    let argv =
-     B.compile_args
-        ~args:(Spec.argv s)
-        ~emits:(Spec.emits s) ~infile:infile' ~outfile:outfile'
+    let argv_fun =
+      Utils.Runner.argv_one_file
+        (fun ~input ~output ->
+           Or_error.return
+             (B.compile_args
+                ~args:(Spec.argv s)
+                ~emits:(Spec.emits s) ~infile:input ~outfile:output
+             )
+        )
     in
-    let%bind () = B.Runner.run ~prog:cmd argv in
-    (* NB: post intentionally gets sent the original filenames. *)
-    B.Hooks.post ~infile ~outfile
+    B.Runner.run_with_copy
+      ~prog:cmd
+      { input  = Copy_spec.file infile
+      ; output = Copy_spec.file outfile
+      }
+      argv_fun
   ;;
 
   let test () = B.Runner.run ~prog:cmd B.test_args
@@ -226,22 +195,14 @@ let runner_from_spec (cspec : Spec.With_id.t) =
   Machine.Spec.With_id.runner (Spec.With_id.machine cspec)
 ;;
 
-let hooks_from_spec (cspec : Spec.With_id.t) =
-  match Machine.Spec.With_id.via (Spec.With_id.machine cspec) with
-  | Machine.Via.Local -> (module No_hooks : Hooks)
-  | Ssh s -> (module Scp_hooks (struct let ssh = s end) : Hooks)
-;;
-
 let from_spec f (cspec : Spec.With_id.t) =
   let open Or_error.Let_syntax in
   let%map (module B : Basic) = f cspec in
-  let (module Hooks) = hooks_from_spec cspec in
   let (module Runner) = runner_from_spec cspec in
   (module
     (Make (struct
        let cspec = cspec
        include B
-       module Hooks = Hooks
        module Runner = Runner
      end)) : S)
 ;;
