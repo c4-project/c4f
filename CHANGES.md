@@ -1,5 +1,11 @@
 # Unreleased
 
+## 2019-Jan-21
+
+- Bugfix: delitmusifier no longer erroneously reverses its arguments.
+
+## Undated (2018-Dec to 2019-Jan)
+
 - Litmusify: `-litmus` now executes litmus on the remote machine.
 - Added new `act tool` command, which will eventually allow free-form running
   of the various tools act wraps.  Currently it supports herd
