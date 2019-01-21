@@ -356,12 +356,9 @@ module Indirect = struct
     Traversable.Make_container0 (struct
       type nonrec t = t
       module Elt = String
-      module Set = String.Set
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Traversable.Helpers (M)
-
         module D = Disp.On_symbols.On_monad (M)
         module O = T_option.On_monad (M)
 
@@ -385,7 +382,6 @@ module Indirect = struct
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module F = Traversable.Helpers (M)
         module O = T_option.On_monad (M)
         module I = Index.On_registers.On_monad (M)
 

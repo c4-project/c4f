@@ -36,13 +36,13 @@ module Type = struct
   type basic =
     | Int
     | Atomic_int
-  [@@deriving sexp, variants]
+  [@@deriving sexp, variants, eq]
   ;;
 
   type t =
     | Normal of basic
     | Pointer_to of basic
-  [@@deriving sexp, variants]
+  [@@deriving sexp, variants, eq]
   ;;
 end
 
@@ -51,8 +51,15 @@ module Initialiser = struct
     { ty    : Type.t
     ; value : Constant.t option
     }
-  [@@deriving sexp, make]
+  [@@deriving sexp, make, eq]
   ;;
+
+  module Named = struct
+    type nonrec t = t named
+    let equal : t -> t -> bool =
+      Tuple2.equal ~eq1:Identifier.equal ~eq2:equal
+    ;;
+  end
 end
 
 module Lvalue = struct
@@ -381,15 +388,44 @@ module Function = struct
   [@@deriving sexp, fields, make]
   ;;
 
-  let map (func : t)
-      ~(parameters : (Type.t id_assoc -> Type.t id_assoc))
-      ~(body_decls : (Initialiser.t id_assoc -> Initialiser.t id_assoc))
-      ~(body_stms  : (Statement.t list -> Statement.t list))
-    : t =
-    Fields.Direct.map func
-      ~parameters:(fun _ _ -> parameters)
-      ~body_decls:(fun _ _ -> body_decls)
-      ~body_stms:(fun _ _ -> body_stms)
+  module Base_map (M : Monad.S) = struct
+    module F = Travesty.Traversable.Helpers (M)
+    let bmap (func : t)
+        ~(parameters : Type.t id_assoc -> Type.t id_assoc M.t)
+        ~(body_decls : Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
+        ~(body_stms  : Statement.t list -> Statement.t list M.t)
+      : t M.t =
+      Fields.fold
+        ~init:(M.return func)
+        ~parameters:(F.proc_field parameters)
+        ~body_decls:(F.proc_field body_decls)
+        ~body_stms:(F.proc_field body_stms)
+    ;;
+  end
+
+  let map = let module M = Base_map (Monad.Ident) in M.bmap
+
+  module On_decls
+    : Travesty.Traversable.S0_container with type t := t
+                                         and type Elt.t = Initialiser.Named.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Initialiser.Named
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module L = Travesty.T_list.On_monad (M)
+
+        let map_m
+            (func : t)
+            ~(f : Initialiser.Named.t -> Initialiser.Named.t M.t) =
+          B.bmap func
+            ~parameters:M.return
+            ~body_decls:(L.map_m ~f)
+            ~body_stms:M.return
+      end
+    end)
+  ;;
 end
 
 module Program = struct
@@ -399,6 +435,40 @@ module Program = struct
     }
   [@@deriving sexp, fields, make]
   ;;
+
+  module Base_map (M : Monad.S) = struct
+    module F = Travesty.Traversable.Helpers (M)
+    let bmap (program : t)
+        ~(globals   : Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
+        ~(functions : Function.t id_assoc -> Function.t id_assoc M.t)
+      : t M.t =
+      Fields.fold
+        ~init:(M.return program)
+        ~globals:(F.proc_field globals)
+        ~functions:(F.proc_field functions)
+    ;;
+  end
+
+  module On_decls
+    : Travesty.Traversable.S0_container
+      with type t := t
+       and type Elt.t := Initialiser.Named.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Initialiser.Named
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module L = Travesty.T_list.On_monad (M)
+        module F = Function.On_decls.On_monad (M)
+
+        let map_m (program : t) ~(f : Elt.t -> Elt.t M.t) =
+          B.bmap program
+            ~globals:(L.map_m ~f)
+            ~functions:(L.map_m ~f:(fun (k, v) -> M.(F.map_m ~f v >>| Tuple2.create k)))
+        ;;
+      end
+    end)
 end
 
 module Reify = struct

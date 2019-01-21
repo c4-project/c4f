@@ -206,6 +206,7 @@ module Statement : sig
      expression statement. *)
 end
 
+(** A function (less its name). *)
 module Function : sig
   type t [@@deriving sexp]
 
@@ -230,6 +231,11 @@ module Function : sig
     -> t
     (** [map func ~parameters ~body_decls ~body_stms] runs the given
         functions over the respective parts of a function. *)
+
+  module On_decls : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t := Initialiser.t named
+    (** [On_decls] allows traversal over all of the declarations
+        inside a function. *)
 end
 
 module Program : sig
@@ -241,6 +247,11 @@ module Program : sig
    -> t
    (** [make ~globals ~functions] makes a program with global variable
        declarations [globals] and function definitions [functions]. *)
+
+  module On_decls : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t := Initialiser.t named
+    (** [On_decls] allows traversal over all of the declarations
+        inside a program. *)
 end
 
 (** Functions for reifying a mini-model into an AST. *)
