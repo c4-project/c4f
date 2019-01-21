@@ -38,17 +38,29 @@ open Base
 
 include module type of Ast_basic
 
+type 'a named = (Identifier.t * 'a)
+(** Shorthand for pairs of items and their names. *)
+
 type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t
 (** Shorthand for associative lists with identifier keys. *)
 
 module Type : sig
-  type t
+  type basic
+  (** Basic types. *)
 
-  val int : t
+  val int : basic
   (** [int] is the int type. *)
 
-  val atomic_int : t
+  val atomic_int : basic
   (** [atomic_int] is the atomic_int type. *)
+
+  type t
+
+  val normal : basic -> t
+  (** [normal ty] lifts a basic type [ty] to a scalar type. *)
+
+  val pointer_to : basic -> t
+  (** [pointer_to ty] lifts a basic type [ty] to a pointer type. *)
 end
 
 module Initialiser : sig
@@ -62,6 +74,18 @@ end
 (** Somewhere assignable (a variable, or dereference thereof). *)
 module Lvalue : sig
   type t [@@deriving sexp]
+
+  val variable : Identifier.t -> t
+  (** [variable id] constructs an lvalue pointing to variable [id].
+      It doesn't do any validation. *)
+
+  val deref : t -> t
+  (** [deref lvalue] constructs a dereference ([*]) of another lvalue
+      [lvalue].It doesn't do any validation. *)
+
+  val is_deref : t -> bool
+  (** [is_deref lvalue] returns [true] if [lvalue] is a dereference of
+      another [lvalue], and [false] otherwise. *)
 
   module On_identifiers
     : Travesty.Traversable.S0_container
@@ -81,6 +105,9 @@ module Address : sig
     : Travesty.Traversable.S0_container
       with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in addresses. *)
+
+  val lvalue : Lvalue.t -> t
+  (** [lvalue lv] lifts an lvalue [lv] to an address. *)
 
   val ref : t -> t
   (** [ref t] constructs a &-reference to [t]. *)
@@ -108,8 +135,18 @@ module Expression : sig
         with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in expressions. *)
 
+  val atomic_load : src:Address.t -> mo:Mem_order.t -> t
+  (** [atomic_load ~src ~mo] constructs an explicit atomic load
+      expression with source [src] and memory order [mo]. *)
+
   val constant : Constant.t -> t
   (** [constant k] lifts a C constant [k] to an expression. *)
+
+  val eq : t -> t -> t
+  (** [eq l r] generates an equality expression. *)
+
+  val lvalue : Lvalue.t -> t
+  (** [lvalue lv] lifts lvalue [lv] to an expression. *)
 end
 
 (** A statement.
@@ -136,10 +173,50 @@ module Statement : sig
 
   val assign : lvalue:Lvalue.t -> rvalue:Expression.t -> t
   (** [assign ~lvalue ~rvalue] lifts a C assignment to a statement. *)
+
+  val atomic_cmpxchg
+    :  obj:Address.t
+    -> expected:Address.t
+    -> desired:Expression.t
+    -> succ:Mem_order.t
+    -> fail:Mem_order.t
+    -> t
+  (** [atomic_cmpxchg ~obj ~expected ~desired ~succ ~fail] constructs an
+      explicit strong compare-exchange with object [obj], expected
+      value store [expected], desired final value [desired], and
+      memory orders [succ] on success and [fail] on failure. *)
+
+  val atomic_store
+    : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
+  (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
+      expression with source [src] and memory order [mo]. *)
+
+  val if_stm
+    :  cond:Expression.t
+    -> t_branch:t
+    -> ?f_branch:t
+    -> unit
+    -> t
+  (** [if_stm ~cond ~t_branch ?f_branch ()] creates an if statement
+     with condition [cond], true branch [t_branch], and optional false
+     branch [f_branch]. *)
+
+  val nop : t
+  (** [nop] is a no-operation statement; it corresponds to C's empty
+     expression statement. *)
 end
 
 module Function : sig
   type t [@@deriving sexp]
+
+  val make
+    :  parameters:Type.t id_assoc
+    -> body_decls:Initialiser.t id_assoc
+    -> ?body_stms:Statement.t list
+    -> unit
+    -> t
+  (** [make ~parameters ~body_decls ?body_stms] creates a function
+     with the given contents. *)
 
   val body_decls : t -> Initialiser.t id_assoc
     (** [body_decls func] gets [func]'s in-body variable
@@ -188,24 +265,6 @@ module Litmus_lang : Litmus.Ast.Basic
 
 (** The mini-model's full Litmus AST module. *)
 module Litmus_ast : sig
-  include Litmus.Ast.S with module Lang := Litmus_lang
+  include Litmus.Ast.S with module Lang = Litmus_lang
   include Base.Pretty_printer.S with type t := Validated.t
-end
-
-
-(** Converting an AST into the mini-model *)
-module Convert : sig
-  val func
-    :  Ast.Function_def.t
-    -> (Identifier.t * Function.t) Or_error.t
-  (** [func ast] tries to interpret a C function definition AST
-      as a mini-model function. *)
-
-  val translation_unit : Ast.Translation_unit.t -> Program.t Or_error.t
-  (** [translation_unit ast] tries to interpret a C translation unit AST
-      as a mini-model program. *)
-
-  val litmus : Ast.Litmus.Validated.t -> Litmus_ast.Validated.t Or_error.t
-  (** [litmus test] tries to interpret a Litmus test over the full C AST
-      as one over the mini-model. *)
 end

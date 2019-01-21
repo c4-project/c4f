@@ -96,7 +96,7 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = unit =
 
     module Frontend = Frontend.Normal
     let pp = Fmt.using Mini.Reify.program Ast.Translation_unit.pp
-    let process = Mini.Convert.translation_unit
+    let process = Mini_convert.translation_unit
 
     let delitmus (_ : t) : del Or_error.t =
       Or_error.error_string "Can't delitmus a normal C file"
@@ -120,7 +120,7 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = unit =
       Or_error.(
         lit
         |>  Ast.Litmus.validate
-        >>= Mini.Convert.litmus
+        >>= Mini_convert.litmus
       )
     ;;
 

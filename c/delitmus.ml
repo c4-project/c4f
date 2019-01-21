@@ -28,7 +28,7 @@ let make_atomic_int_initialiser (value : Ast_basic.Constant.t) =
   (* NB: Apparently, we don't need ATOMIC_VAR_INIT here:
      every known C11 compiler can make do without it, and as a result
      it's obsolete as of C17. *)
-  Mini.Initialiser.make ~ty:Mini.Type.atomic_int ~value ()
+  Mini.Initialiser.make ~ty:Mini.Type.(normal atomic_int) ~value ()
 ;;
 
 (** [make_init_globals init] converts a Litmus initialiser list to
