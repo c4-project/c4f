@@ -36,7 +36,7 @@ module type Basic = sig
 
   val process : ast -> t Or_error.t
 
-  val cvars : t -> [`Names of string list | `Unavailable]
+  val cvars : t -> string list option
   (** [cvars vast] should return a list of C identifiers
       corresponding to all variables in [vast], if possible.
 
@@ -44,9 +44,13 @@ module type Basic = sig
       if you already have a delitmusified AST, use
       [cvars_of_delitmus]. *)
 
-  val cvars_of_delitmus : del -> [`Names of string list | `Unavailable]
+  val cvars_of_delitmus : del -> string list option
   (** [cvars_of_delitmus dl] should return a list of C identifiers
       corresponding to all variables in [dl], if possible. *)
+
+  val postcondition : t -> Mini.Litmus_ast.Post.t option
+  (** [postcondition vast] should get the Litmus postcondition of
+     [vast], if one exists. *)
 
   include Pretty_printer.S with type t := t
 
@@ -61,7 +65,8 @@ type mode =
 
 module Output = struct
   type t =
-    { cvars : [`Names of string list | `Unavailable]
+    { cvars : string list option
+    ; post  : Mini.Litmus_ast.Post.t option
     }
   [@@deriving fields]
 end
@@ -85,14 +90,16 @@ module Make (B : Basic)
       let%map dl = B.delitmus vast in
       Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp_del dl;
       let cvars = B.cvars_of_delitmus dl in
-      { Output.cvars }
+      let post  = B.postcondition vast in
+      { Output.cvars; post }
     ;;
 
     let run_print (vast : B.t) (oc : Out_channel.t)
       : Output.t Or_error.t =
       Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp vast;
       let cvars = B.cvars vast in
-      Or_error.return { Output.cvars }
+      let post  = B.postcondition vast in
+      Or_error.return { Output.cvars; post }
     ;;
 
     let run { Filter.aux; src; _ } ic oc : Output.t Or_error.t =
@@ -108,13 +115,12 @@ module Make (B : Basic)
   end)
 
 
-let cvars_of_program (prog : Mini.Program.t)
-  : [`Names of string list | `Unavailable] =
+let cvars_of_program (prog : Mini.Program.t) : string list option =
   let names =
     prog
     |> Mini.Program.On_decls.to_list
     |> List.map ~f:fst
-  in `Names names
+  in Some names
 ;;
 
 module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
@@ -131,6 +137,7 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
 
     let cvars = cvars_of_program
     let cvars_of_delitmus = Nothing.unreachable_code
+    let postcondition = Fn.const None
 
     let delitmus (_ : t) : del Or_error.t =
       Or_error.error_string "Can't delitmus a normal C file"
@@ -149,7 +156,7 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
     let normal_tmp_file_ext = "litmus"
 
     module Frontend = Frontend.Litmus
-    let pp = Mini.Litmus_ast.pp
+    let pp = Mini.Litmus_pp.pp
     let process lit =
       Or_error.(
         lit
@@ -176,12 +183,14 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
 
     let delitmus = Delitmus.run
 
+    let postcondition
+      : Mini.Litmus_ast.Validated.t -> Mini.Litmus_ast.Post.t option =
+      Mini.Litmus_ast.Validated.post
+
     let cvars_of_delitmus = cvars_of_program
 
-    let cvars (lit : t) : [`Names of string list | `Unavailable] =
-      match delitmus lit with
-      | Ok c_unit -> cvars_of_delitmus c_unit
-      | Error _ -> `Unavailable
+    let cvars (lit : t) : string list option =
+        Option.(Result.ok (delitmus lit) >>= cvars_of_delitmus)
     ;;
   end)
 ;;

@@ -159,18 +159,26 @@ let regress_litmusify : Fpath.t -> unit Or_error.t =
     (Sanitiser_pass.standard)
 ;;
 
-let pp_cvars (f : Base.Formatter.t) = function
-  | `Names names ->
-    Fmt.(vbox (list ~sep:sp
-                 (hbox (prefix (unit "// -@ ") string)))) f names
-  | `Unavailable ->
-    Fmt.pf f "(not available)"
+let pp_cvars : string list Fmt.t =
+  Fmt.(
+    prefix (unit "@,@,// C variables:@,")
+      (vbox (list ~sep:sp
+               (hbox (prefix (unit "// -@ ") string))))
+  )
+;;
+
+let pp_post : C.Mini.Litmus_ast.Post.t Fmt.t =
+  Fmt.(
+    prefix (unit "@,@,// Postcondition:@,")
+      (hbox (prefix (unit "// ") C.Mini.Litmus_pp.pp_post))
+  )
 ;;
 
 let summarise_c_output (o : C.Filters.Output.t) : unit =
   Fmt.(
-    pr "@[<v>@,@,// C variables:@,%a@]@."
-      pp_cvars (C.Filters.Output.cvars o)
+    pr "@[<v>%a%a@]@."
+      (option pp_cvars) (C.Filters.Output.cvars o)
+      (option pp_post) (C.Filters.Output.post o)
   )
 ;;
 

@@ -275,7 +275,7 @@ module Litmus_lang : Litmus.Ast.Basic
 ;;
 
 (** The mini-model's full Litmus AST module. *)
-module Litmus_ast : sig
-  include Litmus.Ast.S with module Lang = Litmus_lang
-  include Base.Pretty_printer.S with type t := Validated.t
-end
+module Litmus_ast : Litmus.Ast.S with module Lang = Litmus_lang
+
+(** Pretty-printing for the mini-model's litmus AST. *)
+module Litmus_pp : Litmus.Pp.S with module Ast = Litmus_ast

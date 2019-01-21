@@ -648,8 +648,5 @@ module Litmus_lang : Litmus.Ast.Basic
   end)
 
 
-module Litmus_ast = struct
-  module A = Litmus.Ast.Make (Litmus_lang)
-  include A
-  include Litmus.Pp.Make_sequential (A)
-end
+module Litmus_ast = Litmus.Ast.Make (Litmus_lang)
+module Litmus_pp = Litmus.Pp.Make_sequential (Litmus_ast)

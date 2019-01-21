@@ -41,9 +41,13 @@ type mode =
 module Output : sig
   type t
 
-  val cvars : t -> [`Names of string list | `Unavailable]
+  val cvars : t -> string list option
   (** [cvars out] gets, if possible, the list of C variable names
       observed in the transformed program. *)
+
+  val post : t -> Mini.Litmus_ast.Post.t option
+  (** [post out] gets the Litmus postcondition observed in the
+     transformed program, if any. *)
 end
 
 module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t
