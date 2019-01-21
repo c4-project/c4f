@@ -1,0 +1,24 @@
+C test_7
+// Hint: try simulating with herd7 <test_7.litmus>
+// WARNING: C litmus output is experimental!
+
+// Declaring global variables.
+{
+  x = 0;
+}
+
+// Thread 0
+void P0(atomic_int *x) {
+  int r0 = 0;
+
+  r0 = 0; /* returns bool */ atomic_compare_exchange_strong_explicit(x, &r0, 2, memory_order_relaxed, memory_order_relaxed);
+  // elided store-conditional instruction
+}
+
+// Thread 1
+void P1(atomic_int *x) {
+  atomic_store_explicit(x, 1, memory_order_relaxed);
+}
+
+exists (0:r0 == 0 /\ x == 2)
+

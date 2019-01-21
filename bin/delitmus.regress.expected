@@ -7,10 +7,10 @@
 #include <stdatomic.h>
 atomic_int x = 0;
 atomic_int y = 0;
-int t2r1 = 0;
 int t2r0 = 0;
-int t3r1 = 0;
+int t2r1 = 0;
 int t3r0 = 0;
+int t3r1 = 0;
 void
 P0()
 { atomic_store_explicit(&x, 1, memory_order_seq_cst); }
@@ -20,15 +20,34 @@ P1()
 void
 P2()
 {
-    t2r1 = atomic_load_explicit(&y, memory_order_seq_cst);
     t2r0 = atomic_load_explicit(&x, memory_order_acquire);
+    t2r1 = atomic_load_explicit(&y, memory_order_seq_cst);
 }
 void
 P3()
 {
-    t3r1 = atomic_load_explicit(&x, memory_order_seq_cst);
     t3r0 = atomic_load_explicit(&y, memory_order_acquire);
+    t3r1 = atomic_load_explicit(&x, memory_order_seq_cst);
 }
+```
+## memalloy_cmpxchg.c.litmus
+
+```
+// <!> Auto-generated from a litmus test by act.
+#include <stdatomic.h>
+atomic_int x = 0;
+int t0r0 = 0;
+void
+P0()
+{
+    t0r0 = 0;
+    atomic_compare_exchange_strong_explicit(&x, &t0r0, 2,
+                                            memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+void
+P1()
+{ atomic_store_explicit(&x, 1, memory_order_relaxed); }
 ```
 ## rwc.c.litmus
 
@@ -37,8 +56,8 @@ P3()
 #include <stdatomic.h>
 atomic_int x = 0;
 atomic_int y = 0;
-int t1r1 = 0;
 int t1r0 = 0;
+int t1r1 = 0;
 int t2r0 = 0;
 void
 P0()
@@ -46,15 +65,15 @@ P0()
 void
 P1()
 {
-    t1r1 = atomic_load_explicit(&y, memory_order_seq_cst);
     t1r0 = atomic_load_explicit(&x, memory_order_acquire);
+    t1r1 = atomic_load_explicit(&y, memory_order_seq_cst);
 }
 void
 P2()
 {
-    t2r0 = atomic_load_explicit(&x, memory_order_seq_cst);
     atomic_store_explicit(&y, 1, memory_order_seq_cst);
+    t2r0 = atomic_load_explicit(&x, memory_order_seq_cst);
 }
 ```
 
-Ran 2 test(s).
+Ran 3 test(s).

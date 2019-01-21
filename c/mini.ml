@@ -39,32 +39,6 @@ type 'a named = (Identifier.t * 'a)
 type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t
 [@@deriving sexp]
 
-module Mem_order = struct
-  module M = struct
-    type t =
-      | Seq_cst
-      | Release
-      | Acquire
-      | Rel_acq
-      | Relaxed
-      | Consume
-    [@@deriving enum]
-    ;;
-
-    let table =
-      [ Seq_cst, "memory_order_seq_cst"
-      ; Release, "memory_order_release"
-      ; Acquire, "memory_order_acquire"
-      ; Rel_acq, "memory_order_rel_acq"
-      ; Relaxed, "memory_order_relaxed"
-      ; Consume, "memory_order_consume"
-      ]
-    ;;
-  end
-  include M
-  include Utils.Enum.Extend_table (M)
-end
-
 module Type = struct
   type basic =
     | Int
@@ -241,6 +215,13 @@ module Statement = struct
         ; dst   : Address.t
         ; order : Mem_order.t
         }
+    | Atomic_cmpxchg of
+        { obj      : Address.t
+        ; expected : Address.t
+        ; desired  : Expression.t
+        ; succ     : Mem_order.t
+        ; fail     : Mem_order.t
+        }
     | Nop
     | If_stm of { cond     : Expression.t
                 ; t_branch : t
@@ -252,7 +233,7 @@ module Statement = struct
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap x ~assign ~atomic_store ~if_stm =
+    let bmap x ~assign ~atomic_store ~atomic_cmpxchg ~if_stm =
       let open M.Let_syntax in
       Variants.map x
         ~assign:(
@@ -264,6 +245,14 @@ module Statement = struct
           fun v ~src ~dst ~order ->
             let%map (src', dst') = atomic_store ~src ~dst in
             v.constructor ~src:src' ~dst:dst' ~order
+        )
+        ~atomic_cmpxchg:(
+          fun v ~obj ~expected ~desired ~succ ~fail ->
+            let%map (obj', expected', desired') =
+              atomic_cmpxchg ~obj ~expected ~desired in
+            v.constructor
+              ~obj:obj' ~expected:expected' ~desired:desired'
+              ~succ ~fail
         )
         ~if_stm:(
           fun v ~cond ~t_branch ~f_branch ->
@@ -298,6 +287,7 @@ module Statement = struct
         ;;
 
         let rec map_m x ~f =
+          let open M.Let_syntax in
           B.bmap x
             ~assign:(
               fun ~lvalue ~rvalue -> both (f lvalue) (E.map_m ~f rvalue)
@@ -306,9 +296,15 @@ module Statement = struct
               fun ~src ~dst ->
                 both (E.map_m ~f src) (A.map_m ~f dst)
             )
+            ~atomic_cmpxchg:(
+              fun ~obj ~expected ~desired ->
+                let%bind obj'      = A.map_m ~f obj      in
+                let%bind expected' = A.map_m ~f expected in
+                let%map  desired'  = E.map_m ~f desired  in
+                (obj', expected', desired')
+            )
             ~if_stm:(
               fun ~cond ~t_branch ~f_branch ->
-                let open M.Let_syntax in
                 let%bind cond'     = E.map_m ~f cond in
                 let%bind t_branch' = map_m t_branch ~f in
                 let%map  f_branch' = O.map_m f_branch ~f:(map_m ~f) in
@@ -338,11 +334,19 @@ module Statement = struct
         ;;
 
         let rec map_m x ~f =
+          let open M.Let_syntax in
           B.bmap x
             ~assign:(fun ~lvalue ~rvalue ->
                 both (M.return lvalue) (E.map_m ~f rvalue))
             ~atomic_store:(
               fun ~src ~dst -> both (E.map_m ~f src) (f dst)
+            )
+            ~atomic_cmpxchg:(
+              fun ~obj ~expected ~desired ->
+                let%bind obj'      =          f obj      in
+                let%bind expected' =          f expected in
+                let%map  desired'  = E.map_m ~f desired  in
+                (obj', expected', desired')
             )
             ~if_stm:(
               fun ~cond ~t_branch ~f_branch ->
@@ -472,33 +476,42 @@ module Reify = struct
     Identifier (Mem_order.to_string mo)
   ;;
 
+  let known_call (name : string) (args : Ast.Expr.t list) : Ast.Expr.t =
+    Call {func = Identifier name ; arguments = args }
+  ;;
+
   let rec expr : Expression.t -> Ast.Expr.t = function
     | Constant k -> Constant k
     | Lvalue l -> lvalue_to_expr l
     | Equals (l, r) -> Binary (expr l, `Eq, expr r)
     | Atomic_load { src; order } ->
-      Call { func      = Identifier "atomic_load_explicit"
-           ; arguments = [ address_to_expr src
-                         ; mem_order_to_expr order
-                         ]
-           }
+      known_call "atomic_load_explicit"
+        [ address_to_expr src
+        ; mem_order_to_expr order
+        ]
+  ;;
+
+  let known_call_stm (name : string) (args : Ast.Expr.t list) : Ast.Stm.t =
+    Expr (Some (known_call name args))
   ;;
 
   let rec stm : Statement.t -> Ast.Stm.t = function
     | Assign { lvalue; rvalue } ->
       Expr (Some (Binary (lvalue_to_expr lvalue, `Assign, expr rvalue)))
     | Atomic_store { dst; src; order } ->
-      Expr
-        (Some
-           (Call
-              { func      = Identifier "atomic_store_explicit"
-              ; arguments = [ address_to_expr dst
-                            ; expr src
-                            ; mem_order_to_expr order
-                            ]
-              }
-           )
-        )
+      known_call_stm "atomic_store_explicit"
+        [ address_to_expr dst
+        ; expr src
+        ; mem_order_to_expr order
+        ]
+    | Atomic_cmpxchg { obj; expected; desired; succ; fail } ->
+      known_call_stm "atomic_compare_exchange_strong_explicit"
+        [ address_to_expr   obj
+        ; address_to_expr   expected
+        ; expr              desired
+        ; mem_order_to_expr succ
+        ; mem_order_to_expr fail
+        ]
     | If_stm { cond; t_branch; f_branch } ->
       If { cond = expr cond
          ; t_branch = stm t_branch
@@ -574,17 +587,39 @@ module Convert = struct
   (** [sift_decls maybe_decl_list] tries to separate [maybe_decl_list]
      into a list of declarations followed immediately by a list of
      code, C89-style. *)
-  let sift_decls :
-    ([> `Decl of Ast.Decl.t ] as 'a) list -> (Ast.Decl.t list * ('a list)) Or_error.t =
-    Travesty.T_list.With_errors.fold_m
-      ~init:([], [])
-      ~f:(fun (decls, rest) item ->
-          match decls, rest, item with
-          | _, [], `Decl d -> Or_error.return (d::decls, rest)
-          | _, _ , `Decl _ -> Or_error.error_string
-                                "Declarations must go before code."
-          | _, _ , _       -> Or_error.return (decls, item::rest)
-        )
+  let sift_decls (maybe_decl_list : ([> `Decl of 'd ] as 'a) list)
+    : ('d list * ('a list)) Or_error.t =
+    Or_error.(
+      Travesty.T_list.With_errors.fold_m maybe_decl_list
+        ~init:(Fqueue.empty, Fqueue.empty)
+        ~f:(fun (decls, rest) -> function
+            | `Decl d ->
+              if Fqueue.is_empty rest
+              then return (Fqueue.enqueue decls d, rest)
+              else error_string
+                  "Declarations must go before code."
+            | item -> return (decls, Fqueue.enqueue rest item)
+          )
+      >>| fun (decls, rest) -> (Fqueue.to_list decls, Fqueue.to_list rest)
+    )
+  ;;
+
+  let%expect_test "sift_decls: mixed example" =
+    let result =
+      Or_error.(
+        [ `Decl "foo"
+        ; `Decl "bar"
+        ; `Ndecl "baz"
+        ; `Ndecl "barbaz"
+        ]
+        |> sift_decls
+        >>| Tuple2.map_snd
+          ~f:(List.map ~f:(function `Decl _ -> "DECL" | `Ndecl x -> x))
+      )
+    in
+    Sexp.output_hum Stdio.stdout
+      [%sexp (result : (string list * string list) Or_error.t)];
+    [%expect {| (Ok ((foo bar) (baz barbaz))) |}]
   ;;
 
   (** [ensure_functions xs] makes sure that each member of [xs] is a
@@ -820,6 +855,25 @@ module Convert = struct
       in call_handler arguments
   ;;
 
+  let model_atomic_load_explicit
+    : Ast.Expr.t list -> Expression.t Or_error.t = function
+    | [ raw_src; raw_mo ] ->
+      let open Or_error.Let_syntax in
+      let%map src   = expr_to_address raw_src
+      and     order = expr_to_memory_order raw_mo
+      in Expression.atomic_load ~src ~order
+    | args ->
+      Or_error.error_s
+        [%message "Invalid arguments to atomic_load_explicit"
+            ~got:(args : Ast.Expr.t list)
+        ]
+  ;;
+
+  let expr_call_table
+    : (Ast.Expr.t list -> Expression.t Or_error.t) id_assoc =
+      [ "atomic_load_explicit", model_atomic_load_explicit ]
+  ;;
+
   let rec expr
     : Ast.Expr.t -> Expression.t Or_error.t =
     let open Or_error.Let_syntax in
@@ -832,22 +886,6 @@ module Convert = struct
       | _   -> Or_error.error_s
                  [%message "Unsupported binary operator" ~got:(op : Operators.Bin.t)]
     in
-    let model_atomic_load_explicit = function
-      | [ raw_src; raw_mo ] ->
-        let%map src   = expr_to_address raw_src
-        and     order = expr_to_memory_order raw_mo
-        in Expression.atomic_load ~src ~order
-      | args ->
-        Or_error.error_s
-          [%message "Invalid arguments to atomic_load_explicit"
-              ~got:(args : Ast.Expr.t list)
-          ]
-    in
-    let call_table =
-      [ "atomic_load_explicit", model_atomic_load_explicit ]
-    in
-    let model_call = call call_table
-    in
     function
     | Brackets e -> expr e
     | Binary (l, op, r) -> model_binary l op r
@@ -856,7 +894,7 @@ module Convert = struct
       Or_error.return (Expression.lvalue (Lvalue.variable id))
     | Prefix (`Deref, expr) ->
       Or_error.(expr |> expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
-    | Call { func; arguments } -> model_call func arguments
+    | Call { func; arguments } -> call expr_call_table func arguments
     | Prefix _ | Postfix _ | Ternary _ | Cast _
     | Subscript _ | Field _ | Sizeof_type _ | String _
       as e ->
@@ -864,31 +902,73 @@ module Convert = struct
         [%message "Unsupported expression" ~got:(e : Ast.Expr.t)]
   ;;
 
-  let expr_stm : Ast.Expr.t -> Statement.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let model_atomic_store_explicit = function
-      | [ raw_dst; raw_src; raw_mo ] ->
-        let%map dst   = expr_to_address raw_dst
-        and     src   = expr raw_src
-        and     order = expr_to_memory_order raw_mo
-        in Statement.atomic_store ~dst ~src ~order
-      | args ->
-        Or_error.error_s
-          [%message "Invalid arguments to atomic_store_explicit"
-              ~got:(args : Ast.Expr.t list)
-          ]
-    in
-    let call_table =
-      [ "atomic_store_explicit", model_atomic_store_explicit ]
-    in
-    let model_call = call call_table
-    in
-    function
+  let%expect_test "model atomic_load_explicit" =
+    Sexp.output_hum Stdio.stdout
+      [%sexp
+         (expr
+           Ast.(
+             Expr.Call { func = Identifier "atomic_load_explicit"
+                       ; arguments =
+                           [ Prefix (`Ref, Identifier "x")
+                           ; Identifier "memory_order_seq_cst"
+                           ]
+                       }
+           )
+         : Expression.t Or_error.t )
+       ];
+    [%expect {|
+      (Ok
+       (Atomic_load (src (Ref (Lvalue (Variable x)))) (order memory_order_seq_cst))) |}]
+  ;;
+
+  let model_atomic_store
+    : Ast.Expr.t list -> Statement.t Or_error.t = function
+    | [ raw_dst; raw_src; raw_mo ] ->
+      let open Or_error.Let_syntax in
+      let%map dst   = expr_to_address raw_dst
+      and     src   = expr raw_src
+      and     order = expr_to_memory_order raw_mo
+      in Statement.atomic_store ~dst ~src ~order
+    | args ->
+      Or_error.error_s
+        [%message "Invalid arguments to atomic_store_explicit"
+            ~got:(args : Ast.Expr.t list)
+        ]
+  ;;
+
+  let model_atomic_cmpxchg
+    : Ast.Expr.t list -> Statement.t Or_error.t = function
+    | [ raw_obj; raw_expected; raw_desired; raw_succ; raw_fail ] ->
+      let open Or_error.Let_syntax in
+      let%map obj      = expr_to_address      raw_obj      (* volatile A* *)
+      and     expected = expr_to_address      raw_expected (* C* *)
+      and     desired  = expr                 raw_desired  (* C *)
+      and     succ     = expr_to_memory_order raw_succ     (* memory_order *)
+      and     fail     = expr_to_memory_order raw_fail     (* memory_order *)
+      in Statement.atomic_cmpxchg
+        ~obj ~expected ~desired ~succ ~fail
+    | args ->
+      Or_error.error_s
+        [%message
+          "Invalid arguments to atomic_compare_exchange_strong_explicit"
+            ~got:(args : Ast.Expr.t list)
+        ]
+  ;;
+
+  let expr_stm_call_table
+    : (Ast.Expr.t list -> Statement.t Or_error.t) id_assoc =
+    [ "atomic_store_explicit"                  , model_atomic_store
+    ; "atomic_compare_exchange_strong_explicit", model_atomic_cmpxchg
+    ]
+  ;;
+
+  let expr_stm : Ast.Expr.t -> Statement.t Or_error.t = function
     | Binary (l, `Assign, r) ->
+      let open Or_error.Let_syntax in
       let%map lvalue = expr_to_lvalue l
       and     rvalue = expr r
       in Statement.assign ~lvalue ~rvalue
-    | Call { func; arguments } -> model_call func arguments
+    | Call { func; arguments } -> call expr_stm_call_table func arguments
     | Brackets _ | Constant _
     | Prefix _ | Postfix _ | Binary _ | Ternary _ | Cast _
     | Subscript _ | Field _ | Sizeof_type _ | String _ | Identifier _
@@ -916,6 +996,62 @@ module Convert = struct
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]
   ;;
+
+  let%expect_test "model atomic_store_explicit" =
+    Sexp.output_hum Stdio.stdout
+      [%sexp
+         (stm
+            Ast.(
+              Stm.Expr
+                (Some
+                   (Expr.Call
+                      { func = Identifier "atomic_store_explicit"
+                      ; arguments =
+                          [ Prefix (`Ref, Identifier "x")
+                          ; Constant (Integer 42)
+                          ; Identifier "memory_order_relaxed"
+                          ]
+                      }
+                   )
+                )
+           )
+         : Statement.t Or_error.t )
+       ];
+    [%expect {|
+      (Ok
+       (Atomic_store (src (Constant (Integer 42)))
+        (dst (Ref (Lvalue (Variable x)))) (order memory_order_relaxed))) |}]
+  ;;
+
+  let%expect_test "model atomic cmpxchg" =
+    Sexp.output_hum Stdio.stdout
+      [%sexp
+         (stm
+            Ast.(
+              Stm.Expr
+                (Some
+                   (Expr.Call
+                      { func = Identifier "atomic_compare_exchange_strong_explicit"
+                      ; arguments =
+                          [ Prefix (`Ref, Identifier "x")
+                          ; Prefix (`Ref, Identifier "y")
+                          ; Constant (Integer 42)
+                          ; Identifier "memory_order_relaxed"
+                          ; Identifier "memory_order_relaxed"
+                          ]
+                      }
+                   )
+                )
+           )
+         : Statement.t Or_error.t )
+       ];
+    [%expect {|
+      (Ok
+       (Atomic_cmpxchg (obj (Ref (Lvalue (Variable x))))
+        (expected (Ref (Lvalue (Variable y)))) (desired (Constant (Integer 42)))
+        (succ memory_order_relaxed) (fail memory_order_relaxed))) |}]
+  ;;
+
 
   let func_body (body : Ast.Compound_stm.t)
     : (Initialiser.t id_assoc * Statement.t list) Or_error.t =
