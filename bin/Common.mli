@@ -66,8 +66,8 @@ val arch_of_target : target -> Id.t
    associated with a target (either a compiler spec or emits
    clause). *)
 
-val runner_of_target : target -> (module Asm_job.Runner) Or_error.t
-(** [runner_of_target target] gets the [Asm_job.Runner]
+val asm_runner_of_target : target -> (module Asm_job.Runner) Or_error.t
+(** [asm_runner_of_target target] gets the [Asm_job.Runner]
    associated with a target (either a compiler spec or emits
    clause). *)
 

@@ -34,7 +34,7 @@ let litmusify o passes spec c_file =
   let%bind (module Comp_lit) =
     Common.(
       target
-      |>  runner_of_target
+      |>  asm_runner_of_target
       >>| Asm_job.get_litmusify
       >>= chain_with_compiler target
     )

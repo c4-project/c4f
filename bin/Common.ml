@@ -79,7 +79,7 @@ let arch_of_target : target -> Id.t = function
   | `Arch arch -> arch
 ;;
 
-let runner_of_target : target -> (module Asm_job.Runner) Or_error.t = function
+let asm_runner_of_target : target -> (module Asm_job.Runner) Or_error.t = function
   | `Spec spec -> Language_support.asm_runner_from_spec spec
   | `Arch arch -> Language_support.asm_runner_from_arch arch
 ;;

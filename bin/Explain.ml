@@ -50,7 +50,7 @@ let run file_type compiler_id_or_arch output_format c_symbols
   let%bind (module Exp) =
     Common.(
       target
-      |>  runner_of_target
+      |>  asm_runner_of_target
       >>| Asm_job.get_explain
       >>= chain_with_compiler target
     )

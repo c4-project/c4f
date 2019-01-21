@@ -171,6 +171,39 @@ module Post_filter = struct
     | `None   -> Err.return `None
 end
 
+let make_filter
+  (post_filter : Post_filter.t)
+  (target : Common.target)
+  (target_runner : (module Runner.S))
+  : ( module
+      Filter.S with type aux_i =
+                      ( ( Common.file_type
+                          * ( Common.file_type
+                              * Asm_job.Litmus_config.t Asm_job.t
+                            )
+                        )
+                        * Post_filter.cfg
+                      )
+                and type aux_o =
+                      ( ( unit option
+                          * ( unit option
+                              * Asm_job.output
+                            )
+                        )
+                        * unit option
+                      )
+    ) Or_error.t =
+  let open Or_error in
+  Common.(
+    target
+    |>  asm_runner_of_target
+    >>| Asm_job.get_litmusify
+    >>= chain_with_compiler target
+    >>| chain_with_delitmus
+    >>| Post_filter.chain post_filter target_runner
+  )
+;;
+
 let run file_type (filter : Post_filter.t) compiler_id_or_emits
     (c_symbols : string list)
     (post_sexp : [ `Exists of Sexp.t ] option)
@@ -186,16 +219,7 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
   in
   let config = Asm_job.Litmus_config.make ?post_sexp () in
   let litmus_job = Asm_job.make ~passes ~config ~symbols:c_symbols () in
-  let%bind (module Flt) =
-    Common.(
-      target
-      |>  runner_of_target
-      >>| Asm_job.get_litmusify
-      >>= chain_with_compiler target
-      >>| chain_with_delitmus
-      >>| Post_filter.chain filter tgt_runner
-    )
-  in
+  let%bind (module Flt) = make_filter filter target tgt_runner in
   let%bind pf_cfg = Post_filter.make_config cfg target filter in
   let inner_file_type =
     match file_type with
@@ -203,7 +227,8 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
     | x         -> x
   in
   let%map _ =
-    Flt.run_from_string_paths ((file_type, (inner_file_type, litmus_job)), pf_cfg)
+    Flt.run_from_string_paths
+      ((file_type, (inner_file_type, litmus_job)), pf_cfg)
       ~infile:infile_raw ~outfile:outfile_raw in
   ()
 ;;
