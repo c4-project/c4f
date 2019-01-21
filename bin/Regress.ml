@@ -159,12 +159,30 @@ let regress_litmusify : Fpath.t -> unit Or_error.t =
     (Sanitiser_pass.standard)
 ;;
 
+let pp_cvars (f : Base.Formatter.t) = function
+  | `Names names ->
+    Fmt.(vbox (list ~sep:sp
+                 (hbox (prefix (unit "// -@ ") string)))) f names
+  | `Unavailable ->
+    Fmt.pf f "(not available)"
+;;
+
+let summarise_c_output (o : C.Filters.Output.t) : unit =
+  Fmt.(
+    pr "@[<v>@,@,// C variables:@,%a@]@."
+      pp_cvars (C.Filters.Output.cvars o)
+  )
+;;
+
 let delitmus_file (dir : Fpath.t) (file : Fpath.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind path = to_full_path ~dir ~file in
-  C.Filters.Litmus.run_from_fpaths C.Filters.Delitmus
-    ~infile:(Some path)
-    ~outfile:None
+  let%map output =
+    C.Filters.Litmus.run_from_fpaths C.Filters.Delitmus
+      ~infile:(Some path)
+      ~outfile:None
+  in
+  summarise_c_output output
 ;;
 
 let regress_delitmus (test_dir : Fpath.t) : unit Or_error.t =

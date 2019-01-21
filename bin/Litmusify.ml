@@ -185,7 +185,7 @@ let make_filter
                         * Post_filter.cfg
                       )
                 and type aux_o =
-                      ( ( unit option
+                      ( ( C.Filters.Output.t option
                           * ( unit option
                               * Asm_job.output
                             )

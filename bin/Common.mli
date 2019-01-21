@@ -84,14 +84,14 @@ val chain_with_compiler
 module Chain_with_delitmus
     (Onto  : Filter.S)
   : Filter.S with type aux_i = (file_type * Onto.aux_i)
-              and type aux_o = (unit option * Onto.aux_o)
+              and type aux_o = (C.Filters.Output.t option * Onto.aux_o)
 (** Chain a delitmusing pass onto [Onto] conditional on the incoming
    file type. *)
 
 val chain_with_delitmus
   :  (module Filter.S with type aux_i = 'i and type aux_o = 'o)
   -> ( module Filter.S with type aux_i = (file_type * 'i)
-                        and type aux_o = (unit option * 'o)
+                        and type aux_o = (C.Filters.Output.t option * 'o)
      )
 (** [chain_with_delitmus onto] is [Chain_with_delitmus], but lifted to
    first-class modules for conveniently slotting into chain builder

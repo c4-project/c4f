@@ -127,7 +127,7 @@ let chain_with_compiler
 module Chain_with_delitmus
     (Onto  : Filter.S)
   : Filter.S with type aux_i = (file_type * Onto.aux_i)
-              and type aux_o = (unit option * Onto.aux_o) =
+              and type aux_o = (C.Filters.Output.t option * Onto.aux_o) =
   Filter.Chain_conditional_first (struct
     module First  = C.Filters.Litmus
     module Second = Onto
@@ -145,11 +145,11 @@ let chain_with_delitmus
   (type aux_o)
   (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
   : ( module Filter.S with type aux_i = (file_type * aux_i)
-                       and type aux_o = (unit option * aux_o)
+                       and type aux_o = (C.Filters.Output.t option * aux_o)
     ) =
   (module Chain_with_delitmus (Onto)
      : Filter.S with type aux_i = (file_type * aux_i)
-                 and type aux_o = (unit option * aux_o)
+                 and type aux_o = (C.Filters.Output.t option * aux_o)
   )
 ;;
 

@@ -37,14 +37,23 @@ type mode =
   (** If the input is a C/Litmus file, try convert it to C. *)
 (** The operation to use in the filter. *)
 
-module Normal_C : Filter.S with type aux_i = mode and type aux_o = unit
+(** Abstract data type of auxiliary output from the C filters. *)
+module Output : sig
+  type t
+
+  val cvars : t -> [`Names of string list | `Unavailable]
+  (** [cvars out] gets, if possible, the list of C variable names
+      observed in the transformed program. *)
+end
+
+module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t
 (** Filter for dealing with 'normal' C programs. *)
 
-module Litmus : Filter.S with type aux_i = mode and type aux_o = unit
+module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t
 (** Filter for dealing with 'litmusified' C programs. *)
 
 val c_module
   :  bool
-  -> (module Filter.S with type aux_i = mode and type aux_o = unit)
+  -> (module Filter.S with type aux_i = mode and type aux_o = Output.t)
 (** [c_module is_c] is [Normal_C] when [is_c] is true, and [Litmus]
    otherwise. *)

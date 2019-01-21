@@ -29,6 +29,15 @@ P3()
     t3r0 = atomic_load_explicit(&y, memory_order_acquire);
     t3r1 = atomic_load_explicit(&x, memory_order_seq_cst);
 }
+
+
+// C variables:
+// - x
+// - y
+// - t2r0
+// - t2r1
+// - t3r0
+// - t3r1
 ```
 ## memalloy_cmpxchg.c.litmus
 
@@ -48,6 +57,11 @@ P0()
 void
 P1()
 { atomic_store_explicit(&x, 1, memory_order_relaxed); }
+
+
+// C variables:
+// - x
+// - t0r0
 ```
 ## rwc.c.litmus
 
@@ -74,6 +88,14 @@ P2()
     atomic_store_explicit(&y, 1, memory_order_seq_cst);
     t2r0 = atomic_load_explicit(&x, memory_order_seq_cst);
 }
+
+
+// C variables:
+// - x
+// - y
+// - t1r0
+// - t1r1
+// - t2r0
 ```
 
 Ran 3 test(s).

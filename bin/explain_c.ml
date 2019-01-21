@@ -26,10 +26,13 @@ open Core
 open Utils
 
 let run_delitmus ~(infile_raw : string option) ~(outfile_raw : string option) _o _cfg =
-  C.Filters.Litmus.run_from_string_paths
-    C.Filters.Delitmus
-    ~infile:infile_raw
-    ~outfile:outfile_raw
+  let open Or_error.Let_syntax in
+  let%map _ =
+    C.Filters.Litmus.run_from_string_paths
+      C.Filters.Delitmus
+      ~infile:infile_raw
+      ~outfile:outfile_raw
+  in ()
 ;;
 
 let delitmus_command : Command.t =
@@ -60,7 +63,7 @@ let run file_type ~(infile_raw : string option) ~(outfile_raw : string option) _
   in
   let (module M)   = C.Filters.c_module is_c in
   let module Cpp_M = Lib.Cpp.Chain_filter (M) in
-  let%map (_, ()) =
+  let%map _ =
     Cpp_M.run (cpp_cfg, Print) infile outfile
   in ()
 ;;
