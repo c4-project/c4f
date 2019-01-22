@@ -72,7 +72,7 @@ module Chain (B : Basic_chain_unconditional)
 (** Chains two filters together using temporary files. *)
 
 module Chain_tuple (First : S) (Second : S)
-  : S with type aux_i = (First.aux_i * (First.aux_o option -> Second.aux_i))
+  : S with type aux_i = (First.aux_i * (First.aux_o chain_output -> Second.aux_i))
        and type aux_o = (First.aux_o * Second.aux_o)
 (** Simplified version of {{!Chain}Chain} that assumes that the
     auxiliary input is a tuple of the input to the first filter, and a

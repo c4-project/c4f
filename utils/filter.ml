@@ -172,7 +172,7 @@ module Chain (B : Basic_chain_unconditional)
   let name = Printf.sprintf "(%s | %s)" B.First.name B.Second.name
 
   let tmp_file_ext { aux; src; sink } =
-    let snd_aux = B.second_input aux None in
+    let snd_aux = B.second_input aux `Checking_ahead in
     B.Second.tmp_file_ext { aux = snd_aux; src; sink }
   ;;
 
@@ -192,7 +192,7 @@ module Chain (B : Basic_chain_unconditional)
     let open Or_error.Let_syntax in
     let%bind (a_out, b_in) = make_temp a_ctx in
     let%bind a_output = B.First.run a_aux src a_out in
-    let      b_aux    = B.second_input aux (Some a_output) in
+    let      b_aux    = B.second_input aux (`Ran a_output) in
     let%map  b_output = B.Second.run b_aux b_in sink in
     (a_output, b_output)
   ;;
@@ -202,12 +202,12 @@ module Chain (B : Basic_chain_unconditional)
 end
 
 module Chain_tuple (First : S) (Second : S)
-  : S with type aux_i = (First.aux_i * (First.aux_o option -> Second.aux_i))
+  : S with type aux_i = (First.aux_i * (First.aux_o chain_output -> Second.aux_i))
        and type aux_o = (First.aux_o * Second.aux_o) =
   Chain (struct
     module First = First
     module Second = Second
-    type aux_i = (First.aux_i * (First.aux_o option -> Second.aux_i))
+    type aux_i = (First.aux_i * (First.aux_o chain_output -> Second.aux_i))
     let first_input = fst
     let second_input = snd
   end)
@@ -222,7 +222,7 @@ module type Chain_conditional_variables = sig
 
   val run_chained
     :  BCC.First.aux_i
-    -> (BCC.First.aux_o option -> BCC.Second.aux_i)
+    -> (BCC.First.aux_o chain_output -> BCC.Second.aux_i)
     -> Io.In_source.t
     -> Io.Out_sink.t
     -> aux_o Or_error.t
@@ -259,7 +259,7 @@ module Chain_conditional_first (B : Basic_chain_conditional_first)
   Chain_conditional_core (struct
     module BCC = struct
       include B
-      type aux_i_single = B.First.aux_o option -> B.Second.aux_i
+      type aux_i_single = B.First.aux_o chain_output -> B.Second.aux_i
     end
     type aux_o = (B.First.aux_o option * B.Second.aux_o)
 
@@ -272,7 +272,7 @@ module Chain_conditional_first (B : Basic_chain_conditional_first)
     let tmp_file_ext ({ src; sink; _ } as ctx) : string =
       match BCC.select ctx with
       | `Both (_, aux)
-      | `One  aux -> B.Second.tmp_file_ext { aux = aux None; src; sink }
+      | `One  aux -> B.Second.tmp_file_ext { aux = aux `Checking_ahead; src; sink }
     ;;
 
     let run_chained a_in b_in src snk =
@@ -283,7 +283,7 @@ module Chain_conditional_first (B : Basic_chain_conditional_first)
 
     let run_unchained (b_in_f) src snk =
       let open Or_error.Let_syntax in
-      let%map b_out = B.Second.run (b_in_f None) src snk in
+      let%map b_out = B.Second.run (b_in_f `Skipped) src snk in
       (None, b_out)
     ;;
   end)
@@ -307,7 +307,7 @@ module Chain_conditional_second (B : Basic_chain_conditional_second)
        may or may not be running. *)
     let tmp_file_ext ({ src; sink; _ } as ctx) : string =
       match BCC.select ctx with
-      | `Both (_, aux) -> B.Second.tmp_file_ext { aux = aux None; src; sink }
+      | `Both (_, aux) -> B.Second.tmp_file_ext { aux = aux `Checking_ahead; src; sink }
       | `One  aux      -> B.First.tmp_file_ext  { aux; src; sink }
     ;;
 

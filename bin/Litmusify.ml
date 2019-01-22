@@ -116,16 +116,16 @@ module Post_filter = struct
       (module R : Runner.S)
       (module M : Filter.S with type aux_i = i and type aux_o = o)
     : ( module
-        Filter.S with type aux_i = (i * (o option -> cfg))
+        Filter.S with type aux_i = (i * (o Filter.chain_output -> cfg))
                   and type aux_o = (o * unit option)
       ) =
     let (module Post) = make (module R) filter in
     (module
       Filter.Chain_conditional_second (struct
-        type aux_i = (i * (o option -> cfg))
+        type aux_i = (i * (o Filter.chain_output -> cfg))
 
         let select { Filter.aux = (rest, cfg); _ } =
-          match cfg None with
+          match cfg `Checking_ahead with
           | `None -> `One rest
           | `Herd _ | `Litmus _ -> `Both (rest, cfg)
         module First = M
@@ -178,7 +178,7 @@ let make_filter
   : ( module
       Filter.S with type aux_i =
                       ( ( File_type.t_or_infer
-                          * ( C.Filters.Output.t option
+                          * ( C.Filters.Output.t Filter.chain_output
                               ->
                               Asm_job.Litmus_config.t
                                 Asm_job.t
@@ -187,7 +187,7 @@ let make_filter
                         )
                         * ( ( C.Filters.Output.t option
                               * ( unit option * Asm_job.output )
-                            ) option
+                            ) Filter.chain_output
                             -> Post_filter.cfg
                           )
                       )
@@ -211,6 +211,49 @@ let make_filter
   )
 ;;
 
+let choose_cvars_after_delitmus
+    (o : Output.t)
+    (user_cvars : string list option)
+    (dl_cvars : string list option)
+  : string list option =
+  (* We could use Option.first_some here, but expanding it out gives
+     us the ability to verbose-log what we're doing. *)
+  let out_cvars message cvars =
+    Fmt.(
+      pf o.vf "Using %s:@ %a@."
+        message
+        (list ~sep:comma string) cvars
+    );
+    Some cvars
+  in
+  match user_cvars, dl_cvars with
+  | Some cvars, Some _ ->
+    out_cvars "user-supplied cvars (overriding those found during delitmus)"
+      cvars
+  | Some cvars, None ->
+    out_cvars "user-supplied cvars (none found during delitmus)" cvars
+  | None, Some cvars ->
+    out_cvars "cvars found during delitmus" cvars
+  | None, None -> None
+;;
+
+let choose_cvars
+  (o : Output.t)
+  (user_cvars : string list option)
+  (dl_output : C.Filters.Output.t Filter.chain_output)
+  : string list option =
+  let warn_if_empty, cvars = match dl_output with
+    | `Checking_ahead -> false, None
+    | `Skipped -> true, user_cvars
+    | `Ran dl ->
+      let dl_cvars = C.Filters.Output.cvars dl in
+      true, choose_cvars_after_delitmus o user_cvars dl_cvars
+  in
+  if warn_if_empty then
+    Common.warn_if_not_tracking_symbols o cvars;
+  cvars
+;;
+
 (** [make_compiler_input file_type user_cvars cfg passes dl_output]
     generates the input to the compiler stage of the litmusify pipeline.
 
@@ -220,15 +263,17 @@ let make_filter
     stage of the litmus pipeline [dl_output], which contains any
     postcondition and discovered C variables. *)
 let make_compiler_input
+  (o : Output.t)
   (file_type : File_type.t_or_infer)
-  (user_cvars : string list)
+  (user_cvars : string list option)
   (config : Asm_job.Litmus_config.t)
   (passes : Sanitiser_pass.Set.t)
-  (_dl_output : C.Filters.Output.t option)
+  (dl_output : C.Filters.Output.t Filter.chain_output)
   : Asm_job.Litmus_config.t Asm_job.t
       Common.Compiler_chain_input.t =
+  let cvars = choose_cvars o user_cvars dl_output in
   let litmus_job =
-    Asm_job.make ~passes ~config ~symbols:user_cvars ()
+    Asm_job.make ~passes ~config ?symbols:cvars ()
   in
   Common.Compiler_chain_input.create
     ~file_type:(File_type.delitmusified file_type)
@@ -236,11 +281,10 @@ let make_compiler_input
 ;;
 
 let run file_type (filter : Post_filter.t) compiler_id_or_emits
-    (c_symbols : string list)
+    (user_cvars : string list option)
     (post_sexp : [ `Exists of Sexp.t ] option)
     ~(infile_raw : string option)
     ~(outfile_raw : string option) o cfg =
-  Common.warn_if_not_tracking_symbols o c_symbols;
   let open Result.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
   let%bind tgt_machine = Post_filter.machine_of_target cfg target in
@@ -252,7 +296,7 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
   in
   let litmus_cfg = Asm_job.Litmus_config.make ?post_sexp () in
   let compiler_input_fn =
-    make_compiler_input file_type c_symbols litmus_cfg passes
+    make_compiler_input o file_type user_cvars litmus_cfg passes
   in
   let%map _ =
     Filter.run_from_string_paths

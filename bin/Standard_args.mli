@@ -70,7 +70,7 @@ module Other : sig
   (** [file_type] defines a parameter for specifying the file type of
       a single input file. *)
 
-  val c_symbols : string list Command.Param.t
+  val c_symbols : string list option Command.Param.t
   (** [c_symbols] defines a parameter for collecting a list of
       C symbols to track during sanitisation. *)
 

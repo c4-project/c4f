@@ -32,6 +32,15 @@ type 'aux ctx =
 (** Collection of all the context used by filters to make
     internal decisions. *)
 
+
+type 'o chain_output =
+  [ `Checking_ahead
+  | `Skipped
+  | `Ran of 'o
+  ]
+(** Type used when forwarding the output of the first item in a
+    chained filter to the input of a second. *)
+
 (** Types and values common to both the basic and full filter
     signatures. *)
 module type Common = sig
@@ -133,7 +142,7 @@ module type Basic_chain_unconditional = sig
   (** [first_input in] should extract the input for the first
       chained filter from [in]. *)
 
-  val second_input : aux_i -> First.aux_o option -> Second.aux_i
+  val second_input : aux_i -> First.aux_o chain_output -> Second.aux_i
   (** [second_input in first_out] should extract the input for the
       second chained filter from [in] and the output [first_out]
       from the first filter.  [first_out] may be missing; this
@@ -149,7 +158,7 @@ module type Basic_chain_conditional = sig
 
   val select
     :  aux_i ctx
-    -> [ `Both of (First.aux_i * (First.aux_o option -> Second.aux_i))
+    -> [ `Both of (First.aux_i * (First.aux_o chain_output -> Second.aux_i))
        | `One of aux_i_single
        ]
   (** [select ctx] should return [`Both] when the optional
@@ -165,7 +174,7 @@ module type Basic_chain_conditional_first = sig
   include Basic_chain_conditional
     with module First := First
      and module Second := Second
-     and type aux_i_single := (First.aux_o option -> Second.aux_i)
+     and type aux_i_single := (First.aux_o chain_output -> Second.aux_i)
 end
 
 (** Signature of inputs needed to build a conditional chain with

@@ -32,10 +32,9 @@ type target =
   ]
 ;;
 
-
-
-let warn_if_not_tracking_symbols (o : Output.t) = function
-  | [] ->
+let warn_if_not_tracking_symbols (o : Output.t)
+  : string list option -> unit = function
+  | None ->
     Format.fprintf o.wf
       "@[%a@]@."
       (Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp)
@@ -45,7 +44,7 @@ let warn_if_not_tracking_symbols (o : Output.t) = function
       ; "refer to heap locations."
       ; "To fix this, specify `-cvars 'symbol1,symbol2,etc'`."
       ]
-  | _ :: _ -> ()
+  | Some _ -> ()
 ;;
 
 let get_target cfg = function
@@ -101,18 +100,19 @@ module Chain_with_compiler
     type aux_i = Onto.aux_i Compiler_chain_input.t
 
     let lift_next (next : Compiler_chain_input.next_mode -> 'a)
-      (used_compiler : bool) : unit option -> 'a =
+      : unit Filter.chain_output -> 'a =
       function
-      | None -> next `Preview
-      | Some () -> next (if used_compiler then `Compile else `No_compile)
+      | `Checking_ahead -> next `Preview
+      | `Skipped -> next `No_compile
+      | `Ran () -> next `Compile
     ;;
 
     let select { Filter.aux; src; _ } =
       let file_type = Compiler_chain_input.file_type aux in
       let next      = Compiler_chain_input.next      aux in
       let f         = lift_next next in
-      if File_type.is_c src file_type then `Both ((), f true)
-      else `One (f false)
+      if File_type.is_c src file_type then `Both ((), f)
+      else `One f
   end)
 ;;
 
@@ -135,12 +135,12 @@ let chain_with_compiler
 
 module Chain_with_delitmus
     (Onto  : Filter.S)
-  : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> Onto.aux_i))
+  : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> Onto.aux_i))
               and type aux_o = (C.Filters.Output.t option * Onto.aux_o) =
   Filter.Chain_conditional_first (struct
     module First  = C.Filters.Litmus
     module Second = Onto
-    type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> Onto.aux_i))
+    type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> Onto.aux_i))
 
     let select { Filter.aux = (file_type, rest); src; _ } =
       if File_type.is_c_litmus src file_type
@@ -153,11 +153,11 @@ let chain_with_delitmus
   (type aux_i)
   (type aux_o)
   (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-  : ( module Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> aux_i))
+  : ( module Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> aux_i))
                        and type aux_o = (C.Filters.Output.t option * aux_o)
     ) =
   (module Chain_with_delitmus (Onto)
-     : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> aux_i))
+     : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> aux_i))
                  and type aux_o = (C.Filters.Output.t option * aux_o)
   )
 ;;

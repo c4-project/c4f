@@ -34,7 +34,7 @@ type target =
 
 val warn_if_not_tracking_symbols
   :  Output.t
-  -> string list
+  -> string list option
   -> unit
 (** [warn_if_not_tracking_symbols o c_symbols] prints a warning on [o]
     if [c_symbols] is empty.  The warning explains that, without any
@@ -89,14 +89,14 @@ val chain_with_compiler
 
 module Chain_with_delitmus
     (Onto  : Filter.S)
-  : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> Onto.aux_i))
+  : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> Onto.aux_i))
               and type aux_o = (C.Filters.Output.t option * Onto.aux_o)
 (** Chain a delitmusing pass onto [Onto] conditional on the incoming
    file type. *)
 
 val chain_with_delitmus
   :  (module Filter.S with type aux_i = 'i and type aux_o = 'o)
-  -> ( module Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> 'i))
+  -> ( module Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> 'i))
                         and type aux_o = (C.Filters.Output.t option * 'o)
      )
 (** [chain_with_delitmus onto] is [Chain_with_delitmus], but lifted to

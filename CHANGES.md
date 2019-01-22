@@ -1,5 +1,13 @@
 # Unreleased
 
+## 2019-Jan-22
+
+- Feature: litmusify now automatically finds the set of C variables
+  when run on a C/litmus file (*not* plain C) and `-cvars` isn't
+  provided.  This will expand to other `act` subcommands in due
+  course.
+- Note: to see the cvars set chosen, pass `-verbose` to litmusify.
+
 ## 2019-Jan-21
 
 - Bugfix: delitmusifier no longer erroneously reverses its arguments.

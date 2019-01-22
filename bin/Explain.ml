@@ -45,7 +45,7 @@ let run file_type compiler_id_or_arch output_format c_symbols
   in
   let config = Asm_job.Explain_config.make ?format:output_format () in
   let explain_job =
-    Asm_job.make ~config ~symbols:c_symbols ~passes ()
+    Asm_job.make ~config ?symbols:c_symbols ~passes ()
   in
   let%bind (module Exp) =
     Common.(
