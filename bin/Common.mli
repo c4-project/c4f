@@ -32,9 +32,6 @@ type target =
   | `Arch of Id.t
   ]
 
-type file_type =
-  [`Assembly | `C | `C_litmus | `Infer]
-
 val warn_if_not_tracking_symbols
   :  Output.t
   -> string list
@@ -42,16 +39,6 @@ val warn_if_not_tracking_symbols
 (** [warn_if_not_tracking_symbols o c_symbols] prints a warning on [o]
     if [c_symbols] is empty.  The warning explains that, without any
     C symbols to track, act may make incorrect assumptions. *)
-
-val is_c : Io.In_source.t -> [> `C | `Infer] -> bool
-(** [is_c infile filetype] decides whether [infile] is a C
-    file---from its extension if [filetype] is [`Infer], or
-    by whether or not [filetype] is [`C]. *)
-
-val is_c_litmus : Io.In_source.t -> [> `C_litmus | `Infer] -> bool
-(** [is_c_litmus infile filetype] decides whether [infile] is a C/litmus
-    file---from its extension if [filetype] is [`Infer], or
-    by whether or not [filetype] is [`C_litmus]. *)
 
 val get_target
   :  Lib.Config.M.t
@@ -81,10 +68,10 @@ module Compiler_chain_input : sig
 
   type 'a t
 
-  val file_type : 'a t -> file_type
+  val file_type : 'a t -> File_type.t_or_infer
   val next      : 'a t -> next_mode -> 'a
 
-  val create : file_type:file_type -> next:(next_mode -> 'a) -> 'a t
+  val create : file_type:File_type.t_or_infer -> next:(next_mode -> 'a) -> 'a t
 end
 
 val chain_with_compiler
@@ -102,14 +89,14 @@ val chain_with_compiler
 
 module Chain_with_delitmus
     (Onto  : Filter.S)
-  : Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> Onto.aux_i))
+  : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> Onto.aux_i))
               and type aux_o = (C.Filters.Output.t option * Onto.aux_o)
 (** Chain a delitmusing pass onto [Onto] conditional on the incoming
    file type. *)
 
 val chain_with_delitmus
   :  (module Filter.S with type aux_i = 'i and type aux_o = 'o)
-  -> ( module Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> 'i))
+  -> ( module Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> 'i))
                         and type aux_o = (C.Filters.Output.t option * 'o)
      )
 (** [chain_with_delitmus onto] is [Chain_with_delitmus], but lifted to

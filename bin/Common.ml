@@ -32,9 +32,7 @@ type target =
   ]
 ;;
 
-type file_type =
-  [`Assembly | `C | `C_litmus | `Infer]
-;;
+
 
 let warn_if_not_tracking_symbols (o : Output.t) = function
   | [] ->
@@ -48,22 +46,6 @@ let warn_if_not_tracking_symbols (o : Output.t) = function
       ; "To fix this, specify `-cvars 'symbol1,symbol2,etc'`."
       ]
   | _ :: _ -> ()
-;;
-
-let is_c (src : Io.In_source.t)
-  : [> `C | `Infer] -> bool = function
-  | `C -> true
-  | `Infer -> Option.exists (Io.In_source.file_type src)
-                ~f:(String.equal "c")
-  | _ -> false
-;;
-
-let is_c_litmus (src : Io.In_source.t)
-  : [> `C_litmus | `Infer] -> bool = function
-  | `C_litmus -> true
-  | `Infer -> Option.exists (Io.In_source.file_type src)
-                ~f:(String.equal "litmus")
-  | _ -> false
 ;;
 
 let get_target cfg = function
@@ -100,7 +82,7 @@ module Compiler_chain_input = struct
     ]
 
     type 'a t =
-    { file_type : file_type
+    { file_type : File_type.t_or_infer
     ; next      : (next_mode -> 'a)
     }
   [@@deriving fields]
@@ -129,7 +111,7 @@ module Chain_with_compiler
       let file_type = Compiler_chain_input.file_type aux in
       let next      = Compiler_chain_input.next      aux in
       let f         = lift_next next in
-      if is_c src file_type then `Both ((), f true)
+      if File_type.is_c src file_type then `Both ((), f true)
       else `One (f false)
   end)
 ;;
@@ -153,15 +135,15 @@ let chain_with_compiler
 
 module Chain_with_delitmus
     (Onto  : Filter.S)
-  : Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> Onto.aux_i))
+  : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> Onto.aux_i))
               and type aux_o = (C.Filters.Output.t option * Onto.aux_o) =
   Filter.Chain_conditional_first (struct
     module First  = C.Filters.Litmus
     module Second = Onto
-    type aux_i = (file_type * (C.Filters.Output.t option -> Onto.aux_i))
+    type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> Onto.aux_i))
 
     let select { Filter.aux = (file_type, rest); src; _ } =
-      if is_c_litmus src file_type
+      if File_type.is_c_litmus src file_type
       then `Both (C.Filters.Delitmus, rest)
       else `One  rest
   end)
@@ -171,11 +153,11 @@ let chain_with_delitmus
   (type aux_i)
   (type aux_o)
   (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-  : ( module Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> aux_i))
+  : ( module Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> aux_i))
                        and type aux_o = (C.Filters.Output.t option * aux_o)
     ) =
   (module Chain_with_delitmus (Onto)
-     : Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> aux_i))
+     : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t option -> aux_i))
                  and type aux_o = (C.Filters.Output.t option * aux_o)
   )
 ;;

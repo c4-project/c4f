@@ -177,7 +177,7 @@ let make_filter
   (target_runner : (module Runner.S))
   : ( module
       Filter.S with type aux_i =
-                      ( ( Common.file_type
+                      ( ( File_type.t_or_infer
                           * ( C.Filters.Output.t option
                               ->
                               Asm_job.Litmus_config.t
@@ -220,23 +220,18 @@ let make_filter
     stage of the litmus pipeline [dl_output], which contains any
     postcondition and discovered C variables. *)
 let make_compiler_input
-  (file_type : Common.file_type)
+  (file_type : File_type.t_or_infer)
   (user_cvars : string list)
   (config : Asm_job.Litmus_config.t)
   (passes : Sanitiser_pass.Set.t)
   (_dl_output : C.Filters.Output.t option)
   : Asm_job.Litmus_config.t Asm_job.t
       Common.Compiler_chain_input.t =
-  let inner_file_type =
-    match file_type with
-    | `C_litmus -> `C
-    | x         -> x
-  in
   let litmus_job =
     Asm_job.make ~passes ~config ~symbols:user_cvars ()
   in
   Common.Compiler_chain_input.create
-    ~file_type:inner_file_type
+    ~file_type:(File_type.delitmusified file_type)
     ~next:(Fn.const litmus_job)
 ;;
 

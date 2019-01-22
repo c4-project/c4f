@@ -57,7 +57,7 @@ let run file_type ~(infile_raw : string option) ~(outfile_raw : string option) _
   let open Or_error.Let_syntax in
   let%bind infile  = Io.In_source.of_string_opt infile_raw in
   let%bind outfile = Io.Out_sink.of_string_opt outfile_raw in
-  let      is_c    = Common.is_c infile file_type in
+  let      is_c    = Lib.File_type.is_c infile file_type in
   let      cpp_cfg =
     Option.value (Lib.Config.M.cpp cfg) ~default:(Lib.Cpp.Config.default ())
   in
