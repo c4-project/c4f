@@ -92,18 +92,45 @@ let ensure_spec : [> `Spec of Compiler.Spec.With_id.t]
         "To handle C files, you must supply a compiler ID."
 ;;
 
+module Compiler_chain_input = struct
+  type next_mode =
+    [ `Preview
+    | `No_compile
+    | `Compile
+    ]
+
+    type 'a t =
+    { file_type : file_type
+    ; next      : (next_mode -> 'a)
+    }
+  [@@deriving fields]
+
+  let create = Fields.create
+end
+
 module Chain_with_compiler
     (Comp : Filter.S with type aux_i = unit and type aux_o = unit)
     (Onto : Filter.S)
-  : Filter.S with type aux_i = (file_type * Onto.aux_i)
+  : Filter.S with type aux_i = Onto.aux_i Compiler_chain_input.t
               and type aux_o = (unit option * Onto.aux_o) =
   Filter.Chain_conditional_first (struct
     module First  = Comp
     module Second = Onto
-    type aux_i_combi = (file_type * Onto.aux_i)
+    type aux_i = Onto.aux_i Compiler_chain_input.t
 
-    let select { Filter.aux = (file_type, rest); src; _ } =
-      if is_c src file_type then `Both ((), rest) else `One rest
+    let lift_next (next : Compiler_chain_input.next_mode -> 'a)
+      (used_compiler : bool) : unit option -> 'a =
+      function
+      | None -> next `Preview
+      | Some () -> next (if used_compiler then `Compile else `No_compile)
+    ;;
+
+    let select { Filter.aux; src; _ } =
+      let file_type = Compiler_chain_input.file_type aux in
+      let next      = Compiler_chain_input.next      aux in
+      let f         = lift_next next in
+      if is_c src file_type then `Both ((), f true)
+      else `One (f false)
   end)
 ;;
 
@@ -112,26 +139,26 @@ let chain_with_compiler
   (type aux_o)
   (target : target)
   (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-  : ( module Filter.S with type aux_i = (file_type * aux_i)
+  : ( module Filter.S with type aux_i = aux_i Compiler_chain_input.t
                        and type aux_o = (unit option * aux_o)
     ) Or_error.t =
   let open Result.Let_syntax in
   let%bind cspec = ensure_spec target in
   let%map (module C) = Language_support.compiler_filter_from_spec cspec in
   (module Chain_with_compiler (C) (Onto)
-     : Filter.S with type aux_i = (file_type * aux_i)
+     : Filter.S with type aux_i = aux_i Compiler_chain_input.t
                  and type aux_o = (unit option * aux_o)
   )
 ;;
 
 module Chain_with_delitmus
     (Onto  : Filter.S)
-  : Filter.S with type aux_i = (file_type * Onto.aux_i)
+  : Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> Onto.aux_i))
               and type aux_o = (C.Filters.Output.t option * Onto.aux_o) =
   Filter.Chain_conditional_first (struct
     module First  = C.Filters.Litmus
     module Second = Onto
-    type aux_i_combi = (file_type * Onto.aux_i)
+    type aux_i = (file_type * (C.Filters.Output.t option -> Onto.aux_i))
 
     let select { Filter.aux = (file_type, rest); src; _ } =
       if is_c_litmus src file_type
@@ -144,11 +171,11 @@ let chain_with_delitmus
   (type aux_i)
   (type aux_o)
   (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-  : ( module Filter.S with type aux_i = (file_type * aux_i)
+  : ( module Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> aux_i))
                        and type aux_o = (C.Filters.Output.t option * aux_o)
     ) =
   (module Chain_with_delitmus (Onto)
-     : Filter.S with type aux_i = (file_type * aux_i)
+     : Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> aux_i))
                  and type aux_o = (C.Filters.Output.t option * aux_o)
   )
 ;;

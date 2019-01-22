@@ -117,17 +117,41 @@ module type S = sig
        success. *)
 end
 
-(** Signature of inputs needed to build a conditional chain. *)
-module type Basic_chain_conditional = sig
+(** Basic signature of inputs needed to build a chain. *)
+module type Basic_chain = sig
   module First  : S (** The first filter. *)
   module Second : S (** The second filter. *)
 
-  type aux_i_combi  (** Combined auxiliary input. *)
+  type aux_i (** Combined auxiliary input. *)
+end
+
+(** Signature of inputs needed to build an unconditional chain. *)
+module type Basic_chain_unconditional = sig
+  include Basic_chain
+
+  val first_input : aux_i -> First.aux_i
+  (** [first_input in] should extract the input for the first
+      chained filter from [in]. *)
+
+  val second_input : aux_i -> First.aux_o option -> Second.aux_i
+  (** [second_input in first_out] should extract the input for the
+      second chained filter from [in] and the output [first_out]
+      from the first filter.  [first_out] may be missing; this
+      usually occurs when the second input is needed before the
+      first filter has run. *)
+end
+
+(** Signature of inputs needed to build a conditional chain. *)
+module type Basic_chain_conditional = sig
+  include Basic_chain
+
   type aux_i_single (** Auxiliary input used when not chaining. *)
 
   val select
-    :  aux_i_combi ctx
-    -> [`Both of (First.aux_i * Second.aux_i) | `One of aux_i_single]
+    :  aux_i ctx
+    -> [ `Both of (First.aux_i * (First.aux_o option -> Second.aux_i))
+       | `One of aux_i_single
+       ]
   (** [select ctx] should return [`Both] when the optional
      filter should be run (which filter this is depends on the
      functor). *)
@@ -136,10 +160,12 @@ end
 (** Signature of inputs needed to build a conditional chain with
     the first filter being conditional. *)
 module type Basic_chain_conditional_first = sig
+  module First : S (** The first filter. *)
   module Second : S (** The second filter. *)
   include Basic_chain_conditional
-    with module Second := Second
-     and type aux_i_single := Second.aux_i
+    with module First := First
+     and module Second := Second
+     and type aux_i_single := (First.aux_o option -> Second.aux_i)
 end
 
 (** Signature of inputs needed to build a conditional chain with

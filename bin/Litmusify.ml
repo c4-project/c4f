@@ -116,16 +116,16 @@ module Post_filter = struct
       (module R : Runner.S)
       (module M : Filter.S with type aux_i = i and type aux_o = o)
     : ( module
-        Filter.S with type aux_i = (i * cfg)
+        Filter.S with type aux_i = (i * (o option -> cfg))
                   and type aux_o = (o * unit option)
       ) =
     let (module Post) = make (module R) filter in
     (module
       Filter.Chain_conditional_second (struct
-        type aux_i_combi = (i * cfg)
+        type aux_i = (i * (o option -> cfg))
 
         let select { Filter.aux = (rest, cfg); _ } =
-          match cfg with
+          match cfg None with
           | `None -> `One rest
           | `Herd _ | `Litmus _ -> `Both (rest, cfg)
         module First = M
@@ -178,11 +178,18 @@ let make_filter
   : ( module
       Filter.S with type aux_i =
                       ( ( Common.file_type
-                          * ( Common.file_type
-                              * Asm_job.Litmus_config.t Asm_job.t
+                          * ( C.Filters.Output.t option
+                              ->
+                              Asm_job.Litmus_config.t
+                                Asm_job.t
+                                Common.Compiler_chain_input.t
                             )
                         )
-                        * Post_filter.cfg
+                        * ( ( C.Filters.Output.t option
+                              * ( unit option * Asm_job.output )
+                            ) option
+                            -> Post_filter.cfg
+                          )
                       )
                 and type aux_o =
                       ( ( C.Filters.Output.t option
@@ -204,6 +211,35 @@ let make_filter
   )
 ;;
 
+(** [make_compiler_input file_type user_cvars cfg passes dl_output]
+    generates the input to the compiler stage of the litmusify pipeline.
+
+    It takes the original file type [file_type]; the user-supplied C
+    variables [user_cvars]; the litmusifier configuration [config];
+    the sanitiser passes [passes]; and the output from the de-litmus
+    stage of the litmus pipeline [dl_output], which contains any
+    postcondition and discovered C variables. *)
+let make_compiler_input
+  (file_type : Common.file_type)
+  (user_cvars : string list)
+  (config : Asm_job.Litmus_config.t)
+  (passes : Sanitiser_pass.Set.t)
+  (_dl_output : C.Filters.Output.t option)
+  : Asm_job.Litmus_config.t Asm_job.t
+      Common.Compiler_chain_input.t =
+  let inner_file_type =
+    match file_type with
+    | `C_litmus -> `C
+    | x         -> x
+  in
+  let litmus_job =
+    Asm_job.make ~passes ~config ~symbols:user_cvars ()
+  in
+  Common.Compiler_chain_input.create
+    ~file_type:inner_file_type
+    ~next:(Fn.const litmus_job)
+;;
+
 let run file_type (filter : Post_filter.t) compiler_id_or_emits
     (c_symbols : string list)
     (post_sexp : [ `Exists of Sexp.t ] option)
@@ -214,21 +250,18 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
   let%bind target = Common.get_target cfg compiler_id_or_emits in
   let%bind tgt_machine = Post_filter.machine_of_target cfg target in
   let tgt_runner = Machine.Spec.With_id.runner tgt_machine in
+  let%bind (module Filter) = make_filter filter target tgt_runner in
+  let%bind pf_cfg = Post_filter.make_config cfg target filter in
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
-  let config = Asm_job.Litmus_config.make ?post_sexp () in
-  let litmus_job = Asm_job.make ~passes ~config ~symbols:c_symbols () in
-  let%bind (module Flt) = make_filter filter target tgt_runner in
-  let%bind pf_cfg = Post_filter.make_config cfg target filter in
-  let inner_file_type =
-    match file_type with
-    | `C_litmus -> `C
-    | x         -> x
+  let litmus_cfg = Asm_job.Litmus_config.make ?post_sexp () in
+  let compiler_input_fn =
+    make_compiler_input file_type c_symbols litmus_cfg passes
   in
   let%map _ =
-    Flt.run_from_string_paths
-      ((file_type, (inner_file_type, litmus_job)), pf_cfg)
+    Filter.run_from_string_paths
+      ((file_type, compiler_input_fn), Fn.const pf_cfg)
       ~infile:infile_raw ~outfile:outfile_raw in
   ()
 ;;

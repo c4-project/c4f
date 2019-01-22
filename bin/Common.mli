@@ -71,26 +71,45 @@ val asm_runner_of_target : target -> (module Asm_job.Runner) Or_error.t
    associated with a target (either a compiler spec or emits
    clause). *)
 
+
+module Compiler_chain_input : sig
+  type next_mode =
+    [ `Preview
+    | `No_compile
+    | `Compile
+    ]
+
+  type 'a t
+
+  val file_type : 'a t -> file_type
+  val next      : 'a t -> next_mode -> 'a
+
+  val create : file_type:file_type -> next:(next_mode -> 'a) -> 'a t
+end
+
 val chain_with_compiler
   :  target
   -> (module Filter.S with type aux_i = 'aux_i and type aux_o = 'aux_o)
-  -> (module Filter.S with type aux_i = (file_type * 'aux_i)
+  -> (module Filter.S with type aux_i = 'aux_i Compiler_chain_input.t
                        and type aux_o = (unit option * 'aux_o)
      ) Or_error.t
 (** [chain_with compiler target to_chain] finds the correct
     compiler filter for [target],
-    then chains it onto [to_chain] conditional on the incoming file type. *)
+    then chains it onto [to_chain] conditional on the incoming file type.
+
+    The second filter's auxiliary input is derived from a function that
+    receives [true] if the compiler was run, and [false] otherwise. *)
 
 module Chain_with_delitmus
     (Onto  : Filter.S)
-  : Filter.S with type aux_i = (file_type * Onto.aux_i)
+  : Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> Onto.aux_i))
               and type aux_o = (C.Filters.Output.t option * Onto.aux_o)
 (** Chain a delitmusing pass onto [Onto] conditional on the incoming
    file type. *)
 
 val chain_with_delitmus
   :  (module Filter.S with type aux_i = 'i and type aux_o = 'o)
-  -> ( module Filter.S with type aux_i = (file_type * 'i)
+  -> ( module Filter.S with type aux_i = (file_type * (C.Filters.Output.t option -> 'i))
                         and type aux_o = (C.Filters.Output.t option * 'o)
      )
 (** [chain_with_delitmus onto] is [Chain_with_delitmus], but lifted to

@@ -55,8 +55,13 @@ let run file_type compiler_id_or_arch output_format c_symbols
       >>= chain_with_compiler target
     )
   in
+  let compiler_input =
+    Common.Compiler_chain_input.create
+      ~file_type
+      ~next:(Fn.const explain_job)
+  in
   let%map (_, out) =
-    Exp.run_from_string_paths (file_type, explain_job)
+    Exp.run_from_string_paths compiler_input
       ~infile:infile_raw ~outfile:outfile_raw
   in
   Asm_job.warn out o.Output.wf;

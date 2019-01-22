@@ -66,17 +66,25 @@ module Make_on_runner (R : Basic_on_runner)
 (** Makes an in-file-only filter by combining a {{!Runner.S}runner} and
     some program accessors. *)
 
-module Chain (A : S) (B : S) : S with type aux_i = (A.aux_i * B.aux_i)
-                                  and type aux_o = (A.aux_o * B.aux_o)
+module Chain (B : Basic_chain_unconditional)
+  : S with type aux_i = B.aux_i
+       and type aux_o = (B.First.aux_o * B.Second.aux_o)
 (** Chains two filters together using temporary files. *)
 
+module Chain_tuple (First : S) (Second : S)
+  : S with type aux_i = (First.aux_i * (First.aux_o option -> Second.aux_i))
+       and type aux_o = (First.aux_o * Second.aux_o)
+(** Simplified version of {{!Chain}Chain} that assumes that the
+    auxiliary input is a tuple of the input to the first filter, and a
+    function for generating the input to the second filter. *)
+
 module Chain_conditional_first (B : Basic_chain_conditional_first)
-  : S with type aux_i = B.aux_i_combi
+  : S with type aux_i = B.aux_i
        and type aux_o = (B.First.aux_o option * B.Second.aux_o)
 (** Chains an optional filter onto a mandatory one. *)
 
 module Chain_conditional_second (B : Basic_chain_conditional_second)
-  : S with type aux_i = B.aux_i_combi
+  : S with type aux_i = B.aux_i
        and type aux_o = (B.First.aux_o * B.Second.aux_o option)
 (** Chains a mandatory filter onto an optional one. *)
 

@@ -62,10 +62,10 @@ module Chain_filter (Dest : Utils.Filter.S) :
     module First = Filter
     module Second = Dest
 
-    type aux_i_combi = (Config.t * Dest.aux_i)
+    type aux_i = (Config.t * Dest.aux_i)
     let select { Utils.Filter.aux = (cfg, rest); _ } =
       if Config.enabled cfg
-      then `Both (cfg, rest)
-      else `One  rest
+      then `Both (cfg, Fn.const rest)
+      else `One  (Fn.const rest)
     ;;
   end)

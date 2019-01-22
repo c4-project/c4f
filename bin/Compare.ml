@@ -41,7 +41,7 @@ let litmusify o passes spec c_file =
   in
   let%map (_, out) =
     Comp_lit.run
-      (`C, litmus_job)
+      (Common.Compiler_chain_input.create ~file_type:`C ~next:(Fn.const litmus_job))
       (Io.In_source.file c_file)
       (Io.Out_sink.stdout)
   in
