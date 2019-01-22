@@ -38,6 +38,9 @@ P3()
 // - t2r1
 // - t3r0
 // - t3r1
+
+// Postcondition:
+// exists (2:r0 == 1 /\ 2:r1 == 0 /\ 3:r0 == 1 /\ 3:r1 == 0)
 ```
 ## memalloy_cmpxchg.c.litmus
 
@@ -62,6 +65,9 @@ P1()
 // C variables:
 // - x
 // - t0r0
+
+// Postcondition:
+// exists (0:r0 == 0 /\ x == 2)
 ```
 ## rwc.c.litmus
 
@@ -96,6 +102,9 @@ P2()
 // - t1r0
 // - t1r1
 // - t2r0
+
+// Postcondition:
+// exists (1:r0 == 1 /\ 1:r1 == 0 /\ 2:r0 == 0)
 ```
 
 Ran 3 test(s).
