@@ -35,33 +35,20 @@ let print_symbol_map = function
       map
 ;;
 
-let run file_type compiler_id_or_arch output_format c_symbols
+let run file_type compiler_id_or_arch output_format (user_cvars : string list option)
     ~(infile_raw : string option) ~(outfile_raw : string option) o cfg =
-  Common.warn_if_not_tracking_symbols o c_symbols;
   let open Or_error.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.explain
   in
-  let config = Asm_job.Explain_config.make ?format:output_format () in
-  let explain_job =
-    Asm_job.make ~config ?symbols:c_symbols ~passes ()
+  let explain_cfg = Asm_job.Explain_config.make ?format:output_format () in
+  let%bind (module Exp) = Common.explain_pipeline target in
+  let compiler_input_fn =
+    Common.make_compiler_input o file_type user_cvars explain_cfg passes
   in
-  let%bind (module Exp) =
-    Common.(
-      target
-      |>  asm_runner_of_target
-      >>| Asm_job.get_explain
-      >>= Language_support.Resolve_compiler_from_target.chained_filter_from_spec target
-    )
-  in
-  let compiler_input =
-    Compiler.Chain_input.create
-      ~file_type
-      ~next:(Fn.const explain_job)
-  in
-  let%map (_, out) =
-    Exp.run_from_string_paths compiler_input
+  let%map (_, (_, out)) =
+    Exp.run_from_string_paths (file_type, compiler_input_fn)
       ~infile:infile_raw ~outfile:outfile_raw
   in
   Asm_job.warn out o.Output.wf;

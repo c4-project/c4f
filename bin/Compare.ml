@@ -31,17 +31,11 @@ let litmusify o passes spec c_file =
   let config = Asm_job.Litmus_config.make ~format:Programs_only () in
   let litmus_job = Asm_job.(make ~config ~passes ()) in
   let open Or_error.Let_syntax in
-  let%bind (module Comp_lit) =
-    Common.(
-      target
-      |>  asm_runner_of_target
-      >>| Asm_job.get_litmusify
-      >>= Language_support.Resolve_compiler_from_target.chained_filter_from_spec target
-    )
-  in
-  let%map (_, out) =
+  let%bind (module Comp_lit) = Common.litmusify_pipeline target in
+  (** TODO(@MattWindsor91): support C/Litmus files here too. *)
+  let%map (_, (_, out)) =
     Comp_lit.run
-      (Compiler.Chain_input.create ~file_type:`C ~next:(Fn.const litmus_job))
+      (`C, Fn.const (Compiler.Chain_input.create ~file_type:`C ~next:(Fn.const litmus_job)))
       (Io.In_source.file c_file)
       (Io.Out_sink.stdout)
   in

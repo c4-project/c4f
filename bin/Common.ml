@@ -83,6 +83,134 @@ let chain_with_delitmus
   )
 ;;
 
+let delitmus_compile_asm_pipeline
+    (type i)
+    (type o)
+    (target : Compiler.Target.t)
+    (job_maker : (module Asm_job.Runner) ->
+     (module Filter.S with type aux_i = i and type aux_o = o))
+  : (module
+      Filter.S with type aux_i =
+                      ( File_type.t_or_infer
+                        * ( C.Filters.Output.t Filter.chain_output
+                            -> i Compiler.Chain_input.t
+                          )
+                      )
+                and type aux_o =
+                      ( C.Filters.Output.t option
+                        * ( unit option * o )
+                      )
+    ) Or_error.t =
+  let open Or_error in
+  target
+  |>  asm_runner_of_target
+  >>| job_maker
+  >>= Language_support.Resolve_compiler_from_target.chained_filter_from_spec
+    target
+  >>| chain_with_delitmus
+;;
+
+let explain_pipeline
+  (target : Compiler.Target.t)
+  : ( module
+      Filter.S with type aux_i =
+                      ( File_type.t_or_infer
+                        * ( C.Filters.Output.t Filter.chain_output
+                            ->
+                            Asm_job.Explain_config.t
+                              Asm_job.t
+                              Compiler.Chain_input.t
+                          )
+                      )
+                and type aux_o =
+                      ( C.Filters.Output.t option
+                        * ( unit option * Asm_job.output )
+                      )
+    ) Or_error.t =
+  delitmus_compile_asm_pipeline target Asm_job.get_explain
+;;
+
+let litmusify_pipeline
+  (target : Compiler.Target.t)
+  : ( module
+      Filter.S with type aux_i =
+                      ( File_type.t_or_infer
+                        * ( C.Filters.Output.t Filter.chain_output
+                            ->
+                            Asm_job.Litmus_config.t
+                              Asm_job.t
+                              Compiler.Chain_input.t
+                          )
+                      )
+                and type aux_o =
+                      ( C.Filters.Output.t option
+                        * ( unit option * Asm_job.output )
+                      )
+    ) Or_error.t =
+  delitmus_compile_asm_pipeline target Asm_job.get_litmusify
+;;
+
+let choose_cvars_after_delitmus
+    (o : Output.t)
+    (user_cvars : string list option)
+    (dl_cvars : string list option)
+  : string list option =
+  (* We could use Option.first_some here, but expanding it out gives
+     us the ability to verbose-log what we're doing. *)
+  let out_cvars message cvars =
+    Fmt.(
+      pf o.vf "Using %s:@ %a@."
+        message
+        (list ~sep:comma string) cvars
+    );
+    Some cvars
+  in
+  match user_cvars, dl_cvars with
+  | Some cvars, Some _ ->
+    out_cvars "user-supplied cvars (overriding those found during delitmus)"
+      cvars
+  | Some cvars, None ->
+    out_cvars "user-supplied cvars (none found during delitmus)" cvars
+  | None, Some cvars ->
+    out_cvars "cvars found during delitmus" cvars
+  | None, None -> None
+;;
+
+let choose_cvars
+  (o : Output.t)
+  (user_cvars : string list option)
+  (dl_output : C.Filters.Output.t Filter.chain_output)
+  : string list option =
+  let warn_if_empty, cvars = match dl_output with
+    | `Checking_ahead -> false, None
+    | `Skipped -> true, user_cvars
+    | `Ran dl ->
+      let dl_cvars = C.Filters.Output.cvars dl in
+      true, choose_cvars_after_delitmus o user_cvars dl_cvars
+  in
+  if warn_if_empty then
+    warn_if_not_tracking_symbols o cvars;
+  cvars
+;;
+
+let make_compiler_input
+  (o : Output.t)
+  (file_type : File_type.t_or_infer)
+  (user_cvars : string list option)
+  (config : 'cfg)
+  (passes : Sanitiser_pass.Set.t)
+  (dl_output : C.Filters.Output.t Filter.chain_output)
+  : 'cfg Asm_job.t
+      Compiler.Chain_input.t =
+  let cvars = choose_cvars o user_cvars dl_output in
+  let litmus_job =
+    Asm_job.make ~passes ~config ?symbols:cvars ()
+  in
+  Compiler.Chain_input.create
+    ~file_type:(File_type.delitmusified file_type)
+    ~next:(Fn.const litmus_job)
+;;
+
 let lift_command
     ?compiler_predicate
     ?machine_predicate

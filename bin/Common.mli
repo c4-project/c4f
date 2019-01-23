@@ -77,3 +77,65 @@ val lift_command
    command body [f], performing common book-keeping such as loading
    and testing the configuration, creating an [Output.t], and printing
    top-level errors. *)
+
+(** {2 Single-file pipelines}
+
+    These are the common pipelines that most of the single-file commands
+    are built upon. *)
+
+val explain_pipeline
+  :  Compiler.Target.t
+  -> (module
+      Filter.S with type aux_i =
+                      ( File_type.t_or_infer
+                        * ( C.Filters.Output.t Filter.chain_output
+                            ->
+                            Asm_job.Explain_config.t
+                              Asm_job.t
+                              Compiler.Chain_input.t
+                          )
+                      )
+                and type aux_o =
+                      ( C.Filters.Output.t option
+                        * ( unit option * Asm_job.output )
+                      )
+    ) Or_error.t
+(** [explain_pipeline target] builds a delitmusify-compile-explain
+    pipeline for target [target]. *)
+
+val litmusify_pipeline
+  :  Compiler.Target.t
+  -> (module
+      Filter.S with type aux_i =
+                      ( File_type.t_or_infer
+                        * ( C.Filters.Output.t Filter.chain_output
+                            ->
+                            Asm_job.Litmus_config.t
+                              Asm_job.t
+                              Compiler.Chain_input.t
+                          )
+                      )
+                and type aux_o =
+                      ( C.Filters.Output.t option
+                        * ( unit option * Asm_job.output )
+                      )
+    ) Or_error.t
+(** [litmusify_pipeline target] builds a delitmusify-compile-litmusify
+    pipeline for target [target]. *)
+
+val make_compiler_input
+  :  Output.t
+  -> File_type.t_or_infer
+  -> string list option
+  -> 'cfg
+  -> Sanitiser_pass.Set.t
+  -> C.Filters.Output.t Filter.chain_output
+  -> 'cfg Asm_job.t Compiler.Chain_input.t
+(** [make_compiler_input o file_type user_cvars cfg passes dl_output]
+    generates the input to the compiler stage of a single-file pipeline.
+
+    It takes the original file type [file_type]; the user-supplied C
+    variables [user_cvars]; the litmusifier configuration [config];
+    the sanitiser passes [passes]; and the output from the de-litmus
+    stage of the litmus pipeline [dl_output], which contains any
+    postcondition and discovered C variables. *)
