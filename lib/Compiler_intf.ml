@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -121,4 +121,47 @@ module type S = sig
   (** [compile ~infile ~outfile] runs the compiler on [infile],
       emitting assembly to [outfile] and returning any errors that arise. *)
   val compile : infile:Fpath.t -> outfile:Fpath.t -> unit Or_error.t
+end
+
+(** {2 Resolving spec IDs to compilers}
+
+    These signatures describe modules that allow one to retrieve
+   (first-class) compiler modules at run-time from compiler
+   specifications.
+*)
+
+(** Basic input type of resolvers. *)
+module type Basic_resolver = sig
+  type spec
+  (** Type of specifications consumed by this resolver. *)
+
+  val resolve : spec -> (module Basic) Or_error.t
+end
+
+(** Signature of fully-instantiated resolvers. *)
+module type S_resolver = sig
+  type spec
+  (** Type of specifications consumed by this resolver. *)
+
+  type 'a chain_input
+  (** Type of chained-filter input. *)
+
+  val from_spec : spec -> (module S) Or_error.t
+  (** [from_spec spec] attempts to produce a first-class
+      compiler module corresponding to [spec]. *)
+
+  val filter_from_spec
+    :  spec
+    -> (module Utils.Filter.S with type aux_i = unit and type aux_o = unit)
+      Or_error.t
+      (** [filter_from_spec spec] attempts to produce a first-class
+          compiler filter corresponding to [spec]. *)
+
+  val chained_filter_from_spec
+    :  spec
+    -> (module Utils.Filter.S with type aux_i = 'i and type aux_o = 'o)
+    -> (module Utils.Filter.S
+         with type aux_i = 'i chain_input
+          and type aux_o = (unit option * 'o)
+       ) Or_error.t
 end

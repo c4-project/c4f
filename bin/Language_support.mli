@@ -33,30 +33,26 @@
 open Core
 open Lib
 
-(** [asm_runner_from_spec spec] generates an assembly job runner from
-   [spec]. *)
-val asm_runner_from_spec
-  :  Compiler.Spec.With_id.t
-  -> (module Asm_job.Runner) Or_error.t
-;;
-
 val asm_runner_from_arch : Id.t -> (module Asm_job.Runner) Or_error.t
 (** [asm_runner_from_arch arch] generates an assembly job runner
    from an architecture ID [arch]. *)
 
-val compiler_from_spec
-  :  Compiler.Spec.With_id.t
-  -> (module Compiler.S) Or_error.t
-(** [compiler_from_spec spec] generates a compiler module from
-    [spec]. *)
+(** Compiler resolver that uses this module's built-in compiler table
+    to look up compilers. *)
+module Resolve_compiler
+  : Compiler.S_resolver
+    with type spec = Compiler.Spec.With_id.t
+     and type 'a chain_input = 'a Compiler.Chain_input.t
+;;
 
-val compiler_filter_from_spec
-  :  Compiler.Spec.With_id.t
-  -> ( module Utils.Filter.S with type aux_i = unit
-                              and type aux_o = unit
-     ) Or_error.t
-(** [compiler_filter_from_spec spec] wraps
-    [compiler_from_spec spec] in the [Utils.Filter.S] interface. *)
+(** Compiler resolver that uses this module's built-in compiler table
+    to look up compilers from targets, filling in a dummy compiler
+    if the target doesn't mention a compiler. *)
+module Resolve_compiler_from_target
+  : Compiler.S_resolver
+    with type spec = Compiler.Target.t
+     and type 'a chain_input = 'a Compiler.Chain_input.t
+;;
 
 (** [load_and_process_config ?compiler_predicate ?machine_predicate
    ?sanitiser_passes ?with_compiler_tests path] loads the config file

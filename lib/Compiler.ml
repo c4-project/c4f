@@ -191,13 +191,73 @@ module Make (B : Basic_with_run_info) : S = struct
   let test () = B.Runner.run ~prog:cmd B.test_args
 end
 
+module S_to_filter (S : S) :
+  Utils.Filter.S with type aux_i = unit and type aux_o = unit =
+  Utils.Filter.Make_files_only
+     (struct
+       type aux_i = unit
+       type aux_o = unit
+       let name = "C compiler"
+       let tmp_file_ext = Fn.const "s"
+       let run _ = S.compile
+     end)
+;;
+
+module Make_filter (B : Basic_with_run_info) :
+  Utils.Filter.S with type aux_i = unit and type aux_o = unit =
+  S_to_filter (Make (B))
+;;
+
 let runner_from_spec (cspec : Spec.With_id.t) =
   Machine.Spec.With_id.runner (Spec.With_id.machine cspec)
 ;;
 
-let from_spec f (cspec : Spec.With_id.t) =
+module Chain_input = struct
+  type next_mode =
+    [ `Preview
+    | `No_compile
+    | `Compile
+    ]
+
+    type 'a t =
+    { file_type : File_type.t_or_infer
+    ; next      : (next_mode -> 'a)
+    }
+  [@@deriving fields]
+
+  let create = Fields.create
+end
+
+module Chain_with_compiler
+    (Comp : Utils.Filter.S with type aux_i = unit and type aux_o = unit)
+    (Onto : Utils.Filter.S)
+  : Utils.Filter.S with type aux_i = Onto.aux_i Chain_input.t
+                    and type aux_o = (unit option * Onto.aux_o) =
+  Utils.Filter.Chain_conditional_first (struct
+    module First  = Comp
+    module Second = Onto
+    type aux_i = Onto.aux_i Chain_input.t
+
+    let lift_next (next : Chain_input.next_mode -> 'a)
+      : unit Filter.chain_output -> 'a =
+      function
+      | `Checking_ahead -> next `Preview
+      | `Skipped -> next `No_compile
+      | `Ran () -> next `Compile
+    ;;
+
+    let select { Filter.aux; src; _ } =
+      let file_type = Chain_input.file_type aux in
+      let next      = Chain_input.next      aux in
+      let f         = lift_next next in
+      if File_type.is_c src file_type then `Both ((), f)
+      else `One f
+  end)
+;;
+
+let from_resolver_and_spec resolve cspec =
   let open Or_error.Let_syntax in
-  let%map (module B : Basic) = f cspec in
+  let%map (module B : Basic) = resolve cspec in
   let (module Runner) = runner_from_spec cspec in
   (module
     (Make (struct
@@ -206,3 +266,114 @@ let from_spec f (cspec : Spec.With_id.t) =
        module Runner = Runner
      end)) : S)
 ;;
+
+module Make_resolver
+    (B : Basic_resolver with type spec := Spec.With_id.t)
+  : S_resolver with type spec = Spec.With_id.t
+                and type 'a chain_input = 'a Chain_input.t = struct
+
+  type spec = Spec.With_id.t
+  type 'a chain_input = 'a Chain_input.t
+
+  let from_spec =
+    from_resolver_and_spec B.resolve
+  ;;
+
+  let filter_from_spec (cspec : Spec.With_id.t)
+    : (module Utils.Filter.S with type aux_i = unit
+                              and type aux_o = unit)
+        Or_error.t
+    =
+    let open Or_error.Let_syntax in
+    let%map (module S) = from_spec cspec in
+    (module S_to_filter (S)
+       : Utils.Filter.S with type aux_i = unit
+                         and type aux_o = unit)
+  ;;
+
+  let chained_filter_from_spec
+      (type i)
+      (type o)
+      (cspec : Spec.With_id.t)
+      (module Onto : Filter.S with type aux_i = i and type aux_o = o)
+    : (module
+        Utils.Filter.S
+        with type aux_i = i Chain_input.t
+         and type aux_o = (unit option * o)
+      ) Or_error.t =
+    let open Or_error.Let_syntax in
+    let%map (module F) = filter_from_spec cspec in
+    (module Chain_with_compiler (F) (Onto)
+       : Utils.Filter.S
+         with type aux_i = i Chain_input.t
+          and type aux_o = (unit option * o))
+end
+
+module Target = struct
+  type t =
+    [ `Spec of Spec.With_id.t
+    | `Arch of Id.t
+    ]
+  ;;
+
+  let arch : t -> Id.t = function
+    | `Spec spec -> Spec.With_id.emits spec
+    | `Arch arch -> arch
+  ;;
+
+  let ensure_spec : t -> Spec.With_id.t Or_error.t = function
+    | `Spec spec -> Or_error.return spec
+    | `Arch _ ->
+      Or_error.error_string
+        "Expected a compiler ID; got an architecture ID."
+  ;;
+end
+
+module Fail (E : sig val error : Error.t end) : S = struct
+  let test () = Result.ok_unit
+
+  let compile ~infile ~outfile =
+    ignore infile;
+    ignore outfile;
+    Result.Error E.error
+end
+
+module Make_target_resolver
+    (B : Basic_resolver with type spec := Spec.With_id.t)
+  : S_resolver with type spec = Target.t
+                and type 'a chain_input = 'a Chain_input.t = struct
+  type spec = Target.t
+  type 'a chain_input = 'a Chain_input.t
+
+  let from_spec = function
+    | `Spec cspec -> from_resolver_and_spec B.resolve cspec
+    | `Arch _ ->
+      Or_error.return
+      (module Fail (struct
+           let error = Error.of_string
+               "To run a compiler, you must supply a compiler ID."
+         end)
+          : S
+      )
+  ;;
+
+  let filter_from_spec (tgt : Target.t) =
+    let open Or_error.Let_syntax in
+    let%map (module S) = from_spec tgt in
+    (module S_to_filter (S)
+       : Utils.Filter.S with type aux_i = unit
+                         and type aux_o = unit)
+  ;;
+
+  let chained_filter_from_spec
+      (type i)
+      (type o)
+      (tgt : Target.t)
+      (module Onto : Filter.S with type aux_i = i and type aux_o = o) =
+    let open Or_error.Let_syntax in
+    let%map (module F) = filter_from_spec tgt in
+    (module Chain_with_compiler (F) (Onto)
+       : Utils.Filter.S
+         with type aux_i = i Chain_input.t
+          and type aux_o = (unit option * o))
+end

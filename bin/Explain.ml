@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -52,11 +52,11 @@ let run file_type compiler_id_or_arch output_format c_symbols
       target
       |>  asm_runner_of_target
       >>| Asm_job.get_explain
-      >>= chain_with_compiler target
+      >>= Language_support.Resolve_compiler_from_target.chained_filter_from_spec target
     )
   in
   let compiler_input =
-    Common.Compiler_chain_input.create
+    Compiler.Chain_input.create
       ~file_type
       ~next:(Fn.const explain_job)
   in

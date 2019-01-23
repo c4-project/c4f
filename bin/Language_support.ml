@@ -61,48 +61,27 @@ let style_modules =
   [ "gcc", (module Gcc : Compiler.Basic) ]
 ;;
 
-let compiler_module_from_spec (cspec : Compiler.Spec.With_id.t) =
-  let style = Compiler.Spec.With_id.style cspec in
-  List.Assoc.find ~equal:String.Caseless.equal style_modules style
-  |> Result.of_option
-    ~error:(Error.create_s
-              [%message "Unknown compiler style" ~style]
-           )
+module Resolver
+  : Compiler.Basic_resolver with type spec := Compiler.Spec.With_id.t
+= struct
+    let resolve (cspec : Compiler.Spec.With_id.t) =
+      let style = Compiler.Spec.With_id.style cspec in
+      List.Assoc.find ~equal:String.Caseless.equal style_modules style
+      |> Result.of_option
+        ~error:(Error.create_s
+                  [%message "Unknown compiler style" ~style]
+               )
+    ;;
+  end
 ;;
 
-let asm_runner_from_spec (cspec : Compiler.Spec.With_id.t) =
-  let arch = Compiler.Spec.With_id.emits cspec in
-  asm_runner_from_arch arch
-;;
-
-let compiler_from_spec (cspec : Compiler.Spec.With_id.t) =
-  Compiler.from_spec compiler_module_from_spec cspec
-;;
-
-let compiler_filter_from_spec
-    (cspec : Compiler.Spec.With_id.t)
-  : ( module Utils.Filter.S with type aux_i = unit
-                             and type aux_o = unit
-    ) Or_error.t =
-  let open Or_error.Let_syntax in
-  let%map (module Com) = compiler_from_spec cspec in
-  (module
-    (Utils.Filter.Make_files_only
-       (struct
-         type aux_i = unit
-         type aux_o = unit
-         let name = "C compiler"
-         let tmp_file_ext = Fn.const "s"
-         let run _ = Com.compile
-       end)
-    )
-    : Utils.Filter.S with type aux_i = unit and type aux_o = unit
-  )
-;;
+module Resolve_compiler = Compiler.Make_resolver (Resolver)
+module Resolve_compiler_from_target =
+  Compiler.Make_target_resolver (Resolver)
 
 let test_compiler cspec =
   let open Or_error.Let_syntax in
-  let%bind (module M) = compiler_from_spec cspec in
+  let%bind (module M) = Resolve_compiler.from_spec cspec in
   let%map () =
     Or_error.tag_arg
       (M.test ())

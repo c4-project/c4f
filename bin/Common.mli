@@ -27,11 +27,6 @@ open Core_kernel
 open Lib
 open Utils
 
-type target =
-  [ `Spec of Compiler.Spec.With_id.t
-  | `Arch of Id.t
-  ]
-
 val warn_if_not_tracking_symbols
   :  Output.t
   -> string list option
@@ -43,49 +38,15 @@ val warn_if_not_tracking_symbols
 val get_target
   :  Lib.Config.M.t
   -> [< `Id of Id.t | `Arch of Id.t ]
-  -> target Or_error.t
+  -> Compiler.Target.t Or_error.t
 (** [get_target cfg target] processes a choice between compiler ID
     and architecture ID; if the input is a compiler
     ID, the compiler is retrieved from [cfg]. *)
 
-val arch_of_target : target -> Id.t
-(** [arch_of_target target] gets the architecture Id
-   associated with a target (either a compiler spec or emits
-   clause). *)
-
-val asm_runner_of_target : target -> (module Asm_job.Runner) Or_error.t
+val asm_runner_of_target : Compiler.Target.t -> (module Asm_job.Runner) Or_error.t
 (** [asm_runner_of_target target] gets the [Asm_job.Runner]
    associated with a target (either a compiler spec or emits
    clause). *)
-
-
-module Compiler_chain_input : sig
-  type next_mode =
-    [ `Preview
-    | `No_compile
-    | `Compile
-    ]
-
-  type 'a t
-
-  val file_type : 'a t -> File_type.t_or_infer
-  val next      : 'a t -> next_mode -> 'a
-
-  val create : file_type:File_type.t_or_infer -> next:(next_mode -> 'a) -> 'a t
-end
-
-val chain_with_compiler
-  :  target
-  -> (module Filter.S with type aux_i = 'aux_i and type aux_o = 'aux_o)
-  -> (module Filter.S with type aux_i = 'aux_i Compiler_chain_input.t
-                       and type aux_o = (unit option * 'aux_o)
-     ) Or_error.t
-(** [chain_with compiler target to_chain] finds the correct
-    compiler filter for [target],
-    then chains it onto [to_chain] conditional on the incoming file type.
-
-    The second filter's auxiliary input is derived from a function that
-    receives [true] if the compiler was run, and [false] otherwise. *)
 
 module Chain_with_delitmus
     (Onto  : Filter.S)
@@ -102,12 +63,6 @@ val chain_with_delitmus
 (** [chain_with_delitmus onto] is [Chain_with_delitmus], but lifted to
    first-class modules for conveniently slotting into chain builder
    pipelines. *)
-
-val ensure_spec
-  :  [> `Spec of Compiler.Spec.With_id.t]
-  -> Compiler.Spec.With_id.t Or_error.t
-(** [ensure_spec maybe_spec] checks that [maybe_spec] is, indeed,
-    a spec. *)
 
 val lift_command
   :  ?compiler_predicate:Compiler.Property.t Blang.t

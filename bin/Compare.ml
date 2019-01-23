@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -36,12 +36,12 @@ let litmusify o passes spec c_file =
       target
       |>  asm_runner_of_target
       >>| Asm_job.get_litmusify
-      >>= chain_with_compiler target
+      >>= Language_support.Resolve_compiler_from_target.chained_filter_from_spec target
     )
   in
   let%map (_, out) =
     Comp_lit.run
-      (Common.Compiler_chain_input.create ~file_type:`C ~next:(Fn.const litmus_job))
+      (Compiler.Chain_input.create ~file_type:`C ~next:(Fn.const litmus_job))
       (Io.In_source.file c_file)
       (Io.Out_sink.stdout)
   in

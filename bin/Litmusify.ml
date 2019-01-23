@@ -132,16 +132,16 @@ module Post_filter = struct
         module Second = Post
       end))
 
-  let herd_config (cfg : Config.M.t) (target : Common.target)
+  let herd_config (cfg : Config.M.t) (target : Compiler.Target.t)
     : Herd.t Err.t =
     let open Err.Let_syntax in
     let%bind herd_cfg = Config.M.require_herd cfg in
-    let arch = Herd.Assembly (Common.arch_of_target target) in
+    let arch = Herd.Assembly (Compiler.Target.arch target) in
     Herd.create ~config:herd_cfg ~arch
   ;;
 
   let machine_of_target (cfg : Config.M.t)
-    : Common.target -> Machine.Spec.With_id.t Err.t = function
+    : Compiler.Target.t -> Machine.Spec.With_id.t Err.t = function
     | `Spec s -> Err.return (Compiler.Spec.With_id.machine s)
     | `Arch _ ->
       (* TODO(@MattWindsor91): should really check that the machine
@@ -151,7 +151,7 @@ module Post_filter = struct
 
   let litmus_config
       (cfg : Config.M.t)
-      (target : Common.target)
+      (target : Compiler.Target.t)
     : Litmus_tool.Config.t Err.t =
     let open Err.Let_syntax in
     let%bind machine = machine_of_target cfg target in
@@ -164,7 +164,7 @@ module Post_filter = struct
 
   let make_config
       (cfg    : Config.M.t)
-      (target : Common.target)
+      (target : Compiler.Target.t)
     : t -> cfg Err.t = function
     | `Herd   -> Err.(herd_config   cfg target >>| fun h -> `Herd   h)
     | `Litmus -> Err.(litmus_config cfg target >>| fun l -> `Litmus l)
@@ -173,7 +173,7 @@ end
 
 let make_filter
   (post_filter : Post_filter.t)
-  (target : Common.target)
+  (target : Compiler.Target.t)
   (target_runner : (module Runner.S))
   : ( module
       Filter.S with type aux_i =
@@ -182,7 +182,7 @@ let make_filter
                               ->
                               Asm_job.Litmus_config.t
                                 Asm_job.t
-                                Common.Compiler_chain_input.t
+                                Compiler.Chain_input.t
                             )
                         )
                         * ( ( C.Filters.Output.t option
@@ -205,7 +205,8 @@ let make_filter
     target
     |>  asm_runner_of_target
     >>| Asm_job.get_litmusify
-    >>= chain_with_compiler target
+    >>= Language_support.Resolve_compiler_from_target.chained_filter_from_spec
+      target
     >>| chain_with_delitmus
     >>| Post_filter.chain post_filter target_runner
   )
@@ -270,12 +271,12 @@ let make_compiler_input
   (passes : Sanitiser_pass.Set.t)
   (dl_output : C.Filters.Output.t Filter.chain_output)
   : Asm_job.Litmus_config.t Asm_job.t
-      Common.Compiler_chain_input.t =
+      Compiler.Chain_input.t =
   let cvars = choose_cvars o user_cvars dl_output in
   let litmus_job =
     Asm_job.make ~passes ~config ?symbols:cvars ()
   in
-  Common.Compiler_chain_input.create
+  Compiler.Chain_input.create
     ~file_type:(File_type.delitmusified file_type)
     ~next:(Fn.const litmus_job)
 ;;

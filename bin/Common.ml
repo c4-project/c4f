@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -26,12 +26,6 @@ open Core_kernel
 open Lib
 open Utils
 
-type target =
-  [ `Spec of Compiler.Spec.With_id.t
-  | `Arch of Id.t
-  ]
-;;
-
 let warn_if_not_tracking_symbols (o : Output.t)
   : string list option -> unit = function
   | None ->
@@ -55,82 +49,9 @@ let get_target cfg = function
   | `Arch _ as arch -> Or_error.return arch
 ;;
 
-let arch_of_target : target -> Id.t = function
-  | `Spec spec -> Compiler.Spec.With_id.emits spec
-  | `Arch arch -> arch
-;;
-
-let asm_runner_of_target : target -> (module Asm_job.Runner) Or_error.t = function
-  | `Spec spec -> Language_support.asm_runner_from_spec spec
-  | `Arch arch -> Language_support.asm_runner_from_arch arch
-;;
-
-let ensure_spec : [> `Spec of Compiler.Spec.With_id.t]
-  -> Compiler.Spec.With_id.t Or_error.t = function
-    | `Spec spec -> Or_error.return spec
-    | _ ->
-      Or_error.error_string
-        "To handle C files, you must supply a compiler ID."
-;;
-
-module Compiler_chain_input = struct
-  type next_mode =
-    [ `Preview
-    | `No_compile
-    | `Compile
-    ]
-
-    type 'a t =
-    { file_type : File_type.t_or_infer
-    ; next      : (next_mode -> 'a)
-    }
-  [@@deriving fields]
-
-  let create = Fields.create
-end
-
-module Chain_with_compiler
-    (Comp : Filter.S with type aux_i = unit and type aux_o = unit)
-    (Onto : Filter.S)
-  : Filter.S with type aux_i = Onto.aux_i Compiler_chain_input.t
-              and type aux_o = (unit option * Onto.aux_o) =
-  Filter.Chain_conditional_first (struct
-    module First  = Comp
-    module Second = Onto
-    type aux_i = Onto.aux_i Compiler_chain_input.t
-
-    let lift_next (next : Compiler_chain_input.next_mode -> 'a)
-      : unit Filter.chain_output -> 'a =
-      function
-      | `Checking_ahead -> next `Preview
-      | `Skipped -> next `No_compile
-      | `Ran () -> next `Compile
-    ;;
-
-    let select { Filter.aux; src; _ } =
-      let file_type = Compiler_chain_input.file_type aux in
-      let next      = Compiler_chain_input.next      aux in
-      let f         = lift_next next in
-      if File_type.is_c src file_type then `Both ((), f)
-      else `One f
-  end)
-;;
-
-let chain_with_compiler
-  (type aux_i)
-  (type aux_o)
-  (target : target)
-  (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-  : ( module Filter.S with type aux_i = aux_i Compiler_chain_input.t
-                       and type aux_o = (unit option * aux_o)
-    ) Or_error.t =
-  let open Result.Let_syntax in
-  let%bind cspec = ensure_spec target in
-  let%map (module C) = Language_support.compiler_filter_from_spec cspec in
-  (module Chain_with_compiler (C) (Onto)
-     : Filter.S with type aux_i = aux_i Compiler_chain_input.t
-                 and type aux_o = (unit option * aux_o)
-  )
+let asm_runner_of_target
+  (tgt : Compiler.Target.t) : (module Asm_job.Runner) Or_error.t =
+  Language_support.asm_runner_from_arch (Compiler.Target.arch tgt)
 ;;
 
 module Chain_with_delitmus

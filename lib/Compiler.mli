@@ -50,6 +50,32 @@ module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t
     references are inlined machine specs.  This is the
     form of compiler spec expected through most of act. *)
 
+(** Type of target specifiers for jobs that can accept both C files
+    and assembly. *)
+module Target : sig
+  type t =
+    [ `Spec of Spec.With_id.t
+    | `Arch of Id.t
+    ]
+  (** [t] is either a compiler specifier, or a raw architecture. *)
+
+  val arch : t -> Id.t
+  (** [arch_of_target target] gets the architecture ID
+      associated with [target]. *)
+
+  val ensure_spec : t -> Spec.With_id.t Or_error.t
+  (** [ensure_spec target] extracts a compiler spec from [target],
+     failing if it is a raw architecture. *)
+end
+
+module Fail (E : sig val error : Error.t end) : S
+(** A compiler that always passes its tests, but fails with [E.error]
+    on runtime.
+
+    Generally used when building a compiler chain fails, but the
+    error is one that can be sidestepped over if the compiler never
+    gets run. *)
+
 (** [Property] contains a mini-language for querying compiler specs,
     suitable for use in [Blang]. *)
 module Property : sig
@@ -91,10 +117,50 @@ module Make (B : Basic_with_run_info) : S
 (** [Make] produces a runnable compiler satisfying [S] from a
     [Basic_with_run_info]. *)
 
-val from_spec
-  :  (Spec.With_id.t -> (module Basic) Or_error.t)
-  -> Spec.With_id.t
-  -> (module S) Or_error.t
-(** [from_spec f spec] takes a function that generates a first-class
-    [Basic] from a spec, and attempts to produce a first-class
-    compiler module. *)
+(** {2 Filters}
+
+    These functors and functions lift compilers into the
+    {{!Utils.Filter}filter} system, so that they can be composed
+    with other similar passes. *)
+
+module S_to_filter (S : S) :
+  Utils.Filter.S with type aux_i = unit and type aux_o = unit
+(** Lifts a [S] to a filter. *)
+
+module Make_filter (B : Basic_with_run_info) :
+  Utils.Filter.S with type aux_i = unit and type aux_o = unit
+(** Shorthand for [Make_filter (S_to_filter (B))]. *)
+
+(** Abstract type of auxiliary input wrappers used for compiler
+    chains. *)
+module Chain_input : sig
+  type next_mode =
+    [ `Preview
+    | `No_compile
+    | `Compile
+    ]
+
+  type 'a t
+
+  val file_type : 'a t -> File_type.t_or_infer
+  val next      : 'a t -> next_mode -> 'a
+
+  val create : file_type:File_type.t_or_infer -> next:(next_mode -> 'a) -> 'a t
+end
+
+(** {2 Resolving spec IDs to compilers} *)
+
+module Make_resolver
+    (B : Basic_resolver with type spec := Spec.With_id.t)
+  : S_resolver with type spec = Spec.With_id.t
+                and type 'a chain_input = 'a Chain_input.t
+(** Constructs a {{!S_resolver}S_resolver} from a
+   {{!Basic_resolver}Basic_resolver} over direct compiler specs. *)
+
+module Make_target_resolver
+    (B : Basic_resolver with type spec := Spec.With_id.t)
+  : S_resolver with type spec = Target.t
+                and type 'a chain_input = 'a Chain_input.t
+(** Constructs a {{!S_resolver}S_resolver} over targets from a
+   {{!Basic_resolver}Basic_resolver}. *)
+

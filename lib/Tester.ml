@@ -285,7 +285,7 @@ module Make_machine (B : Basic_machine) : Machine = struct
     let open Or_error.Let_syntax in
     let id = Compiler.Spec.With_id.id cspec in
 
-    let%bind (module C) = B.compiler_from_spec cspec in
+    let%bind (module C) = B.Resolve_compiler.from_spec cspec in
     let%bind (module R) = B.asm_runner_from_spec cspec in
     let%bind ps = Pathset.make_and_mkdirs id ~in_root ~out_root in
     let module TC = Make_compiler (struct

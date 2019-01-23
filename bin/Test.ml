@@ -40,7 +40,12 @@ let run_machine
         Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
       ;;
       let herd_cfg = Config.M.herd cfg
-      include Language_support
+
+      module Resolve_compiler = Language_support.Resolve_compiler
+
+      let asm_runner_from_spec spec =
+        Language_support.asm_runner_from_arch
+          (Compiler.Spec.With_id.emits spec)
     end) in
   let%map analysis = TM.run ~in_root ~out_root c_files specs in
   (mach_id, analysis)
