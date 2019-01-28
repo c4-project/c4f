@@ -23,18 +23,51 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Utils
 
 include Ast_intf
 
-module Make (Lang : Basic) : S with module Lang = Lang = struct
-  module Lang = Lang
+module Primitives = struct
+  module Id : S_id = struct
+    (* Comparable.Make_plain depends on Sexpable, and
+       Sexpable.Of_stringable depends on Stringable.  As a result, we
+       have to implement Id by snowballing together increasingly
+       elaborate modules, adding Core_kernel extensions as we go. *)
 
-  module Id = struct
-    type t =
-      | Local of int * string
-      | Global of string
-    [@@deriving sexp, eq, compare, variants]
-    ;;
+    module M_str = struct
+      type t =
+        | Local of int * C_identifier.t
+        | Global of C_identifier.t
+      [@@deriving compare, variants]
+      ;;
+
+      let to_string : t -> string = function
+        | Local (t, id) -> sprintf "%d:%s" t (C_identifier.to_string id)
+        | Global id -> (C_identifier.to_string id)
+      ;;
+
+      let try_parse_local (s : string) : (int * string) option =
+        let open Option.Let_syntax in
+        let%bind (thread, rest) = String.lsplit2 ~on:':' s in
+        let%bind tnum = Caml.int_of_string_opt thread in
+        let%map  tnum = Option.some_if (Int.is_non_negative tnum) tnum in
+        (tnum, rest)
+      ;;
+
+      let of_string (s : string) : t =
+        match try_parse_local s with
+        | Some (t, id) -> Local (t, C_identifier.of_string id)
+        | None -> Global (C_identifier.of_string s)
+      ;;
+    end
+
+    module M_sexp = struct
+      include M_str
+      include Sexpable.Of_stringable (M_str)
+    end
+
+    include M_sexp
+    include Comparable.Make_plain (M_sexp)
 
     let anonymise = function
       | Local  (int, str) -> `A ((int, str))
@@ -49,21 +82,45 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     let gen : t Quickcheck.Generator.t =
       let module G = Quickcheck.Generator in
       G.map ~f:deanonymise
-        (G.variant2 (G.tuple2 Int.gen String.gen) String.gen)
+        (G.variant2
+           (G.tuple2 G.small_non_negative_int C_identifier.gen)
+           (C_identifier.gen)
+        )
     ;;
 
     let obs : t Quickcheck.Observer.t =
       let module O = Quickcheck.Observer in
       O.unmap ~f:anonymise
-        (O.variant2 (O.tuple2 Int.obs String.obs) String.obs)
+        (O.variant2
+           (O.tuple2 Int.obs C_identifier.obs)
+           C_identifier.obs
+        )
     ;;
 
     let shrinker : t Quickcheck.Shrinker.t =
       let module S = Quickcheck.Shrinker in
       S.map ~f:deanonymise ~f_inverse:anonymise
-        (S.variant2 (S.tuple2 Int.shrinker String.shrinker) String.shrinker)
+        (S.variant2
+           (S.tuple2 Int.shrinker C_identifier.shrinker)
+           C_identifier.shrinker
+        )
     ;;
+
+
+    let%test_unit "to_string->of_string is idempotent" =
+      Core_kernel.Quickcheck.test ~shrinker ~sexp_of:[%sexp_of: t] gen
+        ~f:(fun ident ->
+            [%test_eq: t] ident (of_string (to_string ident))
+          )
+
+    (* NB: at the moment, the converse isn't true. *)
   end
+end
+
+module Make (Lang : Basic) : S with module Lang = Lang = struct
+  module Lang = Lang
+
+  module Id = Primitives.Id
 
   module Pred_elt = struct
     type t =
@@ -205,7 +262,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   end
 
   module Init = struct
-    type elt = { id : string; value : Lang.Constant.t } [@@deriving sexp]
+    type elt = { id : C_identifier.t; value : Lang.Constant.t } [@@deriving sexp]
 
     type t = elt list [@@deriving sexp]
   end
@@ -220,8 +277,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   end
 
   type t =
-    { language : string
-    ; name     : string
+    { language : C_identifier.t
+    ; name     : C_identifier.t
     ; decls    : Decl.t list
     }
   [@@deriving sexp, fields]
@@ -229,8 +286,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
   module Validated = struct
     type t =
-      { name     : string
-      ; init     : ((string, Lang.Constant.t) List.Assoc.t)
+      { name     : C_identifier.t
+      ; init     : ((C_identifier.t, Lang.Constant.t) List.Assoc.t)
       ; programs : Lang.Program.t list
       ; post     : Post.t option
       } [@@deriving fields, sexp]
@@ -238,24 +295,20 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
     (** [validate_init init] validates an incoming litmus test's
         init block. *)
-    let validate_init (init : (string, Lang.Constant.t) List.Assoc.t) =
+    let validate_init (init : (C_identifier.t, Lang.Constant.t) List.Assoc.t) =
       let module Tr = Travesty in
       let module V = Validate in
       let dup =
-        List.find_a_dup ~compare:(Tr.T_fn.on fst String.compare) init
+        List.find_a_dup ~compare:(Tr.T_fn.on fst C_identifier.compare) init
       in
       let dup_to_err (k, v) =
         V.fail_s
           [%message "duplicate item in 'init'"
-              ~location:k
+              ~location:(k : C_identifier.t)
               ~value:(v : Lang.Constant.t)
           ]
       in
       Option.value_map ~default:(V.pass) ~f:dup_to_err dup
-
-    let validate_name =
-      Validate.booltest (Fn.non String.is_empty) ~if_false:"name is empty"
-    ;;
 
     (** [validate_programs ps] validates an incoming litmus test's
         programs. *)
@@ -277,7 +330,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       let w check = V.field_folder t check in
       V.of_list
         (Fields.fold ~init:[]
-           ~name:(w validate_name)
+           ~name:(w (Fn.const Validate.pass))
            ~init:(w validate_init)
            ~programs:(w validate_programs)
            ~post:(w validate_post)
@@ -299,7 +352,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     |> Or_error.return
   ;;
 
-  let get_init (decls : Decl.t list) : (string, Lang.Constant.t) List.Assoc.t Or_error.t =
+  let get_init (decls : Decl.t list) : (C_identifier.t, Lang.Constant.t) List.Assoc.t Or_error.t =
     Or_error.(
       decls
       |>  List.filter_map ~f:(function Init p -> Some p | _ -> None)
@@ -314,13 +367,13 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     |> Travesty.T_list.at_most_one
   ;;
 
-  let validate_language : string Validate.check =
+  let validate_language : C_identifier.t Validate.check =
     Validate.booltest
-      (String.Caseless.equal Lang.name)
+      (fun l -> String.Caseless.equal (C_identifier.to_string l) Lang.name)
       ~if_false:"incorrect language"
   ;;
 
-  let check_language (language : string) =
+  let check_language (language : C_identifier.t) =
     Validate.valid_or_error language validate_language
   ;;
 
@@ -343,8 +396,8 @@ module Convert (B : Basic_convert) = struct
     |> Or_error.combine_errors
   ;;
 
-  let convert_init (init : (string, B.From.Lang.Constant.t) List.Assoc.t)
-    : (string, B.To.Lang.Constant.t) List.Assoc.t Or_error.t =
+  let convert_init (init : (C_identifier.t, B.From.Lang.Constant.t) List.Assoc.t)
+    : (C_identifier.t, B.To.Lang.Constant.t) List.Assoc.t Or_error.t =
     init
     |> List.map
       ~f:(fun (k, v) -> Or_error.(B.constant v >>| Tuple2.create k))

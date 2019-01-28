@@ -78,7 +78,7 @@ module type S_composite_spec = sig
         ; name_opt : Identifier.t option
         ; decls    : decl list
         }
-    | Named of kind * string
+    | Named of kind * Identifier.t
   [@@deriving sexp]
 
   include Ast_node with type t := t

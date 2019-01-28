@@ -31,6 +31,11 @@ include module type of Ast_intf
    implementation module, and include them in both sides of this
    module. *)
 
+(** Primitive parts of the Litmus AST, common to all languages. *)
+module Primitives : sig
+  module Id : S_id
+end
+
 module Make (Lang : Basic) : S with module Lang = Lang
 (** [Make] is a functor that, given a language described by
     [Basic], produces a module type for litmus test syntax

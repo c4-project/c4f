@@ -16,6 +16,7 @@
 
 open Core_kernel
 open Ast_basic
+open Utils
 
 include Ast_intf
 
@@ -118,11 +119,11 @@ module Parametric = struct
           Fmt.(
             pf f "%a@ %a@ %a"
               B.Kind.pp kind
-              (option string) name_opt
+              (option C_identifier.pp) name_opt
               (Utils.My_format.pp_c_braces (list ~sep:sp B.Decl.pp)) decls
           )
         | Named (kind, id) ->
-          Fmt.pf f "%a@ %s" B.Kind.pp kind id
+          Fmt.pf f "%a@ %a" B.Kind.pp kind C_identifier.pp id
       ;;
     end
   end
@@ -150,7 +151,7 @@ module Parametric = struct
       [@@deriving sexp]
 
       let rec pp f : t -> unit = function
-        | Id      i  -> Fmt.string f i
+        | Id      i  -> Utils.C_identifier.pp f i
         | Bracket t  -> Fmt.brackets B.Dec.pp f t
         | Array   a  -> Array.pp pp (Fmt.option B.Expr.pp) f a
         | Fun_decl (t, ps) ->
@@ -349,12 +350,12 @@ module Parametric = struct
           )
         | Subscript a -> Array.pp pp pp f a
         | Field { value; field; access = `Direct } ->
-          Fmt.pf f "%a.%s" pp value field
+          Fmt.pf f "%a.%a" pp value C_identifier.pp field
         | Field { value; field; access = `Deref } ->
-          Fmt.pf f "%a->%s" pp value field
+          Fmt.pf f "%a->%a" pp value C_identifier.pp field
         | Sizeof_type ty ->
           Fmt.(pf f "sizeof%a" (parens T.pp) ty)
-        | Identifier id -> Fmt.string f id
+        | Identifier id -> C_identifier.pp f id
         | String s -> (* TODO(@MattWindsor91): escape sequences *)
           Fmt.(quote ~mark:"\"" string) f s
         | Constant k -> Constant.pp f k
@@ -467,7 +468,7 @@ module Parametric = struct
               (option B.Expr.pp) update
               pp body
           )
-        | Goto label -> Fmt.pf f "goto@ %s;" label
+        | Goto label -> Fmt.pf f "goto@ %a;" C_identifier.pp label
         | Return expr ->
           Fmt.(
             pf f "return@ %a;"
@@ -526,7 +527,7 @@ end = struct
   let pp =
     Fmt.(
       using (fun { name; value } -> (name, value))
-        (pp_opt_assign Fmt.string Expr.pp)
+        (pp_opt_assign C_identifier.pp Expr.pp)
     )
   ;;
 end
@@ -563,7 +564,7 @@ and Type_spec : S_type_spec
     | #Prim_type.t as prim -> Prim_type.pp f prim
     | `Struct_or_union spec -> Struct_or_union_spec.pp f spec
     | `Enum            spec -> Enum_spec.pp            f spec
-    | `Defined_type    tdef -> Fmt.string              f tdef
+    | `Defined_type    tdef -> C_identifier.pp         f tdef
   ;;
 end
 and Spec_or_qual : Ast_node
@@ -789,7 +790,7 @@ module Litmus_lang : Litmus.Ast.Basic
     module Program = struct
       include Function_def
 
-      let name x = Some (Declarator.identifier x.signature)
+      let name x = Some (C_identifier.to_string (Declarator.identifier x.signature))
       let listing x = x.body
     end
   end)
@@ -802,14 +803,6 @@ module Litmus = struct
 end
 
 (** {2 Quickcheck tests} *)
-
-let%test_unit "generator generates only valid identifiers" =
-    Quickcheck.test
-      ~shrinker:Identifier.shrinker
-      ~sexp_of:[%sexp_of: Identifier.t]
-      Identifier.gen
-      ~f:([%test_pred: Identifier.t] Identifier.is_valid)
-;;
 
 let%test_unit "debracket is idempotent" =
   let module P = Litmus.Pred in

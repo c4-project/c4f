@@ -23,6 +23,7 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Utils
 
 let make_atomic_int_initialiser (value : Ast_basic.Constant.t) =
   (* NB: Apparently, we don't need ATOMIC_VAR_INIT here:
@@ -33,13 +34,14 @@ let make_atomic_int_initialiser (value : Ast_basic.Constant.t) =
 
 (** [make_init_globals init] converts a Litmus initialiser list to
     a set of global variable declarations. *)
-let make_init_globals (init : (string, Ast_basic.Constant.t) List.Assoc.t)
+let make_init_globals (init : (C_identifier.t, Ast_basic.Constant.t) List.Assoc.t)
   : (Ast_basic.Identifier.t, Mini.Initialiser.t) List.Assoc.t =
   List.Assoc.map ~f:make_atomic_int_initialiser init
 ;;
 
-let qualify_local : int -> Mini.Identifier.t -> Mini.Identifier.t =
-  sprintf "t%d%s"
+let qualify_local (t : int) (id : Mini.Identifier.t) : Mini.Identifier.t =
+  let id' = C_identifier.to_string id in
+  C_identifier.of_string (sprintf "t%d%s" t id')
 ;;
 
 let make_single_func_globals (tid : int) (func : Mini.Function.t)
@@ -62,7 +64,7 @@ let qualify_locals
   : Mini.Statement.t -> Mini.Statement.t =
   Mini.Statement.On_identifiers.map
     ~f:(fun id ->
-        if List.Assoc.mem locals ~equal:String.equal id
+        if List.Assoc.mem locals ~equal:C_identifier.equal id
         then qualify_local tid id
         else id)
 ;;
@@ -72,7 +74,7 @@ let address_globals
   : Mini.Statement.t -> Mini.Statement.t =
   Mini.Statement.On_addresses.map
     ~f:(fun addr ->
-        if List.Assoc.mem locals ~equal:String.equal
+        if List.Assoc.mem locals ~equal:C_identifier.equal
             (Mini.Address.underlying_variable addr)
         then addr
         else Mini.Address.ref addr

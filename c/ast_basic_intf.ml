@@ -57,5 +57,5 @@ end
 (** Signature of an AST node that holds exactly one identifier. *)
 module type Ast_node_with_identifier = sig
   include Ast_node
-  val identifier : t -> string
+  val identifier : t -> Utils.C_identifier.t
 end

@@ -119,7 +119,7 @@ let cvars_of_program (prog : Mini.Program.t) : string list option =
   let names =
     prog
     |> Mini.Program.On_decls.to_list
-    |> List.map ~f:fst
+    |> List.map ~f:(fun (x, _) -> C_identifier.to_string x)
   in Some names
 ;;
 

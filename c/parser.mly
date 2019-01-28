@@ -94,7 +94,11 @@
 
 litmus:
   | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF
-    { { Litmus.language; name; decls } }
+    { { Litmus.language = Utils.C_identifier.of_string language
+      ; name = Utils.C_identifier.of_string name
+      ; decls
+      }
+    }
 
 litmus_declaration:
   | decl = litmus_initialiser   { Litmus.Decl.Init decl }
@@ -127,8 +131,8 @@ litmus_equality:
   | l = litmus_identifier; EQ_OP; r = constant { Litmus.Pred.Elt (Litmus.Pred_elt.Eq (l, r)) }
 
 litmus_identifier:
-  | i = IDENTIFIER                     { Litmus.Id.Global (i) }
-  | t = INT_LIT; COLON; i = IDENTIFIER { Litmus.Id.Local (t, i) }
+  | i = IDENTIFIER                     { Litmus.Id.Global (Utils.C_identifier.of_string i) }
+  | t = INT_LIT; COLON; i = IDENTIFIER { Litmus.Id.Local (t, Utils.C_identifier.of_string i) }
 
 translation_unit:
   | decls = external_declaration+ EOF { decls }
@@ -170,7 +174,7 @@ type_specifier:
   | UNSIGNED                      { `Unsigned }
   | s = struct_or_union_specifier { `Struct_or_union s }
   | e = enum_specifier            { `Enum e }
-  | t = TYPEDEF_NAME              { `Defined_type t }
+  | t = TYPEDEF_NAME              { `Defined_type (Utils.C_identifier.of_string t) }
 
 type_qualifier:
   | CONST    { `Const }
@@ -449,6 +453,7 @@ constant:
   | f = FLOAT_LIT { Constant.Float   f }
 
 identifier:
-  | i = IDENTIFIER { i }
+(* The lexer should do C identifier validation for us by construction. *)
+  | i = IDENTIFIER { Utils.C_identifier.of_string i }
 (* Contextual keywords. *)
-  | LIT_EXISTS { "exists" }
+  | LIT_EXISTS { Utils.C_identifier.of_string "exists" }

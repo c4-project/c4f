@@ -207,19 +207,8 @@ end
 
 (** AST node for identifiers *)
 module Identifier : sig
-  type t = string [@@deriving eq]
-
-  val validate : t Validate.check
-  (** [validate id] checks whether [id] is a valid C identifier. *)
-
-  val is_valid : t -> bool
-  (** [is_valid id] is [true] when [validate id] passes, and
-         [false] otherwise. *)
-
+  include module type of Utils.C_identifier
   include Ast_node_with_identifier with type t := t
-
-  include Quickcheck.S with type t := t
-
 end
 
 (** Ast node for pointers *)

@@ -23,6 +23,7 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Utils
 open Mini
 
 let map_combine
@@ -100,8 +101,9 @@ let ensure_statements
     )
 ;;
 
-let defined_types : (string, Type.basic) List.Assoc.t =
-  [ "atomic_int", Type.atomic_int ]
+let defined_types : (C_identifier.t, Type.basic) List.Assoc.t Lazy.t =
+  lazy
+    [ C_identifier.of_string "atomic_int", Type.atomic_int ]
 
 let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t ] list)
   : Type.basic Or_error.t =
@@ -110,10 +112,11 @@ let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t ] list)
   | `Int -> return Type.int
   | `Defined_type t ->
     t
-    |> List.Assoc.find ~equal:String.equal defined_types
+    |> List.Assoc.find ~equal:C_identifier.equal
+      (Lazy.force defined_types)
     |> Result.of_option
       ~error:(Error.create_s
-                [%message "Unknown defined type" ~got:t])
+                [%message "Unknown defined type" ~got:(t : C_identifier.t)])
   | #Ast.Type_spec.t as spec ->
     Or_error.error_s
       [%message "This type isn't supported (yet)"
@@ -273,6 +276,7 @@ let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =
   let open Or_error.Let_syntax in
   let%bind id = expr_to_identifier expr in
   id
+  |> C_identifier.to_string
   |> Mem_order.of_string_option
   |> Result.of_option
     ~error:(
@@ -285,7 +289,7 @@ let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =
     function [func] and arguments [arguments], using the modellers
     in [call_table]. *)
 let call
-    (call_table : (Ast.Expr.t list -> 'a Or_error.t) id_assoc)
+    (call_table : (Ast.Expr.t list -> 'a Or_error.t) id_assoc Lazy.t)
     (func : Ast.Expr.t)
     (arguments : Ast.Expr.t list)
   : 'a Or_error.t =
@@ -293,12 +297,12 @@ let call
   let%bind func_name = expr_to_identifier func in
   let%bind call_handler =
     func_name
-    |> List.Assoc.find ~equal:String.equal call_table
+    |> List.Assoc.find ~equal:C_identifier.equal (Lazy.force call_table)
     |> Result.of_option
       ~error:(
         Error.create_s
           [%message "Unsupported function in expression position"
-              ~got:func_name
+              ~got:(func_name : C_identifier.t)
           ]
       )
   in call_handler arguments
@@ -319,8 +323,10 @@ let model_atomic_load_explicit
 ;;
 
 let expr_call_table
-  : (Ast.Expr.t list -> Expression.t Or_error.t) id_assoc =
-  [ "atomic_load_explicit", model_atomic_load_explicit ]
+  : (Ast.Expr.t list -> Expression.t Or_error.t) id_assoc Lazy.t =
+  lazy
+    [ C_identifier.of_string "atomic_load_explicit", model_atomic_load_explicit
+    ]
 ;;
 
 let rec expr
@@ -356,10 +362,12 @@ let%expect_test "model atomic_load_explicit" =
     [%sexp
       (expr
          Ast.(
-           Expr.Call { func = Identifier "atomic_load_explicit"
+           Expr.Call { func = Identifier
+                           (C_identifier.of_string "atomic_load_explicit")
                      ; arguments =
-                         [ Prefix (`Ref, Identifier "x")
-                         ; Identifier "memory_order_seq_cst"
+                         [ Prefix (`Ref, Identifier (C_identifier.of_string "x"))
+                         ; Identifier
+                             (C_identifier.of_string "memory_order_seq_cst")
                          ]
                      }
          )
@@ -405,10 +413,11 @@ let model_atomic_cmpxchg
 ;;
 
 let expr_stm_call_table
-  : (Ast.Expr.t list -> Statement.t Or_error.t) id_assoc =
-  [ "atomic_store_explicit"                  , model_atomic_store
-  ; "atomic_compare_exchange_strong_explicit", model_atomic_cmpxchg
-  ]
+  : (Ast.Expr.t list -> Statement.t Or_error.t) id_assoc Lazy.t =
+  lazy
+    [ C_identifier.of_string "atomic_store_explicit", model_atomic_store
+    ; C_identifier.of_string "atomic_compare_exchange_strong_explicit", model_atomic_cmpxchg
+    ]
 ;;
 
 let expr_stm : Ast.Expr.t -> Statement.t Or_error.t = function
@@ -454,11 +463,11 @@ let%expect_test "model atomic_store_explicit" =
            Stm.Expr
              (Some
                 (Expr.Call
-                   { func = Identifier "atomic_store_explicit"
+                   { func = Identifier (C_identifier.of_string "atomic_store_explicit")
                    ; arguments =
-                       [ Prefix (`Ref, Identifier "x")
+                       [ Prefix (`Ref, Identifier (C_identifier.of_string "x"))
                        ; Constant (Integer 42)
-                       ; Identifier "memory_order_relaxed"
+                       ; Identifier (C_identifier.of_string "memory_order_relaxed")
                        ]
                    }
                 )
@@ -480,13 +489,13 @@ let%expect_test "model atomic cmpxchg" =
            Stm.Expr
              (Some
                 (Expr.Call
-                   { func = Identifier "atomic_compare_exchange_strong_explicit"
+                   { func = Identifier (C_identifier.of_string "atomic_compare_exchange_strong_explicit")
                    ; arguments =
-                       [ Prefix (`Ref, Identifier "x")
-                       ; Prefix (`Ref, Identifier "y")
+                       [ Prefix (`Ref, Identifier (C_identifier.of_string "x"))
+                       ; Prefix (`Ref, Identifier (C_identifier.of_string "y"))
                        ; Constant (Integer 42)
-                       ; Identifier "memory_order_relaxed"
-                       ; Identifier "memory_order_relaxed"
+                       ; Identifier (C_identifier.of_string "memory_order_relaxed")
+                       ; Identifier (C_identifier.of_string "memory_order_relaxed")
                        ]
                    }
                 )

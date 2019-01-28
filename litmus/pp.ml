@@ -38,19 +38,21 @@ module Make_common (B : Basic) = struct
   let pp_programs : B.Ast.Validated.t Fmt.t =
     Fmt.using B.Ast.Validated.programs B.pp_programs_inner
 
-  let pp_init : (string, B.Ast.Lang.Constant.t) List.Assoc.t Fmt.t =
+  let pp_init : (C_identifier.t, B.Ast.Lang.Constant.t) List.Assoc.t Fmt.t =
     My_format.pp_c_braces
       (Fmt.(
           list ~sep:sp
-            (fun f (l, c) -> pf f "@[%s = %a;@]" l B.Ast.Lang.Constant.pp c)
+            (fun f (l, c) -> pf f "@[%a = %a;@]"
+                C_identifier.pp l
+                B.Ast.Lang.Constant.pp c)
         )
       )
   ;;
 
-  let pp_location_stanza f init =
+  let pp_location_stanza f (init : (C_identifier.t, B.Ast.Lang.Constant.t) List.Assoc.t) =
     Fmt.(
       pf f "@[<h>locations@ [@[%a@]]@]"
-        (list ~sep:(fun f () -> pf f ";@ ") string)
+        (list ~sep:(fun f () -> pf f ";@ ") C_identifier.pp)
     ) (List.map ~f:fst init)
   ;;
 
@@ -59,8 +61,8 @@ module Make_common (B : Basic) = struct
   ;;
 
   let pp_id (f : Formatter.t) : B.Ast.Id.t -> unit = function
-    | Local (tid, str) -> Fmt.pf f "%d:%s" tid str
-    | Global      str  -> Fmt.string f str
+    | Local (tid, str) -> Fmt.pf f "%d:%a" tid C_identifier.pp str
+    | Global      str  -> C_identifier.pp f str
   ;;
 
   let rec pp_predicate f : B.Ast.Pred.t -> unit = function
@@ -76,7 +78,7 @@ module Make_common (B : Basic) = struct
       f (quantifier, predicate)
   ;;
 
-  let pp_body f litmus =
+  let pp_body f (litmus : B.Ast.Validated.t) =
     Fmt.(
       pf f "%a@,@,%a@,@,%a%a"
         pp_init (B.Ast.Validated.init litmus)
@@ -93,8 +95,9 @@ module Make_common (B : Basic) = struct
     Fmt.(
       vbox (
         fun f litmus ->
-          Fmt.pf f "@[%s@ %s@]@,@,"
-            B.Ast.Lang.name (B.Ast.Validated.name litmus);
+          Fmt.pf f "@[%s@ %a@]@,@,"
+            B.Ast.Lang.name
+            C_identifier.pp (B.Ast.Validated.name litmus);
           pp_body f litmus
       )
     )

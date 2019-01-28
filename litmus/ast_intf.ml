@@ -23,6 +23,7 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Utils
 
 (** Signature containing just the parts of an act language needed
     for building Litmus file ASTs. *)
@@ -66,6 +67,28 @@ end
 
 (** {2 AST modules} *)
 
+module type S_id = sig
+  type t =
+    | Local of int * C_identifier.t
+    | Global of C_identifier.t
+  [@@deriving compare, sexp]
+  ;;
+
+  include Stringable.S with type t := t
+  (** Litmus identifiers can be converted to and from strings.
+      Note that conversion from strings can fail if the C identifier
+      parts don't obey C identifier validation. *)
+
+  include Quickcheckable.S with type t := t
+  (** We can generate (valid) Litmus identifiers at random for
+     quickchecks. *)
+
+  include Comparable.S_plain with type t := t
+  (** Litmus identifiers suit various comparable scenarios, such as
+     map keys. *)
+end
+(** Signature of identifier modules. *)
+
 (** The interface for litmus AST modules.
 
     AST modules contain, effectively, two litmus ASTs: the raw AST that
@@ -74,13 +97,7 @@ end
 module type S = sig
   module Lang : Basic
 
-  module Id : sig
-    type t =
-      | Local of int * string
-      | Global of string
-    [@@deriving sexp, compare, eq]
-    ;;
-  end
+  module Id : S_id
 
   (** Type of basic elements inside a Litmus predicate.
 
@@ -132,7 +149,7 @@ module type S = sig
   end
 
   module Init : sig
-    type elt = { id : string; value : Lang.Constant.t } [@@deriving sexp]
+    type elt = { id : C_identifier.t; value : Lang.Constant.t } [@@deriving sexp]
 
     type t = elt list [@@deriving sexp]
   end
@@ -147,8 +164,8 @@ module type S = sig
   end
 
   type t =
-    { language : string
-    ; name     : string
+    { language : C_identifier.t
+    ; name     : C_identifier.t
     ; decls    : Decl.t list
     }
     [@@deriving sexp]
@@ -166,10 +183,10 @@ module type S = sig
     type t [@@deriving sexp_of]
     (** The abstract type of a validated litmus AST. *)
 
-    val name     : t -> string
+    val name     : t -> C_identifier.t
     (** [name test] gets the name of [test]. *)
 
-    val init     : t -> (string, Lang.Constant.t) List.Assoc.t
+    val init     : t -> (C_identifier.t, Lang.Constant.t) List.Assoc.t
     (** [init test] gets the initialiser in [test]. *)
 
     val programs : t -> Lang.Program.t list
@@ -184,8 +201,8 @@ module type S = sig
 
     val make
       :  ?post:Post.t
-      -> name:string
-      -> init:((string, Lang.Constant.t) List.Assoc.t)
+      -> name:C_identifier.t
+      -> init:((C_identifier.t, Lang.Constant.t) List.Assoc.t)
       -> programs:Lang.Program.t list
       -> unit
       -> t Or_error.t

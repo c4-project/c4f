@@ -23,6 +23,7 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Utils
 
 include Ast_basic
 
@@ -478,7 +479,7 @@ module Reify = struct
 
   let basic_type_to_spec : Type.basic -> [> Ast.Type_spec.t] = function
     | Int -> `Int
-    | Atomic_int -> `Defined_type "atomic_int"
+    | Atomic_int -> `Defined_type (C_identifier.of_string "atomic_int")
   ;;
 
   let type_to_spec : Type.t -> [> Ast.Type_spec.t] = function
@@ -544,11 +545,11 @@ module Reify = struct
   ;;
 
   let mem_order_to_expr (mo : Mem_order.t) : Ast.Expr.t =
-    Identifier (Mem_order.to_string mo)
+    Identifier (C_identifier.of_string (Mem_order.to_string mo))
   ;;
 
   let known_call (name : string) (args : Ast.Expr.t list) : Ast.Expr.t =
-    Call {func = Identifier name ; arguments = args }
+    Call {func = Identifier (C_identifier.of_string name) ; arguments = args }
   ;;
 
   let rec expr : Expression.t -> Ast.Expr.t = function
@@ -637,7 +638,7 @@ module Litmus_lang : Litmus.Ast.Basic
 
     module Program = struct
       type t = Function.t named [@@deriving sexp]
-      let name (n, _) = Some n
+      let name (n, _) = Some (C_identifier.to_string n)
       let listing (_, fn) =
         List.map (Function.body_decls fn) ~f:(fun x -> `Decl x)
         @ List.map (Function.body_stms fn) ~f:(fun x -> `Stm x)

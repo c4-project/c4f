@@ -23,9 +23,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Parsing and comparison functionality for Herd output
 
-[Herd] contains functions for scraping the human-readable summary of a
-   Herd7 run, extracting location information, and comparing states.
-   *)
+    [Herd] contains functions for scraping the human-readable summary
+   of a Herd7 run, extracting location information, and comparing
+   states.  *)
 
 open Core
 open Utils

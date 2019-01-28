@@ -106,14 +106,14 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let make_init (progs : MS.Output.Program.t list)
-    : (string, LD.Constant.t) List.Assoc.t =
+    : (C_identifier.t, LD.Constant.t) List.Assoc.t =
     let get_hsyms prog =
       prog
       |> MS.Output.Program.symbol_table
       |> Fn.flip Abstract.Symbol.Table.set_of_sort Abstract.Symbol.Sort.Heap
     in
     let syms = Abstract.Symbol.Set.union_list (List.map ~f:get_hsyms progs) in
-    List.map ~f:(fun s -> (s, LD.Constant.zero))
+    List.map ~f:(fun s -> (C_identifier.of_string s, LD.Constant.zero))
       (Abstract.Symbol.Set.to_list syms)
   ;;
 
@@ -154,7 +154,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let make_litmus
-      (name : string)
+      (name : C_identifier.t)
       (programs : MS.Output.Program.t list)
       (post : L.Post.t option) =
     Or_error.tag ~tag:"Couldn't build litmus file."
@@ -202,7 +202,8 @@ module Make_runner (B : Runner_deps) : Runner = struct
       Travesty.T_option.With_errors.map_m config.post_sexp
         ~f:(make_post redirects)
     in
-    let%map lit = make_litmus name programs post in
+    let%bind name' = C_identifier.create name in
+    let%map lit = make_litmus name' programs post in
     let f = Format.formatter_of_out_channel outp in
     pp_for_litmus_format config.format f lit;
     Format.pp_print_newline f ();
@@ -258,7 +259,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
 
   let run ~f { Filter.aux; src; sink } ic oc : output Or_error.t =
     let open Result.Let_syntax in
-    let name = Filename.basename (Io.In_source.to_string src) in
+    let name = Filename.(chop_extension (basename (Io.In_source.to_string src))) in
     let%bind asm = parse src ic in
     let%bind symbols = stringify_symbols aux.symbols in
     f ?config:aux.config name aux.passes symbols (B.program asm) sink oc
