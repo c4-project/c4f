@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core_kernel
-open Utils
 
 include Tester_intf
 
@@ -241,15 +240,14 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     (analysis, timings)
   ;;
 
-  let run_single (ps : Pathset.t) (c_fname : Fpath.t) =
+  let run_single (ps : Pathset.t) (c_fname : string) =
     let open Or_error.Let_syntax in
-    let base = Fpath.(c_fname |> rem_ext |> filename) in
-    let fs = Pathset.File.make ps base in
+    let fs = Pathset.File.make ps c_fname in
     let%map result =
       T.bracket_join (fun () -> run_single_from_pathset_file fs)
     in
     let (herd, timings) = T.value result in
-    ( base
+    ( c_fname
     , Analysis.File.make
         ~herd
         ?time_taken:(T.time_taken result)
@@ -258,7 +256,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     )
   ;;
 
-  let run c_fnames =
+  let run (c_fnames : string list) =
     let open Or_error.Let_syntax in
     let%map files_and_time =
       T.bracket_join (fun () ->
@@ -279,12 +277,13 @@ end
 module Make_machine (B : Basic_machine) : Machine = struct
   include B
 
-  let run_compiler ~(in_root : Fpath.t) ~(out_root : Fpath.t) c_fnames cspec =
-    (* TODO(@MattWindsor91): actually wire this up to config *)
-    let (module T) = Timing.make_module `Enabled in
+  let run_compiler (cfg : Tester_config.t) cspec =
+    let module Cfg = Tester_config in
     let open Or_error.Let_syntax in
     let id = Compiler.Spec.With_id.id cspec in
-
+    let c_fnames = Cfg.fnames cfg in
+    let in_root  = Cfg.in_root cfg in
+    let out_root = Cfg.out_root cfg in
     let%bind (module C) = B.Resolve_compiler.from_spec cspec in
     let%bind (module R) = B.asm_runner_from_spec cspec in
     let%bind ps = Pathset.make_and_mkdirs id ~in_root ~out_root in
@@ -301,13 +300,25 @@ module Make_machine (B : Basic_machine) : Machine = struct
     (id, result)
   ;;
 
-  let run c_fnames specs ~(in_root : Fpath.t) ~(out_root : Fpath.t) =
+  let spec_id_in (ids : Id.Set.t) (spec : Compiler.Spec.With_id.t) : bool =
+    Id.Set.mem ids (Compiler.Spec.With_id.id spec)
+
+  let filter_specs (ids : Id.Set.t) : Compiler.Spec.Set.t Or_error.t =
+    compilers
+    |> Compiler.Spec.Set.map
+      ~f:(fun spec -> Option.some_if (spec_id_in ids spec) spec)
+    |> List.filter_opt
+    |> Compiler.Spec.Set.of_list
+  ;;
+
+  let run (cfg : Tester_config.t) : Analysis.Machine.t Or_error.t =
     let open Or_error.Let_syntax in
+    let%bind specs = filter_specs (Tester_config.compilers cfg) in
     let%map compilers_and_time =
       T.bracket_join (fun () ->
           specs
           |> Compiler.Spec.Set.map
-            ~f:(run_compiler ~in_root ~out_root c_fnames)
+            ~f:(run_compiler cfg)
           |> Or_error.combine_errors
         )
     in

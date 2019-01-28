@@ -66,7 +66,7 @@ end
 (** User-facing interface for running compiler tests
     on a single compiler. *)
 module type Compiler = sig
-  val run : Fpath.t list -> Analysis.Compiler.t Or_error.t
+  val run : string list -> Analysis.Compiler.t Or_error.t
   (** [run c_fnames] runs tests on each filename in [c_fnames],
       returning a compiler-level analysis. *)
 end
@@ -76,6 +76,10 @@ end
     needed to run tests on one machine. *)
 module type Basic_machine = sig
   include Basic
+
+  val compilers : Compiler.Spec.Set.t
+  (** [compilers] is the set of all enabled compilers for this
+     machine. *)
 
   module Resolve_compiler
     : Compiler.S_resolver
@@ -91,15 +95,10 @@ module type Basic_machine = sig
 end
 
 module type Machine = sig
-  val run
-    :  Fpath.t list
-    -> Compiler.Spec.Set.t
-    -> in_root:Fpath.t
-    -> out_root:Fpath.t
-    -> Analysis.Machine.t Or_error.t
-  (** [run c_fnames specs ~in_root ~out_root] runs tests on each
-     filename in [c_fnames], using every compiler in [specs] (presumed
-     to belong to the same machine), reading from directories in
-     [in_root] and writing to directories in [out_root], and returning
-     a machine-level analysis. *)
+  val run : Tester_config.t -> Analysis.Machine.t Or_error.t
+    (** [run cfg] runs tests on each filename listed in [cfg], using
+       every machine-local compiler in [specs] also listed in [cfg],
+       to belong to the same machine), reading from directories in
+       [cfg]'s [in_root] and writing to directories in its [out_root],
+       and returning a machine-level analysis. *)
 end

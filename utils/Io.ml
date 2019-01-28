@@ -42,6 +42,21 @@ let fpath_of_string_option
   lift_fpath_str Option.some None
 ;;
 
+let filename_no_ext (f : Fpath.t) : string =
+  Fpath.(filename (rem_ext ~multi:true (f)))
+;;
+
+let%expect_test "filename_no_ext: example" =
+  printf "%s\n" (filename_no_ext (Fpath.(v "foo" / "bar" / "baz.c")));
+  [%expect {| baz |}]
+;;
+
+let%expect_test "filename_no_ext: example with double extension" =
+  printf "%s\n" (filename_no_ext (Fpath.(v "foo" / "bar" / "baz.c.litmus")));
+  [%expect {| baz |}]
+;;
+
+
 module Dir = struct
   let default_sort_compare : Fpath.t -> Fpath.t -> int =
     Travesty.T_fn.on

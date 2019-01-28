@@ -106,6 +106,10 @@ val fpath_of_string_option : string option -> Fpath.t option Or_error.t
 (** [fpath_of_string_option str_opt] lifts [fpath_of_string] over
     optional strings. *)
 
+val filename_no_ext : Fpath.t -> string
+(** [filename_no_ext path] is the filename of [path], less any
+    extension(s). *)
+
 val with_input_and_output
   :  In_source.t
   -> Out_sink.t

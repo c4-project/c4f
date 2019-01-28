@@ -26,9 +26,11 @@ open Lib
 open Utils
 
 let run_machine
-    o should_time cfg
-    ~(in_root : Fpath.t) ~(out_root : Fpath.t)
-    (c_files : Fpath.t list) (mach_id, specs) =
+    o
+    (should_time : bool)
+    (cfg : Config.M.t)
+    (tester_cfg : Tester_config.t)
+    (mach_id, specs) =
   let open Or_error.Let_syntax in
 
   let timing_cfg = if should_time then `Enabled else `Disabled in
@@ -41,21 +43,24 @@ let run_machine
       ;;
       let herd_cfg = Config.M.herd cfg
 
+      let compilers = specs
+
       module Resolve_compiler = Language_support.Resolve_compiler
 
       let asm_runner_from_spec spec =
         Language_support.asm_runner_from_arch
           (Compiler.Spec.With_id.emits spec)
     end) in
-  let%map analysis = TM.run ~in_root ~out_root c_files specs in
+  let%map analysis = TM.run tester_cfg in
   (mach_id, analysis)
 ;;
 
-let check_c_files_exist (c_path : Fpath.t) (c_files : Fpath.t list) =
+let check_files_exist (c_path : Fpath.t) (c_files : Fpath.t list) =
   if List.is_empty c_files
   then Or_error.error_s
-      [%message "Expected at least one C file." ~path:(Fpath.to_string c_path)]
+      [%message "Expected at least one file." ~path:(Fpath.to_string c_path)]
   else Result.ok_unit
+  (* TODO(@MattWindsor91): actually test the files go somewhere? *)
 ;;
 
 let report_spec_errors o = function
@@ -77,26 +82,71 @@ let group_specs_by_machine specs =
   |> Id.Map.to_alist
 ;;
 
-let run should_time ~(in_root_raw : string) ~(out_root_raw : string) o cfg =
+let find_memalloy_c_filenames (in_root : Fpath.t)
+  : string list Or_error.t =
   let open Or_error.Let_syntax in
+  let c_path = Fpath.(in_root / "C") in
+  let%bind c_files = Io.Dir.get_files c_path ~ext:"c" in
+  let%map () = check_files_exist c_path c_files in
+  List.map ~f:Io.filename_no_ext c_files
+;;
+
+let find_delitmusify_litmus_filenames (in_root : Fpath.t)
+  : string list Or_error.t =
+  let open Or_error.Let_syntax in
+  let%bind lit_files = Io.Dir.get_files in_root ~ext:"litmus" in
+  let%map () = check_files_exist in_root lit_files in
+  List.map ~f:Io.filename_no_ext lit_files
+;;
+
+let find_filenames : Tester_config.C_litmus_mode.t -> Fpath.t -> string list Or_error.t =
+  function
+  | Tester_config.C_litmus_mode.Memalloy ->
+    find_memalloy_c_filenames
+  | Tester_config.C_litmus_mode.Delitmusify ->
+    find_delitmusify_litmus_filenames
+;;
+
+let make_tester_config ~(in_root_raw : string) ~(out_root_raw : string) o cfg :
+  Tester_config.t Or_error.t =
+  let open Or_error.Let_syntax in
+  (* TODO(@MattWindsor91): wire this up somehow *)
+  let c_litmus_mode = Tester_config.C_litmus_mode.Memalloy in
   let%bind in_root  = Io.fpath_of_string in_root_raw
   and      out_root = Io.fpath_of_string out_root_raw
   in
+  let%bind fnames = find_filenames c_litmus_mode in_root in
   let specs = Config.M.compilers cfg in
   report_spec_errors o
     (List.filter_map ~f:snd (Config.M.disabled_compilers cfg));
+  (* TODO(@MattWindsor91): wire this up somehow *)
+  let compilers =
+    specs
+    |> Compiler.Spec.Set.map ~f:(Compiler.Spec.With_id.id)
+    |> Id.Set.of_list
+  in
+  Tester_config.make
+    ~fnames
+    ~in_root
+    ~out_root
+    ~compilers
+    ~c_litmus_mode
+    ()
+;;
 
-  let c_path = Fpath.(in_root / "C") in
-  let%bind c_files = Io.Dir.get_files c_path ~ext:"c" in
-  let%bind () = check_c_files_exist c_path c_files in
-
+let run should_time ~(in_root_raw : string) ~(out_root_raw : string) o cfg =
+  let open Or_error.Let_syntax in
+  let%bind tester_cfg =
+    make_tester_config ~in_root_raw ~out_root_raw o cfg
+  in
+  let specs = Config.M.compilers cfg in
   let specs_by_machine = group_specs_by_machine specs in
 
   let start_time = Time.now () in
   let%bind results_alist =
     specs_by_machine
     |> List.map
-      ~f:(run_machine o should_time cfg ~in_root ~out_root c_files)
+      ~f:(run_machine o should_time cfg tester_cfg)
     |> Or_error.combine_errors
   in
   let end_time = Time.now () in
