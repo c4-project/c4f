@@ -69,6 +69,25 @@ P1()
 // Postcondition:
 // exists (0:r0 == 0 /\ x == 2)
 ```
+## memalloy_na_int.c.litmus
+
+```
+// <!> Auto-generated from a litmus test by act.
+#include <stdatomic.h>
+atomic_int x = 0;
+int t0r0 = 0;
+void
+P0()
+{ *x = 1; t0r0 = *x; }
+
+
+// C variables:
+// - x
+// - t0r0
+
+// Postcondition:
+// exists (0:r0 == 0 /\ x == 1)
+```
 ## rwc.c.litmus
 
 ```
@@ -107,4 +126,4 @@ P2()
 // exists (1:r0 == 1 /\ 1:r1 == 0 /\ 2:r0 == 0)
 ```
 
-Ran 3 test(s).
+Ran 4 test(s).
