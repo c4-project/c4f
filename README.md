@@ -117,8 +117,10 @@ discrepancies in `act`'s output as diffs.
   immediate output of various `act` functions;
 - _regression tests_, which run the explainer and litmusifier on a
   directory of sample assembly and diff the result against a last
-  known good output (see `bin/tests` and `bin/dune` for the tests)
-
+  known good output (see `bin/tests` and `bin/dune` for the tests);
+- _semi-automatic tests_, which take the form of Unix shell scripts
+  that simplify running various testing workflows that don't fit
+  well into the automatic flow (see `unix_test_scripts`).
 
 ## How to use `act`
 
