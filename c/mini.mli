@@ -38,14 +38,14 @@ open Base
 
 include module type of Ast_basic
 
-type 'a named = (Identifier.t * 'a)
+type 'a named = (Identifier.t * 'a) [@@deriving eq, sexp]
 (** Shorthand for pairs of items and their names. *)
 
-type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t
+type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
 (** Shorthand for associative lists with identifier keys. *)
 
 module Type : sig
-  type basic
+  type basic [@@deriving eq, sexp]
   (** Basic types. *)
 
   val int : basic
@@ -54,13 +54,17 @@ module Type : sig
   val atomic_int : basic
   (** [atomic_int] is the atomic_int type. *)
 
-  type t
+  type t [@@deriving eq, sexp]
 
   val normal : basic -> t
   (** [normal ty] lifts a basic type [ty] to a scalar type. *)
 
   val pointer_to : basic -> t
   (** [pointer_to ty] lifts a basic type [ty] to a pointer type. *)
+
+  val deref : t -> t Or_error.t
+  (** [deref ty] tries to strip a layer of pointer indirection off [ty].
+      It fails if [ty] isn't a pointer type. *)
 end
 
 module Initialiser : sig
@@ -218,6 +222,9 @@ module Function : sig
     -> t
   (** [make ~parameters ~body_decls ?body_stms] creates a function
      with the given contents. *)
+
+  val parameters : t -> Type.t id_assoc
+  (** [parameters func] gets [func]'s parameter list. *)
 
   val body_decls : t -> Initialiser.t id_assoc
     (** [body_decls func] gets [func]'s in-body variable

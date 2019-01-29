@@ -28,10 +28,9 @@ open Utils
 include Ast_basic
 
 type 'a named = (Identifier.t * 'a)
-[@@deriving sexp]
+[@@deriving eq, sexp]
 
-type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t
-[@@deriving sexp]
+type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
 
 module Type = struct
   type basic =
@@ -44,6 +43,11 @@ module Type = struct
     | Normal of basic
     | Pointer_to of basic
   [@@deriving sexp, variants, eq]
+  ;;
+
+  let deref : t -> t Or_error.t = function
+    | Pointer_to k -> Or_error.return (Normal k)
+    | Normal _ -> Or_error.error_string "not a pointer type"
   ;;
 end
 

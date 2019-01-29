@@ -11,6 +11,10 @@
 - Feature: `act c explain` now takes an optional flag `-dump-cvars`,
   which causes it to emit the list of C variables that it found in the
   input.  This is useful for passing to `-cvars` later on.
+- Bugfix: `act c delitmus` now correctly infers global variable types
+  from the thread functions' parameter lists.  This means that
+  global variables with non-atomic `int`s now get the right type in
+  the delitmusification.  (#63)
 
 ## 2019-Jan-28
 

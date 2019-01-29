@@ -25,18 +25,113 @@
 open Core_kernel
 open Utils
 
-let make_atomic_int_initialiser (value : Ast_basic.Constant.t) =
+let make_initialiser ((ty, value) : Mini.Type.t * Ast_basic.Constant.t) =
   (* NB: Apparently, we don't need ATOMIC_VAR_INIT here:
      every known C11 compiler can make do without it, and as a result
      it's obsolete as of C17. *)
-  Mini.Initialiser.make ~ty:Mini.Type.(normal atomic_int) ~value ()
+  Mini.Initialiser.make ~ty ~value ()
 ;;
 
-(** [make_init_globals init] converts a Litmus initialiser list to
-    a set of global variable declarations. *)
-let make_init_globals (init : (C_identifier.t, Ast_basic.Constant.t) List.Assoc.t)
-  : (Ast_basic.Identifier.t, Mini.Initialiser.t) List.Assoc.t =
-  List.Assoc.map ~f:make_atomic_int_initialiser init
+let parameter_list_equal
+  : Mini.Type.t Mini.id_assoc -> Mini.Type.t Mini.id_assoc -> bool =
+  List.equal
+    ~equal:(
+      Tuple2.equal
+        ~eq1:C_identifier.equal
+        ~eq2:Mini.Type.equal
+    )
+;;
+
+let check_parameters_consistent
+  (params : Mini.Type.t Mini.id_assoc)
+  (next : Mini.Function.t)
+  : unit Or_error.t =
+  let params' = Mini.Function.parameters next in
+  if parameter_list_equal params params'
+  then Result.ok_unit
+  else Or_error.error_s
+      [%message "Functions do not agree on parameter lists"
+          ~first_example:(params : Mini.Type.t Mini.id_assoc)
+          ~second_example:(params' : Mini.Type.t Mini.id_assoc)
+      ]
+;;
+
+let functions_to_parameter_map
+  : Mini.Function.t list -> Mini.Type.t Mini.id_assoc Or_error.t
+  = function
+    | [] -> Or_error.error_string "need at least one function"
+    | x :: xs ->
+      let open Or_error.Let_syntax in
+      let params = Mini.Function.parameters x in
+      let%map () =
+        xs
+        |> List.map ~f:(check_parameters_consistent params)
+        |> Or_error.combine_errors_unit
+      in params
+;;
+
+let merge_init_and_params
+    (init : Ast_basic.Constant.t Mini.id_assoc)
+    (params : Mini.Type.t Mini.id_assoc)
+  : (Mini.Type.t * Ast_basic.Constant.t) Mini.id_assoc Or_error.t =
+  let i_ids = init   |> List.map ~f:fst |> C_identifier.Set.of_list in
+  let p_ids = params |> List.map ~f:fst |> C_identifier.Set.of_list in
+  if C_identifier.Set.equal i_ids p_ids
+  then
+    params
+    |> List.map
+      ~f:(
+        fun (id, ty) ->
+          ( id
+          , (ty, List.Assoc.find_exn ~equal:C_identifier.equal init id)
+          )
+      )
+    |> Or_error.return
+  else Or_error.error_s
+      [%message "Init and parameters lists don't agree"
+        ~init_ids:(i_ids : C_identifier.Set.t)
+        ~param_ids:(p_ids : C_identifier.Set.t)
+      ]
+;;
+
+(** [dereference_params params] tries to convert each parameter in
+   [params] from a pointer type to a non-pointer type.  It fails if
+   any of the parameters are non-pointer types.
+
+    Since we assume that litmus tests contain pointers to the global
+   variables in their parameter lists, failure of this function
+   generally means the litmus test being delitmusified is
+   ill-formed. *)
+let dereference_params
+    (params : Mini.Type.t Mini.id_assoc)
+    : Mini.Type.t Mini.id_assoc Or_error.t =
+  Or_error.(
+    params
+    |> List.map ~f:(
+      fun (id, ty) -> ty |> Mini.Type.deref >>| Tuple2.create id
+    )
+    |> combine_errors
+  )
+;;
+
+
+(** [make_init_globals init functions] converts a Litmus initialiser
+   list to a set of global variable declarations, using the type
+   information from [functions].
+
+    It fails if the functions list is empty, is inconsistent with its
+   parameters, or the parameters don't match the initialiser. *)
+let make_init_globals
+    (init : Ast_basic.Constant.t Mini.id_assoc)
+    (functions : Mini.Function.t list)
+  : (Ast_basic.Identifier.t, Mini.Initialiser.t) List.Assoc.t Or_error.t =
+  Or_error.(
+    functions
+    |>  functions_to_parameter_map
+    >>= dereference_params
+    >>= merge_init_and_params init
+    >>| List.Assoc.map ~f:make_initialiser
+  )
 ;;
 
 let qualify_local (t : int) (id : Mini.Identifier.t) : Mini.Identifier.t =
@@ -108,13 +203,15 @@ let delitmus_functions
 
 let run (input : Mini.Litmus_ast.Validated.t)
   : Mini.Program.t Or_error.t =
+  let open Or_error.Let_syntax in
   let init = Mini.Litmus_ast.Validated.init input in
   let raw_functions = Mini.Litmus_ast.Validated.programs input in
-  let init_globals = make_init_globals init in
-  let func_globals = make_func_globals (List.map ~f:snd raw_functions) in
+  let function_bodies = List.map ~f:snd raw_functions in
+  let%map init_globals = make_init_globals init function_bodies in
+  let func_globals = make_func_globals function_bodies in
   let globals = init_globals @ func_globals in
   let functions =
     delitmus_functions raw_functions
   in
-  Or_error.return (Mini.Program.make ~globals ~functions)
+  Mini.Program.make ~globals ~functions
 ;;
