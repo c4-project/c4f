@@ -8,6 +8,9 @@
   Unix environment (including working C compilers and `act.conf`s).
   Currently there is only one script, which is a work-in-progress, but
   this will likely change.
+- Feature: `act c explain` now takes an optional flag `-dump-cvars`,
+  which causes it to emit the list of C variables that it found in the
+  input.  This is useful for passing to `-cvars` later on.
 
 ## 2019-Jan-28
 

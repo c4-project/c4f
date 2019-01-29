@@ -53,7 +53,10 @@ let delitmus_command : Command.t =
     ]
 ;;
 
-let run file_type ~(infile_raw : string option) ~(outfile_raw : string option) _o cfg =
+let run
+    (file_type : [ `C | `Litmus | `Infer ])
+    (output_mode : [ `All | `Vars ])
+    ~(infile_raw : string option) ~(outfile_raw : string option) _o cfg =
   let open Or_error.Let_syntax in
   let%bind infile  = Io.In_source.of_string_opt infile_raw in
   let%bind outfile = Io.Out_sink.of_string_opt outfile_raw in
@@ -64,7 +67,7 @@ let run file_type ~(infile_raw : string option) ~(outfile_raw : string option) _
   let (module M)   = C.Filters.c_module is_c in
   let module Cpp_M = Lib.Cpp.Chain_filter (M) in
   let%map _ =
-    Cpp_M.run (cpp_cfg, Print) infile outfile
+    Cpp_M.run (cpp_cfg, Print output_mode) infile outfile
   in ()
 ;;
 
@@ -81,16 +84,24 @@ let explain_command : Command.t =
       and file_type =
         choose_one
           [ Standard_args.Other.flag_to_enum_choice `C "c"
-              ~doc:"if given, assume input is raw C"
+              ~doc:"assume input is raw C"
           ; Standard_args.Other.flag_to_enum_choice `Litmus "litmus"
-              ~doc:"if given, assume input is a C litmus test"
+              ~doc:"assume input is a C litmus test"
           ]
           ~if_nothing_chosen:(`Default_to `Infer)
+      and output_mode =
+        choose_one
+          [ Standard_args.Other.flag_to_enum_choice `All "dump-input"
+              ~doc:"pretty-print the input back onto stdout (the default)"
+          ; Standard_args.Other.flag_to_enum_choice `Vars "dump-vars"
+              ~doc:"emit the names of all variables found in the input"
+          ]
+          ~if_nothing_chosen:(`Default_to `All)
       and infile_raw = anon (maybe ("FILE" %: file)) in
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run file_type ~infile_raw ~outfile_raw)
+          ~f:(run file_type output_mode ~infile_raw ~outfile_raw)
     ]
 ;;
 

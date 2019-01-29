@@ -31,8 +31,8 @@
 open Utils
 
 type mode =
-  | Print
-  (** Pretty-print out the result (useful for debugging). *)
+  | Print of [ `All | `Vars ]
+  (** Pretty-print all, or part, of the result (useful for debugging). *)
   | Delitmus
   (** If the input is a C/Litmus file, try convert it to C. *)
 (** The operation to use in the filter. *)

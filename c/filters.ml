@@ -59,7 +59,7 @@ module type Basic = sig
 end
 
 type mode =
-  | Print
+  | Print of [ `All | `Vars ]
   | Delitmus
 ;;
 
@@ -80,7 +80,8 @@ module Make (B : Basic)
 
     let tmp_file_ext ({ aux; _ } : mode Filter.ctx) : string =
       match aux with
-      | Print -> B.normal_tmp_file_ext
+      | Print `All -> B.normal_tmp_file_ext
+      | Print `Vars -> "txt"
       | Delitmus -> "c"
     ;;
 
@@ -94,11 +95,20 @@ module Make (B : Basic)
       { Output.cvars; post }
     ;;
 
-    let run_print (vast : B.t) (oc : Out_channel.t)
+    let pp : [ `All | `Vars ] -> (string list * B.t) Fmt.t = function
+      | `All -> Fmt.using snd B.pp
+      | `Vars -> Fmt.(using fst (vbox (list ~sep:sp string)))
+    ;;
+
+    let run_print
+        (output_mode : [ `All | `Vars ])
+        (vast : B.t) (oc : Out_channel.t)
       : Output.t Or_error.t =
-      Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp vast;
       let cvars = B.cvars vast in
       let post  = B.postcondition vast in
+      let f = Format.formatter_of_out_channel oc in
+      Fmt.pf f "%a@." (pp output_mode)
+        (Option.value ~default:[] cvars, vast);
       Or_error.return { Output.cvars; post }
     ;;
 
@@ -109,7 +119,7 @@ module Make (B : Basic)
       in
       let%bind vast = B.process ast in
       match aux with
-      | Print -> run_print vast oc
+      | Print output_mode -> run_print output_mode vast oc
       | Delitmus -> run_delitmus vast oc
     ;;
   end)
