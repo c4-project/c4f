@@ -1,5 +1,21 @@
 # Unreleased
 
+## 2019-Jan-29
+
+- Feature: started bundling a series of shell scripts for
+  semi-automated testing of `act`.  These complement the automated
+  tests, and are intended for checking how `act` interacts with a full
+  Unix environment (including working C compilers and `act.conf`s).
+  Currently there is only one script, which is a work-in-progress, but
+  this will likely change.
+
+## 2019-Jan-28
+
+- Change: in many locations where `act` expects a C-style identifier,
+  such as Litmus identifiers and test names, `act` now automatically
+  does validation to make sure that the identifier is indeed a proper
+  C identifier string.  This may cause intermittent breakages.
+
 ## 2019-Jan-22
 
 - Feature: litmusify now automatically finds the set of C variables
