@@ -139,6 +139,12 @@ let qualify_local (t : int) (id : Mini.Identifier.t) : Mini.Identifier.t =
   C_identifier.of_string (sprintf "t%d%s" t id')
 ;;
 
+let%expect_test "qualify_local: example" =
+  Fmt.pr "%a@." C_identifier.pp
+    (qualify_local 0 (C_identifier.of_string "r0"));
+  [%expect {| t0r0 |}]
+;;
+
 let make_single_func_globals (tid : int) (func : Mini.Function.t)
   : Mini.Initialiser.t Mini.id_assoc =
   List.map
@@ -153,36 +159,100 @@ let make_func_globals (funcs : Mini.Function.t list)
   |> List.concat
 ;;
 
-let qualify_locals
-    (tid : int)
-    (locals : Mini.Initialiser.t Mini.id_assoc)
-  : Mini.Statement.t -> Mini.Statement.t =
-  Mini.Statement.On_identifiers.map
-    ~f:(fun id ->
-        if List.Assoc.mem locals ~equal:C_identifier.equal id
-        then qualify_local tid id
-        else id)
-;;
+module Global_reduce
+    (L : sig
+       val tid : int
+       val locals : Mini.Identifier.Set.t
+     end) = struct
+  let is_local : Mini.Identifier.t -> bool =
+    Mini.Identifier.Set.mem L.locals
+  ;;
 
-let address_globals
-    (locals : Mini.Initialiser.t Mini.id_assoc)
-  : Mini.Statement.t -> Mini.Statement.t =
-  Mini.Statement.On_addresses.map
-    ~f:(fun addr ->
-        if List.Assoc.mem locals ~equal:C_identifier.equal
-            (Mini.Address.underlying_variable addr)
-        then addr
-        else Mini.Address.ref addr
+  let when_local
+    (proj : 'a -> Mini.Identifier.t)
+    (f : 'a -> 'a)
+    (v : 'a) : 'a =
+    if is_local (proj v) then f v else v
+  ;;
+
+  let when_global
+    (proj : 'a -> Mini.Identifier.t)
+    (f : 'a -> 'a)
+    (v : 'a) : 'a =
+    if is_local (proj v) then v else f v
+  ;;
+
+  let qualify_locals : Mini.Statement.t -> Mini.Statement.t =
+    Mini.Statement.On_identifiers.map
+      ~f:(when_local Fn.id (qualify_local L.tid))
+  ;;
+
+  (** [address_globals stm] converts each address in [stm] over a global
+      variable [v] to [&*v], ready for {{!ref_globals}ref_globals} to
+      reduce to [&v]. *)
+  let address_globals : Mini.Statement.t -> Mini.Statement.t =
+    Mini.Statement.On_addresses.map
+      ~f:(
+        when_global Mini.Address.underlying_variable
+          (fun addr ->
+             (* The added deref here will be removed in
+                [ref_globals]. *)
+             Mini.Address.ref
+               (Mini.Address.On_lvalues.map ~f:(Mini.Lvalue.deref) addr)
+          )
       )
+  ;;
+
+  (** [ref_globals stm] turns all dereferences of global variables in
+     [stm] into direct accesses to the same variables. *)
+  let ref_globals
+    : Mini.Statement.t -> Mini.Statement.t =
+    Mini.Statement.On_lvalues.map
+      ~f:(
+        Mini.Lvalue.(
+          when_global underlying_variable
+            (Fn.compose variable underlying_variable)
+        )
+      )
+  ;;
+
+  (** [proc_stm stm] runs all of the global-handling functions
+      on a single statement. *)
+  let proc_stm (stm : Mini.Statement.t) : Mini.Statement.t =
+    stm
+    |> address_globals
+    |> ref_globals
+    |> qualify_locals
+  ;;
+
+  (** [proc_stms stms] runs all of the global-handling functions
+      on multiple statements. *)
+  let proc_stms : Mini.Statement.t list -> Mini.Statement.t list =
+    List.map ~f:proc_stm
+  ;;
+end
+
+let global_reduce
+    (tid : int)
+    (locals : Mini.Identifier.Set.t)
+    : Mini.Statement.t list -> Mini.Statement.t list =
+  let module M = Global_reduce (struct
+      let tid = tid
+      let locals = locals
+  end)
+  in M.proc_stms
 ;;
 
 let delitmus_stms
     (tid : int)
     (locals : Mini.Initialiser.t Mini.id_assoc)
-    (stms : Mini.Statement.t list) =
-  stms
-  |> List.map ~f:(address_globals locals)
-  |> List.map ~f:(qualify_locals tid locals)
+    : Mini.Statement.t list -> Mini.Statement.t list =
+  let locals_set =
+    locals
+    |> List.map ~f:fst
+    |> Mini.Identifier.Set.of_list
+  in
+  global_reduce tid locals_set
 ;;
 
 let delitmus_function (tid : int) (func : Mini.Function.t)

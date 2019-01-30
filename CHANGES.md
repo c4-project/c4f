@@ -1,5 +1,11 @@
 # Unreleased
 
+## 2019-Jan-30
+
+- Bugfix: `act c delitmus` now properly handles removing dereferences from
+  global variables (or, at least, does so _more_ properly than before).
+  (#64)
+
 ## 2019-Jan-29
 
 - Feature: started bundling a series of shell scripts for
