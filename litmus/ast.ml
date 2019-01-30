@@ -54,6 +54,12 @@ module Primitives = struct
         (tnum, rest)
       ;;
 
+      let try_parse (s : string) : t Or_error.t =
+        match try_parse_local s with
+        | Some (t, id) -> Or_error.(id |> C_identifier.create >>| local t)
+        | None -> Or_error.(s |> C_identifier.create >>| global)
+      ;;
+
       let of_string (s : string) : t =
         match try_parse_local s with
         | Some (t, id) -> Local (t, C_identifier.of_string id)
@@ -67,53 +73,90 @@ module Primitives = struct
     end
 
     include M_sexp
-    include Comparable.Make_plain (M_sexp)
+    include Comparable.Make (M_sexp)
 
-    let anonymise = function
-      | Local  (int, str) -> `A ((int, str))
-      | Global str        -> `B str
-    ;;
+    module Quickcheck = struct
+      module G = Quickcheck.Generator
+      module O = Quickcheck.Observer
+      module S = Quickcheck.Shrinker
 
-    let deanonymise = function
-      | `A ((int, str)) -> Local (int, str)
-      | `B str          -> Global str
-    ;;
+      let anonymise = function
+        | Local  (int, str) -> `A ((int, str))
+        | Global str        -> `B str
+      ;;
 
-    let gen : t Quickcheck.Generator.t =
-      let module G = Quickcheck.Generator in
-      G.map ~f:deanonymise
-        (G.variant2
-           (G.tuple2 G.small_non_negative_int C_identifier.gen)
-           (C_identifier.gen)
-        )
-    ;;
+      let deanonymise = function
+        | `A ((int, str)) -> Local (int, str)
+        | `B str          -> Global str
+      ;;
 
-    let obs : t Quickcheck.Observer.t =
-      let module O = Quickcheck.Observer in
-      O.unmap ~f:anonymise
-        (O.variant2
-           (O.tuple2 Int.obs C_identifier.obs)
-           C_identifier.obs
-        )
-    ;;
+      let gen : t G.t =
+        G.map ~f:deanonymise
+          (G.variant2
+             (G.tuple2 G.small_non_negative_int C_identifier.gen)
+             (C_identifier.gen)
+          )
+      ;;
 
-    let shrinker : t Quickcheck.Shrinker.t =
-      let module S = Quickcheck.Shrinker in
-      S.map ~f:deanonymise ~f_inverse:anonymise
-        (S.variant2
-           (S.tuple2 Int.shrinker C_identifier.shrinker)
-           C_identifier.shrinker
-        )
-    ;;
+      let obs : t O.t =
+        O.unmap ~f:anonymise
+          (O.variant2
+             (O.tuple2 Int.obs C_identifier.obs)
+             C_identifier.obs
+          )
+      ;;
 
+      let shrinker : t S.t =
+        S.map ~f:deanonymise ~f_inverse:anonymise
+          (S.variant2
+             (S.tuple2 Int.shrinker C_identifier.shrinker)
+             C_identifier.shrinker
+          )
+      ;;
+    end
+    include Quickcheck
 
-    let%test_unit "to_string->of_string is idempotent" =
+    let%test_unit "to_string->of_string is identity" =
       Core_kernel.Quickcheck.test ~shrinker ~sexp_of:[%sexp_of: t] gen
         ~f:(fun ident ->
-            [%test_eq: t] ident (of_string (to_string ident))
+            [%test_eq: t] ~here:[[%here]] ident (of_string (to_string ident))
           )
 
-    (* NB: at the moment, the converse isn't true. *)
+    let to_memalloy_id_inner (t : int) (id : C_identifier.t)
+      : string =
+      sprintf "t%d%s" t (C_identifier.to_string id)
+    ;;
+
+    let%test_unit "to_memalloy_id_inner produces valid identifiers" =
+      Core_kernel.Quickcheck.test
+        ~sexp_of:[%sexp_of: (int * C_identifier.t)]
+        ~shrinker:Core_kernel.Quickcheck.Shrinker.(
+            tuple2 Int.shrinker C_identifier.shrinker
+          )
+        Core_kernel.Quickcheck.Generator.(
+          tuple2 small_non_negative_int C_identifier.gen
+        )
+        ~f:(fun (t, id) ->
+            [%test_pred: C_identifier.t Or_error.t]
+              ~here:[[%here]]
+              Or_error.is_ok
+              (C_identifier.create (to_memalloy_id_inner t id))
+          )
+
+    let to_memalloy_id : t -> C_identifier.t = function
+      | Local (t, id) ->
+        C_identifier.of_string (to_memalloy_id_inner t id)
+      | Global id -> id
+    ;;
+
+    let%test_unit "to_memalloy_id is identity on globals" =
+      Core_kernel.Quickcheck.test
+        ~shrinker:C_identifier.shrinker
+        ~sexp_of:[%sexp_of: C_identifier.t] C_identifier.gen
+        ~f:(fun ident ->
+            [%test_eq: C_identifier.t] ~here:[[%here]]
+              ident (to_memalloy_id (Global ident))
+          )
   end
 end
 

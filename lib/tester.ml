@@ -92,19 +92,15 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   (** [lower_thread_local_symbol] converts thread-local symbols of the
       form `0:r0` into the memalloy witness equivalent, `t0r0`. *)
   let lower_thread_local_symbol sym =
-    Option.value ~default:sym
-      ( let open Option.Let_syntax in
-        let%bind (thread, rest) = String.lsplit2 ~on:':' sym in
-        let%bind tnum = Caml.int_of_string_opt thread in
-        let%map  tnum = Option.some_if (Int.is_non_negative tnum) tnum in
-        sprintf "t%d%s" tnum rest
-      )
+    Litmus.Ast.Primitives.Id.(
+      Global (to_memalloy_id sym)
+    )
   ;;
 
   let analyse
       (c_herd : herd_run_result)
       (a_herd : herd_run_result)
-      (locmap : (string, string) List.Assoc.t)
+      (locmap : (Litmus.Ast.Primitives.Id.t, Litmus.Ast.Primitives.Id.t) List.Assoc.t)
     : Analysis.Herd.t Or_error.t =
     let open Or_error.Let_syntax in
     (* The locmap function we supply below goes backwards, from
@@ -121,7 +117,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
           ~locmap:(
             fun final_sym ->
               Or_error.return (
-                List.Assoc.find ~equal:String.equal locmap_r final_sym
+                List.Assoc.find ~equal:Litmus.Ast.Primitives.Id.equal locmap_r final_sym
               )
           )
           (* TODO(@MattWindsor91): properly valmap, if needed. *)
@@ -158,14 +154,6 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     )
   ;;
 
-  (** [map_location_renamings locs sym_redirects] works out the
-      mapping from locations in the original C program to
-      symbols in the Litmus output by using the redirects table
-      from the litmusifier. *)
-  let map_location_renamings locs sym_redirects =
-    compose_alists locs sym_redirects String.equal
-  ;;
-
   type timings =
     { in_c_herd    : Time.Span.t option
     ; in_cc        : Time.Span.t option
@@ -182,13 +170,13 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
            ~outfile:(P_file.asm_path fs))
   ;;
 
-  let litmusify_single (fs : Pathset.File.t) locations =
+  let litmusify_single (fs : Pathset.File.t) (cvars : string list) =
     let open Or_error.Let_syntax in
     bracket ~stage:"LITMUS" ~file:(P_file.basename fs)
       (fun () ->
          let%map output =
            R.Litmusify.run_from_fpaths
-             (Asm_job.make ~passes:sanitiser_passes ~symbols:(List.map ~f:snd locations) ())
+             (Asm_job.make ~passes:sanitiser_passes ~symbols:cvars ())
              ~infile:(Some (P_file.asm_path fs))
              ~outfile:(Some (P_file.lita_path fs))
          in
@@ -221,6 +209,49 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     }
   ;;
 
+  module L_id = Litmus.Ast.Primitives.Id
+
+  let cvars_from_loc_map
+      (map : (L_id.t, L_id.t) List.Assoc.t)
+    : string list Or_error.t =
+    map
+    |> List.map ~f:(
+      function
+      | (_, L_id.Global c_sym) ->
+        Or_error.return (Utils.C_identifier.to_string c_sym)
+      | _ ->
+        Or_error.error_string
+          "Internal error: got a non-local C location"
+    )
+    |> Or_error.combine_errors
+  ;;
+
+  let lift_str_map
+    (str_map : (string, string) List.Assoc.t)
+    : (L_id.t, L_id.t) List.Assoc.t Or_error.t =
+    str_map
+    |> List.map ~f:(
+      fun (x, y) ->
+        Or_error.(
+          both
+            (x |> Utils.C_identifier.create >>| fun x -> L_id.Global x)
+            (y |> Utils.C_identifier.create >>| fun y -> L_id.Global y)
+        )
+    )
+    |> Or_error.combine_errors
+  ;;
+
+  (** [map_location_renamings locs sym_redirects] works out the
+      mapping from locations in the original C program to
+      symbols in the Litmus output by using the redirects table
+      from the litmusifier. *)
+  let map_location_renamings
+      (litc_to_c : (L_id.t, L_id.t) List.Assoc.t)
+      (c_to_lita : (L_id.t, L_id.t) List.Assoc.t)
+    : (L_id.t, L_id.t) List.Assoc.t =
+    compose_alists litc_to_c c_to_lita L_id.equal
+  ;;
+
   let run_single_from_pathset_file (fs : Pathset.File.t) =
     let open Or_error.Let_syntax in
     (* NB: many of these stages depend on earlier stages' filesystem
@@ -228,14 +259,16 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
        chain, so be careful when re-ordering. *)
     let%bind c_herd = c_herd_on_pathset_file fs in
     let c_herd_outcome = T.value c_herd in
-    let locs = locations_of_herd_result c_herd_outcome in
+    let litc_to_c_map = locations_of_herd_result c_herd_outcome in
+    let%bind cvars = cvars_from_loc_map litc_to_c_map in
     let%bind cc = compile_from_pathset_file fs in
-    let%bind litmusify = litmusify_single fs locs in
-    let sym_redirects = T.value litmusify in
-    let loc_map = map_location_renamings locs sym_redirects in
+    let%bind litmusify = litmusify_single fs cvars in
+    let c_to_lita_str_map = T.value litmusify in
+    let%bind c_to_lita_map = lift_str_map c_to_lita_str_map in
+    let litc_to_lita_map = map_location_renamings litc_to_c_map c_to_lita_map in
     let%bind a_herd = a_herd_on_pathset_file fs in
     let a_herd_outcome = T.value a_herd in
-    let%map analysis = analyse c_herd_outcome a_herd_outcome loc_map in
+    let%map analysis = analyse c_herd_outcome a_herd_outcome litc_to_lita_map in
     let timings = make_timings c_herd cc litmusify a_herd in
     (analysis, timings)
   ;;

@@ -30,19 +30,23 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Core
 open Utils
 
+module Id = Litmus.Ast.Primitives.Id
+
 module State = struct
   module M = struct
-    type t = string String.Map.t [@@deriving sexp]
-    let compare = String.Map.compare String.compare
+    type t = string Id.Map.t [@@deriving sexp, compare]
   end
 
   include M
 
-  let of_alist = String.Map.of_alist_or_error
+  let of_alist = Id.Map.of_alist_or_error
 
-  let bound = String.Map.keys
+  let bound = Id.Map.keys
 
-  let map ~keyf ~valf state =
+  let map
+      ~(keyf : Id.t -> Id.t option Or_error.t)
+      ~(valf : string -> string Or_error.t)
+      state =
     let open Or_error.Let_syntax in
     let f (k, v) =
       let%bind ko = keyf k in
@@ -51,12 +55,12 @@ module State = struct
       let%map  k' = ko in
       (k', v')
     in
-    let      alist  = String.Map.to_alist state in
+    let      alist  = Id.Map.to_alist state in
     (* First, fail the map if there were any errors... *)
     let%bind mapped = Or_error.combine_errors (List.map ~f alist) in
     (* Next, remove any items with no key mapping... *)
     let      alist' = List.filter_opt mapped in
-    String.Map.of_alist_or_error alist'
+    Id.Map.of_alist_or_error alist'
   ;;
 
   module Set = struct
@@ -97,7 +101,9 @@ let single_outcome_of (herd : t) : single_outcome =
   if herd.is_undef then `Undef else `Unknown
 ;;
 
-let compare_states ~initials ~finals ~locmap ~valmap
+let compare_states ~initials ~finals
+    ~(locmap : Id.t -> Id.t option Or_error.t)
+    ~(valmap : string -> string Or_error.t)
   : outcome Or_error.t =
   let open Or_error.Let_syntax in
   let f = State.map ~keyf:locmap ~valf:valmap in
@@ -196,18 +202,23 @@ let process_preamble herd line =
   (state', herd)
 ;;
 
+let proc_binding (binding : string)
+  : (Id.t * string) Or_error.t =
+  match String.split ~on:'=' (String.strip binding) with
+  | [l; r] ->
+    let open Or_error.Let_syntax in
+    let%map l' = Id.try_parse (String.strip l) in
+    (l', String.strip r)
+  | _ ->
+    Or_error.error_s
+      [%message
+        "Expected a binding of the form X=Y"
+          ~got:binding
+      ]
+;;
+
 let process_state n herd line =
-  let proc_binding (binding : string)
-    : (string * string) Or_error.t =
-    match String.split ~on:'=' (String.strip binding) with
-    | [l; r] -> Ok (String.strip l, String.strip r)
-    | _ ->
-      Or_error.error_s
-        [%message
-          "Expected a binding of the form X=Y"
-            ~got:binding
-        ]
-  in
+
 
   (* State lines are always 'binding; binding; binding;', with
      a trailing ;. *)

@@ -30,6 +30,7 @@
 
 open Core
 open Utils
+open Litmus.Ast.Primitives
 
 (** [t] is the opaque type of a Herd output analysis. *)
 type t
@@ -46,18 +47,18 @@ module State : sig
       [valf] return values, and the result is a well-formed map
       [m], [map] returns [Ok m]; else, an error. *)
   val map
-    :  keyf : (string -> string option Or_error.t)
+    :  keyf : (Id.t -> Id.t option Or_error.t)
     -> valf : (string -> string Or_error.t)
     -> t
     -> t Or_error.t
   ;;
 
   (** [bound t] gets the list of all bound names in [t]. *)
-  val bound : t -> string list
+  val bound : t -> Id.t list
 
   (** [of_alist alist] tries to convert [alist] into a state. *)
   val of_alist
-    :  (string, string) List.Assoc.t
+    :  (Id.t, string) List.Assoc.t
     -> t Or_error.t
   ;;
 
@@ -98,7 +99,7 @@ val single_outcome_of : t -> single_outcome
 val outcome_of
   :  initial : t
   -> final   : t
-  -> locmap  : (string -> string option Or_error.t)
+  -> locmap  : (Id.t -> Id.t option Or_error.t)
   -> valmap  : (string -> string Or_error.t)
   -> outcome Or_error.t
 ;;

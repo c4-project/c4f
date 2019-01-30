@@ -74,6 +74,9 @@ module type S_id = sig
   [@@deriving compare, sexp]
   ;;
 
+  val try_parse : string -> t Or_error.t
+  (** [try_parse str] tries to parse [str] as a Litmus identifier. *)
+
   include Stringable.S with type t := t
   (** Litmus identifiers can be converted to and from strings.
       Note that conversion from strings can fail if the C identifier
@@ -83,9 +86,16 @@ module type S_id = sig
   (** We can generate (valid) Litmus identifiers at random for
      quickchecks. *)
 
-  include Comparable.S_plain with type t := t
+  include Comparable.S with type t := t
   (** Litmus identifiers suit various comparable scenarios, such as
      map keys. *)
+
+  val to_memalloy_id : t -> C_identifier.t
+  (** [to_memalloy_id id] converts [id] to the corresponding
+      memalloy executable-C global variable name.
+
+      This is [x] where [id = Global x], and ["tXY"] where
+      [id = Local (X, Y)]. *)
 end
 (** Signature of identifier modules. *)
 

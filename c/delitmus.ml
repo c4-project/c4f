@@ -135,8 +135,7 @@ let make_init_globals
 ;;
 
 let qualify_local (t : int) (id : Mini.Identifier.t) : Mini.Identifier.t =
-  let id' = C_identifier.to_string id in
-  C_identifier.of_string (sprintf "t%d%s" t id')
+  Litmus.Ast.Primitives.Id.(to_memalloy_id (Local (t, id)))
 ;;
 
 let%expect_test "qualify_local: example" =
