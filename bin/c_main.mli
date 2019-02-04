@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,9 +22,9 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** The 'explain-c' command *)
+(** The 'c' command. *)
 
 open Core
 
 val command : Command.t
-(** [command] is the top-level 'explain-c' command. *)
+(** [command] is the top-level 'c' command. *)

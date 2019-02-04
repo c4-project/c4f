@@ -22,9 +22,9 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Command for act's C/Litmus fuzz-testing mutator. *)
+(** Command for act's C/Litmus delitmusifier. *)
 
 open Core
 
 val command : Command.t
-(** [command] is the top-level 'fuzz' command. *)
+(** [command] is the top-level 'c delitmus' command. *)

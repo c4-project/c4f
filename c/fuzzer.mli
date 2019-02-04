@@ -22,36 +22,13 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
-open Lib
+(** The 'act' mutation-based C litmus test fuzzer. *)
 
-let run
-    (_seed : int option)
-    (_args : Args.Standard_with_files.t)
-    (_o    : Output.t)
-    (_cfg  : Config.M.t)
-  : unit Or_error.t =
-  Or_error.unimplemented "TODO"
-;;
+open Core_kernel
 
-let readme () : string = String.strip {|
-`act fuzz` takes, as input, a C litmus test.  It then performs various
-mutations to the litmus test, and outputs the resulting modified test.
-|}
-
-let command : Command.t =
-  let open Command.Let_syntax in
-  Command.basic
-    ~summary:"Performs fuzzing mutations on a C litmus test"
-    ~readme
-    [%map_open
-      let standard_args = Args.Standard_with_files.get
-      and seed = flag "seed" (optional int)
-          ~doc: "INT use this integer as the seed to the fuzzer RNG"
-      in
-      fun () ->
-        Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false
-          ~f:(run seed)
-    ]
-;;
+val run
+  :  seed:int option
+  -> Mini.Litmus_ast.Validated.t
+  -> Mini.Litmus_ast.Validated.t Or_error.t
+(** [run ~seed test] mutates [test] using a random number generator
+    seeded by [seed]. *)

@@ -36,6 +36,8 @@ module type Basic = sig
 
   val process : ast -> t Or_error.t
 
+  val fuzz : seed:int option -> t -> t Or_error.t
+
   val cvars : t -> string list option
   (** [cvars vast] should return a list of C identifiers
       corresponding to all variables in [vast], if possible.
@@ -61,6 +63,7 @@ end
 type mode =
   | Print of [ `All | `Vars ]
   | Delitmus
+  | Fuzz of { seed : int option }
 ;;
 
 module Output = struct
@@ -83,6 +86,7 @@ module Make (B : Basic)
       | Print `All -> B.normal_tmp_file_ext
       | Print `Vars -> "txt"
       | Delitmus -> "c"
+      | Fuzz _ -> "c.litmus"
     ;;
 
     let run_delitmus (vast : B.t) (oc : Out_channel.t)
@@ -94,6 +98,15 @@ module Make (B : Basic)
       let post  = B.postcondition vast in
       { Output.cvars; post }
     ;;
+
+    let run_fuzz ~(seed : int option) (vast : B.t) (oc : Out_channel.t)
+      : Output.t Or_error.t =
+      let open Or_error.Let_syntax in
+      let%map fz = B.fuzz ~seed vast in
+      Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp fz;
+      let cvars = B.cvars vast in
+      let post  = B.postcondition vast in
+      { Output.cvars; post }
 
     let pp : [ `All | `Vars ] -> (string list * B.t) Fmt.t = function
       | `All -> Fmt.using snd B.pp
@@ -121,6 +134,7 @@ module Make (B : Basic)
       match aux with
       | Print output_mode -> run_print output_mode vast oc
       | Delitmus -> run_delitmus vast oc
+      | Fuzz { seed } -> run_fuzz ~seed vast oc
     ;;
   end)
 
@@ -144,6 +158,11 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
     module Frontend = Frontend.Normal
     let pp = Fmt.using Mini.Reify.program Ast.Translation_unit.pp
     let process = Mini_convert.translation_unit
+
+    let fuzz ~(seed : int option) (_ : t) : t Or_error.t =
+      ignore seed;
+      Or_error.error_string "Can't fuzz a normal C file"
+    ;;
 
     let cvars = cvars_of_program
     let cvars_of_delitmus = Nothing.unreachable_code
@@ -192,6 +211,8 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
     ;;
 
     let delitmus = Delitmus.run
+
+    let fuzz : seed:int option -> t -> t Or_error.t = Fuzzer.run
 
     let postcondition
       : Mini.Litmus_ast.Validated.t -> Mini.Litmus_ast.Post.t option =

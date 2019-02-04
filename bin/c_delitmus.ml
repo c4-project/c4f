@@ -22,32 +22,27 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Main entry point.
-
-    This module contains act's main entry point, which multiplexes all
-   of the various act sub-programs.  *)
-
 open Core
 
-let readme () : string = String.strip {|
-`act` is a toolkit for testing C compilers.  It predominantly deals
-with concurrency---specifically, checking whether compilers comply
-with the C11 memory model with regards to the assembly they emit.
-|}
+let run (args : Args.Standard_with_files.t) _o _cfg =
+  let open Or_error.Let_syntax in
+  let%map _ =
+    C.Filters.Litmus.run_from_string_paths
+      C.Filters.Delitmus
+      ~infile:(Args.Standard_with_files.infile_raw args)
+      ~outfile:(Args.Standard_with_files.outfile_raw args)
+  in ()
+;;
 
-
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    ~readme
-    [ "c"        , C_main.command
-    ; "compare"  , Compare.command
-    ; "configure", Configure.command
-    ; "explain"  , Explain.command
-    ; "litmusify", Litmusify.command
-    ; "regress"  , Regress.command
-    ; "test"     , Test.command
-    ; "tool"     , Tool.command
+let command : Command.t =
+  let open Command.Let_syntax in
+  Command.basic
+    ~summary:"converts a C litmus test to a normal C file"
+    [%map_open
+      let standard_args = Args.Standard_with_files.get in
+      fun () ->
+        Common.lift_command_with_files standard_args
+          ~with_compiler_tests:false
+          ~f:run
     ]
-
-let () = Command.run command
+;;

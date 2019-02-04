@@ -35,6 +35,9 @@ type mode =
   (** Pretty-print all, or part, of the result (useful for debugging). *)
   | Delitmus
   (** If the input is a C/Litmus file, try convert it to C. *)
+  | Fuzz of { seed : int option }
+  (** If the input is a C/Litmus file, fuzz it and return a mutated version. *)
+;;
 (** The operation to use in the filter. *)
 
 (** Abstract data type of auxiliary output from the C filters. *)

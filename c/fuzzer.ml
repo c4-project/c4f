@@ -22,32 +22,20 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Main entry point.
+open Core_kernel
 
-    This module contains act's main entry point, which multiplexes all
-   of the various act sub-programs.  *)
+(** [make_rng seed] creates a splittable RNG;
+    if [seed] is [Some s], [s] will be used as the RNG's seed,
+    otherwise a low-entropy system-derived seed is used. *)
+let make_rng : int option -> Splittable_random.State.t = function
+  | Some seed -> Splittable_random.State.of_int seed
+  | None      -> Splittable_random.State.create
+                   (Random.State.make_self_init ())
+;;
 
-open Core
-
-let readme () : string = String.strip {|
-`act` is a toolkit for testing C compilers.  It predominantly deals
-with concurrency---specifically, checking whether compilers comply
-with the C11 memory model with regards to the assembly they emit.
-|}
-
-
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    ~readme
-    [ "c"        , C_main.command
-    ; "compare"  , Compare.command
-    ; "configure", Configure.command
-    ; "explain"  , Explain.command
-    ; "litmusify", Litmusify.command
-    ; "regress"  , Regress.command
-    ; "test"     , Test.command
-    ; "tool"     , Tool.command
-    ]
-
-let () = Command.run command
+let run ~(seed : int option) (test : Mini.Litmus_ast.Validated.t)
+  : Mini.Litmus_ast.Validated.t Or_error.t =
+  let _ = make_rng seed in
+  (** TODO(@MattWindsor91): actually fuzz here *)
+  Or_error.return test
+;;

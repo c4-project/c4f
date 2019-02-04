@@ -22,32 +22,13 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Main entry point.
-
-    This module contains act's main entry point, which multiplexes all
-   of the various act sub-programs.  *)
-
 open Core
 
-let readme () : string = String.strip {|
-`act` is a toolkit for testing C compilers.  It predominantly deals
-with concurrency---specifically, checking whether compilers comply
-with the C11 memory model with regards to the assembly they emit.
-|}
-
-
-let command =
+let command : Command.t =
   Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    ~readme
-    [ "c"        , C_main.command
-    ; "compare"  , Compare.command
-    ; "configure", Configure.command
-    ; "explain"  , Explain.command
-    ; "litmusify", Litmusify.command
-    ; "regress"  , Regress.command
-    ; "test"     , Test.command
-    ; "tool"     , Tool.command
+    ~summary:"Commands for dealing with C files"
+    [ "delitmus", C_delitmus.command
+    ; "explain" , C_explain.command
+    ; "fuzz"    , C_fuzz.command
     ]
-
-let () = Command.run command
+;;

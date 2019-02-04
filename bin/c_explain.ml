@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -23,29 +23,7 @@
    SOFTWARE. *)
 
 open Core
-
-let run_delitmus (args : Args.Standard_with_files.t) _o _cfg =
-  let open Or_error.Let_syntax in
-  let%map _ =
-    C.Filters.Litmus.run_from_string_paths
-      C.Filters.Delitmus
-      ~infile:(Args.Standard_with_files.infile_raw args)
-      ~outfile:(Args.Standard_with_files.outfile_raw args)
-  in ()
-;;
-
-let delitmus_command : Command.t =
-  let open Command.Let_syntax in
-  Command.basic
-    ~summary:"converts a C litmus test to a normal C file"
-    [%map_open
-      let standard_args = Args.Standard_with_files.get in
-      fun () ->
-        Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false
-          ~f:run_delitmus
-    ]
-;;
+open Lib
 
 let run
     (file_type : [ `C | `Litmus | `Infer ])
@@ -55,18 +33,18 @@ let run
   let open Or_error.Let_syntax in
   let%bind infile  = Args.Standard_with_files.infile_source args in
   let%bind outfile = Args.Standard_with_files.outfile_sink args in
-  let      is_c    = Lib.File_type.is_c infile file_type in
+  let      is_c    = File_type.is_c infile file_type in
   let      cpp_cfg =
-    Option.value (Lib.Config.M.cpp cfg) ~default:(Lib.Cpp.Config.default ())
+    Option.value (Config.M.cpp cfg) ~default:(Cpp.Config.default ())
   in
   let (module M)   = C.Filters.c_module is_c in
-  let module Cpp_M = Lib.Cpp.Chain_filter (M) in
+  let module Cpp_M = Cpp.Chain_filter (M) in
   let%map _ =
     Cpp_M.run (cpp_cfg, Print output_mode) infile outfile
   in ()
 ;;
 
-let explain_command : Command.t =
+let command : Command.t =
   let open Command.Let_syntax in
   Command.basic
     ~summary:"explains act's understanding of a C file"
@@ -93,13 +71,5 @@ let explain_command : Command.t =
         Common.lift_command_with_files standard_args
           ~with_compiler_tests:false
           ~f:(run file_type output_mode)
-    ]
-;;
-
-let command : Command.t =
-  Command.group
-    ~summary:"Commands for dealing with C files"
-    [ "delitmus", delitmus_command
-    ; "explain", explain_command
     ]
 ;;
