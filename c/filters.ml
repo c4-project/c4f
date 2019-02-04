@@ -154,7 +154,12 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
       Or_error.error_string "Can't fuzz a normal C file"
     ;;
 
-    let cvars prog = Mini.Program.cvars prog
+    let cvars prog =
+      prog
+      |> Mini.Program.cvars
+      |> String.Set.map ~f:C_identifier.to_string
+    ;;
+
     let cvars_of_delitmus = Nothing.unreachable_code
     let postcondition = Fn.const None
 
@@ -208,8 +213,17 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
       : Mini.Litmus_ast.Validated.t -> Mini.Litmus_ast.Post.t option =
       Mini.Litmus_ast.Validated.post
 
-    let cvars_of_delitmus prog = Mini.Program.cvars prog
-    let cvars prog = Mini.litmus_cvars prog
+    let cvars_of_delitmus prog =
+      prog
+      |> Mini.Program.cvars
+      |> String.Set.map ~f:C_identifier.to_string
+    ;;
+
+    let cvars prog =
+      prog
+      |> Mini.litmus_cvars
+      |> String.Set.map ~f:C_identifier.to_string
+    ;;
   end)
 ;;
 
