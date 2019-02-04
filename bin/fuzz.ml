@@ -22,33 +22,36 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Main entry point.
-
-    This module contains act's main entry point, which multiplexes all
-   of the various act sub-programs.  *)
-
 open Core
+open Lib
+
+let run
+    (_seed : int option)
+    (_args : Args.Standard_with_files.t)
+    (_o    : Output.t)
+    (_cfg  : Config.M.t)
+  : unit Or_error.t =
+  Or_error.unimplemented "TODO"
+;;
 
 let readme () : string = String.strip {|
-`act` is a toolkit for testing C compilers.  It predominantly deals
-with concurrency---specifically, checking whether compilers comply
-with the C11 memory model with regards to the assembly they emit.
+`act fuzz` takes, as input, a C litmus test.  It then performs various
+mutations to the litmus test, and outputs the resulting modified test.
 |}
 
-
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
+let command : Command.t =
+  let open Command.Let_syntax in
+  Command.basic
+    ~summary:"Performs fuzzing mutations on a C litmus test"
     ~readme
-    [ "c"        , Explain_c.command
-    ; "compare"  , Compare.command
-    ; "configure", Configure.command
-    ; "explain"  , Explain.command
-    ; "fuzz"     , Fuzz.command
-    ; "litmusify", Litmusify.command
-    ; "regress"  , Regress.command
-    ; "test"     , Test.command
-    ; "tool"     , Tool.command
+    [%map_open
+      let standard_args = Args.Standard_with_files.get
+      and seed = flag "seed" (optional int)
+          ~doc: "INT use this integer as the seed to the fuzzer RNG"
+      in
+      fun () ->
+        Common.lift_command_with_files standard_args
+          ~with_compiler_tests:false
+          ~f:(run seed)
     ]
-
-let () = Command.run command
+;;

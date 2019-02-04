@@ -22,33 +22,9 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Main entry point.
-
-    This module contains act's main entry point, which multiplexes all
-   of the various act sub-programs.  *)
+(** Command for act's C/Litmus fuzz-testing mutator. *)
 
 open Core
 
-let readme () : string = String.strip {|
-`act` is a toolkit for testing C compilers.  It predominantly deals
-with concurrency---specifically, checking whether compilers comply
-with the C11 memory model with regards to the assembly they emit.
-|}
-
-
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    ~readme
-    [ "c"        , Explain_c.command
-    ; "compare"  , Compare.command
-    ; "configure", Configure.command
-    ; "explain"  , Explain.command
-    ; "fuzz"     , Fuzz.command
-    ; "litmusify", Litmusify.command
-    ; "regress"  , Regress.command
-    ; "test"     , Test.command
-    ; "tool"     , Tool.command
-    ]
-
-let () = Command.run command
+val command : Command.t
+(** [command] is the top-level 'fuzz' command. *)
