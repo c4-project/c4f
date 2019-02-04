@@ -22,24 +22,29 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Main entry point.
-
-    This module contains act's main entry point, which multiplexes all
-   of the various act sub-programs.  *)
+(** Module types used in {{!Args}Args}. *)
 
 open Core
 
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    [ "c"        , Explain_c.command
-    ; "compare"  , Compare.command
-    ; "configure", Configure.command
-    ; "explain"  , Explain.command
-    ; "litmusify", Litmusify.command
-    ; "regress"  , Regress.command
-    ; "test"     , Test.command
-    ; "tool"     , Tool.command
-    ]
+(** Signature of modules describing argument bundles that include
+    the standard arguments. *)
+module type S_standard = sig
+  type t
+  (** A record collecting the standard argument values. *)
 
-let () = Command.run command
+  val is_verbose : t -> bool
+  (** [is_verbose t] gets whether, according to [t], verbose mode is
+      switched on. *)
+
+  val are_warnings_enabled : t -> bool
+  (** [are_warnings_enabled t] gets whether, according to [t], warnings are
+      switched on. *)
+
+
+  val config_file : t -> string
+  (** [config_file t] gets the configuration file according to [t]. *)
+
+  val get : t Command.Param.t
+  (** [get] is a [Command.Param.t] that describes how to get the
+     standard arguments at the command line. *)
+end

@@ -23,15 +23,14 @@
    SOFTWARE. *)
 
 open Core
-open Utils
 
-let run_delitmus ~(infile_raw : string option) ~(outfile_raw : string option) _o _cfg =
+let run_delitmus (args : Args.Standard_with_files.t) _o _cfg =
   let open Or_error.Let_syntax in
   let%map _ =
     C.Filters.Litmus.run_from_string_paths
       C.Filters.Delitmus
-      ~infile:infile_raw
-      ~outfile:outfile_raw
+      ~infile:(Args.Standard_with_files.infile_raw args)
+      ~outfile:(Args.Standard_with_files.outfile_raw args)
   in ()
 ;;
 
@@ -40,26 +39,22 @@ let delitmus_command : Command.t =
   Command.basic
     ~summary:"converts a C litmus test to a normal C file"
     [%map_open
-      let standard_args = Standard_args.get
-      and outfile_raw =
-        flag "output"
-          (optional file)
-          ~doc: "FILE the output file (default: stdout)"
-      and infile_raw = anon (maybe ("FILE" %: file)) in
+      let standard_args = Args.Standard_with_files.get in
       fun () ->
-        Common.lift_command standard_args
+        Common.lift_command_with_files standard_args
           ~with_compiler_tests:false
-          ~f:(run_delitmus ~infile_raw ~outfile_raw)
+          ~f:run_delitmus
     ]
 ;;
 
 let run
     (file_type : [ `C | `Litmus | `Infer ])
     (output_mode : [ `All | `Vars ])
-    ~(infile_raw : string option) ~(outfile_raw : string option) _o cfg =
+    (args : Args.Standard_with_files.t)
+    _o cfg =
   let open Or_error.Let_syntax in
-  let%bind infile  = Io.In_source.of_string_opt infile_raw in
-  let%bind outfile = Io.Out_sink.of_string_opt outfile_raw in
+  let%bind infile  = Args.Standard_with_files.infile_source args in
+  let%bind outfile = Args.Standard_with_files.outfile_sink args in
   let      is_c    = Lib.File_type.is_c infile file_type in
   let      cpp_cfg =
     Option.value (Lib.Config.M.cpp cfg) ~default:(Lib.Cpp.Config.default ())
@@ -76,32 +71,28 @@ let explain_command : Command.t =
   Command.basic
     ~summary:"explains act's understanding of a C file"
     [%map_open
-      let standard_args = Standard_args.get
-      and outfile_raw =
-        flag "output"
-          (optional file)
-          ~doc: "FILE the explanation output file (default: stdout)"
+      let standard_args = Args.Standard_with_files.get
       and file_type =
         choose_one
-          [ Standard_args.Other.flag_to_enum_choice `C "c"
+          [ Args.flag_to_enum_choice `C "c"
               ~doc:"assume input is raw C"
-          ; Standard_args.Other.flag_to_enum_choice `Litmus "litmus"
+          ; Args.flag_to_enum_choice `Litmus "litmus"
               ~doc:"assume input is a C litmus test"
           ]
           ~if_nothing_chosen:(`Default_to `Infer)
       and output_mode =
         choose_one
-          [ Standard_args.Other.flag_to_enum_choice `All "dump-input"
+          [ Args.flag_to_enum_choice `All "dump-input"
               ~doc:"pretty-print the input back onto stdout (the default)"
-          ; Standard_args.Other.flag_to_enum_choice `Vars "dump-vars"
+          ; Args.flag_to_enum_choice `Vars "dump-vars"
               ~doc:"emit the names of all variables found in the input"
           ]
           ~if_nothing_chosen:(`Default_to `All)
-      and infile_raw = anon (maybe ("FILE" %: file)) in
+      in
       fun () ->
-        Common.lift_command standard_args
+        Common.lift_command_with_files standard_args
           ~with_compiler_tests:false
-          ~f:(run file_type output_mode ~infile_raw ~outfile_raw)
+          ~f:(run file_type output_mode)
     ]
 ;;
 

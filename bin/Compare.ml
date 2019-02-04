@@ -32,7 +32,6 @@ let litmusify o passes spec c_file =
   let litmus_job = Asm_job.(make ~config ~passes ()) in
   let open Or_error.Let_syntax in
   let%bind (module Comp_lit) = Common.litmusify_pipeline target in
-  (** TODO(@MattWindsor91): support C/Litmus files here too. *)
   let%map (_, (_, out)) =
     Comp_lit.run
       (`C, Fn.const (Compiler.Chain_input.create ~file_type:`C ~next:(Fn.const litmus_job)))
@@ -69,10 +68,10 @@ let command =
   Command.basic
     ~summary:"displays the litmus output for each compiler over a C file"
     [%map_open
-      let standard_args = Standard_args.get
-      and sanitiser_passes = Standard_args.Other.sanitiser_passes
-      and compiler_predicate = Standard_args.Other.compiler_predicate
-      and machine_predicate = Standard_args.Other.machine_predicate
+      let standard_args = Args.Standard.get
+      and sanitiser_passes = Args.sanitiser_passes
+      and compiler_predicate = Args.compiler_predicate
+      and machine_predicate = Args.machine_predicate
       and c_file_raw = anon ("FILE" %: file)
       in
       fun () ->
@@ -81,6 +80,6 @@ let command =
           ?machine_predicate
           ?sanitiser_passes
           ~with_compiler_tests:true
-          ~f:(run ~c_file_raw)
+          ~f:(fun _args -> run ~c_file_raw)
     ]
 ;;

@@ -26,10 +26,10 @@ open Core
 open Lib
 
 let run_list_compilers
-    (standard_args : Standard_args.t) (_o : Output.t) (cfg : Lib.Config.M.t)
+    (standard_args : Args.Standard.t) (_o : Output.t) (cfg : Lib.Config.M.t)
   : unit Or_error.t =
   let compilers = Lib.Config.M.compilers cfg in
-  let verbose = Standard_args.is_verbose standard_args in
+  let verbose = Args.Standard.is_verbose standard_args in
   Fmt.pr "@[<v>%a@]@." (Compiler.Spec.Set.pp_verbose verbose) compilers;
   Result.ok_unit
 ;;
@@ -39,11 +39,11 @@ let list_compilers_command : Command.t =
   Command.basic
     ~summary:"outputs information about the current compiler specs"
     [%map_open
-      let standard_args = Standard_args.get in
+      let standard_args = Args.Standard.get in
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run_list_compilers standard_args)
+          ~f:run_list_compilers
     ]
 ;;
 
@@ -79,11 +79,11 @@ let list_predicates_command : Command.t =
   Command.basic
     ~summary:"describes the filtering predicate languages"
     [%map_open
-      let standard_args = Standard_args.get in
+      let standard_args = Args.Standard.get in
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:run_list_predicates
+          ~f:(fun _args -> run_list_predicates)
     ]
 ;;
 

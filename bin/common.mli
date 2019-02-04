@@ -69,14 +69,27 @@ val lift_command
   -> ?machine_predicate:Machine.Property.t Blang.t
   -> ?sanitiser_passes:Sanitiser_pass.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
-  -> f:(Output.t -> Lib.Config.M.t -> unit Or_error.t)
-  -> Standard_args.t
+  -> f:(Args.Standard.t -> Output.t -> Lib.Config.M.t -> unit Or_error.t)
+  -> Args.Standard.t
   -> unit
 (** [lift_command ?compiler_predicate ?machine_predicate
    ?sanitiser_passes ?with_compiler_tests ~f standard_args] lifts a
    command body [f], performing common book-keeping such as loading
    and testing the configuration, creating an [Output.t], and printing
    top-level errors. *)
+
+val lift_command_with_files
+  :  ?compiler_predicate:Compiler.Property.t Blang.t
+  -> ?machine_predicate:Machine.Property.t Blang.t
+  -> ?sanitiser_passes:Sanitiser_pass.Selector.t Blang.t
+  -> ?with_compiler_tests:bool (* default true *)
+  -> f:(Args.Standard_with_files.t -> Output.t -> Lib.Config.M.t -> unit Or_error.t)
+  -> Args.Standard_with_files.t
+  -> unit
+(** [lift_command_with_files ?compiler_predicate ?machine_predicate
+   ?sanitiser_passes ?with_compiler_tests ~f args] behaves like
+    {{!lift_command}lift_command}, but also handles (and supplies)
+    optional input and output files. *)
 
 (** {2 Single-file pipelines}
 

@@ -35,8 +35,9 @@ let print_symbol_map = function
       map
 ;;
 
-let run file_type compiler_id_or_arch output_format (user_cvars : string list option)
-    ~(infile_raw : string option) ~(outfile_raw : string option) o cfg =
+let run
+    file_type compiler_id_or_arch output_format (user_cvars : string list option)
+    (args : Args.Standard_with_files.t) o cfg =
   let open Or_error.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
   let passes =
@@ -49,7 +50,8 @@ let run file_type compiler_id_or_arch output_format (user_cvars : string list op
   in
   let%map (_, (_, out)) =
     Exp.run_from_string_paths (file_type, compiler_input_fn)
-      ~infile:infile_raw ~outfile:outfile_raw
+      ~infile:(Args.Standard_with_files.infile_raw args)
+      ~outfile:(Args.Standard_with_files.outfile_raw args)
   in
   Asm_job.warn out o.Output.wf;
   print_symbol_map (Asm_job.symbol_map out)
@@ -60,10 +62,10 @@ let command =
   Command.basic
     ~summary:"explains act's understanding of an assembly file"
     [%map_open
-      let standard_args = Standard_args.get
-      and sanitiser_passes = Standard_args.Other.sanitiser_passes
-      and compiler_id_or_arch = Standard_args.Other.compiler_id_or_arch
-      and c_symbols = Standard_args.Other.c_symbols
+      let standard_args = Args.Standard_with_files.get
+      and sanitiser_passes = Args.sanitiser_passes
+      and compiler_id_or_arch = Args.compiler_id_or_arch
+      and c_symbols = Args.c_symbols
       and output_format =
         Asm_job.Explain_config.Format.(
           choose_one
@@ -78,21 +80,16 @@ let command =
             ]
             ~if_nothing_chosen:(`Default_to None)
         )
-      and file_type = Standard_args.Other.file_type
-      and outfile_raw =
-        flag "output"
-          (optional file)
-          ~doc: "FILE the explanation output file (default: stdout)"
-      and infile_raw = anon (maybe ("FILE" %: file)) in
+      and file_type = Args.file_type
+      in
       fun () ->
-        Common.lift_command standard_args
+        Common.lift_command_with_files standard_args
           ?sanitiser_passes
           ~with_compiler_tests:false
           ~f:(run
                 file_type
                 compiler_id_or_arch
                 output_format
-                c_symbols
-                ~infile_raw ~outfile_raw)
+                c_symbols)
     ]
 ;;

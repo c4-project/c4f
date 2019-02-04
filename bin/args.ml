@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,49 +22,97 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** [Standard_args] contains argument specifications common to all act
-   sub-commands. *)
-
 open Core
 open Lib
+open Utils
 
-type t =
-  { verbose     : bool
-  ; no_warnings : bool
-  ; config_file : string
-  }
-;;
+include Args_intf
 
-let is_verbose t = t.verbose
-let are_warnings_enabled t = not t.no_warnings
-let config_file t = t.config_file
-
-let default_config_file = "act.conf"
-
-let get =
-  let open Command.Let_syntax in
-  [%map_open
-    let verbose =
-      flag "verbose"
-        no_arg
-        ~doc: "print more information about the compilers"
-    and no_warnings =
-      flag "no-warnings"
-        no_arg
-        ~doc: "if given, suppresses all warnings"
-    and config_file =
-      flag_optional_with_default_doc
-        "config"
-        string [%sexp_of: string]
-        ~default:default_config_file
-        ~doc:"PATH the act.conf file to use"
-    in
-    { verbose
-    ; no_warnings
-    ; config_file
+module Standard : S_standard = struct
+  type t =
+    { verbose     : bool
+    ; no_warnings : bool
+    ; config_file : string
     }
-  ]
-;;
+  ;;
+
+  let is_verbose t = t.verbose
+  let are_warnings_enabled t = not t.no_warnings
+  let config_file t = t.config_file
+
+  let default_config_file = "act.conf"
+
+  let get =
+    let open Command.Let_syntax in
+    [%map_open
+      let verbose =
+        flag "verbose"
+          no_arg
+          ~doc: "print more information about the compilers"
+      and no_warnings =
+        flag "no-warnings"
+          no_arg
+          ~doc: "if given, suppresses all warnings"
+      and config_file =
+        flag_optional_with_default_doc
+          "config"
+          string [%sexp_of: string]
+          ~default:default_config_file
+          ~doc:"PATH the act.conf file to use"
+      in
+      { verbose
+      ; no_warnings
+      ; config_file
+      }
+    ]
+  ;;
+end
+
+module Standard_with_files = struct
+  type nonrec t =
+    { rest    : Standard.t
+    ; infile  : string option
+    ; outfile : string option
+    }
+
+  let as_standard_args t = t.rest
+
+  let is_verbose t = Standard.is_verbose t.rest
+  let are_warnings_enabled t = Standard.are_warnings_enabled t.rest
+  let config_file t = Standard.config_file t.rest
+
+  let get =
+    let open Command.Let_syntax in
+    [%map_open
+      let infile = anon (maybe ("FILE" %: file))
+      and outfile =
+        flag "output"
+          (optional file)
+          ~doc: "FILE the output file (default: stdout)"
+      and rest = Standard.get
+      in { rest; infile; outfile }
+    ]
+
+  let infile_raw (args : t) : string option = args.infile
+
+  let infile_fpath (args : t) : Fpath.t option Or_error.t =
+    args |> infile_raw |> Io.fpath_of_string_option
+  ;;
+
+  let infile_source (args : t) : Io.In_source.t Or_error.t =
+    args |> infile_raw |> Io.In_source.of_string_opt
+  ;;
+
+  let outfile_raw (args : t) : string option = args.outfile
+
+  let outfile_fpath (args : t) : Fpath.t option Or_error.t =
+    args |> outfile_raw |> Io.fpath_of_string_option
+  ;;
+
+  let outfile_sink (args : t) : Io.Out_sink.t Or_error.t =
+    args |> outfile_raw |> Io.Out_sink.of_string_opt
+  ;;
+end
 
 module Other = struct
   open Command.Param
@@ -140,3 +188,4 @@ module Other = struct
       ~doc:"PREDICATE filter machines using this predicate"
   ;;
 end
+include Other

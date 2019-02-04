@@ -37,13 +37,13 @@ let herd_command : Command.t =
   Command.basic
     ~summary:"runs Herd"
     [%map_open
-      let standard_args = Standard_args.get
+      let standard_args = Args.Standard.get
       and arch =
         choose_one
-          [ Standard_args.Other.flag_to_enum_choice (Some Herd.C) "-c"
+          [ Args.flag_to_enum_choice (Some Herd.C) "-c"
               ~doc:"Use the act.conf-configured model for C"
           ; map ~f:(Option.map ~f:(fun x -> Some (Herd.Assembly x)))
-              (Standard_args.Other.arch
+              (Args.arch
                  ~doc:"Use the act.conf-configured model for this architecture"
                  ()
               )
@@ -53,7 +53,7 @@ let herd_command : Command.t =
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run_herd ?arch ?argv)
+          ~f:(fun _args -> run_herd ?arch ?argv)
     ]
 ;;
 
@@ -71,12 +71,12 @@ let litmus_command : Command.t =
   Command.basic
     ~summary:"runs Litmus locally"
     [%map_open
-      let standard_args = Standard_args.get
+      let standard_args = Args.Standard.get
       and argv = flag "--" Command.Flag.escape ~doc:"STRINGS Arguments to send to Herd directly." in
       fun () ->
         Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run_litmus_locally ?argv)
+          ~f:(fun _args -> run_litmus_locally ?argv)
     ]
 ;;
 

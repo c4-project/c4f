@@ -208,11 +208,14 @@ let make_filter
   )
 ;;
 
-let run file_type (filter : Post_filter.t) compiler_id_or_emits
+let run
+    file_type (filter : Post_filter.t) compiler_id_or_emits
     (user_cvars : string list option)
     (post_sexp : [ `Exists of Sexp.t ] option)
-    ~(infile_raw : string option)
-    ~(outfile_raw : string option) o cfg =
+    (args : Args.Standard_with_files.t)
+    (o : Output.t)
+    (cfg : Config.M.t)
+    : unit Or_error.t =
   let open Result.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
   let%bind tgt_machine = Post_filter.machine_of_target cfg target in
@@ -229,7 +232,8 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
   let%map _ =
     Filter.run_from_string_paths
       ((file_type, compiler_input_fn), Fn.const pf_cfg)
-      ~infile:infile_raw ~outfile:outfile_raw in
+      ~infile:(Args.Standard_with_files.infile_raw args)
+      ~outfile:(Args.Standard_with_files.outfile_raw args) in
   ()
 ;;
 
@@ -238,9 +242,9 @@ let command =
   Command.basic
     ~summary:"converts an assembly file to a litmus test"
     [%map_open
-      let standard_args = Standard_args.get
-      and sanitiser_passes = Standard_args.Other.sanitiser_passes
-      and filter = Standard_args.Other.(
+      let standard_args = Args.Standard_with_files.get
+      and sanitiser_passes = Args.sanitiser_passes
+      and filter = Args.(
           choose_one
             [ flag_to_enum_choice `Herd "herd"
                 ~doc:"pipe results through `herd`"
@@ -249,9 +253,9 @@ let command =
             ]
             ~if_nothing_chosen:(`Default_to `None)
         )
-      and file_type = Standard_args.Other.file_type
-      and compiler_id_or_arch = Standard_args.Other.compiler_id_or_arch
-      and c_symbols = Standard_args.Other.c_symbols
+      and file_type = Args.file_type
+      and compiler_id_or_arch = Args.compiler_id_or_arch
+      and c_symbols = Args.c_symbols
       and post_sexp =
         choose_one
           [ map ~f:(Option.map ~f:(fun x -> Some (`Exists x)))
@@ -262,17 +266,12 @@ let command =
                  ~doc: "PREDICATE an 'exists' postcondition to attach to the resulting Litmus test")
           ]
           ~if_nothing_chosen:(`Default_to None)
-      and outfile_raw =
-        flag "output"
-          (optional file)
-          ~doc: "FILE the litmus output file (default: stdout)"
-      and infile_raw = anon (maybe ("FILE" %: file)) in
+      in
       fun () ->
-        Common.lift_command standard_args
+        Common.lift_command_with_files standard_args
           ?sanitiser_passes
           ~with_compiler_tests:false
           ~f:(run
                 file_type filter compiler_id_or_arch c_symbols
-                post_sexp
-                ~infile_raw ~outfile_raw)
+                post_sexp)
     ]

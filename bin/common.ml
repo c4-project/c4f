@@ -211,27 +211,51 @@ let make_compiler_input
     ~next:(Fn.const litmus_job)
 ;;
 
-let lift_command
+let make_output_from_standard_args (args : Args.Standard.t)
+    : Output.t =
+  Output.make
+    ~verbose:(Args.Standard.is_verbose args)
+    ~warnings:(Args.Standard.are_warnings_enabled args)
+;;
+
+(** Used as input to {{!Make_lifter}Make_lifter}. *)
+module type Basic_lifter = sig
+  type t
+  val as_standard_args : t -> Args.Standard.t
+end
+
+(** Since the command lifters are fairly uniform except for
+    the specific argument bundle they pass through, we use
+    a functor to construct them. *)
+module Make_lifter (B : Basic_lifter) = struct
+  let lift
     ?compiler_predicate
     ?machine_predicate
     ?sanitiser_passes
     ?with_compiler_tests
-    ~f
-    standard_args
-  =
-  let o =
-    Output.make
-      ~verbose:(Standard_args.is_verbose standard_args)
-      ~warnings:(Standard_args.are_warnings_enabled standard_args)
-  in
-  Or_error.(
-    (Standard_args.config_file standard_args)
-    |> Io.fpath_of_string
-    >>= Language_support.load_and_process_config
-      ?compiler_predicate
-      ?machine_predicate
-      ?sanitiser_passes
-      ?with_compiler_tests
-    >>= f o
-  ) |> Output.print_error o
-;;
+    ~(f : B.t -> Output.t -> Config.M.t -> unit Or_error.t)
+    (args : B.t)
+    : unit =
+    let standard_args = B.as_standard_args args in
+    let o = make_output_from_standard_args standard_args in
+    Or_error.(
+      (Args.Standard.config_file standard_args)
+      |> Io.fpath_of_string
+      >>= Language_support.load_and_process_config
+        ?compiler_predicate
+        ?machine_predicate
+        ?sanitiser_passes
+        ?with_compiler_tests
+      >>= f args o
+    ) |> Output.print_error o
+  ;;
+end
+
+module Standard_lifter = Make_lifter (struct
+    type t = Args.Standard.t
+    let as_standard_args = Fn.id
+  end)
+let lift_command = Standard_lifter.lift
+
+module With_files_lifter = Make_lifter (Args.Standard_with_files)
+let lift_command_with_files = With_files_lifter.lift

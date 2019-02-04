@@ -169,7 +169,7 @@ let command =
   Command.basic
     ~summary:"runs automatic testing over a memalloy output directory"
     [%map_open
-      let standard_args = Standard_args.get
+      let standard_args = Args.Standard.get
       and out_root_raw =
         flag_optional_with_default_doc "output"
           ~default:Filename.current_dir_name
@@ -179,9 +179,9 @@ let command =
         flag "time"
           no_arg
           ~doc:"if given, measure and report times"
-      and sanitiser_passes = Standard_args.Other.sanitiser_passes
-      and compiler_predicate = Standard_args.Other.compiler_predicate
-      and machine_predicate = Standard_args.Other.machine_predicate
+      and sanitiser_passes = Args.sanitiser_passes
+      and compiler_predicate = Args.compiler_predicate
+      and machine_predicate = Args.machine_predicate
       and in_root_raw =
         anon ("RESULTS_PATH" %: string)
       in
@@ -191,6 +191,6 @@ let command =
           ?machine_predicate
           ?sanitiser_passes
           ~with_compiler_tests:true
-          ~f:(run time ~in_root_raw ~out_root_raw)
+          ~f:(fun _args -> run time ~in_root_raw ~out_root_raw)
     ]
 ;;
