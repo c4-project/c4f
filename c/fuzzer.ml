@@ -33,9 +33,11 @@ let make_rng : int option -> Splittable_random.State.t = function
                    (Random.State.make_self_init ())
 ;;
 
+
 let run ~(seed : int option) (test : Mini.Litmus_ast.Validated.t)
   : Mini.Litmus_ast.Validated.t Or_error.t =
   let _ = make_rng seed in
+  let _existing_variables = Mini.litmus_cvars test in
   (** TODO(@MattWindsor91): actually fuzz here *)
   Or_error.return test
 ;;

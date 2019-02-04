@@ -153,8 +153,8 @@ let litmusify_pipeline
 let choose_cvars_after_delitmus
     (o : Output.t)
     (user_cvars : string list option)
-    (dl_cvars : string list option)
-  : string list option =
+    (dl_cvars : String.Set.t)
+  : string list =
   (* We could use Option.first_some here, but expanding it out gives
      us the ability to verbose-log what we're doing. *)
   let out_cvars message cvars =
@@ -163,17 +163,14 @@ let choose_cvars_after_delitmus
         message
         (list ~sep:comma string) cvars
     );
-    Some cvars
+    cvars
   in
-  match user_cvars, dl_cvars with
-  | Some cvars, Some _ ->
+  match user_cvars with
+  | Some cvars ->
     out_cvars "user-supplied cvars (overriding those found during delitmus)"
       cvars
-  | Some cvars, None ->
-    out_cvars "user-supplied cvars (none found during delitmus)" cvars
-  | None, Some cvars ->
-    out_cvars "cvars found during delitmus" cvars
-  | None, None -> None
+  | None ->
+    out_cvars "cvars found during delitmus" (String.Set.to_list dl_cvars)
 ;;
 
 let choose_cvars
@@ -186,7 +183,7 @@ let choose_cvars
     | `Skipped -> true, user_cvars
     | `Ran dl ->
       let dl_cvars = C.Filters.Output.cvars dl in
-      true, choose_cvars_after_delitmus o user_cvars dl_cvars
+      true, Some (choose_cvars_after_delitmus o user_cvars dl_cvars)
   in
   if warn_if_empty then
     warn_if_not_tracking_symbols o cvars;

@@ -431,6 +431,13 @@ module Function = struct
       end
     end)
   ;;
+
+  let cvars (func : t) : String.Set.t =
+    func
+    |> On_decls.to_list
+    |> List.map ~f:(fun (x, _) -> C_identifier.to_string x)
+    |> String.Set.of_list
+  ;;
 end
 
 module Program = struct
@@ -474,6 +481,13 @@ module Program = struct
         ;;
       end
     end)
+
+  let cvars (prog : t) : String.Set.t =
+    prog
+    |> On_decls.to_list
+    |> List.map ~f:(fun (x, _) -> C_identifier.to_string x)
+    |> String.Set.of_list
+  ;;
 end
 
 module Reify = struct
@@ -652,6 +666,12 @@ module Litmus_lang : Litmus.Ast.Basic
     let name = "C"
   end)
 
-
 module Litmus_ast = Litmus.Ast.Make (Litmus_lang)
 module Litmus_pp = Litmus.Pp.Make_sequential (Litmus_ast)
+
+let litmus_cvars (ast : Litmus_ast.Validated.t) : String.Set.t =
+  ast
+  |> Litmus_ast.Validated.programs
+  |> List.map ~f:(fun (_, func) -> Function.cvars func)
+  |> String.Set.union_list
+;;

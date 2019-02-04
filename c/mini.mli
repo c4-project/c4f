@@ -34,7 +34,7 @@
     {{!Reify}Reify}.
  *)
 
-open Base
+open Core_kernel
 
 include module type of Ast_basic
 
@@ -239,6 +239,10 @@ module Function : sig
     (** [map func ~parameters ~body_decls ~body_stms] runs the given
         functions over the respective parts of a function. *)
 
+  val cvars : t -> String.Set.t
+  (** [cvars func] extracts a set of C variable names from
+      [func]. *)
+
   module On_decls : Travesty.Traversable.S0_container
     with type t := t and type Elt.t := Initialiser.t named
     (** [On_decls] allows traversal over all of the declarations
@@ -254,6 +258,10 @@ module Program : sig
    -> t
    (** [make ~globals ~functions] makes a program with global variable
        declarations [globals] and function definitions [functions]. *)
+
+ val cvars : t -> String.Set.t
+ (** [cvars program] extracts a set of C variable names from
+    [program]. *)
 
   module On_decls : Travesty.Traversable.S0_container
     with type t := t and type Elt.t := Initialiser.t named
@@ -286,3 +294,7 @@ module Litmus_ast : Litmus.Ast.S with module Lang = Litmus_lang
 
 (** Pretty-printing for the mini-model's litmus AST. *)
 module Litmus_pp : Litmus.Pp.S with module Ast = Litmus_ast
+
+val litmus_cvars : Litmus_ast.Validated.t -> String.Set.t
+(** litmus_cvars ast] gets the list of C variables referenced in a
+   mini-C Litmus test. *)

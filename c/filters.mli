@@ -28,6 +28,7 @@
    C or C/Litmus programs from a file (or stdin), doing something to
    them, and outputting the results to a file (or stdout). *)
 
+open Core_kernel
 open Utils
 
 type mode =
@@ -44,8 +45,8 @@ type mode =
 module Output : sig
   type t
 
-  val cvars : t -> string list option
-  (** [cvars out] gets, if possible, the list of C variable names
+  val cvars : t -> String.Set.t
+  (** [cvars out] gets the set of C variable names
       observed in the transformed program. *)
 
   val post : t -> Mini.Litmus_ast.Post.t option

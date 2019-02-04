@@ -159,11 +159,13 @@ let regress_litmusify : Fpath.t -> unit Or_error.t =
     (Sanitiser_pass.standard)
 ;;
 
-let pp_cvars : string list Fmt.t =
+let pp_cvars : String.Set.t Fmt.t =
   Fmt.(
     prefix (unit "@,@,// C variables:@,")
-      (vbox (list ~sep:sp
-               (hbox (prefix (unit "// -@ ") string))))
+      (vbox
+         (using String.Set.to_list
+            (list ~sep:sp
+               (hbox (prefix (unit "// -@ ") string)))))
   )
 ;;
 
@@ -177,7 +179,7 @@ let pp_post : C.Mini.Litmus_ast.Post.t Fmt.t =
 let summarise_c_output (o : C.Filters.Output.t) : unit =
   Fmt.(
     pr "@[<v>%a%a@]@."
-      (option pp_cvars) (C.Filters.Output.cvars o)
+      pp_cvars (C.Filters.Output.cvars o)
       (option pp_post) (C.Filters.Output.post o)
   )
 ;;

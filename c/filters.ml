@@ -38,17 +38,17 @@ module type Basic = sig
 
   val fuzz : seed:int option -> t -> t Or_error.t
 
-  val cvars : t -> string list option
+  val cvars : t -> String.Set.t
   (** [cvars vast] should return a list of C identifiers
-      corresponding to all variables in [vast], if possible.
+      corresponding to all variables in [vast].
 
       [cvars] _may_ de-litmusify the AST in the process;
       if you already have a delitmusified AST, use
       [cvars_of_delitmus]. *)
 
-  val cvars_of_delitmus : del -> string list option
+  val cvars_of_delitmus : del -> String.Set.t
   (** [cvars_of_delitmus dl] should return a list of C identifiers
-      corresponding to all variables in [dl], if possible. *)
+      corresponding to all variables in [dl]. *)
 
   val postcondition : t -> Mini.Litmus_ast.Post.t option
   (** [postcondition vast] should get the Litmus postcondition of
@@ -68,7 +68,7 @@ type mode =
 
 module Output = struct
   type t =
-    { cvars : string list option
+    { cvars : String.Set.t
     ; post  : Mini.Litmus_ast.Post.t option
     }
   [@@deriving fields]
@@ -108,9 +108,9 @@ module Make (B : Basic)
       let post  = B.postcondition vast in
       { Output.cvars; post }
 
-    let pp : [ `All | `Vars ] -> (string list * B.t) Fmt.t = function
+    let pp : [ `All | `Vars ] -> (String.Set.t * B.t) Fmt.t = function
       | `All -> Fmt.using snd B.pp
-      | `Vars -> Fmt.(using fst (vbox (list ~sep:sp string)))
+      | `Vars -> Fmt.(using fst (vbox (using String.Set.to_list (list ~sep:sp string))))
     ;;
 
     let run_print
@@ -120,8 +120,7 @@ module Make (B : Basic)
       let cvars = B.cvars vast in
       let post  = B.postcondition vast in
       let f = Format.formatter_of_out_channel oc in
-      Fmt.pf f "%a@." (pp output_mode)
-        (Option.value ~default:[] cvars, vast);
+      Fmt.pf f "%a@." (pp output_mode) (cvars, vast);
       Or_error.return { Output.cvars; post }
     ;;
 
@@ -137,15 +136,6 @@ module Make (B : Basic)
       | Fuzz { seed } -> run_fuzz ~seed vast oc
     ;;
   end)
-
-
-let cvars_of_program (prog : Mini.Program.t) : string list option =
-  let names =
-    prog
-    |> Mini.Program.On_decls.to_list
-    |> List.map ~f:(fun (x, _) -> C_identifier.to_string x)
-  in Some names
-;;
 
 module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
   Make (struct
@@ -164,7 +154,7 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
       Or_error.error_string "Can't fuzz a normal C file"
     ;;
 
-    let cvars = cvars_of_program
+    let cvars prog = Mini.Program.cvars prog
     let cvars_of_delitmus = Nothing.unreachable_code
     let postcondition = Fn.const None
 
@@ -218,11 +208,8 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
       : Mini.Litmus_ast.Validated.t -> Mini.Litmus_ast.Post.t option =
       Mini.Litmus_ast.Validated.post
 
-    let cvars_of_delitmus = cvars_of_program
-
-    let cvars (lit : t) : string list option =
-        Option.(Result.ok (delitmus lit) >>= cvars_of_delitmus)
-    ;;
+    let cvars_of_delitmus prog = Mini.Program.cvars prog
+    let cvars prog = Mini.litmus_cvars prog
   end)
 ;;
 
