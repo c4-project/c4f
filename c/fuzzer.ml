@@ -114,14 +114,14 @@ module State = struct
   let gen_var_raw (rng : Splittable_random.State.t) : string =
     let module Q = Quickcheck.Generator in
     sprintf "%c%d"
-      (Q.generate ~size:0 Q.char_alphanum rng)
+      (Q.generate ~size:0 Q.char_alpha rng)
       (Q.generate ~size:5 Q.small_non_negative_int rng)
   ;;
 
   let%expect_test "gen_var_raw: example" =
     let deterministic_rng = Splittable_random.State.of_int 0 in
     print_string (gen_var_raw deterministic_rng);
-    [%expect {| O0 |}]
+    [%expect {| P0 |}]
   ;;
 
   (** [gen_var rng] generates a random C identifier, in
