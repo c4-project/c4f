@@ -66,6 +66,12 @@ module Type : sig
   val deref : t -> t Or_error.t
   (** [deref ty] tries to strip a layer of pointer indirection off [ty].
       It fails if [ty] isn't a pointer type. *)
+
+  val underlying_basic_type : t -> basic
+  (** [underlying_basic_type ty] gets [ty]'s basic type. *)
+
+  val is_atomic : t -> bool
+  (** [is_atomic ty] returns whether [ty] is an atomic type. *)
 end
 
 module Initialiser : sig

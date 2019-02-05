@@ -45,9 +45,17 @@ module Type = struct
   [@@deriving sexp, variants, eq, compare]
   ;;
 
+  let underlying_basic_type : t -> basic = function
+    | Normal x | Pointer_to x -> x
+  ;;
+
   let deref : t -> t Or_error.t = function
     | Pointer_to k -> Or_error.return (Normal k)
     | Normal _ -> Or_error.error_string "not a pointer type"
+  ;;
+
+  let is_atomic (ty : t) : bool =
+    equal_basic Atomic_int (underlying_basic_type ty)
   ;;
 end
 
