@@ -50,7 +50,7 @@ open Base
 
 (** Signature of a basic AST node. *)
 module type Ast_node = sig
-  type t [@@deriving sexp]
+  type t [@@deriving sexp, eq, compare]
   include Pretty_printer.S with type t := t
 end
 

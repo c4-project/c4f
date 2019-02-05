@@ -29,7 +29,7 @@ let pp_opt_assign (ppl : 'l Fmt.t) (ppr : 'r Fmt.t)
 
 module Optional (N : Ast_node)
   : Ast_node with type t = N.t option = struct
-  type t = N.t option [@@deriving sexp]
+  type t = N.t option [@@deriving sexp, eq, compare]
   let pp = Fmt.option N.pp
 end
 
@@ -42,13 +42,13 @@ module Space : Sep = struct let sep = Fmt.sp end
 
 module List_of (N : Ast_node) (S : Sep)
   : Ast_node with type t = N.t list = struct
-  type t = N.t list [@@deriving sexp]
+  type t = N.t list [@@deriving sexp, eq, compare]
   let pp = Fmt.list ~sep:S.sep N.pp
 end
 
 module End_semi (N : Ast_node)
   : Ast_node with type t = N.t = struct
-  type t = N.t [@@deriving sexp]
+  type t = N.t [@@deriving sexp, eq, compare]
   let pp = Fmt.suffix (Fmt.unit ";") N.pp
 end
 
@@ -76,7 +76,7 @@ module Parametric = struct
         { qualifiers : B.Qual.t list
         ; declarator : B.Decl.t
         }
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
       ;;
 
       let pp : t Fmt.t =
@@ -112,7 +112,7 @@ module Parametric = struct
             ; decls    : B.Decl.t list
             }
         | Named of B.Kind.t * Identifier.t
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
 
       let pp f = function
         | Literal { kind; name_opt; decls } ->
@@ -142,13 +142,14 @@ module Parametric = struct
       : S with type dec  := B.Dec.t
            and type par  := B.Par.t
            and type expr := B.Expr.t = struct
+
       type t =
         | Id of Identifier.t
         | Bracket of B.Dec.t
         | Array of (t, B.Expr.t option) Array.t
         | Fun_decl of t * B.Par.t
         | Fun_call of t * Identifier.t list
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
 
       let rec pp f : t -> unit = function
         | Id      i  -> Utils.C_identifier.pp f i
@@ -180,7 +181,7 @@ module Parametric = struct
         { pointer : Pointer.t option
         ; direct  : D.t
         }
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
       ;;
 
       let identifier { direct; _ } = D.identifier direct
@@ -214,7 +215,7 @@ module Parametric = struct
         | Bracket of B.Dec.t
         | Array of (t option, B.Expr.t option) Array.t
         | Fun_decl of t option * B.Par.t option
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
       ;;
 
       let rec pp f : t -> unit = function
@@ -234,7 +235,7 @@ module Parametric = struct
       type t =
         | Pointer of Pointer.t
         | Direct of Pointer.t option * D.t
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
       ;;
 
       let pp f : t -> unit = function
@@ -259,7 +260,7 @@ module Parametric = struct
       type t =
         | Regular of B.Dec.t
         | Bitfield of B.Dec.t option * B.Expr.t
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
       ;;
 
       let pp f : t -> unit = function
@@ -284,7 +285,7 @@ module Parametric = struct
         | Normal of Identifier.t
         | Case   of E.t
         | Default
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
       ;;
 
       let pp_body (f : Base.Formatter.t) : t -> unit = function
@@ -320,7 +321,7 @@ module Parametric = struct
         | String      of String.t
         | Constant    of Constant.t
         | Brackets    of t
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
       ;;
 
       let rec pp f : t -> unit = function
@@ -372,7 +373,7 @@ module Parametric = struct
         { params : P.t list
         ; style  : [`Normal | `Variadic]
         }
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
       ;;
 
       let pp_style f = function
@@ -424,7 +425,7 @@ module Parametric = struct
         | Continue
         | Break
         | Return of B.Expr.t option
-      [@@deriving sexp]
+      [@@deriving sexp, eq, compare]
       ;;
 
       let rec pp (f : Base.Formatter.t) : t -> unit = function
@@ -489,14 +490,14 @@ module Parametric = struct
         : S with type decl := B.Decl.t
              and type stm  := B.Stm.t = struct
       module Elt = struct
-        type t = [`Stm of B.Stm.t | `Decl of B.Decl.t] [@@deriving sexp]
+        type t = [`Stm of B.Stm.t | `Decl of B.Decl.t] [@@deriving sexp, eq, compare]
         let pp (f : Base.Formatter.t) : t -> unit = function
           | `Stm  s -> B.Stm.pp  f s
           | `Decl d -> B.Decl.pp f d
         ;;
       end
 
-      type t = Elt.t list [@@deriving sexp]
+      type t = Elt.t list [@@deriving sexp, eq, compare]
 
       let pp : t Fmt.t =
         Utils.My_format.pp_c_braces Fmt.(list ~sep:sp (box Elt.pp))
@@ -512,7 +513,6 @@ and Enumerator : sig
     { name  : Identifier.t
     ; value : Expr.t option
     }
-  [@@deriving sexp]
   ;;
 
   include Ast_node with type t := t
@@ -521,7 +521,7 @@ end = struct
     { name  : Identifier.t
     ; value : Expr.t option
     }
-  [@@deriving sexp]
+  [@@deriving sexp, eq, compare]
   ;;
 
   let pp =
@@ -536,7 +536,7 @@ and Enum_spec
                       and type decl := Enumerator.t =
   Parametric.Composite_spec.Make (struct
     module Kind = struct
-      type t = [`Enum] [@@deriving sexp]
+      type t = [`Enum] [@@deriving sexp, eq, compare]
       let pp f = function `Enum -> Fmt.string f "enum"
     end
     module Decl = Enumerator
@@ -557,7 +557,7 @@ and Type_spec : S_type_spec
     | `Enum of Enum_spec.t
     | `Defined_type of Identifier.t
     ]
-  [@@deriving sexp]
+  [@@deriving sexp, eq, compare]
   ;;
 
   let pp f : t -> unit = function
@@ -569,7 +569,13 @@ and Type_spec : S_type_spec
 end
 and Spec_or_qual : Ast_node
   with type t = [ Type_spec.t | Type_qual.t ] = struct
-  type t = [ Type_spec.t | Type_qual.t ] [@@deriving sexp]
+  type t = [ Type_spec.t | Type_qual.t ] [@@deriving eq, sexp_of, compare]
+
+  let t_of_sexp (s : Sexp.t) : t =
+    try
+      ((Type_spec.t_of_sexp s) :> t)
+    with _ -> ((Type_qual.t_of_sexp s) :> t)
+  ;;
 
   let pp f : t -> unit = function
     | #Type_spec.t as spec -> Type_spec.pp f spec
@@ -578,7 +584,13 @@ and Spec_or_qual : Ast_node
 end
 and Decl_spec : Ast_node
   with type t = [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] = struct
-  type t = [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] [@@deriving sexp]
+  type t = [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] [@@deriving sexp_of, eq, compare]
+
+  let t_of_sexp (s : Sexp.t) : t =
+    try
+      ((Storage_class_spec.t_of_sexp s) :> t)
+    with _ -> ((Spec_or_qual.t_of_sexp s) :> t)
+  ;;
 
   let pp f : t -> unit = function
     | #Storage_class_spec.t as spec -> Storage_class_spec.pp f spec
@@ -598,7 +610,7 @@ and Struct_or_union_spec
                       and type decl := Struct_decl.t =
   Parametric.Composite_spec.Make (struct
     module Kind = struct
-      type t  = [`Struct | `Union] [@@deriving sexp]
+      type t  = [`Struct | `Union] [@@deriving sexp, eq, compare]
 
       let to_string : t -> string = function
         | `Struct -> "struct"
@@ -620,7 +632,7 @@ and Param_decl
     module Decl = struct
       type t = [ `Concrete of Declarator.t
                | `Abstract of Abs_declarator.t option
-               ] [@@deriving sexp]
+               ] [@@deriving sexp, eq, compare]
       ;;
       let pp f : t -> unit = function
         | `Concrete c -> Declarator.pp                  f c
@@ -670,7 +682,7 @@ module Initialiser = struct
   type t =
     | Assign of Expr.t
     | List of t list
-  [@@deriving sexp]
+  [@@deriving sexp, eq, compare]
   ;;
 
   let rec pp f : t -> unit = function
@@ -684,7 +696,7 @@ module Init_declarator = struct
     { declarator : Declarator.t
     ; initialiser : Initialiser.t option
     }
-  [@@deriving sexp]
+  [@@deriving sexp, eq, compare]
   ;;
 
   let pp =
@@ -722,12 +734,12 @@ and Compound_stm
 
 module Function_def = struct
   type t =
-    { decl_specs : [ Storage_class_spec.t | Type_spec.t | Type_qual.t ] list
+    { decl_specs : Decl_spec.t list
     ; signature  : Declarator.t
     ; decls      : Decl.t list
     ; body       : Compound_stm.t
     }
-  [@@deriving sexp]
+  [@@deriving sexp, eq, compare]
   ;;
 
   let pp_oldstyle_decl_list : Decl.t list Fmt.t =
@@ -756,7 +768,7 @@ module External_decl = struct
     [ `Fun of Function_def.t
     | `Decl of Decl.t
     ]
-  [@@deriving sexp]
+  [@@deriving sexp, eq, compare]
   ;;
 
   let pp (f : Base.Formatter.t) : t -> unit = function
@@ -767,7 +779,7 @@ end
 
 module Translation_unit = struct
   type t = External_decl.t list
-  [@@deriving sexp]
+  [@@deriving sexp, eq, compare]
   ;;
 
   let pp : t Fmt.t = Fmt.(vbox (list ~sep:sp External_decl.pp))
@@ -787,10 +799,19 @@ module Litmus_lang : Litmus.Ast.Basic
       let make_uniform = Travesty.T_list.right_pad ~padding:(empty ())
     end
 
+    module Type = Type_spec
+
     module Program = struct
       include Function_def
 
       let name x = Some (C_identifier.to_string (Declarator.identifier x.signature))
+
+      (* TODO(@MattWindsor91): consider implementing this.
+         The main reason why I haven't is because, usually, we'll be
+         converting the litmus test to Mini, and that has a working
+         global variables extraction. *)
+      let global_vars = Fn.const None
+
       let listing x = x.body
     end
   end)

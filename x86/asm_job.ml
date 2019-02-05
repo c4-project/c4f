@@ -42,7 +42,14 @@ let get_runner_from_dialect dialect =
        module Dst_lang = Language.Herd7
 
        module Frontend = Frontend
-       module Litmus_ast = Litmus.Ast.Make (Dst_lang)
+       module Litmus_ast = Litmus.Ast.Make (struct
+           module Program = struct
+             include Dst_lang.Program
+             let global_vars = Fn.const None
+           end
+           include (Dst_lang : module type of Dst_lang with module Program := Program)
+           module Type = Unit
+         end)
        module Litmus_pp = Litmus.Pp.Make_tabular (Litmus_ast)
        module Multi_sanitiser = Sanitiser.Make_multi (Src_lang)
        module Single_sanitiser = Sanitiser.Make_single (Src_lang)

@@ -50,6 +50,11 @@ module type Basic = sig
         same length. *)
   end
 
+  (** Abstract type of types. *)
+  module Type : sig
+    type t [@@deriving compare, eq, sexp]
+  end
+
   (** Abstract type of programs. *)
   module Program : sig
     type t [@@deriving sexp]
@@ -60,6 +65,11 @@ module type Basic = sig
 
     val listing : t -> Statement.t list
     (** [listing program] gets [program]'s statement listing. *)
+
+    val global_vars : t -> Type.t C_identifier.Map.t option
+    (** [global_vars program] gets the set of global variables referenced
+        by [program], if this makes sense for this particular litmus
+        language. *)
 
     include Pretty_printer.S with type t := t
   end

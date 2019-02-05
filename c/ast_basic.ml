@@ -63,7 +63,7 @@ module Operators = struct
       | `Assign_xor (*  ^= *)
       | `Assign_or  (*  |= *)
       ]
-    [@@deriving sexp]
+    [@@deriving sexp, eq, compare]
     ;;
 
     let to_string : t -> string = function
@@ -106,7 +106,7 @@ module Operators = struct
       | `Gt    (* >  *)
       | `Ne    (* != *)
       ]
-    [@@deriving sexp]
+    [@@deriving sexp, eq, compare]
     ;;
 
     let to_string : t -> string = function
@@ -147,7 +147,7 @@ module Operators = struct
       | `Not        (* ~ *)
       | `Lnot       (* ! *)
       ]
-    [@@deriving sexp]
+    [@@deriving sexp, eq, compare]
     ;;
 
     let to_string : t -> string = function
@@ -170,7 +170,7 @@ module Operators = struct
       [ `Inc (* ++ *)
       | `Dec (* -- *)
       ]
-    [@@deriving sexp]
+    [@@deriving sexp, eq, compare]
     ;;
 
     let to_string : t -> string = function
@@ -263,7 +263,7 @@ module Storage_class_spec = struct
 end
 
 module Array = struct
-  type ('a, 'i) t = { array : 'a; index : 'i } [@@deriving sexp]
+  type ('a, 'i) t = { array : 'a; index : 'i } [@@deriving sexp, eq, compare]
 
   let pp ppa ppi =
     Fmt.(
@@ -276,17 +276,18 @@ module Array = struct
     type arr (** Type of arrays *)
     type idx (** Type of indices *)
 
-    type nonrec t = (arr, idx) t [@@deriving sexp]
+    type nonrec t = (arr, idx) t
 
     include Ast_node with type t := t
   end
 
   module Make (A : Ast_node) (I : Ast_node) : S
     with type arr := A.t and type idx := I.t = struct
-
     type nonrec t = (A.t, I.t) t
     let t_of_sexp = t_of_sexp A.t_of_sexp I.t_of_sexp
     let sexp_of_t = sexp_of_t A.sexp_of_t I.sexp_of_t
+    let equal = equal A.equal I.equal
+    let compare = compare A.compare I.compare
     let pp = pp A.pp I.pp
   end
 end
@@ -346,7 +347,7 @@ end
 
 module Pointer : Ast_node with type t = (Type_qual.t list) list = struct
   type t = (Type_qual.t list) list
-  [@@deriving sexp]
+  [@@deriving sexp, eq, compare]
 
   let pp : t Fmt.t =
     Fmt.(list ~sep:sp (prefix (unit "*") (list ~sep:sp Type_qual.pp)))

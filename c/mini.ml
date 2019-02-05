@@ -36,13 +36,13 @@ module Type = struct
   type basic =
     | Int
     | Atomic_int
-  [@@deriving sexp, variants, eq]
+  [@@deriving sexp, variants, eq, compare]
   ;;
 
   type t =
     | Normal of basic
     | Pointer_to of basic
-  [@@deriving sexp, variants, eq]
+  [@@deriving sexp, variants, eq, compare]
   ;;
 
   let deref : t -> t Or_error.t = function
@@ -643,16 +643,19 @@ module Litmus_lang : Litmus.Ast.Basic
     module Statement = struct
       type t = [`Stm of Statement.t | `Decl of Initialiser.t named]
       [@@deriving sexp]
-      let pp =
-        Fmt.using
-          (function
-            | `Decl (id, init) -> `Decl (Reify.decl id init)
-            | `Stm stm         -> `Stm  (Reify.stm stm))
-          Ast.Litmus_lang.Statement.pp
+
+      let reify = function
+        | `Decl (id, init) -> `Decl (Reify.decl id init)
+        | `Stm stm         -> `Stm  (Reify.stm stm)
+      ;;
+
+      let pp = Fmt.using reify Ast.Litmus_lang.Statement.pp
 
       let empty () = `Stm (Statement.nop)
       let make_uniform = Travesty.T_list.right_pad ~padding:(empty ())
     end
+
+    module Type = Type
 
     module Program = struct
       type t = Function.t named [@@deriving sexp]
@@ -661,6 +664,13 @@ module Litmus_lang : Litmus.Ast.Basic
         List.map (Function.body_decls fn) ~f:(fun x -> `Decl x)
         @ List.map (Function.body_stms fn) ~f:(fun x -> `Stm x)
       let pp = Fmt.(using (Tuple2.uncurry Reify.func) Ast.External_decl.pp)
+
+      let global_vars (_, fn) =
+        fn
+        |> Function.parameters
+        |> C_identifier.Map.of_alist_or_error
+        |> Result.ok
+      ;;
     end
 
     let name = "C"

@@ -61,10 +61,9 @@ module type S_g_decl = sig
     { qualifiers : qual list
     ; declarator : decl
     }
-  [@@deriving sexp]
   ;;
 
-  val pp : t Fmt.t
+  include Ast_node with type t := t
 end
 
 (** Signature of general composite (enum, struct, union) specifiers. *)
@@ -79,7 +78,7 @@ module type S_composite_spec = sig
         ; decls    : decl list
         }
     | Named of kind * Identifier.t
-  [@@deriving sexp]
+  ;;
 
   include Ast_node with type t := t
 end
@@ -98,7 +97,6 @@ module type S_direct_declarator = sig
     | Array of (t, expr option) Array.t
     | Fun_decl of t * par
     | Fun_call of t * Identifier.t list
-  [@@deriving sexp]
   ;;
 
   include Ast_node_with_identifier with type t := t
@@ -112,7 +110,6 @@ module type S_declarator = sig
     { pointer : Pointer.t option
     ; direct  : ddec
     }
-  [@@deriving sexp]
   ;;
 
   include Ast_node_with_identifier with type t := t
@@ -128,7 +125,6 @@ module type S_direct_abs_declarator = sig
     | Bracket of dec
     | Array of (t option, expr option) Array.t
     | Fun_decl of t option * par option
-  [@@deriving sexp]
   ;;
 
   include Ast_node with type t := t
@@ -141,7 +137,6 @@ module type S_abs_declarator = sig
   type t =
     | Pointer of Pointer.t
     | Direct of Pointer.t option * ddec
-  [@@deriving sexp]
   ;;
 
   include Ast_node with type t := t
@@ -155,7 +150,6 @@ module type S_struct_declarator = sig
   type t =
     | Regular of dec
     | Bitfield of dec option * expr
-  [@@deriving sexp]
   ;;
 
   include Ast_node with type t := t
@@ -188,7 +182,6 @@ module type S_expr = sig
     | String      of String.t
     | Constant    of Constant.t
     | Brackets    of t
-  [@@deriving sexp]
   ;;
 
   include Ast_node with type t := t
@@ -202,7 +195,6 @@ module type S_label = sig
     | Normal of Identifier.t
     | Case   of expr
     | Default
-  [@@deriving sexp]
   ;;
 
   include Ast_node with type t := t
@@ -217,7 +209,7 @@ module type S_compound_stm = sig
 
   (* TODO(@MattWindsor91): this is the C99 definition of compound
      statements, but everything else targets C89. *)
-  type t = Elt.t list [@@deriving sexp]
+  type t = Elt.t list
 
   include Ast_node with type t := t
 end
@@ -250,7 +242,7 @@ module type S_stm = sig
     | Continue
     | Break
     | Return of expr option
-  [@@deriving sexp]
+  ;;
 
   include Ast_node with type t := t
 end
@@ -266,7 +258,6 @@ module type S_type_spec = sig
     | `Enum of en
     | `Defined_type of Identifier.t
     ]
-  [@@deriving sexp]
   ;;
 
   include Ast_node with type t := t
@@ -280,7 +271,6 @@ module type S_param_type_list = sig
     { params : pdecl list
     ; style  : [`Normal | `Variadic]
     }
-  [@@deriving sexp]
   ;;
 
   include Ast_node with type t := t

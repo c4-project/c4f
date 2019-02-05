@@ -46,7 +46,7 @@ type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
 (** Shorthand for associative lists with identifier keys. *)
 
 module Type : sig
-  type basic [@@deriving eq, sexp]
+  type basic [@@deriving eq, sexp, compare]
   (** Basic types. *)
 
   val int : basic
@@ -55,7 +55,7 @@ module Type : sig
   val atomic_int : basic
   (** [atomic_int] is the atomic_int type. *)
 
-  type t [@@deriving eq, sexp]
+  type t [@@deriving eq, sexp, compare]
 
   val normal : basic -> t
   (** [normal ty] lifts a basic type [ty] to a scalar type. *)

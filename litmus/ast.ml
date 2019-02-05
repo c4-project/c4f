@@ -60,11 +60,7 @@ module Primitives = struct
         | None -> Or_error.(s |> C_identifier.create >>| global)
       ;;
 
-      let of_string (s : string) : t =
-        match try_parse_local s with
-        | Some (t, id) -> Local (t, C_identifier.of_string id)
-        | None -> Global (C_identifier.of_string s)
-      ;;
+      let of_string (s : string) : t = Or_error.ok_exn (try_parse s)
     end
 
     module M_sexp = struct
@@ -368,16 +364,75 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       Fn.const Validate.pass
     ;;
 
-    let validate_inner t =
-      let module V = Validate in
-      let w check = V.field_folder t check in
-      V.of_list
-        (Fields.fold ~init:[]
-           ~name:(w (Fn.const Validate.pass))
-           ~init:(w validate_init)
-           ~programs:(w validate_programs)
-           ~post:(w validate_post)
+    let validate_fields t =
+      let w check = Validate.field_folder t check in
+      Fields.fold ~init:[]
+        ~name:(w (Fn.const Validate.pass))
+        ~init:(w validate_init)
+        ~programs:(w validate_programs)
+        ~post:(w validate_post)
+    ;;
+
+    let get_uniform_globals : Lang.Program.t list ->
+      Lang.Type.t C_identifier.Map.t option Or_error.t = function
+      | [] -> Or_error.error_string "empty programs"
+      | (x :: xs) ->
+        let s = Lang.Program.global_vars x in
+        let is_uniform =
+          List.for_all xs
+            ~f:(fun x' ->
+                [%compare.equal: (Lang.Type.t C_identifier.Map.t option)]
+                  s (Lang.Program.global_vars x')
+              )
+        in
+        Travesty.T_or_error.(
+          unless_m is_uniform
+            ~f:(fun () -> Or_error.error_string
+                   "Programs disagree on global variables sets.")
+          >>| fun () -> s
         )
+    ;;
+
+    let check_init_against_globals
+        (init : (C_identifier.t, Lang.Constant.t) List.Assoc.t)
+        (globals : (Lang.Type.t C_identifier.Map.t))
+        : unit Or_error.t =
+      let init_keys =
+        init |> List.map ~f:fst |> C_identifier.Set.of_list
+      in
+      let globals_keys =
+        globals |> C_identifier.Map.keys |> C_identifier.Set.of_list
+      in
+      Travesty.T_or_error.unless_m
+        (C_identifier.Set.equal init_keys globals_keys)
+        ~f:(fun () ->
+           Or_error.error_s
+             [%message
+               "Program global variables aren't compatible with init."
+                 ~in_program:(globals_keys : C_identifier.Set.t)
+                 ~in_init:(init_keys : C_identifier.Set.t)
+             ]
+        )
+    ;;
+
+    (** [validate_globals] checks an incoming Litmus test to ensure that,
+        if its programs explicitly reference global variables, then they
+        reference the same variables as both each other and the init
+        block. *)
+    let validate_globals : t Validate.check =
+      Validate.of_error (
+        fun candidate ->
+          let open Or_error.Let_syntax in
+          match%bind get_uniform_globals (programs candidate) with
+          | None -> Result.ok_unit
+          | Some gs -> check_init_against_globals (init candidate) gs
+      )
+    ;;
+
+    let validate_inner t =
+      Validate.of_list
+        ( [ validate_globals t ]
+          @ validate_fields t )
     ;;
 
     let validate lit : t Or_error.t =

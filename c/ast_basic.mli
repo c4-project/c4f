@@ -198,7 +198,7 @@ module Constant : sig
     | Char    of char
     | Float   of float
     | Integer of int
-  [@@deriving sexp, eq, compare]
+  [@@deriving sexp]
   ;;
   include Ast_node with type t := t
 
@@ -216,7 +216,7 @@ module Pointer : Ast_node with type t = (Type_qual.t list) list
 
 (** Reusable AST building block for array subscripts *)
 module Array : sig
-  type ('a, 'i) t = { array : 'a; index : 'i } [@@deriving sexp]
+  type ('a, 'i) t = { array : 'a; index : 'i } [@@deriving sexp, eq, compare]
 
   val pp : 'a Fmt.t -> 'i Fmt.t -> ('a, 'i) t Fmt.t
 
