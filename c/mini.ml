@@ -669,9 +669,22 @@ module Litmus_lang : Litmus.Ast.Basic
 module Litmus_ast = Litmus.Ast.Make (Litmus_lang)
 module Litmus_pp = Litmus.Pp.Make_sequential (Litmus_ast)
 
-let litmus_cvars (ast : Litmus_ast.Validated.t) : C_identifier.Set.t =
+let litmus_local_cvars (ast : Litmus_ast.Validated.t) : C_identifier.Set.t =
   ast
   |> Litmus_ast.Validated.programs
   |> List.map ~f:(fun (_, func) -> Function.cvars func)
   |> C_identifier.Set.union_list
+;;
+
+let litmus_global_cvars (ast : Litmus_ast.Validated.t) : C_identifier.Set.t =
+  ast
+  |> Litmus_ast.Validated.init
+  |> List.map ~f:(fun (var, _) -> var)
+  |> C_identifier.Set.of_list
+;;
+
+let litmus_cvars (ast : Litmus_ast.Validated.t) : C_identifier.Set.t =
+  let locals = litmus_local_cvars ast in
+  let globals = litmus_global_cvars ast in
+  C_identifier.Set.union locals globals
 ;;
