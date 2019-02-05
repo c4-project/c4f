@@ -176,16 +176,17 @@ module type S = sig
 
   module Decl : sig
     type t =
-      | Program of Lang.Program.t
-      | Init    of Init.t
-      | Post of Post.t
+      | Program   of Lang.Program.t
+      | Init      of Init.t
+      | Post      of Post.t
+      | Locations of C_identifier.t list (* not properly supported yet *)
     [@@deriving sexp]
     ;;
   end
 
   type t =
     { language : C_identifier.t
-    ; name     : C_identifier.t
+    ; name     : string
     ; decls    : Decl.t list
     }
     [@@deriving sexp]
@@ -203,7 +204,7 @@ module type S = sig
     type t [@@deriving sexp_of]
     (** The abstract type of a validated litmus AST. *)
 
-    val name     : t -> C_identifier.t
+    val name     : t -> string
     (** [name test] gets the name of [test]. *)
 
     val init     : t -> (C_identifier.t, Lang.Constant.t) List.Assoc.t
@@ -221,7 +222,7 @@ module type S = sig
 
     val make
       :  ?post:Post.t
-      -> name:C_identifier.t
+      -> name:string
       -> init:((C_identifier.t, Lang.Constant.t) List.Assoc.t)
       -> programs:Lang.Program.t list
       -> unit

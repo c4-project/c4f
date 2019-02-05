@@ -97,7 +97,7 @@ module Make_common (B : Basic) = struct
         fun f litmus ->
           Fmt.pf f "@[%s@ %a@]@,@,"
             B.Ast.Lang.name
-            C_identifier.pp (B.Ast.Validated.name litmus);
+            string (B.Ast.Validated.name litmus);
           pp_body f litmus
       )
     )

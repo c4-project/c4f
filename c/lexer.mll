@@ -50,6 +50,7 @@ let tr_name typedefs s = match s with
 | "void" -> VOID
 (* Litmus extensions *)
 | "exists" -> LIT_EXISTS
+| "locations" -> LIT_LOCATIONS
 (* Others *)
 | x when String.Set.mem typedefs x -> TYPEDEF_NAME x
 | x -> IDENTIFIER x

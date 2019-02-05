@@ -50,7 +50,7 @@
 %token ADD SUB
 %token STAR DIV MOD
 
-%token LIT_EXISTS LIT_AND LIT_OR
+%token LIT_EXISTS LIT_AND LIT_OR LIT_LOCATIONS
 
 %type <Ast.Translation_unit.t> translation_unit
 %start translation_unit
@@ -95,21 +95,26 @@
 litmus:
   | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF
     { { Litmus.language = Utils.C_identifier.of_string language
-      ; name = Utils.C_identifier.of_string name
+      ; name
       ; decls
       }
     }
 
 litmus_declaration:
-  | decl = litmus_initialiser   { Litmus.Decl.Init decl }
-  | post = litmus_postcondition { Litmus.Decl.Post post }
-  | decl = function_definition  { Litmus.Decl.Program decl }
+  | decl = litmus_initialiser   { Litmus.Decl.Init      decl }
+  | post = litmus_postcondition { Litmus.Decl.Post      post }
+  | locs = litmus_locations     { Litmus.Decl.Locations locs }
+  | decl = function_definition  { Litmus.Decl.Program   decl }
 
 litmus_init_stm:
   | id = identifier; EQ; value = constant { { Litmus.Init.id; value } }
 
 litmus_initialiser:
   | xs = braced(list(endsemi(litmus_init_stm))) { xs }
+
+(* locations [ foo; bar; baz ] *)
+litmus_locations:
+  | LIT_LOCATIONS; xs = bracketed(slist(identifier)) { xs }
 
 litmus_quantifier:
   | LIT_EXISTS { `Exists }
@@ -457,3 +462,4 @@ identifier:
   | i = IDENTIFIER { Utils.C_identifier.of_string i }
 (* Contextual keywords. *)
   | LIT_EXISTS { Utils.C_identifier.of_string "exists" }
+  | LIT_LOCATIONS { Utils.C_identifier.of_string "locations" }

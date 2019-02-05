@@ -308,16 +308,17 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
   module Decl = struct
     type t =
-      | Program of Lang.Program.t
-      | Init    of Init.t
-      | Post    of Post.t
+      | Program   of Lang.Program.t
+      | Init      of Init.t
+      | Post      of Post.t
+      | Locations of C_identifier.t list (* not properly supported yet *)
     [@@deriving sexp]
     ;;
   end
 
   type t =
     { language : C_identifier.t
-    ; name     : C_identifier.t
+    ; name     : string
     ; decls    : Decl.t list
     }
   [@@deriving sexp, fields]
@@ -325,7 +326,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
   module Validated = struct
     type t =
-      { name     : C_identifier.t
+      { name     : string
       ; init     : ((C_identifier.t, Lang.Constant.t) List.Assoc.t)
       ; programs : Lang.Program.t list
       ; post     : Post.t option
@@ -364,10 +365,20 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       Fn.const Validate.pass
     ;;
 
+    let validate_name : string Validate.check =
+      fun name ->
+        if String.contains name ' '
+        then Validate.fail_s
+            [%message "Litmus name contains invalid character"
+                ~name
+            ]
+        else Validate.pass
+    ;;
+
     let validate_fields t =
       let w check = Validate.field_folder t check in
       Fields.fold ~init:[]
-        ~name:(w (Fn.const Validate.pass))
+        ~name:(w validate_name)
         ~init:(w validate_init)
         ~programs:(w validate_programs)
         ~post:(w validate_post)
@@ -481,6 +492,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     let%bind programs = get_programs   decls    in
     let%bind init     = get_init       decls    in
     let%bind post     = get_post       decls    in
+    (* TODO(@MattWindsor91): validate and/or use location stanza. *)
     let%bind _        = check_language language in
     Validated.make ~name ~init ?post ~programs ()
   ;;

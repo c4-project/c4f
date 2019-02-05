@@ -162,7 +162,7 @@ module Subject = struct
       ?(post : Mini.Litmus_ast.Post.t option)
       (subject : t)
       ~(vars : Var_record.t C_identifier.Map.t)
-      ~(name : C_identifier.t)
+      ~(name : string)
     : Mini.Litmus_ast.Validated.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind programs = programs_to_litmus vars subject.programs in

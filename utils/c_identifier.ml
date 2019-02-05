@@ -40,15 +40,26 @@ module M = Validated.Make_bin_io_compare_hash_sexp (struct
         ~if_false:"Invalid character."
     ;;
 
+    let validate_sep : (char * char list) Validate.check =
+      Validate.pair
+        ~fst:(
+          fun c ->
+            Validate.name (sprintf "char '%c'" c)
+              (validate_initial_char c)
+        )
+        ~snd:(
+            Validate.list ~name:(sprintf "char '%c'")
+              validate_char
+        )
+    ;;
+
     let validate : t Validate.check =
       fun id ->
         match String.to_list id with
         | [] -> Validate.fail_s
                   [%message "Identifiers can't be empty"
                       ~id]
-        | c :: cs ->
-          Validate.of_list
-            (validate_initial_char c :: List.map ~f:validate_char cs)
+        | c :: cs -> validate_sep (c, cs)
     ;;
 
     let validate_binio_deserialization = true

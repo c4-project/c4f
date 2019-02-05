@@ -88,6 +88,35 @@ module type Runner =
               and type ecfg := Explain_config.t
 ;;
 
+(** [make_litmus_name src] tries to make a Litmus test name
+    representative of [src]. *)
+let make_litmus_name (src : Io.In_source.t) : string =
+  src
+  |> Io.In_source.to_string
+  |> Filename.basename
+  |> Filename.chop_extension
+  (* TODO(@MattWindsor91): a lot of this is ad-hoc
+     stopgapping to make [make_litmus_name] generate things that
+     the current C litmus test parser will accept; ideally we should
+     just fix that parser. *)
+  |> String.tr ~target:'.' ~replacement:'_'
+  |> String.tr ~target:' ' ~replacement:'_'
+;;
+
+let%expect_test "make_litmus_name: multi-extension filename" =
+  let result =
+    Or_error.(
+      "example.foo.c.litmus"
+      |>  Io.fpath_of_string
+      >>| Io.In_source.of_fpath
+      >>| make_litmus_name
+    )
+  in
+  Sexp.output_hum stdout [%sexp (result : string Or_error.t)];
+  [%expect {| (Ok example_foo_c) |}]
+;;
+
+
 module Make_runner (B : Runner_deps) : Runner = struct
   (* Shorthand for modules we use a _lot_. *)
   module L  = B.Litmus_ast
@@ -154,7 +183,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let make_litmus
-      (name : C_identifier.t)
+      (name : string)
       (programs : MS.Output.Program.t list)
       (post : L.Post.t option) =
     Or_error.tag ~tag:"Couldn't build litmus file."
@@ -202,8 +231,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
       Travesty.T_option.With_errors.map_m config.post_sexp
         ~f:(make_post redirects)
     in
-    let%bind name' = C_identifier.create name in
-    let%map lit = make_litmus name' programs post in
+    let%map lit = make_litmus name programs post in
     let f = Format.formatter_of_out_channel outp in
     pp_for_litmus_format config.format f lit;
     Format.pp_print_newline f ();
