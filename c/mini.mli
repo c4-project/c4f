@@ -231,6 +231,9 @@ module Function : sig
     (** [body_decls func] gets [func]'s in-body variable
        declarations. *)
 
+  val body_stms : t -> Statement.t list
+    (** [body_decls func] gets [func]'s statements. *)
+
   val map
     :  t
     -> parameters:(Type.t id_assoc -> Type.t id_assoc)

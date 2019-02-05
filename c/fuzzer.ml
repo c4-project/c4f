@@ -27,15 +27,96 @@ open Utils
 
 module Var_record = struct
   type t =
-    | Existing
-    | Generated of Mini.Type.t
+    { ty : Mini.Type.t option
+    ; source : [ `Existing | `Generated ]
+    ; scope : [ `Global | `Local ]
+    }
+  ;;
 
-  (** [make_existing_var_map] expands a set of known-existing C variable
-      names to a var-record map where each name is registered as
-      an existing variable. *)
-  let make_existing_var_map (existing_vars : C_identifier.Set.t)
+  (** [is_global vr] returns whether [vr] is a global variable. *)
+  let is_global : t -> bool = function
+    | { scope=`Global ; _ } -> true
+    | { scope=`Local  ; _ } -> false
+  ;;
+
+  (** [make_existing_var_map globals locals] expands a set of
+     known-existing C variable names to a var-record map where each
+     name is registered as an existing variable.
+
+      Global registrations override local ones, in the case of
+      shadowing. *)
+  let make_existing_var_map
+    (globals : Mini.Type.t C_identifier.Map.t)
+    (locals  : C_identifier.Set.t)
     : t C_identifier.Map.t =
-    C_identifier.Set.to_map existing_vars ~f:(Fn.const Existing)
+    let globals_map = C_identifier.Map.map globals
+        ~f:(fun ty -> { ty = Some ty
+                      ; source = `Existing
+                      ; scope = `Global
+                      })
+    in
+    let locals_map = C_identifier.Set.to_map locals
+        ~f:(fun _ -> { ty = None
+                     ; source = `Existing
+                     ; scope = `Local
+                     })
+    in
+    C_identifier.Map.merge globals_map locals_map
+      ~f:(fun ~key -> ignore key;
+           function
+           | `Left x | `Right x | `Both (x, _) -> Some x
+         )
+end
+
+module Subject_program = struct
+  type t =
+    { decls : Mini.Initialiser.t Mini.id_assoc
+    ; stms  : Mini.Statement.t list
+    }
+  ;;
+
+  let of_function (func : Mini.Function.t) : t =
+    { decls = Mini.Function.body_decls func
+    ; stms  = Mini.Function.body_stms func
+    }
+  ;;
+
+  (** [make_function_parameters vars] creates a uniform function
+      parameter list for a C litmus test using the global
+      variable records in [vars]. *)
+  let make_function_parameters
+    (vars : Var_record.t C_identifier.Map.t)
+    : Mini.Type.t Mini.id_assoc Or_error.t =
+    vars
+    |> C_identifier.Map.filter ~f:(Var_record.is_global)
+    |> C_identifier.Map.to_alist
+    |> List.map ~f:
+      (function
+        | (n, { Var_record.ty = Some t; _ }) -> Or_error.return (n, t)
+        | _ -> Or_error.error_string
+                 "Internal error: missing global type"
+      )
+    |> Or_error.combine_errors
+  ;;
+
+  (** [to_function vars prog_id prog] lifts a subject-program [prog]
+      with ID [prog_id]
+      back into a Litmus function, adding a parameter list generated
+      from [vars]. *)
+  let to_function
+      (vars : Var_record.t C_identifier.Map.t)
+      (prog_id : int)
+      (prog : t) : Mini.Function.t Mini.named Or_error.t =
+    let open Or_error.Let_syntax in
+    let name = C_identifier.of_string (sprintf "P%d" prog_id) in
+    let%map parameters = make_function_parameters vars in
+    let func =
+      Mini.Function.make
+        ~parameters
+        ~body_decls:prog.decls
+        ~body_stms:prog.stms
+        ()
+    in (name, func)
   ;;
 end
 
@@ -44,32 +125,52 @@ end
 module Subject = struct
   type t =
     { init     : Mini.Constant.t Mini.id_assoc
-    ; programs : Mini.Function.t Mini.id_assoc
+    ; programs : Subject_program.t list
     }
+  ;;
+
+  let programs_of_litmus (test : Mini.Litmus_ast.Validated.t)
+    : Subject_program.t list =
+    test
+    |> Mini.Litmus_ast.Validated.programs
+    |> List.map ~f:(fun (_, p) -> Subject_program.of_function p)
+  ;;
 
   (** [of_litmus test] converts a validated C litmus test [test]
       to the intermediate form used for fuzzing. *)
   let of_litmus (test : Mini.Litmus_ast.Validated.t) : t =
     { init     = Mini.Litmus_ast.Validated.init test
-    ; programs = Mini.Litmus_ast.Validated.programs test
+    ; programs = programs_of_litmus test
     }
   ;;
 
-  (** [to_litmus ?post subject ~name] tries to reconstitute a
-      validated C litmus test from the subject [subject], attaching
-      the name [name] and optional postcondition [post].  It may fail
-      if the resulting litmus is invalid---generally, this signifies
-      an internal error. *)
+  let programs_to_litmus
+      (vars : Var_record.t C_identifier.Map.t)
+    : Subject_program.t list ->
+      Mini.Litmus_lang.Program.t list Or_error.t =
+    Travesty.T_list.With_errors.mapi_m
+      ~f:(Subject_program.to_function vars)
+  ;;
+
+  (** [to_litmus ?post subject ~vars ~name] tries to reconstitute a
+     validated C litmus test from the subject [subject], attaching the
+     name [name] and optional postcondition [post], and using the
+     variable map [vars] to reconstitute parameters. It may fail if
+     the resulting litmus is invalid---generally, this signifies an
+     internal error. *)
   let to_litmus
-      ?(post:Mini.Litmus_ast.Post.t option)
+      ?(post : Mini.Litmus_ast.Post.t option)
       (subject : t)
-      ~(name:C_identifier.t)
+      ~(vars : Var_record.t C_identifier.Map.t)
+      ~(name : C_identifier.t)
     : Mini.Litmus_ast.Validated.t Or_error.t =
+    let open Or_error.Let_syntax in
+    let%bind programs = programs_to_litmus vars subject.programs in
     Mini.Litmus_ast.Validated.make
       ?post
       ~name
       ~init:(subject.init)
-      ~programs:(subject.programs)
+      ~programs
       ()
   ;;
 
@@ -95,17 +196,22 @@ module State = struct
 
   let init
       (rng : Splittable_random.State.t)
-      (existing_vars : C_identifier.Set.t)
+      (globals : Mini.Type.t C_identifier.Map.t)
+      (locals  : C_identifier.Set.t)
     : t =
-    let vars = Var_record.make_existing_var_map existing_vars in
+    let vars =
+      Var_record.make_existing_var_map globals locals in
     { rng ; vars }
   ;;
 
-  let register_var_direct
+  let register_global_direct
       (var : C_identifier.t) (ty : Mini.Type.t) (s : t) : t =
     { s with vars =
                C_identifier.Map.set s.vars
-                 ~key:var ~data:(Generated ty)
+                 ~key:var ~data:{ scope = `Global
+                                ; ty = Some ty
+                                ; source = `Generated
+                                }
     }
   ;;
 
@@ -154,12 +260,12 @@ module State = struct
   ;;
 
 
-  (** [register_var var ty] is a stateful action that registers
+  (** [register_global var ty] is a stateful action that registers
       a generated variable [var] of type [ty] into the state,
       overwriting any existing variable of the same name. *)
-  let register_var (var : C_identifier.t) (ty : Mini.Type.t)
+  let register_global (var : C_identifier.t) (ty : Mini.Type.t)
     : unit Monad.t =
-    Monad.modify (register_var_direct var ty)
+    Monad.modify (register_global_direct var ty)
 
   (** [gen_fresh_var ()] is a stateful action that generates a
       variable not already registered in the state (but doesn't
@@ -180,7 +286,7 @@ module State = struct
      variable of type [ty]. *)
   let gen_and_register_fresh_var (ty : Mini.Type.t)
     : C_identifier.t Monad.t =
-    Monad.(gen_fresh_var () >>= tee_m ~f:(Fn.flip register_var ty))
+    Monad.(gen_fresh_var () >>= tee_m ~f:(Fn.flip register_global ty))
   ;;
 end
 
@@ -242,17 +348,32 @@ let make_rng : int option -> Splittable_random.State.t = function
                    (Random.State.make_self_init ())
 ;;
 
-let int_type ~(is_atomic : bool) : Mini.Type.t =
+let int_type ~(is_atomic : bool) ~(is_global : bool) : Mini.Type.t =
   Mini.Type.(
-    normal (if is_atomic then atomic_int else int)
+    let basic = if is_atomic then atomic_int else int in
+    let lift  = if is_global then pointer_to else normal in
+    lift basic
   )
+;;
+
+let%expect_test "int_type: combinatoric" =
+  Sexp.output_hum stdout
+    [%sexp
+      ( [ int_type ~is_atomic:false ~is_global:false
+        ; int_type ~is_atomic:false ~is_global:true
+        ; int_type ~is_atomic:true  ~is_global:false
+        ; int_type ~is_atomic:true  ~is_global:true
+        ] : Mini.Type.t list
+      )
+    ];
+  [%expect {| ((Normal Int) (Pointer_to Int) (Normal Atomic_int) (Pointer_to Atomic_int)) |}]
 ;;
 
 let make_global ~(is_atomic : bool) (initial_value : int)
     (subject : Subject.t)
     : Subject.t State.Monad.t =
   let open State.Monad.Let_syntax in
-  let ty = int_type ~is_atomic in
+  let ty = int_type ~is_atomic ~is_global:true in
   let%map var = State.gen_and_register_fresh_var ty in
   let const =  Mini.Constant.Integer initial_value in
   Subject.add_var_to_init subject var const
@@ -287,14 +408,64 @@ let run_with_state (test : Mini.Litmus_ast.Validated.t)
   let post = Mini.Litmus_ast.Validated.post test in
   let subject = Subject.of_litmus test in
   let%bind subject' = mutate_subject subject in
+  let%bind vars = State.Monad.peek State.vars in
   State.Monad.Monadic.return
-    (Subject.to_litmus ~name ?post subject')
+    (Subject.to_litmus ~vars ~name ?post subject')
 ;;
 
-let run ~(seed : int option) (test : Mini.Litmus_ast.Validated.t)
-  : Mini.Litmus_ast.Validated.t Or_error.t =
+let get_first_func
+    (test : Mini.Litmus_ast.Validated.t)
+  : Mini.Function.t Or_error.t =
+  let open Or_error.Let_syntax in
+  (* If this is a validated litmus test, it _should_ have at least
+     one function, and each function _should_ report the right
+     global variables. *)
+  let%map (_name, func) =
+    test
+    |> Mini.Litmus_ast.Validated.programs
+    |> List.hd
+    |> Result.of_option
+      ~error:(
+        Error.of_string
+          "Internal error: validated litmus had no functions"
+      )
+  in func
+;;
+
+(** [existing_globals test] extracts the existing global variable
+    names and types from litmus test [test]. *)
+let existing_globals
+    (test : Mini.Litmus_ast.Validated.t)
+  : Mini.Type.t C_identifier.Map.t Or_error.t =
+  Or_error.(
+    test
+    |>  get_first_func
+    >>| Mini.Function.parameters
+    >>= C_identifier.Map.of_alist_or_error
+  )
+;;
+
+let make_initial_state
+    (seed : int option)
+    (test : Mini.Litmus_ast.Validated.t)
+  : State.t Or_error.t =
+  let open Or_error.Let_syntax in
   let rng = make_rng seed in
-  let existing_variables = Mini.litmus_cvars test in
-  let initial_state = State.init rng existing_variables in
-  State.Monad.run (run_with_state test) initial_state
+  let all_cvars = Mini.litmus_cvars test in
+  let%map globals = existing_globals test in
+  let global_cvars =
+    globals |> C_identifier.Map.keys |> C_identifier.Set.of_list in
+  let locals =
+    C_identifier.Set.diff all_cvars global_cvars
+  in
+  State.init rng globals locals
+;;
+
+let run ~(seed : int option)
+    (test : Mini.Litmus_ast.Validated.t)
+  : Mini.Litmus_ast.Validated.t Or_error.t =
+  Or_error.(
+    make_initial_state seed test
+    >>= State.Monad.run (run_with_state test)
+  )
 ;;
