@@ -184,6 +184,8 @@ module State = struct
   ;;
 end
 
+module State_list = Travesty.T_list.On_monad (State.Monad)
+
 (** High-level actions that the mutator can take. *)
 module Action = struct
   type t =
@@ -223,6 +225,14 @@ let pick_action () : Action.t State.Monad.t =
     (Quickcheck.Generator.generate ~size:10 Action.gen)
 ;;
 
+(** [pick_actions n] is a stateful computation that randomly picks [n]
+   fuzzing actions. *)
+let pick_actions (num : int) : Action.t list State.Monad.t =
+  num
+  |> List.init ~f:(Fn.const (pick_action ()))
+  |> State_list.sequence_m
+;;
+
 (** [make_rng seed] creates a splittable RNG;
     if [seed] is [Some s], [s] will be used as the RNG's seed,
     otherwise a low-entropy system-derived seed is used. *)
@@ -251,20 +261,22 @@ let make_global ~(is_atomic : bool) (initial_value : int)
 (* TODO(@MattWindsor91): implement this *)
 let make_constant_store _new_value = State.Monad.return
 
-let run_action
-  : Action.t -> Subject.t -> Subject.t State.Monad.t = function
+let run_action (subject : Subject.t)
+  : Action.t -> Subject.t State.Monad.t = function
   | Make_global { is_atomic; initial_value } ->
-    make_global ~is_atomic initial_value
+    make_global ~is_atomic initial_value subject
   | Make_constant_store { new_value } ->
-    make_constant_store new_value
+    make_constant_store new_value subject
 ;;
 
 let mutate_subject (subject : Subject.t)
   : Subject.t State.Monad.t =
   let open State.Monad.Let_syntax in
-  let%bind action = pick_action () in
+
+  let%bind actions = pick_actions 10 in
+
   (** TODO(@MattWindsor91): actually fuzz here *)
-  run_action action subject
+  State_list.fold_m ~init:subject ~f:(run_action) actions
 ;;
 
 let run_with_state (test : Mini.Litmus_ast.Validated.t)
