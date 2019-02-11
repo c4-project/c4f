@@ -26,131 +26,7 @@ open Core_kernel
 open Utils
 
 module Var = Fuzzer_var
-
-module Subject_program = struct
-  type t =
-    { decls : Mini.Initialiser.t Mini.id_assoc
-    ; stms  : Mini.Statement.t list
-    }
-  ;;
-
-  let of_function (func : Mini.Function.t) : t =
-    { decls = Mini.Function.body_decls func
-    ; stms  = Mini.Function.body_stms func
-    }
-  ;;
-
-  let try_extract_parameter_type
-    ((n, var) : C_identifier.t * Var.Record.t)
-    : (C_identifier.t * Mini.Type.t) Or_error.t =
-    Or_error.(
-      var
-      |> Var.Record.ty
-      |> Result.of_option
-        ~error:(Error.of_string "Internal error: missing global type")
-      >>| Tuple2.create n
-    )
-  ;;
-
-  (** [make_function_parameters vars] creates a uniform function
-      parameter list for a C litmus test using the global
-      variable records in [vars]. *)
-  let make_function_parameters
-    (vars : Var.Map.t)
-    : Mini.Type.t Mini.id_assoc Or_error.t =
-    vars
-    |> C_identifier.Map.filter ~f:(Var.Record.is_global)
-    |> C_identifier.Map.to_alist
-    |> List.map ~f:try_extract_parameter_type
-    |> Or_error.combine_errors
-  ;;
-
-  (** [to_function vars prog_id prog] lifts a subject-program [prog]
-      with ID [prog_id]
-      back into a Litmus function, adding a parameter list generated
-      from [vars]. *)
-  let to_function
-      (vars : Var.Map.t)
-      (prog_id : int)
-      (prog : t) : Mini.Function.t Mini.named Or_error.t =
-    let open Or_error.Let_syntax in
-    let name = C_identifier.of_string (sprintf "P%d" prog_id) in
-    let%map parameters = make_function_parameters vars in
-    let func =
-      Mini.Function.make
-        ~parameters
-        ~body_decls:prog.decls
-        ~body_stms:prog.stms
-        ()
-    in (name, func)
-  ;;
-end
-
-(** A stripped-down version of the validated C litmus test AST,
-    used in fuzzing to avoid repeatedly having to validate. *)
-module Subject = struct
-  type t =
-    { init     : Mini.Constant.t Mini.id_assoc
-    ; programs : Subject_program.t list
-    }
-  ;;
-
-  let programs_of_litmus (test : Mini.Litmus_ast.Validated.t)
-    : Subject_program.t list =
-    test
-    |> Mini.Litmus_ast.Validated.programs
-    |> List.map ~f:(fun (_, p) -> Subject_program.of_function p)
-  ;;
-
-  (** [of_litmus test] converts a validated C litmus test [test]
-      to the intermediate form used for fuzzing. *)
-  let of_litmus (test : Mini.Litmus_ast.Validated.t) : t =
-    { init     = Mini.Litmus_ast.Validated.init test
-    ; programs = programs_of_litmus test
-    }
-  ;;
-
-  let programs_to_litmus
-      (vars : Var.Map.t)
-    : Subject_program.t list ->
-      Mini.Litmus_lang.Program.t list Or_error.t =
-    Travesty.T_list.With_errors.mapi_m
-      ~f:(Subject_program.to_function vars)
-  ;;
-
-  (** [to_litmus ?post subject ~vars ~name] tries to reconstitute a
-     validated C litmus test from the subject [subject], attaching the
-     name [name] and optional postcondition [post], and using the
-     variable map [vars] to reconstitute parameters. It may fail if
-     the resulting litmus is invalid---generally, this signifies an
-     internal error. *)
-  let to_litmus
-      ?(post : Mini.Litmus_ast.Post.t option)
-      (subject : t)
-      ~(vars : Var.Map.t)
-      ~(name : string)
-    : Mini.Litmus_ast.Validated.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind programs = programs_to_litmus vars subject.programs in
-    Mini.Litmus_ast.Validated.make
-      ?post
-      ~name
-      ~init:(subject.init)
-      ~programs
-      ()
-  ;;
-
-  (** [add_var_to_init subject var initial_value] adds [var] to
-      [subject]'s init block with the initial value [initial_value]. *)
-  let add_var_to_init
-      (subject : t)
-      (var : C_identifier.t)
-      (initial_value : Mini.Constant.t)
-    : t =
-    { subject with init = (var, initial_value) :: subject.init }
-  ;;
-end
-
+module Subject = Fuzzer_subject
 module State = Fuzzer_state
 module State_list = Travesty.T_list.On_monad (State.Monad)
 module Action = Fuzzer_action
@@ -200,8 +76,8 @@ let%expect_test "int_type: combinatoric" =
 ;;
 
 let make_global ~(is_atomic : bool) (initial_value : int)
-    (subject : Subject.t)
-    : Subject.t State.Monad.t =
+    (subject : Subject.Test.t)
+    : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
   let ty = int_type ~is_atomic ~is_global:true in
   let%map var =
@@ -209,7 +85,7 @@ let make_global ~(is_atomic : bool) (initial_value : int)
       ~initial_value:(Var.Value.Known_int initial_value)
   in
   let const = Mini.Constant.Integer initial_value in
-  Subject.add_var_to_init subject var const
+  Subject.Test.add_var_to_init subject var const
 ;;
 
 let random_index (srng : Splittable_random.State.t) (xs : 'a list)
@@ -268,9 +144,9 @@ let%test_unit "random_item is always a valid item" =
     )
 ;;
 
-let on_random_existing_program (subject : Subject.t)
-    ~(f : Subject_program.t -> Subject_program.t State.Monad.t)
-  : Subject.t State.Monad.t =
+let on_random_existing_program (subject : Subject.Test.t)
+    ~(f : Subject.Program.t -> Subject.Program.t State.Monad.t)
+  : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
   State.Monad.with_rng_m
     (fun rng ->
@@ -334,9 +210,9 @@ let insert_randomly
     injects [stm] into [prog]'s statement list at a random location.
     The state monad's random number generator decides where. *)
 let insert_statement_randomly
-  (prog : Subject_program.t)
+  (prog : Subject.Program.t)
   (stm  : Mini.Statement.t)
-  : Subject_program.t State.Monad.t =
+  : Subject.Program.t State.Monad.t =
   let stms = prog.stms in
   State.Monad.with_rng
     (fun rng ->
@@ -346,10 +222,10 @@ let insert_statement_randomly
 ;;
 
 let make_constant_store_on
-  (prog : Subject_program.t)
+  (prog : Subject.Program.t)
   (new_value : int)
   (global : C_identifier.t)
-  : Subject_program.t State.Monad.t =
+  : Subject.Program.t State.Monad.t =
   let open State.Monad.Let_syntax in
   let src =
     Mini.Expression.constant (Mini.Constant.Integer new_value)
@@ -374,16 +250,16 @@ let make_constant_store (new_value : int) =
       )
 ;;
 
-let run_action (subject : Subject.t)
-  : Action.Payload.t -> Subject.t State.Monad.t = function
+let run_action (subject : Subject.Test.t)
+  : Action.Payload.t -> Subject.Test.t State.Monad.t = function
   | Make_global { is_atomic; initial_value } ->
     make_global ~is_atomic initial_value subject
   | Make_constant_store { new_value } ->
     make_constant_store new_value subject
 ;;
 
-let mutate_subject (subject : Subject.t)
-  : Subject.t State.Monad.t =
+let mutate_subject (subject : Subject.Test.t)
+  : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
 
   let%bind actions = pick_actions 10 in
@@ -398,12 +274,12 @@ let run_with_state (test : Mini.Litmus_ast.Validated.t)
   (* TODO: add uuid to this *)
   let name = Mini.Litmus_ast.Validated.name test in
   let post = Mini.Litmus_ast.Validated.post test in
-  let subject = Subject.of_litmus test in
+  let subject = Subject.Test.of_litmus test in
   let%bind subject' = mutate_subject subject in
   State.Monad.with_vars_m
     (fun vars ->
        State.Monad.Monadic.return
-         (Subject.to_litmus ~vars ~name ?post subject')
+         (Subject.Test.to_litmus ~vars ~name ?post subject')
     )
 ;;
 
