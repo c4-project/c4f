@@ -28,8 +28,13 @@ open Utils
 module Var_record = struct
   type t =
     { ty : Mini.Type.t option
+    (** The type of the variable, if known. *)
     ; source : [ `Existing | `Generated ]
+    (** Whether the fuzzer generated this variable or not. *)
     ; scope : [ `Global | `Local ]
+    (** Whether this variable is global or local. *)
+    ; value : [ `Known_int of int | `Unknown ]
+    (** Whether this variable has a single known value or not. *)
     }
   ;;
 
@@ -50,6 +55,22 @@ module Var_record = struct
     | { source = `Generated ; _ } -> true
     | { source = `Existing  ; _ } -> false
 
+  let make_existing_global (ty : Mini.Type.t) : t =
+    { ty     = Some ty
+    ; source = `Existing
+    ; scope  = `Global
+    ; value  = `Unknown
+    }
+  ;;
+
+  let make_existing_local (_name : C_identifier.t) : t =
+    { ty     = None
+    ; source = `Existing
+    ; scope  = `Local
+    ; value  = `Unknown
+    }
+  ;;
+
   (** [make_existing_var_map globals locals] expands a set of
      known-existing C variable names to a var-record map where each
      name is registered as an existing variable.
@@ -61,16 +82,10 @@ module Var_record = struct
     (locals  : C_identifier.Set.t)
     : t C_identifier.Map.t =
     let globals_map = C_identifier.Map.map globals
-        ~f:(fun ty -> { ty = Some ty
-                      ; source = `Existing
-                      ; scope = `Global
-                      })
+        ~f:make_existing_global
     in
     let locals_map = C_identifier.Set.to_map locals
-        ~f:(fun _ -> { ty = None
-                     ; source = `Existing
-                     ; scope = `Local
-                     })
+        ~f:make_existing_local
     in
     C_identifier.Map.merge globals_map locals_map
       ~f:(fun ~key -> ignore key;
@@ -215,16 +230,50 @@ module State = struct
     { rng ; vars }
   ;;
 
-  let register_global_direct
-      (var : C_identifier.t) (ty : Mini.Type.t) (s : t) : t =
-    { s with vars =
-               C_identifier.Map.set s.vars
-                 ~key:var ~data:{ scope = `Global
-                                ; ty = Some ty
-                                ; source = `Generated
-                                }
-    }
+  let register_global_on_map
+      ?(value : [`Known_int of int] option)
+      (key : C_identifier.t) (ty : Mini.Type.t)
+    : Var_record.t C_identifier.Map.t
+    -> Var_record.t C_identifier.Map.t =
+    let value' =
+      Option.value_map value
+        ~f:(fun x -> (x :> [`Known_int of int | `Unknown]))
+        ~default:`Unknown
+    in
+    let data =
+      { Var_record.scope = `Global
+      ; ty = Some ty
+      ; source = `Generated
+      ; value = value'
+      }
+    in
+    C_identifier.Map.set ~key ~data
   ;;
+
+  let register_global_direct
+      ?(value : [`Known_int of int] option)
+      (var : C_identifier.t) (ty : Mini.Type.t) (s : t) : t =
+    { s with vars = register_global_on_map ?value var ty s.vars }
+  ;;
+
+  (** [erase_var_value_on_map var value] removes the known value
+      marker for any mapping for [var] in [map].
+
+      This should be done after involving [var] in any atomic
+      actions that modify it. *)
+  let erase_var_value_on_map
+    (var : C_identifier.t)
+    (map : Var_record.t C_identifier.Map.t)
+    : Var_record.t C_identifier.Map.t =
+    C_identifier.Map.change map var
+      ~f:(Option.map
+            ~f:(fun vr -> {vr with Var_record.value = `Unknown})
+         )
+  ;;
+
+  let erase_var_value_direct
+    (var : C_identifier.t) (s : t) : t =
+    { s with vars = erase_var_value_on_map var s.vars }
 
   (** [gen_var_raw rng] generates a random C identifier, in
       string format, using [rng] as the RNG. *)
@@ -269,12 +318,16 @@ module State = struct
   ;;
 
 
-  (** [register_global var ty] is a stateful action that registers
-      a generated variable [var] of type [ty] into the state,
-      overwriting any existing variable of the same name. *)
-  let register_global (var : C_identifier.t) (ty : Mini.Type.t)
+  (** [register_global ?value ty var] is a stateful action that
+     registers a generated variable [var] of type [ty] and optional
+      known value [value] into the state,
+     overwriting any existing variable of the same name. *)
+  let register_global
+    ?(value : [`Known_int of int] option)
+    (ty : Mini.Type.t)
+    (var : C_identifier.t)
     : unit Monad.t =
-    Monad.modify (register_global_direct var ty)
+    Monad.modify (register_global_direct ?value var ty)
 
   (** [gen_fresh_var ()] is a stateful action that generates a
       variable not already registered in the state (but doesn't
@@ -289,14 +342,20 @@ module State = struct
     in mu ()
   ;;
 
-  (** [gen_and_register_fresh_var ty] is a stateful action that
+  (** [gen_and_register_fresh_var ?value ty] is a stateful action that
      generates a variable name not already
      registered in the state, then registers it as a generated
-     variable of type [ty]. *)
-  let gen_and_register_fresh_var (ty : Mini.Type.t)
+     variable of type [ty] and optional value [value]. *)
+  let gen_and_register_fresh_var
+      ?(value : [`Known_int of int] option)
+      (ty : Mini.Type.t)
     : C_identifier.t Monad.t =
-    Monad.(gen_fresh_var () >>= tee_m ~f:(Fn.flip register_global ty))
+    Monad.(gen_fresh_var () >>= tee_m ~f:(register_global ?value ty))
   ;;
+
+  let erase_var_value (var : C_identifier.t)
+    : unit Monad.t =
+    Monad.modify (erase_var_value_direct var)
 end
 
 module State_list = Travesty.T_list.On_monad (State.Monad)
@@ -391,8 +450,11 @@ let make_global ~(is_atomic : bool) (initial_value : int)
     : Subject.t State.Monad.t =
   let open State.Monad.Let_syntax in
   let ty = int_type ~is_atomic ~is_global:true in
-  let%map var = State.gen_and_register_fresh_var ty in
-  let const =  Mini.Constant.Integer initial_value in
+  let%map var =
+    State.gen_and_register_fresh_var ty
+      ~value:(`Known_int initial_value)
+  in
+  let const = Mini.Constant.Integer initial_value in
   Subject.add_var_to_init subject var const
 ;;
 
@@ -533,6 +595,7 @@ let make_constant_store_on
   (new_value : int)
   (global : C_identifier.t)
   : Subject_program.t State.Monad.t =
+  let open State.Monad.Let_syntax in
   let src =
     Mini.Expression.constant (Mini.Constant.Integer new_value)
   in
@@ -542,6 +605,7 @@ let make_constant_store_on
   (* TODO(@MattWindsor91): memory models. *)
   let mo = Mem_order.Relaxed in
   let constant_store = Mini.Statement.atomic_store ~src ~dst ~mo in
+  let%bind () = State.erase_var_value global in
   insert_statement_randomly prog constant_store
 ;;
 
@@ -554,8 +618,6 @@ let make_constant_store (new_value : int) =
           ~f:(make_constant_store_on prog new_value)
       )
 ;;
-
-State.Monad.return
 
 let run_action (subject : Subject.t)
   : Action.t -> Subject.t State.Monad.t = function
