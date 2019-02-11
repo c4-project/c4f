@@ -153,58 +153,18 @@ end
 
 module State = Fuzzer_state
 module State_list = Travesty.T_list.On_monad (State.Monad)
-
-(** High-level actions that the mutator can take. *)
-module Action = struct
-  type t =
-    | Make_global of { is_atomic : bool; initial_value : int }
-    | Make_constant_store of { new_value : int }
-
-  module Quickcheck = struct
-    (*
-    let anonymise = function
-    | Make_global { is_atomic; initial_value } -> `A ((is_atomic, initial_value))
-    | Make_store  { new_value : int } -> `B new_value
-    ;;
-       *)
-
-    let deanonymise = function
-    | `A ((is_atomic, initial_value)) -> Make_global { is_atomic; initial_value }
-    | `B new_value -> Make_constant_store { new_value }
-    ;;
-
-    module G = Quickcheck.Generator
-
-    (** [gen_int32_as_int] generates an [int] whose domain is that of
-       [int32].  This is useful for making sure that we don't generate
-       integers that could overflow when running tests on 32-bit
-       platforms.  *)
-    let gen_int32_as_int : int G.t =
-      G.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x)) Int32.gen
-    ;;
-
-    let gen : t G.t =
-      G.map ~f:deanonymise
-        (
-          Quickcheck.Generator.variant2
-            (* Make_global *) (G.tuple2 G.bool gen_int32_as_int)
-            (* Make_store  *) (gen_int32_as_int)
-        )
-  end
-
-  include Quickcheck
-end
+module Action = Fuzzer_action
 
 (** [pick_action ()] is a stateful computation that randomly picks a
    new fuzzing action. *)
-let pick_action () : Action.t State.Monad.t =
+let pick_action () : Action.Payload.t State.Monad.t =
   State.Monad.with_rng
-    (Quickcheck.Generator.generate ~size:10 Action.gen)
+    (Quickcheck.Generator.generate ~size:10 Action.Payload.gen)
 ;;
 
 (** [pick_actions n] is a stateful computation that randomly picks [n]
    fuzzing actions. *)
-let pick_actions (num : int) : Action.t list State.Monad.t =
+let pick_actions (num : int) : Action.Payload.t list State.Monad.t =
   num
   |> List.init ~f:(Fn.const (pick_action ()))
   |> State_list.sequence_m
@@ -415,7 +375,7 @@ let make_constant_store (new_value : int) =
 ;;
 
 let run_action (subject : Subject.t)
-  : Action.t -> Subject.t State.Monad.t = function
+  : Action.Payload.t -> Subject.t State.Monad.t = function
   | Make_global { is_atomic; initial_value } ->
     make_global ~is_atomic initial_value subject
   | Make_constant_store { new_value } ->
