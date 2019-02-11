@@ -22,51 +22,29 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Fuzzer: high-level actions *)
-
 open Core_kernel
 
-include module type of Fuzzer_action_intf
-
-(** Enumeration of kinds of action. *)
-module Kind : sig
-  type t =
-    | Make_global
-    | Make_constant_store
-  ;;
-end
-
-module Table : sig
-  (** Type of weightings in an action table. *)
-  module Weight : sig
+module type S = sig
+  (** Random state on which this action depends. *)
+  module Random_state : sig
     type t
-    (** Opaque type of weights. *)
+    (** The type of any random state on which this action depends. *)
 
-    val create : int -> t Or_error.t
-    (** [create k] tries to build a weight from an integer [k]. *)
+    val gen : t Quickcheck.Generator.t
+    (** A generator for producing random state. *)
   end
 
-  module Row : sig
-    type t =
-      { action : (module S)
-      (** The action this row represents. *)
-      ; weight    : Weight.t
-      (** The weight given to this action. *)
-      }
-    ;;
-  end
+  val available
+    :  Fuzzer_subject.Test.t
+    -> bool Fuzzer_state.Monad.t
+  (** [available subject] is a stateful computation that, given
+     subject [subject] and the current state, decides whether this
+     action can run (given any member of [Random_state.t]). *)
 
-  type t = Row.t list
-  (** Type of action tables. *)
-end
-
-(** Fully-generated action payloads. *)
-module Payload : sig
-  type t =
-    | Make_global of { is_atomic : bool; initial_value : int }
-    | Make_constant_store of { new_value : int }
-  ;;
-
-  val gen : t Quickcheck.Generator.t
-  (** Generates a random [Payload]. *)
+  val run
+    :  Fuzzer_subject.Test.t
+    -> Random_state.t
+    -> Fuzzer_subject.Test.t Fuzzer_state.Monad.t
+    (** [run subject random] is a stateful computation that runs this action
+       on [subject] with random state [random]. *)
 end

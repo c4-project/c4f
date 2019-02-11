@@ -24,6 +24,8 @@
 
 open Core_kernel
 
+include Fuzzer_action_intf
+
 module Kind = struct
   type t =
     | Make_global
@@ -41,15 +43,14 @@ module Table = struct
     end)
 
   module Row = struct
-    type 'a t =
-      { kind      : Kind.t
-      ; weight    : Weight.t
-      ; predicate : 'a -> bool
+    type t =
+      { action : (module S)
+      ; weight : Weight.t
       }
     ;;
   end
 
-  type 'a t = 'a Row.t list
+  type t = Row.t list
 end
 
 module Payload = struct
