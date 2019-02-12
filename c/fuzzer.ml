@@ -262,7 +262,10 @@ module Constant_store : Action.S = struct
     in
     (* TODO(@MattWindsor91): memory models. *)
     let mo = Mem_order.Relaxed in
-    let constant_store = Mini.Statement.atomic_store ~src ~dst ~mo in
+    let constant_store =
+      Mini.Statement.atomic_store
+        (Mini.Atomic_store.make ~src ~dst ~mo)
+    in
     let%bind () = State.Monad.erase_var_value global in
     insert_statement_randomly prog constant_store
   ;;

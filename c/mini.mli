@@ -118,7 +118,7 @@ module Lvalue : sig
       with type t := t and type Elt.t = Identifier.t
   (** Traversing over identifiers in lvalues. *)
 
-  include Quickcheck.S with type t := t
+  include Quickcheckable.S with type t := t
 
   val underlying_variable : t -> Identifier.t
   (** [underlying_variable t] gets the underlying variable name of
@@ -145,6 +145,7 @@ module Address : sig
      [t]. *)
 end
 
+(** An expression. *)
 module Expression : sig
   type t [@@deriving sexp]
 
@@ -177,6 +178,78 @@ module Expression : sig
   (** [lvalue lv] lifts lvalue [lv] to an expression. *)
 end
 
+(** A non-atomic assignment. *)
+module Assign : sig
+  type t [@@deriving sexp]
+
+  (** {3 Traversals} *)
+
+  module On_addresses : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Address.t
+  (** Traversing over atomic-action addresses in assignments. *)
+
+  module On_lvalues : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Lvalue.t
+  (** Traversing over lvalues in assignments. *)
+
+  (** {3 Constructors} *)
+
+  val make : lvalue:Lvalue.t -> rvalue:Expression.t -> t
+  (** [make ~lvalue ~rvalue] constructs an assignment of [rvalue] to
+     [lvalue]. *)
+end
+
+(** An atomic store operation. *)
+module Atomic_store : sig
+  type t [@@deriving sexp]
+
+  (** {3 Traversals} *)
+
+  module On_addresses : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Address.t
+  (** Traversing over atomic-action addresses in atomic stores. *)
+
+  module On_lvalues : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Lvalue.t
+  (** Traversing over lvalues in atomic stores. *)
+
+  (** {3 Constructors} *)
+
+  val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
+  (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
+      expression with source [src] and memory order [mo]. *)
+end
+
+(** An atomic compare-exchange operation. *)
+module Atomic_cmpxchg : sig
+  type t [@@deriving sexp]
+
+  (** {3 Traversals} *)
+
+  module On_addresses : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Address.t
+  (** Traversing over atomic-action addresses in atomic
+     compare-exchanges. *)
+
+  module On_lvalues : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Lvalue.t
+  (** Traversing over lvalues in atomic compare-exchanges. *)
+
+  (** {3 Constructors} *)
+
+  val make
+    :  obj:Address.t
+    -> expected:Address.t
+    -> desired:Expression.t
+    -> succ:Mem_order.t
+    -> fail:Mem_order.t
+    -> t
+  (** [make ~obj ~expected ~desired ~succ ~fail] constructs an
+      explicit strong compare-exchange with object [obj], expected
+      value store [expected], desired final value [desired], and
+      memory orders [succ] on success and [fail] on failure. *)
+end
+
 (** A statement.
 
     We treat some things that are technically expressions in C as
@@ -201,25 +274,14 @@ module Statement : sig
 
   (** {3 Constructors} *)
 
-  val assign : lvalue:Lvalue.t -> rvalue:Expression.t -> t
-  (** [assign ~lvalue ~rvalue] lifts a C assignment to a statement. *)
+  val assign : Assign.t -> t
+  (** [assign a] lifts an assignment [a] to a statement. *)
 
-  val atomic_cmpxchg
-    :  obj:Address.t
-    -> expected:Address.t
-    -> desired:Expression.t
-    -> succ:Mem_order.t
-    -> fail:Mem_order.t
-    -> t
-  (** [atomic_cmpxchg ~obj ~expected ~desired ~succ ~fail] constructs an
-      explicit strong compare-exchange with object [obj], expected
-      value store [expected], desired final value [desired], and
-      memory orders [succ] on success and [fail] on failure. *)
+  val atomic_store : Atomic_store.t -> t
+  (** [atomic_store a] lifts an atomic store [a] to a statement. *)
 
-  val atomic_store
-    : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
-  (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
-      expression with source [src] and memory order [mo]. *)
+  val atomic_cmpxchg : Atomic_cmpxchg.t -> t
+  (** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a statement. *)
 
   val if_stm
     :  cond:Expression.t

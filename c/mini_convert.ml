@@ -381,7 +381,8 @@ let model_atomic_store
     let%map dst = expr_to_address raw_dst
     and     src = expr raw_src
     and     mo  = expr_to_memory_order raw_mo
-    in Statement.atomic_store ~dst ~src ~mo
+    in Statement.atomic_store
+      (Atomic_store.make ~dst ~src ~mo)
   | args ->
     Or_error.error_s
       [%message "Invalid arguments to atomic_store_explicit"
@@ -399,7 +400,7 @@ let model_atomic_cmpxchg
     and     succ     = expr_to_memory_order raw_succ     (* memory_order *)
     and     fail     = expr_to_memory_order raw_fail     (* memory_order *)
     in Statement.atomic_cmpxchg
-      ~obj ~expected ~desired ~succ ~fail
+      (Atomic_cmpxchg.make ~obj ~expected ~desired ~succ ~fail)
   | args ->
     Or_error.error_s
       [%message
@@ -421,7 +422,7 @@ let expr_stm : Ast.Expr.t -> Statement.t Or_error.t = function
     let open Or_error.Let_syntax in
     let%map lvalue = expr_to_lvalue l
     and     rvalue = expr r
-    in Statement.assign ~lvalue ~rvalue
+    in Statement.assign (Assign.make ~lvalue ~rvalue)
   | Call { func; arguments } -> call expr_stm_call_table func arguments
   | Brackets _ | Constant _
   | Prefix _ | Postfix _ | Binary _ | Ternary _ | Cast _
@@ -495,8 +496,9 @@ let%expect_test "model atomic_store_explicit" =
     ];
   [%expect {|
       (Ok
-       (Atomic_store (src (Constant (Integer 42)))
-        (dst (Ref (Lvalue (Variable x)))) (mo memory_order_relaxed))) |}]
+       (Atomic_store
+        ((src (Constant (Integer 42))) (dst (Ref (Lvalue (Variable x))))
+         (mo memory_order_relaxed)))) |}]
 ;;
 
 let%expect_test "model atomic cmpxchg" =
@@ -523,9 +525,10 @@ let%expect_test "model atomic cmpxchg" =
     ];
   [%expect {|
       (Ok
-       (Atomic_cmpxchg (obj (Ref (Lvalue (Variable x))))
-        (expected (Ref (Lvalue (Variable y)))) (desired (Constant (Integer 42)))
-        (succ memory_order_relaxed) (fail memory_order_relaxed))) |}]
+       (Atomic_cmpxchg
+        ((obj (Ref (Lvalue (Variable x)))) (expected (Ref (Lvalue (Variable y))))
+         (desired (Constant (Integer 42))) (succ memory_order_relaxed)
+         (fail memory_order_relaxed)))) |}]
 ;;
 
 

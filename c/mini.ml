@@ -410,23 +410,184 @@ module Expression = struct
       (Lvalue.On_identifiers)
 end
 
+module Assign = struct
+  type t =
+    { lvalue : Lvalue.t
+    ; rvalue : Expression.t
+    }
+    [@@deriving sexp, fields, make]
+  ;;
+
+  module Base_map (M : Monad.S) = struct
+    module F = Travesty.Traversable.Helpers (M)
+    let bmap (assign : t)
+        ~(lvalue : Lvalue.t F.traversal)
+        ~(rvalue : Expression.t F.traversal)
+      : t M.t =
+      Fields.fold
+        ~init:(M.return assign)
+        ~lvalue:(F.proc_field lvalue)
+        ~rvalue:(F.proc_field rvalue)
+    ;;
+  end
+
+  module On_lvalues : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Lvalue
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module E = Expression.On_lvalues.On_monad (M)
+
+        let map_m x ~f = B.bmap x ~lvalue:f ~rvalue:(E.map_m ~f)
+      end
+    end)
+
+  module On_addresses : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Address
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module E = Expression.On_addresses.On_monad (M)
+
+        let map_m x ~f = B.bmap x ~lvalue:M.return ~rvalue:(E.map_m ~f)
+      end
+    end)
+end
+
+module Atomic_store = struct
+  type t =
+    { src : Expression.t
+    ; dst : Address.t
+    ; mo  : Mem_order.t
+    }
+    [@@deriving sexp, fields, make]
+  ;;
+
+  module Base_map (M : Monad.S) = struct
+    module F = Travesty.Traversable.Helpers (M)
+    let bmap (store : t)
+        ~(src : Expression.t F.traversal)
+        ~(dst : Address.t    F.traversal)
+        ~(mo  : Mem_order.t  F.traversal)
+      : t M.t =
+      Fields.fold
+        ~init:(M.return store)
+        ~src:(F.proc_field src)
+        ~dst:(F.proc_field dst)
+        ~mo:(F.proc_field mo)
+    ;;
+  end
+
+  module On_lvalues : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Lvalue
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module E = Expression.On_lvalues.On_monad (M)
+        module A = Address.On_lvalues.On_monad (M)
+
+        let map_m x ~f =
+          B.bmap x ~src:(E.map_m ~f) ~dst:(A.map_m ~f) ~mo:(M.return)
+      end
+    end)
+
+  module On_addresses : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Address
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module E = Expression.On_addresses.On_monad (M)
+
+        let map_m x ~f =
+          B.bmap x ~src:(E.map_m ~f) ~dst:f ~mo:(M.return)
+      end
+    end)
+end
+
+module Atomic_cmpxchg = struct
+  type t =
+    { obj      : Address.t
+    ; expected : Address.t
+    ; desired  : Expression.t
+    ; succ     : Mem_order.t
+    ; fail     : Mem_order.t
+    }
+    [@@deriving sexp, fields, make]
+
+  module Base_map (M : Monad.S) = struct
+    module F = Travesty.Traversable.Helpers (M)
+    let bmap (cmpxchg : t)
+        ~(obj      : Address.t    F.traversal)
+        ~(expected : Address.t    F.traversal)
+        ~(desired  : Expression.t F.traversal)
+        ~(succ     : Mem_order.t  F.traversal)
+        ~(fail     : Mem_order.t  F.traversal)
+      : t M.t =
+      Fields.fold
+        ~init:(M.return cmpxchg)
+        ~obj:(F.proc_field obj)
+        ~expected:(F.proc_field expected)
+        ~desired:(F.proc_field desired)
+        ~succ:(F.proc_field succ)
+        ~fail:(F.proc_field fail)
+    ;;
+  end
+
+  module On_lvalues : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Lvalue
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module E = Expression.On_lvalues.On_monad (M)
+        module A = Address.On_lvalues.On_monad (M)
+
+        let map_m x ~f =
+          B.bmap x
+            ~obj:(A.map_m ~f) ~expected:(A.map_m ~f)
+            ~desired:(E.map_m ~f)
+            ~succ:(M.return) ~fail:(M.return)
+      end
+    end)
+
+  module On_addresses : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Address
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        module E = Expression.On_addresses.On_monad (M)
+
+        let map_m x ~f =
+          B.bmap x
+            ~obj:f ~expected:f
+            ~desired:(E.map_m ~f)
+            ~succ:(M.return) ~fail:(M.return)
+      end
+    end)
+end
+
 module Statement = struct
   type t =
-    | Assign of { lvalue : Lvalue.t
-                ; rvalue : Expression.t
-                }
-    | Atomic_store of
-        { src : Expression.t
-        ; dst : Address.t
-        ; mo  : Mem_order.t
-        }
-    | Atomic_cmpxchg of
-        { obj      : Address.t
-        ; expected : Address.t
-        ; desired  : Expression.t
-        ; succ     : Mem_order.t
-        ; fail     : Mem_order.t
-        }
+    | Assign of Assign.t
+    | Atomic_store of Atomic_store.t
+    | Atomic_cmpxchg of Atomic_cmpxchg.t
     | Nop
     | If_stm of { cond     : Expression.t
                 ; t_branch : t list
@@ -486,24 +647,9 @@ module Statement = struct
     let bmap x ~assign ~atomic_store ~atomic_cmpxchg ~if_stm =
       let open M.Let_syntax in
       Variants.map x
-        ~assign:(
-          fun v ~lvalue ~rvalue ->
-            let%map (lvalue', rvalue') = assign ~lvalue ~rvalue in
-            v.constructor ~lvalue:lvalue' ~rvalue:rvalue'
-        )
-        ~atomic_store:(
-          fun v ~src ~dst ~mo ->
-            let%map (src', dst') = atomic_store ~src ~dst in
-            v.constructor ~src:src' ~dst:dst' ~mo
-        )
-        ~atomic_cmpxchg:(
-          fun v ~obj ~expected ~desired ~succ ~fail ->
-            let%map (obj', expected', desired') =
-              atomic_cmpxchg ~obj ~expected ~desired in
-            v.constructor
-              ~obj:obj' ~expected:expected' ~desired:desired'
-              ~succ ~fail
-        )
+        ~assign:(F.proc_variant1 assign)
+        ~atomic_store:(F.proc_variant1 atomic_store)
+        ~atomic_cmpxchg:(F.proc_variant1 atomic_cmpxchg)
         ~if_stm:(
           fun v ~cond ~t_branch ~f_branch ->
             let%map (cond', t_branch', f_branch') =
@@ -525,34 +671,19 @@ module Statement = struct
 
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
-        module A = Address.On_lvalues.On_monad (M)
         module E = Expression.On_lvalues.On_monad (M)
         module L = Travesty.T_list.On_monad (M)
 
-        let both (x : 'a M.t) (y : 'b M.t) : ('a * 'b) M.t =
-          let open M.Let_syntax in
-          let%bind x' = x in
-          let%map  y' = y in
-          (x', y')
-        ;;
+        module Asn = Assign.On_lvalues.On_monad (M)
+        module Sto = Atomic_store.On_lvalues.On_monad (M)
+        module Cxg = Atomic_cmpxchg.On_lvalues.On_monad (M)
 
         let rec map_m x ~f =
           let open M.Let_syntax in
           B.bmap x
-            ~assign:(
-              fun ~lvalue ~rvalue -> both (f lvalue) (E.map_m ~f rvalue)
-            )
-            ~atomic_store:(
-              fun ~src ~dst ->
-                both (E.map_m ~f src) (A.map_m ~f dst)
-            )
-            ~atomic_cmpxchg:(
-              fun ~obj ~expected ~desired ->
-                let%bind obj'      = A.map_m ~f obj      in
-                let%bind expected' = A.map_m ~f expected in
-                let%map  desired'  = E.map_m ~f desired  in
-                (obj', expected', desired')
-            )
+            ~assign:(Asn.map_m ~f)
+            ~atomic_store:(Sto.map_m ~f)
+            ~atomic_cmpxchg:(Cxg.map_m ~f)
             ~if_stm:(
               fun ~cond ~t_branch ~f_branch ->
                 let%bind cond'     = E.map_m ~f cond in
@@ -576,31 +707,18 @@ module Statement = struct
         module E = Expression.On_addresses.On_monad (M)
         module L = Travesty.T_list.On_monad (M)
 
-        let both (x : 'a M.t) (y : 'b M.t) : ('a * 'b) M.t =
-          let open M.Let_syntax in
-          let%bind x' = x in
-          let%map  y' = y in
-          (x', y')
-        ;;
+        module Asn = Assign.On_addresses.On_monad (M)
+        module Sto = Atomic_store.On_addresses.On_monad (M)
+        module Cxg = Atomic_cmpxchg.On_addresses.On_monad (M)
 
         let rec map_m x ~f =
           let open M.Let_syntax in
           B.bmap x
-            ~assign:(fun ~lvalue ~rvalue ->
-                both (M.return lvalue) (E.map_m ~f rvalue))
-            ~atomic_store:(
-              fun ~src ~dst -> both (E.map_m ~f src) (f dst)
-            )
-            ~atomic_cmpxchg:(
-              fun ~obj ~expected ~desired ->
-                let%bind obj'      =          f obj      in
-                let%bind expected' =          f expected in
-                let%map  desired'  = E.map_m ~f desired  in
-                (obj', expected', desired')
-            )
+            ~assign:(Asn.map_m ~f)
+            ~atomic_store:(Sto.map_m ~f)
+            ~atomic_cmpxchg:(Cxg.map_m ~f)
             ~if_stm:(
               fun ~cond ~t_branch ~f_branch ->
-                let open M.Let_syntax in
                 let%bind cond'     = E.map_m ~f cond in
                 let%bind t_branch' = L.map_m t_branch ~f:(map_m ~f) in
                 let%map  f_branch' = L.map_m f_branch ~f:(map_m ~f) in
