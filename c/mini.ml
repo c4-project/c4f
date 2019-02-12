@@ -53,11 +53,22 @@ let list_insert (xs : 'a list) (value : 'a) (at : int) : 'a list Or_error.t =
 
 module Type = struct
   module Basic = struct
-    type t =
-      | Int
-      | Atomic_int
-    [@@deriving sexp, variants, eq, compare]
-    ;;
+    module M = struct
+      type t =
+        | Int
+        | Atomic_int
+      [@@deriving variants, enum]
+      ;;
+
+      let table =
+        [ Int       , "int"
+        ; Atomic_int, "atomic_int"
+        ]
+      ;;
+    end
+
+    include M
+    include Enum.Extend_table (M)
   end
 
   type t =
@@ -82,6 +93,32 @@ module Type = struct
   let is_atomic (ty : t) : bool =
     Basic.equal Atomic_int (underlying_basic_type ty)
   ;;
+
+  module Quickcheck : Quickcheckable.S with type t := t = struct
+    module G = Core_kernel.Quickcheck.Generator
+    module O = Core_kernel.Quickcheck.Observer
+    module S = Core_kernel.Quickcheck.Shrinker
+
+    let anonymise = function
+      | Normal     b -> `A b
+      | Pointer_to b -> `B b
+    ;;
+
+    let deanonymise = function
+      | `A b -> Normal b
+      | `B b -> Pointer_to b
+    ;;
+
+    let gen      : t G.t =
+      G.map (G.variant2 Basic.gen Basic.gen) ~f:deanonymise
+    let obs      : t O.t =
+      O.unmap (O.variant2 Basic.obs Basic.obs) ~f:anonymise
+    let shrinker : t S.t =
+      S.map (S.variant2 Basic.shrinker Basic.shrinker)
+        ~f:deanonymise ~f_inverse:anonymise
+    ;;
+  end
+  include Quickcheck
 end
 
 module Initialiser = struct
@@ -91,6 +128,31 @@ module Initialiser = struct
     }
   [@@deriving sexp, make, eq]
   ;;
+
+  module Quickcheck : Quickcheckable.S with type t := t = struct
+    module G = Core_kernel.Quickcheck.Generator
+    module O = Core_kernel.Quickcheck.Observer
+    module S = Core_kernel.Quickcheck.Shrinker
+
+    let to_tuple { ty; value } = ( ty, value )
+    let of_tuple ( ty, value ) = { ty; value }
+
+    let gen : t G.t =
+      G.map (G.tuple2 Type.gen (Option.gen (Constant.gen)))
+        ~f:of_tuple
+    ;;
+
+    let obs : t O.t =
+      O.unmap (O.tuple2 Type.obs (Option.obs (Constant.obs)))
+        ~f:to_tuple
+    ;;
+
+    let shrinker : t S.t =
+      S.map (S.tuple2 Type.shrinker (Option.shrinker (Constant.shrinker)))
+        ~f:of_tuple ~f_inverse:to_tuple
+    ;;
+  end
+  include Quickcheck
 
   module Named = struct
     type nonrec t = t named
@@ -132,6 +194,52 @@ module Lvalue = struct
     | Variable id -> id
     | Deref    t  -> underlying_variable t
   ;;
+
+  module Quickcheck : Quickcheckable.S with type t := t = struct
+    module G = Core_kernel.Quickcheck.Generator
+    module O = Core_kernel.Quickcheck.Observer
+    module S = Core_kernel.Quickcheck.Shrinker
+
+    let anonymise = function
+      | Variable v -> `A v
+      | Deref    d -> `B d
+    ;;
+
+    let deanonymise = function
+      | `A v -> Variable v
+      | `B d -> Deref    d
+    ;;
+
+    let gen : t G.t =
+      Quickcheck.Generator.recursive_union
+        [ G.map C_identifier.gen ~f:variable ]
+        ~f:(fun mu -> [ G.map mu ~f:deref ])
+    ;;
+
+    let obs : t O.t =
+      O.fixed_point (fun mu ->
+          O.unmap (O.variant2 C_identifier.obs mu)
+            ~f:anonymise
+        )
+    ;;
+
+    let shrinker : t S.t =
+      S.fixed_point (fun mu ->
+          S.map (S.variant2 C_identifier.shrinker mu)
+            ~f:deanonymise ~f_inverse:anonymise
+        )
+    ;;
+  end
+  include Quickcheck
+
+  let%test_unit "gen: distinctiveness" =
+    Core_kernel.Quickcheck.test_distinct_values
+      ~sexp_of:[%sexp_of: t]
+      ~trials:20
+      ~distinct_values:5
+      ~compare:[%compare: t]
+      gen
+  ;;
 end
 
 module Address = struct
@@ -157,10 +265,67 @@ module Address = struct
       end
   end)
 
+  module Quickcheck : Quickcheckable.S with type t := t = struct
+    module G = Core_kernel.Quickcheck.Generator
+    module O = Core_kernel.Quickcheck.Observer
+    module S = Core_kernel.Quickcheck.Shrinker
+
+    let anonymise = function
+      | Lvalue v -> `A v
+      | Ref    d -> `B d
+    ;;
+
+    let deanonymise = function
+      | `A v -> Lvalue v
+      | `B d -> Ref    d
+    ;;
+
+    let gen : t G.t =
+      Quickcheck.Generator.recursive_union
+        [ G.map Lvalue.gen ~f:lvalue ]
+        ~f:(fun mu -> [ G.map mu ~f:ref ])
+    ;;
+
+    let obs : t O.t =
+      O.fixed_point (fun mu ->
+          O.unmap (O.variant2 Lvalue.obs mu)
+            ~f:anonymise
+        )
+    ;;
+
+    let shrinker : t S.t =
+      S.fixed_point (fun mu ->
+          S.map (S.variant2 Lvalue.shrinker mu)
+            ~f:deanonymise ~f_inverse:anonymise
+        )
+    ;;
+  end
+  include Quickcheck
+
   let rec underlying_variable : t -> Identifier.t = function
     | Lvalue lv -> Lvalue.underlying_variable lv
     | Ref    t  -> underlying_variable t
   ;;
+
+  let%test_unit "underlying_variable: preserved by ref" =
+    Core_kernel.Quickcheck.test
+      ~shrinker
+      ~sexp_of:[%sexp_of: t]
+      gen
+      ~f:(fun x ->
+        [%test_eq: Identifier.t] ~here:[[%here]]
+          (underlying_variable x)
+          (underlying_variable (ref x))
+      )
+  ;;
+
+  let%expect_test "underlying_variable: nested example" =
+    let example =
+      Ref (Ref (Lvalue (Lvalue.Deref (Lvalue.Variable (C_identifier.create_exn "yorick")))))
+    in
+    let var = underlying_variable example in
+    Fmt.pr "%a@." Identifier.pp var;
+    [%expect {| yorick |}]
 end
 
 module Expression = struct

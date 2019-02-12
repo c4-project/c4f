@@ -56,7 +56,7 @@ let%expect_test "int_type: combinatoric" =
         ] : Mini.Type.t list
       )
     ];
-  [%expect {| ((Normal Int) (Pointer_to Int) (Normal Atomic_int) (Pointer_to Atomic_int)) |}]
+  [%expect {| ((Normal int) (Pointer_to int) (Normal atomic_int) (Pointer_to atomic_int)) |}]
 ;;
 
 let random_index (srng : Splittable_random.State.t) (xs : 'a list)

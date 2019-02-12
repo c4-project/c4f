@@ -50,7 +50,7 @@ type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
 module Type : sig
   (** Primitive types. *)
   module Basic : sig
-    type t [@@deriving eq, sexp, compare]
+    type t
     (** Opaque type of basic types. *)
 
     val int : t
@@ -58,9 +58,13 @@ module Type : sig
 
     val atomic_int : t
     (** [atomic_int] is the atomic_int type. *)
+
+    include Enum.Extension_table with type t := t
   end
 
   type t [@@deriving eq, sexp, compare]
+
+  include Quickcheckable.S with type t := t
 
   val normal : Basic.t -> t
   (** [normal ty] lifts a basic type [ty] to a scalar type. *)
@@ -89,6 +93,8 @@ module Initialiser : sig
   val make : ty:Type.t -> ?value:Constant.t -> unit -> t
   (** [make ~ty ?value ()] makes an initialiser with type [ty] and
       optional initialised value [value]. *)
+
+  include Quickcheck.S with type t := t
 end
 
 (** Somewhere assignable (a variable, or dereference thereof). *)
@@ -111,6 +117,8 @@ module Lvalue : sig
     : Travesty.Traversable.S0_container
       with type t := t and type Elt.t = Identifier.t
   (** Traversing over identifiers in lvalues. *)
+
+  include Quickcheck.S with type t := t
 
   val underlying_variable : t -> Identifier.t
   (** [underlying_variable t] gets the underlying variable name of
