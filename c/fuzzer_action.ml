@@ -44,50 +44,114 @@ module Table = struct
 
   module Row = struct
     type t =
-      { action : (module S)
+      { action : (module S) sexp_opaque
       ; weight : Weight.t
       }
+      [@@deriving sexp, fields]
+    ;;
+
+    let some_if_available
+        (row : t)
+        ~(subject : Fuzzer_subject.Test.t)
+      : t option Fuzzer_state.Monad.t =
+      let open Fuzzer_state.Monad.Let_syntax in
+      let (module A) = row.action in
+      let%map is_available = A.available subject in
+      let is_weight_nonzero = Int.(0 < (Weight.raw row.weight)) in
+      Option.some_if (is_available && is_weight_nonzero) row
+    ;;
+
+    let compare_weights : t -> t -> int =
+      Travesty.T_fn.on
+        (Fn.compose Weight.raw weight)
+        Int.compare
     ;;
   end
 
   type t = Row.t list
-end
 
-module Payload = struct
-  type t =
-    | Make_global of { is_atomic : bool; initial_value : int }
-    | Make_constant_store of { new_value : int }
+  module Cumulative = struct
+    include Validated.Make (struct
+        type t = Row.t list [@@deriving sexp]
 
-  module Quickcheck = struct
-    (*
-    let anonymise = function
-    | Make_global { is_atomic; initial_value } -> `A ((is_atomic, initial_value))
-    | Make_store  { new_value : int } -> `B new_value
-    ;;
-       *)
+        let here = [%here]
+        let validate : t Validate.check =
+          Validate.booltest
+            (List.is_sorted ~compare:Row.compare_weights)
+            ~if_false:"Weights aren't cumulative"
+      end)
 
-    let deanonymise = function
-    | `A ((is_atomic, initial_value)) -> Make_global { is_atomic; initial_value }
-    | `B new_value -> Make_constant_store { new_value }
-    ;;
-
-    module G = Quickcheck.Generator
-
-    (** [gen_int32_as_int] generates an [int] whose domain is that of
-       [int32].  This is useful for making sure that we don't generate
-       integers that could overflow when running tests on 32-bit
-       platforms.  *)
-    let gen_int32_as_int : int G.t =
-      G.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x)) Int32.gen
+    let from_table_inner : Row.t list -> (int * Row.t list) =
+      Travesty.T_list.fold_map
+        ~init:0
+        ~f:(fun total row ->
+            let this_weight = Weight.raw row.Row.weight in
+            let total' = total + this_weight in
+            total', { Row.weight = Weight.create_exn total'
+                    ; action = row.Row.action
+                    }
+          )
     ;;
 
-    let gen : t G.t =
-      G.map ~f:deanonymise
-        (
-          Quickcheck.Generator.variant2
-            (* Make_global *) (G.tuple2 G.bool gen_int32_as_int)
-            (* Make_store  *) (gen_int32_as_int)
-        )
+    let from_table (table : Row.t list) : int * t =
+      let (max, raw) = from_table_inner table in
+      max, create_exn raw
+    ;;
+
+    let get (c_table : t) (position : int) : (module S) option =
+      let possible =
+        List.drop_while (raw c_table)
+          ~f:(fun { weight; _ } -> Weight.raw weight < position)
+      in
+      Option.map ~f:(Row.action) (List.hd possible)
+    ;;
+
   end
-  include Quickcheck
+
+  module State_list = Travesty.T_list.On_monad(Fuzzer_state.Monad)
+
+  (** [to_available_only table subject] is a stateful action that
+     filters [table] to contain only those rows whose actions are
+     available on [subject]. *)
+  let to_available_only (table : t) (subject : Fuzzer_subject.Test.t)
+    : t Fuzzer_state.Monad.t =
+    let open Fuzzer_state.Monad.Let_syntax in
+    let%map options =
+      State_list.map_m ~f:(Row.some_if_available ~subject) table
+    in
+    List.filter_opt options
+  ;;
+
+
+  let pick_from_cumulative_table
+      (max : int) (c_table : Cumulative.t)
+      (rng : Splittable_random.State.t)
+    : (module S) Fuzzer_state.Monad.t =
+    let position = Splittable_random.int rng ~lo:0 ~hi:(max - 1) in
+    Cumulative.get c_table position
+    |> Result.of_option
+      ~error:(
+        Error.create_s
+          [%message
+            "Couldn't pick action from cumulative table: is the table empty?"
+              ~here:[%here]
+              ~table:(c_table : Cumulative.t)
+              ~position:(position : int)
+              ~max:(max : int)
+          ]
+      )
+    |> Fuzzer_state.Monad.Monadic.return
+  ;;
+
+  (** [pick table subject] is a stateful action that picks a
+     weighted-random action module from [table] that is available on
+     [subject]. *)
+  let pick (table : t) (subject : Fuzzer_subject.Test.t)
+    : (module S) Fuzzer_state.Monad.t =
+    let open Fuzzer_state.Monad.Let_syntax in
+    let%bind available = to_available_only table subject in
+    let (max, c_table) = Cumulative.from_table available in
+    Fuzzer_state.Monad.with_rng_m
+      (pick_from_cumulative_table max c_table)
+  ;;
 end

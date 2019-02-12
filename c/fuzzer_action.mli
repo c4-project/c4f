@@ -44,6 +44,13 @@ module Table : sig
 
     val create : int -> t Or_error.t
     (** [create k] tries to build a weight from an integer [k]. *)
+
+    val create_exn : int -> t
+    (** [create_exn k] tries to build a weight from an integer [k],
+        throwing an exception on failure. *)
+
+    val raw : t -> int
+    (** [raw w] converts [w] to an integer. *)
   end
 
   module Row : sig
@@ -58,15 +65,12 @@ module Table : sig
 
   type t = Row.t list
   (** Type of action tables. *)
-end
 
-(** Fully-generated action payloads. *)
-module Payload : sig
-  type t =
-    | Make_global of { is_atomic : bool; initial_value : int }
-    | Make_constant_store of { new_value : int }
-  ;;
-
-  val gen : t Quickcheck.Generator.t
-  (** Generates a random [Payload]. *)
+  val pick
+    :  t
+    -> Fuzzer_subject.Test.t
+    -> (module S) Fuzzer_state.Monad.t
+    (** [pick table subject] is a stateful computation that selects a
+       random viable action to apply to [subject].  It does not run
+        the action itself. *)
 end
