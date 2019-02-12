@@ -101,15 +101,15 @@ let ensure_statements
     )
 ;;
 
-let defined_types : (C_identifier.t, Type.basic) List.Assoc.t Lazy.t =
+let defined_types : (C_identifier.t, Type.Basic.t) List.Assoc.t Lazy.t =
   lazy
-    [ C_identifier.of_string "atomic_int", Type.atomic_int ]
+    [ C_identifier.of_string "atomic_int", Type.Basic.atomic_int ]
 
 let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t ] list)
-  : Type.basic Or_error.t =
+  : Type.Basic.t Or_error.t =
   let open Or_error.Let_syntax in
   match%bind Travesty.T_list.one quals with
-  | `Int -> return Type.int
+  | `Int -> return Type.Basic.int
   | `Defined_type t ->
     t
     |> List.Assoc.find ~equal:C_identifier.equal
@@ -162,10 +162,6 @@ let value_of_initialiser
     Or_error.error_string "List initialisers not supported"
 ;;
 
-let make_type (is_pointer : bool) : Type.basic -> Type.t =
-  if is_pointer then Type.pointer_to else Type.normal
-;;
-
 (** [decl d] translates a declaration into an identifier-initialiser
     pair. *)
 let decl (d : Ast.Decl.t)
@@ -177,7 +173,7 @@ let decl (d : Ast.Decl.t)
   let%map  value = Travesty.T_option.With_errors.map_m idecl.initialiser
       ~f:value_of_initialiser
   in
-  let ty = make_type is_pointer basic_type in
+  let ty = Type.of_basic ~is_pointer basic_type in
   (name, Initialiser.make ~ty ?value ())
 ;;
 
@@ -213,7 +209,7 @@ let param_decl : Ast.Param_decl.t -> Type.t named Or_error.t =
     let%map basic_type       = qualifiers_to_basic_type qualifiers
     and     (id, is_pointer) = declarator_to_id declarator
     in
-    let ty = make_type is_pointer basic_type in (id, ty)
+    let ty = Type.of_basic ~is_pointer basic_type in (id, ty)
 ;;
 
 let param_type_list : Ast.Param_type_list.t ->

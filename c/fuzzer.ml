@@ -42,9 +42,8 @@ let make_rng : int option -> Splittable_random.State.t = function
 
 let int_type ~(is_atomic : bool) ~(is_global : bool) : Mini.Type.t =
   let module T = Mini.Type in
-  let basic = if is_atomic then T.atomic_int else T.int in
-  let lift  = if is_global then T.pointer_to else T.normal in
-  lift basic
+  let basic = if is_atomic then T.Basic.atomic_int else T.Basic.int in
+  T.of_basic basic ~is_pointer:is_global
 ;;
 
 let%expect_test "int_type: combinatoric" =

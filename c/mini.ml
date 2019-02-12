@@ -52,19 +52,25 @@ let list_insert (xs : 'a list) (value : 'a) (at : int) : 'a list Or_error.t =
 ;;
 
 module Type = struct
-  type basic =
-    | Int
-    | Atomic_int
-  [@@deriving sexp, variants, eq, compare]
-  ;;
+  module Basic = struct
+    type t =
+      | Int
+      | Atomic_int
+    [@@deriving sexp, variants, eq, compare]
+    ;;
+  end
 
   type t =
-    | Normal of basic
-    | Pointer_to of basic
+    | Normal of Basic.t
+    | Pointer_to of Basic.t
   [@@deriving sexp, variants, eq, compare]
   ;;
 
-  let underlying_basic_type : t -> basic = function
+  let of_basic (ty : Basic.t) ~(is_pointer : bool) : t =
+    (if is_pointer then pointer_to else normal) ty
+  ;;
+
+  let underlying_basic_type : t -> Basic.t = function
     | Normal x | Pointer_to x -> x
   ;;
 
@@ -74,7 +80,7 @@ module Type = struct
   ;;
 
   let is_atomic (ty : t) : bool =
-    equal_basic Atomic_int (underlying_basic_type ty)
+    Basic.equal Atomic_int (underlying_basic_type ty)
   ;;
 end
 
@@ -561,7 +567,7 @@ module Reify = struct
     Assign (Constant value)
   ;;
 
-  let basic_type_to_spec : Type.basic -> [> Ast.Type_spec.t] = function
+  let basic_type_to_spec : Type.Basic.t -> [> Ast.Type_spec.t] = function
     | Int -> `Int
     | Atomic_int -> `Defined_type (C_identifier.of_string "atomic_int")
   ;;
