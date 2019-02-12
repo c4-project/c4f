@@ -310,7 +310,8 @@ let model_atomic_load_explicit
     let open Or_error.Let_syntax in
     let%map src = expr_to_address raw_src
     and     mo  = expr_to_memory_order raw_mo
-    in Expression.atomic_load ~src ~mo
+    in Expression.atomic_load
+      (Atomic_load.make ~src ~mo)
   | args ->
     Or_error.error_s
       [%message "Invalid arguments to atomic_load_explicit"
@@ -371,7 +372,7 @@ let%expect_test "model atomic_load_explicit" =
     ];
   [%expect {|
       (Ok
-       (Atomic_load (src (Ref (Lvalue (Variable x)))) (mo memory_order_seq_cst))) |}]
+       (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_seq_cst)))) |}]
 ;;
 
 let model_atomic_store

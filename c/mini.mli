@@ -145,9 +145,33 @@ module Address : sig
      [t]. *)
 end
 
+
+(** An atomic load operation. *)
+module Atomic_load : sig
+  type t [@@deriving sexp]
+
+  (** {3 Traversals} *)
+
+  module On_addresses : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Address.t
+  (** Traversing over atomic-action addresses in atomic loads. *)
+
+  module On_lvalues : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Lvalue.t
+  (** Traversing over lvalues in atomic loads. *)
+
+  (** {3 Constructors} *)
+
+  val make : src:Address.t -> mo:Mem_order.t -> t
+  (** [atomic_load ~src ~dst ~mo] constructs an explicit atomic load
+      expression with source [src] and memory order [mo]. *)
+end
+
 (** An expression. *)
 module Expression : sig
   type t [@@deriving sexp]
+
+  (** {3 Traversals} *)
 
   module On_addresses
     : Travesty.Traversable.S0_container
@@ -164,9 +188,10 @@ module Expression : sig
         with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in expressions. *)
 
-  val atomic_load : src:Address.t -> mo:Mem_order.t -> t
-  (** [atomic_load ~src ~mo] constructs an explicit atomic load
-      expression with source [src] and memory order [mo]. *)
+  (** {3 Constructors} *)
+
+  val atomic_load : Atomic_load.t -> t
+  (** [atomic_load a] lifts an atomic load [a] to an expression. *)
 
   val constant : Constant.t -> t
   (** [constant k] lifts a C constant [k] to an expression. *)
@@ -175,7 +200,7 @@ module Expression : sig
   (** [eq l r] generates an equality expression. *)
 
   val lvalue : Lvalue.t -> t
-  (** [lvalue lv] lifts lvalue [lv] to an expression. *)
+  (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
 end
 
 (** A non-atomic assignment. *)
@@ -217,7 +242,8 @@ module Atomic_store : sig
 
   val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
   (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
-      expression with source [src] and memory order [mo]. *)
+     expression with source [src], destination [dst], and memory order
+     [mo]. *)
 end
 
 (** An atomic compare-exchange operation. *)

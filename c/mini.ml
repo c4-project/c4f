@@ -328,15 +328,57 @@ module Address = struct
     [%expect {| yorick |}]
 end
 
+module Atomic_load = struct
+  type t =
+    { src : Address.t
+    ; mo  : Mem_order.t
+    }
+  [@@deriving sexp, fields, make]
+  ;;
+
+  module Base_map (M : Monad.S) = struct
+    module F = Travesty.Traversable.Helpers (M)
+    let bmap (store : t)
+        ~(src : Address.t    F.traversal)
+        ~(mo  : Mem_order.t  F.traversal)
+      : t M.t =
+      Fields.fold
+        ~init:(M.return store)
+        ~src:(F.proc_field src)
+        ~mo:(F.proc_field mo)
+    ;;
+  end
+
+  module On_addresses : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Address
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map (M)
+        let map_m x ~f = B.bmap x ~src:f ~mo:(M.return)
+      end
+    end)
+
+
+  module On_lvalues : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Chain0
+      (struct
+        type nonrec t = t
+        include On_addresses
+      end)
+      (Address.On_lvalues)
+  ;;
+end
+
 module Expression = struct
   type t =
     | Constant    of Constant.t
     | Lvalue      of Lvalue.t
     | Eq          of t * t
-    | Atomic_load of
-        { src : Address.t
-        ; mo  : Mem_order.t
-        }
+    | Atomic_load of Atomic_load.t
   [@@deriving sexp, variants]
   ;;
 
@@ -349,6 +391,7 @@ module Expression = struct
 
       module On_monad (M : Monad.S) = struct
         module F = Travesty.Traversable.Helpers (M)
+        module A = Atomic_load.On_addresses.On_monad (M)
 
         let rec map_m x ~f =
           Variants.map x
@@ -360,12 +403,7 @@ module Expression = struct
                       let%bind l' = map_m l ~f in
                       let%map  r' = map_m r ~f in
                       (l', r')))
-            ~atomic_load:(
-              fun v ~src ~mo ->
-                let open M.Let_syntax in
-                let%map src' = f src in
-                v.constructor ~src:src' ~mo
-            )
+            ~atomic_load:(F.proc_variant1 (A.map_m ~f))
       end
   end)
 
@@ -377,7 +415,7 @@ module Expression = struct
       module Elt = Lvalue
 
       module On_monad (M : Monad.S) = struct
-        module A = Address.On_lvalues.On_monad (M)
+        module A = Atomic_load.On_lvalues.On_monad (M)
         module F = Travesty.Traversable.Helpers (M)
 
         let rec map_m x ~f =
@@ -390,12 +428,7 @@ module Expression = struct
                       let%bind l' = map_m l ~f in
                       let%map  r' = map_m r ~f in
                       (l', r')))
-            ~atomic_load:(
-              fun v ~src ~mo ->
-                let open M.Let_syntax in
-                let%map src' = A.map_m ~f src in
-                v.constructor ~src:src' ~mo
-            )
+            ~atomic_load:(F.proc_variant1 (A.map_m ~f))
       end
   end)
 
