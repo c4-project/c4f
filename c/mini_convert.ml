@@ -435,19 +435,41 @@ let expr_stm : Ast.Expr.t -> Statement.t Or_error.t = function
       [%message "Unsupported expression statement" ~got:(e : Ast.Expr.t)]
 ;;
 
-let rec stm : Ast.Stm.t -> Statement.t Or_error.t =
-  let model_if old_cond old_t_branch old_f_branch =
+let possible_compound_to_list
+  : Ast.Stm.t -> Ast.Stm.t list Or_error.t = function
+  | Ast.Stm.Compound elems ->
     let open Or_error.Let_syntax in
-    let%map cond = expr old_cond
-    and     t_branch = stm old_t_branch
-    and     f_branch =
-      Travesty.T_option.With_errors.map_m old_f_branch ~f:stm
-    in Statement.if_stm ~cond ~t_branch ?f_branch ()
-  in
+    let%bind (_, ast_nondecls) = sift_decls elems in
+    ensure_statements ast_nondecls
+  | stm -> Or_error.return [ stm ]
+;;
+
+let model_if
+    (model_stm : Ast.Stm.t -> Statement.t Or_error.t)
+    (old_cond : Ast.Expr.t)
+    (old_t_branch : Ast.Stm.t) (old_f_branch : Ast.Stm.t option)
+  : Statement.t Or_error.t =
+  let open Or_error.Let_syntax in
+    let%bind cond = expr old_cond in
+    let%bind t_list = possible_compound_to_list old_t_branch in
+    let%bind f_list =
+      Option.value_map ~f:possible_compound_to_list old_f_branch
+        ~default:(Or_error.return [])
+    in
+    let model_if_branch xs =
+      xs |> List.map ~f:model_stm |> Or_error.combine_errors
+    in
+    let%map t_branch = model_if_branch t_list
+    and     f_branch = model_if_branch f_list
+    in Statement.if_stm ~cond ~t_branch ~f_branch ()
+;;
+
+let rec stm : Ast.Stm.t -> Statement.t Or_error.t =
   function
   | Expr None -> Or_error.return Statement.nop
   | Expr (Some e) -> expr_stm e
-  | If { cond; t_branch; f_branch } -> model_if cond t_branch f_branch
+  | If { cond; t_branch; f_branch } ->
+    model_if stm cond t_branch f_branch
   | Continue | Break | Return _ | Label _ | Compound _
   | Switch _ | While _ | Do_while _ | For _ | Goto _
   as s ->

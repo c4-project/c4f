@@ -38,6 +38,7 @@ open Core_kernel
 open Utils
 
 include module type of Ast_basic
+include module type of Mini_intf
 
 type 'a named = (Identifier.t * 'a) [@@deriving eq, sexp]
 (** Shorthand for pairs of items and their names. *)
@@ -182,6 +183,8 @@ module Statement : sig
         with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in statements. *)
 
+  (** {3 Constructors} *)
+
   val assign : lvalue:Lvalue.t -> rvalue:Expression.t -> t
   (** [assign ~lvalue ~rvalue] lifts a C assignment to a statement. *)
 
@@ -204,8 +207,8 @@ module Statement : sig
 
   val if_stm
     :  cond:Expression.t
-    -> t_branch:t
-    -> ?f_branch:t
+    -> t_branch:t list
+    -> ?f_branch:t list
     -> unit
     -> t
   (** [if_stm ~cond ~t_branch ?f_branch ()] creates an if statement
@@ -215,6 +218,28 @@ module Statement : sig
   val nop : t
   (** [nop] is a no-operation statement; it corresponds to C's empty
      expression statement. *)
+
+  (** {3 Paths} *)
+
+  module Path : sig
+    type stm = t
+
+    type 'a t =
+      | This : on_stm t
+      (** This path refers to the current statement directly. *)
+      | Add_if_block : { branch : [ `True | `False ]; index : int } -> stm_hole t
+      (** This path assumes that the current statement is an if statement, and
+          refers to an empty position inside one of its branches. *)
+      | If_block : { branch : [ `True | `False ] ; index : int; rest : 'a t } -> 'a t
+      (** This path assumes that the current statement is an if statement, and
+          refers to an occupied position inside one of its branches. *)
+      | If_cond : on_expr t
+      (** This path assumes that the current statement is an if statement, and
+          refers to its conditional. *)
+    ;;
+
+    include S_path with type 'a t := 'a t and type stm := stm and type target := stm
+  end
 end
 
 (** A function (less its name). *)

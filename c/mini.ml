@@ -26,11 +26,30 @@ open Core_kernel
 open Utils
 
 include Ast_basic
+include Mini_intf
 
 type 'a named = (Identifier.t * 'a)
 [@@deriving eq, sexp]
 
 type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
+
+(** [list_insert xs value at] tries to insert [value] at index [at] in [xs]. *)
+let list_insert (xs : 'a list) (value : 'a) (at : int) : 'a list Or_error.t =
+  let open Or_error.Let_syntax in
+  let      z_init = Zipper.Plain.of_list xs in
+  let%map  z_move = Zipper.Plain.On_error.step_m z_init ~steps:at
+      ~on_empty:(fun _ ->
+          Or_error.error_s
+            [%message "Insert failed: index out of range"
+              ~here:[%here]
+              ~insert_at:(at : int)
+              ~list_length:(List.length xs : int)
+            ]
+        )
+  in
+  let z_ins = Zipper.Plain.push z_move ~value in
+  Zipper.Plain.to_list z_ins
+;;
 
 module Type = struct
   type basic =
@@ -239,15 +258,54 @@ module Statement = struct
         }
     | Nop
     | If_stm of { cond     : Expression.t
-                ; t_branch : t
-                ; f_branch : t option
+                ; t_branch : t list
+                ; f_branch : t list
                 }
   [@@deriving sexp, variants]
   ;;
 
+  module Path = struct
+    type stm = t
+
+    type 'a t =
+      | This : on_stm t
+      | Add_if_block : { branch : [ `True | `False ]; index : int } -> stm_hole t
+      | If_block : { branch : [ `True | `False ] ; index : int; rest : 'a t } -> 'a t
+      | If_cond : on_expr t
+    ;;
+
+    let insert_stm_in_if
+      (cond : Expression.t)
+      (t_branch : stm list)
+      (f_branch : stm list)
+      (index : int)
+      (stm : stm)
+      : [ `True | `False ] -> stm Or_error.t = function
+      | `True ->
+        Or_error.(
+          list_insert t_branch stm index >>|
+          fun t_branch' -> if_stm ~t_branch:t_branch' ~cond ~f_branch
+        )
+      | `False ->
+        Or_error.(
+          list_insert f_branch stm index >>|
+          fun f_branch' -> if_stm ~f_branch:f_branch' ~cond ~t_branch
+        )
+    ;;
+
+    let insert_stm (path : stm_hole t) (stm : stm) (into : stm)
+      : stm Or_error.t =
+      match path, into with
+      | Add_if_block { branch; index }, If_stm { cond; t_branch; f_branch } ->
+        insert_stm_in_if cond t_branch f_branch index stm branch
+      | _, _ ->
+        Or_error.error_s [%message "Invalid insertion" [%here]]
+    ;;
+  end
+
   (* Override to change f_branch into an optional argument. *)
   let if_stm
-      ~(cond : Expression.t) ~(t_branch : t) ?(f_branch : t option) ()
+      ~(cond : Expression.t) ~(t_branch : t list) ?(f_branch : t list = []) ()
     : t = if_stm ~cond ~t_branch ~f_branch
   ;;
 
@@ -298,7 +356,7 @@ module Statement = struct
         module B = Base_map (M)
         module A = Address.On_lvalues.On_monad (M)
         module E = Expression.On_lvalues.On_monad (M)
-        module O = Travesty.T_option.On_monad (M)
+        module L = Travesty.T_list.On_monad (M)
 
         let both (x : 'a M.t) (y : 'b M.t) : ('a * 'b) M.t =
           let open M.Let_syntax in
@@ -327,8 +385,8 @@ module Statement = struct
             ~if_stm:(
               fun ~cond ~t_branch ~f_branch ->
                 let%bind cond'     = E.map_m ~f cond in
-                let%bind t_branch' = map_m t_branch ~f in
-                let%map  f_branch' = O.map_m f_branch ~f:(map_m ~f) in
+                let%bind t_branch' = L.map_m t_branch ~f:(map_m ~f) in
+                let%map  f_branch' = L.map_m f_branch ~f:(map_m ~f) in
                 (cond', t_branch', f_branch')
             )
       end
@@ -345,7 +403,7 @@ module Statement = struct
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
         module E = Expression.On_addresses.On_monad (M)
-        module O = Travesty.T_option.On_monad (M)
+        module L = Travesty.T_list.On_monad (M)
 
         let both (x : 'a M.t) (y : 'b M.t) : ('a * 'b) M.t =
           let open M.Let_syntax in
@@ -373,8 +431,8 @@ module Statement = struct
               fun ~cond ~t_branch ~f_branch ->
                 let open M.Let_syntax in
                 let%bind cond'     = E.map_m ~f cond in
-                let%bind t_branch' = map_m t_branch ~f in
-                let%map  f_branch' = O.map_m f_branch ~f:(map_m ~f) in
+                let%bind t_branch' = L.map_m t_branch ~f:(map_m ~f) in
+                let%map  f_branch' = L.map_m f_branch ~f:(map_m ~f) in
                 (cond', t_branch', f_branch')
             )
       end
@@ -612,8 +670,12 @@ module Reify = struct
         ]
     | If_stm { cond; t_branch; f_branch } ->
       If { cond = expr cond
-         ; t_branch = stm t_branch
-         ; f_branch = Option.map ~f:stm f_branch
+         ; t_branch =
+             Compound (List.map ~f:(fun x -> `Stm (stm x)) t_branch)
+         ; f_branch =
+             match f_branch with
+             | [] -> None
+             | _  -> Some (Compound (List.map ~f:(fun x -> `Stm (stm x)) f_branch))
          }
     | Nop -> Expr None
   ;;

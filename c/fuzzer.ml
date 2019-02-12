@@ -212,6 +212,7 @@ let gen_int32_as_int : int Quickcheck.Generator.t =
   Quickcheck.Generator.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x)) Int32.gen
 ;;
 
+(** Fuzzer action that generates a new global variable. *)
 module Make_global : Action.S = struct
   module Random_state = struct
     type t = bool * int
@@ -237,6 +238,7 @@ module Make_global : Action.S = struct
   ;;
 end
 
+(** Fuzzer action that stores a constant value to an atomic variable. *)
 module Constant_store : Action.S = struct
   (* TODO(@MattWindsor91): the actual chosen generated global should
      go in here as well. *)
