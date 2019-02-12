@@ -24,47 +24,14 @@
 
 (** Fuzzer: high-level actions *)
 
-open Core_kernel
+open Utils
 
 include module type of Fuzzer_action_intf
 
-(** Enumeration of kinds of action. *)
-module Kind : sig
-  type t =
-    | Make_global
-    | Make_constant_store
-  ;;
-end
-
-module Table : sig
-  (** Type of weightings in an action table. *)
-  module Weight : sig
-    type t
-    (** Opaque type of weights. *)
-
-    val create : int -> t Or_error.t
-    (** [create k] tries to build a weight from an integer [k]. *)
-
-    val create_exn : int -> t
-    (** [create_exn k] tries to build a weight from an integer [k],
-        throwing an exception on failure. *)
-
-    val raw : t -> int
-    (** [raw w] converts [w] to an integer. *)
-  end
-
-  module Row : sig
-    type t =
-      { action : (module S)
-      (** The action this row represents. *)
-      ; weight    : Weight.t
-      (** The weight given to this action. *)
-      }
-    ;;
-  end
-
-  type t = Row.t list
-  (** Type of action tables. *)
+module List : sig
+  type t = (module S) Weighted_list.t
+  (** Action lists are just weighted lists of first-class action
+     modules. *)
 
   val pick
     :  t

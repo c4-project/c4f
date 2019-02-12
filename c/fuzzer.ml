@@ -297,17 +297,20 @@ let run_action
   Act.run subject state
 ;;
 
-let table () : Action.Table.t =
-  [ { action = (module Make_global)   ; weight = Action.Table.Weight.create_exn 1 }
-  ; { action = (module Constant_store); weight = Action.Table.Weight.create_exn 2 }
-  ]
+let table : Action.List.t Lazy.t =
+  lazy
+    (Weighted_list.from_alist_exn
+       [ (module Make_global    : Action.S), 1
+       ; (module Constant_store : Action.S), 2
+       ]
+    )
 ;;
 
 let mutate_subject (subject : Subject.Test.t)
   : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
   let cap = 10 in
-  let table = table () in
+  let table = Lazy.force table in
   let%map (_, subject') =
     State.Monad.fix
         (cap, subject)
@@ -316,7 +319,7 @@ let mutate_subject (subject : Subject.Test.t)
             then return (remaining, subject')
             else
               let%bind action =
-                Action.Table.pick table subject'
+                Action.List.pick table subject'
               in
               let%bind subject'' = run_action action subject' in
               mu (remaining - 1, subject'')
