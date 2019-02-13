@@ -566,7 +566,7 @@ module Litmus_conv = Litmus.Ast.Convert (struct
       include Ast.Litmus
       module Lang = Ast.Litmus_lang
     end
-    module To = Litmus_ast
+    module To = Mini_litmus.Ast
 
     let program = func
     let constant = Or_error.return
@@ -575,6 +575,6 @@ module Litmus_conv = Litmus.Ast.Convert (struct
 
 let litmus
   : Ast.Litmus.Validated.t
-    -> Litmus_ast.Validated.t Or_error.t =
+    -> Mini_litmus.Ast.Validated.t Or_error.t =
   Litmus_conv.convert
 ;;

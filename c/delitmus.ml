@@ -270,11 +270,11 @@ let delitmus_functions
     ~f:(fun tid (name, f) -> (name, delitmus_function tid f))
 ;;
 
-let run (input : Mini.Litmus_ast.Validated.t)
+let run (input : Mini_litmus.Ast.Validated.t)
   : Mini.Program.t Or_error.t =
   let open Or_error.Let_syntax in
-  let init = Mini.Litmus_ast.Validated.init input in
-  let raw_functions = Mini.Litmus_ast.Validated.programs input in
+  let init = Mini_litmus.Ast.Validated.init input in
+  let raw_functions = Mini_litmus.Ast.Validated.programs input in
   let function_bodies = List.map ~f:snd raw_functions in
   let%map init_globals = make_init_globals init function_bodies in
   let func_globals = make_func_globals function_bodies in

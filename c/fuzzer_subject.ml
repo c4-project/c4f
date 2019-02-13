@@ -92,17 +92,17 @@ module Test = struct
     }
   ;;
 
-  let programs_of_litmus (test : Mini.Litmus_ast.Validated.t)
+  let programs_of_litmus (test : Mini_litmus.Ast.Validated.t)
     : Program.t list =
     test
-    |> Mini.Litmus_ast.Validated.programs
+    |> Mini_litmus.Ast.Validated.programs
     |> List.map ~f:(fun (_, p) -> Program.of_function p)
   ;;
 
   (** [of_litmus test] converts a validated C litmus test [test]
       to the intermediate form used for fuzzing. *)
-  let of_litmus (test : Mini.Litmus_ast.Validated.t) : t =
-    { init     = Mini.Litmus_ast.Validated.init test
+  let of_litmus (test : Mini_litmus.Ast.Validated.t) : t =
+    { init     = Mini_litmus.Ast.Validated.init test
     ; programs = programs_of_litmus test
     }
   ;;
@@ -110,7 +110,7 @@ module Test = struct
   let programs_to_litmus
       (progs : Program.t list)
       ~(vars : Fuzzer_var.Map.t)
-    : Mini.Litmus_lang.Program.t list Or_error.t =
+    : Mini_litmus.Lang.Program.t list Or_error.t =
     progs
     |> List.mapi ~f:(fun id -> Program.to_function ~vars ~id)
     |> Or_error.combine_errors
@@ -123,14 +123,14 @@ module Test = struct
      the resulting litmus is invalid---generally, this signifies an
      internal error. *)
   let to_litmus
-      ?(post : Mini.Litmus_ast.Post.t option)
+      ?(post : Mini_litmus.Ast.Post.t option)
       (subject : t)
       ~(vars : Fuzzer_var.Map.t)
       ~(name : string)
-    : Mini.Litmus_ast.Validated.t Or_error.t =
+    : Mini_litmus.Ast.Validated.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind programs = programs_to_litmus ~vars subject.programs in
-    Mini.Litmus_ast.Validated.make
+    Mini_litmus.Ast.Validated.make
       ?post
       ~name
       ~init:(subject.init)

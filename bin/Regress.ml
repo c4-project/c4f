@@ -169,10 +169,10 @@ let pp_cvars : String.Set.t Fmt.t =
   )
 ;;
 
-let pp_post : C.Mini.Litmus_ast.Post.t Fmt.t =
+let pp_post : C.Mini_litmus.Ast.Post.t Fmt.t =
   Fmt.(
     prefix (unit "@,@,// Postcondition:@,")
-      (hbox (prefix (unit "// ") C.Mini.Litmus_pp.pp_post))
+      (hbox (prefix (unit "// ") C.Mini_litmus.Pp.pp_post))
   )
 ;;
 

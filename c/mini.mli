@@ -88,7 +88,7 @@ module Type : sig
 end
 
 module Initialiser : sig
-  type t
+  type t [@@deriving sexp]
 
   val make : ty:Type.t -> ?value:Constant.t -> unit -> t
   (** [make ~ty ?value ()] makes an initialiser with type [ty] and
@@ -398,29 +398,16 @@ end
 (** Functions for reifying a mini-model into an AST. *)
 module Reify : sig
   val func : Identifier.t -> Function.t -> Ast.External_decl.t
+  (** [func id f] reifies the mini-function [f], with name [id], into
+     the C AST. *)
 
   val program : Program.t -> Ast.Translation_unit.t
+  (** [program p] reifies the mini-program [p] into the C AST. *)
+
+  val decl : Identifier.t -> Initialiser.t -> Ast.Decl.t
+  (** [decl id d] reifies the mini-declaration [d], with name [id],
+     into the C AST. *)
+
+  val stm : Statement.t -> Ast.Stm.t
+  (** [stm s] reifies the mini-statement [s] into the C AST. *)
 end
-
-(** The mini-model, packaged up as a Litmus language.
-
-    This language uses {{!Reify}Reify} for all of its pretty-printing
-    needs. *)
-module Litmus_lang : Litmus.Ast.Basic
-  with type Statement.t =
-         [ `Stm of Statement.t
-         | `Decl of (Identifier.t * Initialiser.t)
-         ]
-   and type Program.t = (Identifier.t * Function.t)
-   and type Constant.t = Constant.t
-;;
-
-(** The mini-model's full Litmus AST module. *)
-module Litmus_ast : Litmus.Ast.S with module Lang = Litmus_lang
-
-(** Pretty-printing for the mini-model's litmus AST. *)
-module Litmus_pp : Litmus.Pp.S with module Ast = Litmus_ast
-
-val litmus_cvars : Litmus_ast.Validated.t -> C_identifier.Set.t
-(** litmus_cvars ast] gets the list of C variables referenced in a
-   mini-C Litmus test. *)

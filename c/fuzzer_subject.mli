@@ -62,16 +62,16 @@ module Test : sig
     }
   (** Transparent type of fuzzable litmus tests. *)
 
-  val of_litmus : Mini.Litmus_ast.Validated.t -> t
+  val of_litmus : Mini_litmus.Ast.Validated.t -> t
   (** [of_litmus test] converts a validated C litmus test [test]
       to the intermediate form used for fuzzing. *)
 
   val to_litmus
-    :  ?post:Mini.Litmus_ast.Post.t
+    :  ?post:Mini_litmus.Ast.Post.t
     -> t
     -> vars:Fuzzer_var.Map.t
     -> name:string
-    -> Mini.Litmus_ast.Validated.t Or_error.t
+    -> Mini_litmus.Ast.Validated.t Or_error.t
   (** [to_litmus ?post subject ~vars ~name] tries to reconstitute a
      validated C litmus test from the subject [subject], attaching the
      name [name] and optional postcondition [post], and using the

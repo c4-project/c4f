@@ -28,7 +28,7 @@ open Core_kernel
 
 val run
   :  seed:int option
-  -> Mini.Litmus_ast.Validated.t
-  -> Mini.Litmus_ast.Validated.t Or_error.t
+  -> Mini_litmus.Ast.Validated.t
+  -> Mini_litmus.Ast.Validated.t Or_error.t
 (** [run ~seed test] mutates [test] using a random number generator
     seeded by [seed]. *)

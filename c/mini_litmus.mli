@@ -22,25 +22,32 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Converting an AST into the mini-model.
+(** Mini-model: Litmus tests
 
-    This module contains partial functions that try to convert a full
-    C AST into the mini-model.  They fail if the AST contains pieces of
-    C syntax that aren't expressible in the mini-model.
- *)
+    This module declares modules and functions for manipulating litmus
+    tests over act's 'mini' subset of C. *)
 
-open Base
+open Utils
 
-val func
-  :  Ast.Function_def.t
-  -> (Mini.Identifier.t * Mini.Function.t) Or_error.t
-(** [func ast] tries to interpret a C function definition AST
-    as a mini-model function. *)
+(** The mini-model, packaged up as a Litmus language.
 
-val translation_unit : Ast.Translation_unit.t -> Mini.Program.t Or_error.t
-(** [translation_unit ast] tries to interpret a C translation unit AST
-    as a mini-model program. *)
+    This language uses {{!Reify}Reify} for all of its pretty-printing
+    needs. *)
+module Lang : Litmus.Ast.Basic
+  with type Statement.t =
+         [ `Stm of Mini.Statement.t
+         | `Decl of (Mini.Identifier.t * Mini.Initialiser.t)
+         ]
+   and type Program.t = (Mini.Identifier.t * Mini.Function.t)
+   and type Constant.t = Mini.Constant.t
+;;
 
-val litmus : Ast.Litmus.Validated.t -> Mini_litmus.Ast.Validated.t Or_error.t
-(** [litmus test] tries to interpret a Litmus test over the full C AST
-    as one over the mini-model. *)
+(** The mini-model's full Litmus AST module. *)
+module Ast : Litmus.Ast.S with module Lang = Lang
+
+(** Pretty-printing for the mini-model's litmus AST. *)
+module Pp : Litmus.Pp.S with module Ast = Ast
+
+val cvars : Ast.Validated.t -> C_identifier.Set.t
+(** cvars ast] gets the list of C variables referenced in a
+   mini-C Litmus test. *)

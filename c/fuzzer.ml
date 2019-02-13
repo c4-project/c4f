@@ -327,12 +327,12 @@ let mutate_subject (subject : Subject.Test.t)
   in subject'
 ;;
 
-let run_with_state (test : Mini.Litmus_ast.Validated.t)
-  : Mini.Litmus_ast.Validated.t State.Monad.t =
+let run_with_state (test : Mini_litmus.Ast.Validated.t)
+  : Mini_litmus.Ast.Validated.t State.Monad.t =
   let open State.Monad.Let_syntax in
   (* TODO: add uuid to this *)
-  let name = Mini.Litmus_ast.Validated.name test in
-  let post = Mini.Litmus_ast.Validated.post test in
+  let name = Mini_litmus.Ast.Validated.name test in
+  let post = Mini_litmus.Ast.Validated.post test in
   let subject = Subject.Test.of_litmus test in
   let%bind subject' = mutate_subject subject in
   State.Monad.with_vars_m
@@ -345,7 +345,7 @@ let run_with_state (test : Mini.Litmus_ast.Validated.t)
 (** [get_first_func test] tries to get the first function in a
    validated litmus AST [test]. *)
 let get_first_func
-    (test : Mini.Litmus_ast.Validated.t)
+    (test : Mini_litmus.Ast.Validated.t)
   : Mini.Function.t Or_error.t =
   let open Or_error.Let_syntax in
   (* If this is a validated litmus test, it _should_ have at least
@@ -353,7 +353,7 @@ let get_first_func
      global variables. *)
   let%map (_name, func) =
     test
-    |> Mini.Litmus_ast.Validated.programs
+    |> Mini_litmus.Ast.Validated.programs
     |> List.hd
     |> Result.of_option
       ~error:(
@@ -366,7 +366,7 @@ let get_first_func
 (** [existing_globals test] extracts the existing global variable
     names and types from litmus test [test]. *)
 let existing_globals
-    (test : Mini.Litmus_ast.Validated.t)
+    (test : Mini_litmus.Ast.Validated.t)
   : Mini.Type.t C_identifier.Map.t Or_error.t =
   Or_error.(
     test
@@ -378,11 +378,11 @@ let existing_globals
 
 let make_initial_state
     (seed : int option)
-    (test : Mini.Litmus_ast.Validated.t)
+    (test : Mini_litmus.Ast.Validated.t)
   : State.t Or_error.t =
   let open Or_error.Let_syntax in
   let rng = make_rng seed in
-  let all_cvars = Mini.litmus_cvars test in
+  let all_cvars = Mini_litmus.cvars test in
   let%map globals = existing_globals test in
   let global_cvars =
     globals |> C_identifier.Map.keys |> C_identifier.Set.of_list in
@@ -393,8 +393,8 @@ let make_initial_state
 ;;
 
 let run ~(seed : int option)
-    (test : Mini.Litmus_ast.Validated.t)
-  : Mini.Litmus_ast.Validated.t Or_error.t =
+    (test : Mini_litmus.Ast.Validated.t)
+  : Mini_litmus.Ast.Validated.t Or_error.t =
   Or_error.(
     make_initial_state seed test
     >>= State.Monad.run (run_with_state test)

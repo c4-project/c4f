@@ -49,7 +49,7 @@ module Output : sig
   (** [cvars out] gets the set of C variable names
       observed in the transformed program. *)
 
-  val post : t -> Mini.Litmus_ast.Post.t option
+  val post : t -> Mini_litmus.Ast.Post.t option
   (** [post out] gets the Litmus postcondition observed in the
      transformed program, if any. *)
 end
