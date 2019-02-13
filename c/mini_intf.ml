@@ -34,10 +34,55 @@ type stm_hole
 
 (** {3 Signatures} *)
 
+(** General signature of paths *)
 module type S_path = sig
   type 'a t
   type target
   type stm
 
   val insert_stm : stm_hole t -> stm -> target -> target Or_error.t
+  (** [insert_stm path stm dest] tries to insert [stm] into the part
+     of [dest] pointed to by [path]. *)
+end
+
+(** Signature of paths over statements *)
+module type S_statement_path = sig
+  type stm
+  type 'a list_path
+
+  type 'a t =
+    | This : on_stm t
+    | If_block : { branch : bool ; rest : 'a list_path } -> 'a t
+    | If_cond : on_expr t
+  ;;
+
+  include S_path with type 'a t := 'a t
+                  and type target := stm
+                  and type stm := stm
+
+  val try_gen_insert_stm
+    : stm -> stm_hole t Quickcheck.Generator.t option
+    (** [try_gen_insert_stm dest] tries to create a Quickcheck-style
+       generator for statement insertion paths targeting [dest].
+
+        It can return [None] if [dest] has no position at which
+       statements can be inserted. *)
+end
+
+(** Signature of paths over statement lists *)
+module type S_statement_list_path = sig
+  type stm
+  type 'a stm_path
+
+  type 'a t =
+    | Insert_at : int -> stm_hole t
+    | At        : { index : int; rest : 'a stm_path } -> 'a t
+
+  include S_path with type 'a t := 'a t
+                  and type target := stm list
+                  and type stm := stm
+
+  val gen_insert_stm : stm list -> stm_hole t Quickcheck.Generator.t
+  (** [gen_insert_stm dest] creates a Quickcheck-style
+        generator for statement insertion paths targeting [dest]. *)
 end

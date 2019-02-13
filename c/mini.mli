@@ -325,25 +325,12 @@ module Statement : sig
 
   (** {3 Paths} *)
 
-  module Path : sig
-    type stm = t
-
-    type 'a t =
-      | This : on_stm t
-      (** This path refers to the current statement directly. *)
-      | Add_if_block : { branch : [ `True | `False ]; index : int } -> stm_hole t
-      (** This path assumes that the current statement is an if statement, and
-          refers to an empty position inside one of its branches. *)
-      | If_block : { branch : [ `True | `False ] ; index : int; rest : 'a t } -> 'a t
-      (** This path assumes that the current statement is an if statement, and
-          refers to an occupied position inside one of its branches. *)
-      | If_cond : on_expr t
-      (** This path assumes that the current statement is an if statement, and
-          refers to its conditional. *)
-    ;;
-
-    include S_path with type 'a t := 'a t and type stm := stm and type target := stm
-  end
+  module rec Path :
+    (S_statement_path
+     with type stm = t and type 'a list_path := 'a List_path.t)
+  and List_path :
+    (S_statement_list_path
+     with type stm = t and type 'a stm_path := 'a Path.t)
 end
 
 (** A function (less its name). *)

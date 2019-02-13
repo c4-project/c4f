@@ -33,6 +33,69 @@ type 'a named = (Identifier.t * 'a)
 
 type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
 
+let list_replace (xs : 'a list) (at : int) ~(f : 'a -> 'a option Or_error.t) : 'a list Or_error.t =
+  let open Or_error.Let_syntax in
+  let      z_init = Zipper.Plain.of_list xs in
+  let%bind z_move = Zipper.Plain.On_error.step_m z_init ~steps:at
+      ~on_empty:(fun _ ->
+          Or_error.error_s
+            [%message "Replace failed: index out of range"
+              ~here:[%here]
+              ~insert_at:(at : int)
+              ~list_length:(List.length xs : int)
+            ]
+        )
+  in
+  let%map z_repl =
+    Zipper.Plain.On_error.map_m_head z_move ~f
+      ~on_empty:(fun _ ->
+          Or_error.error_s
+            [%message "Replace failed: index out of range"
+              ~here:[%here]
+              ~insert_at:(at : int)
+              ~list_length:(List.length xs : int)
+            ]
+        )
+  in
+  Zipper.Plain.to_list z_repl
+;;
+
+let%expect_test "list_replace: successfully map" =
+  let lst = [ "kappa"; "keepo"; "frankerz"; "pogchamp" ] in
+  let f x = Or_error.return (Some (String.uppercase x)) in
+  let lst' = list_replace lst 2 ~f in
+  Sexp.output_hum stdout [%sexp (lst' : string list Or_error.t)];
+  [%expect {| (Ok (kappa keepo FRANKERZ pogchamp)) |}]
+;;
+
+let%expect_test "list_replace: successfully delete" =
+  let lst = [ "kappa"; "keepo"; "frankerz"; "pogchamp" ] in
+  let f _ = Or_error.return None in
+  let lst' = list_replace lst 1 ~f in
+  Sexp.output_hum stdout [%sexp (lst' : string list Or_error.t)];
+  [%expect {| (Ok (kappa frankerz pogchamp)) |}]
+;;
+
+let%expect_test "list_replace: failing function" =
+  let lst = [ "kappa"; "keepo"; "frankerz"; "pogchamp" ] in
+  let f _ = Or_error.error_string "function failure" in
+  let lst' = list_replace lst 3 ~f in
+  Sexp.output_hum stdout [%sexp (lst' : string list Or_error.t)];
+  [%expect {| (Error "function failure") |}]
+;;
+
+let%expect_test "list_replace: out of bounds" =
+  let lst = [ "kappa"; "keepo"; "frankerz"; "pogchamp" ] in
+  let f x = Or_error.return (Some (String.uppercase x)) in
+  let lst' = list_replace lst 4 ~f in
+  Sexp.output_hum stdout [%sexp (lst' : string list Or_error.t)];
+  [%expect {|
+    (Error
+     ("Replace failed: index out of range" (here c/mini.ml:54:20) (insert_at 4)
+      (list_length 4))) |}]
+;;
+
+
 (** [list_insert xs value at] tries to insert [value] at index [at] in [xs]. *)
 let list_insert (xs : 'a list) (value : 'a) (at : int) : 'a list Or_error.t =
   let open Or_error.Let_syntax in
@@ -629,13 +692,14 @@ module Statement = struct
   [@@deriving sexp, variants]
   ;;
 
-  module Path = struct
+  module rec Path : S_statement_path
+    with type stm = t
+     and type 'a list_path := 'a List_path.t = struct
     type stm = t
 
     type 'a t =
       | This : on_stm t
-      | Add_if_block : { branch : [ `True | `False ]; index : int } -> stm_hole t
-      | If_block : { branch : [ `True | `False ] ; index : int; rest : 'a t } -> 'a t
+      | If_block : { branch : bool ; rest : 'a List_path.t } -> 'a t
       | If_cond : on_expr t
     ;;
 
@@ -643,28 +707,87 @@ module Statement = struct
       (cond : Expression.t)
       (t_branch : stm list)
       (f_branch : stm list)
-      (index : int)
       (stm : stm)
-      : [ `True | `False ] -> stm Or_error.t = function
-      | `True ->
+      (rest : stm_hole List_path.t)
+      : bool -> stm Or_error.t = function
+      | true ->
         Or_error.(
-          list_insert t_branch stm index >>|
+          List_path.insert_stm rest stm t_branch >>|
           fun t_branch' -> if_stm ~t_branch:t_branch' ~cond ~f_branch
         )
-      | `False ->
+      | false ->
         Or_error.(
-          list_insert f_branch stm index >>|
+          List_path.insert_stm rest stm f_branch >>|
           fun f_branch' -> if_stm ~f_branch:f_branch' ~cond ~t_branch
         )
     ;;
 
-    let insert_stm (path : stm_hole t) (stm : stm) (into : stm)
+    let insert_stm (path : stm_hole t) (stm : stm) (dest : stm)
       : stm Or_error.t =
-      match path, into with
-      | Add_if_block { branch; index }, If_stm { cond; t_branch; f_branch } ->
-        insert_stm_in_if cond t_branch f_branch index stm branch
+      match path, dest with
+      | If_block { branch; rest }, If_stm { cond; t_branch; f_branch } ->
+        insert_stm_in_if cond t_branch f_branch stm rest branch
       | _, _ ->
         Or_error.error_s [%message "Invalid insertion" [%here]]
+    ;;
+
+    let try_gen_insert_stm
+      : stm -> (stm_hole t Quickcheck.Generator.t option) = function
+      | If_stm { t_branch; f_branch; _ } ->
+        Some (
+          Quickcheck.Generator.union
+            [ Quickcheck.Generator.map
+                ~f:(fun rest -> If_block { branch = true; rest })
+                (List_path.gen_insert_stm t_branch)
+            ; Quickcheck.Generator.map
+                ~f:(fun rest -> If_block { branch = false; rest })
+                (List_path.gen_insert_stm f_branch)
+            ]
+        )
+      | _ -> None
+    ;;
+  end
+  and List_path : S_statement_list_path
+    with type stm = t
+     and type 'a stm_path := 'a Path.t = struct
+    type stm = t
+
+    type 'a t =
+      | Insert_at : int -> stm_hole t
+      | At        : { index : int; rest : 'a Path.t } -> 'a t
+    ;;
+
+    let insert_stm (path : stm_hole t) (stm : stm) (dest : stm list)
+      : stm list Or_error.t =
+      match path with
+      | Insert_at index ->
+        list_insert dest stm index
+      | At { index; rest } ->
+        list_replace dest index
+          ~f:(fun x -> Or_error.(Path.insert_stm rest stm x >>| Option.some))
+    ;;
+
+    let gen_insert_stm_on (index : int) (single_dest : stm)
+      : stm_hole t Quickcheck.Generator.t list =
+      let insert_after =
+        Quickcheck.Generator.return (Insert_at (index + 1))
+      in
+      let insert_into =
+        single_dest
+        |> Path.try_gen_insert_stm
+        |> Option.map
+          ~f:(Quickcheck.Generator.map
+                ~f:(fun rest -> At { index; rest })
+             )
+        |> Option.to_list
+      in
+      insert_after :: insert_into
+    ;;
+
+    let gen_insert_stm (dest : stm list) : stm_hole t Quickcheck.Generator.t =
+      Quickcheck.Generator.union
+        (Quickcheck.Generator.return (Insert_at 0)
+        :: List.concat_mapi ~f:gen_insert_stm_on dest)
     ;;
   end
 
