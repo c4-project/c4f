@@ -33,87 +33,6 @@ type 'a named = (Identifier.t * 'a)
 
 type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
 
-let list_replace (xs : 'a list) (at : int) ~(f : 'a -> 'a option Or_error.t) : 'a list Or_error.t =
-  let open Or_error.Let_syntax in
-  let      z_init = Zipper.Plain.of_list xs in
-  let%bind z_move = Zipper.Plain.On_error.step_m z_init ~steps:at
-      ~on_empty:(fun _ ->
-          Or_error.error_s
-            [%message "Replace failed: index out of range"
-              ~here:[%here]
-              ~insert_at:(at : int)
-              ~list_length:(List.length xs : int)
-            ]
-        )
-  in
-  let%map z_repl =
-    Zipper.Plain.On_error.map_m_head z_move ~f
-      ~on_empty:(fun _ ->
-          Or_error.error_s
-            [%message "Replace failed: index out of range"
-              ~here:[%here]
-              ~insert_at:(at : int)
-              ~list_length:(List.length xs : int)
-            ]
-        )
-  in
-  Zipper.Plain.to_list z_repl
-;;
-
-let%expect_test "list_replace: successfully map" =
-  let lst = [ "kappa"; "keepo"; "frankerz"; "pogchamp" ] in
-  let f x = Or_error.return (Some (String.uppercase x)) in
-  let lst' = list_replace lst 2 ~f in
-  Sexp.output_hum stdout [%sexp (lst' : string list Or_error.t)];
-  [%expect {| (Ok (kappa keepo FRANKERZ pogchamp)) |}]
-;;
-
-let%expect_test "list_replace: successfully delete" =
-  let lst = [ "kappa"; "keepo"; "frankerz"; "pogchamp" ] in
-  let f _ = Or_error.return None in
-  let lst' = list_replace lst 1 ~f in
-  Sexp.output_hum stdout [%sexp (lst' : string list Or_error.t)];
-  [%expect {| (Ok (kappa frankerz pogchamp)) |}]
-;;
-
-let%expect_test "list_replace: failing function" =
-  let lst = [ "kappa"; "keepo"; "frankerz"; "pogchamp" ] in
-  let f _ = Or_error.error_string "function failure" in
-  let lst' = list_replace lst 3 ~f in
-  Sexp.output_hum stdout [%sexp (lst' : string list Or_error.t)];
-  [%expect {| (Error "function failure") |}]
-;;
-
-let%expect_test "list_replace: out of bounds" =
-  let lst = [ "kappa"; "keepo"; "frankerz"; "pogchamp" ] in
-  let f x = Or_error.return (Some (String.uppercase x)) in
-  let lst' = list_replace lst 4 ~f in
-  Sexp.output_hum stdout [%sexp (lst' : string list Or_error.t)];
-  [%expect {|
-    (Error
-     ("Replace failed: index out of range" (here c/mini.ml:54:20) (insert_at 4)
-      (list_length 4))) |}]
-;;
-
-
-(** [list_insert xs value at] tries to insert [value] at index [at] in [xs]. *)
-let list_insert (xs : 'a list) (value : 'a) (at : int) : 'a list Or_error.t =
-  let open Or_error.Let_syntax in
-  let      z_init = Zipper.Plain.of_list xs in
-  let%map  z_move = Zipper.Plain.On_error.step_m z_init ~steps:at
-      ~on_empty:(fun _ ->
-          Or_error.error_s
-            [%message "Insert failed: index out of range"
-              ~here:[%here]
-              ~insert_at:(at : int)
-              ~list_length:(List.length xs : int)
-            ]
-        )
-  in
-  let z_ins = Zipper.Plain.push z_move ~value in
-  Zipper.Plain.to_list z_ins
-;;
-
 module Type = struct
   module Basic = struct
     module M = struct
@@ -761,9 +680,9 @@ module Statement = struct
       : stm list Or_error.t =
       match path with
       | Insert_at index ->
-        list_insert dest stm index
+        Alter_list.insert dest index stm
       | At { index; rest } ->
-        list_replace dest index
+        Alter_list.replace dest index
           ~f:(fun x -> Or_error.(Path.insert_stm rest stm x >>| Option.some))
     ;;
 
