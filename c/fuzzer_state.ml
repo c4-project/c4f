@@ -59,39 +59,6 @@ let erase_var_value
     (s : t) ~(var : C_identifier.t) : t =
   map_vars s ~f:(Fuzzer_var.Map.erase_value ~var)
 
-(** [gen_var_raw rng] generates a random C identifier, in
-    string format. *)
-let gen_var_raw : string Quickcheck.Generator.t =
-  let module Q = Quickcheck.Generator in
-  let open Q.Let_syntax in
-  let%bind char = Q.char_alpha in
-  let%map  num  = Q.small_non_negative_int in
-  sprintf "%c%d" char num
-;;
-
-let%expect_test "gen_var_raw: example" =
-  let deterministic_rng = Splittable_random.State.of_int 0 in
-  print_string
-    (Quickcheck.Generator.generate ~size:5 gen_var_raw deterministic_rng);
-  [%expect {| b1 |}]
-;;
-
-(*
-(** [gen_var] generates a random C identifier, in
-    {{!C_identifier.t}C_identifier.t} format. *)
-let gen_var : C_identifier.t Quickcheck.Generator.t =
-  (* Assuming that [gen_var_raw] produces valid C identifiers by
-     construction. *)
-  Quickcheck.Generator.map ~f:C_identifier.of_string gen_var_raw
-;; *)
-
-let gen_fresh_var
-    (state : t) : C_identifier.t Quickcheck.Generator.t =
-  let vars = state.vars in
-  Quickcheck.Generator.filter C_identifier.gen (* gen_var*)
-    ~f:(Fn.non (C_identifier.Map.mem vars))
-;;
-
 module Monad = struct
   include Travesty.State_transform.Make (struct
       module Inner = Or_error

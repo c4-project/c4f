@@ -38,11 +38,6 @@ val init
     random number generator [rng], global variable map [globals],
     and local variable set [locals]. *)
 
-val gen_fresh_var
-  :  t -> C_identifier.t Quickcheck.Generator.t
-(** [gen_fresh_var state] generates random C identifiers that don't
-    shadow existing variables in [state]. *)
-
 (** The state monad. *)
 module Monad : sig
   include Travesty.State_transform.S

@@ -55,6 +55,12 @@ module Record = struct
     | { source = `Existing  ; _ } -> false
   ;;
 
+  let is_generated_atomic_global : t -> bool =
+    Travesty.T_fn.conj
+      is_global
+      (Travesty.T_fn.conj is_atomic was_generated)
+  ;;
+
   let erase_value (record : t) : t =
     { record with value = None }
   ;;
@@ -119,5 +125,26 @@ module Map = struct
   let erase_value (map : t) ~(var : C_identifier.t) : t =
     C_identifier.Map.change map var
       ~f:(Option.map ~f:Record.erase_value)
+  ;;
+
+  let all_generated_atomic_globals (vars : t) : C_identifier.t list =
+    vars
+    |> C_identifier.Map.filter ~f:Record.is_generated_atomic_global
+    |> C_identifier.Map.keys
+  ;;
+
+  let random_generated_atomic_global (vars : t)
+    : C_identifier.t Quickcheck.Generator.t =
+    let all = all_generated_atomic_globals vars in
+    Quickcheck.Generator.of_list all
+  ;;
+
+  let has_generated_atomic_global : t -> bool =
+    C_identifier.Map.exists ~f:Record.is_generated_atomic_global
+  ;;
+
+  let gen_fresh_var (map : t) : C_identifier.t Quickcheck.Generator.t =
+    Quickcheck.Generator.filter C_identifier.gen
+      ~f:(Fn.non (C_identifier.Map.mem map))
   ;;
 end

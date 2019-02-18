@@ -115,40 +115,6 @@ let%test_unit "random_item is always a valid item" =
     )
 ;;
 
-let is_generated_atomic_global
-  : Var.Record.t -> bool =
-  Travesty.T_fn.conj
-    Var.Record.is_global
-    (Travesty.T_fn.conj
-       Var.Record.is_atomic
-       Var.Record.was_generated
-    )
-;;
-
-let all_generated_atomic_globals
-    (vars : Var.Map.t)
-  : C_identifier.t list =
-  vars
-  |> C_identifier.Map.filter ~f:is_generated_atomic_global
-  |> C_identifier.Map.keys
-
-;;
-
-let random_generated_atomic_global
-    (vars : Var.Map.t)
-  : C_identifier.t Quickcheck.Generator.t =
-  let all = all_generated_atomic_globals vars in
-  Quickcheck.Generator.of_list all
-;;
-
-let has_random_generated_atomic_global
-    ()
-  : bool State.Monad.t =
-  State.Monad.with_vars (
-    C_identifier.Map.exists ~f:is_generated_atomic_global
-  )
-;;
-
 (** [gen_int32_as_int] generates an [int] whose domain is that of
     [int32].  This is useful for making sure that we don't generate
     integers that could overflow when running tests on 32-bit
@@ -157,6 +123,7 @@ let gen_int32_as_int : int Quickcheck.Generator.t =
   Quickcheck.Generator.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x)) Int32.gen
 ;;
 
+(** Shorthand for stating that a fuzzer action is always available. *)
 let always : Subject.Test.t -> bool State.Monad.t =
   Fn.const (State.Monad.return true)
 
@@ -171,16 +138,16 @@ module Make_global : Action.S = struct
 
     module G = Quickcheck.Generator
 
-    let gen' (state : State.t)
+    let gen' (vars : Var.Map.t)
       : t G.t =
       let open G.Let_syntax in
       let%bind is_atomic = G.bool in
       let%bind initial_value = gen_int32_as_int in
-      let%map  name = State.gen_fresh_var state in
+      let%map  name = Var.Map.gen_fresh_var vars in
       { is_atomic; initial_value; name }
 
     let gen (_subject : Subject.Test.t) : t G.t State.Monad.t =
-      State.Monad.peek gen'
+      State.Monad.with_vars gen'
   end
 
   let available = always
@@ -215,7 +182,7 @@ module Constant_store : Action.S = struct
     let gen' (subject : Subject.Test.t) (vars : Var.Map.t) : t G.t =
       let open G.Let_syntax in
       let%bind new_value = gen_int32_as_int in
-      let%bind global    = random_generated_atomic_global vars in
+      let%bind global    = Var.Map.random_generated_atomic_global vars in
       let%map  path      = Subject.Test.Path.gen_insert_stm subject in
       { new_value; global; path }
     ;;
@@ -225,7 +192,9 @@ module Constant_store : Action.S = struct
     ;;
   end
 
-  let available = fun _ -> has_random_generated_atomic_global ()
+  let available = fun _ ->
+    State.Monad.with_vars Var.Map.has_generated_atomic_global
+  ;;
 
   let run (subject : Subject.Test.t)
       ( { new_value; global; path } : Random_state.t)
