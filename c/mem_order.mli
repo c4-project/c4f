@@ -24,6 +24,8 @@
 
 (** Enumeration of C11 memory orders. *)
 
+open Core_kernel
+
 type t =
   | Seq_cst (** [memory_order_seq_cst] *)
   | Release (** [memory_order_release] *)
@@ -35,3 +37,34 @@ type t =
 
 include Utils.Enum.S_table with type t := t
 include Utils.Enum.Extension_table with type t := t
+
+(** {2 Predicates} *)
+
+val is_load_compatible : t -> bool
+(** [is_load_compatible mo] returns whether [mo] is compatible with
+   load operations. *)
+
+val is_store_compatible : t -> bool
+(** [is_store_compatible mo] returns whether [mo] is compatible with
+    store operations. *)
+
+val is_rmw_compatible : t -> bool
+(** [is_rmw_compatible mo] returns whether [mo] is compatible with
+    read-modify-writes. *)
+
+(** {2 Quickcheck support} *)
+
+(** The Quickcheck implementation pulled in by [Extension_table], by
+   default, generates from the whole pool of memory orders.  To
+   restrict to those that make sense in a particular context, see
+   {{!gen_load}} et al. *)
+
+val gen_load : t Quickcheck.Generator.t
+(** [gen_load] generates a random memory order suitable for loads. *)
+
+val gen_store : t Quickcheck.Generator.t
+(** [gen_load] generates a random memory order suitable for stores. *)
+
+val gen_rmw : t Quickcheck.Generator.t
+(** [gen_load] generates a random memory order suitable for
+   read-modify-writes. *)

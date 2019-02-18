@@ -22,6 +22,8 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+open Core_kernel
+
 module M = struct
   type t =
     | Seq_cst
@@ -45,3 +47,30 @@ module M = struct
 end
 include M
 include Utils.Enum.Extend_table (M)
+
+let is_load_compatible : t -> bool = function
+  | Seq_cst | Release | Relaxed -> true
+  | Acquire | Consume | Rel_acq -> false
+;;
+
+let is_store_compatible : t -> bool = function
+  | Seq_cst | Acquire | Consume | Relaxed -> true
+  | Release | Rel_acq -> false
+;;
+
+let is_rmw_compatible : t -> bool = function
+  | Seq_cst | Rel_acq | Relaxed -> true
+  | Acquire | Consume | Release -> false
+;;
+
+let gen_load : t Quickcheck.Generator.t =
+  Quickcheck.Generator.filter gen ~f:is_load_compatible
+;;
+
+let gen_store : t Quickcheck.Generator.t =
+  Quickcheck.Generator.filter gen ~f:is_store_compatible
+;;
+
+let gen_rmw : t Quickcheck.Generator.t =
+  Quickcheck.Generator.filter gen ~f:is_rmw_compatible
+;;
