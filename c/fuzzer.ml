@@ -168,8 +168,22 @@ end
 
 (** Fuzzer action that stores a constant value to an atomic variable. *)
 module Constant_store : Action.S = struct
-  (* TODO(@MattWindsor91): the actual chosen generated global should
-     go in here as well. *)
+  (** Lists the restrictions we put on destination variables. *)
+  let restrictions : (Var.Record.t -> bool) list Lazy.t =
+    lazy
+      Var.Record.[ is_atomic
+                 ; is_global
+                 (* TODO(@MattWindsor91): relax the two above. *)
+                 ; was_generated
+                   (* This is to make sure that we don't change the
+                      observable semantics of the program over its
+                      original variables. *)
+                 ; has_no_dependencies
+                   (* This action changes the value, so we can't do it
+                      to variables with depended-upon values. *)
+                 ]
+  ;;
+
   module Random_state = struct
     type t =
       { new_value : int
@@ -181,8 +195,9 @@ module Constant_store : Action.S = struct
 
     let gen' (subject : Subject.Test.t) (vars : Var.Map.t) : t G.t =
       let open G.Let_syntax in
+      let predicates = Lazy.force restrictions in
       let%bind new_value = gen_int32_as_int in
-      let%bind global    = Var.Map.random_generated_atomic_global vars in
+      let%bind global    = Var.Map.random_satisfying_all vars ~predicates in
       let%map  path      = Subject.Test.Path.gen_insert_stm subject in
       { new_value; global; path }
     ;;
@@ -193,7 +208,10 @@ module Constant_store : Action.S = struct
   end
 
   let available = fun _ ->
-    State.Monad.with_vars Var.Map.has_generated_atomic_global
+    State.Monad.with_vars (
+      Var.Map.exists_satisfying_all
+        ~predicates:(Lazy.force restrictions)
+    )
   ;;
 
   let run (subject : Subject.Test.t)

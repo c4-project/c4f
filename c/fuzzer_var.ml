@@ -65,13 +65,7 @@ module Record = struct
     | { source = `Existing  ; _ } -> false
   ;;
 
-  let is_generated_atomic_global : t -> bool =
-    Travesty.T_fn.conj
-      is_global
-      (Travesty.T_fn.conj is_atomic was_generated)
-  ;;
-
-  let is_dependency_free (record : t) : bool =
+  let has_no_dependencies (record : t) : bool =
     Option.for_all (known_value record)
       ~f:(Fn.non (Known_value.has_dependencies))
   ;;
@@ -134,9 +128,9 @@ module Map = struct
       ~f:(Option.map ~f:Record.erase_value)
   ;;
 
-  let is_dependency_free (map : t) ~(var : C_identifier.t) : bool =
+  let has_no_dependencies (map : t) ~(var : C_identifier.t) : bool =
     Option.for_all (C_identifier.Map.find map var)
-      ~f:Record.is_dependency_free
+      ~f:Record.has_no_dependencies
 
   let dependency_error (var : C_identifier.t) : unit Or_error.t =
     Or_error.error_s
@@ -150,26 +144,32 @@ module Map = struct
     let open Or_error.Let_syntax in
     let%map () =
       Travesty.T_or_error.unless_m
-        (is_dependency_free map ~var)
+        (has_no_dependencies map ~var)
         ~f:(fun () -> dependency_error var)
     in
     erase_value_inner map ~var
   ;;
 
-  let all_generated_atomic_globals (vars : t) : C_identifier.t list =
+  let satisfying_all
+      (vars : t) ~(predicates : (Record.t -> bool) list)
+    : C_identifier.t list =
     vars
-    |> C_identifier.Map.filter ~f:Record.is_generated_atomic_global
+    |> C_identifier.Map.filter ~f:(Travesty.T_list.all ~predicates)
     |> C_identifier.Map.keys
   ;;
 
-  let random_generated_atomic_global (vars : t)
-    : C_identifier.t Quickcheck.Generator.t =
-    let all = all_generated_atomic_globals vars in
-    Quickcheck.Generator.of_list all
+  let exists_satisfying_all
+      (vars : t) ~(predicates : (Record.t -> bool) list)
+    : bool =
+    not (List.is_empty (satisfying_all vars ~predicates))
   ;;
 
-  let has_generated_atomic_global : t -> bool =
-    C_identifier.Map.exists ~f:Record.is_generated_atomic_global
+  let random_satisfying_all
+      (vars : t) ~(predicates : (Record.t -> bool) list)
+    : C_identifier.t Quickcheck.Generator.t =
+    vars
+    |> satisfying_all ~predicates
+    |> Quickcheck.Generator.of_list
   ;;
 
   let gen_fresh_var (map : t) : C_identifier.t Quickcheck.Generator.t =
