@@ -32,6 +32,34 @@ module Program = struct
     }
   ;;
 
+  module Path : Mini.S_function_path
+    with type stm = Mini.Statement.t
+     and type target := t
+     and type 'a stm_list_path := 'a Mini.Statement.List_path.t = struct
+    type target = t
+    type stm = Mini.Statement.t
+
+    type 'a t =
+      | On_statements : 'a Mini.Statement.List_path.t -> 'a t
+    ;;
+
+    let gen_insert_stm ({ stms; _ } : target) : Mini.stm_hole t Quickcheck.Generator.t =
+      Quickcheck.Generator.map
+        (Mini.Statement.List_path.gen_insert_stm stms)
+        ~f:(fun path -> On_statements path)
+    ;;
+
+    let insert_stm
+        (path : Mini.stm_hole t) (stm : stm) (prog : target) : target Or_error.t =
+      let open Or_error.Let_syntax in
+      match path with
+      | On_statements rest ->
+        let%map stms' =
+          Mini.Statement.List_path.insert_stm rest stm prog.stms
+        in { prog with stms = stms' }
+    ;;
+  end
+
   let of_function (func : Mini.Function.t) : t =
     { decls = Mini.Function.body_decls func
     ; stms  = Mini.Function.body_stms func
@@ -91,6 +119,40 @@ module Test = struct
     ; programs : Program.t list
     }
   ;;
+
+  module Path : Mini.S_program_path
+    with type stm = Mini.Statement.t
+     and type target := t
+     and type 'a function_path := 'a Program.Path.t = struct
+    type target = t
+    type stm = Mini.Statement.t
+
+    type 'a t =
+      | On_program : { index : int; rest : 'a Program.Path.t } -> 'a t
+    ;;
+
+    let gen_insert_stm (test : target) : Mini.stm_hole t Quickcheck.Generator.t =
+      let prog_gens =
+        List.mapi test.programs
+          ~f:(fun index prog ->
+              Quickcheck.Generator.map
+                (Program.Path.gen_insert_stm prog)
+                ~f:(fun rest -> On_program { index; rest })
+            )
+      in Quickcheck.Generator.union prog_gens
+    ;;
+
+    let insert_stm
+        (path : Mini.stm_hole t) (stm : stm) (test : target) : target Or_error.t =
+      let open Or_error.Let_syntax in
+      match path with
+      | On_program { index; rest } ->
+        let programs = test.programs in
+        let%map programs' = Alter_list.replace programs index
+            ~f:(fun x -> x |> Program.Path.insert_stm rest stm >>| Option.some)
+        in { test with programs = programs' }
+    ;;
+  end
 
   let programs_of_litmus (test : Mini_litmus.Ast.Validated.t)
     : Program.t list =

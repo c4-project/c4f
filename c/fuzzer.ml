@@ -115,23 +115,6 @@ let%test_unit "random_item is always a valid item" =
     )
 ;;
 
-let on_random_existing_program (subject : Subject.Test.t)
-    ~(f : Subject.Program.t -> Subject.Program.t State.Monad.t)
-  : Subject.Test.t State.Monad.t =
-  let open State.Monad.Let_syntax in
-  State.Monad.with_rng_m
-    (fun rng ->
-       let progs = subject.programs in
-       let%map progs' =
-         match random_index rng progs with
-         | None -> State.Monad.return progs
-         | Some i ->
-           State_list.mapi_m progs
-             ~f:(fun j -> if i = j then f else State.Monad.return)
-       in
-       { subject with programs = progs' }
-    )
-
 let is_generated_atomic_global
   : Var.Record.t -> bool =
   Travesty.T_fn.conj
@@ -143,14 +126,19 @@ let is_generated_atomic_global
 ;;
 
 let all_generated_atomic_globals
-    ()
-  : C_identifier.t list State.Monad.t =
-  State.Monad.with_vars (
-    fun vars ->
-      vars
-      |> C_identifier.Map.filter ~f:is_generated_atomic_global
-      |> C_identifier.Map.keys
-  )
+    (vars : Var.Map.t)
+  : C_identifier.t list =
+  vars
+  |> C_identifier.Map.filter ~f:is_generated_atomic_global
+  |> C_identifier.Map.keys
+
+;;
+
+let random_generated_atomic_global
+    (vars : Var.Map.t)
+  : C_identifier.t Quickcheck.Generator.t =
+  let all = all_generated_atomic_globals vars in
+  Quickcheck.Generator.of_list all
 ;;
 
 let has_random_generated_atomic_global
@@ -161,48 +149,6 @@ let has_random_generated_atomic_global
   )
 ;;
 
-let with_random_generated_atomic_global
-  ~(f : C_identifier.t -> 'a State.Monad.t)
-  ~(default : 'a State.Monad.t)
-  : 'a State.Monad.t =
-  let open State.Monad.Let_syntax in
-  State.Monad.with_rng_m
-    (fun rng ->
-       let%bind globals = all_generated_atomic_globals () in
-       match random_item rng globals with
-       | None -> default
-       | Some global -> f global
-    )
-;;
-
-(** [insert_randomly srng x xs] inserts [x] into [xs] at a location
-    determined by the RNG [srng]. *)
-let insert_randomly
-  (srng : Splittable_random.State.t)
-  (x : 'a)
-  (xs : 'a list)
-  : 'a list =
-  let i_opt = random_index srng (x :: xs) in
-  let i = Option.value ~default:0 i_opt in
-  let lhs, rhs = List.split_n xs i in
-  lhs @ (x :: rhs)
-;;
-
-(** [insert_statement_randomly prog stm] is a stateful computation that
-    injects [stm] into [prog]'s statement list at a random location.
-    The state monad's random number generator decides where. *)
-let insert_statement_randomly
-  (prog : Subject.Program.t)
-  (stm  : Mini.Statement.t)
-  : Subject.Program.t State.Monad.t =
-  let stms = prog.stms in
-  State.Monad.with_rng
-    (fun rng ->
-       let stms' = insert_randomly rng stm stms in
-       { prog with stms = stms' }
-    )
-;;
-
 (** [gen_int32_as_int] generates an [int] whose domain is that of
     [int32].  This is useful for making sure that we don't generate
     integers that could overflow when running tests on 32-bit
@@ -211,29 +157,45 @@ let gen_int32_as_int : int Quickcheck.Generator.t =
   Quickcheck.Generator.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x)) Int32.gen
 ;;
 
+let always : Subject.Test.t -> bool State.Monad.t =
+  Fn.const (State.Monad.return true)
+
 (** Fuzzer action that generates a new global variable. *)
 module Make_global : Action.S = struct
   module Random_state = struct
-    type t = bool * int
+    type t =
+      { is_atomic : bool
+      ; initial_value : int
+      ; name : C_identifier.t
+      }
 
     module G = Quickcheck.Generator
-    let gen : t G.t = G.tuple2 G.bool gen_int32_as_int
+
+    let gen' (state : State.t)
+      : t G.t =
+      let open G.Let_syntax in
+      let%bind is_atomic = G.bool in
+      let%bind initial_value = gen_int32_as_int in
+      let%map  name = State.gen_fresh_var state in
+      { is_atomic; initial_value; name }
+
+    let gen (_subject : Subject.Test.t) : t G.t State.Monad.t =
+      State.Monad.peek gen'
   end
 
-  let available = Fn.const (State.Monad.return true)
+  let available = always
 
   let run
       (subject : Subject.Test.t)
-      ((is_atomic, initial_value) : bool * int)
+      ({ is_atomic; initial_value; name } : Random_state.t)
     : Subject.Test.t State.Monad.t =
     let open State.Monad.Let_syntax in
     let ty = int_type ~is_atomic ~is_global:true in
-    let%map var =
-      State.Monad.gen_and_register_fresh_var ty
+    let%map () = State.Monad.register_global ty name
         ~initial_value:(Var.Value.Known_int initial_value)
     in
     let const = Mini.Constant.Integer initial_value in
-    Subject.Test.add_var_to_init subject var const
+    Subject.Test.add_var_to_init subject name const
   ;;
 end
 
@@ -242,17 +204,32 @@ module Constant_store : Action.S = struct
   (* TODO(@MattWindsor91): the actual chosen generated global should
      go in here as well. *)
   module Random_state = struct
-    type t = int (* The new value *)
-    let gen = gen_int32_as_int
+    type t =
+      { new_value : int
+      ; global    : C_identifier.t
+      ; path      : Mini.stm_hole Subject.Test.Path.t
+      }
+
+    module G = Quickcheck.Generator
+
+    let gen' (subject : Subject.Test.t) (vars : Var.Map.t) : t G.t =
+      let open G.Let_syntax in
+      let%bind new_value = gen_int32_as_int in
+      let%bind global    = random_generated_atomic_global vars in
+      let%map  path      = Subject.Test.Path.gen_insert_stm subject in
+      { new_value; global; path }
+    ;;
+
+    let gen (subject : Subject.Test.t) : t G.t State.Monad.t =
+      State.Monad.with_vars (gen' subject)
+    ;;
   end
 
   let available = fun _ -> has_random_generated_atomic_global ()
 
-  let make_constant_store_on
-      (prog : Subject.Program.t)
-      (new_value : int)
-      (global : C_identifier.t)
-    : Subject.Program.t State.Monad.t =
+  let run (subject : Subject.Test.t)
+      ( { new_value; global; path } : Random_state.t)
+    : Subject.Test.t State.Monad.t =
     let open State.Monad.Let_syntax in
     let src =
       Mini.Expression.constant (Mini.Constant.Integer new_value)
@@ -267,33 +244,30 @@ module Constant_store : Action.S = struct
         (Mini.Atomic_store.make ~src ~dst ~mo)
     in
     let%bind () = State.Monad.erase_var_value global in
-    insert_statement_randomly prog constant_store
-  ;;
-
-  let run (subject : Subject.Test.t) (new_value : int) =
-    on_random_existing_program subject
-      ~f:(fun prog ->
-          with_random_generated_atomic_global
-            ~default:(State.Monad.return prog)
-            ~f:(make_constant_store_on prog new_value)
-        )
+    State.Monad.Monadic.return (
+      Subject.Test.Path.insert_stm path constant_store subject
+    )
   ;;
 end
 
-let generate_pure_random_state
+let generate_random_state
   (type rs)
   (module Act : Action.S with type Random_state.t = rs)
+  (subject : Subject.Test.t)
+  (rng : Splittable_random.State.t)
   : rs State.Monad.t =
-  State.Monad.with_rng
-    (Quickcheck.Generator.generate Act.Random_state.gen ~size:10)
+  let open State.Monad.Let_syntax in
+  let%map gen = Act.Random_state.gen subject in
+  Quickcheck.Generator.generate gen rng ~size:10
 ;;
 
 let run_action
   (module Act : Action.S)
   (subject : Subject.Test.t)
+  (rng : Splittable_random.State.t)
   : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
-  let %bind state = generate_pure_random_state (module Act) in
+  let%bind state = generate_random_state (module Act) subject rng in
   Act.run subject state
 ;;
 
@@ -306,7 +280,9 @@ let table : Action.List.t Lazy.t =
     )
 ;;
 
-let mutate_subject (subject : Subject.Test.t)
+let mutate_subject
+    (subject : Subject.Test.t)
+    (rng : Splittable_random.State.t)
   : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
   let cap = 10 in
@@ -319,22 +295,24 @@ let mutate_subject (subject : Subject.Test.t)
             then return (remaining, subject')
             else
               let%bind action =
-                Action.List.pick table subject'
+                Action.List.pick table subject' rng
               in
-              let%bind subject'' = run_action action subject' in
+              let%bind subject'' = run_action action subject' rng in
               mu (remaining - 1, subject'')
           )
   in subject'
 ;;
 
-let run_with_state (test : Mini_litmus.Ast.Validated.t)
+let run_with_state
+    (test : Mini_litmus.Ast.Validated.t)
+    (rng  : Splittable_random.State.t)
   : Mini_litmus.Ast.Validated.t State.Monad.t =
   let open State.Monad.Let_syntax in
   (* TODO: add uuid to this *)
   let name = Mini_litmus.Ast.Validated.name test in
   let post = Mini_litmus.Ast.Validated.post test in
   let subject = Subject.Test.of_litmus test in
-  let%bind subject' = mutate_subject subject in
+  let%bind subject' = mutate_subject subject rng in
   State.Monad.with_vars_m
     (fun vars ->
        State.Monad.Monadic.return
@@ -377,11 +355,9 @@ let existing_globals
 ;;
 
 let make_initial_state
-    (seed : int option)
     (test : Mini_litmus.Ast.Validated.t)
   : State.t Or_error.t =
   let open Or_error.Let_syntax in
-  let rng = make_rng seed in
   let all_cvars = Mini_litmus.cvars test in
   let%map globals = existing_globals test in
   let global_cvars =
@@ -389,14 +365,14 @@ let make_initial_state
   let locals =
     C_identifier.Set.diff all_cvars global_cvars
   in
-  State.init rng globals locals
+  State.init globals locals
 ;;
 
 let run ~(seed : int option)
     (test : Mini_litmus.Ast.Validated.t)
   : Mini_litmus.Ast.Validated.t Or_error.t =
   Or_error.(
-    make_initial_state seed test
-    >>= State.Monad.run (run_with_state test)
+    make_initial_state test
+    >>= State.Monad.run (run_with_state test (make_rng seed))
   )
 ;;

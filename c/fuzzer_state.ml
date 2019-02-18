@@ -26,24 +26,22 @@ open Core_kernel
 open Utils
 
 type t =
-  { rng  : Splittable_random.State.t
-  ; vars : Fuzzer_var.Map.t
+  { vars : Fuzzer_var.Map.t
   }
 [@@deriving fields]
 ;;
 
 let init
-    (rng : Splittable_random.State.t)
     (globals : Mini.Type.t C_identifier.Map.t)
     (locals  : C_identifier.Set.t)
   : t =
   let vars =
     Fuzzer_var.Map.make_existing_var_map globals locals in
-  { rng ; vars }
+  { vars }
 ;;
 
 let map_vars (s : t) ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t) : t =
-  { s with vars = f s.vars }
+  { vars = f s.vars }
 ;;
 
 let register_global
@@ -62,27 +60,36 @@ let erase_var_value
   map_vars s ~f:(Fuzzer_var.Map.erase_value ~var)
 
 (** [gen_var_raw rng] generates a random C identifier, in
-    string format, using [rng] as the RNG. *)
-let gen_var_raw (rng : Splittable_random.State.t) : string =
+    string format. *)
+let gen_var_raw : string Quickcheck.Generator.t =
   let module Q = Quickcheck.Generator in
-  sprintf "%c%d"
-    (Q.generate ~size:0 Q.char_alpha rng)
-    (Q.generate ~size:5 Q.small_non_negative_int rng)
+  let open Q.Let_syntax in
+  let%bind char = Q.char_alpha in
+  let%map  num  = Q.small_non_negative_int in
+  sprintf "%c%d" char num
 ;;
 
 let%expect_test "gen_var_raw: example" =
   let deterministic_rng = Splittable_random.State.of_int 0 in
-  print_string (gen_var_raw deterministic_rng);
-  [%expect {| P0 |}]
+  print_string
+    (Quickcheck.Generator.generate ~size:5 gen_var_raw deterministic_rng);
+  [%expect {| b1 |}]
 ;;
 
-(** [gen_var rng] generates a random C identifier, in
-    {{!C_identifier.t}C_identifier.t} format, using [rng] as the
-    RNG. *)
-let gen_var (rng : Splittable_random.State.t) : C_identifier.t =
+(*
+(** [gen_var] generates a random C identifier, in
+    {{!C_identifier.t}C_identifier.t} format. *)
+let gen_var : C_identifier.t Quickcheck.Generator.t =
   (* Assuming that [gen_var_raw] produces valid C identifiers by
      construction. *)
-  C_identifier.of_string (gen_var_raw rng)
+  Quickcheck.Generator.map ~f:C_identifier.of_string gen_var_raw
+;; *)
+
+let gen_fresh_var
+    (state : t) : C_identifier.t Quickcheck.Generator.t =
+  let vars = state.vars in
+  Quickcheck.Generator.filter C_identifier.gen (* gen_var*)
+    ~f:(Fn.non (C_identifier.Map.mem vars))
 ;;
 
 module Monad = struct
@@ -100,44 +107,12 @@ module Monad = struct
     peek vars >>| f
   ;;
 
-  let with_rng_m (f : Splittable_random.State.t -> 'a t) : 'a t =
-    peek rng >>= f
-  ;;
-
-  let with_rng (f : Splittable_random.State.t -> 'a) : 'a t =
-    peek rng >>| f
-  ;;
-
   let register_global
       ?(initial_value : Fuzzer_var.Value.t option)
       (ty : Mini.Type.t)
       (var : C_identifier.t)
     : unit t =
     modify (fun s -> register_global ?initial_value s var ty)
-
-  (** [gen_fresh_var ()] is a stateful action that generates a
-      variable not already registered in the state (but doesn't
-      register it itself). *)
-  let gen_fresh_var () : C_identifier.t t =
-    let open Let_syntax in
-    let%bind rng  = peek rng in
-    let%map  vars = peek vars in
-    let rec mu () =
-      let var = gen_var rng in
-      if C_identifier.Map.mem vars var then mu () else var
-    in mu ()
-  ;;
-
-  (** [gen_and_register_fresh_var ?value ty] is a stateful action that
-      generates a variable name not already
-      registered in the state, then registers it as a generated
-      variable of type [ty] and optional value [value]. *)
-  let gen_and_register_fresh_var
-      ?(initial_value : Fuzzer_var.Value.t option)
-      (ty : Mini.Type.t)
-    : C_identifier.t t =
-    gen_fresh_var () >>= tee_m ~f:(register_global ?initial_value ty)
-  ;;
 
   let erase_var_value (var : C_identifier.t) : unit t =
     modify (erase_var_value ~var)

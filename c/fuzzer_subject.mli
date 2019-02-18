@@ -39,6 +39,13 @@ module Program : sig
     }
   (** Transparent type of fuzzable programs. *)
 
+  module Path : Mini.S_function_path
+    with type stm = Mini.Statement.t
+     and type target := t
+     and type 'a stm_list_path := 'a Mini.Statement.List_path.t
+  (** Allows production and consumption of random paths over fuzzable
+     programs in the same way as normal mini functions. *)
+
   val of_function : Mini.Function.t -> t
   (** [of_litmus func] converts a mini-model C function [func]
       to the intermediate form used for fuzzing. *)
@@ -61,6 +68,13 @@ module Test : sig
     ; programs : Program.t list
     }
   (** Transparent type of fuzzable litmus tests. *)
+
+  module Path : Mini.S_program_path
+    with type stm = Mini.Statement.t
+     and type target := t
+     and type 'a function_path := 'a Program.Path.t
+  (** Allows production and consumption of random paths over fuzzable
+     tests in the same way as normal mini programs. *)
 
   val of_litmus : Mini_litmus.Ast.Validated.t -> t
   (** [of_litmus test] converts a validated C litmus test [test]

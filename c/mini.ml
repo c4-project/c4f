@@ -868,6 +868,34 @@ module Function = struct
     |> List.map ~f:fst
     |> C_identifier.Set.of_list
   ;;
+
+  module Path : S_function_path
+    with type stm = Statement.t
+     and type target := t
+     and type 'a stm_list_path := 'a Statement.List_path.t = struct
+    type target = t
+    type stm = Statement.t
+
+    type 'a t =
+      | On_statements : 'a Statement.List_path.t -> 'a t
+    ;;
+
+    let gen_insert_stm (func : target) : stm_hole t Quickcheck.Generator.t =
+      Quickcheck.Generator.map
+        (Statement.List_path.gen_insert_stm func.body_stms)
+        ~f:(fun path -> On_statements path)
+    ;;
+
+    let insert_stm
+        (path : stm_hole t) (stm : stm) (func : target) : target Or_error.t =
+      let open Or_error.Let_syntax in
+      match path with
+      | On_statements rest ->
+        let%map body_stms' =
+          Statement.List_path.insert_stm rest stm func.body_stms
+        in { func with body_stms = body_stms' }
+    ;;
+  end
 end
 
 module Program = struct
@@ -918,6 +946,42 @@ module Program = struct
     |> List.map ~f:(fst)
     |> C_identifier.Set.of_list
   ;;
+
+  module Path : S_program_path
+    with type stm = Statement.t
+     and type target := t
+     and type 'a function_path := 'a Function.Path.t = struct
+    type target = t
+    type stm = Statement.t
+
+    type 'a t =
+      | On_program : { index : int; rest : 'a Function.Path.t } -> 'a t
+    ;;
+
+    let gen_insert_stm (prog : target) : stm_hole t Quickcheck.Generator.t =
+      let prog_gens =
+        List.mapi prog.functions
+          ~f:(fun index (_, func) ->
+              Quickcheck.Generator.map
+                (Function.Path.gen_insert_stm func)
+                ~f:(fun rest -> On_program { index; rest })
+            )
+      in Quickcheck.Generator.union prog_gens
+    ;;
+
+    let insert_stm
+        (path : stm_hole t) (stm : stm) (prog : target) : target Or_error.t =
+      let open Or_error.Let_syntax in
+      match path with
+      | On_program { index; rest } ->
+        let functions = functions prog in
+        let%map functions' = Alter_list.replace functions index
+            ~f:(fun (name, func) ->
+                let%map func' = Function.Path.insert_stm rest stm func in
+                Some (name, func'))
+        in { prog with functions = functions' }
+    ;;
+  end
 end
 
 module Reify = struct

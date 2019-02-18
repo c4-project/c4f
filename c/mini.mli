@@ -32,7 +32,7 @@
     One can get a 'mini' C program by {{!Convert}converting} an AST
     to it (which may fail).  To get an AST (for printing, etc.), use
     {{!Reify}Reify}.
- *)
+*)
 
 open Core_kernel
 open Utils
@@ -122,7 +122,7 @@ module Lvalue : sig
 
   val underlying_variable : t -> Identifier.t
   (** [underlying_variable t] gets the underlying variable name of
-     [t]. *)
+      [t]. *)
 end
 
 (** An address (a lvalue, or reference thereto). *)
@@ -142,7 +142,7 @@ module Address : sig
 
   val underlying_variable : t -> Identifier.t
   (** [underlying_variable t] gets the underlying variable name of
-     [t]. *)
+      [t]. *)
 end
 
 
@@ -175,17 +175,17 @@ module Expression : sig
 
   module On_addresses
     : Travesty.Traversable.S0_container
-        with type t := t and type Elt.t = Address.t
+      with type t := t and type Elt.t = Address.t
   (** Traversing over atomic-action addresses in expressions. *)
 
   module On_identifiers
     : Travesty.Traversable.S0_container
-        with type t := t and type Elt.t = Identifier.t
+      with type t := t and type Elt.t = Identifier.t
   (** Traversing over identifiers in expressions. *)
 
   module On_lvalues
     : Travesty.Traversable.S0_container
-        with type t := t and type Elt.t = Lvalue.t
+      with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in expressions. *)
 
   (** {3 Constructors} *)
@@ -221,7 +221,7 @@ module Assign : sig
 
   val make : lvalue:Lvalue.t -> rvalue:Expression.t -> t
   (** [make ~lvalue ~rvalue] constructs an assignment of [rvalue] to
-     [lvalue]. *)
+      [lvalue]. *)
 end
 
 (** An atomic store operation. *)
@@ -242,8 +242,8 @@ module Atomic_store : sig
 
   val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
   (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
-     expression with source [src], destination [dst], and memory order
-     [mo]. *)
+      expression with source [src], destination [dst], and memory order
+      [mo]. *)
 end
 
 (** An atomic compare-exchange operation. *)
@@ -255,7 +255,7 @@ module Atomic_cmpxchg : sig
   module On_addresses : Travesty.Traversable.S0_container
     with type t := t and type Elt.t = Address.t
   (** Traversing over atomic-action addresses in atomic
-     compare-exchanges. *)
+      compare-exchanges. *)
 
   module On_lvalues : Travesty.Traversable.S0_container
     with type t := t and type Elt.t = Lvalue.t
@@ -270,10 +270,10 @@ module Atomic_cmpxchg : sig
     -> succ:Mem_order.t
     -> fail:Mem_order.t
     -> t
-  (** [make ~obj ~expected ~desired ~succ ~fail] constructs an
-      explicit strong compare-exchange with object [obj], expected
-      value store [expected], desired final value [desired], and
-      memory orders [succ] on success and [fail] on failure. *)
+    (** [make ~obj ~expected ~desired ~succ ~fail] constructs an
+        explicit strong compare-exchange with object [obj], expected
+        value store [expected], desired final value [desired], and
+        memory orders [succ] on success and [fail] on failure. *)
 end
 
 (** A statement.
@@ -285,17 +285,17 @@ module Statement : sig
 
   module On_addresses
     : Travesty.Traversable.S0_container
-        with type t := t and type Elt.t = Address.t
+      with type t := t and type Elt.t = Address.t
   (** Traversing over atomic-action addresses in statements. *)
 
   module On_identifiers
     : Travesty.Traversable.S0_container
-        with type t := t and type Elt.t = Identifier.t
+      with type t := t and type Elt.t = Identifier.t
   (** Traversing over identifiers in statements. *)
 
   module On_lvalues
     : Travesty.Traversable.S0_container
-        with type t := t and type Elt.t = Lvalue.t
+      with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in statements. *)
 
   (** {3 Constructors} *)
@@ -316,12 +316,12 @@ module Statement : sig
     -> unit
     -> t
   (** [if_stm ~cond ~t_branch ?f_branch ()] creates an if statement
-     with condition [cond], true branch [t_branch], and optional false
-     branch [f_branch]. *)
+      with condition [cond], true branch [t_branch], and optional false
+      branch [f_branch]. *)
 
   val nop : t
   (** [nop] is a no-operation statement; it corresponds to C's empty
-     expression statement. *)
+      expression statement. *)
 
   (** {3 Paths} *)
 
@@ -344,17 +344,17 @@ module Function : sig
     -> unit
     -> t
   (** [make ~parameters ~body_decls ?body_stms] creates a function
-     with the given contents. *)
+      with the given contents. *)
 
   val parameters : t -> Type.t id_assoc
   (** [parameters func] gets [func]'s parameter list. *)
 
   val body_decls : t -> Initialiser.t id_assoc
-    (** [body_decls func] gets [func]'s in-body variable
-       declarations. *)
+  (** [body_decls func] gets [func]'s in-body variable
+      declarations. *)
 
   val body_stms : t -> Statement.t list
-    (** [body_decls func] gets [func]'s statements. *)
+  (** [body_decls func] gets [func]'s statements. *)
 
   val map
     :  t
@@ -362,8 +362,8 @@ module Function : sig
     -> body_decls:(Initialiser.t id_assoc -> Initialiser.t id_assoc)
     -> body_stms:(Statement.t list -> Statement.t list)
     -> t
-    (** [map func ~parameters ~body_decls ~body_stms] runs the given
-        functions over the respective parts of a function. *)
+  (** [map func ~parameters ~body_decls ~body_stms] runs the given
+      functions over the respective parts of a function. *)
 
   val cvars : t -> C_identifier.Set.t
   (** [cvars func] extracts a set of C variable names from
@@ -371,42 +371,60 @@ module Function : sig
 
   module On_decls : Travesty.Traversable.S0_container
     with type t := t and type Elt.t := Initialiser.t named
-    (** [On_decls] allows traversal over all of the declarations
-        inside a function. *)
+  (** [On_decls] allows traversal over all of the declarations
+      inside a function. *)
+
+  (* {3 Paths} *)
+
+  module Path :
+    (S_function_path
+     with type stm = Statement.t
+      and type target := t
+      and type 'a stm_list_path := 'a Statement.List_path.t)
 end
 
 module Program : sig
   type t [@@deriving sexp]
 
   val make
-   :  globals:(Initialiser.t id_assoc)
-   -> functions:(Function.t id_assoc)
-   -> t
-   (** [make ~globals ~functions] makes a program with global variable
-       declarations [globals] and function definitions [functions]. *)
+    :  globals:(Initialiser.t id_assoc)
+    -> functions:(Function.t id_assoc)
+    -> t
+  (** [make ~globals ~functions] makes a program with global variable
+      declarations [globals] and function definitions [functions]. *)
 
- val cvars : t -> C_identifier.Set.t
- (** [cvars program] extracts a set of C variable names from
-    [program]. *)
+  val cvars : t -> C_identifier.Set.t
+  (** [cvars program] extracts a set of C variable names from
+      [program]. *)
+
+  (* {3 Traversals} *)
 
   module On_decls : Travesty.Traversable.S0_container
     with type t := t and type Elt.t := Initialiser.t named
-    (** [On_decls] allows traversal over all of the declarations
-        inside a program. *)
+  (** [On_decls] allows traversal over all of the declarations
+      inside a program. *)
+
+  (* {3 Paths} *)
+
+  module Path :
+    (S_program_path
+     with type stm = Statement.t
+      and type target := t
+      and type 'a function_path := 'a Function.Path.t)
 end
 
 (** Functions for reifying a mini-model into an AST. *)
 module Reify : sig
   val func : Identifier.t -> Function.t -> Ast.External_decl.t
   (** [func id f] reifies the mini-function [f], with name [id], into
-     the C AST. *)
+      the C AST. *)
 
   val program : Program.t -> Ast.Translation_unit.t
   (** [program p] reifies the mini-program [p] into the C AST. *)
 
   val decl : Identifier.t -> Initialiser.t -> Ast.Decl.t
   (** [decl id d] reifies the mini-declaration [d], with name [id],
-     into the C AST. *)
+      into the C AST. *)
 
   val stm : Statement.t -> Ast.Stm.t
   (** [stm s] reifies the mini-statement [s] into the C AST. *)

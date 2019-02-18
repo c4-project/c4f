@@ -52,16 +52,25 @@ module List = struct
     W.adjust_weights_m wl ~f:(zero_if_not_available subject)
   ;;
 
-  (** [pick table subject] is a stateful action that picks a
-     weighted-random action module from [table] that is available on
-     [subject]. *)
+
   let pick (table : t) (subject : Fuzzer_subject.Test.t)
+      (rng : Splittable_random.State.t)
     : (module S) Fuzzer_state.Monad.t =
     let open Fuzzer_state.Monad.Let_syntax in
     let%bind available = to_available_only table subject in
-    Fuzzer_state.Monad.with_rng_m
-      (fun rng ->
-         Fuzzer_state.Monad.Monadic.return
-           (Weighted_list.sample available rng))
+    Fuzzer_state.Monad.Monadic.return
+      (Weighted_list.sample available rng)
   ;;
+end
+
+module Make_state_only (B : Basic_state_only) : S with type Random_state.t = B.Random_state.t = struct
+  module Random_state = struct
+    type t = B.Random_state.t
+    let gen _subject = B.Random_state.gen ()
+  end
+
+  let available _subject = B.available ()
+
+  let run subject random =
+    Fuzzer_state.Monad.(B.run () random >>| fun () -> subject)
 end

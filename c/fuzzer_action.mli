@@ -36,8 +36,9 @@ module List : sig
   val pick
     :  t
     -> Fuzzer_subject.Test.t
+    -> Splittable_random.State.t
     -> (module S) Fuzzer_state.Monad.t
-    (** [pick table subject] is a stateful computation that selects a
-       random viable action to apply to [subject].  It does not run
-        the action itself. *)
+    (** [pick table subject rng] is a stateful action that picks a
+        weighted-random action module from [table] that is available on
+        [subject], using [rng] as a random number generator. *)
 end

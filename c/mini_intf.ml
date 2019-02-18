@@ -69,6 +69,14 @@ module type S_statement_path = sig
        statements can be inserted. *)
 end
 
+module type S_stm_container_path = sig
+  include S_path
+
+  val gen_insert_stm : target -> stm_hole t Quickcheck.Generator.t
+  (** [gen_insert_stm dest] creates a Quickcheck-style
+        generator for statement insertion paths targeting [dest]. *)
+end
+
 (** Signature of paths over statement lists *)
 module type S_statement_list_path = sig
   type stm
@@ -78,11 +86,29 @@ module type S_statement_list_path = sig
     | Insert_at : int -> stm_hole t
     | At        : { index : int; rest : 'a stm_path } -> 'a t
 
-  include S_path with type 'a t := 'a t
-                  and type target := stm list
-                  and type stm := stm
+  include S_stm_container_path with type 'a t := 'a t
+                                and type target := stm list
+                                and type stm := stm
+end
 
-  val gen_insert_stm : stm list -> stm_hole t Quickcheck.Generator.t
-  (** [gen_insert_stm dest] creates a Quickcheck-style
-        generator for statement insertion paths targeting [dest]. *)
+(** Signature of paths over functions *)
+module type S_function_path = sig
+  type 'a stm_list_path
+
+  type 'a t =
+    | On_statements : 'a stm_list_path -> 'a t
+  ;;
+
+  include S_stm_container_path with type 'a t := 'a t
+end
+
+(** Signature of paths over programs *)
+module type S_program_path = sig
+  type 'a function_path
+
+  type 'a t =
+    | On_program : { index : int; rest : 'a function_path } -> 'a t
+  ;;
+
+  include S_stm_container_path with type 'a t := 'a t
 end

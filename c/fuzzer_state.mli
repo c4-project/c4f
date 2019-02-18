@@ -31,13 +31,17 @@ type t
 (** Opaque type of states. *)
 
 val init
-  :  Splittable_random.State.t
-  -> Mini.Type.t C_identifier.Map.t
+  :  Mini.Type.t C_identifier.Map.t
   -> C_identifier.Set.t
   -> t
-(** [init rng globals locals] creates an initial state with the
+(** [init globals locals] creates an initial state with the
     random number generator [rng], global variable map [globals],
     and local variable set [locals]. *)
+
+val gen_fresh_var
+  :  t -> C_identifier.t Quickcheck.Generator.t
+(** [gen_fresh_var state] generates random C identifiers that don't
+    shadow existing variables in [state]. *)
 
 (** The state monad. *)
 module Monad : sig
@@ -54,14 +58,6 @@ module Monad : sig
   (** [with_vars f] is a variant of {{!with_vars_m}with_vars_m} which
       maps across [f] rather than binding. *)
 
-  val with_rng_m :  (Splittable_random.State.t -> 'a t) -> 'a t
-  (** [with_rng_m f] is a stateful action that binds the stateful
-      action [f] over the state monad's random number generator. *)
-
-  val with_rng :  (Splittable_random.State.t -> 'a) -> 'a t
-  (** [with_rng f] is a variant of {{!with_rng_m}with_rng_m} which
-      maps across [f] rather than binding. *)
-
   val register_global
      :  ?initial_value:Fuzzer_var.Value.t
      -> Mini.Type.t
@@ -71,16 +67,6 @@ module Monad : sig
       registers a generated variable [var] of type [ty] and optional
       known value [value] into the state,
       overwriting any existing variable of the same name. *)
-
-   val gen_and_register_fresh_var
-     :  ?initial_value:Fuzzer_var.Value.t
-     -> Mini.Type.t
-     -> C_identifier.t t
-  (** [gen_and_register_fresh_var ?value ty] is a stateful action that
-      generates a variable name not already
-      registered in the state, then registers it as a generated
-      variable of type [ty] and optional value [value].  It returns
-      the generated variable name. *)
 
    val erase_var_value : C_identifier.t -> unit t
    (** [erase_var_value var] is a stateful action that erases any
