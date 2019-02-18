@@ -30,10 +30,28 @@
 open Core_kernel
 open Utils
 
-(** Variable known-values *)
+(** Type for storing variable values. *)
 module Value : sig
   type t =
-    | Known_int of int
+    | Int of int
+  ;;
+end
+
+(** A variable 'known-value' record.
+
+    These records are used to decide:
+
+    - whether a generated variable has exactly one value throughout the
+      lifetime of a litmus test (meaning we can depend on that value for
+      generating other code);
+    - whether that value is depended upon (meaning we can't use the
+      variable as the target of a value-changing operation). *)
+module Known_value : sig
+  type t =
+    { value            : Value.t
+    ; has_dependencies : bool
+    }
+  ;;
 end
 
 (** Variable records *)

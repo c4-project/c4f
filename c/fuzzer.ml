@@ -159,7 +159,7 @@ module Make_global : Action.S = struct
     let open State.Monad.Let_syntax in
     let ty = int_type ~is_atomic ~is_global:true in
     let%map () = State.Monad.register_global ty name
-        ~initial_value:(Var.Value.Known_int initial_value)
+        ~initial_value:(Var.Value.Int initial_value)
     in
     let const = Mini.Constant.Integer initial_value in
     Subject.Test.add_var_to_init subject name const

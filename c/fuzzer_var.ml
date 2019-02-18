@@ -27,7 +27,17 @@ open Utils
 
 module Value = struct
   type t =
-    | Known_int of int
+    | Int of int
+  ;;
+end
+
+module Known_value = struct
+  type t =
+    { value            : Value.t
+    ; has_dependencies : bool
+    }
+  [@@deriving make]
+  ;;
 end
 
 module Record = struct
@@ -35,9 +45,9 @@ module Record = struct
     { ty : Mini.Type.t option
     ; source : [ `Existing | `Generated ]
     ; scope : [ `Global | `Local ]
-    ; value : Value.t option
+    ; known_value : Known_value.t option
     }
-  [@@deriving fields]
+  [@@deriving fields, make]
   ;;
 
   let is_global : t -> bool = function
@@ -62,34 +72,26 @@ module Record = struct
   ;;
 
   let erase_value (record : t) : t =
-    { record with value = None }
+    { record with known_value = None }
   ;;
 
   let make_existing_global (ty : Mini.Type.t) : t =
-    { ty     = Some ty
-    ; source = `Existing
-    ; scope  = `Global
-    ; value  = None
-    }
+    make ~ty ~source:`Existing ~scope:`Global ()
   ;;
 
   let make_existing_local (_name : C_identifier.t) : t =
-    { ty     = None
-    ; source = `Existing
-    ; scope  = `Local
-    ; value  = None
-    }
+    make ~source:`Existing ~scope:`Local ()
   ;;
 
   let make_generated_global
     ?(initial_value : Value.t option)
     (ty             : Mini.Type.t)
     : t =
-    { ty     = Some ty
-    ; source = `Generated
-    ; scope  = `Global
-    ; value  = initial_value
-    }
+    let known_value = Option.map initial_value
+        ~f:(fun value ->
+            Known_value.make ~value ~has_dependencies:false
+          )
+    in make ~ty ~source:`Generated ~scope:`Global ?known_value ()
   ;;
 end
 
