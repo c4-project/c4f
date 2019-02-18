@@ -174,7 +174,7 @@ module Constant_store : Action.S = struct
     type t =
       { new_value : int
       ; global    : C_identifier.t
-      ; path      : Mini.stm_hole Subject.Test.Path.t
+      ; path      : Mini.stm_hole Mini.program_path
       }
 
     module G = Quickcheck.Generator

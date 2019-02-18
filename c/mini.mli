@@ -325,12 +325,9 @@ module Statement : sig
 
   (** {3 Paths} *)
 
-  module rec Path :
-    (S_statement_path
-     with type stm = t and type 'a list_path := 'a List_path.t)
+  module rec Path : (S_statement_path with type stm = t and type target = t)
   and List_path :
-    (S_statement_list_path
-     with type stm = t and type 'a stm_path := 'a Path.t)
+    (S_statement_list_path with type stm = t and type target = t)
 end
 
 (** A function (less its name). *)
@@ -377,10 +374,7 @@ module Function : sig
   (* {3 Paths} *)
 
   module Path :
-    (S_function_path
-     with type stm = Statement.t
-      and type target := t
-      and type 'a stm_list_path := 'a Statement.List_path.t)
+    (S_function_path with type stm = Statement.t and type target := t)
 end
 
 module Program : sig
@@ -407,10 +401,8 @@ module Program : sig
   (* {3 Paths} *)
 
   module Path :
-    (S_program_path
-     with type stm = Statement.t
-      and type target := t
-      and type 'a function_path := 'a Function.Path.t)
+    S_program_path
+    with type stm = Statement.t and type target := t
 end
 
 (** Functions for reifying a mini-model into an AST. *)
@@ -429,3 +421,8 @@ module Reify : sig
   val stm : Statement.t -> Ast.Stm.t
   (** [stm s] reifies the mini-statement [s] into the C AST. *)
 end
+
+module Make_statement_list_path (M : S_statement_path)
+  : S_statement_list_path
+    with type stm = M.stm and type target = M.target
+

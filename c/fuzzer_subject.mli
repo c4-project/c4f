@@ -31,18 +31,31 @@
 open Core_kernel
 open Utils
 
-(** Fuzzable representation of a program *)
+(** An item, annotated with information about its source. *)
+module With_source : sig
+  type 'a t
+
+  val item : 'a t -> 'a
+  (** [item x] gets [x]'s underlying item. *)
+
+  val source : 'a t -> [`Existing | `Generated]
+  (** [source x] gets [x]'s source. *)
+
+  val make : item:'a -> source:[`Existing | `Generated] -> 'a t
+  (** [make ~item ~source] makes a source-annotated item with contents
+      [item] and source [source]. *)
+end
+
+(** Fuzzable representation of a program. *)
 module Program : sig
   type t =
     { decls : Mini.Initialiser.t Mini.id_assoc
-    ; stms  : Mini.Statement.t list
+    ; stms  : Mini.Statement.t With_source.t list
     }
   (** Transparent type of fuzzable programs. *)
 
   module Path : Mini.S_function_path
-    with type stm = Mini.Statement.t
-     and type target := t
-     and type 'a stm_list_path := 'a Mini.Statement.List_path.t
+    with type stm = Mini.Statement.t and type target := t
   (** Allows production and consumption of random paths over fuzzable
      programs in the same way as normal mini functions. *)
 
@@ -70,9 +83,7 @@ module Test : sig
   (** Transparent type of fuzzable litmus tests. *)
 
   module Path : Mini.S_program_path
-    with type stm = Mini.Statement.t
-     and type target := t
-     and type 'a function_path := 'a Program.Path.t
+    with type stm = Mini.Statement.t and type target := t
   (** Allows production and consumption of random paths over fuzzable
      tests in the same way as normal mini programs. *)
 

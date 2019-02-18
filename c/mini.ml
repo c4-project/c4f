@@ -598,6 +598,50 @@ module Atomic_cmpxchg = struct
     end)
 end
 
+module Make_statement_list_path
+    (M : S_statement_path)
+  : S_statement_list_path
+      with type stm = M.stm
+       and type target = M.target = struct
+
+      type stm = M.stm
+      type target = M.target
+
+      let insert_stm (path : stm_hole list_path) (stm : stm) (dest : target list)
+        : target list Or_error.t =
+        match path with
+        | Insert_at index ->
+          Alter_list.insert dest index (M.lift_stm stm)
+        | At { index; rest } ->
+          Alter_list.replace dest index
+            ~f:(fun x -> Or_error.(M.insert_stm rest stm x >>| Option.some))
+      ;;
+
+      let gen_insert_stm_on (index : int) (single_dest : target)
+        : stm_hole list_path Quickcheck.Generator.t list =
+        let insert_after =
+          Quickcheck.Generator.return (Insert_at (index + 1))
+        in
+        let insert_into =
+          single_dest
+          |> M.try_gen_insert_stm
+          |> Option.map
+            ~f:(Quickcheck.Generator.map
+                  ~f:(fun rest -> At { index; rest })
+               )
+          |> Option.to_list
+        in
+        insert_after :: insert_into
+      ;;
+
+      let gen_insert_stm (dest : target list)
+        : stm_hole list_path Quickcheck.Generator.t =
+        Quickcheck.Generator.union
+          (Quickcheck.Generator.return (Insert_at 0)
+           :: List.concat_mapi ~f:gen_insert_stm_on dest)
+      ;;
+    end
+
 module Statement = struct
   type t =
     | Assign of Assign.t
@@ -611,23 +655,20 @@ module Statement = struct
   [@@deriving sexp, variants]
   ;;
 
-  module rec Path : S_statement_path
-    with type stm = t
-     and type 'a list_path := 'a List_path.t = struct
+  module rec Path
+    : S_statement_path with type stm = t and type target = t = struct
     type stm = t
+    type target = t
 
-    type 'a t =
-      | This : on_stm t
-      | If_block : { branch : bool ; rest : 'a List_path.t } -> 'a t
-      | If_cond : on_expr t
-    ;;
+    let lift_stm = Fn.id
+    let lower_stm = Fn.id
 
     let insert_stm_in_if
       (cond : Expression.t)
       (t_branch : stm list)
       (f_branch : stm list)
       (stm : stm)
-      (rest : stm_hole List_path.t)
+      (rest : stm_hole list_path)
       : bool -> stm Or_error.t = function
       | true ->
         Or_error.(
@@ -641,7 +682,7 @@ module Statement = struct
         )
     ;;
 
-    let insert_stm (path : stm_hole t) (stm : stm) (dest : stm)
+    let insert_stm (path : stm_hole stm_path) (stm : stm) (dest : stm)
       : stm Or_error.t =
       match path, dest with
       | If_block { branch; rest }, If_stm { cond; t_branch; f_branch } ->
@@ -651,7 +692,7 @@ module Statement = struct
     ;;
 
     let try_gen_insert_stm
-      : stm -> (stm_hole t Quickcheck.Generator.t option) = function
+      : stm -> (stm_hole stm_path Quickcheck.Generator.t option) = function
       | If_stm { t_branch; f_branch; _ } ->
         Some (
           Quickcheck.Generator.union
@@ -667,48 +708,8 @@ module Statement = struct
     ;;
   end
   and List_path : S_statement_list_path
-    with type stm = t
-     and type 'a stm_path := 'a Path.t = struct
-    type stm = t
-
-    type 'a t =
-      | Insert_at : int -> stm_hole t
-      | At        : { index : int; rest : 'a Path.t } -> 'a t
-    ;;
-
-    let insert_stm (path : stm_hole t) (stm : stm) (dest : stm list)
-      : stm list Or_error.t =
-      match path with
-      | Insert_at index ->
-        Alter_list.insert dest index stm
-      | At { index; rest } ->
-        Alter_list.replace dest index
-          ~f:(fun x -> Or_error.(Path.insert_stm rest stm x >>| Option.some))
-    ;;
-
-    let gen_insert_stm_on (index : int) (single_dest : stm)
-      : stm_hole t Quickcheck.Generator.t list =
-      let insert_after =
-        Quickcheck.Generator.return (Insert_at (index + 1))
-      in
-      let insert_into =
-        single_dest
-        |> Path.try_gen_insert_stm
-        |> Option.map
-          ~f:(Quickcheck.Generator.map
-                ~f:(fun rest -> At { index; rest })
-             )
-        |> Option.to_list
-      in
-      insert_after :: insert_into
-    ;;
-
-    let gen_insert_stm (dest : stm list) : stm_hole t Quickcheck.Generator.t =
-      Quickcheck.Generator.union
-        (Quickcheck.Generator.return (Insert_at 0)
-        :: List.concat_mapi ~f:gen_insert_stm_on dest)
-    ;;
-  end
+    with type stm = t and type target = t =
+    Make_statement_list_path (Path)
 
   (* Override to change f_branch into an optional argument. *)
   let if_stm
@@ -870,24 +871,20 @@ module Function = struct
   ;;
 
   module Path : S_function_path
-    with type stm = Statement.t
-     and type target := t
-     and type 'a stm_list_path := 'a Statement.List_path.t = struct
+    with type stm = Statement.t and type target := t = struct
     type target = t
     type stm = Statement.t
 
-    type 'a t =
-      | On_statements : 'a Statement.List_path.t -> 'a t
-    ;;
-
-    let gen_insert_stm (func : target) : stm_hole t Quickcheck.Generator.t =
+    let gen_insert_stm (func : target)
+      : stm_hole function_path Quickcheck.Generator.t =
       Quickcheck.Generator.map
         (Statement.List_path.gen_insert_stm func.body_stms)
         ~f:(fun path -> On_statements path)
     ;;
 
     let insert_stm
-        (path : stm_hole t) (stm : stm) (func : target) : target Or_error.t =
+        (path : stm_hole function_path)
+        (stm : stm) (func : target) : target Or_error.t =
       let open Or_error.Let_syntax in
       match path with
       | On_statements rest ->
@@ -948,17 +945,12 @@ module Program = struct
   ;;
 
   module Path : S_program_path
-    with type stm = Statement.t
-     and type target := t
-     and type 'a function_path := 'a Function.Path.t = struct
+    with type stm = Statement.t and type target := t = struct
     type target = t
     type stm = Statement.t
 
-    type 'a t =
-      | On_program : { index : int; rest : 'a Function.Path.t } -> 'a t
-    ;;
-
-    let gen_insert_stm (prog : target) : stm_hole t Quickcheck.Generator.t =
+    let gen_insert_stm (prog : target)
+      : stm_hole program_path Quickcheck.Generator.t =
       let prog_gens =
         List.mapi prog.functions
           ~f:(fun index (_, func) ->
@@ -970,7 +962,8 @@ module Program = struct
     ;;
 
     let insert_stm
-        (path : stm_hole t) (stm : stm) (prog : target) : target Or_error.t =
+        (path : stm_hole program_path)
+        (stm : stm) (prog : target) : target Or_error.t =
       let open Or_error.Let_syntax in
       match path with
       | On_program { index; rest } ->
