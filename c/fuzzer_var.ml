@@ -36,7 +36,7 @@ module Known_value = struct
     { value            : Value.t
     ; has_dependencies : bool
     }
-  [@@deriving make]
+  [@@deriving fields, make]
   ;;
 end
 
@@ -69,6 +69,11 @@ module Record = struct
     Travesty.T_fn.conj
       is_global
       (Travesty.T_fn.conj is_atomic was_generated)
+  ;;
+
+  let is_dependency_free (record : t) : bool =
+    Option.for_all (known_value record)
+      ~f:(Fn.non (Known_value.has_dependencies))
   ;;
 
   let erase_value (record : t) : t =
@@ -124,9 +129,31 @@ module Map = struct
     C_identifier.Map.set map ~key ~data
   ;;
 
-  let erase_value (map : t) ~(var : C_identifier.t) : t =
+  let erase_value_inner (map : t) ~(var : C_identifier.t) : t =
     C_identifier.Map.change map var
       ~f:(Option.map ~f:Record.erase_value)
+  ;;
+
+  let is_dependency_free (map : t) ~(var : C_identifier.t) : bool =
+    Option.for_all (C_identifier.Map.find map var)
+      ~f:Record.is_dependency_free
+
+  let dependency_error (var : C_identifier.t) : unit Or_error.t =
+    Or_error.error_s
+      [%message
+        "Tried to erase the known value of a depended-upon variable"
+          ~var:(var : C_identifier.t)
+      ]
+  ;;
+
+  let erase_value (map : t) ~(var : C_identifier.t) : t Or_error.t =
+    let open Or_error.Let_syntax in
+    let%map () =
+      Travesty.T_or_error.unless_m
+        (is_dependency_free map ~var)
+        ~f:(fun () -> dependency_error var)
+    in
+    erase_value_inner map ~var
   ;;
 
   let all_generated_atomic_globals (vars : t) : C_identifier.t list =

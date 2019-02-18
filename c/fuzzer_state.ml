@@ -40,6 +40,12 @@ let init
   { vars }
 ;;
 
+let try_map_vars
+    (s : t)
+    ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t Or_error.t) : t Or_error.t =
+  Or_error.(s.vars |> f >>| fun vars -> { vars })
+;;
+
 let map_vars (s : t) ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t) : t =
   { vars = f s.vars }
 ;;
@@ -56,8 +62,8 @@ let register_global
 ;;
 
 let erase_var_value
-    (s : t) ~(var : C_identifier.t) : t =
-  map_vars s ~f:(Fuzzer_var.Map.erase_value ~var)
+    (s : t) ~(var : C_identifier.t) : t Or_error.t =
+  try_map_vars s ~f:(Fuzzer_var.Map.erase_value ~var)
 
 module Monad = struct
   include Travesty.State_transform.Make (struct
@@ -82,5 +88,5 @@ module Monad = struct
     modify (fun s -> register_global ?initial_value s var ty)
 
   let erase_var_value (var : C_identifier.t) : unit t =
-    modify (erase_var_value ~var)
+    Monadic.modify (erase_var_value ~var)
 end

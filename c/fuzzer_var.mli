@@ -160,9 +160,13 @@ module Map : sig
   (** [gen_fresh_var map] generates random C identifiers that don't
       shadow existing variables in [map]. *)
 
-  val erase_value : t -> var:C_identifier.t -> t
+  val erase_value : t -> var:C_identifier.t -> t Or_error.t
   (** [erase_value map ~var] erases the known-value field for any
      mapping for [var] in [map], returning the resulting new map.
+
+      [erase_value] fails if [var] is mapped to a record whose known
+     value field is present and has dependencies.  This is a
+     precaution to flag up unsafe attempts to alter [var]'s value.
 
       This should be done after involving [var] in any atomic actions
      that modify it. *)
