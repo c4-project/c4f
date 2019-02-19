@@ -49,13 +49,13 @@ include M
 include Utils.Enum.Extend_table (M)
 
 let is_load_compatible : t -> bool = function
-  | Seq_cst | Release | Relaxed -> true
-  | Acquire | Consume | Rel_acq -> false
+  | Seq_cst | Acquire | Consume | Relaxed -> true
+  | Release | Rel_acq -> false
 ;;
 
 let is_store_compatible : t -> bool = function
-  | Seq_cst | Acquire | Consume | Relaxed -> true
-  | Release | Rel_acq -> false
+  | Seq_cst | Release | Relaxed -> true
+  | Acquire | Consume | Rel_acq -> false
 ;;
 
 let is_rmw_compatible : t -> bool = function
