@@ -189,6 +189,7 @@ module Constant_store : Action.S = struct
       { new_value : int
       ; global    : C_identifier.t
       ; path      : Mini.stm_hole Mini.program_path
+      ; mo        : Mem_order.t
       }
 
     module G = Quickcheck.Generator
@@ -198,8 +199,9 @@ module Constant_store : Action.S = struct
       let predicates = Lazy.force restrictions in
       let%bind new_value = gen_int32_as_int in
       let%bind global    = Var.Map.random_satisfying_all vars ~predicates in
-      let%map  path      = Subject.Test.Path.gen_insert_stm subject in
-      { new_value; global; path }
+      let%bind path      = Subject.Test.Path.gen_insert_stm subject in
+      let%map  mo        = Mem_order.gen_store in
+      { new_value; global; path; mo }
     ;;
 
     let gen (subject : Subject.Test.t) : t G.t State.Monad.t =
@@ -215,7 +217,7 @@ module Constant_store : Action.S = struct
   ;;
 
   let run (subject : Subject.Test.t)
-      ( { new_value; global; path } : Random_state.t)
+      ( { new_value; global; path; mo } : Random_state.t)
     : Subject.Test.t State.Monad.t =
     let open State.Monad.Let_syntax in
     let src =
@@ -224,8 +226,6 @@ module Constant_store : Action.S = struct
     let dst =
       Mini.Address.lvalue (Mini.Lvalue.variable global)
     in
-    (* TODO(@MattWindsor91): memory models. *)
-    let mo = Mem_order.Relaxed in
     let constant_store =
       Mini.Statement.atomic_store
         (Mini.Atomic_store.make ~src ~dst ~mo)
