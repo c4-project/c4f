@@ -131,9 +131,8 @@ module Lvalue : sig
   (** [underlying_variable t] gets the underlying variable name of
       [t]. *)
 
-  module Type_check : S_type_check
-    with type t := t and type tyrec := Type.t
-    (** Type-checking for lvalues. *)
+  include S_type_checkable with type t := t and type tyrec := Type.t
+  (** Type-checking for lvalues. *)
 end
 
 (** An address (a lvalue, or reference thereto). *)
@@ -155,9 +154,8 @@ module Address : sig
   (** [underlying_variable t] gets the underlying variable name of
       [t]. *)
 
-  module Type_check : S_type_check
-    with type t := t and type tyrec := Type.t
-    (** Type-checking for addresses. *)
+  include S_type_checkable with type t := t and type tyrec := Type.t
+  (** Type-checking for addresses. *)
 end
 
 
@@ -219,9 +217,8 @@ module Expression : sig
 
   (** {3 Type checking} *)
 
-  module Type_check : S_type_check
-    with type t := t and type tyrec := Type.t
-    (** Type-checking for expressions. *)
+  include S_type_checkable with type t := t and type tyrec := Type.t
+  (** Type-checking for expressions. *)
 end
 
 (** A non-atomic assignment. *)

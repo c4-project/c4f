@@ -184,18 +184,16 @@ module Lvalue = struct
     | Deref    t  -> underlying_variable t
   ;;
 
-  module Type_check : S_type_check
-    with type t := t and type tyrec := Type.t = struct
-    let rec type_of (lv : t) (env : Type.t C_identifier.Map.t)
-      : Type.t Or_error.t = match lv with
+  module Type_check (E : Env with type tyrec := Type.t) = struct
+    let rec type_of : t -> Type.t Or_error.t = function
       | Variable v ->
-        Result.of_option (C_identifier.Map.find env v)
+        Result.of_option (C_identifier.Map.find E.env v)
           ~error:(Error.create_s
                     [%message "Variable not in environment"
                       ~variable:(v : C_identifier.t)
-                      ~environment:(env : Type.t C_identifier.Map.t)]
+                      ~environment:(E.env : Type.t C_identifier.Map.t)]
                  )
-      | Deref l -> Or_error.(type_of l env >>= Type.deref)
+      | Deref l -> Or_error.(l |> type_of >>= Type.deref)
   end
 
   module Quickcheck : Quickcheckable.S with type t := t = struct
@@ -268,12 +266,11 @@ module Address = struct
       end
     end)
 
-  module Type_check : S_type_check
-    with type t := t and type tyrec := Type.t = struct
-    let rec type_of (addr : t) (env : Type.t C_identifier.Map.t)
-      : Type.t Or_error.t = match addr with
-      | Lvalue l -> Lvalue.Type_check.type_of l env
-      | Ref    r -> Or_error.(type_of r env >>= Type.ref)
+  module Type_check (E : Env with type tyrec := Type.t) = struct
+    module L = Lvalue.Type_check (E)
+    let rec type_of : t -> Type.t Or_error.t = function
+      | Lvalue l -> L.type_of l
+      | Ref    r -> Or_error.(r |> type_of >>= Type.ref)
     ;;
   end
 
@@ -444,25 +441,25 @@ module Expression = struct
       end
   end)
 
-  module Type_check : S_type_check
-    with type t := t and type tyrec := Type.t = struct
+  module Type_check (E : Env with type tyrec := Type.t) = struct
+    module L = Lvalue.Type_check (E)
+    module A = Address.Type_check (E)
+
     let type_of_constant : Constant.t -> Type.t Or_error.t = function
       | Char    _ -> Or_error.unimplemented "char type"
       | Float   _ -> Or_error.unimplemented "float type"
       | Integer _ -> Or_error.return Type.(normal Int)
     ;;
 
-    let rec type_of (expr : t) (env : Type.t C_identifier.Map.t)
-      : Type.t Or_error.t = match expr with
+    let rec type_of : t -> Type.t Or_error.t = function
       | Constant    k      -> type_of_constant k
-      | Lvalue      l      -> Lvalue.Type_check.type_of l env
-      | Eq          (l, r) -> type_of_relational l r env
-      | Atomic_load ld     -> Address.Type_check.type_of (Atomic_load.src ld) env
-    and type_of_relational
-        (l : t) (r : t) (env : Type.t C_identifier.Map.t) : Type.t Or_error.t =
+      | Lvalue      l      -> L.type_of l
+      | Eq          (l, r) -> type_of_relational l r
+      | Atomic_load ld     -> A.type_of (Atomic_load.src ld)
+    and type_of_relational (l : t) (r : t) : Type.t Or_error.t =
       let open Or_error.Let_syntax in
-      let%map _ = type_of l env
-      and     _ = type_of r env
+      let%map _ = type_of l
+      and     _ = type_of r
       in Type.(normal Bool)
     ;;
   end
