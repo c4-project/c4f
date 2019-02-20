@@ -23,6 +23,21 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Utils
+
+(** Signature of parts of the mini-model that implement type checking. *)
+module type S_type_check = sig
+  type t
+  (** The type being checked. *)
+
+  type tyrec
+  (** The type record (this will usually be set to {{!Mini.Type.t}Mini.Type.t}). *)
+
+  val type_of : t -> tyrec C_identifier.Map.t -> tyrec Or_error.t
+  (** [type_of x env] tries to get the type of [x] given the variable
+     typing environment [env].  It fails if the type is
+     inconsistent. *)
+end
 
 (** {2 Paths} *)
 

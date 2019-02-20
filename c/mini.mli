@@ -53,6 +53,9 @@ module Type : sig
     type t
     (** Opaque type of basic types. *)
 
+    val bool : t
+    (** [bool] is the (C99?) Boolean type. *)
+
     val int : t
     (** [int] is the int type. *)
 
@@ -79,6 +82,10 @@ module Type : sig
   val deref : t -> t Or_error.t
   (** [deref ty] tries to strip a layer of pointer indirection off [ty].
       It fails if [ty] isn't a pointer type. *)
+
+  val ref : t -> t Or_error.t
+  (** [ref ty] tries to add a layer of pointer indirection onto [ty].
+      It fails if [ty] is already a pointer type. *)
 
   val underlying_basic_type : t -> Basic.t
   (** [underlying_basic_type ty] gets [ty]'s basic type. *)
@@ -123,6 +130,10 @@ module Lvalue : sig
   val underlying_variable : t -> Identifier.t
   (** [underlying_variable t] gets the underlying variable name of
       [t]. *)
+
+  module Type_check : S_type_check
+    with type t := t and type tyrec := Type.t
+    (** Type-checking for lvalues. *)
 end
 
 (** An address (a lvalue, or reference thereto). *)
@@ -143,6 +154,10 @@ module Address : sig
   val underlying_variable : t -> Identifier.t
   (** [underlying_variable t] gets the underlying variable name of
       [t]. *)
+
+  module Type_check : S_type_check
+    with type t := t and type tyrec := Type.t
+    (** Type-checking for addresses. *)
 end
 
 
@@ -201,6 +216,12 @@ module Expression : sig
 
   val lvalue : Lvalue.t -> t
   (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
+
+  (** {3 Type checking} *)
+
+  module Type_check : S_type_check
+    with type t := t and type tyrec := Type.t
+    (** Type-checking for expressions. *)
 end
 
 (** A non-atomic assignment. *)

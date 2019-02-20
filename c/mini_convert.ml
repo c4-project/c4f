@@ -103,7 +103,10 @@ let ensure_statements
 
 let defined_types : (C_identifier.t, Type.Basic.t) List.Assoc.t Lazy.t =
   lazy
-    [ C_identifier.of_string "atomic_int", Type.Basic.atomic_int ]
+    [ C_identifier.of_string "atomic_int", Type.Basic.atomic_int
+    ; C_identifier.of_string "bool"      , Type.Basic.bool
+    ]
+;;
 
 let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t ] list)
   : Type.Basic.t Or_error.t =

@@ -39,12 +39,14 @@ module Type = struct
       type t =
         | Int
         | Atomic_int
+        | Bool
       [@@deriving variants, enum]
       ;;
 
       let table =
         [ Int       , "int"
         ; Atomic_int, "atomic_int"
+        ; Bool      , "bool"
         ]
       ;;
     end
@@ -70,6 +72,11 @@ module Type = struct
   let deref : t -> t Or_error.t = function
     | Pointer_to k -> Or_error.return (Normal k)
     | Normal _ -> Or_error.error_string "not a pointer type"
+  ;;
+
+  let ref : t -> t Or_error.t = function
+    | Normal k -> Or_error.return (Pointer_to k)
+    | Pointer_to _ -> Or_error.error_string "already a pointer type"
   ;;
 
   let is_atomic (ty : t) : bool =
@@ -177,6 +184,20 @@ module Lvalue = struct
     | Deref    t  -> underlying_variable t
   ;;
 
+  module Type_check : S_type_check
+    with type t := t and type tyrec := Type.t = struct
+    let rec type_of (lv : t) (env : Type.t C_identifier.Map.t)
+      : Type.t Or_error.t = match lv with
+      | Variable v ->
+        Result.of_option (C_identifier.Map.find env v)
+          ~error:(Error.create_s
+                    [%message "Variable not in environment"
+                      ~variable:(v : C_identifier.t)
+                      ~environment:(env : Type.t C_identifier.Map.t)]
+                 )
+      | Deref l -> Or_error.(type_of l env >>= Type.deref)
+  end
+
   module Quickcheck : Quickcheckable.S with type t := t = struct
     module G = Core_kernel.Quickcheck.Generator
     module O = Core_kernel.Quickcheck.Observer
@@ -245,7 +266,16 @@ module Address = struct
             ~lvalue:(F.proc_variant1 f)
             ~ref:(F.proc_variant1 (map_m ~f))
       end
-  end)
+    end)
+
+  module Type_check : S_type_check
+    with type t := t and type tyrec := Type.t = struct
+    let rec type_of (addr : t) (env : Type.t C_identifier.Map.t)
+      : Type.t Or_error.t = match addr with
+      | Lvalue l -> Lvalue.Type_check.type_of l env
+      | Ref    r -> Or_error.(type_of r env >>= Type.ref)
+    ;;
+  end
 
   module Quickcheck : Quickcheckable.S with type t := t = struct
     module G = Core_kernel.Quickcheck.Generator
@@ -413,6 +443,29 @@ module Expression = struct
             ~atomic_load:(F.proc_variant1 (A.map_m ~f))
       end
   end)
+
+  module Type_check : S_type_check
+    with type t := t and type tyrec := Type.t = struct
+    let type_of_constant : Constant.t -> Type.t Or_error.t = function
+      | Char    _ -> Or_error.unimplemented "char type"
+      | Float   _ -> Or_error.unimplemented "float type"
+      | Integer _ -> Or_error.return Type.(normal Int)
+    ;;
+
+    let rec type_of (expr : t) (env : Type.t C_identifier.Map.t)
+      : Type.t Or_error.t = match expr with
+      | Constant    k      -> type_of_constant k
+      | Lvalue      l      -> Lvalue.Type_check.type_of l env
+      | Eq          (l, r) -> type_of_relational l r env
+      | Atomic_load ld     -> Address.Type_check.type_of (Atomic_load.src ld) env
+    and type_of_relational
+        (l : t) (r : t) (env : Type.t C_identifier.Map.t) : Type.t Or_error.t =
+      let open Or_error.Let_syntax in
+      let%map _ = type_of l env
+      and     _ = type_of r env
+      in Type.(normal Bool)
+    ;;
+  end
 
   module On_identifiers
     : Travesty.Traversable.S0_container
@@ -984,6 +1037,7 @@ module Reify = struct
 
   let basic_type_to_spec : Type.Basic.t -> [> Ast.Type_spec.t] = function
     | Int -> `Int
+    | Bool -> `Defined_type (C_identifier.of_string "bool")
     | Atomic_int -> `Defined_type (C_identifier.of_string "atomic_int")
   ;;
 
