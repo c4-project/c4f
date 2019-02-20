@@ -110,6 +110,28 @@ module Type = struct
   include Quickcheck
 end
 
+(** An environment used for testing the various environment-sensitive
+    operations *)
+let test_env : Type.t C_identifier.Map.t Lazy.t =
+  lazy
+    C_identifier.(
+      Map.of_alist_exn
+        [ of_string "foo"   , Type.(normal Int)
+        ; of_string "bar"   , Type.(pointer_to Atomic_int)
+        ; of_string "barbaz", Type.(normal Bool)
+        ; of_string "x"     , Type.(normal Atomic_int)
+        ; of_string "y"     , Type.(normal Atomic_int)
+        ]
+    )
+
+let test_env_mod : (module Env with type tyrec = Type.t) Lazy.t =
+  Lazy.(test_env >>| fun env ->
+        (module (struct
+          type tyrec = Type.t
+          let env = env
+        end) : Env with type tyrec = Type.t))
+;;
+
 module Initialiser = struct
   type t =
     { ty    : Type.t
@@ -196,7 +218,31 @@ module Lvalue = struct
       | Deref l -> Or_error.(l |> type_of >>= Type.deref)
   end
 
-  module Quickcheck : Quickcheckable.S with type t := t = struct
+  let%expect_test "Type-checking a valid normal variable lvalue" =
+    let module T = Type_check (val (Lazy.force test_env_mod)) in
+    let result = T.type_of (Variable (C_identifier.of_string "foo")) in
+    Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)];
+    [%expect {| (Ok (Normal int)) |}]
+  ;;
+
+  let%expect_test "Type-checking an invalid deferencing variable lvalue" =
+    let module T = Type_check (val (Lazy.force test_env_mod)) in
+    let result = T.type_of (Deref (Variable (C_identifier.of_string "foo"))) in
+    Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)];
+    [%expect {| (Error "not a pointer type") |}]
+  ;;
+
+  (** A lvalue generator parametrised on a particular identifier
+     generator. *)
+  let gen_with_identifier_gen (g : C_identifier.t Quickcheck.Generator.t)
+    : t Quickcheck.Generator.t =
+    Quickcheck.Generator.(
+      recursive_union [ map g ~f:variable ]
+        ~f:(fun mu -> [ map mu ~f:deref ])
+    )
+  ;;
+
+  module Quickcheck_main : Quickcheckable.S with type t := t = struct
     module G = Core_kernel.Quickcheck.Generator
     module O = Core_kernel.Quickcheck.Observer
     module S = Core_kernel.Quickcheck.Shrinker
@@ -211,11 +257,7 @@ module Lvalue = struct
       | `B d -> Deref    d
     ;;
 
-    let gen : t G.t =
-      Quickcheck.Generator.recursive_union
-        [ G.map C_identifier.gen ~f:variable ]
-        ~f:(fun mu -> [ G.map mu ~f:deref ])
-    ;;
+    let gen : t G.t = gen_with_identifier_gen C_identifier.gen
 
     let obs : t O.t =
       O.fixed_point (fun mu ->
@@ -231,15 +273,55 @@ module Lvalue = struct
         )
     ;;
   end
-  include Quickcheck
+  include Quickcheck_main
 
   let%test_unit "gen: distinctiveness" =
-    Core_kernel.Quickcheck.test_distinct_values
+    Quickcheck.test_distinct_values
       ~sexp_of:[%sexp_of: t]
       ~trials:20
       ~distinct_values:5
       ~compare:[%compare: t]
       gen
+  ;;
+
+  module Quickcheck_on_env (E : Env with type tyrec := Type.t)
+    : Quickcheckable.S with type t := t = struct
+
+    let random_var : C_identifier.t Quickcheck.Generator.t =
+      Quickcheck.Generator.of_list (C_identifier.Map.keys E.env)
+    ;;
+
+    let gen = gen_with_identifier_gen random_var
+    let obs = obs
+    let shrinker = shrinker
+  end
+
+  let underlying_variable_in (module E : Env with type tyrec = Type.t)
+      (l : t) : bool =
+    C_identifier.Map.mem E.env (underlying_variable l)
+  ;;
+
+  let%test_unit
+    "Quickcheck_on_env: liveness" =
+    let e = Lazy.force test_env_mod in
+    let module Q = Quickcheck_on_env (val e) in
+    Quickcheck.test_can_generate
+      ~sexp_of:[%sexp_of: t]
+      ~trials:20
+      Q.gen
+      ~f:(underlying_variable_in e)
+  ;;
+
+  let%test_unit
+    "Quickcheck_on_env: generated underlying variables in environment" =
+    let e = Lazy.force test_env_mod in
+    let module Q = Quickcheck_on_env (val e) in
+    Quickcheck.test
+      ~sexp_of:[%sexp_of: t]
+      ~trials:20
+      ~shrinker:Q.shrinker
+      Q.gen
+      ~f:([%test_pred: t] ~here:[[%here]] (underlying_variable_in e))
   ;;
 end
 
@@ -1123,16 +1205,9 @@ module Reify = struct
     Expr (Some (known_call name args))
   ;;
 
-  let rec stm : Statement.t -> Ast.Stm.t = function
-    | Assign { lvalue; rvalue } ->
-      Expr (Some (Binary (lvalue_to_expr lvalue, `Assign, expr rvalue)))
-    | Atomic_store { dst; src; mo } ->
-      known_call_stm "atomic_store_explicit"
-        [ address_to_expr dst
-        ; expr src
-        ; mem_order_to_expr mo
-        ]
-    | Atomic_cmpxchg { obj; expected; desired; succ; fail } ->
+  let atomic_cmpxchg
+      ( { obj; expected; desired; succ; fail } : Atomic_cmpxchg.t)
+    : Ast.Stm.t =
       known_call_stm "atomic_compare_exchange_strong_explicit"
         [ address_to_expr   obj
         ; address_to_expr   expected
@@ -1140,6 +1215,21 @@ module Reify = struct
         ; mem_order_to_expr succ
         ; mem_order_to_expr fail
         ]
+  ;;
+
+  let atomic_store ( { dst; src; mo } : Atomic_store.t) : Ast.Stm.t =
+    known_call_stm "atomic_store_explicit"
+      [ address_to_expr dst
+      ; expr src
+      ; mem_order_to_expr mo
+      ]
+  ;;
+
+  let rec stm : Statement.t -> Ast.Stm.t = function
+    | Assign { lvalue; rvalue } ->
+      Expr (Some (Binary (lvalue_to_expr lvalue, `Assign, expr rvalue)))
+    | Atomic_store st -> atomic_store st
+    | Atomic_cmpxchg cx -> atomic_cmpxchg cx
     | If_stm { cond; t_branch; f_branch } ->
       If { cond = expr cond
          ; t_branch =

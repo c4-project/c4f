@@ -126,6 +126,12 @@ module Lvalue : sig
   (** Traversing over identifiers in lvalues. *)
 
   include Quickcheckable.S with type t := t
+  (** Generates random lvalues without constraint. *)
+
+  module Quickcheck_on_env (E : Env with type tyrec := Type.t)
+    : Quickcheckable.S with type t := t
+  (** Generates random lvalues, constrained to discuss the variables
+     in the given environment. *)
 
   val underlying_variable : t -> Identifier.t
   (** [underlying_variable t] gets the underlying variable name of
