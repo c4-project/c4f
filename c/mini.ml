@@ -49,12 +49,10 @@ let test_env : Type.t C_identifier.Map.t Lazy.t =
         ]
     )
 
-let test_env_mod : (module Env with type tyrec = Type.t) Lazy.t =
-  Lazy.(test_env >>| fun env ->
-        (module (struct
-          type tyrec = Type.t
-          let env = env
-        end) : Env with type tyrec = Type.t))
+let test_env_mod : (module Env) Lazy.t =
+  Lazy.(
+    test_env >>| fun env -> (module (struct let env = env end) : Env)
+  )
 ;;
 
 module Initialiser = struct
@@ -131,7 +129,7 @@ module Lvalue = struct
     | Deref    t  -> underlying_variable t
   ;;
 
-  module Type_check (E : Env with type tyrec := Type.t) = struct
+  module Type_check (E : Env) = struct
     let rec type_of : t -> Type.t Or_error.t = function
       | Variable v ->
         Result.of_option (C_identifier.Map.find E.env v)
@@ -209,7 +207,7 @@ module Lvalue = struct
       gen
   ;;
 
-  module Quickcheck_on_env (E : Env with type tyrec := Type.t)
+  module Quickcheck_on_env (E : Env)
     : Quickcheckable.S with type t := t = struct
 
     let random_var : C_identifier.t Quickcheck.Generator.t =
@@ -221,7 +219,7 @@ module Lvalue = struct
     let shrinker = shrinker
   end
 
-  let underlying_variable_in (module E : Env with type tyrec = Type.t)
+  let underlying_variable_in (module E : Env)
       (l : t) : bool =
     C_identifier.Map.mem E.env (underlying_variable l)
   ;;
@@ -273,7 +271,7 @@ module Address = struct
       end
     end)
 
-  module Type_check (E : Env with type tyrec := Type.t) = struct
+  module Type_check (E : Env) = struct
     module L = Lvalue.Type_check (E)
     let rec type_of : t -> Type.t Or_error.t = function
       | Lvalue l -> L.type_of l
@@ -448,7 +446,7 @@ module Expression = struct
       end
   end)
 
-  module Type_check (E : Env with type tyrec := Type.t) = struct
+  module Type_check (E : Env) = struct
     module L = Lvalue.Type_check (E)
     module A = Address.Type_check (E)
 

@@ -83,7 +83,7 @@ module Lvalue : sig
   include Quickcheckable.S with type t := t
   (** Generates random lvalues without constraint. *)
 
-  module Quickcheck_on_env (E : Env with type tyrec := Type.t)
+  module Quickcheck_on_env (E : Env)
     : Quickcheckable.S with type t := t
   (** Generates random lvalues, constrained to discuss the variables
      in the given environment. *)
@@ -92,7 +92,7 @@ module Lvalue : sig
   (** [underlying_variable t] gets the underlying variable name of
       [t]. *)
 
-  include S_type_checkable with type t := t and type tyrec := Type.t
+  include S_type_checkable with type t := t
   (** Type-checking for lvalues. *)
 end
 
@@ -115,7 +115,7 @@ module Address : sig
   (** [underlying_variable t] gets the underlying variable name of
       [t]. *)
 
-  include S_type_checkable with type t := t and type tyrec := Type.t
+  include S_type_checkable with type t := t
   (** Type-checking for addresses. *)
 end
 
@@ -178,7 +178,7 @@ module Expression : sig
 
   (** {3 Type checking} *)
 
-  include S_type_checkable with type t := t and type tyrec := Type.t
+  include S_type_checkable with type t := t
   (** Type-checking for expressions. *)
 end
 

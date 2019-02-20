@@ -22,14 +22,14 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
+(** Mini-model: module signatures *)
+
 open Core_kernel
 open Utils
 
+(** Signature of modules carrying a variable typing environment *)
 module type Env = sig
-  type tyrec
-  (** The type record (this will usually be set to {{!Mini.Type.t}Mini.Type.t}). *)
-
-  val env : tyrec C_identifier.Map.t
+  val env : Mini_type.t C_identifier.Map.t
   (** [env] is a variable typing environment. *)
 end
 
@@ -38,11 +38,8 @@ module type S_type_checkable = sig
   type t
   (** The type being checked. *)
 
-  type tyrec
-  (** The type record (this will usually be set to {{!Mini.Type.t}Mini.Type.t}). *)
-
-  module Type_check (E : Env with type tyrec := tyrec) : sig
-    val type_of : t -> tyrec Or_error.t
+  module Type_check (E : Env) : sig
+    val type_of : t -> Mini_type.t Or_error.t
     (** [type_of x] tries to get the type of [x] given the variable
         typing environment [E.env].  It fails if the type is
         inconsistent. *)
