@@ -40,59 +40,14 @@ open Utils
 include module type of Ast_basic
 include module type of Mini_intf
 
+module Type : module type of Mini_type
+(** Re-exporting {{!Mini.Type}Type}. *)
+
 type 'a named = (Identifier.t * 'a) [@@deriving eq, sexp]
 (** Shorthand for pairs of items and their names. *)
 
 type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
 (** Shorthand for associative lists with identifier keys. *)
-
-(** Abstract data type of (mini C) types. *)
-module Type : sig
-  (** Primitive types. *)
-  module Basic : sig
-    type t
-    (** Opaque type of basic types. *)
-
-    val bool : t
-    (** [bool] is the (C99?) Boolean type. *)
-
-    val int : t
-    (** [int] is the int type. *)
-
-    val atomic_int : t
-    (** [atomic_int] is the atomic_int type. *)
-
-    include Enum.Extension_table with type t := t
-  end
-
-  type t [@@deriving eq, sexp, compare]
-
-  include Quickcheckable.S with type t := t
-
-  val normal : Basic.t -> t
-  (** [normal ty] lifts a basic type [ty] to a scalar type. *)
-
-  val pointer_to : Basic.t -> t
-  (** [pointer_to ty] lifts a basic type [ty] to a pointer type. *)
-
-  val of_basic : Basic.t -> is_pointer:bool -> t
-  (** [of_basic ty ~is_pointer] lifts a basic type [ty] to a pointer
-      type if [is_pointer] is true, and a normal one otherwise. *)
-
-  val deref : t -> t Or_error.t
-  (** [deref ty] tries to strip a layer of pointer indirection off [ty].
-      It fails if [ty] isn't a pointer type. *)
-
-  val ref : t -> t Or_error.t
-  (** [ref ty] tries to add a layer of pointer indirection onto [ty].
-      It fails if [ty] is already a pointer type. *)
-
-  val underlying_basic_type : t -> Basic.t
-  (** [underlying_basic_type ty] gets [ty]'s basic type. *)
-
-  val is_atomic : t -> bool
-  (** [is_atomic ty] returns whether [ty] is an atomic type. *)
-end
 
 module Initialiser : sig
   type t [@@deriving sexp]

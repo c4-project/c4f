@@ -28,87 +28,12 @@ open Utils
 include Ast_basic
 include Mini_intf
 
+module Type = Mini_type
+
 type 'a named = (Identifier.t * 'a)
 [@@deriving eq, sexp]
 
 type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
-
-module Type = struct
-  module Basic = struct
-    module M = struct
-      type t =
-        | Int
-        | Atomic_int
-        | Bool
-      [@@deriving variants, enum]
-      ;;
-
-      let table =
-        [ Int       , "int"
-        ; Atomic_int, "atomic_int"
-        ; Bool      , "bool"
-        ]
-      ;;
-    end
-
-    include M
-    include Enum.Extend_table (M)
-  end
-
-  type t =
-    | Normal of Basic.t
-    | Pointer_to of Basic.t
-  [@@deriving sexp, variants, eq, compare]
-  ;;
-
-  let of_basic (ty : Basic.t) ~(is_pointer : bool) : t =
-    (if is_pointer then pointer_to else normal) ty
-  ;;
-
-  let underlying_basic_type : t -> Basic.t = function
-    | Normal x | Pointer_to x -> x
-  ;;
-
-  let deref : t -> t Or_error.t = function
-    | Pointer_to k -> Or_error.return (Normal k)
-    | Normal _ -> Or_error.error_string "not a pointer type"
-  ;;
-
-  let ref : t -> t Or_error.t = function
-    | Normal k -> Or_error.return (Pointer_to k)
-    | Pointer_to _ -> Or_error.error_string "already a pointer type"
-  ;;
-
-  let is_atomic (ty : t) : bool =
-    Basic.equal Atomic_int (underlying_basic_type ty)
-  ;;
-
-  module Quickcheck : Quickcheckable.S with type t := t = struct
-    module G = Core_kernel.Quickcheck.Generator
-    module O = Core_kernel.Quickcheck.Observer
-    module S = Core_kernel.Quickcheck.Shrinker
-
-    let anonymise = function
-      | Normal     b -> `A b
-      | Pointer_to b -> `B b
-    ;;
-
-    let deanonymise = function
-      | `A b -> Normal b
-      | `B b -> Pointer_to b
-    ;;
-
-    let gen      : t G.t =
-      G.map (G.variant2 Basic.gen Basic.gen) ~f:deanonymise
-    let obs      : t O.t =
-      O.unmap (O.variant2 Basic.obs Basic.obs) ~f:anonymise
-    let shrinker : t S.t =
-      S.map (S.variant2 Basic.shrinker Basic.shrinker)
-        ~f:deanonymise ~f_inverse:anonymise
-    ;;
-  end
-  include Quickcheck
-end
 
 (** An environment used for testing the various environment-sensitive
     operations *)
@@ -116,11 +41,11 @@ let test_env : Type.t C_identifier.Map.t Lazy.t =
   lazy
     C_identifier.(
       Map.of_alist_exn
-        [ of_string "foo"   , Type.(normal Int)
-        ; of_string "bar"   , Type.(pointer_to Atomic_int)
-        ; of_string "barbaz", Type.(normal Bool)
-        ; of_string "x"     , Type.(normal Atomic_int)
-        ; of_string "y"     , Type.(normal Atomic_int)
+        [ of_string "foo"   , Type.(normal     Basic.int)
+        ; of_string "bar"   , Type.(pointer_to Basic.atomic_int)
+        ; of_string "barbaz", Type.(normal     Basic.bool)
+        ; of_string "x"     , Type.(normal     Basic.atomic_int)
+        ; of_string "y"     , Type.(normal     Basic.atomic_int)
         ]
     )
 
@@ -530,7 +455,7 @@ module Expression = struct
     let type_of_constant : Constant.t -> Type.t Or_error.t = function
       | Char    _ -> Or_error.unimplemented "char type"
       | Float   _ -> Or_error.unimplemented "float type"
-      | Integer _ -> Or_error.return Type.(normal Int)
+      | Integer _ -> Or_error.return Type.(normal Basic.int)
     ;;
 
     let rec type_of : t -> Type.t Or_error.t = function
@@ -542,7 +467,7 @@ module Expression = struct
       let open Or_error.Let_syntax in
       let%map _ = type_of l
       and     _ = type_of r
-      in Type.(normal Bool)
+      in Type.(normal Basic.bool)
     ;;
   end
 
@@ -1114,20 +1039,12 @@ module Reify = struct
     Assign (Constant value)
   ;;
 
-  let basic_type_to_spec : Type.Basic.t -> [> Ast.Type_spec.t] = function
-    | Int -> `Int
-    | Bool -> `Defined_type (C_identifier.of_string "bool")
-    | Atomic_int -> `Defined_type (C_identifier.of_string "atomic_int")
+  let type_to_spec (ty : Type.t) : [> Ast.Type_spec.t] =
+    Type.Basic.to_spec (Type.underlying_basic_type ty)
   ;;
 
-  let type_to_spec : Type.t -> [> Ast.Type_spec.t] = function
-    | Normal     x
-    | Pointer_to x -> basic_type_to_spec x
-  ;;
-
-  let type_to_pointer : Type.t -> Pointer.t option = function
-    | Normal     _ -> None
-    | Pointer_to _ -> Some [[]]
+  let type_to_pointer (ty : Type.t) : Pointer.t option =
+    Option.some_if (Type.is_pointer ty) [[]]
   ;;
 
   let id_declarator
