@@ -219,8 +219,7 @@ module Lvalue = struct
     let shrinker = shrinker
   end
 
-  let underlying_variable_in (module E : Env)
-      (l : t) : bool =
+  let underlying_variable_in (module E : Env) (l : t) : bool =
     C_identifier.Map.mem E.env (underlying_variable l)
   ;;
 
@@ -279,7 +278,40 @@ module Address = struct
     ;;
   end
 
-  module Quickcheck : Quickcheckable.S with type t := t = struct
+  let%expect_test "Type-checking a valid normal variable lvalue" =
+    let module T = Type_check (val (Lazy.force test_env_mod)) in
+    let result = T.type_of (Lvalue (Variable (C_identifier.of_string "foo"))) in
+    Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)];
+    [%expect {| (Ok (Normal int)) |}]
+  ;;
+
+  let%expect_test "Type-checking an valid reference lvalue" =
+    let module T = Type_check (val (Lazy.force test_env_mod)) in
+    let result = T.type_of (Ref (Lvalue (Variable (C_identifier.of_string "foo")))) in
+    Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)];
+    [%expect {| (Ok (Pointer_to int)) |}]
+  ;;
+
+  (** An address generator parametrised on a particular lvalue
+     generator. *)
+  let gen_with_lvalue_gen (g : Lvalue.t Quickcheck.Generator.t)
+    : t Quickcheck.Generator.t =
+    Quickcheck.Generator.(
+      recursive_union [ map g ~f:lvalue ]
+        ~f:(fun mu -> [ map mu ~f:ref ])
+    )
+  ;;
+
+  (** An address generator parametrised on a particular identifier
+     generator. *)
+  let gen_with_identifier_gen
+      (g : C_identifier.t Quickcheck.Generator.t)
+    : t Quickcheck.Generator.t =
+    gen_with_lvalue_gen
+      (Lvalue.gen_with_identifier_gen g)
+  ;;
+
+  module Quickcheck_main : Quickcheckable.S with type t := t = struct
     module G = Core_kernel.Quickcheck.Generator
     module O = Core_kernel.Quickcheck.Observer
     module S = Core_kernel.Quickcheck.Shrinker
@@ -314,7 +346,7 @@ module Address = struct
         )
     ;;
   end
-  include Quickcheck
+  include Quickcheck_main
 
   let rec underlying_variable : t -> Identifier.t = function
     | Lvalue lv -> Lvalue.underlying_variable lv
@@ -340,6 +372,46 @@ module Address = struct
     let var = underlying_variable example in
     Fmt.pr "%a@." Identifier.pp var;
     [%expect {| yorick |}]
+
+
+  module Quickcheck_on_env (E : Env)
+    : Quickcheckable.S with type t := t = struct
+
+    let random_var : C_identifier.t Quickcheck.Generator.t =
+      Quickcheck.Generator.of_list (C_identifier.Map.keys E.env)
+    ;;
+
+    let gen = gen_with_identifier_gen random_var
+    let obs = obs
+    let shrinker = shrinker
+  end
+
+  let underlying_variable_in (module E : Env) (l : t) : bool =
+    C_identifier.Map.mem E.env (underlying_variable l)
+  ;;
+
+  let%test_unit
+    "Quickcheck_on_env: liveness" =
+    let e = Lazy.force test_env_mod in
+    let module Q = Quickcheck_on_env (val e) in
+    Quickcheck.test_can_generate
+      ~sexp_of:[%sexp_of: t]
+      ~trials:20
+      Q.gen
+      ~f:(underlying_variable_in e)
+  ;;
+
+  let%test_unit
+    "Quickcheck_on_env: generated underlying variables in environment" =
+    let e = Lazy.force test_env_mod in
+    let module Q = Quickcheck_on_env (val e) in
+    Quickcheck.test
+      ~sexp_of:[%sexp_of: t]
+      ~trials:20
+      ~shrinker:Q.shrinker
+      Q.gen
+      ~f:([%test_pred: t] ~here:[[%here]] (underlying_variable_in e))
+  ;;
 end
 
 module Atomic_load = struct
