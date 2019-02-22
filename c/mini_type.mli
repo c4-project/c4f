@@ -90,8 +90,8 @@ val ref : t -> t Or_error.t
 val basic_type : t -> Basic.t
 (** [basic_type ty] gets [ty]'s underlying basic type. *)
 
-val basic_type_is : t -> Basic.t -> bool
-(** [basic_type_is ty b] is true provided that [b] is [ty]'s
+val basic_type_is : t -> basic:Basic.t -> bool
+(** [basic_type_is ty ~basic] is true provided that [basic] is [ty]'s
    underlying basic type. *)
 
 val is_atomic : t -> bool

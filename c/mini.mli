@@ -71,6 +71,14 @@ module Lvalue : sig
   (** [deref lvalue] constructs a dereference ([*]) of another lvalue
       [lvalue].It doesn't do any validation. *)
 
+  val on_value_of_typed_id : id:C_identifier.t -> ty:Type.t -> t
+  (** [on_value_of_typed_id ~id ~ty] constructs an lvalue with underlying
+      variable [id] and the right level of indirection to convert from
+      a variable of type [ty] to a primitive value.
+
+      For example, if [ty] is a pointer type, the lvalue will become a
+      dereference. *)
+
   val is_deref : t -> bool
   (** [is_deref lvalue] returns [true] if [lvalue] is a dereference of
       another [lvalue], and [false] otherwise. *)

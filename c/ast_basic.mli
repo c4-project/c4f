@@ -202,7 +202,20 @@ module Constant : sig
   ;;
   include Ast_node with type t := t
 
-  include Quickcheck.S with type t := t
+  (** {3 Quickcheck} *)
+
+  include Quickcheckable.S with type t := t
+  (** The default generators generate any valid constant. *)
+
+  (** [gen_int32_as_int] generates an [int] whose domain is that of
+      [int32].  This is useful for making sure that we don't generate
+      integers that could overflow when running tests on 32-bit
+      platforms.  *)
+  val gen_int32_as_int : int Quickcheck.Generator.t
+
+  (** [gen_int32_constant] generates an integer constant using
+     {{!gen_int32_as_int}gen_int32_as_int}. *)
+  val gen_int32_constant : t Quickcheck.Generator.t
 end
 
 (** AST node for identifiers *)

@@ -115,14 +115,6 @@ let%test_unit "random_item is always a valid item" =
     )
 ;;
 
-(** [gen_int32_as_int] generates an [int] whose domain is that of
-    [int32].  This is useful for making sure that we don't generate
-    integers that could overflow when running tests on 32-bit
-    platforms.  *)
-let gen_int32_as_int : int Quickcheck.Generator.t =
-  Quickcheck.Generator.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x)) Int32.gen
-;;
-
 (** Shorthand for stating that a fuzzer action is always available. *)
 let always : Subject.Test.t -> bool State.Monad.t =
   Fn.const (State.Monad.return true)
@@ -142,7 +134,7 @@ module Make_global : Action.S = struct
       : t G.t =
       let open G.Let_syntax in
       let%bind is_atomic = G.bool in
-      let%bind initial_value = gen_int32_as_int in
+      let%bind initial_value = Mini.Constant.gen_int32_as_int in
       let%map  name = Var.Map.gen_fresh_var vars in
       { is_atomic; initial_value; name }
 
@@ -197,7 +189,7 @@ module Constant_store : Action.S = struct
     let gen' (subject : Subject.Test.t) (vars : Var.Map.t) : t G.t =
       let open G.Let_syntax in
       let predicates = Lazy.force restrictions in
-      let%bind new_value = gen_int32_as_int in
+      let%bind new_value = Mini.Constant.gen_int32_as_int in
       let%bind global    = Var.Map.random_satisfying_all vars ~predicates in
       let%bind path      = Subject.Test.Path.gen_insert_stm subject in
       let%map  mo        = Mem_order.gen_store in

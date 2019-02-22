@@ -71,8 +71,8 @@ let basic_type : t -> Basic.t = function
   | Normal x | Pointer_to x -> x
 ;;
 
-let basic_type_is (ty : t) : Basic.t -> bool =
-  Basic.equal (basic_type ty)
+let basic_type_is (ty : t) ~(basic : Basic.t) : bool =
+  Basic.equal (basic_type ty) basic
 ;;
 
 let is_pointer : t -> bool = function
@@ -91,7 +91,7 @@ let ref : t -> t Or_error.t = function
 ;;
 
 let is_atomic (ty : t) : bool =
-  basic_type_is ty Atomic_int (* for now *)
+  basic_type_is ty ~basic:Atomic_int (* for now *)
 ;;
 
 let to_non_atomic : t -> t Or_error.t = function
@@ -132,7 +132,7 @@ let%test_unit "basic_type_is compatibility with basic_type" =
       ~sexp_of:[%sexp_of: t]
       ~shrinker
       ~f:([%test_pred: t] ~here:[[%here]]
-            (fun t -> basic_type_is t (basic_type t))
+            (fun t -> basic_type_is t ~basic:(basic_type t))
          )
 ;;
 

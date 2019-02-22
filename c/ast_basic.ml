@@ -323,6 +323,14 @@ module Constant = struct
     | `C i -> Integer i
   ;;
 
+  let gen_int32_as_int : int Quickcheck.Generator.t =
+    Quickcheck.Generator.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x)) Int32.gen
+  ;;
+
+  let gen_int32_constant : t Quickcheck.Generator.t =
+    Quickcheck.Generator.map ~f:integer gen_int32_as_int
+  ;;
+
   let gen : t Quickcheck.Generator.t =
     let module G = Quickcheck.Generator in
     G.map ~f:deanonymise (G.variant3 Char.gen Float.gen Int.gen)
