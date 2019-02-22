@@ -48,6 +48,11 @@ module Basic : sig
 
   val to_spec : t -> [> Ast.Type_spec.t]
   (** [to_spec btype] converts a basic type to a type spec. *)
+
+  val to_non_atomic : t -> t Or_error.t
+  (** [to_non_atomic btype] tries to get the non-atomic type
+     corresponding to the atomic type [btype].  It fails if [btype]
+     isn't atomic. *)
 end
 
 type t [@@deriving eq, sexp, compare]
@@ -66,6 +71,12 @@ val of_basic : Basic.t -> is_pointer:bool -> t
 (** [of_basic ty ~is_pointer] lifts a basic type [ty] to a pointer
     type if [is_pointer] is true, and a normal one otherwise. *)
 
+(** {2 Modifiers} *)
+
+val to_non_atomic : t -> t Or_error.t
+(** [to_non_atomic ty] tries to get the non-atomic type corresponding to
+    the atomic type [ty].  It fails if [ty] isn't atomic. *)
+
 val deref : t -> t Or_error.t
 (** [deref ty] tries to strip a layer of pointer indirection off [ty].
     It fails if [ty] isn't a pointer type. *)
@@ -76,8 +87,12 @@ val ref : t -> t Or_error.t
 
 (** {2 Accessors and predicates} *)
 
-val underlying_basic_type : t -> Basic.t
-(** [underlying_basic_type ty] gets [ty]'s basic type. *)
+val basic_type : t -> Basic.t
+(** [basic_type ty] gets [ty]'s underlying basic type. *)
+
+val basic_type_is : t -> Basic.t -> bool
+(** [basic_type_is ty b] is true provided that [b] is [ty]'s
+   underlying basic type. *)
 
 val is_atomic : t -> bool
 (** [is_atomic ty] returns whether [ty] is an atomic type. *)

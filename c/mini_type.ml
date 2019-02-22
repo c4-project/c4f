@@ -50,6 +50,11 @@ module Basic = struct
     | Bool -> `Defined_type (C_identifier.of_string "bool")
     | Atomic_int -> `Defined_type (C_identifier.of_string "atomic_int")
   ;;
+
+  let to_non_atomic : t -> t Or_error.t = function
+    | Atomic_int -> Or_error.return Int
+    | Bool | Int -> Or_error.error_string "already non-atomic"
+  ;;
 end
 
 type t =
@@ -62,8 +67,12 @@ let of_basic (ty : Basic.t) ~(is_pointer : bool) : t =
   (if is_pointer then pointer_to else normal) ty
 ;;
 
-let underlying_basic_type : t -> Basic.t = function
+let basic_type : t -> Basic.t = function
   | Normal x | Pointer_to x -> x
+;;
+
+let basic_type_is (ty : t) : Basic.t -> bool =
+  Basic.equal (basic_type ty)
 ;;
 
 let is_pointer : t -> bool = function
@@ -82,7 +91,12 @@ let ref : t -> t Or_error.t = function
 ;;
 
 let is_atomic (ty : t) : bool =
-  Basic.equal Atomic_int (underlying_basic_type ty)
+  basic_type_is ty Atomic_int (* for now *)
+;;
+
+let to_non_atomic : t -> t Or_error.t = function
+  | Normal k -> Or_error.(k |> Basic.to_non_atomic >>| normal)
+  | Pointer_to k -> Or_error.(k |> Basic.to_non_atomic >>| pointer_to)
 ;;
 
 module Quickcheck_main : Quickcheckable.S with type t := t = struct
@@ -112,4 +126,13 @@ module Quickcheck_main : Quickcheckable.S with type t := t = struct
   ;;
 end
 include Quickcheck_main
+
+let%test_unit "basic_type_is compatibility with basic_type" =
+    Quickcheck.test gen
+      ~sexp_of:[%sexp_of: t]
+      ~shrinker
+      ~f:([%test_pred: t] ~here:[[%here]]
+            (fun t -> basic_type_is t (basic_type t))
+         )
+;;
 

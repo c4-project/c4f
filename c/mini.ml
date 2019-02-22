@@ -155,9 +155,20 @@ module Lvalue = struct
     [%expect {| (Error "not a pointer type") |}]
   ;;
 
-  (** A lvalue generator parametrised on a particular identifier
-     generator. *)
-  let gen_with_identifier_gen (g : C_identifier.t Quickcheck.Generator.t)
+  let anonymise = function
+    | Variable v -> `A v
+    | Deref    d -> `B d
+  ;;
+
+  let deanonymise = function
+    | `A v -> Variable v
+    | `B d -> Deref    d
+  ;;
+
+  (** [gen_with_identifier_gen] is a lvalue generator parametrised on
+     a particular identifier generator. *)
+  let gen_with_identifier_gen
+      (g : C_identifier.t Quickcheck.Generator.t)
     : t Quickcheck.Generator.t =
     Quickcheck.Generator.(
       recursive_union [ map g ~f:variable ]
@@ -165,20 +176,24 @@ module Lvalue = struct
     )
   ;;
 
+  (** [shrinker_with_identifier_shrinker] is an lvalue shrinker
+      parametrised on a particular identifier shrinker. *)
+  let shrinker_with_identifier_shrinker
+      (s : C_identifier.t Quickcheck.Shrinker.t)
+    : t Quickcheck.Shrinker.t =
+    Quickcheck.Shrinker.(
+      fixed_point
+        (fun mu ->
+           map (variant2 s mu)
+             ~f:deanonymise ~f_inverse:anonymise
+        )
+    )
+    ;;
+
   module Quickcheck_main : Quickcheckable.S with type t := t = struct
     module G = Core_kernel.Quickcheck.Generator
     module O = Core_kernel.Quickcheck.Observer
     module S = Core_kernel.Quickcheck.Shrinker
-
-    let anonymise = function
-      | Variable v -> `A v
-      | Deref    d -> `B d
-    ;;
-
-    let deanonymise = function
-      | `A v -> Variable v
-      | `B d -> Deref    d
-    ;;
 
     let gen : t G.t = gen_with_identifier_gen C_identifier.gen
 
@@ -216,7 +231,11 @@ module Lvalue = struct
 
     let gen = gen_with_identifier_gen random_var
     let obs = obs
-    let shrinker = shrinker
+
+    (* Don't reduce identifiers, as this might make them no longer
+       members of the environment. *)
+    let shrinker = shrinker_with_identifier_shrinker
+        (Quickcheck.Shrinker.empty ())
   end
 
   let underlying_variable_in (module E : Env) (l : t) : bool =
@@ -238,11 +257,9 @@ module Lvalue = struct
     "Quickcheck_on_env: generated underlying variables in environment" =
     let e = Lazy.force test_env_mod in
     let module Q = Quickcheck_on_env (val e) in
-    Quickcheck.test
+    Quickcheck.test Q.gen
       ~sexp_of:[%sexp_of: t]
-      ~trials:20
       ~shrinker:Q.shrinker
-      Q.gen
       ~f:([%test_pred: t] ~here:[[%here]] (underlying_variable_in e))
   ;;
 end
@@ -292,8 +309,18 @@ module Address = struct
     [%expect {| (Ok (Pointer_to int)) |}]
   ;;
 
-  (** An address generator parametrised on a particular lvalue
-     generator. *)
+  let anonymise = function
+    | Lvalue v -> `A v
+    | Ref    d -> `B d
+  ;;
+
+  let deanonymise = function
+    | `A v -> Lvalue v
+    | `B d -> Ref    d
+  ;;
+
+  (** [gen_with_lvalue_gen] is an address generator parametrised on a
+     particular lvalue generator. *)
   let gen_with_lvalue_gen (g : Lvalue.t Quickcheck.Generator.t)
     : t Quickcheck.Generator.t =
     Quickcheck.Generator.(
@@ -302,49 +329,49 @@ module Address = struct
     )
   ;;
 
-  (** An address generator parametrised on a particular identifier
-     generator. *)
+  (** [shrinker_with_lvalue_shrinker] is an address shrinker
+     parametrised on a particular lvalue shrinker. *)
+  let shrinker_with_lvalue_shrinker (s : Lvalue.t Quickcheck.Shrinker.t)
+    : t Quickcheck.Shrinker.t =
+    Quickcheck.Shrinker.(
+      fixed_point (fun mu ->
+          map (variant2 s mu)
+            ~f:deanonymise ~f_inverse:anonymise
+        )
+    )
+  ;;
+
+  (** [gen_with_identifier_gen] is an address generator parametrised
+     on a particular identifier generator. *)
   let gen_with_identifier_gen
       (g : C_identifier.t Quickcheck.Generator.t)
     : t Quickcheck.Generator.t =
-    gen_with_lvalue_gen
-      (Lvalue.gen_with_identifier_gen g)
+    gen_with_lvalue_gen (Lvalue.gen_with_identifier_gen g)
   ;;
+
+  (** [shrinker_with_identifier_shrinker] is an address generator
+     parametrised on a particular identifier shrinker. *)
+  let shrinker_with_identifier_shrinker
+      (s : C_identifier.t Quickcheck.Shrinker.t)
+    : t Quickcheck.Shrinker.t =
+    shrinker_with_lvalue_shrinker
+      (Lvalue.shrinker_with_identifier_shrinker s)
+  ;;
+
 
   module Quickcheck_main : Quickcheckable.S with type t := t = struct
     module G = Core_kernel.Quickcheck.Generator
     module O = Core_kernel.Quickcheck.Observer
     module S = Core_kernel.Quickcheck.Shrinker
 
-    let anonymise = function
-      | Lvalue v -> `A v
-      | Ref    d -> `B d
-    ;;
-
-    let deanonymise = function
-      | `A v -> Lvalue v
-      | `B d -> Ref    d
-    ;;
-
-    let gen : t G.t =
-      Quickcheck.Generator.recursive_union
-        [ G.map Lvalue.gen ~f:lvalue ]
-        ~f:(fun mu -> [ G.map mu ~f:ref ])
-    ;;
-
+    let gen : t G.t = gen_with_lvalue_gen Lvalue.gen
     let obs : t O.t =
       O.fixed_point (fun mu ->
           O.unmap (O.variant2 Lvalue.obs mu)
             ~f:anonymise
         )
     ;;
-
-    let shrinker : t S.t =
-      S.fixed_point (fun mu ->
-          S.map (S.variant2 Lvalue.shrinker mu)
-            ~f:deanonymise ~f_inverse:anonymise
-        )
-    ;;
+    let shrinker : t S.t = shrinker_with_lvalue_shrinker Lvalue.shrinker
   end
   include Quickcheck_main
 
@@ -383,7 +410,10 @@ module Address = struct
 
     let gen = gen_with_identifier_gen random_var
     let obs = obs
-    let shrinker = shrinker
+    (* We don't shrink identifiers, for the same reason as in the
+       analogous module for lvalues. *)
+    let shrinker = shrinker_with_identifier_shrinker
+      (Quickcheck.Shrinker.empty ())
   end
 
   let underlying_variable_in (module E : Env) (l : t) : bool =
@@ -518,6 +548,16 @@ module Expression = struct
       end
   end)
 
+  module On_identifiers
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = Identifier.t =
+    Travesty.Traversable.Chain0
+      (struct
+        type nonrec t = t
+        include On_lvalues
+      end)
+      (Lvalue.On_identifiers)
+
   module Type_check (E : Env) = struct
     module L = Lvalue.Type_check (E)
     module A = Address.Type_check (E)
@@ -532,7 +572,10 @@ module Expression = struct
       | Constant    k      -> type_of_constant k
       | Lvalue      l      -> L.type_of l
       | Eq          (l, r) -> type_of_relational l r
-      | Atomic_load ld     -> A.type_of (Atomic_load.src ld)
+      | Atomic_load ld     ->
+        Or_error.(
+          ld |> Atomic_load.src |> A.type_of >>= Type.to_non_atomic
+        )
     and type_of_relational (l : t) (r : t) : Type.t Or_error.t =
       let open Or_error.Let_syntax in
       let%map _ = type_of l
@@ -540,16 +583,48 @@ module Expression = struct
       in Type.(normal Basic.bool)
     ;;
   end
+(*
+  module Quickcheck_ints (E : Env)
+    : Quickcheckable.S with type t := t = struct
+    module G = Quickcheck.Generator
+    module O = Quickcheck.Observer
+    module S = Quickcheck.Shrinker
 
-  module On_identifiers
-    : Travesty.Traversable.S0_container
-      with type t := t and type Elt.t = Identifier.t =
-    Travesty.Traversable.Chain0
-      (struct
-        type nonrec t = t
-        include On_lvalues
-      end)
-      (Lvalue.On_identifiers)
+    let int_variables () : C_identifier.t list =
+      E.env
+      |> C_identifier.Map.filter
+        ~f:(Type.equal (Type.normal Type.Basic.int))
+      |> C_identifier.Map.keys
+    ;;
+
+    let atomic_int_variables () : C_identifier.t list =
+      E.env
+      |> C_identifier.Map.filter
+        ~f:(Type.equal (Type.normal Type.Basic.atomic_int))
+      |> C_identifier.Map.keys
+    ;;
+
+    (* TODO(@MattWindsor91): pointers? *)
+
+    let gen : t G.t =
+      let open G.Let_syntax in
+      Quickcheck.Generator.of_fun
+      
+  end
+
+  module Quickcheck_bools (E : Env)
+    : Quickcheckable.S with type t := t = struct
+    module G = Quickcheck.Generator
+    module O = Quickcheck.Observer
+    module S = Quickcheck.Shrinker
+
+    let gen : t G.t =
+      let open G.Let_syntax in
+      Quickcheck.Generator.union
+        [ gen_int_relational
+        ; gen_const
+        ]
+  end *)
 end
 
 module Assign = struct
@@ -1110,10 +1185,14 @@ module Reify = struct
   ;;
 
   let type_to_spec (ty : Type.t) : [> Ast.Type_spec.t] =
-    Type.Basic.to_spec (Type.underlying_basic_type ty)
+    (* We translate the level of indirection separately, in
+       [type_to_pointer]. *)
+    Type.Basic.to_spec (Type.basic_type ty)
   ;;
 
   let type_to_pointer (ty : Type.t) : Pointer.t option =
+    (* We translate the actual underlying type separately, in
+       [type_to_spec]. *)
     Option.some_if (Type.is_pointer ty) [[]]
   ;;
 
