@@ -28,37 +28,14 @@ open Utils
 include Ast_basic
 include Mini_intf
 
+module Env = Mini_env
 module Type = Mini_type
-
-module Env_extensions (E : Env) = struct
-  let random_var : C_identifier.t Quickcheck.Generator.t =
-    Quickcheck.Generator.of_list (C_identifier.Map.keys E.env)
-end
 
 type 'a named = (Identifier.t * 'a)
 [@@deriving eq, sexp]
 
 type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
 
-(** An environment used for testing the various environment-sensitive
-    operations *)
-let test_env : Type.t C_identifier.Map.t Lazy.t =
-  lazy
-    C_identifier.(
-      Map.of_alist_exn
-        [ of_string "foo"   , Type.(normal     Basic.int)
-        ; of_string "bar"   , Type.(pointer_to Basic.atomic_int)
-        ; of_string "barbaz", Type.(normal     Basic.bool)
-        ; of_string "x"     , Type.(normal     Basic.atomic_int)
-        ; of_string "y"     , Type.(normal     Basic.atomic_int)
-        ]
-    )
-
-let test_env_mod : (module Env) Lazy.t =
-  Lazy.(
-    test_env >>| fun env -> (module (struct let env = env end) : Env)
-  )
-;;
 
 module Initialiser = struct
   type t =
@@ -134,7 +111,7 @@ module Lvalue = struct
     | Deref    t  -> underlying_variable t
   ;;
 
-  module Type_check (E : Env) = struct
+  module Type_check (E : Env.S) = struct
     let rec type_of : t -> Type.t Or_error.t = function
       | Variable v ->
         Result.of_option (C_identifier.Map.find E.env v)
@@ -147,14 +124,14 @@ module Lvalue = struct
   end
 
   let%expect_test "Type-checking a valid normal variable lvalue" =
-    let module T = Type_check (val (Lazy.force test_env_mod)) in
+    let module T = Type_check (val (Lazy.force Env.test_env_mod)) in
     let result = T.type_of (Variable (C_identifier.of_string "foo")) in
     Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)];
     [%expect {| (Ok (Normal int)) |}]
   ;;
 
   let%expect_test "Type-checking an invalid deferencing variable lvalue" =
-    let module T = Type_check (val (Lazy.force test_env_mod)) in
+    let module T = Type_check (val (Lazy.force Env.test_env_mod)) in
     let result = T.type_of (Deref (Variable (C_identifier.of_string "foo"))) in
     Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)];
     [%expect {| (Error "not a pointer type") |}]
@@ -232,9 +209,9 @@ module Lvalue = struct
 
   let%test_unit
     "on_value_of_typed_id: always takes basic type" =
-    let (module E) = Lazy.force test_env_mod in
+    let (module E) = Lazy.force Env.test_env_mod in
     let module Tc = Type_check (E) in
-    let module X = Env_extensions (E) in
+    let module X = Env.Extend (E) in
     Quickcheck.test
       (X.random_var)
       ~sexp_of:[%sexp_of: (C_identifier.t)]
@@ -248,10 +225,10 @@ module Lvalue = struct
         )
   ;;
 
-  module Quickcheck_on_env (E : Env)
+  module Quickcheck_on_env (E : Env.S)
     : Quickcheckable.S with type t := t = struct
 
-    module X = Env_extensions (E)
+    module X = Env.Extend (E)
 
     let gen = gen_with_identifier_gen X.random_var
     let obs = obs
@@ -262,7 +239,7 @@ module Lvalue = struct
         (Quickcheck.Shrinker.empty ())
   end
 
-  module Quickcheck_int_values (E : Env)
+  module Quickcheck_int_values (E : Env.S)
     : Quickcheckable.S with type t := t = struct
     let int_variables () : Type.t C_identifier.Map.t =
       C_identifier.Map.filter E.env
@@ -280,13 +257,13 @@ module Lvalue = struct
         (Quickcheck.Shrinker.empty ())
   end
 
-  let underlying_variable_in (module E : Env) (l : t) : bool =
+  let underlying_variable_in (module E : Env.S) (l : t) : bool =
     C_identifier.Map.mem E.env (underlying_variable l)
   ;;
 
   let%test_unit
     "Quickcheck_on_env: liveness" =
-    let e = Lazy.force test_env_mod in
+    let e = Lazy.force Env.test_env_mod in
     let module Q = Quickcheck_on_env (val e) in
     Quickcheck.test_can_generate
       ~sexp_of:[%sexp_of: t]
@@ -297,7 +274,7 @@ module Lvalue = struct
 
   let%test_unit
     "Quickcheck_on_env: generated underlying variables in environment" =
-    let e = Lazy.force test_env_mod in
+    let e = Lazy.force Env.test_env_mod in
     let module Q = Quickcheck_on_env (val e) in
     Quickcheck.test Q.gen
       ~sexp_of:[%sexp_of: t]
@@ -329,7 +306,7 @@ module Address = struct
       end
     end)
 
-  module Type_check (E : Env) = struct
+  module Type_check (E : Env.S) = struct
     module L = Lvalue.Type_check (E)
     let rec type_of : t -> Type.t Or_error.t = function
       | Lvalue l -> L.type_of l
@@ -338,14 +315,14 @@ module Address = struct
   end
 
   let%expect_test "Type-checking a valid normal variable lvalue" =
-    let module T = Type_check (val (Lazy.force test_env_mod)) in
+    let module T = Type_check (val (Lazy.force Env.test_env_mod)) in
     let result = T.type_of (Lvalue (Variable (C_identifier.of_string "foo"))) in
     Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)];
     [%expect {| (Ok (Normal int)) |}]
   ;;
 
   let%expect_test "Type-checking an valid reference lvalue" =
-    let module T = Type_check (val (Lazy.force test_env_mod)) in
+    let module T = Type_check (val (Lazy.force Env.test_env_mod)) in
     let result = T.type_of (Ref (Lvalue (Variable (C_identifier.of_string "foo")))) in
     Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)];
     [%expect {| (Ok (Pointer_to int)) |}]
@@ -400,7 +377,6 @@ module Address = struct
       (Lvalue.shrinker_with_identifier_shrinker s)
   ;;
 
-
   module Quickcheck_main : Quickcheckable.S with type t := t = struct
     module G = Core_kernel.Quickcheck.Generator
     module O = Core_kernel.Quickcheck.Observer
@@ -416,6 +392,47 @@ module Address = struct
     let shrinker : t S.t = shrinker_with_lvalue_shrinker Lvalue.shrinker
   end
   include Quickcheck_main
+
+  let on_address_of_typed_id ~(id : C_identifier.t) ~(ty : Type.t) : t =
+    let lv = Lvalue (Variable id) in
+    if Type.is_pointer ty then lv else ref lv
+  ;;
+
+  let%test_unit
+    "on_address_of_typed_id: always takes pointer type" =
+    let (module E) = Lazy.force Env.test_env_mod in
+    let module Tc = Type_check (E) in
+    let module X = Env.Extend (E) in
+    Quickcheck.test
+      (X.random_var)
+      ~sexp_of:[%sexp_of: (C_identifier.t)]
+      ~shrinker:(Quickcheck.Shrinker.empty ())
+      ~f:(fun id ->
+          let ty = C_identifier.Map.find_exn E.env id in
+          [%test_result: Type.t Or_error.t]
+            ~here:[[%here]]
+            (Tc.type_of (on_address_of_typed_id ~id ~ty))
+            ~expect:(Or_error.return (Type.pointer_to (Type.basic_type ty)))
+        )
+  ;;
+
+  module Quickcheck_int_values (E : Env.S)
+    : Quickcheckable.S with type t := t = struct
+    let atomic_int_variables () : Type.t C_identifier.Map.t =
+      C_identifier.Map.filter E.env
+        ~f:(Type.equal (Type.normal Type.Basic.atomic_int))
+    ;;
+
+    let gen : t Quickcheck.Generator.t =
+      Quickcheck.Generator.map
+        (Quickcheck.Generator.of_list (Map.to_alist (atomic_int_variables ())))
+        ~f:(fun (id, ty) -> on_address_of_typed_id ~id ~ty)
+    ;;
+
+    let obs = obs
+    let shrinker = shrinker_with_identifier_shrinker
+        (Quickcheck.Shrinker.empty ())
+  end
 
   let rec underlying_variable : t -> Identifier.t = function
     | Lvalue lv -> Lvalue.underlying_variable lv
@@ -443,7 +460,7 @@ module Address = struct
     [%expect {| yorick |}]
 
 
-  module Quickcheck_on_env (E : Env)
+  module Quickcheck_on_env (E : Env.S)
     : Quickcheckable.S with type t := t = struct
 
     let random_var : C_identifier.t Quickcheck.Generator.t =
@@ -458,13 +475,13 @@ module Address = struct
         (Quickcheck.Shrinker.empty ())
   end
 
-  let underlying_variable_in (module E : Env) (l : t) : bool =
+  let underlying_variable_in (module E : Env.S) (l : t) : bool =
     C_identifier.Map.mem E.env (underlying_variable l)
   ;;
 
   let%test_unit
     "Quickcheck_on_env: liveness" =
-    let e = Lazy.force test_env_mod in
+    let e = Lazy.force Env.test_env_mod in
     let module Q = Quickcheck_on_env (val e) in
     Quickcheck.test_can_generate
       ~sexp_of:[%sexp_of: t]
@@ -475,7 +492,7 @@ module Address = struct
 
   let%test_unit
     "Quickcheck_on_env: generated underlying variables in environment" =
-    let e = Lazy.force test_env_mod in
+    let e = Lazy.force Env.test_env_mod in
     let module Q = Quickcheck_on_env (val e) in
     Quickcheck.test
       ~sexp_of:[%sexp_of: t]
@@ -533,12 +550,15 @@ module Atomic_load = struct
   module Quickcheck_int_values (E : Env)
     : Quickcheckable.S with type t := t = struct
 
-    let atomic_int_variables () : Type.t C_identifier.Map.t =
-      C_identifier.Map.filter E.env
-        ~f:(Type.equal (Type.normal Type.Basic.atomic_int))
-    ;;
+    module G = Core_kernel.Quickcheck.Generator
+    module O = Core_kernel.Quickcheck.Observer
+    module S = Core_kernel.Quickcheck.Shrinker
+
+    let gen : G.t = ()
+    let obs : O.t = ()
+    let shrinker : S.t = ()
   end
-*)
+                                          *)
 end
 
 module Expression = struct
@@ -610,7 +630,7 @@ module Expression = struct
       end)
       (Lvalue.On_identifiers)
 
-  module Type_check (E : Env) = struct
+  module Type_check (E : Env.S) = struct
     module L = Lvalue.Type_check (E)
     module A = Address.Type_check (E)
 

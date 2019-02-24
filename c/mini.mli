@@ -91,7 +91,7 @@ module Lvalue : sig
   include Quickcheckable.S with type t := t
   (** Generates random lvalues without constraint. *)
 
-  module Quickcheck_on_env (E : Env)
+  module Quickcheck_on_env (E : Mini_env.S)
     : Quickcheckable.S with type t := t
   (** Generates random lvalues, constrained to discuss the variables
      in the given environment. *)
