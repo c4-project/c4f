@@ -168,22 +168,24 @@ module Global_reduce
   ;;
 
   let when_local
-    (proj : 'a -> Mini.Identifier.t)
-    (f : 'a -> 'a)
-    (v : 'a) : 'a =
-    if is_local (proj v) then f v else v
+      (v : 'a)
+      ~(over : 'a -> Mini.Identifier.t)
+      ~(f : 'a -> 'a)
+    : 'a =
+    if is_local (over v) then f v else v
   ;;
 
   let when_global
-    (proj : 'a -> Mini.Identifier.t)
-    (f : 'a -> 'a)
-    (v : 'a) : 'a =
-    if is_local (proj v) then v else f v
+      (v : 'a)
+      ~(over : 'a -> Mini.Identifier.t)
+      ~(f : 'a -> 'a)
+    : 'a =
+    if is_local (over v) then v else f v
   ;;
 
   let qualify_locals : Mini.Statement.t -> Mini.Statement.t =
     Mini.Statement.On_identifiers.map
-      ~f:(when_local Fn.id (qualify_local L.tid))
+      ~f:(when_local ~over:Fn.id ~f:(qualify_local L.tid))
   ;;
 
   (** [address_globals stm] converts each address in [stm] over a global
@@ -192,8 +194,8 @@ module Global_reduce
   let address_globals : Mini.Statement.t -> Mini.Statement.t =
     Mini.Statement.On_addresses.map
       ~f:(
-        when_global Mini.Address.underlying_variable
-          (fun addr ->
+        when_global ~over:Mini.Address.variable_of
+          ~f:(fun addr ->
              (* The added deref here will be removed in
                 [ref_globals]. *)
              Mini.Address.ref
@@ -209,8 +211,8 @@ module Global_reduce
     Mini.Statement.On_lvalues.map
       ~f:(
         Mini.Lvalue.(
-          when_global underlying_variable
-            (Fn.compose variable underlying_variable)
+          when_global ~over:variable_of
+            ~f:(Fn.compose variable variable_of)
         )
       )
   ;;

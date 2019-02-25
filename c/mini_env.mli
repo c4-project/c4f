@@ -35,6 +35,6 @@ val test_env : Mini_type.t C_identifier.Map.t Lazy.t
 val test_env_mod : (module S) Lazy.t
 (** {{!test_env}test_env} packaged as a first-class module. *)
 
-module Extend (E : S) : Extensions
-(** [Extend (E)] extends an environment module with various functions
-    and generators. *)
+module Make (E : Basic) : S
+(** [Make (E)] extends a basic environment module with various
+   functions and generators. *)

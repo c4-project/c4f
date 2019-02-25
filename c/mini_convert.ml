@@ -268,7 +268,7 @@ let expr_to_identifier
   then
     Or_error.error_s
       [%message "Expected identifier" ~got:(lv : Lvalue.t)]
-  else return (Lvalue.underlying_variable lv)
+  else return (Lvalue.variable_of lv)
 ;;
 
 let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =

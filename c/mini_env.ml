@@ -27,9 +27,21 @@ open Utils
 
 include Mini_env_intf
 
-module Extend (E : S) : Extensions = struct
+module Make (E : Basic) : S = struct
+  let env = E.env
+
   let random_var : C_identifier.t Quickcheck.Generator.t =
     Quickcheck.Generator.of_list (C_identifier.Map.keys E.env)
+
+  let atomic_int_variables () : Mini_type.t C_identifier.Map.t =
+    C_identifier.Map.filter E.env
+      ~f:(Mini_type.(basic_type_is ~basic:Basic.atomic_int))
+  ;;
+
+  let int_variables () : Mini_type.t C_identifier.Map.t =
+    C_identifier.Map.filter E.env
+      ~f:(Mini_type.(basic_type_is ~basic:Basic.int))
+  ;;
 end
 
 (** An environment used for testing the various environment-sensitive
@@ -49,6 +61,7 @@ let test_env : Mini_type.t C_identifier.Map.t Lazy.t =
 
 let test_env_mod : (module S) Lazy.t =
   Lazy.(
-    test_env >>| fun env -> (module (struct let env = env end) : S)
+    test_env
+    >>| fun env -> (module (Make (struct let env = env end)) : S)
   )
 ;;

@@ -88,20 +88,27 @@ module Lvalue : sig
       with type t := t and type Elt.t = Identifier.t
   (** Traversing over identifiers in lvalues. *)
 
+  include S_has_underlying_variable with type t := t
+  (** We can get to the variable name inside an lvalue. *)
+
+  include S_type_checkable with type t := t
+  (** Type-checking for lvalues. *)
+
+  (** {3 Generating random lvalues} *)
+
   include Quickcheckable.S with type t := t
   (** Generates random lvalues without constraint. *)
 
   module Quickcheck_on_env (E : Mini_env.S)
     : Quickcheckable.S with type t := t
-  (** Generates random lvalues, constrained to discuss the variables
+  (** Generates random lvalues, constrained over the variables
      in the given environment. *)
 
-  val underlying_variable : t -> Identifier.t
-  (** [underlying_variable t] gets the underlying variable name of
-      [t]. *)
-
-  include S_type_checkable with type t := t
-  (** Type-checking for lvalues. *)
+  module Quickcheck_int_values (E : Mini_env.S)
+    : Quickcheckable.S with type t := t
+    (** Generates random lvalues, constrained over the variables in
+       the given environment; each lvalue has a non-atomic-integer
+       value type. *)
 end
 
 (** An address (a lvalue, or reference thereto). *)
@@ -119,9 +126,9 @@ module Address : sig
   val ref : t -> t
   (** [ref t] constructs a &-reference to [t]. *)
 
-  val underlying_variable : t -> Identifier.t
-  (** [underlying_variable t] gets the underlying variable name of
-      [t]. *)
+  include S_has_underlying_variable with type t := t
+  (** We can get to the variable name inside an address. *)
+
 
   include S_type_checkable with type t := t
   (** Type-checking for addresses. *)
@@ -131,6 +138,10 @@ end
 (** An atomic load operation. *)
 module Atomic_load : sig
   type t [@@deriving sexp]
+
+  include S_has_underlying_variable with type t := t
+  (** We can get to the variable name inside an atomic load (that is,
+      the source variable). *)
 
   (** {3 Traversals} *)
 

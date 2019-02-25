@@ -25,6 +25,20 @@
 (** Mini-model: module signatures *)
 
 open Core_kernel
+open Utils
+
+(** Signature of abstract data types that wrap some C variable name. *)
+module type S_has_underlying_variable = sig
+  type t
+  (** The type that contains underlying variables. *)
+
+  val variable_of : t -> C_identifier.t
+  (** [variable_of x] is the underlying variable of [x]. *)
+
+  val variable_in_env : t -> env:(_ C_identifier.Map.t) -> bool
+  (** [variable_in_env x ~env] gets whether [x]'s underlying variable
+     name is a key in an environment [env]. *)
+end
 
 (** Signature of parts of the mini-model that implement type checking. *)
 module type S_type_checkable = sig

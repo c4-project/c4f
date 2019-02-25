@@ -106,9 +106,57 @@ module Lvalue = struct
       end
     end)
 
-  let rec underlying_variable : t -> Identifier.t = function
+  let rec variable_of : t -> Identifier.t = function
     | Variable id -> id
-    | Deref    t  -> underlying_variable t
+    | Deref    t  -> variable_of t
+  ;;
+
+  let variable_in_env (lv : t) ~(env : _ C_identifier.Map.t) : bool =
+    C_identifier.Map.mem env (variable_of lv)
+  ;;
+
+  let%expect_test
+    "variable_in_env: positive variable result, test env" =
+    let env = Lazy.force Env.test_env in
+    Sexp.output_hum stdout
+      [%sexp (variable_in_env ~env
+                (Variable (C_identifier.of_string "foo"))
+              : bool)
+      ];
+    [%expect {| true |}]
+  ;;
+
+  let%expect_test
+    "variable_in_env: negative variable result, test env" =
+    let env = Lazy.force Env.test_env in
+    Sexp.output_hum stdout
+      [%sexp (variable_in_env ~env
+                (Variable (C_identifier.of_string "kappa"))
+              : bool)
+      ];
+    [%expect {| false |}]
+  ;;
+
+  let%expect_test
+    "variable_in_env: positive deref result, test env" =
+    let env = Lazy.force Env.test_env in
+    Sexp.output_hum stdout
+      [%sexp (variable_in_env ~env
+                (Deref (Variable (C_identifier.of_string "bar")))
+              : bool)
+      ];
+    [%expect {| true |}]
+  ;;
+
+  let%expect_test
+    "variable_in_env: negative variable result, test env" =
+    let env = Lazy.force Env.test_env in
+    Sexp.output_hum stdout
+      [%sexp (variable_in_env ~env
+                (Deref (Variable (C_identifier.of_string "keepo")))
+              : bool)
+      ];
+    [%expect {| false |}]
   ;;
 
   module Type_check (E : Env.S) = struct
@@ -211,9 +259,8 @@ module Lvalue = struct
     "on_value_of_typed_id: always takes basic type" =
     let (module E) = Lazy.force Env.test_env_mod in
     let module Tc = Type_check (E) in
-    let module X = Env.Extend (E) in
     Quickcheck.test
-      (X.random_var)
+      E.random_var
       ~sexp_of:[%sexp_of: (C_identifier.t)]
       ~shrinker:(Quickcheck.Shrinker.empty ())
       ~f:(fun id ->
@@ -228,9 +275,7 @@ module Lvalue = struct
   module Quickcheck_on_env (E : Env.S)
     : Quickcheckable.S with type t := t = struct
 
-    module X = Env.Extend (E)
-
-    let gen = gen_with_identifier_gen X.random_var
+    let gen = gen_with_identifier_gen E.random_var
     let obs = obs
 
     (* Don't reduce identifiers, as this might make them no longer
@@ -239,16 +284,31 @@ module Lvalue = struct
         (Quickcheck.Shrinker.empty ())
   end
 
+  let%test_unit
+    "Quickcheck_on_env: liveness" =
+    let (module E) = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_on_env (E) in
+    Quickcheck.test_can_generate Q.gen
+      ~sexp_of:[%sexp_of: t]
+      ~f:(variable_in_env ~env:E.env)
+  ;;
+
+  let%test_unit
+    "Quickcheck_on_env: generated underlying variables in environment" =
+    let (module E) = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_on_env (E) in
+    Quickcheck.test Q.gen
+      ~sexp_of:[%sexp_of: t]
+      ~shrinker:Q.shrinker
+      ~f:([%test_pred: t] ~here:[[%here]] (variable_in_env ~env:E.env))
+  ;;
+
   module Quickcheck_int_values (E : Env.S)
     : Quickcheckable.S with type t := t = struct
-    let int_variables () : Type.t C_identifier.Map.t =
-      C_identifier.Map.filter E.env
-        ~f:(Type.basic_type_is ~basic:Type.Basic.int)
-    ;;
 
     let gen : t Quickcheck.Generator.t =
       Quickcheck.Generator.map
-        (Quickcheck.Generator.of_list (Map.to_alist (int_variables ())))
+        (Quickcheck.Generator.of_list (Map.to_alist (E.int_variables ())))
         ~f:(fun (id, ty) -> on_value_of_typed_id ~id ~ty)
     ;;
 
@@ -257,29 +317,40 @@ module Lvalue = struct
         (Quickcheck.Shrinker.empty ())
   end
 
-  let underlying_variable_in (module E : Env.S) (l : t) : bool =
-    C_identifier.Map.mem E.env (underlying_variable l)
-  ;;
-
   let%test_unit
-    "Quickcheck_on_env: liveness" =
-    let e = Lazy.force Env.test_env_mod in
-    let module Q = Quickcheck_on_env (val e) in
-    Quickcheck.test_can_generate
+    "Quickcheck_int_values: liveness" =
+    let (module E) = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_int_values (E) in
+    Quickcheck.test_can_generate Q.gen
       ~sexp_of:[%sexp_of: t]
-      ~trials:20
-      Q.gen
-      ~f:(underlying_variable_in e)
+      ~f:(variable_in_env ~env:E.env)
   ;;
 
   let%test_unit
-    "Quickcheck_on_env: generated underlying variables in environment" =
-    let e = Lazy.force Env.test_env_mod in
-    let module Q = Quickcheck_on_env (val e) in
+    "Quickcheck_int_values: generated underlying variables in environment" =
+    let (module E) = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_int_values (E) in
     Quickcheck.test Q.gen
       ~sexp_of:[%sexp_of: t]
       ~shrinker:Q.shrinker
-      ~f:([%test_pred: t] ~here:[[%here]] (underlying_variable_in e))
+      ~f:([%test_pred: t] ~here:[[%here]] (variable_in_env ~env:E.env))
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: generated lvalues have 'int' type" =
+    let (module E) = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_int_values (E) in
+    let module Tc = Type_check (E) in
+    Quickcheck.test Q.gen
+      ~sexp_of:[%sexp_of: t]
+      ~shrinker:Q.shrinker
+      ~f:(fun lv ->
+          [%test_result: Type.t Or_error.t] ~here:[[%here]]
+            (Tc.type_of lv)
+            ~expect:(
+              Or_error.return (Type.(normal Basic.int))
+            )
+        )
   ;;
 end
 
@@ -402,9 +473,8 @@ module Address = struct
     "on_address_of_typed_id: always takes pointer type" =
     let (module E) = Lazy.force Env.test_env_mod in
     let module Tc = Type_check (E) in
-    let module X = Env.Extend (E) in
     Quickcheck.test
-      (X.random_var)
+      E.random_var
       ~sexp_of:[%sexp_of: (C_identifier.t)]
       ~shrinker:(Quickcheck.Shrinker.empty ())
       ~f:(fun id ->
@@ -416,49 +486,36 @@ module Address = struct
         )
   ;;
 
-  module Quickcheck_int_values (E : Env.S)
-    : Quickcheckable.S with type t := t = struct
-    let atomic_int_variables () : Type.t C_identifier.Map.t =
-      C_identifier.Map.filter E.env
-        ~f:(Type.equal (Type.normal Type.Basic.atomic_int))
-    ;;
+  let rec lvalue_of : t -> Lvalue.t = function
+    | Lvalue lv -> lv
+    | Ref    t  -> lvalue_of t
 
-    let gen : t Quickcheck.Generator.t =
-      Quickcheck.Generator.map
-        (Quickcheck.Generator.of_list (Map.to_alist (atomic_int_variables ())))
-        ~f:(fun (id, ty) -> on_address_of_typed_id ~id ~ty)
-    ;;
+  let variable_of (addr : t) : Identifier.t =
+    Lvalue.variable_of (lvalue_of addr)
 
-    let obs = obs
-    let shrinker = shrinker_with_identifier_shrinker
-        (Quickcheck.Shrinker.empty ())
-  end
-
-  let rec underlying_variable : t -> Identifier.t = function
-    | Lvalue lv -> Lvalue.underlying_variable lv
-    | Ref    t  -> underlying_variable t
-  ;;
-
-  let%test_unit "underlying_variable: preserved by ref" =
+  let%test_unit "variable_of: preserved by ref" =
     Core_kernel.Quickcheck.test
       ~shrinker
       ~sexp_of:[%sexp_of: t]
       gen
       ~f:(fun x ->
           [%test_eq: Identifier.t] ~here:[[%here]]
-            (underlying_variable x)
-            (underlying_variable (ref x))
+            (variable_of x)
+            (variable_of (ref x))
         )
   ;;
 
-  let%expect_test "underlying_variable: nested example" =
+  let%expect_test "variable_of: nested example" =
     let example =
       Ref (Ref (Lvalue (Lvalue.Deref (Lvalue.Variable (C_identifier.create_exn "yorick")))))
     in
-    let var = underlying_variable example in
+    let var = variable_of example in
     Fmt.pr "%a@." Identifier.pp var;
     [%expect {| yorick |}]
 
+  let variable_in_env (addr : t) ~(env : _ C_identifier.Map.t) : bool =
+    Lvalue.variable_in_env (lvalue_of addr) ~env
+  ;;
 
   module Quickcheck_on_env (E : Env.S)
     : Quickcheckable.S with type t := t = struct
@@ -475,31 +532,79 @@ module Address = struct
         (Quickcheck.Shrinker.empty ())
   end
 
-  let underlying_variable_in (module E : Env.S) (l : t) : bool =
-    C_identifier.Map.mem E.env (underlying_variable l)
+  let variable_in (module E : Env.S) (l : t) : bool =
+    C_identifier.Map.mem E.env (variable_of l)
   ;;
 
   let%test_unit
     "Quickcheck_on_env: liveness" =
     let e = Lazy.force Env.test_env_mod in
     let module Q = Quickcheck_on_env (val e) in
-    Quickcheck.test_can_generate
+    Quickcheck.test_can_generate Q.gen
       ~sexp_of:[%sexp_of: t]
-      ~trials:20
-      Q.gen
-      ~f:(underlying_variable_in e)
+      ~f:(variable_in e)
   ;;
 
   let%test_unit
     "Quickcheck_on_env: generated underlying variables in environment" =
     let e = Lazy.force Env.test_env_mod in
     let module Q = Quickcheck_on_env (val e) in
-    Quickcheck.test
+    Quickcheck.test Q.gen
       ~sexp_of:[%sexp_of: t]
       ~trials:20
       ~shrinker:Q.shrinker
-      Q.gen
-      ~f:([%test_pred: t] ~here:[[%here]] (underlying_variable_in e))
+      ~f:([%test_pred: t] ~here:[[%here]] (variable_in e))
+  ;;
+
+  module Quickcheck_atomic_int_pointers (E : Env.S)
+    : Quickcheckable.S with type t := t = struct
+
+    let gen : t Quickcheck.Generator.t =
+      Quickcheck.Generator.map
+        (Quickcheck.Generator.of_list (Map.to_alist (E.atomic_int_variables ())))
+        ~f:(fun (id, ty) -> on_address_of_typed_id ~id ~ty)
+    ;;
+
+    let obs = obs
+    let shrinker = shrinker_with_identifier_shrinker
+        (Quickcheck.Shrinker.empty ())
+  end
+
+  let%test_unit
+    "Quickcheck_atomic_int_pointers: liveness" =
+    let e = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_atomic_int_pointers (val e) in
+    Quickcheck.test_can_generate Q.gen
+      ~sexp_of:[%sexp_of: t]
+      ~trials:20
+      ~f:(variable_in e)
+  ;;
+
+  let%test_unit
+    "Quickcheck_atomic_int_pointers: generated underlying variables in environment" =
+    let e = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_atomic_int_pointers (val e) in
+    Quickcheck.test Q.gen
+      ~sexp_of:[%sexp_of: t]
+      ~shrinker:Q.shrinker
+      ~f:([%test_pred: t] ~here:[[%here]] (variable_in e))
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: generated lvalues have '*atomic_int' type" =
+    let e = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_atomic_int_pointers (val e) in
+    let module Tc = Type_check (val e) in
+    Quickcheck.test Q.gen
+      ~sexp_of:[%sexp_of: t]
+      ~shrinker:Q.shrinker
+      ~f:(fun lv ->
+          [%test_result: Type.t Or_error.t] ~here:[[%here]]
+            (Tc.type_of lv)
+            ~expect:(
+              Or_error.return (Type.(pointer_to Basic.atomic_int))
+            )
+        )
   ;;
 end
 
@@ -510,6 +615,9 @@ module Atomic_load = struct
     }
   [@@deriving sexp, fields, make]
   ;;
+
+  let to_tuple ({ src; mo } : t) : Address.t * Mem_order.t = ( src, mo )
+  let of_tuple (( src, mo ) : Address.t * Mem_order.t) : t = { src; mo }
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
@@ -546,19 +654,57 @@ module Atomic_load = struct
       end)
       (Address.On_lvalues)
   ;;
-(*
-  module Quickcheck_int_values (E : Env)
+
+  module Quickcheck_on_env (E : Env.S)
     : Quickcheckable.S with type t := t = struct
 
-    module G = Core_kernel.Quickcheck.Generator
-    module O = Core_kernel.Quickcheck.Observer
-    module S = Core_kernel.Quickcheck.Shrinker
+    module Gen = Core_kernel.Quickcheck.Generator
+    module Obs = Core_kernel.Quickcheck.Observer
+    module Snk = Core_kernel.Quickcheck.Shrinker
 
-    let gen : G.t = ()
-    let obs : O.t = ()
-    let shrinker : S.t = ()
+    module Src = Address.Quickcheck_atomic_int_pointers (E)
+
+    let gen : t Gen.t =
+      Gen.(map (tuple2 Src.gen Mem_order.gen_load) ~f:of_tuple)
+    ;;
+
+    let obs : t Obs.t =
+      Obs.(unmap (tuple2 Src.obs Mem_order.obs) ~f:to_tuple)
+    ;;
+
+    let shrinker : t Snk.t =
+      Snk.(map (tuple2 Src.shrinker Mem_order.shrinker)
+             ~f:of_tuple ~f_inverse:to_tuple
+          )
+    ;;
   end
-                                          *)
+
+  let variable_of (ld : t) : C_identifier.t =
+    Address.variable_of (src ld)
+  ;;
+
+  let variable_in_env (ld : t) ~(env : _ C_identifier.Map.t) : bool =
+    Address.variable_in_env (src ld) ~env
+  ;;
+
+  let%test_unit
+    "Quickcheck_on_env: liveness" =
+    let (module E) = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_on_env (E) in
+    Quickcheck.test_can_generate Q.gen
+      ~sexp_of:[%sexp_of: t]
+      ~f:(variable_in_env ~env:E.env)
+  ;;
+
+  let%test_unit
+    "Quickcheck_on_env: generated underlying variables in environment" =
+    let (module E) = Lazy.force Env.test_env_mod in
+    let module Q = Quickcheck_on_env (E) in
+    Quickcheck.test Q.gen
+      ~sexp_of:[%sexp_of: t]
+      ~shrinker:Q.shrinker
+      ~f:([%test_pred: t] ~here:[[%here]] (variable_in_env ~env:E.env))
+  ;;
 end
 
 module Expression = struct

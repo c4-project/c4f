@@ -27,14 +27,26 @@
 open Core_kernel
 open Utils
 
-(** Signature of modules carrying a variable typing environment. *)
-module type S = sig
+(** Basic signature of modules carrying a variable typing environment. *)
+module type Basic = sig
   val env : Mini_type.t C_identifier.Map.t
   (** [env] is a variable typing environment. *)
 end
 
-(** Signature of extensions to an [Env]. *)
-module type Extensions = sig
+(** Extended signature of environment modules. *)
+module type S = sig
+  include Basic
+
   val random_var : C_identifier.t Quickcheck.Generator.t
   (** [random_var] gets a random variable from the variable environment. *)
+
+  val atomic_int_variables : unit -> Mini_type.t C_identifier.Map.t
+  (** [atomic_int_variables ()] filters the environment, returning a
+     map binding only variables whose type is atomic-int, or a pointer
+     thereto. *)
+
+  val int_variables : unit -> Mini_type.t C_identifier.Map.t
+  (** [atomic_int_variables ()] filters the environment, returning a
+     map binding only variables whose type is (non-atomic) int, or a
+     pointer thereto. *)
 end
