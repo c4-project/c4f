@@ -56,6 +56,7 @@ let test_env : Mini_type.t C_identifier.Map.t Lazy.t =
           ; of_string "barbaz", normal     Basic.bool
           ; of_string "x"     , normal     Basic.atomic_int
           ; of_string "y"     , normal     Basic.atomic_int
+          ; of_string "blep"  , pointer_to Basic.int
           ]
     )
 
