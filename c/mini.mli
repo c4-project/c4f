@@ -267,55 +267,22 @@ end
 
     We treat some things that are technically expressions in C as
     statements, for simplicity. *)
-module Statement : sig
-  type t [@@deriving sexp]
-
-  module On_addresses
-    : Travesty.Traversable.S0_container
-      with type t := t and type Elt.t = Address.t
-  (** Traversing over atomic-action addresses in statements. *)
-
-  module On_identifiers
-    : Travesty.Traversable.S0_container
-      with type t := t and type Elt.t = Identifier.t
-  (** Traversing over identifiers in statements. *)
-
-  module On_lvalues
-    : Travesty.Traversable.S0_container
-      with type t := t and type Elt.t = Lvalue.t
-  (** Traversing over lvalues in statements. *)
-
-  (** {3 Constructors} *)
-
-  val assign : Assign.t -> t
-  (** [assign a] lifts an assignment [a] to a statement. *)
-
-  val atomic_store : Atomic_store.t -> t
-  (** [atomic_store a] lifts an atomic store [a] to a statement. *)
-
-  val atomic_cmpxchg : Atomic_cmpxchg.t -> t
-  (** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a statement. *)
-
-  val if_stm
-    :  cond:Expression.t
-    -> t_branch:t list
-    -> ?f_branch:t list
-    -> unit
-    -> t
-  (** [if_stm ~cond ~t_branch ?f_branch ()] creates an if statement
-      with condition [cond], true branch [t_branch], and optional false
-      branch [f_branch]. *)
-
-  val nop : t
-  (** [nop] is a no-operation statement; it corresponds to C's empty
-      expression statement. *)
-
-  (** {3 Paths} *)
-
-  module rec Path : (S_statement_path with type stm = t and type target = t)
-  and List_path :
-    (S_statement_list_path with type stm = t and type target = t)
-end
+module rec Statement
+  : (S_statement with type address        := Address.t
+                  and type assign         := Assign.t
+                  and type atomic_cmpxchg := Atomic_cmpxchg.t
+                  and type atomic_store   := Atomic_store.t
+                  and type identifier     := Identifier.t
+                  and type if_stm         := If_statement.t
+                  and type lvalue         := Lvalue.t)
+and If_statement
+  : (S_if_statement with type expr       := Expression.t
+                     and type stm        := Statement.t
+                     and type address    := Address.t
+                     and type identifier := Identifier.t
+                     and type lvalue     := Lvalue.t
+    )
+;;
 
 (** A function (less its name). *)
 module Function : sig
@@ -340,6 +307,14 @@ module Function : sig
   val body_stms : t -> Statement.t list
   (** [body_decls func] gets [func]'s statements. *)
 
+  val cvars : t -> C_identifier.Set.t
+  (** [cvars func] extracts a set of C variable names from
+      [func]. *)
+
+  val with_body_stms : t -> Statement.t list -> t
+  (** [with_body_stms func new_stms] produces a new function by
+     substituting [new_stms] for [func]'s body statements. *)
+
   val map
     :  t
     -> parameters:(Type.t id_assoc -> Type.t id_assoc)
@@ -349,19 +324,10 @@ module Function : sig
   (** [map func ~parameters ~body_decls ~body_stms] runs the given
       functions over the respective parts of a function. *)
 
-  val cvars : t -> C_identifier.Set.t
-  (** [cvars func] extracts a set of C variable names from
-      [func]. *)
-
   module On_decls : Travesty.Traversable.S0_container
     with type t := t and type Elt.t := Initialiser.t named
   (** [On_decls] allows traversal over all of the declarations
       inside a function. *)
-
-  (* {3 Paths} *)
-
-  module Path :
-    (S_function_path with type stm = Statement.t and type target := t)
 end
 
 module Program : sig
@@ -374,22 +340,28 @@ module Program : sig
   (** [make ~globals ~functions] makes a program with global variable
       declarations [globals] and function definitions [functions]. *)
 
+  (** {3 Accessors} *)
+
+  val functions : t -> Function.t id_assoc
+  (** [functions program] gets an associative list of each function in
+     [program]. *)
+
   val cvars : t -> C_identifier.Set.t
   (** [cvars program] extracts a set of C variable names from
       [program]. *)
 
-  (* {3 Traversals} *)
+  (** {3 Mutators} *)
+
+  val with_functions : t -> Function.t id_assoc -> t
+  (** [with_functions prog new_functions] creates a new program by
+     substituting [new_functions] for [prog]'s functions. *)
+
+  (** {3 Traversals} *)
 
   module On_decls : Travesty.Traversable.S0_container
     with type t := t and type Elt.t := Initialiser.t named
   (** [On_decls] allows traversal over all of the declarations
       inside a program. *)
-
-  (* {3 Paths} *)
-
-  module Path :
-    S_program_path
-    with type stm = Statement.t and type target := t
 end
 
 (** Functions for reifying a mini-model into an AST. *)
@@ -408,8 +380,3 @@ module Reify : sig
   val stm : Statement.t -> Ast.Stm.t
   (** [stm s] reifies the mini-statement [s] into the C AST. *)
 end
-
-module Make_statement_list_path (M : S_statement_path)
-  : S_statement_list_path
-    with type stm = M.stm and type target = M.target
-

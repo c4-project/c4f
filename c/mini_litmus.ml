@@ -44,7 +44,7 @@ module Lang : Litmus.Ast.Basic
 
       let pp = Fmt.using reify Ast.Litmus_lang.Statement.pp
 
-      let empty () = `Stm (Statement.nop)
+      let empty () = `Stm (Statement.nop ())
       let make_uniform = Travesty.T_list.right_pad ~padding:(empty ())
     end
 

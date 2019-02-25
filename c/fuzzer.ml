@@ -180,7 +180,7 @@ module Constant_store : Action.S = struct
     type t =
       { new_value : int
       ; global    : C_identifier.t
-      ; path      : Mini.stm_hole Mini.program_path
+      ; path      : Mini_path.stm_hole Mini_path.program_path
       ; mo        : Mem_order.t
       }
 

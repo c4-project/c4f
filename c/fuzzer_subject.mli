@@ -54,8 +54,7 @@ module Program : sig
     }
   (** Transparent type of fuzzable programs. *)
 
-  module Path : Mini.S_function_path
-    with type stm = Mini.Statement.t and type target := t
+  module Path : Mini_path.S_function with type target := t
   (** Allows production and consumption of random paths over fuzzable
      programs in the same way as normal mini functions. *)
 
@@ -82,8 +81,7 @@ module Test : sig
     }
   (** Transparent type of fuzzable litmus tests. *)
 
-  module Path : Mini.S_program_path
-    with type stm = Mini.Statement.t and type target := t
+  module Path : Mini_path.S_program with type target := t
   (** Allows production and consumption of random paths over fuzzable
      tests in the same way as normal mini programs. *)
 

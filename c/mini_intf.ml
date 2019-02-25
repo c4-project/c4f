@@ -39,101 +39,133 @@ module type S_type_checkable = sig
   end
 end
 
-(** {2 Paths} *)
+(** {2 Signatures for recursive modules} *)
 
-(** {3 Phantom types for path GADTs} *)
+module type S_address_traversable = sig
+  type t
+  type address
 
-type on_expr
-(** Marks a path as reaching an existing expression. *)
+  module On_addresses
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = address
+  (** Traversing over atomic-action addresses. *)
+end
 
-type on_stm
-(** Marks a path as reaching an existing statement. *)
+module type S_lvalue_traversable = sig
+  type t
+  type lvalue
 
-type stm_hole
-(** Marks a path as reaching a space where we can insert a statement. *)
+  module On_lvalues
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = lvalue
+  (** Traversing over lvalues. *)
+end
 
-(** {3 Path GADTs} *)
+module type S_identifier_traversable = sig
+  type t
+  type identifier
 
-type 'a stm_path =
-  | This     : on_stm stm_path
-  | If_block : { branch : bool ; rest : 'a list_path } -> 'a stm_path
-  | If_cond  : on_expr stm_path
-and 'a list_path =
-  | Insert_at : int -> 'a list_path
-  | At        : { index : int; rest : 'a stm_path } -> 'a list_path
-;;
+  module On_identifiers
+    : Travesty.Traversable.S0_container
+      with type t := t and type Elt.t = identifier
+  (** Traversing over identifiers. *)
+end
 
-type 'a function_path =
-  | On_statements : 'a list_path -> 'a function_path
-;;
+module type S_statement = sig
+  type t [@@deriving sexp]
 
-type 'a program_path =
-  | On_program : { index : int; rest : 'a function_path } -> 'a program_path
-;;
+  type assign
+  type atomic_cmpxchg
+  type atomic_store
+  type if_stm
 
-(** {3 Signatures} *)
+  (** {3 Constructors} *)
 
-(** General signature of paths *)
-module type S_path = sig
-  type 'a t
-  type target
+  val assign : assign -> t
+  (** [assign a] lifts an assignment [a] to a statement. *)
+
+  val atomic_cmpxchg : atomic_cmpxchg -> t
+  (** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a statement. *)
+
+  val atomic_store : atomic_store -> t
+  (** [atomic_store a] lifts an atomic store [a] to a statement. *)
+
+  val if_stm : if_stm -> t
+  (** [if_statement ifs] lifts an if statement [ifs] to a statement. *)
+
+  val nop : unit -> t
+  (** [nop] is a no-operation statement; it corresponds to C's empty
+      expression statement. *)
+
+  val map
+    :  t
+    -> assign:(assign -> 'result)
+    -> atomic_cmpxchg:(atomic_cmpxchg -> 'result)
+    -> atomic_store:(atomic_store -> 'result)
+    -> if_stm:(if_stm -> 'result)
+    -> nop:(unit -> 'result)
+    -> 'result
+  (** [map stm ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop] maps the
+      appropriate function of those given over [stm]. *)
+
+  (** {3 Traversing} *)
+
+  module Base_map (M : Monad.S) : sig
+    val bmap
+      : t
+      -> assign:(assign -> assign M.t)
+      -> atomic_cmpxchg:(atomic_cmpxchg -> atomic_cmpxchg M.t)
+      -> atomic_store:(atomic_store -> atomic_store M.t)
+      -> if_stm:(if_stm -> if_stm M.t)
+      -> nop:(unit -> unit M.t)
+      -> t M.t
+  end
+
+  include S_address_traversable    with type t := t
+  include S_lvalue_traversable     with type t := t
+  include S_identifier_traversable with type t := t
+end
+
+module type S_if_statement = sig
+  type expr
   type stm
+  type t [@@deriving sexp]
 
-  val insert_stm : stm_hole t -> stm -> target -> target Or_error.t
-  (** [insert_stm path stm dest] tries to insert [stm] into the part
-     of [dest] pointed to by [path]. *)
-end
+  (** {3 Constructors} *)
 
-(** Signature of paths over statements and statement-like entities. *)
-module type S_statement_path = sig
-  type stm
-  type target
+  val make
+    :  cond:expr
+    -> ?t_branch:stm list
+    -> ?f_branch:stm list
+    -> unit
+    -> t
+  (** [if_stm ~cond ?t_branch ?f_branch ()] creates an if statement
+     with condition [cond], optional true branch [t_branch], and
+     optional false branch [f_branch]. *)
 
-  include S_path with type 'a t := 'a stm_path
-                  and type target := target
-                  and type stm := stm
+  (** {3 Accessors} *)
 
-  val lift_stm : stm -> target
-  (** [lift_stm s] lifts a generated statement [s] to the target type
-     of this path. *)
+  val cond : t -> expr
+  (** [cond ifs] gets [ifs]'s condition. *)
 
-  val lower_stm : target -> stm
-  (** [lower_stm s] lowers a generated statement [s] to the statement
-     type of this path. *)
+  val t_branch : t -> stm list
+  (** [t_branch ifs] gets [ifs]'s true branch. *)
 
-  val try_gen_insert_stm
-    : target -> stm_hole stm_path Quickcheck.Generator.t option
-    (** [try_gen_insert_stm dest] tries to create a Quickcheck-style
-       generator for statement insertion paths targeting [dest].
+  val f_branch : t -> stm list
+  (** [f_branch ifs] gets [ifs]'s false branch. *)
 
-        It can return [None] if [dest] has no position at which
-       statements can be inserted. *)
-end
+  (** {3 Traversing} *)
 
-module type S_stm_container_path = sig
-  include S_path
+  module Base_map (M : Monad.S) : sig
+    val bmap
+      : t
+      -> cond:(expr -> expr M.t)
+      -> t_branch:(stm list -> stm list M.t)
+      -> f_branch:(stm list -> stm list M.t)
+      -> t M.t
+  end
 
-  val gen_insert_stm : target -> stm_hole t Quickcheck.Generator.t
-  (** [gen_insert_stm dest] creates a Quickcheck-style
-        generator for statement insertion paths targeting [dest]. *)
-end
-
-(** Signature of paths over statement lists *)
-module type S_statement_list_path = sig
-  type stm
-  type target
-
-  include S_stm_container_path with type 'a t := 'a list_path
-                                and type target := target list
-                                and type stm := stm
-end
-
-(** Signature of paths over functions *)
-module type S_function_path = sig
-  include S_stm_container_path with type 'a t := 'a function_path
-end
-
-(** Signature of paths over programs *)
-module type S_program_path = sig
-  include S_stm_container_path with type 'a t := 'a program_path
+  include S_address_traversable    with type t := t
+  include S_lvalue_traversable     with type t := t
+  include S_identifier_traversable with type t := t
 end

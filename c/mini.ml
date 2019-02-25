@@ -876,144 +876,179 @@ module Atomic_cmpxchg = struct
     end)
 end
 
-module Make_statement_list_path
-    (M : S_statement_path)
-  : S_statement_list_path
-    with type stm = M.stm
-     and type target = M.target = struct
-
-  type stm = M.stm
-  type target = M.target
-
-  let insert_stm (path : stm_hole list_path) (stm : stm) (dest : target list)
-    : target list Or_error.t =
-    match path with
-    | Insert_at index ->
-      Alter_list.insert dest index (M.lift_stm stm)
-    | At { index; rest } ->
-      Alter_list.replace dest index
-        ~f:(fun x -> Or_error.(M.insert_stm rest stm x >>| Option.some))
-  ;;
-
-  let gen_insert_stm_on (index : int) (single_dest : target)
-    : stm_hole list_path Quickcheck.Generator.t list =
-    let insert_after =
-      Quickcheck.Generator.return (Insert_at (index + 1))
-    in
-    let insert_into =
-      single_dest
-      |> M.try_gen_insert_stm
-      |> Option.map
-        ~f:(Quickcheck.Generator.map
-              ~f:(fun rest -> At { index; rest })
-           )
-      |> Option.to_list
-    in
-    insert_after :: insert_into
-  ;;
-
-  let gen_insert_stm (dest : target list)
-    : stm_hole list_path Quickcheck.Generator.t =
-    Quickcheck.Generator.union
-      (Quickcheck.Generator.return (Insert_at 0)
-       :: List.concat_mapi ~f:gen_insert_stm_on dest)
-  ;;
-end
-
-module Statement = struct
-  type t =
+module P_statement = struct
+  type 'i t =
     | Assign of Assign.t
     | Atomic_store of Atomic_store.t
     | Atomic_cmpxchg of Atomic_cmpxchg.t
     | Nop
-    | If_stm of { cond     : Expression.t
-                ; t_branch : t list
-                ; f_branch : t list
-                }
+    | If_stm of 'i
   [@@deriving sexp, variants]
-  ;;
+end
 
-  module rec Path
-    : S_statement_path with type stm = t and type target = t = struct
-    type stm = t
-    type target = t
+type statement = if_statement P_statement.t
+and if_statement =
+    { cond     : Expression.t
+    ; t_branch : statement list
+    ; f_branch : statement list
+    }
+  [@@deriving sexp, fields]
+;;
 
-    let lift_stm = Fn.id
-    let lower_stm = Fn.id
+module Ifs_base_map (M : Monad.S) = struct
+  module F = Travesty.Traversable.Helpers (M)
+  module O = Travesty.T_option.On_monad (M)
 
-    let insert_stm_in_if
-        (cond : Expression.t)
-        (t_branch : stm list)
-        (f_branch : stm list)
-        (stm : stm)
-        (rest : stm_hole list_path)
-      : bool -> stm Or_error.t = function
-      | true ->
-        Or_error.(
-          List_path.insert_stm rest stm t_branch >>|
-          fun t_branch' -> if_stm ~t_branch:t_branch' ~cond ~f_branch
-        )
-      | false ->
-        Or_error.(
-          List_path.insert_stm rest stm f_branch >>|
-          fun f_branch' -> if_stm ~f_branch:f_branch' ~cond ~t_branch
-        )
-    ;;
+  let bmap (if_stm : if_statement)
+      ~(cond     : Expression.t F.traversal)
+      ~(t_branch : statement list   F.traversal)
+      ~(f_branch : statement list   F.traversal)
+    : if_statement M.t =
+    Fields_of_if_statement.fold
+      ~init:(M.return if_stm)
+      ~cond:(F.proc_field cond)
+      ~t_branch:(F.proc_field t_branch)
+      ~f_branch:(F.proc_field f_branch)
+end
 
-    let insert_stm (path : stm_hole stm_path) (stm : stm) (dest : stm)
-      : stm Or_error.t =
-      match path, dest with
-      | If_block { branch; rest }, If_stm { cond; t_branch; f_branch } ->
-        insert_stm_in_if cond t_branch f_branch stm rest branch
-      | _, _ ->
-        Or_error.error_s [%message "Invalid insertion" [%here]]
-    ;;
-
-    let try_gen_insert_stm
-      : stm -> (stm_hole stm_path Quickcheck.Generator.t option) = function
-      | If_stm { t_branch; f_branch; _ } ->
-        Some (
-          Quickcheck.Generator.union
-            [ Quickcheck.Generator.map
-                ~f:(fun rest -> If_block { branch = true; rest })
-                (List_path.gen_insert_stm t_branch)
-            ; Quickcheck.Generator.map
-                ~f:(fun rest -> If_block { branch = false; rest })
-                (List_path.gen_insert_stm f_branch)
-            ]
-        )
-      | _ -> None
-    ;;
-  end
-  and List_path : S_statement_list_path
-    with type stm = t and type target = t =
-    Make_statement_list_path (Path)
-
-  (* Override to change f_branch into an optional argument. *)
-  let if_stm
-      ~(cond : Expression.t) ~(t_branch : t list) ?(f_branch : t list = []) ()
-    : t = if_stm ~cond ~t_branch ~f_branch
-  ;;
+module Statement
+  : (S_statement with type address        := Address.t
+                  and type assign         := Assign.t
+                  and type atomic_cmpxchg := Atomic_cmpxchg.t
+                  and type atomic_store   := Atomic_store.t
+                  and type identifier     := Identifier.t
+                  and type if_stm         := if_statement
+                  and type t               = statement
+                  and type lvalue         := Lvalue.t)
+= struct
+  type t = statement [@@deriving sexp]
+  let assign = P_statement.assign
+  let atomic_cmpxchg = P_statement.atomic_cmpxchg
+  let atomic_store = P_statement.atomic_store
+  let if_stm = P_statement.if_stm
+  let nop () = P_statement.nop
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap x ~assign ~atomic_store ~atomic_cmpxchg ~if_stm =
-      let open M.Let_syntax in
-      Variants.map x
+    let bmap x ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop =
+      P_statement.Variants.map x
         ~assign:(F.proc_variant1 assign)
-        ~atomic_store:(F.proc_variant1 atomic_store)
         ~atomic_cmpxchg:(F.proc_variant1 atomic_cmpxchg)
-        ~if_stm:(
-          fun v ~cond ~t_branch ~f_branch ->
-            let%map (cond', t_branch', f_branch') =
-              if_stm ~cond ~t_branch ~f_branch in
-            v.constructor
-              ~cond:cond' ~t_branch:t_branch' ~f_branch:f_branch'
-        )
-        ~nop:(F.proc_variant0 M.return)
+        ~atomic_store:(F.proc_variant1 atomic_store)
+        ~if_stm:(F.proc_variant1 if_stm)
+        ~nop:(F.proc_variant0 nop)
     ;;
   end
+
+  let map x ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop =
+    P_statement.Variants.map x
+      ~assign:(Fn.const assign)
+      ~atomic_store:(Fn.const atomic_store)
+      ~atomic_cmpxchg:(Fn.const atomic_cmpxchg)
+      ~if_stm:(Fn.const if_stm)
+      ~nop:(fun _ -> nop ())
+  ;;
+
+(* We have to unroll the map over if statements here, because
+   otherwise we end up with unsafe module recursion. *)
+
+  module On_lvalues
+    : Travesty.Traversable.S0_container
+      with type t := t
+       and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Lvalue
+
+      module On_monad (M : Monad.S) = struct
+        module B   = Base_map                           (M)
+        module IB  = Ifs_base_map                       (M)
+        module E   = Expression.On_lvalues.On_monad     (M)
+        module L   = Travesty.T_list.On_monad           (M)
+        module Asn = Assign.On_lvalues.On_monad         (M)
+        module Sto = Atomic_store.On_lvalues.On_monad   (M)
+        module Cxg = Atomic_cmpxchg.On_lvalues.On_monad (M)
+
+        let rec map_m x ~f =
+          B.bmap x
+            ~assign:(Asn.map_m ~f)
+            ~atomic_store:(Sto.map_m ~f)
+            ~atomic_cmpxchg:(Cxg.map_m ~f)
+            ~if_stm:(map_m_ifs ~f)
+            ~nop:M.return
+        and map_m_ifs x ~f =
+          IB.bmap x
+            ~cond:(E.map_m ~f)
+            ~t_branch:(L.map_m ~f:(map_m ~f))
+            ~f_branch:(L.map_m ~f:(map_m ~f))
+        ;;
+      end
+    end)
+
+  module On_addresses
+    : Travesty.Traversable.S0_container
+      with type t := t
+       and type Elt.t = Address.t =
+    Travesty.Traversable.Make_container0 (struct
+      type nonrec t = t
+      module Elt = Address
+
+      module On_monad (M : Monad.S) = struct
+        module B = Base_map                               (M)
+        module IB  = Ifs_base_map                         (M)
+        module E = Expression.On_addresses.On_monad       (M)
+        module L = Travesty.T_list.On_monad               (M)
+        module Asn = Assign.On_addresses.On_monad         (M)
+        module Sto = Atomic_store.On_addresses.On_monad   (M)
+        module Cxg = Atomic_cmpxchg.On_addresses.On_monad (M)
+
+        let rec map_m x ~f =
+          B.bmap x
+            ~assign:(Asn.map_m ~f)
+            ~atomic_store:(Sto.map_m ~f)
+            ~atomic_cmpxchg:(Cxg.map_m ~f)
+            ~if_stm:(map_m_ifs ~f)
+            ~nop:M.return
+        and map_m_ifs x ~f =
+          IB.bmap x
+            ~cond:(E.map_m ~f)
+            ~t_branch:(L.map_m ~f:(map_m ~f))
+            ~f_branch:(L.map_m ~f:(map_m ~f))
+        ;;
+      end
+    end)
+
+  module On_identifiers
+    : Travesty.Traversable.S0_container
+      with type t := t
+       and type Elt.t = Identifier.t =
+    Travesty.Traversable.Chain0
+      (struct
+        type nonrec t = t
+        include On_lvalues
+      end)
+      (Lvalue.On_identifiers)
+end
+
+module If_statement
+  : (S_if_statement with type expr       := Expression.t
+                     and type stm        := Statement.t
+                     and type t          =  if_statement
+                     and type address    := Address.t
+                     and type identifier := Identifier.t
+                     and type lvalue     := Lvalue.t
+    )
+= struct
+  type t = if_statement [@@deriving sexp]
+
+  let cond     = Field.get Fields_of_if_statement.cond
+  let f_branch = Field.get Fields_of_if_statement.f_branch
+  let t_branch = Field.get Fields_of_if_statement.t_branch
+  let make ~cond ?(t_branch = []) ?(f_branch = []) () =
+    Fields_of_if_statement.create ~cond ~t_branch ~f_branch
+
+  module Base_map (M : Monad.S) = Ifs_base_map (M)
 
   module On_lvalues
     : Travesty.Traversable.S0_container
@@ -1026,25 +1061,13 @@ module Statement = struct
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
         module E = Expression.On_lvalues.On_monad (M)
+        module S = Statement.On_lvalues.On_monad (M)
         module L = Travesty.T_list.On_monad (M)
-
-        module Asn = Assign.On_lvalues.On_monad (M)
-        module Sto = Atomic_store.On_lvalues.On_monad (M)
-        module Cxg = Atomic_cmpxchg.On_lvalues.On_monad (M)
-
-        let rec map_m x ~f =
-          let open M.Let_syntax in
+        let map_m x ~f =
           B.bmap x
-            ~assign:(Asn.map_m ~f)
-            ~atomic_store:(Sto.map_m ~f)
-            ~atomic_cmpxchg:(Cxg.map_m ~f)
-            ~if_stm:(
-              fun ~cond ~t_branch ~f_branch ->
-                let%bind cond'     = E.map_m ~f cond in
-                let%bind t_branch' = L.map_m t_branch ~f:(map_m ~f) in
-                let%map  f_branch' = L.map_m f_branch ~f:(map_m ~f) in
-                (cond', t_branch', f_branch')
-            )
+            ~cond:(E.map_m ~f)
+            ~t_branch:(L.map_m ~f:(S.map_m ~f))
+            ~f_branch:(L.map_m ~f:(S.map_m ~f))
       end
     end)
 
@@ -1059,25 +1082,13 @@ module Statement = struct
       module On_monad (M : Monad.S) = struct
         module B = Base_map (M)
         module E = Expression.On_addresses.On_monad (M)
+        module S = Statement.On_addresses.On_monad (M)
         module L = Travesty.T_list.On_monad (M)
-
-        module Asn = Assign.On_addresses.On_monad (M)
-        module Sto = Atomic_store.On_addresses.On_monad (M)
-        module Cxg = Atomic_cmpxchg.On_addresses.On_monad (M)
-
-        let rec map_m x ~f =
-          let open M.Let_syntax in
+        let map_m x ~f =
           B.bmap x
-            ~assign:(Asn.map_m ~f)
-            ~atomic_store:(Sto.map_m ~f)
-            ~atomic_cmpxchg:(Cxg.map_m ~f)
-            ~if_stm:(
-              fun ~cond ~t_branch ~f_branch ->
-                let%bind cond'     = E.map_m ~f cond in
-                let%bind t_branch' = L.map_m t_branch ~f:(map_m ~f) in
-                let%map  f_branch' = L.map_m f_branch ~f:(map_m ~f) in
-                (cond', t_branch', f_branch')
-            )
+            ~cond:(E.map_m ~f)
+            ~t_branch:(L.map_m ~f:(S.map_m ~f))
+            ~f_branch:(L.map_m ~f:(S.map_m ~f))
       end
     end)
 
@@ -1101,6 +1112,9 @@ module Function = struct
     }
   [@@deriving sexp, fields, make]
   ;;
+
+  let with_body_stms (func : t) (new_stms : Statement.t list) : t =
+    { func with body_stms = new_stms }
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
@@ -1148,29 +1162,7 @@ module Function = struct
     |> C_identifier.Set.of_list
   ;;
 
-  module Path : S_function_path
-    with type stm = Statement.t and type target := t = struct
-    type target = t
-    type stm = Statement.t
 
-    let gen_insert_stm (func : target)
-      : stm_hole function_path Quickcheck.Generator.t =
-      Quickcheck.Generator.map
-        (Statement.List_path.gen_insert_stm func.body_stms)
-        ~f:(fun path -> On_statements path)
-    ;;
-
-    let insert_stm
-        (path : stm_hole function_path)
-        (stm : stm) (func : target) : target Or_error.t =
-      let open Or_error.Let_syntax in
-      match path with
-      | On_statements rest ->
-        let%map body_stms' =
-          Statement.List_path.insert_stm rest stm func.body_stms
-        in { func with body_stms = body_stms' }
-    ;;
-  end
 end
 
 module Program = struct
@@ -1179,6 +1171,11 @@ module Program = struct
     ; functions : Function.t id_assoc
     }
   [@@deriving sexp, fields, make]
+  ;;
+
+  let with_functions
+      (program : t) (new_functions : Function.t id_assoc) : t =
+    { program with functions = new_functions }
   ;;
 
   module Base_map (M : Monad.S) = struct
@@ -1221,38 +1218,6 @@ module Program = struct
     |> List.map ~f:(fst)
     |> C_identifier.Set.of_list
   ;;
-
-  module Path : S_program_path
-    with type stm = Statement.t and type target := t = struct
-    type target = t
-    type stm = Statement.t
-
-    let gen_insert_stm (prog : target)
-      : stm_hole program_path Quickcheck.Generator.t =
-      let prog_gens =
-        List.mapi prog.functions
-          ~f:(fun index (_, func) ->
-              Quickcheck.Generator.map
-                (Function.Path.gen_insert_stm func)
-                ~f:(fun rest -> On_program { index; rest })
-            )
-      in Quickcheck.Generator.union prog_gens
-    ;;
-
-    let insert_stm
-        (path : stm_hole program_path)
-        (stm : stm) (prog : target) : target Or_error.t =
-      let open Or_error.Let_syntax in
-      match path with
-      | On_program { index; rest } ->
-        let functions = functions prog in
-        let%map functions' = Alter_list.replace functions index
-            ~f:(fun (name, func) ->
-                let%map func' = Function.Path.insert_stm rest stm func in
-                Some (name, func'))
-        in { prog with functions = functions' }
-    ;;
-  end
 end
 
 module Reify = struct
@@ -1272,8 +1237,7 @@ module Reify = struct
     Option.some_if (Type.is_pointer ty) [[]]
   ;;
 
-  let id_declarator
-      (ty : Type.t) (id : Identifier.t)
+  let id_declarator (ty : Type.t) (id : Identifier.t)
     : Ast.Declarator.t =
     { pointer = type_to_pointer ty; direct = Id id }
   ;;
@@ -1290,9 +1254,7 @@ module Reify = struct
     List.map ~f:(fun (k, v) -> `Decl (decl k v))
   ;;
 
-  let func_parameter
-      (id : Identifier.t)
-      (ty : Type.t)
+  let func_parameter (id : Identifier.t) (ty : Type.t)
     : Ast.Param_decl.t =
     { qualifiers = [ type_to_spec ty ]
     ; declarator = `Concrete (id_declarator ty id)
@@ -1367,21 +1329,27 @@ module Reify = struct
       ]
   ;;
 
-  let rec stm : Statement.t -> Ast.Stm.t = function
-    | Assign { lvalue; rvalue } ->
-      Expr (Some (Binary (lvalue_to_expr lvalue, `Assign, expr rvalue)))
-    | Atomic_store st -> atomic_store st
-    | Atomic_cmpxchg cx -> atomic_cmpxchg cx
-    | If_stm { cond; t_branch; f_branch } ->
-      If { cond = expr cond
-         ; t_branch =
-             Compound (List.map ~f:(fun x -> `Stm (stm x)) t_branch)
-         ; f_branch =
-             match f_branch with
-             | [] -> None
-             | _  -> Some (Compound (List.map ~f:(fun x -> `Stm (stm x)) f_branch))
-         }
-    | Nop -> Expr None
+  let assign ( { lvalue; rvalue } : Assign.t) : Ast.Stm.t =
+    Expr (Some (Binary (lvalue_to_expr lvalue, `Assign, expr rvalue)))
+  ;;
+
+  let rec stm : Statement.t -> Ast.Stm.t =
+    Statement.map
+      ~assign
+      ~atomic_cmpxchg
+      ~atomic_store
+      ~if_stm
+      ~nop:(fun () -> Expr None)
+  and if_stm ( ifs : If_statement.t) : Ast.Stm.t =
+    If { cond = expr (If_statement.cond ifs)
+       ; t_branch =
+           Compound (List.map ~f:(fun x -> `Stm (stm x))
+                       (If_statement.t_branch ifs))
+       ; f_branch =
+           match If_statement.f_branch ifs with
+           | [] -> None
+           | fb  -> Some (Compound (List.map ~f:(fun x -> `Stm (stm x)) fb))
+       }
   ;;
 
   let func_body

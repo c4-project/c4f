@@ -462,12 +462,14 @@ let model_if
     in
     let%map t_branch = model_if_branch t_list
     and     f_branch = model_if_branch f_list
-    in Statement.if_stm ~cond ~t_branch ~f_branch ()
+    in
+    let ifs = If_statement.make ~cond ~t_branch ~f_branch () in
+    Statement.if_stm ifs
 ;;
 
 let rec stm : Ast.Stm.t -> Statement.t Or_error.t =
   function
-  | Expr None -> Or_error.return Statement.nop
+  | Expr None -> Or_error.return (Statement.nop ())
   | Expr (Some e) -> expr_stm e
   | If { cond; t_branch; f_branch } ->
     model_if stm cond t_branch f_branch
