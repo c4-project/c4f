@@ -119,8 +119,9 @@ module type S_statement = sig
     -> if_stm:(if_stm -> 'result)
     -> nop:(unit -> 'result)
     -> 'result
-  (** [map stm ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop] maps the
-      appropriate function of those given over [stm]. *)
+  (** [map stm ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop]
+     maps the appropriate function of those given over [stm].  It does
+     _not_ recursively reduce statements inside blocks.  *)
 
   (** {3 Traversing} *)
 

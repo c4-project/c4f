@@ -38,8 +38,8 @@ module Lang : Litmus.Ast.Basic
       [@@deriving sexp]
 
       let reify = function
-        | `Decl (id, init) -> `Decl (Reify.decl id init)
-        | `Stm stm         -> `Stm  (Reify.stm stm)
+        | `Decl (id, init) -> `Decl (Mini_reify.decl id init)
+        | `Stm stm         -> `Stm  (Mini_reify.stm stm)
       ;;
 
       let pp = Fmt.using reify Ast.Litmus_lang.Statement.pp
@@ -56,7 +56,7 @@ module Lang : Litmus.Ast.Basic
       let listing (_, fn) =
         List.map (Function.body_decls fn) ~f:(fun x -> `Decl x)
         @ List.map (Function.body_stms fn) ~f:(fun x -> `Stm x)
-      let pp = Fmt.(using (Tuple2.uncurry Reify.func) Ast.External_decl.pp)
+      let pp = Fmt.(using (Tuple2.uncurry Mini_reify.func) Ast.External_decl.pp)
 
       let global_vars (_, fn) =
         fn

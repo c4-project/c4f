@@ -42,7 +42,7 @@ module Initialiser = struct
     { ty    : Type.t
     ; value : Constant.t option
     }
-  [@@deriving sexp, make, eq]
+  [@@deriving sexp, make, eq, fields]
   ;;
 
   module Quickcheck : Quickcheckable.S with type t := t = struct
@@ -84,6 +84,14 @@ module Lvalue = struct
     | Deref    of t
   [@@deriving sexp, variants, eq]
 
+  let rec reduce (lv : t)
+      ~(variable : Identifier.t -> 'a)
+      ~(deref : 'a -> 'a)
+    : 'a = match lv with
+    | Variable v    -> variable v
+    | Deref    rest -> deref (reduce rest ~variable ~deref)
+  ;;
+
   let is_deref : t -> bool = function
     | Deref _ -> true
     | Variable _ -> false
@@ -106,9 +114,8 @@ module Lvalue = struct
       end
     end)
 
-  let rec variable_of : t -> Identifier.t = function
-    | Variable id -> id
-    | Deref    t  -> variable_of t
+  let variable_of : t -> Identifier.t =
+    reduce ~variable:Fn.id ~deref:Fn.id
   ;;
 
   let variable_in_env (lv : t) ~(env : _ C_identifier.Map.t) : bool =
@@ -360,6 +367,13 @@ module Address = struct
     | Ref    of t
   [@@deriving sexp, variants, eq]
 
+  let rec reduce
+      (addr : t) ~(lvalue : Lvalue.t -> 'a) ~(ref : 'a -> 'a) : 'a =
+    match addr with
+    | Lvalue lv   -> lvalue lv
+    | Ref    rest -> ref (reduce rest ~lvalue ~ref)
+  ;;
+
   module On_lvalues
     : Travesty.Traversable.S0_container
       with type t := t and type Elt.t = Lvalue.t =
@@ -379,9 +393,8 @@ module Address = struct
 
   module Type_check (E : Env.S) = struct
     module L = Lvalue.Type_check (E)
-    let rec type_of : t -> Type.t Or_error.t = function
-      | Lvalue l -> L.type_of l
-      | Ref    r -> Or_error.(r |> type_of >>= Type.ref)
+    let type_of : t -> Type.t Or_error.t =
+      reduce ~lvalue:L.type_of ~ref:(Or_error.bind ~f:Type.ref)
     ;;
   end
 
@@ -486,9 +499,7 @@ module Address = struct
         )
   ;;
 
-  let rec lvalue_of : t -> Lvalue.t = function
-    | Lvalue lv -> lv
-    | Ref    t  -> lvalue_of t
+  let lvalue_of : t -> Lvalue.t = reduce ~lvalue:Fn.id ~ref:Fn.id
 
   let variable_of (addr : t) : Identifier.t =
     Lvalue.variable_of (lvalue_of addr)
@@ -735,9 +746,22 @@ module Expression = struct
   type t =
     | Constant    of Constant.t
     | Lvalue      of Lvalue.t
-    | Eq          of t * t
     | Atomic_load of Atomic_load.t
+    | Eq          of t * t
   [@@deriving sexp, variants]
+  ;;
+
+  let reduce (expr : t)
+    ~(constant    : Constant.t -> 'a)
+    ~(lvalue      : Lvalue.t   -> 'a)
+    ~(atomic_load : Atomic_load.t -> 'a)
+    ~(eq          : 'a -> 'a   -> 'a) : 'a =
+    let rec mu = function
+      | Constant    k      -> constant k
+      | Lvalue      l      -> lvalue l
+      | Atomic_load ld     -> atomic_load ld
+      | Eq          (x, y) -> eq (mu x) (mu y)
+    in mu expr
   ;;
 
   let anonymise = function
@@ -1448,158 +1472,3 @@ module Program = struct
   ;;
 end
 
-module Reify = struct
-  let to_initialiser (value : Constant.t) : Ast.Initialiser.t =
-    Assign (Constant value)
-  ;;
-
-  let type_to_spec (ty : Type.t) : [> Ast.Type_spec.t] =
-    (* We translate the level of indirection separately, in
-       [type_to_pointer]. *)
-    Type.Basic.to_spec (Type.basic_type ty)
-  ;;
-
-  let type_to_pointer (ty : Type.t) : Pointer.t option =
-    (* We translate the actual underlying type separately, in
-       [type_to_spec]. *)
-    Option.some_if (Type.is_pointer ty) [[]]
-  ;;
-
-  let id_declarator (ty : Type.t) (id : Identifier.t)
-    : Ast.Declarator.t =
-    { pointer = type_to_pointer ty; direct = Id id }
-  ;;
-
-  let decl (id : Identifier.t) (elt : Initialiser.t) : Ast.Decl.t =
-    { qualifiers = [ type_to_spec elt.ty ]
-    ; declarator = [ { declarator  = id_declarator elt.ty id
-                     ; initialiser = Option.map ~f:to_initialiser elt.value
-                     }
-                   ]
-    }
-
-  let decls : Initialiser.t id_assoc -> [> `Decl of Ast.Decl.t ] list =
-    List.map ~f:(fun (k, v) -> `Decl (decl k v))
-  ;;
-
-  let func_parameter (id : Identifier.t) (ty : Type.t)
-    : Ast.Param_decl.t =
-    { qualifiers = [ type_to_spec ty ]
-    ; declarator = `Concrete (id_declarator ty id)
-    }
-
-  let func_parameters
-      (parameters : Type.t id_assoc) : Ast.Param_type_list.t =
-    { params = List.map ~f:(Tuple2.uncurry func_parameter) parameters
-    ; style  = `Normal
-    }
-  ;;
-
-  let func_signature
-      (id : Identifier.t)
-      (parameters : Type.t id_assoc)
-    : Ast.Declarator.t =
-    { pointer = None
-    ; direct = Fun_decl (Id id, func_parameters parameters)
-    }
-  ;;
-
-  let rec lvalue_to_expr : Lvalue.t -> Ast.Expr.t = function
-    | Variable v -> Identifier v
-    | Deref    l -> Prefix (`Deref, lvalue_to_expr l)
-  ;;
-
-  let rec address_to_expr : Address.t -> Ast.Expr.t = function
-    | Lvalue v -> lvalue_to_expr v
-    | Ref    l -> Prefix (`Ref, address_to_expr l)
-  ;;
-
-  let mem_order_to_expr (mo : Mem_order.t) : Ast.Expr.t =
-    Identifier (C_identifier.of_string (Mem_order.to_string mo))
-  ;;
-
-  let known_call (name : string) (args : Ast.Expr.t list) : Ast.Expr.t =
-    Call {func = Identifier (C_identifier.of_string name) ; arguments = args }
-  ;;
-
-  let rec expr : Expression.t -> Ast.Expr.t = function
-    | Constant k -> Constant k
-    | Lvalue l -> lvalue_to_expr l
-    | Eq (l, r) -> Binary (expr l, `Eq, expr r)
-    | Atomic_load { src; mo } ->
-      known_call "atomic_load_explicit"
-        [ address_to_expr src
-        ; mem_order_to_expr mo
-        ]
-  ;;
-
-  let known_call_stm (name : string) (args : Ast.Expr.t list) : Ast.Stm.t =
-    Expr (Some (known_call name args))
-  ;;
-
-  let atomic_cmpxchg
-      ( { obj; expected; desired; succ; fail } : Atomic_cmpxchg.t)
-    : Ast.Stm.t =
-    known_call_stm "atomic_compare_exchange_strong_explicit"
-      [ address_to_expr   obj
-      ; address_to_expr   expected
-      ; expr              desired
-      ; mem_order_to_expr succ
-      ; mem_order_to_expr fail
-      ]
-  ;;
-
-  let atomic_store ( { dst; src; mo } : Atomic_store.t) : Ast.Stm.t =
-    known_call_stm "atomic_store_explicit"
-      [ address_to_expr dst
-      ; expr src
-      ; mem_order_to_expr mo
-      ]
-  ;;
-
-  let assign ( { lvalue; rvalue } : Assign.t) : Ast.Stm.t =
-    Expr (Some (Binary (lvalue_to_expr lvalue, `Assign, expr rvalue)))
-  ;;
-
-  let rec stm : Statement.t -> Ast.Stm.t =
-    Statement.map
-      ~assign
-      ~atomic_cmpxchg
-      ~atomic_store
-      ~if_stm
-      ~nop:(fun () -> Expr None)
-  and if_stm ( ifs : If_statement.t) : Ast.Stm.t =
-    If { cond = expr (If_statement.cond ifs)
-       ; t_branch =
-           Compound (List.map ~f:(fun x -> `Stm (stm x))
-                       (If_statement.t_branch ifs))
-       ; f_branch =
-           match If_statement.f_branch ifs with
-           | [] -> None
-           | fb  -> Some (Compound (List.map ~f:(fun x -> `Stm (stm x)) fb))
-       }
-  ;;
-
-  let func_body
-      (ds : Initialiser.t id_assoc)
-      (ss : Statement.t   list)
-    : Ast.Compound_stm.t =
-    decls ds @ List.map ~f:(fun x -> `Stm (stm x)) ss
-
-  let func (id : Identifier.t) (def : Function.t)
-    : Ast.External_decl.t =
-    `Fun
-      { decl_specs = [ `Void ]
-      ; signature  = func_signature id def.parameters
-      ; decls      = []
-      ; body       = func_body def.body_decls def.body_stms
-      }
-  ;;
-
-  let program (prog : Program.t) : Ast.Translation_unit.t =
-    List.concat
-      [ decls                             prog.globals
-      ; List.map ~f:(Tuple2.uncurry func) prog.functions
-      ]
-  ;;
-end

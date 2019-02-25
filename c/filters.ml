@@ -146,7 +146,7 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
     let normal_tmp_file_ext = "c"
 
     module Frontend = Frontend.Normal
-    let pp = Fmt.using Mini.Reify.program Ast.Translation_unit.pp
+    let pp = Fmt.using Mini_reify.program Ast.Translation_unit.pp
     let process = Mini_convert.translation_unit
 
     let fuzz ~(seed : int option) (_ : t) : t Or_error.t =
@@ -201,7 +201,7 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
 
     let pp_del : Mini.Program.t Fmt.t =
       Fmt.(prefix pp_prelude
-             (using Mini.Reify.program
+             (using Mini_reify.program
                 (vbox Ast.Translation_unit.pp)))
     ;;
 

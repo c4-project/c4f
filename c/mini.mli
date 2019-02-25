@@ -52,16 +52,29 @@ type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
 module Initialiser : sig
   type t [@@deriving sexp]
 
+  (** {3 Constructors} *)
+
   val make : ty:Type.t -> ?value:Constant.t -> unit -> t
   (** [make ~ty ?value ()] makes an initialiser with type [ty] and
       optional initialised value [value]. *)
 
-  include Quickcheck.S with type t := t
+  (** {3 Accessors} *)
+
+  val ty : t -> Type.t
+  (** [ty init] gets the type of [init]. *)
+
+  val value : t -> Constant.t option
+  (** [value init] gets the initialised value of [init], if it has
+     one. *)
+
+  include Quickcheckable.S with type t := t
 end
 
 (** Somewhere assignable (a variable, or dereference thereof). *)
 module Lvalue : sig
   type t [@@deriving sexp]
+
+  (** {3 Constructors} *)
 
   val variable : Identifier.t -> t
   (** [variable id] constructs an lvalue pointing to variable [id].
@@ -78,6 +91,17 @@ module Lvalue : sig
 
       For example, if [ty] is a pointer type, the lvalue will become a
       dereference. *)
+
+  (** {3 Accessors} *)
+
+  val reduce
+    :  t
+    -> variable:(Identifier.t -> 'a)
+    -> deref:('a -> 'a)
+    -> 'a
+  (** [reduce lvalue ~variable ~deref] applies [variable] on the
+     underlying variable of [lvalue], then recursively applies [deref]
+     to the result for each layer of indirection in the lvalue. *)
 
   val is_deref : t -> bool
   (** [is_deref lvalue] returns [true] if [lvalue] is a dereference of
@@ -126,9 +150,19 @@ module Address : sig
   val ref : t -> t
   (** [ref t] constructs a &-reference to [t]. *)
 
+  (** {3 Accessors} *)
+
+  val reduce
+    :  t
+    -> lvalue:(Lvalue.t -> 'a)
+    -> ref:('a -> 'a)
+    -> 'a
+  (** [reduce addr ~address ~deref] applies [lvalue] on the
+     underlying lvalue of [addr], then recursively applies [ref]
+     to the result for each layer of address-taking in the address. *)
+
   include S_has_underlying_variable with type t := t
   (** We can get to the variable name inside an address. *)
-
 
   include S_type_checkable with type t := t
   (** Type-checking for addresses. *)
@@ -138,6 +172,20 @@ end
 (** An atomic load operation. *)
 module Atomic_load : sig
   type t [@@deriving sexp]
+
+  (** {3 Constructors} *)
+
+  val make : src:Address.t -> mo:Mem_order.t -> t
+  (** [atomic_load ~src ~dst ~mo] constructs an explicit atomic load
+      expression with source [src] and memory order [mo]. *)
+
+  (** {3 Accessors} *)
+
+  val src : t -> Address.t
+  (** [src ld] gets [ld]'s source address. *)
+
+  val mo : t -> Mem_order.t
+  (** [mo ld] gets [ld]'s memory order. *)
 
   include S_has_underlying_variable with type t := t
   (** We can get to the variable name inside an atomic load (that is,
@@ -152,17 +200,38 @@ module Atomic_load : sig
   module On_lvalues : Travesty.Traversable.S0_container
     with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in atomic loads. *)
-
-  (** {3 Constructors} *)
-
-  val make : src:Address.t -> mo:Mem_order.t -> t
-  (** [atomic_load ~src ~dst ~mo] constructs an explicit atomic load
-      expression with source [src] and memory order [mo]. *)
 end
 
 (** An expression. *)
 module Expression : sig
   type t [@@deriving sexp]
+
+  (** {3 Constructors} *)
+
+  val atomic_load : Atomic_load.t -> t
+  (** [atomic_load a] lifts an atomic load [a] to an expression. *)
+
+  val constant : Constant.t -> t
+  (** [constant k] lifts a C constant [k] to an expression. *)
+
+  val eq : t -> t -> t
+  (** [eq l r] generates an equality expression. *)
+
+  val lvalue : Lvalue.t -> t
+  (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
+
+  (** {3 Accessors} *)
+
+  val reduce
+    :  t
+    -> constant:(Constant.t -> 'a)
+    -> lvalue:(Lvalue.t   -> 'a)
+    -> atomic_load:(Atomic_load.t -> 'a)
+    -> eq:('a -> 'a  -> 'a)
+    -> 'a
+  (** [reduce expr ~constant ~lvalue ~atomic_load ~eq] recursively
+     reduces [expr] to a single value, using the given functions at
+     each corresponding stage of the expression tree. *)
 
   (** {3 Traversals} *)
 
@@ -181,20 +250,6 @@ module Expression : sig
       with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in expressions. *)
 
-  (** {3 Constructors} *)
-
-  val atomic_load : Atomic_load.t -> t
-  (** [atomic_load a] lifts an atomic load [a] to an expression. *)
-
-  val constant : Constant.t -> t
-  (** [constant k] lifts a C constant [k] to an expression. *)
-
-  val eq : t -> t -> t
-  (** [eq l r] generates an equality expression. *)
-
-  val lvalue : Lvalue.t -> t
-  (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
-
   (** {3 Type checking} *)
 
   include S_type_checkable with type t := t
@@ -205,6 +260,20 @@ end
 module Assign : sig
   type t [@@deriving sexp]
 
+  (** {3 Constructors} *)
+
+  val make : lvalue:Lvalue.t -> rvalue:Expression.t -> t
+  (** [make ~lvalue ~rvalue] constructs an assignment of [rvalue] to
+      [lvalue]. *)
+
+  (** {3 Accessors} *)
+
+  val lvalue : t -> Lvalue.t
+  (** [lvalue asn] gets [asn]'s destination lvalue. *)
+
+  val rvalue : t -> Expression.t
+  (** [rvalue asn] gets [asn]'s source expression (rvalue). *)
+
   (** {3 Traversals} *)
 
   module On_addresses : Travesty.Traversable.S0_container
@@ -214,17 +283,29 @@ module Assign : sig
   module On_lvalues : Travesty.Traversable.S0_container
     with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in assignments. *)
-
-  (** {3 Constructors} *)
-
-  val make : lvalue:Lvalue.t -> rvalue:Expression.t -> t
-  (** [make ~lvalue ~rvalue] constructs an assignment of [rvalue] to
-      [lvalue]. *)
 end
 
 (** An atomic store operation. *)
 module Atomic_store : sig
   type t [@@deriving sexp]
+
+  (** {3 Constructors} *)
+
+  val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
+  (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
+      expression with source [src], destination [dst], and memory order
+      [mo]. *)
+
+  (** {3 Accessors} *)
+
+  val dst : t -> Address.t
+  (** [dst st] gets [st]'s destination address. *)
+
+  val src : t -> Expression.t
+  (** [src st] gets [st]'s source expression. *)
+
+  val mo : t -> Mem_order.t
+  (** [mo st] gets [st]'s memory order. *)
 
   (** {3 Traversals} *)
 
@@ -235,29 +316,11 @@ module Atomic_store : sig
   module On_lvalues : Travesty.Traversable.S0_container
     with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in atomic stores. *)
-
-  (** {3 Constructors} *)
-
-  val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
-  (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
-      expression with source [src], destination [dst], and memory order
-      [mo]. *)
 end
 
-(** An atomic compare-exchange operation. *)
+(** A (strong, explicit) atomic compare-exchange operation. *)
 module Atomic_cmpxchg : sig
   type t [@@deriving sexp]
-
-  (** {3 Traversals} *)
-
-  module On_addresses : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Address.t
-  (** Traversing over atomic-action addresses in atomic
-      compare-exchanges. *)
-
-  module On_lvalues : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Lvalue.t
-  (** Traversing over lvalues in atomic compare-exchanges. *)
 
   (** {3 Constructors} *)
 
@@ -272,6 +335,38 @@ module Atomic_cmpxchg : sig
         explicit strong compare-exchange with object [obj], expected
         value store [expected], desired final value [desired], and
         memory orders [succ] on success and [fail] on failure. *)
+
+  (** {3 Accessors} *)
+
+  val obj : t -> Address.t
+  (** [obj cmpxchg] gets [cmpxchg]'s object address (the main target
+     of the operation). *)
+
+  val expected : t -> Address.t
+  (** [expected cmpxchg] gets [cmpxchg]'s expected address (the
+      location that holds the expected value, and receives the actual
+      value). *)
+
+  val desired : t -> Expression.t
+  (** [desired cmpxchg] gets [cmpxchg]'s desired-value expression
+      (written to the object on success). *)
+
+  val succ : t -> Mem_order.t
+  (** [succ cmpxchg] gets [cmpxchg]'s memory order on success. *)
+
+  val fail : t -> Mem_order.t
+  (** [fail cmpxchg] gets [cmpxchg]'s memory order on failure. *)
+
+  (** {3 Traversals} *)
+
+  module On_addresses : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Address.t
+  (** Traversing over atomic-action addresses in atomic
+      compare-exchanges. *)
+
+  module On_lvalues : Travesty.Traversable.S0_container
+    with type t := t and type Elt.t = Lvalue.t
+  (** Traversing over lvalues in atomic compare-exchanges. *)
 end
 
 (** A statement.
@@ -299,6 +394,8 @@ and If_statement
 module Function : sig
   type t [@@deriving sexp]
 
+  (** {3 Constructors} *)
+
   val make
     :  parameters:Type.t id_assoc
     -> body_decls:Initialiser.t id_assoc
@@ -307,6 +404,8 @@ module Function : sig
     -> t
   (** [make ~parameters ~body_decls ?body_stms] creates a function
       with the given contents. *)
+
+  (** {3 Accessors} *)
 
   val parameters : t -> Type.t id_assoc
   (** [parameters func] gets [func]'s parameter list. *)
@@ -322,6 +421,8 @@ module Function : sig
   (** [cvars func] extracts a set of C variable names from
       [func]. *)
 
+  (** {3 Mutators} *)
+
   val with_body_stms : t -> Statement.t list -> t
   (** [with_body_stms func new_stms] produces a new function by
      substituting [new_stms] for [func]'s body statements. *)
@@ -335,6 +436,8 @@ module Function : sig
   (** [map func ~parameters ~body_decls ~body_stms] runs the given
       functions over the respective parts of a function. *)
 
+  (** {3 Traversals} *)
+
   module On_decls : Travesty.Traversable.S0_container
     with type t := t and type Elt.t := Initialiser.t named
   (** [On_decls] allows traversal over all of the declarations
@@ -344,6 +447,8 @@ end
 module Program : sig
   type t [@@deriving sexp]
 
+  (** {3 Constructors} *)
+
   val make
     :  globals:(Initialiser.t id_assoc)
     -> functions:(Function.t id_assoc)
@@ -352,6 +457,10 @@ module Program : sig
       declarations [globals] and function definitions [functions]. *)
 
   (** {3 Accessors} *)
+
+  val globals : t -> Initialiser.t id_assoc
+  (** [globals program] gets an associative list of each global
+     initialiser in [program]. *)
 
   val functions : t -> Function.t id_assoc
   (** [functions program] gets an associative list of each function in
@@ -373,21 +482,4 @@ module Program : sig
     with type t := t and type Elt.t := Initialiser.t named
   (** [On_decls] allows traversal over all of the declarations
       inside a program. *)
-end
-
-(** Functions for reifying a mini-model into an AST. *)
-module Reify : sig
-  val func : Identifier.t -> Function.t -> Ast.External_decl.t
-  (** [func id f] reifies the mini-function [f], with name [id], into
-      the C AST. *)
-
-  val program : Program.t -> Ast.Translation_unit.t
-  (** [program p] reifies the mini-program [p] into the C AST. *)
-
-  val decl : Identifier.t -> Initialiser.t -> Ast.Decl.t
-  (** [decl id d] reifies the mini-declaration [d], with name [id],
-      into the C AST. *)
-
-  val stm : Statement.t -> Ast.Stm.t
-  (** [stm s] reifies the mini-statement [s] into the C AST. *)
 end
