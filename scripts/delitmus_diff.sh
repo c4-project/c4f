@@ -36,11 +36,11 @@ explain () {
 	compiler="${2}"
 	bname="${3}"
 	output="${4}"
-	shift 4 # input is, therefore, $1, and included in $*
+	shift 4 # input is, therefore, $1, and included in $@
 
-	if ${ACT} explain -compiler "${compiler}" ${*} > "${output}";
+	if ${ACT} explain -compiler "${compiler}" "${@}" > "${output}";
 	then
-		if [ $(wc -l <"${output}") -eq 0 ];
+		if [ "$(wc -l <"${output}")" -eq 0 ];
 		then
 			>&2 echo "$0: ${pass} on ${bname} returned empty file"
 			return 2
@@ -52,7 +52,7 @@ explain () {
 	fi
 }
 
-for file in $(find "${c_dir}" -name '*.c');
+for file in "${c_dir}"/*.c;
 do
 	bname=$(basename "${file}" | sed 's/.c$//')
 	litmus="${l_dir}/${bname}.litmus"
