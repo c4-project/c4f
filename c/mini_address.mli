@@ -25,6 +25,7 @@
 (** Mini model: addresses (a lvalue, or reference thereto). *)
 
 open Core_kernel
+open Utils
 
 type t [@@deriving sexp, eq]
 (** Opaque type of addresses. *)
@@ -33,11 +34,23 @@ module On_lvalues : Travesty.Traversable.S0_container
   with type t := t and type Elt.t = Mini_lvalue.t
 (** Traversing over lvalues in addresses. *)
 
+(** {3 Constructors} *)
+
 val lvalue : Mini_lvalue.t -> t
 (** [lvalue lv] lifts an lvalue [lv] to an address. *)
 
 val ref : t -> t
 (** [ref t] constructs a &-reference to [t]. *)
+
+val of_variable : C_identifier.t -> t
+(** [of_variable v] lifts the variable identifier [v] directly to an
+   address. *)
+
+val of_variable_ref : C_identifier.t -> t
+(** [of_variable_ref v] lifts the address of variable identifier [v]
+   to an address (in C syntax, this would be '&v'). *)
+;;
+
 
 (** {3 Accessors} *)
 

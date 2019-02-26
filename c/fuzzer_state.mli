@@ -34,9 +34,18 @@ val init
   :  Mini.Type.t C_identifier.Map.t
   -> C_identifier.Set.t
   -> t
-(** [init globals locals] creates an initial state with the
-    random number generator [rng], global variable map [globals],
-    and local variable set [locals]. *)
+(** [init globals locals] creates an initial state with the global
+   variable map [globals], and local variable set [locals]. *)
+
+val vars : t -> Fuzzer_var.Map.t
+(** [vars state] gets the state's variable map. *)
+
+val vars_satisfying_all
+  :  t
+  -> predicates:((Fuzzer_var.Record.t -> bool) list)
+  -> C_identifier.t list
+(** [vars_satisfying_all state ~predicates] returns the list of all
+   variables in [state]'s variable list that satisfy [predicates]. *)
 
 (** The state monad. *)
 module Monad : sig

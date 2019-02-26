@@ -51,7 +51,7 @@ module Program : sig
   type t =
     { decls : Mini.Initialiser.t Mini.id_assoc
     ; stms  : Mini.Statement.t With_source.t list
-    }
+    } [@@deriving sexp]
   (** Transparent type of fuzzable programs. *)
 
   module Path : Mini_path.S_function with type target := t
@@ -78,7 +78,7 @@ module Test : sig
   type t =
     { init     : Mini.Constant.t Mini.id_assoc
     ; programs : Program.t list
-    }
+    } [@@deriving sexp]
   (** Transparent type of fuzzable litmus tests. *)
 
   module Path : Mini_path.S_program with type target := t

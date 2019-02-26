@@ -27,7 +27,7 @@ open Utils
 
 module With_source = struct
   type 'a t = { item : 'a; source : [ `Existing | `Generated ] }
-      [@@deriving fields, make]
+      [@@deriving sexp, fields, make]
 end
 
 module Program = struct
@@ -35,6 +35,7 @@ module Program = struct
     { decls : Mini.Initialiser.t Mini.id_assoc
     ; stms  : (Mini.Statement.t With_source.t) list
     }
+  [@@deriving sexp]
   ;;
 
   module Stm_path : Mini_path.S_statement
@@ -143,7 +144,7 @@ module Test = struct
   type t =
     { init     : Mini.Constant.t Mini.id_assoc
     ; programs : Program.t list
-    }
+    } [@@deriving sexp]
   ;;
 
   module Path : Mini_path.S_program with type target := t = struct

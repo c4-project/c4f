@@ -69,6 +69,12 @@ let erase_var_value
     (s : t) ~(var : C_identifier.t) : t Or_error.t =
   try_map_vars s ~f:(Fuzzer_var.Map.erase_value ~var)
 
+let vars_satisfying_all
+    (s : t) ~(predicates:(Fuzzer_var.Record.t -> bool) list)
+  : C_identifier.t list =
+  Fuzzer_var.Map.satisfying_all (s.vars) ~predicates
+;;
+
 module Monad = struct
   include Travesty.State_transform.Make (struct
       module Inner = Or_error

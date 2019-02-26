@@ -30,8 +30,12 @@ type t =
   | Ref    of t
 [@@deriving sexp, variants, eq]
 
-let var     (v : C_identifier.t) : t = Lvalue (Mini_lvalue.variable v)
-let var_ref (v : C_identifier.t) : t = Ref (var v)
+let of_variable
+    (v : C_identifier.t) : t = Lvalue (Mini_lvalue.variable v)
+;;
+let of_variable_ref
+    (v : C_identifier.t) : t = Ref (of_variable v)
+;;
 
 let rec reduce
     (addr : t) ~(lvalue : Mini_lvalue.t -> 'a) ~(ref : 'a -> 'a) : 'a =
@@ -68,14 +72,14 @@ end
 
 let%expect_test "Type-checking a valid normal variable lvalue" =
   let module T = Type_check (val (Lazy.force Mini_env.test_env_mod)) in
-  let result = T.type_of (var (C_identifier.of_string "foo")) in
+  let result = T.type_of (of_variable (C_identifier.of_string "foo")) in
   Sexp.output_hum stdout [%sexp (result : Mini_type.t Or_error.t)];
   [%expect {| (Ok (Normal int)) |}]
 ;;
 
 let%expect_test "Type-checking an valid reference lvalue" =
   let module T = Type_check (val (Lazy.force Mini_env.test_env_mod)) in
-  let result = T.type_of (var_ref (C_identifier.of_string "foo")) in
+  let result = T.type_of (of_variable_ref (C_identifier.of_string "foo")) in
   Sexp.output_hum stdout [%sexp (result : Mini_type.t Or_error.t)];
   [%expect {| (Ok (Pointer_to int)) |}]
 ;;
@@ -121,7 +125,7 @@ include Quickcheck_generic (Mini_lvalue)
 
 let on_address_of_typed_id
     ~(id : C_identifier.t) ~(ty : Mini_type.t) : t =
-  let lv = var id in
+  let lv = of_variable id in
   if Mini_type.is_pointer ty then lv else ref lv
 ;;
 

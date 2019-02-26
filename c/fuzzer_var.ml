@@ -69,9 +69,13 @@ module Record = struct
     | { source = `Existing  ; _ } -> false
   ;;
 
-  let has_no_dependencies (record : t) : bool =
-    Option.for_all (known_value record)
-      ~f:(Fn.non (Known_value.has_dependencies))
+  let has_dependencies (record : t) : bool =
+    Option.exists (known_value record)
+      ~f:(Known_value.has_dependencies)
+  ;;
+
+  let has_known_value (record : t) : bool =
+    Option.is_some (known_value record)
   ;;
 
   let add_dependency (record : t) : t =
@@ -144,9 +148,9 @@ module Map = struct
       ~f:(Option.map ~f:Record.erase_value)
   ;;
 
-  let has_no_dependencies (map : t) ~(var : C_identifier.t) : bool =
-    Option.for_all (C_identifier.Map.find map var)
-      ~f:Record.has_no_dependencies
+  let has_dependencies (map : t) ~(var : C_identifier.t) : bool =
+    Option.exists (C_identifier.Map.find map var)
+      ~f:Record.has_dependencies
 
   let dependency_error (var : C_identifier.t) : unit Or_error.t =
     Or_error.error_s
@@ -159,8 +163,8 @@ module Map = struct
   let erase_value (map : t) ~(var : C_identifier.t) : t Or_error.t =
     let open Or_error.Let_syntax in
     let%map () =
-      Travesty.T_or_error.unless_m
-        (has_no_dependencies map ~var)
+      Travesty.T_or_error.when_m
+        (has_dependencies map ~var)
         ~f:(fun () -> dependency_error var)
     in
     erase_value_inner map ~var
