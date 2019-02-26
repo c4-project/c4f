@@ -139,6 +139,14 @@ module Map : sig
      environment for all variables in [map] with known types, and for
      which all predicates in [predicates] are true. *)
 
+  val env_module_satisfying_all
+    :  t
+    -> predicates:(Record.t -> bool) list
+    -> (module Mini_env.S)
+  (** [env_module_satisfying_all map ~predicates] behaves like
+      {{!env_satisfying_all}env_satisfying_all}, but wraps the
+      result in a first-class module. *)
+
   val satisfying_all
     :  t
     -> predicates:(Record.t -> bool) list

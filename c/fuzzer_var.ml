@@ -180,6 +180,16 @@ module Map = struct
     |> C_identifier.Map.filter_map ~f:(Record.ty)
   ;;
 
+  let env_module_satisfying_all
+      (vars : t) ~(predicates : (Record.t -> bool) list)
+    : (module Mini_env.S) =
+    (module Mini_env.Make
+         (struct
+           let env = env_satisfying_all ~predicates vars
+         end)
+    )
+  ;;
+
   let satisfying_all
       (vars : t) ~(predicates : (Record.t -> bool) list)
     : C_identifier.t list =

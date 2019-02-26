@@ -59,27 +59,22 @@ module Int : Action.S = struct
 
     (* TODO(@MattWindsor91): move this to Atomic_store. *)
 
-    let gen_src (vars : Var.Map.t) : Mini.Expression.t G.t =
+    let src_env (vars : Var.Map.t) : (module Mini_env.S) =
       let predicates = Lazy.force src_restrictions in
-      let env = Var.Map.env_satisfying_all ~predicates vars in
-      let module E = Mini_env.Make (struct let env = env end) in
-      let module Q = Mini.Expression.Quickcheck_int_values (E) in
-      Q.gen
+      Var.Map.env_module_satisfying_all ~predicates vars
     ;;
 
-    let gen_dst (vars : Var.Map.t) : Mini.Address.t G.t =
+    let dst_env (vars : Var.Map.t) : (module Mini_env.S) =
       let predicates = Lazy.force dst_restrictions in
-      let env = Var.Map.env_satisfying_all ~predicates vars in
-      let module E = Mini_env.Make (struct let env = env end) in
-      let module Q = Mini.Address.Quickcheck_atomic_int_pointers (E) in
-      Q.gen
+      Var.Map.env_module_satisfying_all ~predicates vars
+    ;;
 
     let gen_store (vars : Var.Map.t) : Mini.Atomic_store.t G.t =
-      let open G.Let_syntax in
-      let%bind src = gen_src vars in
-      let%bind dst = gen_dst vars in
-      let%map  mo  = Mem_order.gen_store in
-      Mini.Atomic_store.make ~src ~dst ~mo
+      let (module Src) = src_env vars in
+      let (module Dst) = dst_env vars in
+      let module Gen = Mini.Atomic_store.Quickcheck_ints (Src) (Dst) in
+      Gen.gen
+    ;;
 
     let gen' (subject : Subject.Test.t) (vars : Var.Map.t) : t G.t =
       let open G.Let_syntax in

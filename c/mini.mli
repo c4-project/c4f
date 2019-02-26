@@ -205,7 +205,28 @@ module Atomic_store : sig
 
   module On_lvalues : Travesty.Traversable.S0_container
     with type t := t and type Elt.t = Lvalue.t
-  (** Traversing over lvalues in atomic stores. *)
+    (** Traversing over lvalues in atomic stores. *)
+
+  (** {3 Generating and quickchecking} *)
+
+  module Quickcheck_generic
+      (Src : Quickcheckable.S with type t := Expression.t)
+      (Dst : Quickcheckable.S with type t := Address.t)
+    : Quickcheckable.S with type t := t
+  (** [Quickcheck_generic (Src) (Dst)] generates random stores,
+      using [Src] to generate source expressions and [Dst] to
+      generate destination addresses.  It uses [Mem_order]'s
+      store-compatible generator to pick random memory orders. *)
+
+  (** There isn't a generic quickcheck instance for atomic stores,
+      as we can't guarantee type safety in general. *)
+
+  module Quickcheck_ints (Src : Mini_env.S) (Dst : Mini_env.S)
+    : Quickcheckable.S with type t := t
+    (** [Quickcheck_ints (E)] generates random stores from atomic
+        integers to non-atomic integers, using [Src] as the
+        variable typing environment for sources and [Dst] as the
+        environment for destinations. *)
 end
 
 (** A (strong, explicit) atomic compare-exchange operation. *)

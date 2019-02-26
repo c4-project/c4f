@@ -102,7 +102,8 @@ module Atomic_load = struct
     [%expect {| (Ok (Normal int)) |}]
   ;;
 
-  module Quickcheck_general (A : Quickcheckable.S with type t := Address.t)
+  module Quickcheck_generic
+      (A : Quickcheckable.S with type t := Address.t)
     : Quickcheckable.S with type t := t = struct
     module Gen = Core_kernel.Quickcheck.Generator
     module Obs = Core_kernel.Quickcheck.Observer
@@ -122,11 +123,11 @@ module Atomic_load = struct
           )
     ;;
   end
-  include Quickcheck_general (Address)
+  include Quickcheck_generic (Address)
 
   module Quickcheck_atomic_ints (E : Env.S)
     : Quickcheckable.S with type t := t =
-    Quickcheck_general (Address.Quickcheck_atomic_int_pointers (E))
+    Quickcheck_generic (Address.Quickcheck_atomic_int_pointers (E))
   ;;
 
   let variable_of (ld : t) : C_identifier.t =
@@ -474,6 +475,50 @@ module Atomic_store = struct
           B.bmap x ~src:(E.map_m ~f) ~dst:f ~mo:(M.return)
       end
     end)
+
+  module Quickcheck_generic
+      (Src : Quickcheckable.S with type t := Expression.t)
+      (Dst : Quickcheckable.S with type t := Address.t)
+    : Quickcheckable.S with type t := t = struct
+
+    let to_tuple
+        ( { src; dst; mo } : t)
+      : ( Expression.t * Address.t * Mem_order.t) =
+      ( src, dst, mo )
+    ;;
+
+    let of_tuple
+        ( ( src, dst, mo ) : Expression.t * Address.t * Mem_order.t)
+      : t =
+      { src; dst; mo }
+    ;;
+
+    let gen : t Quickcheck.Generator.t =
+      Quickcheck.Generator.(
+        map (tuple3 Src.gen Dst.gen Mem_order.gen) ~f:of_tuple
+      )
+    ;;
+
+    let obs : t Quickcheck.Observer.t =
+      Quickcheck.Observer.(
+        unmap (tuple3 Src.obs Dst.obs Mem_order.obs) ~f:to_tuple
+      )
+    ;;
+
+    let shrinker : t Quickcheck.Shrinker.t =
+      Quickcheck.Shrinker.(
+        map (tuple3 Src.shrinker Dst.shrinker Mem_order.shrinker)
+          ~f:of_tuple ~f_inverse:to_tuple
+      )
+    ;;
+  end
+
+  module Quickcheck_ints (Src : Env.S) (Dst : Env.S)
+    : Quickcheckable.S with type t := t =
+    Quickcheck_generic
+      (Expression.Quickcheck_int_values (Src))
+      (Address.Quickcheck_atomic_int_pointers (Dst))
+  ;;
 end
 
 module Atomic_cmpxchg = struct
