@@ -97,6 +97,13 @@ module Record : sig
 
   (** {3 Actions} *)
 
+  val add_dependency : t -> t
+  (** [add_dependency record] adds a dependency flag to the
+     known-value field of [record].
+
+      This should be done after involving [record] in any atomic
+     actions that depend on its known value. *)
+
   val erase_value : t -> t
   (** [erase_value record] erases the known-value field of [record].
 
@@ -123,6 +130,14 @@ module Map : sig
       shadowing. *)
 
   (** {3 Queries} *)
+
+  val env_satisfying_all
+    :  t
+    -> predicates:(Record.t -> bool) list
+    -> Mini.Type.t C_identifier.Map.t
+  (** [env_satisfying_all map ~predicates] returns a typing
+     environment for all variables in [map] with known types, and for
+     which all predicates in [predicates] are true. *)
 
   val satisfying_all
     :  t
@@ -167,6 +182,13 @@ module Map : sig
     :  t -> C_identifier.t Quickcheck.Generator.t
   (** [gen_fresh_var map] generates random C identifiers that don't
       shadow existing variables in [map]. *)
+
+  val add_dependency : t -> var:C_identifier.t -> t
+  (** [add_dependency map ~var] adds a dependency flag in [map] for
+     [var] returning the resulting new map.
+
+      This should be done after involving [var] in any atomic actions
+     that depend on its known value. *)
 
   val erase_value : t -> var:C_identifier.t -> t Or_error.t
   (** [erase_value map ~var] erases the known-value field for any

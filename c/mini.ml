@@ -1413,8 +1413,6 @@ module Function = struct
     |> List.map ~f:fst
     |> C_identifier.Set.of_list
   ;;
-
-
 end
 
 module Program = struct

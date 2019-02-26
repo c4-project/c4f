@@ -61,6 +61,10 @@ let register_global
     )
 ;;
 
+let add_dependency
+    (s : t) ~(var : C_identifier.t) : t =
+  map_vars s ~f:(Fuzzer_var.Map.add_dependency ~var)
+
 let erase_var_value
     (s : t) ~(var : C_identifier.t) : t Or_error.t =
   try_map_vars s ~f:(Fuzzer_var.Map.erase_value ~var)
@@ -86,7 +90,13 @@ module Monad = struct
       (var : C_identifier.t)
     : unit t =
     modify (fun s -> register_global ?initial_value s var ty)
+  ;;
+
+  let add_dependency (var : C_identifier.t) : unit t =
+    modify (add_dependency ~var)
+  ;;
 
   let erase_var_value (var : C_identifier.t) : unit t =
     Monadic.modify (erase_var_value ~var)
+  ;;
 end

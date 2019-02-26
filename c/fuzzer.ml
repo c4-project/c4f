@@ -158,15 +158,17 @@ module Make_global : Action.S = struct
   ;;
 end
 
-(** Fuzzer action that stores a constant value to an atomic variable. *)
-module Constant_store : Action.S = struct
+(** Fuzzer action that stores an integer value to an atomic variable. *)
+module Int_store : Action.S = struct
   (** Lists the restrictions we put on destination variables. *)
-  let restrictions : (Var.Record.t -> bool) list Lazy.t =
+  let src_restrictions : (Var.Record.t -> bool) list Lazy.t =
+    lazy []
+  ;;
+
+  (** Lists the restrictions we put on destination variables. *)
+  let dst_restrictions : (Var.Record.t -> bool) list Lazy.t =
     lazy
-      Var.Record.[ is_atomic
-                 ; is_global
-                 (* TODO(@MattWindsor91): relax the two above. *)
-                 ; was_generated
+      Var.Record.[ was_generated
                    (* This is to make sure that we don't change the
                       observable semantics of the program over its
                       original variables. *)
@@ -178,22 +180,41 @@ module Constant_store : Action.S = struct
 
   module Random_state = struct
     type t =
-      { new_value : int
-      ; global    : C_identifier.t
-      ; path      : Mini_path.stm_hole Mini_path.program_path
-      ; mo        : Mem_order.t
+      { store : Mini.Atomic_store.t
+      ; path  : Mini_path.stm_hole Mini_path.program_path
       }
 
     module G = Quickcheck.Generator
 
+    (* TODO(@MattWindsor91): move this to Atomic_store. *)
+
+    let gen_src (vars : Var.Map.t) : Mini.Expression.t G.t =
+      let predicates = Lazy.force src_restrictions in
+      let env = Var.Map.env_satisfying_all ~predicates vars in
+      let module E = Mini_env.Make (struct let env = env end) in
+      let module Q = Mini.Expression.Quickcheck_int_values (E) in
+      Q.gen
+    ;;
+
+    let gen_dst (vars : Var.Map.t) : Mini.Address.t G.t =
+      let predicates = Lazy.force dst_restrictions in
+      let env = Var.Map.env_satisfying_all ~predicates vars in
+      let module E = Mini_env.Make (struct let env = env end) in
+      let module Q = Mini.Address.Quickcheck_atomic_int_pointers (E) in
+      Q.gen
+
+    let gen_store (vars : Var.Map.t) : Mini.Atomic_store.t G.t =
+      let open G.Let_syntax in
+      let%bind src = gen_src vars in
+      let%bind dst = gen_dst vars in
+      let%map  mo  = Mem_order.gen_store in
+      Mini.Atomic_store.make ~src ~dst ~mo
+
     let gen' (subject : Subject.Test.t) (vars : Var.Map.t) : t G.t =
       let open G.Let_syntax in
-      let predicates = Lazy.force restrictions in
-      let%bind new_value = Mini.Constant.gen_int32_as_int in
-      let%bind global    = Var.Map.random_satisfying_all vars ~predicates in
-      let%bind path      = Subject.Test.Path.gen_insert_stm subject in
-      let%map  mo        = Mem_order.gen_store in
-      { new_value; global; path; mo }
+      let%bind store = gen_store vars in
+      let%map  path = Subject.Test.Path.gen_insert_stm subject in
+      { store; path }
     ;;
 
     let gen (subject : Subject.Test.t) : t G.t State.Monad.t =
@@ -201,30 +222,43 @@ module Constant_store : Action.S = struct
     ;;
   end
 
-  let available = fun _ ->
+  let available _ =
     State.Monad.with_vars (
       Var.Map.exists_satisfying_all
-        ~predicates:(Lazy.force restrictions)
+        ~predicates:(Lazy.force dst_restrictions)
     )
   ;;
 
+  (* This action writes to the destination, so we no longer have a
+     known value for it. *)
+  let erase_value_of_store_dst (store : Mini.Atomic_store.t)
+    : unit State.Monad.t =
+    let dst = Mini.Atomic_store.dst store in
+    let dst_var = Mini.Address.variable_of dst in
+    State.Monad.erase_var_value dst_var
+  ;;
+
+  module Exp_idents =
+    Mini.Expression.On_identifiers.On_monad (State.Monad)
+  ;;
+
+  (* This action also introduces dependencies on every variable in
+     the source. *)
+  let add_dependencies_to_store_src (store : Mini.Atomic_store.t)
+    : unit State.Monad.t =
+    Exp_idents.iter_m (Mini.Atomic_store.src store)
+      ~f:State.Monad.add_dependency
+  ;;
+
   let run (subject : Subject.Test.t)
-      ( { new_value; global; path; mo } : Random_state.t)
+      ( { store; path } : Random_state.t)
     : Subject.Test.t State.Monad.t =
     let open State.Monad.Let_syntax in
-    let src =
-      Mini.Expression.constant (Mini.Constant.Integer new_value)
-    in
-    let dst =
-      Mini.Address.lvalue (Mini.Lvalue.variable global)
-    in
-    let constant_store =
-      Mini.Statement.atomic_store
-        (Mini.Atomic_store.make ~src ~dst ~mo)
-    in
-    let%bind () = State.Monad.erase_var_value global in
+    let store_stm = Mini.Statement.atomic_store store in
+    let%bind () = erase_value_of_store_dst store in
+    let%bind () = add_dependencies_to_store_src store in
     State.Monad.Monadic.return (
-      Subject.Test.Path.insert_stm path constant_store subject
+      Subject.Test.Path.insert_stm path store_stm subject
     )
   ;;
 end
@@ -253,8 +287,8 @@ let run_action
 let table : Action.List.t Lazy.t =
   lazy
     (Weighted_list.from_alist_exn
-       [ (module Make_global    : Action.S), 1
-       ; (module Constant_store : Action.S), 2
+       [ (module Make_global : Action.S), 1
+       ; (module Int_store   : Action.S), 2
        ]
     )
 ;;

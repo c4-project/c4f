@@ -164,8 +164,17 @@ module Address : sig
   include S_has_underlying_variable with type t := t
   (** We can get to the variable name inside an address. *)
 
+  (** {3 Type-checking} *)
+
   include S_type_checkable with type t := t
   (** Type-checking for addresses. *)
+
+  (** {3 Generating and quickchecking} *)
+
+  module Quickcheck_atomic_int_pointers (E : Mini_env.S)
+    : Quickcheckable.S with type t := t
+    (** Generates addresses over the given typing environment that have
+        the type 'atomic_int*'. *)
 end
 
 
@@ -249,6 +258,13 @@ module Expression : sig
     : Travesty.Traversable.S0_container
       with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in expressions. *)
+
+  (** {3 Generation and quickchecking} *)
+
+  module Quickcheck_int_values (E : Mini_env.S)
+    : Quickcheckable.S with type t := t
+  (** Generates random, type-safe expressions over the given variable
+      typing environment, with type 'int'. *)
 
   (** {3 Type checking} *)
 

@@ -63,6 +63,13 @@ module Monad : sig
       known value [value] into the state,
       overwriting any existing variable of the same name. *)
 
+   val add_dependency : C_identifier.t -> unit t
+   (** [erase_var_value var] is a stateful action that adds a
+       dependency flag to any known-value record for variable [var].
+
+      This should be done after involving [var] in any atomic actions
+      that depend on it having a particular known-value. *)
+
    val erase_var_value : C_identifier.t -> unit t
    (** [erase_var_value var] is a stateful action that erases any
       known-value information for variable [var].

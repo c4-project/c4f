@@ -38,6 +38,10 @@ module Known_value = struct
     }
   [@@deriving fields, make]
   ;;
+
+  let add_dependency (kv : t) : t =
+    { kv with has_dependencies = true }
+  ;;
 end
 
 module Record = struct
@@ -68,6 +72,13 @@ module Record = struct
   let has_no_dependencies (record : t) : bool =
     Option.for_all (known_value record)
       ~f:(Fn.non (Known_value.has_dependencies))
+  ;;
+
+  let add_dependency (record : t) : t =
+    { record
+      with known_value =
+             Option.map ~f:Known_value.add_dependency record.known_value
+    }
   ;;
 
   let erase_value (record : t) : t =
@@ -123,6 +134,11 @@ module Map = struct
     C_identifier.Map.set map ~key ~data
   ;;
 
+  let add_dependency (map : t) ~(var : C_identifier.t) : t =
+    C_identifier.Map.change map var
+      ~f:(Option.map ~f:Record.add_dependency)
+  ;;
+
   let erase_value_inner (map : t) ~(var : C_identifier.t) : t =
     C_identifier.Map.change map var
       ~f:(Option.map ~f:Record.erase_value)
@@ -150,11 +166,25 @@ module Map = struct
     erase_value_inner map ~var
   ;;
 
+  let submap_satisfying_all
+      (vars : t) ~(predicates : (Record.t -> bool) list)
+    : t =
+    vars
+    |> C_identifier.Map.filter ~f:(Travesty.T_list.all ~predicates)
+
+  let env_satisfying_all
+      (vars : t) ~(predicates : (Record.t -> bool) list)
+    : Mini.Type.t C_identifier.Map.t =
+    vars
+    |> submap_satisfying_all ~predicates
+    |> C_identifier.Map.filter_map ~f:(Record.ty)
+  ;;
+
   let satisfying_all
       (vars : t) ~(predicates : (Record.t -> bool) list)
     : C_identifier.t list =
     vars
-    |> C_identifier.Map.filter ~f:(Travesty.T_list.all ~predicates)
+    |> submap_satisfying_all ~predicates
     |> C_identifier.Map.keys
   ;;
 
