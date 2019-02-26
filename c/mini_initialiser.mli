@@ -22,32 +22,29 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Mini-model: module signatures for variable typing environments *)
+(** Mini-model: initialisers. *)
 
 open Core_kernel
-open Utils
 
-(** Basic signature of modules carrying a variable typing environment. *)
-module type Basic = sig
-  val env : Mini_type.t C_identifier.Map.t
-  (** [env] is a variable typing environment. *)
-end
+type t [@@deriving sexp]
+(** Opaque type of initialisers. *)
 
-(** Extended signature of environment modules. *)
-module type S = sig
-  include Basic
+(** {3 Constructors} *)
 
-  module Random_var : Quickcheckable.S with type t := C_identifier.t
-  (** [Random_var] allows generation of random variables from the
-     variable environment. *)
+val make : ty:Mini_type.t -> ?value:Ast_basic.Constant.t -> unit -> t
+(** [make ~ty ?value ()] makes an initialiser with type [ty] and
+    optional initialised value [value]. *)
 
-  val atomic_int_variables : unit -> Mini_type.t C_identifier.Map.t
-  (** [atomic_int_variables ()] filters the environment, returning a
-     map binding only variables whose type is atomic-int, or a pointer
-     thereto. *)
+(** {3 Accessors} *)
 
-  val int_variables : unit -> Mini_type.t C_identifier.Map.t
-  (** [atomic_int_variables ()] filters the environment, returning a
-     map binding only variables whose type is (non-atomic) int, or a
-     pointer thereto. *)
-end
+val ty : t -> Mini_type.t
+(** [ty init] gets the type of [init]. *)
+
+val value : t -> Ast_basic.Constant.t option
+(** [value init] gets the initialised value of [init], if it has
+    one. *)
+
+include Quickcheckable.S with type t := t
+
+module Named : Mini_intf.S_named with type elt := t
+(** Allows using the type of named initialiser in certain functors. *)

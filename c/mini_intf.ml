@@ -22,10 +22,25 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Mini-model: module signatures *)
+(** Mini-model: module signatures and basic types *)
 
 open Core_kernel
 open Utils
+
+type 'a named = (C_identifier.t * 'a) [@@deriving eq, sexp]
+(** Shorthand for pairs of items and their names. *)
+
+type 'a id_assoc = (C_identifier.t, 'a) List.Assoc.t [@@deriving sexp]
+(** Shorthand for associative lists with identifier keys. *)
+
+(** {2 General signatures} *)
+
+(** Signature of modules that expose a 'named' part of a mini-model
+    element, usually for compatibility with functors. *)
+module type S_named = sig
+  type elt
+  type t = elt named [@@deriving eq]
+end
 
 (** Signature of abstract data types that wrap some C variable name. *)
 module type S_has_underlying_variable = sig

@@ -30,8 +30,19 @@ include Mini_env_intf
 module Make (E : Basic) : S = struct
   let env = E.env
 
-  let random_var : C_identifier.t Quickcheck.Generator.t =
-    Quickcheck.Generator.of_list (C_identifier.Map.keys E.env)
+  module Random_var
+    : Quickcheckable.S with type t := C_identifier.t = struct
+    let gen : C_identifier.t Quickcheck.Generator.t =
+      Quickcheck.Generator.of_list (C_identifier.Map.keys E.env)
+    ;;
+
+    (* It's not clear whether we need a different observer here? *)
+    let obs = C_identifier.obs
+
+    (* Don't reduce identifiers, as this might make them no longer
+       members of the environment. *)
+    let shrinker = Quickcheck.Shrinker.empty ()
+  end
 
   let atomic_int_variables () : Mini_type.t C_identifier.Map.t =
     C_identifier.Map.filter E.env

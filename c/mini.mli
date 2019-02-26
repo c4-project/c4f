@@ -31,7 +31,7 @@
 
     One can get a 'mini' C program by {{!Convert}converting} an AST
     to it (which may fail).  To get an AST (for printing, etc.), use
-    {{!Reify}Reify}.
+    {{!Mini_reify}Reify}.
 *)
 
 open Core_kernel
@@ -40,143 +40,17 @@ open Utils
 include module type of Ast_basic
 include module type of Mini_intf
 
-module Type : module type of Mini_type
-(** Re-exporting {{!Mini.Type}Type}. *)
+module Type = Mini_type
+(** Re-exporting {{!Mini_type}Type}. *)
 
-type 'a named = (Identifier.t * 'a) [@@deriving eq, sexp]
-(** Shorthand for pairs of items and their names. *)
+module Initialiser = Mini_initialiser
+(** Re-exporting {{!Mini_initialiser}Initialiser}. *)
 
-type 'a id_assoc = (Identifier.t, 'a) List.Assoc.t [@@deriving sexp]
-(** Shorthand for associative lists with identifier keys. *)
+module Lvalue = Mini_lvalue
+(** Re-exporting {{!Mini_lvalue}Lvalue}. *)
 
-module Initialiser : sig
-  type t [@@deriving sexp]
-
-  (** {3 Constructors} *)
-
-  val make : ty:Type.t -> ?value:Constant.t -> unit -> t
-  (** [make ~ty ?value ()] makes an initialiser with type [ty] and
-      optional initialised value [value]. *)
-
-  (** {3 Accessors} *)
-
-  val ty : t -> Type.t
-  (** [ty init] gets the type of [init]. *)
-
-  val value : t -> Constant.t option
-  (** [value init] gets the initialised value of [init], if it has
-     one. *)
-
-  include Quickcheckable.S with type t := t
-end
-
-(** Somewhere assignable (a variable, or dereference thereof). *)
-module Lvalue : sig
-  type t [@@deriving sexp]
-
-  (** {3 Constructors} *)
-
-  val variable : Identifier.t -> t
-  (** [variable id] constructs an lvalue pointing to variable [id].
-      It doesn't do any validation. *)
-
-  val deref : t -> t
-  (** [deref lvalue] constructs a dereference ([*]) of another lvalue
-      [lvalue].It doesn't do any validation. *)
-
-  val on_value_of_typed_id : id:C_identifier.t -> ty:Type.t -> t
-  (** [on_value_of_typed_id ~id ~ty] constructs an lvalue with underlying
-      variable [id] and the right level of indirection to convert from
-      a variable of type [ty] to a primitive value.
-
-      For example, if [ty] is a pointer type, the lvalue will become a
-      dereference. *)
-
-  (** {3 Accessors} *)
-
-  val reduce
-    :  t
-    -> variable:(Identifier.t -> 'a)
-    -> deref:('a -> 'a)
-    -> 'a
-  (** [reduce lvalue ~variable ~deref] applies [variable] on the
-     underlying variable of [lvalue], then recursively applies [deref]
-     to the result for each layer of indirection in the lvalue. *)
-
-  val is_deref : t -> bool
-  (** [is_deref lvalue] returns [true] if [lvalue] is a dereference of
-      another [lvalue], and [false] otherwise. *)
-
-  module On_identifiers
-    : Travesty.Traversable.S0_container
-      with type t := t and type Elt.t = Identifier.t
-  (** Traversing over identifiers in lvalues. *)
-
-  include S_has_underlying_variable with type t := t
-  (** We can get to the variable name inside an lvalue. *)
-
-  include S_type_checkable with type t := t
-  (** Type-checking for lvalues. *)
-
-  (** {3 Generating random lvalues} *)
-
-  include Quickcheckable.S with type t := t
-  (** Generates random lvalues without constraint. *)
-
-  module Quickcheck_on_env (E : Mini_env.S)
-    : Quickcheckable.S with type t := t
-  (** Generates random lvalues, constrained over the variables
-     in the given environment. *)
-
-  module Quickcheck_int_values (E : Mini_env.S)
-    : Quickcheckable.S with type t := t
-    (** Generates random lvalues, constrained over the variables in
-       the given environment; each lvalue has a non-atomic-integer
-       value type. *)
-end
-
-(** An address (a lvalue, or reference thereto). *)
-module Address : sig
-  type t [@@deriving sexp]
-
-  module On_lvalues
-    : Travesty.Traversable.S0_container
-      with type t := t and type Elt.t = Lvalue.t
-  (** Traversing over lvalues in addresses. *)
-
-  val lvalue : Lvalue.t -> t
-  (** [lvalue lv] lifts an lvalue [lv] to an address. *)
-
-  val ref : t -> t
-  (** [ref t] constructs a &-reference to [t]. *)
-
-  (** {3 Accessors} *)
-
-  val reduce
-    :  t
-    -> lvalue:(Lvalue.t -> 'a)
-    -> ref:('a -> 'a)
-    -> 'a
-  (** [reduce addr ~address ~deref] applies [lvalue] on the
-     underlying lvalue of [addr], then recursively applies [ref]
-     to the result for each layer of address-taking in the address. *)
-
-  include S_has_underlying_variable with type t := t
-  (** We can get to the variable name inside an address. *)
-
-  (** {3 Type-checking} *)
-
-  include S_type_checkable with type t := t
-  (** Type-checking for addresses. *)
-
-  (** {3 Generating and quickchecking} *)
-
-  module Quickcheck_atomic_int_pointers (E : Mini_env.S)
-    : Quickcheckable.S with type t := t
-    (** Generates addresses over the given typing environment that have
-        the type 'atomic_int*'. *)
-end
-
+module Address = Mini_address
+(** Re-exporting {{!Mini_address]Address}. *)
 
 (** An atomic load operation. *)
 module Atomic_load : sig

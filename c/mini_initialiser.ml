@@ -22,32 +22,47 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Mini-model: module signatures for variable typing environments *)
-
 open Core_kernel
 open Utils
 
-(** Basic signature of modules carrying a variable typing environment. *)
-module type Basic = sig
-  val env : Mini_type.t C_identifier.Map.t
-  (** [env] is a variable typing environment. *)
+module Type = Mini_type
+module Constant = Ast_basic.Constant
+
+type t =
+  { ty    : Type.t
+  ; value : Constant.t option
+  }
+[@@deriving sexp, make, eq, fields]
+;;
+
+module Quickcheck : Quickcheckable.S with type t := t = struct
+  module G = Core_kernel.Quickcheck.Generator
+  module O = Core_kernel.Quickcheck.Observer
+  module S = Core_kernel.Quickcheck.Shrinker
+
+  let to_tuple { ty; value } = ( ty, value )
+  let of_tuple ( ty, value ) = { ty; value }
+
+  let gen : t G.t =
+    G.map (G.tuple2 Type.gen (Option.gen (Constant.gen)))
+      ~f:of_tuple
+  ;;
+
+  let obs : t O.t =
+    O.unmap (O.tuple2 Type.obs (Option.obs (Constant.obs)))
+      ~f:to_tuple
+  ;;
+
+  let shrinker : t S.t =
+    S.map (S.tuple2 Type.shrinker (Option.shrinker (Constant.shrinker)))
+      ~f:of_tuple ~f_inverse:to_tuple
+  ;;
 end
+include Quickcheck
 
-(** Extended signature of environment modules. *)
-module type S = sig
-  include Basic
-
-  module Random_var : Quickcheckable.S with type t := C_identifier.t
-  (** [Random_var] allows generation of random variables from the
-     variable environment. *)
-
-  val atomic_int_variables : unit -> Mini_type.t C_identifier.Map.t
-  (** [atomic_int_variables ()] filters the environment, returning a
-     map binding only variables whose type is atomic-int, or a pointer
-     thereto. *)
-
-  val int_variables : unit -> Mini_type.t C_identifier.Map.t
-  (** [atomic_int_variables ()] filters the environment, returning a
-     map binding only variables whose type is (non-atomic) int, or a
-     pointer thereto. *)
+module Named : Mini_intf.S_named with type elt := t = struct
+  type nonrec t = t Mini_intf.named
+  let equal : t -> t -> bool =
+    Tuple2.equal ~eq1:C_identifier.equal ~eq2:equal
+  ;;
 end

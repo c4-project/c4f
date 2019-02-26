@@ -48,7 +48,7 @@ module Int : Action.S = struct
                       to variables with depended-upon values. *)
                  ]
   ;;
-  
+
   module Random_state = struct
     type t =
       { store : Mini.Atomic_store.t
