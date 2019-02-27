@@ -123,7 +123,7 @@ discrepancies in `act`'s output as diffs.
   known good output (see `bin/tests` and `bin/dune` for the tests);
 - _semi-automatic tests_, which take the form of Unix shell scripts
   that simplify running various testing workflows that don't fit
-  well into the automatic flow (see `unix_test_scripts`).
+  well into the automatic flow (see `scripts`).
 
 
 ## How to use `act`

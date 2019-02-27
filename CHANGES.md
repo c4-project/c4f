@@ -1,5 +1,13 @@
 # Unreleased
 
+## 2019-Feb-27 (and previous)
+
+- Feature: Ongoing work on building a C11 litmus test mutator (or
+  'fuzzer').  See `act c fuzz`.  Currently in a heavily experimental
+  state.
+- Change: `unix_test_scripts` is now `scripts`, and is starting to
+  contain things that aren't test scripts per se.
+
 ## 2019-Jan-30
 
 - Bugfix: `act c delitmus` now properly handles removing dereferences from
