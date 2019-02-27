@@ -181,7 +181,7 @@ module Cumulative = struct
   ;;
 
   let sample (cl : 'a t) (rng : Splittable_random.State.t) : 'a =
-    let position = Splittable_random.int rng ~lo:0 ~hi:(cl.max - 1) in
+    let position = Splittable_random.int rng ~lo:0 ~hi:cl.max in
     get cl position
   ;;
 end
@@ -192,6 +192,31 @@ let sample (wl : 'a t) (rng : Splittable_random.State.t) : 'a Or_error.t =
     |>  Cumulative.of_weighted_list
     >>| Fn.flip Cumulative.sample rng
   )
+;;
+
+let sample_exn (wl : 'a t) (rng : Splittable_random.State.t) : 'a =
+  Or_error.ok_exn (sample wl rng)
+;;
+
+let sample_gen_exn (wl : 'a t) : 'a Quickcheck.Generator.t =
+  Quickcheck.Generator.create
+    (fun ~size -> ignore size; sample_exn wl)
+;;
+
+let%test_unit
+  "sample: sampling from list of one weight-1 item returns that item" =
+  let wl = from_alist_exn [ ("kappa", 1) ] in
+  Quickcheck.test (sample_gen_exn wl)
+    ~sexp_of:[%sexp_of: string]
+    ~f:([%test_result: string] ~here:[[%here]] ~equal:[%compare.equal: string] ~expect:"kappa")
+;;
+
+let%test_unit
+  "sample: sampling can return the last item" =
+  let wl = from_alist_exn [ ("keepo", 2); ("frankerz", 5); ("kappa", 1) ] in
+  Quickcheck.test_can_generate (sample_gen_exn wl)
+    ~sexp_of:[%sexp_of: string]
+    ~f:([%compare.equal: string] "kappa")
 ;;
 
 module Qc : (Quickcheckable.S1 with type 'a t := 'a t) = struct
