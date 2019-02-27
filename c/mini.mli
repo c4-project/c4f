@@ -50,101 +50,14 @@ module Lvalue = Mini_lvalue
 (** Re-exporting {{!Mini_lvalue}Lvalue}. *)
 
 module Address = Mini_address
-(** Re-exporting {{!Mini_address]Address}. *)
+(** Re-exporting {{!Mini_address}Address}. *)
 
-(** An atomic load operation. *)
-module Atomic_load : sig
-  type t [@@deriving sexp]
+module Expression = Mini_expression
+(** Re-exporting {{!Mini_expression}Expression}. *)
 
-  (** {3 Constructors} *)
-
-  val make : src:Address.t -> mo:Mem_order.t -> t
-  (** [atomic_load ~src ~dst ~mo] constructs an explicit atomic load
-      expression with source [src] and memory order [mo]. *)
-
-  (** {3 Accessors} *)
-
-  val src : t -> Address.t
-  (** [src ld] gets [ld]'s source address. *)
-
-  val mo : t -> Mem_order.t
-  (** [mo ld] gets [ld]'s memory order. *)
-
-  include S_has_underlying_variable with type t := t
-  (** We can get to the variable name inside an atomic load (that is,
-      the source variable). *)
-
-  (** {3 Traversals} *)
-
-  module On_addresses : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Address.t
-  (** Traversing over atomic-action addresses in atomic loads. *)
-
-  module On_lvalues : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Lvalue.t
-  (** Traversing over lvalues in atomic loads. *)
-end
-
-(** An expression. *)
-module Expression : sig
-  type t [@@deriving sexp]
-
-  (** {3 Constructors} *)
-
-  val atomic_load : Atomic_load.t -> t
-  (** [atomic_load a] lifts an atomic load [a] to an expression. *)
-
-  val constant : Constant.t -> t
-  (** [constant k] lifts a C constant [k] to an expression. *)
-
-  val eq : t -> t -> t
-  (** [eq l r] generates an equality expression. *)
-
-  val lvalue : Lvalue.t -> t
-  (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
-
-  (** {3 Accessors} *)
-
-  val reduce
-    :  t
-    -> constant:(Constant.t -> 'a)
-    -> lvalue:(Lvalue.t   -> 'a)
-    -> atomic_load:(Atomic_load.t -> 'a)
-    -> eq:('a -> 'a  -> 'a)
-    -> 'a
-  (** [reduce expr ~constant ~lvalue ~atomic_load ~eq] recursively
-     reduces [expr] to a single value, using the given functions at
-     each corresponding stage of the expression tree. *)
-
-  (** {3 Traversals} *)
-
-  module On_addresses
-    : Travesty.Traversable.S0_container
-      with type t := t and type Elt.t = Address.t
-  (** Traversing over atomic-action addresses in expressions. *)
-
-  module On_identifiers
-    : Travesty.Traversable.S0_container
-      with type t := t and type Elt.t = Identifier.t
-  (** Traversing over identifiers in expressions. *)
-
-  module On_lvalues
-    : Travesty.Traversable.S0_container
-      with type t := t and type Elt.t = Lvalue.t
-  (** Traversing over lvalues in expressions. *)
-
-  (** {3 Generation and quickchecking} *)
-
-  module Quickcheck_int_values (E : Mini_env.S)
-    : Quickcheckable.S with type t := t
-  (** Generates random, type-safe expressions over the given variable
-      typing environment, with type 'int'. *)
-
-  (** {3 Type checking} *)
-
-  include S_type_checkable with type t := t
-  (** Type-checking for expressions. *)
-end
+module Atomic_load = Expression.Atomic_load
+(** Re-exporting {{!Atomic_load}Atomic_load} from within
+   {{!Expression}Expression}. *)
 
 (** A non-atomic assignment. *)
 module Assign : sig
