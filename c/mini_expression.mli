@@ -68,6 +68,9 @@ type t [@@deriving sexp]
 val atomic_load : Atomic_load.t -> t
 (** [atomic_load a] lifts an atomic load [a] to an expression. *)
 
+val bool_lit : bool -> t
+(** [bool_lit b] lifts a Boolean literal [b] to an expression. *)
+
 val constant : Ast_basic.Constant.t -> t
 (** [constant k] lifts a C constant [k] to an expression. *)
 
@@ -81,14 +84,15 @@ val lvalue : Mini_lvalue.t -> t
 
 val reduce
   :  t
+  -> bool_lit:(bool -> 'a)
   -> constant:(Ast_basic.Constant.t -> 'a)
   -> lvalue:(Mini_lvalue.t -> 'a)
   -> atomic_load:(Atomic_load.t -> 'a)
   -> eq:('a -> 'a  -> 'a)
   -> 'a
-(** [reduce expr ~constant ~lvalue ~atomic_load ~eq] recursively
-    reduces [expr] to a single value, using the given functions at
-    each corresponding stage of the expression tree. *)
+(** [reduce expr ~bool_lit ~constant ~lvalue ~atomic_load ~eq]
+   recursively reduces [expr] to a single value, using the given
+   functions at each corresponding stage of the expression tree. *)
 
 (** {2 Traversals} *)
 
@@ -107,14 +111,19 @@ module On_lvalues
     with type t := t and type Elt.t = Mini_lvalue.t
 (** Traversing over lvalues in expressions. *)
 
-(** {3 Generation and quickchecking} *)
+(** {2 Generation and quickchecking} *)
 
 module Quickcheck_int_values (E : Mini_env.S)
   : Quickcheckable.S with type t := t
 (** Generates random, type-safe expressions over the given variable
     typing environment, with type 'int'. *)
 
-(** {3 Type checking} *)
+module Quickcheck_bool_values (E : Mini_env.S)
+  : Quickcheckable.S with type t := t
+(** Generates random, type-safe expressions over the given variable
+    typing environment, with type 'bool'. *)
+
+(** {2 Type checking} *)
 
 include Mini_intf.S_type_checkable with type t := t
 (** Type-checking for expressions. *)

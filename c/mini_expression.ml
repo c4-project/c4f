@@ -157,6 +157,7 @@ module Atomic_load = struct
 end
 
 type t =
+  | Bool_lit    of bool
   | Constant    of Constant.t
   | Lvalue      of Lvalue.t
   | Atomic_load of Atomic_load.t
@@ -165,11 +166,13 @@ type t =
 ;;
 
 let reduce (expr : t)
+    ~(bool_lit    : bool -> 'a)
     ~(constant    : Constant.t -> 'a)
     ~(lvalue      : Lvalue.t   -> 'a)
     ~(atomic_load : Atomic_load.t -> 'a)
     ~(eq          : 'a -> 'a   -> 'a) : 'a =
   let rec mu = function
+    | Bool_lit    b      -> bool_lit b
     | Constant    k      -> constant k
     | Lvalue      l      -> lvalue l
     | Atomic_load ld     -> atomic_load ld
@@ -178,10 +181,11 @@ let reduce (expr : t)
 ;;
 
 let anonymise = function
-  | Constant    k      -> `A k
-  | Lvalue      l      -> `B l
-  | Eq          (x, y) -> `C ((x, y))
-  | Atomic_load ld     -> `D ld
+  | Bool_lit    blit   -> `A blit
+  | Constant    k      -> `B k
+  | Lvalue      l      -> `C l
+  | Eq          (x, y) -> `D ((x, y))
+  | Atomic_load ld     -> `E ld
 ;;
 
 module On_addresses
@@ -197,6 +201,7 @@ module On_addresses
 
       let rec map_m x ~f =
         Variants.map x
+          ~bool_lit:(F.proc_variant1 M.return)
           ~constant:(F.proc_variant1 M.return)
           ~lvalue:(F.proc_variant1 M.return)
           ~eq:(F.proc_variant2
@@ -222,6 +227,7 @@ module On_lvalues
 
       let rec map_m x ~f =
         Variants.map x
+          ~bool_lit:(F.proc_variant1 M.return)
           ~constant:(F.proc_variant1 M.return)
           ~lvalue:(F.proc_variant1 f)
           ~eq:(F.proc_variant2
@@ -255,6 +261,7 @@ module Type_check (E : Env.S) = struct
   ;;
 
   let rec type_of : t -> Type.t Or_error.t = function
+    | Bool_lit    _      -> Or_error.return Type.(normal Basic.bool)
     | Constant    k      -> type_of_constant k
     | Lvalue      l      -> Lv.type_of l
     | Eq          (l, r) -> type_of_relational l r
@@ -267,8 +274,26 @@ module Type_check (E : Env.S) = struct
   ;;
 end
 
+let obs : t Quickcheck.Observer.t =
+  Quickcheck.Observer.(
+    fixed_point
+      (fun mu ->
+         unmap ~f:anonymise
+           (variant5
+             Bool.obs
+             Constant.obs
+             Lvalue.obs
+             (tuple2 mu mu)
+             Atomic_load.obs
+           )
+      )
+  )
+;;
+
 module Quickcheck_int_values (E : Env.S)
-  : Quickcheckable.S with type t := t = struct
+  : Quickcheckable.S with type t = t = struct
+  type nonrec t = t
+
   module Gen = Quickcheck.Generator
   module Obs = Quickcheck.Observer
   module Snk = Quickcheck.Shrinker
@@ -303,18 +328,7 @@ module Quickcheck_int_values (E : Env.S)
     Gen.union base_generators (* ~f:recursive_generators *)
   ;;
 
-  let obs : t Obs.t =
-    Quickcheck.Observer.fixed_point
-      (fun mu ->
-         Obs.unmap ~f:anonymise
-           (Obs.variant4
-              Constant.obs
-              Lvalue.obs
-              (Obs.tuple2 mu mu)
-              Atomic_load.obs
-           )
-      )
-  ;;
+  let obs : t Obs.t = obs
 
   (* TODO(@MattWindsor91): implement this *)
   let shrinker : t Snk.t = Snk.empty ()
@@ -371,11 +385,14 @@ let%test_unit
   test_int_values_distinctiveness_on_mod (Lazy.force Env.empty_env_mod)
 ;;
 
-let%test_unit
-  "Quickcheck_int_values: all expressions have 'int' type" =
-  let (module E) = Lazy.force Env.test_env_mod in
-  let module Ty = Type_check (E) in
-  let module Q = Quickcheck_int_values (E) in
+
+let test_all_expressions_have_type
+    (f : (module Env.S) -> (module Quickcheckable.S with type t = t))
+    (ty : Type.t)
+  : unit =
+  let env = Lazy.force Env.test_env_mod in
+  let (module Q) = f env in
+  let module Ty = Type_check (val env) in
   Quickcheck.test Q.gen
     ~sexp_of:[%sexp_of: t]
     ~shrinker:Q.shrinker
@@ -384,14 +401,14 @@ let%test_unit
           (Ty.type_of e)
           ~here:[[%here]]
           ~equal:[%compare.equal: Type.t Or_error.t]
-          ~expect:(Or_error.return Type.(normal Basic.int))
-      )
+          ~expect:(Or_error.return ty))
 ;;
 
-let%test_unit
-  "Quickcheck_int_values: all referenced variables in environment" =
+let test_all_expressions_in_env
+    (f : (module Env.S) -> (module Quickcheckable.S with type t = t))
+  : unit =
   let (module E) = Lazy.force Env.test_env_mod in
-  let module Q = Quickcheck_int_values (E) in
+  let (module Q) = f (module E) in
   Quickcheck.test Q.gen
     ~sexp_of:[%sexp_of: t]
     ~shrinker:Q.shrinker
@@ -400,17 +417,61 @@ let%test_unit
           ~here:[[%here]]
        )
 ;;
-(*
-  module Quickcheck_bools (E : Env.S)
-    : Quickcheckable.S with type t := t = struct
-    module G = Quickcheck.Generator
-    module O = Quickcheck.Observer
-    module S = Quickcheck.Shrinker
 
-    let gen : t G.t =
-      let open G.Let_syntax in
-      Quickcheck.Generator.union
-        [ gen_int_relational
-        ; gen_const
-        ]
-  end *)
+let%test_unit
+  "Quickcheck_int_values: all expressions have 'int' type" =
+  test_all_expressions_have_type
+    (fun e -> (module Quickcheck_int_values (val e)))
+    Type.(normal Basic.int)
+;;
+
+let%test_unit
+  "Quickcheck_int_values: all referenced variables in environment" =
+  test_all_expressions_in_env
+    (fun e -> (module Quickcheck_int_values (val e)))
+;;
+
+module Quickcheck_bool_values (E : Env.S)
+  : Quickcheckable.S with type t = t = struct
+  type nonrec t = t
+
+  module Gen = Quickcheck.Generator
+  module Obs = Quickcheck.Observer
+  module Snk = Quickcheck.Shrinker
+
+  module Iv = Quickcheck_int_values (E)
+
+  let gen_int_relational : t Gen.t =
+    let open Gen.Let_syntax in
+    let%bind l = Iv.gen in
+    let%map  r = Iv.gen in
+    (* Only relational operation available atm. *)
+    Eq (l, r)
+  ;;
+
+  let gen_const : t Gen.t = Gen.map ~f:bool_lit Bool.gen
+
+  let gen : t Gen.t =
+    Gen.union
+      [ gen_int_relational
+      ; gen_const
+      ]
+
+  let obs : t Obs.t = obs
+
+  (* TODO(@MattWindsor91): implement this *)
+  let shrinker : t Snk.t = Snk.empty ()
+end
+
+let%test_unit
+  "Quickcheck_bool_values: all expressions have 'bool' type" =
+  test_all_expressions_have_type
+    (fun e -> (module Quickcheck_bool_values (val e)))
+    Type.(normal Basic.bool)
+;;
+
+let%test_unit
+  "Quickcheck_bool_values: all referenced variables in environment" =
+  test_all_expressions_in_env
+    (fun e -> (module Quickcheck_bool_values (val e)))
+;;

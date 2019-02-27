@@ -85,8 +85,15 @@ let atomic_load_to_expr (ld : Atomic_load.t) : Ast.Expr.t =
     ; mem_order_to_expr (Atomic_load.mo ld)
     ]
 
+let bool_lit_to_expr (b : bool) : Ast.Expr.t =
+  Ast.Expr.Identifier
+    (Identifier.of_string
+       (if b then "true" else "false"))
+;;
+
 let expr : Expression.t -> Ast.Expr.t =
   Expression.reduce
+    ~bool_lit:bool_lit_to_expr
     ~constant:(fun k -> Ast.Expr.Constant k)
     ~lvalue:lvalue_to_expr
     ~atomic_load:atomic_load_to_expr

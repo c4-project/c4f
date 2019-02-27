@@ -241,7 +241,7 @@ let func_signature : Ast.Declarator.t ->
 
 let rec expr_to_lvalue
   : Ast.Expr.t -> Lvalue.t Or_error.t = function
-  | Identifier id   -> Or_error.return (Lvalue.variable id)
+  | Identifier id -> Or_error.return (Lvalue.variable id)
   | Brackets expr -> expr_to_lvalue expr
   | Prefix (`Deref, expr) ->
     Or_error.(expr |> expr_to_lvalue >>| Lvalue.deref)
@@ -329,6 +329,13 @@ let expr_call_table
     ]
 ;;
 
+let identifier_to_expr (id : C_identifier.t) : Expression.t =
+  match C_identifier.to_string id with
+  | "true" -> Expression.bool_lit true
+  | "false" -> Expression.bool_lit false
+  | _ -> Expression.lvalue (Lvalue.variable id)
+;;
+
 let rec expr
   : Ast.Expr.t -> Expression.t Or_error.t =
   let open Or_error.Let_syntax in
@@ -345,8 +352,7 @@ let rec expr
   | Brackets e -> expr e
   | Binary (l, op, r) -> model_binary l op r
   | Constant k -> Or_error.return (Expression.constant k)
-  | Identifier id ->
-    Or_error.return (Expression.lvalue (Lvalue.variable id))
+  | Identifier id -> Or_error.return (identifier_to_expr id)
   | Prefix (`Deref, expr) ->
     Or_error.(expr |> expr_to_lvalue >>| Lvalue.deref >>| Expression.lvalue)
   | Call { func; arguments } -> call expr_call_table func arguments
