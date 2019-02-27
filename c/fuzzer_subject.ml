@@ -57,8 +57,14 @@ module Program = struct
         (fun item' -> With_source.make ~item:item' ~source)
       )
     ;;
-  end
 
+    let transform_stm path ~f { With_source.item; source } =
+      Or_error.(
+        item |> Mini_path.Statement.transform_stm path ~f >>|
+        (fun item' -> With_source.make ~item:item' ~source)
+      )
+    ;;
+  end
 
   module Stm_list_path : Mini_path.S_statement_list
     with type target = Mini.Statement.t With_source.t =
@@ -67,7 +73,6 @@ module Program = struct
 
   module Path : Mini_path.S_function with type target := t = struct
     type target = t
-    type stm = Mini.Statement.t
 
     let gen_insert_stm ({ stms; _ } : target)
       : Mini_path.stm_hole Mini_path.function_path Quickcheck.Generator.t =
@@ -75,15 +80,35 @@ module Program = struct
         ~f:(fun path -> Mini_path.On_statements path)
     ;;
 
-    let insert_stm
-        (path : Mini_path.stm_hole Mini_path.function_path)
-        (stm : stm) (prog : target) : target Or_error.t =
-      let open Or_error.Let_syntax in
+    let handle_stm (type a)
+        (path : a Mini_path.function_path)
+        ~(f
+          :  a Mini_path.list_path
+          -> Mini.Statement.t With_source.t list
+          -> Mini.Statement.t With_source.t list Or_error.t
+         )
+        (prog : t)
+      : t Or_error.t =
       match path with
       | On_statements rest ->
-        let%map stms' =
-          Stm_list_path.insert_stm rest stm prog.stms
-        in { prog with stms = stms' }
+        Or_error.(
+          f rest prog.stms
+          >>| (fun stms' -> { prog with stms = stms' })
+        )
+    ;;
+
+    let insert_stm
+        (path : Mini_path.stm_hole Mini_path.function_path)
+        (stm : Mini.Statement.t)
+      : target -> target Or_error.t =
+      handle_stm path ~f:(fun rest -> Stm_list_path.insert_stm rest stm)
+    ;;
+
+    let transform_stm
+        (path : Mini_path.on_stm Mini_path.function_path)
+        ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t)
+      : target -> target Or_error.t =
+      handle_stm path ~f:(Stm_list_path.transform_stm ~f)
     ;;
   end
 
@@ -169,16 +194,30 @@ module Test = struct
       in Quickcheck.Generator.union prog_gens
     ;;
 
-    let insert_stm
-        (path : Mini_path.stm_hole Mini_path.program_path)
-        (stm : stm) (test : target) : target Or_error.t =
+    let handle_stm (type a)
+        (path : a Mini_path.program_path)
+        ~(f : a Mini_path.function_path -> Program.t -> Program.t Or_error.t)
+        (test : target) : target Or_error.t =
       let open Or_error.Let_syntax in
       match path with
       | On_program { index; rest } ->
         let programs = test.programs in
         let%map programs' = Alter_list.replace programs index
-            ~f:(fun x -> x |> Program.Path.insert_stm rest stm >>| Option.some)
+            ~f:(fun func -> func |> f rest >>| Option.some)
         in { test with programs = programs' }
+    ;;
+
+    let insert_stm
+        (path : Mini_path.stm_hole Mini_path.program_path)
+        (stm : stm) : target -> target Or_error.t =
+      handle_stm path ~f:(fun rest -> Program.Path.insert_stm rest stm)
+    ;;
+
+    let transform_stm
+        (path : Mini_path.on_stm Mini_path.program_path)
+        ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t)
+        : target -> target Or_error.t =
+      handle_stm path ~f:(Program.Path.transform_stm ~f)
     ;;
   end
 

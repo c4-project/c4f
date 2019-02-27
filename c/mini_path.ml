@@ -41,6 +41,23 @@ module Make_statement_list (M : S_statement)
         ~f:(fun x -> Or_error.(M.insert_stm rest stm x >>| Option.some))
   ;;
 
+  let transform_stm
+      (path : on_stm list_path)
+      ~(f: Mini.Statement.t -> Mini.Statement.t Or_error.t)
+      (dest : target list)
+    : target list Or_error.t =
+    match path with
+    | At { index; rest } ->
+      Alter_list.replace dest index
+        ~f:(fun x -> Or_error.(M.transform_stm rest ~f x >>| Option.some))
+    | Insert_at _ ->
+      Or_error.error_s
+        [%message "Can't use insert-at path to transform statements"
+          ~here:[%here]
+          ~path:(path : on_stm list_path)
+        ]
+  ;;
+
   let gen_insert_stm_on (index : int) (single_dest : target)
     : stm_hole list_path Quickcheck.Generator.t list =
     let insert_after =
@@ -79,13 +96,12 @@ module rec Statement
           ~target:(dest : Mini.Statement.t)]
   ;;
 
-  let insert_stm_in_if (rest : stm_hole if_path)
-      (stm : Mini.Statement.t)
+  let handle_in_if
       (dest : Mini.Statement.t)
+      ~(f : Mini.If_statement.t -> Mini.If_statement.t Or_error.t)
     : Mini.Statement.t Or_error.t =
-
     Mini.Statement.map dest
-      ~if_stm:(fun ifs -> Or_error.(ifs |> If_statement.insert_stm rest stm >>| Mini.Statement.if_stm))
+      ~if_stm:(fun ifs -> Or_error.(ifs |> f >>| Mini.Statement.if_stm))
       ~assign:(in_if_error dest)
       ~atomic_cmpxchg:(in_if_error dest)
       ~atomic_store:(in_if_error dest)
@@ -97,9 +113,19 @@ module rec Statement
     : Mini.Statement.t Or_error.t =
     match path with
     | In_if rest ->
-      insert_stm_in_if rest stm dest
+      handle_in_if ~f:(If_statement.insert_stm rest stm) dest
     | This ->
       Or_error.error_s [%message "Can't insert a statement onto a statement" [%here]]
+  ;;
+
+  let transform_stm (path : on_stm stm_path)
+      ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t)
+      (dest : Mini.Statement.t)
+    : Mini.Statement.t Or_error.t =
+    match path with
+    | In_if rest ->
+      handle_in_if ~f:(If_statement.transform_stm rest ~f) dest
+    | This -> f dest
   ;;
 
   let gen_if_stm_insert_stm
@@ -127,26 +153,36 @@ and If_statement
 
   module B = Mini.If_statement.Base_map (Or_error)
 
-  let insert_stm
-      (path : stm_hole if_path)
-      (stm  : Mini.Statement.t)
+  let handle_stm (type a)
+      (path : a if_path)
+      ~(f   : a list_path -> Mini.Statement.t list -> Mini.Statement.t list Or_error.t)
       (ifs  : Mini.If_statement.t)
     : Mini.If_statement.t Or_error.t =
     match path with
     | Block { branch; rest } ->
       let t_branch, f_branch =
-        ( (if branch
-           then Statement_list.insert_stm rest stm
-           else Or_error.return)
-        , (if branch
-           then Or_error.return
-           else Statement_list.insert_stm rest stm
-          )
+        ( (if branch then f rest else Or_error.return)
+        , (if branch then Or_error.return else f rest)
         )
       in
       B.bmap ifs ~cond:(Or_error.return) ~t_branch ~f_branch
     | Cond ->
-      Or_error.error_string "Not a statement insertion path"
+      Or_error.error_string "Not a statement path"
+  ;;
+
+  let insert_stm
+      (path : stm_hole if_path)
+      (stm  : Mini.Statement.t)
+    : Mini.If_statement.t ->
+    Mini.If_statement.t Or_error.t =
+    handle_stm path ~f:(fun rest -> Statement_list.insert_stm rest stm)
+  ;;
+
+  let transform_stm (path : on_stm if_path)
+      ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t)
+    : Mini.If_statement.t ->
+    Mini.If_statement.t Or_error.t =
+    handle_stm path ~f:(Statement_list.transform_stm ~f)
   ;;
 
   let gen_insert_stm_for_branch
@@ -187,15 +223,31 @@ module Function
       ~f:(fun path -> On_statements path)
   ;;
 
-  let insert_stm
-      (path : stm_hole function_path)
-      (stm : Mini.Statement.t) (func : target) : target Or_error.t =
-    let open Or_error.Let_syntax in
+  let handle_stm (type a)
+      (path : a function_path)
+      ~(f : a list_path -> Mini.Statement.t list -> Mini.Statement.t list Or_error.t)
+      (func : Mini.Function.t)
+    : Mini.Function.t Or_error.t =
     match path with
     | On_statements rest ->
-      let%map body_stms' =
-        Statement_list.insert_stm rest stm (Mini.Function.body_stms func)
-      in Mini.Function.with_body_stms func body_stms'
+      Or_error.(
+        f rest (Mini.Function.body_stms func)
+        >>| Mini.Function.with_body_stms func
+      )
+  ;;
+
+  let insert_stm
+      (path : stm_hole function_path)
+      (stm : Mini.Statement.t)
+    : target -> target Or_error.t =
+    handle_stm path ~f:(fun rest -> Statement_list.insert_stm rest stm)
+  ;;
+
+  let transform_stm
+      (path : on_stm function_path)
+      ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t)
+    : target -> target Or_error.t =
+    handle_stm path ~f:(Statement_list.transform_stm ~f)
   ;;
 end
 
@@ -214,9 +266,9 @@ module Program : S_program with type target := Mini.Program.t = struct
     in Quickcheck.Generator.union prog_gens
   ;;
 
-  let insert_stm
-      (path : stm_hole program_path)
-      (stm : Mini.Statement.t)
+  let handle_stm (type a)
+      (path : a program_path)
+      ~(f : a function_path -> Mini.Function.t -> Mini.Function.t Or_error.t)
       (prog : target) : target Or_error.t =
     let open Or_error.Let_syntax in
     match path with
@@ -224,8 +276,20 @@ module Program : S_program with type target := Mini.Program.t = struct
       let functions = Mini.Program.functions prog in
       let%map functions' = Alter_list.replace functions index
           ~f:(fun (name, func) ->
-              let%map func' = Function.insert_stm rest stm func in
-              Some (name, func'))
+              let%map func' = f rest func in Some (name, func')
+            )
       in Mini.Program.with_functions prog functions'
+
+  let insert_stm
+      (path : stm_hole program_path)
+      (stm : Mini.Statement.t)
+      : target -> target Or_error.t =
+    handle_stm path ~f:(fun rest -> Function.insert_stm rest stm)
+  ;;
+
+  let transform_stm (path : on_stm program_path)
+      ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t)
+      : target -> target Or_error.t =
+    handle_stm path ~f:(Function.transform_stm ~f)
   ;;
 end

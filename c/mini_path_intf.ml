@@ -63,7 +63,7 @@ type 'a program_path =
 
 (** {2 Signatures} *)
 
-(** General signature of paths *)
+(** General signature of paths. *)
 module type S_path = sig
   type 'a t
   type target
@@ -71,7 +71,15 @@ module type S_path = sig
   val insert_stm
     : stm_hole t -> Mini.Statement.t -> target -> target Or_error.t
   (** [insert_stm path stm dest] tries to insert [stm] into the part
-     of [dest] pointed to by [path]. *)
+      of [dest] pointed to by [path]. *)
+
+  val transform_stm
+    :  on_stm t
+    -> f:(Mini.Statement.t -> Mini.Statement.t Or_error.t)
+    -> target
+    -> target Or_error.t
+    (** [transform_stm path ~f dest] tries to modify the statement at [stm]
+        using [f]. *)
 end
 
 (** Signature of paths over statements and statement-like entities. *)
