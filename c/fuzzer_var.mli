@@ -165,17 +165,6 @@ module Map : sig
      exists at least one variable in [map] for which all predicates in
      [predicates] are true. *)
 
-  val random_satisfying_all
-    :  t
-    -> predicates:(Record.t -> bool) list
-    -> C_identifier.t Quickcheck.Generator.t
-  (** [random_satisfying_all map ~predicates] gets a random element
-     from [map] for which all predicates in [predicates] are true.
-
-      Its behaviour is undefined if no such variable exists; use
-     {!{exists_satisfying_all}exists_satisfying_all} to check
-     beforehand. *)
-
   (** {3 Actions} *)
 
   val register_global

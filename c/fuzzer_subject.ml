@@ -38,6 +38,8 @@ module Program = struct
   [@@deriving sexp]
   ;;
 
+  let empty () : t = { decls = []; stms = [] }
+
   module Stm_path : Mini_path.S_statement
     with type target = Mini.Statement.t With_source.t = struct
     type target = Mini.Statement.t With_source.t
@@ -145,6 +147,10 @@ module Test = struct
     { init     : Mini.Constant.t Mini.id_assoc
     ; programs : Program.t list
     } [@@deriving sexp]
+  ;;
+
+  let add_new_program (test : t) : t =
+    { test with programs = (Program.empty ()) :: test.programs }
   ;;
 
   module Path : Mini_path.S_program with type target := t = struct

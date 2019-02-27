@@ -44,8 +44,8 @@ module Make (E : Basic) : S
 
 (** {2 Test environments}
 
-    These (lazily-evaluated) values contain a simple pre-populated
-    test environment that can be used for expects tests, as well as
+    These (lazily-evaluated) values contain simple pre-populated
+    test environments that can be used for expects tests, as well as
     Quickcheck tests that depend on a well-formed environment. *)
 
 val test_env : Mini_type.t C_identifier.Map.t Lazy.t
@@ -54,3 +54,14 @@ val test_env : Mini_type.t C_identifier.Map.t Lazy.t
 
 val test_env_mod : (module S) Lazy.t
 (** {{!test_env}test_env} packaged as a first-class module. *)
+
+val test_env_atomic_ptrs_only : Mini_type.t C_identifier.Map.t Lazy.t
+(** [test_env_atomic_ptrs_only] is an environment that contains only
+   variables of type 'atomic_int*'. *)
+
+val test_env_atomic_ptrs_only_mod : (module S) Lazy.t
+(** {{!test_env_atomic_ptrs_only}test_env_atomic_ptrs_only} packaged
+   as a first-class module. *)
+
+val empty_env_mod : (module S) Lazy.t
+(** A first-class module containing a completely empty environment. *)

@@ -62,15 +62,3 @@ module List = struct
       (Weighted_list.sample available rng)
   ;;
 end
-
-module Make_state_only (B : Basic_state_only) : S with type Random_state.t = B.Random_state.t = struct
-  module Random_state = struct
-    type t = B.Random_state.t
-    let gen _subject = B.Random_state.gen ()
-  end
-
-  let available _subject = B.available ()
-
-  let run subject random =
-    Fuzzer_state.Monad.(B.run () random >>| fun () -> subject)
-end

@@ -276,22 +276,34 @@ module Expression = struct
     module Obs = Quickcheck.Observer
     module Snk = Quickcheck.Shrinker
 
-    module L = Lvalue.Quickcheck_int_values (E)
-    module A = Atomic_load.Quickcheck_atomic_ints (E)
-
     (** Generates the terminal integer expressions. *)
     let base_generators : t Gen.t list =
-      [ Gen.map ~f:constant Constant.gen_int32_constant
-      ; Gen.map ~f:atomic_load A.gen
-      ; Gen.map ~f:lvalue L.gen
-      ]
+      (* Use thunks and let-modules here to prevent accidentally
+         evaluating a generator that can't possibly work---eg, an
+         atomic load when we don't have any atomic variables. *)
+      List.map ~f:Gen.of_fun
+        (List.filter_opt
+           [ Some (fun () -> Gen.map ~f:constant Constant.gen_int32_constant)
+           ; Option.some_if
+               (E.has_atomic_int_variables ())
+               (fun () ->
+                  let module A = Atomic_load.Quickcheck_atomic_ints (E) in
+                  Gen.map ~f:atomic_load A.gen)
+           ; Option.some_if
+               (E.has_int_variables ())
+               (fun () ->
+                  let module L = Lvalue.Quickcheck_int_values (E) in
+                  Gen.map ~f:lvalue L.gen)
+           ]
+        )
 
+(*
     let recursive_generators (_mu : t Gen.t) : t Gen.t list =
       [] (* No useful recursive expression types yet. *)
-    ;;
+    ;; *)
 
     let gen : t Gen.t =
-      Gen.recursive_union base_generators ~f:recursive_generators
+      Gen.union base_generators (* ~f:recursive_generators *)
     ;;
 
     let obs : t Obs.t =
@@ -311,9 +323,7 @@ module Expression = struct
     let shrinker : t Snk.t = Snk.empty ()
   end
 
-  let%test_unit
-    "Quickcheck_int_values: liveness" =
-    let (module E) = Lazy.force Env.test_env_mod in
+  let test_int_values_liveness_on_mod (module E : Env.S) : unit =
     let module Ty = Type_check (E) in
     let module Q = Quickcheck_int_values (E) in
     Quickcheck.test_can_generate Q.gen
@@ -324,6 +334,44 @@ module Expression = struct
                   (Or_error.return (normal Basic.int))
                )
         )
+  ;;
+
+  let test_int_values_distinctiveness_on_mod (module E : Env.S) : unit =
+    let module Ty = Type_check (E) in
+    let module Q = Quickcheck_int_values (E) in
+    Quickcheck.test_distinct_values ~trials:20 ~distinct_values:5 Q.gen
+      ~sexp_of:[%sexp_of: t]
+      ~compare:[%compare: t]
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: liveness" =
+    test_int_values_liveness_on_mod (Lazy.force Env.test_env_mod)
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: liveness (environment has only atomic_int*)" =
+    test_int_values_liveness_on_mod (Lazy.force Env.test_env_atomic_ptrs_only_mod)
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: liveness (environment is empty)" =
+    test_int_values_liveness_on_mod (Lazy.force Env.empty_env_mod)
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: distinctiveness" =
+    test_int_values_distinctiveness_on_mod (Lazy.force Env.test_env_mod)
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: distinctiveness (environment has only atomic_int*)" =
+    test_int_values_distinctiveness_on_mod (Lazy.force Env.test_env_atomic_ptrs_only_mod)
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: distinctiveness (environment is empty)" =
+    test_int_values_distinctiveness_on_mod (Lazy.force Env.empty_env_mod)
   ;;
 
   let%test_unit

@@ -36,7 +36,7 @@ module type Basic = sig
 
   val process : ast -> t Or_error.t
 
-  val fuzz : seed:int option -> t -> t Or_error.t
+  val fuzz : seed:int option -> o:Lib.Output.t -> t -> t Or_error.t
 
   val cvars : t -> String.Set.t
   (** [cvars vast] should return a list of C identifiers
@@ -63,7 +63,7 @@ end
 type mode =
   | Print of [ `All | `Vars ]
   | Delitmus
-  | Fuzz of { seed : int option }
+  | Fuzz of { seed : int option; o : Lib.Output.t }
 ;;
 
 module Output = struct
@@ -99,10 +99,10 @@ module Make (B : Basic)
       { Output.cvars; post }
     ;;
 
-    let run_fuzz ~(seed : int option) (vast : B.t) (oc : Out_channel.t)
+    let run_fuzz ~(seed : int option) ~(o : Lib.Output.t) (vast : B.t) (oc : Out_channel.t)
       : Output.t Or_error.t =
       let open Or_error.Let_syntax in
-      let%map fz = B.fuzz ~seed vast in
+      let%map fz = B.fuzz ~seed ~o vast in
       Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp fz;
       let cvars = B.cvars vast in
       let post  = B.postcondition vast in
@@ -133,7 +133,7 @@ module Make (B : Basic)
       match aux with
       | Print output_mode -> run_print output_mode vast oc
       | Delitmus -> run_delitmus vast oc
-      | Fuzz { seed } -> run_fuzz ~seed vast oc
+      | Fuzz { seed; o } -> run_fuzz ~seed ~o vast oc
     ;;
   end)
 
@@ -149,8 +149,10 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
     let pp = Fmt.using Mini_reify.program Ast.Translation_unit.pp
     let process = Mini_convert.translation_unit
 
-    let fuzz ~(seed : int option) (_ : t) : t Or_error.t =
+    let fuzz ~(seed : int option) ~(o : Lib.Output.t) (_ : t)
+      : t Or_error.t =
       ignore seed;
+      ignore o;
       Or_error.error_string "Can't fuzz a normal C file"
     ;;
 
@@ -207,7 +209,7 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
 
     let delitmus = Delitmus.run
 
-    let fuzz : seed:int option -> t -> t Or_error.t = Fuzzer.run
+    let fuzz : seed:int option -> o:Lib.Output.t -> t -> t Or_error.t = Fuzzer.run
 
     let postcondition
       : Mini_litmus.Ast.Validated.t -> Mini_litmus.Ast.Post.t option =

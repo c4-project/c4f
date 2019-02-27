@@ -31,11 +31,15 @@ type t
 (** Opaque type of states. *)
 
 val init
-  :  Mini.Type.t C_identifier.Map.t
-  -> C_identifier.Set.t
+  :  ?o:Lib.Output.t
+  -> globals:Mini.Type.t C_identifier.Map.t
+  -> locals:C_identifier.Set.t
+  -> unit
   -> t
-(** [init globals locals] creates an initial state with the global
-   variable map [globals], and local variable set [locals]. *)
+(** [init ?o ~globals ~locals ()] creates an initial state with the
+   global variable map [globals], and local variable set [locals].  If
+   an output context [o] is provided, it can be used for logging
+   verbose/debug information during the fuzzing process.  *)
 
 val vars : t -> Fuzzer_var.Map.t
 (** [vars state] gets the state's variable map. *)
@@ -85,4 +89,8 @@ module Monad : sig
 
       This should be done after involving [var] in any atomic actions
       that modify it. *)
+
+   val vf : unit -> Base.Formatter.t t
+   (** [vf ()] is a stateful action that gets the verbose output
+      channel, if one exists. *)
 end

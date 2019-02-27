@@ -37,7 +37,9 @@ type rst =
 ;;
 
 module Int : Action.S with type Random_state.t = rst = struct
-  (** Lists the restrictions we put on destination variables. *)
+  let name = "store-int"
+
+  (** Lists the restrictions we put on source variables. *)
   let src_restrictions : (Var.Record.t -> bool) list Lazy.t =
     lazy []
   ;;
@@ -45,7 +47,8 @@ module Int : Action.S with type Random_state.t = rst = struct
   (** Lists the restrictions we put on destination variables. *)
   let dst_restrictions : (Var.Record.t -> bool) list Lazy.t =
     lazy
-      Var.Record.[ was_generated
+      Var.Record.[ is_atomic
+                 ; was_generated
                    (* This is to make sure that we don't change the
                       observable semantics of the program over its
                       original variables. *)
@@ -57,6 +60,8 @@ module Int : Action.S with type Random_state.t = rst = struct
 
   module Random_state = struct
     type t = rst
+
+    let of_tuple (store, path) = { store; path }
 
     module G = Quickcheck.Generator
 
@@ -72,22 +77,54 @@ module Int : Action.S with type Random_state.t = rst = struct
       Var.Map.env_module_satisfying_all ~predicates vars
     ;;
 
-    let gen_store (vars : Var.Map.t) : Mini.Atomic_store.t G.t =
+    let error_if_empty (env : string) (module M : Mini_env.S) : unit Or_error.t =
+      if Mini.Identifier.Map.is_empty M.env
+      then Or_error.error_s
+          [%message "Internal error: Environment was empty."
+              ~here:[%here]
+              ~env
+          ]
+      else Result.ok_unit
+    ;;
+
+    let gen_store
+        (vf : Base.Formatter.t)
+        (vars : Var.Map.t)
+      : Mini.Atomic_store.t G.t Or_error.t =
       let (module Src) = src_env vars in
       let (module Dst) = dst_env vars in
+      Fmt.pf vf "%s: got environments@." name;
+      let open Or_error.Let_syntax in
+      let%bind () = error_if_empty "src" (module Src) in
+      let%map  () = error_if_empty "dst" (module Dst) in
+      Fmt.pf vf "%s: environments are non-empty@." name;
+      Fmt.pf vf "%s: src environment: @[%a@]@." name Sexp.pp_hum [%sexp (Src.env : Mini_type.t Utils.C_identifier.Map.t)];
+      Fmt.pf vf "%s: dst environment: @[%a@]@." name Sexp.pp_hum [%sexp (Dst.env : Mini_type.t Utils.C_identifier.Map.t)];
       let module Gen = Mini.Atomic_store.Quickcheck_ints (Src) (Dst) in
+      Fmt.pf vf "%s: built generator module@." name;
       Gen.gen
     ;;
 
-    let gen' (subject : Subject.Test.t) (vars : Var.Map.t) : t G.t =
-      let open G.Let_syntax in
-      let%bind store = gen_store vars in
-      let%map  path = Subject.Test.Path.gen_insert_stm subject in
-      { store; path }
+    let gen'
+        (vf : Base.Formatter.t)
+        (subject : Subject.Test.t)
+        (vars : Var.Map.t)
+      : t G.t Or_error.t =
+      let open Or_error.Let_syntax in
+      Fmt.pf vf "%s: building generators...@." name;
+      let%map store = gen_store vf vars in
+      Fmt.pf vf "%s: built store generator@." name;
+      let path = Subject.Test.Path.gen_insert_stm subject in
+      Fmt.pf vf "%s: built path generator@." name;
+      G.map ~f:of_tuple (G.tuple2 store path)
     ;;
 
     let gen (subject : Subject.Test.t) : t G.t State.Monad.t =
-      State.Monad.with_vars (gen' subject)
+      let open State.Monad.Let_syntax in
+      let%bind vf = State.Monad.vf () in
+      State.Monad.with_vars_m
+        (Fn.compose State.Monad.Monadic.return
+           (gen' vf subject))
     ;;
   end
 
@@ -124,7 +161,10 @@ module Int : Action.S with type Random_state.t = rst = struct
     : Subject.Test.t State.Monad.t =
     let open State.Monad.Let_syntax in
     let store_stm = Mini.Statement.atomic_store store in
+    let%bind vf = State.Monad.vf () in
+    Fmt.pf vf "%s: Erasing known value of store destination@." name;
     let%bind () = erase_value_of_store_dst store in
+    Fmt.pf vf "%s: Adding dependency to store source@." name;
     let%bind () = add_dependencies_to_store_src store in
     State.Monad.Monadic.return (
       Subject.Test.Path.insert_stm path store_stm subject
@@ -234,7 +274,7 @@ module Int_test = struct
     let open Lazy.Let_syntax in
     let%map globals_alist = globals in
     let globals = Mini.Identifier.Map.of_alist_exn globals_alist in
-    Fuzzer_state.init globals Mini.Identifier.Set.empty
+    Fuzzer_state.init ~globals ~locals:Mini.Identifier.Set.empty ()
 
   let run_test () : (Fuzzer_state.t * Fuzzer_subject.Test.t) Or_error.t =
     Fuzzer_state.Monad.(

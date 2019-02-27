@@ -167,6 +167,15 @@ and If_statement
   ;;
 end
 
+let%test_unit "insertions into an empty list are always at index 0" =
+  Quickcheck.test (Statement_list.gen_insert_stm [])
+    ~sexp_of:[%sexp_of: stm_hole list_path]
+    ~f:(function
+        | Insert_at 0 -> ()
+        | _ -> failwith "Unexpected path"
+      )
+;;
+
 module Function
   : S_function with type target := Mini.Function.t = struct
   type target = Mini.Function.t

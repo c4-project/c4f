@@ -27,27 +27,30 @@ open Utils
 
 type t =
   { vars : Fuzzer_var.Map.t
+  ; o    : Lib.Output.t option
   }
 [@@deriving fields]
 ;;
 
 let init
-    (globals : Mini.Type.t C_identifier.Map.t)
-    (locals  : C_identifier.Set.t)
+    ?(o       : Lib.Output.t option)
+    ~(globals : Mini.Type.t C_identifier.Map.t)
+    ~(locals  : C_identifier.Set.t)
+    ()
   : t =
   let vars =
     Fuzzer_var.Map.make_existing_var_map globals locals in
-  { vars }
+  { vars; o }
 ;;
 
 let try_map_vars
     (s : t)
     ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t Or_error.t) : t Or_error.t =
-  Or_error.(s.vars |> f >>| fun vars -> { vars })
+  Or_error.(s.vars |> f >>| fun vars -> { s with vars = vars })
 ;;
 
 let map_vars (s : t) ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t) : t =
-  { vars = f s.vars }
+  { s with vars = f s.vars }
 ;;
 
 let register_global
@@ -104,5 +107,12 @@ module Monad = struct
 
   let erase_var_value (var : C_identifier.t) : unit t =
     Monadic.modify (erase_var_value ~var)
+  ;;
+
+  let vf () : Base.Formatter.t t =
+    let open Let_syntax in
+    match%map peek (fun x -> x.o) with
+    | Some o -> o.vf
+    | None -> My_format.null_formatter ()
   ;;
 end

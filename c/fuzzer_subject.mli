@@ -81,6 +81,10 @@ module Test : sig
     } [@@deriving sexp]
   (** Transparent type of fuzzable litmus tests. *)
 
+  val add_new_program : t -> t
+  (** [add_new_program test] appends a new, empty program onto
+     [test]'s programs list, returning the resulting test. *)
+
   module Path : Mini_path.S_program with type target := t
   (** Allows production and consumption of random paths over fuzzable
      tests in the same way as normal mini programs. *)

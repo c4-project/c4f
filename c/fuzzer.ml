@@ -119,8 +119,33 @@ let%test_unit "random_item is always a valid item" =
 let always : Subject.Test.t -> bool State.Monad.t =
   Fn.const (State.Monad.return true)
 
+(** Fuzzer action that generates a new, empty program. *)
+module Make_program : Action.S = struct
+  let name = "make-program"
+
+  module Random_state = struct
+    type t = unit
+    let gen (_subject : Subject.Test.t)
+      : t Quickcheck.Generator.t State.Monad.t =
+      State.Monad.return (Quickcheck.Generator.return ())
+    ;;
+  end
+
+  let available = always
+
+  let run
+      (subject : Subject.Test.t)
+      (() : Random_state.t)
+    : Subject.Test.t State.Monad.t =
+    State.Monad.return
+      (Subject.Test.add_new_program subject)
+  ;;
+end
+
 (** Fuzzer action that generates a new global variable. *)
 module Make_global : Action.S = struct
+  let name = "make-global"
+
   module Random_state = struct
     type t =
       { is_atomic : bool
@@ -158,7 +183,6 @@ module Make_global : Action.S = struct
   ;;
 end
 
-
 let generate_random_state
   (type rs)
   (module Act : Action.S with type Random_state.t = rs)
@@ -166,8 +190,13 @@ let generate_random_state
   (rng : Splittable_random.State.t)
   : rs State.Monad.t =
   let open State.Monad.Let_syntax in
+  let%bind vf = State.Monad.vf () in
+  Fmt.pf vf "fuzz: getting random state generator for %s@." Act.name;
   let%map gen = Act.Random_state.gen subject in
-  Quickcheck.Generator.generate gen rng ~size:10
+  Fmt.pf vf "fuzz: generating random state for %s...@." Act.name;
+  let g = Quickcheck.Generator.generate gen rng ~size:10 in
+  Fmt.pf vf "fuzz: done generating random state.@.";
+  g
 ;;
 
 let run_action
@@ -183,10 +212,30 @@ let run_action
 let table : Action.List.t Lazy.t =
   lazy
     (Weighted_list.from_alist_exn
-       [ (module Make_global      : Action.S), 1
-       ; (module Fuzzer_store.Int : Action.S), 2
+       [ (module Make_global      : Action.S), 5
+       ; (module Fuzzer_store.Int : Action.S), 10
+       ; (module Make_program     : Action.S), 1
        ]
     )
+;;
+
+let mutate_subject_step
+    (table : Action.List.t)
+    (subject : Subject.Test.t)
+    (rng : Splittable_random.State.t)
+  : Subject.Test.t State.Monad.t =
+  let open State.Monad.Let_syntax in
+  let%bind vf = State.Monad.vf () in
+  Fmt.pf vf "fuzz: picking action...@.";
+  let%bind action =
+    Action.List.pick table subject rng
+  in
+  Fmt.pf vf "fuzz: done; now running action...@.";
+  run_action action subject rng
+  >>= State.Monad.tee_m
+    ~f:(fun _ ->
+        Fmt.pf vf "fuzz: action done.@.";
+        State.Monad.return ())
 ;;
 
 let mutate_subject
@@ -202,12 +251,9 @@ let mutate_subject
         ~f:(fun mu (remaining, subject') ->
             if Int.(remaining = 0)
             then return (remaining, subject')
-            else
-              let%bind action =
-                Action.List.pick table subject' rng
-              in
-              let%bind subject'' = run_action action subject' rng in
-              mu (remaining - 1, subject'')
+            else (
+              let%bind subject'' = mutate_subject_step table subject' rng in
+              mu (remaining - 1, subject''))
           )
   in subject'
 ;;
@@ -264,7 +310,8 @@ let existing_globals
 ;;
 
 let make_initial_state
-    (test : Mini_litmus.Ast.Validated.t)
+  (o : Lib.Output.t)
+  (test : Mini_litmus.Ast.Validated.t)
   : State.t Or_error.t =
   let open Or_error.Let_syntax in
   let all_cvars = Mini_litmus.cvars test in
@@ -274,14 +321,16 @@ let make_initial_state
   let locals =
     C_identifier.Set.diff all_cvars global_cvars
   in
-  State.init globals locals
+  State.init ~o ~globals ~locals ()
 ;;
 
-let run ~(seed : int option)
+let run
+    ~(seed : int option)
+    ~(o : Lib.Output.t)
     (test : Mini_litmus.Ast.Validated.t)
   : Mini_litmus.Ast.Validated.t Or_error.t =
   Or_error.(
-    make_initial_state test
+    make_initial_state o test
     >>= State.Monad.run (run_with_state test (make_rng seed))
   )
 ;;

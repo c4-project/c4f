@@ -28,13 +28,13 @@ open Lib
 let run
     (seed : int option)
     (args : Args.Standard_with_files.t)
-    (_o    : Output.t)
+    (o    : Output.t)
     (_cfg  : Config.M.t)
   : unit Or_error.t =
   let open Or_error.Let_syntax in
   let%map _ =
     C.Filters.Litmus.run_from_string_paths
-      (C.Filters.Fuzz { seed })
+      (C.Filters.Fuzz { seed; o })
       ~infile:(Args.Standard_with_files.infile_raw args)
       ~outfile:(Args.Standard_with_files.outfile_raw args)
   in ()

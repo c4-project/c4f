@@ -27,6 +27,9 @@ open Core_kernel
 module type Generic = sig
   type subject
 
+  val name : string
+  (** The name of the action. *)
+
   (** Random state on which this action depends. *)
   module Random_state : sig
     type t
@@ -56,7 +59,3 @@ module type Generic = sig
 end
 
 module type S = Generic with type subject := Fuzzer_subject.Test.t
-
-(** Input interface for fuzzer actions that only depend on, and
-    modify, the fuzzer state. *)
-module type Basic_state_only = Generic with type subject := unit

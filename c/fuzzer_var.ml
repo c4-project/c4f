@@ -208,14 +208,6 @@ module Map = struct
     not (List.is_empty (satisfying_all vars ~predicates))
   ;;
 
-  let random_satisfying_all
-      (vars : t) ~(predicates : (Record.t -> bool) list)
-    : C_identifier.t Quickcheck.Generator.t =
-    vars
-    |> satisfying_all ~predicates
-    |> Quickcheck.Generator.of_list
-  ;;
-
   let gen_fresh_var (map : t) : C_identifier.t Quickcheck.Generator.t =
     Quickcheck.Generator.filter C_identifier.gen
       ~f:(Fn.non (C_identifier.Map.mem map))

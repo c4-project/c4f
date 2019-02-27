@@ -28,13 +28,13 @@ open Core_kernel
 
 (** {2 Phantom types for path GADTs} *)
 
-type on_expr
+type on_expr [@@deriving sexp_of]
 (** Marks a path as reaching an existing expression. *)
 
-type on_stm
+type on_stm [@@deriving sexp_of]
 (** Marks a path as reaching an existing statement. *)
 
-type stm_hole
+type stm_hole [@@deriving sexp_of]
 (** Marks a path as reaching a space where we can insert a statement. *)
 
 (** {2 Path GADTs} *)
@@ -42,12 +42,15 @@ type stm_hole
 type 'a stm_path =
   | In_if    : 'a if_path -> 'a stm_path
   | This     : on_stm stm_path
+[@@deriving sexp_of]
 and 'a list_path =
   | Insert_at : int -> 'a list_path
   | At        : { index : int; rest : 'a stm_path } -> 'a list_path
+[@@deriving sexp_of]
 and 'a if_path =
   | Block : { branch : bool ; rest : 'a list_path } -> 'a if_path
   | Cond  : on_expr if_path
+[@@deriving sexp_of]
 ;;
 
 type 'a function_path =
