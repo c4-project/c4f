@@ -115,48 +115,77 @@ let%expect_test "make_id_path: folds in correct direction" =
   [%expect {| true |}]
 ;;
 
-let make id ~in_root ~out_root =
+(** [make_input_path in_root subdir mode] produces a sub-path of
+   [in_root] that denotes where act expects to find a particular type
+   of input.
+
+   - When [mode] is [`Separate], act expects the input to be separated
+   into subdirectories, and the resulting input path is
+   [in_root/subdir].
+   - When [mode] is [`Together], act expects the input to be in one
+   directory, namely [in_root], and the resulting input path is
+   [in_root]. *)
+let make_input_path
+    (in_root : Fpath.t) (subdir : string)
+    (mode : [< `Separate | `Together ])
+  : Fpath.t = match mode with
+  | `Together -> in_root
+  | `Separate -> Fpath.(in_root / subdir)
+;;
+
+let make id
+    ~(in_root : Fpath.t) ~(out_root : Fpath.t)
+    ~(input_mode : [< `Separate | `Together ]) =
   let id_path = make_id_path out_root id in
   Fpath.
-  { c_path    = in_root / "C"
-  ; litc_path = in_root / "Litmus"
+  { c_path    = make_input_path in_root "C" input_mode
+  ; litc_path = make_input_path in_root "Litmus" input_mode
   ; asm_path  = id_path / "asm"
   ; lita_path = id_path / "litmus"
   ; herd_path = id_path / "herd"
   }
 ;;
 
-let%expect_test "all_paths of make" =
-  let id = Id.of_string "foo.bar.baz" in
-  let ps = make id ~in_root:(Fpath.v "inputs") ~out_root:(Fpath.v "outputs") in
-  let all = all_paths ps in
-  let all_str = List.Assoc.map ~f:Fpath.segs all in
-  Format.printf "@[%a@]@."
-    Sexp.pp_hum
-    [%sexp (all_str : (string, string list) List.Assoc.t)];
-  [%expect {|
+let%test_module "all_paths of make" = (module struct
+  let run_test ~input_mode =
+    let id = Id.of_string "foo.bar.baz" in
+    let ps = make id ~in_root:(Fpath.v "inputs") ~out_root:(Fpath.v "outputs") ~input_mode in
+    let all = all_paths ps in
+    let all_str = List.Assoc.map ~f:Fpath.segs all in
+    Format.printf "@[%a@]@."
+      Sexp.pp_hum
+      [%sexp (all_str : (string, string list) List.Assoc.t)]
+  ;;
+
+  let%expect_test "all_paths of make (separate mode)" =
+    run_test ~input_mode:`Separate;
+    [%expect {|
     ((c_path (inputs C)) (litc_path (inputs Litmus))
      (asm_path (outputs foo bar baz asm))
      (lita_path (outputs foo bar baz litmus))
      (herd_path (outputs foo bar baz herd))) |}]
-;;
+  ;;
 
-let make_and_mkdirs id ~in_root ~out_root =
-  let paths = make id ~in_root ~out_root in
+  let%expect_test "all_paths of make (together mode)" =
+    run_test ~input_mode:`Together;
+    [%expect {|
+    ((c_path (inputs)) (litc_path (inputs)) (asm_path (outputs foo bar baz asm))
+     (lita_path (outputs foo bar baz litmus))
+     (herd_path (outputs foo bar baz herd))) |}]
+  ;;
+end)
+
+let make_and_mkdirs id ~in_root ~out_root ~input_mode =
+  let paths = make id ~in_root ~out_root ~input_mode in
   Or_error.(mkdirs paths >>= (fun _ -> return paths))
 ;;
 
-let pp f ps =
-  Format.pp_open_vbox f 0;
-
+let pp : t Fmt.t =
   let p f (k, v) =
     My_format.pp_kv f k String.pp (My_filename.concat_list v)
   in
-  Format.pp_print_list
-    ~pp_sep:Format.pp_print_cut
-    p
-    f
-    (List.Assoc.map ~f:Fpath.segs (all_paths ps));
-
-  Format.pp_close_box f ()
+  Fmt.(
+    using (fun ps -> (List.Assoc.map ~f:Fpath.segs (all_paths ps)))
+    (vbox (list ~sep:cut p))
+  )
 ;;

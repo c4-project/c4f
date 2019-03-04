@@ -310,25 +310,59 @@ end
 module Make_machine (B : Basic_machine) : Machine = struct
   include B
 
-  let run_compiler (cfg : Tester_config.t) cspec =
-    let module Cfg = Tester_config in
+  let pathset_input_mode (cfg : Tester_config.t)
+      : [< `Separate | `Together ] =
+    match Tester_config.c_litmus_mode cfg with
+    | Memalloy ->
+      (* Memalloy-style outputs have their C in /C and their
+         litmus in /Litmus. *)
+      `Separate
+    | Delitmusify ->
+      (* When delitmusifying ourselves, we just assume that the given
+         input path is precisely where the C files are, and output the
+         delitmusified results into the same directory. *)
+      `Together
+  ;;
+
+  let make_pathset
+    (cfg : Tester_config.t)
+    (spec : Compiler.Spec.With_id.t)
+    : Pathset.t Or_error.t =
     let open Or_error.Let_syntax in
-    let id = Compiler.Spec.With_id.id cspec in
-    let c_fnames = Cfg.fnames cfg in
-    let in_root  = Cfg.in_root cfg in
-    let out_root = Cfg.out_root cfg in
-    let%bind (module C) = B.Resolve_compiler.from_spec cspec in
-    let%bind (module R) = B.asm_runner_from_spec cspec in
-    let%bind ps = Pathset.make_and_mkdirs id ~in_root ~out_root in
-    let module TC = Make_compiler (struct
+    let id = Compiler.Spec.With_id.id spec in
+    let in_root  = Tester_config.in_root cfg in
+    let out_root = Tester_config.out_root cfg in
+    let input_mode = pathset_input_mode cfg in
+    let%map ps =
+      Pathset.make_and_mkdirs id ~in_root ~out_root ~input_mode
+    in
+    Fmt.pf o.vf "%a@." Pathset.pp ps;
+    ps
+  ;;
+
+  let make_compiler
+      (cfg : Tester_config.t)
+      (spec : Compiler.Spec.With_id.t)
+    : (module Compiler) Or_error.t =
+    let open Or_error.Let_syntax in
+    let%bind (module C) = B.Resolve_compiler.from_spec spec in
+    let%bind (module R) = B.asm_runner_from_spec spec in
+    let%map ps = make_pathset cfg spec in
+    (module Make_compiler (struct
         include (B : Basic)
         module C = C
         module R = R
         let ps = ps
-        let cspec = cspec
-      end) in
-    Pathset.pp o.vf ps;
-    Format.pp_print_newline o.vf ();
+        let cspec = spec
+      end) : Compiler)
+  ;;
+
+  let run_compiler
+      (cfg : Tester_config.t) (spec : Compiler.Spec.With_id.t) =
+    let open Or_error.Let_syntax in
+    let id = Compiler.Spec.With_id.id spec in
+    let c_fnames = Tester_config.fnames cfg in
+    let%bind (module TC) = make_compiler cfg spec in
     let%map result = TC.run c_fnames in
     (id, result)
   ;;
@@ -344,20 +378,25 @@ module Make_machine (B : Basic_machine) : Machine = struct
     |> Compiler.Spec.Set.of_list
   ;;
 
+  let run_compilers
+      (cfg : Tester_config.t) (specs : Compiler.Spec.Set.t)
+      : (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
+    specs
+    |> Compiler.Spec.Set.map ~f:(run_compiler cfg)
+    |> Or_error.combine_errors
+  ;;
+
+  let make_analysis (raw : (Id.t, Analysis.Compiler.t) List.Assoc.t T.t)
+    : Analysis.Machine.t =
+    Analysis.Machine.make
+      ~compilers:(T.value raw) ?time_taken:(T.time_taken raw) ()
+  ;;
+
   let run (cfg : Tester_config.t) : Analysis.Machine.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind specs = filter_specs (Tester_config.compilers cfg) in
     let%map compilers_and_time =
-      T.bracket_join (fun () ->
-          specs
-          |> Compiler.Spec.Set.map
-            ~f:(run_compiler cfg)
-          |> Or_error.combine_errors
-        )
-    in
-    Analysis.Machine.make
-      ~compilers:(T.value compilers_and_time)
-      ?time_taken:(T.time_taken compilers_and_time)
-      ()
+      T.bracket_join (fun () -> run_compilers cfg specs)
+    in make_analysis compilers_and_time
   ;;
 end

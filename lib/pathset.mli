@@ -44,22 +44,26 @@ end
    mentioned in a [Pathset.t]. *)
 val mkdirs : t -> unit Or_error.t
 
-(** [make] constructs a [Pathset.t] from a compiler ID and
-   various other paths. *)
 val make
   :  Id.t
   -> in_root:Fpath.t
   -> out_root:Fpath.t
+  -> input_mode:[< `Separate | `Together ]
   -> t
-;;
+(** [make id ~in_root ~out_root ~input_mode] constructs a pathset for
+   compiler ID [id], with all input relative to [in_root], output
+   relative to [out_root], and the input either considered to be in
+   separate, specifically-named subdirectories under [in_root]
+   ([input_mode] is [`Separate]), or directly under in_root
+   ([input_mode] is [`Together]). *)
 
-(** [make_and_mkdirs] constructs a [Pathset.t] per [make], then
-    tries to make the directories through [mkdirs]. *)
 val make_and_mkdirs
   :  Id.t
   -> in_root:Fpath.t
   -> out_root:Fpath.t
+  -> input_mode:[< `Separate | `Together ]
   -> t Or_error.t
-;;
+(** [make_and_mkdirs] behaves as {{!make}make}, then tries to make the
+   directories through [mkdirs]. *)
 
 include Pretty_printer.S with type t := t
