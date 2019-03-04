@@ -30,8 +30,10 @@ open Core_kernel
     where ['a] is the set type under comparison. *)
 type 'a partial_order =
   [ `Equal
-  | `Subset   of 'a (** RHS has the following extra values. *)
-  | `Superset of 'a (** LHS has the following extra values. *)
+  | `Subset   of 'a
+  (** RHS has the following extra values. *)
+  | `Superset of 'a
+  (** LHS has the following extra values. *)
   | `NoOrder
   ] [@@deriving sexp]
 ;;
@@ -40,14 +42,16 @@ type 'a partial_order =
    [Set.S]. *)
 module type Extensions = sig
   type t
+  (** The type of sets that we're extending. *)
+
+  val disjoint : t -> t -> bool
   (** [disjoint x y] returns [true] provided that [x] and [y] have no
       elements in common. *)
-  val disjoint : t -> t -> bool
 
+  val partial_compare : t -> t -> t partial_order
   (** [partial_compare x y] compares two sets [x] and [y] by analysing
       their symmetric difference. *)
-  val partial_compare : t -> t -> t partial_order
 end
 
+module Extend (S : Set.S) : Extensions with type t := S.t
 (** [Extend] builds set extensions for module [S]. *)
-module Extend : functor (S : Set.S) -> Extensions with type t := S.t;;

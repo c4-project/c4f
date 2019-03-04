@@ -33,11 +33,8 @@ module type Basic = sig
 
   (** Abstract type of constant syntax *)
   module Constant : sig
-    type t [@@deriving compare, eq, sexp]
+    type t [@@deriving compare, eq, sexp, quickcheck]
     include Pretty_printer.S with type t := t
-
-    include Quickcheck.S with type t := t
-    (** Constants must come with a quickcheck generator. *)
   end
 
   (** Abstract type of statements. *)
@@ -81,7 +78,7 @@ module type S_id = sig
   type t =
     | Local of int * C_identifier.t
     | Global of C_identifier.t
-  [@@deriving compare, sexp]
+  [@@deriving compare, sexp, quickcheck]
   ;;
 
   val try_parse : string -> t Or_error.t
@@ -91,10 +88,6 @@ module type S_id = sig
   (** Litmus identifiers can be converted to and from strings.
       Note that conversion from strings can fail if the C identifier
       parts don't obey C identifier validation. *)
-
-  include Quickcheckable.S with type t := t
-  (** We can generate (valid) Litmus identifiers at random for
-     quickchecks. *)
 
   include Comparable.S with type t := t
   (** Litmus identifiers suit various comparable scenarios, such as
@@ -127,10 +120,7 @@ module type S = sig
   module Pred_elt : sig
     type t =
       | Eq of Id.t * Lang.Constant.t
-    [@@deriving sexp, compare, eq]
-
-    include Quickcheck.S with type t := t
-    (** Predicate elements come with a quickcheck generator. *)
+    [@@deriving sexp, compare, eq, quickcheck]
   end
 
   module Pred : sig
@@ -139,7 +129,7 @@ module type S = sig
       | Or of t * t
       | And of t * t
       | Elt of Pred_elt.t
-    [@@deriving sexp, compare, eq]
+    [@@deriving sexp, compare, eq, quickcheck]
     (** Type of Litmus predicates. *)
 
     val debracket : t -> t
@@ -154,9 +144,6 @@ module type S = sig
     val to_blang : t -> Pred_elt.t Blang.t
     (** [of_blang pred] converts a [pred] to Blang expression over
        {{!Pred_elt.t}Pred_elt}. *)
-
-    include Quickcheck.S with type t := t
-    (** Predicates come with a quickcheck generator. *)
   end
 
   module Post : sig
@@ -243,6 +230,7 @@ end
 module type Basic_convert = sig
   module From : S
   (** The Litmus language from which we're converting. *)
+
   module To : S
   (** The Litmus language to which we're converting. *)
 

@@ -286,8 +286,8 @@ module M = struct
   module CP = Part_helpers (C)
   module MP = Part_helpers (Machine.Spec)
 
+  type 't hook = 't -> 't option Or_error.t
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
-  type 't hook = ('t -> 't option Or_error.t)
 
   let machines_from_raw
       (hook : Machine.Spec.With_id.t hook)
@@ -300,7 +300,7 @@ module M = struct
           ~f:(part_chain_fst MP.part_enabled (MP.part_hook hook))
           ms
       in
-      (** TODO(@MattWindsor91): test machines *)
+      (* TODO(@MattWindsor91): test machines *)
       let%map enabled' = Machine.Spec.Set.of_list enabled in
       (enabled', disabled)
     )

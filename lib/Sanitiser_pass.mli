@@ -90,10 +90,11 @@ module Selector : sig
 
   (** [t] is the base element type of the language. *)
   type t =
-    [ elt        (** Select an individual item *)
-    | Category.t (** Select an entire category *)
-    | `Default   (** Select whichever set is the default for the given
-                     act command *)
+    [ elt
+    | Category.t
+    | `Default
+      (** Select whichever set is the default for the given act
+         command. *)
     ]
   [@@deriving sexp]
   ;;
@@ -102,7 +103,7 @@ module Selector : sig
   (** This module implements the usual interface for looking up
       predicate documentation. *)
 
+  val eval_b : t Blang.t -> default:Set.t -> Set.t
   (** [eval_b stm ~default] evaluates a [Blang] statement [stm],
       mapping `Default` to the set [default]. *)
-  val eval_b : t Blang.t -> default:Set.t -> Set.t
 end

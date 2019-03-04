@@ -26,9 +26,14 @@ open Core_kernel
 open Utils
 
 module type Basic = sig
-  type ast (** Raw AST *)
-  type t   (** Validated AST *)
-  type del (** Delitmusified AST *)
+  type ast
+  (** Raw AST *)
+
+  type t
+  (** Validated AST *)
+
+  type del
+  (** Delitmusified AST *)
 
   module Frontend : Lib.Frontend.S with type ast := ast
 

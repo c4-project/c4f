@@ -31,10 +31,11 @@
 (** [S] describes a parent type [t], a component type [c], and a
     function [component] for getting the [c] of a [t]. *)
 module type S = sig
-  (** [t] is the main type. *)
   type t
-  (** [c] is the type of inner components. *)
+  (** The main type. *)
+
   type c
+  (** Type of inner components. *)
 
   (** [component x] gets the [c]-typed component of [x]. *)
   val component : t -> c
@@ -44,21 +45,20 @@ end
    type [c], and a function [component_opt] for getting the [c] of a
    [t], if one exists. *)
 module type S_partial = sig
-  (** [t] is the main type. *)
   type t
-  (** [c] is the type of inner components. *)
+  (** The main type. *)
+
   type c
+  (** Type of inner components. *)
 
   (** [component_opt x] tries to get the [c]-typed component of [x]. *)
   val component_opt : t -> c option
 end
 
+module Make_partial (I : S)
+  : S_partial with type t = I.t and type c = I.c
 (** [Make_partial] converts an [S] into an [S_partial] that always
     returns [Some (component x)] for [component_opt x]. *)
-module Make_partial
-  : functor (I : S)
-    -> S_partial with type t = I.t and type c = I.c
-;;
 
 (** {2 Helpers for building inheritance modules} *)
 

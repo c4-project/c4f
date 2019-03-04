@@ -27,10 +27,17 @@ open Utils
 
 (** Generalised signature of job runners. *)
 module type Gen_runner = sig
-  type 'fmt inp  (** Type of input, parametrised over format enum *)
-  type aux       (** Type of auxiliary output *)
-  type lcfg      (** Type of Litmus-specific config *)
-  type ecfg      (** Type of explainer-specific config *)
+  type 'fmt inp
+  (** Type of input, parametrised over format enum. *)
+
+  type aux
+  (** Type of auxiliary output. *)
+
+  type lcfg
+  (** Type of Litmus-specific config. *)
+
+  type ecfg
+  (** Type of explainer-specific config. *)
 
   module Litmusify : Filter.S with type aux_i = lcfg inp
                                and type aux_o = aux

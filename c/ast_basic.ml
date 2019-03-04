@@ -273,8 +273,11 @@ module Array = struct
   ;;
 
   module type S = sig
-    type arr (** Type of arrays *)
-    type idx (** Type of indices *)
+    type arr
+    (** Type of arrays. *)
+
+    type idx
+    (** Type of indices. *)
 
     type nonrec t = (arr, idx) t
 

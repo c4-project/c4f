@@ -52,42 +52,43 @@ module Table : sig
   type elt = t
   type t
 
-  (** [empty] is the empty table. *)
   val empty : t
+  (** [empty] is the empty table. *)
 
+  val of_sets : (Set.t, Sort.t) List.Assoc.t -> t
   (** [of_sets sets] expands a symbol-set-to-sort associative list
       into a [t]. *)
-  val of_sets : (Set.t, Sort.t) List.Assoc.t -> t
 
+  val add : t -> elt -> Sort.t -> t
   (** [add tbl sym sort] registers [sym] as a symbol with sort
       [sort] in [tbl], returning a new table. *)
-  val add : t -> elt -> Sort.t -> t
 
+  val remove : t -> elt -> Sort.t -> t
   (** [remove tbl sym sort] de-registers [sym] as a symbol with sort
       [sort] in [tbl], returning a new table.
 
       If [sym] also maps to another sort, those mappings remain. *)
-  val remove : t -> elt -> Sort.t -> t
 
+  val set_of_sorts : t -> Sort.Set.t -> Set.t
   (** [set_of_sorts tbl sorts] returns all symbols in [tbl] with a
       sort in [sorts], as a symbol set. *)
-  val set_of_sorts : t -> Sort.Set.t -> Set.t
 
+  val set_of_sort : t -> Sort.t -> Set.t
   (** [set_of_sort tbl sort] returns all symbols in [tbl] with sort
       [sort], as a symbol set. *)
-  val set_of_sort : t -> Sort.t -> Set.t
 
+  val set : t -> Set.t
   (** [set tbl] returns all symbols in [tbl]
       as a symbol set. *)
-  val set : t -> Set.t
 
+  val mem : t -> ?sort:Sort.t -> elt -> bool
   (** [mem tbl ?sort symbol] checks whether [symbol] is
       in [tbl].  If [sort] is present, we additionally
       require that [symbol] has sort [sort] in [tbl]. *)
-  val mem : t -> ?sort:Sort.t -> elt -> bool
 
-  (** Tables can be turned into [Tabulator] instances. *)
   include Tabulator.Tabular with type data := t
-  (** They can also, therefore, be pretty-printed as tables. *)
+  (** Tables can be turned into [Tabulator] instances. *)
+
   include Tabulator.Tabular_extensions with type data := t
+  (** They can also, therefore, be pretty-printed as tables. *)
 end

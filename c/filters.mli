@@ -31,6 +31,7 @@
 open Core_kernel
 open Utils
 
+(** The operation to use in the filter. *)
 type mode =
   | Print of [ `All | `Vars ]
   (** Pretty-print all, or part, of the result (useful for debugging). *)
@@ -39,7 +40,6 @@ type mode =
   | Fuzz of { seed : int option; o : Lib.Output.t }
   (** If the input is a C/Litmus file, fuzz it and return a mutated version. *)
 ;;
-(** The operation to use in the filter. *)
 
 (** Abstract data type of auxiliary output from the C filters. *)
 module Output : sig

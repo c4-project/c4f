@@ -28,7 +28,8 @@ open Stdio
 (** [Basic] is an interface to be implemented by anything using
     [Make]. *)
 module type Basic = sig
-  type t (** The type to load. *)
+  type t
+  (** The type to load. *)
 
   val load_from_string : string -> t Or_error.t
   (** [load_from_string s] loads a [t] directly from a string [s]. *)
@@ -56,8 +57,11 @@ end
 (** Signature of modules that explain how to post-process the result of
     a loadable. *)
 module type Basic_chain = sig
-  type src (** Type of the original loadable *)
-  type dst (** Type of the new loadable *)
+  type src
+  (** Type of the original loadable. *)
+
+  type dst
+  (** Type of the new loadable. *)
 
   val f : src -> dst Or_error.t
   (** [f src] is a potentially-failing transformation from [src] to a

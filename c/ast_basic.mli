@@ -234,8 +234,11 @@ module Array : sig
   val pp : 'a Fmt.t -> 'i Fmt.t -> ('a, 'i) t Fmt.t
 
   module type S = sig
-    type arr (** Type of arrays *)
-    type idx (** Type of indices *)
+    type arr
+    (** Type of arrays. *)
+
+    type idx
+    (** Type of indices. *)
 
     type nonrec t = (arr, idx) t [@@deriving sexp]
 

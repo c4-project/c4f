@@ -44,12 +44,12 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Pretty-printing for x86
+(** Pretty-printing for x86.
 
 This module is organised along dialect boundaries: first, we give an
-   interface module [Printer] that exposes the most useful pretty-printers
-   for the x86 AST; then, we give an implementation for each of the
-   dialects we support.
+   interface module [Printer] that exposes the most useful
+   pretty-printers for the x86 AST; then, we give an implementation
+   for each of the dialects we support.
 
 Note that changing the pretty-printer from one dialect to another does
    *NOT* result in valid assembly output in that dialect!  The AST
@@ -59,47 +59,50 @@ Note that changing the pretty-printer from one dialect to another does
 open Ast
 
 module type Printer = sig
-  val pp_reg : Format.formatter -> Reg.t -> unit
-  val pp_indirect : Format.formatter -> Indirect.t -> unit
+  val pp_reg : Reg.t Fmt.t
+  val pp_indirect : Indirect.t Fmt.t
   val pp_immediate : Format.formatter -> Disp.t -> unit
 
-  (** [pp_comment ~pp f k] prints a line comment whose body is
-      given by invoking [pp] on [k]. *)
   val pp_comment
     :  pp:(Format.formatter -> 'a -> unit)
     -> Format.formatter
     -> 'a
     -> unit
+  (** [pp_comment ~pp f k] prints a line comment whose body is
+      given by invoking [pp] on [k]. *)
 
-  val pp_location : Format.formatter -> Location.t -> unit
+  val pp_location : Location.t Fmt.t
 
-  val pp_bop : Format.formatter -> Bop.t -> unit
-  val pp_operand : Format.formatter -> Operand.t -> unit
+  val pp_bop : Bop.t Fmt.t
 
-  val pp_prefix : Format.formatter -> prefix -> unit
+  val pp_operand : Operand.t Fmt.t
 
+  val pp_prefix : prefix Fmt.t
+
+  val pp_opcode : Opcode.t Fmt.t
   (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
-  val pp_opcode : Format.formatter -> Opcode.t -> unit
 
+  val pp_oplist : Operand.t list Fmt.t
   (** [pp_oplist f os] pretty-prints operand list [os] on formatter
      [f]. *)
-  val pp_oplist : Format.formatter -> Operand.t list -> unit
 
-  val pp_instruction : Format.formatter -> Instruction.t -> unit
+  val pp_instruction : Instruction.t Fmt.t
 
-  val pp_statement : Format.formatter -> Statement.t -> unit
+  val pp_statement : Statement.t Fmt.t
 
-  val pp : Format.formatter -> t -> unit
+  val pp : t Fmt.t
   (** [pp f ast] pretty-prints [ast] on formatter [f].
       It ignores any dialect information. *)
 end
 
-(** [Att] provides pretty-printing for AT&T-syntax x86. *)
 module Att : Printer
-(** [Intel] provides pretty-printing for Intel-syntax x86. *)
+(** [Att] provides pretty-printing for AT&T-syntax x86. *)
+
 module Intel : Printer
-(** [Herd7] provides pretty-printing for Herd-syntax x86. *)
+(** [Intel] provides pretty-printing for Intel-syntax x86. *)
+
 module Herd7 : Printer
+(** [Herd7] provides pretty-printing for Herd-syntax x86. *)
 
 val pp_ast : Format.formatter -> t -> unit
 

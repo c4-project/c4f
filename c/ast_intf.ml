@@ -54,8 +54,11 @@ open Ast_basic
 
 (** Signature of general declaration nodes. *)
 module type S_g_decl = sig
-  type qual (** Type of qualifiers *)
-  type decl (** Type of declarators *)
+  type qual
+  (** Type of qualifiers. *)
+
+  type decl
+  (** Type of declarators. *)
 
   type t =
     { qualifiers : qual list
@@ -68,8 +71,11 @@ end
 
 (** Signature of general composite (enum, struct, union) specifiers. *)
 module type S_composite_spec = sig
-  type kind (** Type of kind of composite spec (eg. 'enum') *)
-  type decl (** Type of internal declarations *)
+  type kind
+  (** Type of kind of composite spec (eg. 'enum'). *)
+
+  type decl
+  (** Type of internal declarations. *)
 
   type t =
     | Literal of
@@ -87,9 +93,14 @@ end
 
 (** Signature of direct declarators. *)
 module type S_direct_declarator = sig
-  type dec  (** Type of declarators *)
-  type par  (** Type of parameters *)
-  type expr (** Type of expressions *)
+  type dec
+  (** Type of declarators. *)
+
+  type par
+  (** Type of parameters. *)
+
+  type expr
+  (** Type of expressions. *)
 
   type t =
     | Id of Identifier.t
@@ -104,7 +115,8 @@ end
 
 (** Signature of declarators. *)
 module type S_declarator = sig
-  type ddec (** Type of direct declarators *)
+  type ddec
+  (** Type of direct declarators. *)
 
   type t =
     { pointer : Pointer.t option
@@ -117,9 +129,14 @@ end
 
 (** Signature of direct abstract declarators. *)
 module type S_direct_abs_declarator = sig
-  type dec  (** Type of abstract declarators *)
-  type par  (** Type of parameters *)
-  type expr (** Type of expressions *)
+  type dec
+  (** Type of abstract declarators. *)
+
+  type par
+  (** Type of parameters. *)
+
+  type expr
+  (** Type of expressions. *)
 
   type t =
     | Bracket of dec
@@ -132,7 +149,8 @@ end
 
 (** Signature of abstract declarators. *)
 module type S_abs_declarator = sig
-  type ddec (** Type of direct abstract declarators. *)
+  type ddec
+  (** Type of direct abstract declarators. *)
 
   type t =
     | Pointer of Pointer.t
@@ -144,8 +162,11 @@ end
 
 (** Signature of struct declarators. *)
 module type S_struct_declarator = sig
-  type dec  (** Type of declarations *)
-  type expr (** Type of expressions *)
+  type dec
+  (** Type of declarations. *)
+
+  type expr
+  (** Type of expressions. *)
 
   type t =
     | Regular of dec
@@ -160,7 +181,8 @@ end
 
 (** Signature of expression nodes. *)
 module type S_expr = sig
-  module Ty : Ast_node  (** Type of type names. *)
+  module Ty : Ast_node
+  (** Type of type names. *)
 
   type t =
     | Prefix      of Operators.Pre.t * t
@@ -189,7 +211,8 @@ end
 
 (** Signature of labels *)
 module type S_label = sig
-  type expr (** Type of expressions used in case labels *)
+  type expr
+  (** Type of expressions used in case labels. *)
 
   type t =
     | Normal of Identifier.t
@@ -202,8 +225,11 @@ end
 
 (** Signature of compound statements *)
 module type S_compound_stm = sig
-  type decl (** Type of declarations *)
-  type stm  (** Type of statements *)
+  type decl
+  (** Type of declarations. *)
+
+  type stm
+  (** Type of statements. *)
 
   module Elt : Ast_node with type t = [`Stm of stm | `Decl of decl]
 
@@ -216,9 +242,14 @@ end
 
 (** Signature of statements *)
 module type S_stm = sig
-  type com  (** Type of compound statements *)
-  type expr (** Type of expressions *)
-  type lbl  (** Type of labels *)
+  type com
+  (** Type of compound statements. *)
+
+  type expr
+  (** Type of expressions. *)
+
+  type lbl
+  (** Type of labels. *)
 
   type t =
     | Label of lbl * t
@@ -249,8 +280,11 @@ end
 
 (** Signature of type specifiers *)
 module type S_type_spec = sig
-  type su (** Type of struct-or-union specifiers *)
-  type en (** Type of enum specifiers *)
+  type su
+  (** Type of struct-or-union specifiers. *)
+
+  type en
+  (** Type of enum specifiers. *)
 
   type t =
     [ Prim_type.t
@@ -265,7 +299,8 @@ end
 
 (** Signature of parameter type lists *)
 module type S_param_type_list = sig
-  type pdecl (** Type of parameter declarations *)
+  type pdecl
+  (** Type of parameter declarations. *)
 
   type t =
     { params : pdecl list

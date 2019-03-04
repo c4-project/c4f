@@ -51,7 +51,7 @@ type t =
 ;;
 
 let create ~config ~arch =
-  (** TODO(@MattWindsor91): validate config *)
+  (* TODO(@MattWindsor91): validate config *)
   Or_error.return (make ~config ~arch)
 ;;
 

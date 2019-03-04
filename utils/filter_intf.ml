@@ -128,8 +128,11 @@ end
 
 (** Basic signature of inputs needed to build a chain. *)
 module type Basic_chain = sig
-  module First  : S (** The first filter. *)
-  module Second : S (** The second filter. *)
+  module First  : S
+  (** The first filter. *)
+
+  module Second : S
+  (** The second filter. *)
 
   type aux_i (** Combined auxiliary input. *)
 end
@@ -169,8 +172,12 @@ end
 (** Signature of inputs needed to build a conditional chain with
     the first filter being conditional. *)
 module type Basic_chain_conditional_first = sig
-  module First : S (** The first filter. *)
-  module Second : S (** The second filter. *)
+  module First : S
+  (** The first filter. *)
+
+  module Second : S
+  (** The second filter. *)
+
   include Basic_chain_conditional
     with module First := First
      and module Second := Second
@@ -180,7 +187,9 @@ end
 (** Signature of inputs needed to build a conditional chain with
     the second filter being conditional. *)
 module type Basic_chain_conditional_second = sig
-  module First : S (** The first filter. *)
+  module First : S
+  (** The first filter. *)
+
   include Basic_chain_conditional
     with module First := First
      and type aux_i_single := First.aux_i
@@ -188,10 +197,14 @@ end
 
 (** Signature of inputs needed to adapt a filter. *)
 module type Basic_adapt = sig
-  module Original : S (** The original filter. *)
+  module Original : S
+  (** The original filter. *)
 
-  type aux_i (** The new input type. *)
-  type aux_o (** The new output type. *)
+  type aux_i
+  (** The new input type. *)
+
+  type aux_o
+  (** The new output type. *)
 
   val adapt_i : aux_i -> Original.aux_i Or_error.t
   (** [adapt_i aux] tries to adapt the new input type to the old one. *)
