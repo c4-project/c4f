@@ -57,11 +57,14 @@ module Basic = struct
   ;;
 end
 
-type t =
-  | Normal of Basic.t
-  | Pointer_to of Basic.t
-[@@deriving sexp, variants, eq, compare]
-;;
+module M = struct
+  type t =
+    | Normal of Basic.t
+    | Pointer_to of Basic.t
+  [@@deriving sexp, variants, eq, compare, quickcheck]
+  ;;
+end
+include M
 
 let of_basic (ty : Basic.t) ~(is_pointer : bool) : t =
   (if is_pointer then pointer_to else normal) ty
@@ -99,38 +102,8 @@ let to_non_atomic : t -> t Or_error.t = function
   | Pointer_to k -> Or_error.(k |> Basic.to_non_atomic >>| pointer_to)
 ;;
 
-module Quickcheck_main : Quickcheckable.S with type t := t = struct
-  module G = Core_kernel.Quickcheck.Generator
-  module O = Core_kernel.Quickcheck.Observer
-  module S = Core_kernel.Quickcheck.Shrinker
-
-  (** Converts the type variant to its anonymous quickcheck form. *)
-  let anonymise = function
-    | Normal     b -> `A b
-    | Pointer_to b -> `B b
-  ;;
-
-  (** Converts the type variant from its anonymous quickcheck form. *)
-  let deanonymise = function
-    | `A b -> Normal b
-    | `B b -> Pointer_to b
-  ;;
-
-  let gen      : t G.t =
-    G.map (G.variant2 Basic.gen Basic.gen) ~f:deanonymise
-  let obs      : t O.t =
-    O.unmap (O.variant2 Basic.obs Basic.obs) ~f:anonymise
-  let shrinker : t S.t =
-    S.map (S.variant2 Basic.shrinker Basic.shrinker)
-      ~f:deanonymise ~f_inverse:anonymise
-  ;;
-end
-include Quickcheck_main
-
 let%test_unit "basic_type_is compatibility with basic_type" =
-    Quickcheck.test gen
-      ~sexp_of:[%sexp_of: t]
-      ~shrinker
+    Base_quickcheck.Test.run_exn (module M)
       ~f:([%test_pred: t] ~here:[[%here]]
             (fun t -> basic_type_is t ~basic:(basic_type t))
          )

@@ -36,8 +36,11 @@
 open Core_kernel
 open Utils
 
-type t [@@deriving sexp, eq]
+type t [@@deriving sexp, eq, quickcheck]
 (** Opaque type of lvalues. *)
+
+(** Note that the default quickcheck instance generates random lvalues
+   without constraint. *)
 
 (** {3 Constructors} *)
 
@@ -86,21 +89,25 @@ include Mini_intf.S_type_checkable with type t := t
 (** {3 Generating random lvalues} *)
 
 module Quickcheck_generic
-    (Id : Quickcheckable.S with type t := C_identifier.t)
-  : Quickcheckable.S with type t := t
+    (Id : Quickcheck.S with type t := C_identifier.t)
+: sig
+  type nonrec t = t [@@deriving sexp_of]
+  include Quickcheck.S with type t := t
+end
 (** Generates random lvalues, parametrised on a given identifier
     generator. *)
 
-include Quickcheckable.S with type t := t
-(** Generates random lvalues without constraint. *)
-
-module Quickcheck_on_env (E : Mini_env.S)
-  : Quickcheckable.S with type t := t
+module Quickcheck_on_env (E : Mini_env.S) : sig
+  type nonrec t = t [@@deriving sexp_of]
+  include Quickcheck.S with type t := t
+end
 (** Generates random lvalues, constrained over the variables
     in the given environment. *)
 
-module Quickcheck_int_values (E : Mini_env.S)
-  : Quickcheckable.S with type t := t
+module Quickcheck_int_values (E : Mini_env.S) : sig
+  type nonrec t = t [@@deriving sexp_of]
+  include Quickcheck.S with type t := t
+end
 (** Generates random lvalues, constrained over the variables in
     the given environment; each lvalue has a non-atomic-integer
     value type. *)

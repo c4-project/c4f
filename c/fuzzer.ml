@@ -70,9 +70,9 @@ let%test_unit "random_index is always in bounds" =
   let rng = Random.State.make_self_init ~allow_in_tests:true () in
   let srng = Splittable_random.State.create rng in
   Core_kernel.Quickcheck.test
-    ~shrinker:(List.shrinker Int.shrinker)
+    ~shrinker:[%quickcheck.shrinker: int list]
     ~sexp_of:[%sexp_of: int list]
-    (List.gen Int.gen)
+    [%quickcheck.generator: int list]
     ~f:(
       [%test_pred: int list] ~here:[[%here]]
         (fun xs ->
@@ -102,9 +102,9 @@ let%test_unit "random_item is always a valid item" =
   let rng = Random.State.make_self_init ~allow_in_tests:true () in
   let srng = Splittable_random.State.create rng in
   Core_kernel.Quickcheck.test
-    ~shrinker:(List.shrinker Int.shrinker)
+    ~shrinker:[%quickcheck.shrinker: int list]
     ~sexp_of:[%sexp_of: int list]
-    (List.gen Int.gen)
+    [%quickcheck.generator: int list]
     ~f:(
       [%test_pred: int list] ~here:[[%here]]
         (fun xs ->
@@ -187,14 +187,14 @@ let generate_random_state
   (type rs)
   (module Act : Action.S with type Random_state.t = rs)
   (subject : Subject.Test.t)
-  (rng : Splittable_random.State.t)
+  (random : Splittable_random.State.t)
   : rs State.Monad.t =
   let open State.Monad.Let_syntax in
   let%bind vf = State.Monad.vf () in
   Fmt.pf vf "fuzz: getting random state generator for %s@." Act.name;
   let%map gen = Act.Random_state.gen subject in
   Fmt.pf vf "fuzz: generating random state for %s...@." Act.name;
-  let g = Quickcheck.Generator.generate gen rng ~size:10 in
+  let g = Quickcheck.Generator.generate gen ~random ~size:10 in
   Fmt.pf vf "fuzz: done generating random state.@.";
   g
 ;;

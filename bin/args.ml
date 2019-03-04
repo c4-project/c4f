@@ -84,10 +84,10 @@ module Standard_with_files = struct
   let get =
     let open Command.Let_syntax in
     [%map_open
-      let infile = anon (maybe ("FILE" %: file))
+      let infile = anon (maybe ("FILE" %: Filename.arg_type))
       and outfile =
         flag "output"
-          (optional file)
+          (optional Filename.arg_type)
           ~doc: "FILE the output file (default: stdout)"
       and rest = Standard.get
       in { rest; infile; outfile }

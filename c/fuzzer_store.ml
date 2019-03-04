@@ -102,7 +102,7 @@ module Int : Action.S with type Random_state.t = rst = struct
       Fmt.pf vf "%s: dst environment: @[%a@]@." name Sexp.pp_hum [%sexp (Dst.env : Mini_type.t Utils.C_identifier.Map.t)];
       let module Gen = Mini.Atomic_store.Quickcheck_ints (Src) (Dst) in
       Fmt.pf vf "%s: built generator module@." name;
-      Gen.gen
+      [%quickcheck.generator: Gen.t]
     ;;
 
     let gen'

@@ -71,7 +71,7 @@ module Primitives = struct
     include M_sexp
     include Comparable.Make (M_sexp)
 
-    module Quickcheck = struct
+    module Q : Quickcheck.S with type t := t = struct
       module G = Quickcheck.Generator
       module O = Quickcheck.Observer
       module S = Quickcheck.Shrinker
@@ -86,34 +86,39 @@ module Primitives = struct
         | `B str          -> Global str
       ;;
 
-      let gen : t G.t =
+      let quickcheck_generator : t G.t =
         G.map ~f:deanonymise
-          (G.variant2
-             (G.tuple2 G.small_non_negative_int C_identifier.gen)
-             (C_identifier.gen)
-          )
+          [%quickcheck.generator:
+            [ `A of [%custom G.small_non_negative_int] * C_identifier.t
+            | `B of C_identifier.t
+            ]
+          ]
       ;;
 
-      let obs : t O.t =
+      let quickcheck_observer : t O.t =
         O.unmap ~f:anonymise
-          (O.variant2
-             (O.tuple2 Int.obs C_identifier.obs)
-             C_identifier.obs
-          )
+          [%quickcheck.observer:
+            [ `A of int * C_identifier.t
+            | `B of C_identifier.t
+            ]
+          ]
       ;;
 
-      let shrinker : t S.t =
+      let quickcheck_shrinker : t S.t =
         S.map ~f:deanonymise ~f_inverse:anonymise
-          (S.variant2
-             (S.tuple2 Int.shrinker C_identifier.shrinker)
-             C_identifier.shrinker
-          )
+          [%quickcheck.shrinker:
+            [ `A of int * C_identifier.t
+            | `B of C_identifier.t
+            ]
+          ]
       ;;
     end
-    include Quickcheck
+    include Q
 
     let%test_unit "to_string->of_string is identity" =
-      Core_kernel.Quickcheck.test ~shrinker ~sexp_of:[%sexp_of: t] gen
+      Core_kernel.Quickcheck.test
+        ~shrinker:[%quickcheck.shrinker: t] ~sexp_of:[%sexp_of: t]
+        [%quickcheck.generator: t]
         ~f:(fun ident ->
             [%test_eq: t] ~here:[[%here]] ident (of_string (to_string ident))
           )
@@ -125,13 +130,12 @@ module Primitives = struct
 
     let%test_unit "to_memalloy_id_inner produces valid identifiers" =
       Core_kernel.Quickcheck.test
-        ~sexp_of:[%sexp_of: (int * C_identifier.t)]
-        ~shrinker:Core_kernel.Quickcheck.Shrinker.(
-            tuple2 Int.shrinker C_identifier.shrinker
-          )
-        Core_kernel.Quickcheck.Generator.(
-          tuple2 small_non_negative_int C_identifier.gen
-        )
+        ~sexp_of:[%sexp_of: int * C_identifier.t]
+        ~shrinker:[%quickcheck.shrinker: int * C_identifier.t]
+        [%quickcheck.generator:
+          [%custom Quickcheck.Generator.small_non_negative_int]
+          * C_identifier.t
+        ]
         ~f:(fun (t, id) ->
             [%test_pred: C_identifier.t Or_error.t]
               ~here:[[%here]]
@@ -147,8 +151,9 @@ module Primitives = struct
 
     let%test_unit "to_memalloy_id is identity on globals" =
       Core_kernel.Quickcheck.test
-        ~shrinker:C_identifier.shrinker
-        ~sexp_of:[%sexp_of: C_identifier.t] C_identifier.gen
+        ~shrinker:[%quickcheck.shrinker: C_identifier.t]
+        ~sexp_of:[%sexp_of: C_identifier.t]
+        [%quickcheck.generator: C_identifier.t]
         ~f:(fun ident ->
             [%test_eq: C_identifier.t] ~here:[[%here]]
               ident (to_memalloy_id (Global ident))
@@ -164,35 +169,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   module Pred_elt = struct
     type t =
       | Eq of Id.t * Lang.Constant.t
-    [@@deriving sexp, compare, eq]
-
-    module Quickcheck : Quickcheck.S with type t := t = struct
-      module G = Quickcheck.Generator
-      module O = Quickcheck.Observer
-      module S = Quickcheck.Shrinker
-
-      let anonymise = function
-        | Eq (x, y) -> (x, y)
-      ;;
-
-      let deanonymise (x, y) = Eq (x, y)
-
-      let gen : t G.t =
-        G.map ~f:deanonymise
-          (G.tuple2 Id.gen Lang.Constant.gen)
-      ;;
-
-      let obs : t O.t =
-        O.unmap ~f:anonymise
-          (O.tuple2 Id.obs Lang.Constant.obs)
-      ;;
-
-      let shrinker : t S.t =
-        S.map ~f:deanonymise ~f_inverse:anonymise
-          (S.tuple2 Id.shrinker Lang.Constant.shrinker)
-      ;;
-    end
-    include Quickcheck
+    [@@deriving sexp, compare, eq, quickcheck]
   end
 
   module Pred = struct
@@ -237,7 +214,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       | Elt x      -> Elt x
     ;;
 
-    module Quickcheck : Quickcheck.S with type t := t = struct
+    module Q : Quickcheck.S with type t := t = struct
       module G = Quickcheck.Generator
       module O = Quickcheck.Observer
       module S = Quickcheck.Shrinker
@@ -256,39 +233,50 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         | `D x        -> Elt x
       ;;
 
-      let gen : t G.t =
+      let quickcheck_generator : t G.t =
         G.recursive_union
-          [ G.map ~f:(fun x -> Elt x) Pred_elt.gen ]
+          [ G.map ~f:(fun x -> Elt x) [%quickcheck.generator: Pred_elt.t] ]
           ~f:(fun mu ->
-              [ G.map ~f:(fun x -> Bracket x) mu
-              ; G.map2 ~f:(fun x y -> And (x, y)) mu mu
-              ; G.map2 ~f:(fun x y -> Or (x, y)) mu mu
-              ])
+              [ G.map ~f:deanonymise
+                  [%quickcheck.generator:
+                    [ `A of [%custom mu]
+                    | `B of [%custom mu] * [%custom mu]
+                    | `C of [%custom mu] * [%custom mu]
+                    ]
+                  ]
+              ]
+            )
       ;;
 
-      let obs : t O.t =
+      let quickcheck_observer : t O.t =
         O.fixed_point
           (fun mu ->
              O.unmap ~f:anonymise
-               (O.variant4
-                  mu
-                  (O.tuple2 mu mu)
-                  (O.tuple2 mu mu)
-                  Pred_elt.obs))
+               [%quickcheck.observer:
+                 [ `A of [%custom mu]
+                 | `B of [%custom mu] * [%custom mu]
+                 | `C of [%custom mu] * [%custom mu]
+                 | `D of Pred_elt.t
+                 ]
+               ]
+          )
       ;;
 
-      let shrinker : t S.t =
+      let quickcheck_shrinker : t S.t =
         S.fixed_point
           (fun mu ->
              S.map ~f:deanonymise ~f_inverse:anonymise
-               (S.variant4
-                  mu
-                  (S.tuple2 mu mu)
-                  (S.tuple2 mu mu)
-                  Pred_elt.shrinker))
+               [%quickcheck.shrinker:
+                 [ `A of [%custom mu]
+                 | `B of [%custom mu] * [%custom mu]
+                 | `C of [%custom mu] * [%custom mu]
+                 | `D of Pred_elt.t
+                 ]
+               ]
+          )
       ;;
     end
-    include Quickcheck
+    include Q
   end
 
   module Post = struct

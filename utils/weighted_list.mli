@@ -34,7 +34,7 @@
 
 open Core_kernel
 
-type 'a t [@@deriving sexp_of]
+type 'a t [@@deriving sexp_of, quickcheck]
 (** Opaque type of weighted lists, parametrised on value. *)
 
 (** {2 Constructors} *)
@@ -95,19 +95,20 @@ module Cumulative : sig
   *)
 
   val sample
-    :  'a t -> Splittable_random.State.t -> 'a
-    (** [sample cl rng] samples the cumulative list [cl]
-        according to the random number generator [rng]. *)
+    :  'a t
+    -> random:Splittable_random.State.t
+    -> 'a
+    (** [sample cl ~random] samples the cumulative list [cl]
+        according to the random number generator [random]. *)
 end
 
-val sample : 'a t -> Splittable_random.State.t -> 'a Or_error.t
+val sample
+  :  'a t
+  -> random:Splittable_random.State.t
+  -> 'a Or_error.t
 (** [sample wl rng] converts [wl] to a cumulative list, then
     samples it according to the random number generator [rng].
     It fails if the conversion fails.
 
     If you sample from the same list often, consider converting it
     to a cumulative list once, then sampling that directly. *)
-
-(** {2 Quickcheck support} *)
-
-include Quickcheck.S1 with type 'a t := 'a t

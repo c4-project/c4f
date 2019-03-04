@@ -297,7 +297,7 @@ module Constant = struct
     | Char    of char
     | Float   of float
     | Integer of int
-  [@@deriving sexp, variants, eq, compare]
+  [@@deriving sexp, variants, eq, compare, quickcheck]
   ;;
 
   (* TODO(@MattWindsor91): escaping *)
@@ -311,41 +311,14 @@ module Constant = struct
     | Float d -> Fmt.float f d
     | Integer i -> Fmt.int f i
 
-  let anonymise = function
-    | Char c    -> `A c
-    | Float f   -> `B f
-    | Integer i -> `C i
-  ;;
-
-  let deanonymise = function
-    | `A c -> Char c
-    | `B f -> Float f
-    | `C i -> Integer i
-  ;;
-
   let gen_int32_as_int : int Quickcheck.Generator.t =
-    Quickcheck.Generator.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x)) Int32.gen
+    Quickcheck.Generator.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x))
+      [%quickcheck.generator: int32]
   ;;
 
   let gen_int32_constant : t Quickcheck.Generator.t =
     Quickcheck.Generator.map ~f:integer gen_int32_as_int
   ;;
-
-  let gen : t Quickcheck.Generator.t =
-    let module G = Quickcheck.Generator in
-    G.map ~f:deanonymise (G.variant3 Char.gen Float.gen Int.gen)
-  ;;
-
-  let obs : t Quickcheck.Observer.t =
-    let module O = Quickcheck.Observer in
-    O.unmap (O.variant3 Char.obs Float.obs Int.obs)
-      ~f:anonymise
-  ;;
-
-  let shrinker : t Quickcheck.Shrinker.t =
-    let module S = Quickcheck.Shrinker in
-    S.map ~f:deanonymise ~f_inverse:anonymise
-      (S.variant3 Char.shrinker Float.shrinker Int.shrinker)
 end
 
 module Identifier = struct

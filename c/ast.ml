@@ -827,7 +827,7 @@ end
 
 let%test_unit "debracket is idempotent" =
   let module P = Litmus.Pred in
-  Quickcheck.test ~shrinker:P.shrinker ~sexp_of:[%sexp_of: P.t] P.gen
+  Base_quickcheck.Test.run_exn (module P)
     ~f:(fun pred ->
         [%test_eq: P.t]
           (P.debracket pred) (P.debracket (P.debracket pred))
@@ -836,7 +836,7 @@ let%test_unit "debracket is idempotent" =
 
 let%test_unit "litmus to blang to litmus round-trip" =
   let module P = Litmus.Pred in
-  Quickcheck.test ~shrinker:P.shrinker ~sexp_of:[%sexp_of: P.t] P.gen
+  Base_quickcheck.Test.run_exn (module P)
     ~f:(fun pred ->
         let blang = P.to_blang pred in
         let pred' = Or_error.ok_exn (P.of_blang blang) in

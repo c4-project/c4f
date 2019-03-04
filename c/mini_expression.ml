@@ -102,29 +102,35 @@ module Atomic_load = struct
 
   module Quickcheck_generic
       (A : Quickcheckable.S with type t := Address.t)
-    : Quickcheckable.S with type t := t = struct
-    module Gen = Core_kernel.Quickcheck.Generator
-    module Obs = Core_kernel.Quickcheck.Observer
-    module Snk = Core_kernel.Quickcheck.Shrinker
+    : sig
+      type nonrec t = t [@@deriving sexp_of]
+      include Quickcheck.S with type t := t
+    end = struct
+    type nonrec t = t
+    let sexp_of_t = sexp_of_t
 
-    let gen : t Gen.t =
-      Gen.(map (tuple2 A.gen Mem_order.gen_load) ~f:of_tuple)
+    let quickcheck_generator : t Quickcheck.Generator.t =
+      Quickcheck.Generator.map ~f:of_tuple
+        [%quickcheck.generator : A.t * [%custom Mem_order.gen_load]]
     ;;
 
-    let obs : t Obs.t =
-      Obs.(unmap (tuple2 A.obs Mem_order.obs) ~f:to_tuple)
+    let quickcheck_observer : t Quickcheck.Observer.t =
+      Quickcheck.Observer.unmap ~f:to_tuple
+        [%quickcheck.observer: A.t * Mem_order.t]
     ;;
 
-    let shrinker : t Snk.t =
-      Snk.(map (tuple2 A.shrinker Mem_order.shrinker)
-             ~f:of_tuple ~f_inverse:to_tuple
-          )
+    let quickcheck_shrinker : t Quickcheck.Shrinker.t =
+      Quickcheck.Shrinker.map ~f:of_tuple ~f_inverse:to_tuple
+        [%quickcheck.shrinker: A.t * Mem_order.t]
     ;;
   end
-  include Quickcheck_generic (Address)
+  module Quickcheck_main = Quickcheck_generic (Address)
+  include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
-  module Quickcheck_atomic_ints (E : Env.S)
-    : Quickcheckable.S with type t := t =
+  module Quickcheck_atomic_ints (E : Env.S) : sig
+      type nonrec t = t [@@deriving sexp_of]
+      include Quickcheck.S with type t := t
+    end =
     Quickcheck_generic (Address.Quickcheck_atomic_int_pointers (E))
   ;;
 
@@ -140,7 +146,7 @@ module Atomic_load = struct
     "Quickcheck_atomic_ints: liveness" =
     let (module E) = Lazy.force Env.test_env_mod in
     let module Q = Quickcheck_atomic_ints (E) in
-    Quickcheck.test_can_generate Q.gen
+    Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
       ~sexp_of:[%sexp_of: t]
       ~f:(variable_in_env ~env:E.env)
   ;;
@@ -149,9 +155,7 @@ module Atomic_load = struct
     "Quickcheck_atomic_ints: generated underlying variables in environment" =
     let (module E) = Lazy.force Env.test_env_mod in
     let module Q = Quickcheck_atomic_ints (E) in
-    Quickcheck.test Q.gen
-      ~sexp_of:[%sexp_of: t]
-      ~shrinker:Q.shrinker
+    Base_quickcheck.Test.run_exn (module Q)
       ~f:([%test_pred: t] ~here:[[%here]] (variable_in_env ~env:E.env))
   ;;
 end
@@ -274,25 +278,29 @@ module Type_check (E : Env.S) = struct
   ;;
 end
 
-let obs : t Quickcheck.Observer.t =
+let quickcheck_observer : t Quickcheck.Observer.t =
   Quickcheck.Observer.(
     fixed_point
       (fun mu ->
          unmap ~f:anonymise
-           (variant5
-             Bool.obs
-             Constant.obs
-             Lvalue.obs
-             (tuple2 mu mu)
-             Atomic_load.obs
-           )
+           [%quickcheck.observer:
+             [ `A of Bool.t
+             | `B of Constant.t
+             | `C of Lvalue.t
+             | `D of [%custom mu] * [%custom mu]
+             | `E of Atomic_load.t
+             ]
+           ]
       )
   )
 ;;
 
-module Quickcheck_int_values (E : Env.S)
-  : Quickcheckable.S with type t = t = struct
+module Quickcheck_int_values (E : Env.S) : sig
+  type nonrec t = t [@@deriving sexp_of]
+  include Quickcheck.S with type t := t
+end = struct
   type nonrec t = t
+  let sexp_of_t = sexp_of_t
 
   module Gen = Quickcheck.Generator
   module Obs = Quickcheck.Observer
@@ -310,12 +318,12 @@ module Quickcheck_int_values (E : Env.S)
              (E.has_atomic_int_variables ())
              (fun () ->
                 let module A = Atomic_load.Quickcheck_atomic_ints (E) in
-                Gen.map ~f:atomic_load A.gen)
+                Gen.map ~f:atomic_load [%quickcheck.generator: A.t])
          ; Option.some_if
              (E.has_int_variables ())
              (fun () ->
                 let module L = Lvalue.Quickcheck_int_values (E) in
-                Gen.map ~f:lvalue L.gen)
+                Gen.map ~f:lvalue [%quickcheck.generator: L.t])
          ]
       )
 
@@ -324,20 +332,20 @@ module Quickcheck_int_values (E : Env.S)
       [] (* No useful recursive expression types yet. *)
     ;; *)
 
-  let gen : t Gen.t =
+  let quickcheck_generator : t Gen.t =
     Gen.union base_generators (* ~f:recursive_generators *)
   ;;
 
-  let obs : t Obs.t = obs
+  let quickcheck_observer : t Obs.t = quickcheck_observer
 
   (* TODO(@MattWindsor91): implement this *)
-  let shrinker : t Snk.t = Snk.empty ()
+  let quickcheck_shrinker : t Snk.t = Snk.empty ()
 end
 
 let test_int_values_liveness_on_mod (module E : Env.S) : unit =
   let module Ty = Type_check (E) in
   let module Q = Quickcheck_int_values (E) in
-  Quickcheck.test_can_generate Q.gen
+  Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
     ~sexp_of:[%sexp_of: t]
     ~f:(fun e ->
         Type.([%compare.equal: t Or_error.t]
@@ -350,7 +358,8 @@ let test_int_values_liveness_on_mod (module E : Env.S) : unit =
 let test_int_values_distinctiveness_on_mod (module E : Env.S) : unit =
   let module Ty = Type_check (E) in
   let module Q = Quickcheck_int_values (E) in
-  Quickcheck.test_distinct_values ~trials:20 ~distinct_values:5 Q.gen
+  Quickcheck.test_distinct_values ~trials:20 ~distinct_values:5
+    [%quickcheck.generator: Q.t]
     ~sexp_of:[%sexp_of: t]
     ~compare:[%compare: t]
 ;;
@@ -387,15 +396,13 @@ let%test_unit
 
 
 let test_all_expressions_have_type
-    (f : (module Env.S) -> (module Quickcheckable.S with type t = t))
+    (f : (module Env.S) -> (module Base_quickcheck.Test.S with type t = t))
     (ty : Type.t)
   : unit =
   let env = Lazy.force Env.test_env_mod in
   let (module Q) = f env in
   let module Ty = Type_check (val env) in
-  Quickcheck.test Q.gen
-    ~sexp_of:[%sexp_of: t]
-    ~shrinker:Q.shrinker
+  Base_quickcheck.Test.run_exn (module Q)
     ~f:(fun e ->
         [%test_result: Type.t Or_error.t]
           (Ty.type_of e)
@@ -405,13 +412,11 @@ let test_all_expressions_have_type
 ;;
 
 let test_all_expressions_in_env
-    (f : (module Env.S) -> (module Quickcheckable.S with type t = t))
+    (f : (module Env.S) -> (module Base_quickcheck.Test.S with type t = t))
   : unit =
   let (module E) = Lazy.force Env.test_env_mod in
   let (module Q) = f (module E) in
-  Quickcheck.test Q.gen
-    ~sexp_of:[%sexp_of: t]
-    ~shrinker:Q.shrinker
+  Base_quickcheck.Test.run_exn (module Q)
     ~f:([%test_pred: t]
           (On_identifiers.for_all ~f:(C_identifier.Map.mem E.env))
           ~here:[[%here]]
@@ -431,9 +436,12 @@ let%test_unit
     (fun e -> (module Quickcheck_int_values (val e)))
 ;;
 
-module Quickcheck_bool_values (E : Env.S)
-  : Quickcheckable.S with type t = t = struct
+module Quickcheck_bool_values (E : Env.S) : sig
+  type nonrec t = t [@@deriving sexp_of]
+  include Quickcheck.S with type t := t
+end = struct
   type nonrec t = t
+  let sexp_of_t = sexp_of_t
 
   module Gen = Quickcheck.Generator
   module Obs = Quickcheck.Observer
@@ -443,24 +451,25 @@ module Quickcheck_bool_values (E : Env.S)
 
   let gen_int_relational : t Gen.t =
     let open Gen.Let_syntax in
-    let%bind l = Iv.gen in
-    let%map  r = Iv.gen in
+    let%bind l = [%quickcheck.generator: Iv.t] in
+    let%map  r = [%quickcheck.generator: Iv.t] in
     (* Only relational operation available atm. *)
     Eq (l, r)
   ;;
 
-  let gen_const : t Gen.t = Gen.map ~f:bool_lit Bool.gen
+  let gen_const : t Gen.t =
+    Gen.map ~f:bool_lit [%quickcheck.generator: bool]
 
-  let gen : t Gen.t =
+  let quickcheck_generator : t Gen.t =
     Gen.union
       [ gen_int_relational
       ; gen_const
       ]
 
-  let obs : t Obs.t = obs
+  let quickcheck_observer : t Obs.t = quickcheck_observer
 
   (* TODO(@MattWindsor91): implement this *)
-  let shrinker : t Snk.t = Snk.empty ()
+  let quickcheck_shrinker : t Snk.t = Snk.empty ()
 end
 
 let%test_unit

@@ -25,7 +25,6 @@
 (** Quick and easy process running *)
 
 open Core
-open Core_extended
 
 include Runner_intf
 
@@ -82,7 +81,7 @@ module Local : S = Make (struct
     let process_status
         (prog : string)
         (args : string list)
-      : Process.Status.t -> unit Or_error.t = function
+      : Low_level_process.Status.t -> unit Or_error.t = function
       | `Timeout _ ->
         Or_error.error_string "timed out"
       | `Exited 0 -> Result.ok_unit
@@ -109,7 +108,7 @@ module Local : S = Make (struct
       let%bind out =
         Or_error.tag_arg
           (Or_error.try_with_join
-             (fun () -> return (Process.run ~prog ~args ~stdoutf ~stderrf ())))
+             (fun () -> return (Low_level_process.run ~prog ~args ~stdoutf ~stderrf ())))
           "Failed to run a child process:"
           (prog::args)
           [%sexp_of: string list]

@@ -59,16 +59,16 @@ module Make_quickcheck (E : S)
     x |> E.of_enum |> Option.value_exn
   ;;
 
-  let gen =
+  let quickcheck_generator =
     G.map ~f:of_enum_exn
       (Int.gen_uniform_incl E.min E.max)
   ;;
 
-  let obs =
+  let quickcheck_observer =
     O.enum (E.max - 1) ~f:(fun x -> E.to_enum x - E.min)
   ;;
 
-  let shrinker = S.empty ()
+  let quickcheck_shrinker = S.empty ()
 end
 
 module Make_from_enumerate (E : S_enumerate)

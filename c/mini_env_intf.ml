@@ -37,7 +37,11 @@ end
 module type S = sig
   include Basic
 
-  module Random_var : Quickcheckable.S with type t := C_identifier.t
+  module Random_var : sig
+    type t = C_identifier.t [@@deriving sexp_of]
+    include Quickcheck.S with type t := t
+  end
+
   (** [Random_var] allows generation of random variables from the
      variable environment. *)
 

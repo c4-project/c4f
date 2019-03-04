@@ -8,18 +8,18 @@ license: "MIT"
 homepage: "https://github.com/MattWindsor91/act"
 bug-reports: "https://github.com/MattWindsor91/act/issues"
 depends: [
-  "ocaml" {>= "4.06"}
+  "ocaml" {>= "4.07"}
   "dune" {build}
   "ppx_deriving"
   "ppx_expect"
   "ppx_jane"
   "ppx_sexp_message"
-  "core" {>= "v0.11" & < "v0.12"}
-  "core_extended" {>= "v0.11" & < "v0.12"}
+  "core" {>= "v0.12" & < "v0.13"}
   "fmt" {>= "0.8.5" & < "0.9"}
   "fpath" {>= "0.7.2" & < "0.8"}
   "menhir" {>= "20181113"}
-  "travesty" {>= "0.2.0" & < "0.3"}
+  "shell" {>= "v0.12" & < "v0.13"}
+  "travesty" {>= "0.3.0" & < "0.4"}
 ]
 build: ["dune" "build" "-p" name "-j" jobs]
 run-test: ["dune" "runtest" "-p" name "-j" jobs]

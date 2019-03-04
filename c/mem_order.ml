@@ -64,13 +64,16 @@ let is_rmw_compatible : t -> bool = function
 ;;
 
 let gen_load : t Quickcheck.Generator.t =
-  Quickcheck.Generator.filter gen ~f:is_load_compatible
+  Quickcheck.Generator.filter ~f:is_load_compatible
+    [%quickcheck.generator: t]
 ;;
 
 let gen_store : t Quickcheck.Generator.t =
-  Quickcheck.Generator.filter gen ~f:is_store_compatible
+  Quickcheck.Generator.filter ~f:is_store_compatible
+    [%quickcheck.generator: t]
 ;;
 
 let gen_rmw : t Quickcheck.Generator.t =
-  Quickcheck.Generator.filter gen ~f:is_rmw_compatible
+  Quickcheck.Generator.filter ~f:is_rmw_compatible
+    [%quickcheck.generator: t]
 ;;

@@ -108,15 +108,8 @@ let insert (xs : 'a list) (at : int) (value : 'a) : 'a list Or_error.t =
 let qc : f:((int * int list) -> unit) -> unit =
   Quickcheck.test
     ~sexp_of:[%sexp_of: (int * int list)]
-    ~shrinker:(
-      Quickcheck.Shrinker.tuple2
-        Int.shrinker
-        (List.shrinker Int.shrinker)
-    )
-    (Quickcheck.Generator.tuple2
-       Int.gen
-       (List.gen Int.gen)
-    )
+    ~shrinker:[%quickcheck.shrinker: (int * int list)]
+    [%quickcheck.generator: (int * int list)]
 ;;
 
 let%test_unit "insert at 0 = cons" =

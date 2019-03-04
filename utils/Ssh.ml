@@ -26,7 +26,6 @@
     over SSH. *)
 
 open Core
-open Core_extended
 
 include Ssh_intf
 
@@ -55,7 +54,7 @@ module Scp (Conf : S) = struct
     Or_error.(
       try_with
         (fun () ->
-           Core_extended.Shell.scp ?user ~recurse ~host local_str remote
+           Shell.scp ?user ~recurse ~host local_str remote
         )
     )
   ;;

@@ -95,33 +95,40 @@ let deanonymise = function
 ;;
 
 module Quickcheck_generic
-    (Lv : Quickcheckable.S with type t := Mini_lvalue.t)
-  : Quickcheckable.S with type t := t = struct
-  let gen : t Quickcheck.Generator.t =
+    (Lv : Quickcheckable.S with type t := Mini_lvalue.t) : sig
+  type nonrec t = t [@@deriving sexp_of]
+  include Quickcheck.S with type t := t
+end = struct
+  type nonrec t = t
+  let sexp_of_t = sexp_of_t
+
+  let quickcheck_generator : t Quickcheck.Generator.t =
     Quickcheck.Generator.(
-      recursive_union [ map Lv.gen ~f:lvalue ]
+      recursive_union [ map [%quickcheck.generator: Lv.t] ~f:lvalue ]
         ~f:(fun mu -> [ map mu ~f:ref ])
     )
   ;;
 
-  let obs : t Quickcheck.Observer.t =
+  let quickcheck_observer : t Quickcheck.Observer.t =
     Quickcheck.Observer.(
       fixed_point (fun mu ->
-          unmap (variant2 Lv.obs mu) ~f:anonymise
+          unmap ~f:anonymise
+            [%quickcheck.observer: [ `A of Lv.t | `B of [%custom mu] ]]
         )
     )
   ;;
 
-  let shrinker : t Quickcheck.Shrinker.t =
+  let quickcheck_shrinker : t Quickcheck.Shrinker.t =
     Quickcheck.Shrinker.(
       fixed_point (fun mu ->
-          map (variant2 Lv.shrinker mu)
-            ~f:deanonymise ~f_inverse:anonymise
+          map ~f:deanonymise ~f_inverse:anonymise
+            [%quickcheck.shrinker: [ `A of Lv.t | `B of [%custom mu] ]]
         )
     )
   ;;
 end
-include Quickcheck_generic (Mini_lvalue)
+module Quickcheck_main = Quickcheck_generic (Mini_lvalue)
+include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
 let on_address_of_typed_id
     ~(id : C_identifier.t) ~(ty : Mini_type.t) : t =
@@ -133,9 +140,7 @@ let%test_unit
   "on_address_of_typed_id: always takes pointer type" =
   let (module E) = Lazy.force Mini_env.test_env_mod in
   let module Tc = Type_check (E) in
-  Quickcheck.test E.Random_var.gen
-    ~sexp_of:[%sexp_of: (C_identifier.t)]
-    ~shrinker:E.Random_var.shrinker
+  Base_quickcheck.Test.run_exn (module E.Random_var)
     ~f:(fun id ->
         let ty = C_identifier.Map.find_exn E.env id in
         [%test_result: Mini_type.t Or_error.t]
@@ -151,10 +156,7 @@ let variable_of (addr : t) : C_identifier.t =
   Mini_lvalue.variable_of (lvalue_of addr)
 
 let%test_unit "variable_of: preserved by ref" =
-  Core_kernel.Quickcheck.test
-    ~shrinker
-    ~sexp_of:[%sexp_of: t]
-    gen
+  Base_quickcheck.Test.run_exn (module Quickcheck_main)
     ~f:(fun x ->
         [%test_eq: C_identifier.t] ~here:[[%here]]
           (variable_of x)
@@ -181,9 +183,10 @@ let variable_in_env (addr : t) ~(env : _ C_identifier.Map.t) : bool =
   Mini_lvalue.variable_in_env (lvalue_of addr) ~env
 ;;
 
-module Quickcheck_on_env (E : Mini_env.S)
-  : Quickcheckable.S with type t := t =
-  Quickcheck_generic (Mini_lvalue.Quickcheck_on_env (E))
+module Quickcheck_on_env (E : Mini_env.S): sig
+  type nonrec t = t [@@deriving sexp_of]
+  include Quickcheck.S with type t := t
+end = Quickcheck_generic (Mini_lvalue.Quickcheck_on_env (E))
 ;;
 
 let variable_in (module E : Mini_env.S) (l : t) : bool =
@@ -194,7 +197,7 @@ let%test_unit
   "Quickcheck_on_env: liveness" =
   let e = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_on_env (val e) in
-  Quickcheck.test_can_generate Q.gen
+  Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
     ~sexp_of:[%sexp_of: t]
     ~f:(variable_in e)
 ;;
@@ -203,32 +206,33 @@ let%test_unit
   "Quickcheck_on_env: generated underlying variables in environment" =
   let e = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_on_env (val e) in
-  Quickcheck.test Q.gen
-    ~sexp_of:[%sexp_of: t]
-    ~trials:20
-    ~shrinker:Q.shrinker
+  Base_quickcheck.Test.run_exn (module Q)
     ~f:([%test_pred: t] ~here:[[%here]] (variable_in e))
 ;;
 
-module Quickcheck_atomic_int_pointers (E : Mini_env.S)
-  : Quickcheckable.S with type t := t = struct
+module Quickcheck_atomic_int_pointers (E : Mini_env.S) : sig
+  type nonrec t = t [@@deriving sexp_of]
+  include Quickcheck.S with type t := t
+end = struct
+  type nonrec t = t
+  let sexp_of_t = sexp_of_t
 
-  let gen : t Quickcheck.Generator.t =
+  let quickcheck_generator : t Quickcheck.Generator.t =
     Quickcheck.Generator.map
       (Quickcheck.Generator.of_list (Map.to_alist (E.atomic_int_variables ())))
       ~f:(fun (id, ty) -> on_address_of_typed_id ~id ~ty)
   ;;
 
   module Q = Quickcheck_on_env (E)
-  let obs = Q.obs
-  let shrinker = Q.shrinker
+  let quickcheck_observer = [%quickcheck.observer: Q.t]
+  let quickcheck_shrinker = [%quickcheck.shrinker: Q.t]
 end
 
 let%test_unit
   "Quickcheck_atomic_int_pointers: liveness" =
   let e = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_atomic_int_pointers (val e) in
-  Quickcheck.test_can_generate Q.gen
+  Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
     ~sexp_of:[%sexp_of: t]
     ~trials:20
     ~f:(variable_in e)
@@ -238,9 +242,7 @@ let%test_unit
   "Quickcheck_atomic_int_pointers: generated underlying variables in environment" =
   let e = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_atomic_int_pointers (val e) in
-  Quickcheck.test Q.gen
-    ~sexp_of:[%sexp_of: t]
-    ~shrinker:Q.shrinker
+  Base_quickcheck.Test.run_exn (module Q)
     ~f:([%test_pred: t] ~here:[[%here]] (variable_in e))
 ;;
 
@@ -249,9 +251,7 @@ let%test_unit
   let e = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_atomic_int_pointers (val e) in
   let module Tc = Type_check (val e) in
-  Quickcheck.test Q.gen
-    ~sexp_of:[%sexp_of: t]
-    ~shrinker:Q.shrinker
+  Base_quickcheck.Test.run_exn (module Q)
     ~f:(fun lv ->
         [%test_result: Mini_type.t Or_error.t] ~here:[[%here]]
           (Tc.type_of lv)

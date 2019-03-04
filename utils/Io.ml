@@ -61,7 +61,7 @@ module Dir = struct
   let default_sort_compare : Fpath.t -> Fpath.t -> int =
     Travesty.T_fn.on
       Fpath.to_string
-      Core_extended.Extended_string.collate
+      String_extended.collate
   ;;
 
   let filter_files ?ext (flist : Fpath.t list) =

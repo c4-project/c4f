@@ -72,7 +72,7 @@ let command =
       and sanitiser_passes = Args.sanitiser_passes
       and compiler_predicate = Args.compiler_predicate
       and machine_predicate = Args.machine_predicate
-      and c_file_raw = anon ("FILE" %: file)
+      and c_file_raw = anon ("FILE" %: Filename.arg_type)
       in
       fun () ->
         Common.lift_command standard_args

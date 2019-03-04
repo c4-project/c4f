@@ -13,7 +13,8 @@
   litmus
   utils
   travesty
-  core))
+  core
+  shell.string_extended))
 
 ;; Config file parser
 

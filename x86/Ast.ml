@@ -180,7 +180,8 @@ module Disp = struct
   type t =
     | Symbolic of string
     | Numeric of int
-  [@@deriving sexp, variants, eq, compare]
+  [@@deriving sexp, variants, eq, compare, quickcheck]
+  (* TODO(@MattWindsor91): generate valid symbols only? *)
 
   (** Base mapper for displacements *)
   module Base_map (M : Monad.S) = struct
@@ -211,39 +212,6 @@ module Disp = struct
         ;;
       end
     end)
-
-  module Quickcheck : (Quickcheck.S with type t := t) = struct
-    module G = Quickcheck.Generator
-    module O = Quickcheck.Observer
-    module S = Quickcheck.Shrinker
-
-    let anonymise = function
-      | Symbolic sym -> `A sym
-      | Numeric  int -> `B int
-    ;;
-
-    let deanonymise = function
-      | `A sym -> Symbolic sym
-      | `B int -> Numeric  int
-    ;;
-
-    let gen : t G.t =
-      (* TODO(@MattWindsor91): generate valid symbols only? *)
-      G.map ~f:deanonymise
-        (G.variant2 String.gen Int.gen)
-    ;;
-
-    let obs : t O.t =
-      O.unmap ~f:anonymise
-        (O.variant2 String.obs Int.obs)
-    ;;
-
-    let shrinker : t S.t =
-      S.map ~f:deanonymise ~f_inverse:anonymise
-        (S.variant2 String.shrinker Int.shrinker)
-    ;;
-  end
-  include Quickcheck
 end
 
 module Index = struct
@@ -282,7 +250,7 @@ module Index = struct
       end
     end)
 
-  module Quickcheck : (Quickcheck.S with type t := t) = struct
+  module Q : Quickcheck.S with type t := t = struct
     module G = Quickcheck.Generator
     module O = Quickcheck.Observer
     module S = Quickcheck.Shrinker
@@ -297,29 +265,29 @@ module Index = struct
       | `B ((reg, s)) -> Scaled   (reg, s)
     ;;
 
-    let gen : t G.t =
+    let quickcheck_generator : t G.t =
       G.map ~f:deanonymise
-        (G.variant2
-           Reg.gen
-           (* TODO(@MattWindsor91): sensible indexes? *)
-           (G.tuple2 Reg.gen G.small_positive_int))
+        [%quickcheck.generator:
+          [ `A of Reg.t
+          | `B of Reg.t * [%custom G.small_positive_int]
+          ]
+        ]
     ;;
 
-    let obs : t O.t =
+    let quickcheck_observer : t O.t =
       O.unmap ~f:anonymise
-        (O.variant2
-           Reg.obs
-           (O.tuple2 Reg.obs Int.obs))
+        [%quickcheck.observer: [`A of Reg.t | `B of (Reg.t * int)]]
     ;;
 
-    let shrinker : t S.t =
+    let quickcheck_shrinker : t S.t =
       S.map ~f:deanonymise ~f_inverse:anonymise
         (S.variant2
-           Reg.shrinker
-           (S.tuple2 Reg.shrinker Int.shrinker))
+           Reg.quickcheck_shrinker
+           [%quickcheck.shrinker: (Reg.t * int)]
+        )
     ;;
   end
-  include Quickcheck
+  include Q
 end
 
 (*
@@ -400,39 +368,33 @@ module Indirect = struct
   let of_tuple ( seg, base, index, disp ) = { seg; base; index; disp }
   let to_tuple { seg; base; index; disp } = ( seg, base, index, disp )
 
-  module Quickcheck : (Quickcheck.S with type t := t) = struct
+  module Q : Quickcheck.S with type t := t = struct
     module G = Quickcheck.Generator
     module O = Quickcheck.Observer
     module S = Quickcheck.Shrinker
 
-    let gen : t G.t =
-      let open G.Let_syntax in
-      let%map seg   = Option.gen Reg.gen
-      and     base  = Option.gen Reg.gen
-      and     index = Option.gen Index.gen
-      and     disp  = Option.gen Disp.gen
-      in { seg; base; index; disp }
+    let quickcheck_generator : t G.t =
+      G.map ~f:of_tuple
+        [%quickcheck.generator:
+          Reg.t option * Reg.t option * Index.t option * Disp.t option
+        ]
     ;;
 
-    let obs : t O.t =
+    let quickcheck_observer : t O.t =
       O.unmap ~f:to_tuple
-        (O.tuple4
-           (Option.obs Reg.obs)
-           (Option.obs Reg.obs)
-           (Option.obs Index.obs)
-           (Option.obs Disp.obs))
+        [%quickcheck.observer:
+          Reg.t option * Reg.t option * Index.t option * Disp.t option
+        ]
     ;;
 
-    let shrinker : t S.t =
+    let quickcheck_shrinker : t S.t =
       S.map ~f:of_tuple ~f_inverse:to_tuple
-        (S.tuple4
-           (Option.shrinker Reg.shrinker)
-           (Option.shrinker Reg.shrinker)
-           (Option.shrinker Index.shrinker)
-           (Option.shrinker Disp.shrinker))
+        [%quickcheck.shrinker:
+          Reg.t option * Reg.t option * Index.t option * Disp.t option
+        ]
     ;;
   end
-  include Quickcheck
+  include Q
 end
 
 module Location = struct
@@ -491,7 +453,7 @@ module Location = struct
   ;;
 
 
-  module Quickcheck : (Quickcheck.S with type t := t) = struct
+  module Q : Quickcheck.S with type t := t = struct
     module G = Quickcheck.Generator
     module O = Quickcheck.Observer
     module S = Quickcheck.Shrinker
@@ -506,20 +468,22 @@ module Location = struct
       | `B reg -> Reg      reg
     ;;
 
-    let gen : t G.t =
-      G.map ~f:deanonymise (G.variant2 Indirect.gen Reg.gen)
+    let quickcheck_generator : t G.t =
+      G.map ~f:deanonymise
+        [%quickcheck.generator: [ `A of Indirect.t | `B of Reg.t ]]
     ;;
 
-    let obs : t O.t =
-      O.unmap ~f:anonymise (O.variant2 Indirect.obs Reg.obs)
+    let quickcheck_observer : t O.t =
+      O.unmap ~f:anonymise
+        [%quickcheck.observer: [ `A of Indirect.t | `B of Reg.t ]]
     ;;
 
-    let shrinker : t S.t =
+    let quickcheck_shrinker : t S.t =
       S.map ~f:deanonymise ~f_inverse:anonymise
-        (S.variant2 Indirect.shrinker Reg.shrinker)
+        [%quickcheck.shrinker: [ `A of Indirect.t | `B of Reg.t ]]
     ;;
   end
-  include Quickcheck
+  include Q
 end
 
 module Bop = struct
@@ -626,7 +590,7 @@ module Operand = struct
     end)
   ;;
 
-  module Quickcheck : (Quickcheck.S with type t := t) = struct
+  module Q : Quickcheck.S with type t := t = struct
     module G = Quickcheck.Generator
     module O = Quickcheck.Observer
     module S = Quickcheck.Shrinker
@@ -647,37 +611,55 @@ module Operand = struct
       | `E ((l, b, r)) -> Bop (l, b, r)
     ;;
 
-    let gen : t G.t =
+    let quickcheck_generator : t G.t =
       G.recursive_union
         [ G.map ~f:deanonymise
-            (G.variant4 Location.gen Disp.gen String.gen String.gen)
+            [%quickcheck.generator:
+              [ `A of Location.t
+              | `B of Disp.t
+              | `C of string
+              | `D of string
+              ]
+            ]
         ]
         ~f:(fun mu ->
             [ G.map ~f:(fun (l, b, r) -> Bop (l, b, r))
-                (G.tuple3 mu Bop.gen mu)
+                [%quickcheck.generator:
+                  [%custom mu] * Bop.t * [%custom mu]]
             ])
     ;;
 
-    let obs : t O.t =
+    let quickcheck_observer : t O.t =
       O.fixed_point
         (fun mu ->
            O.unmap ~f:anonymise
-             (O.variant5
-                Location.obs Disp.obs String.obs String.obs
-                (O.tuple3 mu Bop.obs mu)))
+             [%quickcheck.observer:
+               [ `A of Location.t
+               | `B of Disp.t
+               | `C of string
+               | `D of string
+               | `E of [%custom mu] * Bop.t * [%custom mu]
+               ]
+             ]
+        )
     ;;
 
-    let shrinker : t S.t =
+    let quickcheck_shrinker : t S.t =
       S.fixed_point
         (fun mu ->
            S.map ~f:deanonymise ~f_inverse:anonymise
-             (S.variant5
-                Location.shrinker Disp.shrinker
-                String.shrinker String.shrinker
-                (S.tuple3 mu Bop.shrinker mu)))
+             [%quickcheck.shrinker:
+               [ `A of Location.t
+               | `B of Disp.t
+               | `C of string
+               | `D of string
+               | `E of [%custom mu] * Bop.t * [%custom mu]
+               ]
+             ]
+        )
     ;;
   end
-  include Quickcheck
+  include Q
 
   let%expect_test "symbol fold over bop" =
     let ast =

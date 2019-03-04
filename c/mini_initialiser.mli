@@ -24,9 +24,7 @@
 
 (** Mini-model: initialisers. *)
 
-open Core_kernel
-
-type t [@@deriving sexp]
+type t [@@deriving sexp, eq, quickcheck]
 (** Opaque type of initialisers. *)
 
 (** {3 Constructors} *)
@@ -43,8 +41,6 @@ val ty : t -> Mini_type.t
 val value : t -> Ast_basic.Constant.t option
 (** [value init] gets the initialised value of [init], if it has
     one. *)
-
-include Quickcheckable.S with type t := t
 
 module Named : Mini_intf.S_named with type elt := t
 (** Allows using the type of named initialiser in certain functors. *)

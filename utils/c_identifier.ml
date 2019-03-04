@@ -72,35 +72,41 @@ let of_string : string -> t = create_exn
 
 let pp : t Fmt.t = Fmt.of_to_string to_string
 
-let gen : t Quickcheck.Generator.t =
-  let module G = Quickcheck.Generator in
-  let open G.Let_syntax in
-  let initial =
-    G.union
-      [ Char.gen_alpha
-      ; G.return '_'
-      ]
-  in
-  let%bind chr = initial in
-  let%map rest =
-    String.gen'
-      (G.union
-         [ Char.gen_alphanum
-         ; G.return '_'
-         ]
-      )
-  in create_exn (String.of_char chr ^ rest)
+module Q : Quickcheck.S with type t := t = struct
+  let char_or_underscore (c : char Quickcheck.Generator.t)
+      : char Quickcheck.Generator.t =
+    Quickcheck.Generator.(union [ c; return '_' ])
+  ;;
 
-let obs : t Quickcheck.Observer.t =
-  Quickcheck.Observer.unmap String.obs ~f:raw
-
-let shrinker : t Quickcheck.Shrinker.t =
-  Quickcheck.Shrinker.create
-    (fun ident ->
-       ident
-       |> raw
-       |> Quickcheck.Shrinker.shrink String.shrinker
-       |> Sequence.filter_map
-            ~f:(fun x -> x |> create |> Result.ok)
+  let gen_initial : string Quickcheck.Generator.t =
+    Quickcheck.Generator.(
+      map ~f:String.of_char (char_or_underscore Char.gen_alpha)
     )
-;;
+  ;;
+
+  let gen_rest : string Quickcheck.Generator.t =
+    String.gen' (char_or_underscore Char.gen_alphanum)
+  ;;
+
+  let quickcheck_generator : t Quickcheck.Generator.t =
+    Quickcheck.Generator.(
+      map ~f:(Fn.compose create_exn (Tuple2.uncurry (^)))
+        (tuple2 gen_initial gen_rest)
+    )
+  ;;
+
+  let quickcheck_observer : t Quickcheck.Observer.t =
+    Quickcheck.Observer.unmap String.quickcheck_observer ~f:raw
+
+  let quickcheck_shrinker : t Quickcheck.Shrinker.t =
+    Quickcheck.Shrinker.create
+      (fun ident ->
+         ident
+         |> raw
+         |> Quickcheck.Shrinker.shrink String.quickcheck_shrinker
+         |> Sequence.filter_map
+           ~f:(fun x -> x |> create |> Result.ok)
+      )
+  ;;
+end
+include Q

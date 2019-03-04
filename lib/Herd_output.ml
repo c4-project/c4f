@@ -298,7 +298,7 @@ let process_line (rd : reader) (line : string) : reader =
 
   (* Make parsing the line easier by compressing whitespace. *)
   let line =
-    String.strip (Core_extended.Extended_string.squeeze line)
+    String.strip (String_extended.squeeze line)
   in
 
   let state', herd' =

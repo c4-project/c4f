@@ -143,9 +143,13 @@ module Atomic_store = struct
     end)
 
   module Quickcheck_generic
-      (Src : Quickcheckable.S with type t := Expression.t)
-      (Dst : Quickcheckable.S with type t := Address.t)
-    : Quickcheckable.S with type t := t = struct
+      (Src : Quickcheck.S with type t := Expression.t)
+      (Dst : Quickcheck.S with type t := Address.t) : sig
+    type nonrec t = t [@@deriving sexp_of]
+    include Quickcheck.S with type t := t
+  end = struct
+    type nonrec t = t
+    let sexp_of_t = sexp_of_t
 
     let to_tuple
         ( { src; dst; mo } : t)
@@ -159,21 +163,21 @@ module Atomic_store = struct
       { src; dst; mo }
     ;;
 
-    let gen : t Quickcheck.Generator.t =
+    let quickcheck_generator : t Quickcheck.Generator.t =
       Quickcheck.Generator.(
-        map (tuple3 Src.gen Dst.gen Mem_order.gen) ~f:of_tuple
+        map [%quickcheck.generator: Src.t * Dst.t * Mem_order.t] ~f:of_tuple
       )
     ;;
 
-    let obs : t Quickcheck.Observer.t =
+    let quickcheck_observer : t Quickcheck.Observer.t =
       Quickcheck.Observer.(
-        unmap (tuple3 Src.obs Dst.obs Mem_order.obs) ~f:to_tuple
+        unmap [%quickcheck.observer: Src.t * Dst.t * Mem_order.t] ~f:to_tuple
       )
     ;;
 
-    let shrinker : t Quickcheck.Shrinker.t =
+    let quickcheck_shrinker : t Quickcheck.Shrinker.t =
       Quickcheck.Shrinker.(
-        map (tuple3 Src.shrinker Dst.shrinker Mem_order.shrinker)
+        map [%quickcheck.shrinker: Src.t * Dst.t * Mem_order.t]
           ~f:of_tuple ~f_inverse:to_tuple
       )
     ;;

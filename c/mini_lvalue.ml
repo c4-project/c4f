@@ -149,35 +149,50 @@ let deanonymise = function
 ;;
 
 module Quickcheck_generic
-    (Id : Quickcheckable.S with type t := C_identifier.t)
-  : Quickcheckable.S with type t := t = struct
-  let gen : t Quickcheck.Generator.t =
+    (Id : Quickcheck.S with type t := C_identifier.t) : sig
+    type nonrec t = t [@@deriving sexp_of]
+    include Quickcheck.S with type t := t
+  end = struct
+  type nonrec t = t
+  let sexp_of_t = sexp_of_t
+
+  let quickcheck_generator : t Quickcheck.Generator.t =
     Quickcheck.Generator.(
-      recursive_union [ map Id.gen ~f:variable ]
+      recursive_union [ map [%quickcheck.generator: Id.t] ~f:variable ]
         ~f:(fun mu -> [ map mu ~f:deref ])
     )
   ;;
 
-  let obs : t Quickcheck.Observer.t =
+  let quickcheck_observer : t Quickcheck.Observer.t =
     Quickcheck.Observer.(
       fixed_point (fun mu ->
-          unmap (variant2 Id.obs mu) ~f:anonymise
+          unmap ~f:anonymise
+          [%quickcheck.observer:
+            [ `A of Id.t
+            | `B of [%custom mu]
+            ]
+          ]
         )
     )
   ;;
 
-  let shrinker : t Quickcheck.Shrinker.t =
+  let quickcheck_shrinker : t Quickcheck.Shrinker.t =
     Quickcheck.Shrinker.(
       fixed_point (fun mu ->
-          map (variant2 Id.shrinker mu)
-            ~f:deanonymise ~f_inverse:anonymise
+          map ~f:deanonymise ~f_inverse:anonymise
+            [%quickcheck.shrinker:
+              [ `A of Id.t
+              | `B of [%custom mu
+                ]
+              ]
+            ]
         )
     )
   ;;
-
 end
 
-include Quickcheck_generic (C_identifier)
+module Quickcheck_id = Quickcheck_generic (C_identifier)
+include (Quickcheck_id : module type of Quickcheck_id with type t := t)
 
 let%test_unit "gen: distinctiveness" =
   Quickcheck.test_distinct_values
@@ -185,7 +200,7 @@ let%test_unit "gen: distinctiveness" =
     ~trials:20
     ~distinct_values:5
     ~compare:[%compare: t]
-    gen
+    [%quickcheck.generator: t]
 ;;
 
 let on_value_of_typed_id ~(id : C_identifier.t) ~(ty : Mini_type.t) : t =
@@ -195,9 +210,8 @@ let%test_unit
   "on_value_of_typed_id: always takes basic type" =
   let (module E) = Lazy.force Mini_env.test_env_mod in
   let module Tc = Type_check (E) in
-  Quickcheck.test E.Random_var.gen
-    ~sexp_of:[%sexp_of: (C_identifier.t)]
-    ~shrinker:E.Random_var.shrinker
+  Base_quickcheck.Test.run_exn
+    (module E.Random_var)
     ~f:(fun id ->
         let ty = C_identifier.Map.find_exn E.env id in
         [%test_result: Mini_type.t Or_error.t]
@@ -207,16 +221,17 @@ let%test_unit
       )
 ;;
 
-module Quickcheck_on_env (E : Mini_env.S)
-  : Quickcheckable.S with type t := t =
-  Quickcheck_generic (E.Random_var)
+module Quickcheck_on_env (E : Mini_env.S) : sig
+    type nonrec t = t [@@deriving sexp_of]
+    include Quickcheck.S with type t := t
+  end = Quickcheck_generic (E.Random_var)
 ;;
 
 let%test_unit
   "Quickcheck_on_env: liveness" =
   let (module E) = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_on_env (E) in
-  Quickcheck.test_can_generate Q.gen
+  Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
     ~sexp_of:[%sexp_of: t]
     ~f:(variable_in_env ~env:E.env)
 ;;
@@ -225,31 +240,35 @@ let%test_unit
   "Quickcheck_on_env: generated underlying variables in environment" =
   let (module E) = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_on_env (E) in
-  Quickcheck.test Q.gen
-    ~sexp_of:[%sexp_of: t]
-    ~shrinker:Q.shrinker
+  Base_quickcheck.Test.run_exn
+    (module Q)
     ~f:([%test_pred: t] ~here:[[%here]] (variable_in_env ~env:E.env))
 ;;
 
 module Quickcheck_int_values (E : Mini_env.S)
-  : Quickcheckable.S with type t := t = struct
+ : sig
+    type nonrec t = t [@@deriving sexp_of]
+    include Quickcheck.S with type t := t
+  end = struct
+  type nonrec t = t
+  let sexp_of_t = sexp_of_t
 
-  let gen : t Quickcheck.Generator.t =
+  let quickcheck_generator : t Quickcheck.Generator.t =
     Quickcheck.Generator.map
       (Quickcheck.Generator.of_list (Map.to_alist (E.int_variables ())))
       ~f:(fun (id, ty) -> on_value_of_typed_id ~id ~ty)
   ;;
 
   module Q = Quickcheck_on_env (E)
-  let obs = Q.obs
-  let shrinker = Q.shrinker
+  let quickcheck_observer = [%quickcheck.observer: Q.t]
+  let quickcheck_shrinker = [%quickcheck.shrinker: Q.t]
 end
 
 let%test_unit
   "Quickcheck_int_values: liveness" =
   let (module E) = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_int_values (E) in
-  Quickcheck.test_can_generate Q.gen
+  Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
     ~sexp_of:[%sexp_of: t]
     ~f:(variable_in_env ~env:E.env)
 ;;
@@ -258,9 +277,7 @@ let%test_unit
   "Quickcheck_int_values: generated underlying variables in environment" =
   let (module E) = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_int_values (E) in
-  Quickcheck.test Q.gen
-    ~sexp_of:[%sexp_of: t]
-    ~shrinker:Q.shrinker
+  Base_quickcheck.Test.run_exn (module Q)
     ~f:([%test_pred: t] ~here:[[%here]] (variable_in_env ~env:E.env))
 ;;
 
@@ -269,9 +286,7 @@ let%test_unit
   let (module E) = Lazy.force Mini_env.test_env_mod in
   let module Q = Quickcheck_int_values (E) in
   let module Tc = Type_check (E) in
-  Quickcheck.test Q.gen
-    ~sexp_of:[%sexp_of: t]
-    ~shrinker:Q.shrinker
+  Base_quickcheck.Test.run_exn (module Q)
     ~f:(fun lv ->
         [%test_result: Mini_type.t Or_error.t] ~here:[[%here]]
           (Tc.type_of lv)

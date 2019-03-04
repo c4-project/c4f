@@ -8,6 +8,7 @@
  (libraries
   travesty
   core
-  core_extended
+  shell
+  shell.string_extended
   fpath
   fmt))

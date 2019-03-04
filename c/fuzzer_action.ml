@@ -54,11 +54,11 @@ module List = struct
 
 
   let pick (table : t) (subject : Fuzzer_subject.Test.t)
-      (rng : Splittable_random.State.t)
+      (random : Splittable_random.State.t)
     : (module S) Fuzzer_state.Monad.t =
     let open Fuzzer_state.Monad.Let_syntax in
     let%bind available = to_available_only table subject in
     Fuzzer_state.Monad.Monadic.return
-      (Weighted_list.sample available rng)
+      (Weighted_list.sample available ~random)
   ;;
 end

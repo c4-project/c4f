@@ -32,37 +32,12 @@ type t =
   { ty    : Type.t
   ; value : Constant.t option
   }
-[@@deriving sexp, make, eq, fields]
+[@@deriving sexp, make, eq, fields, quickcheck]
 ;;
 
-module Quickcheck : Quickcheckable.S with type t := t = struct
-  module G = Core_kernel.Quickcheck.Generator
-  module O = Core_kernel.Quickcheck.Observer
-  module S = Core_kernel.Quickcheck.Shrinker
-
-  let to_tuple { ty; value } = ( ty, value )
-  let of_tuple ( ty, value ) = { ty; value }
-
-  let gen : t G.t =
-    G.map (G.tuple2 Type.gen (Option.gen (Constant.gen)))
-      ~f:of_tuple
-  ;;
-
-  let obs : t O.t =
-    O.unmap (O.tuple2 Type.obs (Option.obs (Constant.obs)))
-      ~f:to_tuple
-  ;;
-
-  let shrinker : t S.t =
-    S.map (S.tuple2 Type.shrinker (Option.shrinker (Constant.shrinker)))
-      ~f:of_tuple ~f_inverse:to_tuple
-  ;;
-end
-include Quickcheck
-
 module Named : Mini_intf.S_named with type elt := t = struct
-  type nonrec t = t Mini_intf.named
-  let equal : t -> t -> bool =
-    Tuple2.equal ~eq1:C_identifier.equal ~eq2:equal
+  let equal : t Mini_intf.named -> t Mini_intf.named -> bool =
+    [%compare.equal: C_identifier.t * t]
   ;;
+  type nonrec t = t Mini_intf.named
 end

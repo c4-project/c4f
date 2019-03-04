@@ -55,11 +55,8 @@ module Basic : sig
      isn't atomic. *)
 end
 
-type t [@@deriving eq, sexp, compare]
+type t [@@deriving eq, sexp, compare, quickcheck]
 (** Opaque type of types. *)
-
-include Quickcheckable.S with type t := t
-(** Generates random types from the whole pool of possible types. *)
 
 val normal : Basic.t -> t
 (** [normal ty] lifts a basic type [ty] to a scalar type. *)

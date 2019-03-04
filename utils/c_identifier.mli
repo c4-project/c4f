@@ -29,7 +29,7 @@
 
 open Core_kernel
 
-type t [@@deriving bin_io, compare, hash, sexp]
+type t [@@deriving bin_io, compare, hash, sexp, quickcheck]
 (** Opaque type of C identifier strings. *)
 
 val create : string -> t Or_error.t
@@ -46,6 +46,3 @@ include Pretty_printer.S with type t := t
 
 include Stringable.S with type t := t
 (** Note that [of_string] is [create_exn]; ie, it can fail. *)
-
-include Quickcheckable.S with type t := t
-(** We can generate random C identifiers for use in quickcheck. *)

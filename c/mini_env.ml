@@ -30,9 +30,14 @@ include Mini_env_intf
 module Make (E : Basic) : S = struct
   let env = E.env
 
-  module Random_var
-    : Quickcheckable.S with type t := C_identifier.t = struct
-    let gen : C_identifier.t Quickcheck.Generator.t =
+  module Random_var : sig
+    type t = C_identifier.t [@@deriving sexp_of]
+    include Quickcheck.S with type t := t
+  end = struct
+    type t = C_identifier.t
+    let sexp_of_t = C_identifier.sexp_of_t
+
+    let quickcheck_generator : C_identifier.t Quickcheck.Generator.t =
       (* We use a thunk here to prevent the generator from immediately
          raising an error if we try to create an empty environment. *)
       Quickcheck.Generator.of_fun (fun () ->
@@ -48,11 +53,11 @@ module Make (E : Basic) : S = struct
     ;;
 
     (* It's not clear whether we need a different observer here? *)
-    let obs = C_identifier.obs
+    let quickcheck_observer = C_identifier.quickcheck_observer
 
     (* Don't reduce identifiers, as this might make them no longer
        members of the environment. *)
-    let shrinker = Quickcheck.Shrinker.empty ()
+    let quickcheck_shrinker = Quickcheck.Shrinker.empty ()
   end
 
   let has_atomic_int_variables () : bool =

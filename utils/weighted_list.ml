@@ -34,14 +34,14 @@ module Weight = struct
           ~if_false:"Weights must be non-negative"
     end)
 
-  module Qc : (Quickcheckable.S with type t := t) = struct
+  module Qc : (Quickcheck.S with type t := t) = struct
     module G = Quickcheck.Generator
     module O = Quickcheck.Observer
     module S = Quickcheck.Shrinker
 
-    let gen : t G.t = G.map ~f:create_exn G.small_non_negative_int
-    let obs : t O.t = O.unmap ~f:raw Int.obs
-    let shrinker : t S.t = S.map ~f:create_exn ~f_inverse:raw Int.shrinker
+    let quickcheck_generator : t G.t = G.map ~f:create_exn G.small_non_negative_int
+    let quickcheck_observer : t O.t = O.unmap ~f:raw Int.quickcheck_observer
+    let quickcheck_shrinker : t S.t = S.map ~f:create_exn ~f_inverse:raw Int.quickcheck_shrinker
   end
   include Qc
 end
@@ -75,7 +75,7 @@ module Row = struct
     ;;
   end
 
-  module Qc : (Quickcheckable.S1 with type 'a t := 'a t) = struct
+  module Qc : Quickcheck.S1 with type 'a t := 'a t = struct
     module G = Quickcheck.Generator
     module O = Quickcheck.Observer
     module S = Quickcheck.Shrinker
@@ -83,16 +83,17 @@ module Row = struct
     let to_tuple { item; weight } = ( item, weight )
     let of_tuple ( item, weight ) = { item; weight }
 
-    let gen (g : 'a G.t) : 'a t G.t =
-      G.map ~f:of_tuple (G.tuple2 g Weight.gen)
+    let quickcheck_generator (g : 'a G.t) : 'a t G.t =
+      G.map ~f:of_tuple (G.tuple2 g Weight.quickcheck_generator)
     ;;
 
-    let obs (o : 'a O.t) : 'a t O.t =
-      O.unmap ~f:to_tuple (O.tuple2 o Weight.obs)
+    let quickcheck_observer (o : 'a O.t) : 'a t O.t =
+      O.unmap ~f:to_tuple (O.tuple2 o Weight.quickcheck_observer)
     ;;
 
-    let shrinker (s : 'a S.t) : 'a t S.t =
-      S.map ~f:of_tuple ~f_inverse:to_tuple (S.tuple2 s Weight.shrinker)
+    let quickcheck_shrinker (s : 'a S.t) : 'a t S.t =
+      S.map (S.tuple2 s Weight.quickcheck_shrinker)
+        ~f:of_tuple ~f_inverse:to_tuple
     ;;
   end
   include Qc
@@ -180,22 +181,22 @@ module Cumulative = struct
     Row.item (List.hd_exn possible)
   ;;
 
-  let sample (cl : 'a t) (rng : Splittable_random.State.t) : 'a =
-    let position = Splittable_random.int rng ~lo:0 ~hi:cl.max in
+  let sample (cl : 'a t) ~(random : Splittable_random.State.t) : 'a =
+    let position = Splittable_random.int random ~lo:0 ~hi:cl.max in
     get cl position
   ;;
 end
 
-let sample (wl : 'a t) (rng : Splittable_random.State.t) : 'a Or_error.t =
+let sample (wl : 'a t) ~(random : Splittable_random.State.t) : 'a Or_error.t =
   Or_error.(
     wl
     |>  Cumulative.of_weighted_list
-    >>| Fn.flip Cumulative.sample rng
+    >>| Cumulative.sample ~random
   )
 ;;
 
-let sample_exn (wl : 'a t) (rng : Splittable_random.State.t) : 'a =
-  Or_error.ok_exn (sample wl rng)
+let sample_exn (wl : 'a t) ~(random : Splittable_random.State.t) : 'a =
+  Or_error.ok_exn (sample wl ~random)
 ;;
 
 let sample_gen_exn (wl : 'a t) : 'a Quickcheck.Generator.t =
@@ -219,14 +220,16 @@ let%test_unit
     ~f:([%compare.equal: string] "kappa")
 ;;
 
-module Qc : (Quickcheckable.S1 with type 'a t := 'a t) = struct
+module Qc : Quickcheckable.S1 with type 'a t := 'a t = struct
   module G = Quickcheck.Generator
   module O = Quickcheck.Observer
   module S = Quickcheck.Shrinker
 
-  let gen      (g : 'a G.t) : 'a t G.t = List.gen (Row.gen g)
-  let obs      (o : 'a O.t) : 'a t O.t = List.obs (Row.obs o)
+  let quickcheck_generator (g : 'a G.t) : 'a t G.t =
+    List.quickcheck_generator (Row.quickcheck_generator g)
+  let quickcheck_observer (o : 'a O.t) : 'a t O.t =
+    List.quickcheck_observer (Row.quickcheck_observer o)
   (* TODO(@MattWindsor91): add a shrinker here, but make sure it can't shrink to empty lists. *)
-  let shrinker (_ : 'a S.t) : 'a t S.t = S.empty ()
+  let quickcheck_shrinker (_ : 'a S.t) : 'a t S.t = S.empty ()
 end
 include Qc
