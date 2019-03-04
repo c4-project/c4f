@@ -13,14 +13,14 @@
    utils
    menhirLib))
 (ocamllex
- (modules ATTLexer))
+ (modules att_lexer))
 (menhir
  (infer false)
  (flags "--table")
- (modules ATTParser))
+ (modules att_parser))
 
 ;; These rules generate the error message tables for each parser.
 ;; They're probably not as portable as they could be.
 (rule
- (targets ATTMessages.ml)
- (action (with-stdout-to "%{targets}" (run "%{bin:menhir}" "--compile-errors" "%{dep:ATT.messages}" "ATTParser.mly"))))
+ (targets att_messages.ml)
+ (action (with-stdout-to "%{targets}" (run "%{bin:menhir}" "--compile-errors" "%{dep:att.messages}" "att_parser.mly"))))

@@ -16,5 +16,5 @@
 
 (** Lexing X86 assembly *)
 
-val token : Lexing.lexbuf -> ATTParser.token
+val token : Lexing.lexbuf -> Att_parser.token
 

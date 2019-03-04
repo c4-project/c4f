@@ -22,27 +22,36 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+(** Top-level language modules for x86 *)
 
-module type S = Lib.Frontend.S with type ast := Ast.t
+open Lib
 
-module Att : S =
-  Lib.Frontend.Make (struct
-    type ast = Ast.t
+(** [S] is the signature of language modules over the X86 AST. *)
+module type S = sig
+  include Dialect.S
+  include Pp.Printer
+  include
+    Language.S
+    with type Constant.t = Ast.Operand.t
+     and type Location.t = Ast.Location.t
+     and type Instruction.t = Ast.Instruction.t
+     and type Statement.t = Ast.Statement.t
+     and type Program.t = Ast.t
+     and type Symbol.t = string
 
-    module I = ATTParser.MenhirInterpreter
+  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the
+      correct abstract syntax for this version of x86. *)
+  val make_jump_operand : string -> Ast.Operand.t
+end
 
-    let lex = ATTLexer.token
-    let parse = ATTParser.Incremental.main
-    let message = ATTMessages.message
-  end)
-;;
+(** [Att] is a language description for the AT&T dialect of x86. *)
+module Att : S
 
-let of_dialect = function
-  | Dialect.Att -> Or_error.return (module Att : S)
-  | Dialect.Herd7 | Dialect.Intel as d ->
-    Or_error.error_s
-      [%message "x86 dialect unsupported"
-          ~dialect:(d : Dialect.t)
-      ]
-;;
+(** [Intel] is a language description for the Intel dialect of x86. *)
+module Intel : S
+
+(** [Herd7] is a language description for the Herd7 dialect of x86. *)
+module Herd7 : S
+
+(** [of_dialect] gets the correct [S] module for a dialect. *)
+val of_dialect : Dialect.t -> (module S)

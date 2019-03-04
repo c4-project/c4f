@@ -32,7 +32,7 @@
     [Instruction] part of an x86 [Language.S] module. *)
 module type Basic = sig
   module Dialect : Dialect.S
-  module Pretty : PP.Printer
+  module Pretty : Pp.Printer
   module Symbol : Lib.Language_symbol.Basic
     with type t := string
   ;;

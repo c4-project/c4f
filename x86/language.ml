@@ -26,7 +26,7 @@ open Core
 
 module type S = sig
   include Dialect.S
-  include PP.Printer
+  include Pp.Printer
   include
     Lib.Language.S
     with type Constant.t = Ast.Operand.t
@@ -39,7 +39,7 @@ module type S = sig
   val make_jump_operand : string -> Ast.Operand.t
 end
 
-module Make (T : Dialect.S) (P : PP.Printer) : S = struct
+module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
   include T
   include P
 
@@ -190,7 +190,7 @@ module Make (T : Dialect.S) (P : PP.Printer) : S = struct
   let make_jump_operand = Basic.Instruction.make_jump_operand
 end
 
-module Att = Make (Dialect.Att) (PP.Att)
+module Att = Make (Dialect.Att) (Pp.Att)
 
 let%expect_test "is_program_label: positive Mach-O example, AT&T" =
   printf "%b" (Att.Symbol.is_program_label "_P0");
@@ -302,7 +302,7 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
          ));
     [%expect {| reg:sp -> reg:sp |}]
 
-module Intel = Make (Dialect.Intel) (PP.Intel)
+module Intel = Make (Dialect.Intel) (Pp.Intel)
 
 let%expect_test "abs_operands: add ESP, -16, Intel" =
   Format.printf "%a@."
@@ -330,7 +330,7 @@ let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
        ));
   [%expect {| <ERR: Operand types not allowed here> |}]
 
-module Herd7 = Make (Dialect.Herd7) (PP.Herd7)
+module Herd7 = Make (Dialect.Herd7) (Pp.Herd7)
 
 let of_dialect = function
   | Dialect.Att   -> (module Att : S)

@@ -49,7 +49,7 @@ open Core
 open Lexing
 open Lib.Frontend
 open Lib.Lex_utils
-open ATTParser
+open Att_parser
 }
 
 let digit = [ '0'-'9' ]

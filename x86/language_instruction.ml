@@ -30,7 +30,7 @@ open Utils
 
 module type Basic = sig
   module Dialect : Dialect.S
-  module Pretty : PP.Printer
+  module Pretty : Pp.Printer
   module Symbol : Lib.Language_symbol.Basic with type t := string
   module Location : Lib.Language_location.Basic with type t := Ast.Location.t
 end
