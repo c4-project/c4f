@@ -29,7 +29,7 @@ module M = struct
     | Seq_cst
     | Release
     | Acquire
-    | Rel_acq
+    | Acq_rel
     | Relaxed
     | Consume
   [@@deriving enum]
@@ -39,7 +39,7 @@ module M = struct
     [ Seq_cst, "memory_order_seq_cst"
     ; Release, "memory_order_release"
     ; Acquire, "memory_order_acquire"
-    ; Rel_acq, "memory_order_rel_acq"
+    ; Acq_rel, "memory_order_acq_rel"
     ; Relaxed, "memory_order_relaxed"
     ; Consume, "memory_order_consume"
     ]
@@ -50,16 +50,16 @@ include Utils.Enum.Extend_table (M)
 
 let is_load_compatible : t -> bool = function
   | Seq_cst | Acquire | Consume | Relaxed -> true
-  | Release | Rel_acq -> false
+  | Release | Acq_rel -> false
 ;;
 
 let is_store_compatible : t -> bool = function
   | Seq_cst | Release | Relaxed -> true
-  | Acquire | Consume | Rel_acq -> false
+  | Acquire | Consume | Acq_rel -> false
 ;;
 
 let is_rmw_compatible : t -> bool = function
-  | Seq_cst | Rel_acq | Relaxed -> true
+  | Seq_cst | Acq_rel | Relaxed -> true
   | Acquire | Consume | Release -> false
 ;;
 

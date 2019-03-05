@@ -30,7 +30,7 @@ type t =
   | Seq_cst (** [memory_order_seq_cst] *)
   | Release (** [memory_order_release] *)
   | Acquire (** [memory_order_acquire] *)
-  | Rel_acq (** [memory_order_rel_acq] *)
+  | Acq_rel (** [memory_order_acq_rel] *)
   | Relaxed (** [memory_order_relaxed] *)
   | Consume (** [memory_order_consume] *)
 ;;

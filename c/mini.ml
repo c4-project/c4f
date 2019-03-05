@@ -165,7 +165,7 @@ module Atomic_store = struct
 
     let quickcheck_generator : t Quickcheck.Generator.t =
       Quickcheck.Generator.(
-        map [%quickcheck.generator: Src.t * Dst.t * Mem_order.t] ~f:of_tuple
+        map [%quickcheck.generator: Src.t * Dst.t * [%custom Mem_order.gen_store]] ~f:of_tuple
       )
     ;;
 
