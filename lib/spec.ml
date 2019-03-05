@@ -77,6 +77,11 @@ module type S = sig
     val pp_verbose : bool -> Format.formatter -> t -> unit
     val get : t -> Id.t -> With_id.t Or_error.t
     val of_list : With_id.t list -> t Or_error.t
+    val restrict
+      : t
+      -> Id.Set.t
+      -> t
+    ;;
     val partition_map
       :  t
       -> f : (With_id.t -> [`Fst of 'a | `Snd of 'b])
@@ -106,6 +111,11 @@ module Make (B : Basic)
     (* Wrapping this so that we can use [of_sexp] below. *)
     module SM = struct
       type t = (Id.t, B.t) List.Assoc.t [@@deriving sexp]
+
+      let restrict (set : t) (identifiers : Id.Set.t) : t =
+        List.filter set ~f:(Fn.compose (Id.Set.mem identifiers) fst)
+      ;;
+
       let partition_map t ~f =
         List.partition_map t
           ~f:(fun (id, spec) -> f (With_id.create ~id ~spec))

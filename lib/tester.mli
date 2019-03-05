@@ -45,3 +45,5 @@ module Make_machine (B : Basic_machine) : Machine
 (** [Make_machine] makes a single-machine test runner from a
    [Basic_machine]. *)
 
+module Make (B : Basic) : S
+(** [Make] makes a full test runner from a [Basic]. *)

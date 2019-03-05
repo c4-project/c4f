@@ -88,9 +88,17 @@ module Make (T : Timer) : S = struct
   let bracket_join thunk = With_errors.sequence_m (bracket thunk)
 end
 
-let make_timer = function
-  | `Disabled -> (module Null_timer : Timer)
-  | `Enabled  -> (module Now_timer  : Timer)
-;;
+module Mode = struct
+  type t =
+    | Enabled
+    | Disabled
 
-let make_module status = (module Make (val make_timer status) : S)
+  let to_timer : t -> (module Timer) = function
+    | Disabled -> (module Null_timer : Timer)
+    | Enabled  -> (module Now_timer  : Timer)
+  ;;
+
+  let to_module (mode : t) : (module S) =
+    (module Make (val to_timer mode))
+  ;;
+end

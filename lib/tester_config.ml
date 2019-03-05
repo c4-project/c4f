@@ -77,7 +77,9 @@ let make
     ()
   : t Or_error.t =
   let cfg =
-    Fields.create ~fnames ~in_root ~out_root ~compilers ~c_litmus_mode
+    Fields.create
+      ~fnames ~in_root ~out_root ~compilers
+      ~c_litmus_mode
   in
   Validate.valid_or_error cfg validate
 ;;

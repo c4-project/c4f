@@ -23,6 +23,7 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Utils
 
 include Tester_intf
 
@@ -218,7 +219,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     |> List.map ~f:(
       function
       | (_, L_id.Global c_sym) ->
-        Or_error.return (Utils.C_identifier.to_string c_sym)
+        Or_error.return (C_identifier.to_string c_sym)
       | _ ->
         Or_error.error_string
           "Internal error: got a non-local C location"
@@ -234,8 +235,8 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
       fun (x, y) ->
         Or_error.(
           both
-            (x |> Utils.C_identifier.create >>| fun x -> L_id.Global x)
-            (y |> Utils.C_identifier.create >>| fun y -> L_id.Global y)
+            (x |> C_identifier.create >>| fun x -> L_id.Global x)
+            (y |> C_identifier.create >>| fun y -> L_id.Global y)
         )
     )
     |> Or_error.combine_errors
@@ -367,21 +368,10 @@ module Make_machine (B : Basic_machine) : Machine = struct
     (id, result)
   ;;
 
-  let spec_id_in (ids : Id.Set.t) (spec : Compiler.Spec.With_id.t) : bool =
-    Id.Set.mem ids (Compiler.Spec.With_id.id spec)
-
-  let filter_specs (ids : Id.Set.t) : Compiler.Spec.Set.t Or_error.t =
-    compilers
-    |> Compiler.Spec.Set.map
-      ~f:(fun spec -> Option.some_if (spec_id_in ids spec) spec)
-    |> List.filter_opt
-    |> Compiler.Spec.Set.of_list
-  ;;
-
   let run_compilers
-      (cfg : Tester_config.t) (specs : Compiler.Spec.Set.t)
+      (cfg : Tester_config.t)
       : (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
-    specs
+    compilers
     |> Compiler.Spec.Set.map ~f:(run_compiler cfg)
     |> Or_error.combine_errors
   ;;
@@ -394,9 +384,73 @@ module Make_machine (B : Basic_machine) : Machine = struct
 
   let run (cfg : Tester_config.t) : Analysis.Machine.t Or_error.t =
     let open Or_error.Let_syntax in
-    let%bind specs = filter_specs (Tester_config.compilers cfg) in
     let%map compilers_and_time =
-      T.bracket_join (fun () -> run_compilers cfg specs)
+      T.bracket_join (fun () -> run_compilers cfg)
     in make_analysis compilers_and_time
+  ;;
+end
+
+
+let group_specs_by_machine specs =
+  specs
+  |> Compiler.Spec.Set.group
+    ~f:(fun spec ->
+        Machine.Spec.With_id.id
+          (Compiler.Spec.With_id.machine spec)
+      )
+  |> Id.Map.to_alist
+;;
+
+module Make (B : Basic) : S = struct
+  include B
+
+  let make_analysis (raw : (Id.t, Analysis.Machine.t) List.Assoc.t T.t)
+    : Analysis.t =
+    Analysis.make
+      ~machines:(T.value raw)
+      ?time_taken:(T.time_taken raw)
+      ()
+  ;;
+
+  let make_machine_module
+      (mach_compilers : Compiler.Spec.Set.t)
+    : (module Machine) =
+    (module Make_machine (struct
+         include B
+         (* Reduce the set of compilers to those specifically used in
+            this machine. *)
+         let compilers = mach_compilers
+    end))
+  ;;
+
+  let run_machine
+      (tester_cfg : Tester_config.t)
+      (mach_id, mach_compilers) =
+    let open Or_error.Let_syntax in
+    let (module TM) = make_machine_module mach_compilers in
+    let%map analysis = TM.run tester_cfg in
+    (mach_id, analysis)
+  ;;
+
+  let run_machines
+      (cfg : Tester_config.t)
+      (specs_by_machine : (Machine.Id.t, Compiler.Spec.Set.t) List.Assoc.t)
+    : (Machine.Id.t, Analysis.Machine.t) List.Assoc.t Or_error.t =
+    specs_by_machine
+    |> List.map ~f:(run_machine cfg)
+    |> Or_error.combine_errors
+  ;;
+
+  let run
+      (cfg : Tester_config.t)
+    : Analysis.t Or_error.t =
+    let open Or_error.Let_syntax in
+    let enabled_ids = Tester_config.compilers cfg in
+    let specs = Compiler.Spec.Set.restrict compilers enabled_ids in
+    let specs_by_machine = group_specs_by_machine specs in
+    let%map machines_and_time = T.bracket_join
+        (fun () -> run_machines cfg specs_by_machine)
+    in
+    make_analysis machines_and_time
   ;;
 end

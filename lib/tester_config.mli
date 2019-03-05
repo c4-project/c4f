@@ -47,7 +47,7 @@ end
 type t
 (** Opaque type of tester configuration.
 
-    The items inside the configuration type used here are those that,
+    The items inside the configuration type used here are those that
    could change between different runs of the tester on the same set
    of machine configurations.  (At time of writing, this distinction
    is purely academic, but later versions of act might actually expose
@@ -63,22 +63,26 @@ val make
   -> ?c_litmus_mode:C_litmus_mode.t
   -> unit
   -> t Or_error.t
-(** [make ~fnames ~in_root ~out_root ~compilers ?c_litmus_mode]
-   constructs a set of tester configuration with the given parameters.
-   It fails if any of the parameters are invalid. *)
+(** [make ~fnames ~in_root ~out_root ~compilers
+   ?c_litmus_mode ?timing_mode ()] constructs a set of tester
+   configuration with the given parameters.  It fails if any of the
+   parameters are invalid.
+
+    The optional parameters have the following defaults:
+    - [c_litmus_mode]: {{!C_litmus_mode.Memalloy}Memalloy}. *)
 
 (** {2 Accessors} *)
 
-val fnames        : t -> string list
+val fnames : t -> string list
 (** [fnames cfg] gets the filename list for [cfg]. *)
 
-val in_root       : t -> Fpath.t
+val in_root : t -> Fpath.t
 (** [in_root cfg] gets the input root directory for [cfg]. *)
 
-val out_root      : t -> Fpath.t
+val out_root : t -> Fpath.t
 (** [out_root cfg] gets the output root directory for [cfg]. *)
 
-val compilers     : t -> Id.Set.t
+val compilers : t -> Id.Set.t
 (** [compilers cfg] gets the compiler identifier set for [cfg]. *)
 
 val c_litmus_mode : t -> C_litmus_mode.t

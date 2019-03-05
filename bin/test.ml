@@ -25,35 +25,6 @@ open Core
 open Lib
 open Utils
 
-let run_machine
-    o
-    (should_time : bool)
-    (cfg : Config.M.t)
-    (tester_cfg : Tester_config.t)
-    (mach_id, specs) =
-  let open Or_error.Let_syntax in
-
-  let timing_cfg = if should_time then `Enabled else `Disabled in
-
-  let module TM = Tester.Make_machine (struct
-      module T = (val Timing.make_module timing_cfg)
-      let o = o
-      let sanitiser_passes =
-        Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
-      ;;
-      let herd_cfg = Config.M.herd cfg
-
-      let compilers = specs
-
-      module Resolve_compiler = Language_support.Resolve_compiler
-
-      let asm_runner_from_spec spec =
-        Language_support.asm_runner_from_arch
-          (Compiler.Spec.With_id.emits spec)
-    end) in
-  let%map analysis = TM.run tester_cfg in
-  (mach_id, analysis)
-;;
 
 let check_files_exist (c_path : Fpath.t) (c_files : Fpath.t list) =
   if List.is_empty c_files
@@ -70,16 +41,6 @@ let report_spec_errors o = function
       "@[<v>Some of the specified compilers don't seem to be valid:@,@,%a@]@."
       (Format.pp_print_list Error.pp ~pp_sep:Format.pp_print_cut)
       es
-;;
-
-let group_specs_by_machine specs =
-  specs
-  |> Compiler.Spec.Set.group
-    ~f:(fun spec ->
-        Machine.Spec.With_id.id
-          (Compiler.Spec.With_id.machine spec)
-      )
-  |> Id.Map.to_alist
 ;;
 
 let find_memalloy_c_filenames (in_root : Fpath.t)
@@ -134,34 +95,40 @@ let make_tester_config ~(in_root_raw : string) ~(out_root_raw : string) o cfg :
     ()
 ;;
 
+let make_tester o cfg timing_mode : (module Tester.S) =
+  (module
+    Tester.Make
+      (struct
+        module T = (val Utils.Timing.Mode.to_module timing_mode)
+        module Resolve_compiler = Language_support.Resolve_compiler
+
+        let o = o
+        let compilers = Config.M.compilers cfg
+        let sanitiser_passes = Config.M.sanitiser_passes cfg
+            ~default:Sanitiser_pass.standard
+        let herd_cfg = Config.M.herd cfg
+        let asm_runner_from_spec =
+          Fn.compose
+            Language_support.asm_runner_from_arch
+            Compiler.Spec.With_id.emits
+      end)
+  )
+;;
+
+let print_table = Fmt.pr "@[<v>%a@]@." Tabulator.pp
+
 let run should_time ~(in_root_raw : string) ~(out_root_raw : string) o cfg =
   let open Or_error.Let_syntax in
   let%bind tester_cfg =
     make_tester_config ~in_root_raw ~out_root_raw o cfg
   in
-  let specs = Config.M.compilers cfg in
-  let specs_by_machine = group_specs_by_machine specs in
-
-  let start_time = Time.now () in
-  let%bind results_alist =
-    specs_by_machine
-    |> List.map
-      ~f:(run_machine o should_time cfg tester_cfg)
-    |> Or_error.combine_errors
+  let timing_mode =
+    Timing.Mode.(if should_time then Enabled else Disabled)
   in
-  let end_time = Time.now () in
-
-  let analysis = Analysis.make
-      ~machines:results_alist
-      ~time_taken:(Time.diff end_time start_time)
-      ()
-  in
-
+  let (module T) = make_tester o cfg timing_mode in
+  let%bind analysis = T.run tester_cfg in
   let%map table = Analysis.to_table analysis in
-  Format.open_vbox 0;
-  Tabulator.pp Format.std_formatter table;
-  Format.close_box ();
-  Format.print_newline ();
+  print_table table
 ;;
 
 let command =

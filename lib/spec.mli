@@ -100,6 +100,10 @@ module type S = sig
         It raises an error if [xs] contains duplicate IDs. *)
     val of_list : With_id.t list -> t Or_error.t
 
+    (** [restrict specs ids] returns the map corresponding to [specs],
+        but with all specs removed whose ID is not in [ids]. *)
+    val restrict : t -> Id.Set.t -> t
+
     (** [partition_map specs ~f] applies a partitioning predicate [f] to the
         specifications in [specs], returning those marked [`Fst] in
         the first bucket and those marked [`Snd] in the second. *)

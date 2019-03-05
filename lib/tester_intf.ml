@@ -25,9 +25,9 @@
 open Base
 open Utils
 
-(** [Basic] is the signature common to both
-    [Basic_machine] and [Basic_compiler]. *)
-module type Basic = sig
+(** [Basic_common] is the signature common to all [Basic]
+   signatures. *)
+module type Basic_common = sig
   module T : Timing.S
   (** The module to use for timing the various tester passes. *)
 
@@ -46,7 +46,7 @@ end
 (** [Basic_compiler] contains all the various modules and components
     needed to run tests on one compiler. *)
 module type Basic_compiler = sig
-  include Basic
+  include Basic_common
 
   module C : Compiler.S
   (** The compiler interface for this compiler. *)
@@ -75,7 +75,7 @@ end
 (** [Basic_machine] contains all the various modules and components
     needed to run tests on one machine. *)
 module type Basic_machine = sig
-  include Basic
+  include Basic_common
 
   val compilers : Compiler.Spec.Set.t
   (** [compilers] is the set of all enabled compilers for this
@@ -101,4 +101,12 @@ module type Machine = sig
        to belong to the same machine), reading from directories in
        [cfg]'s [in_root] and writing to directories in its [out_root],
        and returning a machine-level analysis. *)
+end
+
+module type Basic = sig
+  include Basic_machine
+end
+
+module type S = sig
+  val run : Tester_config.t -> Analysis.t Or_error.t
 end
