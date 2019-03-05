@@ -22,7 +22,7 @@ mkdir "${dir_name}"
 
 for k in $(seq "${count}");
 do
-    "${ACT}" c fuzz "${infile}" -o "${dir_name}/${k}.c.litmus"
+    "${ACT}" c fuzz "${infile}" -o "${dir_name}/${k}_c.litmus"
 done
 
 # If we look like we're on a Mac, open the directory in Finder.

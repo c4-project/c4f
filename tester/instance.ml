@@ -25,6 +25,7 @@
 open Core_kernel
 open Utils
 open Lib
+open C
 
 include Instance_intf
 
@@ -270,8 +271,14 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   ;;
 
   let delitmusify (fs : Pathset.File.t) : unit Or_error.t =
-    ignore fs;
-    Or_error.unimplemented "delitmusify"
+    let open Or_error.Let_syntax in
+    let%map _ =
+      Filters.Litmus.run_from_fpaths Filters.Delitmus
+        ~infile:(Some (P_file.litc_path fs))
+        ~outfile:(Some (P_file.c_path fs))
+        (* TODO(@MattWindsor91): use the output from this instead of
+           needing to run Herd. *)
+    in ()
   ;;
 
   let delitmusify_if_needed (fs : Pathset.File.t)
