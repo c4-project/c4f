@@ -68,11 +68,12 @@ let find_filenames : Tester_config.C_litmus_mode.t -> Fpath.t -> string list Or_
     find_delitmusify_litmus_filenames
 ;;
 
-let make_tester_config ~(in_root_raw : string) ~(out_root_raw : string) o cfg :
+let make_tester_config
+    ~(in_root_raw : string) ~(out_root_raw : string)
+    ~(c_litmus_mode : Tester_config.C_litmus_mode.t)
+    o cfg :
   Tester_config.t Or_error.t =
   let open Or_error.Let_syntax in
-  (* TODO(@MattWindsor91): wire this up somehow *)
-  let c_litmus_mode = Tester_config.C_litmus_mode.Memalloy in
   let%bind in_root  = Io.fpath_of_string in_root_raw
   and      out_root = Io.fpath_of_string out_root_raw
   in
@@ -80,7 +81,6 @@ let make_tester_config ~(in_root_raw : string) ~(out_root_raw : string) o cfg :
   let specs = Config.M.compilers cfg in
   report_spec_errors o
     (List.filter_map ~f:snd (Config.M.disabled_compilers cfg));
-  (* TODO(@MattWindsor91): wire this up somehow *)
   let compilers =
     specs
     |> Compiler.Spec.Set.map ~f:(Compiler.Spec.With_id.id)
@@ -117,10 +117,10 @@ let make_tester o cfg timing_mode : (module Tester.S) =
 
 let print_table = Fmt.pr "@[<v>%a@]@." Tabulator.pp
 
-let run should_time ~(in_root_raw : string) ~(out_root_raw : string) o cfg =
+let run should_time c_litmus_mode ~(in_root_raw : string) ~(out_root_raw : string) o cfg =
   let open Or_error.Let_syntax in
   let%bind tester_cfg =
-    make_tester_config ~in_root_raw ~out_root_raw o cfg
+    make_tester_config ~in_root_raw ~out_root_raw ~c_litmus_mode o cfg
   in
   let timing_mode =
     Timing.Mode.(if should_time then Enabled else Disabled)
@@ -146,6 +146,20 @@ let command =
         flag "time"
           no_arg
           ~doc:"if given, measure and report times"
+      and c_litmus_mode =
+        Tester_config.C_litmus_mode.(
+          choose_one
+            [ Args.flag_to_enum_choice
+                Memalloy
+                "memalloy"
+                ~doc:"assume the input directory has the layout of a Memalloy run result"
+            ; Args.flag_to_enum_choice
+                Delitmusify
+                "delitmusify"
+                ~doc:"assume the input directory only contains litmus tests"
+            ]
+            ~if_nothing_chosen:(`Default_to Memalloy)
+        )
       and sanitiser_passes = Args.sanitiser_passes
       and compiler_predicate = Args.compiler_predicate
       and machine_predicate = Args.machine_predicate
@@ -158,6 +172,6 @@ let command =
           ?machine_predicate
           ?sanitiser_passes
           ~with_compiler_tests:true
-          ~f:(fun _args -> run time ~in_root_raw ~out_root_raw)
+          ~f:(fun _args -> run time c_litmus_mode ~in_root_raw ~out_root_raw)
     ]
 ;;

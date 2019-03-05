@@ -21,23 +21,24 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Top-level for act's `memalloy` command *)
+(** Top-level for act's `test` command *)
 
-open Core
+open Core_kernel
 open Lib
 
-(** [run should_time ~in_root_raw ~out_root_raw o cfg] runs the
-   memalloy frontend.  It assumes that [in_root] points to a memalloy
-   (or compatible) results directory, and outputs results in
-   [out_root]. *)
 val run
   :  bool
+  -> Tester_config.C_litmus_mode.t
   -> in_root_raw:string
   -> out_root_raw:string
   -> Output.t
   -> Config.M.t
   -> unit Or_error.t
+  (** [run should_time c_litmus_mode ~in_root_raw ~out_root_raw o cfg]
+     runs the test frontend.  It assumes that [in_root] points to a
+     memalloy (or compatible) results directory, and outputs results
+     in [out_root]. *)
 ;;
 
-(** [command] packages up the memalloy command as a [Command.t]. *)
 val command : Command.t
+(** [command] packages up the test command as a [Command.t]. *)
