@@ -125,7 +125,7 @@ let run should_time c_litmus_mode ~(in_root_raw : string) ~(out_root_raw : strin
   in
   let (module T) = make_tester o cfg timing_mode in
   let%bind analysis = T.run tester_cfg in
-  let%map table = Analysis.to_table analysis in
+  let%map table = Tester.Analysis.to_table analysis in
   print_table table
 ;;
 

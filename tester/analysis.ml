@@ -25,8 +25,9 @@
 (** [Analysis] contains abstract data types for storing finished
    analyses of programs. *)
 
-open Core
+open Core_kernel
 open Utils
+open Lib
 
 module Herd = struct
   type t =
