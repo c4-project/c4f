@@ -59,8 +59,10 @@ module type Basic_compiler = sig
   (** [ps] tells the tester where it can find input files, and where
       it should put output files, for this compiler. *)
 
+  val c_litmus_mode : Tester_config.C_litmus_mode.t
+
   include Compiler.With_spec
-  (** [Basic_compiler] instances must provide a compiler spec and ID. *)
+    (** [Basic_compiler] instances must provide a compiler spec and ID. *)
 end
 
 (** User-facing interface for running compiler tests

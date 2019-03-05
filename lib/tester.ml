@@ -70,32 +70,32 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     | `Assembly -> Assembly emits
   ;;
 
-  let should_run_herd = C_id.herd cspec
+  let actually_try_run_herd config arch ~input_path ~output_path =
+    match Herd.create ~config ~arch with
+    | Ok herd ->
+      run_herd herd ~input_path ~output_path
+    | Error e ->
+      Fmt.pf o.wf "@[<v 4>Herd configuration error:@,%a@]@."
+        Error.pp e;
+      `Errored
+  ;;
 
   (** [try_run_herd arch ~input_path ~output_path]
       sees if [cspec] asked for a Herd run and, if so (and [herd_cfg]
       is [Some]), runs Herd on [infile], outputting to [outfile] and
       using models for [c_or_asm]. *)
   let try_run_herd c_or_asm ~input_path ~output_path =
-    match should_run_herd, herd_cfg with
+    match C_id.herd cspec, herd_cfg with
     | false, _ | true, None -> `Disabled
     | true, Some config ->
-      let arch = make_herd_arch c_or_asm in
-      match Herd.create ~config ~arch with
-      | Ok herd ->
-        run_herd herd ~input_path ~output_path
-      | Error e ->
-        Fmt.pf o.wf "@[<v 4>Herd configuration error:@,%a@]@."
-          Error.pp e;
-        `Errored
+      actually_try_run_herd
+        config (make_herd_arch c_or_asm) ~input_path ~output_path
   ;;
 
   (** [lower_thread_local_symbol] converts thread-local symbols of the
       form `0:r0` into the memalloy witness equivalent, `t0r0`. *)
   let lower_thread_local_symbol sym =
-    Litmus.Ast.Primitives.Id.(
-      Global (to_memalloy_id sym)
-    )
+    Litmus.Ast.Primitives.Id.(Global (to_memalloy_id sym))
   ;;
 
   let analyse
@@ -155,13 +155,28 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     )
   ;;
 
-  type timings =
-    { in_c_herd    : Time.Span.t option
-    ; in_cc        : Time.Span.t option
-    ; in_litmusify : Time.Span.t option
-    ; in_a_herd    : Time.Span.t option
-    }
-  ;;
+  module Timing_set = struct
+    type elt = Time.Span.t
+
+    type t =
+      { in_delitmusify : elt option
+      ; in_c_herd      : elt option
+      ; in_cc          : elt option
+      ; in_litmusify   : elt option
+      ; in_a_herd      : elt option
+      }
+    ;;
+
+    let make ?delitmusify ?c_herd ~cc ~litmusify ~a_herd =
+      Option.
+      { in_delitmusify = delitmusify >>= T.time_taken
+      ; in_c_herd      = c_herd      >>= T.time_taken
+      ; in_cc          = cc          |>  T.time_taken
+      ; in_litmusify   = litmusify   |>  T.time_taken
+      ; in_a_herd      = a_herd      |>  T.time_taken
+      }
+    ;;
+  end
 
   let compile_from_pathset_file (fs : Pathset.File.t) =
     bracket ~stage:"CC" ~file:(P_file.basename fs)
@@ -202,13 +217,6 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
              ~output_path:(P_file.herda_path fs)))
   ;;
 
-  let make_timings c_herd cc litmusify a_herd =
-    { in_c_herd    = T.time_taken c_herd
-    ; in_cc        = T.time_taken cc
-    ; in_litmusify = T.time_taken litmusify
-    ; in_a_herd    = T.time_taken a_herd
-    }
-  ;;
 
   module L_id = Litmus.Ast.Primitives.Id
 
@@ -227,17 +235,16 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     |> Or_error.combine_errors
   ;;
 
+  let lift_to_id (s : string) : L_id.t Or_error.t =
+    Or_error.(s |> C_identifier.create >>| fun x -> L_id.Global x)
+  ;;
+
   let lift_str_map
     (str_map : (string, string) List.Assoc.t)
     : (L_id.t, L_id.t) List.Assoc.t Or_error.t =
     str_map
     |> List.map ~f:(
-      fun (x, y) ->
-        Or_error.(
-          both
-            (x |> C_identifier.create >>| fun x -> L_id.Global x)
-            (y |> C_identifier.create >>| fun y -> L_id.Global y)
-        )
+      fun (x, y) -> Or_error.both (lift_to_id x) (lift_to_id y)
     )
     |> Or_error.combine_errors
   ;;
@@ -253,6 +260,31 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     compose_alists litc_to_c c_to_lita L_id.equal
   ;;
 
+  let delitmusify_needed : bool Lazy.t =
+    lazy
+      (match c_litmus_mode with
+       | Delitmusify -> true
+       | Memalloy -> false
+      )
+  ;;
+
+  let delitmusify (fs : Pathset.File.t) : unit Or_error.t =
+    ignore fs;
+    Or_error.unimplemented "delitmusify"
+  ;;
+
+  let delitmusify_if_needed (fs : Pathset.File.t)
+    : unit T.t Or_error.t =
+    bracket
+      (fun () ->
+         Travesty.T_or_error.when_m
+           (Lazy.force delitmusify_needed)
+           ~f:(fun () -> delitmusify fs)
+      )
+      ~stage:"delitmusifying"
+      ~file:(P_file.basename fs)
+  ;;
+
   let run_single_from_pathset_file (fs : Pathset.File.t) =
     let open Or_error.Let_syntax in
     (* NB: many of these stages depend on earlier stages' filesystem
@@ -262,6 +294,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     let c_herd_outcome = T.value c_herd in
     let litc_to_c_map = locations_of_herd_result c_herd_outcome in
     let%bind cvars = cvars_from_loc_map litc_to_c_map in
+    let%bind delitmusify = delitmusify_if_needed fs in
     let%bind cc = compile_from_pathset_file fs in
     let%bind litmusify = litmusify_single fs cvars in
     let c_to_lita_str_map = T.value litmusify in
@@ -270,7 +303,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     let%bind a_herd = a_herd_on_pathset_file fs in
     let a_herd_outcome = T.value a_herd in
     let%map analysis = analyse c_herd_outcome a_herd_outcome litc_to_lita_map in
-    let timings = make_timings c_herd cc litmusify a_herd in
+    let timings = Timing_set.make ~c_herd ~delitmusify ~cc ~litmusify ~a_herd in
     (analysis, timings)
   ;;
 
@@ -355,6 +388,7 @@ module Make_machine (B : Basic_machine) : Machine = struct
         module R = R
         let ps = ps
         let cspec = spec
+        let c_litmus_mode = Tester_config.c_litmus_mode cfg
       end) : Compiler)
   ;;
 
