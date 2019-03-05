@@ -28,7 +28,7 @@ open Lib
 
 val run
   :  bool
-  -> Tester_config.C_litmus_mode.t
+  -> Tester.Run_config.C_litmus_mode.t
   -> in_root_raw:string
   -> out_root_raw:string
   -> Output.t

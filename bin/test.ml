@@ -60,19 +60,17 @@ let find_delitmusify_litmus_filenames (in_root : Fpath.t)
   List.map ~f:Io.filename_no_ext lit_files
 ;;
 
-let find_filenames : Tester_config.C_litmus_mode.t -> Fpath.t -> string list Or_error.t =
+let find_filenames : Tester.Run_config.C_litmus_mode.t -> Fpath.t -> string list Or_error.t =
   function
-  | Tester_config.C_litmus_mode.Memalloy ->
-    find_memalloy_c_filenames
-  | Tester_config.C_litmus_mode.Delitmusify ->
-    find_delitmusify_litmus_filenames
+  | Memalloy -> find_memalloy_c_filenames
+  | Delitmusify -> find_delitmusify_litmus_filenames
 ;;
 
 let make_tester_config
     ~(in_root_raw : string) ~(out_root_raw : string)
-    ~(c_litmus_mode : Tester_config.C_litmus_mode.t)
+    ~(c_litmus_mode : Tester.Run_config.C_litmus_mode.t)
     o cfg :
-  Tester_config.t Or_error.t =
+  Tester.Run_config.t Or_error.t =
   let open Or_error.Let_syntax in
   let%bind in_root  = Io.fpath_of_string in_root_raw
   and      out_root = Io.fpath_of_string out_root_raw
@@ -86,7 +84,7 @@ let make_tester_config
     |> Compiler.Spec.Set.map ~f:(Compiler.Spec.With_id.id)
     |> Id.Set.of_list
   in
-  Tester_config.make
+  Tester.Run_config.make
     ~fnames
     ~in_root
     ~out_root
@@ -95,9 +93,9 @@ let make_tester_config
     ()
 ;;
 
-let make_tester o cfg timing_mode : (module Tester.S) =
+let make_tester o cfg timing_mode : (module Tester.Instance.S) =
   (module
-    Tester.Make
+    Tester.Instance.Make
       (struct
         module T = (val Utils.Timing.Mode.to_module timing_mode)
         module Resolve_compiler = Language_support.Resolve_compiler
@@ -147,7 +145,7 @@ let command =
           no_arg
           ~doc:"if given, measure and report times"
       and c_litmus_mode =
-        Tester_config.C_litmus_mode.(
+        Tester.Run_config.C_litmus_mode.(
           choose_one
             [ Args.flag_to_enum_choice
                 Memalloy

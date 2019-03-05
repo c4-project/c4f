@@ -4,6 +4,7 @@
   (libraries
     lib
     c
+    tester
     x86
     core
     utils

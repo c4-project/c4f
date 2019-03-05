@@ -23,6 +23,7 @@
    SOFTWARE. *)
 
 open Core_kernel
+open Lib
 
 module C_litmus_mode = struct
   type t =

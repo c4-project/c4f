@@ -23,6 +23,7 @@
    SOFTWARE. *)
 
 open Base
+open Lib
 open Utils
 
 (** [Basic_common] is the signature common to all [Basic]
@@ -59,7 +60,7 @@ module type Basic_compiler = sig
   (** [ps] tells the tester where it can find input files, and where
       it should put output files, for this compiler. *)
 
-  val c_litmus_mode : Tester_config.C_litmus_mode.t
+  val c_litmus_mode : Run_config.C_litmus_mode.t
 
   include Compiler.With_spec
     (** [Basic_compiler] instances must provide a compiler spec and ID. *)
@@ -97,7 +98,7 @@ module type Basic_machine = sig
 end
 
 module type Machine = sig
-  val run : Tester_config.t -> Analysis.Machine.t Or_error.t
+  val run : Run_config.t -> Analysis.Machine.t Or_error.t
     (** [run cfg] runs tests on each filename listed in [cfg], using
        every machine-local compiler in [specs] also listed in [cfg],
        to belong to the same machine), reading from directories in
@@ -110,5 +111,5 @@ module type Basic = sig
 end
 
 module type S = sig
-  val run : Tester_config.t -> Analysis.t Or_error.t
+  val run : Run_config.t -> Analysis.t Or_error.t
 end

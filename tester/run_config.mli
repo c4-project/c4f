@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Configuration for the main compiler tester.
+(** Per-run configuration for the compiler tester.
 
     This module exposes types used to configure the {{!Tester}Tester},
    `act`'s main multi-file compiler testing routine.
@@ -31,6 +31,7 @@
     tools.  For act-wide configuration, see {{!Config}Config}. *)
 
 open Base
+open Lib
 
 (** Enumeration of different ways in which the tester can extract a C
     file and corresponding litmus test from its input witness. *)

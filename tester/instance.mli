@@ -21,21 +21,14 @@
    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [Tester] provides the main `act` compiler tester, as used in the
-    `act test` subcommand.
+(** Functor for building an instance of the main `act` compiler
+   tester.
 
-    The modules described in [Tester] run one or more compilers,
-    across one or more machines, on a set of Memalloy-style C
-    test cases with corresponding litmus files.  They then convert
-    the resulting assembly into a litmus test, and (optionally)
-    run Herd on the two tests, comparing the state sets emitted.
+    An instance executes test runs over multiple compilers, spread
+   over multiple machines.  Each run refers to a directory of input
+   files, and various pieces of per-run config. *)
 
-    These modules take the actual components used to do the testing---
-    compilers, assembly job runners, and various other pieces of
-    configuration---as parameters.  In `act`, most of these are
-    filled in at the top-level, ie [Bin]. *)
-
-include module type of Tester_intf
+include module type of Instance_intf
 
 module Make_compiler (B : Basic_compiler) : Compiler
 (** [Make_compiler] makes a single-compiler test runner from a

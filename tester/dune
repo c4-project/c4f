@@ -1,0 +1,12 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name tester)
+ (inline_tests)
+ (preprocess
+  (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
+  (libraries
+   core_kernel
+   c
+   lib
+   utils))

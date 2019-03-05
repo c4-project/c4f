@@ -24,8 +24,9 @@
 
 open Core_kernel
 open Utils
+open Lib
 
-include Tester_intf
+include Instance_intf
 
 module Make_compiler (B : Basic_compiler) : Compiler = struct
   include B
@@ -344,9 +345,9 @@ end
 module Make_machine (B : Basic_machine) : Machine = struct
   include B
 
-  let pathset_input_mode (cfg : Tester_config.t)
+  let pathset_input_mode (cfg : Run_config.t)
       : [< `Separate | `Together ] =
-    match Tester_config.c_litmus_mode cfg with
+    match Run_config.c_litmus_mode cfg with
     | Memalloy ->
       (* Memalloy-style outputs have their C in /C and their
          litmus in /Litmus. *)
@@ -359,13 +360,13 @@ module Make_machine (B : Basic_machine) : Machine = struct
   ;;
 
   let make_pathset
-    (cfg : Tester_config.t)
+    (cfg : Run_config.t)
     (spec : Compiler.Spec.With_id.t)
     : Pathset.t Or_error.t =
     let open Or_error.Let_syntax in
     let id = Compiler.Spec.With_id.id spec in
-    let in_root  = Tester_config.in_root cfg in
-    let out_root = Tester_config.out_root cfg in
+    let in_root  = Run_config.in_root cfg in
+    let out_root = Run_config.out_root cfg in
     let input_mode = pathset_input_mode cfg in
     let%map ps =
       Pathset.make_and_mkdirs id ~in_root ~out_root ~input_mode
@@ -375,7 +376,7 @@ module Make_machine (B : Basic_machine) : Machine = struct
   ;;
 
   let make_compiler
-      (cfg : Tester_config.t)
+      (cfg : Run_config.t)
       (spec : Compiler.Spec.With_id.t)
     : (module Compiler) Or_error.t =
     let open Or_error.Let_syntax in
@@ -388,22 +389,22 @@ module Make_machine (B : Basic_machine) : Machine = struct
         module R = R
         let ps = ps
         let cspec = spec
-        let c_litmus_mode = Tester_config.c_litmus_mode cfg
+        let c_litmus_mode = Run_config.c_litmus_mode cfg
       end) : Compiler)
   ;;
 
   let run_compiler
-      (cfg : Tester_config.t) (spec : Compiler.Spec.With_id.t) =
+      (cfg : Run_config.t) (spec : Compiler.Spec.With_id.t) =
     let open Or_error.Let_syntax in
     let id = Compiler.Spec.With_id.id spec in
-    let c_fnames = Tester_config.fnames cfg in
+    let c_fnames = Run_config.fnames cfg in
     let%bind (module TC) = make_compiler cfg spec in
     let%map result = TC.run c_fnames in
     (id, result)
   ;;
 
   let run_compilers
-      (cfg : Tester_config.t)
+      (cfg : Run_config.t)
       : (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
     compilers
     |> Compiler.Spec.Set.map ~f:(run_compiler cfg)
@@ -416,7 +417,7 @@ module Make_machine (B : Basic_machine) : Machine = struct
       ~compilers:(T.value raw) ?time_taken:(T.time_taken raw) ()
   ;;
 
-  let run (cfg : Tester_config.t) : Analysis.Machine.t Or_error.t =
+  let run (cfg : Run_config.t) : Analysis.Machine.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map compilers_and_time =
       T.bracket_join (fun () -> run_compilers cfg)
@@ -458,7 +459,7 @@ module Make (B : Basic) : S = struct
   ;;
 
   let run_machine
-      (tester_cfg : Tester_config.t)
+      (tester_cfg : Run_config.t)
       (mach_id, mach_compilers) =
     let open Or_error.Let_syntax in
     let (module TM) = make_machine_module mach_compilers in
@@ -467,7 +468,7 @@ module Make (B : Basic) : S = struct
   ;;
 
   let run_machines
-      (cfg : Tester_config.t)
+      (cfg : Run_config.t)
       (specs_by_machine : (Machine.Id.t, Compiler.Spec.Set.t) List.Assoc.t)
     : (Machine.Id.t, Analysis.Machine.t) List.Assoc.t Or_error.t =
     specs_by_machine
@@ -476,10 +477,10 @@ module Make (B : Basic) : S = struct
   ;;
 
   let run
-      (cfg : Tester_config.t)
+      (cfg : Run_config.t)
     : Analysis.t Or_error.t =
     let open Or_error.Let_syntax in
-    let enabled_ids = Tester_config.compilers cfg in
+    let enabled_ids = Run_config.compilers cfg in
     let specs = Compiler.Spec.Set.restrict compilers enabled_ids in
     let specs_by_machine = group_specs_by_machine specs in
     let%map machines_and_time = T.bracket_join
