@@ -46,3 +46,9 @@ include Pretty_printer.S with type t := t
 
 include Stringable.S with type t := t
 (** Note that [of_string] is [create_exn]; ie, it can fail. *)
+
+module Herd_safe : sig
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
+end
+(** A quickcheck generator for C identifiers that produces
+    identifiers that Herd can safely lex. *)

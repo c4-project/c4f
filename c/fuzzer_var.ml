@@ -209,7 +209,8 @@ module Map = struct
   ;;
 
   let gen_fresh_var (map : t) : C_identifier.t Quickcheck.Generator.t =
-    Quickcheck.Generator.filter [%quickcheck.generator: C_identifier.t]
+    Quickcheck.Generator.filter
+      [%quickcheck.generator: C_identifier.Herd_safe.t]
       ~f:(Fn.non (C_identifier.Map.mem map))
   ;;
 end

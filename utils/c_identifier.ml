@@ -72,27 +72,30 @@ let of_string : string -> t = create_exn
 
 let pp : t Fmt.t = Fmt.of_to_string to_string
 
+let gen_string_initial
+  ~(initial : char Quickcheck.Generator.t)
+  ~(rest : char Quickcheck.Generator.t)
+  : string Quickcheck.Generator.t =
+  Quickcheck.Generator.(
+    map ~f:(Tuple2.uncurry (^))
+      (tuple2
+         (map ~f:String.of_char initial)
+         (String.gen' rest))
+  )
+;;
+
 module Q : Quickcheck.S with type t := t = struct
   let char_or_underscore (c : char Quickcheck.Generator.t)
       : char Quickcheck.Generator.t =
     Quickcheck.Generator.(union [ c; return '_' ])
   ;;
 
-  let gen_initial : string Quickcheck.Generator.t =
-    Quickcheck.Generator.(
-      map ~f:String.of_char (char_or_underscore Char.gen_alpha)
-    )
-  ;;
-
-  let gen_rest : string Quickcheck.Generator.t =
-    String.gen' (char_or_underscore Char.gen_alphanum)
-  ;;
-
   let quickcheck_generator : t Quickcheck.Generator.t =
-    Quickcheck.Generator.(
-      map ~f:(Fn.compose create_exn (Tuple2.uncurry (^)))
-        (tuple2 gen_initial gen_rest)
-    )
+    Quickcheck.Generator.map
+      (gen_string_initial
+         ~initial:(char_or_underscore Char.gen_alpha)
+         ~rest:(char_or_underscore Char.gen_alphanum))
+      ~f:create_exn
   ;;
 
   let quickcheck_observer : t Quickcheck.Observer.t =
@@ -105,8 +108,26 @@ module Q : Quickcheck.S with type t := t = struct
          |> raw
          |> Quickcheck.Shrinker.shrink String.quickcheck_shrinker
          |> Sequence.filter_map
-           ~f:(fun x -> x |> create |> Result.ok)
+           ~f:(Fn.compose Result.ok create)
       )
   ;;
 end
 include Q
+
+module Herd_safe : sig
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
+end = struct
+  type nonrec t = t
+  let sexp_of_t = sexp_of_t
+
+  include Q
+
+  (* We need only override the generator, to remove underscores. *)
+  let quickcheck_generator : t Quickcheck.Generator.t =
+    Quickcheck.Generator.map
+      (gen_string_initial
+         ~initial:Char.gen_alpha ~rest:Char.gen_alphanum
+      )
+      ~f:create_exn
+  ;;
+end
