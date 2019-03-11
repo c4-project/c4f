@@ -40,6 +40,13 @@ module Program = struct
 
   let empty () : t = { decls = []; stms = [] }
 
+  let has_statements (p : t) : bool = not (List.is_empty p.stms)
+
+  let%expect_test "empty program has no statements" =
+    Fmt.(pr "%a@." (using has_statements bool) (empty ()));
+    [%expect {| false |}]
+  ;;
+
   module Stm_path : Mini_path.S_statement
     with type target = Mini.Statement.t With_source.t = struct
     type target = Mini.Statement.t With_source.t
@@ -144,10 +151,6 @@ module Program = struct
     |> Or_error.combine_errors
   ;;
 
-  (** [to_function prog ~vars ~id] lifts a subject-program [prog]
-      with ID [prog_id]
-      back into a Litmus function, adding a parameter list generated
-      from [vars]. *)
   let to_function
       (prog : t)
       ~(vars : Fuzzer_var.Map.t)
@@ -225,11 +228,9 @@ module Test = struct
     : Program.t list =
     test
     |> Mini_litmus.Ast.Validated.programs
-    |> List.map ~f:(fun (_, p) -> Program.of_function p)
+    |> List.map ~f:(Fn.compose Program.of_function snd)
   ;;
 
-  (** [of_litmus test] converts a validated C litmus test [test]
-      to the intermediate form used for fuzzing. *)
   let of_litmus (test : Mini_litmus.Ast.Validated.t) : t =
     { init     = Mini_litmus.Ast.Validated.init test
     ; programs = programs_of_litmus test
@@ -241,16 +242,35 @@ module Test = struct
       ~(vars : Fuzzer_var.Map.t)
     : Mini_litmus.Lang.Program.t list Or_error.t =
     progs
+    |> List.filter ~f:Program.has_statements
     |> List.mapi ~f:(fun id -> Program.to_function ~vars ~id)
     |> Or_error.combine_errors
   ;;
 
-  (** [to_litmus ?post subject ~vars ~name] tries to reconstitute a
-     validated C litmus test from the subject [subject], attaching the
-     name [name] and optional postcondition [post], and using the
-     variable map [vars] to reconstitute parameters. It may fail if
-     the resulting litmus is invalid---generally, this signifies an
-     internal error. *)
+  let%test_module "using sample environment" = (module struct
+    type r = Mini_litmus.Lang.Program.t list Or_error.t
+    [@@deriving sexp_of]
+
+    let vars = Fuzzer_var.Map.make_existing_var_map
+        (Lazy.force Mini_env.test_env)
+        (C_identifier.Set.empty)
+    ;;
+
+    let run programs =
+      let result = programs_to_litmus programs ~vars in
+      Sexp.output_hum stdout [%sexp (result : r)]
+
+    let%expect_test "programs_to_litmus: empty test" =
+      run [];
+      [%expect {| (Ok ()) |}]
+    ;;
+
+    let%expect_test "programs_to_litmus: empty programs" =
+      run (List.init 5 ~f:(fun _ -> Program.empty ()));
+      [%expect {| (Ok ()) |}]
+    ;;
+  end)
+
   let to_litmus
       ?(post : Mini_litmus.Ast.Post.t option)
       (subject : t)
@@ -267,8 +287,6 @@ module Test = struct
       ()
   ;;
 
-  (** [add_var_to_init subject var initial_value] adds [var] to
-      [subject]'s init block with the initial value [initial_value]. *)
   let add_var_to_init
       (subject : t)
       (var : C_identifier.t)

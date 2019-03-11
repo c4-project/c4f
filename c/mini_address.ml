@@ -96,8 +96,7 @@ let deanonymise = function
 
 module Quickcheck_generic
     (Lv : Quickcheckable.S with type t := Mini_lvalue.t) : sig
-  type nonrec t = t [@@deriving sexp_of]
-  include Quickcheck.S with type t := t
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
   type nonrec t = t
   let sexp_of_t = sexp_of_t
@@ -183,9 +182,8 @@ let variable_in_env (addr : t) ~(env : _ C_identifier.Map.t) : bool =
   Mini_lvalue.variable_in_env (lvalue_of addr) ~env
 ;;
 
-module Quickcheck_on_env (E : Mini_env.S): sig
-  type nonrec t = t [@@deriving sexp_of]
-  include Quickcheck.S with type t := t
+module Quickcheck_on_env (E : Mini_env.S) : sig
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = Quickcheck_generic (Mini_lvalue.Quickcheck_on_env (E))
 ;;
 
@@ -211,8 +209,7 @@ let%test_unit
 ;;
 
 module Quickcheck_atomic_int_pointers (E : Mini_env.S) : sig
-  type nonrec t = t [@@deriving sexp_of]
-  include Quickcheck.S with type t := t
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
   type nonrec t = t
   let sexp_of_t = sexp_of_t

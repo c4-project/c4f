@@ -103,8 +103,7 @@ module Atomic_load = struct
   module Quickcheck_generic
       (A : Quickcheckable.S with type t := Address.t)
     : sig
-      type nonrec t = t [@@deriving sexp_of]
-      include Quickcheck.S with type t := t
+      type nonrec t = t [@@deriving sexp_of, quickcheck]
     end = struct
     type nonrec t = t
     let sexp_of_t = sexp_of_t
@@ -128,9 +127,9 @@ module Atomic_load = struct
   include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
   module Quickcheck_atomic_ints (E : Env.S) : sig
-      type nonrec t = t [@@deriving sexp_of]
-      include Quickcheck.S with type t := t
-    end =
+    type nonrec t = t [@@deriving sexp_of]
+    include Quickcheck.S with type t := t
+  end =
     Quickcheck_generic (Address.Quickcheck_atomic_int_pointers (E))
   ;;
 
@@ -394,48 +393,6 @@ let%test_unit
   test_int_values_distinctiveness_on_mod (Lazy.force Env.empty_env_mod)
 ;;
 
-
-let test_all_expressions_have_type
-    (f : (module Env.S) -> (module Base_quickcheck.Test.S with type t = t))
-    (ty : Type.t)
-  : unit =
-  let env = Lazy.force Env.test_env_mod in
-  let (module Q) = f env in
-  let module Ty = Type_check (val env) in
-  Base_quickcheck.Test.run_exn (module Q)
-    ~f:(fun e ->
-        [%test_result: Type.t Or_error.t]
-          (Ty.type_of e)
-          ~here:[[%here]]
-          ~equal:[%compare.equal: Type.t Or_error.t]
-          ~expect:(Or_error.return ty))
-;;
-
-let test_all_expressions_in_env
-    (f : (module Env.S) -> (module Base_quickcheck.Test.S with type t = t))
-  : unit =
-  let (module E) = Lazy.force Env.test_env_mod in
-  let (module Q) = f (module E) in
-  Base_quickcheck.Test.run_exn (module Q)
-    ~f:([%test_pred: t]
-          (On_identifiers.for_all ~f:(C_identifier.Map.mem E.env))
-          ~here:[[%here]]
-       )
-;;
-
-let%test_unit
-  "Quickcheck_int_values: all expressions have 'int' type" =
-  test_all_expressions_have_type
-    (fun e -> (module Quickcheck_int_values (val e)))
-    Type.(normal Basic.int)
-;;
-
-let%test_unit
-  "Quickcheck_int_values: all referenced variables in environment" =
-  test_all_expressions_in_env
-    (fun e -> (module Quickcheck_int_values (val e)))
-;;
-
 module Quickcheck_bool_values (E : Env.S) : sig
   type nonrec t = t [@@deriving sexp_of]
   include Quickcheck.S with type t := t
@@ -472,15 +429,61 @@ end = struct
   let quickcheck_shrinker : t Snk.t = Snk.empty ()
 end
 
-let%test_unit
-  "Quickcheck_bool_values: all expressions have 'bool' type" =
-  test_all_expressions_have_type
-    (fun e -> (module Quickcheck_bool_values (val e)))
-    Type.(normal Basic.bool)
+
+let test_all_expressions_have_type
+    (f : (module Env.S) -> (module Base_quickcheck.Test.S with type t = t))
+    (ty : Type.t)
+  : unit =
+  let env = Lazy.force Env.test_env_mod in
+  let (module Q) = f env in
+  let module Ty = Type_check (val env) in
+  Base_quickcheck.Test.run_exn (module Q)
+    ~f:(fun e ->
+        [%test_result: Type.t Or_error.t]
+          (Ty.type_of e)
+          ~here:[[%here]]
+          ~equal:[%compare.equal: Type.t Or_error.t]
+          ~expect:(Or_error.return ty))
 ;;
 
-let%test_unit
-  "Quickcheck_bool_values: all referenced variables in environment" =
-  test_all_expressions_in_env
-    (fun e -> (module Quickcheck_bool_values (val e)))
-;;
+let%test_module "tests using the standard environment" = (module struct
+
+  let test_all_expressions_in_env
+      (f : (module Env.S) -> (module Base_quickcheck.Test.S with type t = t))
+    : unit =
+    let (module E) = Lazy.force Env.test_env_mod in
+    let (module Q) = f (module E) in
+    Base_quickcheck.Test.run_exn (module Q)
+      ~f:([%test_pred: t]
+            (On_identifiers.for_all ~f:(C_identifier.Map.mem E.env))
+            ~here:[[%here]]
+         )
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: all expressions have 'int' type" =
+    test_all_expressions_have_type
+      (fun e -> (module Quickcheck_int_values (val e)))
+      Type.(normal Basic.int)
+  ;;
+
+  let%test_unit
+    "Quickcheck_int_values: all referenced variables in environment" =
+    test_all_expressions_in_env
+      (fun e -> (module Quickcheck_int_values (val e)))
+  ;;
+
+  let%test_unit
+    "Quickcheck_bool_values: all expressions have 'bool' type" =
+    test_all_expressions_have_type
+      (fun e -> (module Quickcheck_bool_values (val e)))
+      Type.(normal Basic.bool)
+  ;;
+
+  let%test_unit
+    "Quickcheck_bool_values: all referenced variables in environment" =
+    test_all_expressions_in_env
+      (fun e -> (module Quickcheck_bool_values (val e)))
+  ;;
+
+end)

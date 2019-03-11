@@ -72,18 +72,6 @@ let of_string : string -> t = create_exn
 
 let pp : t Fmt.t = Fmt.of_to_string to_string
 
-let gen_string_initial
-  ~(initial : char Quickcheck.Generator.t)
-  ~(rest : char Quickcheck.Generator.t)
-  : string Quickcheck.Generator.t =
-  Quickcheck.Generator.(
-    map ~f:(Tuple2.uncurry (^))
-      (tuple2
-         (map ~f:String.of_char initial)
-         (String.gen' rest))
-  )
-;;
-
 module Q : Quickcheck.S with type t := t = struct
   let char_or_underscore (c : char Quickcheck.Generator.t)
       : char Quickcheck.Generator.t =
@@ -92,7 +80,7 @@ module Q : Quickcheck.S with type t := t = struct
 
   let quickcheck_generator : t Quickcheck.Generator.t =
     Quickcheck.Generator.map
-      (gen_string_initial
+      (My_quickcheck.gen_string_initial
          ~initial:(char_or_underscore Char.gen_alpha)
          ~rest:(char_or_underscore Char.gen_alphanum))
       ~f:create_exn
@@ -114,9 +102,7 @@ module Q : Quickcheck.S with type t := t = struct
 end
 include Q
 
-module Herd_safe : sig
-  type nonrec t = t [@@deriving sexp_of, quickcheck]
-end = struct
+module Herd_safe : My_quickcheck.S_with_sexp with type t = t = struct
   type nonrec t = t
   let sexp_of_t = sexp_of_t
 
@@ -125,7 +111,7 @@ end = struct
   (* We need only override the generator, to remove underscores. *)
   let quickcheck_generator : t Quickcheck.Generator.t =
     Quickcheck.Generator.map
-      (gen_string_initial
+      (My_quickcheck.gen_string_initial
          ~initial:Char.gen_alpha ~rest:Char.gen_alphanum
       )
       ~f:create_exn

@@ -27,7 +27,7 @@
 open Core_kernel
 open Utils
 
-type t [@@deriving sexp, eq]
+type t [@@deriving sexp, eq, quickcheck]
 (** Opaque type of addresses. *)
 
 module On_lvalues : Travesty.Traversable.S0_container
@@ -71,16 +71,18 @@ include Mini_intf.S_has_underlying_variable with type t := t
 include Mini_intf.S_type_checkable with type t := t
 (** Type-checking for addresses. *)
 
-(** {3 Generating and quickchecking} *)
+(** {3 Generating and quickchecking}
+
+    The default quickcheck instance random addresses without
+   constraint.  We also provide several modules with more
+
+*)
 
 module Quickcheck_generic
     (Lv : Quickcheckable.S with type t := Mini_lvalue.t)
   : Quickcheckable.S with type t := t
 (** Generates random addresses, parametrised on a given lvalue
     generator. *)
-
-include Quickcheckable.S with type t := t
-(** Generates random addresses without constraint. *)
 
 module Quickcheck_on_env (E : Mini_env.S)
   : Quickcheckable.S with type t := t

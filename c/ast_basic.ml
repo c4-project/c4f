@@ -315,8 +315,8 @@ module Constant = struct
     | Integer i -> Fmt.int f i
 
   let gen_int32_as_int : int Quickcheck.Generator.t =
-    Quickcheck.Generator.map ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x))
-      [%quickcheck.generator: int32]
+    Quickcheck.Generator.map [%quickcheck.generator: int32]
+      ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x))
   ;;
 
   let gen_int32_constant : t Quickcheck.Generator.t =

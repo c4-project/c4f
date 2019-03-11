@@ -22,31 +22,18 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Strings that obey C identifier restrictions.
-
-    Despite the name, this module isn't just for use in C ASTs: it
-    also sees use in Litmus identifiers, etc. *)
-
 open Core_kernel
 
-type t [@@deriving bin_io, compare, hash, sexp, quickcheck]
-(** Opaque type of C identifier strings. *)
+include My_quickcheck_intf
 
-val create : string -> t Or_error.t
-(** [create_exn str] creates a C identifier string from [str].
-    It returns an error if [str] isn't a valid C identifier. *)
-
-val create_exn : string -> t
-(** [create_exn str] creates a C identifier string from [str].
-    It raises an exception if [str] isn't a valid C identifier. *)
-
-include Comparable.S with type t := t
-
-include Pretty_printer.S with type t := t
-
-include Stringable.S with type t := t
-(** Note that [of_string] is [create_exn]; ie, it can fail. *)
-
-module Herd_safe : My_quickcheck.S_with_sexp with type t = t
-(** A quickcheck generator for C identifiers that produces
-    identifiers that Herd can safely lex. *)
+let gen_string_initial
+  ~(initial : char Quickcheck.Generator.t)
+  ~(rest : char Quickcheck.Generator.t)
+  : string Quickcheck.Generator.t =
+  Quickcheck.Generator.(
+    map ~f:(Tuple2.uncurry (^))
+      (tuple2
+         (map ~f:String.of_char initial)
+         (String.gen' rest))
+  )
+;;

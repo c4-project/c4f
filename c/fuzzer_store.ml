@@ -172,7 +172,7 @@ module Int : Action.S with type Random_state.t = rst = struct
   ;;
 end
 
-module Int_test = struct
+let%test_module "int tests" = (module struct
   let init : Mini.Constant.t Mini.id_assoc Lazy.t =
     lazy
       Mini.[ ( Identifier.of_string "x"
@@ -362,4 +362,4 @@ module Int_test = struct
       [%sexp (result : Mini.Identifier.t list Or_error.t)];
     [%expect {| (Ok (gen2)) |}]
   ;;
-end
+end)
