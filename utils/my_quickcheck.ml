@@ -37,3 +37,11 @@ let gen_string_initial
          (String.gen' rest))
   )
 ;;
+
+module Small_non_negative_int : sig
+  include module type of Int
+  include S_with_sexp with type t := int
+end = struct
+  include Int
+  let quickcheck_generator = Base_quickcheck.Generator.small_positive_or_zero_int
+end

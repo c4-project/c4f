@@ -183,6 +183,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let make_litmus
+      (locations : C_identifier.t list)
       (name : string)
       (programs : MS.Output.Program.t list)
       (post : L.Post.t option) =
@@ -192,6 +193,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
           ~init:(make_init programs)
           ~programs:(make_litmus_programs programs)
           ?post
+          ~locations
           ()
       )
   ;;
@@ -206,11 +208,23 @@ module Make_runner (B : Runner_deps) : Runner = struct
       let open Or_error.Let_syntax in
       let%bind blang =
         Or_error.try_with
-          (fun () ->Blang.t_of_sexp [%of_sexp: L.Pred_elt.t] sexp)
+          (fun () -> Blang.t_of_sexp [%of_sexp: L.Pred_elt.t] sexp)
       in
       (* TODO: use redirects *)
       let%map predicate = L.Pred.of_blang blang in
       { L.Post.quantifier = `Exists; predicate }
+  ;;
+
+  let make_locations
+    (_config : Litmus_config.t)
+    (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+    : C_identifier.t list Or_error.t =
+    (* TODO(@MattWindsor91): actually take the locations from the
+       config, filtered through the redirects map. *)
+    redirects
+    |> List.map
+      ~f:(fun (_, s) -> C_identifier.create (LS.Symbol.to_string s))
+    |> Or_error.combine_errors
   ;;
 
   let output_litmus
@@ -231,7 +245,8 @@ module Make_runner (B : Runner_deps) : Runner = struct
       Travesty.T_option.With_errors.map_m config.post_sexp
         ~f:(make_post redirects)
     in
-    let%map lit = make_litmus name programs post in
+    let%bind locations = make_locations config redirects in
+    let%map lit = make_litmus locations name programs post in
     let f = Format.formatter_of_out_channel outp in
     pp_for_litmus_format config.format f lit;
     Format.pp_print_newline f ();

@@ -34,3 +34,9 @@ val gen_string_initial
 (** [gen_string_initial ~initial ~rest] is a Quickcheck generator that
     produces non-empty strings whose first character draws from
     [initial] and all other characters from [rest]. *)
+
+module Small_non_negative_int : sig
+  include module type of Int
+  include S_with_sexp with type t := int
+end
+(** Convenience module for small non-negative integer generation. *)

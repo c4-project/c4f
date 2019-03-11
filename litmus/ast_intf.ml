@@ -201,6 +201,9 @@ module type S = sig
     (** [programs test] gets the program listings in [test], in
         left-right or top-bottom order. *)
 
+    val locations : t -> C_identifier.t list option
+    (** [locations test] gets the locations stanza for [test], if it exists. *)
+
     val post     : t -> Post.t option
     (** [post test] gets the postcondition of [test], if one
        exists. *)
@@ -208,15 +211,16 @@ module type S = sig
     (** For pretty-printing, use one of the functors in [Pp]. *)
 
     val make
-      :  ?post:Post.t
+      :  ?locations:C_identifier.t list
+      -> ?post:Post.t
       -> name:string
       -> init:((C_identifier.t, Lang.Constant.t) List.Assoc.t)
       -> programs:Lang.Program.t list
       -> unit
       -> t Or_error.t
-      (** [make ?post ~name ~init ~programs ()] directly constructs a validated
-         AST with the given fields.  It may fail if the result fails
-         validation. *)
+      (** [make ?location ?post ~name ~init ~programs ()] directly
+         constructs a validated AST with the given fields.  It may
+         fail if the result fails validation. *)
   end
 
   val validate : t -> Validated.t Or_error.t

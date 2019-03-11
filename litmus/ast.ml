@@ -36,9 +36,9 @@ module Primitives = struct
 
     module M_str = struct
       type t =
-        | Local of int * C_identifier.t
+        | Local of My_quickcheck.Small_non_negative_int.t * C_identifier.t
         | Global of C_identifier.t
-      [@@deriving compare, variants]
+      [@@deriving compare, variants, quickcheck]
       ;;
 
       let to_string : t -> string = function
@@ -71,71 +71,17 @@ module Primitives = struct
     include M_sexp
     include Comparable.Make (M_sexp)
 
-    module Q : Quickcheck.S with type t := t = struct
-      module G = Quickcheck.Generator
-      module O = Quickcheck.Observer
-      module S = Quickcheck.Shrinker
-
-      let anonymise = function
-        | Local  (int, str) -> `A ((int, str))
-        | Global str        -> `B str
-      ;;
-
-      let deanonymise = function
-        | `A ((int, str)) -> Local (int, str)
-        | `B str          -> Global str
-      ;;
-
-      let quickcheck_generator : t G.t =
-        G.map ~f:deanonymise
-          [%quickcheck.generator:
-            [ `A of [%custom G.small_non_negative_int] * C_identifier.t
-            | `B of C_identifier.t
-            ]
-          ]
-      ;;
-
-      let quickcheck_observer : t O.t =
-        O.unmap ~f:anonymise
-          [%quickcheck.observer:
-            [ `A of int * C_identifier.t
-            | `B of C_identifier.t
-            ]
-          ]
-      ;;
-
-      let quickcheck_shrinker : t S.t =
-        S.map ~f:deanonymise ~f_inverse:anonymise
-          [%quickcheck.shrinker:
-            [ `A of int * C_identifier.t
-            | `B of C_identifier.t
-            ]
-          ]
-      ;;
-    end
-    include Q
-
-    let%test_unit "to_string->of_string is identity" =
-      Core_kernel.Quickcheck.test
-        ~shrinker:[%quickcheck.shrinker: t] ~sexp_of:[%sexp_of: t]
-        [%quickcheck.generator: t]
-        ~f:(fun ident ->
-            [%test_eq: t] ~here:[[%here]] ident (of_string (to_string ident))
-          )
-
     let to_memalloy_id_inner (t : int) (id : C_identifier.t)
       : string =
       sprintf "t%d%s" t (C_identifier.to_string id)
     ;;
 
     let%test_unit "to_memalloy_id_inner produces valid identifiers" =
-      Core_kernel.Quickcheck.test
-        ~sexp_of:[%sexp_of: int * C_identifier.t]
-        ~shrinker:[%quickcheck.shrinker: int * C_identifier.t]
-        [%quickcheck.generator:
-          [%custom Quickcheck.Generator.small_non_negative_int]
-          * C_identifier.t
-        ]
+      Base_quickcheck.Test.run_exn
+        (module struct
+          type t = My_quickcheck.Small_non_negative_int.t * C_identifier.t
+          [@@deriving sexp, quickcheck]
+        end)
         ~f:(fun (t, id) ->
             [%test_pred: C_identifier.t Or_error.t]
               ~here:[[%here]]
@@ -148,17 +94,22 @@ module Primitives = struct
         C_identifier.of_string (to_memalloy_id_inner t id)
       | Global id -> id
     ;;
+  end
+
+  let%test_module "Id tests" = (module struct
+    let%test_unit "to_string->of_string is identity" =
+      Base_quickcheck.Test.run_exn (module Id)
+        ~f:(fun ident ->
+            [%test_eq: Id.t] ~here:[[%here]] ident (Id.of_string (Id.to_string ident))
+          )
 
     let%test_unit "to_memalloy_id is identity on globals" =
-      Core_kernel.Quickcheck.test
-        ~shrinker:[%quickcheck.shrinker: C_identifier.t]
-        ~sexp_of:[%sexp_of: C_identifier.t]
-        [%quickcheck.generator: C_identifier.t]
+      Base_quickcheck.Test.run_exn  (module C_identifier)
         ~f:(fun ident ->
             [%test_eq: C_identifier.t] ~here:[[%here]]
-              ident (to_memalloy_id (Global ident))
+              ident (Id.to_memalloy_id (Global ident))
           )
-  end
+  end)
 end
 
 module Make (Lang : Basic) : S with module Lang = Lang = struct
@@ -284,14 +235,15 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       { quantifier : [ `Exists ]
       ; predicate  : Pred.t
       }
-    [@@deriving sexp]
+    [@@deriving sexp, quickcheck]
     ;;
   end
 
   module Init = struct
-    type elt = { id : C_identifier.t; value : Lang.Constant.t } [@@deriving sexp]
+    type elt = { id : C_identifier.t; value : Lang.Constant.t }
+    [@@deriving sexp, quickcheck]
 
-    type t = elt list [@@deriving sexp]
+    type t = elt list [@@deriving sexp, quickcheck]
   end
 
   module Decl = struct
@@ -314,10 +266,11 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
   module Validated = struct
     type t =
-      { name     : string
-      ; init     : ((C_identifier.t, Lang.Constant.t) List.Assoc.t)
-      ; programs : Lang.Program.t list
-      ; post     : Post.t option
+      { name      : string
+      ; init      : ((C_identifier.t, Lang.Constant.t) List.Assoc.t)
+      ; locations : C_identifier.t list option
+      ; programs  : Lang.Program.t list
+      ; post      : Post.t option
       } [@@deriving fields, sexp]
     ;;
 
@@ -353,6 +306,11 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       Fn.const Validate.pass
     ;;
 
+    let validate_locations : C_identifier.t list option Validate.check =
+      (* TODO(@MattWindsor91): actual validation here? *)
+      Fn.const Validate.pass
+    ;;
+
     let validate_name : string Validate.check =
       fun name ->
         if String.contains name ' '
@@ -363,13 +321,16 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         else Validate.pass
     ;;
 
-    let validate_fields t =
+    let validate_fields (t : t) : Validate.t =
       let w check = Validate.field_folder t check in
-      Fields.fold ~init:[]
-        ~name:(w validate_name)
-        ~init:(w validate_init)
-        ~programs:(w validate_programs)
-        ~post:(w validate_post)
+      Validate.of_list
+        (Fields.fold ~init:[]
+           ~name:(w validate_name)
+           ~init:(w validate_init)
+           ~programs:(w validate_programs)
+           ~locations:(w validate_locations)
+           ~post:(w validate_post)
+        )
     ;;
 
     let get_uniform_globals : Lang.Program.t list ->
@@ -428,18 +389,44 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       )
     ;;
 
-    let validate_inner t =
-      Validate.of_list
-        ( [ validate_globals t ]
-          @ validate_fields t )
+    (** [validate_post_or_location_exists] checks an incoming Litmus
+       test to ensure that it has either a postcondition or a
+       locations stanza. *)
+    let validate_post_or_location_exists : t Validate.check =
+      Validate.booltest
+        (fun t ->
+           Option.is_some t.locations || Option.is_some t.post)
+        ~if_false:"Test must have a postcondition or location stanza."
+    ;;
+
+    let validate_location_variables : t Validate.check =
+      Validate.booltest
+        (fun t ->
+           Option.for_all t.locations
+             ~f:(List.for_all
+                   ~f:(List.Assoc.mem t.init
+                         ~equal:[%equal: C_identifier.t]
+                      )
+                )
+        )
+        ~if_false:"One or more locations aren't in the init."
+    ;;
+
+    let validate_inner : t Validate.check =
+      Validate.all
+        [ validate_fields
+        ; validate_globals
+        ; validate_post_or_location_exists
+        ; validate_location_variables
+        ]
     ;;
 
     let validate lit : t Or_error.t =
       Validate.valid_or_error lit validate_inner
     ;;
 
-    let make ?post ~name ~init ~programs () =
-      validate (Fields.create ~post ~name ~init ~programs)
+    let make ?locations ?post ~name ~init ~programs () =
+      validate (Fields.create ~locations ~post ~name ~init ~programs)
     ;;
   end
 
@@ -464,6 +451,12 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     |> Travesty.T_list.at_most_one
   ;;
 
+  let get_locations (decls : Decl.t list) : C_identifier.t list option Or_error.t =
+    decls
+    |> List.filter_map ~f:(function Locations l -> Some l | _ -> None)
+    |> Travesty.T_list.at_most_one
+  ;;
+
   let validate_language : C_identifier.t Validate.check =
     Validate.booltest
       (fun l -> String.Caseless.equal (C_identifier.to_string l) Lang.name)
@@ -477,12 +470,12 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   let validate ({ language; name; decls } : t) : Validated.t Or_error.t =
     let open Or_error.Let_syntax in
 
-    let%bind programs = get_programs   decls    in
-    let%bind init     = get_init       decls    in
-    let%bind post     = get_post       decls    in
-    (* TODO(@MattWindsor91): validate and/or use location stanza. *)
-    let%bind _        = check_language language in
-    Validated.make ~name ~init ?post ~programs ()
+    let%bind programs  = get_programs   decls    in
+    let%bind init      = get_init       decls    in
+    let%bind post      = get_post       decls    in
+    let%bind locations = get_locations  decls    in
+    let%bind _         = check_language language in
+    Validated.make ~name ~init ?locations ?post ~programs ()
   ;;
 end
 
@@ -530,14 +523,15 @@ module Convert (B : Basic_convert) = struct
   ;;
 
   let convert (old : B.From.Validated.t) : B.To.Validated.t Or_error.t =
-    let name         = B.From.Validated.name     old in
-    let old_init     = B.From.Validated.init     old in
-    let old_post     = B.From.Validated.post     old in
-    let old_programs = B.From.Validated.programs old in
+    let name         = B.From.Validated.name      old in
+    let old_init     = B.From.Validated.init      old in
+    let old_post     = B.From.Validated.post      old in
+    let old_programs = B.From.Validated.programs  old in
+    let locations    = B.From.Validated.locations old in
     let open Or_error.Let_syntax in
     let%bind init     = convert_init old_init
     and      post     = Travesty.T_option.With_errors.map_m old_post
         ~f:convert_post
     and      programs = convert_programs old_programs
-    in B.To.Validated.make ~name ~init ?post ~programs ()
+    in B.To.Validated.make ~name ~init ?post ?locations ~programs ()
 end
