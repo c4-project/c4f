@@ -54,7 +54,6 @@ module Litmus_config : sig
     [@@deriving eq]
     (** [t] is an enumeration of output formats for litmus jobs. *)
 
-
     val default : t
     (** [default] gets the default output format. *)
   end

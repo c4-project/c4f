@@ -47,25 +47,8 @@ module Make (B : Basic) = struct
     |> Or_error.combine_errors
   ;;
 
-  let convert_id
-    : B.From.Id.t -> B.To.Id.t = function
-    | Local (thr, id) -> Local (thr, id)
-    | Global id -> Global id
-  ;;
-
-  let rec convert_pred
-    : B.From.Pred.t -> B.To.Pred.t Or_error.t = function
-    | Bracket x ->
-      Or_error.(x |> convert_pred >>| fun x' -> B.To.Pred.Bracket x')
-    | Or (l, r) ->
-      Or_error.map2 (convert_pred l) (convert_pred r)
-        ~f:(fun l' r' -> B.To.Pred.Or (l', r'))
-    | And (l, r) ->
-      Or_error.map2 (convert_pred l) (convert_pred r)
-        ~f:(fun l' r' -> B.To.Pred.And (l', r'))
-    | Elt (Eq (id, k)) ->
-      let id' = convert_id id in
-      Or_error.(k |> B.constant >>| fun k' -> B.To.Pred.(Elt (Eq (id', k'))))
+  let convert_pred : B.From.Pred.t -> B.To.Pred.t Or_error.t =
+    Ast_base.Pred.On_constants.With_errors.map_m ~f:B.constant
   ;;
 
   let convert_post (post : B.From.Post.t) : B.To.Post.t Or_error.t =

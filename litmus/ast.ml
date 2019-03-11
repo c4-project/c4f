@@ -27,123 +27,40 @@ open Utils
 
 include Ast_intf
 
-module Primitives = struct
-  module Id : S_id = struct
-    (* Comparable.Make_plain depends on Sexpable, and
-       Sexpable.Of_stringable depends on Stringable.  As a result, we
-       have to implement Id by snowballing together increasingly
-       elaborate modules, adding Core_kernel extensions as we go. *)
-
-    module M_str = struct
-      type t =
-        | Local of My_quickcheck.Small_non_negative_int.t * C_identifier.t
-        | Global of C_identifier.t
-      [@@deriving compare, variants, quickcheck]
-      ;;
-
-      let to_string : t -> string = function
-        | Local (t, id) -> sprintf "%d:%s" t (C_identifier.to_string id)
-        | Global id -> (C_identifier.to_string id)
-      ;;
-
-      let try_parse_local (s : string) : (int * string) option =
-        let open Option.Let_syntax in
-        let%bind (thread, rest) = String.lsplit2 ~on:':' s in
-        let%bind tnum = Caml.int_of_string_opt thread in
-        let%map  tnum = Option.some_if (Int.is_non_negative tnum) tnum in
-        (tnum, rest)
-      ;;
-
-      let try_parse (s : string) : t Or_error.t =
-        match try_parse_local s with
-        | Some (t, id) -> Or_error.(id |> C_identifier.create >>| local t)
-        | None -> Or_error.(s |> C_identifier.create >>| global)
-      ;;
-
-      let of_string (s : string) : t = Or_error.ok_exn (try_parse s)
-    end
-
-    module M_sexp = struct
-      include M_str
-      include Sexpable.Of_stringable (M_str)
-    end
-
-    include M_sexp
-    include Comparable.Make (M_sexp)
-
-    let to_memalloy_id_inner (t : int) (id : C_identifier.t)
-      : string =
-      sprintf "t%d%s" t (C_identifier.to_string id)
-    ;;
-
-    let%test_unit "to_memalloy_id_inner produces valid identifiers" =
-      Base_quickcheck.Test.run_exn
-        (module struct
-          type t = My_quickcheck.Small_non_negative_int.t * C_identifier.t
-          [@@deriving sexp, quickcheck]
-        end)
-        ~f:(fun (t, id) ->
-            [%test_pred: C_identifier.t Or_error.t]
-              ~here:[[%here]]
-              Or_error.is_ok
-              (C_identifier.create (to_memalloy_id_inner t id))
-          )
-
-    let to_memalloy_id : t -> C_identifier.t = function
-      | Local (t, id) ->
-        C_identifier.of_string (to_memalloy_id_inner t id)
-      | Global id -> id
-    ;;
-  end
-
-  let%test_module "Id tests" = (module struct
-    let%test_unit "to_string->of_string is identity" =
-      Base_quickcheck.Test.run_exn (module Id)
-        ~f:(fun ident ->
-            [%test_eq: Id.t] ~here:[[%here]] ident (Id.of_string (Id.to_string ident))
-          )
-
-    let%test_unit "to_memalloy_id is identity on globals" =
-      Base_quickcheck.Test.run_exn  (module C_identifier)
-        ~f:(fun ident ->
-            [%test_eq: C_identifier.t] ~here:[[%here]]
-              ident (Id.to_memalloy_id (Global ident))
-          )
-  end)
-end
-
 module Make (Lang : Basic) : S with module Lang = Lang = struct
   module Lang = Lang
 
-  module Id = Primitives.Id
+  module Id = Ast_base.Id
 
   module Pred_elt = struct
-    type t =
-      | Eq of Id.t * Lang.Constant.t
-    [@@deriving sexp, compare, eq, quickcheck]
+    type t = Lang.Constant.t Ast_base.Pred_elt.t
+    [@@deriving sexp, compare, equal, quickcheck]
+
+    let (==?)   = Ast_base.Pred_elt.(==?)
   end
 
   module Pred = struct
-    type t =
-      | Bracket of t
-      | Or of t * t
-      | And of t * t
-      | Elt of Pred_elt.t
-    [@@deriving sexp, compare, eq]
-    ;;
+    type t = Lang.Constant.t Ast_base.Pred.t
+    [@@deriving sexp, compare, equal]
+
+    let bracket   = Ast_base.Pred.bracket
+    let debracket = Ast_base.Pred.debracket
+    let (||)      = Ast_base.Pred.(||)
+    let (&&)      = Ast_base.Pred.(&&)
+    let elt       = Ast_base.Pred.elt
 
     let rec of_blang : Pred_elt.t Blang.t -> t Or_error.t = function
       | And (l, r) ->
         let open Or_error.Let_syntax in
         let%map l' = of_blang l
         and     r' = of_blang r
-        in And (l', r')
+        in Ast_base.Pred.And (l', r')
       | Or (l, r) ->
         let open Or_error.Let_syntax in
         let%map l' = of_blang l
         and     r' = of_blang r
-        in Or (l', r')
-      | Base x -> Or_error.return (Elt x)
+        in Ast_base.Pred.Or (l', r')
+      | Base x -> Or_error.return (Ast_base.Pred.Elt x)
       | True | False | Not _ | If _ as b ->
         Or_error.error_s
           [%message
@@ -158,73 +75,15 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       | Elt x -> Blang.base x
     ;;
 
-    let rec debracket : t -> t = function
-      | Bracket x  -> debracket x
-      | Or  (l, r) -> Or  (debracket l, debracket r)
-      | And (l, r) -> And (debracket l, debracket r)
-      | Elt x      -> Elt x
-    ;;
-
     module Q : Quickcheck.S with type t := t = struct
-      module G = Quickcheck.Generator
-      module O = Quickcheck.Observer
-      module S = Quickcheck.Shrinker
-
-      let anonymise = function
-        | Bracket x  -> `A x
-        | Or (l, r)  -> `B ((l, r))
-        | And (l, r) -> `C ((l, r))
-        | Elt x      -> `D x
+      let quickcheck_generator =
+        [%quickcheck.generator: Lang.Constant.t Ast_base.Pred.t]
       ;;
-
-      let deanonymise = function
-        | `A x        -> Bracket x
-        | `B ((l, r)) -> Or (l, r)
-        | `C ((l, r)) -> And (l, r)
-        | `D x        -> Elt x
+      let quickcheck_observer =
+        [%quickcheck.observer: Lang.Constant.t Ast_base.Pred.t]
       ;;
-
-      let quickcheck_generator : t G.t =
-        G.recursive_union
-          [ G.map ~f:(fun x -> Elt x) [%quickcheck.generator: Pred_elt.t] ]
-          ~f:(fun mu ->
-              [ G.map ~f:deanonymise
-                  [%quickcheck.generator:
-                    [ `A of [%custom mu]
-                    | `B of [%custom mu] * [%custom mu]
-                    | `C of [%custom mu] * [%custom mu]
-                    ]
-                  ]
-              ]
-            )
-      ;;
-
-      let quickcheck_observer : t O.t =
-        O.fixed_point
-          (fun mu ->
-             O.unmap ~f:anonymise
-               [%quickcheck.observer:
-                 [ `A of [%custom mu]
-                 | `B of [%custom mu] * [%custom mu]
-                 | `C of [%custom mu] * [%custom mu]
-                 | `D of Pred_elt.t
-                 ]
-               ]
-          )
-      ;;
-
-      let quickcheck_shrinker : t S.t =
-        S.fixed_point
-          (fun mu ->
-             S.map ~f:deanonymise ~f_inverse:anonymise
-               [%quickcheck.shrinker:
-                 [ `A of [%custom mu]
-                 | `B of [%custom mu] * [%custom mu]
-                 | `C of [%custom mu] * [%custom mu]
-                 | `D of Pred_elt.t
-                 ]
-               ]
-          )
+      let quickcheck_shrinker =
+        [%quickcheck.shrinker: Lang.Constant.t Ast_base.Pred.t]
       ;;
     end
     include Q
@@ -341,7 +200,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         let is_uniform =
           List.for_all xs
             ~f:(fun x' ->
-                [%compare.equal: (Lang.Type.t C_identifier.Map.t option)]
+                [%equal: (Lang.Type.t C_identifier.Map.t option)]
                   s (Lang.Program.global_vars x')
               )
         in

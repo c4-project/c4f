@@ -130,7 +130,7 @@ let make_init_globals
 ;;
 
 let qualify_local (t : int) (id : Mini.Identifier.t) : Mini.Identifier.t =
-  Litmus.Ast.Primitives.Id.(to_memalloy_id (Local (t, id)))
+  Litmus.Ast_base.Id.(to_memalloy_id (Local (t, id)))
 ;;
 
 let%expect_test "qualify_local: example" =

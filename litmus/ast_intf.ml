@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -24,6 +24,8 @@
 
 open Core_kernel
 open Utils
+
+(** {2 Signatures} *)
 
 (** Signature containing just the parts of an act language needed
     for building Litmus file ASTs. *)
@@ -74,34 +76,6 @@ end
 
 (** {2 AST modules} *)
 
-module type S_id = sig
-  type t =
-    | Local of int * C_identifier.t
-    | Global of C_identifier.t
-  [@@deriving compare, sexp, quickcheck]
-  ;;
-
-  val try_parse : string -> t Or_error.t
-  (** [try_parse str] tries to parse [str] as a Litmus identifier. *)
-
-  include Stringable.S with type t := t
-  (** Litmus identifiers can be converted to and from strings.
-      Note that conversion from strings can fail if the C identifier
-      parts don't obey C identifier validation. *)
-
-  include Comparable.S with type t := t
-  (** Litmus identifiers suit various comparable scenarios, such as
-     map keys. *)
-
-  val to_memalloy_id : t -> C_identifier.t
-  (** [to_memalloy_id id] converts [id] to the corresponding
-      memalloy executable-C global variable name.
-
-      This is [x] where [id = Global x], and ["tXY"] where
-      [id = Local (X, Y)]. *)
-end
-(** Signature of identifier modules. *)
-
 (** The interface for litmus AST modules.
 
     AST modules contain, effectively, two litmus ASTs: the raw AST that
@@ -110,30 +84,26 @@ end
 module type S = sig
   module Lang : Basic
 
-  module Id : S_id
+  module Id : module type of Ast_base.Id
+  (** Convenience re-export of {{!Ast_base.Id}Id}. *)
 
-  (** Type of basic elements inside a Litmus predicate.
-
-      The distinction between [Pred_elt] and {{!Pred}Pred} mainly
-     exists to make conversion to and from other languages, like
-     [Blang], easier. *)
   module Pred_elt : sig
-    type t =
-      | Eq of Id.t * Lang.Constant.t
-    [@@deriving sexp, compare, eq, quickcheck]
+    type t = Lang.Constant.t Ast_base.Pred_elt.t
+    [@@deriving compare, sexp, equal, quickcheck]
+
+    include Ast_base_intf.S_pred_elt with type 'const t := t
+                                      and type 'const elt := Lang.Constant.t
+                                      and type id := Id.t
   end
 
   module Pred : sig
-    type t =
-      | Bracket of t
-      | Or of t * t
-      | And of t * t
-      | Elt of Pred_elt.t
-    [@@deriving sexp, compare, eq, quickcheck]
-    (** Type of Litmus predicates. *)
+    type t = Lang.Constant.t Ast_base.Pred.t
+    [@@deriving compare, sexp, equal, quickcheck]
 
-    val debracket : t -> t
-    (** [debracket pred] removes any brackets in [pred]. *)
+    include Ast_base_intf.S_pred
+      with type 'const t   := t
+       and type 'const elt := Pred_elt.t
+    ;;
 
     val of_blang : Pred_elt.t Blang.t -> t Or_error.t
     (** [of_blang blang] converts [blang], a Blang expression over

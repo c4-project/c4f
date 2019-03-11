@@ -27,10 +27,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
    of a Herd7 run, extracting location information, and comparing
    states.  *)
 
-open Core
+open Core_kernel
 open Utils
 
-module Id = Litmus.Ast.Primitives.Id
+module Id = Litmus.Ast_base.Id
 
 module State = struct
   module M = struct

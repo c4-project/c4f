@@ -125,15 +125,15 @@ litmus_postcondition:
 
 litmus_disjunct:
   | e = litmus_conjunct { e }
-  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct { Litmus.Pred.Or (l, r) }
+  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct { Litmus.Pred.(l || r) }
 
 litmus_conjunct:
   | e = litmus_equality { e }
-  | l = litmus_conjunct; LIT_AND; r = litmus_equality { Litmus.Pred.And (l, r) }
+  | l = litmus_conjunct; LIT_AND; r = litmus_equality { Litmus.Pred.(l && r) }
 
 litmus_equality:
-  | e = parened(litmus_disjunct) { Litmus.Pred.Bracket (e) }
-  | l = litmus_identifier; EQ_OP; r = constant { Litmus.Pred.Elt (Litmus.Pred_elt.Eq (l, r)) }
+  | e = parened(litmus_disjunct) { Litmus.Pred.bracket e }
+  | l = litmus_identifier; EQ_OP; r = constant { Litmus.Pred.elt (Litmus.Pred_elt.(l ==? r)) }
 
 litmus_identifier:
   | i = IDENTIFIER                     { Litmus.Id.Global (Utils.C_identifier.of_string i) }
