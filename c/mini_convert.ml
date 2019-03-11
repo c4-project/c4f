@@ -572,7 +572,7 @@ let translation_unit (prog : Ast.Translation_unit.t) : Program.t Or_error.t =
   in Program.make ~globals ~functions
 ;;
 
-module Litmus_conv = Litmus.Ast.Convert (struct
+module Litmus_conv = Litmus.Convert.Make (struct
     module From = struct
       include Ast.Litmus
       module Lang = Ast.Litmus_lang

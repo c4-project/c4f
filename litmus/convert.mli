@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,19 +22,12 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Top-level AST for Litmus tests *)
+open Base
 
-include module type of Ast_intf
-(** As usual, we store the signatures for [Ast] in a separate
-   implementation module, and include them in both sides of this
-   module. *)
+include module type of Convert_intf
 
-(** Primitive parts of the Litmus AST, common to all languages. *)
-module Primitives : sig
-  module Id : S_id
+module Make (B : Basic) : sig
+  val convert : B.From.Validated.t -> B.To.Validated.t Or_error.t
 end
-
-module Make (Lang : Basic) : S with module Lang = Lang
-(** [Make] is a functor that, given a language described by
-    [Basic], produces a module type for litmus test syntax
-    trees, as well as operations for pretty-printing it. *)
+(** A functor that constructs a partial conversion function from one
+    Litmus AST to another. *)
