@@ -267,8 +267,17 @@ let delitmus_functions
     ~f:(fun tid (name, f) -> (name, delitmus_function tid f))
 ;;
 
+module Output = struct
+  type t =
+    { program   : Mini.Program.t
+    ; c_globals : C_identifier.Set.t
+    ; c_locals  : C_identifier.Set.t
+    }
+  [@@deriving make, fields]
+end
+
 let run (input : Mini_litmus.Ast.Validated.t)
-  : Mini.Program.t Or_error.t =
+  : Output.t Or_error.t =
   let open Or_error.Let_syntax in
   let init = Mini_litmus.Ast.Validated.init input in
   let raw_functions = Mini_litmus.Ast.Validated.programs input in
@@ -279,5 +288,9 @@ let run (input : Mini_litmus.Ast.Validated.t)
   let functions =
     delitmus_functions raw_functions
   in
-  Mini.Program.make ~globals ~functions
+  let program = Mini.Program.make ~globals ~functions in
+  Output.make
+    ~program
+    ~c_globals:(C_identifier.Set.of_list (List.map ~f:fst init_globals))
+    ~c_locals:(C_identifier.Set.of_list (List.map ~f:fst func_globals))
 ;;

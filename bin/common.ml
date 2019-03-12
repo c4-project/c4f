@@ -27,17 +27,19 @@ open Lib
 open Utils
 
 let warn_if_not_tracking_symbols (o : Output.t)
-  : string list option -> unit = function
+  : C_identifier.t list option -> unit = function
   | None ->
-    Format.fprintf o.wf
-      "@[%a@]@."
-      (Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp)
-      [ "The set of known C variables is empty."
-      ; "This can lead to `act` making incorrect assumptions;"
-      ; "for example, it may fail to work out which assembly symbols"
-      ; "refer to heap locations."
-      ; "To fix this, specify `-cvars 'symbol1,symbol2,etc'`."
-      ]
+    Fmt.(
+      pf o.wf
+        "@[%a@]@."
+        (list ~sep:sp string)
+        [ "The set of known C variables is empty."
+        ; "This can lead to `act` making incorrect assumptions;"
+        ; "for example, it may fail to work out which assembly symbols"
+        ; "refer to heap locations."
+        ; "To fix this, specify `-cvars 'symbol1,symbol2,etc'`."
+        ]
+    )
   | Some _ -> ()
 ;;
 
@@ -153,16 +155,16 @@ let litmusify_pipeline
 
 let choose_cvars_after_delitmus
     (o : Output.t)
-    (user_cvars : string list option)
-    (dl_cvars : String.Set.t)
-  : string list =
+    (user_cvars : C.Filters.Var_scope.t C_identifier.Map.t option)
+    (dl_cvars : C.Filters.Var_scope.t C_identifier.Map.t)
+  : C.Filters.Var_scope.t C_identifier.Map.t =
   (* We could use Option.first_some here, but expanding it out gives
      us the ability to verbose-log what we're doing. *)
   let out_cvars message cvars =
     Fmt.(
       pf o.vf "Using %s:@ %a@."
         message
-        (list ~sep:comma string) cvars
+        (using C_identifier.Map.keys (list ~sep:comma C_identifier.pp)) cvars
     );
     cvars
   in
@@ -171,38 +173,86 @@ let choose_cvars_after_delitmus
     out_cvars "user-supplied cvars (overriding those found during delitmus)"
       cvars
   | None ->
-    out_cvars "cvars found during delitmus" (String.Set.to_list dl_cvars)
+    out_cvars "cvars found during delitmus" dl_cvars
+;;
+
+let choose_cvars_inner
+  (o : Output.t)
+  (user_cvars : C.Filters.Var_scope.t C_identifier.Map.t option)
+  : C.Filters.Output.t Filter.chain_output
+    -> bool * C.Filters.Var_scope.t C_identifier.Map.t option = function
+  | `Checking_ahead -> false, None
+  | `Skipped -> true, user_cvars
+  | `Ran dl ->
+    let dl_cvars = C.Filters.Output.cvars dl in
+    true, Some (choose_cvars_after_delitmus o user_cvars dl_cvars)
 ;;
 
 let choose_cvars
   (o : Output.t)
-  (user_cvars : string list option)
+  (user_cvars : C.Filters.Var_scope.t C_identifier.Map.t option)
   (dl_output : C.Filters.Output.t Filter.chain_output)
-  : string list option =
-  let warn_if_empty, cvars = match dl_output with
-    | `Checking_ahead -> false, None
-    | `Skipped -> true, user_cvars
-    | `Ran dl ->
-      let dl_cvars = C.Filters.Output.cvars dl in
-      true, Some (choose_cvars_after_delitmus o user_cvars dl_cvars)
-  in
+  : C.Filters.Var_scope.t C_identifier.Map.t option =
+  let warn_if_empty, cvars = choose_cvars_inner o user_cvars dl_output in
   if warn_if_empty then
-    warn_if_not_tracking_symbols o cvars;
+    warn_if_not_tracking_symbols o
+      (Option.map ~f:C_identifier.Map.keys cvars);
   cvars
+;;
+
+module T_opt = Travesty.T_option.With_errors
+
+let string_list_to_cid_set
+    (sl : string list)
+  : C_identifier.Set.t Or_error.t =
+  Or_error.(
+    sl
+    |>  List.map ~f:C_identifier.create
+    |>  Or_error.combine_errors
+    >>| C_identifier.Set.of_list
+  )
+;;
+
+let collect_cvars
+    ?(c_globals : string list option)
+    ?(c_locals  : string list option)
+    ()
+  : C.Filters.Var_scope.t C_identifier.Map.t option Or_error.t =
+  let open Or_error.Let_syntax in
+  let%bind globals =
+    T_opt.map_m ~f:string_list_to_cid_set c_globals
+  in
+  let%map locals =
+    T_opt.map_m ~f:string_list_to_cid_set c_locals
+  in
+  C.Filters.Var_scope.make_map_opt ?globals ?locals ()
 ;;
 
 let make_compiler_input
   (o : Output.t)
   (file_type : File_type.t_or_infer)
-  (user_cvars : string list option)
-  (config : 'cfg)
+  (user_cvars : C.Filters.Var_scope.t C_identifier.Map.t option)
+  (config_fn : globals:C_identifier.Set.t -> 'cfg)
   (passes : Sanitiser_pass.Set.t)
   (dl_output : C.Filters.Output.t Filter.chain_output)
   : 'cfg Asm_job.t
       Compiler.Chain_input.t =
-  let cvars = choose_cvars o user_cvars dl_output in
+  let cvar_map = choose_cvars o user_cvars dl_output in
+  let c_globals =
+    cvar_map
+    |> Option.value ~default:C_identifier.Map.empty
+    |> C_identifier.Map.filter ~f:C.Filters.Var_scope.([%equal: t] Global)
+    |> C_identifier.Map.keys
+    |> C_identifier.Set.of_list
+  in
+  let symbols =
+    cvar_map
+    |> Option.map ~f:(C_identifier.Map.keys)
+    |> Option.map ~f:(List.map ~f:C_identifier.to_string)
+  in
+  let config = config_fn ~globals:c_globals in
   let litmus_job =
-    Asm_job.make ~passes ~config ?symbols:cvars ()
+    Asm_job.make ~passes ~config ?symbols ()
   in
   Compiler.Chain_input.create
     ~file_type:(File_type.delitmusified file_type)
@@ -214,17 +264,6 @@ let make_output_from_standard_args (args : Args.Standard.t)
   Output.make
     ~verbose:(Args.Standard.is_verbose args)
     ~warnings:(Args.Standard.are_warnings_enabled args)
-;;
-
-let collect_cvars
-  : string list option
-    -> string list option
-    -> string list option =
-  Option.merge
-    ~f:(fun c_globals c_locals ->
-        List.dedup_and_sort ~compare:[%compare:string]
-          (c_globals @ c_locals)
-      )
 ;;
 
 (** Used as input to {{!Make_lifter}Make_lifter}. *)

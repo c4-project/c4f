@@ -25,6 +25,27 @@
 (** De-litmusification of memalloy-style C litmus tests *)
 
 open Base
+open Utils
 
-val run : Mini_litmus.Ast.Validated.t -> Mini.Program.t Or_error.t
+(** The output from a de-litmusification round. *)
+module Output : sig
+  type t
+  (** Opaque type of de-litmusification output. *)
+
+  val program : t -> Mini.Program.t
+  (** [program output] gets the de-litmusified program. *)
+
+  val c_globals : t -> C_identifier.Set.t
+  (** [c_globals output] gets the names of each global variable
+      contained in the de-litmusified program. *)
+
+  val c_locals : t -> C_identifier.Set.t
+  (** [c_locals output] gets the names of each 'local' variable
+      contained in the de-litmusified program.
+      (We actually model them as global variables, but they serve
+      to capture what were local variables in the original test.) *)
+end
+
+
+val run : Mini_litmus.Ast.Validated.t -> Output.t Or_error.t
 (** [run litmus] runs de-litmusification on [litmus]. *)

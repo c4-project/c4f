@@ -159,13 +159,20 @@ let regress_litmusify : Fpath.t -> unit Or_error.t =
     (Sanitiser_pass.standard)
 ;;
 
-let pp_cvars : String.Set.t Fmt.t =
+let pp_cvars : C.Filters.Var_scope.t C_identifier.Map.t Fmt.t =
   Fmt.(
     prefix (unit "@,@,// C variables:@,")
       (vbox
-         (using String.Set.to_list
+         (using C_identifier.Map.keys
             (list ~sep:sp
-               (hbox (prefix (unit "// -@ ") string)))))
+               (hbox (prefix
+                        (unit "// -@ ")
+                        C_identifier.pp
+                     )
+               )
+            )
+         )
+      )
   )
 ;;
 

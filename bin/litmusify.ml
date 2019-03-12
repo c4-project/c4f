@@ -220,26 +220,18 @@ let parse_post
       )
 ;;
 
-let convert_locations (loc_strings : string list)
-    : C_identifier.t list Or_error.t =
-  loc_strings
-  |> List.map ~f:C_identifier.create
-  |> Or_error.combine_errors
-;;
-
-let make_litmus_config
-  (c_globals : string list option)
-  (post_sexp : [ `Exists of Sexp.t ] option)
-  : Sexp.t Asm_job.Litmus_config.t Or_error.t =
+let make_litmus_config_fn
+    (post_sexp : [ `Exists of Sexp.t ] option)
+  : (globals:C_identifier.Set.t -> Sexp.t Asm_job.Litmus_config.t)
+      Or_error.t =
   let open Or_error.Let_syntax in
-  let%bind postcondition = Travesty.T_option.With_errors.map_m post_sexp
+  let%map postcondition = Travesty.T_option.With_errors.map_m post_sexp
       ~f:parse_post
   in
-  let%map locations =
-    Travesty.T_option.With_errors.map_m c_globals
-      ~f:convert_locations
-  in
-  Asm_job.Litmus_config.make ?postcondition ?locations ()
+  (fun ~globals ->
+     let locations = C_identifier.Set.to_list globals in
+     Asm_job.Litmus_config.make ?postcondition ~locations ()
+  )
 ;;
 
 let run
@@ -260,10 +252,10 @@ let run
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
-  let%bind litmus_cfg = make_litmus_config c_globals post_sexp in
-  let user_cvars = Common.collect_cvars c_globals c_locals in
+  let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
+  let%bind user_cvars = Common.collect_cvars ?c_globals ?c_locals () in
   let compiler_input_fn =
-    Common.make_compiler_input o file_type user_cvars litmus_cfg passes
+    Common.make_compiler_input o file_type user_cvars litmus_cfg_fn passes
   in
   let%map _ =
     Filter.run_from_string_paths

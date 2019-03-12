@@ -29,7 +29,7 @@ open Utils
 
 val warn_if_not_tracking_symbols
   :  Output.t
-  -> string list option
+  -> C_identifier.t list option
   -> unit
 (** [warn_if_not_tracking_symbols o c_symbols] prints a warning on [o]
     if [c_symbols] is empty.  The warning explains that, without any
@@ -140,26 +140,28 @@ val litmusify_pipeline
 val make_compiler_input
   :  Output.t
   -> File_type.t_or_infer
-  -> string list option
-  -> 'cfg
+  -> C.Filters.Var_scope.t C_identifier.Map.t option
+  -> (globals:C_identifier.Set.t -> 'cfg)
   -> Sanitiser_pass.Set.t
   -> C.Filters.Output.t Filter.chain_output
   -> 'cfg Asm_job.t Compiler.Chain_input.t
-(** [make_compiler_input o file_type user_cvars cfg passes dl_output]
+(** [make_compiler_input o file_type user_cvars cfg_fun passes dl_output]
     generates the input to the compiler stage of a single-file pipeline.
 
     It takes the original file type [file_type]; the user-supplied C
-    variables [user_cvars]; the litmusifier configuration [config];
+    variables [user_cvars]; a function [cfg_fun] to generate a litmusifier
+    configuration given the final C global variable set,
     the sanitiser passes [passes]; and the output from the de-litmus
     stage of the litmus pipeline [dl_output], which contains any
     postcondition and discovered C variables. *)
 
 val collect_cvars
-  : string list option
-  -> string list option
-  -> string list option
-(** [collect_cvars c_globals c_locals] merges C global and local
-   variable lists, creating a single C variables list.
+  :  ?c_globals:string list
+  -> ?c_locals:string list
+  -> unit
+  -> C.Filters.Var_scope.t C_identifier.Map.t option Or_error.t
+(** [collect_cvars ?c_globals ?c_locals ()] tries to merge C global and
+   local variable lists, creating a single C variables map.
 
     This is useful for passing into things like
    [make_compiler_input]. *)

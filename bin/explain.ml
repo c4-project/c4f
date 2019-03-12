@@ -45,9 +45,12 @@ let run
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.explain
   in
-  let explain_cfg = Asm_job.Explain_config.make ?format:output_format () in
+  let explain_cfg ~globals =
+    ignore globals;
+    Asm_job.Explain_config.make ?format:output_format ()
+  in
   let%bind (module Exp) = Common.explain_pipeline target in
-  let user_cvars = Common.collect_cvars c_globals c_locals in
+  let%bind user_cvars = Common.collect_cvars ?c_globals ?c_locals () in
   let compiler_input_fn =
     Common.make_compiler_input o file_type user_cvars explain_cfg passes
   in
