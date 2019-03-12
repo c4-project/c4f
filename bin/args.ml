@@ -159,15 +159,25 @@ module Other = struct
       ~if_nothing_chosen:(`Default_to `Infer)
   ;;
 
-  let c_symbols =
-    flag "cvars"
-      (optional
-         (Arg_type.comma_separated
-            ~unique_values:true
-            ~strip_whitespace:true
-            string)
+  let c_variables_arg_type =
+    optional
+      (Arg_type.comma_separated
+         ~unique_values:true
+         ~strip_whitespace:true
+         string
       )
-      ~doc: "SYMBOLS comma-separated list of C variables to track"
+  ;;
+
+  let c_globals =
+    flag "c-globals"
+      (c_variables_arg_type)
+      ~doc: "IDS comma-separated list of C global variables to track"
+  ;;
+
+  let c_locals =
+    flag "c-locals"
+      (c_variables_arg_type)
+      ~doc: "IDS comma-separated list of C local variables to track"
   ;;
 
   let sanitiser_passes =

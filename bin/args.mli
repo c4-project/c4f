@@ -102,9 +102,14 @@ val file_type : [> `C_litmus | `Assembly | `C | `Infer] Command.Param.t
 (** [file_type] defines a parameter for specifying the file type of
     a single input file. *)
 
-val c_symbols : string list option Command.Param.t
-(** [c_symbols] defines a parameter for collecting a list of
-    C symbols to track during sanitisation. *)
+val c_globals : string list option Command.Param.t
+(** [c_globals] defines a parameter for collecting a list of
+    global C variables to track during sanitisation (and place in
+    any generated locations stanzas). *)
+
+val c_locals : string list option Command.Param.t
+(** [c_locals] defines a parameter for collecting a list of
+    local C variables to track during sanitisation. *)
 
 val sanitiser_passes
   : Sanitiser_pass.Selector.t Blang.t option Command.Param.t

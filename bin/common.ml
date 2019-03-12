@@ -216,6 +216,17 @@ let make_output_from_standard_args (args : Args.Standard.t)
     ~warnings:(Args.Standard.are_warnings_enabled args)
 ;;
 
+let collect_cvars
+  : string list option
+    -> string list option
+    -> string list option =
+  Option.merge
+    ~f:(fun c_globals c_locals ->
+        List.dedup_and_sort ~compare:[%compare:string]
+          (c_globals @ c_locals)
+      )
+;;
+
 (** Used as input to {{!Make_lifter}Make_lifter}. *)
 module type Basic_lifter = sig
   type t

@@ -153,3 +153,13 @@ val make_compiler_input
     the sanitiser passes [passes]; and the output from the de-litmus
     stage of the litmus pipeline [dl_output], which contains any
     postcondition and discovered C variables. *)
+
+val collect_cvars
+  : string list option
+  -> string list option
+  -> string list option
+(** [collect_cvars c_globals c_locals] merges C global and local
+   variable lists, creating a single C variables list.
+
+    This is useful for passing into things like
+   [make_compiler_input]. *)

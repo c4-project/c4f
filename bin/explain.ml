@@ -36,7 +36,9 @@ let print_symbol_map = function
 ;;
 
 let run
-    file_type compiler_id_or_arch output_format (user_cvars : string list option)
+    file_type compiler_id_or_arch output_format
+    (c_globals : string list option)
+    (c_locals  : string list option)
     (args : Args.Standard_with_files.t) o cfg =
   let open Or_error.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
@@ -45,6 +47,7 @@ let run
   in
   let explain_cfg = Asm_job.Explain_config.make ?format:output_format () in
   let%bind (module Exp) = Common.explain_pipeline target in
+  let user_cvars = Common.collect_cvars c_globals c_locals in
   let compiler_input_fn =
     Common.make_compiler_input o file_type user_cvars explain_cfg passes
   in
@@ -65,7 +68,8 @@ let command =
       let standard_args = Args.Standard_with_files.get
       and sanitiser_passes = Args.sanitiser_passes
       and compiler_id_or_arch = Args.compiler_id_or_arch
-      and c_symbols = Args.c_symbols
+      and c_globals = Args.c_globals
+      and c_locals = Args.c_locals
       and output_format =
         Asm_job.Explain_config.Format.(
           choose_one
@@ -90,6 +94,6 @@ let command =
                 file_type
                 compiler_id_or_arch
                 output_format
-                c_symbols)
+                c_globals c_locals)
     ]
 ;;

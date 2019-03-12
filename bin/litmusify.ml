@@ -182,8 +182,8 @@ let make_filter
                               ->
                               Sexp.t
                               Asm_job.Litmus_config.t
-                                Asm_job.t
-                                Compiler.Chain_input.t
+                              Asm_job.t
+                              Compiler.Chain_input.t
                             )
                         )
                         * ( ( C.Filters.Output.t option
@@ -220,9 +220,32 @@ let parse_post
       )
 ;;
 
+let convert_locations (loc_strings : string list)
+    : C_identifier.t list Or_error.t =
+  loc_strings
+  |> List.map ~f:C_identifier.create
+  |> Or_error.combine_errors
+;;
+
+let make_litmus_config
+  (c_globals : string list option)
+  (post_sexp : [ `Exists of Sexp.t ] option)
+  : Sexp.t Asm_job.Litmus_config.t Or_error.t =
+  let open Or_error.Let_syntax in
+  let%bind postcondition = Travesty.T_option.With_errors.map_m post_sexp
+      ~f:parse_post
+  in
+  let%map locations =
+    Travesty.T_option.With_errors.map_m c_globals
+      ~f:convert_locations
+  in
+  Asm_job.Litmus_config.make ?postcondition ?locations ()
+;;
+
 let run
     file_type (filter : Post_filter.t) compiler_id_or_emits
-    (user_cvars : string list option)
+    (c_globals : string list option)
+    (c_locals : string list option)
     (post_sexp : [ `Exists of Sexp.t ] option)
     (args : Args.Standard_with_files.t)
     (o : Output.t)
@@ -237,10 +260,8 @@ let run
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
-  let%bind postcondition = Travesty.T_option.With_errors.map_m post_sexp
-      ~f:parse_post
-  in
-  let litmus_cfg = Asm_job.Litmus_config.make ?postcondition () in
+  let%bind litmus_cfg = make_litmus_config c_globals post_sexp in
+  let user_cvars = Common.collect_cvars c_globals c_locals in
   let compiler_input_fn =
     Common.make_compiler_input o file_type user_cvars litmus_cfg passes
   in
@@ -270,7 +291,8 @@ let command =
         )
       and file_type = Args.file_type
       and compiler_id_or_arch = Args.compiler_id_or_arch
-      and c_symbols = Args.c_symbols
+      and c_globals = Args.c_globals
+      and c_locals  = Args.c_locals
       and post_sexp =
         choose_one
           [ map ~f:(Option.map ~f:(fun x -> Some (`Exists x)))
@@ -287,6 +309,6 @@ let command =
           ?sanitiser_passes
           ~with_compiler_tests:false
           ~f:(run
-                file_type filter compiler_id_or_arch c_symbols
+                file_type filter compiler_id_or_arch c_globals c_locals
                 post_sexp)
     ]

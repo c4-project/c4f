@@ -51,21 +51,22 @@ module Litmus_config : sig
     type t =
       | Full           (** Output a full, herd-compatible litmus test *)
       | Programs_only  (** Only output the program tables (eg for comparison) *)
-    [@@deriving eq]
+    [@@deriving equal]
     (** [t] is an enumeration of output formats for litmus jobs. *)
 
     val default : t
     (** [default] gets the default output format. *)
   end
 
-  type 'const t [@@deriving eq, sexp]
+  type 'const t [@@deriving equal, sexp]
 
   val make
     :  ?format:Format.t
     -> ?postcondition:('const Litmus.Ast_base.Postcondition.t)
+    -> ?locations:(Utils.C_identifier.t list)
     -> unit
     -> 'const t
-  (** [make ?format ?post_sexp ()] builds a [Litmus_config] with the
+  (** [make ?format ?postcondition ?locations ()] builds a [Litmus_config] with the
      given parameters. *)
 
   val default : unit -> 'a t
@@ -78,14 +79,14 @@ module Explain_config : sig
     type t =
       | Assembly  (** Terse, but as close to parseable assembly as possible *)
       | Detailed  (** More details than [Assembly], but verbose and free-form *)
-    [@@deriving eq]
+    [@@deriving equal]
     ;;
 
     val default : t
     (** [default] gets the default output format. *)
   end
 
-  type t [@@deriving eq, sexp]
+  type t [@@deriving equal, sexp]
 
   val make : ?format:Format.t -> unit -> t
   (** [make ?format ()] builds an [Explain_config] with the given

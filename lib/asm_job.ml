@@ -48,6 +48,7 @@ module Litmus_config = struct
   type 'const t =
     { format        : Format.t [@default Format.default]
     ; postcondition : 'const Litmus.Ast_base.Postcondition.t option
+    ; locations     : C_identifier.t list option
     }
   [@@deriving sexp, eq, make]
   ;;
@@ -221,16 +222,64 @@ module Make_runner (B : Runner_deps)
       ~f:B.convert_const
   ;;
 
-  let make_locations
-    (_config : LS.Constant.t Litmus_config.t)
-    (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+  (** [make_locations_from_redirects redirects] makes a 'locations'
+      stanza by taking the right-hand side of the redirects table
+      [redirects] created by the sanitiser process. *)
+  let make_locations_from_redirects
+      (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
     : C_identifier.t list Or_error.t =
-    (* TODO(@MattWindsor91): actually take the locations from the
-       config, filtered through the redirects map. *)
     redirects
     |> List.map
       ~f:(fun (_, s) -> C_identifier.create (LS.Symbol.to_string s))
     |> Or_error.combine_errors
+  ;;
+
+  let resolve_location_in_redirects
+      (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+      (location : C_identifier.t) : C_identifier.t Or_error.t =
+    let sym_opt =
+        Option.(
+          location
+          |> C_identifier.to_string
+          |> LS.Symbol.of_string_opt
+          >>= List.Assoc.find ~equal:[%equal:LS.Symbol.t] redirects
+          >>| LS.Symbol.to_string
+        )
+    in
+    let open Or_error.Let_syntax in
+    let%bind sym =
+      Result.of_option sym_opt
+        ~error:(
+          Error.create_s
+            [%message "Couldn't resolve location in redirects table"
+                ~here:[%here]
+                ~location:(location : C_identifier.t)
+                ~redirects:(redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+            ]
+        )
+    in C_identifier.create sym
+  ;;
+
+  let make_locations_from_config
+      (config_locs : C_identifier.t list)
+      (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+    : C_identifier.t list Or_error.t =
+    config_locs
+    |> List.map ~f:(resolve_location_in_redirects redirects)
+    |> Or_error.combine_errors
+  ;;
+
+  (** [make_locations config redirects] makes a 'locations'
+      stanza, either by taking the stanza given in [config] and
+      applying [redirects] to it, or just by taking the RHS of the
+      [redirects]. *)
+  let make_locations
+    (config : LS.Constant.t Litmus_config.t)
+    (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+    : C_identifier.t list Or_error.t =
+    match config.locations with
+    | Some locs -> make_locations_from_config locs redirects
+    | None -> make_locations_from_redirects redirects
   ;;
 
   let output_litmus

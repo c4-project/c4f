@@ -1,5 +1,13 @@
 # Unreleased
 
+## 2019-Mar-12
+
+- Split `-cvars` option into two new options: `-c-globals` and
+  `-c-locals`.  The difference is that `-c-globals` are used to build
+  `locations` stanzas in any emitted Litmus tests, whereas
+  `-c-locals` are only used to inform the sanitiser which symbols are
+  variables.
+
 ## 2019-Feb-27 (and previous)
 
 - Feature: Ongoing work on building a C11 litmus test mutator (or
