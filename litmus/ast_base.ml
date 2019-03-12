@@ -231,3 +231,34 @@ module Pred = struct
   end
   include Q
 end
+
+module Postcondition = struct
+  type 'const t =
+    { quantifier : [ `Exists ]
+    ; predicate  : 'const Pred.t
+    }
+  [@@deriving sexp, compare, equal, quickcheck, fields, make]
+  ;;
+
+  module On_constants : Travesty.Traversable.S1_container
+    with type 'const t := 'const t =
+    Travesty.Traversable.Make_container1 (struct
+      type nonrec 'const t = 'const t
+
+      module On_monad (M : Monad.S) = struct
+        module Elt = Pred.On_constants.On_monad (M)
+
+        let map_m (t : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
+          Fields.fold ~init:(M.return t)
+            ~quantifier:(fun xm _fld -> xm)
+            ~predicate:(fun xm _fld ->
+                let open M.Let_syntax in
+                let%bind x  = xm in
+                let      p  = x.predicate in
+                let%map  p' = Elt.map_m ~f p in
+                make ~quantifier:x.quantifier ~predicate:p'
+              )
+        ;;
+      end
+    end)
+end

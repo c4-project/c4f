@@ -272,7 +272,7 @@ module Test = struct
   end)
 
   let to_litmus
-      ?(post : Mini_litmus.Ast.Post.t option)
+      ?(postcondition : Mini_litmus.Ast.Postcondition.t option)
       (subject : t)
       ~(vars : Fuzzer_var.Map.t)
       ~(name : string)
@@ -280,7 +280,7 @@ module Test = struct
     let open Or_error.Let_syntax in
     let%bind programs = programs_to_litmus ~vars subject.programs in
     Mini_litmus.Ast.Validated.make
-      ?post
+      ?postcondition
       ~name
       ~init:(subject.init)
       ~programs

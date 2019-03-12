@@ -45,14 +45,14 @@ module Litmus_config = struct
     let default = Full
   end
 
-  type t =
-    { format    : Format.t [@default Format.default]
-    ; post_sexp : [ `Exists of Sexp.t ] option
+  type 'const t =
+    { format        : Format.t [@default Format.default]
+    ; postcondition : 'const Litmus.Ast_base.Postcondition.t option
     }
   [@@deriving sexp, eq, make]
   ;;
 
-  let default : t = make ()
+  let default : unit -> 'a t = make
 end
 
 module Explain_config = struct
@@ -81,11 +81,14 @@ type output =
   } [@@deriving fields]
 ;;
 
-module type Runner =
-  Gen_runner with type 'fmt inp := 'fmt t
-              and type aux := output
-              and type lcfg := Litmus_config.t
-              and type ecfg := Explain_config.t
+module type Runner = sig
+  type const [@@deriving sexp]
+  include
+    Gen_runner with type 'fmt inp := 'fmt t
+                and type aux := output
+                and type lcfg := const Litmus_config.t
+                and type ecfg := Explain_config.t
+end
 ;;
 
 (** [make_litmus_name src] tries to make a Litmus test name
@@ -117,7 +120,12 @@ let%expect_test "make_litmus_name: multi-extension filename" =
 ;;
 
 
-module Make_runner (B : Runner_deps) : Runner = struct
+module Make_runner (B : Runner_deps)
+  : Runner with type const = B.Src_lang.Constant.t = struct
+  type const = B.Src_lang.Constant.t
+  let const_of_sexp = B.Src_lang.Constant.t_of_sexp
+  let sexp_of_const = B.Src_lang.Constant.sexp_of_t
+
   (* Shorthand for modules we use a _lot_. *)
   module L  = B.Litmus_ast
   module LP = B.Litmus_pp
@@ -176,23 +184,27 @@ module Make_runner (B : Runner_deps) : Runner = struct
     | Programs_only -> LP.pp_programs
   ;;
 
-  let make_litmus_programs (programs : MS.Output.Program.t list) =
-    List.map programs
-      ~f:(fun program ->
-          program |> MS.Output.Program.listing |> B.final_convert)
+  let make_litmus_program (program : MS.Output.Program.t) =
+    program
+    |> MS.Output.Program.listing
+    |> B.convert_program
+  ;;
+
+  let make_litmus_programs =
+    List.map ~f:make_litmus_program
   ;;
 
   let make_litmus
       (locations : C_identifier.t list)
       (name : string)
       (programs : MS.Output.Program.t list)
-      (post : L.Post.t option) =
+      (postcondition : L.Postcondition.t option) =
     Or_error.tag ~tag:"Couldn't build litmus file."
       ( L.Validated.make
           ~name
           ~init:(make_init programs)
           ~programs:(make_litmus_programs programs)
-          ?post
+          ?postcondition
           ~locations
           ()
       )
@@ -203,20 +215,14 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let make_post (_redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
-    : [ `Exists of Sexp.t ] -> L.Post.t Or_error.t = function
-    | `Exists sexp ->
-      let open Or_error.Let_syntax in
-      let%bind blang =
-        Or_error.try_with
-          (fun () -> Blang.t_of_sexp [%of_sexp: L.Pred_elt.t] sexp)
-      in
-      (* TODO: use redirects *)
-      let%map predicate = L.Pred.of_blang blang in
-      { L.Post.quantifier = `Exists; predicate }
+    : LS.Constant.t Litmus.Ast_base.Postcondition.t
+    -> L.Postcondition.t Or_error.t =
+    Litmus.Ast_base.Postcondition.On_constants.With_errors.map_m
+      ~f:B.convert_const
   ;;
 
   let make_locations
-    (_config : Litmus_config.t)
+    (_config : LS.Constant.t Litmus_config.t)
     (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
     : C_identifier.t list Or_error.t =
     (* TODO(@MattWindsor91): actually take the locations from the
@@ -228,7 +234,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 
   let output_litmus
-      ?(config : Litmus_config.t = Litmus_config.default)
+      ?(config : LS.Constant.t Litmus_config.t = Litmus_config.default ())
       (name : string)
       (passes : Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
@@ -242,7 +248,7 @@ module Make_runner (B : Runner_deps) : Runner = struct
     let programs = MS.Output.programs o in
     let warnings = collate_warnings programs in
     let%bind post =
-      Travesty.T_option.With_errors.map_m config.post_sexp
+      Travesty.T_option.With_errors.map_m config.postcondition
         ~f:(make_post redirects)
     in
     let%bind locations = make_locations config redirects in
@@ -308,10 +314,10 @@ module Make_runner (B : Runner_deps) : Runner = struct
     f ?config:aux.config name aux.passes symbols (B.program asm) sink oc
   ;;
 
-  module Litmusify : Filter.S with type aux_i = Litmus_config.t t
+  module Litmusify : Filter.S with type aux_i = LS.Constant.t Litmus_config.t t
                                and type aux_o = output =
     Filter.Make (struct
-      type aux_i = Litmus_config.t t
+      type aux_i = LS.Constant.t Litmus_config.t t
       type aux_o = output
       let name = "Litmusifier"
       let tmp_file_ext = Fn.const "litmus"
@@ -333,10 +339,49 @@ module Make_runner (B : Runner_deps) : Runner = struct
   ;;
 end
 
-let get_litmusify (module Runner : Runner)
-  : ( module Filter.S with type aux_i = Litmus_config.t t
+let get_litmusify_sexp (module Runner : Runner)
+  : ( module Filter.S with type aux_i = Sexp.t Litmus_config.t t
                        and type aux_o = output
-    ) = (module Runner.Litmusify)
+    ) =
+  (module
+    Filter.Adapt (struct
+      module Original = Runner.Litmusify
+
+      type aux_i = Sexp.t Litmus_config.t t
+      type aux_o = output
+
+      let adapt_constant (const : Sexp.t)
+        : Runner.const Or_error.t =
+        Or_error.try_with
+          (fun () -> [%of_sexp: Runner.const] const)
+      ;;
+
+      let adapt_postcondition : Sexp.t Litmus.Ast_base.Postcondition.t
+        -> Runner.const Litmus.Ast_base.Postcondition.t Or_error.t =
+        Litmus.Ast_base.Postcondition.On_constants.With_errors.map_m
+          ~f:adapt_constant
+      ;;
+
+      let adapt_config (config : Sexp.t Litmus_config.t)
+        : Runner.const Litmus_config.t Or_error.t =
+        let open Or_error.Let_syntax in
+        let%map postcondition =
+          Travesty.T_option.With_errors.map_m config.postcondition
+            ~f:adapt_postcondition
+        in { config with postcondition }
+      ;;
+
+      let adapt_i job =
+        let open Or_error.Let_syntax in
+        let%map config =
+          Travesty.T_option.With_errors.map_m job.config
+            ~f:adapt_config
+        in { job with config }
+      ;;
+
+      let adapt_o = Or_error.return
+    end)
+  )
 ;;
 
 let get_explain (module Runner : Runner)

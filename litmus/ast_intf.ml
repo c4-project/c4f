@@ -116,13 +116,12 @@ module type S = sig
        {{!Pred_elt.t}Pred_elt}. *)
   end
 
-  module Post : sig
-    type t =
-      { quantifier : [ `Exists ]
-      ; predicate  : Pred.t
-      }
-    [@@deriving sexp]
-    ;;
+  module Postcondition : sig
+    type t = Lang.Constant.t Ast_base.Postcondition.t
+    [@@deriving sexp, compare, equal, quickcheck]
+
+    include Ast_base_intf.S_postcondition
+      with type 'const t := t and type 'const pred := Pred.t
   end
 
   module Init : sig
@@ -135,7 +134,7 @@ module type S = sig
     type t =
       | Program   of Lang.Program.t
       | Init      of Init.t
-      | Post      of Post.t
+      | Post      of Postcondition.t
       | Locations of C_identifier.t list (* not properly supported yet *)
     [@@deriving sexp]
     ;;
@@ -161,10 +160,10 @@ module type S = sig
     type t [@@deriving sexp_of]
     (** The abstract type of a validated litmus AST. *)
 
-    val name     : t -> string
+    val name : t -> string
     (** [name test] gets the name of [test]. *)
 
-    val init     : t -> (C_identifier.t, Lang.Constant.t) List.Assoc.t
+    val init : t -> (C_identifier.t, Lang.Constant.t) List.Assoc.t
     (** [init test] gets the initialiser in [test]. *)
 
     val programs : t -> Lang.Program.t list
@@ -174,15 +173,15 @@ module type S = sig
     val locations : t -> C_identifier.t list option
     (** [locations test] gets the locations stanza for [test], if it exists. *)
 
-    val post     : t -> Post.t option
-    (** [post test] gets the postcondition of [test], if one
+    val postcondition : t -> Postcondition.t option
+    (** [postcondition test] gets the postcondition of [test], if one
        exists. *)
 
     (** For pretty-printing, use one of the functors in [Pp]. *)
 
     val make
       :  ?locations:C_identifier.t list
-      -> ?post:Post.t
+      -> ?postcondition:Postcondition.t
       -> name:string
       -> init:((C_identifier.t, Lang.Constant.t) List.Assoc.t)
       -> programs:Lang.Program.t list

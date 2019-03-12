@@ -180,6 +180,7 @@ let make_filter
                       ( ( File_type.t_or_infer
                           * ( C.Filters.Output.t Filter.chain_output
                               ->
+                              Sexp.t
                               Asm_job.Litmus_config.t
                                 Asm_job.t
                                 Compiler.Chain_input.t
@@ -208,6 +209,17 @@ let make_filter
   )
 ;;
 
+let parse_post
+  : [ `Exists of Sexp.t ]
+    -> Sexp.t Litmus.Ast_base.Postcondition.t Or_error.t = function
+  | `Exists sexp ->
+    Or_error.try_with
+      (fun () -> Litmus.Ast_base.Postcondition.make
+          ~quantifier:`Exists
+          ~predicate:([%of_sexp: Sexp.t Litmus.Ast_base.Pred.t] sexp)
+      )
+;;
+
 let run
     file_type (filter : Post_filter.t) compiler_id_or_emits
     (user_cvars : string list option)
@@ -225,7 +237,10 @@ let run
   let passes =
     Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
   in
-  let litmus_cfg = Asm_job.Litmus_config.make ?post_sexp () in
+  let%bind postcondition = Travesty.T_option.With_errors.map_m post_sexp
+      ~f:parse_post
+  in
+  let litmus_cfg = Asm_job.Litmus_config.make ?postcondition () in
   let compiler_input_fn =
     Common.make_compiler_input o file_type user_cvars litmus_cfg passes
   in
@@ -262,8 +277,8 @@ let command =
               (flag "exists"
                  (* We can't actually type-check the postcondition until we
                     have a target language! *)
-                 (optional sexp)
-                 ~doc: "PREDICATE an 'exists' postcondition to attach to the resulting Litmus test")
+               (optional sexp)
+               ~doc: "PREDICATE an 'exists' postcondition to attach to the resulting Litmus test")
           ]
           ~if_nothing_chosen:(`Default_to None)
       in

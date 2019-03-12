@@ -55,7 +55,7 @@ module type Basic = sig
   (** [cvars_of_delitmus dl] should return a list of C identifiers
       corresponding to all variables in [dl]. *)
 
-  val postcondition : t -> Mini_litmus.Ast.Post.t option
+  val postcondition : t -> Mini_litmus.Ast.Postcondition.t option
   (** [postcondition vast] should get the Litmus postcondition of
      [vast], if one exists. *)
 
@@ -74,7 +74,7 @@ type mode =
 module Output = struct
   type t =
     { cvars : String.Set.t
-    ; post  : Mini_litmus.Ast.Post.t option
+    ; post  : Mini_litmus.Ast.Postcondition.t option
     }
   [@@deriving fields]
 end
@@ -217,8 +217,8 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
     let fuzz : seed:int option -> o:Lib.Output.t -> t -> t Or_error.t = Fuzzer.run
 
     let postcondition
-      : Mini_litmus.Ast.Validated.t -> Mini_litmus.Ast.Post.t option =
-      Mini_litmus.Ast.Validated.post
+      : Mini_litmus.Ast.Validated.t -> Mini_litmus.Ast.Postcondition.t option =
+      Mini_litmus.Ast.Validated.postcondition
 
     let cvars_of_delitmus prog =
       prog

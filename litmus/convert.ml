@@ -51,22 +51,32 @@ module Make (B : Basic) = struct
     Ast_base.Pred.On_constants.With_errors.map_m ~f:B.constant
   ;;
 
-  let convert_post (post : B.From.Post.t) : B.To.Post.t Or_error.t =
+  let convert_post
+      (post : B.From.Postcondition.t) : B.To.Postcondition.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map predicate = convert_pred (post.predicate) in
-    { B.To.Post.quantifier = post.quantifier; predicate }
+    { Ast_base.Postcondition.quantifier = post.quantifier
+    ; predicate
+    }
+  ;;
+
+  let convert_post_opt
+    : B.From.Postcondition.t option
+      -> B.To.Postcondition.t option Or_error.t =
+    Travesty.T_option.With_errors.map_m ~f:convert_post
   ;;
 
   let convert (old : B.From.Validated.t) : B.To.Validated.t Or_error.t =
-    let name         = B.From.Validated.name      old in
-    let old_init     = B.From.Validated.init      old in
-    let old_post     = B.From.Validated.post      old in
-    let old_programs = B.From.Validated.programs  old in
-    let locations    = B.From.Validated.locations old in
+    let name         = B.From.Validated.name          old in
+    let old_init     = B.From.Validated.init          old in
+    let old_post     = B.From.Validated.postcondition old in
+    let old_programs = B.From.Validated.programs      old in
+    let locations    = B.From.Validated.locations     old in
     let open Or_error.Let_syntax in
-    let%bind init     = convert_init old_init
-    and      post     = Travesty.T_option.With_errors.map_m old_post
-        ~f:convert_post
-    and      programs = convert_programs old_programs
-    in B.To.Validated.make ~name ~init ?post ?locations ~programs ()
+    let%bind init          = convert_init old_init
+    and      postcondition = convert_post_opt old_post
+    and      programs      = convert_programs old_programs
+    in
+    B.To.Validated.make
+      ~name ~init ?postcondition ?locations ~programs ()
 end

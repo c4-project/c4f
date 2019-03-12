@@ -169,7 +169,7 @@ let pp_cvars : String.Set.t Fmt.t =
   )
 ;;
 
-let pp_post : C.Mini_litmus.Ast.Post.t Fmt.t =
+let pp_post : C.Mini_litmus.Ast.Postcondition.t Fmt.t =
   Fmt.(
     prefix (unit "@,@,// Postcondition:@,")
       (hbox (prefix (unit "// ") C.Mini_litmus.Pp.pp_post))

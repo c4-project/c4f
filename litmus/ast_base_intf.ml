@@ -72,3 +72,23 @@ module type S_pred = sig
   val debracket : 'const t -> 'const t
   (** [debracket pred] removes any brackets in [pred]. *)
 end
+
+(** Signature of operations that can be used on Litmus postconditions. *)
+module type S_postcondition = sig
+  type 'const t
+  (** Type of postconditions, possibly parametrised directly by
+     language constants. *)
+
+  type 'const pred
+  (** Type of predicates, possibly parametrised directly by
+      language constants. *)
+
+  val make : quantifier:[ `Exists ] -> predicate:'const pred -> 'const t
+  (** [make ~quantifier ~predicate] constructs a postcondition. *)
+
+  val quantifier : 'const t -> [ `Exists ]
+  (** [quantifier post] gets [post]'s quantifier. *)
+
+  val predicate : 'const t -> 'const pred
+  (** [predicate post] gets [post]'s predicate. *)
+end

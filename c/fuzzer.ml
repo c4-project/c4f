@@ -265,13 +265,13 @@ let run_with_state
   let open State.Monad.Let_syntax in
   (* TODO: add uuid to this *)
   let name = Mini_litmus.Ast.Validated.name test in
-  let post = Mini_litmus.Ast.Validated.post test in
+  let postcondition = Mini_litmus.Ast.Validated.postcondition test in
   let subject = Subject.Test.of_litmus test in
   let%bind subject' = mutate_subject subject rng in
   State.Monad.with_vars_m
     (fun vars ->
        State.Monad.Monadic.return
-         (Subject.Test.to_litmus ~vars ~name ?post subject')
+         (Subject.Test.to_litmus ~vars ~name ?postcondition subject')
     )
 ;;
 

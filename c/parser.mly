@@ -121,7 +121,7 @@ litmus_quantifier:
 
 litmus_postcondition:
   | quantifier = litmus_quantifier; predicate = parened(litmus_disjunct)
-    { { Litmus.Post.quantifier; predicate } }
+    { Litmus.Postcondition.make ~quantifier ~predicate }
 
 litmus_disjunct:
   | e = litmus_conjunct { e }

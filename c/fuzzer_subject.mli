@@ -94,17 +94,17 @@ module Test : sig
       to the intermediate form used for fuzzing. *)
 
   val to_litmus
-    :  ?post:Mini_litmus.Ast.Post.t
+    :  ?postcondition:Mini_litmus.Ast.Postcondition.t
     -> t
     -> vars:Fuzzer_var.Map.t
     -> name:string
     -> Mini_litmus.Ast.Validated.t Or_error.t
-  (** [to_litmus ?post subject ~vars ~name] tries to reconstitute a
-     validated C litmus test from the subject [subject], attaching the
-     name [name] and optional postcondition [post], and using the
-     variable map [vars] to reconstitute parameters. It may fail if
-     the resulting litmus is invalid---generally, this signifies an
-     internal error. *)
+  (** [to_litmus ?postcondition subject ~vars ~name] tries to
+     reconstitute a validated C litmus test from the subject
+     [subject], attaching the name [name] and optional postcondition
+     [post], and using the variable map [vars] to reconstitute
+     parameters. It may fail if the resulting litmus is
+     invalid---generally, this signifies an internal error. *)
 
   (** {3 Helpers for mutating tests} *)
 

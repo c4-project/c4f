@@ -33,7 +33,7 @@ module type S = sig
   (** [pp_programs f ast] prints the program table of [ast] on
      formatter [f], omitting all of the other parts of the AST. *)
 
-  val pp_post : Formatter.t -> Ast.Post.t -> unit
+  val pp_post : Formatter.t -> Ast.Postcondition.t -> unit
   (** [pp_post f post] prints the postcondition [post] on
       formatter [f]. *)
 end

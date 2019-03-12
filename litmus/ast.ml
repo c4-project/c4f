@@ -41,7 +41,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
   module Pred = struct
     type t = Lang.Constant.t Ast_base.Pred.t
-    [@@deriving sexp, compare, equal]
+    [@@deriving sexp, compare, equal, quickcheck]
 
     let bracket   = Ast_base.Pred.bracket
     let debracket = Ast_base.Pred.debracket
@@ -74,28 +74,15 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       | And (l, r) -> Blang.O.(to_blang l && to_blang r)
       | Elt x -> Blang.base x
     ;;
-
-    module Q : Quickcheck.S with type t := t = struct
-      let quickcheck_generator =
-        [%quickcheck.generator: Lang.Constant.t Ast_base.Pred.t]
-      ;;
-      let quickcheck_observer =
-        [%quickcheck.observer: Lang.Constant.t Ast_base.Pred.t]
-      ;;
-      let quickcheck_shrinker =
-        [%quickcheck.shrinker: Lang.Constant.t Ast_base.Pred.t]
-      ;;
-    end
-    include Q
   end
 
-  module Post = struct
-    type t =
-      { quantifier : [ `Exists ]
-      ; predicate  : Pred.t
-      }
-    [@@deriving sexp, quickcheck]
-    ;;
+  module Postcondition = struct
+    type t = Lang.Constant.t Ast_base.Postcondition.t
+    [@@deriving sexp, compare, equal, quickcheck]
+
+    let predicate = Ast_base.Postcondition.predicate
+    let quantifier = Ast_base.Postcondition.quantifier
+    let make = Ast_base.Postcondition.make
   end
 
   module Init = struct
@@ -109,7 +96,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     type t =
       | Program   of Lang.Program.t
       | Init      of Init.t
-      | Post      of Post.t
+      | Post      of Postcondition.t
       | Locations of C_identifier.t list (* not properly supported yet *)
     [@@deriving sexp]
     ;;
@@ -125,11 +112,11 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
   module Validated = struct
     type t =
-      { name      : string
-      ; init      : ((C_identifier.t, Lang.Constant.t) List.Assoc.t)
-      ; locations : C_identifier.t list option
-      ; programs  : Lang.Program.t list
-      ; post      : Post.t option
+      { name          : string
+      ; init          : ((C_identifier.t, Lang.Constant.t) List.Assoc.t)
+      ; locations     : C_identifier.t list option
+      ; programs      : Lang.Program.t list
+      ; postcondition : Postcondition.t option
       } [@@deriving fields, sexp]
     ;;
 
@@ -160,7 +147,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         ]
     ;;
 
-    let validate_post : Post.t option Validate.check =
+    let validate_post : Postcondition.t option Validate.check =
       (* TODO(@MattWindsor91): actual validation here? *)
       Fn.const Validate.pass
     ;;
@@ -188,7 +175,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
            ~init:(w validate_init)
            ~programs:(w validate_programs)
            ~locations:(w validate_locations)
-           ~post:(w validate_post)
+           ~postcondition:(w validate_post)
         )
     ;;
 
@@ -254,7 +241,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     let validate_post_or_location_exists : t Validate.check =
       Validate.booltest
         (fun t ->
-           Option.is_some t.locations || Option.is_some t.post)
+           Option.is_some t.locations || Option.is_some t.postcondition)
         ~if_false:"Test must have a postcondition or location stanza."
     ;;
 
@@ -284,8 +271,10 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       Validate.valid_or_error lit validate_inner
     ;;
 
-    let make ?locations ?post ~name ~init ~programs () =
-      validate (Fields.create ~locations ~post ~name ~init ~programs)
+    let make ?locations ?postcondition ~name ~init ~programs () =
+      let candidate =
+        Fields.create ~locations ~postcondition ~name ~init ~programs
+      in validate candidate
     ;;
   end
 
@@ -304,7 +293,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     )
   ;;
 
-  let get_post (decls : Decl.t list) : Post.t option Or_error.t =
+  let get_post (decls : Decl.t list) : Postcondition.t option Or_error.t =
     decls
     |> List.filter_map ~f:(function Post p -> Some p | _ -> None)
     |> Travesty.T_list.at_most_one
@@ -329,11 +318,11 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   let validate ({ language; name; decls } : t) : Validated.t Or_error.t =
     let open Or_error.Let_syntax in
 
-    let%bind programs  = get_programs   decls    in
-    let%bind init      = get_init       decls    in
-    let%bind post      = get_post       decls    in
-    let%bind locations = get_locations  decls    in
-    let%bind _         = check_language language in
-    Validated.make ~name ~init ?locations ?post ~programs ()
+    let%bind programs      = get_programs   decls    in
+    let%bind init          = get_init       decls    in
+    let%bind postcondition = get_post       decls    in
+    let%bind locations     = get_locations  decls    in
+    let%bind _             = check_language language in
+    Validated.make ~name ~init ?locations ?postcondition ~programs ()
   ;;
 end

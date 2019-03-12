@@ -73,7 +73,7 @@ module Make_common (B : Basic) = struct
       Fmt.pf f "%a@ ==@ %a" pp_id i B.Ast.Lang.Constant.pp c
   ;;
 
-  let pp_post f { B.Ast.Post.quantifier; predicate } =
+  let pp_post f { Ast_base.Postcondition.quantifier; predicate } =
     Fmt.(box (pair ~sep:sp pp_quantifier (parens pp_predicate)))
       f (quantifier, predicate)
   ;;
@@ -87,7 +87,8 @@ module Make_common (B : Basic) = struct
            but herd7 seems to need either a location stanza or a
            precondition, and this is always guaranteed to exist. *)
         pp_location_stanza (B.Ast.Validated.init litmus)
-        (option (prefix (unit "@,@,") pp_post)) (B.Ast.Validated.post litmus)
+        (option (prefix (unit "@,@,") pp_post))
+        (B.Ast.Validated.postcondition litmus)
     )
   ;;
 

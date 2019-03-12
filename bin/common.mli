@@ -123,6 +123,7 @@ val litmusify_pipeline
                       ( File_type.t_or_infer
                         * ( C.Filters.Output.t Filter.chain_output
                             ->
+                            Sexp.t
                             Asm_job.Litmus_config.t
                               Asm_job.t
                               Compiler.Chain_input.t

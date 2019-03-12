@@ -88,7 +88,7 @@ module Pred : sig
     | Or of 'const t * 'const t
     | And of 'const t * 'const t
     | Elt of 'const Pred_elt.t
-  [@@deriving sexp, compare, eq, quickcheck]
+  [@@deriving sexp, compare, equal, quickcheck]
   (** Type of Litmus predicates. *)
 
   include S_pred with type 'const t := 'const t
@@ -97,4 +97,21 @@ module Pred : sig
   module On_constants : Travesty.Traversable.S1_container
     with type 'const t := 'const t
     (** Traversing monadically over all constants in a predicate. *)
+end
+
+(** Directly-parametrised AST for postconditions. *)
+module Postcondition : sig
+  type 'const t =
+    { quantifier : [ `Exists ]
+    ; predicate  : 'const Pred.t
+    }
+  [@@deriving sexp, compare, equal, quickcheck]
+  (** Type of Litmus postconditions. *)
+
+  include S_postcondition
+    with type 'const t := 'const t and type 'const pred := 'const Pred.t
+
+  module On_constants : Travesty.Traversable.S1_container
+    with type 'const t := 'const t
+    (** Traversing monadically over all constants in a postcondition. *)
 end

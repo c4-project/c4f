@@ -57,7 +57,9 @@ let get_runner_from_dialect dialect =
 
        module Conv = Conv.Make (Src_lang) (Dst_lang)
 
-       let final_convert = Conv.convert
+       let convert_program = Conv.convert
+       let convert_const = Or_error.return
+
        let program = Fn.id
      end) : Lib.Asm_job.Runner)
 ;;

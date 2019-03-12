@@ -58,18 +58,18 @@ module Litmus_config : sig
     (** [default] gets the default output format. *)
   end
 
-  type t [@@deriving eq, sexp]
+  type 'const t [@@deriving eq, sexp]
 
   val make
     :  ?format:Format.t
-    -> ?post_sexp:([ `Exists of Sexp.t ])
+    -> ?postcondition:('const Litmus.Ast_base.Postcondition.t)
     -> unit
-    -> t
+    -> 'const t
   (** [make ?format ?post_sexp ()] builds a [Litmus_config] with the
      given parameters. *)
 
-  val default : t
-  (** [default] gets the default Litmus job configuration. *)
+  val default : unit -> 'a t
+  (** [default ()] gets the default Litmus job configuration. *)
 end
 
 module Explain_config : sig
@@ -107,24 +107,31 @@ val symbol_map : output -> (string, string) List.Assoc.t
     pretty-print formatter [f]. *)
 val warn : output -> Format.formatter -> unit
 
-module type Runner =
-  Gen_runner with type 'cfg inp := 'cfg t
-              and type aux      := output
-              and type lcfg     := Litmus_config.t
-              and type ecfg     := Explain_config.t
+module type Runner = sig
+  type const [@@deriving sexp]
+
+  include Gen_runner with type 'cfg inp := 'cfg t
+                      and type aux      := output
+                      and type lcfg     := const Litmus_config.t
+                      and type ecfg     := Explain_config.t
+end
 (** Signature of job runners. *)
 
-module Make_runner (R : Runner_deps) : Runner
+module Make_runner (R : Runner_deps)
+  : Runner with type const = R.Src_lang.Constant.t
 (** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)
 
-(** {2 First-class wrappers for getting job runners } *)
+(** {2 First-class wrappers for getting job runners} *)
 
-val get_litmusify
+val get_litmusify_sexp
   :  (module Runner)
-  -> (module Utils.Filter.S with type aux_i = Litmus_config.t t
+  -> (module Utils.Filter.S with type aux_i = Sexp.t Litmus_config.t t
                              and type aux_o = output
      )
-(** [get_litmusify Runner] is [Runner.Litmusify]. *)
+(** [get_litmusify_sexp Runner] is [Runner.Litmusify], but with the
+    input type altered slightly so that the constants inside any
+    litmus postconditions are expected to be S-expressions, and
+    unmarshalled into the appropriate language at run-time. *)
 
 val get_explain
   :  (module Runner)

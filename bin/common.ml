@@ -84,8 +84,7 @@ let chain_with_delitmus
 ;;
 
 let delitmus_compile_asm_pipeline
-    (type i)
-    (type o)
+    (type i o)
     (target : Compiler.Target.t)
     (job_maker : (module Asm_job.Runner) ->
      (module Filter.S with type aux_i = i and type aux_o = o))
@@ -130,6 +129,7 @@ let explain_pipeline
   delitmus_compile_asm_pipeline target Asm_job.get_explain
 ;;
 
+
 let litmusify_pipeline
   (target : Compiler.Target.t)
   : ( module
@@ -137,6 +137,7 @@ let litmusify_pipeline
                       ( File_type.t_or_infer
                         * ( C.Filters.Output.t Filter.chain_output
                             ->
+                            Sexp.t
                             Asm_job.Litmus_config.t
                               Asm_job.t
                               Compiler.Chain_input.t
@@ -147,7 +148,7 @@ let litmusify_pipeline
                         * ( unit option * Asm_job.output )
                       )
     ) Or_error.t =
-  delitmus_compile_asm_pipeline target Asm_job.get_litmusify
+  delitmus_compile_asm_pipeline target Asm_job.get_litmusify_sexp
 ;;
 
 let choose_cvars_after_delitmus

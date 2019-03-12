@@ -76,9 +76,13 @@ module type Runner_deps = sig
   ;;
   module Explainer : Explainer.S with module Lang := Src_lang
 
-  val final_convert
+  val convert_program
     :  Src_lang.Program.t
     -> Dst_lang.Program.t
+
+  val convert_const
+    :  Src_lang.Constant.t
+    -> Dst_lang.Constant.t Or_error.t
 
   val program : ast -> Src_lang.Program.t
 end
