@@ -49,11 +49,16 @@ module Make_common (B : Basic) = struct
       )
   ;;
 
-  let pp_location_stanza f (init : (C_identifier.t, B.Ast.Lang.Constant.t) List.Assoc.t) =
+  let pp_location_stanza : C_identifier.t list option Fmt.t =
     Fmt.(
-      pf f "@[<h>locations@ [@[%a@]]@]"
-        (list ~sep:(fun f () -> pf f ";@ ") C_identifier.pp)
-    ) (List.map ~f:fst init)
+      option
+        (hbox
+           (prefix
+             (unit "locations@ ")
+             (brackets (box (list ~sep:(unit ";@ ") C_identifier.pp)))
+           )
+        )
+    )
   ;;
 
   let pp_quantifier f = function
@@ -83,10 +88,7 @@ module Make_common (B : Basic) = struct
       pf f "%a@,@,%a@,@,%a%a"
         pp_init (B.Ast.Validated.init litmus)
         pp_programs litmus
-        (* This just repeats information already in the initialiser,
-           but herd7 seems to need either a location stanza or a
-           precondition, and this is always guaranteed to exist. *)
-        pp_location_stanza (B.Ast.Validated.init litmus)
+        pp_location_stanza (B.Ast.Validated.locations litmus)
         (option (prefix (unit "@,@,") pp_post))
         (B.Ast.Validated.postcondition litmus)
     )
