@@ -153,7 +153,9 @@ module Unix : S = struct
         (list ~sep:sp Fpath.pp)
         (subpaths (Fpath.v "/usr/local/etc/blah/burble/baz"))
     );
-    [%expect {| |}]
+    [%expect {|
+      / /usr/ /usr/local/ /usr/local/etc/ /usr/local/etc/blah/
+      /usr/local/etc/blah/burble/ /usr/local/etc/blah/burble/baz |}]
   ;;
 
   let%expect_test "subpaths: example relative path" =
@@ -162,7 +164,7 @@ module Unix : S = struct
         (list ~sep:sp Fpath.pp)
         (subpaths (Fpath.v "../inky/pinky/parlez/vous"))
     );
-    [%expect {| |}]
+    [%expect {| ../ ../inky/ ../inky/pinky/ ../inky/pinky/parlez/ ../inky/pinky/parlez/vous |}]
   ;;
 
   let mkdir_p (path : Fpath.t) =
