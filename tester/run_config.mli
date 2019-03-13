@@ -33,18 +33,6 @@
 open Base
 open Lib
 
-(** Enumeration of different ways in which the tester can extract a C
-    file and corresponding litmus test from its input witness. *)
-module C_litmus_mode : sig
-  type t =
-    | Memalloy
-      (** Assume that there are C/litmus files in the 'Litmus'
-          subdirectory, and C files in the 'C' subdirectory. *)
-    | Delitmusify
-    (** Assume that there are C/litmus files in the input
-        root, and that we must generate delitmusified versions ourselves. *)
-end
-
 type t
 (** Opaque type of tester configuration.
 
@@ -57,34 +45,21 @@ type t
 (** {2 Constructors} *)
 
 val make
-  :  fnames:string list
-  -> in_root:Fpath.t
-  -> out_root:Fpath.t
+  :  output_root:Fpath.t
   -> compilers:Id.Set.t
-  -> ?c_litmus_mode:C_litmus_mode.t
-  -> unit
+  -> input_mode:Pathset.Input_mode.t
   -> t Or_error.t
-(** [make ~fnames ~in_root ~out_root ~compilers
-   ?c_litmus_mode ?timing_mode ()] constructs a set of tester
-   configuration with the given parameters.  It fails if any of the
-   parameters are invalid.
-
-    The optional parameters have the following defaults:
-    - [c_litmus_mode]: {{!C_litmus_mode.Memalloy}Memalloy}. *)
+(** [make ~fnames ~output_root ~compilers ~input_mode ()] constructs a
+   set of tester configuration with the given parameters.  It fails if
+   any of the parameters are invalid. *)
 
 (** {2 Accessors} *)
 
-val fnames : t -> string list
-(** [fnames cfg] gets the filename list for [cfg]. *)
-
-val in_root : t -> Fpath.t
-(** [in_root cfg] gets the input root directory for [cfg]. *)
-
-val out_root : t -> Fpath.t
-(** [out_root cfg] gets the output root directory for [cfg]. *)
+val output_root : t -> Fpath.t
+(** [output_root cfg] gets the output root directory for [cfg]. *)
 
 val compilers : t -> Id.Set.t
 (** [compilers cfg] gets the compiler identifier set for [cfg]. *)
 
-val c_litmus_mode : t -> C_litmus_mode.t
-(** [c_litmus_mode cfg] gets the C litmus mode for [cfg]. *)
+val input_mode : t -> Pathset.Input_mode.t
+(** [input_mode cfg] gets the input mode for [cfg]. *)

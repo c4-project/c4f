@@ -56,61 +56,6 @@ let%expect_test "filename_no_ext: example with double extension" =
   [%expect {| baz |}]
 ;;
 
-
-module Dir = struct
-  let default_sort_compare : Fpath.t -> Fpath.t -> int =
-    Travesty.T_fn.on
-      Fpath.to_string
-      String_extended.collate
-  ;;
-
-  let filter_files ?ext (flist : Fpath.t list) =
-    Option.value_map
-      ~default:flist
-      ~f:(fun ext -> List.filter ~f:(Fpath.has_ext ext) flist)
-      ext
-  ;;
-
-  let test_files = [ "stdio.h"; "conio.h"; "main.c"; "main.o"; "README" ]
-
-  let%expect_test "filter_files: no filter" =
-    let result = filter_files (List.map ~f:Fpath.v test_files) in
-    Sexp.output_hum Out_channel.stdout
-      [%sexp (List.map ~f:Fpath.to_string result : string list) ];
-    [%expect {| (stdio.h conio.h main.c main.o README) |}]
-  ;;
-
-  let%expect_test "filter_files: filter" =
-    let result = filter_files ~ext:"c" (List.map ~f:Fpath.v test_files) in
-    Sexp.output_hum Out_channel.stdout
-      [%sexp (List.map ~f:Fpath.to_string result : string list) ];
-    [%expect {| (main.c) |}]
-  ;;
-
-  let readdir path =
-    Or_error.(
-      tag_arg
-        (try_with (fun () -> Sys.readdir path))
-        "Couldn't read directory"
-        path
-        [%sexp_of: string]
-    )
-  ;;
-
-  let map_combine (xs : 'a list) ~(f : 'a -> 'b Or_error.t)
-    : 'b list Or_error.t =
-    Or_error.combine_errors (List.map ~f xs)
-  ;;
-
-  let get_files ?(compare=default_sort_compare) ?ext (path : Fpath.t) =
-    let open Or_error.Let_syntax in
-    let%bind file_str_array = readdir (Fpath.to_string path) in
-    let      file_strs      = Array.to_list file_str_array in
-    let%map  files          = map_combine ~f:fpath_of_string file_strs in
-    let with_ext = filter_files ?ext files in
-    List.sort ~compare with_ext
-end
-
 module In_source = struct
   type t =
     | File of Fpath.t

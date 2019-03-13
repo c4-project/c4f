@@ -60,8 +60,6 @@ module type Basic_compiler = sig
   (** [ps] tells the tester where it can find input files, and where
       it should put output files, for this compiler. *)
 
-  val c_litmus_mode : Run_config.C_litmus_mode.t
-
   include Compiler.With_spec
     (** [Basic_compiler] instances must provide a compiler spec and ID. *)
 end
@@ -69,8 +67,8 @@ end
 (** User-facing interface for running compiler tests
     on a single compiler. *)
 module type Compiler = sig
-  val run : string list -> Analysis.Compiler.t Or_error.t
-  (** [run c_fnames] runs tests on each filename in [c_fnames],
+  val run : unit -> Analysis.Compiler.t Or_error.t
+  (** [run files] runs tests on each file in the module's pathset,
       returning a compiler-level analysis. *)
 end
 

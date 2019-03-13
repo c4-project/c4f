@@ -25,15 +25,6 @@ open Core
 open Lib
 open Utils
 
-
-let check_files_exist (c_path : Fpath.t) (c_files : Fpath.t list) =
-  if List.is_empty c_files
-  then Or_error.error_s
-      [%message "Expected at least one file." ~path:(Fpath.to_string c_path)]
-  else Result.ok_unit
-  (* TODO(@MattWindsor91): actually test the files go somewhere? *)
-;;
-
 let report_spec_errors o = function
   | [] -> ()
   | es ->
@@ -43,39 +34,14 @@ let report_spec_errors o = function
       es
 ;;
 
-let find_memalloy_c_filenames (in_root : Fpath.t)
-  : string list Or_error.t =
-  let open Or_error.Let_syntax in
-  let c_path = Fpath.(in_root / "C") in
-  let%bind c_files = Io.Dir.get_files c_path ~ext:"c" in
-  let%map () = check_files_exist c_path c_files in
-  List.map ~f:Io.filename_no_ext c_files
-;;
-
-let find_delitmusify_litmus_filenames (in_root : Fpath.t)
-  : string list Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind lit_files = Io.Dir.get_files in_root ~ext:"litmus" in
-  let%map () = check_files_exist in_root lit_files in
-  List.map ~f:Io.filename_no_ext lit_files
-;;
-
-let find_filenames : Tester.Run_config.C_litmus_mode.t -> Fpath.t -> string list Or_error.t =
-  function
-  | Memalloy -> find_memalloy_c_filenames
-  | Delitmusify -> find_delitmusify_litmus_filenames
-;;
-
 let make_tester_config
-    ~(in_root_raw : string) ~(out_root_raw : string)
-    ~(c_litmus_mode : Tester.Run_config.C_litmus_mode.t)
+    ~(out_root_raw : string)
+    ~(input_mode : Pathset.Input_mode.t)
     o cfg :
   Tester.Run_config.t Or_error.t =
   let open Or_error.Let_syntax in
-  let%bind in_root  = Io.fpath_of_string in_root_raw
-  and      out_root = Io.fpath_of_string out_root_raw
+  let%bind output_root = Io.fpath_of_string out_root_raw
   in
-  let%bind fnames = find_filenames c_litmus_mode in_root in
   let specs = Config.M.compilers cfg in
   report_spec_errors o
     (List.filter_map ~f:snd (Config.M.disabled_compilers cfg));
@@ -85,12 +51,9 @@ let make_tester_config
     |> Id.Set.of_list
   in
   Tester.Run_config.make
-    ~fnames
-    ~in_root
-    ~out_root
+    ~output_root
     ~compilers
-    ~c_litmus_mode
-    ()
+    ~input_mode
 ;;
 
 let make_tester o cfg timing_mode : (module Tester.Instance.S) =
@@ -115,10 +78,38 @@ let make_tester o cfg timing_mode : (module Tester.Instance.S) =
 
 let print_table = Fmt.pr "@[<v>%a@]@." Tabulator.pp
 
-let run should_time c_litmus_mode ~(in_root_raw : string) ~(out_root_raw : string) o cfg =
+let cook_memalloy in_root_raw =
   let open Or_error.Let_syntax in
+  let%bind input_root = Io.fpath_of_string in_root_raw in
+  Pathset.Input_mode.memalloy ~input_root
+;;
+
+let cook_delitmus files_raw =
+  let open Or_error.Let_syntax in
+  let%bind files =
+    files_raw
+    |> List.map ~f:Io.fpath_of_string
+    |> Or_error.combine_errors
+  in
+  Pathset.Input_mode.litmus_only ~files
+;;
+
+let cook_input_mode = function
+  | `Memalloy in_root_raw -> cook_memalloy in_root_raw
+  | `Delitmus files_raw -> cook_delitmus files_raw
+;;
+
+let run
+    (should_time : bool)
+    (input_mode_raw : [< `Delitmus of string list | `Memalloy of string ])
+    (out_root_raw : string)
+    (o : Output.t)
+    (cfg : Config.M.t)
+    : unit Or_error.t =
+  let open Or_error.Let_syntax in
+  let%bind input_mode = cook_input_mode input_mode_raw in
   let%bind tester_cfg =
-    make_tester_config ~in_root_raw ~out_root_raw ~c_litmus_mode o cfg
+    make_tester_config ~input_mode ~out_root_raw o cfg
   in
   let timing_mode =
     Timing.Mode.(if should_time then Enabled else Disabled)
@@ -144,25 +135,21 @@ let command =
         flag "time"
           no_arg
           ~doc:"if given, measure and report times"
-      and c_litmus_mode =
-        Tester.Run_config.C_litmus_mode.(
+      and input_mode_raw =
           choose_one
-            [ Args.flag_to_enum_choice
-                Memalloy
-                "memalloy"
-                ~doc:"assume the input directory has the layout of a Memalloy run result"
-            ; Args.flag_to_enum_choice
-                Delitmusify
-                "delitmusify"
-                ~doc:"assume the input directory only contains litmus tests"
+            [ (map ~f:(Option.map ~f:(fun x -> `Memalloy x))
+                 (flag "memalloy" (optional Filename.arg_type)
+                    ~doc:"DIRECTORY read input from a Memalloy run at this directory"
+                 )
+              )
+            ; (map ~f:(Option.map ~f:(fun x -> `Delitmus x))
+                 (anon (maybe (non_empty_sequence_as_list ("TEST_FILE" %: Filename.arg_type))))
+              )
             ]
-            ~if_nothing_chosen:(`Default_to Memalloy)
-        )
+            ~if_nothing_chosen:`Raise
       and sanitiser_passes = Args.sanitiser_passes
       and compiler_predicate = Args.compiler_predicate
       and machine_predicate = Args.machine_predicate
-      and in_root_raw =
-        anon ("RESULTS_PATH" %: string)
       in
       fun () ->
         Common.lift_command standard_args
@@ -170,6 +157,6 @@ let command =
           ?machine_predicate
           ?sanitiser_passes
           ~with_compiler_tests:true
-          ~f:(fun _args -> run time c_litmus_mode ~in_root_raw ~out_root_raw)
+          ~f:(fun _args -> run time input_mode_raw out_root_raw)
     ]
 ;;

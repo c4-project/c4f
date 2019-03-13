@@ -9,8 +9,8 @@ module File : sig
   type ps = t
   type t
 
-  (** [basename f] gets the basename of [f]. *)
-  val basename : t -> string
+  (** [name f] gets the basename of [f]. *)
+  val name : t -> string
 
   (** [c_path f] gets the path of the C input file for [f]. *)
   val c_path : t -> Fpath.t
@@ -35,35 +35,49 @@ module File : sig
      file for [f]. *)
   val herda_path : t -> Fpath.t
 
-  (** [make ps basename] makes file-specific paths for
-      basename [basename], according to pathset [ps]. *)
-  val make : ps -> string -> t
+  (** [make ps filename] makes file-specific paths for
+      file [filename], according to pathset [ps]. *)
+  val make : ps -> Fpath.t -> t
 end
 
 (** [mkdirs] tries to make the output directories
    mentioned in a [Pathset.t]. *)
 val mkdirs : t -> unit Or_error.t
 
+module Input_mode : sig
+  type t
+
+  val memalloy : input_root:Fpath.t -> t Or_error.t
+  val litmus_only : files:Fpath.t list -> t Or_error.t
+
+  val must_delitmusify : t -> bool
+  (** [must_delitmusify imode] returns [true] if the tester must
+      generate C files by de-litmusifying the C litmus tests, or
+      [false] if they are already assumed to exist. *)
+end
+
 val make
   :  Id.t
-  -> in_root:Fpath.t
-  -> out_root:Fpath.t
-  -> input_mode:[< `Separate | `Together ]
-  -> t
-(** [make id ~in_root ~out_root ~input_mode] constructs a pathset for
-   compiler ID [id], with all input relative to [in_root], output
-   relative to [out_root], and the input either considered to be in
-   separate, specifically-named subdirectories under [in_root]
-   ([input_mode] is [`Separate]), or directly under in_root
-   ([input_mode] is [`Together]). *)
+  -> input_mode:Input_mode.t
+  -> output_root:Fpath.t
+  -> t Or_error.t
+(** [make id ~input_mode ~output_root] constructs a pathset for
+    compiler ID [id], with all output relative to [output_root]
+    relative to [out_root], and the input determined by [input_mode]. *)
 
 val make_and_mkdirs
   :  Id.t
-  -> in_root:Fpath.t
-  -> out_root:Fpath.t
-  -> input_mode:[< `Separate | `Together ]
+  -> input_mode:Input_mode.t
+  -> output_root:Fpath.t
   -> t Or_error.t
 (** [make_and_mkdirs] behaves as {{!make}make}, then tries to make the
    directories through [mkdirs]. *)
+
+val input_mode : t -> Input_mode.t
+(** [input_mode ps] gets the input mode used to construct [ps]. *)
+
+val to_files : t -> File.t list
+(** [to_files ps] constructs a file pathset for each C litmus test in
+   [ps]. *)
 
 include Pretty_printer.S with type t := t

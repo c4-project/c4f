@@ -22,40 +22,16 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core_kernel
-open Lib
+include module type of Fs_intf
+(** We keep module signatures in {{!Fs_intf}Fs_intf}. *)
 
-type t =
-  { output_root : Fpath.t
-  ; compilers   : Id.Set.t
-  ; input_mode  : Pathset.Input_mode.t
-  }
-[@@deriving fields]
-;;
+module Unix : S
+(** [Unix] implements {{!S}S} using Core's Unix support. *)
 
-let validate_directory : Fpath.t Validate.check =
-  Validate.booltest Fpath.is_dir_path
-    ~if_false:"Expected a local directory here."
-;;
-
-let validate (cfg : t) : Validate.t =
-  let module V = Validate in
-  let w check = V.field_folder cfg check in
-  V.of_list
-    (Fields.fold ~init:[]
-       ~output_root:(w validate_directory)
-       ~compilers:(w (Fn.const V.pass))
-       ~input_mode:(w (Fn.const V.pass))
-    )
-;;
-
-let make
-    ~(output_root : Fpath.t)
-    ~(compilers   : Id.Set.t)
-    ~(input_mode  : Pathset.Input_mode.t)
-  : t Or_error.t =
-  let cfg =
-    Fields.create ~output_root ~compilers ~input_mode
-  in
-  Validate.valid_or_error cfg validate
-;;
+(* soon
+(** [Mock] mocks {{!S}S}, containing a mutable dummy filesystem that
+    can be set up by tests. *)
+module Mock : sig
+  include S
+end
+*)

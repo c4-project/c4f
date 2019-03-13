@@ -181,7 +181,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   end
 
   let compile_from_pathset_file (fs : Pathset.File.t) =
-    bracket ~stage:"CC" ~file:(P_file.basename fs)
+    bracket ~stage:"CC" ~file:(P_file.name fs)
       (fun () ->
          C.compile
            ~infile:(P_file.c_path fs)
@@ -190,7 +190,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
 
   let litmusify_single (fs : Pathset.File.t) (cvars : string list) =
     let open Or_error.Let_syntax in
-    bracket ~stage:"LITMUS" ~file:(P_file.basename fs)
+    bracket ~stage:"LITMUS" ~file:(P_file.name fs)
       (fun () ->
          let%map output =
            R.Litmusify.run_from_fpaths
@@ -204,7 +204,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   ;;
 
   let c_herd_on_pathset_file fs =
-    bracket ~stage:"HERD(C)" ~file:(P_file.basename fs)
+    bracket ~stage:"HERD(C)" ~file:(P_file.name fs)
       (fun () -> Or_error.return (
            try_run_herd `C
              ~input_path:(P_file.litc_path fs)
@@ -212,7 +212,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   ;;
 
   let a_herd_on_pathset_file fs =
-    bracket ~stage:"HERD(asm)" ~file:(P_file.basename fs)
+    bracket ~stage:"HERD(asm)" ~file:(P_file.name fs)
       (fun () -> Or_error.return (
            try_run_herd `Assembly
              ~input_path:(P_file.lita_path fs)
@@ -264,10 +264,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
 
   let delitmusify_needed : bool Lazy.t =
     lazy
-      (match c_litmus_mode with
-       | Delitmusify -> true
-       | Memalloy -> false
-      )
+      (Pathset.Input_mode.must_delitmusify (Pathset.input_mode ps))
   ;;
 
   let delitmusify (fs : Pathset.File.t) : unit Or_error.t =
@@ -290,7 +287,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
            ~f:(fun () -> delitmusify fs)
       )
       ~stage:"delitmusifying"
-      ~file:(P_file.basename fs)
+      ~file:(P_file.name fs)
   ;;
 
   let run_single_from_pathset_file (fs : Pathset.File.t) =
@@ -315,14 +312,13 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     (analysis, timings)
   ;;
 
-  let run_single (ps : Pathset.t) (c_fname : string) =
+  let run_single (fs : Pathset.File.t) =
     let open Or_error.Let_syntax in
-    let fs = Pathset.File.make ps c_fname in
     let%map result =
       T.bracket_join (fun () -> run_single_from_pathset_file fs)
     in
     let (herd, timings) = T.value result in
-    ( c_fname
+    ( Pathset.File.name fs
     , Analysis.File.make
         ~herd
         ?time_taken:(T.time_taken result)
@@ -331,12 +327,13 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     )
   ;;
 
-  let run (c_fnames : string list) =
+  let run () =
     let open Or_error.Let_syntax in
     let%map files_and_time =
       T.bracket_join (fun () ->
-          c_fnames
-          |> List.map ~f:(run_single ps)
+          ps
+          |> Pathset.to_files
+          |> List.map ~f:run_single
           |> Or_error.combine_errors
         )
     in
@@ -352,31 +349,15 @@ end
 module Make_machine (B : Basic_machine) : Machine = struct
   include B
 
-  let pathset_input_mode (cfg : Run_config.t)
-      : [< `Separate | `Together ] =
-    match Run_config.c_litmus_mode cfg with
-    | Memalloy ->
-      (* Memalloy-style outputs have their C in /C and their
-         litmus in /Litmus. *)
-      `Separate
-    | Delitmusify ->
-      (* When delitmusifying ourselves, we just assume that the given
-         input path is precisely where the C files are, and output the
-         delitmusified results into the same directory. *)
-      `Together
-  ;;
-
   let make_pathset
     (cfg : Run_config.t)
     (spec : Compiler.Spec.With_id.t)
     : Pathset.t Or_error.t =
     let open Or_error.Let_syntax in
     let id = Compiler.Spec.With_id.id spec in
-    let in_root  = Run_config.in_root cfg in
-    let out_root = Run_config.out_root cfg in
-    let input_mode = pathset_input_mode cfg in
-    let%map ps =
-      Pathset.make_and_mkdirs id ~in_root ~out_root ~input_mode
+    let output_root = Run_config.output_root cfg in
+    let input_mode = Run_config.input_mode cfg in
+    let%map ps = Pathset.make_and_mkdirs id ~output_root ~input_mode
     in
     Fmt.pf o.vf "%a@." Pathset.pp ps;
     ps
@@ -396,7 +377,6 @@ module Make_machine (B : Basic_machine) : Machine = struct
         module R = R
         let ps = ps
         let cspec = spec
-        let c_litmus_mode = Run_config.c_litmus_mode cfg
       end) : Compiler)
   ;;
 
@@ -404,9 +384,8 @@ module Make_machine (B : Basic_machine) : Machine = struct
       (cfg : Run_config.t) (spec : Compiler.Spec.With_id.t) =
     let open Or_error.Let_syntax in
     let id = Compiler.Spec.With_id.id spec in
-    let c_fnames = Run_config.fnames cfg in
     let%bind (module TC) = make_compiler cfg spec in
-    let%map result = TC.run c_fnames in
+    let%map result = TC.run () in
     (id, result)
   ;;
 

@@ -28,18 +28,6 @@ open Core
 
 include module type of Io_intf
 
-(** [Dir] contains high-ish-level operations on directories. *)
-module Dir : sig
-  val get_files
-    :  ?compare:(Fpath.t -> Fpath.t -> int)
-    -> ?ext:string
-    -> Fpath.t
-    -> Fpath.t list Or_error.t
-  (** [get_files ?compare ?ext path] wraps [Sys.readfiles] with error
-     handling, optional extension filtering, and path sorting using
-      [compare] (which, by default, is ascending collation). *)
-end
-
 (** [In_source] describes input sources. *)
 module In_source : sig
   type t

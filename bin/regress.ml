@@ -124,7 +124,7 @@ let regress_on_files (bin_name : string) (test_dir : Fpath.t) (ext : string)
   : unit Or_error.t =
   let open Or_error.Let_syntax in
   printf "# %s tests\n\n" bin_name;
-  let%bind test_files = Io.Dir.get_files ~ext test_dir in
+  let%bind test_files = Fs.Unix.get_files ~ext test_dir in
   let results = List.map test_files ~f:(
       fun file ->
         Fmt.pr "## %a\n\n```@." Fpath.pp file;
@@ -143,7 +143,7 @@ let regress_run_asm_many (modename : string) mode passes (test_path : Fpath.t)
   let path = Fpath.(test_path / "asm" / "x86" / "att" / "") in
   let%bind l = Language_support.asm_runner_from_arch arch in
   let%bind specs = read_specs path in
-  let%bind test_files = Io.Dir.get_files ~ext:"s" path in
+  let%bind test_files = Fs.Unix.get_files ~ext:"s" path in
   let%bind () = check_files_against_specs specs test_files in
   regress_on_files modename path "s"
     ~f:(regress_run_asm l path mode specs passes)
