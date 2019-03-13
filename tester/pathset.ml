@@ -26,44 +26,6 @@ open Base
 open Lib
 open Utils
 
-module Input_mode = struct
-  type t =
-    | Memalloy of Fpath.t
-    | Litmus_only of Fpath.t list
-  ;;
-
-  let validate_input_root_exists : Fpath.t Validate.check =
-    Validate.of_error (Fs.Unix.check_is_dir)
-  ;;
-
-  let validate_file_exists : Fpath.t Validate.check =
-    Validate.of_error (Fs.Unix.check_is_file)
-  ;;
-
-  let validate_files_exist : Fpath.t list Validate.check =
-    Validate.list ~name:(Fpath.to_string) validate_file_exists
-  ;;
-
-  let validate : t Validate.check =
-    function
-    | Memalloy input_root -> validate_input_root_exists input_root
-    | Litmus_only files -> validate_files_exist files
-  ;;
-
-  let memalloy ~(input_root:Fpath.t) : t Or_error.t =
-    Validate.valid_or_error (Memalloy input_root) validate
-  ;;
-
-  let litmus_only ~(files:Fpath.t list) : t Or_error.t =
-    Validate.valid_or_error (Litmus_only files) validate
-  ;;
-
-  let must_delitmusify : t -> bool = function
-    | Memalloy    _ -> false
-    | Litmus_only _ -> true
-  ;;
-end
-
 module M = struct
   type t =
     { litc_files : Fpath.t list
@@ -149,9 +111,9 @@ let%expect_test "make_id_path: folds in correct direction" =
 ;;
 
 let make_c_path (id_path : Fpath.t) : Input_mode.t -> Fpath.t =
-  function
-  | Memalloy in_root -> Fpath.(in_root / "C")
-  | Litmus_only _    -> Fpath.(id_path / "c")
+  Input_mode.reduce
+    ~memalloy:(fun in_root -> Fpath.(in_root / "C"))
+    ~litmus_only:(fun _ -> Fpath.(id_path / "c"))
 ;;
 
 module Get_files (F : Fs.S) = struct
@@ -168,9 +130,9 @@ end
 include Get_files (Fs.Unix)
 
 let get_litc_files : Input_mode.t -> Fpath.t list Or_error.t =
-  function
-  | Memalloy input_root -> get_memalloy_litc_files input_root
-  | Litmus_only files -> Or_error.return files
+  Input_mode.reduce
+    ~memalloy:get_memalloy_litc_files
+    ~litmus_only:Or_error.return
 ;;
 
 let make

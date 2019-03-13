@@ -22,40 +22,39 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core_kernel
-open Lib
+(** Input modes for the tester.
 
-type t =
-  { output_root : Fpath.t
-  ; compilers   : Id.Set.t
-  ; input_mode  : Input_mode.t
-  }
-[@@deriving fields]
-;;
+    The tester supports reading in litmus tests (and, optionally,
+    pre-built compilable C files) in several different ways.  This
+    module contains the means for selecting such input modes;
+    its results are then used to build {{!Pathset}pathsets}. *)
 
-let validate_directory : Fpath.t Validate.check =
-  Validate.booltest Fpath.is_dir_path
-    ~if_false:"Expected a local directory here."
-;;
+open Base
 
-let validate (cfg : t) : Validate.t =
-  let module V = Validate in
-  let w check = V.field_folder cfg check in
-  V.of_list
-    (Fields.fold ~init:[]
-       ~output_root:(w validate_directory)
-       ~compilers:(w (Fn.const V.pass))
-       ~input_mode:(w (Fn.const V.pass))
-    )
-;;
+type t
+(** Opaque type of input modes. *)
 
-let make
-    ~(output_root : Fpath.t)
-    ~(compilers   : Id.Set.t)
-    ~(input_mode  : Input_mode.t)
-  : t Or_error.t =
-  let cfg =
-    Fields.create ~output_root ~compilers ~input_mode
-  in
-  Validate.valid_or_error cfg validate
-;;
+(** {2 Constructors} *)
+
+val memalloy : input_root:Fpath.t -> t Or_error.t
+(** [memalloy ~input_root] creates, and validates, a Memalloy
+    input mode record using the given input root. *)
+
+val litmus_only : files:Fpath.t list -> t Or_error.t
+(** [litmus_only ~files] creates, and validates, a litmus-only input
+   mode record using the given files. *)
+
+(** {2 Queries} *)
+
+val reduce
+  :  t
+  -> memalloy:(Fpath.t -> 'a)
+  -> litmus_only:(Fpath.t list -> 'a)
+  -> 'a
+(** [reduce imode ~memalloy ~litmus_only] destructs [imode], applying
+    the appropriate reduction function to the mode. *)
+
+val must_delitmusify : t -> bool
+(** [must_delitmusify imode] returns [true] if the tester must
+   generate C files by de-litmusifying the C litmus tests, or [false]
+   if they are already assumed to exist. *)

@@ -263,8 +263,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   ;;
 
   let delitmusify_needed : bool Lazy.t =
-    lazy
-      (Pathset.Input_mode.must_delitmusify (Pathset.input_mode ps))
+    lazy (Input_mode.must_delitmusify (Pathset.input_mode ps))
   ;;
 
   let delitmusify (fs : Pathset.File.t) : unit Or_error.t =

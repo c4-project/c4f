@@ -69,18 +69,6 @@ end
    mentioned in a [Pathset.t]. *)
 val mkdirs : t -> unit Or_error.t
 
-module Input_mode : sig
-  type t
-
-  val memalloy : input_root:Fpath.t -> t Or_error.t
-  val litmus_only : files:Fpath.t list -> t Or_error.t
-
-  val must_delitmusify : t -> bool
-  (** [must_delitmusify imode] returns [true] if the tester must
-      generate C files by de-litmusifying the C litmus tests, or
-      [false] if they are already assumed to exist. *)
-end
-
 val make
   :  Id.t
   -> input_mode:Input_mode.t

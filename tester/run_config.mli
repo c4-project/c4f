@@ -47,7 +47,7 @@ type t
 val make
   :  output_root:Fpath.t
   -> compilers:Id.Set.t
-  -> input_mode:Pathset.Input_mode.t
+  -> input_mode:Input_mode.t
   -> t Or_error.t
 (** [make ~fnames ~output_root ~compilers ~input_mode ()] constructs a
    set of tester configuration with the given parameters.  It fails if
@@ -61,5 +61,5 @@ val output_root : t -> Fpath.t
 val compilers : t -> Id.Set.t
 (** [compilers cfg] gets the compiler identifier set for [cfg]. *)
 
-val input_mode : t -> Pathset.Input_mode.t
+val input_mode : t -> Input_mode.t
 (** [input_mode cfg] gets the input mode for [cfg]. *)

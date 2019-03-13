@@ -36,7 +36,7 @@ let report_spec_errors o = function
 
 let make_tester_config
     ~(out_root_raw : string)
-    ~(input_mode : Tester.Pathset.Input_mode.t)
+    ~(input_mode : Tester.Input_mode.t)
     o cfg :
   Tester.Run_config.t Or_error.t =
   let open Or_error.Let_syntax in
@@ -81,7 +81,7 @@ let print_table = Fmt.pr "@[<v>%a@]@." Tabulator.pp
 let cook_memalloy in_root_raw =
   let open Or_error.Let_syntax in
   let%bind input_root = Io.fpath_of_string in_root_raw in
-  Tester.Pathset.Input_mode.memalloy ~input_root
+  Tester.Input_mode.memalloy ~input_root
 ;;
 
 let cook_delitmus files_raw =
@@ -91,7 +91,7 @@ let cook_delitmus files_raw =
     |> List.map ~f:Io.fpath_of_string
     |> Or_error.combine_errors
   in
-  Tester.Pathset.Input_mode.litmus_only ~files
+  Tester.Input_mode.litmus_only ~files
 ;;
 
 let cook_input_mode = function
