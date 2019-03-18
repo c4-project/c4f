@@ -546,7 +546,7 @@ module Make (B : Basic)
   ;;
 
   let sanitise ?passes ?(symbols=[]) (prog : Lang.Program.t) =
-    let passes' = Option.value ~default:(Sanitiser_pass.standard) passes in
+    let passes' = Option.value ~default:(Config.Sanitiser_pass.standard) passes in
     let variables = Lang.Symbol.Set.of_list symbols in
     Ctx.(
       run

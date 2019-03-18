@@ -24,9 +24,9 @@
 
 (** Language frontends for x86 *)
 
-open Core
+open Base
 
-module type S = Lib.Frontend.S with type ast := Ast.t
+module type S = Utils.Frontend.S with type ast := Ast.t
 (** [S] is the type of x86 language frontends. *)
 
 module Att : S

@@ -138,7 +138,7 @@ module type S = sig
       that the sanitiser should track throughout the sanitisation
       process. *)
   val sanitise
-    :  ?passes:Sanitiser_pass.Set.t
+    :  ?passes:Config.Sanitiser_pass.Set.t
     -> ?symbols:Lang.Symbol.t list
     -> Lang.Program.t
     -> Output.t Or_error.t

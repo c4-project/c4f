@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core
-open Lib
 open Utils
 
 include Args_intf
@@ -123,14 +122,14 @@ module Other = struct
        (flag str no_arg ~doc))
   ;;
 
-  let compiler_id_type = Arg_type.create Id.of_string
-  let arch_type = Arg_type.create Id.of_string
+  let compiler_id_type = Arg_type.create Config.Id.of_string
+  let arch_type = Arg_type.create Config.Id.of_string
 
   let arch
       ?(name : string = "-arch")
       ?(doc : string = "the architecture to target")
       ()
-    : Id.t option Command.Param.t =
+    : Config.Id.t option Command.Param.t =
     (flag name
        (optional arch_type)
        ~doc:("ARCH_ID " ^ doc))
@@ -182,19 +181,19 @@ module Other = struct
 
   let sanitiser_passes =
     flag "sanitiser-passes"
-      (optional (sexp_conv [%of_sexp: Sanitiser_pass.Selector.t Blang.t]))
+      (optional (sexp_conv [%of_sexp: Config.Sanitiser_pass.Selector.t Blang.t]))
       ~doc:"PREDICATE select which sanitiser passes to use"
   ;;
 
   let compiler_predicate =
     flag "filter-compilers"
-      (optional (sexp_conv [%of_sexp: Compiler.Property.t Blang.t]))
+      (optional (sexp_conv [%of_sexp: Config.Compiler.Property.t Blang.t]))
       ~doc:"PREDICATE filter compilers using this predicate"
   ;;
 
   let machine_predicate =
     flag "filter-machines"
-      (optional (sexp_conv [%of_sexp: Machine.Property.t Blang.t]))
+      (optional (sexp_conv [%of_sexp: Config.Machine.Property.t Blang.t]))
       ~doc:"PREDICATE filter machines using this predicate"
   ;;
 end

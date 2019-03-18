@@ -30,28 +30,28 @@
    language is needed by looking at the 'emits' clause of a compiler
    spec, and hooks up the correct language-dependent modules. *)
 
-open Core
+open Core_kernel
 open Lib
 
-val asm_runner_from_arch : Id.t -> (module Asm_job.Runner) Or_error.t
+val asm_runner_from_arch : Config.Id.t -> (module Asm_job.Runner) Or_error.t
 (** [asm_runner_from_arch arch] generates an assembly job runner
    from an architecture ID [arch]. *)
 
 (** Compiler resolver that uses this module's built-in compiler table
     to look up compilers. *)
 module Resolve_compiler
-  : Compiler.S_resolver
-    with type spec = Compiler.Spec.With_id.t
-     and type 'a chain_input = 'a Compiler.Chain_input.t
+  : Config.Compiler.S_resolver
+    with type spec = Config.Compiler.Spec.With_id.t
+     and type 'a chain_input = 'a Config.Compiler.Chain_input.t
 ;;
 
 (** Compiler resolver that uses this module's built-in compiler table
     to look up compilers from targets, filling in a dummy compiler
     if the target doesn't mention a compiler. *)
 module Resolve_compiler_from_target
-  : Compiler.S_resolver
-    with type spec = Compiler.Target.t
-     and type 'a chain_input = 'a Compiler.Chain_input.t
+  : Config.Compiler.S_resolver
+    with type spec = Config.Compiler.Target.t
+     and type 'a chain_input = 'a Config.Compiler.Chain_input.t
 ;;
 
 (** [load_and_process_config ?compiler_predicate ?machine_predicate
@@ -72,10 +72,10 @@ module Resolve_compiler_from_target
     If [with_compiler_tests] is absent, or present and true, compilers
    will be tested for reachability. *)
 val load_and_process_config
-  :  ?compiler_predicate:Compiler.Property.t Blang.t
-  -> ?machine_predicate:Machine.Property.t Blang.t
-  -> ?sanitiser_passes:Sanitiser_pass.Selector.t Blang.t
+  :  ?compiler_predicate:Config.Compiler.Property.t Blang.t
+  -> ?machine_predicate:Config.Machine.Property.t Blang.t
+  -> ?sanitiser_passes:Config.Sanitiser_pass.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> Fpath.t
-  -> Config.M.t Or_error.t
+  -> Config.Act.t Or_error.t
 ;;

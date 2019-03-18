@@ -164,7 +164,7 @@ module Spec = struct
     type t =
       { enabled : bool [@default true] [@sexp_drop_default]
       ; via     : Via.t
-      ; litmus  : Litmus_tool.Config.t sexp_option
+      ; litmus  : Litmus_tool.t sexp_option
       }
     [@@deriving sexp, fields, make]
     ;;
@@ -177,7 +177,7 @@ module Spec = struct
        [@@deriving fields] infers. *)
     let is_enabled = enabled
 
-    let ensure_litmus (spec : t) : Litmus_tool.Config.t Or_error.t =
+    let ensure_litmus (spec : t) : Litmus_tool.t Or_error.t =
       spec
       |> litmus
       |> Result.of_option ~error:(

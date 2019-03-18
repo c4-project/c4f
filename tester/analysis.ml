@@ -69,7 +69,7 @@ end
 module Machine = struct
   type t =
     { time_taken : Time.Span.t option
-    ; compilers  : (Id.t, Compiler.t) List.Assoc.t
+    ; compilers  : (Config.Id.t, Compiler.t) List.Assoc.t
     } [@@deriving sexp_of, fields, make]
   ;;
 
@@ -85,7 +85,7 @@ end
 module M = struct
   type t =
     { time_taken : Time.Span.t option
-    ; machines   : (Id.t, Machine.t) List.Assoc.t
+    ; machines   : (Config.Id.t, Machine.t) List.Assoc.t
     } [@@deriving sexp_of, fields, make]
   ;;
 
@@ -110,9 +110,9 @@ module M = struct
       (* Assume we're on the first row *)
       Tabulator.with_rule machine_rule tabulator
     | Some lmid, Some lcid ->
-      if Id.equal lmid this_mid
+      if Config.Id.equal lmid this_mid
       then (
-        if Id.equal lcid this_cid
+        if Config.Id.equal lcid this_cid
         then Or_error.return tabulator (* no rule *)
         else Tabulator.with_rule compiler_rule tabulator
       )
@@ -146,8 +146,8 @@ module M = struct
   ;;
 
   let file_to_row mid cid file analysis =
-    [ Fn.flip Id.pp mid
-    ; Fn.flip Id.pp cid
+    [ Fn.flip Config.Id.pp mid
+    ; Fn.flip Config.Id.pp cid
     ; Fn.flip String.pp file
     ] @
     (* We use Fieldslib here, mainly, to raise compilation errors

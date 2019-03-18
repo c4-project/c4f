@@ -88,18 +88,18 @@ module Machine : sig
 
   (** [compilers m] gets an associative list of all analysis results
       for compilers on machine [m]. *)
-  val compilers : t -> (Id.t, Compiler.t) List.Assoc.t
+  val compilers : t -> (Config.Id.t, Compiler.t) List.Assoc.t
 
   (** [files m] gets a list of (compiler ID, filename, analysis)
      tuples for all files processed on machine [m]. *)
-  val files : t -> (Id.t * string * File.t) list
+  val files : t -> (Config.Id.t * string * File.t) list
 
   (** [make ?time_taken ~compilers ()] creates a compiler analysis
      given compiler analyses [compilers] and total time taken on
      machine [time_taken]. *)
   val make
     :  ?time_taken: Time.Span.t
-    -> compilers: (Id.t, Compiler.t) List.Assoc.t
+    -> compilers: (Config.Id.t, Compiler.t) List.Assoc.t
     -> unit
     -> t
   ;;
@@ -112,17 +112,17 @@ type t [@@deriving sexp_of]
    machine analyses [machines] and total time taken [time_taken]. *)
 val make
   :  ?time_taken: Time.Span.t
-  -> machines: (Id.t, Machine.t) List.Assoc.t
+  -> machines: (Config.Id.t, Machine.t) List.Assoc.t
   -> unit
   -> t
 ;;
 
 (** [files x] gets a list of (machine ID, compiler ID, filename,
    analysis) tuples for all files in analysis [x]. *)
-val files : t -> (Id.t * Id.t * string * File.t) list
+val files : t -> (Config.Id.t * Config.Id.t * string * File.t) list
 
 include Tabulator.Tabular with type data := t
 
 (** [machines t] gets an associative list of all analysis results for
     machines in run [t]. *)
-val machines : t -> (Id.t, Machine.t) List.Assoc.t
+val machines : t -> (Config.Id.t, Machine.t) List.Assoc.t

@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Base
-open Lib
 
 (** [Pathset.t] is a record containing various paths used in the
     execution of [act]. *)
@@ -70,7 +69,7 @@ end
 val mkdirs : t -> unit Or_error.t
 
 val make
-  :  Id.t
+  :  Config.Id.t
   -> input_mode:Input_mode.t
   -> output_root:Fpath.t
   -> t Or_error.t
@@ -79,7 +78,7 @@ val make
     relative to [out_root], and the input determined by [input_mode]. *)
 
 val make_and_mkdirs
-  :  Id.t
+  :  Config.Id.t
   -> input_mode:Input_mode.t
   -> output_root:Fpath.t
   -> t Or_error.t

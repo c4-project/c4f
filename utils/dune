@@ -11,4 +11,7 @@
   shell
   shell.string_extended
   fpath
+  menhirLib
   fmt))
+
+(ocamllex (modules lex_utils))

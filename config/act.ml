@@ -22,21 +22,18 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
-open Utils
+open Core_kernel
 
-include Config_intf
+include Act_intf
 
 module Raw = struct
-  module Cpp = Cpp.Config
-
   module CI = struct
     module C = Compiler.Cfg_spec
 
     type t =
       { compilers : C.Set.t
       ; machines  : Machine.Spec.Set.t
-      ; herd      : Herd.Config.t sexp_option
+      ; herd      : Herd.t sexp_option
       ; cpp       : Cpp.t sexp_option
       }
     [@@deriving sexp, fields]
@@ -67,7 +64,7 @@ module Raw = struct
         ~on_empty:(Or_error.errorf "Expected at least one %s" item_name)
     ;;
 
-    let ssh (items : Config_ast.Ssh.t list) =
+    let ssh (items : Ast.Ssh.t list) =
       let open Or_error.Let_syntax in
       let%map  user = find_one items ~item_name:"user"
           ~f:(function User u -> Some u | _ -> None)
@@ -79,21 +76,21 @@ module Raw = struct
     ;;
 
     let via = function
-      | Config_ast.Via.Local -> Or_error.return Machine.Via.Local
+      | Ast.Via.Local -> Or_error.return Machine.Via.Local
       | Ssh items -> Or_error.(ssh items >>| Machine.Via.ssh)
     ;;
 
-    let litmus (items : Config_ast.Litmus.t list)
-      : Litmus_tool.Config.t Or_error.t  =
+    let litmus (items : Ast.Litmus.t list)
+      : Litmus_tool.t Or_error.t  =
       let open Or_error.Let_syntax in
       let%map cmd = find_at_most_one items ~item_name:"cmd"
           ~f:(function Cmd c -> Some (Some c) (* | _ -> None *))
           ~on_empty:(return None)
       in
-      Litmus_tool.Config.create ?cmd ()
+      Litmus_tool.make ?cmd ()
     ;;
 
-    let machine (items : Config_ast.Machine.t list)
+    let machine (items : Ast.Machine.t list)
       : Machine.Spec.t Or_error.t =
       let open Or_error.Let_syntax in
       let%bind enabled =
@@ -114,7 +111,7 @@ module Raw = struct
       Machine.Spec.make ?litmus ~enabled ~via ()
     ;;
 
-    let compiler (items : Config_ast.Compiler.t list) =
+    let compiler (items : Ast.Compiler.t list) =
       let open Or_error.Let_syntax in
       let%map enabled =
         find_at_most_one items ~item_name:"enabled"
@@ -139,7 +136,7 @@ module Raw = struct
       Compiler.Cfg_spec.create ~enabled ~style ~emits ~cmd ~argv ~herd ~machine
     ;;
 
-    let cpp (items : Config_ast.Cpp.t list) =
+    let cpp (items : Ast.Cpp.t list) =
       let open Or_error.Let_syntax in
       let%map cmd = find_at_most_one items ~item_name:"cmd"
           ~f:(function Cmd c -> Some (Some c) | _ -> None)
@@ -153,7 +150,7 @@ module Raw = struct
       in Cpp.make ~enabled ?cmd ?argv ()
     ;;
 
-    let herd (items : Config_ast.Herd.t list) =
+    let herd (items : Ast.Herd.t list) =
       let open Or_error.Let_syntax in
       let%map cmd = find_at_most_one items ~item_name:"cmd"
           ~f:(function Cmd c -> Some (Some c) | _ -> None)
@@ -165,10 +162,10 @@ module Raw = struct
       let asm_models = List.filter_map items
           ~f:(function Asm_model (k, v) -> Some (k, v) | _ -> None)
       in
-      Herd.Config.create ?c_model ~asm_models ?cmd ()
+      Herd.make ?c_model ~asm_models ?cmd ()
     ;;
 
-    let build_cpp (items : Config_ast.t) =
+    let build_cpp (items : Ast.t) =
       let open Or_error.Let_syntax in
       let cpp_ast_result =
         (find_at_most_one items ~item_name:"cpp"
@@ -180,7 +177,7 @@ module Raw = struct
       | None         -> return None
     ;;
 
-    let build_herd (items : Config_ast.t) =
+    let build_herd (items : Ast.t) =
       let open Or_error.Let_syntax in
       let herd_ast_result =
         (find_at_most_one items ~item_name:"herd"
@@ -192,7 +189,7 @@ module Raw = struct
       | None          -> return None
     ;;
 
-    let build_machines (items : Config_ast.t) =
+    let build_machines (items : Ast.t) =
       let open Or_error.Let_syntax in
       items
       |> List.filter_map
@@ -204,7 +201,7 @@ module Raw = struct
       >>= Machine.Spec.Set.of_list
     ;;
 
-    let build_compilers (items : Config_ast.t) =
+    let build_compilers (items : Ast.t) =
       let open Or_error.Let_syntax in
       items
       |> List.filter_map
@@ -216,7 +213,7 @@ module Raw = struct
       >>= Compiler.Cfg_spec.Set.of_list
     ;;
 
-    let main (items : Config_ast.t) =
+    let main (items : Ast.t) =
       let open Or_error.Let_syntax in
       let%map cpp   = build_cpp items
       and herd      = build_herd items
@@ -226,10 +223,10 @@ module Raw = struct
     ;;
   end
 
-  include Loadable.Make_chain
+  include Utils.Loadable.Make_chain
       (struct
-        type t = Config_ast.t
-        include Config_frontend
+        type t = Ast.t
+        include Frontend
       end)
       (struct
         type dst = t
@@ -273,8 +270,8 @@ module M = struct
   type t =
     { compilers          : C.Set.t
     ; machines           : Machine.Spec.Set.t
-    ; cpp                : Cpp.Config.t sexp_option
-    ; herd               : Herd.Config.t sexp_option
+    ; cpp                : Cpp.t sexp_option
+    ; herd               : Herd.t sexp_option
     ; sanitiser_passes   : (default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t)
     ; disabled_compilers : (Id.t, Error.t option) List.Assoc.t
     ; disabled_machines  : (Id.t, Error.t option) List.Assoc.t
@@ -356,7 +353,7 @@ module M = struct
         )
   ;;
 
-  let require_herd (conf : t) : Herd.Config.t Or_error.t =
+  let require_herd (conf : t) : Herd.t Or_error.t =
     conf
     |> herd
     |> Result.of_option
@@ -414,3 +411,4 @@ module M = struct
     }
   ;;
 end
+include M

@@ -29,7 +29,7 @@ include Asm_job_intf
 
 type 'cfg t =
   { config  : 'cfg option
-  ; passes  : Sanitiser_pass.Set.t [@default Sanitiser_pass.standard]
+  ; passes  : Config.Sanitiser_pass.Set.t [@default Config.Sanitiser_pass.standard]
   ; symbols : string list
   }
 [@@deriving make]
@@ -156,8 +156,7 @@ module Make_runner (B : Runner_deps)
   ;;
 
   let stringify_redirects =
-    List.map
-      ~f:(fun (k, v) -> (LS.Symbol.to_string k, LS.Symbol.to_string v))
+    Travesty.T_alist.bi_map ~left:LS.Symbol.to_string ~right:LS.Symbol.to_string
   ;;
 
   let emit_warnings iname = function
@@ -285,7 +284,7 @@ module Make_runner (B : Runner_deps)
   let output_litmus
       ?(config : LS.Constant.t Litmus_config.t = Litmus_config.default ())
       (name : string)
-      (passes : Sanitiser_pass.Set.t)
+      (passes : Config.Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
       (program : LS.Program.t)
       (_osrc : Io.Out_sink.t)
@@ -324,7 +323,7 @@ module Make_runner (B : Runner_deps)
   let run_explanation
       ?(config : Explain_config.t = Explain_config.default)
       (name    : string)
-      (passes  : Sanitiser_pass.Set.t)
+      (passes  : Config.Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
       (program : LS.Program.t)
       (_osrc   : Io.Out_sink.t)

@@ -30,19 +30,9 @@
 open Base
 open Utils
 
-module Config : sig
-  type t [@@deriving sexp]
-  (** The opaque type of Litmus configuration. *)
-
-  include Pretty_printer.S with type t := t
-
-  val create : ?cmd:string -> unit -> t
-  (** [create ?cmd] creates a Litmus-tool config. *)
-end
-
 val run_direct
   :  ?oc:Stdio.Out_channel.t
-  -> Config.t
+  -> Config.Litmus_tool.t
   -> string list
   -> unit Or_error.t
 (** [run_direct ?oc cfg argv] runs Litmus locally, with configuration
@@ -50,5 +40,5 @@ val run_direct
     (or stdout if [oc] is absent). *)
 
 module Filter (R : Runner.S)
-  : Filter.S with type aux_i = Config.t and type aux_o = unit
+  : Filter.S with type aux_i = Config.Litmus_tool.t and type aux_o = unit
 (** Interface for running litmus as a filter. *)

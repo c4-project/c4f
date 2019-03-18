@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core_kernel
-open Utils
 
 module Var_scope = struct
   module M = struct
@@ -54,8 +53,8 @@ module Var_scope = struct
 
   let brand
       (scope : t)
-      (cvars : C_identifier.Set.t) : t C_identifier.Map.t =
-    C_identifier.Set.to_map cvars ~f:(Fn.const scope)
+      (cvars : Utils.C_identifier.Set.t) : t Utils.C_identifier.Map.t =
+    Utils.C_identifier.Set.to_map cvars ~f:(Fn.const scope)
   ;;
 
   let resolve_cvar_clashes ~key =
@@ -66,14 +65,14 @@ module Var_scope = struct
   ;;
 
   let make_map_opt
-      ?(locals : C_identifier.Set.t option)
-      ?(globals : C_identifier.Set.t option)
+      ?(locals : Utils.C_identifier.Set.t option)
+      ?(globals : Utils.C_identifier.Set.t option)
       ()
-    : t C_identifier.Map.t option =
+    : t Utils.C_identifier.Map.t option =
     let locals_map  = Option.map ~f:(brand Local ) locals in
     let globals_map = Option.map ~f:(brand Global) globals in
     Option.merge locals_map globals_map
-      ~f:(C_identifier.Map.merge ~f:resolve_cvar_clashes)
+      ~f:(Utils.C_identifier.Map.merge ~f:resolve_cvar_clashes)
   ;;
 end
 
@@ -87,7 +86,7 @@ module type Basic = sig
   type del
   (** Delitmusified AST *)
 
-  module Frontend : Lib.Frontend.S with type ast := ast
+  module Frontend : Utils.Frontend.S with type ast := ast
 
   val normal_tmp_file_ext : string
 
@@ -95,7 +94,7 @@ module type Basic = sig
 
   val fuzz : seed:int option -> o:Lib.Output.t -> t -> t Or_error.t
 
-  val cvars : t -> Var_scope.t C_identifier.Map.t
+  val cvars : t -> Var_scope.t Utils.C_identifier.Map.t
   (** [cvars vast] should return a list of C identifiers
       corresponding to all variables in [vast].
 
@@ -103,7 +102,7 @@ module type Basic = sig
       if you already have a delitmusified AST, use
       [cvars_of_delitmus]. *)
 
-  val cvars_of_delitmus : del -> Var_scope.t C_identifier.Map.t
+  val cvars_of_delitmus : del -> Var_scope.t Utils.C_identifier.Map.t
   (** [cvars_of_delitmus dl] should return a list of C identifiers
       corresponding to all variables in [dl]. *)
 
@@ -125,20 +124,20 @@ type mode =
 
 module Output = struct
   type t =
-    { cvars : Var_scope.t C_identifier.Map.t
+    { cvars : Var_scope.t Utils.C_identifier.Map.t
     ; post  : Mini_litmus.Ast.Postcondition.t option
     }
   [@@deriving fields]
 end
 
 module Make (B : Basic)
-  : Filter.S with type aux_i = mode and type aux_o = Output.t =
-  Filter.Make (struct
+  : Utils.Filter.S with type aux_i = mode and type aux_o = Output.t =
+  Utils.Filter.Make (struct
     type aux_i = mode
     type aux_o = Output.t
     let name = "C transformer"
 
-    let tmp_file_ext ({ aux; _ } : mode Filter.ctx) : string =
+    let tmp_file_ext ({ aux; _ } : mode Utils.Filter.ctx) : string =
       match aux with
       | Print `All -> B.normal_tmp_file_ext
       | Print `Vars -> "txt"
@@ -166,9 +165,9 @@ module Make (B : Basic)
       { Output.cvars; post }
 
     let pp
-      : [ `All | `Vars ] -> (C_identifier.t list * B.t) Fmt.t = function
+      : [ `All | `Vars ] -> (Utils.C_identifier.t list * B.t) Fmt.t = function
       | `All -> Fmt.using snd B.pp
-      | `Vars -> Fmt.(using fst (vbox (list ~sep:sp C_identifier.pp)))
+      | `Vars -> Fmt.(using fst (vbox (list ~sep:sp Utils.C_identifier.pp)))
     ;;
 
     let run_print
@@ -179,14 +178,14 @@ module Make (B : Basic)
       let post  = B.postcondition vast in
       let f = Format.formatter_of_out_channel oc in
       Fmt.pf f "%a@." (pp output_mode)
-        (C_identifier.Map.keys cvars, vast);
+        (Utils.C_identifier.Map.keys cvars, vast);
       Or_error.return { Output.cvars; post }
     ;;
 
-    let run { Filter.aux; src; _ } ic oc : Output.t Or_error.t =
+    let run { Utils.Filter.aux; src; _ } ic oc : Output.t Or_error.t =
       let open Or_error.Let_syntax in
       let%bind ast =
-        B.Frontend.load_from_ic ~path:(Io.In_source.to_string src) ic
+        B.Frontend.load_from_ic ~path:(Utils.Io.In_source.to_string src) ic
       in
       let%bind vast = B.process ast in
       match aux with
@@ -196,7 +195,7 @@ module Make (B : Basic)
     ;;
   end)
 
-module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
+module Normal_C : Utils.Filter.S with type aux_i = mode and type aux_o = Output.t =
   Make (struct
     type ast = Ast.Translation_unit.t
     type t = Mini.Program.t
@@ -230,7 +229,7 @@ module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t =
   end)
 ;;
 
-module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
+module Litmus : Utils.Filter.S with type aux_i = mode and type aux_o = Output.t =
   Make (struct
     type ast = Ast.Litmus.t
     type t = Mini_litmus.Ast.Validated.t
@@ -279,7 +278,7 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
       let globals = Delitmus.Output.c_globals output in
       let locals  = Delitmus.Output.c_locals output in
       let map_opt = Var_scope.make_map_opt ~globals ~locals () in
-      Option.value ~default:C_identifier.Map.empty map_opt
+      Option.value ~default:Utils.C_identifier.Map.empty map_opt
     ;;
 
     (* TODO(@MattWindsor91): split this into globals/locals. *)
@@ -290,6 +289,6 @@ module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t =
 ;;
 
 let c_module (is_c : bool)
-  : (module Filter.S with type aux_i = mode and type aux_o = Output.t) =
+  : (module Utils.Filter.S with type aux_i = mode and type aux_o = Output.t) =
   if is_c then (module Normal_C) else (module Litmus)
 ;;

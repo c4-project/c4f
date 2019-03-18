@@ -22,12 +22,11 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core_kernel
-open Lib
+open Base
 
 type t =
   { output_root : Fpath.t
-  ; compilers   : Id.Set.t
+  ; compilers   : Config.Id.Set.t
   ; input_mode  : Input_mode.t
   }
 [@@deriving fields]
@@ -51,7 +50,7 @@ let validate (cfg : t) : Validate.t =
 
 let make
     ~(output_root : Fpath.t)
-    ~(compilers   : Id.Set.t)
+    ~(compilers   : Config.Id.Set.t)
     ~(input_mode  : Input_mode.t)
   : t Or_error.t =
   let cfg =

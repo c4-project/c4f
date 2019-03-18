@@ -22,8 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
-open Lib
+open Core_kernel
 
 let lang_procs =
   [ "x86", X86.Asm_job.get_runner ]
@@ -37,14 +36,14 @@ let try_get_lang_proc language =
   )
 ;;
 
-let asm_runner_from_arch (arch : Id.t) =
-  match Id.to_string_list arch with
+let asm_runner_from_arch (arch : Config.Id.t) =
+  match Config.Id.to_string_list arch with
   | [] -> Or_error.error_string "Missing language name"
   | (lang::rest) ->
     Result.(try_get_lang_proc lang >>= (fun proc -> proc rest))
 ;;
 
-module Gcc : Compiler.Basic = struct
+module Gcc : Config.Compiler.Basic = struct
   let compile_args ~args ~emits ~infile ~outfile =
     ignore emits;
     [ "-S"       (* emit assembly *)
@@ -58,14 +57,14 @@ module Gcc : Compiler.Basic = struct
 end
 
 let style_modules =
-  [ "gcc", (module Gcc : Compiler.Basic) ]
+  [ "gcc", (module Gcc : Config.Compiler.Basic) ]
 ;;
 
 module Resolver
-  : Compiler.Basic_resolver with type spec := Compiler.Spec.With_id.t
+  : Config.Compiler.Basic_resolver with type spec := Config.Compiler.Spec.With_id.t
 = struct
-    let resolve (cspec : Compiler.Spec.With_id.t) =
-      let style = Compiler.Spec.With_id.style cspec in
+    let resolve (cspec : Config.Compiler.Spec.With_id.t) =
+      let style = Config.Compiler.Spec.With_id.style cspec in
       List.Assoc.find ~equal:String.Caseless.equal style_modules style
       |> Result.of_option
         ~error:(Error.create_s
@@ -75,9 +74,9 @@ module Resolver
   end
 ;;
 
-module Resolve_compiler = Compiler.Make_resolver (Resolver)
+module Resolve_compiler = Config.Compiler.Make_resolver (Resolver)
 module Resolve_compiler_from_target =
-  Compiler.Make_target_resolver (Resolver)
+  Config.Compiler.Make_target_resolver (Resolver)
 
 let test_compiler cspec =
   let open Or_error.Let_syntax in
@@ -86,15 +85,15 @@ let test_compiler cspec =
     Or_error.tag_arg
       (M.test ())
       "A compiler in your spec file didn't respond properly"
-      (Compiler.Spec.With_id.id cspec)
-      [%sexp_of:Id.t]
+      (Config.Compiler.Spec.With_id.id cspec)
+      [%sexp_of:Config.Id.t]
   in
   Some cspec
 ;;
 
 let filter_compiler predicate cspec =
   Option.some_if
-    (Compiler.Property.eval_b cspec predicate)
+    (Config.Compiler.Property.eval_b cspec predicate)
     cspec
 ;;
 
@@ -111,7 +110,7 @@ let compiler_hook with_compiler_tests predicate cspec =
 
 let machine_hook predicate mspec =
   let eval_b =
-    Machine.Property.eval_b (module Machine.Spec.With_id)
+    Config.Machine.Property.eval_b (module Config.Machine.Spec.With_id)
   in
   Or_error.return (
     (* TODO(@MattWindsor91): actually test the machine here! *)
@@ -126,9 +125,9 @@ let load_and_process_config
     ?(with_compiler_tests=true)
     (path : Fpath.t) =
   let open Or_error.Let_syntax in
-  let%bind rcfg = Config.Raw.load ~path in
+  let%bind rcfg = Config.Act.Raw.load ~path in
   let chook = compiler_hook with_compiler_tests compiler_predicate in
   let mhook = machine_hook machine_predicate in
-  let phook = Sanitiser_pass.Selector.eval_b sanitiser_passes in
-  Config.M.from_raw rcfg ~chook ~mhook ~phook
+  let phook = Config.Sanitiser_pass.Selector.eval_b sanitiser_passes in
+  Config.Act.from_raw rcfg ~chook ~mhook ~phook
 ;;

@@ -64,8 +64,8 @@ let num = digit+
 rule token typedefs = parse
 | [' ''\t''\r']+ { token typedefs lexbuf }
 | '\n' { new_line lexbuf ; token typedefs lexbuf }
-| "/*" { Lib.Lex_utils.skip_c_comment lexbuf ; token typedefs lexbuf }
-| "//" { Lib.Lex_utils.skip_c_line_comment lexbuf ; token typedefs lexbuf }
+| "/*" { Utils.Lex_utils.skip_c_comment lexbuf ; token typedefs lexbuf }
+| "//" { Utils.Lex_utils.skip_c_line_comment lexbuf ; token typedefs lexbuf }
 | '-' ? num as x { INT_LIT (Core.Int.of_string x) }
 | ';' { SEMI }
 | ',' { COMMA }
@@ -126,7 +126,7 @@ rule token typedefs = parse
 | "--" { SUBSUB }
 | '.' {DOT}
 
-| '#' { Lib.Frontend.lex_error
+| '#' { Utils.Frontend.lex_error
           ("C preprocessor directives aren't supported directly.")
           lexbuf
       }
@@ -137,4 +137,4 @@ rule token typedefs = parse
 
 | name as x { tr_name typedefs x }
 | eof { EOF }
-| _ { Lib.Frontend.lex_error ("Unexpected char: " ^ lexeme lexbuf) lexbuf }
+| _ { Utils.Frontend.lex_error ("Unexpected char: " ^ lexeme lexbuf) lexbuf }

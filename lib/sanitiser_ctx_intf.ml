@@ -40,7 +40,7 @@ module type S = sig
       with an inner error monad. *)
 
   val initial
-    :  passes:Sanitiser_pass.Set.t
+    :  passes:Config.Sanitiser_pass.Set.t
     -> variables:Lang.Symbol.Set.t
     -> ctx
   (** [initial ~passes ~variables] opens an initial context
@@ -77,12 +77,12 @@ module type S = sig
 
   (** [is_pass_enabled pass] is a contextual computation that returns
       [true] provided that [pass] is enabled. *)
-  val is_pass_enabled : Sanitiser_pass.t -> bool t
+  val is_pass_enabled : Config.Sanitiser_pass.t -> bool t
 
   (** [p |-> f] guards a contextual computation [f] on the
       pass [p]; it won't run unless [p] is in the current context's
       pass set. *)
-  val (|->) : Sanitiser_pass.t -> ('a -> 'a t) -> ('a -> 'a t)
+  val (|->) : Config.Sanitiser_pass.t -> ('a -> 'a t) -> ('a -> 'a t)
 
   (** [warn element body] adds a warning [body] to the
      current context, concerning element [element]. *)

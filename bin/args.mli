@@ -24,8 +24,7 @@
 
 (** Argument specifications common to all act sub-commands. *)
 
-open Core
-open Lib
+open Core_kernel
 open Utils
 
 include module type of Args_intf
@@ -89,12 +88,12 @@ val flag_to_enum_choice
     corresponds to an enum variant [enum]. *)
 
 val arch
-  : ?name:string -> ?doc:string -> unit -> Id.t option Command.Param.t
+  : ?name:string -> ?doc:string -> unit -> Config.Id.t option Command.Param.t
 (** [arch ?name ?doc ()] produces a parameter, normally named [-arch]
     but overridable by [name], that accepts an architecture ID. *)
 
 val compiler_id_or_arch
-  : [> `Arch of Id.t | `Id of Id.t] Command.Param.t
+  : [> `Arch of Config.Id.t | `Id of Config.Id.t] Command.Param.t
 (** [compiler_id_or_arch] defines a choice between supplying a
     compiler ID, or a direct architecture. *)
 
@@ -112,16 +111,16 @@ val c_locals : string list option Command.Param.t
     local C variables to track during sanitisation. *)
 
 val sanitiser_passes
-  : Sanitiser_pass.Selector.t Blang.t option Command.Param.t
+  : Config.Sanitiser_pass.Selector.t Blang.t option Command.Param.t
 (** [sanitiser_passes] defines a parameter for collecting a selector
     predicate for sanitiser passes. *)
 
 val compiler_predicate
-  : Compiler.Property.t Blang.t option Command.Param.t
+  : Config.Compiler.Property.t Blang.t option Command.Param.t
 (** [compiler_predicate] defines a parameter for collecting a
     filtering predicate for compilers. *)
 
 val machine_predicate
-  : Machine.Property.t Blang.t option Command.Param.t
+  : Config.Machine.Property.t Blang.t option Command.Param.t
   (** [machine_predicate] defines a parameter for collecting a
       filtering predicate for machines. *)

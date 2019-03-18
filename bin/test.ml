@@ -42,13 +42,13 @@ let make_tester_config
   let open Or_error.Let_syntax in
   let%bind output_root = Io.fpath_of_string out_root_raw
   in
-  let specs = Config.M.compilers cfg in
+  let specs = Config.Act.compilers cfg in
   report_spec_errors o
-    (List.filter_map ~f:snd (Config.M.disabled_compilers cfg));
+    (List.filter_map ~f:snd (Config.Act.disabled_compilers cfg));
   let compilers =
     specs
-    |> Compiler.Spec.Set.map ~f:(Compiler.Spec.With_id.id)
-    |> Id.Set.of_list
+    |> Config.Compiler.Spec.Set.map ~f:(Config.Compiler.Spec.With_id.id)
+    |> Config.Id.Set.of_list
   in
   Tester.Run_config.make
     ~output_root
@@ -64,14 +64,14 @@ let make_tester o cfg timing_mode : (module Tester.Instance.S) =
         module Resolve_compiler = Language_support.Resolve_compiler
 
         let o = o
-        let compilers = Config.M.compilers cfg
-        let sanitiser_passes = Config.M.sanitiser_passes cfg
-            ~default:Sanitiser_pass.standard
-        let herd_cfg = Config.M.herd cfg
+        let compilers = Config.Act.compilers cfg
+        let sanitiser_passes = Config.Act.sanitiser_passes cfg
+            ~default:Config.Sanitiser_pass.standard
+        let herd_cfg = Config.Act.herd cfg
         let asm_runner_from_spec =
           Fn.compose
             Language_support.asm_runner_from_arch
-            Compiler.Spec.With_id.emits
+            Config.Compiler.Spec.With_id.emits
       end)
   )
 ;;
@@ -104,7 +104,7 @@ let run
     (input_mode_raw : [< `Delitmus of string list | `Memalloy of string ])
     (out_root_raw : string)
     (o : Output.t)
-    (cfg : Config.M.t)
+    (cfg : Config.Act.t)
     : unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind input_mode = cook_input_mode input_mode_raw in

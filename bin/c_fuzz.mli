@@ -24,7 +24,7 @@
 
 (** Command for act's C/Litmus fuzz-testing mutator. *)
 
-open Core
+open Core_kernel
 
 val command : Command.t
 (** [command] is the top-level 'c fuzz' command. *)

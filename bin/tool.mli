@@ -24,7 +24,7 @@
 
 (** The 'tool' command *)
 
-open Core
+open Core_kernel
 
 (** [command] is the top-level 'tool' command. *)
 val command : Command.t

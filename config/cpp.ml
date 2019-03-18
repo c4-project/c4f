@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,6 +22,21 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Frontend for the config file language. *)
+open Base
 
-include Frontend.S with type ast := Config_ast.t
+type t =
+  { enabled : bool
+  ; cmd     : string option
+  ; argv    : string list
+  }
+[@@deriving sexp, fields, make]
+;;
+
+let default () =
+  { enabled = true
+  ; cmd     = None
+  ; argv    = []
+  }
+;;
+
+let cmd (* override *) t = Option.value ~default:"cpp" (cmd t)

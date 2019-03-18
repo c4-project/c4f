@@ -31,7 +31,6 @@
     tools.  For act-wide configuration, see {{!Config}Config}. *)
 
 open Base
-open Lib
 
 type t
 (** Opaque type of tester configuration.
@@ -46,7 +45,7 @@ type t
 
 val make
   :  output_root:Fpath.t
-  -> compilers:Id.Set.t
+  -> compilers:Config.Id.Set.t
   -> input_mode:Input_mode.t
   -> t Or_error.t
 (** [make ~fnames ~output_root ~compilers ~input_mode ()] constructs a
@@ -58,7 +57,7 @@ val make
 val output_root : t -> Fpath.t
 (** [output_root cfg] gets the output root directory for [cfg]. *)
 
-val compilers : t -> Id.Set.t
+val compilers : t -> Config.Id.Set.t
 (** [compilers cfg] gets the compiler identifier set for [cfg]. *)
 
 val input_mode : t -> Input_mode.t

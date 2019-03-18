@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core
-open Utils
 open Lexing
 
 module Error_range = struct

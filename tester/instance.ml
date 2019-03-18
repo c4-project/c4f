@@ -31,7 +31,7 @@ include Instance_intf
 
 module Make_compiler (B : Basic_compiler) : Compiler = struct
   include B
-  module C_id   = Compiler.Spec.With_id
+  module C_id   = Config.Compiler.Spec.With_id
   module P_file = Pathset.File
 
   let emits = C_id.emits cspec
@@ -350,10 +350,10 @@ module Make_machine (B : Basic_machine) : Machine = struct
 
   let make_pathset
     (cfg : Run_config.t)
-    (spec : Compiler.Spec.With_id.t)
+    (spec : Config.Compiler.Spec.With_id.t)
     : Pathset.t Or_error.t =
     let open Or_error.Let_syntax in
-    let id = Compiler.Spec.With_id.id spec in
+    let id = Config.Compiler.Spec.With_id.id spec in
     let output_root = Run_config.output_root cfg in
     let input_mode = Run_config.input_mode cfg in
     let%map ps = Pathset.make_and_mkdirs id ~output_root ~input_mode
@@ -364,7 +364,7 @@ module Make_machine (B : Basic_machine) : Machine = struct
 
   let make_compiler
       (cfg : Run_config.t)
-      (spec : Compiler.Spec.With_id.t)
+      (spec : Config.Compiler.Spec.With_id.t)
     : (module Compiler) Or_error.t =
     let open Or_error.Let_syntax in
     let%bind (module C) = B.Resolve_compiler.from_spec spec in
@@ -380,9 +380,9 @@ module Make_machine (B : Basic_machine) : Machine = struct
   ;;
 
   let run_compiler
-      (cfg : Run_config.t) (spec : Compiler.Spec.With_id.t) =
+      (cfg : Run_config.t) (spec : Config.Compiler.Spec.With_id.t) =
     let open Or_error.Let_syntax in
-    let id = Compiler.Spec.With_id.id spec in
+    let id = Config.Compiler.Spec.With_id.id spec in
     let%bind (module TC) = make_compiler cfg spec in
     let%map result = TC.run () in
     (id, result)
@@ -390,13 +390,13 @@ module Make_machine (B : Basic_machine) : Machine = struct
 
   let run_compilers
       (cfg : Run_config.t)
-      : (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
+      : (Config.Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
     compilers
-    |> Compiler.Spec.Set.map ~f:(run_compiler cfg)
+    |> Config.Compiler.Spec.Set.map ~f:(run_compiler cfg)
     |> Or_error.combine_errors
   ;;
 
-  let make_analysis (raw : (Id.t, Analysis.Compiler.t) List.Assoc.t T.t)
+  let make_analysis (raw : (Config.Id.t, Analysis.Compiler.t) List.Assoc.t T.t)
     : Analysis.Machine.t =
     Analysis.Machine.make
       ~compilers:(T.value raw) ?time_taken:(T.time_taken raw) ()
@@ -413,18 +413,18 @@ end
 
 let group_specs_by_machine specs =
   specs
-  |> Compiler.Spec.Set.group
+  |> Config.Compiler.Spec.Set.group
     ~f:(fun spec ->
-        Machine.Spec.With_id.id
-          (Compiler.Spec.With_id.machine spec)
+        Config.Machine.Spec.With_id.id
+          (Config.Compiler.Spec.With_id.machine spec)
       )
-  |> Id.Map.to_alist
+  |> Config.Id.Map.to_alist
 ;;
 
 module Make (B : Basic) : S = struct
   include B
 
-  let make_analysis (raw : (Id.t, Analysis.Machine.t) List.Assoc.t T.t)
+  let make_analysis (raw : (Config.Id.t, Analysis.Machine.t) List.Assoc.t T.t)
     : Analysis.t =
     Analysis.make
       ~machines:(T.value raw)
@@ -433,7 +433,7 @@ module Make (B : Basic) : S = struct
   ;;
 
   let make_machine_module
-      (mach_compilers : Compiler.Spec.Set.t)
+      (mach_compilers : Config.Compiler.Spec.Set.t)
     : (module Machine) =
     (module Make_machine (struct
          include B
@@ -454,8 +454,8 @@ module Make (B : Basic) : S = struct
 
   let run_machines
       (cfg : Run_config.t)
-      (specs_by_machine : (Machine.Id.t, Compiler.Spec.Set.t) List.Assoc.t)
-    : (Machine.Id.t, Analysis.Machine.t) List.Assoc.t Or_error.t =
+      (specs_by_machine : (Config.Machine.Id.t, Config.Compiler.Spec.Set.t) List.Assoc.t)
+    : (Config.Machine.Id.t, Analysis.Machine.t) List.Assoc.t Or_error.t =
     specs_by_machine
     |> List.map ~f:(run_machine cfg)
     |> Or_error.combine_errors
@@ -466,7 +466,7 @@ module Make (B : Basic) : S = struct
     : Analysis.t Or_error.t =
     let open Or_error.Let_syntax in
     let enabled_ids = Run_config.compilers cfg in
-    let specs = Compiler.Spec.Set.restrict compilers enabled_ids in
+    let specs = Config.Compiler.Spec.Set.restrict compilers enabled_ids in
     let specs_by_machine = group_specs_by_machine specs in
     let%map machines_and_time = T.bracket_join
         (fun () -> run_machines cfg specs_by_machine)

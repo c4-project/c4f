@@ -26,28 +26,15 @@
 
 open Utils
 
-(** Abstract type of C preprocessor configurations. *)
-module Config : sig
-  include Config_intf.S_program
-
-  val make
-    :  enabled:bool
-    -> ?cmd:string
-    -> ?argv:string list
-    -> unit
-    -> t
-  (** [make ~enabled ?cmd ?argv ()] makes a CPP configuration block. *)
-end
-
 (** {2 Filters} *)
 
-module Filter : Filter.S with type aux_i = Config.t
+module Filter : Filter.S with type aux_i = Config.Cpp.t
                           and type aux_o = unit
 (** [Filter] exposes a filter interface onto a configured C
    preprocessor. *)
 
 module Chain_filter (Dest : Utils.Filter.S) :
-  Utils.Filter.S with type aux_i = (Config.t * Dest.aux_i)
+  Utils.Filter.S with type aux_i = (Config.Cpp.t * Dest.aux_i)
                   and type aux_o = (unit option * Dest.aux_o)
 (** [Chain_filter] exposes a filter that attaches in front of another
     filter [Dest] (that reads in C programs) and performs C

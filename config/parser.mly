@@ -34,7 +34,7 @@ SOFTWARE. *)
 %token <string> STRING
 %token <Id.t> IDENTIFIER
 
-%type <Config_ast.t> main
+%type <Ast.t> main
 %start main
 
 %%
@@ -59,32 +59,32 @@ main:
   | stanzas = line_list(top_stanza); EOF { stanzas }
 
 top_stanza:
-  | c = cpp_stanza      {                 Config_ast.Top.Cpp      c      }
-  | h = herd_stanza     {                 Config_ast.Top.Herd     h      }
-  | x = machine_stanza  { let i, m = x in Config_ast.Top.Machine  (i, m) }
-  | x = compiler_stanza { let i, c = x in Config_ast.Top.Compiler (i, c) }
+  | c = cpp_stanza      {                 Ast.Top.Cpp      c      }
+  | h = herd_stanza     {                 Ast.Top.Herd     h      }
+  | x = machine_stanza  { let i, m = x in Ast.Top.Machine  (i, m) }
+  | x = compiler_stanza { let i, c = x in Ast.Top.Compiler (i, c) }
 
 cpp_stanza:
   | items = simple_stanza(CPP, cpp_item) { items }
 
 cpp_item:
-  | b = enabled { Config_ast.Cpp.Enabled b  }
-  | c = cmd     { Config_ast.Cpp.Cmd     c  }
-  | vs = argv   { Config_ast.Cpp.Argv    vs }
+  | b = enabled { Ast.Cpp.Enabled b  }
+  | c = cmd     { Ast.Cpp.Cmd     c  }
+  | vs = argv   { Ast.Cpp.Argv    vs }
 
 litmus_stanza:
   | items = simple_stanza(LITMUS, litmus_item) { items }
 
 litmus_item:
-  | c = cmd                               { Config_ast.Litmus.Cmd c }
+  | c = cmd                               { Ast.Litmus.Cmd c }
 
 herd_stanza:
   | items = simple_stanza(HERD, herd_item) { items }
 
 herd_item:
-  | c = cmd                               { Config_ast.Herd.Cmd c }
-  | C_MODEL;   s = STRING                 { Config_ast.Herd.C_model s }
-  | ASM_MODEL; e = IDENTIFIER; s = STRING { Config_ast.Herd.Asm_model (e, s) }
+  | c = cmd                               { Ast.Herd.Cmd c }
+  | C_MODEL;   s = STRING                 { Ast.Herd.C_model s }
+  | ASM_MODEL; e = IDENTIFIER; s = STRING { Ast.Herd.Asm_model (e, s) }
 
 id_or_default:
   | id = IDENTIFIER { id }
@@ -94,31 +94,31 @@ machine_stanza:
   | s = id_stanza(MACHINE, id_or_default, machine_item) { s }
 
 machine_item:
-  | b = enabled         { Config_ast.Machine.Enabled b }
-  | VIA; v = via_stanza { Config_ast.Machine.Via     v }
-  | l = litmus_stanza   { Config_ast.Machine.Litmus  l }
+  | b = enabled         { Ast.Machine.Enabled b }
+  | VIA; v = via_stanza { Ast.Machine.Via     v }
+  | l = litmus_stanza   { Ast.Machine.Litmus  l }
 
 via_stanza:
-  | LOCAL                                { Config_ast.Via.Local }
-  | items = simple_stanza(SSH, ssh_item) { Config_ast.Via.Ssh items }
+  | LOCAL                                { Ast.Via.Local }
+  | items = simple_stanza(SSH, ssh_item) { Ast.Via.Ssh items }
 
 ssh_item:
-  | USER;     user    = STRING { Config_ast.Ssh.User    user }
-  | HOST;     host    = STRING { Config_ast.Ssh.Host    host }
-  | COPY; TO; copy_to = STRING { Config_ast.Ssh.Copy_to copy_to }
+  | USER;     user    = STRING { Ast.Ssh.User    user }
+  | HOST;     host    = STRING { Ast.Ssh.Host    host }
+  | COPY; TO; copy_to = STRING { Ast.Ssh.Copy_to copy_to }
 
 compiler_stanza:
   | s = id_stanza(COMPILER, IDENTIFIER, compiler_item) { s }
   (* Compilers don't have a 'default' identifier. *)
 
 compiler_item:
-  | b = enabled                    { Config_ast.Compiler.Enabled b }
-  | c = cmd                        { Config_ast.Compiler.Cmd     c }
-  | vs = argv                      { Config_ast.Compiler.Argv    vs }
-  | STYLE;   style = IDENTIFIER    { Config_ast.Compiler.Style   style }
-  | EMITS;   emits = IDENTIFIER    { Config_ast.Compiler.Emits   emits }
-  | HERD;    on    = BOOL          { Config_ast.Compiler.Herd    on }
-  | MACHINE; mach  = id_or_default { Config_ast.Compiler.Machine mach }
+  | b = enabled                    { Ast.Compiler.Enabled b }
+  | c = cmd                        { Ast.Compiler.Cmd     c }
+  | vs = argv                      { Ast.Compiler.Argv    vs }
+  | STYLE;   style = IDENTIFIER    { Ast.Compiler.Style   style }
+  | EMITS;   emits = IDENTIFIER    { Ast.Compiler.Emits   emits }
+  | HERD;    on    = BOOL          { Ast.Compiler.Herd    on }
+  | MACHINE; mach  = id_or_default { Ast.Compiler.Machine mach }
 
 cmd:
   | CMD; c = STRING { c }

@@ -39,7 +39,7 @@ let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string =
 module Make (Lang : Language.S) : S with module Lang := Lang = struct
   module Lang = Lang
   module Warn = Sanitiser_warn.Make (Lang)
-  module Pass = Sanitiser_pass
+  module Pass = Config.Sanitiser_pass
 
   type ctx =
     { progname  : string

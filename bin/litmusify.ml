@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 open Lib
 open Utils
 
@@ -38,7 +38,7 @@ module Post_filter = struct
 
   type cfg =
     [ `Herd   of Herd.t
-    | `Litmus of Litmus_tool.Config.t
+    | `Litmus of Config.Litmus_tool.t
     | `None
     ]
   ;;
@@ -70,7 +70,7 @@ module Post_filter = struct
       type aux_i = cfg
       type aux_o = unit
 
-      let adapt_i : cfg -> Litmus_tool.Config.t Err.t = function
+      let adapt_i : cfg -> Config.Litmus_tool.t Err.t = function
         | `Litmus l -> Err.return l
         | `Herd _   -> Err.error_string "Expected Litmus config, got herd"
         | `None     -> Err.error_string "Expected Litmus config, got none"
@@ -132,39 +132,39 @@ module Post_filter = struct
         module Second = Post
       end))
 
-  let herd_config (cfg : Config.M.t) (target : Compiler.Target.t)
+  let herd_config (cfg : Config.Act.t) (target : Config.Compiler.Target.t)
     : Herd.t Err.t =
     let open Err.Let_syntax in
-    let%bind herd_cfg = Config.M.require_herd cfg in
-    let arch = Herd.Assembly (Compiler.Target.arch target) in
+    let%bind herd_cfg = Config.Act.require_herd cfg in
+    let arch = Herd.Assembly (Config.Compiler.Target.arch target) in
     Herd.create ~config:herd_cfg ~arch
   ;;
 
-  let machine_of_target (cfg : Config.M.t)
-    : Compiler.Target.t -> Machine.Spec.With_id.t Err.t = function
-    | `Spec s -> Err.return (Compiler.Spec.With_id.machine s)
+  let machine_of_target (cfg : Config.Act.t)
+    : Config.Compiler.Target.t -> Config.Machine.Spec.With_id.t Err.t = function
+    | `Spec s -> Err.return (Config.Compiler.Spec.With_id.machine s)
     | `Arch _ ->
       (* TODO(@MattWindsor91): should really check that the machine
          has the right architecture! *)
-      Machine.Spec.Set.get (Config.M.machines cfg) Machine.Id.default
+      Config.Machine.Spec.Set.get (Config.Act.machines cfg) Config.Machine.Id.default
   ;;
 
   let litmus_config
-      (cfg : Config.M.t)
-      (target : Compiler.Target.t)
-    : Litmus_tool.Config.t Err.t =
+      (cfg : Config.Act.t)
+      (target : Config.Compiler.Target.t)
+    : Config.Litmus_tool.t Err.t =
     let open Err.Let_syntax in
     let%bind machine = machine_of_target cfg target in
     Err.tag_arg
-      (Travesty.T_option.one (Machine.Spec.With_id.litmus machine))
+      (Travesty.T_option.one (Config.Machine.Spec.With_id.litmus machine))
       "While trying to find litmus config for machine"
-      (Machine.Spec.With_id.id machine)
-      [%sexp_of: Machine.Id.t]
+      (Config.Machine.Spec.With_id.id machine)
+      [%sexp_of: Config.Machine.Id.t]
   ;;
 
   let make_config
-      (cfg    : Config.M.t)
-      (target : Compiler.Target.t)
+      (cfg    : Config.Act.t)
+      (target : Config.Compiler.Target.t)
     : t -> cfg Err.t = function
     | `Herd   -> Err.(herd_config   cfg target >>| fun h -> `Herd   h)
     | `Litmus -> Err.(litmus_config cfg target >>| fun l -> `Litmus l)
@@ -173,17 +173,17 @@ end
 
 let make_filter
   (post_filter : Post_filter.t)
-  (target : Compiler.Target.t)
+  (target : Config.Compiler.Target.t)
   (target_runner : (module Runner.S))
   : ( module
       Filter.S with type aux_i =
-                      ( ( File_type.t_or_infer
+                      ( ( Config.File_type.t_or_infer
                           * ( C.Filters.Output.t Filter.chain_output
                               ->
                               Sexp.t
                               Asm_job.Litmus_config.t
                               Asm_job.t
-                              Compiler.Chain_input.t
+                              Config.Compiler.Chain_input.t
                             )
                         )
                         * ( ( C.Filters.Output.t option
@@ -241,16 +241,16 @@ let run
     (post_sexp : [ `Exists of Sexp.t ] option)
     (args : Args.Standard_with_files.t)
     (o : Output.t)
-    (cfg : Config.M.t)
+    (cfg : Config.Act.t)
     : unit Or_error.t =
   let open Result.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
   let%bind tgt_machine = Post_filter.machine_of_target cfg target in
-  let tgt_runner = Machine.Spec.With_id.runner tgt_machine in
+  let tgt_runner = Config.Machine.Spec.With_id.runner tgt_machine in
   let%bind (module Filter) = make_filter filter target tgt_runner in
   let%bind pf_cfg = Post_filter.make_config cfg target filter in
   let passes =
-    Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.standard
+    Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard
   in
   let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
   let%bind user_cvars = Common.collect_cvars ?c_globals ?c_locals () in

@@ -47,7 +47,7 @@ let make ~verbose ~warnings =
 let log_stage o ~stage ~file compiler_id =
   Format.fprintf o.vf "@[%s[%a]@ %s@]@."
     stage
-    Id.pp compiler_id
+    Config.Id.pp compiler_id
     file
 ;;
 

@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 open Lib
 
 let print_symbol_map = function
@@ -43,7 +43,7 @@ let run
   let open Or_error.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
   let passes =
-    Config.M.sanitiser_passes cfg ~default:Sanitiser_pass.explain
+    Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.explain
   in
   let explain_cfg ~globals =
     ignore globals;

@@ -39,7 +39,7 @@ type 'cfg t
 
 val make
   :  ?config:'cfg
-  -> ?passes:Sanitiser_pass.Set.t
+  -> ?passes:Config.Sanitiser_pass.Set.t
   -> ?symbols:string list
   -> unit
   -> 'cfg t

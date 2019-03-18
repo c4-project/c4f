@@ -130,7 +130,7 @@ module Spec : sig
   val make
     :  ?enabled:bool
     -> ?via:Via.t
-    -> ?litmus:Litmus_tool.Config.t
+    -> ?litmus:Litmus_tool.t
     -> unit
     -> t
     (** [make ?enabled ?via ?litmus ()] creates a machine spec with

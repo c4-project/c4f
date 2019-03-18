@@ -22,42 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core_kernel
-open Lib
+(** Signatures, and other helpers, for external program
+   configuration. *)
 
-let run
-    (seed : int option)
-    (args : Args.Standard_with_files.t)
-    (o    : Output.t)
-    (_cfg  : Config.Act.t)
-  : unit Or_error.t =
-  let open Or_error.Let_syntax in
-  let%map _ =
-    C.Filters.Litmus.run_from_string_paths
-      (C.Filters.Fuzz { seed; o })
-      ~infile:(Args.Standard_with_files.infile_raw args)
-      ~outfile:(Args.Standard_with_files.outfile_raw args)
-  in ()
-;;
-
-let readme () : string = String.strip {|
-`act c fuzz` takes, as input, a C litmus test.  It then performs various
-mutations to the litmus test, and outputs the resulting modified test.
-|}
-
-let command : Command.t =
-  let open Command.Let_syntax in
-  Command.basic
-    ~summary:"Performs fuzzing mutations on a C litmus test"
-    ~readme
-    [%map_open
-      let standard_args = Args.Standard_with_files.get
-      and seed = flag "seed" (optional int)
-          ~doc: "INT use this integer as the seed to the fuzzer RNG"
-      in
-      fun () ->
-        Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false
-          ~f:(run seed)
-    ]
-;;
+include Program_intf

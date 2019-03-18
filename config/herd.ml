@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,27 +22,26 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core_kernel
+open Base
 
-let run (args : Args.Standard_with_files.t) _o _cfg =
-  let open Or_error.Let_syntax in
-  let%map _ =
-    C.Filters.Litmus.run_from_string_paths
-      C.Filters.Delitmus
-      ~infile:(Args.Standard_with_files.infile_raw args)
-      ~outfile:(Args.Standard_with_files.outfile_raw args)
-  in ()
+type t =
+  { cmd        : string
+        [@default "herd7"] [@drop_if_default]
+  ; c_model    : string sexp_option
+  ; asm_models : (Id.t, string) List.Assoc.t
+        [@default []] [@drop_if_default]
+  } [@@deriving sexp, fields, make]
 ;;
 
-let command : Command.t =
-  let open Command.Let_syntax in
-  Command.basic
-    ~summary:"converts a C litmus test to a normal C file"
-    [%map_open
-      let standard_args = Args.Standard_with_files.get in
-      fun () ->
-        Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false
-          ~f:run
-    ]
-;;
+let make ?cmd ?c_model ?asm_models = make ?cmd ~c_model ?asm_models
+
+module M : Program.S with type t := t = struct
+  let argv _ = []
+  let enabled _ = true
+
+  let cmd = cmd
+  let sexp_of_t = sexp_of_t
+  let t_of_sexp = t_of_sexp
+  let default () = make ()
+end
+include M

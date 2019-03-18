@@ -22,12 +22,12 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Base
 
-module type S = Lib.Frontend.S with type ast := Ast.t
+module type S = Utils.Frontend.S with type ast := Ast.t
 
 module Att : S =
-  Lib.Frontend.Make (struct
+  Utils.Frontend.Make (struct
     type ast = Ast.t
 
     module I = Att_parser.MenhirInterpreter

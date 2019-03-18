@@ -25,9 +25,9 @@
 (** Language frontends for C *)
 
 module Normal :
-  Lib.Frontend.S with type ast := Ast.Translation_unit.t
+  Utils.Frontend.S with type ast := Ast.Translation_unit.t
 (** Frontend for 'normal' C (C89 at time of writing). *)
 
 module Litmus :
-  Lib.Frontend.S with type ast := Ast.Litmus.t
+  Utils.Frontend.S with type ast := Ast.Litmus.t
 (** Frontend for C-based litmus tests. *)

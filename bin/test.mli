@@ -32,7 +32,7 @@ val run
   -> [< `Delitmus of string list | `Memalloy of string ]
   -> string
   -> Output.t
-  -> Config.M.t
+  -> Config.Act.t
   -> unit Or_error.t
   (** [run should_time input_mode_raw out_root_raw o cfg]
      runs the test frontend.  It accepts input according to

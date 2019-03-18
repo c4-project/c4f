@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,12 +22,12 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include Frontend.Make (struct
-    type ast = Config_ast.t
+(** Abstract type of Litmus7 configurations. *)
 
-    module I = Config_parser.MenhirInterpreter
+include Program.S
 
-    let lex = Config_lexer.token
-    let parse = Config_parser.Incremental.main
-    let message = Config_messages.message
-  end)
+val make
+  :  ?cmd:string
+  -> unit
+  -> t
+(** [make ?cmd] creates a Litmus-tool config. *)

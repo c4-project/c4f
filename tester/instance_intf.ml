@@ -36,10 +36,10 @@ module type Basic_common = sig
   (** [o] tells the tester how to output warnings, errors, and
       other information. *)
 
-  val herd_cfg : Herd.Config.t option
+  val herd_cfg : Config.Herd.t option
   (** [herd_cfg], if present, tells the tester how to run Herd. *)
 
-  val sanitiser_passes : Sanitiser_pass.Set.t
+  val sanitiser_passes : Config.Sanitiser_pass.Set.t
   (** [sanitiser_passes] is the set of sanitiser passes the tester
       should use. *)
 end
@@ -49,7 +49,7 @@ end
 module type Basic_compiler = sig
   include Basic_common
 
-  module C : Compiler.S
+  module C : Config.Compiler.S
   (** The compiler interface for this compiler. *)
 
   module R : Asm_job.Runner
@@ -60,7 +60,7 @@ module type Basic_compiler = sig
   (** [ps] tells the tester where it can find input files, and where
       it should put output files, for this compiler. *)
 
-  include Compiler.With_spec
+  include Config.Compiler.With_spec
     (** [Basic_compiler] instances must provide a compiler spec and ID. *)
 end
 
@@ -78,18 +78,18 @@ end
 module type Basic_machine = sig
   include Basic_common
 
-  val compilers : Compiler.Spec.Set.t
+  val compilers : Config.Compiler.Spec.Set.t
   (** [compilers] is the set of all enabled compilers for this
      machine. *)
 
   module Resolve_compiler
-    : Compiler.S_resolver
-      with type spec = Compiler.Spec.With_id.t
-       and type 'a chain_input = 'a Compiler.Chain_input.t
+    : Config.Compiler.S_resolver
+      with type spec = Config.Compiler.Spec.With_id.t
+       and type 'a chain_input = 'a Config.Compiler.Chain_input.t
   (** Module used to resolve compiler specs to compiler modules. *)
 
   val asm_runner_from_spec
-    :  Compiler.Spec.With_id.t
+    :  Config.Compiler.Spec.With_id.t
     -> (module Asm_job.Runner) Or_error.t
   (** [asm_runner_from_spec cspec] tries to get an [Asm_job.Runner]
       corresponding to [cspec]'s target architecture. *)

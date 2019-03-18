@@ -25,26 +25,13 @@
 open Core
 open Utils
 
-module Config = struct
-  type t =
-    { cmd        : string
-          [@default "herd7"] [@drop_if_default]
-    ; c_model    : string sexp_option
-    ; asm_models : (Id.t, string) List.Assoc.t
-          [@default []] [@drop_if_default]
-    } [@@deriving sexp, make]
-  ;;
-
-  let create ?cmd ?c_model ?asm_models = make ?cmd ~c_model ?asm_models
-end
-
 type arch =
   | C
-  | Assembly of Id.t
+  | Assembly of Config.Id.t
 ;;
 
 type t =
-  { config: Config.t
+  { config: Config.Herd.t
   ; arch  : arch
   }
   [@@deriving make]
@@ -55,10 +42,10 @@ let create ~config ~arch =
   Or_error.return (make ~config ~arch)
 ;;
 
-let model_for_arch (config : Config.t) = function
-  | C -> config.c_model
+let model_for_arch (config : Config.Herd.t) = function
+  | C -> Config.Herd.c_model config
   | Assembly emits_spec ->
-    List.Assoc.find config.asm_models emits_spec ~equal:(Id.equal)
+    List.Assoc.find (Config.Herd.asm_models config) emits_spec ~equal:[%equal: Config.Id.t]
 ;;
 
 let make_argv ?(model : string option) (rest : string list) =
@@ -81,7 +68,7 @@ let%expect_test "make_argv: override model" =
 ;;
 
 let make_argv_from_config
-    (config : Config.t) (arch : arch option) (rest : string list) =
+    (config : Config.Herd.t) (arch : arch option) (rest : string list) =
   let model = Option.bind ~f:(model_for_arch config) arch in
   make_argv ?model rest
 ;;
@@ -89,9 +76,9 @@ let make_argv_from_config
 let run_direct
     ?(arch : arch option)
     ?(oc : Out_channel.t = Out_channel.stdout)
-    (config : Config.t)
+    (config : Config.Herd.t)
     (argv : string list) : unit Or_error.t =
-  let prog = config.cmd in
+  let prog = Config.Herd.cmd config in
   let argv' = make_argv_from_config config arch argv in
   Or_error.tag ~tag:"While running herd"
     (Runner.Local.run ~oc ~prog argv')
@@ -106,7 +93,7 @@ module Filter : Filter.S with type aux_i = t
     let name = "Herd tool"
     let tmp_file_ext = Fn.const "txt"
 
-    let prog t = t.config.cmd
+    let prog t = Config.Herd.cmd t.config
     let argv t path =
       make_argv_from_config t.config (Some t.arch) [ path ]
     ;;

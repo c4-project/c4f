@@ -27,26 +27,6 @@
 open Core
 open Utils
 
-(** [Config] describes configuration needed to find and execute
-    Herd. *)
-module Config : sig
-  (** [t] is the type of Herd configuration. *)
-  type t =
-    { cmd        : string
-    ; c_model    : string option
-    ; asm_models : (Id.t, string) List.Assoc.t
-    } [@@deriving sexp]
-  ;;
-
-  val create
-    :  ?cmd:string
-    -> ?c_model:string
-    -> ?asm_models:((Id.t, string) List.Assoc.t)
-    -> unit
-    -> t
-  ;;
-end
-
 (** [t] is an opaque type representing a configured and validated
     Herd interface. *)
 type t
@@ -55,17 +35,17 @@ type t
    therefore, which model file to load. *)
 type arch =
   | C
-  | Assembly of Id.t
+  | Assembly of Config.Id.t
 ;;
 
-val create : config:Config.t -> arch:arch -> t Or_error.t
+val create : config:Config.Herd.t -> arch:arch -> t Or_error.t
 (** [create ~config ~arch] validates [config] and [arch] and, if
    successful, creates a [t]. *)
 
 val run_direct
   :  ?arch:arch
   -> ?oc:Out_channel.t
-  -> Config.t
+  -> Config.Herd.t
   -> string list
   -> unit Or_error.t
 (** [run_direct ?arch ?oc config argv] runs the Herd binary

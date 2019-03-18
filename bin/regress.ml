@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 open Lib
 open Utils
 
@@ -139,7 +139,7 @@ let regress_on_files (bin_name : string) (test_dir : Fpath.t) (ext : string)
 let regress_run_asm_many (modename : string) mode passes (test_path : Fpath.t)
   : unit Or_error.t =
   let open Or_error.Let_syntax in
-  let arch = Id.of_string "x86.att" in
+  let arch = Config.Id.of_string "x86.att" in
   let path = Fpath.(test_path / "asm" / "x86" / "att" / "") in
   let%bind l = Language_support.asm_runner_from_arch arch in
   let%bind specs = read_specs path in
@@ -151,12 +151,12 @@ let regress_run_asm_many (modename : string) mode passes (test_path : Fpath.t)
 
 let regress_explain : Fpath.t -> unit Or_error.t =
   regress_run_asm_many "Explainer" `Explain
-    (Sanitiser_pass.explain)
+    (Config.Sanitiser_pass.explain)
 ;;
 
 let regress_litmusify : Fpath.t -> unit Or_error.t =
   regress_run_asm_many "Litmusifier" `Litmusify
-    (Sanitiser_pass.standard)
+    (Config.Sanitiser_pass.standard)
 ;;
 
 let pp_cvars : C.Filters.Var_scope.t C_identifier.Map.t Fmt.t =

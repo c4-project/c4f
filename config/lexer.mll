@@ -24,11 +24,11 @@
 
 {
 open Core_kernel
-open Config_parser
+open Parser
 open Lexing
 
-open Frontend
-open Lex_utils
+open Utils.Frontend
+open Utils.Lex_utils
 
 let keywords = lazy
   (

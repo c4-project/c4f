@@ -22,15 +22,15 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 open Lib
 
 let run_list_compilers
-    (standard_args : Args.Standard.t) (_o : Output.t) (cfg : Lib.Config.M.t)
+    (standard_args : Args.Standard.t) (_o : Output.t) (cfg : Config.Act.t)
   : unit Or_error.t =
-  let compilers = Lib.Config.M.compilers cfg in
+  let compilers = Config.Act.compilers cfg in
   let verbose = Args.Standard.is_verbose standard_args in
-  Fmt.pr "@[<v>%a@]@." (Compiler.Spec.Set.pp_verbose verbose) compilers;
+  Fmt.pr "@[<v>%a@]@." (Config.Compiler.Spec.Set.pp_verbose verbose) compilers;
   Result.ok_unit
 ;;
 
@@ -47,20 +47,20 @@ let list_compilers_command : Command.t =
     ]
 ;;
 
-let predicate_lists : (string, (module Property.S)) List.Assoc.t =
-  [ "Compiler predicates (-filter-compilers)", (module Compiler.Property)
-  ; "Machine predicates (-filter-machines)", (module Machine.Property)
-  ; "Identifier predicates", (module Id.Property)
-  ; "Sanitiser passes (-sanitiser-passes)", (module Sanitiser_pass.Selector)
+let predicate_lists : (string, (module Config.Property.S)) List.Assoc.t =
+  [ "Compiler predicates (-filter-compilers)", (module Config.Compiler.Property)
+  ; "Machine predicates (-filter-machines)", (module Config.Machine.Property)
+  ; "Identifier predicates", (module Config.Id.Property)
+  ; "Sanitiser passes (-sanitiser-passes)", (module Config.Sanitiser_pass.Selector)
   ]
 ;;
 
-let pp_tree_module : (module Property.S) Fmt.t =
+let pp_tree_module : (module Config.Property.S) Fmt.t =
   fun f (module M) -> M.pp_tree f ()
 ;;
 
 let run_list_predicates
-    (_o : Output.t) (_cfg : Lib.Config.M.t)
+    (_o : Output.t) (_cfg : Config.Act.t)
   : unit Or_error.t =
   Fmt.(
     pr "@[<v>%a@]@."

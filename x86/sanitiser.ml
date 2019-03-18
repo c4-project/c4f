@@ -30,7 +30,7 @@ module Hook
 
   module Lang = L
   module Ctx = Lib.Sanitiser_ctx.Make (Lang)
-  module Pass = Lib.Sanitiser_pass
+  module Pass = Config.Sanitiser_pass
   module Program_container = P
 
   let negate = function

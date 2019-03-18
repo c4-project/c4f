@@ -22,13 +22,13 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core
+open Core_kernel
 open Lib
 
-let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Config.M.t)
+let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Config.Act.t)
   : unit Or_error.t =
   let open Or_error.Let_syntax in
-  let%bind herd = Config.M.require_herd cfg in
+  let%bind herd = Config.Act.require_herd cfg in
   Herd.run_direct ?arch herd argv
 ;;
 
@@ -57,12 +57,12 @@ let herd_command : Command.t =
     ]
 ;;
 
-let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Config.M.t)
+let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Config.Act.t)
   : unit Or_error.t =
   let open Or_error.Let_syntax in
-  let machines = Config.M.machines cfg in
-  let%bind machine = Machine.Spec.Set.get machines Machine.Id.default in
-  let%bind litmus_cfg = Machine.Spec.With_id.ensure_litmus machine in
+  let machines = Config.Act.machines cfg in
+  let%bind machine = Config.Machine.Spec.Set.get machines Config.Machine.Id.default in
+  let%bind litmus_cfg = Config.Machine.Spec.With_id.ensure_litmus machine in
   Litmus_tool.run_direct litmus_cfg argv
 ;;
 

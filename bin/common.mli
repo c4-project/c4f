@@ -36,28 +36,28 @@ val warn_if_not_tracking_symbols
     C symbols to track, act may make incorrect assumptions. *)
 
 val get_target
-  :  Lib.Config.M.t
-  -> [< `Id of Id.t | `Arch of Id.t ]
-  -> Compiler.Target.t Or_error.t
+  :  Config.Act.t
+  -> [< `Id of Config.Id.t | `Arch of Config.Id.t ]
+  -> Config.Compiler.Target.t Or_error.t
 (** [get_target cfg target] processes a choice between compiler ID
     and architecture ID; if the input is a compiler
     ID, the compiler is retrieved from [cfg]. *)
 
-val asm_runner_of_target : Compiler.Target.t -> (module Asm_job.Runner) Or_error.t
+val asm_runner_of_target : Config.Compiler.Target.t -> (module Asm_job.Runner) Or_error.t
 (** [asm_runner_of_target target] gets the [Asm_job.Runner]
    associated with a target (either a compiler spec or emits
    clause). *)
 
 module Chain_with_delitmus
     (Onto  : Filter.S)
-  : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> Onto.aux_i))
+  : Filter.S with type aux_i = (Config.File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> Onto.aux_i))
               and type aux_o = (C.Filters.Output.t option * Onto.aux_o)
 (** Chain a delitmusing pass onto [Onto] conditional on the incoming
    file type. *)
 
 val chain_with_delitmus
   :  (module Filter.S with type aux_i = 'i and type aux_o = 'o)
-  -> ( module Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> 'i))
+  -> ( module Filter.S with type aux_i = (Config.File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> 'i))
                         and type aux_o = (C.Filters.Output.t option * 'o)
      )
 (** [chain_with_delitmus onto] is [Chain_with_delitmus], but lifted to
@@ -65,11 +65,11 @@ val chain_with_delitmus
    pipelines. *)
 
 val lift_command
-  :  ?compiler_predicate:Compiler.Property.t Blang.t
-  -> ?machine_predicate:Machine.Property.t Blang.t
-  -> ?sanitiser_passes:Sanitiser_pass.Selector.t Blang.t
+  :  ?compiler_predicate:Config.Compiler.Property.t Blang.t
+  -> ?machine_predicate:Config.Machine.Property.t Blang.t
+  -> ?sanitiser_passes:Config.Sanitiser_pass.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
-  -> f:(Args.Standard.t -> Output.t -> Lib.Config.M.t -> unit Or_error.t)
+  -> f:(Args.Standard.t -> Output.t -> Config.Act.t -> unit Or_error.t)
   -> Args.Standard.t
   -> unit
 (** [lift_command ?compiler_predicate ?machine_predicate
@@ -79,11 +79,11 @@ val lift_command
    top-level errors. *)
 
 val lift_command_with_files
-  :  ?compiler_predicate:Compiler.Property.t Blang.t
-  -> ?machine_predicate:Machine.Property.t Blang.t
-  -> ?sanitiser_passes:Sanitiser_pass.Selector.t Blang.t
+  :  ?compiler_predicate:Config.Compiler.Property.t Blang.t
+  -> ?machine_predicate:Config.Machine.Property.t Blang.t
+  -> ?sanitiser_passes:Config.Sanitiser_pass.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
-  -> f:(Args.Standard_with_files.t -> Output.t -> Lib.Config.M.t -> unit Or_error.t)
+  -> f:(Args.Standard_with_files.t -> Output.t -> Config.Act.t -> unit Or_error.t)
   -> Args.Standard_with_files.t
   -> unit
 (** [lift_command_with_files ?compiler_predicate ?machine_predicate
@@ -97,15 +97,15 @@ val lift_command_with_files
     are built upon. *)
 
 val explain_pipeline
-  :  Compiler.Target.t
+  :  Config.Compiler.Target.t
   -> (module
       Filter.S with type aux_i =
-                      ( File_type.t_or_infer
+                      ( Config.File_type.t_or_infer
                         * ( C.Filters.Output.t Filter.chain_output
                             ->
                             Asm_job.Explain_config.t
                               Asm_job.t
-                              Compiler.Chain_input.t
+                              Config.Compiler.Chain_input.t
                           )
                       )
                 and type aux_o =
@@ -117,16 +117,16 @@ val explain_pipeline
     pipeline for target [target]. *)
 
 val litmusify_pipeline
-  :  Compiler.Target.t
+  :  Config.Compiler.Target.t
   -> (module
       Filter.S with type aux_i =
-                      ( File_type.t_or_infer
+                      ( Config.File_type.t_or_infer
                         * ( C.Filters.Output.t Filter.chain_output
                             ->
                             Sexp.t
                             Asm_job.Litmus_config.t
                               Asm_job.t
-                              Compiler.Chain_input.t
+                              Config.Compiler.Chain_input.t
                           )
                       )
                 and type aux_o =
@@ -139,12 +139,12 @@ val litmusify_pipeline
 
 val make_compiler_input
   :  Output.t
-  -> File_type.t_or_infer
+  -> Config.File_type.t_or_infer
   -> C.Filters.Var_scope.t C_identifier.Map.t option
   -> (globals:C_identifier.Set.t -> 'cfg)
-  -> Sanitiser_pass.Set.t
+  -> Config.Sanitiser_pass.Set.t
   -> C.Filters.Output.t Filter.chain_output
-  -> 'cfg Asm_job.t Compiler.Chain_input.t
+  -> 'cfg Asm_job.t Config.Compiler.Chain_input.t
 (** [make_compiler_input o file_type user_cvars cfg_fun passes dl_output]
     generates the input to the compiler stage of a single-file pipeline.
 

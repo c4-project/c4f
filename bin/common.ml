@@ -46,27 +46,27 @@ let warn_if_not_tracking_symbols (o : Output.t)
 let get_target cfg = function
   | `Id id ->
     let open Or_error.Let_syntax in
-    let%map spec = Compiler.Spec.Set.get (Lib.Config.M.compilers cfg) id in
+    let%map spec = Config.Compiler.Spec.Set.get (Config.Act.compilers cfg) id in
     `Spec spec
   | `Arch _ as arch -> Or_error.return arch
 ;;
 
 let asm_runner_of_target
-  (tgt : Compiler.Target.t) : (module Asm_job.Runner) Or_error.t =
-  Language_support.asm_runner_from_arch (Compiler.Target.arch tgt)
+  (tgt : Config.Compiler.Target.t) : (module Asm_job.Runner) Or_error.t =
+  Language_support.asm_runner_from_arch (Config.Compiler.Target.arch tgt)
 ;;
 
 module Chain_with_delitmus
     (Onto  : Filter.S)
-  : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> Onto.aux_i))
+  : Filter.S with type aux_i = (Config.File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> Onto.aux_i))
               and type aux_o = (C.Filters.Output.t option * Onto.aux_o) =
   Filter.Chain_conditional_first (struct
     module First  = C.Filters.Litmus
     module Second = Onto
-    type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> Onto.aux_i))
+    type aux_i = (Config.File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> Onto.aux_i))
 
     let select { Filter.aux = (file_type, rest); src; _ } =
-      if File_type.is_c_litmus src file_type
+      if Config.File_type.is_c_litmus src file_type
       then `Both (C.Filters.Delitmus, rest)
       else `One  rest
   end)
@@ -76,25 +76,25 @@ let chain_with_delitmus
   (type aux_i)
   (type aux_o)
   (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-  : ( module Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> aux_i))
+  : ( module Filter.S with type aux_i = (Config.File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> aux_i))
                        and type aux_o = (C.Filters.Output.t option * aux_o)
     ) =
   (module Chain_with_delitmus (Onto)
-     : Filter.S with type aux_i = (File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> aux_i))
+     : Filter.S with type aux_i = (Config.File_type.t_or_infer * (C.Filters.Output.t Filter.chain_output -> aux_i))
                  and type aux_o = (C.Filters.Output.t option * aux_o)
   )
 ;;
 
 let delitmus_compile_asm_pipeline
     (type i o)
-    (target : Compiler.Target.t)
+    (target : Config.Compiler.Target.t)
     (job_maker : (module Asm_job.Runner) ->
      (module Filter.S with type aux_i = i and type aux_o = o))
   : (module
       Filter.S with type aux_i =
-                      ( File_type.t_or_infer
+                      ( Config.File_type.t_or_infer
                         * ( C.Filters.Output.t Filter.chain_output
-                            -> i Compiler.Chain_input.t
+                            -> i Config.Compiler.Chain_input.t
                           )
                       )
                 and type aux_o =
@@ -112,15 +112,15 @@ let delitmus_compile_asm_pipeline
 ;;
 
 let explain_pipeline
-  (target : Compiler.Target.t)
+  (target : Config.Compiler.Target.t)
   : ( module
       Filter.S with type aux_i =
-                      ( File_type.t_or_infer
+                      ( Config.File_type.t_or_infer
                         * ( C.Filters.Output.t Filter.chain_output
                             ->
                             Asm_job.Explain_config.t
                               Asm_job.t
-                              Compiler.Chain_input.t
+                              Config.Compiler.Chain_input.t
                           )
                       )
                 and type aux_o =
@@ -133,16 +133,16 @@ let explain_pipeline
 
 
 let litmusify_pipeline
-  (target : Compiler.Target.t)
+  (target : Config.Compiler.Target.t)
   : ( module
       Filter.S with type aux_i =
-                      ( File_type.t_or_infer
+                      ( Config.File_type.t_or_infer
                         * ( C.Filters.Output.t Filter.chain_output
                             ->
                             Sexp.t
                             Asm_job.Litmus_config.t
                               Asm_job.t
-                              Compiler.Chain_input.t
+                              Config.Compiler.Chain_input.t
                           )
                       )
                 and type aux_o =
@@ -230,13 +230,13 @@ let collect_cvars
 
 let make_compiler_input
   (o : Output.t)
-  (file_type : File_type.t_or_infer)
+  (file_type : Config.File_type.t_or_infer)
   (user_cvars : C.Filters.Var_scope.t C_identifier.Map.t option)
   (config_fn : globals:C_identifier.Set.t -> 'cfg)
-  (passes : Sanitiser_pass.Set.t)
+  (passes : Config.Sanitiser_pass.Set.t)
   (dl_output : C.Filters.Output.t Filter.chain_output)
   : 'cfg Asm_job.t
-      Compiler.Chain_input.t =
+      Config.Compiler.Chain_input.t =
   let cvar_map = choose_cvars o user_cvars dl_output in
   let c_globals =
     cvar_map
@@ -254,8 +254,8 @@ let make_compiler_input
   let litmus_job =
     Asm_job.make ~passes ~config ?symbols ()
   in
-  Compiler.Chain_input.create
-    ~file_type:(File_type.delitmusified file_type)
+  Config.Compiler.Chain_input.create
+    ~file_type:(Config.File_type.delitmusified file_type)
     ~next:(Fn.const litmus_job)
 ;;
 
@@ -281,7 +281,7 @@ module Make_lifter (B : Basic_lifter) = struct
     ?machine_predicate
     ?sanitiser_passes
     ?with_compiler_tests
-    ~(f : B.t -> Output.t -> Config.M.t -> unit Or_error.t)
+    ~(f : B.t -> Output.t -> Config.Act.t -> unit Or_error.t)
     (args : B.t)
     : unit =
     let standard_args = B.as_standard_args args in

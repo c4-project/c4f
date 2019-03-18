@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,27 +22,33 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-open Core_kernel
+(** Baseline interface of modules over configuration. *)
+module type S = sig
+  module CSpec : Compiler.S_spec
 
-let run (args : Args.Standard_with_files.t) _o _cfg =
-  let open Or_error.Let_syntax in
-  let%map _ =
-    C.Filters.Litmus.run_from_string_paths
-      C.Filters.Delitmus
-      ~infile:(Args.Standard_with_files.infile_raw args)
-      ~outfile:(Args.Standard_with_files.outfile_raw args)
-  in ()
-;;
+  type t [@@deriving sexp]
 
-let command : Command.t =
-  let open Command.Let_syntax in
-  Command.basic
-    ~summary:"converts a C litmus test to a normal C file"
-    [%map_open
-      let standard_args = Args.Standard_with_files.get in
-      fun () ->
-        Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false
-          ~f:run
-    ]
-;;
+  val cpp : t -> Cpp.t option
+  (** [cpp c] gets the C preprocessor config, if any, to use for configuration
+      [c]. *)
+
+  val herd : t -> Herd.t option
+  (** [herd c] gets the Herd config, if any, to use for configuration
+      [c]. *)
+
+  val compilers : t -> CSpec.Set.t
+  (** [compilers c] gets the set of all active compilers in
+      configuration [c]. *)
+
+  val machines : t -> Machine.Spec.Set.t
+  (** [machines c] gets the set of all active machines in
+      configuration [c]. *)
+
+  val sanitiser_passes
+    :  t
+    -> default:Sanitiser_pass.Set.t
+    -> Sanitiser_pass.Set.t
+  (** [sanitiser_passes c ~default] gets the set of requested
+      sanitiser passes, given the default set [default] for the
+      current context. *)
+end

@@ -47,8 +47,8 @@ copyright notice follow. *)
 {
 open Core
 open Lexing
-open Lib.Frontend
-open Lib.Lex_utils
+open Utils.Frontend
+open Utils.Lex_utils
 open Att_parser
 }
 

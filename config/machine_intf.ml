@@ -59,11 +59,11 @@ module type Basic_spec = sig
   val via : t -> via
   (** [via spec] gets the [via] stanza of a machine spec [spec]. *)
 
-  val litmus : t -> Litmus_tool.Config.t option
+  val litmus : t -> Litmus_tool.t option
   (** [litmus spec] gets any available configuration in [spec] for
       the Litmus tool. *)
 
-  val ensure_litmus : t -> Litmus_tool.Config.t Or_error.t
+  val ensure_litmus : t -> Litmus_tool.t Or_error.t
   (** [ensure_litmus spec] behaves as [litmus spec], but returns a
       descriptive error if the Litmus configuration is missing. *)
 

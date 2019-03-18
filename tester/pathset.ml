@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Base
-open Lib
 open Utils
 
 module M = struct
@@ -95,12 +94,12 @@ let mkdirs ps =
 ;;
 
 let make_id_path init id =
-  let segs = Id.to_string_list id in
+  let segs = Config.Id.to_string_list id in
   List.fold ~init ~f:(Fpath.add_seg) segs
 ;;
 
 let%expect_test "make_id_path: folds in correct direction" =
-  let id = Id.of_string "foo.bar.baz" in
+  let id = Config.Id.of_string "foo.bar.baz" in
   let init = Fpath.v "." in
   Io.print_bool
     (Fpath.equal
@@ -136,7 +135,7 @@ let get_litc_files : Input_mode.t -> Fpath.t list Or_error.t =
 ;;
 
 let make
-  (id : Id.t)
+  (id : Config.Id.t)
   ~(input_mode  : Input_mode.t)
   ~(output_root : Fpath.t)
   : t Or_error.t =
@@ -186,7 +185,7 @@ end)
 *)
 
 let make_and_mkdirs
-  (id : Id.t)
+  (id : Config.Id.t)
   ~(input_mode  : Input_mode.t)
   ~(output_root : Fpath.t)
   : t Or_error.t =
