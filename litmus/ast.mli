@@ -24,12 +24,12 @@
 
 (** Top-level AST for Litmus tests *)
 
-include module type of Ast_intf
 (** As usual, we store the signatures for [Ast] in a separate
    implementation module, and include them in both sides of this
    module. *)
+include module type of Ast_intf
 
-module Make (Lang : Basic) : S with module Lang = Lang
 (** [Make] is a functor that, given a language described by
     [Basic], produces a module type for litmus test syntax
     trees, as well as operations for pretty-printing it. *)
+module Make (Lang : Basic) : S with module Lang = Lang
