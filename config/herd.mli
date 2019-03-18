@@ -28,15 +28,14 @@ open Base
 
 include Program.S
 
-    (** {2 Constructors} *)
+(** {2 Constructors} *)
 
 val make
   :  ?cmd:string
   -> ?c_model:string
-  -> ?asm_models:((Id.t, string) List.Assoc.t)
+  -> ?asm_models:(Id.t, string) List.Assoc.t
   -> unit
   -> t
-;;
 
 (** {2 Accessors}
 

@@ -51,6 +51,7 @@ module type S_with_id = sig
 
   (** [t] is the opaque type of specification-ID bundles. *)
   type t
+
   include Common with type t := t
 
   (** [create ~id ~spec] creates a new [With_id.t] pair. *)
@@ -68,6 +69,7 @@ end
 module type Basic = sig
   (** [t] is the opaque type of specifications. *)
   type t
+
   include Common with type t := t
 
   (** [With_id] contains types and functions for handling bundles of
@@ -108,30 +110,22 @@ module type S = sig
         specifications in [specs], returning those marked [`Fst] in
         the first bucket and those marked [`Snd] in the second. *)
     val partition_map
-      :  t
-      -> f : (With_id.t -> [`Fst of 'a | `Snd of 'b])
-      -> ('a list * 'b list)
-    ;;
+      : t -> f:(With_id.t -> [`Fst of 'a | `Snd of 'b]) -> 'a list * 'b list
 
     (** [group specs ~f] groups [specs] into buckets according to some
        grouping function [f].  [f] returns specification IDs; the idea
        is that this allows grouping of specifications by references
         to other, larger specifications. *)
-    val group
-      :  t
-      -> f : (With_id.t -> Id.t)
-      -> t Id.Map.t
-    ;;
+    val group : t -> f:(With_id.t -> Id.t) -> t Id.Map.t
 
     (** [map specs ~f] applies a mapper [f] to the specifications in
         [specs], returning the results as a list. *)
-    val map : t -> f : (With_id.t -> 'a) -> 'a list
+    val map : t -> f:(With_id.t -> 'a) -> 'a list
   end
 
   (** [pp_verbose verbose f spec] prints a [spec] with the level of
        verbosity implied by [verbose]. *)
-  val pp_verbose : bool ->
-    Format.formatter -> t -> unit
+  val pp_verbose : bool -> Format.formatter -> t -> unit
 end
 
 (** [With_id] is a basic implementation of [S_with_id] for specs with
@@ -140,14 +134,7 @@ end
     Usually, spec modules should extend [With_id] to implement the
    various accessors they expose on the spec type itself, for
    convenience. *)
-module With_id
-  : functor (C : Common)
-    -> S_with_id with type elt := C.t
-;;
+module With_id (C : Common) : S_with_id with type elt := C.t
 
 (** [Make] makes an [S] from a [Basic]. *)
-module Make
-  : functor (B : Basic)
-    -> S with type t := B.t and module With_id := B.With_id
-;;
-
+module Make (B : Basic) : S with type t := B.t and module With_id := B.With_id

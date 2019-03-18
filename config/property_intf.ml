@@ -26,10 +26,10 @@ open Base
 
 (** Signature of Blang-compatible property enumerations. *)
 module type S = sig
-  type t [@@deriving sexp]
   (** Type of individual property elements. *)
+  type t [@@deriving sexp]
 
-  val pp_tree : unit Fmt.t
   (** [pp_tree f ()] should print a tree representation of the
       properties available in this module to [f]. *)
+  val pp_tree : unit Fmt.t
 end

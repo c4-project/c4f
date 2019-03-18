@@ -53,29 +53,29 @@ include Identifiable.S with type t := t
 (** [Property] contains a mini-language for querying IDs, suitable
     for use in [Blang]. *)
 module Property : sig
-  type id = t
   (** [id] is a synonym for the identifier type. *)
+  type id = t
 
-  type t [@@deriving sexp]
   (** [t] is the opaque type of property queries. *)
+  type t [@@deriving sexp]
 
-  val has_tag : string -> t
   (** [has_tag s str] constructs a membership test over a string [str]. *)
+  val has_tag : string -> t
 
-  val is : string -> t
   (** [is str] constructs an equality test over a string [str]. *)
+  val is : string -> t
 
-  val has_prefix : string -> t
   (** [has_prefix str] constructs a prefix test over a string [str]. *)
+  val has_prefix : string -> t
 
-  val eval : id -> t -> bool
   (** [eval id property] decides whether [property] holds for [id]. *)
+  val eval : id -> t -> bool
 
-  val eval_b : id -> t Blang.t -> bool
   (** [eval_b id expr] evaluates a [Blang] expression [expr] over
      [id]. *)
+  val eval_b : id -> t Blang.t -> bool
 
-  val pp_tree : unit Fmt.t
   (** [pp_tree f ()] prints a tree describing the property language on
      [f]. *)
+  val pp_tree : unit Fmt.t
 end

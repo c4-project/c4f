@@ -26,17 +26,10 @@ open Base
 
 type t =
   { enabled : bool
-  ; cmd     : string option
-  ; argv    : string list
+  ; cmd : string option
+  ; argv : string list
   }
 [@@deriving sexp, fields, make]
-;;
 
-let default () =
-  { enabled = true
-  ; cmd     = None
-  ; argv    = []
-  }
-;;
-
+let default () = { enabled = true; cmd = None; argv = [] }
 let cmd (* override *) t = Option.value ~default:"cpp" (cmd t)

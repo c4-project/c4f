@@ -26,8 +26,5 @@
 
 include Program.S
 
-val make
-  :  ?cmd:string
-  -> unit
-  -> t
 (** [make ?cmd] creates a Litmus-tool config. *)
+val make : ?cmd:string -> unit -> t

@@ -30,23 +30,20 @@ type t =
   | `C
   | `C_litmus
   ]
-;;
 
 type t_or_infer =
   [ t
   | `Infer
   ]
-;;
 
 let file_type_is (src : Io.In_source.t) (expected : string) : bool =
   Option.exists (Io.In_source.file_type src) ~f:(String.equal expected)
 ;;
 
-let is_c (src : Io.In_source.t)
-  : [> `C | `Infer] -> bool = function
-  | `C     -> true
+let is_c (src : Io.In_source.t) : [> `C | `Infer] -> bool = function
+  | `C -> true
   | `Infer -> file_type_is src "c"
-  | _      -> false
+  | _ -> false
 ;;
 
 let%expect_test "is_c: infer on untyped stdin" =
@@ -124,8 +121,7 @@ let%expect_test "is_c: override non-C on asm-typed file" =
   [%expect {| false |}]
 ;;
 
-let is_c_litmus (src : Io.In_source.t)
-  : [> `C_litmus | `Infer] -> bool = function
+let is_c_litmus (src : Io.In_source.t) : [> `C_litmus | `Infer] -> bool = function
   | `C_litmus -> true
   | `Infer -> file_type_is src "litmus"
   | _ -> false
@@ -133,5 +129,5 @@ let is_c_litmus (src : Io.In_source.t)
 
 let delitmusified : t_or_infer -> t_or_infer = function
   | `C_litmus -> `C
-  | `Assembly | `C | `Infer as x -> x
+  | (`Assembly | `C | `Infer) as x -> x
 ;;

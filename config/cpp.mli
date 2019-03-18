@@ -26,10 +26,5 @@
 
 include Program.S
 
-val make
-  :  enabled:bool
-  -> ?cmd:string
-  -> ?argv:string list
-  -> unit
-  -> t
-  (** [make ~enabled ?cmd ?argv ()] makes a CPP configuration block. *)
+(** [make ~enabled ?cmd ?argv ()] makes a CPP configuration block. *)
+val make : enabled:bool -> ?cmd:string -> ?argv:string list -> unit -> t

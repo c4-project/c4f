@@ -33,63 +33,65 @@ open Utils
     implementation. *)
 include module type of Compiler_intf
 
-module Make_spec (M : Machine.Reference) : S_spec with module Mach = M
 (** [Make_spec] is a functor for building compiler specifications
     parametrised on machine references.
 
     See [Cfg_spec] and [Spec] for implementations of this
     functor. *)
+module Make_spec (M : Machine.Reference) : S_spec with module Mach = M
 
-module Cfg_spec : S_spec with type Mach.t = Id.t
 (** [Cfg_spec] is a module describing compiler specs where machine
     references are unresolved IDs.  This is the format
     used in the configuration file, hence the name. *)
+module Cfg_spec : S_spec with type Mach.t = Id.t
 
-module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t
 (** [Spec] is a module describing compiler specs where machine
     references are inlined machine specs.  This is the
     form of compiler spec expected through most of act. *)
+module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t
 
 (** Type of target specifiers for jobs that can accept both C files
     and assembly. *)
 module Target : sig
+  (** [t] is either a compiler specifier, or a raw architecture. *)
   type t =
     [ `Spec of Spec.With_id.t
     | `Arch of Id.t
     ]
-  (** [t] is either a compiler specifier, or a raw architecture. *)
 
-  val arch : t -> Id.t
   (** [arch_of_target target] gets the architecture ID
       associated with [target]. *)
+  val arch : t -> Id.t
 
-  val ensure_spec : t -> Spec.With_id.t Or_error.t
   (** [ensure_spec target] extracts a compiler spec from [target],
      failing if it is a raw architecture. *)
+  val ensure_spec : t -> Spec.With_id.t Or_error.t
 end
 
-module Fail (E : sig val error : Error.t end) : S
 (** A compiler that always passes its tests, but fails with [E.error]
     on runtime.
 
     Generally used when building a compiler chain fails, but the
     error is one that can be sidestepped over if the compiler never
     gets run. *)
+module Fail (E : sig
+  val error : Error.t
+end) : S
 
 (** [Property] contains a mini-language for querying compiler specs,
     suitable for use in [Blang]. *)
 module Property : sig
-  type t [@@deriving sexp]
   (** [t] is the opaque type of property queries. *)
+  type t [@@deriving sexp]
 
-  val id : Id.Property.t -> t
   (** [id] constructs a query over a compiler's ID. *)
+  val id : Id.Property.t -> t
 
-  val machine : Machine.Property.t -> t
   (** [machine] constructs a query over a compiler's machine. *)
+  val machine : Machine.Property.t -> t
 
-  val eval : Spec.With_id.t -> t -> bool
   (** [eval cspec property] evaluates [property] over [cspec]. *)
+  val eval : Spec.With_id.t -> t -> bool
 
   (** [eval_b cspec expr] evaluates a [Blang] expression [expr] over
       [cspec]. *)
@@ -113,9 +115,9 @@ module type Basic_with_run_info = sig
   module Runner : Runner.S
 end
 
-module Make (B : Basic_with_run_info) : S
 (** [Make] produces a runnable compiler satisfying [S] from a
     [Basic_with_run_info]. *)
+module Make (B : Basic_with_run_info) : S
 
 (** {2 Filters}
 
@@ -123,13 +125,12 @@ module Make (B : Basic_with_run_info) : S
     {{!Utils.Filter}filter} system, so that they can be composed
     with other similar passes. *)
 
-module S_to_filter (S : S) :
-  Utils.Filter.S with type aux_i = unit and type aux_o = unit
 (** Lifts a [S] to a filter. *)
+module S_to_filter (S : S) : Utils.Filter.S with type aux_i = unit and type aux_o = unit
 
+(** Shorthand for [Make_filter (S_to_filter (B))]. *)
 module Make_filter (B : Basic_with_run_info) :
   Utils.Filter.S with type aux_i = unit and type aux_o = unit
-(** Shorthand for [Make_filter (S_to_filter (B))]. *)
 
 (** Abstract type of auxiliary input wrappers used for compiler
     chains. *)
@@ -143,24 +144,18 @@ module Chain_input : sig
   type 'a t
 
   val file_type : 'a t -> File_type.t_or_infer
-  val next      : 'a t -> next_mode -> 'a
-
+  val next : 'a t -> next_mode -> 'a
   val create : file_type:File_type.t_or_infer -> next:(next_mode -> 'a) -> 'a t
 end
 
 (** {2 Resolving spec IDs to compilers} *)
 
-module Make_resolver
-    (B : Basic_resolver with type spec := Spec.With_id.t)
-  : S_resolver with type spec = Spec.With_id.t
-                and type 'a chain_input = 'a Chain_input.t
 (** Constructs a {{!S_resolver}S_resolver} from a
    {{!Basic_resolver}Basic_resolver} over direct compiler specs. *)
+module Make_resolver (B : Basic_resolver with type spec := Spec.With_id.t) :
+  S_resolver with type spec = Spec.With_id.t and type 'a chain_input = 'a Chain_input.t
 
-module Make_target_resolver
-    (B : Basic_resolver with type spec := Spec.With_id.t)
-  : S_resolver with type spec = Target.t
-                and type 'a chain_input = 'a Chain_input.t
 (** Constructs a {{!S_resolver}S_resolver} over targets from a
    {{!Basic_resolver}Basic_resolver}. *)
-
+module Make_target_resolver (B : Basic_resolver with type spec := Spec.With_id.t) :
+  S_resolver with type spec = Target.t and type 'a chain_input = 'a Chain_input.t

@@ -32,36 +32,35 @@
 
 open Utils
 
+(** Enumeration of the high-level file types understood by most of the
+    bits of act that touch the filesystem. *)
 type t =
   [ `Assembly
   | `C
   | `C_litmus
   ]
-(** Enumeration of the high-level file types understood by most of the
-    bits of act that touch the filesystem. *)
 
+(** As [t], but with the possibility of deferring working out the
+    file type to a different channel. *)
 type t_or_infer =
   [ t
   | `Infer
   ]
-(** As [t], but with the possibility of deferring working out the
-    file type to a different channel. *)
 
 (** {2 Classifiers with inference from filenames} *)
 
-val is_c : Io.In_source.t -> [> `C | `Infer] -> bool
 (** [is_c infile filetype] decides whether [infile] is a C
     file---from its extension if [filetype] is [`Infer], or
     by whether or not [filetype] is [`C]. *)
+val is_c : Io.In_source.t -> [> `C | `Infer] -> bool
 
-val is_c_litmus : Io.In_source.t -> [> `C_litmus | `Infer] -> bool
 (** [is_c_litmus infile filetype] decides whether [infile] is a C/litmus
     file---from its extension if [filetype] is [`Infer], or
     by whether or not [filetype] is [`C_litmus]. *)
+val is_c_litmus : Io.In_source.t -> [> `C_litmus | `Infer] -> bool
 
 (** {2 Conversions} *)
 
-val delitmusified : t_or_infer -> t_or_infer
 (** [delitmusified filetype] is the type of the output of a
     delitmusifier if [filetype] is the type of the input:
     [`C] if [filetype] is [`C_litmus], and [filetype] otherwise.
@@ -69,3 +68,4 @@ val delitmusified : t_or_infer -> t_or_infer
     If [filetype] is [`Infer], [delitmusified filetype] is [`Infer]:
     anything using [delitmusified filetype] must take care in this
     case to make sure the correct behaviour occurs. *)
+val delitmusified : t_or_infer -> t_or_infer

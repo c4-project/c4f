@@ -27,13 +27,10 @@ module Cpp = struct
     | Cmd of string
     | Argv of string list
     | Enabled of bool
-  ;;
 end
 
 module Litmus = struct
-  type t =
-    | Cmd of string
-  ;;
+  type t = Cmd of string
 end
 
 module Herd = struct
@@ -41,7 +38,6 @@ module Herd = struct
     | Cmd of string
     | C_model of string
     | Asm_model of Id.t * string
-  ;;
 end
 
 module Ssh = struct
@@ -49,43 +45,38 @@ module Ssh = struct
     | User of string
     | Host of string
     | Copy_to of string
-  ;;
 end
 
 module Via = struct
   type t =
     | Local
     | Ssh of Ssh.t list
-  ;;
 end
 
 module Machine = struct
   type t =
     | Enabled of bool
-    | Via     of Via.t
-    | Litmus  of Litmus.t list
-  ;;
+    | Via of Via.t
+    | Litmus of Litmus.t list
 end
 
 module Compiler = struct
   type t =
     | Enabled of bool
-    | Style   of Id.t
-    | Emits   of Id.t
-    | Cmd     of string
-    | Argv    of string list
-    | Herd    of bool
+    | Style of Id.t
+    | Emits of Id.t
+    | Cmd of string
+    | Argv of string list
+    | Herd of bool
     | Machine of Id.t
-  ;;
 end
 
 module Top = struct
   type t =
-    | Cpp      of Cpp.t list
-    | Herd     of Herd.t list
-    | Machine  of Id.t * Machine.t list
+    | Cpp of Cpp.t list
+    | Herd of Herd.t list
+    | Machine of Id.t * Machine.t list
     | Compiler of Id.t * Compiler.t list
-  ;;
 end
 
 type t = Top.t list

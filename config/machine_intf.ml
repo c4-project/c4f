@@ -50,25 +50,24 @@ end
     In practice, modules implementing this will either be [Spec]
     or [Spec.With_id]. *)
 module type Basic_spec = sig
-  type t
   (** [t] describes a machine. *)
+  type t
 
-  type via
   (** Type of 'via' blocks. *)
+  type via
 
-  val via : t -> via
   (** [via spec] gets the [via] stanza of a machine spec [spec]. *)
+  val via : t -> via
 
-  val litmus : t -> Litmus_tool.t option
   (** [litmus spec] gets any available configuration in [spec] for
       the Litmus tool. *)
+  val litmus : t -> Litmus_tool.t option
 
-  val ensure_litmus : t -> Litmus_tool.t Or_error.t
   (** [ensure_litmus spec] behaves as [litmus spec], but returns a
       descriptive error if the Litmus configuration is missing. *)
+  val ensure_litmus : t -> Litmus_tool.t Or_error.t
 
-  val runner : t -> (module Runner.S)
   (** [to_runner spec] gets a runner for the machine spec
      [spec]. *)
-
+  val runner : t -> (module Runner.S)
 end

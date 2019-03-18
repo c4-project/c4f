@@ -24,23 +24,23 @@
 
 open Base
 
-include module type of Property_intf
 (** For [S], see here. *)
+include module type of Property_intf
 
 (** Helpers for documenting property trees. *)
 module Tree_doc : sig
+  (** Type of elements in a property tree documentation list. *)
   type elt =
-    { args    : string list
+    { args : string list
     ; details : string
     }
-  (** Type of elements in a property tree documentation list. *)
 
-  type t = (string, elt) List.Assoc.t
   (** A property tree documentation list. *)
+  type t = (string, elt) List.Assoc.t
 
-  val pp : t -> string list -> unit Fmt.t
   (** [pp_variants tree_docs variants f ()] prints the tree
      documentation for a property variant, whose tree documentation is
      in [tree_docs] and variant names are in [variants],
      onto formatter [f]. *)
+  val pp : t -> string list -> unit Fmt.t
 end

@@ -25,7 +25,6 @@
 (** Act's top-level configuration. *)
 
 open Base
-
 include module type of Act_intf
 
 (** [Raw] represents act configuration loaded directly from a spec
@@ -39,27 +38,26 @@ module Raw : sig
     -> compilers:Compiler.Cfg_spec.Set.t
     -> machines:Machine.Spec.Set.t
     -> t
-  ;;
 
   include Utils.Loadable.S with type t := t
 end
 
 include S with module CSpec := Compiler.Spec
 
-type 't hook = ('t -> 't option Or_error.t)
 (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
+type 't hook = 't -> 't option Or_error.t
 
-val disabled_compilers : t -> (Id.t * Error.t option) list
 (** [disabled_compilers c] reports all disabled compiler IDs in
     the given config, along with any reason why. *)
+val disabled_compilers : t -> (Id.t * Error.t option) list
 
-val disabled_machines : t -> (Id.t * Error.t option) list
 (** [disabled_machines c] reports all disabled machines in
     the given config, along with any reason why. *)
+val disabled_machines : t -> (Id.t * Error.t option) list
 
-val require_herd : t -> Herd.t Or_error.t
 (** [require_herd c] behaves as [herd c], but raises a descriptive
     error if [c] has no Herd configuration. *)
+val require_herd : t -> Herd.t Or_error.t
 
 (** [from_raw c ?chook ?mhook ?phook] takes a raw config [t] and
     processes it by:
@@ -76,9 +74,8 @@ val require_herd : t -> Herd.t Or_error.t
     [Ok None] when the element is disabled; and
     [Error e] when the element is enabled and failing. *)
 val from_raw
-  :  ?chook:(Compiler.Spec.With_id.t hook)
-  -> ?mhook:(Machine.Spec.With_id.t hook)
+  :  ?chook:Compiler.Spec.With_id.t hook
+  -> ?mhook:Machine.Spec.With_id.t hook
   -> ?phook:(default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t)
   -> Raw.t
   -> t Or_error.t
-;;

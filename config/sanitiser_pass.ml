@@ -43,86 +43,83 @@ module Single_passes = struct
     [@@deriving enum, enumerate]
 
     let table =
-      [ `Escape_symbols       , "escape-symbols"
-      ; `Language_hooks       , "language-hooks"
-      ; `Remove_boundaries    , "remove-boundaries"
-      ; `Remove_litmus        , "remove-litmus"
-      ; `Remove_useless       , "remove-useless"
+      [ `Escape_symbols, "escape-symbols"
+      ; `Language_hooks, "language-hooks"
+      ; `Remove_boundaries, "remove-boundaries"
+      ; `Remove_litmus, "remove-litmus"
+      ; `Remove_useless, "remove-useless"
       ; `Simplify_deref_chains, "simplify-deref-chains"
-      ; `Simplify_litmus      , "simplify-litmus"
-      ; `Unmangle_symbols     , "unmangle-symbols"
-      ; `Warn                 , "warn"
+      ; `Simplify_litmus, "simplify-litmus"
+      ; `Unmangle_symbols, "unmangle-symbols"
+      ; `Warn, "warn"
       ]
+    ;;
   end
+
   include M
   module ET = Enum.Extend_table (M)
   include ET
 
   let tree_docs : Property.Tree_doc.t =
-    [ "escape-symbols",
-      { args = []
-      ; details =
-          {| Mangle symbols to ensure litmus tools can lex them. |}
-      }
-    ; "language-hooks",
-      { args = []
-      ; details =
-          {| Run language-specific hooks.
+    [ ("escape-symbols"
+      , { args = []; details = {| Mangle symbols to ensure litmus tools can lex them. |}
+        })
+    ; ("language-hooks"
+      , { args = []
+        ; details =
+            {| Run language-specific hooks.
              Said hooks may be further categorised into passes, so
              enabling language-hooks on its own won't enable all
              language-specific passes. |}
-      }
-    ; "remove-boundaries",
-      { args = []
-      ; details =
-          {| Remove program boundaries.
+        })
+    ; ("remove-boundaries"
+      , { args = []
+        ; details =
+            {| Remove program boundaries.
              If this pass isn't active, program boundaries are retained
              even if they're not jumped to. |}
-}
-    ; "remove-litmus",
-      { args = []
-      ; details =
-          {| Remove elements that have an effect in the assembly, but
+        })
+    ; ("remove-litmus"
+      , { args = []
+        ; details =
+            {| Remove elements that have an effect in the assembly, but
              said effect isn't captured in the litmus test. |}
-      }
-    ; "remove-useless",
-      { args = []
-      ; details =
-          {| Remove elements with no (direct) effect in the assembly. |}
-      }
-    ; "simplify-deref-chains",
-      { args = []
-      ; details =
-          {| Replace 'deref chains' with direct movements.  This is a
+        })
+    ; ("remove-useless"
+      , { args = []
+        ; details = {| Remove elements with no (direct) effect in the assembly. |}
+        })
+    ; ("simplify-deref-chains"
+      , { args = []
+        ; details =
+            {| Replace 'deref chains' with direct movements.  This is a
              fairly heavyweight change. |}
-      }
-    ; "simplify-litmus",
-      { args = []
-      ; details =
-          {| Perform relatively minor simplifications on elements that
+        })
+    ; ("simplify-litmus"
+      , { args = []
+        ; details =
+            {| Perform relatively minor simplifications on elements that
              aren't directly understandable by litmus tools. |}
-      }
-    ; "unmangle-symbols",
-      { args = []
-      ; details =
-          {| Where possible, replace symbols with their original C
+        })
+    ; ("unmangle-symbols"
+      , { args = []
+        ; details =
+            {| Where possible, replace symbols with their original C
             identifiers. |}
-      }
-    ; "warn",
-      { args = []
-      ; details =
-          {| Warn about things the sanitiser doesn't understand. |}
-      }
-  ]
+        })
+    ; ("warn"
+      , { args = []; details = {| Warn about things the sanitiser doesn't understand. |}
+        })
+    ]
   ;;
 end
 
 include Single_passes
 
 let%expect_test "all passes accounted for" =
-  Fmt.(pr "@[<v>%a@]@." (list ~sep:cut pp))
-    (all_list ());
-  [%expect {|
+  Fmt.(pr "@[<v>%a@]@." (list ~sep:cut pp)) (all_list ());
+  [%expect
+    {|
     escape-symbols
     language-hooks
     remove-boundaries
@@ -135,7 +132,6 @@ let%expect_test "all passes accounted for" =
 ;;
 
 let all_lazy = lazy (all_set ())
-
 let explain = Set.of_list [ `Remove_useless ]
 let standard = all_set ()
 
@@ -149,31 +145,29 @@ module Selector = struct
         | `Explain
         ]
       [@@deriving enum, enumerate]
-      ;;
 
-      let table =
-        [ `Standard, "%standard"
-        ; `Explain,  "%explain"
-        ]
-      ;;
+      let table = [ `Standard, "%standard"; `Explain, "%explain" ]
 
       let tree_docs : Property.Tree_doc.t =
-        [ "%standard",
-          { args = []
-          ; details =
-              {| Set containing all sanitiser passes that are considered
+        [ ("%standard"
+          , { args = []
+            ; details =
+                {| Set containing all sanitiser passes that are considered
                  unlikely to change program semantics. |}
-          }
-        ; "%explain",
-          { args = []
-          ; details =
-              {| Set containing only sanitiser passes that aid readability
+            })
+        ; ("%explain"
+          , { args = []
+            ; details =
+                {| Set containing only sanitiser passes that aid readability
                  when reading assembly, for example directive removal. |}
-          }
+            })
         ]
+      ;;
     end
+
     include M
     include Enum.Extend_table (M)
+
     let __t_of_sexp__ = t_of_sexp (* ?! *)
 
     let%expect_test "all categories accounted for" =
@@ -191,40 +185,42 @@ module Selector = struct
       | `Default
       ]
     [@@deriving eq, enumerate]
-    ;;
 
     let table =
       List.concat
-          [ List.map ~f:(fun (k, v) -> (k :> t), v) Single_passes.table
-          ; List.map ~f:(fun (k, v) -> (k :> t), v) Category.table
-          ; [ `Default, "%default" ]
-          ]
+        [ List.map ~f:(fun (k, v) -> (k :> t), v) Single_passes.table
+        ; List.map ~f:(fun (k, v) -> (k :> t), v) Category.table
+        ; [ `Default, "%default" ]
+        ]
     ;;
   end
+
   include M
+
   include Enum.Extend_table (struct
-      include M
-      include Enum.Make_from_enumerate(M)
-    end)
+    include M
+    include Enum.Make_from_enumerate (M)
+  end)
+
   let __t_of_sexp__ = t_of_sexp (* ?! *)
 
   let eval (default : Single_passes.Set.t) : t -> Single_passes.Set.t = function
     | #elt as pass -> Single_passes.Set.singleton pass
     | `Standard -> standard
-    | `Explain  -> explain
-    | `Default  -> default
+    | `Explain -> explain
+    | `Default -> default
   ;;
 
   let tree_docs : Property.Tree_doc.t =
     List.concat
       [ Single_passes.tree_docs
       ; Category.tree_docs
-      ; [ "%default",
-          { args = []
-          ; details =
-              {| Set containing whichever sanitiser passes are the
+      ; [ ("%default"
+          , { args = []
+            ; details =
+                {| Set containing whichever sanitiser passes are the
                  default for the particular act subcommand. |}
-          }
+            })
         ]
       ]
   ;;
@@ -240,18 +236,16 @@ module Selector = struct
     [%expect {| 0 |}]
   ;;
 
-  let pp_tree : unit Fmt.t =
-    Property.Tree_doc.pp tree_docs (List.map ~f:snd table)
-  ;;
-
-  let eval_b pred ~default =
-    Blang.eval_set ~universe:all_lazy (eval default) pred
+  let pp_tree : unit Fmt.t = Property.Tree_doc.pp tree_docs (List.map ~f:snd table)
+  let eval_b pred ~default = Blang.eval_set ~universe:all_lazy (eval default) pred
 
   let%expect_test "eval_b: standard and not explain" =
-    let blang = Blang.O.((base `Standard) && not (base `Explain)) in
-    Sexp.output_hum Out_channel.stdout
+    let blang = Blang.O.(base `Standard && not (base `Explain)) in
+    Sexp.output_hum
+      Out_channel.stdout
       [%sexp (eval_b blang ~default:Single_passes.Set.empty : Single_passes.Set.t)];
-    [%expect {|
+    [%expect
+      {|
       (escape-symbols language-hooks remove-boundaries remove-litmus
        simplify-deref-chains simplify-litmus unmangle-symbols warn) |}]
   ;;

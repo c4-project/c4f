@@ -28,27 +28,24 @@ module type S = sig
 
   type t [@@deriving sexp]
 
-  val cpp : t -> Cpp.t option
   (** [cpp c] gets the C preprocessor config, if any, to use for configuration
       [c]. *)
+  val cpp : t -> Cpp.t option
 
-  val herd : t -> Herd.t option
   (** [herd c] gets the Herd config, if any, to use for configuration
       [c]. *)
+  val herd : t -> Herd.t option
 
-  val compilers : t -> CSpec.Set.t
   (** [compilers c] gets the set of all active compilers in
       configuration [c]. *)
+  val compilers : t -> CSpec.Set.t
 
-  val machines : t -> Machine.Spec.Set.t
   (** [machines c] gets the set of all active machines in
       configuration [c]. *)
+  val machines : t -> Machine.Spec.Set.t
 
-  val sanitiser_passes
-    :  t
-    -> default:Sanitiser_pass.Set.t
-    -> Sanitiser_pass.Set.t
   (** [sanitiser_passes c ~default] gets the set of requested
       sanitiser passes, given the default set [default] for the
       current context. *)
+  val sanitiser_passes : t -> default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t
 end

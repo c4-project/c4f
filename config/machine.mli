@@ -27,41 +27,32 @@
 
 open Core_kernel
 open Utils
-
 include module type of Machine_intf
 
 (** [Property] contains a mini-language for querying machine
    references, suitable for use in [Blang]. *)
 module Property : sig
-  type t [@@deriving sexp]
   (** [t] is the opaque type of property queries. *)
+  type t [@@deriving sexp]
 
-  val id : Id.Property.t -> t
   (** [id] constructs a query over a machine's ID. *)
+  val id : Id.Property.t -> t
 
-  val is_remote : t
   (** [is_remote] constructs a query that asks if a machine is
      known to be remote. *)
+  val is_remote : t
 
-  val is_local : t
   (** [is_local] constructs a query that asks if a machine is
       known to be local. *)
+  val is_local : t
 
-  val eval
-    :  (module Reference with type t = 'r)
-    -> 'r
-    -> t
-    -> bool
   (** [eval R reference property] evaluates [property] over
       [reference], with respect to module [R]. *)
+  val eval : (module Reference with type t = 'r) -> 'r -> t -> bool
 
-  val eval_b
-    :  (module Reference with type t = 'r)
-    -> 'r
-    -> t Blang.t
-    -> bool
   (** [eval_b R reference expr] evaluates a [Blang] expression [expr]
      over [reference], with respect to module [R]. *)
+  val eval_b : (module Reference with type t = 'r) -> 'r -> t Blang.t -> bool
 
   include Property.S with type t := t
 end
@@ -72,23 +63,24 @@ module Ssh : sig
 
   include Pretty_printer.S with type t := t
 
-  val create : host:string -> ?user:string -> copy_dir:string -> t
   (** [create ~host ?user ~copy_dir] builds an [Ssh.t] from the given
      parameters. *)
+  val create : host:string -> ?user:string -> copy_dir:string -> t
 
-
-  val host : t -> string
   (** [host] gets the hostname of the SSH remote. *)
+  val host : t -> string
 
-  val user : t -> string option
   (** [user] gets the optional username of the SSH remote. *)
+  val user : t -> string option
 
-  val copy_dir : t -> string
   (** [copy_dir] gets the remote directory to which we'll be
       copying work. *)
+  val copy_dir : t -> string
 
-  module To_config (C : sig val ssh : t end) : Ssh.S
   (** [To_config] lifts a [t] to an [Ssh.S]. *)
+  module To_config (C : sig
+    val ssh : t
+  end) : Ssh.S
 end
 
 (** [Id] is an extension onto base [Id] that
@@ -98,47 +90,40 @@ module Id : sig
   include Reference with type t := t
 end
 
-
 (** [Via] enumerates the various methods of reaching a machine. *)
 module Via : sig
+  (** [t] is the type of a machine-reaching method. *)
   type t =
     | Local
     | Ssh of Ssh.t
   [@@deriving sexp]
-  (** [t] is the type of a machine-reaching method. *)
 
-  val local : t
   (** [local] is a [Via] for a local machine. *)
+  val local : t
 
-  val ssh : Ssh.t -> t
   (** [ssh ssh_config] is a [Via] for a SSH connection. *)
+  val ssh : Ssh.t -> t
 
-  include Pretty_printer.S with type t := t
   (** [t] can be pretty-printed. *)
+  include Pretty_printer.S with type t := t
 
-  val to_runner : t -> (module Runner.S)
   (** [to_runner via] builds a runner module for a [via]. *)
+  val to_runner : t -> (module Runner.S)
 
-  val remoteness : t -> [> `Local | `Remote | `Unknown]
   (** [remoteness via] gets an estimate of whether [via] is remote. *)
+  val remoteness : t -> [> `Local | `Remote | `Unknown]
 end
 
 (** [Spec] is a module for machine specifications. *)
 module Spec : sig
   include Basic_spec with type via := Via.t
 
-  val make
-    :  ?enabled:bool
-    -> ?via:Via.t
-    -> ?litmus:Litmus_tool.t
-    -> unit
-    -> t
-    (** [make ?enabled ?via ?litmus ()] creates a machine spec with
+  (** [make ?enabled ?via ?litmus ()] creates a machine spec with
        the given fields.
 
       These fields are subject to change, and as such [make] is an
        unstable API. *)
-  ;;
+  val make : ?enabled:bool -> ?via:Via.t -> ?litmus:Litmus_tool.t -> unit -> t
 
   (** [With_id] is an extension onto [Spec.With_id] that
       lets such items be machine references, and adds all of the
@@ -149,6 +134,6 @@ module Spec : sig
     include Reference with type t := t
   end
 
-  include Spec.S with type t := t and module With_id := With_id
   (** Machine specifications are specifications. *)
+  include Spec.S with type t := t and module With_id := With_id
 end

@@ -23,11 +23,11 @@
    SOFTWARE. *)
 
 include Utils.Frontend.Make (struct
-    type ast = Ast.t
+  type ast = Ast.t
 
-    module I = Parser.MenhirInterpreter
+  module I = Parser.MenhirInterpreter
 
-    let lex = Lexer.token
-    let parse = Parser.Incremental.main
-    let message = Messages.message
-  end)
+  let lex = Lexer.token
+  let parse = Parser.Incremental.main
+  let message = Messages.message
+end)

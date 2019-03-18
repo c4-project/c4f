@@ -73,15 +73,14 @@ module type S_spec = sig
       These fields are subject to change, and as such [create] is an
       unstable API. *)
   val create
-    :  enabled : bool
-    -> style   : string
-    -> emits   : Id.t
-    -> cmd     : string
-    -> argv    : string list
-    -> herd    : bool
-    -> machine : Mach.t
+    :  enabled:bool
+    -> style:string
+    -> emits:Id.t
+    -> cmd:string
+    -> argv:string list
+    -> herd:bool
+    -> machine:Mach.t
     -> t
-  ;;
 
   (** We extend [With_id] to include all of the accessors from
      [Basic_spec]. *)
@@ -106,11 +105,7 @@ module type Basic = sig
       [infile], and the output file [outfile], and produces a final
       argument vector to send to the compiler. *)
   val compile_args
-    :  args    : string list
-    -> emits   : Id.t
-    -> infile  : string
-    -> outfile : string
-    -> string list
+    : args:string list -> emits:Id.t -> infile:string -> outfile:string -> string list
 end
 
 (** [S] is the outward-facing interface of compiler modules. *)
@@ -132,36 +127,35 @@ end
 
 (** Basic input type of resolvers. *)
 module type Basic_resolver = sig
-  type spec
   (** Type of specifications consumed by this resolver. *)
+  type spec
 
   val resolve : spec -> (module Basic) Or_error.t
 end
 
 (** Signature of fully-instantiated resolvers. *)
 module type S_resolver = sig
-  type spec
   (** Type of specifications consumed by this resolver. *)
+  type spec
 
-  type 'a chain_input
   (** Type of chained-filter input. *)
+  type 'a chain_input
 
-  val from_spec : spec -> (module S) Or_error.t
   (** [from_spec spec] attempts to produce a first-class
       compiler module corresponding to [spec]. *)
+  val from_spec : spec -> (module S) Or_error.t
 
+  (** [filter_from_spec spec] attempts to produce a first-class
+          compiler filter corresponding to [spec]. *)
   val filter_from_spec
     :  spec
-    -> (module Utils.Filter.S with type aux_i = unit and type aux_o = unit)
-      Or_error.t
-      (** [filter_from_spec spec] attempts to produce a first-class
-          compiler filter corresponding to [spec]. *)
+    -> (module Utils.Filter.S with type aux_i = unit and type aux_o = unit) Or_error.t
 
   val chained_filter_from_spec
     :  spec
     -> (module Utils.Filter.S with type aux_i = 'i and type aux_o = 'o)
     -> (module Utils.Filter.S
-         with type aux_i = 'i chain_input
-          and type aux_o = (unit option * 'o)
-       ) Or_error.t
+          with type aux_i = 'i chain_input
+           and type aux_o = unit option * 'o)
+       Or_error.t
 end

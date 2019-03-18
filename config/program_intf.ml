@@ -24,18 +24,18 @@
 
 (** Baseline interface for external program configuration. *)
 module type S = sig
-  type t [@@deriving sexp]
   (** The type of program configuration. *)
+  type t [@@deriving sexp]
 
-  val default : unit -> t
   (** [default ()] gets the default configuration for this program. *)
+  val default : unit -> t
 
-  val enabled : t -> bool
   (** [enabled cfg] gets whether this program is enabled, according to [cfg]. *)
+  val enabled : t -> bool
 
-  val cmd     : t -> string
   (** [cmd cfg] gets the configured command. *)
+  val cmd : t -> string
 
-  val argv    : t -> string list
   (** [argv cfg] gets the configured arguments. *)
+  val argv : t -> string list
 end

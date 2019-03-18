@@ -34,14 +34,11 @@ module Cpp : sig
     | Cmd of string
     | Argv of string list
     | Enabled of bool
-  ;;
 end
 
 (** Items in a Litmus stanza *)
 module Litmus : sig
-  type t =
-    | Cmd of string
-  ;;
+  type t = Cmd of string
 end
 
 (** Items in a Herd stanza *)
@@ -50,7 +47,6 @@ module Herd : sig
     | Cmd of string
     | C_model of string
     | Asm_model of Id.t * string
-  ;;
 end
 
 (** Items in a SSH stanza *)
@@ -59,7 +55,6 @@ module Ssh : sig
     | User of string
     | Host of string
     | Copy_to of string
-  ;;
 end
 
 (** Items in a via stanza *)
@@ -67,43 +62,38 @@ module Via : sig
   type t =
     | Local
     | Ssh of Ssh.t list
-  ;;
 end
 
 (** Items in a machine stanza *)
 module Machine : sig
+  (** Type of machine stanza items. *)
   type t =
-    | Enabled of bool
-    (** Whether or not the machine is enabled. *)
-    | Via     of Via.t
-    (** Where the machine is located. *)
-    | Litmus  of Litmus.t list
-    (** Information about how to run `litmus` on this machine. *)
-    (** Type of machine stanza items. *)
+    | Enabled of bool (** Whether or not the machine is enabled. *)
+    | Via of Via.t (** Where the machine is located. *)
+    | Litmus of Litmus.t list
+        (** Information about how to run `litmus` on this machine. *)
 end
 
 (** Items in a compiler stanza *)
 module Compiler : sig
   type t =
     | Enabled of bool
-    | Style   of Id.t
-    | Emits   of Id.t
-    | Cmd     of string
-    | Argv    of string list
-    | Herd    of bool
+    | Style of Id.t
+    | Emits of Id.t
+    | Cmd of string
+    | Argv of string list
+    | Herd of bool
     | Machine of Id.t
-  ;;
 end
 
 (** Items at the top level *)
 module Top : sig
   type t =
-    | Cpp      of Cpp.t list
-    | Herd     of Herd.t list
-    | Machine  of Id.t * Machine.t list
+    | Cpp of Cpp.t list
+    | Herd of Herd.t list
+    | Machine of Id.t * Machine.t list
     | Compiler of Id.t * Compiler.t list
-  ;;
 end
 
-type t = Top.t list
 (** A config AST is a list of top-level items. *)
+type t = Top.t list
