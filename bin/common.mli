@@ -140,7 +140,7 @@ val litmusify_pipeline
 val make_compiler_input
   :  Output.t
   -> Config.File_type.t_or_infer
-  -> C.Filters.Var_scope.t C_identifier.Map.t option
+  -> Config.C_variables.Map.t option
   -> (globals:C_identifier.Set.t -> 'cfg)
   -> Config.Sanitiser_pass.Set.t
   -> C.Filters.Output.t Filter.chain_output
@@ -159,7 +159,7 @@ val collect_cvars
   :  ?c_globals:string list
   -> ?c_locals:string list
   -> unit
-  -> C.Filters.Var_scope.t C_identifier.Map.t option Or_error.t
+  -> Config.C_variables.Map.t option Or_error.t
 (** [collect_cvars ?c_globals ?c_locals ()] tries to merge C global and
    local variable lists, creating a single C variables map.
 

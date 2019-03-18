@@ -42,36 +42,13 @@ type mode =
   (** If the input is a C/Litmus file, fuzz it and return a mutated version. *)
 ;;
 
-(** Flag used to mark C variables with information about their scope. *)
-module Var_scope : sig
-  type t =
-    | Unknown
-    | Local
-    | Global
-  [@@deriving sexp, compare, equal]
-  ;;
-
-  val brand : t -> C_identifier.Set.t -> t C_identifier.Map.t
-  (** [brand scope vars] lifts [vars] to a string-to-scope map,
-     applying [scope] to each variable. *)
-
-  val make_map_opt
-    :  ?locals:C_identifier.Set.t
-    -> ?globals:C_identifier.Set.t
-    -> unit
-    -> t C_identifier.Map.t option
-    (** [make_map_opt ?locals ?globals ()] makes a variable-to-scope
-       map by merging the locals set [locals] and the globals set
-       [globals]. *)
-end
-
 (** {2 The output record} *)
 
 (** Abstract data type of auxiliary output from the C filters. *)
 module Output : sig
   type t
 
-  val cvars : t -> Var_scope.t C_identifier.Map.t
+  val cvars : t -> Config.C_variables.Map.t
   (** [cvars out] gets the set of C variable names observed in the
      transformed program, alongside any information available about
      their scope. *)

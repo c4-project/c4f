@@ -24,58 +24,6 @@
 
 open Core_kernel
 
-module Var_scope = struct
-  module M = struct
-    type t =
-      | Unknown
-      | Local
-      | Global
-    [@@deriving sexp, equal]
-    ;;
-  end
-  include M
-
-  include Comparable.Make (struct
-      (* The comparison scheme used here is very deliberate, hence
-         why we write it out explicitly:
-
-         - information about a scope > no information about a scope;
-         - considering a variable as global > considering it as local *)
-
-      include M
-      let weight = function
-        | Unknown -> 0
-        | Local   -> 1
-        | Global  -> 2
-      ;;
-      let compare = Travesty.T_fn.on weight Int.compare
-    end)
-
-  let brand
-      (scope : t)
-      (cvars : Utils.C_identifier.Set.t) : t Utils.C_identifier.Map.t =
-    Utils.C_identifier.Set.to_map cvars ~f:(Fn.const scope)
-  ;;
-
-  let resolve_cvar_clashes ~key =
-    ignore key;
-    function
-    | `Left ty | `Right ty -> Some ty
-    | `Both (l, r) -> Some (max l r)
-  ;;
-
-  let make_map_opt
-      ?(locals : Utils.C_identifier.Set.t option)
-      ?(globals : Utils.C_identifier.Set.t option)
-      ()
-    : t Utils.C_identifier.Map.t option =
-    let locals_map  = Option.map ~f:(brand Local ) locals in
-    let globals_map = Option.map ~f:(brand Global) globals in
-    Option.merge locals_map globals_map
-      ~f:(Utils.C_identifier.Map.merge ~f:resolve_cvar_clashes)
-  ;;
-end
-
 module type Basic = sig
   type ast
   (** Raw AST *)
@@ -94,7 +42,7 @@ module type Basic = sig
 
   val fuzz : seed:int option -> o:Lib.Output.t -> t -> t Or_error.t
 
-  val cvars : t -> Var_scope.t Utils.C_identifier.Map.t
+  val cvars : t -> Config.C_variables.Map.t
   (** [cvars vast] should return a list of C identifiers
       corresponding to all variables in [vast].
 
@@ -102,7 +50,7 @@ module type Basic = sig
       if you already have a delitmusified AST, use
       [cvars_of_delitmus]. *)
 
-  val cvars_of_delitmus : del -> Var_scope.t Utils.C_identifier.Map.t
+  val cvars_of_delitmus : del -> Config.C_variables.Map.t
   (** [cvars_of_delitmus dl] should return a list of C identifiers
       corresponding to all variables in [dl]. *)
 
@@ -124,7 +72,7 @@ type mode =
 
 module Output = struct
   type t =
-    { cvars : Var_scope.t Utils.C_identifier.Map.t
+    { cvars : Config.C_variables.Map.t
     ; post  : Mini_litmus.Ast.Postcondition.t option
     }
   [@@deriving fields]
@@ -215,7 +163,7 @@ module Normal_C : Utils.Filter.S with type aux_i = mode and type aux_o = Output.
     ;;
 
     let cvars prog =
-      Var_scope.brand Var_scope.Unknown (Mini.Program.cvars prog)
+      Config.C_variables.Scope.(brand Unknown (Mini.Program.cvars prog))
     ;;
 
     let cvars_of_delitmus = Nothing.unreachable_code
@@ -277,13 +225,13 @@ module Litmus : Utils.Filter.S with type aux_i = mode and type aux_o = Output.t 
     let cvars_of_delitmus (output : del) =
       let globals = Delitmus.Output.c_globals output in
       let locals  = Delitmus.Output.c_locals output in
-      let map_opt = Var_scope.make_map_opt ~globals ~locals () in
+      let map_opt = Config.C_variables.Scope.make_map_opt ~globals ~locals () in
       Option.value ~default:Utils.C_identifier.Map.empty map_opt
     ;;
 
     (* TODO(@MattWindsor91): split this into globals/locals. *)
     let cvars prog =
-      Var_scope.brand (Var_scope.Unknown) (Mini_litmus.cvars prog)
+      Config.C_variables.Scope.(brand Unknown (Mini_litmus.cvars prog))
     ;;
   end)
 ;;

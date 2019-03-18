@@ -159,7 +159,7 @@ let regress_litmusify : Fpath.t -> unit Or_error.t =
     (Config.Sanitiser_pass.standard)
 ;;
 
-let pp_cvars : C.Filters.Var_scope.t C_identifier.Map.t Fmt.t =
+let pp_cvars : Config.C_variables.Map.t Fmt.t =
   Fmt.(
     prefix (unit "@,@,// C variables:@,")
       (vbox

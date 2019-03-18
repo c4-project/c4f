@@ -155,9 +155,9 @@ let litmusify_pipeline
 
 let choose_cvars_after_delitmus
     (o : Output.t)
-    (user_cvars : C.Filters.Var_scope.t C_identifier.Map.t option)
-    (dl_cvars : C.Filters.Var_scope.t C_identifier.Map.t)
-  : C.Filters.Var_scope.t C_identifier.Map.t =
+    (user_cvars : Config.C_variables.Map.t option)
+    (dl_cvars : Config.C_variables.Map.t)
+  : Config.C_variables.Map.t =
   (* We could use Option.first_some here, but expanding it out gives
      us the ability to verbose-log what we're doing. *)
   let out_cvars message cvars =
@@ -178,9 +178,9 @@ let choose_cvars_after_delitmus
 
 let choose_cvars_inner
   (o : Output.t)
-  (user_cvars : C.Filters.Var_scope.t C_identifier.Map.t option)
+  (user_cvars : Config.C_variables.Map.t option)
   : C.Filters.Output.t Filter.chain_output
-    -> bool * C.Filters.Var_scope.t C_identifier.Map.t option = function
+    -> bool * Config.C_variables.Map.t option = function
   | `Checking_ahead -> false, None
   | `Skipped -> true, user_cvars
   | `Ran dl ->
@@ -190,9 +190,9 @@ let choose_cvars_inner
 
 let choose_cvars
   (o : Output.t)
-  (user_cvars : C.Filters.Var_scope.t C_identifier.Map.t option)
+  (user_cvars : Config.C_variables.Map.t option)
   (dl_output : C.Filters.Output.t Filter.chain_output)
-  : C.Filters.Var_scope.t C_identifier.Map.t option =
+  : Config.C_variables.Map.t option =
   let warn_if_empty, cvars = choose_cvars_inner o user_cvars dl_output in
   if warn_if_empty then
     warn_if_not_tracking_symbols o
@@ -217,7 +217,7 @@ let collect_cvars
     ?(c_globals : string list option)
     ?(c_locals  : string list option)
     ()
-  : C.Filters.Var_scope.t C_identifier.Map.t option Or_error.t =
+  : Config.C_variables.Map.t option Or_error.t =
   let open Or_error.Let_syntax in
   let%bind globals =
     T_opt.map_m ~f:string_list_to_cid_set c_globals
@@ -225,13 +225,13 @@ let collect_cvars
   let%map locals =
     T_opt.map_m ~f:string_list_to_cid_set c_locals
   in
-  C.Filters.Var_scope.make_map_opt ?globals ?locals ()
+  Config.C_variables.Scope.make_map_opt ?globals ?locals ()
 ;;
 
 let make_compiler_input
   (o : Output.t)
   (file_type : Config.File_type.t_or_infer)
-  (user_cvars : C.Filters.Var_scope.t C_identifier.Map.t option)
+  (user_cvars : Config.C_variables.Map.t option)
   (config_fn : globals:C_identifier.Set.t -> 'cfg)
   (passes : Config.Sanitiser_pass.Set.t)
   (dl_output : C.Filters.Output.t Filter.chain_output)
@@ -241,7 +241,7 @@ let make_compiler_input
   let c_globals =
     cvar_map
     |> Option.value ~default:C_identifier.Map.empty
-    |> C_identifier.Map.filter ~f:C.Filters.Var_scope.([%equal: t] Global)
+    |> C_identifier.Map.filter ~f:Config.C_variables.Scope.([%equal: t] Global)
     |> C_identifier.Map.keys
     |> C_identifier.Set.of_list
   in
