@@ -47,8 +47,8 @@ let run
   let open Or_error.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
   let passes = Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.explain in
-  let explain_cfg ~globals =
-    ignore globals;
+  let explain_cfg ~variable_info =
+    ignore (variable_info : Config.C_variables.Map.t option);
     Asm_job.Explain_config.make ?format:output_format ()
   in
   let%bind (module Exp) = Common.explain_pipeline target in

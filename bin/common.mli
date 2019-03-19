@@ -142,7 +142,7 @@ val make_compiler_input
   :  Output.t
   -> Config.File_type.t_or_infer
   -> Config.C_variables.Map.t option
-  -> (globals:C_identifier.Set.t -> 'cfg)
+  -> (variable_info:(Config.C_variables.Map.t option) -> 'cfg)
   -> Config.Sanitiser_pass.Set.t
   -> C.Filters.Output.t Filter.chain_output
   -> 'cfg Asm_job.t Config.Compiler.Chain_input.t

@@ -222,15 +222,19 @@ let parse_post
 
 let make_litmus_config_fn
     (post_sexp : [ `Exists of Sexp.t ] option)
-  : (globals:C_identifier.Set.t -> Sexp.t Asm_job.Litmus_config.t)
+  : (variable_info:(Config.C_variables.Map.t option) -> Sexp.t Asm_job.Litmus_config.t)
       Or_error.t =
   let open Or_error.Let_syntax in
   let%map postcondition = Travesty.T_option.With_errors.map_m post_sexp
       ~f:parse_post
   in
-  (fun ~globals ->
-     let locations = C_identifier.Set.to_list globals in
-     Asm_job.Litmus_config.make ?postcondition ~locations ()
+  (fun ~variable_info ->
+     let locations =
+       variable_info
+       |> Option.value_map ~f:Config.C_variables.Map.globals ~default:C_identifier.Set.empty
+       |> C_identifier.Set.to_list
+     in
+     Asm_job.Litmus_config.make ?postcondition ~locations ?variable_info ()
   )
 ;;
 
