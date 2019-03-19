@@ -46,7 +46,6 @@ module Scope : sig
     | Local
     | Global
   [@@deriving sexp, compare, equal]
-  ;;
 
   (** [is_global scope] is [true] if [scope] is (definitely) global. *)
   val is_global : t -> bool
@@ -54,14 +53,12 @@ end
 
 (** Information about the initial value of C variables. *)
 module Initial_value : sig
-  type t = int option
-  [@@deriving sexp, compare, equal]
+  type t = int option [@@deriving sexp, compare, equal]
 end
 
 (** A record containing all known information about a C variable. *)
 module Record : sig
-  type t
-  [@@deriving sexp, compare, equal]
+  type t [@@deriving sexp, compare, equal]
 
   (** [is_global record] is [true] if [record]'s scope is (definitely) global. *)
   val is_global : t -> bool
@@ -71,27 +68,21 @@ end
 module Map : sig
   type t = Record.t C_identifier.Map.t
 
-  val of_single_scope_map
-    :  Scope.t
-    -> Initial_value.t C_identifier.Map.t
-    -> t
   (** [of_single_scope_map scope vars] lifts [vars] to a variable map,
       applying [scope] to each variable. *)
+  val of_single_scope_map : Scope.t -> Initial_value.t C_identifier.Map.t -> t
 
-  val of_single_scope_set
-    :  Scope.t
-    -> C_identifier.Set.t
-    -> t
   (** [of_single_scope_set scope vars] lifts [vars] to a variable map,
       applying [scope] to each variable and assigning [None] as the
       initial value. *)
+  val of_single_scope_set : Scope.t -> C_identifier.Set.t -> t
 
+  (** [of_value_maps_opt ?locals ?globals ()] makes a
+       variable-to-record map by merging the optional locals map
+       [locals] and optional globals map [globals]. *)
   val of_value_maps_opt
     :  ?locals:Initial_value.t C_identifier.Map.t
     -> ?globals:Initial_value.t C_identifier.Map.t
     -> unit
     -> t option
-    (** [of_value_maps_opt ?locals ?globals ()] makes a
-       variable-to-record map by merging the optional locals map
-       [locals] and optional globals map [globals]. *)
 end
