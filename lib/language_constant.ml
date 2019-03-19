@@ -26,4 +26,6 @@ include Language_constant_intf
 
 module Make (B : Basic) : S with type t = B.t = struct
   include B
+
+  let zero = of_int 0
 end

@@ -58,6 +58,11 @@ module Scope = struct
     | Global -> true
     | Local | Unknown -> false
   ;;
+
+  let is_local = function
+    | Local -> true
+    | Global | Unknown -> false
+  ;;
 end
 
 module Initial_value = struct
@@ -77,6 +82,7 @@ module Record = struct
   include Comparable.Make (M)
 
   let is_global (record : t) : bool = Scope.is_global (scope record)
+  let is_local (record : t) : bool = Scope.is_local (scope record)
 
   let resolve_clash : [`Left of t | `Right of t | `Both of t * t] -> t = function
     | `Left x | `Right x -> x
@@ -85,7 +91,7 @@ module Record = struct
 end
 
 module Map = struct
-  type t = Record.t C_identifier.Map.t
+  type t = Record.t C_identifier.Map.t [@@deriving sexp, equal]
 
   let of_single_scope_map (scope : Scope.t)
                           (cvars : Initial_value.t C_identifier.Map.t) : t =
@@ -98,9 +104,33 @@ module Map = struct
     of_single_scope_map scope cvars_map
   ;;
 
+  let vars_satisfying (map : t) ~(f : Record.t -> bool) : C_identifier.Set.t =
+    map
+    |> C_identifier.Map.filter ~f
+    |> C_identifier.Map.keys
+    |> C_identifier.Set.of_list
+  ;;
+
+  let globals : t -> C_identifier.Set.t =
+    vars_satisfying ~f:Record.is_global
+  ;;
+
+  let locals : t -> C_identifier.Set.t =
+    vars_satisfying ~f:Record.is_local
+  ;;
+
   let resolve_cvar_clashes ~key value =
     ignore (key : C_identifier.t);
     Some (Record.resolve_clash value)
+  ;;
+
+  let of_value_maps
+      ~(locals : Initial_value.t C_identifier.Map.t)
+      ~(globals : Initial_value.t C_identifier.Map.t)
+    : t =
+    let locals_map = of_single_scope_map Local locals in
+    let globals_map = of_single_scope_map Global globals in
+    C_identifier.Map.merge ~f:resolve_cvar_clashes locals_map globals_map
   ;;
 
   let of_value_maps_opt

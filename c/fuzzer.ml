@@ -315,12 +315,10 @@ let make_initial_state
   : State.t Or_error.t =
   let open Or_error.Let_syntax in
   let all_cvars = Mini_litmus.cvars test in
+  (* TODO(@MattWindsor91): we don't use cvars's globals because we need to know the types of the variables.
+     This seems a _bit_ clunky. *)
   let%map globals = existing_globals test in
-  let global_cvars =
-    globals |> C_identifier.Map.keys |> C_identifier.Set.of_list in
-  let locals =
-    C_identifier.Set.diff all_cvars global_cvars
-  in
+  let locals = Config.C_variables.Map.locals all_cvars in
   State.init ~o ~globals ~locals ()
 ;;
 

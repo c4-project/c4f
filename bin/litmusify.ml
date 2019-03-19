@@ -187,7 +187,7 @@ let make_filter
                             )
                         )
                         * ( ( C.Filters.Output.t option
-                              * ( unit option * Asm_job.output )
+                              * ( unit option * Asm_job.Output.t )
                             ) Filter.chain_output
                             -> Post_filter.cfg
                           )
@@ -195,7 +195,7 @@ let make_filter
                 and type aux_o =
                       ( ( C.Filters.Output.t option
                           * ( unit option
-                              * Asm_job.output
+                              * Asm_job.Output.t
                             )
                         )
                         * unit option

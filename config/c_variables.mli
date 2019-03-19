@@ -49,6 +49,9 @@ module Scope : sig
 
   (** [is_global scope] is [true] if [scope] is (definitely) global. *)
   val is_global : t -> bool
+
+  (** [is_local scope] is [true] if [scope] is (definitely) local. *)
+  val is_local : t -> bool
 end
 
 (** Information about the initial value of C variables. *)
@@ -60,13 +63,24 @@ end
 module Record : sig
   type t [@@deriving sexp, compare, equal]
 
+  (** [scope record] gets [record]'s scope. *)
+  val scope : t -> Scope.t
+
+  (** [initial_value record] gets [record]'s initial value, if any. *)
+  val initial_value : t -> Initial_value.t
+
   (** [is_global record] is [true] if [record]'s scope is (definitely) global. *)
   val is_global : t -> bool
+
+  (** [is_local record] is [true] if [record]'s scope is (definitely) local. *)
+  val is_local : t -> bool
 end
 
 (** A map from C variable identifiers to their records. *)
 module Map : sig
-  type t = Record.t C_identifier.Map.t
+  type t = Record.t C_identifier.Map.t [@@deriving sexp, equal]
+
+  (** {2 Constructors} *)
 
   (** [of_single_scope_map scope vars] lifts [vars] to a variable map,
       applying [scope] to each variable. *)
@@ -77,7 +91,15 @@ module Map : sig
       initial value. *)
   val of_single_scope_set : Scope.t -> C_identifier.Set.t -> t
 
-  (** [of_value_maps_opt ?locals ?globals ()] makes a
+  (** [of_value_maps ~locals ~globals] makes a
+       variable-to-record map by merging the locals map
+       [locals] and globals map [globals]. *)
+  val of_value_maps
+    :  locals:Initial_value.t C_identifier.Map.t
+    -> globals:Initial_value.t C_identifier.Map.t
+    -> t
+
+  (** [of_value_maps_opt ?locals ?globals ()] tries to make a
        variable-to-record map by merging the optional locals map
        [locals] and optional globals map [globals]. *)
   val of_value_maps_opt
@@ -85,4 +107,15 @@ module Map : sig
     -> ?globals:Initial_value.t C_identifier.Map.t
     -> unit
     -> t option
+
+  (** {3 Filtering variables} *)
+
+  (** [vars_satisfying map ~f] extracts a set of all identifiers whose records in [map] satisfy [f]. *)
+  val vars_satisfying : t -> f:(Record.t -> bool) -> C_identifier.Set.t
+
+  (** [globals map] is [vars_satisfying map ~f:Record.is_global]. *)
+  val globals : t -> C_identifier.Set.t
+
+  (** [locals map] is [vars_satisfying map ~f:Record.is_local]. *)
+  val locals : t -> C_identifier.Set.t
 end

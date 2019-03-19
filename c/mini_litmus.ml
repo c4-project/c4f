@@ -72,22 +72,31 @@ module Lang : Litmus.Ast.Basic
 module Ast = Litmus.Ast.Make (Lang)
 module Pp = Litmus.Pp.Make_sequential (Ast)
 
-let litmus_local_cvars (ast : Ast.Validated.t) : C_identifier.Set.t =
+let litmus_local_cvars (ast : Ast.Validated.t) :
+  Config.C_variables.Initial_value.t C_identifier.Map.t =
   ast
   |> Ast.Validated.programs
   |> List.map ~f:(fun (_, func) -> Function.cvars func)
   |> C_identifier.Set.union_list
+  |> C_identifier.Set.to_map ~f:(Fn.const None)
 ;;
 
-let litmus_global_cvars (ast : Ast.Validated.t) : C_identifier.Set.t =
+let constant_to_initial_value : Constant.t -> Config.C_variables.Initial_value.t =
+  function
+  | Integer k -> Some k
+  | Char _ | Float _ -> None (* for now *)
+;;
+
+let litmus_global_cvars (ast : Ast.Validated.t) :
+  Config.C_variables.Initial_value.t C_identifier.Map.t =
   ast
   |> Ast.Validated.init
-  |> List.map ~f:(fun (var, _) -> var)
-  |> C_identifier.Set.of_list
+  |> List.map ~f:(fun (var, k) -> var, constant_to_initial_value k)
+  |> C_identifier.Map.of_alist_exn (* for now *)
 ;;
 
-let cvars (ast : Ast.Validated.t) : C_identifier.Set.t =
+let cvars (ast : Ast.Validated.t) : Config.C_variables.Map.t =
   let locals = litmus_local_cvars ast in
   let globals = litmus_global_cvars ast in
-  C_identifier.Set.union locals globals
+  Config.C_variables.Map.of_value_maps ~locals ~globals
 ;;

@@ -43,12 +43,15 @@ module type Basic = sig
   (** Languages must supply a Quickcheck generator for their
      constants. *)
 
-  (** [zero] is a constant representing numeric zero. *)
-  val zero : t
+  (** [of_int] lifts an integer to a constant. *)
+  val of_int : int -> t
 end
 
 (** [S] is an expanded interface onto an act language's constant
     analysis. *)
 module type S = sig
   include Basic
+
+  (** [zero] is a constant representing numeric zero. *)
+  val zero : t
 end

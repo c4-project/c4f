@@ -198,8 +198,8 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
              ~infile:(Some (P_file.asm_path fs))
              ~outfile:(Some (P_file.lita_path fs))
          in
-         Asm_job.warn output o.wf;
-         Asm_job.symbol_map output
+         Asm_job.Output.warn o.wf output;
+         Asm_job.Output.symbol_map output
       )
   ;;
 

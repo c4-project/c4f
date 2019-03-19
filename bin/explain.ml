@@ -28,23 +28,25 @@ open Lib
 let print_symbol_map = function
   | [] -> ()
   | map ->
-    Format.printf "@[<v>@,Symbol map:@,@,%a@]@."
-      (Format.pp_print_list
-         ~pp_sep:Format.pp_print_space
-         (fun f (k, v) -> Format.fprintf f "@[<hv>%s@ ->@ %s@]" k v))
-      map
+    Fmt.(
+      pr
+        "@[<v>@,Symbol map:@,@,%a@]@."
+        (list ~sep:sp (fun f (k, v) -> pf f "@[<hv>%s@ ->@ %s@]" k v))
+        map)
 ;;
 
 let run
-    file_type compiler_id_or_arch output_format
+    file_type
+    compiler_id_or_arch
+    output_format
     (c_globals : string list option)
-    (c_locals  : string list option)
-    (args : Args.Standard_with_files.t) o cfg =
+    (c_locals : string list option)
+    (args : Args.Standard_with_files.t)
+    o
+    cfg =
   let open Or_error.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
-  let passes =
-    Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.explain
-  in
+  let passes = Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.explain in
   let explain_cfg ~globals =
     ignore globals;
     Asm_job.Explain_config.make ?format:output_format ()
@@ -54,13 +56,14 @@ let run
   let compiler_input_fn =
     Common.make_compiler_input o file_type user_cvars explain_cfg passes
   in
-  let%map (_, (_, out)) =
-    Exp.run_from_string_paths (file_type, compiler_input_fn)
+  let%map _, (_, out) =
+    Exp.run_from_string_paths
+      (file_type, compiler_input_fn)
       ~infile:(Args.Standard_with_files.infile_raw args)
       ~outfile:(Args.Standard_with_files.outfile_raw args)
   in
-  Asm_job.warn out o.Output.wf;
-  print_symbol_map (Asm_job.symbol_map out)
+  Asm_job.Output.warn o.Output.wf out;
+  print_symbol_map (Asm_job.Output.symbol_map out)
 ;;
 
 let command =
@@ -76,27 +79,25 @@ let command =
       and output_format =
         Asm_job.Explain_config.Format.(
           choose_one
-            [ map ~f:(fun flag -> Option.some_if flag (Some Detailed))
-                (flag "detailed"
+            [ map
+                ~f:(fun flag -> Option.some_if flag (Some Detailed))
+                (flag
+                   "detailed"
                    no_arg
-                   ~doc: "Print a detailed (but long-winded) explanation")
-            ; map ~f:(fun flag -> Option.some_if flag (Some Assembly))
-                (flag "as-assembly"
+                   ~doc:"Print a detailed (but long-winded) explanation")
+            ; map
+                ~f:(fun flag -> Option.some_if flag (Some Assembly))
+                (flag
+                   "as-assembly"
                    no_arg
-                   ~doc: "Print explanation as lightly annotated assembly")
+                   ~doc:"Print explanation as lightly annotated assembly")
             ]
-            ~if_nothing_chosen:(`Default_to None)
-        )
-      and file_type = Args.file_type
-      in
+            ~if_nothing_chosen:(`Default_to None))
+      and file_type = Args.file_type in
       fun () ->
-        Common.lift_command_with_files standard_args
+        Common.lift_command_with_files
+          standard_args
           ?sanitiser_passes
           ~with_compiler_tests:false
-          ~f:(run
-                file_type
-                compiler_id_or_arch
-                output_format
-                c_globals c_locals)
-    ]
+          ~f:(run file_type compiler_id_or_arch output_format c_globals c_locals)]
 ;;

@@ -116,7 +116,7 @@ let explain_pipeline (target : Config.Compiler.Target.t) :
                          * (   C.Filters.Output.t Filter.chain_output
                             -> Asm_job.Explain_config.t Asm_job.t
                                Config.Compiler.Chain_input.t)
-        and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.output))
+        and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.Output.t))
     Or_error.t =
   delitmus_compile_asm_pipeline target Asm_job.get_explain
 ;;
@@ -127,7 +127,7 @@ let litmusify_pipeline (target : Config.Compiler.Target.t) :
                          * (   C.Filters.Output.t Filter.chain_output
                             -> Sexp.t Asm_job.Litmus_config.t Asm_job.t
                                Config.Compiler.Chain_input.t)
-        and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.output))
+        and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.Output.t))
     Or_error.t =
   delitmus_compile_asm_pipeline target Asm_job.get_litmusify_sexp
 ;;

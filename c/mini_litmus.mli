@@ -27,20 +27,18 @@
     This module declares modules and functions for manipulating litmus
     tests over act's 'mini' subset of C. *)
 
-open Utils
-
 (** The mini-model, packaged up as a Litmus language.
 
     This language uses {{!Reify}Reify} for all of its pretty-printing
     needs. *)
-module Lang : Litmus.Ast.Basic
+module Lang :
+  Litmus.Ast.Basic
   with type Statement.t =
-         [ `Stm of Mini.Statement.t
-         | `Decl of (Mini.Identifier.t * Mini.Initialiser.t)
-         ]
-   and type Program.t = (Mini.Identifier.t * Mini.Function.t)
+              [ `Stm of Mini.Statement.t
+              | `Decl of Mini.Identifier.t * Mini.Initialiser.t
+              ]
+   and type Program.t = Mini.Identifier.t * Mini.Function.t
    and type Constant.t = Mini.Constant.t
-;;
 
 (** The mini-model's full Litmus AST module. *)
 module Ast : Litmus.Ast.S with module Lang = Lang
@@ -48,6 +46,6 @@ module Ast : Litmus.Ast.S with module Lang = Lang
 (** Pretty-printing for the mini-model's litmus AST. *)
 module Pp : Litmus.Pp.S with module Ast = Ast
 
-val cvars : Ast.Validated.t -> C_identifier.Set.t
-(** cvars ast] gets the list of C variables referenced in a
+(** cvars ast] gets the map of C variables referenced in a
    mini-C Litmus test. *)
+val cvars : Ast.Validated.t -> Config.C_variables.Map.t

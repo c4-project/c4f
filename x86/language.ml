@@ -181,7 +181,7 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
 
       let pp = P.pp_operand
 
-      let zero = Ast.Operand.Immediate (Ast.Disp.Numeric 0)
+      let of_int (k : int) = Ast.Operand.Immediate (Ast.Disp.Numeric k)
     end
   end
 
