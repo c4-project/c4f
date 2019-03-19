@@ -52,31 +52,68 @@ module Scope = struct
       let compare = Travesty.T_fn.on weight Int.compare
     end)
 
-  let brand
-      (scope : t)
-      (cvars : C_identifier.Set.t) : t C_identifier.Map.t =
-    C_identifier.Set.to_map cvars ~f:(Fn.const scope)
+  let is_global = function
+    | Global -> true
+    | Local | Unknown -> false
   ;;
+end
 
-  let resolve_cvar_clashes ~key =
-    ignore key;
+module Initial_value = struct
+  type t = int option [@@deriving sexp, compare, equal]
+end
+
+module Record = struct
+  module M = struct
+    type t =
+      { scope : Scope.t
+      ; initial_value : Initial_value.t
+      }
+    [@@deriving sexp, compare, equal, make, fields]
+  end
+  include M
+  include Comparable.Make (M)
+
+  let is_global (record : t) : bool = Scope.is_global (scope record)
+
+  let resolve_clash : [`Left of t | `Right of t | `Both of (t * t)] -> t =
     function
-    | `Left ty | `Right ty -> Some ty
-    | `Both (l, r) -> Some (max l r)
-  ;;
-
-  let make_map_opt
-      ?(locals : C_identifier.Set.t option)
-      ?(globals : C_identifier.Set.t option)
-      ()
-    : t C_identifier.Map.t option =
-    let locals_map  = Option.map ~f:(brand Local ) locals in
-    let globals_map = Option.map ~f:(brand Global) globals in
-    Option.merge locals_map globals_map
-      ~f:(C_identifier.Map.merge ~f:resolve_cvar_clashes)
+    | `Left x | `Right x -> x
+    | `Both (l, r) -> max l r
   ;;
 end
 
 module Map = struct
-  type t = Scope.t C_identifier.Map.t
+  type t = Record.t C_identifier.Map.t
+
+  let of_single_scope_map
+      (scope : Scope.t)
+      (cvars : Initial_value.t C_identifier.Map.t)
+    : t =
+    C_identifier.Map.map cvars
+      ~f:(fun initial_value -> Record.make ~scope ~initial_value)
+  ;;
+
+  let of_single_scope_set
+    (scope : Scope.t)
+    (cvars : C_identifier.Set.t)
+    : t =
+    let cvars_map = C_identifier.Set.to_map cvars
+        ~f:(Fn.const None)
+    in of_single_scope_map scope cvars_map
+  ;;
+
+  let resolve_cvar_clashes ~key value =
+    ignore (key : C_identifier.t);
+    Some (Record.resolve_clash value)
+
+  let of_value_maps_opt
+      ?(locals : Initial_value.t C_identifier.Map.t option)
+      ?(globals : Initial_value.t C_identifier.Map.t option)
+      ()
+    : t option =
+    let locals_map  = Option.map ~f:(of_single_scope_map Local ) locals in
+    let globals_map = Option.map ~f:(of_single_scope_map Global) globals in
+    Option.merge locals_map globals_map
+      ~f:(C_identifier.Map.merge ~f:resolve_cvar_clashes)
+  ;;
 end

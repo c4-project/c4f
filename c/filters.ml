@@ -163,7 +163,8 @@ module Normal_C : Utils.Filter.S with type aux_i = mode and type aux_o = Output.
     ;;
 
     let cvars prog =
-      Config.C_variables.Scope.(brand Unknown (Mini.Program.cvars prog))
+      let raw_cvars = Mini.Program.cvars prog in
+      Config.C_variables.(Map.of_single_scope_set Scope.Unknown raw_cvars)
     ;;
 
     let cvars_of_delitmus = Nothing.unreachable_code
@@ -223,15 +224,18 @@ module Litmus : Utils.Filter.S with type aux_i = mode and type aux_o = Output.t 
       Mini_litmus.Ast.Validated.postcondition
 
     let cvars_of_delitmus (output : del) =
-      let globals = Delitmus.Output.c_globals output in
-      let locals  = Delitmus.Output.c_locals output in
-      let map_opt = Config.C_variables.Scope.make_map_opt ~globals ~locals () in
+      let globals_set = Delitmus.Output.c_globals output in
+      let locals_set  = Delitmus.Output.c_locals output in
+      (* TODO(@MattWindsor91): output the initial values too. *)
+      let globals = Utils.C_identifier.Set.to_map ~f:(Fn.const None) globals_set in
+      let locals = Utils.C_identifier.Set.to_map ~f:(Fn.const None) locals_set in
+      let map_opt = Config.C_variables.Map.of_value_maps_opt ~globals ~locals () in
       Option.value ~default:Utils.C_identifier.Map.empty map_opt
     ;;
 
     (* TODO(@MattWindsor91): split this into globals/locals. *)
     let cvars prog =
-      Config.C_variables.Scope.(brand Unknown (Mini_litmus.cvars prog))
+      Config.C_variables.(Map.of_single_scope_set Scope.Unknown (Mini_litmus.cvars prog))
     ;;
   end)
 ;;

@@ -202,14 +202,16 @@ let choose_cvars
 
 module T_opt = Travesty.T_option.With_errors
 
-let string_list_to_cid_set
+let string_list_to_cid_map
     (sl : string list)
-  : C_identifier.Set.t Or_error.t =
+  : Config.C_variables.Initial_value.t C_identifier.Map.t Or_error.t =
+  (* TODO(@MattWindsor91): parse initial values *)
   Or_error.(
     sl
     |>  List.map ~f:C_identifier.create
     |>  Or_error.combine_errors
-    >>| C_identifier.Set.of_list
+    >>| List.map ~f:(fun s -> (s, None))
+    >>= C_identifier.Map.of_alist_or_error
   )
 ;;
 
@@ -220,12 +222,12 @@ let collect_cvars
   : Config.C_variables.Map.t option Or_error.t =
   let open Or_error.Let_syntax in
   let%bind globals =
-    T_opt.map_m ~f:string_list_to_cid_set c_globals
+    T_opt.map_m ~f:string_list_to_cid_map c_globals
   in
   let%map locals =
-    T_opt.map_m ~f:string_list_to_cid_set c_locals
+    T_opt.map_m ~f:string_list_to_cid_map c_locals
   in
-  Config.C_variables.Scope.make_map_opt ?globals ?locals ()
+  Config.C_variables.Map.of_value_maps_opt ?globals ?locals ()
 ;;
 
 let make_compiler_input
@@ -241,7 +243,7 @@ let make_compiler_input
   let c_globals =
     cvar_map
     |> Option.value ~default:C_identifier.Map.empty
-    |> C_identifier.Map.filter ~f:Config.C_variables.Scope.([%equal: t] Global)
+    |> C_identifier.Map.filter ~f:Config.C_variables.Record.is_global
     |> C_identifier.Map.keys
     |> C_identifier.Set.of_list
   in
