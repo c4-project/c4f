@@ -31,7 +31,7 @@ module Scope = struct
       | Unknown
       | Local
       | Global
-    [@@deriving sexp, equal]
+    [@@deriving sexp, equal, quickcheck]
   end
 
   include M
@@ -66,7 +66,7 @@ module Scope = struct
 end
 
 module Initial_value = struct
-  type t = int option [@@deriving sexp, compare, equal]
+  type t = int option [@@deriving sexp, compare, equal, quickcheck]
 end
 
 module Record = struct
@@ -76,7 +76,7 @@ module Record = struct
       ; initial_value : Initial_value.t
       ; tid : int option
       }
-    [@@deriving sexp, compare, equal, make, fields]
+    [@@deriving sexp, compare, equal, make, fields, quickcheck]
   end
 
   include M
@@ -94,6 +94,26 @@ end
 
 module Map = struct
   type t = Record.t C_identifier.Map.t [@@deriving sexp, equal]
+
+  module Q : My_quickcheck.S_with_sexp with type t := t = struct
+    let sexp_of_t = sexp_of_t
+
+    let quickcheck_generator =
+      C_identifier.Map.quickcheck_generator
+        C_identifier.quickcheck_generator
+        Record.quickcheck_generator
+
+    let quickcheck_observer =
+      C_identifier.Map.quickcheck_observer
+        C_identifier.quickcheck_observer
+        Record.quickcheck_observer
+
+    let quickcheck_shrinker =
+      C_identifier.Map.quickcheck_shrinker
+        C_identifier.quickcheck_shrinker
+        Record.quickcheck_shrinker
+  end
+  include Q
 
   let of_single_scope_map
       ?(tid : int option)

@@ -46,7 +46,7 @@ module Scope : sig
     | Unknown
     | Local
     | Global
-  [@@deriving sexp, compare, equal]
+  [@@deriving sexp, compare, equal, quickcheck]
 
   (** [is_global scope] is [true] if [scope] is (definitely) global. *)
   val is_global : t -> bool
@@ -57,7 +57,7 @@ end
 
 (** Information about the initial value of C variables. *)
 module Initial_value : sig
-  type t = int option [@@deriving sexp, compare, equal]
+  type t = int option [@@deriving sexp, compare, equal, quickcheck]
 end
 
 (** A record containing all known information about a C variable.
@@ -68,7 +68,7 @@ end
     - The thread ID to which the variable is known to be attached, if any.
 *)
 module Record : sig
-  type t [@@deriving sexp, compare, equal]
+  type t [@@deriving sexp, compare, equal, quickcheck]
 
   (** [tid record] gets [record]'s thread ID, if any. *)
   val tid : t -> int option
@@ -93,7 +93,7 @@ end
 
 (** A map from C variable identifiers to their records. *)
 module Map : sig
-  type t = Record.t C_identifier.Map.t [@@deriving sexp, equal]
+  type t = Record.t C_identifier.Map.t [@@deriving sexp, equal, quickcheck]
 
   (** {2 Constructors} *)
 
