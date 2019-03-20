@@ -164,7 +164,7 @@ module Normal_C : Utils.Filter.S with type aux_i = mode and type aux_o = Output.
 
     let cvars prog =
       let raw_cvars = Mini.Program.cvars prog in
-      Config.C_variables.(Map.of_single_scope_set Scope.Unknown raw_cvars)
+      Config.C_variables.Map.of_single_scope_set raw_cvars
     ;;
 
     let cvars_of_delitmus = Nothing.unreachable_code

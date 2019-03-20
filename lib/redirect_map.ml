@@ -64,6 +64,21 @@ module Make (B : Basic_symbol) : S with type sym := B.t = struct
   let to_string_alist (map : t) : (string, string) List.Assoc.t =
     Travesty.T_alist.bi_map map ~left:B.to_string ~right:B.to_string
   ;;
+
+  (** [transform_c_variables map cvars] tries to apply the redirects in
+      [map] to [cvars]. *)
+  let transform_c_variables
+    (map : t)
+    (cvars : Config.C_variables.Map.t)
+    : Config.C_variables.Map.t Or_error.t =
+    let open Or_error.Monad_infix in
+    cvars
+    |> Map.to_alist
+    |> List.map ~f:(fun (var, record) ->
+        var |> resolve_id map >>| fun v' -> (v', record)
+      )
+    |> Or_error.combine_errors
+    >>= C_identifier.Map.of_alist_or_error
 end
 
 module Make_from_language_symbol (LS : Language_symbol.S) : S with type sym := LS.t =

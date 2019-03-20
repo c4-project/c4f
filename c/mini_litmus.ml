@@ -72,13 +72,20 @@ module Lang : Litmus.Ast.Basic
 module Ast = Litmus.Ast.Make (Lang)
 module Pp = Litmus.Pp.Make_sequential (Ast)
 
+let function_cvars_map (tid : int) ((_, func) : Lang.Program.t)
+  : Config.C_variables.Map.t =
+  func
+  |> Function.cvars
+  |> Config.C_variables.Map.of_single_scope_set
+    ~tid
+    ~scope:Config.C_variables.Scope.Local
+;;
+
 let litmus_local_cvars (ast : Ast.Validated.t) :
-  Config.C_variables.Initial_value.t C_identifier.Map.t =
+  Config.C_variables.Map.t list =
   ast
   |> Ast.Validated.programs
-  |> List.map ~f:(fun (_, func) -> Function.cvars func)
-  |> C_identifier.Set.union_list
-  |> C_identifier.Set.to_map ~f:(Fn.const None)
+  |> List.mapi ~f:function_cvars_map
 ;;
 
 let constant_to_initial_value : Constant.t -> Config.C_variables.Initial_value.t =
@@ -88,15 +95,16 @@ let constant_to_initial_value : Constant.t -> Config.C_variables.Initial_value.t
 ;;
 
 let litmus_global_cvars (ast : Ast.Validated.t) :
-  Config.C_variables.Initial_value.t C_identifier.Map.t =
+  Config.C_variables.Map.t =
   ast
   |> Ast.Validated.init
   |> List.map ~f:(fun (var, k) -> var, constant_to_initial_value k)
   |> C_identifier.Map.of_alist_exn (* for now *)
+  |> Config.C_variables.Map.of_single_scope_map
 ;;
 
 let cvars (ast : Ast.Validated.t) : Config.C_variables.Map.t =
   let locals = litmus_local_cvars ast in
   let globals = litmus_global_cvars ast in
-  Config.C_variables.Map.of_value_maps ~locals ~globals
+  Config.C_variables.Map.merge_list (globals :: locals)
 ;;

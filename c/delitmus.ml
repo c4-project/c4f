@@ -34,7 +34,7 @@ let make_initialiser ((ty, value) : Mini.Type.t * Ast_basic.Constant.t) =
 
 let parameter_list_equal : Mini.Type.t Mini.id_assoc -> Mini.Type.t Mini.id_assoc -> bool
     =
-  [%compare.equal: (C_identifier.t * Mini.Type.t) list]
+  [%equal: (C_identifier.t * Mini.Type.t) list]
 ;;
 
 let check_parameters_consistent

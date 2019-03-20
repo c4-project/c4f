@@ -58,4 +58,11 @@ module type S = sig
       associative list.  It fails if [map]'s symbols are inexpressible
       as C identifiers. *)
   val to_string_alist : t -> (string, string) List.Assoc.t
+
+  (** [transform_c_variables map cvars] tries to apply the redirects in
+      [map] to [cvars]. *)
+  val transform_c_variables
+    :  t
+    -> Config.C_variables.Map.t
+    -> Config.C_variables.Map.t Or_error.t
 end

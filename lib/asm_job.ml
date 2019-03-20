@@ -145,17 +145,6 @@ struct
 
   module Redirect = MS.Redirect
 
-  let resolve_location_alist_in_redirects
-      (redirects : Redirect.t)
-      (alist : (C_identifier.t, 'a) List.Assoc.t)
-    : (C_identifier.t, 'a) List.Assoc.t Or_error.t =
-    alist
-    |> List.map ~f:(fun (x, y) ->
-        Or_error.(x |> Redirect.resolve_id redirects >>| fun x' -> (x', y))
-      )
-    |> Or_error.combine_errors
-  ;;
-
   let record_to_constant (r : Config.C_variables.Record.t) : LD.Constant.t =
     r
     |> Config.C_variables.Record.initial_value
@@ -169,8 +158,8 @@ struct
     : (C_identifier.t, LD.Constant.t) List.Assoc.t Or_error.t =
     Or_error.(
       cvars
-      |> Map.to_alist
-      |> resolve_location_alist_in_redirects redirects
+      |> Redirect.transform_c_variables redirects
+      >>| C_identifier.Map.to_alist
       >>| Travesty.T_alist.bi_map ~left:Fn.id ~right:record_to_constant
     )
 

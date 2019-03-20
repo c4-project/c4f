@@ -59,9 +59,18 @@ module Initial_value : sig
   type t = int option [@@deriving sexp, compare, equal]
 end
 
-(** A record containing all known information about a C variable. *)
+(** A record containing all known information about a C variable.
+
+    Records contain:
+    - The intended scope of the variable (global or local);
+    - The initial value of the variable, if known;
+    - The thread ID to which the variable is known to be attached, if any.
+*)
 module Record : sig
   type t [@@deriving sexp, compare, equal]
+
+  (** [tid record] gets [record]'s thread ID, if any. *)
+  val tid : t -> int option
 
   (** [scope record] gets [record]'s scope. *)
   val scope : t -> Scope.t
@@ -82,14 +91,20 @@ module Map : sig
 
   (** {2 Constructors} *)
 
-  (** [of_single_scope_map scope vars] lifts [vars] to a variable map,
-      applying [scope] to each variable. *)
-  val of_single_scope_map : Scope.t -> Initial_value.t C_identifier.Map.t -> t
+  (** [of_single_scope_map ?tid ?scope vars] lifts [vars] to a variable map,
+      applying [scope] and [tid] to each variable. *)
+  val of_single_scope_map
+    : ?tid:int -> ?scope:Scope.t -> Initial_value.t C_identifier.Map.t -> t
 
-  (** [of_single_scope_set scope vars] lifts [vars] to a variable map,
-      applying [scope] to each variable and assigning [None] as the
+  (** [of_single_scope_set ?tid ?scope vars] lifts [vars] to a variable map,
+      applying [scope] and [tid] to each variable and assigning [None] as the
       initial value. *)
-  val of_single_scope_set : Scope.t -> C_identifier.Set.t -> t
+  val of_single_scope_set : ?tid:int -> ?scope:Scope.t -> C_identifier.Set.t -> t
+
+  (** [merge_list maps] makes a variable-to-record map by merging
+     [maps].  Merging happens in an arbitrary order, but respects the
+     ordering on scopes. *)
+  val merge_list : t list -> t
 
   (** [of_value_maps ~locals ~globals] makes a
        variable-to-record map by merging the locals map

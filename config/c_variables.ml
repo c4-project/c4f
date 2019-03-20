@@ -74,6 +74,7 @@ module Record = struct
     type t =
       { scope : Scope.t
       ; initial_value : Initial_value.t
+      ; tid : int option
       }
     [@@deriving sexp, compare, equal, make, fields]
   end
@@ -93,15 +94,20 @@ end
 module Map = struct
   type t = Record.t C_identifier.Map.t [@@deriving sexp, equal]
 
-  let of_single_scope_map (scope : Scope.t)
-                          (cvars : Initial_value.t C_identifier.Map.t) : t =
-    C_identifier.Map.map cvars ~f:(fun initial_value -> Record.make ~scope ~initial_value)
+  let of_single_scope_map
+      ?(tid : int option)
+      ?(scope : Scope.t = Scope.Unknown)
+      (cvars : Initial_value.t C_identifier.Map.t) : t =
+    C_identifier.Map.map cvars ~f:(fun initial_value ->
+        Record.make ?tid ~scope ~initial_value ())
   ;;
 
-  let of_single_scope_set (scope : Scope.t)
-                          (cvars : C_identifier.Set.t) : t =
+  let of_single_scope_set
+      ?(tid : int option)
+      ?(scope : Scope.t = Scope.Unknown)
+      (cvars : C_identifier.Set.t) : t =
     let cvars_map = C_identifier.Set.to_map cvars ~f:(Fn.const None) in
-    of_single_scope_map scope cvars_map
+    of_single_scope_map ?tid ~scope cvars_map
   ;;
 
   let vars_satisfying (map : t) ~(f : Record.t -> bool) : C_identifier.Set.t =
@@ -111,25 +117,25 @@ module Map = struct
     |> C_identifier.Set.of_list
   ;;
 
-  let globals : t -> C_identifier.Set.t =
-    vars_satisfying ~f:Record.is_global
-  ;;
-
-  let locals : t -> C_identifier.Set.t =
-    vars_satisfying ~f:Record.is_local
-  ;;
+  let globals : t -> C_identifier.Set.t = vars_satisfying ~f:Record.is_global
+  let locals : t -> C_identifier.Set.t = vars_satisfying ~f:Record.is_local
 
   let resolve_cvar_clashes ~key value =
     ignore (key : C_identifier.t);
     Some (Record.resolve_clash value)
   ;;
 
+  let merge_list (xs : t list) : t =
+    xs
+    |> List.reduce_balanced ~f:(C_identifier.Map.merge ~f:resolve_cvar_clashes)
+    |> Option.value ~default:C_identifier.Map.empty
+  ;;
+
   let of_value_maps
       ~(locals : Initial_value.t C_identifier.Map.t)
-      ~(globals : Initial_value.t C_identifier.Map.t)
-    : t =
-    let locals_map = of_single_scope_map Local locals in
-    let globals_map = of_single_scope_map Global globals in
+      ~(globals : Initial_value.t C_identifier.Map.t) : t =
+    let locals_map = of_single_scope_map ~scope:Local locals in
+    let globals_map = of_single_scope_map ~scope:Global globals in
     C_identifier.Map.merge ~f:resolve_cvar_clashes locals_map globals_map
   ;;
 
@@ -137,8 +143,8 @@ module Map = struct
       ?(locals : Initial_value.t C_identifier.Map.t option)
       ?(globals : Initial_value.t C_identifier.Map.t option)
       () : t option =
-    let locals_map = Option.map ~f:(of_single_scope_map Local) locals in
-    let globals_map = Option.map ~f:(of_single_scope_map Global) globals in
+    let locals_map = Option.map ~f:(of_single_scope_map ~scope:Local) locals in
+    let globals_map = Option.map ~f:(of_single_scope_map ~scope:Global) globals in
     Option.merge
       locals_map
       globals_map
