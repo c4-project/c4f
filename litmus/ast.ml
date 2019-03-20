@@ -28,7 +28,6 @@ include Ast_intf
 
 module Make (Lang : Basic) : S with module Lang = Lang = struct
   module Lang = Lang
-  module Id = Ast_base.Id
 
   module Pred_elt = struct
     type t = Lang.Constant.t Ast_base.Pred_elt.t

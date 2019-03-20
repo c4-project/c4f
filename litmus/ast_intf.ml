@@ -86,9 +86,6 @@ end
 module type S = sig
   module Lang : Basic
 
-  (** Convenience re-export of {{!Ast_base.Id}Id}. *)
-  module Id : module type of Ast_base.Id
-
   module Pred_elt : sig
     type t = Lang.Constant.t Ast_base.Pred_elt.t
     [@@deriving compare, sexp, equal, quickcheck]

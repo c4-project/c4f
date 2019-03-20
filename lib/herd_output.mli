@@ -46,18 +46,18 @@ module State : sig
       [valf] return values, and the result is a well-formed map
       [m], [map] returns [Ok m]; else, an error. *)
   val map
-    :  keyf:(Litmus.Ast_base.Id.t -> Litmus.Ast_base.Id.t option Or_error.t)
+    :  keyf:(Litmus.Id.t -> Litmus.Id.t option Or_error.t)
     -> valf:(string -> string Or_error.t)
     -> t
     -> t Or_error.t
   ;;
 
   (** [bound t] gets the list of all bound names in [t]. *)
-  val bound : t -> Litmus.Ast_base.Id.t list
+  val bound : t -> Litmus.Id.t list
 
   (** [of_alist alist] tries to convert [alist] into a state. *)
   val of_alist
-    :  (Litmus.Ast_base.Id.t, string) List.Assoc.t
+    :  (Litmus.Id.t, string) List.Assoc.t
     -> t Or_error.t
   ;;
 
@@ -98,7 +98,7 @@ val single_outcome_of : t -> single_outcome
 val outcome_of
   :  initial : t
   -> final   : t
-  -> locmap  : (Litmus.Ast_base.Id.t -> Litmus.Ast_base.Id.t option Or_error.t)
+  -> locmap  : (Litmus.Id.t -> Litmus.Id.t option Or_error.t)
   -> valmap  : (string -> string Or_error.t)
   -> outcome Or_error.t
 ;;

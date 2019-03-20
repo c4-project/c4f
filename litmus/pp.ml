@@ -65,17 +65,12 @@ module Make_common (B : Basic) = struct
     | `Exists -> Fmt.string f "exists"
   ;;
 
-  let pp_id (f : Formatter.t) : B.Ast.Id.t -> unit = function
-    | Local (tid, str) -> Fmt.pf f "%d:%a" tid C_identifier.pp str
-    | Global      str  -> C_identifier.pp f str
-  ;;
-
   let rec pp_predicate f : B.Ast.Pred.t -> unit = function
     | Bracket pred -> Fmt.parens pp_predicate f pred
     | Or  (l, r) -> Fmt.pf f "%a@ \\/@ %a" pp_predicate l pp_predicate r
     | And (l, r) -> Fmt.pf f "%a@ /\\@ %a" pp_predicate l pp_predicate r
     | Elt (Eq (i, c)) ->
-      Fmt.pf f "%a@ ==@ %a" pp_id i B.Ast.Lang.Constant.pp c
+      Fmt.pf f "%a@ ==@ %a" Id.pp i B.Ast.Lang.Constant.pp c
   ;;
 
   let pp_post f { Ast_base.Postcondition.quantifier; predicate } =

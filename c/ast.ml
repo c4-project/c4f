@@ -806,6 +806,7 @@ module Litmus = struct
   module A = Litmus.Ast.Make (Litmus_lang)
   include A
   include Litmus.Pp.Make_sequential (A)
+  module Id = Litmus.Id
 end
 
 (** {2 Quickcheck tests} *)

@@ -166,5 +166,6 @@ module Litmus_lang : Litmus.Ast.Basic
 module Litmus : sig
   include Litmus.Ast.S with module Lang := Litmus_lang
   include Base.Pretty_printer.S with type t := Validated.t
+  module Id : module type of Litmus.Id
 end
 

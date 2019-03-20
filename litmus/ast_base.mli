@@ -27,37 +27,7 @@
     These parts of the litmus AST have no module-level dependency on the
     underlying language of the litmus tests. *)
 
-open Core_kernel
-open Utils
-
 include module type of Ast_base_intf
-
-module Id : sig
-  type t =
-    | Local of int * C_identifier.t
-    | Global of C_identifier.t
-  [@@deriving compare, sexp, quickcheck]
-  ;;
-
-  val try_parse : string -> t Or_error.t
-  (** [try_parse str] tries to parse [str] as a Litmus identifier. *)
-
-  include Stringable.S with type t := t
-  (** Litmus identifiers can be converted to and from strings.
-      Note that conversion from strings can fail if the C identifier
-      parts don't obey C identifier validation. *)
-
-  include Comparable.S with type t := t
-  (** Litmus identifiers suit various comparable scenarios, such as
-     map keys. *)
-
-  val to_memalloy_id : t -> C_identifier.t
-  (** [to_memalloy_id id] converts [id] to the corresponding
-      memalloy executable-C global variable name.
-
-      This is [x] where [id = Global x], and ["tXY"] where
-      [id = Local (X, Y)]. *)
-end
 
 (** Directly-parametrised AST for basic predicate elements.
 

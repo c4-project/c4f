@@ -97,13 +97,13 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   (** [lower_thread_local_symbol] converts thread-local symbols of the
       form `0:r0` into the memalloy witness equivalent, `t0r0`. *)
   let lower_thread_local_symbol sym =
-    Litmus.Ast_base.Id.(Global (to_memalloy_id sym))
+    Litmus.Id.(Global (to_memalloy_id sym))
   ;;
 
   let analyse
       (c_herd : herd_run_result)
       (a_herd : herd_run_result)
-      (locmap : (Litmus.Ast_base.Id.t, Litmus.Ast_base.Id.t) List.Assoc.t)
+      (locmap : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t)
     : Analysis.Herd.t Or_error.t =
     let open Or_error.Let_syntax in
     (* The locmap function we supply below goes backwards, from
@@ -120,7 +120,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
           ~locmap:(
             fun final_sym ->
               Or_error.return (
-                List.Assoc.find ~equal:[%equal: Litmus.Ast_base.Id.t] locmap_r final_sym
+                List.Assoc.find ~equal:[%equal: Litmus.Id.t] locmap_r final_sym
               )
           )
           (* TODO(@MattWindsor91): properly valmap, if needed. *)
@@ -220,7 +220,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   ;;
 
 
-  module L_id = Litmus.Ast_base.Id
+  module L_id = Litmus.Id
 
   let cvars_from_loc_map
       (map : (L_id.t, L_id.t) List.Assoc.t)
