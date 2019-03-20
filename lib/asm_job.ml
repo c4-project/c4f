@@ -143,40 +143,15 @@ struct
       String.sexp_of_t
   ;;
 
-
-  let resolve_location_in_redirects
-      (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
-      (location : C_identifier.t) : C_identifier.t Or_error.t =
-    let sym_opt =
-      Option.(
-        location
-        |> C_identifier.to_string
-        |> LS.Symbol.of_string_opt
-        >>= List.Assoc.find ~equal:[%equal: LS.Symbol.t] redirects
-        >>| LS.Symbol.to_string)
-    in
-    let open Or_error.Let_syntax in
-    let%bind sym =
-      Result.of_option
-        sym_opt
-        ~error:
-          (Error.create_s
-             [%message
-               "Couldn't resolve location in redirects table"
-                 ~here:[%here]
-                 ~location:(location : C_identifier.t)
-                 ~redirects:(redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)])
-    in
-    C_identifier.create sym
-  ;;
+  module Redirect = MS.Redirect
 
   let resolve_location_alist_in_redirects
-      (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+      (redirects : Redirect.t)
       (alist : (C_identifier.t, 'a) List.Assoc.t)
     : (C_identifier.t, 'a) List.Assoc.t Or_error.t =
     alist
     |> List.map ~f:(fun (x, y) ->
-        Or_error.(x |> resolve_location_in_redirects redirects >>| fun x' -> (x', y))
+        Or_error.(x |> Redirect.resolve_id redirects >>| fun x' -> (x', y))
       )
     |> Or_error.combine_errors
   ;;
@@ -190,7 +165,7 @@ struct
 
   let make_init_from_vars
     (cvars : Config.C_variables.Map.t)
-    (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+    (redirects : Redirect.t)
     : (C_identifier.t, LD.Constant.t) List.Assoc.t Or_error.t =
     Or_error.(
       cvars
@@ -218,16 +193,12 @@ struct
       [progs] and pulling out the heap symbols. *)
   let make_init
       (config : LS.Constant.t Litmus_config.t)
-      (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+      (redirects : Redirect.t)
       (progs : MS.Output.Program.t list) :
       (C_identifier.t, LD.Constant.t) List.Assoc.t Or_error.t =
     match config.variable_info with
     | Some vars -> make_init_from_vars vars redirects
     | None -> Or_error.return (make_init_from_progs progs)
-  ;;
-
-  let stringify_redirects =
-    Travesty.T_alist.bi_map ~left:LS.Symbol.to_string ~right:LS.Symbol.to_string
   ;;
 
   let emit_warnings iname = function
@@ -243,8 +214,8 @@ struct
           ws
   ;;
 
-  let make_output iname redirects warnings : Output.t =
-    { symbol_map = stringify_redirects redirects; warn = emit_warnings iname warnings }
+  let make_output iname (symbol_map : (string, string) List.Assoc.t) warnings : Output.t =
+    { symbol_map; warn = emit_warnings iname warnings }
   ;;
 
   let pp_for_litmus_format : Litmus_config.Format.t -> L.Validated.t Fmt.t = function
@@ -260,7 +231,7 @@ struct
 
   let make_litmus
       (config : LS.Constant.t Litmus_config.t)
-      (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+      (redirects : Redirect.t)
       (locations : C_identifier.t list)
       (name : string)
       (output_programs : MS.Output.Program.t list)
@@ -283,7 +254,7 @@ struct
     List.concat_map programs ~f:MS.Output.Program.warnings
   ;;
 
-  let make_post (_redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+  let make_post (_redirects : Redirect.t)
       : LS.Constant.t Litmus.Ast_base.Postcondition.t -> L.Postcondition.t Or_error.t =
     Litmus.Ast_base.Postcondition.On_constants.With_errors.map_m ~f:B.convert_const
   ;;
@@ -291,19 +262,21 @@ struct
   (** [make_locations_from_redirects redirects] makes a 'locations'
       stanza by taking the right-hand side of the redirects table
       [redirects] created by the sanitiser process. *)
-  let make_locations_from_redirects (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t)
+  let make_locations_from_redirects (redirects : Redirect.t)
       : C_identifier.t list Or_error.t =
-    redirects
-    |> List.map ~f:(fun (_, s) -> C_identifier.create (LS.Symbol.to_string s))
-    |> Or_error.combine_errors
+    Or_error.(
+      redirects
+      |> Redirect.image_ids
+      >>| C_identifier.Set.to_list
+    )
   ;;
 
   let make_locations_from_config
       (config_locs : C_identifier.t list)
-      (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t) :
+      (redirects : Redirect.t) :
       C_identifier.t list Or_error.t =
     config_locs
-    |> List.map ~f:(resolve_location_in_redirects redirects)
+    |> List.map ~f:(Redirect.resolve_id redirects)
     |> Or_error.combine_errors
   ;;
 
@@ -313,7 +286,7 @@ struct
       [redirects]. *)
   let make_locations
       (config : LS.Constant.t Litmus_config.t)
-      (redirects : (LS.Symbol.t, LS.Symbol.t) List.Assoc.t) :
+      (redirects : Redirect.t) :
       C_identifier.t list Or_error.t =
     match config.locations with
     | Some locs -> make_locations_from_config locs redirects
@@ -341,7 +314,8 @@ struct
     let f = Format.formatter_of_out_channel outp in
     pp_for_litmus_format config.format f lit;
     Format.pp_print_newline f ();
-    make_output name (MS.Output.redirects o) warnings
+    let redirects = MS.Output.redirects o in
+    make_output name (Redirect.to_string_alist redirects) warnings
   ;;
 
   let pp_for_explain_format : Explain_config.Format.t -> E.t Fmt.t = function
@@ -371,7 +345,8 @@ struct
     let s_table = SS.Output.Program.symbol_table program in
     let exp = E.explain listing s_table in
     let redirects = SS.Output.redirects san in
-    output_explanation config.format name outp exp redirects
+    output_explanation config.format name outp exp
+      (SS.Redirect.to_string_alist redirects)
   ;;
 
   let stringify_symbol sym =

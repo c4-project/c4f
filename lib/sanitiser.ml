@@ -48,6 +48,8 @@ module Make (B : Basic)
   module Warn = B.Ctx.Warn
   module Lang = B.Lang
 
+  module Redirect = Redirect_map.Make_from_language_symbol (Lang.Symbol)
+
   module Program_container = B.Program_container
 
   (* Modules for building context-sensitive traversals over program
@@ -72,7 +74,7 @@ module Make (B : Basic)
 
     type t =
       { programs      : Program.t Program_container.t
-      ; redirects     : (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t
+      ; redirects     : Redirect.t
       } [@@deriving fields]
   end
 
@@ -527,7 +529,8 @@ module Make (B : Basic)
     in
     let%bind var_set  = Ctx.get_variables in
     let      var_list = Set.to_list var_set in
-    let%map redirects = Ctx.get_redirect_alist var_list in
+    let%map redirect_alist = Ctx.get_redirect_alist var_list in
+    let redirects = Redirect.of_symbol_alist redirect_alist in
     { Output.programs; redirects }
   ;;
 

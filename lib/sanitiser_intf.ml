@@ -90,6 +90,9 @@ module type S = sig
 
   module Warn : Sanitiser_warn.S with module Lang := Lang
 
+  (** The type of symbol redirect maps this sanitiser outputs. *)
+  module Redirect : Redirect_map.S with type sym := Lang.Symbol.t
+
   (** [Program_container] describes the container that the sanitised
      program or programs are held in. *)
   module Program_container : Container.S1
@@ -118,10 +121,7 @@ module type S = sig
 
     (** [redirects t] gets the final mapping from C-level symbols
         to the symbols in [programs t]. *)
-    val redirects
-      :  t
-      -> (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t
-    ;;
+    val redirects : t -> Redirect.t
   end
 
   (** [sanitise ?passes ?symbols stms] sanitises a statement list [stms],
