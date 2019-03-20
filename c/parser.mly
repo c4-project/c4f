@@ -136,8 +136,8 @@ litmus_equality:
   | l = litmus_identifier; EQ_OP; r = constant { Litmus.Pred.elt (Litmus.Pred_elt.(l ==? r)) }
 
 litmus_identifier:
-  | i = IDENTIFIER                     { Litmus.Id.Global (Utils.C_identifier.of_string i) }
-  | t = INT_LIT; COLON; i = IDENTIFIER { Litmus.Id.Local (t, Utils.C_identifier.of_string i) }
+  | i = IDENTIFIER                     { Litmus.Id.global (Utils.C_identifier.of_string i) }
+  | t = INT_LIT; COLON; i = IDENTIFIER { Litmus.Id.local t (Utils.C_identifier.of_string i) }
 
 translation_unit:
   | decls = external_declaration+ EOF { decls }

@@ -67,6 +67,20 @@ end
 include M_sexp
 include Comparable.Make (M_sexp)
 
+let global_of_string (str : string) : t Or_error.t =
+  Or_error.(str |> C_identifier.create >>| global)
+;;
+
+let tid : t -> int option = function
+  | Local (i, _) -> Some i
+  | Global _ -> None
+;;
+
+let as_global : t -> C_identifier.t option = function
+  | Global cid -> Some cid
+  | Local _ -> None
+;;
+
 let to_memalloy_id_inner (t : int) (id : C_identifier.t) : string =
   Printf.sprintf "t%d%s" t (C_identifier.to_string id)
 ;;

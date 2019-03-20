@@ -32,14 +32,42 @@ open Utils
     thread identifier, and capture the type of identifier seen in
     Litmus postconditions. *)
 
-(** Type of litmus-style identifiers. *)
-type t =
-  | Local of int * C_identifier.t
-  | Global of C_identifier.t
+(** Opaque type of litmus-style identifiers. *)
+type t
 [@@deriving compare, sexp, quickcheck]
+
+(** {2 Constructors} *)
+
+(** [global id] creates a global identifier. *)
+val global : C_identifier.t -> t
+
+(** [global_of_string str] tries to create a global identifier from [str].
+    It fails if [str] isn't a valid C identifier. *)
+val global_of_string : string -> t Or_error.t
+
+(** [local tid id] creates a local identifier with the given thread ID. *)
+val local : int -> C_identifier.t -> t
 
 (** [try_parse str] tries to parse [str] as a Litmus identifier. *)
 val try_parse : string -> t Or_error.t
+
+(** {2 Accessors} *)
+
+(** [as_global id] gets [Some cid] if [id] is the global identifier [cid],
+    or [None] otherwise. *)
+val as_global : t -> C_identifier.t option
+
+(** [tid id] gets [id]'s thread identifier, if it has one. *)
+val tid : t -> int option
+
+(** [to_memalloy_id id] converts [id] to the corresponding
+    memalloy executable-C global variable name.
+
+    This is [x] where [id = Global x], and ["tXY"] where
+    [id = Local (X, Y)]. *)
+val to_memalloy_id : t -> C_identifier.t
+
+(** {2 Interface implementations} *)
 
 (** Litmus identifiers can be converted to and from strings.
     Note that conversion from strings can fail if the C identifier
@@ -52,10 +80,3 @@ include Pretty_printer.S with type t := t
 (** Litmus identifiers suit various comparable scenarios, such as
     map keys. *)
 include Comparable.S with type t := t
-
-(** [to_memalloy_id id] converts [id] to the corresponding
-    memalloy executable-C global variable name.
-
-    This is [x] where [id = Global x], and ["tXY"] where
-    [id = Local (X, Y)]. *)
-val to_memalloy_id : t -> C_identifier.t
