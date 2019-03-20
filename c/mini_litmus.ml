@@ -100,7 +100,7 @@ let litmus_global_cvars (ast : Ast.Validated.t) :
   |> Ast.Validated.init
   |> List.map ~f:(fun (var, k) -> var, constant_to_initial_value k)
   |> C_identifier.Map.of_alist_exn (* for now *)
-  |> Config.C_variables.Map.of_single_scope_map
+  |> Config.C_variables.Map.of_single_scope_map ~scope:Global
 ;;
 
 let cvars (ast : Ast.Validated.t) : Config.C_variables.Map.t =
