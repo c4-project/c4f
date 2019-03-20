@@ -32,8 +32,8 @@ P3()
 
 
 // C variables:
-// - r0
-// - r1
+// - t3r0
+// - t3r1
 // - x
 // - y
 
@@ -61,7 +61,7 @@ P1()
 
 
 // C variables:
-// - r0
+// - t0r0
 // - x
 
 // Postcondition:
@@ -80,7 +80,7 @@ P0()
 
 
 // C variables:
-// - r0
+// - t0r0
 // - x
 
 // Postcondition:
@@ -114,8 +114,8 @@ P2()
 
 
 // C variables:
-// - r0
-// - r1
+// - t1r1
+// - t2r0
 // - x
 // - y
 

@@ -82,6 +82,7 @@ module Record = struct
   include M
   include Comparable.Make (M)
 
+  let remove_tid (record : t) : t = { record with tid = None }
   let is_global (record : t) : bool = Scope.is_global (scope record)
   let is_local (record : t) : bool = Scope.is_local (scope record)
 
@@ -149,5 +150,13 @@ module Map = struct
       locals_map
       globals_map
       ~f:(C_identifier.Map.merge ~f:resolve_cvar_clashes)
+  ;;
+
+  let map (m : t) ~(f : C_identifier.t -> Record.t -> C_identifier.t * Record.t) :
+      t Or_error.t =
+    m
+    |> C_identifier.Map.to_alist
+    |> List.map ~f:(Tuple2.uncurry f)
+    |> C_identifier.Map.of_alist_or_error
   ;;
 end

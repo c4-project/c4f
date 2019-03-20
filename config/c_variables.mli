@@ -37,6 +37,7 @@
     This module contains various sub-modules for handling this
    auxiliary information.  *)
 
+open Base
 open Utils
 
 (** Flag used to mark C variables with information about their scope. *)
@@ -83,6 +84,11 @@ module Record : sig
 
   (** [is_local record] is [true] if [record]'s scope is (definitely) local. *)
   val is_local : t -> bool
+
+  (** {3 Modifiers} *)
+
+  (** [remove_tid record] strips any thread ID information from [record]. *)
+  val remove_tid : t -> t
 end
 
 (** A map from C variable identifiers to their records. *)
@@ -122,6 +128,13 @@ module Map : sig
     -> ?globals:Initial_value.t C_identifier.Map.t
     -> unit
     -> t option
+
+  (** {3 Modifiers} *)
+
+  (** [map t ~f] maps [t] over every record and identifier in [f].
+      It fails if the resulting map has duplicate keys. *)
+  val map
+    : t -> f:(C_identifier.t -> Record.t -> C_identifier.t * Record.t) -> t Or_error.t
 
   (** {3 Filtering variables} *)
 

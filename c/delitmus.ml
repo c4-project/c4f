@@ -229,16 +229,38 @@ module Output = struct
   [@@deriving make, fields]
 end
 
+let make_globals
+    (init : Mini.Constant.t Mini.id_assoc)
+    (function_bodies : Mini.Function.t list) :
+    Mini_initialiser.t Mini.id_assoc Or_error.t =
+  let open Or_error.Let_syntax in
+  let%map init_globals = make_init_globals init function_bodies in
+  let func_globals = make_func_globals function_bodies in
+  init_globals @ func_globals
+;;
+
+let qualify_if_local (var : C_identifier.t)
+                     (record : Config.C_variables.Record.t) :
+    C_identifier.t * Config.C_variables.Record.t =
+  match Config.C_variables.Record.tid record with
+  | None -> var, record
+  | Some tid -> qualify_local tid var, Config.C_variables.Record.remove_tid record
+;;
+
+let cvars_with_qualified_locals (cvars : Config.C_variables.Map.t) :
+    Config.C_variables.Map.t Or_error.t =
+  Config.C_variables.Map.map cvars ~f:qualify_if_local
+;;
+
 let run (input : Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
   let open Or_error.Let_syntax in
   let init = Mini_litmus.Ast.Validated.init input in
   let raw_functions = Mini_litmus.Ast.Validated.programs input in
   let function_bodies = List.map ~f:snd raw_functions in
-  let%map init_globals = make_init_globals init function_bodies in
-  let func_globals = make_func_globals function_bodies in
-  let globals = init_globals @ func_globals in
+  let%bind globals = make_globals init function_bodies in
   let functions = delitmus_functions raw_functions in
   let program = Mini.Program.make ~globals ~functions in
-  let c_variables = Mini_litmus.cvars input in
+  let raw_c_variables = Mini_litmus.cvars input in
+  let%map c_variables = cvars_with_qualified_locals raw_c_variables in
   Output.make ~program ~c_variables
 ;;
