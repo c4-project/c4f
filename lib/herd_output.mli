@@ -78,7 +78,7 @@ type single_outcome =
 (** [outcome] is the type of summaries of Herd analysis. *)
 type outcome =
   [ single_outcome
-  | State.Set.t My_set.partial_order
+  | `Order of State.Set.t My_set.Partial_order.t
   | `OracleUndef  (** The oracle execution triggered undefined
                       behaviour. *)
   ]

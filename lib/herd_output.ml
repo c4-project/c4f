@@ -86,7 +86,7 @@ type single_outcome =
 
 type outcome =
   [ single_outcome
-  | State.Set.t My_set.partial_order
+  | `Order of State.Set.t My_set.Partial_order.t
   | `OracleUndef
   ]
 [@@deriving sexp]
@@ -106,7 +106,7 @@ let compare_states ~initials ~finals
   let result =
     State.Set.(Travesty.T_fn.on of_list partial_compare initials finals')
   in
-  (result :> outcome)
+  `Order result
 ;;
 
 let outcome_of ~initial ~final ~locmap ~valmap : outcome Or_error.t =

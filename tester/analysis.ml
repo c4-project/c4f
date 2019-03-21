@@ -37,18 +37,25 @@ module Herd = struct
     ] [@@deriving sexp_of]
   ;;
 
-  let pp f : t -> unit = function
-    | `Errored `Assembly -> String.pp f "ERROR (asm)"
-    | `Errored `C        -> String.pp f "ERROR (C)"
-    | `Disabled          -> String.pp f "--disabled--"
-    | `Unknown           -> String.pp f "??"
-    | `Undef             -> String.pp f "UNDEFINED BEHAVIOUR (asm)"
-    | `OracleUndef       -> String.pp f "UNDEFINED BEHAVIOUR (C)"
-    | `Equal             -> String.pp f "C == asm"
-    | `Subset   _        -> String.pp f "C << asm"
-    | `Superset _        -> String.pp f "C >> asm"
-    | `NoOrder           -> String.pp f "C <> asm"
+  let order_operator : 'a My_set.Partial_order.t -> string =
+    function
+    | Equal -> "=="
+    | Subset _ -> "<<"
+    | Superset _ -> ">>"
+    | No_order _ -> "<>"
   ;;
+
+  let to_string : t -> string = function
+    | `Errored `Assembly -> "ERROR (asm)"
+    | `Errored `C        -> "ERROR (C)"
+    | `Disabled          -> "--disabled--"
+    | `Unknown           -> "??"
+    | `Undef             -> "UNDEFINED BEHAVIOUR (asm)"
+    | `OracleUndef       -> "UNDEFINED BEHAVIOUR (C)"
+    | `Order o           -> sprintf "C %s asm" (order_operator o)
+  ;;
+
+  let pp : t Fmt.t = Fmt.of_to_string to_string
 end
 
 module File = struct

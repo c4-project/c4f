@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -26,32 +26,32 @@
 
 open Core_kernel
 
-(** ['a partial_order] is the type of returns from [partial_compare],
+(** Type of returns from [partial_compare],
     where ['a] is the set type under comparison. *)
-type 'a partial_order =
-  [ `Equal
-  | `Subset   of 'a
-  (** RHS has the following extra values. *)
-  | `Superset of 'a
-  (** LHS has the following extra values. *)
-  | `NoOrder
-  ] [@@deriving sexp]
-;;
+module Partial_order : sig
+  type 'a t =
+    | Equal (** Both sets are equal. *)
+    | Subset of { in_right_only : 'a } (** RHS has the following extra values. *)
+    | Superset of { in_left_only : 'a } (** LHS has the following extra values. *)
+    | No_order of { in_left_only : 'a; in_right_only : 'a }
+        (** LHS and RHS both have the following extra values. *)
+  [@@deriving sexp]
+end
 
 (** [Extensions] contains various extensions to implementations of
    [Set.S]. *)
 module type Extensions = sig
-  type t
   (** The type of sets that we're extending. *)
+  type t
 
-  val disjoint : t -> t -> bool
   (** [disjoint x y] returns [true] provided that [x] and [y] have no
       elements in common. *)
+  val disjoint : t -> t -> bool
 
-  val partial_compare : t -> t -> t partial_order
   (** [partial_compare x y] compares two sets [x] and [y] by analysing
       their symmetric difference. *)
+  val partial_compare : t -> t -> t Partial_order.t
 end
 
-module Extend (S : Set.S) : Extensions with type t := S.t
 (** [Extend] builds set extensions for module [S]. *)
+module Extend (S : Set.S) : Extensions with type t := S.t
