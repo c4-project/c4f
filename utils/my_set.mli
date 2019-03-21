@@ -26,32 +26,11 @@
 
 open Core_kernel
 
-(** Type of returns from [partial_compare],
-    where ['a] is the set type under comparison. *)
-module Partial_order : sig
-  type 'a t =
-    | Equal (** Both sets are equal. *)
-    | Subset of { in_right_only : 'a } (** RHS has the following extra values. *)
-    | Superset of { in_left_only : 'a } (** LHS has the following extra values. *)
-    | No_order of { in_left_only : 'a; in_right_only : 'a }
-        (** LHS and RHS both have the following extra values. *)
-  [@@deriving sexp]
-end
+include module type of My_set_intf
 
-(** [Extensions] contains various extensions to implementations of
-   [Set.S]. *)
-module type Extensions = sig
-  (** The type of sets that we're extending. *)
-  type t
+(** [Make_extensions] builds set extensions for module [M]. *)
+module Make_extensions (M : Set.S) : Extensions with type t := M.t
 
-  (** [disjoint x y] returns [true] provided that [x] and [y] have no
-      elements in common. *)
-  val disjoint : t -> t -> bool
+(** [Extend] builds and applies set extensions for module [M]. *)
+module Extend (M : Set.S) : S with module Elt = M.Elt
 
-  (** [partial_compare x y] compares two sets [x] and [y] by analysing
-      their symmetric difference. *)
-  val partial_compare : t -> t -> t Partial_order.t
-end
-
-(** [Extend] builds set extensions for module [S]. *)
-module Extend (S : Set.S) : Extensions with type t := S.t

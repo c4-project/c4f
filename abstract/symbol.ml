@@ -25,13 +25,9 @@
 open Core_kernel
 open Utils
 
-type t = string [@@deriving sexp, eq]
+type t = string [@@deriving sexp, equal]
 
-module Set = struct
-  module S = Set.Make (String)
-  include S
-  include My_set.Extend (S)
-end
+module Set = My_set.Extend (Set.Make (String))
 
 module Sort = struct
   module M = struct

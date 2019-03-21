@@ -48,21 +48,18 @@ module Make (B : Basic) : S with type t = B.t = struct
   end
 
   module Set = struct
-    module M = Set.Make_using_comparator (Comp)
-    include M
-    include My_set.Extend (M)
-
+    include My_set.Extend (Set.Make_using_comparator (Comp))
     let abstract = Abstract.Symbol.Set.map ~f:B.abstract
   end
 
   module R_map = struct
     module M = Map.Make_using_comparator (Comp)
-    type sym = t [@@deriving compare, eq, sexp]
+    type sym = t [@@deriving compare, equal, sexp]
 
     type r_dest =
       | Identity
       | MapsTo of sym
-    [@@deriving sexp, eq]
+    [@@deriving sexp, equal]
     ;;
 
     type t = r_dest M.t

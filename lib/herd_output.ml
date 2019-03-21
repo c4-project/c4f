@@ -58,11 +58,7 @@ module State = struct
     Id.Map.of_alist_or_error alist'
   ;;
 
-  module Set = struct
-    module SM = Set.Make (M)
-    include SM
-    include My_set.Extend (SM)
-  end
+  module Set = My_set.Extend (Set.Make (M))
 end
 
 type t =
@@ -86,7 +82,7 @@ type single_outcome =
 
 type outcome =
   [ single_outcome
-  | `Order of State.Set.t My_set.Partial_order.t
+  | `Order of State.Set.Partial_order.t
   | `OracleUndef
   ]
 [@@deriving sexp]

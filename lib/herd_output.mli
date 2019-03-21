@@ -61,7 +61,7 @@ module State : sig
     -> t Or_error.t
   ;;
 
-  module Set : Set.S with type Elt.t = t
+  module Set : My_set.S with type Elt.t = t
 end
 
 (** [single_outcome] is the type of outcomes we can get from single
@@ -78,7 +78,7 @@ type single_outcome =
 (** [outcome] is the type of summaries of Herd analysis. *)
 type outcome =
   [ single_outcome
-  | `Order of State.Set.t My_set.Partial_order.t
+  | `Order of State.Set.Partial_order.t
   | `OracleUndef  (** The oracle execution triggered undefined
                       behaviour. *)
   ]

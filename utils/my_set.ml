@@ -25,54 +25,58 @@
 open Core_kernel
 open Travesty
 
-module Partial_order = struct
-  type 'a t =
-    | Equal
-    | Subset of { in_right_only : 'a }
-    | Superset of { in_left_only : 'a }
-    | No_order of { in_left_only : 'a; in_right_only : 'a }
-  [@@deriving sexp]
-end
+include My_set_intf
 
-module type Extensions = sig
-  type t
+module Make_extensions (M : Set.S) : Extensions with type t := M.t = struct
+  let disjoint x y = M.(is_empty (inter x y))
 
-  val disjoint : t -> t -> bool
-  val partial_compare : t -> t -> t Partial_order.t
-end
+  module Partial_order = struct
+    type t =
+      | Equal
+      | Subset of { in_right_only : M.t }
+      | Superset of { in_left_only : M.t }
+      | No_order of { in_left_only : M.t; in_right_only : M.t }
+    [@@deriving sexp]
 
-module Extend (S : Set.S) : Extensions with type t := S.t = struct
-  let disjoint x y = S.(is_empty (inter x y))
+    (** [drop_left x p] updates partial order [p] with the information that
+        an element [x] exists in the left hand set that isn't in the right
+        hand set. *)
+    let drop_left (x : M.Elt.t) : t -> t = function
+      | Equal -> Superset { in_left_only = M.singleton x }
+      | Superset { in_left_only } -> Superset { in_left_only = M.add in_left_only x }
+      | Subset { in_right_only } ->
+        No_order { in_left_only = M.singleton x; in_right_only }
+      | No_order { in_left_only; in_right_only } ->
+        No_order { in_left_only = M.add in_left_only x; in_right_only }
+    ;;
 
-  (** [drop_left x p] updates partial order [p] with the information that
-      an element [x] exists in the left hand set that isn't in the right
-      hand set. *)
-  let drop_left (x : S.Elt.t) : S.t Partial_order.t -> S.t Partial_order.t = function
-    | Equal -> Superset { in_left_only = S.singleton x }
-    | Superset { in_left_only } -> Superset { in_left_only = S.add in_left_only x }
-    | Subset { in_right_only } ->
-      No_order { in_left_only = S.singleton x; in_right_only }
-    | No_order { in_left_only; in_right_only } ->
-      No_order { in_left_only = S.add in_left_only x; in_right_only }
-  ;;
+    (** [drop_right x p] updates partial order [p] with the information
+        that an element [x] exists in the right hand set that isn't in
+        the left hand set. *)
+    let drop_right (x : M.Elt.t) : t -> t = function
+      | Equal -> Subset { in_right_only = M.singleton x }
+      | Subset { in_right_only } -> Subset { in_right_only = M.add in_right_only x }
+      | Superset { in_left_only } ->
+        No_order { in_left_only; in_right_only = M.singleton x }
+      | No_order { in_left_only; in_right_only } ->
+        No_order { in_left_only; in_right_only = M.add in_right_only x }
+    ;;
 
-  (** [drop_right x p] updates partial order [p] with the information
-      that an element [x] exists in the right hand set that isn't in
-      the left hand set. *)
-  let drop_right (x : S.Elt.t) : S.t Partial_order.t -> S.t Partial_order.t = function
-    | Equal -> Subset { in_right_only = S.singleton x }
-    | Subset { in_right_only } -> Subset { in_right_only = S.add in_right_only x }
-    | Superset { in_left_only } ->
-      No_order { in_left_only; in_right_only = S.singleton x }
-    | No_order { in_left_only; in_right_only } ->
-      No_order { in_left_only; in_right_only = S.add in_right_only x }
-  ;;
-
-  let partial_compare x y =
-    Sequence.fold (S.symmetric_diff x y) ~init:Partial_order.Equal ~f:(fun po -> function
+    let drop_either (po : t) : (M.Elt.t, M.Elt.t) Either.t -> t = function
       | First x -> drop_left x po
-      | Second x -> drop_right x po)
+      | Second x -> drop_right x po
+    ;;
+  end
+
+  let partial_compare (x : M.t) (y : M.t) =
+    Sequence.fold (M.symmetric_diff x y)
+      ~init:Partial_order.Equal ~f:Partial_order.drop_either
   ;;
+end
+
+module Extend (M : Set.S) : S with module Elt = M.Elt = struct
+  include M
+  include Make_extensions (M)
 end
 
 let%test_module "integer set" =
@@ -104,7 +108,7 @@ let%test_module "integer set" =
        let module M = Extend (Int.Set) in
        Stdio.print_s
          [%sexp
-           (M.partial_compare Int.Set.empty Int.Set.empty : Int.Set.t Partial_order.t)];
+           (M.partial_compare Int.Set.empty Int.Set.empty : M.Partial_order.t)];
        [%expect {| Equal |}]
      ;;
 
@@ -113,21 +117,19 @@ let%test_module "integer set" =
        Stdio.print_s
          [%sexp
            (T_fn.on Int.Set.of_list M.partial_compare [ 1; 2; 3 ] [ 1; 2; 3; 4; 5; 6 ]
-             : Int.Set.t Partial_order.t)];
+             : M.Partial_order.t)];
        [%expect {| (Subset (in_right_only (4 5 6))) |}]
      ;;
 
      let%expect_test "partial_compare: superset" =
-       let module M = Extend (Int.Set) in
        Stdio.print_s
          [%sexp
            (T_fn.on Int.Set.of_list M.partial_compare [ 1; 2; 3; 4; 5; 6 ] [ 4; 5; 6 ]
-             : Int.Set.t Partial_order.t)];
+             : M.Partial_order.t)];
        [%expect {| (Superset (in_left_only (1 2 3))) |}]
      ;;
 
      let%expect_test "partial_compare: equal" =
-       let module M = Extend (Int.Set) in
        Stdio.print_s
          [%sexp
            (T_fn.on
@@ -135,16 +137,15 @@ let%test_module "integer set" =
               M.partial_compare
               [ 1; 2; 3; 4; 5; 6 ]
               [ 6; 5; 4; 3; 2; 1 ]
-             : Int.Set.t Partial_order.t)];
+             : M.Partial_order.t)];
        [%expect {| Equal |}]
      ;;
 
      let%expect_test "partial_compare: no order" =
-       let module M = Extend (Int.Set) in
        Stdio.print_s
          [%sexp
            (T_fn.on Int.Set.of_list M.partial_compare [ 1; 2; 3; 4 ] [ 3; 4; 5; 6 ]
-             : Int.Set.t Partial_order.t)];
+             : M.Partial_order.t)];
        [%expect {| (No_order (in_left_only (1 2)) (in_right_only (5 6))) |}]
      ;;
   end)

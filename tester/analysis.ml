@@ -37,7 +37,7 @@ module Herd = struct
     ] [@@deriving sexp_of]
   ;;
 
-  let order_operator : 'a My_set.Partial_order.t -> string =
+  let order_operator : Herd_output.State.Set.Partial_order.t -> string =
     function
     | Equal -> "=="
     | Subset _ -> "<<"
