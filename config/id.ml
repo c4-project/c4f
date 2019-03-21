@@ -81,15 +81,13 @@ let is_prefix id ~prefix =
 ;;
 
 let%expect_test "is_prefix: valid prefix, identical" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (is_prefix (of_string "foo.bar") ~prefix:(of_string "foo.bar") : bool)];
   [%expect {| true |}]
 ;;
 
 let%expect_test "is_prefix: valid prefix, identical modulo case" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (is_prefix (of_string "foo.bar") ~prefix:(of_string "Foo.Bar") : bool)];
   [%expect {| true |}]
 ;;
@@ -102,22 +100,19 @@ let%expect_test "is_prefix: valid prefix, same case" =
 ;;
 
 let%expect_test "is_prefix: valid prefix, different case" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (is_prefix (of_string "foo.BAR.baz") ~prefix:(of_string "FOO.bar") : bool)];
   [%expect {| true |}]
 ;;
 
 let%expect_test "is_prefix: invalid prefix (but valid string prefix)" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (is_prefix (of_string "foo.BAR.baz") ~prefix:(of_string "foo.BA") : bool)];
   [%expect {| false |}]
 ;;
 
 let%expect_test "is_prefix: invalid prefix" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (is_prefix (of_string "foo.bar") ~prefix:(of_string "foo.bar.baz") : bool)];
   [%expect {| false |}]
 ;;
@@ -125,43 +120,37 @@ let%expect_test "is_prefix: invalid prefix" =
 let has_tag id element = List.mem id element ~equal:String.Caseless.equal
 
 let%expect_test "has_tag: valid, same case" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (has_tag (of_string "foo.BAR.baz") "foo" : bool)];
   [%expect {| true |}]
 ;;
 
 let%expect_test "has_tag: valid, different case" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (has_tag (of_string "foo.BAR.baz") "FOO" : bool)];
   [%expect {| true |}]
 ;;
 
 let%expect_test "has_tag: invalid, but is a (oversized) substring" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (has_tag (of_string "foo.BAR.baz") "foo." : bool)];
   [%expect {| false |}]
 ;;
 
 let%expect_test "has_tag: invalid, but is a (undersized) substring" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (has_tag (of_string "foo.BAR.baz") "fo" : bool)];
   [%expect {| false |}]
 ;;
 
 let%expect_test "has_tag: invalid, multiple tags" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (has_tag (of_string "foo.BAR.baz") "foo.bar" : bool)];
   [%expect {| false |}]
 ;;
 
 let%expect_test "has_tag: invalid, empty string" =
-  Sexp.output_hum
-    Out_channel.stdout
+  Stdio.print_s
     [%sexp (has_tag (of_string "foo.BAR.baz") "" : bool)];
   [%expect {| false |}]
 ;;
