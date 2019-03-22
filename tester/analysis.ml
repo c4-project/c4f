@@ -29,6 +29,32 @@ open Core_kernel
 open Utils
 open Lib
 
+
+(** Represents an observation that the C and assembly sets of a
+    state-set-level analysis aren't equal. *)
+module State_deviation = struct
+  type t =
+    { in_c_only : Herd_output.State.t list
+    ; in_asm_only : Herd_output.State.t list
+    }
+  [@@deriving sexp_of, fields, make]
+
+  let of_order_opt : Herd_output.State.Set.Partial_order.t -> t option =
+    (* C is left, asm is right. *)
+    function
+    | Equal -> None
+    | Subset { in_right_only } -> Some (make ~in_asm_only:(Set.to_list in_right_only) ())
+    | Superset { in_left_only } -> Some (make ~in_c_only:(Set.to_list in_left_only) ())
+    | No_order { in_left_only; in_right_only } ->
+      Some (make ~in_c_only:(Set.to_list in_left_only) ~in_asm_only:(Set.to_list in_right_only) ())
+  ;;
+
+  let of_herd_outcome_opt : Herd_output.outcome -> t option = function
+    | `Order o -> of_order_opt o
+    | `Unknown | `Undef | `OracleUndef -> None
+  ;;
+end
+
 module Herd = struct
   type t =
     [ Herd_output.outcome
@@ -56,6 +82,12 @@ module Herd = struct
   ;;
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
+
+  let to_state_deviation_opt : t -> State_deviation.t option =
+    function
+    | #Herd_output.outcome as o -> State_deviation.of_herd_outcome_opt o
+    | `Errored _ | `Disabled -> None
+  ;;
 end
 
 module File = struct
@@ -89,6 +121,50 @@ module Machine = struct
   ;;
 end
 
+module Row = struct
+  type 'a t =
+    { machine_id : Config.Id.t
+    ; compiler_id : Config.Id.t
+    ; filename : string
+    ; analysis : 'a
+    } [@@deriving sexp_of, fields, make]
+
+  let pp_span_opt f = function
+    | Some span -> Time.Span.pp f span
+    | None      -> String.pp f "-"
+  ;;
+
+  let to_table_row (row : File.t t) : Tabulator.row =
+    [ Fn.flip Config.Id.pp row.machine_id
+    ; Fn.flip Config.Id.pp row.compiler_id
+    ; Fn.flip String.pp row.filename
+    ] @
+    (* We use Fieldslib here, mainly, to raise compilation errors
+       if the fields in [analysis] change and we don't add them
+       (or ignore them) here. *)
+    File.Fields.Direct.to_list row.analysis
+      ~herd:(fun _field _file h f -> Herd.pp f h)
+      ~time_taken:(fun _field _file t f -> pp_span_opt f t)
+      ~time_taken_in_cc:(fun _field _file t f -> pp_span_opt f t)
+  ;;
+
+  let with_analysis (row : _ t) (analysis : 'a) : 'a t =
+    make
+      ~machine_id:(machine_id row)
+      ~compiler_id:(compiler_id row)
+      ~filename:(filename row)
+      ~analysis
+  ;;
+
+  let deviations (row : File.t t) : State_deviation.t t option =
+    let open Option.Let_syntax in
+    let file = analysis row in
+    let herd = File.herd file in
+    let%map deviations = Herd.to_state_deviation_opt herd in
+    with_analysis row deviations
+  ;;
+end
+
 module M = struct
   type t =
     { time_taken : Time.Span.t option
@@ -96,12 +172,18 @@ module M = struct
     } [@@deriving sexp_of, fields, make]
   ;;
 
-  let files a =
+  let file_rows (a : t) : File.t Row.t list =
     List.concat_map (machines a)
-      ~f:(fun (mid, machine) ->
+      ~f:(fun (machine_id, machine) ->
           List.map (Machine.files machine)
-            ~f:(fun (cid, fname, analysis) ->
-                (mid, cid, fname, analysis)))
+            ~f:(fun (compiler_id, filename, analysis) ->
+                Row.make ~machine_id ~compiler_id ~filename ~analysis))
+  ;;
+
+  let deviation_rows (a : t) : State_deviation.t Row.t list =
+    a
+    |> file_rows
+    |> List.filter_map ~f:Row.deviations
   ;;
 
   let machine_rule  = '='
@@ -126,11 +208,6 @@ module M = struct
       else Tabulator.with_rule machine_rule tabulator
   ;;
 
-  let pp_span_opt f = function
-    | Some span -> Time.Span.pp f span
-    | None      -> String.pp f "-"
-  ;;
-
   let results_table_names : string list Lazy.t =
     lazy (
       [ "Machine"
@@ -152,28 +229,17 @@ module M = struct
     )
   ;;
 
-  let file_to_row mid cid file analysis =
-    [ Fn.flip Config.Id.pp mid
-    ; Fn.flip Config.Id.pp cid
-    ; Fn.flip String.pp file
-    ] @
-    (* We use Fieldslib here, mainly, to raise compilation errors
-       if the fields in [analysis] change and we don't add them
-       (or ignore them) here. *)
-    File.Fields.Direct.to_list analysis
-      ~herd:(fun _field _file h f -> Herd.pp f h)
-      ~time_taken:(fun _field _file t f -> pp_span_opt f t)
-      ~time_taken_in_cc:(fun _field _file t f -> pp_span_opt f t)
-  ;;
-
   let with_file
       (last_mid, last_cid, tabulator)
-      (mid, cid, file, analysis) =
-    let open Or_error in
-    return tabulator
-    >>= maybe_with_rule last_mid mid last_cid cid
-    >>= Tabulator.with_row (file_to_row mid cid file analysis)
-    >>| (fun t' -> Some mid, Some cid, t')
+      (row : File.t Row.t) =
+    let mid = Row.machine_id row in
+    let cid = Row.compiler_id row in
+    Or_error.(
+      return tabulator
+      >>= maybe_with_rule last_mid mid last_cid cid
+      >>= Tabulator.with_row (Row.to_table_row row)
+      >>| (fun t' -> Some mid, Some cid, t')
+    )
   ;;
 
   type data = t (* For compatibility with Extend_tabular *)
@@ -184,7 +250,7 @@ module M = struct
       let open Or_error.Let_syntax in
       let%bind t = make ~header () in
       let%map (_, _, t) =
-        Travesty.T_list.With_errors.fold_m (files a)
+        Travesty.T_list.With_errors.fold_m (file_rows a)
           ~init:(None, None, t) ~f:with_file
       in
       t

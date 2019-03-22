@@ -99,6 +99,72 @@ let cook_input_mode = function
   | `Delitmus files_raw -> cook_delitmus files_raw
 ;;
 
+let output_main_table (analysis : Tester.Analysis.t) : unit Or_error.t =
+  Or_error.(analysis |> Tester.Analysis.to_table >>| print_table)
+;;
+
+let non_empty : 'a list -> 'a list option = function
+  | [] -> None
+  | xs -> Some xs
+;;
+
+let pp_deviation_bucket (bucket_name : string) : Herd_output.State.t list Fmt.t =
+  Fmt.(
+    using non_empty
+      (option
+         (vbox ~indent:2
+            (prefix (suffix sp (styled `Red (const string bucket_name)))
+               (vbox (list ~sep:sp (using [%sexp_of: Herd_output.State.t] Sexp.pp_hum))))
+         )
+      )
+  )
+;;
+
+let pp_deviation : Tester.Analysis.State_deviation.t Fmt.t =
+  Fmt.(
+    using Tester.Analysis.State_deviation.(fun x -> (non_empty (in_c_only x), non_empty (in_asm_only x)))
+      (pair ~sep:sp
+         (option ~none:(const string "No states in C only.") (pp_deviation_bucket "In C only:"))
+         (option ~none:(const string "No states in asm only.") (pp_deviation_bucket "In asm only:"))
+      )
+  )
+;;
+
+let pp_deviation_row : Tester.Analysis.State_deviation.t Tester.Analysis.Row.t Fmt.t =
+  Fmt.(
+    vbox ~indent:2 (
+      (using
+         Tester.Analysis.Row.(fun x -> (((compiler_id x, machine_id x), filename x), analysis x))
+         (pair ~sep:sp
+            (hbox (pair ~sep:(unit ":")
+                     (pair ~sep:(unit "@") Config.Id.pp Config.Id.pp)
+                     string)
+            )
+            pp_deviation
+         )
+      )
+    )
+  )
+;;
+
+let output_deviations (analysis : Tester.Analysis.t) : unit =
+  match Tester.Analysis.deviation_rows analysis with
+  | [] -> ()
+  | rs ->
+    Fmt.(pr "@[<v 2>The following files had deviations:@,%a@]@."
+           (list ~sep:sp pp_deviation_row)
+        )
+        rs
+;;
+
+let output_analysis
+    (analysis : Tester.Analysis.t)
+    : unit Or_error.t =
+  let open Or_error.Let_syntax in
+  let%map () = output_main_table analysis in
+  output_deviations analysis
+;;
+
 let run
     (should_time : bool)
     (input_mode_raw : [< `Delitmus of string list | `Memalloy of string ])
@@ -116,8 +182,7 @@ let run
   in
   let (module T) = make_tester o cfg timing_mode in
   let%bind analysis = T.run tester_cfg in
-  let%map table = Tester.Analysis.to_table analysis in
-  print_table table
+  output_analysis analysis
 ;;
 
 let command =

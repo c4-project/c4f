@@ -29,6 +29,26 @@ open Core_kernel
 open Utils
 open Lib
 
+(** Represents an observation that the C and assembly sets of a
+    state-set-level analysis aren't equal. *)
+module State_deviation : sig
+  type t [@@deriving sexp_of]
+
+  (** [in_c_only dev] gets a list (in no particular order)
+      of states that were in the C simulation, but not in the assembly
+      one. *)
+  val in_c_only : t -> Herd_output.State.t list
+
+  (** [in_asm_only dev] gets a list (in no particular order)
+      of states that were in the C simulation, but not in the assembly
+      one. *)
+  val in_asm_only : t -> Herd_output.State.t list
+
+  (** [of_herd_outcome_opt oc] converts [oc] into a deviation record.
+      It returns [None] if the outcome doesn't represent one. *)
+  val of_herd_outcome_opt : Herd_output.outcome -> t option
+end
+
 module Herd : sig
   (** [t] is the type of Herd analysis runs. *)
   type t =
@@ -37,6 +57,10 @@ module Herd : sig
     | `Errored of [`C | `Assembly]
     ] [@@deriving sexp_of]
   ;;
+
+  (** [to_state_deviation_opt oc] converts [oc] into a deviation record.
+      It returns [None] if the outcome doesn't represent one. *)
+  val to_state_deviation_opt : t -> State_deviation.t option
 end
 
 module File : sig
@@ -117,11 +141,46 @@ val make
   -> t
 ;;
 
-(** [files x] gets a list of (machine ID, compiler ID, filename,
-   analysis) tuples for all files in analysis [x]. *)
-val files : t -> (Config.Id.t * Config.Id.t * string * File.t) list
+(** Rows combine a file analysis with all information about the
+    machine, compiler, and file to which it belongs. *)
+module Row : sig
+  (** Opaque type of rows. *)
+  type 'a t [@@deriving sexp_of]
+
+  (** [machine_id row] gets the ID of the machine of [row]. *)
+  val machine_id : _ t -> Config.Id.t
+
+  (** [compiler_id row] gets the ID of the compiler of [row]. *)
+  val compiler_id : _ t -> Config.Id.t
+
+  (** [filename row] gets the name of the file [row] represents. *)
+  val filename : _ t -> string
+
+  (** [analysis row] gets the analysis for [row]'s file. *)
+  val analysis : 'a t -> 'a
+
+  (** {3 Consuming specific types of row} *)
+
+  (** [deviations row] sees whether [row] discusses a file where
+      there were state set deviations; if so, it returns those
+      deviations as a new row. *)
+  val deviations : File.t t -> State_deviation.t t option
+
+  (** [to_table_row row] converts a [row] containing file analysis to
+     a tabulator row. *)
+  val to_table_row : File.t t -> Tabulator.row
+end
+
+(** [file_rows x] gets a list of (machine ID, compiler ID, filename,
+   analysis) rows for all files in analysis [x]. *)
+val file_rows : t -> File.t Row.t list
 
 include Tabulator.Tabular with type data := t
+
+(** [deviation_rows x] gets a list of (machine ID, compiler ID,
+   filename, deviation) rows for all files in analysis [x] where there
+   are deviations in the state analysis. *)
+val deviation_rows : t -> State_deviation.t Row.t list
 
 (** [machines t] gets an associative list of all analysis results for
     machines in run [t]. *)
