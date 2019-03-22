@@ -33,27 +33,6 @@ type 'cfg t =
   }
 [@@deriving make]
 
-module Litmus_config = struct
-  module Format = struct
-    type t =
-      | Full
-      | Programs_only
-    [@@deriving sexp, equal]
-
-    let default = Full
-  end
-
-  type 'const t =
-    { format : Format.t [@default Format.default]
-    ; postcondition : 'const Litmus.Ast_base.Postcondition.t option
-    ; locations : C_identifier.t list option
-    ; variable_info : Config.C_variables.Map.t option
-    }
-  [@@deriving sexp, equal, make]
-
-  let default : unit -> 'a t = make
-end
-
 module Explain_config = struct
   module Format = struct
     type t =
@@ -87,7 +66,7 @@ module type Runner = sig
     Gen_runner
     with type 'fmt inp := 'fmt t
      and type aux := Output.t
-     and type lcfg := const Litmus_config.t
+     and type lcfg := const Litmusifier.Config.t
      and type ecfg := Explain_config.t
 end
 
@@ -118,6 +97,7 @@ let%expect_test "make_litmus_name: multi-extension filename" =
   [%expect {| (Ok example_foo_c) |}]
 ;;
 
+
 module Make_runner (B : Runner_deps) : Runner with type const = B.Src_lang.Constant.t =
 struct
   type const = B.Src_lang.Constant.t
@@ -145,51 +125,6 @@ struct
 
   module Redirect = MS.Redirect
 
-  let record_to_constant (r : Config.C_variables.Record.t) : LD.Constant.t =
-    r
-    |> Config.C_variables.Record.initial_value
-    |> Option.value ~default:0
-    |> LD.Constant.of_int
-  ;;
-
-  let make_init_from_vars
-    (cvars : Config.C_variables.Map.t)
-    (redirects : Redirect.t)
-    : (C_identifier.t, LD.Constant.t) List.Assoc.t Or_error.t =
-    Or_error.(
-      cvars
-      |> Redirect.transform_c_variables redirects
-      >>| C_identifier.Map.to_alist
-      >>| Travesty.T_alist.bi_map ~left:Fn.id ~right:record_to_constant
-    )
-
-  let make_init_from_progs
-      (progs : MS.Output.Program.t list) :
-      (C_identifier.t, LD.Constant.t) List.Assoc.t =
-    let get_hsyms prog =
-      prog
-      |> MS.Output.Program.symbol_table
-      |> Fn.flip Abstract.Symbol.Table.set_of_sort Abstract.Symbol.Sort.Heap
-    in
-    let syms = Abstract.Symbol.Set.union_list (List.map ~f:get_hsyms progs) in
-    List.map
-      ~f:(fun s -> C_identifier.of_string s, LD.Constant.zero)
-      (Abstract.Symbol.Set.to_list syms)
-
-  (** [make_init config redirects progs] makes an init block
-      either by taking the information given in [config] and
-      applying [redirects] to it, or just by taking the symbol table from
-      [progs] and pulling out the heap symbols. *)
-  let make_init
-      (config : LS.Constant.t Litmus_config.t)
-      (redirects : Redirect.t)
-      (progs : MS.Output.Program.t list) :
-      (C_identifier.t, LD.Constant.t) List.Assoc.t Or_error.t =
-    match config.variable_info with
-    | Some vars -> make_init_from_vars vars redirects
-    | None -> Or_error.return (make_init_from_progs progs)
-  ;;
-
   let emit_warnings iname = function
     | [] -> Fn.const ()
     | ws ->
@@ -207,83 +142,14 @@ struct
     { symbol_map; warn = emit_warnings iname warnings }
   ;;
 
-  let pp_for_litmus_format : Litmus_config.Format.t -> L.Validated.t Fmt.t = function
-    | Full -> LP.pp
-    | Programs_only -> LP.pp_programs
-  ;;
-
-  let make_litmus_program (program : MS.Output.Program.t) =
-    program |> MS.Output.Program.listing |> B.convert_program
-  ;;
-
-  let make_litmus_programs = List.map ~f:make_litmus_program
-
-  let make_litmus
-      (config : LS.Constant.t Litmus_config.t)
-      (redirects : Redirect.t)
-      (locations : C_identifier.t list)
-      (name : string)
-      (output_programs : MS.Output.Program.t list)
-      (postcondition : L.Postcondition.t option) =
-    let open Or_error.Let_syntax in
-    let%bind init = make_init config redirects output_programs in
-    let programs = make_litmus_programs output_programs in
-    Or_error.tag
-      ~tag:"Couldn't build litmus file."
-      (L.Validated.make
-         ~name
-         ~init
-         ~programs
-         ?postcondition
-         ~locations
-         ())
-  ;;
+  module Lit = Litmusifier.Make (B)
 
   let collate_warnings (programs : MS.Output.Program.t list) =
     List.concat_map programs ~f:MS.Output.Program.warnings
   ;;
 
-  let make_post (_redirects : Redirect.t)
-      : LS.Constant.t Litmus.Ast_base.Postcondition.t -> L.Postcondition.t Or_error.t =
-    Litmus.Ast_base.Postcondition.On_constants.With_errors.map_m ~f:B.convert_const
-  ;;
-
-  (** [make_locations_from_redirects redirects] makes a 'locations'
-      stanza by taking the right-hand side of the redirects table
-      [redirects] created by the sanitiser process. *)
-  let make_locations_from_redirects (redirects : Redirect.t)
-      : C_identifier.t list Or_error.t =
-    Or_error.(
-      redirects
-      |> Redirect.image_ids
-      >>| C_identifier.Set.to_list
-    )
-  ;;
-
-  let make_locations_from_config
-      (config_locs : C_identifier.t list)
-      (redirects : Redirect.t) :
-      C_identifier.t list Or_error.t =
-    config_locs
-    |> List.map ~f:(Redirect.resolve_id redirects)
-    |> Or_error.combine_errors
-  ;;
-
-  (** [make_locations config redirects] makes a 'locations'
-      stanza, either by taking the stanza given in [config] and
-      applying [redirects] to it, or just by taking the RHS of the
-      [redirects]. *)
-  let make_locations
-      (config : LS.Constant.t Litmus_config.t)
-      (redirects : Redirect.t) :
-      C_identifier.t list Or_error.t =
-    match config.locations with
-    | Some locs -> make_locations_from_config locs redirects
-    | None -> make_locations_from_redirects redirects
-  ;;
-
   let output_litmus
-      ?(config : LS.Constant.t Litmus_config.t = Litmus_config.default ())
+      ?(config : LS.Constant.t Litmusifier.Config.t = Litmusifier.Config.default ())
       (name : string)
       (passes : Config.Sanitiser_pass.Set.t)
       (symbols : LS.Symbol.t list)
@@ -295,13 +161,9 @@ struct
     let redirects = MS.Output.redirects o in
     let programs = MS.Output.programs o in
     let warnings = collate_warnings programs in
-    let%bind post =
-      Travesty.T_option.With_errors.map_m config.postcondition ~f:(make_post redirects)
-    in
-    let%bind locations = make_locations config redirects in
-    let%map lit = make_litmus config redirects locations name programs post in
+    let%map lit = Lit.make ~config ~redirects ~name ~programs in
     let f = Format.formatter_of_out_channel outp in
-    pp_for_litmus_format config.format f lit;
+    Lit.pp_litmus (Litmusifier.Config.format config) f lit;
     Format.pp_print_newline f ();
     let redirects = MS.Output.redirects o in
     make_output name (Redirect.to_string_alist redirects) warnings
@@ -358,9 +220,9 @@ struct
   ;;
 
   module Litmusify :
-    Filter.S with type aux_i = LS.Constant.t Litmus_config.t t and type aux_o = Output.t =
+    Filter.S with type aux_i = LS.Constant.t Litmusifier.Config.t t and type aux_o = Output.t =
   Filter.Make (struct
-    type aux_i = LS.Constant.t Litmus_config.t t
+    type aux_i = LS.Constant.t Litmusifier.Config.t t
     type aux_o = Output.t
 
     let name = "Litmusifier"
@@ -384,7 +246,7 @@ let get_litmusify_sexp (module Runner : Runner) =
   (module Filter.Adapt (struct
      module Original = Runner.Litmusify
 
-     type aux_i = Sexp.t Litmus_config.t t
+     type aux_i = Sexp.t Litmusifier.Config.t t
      type aux_o = Output.t
 
      let adapt_constant (const : Sexp.t) : Runner.const Or_error.t =
@@ -397,13 +259,12 @@ let get_litmusify_sexp (module Runner : Runner) =
        Litmus.Ast_base.Postcondition.On_constants.With_errors.map_m ~f:adapt_constant
      ;;
 
-     let adapt_config (config : Sexp.t Litmus_config.t) :
-         Runner.const Litmus_config.t Or_error.t =
-       let open Or_error.Let_syntax in
-       let%map postcondition =
-         Travesty.T_option.With_errors.map_m config.postcondition ~f:adapt_postcondition
-       in
-       { config with postcondition }
+     let adapt_config : Sexp.t Litmusifier.Config.t ->
+         Runner.const Litmusifier.Config.t Or_error.t =
+       Litmusifier.Config.transform
+         ~format:Or_error.return
+         ~c_variables:Or_error.return
+         ~postcondition:adapt_postcondition
      ;;
 
      let adapt_i job =
@@ -415,7 +276,7 @@ let get_litmusify_sexp (module Runner : Runner) =
      let adapt_o = Or_error.return
   end)
   : Filter.S
-    with type aux_i = Sexp.t Litmus_config.t t
+    with type aux_i = Sexp.t Litmusifier.Config.t t
      and type aux_o = Output.t)
 ;;
 

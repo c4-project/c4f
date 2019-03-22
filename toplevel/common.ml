@@ -125,7 +125,7 @@ let litmusify_pipeline (target : Config.Compiler.Target.t) :
     (module Filter.S
        with type aux_i = Config.File_type.t_or_infer
                          * (   C.Filters.Output.t Filter.chain_output
-                            -> Sexp.t Asm_job.Litmus_config.t Asm_job.t
+                            -> Sexp.t Litmusifier.Config.t Asm_job.t
                                Config.Compiler.Chain_input.t)
         and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.Output.t))
     Or_error.t =
@@ -219,17 +219,17 @@ let make_compiler_input
     (o : Output.t)
     (file_type : Config.File_type.t_or_infer)
     (user_cvars : Config.C_variables.Map.t option)
-    (config_fn : variable_info:(Config.C_variables.Map.t option) -> 'cfg)
+    (config_fn : c_variables:(Config.C_variables.Map.t option) -> 'cfg)
     (passes : Config.Sanitiser_pass.Set.t)
     (dl_output : C.Filters.Output.t Filter.chain_output) :
     'cfg Asm_job.t Config.Compiler.Chain_input.t =
-  let variable_info = choose_cvars o user_cvars dl_output in
+  let c_variables = choose_cvars o user_cvars dl_output in
   let symbols =
-    variable_info
+    c_variables
     |> Option.map ~f:C_identifier.Map.keys
     |> Option.map ~f:(List.map ~f:C_identifier.to_string)
   in
-  let config = config_fn ~variable_info in
+  let config = config_fn ~c_variables in
   let litmus_job = Asm_job.make ~passes ~config ?symbols () in
   Config.Compiler.Chain_input.create
     ~file_type:(Config.File_type.delitmusified file_type)

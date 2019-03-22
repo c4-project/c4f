@@ -181,7 +181,7 @@ let make_filter
                           * ( C.Filters.Output.t Filter.chain_output
                               ->
                               Sexp.t
-                              Asm_job.Litmus_config.t
+                              Litmusifier.Config.t
                               Asm_job.t
                               Config.Compiler.Chain_input.t
                             )
@@ -222,19 +222,14 @@ let parse_post
 
 let make_litmus_config_fn
     (post_sexp : [ `Exists of Sexp.t ] option)
-  : (variable_info:(Config.C_variables.Map.t option) -> Sexp.t Asm_job.Litmus_config.t)
+  : (c_variables:(Config.C_variables.Map.t option) -> Sexp.t Litmusifier.Config.t)
       Or_error.t =
   let open Or_error.Let_syntax in
   let%map postcondition = Travesty.T_option.With_errors.map_m post_sexp
       ~f:parse_post
   in
-  (fun ~variable_info ->
-     let locations =
-       variable_info
-       |> Option.value_map ~f:Config.C_variables.Map.globals ~default:C_identifier.Set.empty
-       |> C_identifier.Set.to_list
-     in
-     Asm_job.Litmus_config.make ?postcondition ~locations ?variable_info ()
+  (fun ~c_variables ->
+     Litmusifier.Config.make ?postcondition ?c_variables ()
   )
 ;;
 

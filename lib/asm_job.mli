@@ -44,34 +44,6 @@ val make
   -> unit
   -> 'cfg t
 
-module Litmus_config : sig
-  module Format : sig
-    (** [t] is an enumeration of output formats for litmus jobs. *)
-    type t =
-      | Full (** Output a full, herd-compatible litmus test *)
-      | Programs_only (** Only output the program tables (eg for comparison) *)
-    [@@deriving equal]
-
-    (** [default] gets the default output format. *)
-    val default : t
-  end
-
-  type 'const t [@@deriving equal, sexp]
-
-  (** [make ?format ?postcondition ?locations ?variable_info ()] builds a [Litmus_config] with the
-     given parameters. *)
-  val make
-    :  ?format:Format.t
-    -> ?postcondition:'const Litmus.Ast_base.Postcondition.t
-    -> ?locations:Utils.C_identifier.t list
-    -> ?variable_info:Config.C_variables.Map.t
-    -> unit
-    -> 'const t
-
-  (** [default ()] gets the default Litmus job configuration. *)
-  val default : unit -> 'a t
-end
-
 module Explain_config : sig
   module Format : sig
     (** [t] is an enumeration of output formats for explain jobs. *)
@@ -116,7 +88,7 @@ module type Runner = sig
     Gen_runner
     with type 'cfg inp := 'cfg t
      and type aux := Output.t
-     and type lcfg := const Litmus_config.t
+     and type lcfg := const Litmusifier.Config.t
      and type ecfg := Explain_config.t
 end
 
@@ -132,7 +104,7 @@ module Make_runner (R : Runner_deps) : Runner with type const = R.Src_lang.Const
 val get_litmusify_sexp
   :  (module Runner)
   -> (module Utils.Filter.S
-        with type aux_i = Sexp.t Litmus_config.t t
+        with type aux_i = Sexp.t Litmusifier.Config.t t
          and type aux_o = Output.t)
 
 (** [get_explain Runner] is [Runner.Explain]. *)
