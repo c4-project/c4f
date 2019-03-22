@@ -83,6 +83,8 @@ module Record = struct
   include Comparable.Make (M)
 
   let remove_tid (record : t) : t = { record with tid = None }
+
+  let has_tid (record : t) : bool = Option.is_some (tid record)
   let is_global (record : t) : bool = Scope.is_global (scope record)
   let is_local (record : t) : bool = Scope.is_local (scope record)
 
@@ -180,3 +182,29 @@ module Map = struct
     |> C_identifier.Map.of_alist_or_error
   ;;
 end
+
+let%test_module "Map" = (module struct
+  let%expect_test "of_value_maps_opt: no maps" =
+    Stdio.print_s
+      [%sexp (Map.of_value_maps_opt () : Map.t option)];
+    [%expect {| () |}]
+  ;;
+
+  let%expect_test "of_value_maps_opt: empty maps" =
+    Stdio.print_s
+      [%sexp (Map.of_value_maps_opt
+                ~globals:C_identifier.Map.empty
+                ~locals:C_identifier.Map.empty
+                () : Map.t option)];
+    [%expect {| (()) |}]
+  ;;
+
+  let%test_unit "vars_satisfying false = empty" =
+    Base_quickcheck.Test.run_exn (module Map)
+      ~f:(fun m -> [%test_result: C_identifier.Set.t] ~here:[[%here]]
+             ~equal:[%equal: C_identifier.Set.t]
+             (Map.vars_satisfying m ~f:(Fn.const false))
+             ~expect:(C_identifier.Set.empty)
+         )
+  ;;
+end)

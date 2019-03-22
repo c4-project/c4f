@@ -73,6 +73,9 @@ module Record : sig
   (** [tid record] gets [record]'s thread ID, if any. *)
   val tid : t -> int option
 
+  (** [has_tid record] is [true] if [record] has a thread ID. *)
+  val has_tid : t -> bool
+
   (** [scope record] gets [record]'s scope. *)
   val scope : t -> Scope.t
 

@@ -60,7 +60,11 @@ module type S = sig
   val to_string_alist : t -> (string, string) List.Assoc.t
 
   (** [transform_c_variables map cvars] tries to apply the redirects in
-      [map] to [cvars]. *)
+      [map] to [cvars].
+
+      It fails if the resulting map would have duplicate keys, or if
+      [cvars] has any variables with thread IDs (these should be
+      flattened first). *)
   val transform_c_variables
     :  t
     -> Config.C_variables.Map.t
