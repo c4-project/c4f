@@ -48,7 +48,6 @@ module type S = sig
     -> name:string
     -> programs:Sanitiser.Output.Program.t list
     -> Litmus.Validated.t Or_error.t
-  ;;
 
   (** [pp_litmus config] is the litmus test pretty-printer
       matching the configuration [config. *)

@@ -34,7 +34,6 @@
 *)
 
 open Base
-
 include module type of Litmusifier_intf
 
 (** Output formats for the litmusifier. *)
@@ -84,15 +83,15 @@ module Config : sig
   val transform
     :  'a t
     -> format:(Format.t -> Format.t Or_error.t)
-    -> postcondition:('a Litmus.Ast_base.Postcondition.t -> 'b Litmus.Ast_base.Postcondition.t Or_error.t)
+    -> postcondition:(   'a Litmus.Ast_base.Postcondition.t
+                      -> 'b Litmus.Ast_base.Postcondition.t Or_error.t)
     -> c_variables:(Config.C_variables.Map.t -> Config.C_variables.Map.t Or_error.t)
     -> 'b t Or_error.t
-  ;;
 end
 
-module Make (B : Basic)
-  : S with type conf := B.Src_lang.Constant.t Config.t
-       and type fmt := Format.t
-       and type Sanitiser.Redirect.t = B.Multi_sanitiser.Redirect.t
-       and type Sanitiser.Output.Program.t = B.Multi_sanitiser.Output.Program.t
-;;
+module Make (B : Basic) :
+  S
+  with type conf := B.Src_lang.Constant.t Config.t
+   and type fmt := Format.t
+   and type Sanitiser.Redirect.t = B.Multi_sanitiser.Redirect.t
+   and type Sanitiser.Output.Program.t = B.Multi_sanitiser.Output.Program.t
