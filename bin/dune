@@ -1,14 +1,7 @@
 (executable
   (public_name act)
   (preprocess (pps ppx_jane))
-  (libraries
-    lib
-    c
-    tester
-    x86
-    core
-    utils
-    unix))
+  (libraries core toplevel))
 
 (rule
  (targets explain.regress.output)

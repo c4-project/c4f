@@ -1,13 +1,8 @@
-# `bin`: `act` toplevel
+# `bin`: `act` entry point
 
-The top-level parts of `act` live here, including:
+This directory contains the `act` entry point, `act.ml`.  It also
+holds various example files (placed here so the regression tester can
+pick them up).
 
-- the entry point, `act.ml`;
-- the sub-command implementations;
-- glue code to connect the top-level to the language and compiler
-  specific modules;
-- various example files (placed here so the regression tester can
-  pick them up).
-
-Most of the interesting parts of `act` live in `lib` (if they're
-language-independent or core), or in target-specific modules.
+For the actual implementation of the top-level porcelain for `act`,
+see `toplevel`.

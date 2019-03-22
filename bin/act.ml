@@ -28,26 +28,30 @@
    of the various act sub-programs.  *)
 
 open Core
+open Toplevel
 
-let readme () : string = String.strip {|
+let readme () : string =
+  String.strip
+    {|
 `act` is a toolkit for testing C compilers.  It predominantly deals
 with concurrency---specifically, checking whether compilers comply
 with the C11 memory model with regards to the assembly they emit.
 |}
-
+;;
 
 let command =
   Command.group
     ~summary:"Automagic Compiler Tormentor"
     ~readme
-    [ "c"        , C_main.command
-    ; "compare"  , Compare.command
+    [ "c", C_main.command
+    ; "compare", Compare.command
     ; "configure", Configure.command
-    ; "explain"  , Explain.command
+    ; "explain", Explain.command
     ; "litmusify", Litmusify.command
-    ; "regress"  , Regress.command
-    ; "test"     , Test.command
-    ; "tool"     , Tool.command
+    ; "regress", Regress.command
+    ; "test", Test.command
+    ; "tool", Tool.command
     ]
+;;
 
 let () = Command.run command
