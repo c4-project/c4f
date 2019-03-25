@@ -110,27 +110,26 @@ module Map : sig
       initial value. *)
   val of_single_scope_set : ?tid:int -> ?scope:Scope.t -> C_identifier.Set.t -> t
 
-  (** [merge_list maps] makes a variable-to-record map by merging
+  (** {2 Merging maps} *)
+
+  (** [merge x y] merges two maps [x] and [y], respecting scope ordering. *)
+  val merge : t -> t -> t
+
+  (** [merge_list_opt maps] makes a variable-to-record map by merging
      [maps].  Merging happens in an arbitrary order, but respects the
-     ordering on scopes. *)
+     ordering on scopes.  If the list is empty, this returns [None]. *)
+  val merge_list_opt : t list -> t option
+
+  (** [merge_list maps] behaves as [merge_list_opt maps], but returns an empty
+      map if the list is empty. *)
   val merge_list : t list -> t
 
-  (** [of_value_maps ~locals ~globals] makes a
-       variable-to-record map by merging the locals map
-       [locals] and globals map [globals]. *)
-  val of_value_maps
-    :  locals:Initial_value.t C_identifier.Map.t
-    -> globals:Initial_value.t C_identifier.Map.t
-    -> t
-
-  (** [of_value_maps_opt ?locals ?globals ()] tries to make a
-       variable-to-record map by merging the optional locals map
-       [locals] and optional globals map [globals]. *)
-  val of_value_maps_opt
-    :  ?locals:Initial_value.t C_identifier.Map.t
-    -> ?globals:Initial_value.t C_identifier.Map.t
-    -> unit
-    -> t option
+  (** [of_litmus_id_alist ?scope alist] tries to convert an associative list from
+      Litmus-style IDs to initial values into a variable-to-record map. *)
+  val of_litmus_id_alist
+    :  ?scope:Scope.t
+    -> (Litmus.Id.t, Initial_value.t) List.Assoc.t
+    -> t Or_error.t
 
   (** {3 Modifiers} *)
 
@@ -149,4 +148,11 @@ module Map : sig
 
   (** [locals map] is [vars_satisfying map ~f:Record.is_local]. *)
   val locals : t -> C_identifier.Set.t
+end
+
+module String_lang : sig
+  val parse_list
+    : ?scope:Scope.t
+    -> string list
+    -> Map.t Or_error.t
 end

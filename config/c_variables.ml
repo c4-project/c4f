@@ -148,30 +148,35 @@ module Map = struct
     Some (Record.resolve_clash value)
   ;;
 
+  let merge : t -> t -> t =
+    C_identifier.Map.merge ~f:resolve_cvar_clashes
+
+  let merge_list_opt (xs : t list) : t option =
+    List.reduce_balanced xs ~f:merge
+  ;;
+
   let merge_list (xs : t list) : t =
     xs
-    |> List.reduce_balanced ~f:(C_identifier.Map.merge ~f:resolve_cvar_clashes)
+    |> merge_list_opt
     |> Option.value ~default:C_identifier.Map.empty
   ;;
 
-  let of_value_maps
-      ~(locals : Initial_value.t C_identifier.Map.t)
-      ~(globals : Initial_value.t C_identifier.Map.t) : t =
-    let locals_map = of_single_scope_map ~scope:Local locals in
-    let globals_map = of_single_scope_map ~scope:Global globals in
-    C_identifier.Map.merge ~f:resolve_cvar_clashes locals_map globals_map
+  let of_litmus_id_pair
+      ?(scope : Scope.t = Scope.Unknown)
+      (id : Litmus.Id.t) (initial_value : Initial_value.t)
+    : C_identifier.t * Record.t =
+    let tid = Litmus.Id.tid id in
+    let name = Litmus.Id.variable_name id in
+    (name, Record.make ~scope ?tid ~initial_value ())
   ;;
 
-  let of_value_maps_opt
-      ?(locals : Initial_value.t C_identifier.Map.t option)
-      ?(globals : Initial_value.t C_identifier.Map.t option)
-      () : t option =
-    let locals_map = Option.map ~f:(of_single_scope_map ~scope:Local) locals in
-    let globals_map = Option.map ~f:(of_single_scope_map ~scope:Global) globals in
-    Option.merge
-      locals_map
-      globals_map
-      ~f:(C_identifier.Map.merge ~f:resolve_cvar_clashes)
+  let of_litmus_id_alist
+    ?(scope : Scope.t option)
+    (xs : (Litmus.Id.t, Initial_value.t) List.Assoc.t)
+    : t Or_error.t =
+    xs
+    |> List.map ~f:(Tuple2.uncurry (of_litmus_id_pair ?scope))
+    |> C_identifier.Map.of_alist_or_error
   ;;
 
   let map (m : t) ~(f : C_identifier.t -> Record.t -> C_identifier.t * Record.t) :
@@ -183,19 +188,20 @@ module Map = struct
   ;;
 end
 
-let%test_module "Map" = (module struct
-  let%expect_test "of_value_maps_opt: no maps" =
+let%test_module "Map tests" = (module struct
+  let%expect_test "merge_list_opt: no maps" =
     Stdio.print_s
-      [%sexp (Map.of_value_maps_opt () : Map.t option)];
+      [%sexp (Map.merge_list_opt [] : Map.t option)];
     [%expect {| () |}]
   ;;
 
   let%expect_test "of_value_maps_opt: empty maps" =
     Stdio.print_s
-      [%sexp (Map.of_value_maps_opt
-                ~globals:C_identifier.Map.empty
-                ~locals:C_identifier.Map.empty
-                () : Map.t option)];
+      [%sexp (Map.merge_list_opt
+                [ C_identifier.Map.empty
+                ; C_identifier.Map.empty
+                ]
+                : Map.t option)];
     [%expect {| (()) |}]
   ;;
 
@@ -208,3 +214,75 @@ let%test_module "Map" = (module struct
          )
   ;;
 end)
+
+module String_lang = struct
+  module T_opt = Travesty.T_option.With_errors
+
+  let split_initial (str : string) :
+    string * string option =
+    str
+    |> String.rsplit2 ~on:'='
+    |> Option.value_map ~f:(Tuple2.map_snd ~f:Option.some) ~default:(str, None)
+  ;;
+
+  let split_and_strip_initial (str : string) :
+    string * string option =
+    let name_str_unstripped, value_str_unstripped = split_initial str in
+    let name_str = String.strip name_str_unstripped in
+    let value_str = Option.map ~f:String.strip value_str_unstripped in
+    name_str, value_str
+  ;;
+
+  let%expect_test "split_and_strip_initial: present" =
+    Stdio.print_s
+      [%sexp (split_and_strip_initial "foo = barbaz" : string * string option)];
+    [%expect {| (foo (barbaz)) |}]
+  ;;
+
+  let%expect_test "split_and_strip_initial: absent" =
+    Stdio.print_s
+      [%sexp (split_and_strip_initial "foobar" : string * string option)];
+    [%expect {| (foobar ()) |}]
+  ;;
+
+  let%expect_test "split_and_strip_initial: double equals" =
+    Stdio.print_s
+      [%sexp (split_and_strip_initial "foo=bar=baz" : string * string option)];
+    [%expect {| (foo=bar (baz)) |}]
+  ;;
+
+  let parse_initial (str : string) :
+    (Litmus.Id.t * Initial_value.t) Or_error.t =
+    let open Or_error.Let_syntax in
+    let name_str, value_str_opt = split_and_strip_initial str in
+    let%bind name = Litmus.Id.try_parse name_str in
+    let%map value =
+      Travesty.T_option.With_errors.map_m value_str_opt ~f:(fun s ->
+          Or_error.try_with (fun () -> Int.of_string s))
+    in
+    name, value
+  ;;
+
+  let%expect_test "parse_initial: present, no tid" =
+    Stdio.print_s
+      [%sexp (parse_initial "foo = 3" :
+                (Litmus.Id.t * Initial_value.t) Or_error.t)];
+    [%expect {| (Ok (foo (3))) |}]
+  ;;
+
+  let%expect_test "parse_initial: absent" =
+    Stdio.print_s
+      [%sexp (parse_initial "foobar" : (Litmus.Id.t * Initial_value.t) Or_error.t)];
+    [%expect {| (Ok (foobar ())) |}]
+  ;;
+
+  let parse_list ?(scope : Scope.t option) (sl : string list) :
+    Map.t Or_error.t =
+    Or_error.Monad_infix.(
+      sl
+      |> List.map ~f:parse_initial
+      |> Or_error.combine_errors
+      >>= Map.of_litmus_id_alist ?scope
+    )
+  ;;
+end

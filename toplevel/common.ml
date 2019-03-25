@@ -176,43 +176,19 @@ let choose_cvars
   cvars
 ;;
 
+
+
 module T_opt = Travesty.T_option.With_errors
-
-let parse_initial_value (str : string) :
-    (C_identifier.t * Config.C_variables.Initial_value.t) Or_error.t =
-  let open Or_error.Let_syntax in
-  let name_str_unstripped, value_str_unstripped =
-    str
-    |> String.rsplit2 ~on:'='
-    |> Option.value_map ~f:(Tuple2.map_snd ~f:Option.some) ~default:(str, None)
-  in
-  let name_str = String.strip name_str_unstripped in
-  let value_str = Option.map ~f:String.strip value_str_unstripped in
-  let%bind name = C_identifier.create name_str in
-  let%map value =
-    Travesty.T_option.With_errors.map_m value_str ~f:(fun s ->
-        Or_error.try_with (fun () -> Int.of_string s))
-  in
-  name, value
-;;
-
-let string_list_to_cid_map (sl : string list) :
-    Config.C_variables.Initial_value.t C_identifier.Map.t Or_error.t =
-  (* TODO(@MattWindsor91): parse initial values *)
-  Or_error.(
-    sl
-    |> List.map ~f:parse_initial_value
-    |> Or_error.combine_errors
-    >>= C_identifier.Map.of_alist_or_error)
-;;
 
 let collect_cvars ?(c_globals : string list option)
                   ?(c_locals : string list option)
                   () : Config.C_variables.Map.t option Or_error.t =
   let open Or_error.Let_syntax in
-  let%bind globals = T_opt.map_m ~f:string_list_to_cid_map c_globals in
-  let%map locals = T_opt.map_m ~f:string_list_to_cid_map c_locals in
-  Config.C_variables.Map.of_value_maps_opt ?globals ?locals ()
+  let module V = Config.C_variables in
+  let%bind globals = T_opt.map_m ~f:(V.String_lang.parse_list ~scope:V.Scope.Global) c_globals in
+  let%map locals = T_opt.map_m ~f:(V.String_lang.parse_list ~scope:V.Scope.Local) c_locals in
+  Option.merge globals locals
+    ~f:(fun x y -> V.Map.merge_list [x; y])
 ;;
 
 let make_compiler_input

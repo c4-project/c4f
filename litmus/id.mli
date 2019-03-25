@@ -57,6 +57,9 @@ val try_parse : string -> t Or_error.t
     or [None] otherwise. *)
 val as_global : t -> C_identifier.t option
 
+(** [variable_name id] gets the underlying variable name of [id]. *)
+val variable_name : t -> C_identifier.t
+
 (** [tid id] gets [id]'s thread identifier, if it has one. *)
 val tid : t -> int option
 

@@ -71,6 +71,10 @@ let global_of_string (str : string) : t Or_error.t =
   Or_error.(str |> C_identifier.create >>| global)
 ;;
 
+let variable_name : t -> C_identifier.t = function
+  | Local (_, v) | Global v -> v
+;;
+
 let tid : t -> int option = function
   | Local (i, _) -> Some i
   | Global _ -> None
