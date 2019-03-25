@@ -26,11 +26,11 @@
 
 open Core_kernel
 
+(** [run ~seed ~o test] mutates [test] using a random number generator
+    seeded by [seed].  Any debugging information is printed to the
+    appropriate formatters on [o]. *)
 val run
   :  seed:int option
   -> o:Lib.Output.t
   -> Mini_litmus.Ast.Validated.t
   -> Mini_litmus.Ast.Validated.t Or_error.t
-(** [run ~seed ~o test] mutates [test] using a random number generator
-    seeded by [seed].  Any debugging information is printed to the
-    appropriate formatters on [o]. *)

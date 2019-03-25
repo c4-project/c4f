@@ -34,8 +34,8 @@ open Core_kernel
 (** [Basic] is the interface act languages must implement for instruction
    analysis. *)
 module type Basic = sig
-  type t [@@deriving sexp, eq]
   (** Type of instructions. *)
+  type t [@@deriving sexp, eq]
 
   (** [con] is the type of constants. *)
   type con
@@ -52,22 +52,15 @@ module type Basic = sig
   (** [pp_operands f ins] pretty-prints only the instruction operands. *)
   val pp_operands : Format.formatter -> t -> unit
 
-  include Abstract.Abstractable.S
-    with type t := t
-     and module Abs := Abstract.Instruction
-  ;;
+  include Abstract.Abstractable.S with type t := t and module Abs := Abstract.Instruction
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
-    Travesty.Traversable.S0_container with module Elt = Sym
-                                       and type t := t
-  ;;
+    Travesty.Traversable.S0_container with module Elt = Sym and type t := t
 
   (** ...and over locations. *)
   module On_locations :
-    Travesty.Traversable.S0_container with module Elt = Loc
-                                       and type t := t
-  ;;
+    Travesty.Traversable.S0_container with module Elt = Loc and type t := t
 
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
   val jump : string -> t
@@ -115,10 +108,9 @@ module type R_map = sig
 
   (** [r_dest] is the type of destination results used in [R_map]. *)
   type r_dest =
-    | Identity       (** The map redirects this symbol to itself *)
-    | MapsTo of sym  (** The map redirects this symbol here *)
+    | Identity (** The map redirects this symbol to itself *)
+    | MapsTo of sym (** The map redirects this symbol here *)
   [@@deriving sexp, eq]
-  ;;
 
   module Set : Set.S with type Elt.t = sym
 
@@ -133,12 +125,7 @@ module type R_map = sig
 
       [redirect] fails if [dst] is a registered source other than [src];
       this is to prevent cycles. *)
-  val redirect
-    :  src : sym
-    -> dst : sym
-    -> t
-    -> t Or_error.t
-  ;;
+  val redirect : src:sym -> dst:sym -> t -> t Or_error.t
 
   (** [dest_of rmap src] gives the final destination of [src] as an
      [r_dest]. *)
@@ -159,11 +146,10 @@ end
 module type Basic_with_modules = sig
   module Constant : Language_constant.S
   module Location : Language_location.S
-  module Symbol   : Language_symbol.S
+  module Symbol : Language_symbol.S
 
-  include Basic with type   con := Constant.t
-                 and module Loc := Location
-                 and module Sym := Symbol
+  include
+    Basic with type con := Constant.t and module Loc := Location and module Sym := Symbol
 end
 
 (** [S] is an expanded interface onto an act language's instruction
@@ -177,10 +163,7 @@ module type S = sig
 
   (** We can query abstract operand bundle properties on a concrete
       instruction type, routing through [abs_operands]. *)
-  module On_operands :
-    Abstract.Operand.Bundle.S_properties
-    with type t := t
-  ;;
+  module On_operands : Abstract.Operand.Bundle.S_properties with type t := t
 end
 
 (** [Language_instruction] is the interface exposed in the main mli
@@ -192,10 +175,10 @@ module type Language_instruction = sig
 
   (** [Make] produces an instance of [S] from an instance of
      [Basic_with_modules]. *)
-  module Make (B : Basic_with_modules)
-    : S with type t = B.t
-         and module Constant = B.Constant
-         and module Location = B.Location
-         and module Symbol   = B.Symbol
-  ;;
+  module Make (B : Basic_with_modules) :
+    S
+    with type t = B.t
+     and module Constant = B.Constant
+     and module Location = B.Location
+     and module Symbol = B.Symbol
 end

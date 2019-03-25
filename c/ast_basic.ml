@@ -45,13 +45,12 @@
 (****************************************************************************)
 
 open Core_kernel
-
 include Ast_basic_intf
 
 module Operators = struct
   module Assign = struct
     type t =
-      [ `Assign     (*   = *)
+      [ `Assign (*   = *)
       | `Assign_mul (*  *= *)
       | `Assign_div (*  /= *)
       | `Assign_mod (*  %= *)
@@ -61,23 +60,22 @@ module Operators = struct
       | `Assign_shr (* >>= *)
       | `Assign_and (*  &= *)
       | `Assign_xor (*  ^= *)
-      | `Assign_or  (*  |= *)
+      | `Assign_or (*  |= *)
       ]
     [@@deriving sexp, eq, compare]
-    ;;
 
     let to_string : t -> string = function
-      | `Assign     ->   "="
-      | `Assign_mul ->  "*="
-      | `Assign_div ->  "/="
-      | `Assign_mod ->  "%="
-      | `Assign_add ->  "+="
-      | `Assign_sub ->  "-="
+      | `Assign -> "="
+      | `Assign_mul -> "*="
+      | `Assign_div -> "/="
+      | `Assign_mod -> "%="
+      | `Assign_add -> "+="
+      | `Assign_sub -> "-="
       | `Assign_shl -> "<<="
       | `Assign_shr -> ">>="
-      | `Assign_and ->  "&="
-      | `Assign_xor ->  "^="
-      | `Assign_or  ->  "|="
+      | `Assign_and -> "&="
+      | `Assign_xor -> "^="
+      | `Assign_or -> "|="
     ;;
 
     let pp : t Fmt.t = Fmt.of_to_string to_string
@@ -87,49 +85,48 @@ module Operators = struct
     type t =
       [ Assign.t
       | `Comma (* ,  *)
-      | `Mul   (* *  *)
-      | `Div   (* /  *)
-      | `Mod   (* %  *)
-      | `Add   (* +  *)
-      | `Sub   (* -  *)
-      | `Shl   (* << *)
-      | `Shr   (* >> *)
-      | `And   (* &  *)
-      | `Xor   (* ^  *)
-      | `Or    (* |  *)
-      | `Land  (* && *)
-      | `Lor   (* || *)
-      | `Lt    (* <  *)
-      | `Le    (* <= *)
-      | `Eq    (* == *)
-      | `Ge    (* >= *)
-      | `Gt    (* >  *)
-      | `Ne    (* != *)
+      | `Mul (* *  *)
+      | `Div (* /  *)
+      | `Mod (* %  *)
+      | `Add (* +  *)
+      | `Sub (* -  *)
+      | `Shl (* << *)
+      | `Shr (* >> *)
+      | `And (* &  *)
+      | `Xor (* ^  *)
+      | `Or (* |  *)
+      | `Land (* && *)
+      | `Lor (* || *)
+      | `Lt (* <  *)
+      | `Le (* <= *)
+      | `Eq (* == *)
+      | `Ge (* >= *)
+      | `Gt (* >  *)
+      | `Ne (* != *)
       ]
     [@@deriving sexp, eq, compare]
-    ;;
 
     let to_string : t -> string = function
       | #Assign.t as a -> Assign.to_string a
       | `Comma -> ","
-      | `Mul   -> "*"
-      | `Div   -> "/"
-      | `Mod   -> "%"
-      | `Add   -> "+"
-      | `Sub   -> "-"
-      | `Shl   -> "<<"
-      | `Shr   -> ">>"
-      | `And   -> "&"
-      | `Xor   -> "^"
-      | `Or    -> "|"
-      | `Land  -> "&&"
-      | `Lor   -> "||"
-      | `Lt    -> "<"
-      | `Le    -> "<="
-      | `Eq    -> "=="
-      | `Ge    -> ">="
-      | `Gt    -> ">"
-      | `Ne    -> "!="
+      | `Mul -> "*"
+      | `Div -> "/"
+      | `Mod -> "%"
+      | `Add -> "+"
+      | `Sub -> "-"
+      | `Shl -> "<<"
+      | `Shr -> ">>"
+      | `And -> "&"
+      | `Xor -> "^"
+      | `Or -> "|"
+      | `Land -> "&&"
+      | `Lor -> "||"
+      | `Lt -> "<"
+      | `Le -> "<="
+      | `Eq -> "=="
+      | `Ge -> ">="
+      | `Gt -> ">"
+      | `Ne -> "!="
     ;;
 
     let pp : t Fmt.t = Fmt.of_to_string to_string
@@ -137,29 +134,28 @@ module Operators = struct
 
   module Pre = struct
     type t =
-      [ `Inc        (* ++ *)
-      | `Dec        (* -- *)
+      [ `Inc (* ++ *)
+      | `Dec (* -- *)
       | `Sizeof_val (* sizeof *)
-      | `Ref        (* & *)
-      | `Deref      (* * *)
-      | `Add        (* + *)
-      | `Sub        (* - *)
-      | `Not        (* ~ *)
-      | `Lnot       (* ! *)
+      | `Ref (* & *)
+      | `Deref (* * *)
+      | `Add (* + *)
+      | `Sub (* - *)
+      | `Not (* ~ *)
+      | `Lnot (* ! *)
       ]
     [@@deriving sexp, eq, compare]
-    ;;
 
     let to_string : t -> string = function
-      | `Inc        -> "++"
-      | `Dec        -> "--"
+      | `Inc -> "++"
+      | `Dec -> "--"
       | `Sizeof_val -> "sizeof"
-      | `Ref        -> "&"
-      | `Deref      -> "*"
-      | `Add        -> "+"
-      | `Sub        -> "-"
-      | `Not        -> "~"
-      | `Lnot       -> "!"
+      | `Ref -> "&"
+      | `Deref -> "*"
+      | `Add -> "+"
+      | `Sub -> "-"
+      | `Not -> "~"
+      | `Lnot -> "!"
     ;;
 
     let pp : t Fmt.t = Fmt.of_to_string to_string
@@ -171,7 +167,6 @@ module Operators = struct
       | `Dec (* -- *)
       ]
     [@@deriving sexp, eq, compare]
-    ;;
 
     let to_string : t -> string = function
       | `Inc -> "++"
@@ -189,13 +184,8 @@ module Type_qual = struct
       | `Volatile
       ]
     [@@deriving sexp, enum]
-    ;;
 
-    let table : (t, string) List.Assoc.t =
-      [ `Const   , "const"
-      ; `Volatile, "volatile"
-      ]
-    ;;
+    let table : (t, string) List.Assoc.t = [ `Const, "const"; `Volatile, "volatile" ]
   end
 
   include M
@@ -216,17 +206,16 @@ module Prim_type = struct
       | `Unsigned
       ]
     [@@deriving sexp, enum]
-    ;;
 
     let table : (t, string) List.Assoc.t =
-      [ `Void    , "void"
-      ; `Char    , "char"
-      ; `Short   , "short"
-      ; `Int     , "int"
-      ; `Long    , "long"
-      ; `Float   , "float"
-      ; `Double  , "double"
-      ; `Signed  , "signed"
+      [ `Void, "void"
+      ; `Char, "char"
+      ; `Short, "short"
+      ; `Int, "int"
+      ; `Long, "long"
+      ; `Float, "float"
+      ; `Double, "double"
+      ; `Signed, "signed"
       ; `Unsigned, "unsigned"
       ]
     ;;
@@ -246,14 +235,13 @@ module Storage_class_spec = struct
       | `Typedef
       ]
     [@@deriving sexp, enum]
-    ;;
 
     let table : (t, string) List.Assoc.t =
-      [ `Auto    , "auto"
+      [ `Auto, "auto"
       ; `Register, "register"
-      ; `Static  , "static"
-      ; `Extern  , "extern"
-      ; `Typedef , "typedef"
+      ; `Static, "static"
+      ; `Extern, "extern"
+      ; `Typedef, "typedef"
       ]
     ;;
   end
@@ -263,30 +251,32 @@ module Storage_class_spec = struct
 end
 
 module Array = struct
-  type ('a, 'i) t = { array : 'a; index : 'i } [@@deriving sexp, eq, compare]
+  type ('a, 'i) t =
+    { array : 'a
+    ; index : 'i
+    }
+  [@@deriving sexp, eq, compare]
 
   let pp ppa ppi =
-    Fmt.(
-      using (fun { array; index } -> (array, index))
-        (append ppa (brackets ppi))
-    )
+    Fmt.(using (fun { array; index } -> array, index) (append ppa (brackets ppi)))
   ;;
 
   module type S = sig
-    type arr
     (** Type of arrays. *)
+    type arr
 
-    type idx
     (** Type of indices. *)
+    type idx
 
     type nonrec t = (arr, idx) t
 
     include Ast_node with type t := t
   end
 
-  module Make (A : Ast_node) (I : Ast_node) : S
-    with type arr := A.t and type idx := I.t = struct
+  module Make (A : Ast_node) (I : Ast_node) :
+    S with type arr := A.t and type idx := I.t = struct
     type nonrec t = (A.t, I.t) t
+
     let t_of_sexp = t_of_sexp A.t_of_sexp I.t_of_sexp
     let sexp_of_t = sexp_of_t A.sexp_of_t I.sexp_of_t
     let equal = equal A.equal I.equal
@@ -297,26 +287,24 @@ end
 
 module Constant = struct
   type t =
-    | Char    of char
-    | Float   of float
+    | Char of char
+    | Float of float
     | Integer of int
   [@@deriving sexp, variants, eq, compare, quickcheck]
-  ;;
 
   (* TODO(@MattWindsor91): escaping *)
   let escape_char = Char.to_string
-
-  let pp_char =
-    Fmt.(quote ~mark:"'" (using escape_char string))
+  let pp_char = Fmt.(quote ~mark:"'" (using escape_char string))
 
   let pp f = function
     | Char c -> pp_char f c
     | Float d -> Fmt.float f d
     | Integer i -> Fmt.int f i
+  ;;
 
   let gen_int32_as_int : int Quickcheck.Generator.t =
-    Quickcheck.Generator.map [%quickcheck.generator: int32]
-      ~f:(fun x -> Option.value ~default:0 (Int.of_int32 x))
+    Quickcheck.Generator.map [%quickcheck.generator: int32] ~f:(fun x ->
+        Option.value ~default:0 (Int.of_int32 x))
   ;;
 
   let gen_int32_constant : t Quickcheck.Generator.t =
@@ -326,13 +314,12 @@ end
 
 module Identifier = struct
   include Utils.C_identifier
+
   let identifier = Fn.id
 end
 
-module Pointer : Ast_node with type t = (Type_qual.t list) list = struct
-  type t = (Type_qual.t list) list
-  [@@deriving sexp, eq, compare]
+module Pointer : Ast_node with type t = Type_qual.t list list = struct
+  type t = Type_qual.t list list [@@deriving sexp, eq, compare]
 
-  let pp : t Fmt.t =
-    Fmt.(list ~sep:sp (prefix (unit "*") (list ~sep:sp Type_qual.pp)))
+  let pp : t Fmt.t = Fmt.(list ~sep:sp (prefix (unit "*") (list ~sep:sp Type_qual.pp)))
 end

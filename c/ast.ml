@@ -303,7 +303,7 @@ module Parametric = struct
         | Field of
             { value : t
             ; field : Identifier.t
-            ; access : [`Direct (* . *) | `Deref (* -> *)]
+            ; access : [ `Direct (* . *) | `Deref (* -> *) ]
             }
         | Sizeof_type of T.t
         | Identifier of Identifier.t
@@ -343,7 +343,7 @@ module Parametric = struct
     module Make (P : Ast_node) : S with type pdecl := P.t = struct
       type t =
         { params : P.t list
-        ; style : [`Normal | `Variadic]
+        ; style : [ `Normal | `Variadic ]
         }
       [@@deriving sexp, eq, compare]
 
@@ -486,10 +486,10 @@ end = struct
 end
 
 and Enum_spec :
-  (S_composite_spec with type kind := [`Enum] and type decl := Enumerator.t) =
+  (S_composite_spec with type kind := [ `Enum ] and type decl := Enumerator.t) =
 Parametric.Composite_spec.Make (struct
   module Kind = struct
-    type t = [`Enum] [@@deriving sexp, eq, compare]
+    type t = [ `Enum ] [@@deriving sexp, eq, compare]
 
     let pp f = function
       | `Enum -> Fmt.string f "enum"

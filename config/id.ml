@@ -120,38 +120,32 @@ let%expect_test "is_prefix: invalid prefix" =
 let has_tag id element = List.mem id element ~equal:String.Caseless.equal
 
 let%expect_test "has_tag: valid, same case" =
-  Stdio.print_s
-    [%sexp (has_tag (of_string "foo.BAR.baz") "foo" : bool)];
+  Stdio.print_s [%sexp (has_tag (of_string "foo.BAR.baz") "foo" : bool)];
   [%expect {| true |}]
 ;;
 
 let%expect_test "has_tag: valid, different case" =
-  Stdio.print_s
-    [%sexp (has_tag (of_string "foo.BAR.baz") "FOO" : bool)];
+  Stdio.print_s [%sexp (has_tag (of_string "foo.BAR.baz") "FOO" : bool)];
   [%expect {| true |}]
 ;;
 
 let%expect_test "has_tag: invalid, but is a (oversized) substring" =
-  Stdio.print_s
-    [%sexp (has_tag (of_string "foo.BAR.baz") "foo." : bool)];
+  Stdio.print_s [%sexp (has_tag (of_string "foo.BAR.baz") "foo." : bool)];
   [%expect {| false |}]
 ;;
 
 let%expect_test "has_tag: invalid, but is a (undersized) substring" =
-  Stdio.print_s
-    [%sexp (has_tag (of_string "foo.BAR.baz") "fo" : bool)];
+  Stdio.print_s [%sexp (has_tag (of_string "foo.BAR.baz") "fo" : bool)];
   [%expect {| false |}]
 ;;
 
 let%expect_test "has_tag: invalid, multiple tags" =
-  Stdio.print_s
-    [%sexp (has_tag (of_string "foo.BAR.baz") "foo.bar" : bool)];
+  Stdio.print_s [%sexp (has_tag (of_string "foo.BAR.baz") "foo.bar" : bool)];
   [%expect {| false |}]
 ;;
 
 let%expect_test "has_tag: invalid, empty string" =
-  Stdio.print_s
-    [%sexp (has_tag (of_string "foo.BAR.baz") "" : bool)];
+  Stdio.print_s [%sexp (has_tag (of_string "foo.BAR.baz") "" : bool)];
   [%expect {| false |}]
 ;;
 
@@ -177,20 +171,20 @@ module Property = struct
   include M
 
   let tree_docs : Property.Tree_doc.t =
-    [ ("has_tag"
+    [ ( "has_tag"
       , { args = [ "STRING" ]
         ; details =
             {| Requires that any of the dot-separated items in this ID
              matches the argument. |}
-        })
-    ; ("has_prefix"
+        } )
+    ; ( "has_prefix"
       , { args = [ "PARTIAL-ID" ]
         ; details = {| Requires that the ID starts with the argument. |}
-        })
-    ; ("is"
+        } )
+    ; ( "is"
       , { args = [ "ID" ]
         ; details = {| Requires that the ID directly matches the argument. |}
-        })
+        } )
     ]
   ;;
 

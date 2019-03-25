@@ -3,14 +3,7 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries
-  fmt
-  fpath
-  menhirLib
-  litmus
-  utils
-  travesty
-  core_kernel))
+ (libraries fmt fpath menhirLib litmus utils travesty core_kernel))
 
 ;; Config file parser
 
@@ -19,8 +12,13 @@
  (flags "--table")
  (modules parser))
 
-(ocamllex (modules lexer))
+(ocamllex
+ (modules lexer))
 
 (rule
  (targets messages.ml)
- (action (with-stdout-to "%{targets}" (run "%{bin:menhir}" "--compile-errors" "%{dep:config.messages}" "parser.mly"))))
+ (action
+  (with-stdout-to
+   "%{targets}"
+   (run "%{bin:menhir}" "--compile-errors" "%{dep:config.messages}"
+     "parser.mly"))))

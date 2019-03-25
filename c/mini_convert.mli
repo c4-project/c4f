@@ -31,16 +31,14 @@
 
 open Base
 
-val func
-  :  Ast.Function_def.t
-  -> (Mini.Identifier.t * Mini.Function.t) Or_error.t
 (** [func ast] tries to interpret a C function definition AST
     as a mini-model function. *)
+val func : Ast.Function_def.t -> (Mini.Identifier.t * Mini.Function.t) Or_error.t
 
-val translation_unit : Ast.Translation_unit.t -> Mini.Program.t Or_error.t
 (** [translation_unit ast] tries to interpret a C translation unit AST
     as a mini-model program. *)
+val translation_unit : Ast.Translation_unit.t -> Mini.Program.t Or_error.t
 
-val litmus : Ast.Litmus.Validated.t -> Mini_litmus.Ast.Validated.t Or_error.t
 (** [litmus test] tries to interpret a Litmus test over the full C AST
     as one over the mini-model. *)
+val litmus : Ast.Litmus.Validated.t -> Mini_litmus.Ast.Validated.t Or_error.t

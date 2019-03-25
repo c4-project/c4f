@@ -27,26 +27,24 @@ open Utils
 
 type t =
   { vars : Fuzzer_var.Map.t
-  ; o    : Lib.Output.t option
+  ; o : Lib.Output.t option
   }
 [@@deriving fields]
-;;
 
 let init
-    ?(o       : Lib.Output.t option)
+    ?(o : Lib.Output.t option)
     ~(globals : Mini.Type.t C_identifier.Map.t)
-    ~(locals  : C_identifier.Set.t)
+    ~(locals : C_identifier.Set.t)
     ()
-  : t =
-  let vars =
-    Fuzzer_var.Map.make_existing_var_map globals locals in
+    : t =
+  let vars = Fuzzer_var.Map.make_existing_var_map globals locals in
   { vars; o }
 ;;
 
-let try_map_vars
-    (s : t)
-    ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t Or_error.t) : t Or_error.t =
-  Or_error.(s.vars |> f >>| fun vars -> { s with vars = vars })
+let try_map_vars (s : t)
+                 ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t Or_error.t)
+    : t Or_error.t =
+  Or_error.(s.vars |> f >>| fun vars -> { s with vars })
 ;;
 
 let map_vars (s : t) ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t) : t =
@@ -56,54 +54,44 @@ let map_vars (s : t) ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t) : t =
 let register_global
     ?(initial_value : Fuzzer_var.Value.t option)
     (s : t)
-    (var : C_identifier.t) (ty : Mini.Type.t) : t =
-  map_vars s
-    ~f:(
-      fun v ->
-        Fuzzer_var.Map.register_global v ?initial_value var ty
-    )
+    (var : C_identifier.t)
+    (ty : Mini.Type.t)
+    : t =
+  map_vars s ~f:(fun v -> Fuzzer_var.Map.register_global v ?initial_value var ty)
 ;;
 
-let add_dependency
-    (s : t) ~(var : C_identifier.t) : t =
+let add_dependency (s : t) ~(var : C_identifier.t) : t =
   map_vars s ~f:(Fuzzer_var.Map.add_dependency ~var)
+;;
 
-let erase_var_value
-    (s : t) ~(var : C_identifier.t) : t Or_error.t =
+let erase_var_value (s : t) ~(var : C_identifier.t) : t Or_error.t =
   try_map_vars s ~f:(Fuzzer_var.Map.erase_value ~var)
+;;
 
-let vars_satisfying_all
-    (s : t) ~(predicates:(Fuzzer_var.Record.t -> bool) list)
-  : C_identifier.t list =
-  Fuzzer_var.Map.satisfying_all (s.vars) ~predicates
+let vars_satisfying_all (s : t) ~(predicates : (Fuzzer_var.Record.t -> bool) list)
+    : C_identifier.t list =
+  Fuzzer_var.Map.satisfying_all s.vars ~predicates
 ;;
 
 module Monad = struct
   include Travesty.State_transform.Make (struct
-      module Inner = Or_error
-      type nonrec t = t
-    end)
-  ;;
+    module Inner = Or_error
 
-  let with_vars_m (f : Fuzzer_var.Map.t -> 'a t) : 'a t =
-    peek vars >>= f
-  ;;
+    type nonrec t = t
+  end)
 
-  let with_vars (f : Fuzzer_var.Map.t -> 'a) : 'a t =
-    peek vars >>| f
-  ;;
+  let with_vars_m (f : Fuzzer_var.Map.t -> 'a t) : 'a t = peek vars >>= f
+  let with_vars (f : Fuzzer_var.Map.t -> 'a) : 'a t = peek vars >>| f
 
   let register_global
       ?(initial_value : Fuzzer_var.Value.t option)
       (ty : Mini.Type.t)
       (var : C_identifier.t)
-    : unit t =
+      : unit t =
     modify (fun s -> register_global ?initial_value s var ty)
   ;;
 
-  let add_dependency (var : C_identifier.t) : unit t =
-    modify (add_dependency ~var)
-  ;;
+  let add_dependency (var : C_identifier.t) : unit t = modify (add_dependency ~var)
 
   let erase_var_value (var : C_identifier.t) : unit t =
     Monadic.modify (erase_var_value ~var)

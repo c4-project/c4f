@@ -56,10 +56,10 @@ module Config = struct
       (initial : a t)
       ~(format : Format.t -> Format.t Or_error.t)
       ~(postcondition :
-            a Litmus.Ast_base.Postcondition.t
+         a Litmus.Ast_base.Postcondition.t
          -> b Litmus.Ast_base.Postcondition.t Or_error.t)
-      ~(c_variables : Config.C_variables.Map.t -> Config.C_variables.Map.t Or_error.t) :
-      b t Or_error.t =
+      ~(c_variables : Config.C_variables.Map.t -> Config.C_variables.Map.t Or_error.t)
+      : b t Or_error.t =
     Fields.fold
       ~init:(Or_error.return initial)
       ~format:(W.proc_field format)
@@ -102,15 +102,15 @@ module Make_aux (B : Basic_aux) = struct
     r |> C_vars.Record.initial_value |> Option.value ~default:0 |> B.Dst_constant.of_int
   ;;
 
-  let make_init_from_vars (cvars : C_vars.Map.t) :
-      (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
+  let make_init_from_vars (cvars : C_vars.Map.t)
+      : (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
     cvars
     |> C_identifier.Map.to_alist
     |> Travesty.T_alist.bi_map ~left:Fn.id ~right:record_to_constant
   ;;
 
-  let make_init_from_heap_symbols (heap_syms : Abstract.Symbol.Set.t) :
-      (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
+  let make_init_from_heap_symbols (heap_syms : Abstract.Symbol.Set.t)
+      : (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
     List.map
       ~f:(fun s -> C_identifier.of_string s, B.Dst_constant.zero)
       (Abstract.Symbol.Set.to_list heap_syms)
@@ -122,8 +122,8 @@ module Make_aux (B : Basic_aux) = struct
       [heap_syms] and initialising each heap symbol to zero. *)
   let make_init
       (cvars_opt : C_vars.Map.t option)
-      (heap_syms : Abstract.Symbol.Set.t Lazy.t) :
-      (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
+      (heap_syms : Abstract.Symbol.Set.t Lazy.t)
+      : (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
     match cvars_opt with
     | Some vars -> make_init_from_vars vars
     | None -> make_init_from_heap_symbols (Lazy.force heap_syms)
@@ -132,8 +132,8 @@ module Make_aux (B : Basic_aux) = struct
   (** [make_locations_from_redirects redirects] makes a 'locations'
       stanza by taking the right-hand side of the redirects table
       [redirects] created by the sanitiser process. *)
-  let make_locations_from_redirects (redirects : B.Redirect.t) :
-      C_identifier.t list Or_error.t =
+  let make_locations_from_redirects (redirects : B.Redirect.t)
+      : C_identifier.t list Or_error.t =
     Or_error.(redirects |> B.Redirect.image_ids >>| C_identifier.Set.to_list)
   ;;
 
@@ -146,7 +146,8 @@ module Make_aux (B : Basic_aux) = struct
       applying [redirects] to it, or just by taking the RHS of the
       [redirects]. *)
   let make_locations (cvars_opt : C_vars.Map.t option)
-                     (redirects : B.Redirect.t) : C_identifier.t list Or_error.t =
+                     (redirects : B.Redirect.t)
+      : C_identifier.t list Or_error.t =
     match cvars_opt with
     | Some cvars -> Or_error.return (make_locations_from_config cvars)
     | None -> make_locations_from_redirects redirects
@@ -161,7 +162,8 @@ module Make_aux (B : Basic_aux) = struct
   let make
       (config : B.Src_constant.t Config.t)
       (redirects : B.Redirect.t)
-      (heap_symbols : Abstract.Symbol.Set.t Lazy.t) : t Or_error.t =
+      (heap_symbols : Abstract.Symbol.Set.t Lazy.t)
+      : t Or_error.t =
     let open Or_error.Let_syntax in
     let cvars_opt = Config.c_variables config in
     let%bind redirected_cvars_opt =
@@ -228,8 +230,8 @@ module Make (B : Basic) :
     |> Fn.flip Abstract.Symbol.Table.set_of_sort Abstract.Symbol.Sort.Heap
   ;;
 
-  let lazily_get_heap_symbols (programs : Sanitiser.Output.Program.t list) :
-      Abstract.Symbol.Set.t Lazy.t =
+  let lazily_get_heap_symbols (programs : Sanitiser.Output.Program.t list)
+      : Abstract.Symbol.Set.t Lazy.t =
     lazy
       (programs |> List.map ~f:get_program_heap_symbols |> Abstract.Symbol.Set.union_list)
   ;;
@@ -238,7 +240,8 @@ module Make (B : Basic) :
       ~(config : LS.Constant.t Config.t)
       ~(redirects : Sanitiser.Redirect.t)
       ~(name : string)
-      ~(programs : Sanitiser.Output.Program.t list) =
+      ~(programs : Sanitiser.Output.Program.t list)
+    =
     let open Or_error.Let_syntax in
     let heap_symbols = lazily_get_heap_symbols programs in
     let%bind { init; locations; postcondition } =

@@ -5,13 +5,7 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries
-  travesty
-  core
-  shell
-  shell.string_extended
-  fpath
-  menhirLib
-  fmt))
+ (libraries travesty core shell shell.string_extended fpath menhirLib fmt))
 
-(ocamllex (modules lex_utils))
+(ocamllex
+ (modules lex_utils))

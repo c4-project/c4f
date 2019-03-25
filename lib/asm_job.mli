@@ -110,5 +110,6 @@ val get_litmusify_sexp
 (** [get_explain Runner] is [Runner.Explain]. *)
 val get_explain
   :  (module Runner)
-  -> (module Utils.Filter.S with type aux_i = Explain_config.t t
-                             and type aux_o = Output.t)
+  -> (module Utils.Filter.S
+        with type aux_i = Explain_config.t t
+         and type aux_o = Output.t)

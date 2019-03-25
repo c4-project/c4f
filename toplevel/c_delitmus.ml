@@ -31,7 +31,8 @@ let run (args : Args.Standard_with_files.t) _o _cfg =
       C.Filters.Delitmus
       ~infile:(Args.Standard_with_files.infile_raw args)
       ~outfile:(Args.Standard_with_files.outfile_raw args)
-  in ()
+  in
+  ()
 ;;
 
 let command : Command.t =
@@ -41,8 +42,5 @@ let command : Command.t =
     [%map_open
       let standard_args = Args.Standard_with_files.get in
       fun () ->
-        Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false
-          ~f:run
-    ]
+        Common.lift_command_with_files standard_args ~with_compiler_tests:false ~f:run]
 ;;

@@ -40,7 +40,7 @@ let file_type_is (src : Io.In_source.t) (expected : string) : bool =
   Option.exists (Io.In_source.file_type src) ~f:(String.equal expected)
 ;;
 
-let is_c (src : Io.In_source.t) : [> `C | `Infer] -> bool = function
+let is_c (src : Io.In_source.t) : [> `C | `Infer ] -> bool = function
   | `C -> true
   | `Infer -> file_type_is src "c"
   | _ -> false
@@ -121,7 +121,7 @@ let%expect_test "is_c: override non-C on asm-typed file" =
   [%expect {| false |}]
 ;;
 
-let is_c_litmus (src : Io.In_source.t) : [> `C_litmus | `Infer] -> bool = function
+let is_c_litmus (src : Io.In_source.t) : [> `C_litmus | `Infer ] -> bool = function
   | `C_litmus -> true
   | `Infer -> file_type_is src "litmus"
   | _ -> false

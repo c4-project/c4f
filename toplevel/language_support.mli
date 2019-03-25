@@ -33,26 +33,24 @@
 open Core_kernel
 open Lib
 
-val asm_runner_from_arch : Config.Id.t -> (module Asm_job.Runner) Or_error.t
 (** [asm_runner_from_arch arch] generates an assembly job runner
    from an architecture ID [arch]. *)
+val asm_runner_from_arch : Config.Id.t -> (module Asm_job.Runner) Or_error.t
 
 (** Compiler resolver that uses this module's built-in compiler table
     to look up compilers. *)
-module Resolve_compiler
-  : Config.Compiler.S_resolver
-    with type spec = Config.Compiler.Spec.With_id.t
-     and type 'a chain_input = 'a Config.Compiler.Chain_input.t
-;;
+module Resolve_compiler :
+  Config.Compiler.S_resolver
+  with type spec = Config.Compiler.Spec.With_id.t
+   and type 'a chain_input = 'a Config.Compiler.Chain_input.t
 
 (** Compiler resolver that uses this module's built-in compiler table
     to look up compilers from targets, filling in a dummy compiler
     if the target doesn't mention a compiler. *)
-module Resolve_compiler_from_target
-  : Config.Compiler.S_resolver
-    with type spec = Config.Compiler.Target.t
-     and type 'a chain_input = 'a Config.Compiler.Chain_input.t
-;;
+module Resolve_compiler_from_target :
+  Config.Compiler.S_resolver
+  with type spec = Config.Compiler.Target.t
+   and type 'a chain_input = 'a Config.Compiler.Chain_input.t
 
 (** [load_and_process_config ?compiler_predicate ?machine_predicate
    ?sanitiser_passes ?with_compiler_tests path] loads the config file
@@ -78,4 +76,3 @@ val load_and_process_config
   -> ?with_compiler_tests:bool (* default true *)
   -> Fpath.t
   -> Config.Act.t Or_error.t
-;;

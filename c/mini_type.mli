@@ -32,67 +32,67 @@ open Utils
 
 (** Primitive types. *)
 module Basic : sig
-  type t
   (** Opaque type of basic types. *)
+  type t
 
-  val bool : t
   (** [bool] is the (C99?) Boolean type. *)
+  val bool : t
 
-  val int : t
   (** [int] is the int type. *)
+  val int : t
 
-  val atomic_int : t
   (** [atomic_int] is the atomic_int type. *)
+  val atomic_int : t
 
   include Enum.Extension_table with type t := t
 
-  val to_spec : t -> [> Ast.Type_spec.t]
   (** [to_spec btype] converts a basic type to a type spec. *)
+  val to_spec : t -> [> Ast.Type_spec.t ]
 
-  val to_non_atomic : t -> t Or_error.t
   (** [to_non_atomic btype] tries to get the non-atomic type
      corresponding to the atomic type [btype].  It fails if [btype]
      isn't atomic. *)
+  val to_non_atomic : t -> t Or_error.t
 end
 
-type t [@@deriving eq, sexp, compare, quickcheck]
 (** Opaque type of types. *)
+type t [@@deriving eq, sexp, compare, quickcheck]
 
-val normal : Basic.t -> t
 (** [normal ty] lifts a basic type [ty] to a scalar type. *)
+val normal : Basic.t -> t
 
-val pointer_to : Basic.t -> t
 (** [pointer_to ty] lifts a basic type [ty] to a pointer type. *)
+val pointer_to : Basic.t -> t
 
-val of_basic : Basic.t -> is_pointer:bool -> t
 (** [of_basic ty ~is_pointer] lifts a basic type [ty] to a pointer
     type if [is_pointer] is true, and a normal one otherwise. *)
+val of_basic : Basic.t -> is_pointer:bool -> t
 
 (** {2 Modifiers} *)
 
-val to_non_atomic : t -> t Or_error.t
 (** [to_non_atomic ty] tries to get the non-atomic type corresponding to
     the atomic type [ty].  It fails if [ty] isn't atomic. *)
+val to_non_atomic : t -> t Or_error.t
 
-val deref : t -> t Or_error.t
 (** [deref ty] tries to strip a layer of pointer indirection off [ty].
     It fails if [ty] isn't a pointer type. *)
+val deref : t -> t Or_error.t
 
-val ref : t -> t Or_error.t
 (** [ref ty] tries to add a layer of pointer indirection onto [ty].
     It fails if [ty] is already a pointer type. *)
+val ref : t -> t Or_error.t
 
 (** {2 Accessors and predicates} *)
 
-val basic_type : t -> Basic.t
 (** [basic_type ty] gets [ty]'s underlying basic type. *)
+val basic_type : t -> Basic.t
 
-val basic_type_is : t -> basic:Basic.t -> bool
 (** [basic_type_is ty ~basic] is true provided that [basic] is [ty]'s
    underlying basic type. *)
+val basic_type_is : t -> basic:Basic.t -> bool
 
-val is_atomic : t -> bool
 (** [is_atomic ty] returns whether [ty] is an atomic type. *)
+val is_atomic : t -> bool
 
-val is_pointer : t -> bool
 (** [is_pointer ty] returns whether [ty] is a pointer type. *)
+val is_pointer : t -> bool

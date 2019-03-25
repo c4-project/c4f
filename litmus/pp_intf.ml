@@ -26,14 +26,13 @@ open Base
 
 module type S = sig
   module Ast : Ast.S
-
   include Pretty_printer.S with type t := Ast.Validated.t
 
-  val pp_programs : Formatter.t -> Ast.Validated.t -> unit
   (** [pp_programs f ast] prints the program table of [ast] on
      formatter [f], omitting all of the other parts of the AST. *)
+  val pp_programs : Formatter.t -> Ast.Validated.t -> unit
 
-  val pp_post : Formatter.t -> Ast.Postcondition.t -> unit
   (** [pp_post f post] prints the postcondition [post] on
       formatter [f]. *)
+  val pp_post : Formatter.t -> Ast.Postcondition.t -> unit
 end

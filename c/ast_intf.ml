@@ -28,7 +28,6 @@
    (https://github.com/herd/herdtools7); its original attribution and
    copyright notice follow. *)
 
-
 (****************************************************************************)
 (*                           the diy toolsuite                              *)
 (*                                                                          *)
@@ -54,37 +53,31 @@ open Ast_basic
 
 (** Signature of general declaration nodes. *)
 module type S_g_decl = sig
-  type qual
   (** Type of qualifiers. *)
+  type qual
 
-  type decl
   (** Type of declarators. *)
+  type decl
 
   type t =
     { qualifiers : qual list
     ; declarator : decl
     }
-  ;;
 
   include Ast_node with type t := t
 end
 
 (** Signature of general composite (enum, struct, union) specifiers. *)
 module type S_composite_spec = sig
-  type kind
   (** Type of kind of composite spec (eg. 'enum'). *)
+  type kind
 
-  type decl
   (** Type of internal declarations. *)
+  type decl
 
   type t =
-    | Literal of
-        { kind     : kind
-        ; name_opt : Identifier.t option
-        ; decls    : decl list
-        }
+    | Literal of { kind : kind; name_opt : Identifier.t option; decls : decl list }
     | Named of kind * Identifier.t
-  ;;
 
   include Ast_node with type t := t
 end
@@ -93,14 +86,14 @@ end
 
 (** Signature of direct declarators. *)
 module type S_direct_declarator = sig
-  type dec
   (** Type of declarators. *)
+  type dec
 
-  type par
   (** Type of parameters. *)
+  type par
 
-  type expr
   (** Type of expressions. *)
+  type expr
 
   type t =
     | Id of Identifier.t
@@ -108,130 +101,125 @@ module type S_direct_declarator = sig
     | Array of (t, expr option) Array.t
     | Fun_decl of t * par
     | Fun_call of t * Identifier.t list
-  ;;
 
   include Ast_node_with_identifier with type t := t
 end
 
 (** Signature of declarators. *)
 module type S_declarator = sig
-  type ddec
   (** Type of direct declarators. *)
+  type ddec
 
   type t =
     { pointer : Pointer.t option
-    ; direct  : ddec
+    ; direct : ddec
     }
-  ;;
 
   include Ast_node_with_identifier with type t := t
 end
 
 (** Signature of direct abstract declarators. *)
 module type S_direct_abs_declarator = sig
-  type dec
   (** Type of abstract declarators. *)
+  type dec
 
-  type par
   (** Type of parameters. *)
+  type par
 
-  type expr
   (** Type of expressions. *)
+  type expr
 
   type t =
     | Bracket of dec
     | Array of (t option, expr option) Array.t
     | Fun_decl of t option * par option
-  ;;
 
   include Ast_node with type t := t
 end
 
 (** Signature of abstract declarators. *)
 module type S_abs_declarator = sig
-  type ddec
   (** Type of direct abstract declarators. *)
+  type ddec
 
   type t =
     | Pointer of Pointer.t
     | Direct of Pointer.t option * ddec
-  ;;
 
   include Ast_node with type t := t
 end
 
 (** Signature of struct declarators. *)
 module type S_struct_declarator = sig
-  type dec
   (** Type of declarations. *)
+  type dec
 
-  type expr
   (** Type of expressions. *)
+  type expr
 
   type t =
     | Regular of dec
     | Bitfield of dec option * expr
-  ;;
 
   include Ast_node with type t := t
 end
 
 (* {3 Other} *)
 
-
 (** Signature of expression nodes. *)
 module type S_expr = sig
-  module Ty : Ast_node
   (** Type of type names. *)
+  module Ty : Ast_node
 
   type t =
-    | Prefix      of Operators.Pre.t * t
-    | Postfix     of t * Operators.Post.t
-    | Binary      of t * Operators.Bin.t * t
-    | Ternary     of { cond   : t
-                     ; t_expr : t
-                     ; f_expr : t
-                     }
-    | Cast        of Ty.t * t
-    | Call        of { func : t; arguments : t list}
-    | Subscript   of (t, t) Array.t
-    | Field       of { value  : t
-                     ; field  : Identifier.t
-                     ; access : [ `Direct (* . *) | `Deref (* -> *) ]
-                     }
+    | Prefix of Operators.Pre.t * t
+    | Postfix of t * Operators.Post.t
+    | Binary of t * Operators.Bin.t * t
+    | Ternary of { cond : t; t_expr : t; f_expr : t }
+    | Cast of Ty.t * t
+    | Call of { func : t; arguments : t list }
+    | Subscript of (t, t) Array.t
+    | Field of
+        { value : t
+        ; field : Identifier.t
+        ; access : [ `Direct (* . *) | `Deref (* -> *) ]
+        }
     | Sizeof_type of Ty.t
-    | Identifier  of Identifier.t
-    | String      of String.t
-    | Constant    of Constant.t
-    | Brackets    of t
-  ;;
+    | Identifier of Identifier.t
+    | String of String.t
+    | Constant of Constant.t
+    | Brackets of t
 
   include Ast_node with type t := t
 end
 
 (** Signature of labels *)
 module type S_label = sig
-  type expr
   (** Type of expressions used in case labels. *)
+  type expr
 
   type t =
     | Normal of Identifier.t
-    | Case   of expr
+    | Case of expr
     | Default
-  ;;
 
   include Ast_node with type t := t
 end
 
 (** Signature of compound statements *)
 module type S_compound_stm = sig
-  type decl
   (** Type of declarations. *)
+  type decl
 
-  type stm
   (** Type of statements. *)
+  type stm
 
-  module Elt : Ast_node with type t = [`Stm of stm | `Decl of decl]
+  module Elt :
+    Ast_node
+    with type t =
+                [ `Stm of stm
+                | `Decl of decl
+                ]
 
   (* TODO(@MattWindsor91): this is the C99 definition of compound
      statements, but everything else targets C89. *)
@@ -242,49 +230,39 @@ end
 
 (** Signature of statements *)
 module type S_stm = sig
-  type com
   (** Type of compound statements. *)
+  type com
 
-  type expr
   (** Type of expressions. *)
+  type expr
 
-  type lbl
   (** Type of labels. *)
+  type lbl
 
   type t =
     | Label of lbl * t
     | Expr of expr option
     | Compound of com
-    | If of
-        { cond : expr
-        ; t_branch : t
-        ; f_branch : t option
-        }
+    | If of { cond : expr; t_branch : t; f_branch : t option }
     | Switch of expr * t
     | While of expr * t
     | Do_while of t * expr
-    | For of
-        { init   : expr option
-        ; cond   : expr option
-        ; update : expr option
-        ; body   : t
-        }
+    | For of { init : expr option; cond : expr option; update : expr option; body : t }
     | Goto of Identifier.t
     | Continue
     | Break
     | Return of expr option
-  ;;
 
   include Ast_node with type t := t
 end
 
 (** Signature of type specifiers *)
 module type S_type_spec = sig
-  type su
   (** Type of struct-or-union specifiers. *)
+  type su
 
-  type en
   (** Type of enum specifiers. *)
+  type en
 
   type t =
     [ Prim_type.t
@@ -292,21 +270,19 @@ module type S_type_spec = sig
     | `Enum of en
     | `Defined_type of Identifier.t
     ]
-  ;;
 
   include Ast_node with type t := t
 end
 
 (** Signature of parameter type lists *)
 module type S_param_type_list = sig
-  type pdecl
   (** Type of parameter declarations. *)
+  type pdecl
 
   type t =
     { params : pdecl list
-    ; style  : [`Normal | `Variadic]
+    ; style : [ `Normal | `Variadic ]
     }
-  ;;
 
   include Ast_node with type t := t
 end

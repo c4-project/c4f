@@ -23,11 +23,10 @@
    SOFTWARE. *)
 
 open Base
-
 include module type of Convert_intf
 
+(** A functor that constructs a partial conversion function from one
+    Litmus AST to another. *)
 module Make (B : Basic) : sig
   val convert : B.From.Validated.t -> B.To.Validated.t Or_error.t
 end
-(** A functor that constructs a partial conversion function from one
-    Litmus AST to another. *)

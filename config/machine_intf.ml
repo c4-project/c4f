@@ -41,7 +41,7 @@ module type Reference = sig
 
   (** [remoteness m] returns a guess as to whether machine reference
       [m] is a reference to a remote machine. *)
-  val remoteness : t -> [`Remote | `Local | `Unknown]
+  val remoteness : t -> [ `Remote | `Local | `Unknown ]
 end
 
 (** [Basic_spec] is the signature common to any sort of machine

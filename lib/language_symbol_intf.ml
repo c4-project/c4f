@@ -42,10 +42,8 @@ module type Basic = sig
 
   (** They must allow traversal over any string parts of the
       symbol. *)
-  module On_strings
-    : Travesty.Traversable.S0_container with type Elt.t = String.t
-                                         and type t = t
-  ;;
+  module On_strings :
+    Travesty.Traversable.S0_container with type Elt.t = String.t and type t = t
 
   (** [abstract sym] promotes [sym] to an abstract symbol without any
       reverse-engineering. *)
@@ -82,10 +80,9 @@ module type R_map = sig
 
   (** [r_dest] is the type of destination results used in [R_map]. *)
   type r_dest =
-    | Identity       (** The map redirects this symbol to itself *)
-    | MapsTo of sym  (** The map redirects this symbol here *)
+    | Identity (** The map redirects this symbol to itself *)
+    | MapsTo of sym (** The map redirects this symbol here *)
   [@@deriving sexp, eq]
-  ;;
 
   module Set : Set.S with type Elt.t = sym
 
@@ -100,12 +97,7 @@ module type R_map = sig
 
       [redirect] fails if [dst] is a registered source other than [src];
       this is to prevent cycles. *)
-  val redirect
-    :  src : sym
-    -> dst : sym
-    -> t
-    -> t Or_error.t
-  ;;
+  val redirect : src:sym -> dst:sym -> t -> t Or_error.t
 
   (** [dest_of rmap src] gives the final destination of [src] as an
      [r_dest]. *)

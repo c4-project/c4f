@@ -26,35 +26,31 @@ open Base
 
 type t =
   { output_root : Fpath.t
-  ; compilers   : Config.Id.Set.t
-  ; input_mode  : Input_mode.t
+  ; compilers : Config.Id.Set.t
+  ; input_mode : Input_mode.t
   }
 [@@deriving fields]
-;;
 
 let validate_directory : Fpath.t Validate.check =
-  Validate.booltest Fpath.is_dir_path
-    ~if_false:"Expected a local directory here."
+  Validate.booltest Fpath.is_dir_path ~if_false:"Expected a local directory here."
 ;;
 
 let validate (cfg : t) : Validate.t =
   let module V = Validate in
   let w check = V.field_folder cfg check in
   V.of_list
-    (Fields.fold ~init:[]
+    (Fields.fold
+       ~init:[]
        ~output_root:(w validate_directory)
        ~compilers:(w (Fn.const V.pass))
-       ~input_mode:(w (Fn.const V.pass))
-    )
+       ~input_mode:(w (Fn.const V.pass)))
 ;;
 
 let make
     ~(output_root : Fpath.t)
-    ~(compilers   : Config.Id.Set.t)
-    ~(input_mode  : Input_mode.t)
-  : t Or_error.t =
-  let cfg =
-    Fields.create ~output_root ~compilers ~input_mode
-  in
+    ~(compilers : Config.Id.Set.t)
+    ~(input_mode : Input_mode.t)
+    : t Or_error.t =
+  let cfg = Fields.create ~output_root ~compilers ~input_mode in
   Validate.valid_or_error cfg validate
 ;;

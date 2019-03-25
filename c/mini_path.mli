@@ -26,20 +26,11 @@
 
 include module type of Mini_path_intf
 
-module Make_statement_list (M : S_statement)
-  : S_statement_list with type target = M.target
+module Make_statement_list (M : S_statement) :
+  S_statement_list with type target = M.target
 
-module Statement
-  : S_statement with type target = Mini.Statement.t
-
-module Statement_list
-  : S_statement_list with type target = Mini.Statement.t
-
-module If_statement
-  : S_if_statement with type target = Mini.If_statement.t
-
-module Function
-  : S_function with type target := Mini.Function.t
-
-module Program
-  : S_program with type target := Mini.Program.t
+module Statement : S_statement with type target = Mini.Statement.t
+module Statement_list : S_statement_list with type target = Mini.Statement.t
+module If_statement : S_if_statement with type target = Mini.If_statement.t
+module Function : S_function with type target := Mini.Function.t
+module Program : S_program with type target := Mini.Program.t

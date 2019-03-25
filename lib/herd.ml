@@ -28,14 +28,12 @@ open Utils
 type arch =
   | C
   | Assembly of Config.Id.t
-;;
 
 type t =
-  { config: Config.Herd.t
-  ; arch  : arch
+  { config : Config.Herd.t
+  ; arch : arch
   }
-  [@@deriving make]
-;;
+[@@deriving make]
 
 let create ~config ~arch =
   (* TODO(@MattWindsor91): validate config *)
@@ -45,14 +43,14 @@ let create ~config ~arch =
 let model_for_arch (config : Config.Herd.t) = function
   | C -> Config.Herd.c_model config
   | Assembly emits_spec ->
-    List.Assoc.find (Config.Herd.asm_models config) emits_spec ~equal:[%equal: Config.Id.t]
+    List.Assoc.find
+      (Config.Herd.asm_models config)
+      emits_spec
+      ~equal:[%equal: Config.Id.t]
 ;;
 
 let make_argv ?(model : string option) (rest : string list) =
-    ( Option.value_map model
-        ~f:(fun m -> [ "-model"; m ])
-        ~default:[]
-    ) @ rest
+  Option.value_map model ~f:(fun m -> [ "-model"; m ]) ~default:[] @ rest
 ;;
 
 let%expect_test "make_argv: no model" =
@@ -62,13 +60,14 @@ let%expect_test "make_argv: no model" =
 ;;
 
 let%expect_test "make_argv: override model" =
-  let argv = make_argv ~model:("c11_lahav.cat") [ "herd7" ] in
+  let argv = make_argv ~model:"c11_lahav.cat" [ "herd7" ] in
   Sexp.output_hum Out_channel.stdout [%sexp (argv : string list)];
   [%expect {| (-model c11_lahav.cat herd7) |}]
 ;;
 
 let make_argv_from_config
-    (config : Config.Herd.t) (arch : arch option) (rest : string list) =
+    (config : Config.Herd.t) (arch : arch option) (rest : string list)
+  =
   let model = Option.bind ~f:(model_for_arch config) arch in
   make_argv ?model rest
 ;;
@@ -77,38 +76,31 @@ let run_direct
     ?(arch : arch option)
     ?(oc : Out_channel.t = Out_channel.stdout)
     (config : Config.Herd.t)
-    (argv : string list) : unit Or_error.t =
+    (argv : string list)
+    : unit Or_error.t =
   let prog = Config.Herd.cmd config in
   let argv' = make_argv_from_config config arch argv in
-  Or_error.tag ~tag:"While running herd"
-    (Runner.Local.run ~oc ~prog argv')
+  Or_error.tag ~tag:"While running herd" (Runner.Local.run ~oc ~prog argv')
 ;;
 
-module Filter : Filter.S with type aux_i = t
-                          and type aux_o = unit =
-  Filter.Make_on_runner (struct
-    module Runner = Runner.Local
+module Filter : Filter.S with type aux_i = t and type aux_o = unit =
+Filter.Make_on_runner (struct
+  module Runner = Runner.Local
 
-    type aux_i = t
-    let name = "Herd tool"
-    let tmp_file_ext = Fn.const "txt"
+  type aux_i = t
 
-    let prog t = Config.Herd.cmd t.config
-    let argv t path =
-      make_argv_from_config t.config (Some t.arch) [ path ]
-    ;;
-  end)
+  let name = "Herd tool"
+  let tmp_file_ext = Fn.const "txt"
+  let prog t = Config.Herd.cmd t.config
+  let argv t path = make_argv_from_config t.config (Some t.arch) [ path ]
+end)
 
-let run (ctx : t) ~(path : Fpath.t) ~(sink : Io.Out_sink.t)
-  : unit Or_error.t =
+let run (ctx : t) ~(path : Fpath.t) ~(sink : Io.Out_sink.t) : unit Or_error.t =
   Filter.run ctx (Io.In_source.of_fpath path) sink
 ;;
 
-let run_and_load_results
-    (ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
+let run_and_load_results (ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
   let open Or_error.Let_syntax in
-  let%bind () =
-    run ctx ~path:input_path ~sink:(Io.Out_sink.file output_path)
-  in
+  let%bind () = run ctx ~path:input_path ~sink:(Io.Out_sink.file output_path) in
   Herd_output.load ~path:output_path
 ;;

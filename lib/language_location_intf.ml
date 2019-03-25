@@ -37,22 +37,17 @@ module type Basic = sig
   (** [t] is the type of locations. *)
   type t [@@deriving sexp, eq]
 
-  module Sym : Equal.S
   (** Type of concrete symbols. *)
+  module Sym : Equal.S
 
   (** Languages must supply a pretty-printer for their locations. *)
   include Pretty_printer.S with type t := t
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
-    Travesty.Traversable.S0_container with module Elt = Sym
-                                       and type t := t
-  ;;
+    Travesty.Traversable.S0_container with module Elt = Sym and type t := t
 
-  include Abstract.Abstractable.S
-    with type t := t
-     and module Abs := Abstract.Location
-  ;;
+  include Abstract.Abstractable.S with type t := t and module Abs := Abstract.Location
 
   (** [make_heap_loc sym] creates a location referencing a symbolic heap
       location [sym]. *)
@@ -63,7 +58,6 @@ end
     language abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
   module Symbol : Language_symbol.S
-
   include Basic with module Sym := Symbol
 end
 
@@ -86,8 +80,5 @@ module type Language_location = sig
 
   (** [Make] produces an instance of [S] from an instance of
      [Basic_with_modules]. *)
-  module Make (B : Basic_with_modules)
-    : S with type t = B.t
-         and module Symbol = B.Symbol
-  ;;
+  module Make (B : Basic_with_modules) : S with type t = B.t and module Symbol = B.Symbol
 end

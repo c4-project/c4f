@@ -83,7 +83,9 @@ module type S = sig
     val restrict : t -> Id.Set.t -> t
 
     val partition_map
-      : t -> f:(With_id.t -> [`Fst of 'a | `Snd of 'b]) -> 'a list * 'b list
+      :  t
+      -> f:(With_id.t -> [ `Fst of 'a | `Snd of 'b ])
+      -> 'a list * 'b list
 
     val group : t -> f:(With_id.t -> Id.t) -> t Id.Map.t
     val map : t -> f:(With_id.t -> 'a) -> 'a list

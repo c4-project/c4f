@@ -25,28 +25,29 @@
 open Core_kernel
 open Utils
 
-module Filter : Filter.S with type aux_i = Config.Cpp.t
-                          and type aux_o = unit =
-  Filter.Make_on_runner (struct
-    module Runner = Runner.Local
-    type aux_i = Config.Cpp.t
-    let name = "C preprocessor"
-    let tmp_file_ext = Fn.const "c"
-    let prog = Config.Cpp.cmd
-    let argv aux (infile : string) = Config.Cpp.argv aux @ [ infile ]
-  end)
+module Filter : Filter.S with type aux_i = Config.Cpp.t and type aux_o = unit =
+Filter.Make_on_runner (struct
+  module Runner = Runner.Local
+
+  type aux_i = Config.Cpp.t
+
+  let name = "C preprocessor"
+  let tmp_file_ext = Fn.const "c"
+  let prog = Config.Cpp.cmd
+  let argv aux (infile : string) = Config.Cpp.argv aux @ [ infile ]
+end)
 
 module Chain_filter (Dest : Utils.Filter.S) :
-  Utils.Filter.S with type aux_i = (Config.Cpp.t * Dest.aux_i)
-                  and type aux_o = (unit option * Dest.aux_o) =
-  Utils.Filter.Chain_conditional_first (struct
-    module First = Filter
-    module Second = Dest
+  Utils.Filter.S
+  with type aux_i = Config.Cpp.t * Dest.aux_i
+   and type aux_o = unit option * Dest.aux_o =
+Utils.Filter.Chain_conditional_first (struct
+  module First = Filter
+  module Second = Dest
 
-    type aux_i = (Config.Cpp.t * Dest.aux_i)
-    let select { Utils.Filter.aux = (cfg, rest); _ } =
-      if Config.Cpp.enabled cfg
-      then `Both (cfg, Fn.const rest)
-      else `One  (Fn.const rest)
-    ;;
-  end)
+  type aux_i = Config.Cpp.t * Dest.aux_i
+
+  let select { Utils.Filter.aux = cfg, rest; _ } =
+    if Config.Cpp.enabled cfg then `Both (cfg, Fn.const rest) else `One (Fn.const rest)
+  ;;
+end)

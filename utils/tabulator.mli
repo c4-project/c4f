@@ -37,12 +37,7 @@ type row = (Format.formatter -> unit) list
    row [header], optionally using [sep] to separate columns and
    [terminator] to terminate each row.  It fails if [header] is
    empty. *)
-val make
-  :  ?sep        : string
-  -> ?terminator : string
-  -> header      : row
-  -> unit
-  -> t Or_error.t
+val make : ?sep:string -> ?terminator:string -> header:row -> unit -> t Or_error.t
 
 (** [with_row row t] adds [row] to the tabulator [t], returning the
    resulting tabulator.  It fails if [row] is a different length from
@@ -81,14 +76,11 @@ module type Tabular_extensions = sig
      format, [?on_error] (or, if missing, a default formatter) is
      instead used to output the error to [f]. *)
   val pp_as_table
-    :  ?on_error : (Format.formatter -> Error.t -> unit)
+    :  ?on_error:(Format.formatter -> Error.t -> unit)
     -> Format.formatter
     -> data
     -> unit
-  ;;
 end
 
 (** [Extend_tabular] makes a [Tabular_extensions] out of a [Tabular]. *)
-module Extend_tabular
-  : functor (T : Tabular) -> Tabular_extensions with type data := T.data
-;;
+module Extend_tabular (T : Tabular) : Tabular_extensions with type data := T.data

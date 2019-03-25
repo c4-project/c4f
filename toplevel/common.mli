@@ -38,7 +38,7 @@ val warn_if_not_tracking_symbols : Output.t -> C_identifier.t list option -> uni
     ID, the compiler is retrieved from [cfg]. *)
 val get_target
   :  Config.Act.t
-  -> [< `Id of Config.Id.t | `Arch of Config.Id.t]
+  -> [< `Id of Config.Id.t | `Arch of Config.Id.t ]
   -> Config.Compiler.Target.t Or_error.t
 
 (** [asm_runner_of_target target] gets the [Asm_job.Runner]
@@ -103,7 +103,7 @@ val explain_pipeline
   :  Config.Compiler.Target.t
   -> (module Filter.S
         with type aux_i = Config.File_type.t_or_infer
-                          * (   C.Filters.Output.t Filter.chain_output
+                          * (C.Filters.Output.t Filter.chain_output
                              -> Asm_job.Explain_config.t Asm_job.t
                                 Config.Compiler.Chain_input.t)
          and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.Output.t))
@@ -115,7 +115,7 @@ val litmusify_pipeline
   :  Config.Compiler.Target.t
   -> (module Filter.S
         with type aux_i = Config.File_type.t_or_infer
-                          * (   C.Filters.Output.t Filter.chain_output
+                          * (C.Filters.Output.t Filter.chain_output
                              -> Sexp.t Litmusifier.Config.t Asm_job.t
                                 Config.Compiler.Chain_input.t)
          and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.Output.t))

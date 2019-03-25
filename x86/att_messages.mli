@@ -28,4 +28,4 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 (** AT&T parser: error messages *)
 
 (** [message state] gets the error message for the state numbered [s]. *)
-val message : int -> string;;
+val message : int -> string

@@ -263,9 +263,9 @@ struct
 
   let from_spec = from_resolver_and_spec B.resolve
 
-  let filter_from_spec (cspec : Spec.With_id.t) :
-      (module Utils.Filter.S with type aux_i = unit
-                              and type aux_o = unit) Or_error.t =
+  let filter_from_spec (cspec : Spec.With_id.t)
+      : (module Utils.Filter.S with type aux_i = unit
+                                and type aux_o = unit) Or_error.t =
     let open Or_error.Let_syntax in
     let%map (module S) = from_spec cspec in
     (module S_to_filter (S)
@@ -277,10 +277,10 @@ struct
   let chained_filter_from_spec
       (type i o)
       (cspec : Spec.With_id.t)
-      (module Onto : Filter.S with type aux_i = i and type aux_o = o) :
-      (module Utils.Filter.S
-         with type aux_i = i Chain_input.t
-          and type aux_o = unit option * o)
+      (module Onto : Filter.S with type aux_i = i and type aux_o = o)
+      : (module Utils.Filter.S
+           with type aux_i = i Chain_input.t
+            and type aux_o = unit option * o)
       Or_error.t =
     let open Or_error.Let_syntax in
     let%map (module F) = filter_from_spec cspec in
@@ -350,7 +350,8 @@ struct
   let chained_filter_from_spec
       (type i o)
       (tgt : Target.t)
-      (module Onto : Filter.S with type aux_i = i and type aux_o = o) =
+      (module Onto : Filter.S with type aux_i = i and type aux_o = o)
+    =
     let open Or_error.Let_syntax in
     let%map (module F) = filter_from_spec tgt in
     (module Chain_with_compiler (F) (Onto)

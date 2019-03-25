@@ -29,20 +29,16 @@ type t =
   | Memalloy of Fpath.t
   | Litmus_only of Fpath.t list
 [@@deriving variants]
-;;
 
-let reduce
-    (imode : t)
-    ~(memalloy : Fpath.t -> 'a) ~(litmus_only : Fpath.t list -> 'a)
-  : 'a = Variants.map imode
-    ~memalloy:(fun _ -> memalloy)
-    ~litmus_only:(fun _ -> litmus_only)
+let reduce (imode : t)
+           ~(memalloy : Fpath.t -> 'a)
+           ~(litmus_only : Fpath.t list -> 'a)
+    : 'a =
+  Variants.map imode ~memalloy:(fun _ -> memalloy) ~litmus_only:(fun _ -> litmus_only)
 ;;
 
 let must_delitmusify : t -> bool =
-  reduce
-    ~memalloy:(Fn.const false)
-    ~litmus_only:(Fn.const true)
+  reduce ~memalloy:(Fn.const false) ~litmus_only:(Fn.const true)
 ;;
 
 (** These bits depend on filesystem operations; to make them more
@@ -50,28 +46,24 @@ let must_delitmusify : t -> bool =
     include the version based on the real ('Unix') filesystem. *)
 module With_fs (F : Fs.S) = struct
   let validate_input_root_exists : Fpath.t Validate.check =
-    Validate.of_error (F.check_is_dir)
+    Validate.of_error F.check_is_dir
   ;;
 
-  let validate_file_exists : Fpath.t Validate.check =
-    Validate.of_error (F.check_is_file)
-  ;;
+  let validate_file_exists : Fpath.t Validate.check = Validate.of_error F.check_is_file
 
   let validate_files_exist : Fpath.t list Validate.check =
-    Validate.list ~name:(Fpath.to_string) validate_file_exists
+    Validate.list ~name:Fpath.to_string validate_file_exists
   ;;
 
   let validate : t Validate.check =
-    reduce
-      ~memalloy:validate_input_root_exists
-      ~litmus_only:validate_files_exist
+    reduce ~memalloy:validate_input_root_exists ~litmus_only:validate_files_exist
   ;;
 
-  let memalloy ~(input_root:Fpath.t) : t Or_error.t =
+  let memalloy ~(input_root : Fpath.t) : t Or_error.t =
     Validate.valid_or_error (Memalloy input_root) validate
   ;;
 
-  let litmus_only ~(files:Fpath.t list) : t Or_error.t =
+  let litmus_only ~(files : Fpath.t list) : t Or_error.t =
     Validate.valid_or_error (Litmus_only files) validate
   ;;
 end

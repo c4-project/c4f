@@ -35,12 +35,11 @@
    value. *)
 
 open Utils
-
 include module type of Mini_env_intf
 
-module Make (E : Basic) : S
 (** [Make (E)] extends a basic environment module with various
    functions and generators. *)
+module Make (E : Basic) : S
 
 (** {2 Test environments}
 
@@ -48,20 +47,20 @@ module Make (E : Basic) : S
     test environments that can be used for expects tests, as well as
     Quickcheck tests that depend on a well-formed environment. *)
 
-val test_env : Mini_type.t C_identifier.Map.t Lazy.t
 (** [test_env] is an environment used for testing the various
    environment-sensitive operations. *)
+val test_env : Mini_type.t C_identifier.Map.t Lazy.t
 
-val test_env_mod : (module S) Lazy.t
 (** {{!test_env}test_env} packaged as a first-class module. *)
+val test_env_mod : (module S) Lazy.t
 
-val test_env_atomic_ptrs_only : Mini_type.t C_identifier.Map.t Lazy.t
 (** [test_env_atomic_ptrs_only] is an environment that contains only
    variables of type 'atomic_int*'. *)
+val test_env_atomic_ptrs_only : Mini_type.t C_identifier.Map.t Lazy.t
 
-val test_env_atomic_ptrs_only_mod : (module S) Lazy.t
 (** {{!test_env_atomic_ptrs_only}test_env_atomic_ptrs_only} packaged
    as a first-class module. *)
+val test_env_atomic_ptrs_only_mod : (module S) Lazy.t
 
-val empty_env_mod : (module S) Lazy.t
 (** A first-class module containing a completely empty environment. *)
+val empty_env_mod : (module S) Lazy.t

@@ -122,37 +122,25 @@ end
 
 (** [Enum] is the part of this file re-exported as [Enum.mli]. *)
 module type Enum = sig
-  module type S               = S
-  module type S_enumerate     = S_enumerate
-  module type S_sexp          = S_sexp
-  module type S_table         = S_table
-  module type Extension       = Extension
+  module type S = S
+  module type S_enumerate = S_enumerate
+  module type S_sexp = S_sexp
+  module type S_table = S_table
+  module type Extension = Extension
   module type Extension_table = Extension_table
 
   (** [Make_from_enumerate] makes an [S] from an [S_enumerate]. *)
-  module Make_from_enumerate
-    : functor (E : S_enumerate) -> S with type t := E.t
-  ;;
+  module Make_from_enumerate (E : S_enumerate) : S with type t := E.t
 
   (** [Make_comparable] generates a [Comparable.S] from an [Enum.S_sexp]. *)
-  module Make_comparable
-    : functor (E : S_sexp) -> Comparable.S with type t := E.t
-  ;;
+  module Make_comparable (E : S_sexp) : Comparable.S with type t := E.t
 
   (** [Make_hashable] generates a [Hashable.S] from an [Enum.S_sexp]. *)
-  module Make_hashable :
-    functor (E : S_sexp) -> Hashable.S with type t := E.t
-  ;;
+  module Make_hashable (E : S_sexp) : Hashable.S with type t := E.t
 
   (** [Extend] makes an enum extension. *)
-  module Extend
-    : functor (E : S_sexp)
-      -> Extension with type t := E.t
-  ;;
+  module Extend (E : S_sexp) : Extension with type t := E.t
 
   (** [Extend] makes an enum extension with table support. *)
-  module Extend_table
-    : functor (E : S_table)
-      -> Extension_table with type t := E.t
-  ;;
+  module Extend_table (E : S_table) : Extension_table with type t := E.t
 end

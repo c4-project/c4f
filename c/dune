@@ -5,13 +5,11 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
-  (libraries
-   core
-   abstract
-   lib
-   utils
-   menhirLib))
-(ocamllex (modules lexer))
+ (libraries core abstract lib utils menhirLib))
+
+(ocamllex
+ (modules lexer))
+
 (menhir
  (infer false)
  (flags "--table")
@@ -19,6 +17,10 @@
 
 ;; These rules generate the error message tables for each parser.
 ;; They're probably not as portable as they could be.
+
 (rule
  (targets c_messages.ml)
- (action (with-stdout-to "%{targets}" (run "%{bin:menhir}" "--compile-errors" "%{dep:c.messages}" "parser.mly"))))
+ (action
+  (with-stdout-to
+   "%{targets}"
+   (run "%{bin:menhir}" "--compile-errors" "%{dep:c.messages}" "parser.mly"))))

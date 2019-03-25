@@ -29,10 +29,12 @@ open Utils
 
 module type S = sig
   type t [@@deriving sexp]
+
   include Pretty_printer.S with type t := t
 
   module Kind : sig
     type t
+
     include Enum.S_table with type t := t
     include Enum.Extension_table with type t := t
   end

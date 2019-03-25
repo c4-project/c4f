@@ -48,10 +48,10 @@
 
 open Base
 
-include (module type of Zipper_intf)
 (** For documentation on the signatures of both zippers and the
    parameters of the functors below, see also
    {{!Zipper_intf}Zipper_intf}. *)
+include module type of Zipper_intf
 
 (** [Plain] is a basic list zipper, without specialised
    functionality. *)

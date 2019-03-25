@@ -22,11 +22,11 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-include module type of Fs_intf
 (** We keep module signatures in {{!Fs_intf}Fs_intf}. *)
+include module type of Fs_intf
 
-module Unix : S
 (** [Unix] implements {{!S}S} using Core's Unix support. *)
+module Unix : S
 
 (* soon
 (** [Mock] mocks {{!S}S}, containing a mutable dummy filesystem that

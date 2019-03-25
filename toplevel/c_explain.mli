@@ -26,5 +26,5 @@
 
 open Core
 
-val command : Command.t
 (** [command] is the top-level 'c explain' command. *)
+val command : Command.t

@@ -35,24 +35,24 @@ type 'path t =
   | Files of 'path list
   | Nothing
 
-val directory : 'path -> 'path t
 (** [directory path] generates a directory spec over [path]. *)
+val directory : 'path -> 'path t
 
-val file : 'path -> 'path t
 (** [file path] generates a files spec over just [path]. *)
+val file : 'path -> 'path t
 
-val files : 'path list -> 'path t
 (** [files paths] generates a files spec over [paths]. *)
+val files : 'path list -> 'path t
 
-val nothing : 'path t
 (** [nothing] is the empty manifest. *)
+val nothing : 'path t
 
-val validate_local : Fpath.t t -> unit Or_error.t
 (** [validate_local cs] validates a local copy spec by seeing
     if the listed files and directories actually exist. *)
+val validate_local : Fpath.t t -> unit Or_error.t
 
-val map : 'a t -> f:('a -> 'b) -> 'b t
 (** [map cs ~f] maps [f] over all of the paths in [cs]. *)
+val map : 'a t -> f:('a -> 'b) -> 'b t
 
 (** Pairs of input and output copy specs. *)
 module Pair : sig
@@ -61,7 +61,6 @@ module Pair : sig
     ; output : 'path t
     }
 
-  val map : 'a t -> f:('a -> 'b) -> 'b t
   (** [map cs_pair ~f] maps [f] over all of the paths in [cs_pair]. *)
+  val map : 'a t -> f:('a -> 'b) -> 'b t
 end
-

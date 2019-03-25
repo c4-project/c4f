@@ -50,16 +50,12 @@ module State : sig
     -> valf:(string -> string Or_error.t)
     -> t
     -> t Or_error.t
-  ;;
 
   (** [bound t] gets the list of all bound names in [t]. *)
   val bound : t -> Litmus.Id.t list
 
   (** [of_alist alist] tries to convert [alist] into a state. *)
-  val of_alist
-    :  (Litmus.Id.t, string) List.Assoc.t
-    -> t Or_error.t
-  ;;
+  val of_alist : (Litmus.Id.t, string) List.Assoc.t -> t Or_error.t
 
   module Set : My_set.S with type Elt.t = t
 end
@@ -67,23 +63,25 @@ end
 (** [single_outcome] is the type of outcomes we can get from single
     (or double) Herd runs. *)
 type single_outcome =
-  [ `Unknown   (** Either only one Herd run was analysed, or the
+  [ `Unknown
+    (** Either only one Herd run was analysed, or the
                    results are inconclusive. *)
-  | `Undef     (** The final execution triggered undefined
+  | `Undef (** The final execution triggered undefined
                    behaviour. *)
   ]
 [@@deriving sexp]
-;;
 
 (** [outcome] is the type of summaries of Herd analysis. *)
 type outcome =
   [ single_outcome
   | `Order of State.Set.Partial_order.t
-  | `OracleUndef  (** The oracle execution triggered undefined
+  | `OracleUndef
+    (** The oracle execution triggered undefined
                       behaviour. *)
   ]
-[@@deriving sexp] (* sexp_of_outcome, outcome_of_sexp *)
-;;
+[@@deriving sexp]
+
+(* sexp_of_outcome, outcome_of_sexp *)
 
 (** [states herd] gets the states of a single Herd output [herd]. *)
 val states : t -> State.t list
@@ -96,12 +94,11 @@ val single_outcome_of : t -> single_outcome
     mappers [locmap] and [valmap] to every state binding in
     [final], then analyses it against [initial]. *)
 val outcome_of
-  :  initial : t
-  -> final   : t
-  -> locmap  : (Litmus.Id.t -> Litmus.Id.t option Or_error.t)
-  -> valmap  : (string -> string Or_error.t)
+  :  initial:t
+  -> final:t
+  -> locmap:(Litmus.Id.t -> Litmus.Id.t option Or_error.t)
+  -> valmap:(string -> string Or_error.t)
   -> outcome Or_error.t
-;;
 
 (** We can load Herd output analyses using the normal interfaces in
     [Loadable]. *)

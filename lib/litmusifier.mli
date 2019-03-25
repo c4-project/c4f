@@ -83,7 +83,7 @@ module Config : sig
   val transform
     :  'a t
     -> format:(Format.t -> Format.t Or_error.t)
-    -> postcondition:(   'a Litmus.Ast_base.Postcondition.t
+    -> postcondition:('a Litmus.Ast_base.Postcondition.t
                       -> 'b Litmus.Ast_base.Postcondition.t Or_error.t)
     -> c_variables:(Config.C_variables.Map.t -> Config.C_variables.Map.t Or_error.t)
     -> 'b t Or_error.t

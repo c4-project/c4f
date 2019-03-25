@@ -41,7 +41,7 @@ module type Extensions = sig
       | Subset of { in_right_only : t } (** RHS has the following extra values. *)
       | Superset of { in_left_only : t } (** LHS has the following extra values. *)
       | No_order of { in_left_only : t; in_right_only : t }
-      (** LHS and RHS both have the following extra values. *)
+          (** LHS and RHS both have the following extra values. *)
     [@@deriving sexp]
   end
 

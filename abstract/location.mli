@@ -36,7 +36,6 @@ module Register : sig
     | Stack_pointer
     | Unknown
   [@@deriving sexp, eq]
-  ;;
 
   include Pretty_printer.S with type t := t
 end
@@ -48,7 +47,6 @@ module Address : sig
     | Int of int
     | Symbol of Symbol.t
   [@@deriving sexp, eq]
-  ;;
 
   include Pretty_printer.S with type t := t
 end
@@ -56,11 +54,10 @@ end
 (** [t] is an abstracted location. *)
 type t =
   | Register_direct of Register.t
-  | Register_indirect of { reg: Register.t; offset: Address.t }
+  | Register_indirect of { reg : Register.t; offset : Address.t }
   | Heap of Address.t
   | Unknown
 [@@deriving sexp, eq]
-;;
 
 (** [S_predicates] is the signature of any module that can access
     simple predicates over an abstract location. *)
@@ -104,10 +101,8 @@ end
     from an optional component.  Each predicate returns false when the
     component doesn't exist. *)
 module Inherit_predicates
-  : functor (P : S_predicates)
-    -> functor (I : Utils.Inherit.S_partial with type c := P.t)
-      -> S_predicates with type t := I.t
-;;
+    (P : S_predicates)
+    (I : Utils.Inherit.S_partial with type c := P.t) : S_predicates with type t := I.t
 
 module Kind : sig
   type t =
@@ -115,7 +110,6 @@ module Kind : sig
     | Register_indirect
     | Heap
     | Unknown
-  ;;
 
   include Enum.S_table with type t := t
   include Enum.Extension_table with type t := t

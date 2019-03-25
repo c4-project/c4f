@@ -26,5 +26,5 @@
 
 include module type of Language_constant_intf
 
-module Make (B : Basic) : S with type t = B.t
 (** [Make] produces an instance of [S] from an instance of [Basic]. *)
+module Make (B : Basic) : S with type t = B.t

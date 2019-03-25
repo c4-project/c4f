@@ -25,17 +25,15 @@
 (** Quick and easy process running *)
 
 open Base
-
 include module type of Runner_intf
 
-val argv_one_file
-  : (string, 'a) argv_fun -> (string Copy_spec.t, 'a) argv_fun
 (** [argv_one_file f] adapts a function that builds an argument list
     from one input file and one output file to one that works on
     manifests. *)
+val argv_one_file : (string, 'a) argv_fun -> (string Copy_spec.t, 'a) argv_fun
 
-module Make (B : Basic) : S
 (** Makes a {!{S}S} from a {{!{Basic}}. *)
+module Make (B : Basic) : S
 
-module Local : S
 (** [Local] just runs commands on the local machine. *)
+module Local : S

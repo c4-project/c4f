@@ -28,23 +28,22 @@ open Utils
 
 let run_direct
     ?(oc : Out_channel.t = stdout) (cfg : Config.Litmus_tool.t) (argv : string list)
-  : unit Or_error.t =
-      let prog = Config.Litmus_tool.cmd cfg in
-      Or_error.tag ~tag:"While running litmus"
-        (Runner.Local.run ~oc ~prog argv)
+    : unit Or_error.t =
+  let prog = Config.Litmus_tool.cmd cfg in
+  Or_error.tag ~tag:"While running litmus" (Runner.Local.run ~oc ~prog argv)
 ;;
 
-module Filter (R : Runner.S)
-  : Filter.S with type aux_i = Config.Litmus_tool.t and type aux_o = unit =
-  Filter.Make_on_runner (struct
-    module Runner = R
+module Filter (R : Runner.S) :
+  Filter.S with type aux_i = Config.Litmus_tool.t and type aux_o = unit =
+Filter.Make_on_runner (struct
+  module Runner = R
 
-    type aux_i = Config.Litmus_tool.t
-    let name = "Litmus tool"
-    let tmp_file_ext = Fn.const "txt"
+  type aux_i = Config.Litmus_tool.t
 
-    let prog (cfg : Config.Litmus_tool.t) = Config.Litmus_tool.cmd cfg
-    let argv _cfg (path : string) = [ path ]
-  end)
+  let name = "Litmus tool"
+  let tmp_file_ext = Fn.const "txt"
+  let prog (cfg : Config.Litmus_tool.t) = Config.Litmus_tool.cmd cfg
+  let argv _cfg (path : string) = [ path ]
+end)
 
 (* TODO *)

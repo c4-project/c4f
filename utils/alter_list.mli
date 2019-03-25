@@ -29,14 +29,10 @@
 
 open Base
 
-val replace
-  : 'a list
-  -> int
-  -> f:('a -> 'a option Or_error.t)
-  -> 'a list Or_error.t
-  (** [replace xs at ~f] tries to replace the value at index [at] in
+(** [replace xs at ~f] tries to replace the value at index [at] in
      [xs] using the possibly-failing function [f].  [f] may return [Ok
      None], in which case the item is removed. *)
+val replace : 'a list -> int -> f:('a -> 'a option Or_error.t) -> 'a list Or_error.t
 
-val insert : 'a list -> int -> 'a -> 'a list Or_error.t
 (** [insert xs at value] tries to insert [value] at index [at] in [xs]. *)
+val insert : 'a list -> int -> 'a -> 'a list Or_error.t

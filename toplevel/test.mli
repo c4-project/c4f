@@ -27,6 +27,9 @@
 open Core_kernel
 open Lib
 
+(** [run should_time input_mode_raw out_root_raw o cfg]
+     runs the test frontend.  It accepts input according to
+     [input_mode_raw], and outputs results in [out_root_raw]. *)
 val run
   :  bool
   -> [< `Delitmus of string list | `Memalloy of string ]
@@ -34,10 +37,6 @@ val run
   -> Output.t
   -> Config.Act.t
   -> unit Or_error.t
-  (** [run should_time input_mode_raw out_root_raw o cfg]
-     runs the test frontend.  It accepts input according to
-     [input_mode_raw], and outputs results in [out_root_raw]. *)
-;;
 
-val command : Command.t
 (** [command] packages up the test command as a [Command.t]. *)
+val command : Command.t

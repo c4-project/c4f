@@ -31,7 +31,6 @@ module Register = struct
     | Stack_pointer
     | Unknown
   [@@deriving sexp, eq]
-  ;;
 
   let pp f = function
     | General name -> Format.fprintf f "@[gen:@,%s@]" name
@@ -45,7 +44,6 @@ module Address = struct
     | Int of int
     | Symbol of Symbol.t
   [@@deriving sexp, eq]
-  ;;
 
   let pp f = function
     | Int k -> Int.pp f k
@@ -55,45 +53,44 @@ end
 
 type t =
   | Register_direct of Register.t
-  | Register_indirect of { reg: Register.t; offset: Address.t }
+  | Register_indirect of { reg : Register.t; offset : Address.t }
   | Heap of Address.t
   | Unknown
 [@@deriving sexp, eq]
-;;
 
 module type S_predicates = sig
   type t
-  val is_stack_pointer : t -> bool
 
+  val is_stack_pointer : t -> bool
   val as_stack_offset : t -> Address.t option
   val is_stack_offset : t -> bool
   val is_stack_offset_where : t -> f:(Address.t -> bool) -> bool
-
   val as_heap_symbol : t -> Symbol.t option
   val is_heap_symbol : t -> bool
   val is_heap_symbol_where : t -> f:(Symbol.t -> bool) -> bool
-
   val is_dereference : t -> t -> bool
 end
 
 module Inherit_predicates
     (P : S_predicates)
-    (I : Utils.Inherit.S_partial with type c := P.t)
-  : S_predicates with type t := I.t = struct
-  let is_stack_pointer x =
-    Option.exists (I.component_opt x) ~f:P.is_stack_pointer
-  let as_stack_offset x =
-    Option.((I.component_opt x) >>= P.as_stack_offset)
+    (I : Utils.Inherit.S_partial with type c := P.t) : S_predicates with type t := I.t =
+struct
+  let is_stack_pointer x = Option.exists (I.component_opt x) ~f:P.is_stack_pointer
+  let as_stack_offset x = Option.(I.component_opt x >>= P.as_stack_offset)
+
   let is_stack_offset_where x ~f =
     Option.exists (I.component_opt x) ~f:(P.is_stack_offset_where ~f)
-  let is_stack_offset x =
-    Option.exists (I.component_opt x) ~f:P.is_stack_offset
-  let as_heap_symbol x =
-    Option.((I.component_opt x) >>= P.as_heap_symbol)
+  ;;
+
+  let is_stack_offset x = Option.exists (I.component_opt x) ~f:P.is_stack_offset
+  let as_heap_symbol x = Option.(I.component_opt x >>= P.as_heap_symbol)
+
   let is_heap_symbol_where x ~f =
     Option.exists (I.component_opt x) ~f:(P.is_heap_symbol_where ~f)
-  let is_heap_symbol x =
-    Option.exists (I.component_opt x) ~f:P.is_heap_symbol
+  ;;
+
+  let is_heap_symbol x = Option.exists (I.component_opt x) ~f:P.is_heap_symbol
+
   let is_dereference src dst =
     Option.exists
       (Option.both (I.component_opt src) (I.component_opt dst))
@@ -103,51 +100,44 @@ end
 
 module Predicates : S_predicates with type t := t = struct
   let is_stack_pointer = function
-    | Register_direct (Register.Stack_pointer) -> true
-    | Register_direct _
-    | Register_indirect _ | Heap _ | Unknown -> false
+    | Register_direct Register.Stack_pointer -> true
+    | Register_direct _ | Register_indirect _ | Heap _ | Unknown -> false
   ;;
 
   let as_stack_offset = function
-    | Register_indirect { reg = Stack_pointer; offset = k } ->
-      Some k
-    | Register_indirect _
-    | Register_direct _ | Heap _ | Unknown -> None
+    | Register_indirect { reg = Stack_pointer; offset = k } -> Some k
+    | Register_indirect _ | Register_direct _ | Heap _ | Unknown -> None
   ;;
+
   let is_stack_offset_where l ~f = Option.exists ~f (as_stack_offset l)
   let is_stack_offset = is_stack_offset_where ~f:(Fn.const true)
 
   let as_heap_symbol = function
     | Heap (Symbol s) -> Some s
-    | Heap _
-    | Register_indirect _ | Register_direct _ | Unknown -> None
+    | Heap _ | Register_indirect _ | Register_direct _ | Unknown -> None
   ;;
+
   let is_heap_symbol_where l ~f = Option.exists ~f (as_heap_symbol l)
   let is_heap_symbol = is_heap_symbol_where ~f:(Fn.const true)
 
   let is_dereference src dst =
     match src, dst with
-    | Register_indirect { reg = src_reg; offset = Int 0 },
-      Register_direct   dest_reg ->
+    | Register_indirect { reg = src_reg; offset = Int 0 }, Register_direct dest_reg ->
       Register.equal src_reg dest_reg
     | _, _ -> false
   ;;
 end
+
 include Predicates
 
 let pp f = function
-  | Register_direct reg ->
-    Format.fprintf f "reg:%a" Register.pp reg
-  | Register_indirect { reg; offset=(Int 0) } ->
+  | Register_direct reg -> Format.fprintf f "reg:%a" Register.pp reg
+  | Register_indirect { reg; offset = Int 0 } ->
     Format.fprintf f "*(reg:%a)" Register.pp reg
-  | Register_indirect { reg; offset=(Int k) } when k < 0 ->
-    Format.fprintf f "@[*(@,reg:%a@ -@ %d@,)@]"
-      Register.pp reg
-      (Int.abs k)
+  | Register_indirect { reg; offset = Int k } when k < 0 ->
+    Format.fprintf f "@[*(@,reg:%a@ -@ %d@,)@]" Register.pp reg (Int.abs k)
   | Register_indirect { reg; offset } ->
-    Format.fprintf f "@[*(@,reg:%a@ +@ %a@,)@]"
-      Register.pp reg
-      Address.pp offset
+    Format.fprintf f "@[*(@,reg:%a@ +@ %a@,)@]" Register.pp reg Address.pp offset
   | Heap addr -> Format.fprintf f "*(heap:%a)" Address.pp addr
   | Unknown -> String.pp f "unknown"
 ;;
@@ -160,13 +150,12 @@ module Kind = struct
       | Heap
       | Unknown
     [@@deriving sexp, enum]
-    ;;
 
     let table =
-      [ Register_direct  , "register-direct"
+      [ Register_direct, "register-direct"
       ; Register_indirect, "register-indirect"
-      ; Heap             , "heap"
-      ; Unknown          , "unknown"
+      ; Heap, "heap"
+      ; Unknown, "unknown"
       ]
     ;;
   end
@@ -176,10 +165,10 @@ module Kind = struct
 end
 
 let kind = function
-  | Register_direct   _ -> Kind.Register_direct
+  | Register_direct _ -> Kind.Register_direct
   | Register_indirect _ -> Register_indirect
-  | Heap              _ -> Heap
-  | Unknown             -> Unknown
+  | Heap _ -> Heap
+  | Unknown -> Unknown
 ;;
 
 module Flag = Flag_enum.None

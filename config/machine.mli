@@ -111,7 +111,7 @@ module Via : sig
   val to_runner : t -> (module Runner.S)
 
   (** [remoteness via] gets an estimate of whether [via] is remote. *)
-  val remoteness : t -> [> `Local | `Remote | `Unknown]
+  val remoteness : t -> [> `Local | `Remote | `Unknown ]
 end
 
 (** [Spec] is a module for machine specifications. *)

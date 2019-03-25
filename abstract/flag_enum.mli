@@ -34,6 +34,7 @@ open Core_kernel
 (** [S] is the baseline signature for all abstract flag types. *)
 module type S = sig
   type t
+
   include Utils.Enum.Extension_table with type t := t
 end
 

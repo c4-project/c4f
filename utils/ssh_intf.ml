@@ -24,18 +24,18 @@
 
 (** Signature of modules that embed an SSH configuration. *)
 module type S = sig
-  val host : string
   (** [host] is the configured SSH host. *)
+  val host : string
 
-  val user : string option
   (** [user] is the configured SSH user, if any. *)
+  val user : string option
 end
 
 (** Signature of input used to construct a SSH runner. *)
 module type Basic_runner = sig
   include S
 
-  val remote_dir : Fpath.t -> string
   (** [remote_dir local_path] gets the remote directory in which the file
       pointed to by [local_path] should be placed. *)
+  val remote_dir : Fpath.t -> string
 end

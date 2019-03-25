@@ -34,48 +34,48 @@
 
 open Core_kernel
 
-type 'a t [@@deriving sexp_of, quickcheck]
 (** Opaque type of weighted lists, parametrised on value. *)
+type 'a t [@@deriving sexp_of, quickcheck]
 
 (** {2 Constructors} *)
 
-val from_alist : ('a, int) List.Assoc.t -> 'a t Or_error.t
 (** [from_alist alist] tries to convert the associative list
     [alist], which maps values to their weights, to a
     weighted list.  It fails if [alist] is empty, or if any
     weight is negative (note that weights may be zero). *)
+val from_alist : ('a, int) List.Assoc.t -> 'a t Or_error.t
 
-val from_alist_exn : ('a, int) List.Assoc.t -> 'a t
 (** [from_alist_exn alist] does the same thing as
     {{!from_alist}from_alist}, but raises an exception if the
     table is ill-formed. *)
+val from_alist_exn : ('a, int) List.Assoc.t -> 'a t
 
 (** {2 Modifications} *)
 
-val adjust_weights : 'a t -> f:('a -> int -> int) -> 'a t Or_error.t
 (** [adjust_weights wl ~f] maps [f] over every weight in [table],
     providing the weighted item for context.  It fails if any
     invocation of [f] tries to return a negative weight
     (note that weights may be zero). *)
+val adjust_weights : 'a t -> f:('a -> int -> int) -> 'a t Or_error.t
 
-val adjust_weights_exn : 'a t -> f:('a -> int -> int) -> 'a t
 (** [adjust_weights_exn wl ~f] does the same thing as
     {{!adjust_weights}adjust_weights}, but raises an exception if
     [f] returns a negative weight. *)
+val adjust_weights_exn : 'a t -> f:('a -> int -> int) -> 'a t
 
 (** [On_monad] generalises [adjust_weights] to concern any monad [M]
     which is a monad transformer over errors. *)
 module On_monad (M : sig
-    (* TODO(@MattWindsor91): this should really be in Travesty *)
-    include Monad.S
-    val lift : 'a Or_error.t -> 'a t
-  end) : sig
+  (* TODO(@MattWindsor91): this should really be in Travesty *)
+  include Monad.S
 
-  val adjust_weights_m : 'a t -> f:('a -> int -> int M.t) -> 'a t M.t
+  val lift : 'a Or_error.t -> 'a t
+end) : sig
   (** [adjust_weights_m wl ~f] maps [f] over every weight in [table],
      providing the weighted item for context.  It expects [f] to
      return values in the monad [M], and returns the final result in
      the same monad. *)
+  val adjust_weights_m : 'a t -> f:('a -> int -> int M.t) -> 'a t M.t
 end
 
 (** {2 Sampling} *)
@@ -83,32 +83,26 @@ end
 (** Type of weighted lists that have been re-arranged to
     list weights cumulatively. *)
 module Cumulative : sig
-  type 'a w = 'a t
   (** Synonym for weighted lists. *)
+  type 'a w = 'a t
 
-  type 'a t [@@deriving sexp_of]
   (** Opaque type of cumulative lists. *)
+  type 'a t [@@deriving sexp_of]
 
-  val of_weighted_list : 'a w -> 'a t Or_error.t
   (** [of_weighted_list wl] converts [wl] to a cumulative list.
       It fails if there are no items in [wl] with a nonzero weight.
   *)
+  val of_weighted_list : 'a w -> 'a t Or_error.t
 
-  val sample
-    :  'a t
-    -> random:Splittable_random.State.t
-    -> 'a
-    (** [sample cl ~random] samples the cumulative list [cl]
+  (** [sample cl ~random] samples the cumulative list [cl]
         according to the random number generator [random]. *)
+  val sample : 'a t -> random:Splittable_random.State.t -> 'a
 end
 
-val sample
-  :  'a t
-  -> random:Splittable_random.State.t
-  -> 'a Or_error.t
 (** [sample wl rng] converts [wl] to a cumulative list, then
     samples it according to the random number generator [rng].
     It fails if the conversion fails.
 
     If you sample from the same list often, consider converting it
     to a cumulative list once, then sampling that directly. *)
+val sample : 'a t -> random:Splittable_random.State.t -> 'a Or_error.t

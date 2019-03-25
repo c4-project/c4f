@@ -30,15 +30,15 @@
 open Base
 open Utils
 
+(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration
+    [cfg] and arguments [argv], and outputs its results to [oc]
+    (or stdout if [oc] is absent). *)
 val run_direct
   :  ?oc:Stdio.Out_channel.t
   -> Config.Litmus_tool.t
   -> string list
   -> unit Or_error.t
-(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration
-    [cfg] and arguments [argv], and outputs its results to [oc]
-    (or stdout if [oc] is absent). *)
 
-module Filter (R : Runner.S)
-  : Filter.S with type aux_i = Config.Litmus_tool.t and type aux_o = unit
 (** Interface for running litmus as a filter. *)
+module Filter (R : Runner.S) :
+  Filter.S with type aux_i = Config.Litmus_tool.t and type aux_o = unit

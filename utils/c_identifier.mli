@@ -29,24 +29,23 @@
 
 open Core_kernel
 
-type t [@@deriving bin_io, compare, hash, sexp, quickcheck]
 (** Opaque type of C identifier strings. *)
+type t [@@deriving bin_io, compare, hash, sexp, quickcheck]
 
-val create : string -> t Or_error.t
 (** [create_exn str] creates a C identifier string from [str].
     It returns an error if [str] isn't a valid C identifier. *)
+val create : string -> t Or_error.t
 
-val create_exn : string -> t
 (** [create_exn str] creates a C identifier string from [str].
     It raises an exception if [str] isn't a valid C identifier. *)
+val create_exn : string -> t
 
 include Comparable.S with type t := t
-
 include Pretty_printer.S with type t := t
 
-include Stringable.S with type t := t
 (** Note that [of_string] is [create_exn]; ie, it can fail. *)
+include Stringable.S with type t := t
 
-module Herd_safe : My_quickcheck.S_with_sexp with type t = t
 (** A quickcheck generator for C identifiers that produces
     identifiers that Herd can safely lex. *)
+module Herd_safe : My_quickcheck.S_with_sexp with type t = t

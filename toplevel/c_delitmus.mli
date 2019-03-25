@@ -26,5 +26,5 @@
 
 open Core_kernel
 
-val command : Command.t
 (** [command] is the top-level 'c delitmus' command. *)
+val command : Command.t

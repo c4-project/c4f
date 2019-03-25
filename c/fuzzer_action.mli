@@ -25,20 +25,19 @@
 (** Fuzzer: high-level actions *)
 
 open Utils
-
 include module type of Fuzzer_action_intf
 
 module List : sig
-  type t = (module S) Weighted_list.t
   (** Action lists are just weighted lists of first-class action
      modules. *)
+  type t = (module S) Weighted_list.t
 
+  (** [pick table subject rng] is a stateful action that picks a
+        weighted-random action module from [table] that is available on
+        [subject], using [rng] as a random number generator. *)
   val pick
     :  t
     -> Fuzzer_subject.Test.t
     -> Splittable_random.State.t
     -> (module S) Fuzzer_state.Monad.t
-    (** [pick table subject rng] is a stateful action that picks a
-        weighted-random action module from [table] that is available on
-        [subject], using [rng] as a random number generator. *)
 end

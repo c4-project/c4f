@@ -30,6 +30,7 @@ open Lib
 module type S = sig
   include Dialect.S
   include Pp.Printer
+
   include
     Language.S
     with type Constant.t = Ast.Operand.t

@@ -53,7 +53,6 @@ module Operand_spec = struct
     | Immediate
     | Memory
     | Register
-  ;;
 
   type t =
     | Zero
@@ -61,22 +60,20 @@ module Operand_spec = struct
     | Symmetric of (single * single) list
     | Src_dst of (single, single) Src_dst.t list
     | Or of t * t
-  ;;
 
   (* Operand spec for 'arithmetic'-style operands (where the
      source may be immediate).
      We also currently use it for MOV, treating OI as I, FD as
      RM, and TD as MR. *)
   let arith_operands =
-    Src_dst (
+    Src_dst
       Src_dst.
         [ { dst = Register; src = Immediate } (* I, MI *)
-        ; { dst = Memory  ; src = Immediate } (* MI *)
-        ; { dst = Register; src = Memory    } (* RM *)
-        ; { dst = Memory  ; src = Register  } (* MR *)
-        ; { dst = Register; src = Register  } (* RM, MR *)
+        ; { dst = Memory; src = Immediate } (* MI *)
+        ; { dst = Register; src = Memory } (* RM *)
+        ; { dst = Memory; src = Register } (* MR *)
+        ; { dst = Register; src = Register } (* RM, MR *)
         ]
-    )
   ;;
 end
 
@@ -105,37 +102,33 @@ module Sizable = struct
     | `Mov
     | `Pop
     | `Push
-    | `Ret (* Some compilers seem to emit RETL (32-bit)/RETQ (64-bit);
+    | `Ret
+    | (* Some compilers seem to emit RETL (32-bit)/RETQ (64-bit);
               it's unclear if there's any semantic difference from RET. *)
-    | `Sub
+      `Sub
     | `Xchg
     | `Xor
     ]
   [@@deriving sexp, eq, enumerate]
-  ;;
 
   (* Note: any SIZABLE opcodes not present in this table map to
      'unknown operands'. *)
-  let operand_table : ([> t], Operand_spec.t) List.Assoc.t =
+  let operand_table : ([> t ], Operand_spec.t) List.Assoc.t =
     (* See the Intel reference manual for the source of these. *)
     Operand_spec.
-      [ `Add    , arith_operands
-      (* TODO(@MattWindsor91): Call *)
-      ; `Cmp    , arith_operands
-      (* TODO(@MattWindsor91): Cmpxchg *)
-      ; `Mov    , arith_operands (* see arith_operand_spec comments *)
-      ; `Pop    , One [ Memory; Register ]
-      ; `Push   , One [ Memory; Register; Immediate ]
-      ; `Ret    , Or (Zero, One [ Immediate ])
-      ; `Sub    , arith_operands
-      (* Though the reference manual describes XCHG as
+      [ `Add, arith_operands (* TODO(@MattWindsor91): Call *)
+      ; `Cmp, arith_operands (* TODO(@MattWindsor91): Cmpxchg *)
+      ; `Mov, arith_operands (* see arith_operand_spec comments *)
+      ; `Pop, One [ Memory; Register ]
+      ; `Push, One [ Memory; Register; Immediate ]
+      ; `Ret, Or (Zero, One [ Immediate ])
+      ; `Sub, arith_operands
+        (* Though the reference manual describes XCHG as
          having a source and destination operand, the two
          operands are symmetrical in the encoding, and
          both only accept destinations. *)
-      ; `Xchg   , Symmetric [ Memory  , Register
-                            ; Register, Register
-                            ]
-      ; `Xor    , arith_operands
+      ; `Xchg, Symmetric [ Memory, Register; Register, Register ]
+      ; `Xor, arith_operands
       ]
   ;;
 
@@ -143,41 +136,45 @@ module Sizable = struct
 
   include (
     String_table.Make (struct
-      type nonrec t = t
-      let table =
-        [ `Add    , "add"
-        ; `Call   , "call"
-        ; `Cmp    , "cmp"
-        ; `Cmpxchg, "cmpxchg"
-        ; `Mov    , "mov"
-        ; `Pop    , "pop"
-        ; `Push   , "push"
-        ; `Ret    , "ret"
-        ; `Sub    , "sub"
-        ; `Xchg   , "xchg"
-        ; `Xor    , "xor"
-        ]
-    end) : String_table.S with type t := t)
+        type nonrec t = t
+
+        let table =
+          [ `Add, "add"
+          ; `Call, "call"
+          ; `Cmp, "cmp"
+          ; `Cmpxchg, "cmpxchg"
+          ; `Mov, "mov"
+          ; `Pop, "pop"
+          ; `Push, "push"
+          ; `Ret, "ret"
+          ; `Sub, "sub"
+          ; `Xchg, "xchg"
+          ; `Xor, "xor"
+          ]
+        ;;
+      end) :
+      String_table.S with type t := t)
 
   include Abstract.Abstractable.Make (struct
-      type nonrec t = t
-      module Abs = Abstract.Instruction.Opcode
-      open Abs
+    type nonrec t = t
 
-      let abstract = function
-        | `Add     -> Arith
-        | `Call    -> Call
-        | `Cmp     -> Compare
-        | `Cmpxchg -> Rmw
-        | `Mov     -> Move
-        | `Pop     -> Stack
-        | `Push    -> Stack
-        | `Ret     -> Return
-        | `Sub     -> Arith
-        | `Xchg    -> Rmw
-        | `Xor     -> Logical
-      ;;
-    end)
+    module Abs = Abstract.Instruction.Opcode
+    open Abs
+
+    let abstract = function
+      | `Add -> Arith
+      | `Call -> Call
+      | `Cmp -> Compare
+      | `Cmpxchg -> Rmw
+      | `Mov -> Move
+      | `Pop -> Stack
+      | `Push -> Stack
+      | `Ret -> Return
+      | `Sub -> Arith
+      | `Xchg -> Rmw
+      | `Xor -> Logical
+    ;;
+  end)
 end
 
 module Size = struct
@@ -186,23 +183,16 @@ module Size = struct
     | Word
     | Long
   [@@deriving sexp, eq]
-  ;;
 
-  module Suffix_table : String_table.S with type t := t =
-    String_table.Make (struct
-      type nonrec t = t
-      let table =
-        [ Byte, "b"
-        ; Word, "w"
-        ; Long, "l"
-        ]
-    end)
+  module Suffix_table : String_table.S with type t := t = String_table.Make (struct
+    type nonrec t = t
+
+    let table = [ Byte, "b"; Word, "w"; Long, "l" ]
+  end)
 end
 
 module Sized = struct
-  type t = (Sizable.t * Size.t)
-  [@@deriving sexp, eq]
-  ;;
+  type t = Sizable.t * Size.t [@@deriving sexp, eq]
 
   include (
     String_table.Make (struct
@@ -210,19 +200,19 @@ module Sized = struct
 
         let table =
           List.map
-            ~f:(fun ((op, ops), (sz, szs)) -> ((op, sz), ops^szs))
-            (List.cartesian_product
-               Sizable.table
-               Size.Suffix_table.table)
-      end) : String_table.S with type t := t)
-  ;;
+            ~f:(fun ((op, ops), (sz, szs)) -> (op, sz), ops ^ szs)
+            (List.cartesian_product Sizable.table Size.Suffix_table.table)
+        ;;
+      end) :
+      String_table.S with type t := t)
 
   include Abstract.Abstractable.Make (struct
-      type nonrec t = t
-      module Abs = Abstract.Instruction.Opcode
-      let abstract (s, _) = Sizable.abstract s
-    end)
-  ;;
+    type nonrec t = t
+
+    module Abs = Abstract.Instruction.Opcode
+
+    let abstract (s, _) = Sizable.abstract s
+  end)
 end
 
 module Basic = struct
@@ -233,57 +223,54 @@ module Basic = struct
     | `Nop
     ]
   [@@deriving sexp, eq, enumerate]
-  ;;
 
   (* Note: any NON-SIZABLE opcodes not present in this table map to
      'unknown operands'. *)
-  let operand_table : ([> t], Operand_spec.t) List.Assoc.t =
+  let operand_table : ([> t ], Operand_spec.t) List.Assoc.t =
     (* See the Intel reference manual for the source of these. *)
-    Sizable.operand_table @
-    Operand_spec.
-      [ `Leave  , Zero
-      ; `Mfence , Zero
-      ; `Nop    , Zero
-      ]
+    Sizable.operand_table @ Operand_spec.[ `Leave, Zero; `Mfence, Zero; `Nop, Zero ]
   ;;
 
   let get_operand_spec = List.Assoc.find operand_table ~equal
 
   include (
-    String_table.Make
-      (struct
+    String_table.Make (struct
         type nonrec t = t
+
         let table =
           (Sizable.table :> (t, string) List.Assoc.t)
-          @
-          [ `Leave,  "leave"
-          ; `Mfence, "mfence"
-          ; `Nop,    "nop"
-          ]
-      end) : String_table.S with type t := t)
+          @ [ `Leave, "leave"; `Mfence, "mfence"; `Nop, "nop" ]
+        ;;
+      end) :
+      String_table.S with type t := t)
 
   include Abstract.Abstractable.Make (struct
-      type nonrec t = t
-      module Abs = Abstract.Instruction.Opcode
-      open Abs
+    type nonrec t = t
 
-      let abstract = function
-        | #Sizable.t as s -> Sizable.abstract s
-        | `Leave  -> Call
-        | `Mfence -> Fence
-        | `Nop    -> Nop
-      ;;
-    end)
+    module Abs = Abstract.Instruction.Opcode
+    open Abs
+
+    let abstract = function
+      | #Sizable.t as s -> Sizable.abstract s
+      | `Leave -> Call
+      | `Mfence -> Fence
+      | `Nop -> Nop
+    ;;
+  end)
 
   let%expect_test "Basic: table accounts for all instructions" =
-    Format.printf "@[<v>%a@]@."
-      (Format.pp_print_list ~pp_sep:Format.pp_print_space
-         (fun f opcode ->
-            Format.fprintf f "@[<h>%a -> %s@]"
-              Sexp.pp_hum [%sexp (opcode : t)]
-              (Option.value ~default:"(none)" (to_string opcode))))
+    Format.printf
+      "@[<v>%a@]@."
+      (Format.pp_print_list ~pp_sep:Format.pp_print_space (fun f opcode ->
+           Format.fprintf
+             f
+             "@[<h>%a -> %s@]"
+             Sexp.pp_hum
+             [%sexp (opcode : t)]
+             (Option.value ~default:"(none)" (to_string opcode))))
       all;
-    [%expect {|
+    [%expect
+      {|
       Add -> add
       Call -> call
       Cmp -> cmp
@@ -298,6 +285,7 @@ module Basic = struct
       Leave -> leave
       Mfence -> mfence
       Nop -> nop |}]
+  ;;
 end
 
 module Condition = struct
@@ -318,30 +306,29 @@ module Condition = struct
     | `Zero
     ]
   [@@deriving sexp, eq, enumerate]
-  ;;
 
   (** Intermediate table used to build the main condition table. *)
-  module Inv_table =
-    String_table.Make
-      (struct
-        type t = invertible
-        let table =
-          [ `Above       , "a"
-          ; `AboveEqual  , "ae"
-          ; `Below       , "b"
-          ; `BelowEqual  , "be"
-          ; `Carry       , "c"
-          ; `Equal       , "e"
-          ; `Greater     , "g"
-          ; `GreaterEqual, "ge"
-          ; `Less        , "l"
-          ; `LessEqual   , "le"
-          ; `Overflow    , "o"
-          ; `Parity      , "p"
-          ; `Sign        , "s"
-          ; `Zero        , "z"
-          ]
-      end)
+  module Inv_table = String_table.Make (struct
+    type t = invertible
+
+    let table =
+      [ `Above, "a"
+      ; `AboveEqual, "ae"
+      ; `Below, "b"
+      ; `BelowEqual, "be"
+      ; `Carry, "c"
+      ; `Equal, "e"
+      ; `Greater, "g"
+      ; `GreaterEqual, "ge"
+      ; `Less, "l"
+      ; `LessEqual, "le"
+      ; `Overflow, "o"
+      ; `Parity, "p"
+      ; `Sign, "s"
+      ; `Zero, "z"
+      ]
+    ;;
+  end)
 
   type t =
     [ invertible
@@ -352,27 +339,21 @@ module Condition = struct
     | `ParityOdd
     ]
   [@@deriving sexp, eq, enumerate]
-  ;;
 
   (** [build_inv_condition (ic, s) builds, for an invertible condition
       C, string table entries for C and NC. *)
-  let build_inv_condition (ic, s) =
-    [ ((ic :> t), s)
-    ; (`Not ic, "n" ^ s)
-    ]
+  let build_inv_condition (ic, s) = [ (ic :> t), s; `Not ic, "n" ^ s ]
 
-  include
-    (String_table.Make (struct
-       type nonrec t = t
-       let table =
-         List.bind ~f:build_inv_condition Inv_table.table
-         @
-         [ `CXZero    , "cxz"
-         ; `ECXZero   , "ecxz"
-         ; `ParityEven, "pe"
-         ; `ParityOdd , "po"
-         ]
-     end) : String_table.S with type t := t)
+  include (
+    String_table.Make (struct
+        type nonrec t = t
+
+        let table =
+          List.bind ~f:build_inv_condition Inv_table.table
+          @ [ `CXZero, "cxz"; `ECXZero, "ecxz"; `ParityEven, "pe"; `ParityOdd, "po" ]
+        ;;
+      end) :
+      String_table.S with type t := t)
 end
 
 module Jump = struct
@@ -381,31 +362,31 @@ module Jump = struct
     | `Conditional of Condition.t
     ]
   [@@deriving sexp, eq, enumerate]
-  ;;
 
-  include
-    (String_table.Make (struct
-      type nonrec t = t
+  include (
+    String_table.Make (struct
+        type nonrec t = t
 
-      (* Jump instructions are always jC for some condition C, except
+        (* Jump instructions are always jC for some condition C, except
          jmp. *)
-      let f (x, s) = (`Conditional x, "j" ^ s)
-      let table =
-        (`Unconditional, "jmp")
-        :: List.map ~f Condition.table
-      ;;
-    end) : String_table.S with type t := t)
-
+        let f (x, s) = `Conditional x, "j" ^ s
+        let table = (`Unconditional, "jmp") :: List.map ~f Condition.table
+      end) :
+      String_table.S with type t := t)
 
   let%expect_test "Jump: table accounts for all conditions" =
-    Format.printf "@[<v>%a@]@."
-      (Format.pp_print_list ~pp_sep:Format.pp_print_space
-         (fun f opcode ->
-            Format.fprintf f "@[<h>%a -> %s@]"
-              Sexp.pp_hum [%sexp (opcode : t)]
-              (Option.value ~default:"(none)" (to_string opcode))))
+    Format.printf
+      "@[<v>%a@]@."
+      (Format.pp_print_list ~pp_sep:Format.pp_print_space (fun f opcode ->
+           Format.fprintf
+             f
+             "@[<h>%a -> %s@]"
+             Sexp.pp_hum
+             [%sexp (opcode : t)]
+             (Option.value ~default:"(none)" (to_string opcode))))
       all;
-    [%expect {|
+    [%expect
+      {|
       Unconditional -> jmp
       (Conditional Above) -> ja
       (Conditional AboveEqual) -> jae
@@ -439,83 +420,78 @@ module Jump = struct
       (Conditional ECXZero) -> jecxz
       (Conditional ParityEven) -> jpe
       (Conditional ParityOdd) -> jpo |}]
+  ;;
 
   include Abstract.Abstractable.Make (struct
-      type nonrec t = t
-      module Abs = Abstract.Instruction.Opcode
-      let abstract _ = Abs.Jump
-    end)
+    type nonrec t = t
+
+    module Abs = Abstract.Instruction.Opcode
+
+    let abstract _ = Abs.Jump
+  end)
 end
 
 type t =
-  | Basic     of Basic.t
-  | Sized     of Sized.t
-  | Jump      of Jump.t
+  | Basic of Basic.t
+  | Sized of Sized.t
+  | Jump of Jump.t
   | Directive of string
-  | Unknown   of string
+  | Unknown of string
 [@@deriving sexp, eq, variants]
-;;
 
 include Abstract.Abstractable.Make (struct
-    type nonrec t = t
-    module Abs = Abstract.Instruction.Opcode
+  type nonrec t = t
 
-    let abstract = function
-      | Basic b     -> Basic.abstract b
-      | Sized s     -> Sized.abstract s
-      | Jump  j     -> Jump.abstract j
-      | Directive _ -> Other
-      | Unknown _   -> Unknown
-    ;;
-  end)
+  module Abs = Abstract.Instruction.Opcode
 
-let directive_of_string string =
-  Core.String.chop_prefix string ~prefix:"."
-;;
+  let abstract = function
+    | Basic b -> Basic.abstract b
+    | Sized s -> Sized.abstract s
+    | Jump j -> Jump.abstract j
+    | Directive _ -> Other
+    | Unknown _ -> Unknown
+  ;;
+end)
+
+let directive_of_string string = Core.String.chop_prefix string ~prefix:"."
 
 let of_string string =
   Travesty.T_option.first_some_of_thunks
-    (Core.Option.
-       [ (fun () -> string |> directive_of_string >>| directive)
-       ; (fun () -> string |> Jump.of_string      >>| jump)
-       ; (fun () -> string |> Sized.of_string     >>| sized)
-       ; (fun () -> string |> Basic.of_string     >>| basic)
-       ])
+    Core.Option.
+      [ (fun () -> string |> directive_of_string >>| directive)
+      ; (fun () -> string |> Jump.of_string >>| jump)
+      ; (fun () -> string |> Sized.of_string >>| sized)
+      ; (fun () -> string |> Basic.of_string >>| basic)
+      ]
   |> Option.value ~default:(Unknown string)
 ;;
 
 let%expect_test "of_string: directive" =
-  Sexp.output_hum Out_channel.stdout
-    [%sexp (of_string ".global" : t)];
+  Sexp.output_hum Out_channel.stdout [%sexp (of_string ".global" : t)];
   [%expect {| (Directive global) |}]
 ;;
 
 let%expect_test "of_string: conditional jump" =
-  Sexp.output_hum Out_channel.stdout
-    [%sexp (of_string "jne" : t)];
+  Sexp.output_hum Out_channel.stdout [%sexp (of_string "jne" : t)];
   [%expect {| (Jump (Conditional (Not Equal))) |}]
 ;;
 
 let%expect_test "of_string: unconditional jump" =
-  Sexp.output_hum Out_channel.stdout
-    [%sexp (of_string "JMP" : t)];
+  Sexp.output_hum Out_channel.stdout [%sexp (of_string "JMP" : t)];
   [%expect {| (Jump Unconditional) |}]
 ;;
 
 let%expect_test "of_string: sized opcode" =
-  Sexp.output_hum Out_channel.stdout
-    [%sexp (of_string "movl" : t)];
+  Sexp.output_hum Out_channel.stdout [%sexp (of_string "movl" : t)];
   [%expect {| (Sized (Mov Long)) |}]
 ;;
 
 let%expect_test "of_string: basic opcode" =
-  Sexp.output_hum Out_channel.stdout
-    [%sexp (of_string "MOV" : t)];
+  Sexp.output_hum Out_channel.stdout [%sexp (of_string "MOV" : t)];
   [%expect {| (Basic Mov) |}]
 ;;
 
 let%expect_test "of_string: not an opcode" =
-  Sexp.output_hum Out_channel.stdout
-    [%sexp (of_string "bananas" : t)];
+  Sexp.output_hum Out_channel.stdout [%sexp (of_string "bananas" : t)];
   [%expect {| (Unknown bananas) |}]
 ;;

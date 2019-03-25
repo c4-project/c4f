@@ -110,7 +110,9 @@ module type S = sig
         specifications in [specs], returning those marked [`Fst] in
         the first bucket and those marked [`Snd] in the second. *)
     val partition_map
-      : t -> f:(With_id.t -> [`Fst of 'a | `Snd of 'b]) -> 'a list * 'b list
+      :  t
+      -> f:(With_id.t -> [ `Fst of 'a | `Snd of 'b ])
+      -> 'a list * 'b list
 
     (** [group specs ~f] groups [specs] into buckets according to some
        grouping function [f].  [f] returns specification IDs; the idea

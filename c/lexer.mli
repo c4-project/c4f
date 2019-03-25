@@ -16,7 +16,7 @@
 
 open Core_kernel
 
-val token : String.Set.t -> Lexing.lexbuf -> Parser.token
 (** [token typedefs lexbuf] lexes the next token in [lexbuf].  It
    supports the C 'lexer hack' by taking in a set of known
    typedefs [typedefs]. *)
+val token : String.Set.t -> Lexing.lexbuf -> Parser.token

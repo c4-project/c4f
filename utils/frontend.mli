@@ -24,14 +24,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Lexing
 
 module Error_range : sig
-  type t = (position * position) [@@deriving sexp_of]
+  type t = position * position [@@deriving sexp_of]
 end
 
 exception LexError of string * Error_range.t
 
-val lex_error : string -> lexbuf -> 'a
 (** [lex_error error lexbuf] raises a [LexError] with the given
     error message and lexbuf. *)
+val lex_error : string -> lexbuf -> 'a
 
 (** [Basic] is the signature that language frontends must implement
     to use [Make]. *)
@@ -53,5 +53,5 @@ module type S = sig
   include Loadable.S with type t := ast
 end
 
-module Make (B : Basic) : S with type ast := B.ast
 (** [Make] lifts an instance of [B] into a frontend. *)
+module Make (B : Basic) : S with type ast := B.ast

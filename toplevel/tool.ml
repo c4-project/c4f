@@ -25,8 +25,7 @@
 open Core_kernel
 open Lib
 
-let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Config.Act.t)
-  : unit Or_error.t =
+let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Config.Act.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind herd = Config.Act.require_herd cfg in
   Herd.run_direct ?arch herd argv
@@ -40,25 +39,27 @@ let herd_command : Command.t =
       let standard_args = Args.Standard.get
       and arch =
         choose_one
-          [ Args.flag_to_enum_choice (Some Herd.C) "-c"
+          [ Args.flag_to_enum_choice
+              (Some Herd.C)
+              "-c"
               ~doc:"Use the act.conf-configured model for C"
-          ; map ~f:(Option.map ~f:(fun x -> Some (Herd.Assembly x)))
+          ; map
+              ~f:(Option.map ~f:(fun x -> Some (Herd.Assembly x)))
               (Args.arch
                  ~doc:"Use the act.conf-configured model for this architecture"
-                 ()
-              )
+                 ())
           ]
           ~if_nothing_chosen:(`Default_to None)
-      and argv = flag "--" Command.Flag.escape ~doc:"STRINGS Arguments to send to Herd directly." in
+      and argv =
+        flag "--" Command.Flag.escape ~doc:"STRINGS Arguments to send to Herd directly."
+      in
       fun () ->
-        Common.lift_command standard_args
-          ~with_compiler_tests:false
-          ~f:(fun _args -> run_herd ?arch ?argv)
-    ]
+        Common.lift_command standard_args ~with_compiler_tests:false ~f:(fun _args ->
+            run_herd ?arch ?argv)]
 ;;
 
 let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Config.Act.t)
-  : unit Or_error.t =
+    : unit Or_error.t =
   let open Or_error.Let_syntax in
   let machines = Config.Act.machines cfg in
   let%bind machine = Config.Machine.Spec.Set.get machines Config.Machine.Id.default in
@@ -72,18 +73,16 @@ let litmus_command : Command.t =
     ~summary:"runs Litmus locally"
     [%map_open
       let standard_args = Args.Standard.get
-      and argv = flag "--" Command.Flag.escape ~doc:"STRINGS Arguments to send to Herd directly." in
+      and argv =
+        flag "--" Command.Flag.escape ~doc:"STRINGS Arguments to send to Herd directly."
+      in
       fun () ->
-        Common.lift_command standard_args
-          ~with_compiler_tests:false
-          ~f:(fun _args -> run_litmus_locally ?argv)
-    ]
+        Common.lift_command standard_args ~with_compiler_tests:false ~f:(fun _args ->
+            run_litmus_locally ?argv)]
 ;;
 
 let command : Command.t =
   Command.group
     ~summary:"Run act tools directly"
-    [ "herd"  , herd_command
-    ; "litmus", litmus_command
-    ]
+    [ "herd", herd_command; "litmus", litmus_command ]
 ;;

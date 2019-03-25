@@ -39,7 +39,6 @@ module type S = sig
     | Operands of Lang.Instruction.t
     | Statement of Lang.Statement.t
     | Symbol of Lang.Symbol.t
-  ;;
 
   (** [t] is the opaque type of warnings. *)
   type t
@@ -55,12 +54,7 @@ module type S = sig
   val body : t -> Info.t
 
   (** [make ~program_name ~element ~body] creates a warning. *)
-  val make
-    :  program_name:string
-    -> element:elt
-    -> body:Info.t
-    -> t
-  ;;
+  val make : program_name:string -> element:elt -> body:Info.t -> t
 
   (** [not_understood ()] creates a standard warning body for
       an element that wasn't understood by act. *)
@@ -76,9 +70,7 @@ end
 module type Sanitiser_warn = sig
   module type S = S
 
-
   (** [Make] produces a warnings module for the given
      language. *)
-  module Make
-    : functor (Lang : Language.S) -> S with module Lang := Lang
+  module Make (Lang : Language.S) : S with module Lang := Lang
 end

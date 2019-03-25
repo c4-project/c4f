@@ -83,12 +83,11 @@ module Record = struct
   include Comparable.Make (M)
 
   let remove_tid (record : t) : t = { record with tid = None }
-
   let has_tid (record : t) : bool = Option.is_some (tid record)
   let is_global (record : t) : bool = Scope.is_global (scope record)
   let is_local (record : t) : bool = Scope.is_local (scope record)
 
-  let resolve_clash : [`Left of t | `Right of t | `Both of t * t] -> t = function
+  let resolve_clash : [ `Left of t | `Right of t | `Both of t * t ] -> t = function
     | `Left x | `Right x -> x
     | `Both (l, r) -> max l r
   ;;
@@ -104,23 +103,28 @@ module Map = struct
       C_identifier.Map.quickcheck_generator
         C_identifier.quickcheck_generator
         Record.quickcheck_generator
+    ;;
 
     let quickcheck_observer =
       C_identifier.Map.quickcheck_observer
         C_identifier.quickcheck_observer
         Record.quickcheck_observer
+    ;;
 
     let quickcheck_shrinker =
       C_identifier.Map.quickcheck_shrinker
         C_identifier.quickcheck_shrinker
         Record.quickcheck_shrinker
+    ;;
   end
+
   include Q
 
   let of_single_scope_map
       ?(tid : int option)
       ?(scope : Scope.t = Scope.Unknown)
-      (cvars : Initial_value.t C_identifier.Map.t) : t =
+      (cvars : Initial_value.t C_identifier.Map.t)
+      : t =
     C_identifier.Map.map cvars ~f:(fun initial_value ->
         Record.make ?tid ~scope ~initial_value ())
   ;;
@@ -128,7 +132,8 @@ module Map = struct
   let of_single_scope_set
       ?(tid : int option)
       ?(scope : Scope.t = Scope.Unknown)
-      (cvars : C_identifier.Set.t) : t =
+      (cvars : C_identifier.Set.t)
+      : t =
     let cvars_map = C_identifier.Set.to_map cvars ~f:(Fn.const None) in
     of_single_scope_map ?tid ~scope cvars_map
   ;;
@@ -148,39 +153,34 @@ module Map = struct
     Some (Record.resolve_clash value)
   ;;
 
-  let merge : t -> t -> t =
-    C_identifier.Map.merge ~f:resolve_cvar_clashes
-
-  let merge_list_opt (xs : t list) : t option =
-    List.reduce_balanced xs ~f:merge
-  ;;
+  let merge : t -> t -> t = C_identifier.Map.merge ~f:resolve_cvar_clashes
+  let merge_list_opt (xs : t list) : t option = List.reduce_balanced xs ~f:merge
 
   let merge_list (xs : t list) : t =
-    xs
-    |> merge_list_opt
-    |> Option.value ~default:C_identifier.Map.empty
+    xs |> merge_list_opt |> Option.value ~default:C_identifier.Map.empty
   ;;
 
   let of_litmus_id_pair
       ?(scope : Scope.t = Scope.Unknown)
-      (id : Litmus.Id.t) (initial_value : Initial_value.t)
-    : C_identifier.t * Record.t =
+      (id : Litmus.Id.t)
+      (initial_value : Initial_value.t)
+      : C_identifier.t * Record.t =
     let tid = Litmus.Id.tid id in
     let name = Litmus.Id.variable_name id in
-    (name, Record.make ~scope ?tid ~initial_value ())
+    name, Record.make ~scope ?tid ~initial_value ()
   ;;
 
   let of_litmus_id_alist
-    ?(scope : Scope.t option)
-    (xs : (Litmus.Id.t, Initial_value.t) List.Assoc.t)
-    : t Or_error.t =
+      ?(scope : Scope.t option)
+      (xs : (Litmus.Id.t, Initial_value.t) List.Assoc.t)
+      : t Or_error.t =
     xs
     |> List.map ~f:(Tuple2.uncurry (of_litmus_id_pair ?scope))
     |> C_identifier.Map.of_alist_or_error
   ;;
 
-  let map (m : t) ~(f : C_identifier.t -> Record.t -> C_identifier.t * Record.t) :
-      t Or_error.t =
+  let map (m : t) ~(f : C_identifier.t -> Record.t -> C_identifier.t * Record.t)
+      : t Or_error.t =
     m
     |> C_identifier.Map.to_alist
     |> List.map ~f:(Tuple2.uncurry f)
@@ -188,45 +188,44 @@ module Map = struct
   ;;
 end
 
-let%test_module "Map tests" = (module struct
-  let%expect_test "merge_list_opt: no maps" =
-    Stdio.print_s
-      [%sexp (Map.merge_list_opt [] : Map.t option)];
-    [%expect {| () |}]
-  ;;
+let%test_module "Map tests" =
+  (module struct
+     let%expect_test "merge_list_opt: no maps" =
+       Stdio.print_s [%sexp (Map.merge_list_opt [] : Map.t option)];
+       [%expect {| () |}]
+     ;;
 
-  let%expect_test "of_value_maps_opt: empty maps" =
-    Stdio.print_s
-      [%sexp (Map.merge_list_opt
-                [ C_identifier.Map.empty
-                ; C_identifier.Map.empty
-                ]
-                : Map.t option)];
-    [%expect {| (()) |}]
-  ;;
+     let%expect_test "of_value_maps_opt: empty maps" =
+       Stdio.print_s
+         [%sexp
+           (Map.merge_list_opt [ C_identifier.Map.empty; C_identifier.Map.empty ]
+             : Map.t option)];
+       [%expect {| (()) |}]
+     ;;
 
-  let%test_unit "vars_satisfying false = empty" =
-    Base_quickcheck.Test.run_exn (module Map)
-      ~f:(fun m -> [%test_result: C_identifier.Set.t] ~here:[[%here]]
+     let%test_unit "vars_satisfying false = empty" =
+       Base_quickcheck.Test.run_exn
+         (module Map)
+         ~f:(fun m ->
+           [%test_result: C_identifier.Set.t]
+             ~here:[ [%here] ]
              ~equal:[%equal: C_identifier.Set.t]
              (Map.vars_satisfying m ~f:(Fn.const false))
-             ~expect:(C_identifier.Set.empty)
-         )
-  ;;
-end)
+             ~expect:C_identifier.Set.empty)
+     ;;
+  end)
+;;
 
 module String_lang = struct
   module T_opt = Travesty.T_option.With_errors
 
-  let split_initial (str : string) :
-    string * string option =
+  let split_initial (str : string) : string * string option =
     str
     |> String.rsplit2 ~on:'='
     |> Option.value_map ~f:(Tuple2.map_snd ~f:Option.some) ~default:(str, None)
   ;;
 
-  let split_and_strip_initial (str : string) :
-    string * string option =
+  let split_and_strip_initial (str : string) : string * string option =
     let name_str_unstripped, value_str_unstripped = split_initial str in
     let name_str = String.strip name_str_unstripped in
     let value_str = Option.map ~f:String.strip value_str_unstripped in
@@ -240,8 +239,7 @@ module String_lang = struct
   ;;
 
   let%expect_test "split_and_strip_initial: absent" =
-    Stdio.print_s
-      [%sexp (split_and_strip_initial "foobar" : string * string option)];
+    Stdio.print_s [%sexp (split_and_strip_initial "foobar" : string * string option)];
     [%expect {| (foobar ()) |}]
   ;;
 
@@ -251,8 +249,7 @@ module String_lang = struct
     [%expect {| (foo=bar (baz)) |}]
   ;;
 
-  let parse_initial (str : string) :
-    (Litmus.Id.t * Initial_value.t) Or_error.t =
+  let parse_initial (str : string) : (Litmus.Id.t * Initial_value.t) Or_error.t =
     let open Or_error.Let_syntax in
     let name_str, value_str_opt = split_and_strip_initial str in
     let%bind name = Litmus.Id.try_parse name_str in
@@ -265,8 +262,7 @@ module String_lang = struct
 
   let%expect_test "parse_initial: present, no tid" =
     Stdio.print_s
-      [%sexp (parse_initial "foo = 3" :
-                (Litmus.Id.t * Initial_value.t) Or_error.t)];
+      [%sexp (parse_initial "foo = 3" : (Litmus.Id.t * Initial_value.t) Or_error.t)];
     [%expect {| (Ok (foo (3))) |}]
   ;;
 
@@ -276,13 +272,11 @@ module String_lang = struct
     [%expect {| (Ok (foobar ())) |}]
   ;;
 
-  let parse_list ?(scope : Scope.t option) (sl : string list) :
-    Map.t Or_error.t =
+  let parse_list ?(scope : Scope.t option) (sl : string list) : Map.t Or_error.t =
     Or_error.Monad_infix.(
       sl
       |> List.map ~f:parse_initial
       |> Or_error.combine_errors
-      >>= Map.of_litmus_id_alist ?scope
-    )
+      >>= Map.of_litmus_id_alist ?scope)
   ;;
 end

@@ -27,16 +27,16 @@ open Core_kernel
 (** Miscellaneous utilities for the Jane Street quickcheck system. *)
 include module type of My_quickcheck_intf
 
+(** [gen_string_initial ~initial ~rest] is a Quickcheck generator that
+    produces non-empty strings whose first character draws from
+    [initial] and all other characters from [rest]. *)
 val gen_string_initial
   :  initial:char Quickcheck.Generator.t
   -> rest:char Quickcheck.Generator.t
   -> string Quickcheck.Generator.t
-(** [gen_string_initial ~initial ~rest] is a Quickcheck generator that
-    produces non-empty strings whose first character draws from
-    [initial] and all other characters from [rest]. *)
 
+(** Convenience module for small non-negative integer generation. *)
 module Small_non_negative_int : sig
   include module type of Int
   include S_with_sexp with type t := int
 end
-(** Convenience module for small non-negative integer generation. *)

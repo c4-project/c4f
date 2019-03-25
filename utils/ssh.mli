@@ -26,43 +26,42 @@
     over SSH. *)
 
 open Core
-
 include module type of Ssh_intf
 
 (** {2 SSH configuration records} *)
 
-type t
 (** [t] contains a SSH hostname and optional user. *)
+type t
 
-val host : t -> string
 (** [host ssh] gets the configured host for [ssh]. *)
+val host : t -> string
 
-val user : t -> string option
 (** [user ssh] gets the configured user, if any, for [ssh]. *)
+val user : t -> string option
 
-val create : ?user:string -> host:string -> t
 (** [create ?user ~host] creates a [t] for connecting to [host],
     optionally as user [user]. *)
+val create : ?user:string -> host:string -> t
 
 (** {2 Functors} *)
 
-module Make (Conf : sig val ssh : t end) : S
 (** [Make] makes an [S] from a [t]. *)
+module Make (Conf : sig
+  val ssh : t
+end) : S
 
-module Runner (Conf : Basic_runner) : Runner.S
 (** [Runner] provides a [Run.Runner] using the given SSH config. *)
+module Runner (Conf : Basic_runner) : Runner.S
 
 (** [Scp] provides SCP file transfer operations, given an [S]. *)
 module Scp (Conf : S) : sig
-  val send
-    : recurse:bool -> local:Fpath.t -> remote:string -> unit Or_error.t
   (** [send ~recurse ~local ~remote] tries to copy the local path
      [local] to the remote host at path [remote] using scp.
      [recurse], if true, turns on the recursive copy flag. *)
+  val send : recurse:bool -> local:Fpath.t -> remote:string -> unit Or_error.t
 
-  val receive
-    : recurse:bool -> remote:string -> local:Fpath.t -> unit Or_error.t
-    (** [receive ~recurse ~remote ~local] tries to copy the path
+  (** [receive ~recurse ~remote ~local] tries to copy the path
        [remote] on the remote host to the local path [local] using
        scp.  [recurse], if true, turns on the recursive copy flag. *)
+  val receive : recurse:bool -> remote:string -> local:Fpath.t -> unit Or_error.t
 end

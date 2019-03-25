@@ -27,49 +27,43 @@
 open Core_kernel
 open Utils
 
-type t [@@deriving sexp, eq, quickcheck]
 (** Opaque type of addresses. *)
+type t [@@deriving sexp, eq, quickcheck]
 
-module On_lvalues : Travesty.Traversable.S0_container
-  with type t := t and type Elt.t = Mini_lvalue.t
 (** Traversing over lvalues in addresses. *)
+module On_lvalues :
+  Travesty.Traversable.S0_container with type t := t and type Elt.t = Mini_lvalue.t
 
 (** {3 Constructors} *)
 
-val lvalue : Mini_lvalue.t -> t
 (** [lvalue lv] lifts an lvalue [lv] to an address. *)
+val lvalue : Mini_lvalue.t -> t
 
-val ref : t -> t
 (** [ref t] constructs a &-reference to [t]. *)
+val ref : t -> t
 
-val of_variable : C_identifier.t -> t
 (** [of_variable v] lifts the variable identifier [v] directly to an
    address. *)
+val of_variable : C_identifier.t -> t
 
-val of_variable_ref : C_identifier.t -> t
 (** [of_variable_ref v] lifts the address of variable identifier [v]
    to an address (in C syntax, this would be '&v'). *)
-;;
-
+val of_variable_ref : C_identifier.t -> t
 
 (** {3 Accessors} *)
 
-val reduce
-  :  t
-  -> lvalue:(Mini_lvalue.t -> 'a)
-  -> ref:('a -> 'a)
-  -> 'a
 (** [reduce addr ~address ~deref] applies [lvalue] on the
     underlying lvalue of [addr], then recursively applies [ref]
     to the result for each layer of address-taking in the address. *)
+val reduce : t -> lvalue:(Mini_lvalue.t -> 'a) -> ref:('a -> 'a) -> 'a
 
-include Mini_intf.S_has_underlying_variable with type t := t
 (** We can get to the variable name inside an address. *)
+include Mini_intf.S_has_underlying_variable with type t := t
 
 (** {3 Type-checking} *)
 
-include Mini_intf.S_type_checkable with type t := t
 (** Type-checking for addresses. *)
+include Mini_intf.S_type_checkable with type t := t
 
 (** {3 Generating and quickchecking}
 
@@ -78,18 +72,16 @@ include Mini_intf.S_type_checkable with type t := t
 
 *)
 
-module Quickcheck_generic
-    (Lv : Quickcheckable.S with type t := Mini_lvalue.t)
-  : Quickcheckable.S with type t := t
 (** Generates random addresses, parametrised on a given lvalue
     generator. *)
+module Quickcheck_generic (Lv : Quickcheckable.S with type t := Mini_lvalue.t) :
+  Quickcheckable.S with type t := t
 
-module Quickcheck_on_env (E : Mini_env.S)
-  : Quickcheckable.S with type t := t
 (** Generates random addresses, constrained over the variables
     in the given environment. *)
+module Quickcheck_on_env (E : Mini_env.S) : Quickcheckable.S with type t := t
 
-module Quickcheck_atomic_int_pointers (E : Mini_env.S)
-  : Quickcheckable.S with type t := t
 (** Generates addresses over the given typing environment that have
     the type 'atomic_int*'. *)
+module Quickcheck_atomic_int_pointers (E : Mini_env.S) :
+  Quickcheckable.S with type t := t

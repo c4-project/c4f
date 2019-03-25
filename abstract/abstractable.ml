@@ -24,13 +24,10 @@
 
 include Abstractable_intf
 
-module Make (B : Basic)
-  : S with type t := B.t and module Abs := B.Abs = struct
+module Make (B : Basic) : S with type t := B.t and module Abs := B.Abs = struct
   include B
 
   let abs_kind x = Abs.kind (abstract x)
-
   let has_abs_kind ty x = Abs.Kind.equal ty (abs_kind x)
-
   let abs_kind_in tys x = Abs.Kind.Set.mem tys (abs_kind x)
 end

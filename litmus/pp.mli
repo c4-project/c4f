@@ -24,19 +24,19 @@
 
 (** Pretty-printers for Litmus tests *)
 
-include module type of Pp_intf
 (** As usual, we store the signatures for [Pp] in a separate
    implementation module, and include them in both sides of this
    module. *)
+include module type of Pp_intf
 
-module Make_tabular (Ast : Ast.S) : S with module Ast = Ast
 (** [Make_tabular] makes a pretty-printer for a Litmus AST that
     outputs programs as tables.
 
     This is useful for assembly languages. *)
+module Make_tabular (Ast : Ast.S) : S with module Ast = Ast
 
-module Make_sequential (Ast : Ast.S) : S with module Ast = Ast
 (** [Make_sequential] makes a pretty-printer for a Litmus AST that
     directly outputs each program AST in sequence.
 
     This is useful for languages like C. *)
+module Make_sequential (Ast : Ast.S) : S with module Ast = Ast

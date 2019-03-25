@@ -33,22 +33,18 @@
 module type Basic = sig
   module Dialect : Dialect.S
   module Pretty : Pp.Printer
-  module Symbol : Lib.Language_symbol.Basic
-    with type t := string
-  ;;
-  module Location : Lib.Language_location.Basic
-    with type t := Ast.Location.t
-  ;;
+  module Symbol : Lib.Language_symbol.Basic with type t := string
+  module Location : Lib.Language_location.Basic with type t := Ast.Location.t
 end
 
 (** [S] is the signature of a module produced using [Make]. *)
 module type S = sig
-  include Lib.Language_instruction.Basic
+  include
+    Lib.Language_instruction.Basic
     with type t = Ast.Instruction.t
      and type con = Ast.Operand.t
      and type Sym.t = string
      and type Loc.t = Ast.Location.t
-  ;;
 
   (** [make_jump_operand sym] turns [sym] into a jump operand.
 
@@ -59,4 +55,4 @@ module type S = sig
 end
 
 (** [Make (B)] generates a [S] from a [Basic] [B]. *)
-module Make : functor (B : Basic) -> S
+module Make (B : Basic) : S

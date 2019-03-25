@@ -28,20 +28,19 @@
 module Opcode : sig
   (** [t] is an abstracted opcode. *)
   type t =
-    | Arith   (** arithmetic *)
-    | Call    (** calling-convention related instructions *)
+    | Arith (** arithmetic *)
+    | Call (** calling-convention related instructions *)
     | Compare (** comparison *)
-    | Fence   (** memory fence *)
-    | Jump    (** conditional or unconditional jump *)
+    | Fence (** memory fence *)
+    | Jump (** conditional or unconditional jump *)
     | Logical (** logical operation *)
-    | Move    (** move *)
-    | Nop     (** no operation *)
-    | Return  (** jump to caller *)
-    | Rmw     (** read-modify-write *)
-    | Stack   (** stack resizing and pointer manipulation *)
-    | Other   (** known, but doesn't fit in these categories *)
+    | Move (** move *)
+    | Nop (** no operation *)
+    | Return (** jump to caller *)
+    | Rmw (** read-modify-write *)
+    | Stack (** stack resizing and pointer manipulation *)
+    | Other (** known, but doesn't fit in these categories *)
     | Unknown (** unclassified instruction *)
-  ;;
 
   (* Why do we have a separate [Return] type, instead of classing it
      as [Call] or [Jump]?  Two reasons:
@@ -51,92 +50,85 @@ module Opcode : sig
      - It makes it easier for us to translate returns to
        end-of-program jumps in sanitisation.  *)
 
-  include Node.S with type t := t and type Kind.t = t
   (** [Opcode] is an abstraction that is currently its own kind
       enumeration. *)
+  include Node.S with type t := t and type Kind.t = t
 end
 
-type t [@@deriving sexp]
 (** Type of an abstracted instruction, including operands. *)
+type t [@@deriving sexp]
 
-include Node.S with type t := t and module Kind = Opcode.Kind
 (** When using this module as an abstraction, the kind of each
     instruction is exactly the kind of its opcode. *)
+include Node.S with type t := t and module Kind = Opcode.Kind
 
-val make
-  :  opcode:Opcode.t
-  -> operands:Operand.Bundle.t
-  -> t
 (** [make ~opcode ~operands] makes a [t]
    from an [opcode] and an [operands] bundle. *)
+val make : opcode:Opcode.t -> operands:Operand.Bundle.t -> t
 
 (** [S_predicates] is the signature of any module that can access
     simple predicates over an abstract instruction. *)
 module type S_predicates = sig
-  type t
   (** The type we're querying. *)
+  type t
 
-  val has_opcode : t -> opcode:Opcode.Kind.t -> bool
   (** [has_opcode ins ~opcode] tests whether [ins] has opcode
       [opcode]. *)
+  val has_opcode : t -> opcode:Opcode.Kind.t -> bool
 
-  val opcode_in : t -> opcodes:Opcode.Kind.Set.t -> bool
   (** [opcode_in ins ~opcodes] tests whether [ins] has an opcode
       in [opcodes]. *)
+  val opcode_in : t -> opcodes:Opcode.Kind.Set.t -> bool
 
-  val is_jump : t -> bool
   (** [is_jump ins] tests whether [ins] is a jump operation. *)
+  val is_jump : t -> bool
 
-  val is_symbolic_jump : t -> bool
   (** [is_symbolic_jump ins] tests whether [ins] is a jump to a
       symbol (either immediate, or using the symbol as a heap
       reference). *)
+  val is_symbolic_jump : t -> bool
 
-  val is_symbolic_jump_where : t -> f:(Symbol.t -> bool) -> bool
   (** [is_symbolic_jump_where ins ~f] tests whether [ins] is a jump to
      a symbol whose label matches the predicate [f]. *)
+  val is_symbolic_jump_where : t -> f:(Symbol.t -> bool) -> bool
 
-  val is_nop : t -> bool
   (** [is_nop ins] tests whether the [ins] is a no-operation. *)
+  val is_nop : t -> bool
 
-  val is_stack_manipulation : t -> bool
   (** [is_stack_manipulation ins ] tests whether [ins] is manipulating
      the stack pointer. *)
+  val is_stack_manipulation : t -> bool
 end
 
-module Inherit_predicates
-  (P : S_predicates)
-  (I : Utils.Inherit.S_partial with type c := P.t)
-  : S_predicates with type t := I.t
 (** [Inherit_predicates] generates a [S_properties] by inheriting it
     from an optional component.  Each predicate returns false when the
     component doesn't exist. *)
+module Inherit_predicates
+    (P : S_predicates)
+    (I : Utils.Inherit.S_partial with type c := P.t) : S_predicates with type t := I.t
 
 (** [S_properties] is the signature of any module that can access
     properties (including predicates) of an abstract instruction. *)
 module type S_properties = sig
-  type t
   (** The type we're querying. *)
+  type t
 
-  include S_predicates with type t := t
   (** Anything that can access properties can also access predicates. *)
+  include S_predicates with type t := t
 
-  val opcode : t -> Opcode.t
   (** [opcode x] gets the opcode of [x]. *)
+  val opcode : t -> Opcode.t
 
-  val operands : t -> Operand.Bundle.t
   (** [operands x] gets the operands of [x]. *)
+  val operands : t -> Operand.Bundle.t
 end
 
-module Inherit_properties
-  (P : S_properties)
-  (I : Utils.Inherit.S with type c := P.t)
-  : S_properties with type t := I.t
 (** [Inherit_properties] generates a [S_properties] by inheriting it
     from a component. *)
+module Inherit_properties (P : S_properties) (I : Utils.Inherit.S with type c := P.t) :
+  S_properties with type t := I.t
 
-include S_properties with type t := t
 (** We include the functions provided in [S_properties], but define
     them over [with_operands] rather than [t].  This is because some of
     the operations require operand analysis. *)
-
+include S_properties with type t := t

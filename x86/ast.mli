@@ -54,88 +54,129 @@ open Utils
 module Reg : sig
   (** [gp8h] enumerates the 8-bit 'high' general-purpose registers. *)
   type gp8h =
-    [ `AH | `BH | `CH | `DH ]
+    [ `AH
+    | `BH
+    | `CH
+    | `DH
+    ]
   [@@deriving eq, sexp]
-  ;;
 
   (** [gp8l] enumerates the 8-bit 'low' general-purpose registers. *)
   type gp8l =
-    [ `AL | `BL | `CL | `DL ]
+    [ `AL
+    | `BL
+    | `CL
+    | `DL
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [gp8] enumerates the 8-bit general-purpose registers. *)
   type gp8 =
-    [ gp8h | gp8l ]
+    [ gp8h
+    | gp8l
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [gp16] enumerates the 16-bit general-purpose registers. *)
   type gp16 =
-    [ `AX | `BX | `CX | `DX ]
+    [ `AX
+    | `BX
+    | `CX
+    | `DX
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [gp32] enumerates the 32-bit general-purpose registers. *)
   type gp32 =
-    [ `EAX | `EBX | `ECX | `EDX ]
+    [ `EAX
+    | `EBX
+    | `ECX
+    | `EDX
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [gp] enumerates the general-purpose registers. *)
   type gp =
-    [ gp8 | gp16 | gp32 ]
+    [ gp8
+    | gp16
+    | gp32
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [seg] enumerates the segment registers. *)
   type seg =
-    [ `CS | `DS | `SS | `ES | `FS | `GS ]
+    [ `CS
+    | `DS
+    | `SS
+    | `ES
+    | `FS
+    | `GS
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [flag] enumerates the flag registers. *)
   type flag =
-    [ `CF | `PF | `AF | `ZF | `SF | `OF ]
+    [ `CF
+    | `PF
+    | `AF
+    | `ZF
+    | `SF
+    | `OF
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [sp16] enumerates the 16-bit special purpose registers. *)
   type sp16 =
-    [ seg | `BP | `SP | `SI | `DI ]
+    [ seg
+    | `BP
+    | `SP
+    | `SI
+    | `DI
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [sp32] enumerates the 32-bit special-purpose registers. *)
   type sp32 =
-    [ `EIP | `EBP | `ESP | `ESI | `EDI ]
+    [ `EIP
+    | `EBP
+    | `ESP
+    | `ESI
+    | `EDI
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [sp] enumerates the special-purpose registers. *)
   type sp =
-    [ sp16 | sp32 ]
+    [ sp16
+    | sp32
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [reg8] enumerates all 8-bit registers. *)
   type reg8 = gp8
 
   (** [reg16] enumerates all 16-bit registers. *)
   type reg16 =
-    [ gp16 | sp16 ]
+    [ gp16
+    | sp16
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [reg32] enumerates all 32-bit registers. *)
   type reg32 =
-    [ gp32 | sp32 ]
+    [ gp32
+    | sp32
+    ]
   [@@deriving enumerate, eq, sexp]
-  ;;
 
   (** [t] enumerates all commonly used registers available in 32-bit
       x86. *)
-  type t = [ reg8 | reg16 | reg32 | flag ]
+  type t =
+    [ reg8
+    | reg16
+    | reg32
+    | flag
+    ]
 
   include Enum.Extension_table with type t := t
 end
@@ -146,14 +187,11 @@ module Disp : sig
     | Symbolic of string
     | Numeric of int
   [@@deriving sexp, eq, compare]
-  ;;
 
   (** [On_symbols] permits enumerating and folding over symbols inside
       a displacement. *)
-  module On_symbols
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = string
-  ;;
+  module On_symbols :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = string
 
   include Quickcheck.S with type t := t
 end
@@ -162,16 +200,13 @@ end
 module Index : sig
   type t =
     | Unscaled of Reg.t
-    | Scaled   of Reg.t * int
+    | Scaled of Reg.t * int
   [@@deriving sexp, eq, compare]
-  ;;
 
   (** [On_registers] permits enumerating and folding over registers
       inside a displacement. *)
-  module On_registers
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = Reg.t
-  ;;
+  module On_registers :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Reg.t
 
   include Quickcheck.S with type t := t
 end
@@ -182,40 +217,29 @@ module Indirect : sig
 
   (** [make ?seg ?disp ?base ?index ()] makes an [Indirect] with
       the given fields (if present). *)
-  val make
-    :  ?seg   : Reg.t
-    -> ?disp  : Disp.t
-    -> ?base  : Reg.t
-    -> ?index : Index.t
-    -> unit
-    -> t
-  ;;
+  val make : ?seg:Reg.t -> ?disp:Disp.t -> ?base:Reg.t -> ?index:Index.t -> unit -> t
 
   (** [base] gets the indirect base, if any. *)
-  val base : t -> Reg.t option;;
+  val base : t -> Reg.t option
 
   (** [seg] gets the indirect segment, if any. *)
-  val seg : t -> Reg.t option;;
+  val seg : t -> Reg.t option
 
   (** [disp] gets the indirect displacement, if any. *)
-  val disp : t -> Disp.t option;;
+  val disp : t -> Disp.t option
 
   (** [index] gets the indirect index, if any. *)
-  val index : t -> Index.t option;;
+  val index : t -> Index.t option
 
   (** [On_registers] permits enumerating and folding over registers
       inside a memory access. *)
-  module On_registers
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = Reg.t
-  ;;
+  module On_registers :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Reg.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside
       a memory access. *)
-  module On_symbols
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = string
-  ;;
+  module On_symbols :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = string
 
   include Quickcheck.S with type t := t
 end
@@ -230,17 +254,13 @@ module Location : sig
 
   (** [On_registers] permits enumerating and folding over registers
       inside a location. *)
-  module On_registers
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = Reg.t
-  ;;
+  module On_registers :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Reg.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside
       a location. *)
-  module On_symbols
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = string
-  ;;
+  module On_symbols :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = string
 
   include Quickcheck.S with type t := t
 end
@@ -250,7 +270,6 @@ module Bop : sig
     | Plus
     | Minus
   [@@deriving sexp]
-  ;;
 
   include Enum.Extension_table with type t := t
   include Quickcheck.S with type t := t
@@ -264,7 +283,6 @@ module Operand : sig
     | Typ of string (** Type annotation *)
     | Bop of t * Bop.t * t
   [@@deriving sexp, eq, compare]
-  ;;
 
   val location : Location.t -> t
   val immediate : Disp.t -> t
@@ -274,22 +292,18 @@ module Operand : sig
 
   include Quickcheck.S with type t := t
 
-  module On_locations
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = Location.t
   (** [On_locations] permits enumerating and folding over locations
       inside an operand. *)
+  module On_locations :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Location.t
 
-  module On_symbols
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = string
   (** [On_symbols] permits enumerating and folding over symbols inside
       an operand. *)
+  module On_symbols :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = string
 end
 
-type prefix =
-  | PreLock
-[@@deriving sexp]
+type prefix = PreLock [@@deriving sexp]
 
 (** [Instruction] contains the instruction type and related
     operations. *)
@@ -297,24 +311,21 @@ module Instruction : sig
   (** [t] is the type of instructions (and instruction-like things,
       such as directives). *)
   type t =
-    { prefix   : prefix option
-    ; opcode   : Opcode.t
+    { prefix : prefix option
+    ; opcode : Opcode.t
     ; operands : Operand.t list
     }
   [@@deriving sexp, eq, make]
-  ;;
 
-  module On_locations
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = Location.t
   (** [On_locations] permits enumerating and folding over locations
       inside an instruction. *)
+  module On_locations :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Location.t
 
-  module On_symbols
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = string
   (** [On_symbols] permits enumerating and folding over symbols inside
       an instruction. *)
+  module On_symbols :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = string
 end
 
 module Statement : sig
@@ -323,38 +334,31 @@ module Statement : sig
     | Label of string
     | Nop
   [@@deriving sexp, eq]
-  ;;
 
   (** [instruction] creates an instruction statement. *)
   val instruction : Instruction.t -> t
 
   (** [On_instructions] permits enumerating and folding over
       instructions inside a statement. *)
-  module On_instructions
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = Instruction.t
-  ;;
+  module On_instructions :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Instruction.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside
       an operand. *)
-  module On_symbols
-    : Travesty.Traversable.S0_container with type t := t
-                                         and type Elt.t = string
-  ;;
+  module On_symbols :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = string
 end
 
 type t =
-  { syntax  : Dialect.t
+  { syntax : Dialect.t
   ; program : Statement.t list
   }
 [@@deriving sexp, eq, fields]
 
-module On_listings
-  : Travesty.Traversable.S0_container with type t := t
-                                       and type Elt.t = Statement.t list
 (** Traversing over the statement list in a [t] *)
+module On_listings :
+  Travesty.Traversable.S0_container with type t := t and type Elt.t = Statement.t list
 
-module On_statements
-  : Travesty.Traversable.S0_container with type t := t
-                                       and type Elt.t = Statement.t
 (** Traversing over all statements in a [t] *)
+module On_statements :
+  Travesty.Traversable.S0_container with type t := t and type Elt.t = Statement.t

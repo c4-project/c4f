@@ -24,16 +24,15 @@
 
 include Language_location_intf
 
-module Make (B : Basic_with_modules)
-  : S with type t = B.t
-       and module Symbol = B.Symbol = struct
+module Make (B : Basic_with_modules) : S with type t = B.t and module Symbol = B.Symbol =
+struct
   include B
 
   include Abstract.Location.Inherit_predicates
-      (Abstract.Location)
-      (struct
-        type nonrec t = t
-        let component_opt x = Some (abstract x)
-      end)
-  ;;
+            (Abstract.Location)
+            (struct
+              type nonrec t = t
+
+              let component_opt x = Some (abstract x)
+            end)
 end

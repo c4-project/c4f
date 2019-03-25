@@ -60,10 +60,10 @@ module Property = struct
 
   let tree_docs : Property.Tree_doc.t =
     [ "id", { args = [ "PROPERTY" ]; details = {| See 'identifier predicates'. |} }
-    ; ("is_remote"
-      , { args = []; details = {| Selects machines that are known to be remote. |} })
-    ; ("is_local"
-      , { args = []; details = {| Selects machines that are known to be local. |} })
+    ; ( "is_remote"
+      , { args = []; details = {| Selects machines that are known to be remote. |} } )
+    ; ( "is_local"
+      , { args = []; details = {| Selects machines that are known to be local. |} } )
     ]
   ;;
 

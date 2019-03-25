@@ -34,38 +34,33 @@ module type S = sig
 
   type ctx
 
-  include Travesty.State_transform.S with type state := ctx
-                                      and module Inner := Or_error
   (** [S] includes a state transformer, [t],
       with an inner error monad. *)
+  include Travesty.State_transform.S with type state := ctx and module Inner := Or_error
 
-  val initial
-    :  passes:Config.Sanitiser_pass.Set.t
-    -> variables:Lang.Symbol.Set.t
-    -> ctx
   (** [initial ~passes ~variables] opens an initial context
      with the given enabled passes and C variables. *)
+  val initial : passes:Config.Sanitiser_pass.Set.t -> variables:Lang.Symbol.Set.t -> ctx
 
   (*
    * Program properties
    *)
 
-  val enter_program : name:string -> Lang.Program.t -> Lang.Program.t t
   (** [enter_program ~name ~len] is a contextual computation that
       tells the context we've entered a new program with name
       [name] and body [body].  Any previous program state is
       expunged. *)
+  val enter_program : name:string -> Lang.Program.t -> Lang.Program.t t
 
-  val get_end_label : string option t
   (** [get_end_label] is a contextual computation that returns the
       program's current end label. *)
+  val get_end_label : string option t
 
-  val set_end_label : string -> unit t
   (** [set_end_label] is a contextual computation that sets the
      program's current end label and increments the program length
      counter, in anticipation of the program gaining a new label
      statement. *)
-
+  val set_end_label : string -> unit t
 
   (** [get_prog_name] is a contextual computation that returns the
      program's name. *)
@@ -82,7 +77,7 @@ module type S = sig
   (** [p |-> f] guards a contextual computation [f] on the
       pass [p]; it won't run unless [p] is in the current context's
       pass set. *)
-  val (|->) : Config.Sanitiser_pass.t -> ('a -> 'a t) -> ('a -> 'a t)
+  val ( |-> ) : Config.Sanitiser_pass.t -> ('a -> 'a t) -> 'a -> 'a t
 
   (** [warn element body] adds a warning [body] to the
      current context, concerning element [element]. *)
@@ -108,40 +103,30 @@ module type S = sig
   (** [get_symbols_with_sorts sortlist] is a context computation that
      gets the set of all symbols in the context's symbol table with
      sorts in [sortlist]. *)
-  val get_symbols_with_sorts
-    :  Abstract.Symbol.Sort.t list
-    -> Abstract.Symbol.Set.t t
-  ;;
+  val get_symbols_with_sorts : Abstract.Symbol.Sort.t list -> Abstract.Symbol.Set.t t
 
   (** [add_symbol sym sort] is a context computation that adds [sym]
      to the context symbol table with sort [sort], then passes [sym]
      through. *)
-  val add_symbol
-    :  Abstract.Symbol.t
-    -> Abstract.Symbol.Sort.t
-    -> Abstract.Symbol.t t
-  ;;
+  val add_symbol : Abstract.Symbol.t -> Abstract.Symbol.Sort.t -> Abstract.Symbol.t t
 
   (** [set_symbol_table sym sort] is a context computation that replaces
       the current symbol table with [syms]. *)
-  val set_symbol_table
-    :  Abstract.Symbol.Table.t
-    -> unit t
-  ;;
+  val set_symbol_table : Abstract.Symbol.Table.t -> unit t
 
-  val get_variables : Lang.Symbol.Set.t t
   (** [get_variables] looks up the original set of C variables
       passed into this sanitiser context on creation. *)
+  val get_variables : Lang.Symbol.Set.t t
 
-  val get_redirect :  Lang.Symbol.t -> (Lang.Symbol.t option) t
   (** [get_redirect sym] looks up [sym] in the concrete symbol
       redirection table.  If [sym] redirects to itself, the
       result is [Some sym]; [None] means the symbol has no
       known corresponding symbol in the assembly. *)
+  val get_redirect : Lang.Symbol.t -> Lang.Symbol.t option t
 
-  val get_redirect_sources : Lang.Symbol.t -> Lang.Symbol.t list t
   (** [get_redirect_sources sym] returns all symbols that redirect to
       [sym] in the currnet context. *)
+  val get_redirect_sources : Lang.Symbol.t -> Lang.Symbol.t list t
 
   (** [get_redirect_alist syms] looks up each symbol in [syms] in the
      concrete symbol redirection table, and builds an associative list
@@ -149,32 +134,31 @@ module type S = sig
   val get_redirect_alist
     :  Lang.Symbol.t list
     -> (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t t
-  ;;
 
   (** [get_all_redirect_targets] gets a list of all symbols
       currently set as the target of a redirect. *)
   val get_all_redirect_targets : Lang.Symbol.Set.t t
 
-  val redirect : src: Lang.Symbol.t -> dst:Lang.Symbol.t -> unit t
   (** [redirect ~src ~dst] tries to redirect ~src to ~dst in the
      concrete symbol redirection table.  If the redirect causes an
      error, the redirect has no effect and a warning is triggered. *)
+  val redirect : src:Lang.Symbol.t -> dst:Lang.Symbol.t -> unit t
 
-  val make_fresh_label : string -> string t
   (** [make_fresh_label] generates a fresh label with the given prefix
       (in regards to the context's symbol tables), interns it into the
       context, and returns the generated label. *)
+  val make_fresh_label : string -> string t
 
-  val make_fresh_heap_loc : string -> string t
   (** [make_fresh_heap_loc] generates a fresh heap location symbol with
       the given prefix
       (in regards to the context's symbol tables), interns it into the
       context, and returns the generated location symbol. *)
+  val make_fresh_heap_loc : string -> string t
 end
 
 module type Sanitiser_ctx = sig
   module type S = S
 
-  module Make (Lang : Language.S) : S with module Lang := Lang
   (** [Make] builds a context monad for the given language. *)
+  module Make (Lang : Language.S) : S with module Lang := Lang
 end

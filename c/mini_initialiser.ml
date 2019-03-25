@@ -24,20 +24,19 @@
 
 open Core_kernel
 open Utils
-
 module Type = Mini_type
 module Constant = Ast_basic.Constant
 
 type t =
-  { ty    : Type.t
+  { ty : Type.t
   ; value : Constant.t option
   }
 [@@deriving sexp, make, eq, fields, quickcheck]
-;;
 
 module Named : Mini_intf.S_named with type elt := t = struct
   let equal : t Mini_intf.named -> t Mini_intf.named -> bool =
     [%compare.equal: C_identifier.t * t]
   ;;
+
   type nonrec t = t Mini_intf.named
 end

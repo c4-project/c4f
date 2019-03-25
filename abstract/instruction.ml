@@ -42,24 +42,25 @@ module Opcode = struct
       | Other
       | Unknown
     [@@deriving enum, sexp]
-    ;;
 
     let table =
-      [ Arith  , "arith"
-      ; Call   , "call"
+      [ Arith, "arith"
+      ; Call, "call"
       ; Compare, "compare"
-      ; Fence  , "fence"
-      ; Jump   , "jump"
+      ; Fence, "fence"
+      ; Jump, "jump"
       ; Logical, "logical"
-      ; Move   , "move"
-      ; Nop    , "nop"
-      ; Return , "return"
-      ; Rmw    , "RMW"
-      ; Stack  , "stack"
-      ; Other  , "other"
+      ; Move, "move"
+      ; Nop, "nop"
+      ; Return, "return"
+      ; Rmw, "RMW"
+      ; Stack, "stack"
+      ; Other, "other"
       ; Unknown, "??"
       ]
+    ;;
   end
+
   include M
 
   (** For now, instructions form their own kind enumeration.
@@ -81,15 +82,19 @@ type t =
   ; operands : Operand.Bundle.t
   }
 [@@deriving fields, make, sexp]
-;;
 
 module Kind = Opcode.Kind
+
 let kind { opcode; _ } = Opcode.kind opcode
 
 let pp f ins =
-  Format.fprintf f "@[<hv>%a@ (@,%a@,)@]"
-    Opcode.Kind.pp (opcode ins)
-    Operand.Bundle.pp (operands ins)
+  Format.fprintf
+    f
+    "@[<hv>%a@ (@,%a@,)@]"
+    Opcode.Kind.pp
+    (opcode ins)
+    Operand.Bundle.pp
+    (operands ins)
 ;;
 
 module Flag = Flag_enum.None
@@ -99,7 +104,6 @@ module type S_predicates = sig
 
   val has_opcode : t -> opcode:Opcode.Kind.t -> bool
   val opcode_in : t -> opcodes:Opcode.Kind.Set.t -> bool
-
   val is_jump : t -> bool
   val is_symbolic_jump : t -> bool
   val is_symbolic_jump_where : t -> f:(Symbol.t -> bool) -> bool
@@ -108,26 +112,27 @@ module type S_predicates = sig
 end
 
 module Inherit_predicates
-    (P : S_predicates) (I : Utils.Inherit.S_partial with type c := P.t)
-  : S_predicates with type t := I.t = struct
+    (P : S_predicates)
+    (I : Utils.Inherit.S_partial with type c := P.t) : S_predicates with type t := I.t =
+struct
   open Option
-  let has_opcode x ~opcode =
-    exists ~f:(P.has_opcode ~opcode) (I.component_opt x)
-  ;;
-  let opcode_in x ~opcodes =
-    exists ~f:(P.opcode_in ~opcodes) (I.component_opt x)
-  ;;
+
+  let has_opcode x ~opcode = exists ~f:(P.has_opcode ~opcode) (I.component_opt x)
+  let opcode_in x ~opcodes = exists ~f:(P.opcode_in ~opcodes) (I.component_opt x)
   let is_jump x = exists ~f:P.is_jump (I.component_opt x)
   let is_nop x = exists ~f:P.is_nop (I.component_opt x)
   let is_stack_manipulation x = exists ~f:P.is_stack_manipulation (I.component_opt x)
+
   let is_symbolic_jump_where x ~f =
     exists ~f:(P.is_symbolic_jump_where ~f) (I.component_opt x)
   ;;
+
   let is_symbolic_jump x = exists ~f:P.is_symbolic_jump (I.component_opt x)
 end
 
 module type S_properties = sig
   type t
+
   include S_predicates with type t := t
 
   val opcode : t -> Opcode.t
@@ -137,29 +142,19 @@ end
 module Properties : S_properties with type t := t = struct
   let opcode = opcode
   let operands = operands
-
-  let has_opcode { opcode=actual; _ } ~opcode =
-    Opcode.Kind.equal opcode actual
-  ;;
-
-  let opcode_in { opcode=actual; _ } ~opcodes =
-    Opcode.Kind.Set.mem opcodes actual
-  ;;
-
+  let has_opcode { opcode = actual; _ } ~opcode = Opcode.Kind.equal opcode actual
+  let opcode_in { opcode = actual; _ } ~opcodes = Opcode.Kind.Set.mem opcodes actual
   let is_jump = has_opcode ~opcode:Jump
 
   let is_symbolic_jump_where { opcode; operands } ~f =
     Opcode.Kind.equal opcode Jump
     && Operand.Bundle.is_single_jump_symbol_where operands ~f
   ;;
+
   let is_symbolic_jump = is_symbolic_jump_where ~f:(Fn.const true)
 
-
   let%expect_test "is_symbolic_jump: seemingly unconditional jump" =
-    let result =
-      is_symbolic_jump
-          (make ~opcode:Jump ~operands:Operand.Bundle.None)
-    in
+    let result = is_symbolic_jump (make ~opcode:Jump ~operands:Operand.Bundle.None) in
     Out_channel.printf "%b" result;
     [%expect {| false |}]
   ;;
@@ -167,9 +162,7 @@ module Properties : S_properties with type t := t = struct
   let%expect_test "is_symbolic_jump: jump to immediate symbol" =
     let result =
       is_symbolic_jump
-          (make
-            ~opcode:Jump
-            ~operands:Operand.(Bundle.Single (Symbol "foo")))
+        (make ~opcode:Jump ~operands:Operand.(Bundle.Single (Symbol "foo")))
     in
     Out_channel.printf "%b" result;
     [%expect {| true |}]
@@ -178,11 +171,10 @@ module Properties : S_properties with type t := t = struct
   let%expect_test "is_symbolic_jump: jump to heap symbol" =
     let result =
       is_symbolic_jump
-          (make
-            ~opcode:Jump
-            ~operands:Operand.(
-                Bundle.Single
-                  (Location (Location.(Heap (Address.Symbol "foo"))))))
+        (make
+           ~opcode:Jump
+           ~operands:
+             Operand.(Bundle.Single (Location Location.(Heap (Address.Symbol "foo")))))
     in
     Out_channel.printf "%b" result;
     [%expect {| true |}]
@@ -190,29 +182,27 @@ module Properties : S_properties with type t := t = struct
 
   let is_nop { opcode; _ } = Opcode.Kind.equal opcode Nop
 
-  let is_stack_manipulation { opcode; operands } = match opcode with
+  let is_stack_manipulation { opcode; operands } =
+    match opcode with
     | Stack -> true
-    | Arith -> Operand.(
-        Bundle.has_dst_where ~f:is_stack_pointer operands
-      )
-    | Move  -> Operand.Bundle.has_stack_pointer operands
-    | _     -> false
+    | Arith -> Operand.(Bundle.has_dst_where ~f:is_stack_pointer operands)
+    | Move -> Operand.Bundle.has_stack_pointer operands
+    | _ -> false
   ;;
 end
+
 include Properties
 
-module Inherit_properties
-    (P : S_properties)
-    (I : Inherit.S with type c := P.t)
-  : S_properties with type t := I.t = struct
-
+module Inherit_properties (P : S_properties) (I : Inherit.S with type c := P.t) :
+  S_properties with type t := I.t = struct
   let opcode x = P.opcode (I.component x)
   let operands x = P.operands (I.component x)
 
   module I_with_c = struct
     type c = P.t
+
     include I
   end
-  include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
 
+  include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
 end

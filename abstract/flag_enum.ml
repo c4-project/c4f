@@ -27,17 +27,20 @@ open Utils
 
 module type S = sig
   type t
+
   include Enum.Extension_table with type t := t
 end
 
 module None : S with type t = Nothing.t = struct
   type t = Nothing.t
+
   include Enum.Extend_table (struct
-      include Nothing
-      let of_enum _ = failwith "Tried to get a flag when none exist"
-      let to_enum x = Nothing.unreachable_code x
-      let min = -1
-      let max = -1
-      let table = []
-    end)
+    include Nothing
+
+    let of_enum _ = failwith "Tried to get a flag when none exist"
+    let to_enum x = Nothing.unreachable_code x
+    let min = -1
+    let max = -1
+    let table = []
+  end)
 end

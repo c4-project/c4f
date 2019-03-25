@@ -97,7 +97,6 @@ let%expect_test "make_litmus_name: multi-extension filename" =
   [%expect {| (Ok example_foo_c) |}]
 ;;
 
-
 module Make_runner (B : Runner_deps) : Runner with type const = B.Src_lang.Constant.t =
 struct
   type const = B.Src_lang.Constant.t
@@ -138,7 +137,8 @@ struct
           ws
   ;;
 
-  let make_output iname (symbol_map : (string, string) List.Assoc.t) warnings : Output.t =
+  let make_output iname (symbol_map : (string, string) List.Assoc.t) warnings : Output.t
+    =
     { symbol_map; warn = emit_warnings iname warnings }
   ;;
 
@@ -155,7 +155,8 @@ struct
       (symbols : LS.Symbol.t list)
       (program : LS.Program.t)
       (_osrc : Io.Out_sink.t)
-      (outp : Out_channel.t) : Output.t Or_error.t =
+      (outp : Out_channel.t)
+      : Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind o = MS.sanitise ~passes ~symbols program in
     let redirects = MS.Output.redirects o in
@@ -188,7 +189,8 @@ struct
       (symbols : LS.Symbol.t list)
       (program : LS.Program.t)
       (_osrc : Io.Out_sink.t)
-      (outp : Out_channel.t) : Output.t Or_error.t =
+      (outp : Out_channel.t)
+      : Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map san = SS.sanitise ~passes ~symbols program in
     let program = SS.Output.programs san in
@@ -196,7 +198,11 @@ struct
     let s_table = SS.Output.Program.symbol_table program in
     let exp = E.explain listing s_table in
     let redirects = SS.Output.redirects san in
-    output_explanation config.format name outp exp
+    output_explanation
+      config.format
+      name
+      outp
+      exp
       (SS.Redirect.to_string_alist redirects)
   ;;
 
@@ -220,8 +226,9 @@ struct
   ;;
 
   module Litmusify :
-    Filter.S with type aux_i = LS.Constant.t Litmusifier.Config.t t and type aux_o = Output.t =
-  Filter.Make (struct
+    Filter.S
+    with type aux_i = LS.Constant.t Litmusifier.Config.t t
+     and type aux_o = Output.t = Filter.Make (struct
     type aux_i = LS.Constant.t Litmusifier.Config.t t
     type aux_o = Output.t
 
@@ -259,8 +266,8 @@ let get_litmusify_sexp (module Runner : Runner) =
        Litmus.Ast_base.Postcondition.On_constants.With_errors.map_m ~f:adapt_constant
      ;;
 
-     let adapt_config : Sexp.t Litmusifier.Config.t ->
-         Runner.const Litmusifier.Config.t Or_error.t =
+     let adapt_config
+         : Sexp.t Litmusifier.Config.t -> Runner.const Litmusifier.Config.t Or_error.t =
        Litmusifier.Config.transform
          ~format:Or_error.return
          ~c_variables:Or_error.return

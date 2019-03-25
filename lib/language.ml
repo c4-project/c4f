@@ -24,35 +24,38 @@
 
 include Language_intf
 
-module Make (B : Basic)
-  : S
-    with type Symbol.t      = B.Symbol.t
-     and type Constant.t    = B.Constant.t
-     and type Location.t    = B.Location.t
-     and type Instruction.t = B.Instruction.t
-     and type Statement.t   = B.Statement.t
-     and type Program.t     = B.Program.t = struct
+module Make (B : Basic) :
+  S
+  with type Symbol.t = B.Symbol.t
+   and type Constant.t = B.Constant.t
+   and type Location.t = B.Location.t
+   and type Instruction.t = B.Instruction.t
+   and type Statement.t = B.Statement.t
+   and type Program.t = B.Program.t = struct
   include (B : Basic_core)
-
   module Symbol = Language_symbol.Make (B.Symbol)
   module Constant = Language_constant.Make (B.Constant)
+
   module Location = Language_location.Make (struct
-      module Symbol = Symbol
-      include B.Location
-    end)
+    module Symbol = Symbol
+    include B.Location
+  end)
+
   module Instruction = Language_instruction.Make (struct
-      module Constant = Constant
-      module Symbol   = Symbol
-      module Location = Location
-      include B.Instruction
-    end)
+    module Constant = Constant
+    module Symbol = Symbol
+    module Location = Location
+    include B.Instruction
+  end)
+
   module Statement = Language_statement.Make (struct
-      module Symbol = Symbol
-      module Instruction = Instruction
-      include B.Statement
-    end)
+    module Symbol = Symbol
+    module Instruction = Instruction
+    include B.Statement
+  end)
+
   module Program = Language_program.Make (struct
-      module Statement = Statement
-      include B.Program
-    end)
+    module Statement = Statement
+    include B.Program
+  end)
 end

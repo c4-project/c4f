@@ -36,28 +36,27 @@
 
 open Core_kernel
 open Utils
-
 include module type of Ast_basic
 include module type of Mini_intf
 
-module Type = Mini_type
 (** Re-exporting {{!Mini_type}Type}. *)
+module Type = Mini_type
 
-module Initialiser = Mini_initialiser
 (** Re-exporting {{!Mini_initialiser}Initialiser}. *)
+module Initialiser = Mini_initialiser
 
-module Lvalue = Mini_lvalue
 (** Re-exporting {{!Mini_lvalue}Lvalue}. *)
+module Lvalue = Mini_lvalue
 
-module Address = Mini_address
 (** Re-exporting {{!Mini_address}Address}. *)
+module Address = Mini_address
 
-module Expression = Mini_expression
 (** Re-exporting {{!Mini_expression}Expression}. *)
+module Expression = Mini_expression
 
-module Atomic_load = Expression.Atomic_load
 (** Re-exporting {{!Atomic_load}Atomic_load} from within
    {{!Expression}Expression}. *)
+module Atomic_load = Expression.Atomic_load
 
 (** A non-atomic assignment. *)
 module Assign : sig
@@ -65,27 +64,27 @@ module Assign : sig
 
   (** {3 Constructors} *)
 
-  val make : lvalue:Lvalue.t -> rvalue:Expression.t -> t
   (** [make ~lvalue ~rvalue] constructs an assignment of [rvalue] to
       [lvalue]. *)
+  val make : lvalue:Lvalue.t -> rvalue:Expression.t -> t
 
   (** {3 Accessors} *)
 
-  val lvalue : t -> Lvalue.t
   (** [lvalue asn] gets [asn]'s destination lvalue. *)
+  val lvalue : t -> Lvalue.t
 
-  val rvalue : t -> Expression.t
   (** [rvalue asn] gets [asn]'s source expression (rvalue). *)
+  val rvalue : t -> Expression.t
 
   (** {3 Traversals} *)
 
-  module On_addresses : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Address.t
   (** Traversing over atomic-action addresses in assignments. *)
+  module On_addresses :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Address.t
 
-  module On_lvalues : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in assignments. *)
+  module On_lvalues :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Lvalue.t
 end
 
 (** An atomic store operation. *)
@@ -94,52 +93,52 @@ module Atomic_store : sig
 
   (** {3 Constructors} *)
 
-  val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
   (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
       expression with source [src], destination [dst], and memory order
       [mo]. *)
+  val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
 
   (** {3 Accessors} *)
 
-  val dst : t -> Address.t
   (** [dst st] gets [st]'s destination address. *)
+  val dst : t -> Address.t
 
-  val src : t -> Expression.t
   (** [src st] gets [st]'s source expression. *)
+  val src : t -> Expression.t
 
-  val mo : t -> Mem_order.t
   (** [mo st] gets [st]'s memory order. *)
+  val mo : t -> Mem_order.t
 
   (** {3 Traversals} *)
 
-  module On_addresses : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Address.t
   (** Traversing over atomic-action addresses in atomic stores. *)
+  module On_addresses :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Address.t
 
-  module On_lvalues : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Lvalue.t
-    (** Traversing over lvalues in atomic stores. *)
+  (** Traversing over lvalues in atomic stores. *)
+  module On_lvalues :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Lvalue.t
 
   (** {3 Generating and quickchecking} *)
 
-  module Quickcheck_generic
-      (Src : Quickcheckable.S with type t := Expression.t)
-      (Dst : Quickcheckable.S with type t := Address.t)
-    : Quickcheckable.S with type t := t
   (** [Quickcheck_generic (Src) (Dst)] generates random stores,
       using [Src] to generate source expressions and [Dst] to
       generate destination addresses.  It uses [Mem_order]'s
       store-compatible generator to pick random memory orders. *)
+  module Quickcheck_generic
+      (Src : Quickcheckable.S with type t := Expression.t)
+      (Dst : Quickcheckable.S with type t := Address.t) :
+    Quickcheckable.S with type t := t
 
   (** There isn't a generic quickcheck instance for atomic stores,
       as we can't guarantee type safety in general. *)
 
-  module Quickcheck_ints (Src : Mini_env.S) (Dst : Mini_env.S)
-    : Quickcheckable.S with type t := t
-    (** [Quickcheck_ints (E)] generates random stores from atomic
+  (** [Quickcheck_ints (E)] generates random stores from atomic
         integers to non-atomic integers, using [Src] as the
         variable typing environment for sources and [Dst] as the
         environment for destinations. *)
+  module Quickcheck_ints (Src : Mini_env.S) (Dst : Mini_env.S) :
+    Quickcheckable.S with type t := t
 end
 
 (** A (strong, explicit) atomic compare-exchange operation. *)
@@ -148,6 +147,10 @@ module Atomic_cmpxchg : sig
 
   (** {3 Constructors} *)
 
+  (** [make ~obj ~expected ~desired ~succ ~fail] constructs an
+        explicit strong compare-exchange with object [obj], expected
+        value store [expected], desired final value [desired], and
+        memory orders [succ] on success and [fail] on failure. *)
   val make
     :  obj:Address.t
     -> expected:Address.t
@@ -155,64 +158,61 @@ module Atomic_cmpxchg : sig
     -> succ:Mem_order.t
     -> fail:Mem_order.t
     -> t
-    (** [make ~obj ~expected ~desired ~succ ~fail] constructs an
-        explicit strong compare-exchange with object [obj], expected
-        value store [expected], desired final value [desired], and
-        memory orders [succ] on success and [fail] on failure. *)
 
   (** {3 Accessors} *)
 
-  val obj : t -> Address.t
   (** [obj cmpxchg] gets [cmpxchg]'s object address (the main target
      of the operation). *)
+  val obj : t -> Address.t
 
-  val expected : t -> Address.t
   (** [expected cmpxchg] gets [cmpxchg]'s expected address (the
       location that holds the expected value, and receives the actual
       value). *)
+  val expected : t -> Address.t
 
-  val desired : t -> Expression.t
   (** [desired cmpxchg] gets [cmpxchg]'s desired-value expression
       (written to the object on success). *)
+  val desired : t -> Expression.t
 
-  val succ : t -> Mem_order.t
   (** [succ cmpxchg] gets [cmpxchg]'s memory order on success. *)
+  val succ : t -> Mem_order.t
 
-  val fail : t -> Mem_order.t
   (** [fail cmpxchg] gets [cmpxchg]'s memory order on failure. *)
+  val fail : t -> Mem_order.t
 
   (** {3 Traversals} *)
 
-  module On_addresses : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Address.t
   (** Traversing over atomic-action addresses in atomic
       compare-exchanges. *)
+  module On_addresses :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Address.t
 
-  module On_lvalues : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Lvalue.t
   (** Traversing over lvalues in atomic compare-exchanges. *)
+  module On_lvalues :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Lvalue.t
 end
 
 (** A statement.
 
     We treat some things that are technically expressions in C as
     statements, for simplicity. *)
-module rec Statement
-  : (S_statement with type address        := Address.t
-                  and type assign         := Assign.t
-                  and type atomic_cmpxchg := Atomic_cmpxchg.t
-                  and type atomic_store   := Atomic_store.t
-                  and type identifier     := Identifier.t
-                  and type if_stm         := If_statement.t
-                  and type lvalue         := Lvalue.t)
-and If_statement
-  : (S_if_statement with type expr       := Expression.t
-                     and type stm        := Statement.t
-                     and type address    := Address.t
-                     and type identifier := Identifier.t
-                     and type lvalue     := Lvalue.t
-    )
-;;
+module rec Statement :
+  (S_statement
+  with type address := Address.t
+   and type assign := Assign.t
+   and type atomic_cmpxchg := Atomic_cmpxchg.t
+   and type atomic_store := Atomic_store.t
+   and type identifier := Identifier.t
+   and type if_stm := If_statement.t
+   and type lvalue := Lvalue.t)
+
+and If_statement :
+  (S_if_statement
+  with type expr := Expression.t
+   and type stm := Statement.t
+   and type address := Address.t
+   and type identifier := Identifier.t
+   and type lvalue := Lvalue.t)
 
 (** A function (less its name). *)
 module Function : sig
@@ -220,52 +220,54 @@ module Function : sig
 
   (** {3 Constructors} *)
 
+  (** [make ~parameters ~body_decls ?body_stms] creates a function
+      with the given contents. *)
   val make
     :  parameters:Type.t id_assoc
     -> body_decls:Initialiser.t id_assoc
     -> ?body_stms:Statement.t list
     -> unit
     -> t
-  (** [make ~parameters ~body_decls ?body_stms] creates a function
-      with the given contents. *)
 
   (** {3 Accessors} *)
 
-  val parameters : t -> Type.t id_assoc
   (** [parameters func] gets [func]'s parameter list. *)
+  val parameters : t -> Type.t id_assoc
 
-  val body_decls : t -> Initialiser.t id_assoc
   (** [body_decls func] gets [func]'s in-body variable
       declarations. *)
+  val body_decls : t -> Initialiser.t id_assoc
 
-  val body_stms : t -> Statement.t list
   (** [body_decls func] gets [func]'s statements. *)
+  val body_stms : t -> Statement.t list
 
-  val cvars : t -> C_identifier.Set.t
   (** [cvars func] extracts a set of C variable names from
       [func]. *)
+  val cvars : t -> C_identifier.Set.t
 
   (** {3 Mutators} *)
 
-  val with_body_stms : t -> Statement.t list -> t
   (** [with_body_stms func new_stms] produces a new function by
      substituting [new_stms] for [func]'s body statements. *)
+  val with_body_stms : t -> Statement.t list -> t
 
+  (** [map func ~parameters ~body_decls ~body_stms] runs the given
+      functions over the respective parts of a function. *)
   val map
     :  t
     -> parameters:(Type.t id_assoc -> Type.t id_assoc)
     -> body_decls:(Initialiser.t id_assoc -> Initialiser.t id_assoc)
     -> body_stms:(Statement.t list -> Statement.t list)
     -> t
-  (** [map func ~parameters ~body_decls ~body_stms] runs the given
-      functions over the respective parts of a function. *)
 
   (** {3 Traversals} *)
 
-  module On_decls : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t := Initialiser.t named
   (** [On_decls] allows traversal over all of the declarations
       inside a function. *)
+  module On_decls :
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t := Initialiser.t named
 end
 
 module Program : sig
@@ -273,37 +275,36 @@ module Program : sig
 
   (** {3 Constructors} *)
 
-  val make
-    :  globals:(Initialiser.t id_assoc)
-    -> functions:(Function.t id_assoc)
-    -> t
   (** [make ~globals ~functions] makes a program with global variable
       declarations [globals] and function definitions [functions]. *)
+  val make : globals:Initialiser.t id_assoc -> functions:Function.t id_assoc -> t
 
   (** {3 Accessors} *)
 
-  val globals : t -> Initialiser.t id_assoc
   (** [globals program] gets an associative list of each global
      initialiser in [program]. *)
+  val globals : t -> Initialiser.t id_assoc
 
-  val functions : t -> Function.t id_assoc
   (** [functions program] gets an associative list of each function in
      [program]. *)
+  val functions : t -> Function.t id_assoc
 
-  val cvars : t -> C_identifier.Set.t
   (** [cvars program] extracts a set of C variable names from
       [program]. *)
+  val cvars : t -> C_identifier.Set.t
 
   (** {3 Mutators} *)
 
-  val with_functions : t -> Function.t id_assoc -> t
   (** [with_functions prog new_functions] creates a new program by
      substituting [new_functions] for [prog]'s functions. *)
+  val with_functions : t -> Function.t id_assoc -> t
 
   (** {3 Traversals} *)
 
-  module On_decls : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t := Initialiser.t named
   (** [On_decls] allows traversal over all of the declarations
       inside a program. *)
+  module On_decls :
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t := Initialiser.t named
 end

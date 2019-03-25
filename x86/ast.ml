@@ -51,71 +51,107 @@ open Travesty
 module Reg = struct
   module M = struct
     type gp8h =
-      [ `AH | `BH | `CH | `DH ]
+      [ `AH
+      | `BH
+      | `CH
+      | `DH
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type gp8l =
-      [ `AL | `BL | `CL | `DL ]
+      [ `AL
+      | `BL
+      | `CL
+      | `DL
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type gp8 =
-      [ gp8h | gp8l ]
+      [ gp8h
+      | gp8l
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type gp16 =
-      [ `AX | `BX | `CX | `DX ]
+      [ `AX
+      | `BX
+      | `CX
+      | `DX
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type gp32 =
-      [ `EAX | `EBX | `ECX | `EDX ]
+      [ `EAX
+      | `EBX
+      | `ECX
+      | `EDX
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type gp =
-      [ gp8 | gp16 | gp32 ]
+      [ gp8
+      | gp16
+      | gp32
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type seg =
-      [ `CS | `DS | `SS | `ES | `FS | `GS ]
+      [ `CS
+      | `DS
+      | `SS
+      | `ES
+      | `FS
+      | `GS
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type flag =
-      [ `CF | `PF | `AF | `ZF | `SF | `OF ]
+      [ `CF
+      | `PF
+      | `AF
+      | `ZF
+      | `SF
+      | `OF
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type sp16 =
-      [ seg | `BP | `SP | `SI | `DI ]
+      [ seg
+      | `BP
+      | `SP
+      | `SI
+      | `DI
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type sp32 =
-      [ `EIP | `EBP | `ESP | `ESI | `EDI ]
+      [ `EIP
+      | `EBP
+      | `ESP
+      | `ESI
+      | `EDI
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type sp =
-      [ sp16 | sp32 ]
+      [ sp16
+      | sp32
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type reg8 = gp8
 
     type reg16 =
-      [ gp16 | sp16 ]
+      [ gp16
+      | sp16
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type reg32 =
-      [ gp32 | sp32 ]
+      [ gp32
+      | sp32
+      ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     type t =
       [ gp8 (* can't use reg8 here, it breaks sexp *)
@@ -124,56 +160,55 @@ module Reg = struct
       | flag
       ]
     [@@deriving enumerate, eq, sexp]
-    ;;
 
     let table : (t, string) List.Assoc.t =
-      [ `AH , "AH"
-      ; `AL , "AL"
-      ; `AX , "AX"
+      [ `AH, "AH"
+      ; `AL, "AL"
+      ; `AX, "AX"
       ; `EAX, "EAX"
-      ; `BH , "BH"
-      ; `BL , "BL"
-      ; `BX , "BX"
+      ; `BH, "BH"
+      ; `BL, "BL"
+      ; `BX, "BX"
       ; `EBX, "EBX"
-      ; `CH , "CH"
-      ; `CL , "CL"
-      ; `CX , "CX"
+      ; `CH, "CH"
+      ; `CL, "CL"
+      ; `CX, "CX"
       ; `ECX, "ECX"
-      ; `DH , "DH"
-      ; `DL , "DL"
-      ; `DX , "DX"
+      ; `DH, "DH"
+      ; `DL, "DL"
+      ; `DX, "DX"
       ; `EDX, "EDX"
-      ; `BP , "BP"
+      ; `BP, "BP"
       ; `EBP, "EBP"
-      ; `SI , "SI"
+      ; `SI, "SI"
       ; `ESI, "ESI"
-      ; `DI , "DI"
+      ; `DI, "DI"
       ; `EDI, "EDI"
-      ; `SP , "SP"
+      ; `SP, "SP"
       ; `ESP, "ESP"
-      ; `CS , "CS"
-      ; `DS , "DS"
-      ; `SS , "SS"
-      ; `ES , "ES"
-      ; `FS , "FS"
-      ; `GS , "GS"
-      ; `CF , "CF"
-      ; `PF , "PF"
-      ; `AF , "AF"
-      ; `ZF , "ZF"
-      ; `SF , "SF"
-      ; `OF , "OF"
+      ; `CS, "CS"
+      ; `DS, "DS"
+      ; `SS, "SS"
+      ; `ES, "ES"
+      ; `FS, "FS"
+      ; `GS, "GS"
+      ; `CF, "CF"
+      ; `PF, "PF"
+      ; `AF, "AF"
+      ; `ZF, "ZF"
+      ; `SF, "SF"
+      ; `OF, "OF"
       ; `EIP, "EIP"
       ]
     ;;
   end
 
   include M
+
   include Enum.Extend_table (struct
-      include M
-      include Enum.Make_from_enumerate (M)
-    end)
-  ;;
+    include M
+    include Enum.Make_from_enumerate (M)
+  end)
 end
 
 module Disp = struct
@@ -181,6 +216,7 @@ module Disp = struct
     | Symbolic of string
     | Numeric of int
   [@@deriving sexp, variants, eq, compare, quickcheck]
+
   (* TODO(@MattWindsor91): generate valid symbols only? *)
 
   (** Base mapper for displacements *)
@@ -188,30 +224,31 @@ module Disp = struct
     module F = Traversable.Helpers (M)
 
     let map_m (x : t) ~symbolic ~numeric : t M.t =
-      Variants.map x
+      Variants.map
+        x
         ~symbolic:(F.proc_variant1 symbolic)
         ~numeric:(F.proc_variant1 numeric)
     ;;
   end
 
-  module On_symbols : Traversable.S0_container with type t := t
-                                                and type Elt.t = string =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = String
+  module On_symbols : Traversable.S0_container with type t := t and type Elt.t = string =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module F = Traversable.Helpers (M)
+    module Elt = String
 
-        let map_m t ~f =
-          B.map_m t
-            ~symbolic:f
-            (* Numeric displacements, of course, have no symbols *)
-            ~numeric:M.return
-        ;;
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module F = Traversable.Helpers (M)
+
+      let map_m t ~f =
+        B.map_m
+          t
+          ~symbolic:f (* Numeric displacements, of course, have no symbols *)
+          ~numeric:M.return
+      ;;
+    end
+  end)
 end
 
 module Index = struct
@@ -225,30 +262,30 @@ module Index = struct
     module F = Traversable.Helpers (M)
 
     let map_m (x : t) ~unscaled ~scaled : t M.t =
-      Variants.map x
+      Variants.map
+        x
         ~unscaled:(F.proc_variant1 unscaled)
         ~scaled:(F.proc_variant2 scaled)
     ;;
   end
 
   (** Recursive mapper for registers *)
-  module On_registers : Traversable.S0_container with type t := t
-                                                  and type Elt.t = Reg.t =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = Reg
+  module On_registers :
+    Traversable.S0_container with type t := t and type Elt.t = Reg.t =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module F = Traversable.Helpers (M)
+    module Elt = Reg
 
-        let map_m t ~f =
-          B.map_m t
-            ~unscaled:f
-            ~scaled:M.(fun (r, k) -> f r >>| (fun r' -> (r', k)))
-        ;;
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module F = Traversable.Helpers (M)
+
+      let map_m t ~f =
+        B.map_m t ~unscaled:f ~scaled:M.(fun (r, k) -> f r >>| fun r' -> r', k)
+      ;;
+    end
+  end)
 
   module Q : Quickcheck.S with type t := t = struct
     module G = Quickcheck.Generator
@@ -256,37 +293,34 @@ module Index = struct
     module S = Quickcheck.Shrinker
 
     let anonymise = function
-      | Unscaled reg      -> `A reg
-      | Scaled   (reg, s) -> `B ((reg, s))
+      | Unscaled reg -> `A reg
+      | Scaled (reg, s) -> `B (reg, s)
     ;;
 
     let deanonymise = function
-      | `A reg        -> Unscaled reg
-      | `B ((reg, s)) -> Scaled   (reg, s)
+      | `A reg -> Unscaled reg
+      | `B (reg, s) -> Scaled (reg, s)
     ;;
 
     let quickcheck_generator : t G.t =
-      G.map ~f:deanonymise
+      G.map
+        ~f:deanonymise
         [%quickcheck.generator:
-          [ `A of Reg.t
-          | `B of Reg.t * [%custom G.small_positive_int]
-          ]
-        ]
+          [ `A of Reg.t | `B of Reg.t * [%custom G.small_positive_int] ]]
     ;;
 
     let quickcheck_observer : t O.t =
-      O.unmap ~f:anonymise
-        [%quickcheck.observer: [`A of Reg.t | `B of (Reg.t * int)]]
+      O.unmap ~f:anonymise [%quickcheck.observer: [ `A of Reg.t | `B of Reg.t * int ]]
     ;;
 
     let quickcheck_shrinker : t S.t =
-      S.map ~f:deanonymise ~f_inverse:anonymise
-        (S.variant2
-           Reg.quickcheck_shrinker
-           [%quickcheck.shrinker: (Reg.t * int)]
-        )
+      S.map
+        ~f:deanonymise
+        ~f_inverse:anonymise
+        (S.variant2 Reg.quickcheck_shrinker [%quickcheck.shrinker: Reg.t * int])
     ;;
   end
+
   include Q
 end
 
@@ -296,10 +330,10 @@ end
 
 module Indirect = struct
   type t =
-    { seg    : Reg.t   option
-    ; disp   : Disp.t  option
-    ; base   : Reg.t   option
-    ; index  : Index.t option
+    { seg : Reg.t option
+    ; disp : Disp.t option
+    ; base : Reg.t option
+    ; index : Index.t option
     }
   [@@deriving sexp, eq, compare, fields, make]
 
@@ -318,55 +352,55 @@ module Indirect = struct
   end
 
   (** Recursive mapper for symbols *)
-  module On_symbols
-    : Traversable.S0_container with type t := t
-                                and type Elt.t = string =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = String
+  module On_symbols : Traversable.S0_container with type t := t and type Elt.t = string =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module D = Disp.On_symbols.On_monad (M)
-        module O = T_option.On_monad (M)
+    module Elt = String
 
-        let map_m t ~f =
-          B.map_m t
-            ~disp:(O.map_m ~f:(D.map_m ~f))
-            (* Segments, bases, and indices have no symbols. *)
-            ~seg:M.return
-            ~base:M.return
-            ~index:M.return
-        ;;
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module D = Disp.On_symbols.On_monad (M)
+      module O = T_option.On_monad (M)
+
+      let map_m t ~f =
+        B.map_m
+          t
+          ~disp:
+            (O.map_m ~f:(D.map_m ~f)) (* Segments, bases, and indices have no symbols. *)
+          ~seg:M.return
+          ~base:M.return
+          ~index:M.return
+      ;;
+    end
+  end)
 
   (** Recursive mapper for registers *)
-  module On_registers
-    : Traversable.S0_container with type t := t and type Elt.t = Reg.t =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = Reg
+  module On_registers :
+    Traversable.S0_container with type t := t and type Elt.t = Reg.t =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module O = T_option.On_monad (M)
-        module I = Index.On_registers.On_monad (M)
+    module Elt = Reg
 
-        let map_m t ~f =
-          B.map_m t
-            ~seg:(O.map_m ~f)
-            ~base:(O.map_m ~f)
-            ~index:(O.map_m ~f:(I.map_m ~f))
-            (* Displacements have no registers. *)
-            ~disp:M.return
-        ;;
-      end
-    end)
-  ;;
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module O = T_option.On_monad (M)
+      module I = Index.On_registers.On_monad (M)
 
-  let of_tuple ( seg, base, index, disp ) = { seg; base; index; disp }
-  let to_tuple { seg; base; index; disp } = ( seg, base, index, disp )
+      let map_m t ~f =
+        B.map_m
+          t
+          ~seg:(O.map_m ~f)
+          ~base:(O.map_m ~f)
+          ~index:(O.map_m ~f:(I.map_m ~f)) (* Displacements have no registers. *)
+          ~disp:M.return
+      ;;
+    end
+  end)
+
+  let of_tuple (seg, base, index, disp) = { seg; base; index; disp }
+  let to_tuple { seg; base; index; disp } = seg, base, index, disp
 
   module Q : Quickcheck.S with type t := t = struct
     module G = Quickcheck.Generator
@@ -374,26 +408,28 @@ module Indirect = struct
     module S = Quickcheck.Shrinker
 
     let quickcheck_generator : t G.t =
-      G.map ~f:of_tuple
+      G.map
+        ~f:of_tuple
         [%quickcheck.generator:
-          Reg.t option * Reg.t option * Index.t option * Disp.t option
-        ]
+          Reg.t option * Reg.t option * Index.t option * Disp.t option]
     ;;
 
     let quickcheck_observer : t O.t =
-      O.unmap ~f:to_tuple
+      O.unmap
+        ~f:to_tuple
         [%quickcheck.observer:
-          Reg.t option * Reg.t option * Index.t option * Disp.t option
-        ]
+          Reg.t option * Reg.t option * Index.t option * Disp.t option]
     ;;
 
     let quickcheck_shrinker : t S.t =
-      S.map ~f:of_tuple ~f_inverse:to_tuple
+      S.map
+        ~f:of_tuple
+        ~f_inverse:to_tuple
         [%quickcheck.shrinker:
-          Reg.t option * Reg.t option * Index.t option * Disp.t option
-        ]
+          Reg.t option * Reg.t option * Index.t option * Disp.t option]
     ;;
   end
+
   include Q
 end
 
@@ -408,50 +444,45 @@ module Location = struct
     module F = Traversable.Helpers (M)
 
     let map_m x ~indirect ~reg =
-      Variants.map
-        x
-        ~indirect:(F.proc_variant1 indirect)
-        ~reg:(F.proc_variant1 reg)
+      Variants.map x ~indirect:(F.proc_variant1 indirect) ~reg:(F.proc_variant1 reg)
     ;;
   end
 
-  module On_registers
-    : Traversable.S0_container with type t := t and type Elt.t = Reg.t =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = Reg
+  module On_registers :
+    Traversable.S0_container with type t := t and type Elt.t = Reg.t =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module F = Traversable.Helpers (M)
-        module I = Indirect.On_registers.On_monad (M)
+    module Elt = Reg
 
-        let map_m t ~f = B.map_m t ~indirect:(I.map_m ~f) ~reg:f
-      end
-    end)
-  ;;
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module F = Traversable.Helpers (M)
+      module I = Indirect.On_registers.On_monad (M)
 
-  module On_symbols
-    : Traversable.S0_container with type t := t and type Elt.t = string =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = String
+      let map_m t ~f = B.map_m t ~indirect:(I.map_m ~f) ~reg:f
+    end
+  end)
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module F = Traversable.Helpers (M)
-        module I = Indirect.On_symbols.On_monad (M)
+  module On_symbols : Traversable.S0_container with type t := t and type Elt.t = string =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-        let map_m t ~f =
-          B.map_m t
-            ~indirect:(I.map_m ~f)
-            (* Registers don't have any symbols *)
-            ~reg:M.return
-        ;;
-      end
-    end)
-  ;;
+    module Elt = String
 
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module F = Traversable.Helpers (M)
+      module I = Indirect.On_symbols.On_monad (M)
+
+      let map_m t ~f =
+        B.map_m
+          t
+          ~indirect:(I.map_m ~f) (* Registers don't have any symbols *)
+          ~reg:M.return
+      ;;
+    end
+  end)
 
   module Q : Quickcheck.S with type t := t = struct
     module G = Quickcheck.Generator
@@ -460,29 +491,30 @@ module Location = struct
 
     let anonymise = function
       | Indirect ind -> `A ind
-      | Reg      reg -> `B reg
+      | Reg reg -> `B reg
     ;;
 
     let deanonymise = function
       | `A ind -> Indirect ind
-      | `B reg -> Reg      reg
+      | `B reg -> Reg reg
     ;;
 
     let quickcheck_generator : t G.t =
-      G.map ~f:deanonymise
-        [%quickcheck.generator: [ `A of Indirect.t | `B of Reg.t ]]
+      G.map ~f:deanonymise [%quickcheck.generator: [ `A of Indirect.t | `B of Reg.t ]]
     ;;
 
     let quickcheck_observer : t O.t =
-      O.unmap ~f:anonymise
-        [%quickcheck.observer: [ `A of Indirect.t | `B of Reg.t ]]
+      O.unmap ~f:anonymise [%quickcheck.observer: [ `A of Indirect.t | `B of Reg.t ]]
     ;;
 
     let quickcheck_shrinker : t S.t =
-      S.map ~f:deanonymise ~f_inverse:anonymise
+      S.map
+        ~f:deanonymise
+        ~f_inverse:anonymise
         [%quickcheck.shrinker: [ `A of Indirect.t | `B of Reg.t ]]
     ;;
   end
+
   include Q
 end
 
@@ -492,18 +524,13 @@ module Bop = struct
       | Plus
       | Minus
     [@@deriving enum]
-    ;;
 
-    let table =
-      [ Plus , "+"
-      ; Minus, "-"
-      ]
-    ;;
+    let table = [ Plus, "+"; Minus, "-" ]
   end
+
   include M
   include Enum.Extend_table (M)
 end
-
 
 module Operand = struct
   type t =
@@ -518,77 +545,79 @@ module Operand = struct
   module Base_map (M : Monad.S) = struct
     module F = Traversable.Helpers (M)
 
-    let rec map_m
-      (x : t)
-        ~location
-        ~immediate
-        ~string
-        ~typ
-        ~bop
-      : t M.t =
+    let rec map_m (x : t)
+                  ~location
+                  ~immediate
+                  ~string
+                  ~typ
+                  ~bop : t M.t =
       Variants.map
         x
         ~location:(F.proc_variant1 location)
         ~immediate:(F.proc_variant1 immediate)
         ~string:(F.proc_variant1 string)
         ~typ:(F.proc_variant1 typ)
-        ~bop:(F.proc_variant3
-                (fun (l, b, r) ->
-                   let open M.Let_syntax in
-                   let%bind l' = map_m ~location ~immediate ~string ~typ ~bop l in
-                   let%bind b' = bop b in
-                   let%map  r' = map_m ~location ~immediate ~string ~typ ~bop r in
-                   (l', b', r')))
+        ~bop:
+          (F.proc_variant3 (fun (l, b, r) ->
+               let open M.Let_syntax in
+               let%bind l' = map_m ~location ~immediate ~string ~typ ~bop l in
+               let%bind b' = bop b in
+               let%map r' = map_m ~location ~immediate ~string ~typ ~bop r in
+               l', b', r'))
     ;;
   end
 
   (** Recursive mapper for locations in operands *)
-  module On_locations
-    : Traversable.S0_container with type t := t and type Elt.t = Location.t =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = Location
+  module On_locations :
+    Traversable.S0_container with type t := t and type Elt.t = Location.t =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module F = Traversable.Helpers (M)
+    module Elt = Location
 
-        let map_m t ~f =
-          B.map_m t
-            ~location:f
-            (* These don't contain locations: *)
-            ~immediate:M.return
-            ~string:M.return
-            ~typ:M.return
-            ~bop:M.return (* NB: this folds over the operator *)
-        ;;
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module F = Traversable.Helpers (M)
+
+      let map_m t ~f =
+        B.map_m
+          t
+          ~location:f (* These don't contain locations: *)
+          ~immediate:M.return
+          ~string:M.return
+          ~typ:M.return
+          ~bop:M.return
+      ;;
+
+      (* NB: this folds over the operator *)
+    end
+  end)
 
   (** Recursive mapper for symbols in operands *)
-  module On_symbols
-    : Traversable.S0_container with type t := t and type Elt.t = string =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = String
+  module On_symbols : Traversable.S0_container with type t := t and type Elt.t = string =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module L = Location.On_symbols.On_monad (M)
-        module D = Disp.On_symbols.On_monad (M)
+    module Elt = String
 
-        let map_m t ~f =
-          B.map_m t
-            ~location:(L.map_m ~f)
-            ~immediate:(D.map_m ~f)
-            (* These don't contain symbols: *)
-            ~string:M.return
-            ~typ:M.return
-            ~bop:M.return (* NB: this folds over the operator *)
-        ;;
-      end
-    end)
-  ;;
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module L = Location.On_symbols.On_monad (M)
+      module D = Disp.On_symbols.On_monad (M)
+
+      let map_m t ~f =
+        B.map_m
+          t
+          ~location:(L.map_m ~f)
+          ~immediate:(D.map_m ~f) (* These don't contain symbols: *)
+          ~string:M.return
+          ~typ:M.return
+          ~bop:M.return
+      ;;
+
+      (* NB: this folds over the operator *)
+    end
+  end)
 
   module Q : Quickcheck.S with type t := t = struct
     module G = Quickcheck.Generator
@@ -596,88 +625,77 @@ module Operand = struct
     module S = Quickcheck.Shrinker
 
     let anonymise = function
-      | Location  loc       -> `A loc
-      | Immediate disp      -> `B disp
-      | String    str       -> `C str
-      | Typ       typ       -> `D typ
-      | Bop       (l, b, r) -> `E ((l, b, r))
+      | Location loc -> `A loc
+      | Immediate disp -> `B disp
+      | String str -> `C str
+      | Typ typ -> `D typ
+      | Bop (l, b, r) -> `E (l, b, r)
     ;;
 
     let deanonymise = function
-      | `A loc         -> Location loc
-      | `B disp        -> Immediate disp
-      | `C str         -> String str
-      | `D typ         -> Typ typ
-      | `E ((l, b, r)) -> Bop (l, b, r)
+      | `A loc -> Location loc
+      | `B disp -> Immediate disp
+      | `C str -> String str
+      | `D typ -> Typ typ
+      | `E (l, b, r) -> Bop (l, b, r)
     ;;
 
     let quickcheck_generator : t G.t =
       G.recursive_union
-        [ G.map ~f:deanonymise
+        [ G.map
+            ~f:deanonymise
             [%quickcheck.generator:
+              [ `A of Location.t | `B of Disp.t | `C of string | `D of string ]]
+        ]
+        ~f:(fun mu ->
+          [ G.map
+              ~f:(fun (l, b, r) -> Bop (l, b, r))
+              [%quickcheck.generator: [%custom mu] * Bop.t * [%custom mu]]
+          ])
+    ;;
+
+    let quickcheck_observer : t O.t =
+      O.fixed_point (fun mu ->
+          O.unmap
+            ~f:anonymise
+            [%quickcheck.observer:
               [ `A of Location.t
               | `B of Disp.t
               | `C of string
               | `D of string
-              ]
-            ]
-        ]
-        ~f:(fun mu ->
-            [ G.map ~f:(fun (l, b, r) -> Bop (l, b, r))
-                [%quickcheck.generator:
-                  [%custom mu] * Bop.t * [%custom mu]]
-            ])
-    ;;
-
-    let quickcheck_observer : t O.t =
-      O.fixed_point
-        (fun mu ->
-           O.unmap ~f:anonymise
-             [%quickcheck.observer:
-               [ `A of Location.t
-               | `B of Disp.t
-               | `C of string
-               | `D of string
-               | `E of [%custom mu] * Bop.t * [%custom mu]
-               ]
-             ]
-        )
+              | `E of [%custom mu] * Bop.t * [%custom mu]
+              ]])
     ;;
 
     let quickcheck_shrinker : t S.t =
-      S.fixed_point
-        (fun mu ->
-           S.map ~f:deanonymise ~f_inverse:anonymise
-             [%quickcheck.shrinker:
-               [ `A of Location.t
-               | `B of Disp.t
-               | `C of string
-               | `D of string
-               | `E of [%custom mu] * Bop.t * [%custom mu]
-               ]
-             ]
-        )
+      S.fixed_point (fun mu ->
+          S.map
+            ~f:deanonymise
+            ~f_inverse:anonymise
+            [%quickcheck.shrinker:
+              [ `A of Location.t
+              | `B of Disp.t
+              | `C of string
+              | `D of string
+              | `E of [%custom mu] * Bop.t * [%custom mu]
+              ]])
     ;;
   end
+
   include Q
 
   let%expect_test "symbol fold over bop" =
     let ast =
       bop
-        (bop
-           (immediate (Disp.Symbolic "a"))
-           Bop.Plus
-           (immediate (Disp.Symbolic "b")))
+        (bop (immediate (Disp.Symbolic "a")) Bop.Plus (immediate (Disp.Symbolic "b")))
         Bop.Minus
-        (location
-           (Location.Indirect (Indirect.make ~disp:(Disp.Symbolic "c") ())))
+        (location (Location.Indirect (Indirect.make ~disp:(Disp.Symbolic "c") ())))
     in
-    let f count sym = (count + 1), String.capitalize sym in
-    let (total, ast') = On_symbols.fold_map ~f ~init:0 ast in
-    Format.printf "@[<v>@[<h>Total:@ %d@]@,%a@]@."
-      total
-      Sexp.pp_hum [%sexp (ast' : t)];
-    [%expect {|
+    let f count sym = count + 1, String.capitalize sym in
+    let total, ast' = On_symbols.fold_map ~f ~init:0 ast in
+    Format.printf "@[<v>@[<h>Total:@ %d@]@,%a@]@." total Sexp.pp_hum [%sexp (ast' : t)];
+    [%expect
+      {|
       Total: 3
       (Bop (Bop (Immediate (Symbolic A)) + (Immediate (Symbolic B))) -
        (Location (Indirect ((seg ()) (disp ((Symbolic C))) (base ()) (index ()))))) |}]
@@ -688,9 +706,7 @@ end
  * Prefixes
  *)
 
-type prefix =
-  | PreLock
-[@@deriving sexp, eq]
+type prefix = PreLock [@@deriving sexp, eq]
 
 (*
  * Instructions
@@ -699,13 +715,13 @@ type prefix =
 module Instruction = struct
   module T = struct
     type t =
-      { prefix   : prefix option
-      ; opcode   : Opcode.t
+      { prefix : prefix option
+      ; opcode : Opcode.t
       ; operands : Operand.t list
       }
     [@@deriving sexp, fields, eq, make]
-    ;;
   end
+
   include T
 
   (** Base mapper for instructions *)
@@ -722,53 +738,55 @@ module Instruction = struct
   end
 
   (** Recursive mapper for symbols in instructions *)
-  module On_symbols
-    : Traversable.S0_container with type t := t and type Elt.t = string =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = String
-      module Set = String.Set
+  module On_symbols : Traversable.S0_container with type t := t and type Elt.t = string =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B  = Base_map (M)
-        module F  = Traversable.Helpers (M)
-        module OS = Operand.On_symbols.On_monad (M)
-        module L  = T_list.On_monad (M)
+    module Elt = String
+    module Set = String.Set
 
-        let map_m t ~f =
-          B.map_m t
-            ~operands:(L.map_m ~f:(OS.map_m ~f))
-            (* Prefixes and opcodes don't contain symbols. *)
-            ~prefix:M.return
-            ~opcode:M.return
-        ;;
-      end
-    end)
-  ;;
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module F = Traversable.Helpers (M)
+      module OS = Operand.On_symbols.On_monad (M)
+      module L = T_list.On_monad (M)
+
+      let map_m t ~f =
+        B.map_m
+          t
+          ~operands:
+            (L.map_m ~f:(OS.map_m ~f)) (* Prefixes and opcodes don't contain symbols. *)
+          ~prefix:M.return
+          ~opcode:M.return
+      ;;
+    end
+  end)
 
   (** Recursive mapper for locations in instructions *)
-  module On_locations
-    : Traversable.S0_container with type t := t and type Elt.t = Location.t =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = Location
+  module On_locations :
+    Traversable.S0_container with type t := t and type Elt.t = Location.t =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B  = Base_map (M)
-        module F  = Traversable.Helpers (M)
-        module OL = Operand.On_locations.On_monad (M)
-        module L  = T_list.On_monad (M)
+    module Elt = Location
 
-        let map_m t ~f =
-          B.map_m t
-            ~operands:(L.map_m ~f:(OL.map_m ~f))
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module F = Traversable.Helpers (M)
+      module OL = Operand.On_locations.On_monad (M)
+      module L = T_list.On_monad (M)
+
+      let map_m t ~f =
+        B.map_m
+          t
+          ~operands:
+            (L.map_m ~f:(OL.map_m ~f))
             (* Prefixes and opcodes don't contain locations. *)
-            ~prefix:M.return
-            ~opcode:M.return
-        ;;
-      end
-    end)
-  ;;
+          ~prefix:M.return
+          ~opcode:M.return
+      ;;
+    end
+  end)
 end
 
 module Statement = struct
@@ -783,7 +801,8 @@ module Statement = struct
     module F = Traversable.Helpers (M)
 
     let map_m x ~instruction ~label ~nop =
-      Variants.map x
+      Variants.map
+        x
         ~instruction:(F.proc_variant1 instruction)
         ~label:(F.proc_variant1 label)
         ~nop:(F.proc_variant0 nop)
@@ -791,55 +810,55 @@ module Statement = struct
   end
 
   (** Recursive mapper for instructions in statements *)
-  module On_instructions
-    : Traversable.S0_container with type t := t
-                           and type Elt.t = Instruction.t =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = Instruction
+  module On_instructions :
+    Traversable.S0_container with type t := t and type Elt.t = Instruction.t =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module F = Traversable.Helpers (M)
-        module I = Instruction.On_symbols.On_monad (M)
+    module Elt = Instruction
 
-        let map_m t ~f =
-          B.map_m t
-            ~instruction:f
-            (* These don't contain instructions: *)
-            ~label:M.return
-            ~nop:M.return
-        ;;
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module F = Traversable.Helpers (M)
+      module I = Instruction.On_symbols.On_monad (M)
+
+      let map_m t ~f =
+        B.map_m
+          t
+          ~instruction:f (* These don't contain instructions: *)
+          ~label:M.return
+          ~nop:M.return
+      ;;
+    end
+  end)
 
   (** Recursive mapper for symbols in statements *)
-  module On_symbols
-    : Traversable.S0_container with type t := t and type Elt.t = string =
-    Traversable.Make_container0 (struct
-      type nonrec t = t
-      module Elt = String
+  module On_symbols : Traversable.S0_container with type t := t and type Elt.t = string =
+  Traversable.Make_container0 (struct
+    type nonrec t = t
 
-      module On_monad (M : Monad.S) = struct
-        module B = Base_map (M)
-        module F = Traversable.Helpers (M)
-        module I = Instruction.On_symbols.On_monad (M)
+    module Elt = String
 
-        let map_m t ~f =
-          B.map_m t
-            ~instruction:(I.map_m ~f)
-            ~label:f
-            (* These don't contain symbols: *)
-            ~nop:M.return
-        ;;
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module B = Base_map (M)
+      module F = Traversable.Helpers (M)
+      module I = Instruction.On_symbols.On_monad (M)
+
+      let map_m t ~f =
+        B.map_m
+          t
+          ~instruction:(I.map_m ~f)
+          ~label:f (* These don't contain symbols: *)
+          ~nop:M.return
+      ;;
+    end
+  end)
 end
 
 (** [t] is the type of an X86 abstract syntax tree, containing the
     specific X86 syntax dialect and a list of statements. *)
 type t =
-  { syntax  : Dialect.t
+  { syntax : Dialect.t
   ; program : Statement.t list
   }
 [@@deriving sexp, eq, fields]
@@ -853,25 +872,30 @@ module Base_map (M : Monad.S) = struct
       ~init:(M.return x)
       ~syntax:(F.proc_field syntax)
       ~program:(F.proc_field program)
-    ;;
+  ;;
 end
 
-module On_listings
-  : Traversable.S0_container with type t := t and type Elt.t = Statement.t list =
-  Traversable.Make_container0 (struct
-    type nonrec t = t
-    module Elt = struct type t = Statement.t list [@@deriving eq] end
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      let map_m t ~f = B.map_m t ~program:f ~syntax:M.return
-    end
-  end)
-;;
+module On_listings :
+  Traversable.S0_container with type t := t and type Elt.t = Statement.t list =
+Traversable.Make_container0 (struct
+  type nonrec t = t
 
-module On_statements
-  : Traversable.S0_container with type t := t and type Elt.t = Statement.t =
+  module Elt = struct
+    type t = Statement.t list [@@deriving eq]
+  end
+
+  module On_monad (M : Monad.S) = struct
+    module B = Base_map (M)
+
+    let map_m t ~f = B.map_m t ~program:f ~syntax:M.return
+  end
+end)
+
+module On_statements :
+  Traversable.S0_container with type t := t and type Elt.t = Statement.t =
   Traversable.Chain0 (struct
-    type nonrec t = t
-    include On_listings
-  end)
+      type nonrec t = t
+
+      include On_listings
+    end)
     (T_list.With_elt (Statement))

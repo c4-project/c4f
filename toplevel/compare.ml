@@ -32,20 +32,25 @@ let litmusify o passes spec c_file =
   let litmus_job = Asm_job.(make ~config ~passes ()) in
   let open Or_error.Let_syntax in
   let%bind (module Comp_lit) = Common.litmusify_pipeline target in
-  let%map (_, (_, out)) =
+  let%map _, (_, out) =
     Comp_lit.run
-      (`C, Fn.const (Config.Compiler.Chain_input.create ~file_type:`C ~next:(Fn.const litmus_job)))
+      ( `C
+      , Fn.const
+          (Config.Compiler.Chain_input.create ~file_type:`C ~next:(Fn.const litmus_job))
+      )
       (Io.In_source.file c_file)
-      (Io.Out_sink.stdout)
+      Io.Out_sink.stdout
   in
-  Asm_job.Output.warn (o.Output.wf) out
+  Asm_job.Output.warn o.Output.wf out
 ;;
 
 let run_spec_on_file o passes spec ~c_file =
-  Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@."
-    Config.Id.pp (Config.Compiler.Spec.With_id.id spec);
+  Format.printf
+    "@[<v>@,@[<h>##@ %a@]@,@,```@]@."
+    Config.Id.pp
+    (Config.Compiler.Spec.With_id.id spec);
   let open Or_error.Let_syntax in
-  let%map  _  = litmusify o passes spec c_file in
+  let%map _ = litmusify o passes spec c_file in
   Format.printf "@[<h>```@]@."
 ;;
 
@@ -53,14 +58,10 @@ let run o cfg ~(c_file_raw : string) =
   let open Or_error.Let_syntax in
   let%bind c_file = Io.fpath_of_string c_file_raw in
   let specs = Config.Act.compilers cfg in
-  let passes =
-    Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard
-  in
+  let passes = Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard in
   Fmt.pr "@[<h>#@ %a@]@." Fpath.pp c_file;
   Or_error.combine_errors_unit
-    (Config.Compiler.Spec.Set.map specs
-       ~f:(run_spec_on_file o passes ~c_file)
-    )
+    (Config.Compiler.Spec.Set.map specs ~f:(run_spec_on_file o passes ~c_file))
 ;;
 
 let command =
@@ -72,14 +73,13 @@ let command =
       and sanitiser_passes = Args.sanitiser_passes
       and compiler_predicate = Args.compiler_predicate
       and machine_predicate = Args.machine_predicate
-      and c_file_raw = anon ("FILE" %: Filename.arg_type)
-      in
+      and c_file_raw = anon ("FILE" %: Filename.arg_type) in
       fun () ->
-        Common.lift_command standard_args
+        Common.lift_command
+          standard_args
           ?compiler_predicate
           ?machine_predicate
           ?sanitiser_passes
           ~with_compiler_tests:true
-          ~f:(fun _args -> run ~c_file_raw)
-    ]
+          ~f:(fun _args -> run ~c_file_raw)]
 ;;

@@ -50,10 +50,10 @@ open Utils
 
 (** [t] enumerates the various dialects of x86 syntax. *)
 type t =
-  | Att   (* AT&T syntax (like GNU as) *)
+  | Att (* AT&T syntax (like GNU as) *)
   | Intel (* Intel syntax *)
   | Herd7 (* Herd7 syntax (somewhere in between) *)
-  [@@deriving sexp, compare, hash]
+[@@deriving sexp, compare, hash]
 
 (** [Name_table] associates each dialect with its string name. *)
 module Name_table : String_table.S with type t := t
@@ -91,7 +91,7 @@ module type S = sig
 
       In AT&T, symbolic jumps look like indirect displacements; in
      Intel and Herd7, they look like immediate values. *)
-  val symbolic_jump_type : [`Indirect | `Immediate ]
+  val symbolic_jump_type : [ `Indirect | `Immediate ]
 end
 
 (** [Att] describes the AT&T dialect of x86 assembly. *)

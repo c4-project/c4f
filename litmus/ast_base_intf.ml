@@ -33,62 +33,62 @@
 (** Signature of operations that can be used on Litmus predicate
    elements. *)
 module type S_pred_elt = sig
-  type id
   (** Type of identifiers. *)
+  type id
 
-  type 'const elt
   (** Type of constants, possibly parametrised directly. *)
+  type 'const elt
 
-  type 'const t
   (** Type of predicate elements, possibly parametrised directly by
       language constants. *)
+  type 'const t
 
-  val (==?) : id -> 'const elt -> 'const t
   (** [l ==? r] constructs an equality constraint. *)
+  val ( ==? ) : id -> 'const elt -> 'const t
 end
 
 (** Signature of operations that can be used on Litmus predicates. *)
 module type S_pred = sig
-  type 'const t
   (** Type of predicates, possibly parametrised directly by
       language constants. *)
+  type 'const t
 
-  type 'const elt
   (** Type of predicate elements, possibly parametrised directly by
       language constants. *)
+  type 'const elt
 
-  val (||) : 'const t -> 'const t -> 'const t
   (** [l || r] constructs a disjunction. *)
+  val ( || ) : 'const t -> 'const t -> 'const t
 
-  val (&&) : 'const t -> 'const t -> 'const t
   (** [l && r] constructs a conjunction. *)
+  val ( && ) : 'const t -> 'const t -> 'const t
 
-  val elt : 'const elt -> 'const t
   (** [elt x] lifts [x] to a predicate. *)
+  val elt : 'const elt -> 'const t
 
-  val bracket : 'const t -> 'const t
   (** [bracket x] surrounds [x] with parentheses. *)
+  val bracket : 'const t -> 'const t
 
-  val debracket : 'const t -> 'const t
   (** [debracket pred] removes any brackets in [pred]. *)
+  val debracket : 'const t -> 'const t
 end
 
 (** Signature of operations that can be used on Litmus postconditions. *)
 module type S_postcondition = sig
-  type 'const t
   (** Type of postconditions, possibly parametrised directly by
      language constants. *)
+  type 'const t
 
-  type 'const pred
   (** Type of predicates, possibly parametrised directly by
       language constants. *)
+  type 'const pred
 
-  val make : quantifier:[ `Exists ] -> predicate:'const pred -> 'const t
   (** [make ~quantifier ~predicate] constructs a postcondition. *)
+  val make : quantifier:[ `Exists ] -> predicate:'const pred -> 'const t
 
-  val quantifier : 'const t -> [ `Exists ]
   (** [quantifier post] gets [post]'s quantifier. *)
+  val quantifier : 'const t -> [ `Exists ]
 
-  val predicate : 'const t -> 'const pred
   (** [predicate post] gets [post]'s predicate. *)
+  val predicate : 'const t -> 'const pred
 end

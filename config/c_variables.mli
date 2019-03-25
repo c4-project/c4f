@@ -103,7 +103,10 @@ module Map : sig
   (** [of_single_scope_map ?tid ?scope vars] lifts [vars] to a variable map,
       applying [scope] and [tid] to each variable. *)
   val of_single_scope_map
-    : ?tid:int -> ?scope:Scope.t -> Initial_value.t C_identifier.Map.t -> t
+    :  ?tid:int
+    -> ?scope:Scope.t
+    -> Initial_value.t C_identifier.Map.t
+    -> t
 
   (** [of_single_scope_set ?tid ?scope vars] lifts [vars] to a variable map,
       applying [scope] and [tid] to each variable and assigning [None] as the
@@ -136,7 +139,9 @@ module Map : sig
   (** [map t ~f] maps [t] over every record and identifier in [f].
       It fails if the resulting map has duplicate keys. *)
   val map
-    : t -> f:(C_identifier.t -> Record.t -> C_identifier.t * Record.t) -> t Or_error.t
+    :  t
+    -> f:(C_identifier.t -> Record.t -> C_identifier.t * Record.t)
+    -> t Or_error.t
 
   (** {3 Filtering variables} *)
 
@@ -151,8 +156,5 @@ module Map : sig
 end
 
 module String_lang : sig
-  val parse_list
-    : ?scope:Scope.t
-    -> string list
-    -> Map.t Or_error.t
+  val parse_list : ?scope:Scope.t -> string list -> Map.t Or_error.t
 end

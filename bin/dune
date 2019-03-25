@@ -1,58 +1,62 @@
 (executable
-  (public_name act)
-  (preprocess (pps ppx_jane))
-  (libraries core toplevel))
+ (public_name act)
+ (preprocess
+  (pps ppx_jane))
+ (libraries core toplevel))
 
 (rule
  (targets explain.regress.output)
  (action
-  (with-stdout-to explain.regress.output
+  (with-stdout-to
+   explain.regress.output
    (run act regress "explain" "tests")))
  (deps
   "tests/asm/x86/att/spec"
-  (glob_files "tests/asm/x86/att/*.s"))
-)
+  (glob_files "tests/asm/x86/att/*.s")))
+
 (alias
  (name runtest)
- (action (diff explain.regress.expected explain.regress.output)
-))
+ (action
+  (diff explain.regress.expected explain.regress.output)))
 
 (rule
  (targets litmusify.regress.output)
  (action
-  (with-stdout-to litmusify.regress.output
+  (with-stdout-to
+   litmusify.regress.output
    (run act regress "litmusify" "tests")))
  (deps
   "tests/asm/x86/att/spec"
-  (glob_files "tests/asm/x86/att/*.s"))
-)
+  (glob_files "tests/asm/x86/att/*.s")))
+
 (alias
  (name runtest)
- (action (diff litmusify.regress.expected litmusify.regress.output)
-))
+ (action
+  (diff litmusify.regress.expected litmusify.regress.output)))
 
 (rule
  (targets delitmus.regress.output)
  (action
-  (with-stdout-to delitmus.regress.output
+  (with-stdout-to
+   delitmus.regress.output
    (run act regress "delitmus" "tests/litmus/")))
  (deps
-  (glob_files "tests/litmus/*.litmus"))
-)
+  (glob_files "tests/litmus/*.litmus")))
+
 (alias
  (name runtest)
- (action (diff delitmus.regress.expected delitmus.regress.output)
-))
+ (action
+  (diff delitmus.regress.expected delitmus.regress.output)))
 
 (rule
  (targets specs.output)
  (action
-  (with-stdout-to specs.output
+  (with-stdout-to
+   specs.output
    (run act config "list-compilers" "-verbose" "-config" "act.conf.example")))
- (deps
-  "act.conf.example")
-)
+ (deps "act.conf.example"))
+
 (alias
  (name runtest)
- (action (diff specs.expected specs.output)
-))
+ (action
+  (diff specs.expected specs.output)))

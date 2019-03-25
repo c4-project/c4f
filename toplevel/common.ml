@@ -51,8 +51,8 @@ let get_target cfg = function
   | `Arch _ as arch -> Or_error.return arch
 ;;
 
-let asm_runner_of_target (tgt : Config.Compiler.Target.t) :
-    (module Asm_job.Runner) Or_error.t =
+let asm_runner_of_target (tgt : Config.Compiler.Target.t)
+    : (module Asm_job.Runner) Or_error.t =
   Language_support.asm_runner_from_arch (Config.Compiler.Target.arch tgt)
 ;;
 
@@ -78,11 +78,11 @@ end)
 
 let chain_with_delitmus
     (type aux_i aux_o)
-    (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o) :
-    (module Filter.S
-       with type aux_i = Config.File_type.t_or_infer
-                         * (C.Filters.Output.t Filter.chain_output -> aux_i)
-        and type aux_o = C.Filters.Output.t option * aux_o) =
+    (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
+    : (module Filter.S
+         with type aux_i = Config.File_type.t_or_infer
+                           * (C.Filters.Output.t Filter.chain_output -> aux_i)
+          and type aux_o = C.Filters.Output.t option * aux_o) =
   (module Chain_with_delitmus (Onto)
   : Filter.S
     with type aux_i = Config.File_type.t_or_infer
@@ -95,12 +95,11 @@ let delitmus_compile_asm_pipeline
     (target : Config.Compiler.Target.t)
     (job_maker :
       (module Asm_job.Runner) -> (module Filter.S with type aux_i = i and type aux_o = o))
-    :
-    (module Filter.S
-       with type aux_i = Config.File_type.t_or_infer
-                         * (   C.Filters.Output.t Filter.chain_output
-                            -> i Config.Compiler.Chain_input.t)
-        and type aux_o = C.Filters.Output.t option * (unit option * o))
+    : (module Filter.S
+         with type aux_i = Config.File_type.t_or_infer
+                           * (C.Filters.Output.t Filter.chain_output
+                              -> i Config.Compiler.Chain_input.t)
+          and type aux_o = C.Filters.Output.t option * (unit option * o))
     Or_error.t =
   let open Or_error in
   target
@@ -110,24 +109,24 @@ let delitmus_compile_asm_pipeline
   >>| chain_with_delitmus
 ;;
 
-let explain_pipeline (target : Config.Compiler.Target.t) :
-    (module Filter.S
-       with type aux_i = Config.File_type.t_or_infer
-                         * (   C.Filters.Output.t Filter.chain_output
-                            -> Asm_job.Explain_config.t Asm_job.t
-                               Config.Compiler.Chain_input.t)
-        and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.Output.t))
+let explain_pipeline (target : Config.Compiler.Target.t)
+    : (module Filter.S
+         with type aux_i = Config.File_type.t_or_infer
+                           * (C.Filters.Output.t Filter.chain_output
+                              -> Asm_job.Explain_config.t Asm_job.t
+                                 Config.Compiler.Chain_input.t)
+          and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.Output.t))
     Or_error.t =
   delitmus_compile_asm_pipeline target Asm_job.get_explain
 ;;
 
-let litmusify_pipeline (target : Config.Compiler.Target.t) :
-    (module Filter.S
-       with type aux_i = Config.File_type.t_or_infer
-                         * (   C.Filters.Output.t Filter.chain_output
-                            -> Sexp.t Litmusifier.Config.t Asm_job.t
-                               Config.Compiler.Chain_input.t)
-        and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.Output.t))
+let litmusify_pipeline (target : Config.Compiler.Target.t)
+    : (module Filter.S
+         with type aux_i = Config.File_type.t_or_infer
+                           * (C.Filters.Output.t Filter.chain_output
+                              -> Sexp.t Litmusifier.Config.t Asm_job.t
+                                 Config.Compiler.Chain_input.t)
+          and type aux_o = C.Filters.Output.t option * (unit option * Asm_job.Output.t))
     Or_error.t =
   delitmus_compile_asm_pipeline target Asm_job.get_litmusify_sexp
 ;;
@@ -135,7 +134,8 @@ let litmusify_pipeline (target : Config.Compiler.Target.t) :
 let choose_cvars_after_delitmus
     (o : Output.t)
     (user_cvars : Config.C_variables.Map.t option)
-    (dl_cvars : Config.C_variables.Map.t) : Config.C_variables.Map.t =
+    (dl_cvars : Config.C_variables.Map.t)
+    : Config.C_variables.Map.t =
   (* We could use Option.first_some here, but expanding it out gives
      us the ability to verbose-log what we're doing. *)
   let out_cvars message cvars =
@@ -168,37 +168,39 @@ let choose_cvars_inner (o : Output.t)
 let choose_cvars
     (o : Output.t)
     (user_cvars : Config.C_variables.Map.t option)
-    (dl_output : C.Filters.Output.t Filter.chain_output) :
-    Config.C_variables.Map.t option =
+    (dl_output : C.Filters.Output.t Filter.chain_output)
+    : Config.C_variables.Map.t option =
   let warn_if_empty, cvars = choose_cvars_inner o user_cvars dl_output in
   if warn_if_empty
   then warn_if_not_tracking_symbols o (Option.map ~f:C_identifier.Map.keys cvars);
   cvars
 ;;
 
-
-
 module T_opt = Travesty.T_option.With_errors
 
 let collect_cvars ?(c_globals : string list option)
                   ?(c_locals : string list option)
-                  () : Config.C_variables.Map.t option Or_error.t =
+                  ()
+    : Config.C_variables.Map.t option Or_error.t =
   let open Or_error.Let_syntax in
   let module V = Config.C_variables in
-  let%bind globals = T_opt.map_m ~f:(V.String_lang.parse_list ~scope:V.Scope.Global) c_globals in
-  let%map locals = T_opt.map_m ~f:(V.String_lang.parse_list ~scope:V.Scope.Local) c_locals in
-  Option.merge globals locals
-    ~f:(fun x y -> V.Map.merge_list [x; y])
+  let%bind globals =
+    T_opt.map_m ~f:(V.String_lang.parse_list ~scope:V.Scope.Global) c_globals
+  in
+  let%map locals =
+    T_opt.map_m ~f:(V.String_lang.parse_list ~scope:V.Scope.Local) c_locals
+  in
+  Option.merge globals locals ~f:(fun x y -> V.Map.merge_list [ x; y ])
 ;;
 
 let make_compiler_input
     (o : Output.t)
     (file_type : Config.File_type.t_or_infer)
     (user_cvars : Config.C_variables.Map.t option)
-    (config_fn : c_variables:(Config.C_variables.Map.t option) -> 'cfg)
+    (config_fn : c_variables:Config.C_variables.Map.t option -> 'cfg)
     (passes : Config.Sanitiser_pass.Set.t)
-    (dl_output : C.Filters.Output.t Filter.chain_output) :
-    'cfg Asm_job.t Config.Compiler.Chain_input.t =
+    (dl_output : C.Filters.Output.t Filter.chain_output)
+    : 'cfg Asm_job.t Config.Compiler.Chain_input.t =
   let c_variables = choose_cvars o user_cvars dl_output in
   let symbols =
     c_variables
@@ -235,7 +237,8 @@ module Make_lifter (B : Basic_lifter) = struct
       ?sanitiser_passes
       ?with_compiler_tests
       ~(f : B.t -> Output.t -> Config.Act.t -> unit Or_error.t)
-      (args : B.t) : unit =
+      (args : B.t)
+      : unit =
     let standard_args = B.as_standard_args args in
     let o = make_output_from_standard_args standard_args in
     Or_error.(

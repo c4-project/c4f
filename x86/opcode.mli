@@ -66,29 +66,25 @@ module Operand_spec : sig
 
       At present, we don't model operand size restrictions. *)
   type single =
-    | Immediate  (** This operand can be an immediate value (imm) *)
-    | Memory     (** This operand can be a memory reference (m) *)
-    | Register   (** This operand can be a register (r) *)
-  ;;
+    | Immediate (** This operand can be an immediate value (imm) *)
+    | Memory (** This operand can be a memory reference (m) *)
+    | Register (** This operand can be a register (r) *)
 
   (** [t] describes the operands of an instruction. *)
   type t =
-    | Zero
-    (** This instruction takes no operands. *)
+    | Zero (** This instruction takes no operands. *)
     | One of single list
-    (** This instruction takes one operand, which may satisfy any of
+        (** This instruction takes one operand, which may satisfy any of
        the following specifications. *)
     | Symmetric of (single * single) list
-    (** This instruction takes two operands, which may satisfy any of
+        (** This instruction takes two operands, which may satisfy any of
        the following pairwise specifications in either order. *)
     | Src_dst of (single, single) Src_dst.t list
-    (** This instruction takes two operands, which may satisfy any of
+        (** This instruction takes two operands, which may satisfy any of
        the following pairwise specifications so long as the source
        matches the [src] side and the destination matches the [dst]
        side. *)
-    | Or of t * t
-    (** This instruction can match either of these descriptions. *)
-  ;;
+    | Or of t * t (** This instruction can match either of these descriptions. *)
 end
 
 (** [Sizable] enumerates x86 opcodes that may have an associated size
@@ -108,23 +104,23 @@ module Sizable : sig
     | `Xor
     ]
   [@@deriving sexp, eq]
-  ;;
 
-  include String_table.S with type t := t
   (** [Sizable] contains a string table for sizable opcodes.
       These strings _don't_ have a size suffix attached; to parse
       or emit an AT&T-style opcode with size suffix, use
       [Sized]. *)
+  include String_table.S with type t := t
 
-  include Abstract.Abstractable.S
+  (** We can convert sizable opcodes to the act abstract form. *)
+  include
+    Abstract.Abstractable.S
     with type t := t
      and module Abs := Abstract.Instruction.Opcode
-  (** We can convert sizable opcodes to the act abstract form. *)
 
-  val get_operand_spec : t -> Operand_spec.t option
   (** [get_operand_spec opcode] tries to get an operand spec for
       [opcode].  It returns [None] if the opcode doesn't yet have
       operand analysis. *)
+  val get_operand_spec : t -> Operand_spec.t option
 end
 
 (** [Size] contains an enumeration of operand sizes. *)
@@ -134,27 +130,25 @@ module Size : sig
     | Word
     | Long
   [@@deriving sexp, eq]
-  ;;
 
-  module Suffix_table : String_table.S with type t := t
   (** [Size] contains a string table for AT&T-style size suffixes. *)
+  module Suffix_table : String_table.S with type t := t
 end
 
 module Sized : sig
   (** A [Sized.t] is a pair of sizable instruction and
       actual size. *)
-  type t = (Sizable.t * Size.t)
-  [@@deriving sexp, eq]
-  ;;
+  type t = Sizable.t * Size.t [@@deriving sexp, eq]
 
-  include String_table.S with type t := t
   (** [Sized] contains a string table for AT&T-style size-suffixed
       opcodes. *)
+  include String_table.S with type t := t
 
-  include Abstract.Abstractable.S
+  (** We can convert sized opcodes to the act abstract form. *)
+  include
+    Abstract.Abstractable.S
     with type t := t
      and module Abs := Abstract.Instruction.Opcode
-  (** We can convert sized opcodes to the act abstract form. *)
 end
 
 (** [Basic] enumerates 'regular' known opcodes that are neither jumps
@@ -169,21 +163,21 @@ module Basic : sig
     | `Nop
     ]
   [@@deriving sexp, eq, enumerate]
-  ;;
 
-  include String_table.S with type t := t
   (** [Basic] contains a string table for basic opcodes.
       This is a superset of [Sizable]'s string table. *)
+  include String_table.S with type t := t
 
-  include Abstract.Abstractable.S
+  (** We can convert basic opcodes to the act abstract form. *)
+  include
+    Abstract.Abstractable.S
     with type t := t
      and module Abs := Abstract.Instruction.Opcode
-  (** We can convert basic opcodes to the act abstract form. *)
 
-  val get_operand_spec : t -> Operand_spec.t option
   (** [get_operand_spec opcode] tries to get an operand spec for
       [opcode].  It returns [None] if the opcode doesn't yet have
       operand analysis. *)
+  val get_operand_spec : t -> Operand_spec.t option
 end
 
 (** [Condition] describes jump conditions. *)
@@ -208,7 +202,6 @@ module Condition : sig
     | `Zero
     ]
   [@@deriving sexp, eq]
-  ;;
 
   (** [t] enumerates all x86 conditions, including both forms of
       invertible conditions. *)
@@ -221,7 +214,6 @@ module Condition : sig
     | `ParityOdd
     ]
   [@@deriving sexp, eq]
-  ;;
 end
 
 (** [Jump] describes jump instructions. *)
@@ -232,50 +224,47 @@ module Jump : sig
     | `Conditional of Condition.t
     ]
   [@@deriving sexp, eq]
-  ;;
 
-
-  include String_table.S with type t := t
   (** [Jump] contains a string table for jump instructions. *)
+  include String_table.S with type t := t
 
-  include Abstract.Abstractable.S
+  (** We can convert jumps to the act abstract form. *)
+  include
+    Abstract.Abstractable.S
     with type t := t
      and module Abs := Abstract.Instruction.Opcode
-  (** We can convert jumps to the act abstract form. *)
 end
 
 (** [t] enumerates all possible types of opcode. *)
 type t =
-  | Basic     of Basic.t  (** Instruction without AT&T size suffix *)
-  | Sized     of Sized.t  (** Instruction with AT&T size suffix *)
-  | Jump      of Jump.t   (** Jump instruction *)
-  | Directive of string   (** Assembler directive *)
-  | Unknown   of string   (** An opcode we don't (yet) understand. *)
+  | Basic of Basic.t (** Instruction without AT&T size suffix *)
+  | Sized of Sized.t (** Instruction with AT&T size suffix *)
+  | Jump of Jump.t (** Jump instruction *)
+  | Directive of string (** Assembler directive *)
+  | Unknown of string (** An opcode we don't (yet) understand. *)
 [@@deriving sexp, eq]
-;;
 
-val basic : Basic.t -> t
 (** [basic b] builds a [t] from a basic opcode [b]. *)
+val basic : Basic.t -> t
 
-val sized : Sized.t -> t
 (** [sized s] builds a [t] from a sized opcode [s]. *)
+val sized : Sized.t -> t
 
-val jump : Jump.t -> t
 (** [jump j] builds a [t] from a jump opcode [j]. *)
+val jump : Jump.t -> t
 
-val directive : string -> t
 (** [directive name] builds a [t] from a directive with name
     [name]. *)
+val directive : string -> t
 
-val unknown : string -> t
 (** [unknown mnemonic] builds a [t] from an unknown mnemonic
     [mnemonic]. *)
+val unknown : string -> t
 
-include Abstract.Abstractable.S
-  with type t := t
-   and module Abs := Abstract.Instruction.Opcode
 (** We can convert elements of [t] to the act abstract form. *)
+include
+  Abstract.Abstractable.S with type t := t and module Abs := Abstract.Instruction.Opcode
 
-val of_string : string -> t
 (** [of_string string] parses [string] as an opcode (or opcode-like
     entity). *)
+val of_string : string -> t

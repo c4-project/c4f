@@ -35,12 +35,10 @@ open Utils
 (** The operation to use in the filter. *)
 type mode =
   | Print of [ `All | `Vars ]
-  (** Pretty-print all, or part, of the result (useful for debugging). *)
-  | Delitmus
-  (** If the input is a C/Litmus file, try convert it to C. *)
+      (** Pretty-print all, or part, of the result (useful for debugging). *)
+  | Delitmus (** If the input is a C/Litmus file, try convert it to C. *)
   | Fuzz of { seed : int option; o : Lib.Output.t }
-  (** If the input is a C/Litmus file, fuzz it and return a mutated version. *)
-;;
+      (** If the input is a C/Litmus file, fuzz it and return a mutated version. *)
 
 (** {2 The output record} *)
 
@@ -48,26 +46,24 @@ type mode =
 module Output : sig
   type t
 
-  val cvars : t -> Config.C_variables.Map.t
   (** [cvars out] gets the set of C variable names observed in the
      transformed program, alongside any information available about
      their scope. *)
+  val cvars : t -> Config.C_variables.Map.t
 
-  val post : t -> Mini_litmus.Ast.Postcondition.t option
   (** [post out] gets the Litmus postcondition observed in the
      transformed program, if any. *)
+  val post : t -> Mini_litmus.Ast.Postcondition.t option
 end
 
 (** {2 Filter modules} *)
 
-module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t
 (** Filter for dealing with 'normal' C programs. *)
+module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t
 
-module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t
 (** Filter for dealing with 'litmusified' C programs. *)
+module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t
 
-val c_module
-  :  bool
-  -> (module Filter.S with type aux_i = mode and type aux_o = Output.t)
 (** [c_module is_c] is [Normal_C] when [is_c] is true, and [Litmus]
    otherwise. *)
+val c_module : bool -> (module Filter.S with type aux_i = mode and type aux_o = Output.t)

@@ -31,30 +31,26 @@
 
 open Base
 
-type t
 (** Opaque type of input modes. *)
+type t
 
 (** {2 Constructors} *)
 
-val memalloy : input_root:Fpath.t -> t Or_error.t
 (** [memalloy ~input_root] creates, and validates, a Memalloy
     input mode record using the given input root. *)
+val memalloy : input_root:Fpath.t -> t Or_error.t
 
-val litmus_only : files:Fpath.t list -> t Or_error.t
 (** [litmus_only ~files] creates, and validates, a litmus-only input
    mode record using the given files. *)
+val litmus_only : files:Fpath.t list -> t Or_error.t
 
 (** {2 Queries} *)
 
-val reduce
-  :  t
-  -> memalloy:(Fpath.t -> 'a)
-  -> litmus_only:(Fpath.t list -> 'a)
-  -> 'a
 (** [reduce imode ~memalloy ~litmus_only] destructs [imode], applying
     the appropriate reduction function to the mode. *)
+val reduce : t -> memalloy:(Fpath.t -> 'a) -> litmus_only:(Fpath.t list -> 'a) -> 'a
 
-val must_delitmusify : t -> bool
 (** [must_delitmusify imode] returns [true] if the tester must
    generate C files by de-litmusifying the C litmus tests, or [false]
    if they are already assumed to exist. *)
+val must_delitmusify : t -> bool

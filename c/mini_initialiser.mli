@@ -24,23 +24,23 @@
 
 (** Mini-model: initialisers. *)
 
-type t [@@deriving sexp, eq, quickcheck]
 (** Opaque type of initialisers. *)
+type t [@@deriving sexp, eq, quickcheck]
 
 (** {3 Constructors} *)
 
-val make : ty:Mini_type.t -> ?value:Ast_basic.Constant.t -> unit -> t
 (** [make ~ty ?value ()] makes an initialiser with type [ty] and
     optional initialised value [value]. *)
+val make : ty:Mini_type.t -> ?value:Ast_basic.Constant.t -> unit -> t
 
 (** {3 Accessors} *)
 
-val ty : t -> Mini_type.t
 (** [ty init] gets the type of [init]. *)
+val ty : t -> Mini_type.t
 
-val value : t -> Ast_basic.Constant.t option
 (** [value init] gets the initialised value of [init], if it has
     one. *)
+val value : t -> Ast_basic.Constant.t option
 
-module Named : Mini_intf.S_named with type elt := t
 (** Allows using the type of named initialiser in certain functors. *)
+module Named : Mini_intf.S_named with type elt := t

@@ -27,19 +27,21 @@ open Base
 module type S = sig
   type t
   type c
+
   val component : t -> c
 end
 
 module type S_partial = sig
   type t
   type c
+
   val component_opt : t -> c option
 end
 
-module Make_partial (I : S)
-  : S_partial with type t = I.t and type c = I.c = struct
+module Make_partial (I : S) : S_partial with type t = I.t and type c = I.c = struct
   type t = I.t
   type c = I.c
+
   let component_opt x = Some (I.component x)
 end
 

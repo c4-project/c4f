@@ -54,9 +54,9 @@ module Herd : sig
   type t =
     [ Herd_output.outcome
     | `Disabled
-    | `Errored of [`C | `Assembly]
-    ] [@@deriving sexp_of]
-  ;;
+    | `Errored of [ `C | `Assembly ]
+    ]
+  [@@deriving sexp_of]
 
   (** [to_state_deviation_opt oc] converts [oc] into a deviation record.
       It returns [None] if the outcome doesn't represent one. *)
@@ -97,11 +97,7 @@ module Compiler : sig
   (** [make ?time_taken ~files ()] creates a compiler analysis given
      file analyses [files] and total time taken in compiler
      [time_taken]. *)
-  val make
-    :  ?time_taken: Time.Span.t
-    -> files: (string, File.t) List.Assoc.t
-    -> unit
-    -> t
+  val make : ?time_taken:Time.Span.t -> files:(string, File.t) List.Assoc.t -> unit -> t
 end
 
 module Machine : sig
@@ -122,11 +118,10 @@ module Machine : sig
      given compiler analyses [compilers] and total time taken on
      machine [time_taken]. *)
   val make
-    :  ?time_taken: Time.Span.t
-    -> compilers: (Config.Id.t, Compiler.t) List.Assoc.t
+    :  ?time_taken:Time.Span.t
+    -> compilers:(Config.Id.t, Compiler.t) List.Assoc.t
     -> unit
     -> t
-  ;;
 end
 
 (** [t] is the opaque type of a full analysis. *)
@@ -135,11 +130,10 @@ type t [@@deriving sexp_of]
 (** [make ?time_taken ~machines ()] creates a top-level analysis given
    machine analyses [machines] and total time taken [time_taken]. *)
 val make
-  :  ?time_taken: Time.Span.t
-  -> machines: (Config.Id.t, Machine.t) List.Assoc.t
+  :  ?time_taken:Time.Span.t
+  -> machines:(Config.Id.t, Machine.t) List.Assoc.t
   -> unit
   -> t
-;;
 
 (** Rows combine a file analysis with all information about the
     machine, compiler, and file to which it belongs. *)

@@ -29,8 +29,8 @@ open Utils
 
 (** Basic signature of modules carrying a variable typing environment. *)
 module type Basic = sig
-  val env : Mini_type.t C_identifier.Map.t
   (** [env] is a variable typing environment. *)
+  val env : Mini_type.t C_identifier.Map.t
 end
 
 (** Extended signature of environment modules. *)
@@ -39,29 +39,30 @@ module type S = sig
 
   module Random_var : sig
     type t = C_identifier.t [@@deriving sexp_of]
+
     include Quickcheck.S with type t := t
   end
 
   (** [Random_var] allows generation of random variables from the
      variable environment. *)
 
-  val has_atomic_int_variables : unit -> bool
   (** [has_atomic_int_variables ()] is true provided that the
      environment has at least one variable whose type is atomic-int,
      or a pointer thereto. *)
+  val has_atomic_int_variables : unit -> bool
 
-  val has_int_variables : unit -> bool
   (** [has_int_variables ()] is true provided that the environment has
      at least one variable whose type is (non-atomic) int, or a
      pointer thereto. *)
+  val has_int_variables : unit -> bool
 
-  val atomic_int_variables : unit -> Mini_type.t C_identifier.Map.t
   (** [atomic_int_variables ()] filters the environment, returning a
      map binding only variables whose type is atomic-int, or a pointer
      thereto. *)
+  val atomic_int_variables : unit -> Mini_type.t C_identifier.Map.t
 
-  val int_variables : unit -> Mini_type.t C_identifier.Map.t
   (** [atomic_int_variables ()] filters the environment, returning a
      map binding only variables whose type is (non-atomic) int, or a
      pointer thereto. *)
+  val int_variables : unit -> Mini_type.t C_identifier.Map.t
 end

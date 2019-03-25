@@ -25,4 +25,4 @@
 (** [Sanitiser_base] contains the base signatures shared by each
     sanitiser pass. *)
 
-include (module type of Sanitiser_base_intf)
+include module type of Sanitiser_base_intf

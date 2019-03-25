@@ -25,88 +25,79 @@
 (** Various input/output helpers *)
 
 open Core
-
 include module type of Io_intf
 
 (** [In_source] describes input sources. *)
 module In_source : sig
-  type t
   (** The opaque type of input sources. *)
+  type t
 
-  val file : Fpath.t -> t
   (** [file fname] creates an input source for a given filename. *)
+  val file : Fpath.t -> t
 
-  val stdin : ?file_type:string -> unit -> t
   (** [stdin] is the standard input source.
 
       If [file_type] is given, it is reported as the file type of
      standard input, in the same way as the extension of a [file]. *)
+  val stdin : ?file_type:string -> unit -> t
 
-  val file_type : t -> string option
   (** [file_type src] gets the file type of [src].  This is the
       file extension for [file]s, and the optional provided extension
       otherwise. *)
+  val file_type : t -> string option
 
   include Common with type t := t
 
-  val with_input
-    :  t
-    -> f:(t -> In_channel.t -> 'a Or_error.t)
-    -> 'a Or_error.t
   (** [with_input iname ~f] runs [f] connected to the input channel
       pointed to by [iname]. *)
+  val with_input : t -> f:(t -> In_channel.t -> 'a Or_error.t) -> 'a Or_error.t
 end
 
 (** [Out_sink] describes output sinks. *)
 module Out_sink : sig
-  type t
   (** The opaque type of output sinks. *)
+  type t
 
-  val file : Fpath.t -> t
   (** [file fname] creates an output sink for a given filename. *)
+  val file : Fpath.t -> t
 
-  val stdout : t
   (** [stdout] is the standard output sink. *)
+  val stdout : t
 
-  val temp : prefix:string -> ext:string -> t
   (** [temp ~prefix ~ext] creates an output sink for a temporary
       file with the given prefix and extension. *)
+  val temp : prefix:string -> ext:string -> t
 
-  val as_in_source : t -> In_source.t Or_error.t
   (** [as_in_source sink] tries to get an input source pointing to the
       same data as [sink]. *)
+  val as_in_source : t -> In_source.t Or_error.t
 
   include Common with type t := t
 
-  val with_output
-    :  t
-    -> f:(t -> Out_channel.t -> 'a Or_error.t)
-    -> 'a Or_error.t
   (** [with_output oname ~f] runs [f] connected to the output channel
       pointed to by [oname].  It returns the result of [f]. *)
+  val with_output : t -> f:(t -> Out_channel.t -> 'a Or_error.t) -> 'a Or_error.t
 end
 
-val fpath_of_string : string -> Fpath.t Or_error.t
 (** [fpath_of_string str] is [Fpath.of_string str], but with the
     error changed to an [Or_error.t]. *)
+val fpath_of_string : string -> Fpath.t Or_error.t
 
-val fpath_of_string_option : string option -> Fpath.t option Or_error.t
 (** [fpath_of_string_option str_opt] lifts [fpath_of_string] over
     optional strings. *)
+val fpath_of_string_option : string option -> Fpath.t option Or_error.t
 
-val filename_no_ext : Fpath.t -> string
 (** [filename_no_ext path] is the filename of [path], less any
     extension(s). *)
+val filename_no_ext : Fpath.t -> string
 
+(** [with_input_and_output i o ~f] runs [f] with the appropriate
+    channels pointed to by [i] and [o]. *)
 val with_input_and_output
   :  In_source.t
   -> Out_sink.t
-  -> f:(In_source.t -> In_channel.t ->
-        Out_sink.t -> Out_channel.t ->
-        'a Or_error.t)
+  -> f:(In_source.t -> In_channel.t -> Out_sink.t -> Out_channel.t -> 'a Or_error.t)
   -> 'a Or_error.t
-(** [with_input_and_output i o ~f] runs [f] with the appropriate
-    channels pointed to by [i] and [o]. *)
 
-val print_bool : bool -> unit
 (** [print_bool b] prints the truth value of [b] to stdout. *)
+val print_bool : bool -> unit

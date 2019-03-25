@@ -27,7 +27,7 @@ open Lib
 
 let run_list_compilers
     (standard_args : Args.Standard.t) (_o : Output.t) (cfg : Config.Act.t)
-  : unit Or_error.t =
+    : unit Or_error.t =
   let compilers = Config.Act.compilers cfg in
   let verbose = Args.Standard.is_verbose standard_args in
   Fmt.pr "@[<v>%a@]@." (Config.Compiler.Spec.Set.pp_verbose verbose) compilers;
@@ -41,10 +41,10 @@ let list_compilers_command : Command.t =
     [%map_open
       let standard_args = Args.Standard.get in
       fun () ->
-        Common.lift_command standard_args
+        Common.lift_command
+          standard_args
           ~with_compiler_tests:false
-          ~f:run_list_compilers
-    ]
+          ~f:run_list_compilers]
 ;;
 
 let predicate_lists : (string, (module Config.Property.S)) List.Assoc.t =
@@ -56,21 +56,17 @@ let predicate_lists : (string, (module Config.Property.S)) List.Assoc.t =
 ;;
 
 let pp_tree_module : (module Config.Property.S) Fmt.t =
-  fun f (module M) -> M.pp_tree f ()
+ fun f (module M) -> M.pp_tree f ()
 ;;
 
-let run_list_predicates
-    (_o : Output.t) (_cfg : Config.Act.t)
-  : unit Or_error.t =
+let run_list_predicates (_o : Output.t) (_cfg : Config.Act.t) : unit Or_error.t =
   Fmt.(
-    pr "@[<v>%a@]@."
-      (list ~sep:(unit "@,@,")
-         (vbox ~indent:2
-            (pair ~sep:sp (suffix (unit ":") string) pp_tree_module)
-         )
-      )
-      predicate_lists
-  );
+    pr
+      "@[<v>%a@]@."
+      (list
+         ~sep:(unit "@,@,")
+         (vbox ~indent:2 (pair ~sep:sp (suffix (unit ":") string) pp_tree_module)))
+      predicate_lists);
   Result.ok_unit
 ;;
 
@@ -81,10 +77,8 @@ let list_predicates_command : Command.t =
     [%map_open
       let standard_args = Args.Standard.get in
       fun () ->
-        Common.lift_command standard_args
-          ~with_compiler_tests:false
-          ~f:(fun _args -> run_list_predicates)
-    ]
+        Common.lift_command standard_args ~with_compiler_tests:false ~f:(fun _args ->
+            run_list_predicates)]
 ;;
 
 let command : Command.t =

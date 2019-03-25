@@ -33,24 +33,23 @@ type t =
   | Acq_rel (** [memory_order_acq_rel] *)
   | Relaxed (** [memory_order_relaxed] *)
   | Consume (** [memory_order_consume] *)
-;;
 
 include Utils.Enum.S_table with type t := t
 include Utils.Enum.Extension_table with type t := t
 
 (** {2 Predicates} *)
 
-val is_load_compatible : t -> bool
 (** [is_load_compatible mo] returns whether [mo] is compatible with
    load operations. *)
+val is_load_compatible : t -> bool
 
-val is_store_compatible : t -> bool
 (** [is_store_compatible mo] returns whether [mo] is compatible with
     store operations. *)
+val is_store_compatible : t -> bool
 
-val is_rmw_compatible : t -> bool
 (** [is_rmw_compatible mo] returns whether [mo] is compatible with
     read-modify-writes. *)
+val is_rmw_compatible : t -> bool
 
 (** {2 Quickcheck support} *)
 
@@ -59,12 +58,12 @@ val is_rmw_compatible : t -> bool
    restrict to those that make sense in a particular context, see
    {{!gen_load}} et al. *)
 
-val gen_load : t Quickcheck.Generator.t
 (** [gen_load] generates a random memory order suitable for loads. *)
+val gen_load : t Quickcheck.Generator.t
 
-val gen_store : t Quickcheck.Generator.t
 (** [gen_load] generates a random memory order suitable for stores. *)
+val gen_store : t Quickcheck.Generator.t
 
-val gen_rmw : t Quickcheck.Generator.t
 (** [gen_load] generates a random memory order suitable for
    read-modify-writes. *)
+val gen_rmw : t Quickcheck.Generator.t

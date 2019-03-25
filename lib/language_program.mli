@@ -26,7 +26,6 @@
 
 include module type of Language_program_intf
 
-module Make (B : Basic_with_modules)
-  : S with type t = B.t
-       and module Statement = B.Statement
 (** [Make] makes an [S] from a [Basic_with_modules]. *)
+module Make (B : Basic_with_modules) :
+  S with type t = B.t and module Statement = B.Statement

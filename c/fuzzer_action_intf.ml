@@ -27,35 +27,28 @@ open Core_kernel
 module type Generic = sig
   type subject
 
-  val name : string
   (** The name of the action. *)
+  val name : string
 
   (** Random state on which this action depends. *)
   module Random_state : sig
-    type t
     (** The type of any random state on which this action depends. *)
+    type t
 
-    val gen
-      :  subject
-      -> t Quickcheck.Generator.t Fuzzer_state.Monad.t
     (** [gen subject] is a stateful computation that, given subject
         [subject] and the current state, generates a random amount of
         random state for this fuzzer action. *)
+    val gen : subject -> t Quickcheck.Generator.t Fuzzer_state.Monad.t
   end
 
-  val available
-    :  subject
-    -> bool Fuzzer_state.Monad.t
   (** [available subject] is a stateful computation that, given
      subject [subject] and the current state, decides whether this
      action can run (given any member of [Random_state.t]). *)
+  val available : subject -> bool Fuzzer_state.Monad.t
 
-  val run
-    :  subject
-    -> Random_state.t
-    -> subject Fuzzer_state.Monad.t
-    (** [run subject random] is a stateful computation that runs this action
+  (** [run subject random] is a stateful computation that runs this action
        on [subject] with random state [random]. *)
+  val run : subject -> Random_state.t -> subject Fuzzer_state.Monad.t
 end
 
 module type S = Generic with type subject := Fuzzer_subject.Test.t

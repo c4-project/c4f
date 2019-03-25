@@ -29,19 +29,18 @@ let run
     (file_type : [ `C | `Litmus | `Infer ])
     (output_mode : [ `All | `Vars ])
     (args : Args.Standard_with_files.t)
-    _o cfg =
+    _o
+    cfg
+  =
   let open Or_error.Let_syntax in
-  let%bind infile  = Args.Standard_with_files.infile_source args in
+  let%bind infile = Args.Standard_with_files.infile_source args in
   let%bind outfile = Args.Standard_with_files.outfile_sink args in
-  let      is_c    = Config.File_type.is_c infile file_type in
-  let      cpp_cfg =
-    Option.value (Config.Act.cpp cfg) ~default:(Config.Cpp.default ())
-  in
-  let (module M)   = C.Filters.c_module is_c in
+  let is_c = Config.File_type.is_c infile file_type in
+  let cpp_cfg = Option.value (Config.Act.cpp cfg) ~default:(Config.Cpp.default ()) in
+  let (module M) = C.Filters.c_module is_c in
   let module Cpp_M = Cpp.Chain_filter (M) in
-  let%map _ =
-    Cpp_M.run (cpp_cfg, Print output_mode) infile outfile
-  in ()
+  let%map _ = Cpp_M.run (cpp_cfg, Print output_mode) infile outfile in
+  ()
 ;;
 
 let command : Command.t =
@@ -52,24 +51,29 @@ let command : Command.t =
       let standard_args = Args.Standard_with_files.get
       and file_type =
         choose_one
-          [ Args.flag_to_enum_choice `C "c"
-              ~doc:"assume input is raw C"
-          ; Args.flag_to_enum_choice `Litmus "litmus"
+          [ Args.flag_to_enum_choice `C "c" ~doc:"assume input is raw C"
+          ; Args.flag_to_enum_choice
+              `Litmus
+              "litmus"
               ~doc:"assume input is a C litmus test"
           ]
           ~if_nothing_chosen:(`Default_to `Infer)
       and output_mode =
         choose_one
-          [ Args.flag_to_enum_choice `All "dump-input"
+          [ Args.flag_to_enum_choice
+              `All
+              "dump-input"
               ~doc:"pretty-print the input back onto stdout (the default)"
-          ; Args.flag_to_enum_choice `Vars "dump-vars"
+          ; Args.flag_to_enum_choice
+              `Vars
+              "dump-vars"
               ~doc:"emit the names of all variables found in the input"
           ]
           ~if_nothing_chosen:(`Default_to `All)
       in
       fun () ->
-        Common.lift_command_with_files standard_args
+        Common.lift_command_with_files
+          standard_args
           ~with_compiler_tests:false
-          ~f:(run file_type output_mode)
-    ]
+          ~f:(run file_type output_mode)]
 ;;

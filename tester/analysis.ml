@@ -29,7 +29,6 @@ open Core_kernel
 open Utils
 open Lib
 
-
 (** Represents an observation that the C and assembly sets of a
     state-set-level analysis aren't equal. *)
 module State_deviation = struct
@@ -46,7 +45,11 @@ module State_deviation = struct
     | Subset { in_right_only } -> Some (make ~in_asm_only:(Set.to_list in_right_only) ())
     | Superset { in_left_only } -> Some (make ~in_c_only:(Set.to_list in_left_only) ())
     | No_order { in_left_only; in_right_only } ->
-      Some (make ~in_c_only:(Set.to_list in_left_only) ~in_asm_only:(Set.to_list in_right_only) ())
+      Some
+        (make
+           ~in_c_only:(Set.to_list in_left_only)
+           ~in_asm_only:(Set.to_list in_right_only)
+           ())
   ;;
 
   let of_herd_outcome_opt : Herd_output.outcome -> t option = function
@@ -59,12 +62,11 @@ module Herd = struct
   type t =
     [ Herd_output.outcome
     | `Disabled
-    | `Errored of [`C | `Assembly]
-    ] [@@deriving sexp_of]
-  ;;
+    | `Errored of [ `C | `Assembly ]
+    ]
+  [@@deriving sexp_of]
 
-  let order_operator : Herd_output.State.Set.Partial_order.t -> string =
-    function
+  let order_operator : Herd_output.State.Set.Partial_order.t -> string = function
     | Equal -> "=="
     | Subset _ -> "<<"
     | Superset _ -> ">>"
@@ -73,18 +75,17 @@ module Herd = struct
 
   let to_string : t -> string = function
     | `Errored `Assembly -> "ERROR (asm)"
-    | `Errored `C        -> "ERROR (C)"
-    | `Disabled          -> "--disabled--"
-    | `Unknown           -> "??"
-    | `Undef             -> "UNDEFINED BEHAVIOUR (asm)"
-    | `OracleUndef       -> "UNDEFINED BEHAVIOUR (C)"
-    | `Order o           -> sprintf "C %s asm" (order_operator o)
+    | `Errored `C -> "ERROR (C)"
+    | `Disabled -> "--disabled--"
+    | `Unknown -> "??"
+    | `Undef -> "UNDEFINED BEHAVIOUR (asm)"
+    | `OracleUndef -> "UNDEFINED BEHAVIOUR (C)"
+    | `Order o -> sprintf "C %s asm" (order_operator o)
   ;;
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
 
-  let to_state_deviation_opt : t -> State_deviation.t option =
-    function
+  let to_state_deviation_opt : t -> State_deviation.t option = function
     | #Herd_output.outcome as o -> State_deviation.of_herd_outcome_opt o
     | `Errored _ | `Disabled -> None
   ;;
@@ -92,32 +93,32 @@ end
 
 module File = struct
   type t =
-    { time_taken       : Time.Span.t option
+    { time_taken : Time.Span.t option
     ; time_taken_in_cc : Time.Span.t option
-    ; herd             : Herd.t
-    } [@@deriving sexp_of, fields, make]
+    ; herd : Herd.t
+    }
+  [@@deriving sexp_of, fields, make]
 end
 
 module Compiler = struct
   type t =
     { time_taken : Time.Span.t option
-    ; files      : (string, File.t) List.Assoc.t
-    } [@@deriving sexp_of, fields, make]
+    ; files : (string, File.t) List.Assoc.t
+    }
+  [@@deriving sexp_of, fields, make]
 end
 
 module Machine = struct
   type t =
     { time_taken : Time.Span.t option
-    ; compilers  : (Config.Id.t, Compiler.t) List.Assoc.t
-    } [@@deriving sexp_of, fields, make]
-  ;;
+    ; compilers : (Config.Id.t, Compiler.t) List.Assoc.t
+    }
+  [@@deriving sexp_of, fields, make]
 
   let files m =
-    List.concat_map (compilers m)
-      ~f:(fun (cid, compiler) ->
-          List.map (Compiler.files compiler)
-            ~f:(fun (fname, analysis) ->
-                (cid, fname, analysis)))
+    List.concat_map (compilers m) ~f:(fun (cid, compiler) ->
+        List.map (Compiler.files compiler) ~f:(fun (fname, analysis) ->
+            cid, fname, analysis))
   ;;
 end
 
@@ -127,25 +128,27 @@ module Row = struct
     ; compiler_id : Config.Id.t
     ; filename : string
     ; analysis : 'a
-    } [@@deriving sexp_of, fields, make]
+    }
+  [@@deriving sexp_of, fields, make]
 
   let pp_span_opt f = function
     | Some span -> Time.Span.pp f span
-    | None      -> String.pp f "-"
+    | None -> String.pp f "-"
   ;;
 
   let to_table_row (row : File.t t) : Tabulator.row =
     [ Fn.flip Config.Id.pp row.machine_id
     ; Fn.flip Config.Id.pp row.compiler_id
     ; Fn.flip String.pp row.filename
-    ] @
-    (* We use Fieldslib here, mainly, to raise compilation errors
+    ]
+    @ (* We use Fieldslib here, mainly, to raise compilation errors
        if the fields in [analysis] change and we don't add them
        (or ignore them) here. *)
-    File.Fields.Direct.to_list row.analysis
-      ~herd:(fun _field _file h f -> Herd.pp f h)
-      ~time_taken:(fun _field _file t f -> pp_span_opt f t)
-      ~time_taken_in_cc:(fun _field _file t f -> pp_span_opt f t)
+      File.Fields.Direct.to_list
+        row.analysis
+        ~herd:(fun _field _file h f -> Herd.pp f h)
+        ~time_taken:(fun _field _file t f -> pp_span_opt f t)
+        ~time_taken_in_cc:(fun _field _file t f -> pp_span_opt f t)
   ;;
 
   let with_analysis (row : _ t) (analysis : 'a) : 'a t =
@@ -168,25 +171,21 @@ end
 module M = struct
   type t =
     { time_taken : Time.Span.t option
-    ; machines   : (Config.Id.t, Machine.t) List.Assoc.t
-    } [@@deriving sexp_of, fields, make]
-  ;;
+    ; machines : (Config.Id.t, Machine.t) List.Assoc.t
+    }
+  [@@deriving sexp_of, fields, make]
 
   let file_rows (a : t) : File.t Row.t list =
-    List.concat_map (machines a)
-      ~f:(fun (machine_id, machine) ->
-          List.map (Machine.files machine)
-            ~f:(fun (compiler_id, filename, analysis) ->
-                Row.make ~machine_id ~compiler_id ~filename ~analysis))
+    List.concat_map (machines a) ~f:(fun (machine_id, machine) ->
+        List.map (Machine.files machine) ~f:(fun (compiler_id, filename, analysis) ->
+            Row.make ~machine_id ~compiler_id ~filename ~analysis))
   ;;
 
   let deviation_rows (a : t) : State_deviation.t Row.t list =
-    a
-    |> file_rows
-    |> List.filter_map ~f:Row.deviations
+    a |> file_rows |> List.filter_map ~f:Row.deviations
   ;;
 
-  let machine_rule  = '='
+  let machine_rule = '='
   let compiler_rule = '-'
 
   (** [maybe_with_rule last_mid this_mid last_cid this_cid tabulator]
@@ -200,46 +199,35 @@ module M = struct
       Tabulator.with_rule machine_rule tabulator
     | Some lmid, Some lcid ->
       if Config.Id.equal lmid this_mid
-      then (
+      then
         if Config.Id.equal lcid this_cid
         then Or_error.return tabulator (* no rule *)
         else Tabulator.with_rule compiler_rule tabulator
-      )
       else Tabulator.with_rule machine_rule tabulator
   ;;
 
   let results_table_names : string list Lazy.t =
-    lazy (
-      [ "Machine"
-      ; "Compiler"
-      ; "File"
-      ]
-      @
-      File.Fields.to_list
-        ~herd:(fun _ -> "Result")
-        ~time_taken:(fun _ -> "Time/total")
-        ~time_taken_in_cc:(fun _ -> "Time/CC")
-    )
+    lazy
+      ([ "Machine"; "Compiler"; "File" ]
+      @ File.Fields.to_list
+          ~herd:(fun _ -> "Result")
+          ~time_taken:(fun _ -> "Time/total")
+          ~time_taken_in_cc:(fun _ -> "Time/CC"))
   ;;
 
   let results_table_header =
-    lazy (
-      List.map (force results_table_names)
-        ~f:(Fn.flip String.pp)
-    )
+    lazy (List.map (force results_table_names) ~f:(Fn.flip String.pp))
   ;;
 
-  let with_file
-      (last_mid, last_cid, tabulator)
-      (row : File.t Row.t) =
+  let with_file (last_mid, last_cid, tabulator)
+                (row : File.t Row.t) =
     let mid = Row.machine_id row in
     let cid = Row.compiler_id row in
     Or_error.(
       return tabulator
       >>= maybe_with_rule last_mid mid last_cid cid
       >>= Tabulator.with_row (Row.to_table_row row)
-      >>| (fun t' -> Some mid, Some cid, t')
-    )
+      >>| fun t' -> Some mid, Some cid, t')
   ;;
 
   type data = t (* For compatibility with Extend_tabular *)
@@ -249,13 +237,14 @@ module M = struct
     Tabulator.(
       let open Or_error.Let_syntax in
       let%bind t = make ~header () in
-      let%map (_, _, t) =
-        Travesty.T_list.With_errors.fold_m (file_rows a)
-          ~init:(None, None, t) ~f:with_file
+      let%map _, _, t =
+        Travesty.T_list.With_errors.fold_m
+          (file_rows a)
+          ~init:(None, None, t)
+          ~f:with_file
       in
-      t
-    )
-    ;;
+      t)
+  ;;
 end
 
 include M

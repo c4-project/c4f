@@ -45,6 +45,7 @@ end
    timestamp. *)
 module type Timed0 = sig
   type t
+
   include Timed1 with type 'a t := t
 end
 
@@ -55,13 +56,13 @@ module type Timer = sig
   val time : unit -> Time.t option
 end
 
-module Null_timer : Timer
 (** [Null_timer] is an implemention of [Timer] that returns
     [None] for each invocation of [time]. *)
+module Null_timer : Timer
 
-module Now_timer : Timer
 (** [Now_timer] is an implementation of [Timer] that uses
     [Time.now] for [time]. *)
+module Now_timer : Timer
 
 (** [S] is a signature for containers associating an arbitrary type
    with a timestamp. *)
@@ -83,19 +84,16 @@ module type S = sig
   include Travesty.Traversable.S1_container with type 'a t := 'a t
 end
 
-module Make (T : Timer) : S
 (** [Make] makes a [Timer] from a [S]. *)
-
+module Make (T : Timer) : S
 
 (** Enumeration of different ways in which the timer can work. *)
 module Mode : sig
   type t =
-    | Enabled
-    (** Timing is enabled. *)
-    | Disabled
-    (** Timing is disabled. *)
+    | Enabled (** Timing is enabled. *)
+    | Disabled (** Timing is disabled. *)
 
-  val to_module : t -> (module S)
   (** [to_module mode] makes a [S] module based on [mode],
       which describes what sort of timing should be used. *)
+  val to_module : t -> (module S)
 end

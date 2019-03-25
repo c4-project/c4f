@@ -5,14 +5,5 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries
-  config
-  fmt
-  fpath
-  menhirLib
-  abstract
-  litmus
-  utils
-  travesty
-  core
-  shell.string_extended))
+ (libraries config fmt fpath menhirLib abstract litmus utils travesty core
+   shell.string_extended))

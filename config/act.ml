@@ -362,8 +362,8 @@ module M = struct
   type 't hook = 't -> 't option Or_error.t
 
   let machines_from_raw (hook : Machine.Spec.With_id.t hook)
-                        (ms : Machine.Spec.Set.t) :
-      (Machine.Spec.Set.t * (Id.t, Error.t option) List.Assoc.t) Or_error.t =
+                        (ms : Machine.Spec.Set.t)
+      : (Machine.Spec.Set.t * (Id.t, Error.t option) List.Assoc.t) Or_error.t =
     let open Or_error.Let_syntax in
     Machine.Spec.Set.(
       let enabled, disabled =
@@ -423,7 +423,8 @@ module M = struct
       (ms : Machine.Spec.Set.t)
       (ms_disabled : (Id.t, Error.t option) List.Assoc.t)
       (hook : C.With_id.t hook)
-      (cs : Raw.C.Set.t) : (C.Set.t * (Id.t, Error.t option) List.Assoc.t) Or_error.t =
+      (cs : Raw.C.Set.t)
+      : (C.Set.t * (Id.t, Error.t option) List.Assoc.t) Or_error.t =
     let open Or_error.Let_syntax in
     Raw.C.Set.(
       let enabled, disabled =
@@ -449,7 +450,8 @@ module M = struct
       ?(chook = Fn.compose Result.return Option.some)
       ?(mhook = Fn.compose Result.return Option.some)
       ?(phook = fun ~default -> default)
-      (c : Raw.t) : t Or_error.t =
+      (c : Raw.t)
+      : t Or_error.t =
     let open Or_error.Let_syntax in
     let raw_ms = Raw.machines c in
     let%bind machines, disabled_machines = machines_from_raw mhook raw_ms in

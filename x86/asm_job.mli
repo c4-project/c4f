@@ -26,7 +26,7 @@
 
 open Base
 
-val get_runner : string list -> (module Lib.Asm_job.Runner) Or_error.t
 (** [get_runner emits_tail] tries to get an asm-job runner for the x86
     dialect described by [emits_tail] (which should be an architecture
     identifier, less 'x86'. *)
+val get_runner : string list -> (module Lib.Asm_job.Runner) Or_error.t

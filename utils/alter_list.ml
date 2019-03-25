@@ -24,31 +24,27 @@
 
 open Core_kernel
 
-let replace
-    (xs : 'a list) (at : int) ~(f : 'a -> 'a option Or_error.t)
-  : 'a list Or_error.t =
+let replace (xs : 'a list) (at : int) ~(f : 'a -> 'a option Or_error.t)
+    : 'a list Or_error.t =
   let open Or_error.Let_syntax in
-  let      z_init = Zipper.Plain.of_list xs in
-  let%bind z_move = Zipper.Plain.On_error.step_m z_init ~steps:at
-      ~on_empty:(fun _ ->
-          Or_error.error_s
-            [%message "Replace failed: index out of range"
+  let z_init = Zipper.Plain.of_list xs in
+  let%bind z_move =
+    Zipper.Plain.On_error.step_m z_init ~steps:at ~on_empty:(fun _ ->
+        Or_error.error_s
+          [%message
+            "Replace failed: index out of range"
               ~here:[%here]
               ~insert_at:(at : int)
-              ~list_length:(List.length xs : int)
-            ]
-        )
+              ~list_length:(List.length xs : int)])
   in
   let%map z_repl =
-    Zipper.Plain.On_error.map_m_head z_move ~f
-      ~on_empty:(fun _ ->
-          Or_error.error_s
-            [%message "Replace failed: index out of range"
+    Zipper.Plain.On_error.map_m_head z_move ~f ~on_empty:(fun _ ->
+        Or_error.error_s
+          [%message
+            "Replace failed: index out of range"
               ~here:[%here]
               ~insert_at:(at : int)
-              ~list_length:(List.length xs : int)
-            ]
-        )
+              ~list_length:(List.length xs : int)])
   in
   Zipper.Plain.to_list z_repl
 ;;
@@ -82,40 +78,38 @@ let%expect_test "replace: out of bounds" =
   let f x = Or_error.return (Some (String.uppercase x)) in
   let lst' = replace lst 4 ~f in
   Sexp.output_hum stdout [%sexp (lst' : string list Or_error.t)];
-  [%expect {|
+  [%expect
+    {|
     (Error
-     ("Replace failed: index out of range" (here utils/alter_list.ml:47:20)
+     ("Replace failed: index out of range" (here utils/alter_list.ml:45:20)
       (insert_at 4) (list_length 4))) |}]
 ;;
 
 let insert (xs : 'a list) (at : int) (value : 'a) : 'a list Or_error.t =
   let open Or_error.Let_syntax in
-  let      z_init = Zipper.Plain.of_list xs in
-  let%map  z_move = Zipper.Plain.On_error.step_m z_init ~steps:at
-      ~on_empty:(fun _ ->
-          Or_error.error_s
-            [%message "Insert failed: index out of range"
+  let z_init = Zipper.Plain.of_list xs in
+  let%map z_move =
+    Zipper.Plain.On_error.step_m z_init ~steps:at ~on_empty:(fun _ ->
+        Or_error.error_s
+          [%message
+            "Insert failed: index out of range"
               ~here:[%here]
               ~insert_at:(at : int)
-              ~list_length:(List.length xs : int)
-            ]
-        )
+              ~list_length:(List.length xs : int)])
   in
   let z_ins = Zipper.Plain.push z_move ~value in
   Zipper.Plain.to_list z_ins
 ;;
 
-let qc : f:((int * int list) -> unit) -> unit =
+let qc : f:(int * int list -> unit) -> unit =
   Quickcheck.test
-    ~sexp_of:[%sexp_of: (int * int list)]
-    ~shrinker:[%quickcheck.shrinker: (int * int list)]
-    [%quickcheck.generator: (int * int list)]
+    ~sexp_of:[%sexp_of: int * int list]
+    ~shrinker:[%quickcheck.shrinker: int * int list]
+    [%quickcheck.generator: int * int list]
 ;;
 
 let%test_unit "insert at 0 = cons" =
   qc ~f:(fun (x, xs) ->
-    [%test_eq: int list] ~here:[[%here]]
-      (Or_error.ok_exn (insert xs 0 x))
-      (x::xs)
+      [%test_eq: int list] ~here:[ [%here] ] (Or_error.ok_exn (insert xs 0 x)) (x :: xs)
   )
 ;;

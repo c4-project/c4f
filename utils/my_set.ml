@@ -24,7 +24,6 @@
 
 open Core_kernel
 open Travesty
-
 include My_set_intf
 
 module Make_extensions (M : Set.S) : Extensions with type t := M.t = struct
@@ -69,8 +68,10 @@ module Make_extensions (M : Set.S) : Extensions with type t := M.t = struct
   end
 
   let partial_compare (x : M.t) (y : M.t) =
-    Sequence.fold (M.symmetric_diff x y)
-      ~init:Partial_order.Equal ~f:Partial_order.drop_either
+    Sequence.fold
+      (M.symmetric_diff x y)
+      ~init:Partial_order.Equal
+      ~f:Partial_order.drop_either
   ;;
 end
 
@@ -107,8 +108,7 @@ let%test_module "integer set" =
      let%expect_test "partial_compare: empty sets" =
        let module M = Extend (Int.Set) in
        Stdio.print_s
-         [%sexp
-           (M.partial_compare Int.Set.empty Int.Set.empty : M.Partial_order.t)];
+         [%sexp (M.partial_compare Int.Set.empty Int.Set.empty : M.Partial_order.t)];
        [%expect {| Equal |}]
      ;;
 

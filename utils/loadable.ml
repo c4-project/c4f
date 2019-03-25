@@ -23,71 +23,50 @@
    SOFTWARE. *)
 
 open Core
-
 include Loadable_intf
 
 module Make (B : Basic) : S with type t := B.t = struct
   include B
 
   let path_of_is (is : Io.In_source.t) : string option =
-    is
-    |> Io.In_source.to_file
-    |> Option.map ~f:Fpath.to_string
+    is |> Io.In_source.to_file |> Option.map ~f:Fpath.to_string
   ;;
 
   let load_from_isrc =
-    Io.In_source.with_input
-      ~f:(fun is ic -> load_from_ic ?path:(path_of_is is) ic)
+    Io.In_source.with_input ~f:(fun is ic -> load_from_ic ?path:(path_of_is is) ic)
   ;;
 
   let load ~path = load_from_isrc (Io.In_source.file path)
 end
 
-module Make_chain (B : Basic) (C : Basic_chain with type src := B.t)
-  : S with type t := C.dst
-  = Make (struct
-    type t = C.dst
+module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
+  S with type t := C.dst = Make (struct
+  type t = C.dst
 
-    let load_from_string str =
-      Or_error.(str |> B.load_from_string >>= C.f)
-    ;;
-    let load_from_ic ?path ic =
-      Or_error.(B.load_from_ic ?path ic >>= C.f)
-    ;;
-  end)
-;;
+  let load_from_string str = Or_error.(str |> B.load_from_string >>= C.f)
+  let load_from_ic ?path ic = Or_error.(B.load_from_ic ?path ic >>= C.f)
+end)
 
-module Of_sexpable (B : Sexpable.S) : S with type t := B.t
-  = Make (struct
-    type t = B.t
+module Of_sexpable (B : Sexpable.S) : S with type t := B.t = Make (struct
+  type t = B.t
 
-    let wrap name f =
-      Or_error.tag_arg
-        (Or_error.try_with f)
-        "While reading from"
-        name
-        [%sexp_of: string]
-    ;;
+  let wrap name f =
+    Or_error.tag_arg (Or_error.try_with f) "While reading from" name [%sexp_of: string]
+  ;;
 
-    let load_from_string s =
-      wrap "string" (fun () -> Sexp.of_string_conv_exn s B.t_of_sexp)
-    ;;
+  let load_from_string s = wrap "string" (fun () -> Sexp.of_string_conv_exn s B.t_of_sexp)
 
-    let load_from_ic ?(path="stdin") ic =
-      wrap path (fun () -> B.t_of_sexp (Sexp.input_sexp ic))
-    ;;
-  end)
-;;
+  let load_from_ic ?(path = "stdin") ic =
+    wrap path (fun () -> B.t_of_sexp (Sexp.input_sexp ic))
+  ;;
+end)
 
-module To_filter (L : S) : Filter.S with type aux_i = unit
-                                     and type aux_o = L.t =
-  Filter.Make (struct
-    type aux_i = unit
-    type aux_o = L.t
-    let name = "(loading)"
+module To_filter (L : S) : Filter.S with type aux_i = unit and type aux_o = L.t =
+Filter.Make (struct
+  type aux_i = unit
+  type aux_o = L.t
 
-    let tmp_file_ext = Fn.const "tmp"
-
-    let run _ctx ic _oc = L.load_from_ic ic
-  end)
-;;
+  let name = "(loading)"
+  let tmp_file_ext = Fn.const "tmp"
+  let run _ctx ic _oc = L.load_from_ic ic
+end)

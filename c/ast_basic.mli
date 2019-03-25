@@ -51,8 +51,8 @@
 
 open Core_kernel
 
-include module type of Ast_basic_intf
 (** As usual, the signatures are in a separate 'intf' module. *)
+include module type of Ast_basic_intf
 
 (** {2 Enumerations} *)
 
@@ -61,7 +61,7 @@ module Operators : sig
   (** Enumeration of assignment operators. *)
   module Assign : sig
     type t =
-      [ `Assign     (*   = *)
+      [ `Assign (*   = *)
       | `Assign_mul (*  *= *)
       | `Assign_div (*  /= *)
       | `Assign_mod (*  %= *)
@@ -71,10 +71,9 @@ module Operators : sig
       | `Assign_shr (* >>= *)
       | `Assign_and (*  &= *)
       | `Assign_xor (*  ^= *)
-      | `Assign_or  (*  |= *)
+      | `Assign_or (*  |= *)
       ]
     [@@deriving sexp]
-    ;;
 
     include Ast_node with type t := t
   end
@@ -84,27 +83,26 @@ module Operators : sig
     type t =
       [ Assign.t
       | `Comma (* ,  *)
-      | `Mul   (* *  *)
-      | `Div   (* /  *)
-      | `Mod   (* %  *)
-      | `Add   (* +  *)
-      | `Sub   (* -  *)
-      | `Shl   (* << *)
-      | `Shr   (* >> *)
-      | `And   (* &  *)
-      | `Xor   (* ^  *)
-      | `Or    (* |  *)
-      | `Land  (* && *)
-      | `Lor   (* || *)
-      | `Lt    (* <  *)
-      | `Le    (* <= *)
-      | `Eq    (* == *)
-      | `Ge    (* >= *)
-      | `Gt    (* >  *)
-      | `Ne    (* != *)
+      | `Mul (* *  *)
+      | `Div (* /  *)
+      | `Mod (* %  *)
+      | `Add (* +  *)
+      | `Sub (* -  *)
+      | `Shl (* << *)
+      | `Shr (* >> *)
+      | `And (* &  *)
+      | `Xor (* ^  *)
+      | `Or (* |  *)
+      | `Land (* && *)
+      | `Lor (* || *)
+      | `Lt (* <  *)
+      | `Le (* <= *)
+      | `Eq (* == *)
+      | `Ge (* >= *)
+      | `Gt (* >  *)
+      | `Ne (* != *)
       ]
     [@@deriving sexp]
-    ;;
 
     include Ast_node with type t := t
   end
@@ -112,18 +110,17 @@ module Operators : sig
   (** Enumeration of prefix operators. *)
   module Pre : sig
     type t =
-      [ `Inc        (* ++ *)
-      | `Dec        (* -- *)
+      [ `Inc (* ++ *)
+      | `Dec (* -- *)
       | `Sizeof_val (* sizeof *)
-      | `Ref        (* & *)
-      | `Deref      (* * *)
-      | `Add        (* + *)
-      | `Sub        (* - *)
-      | `Not        (* ~ *)
-      | `Lnot       (* ! *)
+      | `Ref (* & *)
+      | `Deref (* * *)
+      | `Add (* + *)
+      | `Sub (* - *)
+      | `Not (* ~ *)
+      | `Lnot (* ! *)
       ]
     [@@deriving sexp]
-    ;;
 
     include Ast_node with type t := t
   end
@@ -135,7 +132,6 @@ module Operators : sig
       | `Dec (* -- *)
       ]
     [@@deriving sexp]
-    ;;
 
     include Ast_node with type t := t
   end
@@ -148,7 +144,6 @@ module Type_qual : sig
     | `Volatile
     ]
   [@@deriving sexp]
-  ;;
 
   include Ast_node with type t := t
   include Utils.Enum.Extension_table with type t := t
@@ -168,7 +163,6 @@ module Prim_type : sig
     | `Unsigned
     ]
   [@@deriving sexp]
-  ;;
 
   include Ast_node with type t := t
   include Utils.Enum.Extension_table with type t := t
@@ -184,7 +178,6 @@ module Storage_class_spec : sig
     | `Typedef
     ]
   [@@deriving sexp]
-  ;;
 
   include Ast_node with type t := t
   include Utils.Enum.Extension_table with type t := t
@@ -195,17 +188,17 @@ end
 (** AST node for constants *)
 module Constant : sig
   type t =
-    | Char    of char
-    | Float   of float
+    | Char of char
+    | Float of float
     | Integer of int
   [@@deriving sexp]
-  ;;
+
   include Ast_node with type t := t
 
   (** {3 Quickcheck} *)
 
-  include Quickcheckable.S with type t := t
   (** The default generators generate any valid constant. *)
+  include Quickcheckable.S with type t := t
 
   (** [gen_int32_as_int] generates an [int] whose domain is that of
       [int32].  This is useful for making sure that we don't generate
@@ -225,26 +218,29 @@ module Identifier : sig
 end
 
 (** Ast node for pointers *)
-module Pointer : Ast_node with type t = (Type_qual.t list) list
+module Pointer : Ast_node with type t = Type_qual.t list list
 
 (** Reusable AST building block for array subscripts *)
 module Array : sig
-  type ('a, 'i) t = { array : 'a; index : 'i } [@@deriving sexp, eq, compare]
+  type ('a, 'i) t =
+    { array : 'a
+    ; index : 'i
+    }
+  [@@deriving sexp, eq, compare]
 
   val pp : 'a Fmt.t -> 'i Fmt.t -> ('a, 'i) t Fmt.t
 
   module type S = sig
-    type arr
     (** Type of arrays. *)
+    type arr
 
-    type idx
     (** Type of indices. *)
+    type idx
 
     type nonrec t = (arr, idx) t [@@deriving sexp]
 
     include Ast_node with type t := t
   end
 
-  module Make (A : Ast_node) (I : Ast_node) : S
-    with type arr := A.t and type idx := I.t
+  module Make (A : Ast_node) (I : Ast_node) : S with type arr := A.t and type idx := I.t
 end

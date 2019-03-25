@@ -32,9 +32,7 @@ type t =
   }
 
 let maybe_err_formatter on =
-  if on
-  then Format.err_formatter
-  else My_format.null_formatter ()
+  if on then Format.err_formatter else My_format.null_formatter ()
 ;;
 
 let make ~verbose ~warnings =
@@ -45,14 +43,10 @@ let make ~verbose ~warnings =
 ;;
 
 let log_stage o ~stage ~file compiler_id =
-  Format.fprintf o.vf "@[%s[%a]@ %s@]@."
-    stage
-    Config.Id.pp compiler_id
-    file
+  Format.fprintf o.vf "@[%s[%a]@ %s@]@." stage Config.Id.pp compiler_id file
 ;;
 
 let print_error o =
   Result.iter_error
-    ~f:(Format.fprintf o.ef
-          "@[act encountered a top-level error:@.@[%a@]@]@." Error.pp)
+    ~f:(Format.fprintf o.ef "@[act encountered a top-level error:@.@[%a@]@]@." Error.pp)
 ;;

@@ -68,28 +68,24 @@ end
    mentioned in a [Pathset.t]. *)
 val mkdirs : t -> unit Or_error.t
 
-val make
-  :  Config.Id.t
-  -> input_mode:Input_mode.t
-  -> output_root:Fpath.t
-  -> t Or_error.t
 (** [make id ~input_mode ~output_root] constructs a pathset for
     compiler ID [id], with all output relative to [output_root]
     relative to [out_root], and the input determined by [input_mode]. *)
+val make : Config.Id.t -> input_mode:Input_mode.t -> output_root:Fpath.t -> t Or_error.t
 
+(** [make_and_mkdirs] behaves as {{!make}make}, then tries to make the
+   directories through [mkdirs]. *)
 val make_and_mkdirs
   :  Config.Id.t
   -> input_mode:Input_mode.t
   -> output_root:Fpath.t
   -> t Or_error.t
-(** [make_and_mkdirs] behaves as {{!make}make}, then tries to make the
-   directories through [mkdirs]. *)
 
-val input_mode : t -> Input_mode.t
 (** [input_mode ps] gets the input mode used to construct [ps]. *)
+val input_mode : t -> Input_mode.t
 
-val to_files : t -> File.t list
 (** [to_files ps] constructs a file pathset for each C litmus test in
    [ps]. *)
+val to_files : t -> File.t list
 
 include Pretty_printer.S with type t := t

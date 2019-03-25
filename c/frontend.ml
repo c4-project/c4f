@@ -26,30 +26,24 @@ open Core_kernel
 
 (* TODO(@MattWindsor91): lexer hack *)
 
-module Normal =
-  Utils.Frontend.Make (struct
-    type ast = Ast.Translation_unit.t
+module Normal = Utils.Frontend.Make (struct
+  type ast = Ast.Translation_unit.t
 
-    module I = Parser.MenhirInterpreter
+  module I = Parser.MenhirInterpreter
 
-    let lex = Lexer.token (String.Set.empty)
-    let parse = Parser.Incremental.translation_unit
-    let message = C_messages.message
-  end)
-;;
+  let lex = Lexer.token String.Set.empty
+  let parse = Parser.Incremental.translation_unit
+  let message = C_messages.message
+end)
 
-let litmus_predefined_types =
-  String.Set.of_list
-    [ "atomic_int" ]
+let litmus_predefined_types = String.Set.of_list [ "atomic_int" ]
 
-module Litmus =
-  Utils.Frontend.Make (struct
-    type ast = Ast.Litmus.t
+module Litmus = Utils.Frontend.Make (struct
+  type ast = Ast.Litmus.t
 
-    module I = Parser.MenhirInterpreter
+  module I = Parser.MenhirInterpreter
 
-    let lex = Lexer.token litmus_predefined_types
-    let parse = Parser.Incremental.litmus
-    let message = C_messages.message
-  end)
-;;
+  let lex = Lexer.token litmus_predefined_types
+  let parse = Parser.Incremental.litmus
+  let message = C_messages.message
+end)

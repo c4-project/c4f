@@ -29,83 +29,76 @@ module M = struct
   type t =
     { litc_files : Fpath.t list
     ; input_mode : Input_mode.t
-    ; c_path     : Fpath.t
-    ; asm_path   : Fpath.t
-    ; lita_path  : Fpath.t
-    ; herd_path  : Fpath.t
-    } [@@deriving fields]
+    ; c_path : Fpath.t
+    ; asm_path : Fpath.t
+    ; lita_path : Fpath.t
+    ; herd_path : Fpath.t
+    }
+  [@@deriving fields]
 end
+
 include M
 
 module File = struct
   type ps = t
 
   type t =
-    { name       : string
-    ; c_path     : Fpath.t
-    ; litc_path  : Fpath.t
-    ; asm_path   : Fpath.t
-    ; lita_path  : Fpath.t
+    { name : string
+    ; c_path : Fpath.t
+    ; litc_path : Fpath.t
+    ; asm_path : Fpath.t
+    ; lita_path : Fpath.t
     ; herdc_path : Fpath.t
     ; herda_path : Fpath.t
-    } [@@deriving fields]
+    }
+  [@@deriving fields]
 
   let make (ps : ps) (litc_path : Fpath.t) =
     let name = Fpath.(basename (rem_ext litc_path)) in
     Fpath.
       { name
-      ; litc_path  = litc_path
-      ; c_path     = M.c_path ps    / name + ".c"
-      ; asm_path   = M.asm_path  ps / name + ".s"
-      ; lita_path  = M.lita_path ps / name + ".s.litmus"
-      ; herdc_path = M.herd_path ps / name + ".herd.txt"
-      ; herda_path = M.herd_path ps / name + ".s.herd.txt"
+      ; litc_path
+      ; c_path = (M.c_path ps / name) + ".c"
+      ; asm_path = (M.asm_path ps / name) + ".s"
+      ; lita_path = (M.lita_path ps / name) + ".s.litmus"
+      ; herdc_path = (M.herd_path ps / name) + ".herd.txt"
+      ; herda_path = (M.herd_path ps / name) + ".s.herd.txt"
       }
   ;;
 end
 
-let to_files (ps : t) : File.t list =
-  List.map ~f:(File.make ps) ps.litc_files
-;;
+let to_files (ps : t) : File.t list = List.map ~f:(File.make ps) ps.litc_files
 
 let all_dirs (ps : t) : (string, Fpath.t) List.Assoc.t =
-  let to_pair fld = Some ( Field.name fld, Field.get fld ps ) in
+  let to_pair fld = Some (Field.name fld, Field.get fld ps) in
   List.filter_opt
-  ( Fields.to_list
-      ~input_mode:(Fn.const None)
-      ~litc_files:(Fn.const None)
-      ~c_path:to_pair
-      ~asm_path:to_pair
-      ~lita_path:to_pair
-      ~herd_path:to_pair
-  )
+    (Fields.to_list
+       ~input_mode:(Fn.const None)
+       ~litc_files:(Fn.const None)
+       ~c_path:to_pair
+       ~asm_path:to_pair
+       ~lita_path:to_pair
+       ~herd_path:to_pair)
 ;;
 
 let mkdirs ps =
   Or_error.(
-    tag ~tag:"Couldn't make directories"
-      (try_with_join
-         ( fun () ->
-             Or_error.all_unit
-               (List.map ~f:(Fn.compose Fs.Unix.mkdir_p snd) (all_dirs ps))
-         )
-      )
-  )
+    tag
+      ~tag:"Couldn't make directories"
+      (try_with_join (fun () ->
+           Or_error.all_unit (List.map ~f:(Fn.compose Fs.Unix.mkdir_p snd) (all_dirs ps))
+       )))
 ;;
 
 let make_id_path init id =
   let segs = Config.Id.to_string_list id in
-  List.fold ~init ~f:(Fpath.add_seg) segs
+  List.fold ~init ~f:Fpath.add_seg segs
 ;;
 
 let%expect_test "make_id_path: folds in correct direction" =
   let id = Config.Id.of_string "foo.bar.baz" in
   let init = Fpath.v "." in
-  Io.print_bool
-    (Fpath.equal
-       (make_id_path init id)
-       Fpath.(init / "foo" / "bar" / "baz")
-    );
+  Io.print_bool (Fpath.equal (make_id_path init id) Fpath.(init / "foo" / "bar" / "baz"));
   [%expect {| true |}]
 ;;
 
@@ -116,37 +109,32 @@ let make_c_path (id_path : Fpath.t) : Input_mode.t -> Fpath.t =
 ;;
 
 module Get_files (F : Fs.S) = struct
-  let get_memalloy_litc_files
-      (input_root : Fpath.t) : Fpath.t list Or_error.t =
+  let get_memalloy_litc_files (input_root : Fpath.t) : Fpath.t list Or_error.t =
     let open Or_error.Let_syntax in
     let litmus_dir = Fpath.(input_root / "Litmus") in
-    let%map files =
-      F.get_files ~ext:"litmus" (Fpath.(input_root / "Litmus"))
-    in
+    let%map files = F.get_files ~ext:"litmus" Fpath.(input_root / "Litmus") in
     List.map ~f:(Fpath.append litmus_dir) files
+  ;;
 end
 
 include Get_files (Fs.Unix)
 
 let get_litc_files : Input_mode.t -> Fpath.t list Or_error.t =
-  Input_mode.reduce
-    ~memalloy:get_memalloy_litc_files
-    ~litmus_only:Or_error.return
+  Input_mode.reduce ~memalloy:get_memalloy_litc_files ~litmus_only:Or_error.return
 ;;
 
-let make
-  (id : Config.Id.t)
-  ~(input_mode  : Input_mode.t)
-  ~(output_root : Fpath.t)
-  : t Or_error.t =
+let make (id : Config.Id.t)
+         ~(input_mode : Input_mode.t)
+         ~(output_root : Fpath.t)
+    : t Or_error.t =
   let open Or_error.Let_syntax in
   let id_path = make_id_path output_root id in
   let%map litc_files = get_litc_files input_mode in
   Fpath.
     { input_mode
     ; litc_files
-    ; c_path    = make_c_path id_path input_mode
-    ; asm_path  = id_path / "asm"
+    ; c_path = make_c_path id_path input_mode
+    ; asm_path = id_path / "asm"
     ; lita_path = id_path / "litmus"
     ; herd_path = id_path / "herd"
     }
@@ -185,23 +173,16 @@ end)
 *)
 
 let make_and_mkdirs
-  (id : Config.Id.t)
-  ~(input_mode  : Input_mode.t)
-  ~(output_root : Fpath.t)
-  : t Or_error.t =
-  Or_error.(
-    make id ~input_mode ~output_root
-    >>= Travesty.T_or_error.tee_m ~f:mkdirs
-  )
+    (id : Config.Id.t)
+    ~(input_mode : Input_mode.t)
+    ~(output_root : Fpath.t)
+    : t Or_error.t =
+  Or_error.(make id ~input_mode ~output_root >>= Travesty.T_or_error.tee_m ~f:mkdirs)
 ;;
 
 (* TODO(@MattWindsor91): needs fixing up for new pathsets. *)
 let pp : t Fmt.t =
-  let p f (k, v) =
-    My_format.pp_kv f k String.pp (My_filename.concat_list v)
-  in
+  let p f (k, v) = My_format.pp_kv f k String.pp (My_filename.concat_list v) in
   Fmt.(
-    using (fun ps -> (List.Assoc.map ~f:Fpath.segs (all_dirs ps)))
-    (vbox (list ~sep:cut p))
-  )
+    using (fun ps -> List.Assoc.map ~f:Fpath.segs (all_dirs ps)) (vbox (list ~sep:cut p)))
 ;;

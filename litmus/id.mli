@@ -33,8 +33,7 @@ open Utils
     Litmus postconditions. *)
 
 (** Opaque type of litmus-style identifiers. *)
-type t
-[@@deriving compare, sexp, quickcheck]
+type t [@@deriving compare, sexp, quickcheck]
 
 (** {2 Constructors} *)
 

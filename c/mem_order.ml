@@ -33,7 +33,6 @@ module M = struct
     | Relaxed
     | Consume
   [@@deriving enum]
-  ;;
 
   let table =
     [ Seq_cst, "memory_order_seq_cst"
@@ -45,6 +44,7 @@ module M = struct
     ]
   ;;
 end
+
 include M
 include Utils.Enum.Extend_table (M)
 
@@ -64,16 +64,13 @@ let is_rmw_compatible : t -> bool = function
 ;;
 
 let gen_load : t Quickcheck.Generator.t =
-  Quickcheck.Generator.filter ~f:is_load_compatible
-    [%quickcheck.generator: t]
+  Quickcheck.Generator.filter ~f:is_load_compatible [%quickcheck.generator: t]
 ;;
 
 let gen_store : t Quickcheck.Generator.t =
-  Quickcheck.Generator.filter ~f:is_store_compatible
-    [%quickcheck.generator: t]
+  Quickcheck.Generator.filter ~f:is_store_compatible [%quickcheck.generator: t]
 ;;
 
 let gen_rmw : t Quickcheck.Generator.t =
-  Quickcheck.Generator.filter ~f:is_rmw_compatible
-    [%quickcheck.generator: t]
+  Quickcheck.Generator.filter ~f:is_rmw_compatible [%quickcheck.generator: t]
 ;;

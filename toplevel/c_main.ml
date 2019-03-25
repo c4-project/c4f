@@ -28,7 +28,7 @@ let command : Command.t =
   Command.group
     ~summary:"Commands for dealing with C files"
     [ "delitmus", C_delitmus.command
-    ; "explain" , C_explain.command
-    ; "fuzz"    , C_fuzz.command
+    ; "explain", C_explain.command
+    ; "fuzz", C_fuzz.command
     ]
 ;;

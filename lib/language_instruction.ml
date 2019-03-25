@@ -24,27 +24,28 @@
 
 include Language_instruction_intf
 
-module Make (B : Basic_with_modules)
-  : S with type t = B.t
-       and module Constant = B.Constant
-       and module Location = B.Location
-       and module Symbol   = B.Symbol = struct
+module Make (B : Basic_with_modules) :
+  S
+  with type t = B.t
+   and module Constant = B.Constant
+   and module Location = B.Location
+   and module Symbol = B.Symbol = struct
   include B
 
   include Abstract.Instruction.Inherit_properties
-      (Abstract.Instruction)
-      (struct
-        type nonrec t = t
-        let component = abstract
-      end)
-  ;;
+            (Abstract.Instruction)
+            (struct
+              type nonrec t = t
+
+              let component = abstract
+            end)
 
   module On_operands =
     Abstract.Operand.Bundle.Inherit_properties
       (Abstract.Operand.Bundle)
       (struct
         type nonrec t = t
+
         let component = abs_operands
       end)
-  ;;
 end

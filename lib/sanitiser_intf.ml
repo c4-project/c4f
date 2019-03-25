@@ -30,38 +30,42 @@ open Base
     sanitisation process. *)
 module type Hook = sig
   include Sanitiser_base.Basic
-  include Sanitiser_base.S_all
+
+  include
+    Sanitiser_base.S_all
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
-  ;;
-  include Sanitiser_base.S_program
+
+  include
+    Sanitiser_base.S_program
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
-  ;;
-  include Sanitiser_base.S_statement
+
+  include
+    Sanitiser_base.S_statement
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
-  ;;
-  include Sanitiser_base.S_instruction
+
+  include
+    Sanitiser_base.S_instruction
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
-  ;;
-  include Sanitiser_base.S_location
+
+  include
+    Sanitiser_base.S_location
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
-  ;;
 end
 
-module type Hook_maker =
-  functor (P : Travesty.Traversable.S1_container)
-    -> Hook with module Program_container = P
 (** [Hook_maker] is the type of functors that generate hooks given a
     program container. *)
+module type Hook_maker = functor (P : Travesty.Traversable.S1_container) -> Hook
+                                                                            with module Program_container = P
 
 (** [Basic] describes the base functionality we need to supply to a
     sanitiser.
@@ -78,9 +82,7 @@ module type Basic = sig
 
   (** [split] splits an assembly script up into the one or more
       programs we'll be sanitising. *)
-  val split
-    :  Lang.Program.t
-    -> Lang.Program.t Program_container.t Or_error.t
+  val split : Lang.Program.t -> Lang.Program.t Program_container.t Or_error.t
 end
 
 (** [S] is the interface to a fully-built sanitiser. *)
@@ -151,27 +153,27 @@ module type Sanitiser = sig
   module type Basic = Basic
   module type S = S
 
-  module Make_null_hook
-      (Lang : Language.S) (P : Travesty.Traversable.S1_container)
-    : Hook with module Lang = Lang and module Program_container = P
   (** [Make_null_hook] makes a [Hook] that does nothing. *)
+  module Make_null_hook (Lang : Language.S) (P : Travesty.Traversable.S1_container) :
+    Hook with module Lang = Lang and module Program_container = P
 
-  module Make (B : Basic)
-    : S with module Lang := B.Lang
-         and type 'a Program_container.t = 'a B.Program_container.t
   (** [Make] implements the assembly sanitiser for a given [Basic]. *)
+  module Make (B : Basic) :
+    S
+    with module Lang := B.Lang
+     and type 'a Program_container.t = 'a B.Program_container.t
 
-  module Make_single (H : Hook_maker)
-    : S with module Lang := H(Travesty.Singleton).Lang
-         and type 'a Program_container.t = 'a
   (** [Make_single] implements the assembly sanitiser for a given
      [Hook_maker], performing no program splitting and returning the
      sanitised assembly back as one program. *)
+  module Make_single (H : Hook_maker) :
+    S with module Lang := H(Travesty.Singleton).Lang and type 'a Program_container.t = 'a
 
-  module Make_multi (H : Hook_maker)
-    : S with module Lang := H(Travesty.T_list).Lang
-         and type 'a Program_container.t = 'a list
   (** [Make_multi] implements the assembly sanitiser for a given
      [Hook_maker], treating the incoming assembly as holding multiple
      label-delimited programs and splitting them accordingly. *)
+  module Make_multi (H : Hook_maker) :
+    S
+    with module Lang := H(Travesty.T_list).Lang
+     and type 'a Program_container.t = 'a list
 end

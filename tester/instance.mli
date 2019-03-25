@@ -30,13 +30,13 @@
 
 include module type of Instance_intf
 
-module Make_compiler (B : Basic_compiler) : Compiler
 (** [Make_compiler] makes a single-compiler test runner from a
    [Basic_compiler]. *)
+module Make_compiler (B : Basic_compiler) : Compiler
 
-module Make_machine (B : Basic_machine) : Machine
 (** [Make_machine] makes a single-machine test runner from a
    [Basic_machine]. *)
+module Make_machine (B : Basic_machine) : Machine
 
-module Make (B : Basic) : S
 (** [Make] makes a full test runner from a [Basic]. *)
+module Make (B : Basic) : S

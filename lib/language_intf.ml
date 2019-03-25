@@ -31,33 +31,26 @@ module type Basic_core = sig
 
   (** [pp_comment ~pp f k] prints a line comment whose body is
       given by invoking [pp] on [k]. *)
-  val pp_comment
-    :  pp:(Format.formatter -> 'a -> unit)
-    -> Format.formatter
-    -> 'a
-    -> unit
+  val pp_comment : pp:(Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
 end
 
 (** [Basic] is the signature that act languages must implement. *)
 module type Basic = sig
   include Basic_core
+  module Constant : Language_constant.Basic
+  module Symbol : Language_symbol.Basic
+  module Location : Language_location.Basic with module Sym := Symbol
 
-  module Constant    : Language_constant.Basic
-  module Symbol      : Language_symbol.Basic
-  module Location    : Language_location.Basic
-    with module Sym := Symbol
-  module Instruction : Language_instruction.Basic
+  module Instruction :
+    Language_instruction.Basic
     with type con = Constant.t
      and module Loc := Location
      and module Sym := Symbol
-  ;;
-  module Statement : Language_statement.Basic
-    with module Ins := Instruction
-     and module Sym := Symbol
-  ;;
-  module Program : Language_program.Basic
-    with type stm := Statement.t
-  ;;
+
+  module Statement :
+    Language_statement.Basic with module Ins := Instruction and module Sym := Symbol
+
+  module Program : Language_program.Basic with type stm := Statement.t
 end
 
 (** [S] is the user-facing interface module for act languages.
@@ -65,35 +58,31 @@ end
     onto a bare-bones language [Basic]. *)
 module type S = sig
   include Basic_core
-
   module Constant : Language_constant.S
   module Symbol : Language_symbol.S
-  module Location : Language_location.S
-    with module Symbol = Symbol
-  ;;
-  module Instruction : Language_instruction.S
+  module Location : Language_location.S with module Symbol = Symbol
+
+  module Instruction :
+    Language_instruction.S
     with module Constant = Constant
      and module Location = Location
-     and module Symbol   = Symbol
-  ;;
-  module Statement : Language_statement.S
-    with module Instruction = Instruction
-  ;;
-  module Program : Language_program.S
-    with module Statement = Statement
-  ;;
+     and module Symbol = Symbol
+
+  module Statement : Language_statement.S with module Instruction = Instruction
+  module Program : Language_program.S with module Statement = Statement
 end
 
 module type Language = sig
   module type Basic = Basic
   module type S = S
 
+  (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
   module Make (B : Basic) :
-    S with type Constant.t    = B.Constant.t
-       and type Location.t    = B.Location.t
-       and type Instruction.t = B.Instruction.t
-       and type Program.t     = B.Program.t
-       and type Statement.t   = B.Statement.t
-       and type Symbol.t      = B.Symbol.t
-       (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
+    S
+    with type Constant.t = B.Constant.t
+     and type Location.t = B.Location.t
+     and type Instruction.t = B.Instruction.t
+     and type Program.t = B.Program.t
+     and type Statement.t = B.Statement.t
+     and type Symbol.t = B.Symbol.t
 end

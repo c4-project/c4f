@@ -48,22 +48,22 @@
 
 open Lexing
 
-val skip_ml_comment : lexbuf -> unit
 (** [skip_ml_comment lexbuf] lexes an ML-style comment, discarding
    it. *)
+val skip_ml_comment : lexbuf -> unit
 
-val skip_c_comment : lexbuf -> unit
 (** [skip_c_comment lexbuf] lexes a C-style block comment, discarding
    it. *)
+val skip_c_comment : lexbuf -> unit
 
-val skip_c_line_comment : lexbuf -> unit
 (** [skip_c_line_comment lexbuf] lexes a C-style line comment,
    discarding it. *)
+val skip_c_line_comment : lexbuf -> unit
 
-val skip_string : lexbuf -> unit
 (** [skip_string lexbuf] lexes the body of a double-quoted string,
    discarding it. *)
+val skip_string : lexbuf -> unit
 
-val read_string : (string -> 'a) -> lexbuf -> 'a
 (** [read_string token lexbuf] lexes the body of a double-quoted string,
    feeding it to the token constructor [token]. *)
+val read_string : (string -> 'a) -> lexbuf -> 'a

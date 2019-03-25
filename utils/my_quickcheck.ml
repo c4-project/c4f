@@ -23,19 +23,16 @@
    SOFTWARE. *)
 
 open Core_kernel
-
 include My_quickcheck_intf
 
 let gen_string_initial
-  ~(initial : char Quickcheck.Generator.t)
-  ~(rest : char Quickcheck.Generator.t)
-  : string Quickcheck.Generator.t =
+    ~(initial : char Quickcheck.Generator.t)
+    ~(rest : char Quickcheck.Generator.t)
+    : string Quickcheck.Generator.t =
   Quickcheck.Generator.(
-    map ~f:(Tuple2.uncurry (^))
-      (tuple2
-         (map ~f:String.of_char initial)
-         (String.gen' rest))
-  )
+    map
+      ~f:(Tuple2.uncurry ( ^ ))
+      (tuple2 (map ~f:String.of_char initial) (String.gen' rest)))
 ;;
 
 module Small_non_negative_int : sig
@@ -43,5 +40,6 @@ module Small_non_negative_int : sig
   include S_with_sexp with type t := int
 end = struct
   include Int
+
   let quickcheck_generator = Base_quickcheck.Generator.small_positive_or_zero_int
 end

@@ -34,7 +34,5 @@
     to read events.  Chains corresponding to write events are harder
     to detect, but will be supported eventually. *)
 
-module Make (B : Sanitiser_base.Basic)
-  : Sanitiser_base.S_program with module Lang := B.Lang
-                              and module Ctx := B.Ctx
-;;
+module Make (B : Sanitiser_base.Basic) :
+  Sanitiser_base.S_program with module Lang := B.Lang and module Ctx := B.Ctx

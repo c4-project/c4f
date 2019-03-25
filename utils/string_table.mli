@@ -65,13 +65,14 @@ module type S = sig
 end
 
 (** [Make] lifts a [Table] into a module satisfying [Intf]. *)
-module Make : functor (T : Table) -> S with type t := T.t
+module Make (T : Table) : S with type t := T.t
 
 (** [Basic_identifiable] is the signature that must be implemented
     to use string tables as [Identifiable]s through
     [To_identifiable]. *)
 module type Basic_identifiable = sig
   type t
+
   include S with type t := t
 
   val compare : t -> t -> int
@@ -81,14 +82,8 @@ end
 
 (** [To_stringable] produces a plain stringable instance
     given a string table and a comparator. *)
-module To_stringable
-  : functor (T : Basic_identifiable)
-    -> Stringable.S with type t := T.t
-;;
+module To_stringable (T : Basic_identifiable) : Stringable.S with type t := T.t
 
 (** [To_identifiable] produces a plain identifiable instance
     given a string table and a comparator. *)
-module To_identifiable
-  : functor (T : Basic_identifiable)
-    -> Identifiable.S_plain with type t := T.t
-;;
+module To_identifiable (T : Basic_identifiable) : Identifiable.S_plain with type t := T.t

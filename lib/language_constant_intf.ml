@@ -36,12 +36,12 @@ module type Basic = sig
   (** [t] is the type of constants. *)
   type t [@@deriving compare, eq, sexp]
 
-  include Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their constants. *)
+  include Pretty_printer.S with type t := t
 
-  include Quickcheck.S with type t := t
   (** Languages must supply a Quickcheck generator for their
      constants. *)
+  include Quickcheck.S with type t := t
 
   (** [of_int] lifts an integer to a constant. *)
   val of_int : int -> t

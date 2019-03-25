@@ -43,7 +43,8 @@ let run
     (c_locals : string list option)
     (args : Args.Standard_with_files.t)
     o
-    cfg =
+    cfg
+  =
   let open Or_error.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_arch in
   let passes = Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.explain in

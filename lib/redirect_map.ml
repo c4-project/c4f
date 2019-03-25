@@ -67,32 +67,30 @@ module Make (B : Basic_symbol) : S with type sym := B.t = struct
 
   let check_no_tids (cvars : Config.C_variables.Map.t) : unit Or_error.t =
     let cvars_with_tids =
-      cvars
-      |> Map.filter ~f:(Config.C_variables.Record.has_tid)
-      |> Map.keys
+      cvars |> Map.filter ~f:Config.C_variables.Record.has_tid |> Map.keys
     in
     match cvars_with_tids with
     | [] -> Result.ok_unit
-    | _ -> Or_error.error_s
-             [%message "Expected a C variable map without thread IDs"
-                 ~cvars_with_tids:(cvars_with_tids : C_identifier.t list)]
+    | _ ->
+      Or_error.error_s
+        [%message
+          "Expected a C variable map without thread IDs"
+            ~cvars_with_tids:(cvars_with_tids : C_identifier.t list)]
   ;;
 
-  let transform_c_variables
-    (map : t)
-    (cvars : Config.C_variables.Map.t)
-    : Config.C_variables.Map.t Or_error.t =
+  let transform_c_variables (map : t)
+                            (cvars : Config.C_variables.Map.t)
+      : Config.C_variables.Map.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind () = check_no_tids cvars in
     let%bind alist =
       cvars
       |> Map.to_alist
-      |> List.map ~f:(fun (var, record) ->
-          var |> resolve_id map >>| fun v' -> (v', record)
-        )
+      |> List.map ~f:(fun (var, record) -> var |> resolve_id map >>| fun v' -> v', record)
       |> Or_error.combine_errors
     in
     C_identifier.Map.of_alist_or_error alist
+  ;;
 end
 
 module Make_from_language_symbol (LS : Language_symbol.S) : S with type sym := LS.t =
@@ -119,67 +117,69 @@ Make (struct
   ;;
 end)
 
-let%test_module "string redirect maps" = (module struct
-  module M = Make (struct
-      type t = string [@@deriving equal, sexp]
-      let to_string = Fn.id
-      let of_string = Fn.id
+let%test_module "string redirect maps" =
+  (module struct
+     module M = Make (struct
+       type t = string [@@deriving equal, sexp]
 
-      let of_c_identifier x = x |> C_identifier.to_string |> Or_error.return
-      let to_c_identifier = C_identifier.create
-    end)
+       let to_string = Fn.id
+       let of_string = Fn.id
+       let of_c_identifier x = x |> C_identifier.to_string |> Or_error.return
+       let to_c_identifier = C_identifier.create
+     end)
 
-  let example_map : M.t =
-    M.of_symbol_alist
-      [ ("foo", "_foo")
-      ; ("bar_baz", "_bar_baz")
-      ; ("BEEP", "_beep")
-      ; ("_boop", "_2boop") (* why not? *)
-      ]
-  ;;
+     let example_map : M.t =
+       M.of_symbol_alist
+         [ "foo", "_foo"
+         ; "bar_baz", "_bar_baz"
+         ; "BEEP", "_beep"
+         ; "_boop", "_2boop" (* why not? *)
+         ]
+     ;;
 
-  let%expect_test "resolve_id: in map" =
-    let foo = C_identifier.of_string "foo" in
-    Stdio.print_s [%sexp (M.resolve_id example_map foo : C_identifier.t Or_error.t)];
-    [%expect {| (Ok _foo) |}]
-  ;;
+     let%expect_test "resolve_id: in map" =
+       let foo = C_identifier.of_string "foo" in
+       Stdio.print_s [%sexp (M.resolve_id example_map foo : C_identifier.t Or_error.t)];
+       [%expect {| (Ok _foo) |}]
+     ;;
 
-  let%expect_test "resolve_id: not in map" =
-    let foo = C_identifier.of_string "nope" in
-    Stdio.print_s [%sexp (M.resolve_id example_map foo : C_identifier.t Or_error.t)];
-    [%expect {|
+     let%expect_test "resolve_id: not in map" =
+       let foo = C_identifier.of_string "nope" in
+       Stdio.print_s [%sexp (M.resolve_id example_map foo : C_identifier.t Or_error.t)];
+       [%expect
+         {|
       (Error
        ("Couldn't resolve symbol in redirects table"
         (here lib/redirect_map.ml:41:24) (symbol nope)
         (redirects ((foo _foo) (bar_baz _bar_baz) (BEEP _beep) (_boop _2boop))))) |}]
-  ;;
+     ;;
 
-  let example_cvars_working : Config.C_variables.Map.t =
-    Config.C_variables.Map.(
-      merge_list
-        [ of_single_scope_map ~scope:Config.C_variables.Scope.Local
-            (C_identifier.Map.of_alist_exn
-               [ (C_identifier.of_string "foo", Some 27)
-               ; (C_identifier.of_string "bar_baz", None)
-               ]
-            )
-        ; of_single_scope_map ~scope:Config.C_variables.Scope.Global
-            (C_identifier.Map.of_alist_exn
-               [ (C_identifier.of_string "BEEP", Some 53)
-               ]
-            )
-        ]
-    )
-  ;;
+     let example_cvars_working : Config.C_variables.Map.t =
+       Config.C_variables.Map.(
+         merge_list
+           [ of_single_scope_map
+               ~scope:Config.C_variables.Scope.Local
+               (C_identifier.Map.of_alist_exn
+                  [ C_identifier.of_string "foo", Some 27
+                  ; C_identifier.of_string "bar_baz", None
+                  ])
+           ; of_single_scope_map
+               ~scope:Config.C_variables.Scope.Global
+               (C_identifier.Map.of_alist_exn [ C_identifier.of_string "BEEP", Some 53 ])
+           ])
+     ;;
 
-  let%expect_test "transform_c_variables: working example" =
-    Stdio.print_s
-      [%sexp (M.transform_c_variables example_map example_cvars_working
-               : Config.C_variables.Map.t Or_error.t)];
-    [%expect {|
+     let%expect_test "transform_c_variables: working example" =
+       Stdio.print_s
+         [%sexp
+           (M.transform_c_variables example_map example_cvars_working
+             : Config.C_variables.Map.t Or_error.t)];
+       [%expect
+         {|
       (Ok
        ((_bar_baz ((scope Local) (initial_value ()) (tid ())))
         (_beep ((scope Global) (initial_value (53)) (tid ())))
         (_foo ((scope Local) (initial_value (27)) (tid ()))))) |}]
-  ;;
-end)
+     ;;
+  end)
+;;

@@ -31,6 +31,7 @@ open Utils
     types. *)
 module type S = sig
   type t [@@deriving sexp]
+
   include Pretty_printer.S with type t := t
 
   (** [Kind] contains an enumeration of all of the possible high-level
@@ -38,6 +39,7 @@ module type S = sig
       result of removing all of the arguments from [t]'s constructors. *)
   module Kind : sig
     type t
+
     include Enum.S_table with type t := t
     include Enum.Extension_table with type t := t
   end

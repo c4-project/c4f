@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core_kernel
-
 include Sanitiser_warn_intf
 
 module Make (Lang : Language.S) : S with module Lang := Lang = struct
@@ -33,15 +32,13 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     | Operands of Lang.Instruction.t
     | Statement of Lang.Statement.t
     | Symbol of Lang.Symbol.t
-  ;;
 
   type t =
     { program_name : string
-    ; element      : elt
-    ; body         : Info.t
+    ; element : elt
+    ; body : Info.t
     }
-    [@@deriving fields, make]
-  ;;
+  [@@deriving fields, make]
 
   let pp_elt f = function
     | Statement s -> Lang.Statement.pp f s
@@ -59,23 +56,21 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
   ;;
 
   let pp f ent =
-    Format.fprintf f "@[<v>@[<h>In program %s,@ in %s@ `%a`:@]@ %a@]"
+    Format.fprintf
+      f
+      "@[<v>@[<h>In program %s,@ in %s@ `%a`:@]@ %a@]"
       ent.program_name
       (elt_type_name ent.element)
-      pp_elt ent.element
-      Info.pp ent.body
+      pp_elt
+      ent.element
+      Info.pp
+      ent.body
   ;;
 
-  let not_understood () =
-    Info.of_string "act didn't understand this element"
-  ;;
+  let not_understood () = Info.of_string "act didn't understand this element"
 
   let erroneous reason =
     Info.create_s
-      [%message
-        "act thinks this element is invalid"
-          ~reason:(reason : Error.t)
-      ]
+      [%message "act thinks this element is invalid" ~reason:(reason : Error.t)]
   ;;
-
 end

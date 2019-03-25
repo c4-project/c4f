@@ -31,7 +31,6 @@ type t =
   | Blank
   | Label of string
   | Unknown
-;;
 
 (** [Kind] is an enumeration over the high-level kinds of abstracted
    statement. *)
@@ -42,7 +41,6 @@ module Kind : sig
     | Blank
     | Label
     | Unknown
-  ;;
 
   include Enum.S_table with type t := t
   include Enum.Extension_table with type t := t
@@ -68,11 +66,7 @@ module type S_predicates = sig
 
   (** [is_instruction_where stm ~f] tests whether [stm] is a label
       whose opcode and operands satisfy the predicate [f]. *)
-  val is_instruction_where
-    :  t
-    -> f:(Instruction.t -> bool)
-    -> bool
-  ;;
+  val is_instruction_where : t -> f:(Instruction.t -> bool) -> bool
 
   (** [is_label stm] decides whether [stm] appears to be an
       label. *)
@@ -85,11 +79,7 @@ module type S_predicates = sig
   (** [is_unused_label stm ~symbol_table] decides
      whether [stm] is a label whose symbol isn't registered as a jump
       destination in [symbol_table]. *)
-  val is_unused_label
-    : t
-    -> symbol_table:Symbol.Table.t
-    -> bool
-  ;;
+  val is_unused_label : t -> symbol_table:Symbol.Table.t -> bool
 
   (** [is_jump_pair x y] returns true if [x] is a jump instruction,
       [y] is a label, and [x] is jumping to [y]. *)
@@ -106,20 +96,18 @@ end
     from an optional component.  Each predicate returns false when the
     component doesn't exist. *)
 module Inherit_predicates
-  : functor (P : S_predicates)
-    -> functor (I : Utils.Inherit.S_partial with type c := P.t)
-      -> S_predicates with type t := I.t
-;;
+    (P : S_predicates)
+    (I : Utils.Inherit.S_partial with type c := P.t) : S_predicates with type t := I.t
 
 (** [Flag] is an enumeration of various statement observations. *)
 module Flag : sig
   type t =
-    [ `UnusedLabel   (* A label that doesn't appear in any jumps *)
-    | `StackManip    (* A statement that only serves to manipulate
+    [ `UnusedLabel (* A label that doesn't appear in any jumps *)
+    | `StackManip
+      (* A statement that only serves to manipulate
                         the call stack *)
     ]
   [@@deriving sexp, enumerate]
-  ;;
 
   include Flag_enum.S with type t := t
 end
@@ -142,8 +130,8 @@ module type S_properties = sig
     -> ?label:(Symbol.t -> bool)
     -> ?blank:bool
     -> ?unknown:bool
-    -> t -> bool
-  ;;
+    -> t
+    -> bool
 
   (** [iter ?directive ?instruction ?label ?blank ?unknown stm] executes
      any of the optional side-effecting functions that apply to
@@ -154,8 +142,8 @@ module type S_properties = sig
     -> ?label:(Symbol.t -> unit)
     -> ?blank:(unit -> unit)
     -> ?unknown:(unit -> unit)
-    -> t -> unit
-  ;;
+    -> t
+    -> unit
 
   (** [flags x symbol_table] gets the statement flags for [x] given
       symbol table [symbol_table]. *)
@@ -164,16 +152,10 @@ end
 
 (** [Inherit_properties] generates a [S_properties] by inheriting it
     from a component. *)
-module Inherit_properties
-  : functor (P : S_properties)
-    -> functor (I : Utils.Inherit.S with type c := P.t)
-      -> S_properties with type t := I.t
-;;
+module Inherit_properties (P : S_properties) (I : Utils.Inherit.S with type c := P.t) :
+  S_properties with type t := I.t
 
 (** This module contains [S_properties] directly. *)
 include S_properties with type t := t
 
-include Node.S with type t := t
-                and module Kind := Kind
-                and module Flag := Flag
-;;
+include Node.S with type t := t and module Kind := Kind and module Flag := Flag

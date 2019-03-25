@@ -32,7 +32,6 @@
 
 open Base
 
-type t
 (** Opaque type of tester configuration.
 
     The items inside the configuration type used here are those that
@@ -40,25 +39,26 @@ type t
    of machine configurations.  (At time of writing, this distinction
    is purely academic, but later versions of act might actually expose
    a way to run multiple tester jobs. *)
+type t
 
 (** {2 Constructors} *)
 
+(** [make ~fnames ~output_root ~compilers ~input_mode ()] constructs a
+   set of tester configuration with the given parameters.  It fails if
+   any of the parameters are invalid. *)
 val make
   :  output_root:Fpath.t
   -> compilers:Config.Id.Set.t
   -> input_mode:Input_mode.t
   -> t Or_error.t
-(** [make ~fnames ~output_root ~compilers ~input_mode ()] constructs a
-   set of tester configuration with the given parameters.  It fails if
-   any of the parameters are invalid. *)
 
 (** {2 Accessors} *)
 
-val output_root : t -> Fpath.t
 (** [output_root cfg] gets the output root directory for [cfg]. *)
+val output_root : t -> Fpath.t
 
-val compilers : t -> Config.Id.Set.t
 (** [compilers cfg] gets the compiler identifier set for [cfg]. *)
+val compilers : t -> Config.Id.Set.t
 
-val input_mode : t -> Input_mode.t
 (** [input_mode cfg] gets the input mode for [cfg]. *)
+val input_mode : t -> Input_mode.t

@@ -58,8 +58,5 @@ module type Abstractable = sig
   module type S = S
 
   (** [Make] extends a [Basic] to an [S]. *)
-  module Make
-    : functor (B : Basic)
-      -> S with type t := B.t and module Abs := B.Abs
-  ;;
+  module Make (B : Basic) : S with type t := B.t and module Abs := B.Abs
 end

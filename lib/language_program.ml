@@ -23,43 +23,41 @@
    SOFTWARE. *)
 
 open Base
-
 include Language_program_intf
 
-module Make (B : Basic_with_modules)
-  : S with type t = B.t
-       and module Statement = B.Statement = struct
+module Make (B : Basic_with_modules) :
+  S with type t = B.t and module Statement = B.Statement = struct
   include B
 
   module On_statements = struct
     include Travesty.Traversable.Chain0 (struct
-        type nonrec t = t
-        include On_listings
-      end) (Travesty.T_list.With_elt (Statement))
-    ;;
+                type nonrec t = t
+
+                include On_listings
+              end)
+              (Travesty.T_list.With_elt (Statement))
 
     include Travesty.Filter_mappable.Make0 (struct
-        type t = B.t
-        type elt = B.Statement.t
-        let filter_map x ~f =
-          On_listings.map x
-            ~f:(Travesty.T_list.filter_map ~f)
-        ;;
-      end)
+      type t = B.t
+      type elt = B.Statement.t
+
+      let filter_map x ~f = On_listings.map x ~f:(Travesty.T_list.filter_map ~f)
+    end)
   end
 
   let listing : t -> Statement.t list = On_statements.to_list
 
   module On_symbols =
     Travesty.Traversable.Chain0 (struct
-      type nonrec t = t
-      include On_statements
-    end) (Statement.On_symbols)
+        type nonrec t = t
 
+        include On_statements
+      end)
+      (Statement.On_symbols)
 
   module Instruction = B.Statement.Instruction
-  module Symbol      = Instruction.Symbol
-  module Location    = Instruction.Location
+  module Symbol = Instruction.Symbol
+  module Location = Instruction.Location
 
   let heap_symbols_of_instruction ins ~known_heap_symbols =
     let symbols_in_heap_position =
@@ -73,9 +71,7 @@ module Make (B : Basic_with_modules)
       Option.some_if is_known asym
     in
     let symbols_matching_known =
-      ins
-      |> Instruction.On_symbols.to_list
-      |> List.filter_map ~f:compare_against_known
+      ins |> Instruction.On_symbols.to_list |> List.filter_map ~f:compare_against_known
     in
     symbols_in_heap_position @ symbols_matching_known
   ;;
@@ -91,9 +87,9 @@ module Make (B : Basic_with_modules)
        Maybe, one day, we'll find an architecture that does actually
        contain heap locations in a jump, and have to re-think this. *)
     |> Travesty.T_list.exclude ~f:Instruction.is_jump
-    |> List.concat_map
-      ~f:(heap_symbols_of_instruction ~known_heap_symbols)
+    |> List.concat_map ~f:(heap_symbols_of_instruction ~known_heap_symbols)
     |> Abstract.Symbol.Set.of_list
+  ;;
 
   (** [symbols_in_statements_where filter prog] collects all
       abstract symbols belonging to statements in [prog] that match
@@ -101,11 +97,10 @@ module Make (B : Basic_with_modules)
   let symbols_in_statements_where filter prog =
     prog
     |> On_statements.to_list
-    |> List.filter_map
-      ~f:(fun p ->
-          if filter p
-          then Some (Symbol.Set.of_list (Statement.On_symbols.to_list p))
-          else None)
+    |> List.filter_map ~f:(fun p ->
+           if filter p
+           then Some (Symbol.Set.of_list (Statement.On_symbols.to_list p))
+           else None)
     |> Symbol.Set.union_list
     |> Symbol.Set.abstract
   ;;
@@ -116,11 +111,10 @@ module Make (B : Basic_with_modules)
   let symbols prog ~known_heap_symbols =
     Abstract.(
       Symbol.Table.of_sets
-        [ heap_symbols  prog ~known_heap_symbols, Symbol.Sort.Heap
-        ; jump_symbols  prog                    , Symbol.Sort.Jump
-        ; label_symbols prog                    , Symbol.Sort.Label
-        ]
-    )
+        [ heap_symbols prog ~known_heap_symbols, Symbol.Sort.Heap
+        ; jump_symbols prog, Symbol.Sort.Jump
+        ; label_symbols prog, Symbol.Sort.Label
+        ])
   ;;
 
   let split_stms_on_boundaries stms =
@@ -128,12 +122,11 @@ module Make (B : Basic_with_modules)
        instructions before the first program, meaning we can
        simplify discarding such instructions. *)
     let splits =
-      (B.Statement.empty () :: stms)
+      B.Statement.empty () :: stms
       |> List.group ~break:(Fn.const B.Statement.is_program_boundary)
-    in Or_error.return (List.drop splits 1)
+    in
+    Or_error.return (List.drop splits 1)
   ;;
 
-  let split_on_boundaries prog =
-    B.split prog ~f:split_stms_on_boundaries
-  ;;
+  let split_on_boundaries prog = B.split prog ~f:split_stms_on_boundaries
 end

@@ -31,11 +31,11 @@
 (** [S] describes a parent type [t], a component type [c], and a
     function [component] for getting the [c] of a [t]. *)
 module type S = sig
-  type t
   (** The main type. *)
+  type t
 
-  type c
   (** Type of inner components. *)
+  type c
 
   (** [component x] gets the [c]-typed component of [x]. *)
   val component : t -> c
@@ -45,38 +45,37 @@ end
    type [c], and a function [component_opt] for getting the [c] of a
    [t], if one exists. *)
 module type S_partial = sig
-  type t
   (** The main type. *)
+  type t
 
-  type c
   (** Type of inner components. *)
+  type c
 
   (** [component_opt x] tries to get the [c]-typed component of [x]. *)
   val component_opt : t -> c option
 end
 
-module Make_partial (I : S)
-  : S_partial with type t = I.t and type c = I.c
 (** [Make_partial] converts an [S] into an [S_partial] that always
     returns [Some (component x)] for [component_opt x]. *)
+module Make_partial (I : S) : S_partial with type t = I.t and type c = I.c
 
 (** {2 Helpers for building inheritance modules} *)
 
 (** [Helpers] produces helper functions for forwarding through an
     {{!S}S}. *)
 module Helpers (I : S) : sig
-  val forward : (I.c -> 'a) -> I.t -> 'a
   (** [forward f t] lifts the component accessor [f] over [t]. *)
+  val forward : (I.c -> 'a) -> I.t -> 'a
 end
 
 (** [Partial_helpers] produces helper functions for forwarding through
    an {{!S_partial}S_partial}. *)
 module Partial_helpers (I : S_partial) : sig
-  val forward_bool : (I.c -> bool) -> I.t -> bool
   (** [forward_bool f t] is [false] if [t] doesn't have the required
      component, and [f c] if it does (and that component is [c]). *)
+  val forward_bool : (I.c -> bool) -> I.t -> bool
 
-  val forward_bind : (I.c -> 'a option) -> I.t -> 'a option
   (** [forward_bind f t] is [None] if [t] doesn't have the required
      component, and [f c] if it does (and that component is [c]). *)
+  val forward_bind : (I.c -> 'a option) -> I.t -> 'a option
 end

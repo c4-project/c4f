@@ -56,22 +56,16 @@ end
 
 include M
 
-module Name_table =
-  String_table.Make (struct
-    type nonrec t = t
-    let table =
-      [ Att  , "ATT"
-      ; Intel, "Intel"
-      ; Herd7, "Herd7"
-      ]
-  end)
-;;
+module Name_table = String_table.Make (struct
+  type nonrec t = t
+
+  let table = [ Att, "ATT"; Intel, "Intel"; Herd7, "Herd7" ]
+end)
 
 include String_table.To_identifiable (struct
-    include M
-    include Name_table
-  end)
-;;
+  include M
+  include Name_table
+end)
 
 module type Has_dialect = sig
   val dialect : t
@@ -82,27 +76,38 @@ module type S = sig
   include Src_dst.S
 
   val has_size_suffix : bool
-
-  val symbolic_jump_type : [`Indirect | `Immediate ]
+  val symbolic_jump_type : [ `Indirect | `Immediate ]
 end
 
 module Att = struct
   let dialect = Att
-  include Src_dst.Make (struct let operand_order = Src_dst.Src_then_dst end)
+
+  include Src_dst.Make (struct
+    let operand_order = Src_dst.Src_then_dst
+  end)
+
   let has_size_suffix = true
   let symbolic_jump_type = `Indirect
 end
 
 module Intel = struct
   let dialect = Intel
-  include Src_dst.Make (struct let operand_order = Src_dst.Dst_then_src end)
+
+  include Src_dst.Make (struct
+    let operand_order = Src_dst.Dst_then_src
+  end)
+
   let has_size_suffix = false
   let symbolic_jump_type = `Immediate
 end
 
 module Herd7 = struct
   let dialect = Herd7
-  include Src_dst.Make (struct let operand_order = Src_dst.Dst_then_src end)
+
+  include Src_dst.Make (struct
+    let operand_order = Src_dst.Dst_then_src
+  end)
+
   (* Surprisingly, this is true---for some operations, anyway. *)
   let has_size_suffix = true
   let symbolic_jump_type = `Immediate

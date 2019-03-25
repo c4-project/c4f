@@ -26,6 +26,7 @@ open Core
 
 module type S = sig
   type ast
+
   val convert : ast -> ast
 end
 
@@ -33,9 +34,7 @@ module Make (SD : Language.S) (DD : Language.S) = struct
   type ast = Ast.t
 
   let swap operands =
-    operands
-    |> SD.to_src_dst
-    |> Option.value_map ~f:DD.of_src_dst ~default:operands
+    operands |> SD.to_src_dst |> Option.value_map ~f:DD.of_src_dst ~default:operands
   ;;
 
   (** [swap_instruction ins] does any swapping of operands needed to
@@ -46,10 +45,9 @@ module Make (SD : Language.S) (DD : Language.S) = struct
        read from a source and write to a destination.
 
        This may change. *)
-    let swapped_operands = swap ins.Ast.Instruction.operands
-    in { ins with Ast.Instruction.operands = swapped_operands }
+    let swapped_operands = swap ins.Ast.Instruction.operands in
+    { ins with Ast.Instruction.operands = swapped_operands }
   ;;
-
 
   (** [convert_jump_operand ins] checks to see if [ins] is a jump and,
      if so, does some syntactic rearranging of the jump's destination.
@@ -57,27 +55,21 @@ module Make (SD : Language.S) (DD : Language.S) = struct
       See [Dialect.Intf.symbolic_jump_type] for an explanation. *)
   let convert_jump_operand ins =
     if SD.Instruction.is_jump ins
-    then
+    then (
       match SD.Instruction.abs_operands ins with
       | Abstract.Operand.(Bundle.Single (Symbol jsym)) ->
         { ins with operands = [ DD.make_jump_operand jsym ] }
-      | _ -> ins
+      | _ -> ins)
     else ins
   ;;
 
-  let convert_instruction ins =
-    ins
-    |> swap_instruction
-    |> convert_jump_operand
-
-  let convert_statement =
-    Ast.Statement.On_instructions.map ~f:convert_instruction
-  ;;
-
+  let convert_instruction ins = ins |> swap_instruction |> convert_jump_operand
+  let convert_statement = Ast.Statement.On_instructions.map ~f:convert_instruction
   let convert_listing = List.map ~f:convert_statement
 
   let convert { Ast.program; _ } =
     (* TODO(@MattWindsor91): check the source dialect. *)
     let program' = convert_listing program in
     { Ast.syntax = DD.dialect; program = program' }
+  ;;
 end

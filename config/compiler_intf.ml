@@ -105,7 +105,11 @@ module type Basic = sig
       [infile], and the output file [outfile], and produces a final
       argument vector to send to the compiler. *)
   val compile_args
-    : args:string list -> emits:Id.t -> infile:string -> outfile:string -> string list
+    :  args:string list
+    -> emits:Id.t
+    -> infile:string
+    -> outfile:string
+    -> string list
 end
 
 (** [S] is the outward-facing interface of compiler modules. *)

@@ -32,29 +32,13 @@ val null_formatter : unit -> Formatter.t
 
 (** [pp_listlist ~pp o] pretty-prints a list of lists, using
     newlines to separate the first dimension and commas the second. *)
-val pp_listlist
-  :  pp:(Formatter.t -> 'a -> unit)
-  -> Formatter.t
-  -> 'a list list
-  -> unit
-;;
+val pp_listlist : pp:(Formatter.t -> 'a -> unit) -> Formatter.t -> 'a list list -> unit
 
 (** [pp_c_braces pi f i] wraps a vertical pretty-printer [pi] inside a
    C-style brace pair. *)
-val pp_c_braces
-  :  (Formatter.t -> 'v -> unit)
-  -> Formatter.t
-  -> 'v
-  -> unit
-;;
+val pp_c_braces : (Formatter.t -> 'v -> unit) -> Formatter.t -> 'v -> unit
 
 (** [pp_kv f k pv v] prints a key-value pair, whose key is the string
    [k] and value is the value [v] printable by [pv], onto formatter
    [f]. *)
-val pp_kv
-  :  Formatter.t
-  -> string
-  -> (Formatter.t -> 'v -> unit)
-  -> 'v
-  -> unit
-;;
+val pp_kv : Formatter.t -> string -> (Formatter.t -> 'v -> unit) -> 'v -> unit

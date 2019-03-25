@@ -28,29 +28,29 @@ open Base
 module type Common = sig
   type t
 
-  val of_fpath : Fpath.t -> t
   (** [of_fpath n] returns a source or sink over the file path [n]. *)
+  val of_fpath : Fpath.t -> t
 
-  val of_fpath_opt : Fpath.t option -> t
   (** [of_fpath_opt n] returns [of_fpath n'] if [n] is [Some n'], and
       the standard stream otherwise. *)
+  val of_fpath_opt : Fpath.t option -> t
 
-  val of_string_opt : string option -> t Or_error.t
   (** [of_string_opt n] tries to parse [n] as a file path if it is
       [Some n], and returns
       the standard stream otherwise. *)
+  val of_string_opt : string option -> t Or_error.t
 
-  val to_file : t -> Fpath.t option
   (** [to_file t] returns [Some f] if [t] is a file with path [f],
       and [None] otherwise. *)
+  val to_file : t -> Fpath.t option
 
-  val to_file_err : t -> Fpath.t Or_error.t
   (** [to_file_err t] behaves like {{!to_file}to_file}, but raises a
       mildly descriptive error on failure. *)
+  val to_file_err : t -> Fpath.t Or_error.t
 
-  val to_string : t -> string
   (** [to_string t] returns a descriptive string representation of
      [t]. *)
+  val to_string : t -> string
 
   include Pretty_printer.S with type t := t
 end

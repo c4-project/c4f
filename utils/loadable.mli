@@ -28,28 +28,26 @@
     sources. *)
 
 open Core_kernel
-
 include module type of Loadable_intf
 
-module Make (B : Basic) : S with type t := B.t
 (** [Make] extends a [Basic] into an [S]. *)
+module Make (B : Basic) : S with type t := B.t
 
 (** {2 Loading from standard formats} *)
 
-module Of_sexpable (B : Sexpable.S) : S with type t := B.t
 (** [Of_sexpable] extends a [Sexpable] into an [S]; the added
     methods load S-expressions. *)
+module Of_sexpable (B : Sexpable.S) : S with type t := B.t
 
 (** {2 Chaining} *)
 
-module Make_chain (B : Basic) (C : Basic_chain with type src := B.t)
-  : S with type t := C.dst
 (** Makes a new {{!S}S} from chaining a basic loadable [B] to a
     transformation function described in [C]. *)
+module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
+  S with type t := C.dst
 
 (** {2 Interoperability with filters } *)
 
-module To_filter (L : S) : Filter.S with type aux_i = unit
-                                     and type aux_o = L.t
 (** Lifts a {{!S}S} to a {{!Filter.S}Filter.S} that outputs nothing to
     its target file and returns the loaded data as auxiliary output. *)
+module To_filter (L : S) : Filter.S with type aux_i = unit and type aux_o = L.t

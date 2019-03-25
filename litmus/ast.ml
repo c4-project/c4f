@@ -225,7 +225,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
 
     let check_init_against_globals
         (init : (C_identifier.t, Lang.Constant.t) List.Assoc.t)
-        (globals : Lang.Type.t C_identifier.Map.t) : unit Or_error.t =
+        (globals : Lang.Type.t C_identifier.Map.t)
+        : unit Or_error.t =
       let init_keys = init |> List.map ~f:fst |> C_identifier.Set.of_list in
       let globals_keys = globals |> C_identifier.Map.keys |> C_identifier.Set.of_list in
       Travesty.T_or_error.unless_m
@@ -306,8 +307,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     decls |> List.filter_map ~f:Decl.as_program |> Or_error.return
   ;;
 
-  let get_init (decls : Decl.t list) :
-      (C_identifier.t, Lang.Constant.t) List.Assoc.t Or_error.t =
+  let get_init (decls : Decl.t list)
+      : (C_identifier.t, Lang.Constant.t) List.Assoc.t Or_error.t =
     Or_error.(
       decls
       |> List.filter_map ~f:Decl.as_init

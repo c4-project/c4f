@@ -29,22 +29,21 @@ open Core
 (** Signature of modules describing argument bundles that include
     the standard arguments. *)
 module type S_standard = sig
-  type t
   (** A record collecting the standard argument values. *)
+  type t
 
-  val is_verbose : t -> bool
   (** [is_verbose t] gets whether, according to [t], verbose mode is
       switched on. *)
+  val is_verbose : t -> bool
 
-  val are_warnings_enabled : t -> bool
   (** [are_warnings_enabled t] gets whether, according to [t], warnings are
       switched on. *)
+  val are_warnings_enabled : t -> bool
 
-
-  val config_file : t -> string
   (** [config_file t] gets the configuration file according to [t]. *)
+  val config_file : t -> string
 
-  val get : t Command.Param.t
   (** [get] is a [Command.Param.t] that describes how to get the
      standard arguments at the command line. *)
+  val get : t Command.Param.t
 end

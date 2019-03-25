@@ -26,23 +26,18 @@ open Base
 
 module type S = Utils.Frontend.S with type ast := Ast.t
 
-module Att : S =
-  Utils.Frontend.Make (struct
-    type ast = Ast.t
+module Att : S = Utils.Frontend.Make (struct
+  type ast = Ast.t
 
-    module I = Att_parser.MenhirInterpreter
+  module I = Att_parser.MenhirInterpreter
 
-    let lex = Att_lexer.token
-    let parse = Att_parser.Incremental.main
-    let message = Att_messages.message
-  end)
-;;
+  let lex = Att_lexer.token
+  let parse = Att_parser.Incremental.main
+  let message = Att_messages.message
+end)
 
 let of_dialect = function
   | Dialect.Att -> Or_error.return (module Att : S)
-  | Dialect.Herd7 | Dialect.Intel as d ->
-    Or_error.error_s
-      [%message "x86 dialect unsupported"
-          ~dialect:(d : Dialect.t)
-      ]
+  | (Dialect.Herd7 | Dialect.Intel) as d ->
+    Or_error.error_s [%message "x86 dialect unsupported" ~dialect:(d : Dialect.t)]
 ;;

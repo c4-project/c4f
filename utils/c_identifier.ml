@@ -25,56 +25,48 @@
 open Core_kernel
 
 module M = Validated.Make_bin_io_compare_hash_sexp (struct
-    include String
-    let here = [%here]
+  include String
 
-    let validate_initial_char : char Validate.check =
-      Validate.booltest
-        (Travesty.T_fn.disj Char.is_alpha (Char.equal '_'))
-        ~if_false:"Invalid initial character."
-    ;;
+  let here = [%here]
 
-    let validate_char : char Validate.check =
-      Validate.booltest
-        (Travesty.T_fn.disj Char.is_alphanum (Char.equal '_'))
-        ~if_false:"Invalid character."
-    ;;
+  let validate_initial_char : char Validate.check =
+    Validate.booltest
+      (Travesty.T_fn.disj Char.is_alpha (Char.equal '_'))
+      ~if_false:"Invalid initial character."
+  ;;
 
-    let validate_sep : (char * char list) Validate.check =
-      Validate.pair
-        ~fst:(
-          fun c ->
-            Validate.name (sprintf "char '%c'" c)
-              (validate_initial_char c)
-        )
-        ~snd:(
-            Validate.list ~name:(sprintf "char '%c'")
-              validate_char
-        )
-    ;;
+  let validate_char : char Validate.check =
+    Validate.booltest
+      (Travesty.T_fn.disj Char.is_alphanum (Char.equal '_'))
+      ~if_false:"Invalid character."
+  ;;
 
-    let validate : t Validate.check =
-      fun id ->
-        match String.to_list id with
-        | [] -> Validate.fail_s
-                  [%message "Identifiers can't be empty"
-                      ~id]
-        | c :: cs -> validate_sep (c, cs)
-    ;;
+  let validate_sep : (char * char list) Validate.check =
+    Validate.pair
+      ~fst:(fun c -> Validate.name (sprintf "char '%c'" c) (validate_initial_char c))
+      ~snd:(Validate.list ~name:(sprintf "char '%c'") validate_char)
+  ;;
 
-    let validate_binio_deserialization = true
-  end)
+  let validate : t Validate.check =
+   fun id ->
+    match String.to_list id with
+    | [] -> Validate.fail_s [%message "Identifiers can't be empty" ~id]
+    | c :: cs -> validate_sep (c, cs)
+ ;;
+
+  let validate_binio_deserialization = true
+end)
+
 include M
 include Comparable.Make (M)
 
 let to_string : t -> string = raw
 let of_string : string -> t = create_exn
-
 let pp : t Fmt.t = Fmt.of_to_string to_string
 
 module Q : Quickcheck.S with type t := t = struct
-  let char_or_underscore (c : char Quickcheck.Generator.t)
-      : char Quickcheck.Generator.t =
+  let char_or_underscore (c : char Quickcheck.Generator.t) : char Quickcheck.Generator.t
+    =
     Quickcheck.Generator.(union [ c; return '_' ])
   ;;
 
@@ -88,22 +80,22 @@ module Q : Quickcheck.S with type t := t = struct
 
   let quickcheck_observer : t Quickcheck.Observer.t =
     Quickcheck.Observer.unmap String.quickcheck_observer ~f:raw
+  ;;
 
   let quickcheck_shrinker : t Quickcheck.Shrinker.t =
-    Quickcheck.Shrinker.create
-      (fun ident ->
-         ident
-         |> raw
-         |> Quickcheck.Shrinker.shrink String.quickcheck_shrinker
-         |> Sequence.filter_map
-           ~f:(Fn.compose Result.ok create)
-      )
+    Quickcheck.Shrinker.create (fun ident ->
+        ident
+        |> raw
+        |> Quickcheck.Shrinker.shrink String.quickcheck_shrinker
+        |> Sequence.filter_map ~f:(Fn.compose Result.ok create))
   ;;
 end
+
 include Q
 
 module Herd_safe : My_quickcheck.S_with_sexp with type t = t = struct
   type nonrec t = t
+
   let sexp_of_t = sexp_of_t
 
   include Q
@@ -111,9 +103,7 @@ module Herd_safe : My_quickcheck.S_with_sexp with type t = t = struct
   (* We need only override the generator, to remove underscores. *)
   let quickcheck_generator : t Quickcheck.Generator.t =
     Quickcheck.Generator.map
-      (My_quickcheck.gen_string_initial
-         ~initial:Char.gen_alpha ~rest:Char.gen_alphanum
-      )
+      (My_quickcheck.gen_string_initial ~initial:Char.gen_alpha ~rest:Char.gen_alphanum)
       ~f:create_exn
   ;;
 end

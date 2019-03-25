@@ -35,53 +35,47 @@ include module type of Ast_base_intf
     exists to make conversion to and from other languages, like
     [Blang], easier. *)
 module Pred_elt : sig
-  type 'const t =
-    | Eq of Id.t * 'const
-  [@@deriving sexp, compare, equal, quickcheck]
-  ;;
+  type 'const t = Eq of Id.t * 'const [@@deriving sexp, compare, equal, quickcheck]
 
-  include S_pred_elt with type id := Id.t
-                      and type 'const t := 'const t
-                      and type 'const elt := 'const
-  ;;
+  include
+    S_pred_elt
+    with type id := Id.t
+     and type 'const t := 'const t
+     and type 'const elt := 'const
 
-  module On_constants : Travesty.Traversable.S1_container
-    with type 'const t := 'const t
-    (** Traversing monadically over all constants in a predicate
+  (** Traversing monadically over all constants in a predicate
         element. *)
+  module On_constants : Travesty.Traversable.S1_container with type 'const t := 'const t
 end
 
 (** Directly-parametrised AST for predicates. *)
 module Pred : sig
+  (** Type of Litmus predicates. *)
   type 'const t =
     | Bracket of 'const t
     | Or of 'const t * 'const t
     | And of 'const t * 'const t
     | Elt of 'const Pred_elt.t
   [@@deriving sexp, compare, equal, quickcheck]
-  (** Type of Litmus predicates. *)
 
-  include S_pred with type 'const t := 'const t
-                  and type 'const elt := 'const Pred_elt.t
+  include S_pred with type 'const t := 'const t and type 'const elt := 'const Pred_elt.t
 
-  module On_constants : Travesty.Traversable.S1_container
-    with type 'const t := 'const t
-    (** Traversing monadically over all constants in a predicate. *)
+  (** Traversing monadically over all constants in a predicate. *)
+  module On_constants : Travesty.Traversable.S1_container with type 'const t := 'const t
 end
 
 (** Directly-parametrised AST for postconditions. *)
 module Postcondition : sig
+  (** Type of Litmus postconditions. *)
   type 'const t =
     { quantifier : [ `Exists ]
-    ; predicate  : 'const Pred.t
+    ; predicate : 'const Pred.t
     }
   [@@deriving sexp, compare, equal, quickcheck]
-  (** Type of Litmus postconditions. *)
 
-  include S_postcondition
-    with type 'const t := 'const t and type 'const pred := 'const Pred.t
+  include
+    S_postcondition with type 'const t := 'const t and type 'const pred := 'const Pred.t
 
-  module On_constants : Travesty.Traversable.S1_container
-    with type 'const t := 'const t
-    (** Traversing monadically over all constants in a postcondition. *)
+  (** Traversing monadically over all constants in a postcondition. *)
+  module On_constants : Travesty.Traversable.S1_container with type 'const t := 'const t
 end

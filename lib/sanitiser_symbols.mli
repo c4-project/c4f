@@ -33,9 +33,8 @@
     difficult for Herd-like programs to parse with less human-readable
     (but more machine-readable) equivalents. *)
 
-module Make (B : Sanitiser_base.Basic)
-  : Sanitiser_base.S_all
-    with module Lang := B.Lang
-     and module Ctx := B.Ctx
-     and module Program_container := B.Program_container
-;;
+module Make (B : Sanitiser_base.Basic) :
+  Sanitiser_base.S_all
+  with module Lang := B.Lang
+   and module Ctx := B.Ctx
+   and module Program_container := B.Program_container

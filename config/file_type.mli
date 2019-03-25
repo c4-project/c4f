@@ -52,12 +52,12 @@ type t_or_infer =
 (** [is_c infile filetype] decides whether [infile] is a C
     file---from its extension if [filetype] is [`Infer], or
     by whether or not [filetype] is [`C]. *)
-val is_c : Io.In_source.t -> [> `C | `Infer] -> bool
+val is_c : Io.In_source.t -> [> `C | `Infer ] -> bool
 
 (** [is_c_litmus infile filetype] decides whether [infile] is a C/litmus
     file---from its extension if [filetype] is [`Infer], or
     by whether or not [filetype] is [`C_litmus]. *)
-val is_c_litmus : Io.In_source.t -> [> `C_litmus | `Infer] -> bool
+val is_c_litmus : Io.In_source.t -> [> `C_litmus | `Infer ] -> bool
 
 (** {2 Conversions} *)
 

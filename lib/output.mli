@@ -40,13 +40,7 @@ val make : verbose:bool -> warnings:bool -> t
     notice, onto [o]'s verbose formatter, that explains that the
     stage named [stage] is happening on file [file] and compiler ID
     [compiler_id]. *)
-val log_stage
-  :  t
-  -> stage:string
-  -> file:string
-  -> Config.Id.t
-  -> unit
-;;
+val log_stage : t -> stage:string -> file:string -> Config.Id.t -> unit
 
 (** [print_error o u] prints any top-level errors represented by [u]
    to [o]'s error formatter. *)

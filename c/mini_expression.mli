@@ -32,98 +32,94 @@ module Atomic_load : sig
 
   (** {3 Constructors} *)
 
-  val make : src:Mini_address.t -> mo:Mem_order.t -> t
   (** [atomic_load ~src ~dst ~mo] constructs an explicit atomic load
       expression with source [src] and memory order [mo]. *)
+  val make : src:Mini_address.t -> mo:Mem_order.t -> t
 
   (** {3 Accessors} *)
 
-  val src : t -> Mini_address.t
   (** [src ld] gets [ld]'s source address. *)
+  val src : t -> Mini_address.t
 
-  val mo : t -> Mem_order.t
   (** [mo ld] gets [ld]'s memory order. *)
+  val mo : t -> Mem_order.t
 
-  include Mini_intf.S_has_underlying_variable with type t := t
   (** We can get to the variable name inside an atomic load (that is,
       the source variable). *)
+  include Mini_intf.S_has_underlying_variable with type t := t
 
   (** {3 Traversals} *)
 
-  module On_addresses : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Mini_address.t
   (** Traversing over atomic-action addresses in atomic loads. *)
+  module On_addresses :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Mini_address.t
 
-  module On_lvalues : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Mini_lvalue.t
-    (** Traversing over lvalues in atomic loads. *)
+  (** Traversing over lvalues in atomic loads. *)
+  module On_lvalues :
+    Travesty.Traversable.S0_container with type t := t and type Elt.t = Mini_lvalue.t
 end
 
-
-type t [@@deriving sexp]
 (** Opaque type of expressions. *)
+type t [@@deriving sexp]
 
 (** {2 Constructors} *)
 
-val atomic_load : Atomic_load.t -> t
 (** [atomic_load a] lifts an atomic load [a] to an expression. *)
+val atomic_load : Atomic_load.t -> t
 
-val bool_lit : bool -> t
 (** [bool_lit b] lifts a Boolean literal [b] to an expression. *)
+val bool_lit : bool -> t
 
-val constant : Ast_basic.Constant.t -> t
 (** [constant k] lifts a C constant [k] to an expression. *)
+val constant : Ast_basic.Constant.t -> t
 
-val eq : t -> t -> t
 (** [eq l r] generates an equality expression. *)
+val eq : t -> t -> t
 
-val lvalue : Mini_lvalue.t -> t
 (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
+val lvalue : Mini_lvalue.t -> t
 
 (** {2 Accessors} *)
 
+(** [reduce expr ~bool_lit ~constant ~lvalue ~atomic_load ~eq]
+   recursively reduces [expr] to a single value, using the given
+   functions at each corresponding stage of the expression tree. *)
 val reduce
   :  t
   -> bool_lit:(bool -> 'a)
   -> constant:(Ast_basic.Constant.t -> 'a)
   -> lvalue:(Mini_lvalue.t -> 'a)
   -> atomic_load:(Atomic_load.t -> 'a)
-  -> eq:('a -> 'a  -> 'a)
+  -> eq:('a -> 'a -> 'a)
   -> 'a
-(** [reduce expr ~bool_lit ~constant ~lvalue ~atomic_load ~eq]
-   recursively reduces [expr] to a single value, using the given
-   functions at each corresponding stage of the expression tree. *)
 
 (** {2 Traversals} *)
 
-module On_addresses
-  : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Mini_address.t
 (** Traversing over atomic-action addresses in expressions. *)
+module On_addresses :
+  Travesty.Traversable.S0_container with type t := t and type Elt.t = Mini_address.t
 
-module On_identifiers
-  : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Ast_basic.Identifier.t
 (** Traversing over identifiers in expressions. *)
+module On_identifiers :
+  Travesty.Traversable.S0_container
+  with type t := t
+   and type Elt.t = Ast_basic.Identifier.t
 
-module On_lvalues
-  : Travesty.Traversable.S0_container
-    with type t := t and type Elt.t = Mini_lvalue.t
 (** Traversing over lvalues in expressions. *)
+module On_lvalues :
+  Travesty.Traversable.S0_container with type t := t and type Elt.t = Mini_lvalue.t
 
 (** {2 Generation and quickchecking} *)
 
-module Quickcheck_int_values (E : Mini_env.S)
-  : Quickcheckable.S with type t := t
 (** Generates random, type-safe expressions over the given variable
     typing environment, with type 'int'. *)
+module Quickcheck_int_values (E : Mini_env.S) : Quickcheckable.S with type t := t
 
-module Quickcheck_bool_values (E : Mini_env.S)
-  : Quickcheckable.S with type t := t
 (** Generates random, type-safe expressions over the given variable
     typing environment, with type 'bool'. *)
+module Quickcheck_bool_values (E : Mini_env.S) : Quickcheckable.S with type t := t
 
 (** {2 Type checking} *)
 
-include Mini_intf.S_type_checkable with type t := t
 (** Type-checking for expressions. *)
+include Mini_intf.S_type_checkable with type t := t

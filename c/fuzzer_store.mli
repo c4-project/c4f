@@ -24,6 +24,6 @@
 
 (** C fuzzer: actions that generate store instructions. *)
 
-module Int : Fuzzer_action.S
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)
+module Int : Fuzzer_action.S

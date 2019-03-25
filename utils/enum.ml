@@ -23,7 +23,6 @@
    SOFTWARE. *)
 
 open Core_kernel
-
 include Enum_intf
 
 module Make_compare_hash_basic (E : S) = struct
@@ -32,54 +31,37 @@ module Make_compare_hash_basic (E : S) = struct
   let hash_fold_t s x = Int.hash_fold_t s (E.to_enum x)
 end
 
-module Make_comparable (E : S_sexp)
-  : Comparable.S with type t := E.t =
-  Comparable.Make (struct
-    include E
-    include Make_compare_hash_basic (E)
-  end)
-;;
+module Make_comparable (E : S_sexp) : Comparable.S with type t := E.t =
+Comparable.Make (struct
+  include E
+  include Make_compare_hash_basic (E)
+end)
 
-module Make_hashable (E : S_sexp)
-  : Hashable.S with type t := E.t =
-  Hashable.Make (struct
-    include E
-    include Make_comparable (E)
-    include Make_compare_hash_basic (E)
-  end)
-;;
+module Make_hashable (E : S_sexp) : Hashable.S with type t := E.t = Hashable.Make (struct
+  include E
+  include Make_comparable (E)
+  include Make_compare_hash_basic (E)
+end)
 
-module Make_quickcheck (E : S)
-  : Quickcheck.S with type t := E.t = struct
+module Make_quickcheck (E : S) : Quickcheck.S with type t := E.t = struct
   module G = Quickcheck.Generator
   module O = Quickcheck.Observer
   module S = Quickcheck.Shrinker
 
-  let of_enum_exn x =
-    x |> E.of_enum |> Option.value_exn
-  ;;
-
-  let quickcheck_generator =
-    G.map ~f:of_enum_exn
-      (Int.gen_uniform_incl E.min E.max)
-  ;;
-
-  let quickcheck_observer =
-    O.enum (E.max - 1) ~f:(fun x -> E.to_enum x - E.min)
-  ;;
-
+  let of_enum_exn x = x |> E.of_enum |> Option.value_exn
+  let quickcheck_generator = G.map ~f:of_enum_exn (Int.gen_uniform_incl E.min E.max)
+  let quickcheck_observer = O.enum (E.max - 1) ~f:(fun x -> E.to_enum x - E.min)
   let quickcheck_shrinker = S.empty ()
 end
 
-module Make_from_enumerate (E : S_enumerate)
-  : S with type t := E.t = struct
+module Make_from_enumerate (E : S_enumerate) : S with type t := E.t = struct
   let min = 0
-  let max = (List.length E.all - 1)
+  let max = List.length E.all - 1
 
   let to_enum elt =
-    List.find_mapi_exn E.all
-      ~f:(fun i elt' -> Option.some_if (E.equal elt elt') i)
+    List.find_mapi_exn E.all ~f:(fun i elt' -> Option.some_if (E.equal elt elt') i)
   ;;
+
   let of_enum = List.nth E.all
 end
 
@@ -87,38 +69,37 @@ module Extend (E : S_sexp) : Extension with type t := E.t = struct
   include Make_comparable (E)
   include Make_hashable (E)
   include Make_quickcheck (E)
-
   include (E : Sexpable.S with type t := E.t)
 
   let of_enum = E.of_enum
   let to_enum = E.to_enum
-
   let of_enum_exn k = Option.value_exn (of_enum k)
-
   let min_enum = E.min
   let max_enum = E.max
 
   let all_list () =
-    List.map ~f:of_enum_exn
+    List.map
+      ~f:of_enum_exn
       (List.range ~stride:1 ~start:`inclusive ~stop:`inclusive E.min E.max)
   ;;
 
-  let all_set () = Set.of_list (all_list ());;
+  let all_set () = Set.of_list (all_list ())
 end
 
-module Extend_table (E : S_table)
-  : Extension_table with type t := E.t = struct
+module Extend_table (E : S_table) : Extension_table with type t := E.t = struct
   module Tbl = String_table.Make (E)
   include Tbl
 
   module Basic_id = struct
     type t = E.t
+
     include Tbl
     include Make_compare_hash_basic (E)
   end
 
-  module Id : (Identifiable.S_common with type t := E.t) =
+  module Id : Identifiable.S_common with type t := E.t =
     String_table.To_identifiable (Basic_id)
+
   include Id
 
   (* Identifiable, for some reason, doesn't contain both sides
@@ -126,19 +107,20 @@ module Extend_table (E : S_table)
      [t_of_sexp] ourselves. *)
   module Sexp = struct
     module Sexp = Sexpable.Of_stringable (struct
-        type t = E.t
-        include String_table.To_stringable (Basic_id)
-      end)
+      type t = E.t
+
+      include String_table.To_stringable (Basic_id)
+    end)
+
     let sexp_of_t = Id.sexp_of_t
     let t_of_sexp = Sexp.t_of_sexp
   end
 
   include Extend (struct
-      include E
-      include Sexp
-    end)
+    include E
+    include Sexp
+  end)
 
   let of_string_option = Tbl.of_string
-
   let pp_set = Fmt.(using Set.to_list (parens (box (list ~sep:comma pp))))
 end

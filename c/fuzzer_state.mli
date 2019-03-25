@@ -27,70 +27,67 @@
 open Core_kernel
 open Utils
 
-type t
 (** Opaque type of states. *)
+type t
 
+(** [init ?o ~globals ~locals ()] creates an initial state with the
+   global variable map [globals], and local variable set [locals].  If
+   an output context [o] is provided, it can be used for logging
+   verbose/debug information during the fuzzing process.  *)
 val init
   :  ?o:Lib.Output.t
   -> globals:Mini.Type.t C_identifier.Map.t
   -> locals:C_identifier.Set.t
   -> unit
   -> t
-(** [init ?o ~globals ~locals ()] creates an initial state with the
-   global variable map [globals], and local variable set [locals].  If
-   an output context [o] is provided, it can be used for logging
-   verbose/debug information during the fuzzing process.  *)
 
-val vars : t -> Fuzzer_var.Map.t
 (** [vars state] gets the state's variable map. *)
+val vars : t -> Fuzzer_var.Map.t
 
-val vars_satisfying_all
-  :  t
-  -> predicates:((Fuzzer_var.Record.t -> bool) list)
-  -> C_identifier.t list
 (** [vars_satisfying_all state ~predicates] returns the list of all
    variables in [state]'s variable list that satisfy [predicates]. *)
+val vars_satisfying_all
+  :  t
+  -> predicates:(Fuzzer_var.Record.t -> bool) list
+  -> C_identifier.t list
 
 (** The state monad. *)
 module Monad : sig
-  include Travesty.State_transform.S
-    with type state := t
-     and module Inner := Or_error
-  ;;
+  include Travesty.State_transform.S with type state := t and module Inner := Or_error
 
-  val with_vars_m : (Fuzzer_var.Map.t -> 'a t) -> 'a t
   (** [with_vars_m f] is a stateful action that binds the stateful
      action [f] over the current variable map. *)
+  val with_vars_m : (Fuzzer_var.Map.t -> 'a t) -> 'a t
 
-  val with_vars : (Fuzzer_var.Map.t -> 'a) -> 'a t
   (** [with_vars f] is a variant of {{!with_vars_m}with_vars_m} which
       maps across [f] rather than binding. *)
+  val with_vars : (Fuzzer_var.Map.t -> 'a) -> 'a t
 
-  val register_global
-     :  ?initial_value:Fuzzer_var.Value.t
-     -> Mini.Type.t
-     -> C_identifier.t
-     -> unit t
   (** [register_global ?initial_value ty var] is a stateful action that
       registers a generated variable [var] of type [ty] and optional
       known value [value] into the state,
       overwriting any existing variable of the same name. *)
+  val register_global
+    :  ?initial_value:Fuzzer_var.Value.t
+    -> Mini.Type.t
+    -> C_identifier.t
+    -> unit t
 
-   val add_dependency : C_identifier.t -> unit t
-   (** [erase_var_value var] is a stateful action that adds a
+  (** [erase_var_value var] is a stateful action that adds a
        dependency flag to any known-value record for variable [var].
 
       This should be done after involving [var] in any atomic actions
       that depend on it having a particular known-value. *)
+  val add_dependency : C_identifier.t -> unit t
 
-   val erase_var_value : C_identifier.t -> unit t
-   (** [erase_var_value var] is a stateful action that erases any
+  (** [erase_var_value var] is a stateful action that erases any
       known-value information for variable [var].
 
       This should be done after involving [var] in any atomic actions
       that modify it. *)
+  val erase_var_value : C_identifier.t -> unit t
 
-   val vf : unit -> Base.Formatter.t t
-   (** [vf ()] is a stateful action that gets the verbose output
+  (** [vf ()] is a stateful action that gets the verbose output
       channel, if one exists. *)
+  val vf : unit -> Base.Formatter.t t
 end

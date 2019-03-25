@@ -26,8 +26,7 @@
 
 include module type of Language_statement_intf
 
-module Make (B : Basic_with_modules)
-  : S with type t = B.t
-       and module Instruction = B.Instruction
 (** [Make] produces an instance of [S] from an instance of
     [Basic_with_modules]. *)
+module Make (B : Basic_with_modules) :
+  S with type t = B.t and module Instruction = B.Instruction

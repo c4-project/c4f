@@ -61,55 +61,57 @@ module Single_passes = struct
   include ET
 
   let tree_docs : Property.Tree_doc.t =
-    [ ("escape-symbols"
-      , { args = []; details = {| Mangle symbols to ensure litmus tools can lex them. |}
-        })
-    ; ("language-hooks"
+    [ ( "escape-symbols"
+      , { args = []
+        ; details = {| Mangle symbols to ensure litmus tools can lex them. |}
+        } )
+    ; ( "language-hooks"
       , { args = []
         ; details =
             {| Run language-specific hooks.
              Said hooks may be further categorised into passes, so
              enabling language-hooks on its own won't enable all
              language-specific passes. |}
-        })
-    ; ("remove-boundaries"
+        } )
+    ; ( "remove-boundaries"
       , { args = []
         ; details =
             {| Remove program boundaries.
              If this pass isn't active, program boundaries are retained
              even if they're not jumped to. |}
-        })
-    ; ("remove-litmus"
+        } )
+    ; ( "remove-litmus"
       , { args = []
         ; details =
             {| Remove elements that have an effect in the assembly, but
              said effect isn't captured in the litmus test. |}
-        })
-    ; ("remove-useless"
+        } )
+    ; ( "remove-useless"
       , { args = []
         ; details = {| Remove elements with no (direct) effect in the assembly. |}
-        })
-    ; ("simplify-deref-chains"
+        } )
+    ; ( "simplify-deref-chains"
       , { args = []
         ; details =
             {| Replace 'deref chains' with direct movements.  This is a
              fairly heavyweight change. |}
-        })
-    ; ("simplify-litmus"
+        } )
+    ; ( "simplify-litmus"
       , { args = []
         ; details =
             {| Perform relatively minor simplifications on elements that
              aren't directly understandable by litmus tools. |}
-        })
-    ; ("unmangle-symbols"
+        } )
+    ; ( "unmangle-symbols"
       , { args = []
         ; details =
             {| Where possible, replace symbols with their original C
             identifiers. |}
-        })
-    ; ("warn"
-      , { args = []; details = {| Warn about things the sanitiser doesn't understand. |}
-        })
+        } )
+    ; ( "warn"
+      , { args = []
+        ; details = {| Warn about things the sanitiser doesn't understand. |}
+        } )
     ]
   ;;
 end
@@ -149,18 +151,18 @@ module Selector = struct
       let table = [ `Standard, "%standard"; `Explain, "%explain" ]
 
       let tree_docs : Property.Tree_doc.t =
-        [ ("%standard"
+        [ ( "%standard"
           , { args = []
             ; details =
                 {| Set containing all sanitiser passes that are considered
                  unlikely to change program semantics. |}
-            })
-        ; ("%explain"
+            } )
+        ; ( "%explain"
           , { args = []
             ; details =
                 {| Set containing only sanitiser passes that aid readability
                  when reading assembly, for example directive removal. |}
-            })
+            } )
         ]
       ;;
     end
@@ -215,12 +217,12 @@ module Selector = struct
     List.concat
       [ Single_passes.tree_docs
       ; Category.tree_docs
-      ; [ ("%default"
+      ; [ ( "%default"
           , { args = []
             ; details =
                 {| Set containing whichever sanitiser passes are the
                  default for the particular act subcommand. |}
-            })
+            } )
         ]
       ]
   ;;
