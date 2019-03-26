@@ -51,7 +51,7 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
     module Symbol = struct
       include String
 
-      let of_string_opt = Option.some
+      let require_of_string = Or_error.return
       let abstract = Fn.id
 
       let abstract_demangle str =

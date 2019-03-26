@@ -60,11 +60,13 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     }
   ;;
 
-  include Travesty.State_transform.Make (struct
+  module M = Travesty.State_transform.Make (struct
     type t = ctx
 
     module Inner = Or_error
   end)
+
+  include M
 
   let is_pass_enabled pass = peek (fun ctx -> Pass.Set.mem ctx.passes pass)
 
@@ -110,8 +112,8 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
         { ctx with warnings = rest_warnings }, prog_warnings)
   ;;
 
-  let add_symbol sym sort =
-    make (fun ctx -> { ctx with syms = Abstract.Symbol.Table.add ctx.syms sym sort }, sym)
+  let add_symbol_to_table sym sort =
+    modify (fun ctx -> { ctx with syms = Abstract.Symbol.Table.add ctx.syms sym sort })
   ;;
 
   let get_symbol_table = peek syms
@@ -160,15 +162,27 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     Lang.Symbol.R_map.all_dests rds
   ;;
 
-  let redirect ~src ~dst =
+  let modify_rmap ~(f : Lang.Symbol.R_map.t -> Lang.Symbol.R_map.t Or_error.t) : unit t =
     let open Let_syntax in
     let%bind rds = peek redirects in
     (* Redirection can fail, which _should_ be an internal bug, so
        we make it a fatal error in the sanitiser. *)
     Monadic.modify (fun ctx ->
         let open Or_error.Let_syntax in
-        let%map rds' = Lang.Symbol.R_map.redirect ~src ~dst rds in
+        let%map rds' = f rds in
         { ctx with redirects = rds' })
+  ;;
+
+  (* TODO(@MattWindsor91): propagate changes to the abstract map *)
+
+  let redirect ~src ~dst : unit t = modify_rmap ~f:(Lang.Symbol.R_map.redirect ~src ~dst)
+
+  let add_symbol sym_name sort =
+    let open Let_syntax in
+    let%bind () = add_symbol_to_table sym_name sort in
+    let%bind sym = Monadic.return (Lang.Symbol.require_of_string sym_name) in
+    let%map () = redirect ~src:sym ~dst:sym in
+    sym_name
   ;;
 
   let make_fresh_label prefix =

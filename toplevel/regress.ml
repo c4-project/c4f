@@ -26,7 +26,11 @@ open Core_kernel
 open Lib
 open Utils
 
-type spec = { cvars : string list } [@@deriving sexp]
+type spec =
+  { c_globals : string sexp_list
+  ; c_locals : string sexp_list
+  }
+[@@deriving sexp]
 
 let find_spec specs (path : Fpath.t) =
   let file = Fpath.to_string path in
@@ -84,7 +88,8 @@ let regress_run_asm
   let open Or_error.Let_syntax in
   let%bind filepath = to_full_path ~dir ~file in
   let%bind spec = find_spec specs file in
-  let input = Asm_job.make ~passes ~symbols:spec.cvars in
+  let symbols = spec.c_globals @ spec.c_locals (* for now *) in
+  let input = Asm_job.make ~passes ~symbols in
   let%map _ =
     match mode with
     | `Litmusify ->

@@ -22,9 +22,9 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Sanitiser: context state monad
+(** Sanitiser: context state monad. *)
 
-    The interface for the sanitiser context is kept in
-    [Sanitiser_ctx_intf.ml], to prevent duplication. *)
+include module type of Sanitiser_ctx_intf
 
-include Sanitiser_ctx_intf.Sanitiser_ctx
+(** [Make] builds a context monad for the given language. *)
+module Make (Lang : Language.S) : S with module Lang := Lang

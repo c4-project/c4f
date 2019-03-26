@@ -41,6 +41,8 @@ let%expect_test "program_id_of_demangled: valid" =
 module Make (B : Basic) : S with type t = B.t = struct
   include B
 
+  let of_string_opt (s : string) = Result.ok (B.require_of_string s)
+
   module Comp = struct
     include B
     include Comparator.Make (B)
@@ -62,7 +64,7 @@ module Make (B : Basic) : S with type t = B.t = struct
       | MapsTo of sym
     [@@deriving sexp, equal]
 
-    type t = r_dest M.t
+    type t = r_dest M.t [@@deriving sexp]
 
     module Set = Set
 
@@ -120,15 +122,21 @@ module Make (B : Basic) : S with type t = B.t = struct
     List.hd ids
   ;;
 
+  let is_c_safe (sym : t) : bool = Utils.C_identifier.is_string_safe (to_string sym)
+
+  let is_herd_safe (sym : t) : bool =
+    Utils.C_identifier.Herd_safe.is_string_safe (to_string sym)
+  ;;
+
   let is_program_label sym = Option.is_some (program_id_of sym)
 end
 
-module String_direct = Make (struct
+module String_direct : S with type t = string = Make (struct
   include String
 
   let abstract = Fn.id
   let abstract_demangle = List.return
-  let of_string_opt = Option.some
+  let require_of_string = Or_error.return
 
   module On_strings = struct
     type t = string
@@ -137,60 +145,73 @@ module String_direct = Make (struct
   end
 end)
 
-let make_test_rmap () =
-  let open Or_error in
-  String_direct.R_map.(
-    return (make (String_direct.Set.singleton "whiskey"))
-    >>= redirect ~src:"alpha" ~dst:"alpha"
-    >>= redirect ~src:"bravo" ~dst:"echo"
-    >>= redirect ~src:"charlie" ~dst:"echo"
-    >>= redirect ~src:"echo" ~dst:"foxtrot"
-    >>= redirect ~src:"delta" ~dst:"kilo"
-    >>= redirect ~src:"kilo" ~dst:"delta")
+let string_test_rmap : String_direct.R_map.t Or_error.t Lazy.t =
+  lazy
+    Or_error.(
+      String_direct.R_map.(
+        return (make (String_direct.Set.singleton "whiskey"))
+        >>= redirect ~src:"alpha" ~dst:"alpha"
+        >>= redirect ~src:"bravo" ~dst:"_echo"
+        >>= redirect ~src:"charlie" ~dst:"_echo"
+        >>= redirect ~src:"_echo" ~dst:".foxtrot"
+        >>= redirect ~src:"%delta" ~dst:"$kilo"
+        >>= redirect ~src:"$kilo" ~dst:"%delta"))
 ;;
 
-let%expect_test "String.R_map: all_dests example run" =
-  let open Or_error.Let_syntax in
-  String_direct.R_map.(
-    let r =
-      let%map map = make_test_rmap () in
-      all_dests map
-    in
-    Sexp.output_hum Out_channel.stdout [%sexp (r : String_direct.R_map.Set.t Or_error.t)]);
-  [%expect {| (Ok (alpha delta foxtrot whiskey)) |}]
-;;
+let%test_module "String R-maps" =
+  (module struct
+     let test_rmap = Lazy.force string_test_rmap
 
-let%expect_test "String.R_map: dest_of example run" =
-  let open Or_error.Let_syntax in
-  String_direct.R_map.(
-    let r =
-      let%map map = make_test_rmap () in
-      let alpha = dest_of map "alpha" in
-      let bravo = dest_of map "bravo" in
-      let charlie = dest_of map "charlie" in
-      let delta = dest_of map "delta" in
-      alpha, bravo, charlie, delta
-    in
-    Sexp.output_hum
-      Out_channel.stdout
-      [%sexp
-        (r : (r_dest option * r_dest option * r_dest option * r_dest option) Or_error.t)]);
-  [%expect {| (Ok ((Identity) ((MapsTo foxtrot)) ((MapsTo foxtrot)) (Identity))) |}]
-;;
+     let%expect_test "String.R_map: all_dests example run" =
+       let open Or_error.Let_syntax in
+       String_direct.R_map.(
+         let r =
+           let%map map = test_rmap in
+           all_dests map
+         in
+         Sexp.output_hum
+           Out_channel.stdout
+           [%sexp (r : String_direct.R_map.Set.t Or_error.t)]);
+       [%expect {| (Ok (%delta .foxtrot alpha whiskey)) |}]
+     ;;
 
-let%expect_test "String.R_map: sources_of example run" =
-  let open Or_error.Let_syntax in
-  String_direct.R_map.(
-    let r =
-      let%map map = make_test_rmap () in
-      let alpha = sources_of map "alpha" in
-      let bravo = sources_of map "bravo" in
-      let echo = sources_of map "echo" in
-      let foxtrot = sources_of map "foxtrot" in
-      alpha, bravo, echo, foxtrot
-    in
-    Sexp.output_hum
-      Out_channel.stdout
-      [%sexp (r : (string list * string list * string list * string list) Or_error.t)]);
-  [%expect {| (Ok ((alpha) () () (bravo charlie echo))) |}]
+     let%expect_test "String.R_map: dest_of example run" =
+       let open Or_error.Let_syntax in
+       String_direct.R_map.(
+         let r =
+           let%map map = test_rmap in
+           let alpha = dest_of map "alpha" in
+           let bravo = dest_of map "bravo" in
+           let charlie = dest_of map "charlie" in
+           let delta = dest_of map "%delta" in
+           alpha, bravo, charlie, delta
+         in
+         Sexp.output_hum
+           Out_channel.stdout
+           [%sexp
+             (r
+               : (r_dest option * r_dest option * r_dest option * r_dest option)
+                 Or_error.t)]);
+       [%expect
+         {| (Ok ((Identity) ((MapsTo .foxtrot)) ((MapsTo .foxtrot)) (Identity))) |}]
+     ;;
+
+     let%expect_test "String.R_map: sources_of example run" =
+       let open Or_error.Let_syntax in
+       String_direct.R_map.(
+         let r =
+           let%map map = test_rmap in
+           let alpha = sources_of map "alpha" in
+           let bravo = sources_of map "bravo" in
+           let echo = sources_of map "_echo" in
+           let foxtrot = sources_of map ".foxtrot" in
+           alpha, bravo, echo, foxtrot
+         in
+         Sexp.output_hum
+           Out_channel.stdout
+           [%sexp
+             (r : (string list * string list * string list * string list) Or_error.t)]);
+       [%expect {| (Ok ((alpha) () () (_echo bravo charlie))) |}]
+     ;;
+  end)
 ;;

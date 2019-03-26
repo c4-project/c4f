@@ -61,10 +61,10 @@ module type Basic = sig
       a valid assembly-level representation of [t]. *)
   val to_string : t -> string
 
-  (** [of_string_opt t] tries to interpret [s] as a symbol.  This
-     function can return [None] if the string doesn't represent a
+  (** [require_of_string t] tries to interpret [s] as a symbol.  This
+     function can return an error if the string doesn't represent a
      legal symbol in this language. *)
-  val of_string_opt : string -> t option
+  val require_of_string : string -> t Or_error.t
 end
 
 (** [R_map] is the interface of a map-like structure that represents
@@ -73,7 +73,7 @@ end
     Implementations of [S] contain implementations of [R_map]. *)
 module type R_map = sig
   (** [t] is the opaque type of a redirect map. *)
-  type t
+  type t [@@deriving sexp_of]
 
   (** [sym] is the type of symbols. *)
   type sym [@@deriving sexp, eq]
@@ -131,6 +131,11 @@ module type S = sig
   (** [R_map] is an implementation of [R_map] for this symbol type. *)
   module R_map : R_map with type sym = t and module Set = Set
 
+  (** [of_string_opt t] tries to interpret [s] as a symbol.  This
+     function can return [None] if the string doesn't represent a
+     legal symbol in this language. *)
+  val of_string_opt : string -> t option
+
   (** [program_id_of sym] tries to interpret [sym] as a
       program label; if so, it returns [Some n] where [n]
       is the underlying program ID.
@@ -141,18 +146,18 @@ module type S = sig
       relies on [abstract_demangle]. *)
   val program_id_of : t -> int option
 
+  (** {3 Predicates on symbols} *)
+
   (** [is_program_label sym] determines whether concrete symbol
       [sym] is a program label; it is equivalent to
       [Option.is_some (program_name_of sym)]. *)
   val is_program_label : t -> bool
-end
 
-(** [Language_symbol] is the interface exposed in the main mli
-   file. *)
-module type Language_symbol = sig
-  module type Basic = Basic
-  module type S = S
+  (** [is_c_safe sym] checks whether [sym]'s string
+      representation is safe for use in C as-is. *)
+  val is_c_safe : t -> bool
 
-  (** [Make] produces an instance of [S] from an instance of [Basic]. *)
-  module Make (B : Basic) : S with type t = B.t
+  (** [is_herd_safe sym] checks whether [sym]'s string
+      representation is safe for use in Herd as-is. *)
+  val is_herd_safe : t -> bool
 end

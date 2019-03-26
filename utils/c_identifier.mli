@@ -32,7 +32,7 @@ open Core_kernel
 (** Opaque type of C identifier strings. *)
 type t [@@deriving bin_io, compare, hash, sexp, quickcheck]
 
-(** [create_exn str] creates a C identifier string from [str].
+(** [create str] creates a C identifier string from [str].
     It returns an error if [str] isn't a valid C identifier. *)
 val create : string -> t Or_error.t
 
@@ -46,6 +46,36 @@ include Pretty_printer.S with type t := t
 (** Note that [of_string] is [create_exn]; ie, it can fail. *)
 include Stringable.S with type t := t
 
-(** A quickcheck generator for C identifiers that produces
+(** [is_string_safe str] checks whether [str] is C-safe, but doesn't return the
+    constructed identifier. *)
+val is_string_safe : string -> bool
+
+(** A restricted form of C identifiers that represents
     identifiers that Herd can safely lex. *)
-module Herd_safe : My_quickcheck.S_with_sexp with type t = t
+module Herd_safe : sig
+  type c = t
+  type t [@@deriving bin_io, compare, hash, sexp, quickcheck]
+
+  (** [create str] creates a Herd-safe C identifier string from [str].
+      It returns an error if [str] isn't a Herd-safe C identifier. *)
+  val create : string -> t Or_error.t
+
+  include Pretty_printer.S with type t := t
+
+  (** Note that [of_string] is [create_exn]; ie, it can fail. *)
+  include Stringable.S with type t := t
+
+  (** [of_c_identifier cid] tries to create a Herd-safe identifier from
+      [cid].
+      It returns an error if [str] isn't a Herd-safe C identifier. *)
+  val of_c_identifier : c -> t Or_error.t
+
+  (** [to_c_identifier cid] converts a Herd-safe identifier to a normal one. *)
+  val to_c_identifier : t -> c
+
+  (** [is_string_safe str] checks whether [str] is Herd-safe, but doesn't return the
+      constructed identifier. *)
+  val is_string_safe : string -> bool
+
+  include My_quickcheck.S_with_sexp with type t := t
+end

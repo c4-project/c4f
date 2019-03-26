@@ -1,13 +1,18 @@
 ;; -*- mode: lisp; -*-
 (("clang_macho_o3_xchg.s"
-  ((cvars (x y))))
+  ((c_globals (x y))))
  ("gcc_elf_o0_stackchk.s"
-  ((cvars (x y))))
+  ((c_globals (x y))
+   (c_locals (t0r0))))
  ("gcc_macho_o0_deref_cmpxchg.s"
-  ((cvars (x y))))
+  ((c_globals (x))
+   (c_locals (t0r0))))
  ("gcc_macho_o0_deref_write.s"
-  ((cvars (x y))))
+  ((c_globals (x y))
+   (c_locals (t0r0 t1r0))))
  ("gcc_macho_o0_immediate_heap.s"
-  ((cvars (x y))))
+  ((c_globals (x y))
+   (c_locals (t0r0))))
  ("gcc_macho_o0_moves.s"
-  ((cvars (x y)))))
+  ((c_globals (x y))
+   (c_locals (t0r0 t1r0)))))

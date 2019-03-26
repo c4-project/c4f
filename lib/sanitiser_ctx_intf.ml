@@ -22,7 +22,7 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Sanitiser: context state monad: interfaces *)
+(** Sanitiser: context state monad: signatures *)
 
 open Base
 
@@ -139,6 +139,9 @@ module type S = sig
       currently set as the target of a redirect. *)
   val get_all_redirect_targets : Lang.Symbol.Set.t t
 
+  (** [modify_rmap ~f] applies [f] to the context's redirect map. *)
+  val modify_rmap : f:(Lang.Symbol.R_map.t -> Lang.Symbol.R_map.t Or_error.t) -> unit t
+
   (** [redirect ~src ~dst] tries to redirect ~src to ~dst in the
      concrete symbol redirection table.  If the redirect causes an
      error, the redirect has no effect and a warning is triggered. *)
@@ -154,11 +157,4 @@ module type S = sig
       (in regards to the context's symbol tables), interns it into the
       context, and returns the generated location symbol. *)
   val make_fresh_heap_loc : string -> string t
-end
-
-module type Sanitiser_ctx = sig
-  module type S = S
-
-  (** [Make] builds a context monad for the given language. *)
-  module Make (Lang : Language.S) : S with module Lang := Lang
 end

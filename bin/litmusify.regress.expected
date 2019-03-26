@@ -51,89 +51,89 @@ movl [t0r0], EAX      | mfence                ;
 movl EAX, [t0sZM12]   | movl EAX, [t1sZM12]   ;
 xor EAX, [t0gGSd201]  | xor EAX, [t1gGSd201]  ;
 
-locations [x; y]
+locations [t0r0; x; y]
 ```
 ## gcc_macho_o0_deref_cmpxchg.s
 
 ```
 X86 gcc_macho_o0_deref_cmpxchg
 
-{ ZUt0r0 = 0; t0sZM4 = 0; t0sZM8 = 0; x = 0; }
+{ t0r0 = 0; t0sZM4 = 0; t0sZM8 = 0; x = 0; }
 
 P0                      | P1         ;
-movl [ZUt0r0], 0        | mov [x], 1 ;
+movl [t0r0], 0          | mov [x], 1 ;
 movl [t0sZM4], x        |            ;
 movl [t0sZM8], 2        |            ;
 movl EAX, [t0sZM8]      |            ;
 movl EDX, EAX           |            ;
 movl ECX, [t0sZM4]      |            ;
-movl EAX, [ZUt0r0]      |            ;
+movl EAX, [t0r0]        |            ;
 lock cmpxchg [ECX], EDX |            ;
 movl EDX, EAX           |            ;
 sete AL                 |            ;
 testb AL, AL            |            ;
 jne L3                  |            ;
-movl [ZUt0r0], EDX      |            ;
+movl [t0r0], EDX        |            ;
 L3:                     |            ;
 
-locations [x]
+locations [t0r0; x]
 ```
 ## gcc_macho_o0_deref_write.s
 
 ```
 X86 gcc_macho_o0_deref_write
 
-{ ZUt0r0 = 0; ZUt1r0 = 0; t0sZM8 = 0; x = 0; y = 0; }
+{ t0r0 = 0; t0sZM8 = 0; t1r0 = 0; x = 0; y = 0; }
 
-P0                 | P1                 ;
-mov EAX, [y]       | movl EAX, [x]      ;
-movl [t0sZM8], EAX | movl [ZUt1r0], EAX ;
-movl EAX, [t0sZM8] | movl EAX, [ZUt1r0] ;
-movl [ZUt0r0], EAX | cmp EAX, 1         ;
-movl EAX, [ZUt0r0] | jne L6             ;
-cmp EAX, 1         | mov [y], 1         ;
-jne L3             | L6:                ;
-movl [x], 1        |                    ;
-L3:                |                    ;
+P0                 | P1               ;
+mov EAX, [y]       | movl EAX, [x]    ;
+movl [t0sZM8], EAX | movl [t1r0], EAX ;
+movl EAX, [t0sZM8] | movl EAX, [t1r0] ;
+movl [t0r0], EAX   | cmp EAX, 1       ;
+movl EAX, [t0r0]   | jne L6           ;
+cmp EAX, 1         | mov [y], 1       ;
+jne L3             | L6:              ;
+movl [x], 1        |                  ;
+L3:                |                  ;
 
-locations [x; y]
+locations [t0r0; t1r0; x; y]
 ```
 ## gcc_macho_o0_immediate_heap.s
 
 ```
 X86 gcc_macho_o0_immediate_heap
 
-{ ZUt0r0 = 0; t0sZM12 = 0; x = 0; y = 0; }
+{ t0r0 = 0; t0sZM12 = 0; x = 0; y = 0; }
 
 P0                  | P1         ;
 mov EAX, [x]        | mov [y], 2 ;
 movl [t0sZM12], EAX | mov [x], 1 ;
 movl EAX, [t0sZM12] |            ;
-movl [ZUt0r0], EAX  |            ;
+movl [t0r0], EAX    |            ;
 mov [y], 1          |            ;
 
-locations [x; y]
+locations [t0r0; x; y]
 ```
 ## gcc_macho_o0_moves.s
 
 ```
 X86 gcc_macho_o0_moves
 
-{ ZUt0r0 = 0; ZUt1r0 = 0; t0sZM4 = 0; t1sZM4 = 0; x = 0; y = 0; }
+{ t0r0 = 0; t0sZM4 = 0; t1r0 = 0; t1sZM4 = 0; x = 0; y = 0; }
 
 P0                 | P1                 ;
 movl EAX, [y]      | movl EAX, [x]      ;
-movl [t0sZM4], EAX | movl [ZUt1r0], EAX ;
-movl EAX, [t0sZM4] | movl EAX, [ZUt1r0] ;
-movl [ZUt0r0], EAX | cmp EAX, 1         ;
-movl EAX, [ZUt0r0] | jne L6             ;
+movl [t0sZM4], EAX | movl [t1r0], EAX   ;
+movl EAX, [t0sZM4] | movl EAX, [t1r0]   ;
+movl [t0r0], EAX   | cmp EAX, 1         ;
+movl EAX, [t0r0]   | jne L6             ;
 cmp EAX, 1         | movl [t1sZM4], 1   ;
 jne L3             | movl EAX, [t1sZM4] ;
 movl [x], 1        | movl [y], EAX      ;
 L3:                | mfence             ;
                    | L6:                ;
 
-locations [x; y]
+locations [t0r0; t1r0; x; y]
 ```
 
 Ran 6 test(s).

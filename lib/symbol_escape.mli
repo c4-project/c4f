@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -22,20 +22,28 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Language interface: Symbols
+(** [act]'s Herd-safe symbol escaper.
 
-    To avoid duplication, this interface just includes
-    [Language_symbol_intf.Language_symbol].  See that module for
-    documentation. *)
+    This module exposes several functions that mangle a language
+    symbol to remove any characters that tools such as Herd and Litmus
+    find hard to parse: underscores, dollar signs, and
+    so on.  The mangling isn't guaranteed to correspond to any
+    'standard' escaping of these characters, but aims to be vaguely
+    human-readable and injective.
+ *)
 
 open Base
-include module type of Language_symbol_intf
 
-(** [Make] produces an instance of [S] from an instance of [Basic]. *)
-module Make (B : Basic) : S with type t = B.t
+(** [escape_string s] performs symbol escaping on the string [s]. *)
+val escape_string : string -> string
 
-(** Allows the use of strings as language symbols (mainly for testing). *)
-module String_direct : S with type t = string
+(** Builds symbol escaping functions over a language symbol type. *)
+module Make (S : Language_symbol.S) : sig
+  (** [escape s] performs symbol escaping on the symbol [s]. *)
+  val escape : S.t -> S.t
 
-(** A test R-map, exported for use in tests in other parts of act. *)
-val string_test_rmap : String_direct.R_map.t Or_error.t Lazy.t
+  (** [escape_rmap map] tries to escape every symbol in the redirect
+     map [map], by applying redirects from each existing redirect
+     target to its {{!escape}escape}d equivalent. *)
+  val escape_rmap : S.R_map.t -> S.R_map.t Or_error.t
+end

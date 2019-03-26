@@ -109,13 +109,6 @@ struct
     PC_listings_cont.map ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f) xs
   ;;
 
-  let symbol_from_string string =
-    Ctx.Monadic.return
-      (Result.of_option
-         (Lang.Symbol.of_string_opt string)
-         ~error:(Error.create_s [%message "Couldn't convert string to symbol" ~string]))
-  ;;
-
   let address_to_string = function
     | Abstract.Location.Address.Int i -> Int.to_string i
     | Symbol s -> s
@@ -127,8 +120,9 @@ struct
     let f loc =
       match Lang.Location.as_stack_offset loc with
       | Some offset ->
-        let symbol_str = sprintf "t%ss%s" name (address_to_string offset) in
-        let%map symbol = symbol_from_string symbol_str in
+        let base_str = sprintf "t%ss%s" name (address_to_string offset) in
+        let%bind symbol_str = Ctx.add_symbol base_str Abstract.Symbol.Sort.Heap in
+        let%map symbol = Ctx.Monadic.return (Lang.Symbol.require_of_string symbol_str) in
         Lang.Location.make_heap_loc symbol
       | None -> Ctx.return loc
     in
@@ -437,7 +431,7 @@ struct
     |> String.Map.of_alist_reduce ~f:(fun _ y -> y)
   ;;
 
-  let warn_missing_redirect () =
+  let warn_missing_redirect () : Info.t =
     Info.(
       of_list
         [ of_string "This symbol couldn't be found in the assembly."

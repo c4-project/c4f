@@ -35,34 +35,6 @@ open Core_kernel
     difficult for Herd-like programs to parse with less human-readable
     (but more machine-readable) equivalents. *)
 
-let mangler =
-  (* We could always just use something like Base36 here, but this
-     seems a bit more human-readable. *)
-  String.Escaping.escape_gen_exn
-    ~escape_char:
-      'Z'
-      (* We escape some things that couldn't possibly appear in legal
-       x86 assembler, but _might_ be generated during sanitisation. *)
-    ~escapeworthy_map:
-      [ '+', 'A' (* Add *)
-      ; ',', 'C' (* Comma *)
-      ; '$', 'D' (* Dollar *)
-      ; '.', 'F' (* Full stop *)
-      ; '-', 'M' (* Minus *)
-      ; '%', 'P' (* Percent *)
-      ; '@', 'T' (* aT *)
-      ; '_', 'U' (* Underscore *)
-      ; 'Z', 'Z' (* Z *)
-      ]
-;;
-
-let mangle = Staged.unstage mangler
-
-let%expect_test "mangle: sample" =
-  print_string (mangle "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet");
-  [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
-;;
-
 module Make (B : Sanitiser_base.Basic) :
   Sanitiser_base.S_all
   with module Lang := B.Lang
@@ -85,17 +57,28 @@ module Make (B : Sanitiser_base.Basic) :
     | Some _ | None -> f sym
   ;;
 
-  (** [escape_and_redirect sym] mangles [sym], either by
-      generating and installing a new mangling into
-      the redirects table if none already exists; or by
-      fetching the existing mangle. *)
-  let escape_and_redirect =
-    get_existing_redirect_or ~f:(fun sym ->
-        let sym' = Lang.Symbol.On_strings.map ~f:mangle sym in
-        Ctx.(redirect ~src:sym ~dst:sym' >>| fun () -> sym'))
+  module Escape = Symbol_escape.Make (Lang.Symbol)
+
+  let add_escape_redirects : unit Ctx.t = Ctx.modify_rmap ~f:Escape.escape_rmap
+
+  (** [redirect_or_escape sym] gets the redirected form of [sym], if
+      one exists, or the escaped form of [sym] otherwise. *)
+  let redirect_or_escape (sym : Lang.Symbol.t) : Lang.Symbol.t Ctx.t =
+    get_existing_redirect_or sym ~f:(Fn.compose Ctx.return Escape.escape)
   ;;
 
-  let escape_symbols = over_all_symbols ~f:escape_and_redirect
+  let escape_symbols (progs : Lang.Program.t Program_container.t)
+      : Lang.Program.t Program_container.t Ctx.t =
+    let open Ctx.Let_syntax in
+    (* We do this to make sure that every redirectable symbol known to
+       the sanitiser is escaped, not just the ones that appear in the
+       program. *)
+    let%bind () = add_escape_redirects in
+    (* That said, we do need to make sure that every symbol---not just
+       the redirected ones---is escaped.  As a result, we escape any
+       symbol that the above redirection didn't catch. *)
+    over_all_symbols ~f:redirect_or_escape progs
+  ;;
 
   let get_symbols_in_use =
     let open Ctx.Let_syntax in
@@ -112,19 +95,23 @@ module Make (B : Sanitiser_base.Basic) :
         not (Abstract.Symbol.Set.mem used_set (Lang.Symbol.abstract candidate)))
   ;;
 
+  let actually_unmangle (sym : Lang.Symbol.t) : Lang.Symbol.t Ctx.t =
+    let open Ctx.Let_syntax in
+    let%bind valid_vars = Ctx.get_variables
+    and possible_sym_vars = get_redirect_sources_as_set sym
+    and symbols_in_use = get_symbols_in_use in
+    let candidates = Lang.Symbol.Set.inter valid_vars possible_sym_vars in
+    let herd_safe_candidates = Lang.Symbol.(Set.filter ~f:is_herd_safe) candidates in
+    match first_unused_symbol symbols_in_use herd_safe_candidates with
+    | Some sym' -> Ctx.(redirect ~src:sym ~dst:sym' >>| fun () -> sym')
+    | None -> Ctx.return sym
+  ;;
+
   let unmangle =
     (* This is important, because trying to unmangle a symbol twice
        will fail---the first unmangling will register as the symbol
        being 'in use'. *)
-    get_existing_redirect_or ~f:(fun sym ->
-        let open Ctx.Let_syntax in
-        let%bind valid_vars = Ctx.get_variables
-        and possible_sym_vars = get_redirect_sources_as_set sym
-        and symbols_in_use = get_symbols_in_use in
-        let candidates = Lang.Symbol.Set.inter valid_vars possible_sym_vars in
-        match first_unused_symbol symbols_in_use candidates with
-        | Some sym' -> Ctx.(redirect ~src:sym ~dst:sym' >>| fun () -> sym')
-        | None -> Ctx.return sym)
+    get_existing_redirect_or ~f:actually_unmangle
   ;;
 
   let unmangle_symbols = over_all_symbols ~f:unmangle
