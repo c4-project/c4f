@@ -143,9 +143,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
   let get_redirect_alist syms : (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t t =
     let open Let_syntax in
     let%map rds = peek redirects in
-    List.map syms ~f:(fun sym ->
-        (sym, Lang.Symbol.R_map.dest_of_sym rds sym)
-      )
+    List.map syms ~f:(fun sym -> sym, Lang.Symbol.R_map.dest_of_sym rds sym)
   ;;
 
   let get_all_redirect_targets : Lang.Symbol.Set.t t =
@@ -168,8 +166,9 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
 
   (* TODO(@MattWindsor91): propagate changes to the abstract map *)
 
-  let redirect ~src ~dst : unit t = modify_rmap
-      ~f:(Fn.compose Or_error.return (Lang.Symbol.R_map.redirect ~src ~dst))
+  let redirect ~src ~dst : unit t =
+    modify_rmap ~f:(Fn.compose Or_error.return (Lang.Symbol.R_map.redirect ~src ~dst))
+  ;;
 
   let add_symbol sym_name sort =
     let open Let_syntax in

@@ -51,33 +51,37 @@ module Make (B : Basic) : S with type t = B.t = struct
     let abstract = Abstract.Symbol.Set.map ~f:B.abstract
   end
 
-  include (Comp : Comparable.S with type t := t
-                        and type comparator_witness = Set.Elt.comparator_witness
-                        and module Set := Set)
+  include (
+    Comp :
+      Comparable.S
+      with type t := t
+       and type comparator_witness = Set.Elt.comparator_witness
+       and module Set := Set)
 
-  module R_map : Redirect_map.S with type sym := t and type sym_set := Set.t = Redirect_map.Make (struct
-      include B
-      include Comp
+  module R_map : Redirect_map.S with type sym := t and type sym_set := Set.t =
+  Redirect_map.Make (struct
+    include B
+    include Comp
 
-      let of_string (x : string) = Option.value_exn (of_string_opt x)
+    let of_string (x : string) = Option.value_exn (of_string_opt x)
 
-      let to_c_identifier (s : t) : C_identifier.t Or_error.t =
-        s |> to_string |> C_identifier.create
-      ;;
+    let to_c_identifier (s : t) : C_identifier.t Or_error.t =
+      s |> to_string |> C_identifier.create
+    ;;
 
-      let of_c_identifier (id : C_identifier.t) : t Or_error.t =
-        id
-        |> C_identifier.to_string
-        |> of_string_opt
-        |> Result.of_option
-          ~error:
-            (Error.create_s
-               [%message
-                 "Couldn't convert identifier to symbol"
-                   ~here:[%here]
-                   ~id:(id : C_identifier.t)])
-      ;;
-    end)
+    let of_c_identifier (id : C_identifier.t) : t Or_error.t =
+      id
+      |> C_identifier.to_string
+      |> of_string_opt
+      |> Result.of_option
+           ~error:
+             (Error.create_s
+                [%message
+                  "Couldn't convert identifier to symbol"
+                    ~here:[%here]
+                    ~id:(id : C_identifier.t)])
+    ;;
+  end)
 
   let program_id_of sym =
     let asyms = B.abstract_demangle sym in

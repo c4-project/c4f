@@ -93,8 +93,8 @@ module type S = sig
   module Warn : Sanitiser_warn.S with module Lang := Lang
 
   (** The type of symbol redirect maps this sanitiser outputs. *)
-  module Redirect : Redirect_map.S with type sym := Lang.Symbol.t
-                                    and type sym_set := Lang.Symbol.Set.t
+  module Redirect :
+    Redirect_map.S with type sym := Lang.Symbol.t and type sym_set := Lang.Symbol.Set.t
 
   (** [Program_container] describes the container that the sanitised
      program or programs are held in. *)

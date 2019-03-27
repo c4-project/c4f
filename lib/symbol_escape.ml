@@ -60,8 +60,7 @@ module Make (S : Language_symbol.S) = struct
 
   let escape_rmap (map : S.R_map.t) ~(to_escape : S.Set.t) : S.R_map.t =
     let escapes = escape_all (S.Set.to_list to_escape) in
-    List.fold escapes ~init:map ~f:(fun map (src, dst) ->
-        S.R_map.redirect map ~src ~dst)
+    List.fold escapes ~init:map ~f:(fun map (src, dst) -> S.R_map.redirect map ~src ~dst)
   ;;
 end
 
@@ -92,6 +91,7 @@ let%test_module "escaping on a toy symbol module" =
            ([%test_pred: string * string] ~here:[ [%here] ] (fun (x, y) ->
                 not (Travesty.T_fn.on M.escape String.equal x y)))
      ;;
+
      (* TODO(@MattWindsor91): fix this test
      let%expect_test "escape_rmap: sample" =
        let test_map =

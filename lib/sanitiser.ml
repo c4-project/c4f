@@ -477,7 +477,7 @@ struct
     let%bind var_set = Ctx.get_variables in
     let var_list = Set.to_list var_set in
     let%bind redirect_alist = Ctx.get_redirect_alist var_list in
-    let%map redirects = Ctx.Monadic.return (Redirect.of_symbol_alist redirect_alist )in
+    let%map redirects = Ctx.Monadic.return (Redirect.of_symbol_alist redirect_alist) in
     { Output.programs; redirects }
   ;;
 

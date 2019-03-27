@@ -133,17 +133,18 @@ module Make_aux (B : Basic_aux) = struct
     cvars |> C_vars.Map.globals |> Set.to_list
   ;;
 
-  let make_locations_from_init
-      (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t)
-    : C_identifier.t list =
+  let make_locations_from_init (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t)
+      : C_identifier.t list =
     List.map ~f:fst init
+  ;;
 
   (** [make_locations cvars_opt init] makes a 'locations'
       stanza, either by taking the variables in [cvars_opt] and
       applying [redirects] to them, or just by taking the LHS of
       [init]. *)
-  let make_locations (cvars_opt : C_vars.Map.t option)
-                     (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t)
+  let make_locations
+      (cvars_opt : C_vars.Map.t option)
+      (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t)
       : C_identifier.t list =
     match cvars_opt with
     | Some cvars -> make_locations_from_config cvars

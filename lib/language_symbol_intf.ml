@@ -82,9 +82,11 @@ module type S = sig
     val abstract : t -> Abstract.Symbol.Set.t
   end
 
-  include Comparable.S with type t := t
-                        and type comparator_witness = Set.Elt.comparator_witness
-                        and module Set := Set
+  include
+    Comparable.S
+    with type t := t
+     and type comparator_witness = Set.Elt.comparator_witness
+     and module Set := Set
 
   (** [R_map] is an implementation of [Redirect_map] for this symbol type. *)
   module R_map : Redirect_map.S with type sym := t and type sym_set := Set.t

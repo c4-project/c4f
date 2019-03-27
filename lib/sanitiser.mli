@@ -32,9 +32,7 @@ module Make_null_hook (Lang : Language.S) (P : Travesty.Traversable.S1_container
 
 (** [Make] implements the assembly sanitiser for a given [Basic]. *)
 module Make (B : Basic) :
-  S
-  with module Lang := B.Lang
-   and type 'a Program_container.t = 'a B.Program_container.t
+  S with module Lang := B.Lang and type 'a Program_container.t = 'a B.Program_container.t
 
 (** [Make_single] implements the assembly sanitiser for a given
     [Hook_maker], performing no program splitting and returning the
@@ -46,6 +44,4 @@ module Make_single (H : Hook_maker) :
     [Hook_maker], treating the incoming assembly as holding multiple
     label-delimited programs and splitting them accordingly. *)
 module Make_multi (H : Hook_maker) :
-  S
-  with module Lang := H(Travesty.T_list).Lang
-   and type 'a Program_container.t = 'a list
+  S with module Lang := H(Travesty.T_list).Lang and type 'a Program_container.t = 'a list

@@ -62,6 +62,7 @@ module Make (B : Sanitiser_base.Basic) :
     let open Ctx.Let_syntax in
     let%bind to_escape = Ctx.get_variables in
     Ctx.modify_rmap ~f:(Fn.compose Or_error.return (Escape.escape_rmap ~to_escape))
+  ;;
 
   (** [redirect_or_escape sym] gets the redirected form of [sym], if
       one exists, or the escaped form of [sym] otherwise. *)

@@ -47,7 +47,6 @@ module type S = sig
   (** Opaque type of redirect maps. *)
   type t [@@deriving sexp_of]
 
-
   (** {3 Constructors} *)
 
   (** [of_symbol_alist alist] tries to lift [alist] into a redirect map.
