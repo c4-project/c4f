@@ -30,6 +30,7 @@ open Utils
 module type Basic_symbol = sig
   type t [@@deriving sexp, equal]
 
+  include Core_kernel.Comparable.S with type t := t
   include Stringable.S with type t := t
 
   val of_c_identifier : C_identifier.t -> t Or_error.t
@@ -51,8 +52,9 @@ module type S = sig
       redirected to in this map. *)
   val image_ids : t -> C_identifier.Set.t Or_error.t
 
-  (** [of_symbol_alist alist] lifts [alist] into a redirect map. *)
-  val of_symbol_alist : (sym, sym) List.Assoc.t -> t
+  (** [of_symbol_alist alist] tries to lift [alist] into a redirect map.
+      It fails if there are duplicate keys. *)
+  val of_symbol_alist : (sym, sym) List.Assoc.t -> t Or_error.t
 
   (** [to_string_alist map] converts [map] into a string-to-string
       associative list.  It fails if [map]'s symbols are inexpressible

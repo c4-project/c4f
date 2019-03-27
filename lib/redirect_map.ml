@@ -27,12 +27,12 @@ open Utils
 include Redirect_map_intf
 
 module Make (B : Basic_symbol) : S with type sym := B.t = struct
-  type t = (B.t, B.t) List.Assoc.t [@@deriving sexp]
+  type t = B.t B.Map.t [@@deriving sexp]
 
   let resolve_sym (map : t)
                   (symbol : B.t) : B.t Or_error.t =
     symbol
-    |> List.Assoc.find map ~equal:[%equal: B.t]
+    |> B.Map.find map
     |> Result.of_option
          ~error:
            (Error.create_s
@@ -54,15 +54,20 @@ module Make (B : Basic_symbol) : S with type sym := B.t = struct
   let image_ids (map : t) : C_identifier.Set.t Or_error.t =
     let open Or_error.Monad_infix in
     map
-    |> List.map ~f:(fun (_, sym) -> B.to_c_identifier sym)
+    |> B.Map.data
+    |> List.map ~f:B.to_c_identifier
     |> Or_error.combine_errors
     >>| C_identifier.Set.of_list
   ;;
 
-  let of_symbol_alist : (B.t, B.t) List.Assoc.t -> t = Fn.id
+  let of_symbol_alist : (B.t, B.t) List.Assoc.t -> t Or_error.t =
+    B.Map.of_alist_or_error
+  ;;
 
   let to_string_alist (map : t) : (string, string) List.Assoc.t =
-    Travesty.T_alist.bi_map map ~left:B.to_string ~right:B.to_string
+    map
+    |> Map.to_alist
+    |> Travesty.T_alist.bi_map ~left:B.to_string ~right:B.to_string
   ;;
 
   let check_no_tids (cvars : Config.C_variables.Map.t) : unit Or_error.t =
@@ -120,7 +125,7 @@ end)
 let%test_module "string redirect maps" =
   (module struct
      module M = Make (struct
-       type t = string [@@deriving equal, sexp]
+       include Core_kernel.String
 
        let to_string = Fn.id
        let of_string = Fn.id
@@ -129,12 +134,14 @@ let%test_module "string redirect maps" =
      end)
 
      let example_map : M.t =
-       M.of_symbol_alist
-         [ "foo", "_foo"
-         ; "bar_baz", "_bar_baz"
-         ; "BEEP", "_beep"
-         ; "_boop", "_2boop" (* why not? *)
-         ]
+       Or_error.ok_exn (
+         M.of_symbol_alist
+           [ "foo", "_foo"
+           ; "bar_baz", "_bar_baz"
+           ; "BEEP", "_beep"
+           ; "_boop", "_2boop" (* why not? *)
+           ]
+       )
      ;;
 
      let%expect_test "resolve_id: in map" =
@@ -151,7 +158,7 @@ let%test_module "string redirect maps" =
       (Error
        ("Couldn't resolve symbol in redirects table"
         (here lib/redirect_map.ml:41:24) (symbol nope)
-        (redirects ((foo _foo) (bar_baz _bar_baz) (BEEP _beep) (_boop _2boop))))) |}]
+        (redirects ((BEEP _beep) (_boop _2boop) (bar_baz _bar_baz) (foo _foo))))) |}]
      ;;
 
      let example_cvars_working : Config.C_variables.Map.t =

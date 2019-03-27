@@ -476,8 +476,8 @@ struct
     let%bind programs = Ctx_Pcon.mapi_m ~f:build_single_program_output listings in
     let%bind var_set = Ctx.get_variables in
     let var_list = Set.to_list var_set in
-    let%map redirect_alist = Ctx.get_redirect_alist var_list in
-    let redirects = Redirect.of_symbol_alist redirect_alist in
+    let%bind redirect_alist = Ctx.get_redirect_alist var_list in
+    let%map redirects = Ctx.Monadic.return (Redirect.of_symbol_alist redirect_alist )in
     { Output.programs; redirects }
   ;;
 

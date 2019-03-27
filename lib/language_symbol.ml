@@ -43,19 +43,21 @@ module Make (B : Basic) : S with type t = B.t = struct
 
   let of_string_opt (s : string) = Result.ok (B.require_of_string s)
 
-  module Comp = struct
-    include B
-    include Comparator.Make (B)
-  end
+  module Comp = Comparable.Make (B)
 
   module Set = struct
-    include My_set.Extend (Set.Make_using_comparator (Comp))
+    include My_set.Extend (Comp.Set)
 
     let abstract = Abstract.Symbol.Set.map ~f:B.abstract
   end
 
+  include (Comp : Comparable.S with type t := t
+                        and type comparator_witness = Set.Elt.comparator_witness
+                        and module Set := Set)
+
+
   module R_map = struct
-    module M = Map.Make_using_comparator (Comp)
+    module M = Comp.Map
 
     type sym = t [@@deriving compare, equal, sexp]
 

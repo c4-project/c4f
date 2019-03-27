@@ -128,6 +128,10 @@ module type S = sig
     val abstract : t -> Abstract.Symbol.Set.t
   end
 
+  include Comparable.S with type t := t
+                        and type comparator_witness = Set.Elt.comparator_witness
+                        and module Set := Set
+
   (** [R_map] is an implementation of [R_map] for this symbol type. *)
   module R_map : R_map with type sym = t and module Set = Set
 
