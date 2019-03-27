@@ -36,6 +36,3 @@ module Make (B : Basic) : S with type t = B.t
 
 (** Allows the use of strings as language symbols (mainly for testing). *)
 module String_direct : S with type t = string
-
-(** A test R-map, exported for use in tests in other parts of act. *)
-val string_test_rmap : String_direct.R_map.t Or_error.t Lazy.t

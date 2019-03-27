@@ -54,7 +54,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     ; endlabel = None
     ; syms = Abstract.Symbol.Table.empty
     ; variables
-    ; redirects = Lang.Symbol.R_map.make Lang.Symbol.Set.empty
+    ; redirects = Lang.Symbol.R_map.identity ()
     ; passes
     ; warnings = []
     }
@@ -126,40 +126,33 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
   ;;
 
   let set_symbol_table syms = modify (fun ctx -> { ctx with syms })
-
-  let resolve_redirect sym = function
-    | Lang.Symbol.R_map.Identity -> sym
-    | MapsTo sym' -> sym'
-  ;;
-
   let get_variables = peek variables
 
-  let get_redirect sym =
+  let get_redirect (sym : Lang.Symbol.t) : Lang.Symbol.t t =
     let open Let_syntax in
     let%map rds = peek redirects in
-    Option.map (Lang.Symbol.R_map.dest_of rds sym) ~f:(resolve_redirect sym)
+    Lang.Symbol.R_map.dest_of_sym rds sym
   ;;
 
-  let get_redirect_sources sym =
+  let get_redirect_sources (sym : Lang.Symbol.t) : Lang.Symbol.Set.t t =
     let open Let_syntax in
     let%map rds = peek redirects in
-    Lang.Symbol.R_map.sources_of rds sym
+    Lang.Symbol.R_map.sources_of_sym rds sym
   ;;
 
   let get_redirect_alist syms : (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t t =
     let open Let_syntax in
     let%map rds = peek redirects in
-    List.filter_map syms ~f:(fun sym ->
-        Option.(
-          Lang.Symbol.R_map.dest_of rds sym
-          >>| resolve_redirect sym
-          >>| Tuple2.create sym))
+    List.map syms ~f:(fun sym ->
+        (sym, Lang.Symbol.R_map.dest_of_sym rds sym)
+      )
   ;;
 
   let get_all_redirect_targets : Lang.Symbol.Set.t t =
     let open Let_syntax in
-    let%map rds = peek redirects in
-    Lang.Symbol.R_map.all_dests rds
+    let%bind rds = peek redirects in
+    let%map sources = peek variables in
+    Lang.Symbol.R_map.dest_syms rds ~sources
   ;;
 
   let modify_rmap ~(f : Lang.Symbol.R_map.t -> Lang.Symbol.R_map.t Or_error.t) : unit t =
@@ -175,7 +168,8 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
 
   (* TODO(@MattWindsor91): propagate changes to the abstract map *)
 
-  let redirect ~src ~dst : unit t = modify_rmap ~f:(Lang.Symbol.R_map.redirect ~src ~dst)
+  let redirect ~src ~dst : unit t = modify_rmap
+      ~f:(Fn.compose Or_error.return (Lang.Symbol.R_map.redirect ~src ~dst))
 
   let add_symbol sym_name sort =
     let open Let_syntax in

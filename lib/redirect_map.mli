@@ -23,5 +23,6 @@
    SOFTWARE. *)
 
 include module type of Redirect_map_intf
-module Make (B : Basic_symbol) : S with type sym := B.t
-module Make_from_language_symbol (LS : Language_symbol.S) : S with type sym := LS.t
+
+(** Makes a redirect map for the symbol module represented by [B]. *)
+module Make (B : Basic_symbol) : S with type sym := B.t and type sym_set := B.Set.t

@@ -55,65 +55,29 @@ module Make (B : Basic) : S with type t = B.t = struct
                         and type comparator_witness = Set.Elt.comparator_witness
                         and module Set := Set)
 
+  module R_map : Redirect_map.S with type sym := t and type sym_set := Set.t = Redirect_map.Make (struct
+      include B
+      include Comp
 
-  module R_map = struct
-    module M = Comp.Map
+      let of_string (x : string) = Option.value_exn (of_string_opt x)
 
-    type sym = t [@@deriving compare, equal, sexp]
+      let to_c_identifier (s : t) : C_identifier.t Or_error.t =
+        s |> to_string |> C_identifier.create
+      ;;
 
-    type r_dest =
-      | Identity
-      | MapsTo of sym
-    [@@deriving sexp, equal]
-
-    type t = r_dest M.t [@@deriving sexp]
-
-    module Set = Set
-
-    let make : Set.t -> t = Set.to_map ~f:(Fn.const Identity)
-
-    let sources_of (rmap : t) d =
-      let indirects =
-        rmap
-        |> M.filter ~f:(equal_r_dest (MapsTo d))
-        |> M.to_sequence
-        |> Sequence.map ~f:fst
-        |> Sequence.to_list
-      in
-      let directs =
-        match M.find rmap d with
-        | Some Identity -> [ d ]
-        | Some _ | None -> []
-      in
-      directs @ indirects
-    ;;
-
-    let dest_of = M.find
-
-    let to_dest = function
-      | src, Identity -> src
-      | _, MapsTo x -> x
-    ;;
-
-    let all_dests rmap = rmap |> M.to_alist |> List.map ~f:to_dest |> Set.of_list
-
-    let add_maps_to_edge ~src ~dst rmap =
-      rmap
-      |> M.set ~key:src ~data:(MapsTo dst)
-      |> M.mapi ~f:(fun ~key ~data ->
-             match data with
-             | MapsTo dst' when equal_sym src dst' ->
-               if equal_sym key dst then Identity else MapsTo dst
-             | x -> x)
-    ;;
-
-    let redirect ~src ~dst rmap =
-      Or_error.(
-        if equal_sym src dst
-        then return (M.set rmap ~key:src ~data:Identity)
-        else return (add_maps_to_edge ~src ~dst rmap))
-    ;;
-  end
+      let of_c_identifier (id : C_identifier.t) : t Or_error.t =
+        id
+        |> C_identifier.to_string
+        |> of_string_opt
+        |> Result.of_option
+          ~error:
+            (Error.create_s
+               [%message
+                 "Couldn't convert identifier to symbol"
+                   ~here:[%here]
+                   ~id:(id : C_identifier.t)])
+      ;;
+    end)
 
   let program_id_of sym =
     let asyms = B.abstract_demangle sym in
@@ -146,74 +110,3 @@ module String_direct : S with type t = string = Make (struct
     include Travesty.Singleton.With_elt (String)
   end
 end)
-
-let string_test_rmap : String_direct.R_map.t Or_error.t Lazy.t =
-  lazy
-    Or_error.(
-      String_direct.R_map.(
-        return (make (String_direct.Set.singleton "whiskey"))
-        >>= redirect ~src:"alpha" ~dst:"alpha"
-        >>= redirect ~src:"bravo" ~dst:"_echo"
-        >>= redirect ~src:"charlie" ~dst:"_echo"
-        >>= redirect ~src:"_echo" ~dst:".foxtrot"
-        >>= redirect ~src:"%delta" ~dst:"$kilo"
-        >>= redirect ~src:"$kilo" ~dst:"%delta"))
-;;
-
-let%test_module "String R-maps" =
-  (module struct
-     let test_rmap = Lazy.force string_test_rmap
-
-     let%expect_test "String.R_map: all_dests example run" =
-       let open Or_error.Let_syntax in
-       String_direct.R_map.(
-         let r =
-           let%map map = test_rmap in
-           all_dests map
-         in
-         Sexp.output_hum
-           Out_channel.stdout
-           [%sexp (r : String_direct.R_map.Set.t Or_error.t)]);
-       [%expect {| (Ok (%delta .foxtrot alpha whiskey)) |}]
-     ;;
-
-     let%expect_test "String.R_map: dest_of example run" =
-       let open Or_error.Let_syntax in
-       String_direct.R_map.(
-         let r =
-           let%map map = test_rmap in
-           let alpha = dest_of map "alpha" in
-           let bravo = dest_of map "bravo" in
-           let charlie = dest_of map "charlie" in
-           let delta = dest_of map "%delta" in
-           alpha, bravo, charlie, delta
-         in
-         Sexp.output_hum
-           Out_channel.stdout
-           [%sexp
-             (r
-               : (r_dest option * r_dest option * r_dest option * r_dest option)
-                 Or_error.t)]);
-       [%expect
-         {| (Ok ((Identity) ((MapsTo .foxtrot)) ((MapsTo .foxtrot)) (Identity))) |}]
-     ;;
-
-     let%expect_test "String.R_map: sources_of example run" =
-       let open Or_error.Let_syntax in
-       String_direct.R_map.(
-         let r =
-           let%map map = test_rmap in
-           let alpha = sources_of map "alpha" in
-           let bravo = sources_of map "bravo" in
-           let echo = sources_of map "_echo" in
-           let foxtrot = sources_of map ".foxtrot" in
-           alpha, bravo, echo, foxtrot
-         in
-         Sexp.output_hum
-           Out_channel.stdout
-           [%sexp
-             (r : (string list * string list * string list * string list) Or_error.t)]);
-       [%expect {| (Ok ((alpha) () () (_echo bravo charlie))) |}]
-     ;;
-  end)
-;;

@@ -52,14 +52,16 @@ module Make (B : Sanitiser_base.Basic) :
 
   let get_existing_redirect_or sym ~f =
     let open Ctx.Let_syntax in
-    match%bind Ctx.get_redirect sym with
-    | Some sym' when not (Lang.Symbol.equal sym sym') -> Ctx.return sym'
-    | Some _ | None -> f sym
+    let%bind sym' = Ctx.get_redirect sym in
+    if Lang.Symbol.equal sym sym' then f sym else Ctx.return sym'
   ;;
 
   module Escape = Symbol_escape.Make (Lang.Symbol)
 
-  let add_escape_redirects : unit Ctx.t = Ctx.modify_rmap ~f:Escape.escape_rmap
+  let add_escape_redirects : unit Ctx.t =
+    let open Ctx.Let_syntax in
+    let%bind to_escape = Ctx.get_variables in
+    Ctx.modify_rmap ~f:(Fn.compose Or_error.return (Escape.escape_rmap ~to_escape))
 
   (** [redirect_or_escape sym] gets the redirected form of [sym], if
       one exists, or the escaped form of [sym] otherwise. *)
@@ -86,10 +88,6 @@ module Make (B : Sanitiser_base.Basic) :
     Abstract.Symbol.Table.set symbol_table
   ;;
 
-  let get_redirect_sources_as_set sym =
-    Ctx.(get_redirect_sources sym >>| Lang.Symbol.Set.of_list)
-  ;;
-
   let first_unused_symbol used_set candidate_set =
     Lang.Symbol.Set.find candidate_set ~f:(fun candidate ->
         not (Abstract.Symbol.Set.mem used_set (Lang.Symbol.abstract candidate)))
@@ -98,7 +96,7 @@ module Make (B : Sanitiser_base.Basic) :
   let actually_unmangle (sym : Lang.Symbol.t) : Lang.Symbol.t Ctx.t =
     let open Ctx.Let_syntax in
     let%bind valid_vars = Ctx.get_variables
-    and possible_sym_vars = get_redirect_sources_as_set sym
+    and possible_sym_vars = Ctx.get_redirect_sources sym
     and symbols_in_use = get_symbols_in_use in
     let candidates = Lang.Symbol.Set.inter valid_vars possible_sym_vars in
     let herd_safe_candidates = Lang.Symbol.(Set.filter ~f:is_herd_safe) candidates in

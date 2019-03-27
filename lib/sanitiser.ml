@@ -45,7 +45,7 @@ struct
   module Ctx = B.Ctx
   module Warn = B.Ctx.Warn
   module Lang = B.Lang
-  module Redirect = Redirect_map.Make_from_language_symbol (Lang.Symbol)
+  module Redirect = Lang.Symbol.R_map
   module Program_container = B.Program_container
 
   (* Modules for building context-sensitive traversals over program

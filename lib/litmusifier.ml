@@ -129,28 +129,25 @@ module Make_aux (B : Basic_aux) = struct
     | None -> make_init_from_heap_symbols (Lazy.force heap_syms)
   ;;
 
-  (** [make_locations_from_redirects redirects] makes a 'locations'
-      stanza by taking the right-hand side of the redirects table
-      [redirects] created by the sanitiser process. *)
-  let make_locations_from_redirects (redirects : B.Redirect.t)
-      : C_identifier.t list Or_error.t =
-    Or_error.(redirects |> B.Redirect.image_ids >>| C_identifier.Set.to_list)
-  ;;
-
   let make_locations_from_config (cvars : C_vars.Map.t) : C_identifier.t list =
     cvars |> C_vars.Map.globals |> Set.to_list
   ;;
 
-  (** [make_locations config redirects] makes a 'locations'
-      stanza, either by taking the stanza given in [config] and
-      applying [redirects] to it, or just by taking the RHS of the
-      [redirects]. *)
+  let make_locations_from_init
+      (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t)
+    : C_identifier.t list =
+    List.map ~f:fst init
+
+  (** [make_locations cvars_opt init] makes a 'locations'
+      stanza, either by taking the variables in [cvars_opt] and
+      applying [redirects] to them, or just by taking the LHS of
+      [init]. *)
   let make_locations (cvars_opt : C_vars.Map.t option)
-                     (redirects : B.Redirect.t)
-      : C_identifier.t list Or_error.t =
+                     (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t)
+      : C_identifier.t list =
     match cvars_opt with
-    | Some cvars -> Or_error.return (make_locations_from_config cvars)
-    | None -> make_locations_from_redirects redirects
+    | Some cvars -> make_locations_from_config cvars
+    | None -> make_locations_from_init init
   ;;
 
   let make_post (_redirects : B.Redirect.t)
@@ -171,12 +168,12 @@ module Make_aux (B : Basic_aux) = struct
         cvars_opt
         ~f:(B.Redirect.transform_c_variables redirects)
     in
-    let%bind locations = make_locations redirected_cvars_opt redirects in
+    let init = make_init redirected_cvars_opt heap_symbols in
+    let locations = make_locations redirected_cvars_opt init in
     let src_post_opt = Config.postcondition config in
     let%map postcondition =
       Travesty.T_option.With_errors.map_m ~f:(make_post redirects) src_post_opt
     in
-    let init = make_init redirected_cvars_opt heap_symbols in
     make ~locations ~init ?postcondition ()
   ;;
 end
@@ -206,6 +203,7 @@ module Make (B : Basic) :
       include Sanitiser.Redirect
 
       type sym = LS.Symbol.t
+      type sym_set = LS.Symbol.Set.t
     end
 
     module Program = Sanitiser.Output.Program

@@ -67,52 +67,6 @@ module type Basic = sig
   val require_of_string : string -> t Or_error.t
 end
 
-(** [R_map] is the interface of a map-like structure that represents
-   redirections from symbols to other symbols.
-
-    Implementations of [S] contain implementations of [R_map]. *)
-module type R_map = sig
-  (** [t] is the opaque type of a redirect map. *)
-  type t [@@deriving sexp_of]
-
-  (** [sym] is the type of symbols. *)
-  type sym [@@deriving sexp, eq]
-
-  (** [r_dest] is the type of destination results used in [R_map]. *)
-  type r_dest =
-    | Identity (** The map redirects this symbol to itself *)
-    | MapsTo of sym (** The map redirects this symbol here *)
-  [@@deriving sexp, eq]
-
-  module Set : Set.S with type Elt.t = sym
-
-  (** [make s] creates a redirect map with the initial source
-      set [s].  Each symbol is registered as mapping to itself. *)
-  val make : Set.t -> t
-
-  (** [redirect ~src ~dst rmap] marks [src] as having redirected to
-     [dst] in [rmap].  It is safe for [src] and [dst] to be equal: in
-     such cases we register that a redirection happened, but otherwise
-     don't do anything.
-
-      [redirect] fails if [dst] is a registered source other than [src];
-      this is to prevent cycles. *)
-  val redirect : src:sym -> dst:sym -> t -> t Or_error.t
-
-  (** [dest_of rmap src] gives the final destination of [src] as an
-     [r_dest]. *)
-  val dest_of : t -> sym -> r_dest option
-
-  (** [all_dests rmap] collects all of the destination symbols in
-      [rmap].  This is a useful approximation as to which symbols
-      are heap references. *)
-  val all_dests : t -> Set.t
-
-  (** [sources_of rmap dst] gives all of the symbols that map to
-      [dst] in [rmap]. *)
-  val sources_of : t -> sym -> sym list
-end
-
 (** [S] is an expanded interface onto an act language's symbol
     analysis. *)
 module type S = sig
@@ -132,8 +86,8 @@ module type S = sig
                         and type comparator_witness = Set.Elt.comparator_witness
                         and module Set := Set
 
-  (** [R_map] is an implementation of [R_map] for this symbol type. *)
-  module R_map : R_map with type sym = t and module Set = Set
+  (** [R_map] is an implementation of [Redirect_map] for this symbol type. *)
+  module R_map : Redirect_map.S with type sym := t and type sym_set := Set.t
 
   (** [of_string_opt t] tries to interpret [s] as a symbol.  This
      function can return [None] if the string doesn't represent a

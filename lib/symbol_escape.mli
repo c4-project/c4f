@@ -42,8 +42,7 @@ module Make (S : Language_symbol.S) : sig
   (** [escape s] performs symbol escaping on the symbol [s]. *)
   val escape : S.t -> S.t
 
-  (** [escape_rmap map] tries to escape every symbol in the redirect
-     map [map], by applying redirects from each existing redirect
-     target to its {{!escape}escape}d equivalent. *)
-  val escape_rmap : S.R_map.t -> S.R_map.t Or_error.t
+  (** [escape_rmap map ~to_escape] tries to escape every symbol in [to_escape]
+      by adding a corresponding redirect mapping in [map]. *)
+  val escape_rmap : S.R_map.t -> to_escape:S.Set.t -> S.R_map.t
 end

@@ -120,13 +120,12 @@ module type S = sig
 
   (** [get_redirect sym] looks up [sym] in the concrete symbol
       redirection table.  If [sym] redirects to itself, the
-      result is [Some sym]; [None] means the symbol has no
-      known corresponding symbol in the assembly. *)
-  val get_redirect : Lang.Symbol.t -> Lang.Symbol.t option t
+      result is [sym]. *)
+  val get_redirect : Lang.Symbol.t -> Lang.Symbol.t t
 
   (** [get_redirect_sources sym] returns all symbols that redirect to
       [sym] in the currnet context. *)
-  val get_redirect_sources : Lang.Symbol.t -> Lang.Symbol.t list t
+  val get_redirect_sources : Lang.Symbol.t -> Lang.Symbol.Set.t t
 
   (** [get_redirect_alist syms] looks up each symbol in [syms] in the
      concrete symbol redirection table, and builds an associative list

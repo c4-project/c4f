@@ -51,7 +51,8 @@ movl [t0r0], EAX      | mfence                ;
 movl EAX, [t0sZM12]   | movl EAX, [t1sZM12]   ;
 xor EAX, [t0gGSd201]  | xor EAX, [t1gGSd201]  ;
 
-locations [t0r0; x; y]
+locations [t0gGSd200; t0gGSd201; t0r0; t0sZM12; t0sZM16; t0sZM20; t1gGSd200;
+           t1gGSd201; t1sZM12; t1sZM16; t1sZM20; x; y]
 ```
 ## gcc_macho_o0_deref_cmpxchg.s
 
@@ -76,7 +77,7 @@ jne L3                  |            ;
 movl [t0r0], EDX        |            ;
 L3:                     |            ;
 
-locations [t0r0; x]
+locations [t0r0; t0sZM4; t0sZM8; x]
 ```
 ## gcc_macho_o0_deref_write.s
 
@@ -96,7 +97,7 @@ jne L3             | L6:              ;
 movl [x], 1        |                  ;
 L3:                |                  ;
 
-locations [t0r0; t1r0; x; y]
+locations [t0r0; t0sZM8; t1r0; x; y]
 ```
 ## gcc_macho_o0_immediate_heap.s
 
@@ -112,7 +113,7 @@ movl EAX, [t0sZM12] |            ;
 movl [t0r0], EAX    |            ;
 mov [y], 1          |            ;
 
-locations [t0r0; x; y]
+locations [t0r0; t0sZM12; x; y]
 ```
 ## gcc_macho_o0_moves.s
 
@@ -133,7 +134,7 @@ movl [x], 1        | movl [y], EAX      ;
 L3:                | mfence             ;
                    | L6:                ;
 
-locations [t0r0; t1r0; x; y]
+locations [t0r0; t0sZM4; t1r0; t1sZM4; x; y]
 ```
 
 Ran 6 test(s).

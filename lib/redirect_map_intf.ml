@@ -41,25 +41,61 @@ module type S = sig
   (** Type of symbols. *)
   type sym
 
+  (** [Type of symbol sets. *)
+  type sym_set
+
   (** Opaque type of redirect maps. *)
-  type t
+  type t [@@deriving sexp_of]
 
-  (** [resolve_id map cid] tries to look up a C identifier [cid] in
-      a redirect map [map].  It fails if [cid] has no redirection. *)
-  val resolve_id : t -> C_identifier.t -> C_identifier.t Or_error.t
 
-  (** [image_ids map] gets the set of C identifiers that are
-      redirected to in this map. *)
-  val image_ids : t -> C_identifier.Set.t Or_error.t
+  (** {3 Constructors} *)
 
   (** [of_symbol_alist alist] tries to lift [alist] into a redirect map.
       It fails if there are duplicate keys. *)
   val of_symbol_alist : (sym, sym) List.Assoc.t -> t Or_error.t
 
+  (** [identity s] creates an empty mapping. *)
+  val identity : unit -> t
+
+  (** {3 Mutators} *)
+
+  (** [redirect ~src ~dst rmap] marks [src] as having redirected to
+      [dst] in [rmap].  It is safe for [src] and [dst] to be equal;
+      this clears the redirection. *)
+  val redirect : src:sym -> dst:sym -> t -> t
+
   (** [to_string_alist map] converts [map] into a string-to-string
       associative list.  It fails if [map]'s symbols are inexpressible
       as C identifiers. *)
   val to_string_alist : t -> (string, string) List.Assoc.t
+
+  (** {3 Looking up symbols} *)
+
+  (** [dest_of_sym map sym] tries to look up a symbol [sym] in
+      a redirect map [map].  It returns [sym] if [sym] has no redirection. *)
+  val dest_of_sym : t -> sym -> sym
+
+  (** [dest_syms map ~sources] collects all of the destination symbols
+     in [map] that are reachable from the source symbols [sources].
+     This is a useful approximation as to which symbols are heap
+     references. *)
+  val dest_syms : t -> sources:sym_set -> sym_set
+
+  (** [sources_of_sym rmap dst] gives all of the symbols that map to
+      [dst] in [rmap]. *)
+  val sources_of_sym : t -> sym -> sym_set
+
+  (** {3 Looking up C identifiers} *)
+
+  (** [dest_of_id map cid] tries to look up a C identifier [cid] in a
+     redirect map [map].  It fails if the redirected symbol isn't a
+     valid C identifier. *)
+  val dest_of_id : t -> C_identifier.t -> C_identifier.t Or_error.t
+
+  (** [dest_ids map ~sources] gets the set of C identifiers that are
+      reachable, in [map], from identifiers in [sources].  It can fail if any of the symbols
+      aren't expressible as identifiers. *)
+  val dest_ids : t -> sources:C_identifier.Set.t -> C_identifier.Set.t Or_error.t
 
   (** [transform_c_variables map cvars] tries to apply the redirects in
       [map] to [cvars].
