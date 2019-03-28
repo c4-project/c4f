@@ -100,8 +100,10 @@ let run (ctx : t) ~(path : Fpath.t) ~(sink : Io.Out_sink.t) : unit Or_error.t =
   Filter.run ctx (Io.In_source.of_fpath path) sink
 ;;
 
-let run_and_load_results (ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
+let run_and_load_results (ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t)
+  : Sim_output.t Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%bind () = run ctx ~path:input_path ~sink:(Io.Out_sink.file output_path) in
-  Herd_output.load ~path:output_path
+  Herd_reader.load ~path:output_path
 ;;

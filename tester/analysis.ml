@@ -22,9 +22,6 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** [Analysis] contains abstract data types for storing finished
-   analyses of programs. *)
-
 open Core_kernel
 open Utils
 open Lib
@@ -33,12 +30,12 @@ open Lib
     state-set-level analysis aren't equal. *)
 module State_deviation = struct
   type t =
-    { in_c_only : Herd_output.State.t list
-    ; in_asm_only : Herd_output.State.t list
+    { in_c_only : Sim_output.State.t list
+    ; in_asm_only : Sim_output.State.t list
     }
   [@@deriving sexp_of, fields, make]
 
-  let of_order_opt : Herd_output.State.Set.Partial_order.t -> t option
+  let of_order_opt : Sim_output.State.Set.Partial_order.t -> t option
     = (* C is left, asm is right. *)
     function
     | Equal -> None
@@ -52,42 +49,31 @@ module State_deviation = struct
            ())
   ;;
 
-  let of_herd_outcome_opt : Herd_output.outcome -> t option = function
-    | `Order o -> of_order_opt o
-    | `Unknown | `Undef | `OracleUndef -> None
+  let of_herd_outcome_opt : Sim_diff.t -> t option = function
+    | Result o -> of_order_opt o
+    | Oracle_undefined | Subject_undefined -> None
   ;;
 end
 
 module Herd = struct
   type t =
-    [ Herd_output.outcome
-    | `Disabled
-    | `Errored of [ `C | `Assembly ]
-    ]
+    | Run of Sim_diff.t
+    | Disabled
+    | Errored of [ `C | `Assembly ]
   [@@deriving sexp_of]
 
-  let order_operator : Herd_output.State.Set.Partial_order.t -> string = function
-    | Equal -> "=="
-    | Subset _ -> "<<"
-    | Superset _ -> ">>"
-    | No_order _ -> "<>"
-  ;;
-
   let to_string : t -> string = function
-    | `Errored `Assembly -> "ERROR (asm)"
-    | `Errored `C -> "ERROR (C)"
-    | `Disabled -> "--disabled--"
-    | `Unknown -> "??"
-    | `Undef -> "UNDEFINED BEHAVIOUR (asm)"
-    | `OracleUndef -> "UNDEFINED BEHAVIOUR (C)"
-    | `Order o -> sprintf "C %s asm" (order_operator o)
+    | Errored `Assembly -> "ERROR (asm)"
+    | Errored `C -> "ERROR (C)"
+    | Disabled -> "--disabled--"
+    | Run x -> Sim_diff.to_string x
   ;;
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
 
   let to_state_deviation_opt : t -> State_deviation.t option = function
-    | #Herd_output.outcome as o -> State_deviation.of_herd_outcome_opt o
-    | `Errored _ | `Disabled -> None
+    | Run o -> State_deviation.of_herd_outcome_opt o
+    | Errored _ | Disabled -> None
   ;;
 end
 

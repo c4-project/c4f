@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -37,25 +37,24 @@ module State_deviation : sig
   (** [in_c_only dev] gets a list (in no particular order)
       of states that were in the C simulation, but not in the assembly
       one. *)
-  val in_c_only : t -> Herd_output.State.t list
+  val in_c_only : t -> Sim_output.State.t list
 
   (** [in_asm_only dev] gets a list (in no particular order)
       of states that were in the C simulation, but not in the assembly
       one. *)
-  val in_asm_only : t -> Herd_output.State.t list
+  val in_asm_only : t -> Sim_output.State.t list
 
   (** [of_herd_outcome_opt oc] converts [oc] into a deviation record.
       It returns [None] if the outcome doesn't represent one. *)
-  val of_herd_outcome_opt : Herd_output.outcome -> t option
+  val of_herd_outcome_opt : Sim_diff.t -> t option
 end
 
 module Herd : sig
   (** [t] is the type of Herd analysis runs. *)
   type t =
-    [ Herd_output.outcome
-    | `Disabled
-    | `Errored of [ `C | `Assembly ]
-    ]
+    | Run of Sim_diff.t (** Herd ran on both sides, with the given differential result. *)
+    | Disabled (** Herd was disabled. *)
+    | Errored of [ `C | `Assembly ] (** Herd encountered an error. *)
   [@@deriving sexp_of]
 
   (** [to_state_deviation_opt oc] converts [oc] into a deviation record.

@@ -75,4 +75,4 @@ val run_and_load_results
   :  t
   -> input_path:Fpath.t
   -> output_path:Fpath.t
-  -> Herd_output.t Or_error.t
+  -> Sim_output.t Or_error.t

@@ -46,7 +46,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
 
   (** [herd_run_result] summarises the result of running Herd. *)
   type herd_run_result =
-    [ `Success of Herd_output.t
+    [ `Success of Sim_output.t
     | `Disabled
     | `Errored
     ]
@@ -104,21 +104,21 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
        way, so we need to transpose it. *)
     let locmap_r = List.Assoc.inverse locmap in
     match c_herd, a_herd with
-    | `Disabled, _ | _, `Disabled -> return `Disabled
-    | `Errored, _ -> return (`Errored `C)
-    | _, `Errored -> return (`Errored `Assembly)
-    | `Success initial, `Success final ->
+    | `Disabled, _ | _, `Disabled -> return Analysis.Herd.Disabled
+    | `Errored, _ -> return (Analysis.Herd.Errored `C)
+    | _, `Errored -> return (Analysis.Herd.Errored `Assembly)
+    | `Success oracle, `Success subject ->
       let%map outcome =
-        Herd_output.outcome_of
-          ~initial
-          ~final
-          ~locmap:(fun final_sym ->
+        Sim_diff.run
+          ~oracle
+          ~subject
+          ~location_map:(fun final_sym ->
             Or_error.return
               (List.Assoc.find ~equal:[%equal: Litmus.Id.t] locmap_r final_sym))
             (* TODO(@MattWindsor91): properly valmap, if needed. *)
-          ~valmap:return
+          ~value_map:return
       in
-      (outcome :> Analysis.Herd.t)
+      (Analysis.Herd.Run outcome)
   ;;
 
   (** [locations_of_herd_result r] takes the C/litmus Herd result [r]
@@ -127,8 +127,8 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
       the equivalent variable name in the memalloy C witness. *)
   let locations_of_herd_result = function
     | `Success herd ->
-      Herd_output.states herd
-      |> List.concat_map ~f:Herd_output.State.bound
+      Sim_output.states herd
+      |> List.concat_map ~f:Sim_output.State.bound
       |> List.map ~f:(fun s -> s, lower_thread_local_symbol s)
     | `Disabled | `Errored -> []
   ;;

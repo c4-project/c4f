@@ -104,7 +104,7 @@ let non_empty : 'a list -> 'a list option = function
   | xs -> Some xs
 ;;
 
-let pp_deviation_bucket (bucket_name : string) : Herd_output.State.t list Fmt.t =
+let pp_deviation_bucket (bucket_name : string) : Sim_output.State.t list Fmt.t =
   Fmt.(
     using
       non_empty
@@ -113,7 +113,7 @@ let pp_deviation_bucket (bucket_name : string) : Herd_output.State.t list Fmt.t 
             ~indent:2
             (prefix
                (suffix sp (styled `Red (const string bucket_name)))
-               (vbox (list ~sep:sp (using [%sexp_of: Herd_output.State.t] Sexp.pp_hum)))))))
+               (vbox (list ~sep:sp (using [%sexp_of: Sim_output.State.t] Sexp.pp_hum)))))))
 ;;
 
 let pp_deviation : Tester.Analysis.State_deviation.t Fmt.t =
