@@ -25,4 +25,4 @@
 include module type of Redirect_map_intf
 
 (** Makes a redirect map for the symbol module represented by [B]. *)
-module Make (B : Basic_symbol) : S with type sym := B.t and type sym_set := B.Set.t
+module Make (B : Basic_symbol) : S with type sym = B.t and type sym_set = B.Set.t

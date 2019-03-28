@@ -58,7 +58,7 @@ module Make (B : Basic) : S with type t = B.t = struct
        and type comparator_witness = Set.Elt.comparator_witness
        and module Set := Set)
 
-  module R_map : Redirect_map.S with type sym := t and type sym_set := Set.t =
+  module R_map : Redirect_map.S with type sym = t and type sym_set = Set.t =
   Redirect_map.Make (struct
     include B
     include Comp

@@ -26,9 +26,11 @@ open Base
 open Utils
 include Redirect_map_intf
 
-module Make (B : Basic_symbol) : S with type sym := B.t and type sym_set := B.Set.t =
+module Make (B : Basic_symbol) : S with type sym = B.t and type sym_set = B.Set.t =
 struct
   type t = B.t B.Map.t [@@deriving sexp]
+  type sym = B.t
+  type sym_set = B.Set.t
 
   let dest_of_sym (map : t) (sym : B.t) : B.t =
     Option.value (B.Map.find map sym) ~default:sym

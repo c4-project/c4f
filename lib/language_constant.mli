@@ -28,3 +28,6 @@ include module type of Language_constant_intf
 
 (** [Make] produces an instance of [S] from an instance of [Basic]. *)
 module Make (B : Basic) : S with type t = B.t
+
+(** [Int_direct] allows integers to be used as constants directly. *)
+module Int_direct : S with type t = int

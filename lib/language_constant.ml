@@ -29,3 +29,5 @@ module Make (B : Basic) : S with type t = B.t = struct
 
   let zero = of_int 0
 end
+
+module Int_direct : S with type t = int = Make (Core_kernel.Int)

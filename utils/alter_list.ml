@@ -82,7 +82,7 @@ let%expect_test "replace: out of bounds" =
   [%expect
     {|
     (Error
-     ("Replace failed: index out of range" (here utils/alter_list.ml:45:20)
+     ("Replace failed: index out of range" (here utils/alter_list.ml:46:20)
       (insert_at 4) (list_length 4))) |}]
 ;;
 
