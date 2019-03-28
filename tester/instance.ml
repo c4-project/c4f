@@ -96,7 +96,8 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
       (c_herd : herd_run_result)
       (a_herd : herd_run_result)
       (locmap : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t)
-      : Analysis.Herd.t Or_error.t =
+      : Analysis.Herd.t Or_error.t
+    =
     let open Or_error.Let_syntax in
     (* The locmap function we supply below goes backwards, from
        assembly locations to C symbols.  Our location map goes the other
@@ -139,7 +140,8 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
       (a : ('a, 'b) List.Assoc.t)
       (b : ('b, 'c) List.Assoc.t)
       (equal : 'b -> 'b -> bool)
-      : ('a, 'c) List.Assoc.t =
+      : ('a, 'c) List.Assoc.t
+    =
     List.filter_map a ~f:(fun (k, v) ->
         Option.Monad_infix.(List.Assoc.find ~equal b v >>| Tuple2.create k))
   ;;
@@ -213,14 +215,16 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   ;;
 
   let cvars_from_loc_map (map : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t)
-      : string list Or_error.t =
+      : string list Or_error.t
+    =
     map
     |> List.map ~f:(fun (_, id) -> cvar_from_loc_map_entry id)
     |> Or_error.combine_errors
   ;;
 
   let lift_str_map (str_map : (string, string) List.Assoc.t)
-      : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t Or_error.t =
+      : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t Or_error.t
+    =
     str_map
     |> List.map ~f:(fun (x, y) ->
            Or_error.both (Litmus.Id.global_of_string x) (Litmus.Id.global_of_string y))
@@ -234,7 +238,8 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   let map_location_renamings
       (litc_to_c : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t)
       (c_to_lita : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t)
-      : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t =
+      : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t
+    =
     compose_alists litc_to_c c_to_lita Litmus.Id.equal
   ;;
 
@@ -318,7 +323,8 @@ module Make_machine (B : Basic_machine) : Machine = struct
 
   let make_pathset (cfg : Run_config.t)
                    (spec : Config.Compiler.Spec.With_id.t)
-      : Pathset.t Or_error.t =
+      : Pathset.t Or_error.t
+    =
     let open Or_error.Let_syntax in
     let id = Config.Compiler.Spec.With_id.id spec in
     let output_root = Run_config.output_root cfg in
@@ -330,18 +336,19 @@ module Make_machine (B : Basic_machine) : Machine = struct
 
   let make_compiler (cfg : Run_config.t)
                     (spec : Config.Compiler.Spec.With_id.t)
-      : (module Compiler) Or_error.t =
+      : (module Compiler) Or_error.t
+    =
     let open Or_error.Let_syntax in
     let%bind (module C) = B.Resolve_compiler.from_spec spec in
     let%bind (module R) = B.asm_runner_from_spec spec in
     let%map ps = make_pathset cfg spec in
     (module Make_compiler (struct
-       include (B : Basic)
-       module C = C
-       module R = R
+      include (B : Basic)
+      module C = C
+      module R = R
 
-       let ps = ps
-       let cspec = spec
+      let ps = ps
+      let cspec = spec
     end)
     : Compiler)
   ;;
@@ -355,14 +362,16 @@ module Make_machine (B : Basic_machine) : Machine = struct
   ;;
 
   let run_compilers (cfg : Run_config.t)
-      : (Config.Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
+      : (Config.Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t
+    =
     compilers
     |> Config.Compiler.Spec.Set.map ~f:(run_compiler cfg)
     |> Or_error.combine_errors
   ;;
 
   let make_analysis (raw : (Config.Id.t, Analysis.Compiler.t) List.Assoc.t T.t)
-      : Analysis.Machine.t =
+      : Analysis.Machine.t
+    =
     Analysis.Machine.make ~compilers:(T.value raw) ?time_taken:(T.time_taken raw) ()
   ;;
 
@@ -384,17 +393,18 @@ module Make (B : Basic) : S = struct
   include B
 
   let make_analysis (raw : (Config.Id.t, Analysis.Machine.t) List.Assoc.t T.t)
-      : Analysis.t =
+      : Analysis.t
+    =
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
   ;;
 
   let make_machine_module (mach_compilers : Config.Compiler.Spec.Set.t) =
     (module Make_machine (struct
-       include B
+      include B
 
-       (* Reduce the set of compilers to those specifically used in
+      (* Reduce the set of compilers to those specifically used in
             this machine. *)
-       let compilers = mach_compilers
+      let compilers = mach_compilers
     end)
     : Machine)
   ;;
@@ -410,7 +420,8 @@ module Make (B : Basic) : S = struct
   let run_machines
       (cfg : Run_config.t)
       (specs_by_machine : (Config.Machine.Id.t, Config.Compiler.Spec.Set.t) List.Assoc.t)
-      : (Config.Machine.Id.t, Analysis.Machine.t) List.Assoc.t Or_error.t =
+      : (Config.Machine.Id.t, Analysis.Machine.t) List.Assoc.t Or_error.t
+    =
     specs_by_machine |> List.map ~f:(run_machine cfg) |> Or_error.combine_errors
   ;;
 

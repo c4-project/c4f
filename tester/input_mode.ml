@@ -33,7 +33,8 @@ type t =
 let reduce (imode : t)
            ~(memalloy : Fpath.t -> 'a)
            ~(litmus_only : Fpath.t list -> 'a)
-    : 'a =
+    : 'a
+  =
   Variants.map imode ~memalloy:(fun _ -> memalloy) ~litmus_only:(fun _ -> litmus_only)
 ;;
 

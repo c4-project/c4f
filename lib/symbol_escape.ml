@@ -66,33 +66,33 @@ end
 
 let%test_module "escaping on a toy symbol module" =
   (module struct
-     module M = Make (Language_symbol.String_direct)
+    module M = Make (Language_symbol.String_direct)
 
-     let%expect_test "escape: sample" =
-       Stdio.print_string (M.escape "_example_two%100.5@@etc,etc,etc$6");
-       [%expect {| ZUexampleZUtwoZP100ZF5ZTZTetcZCetcZCetcZD6 |}]
-     ;;
+    let%expect_test "escape: sample" =
+      Stdio.print_string (M.escape "_example_two%100.5@@etc,etc,etc$6");
+      [%expect {| ZUexampleZUtwoZP100ZF5ZTZTetcZCetcZCetcZD6 |}]
+    ;;
 
-     let%test_unit "escape: should be injective" =
-       let open Base_quickcheck in
-       Test.run_exn
-         (module struct
-            type t = string * string [@@deriving sexp]
+    let%test_unit "escape: should be injective" =
+      let open Base_quickcheck in
+      Test.run_exn
+        (module struct
+          type t = string * string [@@deriving sexp]
 
-            let quickcheck_generator =
-              Base_quickcheck.Generator.filter
-                [%quickcheck.generator: string * string]
-                ~f:(fun (x, y) -> not (String.equal x y))
-            ;;
+          let quickcheck_generator =
+            Base_quickcheck.Generator.filter
+              [%quickcheck.generator: string * string]
+              ~f:(fun (x, y) -> not (String.equal x y))
+          ;;
 
-            let quickcheck_shrinker = [%quickcheck.shrinker: string * string]
-         end)
-         ~f:
-           ([%test_pred: string * string] ~here:[ [%here] ] (fun (x, y) ->
-                not (Travesty.T_fn.on M.escape String.equal x y)))
-     ;;
+          let quickcheck_shrinker = [%quickcheck.shrinker: string * string]
+        end)
+        ~f:
+          ([%test_pred: string * string] ~here:[ [%here] ] (fun (x, y) ->
+               not (Travesty.T_fn.on M.escape String.equal x y)))
+    ;;
 
-     (* TODO(@MattWindsor91): fix this test
+    (* TODO(@MattWindsor91): fix this test
      let%expect_test "escape_rmap: sample" =
        let test_map =
 

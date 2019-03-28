@@ -92,8 +92,8 @@ let to_memalloy_id_inner (t : int) (id : C_identifier.t) : string =
 let%test_unit "to_memalloy_id_inner produces valid identifiers" =
   Base_quickcheck.Test.run_exn
     (module struct
-       type t = My_quickcheck.Small_non_negative_int.t * C_identifier.t
-       [@@deriving sexp, quickcheck]
+      type t = My_quickcheck.Small_non_negative_int.t * C_identifier.t
+      [@@deriving sexp, quickcheck]
     end)
     ~f:(fun (t, id) ->
       [%test_pred: C_identifier.t Or_error.t]
@@ -109,22 +109,22 @@ let to_memalloy_id : t -> C_identifier.t = function
 
 let%test_module "Id tests" =
   (module struct
-     let%test_unit "to_string->of_string is identity" =
-       Base_quickcheck.Test.run_exn
-         (module M_sexp)
-         ~f:(fun ident ->
-           [%test_eq: t] ~here:[ [%here] ] ident (of_string (to_string ident)))
-     ;;
+    let%test_unit "to_string->of_string is identity" =
+      Base_quickcheck.Test.run_exn
+        (module M_sexp)
+        ~f:(fun ident ->
+          [%test_eq: t] ~here:[ [%here] ] ident (of_string (to_string ident)))
+    ;;
 
-     let%test_unit "to_memalloy_id is identity on globals" =
-       Base_quickcheck.Test.run_exn
-         (module C_identifier)
-         ~f:(fun ident ->
-           [%test_eq: C_identifier.t]
-             ~here:[ [%here] ]
-             ident
-             (to_memalloy_id (Global ident)))
-     ;;
+    let%test_unit "to_memalloy_id is identity on globals" =
+      Base_quickcheck.Test.run_exn
+        (module C_identifier)
+        ~f:(fun ident ->
+          [%test_eq: C_identifier.t]
+            ~here:[ [%here] ]
+            ident
+            (to_memalloy_id (Global ident)))
+    ;;
   end)
 ;;
 

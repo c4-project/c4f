@@ -85,7 +85,8 @@ module Int : Action.S with type Random_state.t = rst = struct
 
     let gen_store (vf : Base.Formatter.t)
                   (vars : Var.Map.t)
-        : Mini.Atomic_store.t G.t Or_error.t =
+        : Mini.Atomic_store.t G.t Or_error.t
+      =
       let (module Src) = src_env vars in
       let (module Dst) = dst_env vars in
       Fmt.pf vf "%s: got environments@." name;
@@ -113,7 +114,8 @@ module Int : Action.S with type Random_state.t = rst = struct
     let gen' (vf : Base.Formatter.t)
              (subject : Subject.Test.t)
              (vars : Var.Map.t)
-        : t G.t Or_error.t =
+        : t G.t Or_error.t
+      =
       let open Or_error.Let_syntax in
       Fmt.pf vf "%s: building generators...@." name;
       let%map store = gen_store vf vars in
@@ -153,7 +155,8 @@ module Int : Action.S with type Random_state.t = rst = struct
 
   let run (subject : Subject.Test.t)
           ({ store; path } : Random_state.t)
-      : Subject.Test.t State.Monad.t =
+      : Subject.Test.t State.Monad.t
+    =
     let open State.Monad.Let_syntax in
     let store_stm = Mini.Statement.atomic_store store in
     let%bind vf = State.Monad.vf () in
@@ -167,124 +170,124 @@ end
 
 let%test_module "int tests" =
   (module struct
-     let init : Mini.Constant.t Mini.id_assoc Lazy.t =
-       lazy
-         Mini.
-           [ Identifier.of_string "x", Constant.Integer 27
-           ; Identifier.of_string "y", Constant.Integer 53
-           ]
-     ;;
+    let init : Mini.Constant.t Mini.id_assoc Lazy.t =
+      lazy
+        Mini.
+          [ Identifier.of_string "x", Constant.Integer 27
+          ; Identifier.of_string "y", Constant.Integer 53
+          ]
+    ;;
 
-     let globals : Mini.Type.t Mini.id_assoc Lazy.t =
-       lazy
-         Mini.
-           [ (Identifier.of_string "x", Type.(pointer_to Basic.atomic_int))
-           ; (Identifier.of_string "y", Type.(pointer_to Basic.atomic_int))
-           ]
-     ;;
+    let globals : Mini.Type.t Mini.id_assoc Lazy.t =
+      lazy
+        Mini.
+          [ (Identifier.of_string "x", Type.(pointer_to Basic.atomic_int))
+          ; (Identifier.of_string "y", Type.(pointer_to Basic.atomic_int))
+          ]
+    ;;
 
-     let body_stms : Mini.Statement.t list Lazy.t =
-       lazy
-         Mini.
-           [ Statement.atomic_store
-               (Atomic_store.make
-                  ~src:(Expression.constant (Constant.Integer 42))
-                  ~dst:(Address.of_variable (Identifier.of_string "x"))
-                  ~mo:Mem_order.Seq_cst)
-           ; Statement.nop ()
-           ; Statement.atomic_store
-               (Atomic_store.make
-                  ~src:(Expression.lvalue (Lvalue.variable (Identifier.of_string "foo")))
-                  ~dst:(Address.of_variable (Identifier.of_string "y"))
-                  ~mo:Mem_order.Relaxed)
-           ]
-     ;;
+    let body_stms : Mini.Statement.t list Lazy.t =
+      lazy
+        Mini.
+          [ Statement.atomic_store
+              (Atomic_store.make
+                 ~src:(Expression.constant (Constant.Integer 42))
+                 ~dst:(Address.of_variable (Identifier.of_string "x"))
+                 ~mo:Mem_order.Seq_cst)
+          ; Statement.nop ()
+          ; Statement.atomic_store
+              (Atomic_store.make
+                 ~src:(Expression.lvalue (Lvalue.variable (Identifier.of_string "foo")))
+                 ~dst:(Address.of_variable (Identifier.of_string "y"))
+                 ~mo:Mem_order.Relaxed)
+          ]
+    ;;
 
-     let programs : Fuzzer_subject.Program.t list Lazy.t =
-       let open Lazy.Let_syntax in
-       let%bind parameters = globals in
-       let%map body_stms = body_stms in
-       Mini.
-         [ Fuzzer_subject.Program.of_function
-             (Function.make ~parameters ~body_decls:[] ~body_stms ())
-         ]
-     ;;
+    let programs : Fuzzer_subject.Program.t list Lazy.t =
+      let open Lazy.Let_syntax in
+      let%bind parameters = globals in
+      let%map body_stms = body_stms in
+      Mini.
+        [ Fuzzer_subject.Program.of_function
+            (Function.make ~parameters ~body_decls:[] ~body_stms ())
+        ]
+    ;;
 
-     let test_subject : Fuzzer_subject.Test.t Lazy.t =
-       let open Lazy.Let_syntax in
-       let%bind init = init in
-       let%map programs = programs in
-       { Fuzzer_subject.Test.init; programs }
-     ;;
+    let test_subject : Fuzzer_subject.Test.t Lazy.t =
+      let open Lazy.Let_syntax in
+      let%bind init = init in
+      let%map programs = programs in
+      { Fuzzer_subject.Test.init; programs }
+    ;;
 
-     let path : Mini_path.stm_hole Mini_path.program_path Lazy.t =
-       lazy Mini_path.(On_program { index = 0; rest = On_statements (Insert_at 2) })
-     ;;
+    let path : Mini_path.stm_hole Mini_path.program_path Lazy.t =
+      lazy Mini_path.(On_program { index = 0; rest = On_statements (Insert_at 2) })
+    ;;
 
-     let store : Mini.Atomic_store.t Lazy.t =
-       lazy
-         Mini.(
-           Atomic_store.make
-             ~src:
-               (Expression.atomic_load
-                  (Atomic_load.make
-                     ~src:(Address.of_variable (Identifier.of_string "gen2"))
-                     ~mo:Mem_order.Seq_cst))
-             ~dst:(Address.of_variable (Identifier.of_string "gen1"))
-             ~mo:Mem_order.Seq_cst)
-     ;;
+    let store : Mini.Atomic_store.t Lazy.t =
+      lazy
+        Mini.(
+          Atomic_store.make
+            ~src:
+              (Expression.atomic_load
+                 (Atomic_load.make
+                    ~src:(Address.of_variable (Identifier.of_string "gen2"))
+                    ~mo:Mem_order.Seq_cst))
+            ~dst:(Address.of_variable (Identifier.of_string "gen1"))
+            ~mo:Mem_order.Seq_cst)
+    ;;
 
-     let random_state : Int.Random_state.t Lazy.t =
-       let open Lazy.Let_syntax in
-       let%bind store = store in
-       let%map path = path in
-       { store; path }
-     ;;
+    let random_state : Int.Random_state.t Lazy.t =
+      let open Lazy.Let_syntax in
+      let%bind store = store in
+      let%map path = path in
+      { store; path }
+    ;;
 
-     let prepare_fuzzer_state () : unit Fuzzer_state.Monad.t =
-       Fuzzer_state.Monad.(
-         register_global
-           Mini_type.(pointer_to Basic.atomic_int)
-           (Mini.Identifier.of_string "gen1")
-           ~initial_value:(Fuzzer_var.Value.Int 1337)
-         >>= fun () ->
-         register_global
-           Mini_type.(pointer_to Basic.atomic_int)
-           (Mini.Identifier.of_string "gen2")
-           ~initial_value:(Fuzzer_var.Value.Int (-55)))
-     ;;
+    let prepare_fuzzer_state () : unit Fuzzer_state.Monad.t =
+      Fuzzer_state.Monad.(
+        register_global
+          Mini_type.(pointer_to Basic.atomic_int)
+          (Mini.Identifier.of_string "gen1")
+          ~initial_value:(Fuzzer_var.Value.Int 1337)
+        >>= fun () ->
+        register_global
+          Mini_type.(pointer_to Basic.atomic_int)
+          (Mini.Identifier.of_string "gen2")
+          ~initial_value:(Fuzzer_var.Value.Int (-55)))
+    ;;
 
-     let init_fuzzer_state : Fuzzer_state.t Lazy.t =
-       let open Lazy.Let_syntax in
-       let%map globals_alist = globals in
-       let globals = Mini.Identifier.Map.of_alist_exn globals_alist in
-       Fuzzer_state.init ~globals ~locals:Mini.Identifier.Set.empty ()
-     ;;
+    let init_fuzzer_state : Fuzzer_state.t Lazy.t =
+      let open Lazy.Let_syntax in
+      let%map globals_alist = globals in
+      let globals = Mini.Identifier.Map.of_alist_exn globals_alist in
+      Fuzzer_state.init ~globals ~locals:Mini.Identifier.Set.empty ()
+    ;;
 
-     let run_test () : (Fuzzer_state.t * Fuzzer_subject.Test.t) Or_error.t =
-       Fuzzer_state.Monad.(
-         run'
-           (prepare_fuzzer_state ()
-           >>= fun () -> Int.run (Lazy.force test_subject) (Lazy.force random_state))
-           (Lazy.force init_fuzzer_state))
-     ;;
+    let run_test () : (Fuzzer_state.t * Fuzzer_subject.Test.t) Or_error.t =
+      Fuzzer_state.Monad.(
+        run'
+          (prepare_fuzzer_state ()
+          >>= fun () -> Int.run (Lazy.force test_subject) (Lazy.force random_state))
+          (Lazy.force init_fuzzer_state))
+    ;;
 
-     let%expect_test "test int store: programs" =
-       let r =
-         let open Or_error.Let_syntax in
-         let%bind state, test = run_test () in
-         let vars = Fuzzer_state.vars state in
-         let prog_results =
-           List.mapi test.programs ~f:(fun id p ->
-               p
-               |> Fuzzer_subject.Program.to_function ~vars ~id
-               >>| Tuple2.uncurry Mini_reify.func)
-         in
-         Or_error.combine_errors prog_results
-       in
-       Fmt.(pr "%a@." (result ~ok:(list Ast.External_decl.pp) ~error:Error.pp)) r;
-       [%expect
-         {|
+    let%expect_test "test int store: programs" =
+      let r =
+        let open Or_error.Let_syntax in
+        let%bind state, test = run_test () in
+        let vars = Fuzzer_state.vars state in
+        let prog_results =
+          List.mapi test.programs ~f:(fun id p ->
+              p
+              |> Fuzzer_subject.Program.to_function ~vars ~id
+              >>| Tuple2.uncurry Mini_reify.func)
+        in
+        Or_error.combine_errors prog_results
+      in
+      Fmt.(pr "%a@." (result ~ok:(list Ast.External_decl.pp) ~error:Error.pp)) r;
+      [%expect
+        {|
       void P0(atomic_int *gen1, atomic_int *gen2, atomic_int *x, atomic_int *y)
       {
           atomic_store_explicit(x, 42, memory_order_seq_cst);
@@ -294,42 +297,41 @@ let%test_module "int tests" =
                                 memory_order_seq_cst);
           atomic_store_explicit(y, foo, memory_order_relaxed);
       } |}]
-     ;;
+    ;;
 
-     let%expect_test "test int store: global variables" =
-       let result =
-         Or_error.(
-           run_test ()
-           >>| fst
-           >>| Fuzzer_state.vars_satisfying_all
-                 ~predicates:[ Fuzzer_var.Record.is_global ])
-       in
-       Sexp.output_hum stdout [%sexp (result : Mini.Identifier.t list Or_error.t)];
-       [%expect {| (Ok (gen1 gen2 x y)) |}]
-     ;;
+    let%expect_test "test int store: global variables" =
+      let result =
+        Or_error.(
+          run_test ()
+          >>| fst
+          >>| Fuzzer_state.vars_satisfying_all ~predicates:[ Fuzzer_var.Record.is_global ])
+      in
+      Sexp.output_hum stdout [%sexp (result : Mini.Identifier.t list Or_error.t)];
+      [%expect {| (Ok (gen1 gen2 x y)) |}]
+    ;;
 
-     let%expect_test "test int store: variables with known values" =
-       let result =
-         Or_error.(
-           run_test ()
-           >>| fst
-           >>| Fuzzer_state.vars_satisfying_all
-                 ~predicates:[ Fuzzer_var.Record.has_known_value ])
-       in
-       Sexp.output_hum stdout [%sexp (result : Mini.Identifier.t list Or_error.t)];
-       [%expect {| (Ok (gen2)) |}]
-     ;;
+    let%expect_test "test int store: variables with known values" =
+      let result =
+        Or_error.(
+          run_test ()
+          >>| fst
+          >>| Fuzzer_state.vars_satisfying_all
+                ~predicates:[ Fuzzer_var.Record.has_known_value ])
+      in
+      Sexp.output_hum stdout [%sexp (result : Mini.Identifier.t list Or_error.t)];
+      [%expect {| (Ok (gen2)) |}]
+    ;;
 
-     let%expect_test "test int store: variables with dependencies" =
-       let result =
-         Or_error.(
-           run_test ()
-           >>| fst
-           >>| Fuzzer_state.vars_satisfying_all
-                 ~predicates:[ Fuzzer_var.Record.has_dependencies ])
-       in
-       Sexp.output_hum stdout [%sexp (result : Mini.Identifier.t list Or_error.t)];
-       [%expect {| (Ok (gen2)) |}]
-     ;;
+    let%expect_test "test int store: variables with dependencies" =
+      let result =
+        Or_error.(
+          run_test ()
+          >>| fst
+          >>| Fuzzer_state.vars_satisfying_all
+                ~predicates:[ Fuzzer_var.Record.has_dependencies ])
+      in
+      Sexp.output_hum stdout [%sexp (result : Mini.Identifier.t list Or_error.t)];
+      [%expect {| (Ok (gen2)) |}]
+    ;;
   end)
 ;;

@@ -124,7 +124,8 @@ module Map = struct
       ?(tid : int option)
       ?(scope : Scope.t = Scope.Unknown)
       (cvars : Initial_value.t C_identifier.Map.t)
-      : t =
+      : t
+    =
     C_identifier.Map.map cvars ~f:(fun initial_value ->
         Record.make ?tid ~scope ~initial_value ())
   ;;
@@ -133,7 +134,8 @@ module Map = struct
       ?(tid : int option)
       ?(scope : Scope.t = Scope.Unknown)
       (cvars : C_identifier.Set.t)
-      : t =
+      : t
+    =
     let cvars_map = C_identifier.Set.to_map cvars ~f:(Fn.const None) in
     of_single_scope_map ?tid ~scope cvars_map
   ;;
@@ -164,7 +166,8 @@ module Map = struct
       ?(scope : Scope.t = Scope.Unknown)
       (id : Litmus.Id.t)
       (initial_value : Initial_value.t)
-      : C_identifier.t * Record.t =
+      : C_identifier.t * Record.t
+    =
     let tid = Litmus.Id.tid id in
     let name = Litmus.Id.variable_name id in
     name, Record.make ~scope ?tid ~initial_value ()
@@ -173,14 +176,16 @@ module Map = struct
   let of_litmus_id_alist
       ?(scope : Scope.t option)
       (xs : (Litmus.Id.t, Initial_value.t) List.Assoc.t)
-      : t Or_error.t =
+      : t Or_error.t
+    =
     xs
     |> List.map ~f:(Tuple2.uncurry (of_litmus_id_pair ?scope))
     |> C_identifier.Map.of_alist_or_error
   ;;
 
   let map (m : t) ~(f : C_identifier.t -> Record.t -> C_identifier.t * Record.t)
-      : t Or_error.t =
+      : t Or_error.t
+    =
     m
     |> C_identifier.Map.to_alist
     |> List.map ~f:(Tuple2.uncurry f)
@@ -190,29 +195,29 @@ end
 
 let%test_module "Map tests" =
   (module struct
-     let%expect_test "merge_list_opt: no maps" =
-       Stdio.print_s [%sexp (Map.merge_list_opt [] : Map.t option)];
-       [%expect {| () |}]
-     ;;
+    let%expect_test "merge_list_opt: no maps" =
+      Stdio.print_s [%sexp (Map.merge_list_opt [] : Map.t option)];
+      [%expect {| () |}]
+    ;;
 
-     let%expect_test "of_value_maps_opt: empty maps" =
-       Stdio.print_s
-         [%sexp
-           (Map.merge_list_opt [ C_identifier.Map.empty; C_identifier.Map.empty ]
-             : Map.t option)];
-       [%expect {| (()) |}]
-     ;;
+    let%expect_test "of_value_maps_opt: empty maps" =
+      Stdio.print_s
+        [%sexp
+          (Map.merge_list_opt [ C_identifier.Map.empty; C_identifier.Map.empty ]
+            : Map.t option)];
+      [%expect {| (()) |}]
+    ;;
 
-     let%test_unit "vars_satisfying false = empty" =
-       Base_quickcheck.Test.run_exn
-         (module Map)
-         ~f:(fun m ->
-           [%test_result: C_identifier.Set.t]
-             ~here:[ [%here] ]
-             ~equal:[%equal: C_identifier.Set.t]
-             (Map.vars_satisfying m ~f:(Fn.const false))
-             ~expect:C_identifier.Set.empty)
-     ;;
+    let%test_unit "vars_satisfying false = empty" =
+      Base_quickcheck.Test.run_exn
+        (module Map)
+        ~f:(fun m ->
+          [%test_result: C_identifier.Set.t]
+            ~here:[ [%here] ]
+            ~equal:[%equal: C_identifier.Set.t]
+            (Map.vars_satisfying m ~f:(Fn.const false))
+            ~expect:C_identifier.Set.empty)
+    ;;
   end)
 ;;
 

@@ -71,7 +71,8 @@ module Make (B : Sanitiser_base.Basic) :
   ;;
 
   let escape_symbols (progs : Lang.Program.t Program_container.t)
-      : Lang.Program.t Program_container.t Ctx.t =
+      : Lang.Program.t Program_container.t Ctx.t
+    =
     let open Ctx.Let_syntax in
     (* We do this to make sure that every redirectable symbol known to
        the sanitiser is escaped, not just the ones that appear in the

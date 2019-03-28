@@ -39,7 +39,8 @@ let make_tester_config ~(out_root_raw : string)
                        ~(input_mode : Tester.Input_mode.t)
                        o
                        cfg
-    : Tester.Run_config.t Or_error.t =
+    : Tester.Run_config.t Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%bind output_root = Io.fpath_of_string out_root_raw in
   let specs = Config.Act.compilers cfg in
@@ -54,23 +55,21 @@ let make_tester_config ~(out_root_raw : string)
 
 let make_tester o cfg timing_mode =
   (module Tester.Instance.Make (struct
-     module T = (val Utils.Timing.Mode.to_module timing_mode)
-     module Resolve_compiler = Language_support.Resolve_compiler
+    module T = (val Utils.Timing.Mode.to_module timing_mode)
+    module Resolve_compiler = Language_support.Resolve_compiler
 
-     let o = o
-     let compilers = Config.Act.compilers cfg
+    let o = o
+    let compilers = Config.Act.compilers cfg
 
-     let sanitiser_passes =
-       Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard
-     ;;
+    let sanitiser_passes =
+      Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard
+    ;;
 
-     let herd_cfg = Config.Act.herd cfg
+    let herd_cfg = Config.Act.herd cfg
 
-     let asm_runner_from_spec =
-       Fn.compose
-         Language_support.asm_runner_from_arch
-         Config.Compiler.Spec.With_id.emits
-     ;;
+    let asm_runner_from_spec =
+      Fn.compose Language_support.asm_runner_from_arch Config.Compiler.Spec.With_id.emits
+    ;;
   end)
   : Tester.Instance.S)
 ;;
@@ -172,7 +171,8 @@ let run
     (out_root_raw : string)
     (o : Output.t)
     (cfg : Config.Act.t)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%bind input_mode = cook_input_mode input_mode_raw in
   let%bind tester_cfg = make_tester_config ~input_mode ~out_root_raw o cfg in

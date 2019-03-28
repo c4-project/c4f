@@ -101,7 +101,8 @@ module Map = struct
   let make_existing_var_map
       (globals : Mini.Type.t C_identifier.Map.t)
       (locals : C_identifier.Set.t)
-      : t =
+      : t
+    =
     let globals_map = C_identifier.Map.map globals ~f:Record.make_existing_global in
     let locals_map = C_identifier.Set.to_map locals ~f:Record.make_existing_local in
     C_identifier.Map.merge globals_map locals_map ~f:(fun ~key ->
@@ -115,7 +116,8 @@ module Map = struct
       (map : t)
       (key : C_identifier.t)
       (ty : Mini.Type.t)
-      : t =
+      : t
+    =
     let data = Record.make_generated_global ?initial_value ty in
     C_identifier.Map.set map ~key ~data
   ;;
@@ -153,19 +155,21 @@ module Map = struct
   ;;
 
   let env_satisfying_all (vars : t) ~(predicates : (Record.t -> bool) list)
-      : Mini.Type.t C_identifier.Map.t =
+      : Mini.Type.t C_identifier.Map.t
+    =
     vars |> submap_satisfying_all ~predicates |> C_identifier.Map.filter_map ~f:Record.ty
   ;;
 
   let env_module_satisfying_all (vars : t) ~(predicates : (Record.t -> bool) list) =
     (module Mini_env.Make (struct
-       let env = env_satisfying_all ~predicates vars
+      let env = env_satisfying_all ~predicates vars
     end)
     : Mini_env.S)
   ;;
 
   let satisfying_all (vars : t) ~(predicates : (Record.t -> bool) list)
-      : C_identifier.t list =
+      : C_identifier.t list
+    =
     vars |> submap_satisfying_all ~predicates |> C_identifier.Map.keys
   ;;
 

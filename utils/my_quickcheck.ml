@@ -28,7 +28,8 @@ include My_quickcheck_intf
 let gen_string_initial
     ~(initial : char Quickcheck.Generator.t)
     ~(rest : char Quickcheck.Generator.t)
-    : string Quickcheck.Generator.t =
+    : string Quickcheck.Generator.t
+  =
   Quickcheck.Generator.(
     map
       ~f:(Tuple2.uncurry ( ^ ))

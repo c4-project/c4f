@@ -38,8 +38,8 @@ module State_deviation = struct
     }
   [@@deriving sexp_of, fields, make]
 
-  let of_order_opt : Herd_output.State.Set.Partial_order.t -> t option =
-    (* C is left, asm is right. *)
+  let of_order_opt : Herd_output.State.Set.Partial_order.t -> t option
+    = (* C is left, asm is right. *)
     function
     | Equal -> None
     | Subset { in_right_only } -> Some (make ~in_asm_only:(Set.to_list in_right_only) ())

@@ -28,19 +28,22 @@ include Convert_intf
 
 module Make (B : Basic) = struct
   let convert_programs (ps : B.From.Lang.Program.t list)
-      : B.To.Lang.Program.t list Or_error.t =
+      : B.To.Lang.Program.t list Or_error.t
+    =
     ps |> List.map ~f:B.program |> Or_error.combine_errors
   ;;
 
   let convert_init_line ((k, v) : C_identifier.t * B.From.Lang.Constant.t)
-      : (C_identifier.t * B.To.Lang.Constant.t) Or_error.t =
+      : (C_identifier.t * B.To.Lang.Constant.t) Or_error.t
+    =
     let open Or_error.Let_syntax in
     let%map v' = B.constant v in
     k, v'
   ;;
 
   let convert_init (init : (C_identifier.t, B.From.Lang.Constant.t) List.Assoc.t)
-      : (C_identifier.t, B.To.Lang.Constant.t) List.Assoc.t Or_error.t =
+      : (C_identifier.t, B.To.Lang.Constant.t) List.Assoc.t Or_error.t
+    =
     init |> List.map ~f:convert_init_line |> Or_error.combine_errors
   ;;
 
@@ -55,7 +58,8 @@ module Make (B : Basic) = struct
   ;;
 
   let convert_post_opt
-      : B.From.Postcondition.t option -> B.To.Postcondition.t option Or_error.t =
+      : B.From.Postcondition.t option -> B.To.Postcondition.t option Or_error.t
+    =
     Travesty.T_option.With_errors.map_m ~f:convert_post
   ;;
 

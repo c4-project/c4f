@@ -91,8 +91,7 @@ let%expect_test "is_string_safe: negative example" =
 ;;
 
 module Q : Quickcheck.S with type t := t = struct
-  let char_or_underscore (c : char Quickcheck.Generator.t) : char Quickcheck.Generator.t
-    =
+  let char_or_underscore (c : char Quickcheck.Generator.t) : char Quickcheck.Generator.t =
     Quickcheck.Generator.(union [ c; return '_' ])
   ;;
 

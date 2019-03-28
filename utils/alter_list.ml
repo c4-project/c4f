@@ -25,7 +25,8 @@
 open Core_kernel
 
 let replace (xs : 'a list) (at : int) ~(f : 'a -> 'a option Or_error.t)
-    : 'a list Or_error.t =
+    : 'a list Or_error.t
+  =
   let open Or_error.Let_syntax in
   let z_init = Zipper.Plain.of_list xs in
   let%bind z_move =

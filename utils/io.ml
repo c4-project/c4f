@@ -30,7 +30,8 @@ let fpath_of_string (s : string) : Fpath.t Or_error.t =
 ;;
 
 let lift_fpath_str (f : Fpath.t -> 'a)
-                   (default : 'a) : string option -> 'a Or_error.t = function
+                   (default : 'a) : string option -> 'a Or_error.t
+  = function
   | None -> Or_error.return default
   | Some s -> Or_error.(s |> fpath_of_string >>| f)
 ;;

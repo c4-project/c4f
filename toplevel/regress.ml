@@ -105,7 +105,8 @@ let regress_on_files
     (test_dir : Fpath.t)
     (ext : string)
     ~(f : Fpath.t -> unit Or_error.t)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let open Or_error.Let_syntax in
   printf "# %s tests\n\n" bin_name;
   let%bind test_files = Fs.Unix.get_files ~ext test_dir in
@@ -121,7 +122,8 @@ let regress_on_files
 ;;
 
 let regress_run_asm_many (modename : string) mode passes (test_path : Fpath.t)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let open Or_error.Let_syntax in
   let arch = Config.Id.of_string "x86.att" in
   let path = Fpath.(test_path / "asm" / "x86" / "att" / "") in
@@ -183,7 +185,8 @@ let regress_delitmus (test_dir : Fpath.t) : unit Or_error.t =
 let make_regress_command
     ~(summary : string)
     (regress_function : Fpath.t -> unit Or_error.t)
-    : Command.t =
+    : Command.t
+  =
   let open Command.Let_syntax in
   Command.basic
     ~summary

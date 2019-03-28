@@ -126,7 +126,8 @@ let get_litc_files : Input_mode.t -> Fpath.t list Or_error.t =
 let make (id : Config.Id.t)
          ~(input_mode : Input_mode.t)
          ~(output_root : Fpath.t)
-    : t Or_error.t =
+    : t Or_error.t
+  =
   let open Or_error.Let_syntax in
   let id_path = make_id_path output_root id in
   let%map litc_files = get_litc_files input_mode in
@@ -176,7 +177,8 @@ let make_and_mkdirs
     (id : Config.Id.t)
     ~(input_mode : Input_mode.t)
     ~(output_root : Fpath.t)
-    : t Or_error.t =
+    : t Or_error.t
+  =
   Or_error.(make id ~input_mode ~output_root >>= Travesty.T_or_error.tee_m ~f:mkdirs)
 ;;
 

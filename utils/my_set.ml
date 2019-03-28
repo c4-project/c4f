@@ -82,71 +82,71 @@ end
 
 let%test_module "integer set" =
   (module struct
-     module M = Extend (Int.Set)
+    module M = Extend (Int.Set)
 
-     let%expect_test "disjoint: positive witness" =
-       printf
-         "%b"
-         (M.disjoint (Int.Set.of_list [ 2; 4; 6; 8 ]) (Int.Set.of_list [ 3; 5; 7; 9 ]));
-       [%expect {| true |}]
-     ;;
+    let%expect_test "disjoint: positive witness" =
+      printf
+        "%b"
+        (M.disjoint (Int.Set.of_list [ 2; 4; 6; 8 ]) (Int.Set.of_list [ 3; 5; 7; 9 ]));
+      [%expect {| true |}]
+    ;;
 
-     let%expect_test "disjoint: negative witness" =
-       let module M = Extend (Int.Set) in
-       printf
-         "%b"
-         (M.disjoint (Int.Set.of_list [ 2; 4; 6; 8 ]) (Int.Set.of_list [ 1; 2; 3; 4 ]));
-       [%expect {| false |}]
-     ;;
+    let%expect_test "disjoint: negative witness" =
+      let module M = Extend (Int.Set) in
+      printf
+        "%b"
+        (M.disjoint (Int.Set.of_list [ 2; 4; 6; 8 ]) (Int.Set.of_list [ 1; 2; 3; 4 ]));
+      [%expect {| false |}]
+    ;;
 
-     let%expect_test "disjoint: double empty is disjoint" =
-       let module M = Extend (Int.Set) in
-       printf "%b" (M.disjoint Int.Set.empty Int.Set.empty);
-       [%expect {| true |}]
-     ;;
+    let%expect_test "disjoint: double empty is disjoint" =
+      let module M = Extend (Int.Set) in
+      printf "%b" (M.disjoint Int.Set.empty Int.Set.empty);
+      [%expect {| true |}]
+    ;;
 
-     let%expect_test "partial_compare: empty sets" =
-       let module M = Extend (Int.Set) in
-       Stdio.print_s
-         [%sexp (M.partial_compare Int.Set.empty Int.Set.empty : M.Partial_order.t)];
-       [%expect {| Equal |}]
-     ;;
+    let%expect_test "partial_compare: empty sets" =
+      let module M = Extend (Int.Set) in
+      Stdio.print_s
+        [%sexp (M.partial_compare Int.Set.empty Int.Set.empty : M.Partial_order.t)];
+      [%expect {| Equal |}]
+    ;;
 
-     let%expect_test "partial_compare: subset" =
-       let module M = Extend (Int.Set) in
-       Stdio.print_s
-         [%sexp
-           (T_fn.on Int.Set.of_list M.partial_compare [ 1; 2; 3 ] [ 1; 2; 3; 4; 5; 6 ]
-             : M.Partial_order.t)];
-       [%expect {| (Subset (in_right_only (4 5 6))) |}]
-     ;;
+    let%expect_test "partial_compare: subset" =
+      let module M = Extend (Int.Set) in
+      Stdio.print_s
+        [%sexp
+          (T_fn.on Int.Set.of_list M.partial_compare [ 1; 2; 3 ] [ 1; 2; 3; 4; 5; 6 ]
+            : M.Partial_order.t)];
+      [%expect {| (Subset (in_right_only (4 5 6))) |}]
+    ;;
 
-     let%expect_test "partial_compare: superset" =
-       Stdio.print_s
-         [%sexp
-           (T_fn.on Int.Set.of_list M.partial_compare [ 1; 2; 3; 4; 5; 6 ] [ 4; 5; 6 ]
-             : M.Partial_order.t)];
-       [%expect {| (Superset (in_left_only (1 2 3))) |}]
-     ;;
+    let%expect_test "partial_compare: superset" =
+      Stdio.print_s
+        [%sexp
+          (T_fn.on Int.Set.of_list M.partial_compare [ 1; 2; 3; 4; 5; 6 ] [ 4; 5; 6 ]
+            : M.Partial_order.t)];
+      [%expect {| (Superset (in_left_only (1 2 3))) |}]
+    ;;
 
-     let%expect_test "partial_compare: equal" =
-       Stdio.print_s
-         [%sexp
-           (T_fn.on
-              Int.Set.of_list
-              M.partial_compare
-              [ 1; 2; 3; 4; 5; 6 ]
-              [ 6; 5; 4; 3; 2; 1 ]
-             : M.Partial_order.t)];
-       [%expect {| Equal |}]
-     ;;
+    let%expect_test "partial_compare: equal" =
+      Stdio.print_s
+        [%sexp
+          (T_fn.on
+             Int.Set.of_list
+             M.partial_compare
+             [ 1; 2; 3; 4; 5; 6 ]
+             [ 6; 5; 4; 3; 2; 1 ]
+            : M.Partial_order.t)];
+      [%expect {| Equal |}]
+    ;;
 
-     let%expect_test "partial_compare: no order" =
-       Stdio.print_s
-         [%sexp
-           (T_fn.on Int.Set.of_list M.partial_compare [ 1; 2; 3; 4 ] [ 3; 4; 5; 6 ]
-             : M.Partial_order.t)];
-       [%expect {| (No_order (in_left_only (1 2)) (in_right_only (5 6))) |}]
-     ;;
+    let%expect_test "partial_compare: no order" =
+      Stdio.print_s
+        [%sexp
+          (T_fn.on Int.Set.of_list M.partial_compare [ 1; 2; 3; 4 ] [ 3; 4; 5; 6 ]
+            : M.Partial_order.t)];
+      [%expect {| (No_order (in_left_only (1 2)) (in_right_only (5 6))) |}]
+    ;;
   end)
 ;;

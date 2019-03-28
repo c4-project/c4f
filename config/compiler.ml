@@ -227,8 +227,8 @@ Utils.Filter.Chain_conditional_first (struct
 
   type aux_i = Onto.aux_i Chain_input.t
 
-  let lift_next (next : Chain_input.next_mode -> 'a) : unit Filter.chain_output -> 'a =
-    function
+  let lift_next (next : Chain_input.next_mode -> 'a) : unit Filter.chain_output -> 'a
+    = function
     | `Checking_ahead -> next `Preview
     | `Skipped -> next `No_compile
     | `Ran () -> next `Compile
@@ -247,10 +247,10 @@ let from_resolver_and_spec resolve cspec =
   let%map (module B : Basic) = resolve cspec in
   let (module Runner) = runner_from_spec cspec in
   (module Make (struct
-     let cspec = cspec
+    let cspec = cspec
 
-     include B
-     module Runner = Runner
+    include B
+    module Runner = Runner
   end)
   : S)
 ;;
@@ -265,7 +265,8 @@ struct
 
   let filter_from_spec (cspec : Spec.With_id.t)
       : (module Utils.Filter.S with type aux_i = unit
-                                and type aux_o = unit) Or_error.t =
+                                and type aux_o = unit) Or_error.t
+    =
     let open Or_error.Let_syntax in
     let%map (module S) = from_spec cspec in
     (module S_to_filter (S)
@@ -281,7 +282,8 @@ struct
       : (module Utils.Filter.S
            with type aux_i = i Chain_input.t
             and type aux_o = unit option * o)
-      Or_error.t =
+      Or_error.t
+    =
     let open Or_error.Let_syntax in
     let%map (module F) = filter_from_spec cspec in
     (module Chain_with_compiler (F) (Onto)
@@ -331,9 +333,7 @@ struct
     | `Arch _ ->
       Or_error.return
         (module Fail (struct
-           let error =
-             Error.of_string "To run a compiler, you must supply a compiler ID."
-           ;;
+          let error = Error.of_string "To run a compiler, you must supply a compiler ID."
         end)
         : S)
   ;;

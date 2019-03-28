@@ -48,7 +48,8 @@ module Assign = struct
         (assign : t)
         ~(lvalue : Lvalue.t F.traversal)
         ~(rvalue : Expression.t F.traversal)
-        : t M.t =
+        : t M.t
+      =
       Fields.fold
         ~init:(M.return assign)
         ~lvalue:(F.proc_field lvalue)
@@ -103,7 +104,8 @@ module Atomic_store = struct
         ~(src : Expression.t F.traversal)
         ~(dst : Address.t F.traversal)
         ~(mo : Mem_order.t F.traversal)
-        : t M.t =
+        : t M.t
+      =
       Fields.fold
         ~init:(M.return store)
         ~src:(F.proc_field src)
@@ -211,7 +213,8 @@ module Atomic_cmpxchg = struct
         ~(desired : Expression.t F.traversal)
         ~(succ : Mem_order.t F.traversal)
         ~(fail : Mem_order.t F.traversal)
-        : t M.t =
+        : t M.t
+      =
       Fields.fold
         ~init:(M.return cmpxchg)
         ~obj:(F.proc_field obj)
@@ -292,7 +295,8 @@ module Ifs_base_map (M : Monad.S) = struct
       ~(cond : Expression.t F.traversal)
       ~(t_branch : statement list F.traversal)
       ~(f_branch : statement list F.traversal)
-      : if_statement M.t =
+      : if_statement M.t
+    =
     Fields_of_if_statement.fold
       ~init:(M.return if_stm)
       ~cond:(F.proc_field cond)
@@ -522,7 +526,8 @@ module Function = struct
         ~(parameters : Type.t id_assoc -> Type.t id_assoc M.t)
         ~(body_decls : Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
         ~(body_stms : Statement.t list -> Statement.t list M.t)
-        : t M.t =
+        : t M.t
+      =
       Fields.fold
         ~init:(M.return func)
         ~parameters:(F.proc_field parameters)
@@ -578,7 +583,8 @@ module Program = struct
         (program : t)
         ~(globals : Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
         ~(functions : Function.t id_assoc -> Function.t id_assoc M.t)
-        : t M.t =
+        : t M.t
+      =
       Fields.fold
         ~init:(M.return program)
         ~globals:(F.proc_field globals)

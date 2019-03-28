@@ -88,7 +88,8 @@ module Runner (Conf : Basic_runner) : R.S = R.Make (struct
                (ys : 'b list)
                ~(f : 'a -> 'b -> 'c)
                ~(error : Error.t)
-      : 'c list Or_error.t =
+      : 'c list Or_error.t
+    =
     let map_result = List.map2 xs ys ~f in
     match map_result with
     | Ok xs -> Or_error.return xs
@@ -99,7 +100,8 @@ module Runner (Conf : Basic_runner) : R.S = R.Make (struct
       ~(action : local:Fpath.t -> remote:string -> unit Or_error.t)
       (locals : Fpath.t list)
       (remotes : string list)
-      : unit Or_error.t =
+      : unit Or_error.t
+    =
     Or_error.(
       map2_err
         locals
@@ -119,7 +121,8 @@ module Runner (Conf : Basic_runner) : R.S = R.Make (struct
       ~(dir_action : local:Fpath.t -> remote:string -> unit Or_error.t)
       ~(file_action : local:Fpath.t -> remote:string -> unit Or_error.t)
       (cs : Fpath.t Copy_spec.t)
-      : string Copy_spec.t Or_error.t =
+      : string Copy_spec.t Or_error.t
+    =
     let open Or_error.Let_syntax in
     let rcs = copy_spec_to_remote cs in
     let%map () =

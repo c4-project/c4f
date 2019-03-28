@@ -38,23 +38,23 @@ let filter_files ?ext (flist : Fpath.t list) =
 
 let%test_module "filter_files" =
   (module struct
-     let test_files = [ "stdio.h"; "conio.h"; "main.c"; "main.o"; "README" ]
+    let test_files = [ "stdio.h"; "conio.h"; "main.c"; "main.o"; "README" ]
 
-     let%expect_test "filter_files: no filter" =
-       let result = filter_files (List.map ~f:Fpath.v test_files) in
-       Sexp.output_hum
-         Out_channel.stdout
-         [%sexp (List.map ~f:Fpath.to_string result : string list)];
-       [%expect {| (stdio.h conio.h main.c main.o README) |}]
-     ;;
+    let%expect_test "filter_files: no filter" =
+      let result = filter_files (List.map ~f:Fpath.v test_files) in
+      Sexp.output_hum
+        Out_channel.stdout
+        [%sexp (List.map ~f:Fpath.to_string result : string list)];
+      [%expect {| (stdio.h conio.h main.c main.o README) |}]
+    ;;
 
-     let%expect_test "filter_files: filter" =
-       let result = filter_files ~ext:"c" (List.map ~f:Fpath.v test_files) in
-       Sexp.output_hum
-         Out_channel.stdout
-         [%sexp (List.map ~f:Fpath.to_string result : string list)];
-       [%expect {| (main.c) |}]
-     ;;
+    let%expect_test "filter_files: filter" =
+      let result = filter_files ~ext:"c" (List.map ~f:Fpath.v test_files) in
+      Sexp.output_hum
+        Out_channel.stdout
+        [%sexp (List.map ~f:Fpath.to_string result : string list)];
+      [%expect {| (main.c) |}]
+    ;;
   end)
 ;;
 
@@ -89,7 +89,8 @@ module Unix : S = struct
       (path : Fpath.t)
       ~(on_dir : Fpath.t -> unit Or_error.t)
       ~(on_file : Fpath.t -> unit Or_error.t)
-      : unit Or_error.t =
+      : unit Or_error.t
+    =
     let path_s = Fpath.to_string path in
     match get_ent_type path_s with
     | Dir -> on_dir path
@@ -99,14 +100,16 @@ module Unix : S = struct
   ;;
 
   let check_is_dir ?(on_absent : (Fpath.t -> unit Or_error.t) option)
-      : Fpath.t -> unit Or_error.t =
+      : Fpath.t -> unit Or_error.t
+    =
     check ?on_absent ~on_dir:(Fn.const Result.ok_unit) ~on_file:(fun path ->
         Or_error.error_s
           [%message "path exists, but is a file" ~path:(Fpath.to_string path)])
   ;;
 
   let check_is_file ?(on_absent : (Fpath.t -> unit Or_error.t) option)
-      : Fpath.t -> unit Or_error.t =
+      : Fpath.t -> unit Or_error.t
+    =
     check ?on_absent ~on_file:(Fn.const Result.ok_unit) ~on_dir:(fun path ->
         Or_error.error_s
           [%message "path exists, but is a directory" ~path:(Fpath.to_string path)])

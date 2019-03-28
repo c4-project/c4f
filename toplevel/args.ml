@@ -116,7 +116,8 @@ module Other = struct
   let arch ?(name : string = "-arch")
            ?(doc : string = "the architecture to target")
            ()
-      : Config.Id.t option Command.Param.t =
+      : Config.Id.t option Command.Param.t
+    =
     flag name (optional arch_type) ~doc:("ARCH_ID " ^ doc)
   ;;
 

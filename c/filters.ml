@@ -101,7 +101,8 @@ Utils.Filter.Make (struct
   ;;
 
   let run_fuzz ~(seed : int option) ~(o : Lib.Output.t) (vast : B.t) (oc : Out_channel.t)
-      : Output.t Or_error.t =
+      : Output.t Or_error.t
+    =
     let open Or_error.Let_syntax in
     let%map fz = B.fuzz ~seed ~o vast in
     Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp fz;
@@ -118,7 +119,8 @@ Utils.Filter.Make (struct
   let run_print (output_mode : [ `All | `Vars ])
                 (vast : B.t)
                 (oc : Out_channel.t)
-      : Output.t Or_error.t =
+      : Output.t Or_error.t
+    =
     let cvars = B.cvars vast in
     let post = B.postcondition vast in
     let f = Format.formatter_of_out_channel oc in
@@ -203,7 +205,8 @@ Make (struct
   let fuzz : seed:int option -> o:Lib.Output.t -> t -> t Or_error.t = Fuzzer.run
 
   let postcondition
-      : Mini_litmus.Ast.Validated.t -> Mini_litmus.Ast.Postcondition.t option =
+      : Mini_litmus.Ast.Validated.t -> Mini_litmus.Ast.Postcondition.t option
+    =
     Mini_litmus.Ast.Validated.postcondition
   ;;
 
@@ -212,6 +215,7 @@ Make (struct
 end)
 
 let c_module (is_c : bool)
-    : (module Utils.Filter.S with type aux_i = mode and type aux_o = Output.t) =
+    : (module Utils.Filter.S with type aux_i = mode and type aux_o = Output.t)
+  =
   if is_c then (module Normal_C) else (module Litmus)
 ;;

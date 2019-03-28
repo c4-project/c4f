@@ -91,7 +91,8 @@ let compare_states
     ~finals
     ~(locmap : Id.t -> Id.t option Or_error.t)
     ~(valmap : string -> string Or_error.t)
-    : outcome Or_error.t =
+    : outcome Or_error.t
+  =
   let open Or_error.Let_syntax in
   let f = State.map ~keyf:locmap ~valf:valmap in
   let%map finals' = Or_error.combine_errors (List.map ~f finals) in

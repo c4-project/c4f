@@ -28,7 +28,8 @@ include Fuzzer_action_intf
 let zero_if_not_available (subject : Fuzzer_subject.Test.t)
                           (module A : S)
                           (weight : int)
-    : int Fuzzer_state.Monad.t =
+    : int Fuzzer_state.Monad.t
+  =
   let open Fuzzer_state.Monad.Let_syntax in
   if%map A.available subject then weight else 0
 ;;
@@ -47,7 +48,8 @@ module List = struct
       weight 0. *)
   let to_available_only (wl : t)
                         (subject : Fuzzer_subject.Test.t)
-      : t Fuzzer_state.Monad.t =
+      : t Fuzzer_state.Monad.t
+    =
     W.adjust_weights_m wl ~f:(zero_if_not_available subject)
   ;;
 
@@ -55,7 +57,8 @@ module List = struct
       (table : t)
       (subject : Fuzzer_subject.Test.t)
       (random : Splittable_random.State.t)
-      : (module S) Fuzzer_state.Monad.t =
+      : (module S) Fuzzer_state.Monad.t
+    =
     let open Fuzzer_state.Monad.Let_syntax in
     let%bind available = to_available_only table subject in
     Fuzzer_state.Monad.Monadic.return (Weighted_list.sample available ~random)

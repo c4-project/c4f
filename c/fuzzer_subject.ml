@@ -82,7 +82,8 @@ module Program = struct
     type target = t
 
     let gen_insert_stm ({ stms; _ } : target)
-        : Mini_path.stm_hole Mini_path.function_path Quickcheck.Generator.t =
+        : Mini_path.stm_hole Mini_path.function_path Quickcheck.Generator.t
+      =
       Quickcheck.Generator.map (Stm_list_path.gen_insert_stm stms) ~f:(fun path ->
           Mini_path.On_statements path)
     ;;
@@ -95,7 +96,8 @@ module Program = struct
            -> Mini.Statement.t With_source.t list
            -> Mini.Statement.t With_source.t list Or_error.t)
         (prog : t)
-        : t Or_error.t =
+        : t Or_error.t
+      =
       match path with
       | On_statements rest ->
         Or_error.(f rest prog.stms >>| fun stms' -> { prog with stms = stms' })
@@ -104,14 +106,16 @@ module Program = struct
     let insert_stm
         (path : Mini_path.stm_hole Mini_path.function_path)
         (stm : Mini.Statement.t)
-        : target -> target Or_error.t =
+        : target -> target Or_error.t
+      =
       handle_stm path ~f:(fun rest -> Stm_list_path.insert_stm rest stm)
     ;;
 
     let transform_stm
         (path : Mini_path.on_stm Mini_path.function_path)
         ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t)
-        : target -> target Or_error.t =
+        : target -> target Or_error.t
+      =
       handle_stm path ~f:(Stm_list_path.transform_stm ~f)
     ;;
   end
@@ -125,7 +129,8 @@ module Program = struct
   ;;
 
   let try_extract_parameter_type ((n, var) : C_identifier.t * Fuzzer_var.Record.t)
-      : (C_identifier.t * Mini.Type.t) Or_error.t =
+      : (C_identifier.t * Mini.Type.t) Or_error.t
+    =
     Or_error.(
       var
       |> Fuzzer_var.Record.ty
@@ -137,7 +142,8 @@ module Program = struct
       parameter list for a C litmus test using the global
       variable records in [vars]. *)
   let make_function_parameters (vars : Fuzzer_var.Map.t)
-      : Mini.Type.t Mini.id_assoc Or_error.t =
+      : Mini.Type.t Mini.id_assoc Or_error.t
+    =
     vars
     |> C_identifier.Map.filter ~f:Fuzzer_var.Record.is_global
     |> C_identifier.Map.to_alist
@@ -148,7 +154,8 @@ module Program = struct
   let to_function (prog : t)
                   ~(vars : Fuzzer_var.Map.t)
                   ~(id : int)
-      : Mini.Function.t Mini.named Or_error.t =
+      : Mini.Function.t Mini.named Or_error.t
+    =
     let open Or_error.Let_syntax in
     let name = C_identifier.of_string (sprintf "P%d" id) in
     let%map parameters = make_function_parameters vars in
@@ -174,7 +181,8 @@ module Test = struct
     type stm = Mini.Statement.t
 
     let gen_insert_stm (test : target)
-        : Mini_path.stm_hole Mini_path.program_path Quickcheck.Generator.t =
+        : Mini_path.stm_hole Mini_path.program_path Quickcheck.Generator.t
+      =
       let prog_gens =
         List.mapi test.programs ~f:(fun index prog ->
             Quickcheck.Generator.map (Program.Path.gen_insert_stm prog) ~f:(fun rest ->
@@ -188,7 +196,8 @@ module Test = struct
         (path : a Mini_path.program_path)
         ~(f : a Mini_path.function_path -> Program.t -> Program.t Or_error.t)
         (test : target)
-        : target Or_error.t =
+        : target Or_error.t
+      =
       let open Or_error.Let_syntax in
       match path with
       | On_program { index; rest } ->
@@ -202,14 +211,16 @@ module Test = struct
 
     let insert_stm (path : Mini_path.stm_hole Mini_path.program_path)
                    (stm : stm)
-        : target -> target Or_error.t =
+        : target -> target Or_error.t
+      =
       handle_stm path ~f:(fun rest -> Program.Path.insert_stm rest stm)
     ;;
 
     let transform_stm
         (path : Mini_path.on_stm Mini_path.program_path)
         ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t)
-        : target -> target Or_error.t =
+        : target -> target Or_error.t
+      =
       handle_stm path ~f:(Program.Path.transform_stm ~f)
     ;;
   end
@@ -226,7 +237,8 @@ module Test = struct
 
   let programs_to_litmus (progs : Program.t list)
                          ~(vars : Fuzzer_var.Map.t)
-      : Mini_litmus.Lang.Program.t list Or_error.t =
+      : Mini_litmus.Lang.Program.t list Or_error.t
+    =
     progs
     |> List.filter ~f:Program.has_statements
     |> List.mapi ~f:(fun id -> Program.to_function ~vars ~id)
@@ -235,28 +247,28 @@ module Test = struct
 
   let%test_module "using sample environment" =
     (module struct
-       type r = Mini_litmus.Lang.Program.t list Or_error.t [@@deriving sexp_of]
+      type r = Mini_litmus.Lang.Program.t list Or_error.t [@@deriving sexp_of]
 
-       let vars =
-         Fuzzer_var.Map.make_existing_var_map
-           (Lazy.force Mini_env.test_env)
-           C_identifier.Set.empty
-       ;;
+      let vars =
+        Fuzzer_var.Map.make_existing_var_map
+          (Lazy.force Mini_env.test_env)
+          C_identifier.Set.empty
+      ;;
 
-       let run programs =
-         let result = programs_to_litmus programs ~vars in
-         Sexp.output_hum stdout [%sexp (result : r)]
-       ;;
+      let run programs =
+        let result = programs_to_litmus programs ~vars in
+        Sexp.output_hum stdout [%sexp (result : r)]
+      ;;
 
-       let%expect_test "programs_to_litmus: empty test" =
-         run [];
-         [%expect {| (Ok ()) |}]
-       ;;
+      let%expect_test "programs_to_litmus: empty test" =
+        run [];
+        [%expect {| (Ok ()) |}]
+      ;;
 
-       let%expect_test "programs_to_litmus: empty programs" =
-         run (List.init 5 ~f:(fun _ -> Program.empty ()));
-         [%expect {| (Ok ()) |}]
-       ;;
+      let%expect_test "programs_to_litmus: empty programs" =
+        run (List.init 5 ~f:(fun _ -> Program.empty ()));
+        [%expect {| (Ok ()) |}]
+      ;;
     end)
   ;;
 
@@ -265,7 +277,8 @@ module Test = struct
       (subject : t)
       ~(vars : Fuzzer_var.Map.t)
       ~(name : string)
-      : Mini_litmus.Ast.Validated.t Or_error.t =
+      : Mini_litmus.Ast.Validated.t Or_error.t
+    =
     let open Or_error.Let_syntax in
     let%bind programs = programs_to_litmus ~vars subject.programs in
     Mini_litmus.Ast.Validated.make ?postcondition ~name ~init:subject.init ~programs ()
@@ -275,7 +288,8 @@ module Test = struct
       (subject : t)
       (var : C_identifier.t)
       (initial_value : Mini.Constant.t)
-      : t =
+      : t
+    =
     { subject with init = (var, initial_value) :: subject.init }
   ;;
 end

@@ -30,7 +30,8 @@ let run
     (args : Args.Standard_with_files.t)
     (o : Output.t)
     (_cfg : Config.Act.t)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%map _ =
     C.Filters.Litmus.run_from_string_paths

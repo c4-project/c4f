@@ -34,7 +34,8 @@ let map_combine (xs : 'a list) ~(f : 'a -> 'b Or_error.t) : 'b list Or_error.t =
     into a list of declarations followed immediately by a list of
     code, C89-style. *)
 let sift_decls (maybe_decl_list : ([> `Decl of 'd ] as 'a) list)
-    : ('d list * 'a list) Or_error.t =
+    : ('d list * 'a list) Or_error.t
+  =
   Or_error.(
     Travesty.T_list.With_errors.fold_m
       maybe_decl_list
@@ -90,7 +91,8 @@ let defined_types : (C_identifier.t, Type.Basic.t) List.Assoc.t Lazy.t =
 ;;
 
 let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t ] list)
-    : Type.Basic.t Or_error.t =
+    : Type.Basic.t Or_error.t
+  =
   let open Or_error.Let_syntax in
   match%bind Travesty.T_list.one quals with
   | `Int -> return Type.Basic.int
@@ -180,8 +182,8 @@ let param_type_list : Ast.Param_type_list.t -> Type.t id_assoc Or_error.t = func
   | { style = `Normal; params } -> map_combine ~f:param_decl params
 ;;
 
-let func_signature : Ast.Declarator.t -> (Identifier.t * Type.t id_assoc) Or_error.t =
-  function
+let func_signature : Ast.Declarator.t -> (Identifier.t * Type.t id_assoc) Or_error.t
+  = function
   | { pointer = Some _; _ } -> Or_error.error_string "Pointers not supported yet"
   | { pointer = None; direct = Fun_decl (Id name, param_list) } ->
     Or_error.(param_list |> param_type_list >>| Tuple2.create name)
@@ -231,7 +233,8 @@ let call
     (call_table : (Ast.Expr.t list -> 'a Or_error.t) id_assoc Lazy.t)
     (func : Ast.Expr.t)
     (arguments : Ast.Expr.t list)
-    : 'a Or_error.t =
+    : 'a Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%bind func_name = expr_to_identifier func in
   let%bind call_handler =
@@ -376,7 +379,8 @@ let model_if
     (old_cond : Ast.Expr.t)
     (old_t_branch : Ast.Stm.t)
     (old_f_branch : Ast.Stm.t option)
-    : Statement.t Or_error.t =
+    : Statement.t Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%bind cond = expr old_cond in
   let%bind t_list = possible_compound_to_list old_t_branch in
@@ -459,7 +463,8 @@ let%expect_test "model atomic cmpxchg" =
 ;;
 
 let func_body (body : Ast.Compound_stm.t)
-    : (Initialiser.t id_assoc * Statement.t list) Or_error.t =
+    : (Initialiser.t id_assoc * Statement.t list) Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%bind ast_decls, ast_nondecls = sift_decls body in
   let%bind ast_stms = ensure_statements ast_nondecls in

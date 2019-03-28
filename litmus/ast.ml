@@ -206,8 +206,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     ;;
 
     let get_uniform_globals
-        : Lang.Program.t list -> Lang.Type.t C_identifier.Map.t option Or_error.t =
-      function
+        : Lang.Program.t list -> Lang.Type.t C_identifier.Map.t option Or_error.t
+      = function
       | [] -> Or_error.error_string "empty programs"
       | x :: xs ->
         let s = Lang.Program.global_vars x in
@@ -226,7 +226,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     let check_init_against_globals
         (init : (C_identifier.t, Lang.Constant.t) List.Assoc.t)
         (globals : Lang.Type.t C_identifier.Map.t)
-        : unit Or_error.t =
+        : unit Or_error.t
+      =
       let init_keys = init |> List.map ~f:fst |> C_identifier.Set.of_list in
       let globals_keys = globals |> C_identifier.Map.keys |> C_identifier.Set.of_list in
       Travesty.T_or_error.unless_m
@@ -308,7 +309,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   ;;
 
   let get_init (decls : Decl.t list)
-      : (C_identifier.t, Lang.Constant.t) List.Assoc.t Or_error.t =
+      : (C_identifier.t, Lang.Constant.t) List.Assoc.t Or_error.t
+    =
     Or_error.(
       decls
       |> List.filter_map ~f:Decl.as_init

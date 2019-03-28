@@ -94,7 +94,7 @@ let lift_to_lazy_mod (e : Mini_type.t C_identifier.Map.t Lazy.t) : (module S) La
     e
     >>| fun env ->
     (module Make (struct
-       let env = env
+      let env = env
     end)
     : S))
 ;;

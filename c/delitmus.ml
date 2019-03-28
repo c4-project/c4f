@@ -40,7 +40,8 @@ let parameter_list_equal : Mini.Type.t Mini.id_assoc -> Mini.Type.t Mini.id_asso
 let check_parameters_consistent
     (params : Mini.Type.t Mini.id_assoc)
     (next : Mini.Function.t)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let params' = Mini.Function.parameters next in
   if parameter_list_equal params params'
   then Result.ok_unit
@@ -53,7 +54,8 @@ let check_parameters_consistent
 ;;
 
 let functions_to_parameter_map
-    : Mini.Function.t list -> Mini.Type.t Mini.id_assoc Or_error.t = function
+    : Mini.Function.t list -> Mini.Type.t Mini.id_assoc Or_error.t
+  = function
   | [] -> Or_error.error_string "need at least one function"
   | x :: xs ->
     let open Or_error.Let_syntax in
@@ -69,7 +71,8 @@ let functions_to_parameter_map
 let merge_init_and_params
     (init : Ast_basic.Constant.t Mini.id_assoc)
     (params : Mini.Type.t Mini.id_assoc)
-    : (Mini.Type.t * Ast_basic.Constant.t) Mini.id_assoc Or_error.t =
+    : (Mini.Type.t * Ast_basic.Constant.t) Mini.id_assoc Or_error.t
+  =
   let i_ids = init |> List.map ~f:fst |> C_identifier.Set.of_list in
   let p_ids = params |> List.map ~f:fst |> C_identifier.Set.of_list in
   if C_identifier.Set.equal i_ids p_ids
@@ -95,7 +98,8 @@ let merge_init_and_params
    generally means the litmus test being delitmusified is
    ill-formed. *)
 let dereference_params (params : Mini.Type.t Mini.id_assoc)
-    : Mini.Type.t Mini.id_assoc Or_error.t =
+    : Mini.Type.t Mini.id_assoc Or_error.t
+  =
   Or_error.(
     params
     |> List.map ~f:(fun (id, ty) -> ty |> Mini.Type.deref >>| Tuple2.create id)
@@ -111,7 +115,8 @@ let dereference_params (params : Mini.Type.t Mini.id_assoc)
 let make_init_globals
     (init : Ast_basic.Constant.t Mini.id_assoc)
     (functions : Mini.Function.t list)
-    : (Ast_basic.Identifier.t, Mini.Initialiser.t) List.Assoc.t Or_error.t =
+    : (Ast_basic.Identifier.t, Mini.Initialiser.t) List.Assoc.t Or_error.t
+  =
   Or_error.(
     functions
     |> functions_to_parameter_map
@@ -130,7 +135,8 @@ let%expect_test "qualify_local: example" =
 ;;
 
 let make_single_func_globals (tid : int) (func : Mini.Function.t)
-    : Mini.Initialiser.t Mini.id_assoc =
+    : Mini.Initialiser.t Mini.id_assoc
+  =
   List.map ~f:(fun (k, v) -> qualify_local tid k, v) (Mini.Function.body_decls func)
 ;;
 
@@ -194,7 +200,8 @@ end
 
 let global_reduce (tid : int)
                   (locals : Mini.Identifier.Set.t)
-    : Mini.Statement.t list -> Mini.Statement.t list =
+    : Mini.Statement.t list -> Mini.Statement.t list
+  =
   let module M = Global_reduce (struct
     let tid = tid
     let locals = locals
@@ -205,7 +212,8 @@ let global_reduce (tid : int)
 
 let delitmus_stms (tid : int)
                   (locals : Mini.Initialiser.t Mini.id_assoc)
-    : Mini.Statement.t list -> Mini.Statement.t list =
+    : Mini.Statement.t list -> Mini.Statement.t list
+  =
   let locals_set = locals |> List.map ~f:fst |> Mini.Identifier.Set.of_list in
   global_reduce tid locals_set
 ;;
@@ -234,7 +242,8 @@ end
 let make_globals
     (init : Mini.Constant.t Mini.id_assoc)
     (function_bodies : Mini.Function.t list)
-    : Mini_initialiser.t Mini.id_assoc Or_error.t =
+    : Mini_initialiser.t Mini.id_assoc Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%map init_globals = make_init_globals init function_bodies in
   let func_globals = make_func_globals function_bodies in
@@ -243,14 +252,16 @@ let make_globals
 
 let qualify_if_local (var : C_identifier.t)
                      (record : Config.C_variables.Record.t)
-    : C_identifier.t * Config.C_variables.Record.t =
+    : C_identifier.t * Config.C_variables.Record.t
+  =
   match Config.C_variables.Record.tid record with
   | None -> var, record
   | Some tid -> qualify_local tid var, Config.C_variables.Record.remove_tid record
 ;;
 
 let cvars_with_qualified_locals (cvars : Config.C_variables.Map.t)
-    : Config.C_variables.Map.t Or_error.t =
+    : Config.C_variables.Map.t Or_error.t
+  =
   Config.C_variables.Map.map cvars ~f:qualify_if_local
 ;;
 

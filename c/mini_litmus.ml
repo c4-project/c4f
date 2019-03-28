@@ -79,7 +79,8 @@ module Ast = Litmus.Ast.Make (Lang)
 module Pp = Litmus.Pp.Make_sequential (Ast)
 
 let function_cvars_map (tid : int) ((_, func) : Lang.Program.t)
-    : Config.C_variables.Map.t =
+    : Config.C_variables.Map.t
+  =
   func
   |> Function.cvars
   |> Config.C_variables.Map.of_single_scope_set
@@ -91,8 +92,8 @@ let litmus_local_cvars (ast : Ast.Validated.t) : Config.C_variables.Map.t list =
   ast |> Ast.Validated.programs |> List.mapi ~f:function_cvars_map
 ;;
 
-let constant_to_initial_value : Constant.t -> Config.C_variables.Initial_value.t =
-  function
+let constant_to_initial_value : Constant.t -> Config.C_variables.Initial_value.t
+  = function
   | Integer k -> Some k
   | Char _ | Float _ -> None
 ;;

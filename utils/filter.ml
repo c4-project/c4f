@@ -30,7 +30,8 @@ let lift_to_raw_strings
     (aux_in : 'i)
     ~(infile : string option)
     ~(outfile : string option)
-    : 'o Or_error.t =
+    : 'o Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%bind in_src = Io.In_source.of_string_opt infile
   and out_snk = Io.Out_sink.of_string_opt outfile in
@@ -42,7 +43,8 @@ let lift_to_fpaths
     (aux_in : 'i)
     ~(infile : Fpath.t option)
     ~(outfile : Fpath.t option)
-    : 'o Or_error.t =
+    : 'o Or_error.t
+  =
   let in_src = Io.In_source.of_fpath_opt infile
   and out_snk = Io.Out_sink.of_fpath_opt outfile in
   f aux_in in_src out_snk
@@ -69,7 +71,8 @@ let copy
     (ic : Stdio.In_channel.t)
     (_snk : Io.Out_sink.t)
     (oc : Stdio.Out_channel.t)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   Or_error.try_with (fun () ->
       Stdio.In_channel.iter_lines
         ic
@@ -101,7 +104,8 @@ let ensure_input_file (src : Io.In_source.t) : Fpath.t Or_error.t =
    successful completion. *)
 let route_input_from_file (sink : Io.Out_sink.t)
                           ~(f : Fpath.t -> 'a Or_error.t)
-    : 'a Or_error.t =
+    : 'a Or_error.t
+  =
   let open Or_error.Let_syntax in
   let temp_out = Io.Out_sink.temp ~prefix:"filter" ~ext:"tmp" in
   let%bind file = Io.Out_sink.to_file_err temp_out in
@@ -117,7 +121,8 @@ let route_input_from_file (sink : Io.Out_sink.t)
    on successful completion. *)
 let ensure_output_file (sink : Io.Out_sink.t)
                        ~(f : Fpath.t -> 'a Or_error.t)
-    : 'a Or_error.t =
+    : 'a Or_error.t
+  =
   match Io.Out_sink.to_file sink with
   | Some file -> f file
   | None -> route_input_from_file sink ~f
@@ -331,7 +336,8 @@ struct
   ;;
 
   let run (new_i : aux_i) (src : Io.In_source.t) (sink : Io.Out_sink.t)
-      : aux_o Or_error.t =
+      : aux_o Or_error.t
+    =
     let open Or_error.Let_syntax in
     let%bind old_i = B.adapt_i new_i in
     let%bind old_o = B.Original.run old_i src sink in
@@ -354,7 +360,8 @@ module Make_on_runner (R : Basic_on_runner) :
       (aux : R.aux_i)
       ~(input : string Copy_spec.t)
       ~(output : string Copy_spec.t)
-      : string list Or_error.t =
+      : string list Or_error.t
+    =
     ignore output;
     let open Or_error.Let_syntax in
     let%map file = get_file input in
@@ -366,7 +373,8 @@ module Make_on_runner (R : Basic_on_runner) :
   type aux_o = unit
 
   let run ({ aux; _ } : aux_i ctx) (infile : Fpath.t) (oc : Stdio.Out_channel.t)
-      : unit Or_error.t =
+      : unit Or_error.t
+    =
     let prog = R.prog aux in
     R.Runner.run_with_copy
       ~oc

@@ -28,7 +28,8 @@ open Utils
 
 let run_direct
     ?(oc : Out_channel.t = stdout) (cfg : Config.Litmus_tool.t) (argv : string list)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let prog = Config.Litmus_tool.cmd cfg in
   Or_error.tag ~tag:"While running litmus" (Runner.Local.run ~oc ~prog argv)
 ;;

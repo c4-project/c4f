@@ -132,7 +132,8 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
     ;;
 
     let get_uniform_listings (progs : Ast.Lang.Program.t list)
-        : Ast.Lang.Statement.t list list =
+        : Ast.Lang.Statement.t list list
+      =
       progs |> List.map ~f:Ast.Lang.Program.listing |> Ast.Lang.Statement.make_uniform
     ;;
 

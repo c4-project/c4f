@@ -77,7 +77,8 @@ let run_direct
     ?(oc : Out_channel.t = Out_channel.stdout)
     (config : Config.Herd.t)
     (argv : string list)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let prog = Config.Herd.cmd config in
   let argv' = make_argv_from_config config arch argv in
   Or_error.tag ~tag:"While running herd" (Runner.Local.run ~oc ~prog argv')

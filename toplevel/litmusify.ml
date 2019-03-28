@@ -111,19 +111,20 @@ module Post_filter = struct
       (module M : Filter.S with type aux_i = i and type aux_o = o)
       : (module Filter.S
            with type aux_i = i * (o Filter.chain_output -> cfg)
-            and type aux_o = o * unit option) =
+            and type aux_o = o * unit option)
+    =
     let (module Post) = make (module R) filter in
     (module Filter.Chain_conditional_second (struct
-       type aux_i = i * (o Filter.chain_output -> cfg)
+      type aux_i = i * (o Filter.chain_output -> cfg)
 
-       let select { Filter.aux = rest, cfg; _ } =
-         match cfg `Checking_ahead with
-         | `None -> `One rest
-         | `Herd _ | `Litmus _ -> `Both (rest, cfg)
-       ;;
+      let select { Filter.aux = rest, cfg; _ } =
+        match cfg `Checking_ahead with
+        | `None -> `One rest
+        | `Herd _ | `Litmus _ -> `Both (rest, cfg)
+      ;;
 
-       module First = M
-       module Second = Post
+      module First = M
+      module Second = Post
     end))
   ;;
 
@@ -136,7 +137,8 @@ module Post_filter = struct
   ;;
 
   let machine_of_target (cfg : Config.Act.t)
-      : Config.Compiler.Target.t -> Config.Machine.Spec.With_id.t Err.t = function
+      : Config.Compiler.Target.t -> Config.Machine.Spec.With_id.t Err.t
+    = function
     | `Spec s -> Err.return (Config.Compiler.Spec.With_id.machine s)
     | `Arch _ ->
       (* TODO(@MattWindsor91): should really check that the machine
@@ -146,7 +148,8 @@ module Post_filter = struct
 
   let litmus_config (cfg : Config.Act.t)
                     (target : Config.Compiler.Target.t)
-      : Config.Litmus_tool.t Err.t =
+      : Config.Litmus_tool.t Err.t
+    =
     let open Err.Let_syntax in
     let%bind machine = machine_of_target cfg target in
     Err.tag_arg
@@ -158,7 +161,8 @@ module Post_filter = struct
 
   let make_config (cfg : Config.Act.t)
                   (target : Config.Compiler.Target.t)
-      : t -> cfg Err.t = function
+      : t -> cfg Err.t
+    = function
     | `Herd -> Err.(herd_config cfg target >>| fun h -> `Herd h)
     | `Litmus -> Err.(litmus_config cfg target >>| fun l -> `Litmus l)
     | `None -> Err.return `None
@@ -180,14 +184,15 @@ let make_filter
                               -> Post_filter.cfg)
           and type aux_o = (C.Filters.Output.t option * (unit option * Asm_job.Output.t))
                            * unit option)
-    Or_error.t =
+    Or_error.t
+  =
   let open Or_error in
   Common.(target |> litmusify_pipeline >>| Post_filter.chain post_filter target_runner)
 ;;
 
 let parse_post
-    : [ `Exists of Sexp.t ] -> Sexp.t Litmus.Ast_base.Postcondition.t Or_error.t =
-  function
+    : [ `Exists of Sexp.t ] -> Sexp.t Litmus.Ast_base.Postcondition.t Or_error.t
+  = function
   | `Exists sexp ->
     Or_error.try_with (fun () ->
         Litmus.Ast_base.Postcondition.make
@@ -197,7 +202,8 @@ let parse_post
 
 let make_litmus_config_fn (post_sexp : [ `Exists of Sexp.t ] option)
     : (c_variables:Config.C_variables.Map.t option -> Sexp.t Litmusifier.Config.t)
-    Or_error.t =
+    Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%map postcondition = Travesty.T_option.With_errors.map_m post_sexp ~f:parse_post in
   fun ~c_variables -> Litmusifier.Config.make ?postcondition ?c_variables ()
@@ -213,7 +219,8 @@ let run
     (args : Args.Standard_with_files.t)
     (o : Output.t)
     (cfg : Config.Act.t)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let open Result.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
   let%bind tgt_machine = Post_filter.machine_of_target cfg target in

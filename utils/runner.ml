@@ -77,7 +77,8 @@ module Local : S = Make (struct
 
   let process_status (prog : string)
                      (args : string list)
-      : Low_level_process.Status.t -> unit Or_error.t = function
+      : Low_level_process.Status.t -> unit Or_error.t
+    = function
     | `Timeout _ -> Or_error.error_string "timed out"
     | `Exited 0 -> Result.ok_unit
     | `Exited code ->

@@ -36,14 +36,16 @@ let init
     ~(globals : Mini.Type.t C_identifier.Map.t)
     ~(locals : C_identifier.Set.t)
     ()
-    : t =
+    : t
+  =
   let vars = Fuzzer_var.Map.make_existing_var_map globals locals in
   { vars; o }
 ;;
 
 let try_map_vars (s : t)
                  ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t Or_error.t)
-    : t Or_error.t =
+    : t Or_error.t
+  =
   Or_error.(s.vars |> f >>| fun vars -> { s with vars })
 ;;
 
@@ -56,7 +58,8 @@ let register_global
     (s : t)
     (var : C_identifier.t)
     (ty : Mini.Type.t)
-    : t =
+    : t
+  =
   map_vars s ~f:(fun v -> Fuzzer_var.Map.register_global v ?initial_value var ty)
 ;;
 
@@ -69,7 +72,8 @@ let erase_var_value (s : t) ~(var : C_identifier.t) : t Or_error.t =
 ;;
 
 let vars_satisfying_all (s : t) ~(predicates : (Fuzzer_var.Record.t -> bool) list)
-    : C_identifier.t list =
+    : C_identifier.t list
+  =
   Fuzzer_var.Map.satisfying_all s.vars ~predicates
 ;;
 
@@ -87,7 +91,8 @@ module Monad = struct
       ?(initial_value : Fuzzer_var.Value.t option)
       (ty : Mini.Type.t)
       (var : C_identifier.t)
-      : unit t =
+      : unit t
+    =
     modify (fun s -> register_global ?initial_value s var ty)
   ;;
 

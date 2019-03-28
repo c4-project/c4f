@@ -27,7 +27,8 @@ open Lib
 
 let run_list_compilers
     (standard_args : Args.Standard.t) (_o : Output.t) (cfg : Config.Act.t)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let compilers = Config.Act.compilers cfg in
   let verbose = Args.Standard.is_verbose standard_args in
   Fmt.pr "@[<v>%a@]@." (Config.Compiler.Spec.Set.pp_verbose verbose) compilers;

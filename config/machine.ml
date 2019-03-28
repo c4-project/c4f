@@ -134,11 +134,11 @@ module Via = struct
     | Local -> (module Runner.Local : Runner.S)
     | Ssh c ->
       (module Utils.Ssh.Runner (struct
-         include Ssh.To_config (struct
-           let ssh = c
-         end)
+        include Ssh.To_config (struct
+          let ssh = c
+        end)
 
-         let remote_dir = Fn.const c.copy_dir
+        let remote_dir = Fn.const c.copy_dir
       end)
       : Runner.S)
   ;;

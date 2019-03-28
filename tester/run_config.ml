@@ -50,7 +50,8 @@ let make
     ~(output_root : Fpath.t)
     ~(compilers : Config.Id.Set.t)
     ~(input_mode : Input_mode.t)
-    : t Or_error.t =
+    : t Or_error.t
+  =
   let cfg = Fields.create ~output_root ~compilers ~input_mode in
   Validate.valid_or_error cfg validate
 ;;

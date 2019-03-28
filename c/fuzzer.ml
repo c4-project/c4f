@@ -123,7 +123,8 @@ module Make_program : Action.S = struct
   let available = always
 
   let run (subject : Subject.Test.t)
-          (() : Random_state.t) : Subject.Test.t State.Monad.t =
+          (() : Random_state.t) : Subject.Test.t State.Monad.t
+    =
     State.Monad.return (Subject.Test.add_new_program subject)
   ;;
 end
@@ -159,7 +160,8 @@ module Make_global : Action.S = struct
   let run
       (subject : Subject.Test.t)
       ({ is_atomic; initial_value; name } : Random_state.t)
-      : Subject.Test.t State.Monad.t =
+      : Subject.Test.t State.Monad.t
+    =
     let open State.Monad.Let_syntax in
     let ty = int_type ~is_atomic ~is_global:true in
     let%map () =
@@ -175,7 +177,8 @@ let generate_random_state
     (module Act : Action.S with type Random_state.t = rs)
     (subject : Subject.Test.t)
     (random : Splittable_random.State.t)
-    : rs State.Monad.t =
+    : rs State.Monad.t
+  =
   let open State.Monad.Let_syntax in
   let%bind vf = State.Monad.vf () in
   Fmt.pf vf "fuzz: getting random state generator for %s@." Act.name;
@@ -190,7 +193,8 @@ let run_action
     (module Act : Action.S)
     (subject : Subject.Test.t)
     (rng : Splittable_random.State.t)
-    : Subject.Test.t State.Monad.t =
+    : Subject.Test.t State.Monad.t
+  =
   let open State.Monad.Let_syntax in
   let%bind state = generate_random_state (module Act) subject rng in
   Act.run subject state
@@ -209,7 +213,8 @@ let mutate_subject_step
     (table : Action.List.t)
     (subject : Subject.Test.t)
     (rng : Splittable_random.State.t)
-    : Subject.Test.t State.Monad.t =
+    : Subject.Test.t State.Monad.t
+  =
   let open State.Monad.Let_syntax in
   let%bind vf = State.Monad.vf () in
   Fmt.pf vf "fuzz: picking action...@.";
@@ -223,7 +228,8 @@ let mutate_subject_step
 
 let mutate_subject (subject : Subject.Test.t)
                    (rng : Splittable_random.State.t)
-    : Subject.Test.t State.Monad.t =
+    : Subject.Test.t State.Monad.t
+  =
   let open State.Monad.Let_syntax in
   let cap = 10 in
   let table = Lazy.force table in
@@ -240,7 +246,8 @@ let mutate_subject (subject : Subject.Test.t)
 
 let run_with_state (test : Mini_litmus.Ast.Validated.t)
                    (rng : Splittable_random.State.t)
-    : Mini_litmus.Ast.Validated.t State.Monad.t =
+    : Mini_litmus.Ast.Validated.t State.Monad.t
+  =
   let open State.Monad.Let_syntax in
   (* TODO: add uuid to this *)
   let name = Mini_litmus.Ast.Validated.name test in
@@ -272,7 +279,8 @@ let get_first_func (test : Mini_litmus.Ast.Validated.t) : Mini.Function.t Or_err
 (** [existing_globals test] extracts the existing global variable
     names and types from litmus test [test]. *)
 let existing_globals (test : Mini_litmus.Ast.Validated.t)
-    : Mini.Type.t C_identifier.Map.t Or_error.t =
+    : Mini.Type.t C_identifier.Map.t Or_error.t
+  =
   Or_error.(
     test
     |> get_first_func
@@ -282,7 +290,8 @@ let existing_globals (test : Mini_litmus.Ast.Validated.t)
 
 let make_initial_state (o : Lib.Output.t)
                        (test : Mini_litmus.Ast.Validated.t)
-    : State.t Or_error.t =
+    : State.t Or_error.t
+  =
   let open Or_error.Let_syntax in
   let all_cvars = Mini_litmus.cvars test in
   (* TODO(@MattWindsor91): we don't use cvars's globals because we need to know the types of the variables.
@@ -295,7 +304,8 @@ let make_initial_state (o : Lib.Output.t)
 let run ~(seed : int option)
         ~(o : Lib.Output.t)
         (test : Mini_litmus.Ast.Validated.t)
-    : Mini_litmus.Ast.Validated.t Or_error.t =
+    : Mini_litmus.Ast.Validated.t Or_error.t
+  =
   Or_error.(
     make_initial_state o test >>= State.Monad.run (run_with_state test (make_rng seed)))
 ;;

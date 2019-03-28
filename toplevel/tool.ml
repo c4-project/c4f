@@ -59,7 +59,8 @@ let herd_command : Command.t =
 ;;
 
 let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Config.Act.t)
-    : unit Or_error.t =
+    : unit Or_error.t
+  =
   let open Or_error.Let_syntax in
   let machines = Config.Act.machines cfg in
   let%bind machine = Config.Machine.Spec.Set.get machines Config.Machine.Id.default in

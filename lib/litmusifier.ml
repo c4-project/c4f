@@ -59,7 +59,8 @@ module Config = struct
          a Litmus.Ast_base.Postcondition.t
          -> b Litmus.Ast_base.Postcondition.t Or_error.t)
       ~(c_variables : Config.C_variables.Map.t -> Config.C_variables.Map.t Or_error.t)
-      : b t Or_error.t =
+      : b t Or_error.t
+    =
     Fields.fold
       ~init:(Or_error.return initial)
       ~format:(W.proc_field format)
@@ -103,14 +104,16 @@ module Make_aux (B : Basic_aux) = struct
   ;;
 
   let make_init_from_vars (cvars : C_vars.Map.t)
-      : (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
+      : (C_identifier.t, B.Dst_constant.t) List.Assoc.t
+    =
     cvars
     |> C_identifier.Map.to_alist
     |> Travesty.T_alist.bi_map ~left:Fn.id ~right:record_to_constant
   ;;
 
   let make_init_from_heap_symbols (heap_syms : Abstract.Symbol.Set.t)
-      : (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
+      : (C_identifier.t, B.Dst_constant.t) List.Assoc.t
+    =
     List.map
       ~f:(fun s -> C_identifier.of_string s, B.Dst_constant.zero)
       (Abstract.Symbol.Set.to_list heap_syms)
@@ -123,7 +126,8 @@ module Make_aux (B : Basic_aux) = struct
   let make_init
       (cvars_opt : C_vars.Map.t option)
       (heap_syms : Abstract.Symbol.Set.t Lazy.t)
-      : (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
+      : (C_identifier.t, B.Dst_constant.t) List.Assoc.t
+    =
     match cvars_opt with
     | Some vars -> make_init_from_vars vars
     | None -> make_init_from_heap_symbols (Lazy.force heap_syms)
@@ -134,7 +138,8 @@ module Make_aux (B : Basic_aux) = struct
   ;;
 
   let make_locations_from_init (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t)
-      : C_identifier.t list =
+      : C_identifier.t list
+    =
     List.map ~f:fst init
   ;;
 
@@ -145,7 +150,8 @@ module Make_aux (B : Basic_aux) = struct
   let make_locations
       (cvars_opt : C_vars.Map.t option)
       (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t)
-      : C_identifier.t list =
+      : C_identifier.t list
+    =
     match cvars_opt with
     | Some cvars -> make_locations_from_config cvars
     | None -> make_locations_from_init init
@@ -153,7 +159,8 @@ module Make_aux (B : Basic_aux) = struct
 
   let make_post (_redirects : B.Redirect.t)
       :  B.Src_constant.t Litmus.Ast_base.Postcondition.t
-      -> B.Dst_constant.t Litmus.Ast_base.Postcondition.t Or_error.t =
+      -> B.Dst_constant.t Litmus.Ast_base.Postcondition.t Or_error.t
+    =
     Litmus.Ast_base.Postcondition.On_constants.With_errors.map_m ~f:B.convert_const
   ;;
 
@@ -161,7 +168,8 @@ module Make_aux (B : Basic_aux) = struct
       (config : B.Src_constant.t Config.t)
       (redirects : B.Redirect.t)
       (heap_symbols : Abstract.Symbol.Set.t Lazy.t)
-      : t Or_error.t =
+      : t Or_error.t
+    =
     let open Or_error.Let_syntax in
     let cvars_opt = Config.c_variables config in
     let%bind redirected_cvars_opt =
@@ -230,7 +238,8 @@ module Make (B : Basic) :
   ;;
 
   let lazily_get_heap_symbols (programs : Sanitiser.Output.Program.t list)
-      : Abstract.Symbol.Set.t Lazy.t =
+      : Abstract.Symbol.Set.t Lazy.t
+    =
     lazy
       (programs |> List.map ~f:get_program_heap_symbols |> Abstract.Symbol.Set.union_list)
   ;;
