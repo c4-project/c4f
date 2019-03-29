@@ -118,7 +118,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
             (* TODO(@MattWindsor91): properly valmap, if needed. *)
           ~value_map:return
       in
-      (Analysis.Herd.Run outcome)
+      Analysis.Herd.Run outcome
   ;;
 
   (** [locations_of_herd_result r] takes the C/litmus Herd result [r]

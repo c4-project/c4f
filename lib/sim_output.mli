@@ -30,7 +30,7 @@ open Utils
 (** A single state in a Herd/Litmus run output. *)
 module State : sig
   (** [t] is the type of states: a binding from name to value. *)
-  type t [@@deriving sexp, compare]
+  type t [@@deriving sexp, compare, quickcheck]
 
   (** [map ~location_map ~value_map t] maps partial mappers over the keys and
       values of state [t].  [location_map] may return [Ok None] if the
@@ -45,17 +45,21 @@ module State : sig
     -> t
     -> t Or_error.t
 
-  (** [bound t] gets the list of all bound names in [t]. *)
-  val bound : t -> Litmus.Id.t list
-
   (** [of_alist alist] tries to convert [alist] into a state. *)
   val of_alist : (Litmus.Id.t, string) List.Assoc.t -> t Or_error.t
 
   module Set : My_set.S with type Elt.t = t
+
+  (** [bound t] gets the list of all bound names in [t]. *)
+  val bound : t -> Litmus.Id.t list
+
+  (** [restrict t ~domain] removes all mappings in [t] that don't
+      reference identifiers in [domain]. *)
+  val restrict : t -> domain:Litmus.Id.Set.t -> t
 end
 
 (** Opaque type of a simulator output record. *)
-type t [@@deriving sexp_of]
+type t [@@deriving sexp_of, quickcheck]
 
 (** {2 Constructing an output record} *)
 

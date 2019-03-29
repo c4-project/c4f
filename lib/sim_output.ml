@@ -33,8 +33,36 @@ module State = struct
 
   include M
 
+  module Q : My_quickcheck.S_with_sexp with type t := t = struct
+    include M
+
+    let quickcheck_generator =
+      Id.Map.quickcheck_generator
+        [%quickcheck.generator: Litmus.Id.t]
+        Base_quickcheck.quickcheck_generator_string
+    ;;
+
+    let quickcheck_observer =
+      Id.Map.quickcheck_observer
+        [%quickcheck.observer: Litmus.Id.t]
+        Base_quickcheck.quickcheck_observer_string
+    ;;
+
+    let quickcheck_shrinker =
+      Id.Map.quickcheck_shrinker
+        [%quickcheck.shrinker: Litmus.Id.t]
+        Base_quickcheck.quickcheck_shrinker_string
+    ;;
+  end
+
+  include Q
+
   let of_alist = Id.Map.of_alist_or_error
   let bound = Id.Map.keys
+
+  let restrict (state : t) ~(domain : Id.Set.t) : t =
+    Id.Map.filter_keys state ~f:(Id.Set.mem domain)
+  ;;
 
   let map
       ~(location_map : Id.t -> Id.t option Or_error.t)
@@ -65,7 +93,7 @@ type t =
   { states : State.t list
   ; is_undefined : bool
   }
-[@@deriving fields, sexp_of]
+[@@deriving fields, sexp_of, quickcheck]
 
 (** [init ()] generates an initial [t]. *)
 let init () = { states = []; is_undefined = false }
@@ -74,22 +102,20 @@ let add (out : t) ~(state : State.t) : t Or_error.t =
   match out with
   | { is_undefined = true; _ } ->
     Or_error.error_s
-      [%message "Can't add state to simulation output, as the output is marked undefined"
-          ~state:(state : State.t)
-      ]
+      [%message
+        "Can't add state to simulation output, as the output is marked undefined"
+          ~state:(state : State.t)]
   | { is_undefined = false; states } ->
-    Or_error.return
-      { is_undefined = false; states = state :: states }
+    Or_error.return { is_undefined = false; states = state :: states }
 ;;
 
-let set_undefined : t -> t Or_error.t =
-  function
+let set_undefined : t -> t Or_error.t = function
   | { is_undefined = true; _ } ->
     Or_error.error_string "Simulation output already marked as undefined"
   | { states = []; _ } -> Or_error.return { states = []; is_undefined = true }
   | { states; _ } ->
     Or_error.error_s
-      [%message "Can't mark simulation output as undefined, as it has states"
-          ~states:(states : State.t list)
-      ]
+      [%message
+        "Can't mark simulation output as undefined, as it has states"
+          ~states:(states : State.t list)]
 ;;

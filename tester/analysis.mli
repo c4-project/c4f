@@ -52,7 +52,8 @@ end
 module Herd : sig
   (** [t] is the type of Herd analysis runs. *)
   type t =
-    | Run of Sim_diff.t (** Herd ran on both sides, with the given differential result. *)
+    | Run of Sim_diff.t
+        (** Herd ran on both sides, with the given differential result. *)
     | Disabled (** Herd was disabled. *)
     | Errored of [ `C | `Assembly ] (** Herd encountered an error. *)
   [@@deriving sexp_of]

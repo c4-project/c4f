@@ -39,7 +39,8 @@ open Base
 type t =
   | Oracle_undefined (** The oracle execution triggered undefined behaviour. *)
   | Subject_undefined (** The subject execution triggered undefined behaviour. *)
-  | Result of Sim_output.State.Set.Partial_order.t (** Analysis completed with the following result. *)
+  | Result of Sim_output.State.Set.Partial_order.t
+      (** Analysis completed with the following result. *)
 [@@deriving sexp]
 
 (** [to_string result] returns a human-readable string representing [result]. *)

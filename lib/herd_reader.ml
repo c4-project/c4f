@@ -31,7 +31,7 @@ module State = struct
     | Empty (** We haven't read anything yet. *)
     | Preamble (** We're in the pre-state matter. *)
     | State of int
-    (** We're in a state block with the given
+        (** We're in a state block with the given
                        remaining length. *)
     | Summary (** We're reading the summary tag. *)
     | Postamble (** We're in the post-summary matter. *)
@@ -41,8 +41,7 @@ module State = struct
     if states_left = 1 then Summary else State (states_left - 1)
   ;;
 
-  let validate_final_state : t Validate.check
-    = function
+  let validate_final_state : t Validate.check = function
     | Empty -> Validate.fail_s [%message "Herd file was empty."]
     | Error e -> Validate.of_error (Fn.const (Result.Error e)) ()
     | State k ->
@@ -52,7 +51,6 @@ module State = struct
     | Summary -> Validate.fail_s [%message "Herd file ended while expecting summary."]
     | Postamble -> Validate.pass
   ;;
-
 end
 
 type t =
@@ -61,8 +59,9 @@ type t =
   ; state : State.t (** Which state are we currently in? *)
   }
 
-let init ?(path : string option) () : t = { path; output = Sim_output.init (); state = Empty }
-
+let init ?(path : string option) () : t =
+  { path; output = Sim_output.init (); state = Empty }
+;;
 
 (** [fail_if_bad_state] produces an error if the reader ended in a
     state other than Postamble. *)
@@ -88,11 +87,12 @@ let process_preamble herd line =
     | 0 -> Summary
     | _ -> State k
   in
-  let state_o = Option.try_with (fun () -> Caml.Scanf.sscanf line "States %d" proc_state) in
+  let state_o =
+    Option.try_with (fun () -> Caml.Scanf.sscanf line "States %d" proc_state)
+  in
   let state' = Option.value ~default:Preamble state_o in
   state', herd
 ;;
-
 
 let proc_binding (binding : string) : (Litmus.Id.t * string) Or_error.t =
   match String.split ~on:'=' (String.strip binding) with
@@ -115,42 +115,42 @@ let try_parse_state_line (line : string) : Sim_output.State.t Or_error.t =
     >>= Sim_output.State.of_alist)
 ;;
 
-let try_process_state_line
-    (states_left : int)
-    (line : string)
-    (output : Sim_output.t)
-  : (State.t * Sim_output.t) Or_error.t =
+let try_process_state_line (states_left : int)
+                           (line : string)
+                           (output : Sim_output.t)
+    : (State.t * Sim_output.t) Or_error.t
+  =
   let open Or_error.Let_syntax in
   let%bind state = try_parse_state_line line in
   let%map output' = Sim_output.add output ~state in
-  (State.after_state_line states_left, output')
+  State.after_state_line states_left, output'
 ;;
 
-let wrap_error ~(f : Sim_output.t -> (State.t * Sim_output.t) Or_error.t)
-  (out : Sim_output.t) : State.t * Sim_output.t =
+let wrap_error
+    ~(f : Sim_output.t -> (State.t * Sim_output.t) Or_error.t)
+    (out : Sim_output.t)
+    : State.t * Sim_output.t
+  =
   match f out with
   | Ok (state, out') -> state, out'
   | Error e -> Error e, out
 ;;
 
 let process_state_line (states_left : int) (line : string)
-  : Sim_output.t -> State.t * Sim_output.t
+    : Sim_output.t -> State.t * Sim_output.t
   =
   wrap_error ~f:(try_process_state_line states_left line)
+;;
 
 (** [summaries] associates each expected summary line in a Herd
     output with some information about it---presently, just whether
     it represents undefined behaviour. *)
 let summaries : (string, bool) List.Assoc.t =
-  [ "Ok", false
-  ; "No", false
-  ; "Yes", false
-  ; "Undef", true
-  ]
+  [ "Ok", false; "No", false; "Yes", false; "Undef", true ]
 ;;
 
 let try_process_summary (line : string) (output : Sim_output.t)
-  : (State.t * Sim_output.t) Or_error.t
+    : (State.t * Sim_output.t) Or_error.t
   =
   let open Or_error.Let_syntax in
   let summary = String.strip line in
@@ -158,20 +158,19 @@ let try_process_summary (line : string) (output : Sim_output.t)
     List.Assoc.find summaries summary ~equal:String.Caseless.equal
   in
   let%bind is_undefined =
-    Result.of_option is_undefined_opt
+    Result.of_option
+      is_undefined_opt
       ~error:(Error.create_s [%message "unexpected summary" ~got:summary])
   in
   let%map output' =
     (if is_undefined then Sim_output.set_undefined else Or_error.return) output
   in
-  (State.Postamble, output')
+  State.Postamble, output'
 ;;
 
-
-let process_summary (line : string)
-  : Sim_output.t -> State.t * Sim_output.t
-  =
+let process_summary (line : string) : Sim_output.t -> State.t * Sim_output.t =
   wrap_error ~f:(try_process_summary line)
+;;
 
 let process_postamble output _line =
   (* TODO(@MattWindsor91): do something with this? *)
@@ -215,10 +214,7 @@ module Load : Loadable.Basic with type t = Sim_output.t = struct
   type nonrec t = Sim_output.t
 
   let load_from_string s =
-    s
-    |> String.split_lines
-    |> List.fold ~init:(init ()) ~f:process_line
-    |> get_output
+    s |> String.split_lines |> List.fold ~init:(init ()) ~f:process_line |> get_output
   ;;
 
   let load_from_ic ?path ic =
@@ -230,7 +226,8 @@ include Loadable.Make (Load)
 
 let%expect_test "load_from_string on empty string fails" =
   Or_error.iter_error ~f:(Fmt.pr "@[<v>%a@]@." Error.pp) (load_from_string "");
-  [%expect {|
+  [%expect
+    {|
     ("While reading Herd input from" "(stdin)"
      ("validation errors" (("" "Herd file was empty.")))) |}]
 ;;

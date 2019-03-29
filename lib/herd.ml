@@ -101,7 +101,7 @@ let run (ctx : t) ~(path : Fpath.t) ~(sink : Io.Out_sink.t) : unit Or_error.t =
 ;;
 
 let run_and_load_results (ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t)
-  : Sim_output.t Or_error.t
+    : Sim_output.t Or_error.t
   =
   let open Or_error.Let_syntax in
   let%bind () = run ctx ~path:input_path ~sink:(Io.Out_sink.file output_path) in
