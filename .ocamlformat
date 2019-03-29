@@ -1,1 +1,4 @@
-profile = janestreet
+profile = ocamlformat
+margin = 77
+parse-docstrings = true
+wrap-comments = true

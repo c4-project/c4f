@@ -2,25 +2,24 @@
 
    Copyright (c) 2018, 2019 by Matt Windsor
 
-   Permission is hereby granted, free of charge, to any person
-   obtaining a copy of this software and associated documentation
-   files (the "Software"), to deal in the Software without
-   restriction, including without limitation the rights to use, copy,
-   modify, merge, publish, distribute, sublicense, and/or sell copies
-   of the Software, and to permit persons to whom the Software is
-   furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the
+   "Software"), to deal in the Software without restriction, including
+   without limitation the rights to use, copy, modify, merge, publish,
+   distribute, sublicense, and/or sell copies of the Software, and to permit
+   persons to whom the Software is furnished to do so, subject to the
+   following conditions:
 
-   The above copyright notice and this permission notice shall be
-   included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-   SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Mini model: addresses (a lvalue, or reference thereto). *)
 
@@ -32,30 +31,32 @@ type t [@@deriving sexp, eq, quickcheck]
 
 (** Traversing over lvalues in addresses. *)
 module On_lvalues :
-  Travesty.Traversable.S0_container with type t := t and type Elt.t = Mini_lvalue.t
+  Travesty.Traversable.S0_container
+  with type t := t
+   and type Elt.t = Mini_lvalue.t
 
 (** {3 Constructors} *)
 
-(** [lvalue lv] lifts an lvalue [lv] to an address. *)
 val lvalue : Mini_lvalue.t -> t
+(** [lvalue lv] lifts an lvalue [lv] to an address. *)
 
-(** [ref t] constructs a &-reference to [t]. *)
 val ref : t -> t
+(** [ref t] constructs a &-reference to [t]. *)
 
-(** [of_variable v] lifts the variable identifier [v] directly to an
-   address. *)
 val of_variable : C_identifier.t -> t
+(** [of_variable v] lifts the variable identifier [v] directly to an
+    address. *)
 
-(** [of_variable_ref v] lifts the address of variable identifier [v]
-   to an address (in C syntax, this would be '&v'). *)
 val of_variable_ref : C_identifier.t -> t
+(** [of_variable_ref v] lifts the address of variable identifier [v] to an
+    address (in C syntax, this would be '&v'). *)
 
 (** {3 Accessors} *)
 
-(** [reduce addr ~address ~deref] applies [lvalue] on the
-    underlying lvalue of [addr], then recursively applies [ref]
-    to the result for each layer of address-taking in the address. *)
 val reduce : t -> lvalue:(Mini_lvalue.t -> 'a) -> ref:('a -> 'a) -> 'a
+(** [reduce addr ~address ~deref] applies [lvalue] on the underlying lvalue
+    of [addr], then recursively applies [ref] to the result for each layer
+    of address-taking in the address. *)
 
 (** We can get to the variable name inside an address. *)
 include Mini_intf.S_has_underlying_variable with type t := t
@@ -67,21 +68,20 @@ include Mini_intf.S_type_checkable with type t := t
 
 (** {3 Generating and quickchecking}
 
-    The default quickcheck instance random addresses without
-   constraint.  We also provide several modules with more
+    The default quickcheck instance random addresses without constraint. We
+    also provide several modules with more *)
 
-*)
-
-(** Generates random addresses, parametrised on a given lvalue
-    generator. *)
-module Quickcheck_generic (Lv : Quickcheckable.S with type t := Mini_lvalue.t) :
+(** Generates random addresses, parametrised on a given lvalue generator. *)
+module Quickcheck_generic
+    (Lv : Quickcheckable.S with type t := Mini_lvalue.t) :
   Quickcheckable.S with type t := t
 
-(** Generates random addresses, constrained over the variables
-    in the given environment. *)
-module Quickcheck_on_env (E : Mini_env.S) : Quickcheckable.S with type t := t
+(** Generates random addresses, constrained over the variables in the given
+    environment. *)
+module Quickcheck_on_env (E : Mini_env.S) :
+  Quickcheckable.S with type t := t
 
-(** Generates addresses over the given typing environment that have
-    the type 'atomic_int*'. *)
+(** Generates addresses over the given typing environment that have the type
+    'atomic_int*'. *)
 module Quickcheck_atomic_int_pointers (E : Mini_env.S) :
   Quickcheckable.S with type t := t

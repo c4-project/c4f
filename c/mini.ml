@@ -2,25 +2,24 @@
 
    Copyright (c) 2018, 2019 by Matt Windsor
 
-   Permission is hereby granted, free of charge, to any person
-   obtaining a copy of this software and associated documentation
-   files (the "Software"), to deal in the Software without
-   restriction, including without limitation the rights to use, copy,
-   modify, merge, publish, distribute, sublicense, and/or sell copies
-   of the Software, and to permit persons to whom the Software is
-   furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the
+   "Software"), to deal in the Software without restriction, including
+   without limitation the rights to use, copy, modify, merge, publish,
+   distribute, sublicense, and/or sell copies of the Software, and to permit
+   persons to whom the Software is furnished to do so, subject to the
+   following conditions:
 
-   The above copyright notice and this permission notice shall be
-   included in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-   SOFTWARE. *)
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
 open Utils
@@ -35,30 +34,22 @@ module Type = Mini_type
 module Atomic_load = Expression.Atomic_load
 
 module Assign = struct
-  type t =
-    { lvalue : Lvalue.t
-    ; rvalue : Expression.t
-    }
+  type t = {lvalue: Lvalue.t; rvalue: Expression.t}
   [@@deriving sexp, fields, make]
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap
-        (assign : t)
-        ~(lvalue : Lvalue.t F.traversal)
-        ~(rvalue : Expression.t F.traversal)
-        : t M.t
-      =
-      Fields.fold
-        ~init:(M.return assign)
-        ~lvalue:(F.proc_field lvalue)
+    let bmap (assign : t) ~(lvalue : Lvalue.t F.traversal)
+        ~(rvalue : Expression.t F.traversal) : t M.t =
+      Fields.fold ~init:(M.return assign) ~lvalue:(F.proc_field lvalue)
         ~rvalue:(F.proc_field rvalue)
-    ;;
   end
 
   module On_lvalues :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -73,7 +64,9 @@ module Assign = struct
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Address.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -89,33 +82,23 @@ module Assign = struct
 end
 
 module Atomic_store = struct
-  type t =
-    { src : Expression.t
-    ; dst : Address.t
-    ; mo : Mem_order.t
-    }
+  type t = {src: Expression.t; dst: Address.t; mo: Mem_order.t}
   [@@deriving sexp, fields, make]
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap
-        (store : t)
-        ~(src : Expression.t F.traversal)
-        ~(dst : Address.t F.traversal)
-        ~(mo : Mem_order.t F.traversal)
-        : t M.t
-      =
-      Fields.fold
-        ~init:(M.return store)
-        ~src:(F.proc_field src)
-        ~dst:(F.proc_field dst)
-        ~mo:(F.proc_field mo)
-    ;;
+    let bmap (store : t) ~(src : Expression.t F.traversal)
+        ~(dst : Address.t F.traversal) ~(mo : Mem_order.t F.traversal) :
+        t M.t =
+      Fields.fold ~init:(M.return store) ~src:(F.proc_field src)
+        ~dst:(F.proc_field dst) ~mo:(F.proc_field mo)
   end
 
   module On_lvalues :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -126,12 +109,15 @@ module Atomic_store = struct
       module E = Expression.On_lvalues.On_monad (M)
       module A = Address.On_lvalues.On_monad (M)
 
-      let map_m x ~f = B.bmap x ~src:(E.map_m ~f) ~dst:(A.map_m ~f) ~mo:M.return
+      let map_m x ~f =
+        B.bmap x ~src:(E.map_m ~f) ~dst:(A.map_m ~f) ~mo:M.return
     end
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Address.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -156,33 +142,29 @@ module Atomic_store = struct
 
     let sexp_of_t = sexp_of_t
 
-    let to_tuple ({ src; dst; mo } : t) : Expression.t * Address.t * Mem_order.t =
-      src, dst, mo
-    ;;
+    let to_tuple ({src; dst; mo} : t) :
+        Expression.t * Address.t * Mem_order.t =
+      (src, dst, mo)
 
-    let of_tuple ((src, dst, mo) : Expression.t * Address.t * Mem_order.t) : t =
-      { src; dst; mo }
-    ;;
+    let of_tuple ((src, dst, mo) : Expression.t * Address.t * Mem_order.t) :
+        t =
+      {src; dst; mo}
 
     let quickcheck_generator : t Quickcheck.Generator.t =
       Quickcheck.Generator.(
         map
-          [%quickcheck.generator: Src.t * Dst.t * [%custom Mem_order.gen_store]]
-          ~f:of_tuple)
-    ;;
+          [%quickcheck.generator:
+            Src.t * Dst.t * [%custom Mem_order.gen_store]] ~f:of_tuple)
 
     let quickcheck_observer : t Quickcheck.Observer.t =
       Quickcheck.Observer.(
-        unmap [%quickcheck.observer: Src.t * Dst.t * Mem_order.t] ~f:to_tuple)
-    ;;
+        unmap [%quickcheck.observer: Src.t * Dst.t * Mem_order.t]
+          ~f:to_tuple)
 
     let quickcheck_shrinker : t Quickcheck.Shrinker.t =
       Quickcheck.Shrinker.(
-        map
-          [%quickcheck.shrinker: Src.t * Dst.t * Mem_order.t]
-          ~f:of_tuple
+        map [%quickcheck.shrinker: Src.t * Dst.t * Mem_order.t] ~f:of_tuple
           ~f_inverse:to_tuple)
-    ;;
   end
 
   module Quickcheck_ints (Src : Env.S) (Dst : Env.S) :
@@ -195,38 +177,30 @@ end
 
 module Atomic_cmpxchg = struct
   type t =
-    { obj : Address.t
-    ; expected : Address.t
-    ; desired : Expression.t
-    ; succ : Mem_order.t
-    ; fail : Mem_order.t
-    }
+    { obj: Address.t
+    ; expected: Address.t
+    ; desired: Expression.t
+    ; succ: Mem_order.t
+    ; fail: Mem_order.t }
   [@@deriving sexp, fields, make]
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap
-        (cmpxchg : t)
-        ~(obj : Address.t F.traversal)
+    let bmap (cmpxchg : t) ~(obj : Address.t F.traversal)
         ~(expected : Address.t F.traversal)
         ~(desired : Expression.t F.traversal)
-        ~(succ : Mem_order.t F.traversal)
-        ~(fail : Mem_order.t F.traversal)
-        : t M.t
-      =
-      Fields.fold
-        ~init:(M.return cmpxchg)
-        ~obj:(F.proc_field obj)
-        ~expected:(F.proc_field expected)
-        ~desired:(F.proc_field desired)
-        ~succ:(F.proc_field succ)
-        ~fail:(F.proc_field fail)
-    ;;
+        ~(succ : Mem_order.t F.traversal) ~(fail : Mem_order.t F.traversal)
+        : t M.t =
+      Fields.fold ~init:(M.return cmpxchg) ~obj:(F.proc_field obj)
+        ~expected:(F.proc_field expected) ~desired:(F.proc_field desired)
+        ~succ:(F.proc_field succ) ~fail:(F.proc_field fail)
   end
 
   module On_lvalues :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -238,19 +212,15 @@ module Atomic_cmpxchg = struct
       module A = Address.On_lvalues.On_monad (M)
 
       let map_m x ~f =
-        B.bmap
-          x
-          ~obj:(A.map_m ~f)
-          ~expected:(A.map_m ~f)
-          ~desired:(E.map_m ~f)
-          ~succ:M.return
-          ~fail:M.return
-      ;;
+        B.bmap x ~obj:(A.map_m ~f) ~expected:(A.map_m ~f)
+          ~desired:(E.map_m ~f) ~succ:M.return ~fail:M.return
     end
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Address.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -261,8 +231,8 @@ module Atomic_cmpxchg = struct
       module E = Expression.On_addresses.On_monad (M)
 
       let map_m x ~f =
-        B.bmap x ~obj:f ~expected:f ~desired:(E.map_m ~f) ~succ:M.return ~fail:M.return
-      ;;
+        B.bmap x ~obj:f ~expected:f ~desired:(E.map_m ~f) ~succ:M.return
+          ~fail:M.return
     end
   end)
 end
@@ -280,29 +250,19 @@ end
 type statement = if_statement P_statement.t
 
 and if_statement =
-  { cond : Expression.t
-  ; t_branch : statement list
-  ; f_branch : statement list
-  }
+  {cond: Expression.t; t_branch: statement list; f_branch: statement list}
 [@@deriving sexp, fields]
 
 module Ifs_base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
   module O = Travesty.T_option.On_monad (M)
 
-  let bmap
-      (if_stm : if_statement)
-      ~(cond : Expression.t F.traversal)
+  let bmap (if_stm : if_statement) ~(cond : Expression.t F.traversal)
       ~(t_branch : statement list F.traversal)
-      ~(f_branch : statement list F.traversal)
-      : if_statement M.t
-    =
-    Fields_of_if_statement.fold
-      ~init:(M.return if_stm)
-      ~cond:(F.proc_field cond)
-      ~t_branch:(F.proc_field t_branch)
+      ~(f_branch : statement list F.traversal) : if_statement M.t =
+    Fields_of_if_statement.fold ~init:(M.return if_stm)
+      ~cond:(F.proc_field cond) ~t_branch:(F.proc_field t_branch)
       ~f_branch:(F.proc_field f_branch)
-  ;;
 end
 
 module Statement :
@@ -318,40 +278,38 @@ module Statement :
   type t = statement [@@deriving sexp]
 
   let assign = P_statement.assign
+
   let atomic_cmpxchg = P_statement.atomic_cmpxchg
+
   let atomic_store = P_statement.atomic_store
+
   let if_stm = P_statement.if_stm
+
   let nop () = P_statement.nop
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
     let bmap x ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop =
-      P_statement.Variants.map
-        x
-        ~assign:(F.proc_variant1 assign)
+      P_statement.Variants.map x ~assign:(F.proc_variant1 assign)
         ~atomic_cmpxchg:(F.proc_variant1 atomic_cmpxchg)
         ~atomic_store:(F.proc_variant1 atomic_store)
-        ~if_stm:(F.proc_variant1 if_stm)
-        ~nop:(F.proc_variant0 nop)
-    ;;
+        ~if_stm:(F.proc_variant1 if_stm) ~nop:(F.proc_variant0 nop)
   end
 
   let map x ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop =
-    P_statement.Variants.map
-      x
-      ~assign:(Fn.const assign)
+    P_statement.Variants.map x ~assign:(Fn.const assign)
       ~atomic_store:(Fn.const atomic_store)
-      ~atomic_cmpxchg:(Fn.const atomic_cmpxchg)
-      ~if_stm:(Fn.const if_stm)
+      ~atomic_cmpxchg:(Fn.const atomic_cmpxchg) ~if_stm:(Fn.const if_stm)
       ~nop:(fun _ -> nop ())
-  ;;
 
-  (* We have to unroll the map over if statements here, because
-   otherwise we end up with unsafe module recursion. *)
+  (* We have to unroll the map over if statements here, because otherwise we
+     end up with unsafe module recursion. *)
 
   module On_lvalues :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -367,26 +325,21 @@ module Statement :
       module Cxg = Atomic_cmpxchg.On_lvalues.On_monad (M)
 
       let rec map_m x ~f =
-        B.bmap
-          x
-          ~assign:(Asn.map_m ~f)
-          ~atomic_store:(Sto.map_m ~f)
-          ~atomic_cmpxchg:(Cxg.map_m ~f)
-          ~if_stm:(map_m_ifs ~f)
+        B.bmap x ~assign:(Asn.map_m ~f) ~atomic_store:(Sto.map_m ~f)
+          ~atomic_cmpxchg:(Cxg.map_m ~f) ~if_stm:(map_m_ifs ~f)
           ~nop:M.return
 
       and map_m_ifs x ~f =
-        IB.bmap
-          x
-          ~cond:(E.map_m ~f)
+        IB.bmap x ~cond:(E.map_m ~f)
           ~t_branch:(L.map_m ~f:(map_m ~f))
           ~f_branch:(L.map_m ~f:(map_m ~f))
-      ;;
     end
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Address.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -402,26 +355,21 @@ module Statement :
       module Cxg = Atomic_cmpxchg.On_addresses.On_monad (M)
 
       let rec map_m x ~f =
-        B.bmap
-          x
-          ~assign:(Asn.map_m ~f)
-          ~atomic_store:(Sto.map_m ~f)
-          ~atomic_cmpxchg:(Cxg.map_m ~f)
-          ~if_stm:(map_m_ifs ~f)
+        B.bmap x ~assign:(Asn.map_m ~f) ~atomic_store:(Sto.map_m ~f)
+          ~atomic_cmpxchg:(Cxg.map_m ~f) ~if_stm:(map_m_ifs ~f)
           ~nop:M.return
 
       and map_m_ifs x ~f =
-        IB.bmap
-          x
-          ~cond:(E.map_m ~f)
+        IB.bmap x ~cond:(E.map_m ~f)
           ~t_branch:(L.map_m ~f:(map_m ~f))
           ~f_branch:(L.map_m ~f:(map_m ~f))
-      ;;
     end
   end)
 
   module On_identifiers :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Identifier.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Identifier.t =
     Travesty.Traversable.Chain0 (struct
         type nonrec t = t
 
@@ -441,17 +389,20 @@ module If_statement :
   type t = if_statement [@@deriving sexp]
 
   let cond = Field.get Fields_of_if_statement.cond
+
   let f_branch = Field.get Fields_of_if_statement.f_branch
+
   let t_branch = Field.get Fields_of_if_statement.t_branch
 
   let make ~cond ?(t_branch = []) ?(f_branch = []) () =
     Fields_of_if_statement.create ~cond ~t_branch ~f_branch
-  ;;
 
   module Base_map (M : Monad.S) = Ifs_base_map (M)
 
   module On_lvalues :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -464,17 +415,16 @@ module If_statement :
       module L = Travesty.T_list.On_monad (M)
 
       let map_m x ~f =
-        B.bmap
-          x
-          ~cond:(E.map_m ~f)
+        B.bmap x ~cond:(E.map_m ~f)
           ~t_branch:(L.map_m ~f:(S.map_m ~f))
           ~f_branch:(L.map_m ~f:(S.map_m ~f))
-      ;;
     end
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Address.t =
   Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
@@ -487,17 +437,16 @@ module If_statement :
       module L = Travesty.T_list.On_monad (M)
 
       let map_m x ~f =
-        B.bmap
-          x
-          ~cond:(E.map_m ~f)
+        B.bmap x ~cond:(E.map_m ~f)
           ~t_branch:(L.map_m ~f:(S.map_m ~f))
           ~f_branch:(L.map_m ~f:(S.map_m ~f))
-      ;;
     end
   end)
 
   module On_identifiers :
-    Travesty.Traversable.S0_container with type t := t and type Elt.t = Identifier.t =
+    Travesty.Traversable.S0_container
+    with type t := t
+     and type Elt.t = Identifier.t =
     Travesty.Traversable.Chain0 (struct
         type nonrec t = t
 
@@ -508,43 +457,36 @@ end
 
 module Function = struct
   type t =
-    { parameters : Type.t id_assoc
-    ; body_decls : Initialiser.t id_assoc
-    ; body_stms : Statement.t list
-    }
+    { parameters: Type.t id_assoc
+    ; body_decls: Initialiser.t id_assoc
+    ; body_stms: Statement.t list }
   [@@deriving sexp, fields, make]
 
   let with_body_stms (func : t) (new_stms : Statement.t list) : t =
-    { func with body_stms = new_stms }
-  ;;
+    {func with body_stms= new_stms}
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap
-        (func : t)
+    let bmap (func : t)
         ~(parameters : Type.t id_assoc -> Type.t id_assoc M.t)
         ~(body_decls : Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
-        ~(body_stms : Statement.t list -> Statement.t list M.t)
-        : t M.t
-      =
-      Fields.fold
-        ~init:(M.return func)
+        ~(body_stms : Statement.t list -> Statement.t list M.t) : t M.t =
+      Fields.fold ~init:(M.return func)
         ~parameters:(F.proc_field parameters)
         ~body_decls:(F.proc_field body_decls)
         ~body_stms:(F.proc_field body_stms)
-    ;;
   end
 
   let map =
     let module M = Base_map (Monad.Ident) in
     M.bmap
-  ;;
 
   module On_decls :
     Travesty.Traversable.S0_container
     with type t := t
-     and type Elt.t = Initialiser.Named.t = Travesty.Traversable.Make_container0 (struct
+     and type Elt.t = Initialiser.Named.t =
+  Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
     module Elt = Initialiser.Named
@@ -554,48 +496,40 @@ module Function = struct
       module L = Travesty.T_list.On_monad (M)
 
       let map_m (func : t)
-                ~(f : Initialiser.Named.t -> Initialiser.Named.t M.t) =
-        B.bmap func ~parameters:M.return ~body_decls:(L.map_m ~f) ~body_stms:M.return
-      ;;
+          ~(f : Initialiser.Named.t -> Initialiser.Named.t M.t) =
+        B.bmap func ~parameters:M.return ~body_decls:(L.map_m ~f)
+          ~body_stms:M.return
     end
   end)
 
   let cvars (func : t) : C_identifier.Set.t =
     func |> On_decls.to_list |> List.map ~f:fst |> C_identifier.Set.of_list
-  ;;
 end
 
 module Program = struct
-  type t =
-    { globals : Initialiser.t id_assoc
-    ; functions : Function.t id_assoc
-    }
+  type t = {globals: Initialiser.t id_assoc; functions: Function.t id_assoc}
   [@@deriving sexp, fields, make]
 
-  let with_functions (program : t) (new_functions : Function.t id_assoc) : t =
-    { program with functions = new_functions }
-  ;;
+  let with_functions (program : t) (new_functions : Function.t id_assoc) : t
+      =
+    {program with functions= new_functions}
 
   module Base_map (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap
-        (program : t)
+    let bmap (program : t)
         ~(globals : Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
-        ~(functions : Function.t id_assoc -> Function.t id_assoc M.t)
-        : t M.t
-      =
-      Fields.fold
-        ~init:(M.return program)
-        ~globals:(F.proc_field globals)
+        ~(functions : Function.t id_assoc -> Function.t id_assoc M.t) :
+        t M.t =
+      Fields.fold ~init:(M.return program) ~globals:(F.proc_field globals)
         ~functions:(F.proc_field functions)
-    ;;
   end
 
   module On_decls :
     Travesty.Traversable.S0_container
     with type t := t
-     and type Elt.t := Initialiser.Named.t = Travesty.Traversable.Make_container0 (struct
+     and type Elt.t := Initialiser.Named.t =
+  Travesty.Traversable.Make_container0 (struct
     type nonrec t = t
 
     module Elt = Initialiser.Named
@@ -606,15 +540,12 @@ module Program = struct
       module F = Function.On_decls.On_monad (M)
 
       let map_m (program : t) ~(f : Elt.t -> Elt.t M.t) =
-        B.bmap
-          program
-          ~globals:(L.map_m ~f)
-          ~functions:(L.map_m ~f:(fun (k, v) -> M.(F.map_m ~f v >>| Tuple2.create k)))
-      ;;
+        B.bmap program ~globals:(L.map_m ~f)
+          ~functions:
+            (L.map_m ~f:(fun (k, v) -> M.(F.map_m ~f v >>| Tuple2.create k)))
     end
   end)
 
   let cvars (prog : t) : C_identifier.Set.t =
     prog |> On_decls.to_list |> List.map ~f:fst |> C_identifier.Set.of_list
-  ;;
 end
