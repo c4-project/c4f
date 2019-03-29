@@ -41,7 +41,7 @@ with the C11 memory model with regards to the assembly they emit.
 
 let command =
   Command.group
-    ~summary:"Automagic Compiler Tormentor"
+    ~summary:"the Automagic Compiler Tormentor"
     ~readme
     [ "c", C_main.command
     ; "compare", Compare.command

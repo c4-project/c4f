@@ -84,6 +84,6 @@ let litmus_command : Command.t =
 
 let command : Command.t =
   Command.group
-    ~summary:"Run act tools directly"
+    ~summary:"runs external tools directly"
     [ "herd", herd_command; "litmus", litmus_command ]
 ;;

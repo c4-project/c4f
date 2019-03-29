@@ -84,7 +84,7 @@ let list_predicates_command : Command.t =
 
 let command : Command.t =
   Command.group
-    ~summary:"Commands for dealing with act configuration"
+    ~summary:"commands for dealing with act configuration"
     [ "list-compilers", list_compilers_command
     ; "list-predicates", list_predicates_command
     ]
