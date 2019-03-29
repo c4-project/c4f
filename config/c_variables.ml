@@ -183,62 +183,30 @@ let%test_module "Map tests" =
 module String_lang = struct
   module T_opt = Travesty.T_option.With_errors
 
-  let split_initial (str : string) : string * string option =
-    str |> String.rsplit2 ~on:'='
-    |> Option.value_map
-         ~f:(Tuple2.map_snd ~f:Option.some)
-         ~default:(str, None)
+  let parse_list_as_alist :
+      string list -> (Litmus.Id.t, Initial_value.t) List.Assoc.t Or_error.t
+      =
+    Litmus.Id.Assoc.try_parse
+      ~value_parser:
+        (Travesty.T_option.With_errors.map_m ~f:(fun s ->
+             Or_error.try_with (fun () -> Int.of_string s) ))
 
-  let split_and_strip_initial (str : string) : string * string option =
-    let name_str_unstripped, value_str_unstripped = split_initial str in
-    let name_str = String.strip name_str_unstripped in
-    let value_str = Option.map ~f:String.strip value_str_unstripped in
-    (name_str, value_str)
-
-  let%expect_test "split_and_strip_initial: present" =
+  let%expect_test "parse_list_as_alist: present, no tid" =
     Stdio.print_s
       [%sexp
-        (split_and_strip_initial "foo = barbaz" : string * string option)] ;
-    [%expect {| (foo (barbaz)) |}]
+        ( parse_list_as_alist ["foo = 3"]
+          : (Litmus.Id.t, Initial_value.t) List.Assoc.t Or_error.t )] ;
+    [%expect {| (Ok ((foo (3)))) |}]
 
-  let%expect_test "split_and_strip_initial: absent" =
-    Stdio.print_s
-      [%sexp (split_and_strip_initial "foobar" : string * string option)] ;
-    [%expect {| (foobar ()) |}]
-
-  let%expect_test "split_and_strip_initial: double equals" =
+  let%expect_test "parse_list_as_alist: absent" =
     Stdio.print_s
       [%sexp
-        (split_and_strip_initial "foo=bar=baz" : string * string option)] ;
-    [%expect {| (foo=bar (baz)) |}]
-
-  let parse_initial (str : string) :
-      (Litmus.Id.t * Initial_value.t) Or_error.t =
-    let open Or_error.Let_syntax in
-    let name_str, value_str_opt = split_and_strip_initial str in
-    let%bind name = Litmus.Id.try_parse name_str in
-    let%map value =
-      Travesty.T_option.With_errors.map_m value_str_opt ~f:(fun s ->
-          Or_error.try_with (fun () -> Int.of_string s) )
-    in
-    (name, value)
-
-  let%expect_test "parse_initial: present, no tid" =
-    Stdio.print_s
-      [%sexp
-        ( parse_initial "foo = 3"
-          : (Litmus.Id.t * Initial_value.t) Or_error.t )] ;
-    [%expect {| (Ok (foo (3))) |}]
-
-  let%expect_test "parse_initial: absent" =
-    Stdio.print_s
-      [%sexp
-        (parse_initial "foobar" : (Litmus.Id.t * Initial_value.t) Or_error.t)] ;
-    [%expect {| (Ok (foobar ())) |}]
+        ( parse_list_as_alist ["foobar"]
+          : (Litmus.Id.t, Initial_value.t) List.Assoc.t Or_error.t )] ;
+    [%expect {| (Ok ((foobar ()))) |}]
 
   let parse_list ?(scope : Scope.t option) (sl : string list) :
       Map.t Or_error.t =
     Or_error.Monad_infix.(
-      sl |> List.map ~f:parse_initial |> Or_error.combine_errors
-      >>= Map.of_litmus_id_alist ?scope)
+      sl |> parse_list_as_alist >>= Map.of_litmus_id_alist ?scope)
 end

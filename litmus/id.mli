@@ -80,3 +80,16 @@ include Pretty_printer.S with type t := t
 
 (** Litmus identifiers suit various comparable scenarios, such as map keys. *)
 include Comparable.S with type t := t
+
+(** Helpers for parsing, and handling, associative lists over litmus IDs. *)
+module Assoc : sig
+  type nonrec 'a t = (t, 'a) List.Assoc.t
+
+  val try_parse :
+       string list
+    -> value_parser:(string option -> 'a Or_error.t)
+    -> 'a t Or_error.t
+  (** [try_parse strs ~value_parser] tries to parse the string list [strs],
+      where each string is of the form [id=value], as an associative list
+      with litmus ID keys and values interpreted by [value_parser]. *)
+end

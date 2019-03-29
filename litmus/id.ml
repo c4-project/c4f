@@ -67,6 +67,23 @@ end
 include M_sexp
 include Comparable.Make (M_sexp)
 
+let%expect_test "try_parse: example local identifier" =
+  Stdio.print_s [%sexp (try_parse "0:r1" : t Or_error.t)] ;
+  [%expect {| (Ok 0:r1) |}]
+
+let%expect_test "try_parse: example global identifier" =
+  Stdio.print_s [%sexp (try_parse "x" : t Or_error.t)] ;
+  [%expect {| (Ok x) |}]
+
+let%expect_test "try_parse: example invalid identifier" =
+  Stdio.print_s [%sexp (try_parse "0:1" : t Or_error.t)] ;
+  [%expect
+    {|
+    (Error
+     ("validation failed"
+      (1 ("validation errors" (("fst.char '1'" "Invalid initial character.")))
+       utils/c_identifier.ml:57:13))) |}]
+
 let global_of_string (str : string) : t Or_error.t =
   Or_error.(str |> C_identifier.create >>| global)
 
@@ -128,3 +145,50 @@ let pp : t Fmt.t =
       Fmt.pf f "%d:%a" tid C_identifier.pp str
   | Global str ->
       C_identifier.pp f str
+
+module Assoc = struct
+  type 'a t = (M_sexp.t, 'a) List.Assoc.t
+
+  let split_initial (str : string) : string * string option =
+    str |> String.rsplit2 ~on:'='
+    |> Option.value_map
+         ~f:(Tuple2.map_snd ~f:Option.some)
+         ~default:(str, None)
+
+  let split_and_strip_initial (str : string) : string * string option =
+    let name_str_unstripped, value_str_unstripped = split_initial str in
+    let name_str = String.strip name_str_unstripped in
+    let value_str = Option.map ~f:String.strip value_str_unstripped in
+    (name_str, value_str)
+
+  let%expect_test "split_and_strip_initial: present" =
+    Stdio.print_s
+      [%sexp
+        (split_and_strip_initial "foo = barbaz" : string * string option)] ;
+    [%expect {| (foo (barbaz)) |}]
+
+  let%expect_test "split_and_strip_initial: absent" =
+    Stdio.print_s
+      [%sexp (split_and_strip_initial "foobar" : string * string option)] ;
+    [%expect {| (foobar ()) |}]
+
+  let%expect_test "split_and_strip_initial: double equals" =
+    Stdio.print_s
+      [%sexp
+        (split_and_strip_initial "foo=bar=baz" : string * string option)] ;
+    [%expect {| (foo=bar (baz)) |}]
+
+  let try_parse_pair ~(value_parser : string option -> 'a Or_error.t)
+      (str : string) : (M_sexp.t * 'a) Or_error.t =
+    let open Or_error.Let_syntax in
+    let name_str, value_str_opt = split_and_strip_initial str in
+    let%bind name = try_parse name_str in
+    let%map value = value_parser value_str_opt in
+    (name, value)
+
+  let try_parse (strs : string list)
+      ~(value_parser : string option -> 'a Or_error.t) : 'a t Or_error.t =
+    strs
+    |> List.map ~f:(try_parse_pair ~value_parser)
+    |> Or_error.combine_errors
+end
