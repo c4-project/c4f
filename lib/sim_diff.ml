@@ -66,18 +66,20 @@ let map_subject_states (states : Sim_output.State.t list)
   |> List.map ~f:(Sim_output.State.map ~location_map ~value_map)
   |> Or_error.combine_errors
 
+let domain_error (one_domain : Litmus.Id.Set.t)
+    (another_domain : Litmus.Id.Set.t) : unit Or_error.t =
+  Or_error.error_s
+    [%message
+      "Domains of states are inconsistent: for example,"
+        ~one_domain:(one_domain : Litmus.Id.Set.t)
+        ~another_domain:(another_domain : Litmus.Id.Set.t)]
+
 let check_domain_consistency (xs_domains : Litmus.Id.Set.t Sequence.t)
     (x_domain : Litmus.Id.Set.t) : unit Or_error.t =
   let inconsistencies : unit Or_error.t Sequence.t =
     xs_domains
     |> Sequence.filter ~f:(Fn.non ([%equal: Litmus.Id.Set.t] x_domain))
-    |> Sequence.map ~f:(fun bad_dom ->
-           Or_error.error_s
-             [%message
-               "Domains of states are inconsistent: for example,"
-                 ~here:[%here]
-                 ~one_domain:(x_domain : Litmus.Id.Set.t)
-                 ~other_domain:(bad_dom : Litmus.Id.Set.t)] )
+    |> Sequence.map ~f:(domain_error x_domain)
   in
   Or_error.combine_errors_unit (Sequence.to_list inconsistencies)
 
@@ -114,8 +116,7 @@ let%test_module "check_domain_consistency expects tests" =
         {|
       (Error
        ("Domains of states are inconsistent: for example,"
-        (here lib/sim_diff.ml:83:23) (one_domain (0:foo 1:bar baz))
-        (other_domain (0:foo)))) |}]
+        (one_domain (0:foo 1:bar baz)) (another_domain (0:foo)))) |}]
   end )
 
 let get_domain : Sim_output.State.t list -> Litmus.Id.Set.t Or_error.t =
