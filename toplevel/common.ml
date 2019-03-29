@@ -26,6 +26,12 @@ open Core_kernel
 open Lib
 open Utils
 
+let format_for_readme (str : string) : string =
+  str
+  |> String_extended.squeeze (* The order here is important *)
+  |> String_extended.word_wrap ~soft_limit:72 ~hard_limit:80 ~nl:"\n "
+;;
+
 let warn_if_not_tracking_symbols (o : Output.t) : C_identifier.t list option -> unit
   = function
   | None ->

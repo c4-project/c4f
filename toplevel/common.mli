@@ -28,6 +28,10 @@ open Core_kernel
 open Lib
 open Utils
 
+(** [format_for_readme str] applies word-wrapping and squeezing to [str]
+    to make it suitable for command READMEs. *)
+val format_for_readme : string -> string
+
 (** [warn_if_not_tracking_symbols o c_symbols] prints a warning on [o]
     if [c_symbols] is empty.  The warning explains that, without any
     C symbols to track, act may make incorrect assumptions. *)

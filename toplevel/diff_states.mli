@@ -22,37 +22,19 @@
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE. *)
 
-(** Main entry point.
+(** Top-level for act's `diff_states` command *)
 
-    This module contains act's main entry point, which multiplexes all
-   of the various act sub-programs.  *)
+open Core_kernel
+open Lib
 
-open Core
-open Toplevel
+(** [run o cfg ~oracle_raw ~subject_raw] runs the state differ, accepting
+    simulator input from the files named by [oracle_raw] and [subject_raw]. *)
+val run
+  :  Output.t
+  -> Config.Act.t
+  -> oracle_raw:[< `Herd of string | `Litmus of string]
+  -> subject_raw : [< `Herd of string | `Litmus of string]
+  -> unit Or_error.t
 
-let readme () : string =
-  Common.format_for_readme
-    {|
-`act` is a toolkit for testing C compilers.  It predominantly deals
-with concurrency---specifically, checking whether compilers comply
-with the C11 memory model with regards to the assembly they emit.
-|}
-;;
-
-let command =
-  Command.group
-    ~summary:"Automagic Compiler Tormentor"
-    ~readme
-    [ "c", C_main.command
-    ; "compare", Compare.command
-    ; "configure", Configure.command
-    ; "diff-states", Diff_states.command
-    ; "explain", Explain.command
-    ; "litmusify", Litmusify.command
-    ; "regress", Regress.command
-    ; "test", Test.command
-    ; "tool", Tool.command
-    ]
-;;
-
-let () = Command.run command
+(** [command] packages up the diff_states command as a [Command.t]. *)
+val command : Command.t

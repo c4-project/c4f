@@ -43,7 +43,7 @@ let run
 ;;
 
 let readme () : string =
-  String.strip
+  Common.format_for_readme
     {|
 `act c fuzz` takes, as input, a C litmus test.  It then performs various
 mutations to the litmus test, and outputs the resulting modified test.
