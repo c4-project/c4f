@@ -57,8 +57,6 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
 
     module G = Quickcheck.Generator
 
-    (* TODO(@MattWindsor91): move this to Atomic_store. *)
-
     let src_env (vars : Var.Map.t) : (module Mini_env.S) =
       let predicates = Lazy.force src_restrictions in
       Var.Map.env_module_satisfying_all ~predicates vars
