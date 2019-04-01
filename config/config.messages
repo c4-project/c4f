@@ -66,6 +66,65 @@ Expected a valid compiler configuration item; for example:
 - `style STYLE-ID`
 - `emits ARCH-ID`
 
+main: FUZZ LBRACE WEIGHT
+##
+## Ends in an error in state: 62.
+##
+## simple_stanza(FUZZ,fuzz_item) -> FUZZ LBRACE . separated_nonempty_list(EOL,option(fuzz_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## FUZZ LBRACE
+##
+main: FUZZ LBRACE EOL WEIGHT
+##
+## Ends in an error in state: 72.
+##
+## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) EOL . separated_nonempty_list(EOL,option(fuzz_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(fuzz_item) EOL
+##
+
+Expected a valid fuzz configuration item; for example:
+- `action ACTION-ID`
+- `action ACTION-ID weight NUM`
+
+main: FUZZ LBRACE ACTION WEIGHT
+##
+## Ends in an error in state: 63.
+##
+## fuzz_item -> ACTION . IDENTIFIER option(fuzz_weight) [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## ACTION
+##
+
+Expected an action identifier after `action`
+
+main: FUZZ LBRACE ACTION IDENTIFIER VIA
+##
+## Ends in an error in state: 64.
+##
+## fuzz_item -> ACTION IDENTIFIER . option(fuzz_weight) [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## ACTION IDENTIFIER
+##
+
+Expected `weight NUMBER`, or a newline, after the action identifier
+
+main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT WEIGHT
+##
+## Ends in an error in state: 65.
+##
+## fuzz_weight -> WEIGHT . INTEGER [ RBRACE EOL ]
+##
+## The known suffix of the stack is as follows:
+## WEIGHT
+##
+
+Expected an integer weight after `weight`
+
 main: CPP VIA
 ##
 ## Ends in an error in state: 50.
@@ -101,6 +160,15 @@ main: MACHINE IDENTIFIER LBRACE LITMUS VIA
 ##
 ## The known suffix of the stack is as follows:
 ## LITMUS
+##
+main: FUZZ WEIGHT
+##
+## Ends in an error in state: 61.
+##
+## simple_stanza(FUZZ,fuzz_item) -> FUZZ . LBRACE separated_nonempty_list(EOL,option(fuzz_item)) RBRACE [ EOL EOF ]
+##
+## The known suffix of the stack is as follows:
+## FUZZ
 ##
 
 Expected an opening brace after the block name
@@ -234,7 +302,16 @@ main: MACHINE IDENTIFIER LBRACE LITMUS LBRACE CMD STRING VIA
 ## The known suffix of the stack is as follows:
 ## option(litmus_item)
 ##
-
+main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT INTEGER WEIGHT
+##
+## Ends in an error in state: 71.
+##
+## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) . [ RBRACE ]
+## separated_nonempty_list(EOL,option(fuzz_item)) -> option(fuzz_item) . EOL separated_nonempty_list(EOL,option(fuzz_item)) [ RBRACE ]
+##
+## The known suffix of the stack is as follows:
+## option(fuzz_item)
+##
 
 Expected a closing brace (to terminate this block), or a newline
 

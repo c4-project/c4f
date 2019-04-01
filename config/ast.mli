@@ -31,6 +31,11 @@ module Cpp : sig
   type t = Cmd of string | Argv of string list | Enabled of bool
 end
 
+(** Items in a fuzzer stanza *)
+module Fuzz : sig
+  type t = Action of Id.t * int option
+end
+
 (** Items in a Litmus stanza *)
 module Litmus : sig
   type t = Cmd of string
@@ -76,10 +81,11 @@ end
 (** Items at the top level *)
 module Top : sig
   type t =
-    | Cpp of Cpp.t list
-    | Herd of Herd.t list
-    | Machine of Id.t * Machine.t list
-    | Compiler of Id.t * Compiler.t list
+    | Cpp of Cpp.t list (** A C preprocessor config block. *)
+    | Fuzz of Fuzz.t list (** A fuzzer config block. *)
+    | Herd of Herd.t list (** A Herd config block. *)
+    | Machine of Id.t * Machine.t list (** A machine config block. *)
+    | Compiler of Id.t * Compiler.t list (** A compiler config block. *)
 end
 
 (** A config AST is a list of top-level items. *)

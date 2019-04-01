@@ -33,7 +33,8 @@ open Utils.Lex_utils
 let keywords = lazy
   (
     String.Caseless.Map.of_alist_exn
-      [ "argv", ARGV
+      [ "action", ACTION
+      ; "argv", ARGV
       ; "asm_model", ASM_MODEL
       ; "c_model", C_MODEL
       ; "cmd", CMD
@@ -44,6 +45,7 @@ let keywords = lazy
       ; "emits", EMITS
       ; "enabled", ENABLED
       ; "false", BOOL false
+      ; "fuzz", FUZZ
       ; "herd", HERD
       ; "host", HOST
       ; "litmus", LITMUS
@@ -58,6 +60,7 @@ let keywords = lazy
       ; "true", BOOL true
       ; "user", USER
       ; "via", VIA
+      ; "weight", WEIGHT
       ; "yes", BOOL true
       ]
   )
@@ -66,6 +69,7 @@ let keywords = lazy
 let digit = [ '0'-'9' ]
 let hex   = [ '0'-'9' 'a'-'f' 'A'-'F' ]
 let alpha = [ 'a'-'z' 'A'-'Z' ]
+let num   = digit+
 
 let id_start   = (alpha|'_')
 let id_middle  = (id_start|digit|'.')
@@ -84,4 +88,5 @@ rule token = parse
       | None -> IDENTIFIER (Id.of_string x)
     }
   | eof { EOF }
+  | '-' ? num as x { INTEGER (Core.Int.of_string x) }
   | _ { lex_error ("Unexpected char: " ^ Lexing.lexeme lexbuf) lexbuf }

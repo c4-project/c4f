@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-Copyright (c) 2018 by Matt Windsor
+Copyright (c) 2018, 2019 by Matt Windsor
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -23,16 +23,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. *)
 
 %token (* delimiters *) LBRACE RBRACE EOF EOL
-%token (* main groups *) MACHINE COMPILER
+%token (* main groups *) MACHINE COMPILER FUZZ
 %token (* program subgroups *) CPP HERD LITMUS
 %token (* common keywords *) ENABLED CMD ARGV DEFAULT
+%token (* fuzz-specific keywords *) ACTION WEIGHT
 %token (* Herd-specific keywords *) ASM_MODEL C_MODEL
 %token (* machine-specific keywords *) VIA SSH HOST USER COPY TO LOCAL
 %token (* compiler-specific keywords *) STYLE EMITS
 
 %token <bool>   BOOL
 %token <string> STRING
-%token <Id.t> IDENTIFIER
+%token <int>    INTEGER
+%token <Id.t>   IDENTIFIER
 
 %type <Ast.t> main
 %start main
@@ -60,7 +62,9 @@ main:
 
 top_stanza:
   | c = cpp_stanza      {                 Ast.Top.Cpp      c      }
+  | f = fuzz_stanza     {                 Ast.Top.Fuzz     f      }
   | h = herd_stanza     {                 Ast.Top.Herd     h      }
+  (* Litmus stanzas are machine-specific. *)
   | x = machine_stanza  { let i, m = x in Ast.Top.Machine  (i, m) }
   | x = compiler_stanza { let i, c = x in Ast.Top.Compiler (i, c) }
 
@@ -71,6 +75,15 @@ cpp_item:
   | b = enabled { Ast.Cpp.Enabled b  }
   | c = cmd     { Ast.Cpp.Cmd     c  }
   | vs = argv   { Ast.Cpp.Argv    vs }
+
+fuzz_stanza:
+  | items = simple_stanza(FUZZ, fuzz_item) { items }
+
+fuzz_item:
+  | ACTION; action = IDENTIFIER; weight = fuzz_weight? { Ast.Fuzz.Action (action, weight) }
+
+fuzz_weight:
+  | WEIGHT; w = INTEGER { w }
 
 litmus_stanza:
   | items = simple_stanza(LITMUS, litmus_item) { items }

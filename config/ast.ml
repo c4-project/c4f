@@ -25,6 +25,10 @@ module Cpp = struct
   type t = Cmd of string | Argv of string list | Enabled of bool
 end
 
+module Fuzz = struct
+  type t = Action of Id.t * int option
+end
+
 module Litmus = struct
   type t = Cmd of string
 end
@@ -59,6 +63,7 @@ end
 module Top = struct
   type t =
     | Cpp of Cpp.t list
+    | Fuzz of Fuzz.t list
     | Herd of Herd.t list
     | Machine of Id.t * Machine.t list
     | Compiler of Id.t * Compiler.t list
