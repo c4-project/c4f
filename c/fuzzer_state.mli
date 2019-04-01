@@ -74,11 +74,18 @@ module Monad : sig
       same name. *)
 
   val add_dependency : C_identifier.t -> unit t
-  (** [erase_var_value var] is a stateful action that adds a dependency flag
+  (** [add_dependency var] is a stateful action that adds a dependency flag
       to any known-value record for variable [var].
 
       This should be done after involving [var] in any atomic actions that
       depend on it having a particular known-value. *)
+
+  val add_write : C_identifier.t -> unit t
+  (** [add_write var] is a stateful action that adds a write flag to
+      variable [var].
+
+      This should be done after involving [var] in any atomic actions that
+      write to it, even if they don't modify it. *)
 
   val erase_var_value : C_identifier.t -> unit t
   (** [erase_var_value var] is a stateful action that erases any known-value

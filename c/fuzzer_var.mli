@@ -84,6 +84,9 @@ module Record : sig
   (** [has_dependencies vr] returns true if [vr] has a known value that also
       has dependencies. *)
 
+  val has_writes : t -> bool
+  (** [has_writes vr] returns true if [vr] is known to have been written to. *)
+
   val has_known_value : t -> bool
   (** [has_known_value vr] returns whether [vr] has a known value. *)
 
@@ -100,6 +103,13 @@ module Record : sig
 
       This should be done after involving [record] in any atomic actions
       that depend on its known value. *)
+
+  val add_write : t -> t
+  (** [add_write record] adds a write flag to the known-value field of
+      [record].
+
+      This should be done after involving [record] in any atomic actions
+      that write to it, even if they don't change its known value. *)
 
   val erase_value : t -> t
   (** [erase_value record] erases the known-value field of [record].
@@ -163,11 +173,18 @@ module Map : sig
       existing variables in [map]. *)
 
   val add_dependency : t -> var:C_identifier.t -> t
-  (** [add_dependency map ~var] adds a dependency flag in [map] for [var]
+  (** [add_dependency map ~var] adds a dependency flag in [map] for [var],
       returning the resulting new map.
 
       This should be done after involving [var] in any atomic actions that
       depend on its known value. *)
+
+  val add_write : t -> var:C_identifier.t -> t
+  (** [add_write map ~var] adds a write flag in [map] for [var], returning
+      the resulting new map.
+
+      This should be done after involving [var] in any atomic actions that
+      write to it, even if they don't modify its value. *)
 
   val erase_value : t -> var:C_identifier.t -> t Or_error.t
   (** [erase_value map ~var] erases the known-value field for any mapping

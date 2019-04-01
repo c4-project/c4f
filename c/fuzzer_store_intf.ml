@@ -21,17 +21,20 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** C fuzzer: actions that generate store instructions. *)
+type rst =
+  { store: Mini.Atomic_store.t
+  ; path: Mini_path.stm_hole Mini_path.program_path }
 
-include module type of Fuzzer_store_intf
+(** Basic template for fuzzer store action modules. *)
+module type Basic = sig
+  val name : string
+  (** The name of this store action. *)
 
-(** {2 Functors} *)
+  val forbid_already_written : bool
+  (** If true, only allow stores to variables that are known not to already
+      have writes. This can help avoid combinatorial explosions. *)
 
-(** [Make (B)] makes a store action given the basic configuration in [B]. *)
-module Make (B : Basic) : Fuzzer_action.S
-
-(** {2 Pre-made modules} *)
-
-(** [Int] is a fuzzer action that generates a random atomic-int store
-    instruction. *)
-module Int : Fuzzer_action.S
+  (** The generator this store action uses to create stores. *)
+  module Quickcheck (Src : Mini_env.S) (Dst : Mini_env.S) :
+    Utils.My_quickcheck.S_with_sexp with type t := Mini.Atomic_store.t
+end

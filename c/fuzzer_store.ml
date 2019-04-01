@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+include Fuzzer_store_intf
 
 (* Module shorthands *)
 module Action = Fuzzer_action
@@ -29,12 +30,8 @@ module Subject = Fuzzer_subject
 module State = Fuzzer_state
 module Var = Fuzzer_var
 
-type rst =
-  { store: Mini.Atomic_store.t
-  ; path: Mini_path.stm_hole Mini_path.program_path }
-
-module Int : Action.S with type Random_state.t = rst = struct
-  let name = "store-int"
+module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
+  let name = B.name
 
   (** Lists the restrictions we put on source variables. *)
   let src_restrictions : (Var.Record.t -> bool) list Lazy.t = lazy []
@@ -42,7 +39,7 @@ module Int : Action.S with type Random_state.t = rst = struct
   (** Lists the restrictions we put on destination variables. *)
   let dst_restrictions : (Var.Record.t -> bool) list Lazy.t =
     lazy
-      Var.Record.
+      Var.Record.(
         [ is_atomic
         ; was_generated
           (* This is to make sure that we don't change the observable
@@ -51,6 +48,7 @@ module Int : Action.S with type Random_state.t = rst = struct
           (* This action changes the value, so we can't do it to variables
              with depended-upon values. *)
          ]
+        @ if B.forbid_already_written then [Fn.non has_writes] else [])
 
   module Random_state = struct
     type t = rst
@@ -90,7 +88,7 @@ module Int : Action.S with type Random_state.t = rst = struct
         [%sexp (Src.env : Mini_type.t Utils.C_identifier.Map.t)] ;
       Fmt.pf vf "%s: dst environment: @[%a@]@." name Sexp.pp_hum
         [%sexp (Dst.env : Mini_type.t Utils.C_identifier.Map.t)] ;
-      let module Gen = Mini.Atomic_store.Quickcheck_ints (Src) (Dst) in
+      let module Gen = B.Quickcheck (Src) (Dst) in
       Fmt.pf vf "%s: built generator module@." name ;
       [%quickcheck.generator: Gen.t]
 
@@ -118,11 +116,12 @@ module Int : Action.S with type Random_state.t = rst = struct
 
   (* This action writes to the destination, so we no longer have a known
      value for it. *)
-  let erase_value_of_store_dst (store : Mini.Atomic_store.t) :
-      unit State.Monad.t =
+  let mark_store_dst (store : Mini.Atomic_store.t) : unit State.Monad.t =
+    let open State.Monad.Let_syntax in
     let dst = Mini.Atomic_store.dst store in
     let dst_var = Mini.Address.variable_of dst in
-    State.Monad.erase_var_value dst_var
+    let%bind () = State.Monad.erase_var_value dst_var in
+    State.Monad.add_write dst_var
 
   module Exp_idents = Mini.Expression.On_identifiers.On_monad (State.Monad)
 
@@ -140,12 +139,20 @@ module Int : Action.S with type Random_state.t = rst = struct
     let store_stm = Mini.Statement.atomic_store store in
     let%bind vf = State.Monad.vf () in
     Fmt.pf vf "%s: Erasing known value of store destination@." name ;
-    let%bind () = erase_value_of_store_dst store in
+    let%bind () = mark_store_dst store in
     Fmt.pf vf "%s: Adding dependency to store source@." name ;
     let%bind () = add_dependencies_to_store_src store in
     State.Monad.Monadic.return
       (Subject.Test.Path.insert_stm path store_stm subject)
 end
+
+module Int : Action.S with type Random_state.t = rst = Make (struct
+  let name = "store-int"
+
+  let forbid_already_written = true (* for now *)
+
+  module Quickcheck = Mini.Atomic_store.Quickcheck_ints
+end)
 
 let%test_module "int tests" =
   ( module struct

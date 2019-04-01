@@ -133,9 +133,9 @@ module Atomic_store : sig
       addresses. It uses [Mem_order]'s store-compatible generator to pick
       random memory orders. *)
   module Quickcheck_generic
-      (Src : Quickcheckable.S with type t := Expression.t)
-      (Dst : Quickcheckable.S with type t := Address.t) :
-    Quickcheckable.S with type t := t
+      (Src : Quickcheck.S with type t := Expression.t)
+      (Dst : Quickcheck.S with type t := Address.t) :
+    My_quickcheck.S_with_sexp with type t := t
 
   (** There isn't a generic quickcheck instance for atomic stores, as we
       can't guarantee type safety in general. *)
@@ -144,7 +144,7 @@ module Atomic_store : sig
       non-atomic integers, using [Src] as the variable typing environment
       for sources and [Dst] as the environment for destinations. *)
   module Quickcheck_ints (Src : Mini_env.S) (Dst : Mini_env.S) :
-    Quickcheckable.S with type t := t
+    My_quickcheck.S_with_sexp with type t := t
 end
 
 (** A (strong, explicit) atomic compare-exchange operation. *)

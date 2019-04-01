@@ -136,7 +136,7 @@ module Atomic_store = struct
       (Dst : Quickcheck.S with type t := Address.t) : sig
     type nonrec t = t [@@deriving sexp_of]
 
-    include Quickcheck.S with type t := t
+    include My_quickcheck.S_with_sexp with type t := t
   end = struct
     type nonrec t = t
 
@@ -150,25 +150,25 @@ module Atomic_store = struct
         t =
       {src; dst; mo}
 
-    let quickcheck_generator : t Quickcheck.Generator.t =
-      Quickcheck.Generator.(
+    let quickcheck_generator : t Base_quickcheck.Generator.t =
+      Base_quickcheck.Generator.(
         map
           [%quickcheck.generator:
             Src.t * Dst.t * [%custom Mem_order.gen_store]] ~f:of_tuple)
 
-    let quickcheck_observer : t Quickcheck.Observer.t =
-      Quickcheck.Observer.(
+    let quickcheck_observer : t Base_quickcheck.Observer.t =
+      Base_quickcheck.Observer.(
         unmap [%quickcheck.observer: Src.t * Dst.t * Mem_order.t]
           ~f:to_tuple)
 
-    let quickcheck_shrinker : t Quickcheck.Shrinker.t =
-      Quickcheck.Shrinker.(
+    let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
+      Base_quickcheck.Shrinker.(
         map [%quickcheck.shrinker: Src.t * Dst.t * Mem_order.t] ~f:of_tuple
           ~f_inverse:to_tuple)
   end
 
   module Quickcheck_ints (Src : Env.S) (Dst : Env.S) :
-    Quickcheckable.S with type t := t =
+    My_quickcheck.S_with_sexp with type t := t =
     Quickcheck_generic
       (Expression.Quickcheck_int_values
          (Src))

@@ -40,7 +40,8 @@ module Record = struct
     { ty: Mini.Type.t option
     ; source: [`Existing | `Generated]
     ; scope: [`Global | `Local]
-    ; known_value: Known_value.t option }
+    ; known_value: Known_value.t option
+    ; has_writes: bool [@default false] }
   [@@deriving fields, make]
 
   let is_global : t -> bool = function
@@ -67,10 +68,14 @@ module Record = struct
   let has_known_value (record : t) : bool =
     Option.is_some (known_value record)
 
-  let add_dependency (record : t) : t =
-    { record with
-      known_value=
-        Option.map ~f:Known_value.add_dependency record.known_value }
+  let map_known_value (record : t) ~(f : Known_value.t -> Known_value.t) : t
+      =
+    {record with known_value= Option.map ~f record.known_value}
+
+  let add_dependency : t -> t =
+    map_known_value ~f:Known_value.add_dependency
+
+  let add_write (record : t) : t = {record with has_writes= true}
 
   let erase_value (record : t) : t = {record with known_value= None}
 
@@ -109,8 +114,15 @@ module Map = struct
     let data = Record.make_generated_global ?initial_value ty in
     C_identifier.Map.set map ~key ~data
 
-  let add_dependency (map : t) ~(var : C_identifier.t) : t =
-    C_identifier.Map.change map var ~f:(Option.map ~f:Record.add_dependency)
+  let change_var (map : t) ~(var : C_identifier.t)
+      ~(f : Record.t -> Record.t) : t =
+    C_identifier.Map.change map var ~f:(Option.map ~f)
+
+  let add_write : t -> var:C_identifier.t -> t =
+    change_var ~f:Record.add_write
+
+  let add_dependency : t -> var:C_identifier.t -> t =
+    change_var ~f:Record.add_dependency
 
   let erase_value_inner (map : t) ~(var : C_identifier.t) : t =
     C_identifier.Map.change map var ~f:(Option.map ~f:Record.erase_value)
