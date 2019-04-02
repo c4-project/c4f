@@ -56,7 +56,7 @@ module type Basic = sig
   (** [postcondition vast] should get the Litmus postcondition of [vast], if
       one exists. *)
 
-  include Pretty_printer.S with type t := t
+  val print : Out_channel.t -> t -> unit
 
   val delitmus : t -> del Or_error.t
 
@@ -107,25 +107,30 @@ Utils.Filter.Make (struct
       (oc : Out_channel.t) : Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map fz = B.fuzz ~seed ~o vast in
-    Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp fz ;
+    B.print oc fz;
     let cvars = B.cvars vast in
     let post = B.postcondition vast in
     {Output.cvars; post}
 
-  let pp : [`All | `Vars] -> (Utils.C_identifier.t list * B.t) Fmt.t =
+  let print_all (oc : Out_channel.t) _ (x : B.t) : unit =
+    B.print oc x
+
+  let print_vars (oc : Out_channel.t) (vars : Utils.C_identifier.t list) _ : unit =
+    let f = Caml.Format.formatter_of_out_channel oc in
+    Fmt.(vbox (list ~sep:sp Utils.C_identifier.pp)) f vars
+
+  let print : [`All | `Vars] -> Out_channel.t -> Utils.C_identifier.t list -> B.t -> unit =
     function
     | `All ->
-        Fmt.using snd B.pp
+        print_all
     | `Vars ->
-        Fmt.(using fst (vbox (list ~sep:sp Utils.C_identifier.pp)))
+        print_vars
 
   let run_print (output_mode : [`All | `Vars]) (vast : B.t)
       (oc : Out_channel.t) : Output.t Or_error.t =
     let cvars = B.cvars vast in
     let post = B.postcondition vast in
-    let f = Format.formatter_of_out_channel oc in
-    Fmt.pf f "%a@." (pp output_mode)
-      (Utils.C_identifier.Map.keys cvars, vast) ;
+    print output_mode oc (Utils.C_identifier.Map.keys cvars) vast;
     Or_error.return {Output.cvars; post}
 
   let run {Utils.Filter.aux; src; _} ic oc : Output.t Or_error.t =
@@ -156,7 +161,10 @@ Make (struct
 
   module Frontend = Frontend.Normal
 
-  let pp = Fmt.using Mini_reify.program Ast.Translation_unit.pp
+  let print oc tu =
+    let f = Caml.Format.formatter_of_out_channel oc in
+    let program = Mini_reify.program tu in
+    Ast.Translation_unit.pp f program
 
   let process = Mini_convert.translation_unit
 
@@ -192,7 +200,7 @@ Make (struct
 
   module Frontend = Frontend.Litmus
 
-  let pp = Mini_litmus.Pp.pp
+  let print = Mini_litmus.Pp.print
 
   let process lit =
     Or_error.(lit |> Ast.Litmus.validate >>= Mini_convert.litmus)

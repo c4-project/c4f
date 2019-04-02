@@ -134,7 +134,8 @@ let pp_row t f = function
 
 let pp_rows t = Format.pp_print_list ~pp_sep:(end_line `Normal t) (pp_row t)
 
-let pp f t =
+let print ?(oc : Stdio.Out_channel.t = Stdio.Out_channel.stdout) (t : t) : unit =
+  let f = Format.formatter_of_out_channel oc in
   Format.pp_open_tbox f () ;
   pp_header t f t.header ;
   if List.is_empty t.rows_reversed then pp_terminator `Header t f
@@ -142,7 +143,8 @@ let pp f t =
     end_line `Header t f () ;
     pp_rows t f (List.rev t.rows_reversed) ;
     pp_terminator `Normal t f ) ;
-  Format.pp_close_tbox f ()
+  Format.pp_close_tbox f () ;
+  Format.pp_print_flush f ()
 
 let%expect_test "Sample use of tabulator with 'with_rows'" =
   let tab_result =
@@ -161,7 +163,7 @@ let%expect_test "Sample use of tabulator with 'with_rows'" =
             ; [ Fn.flip String.pp "African Swallow"
               ; Fn.flip Int.pp 1
               ; Fn.flip Format.pp_print_bool true ] ]
-      >>| pp Format.std_formatter)
+      >>| print)
   in
   Format.print_newline () ;
   Format.printf "@[%a@]@." Sexp.pp_hum
@@ -195,7 +197,7 @@ let%expect_test "Sample use of tabulator with rules" =
             [ Fn.flip String.pp "African Swallow"
             ; Fn.flip Int.pp 1
             ; Fn.flip Format.pp_print_bool true ]
-      >>| pp Format.std_formatter)
+      >>| print)
   in
   Format.print_newline () ;
   Format.printf "@[%a@]@." Sexp.pp_hum
@@ -229,7 +231,7 @@ let%expect_test "Sample use of tabulator with custom separators" =
             [ Fn.flip String.pp "African Swallow"
             ; Fn.flip Int.pp 1
             ; Fn.flip Format.pp_print_bool true ]
-      >>| pp Format.std_formatter)
+      >>| print)
   in
   Format.print_newline () ;
   Format.printf "@[%a@]@." Sexp.pp_hum
@@ -263,7 +265,7 @@ let%expect_test "Sample use of tabulator with custom separators and rule" =
             [ Fn.flip String.pp "African Swallow"
             ; Fn.flip Int.pp 1
             ; Fn.flip Format.pp_print_bool true ]
-      >>| pp Format.std_formatter)
+      >>| print)
   in
   Format.print_newline () ;
   Format.printf "@[%a@]@." Sexp.pp_hum
@@ -287,22 +289,22 @@ end
 module type Tabular_extensions = sig
   type data
 
-  val pp_as_table :
-       ?on_error:(Format.formatter -> Error.t -> unit)
-    -> Format.formatter
+  val print_as_table :
+       ?oc:Stdio.Out_channel.t
+    -> ?on_error:(Error.t -> unit)
     -> data
     -> unit
 end
 
 module Extend_tabular (T : Tabular) :
   Tabular_extensions with type data := T.data = struct
-  let pp_error_default f error =
-    Format.fprintf f "@[<error building table: %a>@]" Error.pp error
+  let error_default error =
+    Format.printf "@[<error building table: %a>@]" Error.pp error
 
-  let pp_as_table ?(on_error = pp_error_default) f t =
+  let print_as_table ?(oc : Stdio.Out_channel.t option) ?(on_error = error_default) t =
     match T.to_table t with
     | Ok table ->
-        pp f table
+        print ?oc table
     | Error e ->
-        on_error f e
+        on_error e
 end

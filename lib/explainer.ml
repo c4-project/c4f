@@ -22,50 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-
-module type Basic_explanation = sig
-  type elt
-
-  type context
-
-  type details
-
-  include Abstract.Abstractable.S with type t := elt
-
-  include Pretty_printer.S with type t := elt
-
-  module Flag : Abstract.Flag_enum.S
-
-  val abs_flags : elt -> context -> Flag.Set.t
-
-  val make_details : elt -> context -> details
-
-  val pp_details : Base.Formatter.t -> details -> unit
-end
-
-module type Explanation = sig
-  type t
-
-  type elt
-
-  type details
-
-  type context
-
-  include Abstract.Abstractable.S with type t := t
-
-  include Pretty_printer.S with type t := t
-
-  module Flag : Abstract.Flag_enum.S
-
-  val original : t -> elt
-
-  val details : t -> details
-
-  val abs_flags : t -> Flag.Set.t
-
-  val make : context:context -> original:elt -> t
-end
+include Explainer_intf
 
 let pp_details pp_header pp_body =
   Fmt.(
@@ -124,58 +81,6 @@ module Make_explanation (B : Basic_explanation) :
         ~details:(fun _ _ -> B.pp_details f))
 
   let pp f t = pp_details B.pp pp_body f (original t, t)
-end
-
-module type S = sig
-  module Lang : Language.S
-
-  module Loc_explanation : sig
-    include
-      Explanation
-      with type elt := Lang.Location.t
-       and type context := Abstract.Symbol.Table.t
-       and module Abs := Abstract.Location
-  end
-
-  module Ops_explanation : sig
-    include
-      Explanation
-      with type elt := Lang.Instruction.t
-       and type context := Abstract.Symbol.Table.t
-       and module Abs := Abstract.Operand.Bundle
-
-    include Abstract.Operand.Bundle.S_properties with type t := t
-  end
-
-  module Ins_explanation : sig
-    include
-      Explanation
-      with type elt := Lang.Instruction.t
-       and type context := Abstract.Symbol.Table.t
-       and module Abs := Abstract.Instruction
-
-    include Abstract.Instruction.S_properties with type t := t
-  end
-
-  module Stm_explanation : sig
-    include
-      Explanation
-      with type elt := Lang.Statement.t
-       and type context := Abstract.Symbol.Table.t
-       and module Abs := Abstract.Statement
-
-    include Abstract.Statement.S_properties with type t := t
-  end
-
-  type t =
-    { statements: Stm_explanation.t list
-    ; symbol_table: Abstract.Symbol.Table.t }
-
-  include Pretty_printer.S with type t := t
-
-  val pp_as_assembly : Base.Formatter.t -> t -> unit
-
-  val explain : Lang.Program.t -> Abstract.Symbol.Table.t -> t
 end
 
 module Make (Lang : Language.S) : S with module Lang := Lang = struct
@@ -426,9 +331,11 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
 
   let pp f exp =
     Fmt.(
-      pf f "@[<v>%a@,@,%a@]"
+      pf f "@[<v>%a@,@]"
         (list Stm_explanation.pp ~sep:sp)
         (non_blank_statements exp)
-        (fun f -> Abstract.Symbol.Table.pp_as_table f)
-        exp.symbol_table)
+    )
+  
+  let print_symbol_table ?(oc: Stdio.Out_channel.t option ) (exp: t) : unit =
+    Abstract.Symbol.Table.print_as_table ?oc exp.symbol_table
 end

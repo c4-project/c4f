@@ -35,6 +35,7 @@ module Raw : sig
   val create :
        ?cpp:Cpp.t
     -> ?herd:Herd.t
+    -> ?fuzz:Fuzz.t
     -> compilers:Compiler.Cfg_spec.Set.t
     -> machines:Machine.Spec.Set.t
     -> t

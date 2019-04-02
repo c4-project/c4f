@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,22 +21,16 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** High-level module for emitting act's internal assembly analysis
+open Base
 
-    [Explainer] contains functors for extracting a pretty-printable summary
-    of an assembly listing as act understands it, through a language module. *)
+type t =
+  { weights: (Id.t, int) List.Assoc.t [@default []] [@drop_if_default]
+  }
+[@@deriving sexp, fields, make]
 
-include module type of Explainer_intf
+let to_weight_opt : Ast.Fuzz.t -> (Id.t * int) option = function
+| Ast.Fuzz.Action (a, w) -> Some (a, Option.value w ~default:1)
 
-(** [Make_explanation (B)] makes an [Explanation] from a
-    [Basic_explanation]. *)
-module Make_explanation (B : Basic_explanation) :
-  Explanation
-  with type elt := B.elt
-   and type context := B.context
-   and type details := B.details
-   and module Abs := B.Abs
-   and module Flag := B.Flag
-
-(** [Make] makes an implementation of [S] for a given language. *)
-module Make (LS : Language.S) : S with module Lang := LS
+let of_ast (ast : Ast.Fuzz.t list) : t Or_error.t =
+  let weights = List.filter_map ast ~f:to_weight_opt in
+  Or_error.return (make ~weights ())

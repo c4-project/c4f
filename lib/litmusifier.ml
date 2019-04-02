@@ -274,11 +274,11 @@ struct
     let convert_const = B.convert_const
   end)
 
-  let pp_litmus : Format.t -> Litmus.Validated.t Fmt.t = function
+  let print_litmus : Format.t -> Out_channel.t -> Litmus.Validated.t -> unit = function
     | Full ->
-        B.Litmus_pp.pp
+        B.Litmus_pp.print
     | Programs_only ->
-        B.Litmus_pp.pp_programs
+        B.Litmus_pp.print_programs
 
   let make_litmus_program (program : Sanitiser.Output.Program.t) =
     program |> Sanitiser.Output.Program.listing |> B.convert_program

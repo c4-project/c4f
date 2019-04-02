@@ -22,19 +22,28 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Stdio
 open Utils
 include Pp_intf
+
+let pp_location_stanza : C_identifier.t list option Fmt.t =
+  Fmt.(
+    option
+      (hbox
+          (prefix (unit "locations@ ")
+            (brackets (box (list ~sep:(unit ";@ ") C_identifier.pp))))))
+
 
 module type Basic = sig
   module Ast : Ast.S
 
-  val pp_programs_inner : Ast.Lang.Program.t list Fmt.t
+  val print_programs_inner : Out_channel.t -> Ast.Lang.Program.t list -> unit
 end
 
 (** Makes the bits of a litmus AST that are common to all styles. *)
 module Make_common (B : Basic) = struct
-  let pp_programs : B.Ast.Validated.t Fmt.t =
-    Fmt.using B.Ast.Validated.programs B.pp_programs_inner
+  let print_programs (oc: Out_channel.t) (ast : B.Ast.Validated.t) : unit =
+    B.print_programs_inner oc (B.Ast.Validated.programs ast)
 
   let pp_init : (C_identifier.t, B.Ast.Lang.Constant.t) List.Assoc.t Fmt.t =
     My_format.pp_c_braces
@@ -42,13 +51,6 @@ module Make_common (B : Basic) = struct
         list ~sep:sp (fun f (l, c) ->
             pf f "@[%a = %a;@]" C_identifier.pp l B.Ast.Lang.Constant.pp c
         ))
-
-  let pp_location_stanza : C_identifier.t list option Fmt.t =
-    Fmt.(
-      option
-        (hbox
-           (prefix (unit "locations@ ")
-              (brackets (box (list ~sep:(unit ";@ ") C_identifier.pp))))))
 
   let pp_quantifier f = function `Exists -> Fmt.string f "exists"
 
@@ -66,21 +68,21 @@ module Make_common (B : Basic) = struct
     Fmt.(box (pair ~sep:sp pp_quantifier (parens pp_predicate)))
       f (quantifier, predicate)
 
-  let pp_body f (litmus : B.Ast.Validated.t) =
-    Fmt.(
-      pf f "%a@,@,%a@,@,%a%a" pp_init
-        (B.Ast.Validated.init litmus)
-        pp_programs litmus pp_location_stanza
-        (B.Ast.Validated.locations litmus)
-        (option (prefix (unit "@,@,") pp_post))
-        (B.Ast.Validated.postcondition litmus))
+  let print_body (oc : Out_channel.t) (litmus : B.Ast.Validated.t) : unit =
+    let f = Caml.Format.formatter_of_out_channel oc in
+    pp_init f (B.Ast.Validated.init litmus);
+    Fmt.pf f "@.@.";
+    print_programs oc litmus;
+    Fmt.pf f "@.@.";
+    pp_location_stanza f (B.Ast.Validated.locations litmus);
+    Fmt.(option (prefix (unit "@,@,") pp_post)) f
+        (B.Ast.Validated.postcondition litmus);
+    Caml.Format.pp_print_flush f ()
 
-  let pp =
-    Fmt.(
-      vbox (fun f litmus ->
-          Fmt.pf f "@[%s@ %a@]@,@," B.Ast.Lang.name string
-            (B.Ast.Validated.name litmus) ;
-          pp_body f litmus ))
+  let print (oc : Out_channel.t) (litmus : B.Ast.Validated.t) : unit = 
+    let lang_name = B.Ast.Lang.name in
+    let test_name = B.Ast.Validated.name litmus in
+    Out_channel.fprintf oc "%s %s\n\n%a" lang_name test_name print_body litmus
 end
 
 module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
@@ -121,9 +123,13 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
       include Tabulator.Extend_tabular (M)
     end
 
-    let pp_listings : Ast.Lang.Statement.t list list Fmt.t =
-      Program_tabulator.pp_as_table ~on_error:(fun f e ->
-          Fmt.pf f "@[<@ error printing table:@ %a@ >@]" Error.pp e )
+    let print_listings (oc : Out_channel.t)
+      : Ast.Lang.Statement.t list list -> unit =
+      Program_tabulator.print_as_table
+        ~oc
+        ~on_error:(fun e ->
+          Fmt.epr "@[<@ error printing table:@ %a@ >@]" Error.pp e
+        )
 
     let get_uniform_listings (progs : Ast.Lang.Program.t list) :
         Ast.Lang.Statement.t list list =
@@ -131,8 +137,11 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
       |> List.map ~f:Ast.Lang.Program.listing
       |> Ast.Lang.Statement.make_uniform
 
-    let pp_programs_inner : Ast.Lang.Program.t list Fmt.t =
-      Fmt.using get_uniform_listings pp_listings
+    let print_programs_inner (oc : Out_channel.t)
+      (programs : Ast.Lang.Program.t list) : unit =
+      programs
+      |> get_uniform_listings
+      |> print_listings oc
   end
 
   include Make_common (struct
@@ -145,8 +154,10 @@ module Make_sequential (Ast : Ast.S) : S with module Ast = Ast = struct
   module Ast = Ast
 
   module Specific = struct
-    let pp_programs_inner : Ast.Lang.Program.t list Fmt.t =
+    let print_programs_inner (oc : Stdio.Out_channel.t)
+      : Ast.Lang.Program.t list -> unit =
       Fmt.list ~sep:(Fmt.unit "@ @ ") Ast.Lang.Program.pp
+      (Caml.Format.formatter_of_out_channel oc)
   end
 
   include Make_common (struct

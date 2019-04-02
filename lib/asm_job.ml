@@ -143,9 +143,8 @@ module Make_runner (B : Runner_deps) :
     let programs = MS.Output.programs o in
     let warnings = collate_warnings programs in
     let%map lit = Lit.make ~config ~redirects ~name ~programs in
-    let f = Format.formatter_of_out_channel outp in
-    Lit.pp_litmus (Litmusifier.Config.format config) f lit ;
-    Format.pp_print_newline f () ;
+    Lit.print_litmus (Litmusifier.Config.format config) outp lit ;
+    Out_channel.newline outp ;
     let redirects = MS.Output.redirects o in
     make_output name (Redirect.to_string_alist redirects) warnings
 

@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,22 +21,27 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** High-level module for emitting act's internal assembly analysis
+(** Fuzzer configuration.
 
-    [Explainer] contains functors for extracting a pretty-printable summary
-    of an assembly listing as act understands it, through a language module. *)
+    This module contains the top-level configuration for `act`'s
+    litmus test mutator. *)
 
-include module type of Explainer_intf
+open Base
 
-(** [Make_explanation (B)] makes an [Explanation] from a
-    [Basic_explanation]. *)
-module Make_explanation (B : Basic_explanation) :
-  Explanation
-  with type elt := B.elt
-   and type context := B.context
-   and type details := B.details
-   and module Abs := B.Abs
-   and module Flag := B.Flag
+type t [@@deriving sexp]
+(** Opaque type of fuzzer configurations. *)
 
-(** [Make] makes an implementation of [S] for a given language. *)
-module Make (LS : Language.S) : S with module Lang := LS
+(** {2 Constructors} *)
+
+val make : ?weights: (Id.t, int) List.Assoc.t -> unit -> t
+(** [make ?weights ()] constructs a fuzzer configuration with the given
+    action weights table (defaulting to empty). *)
+
+val of_ast : Ast.Fuzz.t list -> t Or_error.t
+(** [of_ast ast] interprets a fuzzer configuration block [ast].
+    It returns the resulting block if well-formed, and an error otherwise. *)
+
+(** {2 Accessors} *)
+
+val weights : t -> (Id.t, int) List.Assoc.t
+(** [weights t] gets the action weight table of [config] *)

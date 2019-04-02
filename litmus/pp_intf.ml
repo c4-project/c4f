@@ -22,15 +22,18 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Stdio
 
 module type S = sig
   module Ast : Ast.S
 
-  include Pretty_printer.S with type t := Ast.Validated.t
+  val print : Out_channel.t -> Ast.Validated.t -> unit
+  (** [print oc ast] prints [ast] on output
+      channel [oc]. *)
 
-  val pp_programs : Formatter.t -> Ast.Validated.t -> unit
-  (** [pp_programs f ast] prints the program table of [ast] on formatter
-      [f], omitting all of the other parts of the AST. *)
+  val print_programs : Out_channel.t -> Ast.Validated.t -> unit
+  (** [print_programs oc ast] prints the program table of [ast] on output
+      channel [oc], omitting all of the other parts of the AST. *)
 
   val pp_post : Formatter.t -> Ast.Postcondition.t -> unit
   (** [pp_post f post] prints the postcondition [post] on formatter [f]. *)

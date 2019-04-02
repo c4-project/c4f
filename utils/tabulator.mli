@@ -52,8 +52,8 @@ val with_rule : char -> t -> t Or_error.t
 (** [with_rule rule_char t] adds a dividing rule made up of [rule_char] to
     tabulator [t], returning the resulting tabulator. *)
 
-(** Pretty-printing a [t] tabulates it onto the given formatter. *)
-include Pretty_printer.S with type t := t
+val print : ?oc:Stdio.Out_channel.t -> t -> unit
+(** [print t] prints [t] on [oc] (default stdout). *)
 
 (** [Tabular] is a signature for abstract data types that can be tabulated
     using a [Tabulator]. *)
@@ -70,15 +70,14 @@ end
 module type Tabular_extensions = sig
   type data
 
-  val pp_as_table :
-       ?on_error:(Format.formatter -> Error.t -> unit)
-    -> Format.formatter
+  val print_as_table :
+       ?oc:Stdio.Out_channel.t
+    -> ?on_error:(Error.t -> unit)
     -> data
     -> unit
-  (** [pp_as_table ?on_error f t] tries to convert [t] to a table and
-      pretty-print it on [f]. If the data can't be shown in table format,
-      [?on_error] (or, if missing, a default formatter) is instead used to
-      output the error to [f]. *)
+  (** [pp_as_table ?on_error t] tries to convert [t] to a table and
+      pretty-print it on [oc] (default stdout). If the data can't be shown in table format,
+      [?on_error] (or, if missing, a default handler) is instead used. *)
 end
 
 (** [Extend_tabular] makes a [Tabular_extensions] out of a [Tabular]. *)

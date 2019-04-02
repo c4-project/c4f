@@ -95,8 +95,7 @@ module Table = struct
   include Tabulator.Extend_tabular (Tabulate)
 
   let%expect_test "Printing symbol table using tabulator" =
-    Format.printf "@[%a@]@."
-      (fun f -> pp_as_table f)
+    print_as_table
       Sort.[("foo", Heap); ("bar", Heap); ("bar", Label); ("baz", Jump)] ;
     [%expect
       {|

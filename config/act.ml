@@ -24,6 +24,8 @@
 open Core_kernel
 include Act_intf
 
+module My_list = Utils.My_list
+
 module Raw = struct
   module CI = struct
     module C = Compiler.Cfg_spec
@@ -31,12 +33,13 @@ module Raw = struct
     type t =
       { compilers: C.Set.t
       ; machines: Machine.Spec.Set.t
+      ; fuzz: Fuzz.t sexp_option
       ; herd: Herd.t sexp_option
       ; cpp: Cpp.t sexp_option }
     [@@deriving sexp, fields]
 
-    let create ?cpp ?herd ~compilers ~machines =
-      Fields.create ~cpp ~herd ~compilers ~machines
+    let create ?cpp ?herd ?fuzz ~compilers ~machines =
+      Fields.create ~cpp ~herd ~fuzz ~compilers ~machines
 
     let sanitiser_passes _ ~default = default
   end
@@ -45,36 +48,22 @@ module Raw = struct
 
   (** Reading in config from a Config_ast *)
   module File = struct
-    let find_at_most_one items ~item_name ~f ~on_empty =
-      Or_error.(
-        match List.filter_map items ~f with
-        | [] ->
-            on_empty
-        | [x] ->
-            return x
-        | _ ->
-            errorf "Duplicate %s" item_name)
-
-    let find_one items ~item_name ~f =
-      find_at_most_one items ~item_name ~f
-        ~on_empty:(Or_error.errorf "Expected at least one %s" item_name)
-
     let ssh (items : Ast.Ssh.t list) =
       let open Or_error.Let_syntax in
       let%map user =
-        find_one items ~item_name:"user" ~f:(function
+        My_list.find_one items ~item_name:"user" ~f:(function
           | User u ->
               Some u
           | _ ->
               None )
       and host =
-        find_one items ~item_name:"host" ~f:(function
+        My_list.find_one items ~item_name:"host" ~f:(function
           | Host h ->
               Some h
           | _ ->
               None )
       and copy_dir =
-        find_one items ~item_name:"copy to" ~f:(function
+        My_list.find_one items ~item_name:"copy to" ~f:(function
           | Copy_to c ->
               Some c
           | _ ->
@@ -91,24 +80,22 @@ module Raw = struct
     let litmus (items : Ast.Litmus.t list) : Litmus_tool.t Or_error.t =
       let open Or_error.Let_syntax in
       let%map cmd =
-        find_at_most_one items ~item_name:"cmd"
-          ~f:(function Cmd c -> Some (Some c) (* | _ -> None *))
-          ~on_empty:(return None)
+        My_list.find_one_opt items ~item_name:"cmd"
+          ~f:(function Cmd c -> Some c (* | _ -> None *))
       in
       Litmus_tool.make ?cmd ()
 
     let machine (items : Ast.Machine.t list) : Machine.Spec.t Or_error.t =
       let open Or_error.Let_syntax in
       let%bind enabled =
-        find_at_most_one items ~item_name:"enabled"
+        My_list.find_at_most_one items ~item_name:"enabled"
           ~f:(function Enabled b -> Some b | _ -> None)
           ~on_empty:(Or_error.return true)
       and litmus_raw =
-        find_at_most_one items ~item_name:"litmus"
-          ~f:(function Litmus h -> Some (Some h) | _ -> None)
-          ~on_empty:(return None)
+        My_list.find_one_opt items ~item_name:"litmus"
+          ~f:(function Litmus h -> Some h | _ -> None)
       and via_raw =
-        find_one items ~item_name:"via" ~f:(function
+        My_list.find_one items ~item_name:"via" ~f:(function
           | Via v ->
               Some v
           | _ ->
@@ -122,37 +109,37 @@ module Raw = struct
     let compiler (items : Ast.Compiler.t list) =
       let open Or_error.Let_syntax in
       let%map enabled =
-        find_at_most_one items ~item_name:"enabled"
+        My_list.find_at_most_one items ~item_name:"enabled"
           ~f:(function Enabled b -> Some b | _ -> None)
           ~on_empty:(Or_error.return true)
       and style =
-        find_one items ~item_name:"style" ~f:(function
+        My_list.find_one items ~item_name:"style" ~f:(function
           | Style s ->
               Some (Id.to_string s)
           | _ ->
               None )
       and emits =
-        find_one items ~item_name:"emits" ~f:(function
+        My_list.find_one items ~item_name:"emits" ~f:(function
           | Emits e ->
               Some e
           | _ ->
               None )
       and cmd =
-        find_one items ~item_name:"cmd" ~f:(function
+        My_list.find_one items ~item_name:"cmd" ~f:(function
           | Cmd c ->
               Some c
           | _ ->
               None )
       and argv =
-        find_at_most_one items ~item_name:"argv"
+        My_list.find_at_most_one items ~item_name:"argv"
           ~f:(function Argv v -> Some v | _ -> None)
           ~on_empty:(return [])
       and herd =
-        find_at_most_one items ~item_name:"herd"
+        My_list.find_at_most_one items ~item_name:"herd"
           ~f:(function Herd h -> Some h | _ -> None)
           ~on_empty:(return true)
       and machine =
-        find_at_most_one items ~item_name:"copy to"
+        My_list.find_at_most_one items ~item_name:"copy to"
           ~f:(function Machine m -> Some m | _ -> None)
           ~on_empty:(return Machine.Id.default)
       in
@@ -162,15 +149,13 @@ module Raw = struct
     let cpp (items : Ast.Cpp.t list) =
       let open Or_error.Let_syntax in
       let%map cmd =
-        find_at_most_one items ~item_name:"cmd"
-          ~f:(function Cmd c -> Some (Some c) | _ -> None)
-          ~on_empty:(return None)
+        My_list.find_one_opt items ~item_name:"cmd"
+          ~f:(function Cmd c -> Some c | _ -> None)
       and argv =
-        find_at_most_one items ~item_name:"argv"
-          ~f:(function Argv v -> Some (Some v) | _ -> None)
-          ~on_empty:(return None)
+        My_list.find_one_opt items ~item_name:"argv"
+          ~f:(function Argv v -> Some v | _ -> None)
       and enabled =
-        find_at_most_one items ~item_name:"enabled"
+        My_list.find_at_most_one items ~item_name:"enabled"
           ~f:(function Enabled b -> Some b | _ -> None)
           ~on_empty:(return true)
       in
@@ -179,13 +164,11 @@ module Raw = struct
     let herd (items : Ast.Herd.t list) =
       let open Or_error.Let_syntax in
       let%map cmd =
-        find_at_most_one items ~item_name:"cmd"
-          ~f:(function Cmd c -> Some (Some c) | _ -> None)
-          ~on_empty:(return None)
+        My_list.find_one_opt items ~item_name:"cmd"
+          ~f:(function Cmd c -> Some c | _ -> None)
       and c_model =
-        find_at_most_one items ~item_name:"c_model"
-          ~f:(function C_model c -> Some (Some c) | _ -> None)
-          ~on_empty:(return None)
+        My_list.find_one_opt items ~item_name:"c_model"
+          ~f:(function C_model c -> Some c | _ -> None)
       in
       let asm_models =
         List.filter_map items ~f:(function
@@ -199,9 +182,8 @@ module Raw = struct
     let build_cpp (items : Ast.t) =
       let open Or_error.Let_syntax in
       let cpp_ast_result =
-        find_at_most_one items ~item_name:"cpp"
-          ~f:(function Cpp h -> Some (Some h) | _ -> None)
-          ~on_empty:(return None)
+        My_list.find_one_opt items ~item_name:"cpp"
+          ~f:(function Cpp h -> Some h | _ -> None)
       in
       match%bind cpp_ast_result with
       | Some cpp_ast ->
@@ -212,9 +194,8 @@ module Raw = struct
     let build_herd (items : Ast.t) =
       let open Or_error.Let_syntax in
       let herd_ast_result =
-        find_at_most_one items ~item_name:"herd"
-          ~f:(function Herd h -> Some (Some h) | _ -> None)
-          ~on_empty:(return None)
+        My_list.find_one_opt items ~item_name:"herd"
+          ~f:(function Herd h -> Some h | _ -> None)
       in
       match%bind herd_ast_result with
       | Some herd_ast ->
@@ -248,13 +229,25 @@ module Raw = struct
              Compiler.Cfg_spec.With_id.create ~id ~spec )
       >>= Compiler.Cfg_spec.Set.of_list
 
+    let match_fuzz : Ast.Top.t -> Ast.Fuzz.t list option = function
+    | Fuzz f -> Some f
+    | _ -> None
+
+    let build_fuzz (items : Ast.t) : Fuzz.t option Or_error.t =
+      Or_error.Let_syntax.(
+      items
+      |> My_list.find_one_opt ~item_name:"fuzz" ~f:match_fuzz
+      >>= Travesty.T_option.With_errors.map_m ~f:Fuzz.of_ast
+      )
+
     let main (items : Ast.t) =
       let open Or_error.Let_syntax in
       let%map cpp = build_cpp items
       and herd = build_herd items
+      and fuzz = build_fuzz items
       and machines = build_machines items
       and compilers = build_compilers items in
-      create ?cpp ?herd ~machines ~compilers
+      create ?cpp ?herd ?fuzz ~machines ~compilers
   end
 
   include Utils.Loadable.Make_chain (struct
