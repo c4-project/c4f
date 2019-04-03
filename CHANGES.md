@@ -1,5 +1,13 @@
 # Unreleased
 
+## 2019-Apr-03
+
+- The `fuzz_many` script in `scripts/` now takes arguments in the
+  order `fuzz_many COUNT FILE*`, with multiple `FILE`s supported.  When
+  given multiple files, it mutates each `COUNT` times, giving each a
+  distinct filename.  It now also symbolically links `_fuzz_latest` to
+  the latest fuzzer directory, in a similar manner to Memalloy.
+
 ## 2019-Mar-12
 
 - Split `-cvars` option into two new options: `-c-globals` and
