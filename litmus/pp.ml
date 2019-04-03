@@ -73,7 +73,7 @@ module Make_common (B : Basic) = struct
     pp_init f (B.Ast.Validated.init litmus);
     Fmt.pf f "@.@.";
     print_programs oc litmus;
-    Fmt.pf f "@.@.";
+    Fmt.pf f "@.";
     pp_location_stanza f (B.Ast.Validated.locations litmus);
     Fmt.(option (prefix (unit "@,@,") pp_post)) f
         (B.Ast.Validated.postcondition litmus);
@@ -89,8 +89,8 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
   module Ast = Ast
 
   module Specific = struct
-    let pp_instr (f : Formatter.t) =
-      Fmt.pf f "@[<h>%a@]" Ast.Lang.Statement.pp
+    let pp_instr =
+      Fmt.strf "@[<h>%a@]" Ast.Lang.Statement.pp
 
     module Program_tabulator = struct
       module M = struct
@@ -98,11 +98,8 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
 
         let to_table programs =
           let open Or_error.Let_syntax in
-          let program_names =
+          let header =
             List.mapi ~f:(fun i _ -> Printf.sprintf "P%d" i) programs
-          in
-          let header : Tabulator.row =
-            List.map ~f:(Fn.flip String.pp) program_names
           in
           let%bind programs' =
             Result.of_option (List.transpose programs)
@@ -113,10 +110,10 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
                        ~table:(programs : Ast.Lang.Statement.t list list)])
           in
           let rows =
-            List.map ~f:(List.map ~f:(Fn.flip pp_instr)) programs'
+            List.map ~f:(List.map ~f:pp_instr) programs'
           in
           Tabulator.(
-            make ~sep:" | " ~terminator:" ;" ~header () >>= with_rows rows)
+            make ~sep:" | " ~terminator:" ;" ~header () >>= add_rows ~rows)
       end
 
       include M

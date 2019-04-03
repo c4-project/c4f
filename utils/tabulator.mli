@@ -30,7 +30,7 @@ open Core
 type t
 
 (** [row] is the type of a tabulator row. *)
-type row = (Format.formatter -> unit) list
+type row = string list
 
 val make :
   ?sep:string -> ?terminator:string -> header:row -> unit -> t Or_error.t
@@ -38,18 +38,18 @@ val make :
     [header], optionally using [sep] to separate columns and [terminator] to
     terminate each row. It fails if [header] is empty. *)
 
-val with_row : row -> t -> t Or_error.t
-(** [with_row row t] adds [row] to the tabulator [t], returning the
+val add_row : t -> row:row -> t Or_error.t
+(** [add_row t ~row] adds [row] to the tabulator [t], returning the
     resulting tabulator. It fails if [row] is a different length from [t]'s
     header row. *)
 
-val with_rows : row list -> t -> t Or_error.t
-(** [with_rows rows t] adds [rows] to the tabulator [t] in order, returning
+val add_rows : t -> rows:row list -> t Or_error.t
+(** [add_rows t ~rows] adds [rows] to the tabulator [t] in order, returning
     the resulting tabulator. It fails if any row in [rows] is a different
     length from [t]'s header row. *)
 
-val with_rule : char -> t -> t Or_error.t
-(** [with_rule rule_char t] adds a dividing rule made up of [rule_char] to
+val add_rule : ?char:char -> t -> t Or_error.t
+(** [add_rule ?char t] adds a dividing rule made up of [char] (default '-') to
     tabulator [t], returning the resulting tabulator. *)
 
 val print : ?oc:Stdio.Out_channel.t -> t -> unit

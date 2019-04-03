@@ -20,6 +20,7 @@ depends: [
   "menhir" {>= "20181113"}
   "shell" {>= "v0.12" & < "v0.13"}
   "travesty" {>= "0.3.0" & < "0.4"}
+  "textutils_kernel" {>= "v0.12" & < "v0.13"}
 ]
 build: ["dune" "build" "-p" name "-j" jobs]
 run-test: ["dune" "runtest" "-p" name "-j" jobs]

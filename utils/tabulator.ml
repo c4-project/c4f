@@ -21,24 +21,55 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
+open Base
+open Stdio
 
-type row = (Format.formatter -> unit) list
+type row = string list
 
-(** Internally, rows can be either printer lists (as above) or dividers. *)
-type inner_row = Data of row | Divider of char
+module Column = struct
+  type cell = Data of string | Rule of char
+
+  type t = 
+    { cells_reversed : cell list
+    ; width : int
+    }
+  
+
+  let init (width : int) : t = { cells_reversed = []; width }
+
+  let height (column : t) : int = List.length column.cells_reversed
+
+  let add_cell (column : t) ~(data : string) : t =
+    { width = Int.max column.width (String.length data)
+    ; cells_reversed = Data data :: column.cells_reversed 
+    }
+
+  let add_rule (column : t) ~(char : char) : t =
+    { column with cells_reversed = Rule char :: column.cells_reversed 
+    }
+  
+  let cell_to_text_block (column : t) : cell -> Text_block.t =
+    function
+    | Data s -> Text_block.text s
+    | Rule char -> Text_block.fill char ~width:column.width ~height:1
+
+  let to_text_block (column : t) : Text_block.t =
+    column.cells_reversed
+    |> List.rev_map ~f:(cell_to_text_block column)
+    |> Text_block.vcat
+end
 
 type t =
   { header: row
   ; sep: string
   ; terminator: string option
-  ; rows_reversed: inner_row list
-  ; column_widths: int list }
+  ; columns: Column.t list } 
+  [@@deriving fields]
 
-let pp_cell_contents f pp = pp f
-
-let stride cell =
-  String.length (Format.asprintf "@[<h>%a@]" pp_cell_contents cell)
+let length_at (index : int) (header : row) : int =
+  index
+  |> List.nth header
+  |> Option.value_map ~f:String.length ~default:0
 
 let make ?(sep = "  ") ?terminator ~header () =
   let open Or_error.Let_syntax in
@@ -47,127 +78,97 @@ let make ?(sep = "  ") ?terminator ~header () =
       (not (List.is_empty header))
       ~error:(Error.of_string "Header row must not be empty.")
   in
+  (* Easiest way to handle separators. *)
+  let header = List.intersperse ~sep header in
   { header
   ; sep
   ; terminator
-  ; rows_reversed= []
-  ; column_widths= List.map ~f:stride header }
+  ; columns= List.init (List.length header) ~f:(fun i -> Column.init (length_at i header)) }
 
-let column_count t = List.length t.column_widths
+let validate_length (table : t) : row Validate.check =
+  Validate.booltest
+    (Travesty.T_fn.on List.length Int.equal (table.header))
+    ~if_false:"Row length inconsistency."
 
-let update_column_lengths row old_lengths =
-  (* We already checked that the new row has the right length. *)
-  List.map2_exn row old_lengths ~f:(fun cell old_length ->
-      Int.max old_length (stride cell) )
+let add_row_cells (column : Column.t) (data : string)
+  : Column.t = (Column.add_cell column ~data)
 
-let with_row row t =
+let add_row_inner (columns : Column.t list) (row : row)
+  : Column.t list List.Or_unequal_lengths.t =
+  List.map2 columns row ~f:add_row_cells
+
+let add_row (table : t) ~(row : row) : t Or_error.t =
+  let sepped_row = List.intersperse ~sep:(sep table) row in
   let open Or_error.Let_syntax in
-  let row_length = List.length row in
-  let expected_length = column_count t in
-  let%map () =
-    Result.ok_if_true
-      (Int.equal row_length expected_length)
-      ~error:
-        (Error.create_s
-           [%message
-             "Header row has wrong length"
-               ~expected:(expected_length : int)
-               ~got:(row_length : int)])
+  let%bind () = Validate.result (validate_length table sepped_row) in
+  let%map columns =
+    match add_row_inner table.columns sepped_row with
+    | Ok c -> Or_error.return c
+    | Unequal_lengths ->
+      Or_error.error_string "Row length inconsistency (columns <> row)."
   in
-  { t with
-    rows_reversed= Data row :: t.rows_reversed
-  ; column_widths= update_column_lengths row t.column_widths }
+  { table with columns }
 
-let with_rows rows t =
-  Travesty.T_list.With_errors.fold_m ~f:(Fn.flip with_row) ~init:t rows
+let add_rows (table : t) ~(rows : row list) : t Or_error.t =
+  Travesty.T_list.With_errors.fold_m
+    ~f:(fun table' row -> add_row table' ~row) ~init:table rows
 
-let with_rule rule_char t =
-  Ok {t with rows_reversed= Divider rule_char :: t.rows_reversed}
+let add_rule ?(char : char = '-') (table : t) : t Or_error.t =
+  let columns = List.map ~f:(Column.add_rule ~char) table.columns in
+  Ok {table with columns}
 
-let tabstop = function
-  | `Header ->
-      Format.pp_set_tab
-  | `Normal ->
-      Format.pp_print_tab
+module Print = struct
+  let terminator_height (table : t) : int =
+    let max_column_height =
+      Travesty.T_list.max_measure ~measure:Column.height (columns table)
+    in
+    max_column_height + 1 (* for the header *)
 
-let end_cell mode t f () = tabstop mode f () ; String.pp f t.sep
+  let string_to_terminator (height : int) (str : string) : Text_block.t =
+    let slices = List.init height ~f:(Fn.const (Text_block.text str)) in
+    Text_block.vcat slices
 
-let pp_terminator mode t f =
-  Option.iter t.terminator ~f:(fun term ->
-      tabstop mode f () ; String.pp f term )
+  let make_terminator (table : t) : Text_block.t list =
+    table
+    |> terminator
+    |> Option.to_list
+    |> List.map ~f:(string_to_terminator (terminator_height table))
 
-let end_line mode t f () = pp_terminator mode t f ; Format.pp_print_tab f ()
+  let make_block (table : t) : Text_block.t = 
+    let columns = List.map ~f:Column.to_text_block (columns table) in
+    let headered_columns = List.map2_exn (header table) columns
+      ~f:(fun h_cell column -> Text_block.(vcat [ text h_cell; column ]))
+    in
+    Text_block.hcat (headered_columns @ make_terminator table)
 
-let pp_header_cell f (column_width, cell) =
-  (* Since we're setting tabs here, we need to pad the column width. *)
-  let cell_stride = stride cell in
-  let padding = Int.max 0 (column_width - cell_stride) in
-  Format.fprintf f "@[<h>%a%s@]" pp_cell_contents cell
-    (String.init padding ~f:(Fn.const ' '))
+  let table ?(oc : Out_channel.t = Out_channel.stdout) (table : t) : unit =
+    let block = make_block table in
+    let rendered = Text_block.render block in
+    Out_channel.output_string oc rendered
+end
 
-let pp_cell f cell = Format.fprintf f "@[<h>%a@]" pp_cell_contents cell
+let print = Print.table
 
-let pp_header t f header =
-  Format.pp_set_tab f () ;
-  (* initial tabstop *)
-  let columns = List.zip_exn t.column_widths header in
-  Format.pp_print_list ~pp_sep:(end_cell `Header t) pp_header_cell f columns
-
-let pp_data_row t =
-  Format.pp_print_list ~pp_sep:(end_cell `Normal t) pp_cell
-
-let pp_divider t f divider_char =
-  let div f width =
-    String.pp f (String.init width ~f:(Fn.const divider_char))
-  in
-  let div_sep f () =
-    tabstop `Normal f () ;
-    div f (String.length t.sep)
-  in
-  Format.pp_print_list ~pp_sep:div_sep div f t.column_widths
-
-let pp_row t f = function
-  | Data r ->
-      pp_data_row t f r
-  | Divider c ->
-      pp_divider t f c
-
-let pp_rows t = Format.pp_print_list ~pp_sep:(end_line `Normal t) (pp_row t)
-
-let print ?(oc : Stdio.Out_channel.t = Stdio.Out_channel.stdout) (t : t) : unit =
-  let f = Format.formatter_of_out_channel oc in
-  Format.pp_open_tbox f () ;
-  pp_header t f t.header ;
-  if List.is_empty t.rows_reversed then pp_terminator `Header t f
-  else (
-    end_line `Header t f () ;
-    pp_rows t f (List.rev t.rows_reversed) ;
-    pp_terminator `Normal t f ) ;
-  Format.pp_close_tbox f () ;
-  Format.pp_print_flush f ()
-
-let%expect_test "Sample use of tabulator with 'with_rows'" =
+let%expect_test "Sample use of tabulator with 'add_rows'" =
   let tab_result =
     Result.(
       make
         ~header:
-          (List.map ["Item"; "Quantity"; "Available"] ~f:(Fn.flip String.pp))
+          ["Item"; "Quantity"; "Available"]
         ()
-      >>= with_rows
-            [ [ Fn.flip String.pp "Bicycle"
-              ; Fn.flip Int.pp 5
-              ; Fn.flip Format.pp_print_bool false ]
-            ; [ Fn.flip String.pp "Car"
-              ; Fn.flip Int.pp 10
-              ; Fn.flip Format.pp_print_bool true ]
-            ; [ Fn.flip String.pp "African Swallow"
-              ; Fn.flip Int.pp 1
-              ; Fn.flip Format.pp_print_bool true ] ]
+      >>= add_rows ~rows:
+            [ [ "Bicycle"
+              ; "5"
+              ; "false" ]
+            ; [ "Car"
+              ; "10"
+              ; "true" ]
+            ; [ "African Swallow"
+              ; "1"
+              ; "true" ] ]
       >>| print)
   in
-  Format.print_newline () ;
-  Format.printf "@[%a@]@." Sexp.pp_hum
-    ([%sexp_of: unit Or_error.t] tab_result) ;
+  print_s [%sexp (tab_result : unit Or_error.t)] ;
   [%expect
     {|
     Item             Quantity  Available
@@ -180,28 +181,19 @@ let%expect_test "Sample use of tabulator with rules" =
   let tab_result =
     Result.(
       make
-        ~header:
-          (List.map ["Item"; "Quantity"; "Available"] ~f:(Fn.flip String.pp))
+        ~header:["Item"; "Quantity"; "Available"]
         ()
-      >>= with_rule '='
-      >>= with_row
-            [ Fn.flip String.pp "Bicycle"
-            ; Fn.flip Int.pp 5
-            ; Fn.flip Format.pp_print_bool false ]
-      >>= with_row
-            [ Fn.flip String.pp "Car"
-            ; Fn.flip Int.pp 10
-            ; Fn.flip Format.pp_print_bool true ]
-      >>= with_rule '-'
-      >>= with_row
-            [ Fn.flip String.pp "African Swallow"
-            ; Fn.flip Int.pp 1
-            ; Fn.flip Format.pp_print_bool true ]
+      >>= add_rule ~char:'='
+      >>= add_row ~row:
+            [ "Bicycle" ; "5" ; "false" ]
+      >>= add_row ~row:
+            [ "Car" ; "10" ; "true" ]
+      >>= add_rule ~char:'-'
+      >>= add_row ~row:
+            [ "African Swallow" ; "1" ; "true" ]
       >>| print)
   in
-  Format.print_newline () ;
-  Format.printf "@[%a@]@." Sexp.pp_hum
-    ([%sexp_of: unit Or_error.t] tab_result) ;
+  print_s [%sexp (tab_result : unit Or_error.t)] ;
   [%expect
     {|
     Item             Quantity  Available
@@ -216,26 +208,14 @@ let%expect_test "Sample use of tabulator with custom separators" =
   let tab_result =
     Result.(
       make ~sep:" | " ~terminator:";"
-        ~header:
-          (List.map ["Item"; "Quantity"; "Available"] ~f:(Fn.flip String.pp))
+        ~header:["Item"; "Quantity"; "Available"]
         ()
-      >>= with_row
-            [ Fn.flip String.pp "Bicycle"
-            ; Fn.flip Int.pp 5
-            ; Fn.flip Format.pp_print_bool false ]
-      >>= with_row
-            [ Fn.flip String.pp "Car"
-            ; Fn.flip Int.pp 10
-            ; Fn.flip Format.pp_print_bool true ]
-      >>= with_row
-            [ Fn.flip String.pp "African Swallow"
-            ; Fn.flip Int.pp 1
-            ; Fn.flip Format.pp_print_bool true ]
+      >>= add_row ~row:[ "Bicycle" ; "5" ; "false" ]
+      >>= add_row ~row:[ "Car" ; "10" ; "true" ]
+      >>= add_row ~row:[ "African Swallow" ; "1" ; "true" ]
       >>| print)
   in
-  Format.print_newline () ;
-  Format.printf "@[%a@]@." Sexp.pp_hum
-    ([%sexp_of: unit Or_error.t] tab_result) ;
+  print_s [%sexp (tab_result : unit Or_error.t)] ;
   [%expect
     {|
     Item            | Quantity | Available;
@@ -248,28 +228,18 @@ let%expect_test "Sample use of tabulator with custom separators and rule" =
   let tab_result =
     Result.(
       make ~sep:" | " ~terminator:";"
-        ~header:
-          (List.map ["Item"; "Quantity"; "Available"] ~f:(Fn.flip String.pp))
+        ~header:["Item"; "Quantity"; "Available"]
         ()
-      >>= with_rule '='
-      >>= with_row
-            [ Fn.flip String.pp "Bicycle"
-            ; Fn.flip Int.pp 5
-            ; Fn.flip Format.pp_print_bool false ]
-      >>= with_row
-            [ Fn.flip String.pp "Car"
-            ; Fn.flip Int.pp 10
-            ; Fn.flip Format.pp_print_bool true ]
-      >>= with_rule '-'
-      >>= with_row
-            [ Fn.flip String.pp "African Swallow"
-            ; Fn.flip Int.pp 1
-            ; Fn.flip Format.pp_print_bool true ]
+      >>= add_rule ~char:'='
+      >>= add_row ~row:
+            [ "Bicycle" ; "5" ; "false" ]
+      >>= add_row ~row:
+            [ "Car" ; "10" ; "true" ]
+      >>= add_rule ~char:'-'
+      >>= add_row ~row: [ "African Swallow" ; "1" ; "true" ]
       >>| print)
   in
-  Format.print_newline () ;
-  Format.printf "@[%a@]@." Sexp.pp_hum
-    ([%sexp_of: unit Or_error.t] tab_result) ;
+  print_s [%sexp (tab_result : unit Or_error.t)] ;
   [%expect
     {|
     Item            | Quantity | Available;
@@ -290,7 +260,7 @@ module type Tabular_extensions = sig
   type data
 
   val print_as_table :
-       ?oc:Stdio.Out_channel.t
+       ?oc:Out_channel.t
     -> ?on_error:(Error.t -> unit)
     -> data
     -> unit
@@ -299,9 +269,9 @@ end
 module Extend_tabular (T : Tabular) :
   Tabular_extensions with type data := T.data = struct
   let error_default error =
-    Format.printf "@[<error building table: %a>@]" Error.pp error
+    Fmt.epr "@[<error building table: %a>@]" Error.pp error
 
-  let print_as_table ?(oc : Stdio.Out_channel.t option) ?(on_error = error_default) t =
+  let print_as_table ?(oc : Out_channel.t option) ?(on_error = error_default) t =
     match T.to_table t with
     | Ok table ->
         print ?oc table

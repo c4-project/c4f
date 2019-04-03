@@ -120,16 +120,16 @@ module Row = struct
         String.pp f "-"
 
   let to_table_row (row : File.t t) : Tabulator.row =
-    [ Fn.flip Config.Id.pp row.machine_id
-    ; Fn.flip Config.Id.pp row.compiler_id
-    ; Fn.flip String.pp row.filename ]
+    [ Fmt.strf "%a" Config.Id.pp row.machine_id
+    ; Fmt.strf "%a" Config.Id.pp row.compiler_id
+    ; row.filename ]
     @ (* We use Fieldslib here, mainly, to raise compilation errors if the
          fields in [analysis] change and we don't add them (or ignore them)
          here. *)
       File.Fields.Direct.to_list row.analysis
-        ~herd:(fun _field _file h f -> Herd.pp f h)
-        ~time_taken:(fun _field _file t f -> pp_span_opt f t)
-        ~time_taken_in_cc:(fun _field _file t f -> pp_span_opt f t)
+        ~herd:(fun _field _file -> Fmt.strf "%a" Herd.pp)
+        ~time_taken:(fun _field _file -> Fmt.strf "%a" pp_span_opt)
+        ~time_taken_in_cc:(fun _field _file -> Fmt.strf "%a" pp_span_opt)
 
   let with_analysis (row : _ t) (analysis : 'a) : 'a t =
     make ~machine_id:(machine_id row) ~compiler_id:(compiler_id row)
@@ -170,15 +170,15 @@ module M = struct
     match (last_mid, last_cid) with
     | None, _ | _, None ->
         (* Assume we're on the first row *)
-        Tabulator.with_rule machine_rule tabulator
+        Tabulator.add_rule ~char:machine_rule tabulator
     | Some lmid, Some lcid ->
         if Config.Id.equal lmid this_mid then
           if Config.Id.equal lcid this_cid then Or_error.return tabulator
             (* no rule *)
-          else Tabulator.with_rule compiler_rule tabulator
-        else Tabulator.with_rule machine_rule tabulator
+          else Tabulator.add_rule ~char:compiler_rule tabulator
+        else Tabulator.add_rule ~char:machine_rule tabulator
 
-  let results_table_names : string list Lazy.t =
+  let results_table_header : string list Lazy.t =
     lazy
       ( ["Machine"; "Compiler"; "File"]
       @ File.Fields.to_list
@@ -186,16 +186,13 @@ module M = struct
           ~time_taken:(fun _ -> "Time/total")
           ~time_taken_in_cc:(fun _ -> "Time/CC") )
 
-  let results_table_header =
-    lazy (List.map (force results_table_names) ~f:(Fn.flip String.pp))
-
   let with_file (last_mid, last_cid, tabulator) (row : File.t Row.t) =
     let mid = Row.machine_id row in
     let cid = Row.compiler_id row in
     Or_error.(
       return tabulator
       >>= maybe_with_rule last_mid mid last_cid cid
-      >>= Tabulator.with_row (Row.to_table_row row)
+      >>= Tabulator.add_row ~row:(Row.to_table_row row)
       >>| fun t' -> (Some mid, Some cid, t'))
 
   type data = t (* For compatibility with Extend_tabular *)
