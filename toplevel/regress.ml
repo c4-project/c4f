@@ -25,7 +25,9 @@ open Core_kernel
 open Lib
 open Utils
 
-type spec = {c_globals: string sexp_list; c_locals: string sexp_list}
+type spec =
+  { c_globals: string list [@sexp.list] [@sexp.omit_nil]
+  ; c_locals: string list [@sexp.list] [@sexp.omit_nil] }
 [@@deriving sexp]
 
 let find_spec specs (path : Fpath.t) =
@@ -172,14 +174,13 @@ let regress_config_parser_failures (test_dir : Fpath.t) : unit Or_error.t =
 
 let make_regress_command ~(summary : string)
     (regress_function : Fpath.t -> unit Or_error.t) : Command.t =
-  let open Command.Let_syntax in
   Command.basic ~summary
-    [%map_open
-      let test_path_raw = anon ("TEST_PATH" %: string) in
+    Command.Let_syntax.(
+      let%map_open test_path_raw = anon ("TEST_PATH" %: string) in
       fun () ->
         let o = Output.make ~verbose:false ~warnings:true in
         Or_error.(test_path_raw |> Io.fpath_of_string >>= regress_function)
-        |> Output.print_error o]
+        |> Output.print_error o)
 
 let command : Command.t =
   Command.group ~summary:"runs regression tests"

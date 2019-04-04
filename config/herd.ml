@@ -25,12 +25,10 @@ open Base
 
 type t =
   { cmd: string [@default "herd7"] [@drop_if_default]
-  ; c_model: string sexp_option
+  ; c_model: string option [@sexp.option]
   ; asm_models: (Id.t, string) List.Assoc.t [@default []] [@drop_if_default]
   }
 [@@deriving sexp, fields, make]
-
-let make ?cmd ?c_model ?asm_models = make ?cmd ~c_model ?asm_models
 
 module M : Program.S with type t := t = struct
   let argv _ = []

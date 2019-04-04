@@ -172,11 +172,10 @@ let run (should_time : bool)
   output_analysis analysis
 
 let command =
-  let open Command.Let_syntax in
   Command.basic
     ~summary:"runs automatic testing over a memalloy output directory"
-    [%map_open
-      let standard_args = Args.Standard.get
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard.get
       and out_root_raw =
         flag_optional_with_default_doc "output"
           ~default:Filename.current_dir_name string [%sexp_of: string]
@@ -206,4 +205,4 @@ let command =
       fun () ->
         Common.lift_command standard_args ?compiler_predicate
           ?machine_predicate ?sanitiser_passes ~with_compiler_tests:true
-          ~f:(fun _args -> run time input_mode_raw out_root_raw)]
+          ~f:(fun _args -> run time input_mode_raw out_root_raw))

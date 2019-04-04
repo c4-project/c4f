@@ -81,11 +81,9 @@ module Property = struct
 end
 
 module Ssh = struct
-  type t = {host: string; user: string sexp_option; copy_dir: string}
-  [@@deriving sexp, fields]
-
-  (* The use of 'sexp_option' above makes deriving this impossible. *)
-  let create ~host ?user ~copy_dir = Fields.create ~host ~user ~copy_dir
+  type t =
+    {user: string option [@sexp.option]; host: string; copy_dir: string}
+  [@@deriving sexp, make, fields]
 
   let pp f {host; user; copy_dir} =
     match user with
@@ -147,13 +145,10 @@ end
 module Spec = struct
   module M = struct
     type t =
-      { enabled: bool [@default true] [@sexp_drop_default]
-      ; via: Via.t
-      ; litmus: Litmus_tool.t sexp_option }
+      { enabled: bool [@default true] [@sexp_drop_default.equal]
+      ; via: Via.t [@default Via.local] [@sexp_drop_default.equal]
+      ; litmus: Litmus_tool.t option [@sexp.option] }
     [@@deriving sexp, fields, make]
-
-    let make ?enabled ?(via = Via.local) ?litmus () (* override *) =
-      make ?enabled ~via ~litmus ()
 
     (* We use a different name for the getter than the one [@@deriving
        fields] infers. *)
@@ -210,7 +205,7 @@ module Spec = struct
 
     let remoteness t = M.remoteness (spec t)
 
-    let default = create ~id:Id.default ~spec:default
+    let default = make ~id:Id.default ~spec:default
 
     let pp f t =
       Format.fprintf f "@[%a@ (@,%a@,)@]" Id.pp (id t) M.pp (spec t)

@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -31,14 +31,14 @@ struct
 
   module M = struct
     type t =
-      { enabled: bool [@default true] [@sexp_drop_default]
+      { machine: Mach.t [@default Mach.default]
+      ; argv: string list [@sexp.list]
+      ; enabled: bool [@sexp.bool]
       ; style: string
       ; emits: Id.t
       ; cmd: string
-      ; argv: string sexp_list
-      ; herd: bool [@default true] [@sexp_drop_default]
-      ; machine: Mach.t [@default Mach.default] }
-    [@@deriving sexp, fields]
+      ; herd: bool [@sexp.bool] }
+    [@@deriving sexp, fields, make]
 
     (* We use a different name for the getter than the one [@@deriving
        fields] infers. *)
@@ -96,8 +96,6 @@ struct
     include M
     module With_id = With_id
   end)
-
-  let create = M.Fields.create
 end
 
 module Cfg_spec : S_spec with type Mach.t = Id.t = Make_spec (Machine.Id)
@@ -196,9 +194,7 @@ module Chain_input = struct
   type next_mode = [`Preview | `No_compile | `Compile]
 
   type 'a t = {file_type: File_type.t_or_infer; next: next_mode -> 'a}
-  [@@deriving fields]
-
-  let create = Fields.create
+  [@@deriving make, fields]
 end
 
 module Chain_with_compiler

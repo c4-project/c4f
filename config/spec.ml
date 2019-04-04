@@ -44,7 +44,7 @@ module type S_with_id = sig
 
   include Common with type t := t
 
-  val create : id:Id.t -> spec:elt -> t
+  val make : id:Id.t -> spec:elt -> t
 
   val id : t -> Id.t
 
@@ -52,9 +52,7 @@ module type S_with_id = sig
 end
 
 module With_id (C : Common) : S_with_id with type elt := C.t = struct
-  type t = {id: Id.t; spec: C.t} [@@deriving fields, sexp]
-
-  let create = Fields.create
+  type t = {id: Id.t; spec: C.t} [@@deriving fields, make, sexp]
 
   let is_enabled x = C.is_enabled (spec x)
 
@@ -114,17 +112,17 @@ module Make (B : Basic) :
 
       let partition_map t ~f =
         List.partition_map t ~f:(fun (id, spec) ->
-            f (With_id.create ~id ~spec) )
+            f (With_id.make ~id ~spec) )
 
       let map t ~f =
-        List.map t ~f:(fun (id, spec) -> f (With_id.create ~id ~spec))
+        List.map t ~f:(fun (id, spec) -> f (With_id.make ~id ~spec))
     end
 
     include SM
 
     let get specs id =
       List.Assoc.find specs ~equal:Id.equal id
-      |> Option.map ~f:(fun spec -> With_id.create ~id ~spec)
+      |> Option.map ~f:(fun spec -> With_id.make ~id ~spec)
       |> Result.of_option
            ~error:
              (Error.create_s
@@ -146,7 +144,7 @@ module Make (B : Basic) :
     let group t ~f =
       t
       |> List.map ~f:(fun (id, spec) ->
-             (f (With_id.create ~id ~spec), (id, spec)) )
+             (f (With_id.make ~id ~spec), (id, spec)) )
       |> Id.Map.of_alist_multi
 
     let pp_id_spec f ~pp id spec =

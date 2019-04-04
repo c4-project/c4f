@@ -51,8 +51,8 @@ module type S_with_id = sig
 
   include Common with type t := t
 
-  val create : id:Id.t -> spec:elt -> t
-  (** [create ~id ~spec] creates a new [With_id.t] pair. *)
+  val make : id:Id.t -> spec:elt -> t
+  (** [make ~id ~spec] creates a new [With_id.t] pair. *)
 
   val id : t -> Id.t
   (** [id w] gets the ID component of a [w]. *)

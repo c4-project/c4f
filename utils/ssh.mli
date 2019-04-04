@@ -39,8 +39,8 @@ val host : t -> string
 val user : t -> string option
 (** [user ssh] gets the configured user, if any, for [ssh]. *)
 
-val create : ?user:string -> host:string -> t
-(** [create ?user ~host] creates a [t] for connecting to [host], optionally
+val make : ?user:string -> host:string -> unit -> t
+(** [make ?user ~host ()] creates a [t] for connecting to [host], optionally
     as user [user]. *)
 
 (** {2 Functors} *)

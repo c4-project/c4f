@@ -136,7 +136,7 @@ end
 module Cumulative = struct
   type 'a w = 'a t
 
-  type 'a t = {rows: 'a Row.t list; max: int sexp_opaque}
+  type 'a t = {rows: 'a Row.t list; max: int [@sexp.opaque]}
   [@@deriving sexp_of]
 
   let from_table_step (total : int) (row : 'a Row.t) : int * 'a Row.t option
@@ -188,14 +188,14 @@ let%test_unit "sample: sampling from list of one weight-1 item returns \
   let wl = from_alist_exn [("kappa", 1)] in
   Quickcheck.test (sample_gen_exn wl) ~sexp_of:[%sexp_of: string]
     ~f:
-      ([%test_result: string] ~here:[[%here]]
-         ~equal:[%compare.equal: string] ~expect:"kappa")
+      ([%test_result: string] ~here:[[%here]] ~equal:[%equal: string]
+         ~expect:"kappa")
 
 let%test_unit "sample: sampling can return the last item" =
   let wl = from_alist_exn [("keepo", 2); ("frankerz", 5); ("kappa", 1)] in
   Quickcheck.test_can_generate (sample_gen_exn wl)
     ~sexp_of:[%sexp_of: string]
-    ~f:([%compare.equal: string] "kappa")
+    ~f:([%equal: string] "kappa")
 
 module Qc : Quickcheckable.S1 with type 'a t := 'a t = struct
   module G = Quickcheck.Generator

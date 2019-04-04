@@ -31,10 +31,9 @@ let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Config.Act.t) :
   Herd.run_direct ?arch herd argv
 
 let herd_command : Command.t =
-  let open Command.Let_syntax in
   Command.basic ~summary:"runs Herd"
-    [%map_open
-      let standard_args = Args.Standard.get
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard.get
       and arch =
         choose_one
           [ Args.flag_to_enum_choice (Some Herd.C) "-c"
@@ -52,7 +51,7 @@ let herd_command : Command.t =
       in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:(fun _args -> run_herd ?arch ?argv)]
+          ~f:(fun _args -> run_herd ?arch ?argv))
 
 let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Config.Act.t) :
     unit Or_error.t =
@@ -65,17 +64,16 @@ let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Config.Act.t) :
   Litmus_tool.run_direct litmus_cfg argv
 
 let litmus_command : Command.t =
-  let open Command.Let_syntax in
   Command.basic ~summary:"runs Litmus locally"
-    [%map_open
-      let standard_args = Args.Standard.get
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard.get
       and argv =
         flag "--" Command.Flag.escape
           ~doc:"STRINGS Arguments to send to Herd directly."
       in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:(fun _args -> run_litmus_locally ?argv)]
+          ~f:(fun _args -> run_litmus_locally ?argv))
 
 let command : Command.t =
   Command.group ~summary:"runs external tools directly"

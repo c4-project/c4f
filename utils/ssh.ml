@@ -28,10 +28,8 @@ open Core
 include Ssh_intf
 module R = Runner
 
-type t = {user: string sexp_option; host: string} [@@deriving sexp, fields]
-
-(* The use of 'sexp_option' above makes deriving this impossible. *)
-let create ?user ~host = Fields.create ~user ~host
+type t = {user: string option [@sexp.option]; host: string}
+[@@deriving sexp, fields, make]
 
 module Make (C : sig
   val ssh : t
@@ -79,8 +77,8 @@ module Runner (Conf : Basic_runner) : R.S = R.Make (struct
     let local_file = Fpath.filename local_path in
     sprintf "%s/%s" remote_dir local_file
 
-  let map2_err (xs : 'a list) (ys : 'b list) ~(f : 'a -> 'b -> 'c)
-      ~(error : Error.t) : 'c list Or_error.t =
+  let map2_err (type a b c) (xs : a list) (ys : b list) ~(f : a -> b -> c)
+      ~(error : Error.t) : c list Or_error.t =
     let map_result = List.map2 xs ys ~f in
     match map_result with
     | Ok xs ->
@@ -154,18 +152,18 @@ module Runner (Conf : Basic_runner) : R.S = R.Make (struct
 
   let run_one oc prog args =
     let open Or_error in
-    let open Or_error.Let_syntax in
-    let%map output =
-      tag_arg
-        (try_with (fun () ->
-             Shell.ssh_lines "%s %s" prog
-               (String.concat ~sep:" " args)
-               ~host ?user ))
-        "Error running remote command via ssh:"
-        (host, Option.value ~default:"(default user)" user)
-        [%sexp_of: string * string]
-    in
-    Option.iter ~f:(fun o -> Out_channel.output_lines o output) oc
+    Or_error.Let_syntax.(
+      let%map output =
+        tag_arg
+          (try_with (fun () ->
+               Shell.ssh_lines "%s %s" prog
+                 (String.concat ~sep:" " args)
+                 ~host ?user ))
+          "Error running remote command via ssh:"
+          (host, Option.value ~default:"(default user)" user)
+          [%sexp_of: string * string]
+      in
+      Option.iter ~f:(fun o -> Out_channel.output_lines o output) oc)
 
   let run_batch ?oc (argss : string list list) ~prog =
     let results = List.map ~f:(run_one oc prog) argss in

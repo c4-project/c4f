@@ -65,13 +65,12 @@ let run_list_predicates (_o : Output.t) (_cfg : Config.Act.t) :
   Result.ok_unit
 
 let list_predicates_command : Command.t =
-  let open Command.Let_syntax in
   Command.basic ~summary:"describes the filtering predicate languages"
-    [%map_open
-      let standard_args = Args.Standard.get in
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard.get in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:(fun _args -> run_list_predicates)]
+          ~f:(fun _args -> run_list_predicates))
 
 let command : Command.t =
   Command.group ~summary:"commands for dealing with act configuration"

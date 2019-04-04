@@ -92,8 +92,8 @@ end
 module Other = struct
   open Command.Param
 
-  let flag_to_enum_choice (enum : 'a) (str : string) ~(doc : string) :
-      'a option t =
+  let flag_to_enum_choice (type a) (enum : a) (str : string) ~(doc : string)
+      : a option t =
     map ~f:(Fn.flip Option.some_if enum) (flag str no_arg ~doc)
 
   let compiler_id_type = Arg_type.create Config.Id.of_string

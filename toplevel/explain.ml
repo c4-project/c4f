@@ -60,10 +60,9 @@ let run file_type compiler_id_or_arch output_format
   print_symbol_map (Asm_job.Output.symbol_map out)
 
 let command =
-  let open Command.Let_syntax in
   Command.basic ~summary:"explains act's understanding of an assembly file"
-    [%map_open
-      let standard_args = Args.Standard_with_files.get
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard_with_files.get
       and sanitiser_passes = Args.sanitiser_passes
       and compiler_id_or_arch = Args.compiler_id_or_arch
       and c_globals = Args.c_globals
@@ -87,4 +86,4 @@ let command =
           ~with_compiler_tests:false
           ~f:
             (run file_type compiler_id_or_arch output_format c_globals
-               c_locals)]
+               c_locals))

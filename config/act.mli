@@ -32,12 +32,13 @@ include module type of Act_intf
 module Raw : sig
   include S with module CSpec := Compiler.Cfg_spec
 
-  val create :
+  val make :
        ?cpp:Cpp.t
     -> ?herd:Herd.t
     -> ?fuzz:Fuzz.t
     -> compilers:Compiler.Cfg_spec.Set.t
     -> machines:Machine.Spec.Set.t
+    -> unit
     -> t
 
   include Utils.Loadable.S with type t := t

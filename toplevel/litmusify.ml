@@ -229,10 +229,9 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
   ()
 
 let command =
-  let open Command.Let_syntax in
   Command.basic ~summary:"converts an assembly file to a litmus test"
-    [%map_open
-      let standard_args = Args.Standard_with_files.get
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard_with_files.get
       and sanitiser_passes = Args.sanitiser_passes
       and filter =
         Args.(
@@ -264,4 +263,4 @@ let command =
           ~with_compiler_tests:false
           ~f:
             (run file_type filter compiler_id_or_arch c_globals c_locals
-               post_sexp)]
+               post_sexp))

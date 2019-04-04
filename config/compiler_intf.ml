@@ -65,20 +65,21 @@ end
 module type S_spec = sig
   include Basic_spec
 
-  val create :
-       enabled:bool
+  val make :
+       ?machine:Mach.t
+    -> ?argv:string list
+    -> enabled:bool
     -> style:string
     -> emits:Id.t
     -> cmd:string
-    -> argv:string list
     -> herd:bool
-    -> machine:Mach.t
+    -> unit
     -> t
-  (** [create ~enabled ~style ~emits ~cmd ~argv ~herd ~machine] creates a
+  (** [make ?machine ?argv ~enabled ~style ~emits ~cmd ~herd ()] creates a
       compiler spec with the given fields.
 
-      These fields are subject to change, and as such [create] is an
-      unstable API. *)
+      These fields are subject to change, and as such [make] is an unstable
+      API. *)
 
   (** We extend [With_id] to include all of the accessors from [Basic_spec]. *)
   module With_id : sig

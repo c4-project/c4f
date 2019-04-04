@@ -138,7 +138,7 @@ module Chain_input : sig
 
   val next : 'a t -> next_mode -> 'a
 
-  val create :
+  val make :
     file_type:File_type.t_or_infer -> next:(next_mode -> 'a) -> 'a t
 end
 

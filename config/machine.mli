@@ -64,8 +64,8 @@ module Ssh : sig
 
   include Pretty_printer.S with type t := t
 
-  val create : host:string -> ?user:string -> copy_dir:string -> t
-  (** [create ~host ?user ~copy_dir] builds an [Ssh.t] from the given
+  val make : ?user:string -> host:string -> copy_dir:string -> unit -> t
+  (** [make ?user ~host ~copy_dir ()] builds an [Ssh.t] from the given
       parameters. *)
 
   val host : t -> string

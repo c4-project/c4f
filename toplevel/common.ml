@@ -201,7 +201,7 @@ let make_compiler_input (o : Output.t)
   in
   let config = config_fn ~c_variables in
   let litmus_job = Asm_job.make ~passes ~config ?symbols () in
-  Config.Compiler.Chain_input.create
+  Config.Compiler.Chain_input.make
     ~file_type:(Config.File_type.delitmusified file_type)
     ~next:(Fn.const litmus_job)
 
