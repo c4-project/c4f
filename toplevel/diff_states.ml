@@ -67,13 +67,12 @@ let readme () =
     mappings, and compares the sets of final states on both ends.
   |}
 
-let command =
-  let open Command.Let_syntax in
+let command : Command.t =
   Command.basic ~summary:"compares two simulation runs" ~readme
-    [%map_open
-      let standard_args = Args.Standard.get
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard.get
       and oracle_raw = file_flag "oracle"
       and subject_raw = file_flag "subject" in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:(fun _args -> run ~oracle_raw ~subject_raw)]
+          ~f:(fun _args -> run ~oracle_raw ~subject_raw))

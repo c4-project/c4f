@@ -72,9 +72,7 @@ let make_tester o cfg timing_mode =
   end)
   : Tester.Instance.S )
 
-let print_table t =
-  Tabulator.print t;
-  Stdio.print_endline ""
+let print_table t = Tabulator.print t ; Stdio.print_endline ""
 
 let cook_memalloy in_root_raw =
   let open Or_error.Let_syntax in

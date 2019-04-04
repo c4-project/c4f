@@ -23,7 +23,6 @@
 
 open Core_kernel
 include Act_intf
-
 module My_list = Utils.My_list
 
 module Raw = struct
@@ -80,8 +79,8 @@ module Raw = struct
     let litmus (items : Ast.Litmus.t list) : Litmus_tool.t Or_error.t =
       let open Or_error.Let_syntax in
       let%map cmd =
-        My_list.find_one_opt items ~item_name:"cmd"
-          ~f:(function Cmd c -> Some c (* | _ -> None *))
+        My_list.find_one_opt items ~item_name:"cmd" ~f:(function Cmd c ->
+            Some c (* | _ -> None *) )
       in
       Litmus_tool.make ?cmd ()
 
@@ -92,8 +91,11 @@ module Raw = struct
           ~f:(function Enabled b -> Some b | _ -> None)
           ~on_empty:(Or_error.return true)
       and litmus_raw =
-        My_list.find_one_opt items ~item_name:"litmus"
-          ~f:(function Litmus h -> Some h | _ -> None)
+        My_list.find_one_opt items ~item_name:"litmus" ~f:(function
+          | Litmus h ->
+              Some h
+          | _ ->
+              None )
       and via_raw =
         My_list.find_one items ~item_name:"via" ~f:(function
           | Via v ->
@@ -149,11 +151,17 @@ module Raw = struct
     let cpp (items : Ast.Cpp.t list) =
       let open Or_error.Let_syntax in
       let%map cmd =
-        My_list.find_one_opt items ~item_name:"cmd"
-          ~f:(function Cmd c -> Some c | _ -> None)
+        My_list.find_one_opt items ~item_name:"cmd" ~f:(function
+          | Cmd c ->
+              Some c
+          | _ ->
+              None )
       and argv =
-        My_list.find_one_opt items ~item_name:"argv"
-          ~f:(function Argv v -> Some v | _ -> None)
+        My_list.find_one_opt items ~item_name:"argv" ~f:(function
+          | Argv v ->
+              Some v
+          | _ ->
+              None )
       and enabled =
         My_list.find_at_most_one items ~item_name:"enabled"
           ~f:(function Enabled b -> Some b | _ -> None)
@@ -164,11 +172,17 @@ module Raw = struct
     let herd (items : Ast.Herd.t list) =
       let open Or_error.Let_syntax in
       let%map cmd =
-        My_list.find_one_opt items ~item_name:"cmd"
-          ~f:(function Cmd c -> Some c | _ -> None)
+        My_list.find_one_opt items ~item_name:"cmd" ~f:(function
+          | Cmd c ->
+              Some c
+          | _ ->
+              None )
       and c_model =
-        My_list.find_one_opt items ~item_name:"c_model"
-          ~f:(function C_model c -> Some c | _ -> None)
+        My_list.find_one_opt items ~item_name:"c_model" ~f:(function
+          | C_model c ->
+              Some c
+          | _ ->
+              None )
       in
       let asm_models =
         List.filter_map items ~f:(function
@@ -182,8 +196,11 @@ module Raw = struct
     let build_cpp (items : Ast.t) =
       let open Or_error.Let_syntax in
       let cpp_ast_result =
-        My_list.find_one_opt items ~item_name:"cpp"
-          ~f:(function Cpp h -> Some h | _ -> None)
+        My_list.find_one_opt items ~item_name:"cpp" ~f:(function
+          | Cpp h ->
+              Some h
+          | _ ->
+              None )
       in
       match%bind cpp_ast_result with
       | Some cpp_ast ->
@@ -194,8 +211,11 @@ module Raw = struct
     let build_herd (items : Ast.t) =
       let open Or_error.Let_syntax in
       let herd_ast_result =
-        My_list.find_one_opt items ~item_name:"herd"
-          ~f:(function Herd h -> Some h | _ -> None)
+        My_list.find_one_opt items ~item_name:"herd" ~f:(function
+          | Herd h ->
+              Some h
+          | _ ->
+              None )
       in
       match%bind herd_ast_result with
       | Some herd_ast ->
@@ -230,15 +250,16 @@ module Raw = struct
       >>= Compiler.Cfg_spec.Set.of_list
 
     let match_fuzz : Ast.Top.t -> Ast.Fuzz.t list option = function
-    | Fuzz f -> Some f
-    | _ -> None
+      | Fuzz f ->
+          Some f
+      | _ ->
+          None
 
     let build_fuzz (items : Ast.t) : Fuzz.t option Or_error.t =
       Or_error.Let_syntax.(
-      items
-      |> My_list.find_one_opt ~item_name:"fuzz" ~f:match_fuzz
-      >>= Travesty.T_option.With_errors.map_m ~f:Fuzz.of_ast
-      )
+        items
+        |> My_list.find_one_opt ~item_name:"fuzz" ~f:match_fuzz
+        >>= Travesty.T_option.With_errors.map_m ~f:Fuzz.of_ast)
 
     let main (items : Ast.t) =
       let open Or_error.Let_syntax in

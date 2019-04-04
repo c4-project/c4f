@@ -333,9 +333,9 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
     Fmt.(
       pf f "@[<v>%a@,@]"
         (list Stm_explanation.pp ~sep:sp)
-        (non_blank_statements exp)
-    )
-  
-  let print_symbol_table ?(oc: Stdio.Out_channel.t option ) (exp: t) : unit =
+        (non_blank_statements exp))
+
+  let print_symbol_table ?(oc : Stdio.Out_channel.t option) (exp : t) : unit
+      =
     Abstract.Symbol.Table.print_as_table ?oc exp.symbol_table
 end

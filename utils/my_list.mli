@@ -23,30 +23,27 @@
 
 open Base
 
-val find_at_most_one
-  : ?item_name: string
+val find_at_most_one :
+     ?item_name:string
   -> 'a list
   -> f:('a -> 'b option)
-  -> on_empty:('b Or_error.t)
+  -> on_empty:'b Or_error.t
   -> 'b Or_error.t
 (** [find_at_most_one ?item_name items ~f ~on_empty] tries to find an item
-    in [items] for which [f] returns [Some].  It returns the result if 
+    in [items] for which [f] returns [Some]. It returns the result if
     precisely one exists; [on_empty] if none exist, and an error otherwise. *)
 
-val find_one_opt
-  : ?item_name: string
+val find_one_opt :
+     ?item_name:string
   -> 'a list
   -> f:('a -> 'b option)
   -> 'b option Or_error.t
-(** [find_one_opt ?item_name items ~f] tries to find an item
-    in [items] for which [f] returns [Some].  It returns the result in [Some] if 
-    precisely one exists, [None] if none exist, and an error otherwise. *)
+(** [find_one_opt ?item_name items ~f] tries to find an item in [items] for
+    which [f] returns [Some]. It returns the result in [Some] if precisely
+    one exists, [None] if none exist, and an error otherwise. *)
 
-val find_one
-  : ?item_name: string
-  -> 'a list
-  -> f:('a -> 'b option)
-  -> 'b Or_error.t
-(** [find_one ?item_name items ~f] tries to find an item
-    in [items] for which [f] returns [Some].  It returns the result if 
-    precisely one exists, and an error otherwise. *)
+val find_one :
+  ?item_name:string -> 'a list -> f:('a -> 'b option) -> 'b Or_error.t
+(** [find_one ?item_name items ~f] tries to find an item in [items] for
+    which [f] returns [Some]. It returns the result if precisely one exists,
+    and an error otherwise. *)

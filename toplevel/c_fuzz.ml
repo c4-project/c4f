@@ -43,15 +43,14 @@ mutations to the litmus test, and outputs the resulting modified test.
 |}
 
 let command : Command.t =
-  let open Command.Let_syntax in
   Command.basic ~summary:"performs fuzzing mutations on a C litmus test"
     ~readme
-    [%map_open
-      let standard_args = Args.Standard_with_files.get
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard_with_files.get
       and seed =
         flag "seed" (optional int)
           ~doc:"INT use this integer as the seed to the fuzzer RNG"
       in
       fun () ->
         Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false ~f:(run seed)]
+          ~with_compiler_tests:false ~f:(run seed))

@@ -47,7 +47,8 @@ module type S = sig
     -> Litmus.Validated.t Or_error.t
   (** [make ~config ~redirects ~name ~programs] produces a *)
 
-  val print_litmus : fmt -> Stdio.Out_channel.t -> Litmus.Validated.t -> unit 
+  val print_litmus :
+    fmt -> Stdio.Out_channel.t -> Litmus.Validated.t -> unit
   (** [print_litmus fmt oc ast] is the litmus test printer matching the
       configuration [fmt]. *)
 end

@@ -77,15 +77,12 @@ module Table = struct
   module Tabulate : Tabulator.Tabular with type data = t = struct
     type data = t
 
-    let to_row (symbol, sorts) =
-      [symbol; Fmt.strf "%a" Sort.pp sorts]
+    let to_row (symbol, sorts) = [symbol; Fmt.strf "%a" Sort.pp sorts]
 
     let to_table table =
       let open Result.Monad_infix in
       Tabulator.(
-        make
-          ~header:["Symbol"; "Sort"]
-          ~sep:" | " ()
+        make ~header:["Symbol"; "Sort"] ~sep:" | " ()
         >>= add_rule ~char:'='
         >>= add_rows ~rows:(List.map ~f:to_row table))
   end

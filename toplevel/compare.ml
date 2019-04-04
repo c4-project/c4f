@@ -61,12 +61,11 @@ let run o cfg ~(c_file_raw : string) =
     (Config.Compiler.Spec.Set.map specs
        ~f:(run_spec_on_file o passes ~c_file))
 
-let command =
-  let open Command.Let_syntax in
+let command : Command.t =
   Command.basic
     ~summary:"displays the litmus output for each compiler over a C file"
-    [%map_open
-      let standard_args = Args.Standard.get
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard.get
       and sanitiser_passes = Args.sanitiser_passes
       and compiler_predicate = Args.compiler_predicate
       and machine_predicate = Args.machine_predicate
@@ -74,4 +73,4 @@ let command =
       fun () ->
         Common.lift_command standard_args ?compiler_predicate
           ?machine_predicate ?sanitiser_passes ~with_compiler_tests:true
-          ~f:(fun _args -> run ~c_file_raw)]
+          ~f:(fun _args -> run ~c_file_raw))

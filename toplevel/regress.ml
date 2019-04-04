@@ -91,8 +91,8 @@ let regress_run_asm (module L : Asm_job.Runner) (dir : Fpath.t) mode specs
   in
   ()
 
-let regress_on_files (bin_name : string) (test_dir : Fpath.t) ~(ext : string)
-    ~(f : Fpath.t -> unit Or_error.t) : unit Or_error.t =
+let regress_on_files (bin_name : string) (test_dir : Fpath.t)
+    ~(ext : string) ~(f : Fpath.t -> unit Or_error.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   printf "# %s tests\n\n" bin_name ;
   let%bind test_files = Fs.Unix.get_files ~ext test_dir in
@@ -155,18 +155,20 @@ let delitmus_file (dir : Fpath.t) (file : Fpath.t) : unit Or_error.t =
   summarise_c_output output
 
 let regress_delitmus (test_dir : Fpath.t) : unit Or_error.t =
-  regress_on_files "Delitmus" test_dir ~ext:"litmus" ~f:(delitmus_file test_dir)
+  regress_on_files "Delitmus" test_dir ~ext:"litmus"
+    ~f:(delitmus_file test_dir)
 
-let parse_config_failures (dir : Fpath.t) (file : Fpath.t) : unit Or_error.t =
+let parse_config_failures (dir : Fpath.t) (file : Fpath.t) : unit Or_error.t
+    =
   let open Or_error.Let_syntax in
   let%bind path = to_full_path ~dir ~file in
   let r = Config.Frontend.load ~path in
-  Fmt.(pr "@[%a@]@." (result ~ok:(always "No failures.") ~error:Error.pp)) r;
+  Fmt.(pr "@[%a@]@." (result ~ok:(always "No failures.") ~error:Error.pp)) r ;
   Result.ok_unit
 
 let regress_config_parser_failures (test_dir : Fpath.t) : unit Or_error.t =
   regress_on_files "Config parser (failures)" test_dir ~ext:"conf"
-   ~f:(parse_config_failures test_dir)
+    ~f:(parse_config_failures test_dir)
 
 let make_regress_command ~(summary : string)
     (regress_function : Fpath.t -> unit Or_error.t) : Command.t =
@@ -191,5 +193,6 @@ let command : Command.t =
       , make_regress_command ~summary:"runs de-litmus regressions"
           regress_delitmus )
     ; ( "config-failures"
-      , make_regress_command ~summary:"runs config parser failure regressions"
+      , make_regress_command
+          ~summary:"runs config parser failure regressions"
           regress_config_parser_failures ) ]

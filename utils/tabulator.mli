@@ -49,8 +49,8 @@ val add_rows : t -> rows:row list -> t Or_error.t
     length from [t]'s header row. *)
 
 val add_rule : ?char:char -> t -> t Or_error.t
-(** [add_rule ?char t] adds a dividing rule made up of [char] (default '-') to
-    tabulator [t], returning the resulting tabulator. *)
+(** [add_rule ?char t] adds a dividing rule made up of [char] (default '-')
+    to tabulator [t], returning the resulting tabulator. *)
 
 val print : ?oc:Stdio.Out_channel.t -> t -> unit
 (** [print t] prints [t] on [oc] (default stdout). *)
@@ -71,13 +71,11 @@ module type Tabular_extensions = sig
   type data
 
   val print_as_table :
-       ?oc:Stdio.Out_channel.t
-    -> ?on_error:(Error.t -> unit)
-    -> data
-    -> unit
+    ?oc:Stdio.Out_channel.t -> ?on_error:(Error.t -> unit) -> data -> unit
   (** [pp_as_table ?on_error t] tries to convert [t] to a table and
-      pretty-print it on [oc] (default stdout). If the data can't be shown in table format,
-      [?on_error] (or, if missing, a default handler) is instead used. *)
+      pretty-print it on [oc] (default stdout). If the data can't be shown
+      in table format, [?on_error] (or, if missing, a default handler) is
+      instead used. *)
 end
 
 (** [Extend_tabular] makes a [Tabular_extensions] out of a [Tabular]. *)

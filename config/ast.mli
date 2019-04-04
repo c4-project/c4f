@@ -81,11 +81,11 @@ end
 (** Items at the top level *)
 module Top : sig
   type t =
-    | Cpp of Cpp.t list (** A C preprocessor config block. *)
-    | Fuzz of Fuzz.t list (** A fuzzer config block. *)
-    | Herd of Herd.t list (** A Herd config block. *)
-    | Machine of Id.t * Machine.t list (** A machine config block. *)
-    | Compiler of Id.t * Compiler.t list (** A compiler config block. *)
+    | Cpp of Cpp.t list  (** A C preprocessor config block. *)
+    | Fuzz of Fuzz.t list  (** A fuzzer config block. *)
+    | Herd of Herd.t list  (** A Herd config block. *)
+    | Machine of Id.t * Machine.t list  (** A machine config block. *)
+    | Compiler of Id.t * Compiler.t list  (** A compiler config block. *)
 end
 
 (** A config AST is a list of top-level items. *)

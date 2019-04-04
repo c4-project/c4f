@@ -28,8 +28,7 @@ module type S = sig
   module Ast : Ast.S
 
   val print : Out_channel.t -> Ast.Validated.t -> unit
-  (** [print oc ast] prints [ast] on output
-      channel [oc]. *)
+  (** [print oc ast] prints [ast] on output channel [oc]. *)
 
   val print_programs : Out_channel.t -> Ast.Validated.t -> unit
   (** [print_programs oc ast] prints the program table of [ast] on output

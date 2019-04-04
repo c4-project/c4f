@@ -23,23 +23,23 @@
 
 (** Fuzzer configuration.
 
-    This module contains the top-level configuration for `act`'s
-    litmus test mutator. *)
+    This module contains the top-level configuration for `act`'s litmus test
+    mutator. *)
 
 open Base
 
-type t [@@deriving sexp]
 (** Opaque type of fuzzer configurations. *)
+type t [@@deriving sexp]
 
 (** {2 Constructors} *)
 
-val make : ?weights: (Id.t, int) List.Assoc.t -> unit -> t
+val make : ?weights:(Id.t, int) List.Assoc.t -> unit -> t
 (** [make ?weights ()] constructs a fuzzer configuration with the given
     action weights table (defaulting to empty). *)
 
 val of_ast : Ast.Fuzz.t list -> t Or_error.t
-(** [of_ast ast] interprets a fuzzer configuration block [ast].
-    It returns the resulting block if well-formed, and an error otherwise. *)
+(** [of_ast ast] interprets a fuzzer configuration block [ast]. It returns
+    the resulting block if well-formed, and an error otherwise. *)
 
 (** {2 Accessors} *)
 

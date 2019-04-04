@@ -34,14 +34,13 @@ let run_list_compilers (standard_args : Args.Standard.t) (_o : Output.t)
   Result.ok_unit
 
 let list_compilers_command : Command.t =
-  let open Command.Let_syntax in
   Command.basic
     ~summary:"outputs information about the current compiler specs"
-    [%map_open
-      let standard_args = Args.Standard.get in
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard.get in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:run_list_compilers]
+          ~f:run_list_compilers)
 
 let predicate_lists : (string, (module Config.Property.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"

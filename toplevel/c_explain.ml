@@ -39,10 +39,9 @@ let run (file_type : [`C | `Litmus | `Infer]) (output_mode : [`All | `Vars])
   ()
 
 let command : Command.t =
-  let open Command.Let_syntax in
   Command.basic ~summary:"explains act's understanding of a C file"
-    [%map_open
-      let standard_args = Args.Standard_with_files.get
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard_with_files.get
       and file_type =
         choose_one
           [ Args.flag_to_enum_choice `C "c" ~doc:"assume input is raw C"
@@ -60,4 +59,4 @@ let command : Command.t =
       fun () ->
         Common.lift_command_with_files standard_args
           ~with_compiler_tests:false
-          ~f:(run file_type output_mode)]
+          ~f:(run file_type output_mode))

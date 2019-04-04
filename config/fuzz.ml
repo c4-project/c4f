@@ -23,13 +23,12 @@
 
 open Base
 
-type t =
-  { weights: (Id.t, int) List.Assoc.t [@default []] [@drop_if_default]
-  }
+type t = {weights: (Id.t, int) List.Assoc.t [@default []] [@drop_if_default]}
 [@@deriving sexp, fields, make]
 
 let to_weight_opt : Ast.Fuzz.t -> (Id.t * int) option = function
-| Ast.Fuzz.Action (a, w) -> Some (a, Option.value w ~default:1)
+  | Ast.Fuzz.Action (a, w) ->
+      Some (a, Option.value w ~default:1)
 
 let of_ast (ast : Ast.Fuzz.t list) : t Or_error.t =
   let weights = List.filter_map ast ~f:to_weight_opt in

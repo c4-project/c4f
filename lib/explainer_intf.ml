@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Signatures for the {{!Explainer}Explainer} module. *)
+(** Signatures for the {{!Explainer} Explainer} module. *)
 
 open Base
 
@@ -171,8 +171,8 @@ module type S = sig
   include Pretty_printer.S with type t := t
 
   val print_symbol_table : ?oc:Stdio.Out_channel.t -> t -> unit
-  (** [print_symbol_table ?oc exp] prints [exp]'s symbol table to stdout,
-      or [oc] if given. *)
+  (** [print_symbol_table ?oc exp] prints [exp]'s symbol table to stdout, or
+      [oc] if given. *)
 
   val pp_as_assembly : Base.Formatter.t -> t -> unit
   (** [pp_as_assembly f exp] prints [exp] in a smaller summary format that

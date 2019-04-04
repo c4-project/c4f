@@ -274,7 +274,8 @@ struct
     let convert_const = B.convert_const
   end)
 
-  let print_litmus : Format.t -> Out_channel.t -> Litmus.Validated.t -> unit = function
+  let print_litmus : Format.t -> Out_channel.t -> Litmus.Validated.t -> unit
+      = function
     | Full ->
         B.Litmus_pp.print
     | Programs_only ->

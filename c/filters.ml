@@ -107,20 +107,24 @@ Utils.Filter.Make (struct
       (oc : Out_channel.t) : Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map fz = B.fuzz ~seed ~o vast in
-    B.print oc fz;
+    B.print oc fz ;
     let cvars = B.cvars vast in
     let post = B.postcondition vast in
     {Output.cvars; post}
 
-  let print_all (oc : Out_channel.t) _ (x : B.t) : unit =
-    B.print oc x
+  let print_all (oc : Out_channel.t) _ (x : B.t) : unit = B.print oc x
 
-  let print_vars (oc : Out_channel.t) (vars : Utils.C_identifier.t list) _ : unit =
+  let print_vars (oc : Out_channel.t) (vars : Utils.C_identifier.t list) _ :
+      unit =
     let f = Caml.Format.formatter_of_out_channel oc in
     Fmt.(vbox (list ~sep:sp Utils.C_identifier.pp)) f vars
 
-  let print : [`All | `Vars] -> Out_channel.t -> Utils.C_identifier.t list -> B.t -> unit =
-    function
+  let print :
+         [`All | `Vars]
+      -> Out_channel.t
+      -> Utils.C_identifier.t list
+      -> B.t
+      -> unit = function
     | `All ->
         print_all
     | `Vars ->
@@ -130,7 +134,7 @@ Utils.Filter.Make (struct
       (oc : Out_channel.t) : Output.t Or_error.t =
     let cvars = B.cvars vast in
     let post = B.postcondition vast in
-    print output_mode oc (Utils.C_identifier.Map.keys cvars) vast;
+    print output_mode oc (Utils.C_identifier.Map.keys cvars) vast ;
     Or_error.return {Output.cvars; post}
 
   let run {Utils.Filter.aux; src; _} ic oc : Output.t Or_error.t =

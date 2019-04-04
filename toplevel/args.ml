@@ -37,9 +37,8 @@ module Standard : S_standard = struct
   let default_config_file = "act.conf"
 
   let get =
-    let open Command.Let_syntax in
-    [%map_open
-      let verbose =
+    Command.Let_syntax.(
+      let%map_open verbose =
         flag "verbose" no_arg
           ~doc:"print more information about the compilers"
       and no_warnings =
@@ -48,7 +47,7 @@ module Standard : S_standard = struct
         flag_optional_with_default_doc "config" string [%sexp_of: string]
           ~default:default_config_file ~doc:"PATH the act.conf file to use"
       in
-      {verbose; no_warnings; config_file}]
+      {verbose; no_warnings; config_file})
 end
 
 module Standard_with_files = struct
@@ -64,15 +63,14 @@ module Standard_with_files = struct
   let config_file t = Standard.config_file t.rest
 
   let get =
-    let open Command.Let_syntax in
-    [%map_open
-      let infile = anon (maybe ("FILE" %: Filename.arg_type))
+    Command.Let_syntax.(
+      let%map_open infile = anon (maybe ("FILE" %: Filename.arg_type))
       and outfile =
         flag "output"
           (optional Filename.arg_type)
           ~doc:"FILE the output file (default: stdout)"
       and rest = Standard.get in
-      {rest; infile; outfile}]
+      {rest; infile; outfile})
 
   let infile_raw (args : t) : string option = args.infile
 
