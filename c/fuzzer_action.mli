@@ -23,13 +23,19 @@
 
 (** Fuzzer: high-level actions *)
 
-open Utils
+open Base
 
 include module type of Fuzzer_action_intf
 
-module List : sig
+(** A weighted pool of fuzzer actions. *)
+module Pool : sig
   (** Action lists are just weighted lists of first-class action modules. *)
-  type t = (module S) Weighted_list.t
+  type t
+
+  val make : (module S) list -> Config.Fuzz.t -> t Or_error.t
+  (** [make actions config] tries to make a weighted action pool
+      by taking the actions defined in [action_map] and applying the
+      user-specified weight overrides in [config]. *)
 
   val pick :
        t

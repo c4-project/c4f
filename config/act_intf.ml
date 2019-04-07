@@ -31,6 +31,9 @@ module type S = sig
   (** [cpp c] gets the C preprocessor config, if any, to use for
       configuration [c]. *)
 
+  val fuzz : t -> Fuzz.t option
+  (** [fuzz c] gets the fuzzer config, if any, to use for configuration [c]. *)
+
   val herd : t -> Herd.t option
   (** [herd c] gets the Herd config, if any, to use for configuration [c]. *)
 

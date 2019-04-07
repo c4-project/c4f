@@ -25,11 +25,16 @@ open Core_kernel
 open Lib
 
 let run (seed : int option) (args : Args.Standard_with_files.t)
-    (o : Output.t) (_cfg : Config.Act.t) : unit Or_error.t =
+    (o : Output.t) (act_config : Config.Act.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
+  let config =
+    act_config
+    |> Config.Act.fuzz
+    |> Option.value ~default:(Config.Fuzz.make ())
+  in
   let%map _ =
     C.Filters.Litmus.run_from_string_paths
-      (C.Filters.Fuzz {seed; o})
+      (C.Filters.Fuzz {seed; o; config})
       ~infile:(Args.Standard_with_files.infile_raw args)
       ~outfile:(Args.Standard_with_files.outfile_raw args)
   in

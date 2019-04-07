@@ -104,7 +104,8 @@ let always : Subject.Test.t -> bool State.Monad.t =
 
 (** Fuzzer action that generates a new, empty program. *)
 module Make_program : Action.S = struct
-  let name = "make-program"
+  let name = Config.Id.of_string "program.make.empty"
+  let default_weight = 1
 
   module Random_state = struct
     type t = unit
@@ -123,7 +124,8 @@ end
 
 (** Fuzzer action that generates a new global variable. *)
 module Make_global : Action.S = struct
-  let name = "make-global"
+  let name = Config.Id.of_string "var.make.global"
+  let default_weight = 2
 
   module Random_state = struct
     type t = {is_atomic: bool; initial_value: int; name: C_identifier.t}
@@ -162,9 +164,9 @@ let generate_random_state (type rs)
     rs State.Monad.t =
   let open State.Monad.Let_syntax in
   let%bind vf = State.Monad.vf () in
-  Fmt.pf vf "fuzz: getting random state generator for %s@." Act.name ;
+  Fmt.pf vf "fuzz: getting random state generator for %a@." Config.Id.pp Act.name ;
   let%map gen = Act.Random_state.gen subject in
-  Fmt.pf vf "fuzz: generating random state for %s...@." Act.name ;
+  Fmt.pf vf "fuzz: generating random state for %a...@." Config.Id.pp Act.name ;
   let g = Quickcheck.Generator.generate gen ~random ~size:10 in
   Fmt.pf vf "fuzz: done generating random state.@." ;
   g
@@ -175,48 +177,53 @@ let run_action (module Act : Action.S) (subject : Subject.Test.t)
   let%bind state = generate_random_state (module Act) subject rng in
   Act.run subject state
 
-let table : Action.List.t Lazy.t =
+let modules : (module Action.S) list Lazy.t =
   lazy
-    (Weighted_list.from_alist_exn
-       [ ((module Make_global : Action.S), 5)
-       ; ((module Fuzzer_store.Int : Action.S), 10)
-       ; ((module Make_program : Action.S), 1) ])
+  [ (module Make_global : Action.S)
+  ; (module Fuzzer_store.Int : Action.S)
+  ; (module Make_program : Action.S)
+  ]
 
-let mutate_subject_step (table : Action.List.t) (subject : Subject.Test.t)
+let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
     (rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
   let%bind vf = State.Monad.vf () in
   Fmt.pf vf "fuzz: picking action...@." ;
-  let%bind action = Action.List.pick table subject rng in
+  let%bind action = Action.Pool.pick pool subject rng in
   Fmt.pf vf "fuzz: done; now running action...@." ;
   run_action action subject rng
   >>= State.Monad.tee_m ~f:(fun _ ->
           Fmt.pf vf "fuzz: action done.@." ;
           State.Monad.return () )
 
+let make_pool : Config.Fuzz.t -> Action.Pool.t Or_error.t =
+  Action.Pool.make (Lazy.force modules)
+
 let mutate_subject (subject : Subject.Test.t)
-    (rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =
-  let open State.Monad.Let_syntax in
+    ~(config : Config.Fuzz.t)
+    ~(rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =
+  State.Monad.Let_syntax.(
   let cap = 10 in
-  let table = Lazy.force table in
+  let%bind pool = State.Monad.Monadic.return (make_pool config) in
   let%map _, subject' =
     State.Monad.fix (cap, subject) ~f:(fun mu (remaining, subject') ->
         if Int.(remaining = 0) then return (remaining, subject')
         else
-          let%bind subject'' = mutate_subject_step table subject' rng in
+          let%bind subject'' = mutate_subject_step pool subject' rng in
           mu (remaining - 1, subject'') )
   in
-  subject'
+  subject')
 
 let run_with_state (test : Mini_litmus.Ast.Validated.t)
-    (rng : Splittable_random.State.t) :
+    ~(config : Config.Fuzz.t)
+    ~(rng : Splittable_random.State.t) :
     Mini_litmus.Ast.Validated.t State.Monad.t =
   let open State.Monad.Let_syntax in
   (* TODO: add uuid to this *)
   let name = Mini_litmus.Ast.Validated.name test in
   let postcondition = Mini_litmus.Ast.Validated.postcondition test in
   let subject = Subject.Test.of_litmus test in
-  let%bind subject' = mutate_subject subject rng in
+  let%bind subject' = mutate_subject subject ~config ~rng in
   State.Monad.with_vars_m (fun vars ->
       State.Monad.Monadic.return
         (Subject.Test.to_litmus ~vars ~name ?postcondition subject') )
@@ -255,9 +262,12 @@ let make_initial_state (o : Lib.Output.t)
   let locals = Config.C_variables.Map.locals all_cvars in
   State.init ~o ~globals ~locals ()
 
-let run ~(seed : int option) ~(o : Lib.Output.t)
-    (test : Mini_litmus.Ast.Validated.t) :
+let run
+   ?(seed : int option)
+    (test : Mini_litmus.Ast.Validated.t)
+   ~(o : Lib.Output.t)
+   ~(config : Config.Fuzz.t) :
     Mini_litmus.Ast.Validated.t Or_error.t =
   Or_error.(
     make_initial_state o test
-    >>= State.Monad.run (run_with_state test (make_rng seed)))
+    >>= State.Monad.run (run_with_state test ~config ~rng:(make_rng seed)))

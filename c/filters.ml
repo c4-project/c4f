@@ -39,7 +39,7 @@ module type Basic = sig
 
   val process : ast -> t Or_error.t
 
-  val fuzz : seed:int option -> o:Lib.Output.t -> t -> t Or_error.t
+  val fuzz : ?seed:int -> t -> o:Lib.Output.t -> config:Config.Fuzz.t -> t Or_error.t
 
   val cvars : t -> Config.C_variables.Map.t
   (** [cvars vast] should return a list of C identifiers corresponding to
@@ -66,7 +66,7 @@ end
 type mode =
   | Print of [`All | `Vars]
   | Delitmus
-  | Fuzz of {seed: int option; o: Lib.Output.t}
+  | Fuzz of {seed: int option; o: Lib.Output.t; config: Config.Fuzz.t}
 
 module Output = struct
   type t =
@@ -103,10 +103,13 @@ Utils.Filter.Make (struct
     let post = B.postcondition vast in
     {Output.cvars; post}
 
-  let run_fuzz ~(seed : int option) ~(o : Lib.Output.t) (vast : B.t)
-      (oc : Out_channel.t) : Output.t Or_error.t =
+  let run_fuzz ?(seed : int option) (vast : B.t)
+  (oc : Out_channel.t)
+  ~(o : Lib.Output.t)
+  ~(config : Config.Fuzz.t)
+      : Output.t Or_error.t =
     let open Or_error.Let_syntax in
-    let%map fz = B.fuzz ~seed ~o vast in
+    let%map fz = B.fuzz ?seed ~o ~config vast in
     B.print oc fz ;
     let cvars = B.cvars vast in
     let post = B.postcondition vast in
@@ -143,13 +146,15 @@ Utils.Filter.Make (struct
       B.Frontend.load_from_ic ~path:(Utils.Io.In_source.to_string src) ic
     in
     let%bind vast = B.process ast in
-    match aux with
+    let f = match aux with
     | Print output_mode ->
-        run_print output_mode vast oc
+        run_print output_mode
     | Delitmus ->
-        run_delitmus vast oc
-    | Fuzz {seed; o} ->
-        run_fuzz ~seed ~o vast oc
+        run_delitmus
+    | Fuzz {seed; o; config} ->
+        run_fuzz ?seed ~o ~config
+    in
+    f vast oc
 end)
 
 module Normal_C :
@@ -172,9 +177,10 @@ Make (struct
 
   let process = Mini_convert.translation_unit
 
-  let fuzz ~(seed : int option) ~(o : Lib.Output.t) (_ : t) : t Or_error.t =
+  let fuzz ?(seed : int option) (_ : t) ~(o : Lib.Output.t) ~(config : Config.Fuzz.t) : t Or_error.t =
     ignore seed ;
     ignore o ;
+    ignore config ;
     Or_error.error_string "Can't fuzz a normal C file"
 
   let cvars prog =
@@ -226,7 +232,7 @@ Make (struct
 
   let delitmus = Delitmus.run
 
-  let fuzz : seed:int option -> o:Lib.Output.t -> t -> t Or_error.t =
+  let fuzz : ?seed:int -> t -> o:Lib.Output.t -> config:Config.Fuzz.t -> t Or_error.t =
     Fuzzer.run
 
   let postcondition :

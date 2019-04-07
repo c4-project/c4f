@@ -42,7 +42,7 @@ module Raw = struct
 
   include CI
 
-  (** Reading in config from a Config_ast *)
+  (** Reading in config from an AST. *)
   module File = struct
     let ssh (items : Ast.Ssh.t list) : Machine.Ssh.t Or_error.t =
       Or_error.Let_syntax.(
@@ -193,11 +193,7 @@ module Raw = struct
     let build_cpp (items : Ast.t) =
       Or_error.Let_syntax.(
         let cpp_ast_result =
-          My_list.find_one_opt items ~item_name:"cpp" ~f:(function
-            | Cpp h ->
-                Some h
-            | _ ->
-                None )
+          My_list.find_one_opt items ~item_name:"cpp" ~f:Ast.Top.as_cpp
         in
         match%bind cpp_ast_result with
         | Some cpp_ast ->
@@ -208,12 +204,7 @@ module Raw = struct
     let build_herd (items : Ast.t) =
       Or_error.Let_syntax.(
         let herd_ast_result =
-          My_list.find_one_opt items ~item_name:"herd" ~f:(function
-            | Herd h ->
-                Some h
-            | _ ->
-                None )
-        in
+          My_list.find_one_opt items ~item_name:"herd" ~f:Ast.Top.as_herd        in
         match%bind herd_ast_result with
         | Some herd_ast ->
             herd herd_ast >>| Option.some
@@ -223,11 +214,7 @@ module Raw = struct
     let build_machines (items : Ast.t) =
       Or_error.Let_syntax.(
         items
-        |> List.filter_map ~f:(function
-             | Machine (id, spec_ast) ->
-                 Some (id, spec_ast)
-             | _ ->
-                 None )
+        |> List.filter_map ~f:Ast.Top.as_machine
         |> Travesty.T_list.With_errors.map_m ~f:(fun (id, spec_ast) ->
                let%map spec = machine spec_ast in
                Machine.Spec.With_id.make ~id ~spec )
@@ -236,26 +223,16 @@ module Raw = struct
     let build_compilers (items : Ast.t) =
       Or_error.Let_syntax.(
         items
-        |> List.filter_map ~f:(function
-             | Compiler (id, spec_ast) ->
-                 Some (id, spec_ast)
-             | _ ->
-                 None )
+        |> List.filter_map ~f:Ast.Top.as_compiler
         |> Travesty.T_list.With_errors.map_m ~f:(fun (id, spec_ast) ->
                let%map spec = compiler spec_ast in
                Compiler.Cfg_spec.With_id.make ~id ~spec )
         >>= Compiler.Cfg_spec.Set.of_list)
 
-    let match_fuzz : Ast.Top.t -> Ast.Fuzz.t list option = function
-      | Fuzz f ->
-          Some f
-      | _ ->
-          None
-
     let build_fuzz (items : Ast.t) : Fuzz.t option Or_error.t =
       Or_error.Let_syntax.(
         items
-        |> My_list.find_one_opt ~item_name:"fuzz" ~f:match_fuzz
+        |> My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
         >>= Travesty.T_option.With_errors.map_m ~f:Fuzz.of_ast)
 
     let main (items : Ast.t) : t Or_error.t =
@@ -310,6 +287,7 @@ module M = struct
     { compilers: C.Set.t
     ; machines: Machine.Spec.Set.t
     ; cpp: Cpp.t option [@sexp.option]
+    ; fuzz: Fuzz.t option [@sexp.option]
     ; herd: Herd.t option [@sexp.option]
     ; sanitiser_passes: default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t
     ; disabled_compilers: (Id.t, Error.t option) List.Assoc.t
@@ -427,6 +405,7 @@ module M = struct
       ; disabled_machines
       ; sanitiser_passes= phook
       ; cpp= Raw.cpp c
+      ; fuzz= Raw.fuzz c
       ; herd= Raw.herd c })
 end
 

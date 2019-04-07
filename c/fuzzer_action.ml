@@ -21,6 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
 open Utils
 include Fuzzer_action_intf
 
@@ -29,8 +30,30 @@ let zero_if_not_available (subject : Fuzzer_subject.Test.t) (module A : S)
   let open Fuzzer_state.Monad.Let_syntax in
   if%map A.available subject then weight else 0
 
-module List = struct
+module Pool = struct
   type t = (module S) Weighted_list.t
+
+  let make_weight_pair (weight_overrides : int Config.Id.Map.t) (module M : S)
+    : ((module S) * int) =
+    let weight =
+      M.name
+      |> Config.Id.Map.find weight_overrides
+      |> Option.value ~default:(M.default_weight)
+    in
+    ((module M : S), weight)
+
+  let make_weight_alist (actions : (module S) list) (weight_overrides : int Config.Id.Map.t)
+    : ((module S), int) List.Assoc.t =
+    List.map ~f:(make_weight_pair weight_overrides) actions
+
+  let make (actions : (module S) list) (config : Config.Fuzz.t)
+    : t Or_error.t =
+    let weight_overrides_alist = Config.Fuzz.weights config in
+    Or_error.Let_syntax.(
+      let%bind weight_overrides = Config.Id.Map.of_alist_or_error weight_overrides_alist in
+      let weights = make_weight_alist actions weight_overrides in
+      Weighted_list.from_alist weights
+    )
 
   module W = Weighted_list.On_monad (struct
     include Fuzzer_state.Monad

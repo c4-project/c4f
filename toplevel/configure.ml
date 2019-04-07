@@ -72,7 +72,33 @@ let list_predicates_command : Command.t =
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:(fun _args -> run_list_predicates))
 
+let list_fuzz_weights_readme () : string =
+  Common.format_for_readme
+    {|
+      Reads the current config file, and outputs the computed weight
+      for each fuzzer action.
+    |}
+
+let run_list_fuzz_weights (_o : Output.t) (cfg : Config.Act.t) :
+  unit Or_error.t =
+  let fuzz = cfg |> Config.Act.fuzz |> Option.value ~default:(Config.Fuzz.make ()) in
+  (*let weights = C.Fuzzer.Action.foo in*)
+  Stdio.print_s [%sexp (fuzz : Config.Fuzz.t)];
+  Result.ok_unit
+
+let list_fuzz_weights_command : Command.t =
+  Command.basic
+    ~summary:"outputs the current fuzzer weight table"
+    ~readme:list_fuzz_weights_readme
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard.get in
+      fun () ->
+        Common.lift_command standard_args ~with_compiler_tests:false
+          ~f:(fun _args -> run_list_fuzz_weights))
+
 let command : Command.t =
   Command.group ~summary:"commands for dealing with act configuration"
     [ ("list-compilers", list_compilers_command)
-    ; ("list-predicates", list_predicates_command) ]
+    ; ("list-predicates", list_predicates_command)
+    ; ("list-fuzz-weights", list_fuzz_weights_command)
+    ]

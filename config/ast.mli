@@ -86,6 +86,21 @@ module Top : sig
     | Herd of Herd.t list  (** A Herd config block. *)
     | Machine of Id.t * Machine.t list  (** A machine config block. *)
     | Compiler of Id.t * Compiler.t list  (** A compiler config block. *)
+
+  val as_cpp : t -> Cpp.t list option
+  (** [as_cpp top] is [Some c] if [top] is [Cpp c], and [None] otherwise. *)
+
+  val as_fuzz : t -> Fuzz.t list option
+  (** [as_fuzz top] is [Some f] if [top] is [Fuzz f], and [None] otherwise. *)
+
+  val as_herd : t -> Herd.t list option
+  (** [as_herd top] is [Some h] if [top] is [Herd h], and [None] otherwise. *)
+
+  val as_machine : t -> (Id.t * Machine.t list) option
+  (** [as_machine top] is [Some (i, m)] if [top] is [Machine (i, m)], and [None] otherwise. *)
+
+  val as_compiler : t -> (Id.t * Compiler.t list) option
+  (** [as_compiler top] is [Some (i, c)] if [top] is [Compiler (i, c)], and [None] otherwise. *)
 end
 
 (** A config AST is a list of top-level items. *)

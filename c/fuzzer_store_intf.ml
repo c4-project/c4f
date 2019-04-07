@@ -27,8 +27,11 @@ type rst =
 
 (** Basic template for fuzzer store action modules. *)
 module type Basic = sig
-  val name : string
+  val name : Config.Id.t
   (** The name of this store action. *)
+
+  val default_weight : int
+  (** The default weight of this store action. *)
 
   val forbid_already_written : bool
   (** If true, only allow stores to variables that are known not to already

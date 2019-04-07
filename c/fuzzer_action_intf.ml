@@ -26,8 +26,11 @@ open Core_kernel
 module type Generic = sig
   type subject
 
-  val name : string
-  (** The name of the action. *)
+  val name : Config.Id.t
+  (** The name of the action, as a config identifier. *)
+
+  val default_weight : int
+  (** The default weight of the action. *)
 
   (** Random state on which this action depends. *)
   module Random_state : sig

@@ -67,6 +67,37 @@ module Top = struct
     | Herd of Herd.t list
     | Machine of Id.t * Machine.t list
     | Compiler of Id.t * Compiler.t list
+      [@@deriving variants]
+
+  let as_cpp : t -> Cpp.t list option = function
+    | Cpp c ->
+        Some c
+    | _ ->
+        None
+
+  let as_fuzz : t -> Fuzz.t list option = function
+    | Fuzz f ->
+        Some f
+    | _ ->
+        None
+
+  let as_herd : t -> Herd.t list option = function
+    | Herd h ->
+        Some h
+    | _ ->
+        None
+
+  let as_machine : t -> (Id.t * Machine.t list) option = function
+    | Machine (i, m) ->
+        Some (i, m)
+    | _ ->
+        None
+
+  let as_compiler : t -> (Id.t * Compiler.t list) option = function
+    | Compiler (i, c) ->
+        Some (i, c)
+    | _ ->
+        None
 end
 
 type t = Top.t list
