@@ -28,8 +28,7 @@ let run (seed : int option) (args : Args.Standard_with_files.t)
     (o : Output.t) (act_config : Config.Act.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   let config =
-    act_config
-    |> Config.Act.fuzz
+    act_config |> Config.Act.fuzz
     |> Option.value ~default:(Config.Fuzz.make ())
   in
   let%map _ =
@@ -41,7 +40,7 @@ let run (seed : int option) (args : Args.Standard_with_files.t)
   ()
 
 let readme () : string =
-  Common.format_for_readme
+  Utils.My_string.format_for_readme
     {|
 `act c fuzz` takes, as input, a C litmus test.  It then performs various
 mutations to the litmus test, and outputs the resulting modified test.

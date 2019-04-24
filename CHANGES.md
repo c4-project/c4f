@@ -1,5 +1,15 @@
 # Unreleased
 
+## 2019-Apr-24
+
+- New standard flag: `colour`, which takes `always`, `never`, or `auto`
+  (the default), and colourises output accordingly.  Currently, not a lot of
+  `act` supports colourisation, but expect this to change.
+- New(ish) command: `act configure list-fuzzer-actions`, which describes the
+  fuzzer actions `act` understands; for each, it outputs a readme and the
+  current configured weight.  This should make it easier to configure fuzzer
+  weights.
+
 ## 2019-Apr-03
 
 - The `fuzz_many` script in `scripts/` now takes arguments in the

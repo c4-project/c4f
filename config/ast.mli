@@ -97,10 +97,12 @@ module Top : sig
   (** [as_herd top] is [Some h] if [top] is [Herd h], and [None] otherwise. *)
 
   val as_machine : t -> (Id.t * Machine.t list) option
-  (** [as_machine top] is [Some (i, m)] if [top] is [Machine (i, m)], and [None] otherwise. *)
+  (** [as_machine top] is [Some (i, m)] if [top] is [Machine (i, m)], and
+      [None] otherwise. *)
 
   val as_compiler : t -> (Id.t * Compiler.t list) option
-  (** [as_compiler top] is [Some (i, c)] if [top] is [Compiler (i, c)], and [None] otherwise. *)
+  (** [as_compiler top] is [Some (i, c)] if [top] is [Compiler (i, c)], and
+      [None] otherwise. *)
 end
 
 (** A config AST is a list of top-level items. *)

@@ -204,7 +204,8 @@ module Raw = struct
     let build_herd (items : Ast.t) =
       Or_error.Let_syntax.(
         let herd_ast_result =
-          My_list.find_one_opt items ~item_name:"herd" ~f:Ast.Top.as_herd        in
+          My_list.find_one_opt items ~item_name:"herd" ~f:Ast.Top.as_herd
+        in
         match%bind herd_ast_result with
         | Some herd_ast ->
             herd herd_ast >>| Option.some

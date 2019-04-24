@@ -139,6 +139,15 @@ let%expect_test "has_tag: invalid, empty string" =
   Stdio.print_s [%sexp (has_tag (of_string "foo.BAR.baz") "" : bool)] ;
   [%expect {| false |}]
 
+let pp_pair (ppe : 'e Fmt.t) : (t * 'e) Fmt.t =
+  Fmt.(vbox ~indent:2 (pair (suffix (unit ":") pp) ppe))
+
+let pp_alist (ppe : 'e Fmt.t) : (t, 'e) List.Assoc.t Fmt.t =
+  Fmt.(vbox (list ~sep:cut (pp_pair ppe)))
+
+let pp_map (ppe : 'e Fmt.t) : 'e Map.t Fmt.t =
+  Fmt.using Map.to_alist (pp_alist ppe)
+
 module Property = struct
   type id = t
 

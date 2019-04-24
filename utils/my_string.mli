@@ -21,21 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** The 'act' mutation-based C litmus test fuzzer. *)
+(** Miscellaneous string utility functions. *)
 
-open Core_kernel
-module Action = Fuzzer_action
-
-val summarise : Config.Fuzz.t -> Action.Summary.t Config.Id.Map.t Or_error.t
-(** [summarise config] tries to get the effective fuzzer weights setup using
-    the weighting information in [config]. *)
-
-val run :
-     ?seed:int
-  -> Mini_litmus.Ast.Validated.t
-  -> o:Lib.Output.t
-  -> config:Config.Fuzz.t
-  -> Mini_litmus.Ast.Validated.t Or_error.t
-(** [run ?seed test ~o test] mutates [test] using a random number generator
-    seeded by [seed]. Any debugging information is printed to the
-    appropriate formatters on [o]. *)
+val format_for_readme : string -> string
+(** [format_for_readme str] applies word-wrapping and squeezing to [str] to
+    make it suitable for command READMEs. *)

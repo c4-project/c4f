@@ -25,14 +25,33 @@ open Core
 open Utils
 include Args_intf
 
+module Colour_table = String_table.Make (struct
+  type t = Fmt.style_renderer option
+
+  let table =
+    [(Some `None, "never"); (Some `Ansi_tty, "always"); (None, "auto")]
+end)
+
+let colour_map : Fmt.style_renderer option String.Map.t =
+  String.Map.of_alist_exn (List.Assoc.inverse Colour_table.table)
+
+let colour_type : Fmt.style_renderer option Command.Arg_type.t =
+  Command.Arg_type.of_map colour_map
+
+let colour_sexp (sr : Fmt.style_renderer option) : Sexp.t =
+  sr |> Colour_table.to_string |> Option.value ~default:"?" |> Sexp.Atom
+
 module Standard : S_standard = struct
-  type t = {verbose: bool; no_warnings: bool; config_file: string}
+  type t =
+    { verbose: bool
+    ; no_warnings: bool
+    ; colour: Fmt.style_renderer option
+    ; config_file: string }
+  [@@deriving fields]
 
   let is_verbose t = t.verbose
 
   let are_warnings_enabled t = not t.no_warnings
-
-  let config_file t = t.config_file
 
   let default_config_file = "act.conf"
 
@@ -46,8 +65,11 @@ module Standard : S_standard = struct
       and config_file =
         flag_optional_with_default_doc "config" string [%sexp_of: string]
           ~default:default_config_file ~doc:"PATH the act.conf file to use"
+      and colour =
+        flag_optional_with_default_doc "colour" colour_type colour_sexp
+          ~default:None ~doc:"MODE force a particular colouring mode"
       in
-      {verbose; no_warnings; config_file})
+      {verbose; no_warnings; config_file; colour})
 end
 
 module Standard_with_files = struct
@@ -61,6 +83,8 @@ module Standard_with_files = struct
   let are_warnings_enabled t = Standard.are_warnings_enabled t.rest
 
   let config_file t = Standard.config_file t.rest
+
+  let colour t = Standard.colour t.rest
 
   let get =
     Command.Let_syntax.(

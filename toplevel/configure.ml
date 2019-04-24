@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -54,14 +54,17 @@ let predicate_lists : (string, (module Config.Property.S)) List.Assoc.t =
 let pp_tree_module : (module Config.Property.S) Fmt.t =
  fun f (module M) -> M.pp_tree f ()
 
+(** [pp_predicate_list] is a pretty-printer for predicate lists. *)
+let pp_predicate_list :
+    (string, (module Config.Property.S)) List.Assoc.t Fmt.t =
+  Fmt.(
+    list ~sep:(unit "@,@,")
+      (vbox ~indent:2
+         (pair ~sep:sp (suffix (unit ":") string) pp_tree_module)))
+
 let run_list_predicates (_o : Output.t) (_cfg : Config.Act.t) :
     unit Or_error.t =
-  Fmt.(
-    pr "@[<v>%a@]@."
-      (list ~sep:(unit "@,@,")
-         (vbox ~indent:2
-            (pair ~sep:sp (suffix (unit ":") string) pp_tree_module)))
-      predicate_lists) ;
+  Fmt.pr "@[<v>%a@]@." pp_predicate_list predicate_lists ;
   Result.ok_unit
 
 let list_predicates_command : Command.t =
@@ -72,33 +75,38 @@ let list_predicates_command : Command.t =
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:(fun _args -> run_list_predicates))
 
-let list_fuzz_weights_readme () : string =
-  Common.format_for_readme
+let list_fuzzer_actions_readme () : string =
+  Utils.My_string.format_for_readme
     {|
-      Reads the current config file, and outputs the computed weight
-      for each fuzzer action.
+      Reads the current config file, and outputs information about each
+      fuzzer action, including its computed weight after taking the config
+      into consideration.
     |}
 
-let run_list_fuzz_weights (_o : Output.t) (cfg : Config.Act.t) :
-  unit Or_error.t =
-  let fuzz = cfg |> Config.Act.fuzz |> Option.value ~default:(Config.Fuzz.make ()) in
-  (*let weights = C.Fuzzer.Action.foo in*)
-  Stdio.print_s [%sexp (fuzz : Config.Fuzz.t)];
-  Result.ok_unit
+let fuzz_config (cfg : Config.Act.t) : Config.Fuzz.t =
+  cfg |> Config.Act.fuzz |> Option.value ~default:(Config.Fuzz.make ())
 
-let list_fuzz_weights_command : Command.t =
-  Command.basic
-    ~summary:"outputs the current fuzzer weight table"
-    ~readme:list_fuzz_weights_readme
+let pp_fuzz_summaries : C.Fuzzer.Action.Summary.t Config.Id.Map.t Fmt.t =
+  Config.Id.pp_map C.Fuzzer.Action.Summary.pp
+
+let run_list_fuzzer_actions (_o : Output.t) (cfg : Config.Act.t) :
+    unit Or_error.t =
+  let open Or_error.Let_syntax in
+  let fuzz = fuzz_config cfg in
+  let%map summaries = C.Fuzzer.summarise fuzz in
+  Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries summaries
+
+let list_fuzzer_actions_command : Command.t =
+  Command.basic ~summary:"outputs the current fuzzer weight table"
+    ~readme:list_fuzzer_actions_readme
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard.get in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:(fun _args -> run_list_fuzz_weights))
+          ~f:(fun _args -> run_list_fuzzer_actions))
 
 let command : Command.t =
   Command.group ~summary:"commands for dealing with act configuration"
     [ ("list-compilers", list_compilers_command)
     ; ("list-predicates", list_predicates_command)
-    ; ("list-fuzz-weights", list_fuzz_weights_command)
-    ]
+    ; ("list-fuzzer-actions", list_fuzzer_actions_command) ]

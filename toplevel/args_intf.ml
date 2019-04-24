@@ -39,6 +39,9 @@ module type S_standard = sig
   (** [are_warnings_enabled t] gets whether, according to [t], warnings are
       switched on. *)
 
+  val colour : t -> Fmt.style_renderer option
+  (** [colour t] gets the TTY colouring mode, if any, according to [t]. *)
+
   val config_file : t -> string
   (** [config_file t] gets the configuration file according to [t]. *)
 

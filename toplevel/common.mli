@@ -27,10 +27,6 @@ open Core_kernel
 open Lib
 open Utils
 
-val format_for_readme : string -> string
-(** [format_for_readme str] applies word-wrapping and squeezing to [str] to
-    make it suitable for command READMEs. *)
-
 val warn_if_not_tracking_symbols :
   Output.t -> C_identifier.t list option -> unit
 (** [warn_if_not_tracking_symbols o c_symbols] prints a warning on [o] if

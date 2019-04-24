@@ -25,10 +25,6 @@ open Core_kernel
 open Lib
 open Utils
 
-let format_for_readme (str : string) : string =
-  str |> String_extended.squeeze (* The order here is important *)
-  |> String_extended.word_wrap ~soft_limit:72 ~hard_limit:80 ~nl:"\n "
-
 let warn_if_not_tracking_symbols (o : Output.t) :
     C_identifier.t list option -> unit = function
   | None ->
@@ -217,6 +213,10 @@ module type Basic_lifter = sig
   val as_standard_args : t -> Args.Standard.t
 end
 
+let setup_colour (args : Args.Standard.t) : unit =
+  let style_renderer = Args.Standard.colour args in
+  Fmt_tty.setup_std_outputs ?style_renderer ()
+
 (** Since the command lifters are fairly uniform except for the specific
     argument bundle they pass through, we use a functor to construct them. *)
 module Make_lifter (B : Basic_lifter) = struct
@@ -225,6 +225,7 @@ module Make_lifter (B : Basic_lifter) = struct
       ~(f : B.t -> Output.t -> Config.Act.t -> unit Or_error.t) (args : B.t)
       : unit =
     let standard_args = B.as_standard_args args in
+    setup_colour standard_args ;
     let o = make_output_from_standard_args standard_args in
     Or_error.(
       Args.Standard.config_file standard_args

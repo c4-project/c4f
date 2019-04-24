@@ -58,7 +58,7 @@ let file_flag (name : string) :
       ~if_nothing_chosen:`Raise)
 
 let readme () =
-  Common.format_for_readme
+  Utils.My_string.format_for_readme
     {|
     `act diff-states` takes two summaries of simulation runs: an
     'oracle' (usually a program _before_ compilation), and a

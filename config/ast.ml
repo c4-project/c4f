@@ -67,7 +67,7 @@ module Top = struct
     | Herd of Herd.t list
     | Machine of Id.t * Machine.t list
     | Compiler of Id.t * Compiler.t list
-      [@@deriving variants]
+  [@@deriving variants]
 
   let as_cpp : t -> Cpp.t list option = function
     | Cpp c ->

@@ -29,6 +29,9 @@ module type Generic = sig
   val name : Config.Id.t
   (** The name of the action, as a config identifier. *)
 
+  val readme : unit -> string
+  (** [readme () builds a long synopsis of this action. *)
+
   val default_weight : int
   (** The default weight of the action. *)
 

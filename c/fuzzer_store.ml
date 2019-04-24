@@ -32,7 +32,35 @@ module Var = Fuzzer_var
 
 module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
   let name = B.name
+
   let default_weight = B.default_weight
+
+  (** [readme_chunks ()] generates fragments of unformatted README text
+      based on the configuration of this store module. *)
+  let readme_chunks () : (bool * string) list =
+    [ ( true
+      , {|
+       Generates a store operation on a randomly selected fuzzer-generated
+       global variable.
+       |}
+      )
+    ; ( B.forbid_already_written
+      , {|
+       This version of the action only stores to variables that haven't
+       previously been selected for store actions.  This makes calculating
+       candidate executions easier, but limits the degree of entropy
+       somewhat.
+       |}
+      ) ]
+
+  let select_and_format_chunk (select : bool) (chunk : string) :
+      string option =
+    if select then Some (Utils.My_string.format_for_readme chunk) else None
+
+  let readme () =
+    readme_chunks ()
+    |> List.filter_map ~f:(Tuple2.uncurry select_and_format_chunk)
+    |> String.concat ~sep:"\n\n"
 
   (** Lists the restrictions we put on source variables. *)
   let src_restrictions : (Var.Record.t -> bool) list Lazy.t = lazy []
@@ -83,9 +111,11 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
       let%bind () = error_if_empty "src" (module Src) in
       let%map () = error_if_empty "dst" (module Dst) in
       Fmt.pf vf "%a: environments are non-empty@." Config.Id.pp name ;
-      Fmt.pf vf "%a: src environment: @[%a@]@." Config.Id.pp name Sexp.pp_hum
+      Fmt.pf vf "%a: src environment: @[%a@]@." Config.Id.pp name
+        Sexp.pp_hum
         [%sexp (Src.env : Mini_type.t Utils.C_identifier.Map.t)] ;
-      Fmt.pf vf "%a: dst environment: @[%a@]@." Config.Id.pp name Sexp.pp_hum
+      Fmt.pf vf "%a: dst environment: @[%a@]@." Config.Id.pp name
+        Sexp.pp_hum
         [%sexp (Dst.env : Mini_type.t Utils.C_identifier.Map.t)] ;
       let module Gen = B.Quickcheck (Src) (Dst) in
       Fmt.pf vf "%a: built generator module@." Config.Id.pp name ;
@@ -137,7 +167,8 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
     let open State.Monad.Let_syntax in
     let store_stm = Mini.Statement.atomic_store store in
     let%bind vf = State.Monad.vf () in
-    Fmt.pf vf "%a: Erasing known value of store destination@." Config.Id.pp name ;
+    Fmt.pf vf "%a: Erasing known value of store destination@." Config.Id.pp
+      name ;
     let%bind () = mark_store_dst store in
     Fmt.pf vf "%a: Adding dependency to store source@." Config.Id.pp name ;
     let%bind () = add_dependencies_to_store_src store in
@@ -149,6 +180,7 @@ module Int : Action.S with type Random_state.t = rst = Make (struct
   let name = Config.Id.of_string "store.make.int.single"
 
   let forbid_already_written = true (* for now *)
+
   let default_weight = 3
 
   module Quickcheck = Mini.Atomic_store.Quickcheck_ints

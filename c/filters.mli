@@ -36,7 +36,7 @@ type mode =
   | Print of [`All | `Vars]
       (** Pretty-print all, or part, of the result (useful for debugging). *)
   | Delitmus  (** If the input is a C/Litmus file, try convert it to C. *)
-  | Fuzz of {seed: int option; o: Lib.Output.t; config: Config.Fuzz.t }
+  | Fuzz of {seed: int option; o: Lib.Output.t; config: Config.Fuzz.t}
       (** If the input is a C/Litmus file, fuzz it and return a mutated
           version. *)
 

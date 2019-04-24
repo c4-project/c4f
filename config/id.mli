@@ -26,7 +26,7 @@
     Identifiers contain an ordered list of case-insensitive elements, called
     'tags'. *)
 
-open Core
+open Core_kernel
 
 (** [t] is the type of compiler and machine identifiers. *)
 type t
@@ -46,6 +46,18 @@ val is_prefix : t -> prefix:t -> bool
 
 (** We can use [t] as an [Identifiable]. *)
 include Identifiable.S with type t := t
+
+(** {2 Pretty-printing helpers} *)
+
+val pp_alist : 'e Fmt.t -> (t, 'e) List.Assoc.t Fmt.t
+(** [pp_alist ppe] vertically pretty-prints an associative list from
+    identifiers to values printable by [ppe]. *)
+
+val pp_map : 'e Fmt.t -> 'e Map.t Fmt.t
+(** [pp_map ppe] vertically pretty-prints a map from identifiers to values
+    printable by [ppe]. *)
+
+(** {2 Property language} *)
 
 (** [Property] contains a mini-language for querying IDs, suitable for use
     in [Blang]. *)

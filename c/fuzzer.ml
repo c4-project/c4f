@@ -105,6 +105,15 @@ let always : Subject.Test.t -> bool State.Monad.t =
 (** Fuzzer action that generates a new, empty program. *)
 module Make_program : Action.S = struct
   let name = Config.Id.of_string "program.make.empty"
+
+  let readme () =
+    Utils.My_string.format_for_readme
+      {|
+    Generates a new, empty program at one end of the program list.
+    This action isn't very useful on its own, but works well in combination
+    with other actions that construct statements and control flows.
+    |}
+
   let default_weight = 1
 
   module Random_state = struct
@@ -125,6 +134,14 @@ end
 (** Fuzzer action that generates a new global variable. *)
 module Make_global : Action.S = struct
   let name = Config.Id.of_string "var.make.global"
+
+  let readme () =
+    Utils.My_string.format_for_readme
+      {|
+    Generates a new global integer variable, with a random name, initial value,
+    and atomicity.
+    |}
+
   let default_weight = 2
 
   module Random_state = struct
@@ -164,9 +181,11 @@ let generate_random_state (type rs)
     rs State.Monad.t =
   let open State.Monad.Let_syntax in
   let%bind vf = State.Monad.vf () in
-  Fmt.pf vf "fuzz: getting random state generator for %a@." Config.Id.pp Act.name ;
+  Fmt.pf vf "fuzz: getting random state generator for %a@." Config.Id.pp
+    Act.name ;
   let%map gen = Act.Random_state.gen subject in
-  Fmt.pf vf "fuzz: generating random state for %a...@." Config.Id.pp Act.name ;
+  Fmt.pf vf "fuzz: generating random state for %a...@." Config.Id.pp
+    Act.name ;
   let g = Quickcheck.Generator.generate gen ~random ~size:10 in
   Fmt.pf vf "fuzz: done generating random state.@." ;
   g
@@ -179,10 +198,9 @@ let run_action (module Act : Action.S) (subject : Subject.Test.t)
 
 let modules : (module Action.S) list Lazy.t =
   lazy
-  [ (module Make_global : Action.S)
-  ; (module Fuzzer_store.Int : Action.S)
-  ; (module Make_program : Action.S)
-  ]
+    [ (module Make_global : Action.S)
+    ; (module Fuzzer_store.Int : Action.S)
+    ; (module Make_program : Action.S) ]
 
 let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
     (rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =
@@ -199,24 +217,26 @@ let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
 let make_pool : Config.Fuzz.t -> Action.Pool.t Or_error.t =
   Action.Pool.make (Lazy.force modules)
 
-let mutate_subject (subject : Subject.Test.t)
-    ~(config : Config.Fuzz.t)
+let summarise (cfg : Config.Fuzz.t) :
+    Action.Summary.t Config.Id.Map.t Or_error.t =
+  Or_error.(cfg |> make_pool >>| Action.Pool.summarise)
+
+let mutate_subject (subject : Subject.Test.t) ~(config : Config.Fuzz.t)
     ~(rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =
   State.Monad.Let_syntax.(
-  let cap = 10 in
-  let%bind pool = State.Monad.Monadic.return (make_pool config) in
-  let%map _, subject' =
-    State.Monad.fix (cap, subject) ~f:(fun mu (remaining, subject') ->
-        if Int.(remaining = 0) then return (remaining, subject')
-        else
-          let%bind subject'' = mutate_subject_step pool subject' rng in
-          mu (remaining - 1, subject'') )
-  in
-  subject')
+    let cap = 10 in
+    let%bind pool = State.Monad.Monadic.return (make_pool config) in
+    let%map _, subject' =
+      State.Monad.fix (cap, subject) ~f:(fun mu (remaining, subject') ->
+          if Int.(remaining = 0) then return (remaining, subject')
+          else
+            let%bind subject'' = mutate_subject_step pool subject' rng in
+            mu (remaining - 1, subject'') )
+    in
+    subject')
 
 let run_with_state (test : Mini_litmus.Ast.Validated.t)
-    ~(config : Config.Fuzz.t)
-    ~(rng : Splittable_random.State.t) :
+    ~(config : Config.Fuzz.t) ~(rng : Splittable_random.State.t) :
     Mini_litmus.Ast.Validated.t State.Monad.t =
   let open State.Monad.Let_syntax in
   (* TODO: add uuid to this *)
@@ -262,11 +282,8 @@ let make_initial_state (o : Lib.Output.t)
   let locals = Config.C_variables.Map.locals all_cvars in
   State.init ~o ~globals ~locals ()
 
-let run
-   ?(seed : int option)
-    (test : Mini_litmus.Ast.Validated.t)
-   ~(o : Lib.Output.t)
-   ~(config : Config.Fuzz.t) :
+let run ?(seed : int option) (test : Mini_litmus.Ast.Validated.t)
+    ~(o : Lib.Output.t) ~(config : Config.Fuzz.t) :
     Mini_litmus.Ast.Validated.t Or_error.t =
   Or_error.(
     make_initial_state o test

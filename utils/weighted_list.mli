@@ -75,6 +75,15 @@ end) : sig
       monad. *)
 end
 
+(** {2 Conversion} *)
+
+val fold : 'a t -> f:('b -> 'a -> int -> 'b) -> init:'b -> 'b
+(** [fold wl ~f ~init] folds [f] over every row in [wl], starting at [init]. *)
+
+val iter : 'a t -> f:('a -> int -> unit) -> unit
+(** [iter wl ~f ~init] applies side-effectful function [f] to every row in
+    [wl]. *)
+
 (** {2 Sampling} *)
 
 (** Type of weighted lists that have been re-arranged to list weights
