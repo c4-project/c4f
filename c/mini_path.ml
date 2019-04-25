@@ -33,9 +33,9 @@ module Make_statement_list (M : S_statement) :
       (dest : target list) : target list Or_error.t =
     match path with
     | Insert_at index ->
-        Alter_list.insert dest index (M.lift_stm stm)
+        My_list.insert dest index (M.lift_stm stm)
     | At {index; rest} ->
-        Alter_list.replace dest index ~f:(fun x ->
+        My_list.replace dest index ~f:(fun x ->
             Or_error.(M.insert_stm rest stm x >>| Option.some) )
 
   let transform_stm (path : on_stm list_path)
@@ -43,7 +43,7 @@ module Make_statement_list (M : S_statement) :
       (dest : target list) : target list Or_error.t =
     match path with
     | At {index; rest} ->
-        Alter_list.replace dest index ~f:(fun x ->
+        My_list.replace dest index ~f:(fun x ->
             Or_error.(M.transform_stm rest ~f x >>| Option.some) )
     | Insert_at _ ->
         Or_error.error_s
@@ -233,7 +233,7 @@ module Program : S_program with type target := Mini.Program.t = struct
     | On_program {index; rest} ->
         let functions = Mini.Program.functions prog in
         let%map functions' =
-          Alter_list.replace functions index ~f:(fun (name, func) ->
+          My_list.replace functions index ~f:(fun (name, func) ->
               let%map func' = f rest func in
               Some (name, func') )
         in

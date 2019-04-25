@@ -169,7 +169,7 @@ module Test = struct
       | On_program {index; rest} ->
           let programs = test.programs in
           let%map programs' =
-            Alter_list.replace programs index ~f:(fun func ->
+            My_list.replace programs index ~f:(fun func ->
                 func |> f rest >>| Option.some )
           in
           {test with programs= programs'}

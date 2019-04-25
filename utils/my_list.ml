@@ -22,6 +22,90 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Base_quickcheck
+
+let replace (xs : 'a list) (at : int) ~(f : 'a -> 'a option Or_error.t) :
+    'a list Or_error.t =
+  let open Or_error.Let_syntax in
+  let z_init = Zipper.Plain.of_list xs in
+  let%bind z_move =
+    Zipper.Plain.On_error.step_m z_init ~steps:at ~on_empty:(fun _ ->
+        Or_error.error_s
+          [%message
+            "Replace failed: index out of range" ~here:[%here]
+              ~insert_at:(at : int)
+              ~list_length:(List.length xs : int)] )
+  in
+  let%map z_repl =
+    Zipper.Plain.On_error.map_m_head z_move ~f ~on_empty:(fun _ ->
+        Or_error.error_s
+          [%message
+            "Replace failed: index out of range" ~here:[%here]
+              ~insert_at:(at : int)
+              ~list_length:(List.length xs : int)] )
+  in
+  Zipper.Plain.to_list z_repl
+
+let%expect_test "replace: successfully map" =
+  let lst = ["kappa"; "keepo"; "frankerz"; "pogchamp"] in
+  let f x = Or_error.return (Some (String.uppercase x)) in
+  let lst' = replace lst 2 ~f in
+  Stdio.print_s [%sexp (lst' : string list Or_error.t)] ;
+  [%expect {| (Ok (kappa keepo FRANKERZ pogchamp)) |}]
+
+let%expect_test "replace: successfully delete" =
+  let lst = ["kappa"; "keepo"; "frankerz"; "pogchamp"] in
+  let f _ = Or_error.return None in
+  let lst' = replace lst 1 ~f in
+  Stdio.print_s [%sexp (lst' : string list Or_error.t)] ;
+  [%expect {| (Ok (kappa frankerz pogchamp)) |}]
+
+let%expect_test "replace: failing function" =
+  let lst = ["kappa"; "keepo"; "frankerz"; "pogchamp"] in
+  let f _ = Or_error.error_string "function failure" in
+  let lst' = replace lst 3 ~f in
+  Stdio.print_s [%sexp (lst' : string list Or_error.t)] ;
+  [%expect {| (Error "function failure") |}]
+
+let%expect_test "replace: out of bounds" =
+  let lst = ["kappa"; "keepo"; "frankerz"; "pogchamp"] in
+  let f x = Or_error.return (Some (String.uppercase x)) in
+  let lst' = replace lst 4 ~f in
+  Stdio.print_s [%sexp (lst' : string list Or_error.t)] ;
+  [%expect
+    {|
+    (Error
+     ("Replace failed: index out of range" (here utils/my_list.ml:43:55)
+      (insert_at 4) (list_length 4))) |}]
+
+let insert (xs : 'a list) (at : int) (value : 'a) : 'a list Or_error.t =
+  let open Or_error.Let_syntax in
+  let z_init = Zipper.Plain.of_list xs in
+  let%map z_move =
+    Zipper.Plain.On_error.step_m z_init ~steps:at ~on_empty:(fun _ ->
+        Or_error.error_s
+          [%message
+            "Insert failed: index out of range" ~here:[%here]
+              ~insert_at:(at : int)
+              ~list_length:(List.length xs : int)] )
+  in
+  let z_ins = Zipper.Plain.push z_move ~value in
+  Zipper.Plain.to_list z_ins
+
+let%test_module "insert" =
+  ( module struct
+    module Qc = struct
+      type t = int * int list [@@deriving quickcheck, sexp]
+    end
+
+    let%test_unit "insert at 0 = cons" =
+      Base_quickcheck.Test.run_exn
+        (module Qc)
+        ~f:(fun (x, xs) ->
+          [%test_eq: int list] ~here:[[%here]]
+            (Or_error.ok_exn (insert xs 0 x))
+            (x :: xs) )
+  end )
 
 let find_at_most_one (type a b) ?(item_name : string = "item")
     (items : a list) ~(f : a -> b option) ~(on_empty : b Or_error.t) :

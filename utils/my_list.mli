@@ -21,7 +21,11 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+(** Utility functions for lists. *)
+
 open Base
+
+(** {2 Finding and transforming specific amounts of items} *)
 
 val find_at_most_one :
      ?item_name:string
@@ -47,3 +51,14 @@ val find_one :
 (** [find_one ?item_name items ~f] tries to find an item in [items] for
     which [f] returns [Some]. It returns the result if precisely one exists,
     and an error otherwise. *)
+
+(** {2 Utility functions for modifying lists} *)
+
+val replace :
+  'a list -> int -> f:('a -> 'a option Or_error.t) -> 'a list Or_error.t
+(** [replace xs at ~f] tries to replace the value at index [at] in [xs]
+    using the possibly-failing function [f]. [f] may return [Ok None], in
+    which case the item is removed. *)
+
+val insert : 'a list -> int -> 'a -> 'a list Or_error.t
+(** [insert xs at value] tries to insert [value] at index [at] in [xs]. *)
