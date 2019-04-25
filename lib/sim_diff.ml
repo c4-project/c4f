@@ -40,6 +40,29 @@ let order_operator : Sim_output.State.Set.Partial_order.t -> string =
   | No_order _ ->
       "<>"
 
+let order_colour : Sim_output.State.Set.Partial_order.t -> Fmt.style =
+  function
+  | Equal ->
+      `Green
+  | Subset _ ->
+      `Red
+  | Superset _ ->
+      `Yellow
+  | No_order _ ->
+      `Magenta
+
+let pp_order_operator (f : Formatter.t)
+    (op : Sim_output.State.Set.Partial_order.t) : unit =
+  Fmt.(styled (order_colour op) (using order_operator string)) f op
+
+let pp (f : Formatter.t) : t -> unit = function
+  | Subject_undefined ->
+      Fmt.styled_unit `Cyan "UNDEFINED@ (Subject)" f ()
+  | Oracle_undefined ->
+      Fmt.styled_unit `Cyan "UNDEFINED@ (Oracle)" f ()
+  | Result o ->
+      Fmt.pf f "Oracle@ %a@ Subject" pp_order_operator o
+
 let to_string : t -> string = function
   | Subject_undefined ->
       "UNDEFINED (Subject)"
@@ -47,8 +70,6 @@ let to_string : t -> string = function
       "UNDEFINED (Oracle)"
   | Result o ->
       Printf.sprintf "Oracle %s Subject" (order_operator o)
-
-let pp : t Fmt.t = Fmt.of_to_string to_string
 
 let compare_states ~(oracle_states : Sim_output.State.t list)
     ~(subject_states : Sim_output.State.t list) : t =
