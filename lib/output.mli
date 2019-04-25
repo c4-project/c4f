@@ -24,16 +24,31 @@
 (** Bundle of formatters used to output information in the middle of act
     execution *)
 
-open Core
+open Base
 
-(** [t] is the type of output contexts. *)
-type t =
-  { vf: Format.formatter (* Verbose formatter *)
-  ; wf: Format.formatter (* Warning formatter *)
-  ; ef: Format.formatter (* Error formatter *) }
+(** Opaque type of output contexts. *)
+type t
+
+(** {2 Constructors} *)
 
 val make : verbose:bool -> warnings:bool -> t
-(** [make] makes a [t] from various reporting flags. *)
+(** [make ~verbose ~warnings] makes a [t] from various reporting flags. *)
+
+val silent : unit -> t
+(** [silent ()] makes a [t] that ignores anything sent to it. *)
+
+(** {2 Usage} *)
+
+val pv : t -> ('a, Formatter.t, unit) format -> 'a
+(** [pv output fmt] prints onto [output]'s 'verbose' output. *)
+
+val pw : t -> ('a, Formatter.t, unit) format -> 'a
+(** [pw output fmt] prints onto [output]'s 'warning' output. *)
+
+val pe : t -> ('a, Formatter.t, unit) format -> 'a
+(** [pe output fmt] prints onto [output]'s 'error' output (usually stderr). *)
+
+(** {2 Common output forms} *)
 
 val log_stage : t -> stage:string -> file:string -> Config.Id.t -> unit
 (** [log_stage o ~stage ~file compiler_id] outputs a brief notice, onto

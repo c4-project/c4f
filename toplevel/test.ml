@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -25,14 +25,14 @@ open Core
 open Lib
 open Utils
 
-let report_spec_errors o = function
+let report_spec_errors (o : Output.t) = function
   | [] ->
       ()
   | es ->
-      Format.fprintf o.Output.wf
+      Output.pw o
         "@[<v>Some of the specified compilers don't seem to be \
          valid:@,@,%a@]@."
-        (Format.pp_print_list Error.pp ~pp_sep:Format.pp_print_cut)
+        Fmt.(list Error.pp ~sep:cut)
         es
 
 let make_tester_config ~(out_root_raw : string)

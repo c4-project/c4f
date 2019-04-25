@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Lib
 open Utils
 module Var = Fuzzer_var
 module Subject = Fuzzer_subject
@@ -180,14 +181,14 @@ let generate_random_state (type rs)
     (subject : Subject.Test.t) (random : Splittable_random.State.t) :
     rs State.Monad.t =
   let open State.Monad.Let_syntax in
-  let%bind vf = State.Monad.vf () in
-  Fmt.pf vf "fuzz: getting random state generator for %a@." Config.Id.pp
+  let%bind o = State.Monad.output () in
+  Output.pv o "fuzz: getting random state generator for %a@." Config.Id.pp
     Act.name ;
   let%map gen = Act.Random_state.gen subject in
-  Fmt.pf vf "fuzz: generating random state for %a...@." Config.Id.pp
+  Output.pv o "fuzz: generating random state for %a...@." Config.Id.pp
     Act.name ;
   let g = Quickcheck.Generator.generate gen ~random ~size:10 in
-  Fmt.pf vf "fuzz: done generating random state.@." ;
+  Output.pv o "fuzz: done generating random state.@." ;
   g
 
 let run_action (module Act : Action.S) (subject : Subject.Test.t)
@@ -205,13 +206,13 @@ let modules : (module Action.S) list Lazy.t =
 let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
     (rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
-  let%bind vf = State.Monad.vf () in
-  Fmt.pf vf "fuzz: picking action...@." ;
+  let%bind o = State.Monad.output () in
+  Output.pv o "fuzz: picking action...@." ;
   let%bind action = Action.Pool.pick pool subject rng in
-  Fmt.pf vf "fuzz: done; now running action...@." ;
+  Output.pv o "fuzz: done; now running action...@." ;
   run_action action subject rng
   >>= State.Monad.tee_m ~f:(fun _ ->
-          Fmt.pf vf "fuzz: action done.@." ;
+          Output.pv o "fuzz: action done.@." ;
           State.Monad.return () )
 
 let make_pool : Config.Fuzz.t -> Action.Pool.t Or_error.t =

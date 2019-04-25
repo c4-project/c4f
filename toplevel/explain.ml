@@ -56,7 +56,7 @@ let run file_type compiler_id_or_arch output_format
       ~infile:(Args.Standard_with_files.infile_raw args)
       ~outfile:(Args.Standard_with_files.outfile_raw args)
   in
-  Asm_job.Output.warn o.Output.wf out ;
+  Output.pw o "@[%a@]@." Asm_job.Output.warn out ;
   print_symbol_map (Asm_job.Output.symbol_map out)
 
 let command =

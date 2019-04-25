@@ -94,7 +94,6 @@ module Monad : sig
       This should be done after involving [var] in any atomic actions that
       modify it. *)
 
-  val vf : unit -> Base.Formatter.t t
-  (** [vf ()] is a stateful action that gets the verbose output channel, if
-      one exists. *)
+  val output : unit -> Lib.Output.t t
+  (** [output ()] is a stateful action that gets the current output context. *)
 end

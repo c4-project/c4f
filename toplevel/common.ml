@@ -25,16 +25,22 @@ open Core_kernel
 open Lib
 open Utils
 
+let not_tracking_symbols_warning : string =
+  {|
+    The set of known C variables is empty.
+
+    This can lead to `act` making incorrect assumptions;
+    for example, it may fail to work out which assembly symbols
+    refer to heap locations.
+
+    To fix this, specify `-c-globals 'symbol1,symbol2,etc'` (and/or `-c-locals`),
+    or (if possible) use a C litmus test as input.
+  |}
+
 let warn_if_not_tracking_symbols (o : Output.t) :
     C_identifier.t list option -> unit = function
   | None ->
-      Fmt.(
-        pf o.wf "@[%a@]@." (list ~sep:sp string)
-          [ "The set of known C variables is empty."
-          ; "This can lead to `act` making incorrect assumptions;"
-          ; "for example, it may fail to work out which assembly symbols"
-          ; "refer to heap locations."
-          ; "To fix this, specify `-cvars 'symbol1,symbol2,etc'`." ])
+      Output.pw o "@[%a@]@." Fmt.paragraphs not_tracking_symbols_warning
   | Some _ ->
       ()
 
@@ -130,10 +136,9 @@ let choose_cvars_after_delitmus (o : Output.t)
   (* We could use Option.first_some here, but expanding it out gives us the
      ability to verbose-log what we're doing. *)
   let out_cvars message cvars =
-    Fmt.(
-      pf o.vf "Using %s:@ %a@." message
-        (using C_identifier.Map.keys (list ~sep:comma C_identifier.pp))
-        cvars) ;
+    Output.pv o "Using %s:@ %a@." message
+      Fmt.(using C_identifier.Map.keys (list ~sep:comma C_identifier.pp))
+      cvars ;
     cvars
   in
   match user_cvars with

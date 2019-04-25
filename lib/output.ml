@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,24 +21,38 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
+open Base
 open Utils
 
-type t = {vf: Format.formatter; wf: Format.formatter; ef: Format.formatter}
+type t = {vf: Formatter.t; wf: Formatter.t; ef: Formatter.t}
 
-let maybe_err_formatter on =
-  if on then Format.err_formatter else My_format.null_formatter ()
+let maybe_err_formatter on : Formatter.t =
+  if on then Fmt.stderr else My_format.null_formatter ()
 
-let make ~verbose ~warnings =
+let make ~verbose ~warnings : t =
   { vf= maybe_err_formatter verbose
   ; wf= maybe_err_formatter warnings
-  ; ef= Format.err_formatter }
+  ; ef= Fmt.stderr }
 
-let log_stage o ~stage ~file compiler_id =
-  Format.fprintf o.vf "@[%s[%a]@ %s@]@." stage Config.Id.pp compiler_id file
+let silent () : t =
+  let nullf = My_format.null_formatter () in
+  {vf= nullf; wf= nullf; ef= nullf}
 
-let print_error o =
-  Result.iter_error
-    ~f:
-      (Format.fprintf o.ef
-         "@[act encountered a top-level error:@.@[%a@]@]@." Error.pp)
+let pv (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.vf
+
+let pw (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.wf
+
+let pe (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.ef
+
+let log_stage (o : t) ~stage ~file compiler_id =
+  Fmt.pf o.vf "@[%s[%a]@ %s@]@." stage Config.Id.pp compiler_id file
+
+let print_error_body : Error.t Fmt.t =
+  Fmt.(
+    vbox ~indent:2
+      (prefix
+         (hbox (styled_unit `Red "act encountered a top-level error:@,"))
+         (box Error.pp)))
+
+let print_error (o : t) : 'a Or_error.t -> unit =
+  Fmt.(result ~ok:nop ~error:print_error_body o.ef)

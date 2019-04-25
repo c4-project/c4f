@@ -56,7 +56,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     | Result.Ok herd ->
         `Success herd
     | Result.Error err ->
-        Fmt.pf o.wf "@[<v 4>Herd analysis error:@,%a@]@." Error.pp err ;
+        Output.pw o "@[<v 4>Herd analysis error:@,%a@]@." Error.pp err ;
         `Errored
 
   let make_herd_arch = function `C -> Herd.C | `Assembly -> Assembly emits
@@ -66,7 +66,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     | Ok herd ->
         run_herd herd ~input_path ~output_path
     | Error e ->
-        Fmt.pf o.wf "@[<v 4>Herd configuration error:@,%a@]@." Error.pp e ;
+        Output.pw o "@[<v 4>Herd configuration error:@,%a@]@." Error.pp e ;
         `Errored
 
   (** [try_run_herd arch ~input_path ~output_path] sees if [cspec] asked for
@@ -166,7 +166,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
             ~infile:(Some (P_file.asm_path fs))
             ~outfile:(Some (P_file.lita_path fs))
         in
-        Asm_job.Output.warn o.wf output ;
+        Output.pw o "@[%a@]@." Asm_job.Output.warn output ;
         Asm_job.Output.symbol_map output )
 
   let c_herd_on_pathset_file fs =
@@ -296,7 +296,7 @@ module Make_machine (B : Basic_machine) : Machine = struct
     let output_root = Run_config.output_root cfg in
     let input_mode = Run_config.input_mode cfg in
     let%map ps = Pathset.make_and_mkdirs id ~output_root ~input_mode in
-    Fmt.pf o.vf "%a@." Pathset.pp ps ;
+    Output.pv o "%a@." Pathset.pp ps ;
     ps
 
   let make_compiler (cfg : Run_config.t)

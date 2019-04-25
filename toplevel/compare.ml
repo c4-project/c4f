@@ -40,7 +40,7 @@ let litmusify o passes spec c_file =
       (Io.In_source.file c_file)
       Io.Out_sink.stdout
   in
-  Asm_job.Output.warn o.Output.wf out
+  Output.pw o "@[%a@]@." Asm_job.Output.warn out
 
 let run_spec_on_file o passes spec ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@." Config.Id.pp
