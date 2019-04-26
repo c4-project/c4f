@@ -23,37 +23,35 @@
 
 open Base
 
-type t =
-  | Oracle_undefined
-  | Subject_undefined
-  | Result of Sim_output.State.Set.Partial_order.t
-[@@deriving sexp]
+module Order = struct
+  include Sim_output.State.Set.Partial_order
 
-let order_operator : Sim_output.State.Set.Partial_order.t -> string =
-  function
-  | Equal ->
-      "=="
-  | Subset _ ->
-      "<<"
-  | Superset _ ->
-      ">>"
-  | No_order _ ->
-      "<>"
+  let operator : Ordering.t option -> string = function
+    | Some Equal ->
+        "=="
+    | Some Less ->
+        "<<"
+    | Some Greater ->
+        ">>"
+    | None ->
+        "<>"
 
-let order_colour : Sim_output.State.Set.Partial_order.t -> Fmt.style =
-  function
-  | Equal ->
-      `Green
-  | Subset _ ->
-      `Red
-  | Superset _ ->
-      `Yellow
-  | No_order _ ->
-      `Magenta
+  let colour : Ordering.t option -> Fmt.style = function
+    | Some Equal ->
+        `Green
+    | Some Less ->
+        `Red
+    | Some Greater ->
+        `Yellow
+    | None ->
+        `Magenta
 
-let pp_order_operator (f : Formatter.t)
-    (op : Sim_output.State.Set.Partial_order.t) : unit =
-  Fmt.(styled (order_colour op) (using order_operator string)) f op
+  let pp_operator (f : Formatter.t) (op : Ordering.t option) : unit =
+    Fmt.(styled (colour op) (using operator string)) f op
+end
+
+type t = Oracle_undefined | Subject_undefined | Result of Order.t
+[@@deriving sexp_of]
 
 let pp (f : Formatter.t) : t -> unit = function
   | Subject_undefined ->
@@ -61,7 +59,8 @@ let pp (f : Formatter.t) : t -> unit = function
   | Oracle_undefined ->
       Fmt.styled_unit `Cyan "UNDEFINED@ (Oracle)" f ()
   | Result o ->
-      Fmt.pf f "Oracle@ %a@ Subject" pp_order_operator o
+      Fmt.pf f "Oracle@ %a@ Subject" Order.pp_operator
+        (Order.to_ordering_opt o)
 
 let to_string : t -> string = function
   | Subject_undefined ->
@@ -69,7 +68,8 @@ let to_string : t -> string = function
   | Oracle_undefined ->
       "UNDEFINED (Oracle)"
   | Result o ->
-      Printf.sprintf "Oracle %s Subject" (order_operator o)
+      Printf.sprintf "Oracle %s Subject"
+        (Order.operator (Order.to_ordering_opt o))
 
 let compare_states ~(oracle_states : Sim_output.State.t list)
     ~(subject_states : Sim_output.State.t list) : t =

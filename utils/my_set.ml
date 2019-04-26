@@ -67,6 +67,69 @@ module Make_extensions (M : Set.S) : Extensions with type t := M.t = struct
           drop_left x po
       | Second x ->
           drop_right x po
+
+    let to_ordering_opt : t -> Ordering.t option = function
+      | Equal ->
+          Some Equal
+      | Superset _ ->
+          Some Greater
+      | Subset _ ->
+          Some Less
+      | No_order _ ->
+          None
+
+    let is_equal : t -> bool = function
+      | Equal ->
+          true
+      | Superset _ | Subset _ | No_order _ ->
+          false
+
+    let is_unordered : t -> bool = function
+      | No_order _ ->
+          true
+      | Superset _ | Subset _ | Equal ->
+          false
+
+    let is_proper_superset : t -> bool = function
+      | Superset _ ->
+          true
+      | No_order _ | Subset _ | Equal ->
+          false
+
+    let is_superset : t -> bool =
+      Travesty.T_fn.disj is_proper_superset is_equal
+
+    let is_proper_subset : t -> bool = function
+      | Subset _ ->
+          true
+      | No_order _ | Superset _ | Equal ->
+          false
+
+    let is_subset : t -> bool = Travesty.T_fn.disj is_proper_subset is_equal
+
+    let left_has_uniques : t -> bool = function
+      | Superset _ | No_order _ ->
+          true
+      | Subset _ | Equal ->
+          false
+
+    let right_has_uniques : t -> bool = function
+      | Subset _ | No_order _ ->
+          true
+      | Superset _ | Equal ->
+          false
+
+    let in_left_only : t -> M.t = function
+      | Superset {in_left_only} | No_order {in_left_only; _} ->
+          in_left_only
+      | Subset _ | Equal ->
+          M.empty
+
+    let in_right_only : t -> M.t = function
+      | Subset {in_right_only} | No_order {in_right_only; _} ->
+          in_right_only
+      | Superset _ | Equal ->
+          M.empty
   end
 
   let partial_compare (x : M.t) (y : M.t) =

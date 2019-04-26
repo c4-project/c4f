@@ -93,7 +93,11 @@ let cook_input_mode = function
       cook_delitmus files_raw
 
 let output_main_table (analysis : Tester.Analysis.t) : unit Or_error.t =
-  Or_error.(analysis |> Tester.Analysis.to_table >>| print_table)
+  (* TODO(@MattWindsor): wire this up *)
+  let a =
+    {Tester.Analysis_table.Interest_level.data= analysis; level= All}
+  in
+  Or_error.(a |> Tester.Analysis_table.On_files.to_table >>| print_table)
 
 let non_empty : 'a list -> 'a list option = function
   | [] ->
@@ -106,32 +110,32 @@ let pp_deviation_bucket (bucket_name : string) :
   Fmt.(
     using non_empty
       (option
+         ~none:
+           (styled `Yellow (const (fmt "No states in %s only.") bucket_name))
          (vbox ~indent:2
             (prefix
-               (suffix sp (styled `Red (const string bucket_name)))
+               (suffix sp
+                  (styled `Red (const (fmt "In %s only:") bucket_name)))
                (vbox
                   (list ~sep:sp
                      (using [%sexp_of: Sim_output.State.t] Sexp.pp_hum)))))))
 
-let pp_deviation : Tester.Analysis.State_deviation.t Fmt.t =
-  Fmt.(
-    using
-      Tester.Analysis.State_deviation.(
-        fun x -> (non_empty (in_c_only x), non_empty (in_asm_only x)))
-      (pair ~sep:sp
-         (option
-            ~none:(const string "No states in C only.")
-            (pp_deviation_bucket "In C only:"))
-         (option
-            ~none:(const string "No states in asm only.")
-            (pp_deviation_bucket "In asm only:"))))
+let to_deviation_lists (ord : Sim_diff.Order.t) :
+    Sim_output.State.t list * Sim_output.State.t list =
+  let l = ord |> Sim_diff.Order.in_left_only |> Set.to_list in
+  let r = ord |> Sim_diff.Order.in_right_only |> Set.to_list in
+  (l, r)
 
-let pp_deviation_row :
-    Tester.Analysis.State_deviation.t Tester.Analysis.Row.t Fmt.t =
+let pp_deviation : Sim_diff.Order.t Fmt.t =
+  Fmt.(
+    using to_deviation_lists
+      (pair ~sep:sp (pp_deviation_bucket "C") (pp_deviation_bucket "asm")))
+
+let pp_deviation_row : Sim_diff.Order.t Tester.Analysis_table.Row.t Fmt.t =
   Fmt.(
     vbox ~indent:2
       (using
-         Tester.Analysis.Row.(
+         Tester.Analysis_table.Row.(
            fun x -> (((compiler_id x, machine_id x), filename x), analysis x))
          (pair ~sep:sp
             (hbox
@@ -141,7 +145,7 @@ let pp_deviation_row :
             pp_deviation)))
 
 let output_deviations (analysis : Tester.Analysis.t) : unit =
-  match Tester.Analysis.deviation_rows analysis with
+  match Tester.Analysis_table.On_deviations.rows analysis with
   | [] ->
       ()
   | rs ->

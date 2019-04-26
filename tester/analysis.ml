@@ -22,39 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
 open Lib
-
-(** Represents an observation that the C and assembly sets of a
-    state-set-level analysis aren't equal. *)
-module State_deviation = struct
-  type t =
-    { in_c_only: Sim_output.State.t list
-    ; in_asm_only: Sim_output.State.t list }
-  [@@deriving sexp_of, fields, make]
-
-  let of_order_opt : Sim_output.State.Set.Partial_order.t -> t option =
-    (* C is left, asm is right. *)
-    function
-    | Equal ->
-        None
-    | Subset {in_right_only} ->
-        Some (make ~in_asm_only:(Set.to_list in_right_only) ())
-    | Superset {in_left_only} ->
-        Some (make ~in_c_only:(Set.to_list in_left_only) ())
-    | No_order {in_left_only; in_right_only} ->
-        Some
-          (make
-             ~in_c_only:(Set.to_list in_left_only)
-             ~in_asm_only:(Set.to_list in_right_only)
-             ())
-
-  let of_herd_outcome_opt : Sim_diff.t -> t option = function
-    | Result o ->
-        of_order_opt o
-    | Oracle_undefined | Subject_undefined ->
-        None
-end
+include Analysis_intf
 
 module Herd = struct
   type t = Run of Sim_diff.t | Disabled | Errored of [`C | `Assembly]
@@ -72,11 +41,46 @@ module Herd = struct
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
 
-  let to_state_deviation_opt : t -> State_deviation.t option = function
-    | Run o ->
-        State_deviation.of_herd_outcome_opt o
-    | Errored _ | Disabled ->
+  module Predicates = struct
+    let is_undefined : t -> bool = function
+      | Run Oracle_undefined | Run Subject_undefined ->
+          true
+      | Run _ | Errored _ | Disabled ->
+          false
+
+    let has_errors : t -> bool = function
+      | Errored _ ->
+          true
+      | Run _ | Disabled ->
+          false
+  end
+
+  include Predicates
+
+  let state_set_order : t -> Sim_diff.Order.t option = function
+    | Run (Result r) ->
+        Some r
+    | Run _ | Errored _ | Disabled ->
         None
+
+  (** Forwards from [Sim_diff.Order]. *)
+  module Order_forwards = struct
+    module H = Utils.Inherit.Partial_helpers (struct
+      type nonrec t = t
+
+      type c = Sim_diff.Order.t
+
+      let component_opt : t -> c option = state_set_order
+    end)
+
+    let has_deviations : t -> bool =
+      H.forward_bool (Fn.non Sim_diff.Order.is_equal)
+
+    let has_asm_deviations : t -> bool =
+      H.forward_bool Sim_diff.Order.right_has_uniques
+  end
+
+  include Order_forwards
 end
 
 module File = struct
@@ -85,6 +89,29 @@ module File = struct
     ; time_taken_in_cc: Time.Span.t option
     ; herd: Herd.t }
   [@@deriving sexp_of, fields, make]
+
+  module Herd_forwards = struct
+    module H = Utils.Inherit.Helpers (struct
+      type nonrec t = t
+
+      type c = Herd.t
+
+      let component : t -> c = herd
+    end)
+
+    let state_set_order : t -> Sim_diff.Order.t option =
+      H.forward Herd.state_set_order
+
+    let has_deviations : t -> bool = H.forward Herd.has_deviations
+
+    let has_asm_deviations : t -> bool = H.forward Herd.has_asm_deviations
+
+    let has_errors : t -> bool = H.forward Herd.has_errors
+
+    let is_undefined : t -> bool = H.forward Herd.is_undefined
+  end
+
+  include Herd_forwards
 end
 
 module Compiler = struct
@@ -105,109 +132,7 @@ module Machine = struct
             (cid, fname, analysis) ) )
 end
 
-module Row = struct
-  type 'a t =
-    { machine_id: Config.Id.t
-    ; compiler_id: Config.Id.t
-    ; filename: string
-    ; analysis: 'a }
-  [@@deriving sexp_of, fields, make]
-
-  let pp_span_opt f = function
-    | Some span ->
-        Time.Span.pp f span
-    | None ->
-        String.pp f "-"
-
-  let to_table_row (row : File.t t) : Tabulator.row =
-    [ Fmt.strf "%a" Config.Id.pp row.machine_id
-    ; Fmt.strf "%a" Config.Id.pp row.compiler_id
-    ; row.filename ]
-    @ (* We use Fieldslib here, mainly, to raise compilation errors if the
-         fields in [analysis] change and we don't add them (or ignore them)
-         here. *)
-      File.Fields.Direct.to_list row.analysis
-        ~herd:(fun _field _file -> Fmt.strf "%a" Herd.pp)
-        ~time_taken:(fun _field _file -> Fmt.strf "%a" pp_span_opt)
-        ~time_taken_in_cc:(fun _field _file -> Fmt.strf "%a" pp_span_opt)
-
-  let with_analysis (row : _ t) (analysis : 'a) : 'a t =
-    make ~machine_id:(machine_id row) ~compiler_id:(compiler_id row)
-      ~filename:(filename row) ~analysis
-
-  let deviations (row : File.t t) : State_deviation.t t option =
-    let open Option.Let_syntax in
-    let file = analysis row in
-    let herd = File.herd file in
-    let%map deviations = Herd.to_state_deviation_opt herd in
-    with_analysis row deviations
-end
-
-module M = struct
-  type t =
-    { time_taken: Time.Span.t option
-    ; machines: (Config.Id.t, Machine.t) List.Assoc.t }
-  [@@deriving sexp_of, fields, make]
-
-  let file_rows (a : t) : File.t Row.t list =
-    List.concat_map (machines a) ~f:(fun (machine_id, machine) ->
-        List.map (Machine.files machine)
-          ~f:(fun (compiler_id, filename, analysis) ->
-            Row.make ~machine_id ~compiler_id ~filename ~analysis ) )
-
-  let deviation_rows (a : t) : State_deviation.t Row.t list =
-    a |> file_rows |> List.filter_map ~f:Row.deviations
-
-  let machine_rule = '='
-
-  let compiler_rule = '-'
-
-  (** [maybe_with_rule last_mid this_mid last_cid this_cid tabulator]
-      determines, by checking whether the machine or compiler IDs have
-      changed from last row (if there was a last row), whether to insert a
-      rule on [tabulator] and, if so, which one to insert. *)
-  let maybe_with_rule last_mid this_mid last_cid this_cid tabulator =
-    match (last_mid, last_cid) with
-    | None, _ | _, None ->
-        (* Assume we're on the first row *)
-        Tabulator.add_rule ~char:machine_rule tabulator
-    | Some lmid, Some lcid ->
-        if Config.Id.equal lmid this_mid then
-          if Config.Id.equal lcid this_cid then Or_error.return tabulator
-            (* no rule *)
-          else Tabulator.add_rule ~char:compiler_rule tabulator
-        else Tabulator.add_rule ~char:machine_rule tabulator
-
-  let results_table_header : string list Lazy.t =
-    lazy
-      ( ["Machine"; "Compiler"; "File"]
-      @ File.Fields.to_list
-          ~herd:(fun _ -> "Result")
-          ~time_taken:(fun _ -> "Time/total")
-          ~time_taken_in_cc:(fun _ -> "Time/CC") )
-
-  let with_file (last_mid, last_cid, tabulator) (row : File.t Row.t) =
-    let mid = Row.machine_id row in
-    let cid = Row.compiler_id row in
-    Or_error.(
-      return tabulator
-      >>= maybe_with_rule last_mid mid last_cid cid
-      >>= Tabulator.add_row ~row:(Row.to_table_row row)
-      >>| fun t' -> (Some mid, Some cid, t'))
-
-  type data = t (* For compatibility with Extend_tabular *)
-
-  let to_table a =
-    let header = force results_table_header in
-    Tabulator.(
-      let open Or_error.Let_syntax in
-      let%bind t = make ~header () in
-      let%map _, _, t =
-        Travesty.T_list.With_errors.fold_m (file_rows a)
-          ~init:(None, None, t) ~f:with_file
-      in
-      t)
-end
-
-include M
-include Tabulator.Extend_tabular (M)
+type t =
+  { time_taken: Time.Span.t option
+  ; machines: (Config.Id.t, Machine.t) List.Assoc.t }
+[@@deriving sexp_of, fields, make]

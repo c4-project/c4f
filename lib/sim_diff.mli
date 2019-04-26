@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -34,14 +34,16 @@
 
 open Base
 
+(** Synonym of [Partial_order] for orderings between state sets. *)
+module Order : module type of Sim_output.State.Set.Partial_order
+
 type t =
   | Oracle_undefined
       (** The oracle execution triggered undefined behaviour. *)
   | Subject_undefined
       (** The subject execution triggered undefined behaviour. *)
-  | Result of Sim_output.State.Set.Partial_order.t
-      (** Analysis completed with the following result. *)
-[@@deriving sexp]
+  | Result of Order.t  (** Analysis completed with the following result. *)
+[@@deriving sexp_of]
 
 val to_string : t -> string
 (** [to_string result] returns a human-readable string representing
