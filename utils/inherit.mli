@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -26,32 +26,7 @@
 
     This is based on the pattern used in [Base.Comparable]. *)
 
-(** [S] describes a parent type [t], a component type [c], and a function
-    [component] for getting the [c] of a [t]. *)
-module type S = sig
-  (** The main type. *)
-  type t
-
-  (** Type of inner components. *)
-  type c
-
-  val component : t -> c
-  (** [component x] gets the [c]-typed component of [x]. *)
-end
-
-(** [S_partial] describes a parent type [t], an optional component type [c],
-    and a function [component_opt] for getting the [c] of a [t], if one
-    exists. *)
-module type S_partial = sig
-  (** The main type. *)
-  type t
-
-  (** Type of inner components. *)
-  type c
-
-  val component_opt : t -> c option
-  (** [component_opt x] tries to get the [c]-typed component of [x]. *)
-end
+include module type of Inherit_intf
 
 (** [Make_partial] converts an [S] into an [S_partial] that always returns
     [Some (component x)] for [component_opt x]. *)

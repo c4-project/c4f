@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,24 +21,31 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Base
-include Inherit_intf
+(** Signatures for {{!Inherit} Inherit}. *)
 
-module Make_partial (I : S) : S_partial with type t = I.t and type c = I.c =
-struct
-  type t = I.t
+(** [S] describes a parent type [t], a component type [c], and a function
+    [component] for getting the [c] of a [t]. *)
+module type S = sig
+  (** The main type. *)
+  type t
 
-  type c = I.c
+  (** Type of inner components. *)
+  type c
 
-  let component_opt x = Some (I.component x)
+  val component : t -> c
+  (** [component x] gets the [c]-typed component of [x]. *)
 end
 
-module Helpers (I : S) = struct
-  let forward f x = f (I.component x)
-end
+(** [S_partial] describes a parent type [t], an optional component type [c],
+    and a function [component_opt] for getting the [c] of a [t], if one
+    exists. *)
+module type S_partial = sig
+  (** The main type. *)
+  type t
 
-module Partial_helpers (I : S_partial) = struct
-  let forward_bool f x = Option.exists ~f (I.component_opt x)
+  (** Type of inner components. *)
+  type c
 
-  let forward_bind f x = Option.bind ~f (I.component_opt x)
+  val component_opt : t -> c option
+  (** [component_opt x] tries to get the [c]-typed component of [x]. *)
 end
