@@ -72,7 +72,7 @@ To build `act`, you can either:
 - ask opam to build and install `act` using `opam install .` (or similar);
 - build manually using `dune build`.  You'll then need to install several
   `opam` packages;  to find out which, run
-  `dune external-lib-deps --missing bin/main.exe`.
+  `dune external-lib-deps --missing bin/act.exe`.
 
 **NOTE**: For `menhirLib`, install the `menhir` OPAM package (not the
 nonexistent `menhirLib` one!).
@@ -89,8 +89,8 @@ looks for it in `./act.conf`), and adjust to your needs.
 
 ### Running
 
-The easiest way to run `act` is through `dune exec bin/main.exe --
-ARGS`; this will build `act` if needed.  Use `dune exec bin/main.exe
+The easiest way to run `act` is through `dune exec bin/act.exe --
+ARGS`; this will build `act` if needed.  Use `dune exec bin/act.exe
 -- help` for general usage.  (The `--` is needed to stop `dune` from
 trying to parse the arguments itself.)
 
