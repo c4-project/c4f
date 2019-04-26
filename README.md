@@ -64,11 +64,15 @@ We've tested `act` on:
 First, you'll need:
 
 - OCaml (4.07+)
-- opam (tested with version 2)
-- dune (1.4+)
+- opam (last tested with version 2)
+- dune (1.8+; last tested with version 2.0.4)
 
-You'll then need to install several `opam` packages.  To find out which,
-run `dune external-lib-deps --missing bin/main.exe`.
+To build `act`, you can either:
+
+- ask opam to build and install `act` using `opam install .` (or similar);
+- build manually using `dune build`.  You'll then need to install several
+  `opam` packages;  to find out which, run
+  `dune external-lib-deps --missing bin/main.exe`.
 
 **NOTE**: For `menhirLib`, install the `menhir` OPAM package (not the
 nonexistent `menhirLib` one!).
