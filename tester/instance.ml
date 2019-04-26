@@ -31,6 +31,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
   include B
   module C_id = Config.Compiler.Spec.With_id
   module P_file = Pathset.File
+  module TS = Timing_set.Make (B.T)
 
   let emits = C_id.emits cspec
 
@@ -133,25 +134,6 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
         Option.Monad_infix.(List.Assoc.find ~equal b v >>| Tuple2.create k)
     )
 
-  module Timing_set = struct
-    type elt = Time.Span.t
-
-    type t =
-      { in_delitmusify: elt option
-      ; in_c_herd: elt option
-      ; in_cc: elt option
-      ; in_litmusify: elt option
-      ; in_a_herd: elt option }
-
-    let make ?delitmusify ?c_herd ~cc ~litmusify ~a_herd =
-      Option.
-        { in_delitmusify= delitmusify >>= T.time_taken
-        ; in_c_herd= c_herd >>= T.time_taken
-        ; in_cc= cc |> T.time_taken
-        ; in_litmusify= litmusify |> T.time_taken
-        ; in_a_herd= a_herd |> T.time_taken }
-  end
-
   let compile_from_pathset_file (fs : Pathset.File.t) =
     bracket ~stage:"CC" ~file:(P_file.name fs) (fun () ->
         C.compile ~infile:(P_file.c_path fs) ~outfile:(P_file.asm_path fs)
@@ -235,30 +217,32 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
           ~f:(fun () -> delitmusify fs) )
       ~stage:"delitmusifying" ~file:(P_file.name fs)
 
-  let run_single_from_pathset_file (fs : Pathset.File.t) =
+  let run_single_from_pathset_file (fs : Pathset.File.t) :
+      (Analysis.Herd.t * TS.t) Or_error.t =
     let open Or_error.Let_syntax in
     (* NB: many of these stages depend on earlier stages' filesystem
        side-effects. These dependencies aren't evident in the binding chain,
        so be careful when re-ordering. *)
-    let%bind c_herd = c_herd_on_pathset_file fs in
-    let c_herd_outcome = T.value c_herd in
+    let%bind c_simulator = c_herd_on_pathset_file fs in
+    let c_herd_outcome = T.value c_simulator in
     let litc_to_c_map = locations_of_herd_result c_herd_outcome in
     let%bind cvars = cvars_from_loc_map litc_to_c_map in
-    let%bind delitmusify = delitmusify_if_needed fs in
-    let%bind cc = compile_from_pathset_file fs in
-    let%bind litmusify = litmusify_single fs cvars in
-    let c_to_lita_str_map = T.value litmusify in
+    let%bind delitmusifier = delitmusify_if_needed fs in
+    let%bind compiler = compile_from_pathset_file fs in
+    let%bind litmusifier = litmusify_single fs cvars in
+    let c_to_lita_str_map = T.value litmusifier in
     let%bind c_to_lita_map = lift_str_map c_to_lita_str_map in
     let litc_to_lita_map =
       map_location_renamings litc_to_c_map c_to_lita_map
     in
-    let%bind a_herd = a_herd_on_pathset_file fs in
-    let a_herd_outcome = T.value a_herd in
+    let%bind asm_simulator = a_herd_on_pathset_file fs in
+    let a_herd_outcome = T.value asm_simulator in
     let%map analysis =
       analyse c_herd_outcome a_herd_outcome litc_to_lita_map
     in
     let timings =
-      Timing_set.make ~c_herd ~delitmusify ~cc ~litmusify ~a_herd
+      TS.make ~delitmusifier ~c_simulator ~compiler ~litmusifier
+        ~asm_simulator ()
     in
     (analysis, timings)
 
@@ -270,7 +254,7 @@ module Make_compiler (B : Basic_compiler) : Compiler = struct
     let herd, timings = T.value result in
     ( Pathset.File.name fs
     , Analysis.File.make ~herd ?time_taken:(T.time_taken result)
-        ?time_taken_in_cc:timings.in_cc () )
+        ?time_taken_in_cc:(TS.in_compiler timings) () )
 
   let run () =
     let open Or_error.Let_syntax in
