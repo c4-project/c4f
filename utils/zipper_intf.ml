@@ -67,7 +67,7 @@ module type S_non_monadic = sig
       not-yet-processed items in forwards order. *)
 
   val to_two_lists : 'a t -> 'a list * 'a list
-  (** [to_two_lists zipper] is [(left_list zipper, right_list zipper). *)
+  (** [to_two_lists zipper] is [(left_list zipper, right_list zipper)]. *)
 
   val left_length : 'a t -> int
   (** [left_length zipper] gets the length of [zipper]'s left list. *)

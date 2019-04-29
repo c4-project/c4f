@@ -15,6 +15,10 @@ build:
 test:
 	dune runtest --force
 
+.PHONY: fmt
+fmt:
+	dune build @fmt --auto-promote
+
 #
 # Commands for making the act paper
 # (These aren't run by default)

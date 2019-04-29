@@ -42,7 +42,7 @@ module type S = sig
   (** Type of symbols. *)
   type sym
 
-  (** [Type of symbol sets. *)
+  (** Type of symbol sets. *)
   type sym_set
 
   (** Opaque type of redirect maps. *)

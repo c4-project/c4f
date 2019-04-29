@@ -46,6 +46,9 @@ compilers/architectures/dialects/instructions/syntax.
 that, so long as you run `act` through `dune exec`, `dune` will
 automatically build `act` for you when needed.
 
+You can, of course, manually build `act` using `dune build`, or
+`make` (which just calls the former).
+
 
 ### Supported operating systems
 
