@@ -50,5 +50,5 @@ module Make_single (H : Hook_maker) :
     programs and splitting them accordingly. *)
 module Make_multi (H : Hook_maker) :
   S
-  with module Lang := H(Travesty.T_list).Lang
+  with module Lang := H(Travesty_core_kernel_exts.List).Lang
    and type 'a Program_container.t = 'a list

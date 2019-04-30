@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,17 +21,9 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Functor for building an instance of the main `act` compiler tester.
+(** Tester: single-compiler test runners. *)
 
-    An instance executes test runs over multiple compilers, spread over
-    multiple machines. Each run refers to a directory of input files, and
-    various pieces of per-run config. *)
+include module type of Compiler_intf
 
-include module type of Instance_intf
-
-(** [Make_machine] makes a single-machine test runner from a
-    [Basic_machine]. *)
-module Make_machine (B : Basic_machine) : Machine
-
-(** [Make] makes a full test runner from a [Basic]. *)
+(** [Make] produces a compiler-specific test runner from a [Basic]. *)
 module Make (B : Basic) : S

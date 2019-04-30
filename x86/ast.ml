@@ -44,6 +44,7 @@
 (****************************************************************************)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 open Utils
 open Travesty
 
@@ -269,7 +270,7 @@ module Indirect = struct
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
       module D = Disp.On_symbols.On_monad (M)
-      module O = T_option.On_monad (M)
+      module O = Option.On_monad (M)
 
       let map_m t ~f =
         B.map_m t
@@ -290,7 +291,7 @@ module Indirect = struct
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module O = T_option.On_monad (M)
+      module O = Option.On_monad (M)
       module I = Index.On_registers.On_monad (M)
 
       let map_m t ~f =
@@ -614,7 +615,7 @@ module Instruction = struct
       module B = Base_map (M)
       module F = Traversable.Helpers (M)
       module OS = Operand.On_symbols.On_monad (M)
-      module L = T_list.On_monad (M)
+      module L = List.On_monad (M)
 
       let map_m t ~f =
         B.map_m t
@@ -637,7 +638,7 @@ module Instruction = struct
       module B = Base_map (M)
       module F = Traversable.Helpers (M)
       module OL = Operand.On_locations.On_monad (M)
-      module L = T_list.On_monad (M)
+      module L = List.On_monad (M)
 
       let map_m t ~f =
         B.map_m t
@@ -740,4 +741,4 @@ module On_statements :
 
       include On_listings
     end)
-    (T_list.With_elt (Statement))
+    (List.With_elt (Statement))

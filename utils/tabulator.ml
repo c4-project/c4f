@@ -23,6 +23,7 @@
 
 open Base
 open Stdio
+open Travesty_base_exts
 
 type row = string list
 
@@ -82,7 +83,7 @@ let make ?(sep = "  ") ?terminator ~header () =
 
 let validate_length (table : t) : row Validate.check =
   Validate.booltest
-    (Travesty.T_fn.on List.length Int.equal table.header)
+    (Fn.on List.length ~f:Int.equal table.header)
     ~if_false:"Row length inconsistency."
 
 let add_row_cells (column : Column.t) (data : string) : Column.t =
@@ -106,7 +107,7 @@ let add_row (table : t) ~(row : row) : t Or_error.t =
   {table with columns}
 
 let add_rows (table : t) ~(rows : row list) : t Or_error.t =
-  Travesty.T_list.With_errors.fold_m
+  List.With_errors.fold_m
     ~f:(fun table' row -> add_row table' ~row)
     ~init:table rows
 
@@ -117,7 +118,7 @@ let add_rule ?(char : char = '-') (table : t) : t Or_error.t =
 module Print = struct
   let terminator_height (table : t) : int =
     let max_column_height =
-      Travesty.T_list.max_measure ~measure:Column.height (columns table)
+      List.max_measure ~measure:Column.height (columns table)
     in
     max_column_height + 1
 

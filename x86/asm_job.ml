@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
 
 let try_get_dialect dialect =
   dialect |> Dialect.Name_table.of_string
@@ -68,5 +69,4 @@ let get_runner_from_dialect dialect =
 
 let get_runner emits_tail =
   Or_error.(
-    emits_tail |> Travesty.T_list.one >>= try_get_dialect
-    >>= get_runner_from_dialect)
+    emits_tail |> List.one >>= try_get_dialect >>= get_runner_from_dialect)

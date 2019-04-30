@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
+open Core_kernel
+open Travesty_core_kernel_exts
 open Utils
 include Asm_job_intf
 
@@ -250,7 +251,7 @@ let get_litmusify_sexp (module Runner : Runner) =
     let adapt_i job =
       let open Or_error.Let_syntax in
       let%map config =
-        Travesty.T_option.With_errors.map_m job.config ~f:adapt_config
+        Option.With_errors.map_m job.config ~f:adapt_config
       in
       {job with config}
 

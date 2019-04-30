@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+module Tx = Travesty_core_kernel_exts
 
 module Weight = struct
   include Validated.Make (struct
@@ -126,7 +127,7 @@ module On_monad (M : sig
   val lift : 'a Or_error.t -> 'a t
 end) =
 struct
-  module L = Travesty.T_list.On_monad (M)
+  module L = Tx.List.On_monad (M)
   module R = Row.On_monad (M)
 
   let adjust_weights_m (wl : 'a t) ~(f : 'a -> int -> int M.t) : 'a t M.t =
@@ -152,9 +153,7 @@ module Cumulative = struct
         (total', Some row')
 
   let of_weighted_list (wl : 'a w) : 'a t Or_error.t =
-    let max, opt_rows =
-      Travesty.T_list.fold_map wl ~init:0 ~f:from_table_step
-    in
+    let max, opt_rows = List.fold_map wl ~init:0 ~f:from_table_step in
     match List.filter_opt opt_rows with
     | [] ->
         Or_error.error_string "No choices have a positive weight"

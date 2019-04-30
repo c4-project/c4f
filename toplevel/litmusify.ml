@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 open Lib
 open Utils
 
@@ -147,7 +148,7 @@ module Post_filter = struct
     let open Err.Let_syntax in
     let%bind machine = machine_of_target cfg target in
     Err.tag_arg
-      (Travesty.T_option.one (Config.Machine.Spec.With_id.litmus machine))
+      (Option.one (Config.Machine.Spec.With_id.litmus machine))
       "While trying to find litmus config for machine"
       (Config.Machine.Spec.With_id.id machine)
       [%sexp_of: Config.Machine.Id.t]
@@ -197,7 +198,7 @@ let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
     Or_error.t =
   let open Or_error.Let_syntax in
   let%map postcondition =
-    Travesty.T_option.With_errors.map_m post_sexp ~f:parse_post
+    Option.With_errors.map_m post_sexp ~f:parse_post
   in
   fun ~c_variables -> Litmusifier.Config.make ?postcondition ?c_variables ()
 

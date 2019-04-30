@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Utils
-open Travesty
+module Tx = Travesty_core_kernel_exts
 
 (* Define this in a separate module so we can include it as [Elt] below. *)
 module M = struct
@@ -32,7 +32,7 @@ module M = struct
      implement error equality. *)
   type err = Error.t
 
-  let equal_err = T_fn.on Error.sexp_of_t Sexp.equal
+  let equal_err = Tx.Fn.on Error.sexp_of_t ~f:Sexp.equal
 
   let err_of_sexp = Error.t_of_sexp
 
@@ -282,13 +282,13 @@ module Bundle = struct
     | Src_dst _ ->
         Src_dst
 
-  include Traversable.Make_container0 (struct
+  include Travesty.Traversable.Make_container0 (struct
     module Elt = M
 
     type nonrec t = t
 
     module On_monad (Mo : Monad.S) = struct
-      module H = Traversable.Helpers (Mo)
+      module H = Travesty.Traversable.Helpers (Mo)
 
       let map_m bundle ~f =
         Variants.map bundle

@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
 include Filter_intf
 
 let lift_to_raw_strings
@@ -337,7 +338,7 @@ module Make_on_runner (R : Basic_on_runner) :
 Make_in_file_only (struct
   let get_file : string Copy_spec.t -> string Or_error.t = function
     | Files fs ->
-        Travesty.T_list.one fs
+        List.one fs
     | Directory _ ->
         Or_error.error_string "Expected one file; got directory"
     | Nothing ->

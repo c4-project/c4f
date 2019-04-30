@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
 open Utils
 include Convert_intf
 
@@ -53,7 +54,7 @@ module Make (B : Basic) = struct
   let convert_post_opt :
          B.From.Postcondition.t option
       -> B.To.Postcondition.t option Or_error.t =
-    Travesty.T_option.With_errors.map_m ~f:convert_post
+    Option.With_errors.map_m ~f:convert_post
 
   let convert (old : B.From.Validated.t) : B.To.Validated.t Or_error.t =
     let name = B.From.Validated.name old in

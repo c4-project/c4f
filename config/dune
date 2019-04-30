@@ -3,7 +3,8 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries fmt fpath menhirLib litmus utils travesty core_kernel))
+ (libraries fmt fpath menhirLib litmus utils travesty
+   travesty.core_kernel_exts core_kernel))
 
 ;; Config file parser
 

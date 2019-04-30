@@ -23,6 +23,7 @@
 
 open Core_kernel
 open Utils
+module Tx = Travesty_core_kernel_exts
 
 module Scope = struct
   module M = struct
@@ -42,7 +43,7 @@ module Scope = struct
 
     let weight = function Unknown -> 0 | Local -> 1 | Global -> 2
 
-    let compare = Travesty.T_fn.on weight Int.compare
+    let compare = Tx.Fn.on weight ~f:Int.compare
   end)
 
   let is_global = function Global -> true | Local | Unknown -> false
@@ -181,14 +182,14 @@ let%test_module "Map tests" =
   end )
 
 module String_lang = struct
-  module T_opt = Travesty.T_option.With_errors
+  module T_opt = Tx.Option.With_errors
 
   let parse_list_as_alist :
       string list -> (Litmus.Id.t, Initial_value.t) List.Assoc.t Or_error.t
       =
     Litmus.Id.Assoc.try_parse
       ~value_parser:
-        (Travesty.T_option.With_errors.map_m ~f:(fun s ->
+        (Tx.Option.With_errors.map_m ~f:(fun s ->
              Or_error.try_with (fun () -> Int.of_string s) ))
 
   let%expect_test "parse_list_as_alist: present, no tid" =

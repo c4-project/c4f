@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 open Utils
 open Mini
 
@@ -34,7 +35,7 @@ let map_combine (xs : 'a list) ~(f : 'a -> 'b Or_error.t) :
 let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
     ('d list * 'a list) Or_error.t =
   Or_error.(
-    Travesty.T_list.With_errors.fold_m maybe_decl_list
+    List.With_errors.fold_m maybe_decl_list
       ~init:(Fqueue.empty, Fqueue.empty) ~f:(fun (decls, rest) -> function
       | `Decl d ->
           if Fqueue.is_empty rest then return (Fqueue.enqueue decls d, rest)
@@ -86,7 +87,7 @@ let defined_types : (C_identifier.t, Type.Basic.t) List.Assoc.t Lazy.t =
 let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
     Type.Basic.t Or_error.t =
   let open Or_error.Let_syntax in
-  match%bind Travesty.T_list.one quals with
+  match%bind List.one quals with
   | `Int ->
       return Type.Basic.int
   | `Defined_type t ->
@@ -144,11 +145,10 @@ let value_of_initialiser : Ast.Initialiser.t -> Constant.t Or_error.t =
 let decl (d : Ast.Decl.t) : (Identifier.t * Initialiser.t) Or_error.t =
   let open Or_error.Let_syntax in
   let%bind basic_type = qualifiers_to_basic_type d.qualifiers in
-  let%bind idecl = Travesty.T_list.one d.declarator in
+  let%bind idecl = List.one d.declarator in
   let%bind name, is_pointer = declarator_to_id idecl.declarator in
   let%map value =
-    Travesty.T_option.With_errors.map_m idecl.initialiser
-      ~f:value_of_initialiser
+    Option.With_errors.map_m idecl.initialiser ~f:value_of_initialiser
   in
   let ty = Type.of_basic ~is_pointer basic_type in
   (name, Initialiser.make ~ty ?value ())

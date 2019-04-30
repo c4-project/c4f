@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
 
 let escape_string : string -> string =
   Staged.unstage
@@ -84,7 +85,7 @@ let%test_module "escaping on a toy symbol module" =
         end )
         ~f:
           ([%test_pred: string * string] ~here:[[%here]] (fun (x, y) ->
-               not (Travesty.T_fn.on M.escape String.equal x y) ))
+               not (Fn.on M.escape ~f:String.equal x y) ))
 
     (* TODO(@MattWindsor91): fix this test let%expect_test "escape_rmap:
        sample" = let test_map =

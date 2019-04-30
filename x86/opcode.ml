@@ -44,7 +44,8 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 (****************************************************************************)
 
-open Core
+open Base
+open Travesty_base_exts
 open Utils
 
 module Operand_spec = struct
@@ -249,9 +250,9 @@ module Basic = struct
   end)
 
   let%expect_test "Basic: table accounts for all instructions" =
-    Format.printf "@[<v>%a@]@."
-      (Format.pp_print_list ~pp_sep:Format.pp_print_space (fun f opcode ->
-           Format.fprintf f "@[<h>%a -> %s@]" Sexp.pp_hum
+    Fmt.pr "@[<v>%a@]@."
+      (Fmt.list ~sep:Fmt.sp (fun f opcode ->
+           Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
              [%sexp (opcode : t)]
              (Option.value ~default:"(none)" (to_string opcode)) ))
       all ;
@@ -355,9 +356,9 @@ module Jump = struct
       String_table.S with type t := t )
 
   let%expect_test "Jump: table accounts for all conditions" =
-    Format.printf "@[<v>%a@]@."
-      (Format.pp_print_list ~pp_sep:Format.pp_print_space (fun f opcode ->
-           Format.fprintf f "@[<h>%a -> %s@]" Sexp.pp_hum
+    Fmt.pr "@[<v>%a@]@."
+      (Fmt.list ~sep:Fmt.sp (fun f opcode ->
+           Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
              [%sexp (opcode : t)]
              (Option.value ~default:"(none)" (to_string opcode)) ))
       all ;
@@ -435,7 +436,7 @@ end)
 let directive_of_string string = Core.String.chop_prefix string ~prefix:"."
 
 let of_string string =
-  Travesty.T_option.first_some_of_thunks
+  Option.first_some_of_thunks
     Core.Option.
       [ (fun () -> string |> directive_of_string >>| directive)
       ; (fun () -> string |> Jump.of_string >>| jump)
@@ -444,25 +445,25 @@ let of_string string =
   |> Option.value ~default:(Unknown string)
 
 let%expect_test "of_string: directive" =
-  Sexp.output_hum Out_channel.stdout [%sexp (of_string ".global" : t)] ;
+  Stdio.print_s [%sexp (of_string ".global" : t)] ;
   [%expect {| (Directive global) |}]
 
 let%expect_test "of_string: conditional jump" =
-  Sexp.output_hum Out_channel.stdout [%sexp (of_string "jne" : t)] ;
+  Stdio.print_s [%sexp (of_string "jne" : t)] ;
   [%expect {| (Jump (Conditional (Not Equal))) |}]
 
 let%expect_test "of_string: unconditional jump" =
-  Sexp.output_hum Out_channel.stdout [%sexp (of_string "JMP" : t)] ;
+  Stdio.print_s [%sexp (of_string "JMP" : t)] ;
   [%expect {| (Jump Unconditional) |}]
 
 let%expect_test "of_string: sized opcode" =
-  Sexp.output_hum Out_channel.stdout [%sexp (of_string "movl" : t)] ;
+  Stdio.print_s [%sexp (of_string "movl" : t)] ;
   [%expect {| (Sized (Mov Long)) |}]
 
 let%expect_test "of_string: basic opcode" =
-  Sexp.output_hum Out_channel.stdout [%sexp (of_string "MOV" : t)] ;
+  Stdio.print_s [%sexp (of_string "MOV" : t)] ;
   [%expect {| (Basic Mov) |}]
 
 let%expect_test "of_string: not an opcode" =
-  Sexp.output_hum Out_channel.stdout [%sexp (of_string "bananas" : t)] ;
+  Stdio.print_s [%sexp (of_string "bananas" : t)] ;
   [%expect {| (Unknown bananas) |}]

@@ -22,10 +22,11 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
+open Travesty_core_kernel_exts
 include Fs_intf
 
 let default_sort_compare : Fpath.t -> Fpath.t -> int =
-  Travesty.T_fn.on Fpath.to_string String_extended.collate
+  Fn.on Fpath.to_string ~f:String_extended.collate
 
 let filter_files ?ext (flist : Fpath.t list) =
   Option.value_map ~default:flist
@@ -114,7 +115,7 @@ module Unix : S = struct
   let subpaths (path : Fpath.t) : Fpath.t list =
     let rec mu (prefixes : Fpath.t list) (path : Fpath.t) : Fpath.t list =
       if
-        Travesty.T_list.any path
+        List.any path
           ~predicates:
             [Fpath.is_current_dir; Fpath.is_parent_dir; Fpath.is_root]
       then prefixes

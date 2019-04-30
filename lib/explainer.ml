@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 include Explainer_intf
 
 let pp_details pp_header pp_body =
@@ -324,7 +325,7 @@ module Make (Lang : Language.S) : S with module Lang := Lang = struct
             exp)
 
   let non_blank_statements exp =
-    Travesty.T_list.exclude ~f:Stm_explanation.is_blank exp.statements
+    List.exclude ~f:Stm_explanation.is_blank exp.statements
 
   let pp_as_assembly =
     Fmt.(vbox (using non_blank_statements (list pp_statement ~sep:sp)))

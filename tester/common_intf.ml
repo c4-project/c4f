@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,17 +21,24 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Functor for building an instance of the main `act` compiler tester.
+(** Signatures common to multiple different parts of the tester. *)
 
-    An instance executes test runs over multiple compilers, spread over
-    multiple machines. Each run refers to a directory of input files, and
-    various pieces of per-run config. *)
+open Lib
+open Utils
 
-include module type of Instance_intf
+(** [Basic] is the signature common to most tester [Basic] signatures. *)
+module type Basic = sig
+  (** The module to use for timing the various tester passes. *)
+  module T : Timing.S
 
-(** [Make_machine] makes a single-machine test runner from a
-    [Basic_machine]. *)
-module Make_machine (B : Basic_machine) : Machine
+  val o : Output.t
+  (** [o] tells the tester how to output warnings, errors, and other
+      information. *)
 
-(** [Make] makes a full test runner from a [Basic]. *)
-module Make (B : Basic) : S
+  val herd_cfg : Config.Herd.t option
+  (** [herd_cfg], if present, tells the tester how to run Herd. *)
+
+  val sanitiser_passes : Config.Sanitiser_pass.Set.t
+  (** [sanitiser_passes] is the set of sanitiser passes the tester should
+      use. *)
+end

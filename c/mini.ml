@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 open Utils
 include Ast_basic
 include Mini_intf
@@ -255,7 +256,7 @@ and if_statement =
 
 module Ifs_base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
-  module O = Travesty.T_option.On_monad (M)
+  module O = Option.On_monad (M)
 
   let bmap (if_stm : if_statement) ~(cond : Expression.t F.traversal)
       ~(t_branch : statement list F.traversal)
@@ -319,7 +320,7 @@ module Statement :
       module B = Base_map (M)
       module IB = Ifs_base_map (M)
       module E = Expression.On_lvalues.On_monad (M)
-      module L = Travesty.T_list.On_monad (M)
+      module L = List.On_monad (M)
       module Asn = Assign.On_lvalues.On_monad (M)
       module Sto = Atomic_store.On_lvalues.On_monad (M)
       module Cxg = Atomic_cmpxchg.On_lvalues.On_monad (M)
@@ -349,7 +350,7 @@ module Statement :
       module B = Base_map (M)
       module IB = Ifs_base_map (M)
       module E = Expression.On_addresses.On_monad (M)
-      module L = Travesty.T_list.On_monad (M)
+      module L = List.On_monad (M)
       module Asn = Assign.On_addresses.On_monad (M)
       module Sto = Atomic_store.On_addresses.On_monad (M)
       module Cxg = Atomic_cmpxchg.On_addresses.On_monad (M)
@@ -412,7 +413,7 @@ module If_statement :
       module B = Base_map (M)
       module E = Expression.On_lvalues.On_monad (M)
       module S = Statement.On_lvalues.On_monad (M)
-      module L = Travesty.T_list.On_monad (M)
+      module L = List.On_monad (M)
 
       let map_m x ~f =
         B.bmap x ~cond:(E.map_m ~f)
@@ -434,7 +435,7 @@ module If_statement :
       module B = Base_map (M)
       module E = Expression.On_addresses.On_monad (M)
       module S = Statement.On_addresses.On_monad (M)
-      module L = Travesty.T_list.On_monad (M)
+      module L = List.On_monad (M)
 
       let map_m x ~f =
         B.bmap x ~cond:(E.map_m ~f)
@@ -493,7 +494,7 @@ module Function = struct
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module L = Travesty.T_list.On_monad (M)
+      module L = List.On_monad (M)
 
       let map_m (func : t)
           ~(f : Initialiser.Named.t -> Initialiser.Named.t M.t) =
@@ -536,7 +537,7 @@ module Program = struct
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module L = Travesty.T_list.On_monad (M)
+      module L = List.On_monad (M)
       module F = Function.On_decls.On_monad (M)
 
       let map_m (program : t) ~(f : Elt.t -> Elt.t M.t) =

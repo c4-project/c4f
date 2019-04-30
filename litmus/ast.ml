@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 open Utils
 include Ast_intf
 
@@ -150,7 +151,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       let module Tr = Travesty in
       let module V = Validate in
       let dup =
-        List.find_a_dup ~compare:(Tr.T_fn.on fst C_identifier.compare) init
+        List.find_a_dup ~compare:(Fn.on fst ~f:C_identifier.compare) init
       in
       let dup_to_err (k, v) =
         V.fail_s
@@ -204,10 +205,10 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
                 [%equal: Lang.Type.t C_identifier.Map.t option] s
                   (Lang.Program.global_vars x') )
           in
-          Travesty.T_or_error.(
+          Or_error.(
             unless_m is_uniform ~f:(fun () ->
-                Or_error.error_string
-                  "Programs disagree on global variables sets." )
+                error_string "Programs disagree on global variables sets."
+            )
             >>| fun () -> s)
 
     let check_init_against_globals
@@ -217,13 +218,14 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       let globals_keys =
         globals |> C_identifier.Map.keys |> C_identifier.Set.of_list
       in
-      Travesty.T_or_error.unless_m
-        (C_identifier.Set.equal init_keys globals_keys) ~f:(fun () ->
-          Or_error.error_s
-            [%message
-              "Program global variables aren't compatible with init."
-                ~in_program:(globals_keys : C_identifier.Set.t)
-                ~in_init:(init_keys : C_identifier.Set.t)] )
+      Or_error.(
+        unless_m (C_identifier.Set.equal init_keys globals_keys)
+          ~f:(fun () ->
+            error_s
+              [%message
+                "Program global variables aren't compatible with init."
+                  ~in_program:(globals_keys : C_identifier.Set.t)
+                  ~in_init:(init_keys : C_identifier.Set.t)] ))
 
     (** [validate_globals] checks an incoming Litmus test to ensure that, if
         its programs explicitly reference global variables, then they
@@ -292,17 +294,15 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     Or_error.(
       decls
       |> List.filter_map ~f:Decl.as_init
-      |> Travesty.T_list.one
+      |> List.one
       >>| List.map ~f:(fun {Init.id; value} -> (id, value)))
 
   let get_post (decls : Decl.t list) : Postcondition.t option Or_error.t =
-    decls |> List.filter_map ~f:Decl.as_post |> Travesty.T_list.at_most_one
+    decls |> List.filter_map ~f:Decl.as_post |> List.at_most_one
 
   let get_locations (decls : Decl.t list) :
       C_identifier.t list option Or_error.t =
-    decls
-    |> List.filter_map ~f:Decl.as_locations
-    |> Travesty.T_list.at_most_one
+    decls |> List.filter_map ~f:Decl.as_locations |> List.at_most_one
 
   let validate_language : C_identifier.t Validate.check =
     Validate.booltest

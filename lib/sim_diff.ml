@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
 
 module Order = struct
   include Sim_output.State.Set.Partial_order
@@ -75,7 +76,7 @@ let compare_states ~(oracle_states : Sim_output.State.t list)
     ~(subject_states : Sim_output.State.t list) : t =
   let result =
     Sim_output.State.Set.(
-      Travesty.T_fn.on of_list partial_compare oracle_states subject_states)
+      Fn.on of_list ~f:partial_compare oracle_states subject_states)
   in
   Result result
 
@@ -146,10 +147,8 @@ let get_domain : Sim_output.State.t list -> Litmus.Id.Set.t Or_error.t =
       Or_error.return Litmus.Id.Set.empty
   | x :: xs ->
       let dom s = Litmus.Id.Set.of_list (Sim_output.State.bound s) in
-      let x_domain = dom x in
       let xs_domains = Sequence.map ~f:dom (Sequence.of_list xs) in
-      x_domain
-      |> Travesty.T_or_error.tee_m ~f:(check_domain_consistency xs_domains)
+      Or_error.tee_m (dom x) ~f:(check_domain_consistency xs_domains)
 
 let filter_oracle_states ~(raw_oracle_states : Sim_output.State.t list)
     ~(subject_states : Sim_output.State.t list) :

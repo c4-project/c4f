@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
 open Utils
 
 module State = struct
@@ -110,7 +111,7 @@ let proc_binding (binding : string) : (Litmus.Id.t * string) Or_error.t =
 let try_parse_state_line (line : string) : Sim_output.State.t Or_error.t =
   Or_error.(
     line |> String.split ~on:';'
-    |> Travesty.T_list.exclude ~f:String.is_empty (* Drop trailing ; *)
+    |> List.exclude ~f:String.is_empty (* Drop trailing ; *)
     |> List.map ~f:proc_binding |> Result.all >>= Sim_output.State.of_alist)
 
 let try_process_state_line (states_left : int) (line : string)

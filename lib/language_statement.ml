@@ -24,6 +24,7 @@
 open Core_kernel
 open Utils
 include Language_statement_intf
+module List = Travesty_core_kernel_exts.List
 
 module Make (B : Basic_with_modules) :
   S with type t = B.t and module Instruction = B.Instruction = struct
@@ -78,5 +79,5 @@ module Make (B : Basic_with_modules) :
       (new_flags stm symbol_table)
 
   let make_uniform : t list list -> t list list =
-    Travesty.T_list.right_pad ~padding:(empty ())
+    List.right_pad ~padding:(empty ())
 end

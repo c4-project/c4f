@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 open Utils
 include Mini_env_intf
 
@@ -105,8 +106,7 @@ let test_env_atomic_ptrs_only : Mini_type.t C_identifier.Map.t Lazy.t =
     >>| C_identifier.Map.filter
           ~f:
             Mini_type.(
-              Travesty.T_fn.conj is_pointer
-                (basic_type_is ~basic:Basic.atomic_int)))
+              Fn.(is_pointer &&& basic_type_is ~basic:Basic.atomic_int)))
 
 let test_env_atomic_ptrs_only_mod : (module S) Lazy.t =
   lift_to_lazy_mod test_env_atomic_ptrs_only

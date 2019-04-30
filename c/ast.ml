@@ -15,6 +15,7 @@
 (****************************************************************************)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 open Ast_basic
 open Utils
 include Ast_intf
@@ -752,7 +753,7 @@ module Litmus_lang :
 
     let empty () = `Stm (Stm.Expr None)
 
-    let make_uniform = Travesty.T_list.right_pad ~padding:(empty ())
+    let make_uniform = List.right_pad ~padding:(empty ())
   end
 
   module Type = Type_spec

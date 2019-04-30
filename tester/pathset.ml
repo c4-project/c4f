@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
 open Utils
 
 module M = struct
@@ -146,8 +147,7 @@ let make (id : Config.Id.t) ~(input_mode : Input_mode.t)
 
 let make_and_mkdirs (id : Config.Id.t) ~(input_mode : Input_mode.t)
     ~(output_root : Fpath.t) : t Or_error.t =
-  Or_error.(
-    make id ~input_mode ~output_root >>= Travesty.T_or_error.tee_m ~f:mkdirs)
+  Or_error.(make id ~input_mode ~output_root >>= Or_error.tee_m ~f:mkdirs)
 
 (* TODO(@MattWindsor91): needs fixing up for new pathsets. *)
 let pp : t Fmt.t =

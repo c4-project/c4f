@@ -24,6 +24,7 @@
 open Base
 open Utils
 include Redirect_map_intf
+module Alist = Travesty_core_kernel_exts.Alist
 
 module Make (B : Basic_symbol) :
   S with type sym = B.t and type sym_set = B.Set.t = struct
@@ -71,8 +72,7 @@ module Make (B : Basic_symbol) :
     B.Map.of_alist_or_error
 
   let to_string_alist (map : t) : (string, string) List.Assoc.t =
-    map |> Map.to_alist
-    |> Travesty.T_alist.bi_map ~left:B.to_string ~right:B.to_string
+    map |> Map.to_alist |> Alist.bi_map ~left:B.to_string ~right:B.to_string
 
   let check_no_tids (cvars : Config.C_variables.Map.t) : unit Or_error.t =
     let cvars_with_tids =
@@ -201,7 +201,7 @@ let%test_module "string redirect maps" =
          ("validation failed"
           (.foxtrot
            ("validation errors" (("fst.char '.'" "Invalid initial character.")))
-           utils/c_identifier.ml:57:13))) |}]
+           utils/c_identifier.ml:58:13))) |}]
 
     let%expect_test "dest_of_id: not in map" =
       let foo = C_identifier.of_string "nope" in

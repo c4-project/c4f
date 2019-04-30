@@ -22,10 +22,11 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 include Enum_intf
 
 module Make_compare_hash_basic (E : S) = struct
-  let compare = Travesty.T_fn.on E.to_enum Int.compare
+  let compare = Fn.on E.to_enum ~f:Int.compare
 
   let hash x = Int.hash (E.to_enum x)
 

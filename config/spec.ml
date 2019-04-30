@@ -26,6 +26,7 @@
 
 open Core
 open Utils
+module Tx = Travesty_core_kernel_exts
 
 module type Common = sig
   type t [@@deriving sexp]
@@ -132,8 +133,7 @@ module Make (B : Basic) :
       let open Or_error.Let_syntax in
       let%map () =
         xs
-        |> List.find_all_dups
-             ~compare:(Travesty.T_fn.on With_id.id Id.compare)
+        |> List.find_all_dups ~compare:(Tx.Fn.on With_id.id ~f:Id.compare)
         |> List.map ~f:(fun x ->
                Or_error.error_s
                  [%message "duplicate ID" ~id:(With_id.id x : Id.t)] )

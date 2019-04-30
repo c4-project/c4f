@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty
+open Travesty_core_kernel_exts
 include My_set_intf
 
 module Make_extensions (M : Set.S) : Extensions with type t := M.t = struct
@@ -96,8 +96,7 @@ module Make_extensions (M : Set.S) : Extensions with type t := M.t = struct
       | No_order _ | Subset _ | Equal ->
           false
 
-    let is_superset : t -> bool =
-      Travesty.T_fn.disj is_proper_superset is_equal
+    let is_superset : t -> bool = Fn.(is_proper_superset ||| is_equal)
 
     let is_proper_subset : t -> bool = function
       | Subset _ ->
@@ -105,7 +104,7 @@ module Make_extensions (M : Set.S) : Extensions with type t := M.t = struct
       | No_order _ | Superset _ | Equal ->
           false
 
-    let is_subset : t -> bool = Travesty.T_fn.disj is_proper_subset is_equal
+    let is_subset : t -> bool = Fn.(is_proper_subset ||| is_equal)
 
     let left_has_uniques : t -> bool = function
       | Superset _ | No_order _ ->
@@ -177,7 +176,7 @@ let%test_module "integer set" =
       let module M = Extend (Int.Set) in
       Stdio.print_s
         [%sexp
-          ( T_fn.on Int.Set.of_list M.partial_compare [1; 2; 3]
+          ( Fn.on Int.Set.of_list ~f:M.partial_compare [1; 2; 3]
               [1; 2; 3; 4; 5; 6]
             : M.Partial_order.t )] ;
       [%expect {| (Subset (in_right_only (4 5 6))) |}]
@@ -185,7 +184,7 @@ let%test_module "integer set" =
     let%expect_test "partial_compare: superset" =
       Stdio.print_s
         [%sexp
-          ( T_fn.on Int.Set.of_list M.partial_compare [1; 2; 3; 4; 5; 6]
+          ( Fn.on Int.Set.of_list ~f:M.partial_compare [1; 2; 3; 4; 5; 6]
               [4; 5; 6]
             : M.Partial_order.t )] ;
       [%expect {| (Superset (in_left_only (1 2 3))) |}]
@@ -193,7 +192,7 @@ let%test_module "integer set" =
     let%expect_test "partial_compare: equal" =
       Stdio.print_s
         [%sexp
-          ( T_fn.on Int.Set.of_list M.partial_compare [1; 2; 3; 4; 5; 6]
+          ( Fn.on Int.Set.of_list ~f:M.partial_compare [1; 2; 3; 4; 5; 6]
               [6; 5; 4; 3; 2; 1]
             : M.Partial_order.t )] ;
       [%expect {| Equal |}]
@@ -201,7 +200,7 @@ let%test_module "integer set" =
     let%expect_test "partial_compare: no order" =
       Stdio.print_s
         [%sexp
-          ( T_fn.on Int.Set.of_list M.partial_compare [1; 2; 3; 4]
+          ( Fn.on Int.Set.of_list ~f:M.partial_compare [1; 2; 3; 4]
               [3; 4; 5; 6]
             : M.Partial_order.t )] ;
       [%expect {| (No_order (in_left_only (1 2)) (in_right_only (5 6))) |}]

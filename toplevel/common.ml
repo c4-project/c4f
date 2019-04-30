@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 open Lib
 open Utils
 
@@ -170,20 +171,20 @@ let choose_cvars (o : Output.t)
       (Option.map ~f:C_identifier.Map.keys cvars) ;
   cvars
 
-module T_opt = Travesty.T_option.With_errors
-
 let collect_cvars ?(c_globals : string list option)
     ?(c_locals : string list option) () :
     Config.C_variables.Map.t option Or_error.t =
   let open Or_error.Let_syntax in
   let module V = Config.C_variables in
   let%bind globals =
-    T_opt.map_m
+    Option.With_errors.map_m
       ~f:(V.String_lang.parse_list ~scope:V.Scope.Global)
       c_globals
   in
   let%map locals =
-    T_opt.map_m ~f:(V.String_lang.parse_list ~scope:V.Scope.Local) c_locals
+    Option.With_errors.map_m
+      ~f:(V.String_lang.parse_list ~scope:V.Scope.Local)
+      c_locals
   in
   Option.merge globals locals ~f:(fun x y -> V.Map.merge_list [x; y])
 
