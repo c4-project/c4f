@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Travesty_base_exts
+open Core_kernel
+open Travesty_core_kernel_exts
 open Lib
 include Instance_intf
 
@@ -107,50 +108,54 @@ module Compiler_spec_env = struct
     group_by_machine specs
 end
 
-(** Bulding of everything used in a tester instance. *)
+(** Bundle of everything used in a tester job. *)
+module Job = struct
+  type t =
+    { config: Run_config.t
+    ; specs: Compiler_spec_env.t
+    ; c_simulations: Sim_output.t String.Map.t
+    ; make_machine: Config.Compiler.Spec.Set.t -> (module Machine)
+    } [@@deriving fields, make]
 
-(*module Ctx = struct type t = { config: Run_config.t ; specs:
-  Compiler_spec_env.t } [@@deriving fields, make] end*)
+  let run_machine (job : t) (mach_id, mach_compilers) =
+    Or_error.Let_syntax.(
+      let (module TM) = make_machine job mach_compilers in
+      let%map analysis = TM.run (config job) in
+      (mach_id, analysis)
+    )
+
+  let run (job : t) : Analysis.Machine.t Machine_assoc.t Or_error.t =
+    job
+    |> specs
+    |> List.map ~f:(run_machine job)
+    |> Or_error.combine_errors
+end
 
 module Make (B : Basic) : S = struct
   include B
 
   let make_analysis
-      (raw : (Config.Id.t, Analysis.Machine.t) List.Assoc.t T.t) :
+      (raw : Analysis.Machine.t Machine_assoc.t T.t) :
       Analysis.t =
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
 
-  let make_machine_module (mach_compilers : Config.Compiler.Spec.Set.t) =
-    ( module Make_machine (struct
+  let make_machine (mach_compilers : Config.Compiler.Spec.Set.t) : (module Machine) =
+    (module Make_machine (struct
       include B
 
       (* Reduce the set of compilers to those specifically used in this
          machine. *)
       let compilers = mach_compilers
-    end)
-    : Machine )
+    end))
 
-  let run_machine (tester_cfg : Run_config.t) (mach_id, mach_compilers) =
-    let open Or_error.Let_syntax in
-    let (module TM) = make_machine_module mach_compilers in
-    let%map analysis = TM.run tester_cfg in
-    (mach_id, analysis)
+  let make_job (config : Run_config.t) : Job.t = 
+    let c_simulations = String.Map.empty (* for now *) in
+    let specs = Compiler_spec_env.get config compilers in
+    Job.make ~config ~c_simulations ~specs ~make_machine
 
-  let run_machines (cfg : Run_config.t)
-      (specs_by_machine : Config.Compiler.Spec.Set.t Machine_assoc.t) :
-      Analysis.Machine.t Machine_assoc.t Or_error.t =
-    specs_by_machine
-    |> List.map ~f:(run_machine cfg)
-    |> Or_error.combine_errors
+  let run_job_timed (job : Job.t) : Analysis.Machine.t Machine_assoc.t T.t Or_error.t =
+    T.bracket_join (fun () -> Job.run job)
 
-  let run_with_specs (cfg : Run_config.t) (specs : Compiler_spec_env.t) :
-      Analysis.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%map machines_and_time =
-      T.bracket_join (fun () -> run_machines cfg specs)
-    in
-    make_analysis machines_and_time
-
-  let run (cfg : Run_config.t) : Analysis.t Or_error.t =
-    run_with_specs cfg (Compiler_spec_env.get cfg compilers)
+  let run (config : Run_config.t) : Analysis.t Or_error.t =
+    Or_error.(config |> make_job |> run_job_timed >>| make_analysis)
 end

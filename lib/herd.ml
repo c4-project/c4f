@@ -65,29 +65,24 @@ let run_direct ?(arch : arch option)
   let argv' = make_argv_from_config config arch argv in
   Or_error.tag ~tag:"While running herd" (Runner.Local.run ~oc ~prog argv')
 
-module Filter : Filter.S with type aux_i = t and type aux_o = unit =
-Filter.Make_on_runner (struct
-  module Runner = Runner.Local
+module Basic = struct
+  module Filter : Filter.S with type aux_i = t and type aux_o = unit =
+  Filter.Make_on_runner (struct
+    module Runner = Runner.Local
 
-  type aux_i = t
+    type aux_i = t
 
-  let name = "Herd tool"
+    let name = "Herd tool"
 
-  let tmp_file_ext = Fn.const "txt"
+    let tmp_file_ext = Fn.const "txt"
 
-  let prog t = Config.Herd.cmd t.config
+    let prog t = Config.Herd.cmd t.config
 
-  let argv t path = make_argv_from_config t.config (Some t.arch) [path]
-end)
+    let argv t path = make_argv_from_config t.config (Some t.arch) [path]
+  end)
+  module Reader = Herd_reader
+end
+include Basic
 
-let run (ctx : t) ~(path : Fpath.t) ~(sink : Io.Out_sink.t) :
-    unit Or_error.t =
-  Filter.run ctx (Io.In_source.of_fpath path) sink
-
-let run_and_load_results (ctx : t) ~(input_path : Fpath.t)
-    ~(output_path : Fpath.t) : Sim_output.t Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind () =
-    run ctx ~path:input_path ~sink:(Io.Out_sink.file output_path)
-  in
-  Herd_reader.load ~path:output_path
+module SR = Sim_runner.Make (Basic)
+include (SR : module type of SR with type t := t)

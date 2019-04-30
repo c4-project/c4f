@@ -23,8 +23,7 @@
 
 (** [Herd] interfaces with the Herd tool. *)
 
-open Core
-open Utils
+open Base
 
 (** [t] is an opaque type representing a configured and validated Herd
     interface. *)
@@ -40,7 +39,7 @@ val create : config:Config.Herd.t -> arch:arch -> t Or_error.t
 
 val run_direct :
      ?arch:arch
-  -> ?oc:Out_channel.t
+  -> ?oc:Stdio.Out_channel.t
   -> Config.Herd.t
   -> string list
   -> unit Or_error.t
@@ -54,16 +53,8 @@ val run_direct :
     instead -- this is a lower-level function intended for things like the
     `act tool` command. *)
 
-val run : t -> path:Fpath.t -> sink:Io.Out_sink.t -> unit Or_error.t
-(** [run ctx ~path ~sink] runs Herd (represented by [ctx]) on the Litmus
-    test at [path] using the model and other configuration for architecture
-    [arch]. It outputs the results to [sink], but doesn't analyse them. *)
+module Filter : Utils.Filter.S with type aux_i = t and type aux_o = unit
+(** We can run Herd as a filter. *)
 
-(** [run], but bundled up as a [Filter] for use in chains. *)
-module Filter : Filter.S with type aux_i = t and type aux_o = unit
-
-val run_and_load_results :
-  t -> input_path:Fpath.t -> output_path:Fpath.t -> Sim_output.t Or_error.t
-(** [run_and_load_results ctx ~input_path ~output_path] behaves like [run],
-    but then reads [output_path] back in as a [Herd_output.t]. This requires
-    [output_path] to point to a file, rather than being any [Out_sink.t]. *)
+include Sim_runner.S with type t := t
+(** We can also use Herd as a simulator runner. *)
