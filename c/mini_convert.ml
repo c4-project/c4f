@@ -549,3 +549,6 @@ end)
 let litmus :
     Ast.Litmus.Validated.t -> Mini_litmus.Ast.Validated.t Or_error.t =
   Litmus_conv.convert
+
+let litmus_of_raw_ast (ast : Ast.Litmus.t) =
+  Or_error.(ast |> Ast.Litmus.validate >>= litmus)

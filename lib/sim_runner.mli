@@ -25,10 +25,10 @@
 
     This module provides a standard interface for interacting with C and
     assembly simulators, such as Herd and Litmus, as well as a functor for
-    implementing that interface using a filter wrapper over the simulator and
-    a simulator output parser. *)
+    implementing that interface using a filter wrapper over the simulator
+    and a simulator output parser. *)
 
 include module type of Sim_runner_intf
 
-module Make (B : Basic) : S with type t = B.Filter.aux_i
 (** [Make] makes a simulator runner from a [Basic]. *)
+module Make (B : Basic) : S with type t = B.Filter.aux_i

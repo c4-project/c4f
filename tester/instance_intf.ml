@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Base
+open Core_kernel
 open Lib
 
 (** [Basic_machine] contains all the various modules and components needed
@@ -45,12 +45,15 @@ module type Basic_machine = sig
 end
 
 module type Machine = sig
-  val run : Run_config.t -> Analysis.Machine.t Or_error.t
-  (** [run cfg] runs tests on each filename listed in [cfg], using every
-      machine-local compiler in [specs] also listed in [cfg], to belong to
-      the same machine), reading from directories in [cfg]'s [in_root] and
-      writing to directories in its [out_root], and returning a
-      machine-level analysis. *)
+  val run :
+       Run_config.t
+    -> Sim.Result.t String.Map.t
+    -> Analysis.Machine.t Or_error.t
+  (** [run cfg c_sims] runs tests on each filename listed in [cfg], using
+      every machine-local compiler in [specs] also listed in [cfg], to
+      belong to the same machine), reading from directories in [cfg]'s
+      [in_root] and writing to directories in its [out_root], and returning
+      a machine-level analysis. *)
 end
 
 module type Basic = sig

@@ -26,25 +26,30 @@ open Utils
 
 (** Basic interface for simulator runners.
 
-    Simulator runners consist of two stages: a filter that runs the simulator
-    on a litmus test to produce an opaque file output, and a loader that
-    reads that output back in as generic simulator output. *)
+    Simulator runners consist of two stages: a filter that runs the
+    simulator on a litmus test to produce an opaque file output, and a
+    loader that reads that output back in as generic simulator output. *)
 module type Basic = sig
-  (** The main body of the simulator runner is a filter from litmus tests to output files.
-      The filter shouldn't produce any auxiliary output.  *)
+  (** The main body of the simulator runner is a filter from litmus tests to
+      output files. The filter shouldn't produce any auxiliary output. *)
   module Filter : Filter.S with type aux_o := unit
 
-  (** Simulator runners must be able to load back their output into the simulator output format. *)
+  (** Simulator runners must be able to load back their output into the
+      simulator output format. *)
   module Reader : Loadable.S with type t := Sim_output.t
 end
 
 (** Complete interface for simulator runners. *)
 module type S = sig
-  type t
   (** Type of per-run context. *)
+  type t
 
-  val run_and_load_results : t -> input_path:Fpath.t -> output_path:Fpath.t -> Sim_output.t Or_error.t
-(** [run_and_load_results ctx ~input_path ~output_path] runs the simulator
-    on [input_path], using [ctx] as context, outputs to [output_path], and then
-    tries to load back the results as generic simulator output. *)
+  val run_and_load_results :
+       t
+    -> input_path:Fpath.t
+    -> output_path:Fpath.t
+    -> Sim_output.t Or_error.t
+  (** [run_and_load_results ctx ~input_path ~output_path] runs the simulator
+      on [input_path], using [ctx] as context, outputs to [output_path], and
+      then tries to load back the results as generic simulator output. *)
 end

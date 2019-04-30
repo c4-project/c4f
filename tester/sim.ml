@@ -22,39 +22,42 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Utils
+open Lib
+include Sim_intf
 
-type t = {vf: Formatter.t; wf: Formatter.t; ef: Formatter.t}
+(* TODO(@MattWindsor91): roll this into, or disambiguate it from, Sim_output *)
+module Result = struct
+  (* TODO(@MattWindsor91): decouple this!! *)
+  type t = [`Success of Sim_output.t | `Disabled | `Errored]
+end
 
-let maybe_err_formatter on : Formatter.t =
-  if on then Fmt.stderr else My_format.null_formatter ()
+module Make (B : Common_intf.Basic) : S = struct
+  type run_result = Result.t
 
-let make ~verbose ~warnings : t =
-  { vf= maybe_err_formatter verbose
-  ; wf= maybe_err_formatter warnings
-  ; ef= Fmt.stderr }
+  let run_herd herd ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
+    let result =
+      Or_error.tag ~tag:"While running herd"
+        (Herd.run_and_load_results herd ~input_path ~output_path)
+    in
+    match result with
+    | Ok herd ->
+        `Success herd
+    | Error err ->
+        Output.pw B.o "@[<v 4>Herd analysis error:@,%a@]@." Error.pp err ;
+        `Errored
 
-let silent () : t =
-  let nullf = My_format.null_formatter () in
-  {vf= nullf; wf= nullf; ef= nullf}
+  let run_with_config config arch ~input_path ~output_path =
+    match Herd.create ~config ~arch with
+    | Ok herd ->
+        run_herd herd ~input_path ~output_path
+    | Error e ->
+        Output.pw B.o "@[<v 4>Herd configuration error:@,%a@]@." Error.pp e ;
+        `Errored
 
-let pv (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.vf
-
-let pw (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.wf
-
-let pe (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.ef
-
-let pp_stage_name : string Fmt.t = Fmt.(styled `Magenta string)
-
-let log_stage (o : t) ~stage ~file compiler_id : unit =
-  pv o "@[%a[%a]@ %s@]@." pp_stage_name stage Config.Id.pp compiler_id file
-
-let print_error_body : Error.t Fmt.t =
-  Fmt.(
-    vbox ~indent:2
-      (prefix
-         (suffix sp (hbox (styled_unit `Red "act encountered a top-level error:")))
-         (box Error.pp)))
-
-let print_error (o : t) : 'a Or_error.t -> unit =
-  Fmt.(result ~ok:nop ~error:print_error_body o.ef)
+  let run arch ~input_path ~output_path =
+    match B.herd_cfg with
+    | Some h ->
+        run_with_config h arch ~input_path ~output_path
+    | None ->
+        `Disabled
+end

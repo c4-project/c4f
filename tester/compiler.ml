@@ -21,8 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Base
-open Travesty_base_exts
+open Core_kernel
+open Travesty_core_kernel_exts
 open Utils
 open Lib
 open C
@@ -30,64 +30,33 @@ include Compiler_intf
 
 module Make (B : Basic) : S = struct
   include B
+  include Common.Extend (B)
+
   module C_id = Config.Compiler.Spec.With_id
   module P_file = Pathset.File
-  module TS = Timing_set.Make (B.T)
 
   let emits = C_id.emits cspec
 
   let id = C_id.id cspec
-
-  let bracket f ~stage ~file =
-    Output.log_stage o ~stage ~file id ;
-    let f' () =
-      Or_error.tag_arg (f ()) "While executing tester stage" stage
-        String.sexp_of_t
-    in
-    T.bracket_join f'
-
-  (** [herd_run_result] summarises the result of running Herd. *)
-  type herd_run_result = [`Success of Sim_output.t | `Disabled | `Errored]
-
-  let run_herd herd ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
-    let result =
-      Or_error.tag ~tag:"While running herd"
-        (Herd.run_and_load_results herd ~input_path ~output_path)
-    in
-    match result with
-    | Result.Ok herd ->
-        `Success herd
-    | Result.Error err ->
-        Output.pw o "@[<v 4>Herd analysis error:@,%a@]@." Error.pp err ;
-        `Errored
-
-  let make_herd_arch = function `C -> Herd.C | `Assembly -> Assembly emits
-
-  let actually_try_run_herd config arch ~input_path ~output_path =
-    match Herd.create ~config ~arch with
-    | Ok herd ->
-        run_herd herd ~input_path ~output_path
-    | Error e ->
-        Output.pw o "@[<v 4>Herd configuration error:@,%a@]@." Error.pp e ;
-        `Errored
-
-  (** [try_run_herd arch ~input_path ~output_path] sees if [cspec] asked for
-      a Herd run and, if so (and [herd_cfg] is [Some]), runs Herd on
-      [infile], outputting to [outfile] and using models for [c_or_asm]. *)
-  let try_run_herd c_or_asm ~input_path ~output_path =
-    match (C_id.herd cspec, herd_cfg) with
-    | false, _ | true, None ->
-        `Disabled
-    | true, Some config ->
-        actually_try_run_herd config (make_herd_arch c_or_asm) ~input_path
-          ~output_path
 
   (** [lower_thread_local_symbol] converts thread-local symbols of the form
       `0:r0` into the memalloy witness equivalent, `t0r0`. *)
   let lower_thread_local_symbol sym =
     Litmus.Id.(global (to_memalloy_id sym))
 
-  let analyse (c_herd : herd_run_result) (a_herd : herd_run_result)
+  module S = Sim.Make (B)
+
+  let make_herd_arch = function `C -> Herd.C | `Assembly -> Assembly emits
+
+  (** [try_run_herd arch ~input_path ~output_path] sees if [cspec] asked for
+      a Herd run and, if so (and [herd_cfg] is [Some]), runs Herd on
+      [infile], outputting to [outfile] and using models for [c_or_asm]. *)
+  let try_run_herd c_or_asm ~input_path ~output_path =
+    if C_id.herd cspec then
+      S.run (make_herd_arch c_or_asm) ~input_path ~output_path
+    else `Disabled
+
+  let analyse (c_herd : S.run_result) (a_herd : S.run_result)
       (locmap : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t) :
       Analysis.Herd.t Or_error.t =
     let open Or_error.Let_syntax in
@@ -127,33 +96,28 @@ module Make (B : Basic) : S = struct
         []
 
   let compile_from_pathset_file (fs : Pathset.File.t) =
-    bracket ~stage:"CC" ~file:(P_file.name fs) (fun () ->
-        C.compile ~infile:(P_file.c_path fs) ~outfile:(P_file.asm_path fs)
+    bracket ~id ~stage:"CC" ~file:(P_file.name fs) (fun () ->
+        C.compile ~infile:(P_file.c_file fs) ~outfile:(P_file.asm_file fs)
     )
 
   let litmusify_single (fs : Pathset.File.t) (cvars : string list) =
     let open Or_error.Let_syntax in
-    bracket ~stage:"LITMUS" ~file:(P_file.name fs) (fun () ->
+    bracket ~id ~stage:"LITMUS" ~file:(P_file.name fs) (fun () ->
         let%map output =
           R.Litmusify.run_from_fpaths
             (Asm_job.make ~passes:sanitiser_passes ~symbols:cvars ())
-            ~infile:(Some (P_file.asm_path fs))
-            ~outfile:(Some (P_file.lita_path fs))
+            ~infile:(Some (P_file.asm_file fs))
+            ~outfile:(Some (P_file.asm_litmus_file fs))
         in
         Output.pw o "@[%a@]@." Asm_job.Output.warn output ;
         Asm_job.Output.symbol_map output )
 
-  let c_herd_on_pathset_file fs =
-    bracket ~stage:"HERD(C)" ~file:(P_file.name fs) (fun () ->
-        Or_error.return
-          (try_run_herd `C ~input_path:(P_file.litc_path fs)
-             ~output_path:(P_file.herdc_path fs)) )
-
   let a_herd_on_pathset_file fs =
-    bracket ~stage:"HERD(asm)" ~file:(P_file.name fs) (fun () ->
+    bracket ~id ~stage:"SIM(asm)" ~file:(P_file.name fs) (fun () ->
         Or_error.return
-          (try_run_herd `Assembly ~input_path:(P_file.lita_path fs)
-             ~output_path:(P_file.herda_path fs)) )
+          (try_run_herd `Assembly
+             ~input_path:(P_file.asm_litmus_file fs)
+             ~output_path:(P_file.asm_sim_file fs)) )
 
   let cvar_from_loc_map_entry (id : Litmus.Id.t) : string Or_error.t =
     let open Or_error.Let_syntax in
@@ -189,14 +153,14 @@ module Make (B : Basic) : S = struct
     Alist.compose litc_to_c c_to_lita ~equal:Litmus.Id.equal
 
   let delitmusify_needed : bool Lazy.t =
-    lazy (Input_mode.must_delitmusify (Pathset.input_mode ps))
+    lazy (Input_mode.must_delitmusify (Pathset.Compiler.input_mode ps))
 
   let delitmusify (fs : Pathset.File.t) : unit Or_error.t =
     let open Or_error.Let_syntax in
     let%map _ =
       Filters.Litmus.run_from_fpaths Filters.Delitmus
-        ~infile:(Some (P_file.litc_path fs))
-        ~outfile:(Some (P_file.c_path fs))
+        ~infile:(Some (P_file.c_litmus_file fs))
+        ~outfile:(Some (P_file.c_file fs))
       (* TODO(@MattWindsor91): use the output from this instead of needing
          to run Herd. *)
     in
@@ -207,16 +171,25 @@ module Make (B : Basic) : S = struct
       (fun () ->
         Or_error.when_m (Lazy.force delitmusify_needed) ~f:(fun () ->
             delitmusify fs ) )
-      ~stage:"delitmusifying" ~file:(P_file.name fs)
+      ~stage:"delitmusifying" ~file:(P_file.name fs) ~id
 
-  let run_single_from_pathset_file (fs : Pathset.File.t) :
-      (Analysis.Herd.t * TS.t) Or_error.t =
+  let try_find_c_sim (c_sims : Sim.Result.t String.Map.t)
+      (fs : Pathset.File.t) : Sim.Result.t =
+    let key = Pathset.File.name fs in
+    match String.Map.find c_sims key with
+    | Some sim ->
+        sim
+    | None ->
+        Output.pw B.o "Missing C simulation data for: %s" key ;
+        `Errored
+
+  let run_single_from_pathset_file (c_sims : Sim.Result.t String.Map.t)
+      (fs : Pathset.File.t) : (Analysis.Herd.t * TS.t) Or_error.t =
     let open Or_error.Let_syntax in
     (* NB: many of these stages depend on earlier stages' filesystem
        side-effects. These dependencies aren't evident in the binding chain,
        so be careful when re-ordering. *)
-    let%bind c_simulator = c_herd_on_pathset_file fs in
-    let c_herd_outcome = T.value c_simulator in
+    let c_herd_outcome = try_find_c_sim c_sims fs in
     let litc_to_c_map = locations_of_herd_result c_herd_outcome in
     let%bind cvars = cvars_from_loc_map litc_to_c_map in
     let%bind delitmusifier = delitmusify_if_needed fs in
@@ -232,27 +205,29 @@ module Make (B : Basic) : S = struct
     let%map analysis =
       analyse c_herd_outcome a_herd_outcome litc_to_lita_map
     in
+    (* TODO(@MattWindsor91): fix c simulator timing *)
     let timings =
-      TS.make ~delitmusifier ~c_simulator ~compiler ~litmusifier
-        ~asm_simulator ()
+      TS.make ~delitmusifier ~compiler ~litmusifier ~asm_simulator ()
     in
     (analysis, timings)
 
-  let run_single (fs : Pathset.File.t) =
+  let run_single (c_sims : Sim.Result.t String.Map.t) (fs : Pathset.File.t)
+      =
     let open Or_error.Let_syntax in
     let%map result =
-      T.bracket_join (fun () -> run_single_from_pathset_file fs)
+      T.bracket_join (fun () -> run_single_from_pathset_file c_sims fs)
     in
     let herd, timings = T.value result in
     ( Pathset.File.name fs
     , Analysis.File.make ~herd ?time_taken:(T.time_taken result)
         ?time_taken_in_cc:(TS.in_compiler timings) () )
 
-  let run () =
+  let run (c_sims : Sim.Result.t String.Map.t) =
     let open Or_error.Let_syntax in
     let%map files_and_time =
       T.bracket_join (fun () ->
-          ps |> Pathset.to_files |> List.map ~f:run_single
+          ps |> Pathset.File.make_all
+          |> List.map ~f:(run_single c_sims)
           |> Or_error.combine_errors )
     in
     Analysis.Compiler.make ~files:(T.value files_and_time)

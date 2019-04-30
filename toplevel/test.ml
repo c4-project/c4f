@@ -39,7 +39,7 @@ let make_tester_config ~(out_root_raw : string)
     ~(input_mode : Tester.Input_mode.t) o cfg :
     Tester.Run_config.t Or_error.t =
   let open Or_error.Let_syntax in
-  let%bind output_root = Io.fpath_of_string out_root_raw in
+  let%bind output_root_dir = Io.fpath_of_string out_root_raw in
   let specs = Config.Act.compilers cfg in
   report_spec_errors o
     (List.filter_map ~f:snd (Config.Act.disabled_compilers cfg)) ;
@@ -48,7 +48,10 @@ let make_tester_config ~(out_root_raw : string)
     |> Config.Compiler.Spec.Set.map ~f:Config.Compiler.Spec.With_id.id
     |> Config.Id.Set.of_list
   in
-  Tester.Run_config.make ~output_root ~compilers ~input_mode
+  let%map pathset =
+    Tester.Pathset.Run.make_and_mkdirs {output_root_dir; input_mode}
+  in
+  Tester.Run_config.make ~pathset ~compilers
 
 let make_tester o cfg timing_mode =
   ( module Tester.Instance.Make (struct

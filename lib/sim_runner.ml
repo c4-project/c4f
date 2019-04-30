@@ -23,7 +23,6 @@
 
 open Base
 open Utils
-
 include Sim_runner_intf
 
 module Make (B : Basic) : S with type t = B.Filter.aux_i = struct
@@ -31,13 +30,13 @@ module Make (B : Basic) : S with type t = B.Filter.aux_i = struct
 
   let run_on_paths (ctx : t) ~(input_path : Fpath.t)
       ~(output_path : Fpath.t) : unit Or_error.t =
-    B.Filter.run ctx (Io.In_source.of_fpath input_path) (Io.Out_sink.file output_path)
-
+    B.Filter.run ctx
+      (Io.In_source.of_fpath input_path)
+      (Io.Out_sink.file output_path)
 
   let run_and_load_results (ctx : t) ~(input_path : Fpath.t)
       ~(output_path : Fpath.t) : Sim_output.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind () = run_on_paths ctx ~input_path ~output_path in
-      B.Reader.load ~path:output_path
-    )
+      B.Reader.load ~path:output_path)
 end

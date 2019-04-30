@@ -96,22 +96,19 @@ Utils.Filter.Make (struct
     | Fuzz _ ->
         "c.litmus"
 
-  let run_delitmus (vast : B.t) (oc : Out_channel.t) : Output.t Or_error.t =
+  let run_delitmus (vast : B.t) (oc : Out_channel.t) :
+      Config.C_variables.Map.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map dl = B.delitmus vast in
     Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp_del dl ;
-    let cvars = B.cvars_of_delitmus dl in
-    let post = B.postcondition vast in
-    {Output.cvars; post}
+    B.cvars_of_delitmus dl
 
   let run_fuzz ?(seed : int option) (vast : B.t) (oc : Out_channel.t)
-      ~(o : Lib.Output.t) ~(config : Config.Fuzz.t) : Output.t Or_error.t =
+      ~(o : Lib.Output.t) ~(config : Config.Fuzz.t) :
+      Config.C_variables.Map.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map fz = B.fuzz ?seed ~o ~config vast in
-    B.print oc fz ;
-    let cvars = B.cvars vast in
-    let post = B.postcondition vast in
-    {Output.cvars; post}
+    B.print oc fz ; B.cvars vast
 
   let print_all (oc : Out_channel.t) _ (x : B.t) : unit = B.print oc x
 
@@ -132,11 +129,10 @@ Utils.Filter.Make (struct
         print_vars
 
   let run_print (output_mode : [`All | `Vars]) (vast : B.t)
-      (oc : Out_channel.t) : Output.t Or_error.t =
+      (oc : Out_channel.t) : Config.C_variables.Map.t Or_error.t =
     let cvars = B.cvars vast in
-    let post = B.postcondition vast in
     print output_mode oc (Utils.C_identifier.Map.keys cvars) vast ;
-    Or_error.return {Output.cvars; post}
+    Or_error.return cvars
 
   let run {Utils.Filter.aux; src; _} ic oc : Output.t Or_error.t =
     let open Or_error.Let_syntax in
@@ -153,7 +149,8 @@ Utils.Filter.Make (struct
       | Fuzz {seed; o; config} ->
           run_fuzz ?seed ~o ~config
     in
-    f vast oc
+    let%map cvars = f vast oc in
+    {Output.cvars; post= B.postcondition vast}
 end)
 
 module Normal_C :
@@ -212,8 +209,7 @@ Make (struct
 
   let print = Mini_litmus.Pp.print
 
-  let process lit =
-    Or_error.(lit |> Ast.Litmus.validate >>= Mini_convert.litmus)
+  let process = Mini_convert.litmus_of_raw_ast
 
   let prelude : string list =
     [ "// <!> Auto-generated from a litmus test by act."

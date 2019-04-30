@@ -23,25 +23,14 @@
 
 open Base
 
-type t =
-  { output_root: Fpath.t
-  ; compilers: Config.Id.Set.t
-  ; input_mode: Input_mode.t }
-[@@deriving fields]
+type t = {pathset: Pathset.Run.t; compilers: Config.Id.Set.t}
+[@@deriving fields, make]
 
-let validate_directory : Fpath.t Validate.check =
-  Validate.booltest Fpath.is_dir_path
-    ~if_false:"Expected a local directory here."
+let output_root_dir : t -> Fpath.t =
+  Fn.compose Pathset.Run.output_root_dir pathset
 
-let validate (cfg : t) : Validate.t =
-  let module V = Validate in
-  let w check = V.field_folder cfg check in
-  V.of_list
-    (Fields.fold ~init:[] ~output_root:(w validate_directory)
-       ~compilers:(w (Fn.const V.pass))
-       ~input_mode:(w (Fn.const V.pass)))
+let input_mode : t -> Input_mode.t =
+  Fn.compose Pathset.Run.input_mode pathset
 
-let make ~(output_root : Fpath.t) ~(compilers : Config.Id.Set.t)
-    ~(input_mode : Input_mode.t) : t Or_error.t =
-  let cfg = Fields.create ~output_root ~compilers ~input_mode in
-  Validate.valid_or_error cfg validate
+let c_litmus_files : t -> Fpath.t list =
+  Fn.compose Pathset.Run.c_litmus_files pathset

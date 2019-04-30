@@ -23,6 +23,7 @@
 
 (** Signatures common to multiple different parts of the tester. *)
 
+open Base
 open Lib
 open Utils
 
@@ -41,4 +42,17 @@ module type Basic = sig
   val sanitiser_passes : Config.Sanitiser_pass.Set.t
   (** [sanitiser_passes] is the set of sanitiser passes the tester should
       use. *)
+end
+
+(** [Extensions] contains various extensions to [Basic] commonly imported into
+    tester modules. *)
+module type Extensions = sig
+  type 'a timed
+
+  module TS : Timing_set.S with type 'a input := 'a timed
+
+  val bracket : ?id:Config.Id.t -> (unit -> 'a Or_error.t) -> stage:string -> file:string -> 'a timed Or_error.t
+  (** [bracket ?id f ~stage ~file] runs [f], using the timing wrapper [timed] and
+      logging the tester stage [stage] on file [file], and, optionally, over
+      compiler ID [id]. *)
 end

@@ -21,40 +21,12 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Base
-open Utils
+open Lib
 
-type t = {vf: Formatter.t; wf: Formatter.t; ef: Formatter.t}
+module type S = sig
+  (** [run_result] summarises the result of running Herd. *)
+  type run_result = [`Success of Sim_output.t | `Disabled | `Errored]
 
-let maybe_err_formatter on : Formatter.t =
-  if on then Fmt.stderr else My_format.null_formatter ()
-
-let make ~verbose ~warnings : t =
-  { vf= maybe_err_formatter verbose
-  ; wf= maybe_err_formatter warnings
-  ; ef= Fmt.stderr }
-
-let silent () : t =
-  let nullf = My_format.null_formatter () in
-  {vf= nullf; wf= nullf; ef= nullf}
-
-let pv (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.vf
-
-let pw (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.wf
-
-let pe (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.ef
-
-let pp_stage_name : string Fmt.t = Fmt.(styled `Magenta string)
-
-let log_stage (o : t) ~stage ~file compiler_id : unit =
-  pv o "@[%a[%a]@ %s@]@." pp_stage_name stage Config.Id.pp compiler_id file
-
-let print_error_body : Error.t Fmt.t =
-  Fmt.(
-    vbox ~indent:2
-      (prefix
-         (suffix sp (hbox (styled_unit `Red "act encountered a top-level error:")))
-         (box Error.pp)))
-
-let print_error (o : t) : 'a Or_error.t -> unit =
-  Fmt.(result ~ok:nop ~error:print_error_body o.ef)
+  val run :
+    Herd.arch -> input_path:Fpath.t -> output_path:Fpath.t -> run_result
+end

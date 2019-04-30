@@ -80,9 +80,11 @@ module Basic = struct
 
     let argv t path = make_argv_from_config t.config (Some t.arch) [path]
   end)
+
   module Reader = Herd_reader
 end
-include Basic
 
+include Basic
 module SR = Sim_runner.Make (Basic)
+
 include (SR : module type of SR with type t := t)

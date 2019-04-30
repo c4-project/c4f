@@ -42,3 +42,8 @@ val litmus :
   Ast.Litmus.Validated.t -> Mini_litmus.Ast.Validated.t Or_error.t
 (** [litmus test] tries to interpret a Litmus test over the full C AST as
     one over the mini-model. *)
+
+val litmus_of_raw_ast :
+  Ast.Litmus.t -> Mini_litmus.Ast.Validated.t Or_error.t
+(** [litmus_of_raw_ast test] applies [litmus] to the validated form, if
+    available, of [test]. *)

@@ -22,39 +22,21 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Utils
+open Lib
 
-type t = {vf: Formatter.t; wf: Formatter.t; ef: Formatter.t}
+include Common_intf
 
-let maybe_err_formatter on : Formatter.t =
-  if on then Fmt.stderr else My_format.null_formatter ()
+module Extend (B : Basic) : Extensions with type 'a timed := 'a B.T.t = struct
+  module TS = Timing_set.Make (B.T)
 
-let make ~verbose ~warnings : t =
-  { vf= maybe_err_formatter verbose
-  ; wf= maybe_err_formatter warnings
-  ; ef= Fmt.stderr }
+  let bracket ?(id : Config.Id.t = Config.Id.of_string "none")
+      (f : unit -> 'a Or_error.t) ~(stage : string) ~(file : string) : 'a B.T.t Or_error.t =
+    (* TODO (@MattWindsor91): make id properly optional. *)
 
-let silent () : t =
-  let nullf = My_format.null_formatter () in
-  {vf= nullf; wf= nullf; ef= nullf}
-
-let pv (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.vf
-
-let pw (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.wf
-
-let pe (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.ef
-
-let pp_stage_name : string Fmt.t = Fmt.(styled `Magenta string)
-
-let log_stage (o : t) ~stage ~file compiler_id : unit =
-  pv o "@[%a[%a]@ %s@]@." pp_stage_name stage Config.Id.pp compiler_id file
-
-let print_error_body : Error.t Fmt.t =
-  Fmt.(
-    vbox ~indent:2
-      (prefix
-         (suffix sp (hbox (styled_unit `Red "act encountered a top-level error:")))
-         (box Error.pp)))
-
-let print_error (o : t) : 'a Or_error.t -> unit =
-  Fmt.(result ~ok:nop ~error:print_error_body o.ef)
+    Output.log_stage B.o ~stage ~file id ;
+    let f' () =
+      Or_error.tag_arg (f ()) "While executing tester stage" stage
+        String.sexp_of_t
+    in
+    B.T.bracket_join f'
+end

@@ -30,15 +30,18 @@ include Instance_intf
     [Basic_machine]. *)
 module Make_machine (B : Basic_machine) : Machine = struct
   include B
+  include Common.Extend (B)
 
   let make_pathset (cfg : Run_config.t)
-      (spec : Config.Compiler.Spec.With_id.t) : Pathset.t Or_error.t =
+      (spec : Config.Compiler.Spec.With_id.t) :
+      Pathset.Compiler.t Or_error.t =
     let open Or_error.Let_syntax in
-    let id = Config.Compiler.Spec.With_id.id spec in
-    let output_root = Run_config.output_root cfg in
-    let input_mode = Run_config.input_mode cfg in
-    let%map ps = Pathset.make_and_mkdirs id ~output_root ~input_mode in
-    Output.pv o "%a@." Pathset.pp ps ;
+    let compiler_id = Config.Compiler.Spec.With_id.id spec in
+    let%map ps =
+      Pathset.Compiler.make_and_mkdirs
+        {compiler_id; run= Run_config.pathset cfg}
+    in
+    Output.pv o "%a@." Pathset.Compiler.pp ps ;
     ps
 
   let make_compiler (cfg : Run_config.t)
@@ -60,18 +63,19 @@ module Make_machine (B : Basic_machine) : Machine = struct
     end)
     : Compiler.S )
 
-  let run_compiler (cfg : Run_config.t)
+  let run_compiler (cfg : Run_config.t) (c_sims : Sim.Result.t String.Map.t)
       (spec : Config.Compiler.Spec.With_id.t) =
     let open Or_error.Let_syntax in
     let id = Config.Compiler.Spec.With_id.id spec in
     let%bind (module TC) = make_compiler cfg spec in
-    let%map result = TC.run () in
+    let%map result = TC.run c_sims in
     (id, result)
 
-  let run_compilers (cfg : Run_config.t) :
+  let run_compilers (cfg : Run_config.t)
+      (c_sims : Sim.Result.t String.Map.t) :
       (Config.Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
     compilers
-    |> Config.Compiler.Spec.Set.map ~f:(run_compiler cfg)
+    |> Config.Compiler.Spec.Set.map ~f:(run_compiler cfg c_sims)
     |> Or_error.combine_errors
 
   let make_analysis
@@ -80,10 +84,11 @@ module Make_machine (B : Basic_machine) : Machine = struct
     Analysis.Machine.make ~compilers:(T.value raw)
       ?time_taken:(T.time_taken raw) ()
 
-  let run (cfg : Run_config.t) : Analysis.Machine.t Or_error.t =
+  let run (cfg : Run_config.t) (c_sims : Sim.Result.t String.Map.t) :
+      Analysis.Machine.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map compilers_and_time =
-      T.bracket_join (fun () -> run_compilers cfg)
+      T.bracket_join (fun () -> run_compilers cfg c_sims)
     in
     make_analysis compilers_and_time
 end
@@ -113,49 +118,65 @@ module Job = struct
   type t =
     { config: Run_config.t
     ; specs: Compiler_spec_env.t
-    ; c_simulations: Sim_output.t String.Map.t
-    ; make_machine: Config.Compiler.Spec.Set.t -> (module Machine)
-    } [@@deriving fields, make]
+    ; c_simulations: Sim.Result.t String.Map.t
+    ; make_machine: Config.Compiler.Spec.Set.t -> (module Machine) }
+  [@@deriving fields, make]
 
   let run_machine (job : t) (mach_id, mach_compilers) =
     Or_error.Let_syntax.(
-      let (module TM) = make_machine job mach_compilers in
-      let%map analysis = TM.run (config job) in
-      (mach_id, analysis)
-    )
+      let (module TM) = (make_machine job) mach_compilers in
+      let%map analysis = TM.run (config job) (c_simulations job) in
+      (mach_id, analysis))
 
   let run (job : t) : Analysis.Machine.t Machine_assoc.t Or_error.t =
-    job
-    |> specs
-    |> List.map ~f:(run_machine job)
-    |> Or_error.combine_errors
+    job |> specs |> List.map ~f:(run_machine job) |> Or_error.combine_errors
 end
 
 module Make (B : Basic) : S = struct
   include B
+  include Common.Extend (B)
 
-  let make_analysis
-      (raw : Analysis.Machine.t Machine_assoc.t T.t) :
+  let make_analysis (raw : Analysis.Machine.t Machine_assoc.t T.t) :
       Analysis.t =
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
 
-  let make_machine (mach_compilers : Config.Compiler.Spec.Set.t) : (module Machine) =
-    (module Make_machine (struct
+  let make_machine (mach_compilers : Config.Compiler.Spec.Set.t) =
+    ( module Make_machine (struct
       include B
 
       (* Reduce the set of compilers to those specifically used in this
          machine. *)
       let compilers = mach_compilers
-    end))
+    end)
+    : Machine )
 
-  let make_job (config : Run_config.t) : Job.t = 
-    let c_simulations = String.Map.empty (* for now *) in
-    let specs = Compiler_spec_env.get config compilers in
-    Job.make ~config ~c_simulations ~specs ~make_machine
+  module H = C_simulation.Make (Lib.Herd)
+  module S = Sim.Make (B)
 
-  let run_job_timed (job : Job.t) : Analysis.Machine.t Machine_assoc.t T.t Or_error.t =
+  let run_c_simulation (ps : Pathset.Run.t) (input_path : Fpath.t) :
+      string * Sim.Result.t =
+    let name = Fpath.(basename (rem_ext input_path)) in
+    let output_path = Pathset.Run.c_sim_file ps name in
+    let sim = S.run Herd.C ~input_path ~output_path in
+    (name, sim)
+
+  let run_c_simulations (config : Run_config.t) :
+      Sim.Result.t String.Map.t Or_error.t =
+    let ps = Run_config.pathset config in
+    config |> Run_config.c_litmus_files
+    |> List.map ~f:(run_c_simulation ps)
+    |> String.Map.of_alist_or_error
+
+  let make_job (config : Run_config.t) : Job.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%map c_simulations = run_c_simulations config in
+      let specs = Compiler_spec_env.get config compilers in
+      Job.make ~config ~c_simulations ~specs ~make_machine)
+
+  let run_job_timed (job : Job.t) :
+      Analysis.Machine.t Machine_assoc.t T.t Or_error.t =
     T.bracket_join (fun () -> Job.run job)
 
   let run (config : Run_config.t) : Analysis.t Or_error.t =
-    Or_error.(config |> make_job |> run_job_timed >>| make_analysis)
+    Or_error.(config |> make_job >>= run_job_timed >>| make_analysis)
 end

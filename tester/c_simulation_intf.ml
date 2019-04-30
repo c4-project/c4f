@@ -22,39 +22,38 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Utils
+open Lib
 
-type t = {vf: Formatter.t; wf: Formatter.t; ef: Formatter.t}
+(** {2 Input and output types} *)
 
-let maybe_err_formatter on : Formatter.t =
-  if on then Fmt.stderr else My_format.null_formatter ()
+type 'elt source =
+  | From_test of {input_path: Fpath.t; output_path: Fpath.t}
+      (** This simulation run will get ['elt] from the Litmus test at
+          [input_path]. It may use [output_path] as an output file if needed
+          (for example, to communicate with the simulator). *)
+  | Inline of 'elt
+      (** This simulation run will get ['elt] directly from the user. *)
 
-let make ~verbose ~warnings : t =
-  { vf= maybe_err_formatter verbose
-  ; wf= maybe_err_formatter warnings
-  ; ef= Fmt.stderr }
+(** Type of postcondition input. *)
+type post = C.Mini_litmus.Ast.Postcondition.t
 
-let silent () : t =
-  let nullf = My_format.null_formatter () in
-  {vf= nullf; wf= nullf; ef= nullf}
+(** Type of extensional state-set input. *)
+type ext = Sim_output.State.Set.t
 
-let pv (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.vf
+(** {2 Signatures} *)
 
-let pw (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.wf
+module type S = sig
+  (** Type of simulator context *)
+  type t
 
-let pe (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.ef
+  val run_post : t -> input:post source -> post Or_error.t
 
-let pp_stage_name : string Fmt.t = Fmt.(styled `Magenta string)
+  val run_ext : t -> input:ext source -> ext Or_error.t
 
-let log_stage (o : t) ~stage ~file compiler_id : unit =
-  pv o "@[%a[%a]@ %s@]@." pp_stage_name stage Config.Id.pp compiler_id file
-
-let print_error_body : Error.t Fmt.t =
-  Fmt.(
-    vbox ~indent:2
-      (prefix
-         (suffix sp (hbox (styled_unit `Red "act encountered a top-level error:")))
-         (box Error.pp)))
-
-let print_error (o : t) : 'a Or_error.t -> unit =
-  Fmt.(result ~ok:nop ~error:print_error_body o.ef)
+  val run :
+       t
+    -> input:[`Post of post source | `Ext of ext source]
+    -> [`Post of post | `Ext of ext] Or_error.t
+  (** [run input] behaves as [run_post] or [run_ext], depending on the input
+      query. *)
+end

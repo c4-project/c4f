@@ -53,8 +53,8 @@ val run_direct :
     instead -- this is a lower-level function intended for things like the
     `act tool` command. *)
 
-module Filter : Utils.Filter.S with type aux_i = t and type aux_o = unit
 (** We can run Herd as a filter. *)
+module Filter : Utils.Filter.S with type aux_i = t and type aux_o = unit
 
-include Sim_runner.S with type t := t
 (** We can also use Herd as a simulator runner. *)
+include Sim_runner.S with type t := t

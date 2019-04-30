@@ -29,8 +29,6 @@
     This configuration, generally, isn't used in `act`'s other tools. For
     act-wide configuration, see {{!Config} Config}. *)
 
-open Base
-
 (** Opaque type of tester configuration.
 
     The items inside the configuration type used here are those that could
@@ -42,22 +40,24 @@ type t
 
 (** {2 Constructors} *)
 
-val make :
-     output_root:Fpath.t
-  -> compilers:Config.Id.Set.t
-  -> input_mode:Input_mode.t
-  -> t Or_error.t
-(** [make ~fnames ~output_root ~compilers ~input_mode ()] constructs a set
-    of tester configuration with the given parameters. It fails if any of
-    the parameters are invalid. *)
+val make : pathset:Pathset.Run.t -> compilers:Config.Id.Set.t -> t
+(** [make ~pathset ~compilers ~herd_config] constructs a run config with a
+    given [pathset] and [compilers] set. *)
 
 (** {2 Accessors} *)
 
-val output_root : t -> Fpath.t
-(** [output_root cfg] gets the output root directory for [cfg]. *)
+val pathset : t -> Pathset.Run.t
+(** [pathset cfg] gets the run-level pathset for [cfg]. *)
+
+val output_root_dir : t -> Fpath.t
+(** [output_root_dir cfg] gets the output root directory for [cfg]. *)
 
 val compilers : t -> Config.Id.Set.t
 (** [compilers cfg] gets the compiler identifier set for [cfg]. *)
 
 val input_mode : t -> Input_mode.t
 (** [input_mode cfg] gets the input mode for [cfg]. *)
+
+val c_litmus_files : t -> Fpath.t list
+(** [c_litmus_files ps] gets a list of all C/litmus input files for the run
+    with config [cfg]. *)
