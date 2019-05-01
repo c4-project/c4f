@@ -173,23 +173,14 @@ module Make (B : Basic) : S = struct
             delitmusify fs ) )
       ~stage:"delitmusifying" ~file:(P_file.name fs) ~id
 
-  let try_find_c_sim (c_sims : Sim.Result.t String.Map.t)
-      (fs : Pathset.File.t) : Sim.Result.t =
-    let key = Pathset.File.name fs in
-    match String.Map.find c_sims key with
-    | Some sim ->
-        sim
-    | None ->
-        Output.pw B.o "Missing C simulation data for: %s" key ;
-        `Errored
-
-  let run_single_from_pathset_file (c_sims : Sim.Result.t String.Map.t)
+  let run_single_from_pathset_file (c_sims : Sim.File_map.t)
       (fs : Pathset.File.t) : (Analysis.Herd.t * TS.t) Or_error.t =
     let open Or_error.Let_syntax in
     (* NB: many of these stages depend on earlier stages' filesystem
        side-effects. These dependencies aren't evident in the binding chain,
        so be careful when re-ordering. *)
-    let c_herd_outcome = try_find_c_sim c_sims fs in
+    let litmus_path = Pathset.File.c_litmus_file fs in
+    let c_herd_outcome = Sim.File_map.get c_sims ~litmus_path in
     let litc_to_c_map = locations_of_herd_result c_herd_outcome in
     let%bind cvars = cvars_from_loc_map litc_to_c_map in
     let%bind delitmusifier = delitmusify_if_needed fs in
@@ -211,7 +202,7 @@ module Make (B : Basic) : S = struct
     in
     (analysis, timings)
 
-  let run_single (c_sims : Sim.Result.t String.Map.t) (fs : Pathset.File.t)
+  let run_single (c_sims : Sim.File_map.t) (fs : Pathset.File.t)
       =
     let open Or_error.Let_syntax in
     let%map result =
@@ -222,7 +213,7 @@ module Make (B : Basic) : S = struct
     , Analysis.File.make ~herd ?time_taken:(T.time_taken result)
         ?time_taken_in_cc:(TS.in_compiler timings) () )
 
-  let run (c_sims : Sim.Result.t String.Map.t) =
+  let run (c_sims : Sim.File_map.t) =
     let open Or_error.Let_syntax in
     let%map files_and_time =
       T.bracket_join (fun () ->

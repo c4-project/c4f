@@ -22,6 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
+
 open Lib
 include Sim_intf
 
@@ -31,10 +33,27 @@ module Result = struct
   type t = [`Success of Sim_output.t | `Disabled | `Errored]
 end
 
-module Make (B : Common_intf.Basic) : S = struct
+module File_map = struct
+  type t = Result.t Map.M(String).t
+
+  (* TODO(@MattWindsor91): is storing the string safe? *)
+  let to_key : Fpath.t -> string = Fpath.to_string
+
+  let make (alist : (Fpath.t, Result.t) List.Assoc.t) : t Or_error.t =
+    alist
+    |> Alist.map_left ~f:to_key
+    |> Map.of_alist_or_error (module String)
+
+  let get (map : t) ~(litmus_path : Fpath.t) : Result.t =
+    let key = to_key litmus_path in
+    let found = Map.find map key in
+    Option.value found ~default:`Disabled
+end
+
+module Make (B : Common_intf.Basic) : S with type file_map := File_map.t = struct
   type run_result = Result.t
 
-  let run_herd herd ~(input_path : Fpath.t) ~(output_path : Fpath.t) =
+  let run_herd herd ~(input_path : Fpath.t) ~(output_path : Fpath.t) : Result.t =
     let result =
       Or_error.tag ~tag:"While running herd"
         (Herd.run_and_load_results herd ~input_path ~output_path)
@@ -60,4 +79,17 @@ module Make (B : Common_intf.Basic) : S = struct
         run_with_config h arch ~input_path ~output_path
     | None ->
         `Disabled
+
+  let run_bulk_single arch (input_path : Fpath.t) ~(output_path_f : Fpath.t -> Fpath.t)
+    : Fpath.t * Result.t =
+    let output_path = output_path_f input_path in
+    let sim = run arch ~input_path ~output_path in
+    (input_path, sim)
+
+  let run_bulk arch
+      ~(input_paths : Fpath.t list) ~(output_path_f : Fpath.t -> Fpath.t)
+      : File_map.t Or_error.t =
+  input_paths
+  |> List.map ~f:(run_bulk_single arch ~output_path_f)
+  |> File_map.make
 end

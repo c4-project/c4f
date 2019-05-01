@@ -21,43 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
-open Lib
-
-(** [Basic_machine] contains all the various modules and components needed
-    to run tests on one machine. *)
-module type Basic_machine = sig
-  include Common_intf.Basic
-
-  val compilers : Config.Compiler.Spec.Set.t
-  (** [compilers] is the set of all enabled compilers for this machine. *)
-
-  (** Module used to resolve compiler specs to compiler modules. *)
-  module Resolve_compiler :
-    Config.Compiler.S_resolver
-    with type spec = Config.Compiler.Spec.With_id.t
-     and type 'a chain_input = 'a Config.Compiler.Chain_input.t
-
-  val asm_runner_from_spec :
-    Config.Compiler.Spec.With_id.t -> (module Asm_job.Runner) Or_error.t
-  (** [asm_runner_from_spec cspec] tries to get an [Asm_job.Runner]
-      corresponding to [cspec]'s target architecture. *)
-end
-
-module type Machine = sig
-  val run :
-       Run_config.t
-    -> Sim.Result.t String.Map.t
-    -> Analysis.Machine.t Or_error.t
-  (** [run cfg c_sims] runs tests on each filename listed in [cfg], using
-      every machine-local compiler in [specs] also listed in [cfg], to
-      belong to the same machine), reading from directories in [cfg]'s
-      [in_root] and writing to directories in its [out_root], and returning
-      a machine-level analysis. *)
-end
+open Base
 
 module type Basic = sig
-  include Basic_machine
+  include Machine.Basic
 end
 
 module type S = sig

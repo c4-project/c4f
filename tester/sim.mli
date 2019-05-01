@@ -21,6 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
 open Lib
 
 include module type of Sim_intf
@@ -29,4 +30,16 @@ module Result : sig
   type t = [`Success of Sim_output.t | `Disabled | `Errored]
 end
 
-module Make (B : Common_intf.Basic) : S
+module File_map : sig
+  type t
+  (** Opaque type of file maps *)
+
+  val make : (Fpath.t, Result.t) List.Assoc.t -> t Or_error.t
+  (** [make alist] makes a file map from an associative list of Litmus file paths
+      and simulator results. *)
+
+  val get : t -> litmus_path:Fpath.t -> Result.t
+  (** [get t ~litmus_path] gets the simulator result for Litmus path ~litmus_path. *)
+end
+
+module Make (B : Common_intf.Basic) : S with type file_map := File_map.t

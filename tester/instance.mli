@@ -29,9 +29,5 @@
 
 include module type of Instance_intf
 
-(** [Make_machine] makes a single-machine test runner from a
-    [Basic_machine]. *)
-module Make_machine (B : Basic_machine) : Machine
-
 (** [Make] makes a full test runner from a [Basic]. *)
 module Make (B : Basic) : S

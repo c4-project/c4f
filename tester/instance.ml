@@ -26,73 +26,6 @@ open Travesty_core_kernel_exts
 open Lib
 include Instance_intf
 
-(** [Make_machine] makes a single-machine test runner from a
-    [Basic_machine]. *)
-module Make_machine (B : Basic_machine) : Machine = struct
-  include B
-  include Common.Extend (B)
-
-  let make_pathset (cfg : Run_config.t)
-      (spec : Config.Compiler.Spec.With_id.t) :
-      Pathset.Compiler.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let compiler_id = Config.Compiler.Spec.With_id.id spec in
-    let%map ps =
-      Pathset.Compiler.make_and_mkdirs
-        {compiler_id; run= Run_config.pathset cfg}
-    in
-    Output.pv o "%a@." Pathset.Compiler.pp ps ;
-    ps
-
-  let make_compiler (cfg : Run_config.t)
-      (spec : Config.Compiler.Spec.With_id.t) :
-      (module Compiler.S) Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind (module C) = B.Resolve_compiler.from_spec spec in
-    let%bind (module R) = B.asm_runner_from_spec spec in
-    let%map ps = make_pathset cfg spec in
-    ( module Compiler.Make (struct
-      include (B : Basic)
-
-      module C = C
-      module R = R
-
-      let ps = ps
-
-      let cspec = spec
-    end)
-    : Compiler.S )
-
-  let run_compiler (cfg : Run_config.t) (c_sims : Sim.Result.t String.Map.t)
-      (spec : Config.Compiler.Spec.With_id.t) =
-    let open Or_error.Let_syntax in
-    let id = Config.Compiler.Spec.With_id.id spec in
-    let%bind (module TC) = make_compiler cfg spec in
-    let%map result = TC.run c_sims in
-    (id, result)
-
-  let run_compilers (cfg : Run_config.t)
-      (c_sims : Sim.Result.t String.Map.t) :
-      (Config.Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
-    compilers
-    |> Config.Compiler.Spec.Set.map ~f:(run_compiler cfg c_sims)
-    |> Or_error.combine_errors
-
-  let make_analysis
-      (raw : (Config.Id.t, Analysis.Compiler.t) List.Assoc.t T.t) :
-      Analysis.Machine.t =
-    Analysis.Machine.make ~compilers:(T.value raw)
-      ?time_taken:(T.time_taken raw) ()
-
-  let run (cfg : Run_config.t) (c_sims : Sim.Result.t String.Map.t) :
-      Analysis.Machine.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%map compilers_and_time =
-      T.bracket_join (fun () -> run_compilers cfg c_sims)
-    in
-    make_analysis compilers_and_time
-end
-
 module Machine_assoc = Alist.Fix_left (Config.Machine.Id)
 
 (** Compiler specification sets, grouped by machine. *)
@@ -118,8 +51,8 @@ module Job = struct
   type t =
     { config: Run_config.t
     ; specs: Compiler_spec_env.t
-    ; c_simulations: Sim.Result.t String.Map.t
-    ; make_machine: Config.Compiler.Spec.Set.t -> (module Machine) }
+    ; c_simulations: Sim.File_map.t
+    ; make_machine: Config.Compiler.Spec.Set.t -> (module Machine.S) }
   [@@deriving fields, make]
 
   let run_machine (job : t) (mach_id, mach_compilers) =
@@ -140,32 +73,30 @@ module Make (B : Basic) : S = struct
       Analysis.t =
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
 
-  let make_machine (mach_compilers : Config.Compiler.Spec.Set.t) =
-    ( module Make_machine (struct
+  let make_machine (mach_compilers : Config.Compiler.Spec.Set.t) : (module Machine.S) =
+    ( module Machine.Make (struct
       include B
 
       (* Reduce the set of compilers to those specifically used in this
          machine. *)
       let compilers = mach_compilers
-    end)
-    : Machine )
+    end))
 
   module H = C_simulation.Make (Lib.Herd)
   module S = Sim.Make (B)
 
-  let run_c_simulation (ps : Pathset.Run.t) (input_path : Fpath.t) :
-      string * Sim.Result.t =
-    let name = Fpath.(basename (rem_ext input_path)) in
-    let output_path = Pathset.Run.c_sim_file ps name in
-    let sim = S.run Herd.C ~input_path ~output_path in
-    (name, sim)
+  let make_output_path (ps : Pathset.Run.t) : (Fpath.t -> Fpath.t) Staged.t =
+    Staged.stage
+      (fun input_path ->
+        let name = Fpath.(basename (rem_ext input_path)) in
+        Pathset.Run.c_sim_file ps name)
 
   let run_c_simulations (config : Run_config.t) :
-      Sim.Result.t String.Map.t Or_error.t =
+      Sim.File_map.t Or_error.t =
+    let input_paths = Run_config.c_litmus_files config in
     let ps = Run_config.pathset config in
-    config |> Run_config.c_litmus_files
-    |> List.map ~f:(run_c_simulation ps)
-    |> String.Map.of_alist_or_error
+    let output_path_f = Staged.unstage (make_output_path ps) in
+    S.run_bulk Herd.C ~input_paths ~output_path_f
 
   let make_job (config : Run_config.t) : Job.t Or_error.t =
     Or_error.Let_syntax.(

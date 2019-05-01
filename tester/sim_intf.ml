@@ -21,12 +21,20 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
 open Lib
 
 module type S = sig
+  type file_map
+  (** Opaque type of file maps. *)
+
   (** [run_result] summarises the result of running Herd. *)
   type run_result = [`Success of Sim_output.t | `Disabled | `Errored]
 
   val run :
     Herd.arch -> input_path:Fpath.t -> output_path:Fpath.t -> run_result
+
+  val run_bulk : Herd.arch ->
+      input_paths:Fpath.t list -> output_path_f:(Fpath.t -> Fpath.t)
+      -> file_map Or_error.t
 end
