@@ -42,7 +42,7 @@ module Make (B : Basic) :
     sanitised assembly back as one program. *)
 module Make_single (H : Hook_maker) :
   S
-  with module Lang := H(Travesty.Singleton).Lang
+  with module Lang := H(Travesty_containers.Singleton).Lang
    and type 'a Program_container.t = 'a
 
 (** [Make_multi] implements the assembly sanitiser for a given [Hook_maker],

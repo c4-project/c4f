@@ -22,8 +22,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_containers
 open Travesty_core_kernel_exts
-open Utils
+
 include Sanitiser_intf
 
 module Make_null_hook
@@ -492,9 +493,9 @@ end
 
 module Make_single (H : Hook_maker) :
   S
-  with module Lang := H(Travesty.Singleton).Lang
+  with module Lang := H(Singleton).Lang
    and type 'a Program_container.t = 'a = Make (struct
-  include H (Travesty.Singleton)
+  include H (Singleton)
 
   let split = Or_error.return (* no operation *)
 end)

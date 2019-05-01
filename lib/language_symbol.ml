@@ -105,6 +105,6 @@ module String_direct : S with type t = string = Make (struct
   module On_strings = struct
     type t = string
 
-    include Travesty.Singleton.With_elt (String)
+    include Travesty_containers.Singleton.With_elt (String)
   end
 end)

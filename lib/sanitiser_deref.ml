@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_containers
 open Travesty_core_kernel_exts
 open Utils
 

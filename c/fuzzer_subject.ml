@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Travesty_core_kernel_exts
 open Utils
 
 module With_source = struct
@@ -169,7 +170,7 @@ module Test = struct
       | On_program {index; rest} ->
           let programs = test.programs in
           let%map programs' =
-            My_list.replace programs index ~f:(fun func ->
+            List.With_errors.replace_m programs index ~f:(fun func ->
                 func |> f rest >>| Option.some )
           in
           {test with programs= programs'}

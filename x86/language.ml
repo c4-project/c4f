@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
+open Core_kernel
+open Travesty_containers
 
 module type S = sig
   include Dialect.S
@@ -66,7 +67,7 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
       module On_strings = struct
         type t = string
 
-        include Travesty.Singleton.With_elt (String)
+        include Singleton.With_elt (String)
       end
     end
 

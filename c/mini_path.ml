@@ -22,7 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Travesty_core_kernel_exts
+
 include Mini_path_intf
 
 module Make_statement_list (M : S_statement) :
@@ -33,9 +34,9 @@ module Make_statement_list (M : S_statement) :
       (dest : target list) : target list Or_error.t =
     match path with
     | Insert_at index ->
-        My_list.insert dest index (M.lift_stm stm)
+        List.insert dest index (M.lift_stm stm)
     | At {index; rest} ->
-        My_list.replace dest index ~f:(fun x ->
+        List.With_errors.replace_m dest index ~f:(fun x ->
             Or_error.(M.insert_stm rest stm x >>| Option.some) )
 
   let transform_stm (path : on_stm list_path)
@@ -43,7 +44,7 @@ module Make_statement_list (M : S_statement) :
       (dest : target list) : target list Or_error.t =
     match path with
     | At {index; rest} ->
-        My_list.replace dest index ~f:(fun x ->
+        List.With_errors.replace_m dest index ~f:(fun x ->
             Or_error.(M.transform_stm rest ~f x >>| Option.some) )
     | Insert_at _ ->
         Or_error.error_s
@@ -233,7 +234,7 @@ module Program : S_program with type target := Mini.Program.t = struct
     | On_program {index; rest} ->
         let functions = Mini.Program.functions prog in
         let%map functions' =
-          My_list.replace functions index ~f:(fun (name, func) ->
+          List.With_errors.replace_m functions index ~f:(fun (name, func) ->
               let%map func' = f rest func in
               Some (name, func') )
         in
