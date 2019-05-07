@@ -23,6 +23,4 @@
 
 open Act_common
 
-type t =
-  | C
-  | Assembly of Id.t
+type t = C | Assembly of Id.t

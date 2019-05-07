@@ -184,11 +184,9 @@ let generate_random_state (type rs)
     rs State.Monad.t =
   let open State.Monad.Let_syntax in
   let%bind o = State.Monad.output () in
-  Output.pv o "fuzz: getting random state generator for %a@." Id.pp
-    Act.name ;
+  Output.pv o "fuzz: getting random state generator for %a@." Id.pp Act.name ;
   let%map gen = Act.Random_state.gen subject in
-  Output.pv o "fuzz: generating random state for %a...@." Id.pp
-    Act.name ;
+  Output.pv o "fuzz: generating random state for %a...@." Id.pp Act.name ;
   let g = Quickcheck.Generator.generate gen ~random ~size:10 in
   Output.pv o "fuzz: done generating random state.@." ;
   g
@@ -220,8 +218,7 @@ let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
 let make_pool : Config.Fuzz.t -> Action.Pool.t Or_error.t =
   Action.Pool.make (Lazy.force modules)
 
-let summarise (cfg : Config.Fuzz.t) :
-    Action.Summary.t Id.Map.t Or_error.t =
+let summarise (cfg : Config.Fuzz.t) : Action.Summary.t Id.Map.t Or_error.t =
   Or_error.(cfg |> make_pool >>| Action.Pool.summarise)
 
 let mutate_subject (subject : Subject.Test.t) ~(config : Config.Fuzz.t)

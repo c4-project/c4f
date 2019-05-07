@@ -113,11 +113,9 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
       let%bind () = error_if_empty "src" (module Src) in
       let%map () = error_if_empty "dst" (module Dst) in
       Output.pv o "%a: environments are non-empty@." Id.pp name ;
-      Output.pv o "%a: src environment: @[%a@]@." Id.pp name
-        Sexp.pp_hum
+      Output.pv o "%a: src environment: @[%a@]@." Id.pp name Sexp.pp_hum
         [%sexp (Src.env : Mini_type.t Utils.C_identifier.Map.t)] ;
-      Output.pv o "%a: dst environment: @[%a@]@." Id.pp name
-        Sexp.pp_hum
+      Output.pv o "%a: dst environment: @[%a@]@." Id.pp name Sexp.pp_hum
         [%sexp (Dst.env : Mini_type.t Utils.C_identifier.Map.t)] ;
       let module Gen = B.Quickcheck (Src) (Dst) in
       Output.pv o "%a: built generator module@." Id.pp name ;
@@ -169,8 +167,7 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
     let open State.Monad.Let_syntax in
     let store_stm = Mini.Statement.atomic_store store in
     let%bind o = State.Monad.output () in
-    Output.pv o "%a: Erasing known value of store destination@."
-      Id.pp name ;
+    Output.pv o "%a: Erasing known value of store destination@." Id.pp name ;
     let%bind () = mark_store_dst store in
     Output.pv o "%a: Adding dependency to store source@." Id.pp name ;
     let%bind () = add_dependencies_to_store_src store in

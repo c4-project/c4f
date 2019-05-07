@@ -24,4 +24,3 @@
 include module type of Common_intf
 
 module Extend (B : Basic) : Extensions with type 'a timed := 'a B.T.t
-

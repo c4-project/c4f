@@ -24,8 +24,8 @@
 (** Functor for building an instance of the `act` compiler tester for a
     particular machine.
 
-    A machine instance executes test runs over multiple compilers on a single
-    machine. *)
+    A machine instance executes test runs over multiple compilers on a
+    single machine. *)
 
 include module type of Machine_intf
 

@@ -24,7 +24,7 @@
 open Core
 include Loadable_intf
 
-module Make (B : Basic) : S with type t := B.t = struct
+module Make (B : Basic) : S with type t = B.t = struct
   include B
 
   let path_of_is (is : Io.In_source.t) : string option =
@@ -38,7 +38,7 @@ module Make (B : Basic) : S with type t := B.t = struct
 end
 
 module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
-  S with type t := C.dst = Make (struct
+  S with type t = C.dst = Make (struct
   type t = C.dst
 
   let load_from_string str = Or_error.(str |> B.load_from_string >>= C.f)
@@ -46,7 +46,7 @@ module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
   let load_from_ic ?path ic = Or_error.(B.load_from_ic ?path ic >>= C.f)
 end)
 
-module Of_sexpable (B : Sexpable.S) : S with type t := B.t = Make (struct
+module Of_sexpable (B : Sexpable.S) : S with type t = B.t = Make (struct
   type t = B.t
 
   let wrap name f =

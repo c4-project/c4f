@@ -26,32 +26,39 @@ open Utils
 
 (** {2 Input interfaces} *)
 
+(** Shorthand for the specific type of filter a simulator runner expects. *)
+module type Basic_filter =
+  Filter.S with type aux_i = Arch.t and type aux_o = unit
+
+(** Shorthand for the specific type of runner a simulator runner expects. *)
+module type Basic_reader = Loadable.S with type t = Output.t
+
 (** Basic interface for simulator runners constructed from filters.
 
-    Such runners consist of two stages: a filter that runs the
-    simulator on a litmus test to produce an opaque file output, and a
-    loader that reads that output back in as generic simulator output. *)
+    Such runners consist of two stages: a filter that runs the simulator on
+    a litmus test to produce an opaque file output, and a loader that reads
+    that output back in as generic simulator output. *)
 module type Basic = sig
   (** The main body of the simulator runner is a filter from litmus tests to
-      output files. The filter shouldn't produce any auxiliary output, and should
-      accept an architecture as its input. *)
-  module Filter : Filter.S with type aux_i = Arch.t and type aux_o = unit
+      output files. The filter shouldn't produce any auxiliary output, and
+      should accept an architecture as its input. *)
+  module Filter : Basic_filter
 
   (** Simulator runners must be able to load back their output into the
       simulator output format. *)
-  module Reader : Loadable.S with type t = Output.t
+  module Reader : Basic_reader
 end
 
 (** {2 Output interfaces} *)
 
 (** Main interface for simulator runners. *)
 module type S = sig
-  val run_and_load_results :
+  val run :
        Arch.t
     -> input_path:Fpath.t
     -> output_path:Fpath.t
     -> Output.t Or_error.t
-  (** [run_and_load_results ctx ~input_path ~output_path] runs the simulator
-      on [input_path], using [ctx] as context, outputs to [output_path], and
-      then tries to load back the results as generic simulator output. *)
+  (** [run ctx ~input_path ~output_path] runs the simulator on [input_path],
+      using [ctx] as context, outputs to [output_path], and then tries to
+      load back the results as generic simulator output. *)
 end

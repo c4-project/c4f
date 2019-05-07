@@ -151,11 +151,10 @@ module Make (B : Basic) :
       My_format.pp_kv f (Id.to_string id) pp spec
 
     let pp_verbose verbose : t Fmt.t =
-      Fmt.(vbox
-        (list ~sep:cut
-          (fun f -> Tuple2.uncurry (pp_id_spec ~pp:(pp_verbose verbose) f))
-        )
-    )
+      Fmt.(
+        vbox
+          (list ~sep:cut (fun f ->
+               Tuple2.uncurry (pp_id_spec ~pp:(pp_verbose verbose) f) )))
 
     let pp : t Fmt.t = pp_verbose true
   end

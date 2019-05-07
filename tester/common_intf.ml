@@ -37,7 +37,10 @@ module type Basic = sig
   (** [o] tells the tester how to output warnings, errors, and other
       information. *)
 
+  (** The simulator runner used to perform C-level simulations. *)
   module C_simulator : Sim.Runner.S
+
+  (** The simulator runner used to perform assembly-level simulations. *)
   module Asm_simulator : Sim.Runner.S
 
   val sanitiser_passes : Config.Sanitiser_pass.Set.t
@@ -45,15 +48,20 @@ module type Basic = sig
       use. *)
 end
 
-(** [Extensions] contains various extensions to [Basic] commonly imported into
-    tester modules. *)
+(** [Extensions] contains various extensions to [Basic] commonly imported
+    into tester modules. *)
 module type Extensions = sig
   type 'a timed
 
   module TS : Timing_set.S with type 'a input := 'a timed
 
-  val bracket : ?id:Id.t -> (unit -> 'a Or_error.t) -> stage:string -> file:string -> 'a timed Or_error.t
-  (** [bracket ?id f ~stage ~file] runs [f], using the timing wrapper [timed] and
-      logging the tester stage [stage] on file [file], and, optionally, over
-      compiler ID [id]. *)
+  val bracket :
+       ?id:Id.t
+    -> (unit -> 'a Or_error.t)
+    -> stage:string
+    -> file:string
+    -> 'a timed Or_error.t
+  (** [bracket ?id f ~stage ~file] runs [f], using the timing wrapper
+      [timed] and logging the tester stage [stage] on file [file], and,
+      optionally, over compiler ID [id]. *)
 end

@@ -23,25 +23,25 @@
 
 open Base
 open Stdio
-open Utils
+include Filter_intf
 
 let run_direct ?(oc : Out_channel.t = stdout) (cfg : Config.Litmus_tool.t)
     (argv : string list) : unit Or_error.t =
   let prog = Config.Litmus_tool.cmd cfg in
-  Or_error.tag ~tag:"While running litmus" (Runner.Local.run ~oc ~prog argv)
+  Or_error.tag ~tag:"While running litmus"
+    (Utils.Runner.Local.run ~oc ~prog argv)
 
-module Filter (R : Runner.S) :
-  Filter.S with type aux_i = Config.Litmus_tool.t and type aux_o = unit =
-Filter.Make_on_runner (struct
-  module Runner = R
+module Make (B : Basic) : Sim.Runner.Basic_filter =
+Utils.Filter.Make_on_runner (struct
+  module Runner = B.Runner
 
-  type aux_i = Config.Litmus_tool.t
+  type aux_i = Sim.Arch.t
 
   let name = "Litmus tool"
 
   let tmp_file_ext = Fn.const "txt"
 
-  let prog (cfg : Config.Litmus_tool.t) = Config.Litmus_tool.cmd cfg
+  let prog (_arch : Sim.Arch.t) = Config.Litmus_tool.cmd B.config
 
   let argv _cfg (path : string) = [path]
 end)

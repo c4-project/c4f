@@ -31,7 +31,6 @@ include Compiler_intf
 module Make (B : Basic) : S = struct
   include B
   include Common.Extend (B)
-
   module C_id = Config.Compiler.Spec.With_id
   module P_file = Pathset.File
 
@@ -100,11 +99,12 @@ module Make (B : Basic) : S = struct
         Output.pw o "@[%a@]@." Asm_job.Output.warn output ;
         Asm_job.Output.symbol_map output )
 
-  let a_herd_on_pathset_file (fs : Pathset.File.t) : Sim.Output.t T.t Or_error.t =
+  let a_herd_on_pathset_file (fs : Pathset.File.t) :
+      Sim.Output.t T.t Or_error.t =
     bracket ~id ~stage:"SIM(asm)" ~file:(P_file.name fs) (fun () ->
-          B.Asm_simulator.run_and_load_results (Sim.Arch.Assembly emits)
-             ~input_path:(P_file.asm_litmus_file fs)
-             ~output_path:(P_file.asm_sim_file fs))
+        B.Asm_simulator.run (Sim.Arch.Assembly emits)
+          ~input_path:(P_file.asm_litmus_file fs)
+          ~output_path:(P_file.asm_sim_file fs) )
 
   let cvar_from_loc_map_entry (id : Litmus.Id.t) : string Or_error.t =
     let open Or_error.Let_syntax in
@@ -189,8 +189,7 @@ module Make (B : Basic) : S = struct
     in
     (analysis, timings)
 
-  let run_single (c_sims : Sim.Bulk.File_map.t) (fs : Pathset.File.t)
-      =
+  let run_single (c_sims : Sim.Bulk.File_map.t) (fs : Pathset.File.t) =
     let open Or_error.Let_syntax in
     let%map result =
       T.bracket_join (fun () -> run_single_from_pathset_file c_sims fs)

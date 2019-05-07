@@ -34,13 +34,13 @@ val map :
   -> value_map:(string -> string Or_error.t)
   -> t
   -> t Or_error.t
-(** [map ~location_map ~value_map t] maps partial mappers over the keys
-    and values of state [t]. [location_map] may return [Ok None] if the
-    key should be deleted in the new map.
+(** [map ~location_map ~value_map t] maps partial mappers over the keys and
+    values of state [t]. [location_map] may return [Ok None] if the key
+    should be deleted in the new map.
 
-    If all invocations of [location_map] and [value_map] return values,
-    and the result is a well-formed map [m], [map] returns [Ok m]; else,
-    an error. *)
+    If all invocations of [location_map] and [value_map] return values, and
+    the result is a well-formed map [m], [map] returns [Ok m]; else, an
+    error. *)
 
 val of_alist : (Litmus.Id.t, string) List.Assoc.t -> t Or_error.t
 (** [of_alist alist] tries to convert [alist] into a state. *)

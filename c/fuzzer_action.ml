@@ -100,8 +100,8 @@ end
 module Pool = struct
   type t = (module S) Weighted_list.t
 
-  let make_weight_pair (weight_overrides : int Id.Map.t)
-      (module M : S) : (module S) * int =
+  let make_weight_pair (weight_overrides : int Id.Map.t) (module M : S) :
+      (module S) * int =
     let weight =
       M.name
       |> Id.Map.find weight_overrides
@@ -110,8 +110,7 @@ module Pool = struct
     ((module M : S), weight)
 
   let make_weight_alist (actions : (module S) list)
-      (weight_overrides : int Id.Map.t) :
-      ((module S), int) List.Assoc.t =
+      (weight_overrides : int Id.Map.t) : ((module S), int) List.Assoc.t =
     List.map ~f:(make_weight_pair weight_overrides) actions
 
   let make (actions : (module S) list) (config : Config.Fuzz.t) :

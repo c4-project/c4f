@@ -25,7 +25,6 @@ open Core_kernel
 open Travesty_core_kernel_exts
 open Act_common
 include Instance_intf
-
 module Machine_assoc = Alist.Fix_left (Config.Machine.Id)
 
 (** Compiler specification sets, grouped by machine. *)
@@ -73,30 +72,31 @@ module Make (B : Basic) : S = struct
       Analysis.t =
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
 
-  let make_machine (mach_compilers : Config.Compiler.Spec.Set.t) : (module Machine.S) =
+  let make_machine (mach_compilers : Config.Compiler.Spec.Set.t) =
     ( module Machine.Make (struct
       include B
 
       (* Reduce the set of compilers to those specifically used in this
          machine. *)
       let compilers = mach_compilers
-    end))
+    end)
+    : Machine.S )
 
   module H = C_sim.Make (B.C_simulator)
   module S = Sim.Bulk.Make (B.C_simulator)
 
-  let make_output_path (ps : Pathset.Run.t) : (Fpath.t -> Fpath.t) Staged.t =
-    Staged.stage
-      (fun input_path ->
+  let make_output_path (ps : Pathset.Run.t) : (Fpath.t -> Fpath.t) Staged.t
+      =
+    Staged.stage (fun input_path ->
         let name = Fpath.(basename (rem_ext input_path)) in
-        Pathset.Run.c_sim_file ps name)
+        Pathset.Run.c_sim_file ps name )
 
   let run_c_simulations (config : Run_config.t) :
-    Sim.Bulk.File_map.t Or_error.t =
+      Sim.Bulk.File_map.t Or_error.t =
     let input_paths = Run_config.c_litmus_files config in
     let ps = Run_config.pathset config in
     let output_path_f = Staged.unstage (make_output_path ps) in
-    let job = { S.Job.arch = C; input_paths; output_path_f } in
+    let job = {S.Job.arch= C; input_paths; output_path_f} in
     S.run job
 
   let make_job (config : Run_config.t) : Job.t Or_error.t =

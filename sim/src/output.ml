@@ -43,7 +43,8 @@ module Observation = struct
 
   let set_undefined : t -> t Or_error.t = function
     | {is_undefined= true; _} ->
-        Or_error.error_string "Simulation output already marked as undefined"
+        Or_error.error_string
+          "Simulation output already marked as undefined"
     | {states= []; _} ->
         Or_error.return {states= []; is_undefined= true}
     | {states; _} ->
@@ -55,13 +56,14 @@ end
 
 type t =
   | Success of Observation.t
-  | Skipped of { why: Info.t }
-  | Errored of { err: Error.t }
+  | Skipped of {why: Info.t}
+  | Errored of {err: Error.t}
 
-let join : t Or_error.t -> t =
-  function
-  | Ok success -> success
-  | Error err -> Errored { err }
+let join : t Or_error.t -> t = function
+  | Ok success ->
+      success
+  | Error err ->
+      Errored {err}
 
 let of_observation_or_error (o : Observation.t Or_error.t) : t =
   join (Or_error.map ~f:(fun x -> Success x) o)
@@ -69,16 +71,18 @@ let of_observation_or_error (o : Observation.t Or_error.t) : t =
 let not_found (litmus_path : Fpath.t) : t =
   let path = Fpath.to_string litmus_path in
   let why =
-    Info.create_s
-      [%message "Path not found in simulation cache" ~path]
+    Info.create_s [%message "Path not found in simulation cache" ~path]
   in
-  Skipped { why }
+  Skipped {why}
 
-let to_observation_or_error (o : t) ~(handle_skipped:[`Error | `Ignore]) : Observation.t Or_error.t =
-  match o, handle_skipped with
-  | Success obs, _ -> Or_error.return obs
-  | Errored { err }, _ -> Result.Error err
-  | Skipped { why }, `Error ->
-    Result.Error (Error.of_info why)
-  | Skipped { why = _ }, `Ignore -> Or_error.return (Observation.init ())
-
+let to_observation_or_error (o : t) ~(handle_skipped : [`Error | `Ignore]) :
+    Observation.t Or_error.t =
+  match (o, handle_skipped) with
+  | Success obs, _ ->
+      Or_error.return obs
+  | Errored {err}, _ ->
+      Result.Error err
+  | Skipped {why}, `Error ->
+      Result.Error (Error.of_info why)
+  | Skipped {why= _}, `Ignore ->
+      Or_error.return (Observation.init ())

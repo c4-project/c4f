@@ -27,7 +27,8 @@
     and not to be confused with the tests itself. *)
 
 open Base
-open Utils
+
+include module type of Filter_intf
 
 val run_direct :
      ?oc:Stdio.Out_channel.t
@@ -38,6 +39,5 @@ val run_direct :
     and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
     is absent). *)
 
-(** Interface for running litmus as a filter. *)
-module Filter (R : Runner.S) :
-  Filter.S with type aux_i = Config.Litmus_tool.t and type aux_o = unit
+(** Interface for making a filter over litmus7. *)
+module Make (B : Basic) : Sim.Runner.Basic_filter

@@ -92,8 +92,7 @@ val arch :
 (** [arch ?name ?doc ()] produces a parameter, normally named [-arch] but
     overridable by [name], that accepts an architecture ID. *)
 
-val compiler_id_or_arch :
-  [> `Arch of Id.t | `Id of Id.t] Command.Param.t
+val compiler_id_or_arch : [> `Arch of Id.t | `Id of Id.t] Command.Param.t
 (** [compiler_id_or_arch] defines a choice between supplying a compiler ID,
     or a direct architecture. *)
 

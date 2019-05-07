@@ -30,20 +30,20 @@ open Core_kernel
 include module type of Loadable_intf
 
 (** [Make] extends a [Basic] into an [S]. *)
-module Make (B : Basic) : S with type t := B.t
+module Make (B : Basic) : S with type t = B.t
 
 (** {2 Loading from standard formats} *)
 
 (** [Of_sexpable] extends a [Sexpable] into an [S]; the added methods load
     S-expressions. *)
-module Of_sexpable (B : Sexpable.S) : S with type t := B.t
+module Of_sexpable (B : Sexpable.S) : S with type t = B.t
 
 (** {2 Chaining} *)
 
 (** Makes a new {{!S} S} from chaining a basic loadable [B] to a
     transformation function described in [C]. *)
 module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
-  S with type t := C.dst
+  S with type t = C.dst
 
 (** {2 Interoperability with filters} *)
 

@@ -24,8 +24,8 @@
 open Core_kernel
 open Lib
 
-(** [Basic] contains all the various modules and components needed
-    to run tests on one machine. *)
+(** [Basic] contains all the various modules and components needed to run
+    tests on one machine. *)
 module type Basic = sig
   include Common_intf.Basic
 
@@ -46,9 +46,7 @@ end
 
 module type S = sig
   val run :
-       Run_config.t
-    -> Sim.Bulk.File_map.t
-    -> Analysis.Machine.t Or_error.t
+    Run_config.t -> Sim.Bulk.File_map.t -> Analysis.Machine.t Or_error.t
   (** [run cfg c_sims] runs tests on each filename listed in [cfg], using
       every machine-local compiler in [specs] also listed in [cfg], to
       belong to the same machine), reading from directories in [cfg]'s

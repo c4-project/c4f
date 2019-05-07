@@ -23,7 +23,6 @@
 
 open Base
 open Travesty_base_exts
-
 module Ob = Output.Observation
 
 module Order = struct
@@ -84,8 +83,7 @@ let compare_states ~(oracle_states : State.t list)
 
 let map_subject_states (states : State.t list)
     ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
-    ~(value_map : string -> string Or_error.t) :
-    State.t list Or_error.t =
+    ~(value_map : string -> string Or_error.t) : State.t list Or_error.t =
   states
   |> List.map ~f:(State.map ~location_map ~value_map)
   |> Or_error.combine_errors
@@ -143,8 +141,7 @@ let%test_module "check_domain_consistency expects tests" =
         (one_domain (0:foo 1:bar baz)) (another_domain (0:foo)))) |}]
   end )
 
-let get_domain : State.t list -> Litmus.Id.Set.t Or_error.t =
-  function
+let get_domain : State.t list -> Litmus.Id.Set.t Or_error.t = function
   | [] ->
       Or_error.return Litmus.Id.Set.empty
   | x :: xs ->
@@ -153,8 +150,7 @@ let get_domain : State.t list -> Litmus.Id.Set.t Or_error.t =
       Or_error.tee_m (dom x) ~f:(check_domain_consistency xs_domains)
 
 let filter_oracle_states ~(raw_oracle_states : State.t list)
-    ~(subject_states : State.t list) :
-    State.t list Or_error.t =
+    ~(subject_states : State.t list) : State.t list Or_error.t =
   let open Or_error.Let_syntax in
   let%map domain = get_domain subject_states in
   List.map raw_oracle_states ~f:(State.restrict ~domain)
@@ -177,6 +173,5 @@ let run ~(oracle : Ob.t) ~(subject : Ob.t)
     ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
     ~(value_map : string -> string Or_error.t) : t Or_error.t =
   if Ob.is_undefined oracle then Or_error.return Oracle_undefined
-  else if Ob.is_undefined subject then
-    Or_error.return Subject_undefined
+  else if Ob.is_undefined subject then Or_error.return Subject_undefined
   else run_defined ~oracle ~subject ~location_map ~value_map

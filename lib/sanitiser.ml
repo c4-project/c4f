@@ -24,7 +24,6 @@
 open Core_kernel
 open Travesty_containers
 open Travesty_core_kernel_exts
-
 include Sanitiser_intf
 
 module Make_null_hook

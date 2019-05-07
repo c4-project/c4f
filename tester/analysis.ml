@@ -133,6 +133,5 @@ module Machine = struct
 end
 
 type t =
-  { time_taken: Time.Span.t option
-  ; machines: (Id.t, Machine.t) List.Assoc.t }
+  {time_taken: Time.Span.t option; machines: (Id.t, Machine.t) List.Assoc.t}
 [@@deriving sexp_of, fields, make]

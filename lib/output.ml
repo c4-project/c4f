@@ -54,7 +54,8 @@ let print_error_body : Error.t Fmt.t =
   Fmt.(
     vbox ~indent:2
       (prefix
-         (suffix sp (hbox (styled_unit `Red "act encountered a top-level error:")))
+         (suffix sp
+            (hbox (styled_unit `Red "act encountered a top-level error:")))
          (box Error.pp)))
 
 let print_error (o : t) : 'a Or_error.t -> unit =

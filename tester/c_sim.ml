@@ -5,8 +5,8 @@ module Make (R : Sim.Runner.S) : S = struct
   let no_post_error () : Error.t =
     Error.of_string "This Litmus test doesn't have a postcondition."
 
-  let post_from_test ~(input_path : Fpath.t)
-      ~(output_path : Fpath.t) : post Or_error.t =
+  let post_from_test ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
+      post Or_error.t =
     ignore (output_path : Fpath.t) ;
     (* We don't need to talk to the simulator *)
     Or_error.Let_syntax.(
@@ -15,13 +15,13 @@ module Make (R : Sim.Runner.S) : S = struct
       let post = C.Mini_litmus.Ast.Validated.postcondition mini in
       Result.of_option post ~error:(no_post_error ()))
 
-  let ext_from_test ~(input_path : Fpath.t)
-      ~(output_path : Fpath.t) : ext Or_error.t =
+  let ext_from_test ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
+      ext Or_error.t =
     Or_error.Let_syntax.(
-      let%bind output =
-        R.run_and_load_results Sim.Arch.C ~input_path ~output_path
+      let%bind output = R.run Sim.Arch.C ~input_path ~output_path in
+      let%map obs =
+        Sim.Output.to_observation_or_error output ~handle_skipped:`Error
       in
-      let%map obs = Sim.Output.to_observation_or_error output ~handle_skipped:`Error in
       let state_list = Sim.Output.Observation.states obs in
       Sim.State.Set.of_list state_list)
 
@@ -41,11 +41,15 @@ module Make (R : Sim.Runner.S) : S = struct
   let run_ext : ext source -> ext Or_error.t =
     run_source ~from_test:ext_from_test
 
-  let run : [`Post of post source | `Ext of ext source] ->
-      [`Post of post | `Ext of ext] Or_error.t =
-    function
+  let run :
+         [`Post of post source | `Ext of ext source]
+      -> [`Post of post | `Ext of ext] Or_error.t = function
     | `Post input ->
-        Or_error.Let_syntax.(let%map o = run_post input in `Post o)
+        Or_error.Let_syntax.(
+          let%map o = run_post input in
+          `Post o)
     | `Ext input ->
-        Or_error.Let_syntax.(let%map o = run_ext input in `Ext o)
+        Or_error.Let_syntax.(
+          let%map o = run_ext input in
+          `Ext o)
 end

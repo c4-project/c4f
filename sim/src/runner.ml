@@ -33,8 +33,8 @@ module Make (B : Basic) : S = struct
       (Utils.Io.In_source.of_fpath input_path)
       (Utils.Io.Out_sink.file output_path)
 
-  let run_and_load_results (ctx : t) ~(input_path : Fpath.t)
-      ~(output_path : Fpath.t) : Output.t Or_error.t =
+  let run (ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
+      Output.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind () = run_on_paths ctx ~input_path ~output_path in
       B.Reader.load ~path:output_path)

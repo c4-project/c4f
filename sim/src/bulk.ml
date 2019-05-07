@@ -23,16 +23,15 @@
 
 open Base
 open Travesty_base_exts
-
 include Bulk_intf
 
 module File_map = struct
   type t = Output.t Map.M(String).t
+
   let to_key : Fpath.t -> string = Fpath.to_string
 
   let make (alist : (Fpath.t, Output.t) List.Assoc.t) : t Or_error.t =
-    alist
-    |> Alist.map_left ~f:to_key
+    alist |> Alist.map_left ~f:to_key
     |> Map.of_alist_or_error (module String)
 
   let get (map : t) ~(litmus_path : Fpath.t) : Output.t =
@@ -43,27 +42,24 @@ end
 
 module Make (R : Runner.S) : S with type file_map := File_map.t = struct
   module Job = struct
-    type t = { input_paths : Fpath.t list
-             ; output_path_f : Fpath.t -> Fpath.t
-             ; arch : Arch.t
-             }
+    type t =
+      { input_paths: Fpath.t list
+      ; output_path_f: Fpath.t -> Fpath.t
+      ; arch: Arch.t }
   end
 
-  let run_with_output_path (arch : Arch.t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) : Output.t =
+  let run_with_output_path (arch : Arch.t) ~(input_path : Fpath.t)
+      ~(output_path : Fpath.t) : Output.t =
     Or_error.(
-      R.run_and_load_results arch ~input_path ~output_path
+      R.run arch ~input_path ~output_path
       |> tag ~tag:"While running herd"
-      |> Output.join
-    )
+      |> Output.join)
 
-  let run_single (job : Job.t) (input_path : Fpath.t)
-    : Fpath.t * Output.t =
+  let run_single (job : Job.t) (input_path : Fpath.t) : Fpath.t * Output.t =
     let output_path = job.output_path_f input_path in
     let sim = run_with_output_path job.arch ~input_path ~output_path in
     (input_path, sim)
 
   let run (job : Job.t) : File_map.t Or_error.t =
-  job.input_paths
-  |> List.map ~f:(run_single job)
-  |> File_map.make
+    job.input_paths |> List.map ~f:(run_single job) |> File_map.make
 end

@@ -23,7 +23,6 @@
 
 open Core_kernel
 open Travesty_core_kernel_exts
-
 include Mini_path_intf
 
 module Make_statement_list (M : S_statement) :

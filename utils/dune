@@ -5,8 +5,9 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries travesty travesty.core_kernel_exts core shell
-   shell.string_extended fpath menhirLib fmt textutils_kernel.text_block))
+ (libraries travesty travesty.base_exts travesty.core_kernel_exts core
+   core_kernel shell base stdio sexplib0 shell.string_extended fpath
+   menhirLib fmt textutils_kernel.text_block))
 
 (ocamllex
  (modules lex_utils))

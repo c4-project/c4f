@@ -28,15 +28,16 @@ open Base
 include module type of Bulk_intf
 
 module File_map : sig
-  type t
   (** Opaque type of file maps *)
+  type t
 
   val make : (Fpath.t, Output.t) List.Assoc.t -> t Or_error.t
-  (** [make alist] makes a file map from an associative list of Litmus file paths
-      and simulator results. *)
+  (** [make alist] makes a file map from an associative list of Litmus file
+      paths and simulator results. *)
 
   val get : t -> litmus_path:Fpath.t -> Output.t
-  (** [get t ~litmus_path] gets the simulator output for Litmus path ~litmus_path. *)
+  (** [get t ~litmus_path] gets the simulator output for Litmus path
+      ~litmus_path. *)
 end
 
 module Make (R : Runner.S) : S with type file_map := File_map.t

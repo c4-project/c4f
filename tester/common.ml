@@ -24,16 +24,15 @@
 open Base
 open Act_common
 open Lib
-
 include Common_intf
 
-module Extend (B : Basic) : Extensions with type 'a timed := 'a B.T.t = struct
+module Extend (B : Basic) : Extensions with type 'a timed := 'a B.T.t =
+struct
   module TS = Timing_set.Make (B.T)
 
-  let bracket ?(id : Id.t = Id.of_string "none")
-      (f : unit -> 'a Or_error.t) ~(stage : string) ~(file : string) : 'a B.T.t Or_error.t =
+  let bracket ?(id : Id.t = Id.of_string "none") (f : unit -> 'a Or_error.t)
+      ~(stage : string) ~(file : string) : 'a B.T.t Or_error.t =
     (* TODO (@MattWindsor91): make id properly optional. *)
-
     Output.log_stage B.o ~stage ~file id ;
     let f' () =
       Or_error.tag_arg (f ()) "While executing tester stage" stage

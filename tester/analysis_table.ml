@@ -38,10 +38,7 @@ let pp_span_opt = Fmt.(option ~none:(unit "-") Time.Span.pp)
 
 module Row = struct
   type 'a t =
-    { machine_id: Id.t
-    ; compiler_id: Id.t
-    ; filename: string
-    ; analysis: 'a }
+    {machine_id: Id.t; compiler_id: Id.t; filename: string; analysis: 'a}
   [@@deriving sexp_of, fields, make]
 
   let to_table_row (type a) (row : a t) ~(f : a -> string list) :
@@ -62,8 +59,8 @@ module Row = struct
     with_analysis row ~analysis
 end
 
-let file_rows_of_machine (machine_id : Id.t) (machine : A.Machine.t)
-    : A.File.t Row.t list =
+let file_rows_of_machine (machine_id : Id.t) (machine : A.Machine.t) :
+    A.File.t Row.t list =
   List.map (A.Machine.files machine)
     ~f:(fun (compiler_id, filename, analysis) ->
       Row.make ~machine_id ~compiler_id ~filename ~analysis )

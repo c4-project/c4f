@@ -56,8 +56,7 @@ let pp_tree_module : (module Property.S) Fmt.t =
  fun f (module M) -> M.pp_tree f ()
 
 (** [pp_predicate_list] is a pretty-printer for predicate lists. *)
-let pp_predicate_list :
-    (string, (module Property.S)) List.Assoc.t Fmt.t =
+let pp_predicate_list : (string, (module Property.S)) List.Assoc.t Fmt.t =
   Fmt.(
     list ~sep:(unit "@,@,")
       (vbox ~indent:2

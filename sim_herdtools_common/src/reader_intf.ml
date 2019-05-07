@@ -21,31 +21,25 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Filter interface for Herd.
-
-    For running Herd as a simulator, see {{!Runner} Runner}. *)
+(** Signatures and types for building Herdtools output scrapers. *)
 
 open Base
 
-include module type of Filter_intf
+(** Type of split state lines. *)
+type state_line =
+  { occurrences: int option
+        (** Optional number of occurrences for this state. *)
+  ; rest: string  (** The (so far unparsed) rest of the state line. *) }
 
-val run_direct :
-     ?arch:Sim.Arch.t
-  -> ?oc:Stdio.Out_channel.t
-  -> Config.Herd.t
-  -> string list
-  -> unit Or_error.t
-(** [run_direct ?arch ?oc config argv] runs the Herd binary configured in
-    [config], with the arguments in [argv] plus, if [arch] is present, any
-    arguments required to effect [config]'s configuration for [arch] (like
-    model overrides etc.). Any output will be sent to [oc], or standard
-    output if [oc] is absent.
+(** Signature over the tool-specific parts of a Herdtools output scraper. *)
+module type Basic = sig
+  val try_parse_state_count : string -> int option
+  (** [try_parse_state_count line] should return [Some k] if preamble line
+      [line] contains a state count with [k] states, and [None] otherwise.
+      (It needn't do any further validation.) *)
 
-    Most Herd use-cases should use {{!run} run} or {{!Filter} Filter}
-    instead -- this is a lower-level function intended for things like the
-    `act tool` command. *)
-
-(** We can use Herd as a simulator runner by supplying it with configuration
-    expressed as a {{!Basic} Basic} module. *)
-module Make (B : Basic) :
-  Utils.Filter.S with type aux_i = Sim.Arch.t and type aux_o = unit
+  val try_split_state_line : string -> state_line Or_error.t
+  (** [try_split_state_line line] should try to split a state line into the
+      (optional) number of occurrences of that state, and an otherwise
+      unparsed line containing the state data. *)
+end

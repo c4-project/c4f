@@ -61,8 +61,8 @@ module File : sig
     -> unit
     -> t
   (** [make ?time_taken ?time_taken_in_cc ()] creates a file analysis given
-      Herd run [herd], total time taken [time_taken], and time taken in
-      the C compiler [time_taken_in_cc]. *)
+      Herd run [herd], total time taken [time_taken], and time taken in the
+      C compiler [time_taken_in_cc]. *)
 
   val time_taken_in_cc : t -> Time.Span.t option
   (** [time_taken_in_cc file] gets an estimate of the time spent compiling

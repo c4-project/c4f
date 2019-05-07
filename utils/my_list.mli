@@ -51,5 +51,3 @@ val find_one :
 (** [find_one ?item_name items ~f] tries to find an item in [items] for
     which [f] returns [Some]. It returns the result if precisely one exists,
     and an error otherwise. *)
-
-

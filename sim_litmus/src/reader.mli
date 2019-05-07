@@ -21,31 +21,11 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Filter interface for Herd.
+(** Simulation output reader for Herd7.
 
-    For running Herd as a simulator, see {{!Runner} Runner}. *)
+    This module describes a set of functions and other related constructs
+    that scrape the text output of a Herd7 run, and build
+    {{!Sim_output.t} Sim_output.t} records representing the run results. *)
 
-open Base
-
-include module type of Filter_intf
-
-val run_direct :
-     ?arch:Sim.Arch.t
-  -> ?oc:Stdio.Out_channel.t
-  -> Config.Herd.t
-  -> string list
-  -> unit Or_error.t
-(** [run_direct ?arch ?oc config argv] runs the Herd binary configured in
-    [config], with the arguments in [argv] plus, if [arch] is present, any
-    arguments required to effect [config]'s configuration for [arch] (like
-    model overrides etc.). Any output will be sent to [oc], or standard
-    output if [oc] is absent.
-
-    Most Herd use-cases should use {{!run} run} or {{!Filter} Filter}
-    instead -- this is a lower-level function intended for things like the
-    `act tool` command. *)
-
-(** We can use Herd as a simulator runner by supplying it with configuration
-    expressed as a {{!Basic} Basic} module. *)
-module Make (B : Basic) :
-  Utils.Filter.S with type aux_i = Sim.Arch.t and type aux_o = unit
+(** Herd readers support the {{!Loadable.S} Loadable} interface. *)
+include Utils.Loadable.S with type t = Sim.Output.t

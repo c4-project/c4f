@@ -4,5 +4,5 @@
  (name act_common)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries utils fmt fpath travesty
-   travesty.base_exts travesty.core_kernel_exts core shell.string_extended))
+ (libraries utils fmt fpath travesty travesty.base_exts
+   travesty.core_kernel_exts core shell.string_extended))

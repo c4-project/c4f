@@ -69,15 +69,13 @@ module Make (B : Basic) : S = struct
     let%map result = TC.run c_sims in
     (id, result)
 
-  let run_compilers (cfg : Run_config.t)
-      (c_sims : Sim.Bulk.File_map.t) :
+  let run_compilers (cfg : Run_config.t) (c_sims : Sim.Bulk.File_map.t) :
       (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
     compilers
     |> Config.Compiler.Spec.Set.map ~f:(run_compiler cfg c_sims)
     |> Or_error.combine_errors
 
-  let make_analysis
-      (raw : (Id.t, Analysis.Compiler.t) List.Assoc.t T.t) :
+  let make_analysis (raw : (Id.t, Analysis.Compiler.t) List.Assoc.t T.t) :
       Analysis.Machine.t =
     Analysis.Machine.make ~compilers:(T.value raw)
       ?time_taken:(T.time_taken raw) ()

@@ -25,15 +25,15 @@ open Base
 
 (** Signature of bulk (multi-file) simulation runners. *)
 module type S = sig
-  type file_map
   (** Opaque type of file maps. *)
+  type file_map
 
-	(** Bundle of inputs needed for a bulk job. *)
+  (** Bundle of inputs needed for a bulk job. *)
   module Job : sig
     type nonrec t =
-      { input_paths : Fpath.t list
-      ; output_path_f : Fpath.t -> Fpath.t
-      ; arch : Arch.t }
+      { input_paths: Fpath.t list
+      ; output_path_f: Fpath.t -> Fpath.t
+      ; arch: Arch.t }
   end
 
   val run : Job.t -> file_map Or_error.t

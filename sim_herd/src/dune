@@ -3,5 +3,7 @@
 (library
  (name sim_herd)
  (synopsis "Simulator frontend for the Herd7 multicore CPU simulator")
- (preprocess (pps ppx_deriving.std ppx_jane))
- (libraries utils lib sim core_kernel travesty.base_exts travesty.core_kernel_exts))
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (libraries utils lib sim sim_herdtools_common core_kernel travesty.base_exts
+   travesty.core_kernel_exts))

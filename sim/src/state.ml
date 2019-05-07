@@ -27,6 +27,7 @@ open Utils
 module M = struct
   type t = string Litmus.Id.Map.t [@@deriving sexp, compare]
 end
+
 include M
 
 module Q : My_quickcheck.S_with_sexp with type t := t = struct
@@ -55,8 +56,7 @@ let restrict (state : t) ~(domain : Litmus.Id.Set.t) : t =
   Litmus.Id.Map.filter_keys state ~f:(Litmus.Id.Set.mem domain)
 
 let map ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
-    ~(value_map : string -> string Or_error.t) (state : t) : t Or_error.t
-    =
+    ~(value_map : string -> string Or_error.t) (state : t) : t Or_error.t =
   let open Or_error.Let_syntax in
   let f (k, v) =
     let%bind ko = location_map k in
@@ -73,4 +73,3 @@ let map ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
   Litmus.Id.Map.of_alist_or_error alist'
 
 module Set = My_set.Extend (Set.Make (M))
-

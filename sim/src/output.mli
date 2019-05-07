@@ -56,8 +56,8 @@ end
 
 type t =
   | Success of Observation.t
-  | Skipped of { why: Info.t }
-  | Errored of { err: Error.t }
+  | Skipped of {why: Info.t}
+  | Errored of {err: Error.t}
 
 (** {2 Convenience constructors} *)
 
@@ -67,5 +67,5 @@ val of_observation_or_error : Observation.t Or_error.t -> t
 
 val not_found : Fpath.t -> t
 
-
-val to_observation_or_error : t -> handle_skipped:[`Error | `Ignore] -> Observation.t Or_error.t
+val to_observation_or_error :
+  t -> handle_skipped:[`Error | `Ignore] -> Observation.t Or_error.t

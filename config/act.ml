@@ -28,235 +28,235 @@ include Act_intf
 module My_list = Utils.My_list
 
 module Raw = struct
-  module CI = struct
-    module C = Compiler.Cfg_spec
+  module C = Compiler.Cfg_spec
 
-    type t =
-      { cpp: Cpp.t option [@sexp.option]
-      ; herd: Herd.t option [@sexp.option]
-      ; fuzz: Fuzz.t option [@sexp.option]
-      ; compilers: C.Set.t
-      ; machines: Machine.Spec.Set.t }
-    [@@deriving sexp, make, fields]
+  type t =
+    { cpp: Cpp.t option [@sexp.option]
+    ; herd: Herd.t option [@sexp.option]
+    ; fuzz: Fuzz.t option [@sexp.option]
+    ; compilers: C.Set.t
+    ; machines: Machine.Spec.Set.t }
+  [@@deriving sexp, make, fields]
 
-    let sanitiser_passes _ ~default = default
+  let sanitiser_passes _ ~default = default
+
+  module Raw_load = struct
+    (** Reading in config from an AST. *)
+    module File = struct
+      let ssh (items : Ast.Ssh.t list) : Machine.Ssh.t Or_error.t =
+        Or_error.Let_syntax.(
+          let%map user =
+            My_list.find_one items ~item_name:"user" ~f:(function
+              | User u ->
+                  Some u
+              | _ ->
+                  None )
+          and host =
+            My_list.find_one items ~item_name:"host" ~f:(function
+              | Host h ->
+                  Some h
+              | _ ->
+                  None )
+          and copy_dir =
+            My_list.find_one items ~item_name:"copy to" ~f:(function
+              | Copy_to c ->
+                  Some c
+              | _ ->
+                  None )
+          in
+          Machine.Ssh.make ~user ~host ~copy_dir ())
+
+      let via = function
+        | Ast.Via.Local ->
+            Or_error.return Machine.Via.Local
+        | Ssh items ->
+            Or_error.(ssh items >>| Machine.Via.ssh)
+
+      let litmus (items : Ast.Litmus.t list) : Litmus_tool.t Or_error.t =
+        Or_error.Let_syntax.(
+          let%map cmd =
+            My_list.find_one_opt items ~item_name:"cmd" ~f:(function
+                | Cmd c -> Some c (* | _ -> None *) )
+          in
+          Litmus_tool.make ?cmd ())
+
+      let machine (items : Ast.Machine.t list) : Machine.Spec.t Or_error.t =
+        Or_error.Let_syntax.(
+          let%bind enabled =
+            My_list.find_at_most_one items ~item_name:"enabled"
+              ~f:(function Enabled b -> Some b | _ -> None)
+              ~on_empty:(Or_error.return true)
+          and litmus_raw =
+            My_list.find_one_opt items ~item_name:"litmus" ~f:(function
+              | Litmus h ->
+                  Some h
+              | _ ->
+                  None )
+          and via_raw =
+            My_list.find_one items ~item_name:"via" ~f:(function
+              | Via v ->
+                  Some v
+              | _ ->
+                  None )
+          in
+          let%map litmus = Option.With_errors.map_m ~f:litmus litmus_raw
+          and via = via via_raw in
+          Machine.Spec.make ?litmus ~enabled ~via ())
+
+      let compiler (items : Ast.Compiler.t list) : C.t Or_error.t =
+        Or_error.Let_syntax.(
+          let%map enabled =
+            My_list.find_at_most_one items ~item_name:"enabled"
+              ~f:(function Enabled b -> Some b | _ -> None)
+              ~on_empty:(Or_error.return true)
+          and style =
+            My_list.find_one items ~item_name:"style" ~f:(function
+              | Style s ->
+                  Some (Id.to_string s)
+              | _ ->
+                  None )
+          and emits =
+            My_list.find_one items ~item_name:"emits" ~f:(function
+              | Emits e ->
+                  Some e
+              | _ ->
+                  None )
+          and cmd =
+            My_list.find_one items ~item_name:"cmd" ~f:(function
+              | Cmd c ->
+                  Some c
+              | _ ->
+                  None )
+          and argv =
+            My_list.find_at_most_one items ~item_name:"argv"
+              ~f:(function Argv v -> Some v | _ -> None)
+              ~on_empty:(return [])
+          and herd =
+            My_list.find_at_most_one items ~item_name:"herd"
+              ~f:(function Herd h -> Some h | _ -> None)
+              ~on_empty:(return true)
+          and machine =
+            My_list.find_at_most_one items ~item_name:"copy to"
+              ~f:(function Machine m -> Some m | _ -> None)
+              ~on_empty:(return Machine.Id.default)
+          in
+          Compiler.Cfg_spec.make ~enabled ~style ~emits ~cmd ~argv ~herd
+            ~machine ())
+
+      let cpp (items : Ast.Cpp.t list) =
+        Or_error.Let_syntax.(
+          let%map cmd =
+            My_list.find_one_opt items ~item_name:"cmd" ~f:(function
+              | Cmd c ->
+                  Some c
+              | _ ->
+                  None )
+          and argv =
+            My_list.find_one_opt items ~item_name:"argv" ~f:(function
+              | Argv v ->
+                  Some v
+              | _ ->
+                  None )
+          and enabled =
+            My_list.find_at_most_one items ~item_name:"enabled"
+              ~f:(function Enabled b -> Some b | _ -> None)
+              ~on_empty:(return true)
+          in
+          Cpp.make ~enabled ?cmd ?argv ())
+
+      let herd (items : Ast.Herd.t list) =
+        Or_error.Let_syntax.(
+          let%map cmd =
+            My_list.find_one_opt items ~item_name:"cmd" ~f:(function
+              | Cmd c ->
+                  Some c
+              | _ ->
+                  None )
+          and c_model =
+            My_list.find_one_opt items ~item_name:"c_model" ~f:(function
+              | C_model c ->
+                  Some c
+              | _ ->
+                  None )
+          in
+          let asm_models =
+            List.filter_map items ~f:(function
+              | Asm_model (k, v) ->
+                  Some (k, v)
+              | _ ->
+                  None )
+          in
+          Herd.make ?c_model ~asm_models ?cmd ())
+
+      let build_cpp (items : Ast.t) =
+        Or_error.Let_syntax.(
+          let cpp_ast_result =
+            My_list.find_one_opt items ~item_name:"cpp" ~f:Ast.Top.as_cpp
+          in
+          match%bind cpp_ast_result with
+          | Some cpp_ast ->
+              cpp cpp_ast >>| Option.some
+          | None ->
+              return None)
+
+      let build_herd (items : Ast.t) =
+        Or_error.Let_syntax.(
+          let herd_ast_result =
+            My_list.find_one_opt items ~item_name:"herd" ~f:Ast.Top.as_herd
+          in
+          match%bind herd_ast_result with
+          | Some herd_ast ->
+              herd herd_ast >>| Option.some
+          | None ->
+              return None)
+
+      let build_machines (items : Ast.t) =
+        Or_error.Let_syntax.(
+          items
+          |> List.filter_map ~f:Ast.Top.as_machine
+          |> List.With_errors.map_m ~f:(fun (id, spec_ast) ->
+                 let%map spec = machine spec_ast in
+                 Machine.Spec.With_id.make ~id ~spec )
+          >>= Machine.Spec.Set.of_list)
+
+      let build_compilers (items : Ast.t) =
+        Or_error.Let_syntax.(
+          items
+          |> List.filter_map ~f:Ast.Top.as_compiler
+          |> List.With_errors.map_m ~f:(fun (id, spec_ast) ->
+                 let%map spec = compiler spec_ast in
+                 Compiler.Cfg_spec.With_id.make ~id ~spec )
+          >>= Compiler.Cfg_spec.Set.of_list)
+
+      let build_fuzz (items : Ast.t) : Fuzz.t option Or_error.t =
+        Or_error.Let_syntax.(
+          items
+          |> My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
+          >>= Option.With_errors.map_m ~f:Fuzz.of_ast)
+
+      let main (items : Ast.t) : t Or_error.t =
+        Or_error.Let_syntax.(
+          let%map cpp = build_cpp items
+          and herd = build_herd items
+          and fuzz = build_fuzz items
+          and machines = build_machines items
+          and compilers = build_compilers items in
+          make ?cpp ?herd ?fuzz ~machines ~compilers ())
+    end
+
+    include Utils.Loadable.Make_chain (struct
+                type t = Ast.t
+
+                include Frontend
+              end)
+              (struct
+                type dst = t
+
+                let f = File.main
+              end)
   end
 
-  include CI
-
-  (** Reading in config from an AST. *)
-  module File = struct
-    let ssh (items : Ast.Ssh.t list) : Machine.Ssh.t Or_error.t =
-      Or_error.Let_syntax.(
-        let%map user =
-          My_list.find_one items ~item_name:"user" ~f:(function
-            | User u ->
-                Some u
-            | _ ->
-                None )
-        and host =
-          My_list.find_one items ~item_name:"host" ~f:(function
-            | Host h ->
-                Some h
-            | _ ->
-                None )
-        and copy_dir =
-          My_list.find_one items ~item_name:"copy to" ~f:(function
-            | Copy_to c ->
-                Some c
-            | _ ->
-                None )
-        in
-        Machine.Ssh.make ~user ~host ~copy_dir ())
-
-    let via = function
-      | Ast.Via.Local ->
-          Or_error.return Machine.Via.Local
-      | Ssh items ->
-          Or_error.(ssh items >>| Machine.Via.ssh)
-
-    let litmus (items : Ast.Litmus.t list) : Litmus_tool.t Or_error.t =
-      Or_error.Let_syntax.(
-        let%map cmd =
-          My_list.find_one_opt items ~item_name:"cmd" ~f:(function
-              | Cmd c -> Some c (* | _ -> None *) )
-        in
-        Litmus_tool.make ?cmd ())
-
-    let machine (items : Ast.Machine.t list) : Machine.Spec.t Or_error.t =
-      Or_error.Let_syntax.(
-        let%bind enabled =
-          My_list.find_at_most_one items ~item_name:"enabled"
-            ~f:(function Enabled b -> Some b | _ -> None)
-            ~on_empty:(Or_error.return true)
-        and litmus_raw =
-          My_list.find_one_opt items ~item_name:"litmus" ~f:(function
-            | Litmus h ->
-                Some h
-            | _ ->
-                None )
-        and via_raw =
-          My_list.find_one items ~item_name:"via" ~f:(function
-            | Via v ->
-                Some v
-            | _ ->
-                None )
-        in
-        let%map litmus = Option.With_errors.map_m ~f:litmus litmus_raw
-        and via = via via_raw in
-        Machine.Spec.make ?litmus ~enabled ~via ())
-
-    let compiler (items : Ast.Compiler.t list) : C.t Or_error.t =
-      Or_error.Let_syntax.(
-        let%map enabled =
-          My_list.find_at_most_one items ~item_name:"enabled"
-            ~f:(function Enabled b -> Some b | _ -> None)
-            ~on_empty:(Or_error.return true)
-        and style =
-          My_list.find_one items ~item_name:"style" ~f:(function
-            | Style s ->
-                Some (Id.to_string s)
-            | _ ->
-                None )
-        and emits =
-          My_list.find_one items ~item_name:"emits" ~f:(function
-            | Emits e ->
-                Some e
-            | _ ->
-                None )
-        and cmd =
-          My_list.find_one items ~item_name:"cmd" ~f:(function
-            | Cmd c ->
-                Some c
-            | _ ->
-                None )
-        and argv =
-          My_list.find_at_most_one items ~item_name:"argv"
-            ~f:(function Argv v -> Some v | _ -> None)
-            ~on_empty:(return [])
-        and herd =
-          My_list.find_at_most_one items ~item_name:"herd"
-            ~f:(function Herd h -> Some h | _ -> None)
-            ~on_empty:(return true)
-        and machine =
-          My_list.find_at_most_one items ~item_name:"copy to"
-            ~f:(function Machine m -> Some m | _ -> None)
-            ~on_empty:(return Machine.Id.default)
-        in
-        Compiler.Cfg_spec.make ~enabled ~style ~emits ~cmd ~argv ~herd
-          ~machine ())
-
-    let cpp (items : Ast.Cpp.t list) =
-      Or_error.Let_syntax.(
-        let%map cmd =
-          My_list.find_one_opt items ~item_name:"cmd" ~f:(function
-            | Cmd c ->
-                Some c
-            | _ ->
-                None )
-        and argv =
-          My_list.find_one_opt items ~item_name:"argv" ~f:(function
-            | Argv v ->
-                Some v
-            | _ ->
-                None )
-        and enabled =
-          My_list.find_at_most_one items ~item_name:"enabled"
-            ~f:(function Enabled b -> Some b | _ -> None)
-            ~on_empty:(return true)
-        in
-        Cpp.make ~enabled ?cmd ?argv ())
-
-    let herd (items : Ast.Herd.t list) =
-      Or_error.Let_syntax.(
-        let%map cmd =
-          My_list.find_one_opt items ~item_name:"cmd" ~f:(function
-            | Cmd c ->
-                Some c
-            | _ ->
-                None )
-        and c_model =
-          My_list.find_one_opt items ~item_name:"c_model" ~f:(function
-            | C_model c ->
-                Some c
-            | _ ->
-                None )
-        in
-        let asm_models =
-          List.filter_map items ~f:(function
-            | Asm_model (k, v) ->
-                Some (k, v)
-            | _ ->
-                None )
-        in
-        Herd.make ?c_model ~asm_models ?cmd ())
-
-    let build_cpp (items : Ast.t) =
-      Or_error.Let_syntax.(
-        let cpp_ast_result =
-          My_list.find_one_opt items ~item_name:"cpp" ~f:Ast.Top.as_cpp
-        in
-        match%bind cpp_ast_result with
-        | Some cpp_ast ->
-            cpp cpp_ast >>| Option.some
-        | None ->
-            return None)
-
-    let build_herd (items : Ast.t) =
-      Or_error.Let_syntax.(
-        let herd_ast_result =
-          My_list.find_one_opt items ~item_name:"herd" ~f:Ast.Top.as_herd
-        in
-        match%bind herd_ast_result with
-        | Some herd_ast ->
-            herd herd_ast >>| Option.some
-        | None ->
-            return None)
-
-    let build_machines (items : Ast.t) =
-      Or_error.Let_syntax.(
-        items
-        |> List.filter_map ~f:Ast.Top.as_machine
-        |> List.With_errors.map_m ~f:(fun (id, spec_ast) ->
-               let%map spec = machine spec_ast in
-               Machine.Spec.With_id.make ~id ~spec )
-        >>= Machine.Spec.Set.of_list)
-
-    let build_compilers (items : Ast.t) =
-      Or_error.Let_syntax.(
-        items
-        |> List.filter_map ~f:Ast.Top.as_compiler
-        |> List.With_errors.map_m ~f:(fun (id, spec_ast) ->
-               let%map spec = compiler spec_ast in
-               Compiler.Cfg_spec.With_id.make ~id ~spec )
-        >>= Compiler.Cfg_spec.Set.of_list)
-
-    let build_fuzz (items : Ast.t) : Fuzz.t option Or_error.t =
-      Or_error.Let_syntax.(
-        items
-        |> My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
-        >>= Option.With_errors.map_m ~f:Fuzz.of_ast)
-
-    let main (items : Ast.t) : t Or_error.t =
-      Or_error.Let_syntax.(
-        let%map cpp = build_cpp items
-        and herd = build_herd items
-        and fuzz = build_fuzz items
-        and machines = build_machines items
-        and compilers = build_compilers items in
-        make ?cpp ?herd ?fuzz ~machines ~compilers ())
-  end
-
-  include Utils.Loadable.Make_chain (struct
-              type t = Ast.t
-
-              include Frontend
-            end)
-            (struct
-              type dst = t
-
-              let f = File.main
-            end)
+  include (Raw_load : Utils.Loadable.S with type t := t)
 end
 
 let part_chain_fst f g x = match f x with `Fst y -> g y | `Snd y -> `Snd y

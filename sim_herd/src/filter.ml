@@ -24,10 +24,10 @@
 open Base
 open Stdio
 open Act_common
-
 include Filter_intf
 
-let model_for_arch (config : Config.Herd.t) : Sim.Arch.t -> string option = function
+let model_for_arch (config : Config.Herd.t) : Sim.Arch.t -> string option =
+  function
   | C ->
       Config.Herd.c_model config
   | Assembly emits_spec ->
@@ -48,8 +48,8 @@ let%expect_test "make_argv: override model" =
   print_s [%sexp (argv : string list)] ;
   [%expect {| (-model c11_lahav.cat herd7) |}]
 
-let make_argv_from_config (config : Config.Herd.t) (arch : Sim.Arch.t option)
-    (rest : string list) =
+let make_argv_from_config (config : Config.Herd.t)
+    (arch : Sim.Arch.t option) (rest : string list) =
   let model = Option.bind ~f:(model_for_arch config) arch in
   make_argv ?model rest
 
@@ -58,21 +58,21 @@ let run_direct ?(arch : Sim.Arch.t option)
     (argv : string list) : unit Or_error.t =
   let prog = Config.Herd.cmd config in
   let argv' = make_argv_from_config config arch argv in
-  Or_error.tag ~tag:"While running herd" (Utils.Runner.Local.run ~oc ~prog argv')
+  Or_error.tag ~tag:"While running herd"
+    (Utils.Runner.Local.run ~oc ~prog argv')
 
-module Make (B : Basic) : Utils.Filter.S with type aux_i = Sim.Arch.t and type aux_o = unit = 
-  Utils.Filter.Make_on_runner (struct
-    module Runner = Utils.Runner.Local
+module Make (B : Basic) :
+  Utils.Filter.S with type aux_i = Sim.Arch.t and type aux_o = unit =
+Utils.Filter.Make_on_runner (struct
+  module Runner = Utils.Runner.Local
 
-    type aux_i = Sim.Arch.t
+  type aux_i = Sim.Arch.t
 
-    let name = "Herd tool"
+  let name = "Herd tool"
 
-    let tmp_file_ext = Fn.const "txt"
+  let tmp_file_ext = Fn.const "txt"
 
-    let prog _t = Config.Herd.cmd B.config
+  let prog _t = Config.Herd.cmd B.config
 
-    let argv t path = make_argv_from_config B.config (Some t) [path]
-  end)
-
-
+  let argv t path = make_argv_from_config B.config (Some t) [path]
+end)

@@ -55,11 +55,7 @@ let make_tester_config ~(out_root_raw : string)
   Tester.Run_config.make ~pathset ~compilers
 
 let make_tester o cfg timing_mode =
-  let herd_cfg =
-    cfg
-    |> Config.Act.herd
-    |> Option.value ~default:(Config.Herd.default ())
-  in
+  let herd_cfg = Config.Act.herd_or_default cfg in
   ( module Tester.Instance.Make (struct
     module T = (val Utils.Timing.Mode.to_module timing_mode)
 
@@ -67,7 +63,10 @@ let make_tester o cfg timing_mode =
 
     let o = o
 
-    module Herd = Sim_herd.Runner.Make (struct let config = herd_cfg end)
+    module Herd = Sim_herd.Runner.Make (struct
+      let config = herd_cfg
+    end)
+
     module Asm_simulator = Herd
     module C_simulator = Herd
 
@@ -116,8 +115,7 @@ let non_empty : 'a list -> 'a list option = function
   | xs ->
       Some xs
 
-let pp_deviation_bucket (bucket_name : string) :
-    Sim.State.t list Fmt.t =
+let pp_deviation_bucket (bucket_name : string) : Sim.State.t list Fmt.t =
   Fmt.(
     using non_empty
       (option
@@ -128,8 +126,7 @@ let pp_deviation_bucket (bucket_name : string) :
                (suffix sp
                   (styled `Red (const (fmt "In %s only:") bucket_name)))
                (vbox
-                  (list ~sep:sp
-                     (using [%sexp_of: Sim.State.t] Sexp.pp_hum)))))))
+                  (list ~sep:sp (using [%sexp_of: Sim.State.t] Sexp.pp_hum)))))))
 
 let to_deviation_lists (ord : Sim.Diff.Order.t) :
     Sim.State.t list * Sim.State.t list =
