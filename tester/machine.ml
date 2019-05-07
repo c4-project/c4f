@@ -45,21 +45,24 @@ module Make (B : Basic) : S = struct
   let make_compiler (cfg : Run_config.t)
       (spec : Config.Compiler.Spec.With_id.t) :
       (module Compiler.S) Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind (module C) = B.Resolve_compiler.from_spec spec in
-    let%bind (module R) = B.asm_runner_from_spec spec in
-    let%map ps = make_pathset cfg spec in
-    ( module Compiler.Make (struct
-      include (B : Basic)
+    Or_error.Let_syntax.(
+      let%bind (module C) = B.Resolve_compiler.from_spec spec in
+      let%bind (module R) = B.asm_runner_from_spec spec in
+      let asm_simulator_id = Run_config.asm_simulator cfg in
+      let (module AS) = Sim.Table.get B.asm_simulators asm_simulator_id in
+      let%map ps = make_pathset cfg spec in
+      ( module Compiler.Make (struct
+        include (B : Basic)
 
-      module C = C
-      module R = R
+        module C = C
+        module R = R
+        module Asm_simulator = AS
 
-      let ps = ps
+        let ps = ps
 
-      let cspec = spec
-    end)
-    : Compiler.S )
+        let cspec = spec
+      end)
+      : Compiler.S ))
 
   let run_compiler (cfg : Run_config.t) (c_sims : Sim.Bulk.File_map.t)
       (spec : Config.Compiler.Spec.With_id.t) =

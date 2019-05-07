@@ -32,3 +32,5 @@ include module type of Runner_intf
 
 (** [Make] makes a simulator runner from a [Basic]. *)
 module Make (B : Basic) : S
+
+module Make_error (B : Basic_error) : S

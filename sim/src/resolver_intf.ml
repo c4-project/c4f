@@ -23,13 +23,10 @@
 
 open Base
 
-module type Basic = sig
-  include Common_intf.Basic_machine_and_up
-
-  (** The resolver used to produce simulator runners for machines. *)
-  module Asm_simulator_resolver : Sim.Resolver.S
-end
-
+(** Signature of modules that resolve a machine ID we want to simulate on
+    into a table of available simulators on that machine. *)
 module type S = sig
-  val run : Run_config.t -> Analysis.t Or_error.t
+  val make_table : Act_common.Id.t -> Table.t Or_error.t
+  (** [make_table machine_id] creates the table of available simulators on
+      machine [machine_id]. *)
 end

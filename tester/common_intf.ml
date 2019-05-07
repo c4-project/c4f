@@ -37,15 +37,31 @@ module type Basic = sig
   (** [o] tells the tester how to output warnings, errors, and other
       information. *)
 
-  (** The simulator runner used to perform C-level simulations. *)
   module C_simulator : Sim.Runner.S
-
-  (** The simulator runner used to perform assembly-level simulations. *)
-  module Asm_simulator : Sim.Runner.S
 
   val sanitiser_passes : Config.Sanitiser_pass.Set.t
   (** [sanitiser_passes] is the set of sanitiser passes the tester should
       use. *)
+end
+
+(** [Basic_machine_and_up] is the signature common to machine and instance
+    level [Basic] signatures. *)
+module type Basic_machine_and_up = sig
+  include Basic
+
+  val compilers : Config.Compiler.Spec.Set.t
+  (** [compilers] is the set of all enabled compilers for this machine. *)
+
+  (** Module used to resolve compiler specs to compiler modules. *)
+  module Resolve_compiler :
+    Config.Compiler.S_resolver
+    with type spec = Config.Compiler.Spec.With_id.t
+     and type 'a chain_input = 'a Config.Compiler.Chain_input.t
+
+  val asm_runner_from_spec :
+    Config.Compiler.Spec.With_id.t -> (module Asm_job.Runner) Or_error.t
+  (** [asm_runner_from_spec cspec] tries to get an [Asm_job.Runner]
+      corresponding to [cspec]'s target architecture. *)
 end
 
 (** [Extensions] contains various extensions to [Basic] commonly imported

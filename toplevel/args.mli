@@ -87,6 +87,11 @@ val flag_to_enum_choice :
     choose-one choices between multiple flags where each flag [str]
     corresponds to an enum variant [enum]. *)
 
+val simulator :
+  ?name:string -> ?doc:string -> unit -> Id.t option Command.Param.t
+(** [simulator ?name ?doc ()] produces a parameter, normally named
+    [-simulator] but overridable by [name], that accepts a simulator ID. *)
+
 val arch :
   ?name:string -> ?doc:string -> unit -> Id.t option Command.Param.t
 (** [arch ?name ?doc ()] produces a parameter, normally named [-arch] but

@@ -21,27 +21,15 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
-open Lib
+open Base
 
 (** [Basic] contains all the various modules and components needed to run
     tests on one machine. *)
 module type Basic = sig
-  include Common_intf.Basic
+  include Common_intf.Basic_machine_and_up
 
-  val compilers : Config.Compiler.Spec.Set.t
-  (** [compilers] is the set of all enabled compilers for this machine. *)
-
-  (** Module used to resolve compiler specs to compiler modules. *)
-  module Resolve_compiler :
-    Config.Compiler.S_resolver
-    with type spec = Config.Compiler.Spec.With_id.t
-     and type 'a chain_input = 'a Config.Compiler.Chain_input.t
-
-  val asm_runner_from_spec :
-    Config.Compiler.Spec.With_id.t -> (module Asm_job.Runner) Or_error.t
-  (** [asm_runner_from_spec cspec] tries to get an [Asm_job.Runner]
-      corresponding to [cspec]'s target architecture. *)
+  val asm_simulators : Sim.Table.t
+  (** The table of simulators available to this machine. *)
 end
 
 module type S = sig

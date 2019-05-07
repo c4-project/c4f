@@ -51,17 +51,19 @@ module Job = struct
     { config: Run_config.t
     ; specs: Compiler_spec_env.t
     ; c_simulations: Sim.Bulk.File_map.t
-    ; make_machine: Config.Compiler.Spec.Set.t -> (module Machine.S) }
+    ; make_machine:
+        Id.t -> Config.Compiler.Spec.Set.t -> (module Machine.S) Or_error.t
+    }
   [@@deriving fields, make]
 
   let run_machine (job : t) (mach_id, mach_compilers) =
     Or_error.Let_syntax.(
-      let (module TM) = (make_machine job) mach_compilers in
+      let%bind (module TM) = make_machine job mach_id mach_compilers in
       let%map analysis = TM.run (config job) (c_simulations job) in
       (mach_id, analysis))
 
   let run (job : t) : Analysis.Machine.t Machine_assoc.t Or_error.t =
-    job |> specs |> List.map ~f:(run_machine job) |> Or_error.combine_errors
+    job |> specs |> Or_error.combine_map ~f:(run_machine job)
 end
 
 module Make (B : Basic) : S = struct
@@ -72,15 +74,18 @@ module Make (B : Basic) : S = struct
       Analysis.t =
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
 
-  let make_machine (mach_compilers : Config.Compiler.Spec.Set.t) =
-    ( module Machine.Make (struct
-      include B
+  let make_machine (id : Id.t) (mach_compilers : Config.Compiler.Spec.Set.t)
+      : (module Machine.S) Or_error.t =
+    Or_error.Let_syntax.(
+      let%map asm_simulators = B.Asm_simulator_resolver.make_table id in
+      ( module Machine.Make (struct
+        include B
 
-      (* Reduce the set of compilers to those specifically used in this
-         machine. *)
-      let compilers = mach_compilers
-    end)
-    : Machine.S )
+        let compilers = mach_compilers
+
+        let asm_simulators = asm_simulators
+      end)
+      : Machine.S ))
 
   module H = C_sim.Make (B.C_simulator)
   module S = Sim.Bulk.Make (B.C_simulator)

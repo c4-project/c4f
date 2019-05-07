@@ -3,4 +3,5 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries lib c tester sim_herd sim_litmus x86 core utils unix fmt fmt.tty))
+ (libraries config lib c tester sim sim_herd sim_litmus x86 core utils unix
+   fmt fmt.tty))

@@ -25,17 +25,41 @@ open Base
 include Runner_intf
 
 module Make (B : Basic) : S = struct
-  type t = B.Filter.aux_i
+  module Filter = B.Filter
 
-  let run_on_paths (ctx : t) ~(input_path : Fpath.t)
-      ~(output_path : Fpath.t) : unit Or_error.t =
-    B.Filter.run ctx
-      (Utils.Io.In_source.of_fpath input_path)
-      (Utils.Io.Out_sink.file output_path)
+  type t = Filter.aux_i
 
   let run (ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
       Output.t Or_error.t =
     Or_error.Let_syntax.(
-      let%bind () = run_on_paths ctx ~input_path ~output_path in
+      let%bind () =
+        Filter.run_from_fpaths ctx ~infile:(Some input_path)
+          ~outfile:(Some output_path)
+      in
       B.Reader.load ~path:output_path)
+end
+
+module Make_error_filter (B : Basic_error) : Basic_filter =
+Utils.Filter.Make (struct
+  type aux_i = Arch.t
+
+  type aux_o = unit
+
+  let name = "(errored)"
+
+  let tmp_file_ext = Fn.const "tmp"
+
+  let run (_ : _ Utils.Filter.ctx) (_ : Stdio.In_channel.t)
+      (_ : Stdio.Out_channel.t) : unit Or_error.t =
+    Result.Error B.error
+end)
+
+module Make_error (B : Basic_error) : S = struct
+  module Filter = Make_error_filter (B)
+
+  type t = Filter.aux_i
+
+  let run (_ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
+      Output.t Or_error.t =
+    ignore input_path ; ignore output_path ; Result.Error B.error
 end

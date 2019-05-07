@@ -21,15 +21,19 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+(** Tables mapping simulator names to runner modules. *)
+
 open Base
+open Act_common
 
-module type Basic = sig
-  include Common_intf.Basic_machine_and_up
+(** Opaque type of runner tables. *)
+type t
 
-  (** The resolver used to produce simulator runners for machines. *)
-  module Asm_simulator_resolver : Sim.Resolver.S
-end
+val get : t -> Id.t -> (module Runner.S)
+(** [get table id] gets the simulator runner with id [id] from table
+    [table], if one exists. If not, it gets a dummy runner that produces a
+    'simulator not found' error when used. *)
 
-module type S = sig
-  val run : Run_config.t -> Analysis.t Or_error.t
-end
+val make : (Id.t, (module Runner.S)) List.Assoc.t -> t Or_error.t
+(** [make assoc] makes a runner table from an associative list [assoc] from
+    simulator identifiers to runner implementations. *)

@@ -42,9 +42,15 @@ type t
 
 (** {2 Constructors} *)
 
-val make : pathset:Pathset.Run.t -> compilers:Id.Set.t -> t
-(** [make ~pathset ~compilers ~herd_config] constructs a run config with a
-    given [pathset] and [compilers] set. *)
+val make :
+     pathset:Pathset.Run.t
+  -> compilers:Id.Set.t
+  -> asm_simulator:Id.t
+  -> c_simulator:Id.t
+  -> t
+(** [make ~pathset ~compilers ~herd_config ~asm_simulator ~c_simulator]
+    constructs a run config with a given [pathset] and [compilers] set, and
+    the given simulators. *)
 
 (** {2 Accessors} *)
 
@@ -63,3 +69,7 @@ val input_mode : t -> Input_mode.t
 val c_litmus_files : t -> Fpath.t list
 (** [c_litmus_files ps] gets a list of all C/litmus input files for the run
     with config [cfg]. *)
+
+val asm_simulator : t -> Id.t
+
+val c_simulator : t -> Id.t

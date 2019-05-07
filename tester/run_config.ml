@@ -24,7 +24,11 @@
 open Base
 open Act_common
 
-type t = {pathset: Pathset.Run.t; compilers: Id.Set.t}
+type t =
+  { pathset: Pathset.Run.t
+  ; compilers: Id.Set.t
+  ; asm_simulator: Id.t
+  ; c_simulator: Id.t }
 [@@deriving fields, make]
 
 let output_root_dir : t -> Fpath.t =

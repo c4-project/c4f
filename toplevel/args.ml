@@ -121,21 +121,23 @@ module Other = struct
       : a option t =
     map ~f:(Fn.flip Option.some_if enum) (flag str no_arg ~doc)
 
-  let compiler_id_type = Arg_type.create Id.of_string
+  let id_type = Arg_type.create Id.of_string
 
-  let arch_type = Arg_type.create Id.of_string
+  let simulator ?(name : string = "-simulator")
+      ?(doc : string = "the simulator to use") () :
+      Id.t option Command.Param.t =
+    flag name (optional id_type) ~doc:("SIM_ID " ^ doc)
 
   let arch ?(name : string = "-arch")
       ?(doc : string = "the architecture to target") () :
       Id.t option Command.Param.t =
-    flag name (optional arch_type) ~doc:("ARCH_ID " ^ doc)
+    flag name (optional id_type) ~doc:("ARCH_ID " ^ doc)
 
   let compiler_id_or_arch =
     choose_one
       [ map
           ~f:(Option.map ~f:(fun x -> `Id x))
-          (flag "compiler"
-             (optional compiler_id_type)
+          (flag "compiler" (optional id_type)
              ~doc:"COMPILER_ID ID of the compiler to target")
       ; map ~f:(Option.map ~f:(fun x -> `Arch x)) (arch ()) ]
       ~if_nothing_chosen:`Raise

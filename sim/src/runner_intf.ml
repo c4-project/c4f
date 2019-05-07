@@ -33,6 +33,10 @@ module type Basic_filter =
 (** Shorthand for the specific type of runner a simulator runner expects. *)
 module type Basic_reader = Loadable.S with type t = Output.t
 
+module type Basic_error = sig
+  val error : Error.t
+end
+
 (** Basic interface for simulator runners constructed from filters.
 
     Such runners consist of two stages: a filter that runs the simulator on
@@ -53,6 +57,9 @@ end
 
 (** Main interface for simulator runners. *)
 module type S = sig
+  (** Exposes the simulator runner's filter. *)
+  module Filter : Basic_filter
+
   val run :
        Arch.t
     -> input_path:Fpath.t

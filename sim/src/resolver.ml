@@ -21,15 +21,4 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Base
-
-module type Basic = sig
-  include Common_intf.Basic_machine_and_up
-
-  (** The resolver used to produce simulator runners for machines. *)
-  module Asm_simulator_resolver : Sim.Resolver.S
-end
-
-module type S = sig
-  val run : Run_config.t -> Analysis.t Or_error.t
-end
+include Resolver_intf

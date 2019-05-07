@@ -48,8 +48,8 @@ module Post_filter = struct
 
   (** Adapts a simulator filter to try extract its per-run config from a
       [cfg]. *)
-  module Adapt (S : Sim.Runner.Basic_filter) : S = Filter.Adapt (struct
-    module Original = S
+  module Adapt (S : Sim.Runner.S) : S = Filter.Adapt (struct
+    module Original = S.Filter
 
     type aux_i = Cfg.t
 
@@ -60,48 +60,29 @@ module Post_filter = struct
     let adapt_o : unit -> unit Or_error.t = Or_error.return
   end)
 
+  module Make_dummy (B : sig
+    val error : Error.t
+  end) : S =
+    Adapt (Sim.Runner.Make_error (B))
+
   (** This mainly exists so that there's still a module returned by
       {{!make} make}, even if we don't need one.
 
       In practice, {{!chain} chain} makes sure that this filter is never
       run. *)
-  module Make_dummy (B : sig
-    val error : Error.t
-  end) : S = Filter.Make (struct
-    type aux_i = Cfg.t
-
-    type aux_o = unit
-
-    let name = "dummy"
-
-    let tmp_file_ext = Fn.const "tmp"
-
-    let run (_ : _ Filter.ctx) (_ : In_channel.t) (_ : Out_channel.t) :
-        unit Or_error.t =
-      Result.Error B.error
-  end)
-
   module No_filter_dummy : S = Make_dummy (struct
     let error =
       Error.of_string "Tried to use a filter when none was requested"
   end)
 
-  module Missing_filter_dummy : S = Make_dummy (struct
-    let error = Error.of_string "Tried to use a filter that doesn't exist"
-  end)
-
   (** [make mtab] makes a post-filter module based on the request [which]. *)
-  let make (mtab : (Id.t, (module S)) List.Assoc.t) : Cfg.t -> (module S) =
-    function
+  let make (mtab : Sim.Table.t) : Cfg.t -> (module S) = function
     | No_filter ->
         (module No_filter_dummy)
     | Filter {id; _} ->
-        id
-        |> List.Assoc.find ~equal:Id.equal mtab
-        |> Option.value ~default:(module Missing_filter_dummy : S)
+        (module Adapt ((val Sim.Table.get mtab id)))
 
-  let chain (type i o) (filter : Cfg.t)
-      (mtab : (Id.t, (module S)) List.Assoc.t)
+  let chain (type i o) (filter : Cfg.t) (mtab : Sim.Table.t)
       (module M : Filter.S with type aux_i = i and type aux_o = o) :
       (module Filter.S
          with type aux_i = i * (o Filter.chain_output -> Cfg.t)
@@ -120,70 +101,10 @@ module Post_filter = struct
       module First = M
       module Second = Post
     end) )
-
-  let get_arch (target : Config.Compiler.Target.t) : Sim.Arch.t =
-    Assembly (Config.Compiler.Target.arch target)
-
-  let machine_of_target (cfg : Config.Act.t) :
-      Config.Compiler.Target.t -> Config.Machine.Spec.With_id.t Or_error.t =
-    function
-    | `Spec s ->
-        Or_error.return (Config.Compiler.Spec.With_id.machine s)
-    | `Arch _ ->
-        (* TODO(@MattWindsor91): should really check that the machine has
-           the right architecture! *)
-        Config.Machine.Spec.Set.get (Config.Act.machines cfg)
-          Config.Machine.Id.default
-
-  let litmus_config (cfg : Config.Act.t) (target : Config.Compiler.Target.t)
-      : Config.Litmus_tool.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind machine = machine_of_target cfg target in
-    Or_error.tag_arg
-      (Option.one (Config.Machine.Spec.With_id.litmus machine))
-      "While trying to find litmus config for machine"
-      (Config.Machine.Spec.With_id.id machine)
-      [%sexp_of: Config.Machine.Id.t]
-
-  let try_make_litmus_filter (cfg : Config.Act.t)
-      (target : Config.Compiler.Target.t) : (module S) Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind litmus_cfg = litmus_config cfg target in
-      let%map mach = machine_of_target cfg target in
-      (* TODO: redundant *)
-      let (module R) = Config.Machine.Spec.With_id.runner mach in
-      ( module Adapt (Sim_litmus.Filter.Make (struct
-        let config = litmus_cfg
-
-        module Runner = R
-      end))
-      : S ))
-
-  let make_herd_filter (cfg : Config.Act.t) : (module S) =
-    let cfg = Config.Act.herd_or_default cfg in
-    ( module Adapt (Sim_herd.Filter.Make (struct
-      let config = cfg
-    end)) )
-
-  let make_litmus_filter (cfg : Config.Act.t)
-      (target : Config.Compiler.Target.t) : (module S) =
-    match try_make_litmus_filter cfg target with
-    | Ok m ->
-        m
-    | Error e ->
-        ( module Make_dummy (struct
-          let error = e
-        end) )
-
-  let make_mtab (cfg : Config.Act.t) (target : Config.Compiler.Target.t) :
-      (Id.t, (module S)) List.Assoc.t =
-    [ (Id.of_string "herd", make_herd_filter cfg)
-    ; (Id.of_string "litmus", make_litmus_filter cfg target) ]
 end
 
 let make_filter (filter : Post_filter.Cfg.t)
-    (target : Config.Compiler.Target.t)
-    (mtab : (Id.t, (module Post_filter.S)) List.Assoc.t) :
+    (target : Config.Compiler.Target.t) (mtab : Sim.Table.t) :
     (module Filter.S
        with type aux_i = ( Config.File_type.t_or_infer
                          * (   C.Filters.Output.t Filter.chain_output
@@ -218,6 +139,15 @@ let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
   in
   fun ~c_variables -> Litmusifier.Config.make ?postcondition ?c_variables ()
 
+let get_arch (target : Config.Compiler.Target.t) : Sim.Arch.t =
+  Assembly (Config.Compiler.Target.arch target)
+
+let to_machine_id = function
+  | `Id id ->
+      id
+  | `Arch _ ->
+      Config.Machine.Id.default
+
 let run file_type (simulator : Id.t option) compiler_id_or_emits
     (c_globals : string list option) (c_locals : string list option)
     (post_sexp : [`Exists of Sexp.t] option)
@@ -225,9 +155,12 @@ let run file_type (simulator : Id.t option) compiler_id_or_emits
     : unit Or_error.t =
   let open Result.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
-  let arch = Post_filter.get_arch target in
+  let arch = get_arch target in
   let filter = Post_filter.Cfg.make ?simulator ~arch in
-  let mtab = Post_filter.make_mtab cfg target in
+  let module R = Sim_support.Make_resolver (struct
+    let cfg = cfg
+  end) in
+  let%bind mtab = R.make_table (to_machine_id compiler_id_or_emits) in
   let%bind (module Filter) = make_filter filter target mtab in
   let passes =
     Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard
@@ -245,16 +178,12 @@ let run file_type (simulator : Id.t option) compiler_id_or_emits
   in
   ()
 
-let filter_arg = Command.Arg_type.create Id.of_string
-
 let command =
   Command.basic ~summary:"converts an assembly file to a litmus test"
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard_with_files.get
       and sanitiser_passes = Args.sanitiser_passes
-      and simulator =
-        flag "simulator" (optional filter_arg)
-          ~doc:"ID identifier of simulator to use, if any"
+      and simulator = Args.simulator ()
       and file_type = Args.file_type
       and compiler_id_or_arch = Args.compiler_id_or_arch
       and c_globals = Args.c_globals

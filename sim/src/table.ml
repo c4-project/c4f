@@ -22,14 +22,23 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
+open Act_common
 
-module type Basic = sig
-  include Common_intf.Basic_machine_and_up
+type t = (module Runner.S) Id.Map.t
 
-  (** The resolver used to produce simulator runners for machines. *)
-  module Asm_simulator_resolver : Sim.Resolver.S
-end
+let make_not_found_runner (id : Id.t) () =
+  ( module Runner.Make_error (struct
+    let error =
+      Error.create_s
+        [%message
+          "No simulator with the given ID was found." ~id:(id : Id.t)]
+  end)
+  : Runner.S )
 
-module type S = sig
-  val run : Run_config.t -> Analysis.t Or_error.t
-end
+let get (table : t) (id : Id.t) : (module Runner.S) =
+  Option.value_f (Id.Map.find table id)
+    ~default_f:(make_not_found_runner id)
+
+let make : (Id.t, (module Runner.S)) List.Assoc.t -> t Or_error.t =
+  Id.Map.of_alist_or_error

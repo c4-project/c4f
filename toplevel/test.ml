@@ -36,7 +36,9 @@ let report_spec_errors (o : Output.t) = function
         Fmt.(list Error.pp ~sep:cut)
         es
 
-let make_tester_config ~(out_root_raw : string)
+(* TODO(@MattWindsor91): de-hardcode Herd here *)
+let make_tester_config ?(c_simulator : Id.t = Id.of_string "herd")
+    ?(asm_simulator : Id.t = Id.of_string "herd") ~(out_root_raw : string)
     ~(input_mode : Tester.Input_mode.t) o cfg :
     Tester.Run_config.t Or_error.t =
   let open Or_error.Let_syntax in
@@ -52,9 +54,9 @@ let make_tester_config ~(out_root_raw : string)
   let%map pathset =
     Tester.Pathset.Run.make_and_mkdirs {output_root_dir; input_mode}
   in
-  Tester.Run_config.make ~pathset ~compilers
+  Tester.Run_config.make ~c_simulator ~asm_simulator ~pathset ~compilers
 
-let make_tester o cfg timing_mode =
+let make_tester o (cfg : Config.Act.t) timing_mode =
   let herd_cfg = Config.Act.herd_or_default cfg in
   ( module Tester.Instance.Make (struct
     module T = (val Utils.Timing.Mode.to_module timing_mode)
@@ -67,7 +69,10 @@ let make_tester o cfg timing_mode =
       let config = herd_cfg
     end)
 
-    module Asm_simulator = Herd
+    module Asm_simulator_resolver = Sim_support.Make_resolver (struct
+      let cfg = cfg
+    end)
+
     module C_simulator = Herd
 
     let compilers = Config.Act.compilers cfg
@@ -167,14 +172,16 @@ let output_analysis (analysis : Tester.Analysis.t) : unit Or_error.t =
   let%map () = output_main_table analysis in
   output_deviations analysis
 
-let run (should_time : bool)
+let run (c_simulator : Id.t option) (asm_simulator : Id.t option)
+    (should_time : bool)
     (input_mode_raw : [< `Delitmus of string list | `Memalloy of string])
     (out_root_raw : string) (o : Output.t) (cfg : Config.Act.t) :
     unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind input_mode = cook_input_mode input_mode_raw in
   let%bind tester_cfg =
-    make_tester_config ~input_mode ~out_root_raw o cfg
+    make_tester_config ?c_simulator ?asm_simulator ~input_mode ~out_root_raw
+      o cfg
   in
   let timing_mode =
     Timing.Mode.(if should_time then Enabled else Disabled)
@@ -195,6 +202,12 @@ let command =
             "PATH the path under which output directories will be created"
       and time =
         flag "time" no_arg ~doc:"if given, measure and report times"
+      and c_simulator =
+        Args.simulator ~name:"-c-simulator"
+          ~doc:"If given, overrides the normal C test simulator" ()
+      and asm_simulator =
+        Args.simulator ~name:"-asm-simulator"
+          ~doc:"If given, overrides the normal assembly test simulator" ()
       and input_mode_raw =
         choose_one
           [ map
@@ -217,4 +230,6 @@ let command =
       fun () ->
         Common.lift_command standard_args ?compiler_predicate
           ?machine_predicate ?sanitiser_passes ~with_compiler_tests:true
-          ~f:(fun _args -> run time input_mode_raw out_root_raw))
+          ~f:(fun _args ->
+            run c_simulator asm_simulator time input_mode_raw out_root_raw
+        ))

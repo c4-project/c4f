@@ -25,17 +25,20 @@
 
 open Core_kernel
 open Lib
+open Act_common
 
 val run :
-     bool
+     Id.t option
+  -> Id.t option
+  -> bool
   -> [< `Delitmus of string list | `Memalloy of string]
   -> string
   -> Output.t
   -> Config.Act.t
   -> unit Or_error.t
-(** [run should_time input_mode_raw out_root_raw o cfg] runs the test
-    frontend. It accepts input according to [input_mode_raw], and outputs
-    results in [out_root_raw]. *)
+(** [run c_simulator asm_simulator should_time input_mode_raw out_root_raw o
+    cfg] runs the test frontend. It accepts input according to
+    [input_mode_raw], and outputs results in [out_root_raw]. *)
 
 val command : Command.t
 (** [command] packages up the test command as a [Command.t]. *)
