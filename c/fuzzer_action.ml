@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 open Utils
 include Fuzzer_action_intf
 
@@ -99,17 +100,17 @@ end
 module Pool = struct
   type t = (module S) Weighted_list.t
 
-  let make_weight_pair (weight_overrides : int Config.Id.Map.t)
+  let make_weight_pair (weight_overrides : int Id.Map.t)
       (module M : S) : (module S) * int =
     let weight =
       M.name
-      |> Config.Id.Map.find weight_overrides
+      |> Id.Map.find weight_overrides
       |> Option.value ~default:M.default_weight
     in
     ((module M : S), weight)
 
   let make_weight_alist (actions : (module S) list)
-      (weight_overrides : int Config.Id.Map.t) :
+      (weight_overrides : int Id.Map.t) :
       ((module S), int) List.Assoc.t =
     List.map ~f:(make_weight_pair weight_overrides) actions
 
@@ -118,13 +119,13 @@ module Pool = struct
     let weight_overrides_alist = Config.Fuzz.weights config in
     Or_error.Let_syntax.(
       let%bind weight_overrides =
-        Config.Id.Map.of_alist_or_error weight_overrides_alist
+        Id.Map.of_alist_or_error weight_overrides_alist
       in
       let weights = make_weight_alist actions weight_overrides in
       Weighted_list.from_alist weights)
 
-  let summarise : t -> Summary.t Config.Id.Map.t =
-    Weighted_list.fold ~init:Config.Id.Map.empty
+  let summarise : t -> Summary.t Id.Map.t =
+    Weighted_list.fold ~init:Id.Map.empty
       ~f:(fun map (module M : S) user_weight ->
         Map.set map ~key:M.name ~data:(Summary.make (module M) user_weight)
     )

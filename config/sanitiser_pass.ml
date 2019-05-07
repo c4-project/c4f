@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 open Utils
 
 (* The unusual module nesting here is to make use of various extensions and

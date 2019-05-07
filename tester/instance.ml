@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Travesty_core_kernel_exts
-open Lib
+open Act_common
 include Instance_intf
 
 module Machine_assoc = Alist.Fix_left (Config.Machine.Id)
@@ -37,7 +37,7 @@ module Compiler_spec_env = struct
     |> Config.Compiler.Spec.Set.group ~f:(fun spec ->
            Config.Machine.Spec.With_id.id
              (Config.Compiler.Spec.With_id.machine spec) )
-    |> Config.Id.Map.to_alist
+    |> Id.Map.to_alist
 
   let get (cfg : Run_config.t) (compilers : Config.Compiler.Spec.Set.t) : t
       =
@@ -51,7 +51,7 @@ module Job = struct
   type t =
     { config: Run_config.t
     ; specs: Compiler_spec_env.t
-    ; c_simulations: Sim.File_map.t
+    ; c_simulations: Sim.Bulk.File_map.t
     ; make_machine: Config.Compiler.Spec.Set.t -> (module Machine.S) }
   [@@deriving fields, make]
 
@@ -82,8 +82,8 @@ module Make (B : Basic) : S = struct
       let compilers = mach_compilers
     end))
 
-  module H = C_simulation.Make (Lib.Herd)
-  module S = Sim.Make (B)
+  module H = C_sim.Make (B.C_simulator)
+  module S = Sim.Bulk.Make (B.C_simulator)
 
   let make_output_path (ps : Pathset.Run.t) : (Fpath.t -> Fpath.t) Staged.t =
     Staged.stage
@@ -92,11 +92,12 @@ module Make (B : Basic) : S = struct
         Pathset.Run.c_sim_file ps name)
 
   let run_c_simulations (config : Run_config.t) :
-      Sim.File_map.t Or_error.t =
+    Sim.Bulk.File_map.t Or_error.t =
     let input_paths = Run_config.c_litmus_files config in
     let ps = Run_config.pathset config in
     let output_path_f = Staged.unstage (make_output_path ps) in
-    S.run_bulk Herd.C ~input_paths ~output_path_f
+    let job = { S.Job.arch = C; input_paths; output_path_f } in
+    S.run job
 
   let make_job (config : Run_config.t) : Job.t Or_error.t =
     Or_error.Let_syntax.(

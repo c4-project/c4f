@@ -23,6 +23,7 @@
 
 (** Outputting test analyses in tabular formats. *)
 
+open Act_common
 open Utils
 
 (** Enumeration of levels of 'interestingness', which determine which rows
@@ -46,10 +47,10 @@ module Row : sig
   (** Opaque type of rows. *)
   type 'a t [@@deriving sexp_of]
 
-  val machine_id : _ t -> Config.Id.t
+  val machine_id : _ t -> Id.t
   (** [machine_id row] gets the ID of the machine of [row]. *)
 
-  val compiler_id : _ t -> Config.Id.t
+  val compiler_id : _ t -> Id.t
   (** [compiler_id row] gets the ID of the compiler of [row]. *)
 
   val filename : _ t -> string
@@ -81,7 +82,7 @@ module On_files : sig
 end
 
 module On_deviations : sig
-  val rows : Analysis.t -> Lib.Sim_diff.Order.t Row.t list
+  val rows : Analysis.t -> Sim.Diff.Order.t Row.t list
   (** [rows x] gets a list of (machine ID, compiler ID, filename, deviation)
       rows for all files in analysis [x] where there are deviations in the
       state analysis. *)

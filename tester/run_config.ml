@@ -22,8 +22,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 
-type t = {pathset: Pathset.Run.t; compilers: Config.Id.Set.t}
+type t = {pathset: Pathset.Run.t; compilers: Id.Set.t}
 [@@deriving fields, make]
 
 let output_root_dir : t -> Fpath.t =

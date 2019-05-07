@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 
 let lang_procs = [("x86", X86.Asm_job.get_runner)]
 
@@ -31,8 +32,8 @@ let try_get_lang_proc language =
   |> Result.of_option
        ~error:(Error.create_s [%message "Unknown language" ~language])
 
-let asm_runner_from_arch (arch : Config.Id.t) =
-  match Config.Id.to_string_list arch with
+let asm_runner_from_arch (arch : Id.t) =
+  match Id.to_string_list arch with
   | [] ->
       Or_error.error_string "Missing language name"
   | lang :: rest ->
@@ -72,7 +73,7 @@ let test_compiler cspec =
     Or_error.tag_arg (M.test ())
       "A compiler in your spec file didn't respond properly"
       (Config.Compiler.Spec.With_id.id cspec)
-      [%sexp_of: Config.Id.t]
+      [%sexp_of: Id.t]
   in
   Some cspec
 

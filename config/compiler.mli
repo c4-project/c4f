@@ -25,6 +25,7 @@
     compilers. *)
 
 open Core_kernel
+open Act_common
 open Utils
 
 (** To reduce duplication, we describe the module types of [Compiler] in

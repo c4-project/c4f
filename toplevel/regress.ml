@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 open Lib
 open Utils
 
@@ -111,7 +112,7 @@ let regress_on_files (bin_name : string) (test_dir : Fpath.t)
 let regress_run_asm_many (modename : string) mode passes
     (test_path : Fpath.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
-  let arch = Config.Id.of_string "x86.att" in
+  let arch = Id.of_string "x86.att" in
   let path = Fpath.(test_path / "asm" / "x86" / "att" / "") in
   let%bind l = Language_support.asm_runner_from_arch arch in
   let%bind specs = read_specs path in

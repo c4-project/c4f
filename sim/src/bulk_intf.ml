@@ -21,10 +21,21 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Using simulators to determine the expected behaviour of a C litmus test. *)
+open Base
 
-include module type of C_simulation_intf
+(** Signature of bulk (multi-file) simulation runners. *)
+module type S = sig
+  type file_map
+  (** Opaque type of file maps. *)
 
-(** [Make] adapts a simulation runner to the C simulation interface, by
-    filling in logic specific to running C simulation queries. *)
-module Make (R : Lib.Sim_runner.S) : S
+	(** Bundle of inputs needed for a bulk job. *)
+  module Job : sig
+    type nonrec t =
+      { input_paths : Fpath.t list
+      ; output_path_f : Fpath.t -> Fpath.t
+      ; arch : Arch.t }
+  end
+
+  val run : Job.t -> file_map Or_error.t
+  (** [run job] runs the simulator on a bulk job [job]. *)
+end

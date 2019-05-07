@@ -21,21 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulation output reader for Herd7.
+(** Simulator-runner interface for Herd.
 
-    This module describes a set of functions and other related constructs
-    that scrape the text output of a Herd7 run, and build
-    {{!Sim_output.t} Sim_output.t} records representing the run results. *)
+    For just running Herd directly, or as a filter, see {{!Filter}Filter}. *)
 
-open Base
-open Utils
-
-(** Opaque type of Herd input readers. *)
-type t
-
-val init : ?path:string -> unit -> t
-(** [init ?path ()] constructs a new reader, optionally with the path
-    [path]. *)
-
-(** Herd readers support the {{!Loadable.S} Loadable} interface. *)
-include Loadable.S with type t := Sim_output.t
+module Make (B : Filter.Basic) : Sim.Runner.S
+(** We can use Herd as a simulator runner by supplying it with configuration
+    expressed as a {{!Filter.Basic}Filter.Basic} module. *)

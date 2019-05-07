@@ -26,27 +26,29 @@ open Travesty_core_kernel_exts
 open Lib
 open Utils
 
+(* TODO(@MattWindsor91): clean this up. *)
+module type Herd_in = Filter.S with type aux_i = Sim.Arch.t and type aux_o = unit
+
 module Post_filter = struct
   module Err = Or_error
 
   type t = [`Herd | `Litmus | `None]
 
-  type cfg = [`Herd of Herd.t | `Litmus of Config.Litmus_tool.t | `None]
+  type cfg = [`Herd of Sim.Arch.t | `Litmus of Config.Litmus_tool.t | `None]
 
   (** All post-filters have the same signature. *)
   module type S = Filter.S with type aux_i = cfg and type aux_o = unit
 
-  (** Adapts the Herd filter to try extract its config from a [cfg]. *)
-  module Herd_filter : S = Filter.Adapt (struct
-    module Original = Herd.Filter
+
+  (** Adapts a Herd filter to try extract its per-run config from a [cfg]. *)
+  module Herd_filter (H : Herd_in) : S = Filter.Adapt (struct
+    module Original = H
 
     type aux_i = cfg
-
     type aux_o = unit
 
-    let adapt_i : cfg -> Herd.t Err.t = function
-      | `Herd h ->
-          Err.return h
+    let adapt_i : cfg -> Sim.Arch.t Err.t = function
+      | `Herd arch -> Err.return arch
       | `Litmus _ ->
           Err.error_string "Expected Herd config, got litmus"
       | `None ->
@@ -94,23 +96,23 @@ module Post_filter = struct
         "Internal error: tried to postprocess litmus with no filter"
   end)
 
-  (** [make mach_runner which] makes a post-filter module based on the
+  (** [make herd_cfg mach_runner which] makes a post-filter module based on the
       request [which]. If the post-filter is Litmus, then it is set up to
       run using [mach_runner]; other post-filters are run locally. *)
-  let make (module Mach_runner : Runner.S) : t -> (module S) = function
+  let make (module H : Herd_in) (module Mach_runner : Runner.S) : t -> (module S) = function
     | `Herd ->
-        (module Herd_filter)
+        (module Herd_filter (H))
     | `Litmus ->
         (module Litmus_filter (Mach_runner))
     | `None ->
         (module Dummy)
 
-  let chain (type i o) (filter : t) (module R : Runner.S)
+  let chain (type i o) (filter : t) (module H : Herd_in) (module R : Runner.S)
       (module M : Filter.S with type aux_i = i and type aux_o = o) :
       (module Filter.S
          with type aux_i = i * (o Filter.chain_output -> cfg)
           and type aux_o = o * unit option) =
-    let (module Post) = make (module R) filter in
+    let (module Post) = make (module H) (module R) filter in
     ( module Filter.Chain_conditional_second (struct
       type aux_i = i * (o Filter.chain_output -> cfg)
 
@@ -125,12 +127,9 @@ module Post_filter = struct
       module Second = Post
     end) )
 
-  let herd_config (cfg : Config.Act.t) (target : Config.Compiler.Target.t) :
-      Herd.t Err.t =
-    let open Err.Let_syntax in
-    let%bind herd_cfg = Config.Act.require_herd cfg in
-    let arch = Herd.Assembly (Config.Compiler.Target.arch target) in
-    Herd.create ~config:herd_cfg ~arch
+  let get_arch (target : Config.Compiler.Target.t) :
+    Sim.Arch.t =
+    Assembly (Config.Compiler.Target.arch target)
 
   let machine_of_target (cfg : Config.Act.t) :
       Config.Compiler.Target.t -> Config.Machine.Spec.With_id.t Err.t =
@@ -156,7 +155,7 @@ module Post_filter = struct
   let make_config (cfg : Config.Act.t) (target : Config.Compiler.Target.t) :
       t -> cfg Err.t = function
     | `Herd ->
-        Err.(herd_config cfg target >>| fun h -> `Herd h)
+        Err.return (`Herd (get_arch target))
     | `Litmus ->
         Err.(litmus_config cfg target >>| fun l -> `Litmus l)
     | `None ->
@@ -164,7 +163,9 @@ module Post_filter = struct
 end
 
 let make_filter (post_filter : Post_filter.t)
-    (target : Config.Compiler.Target.t) (target_runner : (module Runner.S))
+    (target : Config.Compiler.Target.t)
+    (herd : (module Herd_in))
+    (target_runner : (module Runner.S))
     :
     (module Filter.S
        with type aux_i = ( Config.File_type.t_or_infer
@@ -182,7 +183,7 @@ let make_filter (post_filter : Post_filter.t)
   let open Or_error in
   Common.(
     target |> litmusify_pipeline
-    >>| Post_filter.chain post_filter target_runner)
+    >>| Post_filter.chain post_filter herd target_runner)
 
 let parse_post :
     [`Exists of Sexp.t] -> Sexp.t Litmus.Ast_base.Postcondition.t Or_error.t
@@ -202,6 +203,11 @@ let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
   in
   fun ~c_variables -> Litmusifier.Config.make ?postcondition ?c_variables ()
 
+(* TODO(@MattWindsor91): merge with tester logic *)
+let make_herd_module (cfg : Config.Act.t) : (module Herd_in) =
+  let herd_cfg = Config.Act.herd_or_default cfg in
+  (module Sim_herd.Filter.Make (struct let config = herd_cfg end))
+
 let run file_type (filter : Post_filter.t) compiler_id_or_emits
     (c_globals : string list option) (c_locals : string list option)
     (post_sexp : [`Exists of Sexp.t] option)
@@ -209,9 +215,10 @@ let run file_type (filter : Post_filter.t) compiler_id_or_emits
     : unit Or_error.t =
   let open Result.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
+  let herd = make_herd_module cfg in
   let%bind tgt_machine = Post_filter.machine_of_target cfg target in
   let tgt_runner = Config.Machine.Spec.With_id.runner tgt_machine in
-  let%bind (module Filter) = make_filter filter target tgt_runner in
+  let%bind (module Filter) = make_filter filter target herd tgt_runner in
   let%bind pf_cfg = Post_filter.make_config cfg target filter in
   let passes =
     Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard

@@ -24,9 +24,9 @@
 (** [Spec] contains general interfaces for dealing with specifications of
     machines and compilers. *)
 
-open Core
+open Base
+open Travesty_core_kernel_exts
 open Utils
-module Tx = Travesty_core_kernel_exts
 
 module type Common = sig
   type t [@@deriving sexp]
@@ -35,7 +35,7 @@ module type Common = sig
 
   include Pretty_printer.S with type t := t
 
-  val pp_summary : Format.formatter -> t -> unit
+  val pp_summary : t Fmt.t
 end
 
 module type S_with_id = sig
@@ -78,7 +78,7 @@ module type S = sig
 
     include Pretty_printer.S with type t := t
 
-    val pp_verbose : bool -> Format.formatter -> t -> unit
+    val pp_verbose : bool -> t Fmt.t
 
     val get : t -> Id.t -> With_id.t Or_error.t
 
@@ -94,7 +94,7 @@ module type S = sig
     val map : t -> f:(With_id.t -> 'a) -> 'a list
   end
 
-  val pp_verbose : bool -> Format.formatter -> t -> unit
+  val pp_verbose : bool -> t Fmt.t
 end
 
 module Make (B : Basic) :
@@ -133,7 +133,7 @@ module Make (B : Basic) :
       let open Or_error.Let_syntax in
       let%map () =
         xs
-        |> List.find_all_dups ~compare:(Tx.Fn.on With_id.id ~f:Id.compare)
+        |> List.find_all_dups ~compare:(Fn.on With_id.id ~f:Id.compare)
         |> List.map ~f:(fun x ->
                Or_error.error_s
                  [%message "duplicate ID" ~id:(With_id.id x : Id.t)] )
@@ -150,13 +150,13 @@ module Make (B : Basic) :
     let pp_id_spec f ~pp id spec =
       My_format.pp_kv f (Id.to_string id) pp spec
 
-    let pp_verbose verbose f specs =
-      Format.pp_open_vbox f 0 ;
-      Format.pp_print_list ~pp_sep:Format.pp_print_cut
-        (fun f -> Tuple2.uncurry (pp_id_spec ~pp:(pp_verbose verbose) f))
-        f specs ;
-      Format.pp_close_box f ()
+    let pp_verbose verbose : t Fmt.t =
+      Fmt.(vbox
+        (list ~sep:cut
+          (fun f -> Tuple2.uncurry (pp_id_spec ~pp:(pp_verbose verbose) f))
+        )
+    )
 
-    let pp = pp_verbose true
+    let pp : t Fmt.t = pp_verbose true
   end
 end

@@ -1,9 +1,8 @@
 # `lib`: target-independent, mid-level parts of `act`
 
 This part of `act` contains the majority of `act`'s language and
-compiler-independent code, as well as interfaces and utilities used
+compiler-independent code.  It also contains interfaces and utilities used
 by the target-specific parts.
 
-Since `lib` is used by the target-specific parts of `act`, it can't
-depend on any of them.  As a result, glue code to connect `act` to
-the language and compiler implementations is in `bin`, not `lib`.
+This module is gradually being phased out in favour of more specific
+top-level modules.

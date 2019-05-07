@@ -44,19 +44,7 @@ module Make (B : Basic) : S = struct
   let lower_thread_local_symbol sym =
     Litmus.Id.(global (to_memalloy_id sym))
 
-  module S = Sim.Make (B)
-
-  let make_herd_arch = function `C -> Herd.C | `Assembly -> Assembly emits
-
-  (** [try_run_herd arch ~input_path ~output_path] sees if [cspec] asked for
-      a Herd run and, if so (and [herd_cfg] is [Some]), runs Herd on
-      [infile], outputting to [outfile] and using models for [c_or_asm]. *)
-  let try_run_herd c_or_asm ~input_path ~output_path =
-    if C_id.herd cspec then
-      S.run (make_herd_arch c_or_asm) ~input_path ~output_path
-    else `Disabled
-
-  let analyse (c_herd : S.run_result) (a_herd : S.run_result)
+  let analyse (c_herd : Sim.Output.t) (a_herd : Sim.Output.t)
       (locmap : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t) :
       Analysis.Herd.t Or_error.t =
     let open Or_error.Let_syntax in
@@ -65,15 +53,15 @@ module Make (B : Basic) : S = struct
        need to transpose it. *)
     let locmap_r = List.Assoc.inverse locmap in
     match (c_herd, a_herd) with
-    | `Disabled, _ | _, `Disabled ->
+    | Skipped _, _ | _, Skipped _ ->
         return Analysis.Herd.Disabled
-    | `Errored, _ ->
+    | Errored _, _ ->
         return (Analysis.Herd.Errored `C)
-    | _, `Errored ->
+    | _, Errored _ ->
         return (Analysis.Herd.Errored `Assembly)
-    | `Success oracle, `Success subject ->
+    | Success oracle, Success subject ->
         let%map outcome =
-          Sim_diff.run ~oracle ~subject
+          Sim.Diff.run ~oracle ~subject
             ~location_map:(fun final_sym ->
               Or_error.return
                 (List.Assoc.find ~equal:[%equal: Litmus.Id.t] locmap_r
@@ -87,12 +75,12 @@ module Make (B : Basic) : S = struct
       extracts an associative array of mappings [(s, s')] where each [s] is
       a location mentioned in [r]'s state list, and each [s'] is the
       equivalent variable name in the memalloy C witness. *)
-  let locations_of_herd_result = function
-    | `Success herd ->
-        Sim_output.states herd
-        |> List.concat_map ~f:Sim_output.State.bound
+  let locations_of_herd_result : Sim.Output.t -> _ list = function
+    | Success herd ->
+        Sim.Output.Observation.states herd
+        |> List.concat_map ~f:Sim.State.bound
         |> List.map ~f:(fun s -> (s, lower_thread_local_symbol s))
-    | `Disabled | `Errored ->
+    | Skipped _ | Errored _ ->
         []
 
   let compile_from_pathset_file (fs : Pathset.File.t) =
@@ -112,12 +100,11 @@ module Make (B : Basic) : S = struct
         Output.pw o "@[%a@]@." Asm_job.Output.warn output ;
         Asm_job.Output.symbol_map output )
 
-  let a_herd_on_pathset_file fs =
+  let a_herd_on_pathset_file (fs : Pathset.File.t) : Sim.Output.t T.t Or_error.t =
     bracket ~id ~stage:"SIM(asm)" ~file:(P_file.name fs) (fun () ->
-        Or_error.return
-          (try_run_herd `Assembly
+          B.Asm_simulator.run_and_load_results (Sim.Arch.Assembly emits)
              ~input_path:(P_file.asm_litmus_file fs)
-             ~output_path:(P_file.asm_sim_file fs)) )
+             ~output_path:(P_file.asm_sim_file fs))
 
   let cvar_from_loc_map_entry (id : Litmus.Id.t) : string Or_error.t =
     let open Or_error.Let_syntax in
@@ -173,14 +160,14 @@ module Make (B : Basic) : S = struct
             delitmusify fs ) )
       ~stage:"delitmusifying" ~file:(P_file.name fs) ~id
 
-  let run_single_from_pathset_file (c_sims : Sim.File_map.t)
+  let run_single_from_pathset_file (c_sims : Sim.Bulk.File_map.t)
       (fs : Pathset.File.t) : (Analysis.Herd.t * TS.t) Or_error.t =
     let open Or_error.Let_syntax in
     (* NB: many of these stages depend on earlier stages' filesystem
        side-effects. These dependencies aren't evident in the binding chain,
        so be careful when re-ordering. *)
     let litmus_path = Pathset.File.c_litmus_file fs in
-    let c_herd_outcome = Sim.File_map.get c_sims ~litmus_path in
+    let c_herd_outcome = Sim.Bulk.File_map.get c_sims ~litmus_path in
     let litc_to_c_map = locations_of_herd_result c_herd_outcome in
     let%bind cvars = cvars_from_loc_map litc_to_c_map in
     let%bind delitmusifier = delitmusify_if_needed fs in
@@ -202,7 +189,7 @@ module Make (B : Basic) : S = struct
     in
     (analysis, timings)
 
-  let run_single (c_sims : Sim.File_map.t) (fs : Pathset.File.t)
+  let run_single (c_sims : Sim.Bulk.File_map.t) (fs : Pathset.File.t)
       =
     let open Or_error.Let_syntax in
     let%map result =
@@ -213,7 +200,7 @@ module Make (B : Basic) : S = struct
     , Analysis.File.make ~herd ?time_taken:(T.time_taken result)
         ?time_taken_in_cc:(TS.in_compiler timings) () )
 
-  let run (c_sims : Sim.File_map.t) =
+  let run (c_sims : Sim.Bulk.File_map.t) =
     let open Or_error.Let_syntax in
     let%map files_and_time =
       T.bracket_join (fun () ->

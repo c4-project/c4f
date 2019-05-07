@@ -24,9 +24,10 @@
 (** The 'act' mutation-based C litmus test fuzzer. *)
 
 open Core_kernel
+open Act_common
 module Action = Fuzzer_action
 
-val summarise : Config.Fuzz.t -> Action.Summary.t Config.Id.Map.t Or_error.t
+val summarise : Config.Fuzz.t -> Action.Summary.t Id.Map.t Or_error.t
 (** [summarise config] tries to get the effective fuzzer weights setup using
     the weighting information in [config]. *)
 

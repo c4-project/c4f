@@ -22,38 +22,20 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Lib
+include Runner_intf
 
-(** {2 Input and output types} *)
+module Make (B : Basic) : S = struct
+  type t = B.Filter.aux_i
 
-type 'elt source =
-  | From_test of {input_path: Fpath.t; output_path: Fpath.t}
-      (** This simulation run will get ['elt] from the Litmus test at
-          [input_path]. It may use [output_path] as an output file if needed
-          (for example, to communicate with the simulator). *)
-  | Inline of 'elt
-      (** This simulation run will get ['elt] directly from the user. *)
+  let run_on_paths (ctx : t) ~(input_path : Fpath.t)
+      ~(output_path : Fpath.t) : unit Or_error.t =
+    B.Filter.run ctx
+      (Utils.Io.In_source.of_fpath input_path)
+      (Utils.Io.Out_sink.file output_path)
 
-(** Type of postcondition input. *)
-type post = C.Mini_litmus.Ast.Postcondition.t
-
-(** Type of extensional state-set input. *)
-type ext = Sim_output.State.Set.t
-
-(** {2 Signatures} *)
-
-module type S = sig
-  (** Type of simulator context *)
-  type t
-
-  val run_post : t -> input:post source -> post Or_error.t
-
-  val run_ext : t -> input:ext source -> ext Or_error.t
-
-  val run :
-       t
-    -> input:[`Post of post source | `Ext of ext source]
-    -> [`Post of post | `Ext of ext] Or_error.t
-  (** [run input] behaves as [run_post] or [run_ext], depending on the input
-      query. *)
+  let run_and_load_results (ctx : t) ~(input_path : Fpath.t)
+      ~(output_path : Fpath.t) : Output.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind () = run_on_paths ctx ~input_path ~output_path in
+      B.Reader.load ~path:output_path)
 end

@@ -25,6 +25,7 @@
     can be enabled or disabled. *)
 
 open Core_kernel
+open Act_common
 open Utils
 
 (** [t] enumerates the various high-level sanitisation passes. *)

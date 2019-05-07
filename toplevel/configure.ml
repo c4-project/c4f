@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 open Lib
 
 let run_list_compilers (standard_args : Args.Standard.t) (_o : Output.t)
@@ -42,21 +43,21 @@ let list_compilers_command : Command.t =
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:run_list_compilers)
 
-let predicate_lists : (string, (module Config.Property.S)) List.Assoc.t =
+let predicate_lists : (string, (module Property.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"
     , (module Config.Compiler.Property) )
   ; ( "Machine predicates (-filter-machines)"
     , (module Config.Machine.Property) )
-  ; ("Identifier predicates", (module Config.Id.Property))
+  ; ("Identifier predicates", (module Id.Property))
   ; ( "Sanitiser passes (-sanitiser-passes)"
     , (module Config.Sanitiser_pass.Selector) ) ]
 
-let pp_tree_module : (module Config.Property.S) Fmt.t =
+let pp_tree_module : (module Property.S) Fmt.t =
  fun f (module M) -> M.pp_tree f ()
 
 (** [pp_predicate_list] is a pretty-printer for predicate lists. *)
 let pp_predicate_list :
-    (string, (module Config.Property.S)) List.Assoc.t Fmt.t =
+    (string, (module Property.S)) List.Assoc.t Fmt.t =
   Fmt.(
     list ~sep:(unit "@,@,")
       (vbox ~indent:2
@@ -86,8 +87,8 @@ let list_fuzzer_actions_readme () : string =
 let fuzz_config (cfg : Config.Act.t) : Config.Fuzz.t =
   cfg |> Config.Act.fuzz |> Option.value ~default:(Config.Fuzz.make ())
 
-let pp_fuzz_summaries : C.Fuzzer.Action.Summary.t Config.Id.Map.t Fmt.t =
-  Config.Id.pp_map C.Fuzzer.Action.Summary.pp
+let pp_fuzz_summaries : C.Fuzzer.Action.Summary.t Id.Map.t Fmt.t =
+  Id.pp_map C.Fuzzer.Action.Summary.pp
 
 let run_list_fuzzer_actions (_o : Output.t) (cfg : Config.Act.t) :
     unit Or_error.t =

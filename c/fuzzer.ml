@@ -23,6 +23,7 @@
 
 open Core_kernel
 open Travesty_core_kernel_exts
+open Act_common
 open Lib
 open Utils
 module Var = Fuzzer_var
@@ -106,7 +107,7 @@ let always : Subject.Test.t -> bool State.Monad.t =
 
 (** Fuzzer action that generates a new, empty program. *)
 module Make_program : Action.S = struct
-  let name = Config.Id.of_string "program.make.empty"
+  let name = Id.of_string "program.make.empty"
 
   let readme () =
     Utils.My_string.format_for_readme
@@ -135,7 +136,7 @@ end
 
 (** Fuzzer action that generates a new global variable. *)
 module Make_global : Action.S = struct
-  let name = Config.Id.of_string "var.make.global"
+  let name = Id.of_string "var.make.global"
 
   let readme () =
     Utils.My_string.format_for_readme
@@ -183,10 +184,10 @@ let generate_random_state (type rs)
     rs State.Monad.t =
   let open State.Monad.Let_syntax in
   let%bind o = State.Monad.output () in
-  Output.pv o "fuzz: getting random state generator for %a@." Config.Id.pp
+  Output.pv o "fuzz: getting random state generator for %a@." Id.pp
     Act.name ;
   let%map gen = Act.Random_state.gen subject in
-  Output.pv o "fuzz: generating random state for %a...@." Config.Id.pp
+  Output.pv o "fuzz: generating random state for %a...@." Id.pp
     Act.name ;
   let g = Quickcheck.Generator.generate gen ~random ~size:10 in
   Output.pv o "fuzz: done generating random state.@." ;
@@ -220,7 +221,7 @@ let make_pool : Config.Fuzz.t -> Action.Pool.t Or_error.t =
   Action.Pool.make (Lazy.force modules)
 
 let summarise (cfg : Config.Fuzz.t) :
-    Action.Summary.t Config.Id.Map.t Or_error.t =
+    Action.Summary.t Id.Map.t Or_error.t =
   Or_error.(cfg |> make_pool >>| Action.Pool.summarise)
 
 let mutate_subject (subject : Subject.Test.t) ~(config : Config.Fuzz.t)

@@ -45,7 +45,8 @@ end
 
 (** User-facing interface for running compiler tests on a single compiler. *)
 module type S = sig
-  val run : Sim.File_map.t -> Analysis.Compiler.t Or_error.t
+  val run : Sim.Bulk.File_map.t -> Analysis.Compiler.t Or_error.t
   (** [run c_sims] runs tests on each file in the module's pathset,
+      given the output of running C simulations in [c_sims], and
       returning a compiler-level analysis. *)
 end

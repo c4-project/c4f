@@ -35,7 +35,7 @@
 open Base
 
 (** Synonym of [Partial_order] for orderings between state sets. *)
-module Order : module type of Sim_output.State.Set.Partial_order
+module Order : module type of State.Set.Partial_order
 
 type t =
   | Oracle_undefined
@@ -54,8 +54,8 @@ val to_string : t -> string
 include Pretty_printer.S with type t := t
 
 val run :
-     oracle:Sim_output.t
-  -> subject:Sim_output.t
+     oracle:Output.Observation.t
+  -> subject:Output.Observation.t
   -> location_map:(Litmus.Id.t -> Litmus.Id.t option Or_error.t)
   -> value_map:(string -> string Or_error.t)
   -> t Or_error.t

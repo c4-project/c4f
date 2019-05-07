@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 
 (** [Basic_spec] is the signature common to any sort of compiler
     specification, including [With_id] pairs.

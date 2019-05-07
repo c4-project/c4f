@@ -26,9 +26,8 @@ open Lib
 
 let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Config.Act.t) :
     unit Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind herd = Config.Act.require_herd cfg in
-  Herd.run_direct ?arch herd argv
+  let herd = Config.Act.herd_or_default cfg in
+  Sim_herd.Filter.run_direct ?arch herd argv
 
 let herd_command : Command.t =
   Command.basic ~summary:"runs Herd"
@@ -36,10 +35,10 @@ let herd_command : Command.t =
       let%map_open standard_args = Args.Standard.get
       and arch =
         choose_one
-          [ Args.flag_to_enum_choice (Some Herd.C) "-c"
+          [ Args.flag_to_enum_choice (Some Sim.Arch.C) "-c"
               ~doc:"Use the act.conf-configured model for C"
           ; map
-              ~f:(Option.map ~f:(fun x -> Some (Herd.Assembly x)))
+              ~f:(Option.map ~f:(fun x -> Some (Sim.Arch.Assembly x)))
               (Args.arch
                  ~doc:
                    "Use the act.conf-configured model for this architecture"

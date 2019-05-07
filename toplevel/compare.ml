@@ -23,6 +23,7 @@
 
 open Core
 open Lib
+open Act_common
 open Utils
 
 let litmusify o passes spec c_file =
@@ -43,7 +44,7 @@ let litmusify o passes spec c_file =
   Output.pw o "@[%a@]@." Asm_job.Output.warn out
 
 let run_spec_on_file o passes spec ~c_file =
-  Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@." Config.Id.pp
+  Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@." Id.pp
     (Config.Compiler.Spec.With_id.id spec) ;
   let open Or_error.Let_syntax in
   let%map _ = litmusify o passes spec c_file in

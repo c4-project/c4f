@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 open Utils
 
 type t = {vf: Formatter.t; wf: Formatter.t; ef: Formatter.t}
@@ -47,7 +48,7 @@ let pe (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.ef
 let pp_stage_name : string Fmt.t = Fmt.(styled `Magenta string)
 
 let log_stage (o : t) ~stage ~file compiler_id : unit =
-  pv o "@[%a[%a]@ %s@]@." pp_stage_name stage Config.Id.pp compiler_id file
+  pv o "@[%a[%a]@ %s@]@." pp_stage_name stage Id.pp compiler_id file
 
 let print_error_body : Error.t Fmt.t =
   Fmt.(

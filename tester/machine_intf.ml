@@ -47,7 +47,7 @@ end
 module type S = sig
   val run :
        Run_config.t
-    -> Sim.File_map.t
+    -> Sim.Bulk.File_map.t
     -> Analysis.Machine.t Or_error.t
   (** [run cfg c_sims] runs tests on each filename listed in [cfg], using
       every machine-local compiler in [specs] also listed in [cfg], to

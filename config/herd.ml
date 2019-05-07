@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 
 type t =
   { cmd: string [@default "herd7"] [@drop_if_default]

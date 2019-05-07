@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
+open Act_common
 open Lib
 open Utils
 
@@ -46,7 +47,7 @@ let make_tester_config ~(out_root_raw : string)
   let compilers =
     specs
     |> Config.Compiler.Spec.Set.map ~f:Config.Compiler.Spec.With_id.id
-    |> Config.Id.Set.of_list
+    |> Id.Set.of_list
   in
   let%map pathset =
     Tester.Pathset.Run.make_and_mkdirs {output_root_dir; input_mode}
@@ -54,6 +55,11 @@ let make_tester_config ~(out_root_raw : string)
   Tester.Run_config.make ~pathset ~compilers
 
 let make_tester o cfg timing_mode =
+  let herd_cfg =
+    cfg
+    |> Config.Act.herd
+    |> Option.value ~default:(Config.Herd.default ())
+  in
   ( module Tester.Instance.Make (struct
     module T = (val Utils.Timing.Mode.to_module timing_mode)
 
@@ -61,13 +67,15 @@ let make_tester o cfg timing_mode =
 
     let o = o
 
+    module Herd = Sim_herd.Runner.Make (struct let config = herd_cfg end)
+    module Asm_simulator = Herd
+    module C_simulator = Herd
+
     let compilers = Config.Act.compilers cfg
 
     let sanitiser_passes =
       Config.Act.sanitiser_passes cfg
         ~default:Config.Sanitiser_pass.standard
-
-    let herd_cfg = Config.Act.herd cfg
 
     let asm_runner_from_spec =
       Fn.compose Language_support.asm_runner_from_arch
@@ -109,7 +117,7 @@ let non_empty : 'a list -> 'a list option = function
       Some xs
 
 let pp_deviation_bucket (bucket_name : string) :
-    Sim_output.State.t list Fmt.t =
+    Sim.State.t list Fmt.t =
   Fmt.(
     using non_empty
       (option
@@ -121,20 +129,20 @@ let pp_deviation_bucket (bucket_name : string) :
                   (styled `Red (const (fmt "In %s only:") bucket_name)))
                (vbox
                   (list ~sep:sp
-                     (using [%sexp_of: Sim_output.State.t] Sexp.pp_hum)))))))
+                     (using [%sexp_of: Sim.State.t] Sexp.pp_hum)))))))
 
-let to_deviation_lists (ord : Sim_diff.Order.t) :
-    Sim_output.State.t list * Sim_output.State.t list =
-  let l = ord |> Sim_diff.Order.in_left_only |> Set.to_list in
-  let r = ord |> Sim_diff.Order.in_right_only |> Set.to_list in
+let to_deviation_lists (ord : Sim.Diff.Order.t) :
+    Sim.State.t list * Sim.State.t list =
+  let l = ord |> Sim.Diff.Order.in_left_only |> Set.to_list in
+  let r = ord |> Sim.Diff.Order.in_right_only |> Set.to_list in
   (l, r)
 
-let pp_deviation : Sim_diff.Order.t Fmt.t =
+let pp_deviation : Sim.Diff.Order.t Fmt.t =
   Fmt.(
     using to_deviation_lists
       (pair ~sep:sp (pp_deviation_bucket "C") (pp_deviation_bucket "asm")))
 
-let pp_deviation_row : Sim_diff.Order.t Tester.Analysis_table.Row.t Fmt.t =
+let pp_deviation_row : Sim.Diff.Order.t Tester.Analysis_table.Row.t Fmt.t =
   Fmt.(
     vbox ~indent:2
       (using
@@ -143,7 +151,7 @@ let pp_deviation_row : Sim_diff.Order.t Tester.Analysis_table.Row.t Fmt.t =
          (pair ~sep:sp
             (hbox
                (pair ~sep:(unit ":")
-                  (pair ~sep:(unit "@") Config.Id.pp Config.Id.pp)
+                  (pair ~sep:(unit "@") Id.pp Id.pp)
                   string))
             pp_deviation)))
 

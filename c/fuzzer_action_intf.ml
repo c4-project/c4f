@@ -22,12 +22,13 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 
 module type Generic = sig
   type subject
 
-  val name : Config.Id.t
-  (** The name of the action, as a config identifier. *)
+  val name : Id.t
+  (** The name of the action, as an act identifier. *)
 
   val readme : unit -> string
   (** [readme () builds a long synopsis of this action. *)

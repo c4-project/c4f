@@ -23,6 +23,7 @@
 
 open Base
 open Travesty_base_exts
+open Act_common
 open Utils
 
 let validate_fpath (f : Fpath.t -> bool) (expect : string) (fp : Fpath.t) :
@@ -44,7 +45,7 @@ let to_sim_file (dir : Fpath.t) (name : string) : Fpath.t =
   Fpath.((dir / name) + "sim.txt")
 
 let make_id_dir init id =
-  let segs = Config.Id.to_string_list id in
+  let segs = Id.to_string_list id in
   Fpath.to_dir_path (List.fold ~init ~f:Fpath.add_seg segs)
 
 let make_c_dir (id_dir : Fpath.t) : Input_mode.t -> Fpath.t =
@@ -53,7 +54,7 @@ let make_c_dir (id_dir : Fpath.t) : Input_mode.t -> Fpath.t =
     ~litmus_only:(fun _ -> Fpath.(id_dir / "c" / ""))
 
 let%expect_test "make_id_path: folds in correct direction" =
-  let id = Config.Id.of_string "foo.bar.baz" in
+  let id = Id.of_string "foo.bar.baz" in
   let init = Fpath.v "." in
   Io.print_bool
     (Fpath.equal (make_id_dir init id)
@@ -171,7 +172,7 @@ module Compiler = struct
       ; asm_sim_dir: Fpath.t }
     [@@deriving fields]
 
-    type input = {run: Run.t; compiler_id: Config.Id.t}
+    type input = {run: Run.t; compiler_id: Id.t}
 
     let all_dirs (ps : t) : (string, Fpath.t) List.Assoc.t =
       let to_pair fld = [(Field.name fld, Field.get fld ps)] in

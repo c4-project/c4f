@@ -24,6 +24,7 @@
 
 {
 open Core_kernel
+open Act_common
 open Parser
 open Lexing
 

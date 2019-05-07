@@ -29,6 +29,8 @@
     This configuration, generally, isn't used in `act`'s other tools. For
     act-wide configuration, see {{!Config} Config}. *)
 
+open Act_common
+
 (** Opaque type of tester configuration.
 
     The items inside the configuration type used here are those that could
@@ -40,7 +42,7 @@ type t
 
 (** {2 Constructors} *)
 
-val make : pathset:Pathset.Run.t -> compilers:Config.Id.Set.t -> t
+val make : pathset:Pathset.Run.t -> compilers:Id.Set.t -> t
 (** [make ~pathset ~compilers ~herd_config] constructs a run config with a
     given [pathset] and [compilers] set. *)
 
@@ -52,7 +54,7 @@ val pathset : t -> Pathset.Run.t
 val output_root_dir : t -> Fpath.t
 (** [output_root_dir cfg] gets the output root directory for [cfg]. *)
 
-val compilers : t -> Config.Id.Set.t
+val compilers : t -> Id.Set.t
 (** [compilers cfg] gets the compiler identifier set for [cfg]. *)
 
 val input_mode : t -> Input_mode.t

@@ -25,6 +25,7 @@
     interacting with machines. *)
 
 open Core_kernel
+open Act_common
 open Utils
 
 include module type of Machine_intf

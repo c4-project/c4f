@@ -21,22 +21,14 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Base
-open Utils
-include Sim_runner_intf
+(** Litmus simulation: runner interfaces.
 
-module Make (B : Basic) : S with type t = B.Filter.aux_i = struct
-  type t = B.Filter.aux_i
+    This module provides a standard interface for interacting with C and
+    assembly simulators, such as Herd and Litmus, as well as a functor for
+    implementing that interface using a filter wrapper over the simulator
+    and a simulator output parser. *)
 
-  let run_on_paths (ctx : t) ~(input_path : Fpath.t)
-      ~(output_path : Fpath.t) : unit Or_error.t =
-    B.Filter.run ctx
-      (Io.In_source.of_fpath input_path)
-      (Io.Out_sink.file output_path)
+include module type of Runner_intf
 
-  let run_and_load_results (ctx : t) ~(input_path : Fpath.t)
-      ~(output_path : Fpath.t) : Sim_output.t Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind () = run_on_paths ctx ~input_path ~output_path in
-      B.Reader.load ~path:output_path)
-end
+(** [Make] makes a simulator runner from a [Basic]. *)
+module Make (B : Basic) : S

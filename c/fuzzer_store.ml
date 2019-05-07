@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 open Lib
 include Fuzzer_store_intf
 
@@ -107,29 +108,29 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
         Mini.Atomic_store.t G.t Or_error.t =
       let (module Src) = src_env vars in
       let (module Dst) = dst_env vars in
-      Output.pv o "%a: got environments@." Config.Id.pp name ;
+      Output.pv o "%a: got environments@." Id.pp name ;
       let open Or_error.Let_syntax in
       let%bind () = error_if_empty "src" (module Src) in
       let%map () = error_if_empty "dst" (module Dst) in
-      Output.pv o "%a: environments are non-empty@." Config.Id.pp name ;
-      Output.pv o "%a: src environment: @[%a@]@." Config.Id.pp name
+      Output.pv o "%a: environments are non-empty@." Id.pp name ;
+      Output.pv o "%a: src environment: @[%a@]@." Id.pp name
         Sexp.pp_hum
         [%sexp (Src.env : Mini_type.t Utils.C_identifier.Map.t)] ;
-      Output.pv o "%a: dst environment: @[%a@]@." Config.Id.pp name
+      Output.pv o "%a: dst environment: @[%a@]@." Id.pp name
         Sexp.pp_hum
         [%sexp (Dst.env : Mini_type.t Utils.C_identifier.Map.t)] ;
       let module Gen = B.Quickcheck (Src) (Dst) in
-      Output.pv o "%a: built generator module@." Config.Id.pp name ;
+      Output.pv o "%a: built generator module@." Id.pp name ;
       [%quickcheck.generator: Gen.t]
 
     let gen' (o : Output.t) (subject : Subject.Test.t) (vars : Var.Map.t) :
         t G.t Or_error.t =
       let open Or_error.Let_syntax in
-      Output.pv o "%a: building generators...@." Config.Id.pp name ;
+      Output.pv o "%a: building generators...@." Id.pp name ;
       let%map store = gen_store o vars in
-      Output.pv o "%a: built store generator@." Config.Id.pp name ;
+      Output.pv o "%a: built store generator@." Id.pp name ;
       let path = Subject.Test.Path.gen_insert_stm subject in
-      Output.pv o "%a: built path generator@." Config.Id.pp name ;
+      Output.pv o "%a: built path generator@." Id.pp name ;
       G.map ~f:of_tuple (G.tuple2 store path)
 
     let gen (subject : Subject.Test.t) : t G.t State.Monad.t =
@@ -169,16 +170,16 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
     let store_stm = Mini.Statement.atomic_store store in
     let%bind o = State.Monad.output () in
     Output.pv o "%a: Erasing known value of store destination@."
-      Config.Id.pp name ;
+      Id.pp name ;
     let%bind () = mark_store_dst store in
-    Output.pv o "%a: Adding dependency to store source@." Config.Id.pp name ;
+    Output.pv o "%a: Adding dependency to store source@." Id.pp name ;
     let%bind () = add_dependencies_to_store_src store in
     State.Monad.Monadic.return
       (Subject.Test.Path.insert_stm path store_stm subject)
 end
 
 module Int : Action.S with type Random_state.t = rst = Make (struct
-  let name = Config.Id.of_string "store.make.int.single"
+  let name = Id.of_string "store.make.int.single"
 
   let forbid_already_written = true (* for now *)
 

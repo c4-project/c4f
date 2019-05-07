@@ -21,6 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Act_common
+
 (** Abstract syntax tree for config files
 
     The config {{!Config_parser} parser} emits this AST; later on, the

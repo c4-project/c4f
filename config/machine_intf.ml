@@ -23,6 +23,7 @@
 
 open Base
 open Utils
+open Act_common
 
 (** [Reference] is the signature of references to machines. *)
 module type Reference = sig

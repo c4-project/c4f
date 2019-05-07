@@ -21,6 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Act_common
+
 module Cpp = struct
   type t = Cmd of string | Argv of string list | Enabled of bool
 end

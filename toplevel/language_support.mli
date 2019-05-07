@@ -30,9 +30,10 @@
     and hooks up the correct language-dependent modules. *)
 
 open Core_kernel
+open Act_common
 open Lib
 
-val asm_runner_from_arch : Config.Id.t -> (module Asm_job.Runner) Or_error.t
+val asm_runner_from_arch : Id.t -> (module Asm_job.Runner) Or_error.t
 (** [asm_runner_from_arch arch] generates an assembly job runner from an
     architecture ID [arch]. *)
 

@@ -24,6 +24,7 @@
 (** Act's top-level configuration. *)
 
 open Base
+open Act_common
 
 include module type of Act_intf
 
@@ -57,9 +58,9 @@ val disabled_machines : t -> (Id.t * Error.t option) list
 (** [disabled_machines c] reports all disabled machines in the given config,
     along with any reason why. *)
 
-val require_herd : t -> Herd.t Or_error.t
-(** [require_herd c] behaves as [herd c], but raises a descriptive error if
-    [c] has no Herd configuration. *)
+val herd_or_default : t -> Herd.t
+(** [herd_or_default c] behaves as [herd c], but substitutes [Herd.default]
+    if [c] has no Herd configuration. *)
 
 val from_raw :
      ?chook:Compiler.Spec.With_id.t hook

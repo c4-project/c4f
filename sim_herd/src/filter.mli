@@ -21,24 +21,16 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [Herd] interfaces with the Herd tool. *)
+(** Filter interface for Herd.
+
+    For running Herd as a simulator, see {{!Runner}Runner}. *)
 
 open Base
 
-(** [t] is an opaque type representing a configured and validated Herd
-    interface. *)
-type t
-
-(** [arch] tells a Herd run which architecture it should model, and,
-    therefore, which model file to load. *)
-type arch = C | Assembly of Config.Id.t
-
-val create : config:Config.Herd.t -> arch:arch -> t Or_error.t
-(** [create ~config ~arch] validates [config] and [arch] and, if successful,
-    creates a [t]. *)
+include module type of Filter_intf
 
 val run_direct :
-     ?arch:arch
+     ?arch:Sim.Arch.t
   -> ?oc:Stdio.Out_channel.t
   -> Config.Herd.t
   -> string list
@@ -53,8 +45,6 @@ val run_direct :
     instead -- this is a lower-level function intended for things like the
     `act tool` command. *)
 
-(** We can run Herd as a filter. *)
-module Filter : Utils.Filter.S with type aux_i = t and type aux_o = unit
-
-(** We can also use Herd as a simulator runner. *)
-include Sim_runner.S with type t := t
+module Make (B : Basic) : Utils.Filter.S with type aux_i = Sim.Arch.t and type aux_o = unit
+(** We can use Herd as a simulator runner by supplying it with configuration
+    expressed as a {{!Basic}Basic} module. *)

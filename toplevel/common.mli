@@ -24,6 +24,7 @@
 (** Glue code common to all top-level commands. *)
 
 open Core_kernel
+open Act_common
 open Lib
 open Utils
 
@@ -35,7 +36,7 @@ val warn_if_not_tracking_symbols :
 
 val get_target :
      Config.Act.t
-  -> [< `Id of Config.Id.t | `Arch of Config.Id.t]
+  -> [< `Id of Id.t | `Arch of Id.t]
   -> Config.Compiler.Target.t Or_error.t
 (** [get_target cfg target] processes a choice between compiler ID and
     architecture ID; if the input is a compiler ID, the compiler is

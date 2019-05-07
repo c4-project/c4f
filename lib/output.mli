@@ -25,6 +25,7 @@
     execution *)
 
 open Base
+open Act_common
 
 (** Opaque type of output contexts. *)
 type t
@@ -50,7 +51,7 @@ val pe : t -> ('a, Formatter.t, unit) format -> 'a
 
 (** {2 Common output forms} *)
 
-val log_stage : t -> stage:string -> file:string -> Config.Id.t -> unit
+val log_stage : t -> stage:string -> file:string -> Id.t -> unit
 (** [log_stage o ~stage ~file compiler_id] outputs a brief notice, onto
     [o]'s verbose formatter, that explains that the stage named [stage] is
     happening on file [file] and compiler ID [compiler_id]. *)

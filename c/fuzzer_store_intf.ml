@@ -21,13 +21,15 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Act_common
+
 type rst =
   { store: Mini.Atomic_store.t
   ; path: Mini_path.stm_hole Mini_path.program_path }
 
 (** Basic template for fuzzer store action modules. *)
 module type Basic = sig
-  val name : Config.Id.t
+  val name : Id.t
   (** The name of this store action. *)
 
   val default_weight : int

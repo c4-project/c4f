@@ -27,6 +27,7 @@
     mutator. *)
 
 open Base
+open Act_common
 
 (** Opaque type of fuzzer configurations. *)
 type t [@@deriving sexp]

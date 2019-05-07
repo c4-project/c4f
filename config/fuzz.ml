@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 
 type t = {weights: (Id.t, int) List.Assoc.t [@default []] [@drop_if_default]}
 [@@deriving sexp, fields, make]

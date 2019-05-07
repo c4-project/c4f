@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Travesty_base_exts
+open Act_common
 open Lib
 include Machine_intf
 
@@ -60,7 +61,7 @@ module Make (B : Basic) : S = struct
     end)
     : Compiler.S )
 
-  let run_compiler (cfg : Run_config.t) (c_sims : Sim.File_map.t)
+  let run_compiler (cfg : Run_config.t) (c_sims : Sim.Bulk.File_map.t)
       (spec : Config.Compiler.Spec.With_id.t) =
     let open Or_error.Let_syntax in
     let id = Config.Compiler.Spec.With_id.id spec in
@@ -69,19 +70,19 @@ module Make (B : Basic) : S = struct
     (id, result)
 
   let run_compilers (cfg : Run_config.t)
-      (c_sims : Sim.File_map.t) :
-      (Config.Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
+      (c_sims : Sim.Bulk.File_map.t) :
+      (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
     compilers
     |> Config.Compiler.Spec.Set.map ~f:(run_compiler cfg c_sims)
     |> Or_error.combine_errors
 
   let make_analysis
-      (raw : (Config.Id.t, Analysis.Compiler.t) List.Assoc.t T.t) :
+      (raw : (Id.t, Analysis.Compiler.t) List.Assoc.t T.t) :
       Analysis.Machine.t =
     Analysis.Machine.make ~compilers:(T.value raw)
       ?time_taken:(T.time_taken raw) ()
 
-  let run (cfg : Run_config.t) (c_sims : Sim.File_map.t) :
+  let run (cfg : Run_config.t) (c_sims : Sim.Bulk.File_map.t) :
       Analysis.Machine.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map compilers_and_time =

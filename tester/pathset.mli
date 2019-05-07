@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 
 (** [Run] contains a compiler-agnostic path set for one test run. *)
 module Run : sig
@@ -67,7 +68,7 @@ module Compiler : sig
   (** {3 Constructors} *)
 
   (** Type of input to the constructors. *)
-  type input = {run: Run.t; compiler_id: Config.Id.t}
+  type input = {run: Run.t; compiler_id: Id.t}
 
   val make : input -> t Or_error.t
   (** [make {run; compiler_id}] constructs a pathset for compiler ID

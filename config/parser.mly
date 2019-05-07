@@ -34,7 +34,7 @@ SOFTWARE. *)
 %token <bool>   BOOL
 %token <string> STRING
 %token <int>    INTEGER
-%token <Id.t>   IDENTIFIER
+%token <Act_common.Id.t>   IDENTIFIER
 
 %type <Ast.t> main
 %start main

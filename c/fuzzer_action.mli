@@ -24,6 +24,7 @@
 (** Fuzzer: high-level actions *)
 
 open Base
+open Act_common
 
 include module type of Fuzzer_action_intf
 
@@ -69,7 +70,7 @@ module Pool : sig
       the actions defined in [action_map] and applying the user-specified
       weight overrides in [config]. *)
 
-  val summarise : t -> Summary.t Config.Id.Map.t
+  val summarise : t -> Summary.t Id.Map.t
   (** [summarise pool] generates a mapping from action names to summaries of
       each action, including its adjusted weight in the pool. *)
 

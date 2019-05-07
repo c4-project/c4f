@@ -21,14 +21,35 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Litmus simulation: runner interfaces.
+(** A single state in a simulator run output. *)
 
-    This module provides a standard interface for interacting with C and
-    assembly simulators, such as Herd and Litmus, as well as a functor for
-    implementing that interface using a filter wrapper over the simulator
-    and a simulator output parser. *)
+open Base
+open Utils
 
-include module type of Sim_runner_intf
+(** [t] is the type of states: a binding from name to value. *)
+type t [@@deriving sexp, compare, quickcheck]
 
-(** [Make] makes a simulator runner from a [Basic]. *)
-module Make (B : Basic) : S with type t = B.Filter.aux_i
+val map :
+     location_map:(Litmus.Id.t -> Litmus.Id.t option Or_error.t)
+  -> value_map:(string -> string Or_error.t)
+  -> t
+  -> t Or_error.t
+(** [map ~location_map ~value_map t] maps partial mappers over the keys
+    and values of state [t]. [location_map] may return [Ok None] if the
+    key should be deleted in the new map.
+
+    If all invocations of [location_map] and [value_map] return values,
+    and the result is a well-formed map [m], [map] returns [Ok m]; else,
+    an error. *)
+
+val of_alist : (Litmus.Id.t, string) List.Assoc.t -> t Or_error.t
+(** [of_alist alist] tries to convert [alist] into a state. *)
+
+module Set : My_set.S with type Elt.t = t
+
+val bound : t -> Litmus.Id.t list
+(** [bound t] gets the list of all bound names in [t]. *)
+
+val restrict : t -> domain:Litmus.Id.Set.t -> t
+(** [restrict t ~domain] removes all mappings in [t] that don't reference
+    identifiers in [domain]. *)

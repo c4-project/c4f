@@ -23,6 +23,7 @@
 
 open Core_kernel
 open Utils
+open Act_common
 include Machine_intf
 
 module Forward_basic_spec

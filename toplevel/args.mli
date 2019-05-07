@@ -24,6 +24,7 @@
 (** Argument specifications common to all act sub-commands. *)
 
 open Core_kernel
+open Act_common
 open Utils
 
 include module type of Args_intf
@@ -87,12 +88,12 @@ val flag_to_enum_choice :
     corresponds to an enum variant [enum]. *)
 
 val arch :
-  ?name:string -> ?doc:string -> unit -> Config.Id.t option Command.Param.t
+  ?name:string -> ?doc:string -> unit -> Id.t option Command.Param.t
 (** [arch ?name ?doc ()] produces a parameter, normally named [-arch] but
     overridable by [name], that accepts an architecture ID. *)
 
 val compiler_id_or_arch :
-  [> `Arch of Config.Id.t | `Id of Config.Id.t] Command.Param.t
+  [> `Arch of Id.t | `Id of Id.t] Command.Param.t
 (** [compiler_id_or_arch] defines a choice between supplying a compiler ID,
     or a direct architecture. *)
 

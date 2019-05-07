@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
+open Act_common
 open Utils
 include Args_intf
 
@@ -120,13 +121,13 @@ module Other = struct
       : a option t =
     map ~f:(Fn.flip Option.some_if enum) (flag str no_arg ~doc)
 
-  let compiler_id_type = Arg_type.create Config.Id.of_string
+  let compiler_id_type = Arg_type.create Id.of_string
 
-  let arch_type = Arg_type.create Config.Id.of_string
+  let arch_type = Arg_type.create Id.of_string
 
   let arch ?(name : string = "-arch")
       ?(doc : string = "the architecture to target") () :
-      Config.Id.t option Command.Param.t =
+      Id.t option Command.Param.t =
     flag name (optional arch_type) ~doc:("ARCH_ID " ^ doc)
 
   let compiler_id_or_arch =

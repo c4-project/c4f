@@ -24,8 +24,10 @@
 open Base
 open Travesty_base_exts
 
+module Ob = Output.Observation
+
 module Order = struct
-  include Sim_output.State.Set.Partial_order
+  include State.Set.Partial_order
 
   let operator : Ordering.t option -> string = function
     | Some Equal ->
@@ -72,20 +74,20 @@ let to_string : t -> string = function
       Printf.sprintf "Oracle %s Subject"
         (Order.operator (Order.to_ordering_opt o))
 
-let compare_states ~(oracle_states : Sim_output.State.t list)
-    ~(subject_states : Sim_output.State.t list) : t =
+let compare_states ~(oracle_states : State.t list)
+    ~(subject_states : State.t list) : t =
   let result =
-    Sim_output.State.Set.(
+    State.Set.(
       Fn.on of_list ~f:partial_compare oracle_states subject_states)
   in
   Result result
 
-let map_subject_states (states : Sim_output.State.t list)
+let map_subject_states (states : State.t list)
     ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
     ~(value_map : string -> string Or_error.t) :
-    Sim_output.State.t list Or_error.t =
+    State.t list Or_error.t =
   states
-  |> List.map ~f:(Sim_output.State.map ~location_map ~value_map)
+  |> List.map ~f:(State.map ~location_map ~value_map)
   |> Or_error.combine_errors
 
 let domain_error (one_domain : Litmus.Id.Set.t)
@@ -141,28 +143,28 @@ let%test_module "check_domain_consistency expects tests" =
         (one_domain (0:foo 1:bar baz)) (another_domain (0:foo)))) |}]
   end )
 
-let get_domain : Sim_output.State.t list -> Litmus.Id.Set.t Or_error.t =
+let get_domain : State.t list -> Litmus.Id.Set.t Or_error.t =
   function
   | [] ->
       Or_error.return Litmus.Id.Set.empty
   | x :: xs ->
-      let dom s = Litmus.Id.Set.of_list (Sim_output.State.bound s) in
+      let dom s = Litmus.Id.Set.of_list (State.bound s) in
       let xs_domains = Sequence.map ~f:dom (Sequence.of_list xs) in
       Or_error.tee_m (dom x) ~f:(check_domain_consistency xs_domains)
 
-let filter_oracle_states ~(raw_oracle_states : Sim_output.State.t list)
-    ~(subject_states : Sim_output.State.t list) :
-    Sim_output.State.t list Or_error.t =
+let filter_oracle_states ~(raw_oracle_states : State.t list)
+    ~(subject_states : State.t list) :
+    State.t list Or_error.t =
   let open Or_error.Let_syntax in
   let%map domain = get_domain subject_states in
-  List.map raw_oracle_states ~f:(Sim_output.State.restrict ~domain)
+  List.map raw_oracle_states ~f:(State.restrict ~domain)
 
-let run_defined ~(oracle : Sim_output.t) ~(subject : Sim_output.t)
+let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
     ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
     ~(value_map : string -> string Or_error.t) : t Or_error.t =
   let open Or_error.Let_syntax in
-  let raw_oracle_states = Sim_output.states oracle in
-  let raw_subject_states = Sim_output.states subject in
+  let raw_oracle_states = Ob.states oracle in
+  let raw_subject_states = Ob.states subject in
   let%bind subject_states =
     map_subject_states raw_subject_states ~location_map ~value_map
   in
@@ -171,10 +173,10 @@ let run_defined ~(oracle : Sim_output.t) ~(subject : Sim_output.t)
   in
   compare_states ~oracle_states ~subject_states
 
-let run ~(oracle : Sim_output.t) ~(subject : Sim_output.t)
+let run ~(oracle : Ob.t) ~(subject : Ob.t)
     ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
     ~(value_map : string -> string Or_error.t) : t Or_error.t =
-  if Sim_output.is_undefined oracle then Or_error.return Oracle_undefined
-  else if Sim_output.is_undefined subject then
+  if Ob.is_undefined oracle then Or_error.return Oracle_undefined
+  else if Ob.is_undefined subject then
     Or_error.return Subject_undefined
   else run_defined ~oracle ~subject ~location_map ~value_map

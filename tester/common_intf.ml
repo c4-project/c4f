@@ -24,6 +24,7 @@
 (** Signatures common to multiple different parts of the tester. *)
 
 open Base
+open Act_common
 open Lib
 open Utils
 
@@ -36,8 +37,8 @@ module type Basic = sig
   (** [o] tells the tester how to output warnings, errors, and other
       information. *)
 
-  val herd_cfg : Config.Herd.t option
-  (** [herd_cfg], if present, tells the tester how to run Herd. *)
+  module C_simulator : Sim.Runner.S
+  module Asm_simulator : Sim.Runner.S
 
   val sanitiser_passes : Config.Sanitiser_pass.Set.t
   (** [sanitiser_passes] is the set of sanitiser passes the tester should
@@ -51,7 +52,7 @@ module type Extensions = sig
 
   module TS : Timing_set.S with type 'a input := 'a timed
 
-  val bracket : ?id:Config.Id.t -> (unit -> 'a Or_error.t) -> stage:string -> file:string -> 'a timed Or_error.t
+  val bracket : ?id:Id.t -> (unit -> 'a Or_error.t) -> stage:string -> file:string -> 'a timed Or_error.t
   (** [bracket ?id f ~stage ~file] runs [f], using the timing wrapper [timed] and
       logging the tester stage [stage] on file [file], and, optionally, over
       compiler ID [id]. *)

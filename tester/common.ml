@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 open Lib
 
 include Common_intf
@@ -29,7 +30,7 @@ include Common_intf
 module Extend (B : Basic) : Extensions with type 'a timed := 'a B.T.t = struct
   module TS = Timing_set.Make (B.T)
 
-  let bracket ?(id : Config.Id.t = Config.Id.of_string "none")
+  let bracket ?(id : Id.t = Id.of_string "none")
       (f : unit -> 'a Or_error.t) ~(stage : string) ~(file : string) : 'a B.T.t Or_error.t =
     (* TODO (@MattWindsor91): make id properly optional. *)
 
