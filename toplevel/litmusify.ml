@@ -59,7 +59,7 @@ module Post_filter = struct
 
   (** Adapts the Litmus-tool filter to try extract its config from a [cfg]. *)
   module Litmus_filter (R : Runner.S) : S = Filter.Adapt (struct
-    module Original = Litmus_tool.Filter (R)
+    module Original = Sim_litmus.Filter.Filter (R)
 
     type aux_i = cfg
 

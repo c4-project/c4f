@@ -60,7 +60,7 @@ let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Config.Act.t) :
     Config.Machine.Spec.Set.get machines Config.Machine.Id.default
   in
   let%bind litmus_cfg = Config.Machine.Spec.With_id.ensure_litmus machine in
-  Litmus_tool.run_direct litmus_cfg argv
+  Sim_litmus.Filter.run_direct litmus_cfg argv
 
 let litmus_command : Command.t =
   Command.basic ~summary:"runs Litmus locally"
