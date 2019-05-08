@@ -24,14 +24,17 @@
 open Base
 open Utils
 
-(** {2 Input interfaces} *)
+(** {3 Input interfaces} *)
 
 (** Shorthand for the specific type of filter a simulator runner expects. *)
 module type Basic_filter =
   Filter.S with type aux_i = Arch.t and type aux_o = unit
 
+(** Input for generating simulators that always fail with a particular error
+    on use. *)
 module type Basic_error = sig
   val error : Error.t
+  (** The error to return on use. *)
 end
 
 (** Basic interface for simulator runners constructed from filters.
@@ -50,7 +53,7 @@ module type Basic = sig
   module Reader : Reader.Basic
 end
 
-(** {2 Output interfaces} *)
+(** {3 Output interfaces} *)
 
 (** Main interface for simulator runners. *)
 module type S = sig

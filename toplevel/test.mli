@@ -24,7 +24,6 @@
 (** Top-level for act's `test` command *)
 
 open Core_kernel
-open Lib
 open Act_common
 
 val run :

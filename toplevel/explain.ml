@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 open Lib
 
 let print_symbol_map = function

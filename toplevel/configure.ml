@@ -23,7 +23,6 @@
 
 open Core_kernel
 open Act_common
-open Lib
 
 let run_list_compilers (standard_args : Args.Standard.t) (_o : Output.t)
     (cfg : Config.Act.t) : unit Or_error.t =

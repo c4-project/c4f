@@ -22,11 +22,12 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 open Utils
 
-type t = {vars: Fuzzer_var.Map.t; o: Lib.Output.t} [@@deriving fields]
+type t = {vars: Fuzzer_var.Map.t; o: Output.t} [@@deriving fields]
 
-let init ?(o : Lib.Output.t = Lib.Output.silent ())
+let init ?(o : Output.t = Output.silent ())
     ~(globals : Mini.Type.t C_identifier.Map.t)
     ~(locals : C_identifier.Set.t) () : t =
   let vars = Fuzzer_var.Map.make_existing_var_map globals locals in
@@ -81,5 +82,5 @@ module Monad = struct
   let erase_var_value (var : C_identifier.t) : unit t =
     Monadic.modify (erase_var_value ~var)
 
-  let output () : Lib.Output.t t = peek (fun x -> x.o)
+  let output () : Output.t t = peek (fun x -> x.o)
 end

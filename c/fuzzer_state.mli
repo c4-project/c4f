@@ -25,12 +25,13 @@
 
 open Core_kernel
 open Utils
+open Act_common
 
 (** Opaque type of states. *)
 type t
 
 val init :
-     ?o:Lib.Output.t
+     ?o:Output.t
   -> globals:Mini.Type.t C_identifier.Map.t
   -> locals:C_identifier.Set.t
   -> unit
@@ -94,6 +95,6 @@ module Monad : sig
       This should be done after involving [var] in any atomic actions that
       modify it. *)
 
-  val output : unit -> Lib.Output.t t
+  val output : unit -> Output.t t
   (** [output ()] is a stateful action that gets the current output context. *)
 end

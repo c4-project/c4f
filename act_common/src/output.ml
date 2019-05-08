@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Act_common
 open Utils
 
 type t = {vf: Formatter.t; wf: Formatter.t; ef: Formatter.t}

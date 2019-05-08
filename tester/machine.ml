@@ -23,7 +23,6 @@
 
 open Travesty_base_exts
 open Act_common
-open Lib
 include Machine_intf
 
 module Make (B : Basic) : S = struct

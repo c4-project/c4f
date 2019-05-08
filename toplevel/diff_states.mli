@@ -24,7 +24,7 @@
 (** Top-level for act's `diff_states` command *)
 
 open Core_kernel
-open Lib
+open Act_common
 
 val run :
      Output.t

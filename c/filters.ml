@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+open Act_common
 
 module type Basic = sig
   (** Raw AST *)
@@ -40,7 +41,7 @@ module type Basic = sig
   val process : ast -> t Or_error.t
 
   val fuzz :
-    ?seed:int -> t -> o:Lib.Output.t -> config:Config.Fuzz.t -> t Or_error.t
+    ?seed:int -> t -> o:Output.t -> config:Config.Fuzz.t -> t Or_error.t
 
   val cvars : t -> Config.C_variables.Map.t
   (** [cvars vast] should return a list of C identifiers corresponding to
@@ -67,7 +68,7 @@ end
 type mode =
   | Print of [`All | `Vars]
   | Delitmus
-  | Fuzz of {seed: int option; o: Lib.Output.t; config: Config.Fuzz.t}
+  | Fuzz of {seed: int option; o: Output.t; config: Config.Fuzz.t}
 
 module Output = struct
   type t =
@@ -104,7 +105,7 @@ Utils.Filter.Make (struct
     B.cvars_of_delitmus dl
 
   let run_fuzz ?(seed : int option) (vast : B.t) (oc : Out_channel.t)
-      ~(o : Lib.Output.t) ~(config : Config.Fuzz.t) :
+      ~(o : Act_common.Output.t) ~(config : Config.Fuzz.t) :
       Config.C_variables.Map.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map fz = B.fuzz ?seed ~o ~config vast in
@@ -173,7 +174,7 @@ Make (struct
 
   let process = Mini_convert.translation_unit
 
-  let fuzz ?(seed : int option) (_ : t) ~(o : Lib.Output.t)
+  let fuzz ?(seed : int option) (_ : t) ~(o : Act_common.Output.t)
       ~(config : Config.Fuzz.t) : t Or_error.t =
     ignore seed ;
     ignore o ;
@@ -231,7 +232,7 @@ Make (struct
   let fuzz :
          ?seed:int
       -> t
-      -> o:Lib.Output.t
+      -> o:Act_common.Output.t
       -> config:Config.Fuzz.t
       -> t Or_error.t =
     Fuzzer.run

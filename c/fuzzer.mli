@@ -34,7 +34,7 @@ val summarise : Config.Fuzz.t -> Action.Summary.t Id.Map.t Or_error.t
 val run :
      ?seed:int
   -> Mini_litmus.Ast.Validated.t
-  -> o:Lib.Output.t
+  -> o:Output.t
   -> config:Config.Fuzz.t
   -> Mini_litmus.Ast.Validated.t Or_error.t
 (** [run ?seed test ~o test] mutates [test] using a random number generator

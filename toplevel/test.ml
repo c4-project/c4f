@@ -23,7 +23,6 @@
 
 open Core
 open Act_common
-open Lib
 open Utils
 
 let report_spec_errors (o : Output.t) = function

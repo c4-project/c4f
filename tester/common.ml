@@ -23,7 +23,6 @@
 
 open Base
 open Act_common
-open Lib
 include Common_intf
 
 module Extend (B : Basic) : Extensions with type 'a timed := 'a B.T.t =

@@ -24,7 +24,6 @@
 open Core_kernel
 open Travesty_core_kernel_exts
 open Act_common
-open Lib
 open Utils
 module Var = Fuzzer_var
 module Subject = Fuzzer_subject
@@ -272,8 +271,8 @@ let existing_globals (test : Mini_litmus.Ast.Validated.t) :
     test |> get_first_func >>| Mini.Function.parameters
     >>= C_identifier.Map.of_alist_or_error)
 
-let make_initial_state (o : Lib.Output.t)
-    (test : Mini_litmus.Ast.Validated.t) : State.t Or_error.t =
+let make_initial_state (o : Output.t) (test : Mini_litmus.Ast.Validated.t) :
+    State.t Or_error.t =
   let open Or_error.Let_syntax in
   let all_cvars = Mini_litmus.cvars test in
   (* TODO(@MattWindsor91): we don't use cvars's globals because we need to
@@ -283,7 +282,7 @@ let make_initial_state (o : Lib.Output.t)
   State.init ~o ~globals ~locals ()
 
 let run ?(seed : int option) (test : Mini_litmus.Ast.Validated.t)
-    ~(o : Lib.Output.t) ~(config : Config.Fuzz.t) :
+    ~(o : Output.t) ~(config : Config.Fuzz.t) :
     Mini_litmus.Ast.Validated.t Or_error.t =
   Or_error.(
     make_initial_state o test

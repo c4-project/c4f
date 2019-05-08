@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
-open Lib
+open Act_common
 
 let run (_o : Output.t) (_cfg : Config.Act.t)
     ~(oracle_raw : [< `Herd of string | `Litmus of string])

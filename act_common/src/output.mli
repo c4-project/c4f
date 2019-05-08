@@ -25,7 +25,6 @@
     execution *)
 
 open Base
-open Act_common
 
 (** Opaque type of output contexts. *)
 type t

@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Lib
+open Act_common
 
 let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Config.Act.t) :
     unit Or_error.t =

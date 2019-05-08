@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Lib
+open Act_common
 
 let run (seed : int option) (args : Args.Standard_with_files.t)
     (o : Output.t) (act_config : Config.Act.t) : unit Or_error.t =

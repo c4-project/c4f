@@ -23,6 +23,7 @@
 
 open Core_kernel
 open Travesty_core_kernel_exts
+open Act_common
 open Lib
 open Utils
 

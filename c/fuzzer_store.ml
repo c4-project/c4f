@@ -23,7 +23,6 @@
 
 open Core_kernel
 open Act_common
-open Lib
 include Fuzzer_store_intf
 
 (* Module shorthands *)

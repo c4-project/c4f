@@ -25,6 +25,7 @@ open Core_kernel
 open Travesty_core_kernel_exts
 open Utils
 open Lib
+open Act_common
 open C
 include Compiler_intf
 
