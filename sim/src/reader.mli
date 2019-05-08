@@ -21,5 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulation output reader for Litmus7. *)
-include Sim.Reader.S
+include module type of Reader_intf
+
+module Extend (B : Basic) : Extensions
+
+module Make (B : Basic) : S

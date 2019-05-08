@@ -28,6 +28,7 @@
     implementing that interface using a filter wrapper over the simulator
     and a simulator output parser. *)
 
+(** @inline *)
 include module type of Runner_intf
 
 (** [Make] makes a simulator runner from a [Basic]. *)

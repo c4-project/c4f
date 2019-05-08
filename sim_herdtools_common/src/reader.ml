@@ -325,5 +325,5 @@ struct
     Ctx.run_to_output ?path (I.iter_m ic ~f:M.process_line)
 end
 
-module Make (B : Basic) : Sim.Runner.Basic_reader =
-  Loadable.Make (Make_load (B))
+module Make (B : Basic) : Sim.Reader.S =
+  Sim.Reader.Make (Loadable.Make (Make_load (B)))

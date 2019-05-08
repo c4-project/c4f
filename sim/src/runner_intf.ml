@@ -30,9 +30,6 @@ open Utils
 module type Basic_filter =
   Filter.S with type aux_i = Arch.t and type aux_o = unit
 
-(** Shorthand for the specific type of runner a simulator runner expects. *)
-module type Basic_reader = Loadable.S with type t = Output.t
-
 module type Basic_error = sig
   val error : Error.t
 end
@@ -50,7 +47,7 @@ module type Basic = sig
 
   (** Simulator runners must be able to load back their output into the
       simulator output format. *)
-  module Reader : Basic_reader
+  module Reader : Reader.Basic
 end
 
 (** {2 Output interfaces} *)

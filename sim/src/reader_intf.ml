@@ -21,5 +21,21 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulation output reader for Litmus7. *)
-include Sim.Reader.S
+(** Shorthand for the specific type of runner a simulator runner expects. *)
+module type Basic = Utils.Loadable.S with type t = Output.t
+
+(** Extensions for readers, mostly for stand-alone use. *)
+module type Extensions = sig
+  val read_output_from_string : string -> Output.t
+  (** [read_output_from_string s] runs the simulator's reader on [s],
+      returning the output.
+
+      We mainly intend this function to be used for testing. *)
+end
+
+(** Combines [Basic] and [Extensions]. *)
+module type S = sig
+  include Basic
+
+  include Extensions
+end

@@ -21,11 +21,5 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulation output reader for Herd7.
-
-    This module describes a set of functions and other related constructs
-    that scrape the text output of a Herd7 run, and build
-    {{!Sim_output.t} Sim_output.t} records representing the run results. *)
-
-(** Herd readers support the {{!Loadable.S} Loadable} interface. *)
-include Utils.Loadable.S with type t = Sim.Output.t
+(** Simulation output reader for Herd7. *)
+include Sim.Reader.S

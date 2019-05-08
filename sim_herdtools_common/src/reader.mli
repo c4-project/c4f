@@ -30,4 +30,4 @@
 include module type of Reader_intf
 
 (** Makes an output scraper for the Herdtools7 simulator described in [B]. *)
-module Make (B : Basic) : Sim.Runner.Basic_reader
+module Make (B : Basic) : Sim.Reader.S

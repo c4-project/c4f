@@ -25,11 +25,14 @@ open Core_kernel
 open Travesty_core_kernel_exts
 open Act_common
 include Instance_intf
-module Machine_assoc = Alist.Fix_left (Config.Machine.Id)
+module Machine_assoc =
+  Travesty.Bi_mappable.Fix2_left (List.Assoc) (Config.Machine.Id)
 
 (** Compiler specification sets, grouped by machine. *)
 module Compiler_spec_env = struct
-  include Machine_assoc.Fix_right (Config.Compiler.Spec.Set)
+  include Travesty.Bi_mappable.Fix1_right
+            (Machine_assoc)
+            (Config.Compiler.Spec.Set)
 
   let group_by_machine specs =
     specs

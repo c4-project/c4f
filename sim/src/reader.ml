@@ -21,5 +21,14 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulation output reader for Litmus7. *)
-include Sim.Reader.S
+include Reader_intf
+
+module Extend (B : Basic) : Extensions = struct
+  let read_output_from_string (s : string) : Output.t =
+    Output.join (B.load_from_string s)
+end
+
+module Make (B : Basic) : S = struct
+  include B
+  include Extend (B)
+end

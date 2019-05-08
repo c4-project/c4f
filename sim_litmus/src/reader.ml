@@ -22,14 +22,36 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Travesty_base_exts
 open Sim_herdtools_common
+
+(* Map over an optional tuple. *)
+module O2 = Travesty.Bi_mappable.Chain_Bi2_Map1 (Tuple2) (Option)
+
+let strip_with_separator : string -> string =
+  String.strip ~drop:(Fn.disj Char.is_whitespace (String.mem ":>"))
+
+let split_line_to_string_tuple (line : string) : string option * string =
+  line |> String.lsplit2 ~on:':'
+  |> O2.bi_map
+       ~left:(Fn.compose Option.return String.strip)
+       ~right:strip_with_separator
+  |> Option.value ~default:(None, line)
+
+let parse_int (s : string) : int Or_error.t =
+  Or_error.try_with (fun () -> Int.of_string s)
+
+let parse_int_opt : string option -> int option Or_error.t =
+  Option.With_errors.map_m ~f:parse_int
 
 include Reader.Make (struct
   let try_parse_state_count (line : string) : int option =
-    Option.try_with (fun () -> Caml.Scanf.sscanf line "States %d" Fn.id)
+    Option.try_with (fun () ->
+        Caml.Scanf.sscanf line "Histogram (%d states)" Fn.id )
 
   let try_split_state_line (line : string) : Reader.state_line Or_error.t =
-    (* Herd inputs don't have a histogram, so they don't have an occurrence
-       count. *)
-    Or_error.return {Reader.occurrences= None; rest= line}
+    let occurrences_str, rest = split_line_to_string_tuple line in
+    Or_error.Let_syntax.(
+      let%map occurrences = parse_int_opt occurrences_str in
+      {Reader.occurrences; rest})
 end)

@@ -21,5 +21,4 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulation output reader for Litmus7. *)
-include Sim.Reader.S
+(** This interface intentionally left blank. *)

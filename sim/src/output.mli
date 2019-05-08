@@ -58,6 +58,7 @@ type t =
   | Success of Observation.t
   | Skipped of {why: Info.t}
   | Errored of {err: Error.t}
+[@@deriving sexp_of]
 
 (** {2 Convenience constructors} *)
 
