@@ -29,10 +29,12 @@ module Extend (B : Basic) : Extensions with type 'a timed := 'a B.T.t =
 struct
   module TS = Timing_set.Make (B.T)
 
-  let bracket ?(id : Id.t = Id.of_string "none") (f : unit -> 'a Or_error.t)
-      ~(stage : string) ~(file : string) : 'a B.T.t Or_error.t =
+  let bracket ?(id : Id.t option) ?(machine : Id.t option)
+      ?(in_file : string option) ?(out_file : string option)
+      ?(sub_stage : string option) (f : unit -> 'a Or_error.t)
+      ~(stage : string) : 'a B.T.t Or_error.t =
     (* TODO (@MattWindsor91): make id properly optional. *)
-    Output.log_stage B.o ~stage ~file id ;
+    Output.log_stage ?id ?machine ?in_file ?out_file ?sub_stage B.o ~stage ;
     let f' () =
       Or_error.tag_arg (f ()) "While executing tester stage" stage
         String.sexp_of_t

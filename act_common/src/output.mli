@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -50,10 +50,22 @@ val pe : t -> ('a, Formatter.t, unit) format -> 'a
 
 (** {2 Common output forms} *)
 
-val log_stage : t -> stage:string -> file:string -> Id.t -> unit
-(** [log_stage o ~stage ~file compiler_id] outputs a brief notice, onto
-    [o]'s verbose formatter, that explains that the stage named [stage] is
-    happening on file [file] and compiler ID [compiler_id]. *)
+val log_stage :
+     ?id:Id.t
+  -> ?machine:Id.t
+  -> ?in_file:string
+  -> ?out_file:string
+  -> ?sub_stage:string
+  -> t
+  -> stage:string
+  -> unit
+(** [log_stage ?id ?machine ?file ?sub_stage o ~stage] outputs a brief
+    notice, onto [o]'s verbose-only output, that explains that the stage
+    named [stage] is happening. The optional arguments give details: [id]
+    mentions a particular compiler or simulator ID; [machine] the machine on
+    which the stage is running; [in_file] the input file for the stage;
+    [out_file] the output file; and [sub_stage] any particular sub-stage of
+    [stage]. *)
 
 val print_error : t -> unit Or_error.t -> unit
 (** [print_error o u] prints any top-level errors represented by [u] to

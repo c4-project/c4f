@@ -25,11 +25,9 @@ open Base
 include Runner_intf
 
 module Make (B : Basic) : S = struct
-  module Filter = B.Filter
+  include (B : Common)
 
-  type t = Filter.aux_i
-
-  let run (ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
+  let run (ctx : Arch.t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
       Output.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind () =
@@ -56,6 +54,10 @@ end)
 
 module Make_error (B : Basic_error) : S = struct
   module Filter = Make_error_filter (B)
+
+  let name : Act_common.Id.t = Act_common.Id.of_string "error"
+
+  let machine_id : Act_common.Id.t = Config.Machine.Id.default
 
   type t = Filter.aux_i
 

@@ -107,9 +107,16 @@ module Make (B : Basic) : S = struct
     let job = {S.Job.arch= C; input_paths; output_path_f} in
     S.run job
 
+  let run_and_time_c_simulations (config : Run_config.t) :
+      Sim.Bulk.File_map.t B.T.t Or_error.t =
+    bracket ~id:B.C_simulator.name ~machine:B.C_simulator.machine_id
+      ~stage:"sim" ~sub_stage:"C" (fun () -> run_c_simulations config)
+
   let make_job (config : Run_config.t) : Job.t Or_error.t =
     Or_error.Let_syntax.(
-      let%map c_simulations = run_c_simulations config in
+      (* TODO(@MattWindsor91): do something with the times. *)
+      let%map c_simulations_t = run_and_time_c_simulations config in
+      let c_simulations = T.value c_simulations_t in
       let specs = Compiler_spec_env.get config compilers in
       Job.make ~config ~c_simulations ~specs ~make_machine)
 

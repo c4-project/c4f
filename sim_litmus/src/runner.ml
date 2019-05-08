@@ -22,6 +22,10 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 module Make (B : Filter.Basic) : Sim.Runner.S = Sim.Runner.Make (struct
+  let name = Act_common.Id.of_string "litmus"
+
+  let machine_id = B.machine_id
+
   module Filter = Filter.Make (B)
   module Reader = Reader
 end)

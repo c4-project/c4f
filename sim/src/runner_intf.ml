@@ -37,16 +37,30 @@ module type Basic_error = sig
   (** The error to return on use. *)
 end
 
+(** Signature common to both [Basic] and fully instantiated ([S]) runners. *)
+module type Common = sig
+  val name : Act_common.Id.t
+  (** [name] is the name of the simulator, as an act ID. This can differ
+      from the ID under which this simulator was registered in any runner
+      tables. *)
+
+  val machine_id : Act_common.Id.t
+  (** [machine_id] is the ID of the machine on which this simulator is
+      running. *)
+
+  (** The main body of the simulator runner is a filter from litmus tests to
+      output files. The filter shouldn't produce any auxiliary output, and
+      should accept an architecture as its input. *)
+  module Filter : Basic_filter
+end
+
 (** Basic interface for simulator runners constructed from filters.
 
     Such runners consist of two stages: a filter that runs the simulator on
     a litmus test to produce an opaque file output, and a loader that reads
     that output back in as generic simulator output. *)
 module type Basic = sig
-  (** The main body of the simulator runner is a filter from litmus tests to
-      output files. The filter shouldn't produce any auxiliary output, and
-      should accept an architecture as its input. *)
-  module Filter : Basic_filter
+  include Common
 
   (** Simulator runners must be able to load back their output into the
       simulator output format. *)
@@ -57,8 +71,7 @@ end
 
 (** Main interface for simulator runners. *)
 module type S = sig
-  (** Exposes the simulator runner's filter. *)
-  module Filter : Basic_filter
+  include Common
 
   val run :
        Arch.t

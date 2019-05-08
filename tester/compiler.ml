@@ -84,13 +84,17 @@ module Make (B : Basic) : S = struct
         []
 
   let compile_from_pathset_file (fs : Pathset.File.t) =
-    bracket ~id ~stage:"CC" ~file:(P_file.name fs) (fun () ->
+    bracket ~id ~stage:"cc" ~in_file:(P_file.name fs)
+      ~out_file:(Fpath.to_string (P_file.asm_file fs))
+      (fun () ->
         C.compile ~infile:(P_file.c_file fs) ~outfile:(P_file.asm_file fs)
-    )
+        )
 
   let litmusify_single (fs : Pathset.File.t) (cvars : string list) =
     let open Or_error.Let_syntax in
-    bracket ~id ~stage:"LITMUS" ~file:(P_file.name fs) (fun () ->
+    bracket ~id ~stage:"litmus" ~in_file:(P_file.name fs)
+      ~out_file:(Fpath.to_string (P_file.asm_litmus_file fs))
+      (fun () ->
         let%map output =
           R.Litmusify.run_from_fpaths
             (Asm_job.make ~passes:sanitiser_passes ~symbols:cvars ())
@@ -102,7 +106,10 @@ module Make (B : Basic) : S = struct
 
   let a_herd_on_pathset_file (fs : Pathset.File.t) :
       Sim.Output.t T.t Or_error.t =
-    bracket ~id ~stage:"SIM(asm)" ~file:(P_file.name fs) (fun () ->
+    bracket ~id:B.Asm_simulator.name ~stage:"sim" ~sub_stage:"asm"
+      ~machine:B.Asm_simulator.machine_id ~in_file:(P_file.name fs)
+      ~out_file:(Fpath.to_string (P_file.asm_sim_file fs))
+      (fun () ->
         B.Asm_simulator.run (Sim.Arch.Assembly emits)
           ~input_path:(P_file.asm_litmus_file fs)
           ~output_path:(P_file.asm_sim_file fs) )
@@ -159,7 +166,7 @@ module Make (B : Basic) : S = struct
       (fun () ->
         Or_error.when_m (Lazy.force delitmusify_needed) ~f:(fun () ->
             delitmusify fs ) )
-      ~stage:"delitmusifying" ~file:(P_file.name fs) ~id
+      ~stage:"delitmus" ~in_file:(P_file.name fs) ~id
 
   let run_single_from_pathset_file (c_sims : Sim.Bulk.File_map.t)
       (fs : Pathset.File.t) : (Analysis.Herd.t * TS.t) Or_error.t =

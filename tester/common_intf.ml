@@ -73,11 +73,14 @@ module type Extensions = sig
 
   val bracket :
        ?id:Id.t
+    -> ?machine:Id.t
+    -> ?in_file:string
+    -> ?out_file:string
+    -> ?sub_stage:string
     -> (unit -> 'a Or_error.t)
     -> stage:string
-    -> file:string
     -> 'a timed Or_error.t
-  (** [bracket ?id f ~stage ~file] runs [f], using the timing wrapper
-      [timed] and logging the tester stage [stage] on file [file], and,
-      optionally, over compiler ID [id]. *)
+  (** [bracket ?id ?machine ?in_file ?out_file ?sub_stage f ~stage] runs
+      [f], using the timing wrapper [timed] and logging the tester stage
+      [stage] with the various logging options passed through. *)
 end

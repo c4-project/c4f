@@ -22,6 +22,10 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 module Make (B : Filter.Basic) : Sim.Runner.S = Sim.Runner.Make (struct
+  let name = Act_common.Id.of_string "herd"
+
+  let machine_id = Config.Machine.Id.default
+
   module Filter = Filter.Make (B)
   module Reader = Reader
 end)

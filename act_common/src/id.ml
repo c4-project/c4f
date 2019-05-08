@@ -27,13 +27,19 @@ module T = struct
   (** [t] is the type of compiler IDs. *)
   type t = String.Caseless.t list [@@deriving compare, hash, sexp, bin_io]
 
-  let allowed_id_splits = ['.'; ' '; '/'; '\\']
+  let allowed_id_splits : char list = ['.'; ' '; '/'; '\\']
 
-  let of_string = String.split_on_chars ~on:allowed_id_splits
+  let of_string : string -> t = String.split_on_chars ~on:allowed_id_splits
 
-  let to_string = String.concat ~sep:"."
+  let of_string_list : string list -> t = Fn.id
 
-  let module_name = "act.Lib.Id"
+  let to_string : t -> string = String.concat ~sep:"."
+
+  let ( @: ) : string -> t -> t = List.cons
+
+  let ( @. ) : t -> t -> t = ( @ )
+
+  let module_name : string = "act.Act_common.Id"
 end
 
 include T

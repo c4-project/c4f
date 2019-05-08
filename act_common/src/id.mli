@@ -31,6 +31,9 @@ open Core_kernel
 (** [t] is the type of compiler and machine identifiers. *)
 type t
 
+val of_string_list : string list -> t
+(** [of_string_list tags] produces an identifier from a tag list. *)
+
 val to_string_list : t -> string list
 (** [to_string_list id] returns a list of each tag in [id]. *)
 
@@ -46,6 +49,14 @@ val is_prefix : t -> prefix:t -> bool
 
 (** We can use [t] as an [Identifiable]. *)
 include Identifiable.S with type t := t
+
+(** {2 Operators for building identifiers} *)
+
+val ( @: ) : string -> t -> t
+(** [x @: y] pushes a tag [x] onto identifier [y]. *)
+
+val ( @. ) : t -> t -> t
+(** [x @. y] concatenates identifiers [x] and [y]. *)
 
 (** {2 Pretty-printing helpers} *)
 

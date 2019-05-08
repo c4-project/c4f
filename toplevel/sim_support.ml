@@ -41,6 +41,8 @@ let try_make_litmus_filter (machine : Config.Machine.Spec.With_id.t) :
     ( module Sim_litmus.Runner.Make (struct
       let config = litmus_cfg
 
+      let machine_id = Config.Machine.Spec.With_id.id machine
+
       module Runner = R
     end)
     : Sim.Runner.S ))
