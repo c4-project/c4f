@@ -110,9 +110,7 @@ module Disp : sig
   (** [On_symbols] permits enumerating and folding over symbols inside a
       displacement. *)
   module On_symbols :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = string
+    Travesty.Traversable.S0 with type t := t and type Elt.t = string
 
   include Quickcheck.S with type t := t
 end
@@ -125,9 +123,7 @@ module Index : sig
   (** [On_registers] permits enumerating and folding over registers inside a
       displacement. *)
   module On_registers :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Reg.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
 
   include Quickcheck.S with type t := t
 end
@@ -156,16 +152,12 @@ module Indirect : sig
   (** [On_registers] permits enumerating and folding over registers inside a
       memory access. *)
   module On_registers :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Reg.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside a
       memory access. *)
   module On_symbols :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = string
+    Travesty.Traversable.S0 with type t := t and type Elt.t = string
 
   include Quickcheck.S with type t := t
 end
@@ -179,16 +171,12 @@ module Location : sig
   (** [On_registers] permits enumerating and folding over registers inside a
       location. *)
   module On_registers :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Reg.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside a
       location. *)
   module On_symbols :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = string
+    Travesty.Traversable.S0 with type t := t and type Elt.t = string
 
   include Quickcheck.S with type t := t
 end
@@ -225,16 +213,12 @@ module Operand : sig
   (** [On_locations] permits enumerating and folding over locations inside
       an operand. *)
   module On_locations :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Location.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       operand. *)
   module On_symbols :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = string
+    Travesty.Traversable.S0 with type t := t and type Elt.t = string
 end
 
 type prefix = PreLock [@@deriving sexp]
@@ -250,16 +234,12 @@ module Instruction : sig
   (** [On_locations] permits enumerating and folding over locations inside
       an instruction. *)
   module On_locations :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Location.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       instruction. *)
   module On_symbols :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = string
+    Travesty.Traversable.S0 with type t := t and type Elt.t = string
 end
 
 module Statement : sig
@@ -272,16 +252,12 @@ module Statement : sig
   (** [On_instructions] permits enumerating and folding over instructions
       inside a statement. *)
   module On_instructions :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Instruction.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Instruction.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       operand. *)
   module On_symbols :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = string
+    Travesty.Traversable.S0 with type t := t and type Elt.t = string
 end
 
 type t = {syntax: Dialect.t; program: Statement.t list}
@@ -289,12 +265,8 @@ type t = {syntax: Dialect.t; program: Statement.t list}
 
 (** Traversing over the statement list in a [t] *)
 module On_listings :
-  Travesty.Traversable.S0_container
-  with type t := t
-   and type Elt.t = Statement.t list
+  Travesty.Traversable.S0 with type t := t and type Elt.t = Statement.t list
 
 (** Traversing over all statements in a [t] *)
 module On_statements :
-  Travesty.Traversable.S0_container
-  with type t := t
-   and type Elt.t = Statement.t
+  Travesty.Traversable.S0 with type t := t and type Elt.t = Statement.t

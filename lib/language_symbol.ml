@@ -102,9 +102,6 @@ module String_direct : S with type t = string = Make (struct
 
   let require_of_string = Or_error.return
 
-  module On_strings = struct
-    type t = string
-
-    include Travesty_containers.Singleton.With_elt (String)
-  end
+  module On_strings =
+    Travesty.Traversable.Fix_elt (Travesty_containers.Singleton) (String)
 end)

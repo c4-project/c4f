@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 module Ob = Output.Observation
 
 module Order = struct
@@ -77,7 +77,7 @@ let compare_states ~(oracle_states : State.t list)
     ~(subject_states : State.t list) : t =
   let result =
     State.Set.(
-      Fn.on of_list ~f:partial_compare oracle_states subject_states)
+      Tx.Fn.on of_list ~f:partial_compare oracle_states subject_states)
   in
   Result result
 
@@ -147,7 +147,7 @@ let get_domain : State.t list -> Litmus.Id.Set.t Or_error.t = function
   | x :: xs ->
       let dom s = Litmus.Id.Set.of_list (State.bound s) in
       let xs_domains = Sequence.map ~f:dom (Sequence.of_list xs) in
-      Or_error.tee_m (dom x) ~f:(check_domain_consistency xs_domains)
+      Tx.Or_error.tee_m (dom x) ~f:(check_domain_consistency xs_domains)
 
 let filter_oracle_states ~(raw_oracle_states : State.t list)
     ~(subject_states : State.t list) : State.t list Or_error.t =

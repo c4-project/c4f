@@ -23,12 +23,12 @@
 
 open Base
 open Act_common
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 
 let litmus_config (machine : Config.Machine.Spec.With_id.t) :
     Config.Litmus_tool.t Or_error.t =
   Or_error.tag_arg
-    (Option.one (Config.Machine.Spec.With_id.litmus machine))
+    (Tx.Option.one (Config.Machine.Spec.With_id.litmus machine))
     "While trying to find litmus config for machine"
     (Config.Machine.Spec.With_id.id machine)
     [%sexp_of: Config.Machine.Id.t]

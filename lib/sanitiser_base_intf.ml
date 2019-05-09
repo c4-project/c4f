@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -32,7 +32,7 @@ module type Basic = sig
 
   (** [Program_container] is the container used to hold the one or more
       programs being sanitised. *)
-  module Program_container : Travesty.Traversable.S1_container
+  module Program_container : Travesty.Traversable.S1
 end
 
 (** [S_location] is the standard signature for location passes. *)

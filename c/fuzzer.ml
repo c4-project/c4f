@@ -22,13 +22,13 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Act_common
 open Utils
 module Var = Fuzzer_var
 module Subject = Fuzzer_subject
 module State = Fuzzer_state
-module State_list = List.On_monad (State.Monad)
+module State_list = Tx.List.On_monad (State.Monad)
 module Action = Fuzzer_action
 
 (** [make_rng seed] creates a splittable RNG; if [seed] is [Some s], [s]

@@ -24,8 +24,9 @@
 (** [Spec] contains general interfaces for dealing with specifications of
     machines and compilers. *)
 
-open Base
-open Travesty_core_kernel_exts
+open Core_kernel (* for Tuple2 *)
+
+module Tx = Travesty_core_kernel_exts
 open Utils
 
 module type Common = sig
@@ -133,7 +134,7 @@ module Make (B : Basic) :
       let open Or_error.Let_syntax in
       let%map () =
         xs
-        |> List.find_all_dups ~compare:(Fn.on With_id.id ~f:Id.compare)
+        |> List.find_all_dups ~compare:(Tx.Fn.on With_id.id ~f:Id.compare)
         |> List.map ~f:(fun x ->
                Or_error.error_s
                  [%message "duplicate ID" ~id:(With_id.id x : Id.t)] )

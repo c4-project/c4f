@@ -22,14 +22,14 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 open Sim_herdtools_common
 
 (* Map over an optional tuple. *)
-module O2 = Travesty.Bi_mappable.Chain_Bi2_Map1 (Tuple2) (Option)
+module O2 = Travesty.Bi_mappable.Chain_Bi2_Map1 (Tx.Tuple2) (Option)
 
 let strip_with_separator : string -> string =
-  String.strip ~drop:(Fn.disj Char.is_whitespace (String.mem ":>"))
+  String.strip ~drop:(Tx.Fn.disj Char.is_whitespace (String.mem ":>"))
 
 let split_line_to_string_tuple (line : string) : string option * string =
   line |> String.lsplit2 ~on:':'
@@ -42,7 +42,7 @@ let parse_int (s : string) : int Or_error.t =
   Or_error.try_with (fun () -> Int.of_string s)
 
 let parse_int_opt : string option -> int option Or_error.t =
-  Option.With_errors.map_m ~f:parse_int
+  Tx.Option.With_errors.map_m ~f:parse_int
 
 include Reader.Make (struct
   let try_parse_state_count (line : string) : int option =

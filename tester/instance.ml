@@ -22,11 +22,11 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Act_common
 include Instance_intf
 module Machine_assoc =
-  Travesty.Bi_mappable.Fix2_left (List.Assoc) (Config.Machine.Id)
+  Travesty.Bi_mappable.Fix2_left (Tx.Alist) (Config.Machine.Id)
 
 (** Compiler specification sets, grouped by machine. *)
 module Compiler_spec_env = struct
@@ -66,7 +66,7 @@ module Job = struct
       (mach_id, analysis))
 
   let run (job : t) : Analysis.Machine.t Machine_assoc.t Or_error.t =
-    job |> specs |> Or_error.combine_map ~f:(run_machine job)
+    job |> specs |> Tx.Or_error.combine_map ~f:(run_machine job)
 end
 
 module Make (B : Basic) : S = struct

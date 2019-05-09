@@ -23,7 +23,7 @@
 
 open Core_kernel (* not Base: we need Time.Span. *)
 
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Act_common
 open Utils
 module A = Analysis
@@ -54,9 +54,9 @@ module Row = struct
 
   let filter_map_analysis (row : 'a t) ~(f : 'a -> 'b option) : 'b t option
       =
-    let open Option.Let_syntax in
-    let%map analysis = f row.analysis in
-    with_analysis row ~analysis
+    Option.Let_syntax.(
+      let%map analysis = f row.analysis in
+      with_analysis row ~analysis)
 end
 
 let file_rows_of_machine (machine_id : Id.t) (machine : A.Machine.t) :
@@ -127,7 +127,7 @@ module Make_tabulator (B : Basic_tabulator) :
       Tabulator.t Or_error.t =
     Or_error.(
       rows
-      |> List.With_errors.fold_m ~init:(None, None, tab) ~f:with_file
+      |> Tx.List.With_errors.fold_m ~init:(None, None, tab) ~f:with_file
       >>| Tuple3.get3)
 
   let to_table (a : data) : Tabulator.t Or_error.t =
@@ -139,10 +139,10 @@ module On_files = struct
     List.concat_map (A.machines a) ~f:(Tuple2.uncurry file_rows_of_machine)
 
   let has_ub_and_below : Analysis.File.t -> bool =
-    Analysis.File.(Fn.(has_deviations ||| is_undefined))
+    Analysis.File.(Tx.Fn.(has_deviations ||| is_undefined))
 
   let has_deviations_and_below : Analysis.File.t -> bool =
-    Analysis.File.(Fn.(has_ub_and_below ||| has_errors))
+    Analysis.File.(Tx.Fn.(has_ub_and_below ||| has_errors))
 
   let is_file_interesting : Interest_level.t -> Analysis.File.t -> bool =
     function
@@ -188,7 +188,7 @@ end
 
 module On_deviations = struct
   let deviating_order_opt (file : A.File.t) : Sim.Diff.Order.t option =
-    Option.(
+    Tx.Option.(
       file |> A.File.state_set_order |> exclude ~f:Sim.Diff.Order.is_equal)
 
   let row_deviating_order_opt :

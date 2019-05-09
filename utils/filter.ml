@@ -22,17 +22,17 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 include Filter_intf
 
 let lift_to_raw_strings
     ~(f : 'i -> Io.In_source.t -> Io.Out_sink.t -> 'o Or_error.t)
     (aux_in : 'i) ~(infile : string option) ~(outfile : string option) :
     'o Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind in_src = Io.In_source.of_string_opt infile
-  and out_snk = Io.Out_sink.of_string_opt outfile in
-  f aux_in in_src out_snk
+  Or_error.Let_syntax.(
+    let%bind in_src = Io.In_source.of_string_opt infile
+    and out_snk = Io.Out_sink.of_string_opt outfile in
+    f aux_in in_src out_snk)
 
 let lift_to_fpaths
     ~(f : 'i -> Io.In_source.t -> Io.Out_sink.t -> 'o Or_error.t)
@@ -338,7 +338,7 @@ module Make_on_runner (R : Basic_on_runner) :
 Make_in_file_only (struct
   let get_file : string Copy_spec.t -> string Or_error.t = function
     | Files fs ->
-        List.one fs
+        Tx.List.one fs
     | Directory _ ->
         Or_error.error_string "Expected one file; got directory"
     | Nothing ->

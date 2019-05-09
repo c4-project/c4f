@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 open Act_common
 
 type t = (module Runner.S) Id.Map.t
@@ -37,7 +37,7 @@ let make_not_found_runner (id : Id.t) () =
   : Runner.S )
 
 let get (table : t) (id : Id.t) : (module Runner.S) =
-  Option.value_f (Id.Map.find table id)
+  Tx.Option.value_f (Id.Map.find table id)
     ~default_f:(make_not_found_runner id)
 
 let make : (Id.t, (module Runner.S)) List.Assoc.t -> t Or_error.t =

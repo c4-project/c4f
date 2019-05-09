@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -245,7 +245,7 @@ module Bundle : sig
 
   (** Operand bundles are traversable containers. *)
   include
-    Travesty.Traversable.S0_container
+    Travesty.Traversable.S0
     with type Elt.t = elt
      and type elt := elt
      and type t := t

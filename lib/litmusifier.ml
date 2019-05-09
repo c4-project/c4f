@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Utils
 include Litmusifier_intf
 
@@ -61,9 +61,10 @@ module Config = struct
         let open Or_error.Let_syntax in
         let%bind x = x_or_error in
         let post = x.postcondition in
-        let%map post' = Option.With_errors.map_m ~f:postcondition post in
+        let%map post' = Tx.Option.With_errors.map_m ~f:postcondition post in
         {x with postcondition= post'} )
-      ~c_variables:(W.proc_field (Option.With_errors.map_m ~f:c_variables))
+      ~c_variables:
+        (W.proc_field (Tx.Option.With_errors.map_m ~f:c_variables))
 end
 
 module type Basic_aux = sig
@@ -99,7 +100,7 @@ module Make_aux (B : Basic_aux) = struct
   let make_init_from_vars (cvars : C_vars.Map.t) :
       (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
     cvars |> C_identifier.Map.to_alist
-    |> Alist.bi_map ~left:Fn.id ~right:record_to_constant
+    |> Tx.Alist.bi_map ~left:Fn.id ~right:record_to_constant
 
   let make_init_from_all_heap_symbols (heap_syms : Abstract.Symbol.Set.t) :
       (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
@@ -160,7 +161,7 @@ module Make_aux (B : Basic_aux) = struct
     let open Or_error.Let_syntax in
     let cvars_opt = Config.c_variables config in
     let%map redirected_cvars_opt =
-      Option.With_errors.map_m cvars_opt
+      Tx.Option.With_errors.map_m cvars_opt
         ~f:(B.Redirect.transform_c_variables redirects)
     in
     Option.map ~f:(live_symbols_only heap_symbols) redirected_cvars_opt
@@ -175,7 +176,7 @@ module Make_aux (B : Basic_aux) = struct
     let locations = make_locations cvars_opt init in
     let src_post_opt = Config.postcondition config in
     let%map postcondition =
-      Option.With_errors.map_m ~f:(make_post redirects) src_post_opt
+      Tx.Option.With_errors.map_m ~f:(make_post redirects) src_post_opt
     in
     make ~locations ~init ?postcondition ()
 end

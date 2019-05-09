@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Utils
 open Mini
 
@@ -48,7 +48,7 @@ module Lang :
 
     let empty () = `Stm (Statement.nop ())
 
-    let make_uniform = List.right_pad ~padding:(empty ())
+    let make_uniform = Tx.List.right_pad ~padding:(empty ())
   end
 
   module Type = Type

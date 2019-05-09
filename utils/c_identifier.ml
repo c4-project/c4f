@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 
 module type Basic = sig
   val here : Lexing.position
@@ -59,12 +59,12 @@ module M = Validated.Make_bin_io_compare_hash_sexp (Make (struct
 
   let validate_initial_char : char Validate.check =
     Validate.booltest
-      Fn.(Char.is_alpha ||| Char.equal '_')
+      Tx.Fn.(Char.is_alpha ||| Char.equal '_')
       ~if_false:"Invalid initial character."
 
   let validate_char : char Validate.check =
     Validate.booltest
-      Fn.(Char.is_alphanum ||| Char.equal '_')
+      Tx.Fn.(Char.is_alphanum ||| Char.equal '_')
       ~if_false:"Invalid character."
 end))
 

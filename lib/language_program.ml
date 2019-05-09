@@ -23,19 +23,20 @@
 
 open Base
 include Language_program_intf
-module List = Travesty_core_kernel_exts.List
+module Tx = Travesty_core_kernel_exts
 
 module Make (B : Basic_with_modules) :
   S with type t = B.t and module Statement = B.Statement = struct
   include B
+  module Tr = Travesty.Traversable
 
   module On_statements = struct
-    include Travesty.Traversable.Chain0 (struct
-                type nonrec t = t
+    include Tr.Chain0 (struct
+                type t = B.t
 
                 include On_listings
               end)
-              (List.With_elt (Statement))
+              (Tr.Fix_elt (Tx.List) (Statement))
 
     include Travesty.Filter_mappable.Make0 (struct
       type t = B.t
@@ -49,13 +50,7 @@ module Make (B : Basic_with_modules) :
   let listing : t -> Statement.t list = On_statements.to_list
 
   module On_symbols =
-    Travesty.Traversable.Chain0 (struct
-        type nonrec t = t
-
-        include On_statements
-      end)
-      (Statement.On_symbols)
-
+    Travesty.Traversable.Chain0 (On_statements) (Statement.On_symbols)
   module Instruction = B.Statement.Instruction
   module Symbol = Instruction.Symbol
   module Location = Instruction.Location
@@ -85,7 +80,7 @@ module Make (B : Basic_with_modules) :
 
        Maybe, one day, we'll find an architecture that does actually contain
        heap locations in a jump, and have to re-think this. *)
-    |> List.exclude ~f:Instruction.is_jump
+    |> Tx.List.exclude ~f:Instruction.is_jump
     |> List.concat_map ~f:(heap_symbols_of_instruction ~known_heap_symbols)
     |> Abstract.Symbol.Set.of_list
 

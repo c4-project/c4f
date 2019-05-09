@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -64,11 +64,7 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
           ; String.chop_prefix ~prefix:"_" str
             (* Darwin Mach-O *) ]
 
-      module On_strings = struct
-        type t = string
-
-        include Singleton.With_elt (String)
-      end
+      module On_strings = Travesty.Traversable.Fix_elt (Singleton) (String)
     end
 
     module Location = struct

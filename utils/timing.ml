@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -58,7 +58,7 @@ module type S = sig
 
   include Timed1 with type 'a t := 'a t
 
-  include Travesty.Traversable.S1_container with type 'a t := 'a t
+  include Travesty.Traversable.S1 with type 'a t := 'a t
 end
 
 module Make (T : Timer) : S = struct
@@ -74,13 +74,15 @@ module Make (T : Timer) : S = struct
     let time_taken = make_span pre post in
     {value; time_taken}
 
-  include Travesty.Traversable.Make_container1 (struct
+  module T = Travesty.Traversable.Make1 (struct
     type nonrec 'a t = 'a t
 
     module On_monad (M : Monad.S) = struct
       let map_m wt ~f = M.(f wt.value >>| fun v -> {wt with value= v})
     end
   end)
+
+  include (T : module type of T with type 'a t := 'a t)
 
   let bracket_join thunk = With_errors.sequence_m (bracket thunk)
 end

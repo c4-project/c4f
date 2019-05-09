@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Utils
 
 module Value = struct
@@ -140,14 +140,14 @@ module Map = struct
   let erase_value (map : t) ~(var : C_identifier.t) : t Or_error.t =
     let open Or_error.Let_syntax in
     let%map () =
-      Or_error.when_m (has_dependencies map ~var) ~f:(fun () ->
+      Tx.Or_error.when_m (has_dependencies map ~var) ~f:(fun () ->
           dependency_error var )
     in
     erase_value_inner map ~var
 
   let submap_satisfying_all (vars : t)
       ~(predicates : (Record.t -> bool) list) : t =
-    vars |> C_identifier.Map.filter ~f:(List.all ~predicates)
+    vars |> C_identifier.Map.filter ~f:(Tx.List.all ~predicates)
 
   let env_satisfying_all (vars : t) ~(predicates : (Record.t -> bool) list)
       : Mini.Type.t C_identifier.Map.t =

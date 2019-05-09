@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Act_common
 open Lib
 open Utils
@@ -178,12 +178,12 @@ let collect_cvars ?(c_globals : string list option)
   let open Or_error.Let_syntax in
   let module V = Config.C_variables in
   let%bind globals =
-    Option.With_errors.map_m
+    Tx.Option.With_errors.map_m
       ~f:(V.String_lang.parse_list ~scope:V.Scope.Global)
       c_globals
   in
   let%map locals =
-    Option.With_errors.map_m
+    Tx.Option.With_errors.map_m
       ~f:(V.String_lang.parse_list ~scope:V.Scope.Local)
       c_locals
   in

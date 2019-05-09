@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 
 (** [Basic] is the interface act languages must implement for program
     analysis. *)
@@ -39,9 +39,7 @@ module type Basic = sig
 
       For individual statements, use [On_statements] in {{!S} S}. *)
   module On_listings :
-    Travesty.Traversable.S0_container
-    with type Elt.t = stm list
-     and type t := t
+    Travesty.Traversable.S0 with type Elt.t = stm list and type t := t
 
   val name : t -> string option
   (** [name prog] gets the declared name of [prog], if it has one.
@@ -71,9 +69,7 @@ module type S = sig
       statements of listings). *)
   module On_statements : sig
     include
-      Travesty.Traversable.S0_container
-      with type Elt.t = Statement.t
-       and type t := t
+      Travesty.Traversable.S0 with type Elt.t = Statement.t and type t := t
 
     include
       Travesty.Filter_mappable.S0 with type elt := Elt.t and type t := t
@@ -85,7 +81,7 @@ module type S = sig
   (** Traversal over every symbol in the program (transitive across symbols
       of statements). *)
   module On_symbols :
-    Travesty.Traversable.S0_container
+    Travesty.Traversable.S0
     with type Elt.t = Statement.Instruction.Symbol.t
      and type t := t
 

@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Utils
 include Ast_basic
 include Mini_intf
@@ -48,10 +48,8 @@ module Assign = struct
   end
 
   module On_lvalues :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Lvalue.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Lvalue
@@ -65,10 +63,8 @@ module Assign = struct
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Address.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Address
@@ -97,10 +93,8 @@ module Atomic_store = struct
   end
 
   module On_lvalues :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Lvalue.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Lvalue
@@ -116,10 +110,8 @@ module Atomic_store = struct
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Address.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Address
@@ -199,10 +191,8 @@ module Atomic_cmpxchg = struct
   end
 
   module On_lvalues :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Lvalue.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Lvalue
@@ -219,10 +209,8 @@ module Atomic_cmpxchg = struct
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Address.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Address
@@ -256,7 +244,7 @@ and if_statement =
 
 module Ifs_base_map (M : Monad.S) = struct
   module F = Travesty.Traversable.Helpers (M)
-  module O = Option.On_monad (M)
+  module O = Tx.Option.On_monad (M)
 
   let bmap (if_stm : if_statement) ~(cond : Expression.t F.traversal)
       ~(t_branch : statement list F.traversal)
@@ -308,10 +296,8 @@ module Statement :
      end up with unsafe module recursion. *)
 
   module On_lvalues :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Lvalue.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Lvalue
@@ -320,7 +306,7 @@ module Statement :
       module B = Base_map (M)
       module IB = Ifs_base_map (M)
       module E = Expression.On_lvalues.On_monad (M)
-      module L = List.On_monad (M)
+      module L = Tx.List.On_monad (M)
       module Asn = Assign.On_lvalues.On_monad (M)
       module Sto = Atomic_store.On_lvalues.On_monad (M)
       module Cxg = Atomic_cmpxchg.On_lvalues.On_monad (M)
@@ -338,10 +324,8 @@ module Statement :
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Address.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Address
@@ -350,7 +334,7 @@ module Statement :
       module B = Base_map (M)
       module IB = Ifs_base_map (M)
       module E = Expression.On_addresses.On_monad (M)
-      module L = List.On_monad (M)
+      module L = Tx.List.On_monad (M)
       module Asn = Assign.On_addresses.On_monad (M)
       module Sto = Atomic_store.On_addresses.On_monad (M)
       module Cxg = Atomic_cmpxchg.On_addresses.On_monad (M)
@@ -368,15 +352,8 @@ module Statement :
   end)
 
   module On_identifiers :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Identifier.t =
-    Travesty.Traversable.Chain0 (struct
-        type nonrec t = t
-
-        include On_lvalues
-      end)
-      (Lvalue.On_identifiers)
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Identifier.t =
+    Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 end
 
 module If_statement :
@@ -401,10 +378,8 @@ module If_statement :
   module Base_map (M : Monad.S) = Ifs_base_map (M)
 
   module On_lvalues :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Lvalue.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Lvalue.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Lvalue
@@ -413,7 +388,7 @@ module If_statement :
       module B = Base_map (M)
       module E = Expression.On_lvalues.On_monad (M)
       module S = Statement.On_lvalues.On_monad (M)
-      module L = List.On_monad (M)
+      module L = Tx.List.On_monad (M)
 
       let map_m x ~f =
         B.bmap x ~cond:(E.map_m ~f)
@@ -423,10 +398,8 @@ module If_statement :
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Address.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Address.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Address
@@ -435,7 +408,7 @@ module If_statement :
       module B = Base_map (M)
       module E = Expression.On_addresses.On_monad (M)
       module S = Statement.On_addresses.On_monad (M)
-      module L = List.On_monad (M)
+      module L = Tx.List.On_monad (M)
 
       let map_m x ~f =
         B.bmap x ~cond:(E.map_m ~f)
@@ -445,9 +418,7 @@ module If_statement :
   end)
 
   module On_identifiers :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Identifier.t =
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Identifier.t =
     Travesty.Traversable.Chain0 (struct
         type nonrec t = t
 
@@ -484,17 +455,17 @@ module Function = struct
     M.bmap
 
   module On_decls :
-    Travesty.Traversable.S0_container
-    with type t := t
+    Travesty.Traversable.S0
+    with type t = t
      and type Elt.t = Initialiser.Named.t =
-  Travesty.Traversable.Make_container0 (struct
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Initialiser.Named
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module L = List.On_monad (M)
+      module L = Tx.List.On_monad (M)
 
       let map_m (func : t)
           ~(f : Initialiser.Named.t -> Initialiser.Named.t M.t) =
@@ -527,17 +498,17 @@ module Program = struct
   end
 
   module On_decls :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t := Initialiser.Named.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0
+    with type t = t
+     and type Elt.t = Initialiser.Named.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Initialiser.Named
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module L = List.On_monad (M)
+      module L = Tx.List.On_monad (M)
       module F = Function.On_decls.On_monad (M)
 
       let map_m (program : t) ~(f : Elt.t -> Elt.t M.t) =

@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 include Bulk_intf
 
 module File_map = struct
@@ -31,7 +31,8 @@ module File_map = struct
   let to_key : Fpath.t -> string = Fpath.to_string
 
   let make (alist : (Fpath.t, Output.t) List.Assoc.t) : t Or_error.t =
-    alist |> Alist.map_left ~f:to_key
+    alist
+    |> Tx.Alist.map_left ~f:to_key
     |> Map.of_alist_or_error (module String)
 
   let get (map : t) ~(litmus_path : Fpath.t) : Output.t =

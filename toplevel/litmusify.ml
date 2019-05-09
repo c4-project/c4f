@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Lib
 open Utils
 open Act_common
@@ -135,7 +135,7 @@ let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
     Or_error.t =
   let open Or_error.Let_syntax in
   let%map postcondition =
-    Option.With_errors.map_m post_sexp ~f:parse_post
+    Tx.Option.With_errors.map_m post_sexp ~f:parse_post
   in
   fun ~c_variables -> Litmusifier.Config.make ?postcondition ?c_variables ()
 

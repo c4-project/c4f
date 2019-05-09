@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Travesty_containers
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Utils
 
 module Mark = struct
@@ -132,7 +132,7 @@ module Chain_item = struct
   let of_locations ins is_move locs state =
     (* Note: these two classifications overlap somewhat, so the order of end
        before step is deliberate. *)
-    Option.first_some_of_thunks
+    Tx.Option.first_some_of_thunks
       [ (fun () -> end_of_locations ins locs state)
       ; (fun () -> step_of_locations is_move locs state) ]
 
@@ -271,7 +271,7 @@ module Chain_item = struct
       {| ((New_write 10 (Register_indirect (reg (General eax)) (offset (Int 0))))) |}]
 
   let of_operands ins is_move locs state =
-    Option.first_some_of_thunks
+    Tx.Option.first_some_of_thunks
       [ (fun () -> of_operands_as_locations ins is_move locs state)
       ; (fun () -> as_possible_new_write ins locs) ]
 end

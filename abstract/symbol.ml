@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Utils
 
 type t = string [@@deriving sexp, equal]
@@ -56,7 +56,7 @@ module Table = struct
   let add tbl sym sort = (sym, sort) :: tbl
 
   let remove tbl sym sort =
-    List.exclude
+    Tx.List.exclude
       ~f:(Tuple2.equal ~eq1:String.equal ~eq2:Sort.equal (sym, sort))
       tbl
 

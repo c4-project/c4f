@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 open Act_common
 open Utils
 
@@ -64,12 +64,12 @@ let%expect_test "make_id_path: folds in correct direction" =
 module Get_files (F : Fs.S) = struct
   let get_memalloy_litc_files (input_root : Fpath.t) :
       Fpath.t list Or_error.t =
-    let open Or_error.Let_syntax in
-    let litmus_dir = Fpath.(input_root / "Litmus" / "") in
-    let%map files =
-      F.get_files ~ext:"litmus" Fpath.(input_root / "Litmus" / "")
-    in
-    List.map ~f:(Fpath.append litmus_dir) files
+    Or_error.Let_syntax.(
+      let litmus_dir = Fpath.(input_root / "Litmus" / "") in
+      let%map files =
+        F.get_files ~ext:"litmus" Fpath.(input_root / "Litmus" / "")
+      in
+      List.map ~f:(Fpath.append litmus_dir) files)
 end
 
 module type Basic = sig
@@ -100,7 +100,7 @@ module Extend (B : Basic) = struct
     Or_error.(i |> B.make_raw >>= validate_err)
 
   let make_and_mkdirs (i : B.input) : B.t Or_error.t =
-    Or_error.(i |> make >>= Or_error.tee_m ~f:mkdirs)
+    Or_error.(i |> make >>= Tx.Or_error.tee_m ~f:mkdirs)
 
   let pp : B.t Fmt.t =
     let p f (k, v) =

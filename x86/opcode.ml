@@ -45,7 +45,7 @@
 (****************************************************************************)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 open Utils
 
 module Operand_spec = struct
@@ -436,7 +436,7 @@ end)
 let directive_of_string string = Core.String.chop_prefix string ~prefix:"."
 
 let of_string string =
-  Option.first_some_of_thunks
+  Tx.Option.first_some_of_thunks
     Core.Option.
       [ (fun () -> string |> directive_of_string >>| directive)
       ; (fun () -> string |> Jump.of_string >>| jump)

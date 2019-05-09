@@ -47,10 +47,8 @@ module Atomic_load = struct
   end
 
   module On_addresses :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Address.t =
-  Travesty.Traversable.Make_container0 (struct
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Address
@@ -63,15 +61,8 @@ module Atomic_load = struct
   end)
 
   module On_lvalues :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Lvalue.t =
-    Travesty.Traversable.Chain0 (struct
-        type nonrec t = t
-
-        include On_addresses
-      end)
-      (Address.On_lvalues)
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+    Travesty.Traversable.Chain0 (On_addresses) (Address.On_lvalues)
 
   module Type_check (E : Env.S) = struct
     module A = Address.Type_check (E)
@@ -183,9 +174,8 @@ let anonymise = function
       `E ld
 
 module On_addresses :
-  Travesty.Traversable.S0_container
-  with type t := t
-   and type Elt.t = Address.t = Travesty.Traversable.Make_container0 (struct
+  Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = Address
@@ -210,9 +200,8 @@ module On_addresses :
 end)
 
 module On_lvalues :
-  Travesty.Traversable.S0_container
-  with type t := t
-   and type Elt.t = Lvalue.t = Travesty.Traversable.Make_container0 (struct
+  Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = Lvalue
@@ -237,15 +226,8 @@ module On_lvalues :
 end)
 
 module On_identifiers :
-  Travesty.Traversable.S0_container
-  with type t := t
-   and type Elt.t = Identifier.t =
-  Travesty.Traversable.Chain0 (struct
-      type nonrec t = t
-
-      include On_lvalues
-    end)
-    (Lvalue.On_identifiers)
+  Travesty.Traversable.S0 with type t = t and type Elt.t = Identifier.t =
+  Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 
 module Type_check (E : Env.S) = struct
   module Lv = Lvalue.Type_check (E)

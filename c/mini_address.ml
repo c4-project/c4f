@@ -40,10 +40,8 @@ let rec reduce (addr : t) ~(lvalue : Mini_lvalue.t -> 'a) ~(ref : 'a -> 'a)
       ref (reduce rest ~lvalue ~ref)
 
 module On_lvalues :
-  Travesty.Traversable.S0_container
-  with type t := t
-   and type Elt.t = Mini_lvalue.t =
-Travesty.Traversable.Make_container0 (struct
+  Travesty.Traversable.S0 with type t = t and type Elt.t = Mini_lvalue.t =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = Mini_lvalue

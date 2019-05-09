@@ -22,14 +22,14 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 open Utils
 include Convert_intf
 
 module Make (B : Basic) = struct
-  let convert_programs (ps : B.From.Lang.Program.t list) :
-      B.To.Lang.Program.t list Or_error.t =
-    ps |> List.map ~f:B.program |> Or_error.combine_errors
+  let convert_programs :
+      B.From.Lang.Program.t list -> B.To.Lang.Program.t list Or_error.t =
+    Tx.Or_error.combine_map ~f:B.program
 
   let convert_init_line ((k, v) : C_identifier.t * B.From.Lang.Constant.t) :
       (C_identifier.t * B.To.Lang.Constant.t) Or_error.t =
@@ -54,7 +54,7 @@ module Make (B : Basic) = struct
   let convert_post_opt :
          B.From.Postcondition.t option
       -> B.To.Postcondition.t option Or_error.t =
-    Option.With_errors.map_m ~f:convert_post
+    Tx.Option.With_errors.map_m ~f:convert_post
 
   let convert (old : B.From.Validated.t) : B.To.Validated.t Or_error.t =
     let name = B.From.Validated.name old in

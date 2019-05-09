@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -63,8 +63,8 @@ end
 
 (** [Hook_maker] is the type of functors that generate hooks given a program
     container. *)
-module type Hook_maker = functor (P : Travesty.Traversable.S1_container) -> Hook
-                                                                            with module Program_container = P
+module type Hook_maker = functor (P : Travesty.Traversable.S1) -> Hook
+                                                                  with module Program_container = P
 
 (** [Basic] describes the base functionality we need to supply to a
     sanitiser.

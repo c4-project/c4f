@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Utils
 include Ast_intf
 
@@ -151,7 +151,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       let module Tr = Travesty in
       let module V = Validate in
       let dup =
-        List.find_a_dup ~compare:(Fn.on fst ~f:C_identifier.compare) init
+        List.find_a_dup ~compare:(Tx.Fn.on fst ~f:C_identifier.compare) init
       in
       let dup_to_err (k, v) =
         V.fail_s
@@ -206,7 +206,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
                   (Lang.Program.global_vars x') )
           in
           Or_error.(
-            unless_m is_uniform ~f:(fun () ->
+            Tx.Or_error.unless_m is_uniform ~f:(fun () ->
                 error_string "Programs disagree on global variables sets."
             )
             >>| fun () -> s)
@@ -219,7 +219,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         globals |> C_identifier.Map.keys |> C_identifier.Set.of_list
       in
       Or_error.(
-        unless_m (C_identifier.Set.equal init_keys globals_keys)
+        Tx.Or_error.unless_m (C_identifier.Set.equal init_keys globals_keys)
           ~f:(fun () ->
             error_s
               [%message
@@ -294,15 +294,15 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     Or_error.(
       decls
       |> List.filter_map ~f:Decl.as_init
-      |> List.one
+      |> Tx.List.one
       >>| List.map ~f:(fun {Init.id; value} -> (id, value)))
 
   let get_post (decls : Decl.t list) : Postcondition.t option Or_error.t =
-    decls |> List.filter_map ~f:Decl.as_post |> List.at_most_one
+    decls |> List.filter_map ~f:Decl.as_post |> Tx.List.at_most_one
 
   let get_locations (decls : Decl.t list) :
       C_identifier.t list option Or_error.t =
-    decls |> List.filter_map ~f:Decl.as_locations |> List.at_most_one
+    decls |> List.filter_map ~f:Decl.as_locations |> Tx.List.at_most_one
 
   let validate_language : C_identifier.t Validate.check =
     Validate.booltest

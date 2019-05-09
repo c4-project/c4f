@@ -43,8 +43,9 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 (****************************************************************************)
 
-open Core_kernel
-open Travesty_core_kernel_exts
+open Base
+open Base_quickcheck
+module Tx = Travesty_base_exts
 open Utils
 open Travesty
 
@@ -151,8 +152,8 @@ module Disp = struct
   end
 
   module On_symbols :
-    Traversable.S0_container with type t := t and type Elt.t = string =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = string =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
@@ -186,8 +187,8 @@ module Index = struct
 
   (** Recursive mapper for registers *)
   module On_registers :
-    Traversable.S0_container with type t := t and type Elt.t = Reg.t =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = Reg.t =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Reg
@@ -202,10 +203,12 @@ module Index = struct
     end
   end)
 
-  module Q : Quickcheck.S with type t := t = struct
-    module G = Quickcheck.Generator
-    module O = Quickcheck.Observer
-    module S = Quickcheck.Shrinker
+  module Q : Utils.My_quickcheck.S_with_sexp with type t := t = struct
+    let sexp_of_t = sexp_of_t
+
+    module G = Base_quickcheck.Generator
+    module O = Base_quickcheck.Observer
+    module S = Base_quickcheck.Shrinker
 
     let anonymise = function
       | Unscaled reg ->
@@ -222,7 +225,8 @@ module Index = struct
     let quickcheck_generator : t G.t =
       G.map ~f:deanonymise
         [%quickcheck.generator:
-          [`A of Reg.t | `B of Reg.t * [%custom G.small_positive_int]]]
+          [ `A of Reg.t
+          | `B of Reg.t * [%custom G.small_strictly_positive_int] ]]
 
     let quickcheck_observer : t O.t =
       O.unmap ~f:anonymise
@@ -230,8 +234,7 @@ module Index = struct
 
     let quickcheck_shrinker : t S.t =
       S.map ~f:deanonymise ~f_inverse:anonymise
-        (S.variant2 Reg.quickcheck_shrinker
-           [%quickcheck.shrinker: Reg.t * int])
+        [%quickcheck.shrinker: [`A of Reg.t | `B of Reg.t * int]]
   end
 
   include Q
@@ -247,7 +250,7 @@ module Indirect = struct
     ; disp: Disp.t option
     ; base: Reg.t option
     ; index: Index.t option }
-  [@@deriving sexp, eq, compare, fields, make]
+  [@@deriving sexp, eq, compare, fields, make, quickcheck]
 
   (** Base mapper for memory addresses *)
   module Base_map (M : Monad.S) = struct
@@ -261,8 +264,8 @@ module Indirect = struct
 
   (** Recursive mapper for symbols *)
   module On_symbols :
-    Traversable.S0_container with type t := t and type Elt.t = string =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = string =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
@@ -270,7 +273,7 @@ module Indirect = struct
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
       module D = Disp.On_symbols.On_monad (M)
-      module O = Option.On_monad (M)
+      module O = Tx.Option.On_monad (M)
 
       let map_m t ~f =
         B.map_m t
@@ -283,15 +286,15 @@ module Indirect = struct
 
   (** Recursive mapper for registers *)
   module On_registers :
-    Traversable.S0_container with type t := t and type Elt.t = Reg.t =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = Reg.t =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Reg
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module O = Option.On_monad (M)
+      module O = Tx.Option.On_monad (M)
       module I = Index.On_registers.On_monad (M)
 
       let map_m t ~f =
@@ -301,38 +304,11 @@ module Indirect = struct
           ~disp:M.return
     end
   end)
-
-  let of_tuple (seg, base, index, disp) = {seg; base; index; disp}
-
-  let to_tuple {seg; base; index; disp} = (seg, base, index, disp)
-
-  module Q : Quickcheck.S with type t := t = struct
-    module G = Quickcheck.Generator
-    module O = Quickcheck.Observer
-    module S = Quickcheck.Shrinker
-
-    let quickcheck_generator : t G.t =
-      G.map ~f:of_tuple
-        [%quickcheck.generator:
-          Reg.t option * Reg.t option * Index.t option * Disp.t option]
-
-    let quickcheck_observer : t O.t =
-      O.unmap ~f:to_tuple
-        [%quickcheck.observer:
-          Reg.t option * Reg.t option * Index.t option * Disp.t option]
-
-    let quickcheck_shrinker : t S.t =
-      S.map ~f:of_tuple ~f_inverse:to_tuple
-        [%quickcheck.shrinker:
-          Reg.t option * Reg.t option * Index.t option * Disp.t option]
-  end
-
-  include Q
 end
 
 module Location = struct
   type t = Indirect of Indirect.t | Reg of Reg.t
-  [@@deriving sexp, variants, eq, compare]
+  [@@deriving sexp, variants, equal, compare, quickcheck]
 
   (** Base mapper for locations *)
   module Base_map (M : Monad.S) = struct
@@ -345,8 +321,8 @@ module Location = struct
   end
 
   module On_registers :
-    Traversable.S0_container with type t := t and type Elt.t = Reg.t =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = Reg.t =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Reg
@@ -361,8 +337,8 @@ module Location = struct
   end)
 
   module On_symbols :
-    Traversable.S0_container with type t := t and type Elt.t = string =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = string =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
@@ -378,30 +354,6 @@ module Location = struct
           ~reg:M.return
     end
   end)
-
-  module Q : Quickcheck.S with type t := t = struct
-    module G = Quickcheck.Generator
-    module O = Quickcheck.Observer
-    module S = Quickcheck.Shrinker
-
-    let anonymise = function Indirect ind -> `A ind | Reg reg -> `B reg
-
-    let deanonymise = function `A ind -> Indirect ind | `B reg -> Reg reg
-
-    let quickcheck_generator : t G.t =
-      G.map ~f:deanonymise
-        [%quickcheck.generator: [`A of Indirect.t | `B of Reg.t]]
-
-    let quickcheck_observer : t O.t =
-      O.unmap ~f:anonymise
-        [%quickcheck.observer: [`A of Indirect.t | `B of Reg.t]]
-
-    let quickcheck_shrinker : t S.t =
-      S.map ~f:deanonymise ~f_inverse:anonymise
-        [%quickcheck.shrinker: [`A of Indirect.t | `B of Reg.t]]
-  end
-
-  include Q
 end
 
 module Bop = struct
@@ -448,8 +400,8 @@ module Operand = struct
 
   (** Recursive mapper for locations in operands *)
   module On_locations :
-    Traversable.S0_container with type t := t and type Elt.t = Location.t =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = Location.t =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location
@@ -468,8 +420,8 @@ module Operand = struct
 
   (** Recursive mapper for symbols in operands *)
   module On_symbols :
-    Traversable.S0_container with type t := t and type Elt.t = string =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = string =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
@@ -488,10 +440,12 @@ module Operand = struct
     end
   end)
 
-  module Q : Quickcheck.S with type t := t = struct
-    module G = Quickcheck.Generator
-    module O = Quickcheck.Observer
-    module S = Quickcheck.Shrinker
+  module Q : My_quickcheck.S_with_sexp with type t := t = struct
+    let sexp_of_t = sexp_of_t
+
+    module G = Base_quickcheck.Generator
+    module O = Base_quickcheck.Observer
+    module S = Base_quickcheck.Shrinker
 
     let anonymise = function
       | Location loc ->
@@ -565,7 +519,7 @@ module Operand = struct
     in
     let f count sym = (count + 1, String.capitalize sym) in
     let total, ast' = On_symbols.fold_map ~f ~init:0 ast in
-    Format.printf "@[<v>@[<h>Total:@ %d@]@,%a@]@." total Sexp.pp_hum
+    Fmt.pr "@[<v>@[<h>Total:@ %d@]@,%a@]@." total Sexp.pp_hum
       [%sexp (ast' : t)] ;
     [%expect
       {|
@@ -574,15 +528,7 @@ module Operand = struct
        (Location (Indirect ((seg ()) (disp ((Symbolic C))) (base ()) (index ()))))) |}]
 end
 
-(*
- * Prefixes
- *)
-
 type prefix = PreLock [@@deriving sexp, eq]
-
-(*
- * Instructions
- *)
 
 module Instruction = struct
   module T = struct
@@ -604,18 +550,18 @@ module Instruction = struct
 
   (** Recursive mapper for symbols in instructions *)
   module On_symbols :
-    Traversable.S0_container with type t := t and type Elt.t = string =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = string =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
-    module Set = String.Set
+    module Set = Set.M (String)
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
       module F = Traversable.Helpers (M)
       module OS = Operand.On_symbols.On_monad (M)
-      module L = List.On_monad (M)
+      module L = Tx.List.On_monad (M)
 
       let map_m t ~f =
         B.map_m t
@@ -628,8 +574,8 @@ module Instruction = struct
 
   (** Recursive mapper for locations in instructions *)
   module On_locations :
-    Traversable.S0_container with type t := t and type Elt.t = Location.t =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = Location.t =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location
@@ -638,7 +584,7 @@ module Instruction = struct
       module B = Base_map (M)
       module F = Traversable.Helpers (M)
       module OL = Operand.On_locations.On_monad (M)
-      module L = List.On_monad (M)
+      module L = Tx.List.On_monad (M)
 
       let map_m t ~f =
         B.map_m t
@@ -666,8 +612,8 @@ module Statement = struct
 
   (** Recursive mapper for instructions in statements *)
   module On_instructions :
-    Traversable.S0_container with type t := t and type Elt.t = Instruction.t =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = Instruction.t =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Instruction
@@ -685,8 +631,8 @@ module Statement = struct
 
   (** Recursive mapper for symbols in statements *)
   module On_symbols :
-    Traversable.S0_container with type t := t and type Elt.t = string =
-  Traversable.Make_container0 (struct
+    Traversable.S0 with type t = t and type Elt.t = string =
+  Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
@@ -718,9 +664,8 @@ module Base_map (M : Monad.S) = struct
 end
 
 module On_listings :
-  Traversable.S0_container
-  with type t := t
-   and type Elt.t = Statement.t list = Traversable.Make_container0 (struct
+  Traversable.S0 with type t = t and type Elt.t = Statement.t list =
+Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = struct
@@ -735,10 +680,7 @@ module On_listings :
 end)
 
 module On_statements :
-  Traversable.S0_container with type t := t and type Elt.t = Statement.t =
-  Traversable.Chain0 (struct
-      type nonrec t = t
-
-      include On_listings
-    end)
-    (List.With_elt (Statement))
+  Traversable.S0 with type t = t and type Elt.t = Statement.t =
+  Traversable.Chain0
+    (On_listings)
+    (Traversable.Fix_elt (Tx.List) (Statement))

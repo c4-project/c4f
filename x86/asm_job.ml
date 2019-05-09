@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 
 let try_get_dialect dialect =
   dialect |> Dialect.Name_table.of_string
@@ -69,4 +69,5 @@ let get_runner_from_dialect dialect =
 
 let get_runner emits_tail =
   Or_error.(
-    emits_tail |> List.one >>= try_get_dialect >>= get_runner_from_dialect)
+    emits_tail |> Tx.List.one >>= try_get_dialect
+    >>= get_runner_from_dialect)

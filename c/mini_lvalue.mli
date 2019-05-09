@@ -71,9 +71,7 @@ val is_deref : t -> bool
 
 (** Traversing over identifiers in lvalues. *)
 module On_identifiers :
-  Travesty.Traversable.S0_container
-  with type t := t
-   and type Elt.t = C_identifier.t
+  Travesty.Traversable.S0 with type t := t and type Elt.t = C_identifier.t
 
 (** We can get to the variable name inside an lvalue. *)
 include Mini_intf.S_has_underlying_variable with type t := t

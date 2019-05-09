@@ -79,15 +79,11 @@ module Assign : sig
 
   (** Traversing over atomic-action addresses in assignments. *)
   module On_addresses :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Address.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Address.t
 
   (** Traversing over lvalues in assignments. *)
   module On_lvalues :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Lvalue.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Lvalue.t
 end
 
 (** An atomic store operation. *)
@@ -116,15 +112,11 @@ module Atomic_store : sig
 
   (** Traversing over atomic-action addresses in atomic stores. *)
   module On_addresses :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Address.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Address.t
 
   (** Traversing over lvalues in atomic stores. *)
   module On_lvalues :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Lvalue.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Lvalue.t
 
   (** {3 Generating and quickchecking} *)
 
@@ -189,15 +181,11 @@ module Atomic_cmpxchg : sig
 
   (** Traversing over atomic-action addresses in atomic compare-exchanges. *)
   module On_addresses :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Address.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Address.t
 
   (** Traversing over lvalues in atomic compare-exchanges. *)
   module On_lvalues :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t = Lvalue.t
+    Travesty.Traversable.S0 with type t := t and type Elt.t = Lvalue.t
 end
 
 (** A statement.
@@ -271,7 +259,7 @@ module Function : sig
   (** [On_decls] allows traversal over all of the declarations inside a
       function. *)
   module On_decls :
-    Travesty.Traversable.S0_container
+    Travesty.Traversable.S0
     with type t := t
      and type Elt.t := Initialiser.t named
 end
@@ -310,7 +298,7 @@ module Program : sig
   (** [On_decls] allows traversal over all of the declarations inside a
       program. *)
   module On_decls :
-    Travesty.Traversable.S0_container
-    with type t := t
-     and type Elt.t := Initialiser.t named
+    Travesty.Traversable.S0
+    with type t = t
+     and type Elt.t = Initialiser.t named
 end

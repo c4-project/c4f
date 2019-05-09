@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -26,7 +26,7 @@
 (** [Hook] implements x86-specific sanitisation passes. It requires an
     [Language.S] module to tell it things about the current x86 dialect (for
     example, the order of operands). *)
-module Hook (L : Language.S) (P : Travesty.Traversable.S1_container) :
+module Hook (L : Language.S) (P : Travesty.Traversable.S1) :
   Lib.Sanitiser.Hook with module Lang := L and module Program_container = P
 
 (** [Make_single] directly instantiates a single-program sanitiser for an

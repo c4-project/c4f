@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 open Utils
 include Reader_intf
 
@@ -163,13 +163,13 @@ module Ctx = struct
       Or_error.(
         body
         |> map_a_state_m ~f:Automaton.try_leave_summary
-        >>= map_unless_m is_defined ~f:try_set_undefined)
+        >>= Tx.Or_error.map_unless_m is_defined ~f:try_set_undefined)
   end
 
   include Travesty.State_transform.Make (struct
     type t = Body.t
 
-    module Inner = Travesty_base_exts.Or_error
+    module Inner = Or_error
   end)
 
   let peek_automaton () : Automaton.t t = peek Body.a_state
@@ -249,7 +249,7 @@ module Make_main (B : Basic) = struct
     let try_parse_state_line_body (line : string) : Sim.State.t Or_error.t =
       Or_error.(
         line |> String.split ~on:';'
-        |> List.exclude ~f:String.is_empty (* Drop trailing ; *)
+        |> Tx.List.exclude ~f:String.is_empty (* Drop trailing ; *)
         |> List.map ~f:proc_binding |> Result.all >>= Sim.State.of_alist)
 
     let try_parse_state_line (line : string) : Sim.State.t Or_error.t =
@@ -312,7 +312,7 @@ end
 module Make_load (B : Basic) : Loadable.Basic with type t = Sim.Output.t =
 struct
   module M = Make_main (B)
-  module L = List.On_monad (Ctx)
+  module L = Tx.List.On_monad (Ctx)
   module I = Ic.On_monad (Ctx)
 
   type nonrec t = Sim.Output.t

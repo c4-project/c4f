@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Act_common
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 include Act_intf
 module My_list = Utils.My_list
 
@@ -99,7 +99,7 @@ module Raw = struct
               | _ ->
                   None )
           in
-          let%map litmus = Option.With_errors.map_m ~f:litmus litmus_raw
+          let%map litmus = Tx.Option.With_errors.map_m ~f:litmus litmus_raw
           and via = via via_raw in
           Machine.Spec.make ?litmus ~enabled ~via ())
 
@@ -214,7 +214,7 @@ module Raw = struct
         Or_error.Let_syntax.(
           items
           |> List.filter_map ~f:Ast.Top.as_machine
-          |> List.With_errors.map_m ~f:(fun (id, spec_ast) ->
+          |> Tx.List.With_errors.map_m ~f:(fun (id, spec_ast) ->
                  let%map spec = machine spec_ast in
                  Machine.Spec.With_id.make ~id ~spec )
           >>= Machine.Spec.Set.of_list)
@@ -223,7 +223,7 @@ module Raw = struct
         Or_error.Let_syntax.(
           items
           |> List.filter_map ~f:Ast.Top.as_compiler
-          |> List.With_errors.map_m ~f:(fun (id, spec_ast) ->
+          |> Tx.List.With_errors.map_m ~f:(fun (id, spec_ast) ->
                  let%map spec = compiler spec_ast in
                  Compiler.Cfg_spec.With_id.make ~id ~spec )
           >>= Compiler.Cfg_spec.Set.of_list)
@@ -232,7 +232,7 @@ module Raw = struct
         Or_error.Let_syntax.(
           items
           |> My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
-          >>= Option.With_errors.map_m ~f:Fuzz.of_ast)
+          >>= Tx.Option.With_errors.map_m ~f:Fuzz.of_ast)
 
       let main (items : Ast.t) : t Or_error.t =
         Or_error.Let_syntax.(
@@ -359,7 +359,7 @@ module M = struct
           , Some (Error.tag ~tag:"Error finding machine:" err) )
 
   let herd_or_default (conf : t) : Herd.t =
-    conf |> herd |> Option.value_f ~default_f:Herd.default
+    conf |> herd |> Tx.Option.value_f ~default_f:Herd.default
 
   let compilers_from_raw (ms : Machine.Spec.Set.t)
       (ms_disabled : (Id.t, Error.t option) List.Assoc.t)

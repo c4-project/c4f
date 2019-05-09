@@ -38,10 +38,8 @@ let rec reduce (lv : t) ~(variable : C_identifier.t -> 'a)
 let is_deref : t -> bool = function Deref _ -> true | Variable _ -> false
 
 module On_identifiers :
-  Travesty.Traversable.S0_container
-  with type t := t
-   and type Elt.t = C_identifier.t =
-Travesty.Traversable.Make_container0 (struct
+  Travesty.Traversable.S0 with type t = t and type Elt.t = C_identifier.t =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = C_identifier

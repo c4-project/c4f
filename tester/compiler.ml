@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+module Tx = Travesty_core_kernel_exts
 open Utils
 open Lib
 open Act_common
@@ -145,7 +145,7 @@ module Make (B : Basic) : S = struct
       (litc_to_c : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t)
       (c_to_lita : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t) :
       (Litmus.Id.t, Litmus.Id.t) List.Assoc.t =
-    Alist.compose litc_to_c c_to_lita ~equal:Litmus.Id.equal
+    Tx.Alist.compose litc_to_c c_to_lita ~equal:Litmus.Id.equal
 
   let delitmusify_needed : bool Lazy.t =
     lazy (Input_mode.must_delitmusify (Pathset.Compiler.input_mode ps))
@@ -164,7 +164,7 @@ module Make (B : Basic) : S = struct
   let delitmusify_if_needed (fs : Pathset.File.t) : unit T.t Or_error.t =
     bracket
       (fun () ->
-        Or_error.when_m (Lazy.force delitmusify_needed) ~f:(fun () ->
+        Tx.Or_error.when_m (Lazy.force delitmusify_needed) ~f:(fun () ->
             delitmusify fs ) )
       ~stage:"delitmus" ~in_file:(P_file.name fs) ~id
 

@@ -31,9 +31,7 @@ type t [@@deriving sexp, eq, quickcheck]
 
 (** Traversing over lvalues in addresses. *)
 module On_lvalues :
-  Travesty.Traversable.S0_container
-  with type t := t
-   and type Elt.t = Mini_lvalue.t
+  Travesty.Traversable.S0 with type t = t and type Elt.t = Mini_lvalue.t
 
 (** {3 Constructors} *)
 

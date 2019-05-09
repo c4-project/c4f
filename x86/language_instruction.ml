@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Travesty_base_exts
+module Tx = Travesty_base_exts
 open Utils
 
 (* All expects tests for this module are attached to the concrete
@@ -115,24 +115,24 @@ module Make (B : Basic) : S = struct
 
   let single_operand operands ~allowed : Abstract.Operand.Bundle.t =
     error_to_erroneous
-      (let open Or_error.Let_syntax in
-      let%bind operand = List.one operands in
-      let%map abs_operand = classify_single operand allowed in
-      Abstract.Operand.Bundle.single abs_operand)
+      Or_error.Let_syntax.(
+        let%bind operand = Tx.List.one operands in
+        let%map abs_operand = classify_single operand allowed in
+        Abstract.Operand.Bundle.single abs_operand)
 
   let src_dst_operands operands ~allowed =
     error_to_erroneous
-      (let open Or_error.Let_syntax in
-      let%bind {src; dst} = Dialect.to_src_dst_or_error operands in
-      let%map {src= src'; dst= dst'} = classify_src_dst src dst allowed in
-      Abstract.Operand.Bundle.src_dst ~src:src' ~dst:dst')
+      Or_error.Let_syntax.(
+        let%bind {src; dst} = Dialect.to_src_dst_or_error operands in
+        let%map {src= src'; dst= dst'} = classify_src_dst src dst allowed in
+        Abstract.Operand.Bundle.src_dst ~src:src' ~dst:dst')
 
   let double_operands operands ~allowed =
     error_to_erroneous
-      (let open Or_error.Let_syntax in
-      let%bind op1, op2 = List.two operands in
-      let%map abs1, abs2 = classify_double op1 op2 allowed in
-      Abstract.Operand.Bundle.double abs1 abs2)
+      Or_error.Let_syntax.(
+        let%bind op1, op2 = Tx.List.two operands in
+        let%map abs1, abs2 = classify_double op1 op2 allowed in
+        Abstract.Operand.Bundle.double abs1 abs2)
 
   (** [pairwise_symmetric classifier_pairs] builds a list of operand
       classifiers that permits pairs of operands ([op1], [op2]) for which

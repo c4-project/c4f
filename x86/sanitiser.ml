@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -23,8 +23,7 @@
 
 open Core
 
-module Hook (L : Language.S) (P : Travesty.Traversable.S1_container) =
-struct
+module Hook (L : Language.S) (P : Travesty.Traversable.S1) = struct
   open Ast
   module Lang = L
   module Ctx = Lib.Sanitiser_ctx.Make (Lang)

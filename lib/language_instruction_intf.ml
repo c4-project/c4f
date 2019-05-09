@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -58,11 +58,11 @@ module type Basic = sig
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
-    Travesty.Traversable.S0_container with module Elt = Sym and type t := t
+    Travesty.Traversable.S0 with module Elt = Sym and type t := t
 
   (** ...and over locations. *)
   module On_locations :
-    Travesty.Traversable.S0_container with module Elt = Loc and type t := t
+    Travesty.Traversable.S0 with module Elt = Loc and type t := t
 
   val jump : string -> t
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)

@@ -41,9 +41,7 @@ module type Basic = sig
 
   (** They must allow traversal over any string parts of the symbol. *)
   module On_strings :
-    Travesty.Traversable.S0_container
-    with type Elt.t = String.t
-     and type t = t
+    Travesty.Traversable.S0 with type Elt.t = String.t and type t = t
 
   val abstract : t -> Abstract.Symbol.t
   (** [abstract sym] promotes [sym] to an abstract symbol without any
