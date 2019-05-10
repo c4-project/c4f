@@ -74,9 +74,9 @@ module Make (B : Basic_symbol) :
   let to_string_alist (map : t) : (string, string) List.Assoc.t =
     map |> Map.to_alist |> Alist.bi_map ~left:B.to_string ~right:B.to_string
 
-  let check_no_tids (cvars : Config.C_variables.Map.t) : unit Or_error.t =
+  let check_no_tids (cvars : C_variables.Map.t) : unit Or_error.t =
     let cvars_with_tids =
-      cvars |> Map.filter ~f:Config.C_variables.Record.has_tid |> Map.keys
+      cvars |> Map.filter ~f:C_variables.Record.has_tid |> Map.keys
     in
     match cvars_with_tids with
     | [] ->
@@ -87,17 +87,17 @@ module Make (B : Basic_symbol) :
             "Expected a C variable map without thread IDs"
               ~cvars_with_tids:(cvars_with_tids : C_identifier.t list)]
 
-  let transform_c_variables (map : t) (cvars : Config.C_variables.Map.t) :
-      Config.C_variables.Map.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind () = check_no_tids cvars in
-    let%bind alist =
-      cvars |> Map.to_alist
-      |> List.map ~f:(fun (var, record) ->
-             var |> dest_of_id map >>| fun v' -> (v', record) )
-      |> Or_error.combine_errors
-    in
-    C_identifier.Map.of_alist_or_error alist
+  let transform_c_variables (map : t) (cvars : C_variables.Map.t) :
+      C_variables.Map.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind () = check_no_tids cvars in
+      let%bind alist =
+        cvars |> Map.to_alist
+        |> List.map ~f:(fun (var, record) ->
+               var |> dest_of_id map >>| fun v' -> (v', record) )
+        |> Or_error.combine_errors
+      in
+      C_identifier.Map.of_alist_or_error alist)
 
   let sources_of_sym (map : t) (dest : B.t) : B.Set.t =
     map
@@ -209,14 +209,14 @@ let%test_module "string redirect maps" =
         [%sexp (M.dest_of_id test_map foo : C_identifier.t Or_error.t)] ;
       [%expect {| (Ok nope) |}]
 
-    let example_cvars_working : Config.C_variables.Map.t =
-      Config.C_variables.Map.(
+    let example_cvars_working : C_variables.Map.t =
+      C_variables.Map.(
         merge_list
-          [ of_single_scope_map ~scope:Config.C_variables.Scope.Local
+          [ of_single_scope_map ~scope:C_variables.Scope.Local
               (C_identifier.Map.of_alist_exn
                  [ (C_identifier.of_string "alpha", Some 27)
                  ; (C_identifier.of_string "hotel", None) ])
-          ; of_single_scope_map ~scope:Config.C_variables.Scope.Global
+          ; of_single_scope_map ~scope:C_variables.Scope.Global
               (C_identifier.Map.of_alist_exn
                  [(C_identifier.of_string "BEEP", Some 53)]) ])
 
@@ -224,7 +224,7 @@ let%test_module "string redirect maps" =
       Stdio.print_s
         [%sexp
           ( M.transform_c_variables test_map example_cvars_working
-            : Config.C_variables.Map.t Or_error.t )] ;
+            : C_variables.Map.t Or_error.t )] ;
       [%expect
         {|
       (Ok

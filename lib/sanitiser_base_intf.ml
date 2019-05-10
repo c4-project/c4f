@@ -25,7 +25,7 @@
     passes. *)
 module type Basic = sig
   (** [Lang] provides language-specific functionality. *)
-  module Lang : Language.S
+  module Lang : Language.Definition.S
 
   (** [Ctx] is the sanitiser's state monad, specialised over [Lang]. *)
   module Ctx : Sanitiser_ctx.S with module Lang := Lang

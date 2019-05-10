@@ -33,15 +33,14 @@ module type Basic = sig
 
   module Pretty : Pp.Printer
 
-  module Symbol : Lib.Language_symbol.Basic with type t := string
+  module Symbol : Language.Symbol.Basic with type t := string
 
-  module Location :
-    Lib.Language_location.Basic with type t := Ast.Location.t
+  module Location : Language.Location.Basic with type t := Ast.Location.t
 end
 
 module type S = sig
   include
-    Lib.Language_instruction.Basic
+    Language.Instruction.Basic
     with type t = Ast.Instruction.t
      and type con = Ast.Operand.t
      and type Sym.t = string

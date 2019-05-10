@@ -25,6 +25,7 @@ open Core_kernel
 module Tx = Travesty_core_kernel_exts
 open Utils
 open Mini
+module A = Act_common
 
 module Lang :
   Litmus.Ast.Basic
@@ -77,17 +78,16 @@ module Ast = Litmus.Ast.Make (Lang)
 module Pp = Litmus.Pp.Make_sequential (Ast)
 
 let function_cvars_map (tid : int) ((_, func) : Lang.Program.t) :
-    Config.C_variables.Map.t =
+    A.C_variables.Map.t =
   func |> Function.cvars
-  |> Config.C_variables.Map.of_single_scope_set ~tid
-       ~scope:Config.C_variables.Scope.Local
+  |> A.C_variables.Map.of_single_scope_set ~tid
+       ~scope:A.C_variables.Scope.Local
 
-let litmus_local_cvars (ast : Ast.Validated.t) :
-    Config.C_variables.Map.t list =
+let litmus_local_cvars (ast : Ast.Validated.t) : A.C_variables.Map.t list =
   ast |> Ast.Validated.programs |> List.mapi ~f:function_cvars_map
 
-let constant_to_initial_value :
-    Constant.t -> Config.C_variables.Initial_value.t = function
+let constant_to_initial_value : Constant.t -> A.C_variables.Initial_value.t
+    = function
   | Integer k ->
       Some k
   | Char _ | Float _ ->
@@ -95,13 +95,13 @@ let constant_to_initial_value :
 
 (* for now *)
 
-let litmus_global_cvars (ast : Ast.Validated.t) : Config.C_variables.Map.t =
+let litmus_global_cvars (ast : Ast.Validated.t) : A.C_variables.Map.t =
   ast |> Ast.Validated.init
   |> List.map ~f:(fun (var, k) -> (var, constant_to_initial_value k))
   |> C_identifier.Map.of_alist_exn (* for now *)
-  |> Config.C_variables.Map.of_single_scope_map ~scope:Global
+  |> A.C_variables.Map.of_single_scope_map ~scope:Global
 
-let cvars (ast : Ast.Validated.t) : Config.C_variables.Map.t =
+let cvars (ast : Ast.Validated.t) : A.C_variables.Map.t =
   let locals = litmus_local_cvars ast in
   let globals = litmus_global_cvars ast in
-  Config.C_variables.Map.merge_list (globals :: locals)
+  A.C_variables.Map.merge_list (globals :: locals)

@@ -33,7 +33,7 @@ module Output : sig
   val program : t -> Mini.Program.t
   (** [program output] gets the de-litmusified program. *)
 
-  val c_variables : t -> Config.C_variables.Map.t
+  val c_variables : t -> Act_common.C_variables.Map.t
   (** [c_variables output] gets a map containing information about each
       global and local variable contained in the de-litmusified program. *)
 end

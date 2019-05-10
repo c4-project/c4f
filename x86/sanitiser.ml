@@ -21,9 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
+open Core_kernel
 
-module Hook (L : Language.S) (P : Travesty.Traversable.S1) = struct
+module Hook (L : Language_definition.S) (P : Travesty.Traversable.S1) =
+struct
   open Ast
   module Lang = L
   module Ctx = Lib.Sanitiser_ctx.Make (Lang)
@@ -146,5 +147,7 @@ module Hook (L : Language.S) (P : Travesty.Traversable.S1) = struct
     Ctx.(return stm >>| sub_to_add >>| drop_unsupported_lengths)
 end
 
-module Make_single (L : Language.S) = Lib.Sanitiser.Make_single (Hook (L))
-module Make_multi (L : Language.S) = Lib.Sanitiser.Make_multi (Hook (L))
+module Make_single (L : Language_definition.S) =
+  Lib.Sanitiser.Make_single (Hook (L))
+module Make_multi (L : Language_definition.S) =
+  Lib.Sanitiser.Make_multi (Hook (L))

@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,17 +21,11 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Language_location_intf
+(** Language abstraction layer: Statements *)
 
+include module type of Statement_intf
+
+(** [Make] produces an instance of [S] from an instance of
+    [Basic_with_modules]. *)
 module Make (B : Basic_with_modules) :
-  S with type t = B.t and module Symbol = B.Symbol = struct
-  include B
-
-  include Abstract.Location.Inherit_predicates
-            (Abstract.Location)
-            (struct
-              type nonrec t = t
-
-              let component_opt x = Some (abstract x)
-            end)
-end
+  S with type t = B.t and module Instruction = B.Instruction

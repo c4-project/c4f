@@ -26,17 +26,17 @@
 (** [Hook] implements x86-specific sanitisation passes. It requires an
     [Language.S] module to tell it things about the current x86 dialect (for
     example, the order of operands). *)
-module Hook (L : Language.S) (P : Travesty.Traversable.S1) :
+module Hook (L : Language_definition.S) (P : Travesty.Traversable.S1) :
   Lib.Sanitiser.Hook with module Lang := L and module Program_container = P
 
 (** [Make_single] directly instantiates a single-program sanitiser for an
-    [Language.Intf] module. *)
-module Make_single (L : Language.S) :
+    x86 language definition. *)
+module Make_single (L : Language_definition.S) :
   Lib.Sanitiser.S with module Lang := L and type 'a Program_container.t = 'a
 
-(** [Make_multi] directly instantiates a multi-program sanitiser for anb
-    [Language.Intf] module. *)
-module Make_multi (L : Language.S) :
+(** [Make_multi] directly instantiates a multi-program sanitiser for an x86
+    language definition. *)
+module Make_multi (L : Language_definition.S) :
   Lib.Sanitiser.S
   with module Lang := L
    and type 'a Program_container.t = 'a list

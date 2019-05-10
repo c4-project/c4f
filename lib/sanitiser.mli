@@ -23,10 +23,13 @@
 
 (** Assembly sanitisation *)
 
+(** @inline *)
 include module type of Sanitiser_intf
 
 (** [Make_null_hook] makes a [Hook] that does nothing. *)
-module Make_null_hook (Lang : Language.S) (P : Travesty.Traversable.S1) :
+module Make_null_hook
+    (Lang : Language.Definition.S)
+    (P : Travesty.Traversable.S1) :
   Hook with module Lang = Lang and module Program_container = P
 
 (** [Make] implements the assembly sanitiser for a given [Basic]. *)

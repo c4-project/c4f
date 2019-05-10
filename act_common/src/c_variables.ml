@@ -137,14 +137,14 @@ module Map = struct
     xs |> merge_list_opt |> Option.value ~default:C_identifier.Map.empty
 
   let of_litmus_id_pair ?(scope : Scope.t = Scope.Unknown)
-      (id : Litmus.Id.t) (initial_value : Initial_value.t) :
+      (id : Litmus_id.t) (initial_value : Initial_value.t) :
       C_identifier.t * Record.t =
-    let tid = Litmus.Id.tid id in
-    let name = Litmus.Id.variable_name id in
+    let tid = Litmus_id.tid id in
+    let name = Litmus_id.variable_name id in
     (name, Record.make ~scope ?tid ~initial_value ())
 
   let of_litmus_id_alist ?(scope : Scope.t option)
-      (xs : (Litmus.Id.t, Initial_value.t) List.Assoc.t) : t Or_error.t =
+      (xs : (Litmus_id.t, Initial_value.t) List.Assoc.t) : t Or_error.t =
     xs
     |> List.map ~f:(Tuple2.uncurry (of_litmus_id_pair ?scope))
     |> C_identifier.Map.of_alist_or_error
@@ -185,9 +185,9 @@ module String_lang = struct
   module T_opt = Tx.Option.With_errors
 
   let parse_list_as_alist :
-      string list -> (Litmus.Id.t, Initial_value.t) List.Assoc.t Or_error.t
+      string list -> (Litmus_id.t, Initial_value.t) List.Assoc.t Or_error.t
       =
-    Litmus.Id.Assoc.try_parse
+    Litmus_id.Assoc.try_parse
       ~value_parser:
         (Tx.Option.With_errors.map_m ~f:(fun s ->
              Or_error.try_with (fun () -> Int.of_string s) ))
@@ -196,14 +196,14 @@ module String_lang = struct
     Stdio.print_s
       [%sexp
         ( parse_list_as_alist ["foo = 3"]
-          : (Litmus.Id.t, Initial_value.t) List.Assoc.t Or_error.t )] ;
+          : (Litmus_id.t, Initial_value.t) List.Assoc.t Or_error.t )] ;
     [%expect {| (Ok ((foo (3)))) |}]
 
   let%expect_test "parse_list_as_alist: absent" =
     Stdio.print_s
       [%sexp
         ( parse_list_as_alist ["foobar"]
-          : (Litmus.Id.t, Initial_value.t) List.Assoc.t Or_error.t )] ;
+          : (Litmus_id.t, Initial_value.t) List.Assoc.t Or_error.t )] ;
     [%expect {| (Ok ((foobar ()))) |}]
 
   let parse_list ?(scope : Scope.t option) (sl : string list) :

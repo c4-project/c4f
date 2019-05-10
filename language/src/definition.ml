@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,25 +21,41 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [act]'s Herd-safe symbol escaper.
+include Definition_intf
 
-    This module exposes several functions that mangle a language symbol to
-    remove any characters that tools such as Herd and Litmus find hard to
-    parse: underscores, dollar signs, and so on. The mangling isn't
-    guaranteed to correspond to any 'standard' escaping of these characters,
-    but aims to be vaguely human-readable and injective. *)
+module Make (B : Basic) :
+  S
+  with type Symbol.t = B.Symbol.t
+   and type Constant.t = B.Constant.t
+   and type Location.t = B.Location.t
+   and type Instruction.t = B.Instruction.t
+   and type Statement.t = B.Statement.t
+   and type Program.t = B.Program.t = struct
+  include (B : Basic_core)
 
-open Base
+  module Symbol = Symbol.Make (B.Symbol)
+  module Constant = Constant.Make (B.Constant)
 
-val escape_string : string -> string
-(** [escape_string s] performs symbol escaping on the string [s]. *)
+  module Location = Location.Make (struct
+    module Symbol = Symbol
+    include B.Location
+  end)
 
-(** Builds symbol escaping functions over a language symbol type. *)
-module Make (S : Language_symbol.S) : sig
-  val escape : S.t -> S.t
-  (** [escape s] performs symbol escaping on the symbol [s]. *)
+  module Instruction = Instruction.Make (struct
+    module Constant = Constant
+    module Symbol = Symbol
+    module Location = Location
+    include B.Instruction
+  end)
 
-  val escape_rmap : S.R_map.t -> to_escape:S.Set.t -> S.R_map.t
-  (** [escape_rmap map ~to_escape] tries to escape every symbol in
-      [to_escape] by adding a corresponding redirect mapping in [map]. *)
+  module Statement = Statement.Make (struct
+    module Symbol = Symbol
+    module Instruction = Instruction
+    include B.Statement
+  end)
+
+  module Program = Program.Make (struct
+    module Statement = Statement
+    include B.Program
+  end)
 end

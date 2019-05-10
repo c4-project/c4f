@@ -29,6 +29,7 @@
 
 open Core_kernel
 open Utils
+open Act_common
 
 (** [Basic] is the interface act languages must implement for symbol
     analysis. *)

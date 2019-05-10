@@ -21,18 +21,17 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Language interface: Symbols
+include Location_intf
 
-    To avoid duplication, this interface just includes
-    [Language_symbol_intf.Language_symbol]. See that module for
-    documentation. *)
+module Make (B : Basic_with_modules) :
+  S with type t = B.t and module Symbol = B.Symbol = struct
+  include B
 
-open Base
+  include Abstract.Location.Inherit_predicates
+            (Abstract.Location)
+            (struct
+              type nonrec t = t
 
-include module type of Language_symbol_intf
-
-(** [Make] produces an instance of [S] from an instance of [Basic]. *)
-module Make (B : Basic) : S with type t = B.t
-
-(** Allows the use of strings as language symbols (mainly for testing). *)
-module String_direct : S with type t = string
+              let component_opt x = Some (abstract x)
+            end)
+end

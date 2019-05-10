@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -32,4 +32,5 @@ module type S = sig
 end
 
 (** [Make SD DD] makes a conversion from x86 dialect SD to dialect DD. *)
-module Make (SD : Language.S) (DD : Language.S) : S with type ast = Ast.t
+module Make (SD : Language_definition.S) (DD : Language_definition.S) :
+  S with type ast = Ast.t

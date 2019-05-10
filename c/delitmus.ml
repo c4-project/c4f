@@ -23,6 +23,7 @@
 
 open Core_kernel
 open Utils
+module A = Act_common
 
 let make_initialiser ((ty, value) : Mini.Type.t * Ast_basic.Constant.t) =
   (* NB: Apparently, we don't need ATOMIC_VAR_INIT here: every known C11
@@ -107,7 +108,7 @@ let make_init_globals (init : Ast_basic.Constant.t Mini.id_assoc)
     >>| List.Assoc.map ~f:make_initialiser)
 
 let qualify_local (t : int) (id : Mini.Identifier.t) : Mini.Identifier.t =
-  Litmus.Id.(to_memalloy_id (local t id))
+  A.Litmus_id.(to_memalloy_id (local t id))
 
 let%expect_test "qualify_local: example" =
   Fmt.pr "%a@." C_identifier.pp
@@ -202,7 +203,7 @@ let delitmus_functions :
   List.mapi ~f:(fun tid (name, f) -> (name, delitmus_function tid f))
 
 module Output = struct
-  type t = {program: Mini.Program.t; c_variables: Config.C_variables.Map.t}
+  type t = {program: Mini.Program.t; c_variables: A.C_variables.Map.t}
   [@@deriving make, fields]
 end
 
@@ -215,17 +216,17 @@ let make_globals (init : Mini.Constant.t Mini.id_assoc)
   init_globals @ func_globals
 
 let qualify_if_local (var : C_identifier.t)
-    (record : Config.C_variables.Record.t) :
-    C_identifier.t * Config.C_variables.Record.t =
-  match Config.C_variables.Record.tid record with
+    (record : A.C_variables.Record.t) :
+    C_identifier.t * A.C_variables.Record.t =
+  match A.C_variables.Record.tid record with
   | None ->
       (var, record)
   | Some tid ->
-      (qualify_local tid var, Config.C_variables.Record.remove_tid record)
+      (qualify_local tid var, A.C_variables.Record.remove_tid record)
 
-let cvars_with_qualified_locals (cvars : Config.C_variables.Map.t) :
-    Config.C_variables.Map.t Or_error.t =
-  Config.C_variables.Map.map cvars ~f:qualify_if_local
+let cvars_with_qualified_locals (cvars : A.C_variables.Map.t) :
+    A.C_variables.Map.t Or_error.t =
+  A.C_variables.Map.map cvars ~f:qualify_if_local
 
 let run (input : Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
   let open Or_error.Let_syntax in

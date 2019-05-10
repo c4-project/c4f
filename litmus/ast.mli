@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -23,8 +23,7 @@
 
 (** Top-level AST for Litmus tests *)
 
-(** As usual, we store the signatures for [Ast] in a separate implementation
-    module, and include them in both sides of this module. *)
+(** @inline *)
 include module type of Ast_intf
 
 (** [Make] is a functor that, given a language described by [Basic],

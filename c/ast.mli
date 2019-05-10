@@ -148,5 +148,5 @@ module Litmus_lang :
 module Litmus : sig
   include Litmus.Ast.S with module Lang := Litmus_lang
 
-  module Id : module type of Litmus.Id
+  module Id : module type of Act_common.Litmus_id
 end

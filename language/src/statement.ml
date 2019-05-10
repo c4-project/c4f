@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Utils
-include Language_statement_intf
+include Statement_intf
 module Tx = Travesty_core_kernel_exts
 
 module Make (B : Basic_with_modules) :

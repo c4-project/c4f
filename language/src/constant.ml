@@ -21,11 +21,12 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Language abstraction layer: Statements *)
+include Constant_intf
 
-include module type of Language_statement_intf
+module Make (B : Basic) : S with type t = B.t = struct
+  include B
 
-(** [Make] produces an instance of [S] from an instance of
-    [Basic_with_modules]. *)
-module Make (B : Basic_with_modules) :
-  S with type t = B.t and module Instruction = B.Instruction
+  let zero = of_int 0
+end
+
+module Int_direct : S with type t = int = Make (Core_kernel.Int)

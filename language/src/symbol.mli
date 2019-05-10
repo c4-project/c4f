@@ -21,9 +21,14 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** High-level interface to languages supported by act
+(** Language interface: Symbols *)
 
-    To avoid duplication, this interface just includes
-    [Language_intf.Language]. See that module for documentation. *)
+open Base
 
-include Language_intf.Language
+include module type of Symbol_intf
+
+(** [Make] produces an instance of [S] from an instance of [Basic]. *)
+module Make (B : Basic) : S with type t = B.t
+
+(** Allows the use of strings as language symbols (mainly for testing). *)
+module String_direct : S with type t = string

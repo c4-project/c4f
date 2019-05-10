@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Language_program_intf
+include Program_intf
 module Tx = Travesty_core_kernel_exts
 
 module Make (B : Basic_with_modules) :

@@ -128,7 +128,7 @@ let regress_litmusify : Fpath.t -> unit Or_error.t =
   regress_run_asm_many "Litmusifier" `Litmusify
     Config.Sanitiser_pass.standard
 
-let pp_cvars : Config.C_variables.Map.t Fmt.t =
+let pp_cvars : C_variables.Map.t Fmt.t =
   Fmt.(
     prefix
       (unit "@,@,// C variables:@,")

@@ -24,13 +24,14 @@
 (** A single state in a simulator run output. *)
 
 open Base
+open Act_common
 open Utils
 
 (** [t] is the type of states: a binding from name to value. *)
 type t [@@deriving sexp, compare, quickcheck]
 
 val map :
-     location_map:(Litmus.Id.t -> Litmus.Id.t option Or_error.t)
+     location_map:(Litmus_id.t -> Litmus_id.t option Or_error.t)
   -> value_map:(string -> string Or_error.t)
   -> t
   -> t Or_error.t
@@ -42,14 +43,14 @@ val map :
     the result is a well-formed map [m], [map] returns [Ok m]; else, an
     error. *)
 
-val of_alist : (Litmus.Id.t, string) List.Assoc.t -> t Or_error.t
+val of_alist : (Litmus_id.t, string) List.Assoc.t -> t Or_error.t
 (** [of_alist alist] tries to convert [alist] into a state. *)
 
 module Set : My_set.S with type Elt.t = t
 
-val bound : t -> Litmus.Id.t list
+val bound : t -> Litmus_id.t list
 (** [bound t] gets the list of all bound names in [t]. *)
 
-val restrict : t -> domain:Litmus.Id.Set.t -> t
+val restrict : t -> domain:Litmus_id.Set.t -> t
 (** [restrict t ~domain] removes all mappings in [t] that don't reference
     identifiers in [domain]. *)

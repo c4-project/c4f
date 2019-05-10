@@ -21,30 +21,13 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Language_instruction_intf
+(** Language abstraction layer: Constants *)
 
-module Make (B : Basic_with_modules) :
-  S
-  with type t = B.t
-   and module Constant = B.Constant
-   and module Location = B.Location
-   and module Symbol = B.Symbol = struct
-  include B
+(** @inline *)
+include module type of Constant_intf
 
-  include Abstract.Instruction.Inherit_properties
-            (Abstract.Instruction)
-            (struct
-              type nonrec t = t
+(** [Make] produces an instance of [S] from an instance of [Basic]. *)
+module Make (B : Basic) : S with type t = B.t
 
-              let component = abstract
-            end)
-
-  module On_operands =
-    Abstract.Operand.Bundle.Inherit_properties
-      (Abstract.Operand.Bundle)
-      (struct
-        type nonrec t = t
-
-        let component = abs_operands
-      end)
-end
+(** [Int_direct] allows integers to be used as constants directly. *)
+module Int_direct : S with type t = int

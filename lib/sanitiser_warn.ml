@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -24,7 +24,8 @@
 open Core_kernel
 include Sanitiser_warn_intf
 
-module Make (Lang : Language.S) : S with module Lang := Lang = struct
+module Make (Lang : Language.Definition.S) : S with module Lang := Lang =
+struct
   type elt =
     | Instruction of Lang.Instruction.t
     | Location of Lang.Location.t

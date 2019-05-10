@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+module A = Act_common
 module Tx = Travesty_base_exts
 module Ob = Output.Observation
 
@@ -82,25 +83,25 @@ let compare_states ~(oracle_states : State.t list)
   Result result
 
 let map_subject_states (states : State.t list)
-    ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
+    ~(location_map : A.Litmus_id.t -> A.Litmus_id.t option Or_error.t)
     ~(value_map : string -> string Or_error.t) : State.t list Or_error.t =
   states
   |> List.map ~f:(State.map ~location_map ~value_map)
   |> Or_error.combine_errors
 
-let domain_error (one_domain : Litmus.Id.Set.t)
-    (another_domain : Litmus.Id.Set.t) : unit Or_error.t =
+let domain_error (one_domain : A.Litmus_id.Set.t)
+    (another_domain : A.Litmus_id.Set.t) : unit Or_error.t =
   Or_error.error_s
     [%message
       "Domains of states are inconsistent: for example,"
-        ~one_domain:(one_domain : Litmus.Id.Set.t)
-        ~another_domain:(another_domain : Litmus.Id.Set.t)]
+        ~one_domain:(one_domain : A.Litmus_id.Set.t)
+        ~another_domain:(another_domain : A.Litmus_id.Set.t)]
 
-let check_domain_consistency (xs_domains : Litmus.Id.Set.t Sequence.t)
-    (x_domain : Litmus.Id.Set.t) : unit Or_error.t =
+let check_domain_consistency (xs_domains : A.Litmus_id.Set.t Sequence.t)
+    (x_domain : A.Litmus_id.Set.t) : unit Or_error.t =
   let inconsistencies : unit Or_error.t Sequence.t =
     xs_domains
-    |> Sequence.filter ~f:(Fn.non ([%equal: Litmus.Id.Set.t] x_domain))
+    |> Sequence.filter ~f:(Fn.non ([%equal: A.Litmus_id.Set.t] x_domain))
     |> Sequence.map ~f:(domain_error x_domain)
   in
   Or_error.combine_errors_unit (Sequence.to_list inconsistencies)
@@ -108,7 +109,7 @@ let check_domain_consistency (xs_domains : Litmus.Id.Set.t Sequence.t)
 let%test_module "check_domain_consistency expects tests" =
   ( module struct
     let test_x_domain =
-      Litmus.Id.(
+      A.Litmus_id.(
         Set.of_list [of_string "0:foo"; of_string "1:bar"; of_string "baz"])
 
     let%expect_test "no other domains" =
@@ -129,7 +130,7 @@ let%test_module "check_domain_consistency expects tests" =
 
     let%expect_test "inconsistent domains" =
       let doms =
-        Sequence.singleton Litmus.Id.(Set.of_list [of_string "0:foo"])
+        Sequence.singleton A.Litmus_id.(Set.of_list [of_string "0:foo"])
       in
       Stdio.print_s
         [%sexp
@@ -141,11 +142,11 @@ let%test_module "check_domain_consistency expects tests" =
         (one_domain (0:foo 1:bar baz)) (another_domain (0:foo)))) |}]
   end )
 
-let get_domain : State.t list -> Litmus.Id.Set.t Or_error.t = function
+let get_domain : State.t list -> A.Litmus_id.Set.t Or_error.t = function
   | [] ->
-      Or_error.return Litmus.Id.Set.empty
+      Or_error.return A.Litmus_id.Set.empty
   | x :: xs ->
-      let dom s = Litmus.Id.Set.of_list (State.bound s) in
+      let dom s = A.Litmus_id.Set.of_list (State.bound s) in
       let xs_domains = Sequence.map ~f:dom (Sequence.of_list xs) in
       Tx.Or_error.tee_m (dom x) ~f:(check_domain_consistency xs_domains)
 
@@ -156,7 +157,7 @@ let filter_oracle_states ~(raw_oracle_states : State.t list)
   List.map raw_oracle_states ~f:(State.restrict ~domain)
 
 let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
-    ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
+    ~(location_map : A.Litmus_id.t -> A.Litmus_id.t option Or_error.t)
     ~(value_map : string -> string Or_error.t) : t Or_error.t =
   let open Or_error.Let_syntax in
   let raw_oracle_states = Ob.states oracle in
@@ -170,7 +171,7 @@ let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
   compare_states ~oracle_states ~subject_states
 
 let run ~(oracle : Ob.t) ~(subject : Ob.t)
-    ~(location_map : Litmus.Id.t -> Litmus.Id.t option Or_error.t)
+    ~(location_map : A.Litmus_id.t -> A.Litmus_id.t option Or_error.t)
     ~(value_map : string -> string Or_error.t) : t Or_error.t =
   if Ob.is_undefined oracle then Or_error.return Oracle_undefined
   else if Ob.is_undefined subject then Or_error.return Subject_undefined

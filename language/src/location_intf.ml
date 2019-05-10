@@ -59,7 +59,7 @@ end
 (** [Basic_with_modules] extends [Basic] with the fully expanded language
     abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
-  module Symbol : Language_symbol.S
+  module Symbol : Symbol.S
 
   include Basic with module Sym := Symbol
 end
@@ -73,8 +73,8 @@ module type S = sig
   include Abstract.Location.S_predicates with type t := t
 end
 
-(** [Language_location] is the interface exposed in the main mli file. *)
-module type Language_location = sig
+(** [Location] is the interface exposed in the main mli file. *)
+module type Location = sig
   module type Basic = Basic
 
   module type Basic_with_modules = Basic_with_modules

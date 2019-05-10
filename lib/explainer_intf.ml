@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -108,8 +108,8 @@ module type Explanation = sig
 end
 
 module type S = sig
-  (** [Lang] is the [Language.S] this explainer is targeting. *)
-  module Lang : Language.S
+  (** [Lang] is the language definition this explainer is targeting. *)
+  module Lang : Language.Definition.S
 
   (** [Loc_explanation] provides explanations for locations. *)
   module Loc_explanation :

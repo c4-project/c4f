@@ -278,7 +278,7 @@ let make_initial_state (o : Output.t) (test : Mini_litmus.Ast.Validated.t) :
   (* TODO(@MattWindsor91): we don't use cvars's globals because we need to
      know the types of the variables. This seems a _bit_ clunky. *)
   let%map globals = existing_globals test in
-  let locals = Config.C_variables.Map.locals all_cvars in
+  let locals = Act_common.C_variables.Map.locals all_cvars in
   State.init ~o ~globals ~locals ()
 
 let run ?(seed : int option) (test : Mini_litmus.Ast.Validated.t)

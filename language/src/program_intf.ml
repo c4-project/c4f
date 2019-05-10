@@ -56,7 +56,7 @@ end
 (** [Basic_with_modules] extends [Basic] with the fully expanded language
     abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
-  module Statement : Language_statement.S
+  module Statement : Statement.S
 
   include Basic with type stm := Statement.t
 end

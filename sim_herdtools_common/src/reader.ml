@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 module Tx = Travesty_base_exts
 open Utils
 include Reader_intf
@@ -233,12 +234,12 @@ module Make_main (B : Basic) = struct
   end
 
   module State = struct
-    let proc_binding (binding : string) : (Litmus.Id.t * string) Or_error.t
+    let proc_binding (binding : string) : (Litmus_id.t * string) Or_error.t
         =
       match String.split ~on:'=' (String.strip binding) with
       | [l; r] ->
           let open Or_error.Let_syntax in
-          let%map l' = Litmus.Id.try_parse (String.strip l) in
+          let%map l' = Litmus_id.try_parse (String.strip l) in
           (l', String.strip r)
       | _ ->
           Or_error.error_s

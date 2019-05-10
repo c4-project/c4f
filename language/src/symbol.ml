@@ -21,9 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Core
-include Utils
-include Language_symbol_intf
+open Act_common
+open Core_kernel
+open Utils
+include Symbol_intf
 
 let program_id_of_demangled sym =
   let open Option.Let_syntax in

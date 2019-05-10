@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,10 +21,25 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Language abstraction layer: Programs *)
+(** [act]'s Herd-safe symbol escaper.
 
-include module type of Language_program_intf
+    This module exposes several functions that mangle a language symbol to
+    remove any characters that tools such as Herd and Litmus find hard to
+    parse: underscores, dollar signs, and so on. The mangling isn't
+    guaranteed to correspond to any 'standard' escaping of these characters,
+    but aims to be vaguely human-readable and injective. *)
 
-(** [Make] makes an [S] from a [Basic_with_modules]. *)
-module Make (B : Basic_with_modules) :
-  S with type t = B.t and module Statement = B.Statement
+open Base
+
+val escape_string : string -> string
+(** [escape_string s] performs symbol escaping on the string [s]. *)
+
+(** Builds symbol escaping functions over a language symbol type. *)
+module Make (S : Symbol.S) : sig
+  val escape : S.t -> S.t
+  (** [escape s] performs symbol escaping on the symbol [s]. *)
+
+  val escape_rmap : S.R_map.t -> to_escape:S.Set.t -> S.R_map.t
+  (** [escape_rmap map ~to_escape] tries to escape every symbol in
+      [to_escape] by adding a corresponding redirect mapping in [map]. *)
+end

@@ -47,7 +47,7 @@ type mode =
 module Output : sig
   type t
 
-  val cvars : t -> Config.C_variables.Map.t
+  val cvars : t -> C_variables.Map.t
   (** [cvars out] gets the set of C variable names observed in the
       transformed program, alongside any information available about their
       scope. *)

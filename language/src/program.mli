@@ -21,10 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Language abstraction layer: Instructions
+(** Language abstraction layer: Programs *)
 
-    To avoid duplication, this interface just includes
-    [Language_instruction_intf.Language_instruction]. See that module for
-    documentation. *)
+include module type of Program_intf
 
-include Language_instruction_intf.Language_instruction
+(** [Make] makes an [S] from a [Basic_with_modules]. *)
+module Make (B : Basic_with_modules) :
+  S with type t = B.t and module Statement = B.Statement

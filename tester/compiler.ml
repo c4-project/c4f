@@ -22,12 +22,12 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-module Tx = Travesty_core_kernel_exts
 open Utils
 open Lib
-open Act_common
 open C
 include Compiler_intf
+module Tx = Travesty_core_kernel_exts
+module A = Act_common
 
 module Make (B : Basic) : S = struct
   include B
@@ -42,10 +42,10 @@ module Make (B : Basic) : S = struct
   (** [lower_thread_local_symbol] converts thread-local symbols of the form
       `0:r0` into the memalloy witness equivalent, `t0r0`. *)
   let lower_thread_local_symbol sym =
-    Litmus.Id.(global (to_memalloy_id sym))
+    A.Litmus_id.(global (to_memalloy_id sym))
 
   let analyse (c_herd : Sim.Output.t) (a_herd : Sim.Output.t)
-      (locmap : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t) :
+      (locmap : (A.Litmus_id.t, A.Litmus_id.t) List.Assoc.t) :
       Analysis.Herd.t Or_error.t =
     let open Or_error.Let_syntax in
     (* The locmap function we supply below goes backwards, from assembly
@@ -64,7 +64,7 @@ module Make (B : Basic) : S = struct
           Sim.Diff.run ~oracle ~subject
             ~location_map:(fun final_sym ->
               Or_error.return
-                (List.Assoc.find ~equal:[%equal: Litmus.Id.t] locmap_r
+                (List.Assoc.find ~equal:[%equal: A.Litmus_id.t] locmap_r
                    final_sym) )
               (* TODO(@MattWindsor91): properly valmap, if needed. *)
             ~value_map:return
@@ -101,7 +101,7 @@ module Make (B : Basic) : S = struct
             ~infile:(Some (P_file.asm_file fs))
             ~outfile:(Some (P_file.asm_litmus_file fs))
         in
-        Output.pw o "@[%a@]@." Asm_job.Output.warn output ;
+        A.Output.pw o "@[%a@]@." Asm_job.Output.warn output ;
         Asm_job.Output.symbol_map output )
 
   let a_herd_on_pathset_file (fs : Pathset.File.t) :
@@ -114,38 +114,39 @@ module Make (B : Basic) : S = struct
           ~input_path:(P_file.asm_litmus_file fs)
           ~output_path:(P_file.asm_sim_file fs) )
 
-  let cvar_from_loc_map_entry (id : Litmus.Id.t) : string Or_error.t =
+  let cvar_from_loc_map_entry (id : A.Litmus_id.t) : string Or_error.t =
     let open Or_error.Let_syntax in
     let%map global_id =
-      Result.of_option (Litmus.Id.as_global id)
+      Result.of_option
+        (A.Litmus_id.as_global id)
         ~error:
           (Error.of_string "Internal error: got a non-local C location")
     in
     C_identifier.to_string global_id
 
-  let cvars_from_loc_map (map : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t) :
-      string list Or_error.t =
+  let cvars_from_loc_map (map : (A.Litmus_id.t, A.Litmus_id.t) List.Assoc.t)
+      : string list Or_error.t =
     map
     |> List.map ~f:(fun (_, id) -> cvar_from_loc_map_entry id)
     |> Or_error.combine_errors
 
   let lift_str_map (str_map : (string, string) List.Assoc.t) :
-      (Litmus.Id.t, Litmus.Id.t) List.Assoc.t Or_error.t =
+      (A.Litmus_id.t, A.Litmus_id.t) List.Assoc.t Or_error.t =
     str_map
     |> List.map ~f:(fun (x, y) ->
            Or_error.both
-             (Litmus.Id.global_of_string x)
-             (Litmus.Id.global_of_string y) )
+             (A.Litmus_id.global_of_string x)
+             (A.Litmus_id.global_of_string y) )
     |> Or_error.combine_errors
 
   (** [map_location_renamings locs sym_redirects] works out the mapping from
       locations in the original C program to symbols in the Litmus output by
       using the redirects table from the litmusifier. *)
   let map_location_renamings
-      (litc_to_c : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t)
-      (c_to_lita : (Litmus.Id.t, Litmus.Id.t) List.Assoc.t) :
-      (Litmus.Id.t, Litmus.Id.t) List.Assoc.t =
-    Tx.Alist.compose litc_to_c c_to_lita ~equal:Litmus.Id.equal
+      (litc_to_c : (A.Litmus_id.t, A.Litmus_id.t) List.Assoc.t)
+      (c_to_lita : (A.Litmus_id.t, A.Litmus_id.t) List.Assoc.t) :
+      (A.Litmus_id.t, A.Litmus_id.t) List.Assoc.t =
+    Tx.Alist.compose litc_to_c c_to_lita ~equal:A.Litmus_id.equal
 
   let delitmusify_needed : bool Lazy.t =
     lazy (Input_mode.must_delitmusify (Pathset.Compiler.input_mode ps))

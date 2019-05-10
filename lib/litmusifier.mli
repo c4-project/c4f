@@ -31,7 +31,9 @@
     the bulk of this module is in the {{!Make} Make} functor. *)
 
 open Base
+open Act_common
 
+(** @inline *)
 include module type of Litmusifier_intf
 
 (** Output formats for the litmusifier. *)
@@ -56,7 +58,7 @@ module Config : sig
   val make :
        ?format:Format.t
     -> ?postcondition:'const Litmus.Ast_base.Postcondition.t
-    -> ?c_variables:Config.C_variables.Map.t
+    -> ?c_variables:C_variables.Map.t
     -> unit
     -> 'const t
   (** [make ?format ?postcondition ?c_variables ()] builds a [Litmus_config]
@@ -67,7 +69,7 @@ module Config : sig
 
   (** {3 Accessors} *)
 
-  val c_variables : _ t -> Config.C_variables.Map.t option
+  val c_variables : _ t -> C_variables.Map.t option
   (** [c_variables config] gets the auxiliary C variable information passed
       into [config], if any. *)
 
@@ -81,8 +83,7 @@ module Config : sig
     -> format:(Format.t -> Format.t Or_error.t)
     -> postcondition:(   'a Litmus.Ast_base.Postcondition.t
                       -> 'b Litmus.Ast_base.Postcondition.t Or_error.t)
-    -> c_variables:(   Config.C_variables.Map.t
-                    -> Config.C_variables.Map.t Or_error.t)
+    -> c_variables:(C_variables.Map.t -> C_variables.Map.t Or_error.t)
     -> 'b t Or_error.t
   (** [transform config ~format ~postcondition ~c_variables] transforms
       [config] with the given functions. It fails if any of the transformers

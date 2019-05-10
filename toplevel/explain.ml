@@ -22,8 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_common
 open Lib
+module A = Act_common
 
 let print_symbol_map = function
   | [] ->
@@ -43,7 +43,7 @@ let run file_type compiler_id_or_arch output_format
     Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.explain
   in
   let explain_cfg ~c_variables =
-    ignore (c_variables : Config.C_variables.Map.t option) ;
+    ignore (c_variables : A.C_variables.Map.t option) ;
     Asm_job.Explain_config.make ?format:output_format ()
   in
   let%bind (module Exp) = Common.explain_pipeline target in
@@ -57,7 +57,7 @@ let run file_type compiler_id_or_arch output_format
       ~infile:(Args.Standard_with_files.infile_raw args)
       ~outfile:(Args.Standard_with_files.outfile_raw args)
   in
-  Output.pw o "@[%a@]@." Asm_job.Output.warn out ;
+  A.Output.pw o "@[%a@]@." Asm_job.Output.warn out ;
   print_symbol_map (Asm_job.Output.symbol_map out)
 
 let command =

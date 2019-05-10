@@ -23,6 +23,7 @@
 
 open Base
 open Stdio
+module Id = Act_common.Litmus_id
 
 module type S = sig
   module Ast : Ast.S

@@ -26,7 +26,9 @@ open Travesty_containers
 module Tx = Travesty_core_kernel_exts
 include Sanitiser_intf
 
-module Make_null_hook (Lang : Language.S) (P : Travesty.Traversable.S1) :
+module Make_null_hook
+    (Lang : Language.Definition.S)
+    (P : Travesty.Traversable.S1) :
   Hook with module Lang = Lang and module Program_container = P = struct
   module Lang = Lang
   module Ctx = Sanitiser_ctx.Make (Lang)

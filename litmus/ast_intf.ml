@@ -23,6 +23,7 @@
 
 open Core_kernel
 open Utils
+module Id = Act_common.Litmus_id
 
 (** {2 Signatures} *)
 

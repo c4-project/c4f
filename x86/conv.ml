@@ -29,7 +29,8 @@ module type S = sig
   val convert : ast -> ast
 end
 
-module Make (SD : Language.S) (DD : Language.S) = struct
+module Make (SD : Language_definition.S) (DD : Language_definition.S) =
+struct
   type ast = Ast.t
 
   let swap operands =

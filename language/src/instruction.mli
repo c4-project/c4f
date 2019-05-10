@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,41 +21,15 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Language_intf
+(** Language abstraction layer: Instructions *)
 
-module Make (B : Basic) :
+include module type of Instruction_intf
+
+(** [Make] produces an instance of [S] from an instance of
+    [Basic_with_modules]. *)
+module Make (B : Basic_with_modules) :
   S
-  with type Symbol.t = B.Symbol.t
-   and type Constant.t = B.Constant.t
-   and type Location.t = B.Location.t
-   and type Instruction.t = B.Instruction.t
-   and type Statement.t = B.Statement.t
-   and type Program.t = B.Program.t = struct
-  include (B : Basic_core)
-
-  module Symbol = Language_symbol.Make (B.Symbol)
-  module Constant = Language_constant.Make (B.Constant)
-
-  module Location = Language_location.Make (struct
-    module Symbol = Symbol
-    include B.Location
-  end)
-
-  module Instruction = Language_instruction.Make (struct
-    module Constant = Constant
-    module Symbol = Symbol
-    module Location = Location
-    include B.Instruction
-  end)
-
-  module Statement = Language_statement.Make (struct
-    module Symbol = Symbol
-    module Instruction = Instruction
-    include B.Statement
-  end)
-
-  module Program = Language_program.Make (struct
-    module Statement = Statement
-    include B.Program
-  end)
-end
+  with type t = B.t
+   and module Constant = B.Constant
+   and module Location = B.Location
+   and module Symbol = B.Symbol

@@ -30,7 +30,7 @@ module type S = sig
   include Pp.Printer
 
   include
-    Lib.Language.S
+    Language.Definition.S
     with type Constant.t = Ast.Operand.t
      and type Location.t = Ast.Location.t
      and type Instruction.t = Ast.Instruction.t
@@ -195,7 +195,7 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
     end
   end
 
-  include Lib.Language.Make (Basic)
+  include Language.Definition.Make (Basic)
 
   let make_jump_operand = Basic.Instruction.make_jump_operand
 end

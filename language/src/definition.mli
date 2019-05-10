@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,38 +21,17 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Top-level language modules for x86 *)
+(** High-level interface to languages supported by act *)
 
-open Lib
+(** @inline *)
+include module type of Definition_intf
 
-(** [S] is the signature of language modules over the X86 AST. *)
-module type S = sig
-  include Dialect.S
-
-  include Pp.Printer
-
-  include
-    Language.S
-    with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.Location.t
-     and type Instruction.t = Ast.Instruction.t
-     and type Statement.t = Ast.Statement.t
-     and type Program.t = Ast.t
-     and type Symbol.t = string
-
-  val make_jump_operand : string -> Ast.Operand.t
-  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the correct
-      abstract syntax for this version of x86. *)
-end
-
-(** [Att] is a language description for the AT&T dialect of x86. *)
-module Att : S
-
-(** [Intel] is a language description for the Intel dialect of x86. *)
-module Intel : S
-
-(** [Herd7] is a language description for the Herd7 dialect of x86. *)
-module Herd7 : S
-
-val of_dialect : Dialect.t -> (module S)
-(** [of_dialect] gets the correct [S] module for a dialect. *)
+(** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
+module Make (B : Basic) :
+  S
+  with type Constant.t = B.Constant.t
+   and type Location.t = B.Location.t
+   and type Instruction.t = B.Instruction.t
+   and type Program.t = B.Program.t
+   and type Statement.t = B.Statement.t
+   and type Symbol.t = B.Symbol.t

@@ -144,11 +144,11 @@ end
 (** [Basic_with_modules] extends [Basic] with the fully expanded language
     abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
-  module Constant : Language_constant.S
+  module Constant : Constant.S
 
-  module Location : Language_location.S
+  module Location : Location.S
 
-  module Symbol : Language_symbol.S
+  module Symbol : Symbol.S
 
   include
     Basic
@@ -169,22 +169,4 @@ module type S = sig
   (** We can query abstract operand bundle properties on a concrete
       instruction type, routing through [abs_operands]. *)
   module On_operands : Abstract.Operand.Bundle.S_properties with type t := t
-end
-
-(** [Language_instruction] is the interface exposed in the main mli file. *)
-module type Language_instruction = sig
-  module type Basic = Basic
-
-  module type Basic_with_modules = Basic_with_modules
-
-  module type S = S
-
-  (** [Make] produces an instance of [S] from an instance of
-      [Basic_with_modules]. *)
-  module Make (B : Basic_with_modules) :
-    S
-    with type t = B.t
-     and module Constant = B.Constant
-     and module Location = B.Location
-     and module Symbol = B.Symbol
 end

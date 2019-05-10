@@ -56,7 +56,8 @@ include Pretty_printer.S with type t := t
 val run :
      oracle:Output.Observation.t
   -> subject:Output.Observation.t
-  -> location_map:(Litmus.Id.t -> Litmus.Id.t option Or_error.t)
+  -> location_map:(   Act_common.Litmus_id.t
+                   -> Act_common.Litmus_id.t option Or_error.t)
   -> value_map:(string -> string Or_error.t)
   -> t Or_error.t
 (** [run ~oracle ~subject ~location_map ~value_map] applies the partial

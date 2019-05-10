@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -39,24 +39,22 @@ end
 module type Basic = sig
   include Basic_core
 
-  module Constant : Language_constant.Basic
+  module Constant : Constant.Basic
 
-  module Symbol : Language_symbol.Basic
+  module Symbol : Symbol.Basic
 
-  module Location : Language_location.Basic with module Sym := Symbol
+  module Location : Location.Basic with module Sym := Symbol
 
   module Instruction :
-    Language_instruction.Basic
+    Instruction.Basic
     with type con = Constant.t
      and module Loc := Location
      and module Sym := Symbol
 
   module Statement :
-    Language_statement.Basic
-    with module Ins := Instruction
-     and module Sym := Symbol
+    Statement.Basic with module Ins := Instruction and module Sym := Symbol
 
-  module Program : Language_program.Basic with type stm := Statement.t
+  module Program : Program.Basic with type stm := Statement.t
 end
 
 (** [S] is the user-facing interface module for act languages. Usually, you
@@ -65,36 +63,19 @@ end
 module type S = sig
   include Basic_core
 
-  module Constant : Language_constant.S
+  module Constant : Constant.S
 
-  module Symbol : Language_symbol.S
+  module Symbol : Symbol.S
 
-  module Location : Language_location.S with module Symbol = Symbol
+  module Location : Location.S with module Symbol = Symbol
 
   module Instruction :
-    Language_instruction.S
+    Instruction.S
     with module Constant = Constant
      and module Location = Location
      and module Symbol = Symbol
 
-  module Statement :
-    Language_statement.S with module Instruction = Instruction
+  module Statement : Statement.S with module Instruction = Instruction
 
-  module Program : Language_program.S with module Statement = Statement
-end
-
-module type Language = sig
-  module type Basic = Basic
-
-  module type S = S
-
-  (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
-  module Make (B : Basic) :
-    S
-    with type Constant.t = B.Constant.t
-     and type Location.t = B.Location.t
-     and type Instruction.t = B.Instruction.t
-     and type Program.t = B.Program.t
-     and type Statement.t = B.Statement.t
-     and type Symbol.t = B.Symbol.t
+  module Program : Program.S with module Statement = Statement
 end

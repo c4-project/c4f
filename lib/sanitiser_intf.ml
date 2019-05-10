@@ -24,6 +24,7 @@
 (** Assembly sanitisation *)
 
 open Base
+open Act_common
 
 (** [Hook] is an interface for language-specific hooks into the sanitisation
     process. *)
@@ -87,7 +88,7 @@ end
 (** [S] is the interface to a fully-built sanitiser. *)
 module type S = sig
   (** [Lang] is the language over which we are sanitising. *)
-  module Lang : Language.S
+  module Lang : Language.Definition.S
 
   module Warn : Sanitiser_warn.S with module Lang := Lang
 

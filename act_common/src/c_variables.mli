@@ -123,7 +123,7 @@ module Map : sig
 
   val of_litmus_id_alist :
        ?scope:Scope.t
-    -> (Litmus.Id.t, Initial_value.t) List.Assoc.t
+    -> (Litmus_id.t, Initial_value.t) List.Assoc.t
     -> t Or_error.t
   (** [of_litmus_id_alist ?scope alist] tries to convert an associative list
       from Litmus-style IDs to initial values into a variable-to-record map. *)

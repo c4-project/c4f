@@ -22,14 +22,14 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-module Tx = Travesty_core_kernel_exts
 open Lib
 open Utils
-open Act_common
+module A = Act_common
+module Tx = Travesty_core_kernel_exts
 
 module Post_filter = struct
   module Cfg = struct
-    type t = No_filter | Filter of {id: Id.t; arch: Sim.Arch.t}
+    type t = No_filter | Filter of {id: A.Id.t; arch: Sim.Arch.t}
 
     let arch_of_t : t -> Sim.Arch.t Or_error.t = function
       | Filter {arch; _} ->
@@ -38,9 +38,9 @@ module Post_filter = struct
           Or_error.error_string
             "Tried to filter despite filtering being disabled"
 
-    let make_filter (arch : Sim.Arch.t) (id : Id.t) = Filter {id; arch}
+    let make_filter (arch : Sim.Arch.t) (id : A.Id.t) = Filter {id; arch}
 
-    let make ?(simulator : Id.t option) ~(arch : Sim.Arch.t) : t =
+    let make ?(simulator : A.Id.t option) ~(arch : Sim.Arch.t) : t =
       Option.value_map simulator ~default:No_filter ~f:(make_filter arch)
   end
 
@@ -130,8 +130,7 @@ let parse_post :
             ~predicate:([%of_sexp: Sexp.t Litmus.Ast_base.Pred.t] sexp) )
 
 let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
-    (   c_variables:Config.C_variables.Map.t option
-     -> Sexp.t Litmusifier.Config.t)
+    (c_variables:A.C_variables.Map.t option -> Sexp.t Litmusifier.Config.t)
     Or_error.t =
   let open Or_error.Let_syntax in
   let%map postcondition =
@@ -148,11 +147,11 @@ let to_machine_id = function
   | `Arch _ ->
       Config.Machine.Id.default
 
-let run file_type (simulator : Id.t option) compiler_id_or_emits
+let run file_type (simulator : A.Id.t option) compiler_id_or_emits
     (c_globals : string list option) (c_locals : string list option)
     (post_sexp : [`Exists of Sexp.t] option)
-    (args : Args.Standard_with_files.t) (o : Output.t) (cfg : Config.Act.t)
-    : unit Or_error.t =
+    (args : Args.Standard_with_files.t) (o : A.Output.t)
+    (cfg : Config.Act.t) : unit Or_error.t =
   let open Result.Let_syntax in
   let%bind target = Common.get_target cfg compiler_id_or_emits in
   let arch = get_arch target in

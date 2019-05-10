@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -54,7 +54,7 @@ module Make (B : Sanitiser_base.Basic) :
     let%bind sym' = Ctx.get_redirect sym in
     if Lang.Symbol.equal sym sym' then f sym else Ctx.return sym'
 
-  module Escape = Symbol_escape.Make (Lang.Symbol)
+  module Escape = Language.Symbol_escape.Make (Lang.Symbol)
 
   let add_escape_redirects : unit Ctx.t =
     let open Ctx.Let_syntax in

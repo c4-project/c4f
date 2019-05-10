@@ -50,7 +50,7 @@ let%expect_test "escape_string: sample" =
     (escape_string "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet") ;
   [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
 
-module Make (S : Language_symbol.S) = struct
+module Make (S : Symbol.S) = struct
   let escape : S.t -> S.t = S.On_strings.map ~f:escape_string
 
   let escape_all : S.t list -> (S.t, S.t) List.Assoc.t =
@@ -64,7 +64,7 @@ end
 
 let%test_module "escaping on a toy symbol module" =
   ( module struct
-    module M = Make (Language_symbol.String_direct)
+    module M = Make (Symbol.String_direct)
 
     let%expect_test "escape: sample" =
       Stdio.print_string (M.escape "_example_two%100.5@@etc,etc,etc$6") ;

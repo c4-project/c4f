@@ -98,7 +98,7 @@ module type S = sig
       of the symbols aren't expressible as identifiers. *)
 
   val transform_c_variables :
-    t -> Config.C_variables.Map.t -> Config.C_variables.Map.t Or_error.t
+    t -> C_variables.Map.t -> C_variables.Map.t Or_error.t
   (** [transform_c_variables map cvars] tries to apply the redirects in
       [map] to [cvars].
 

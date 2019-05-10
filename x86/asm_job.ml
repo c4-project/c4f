@@ -32,12 +32,12 @@ let try_get_dialect dialect =
 let get_runner_from_dialect dialect =
   let open Or_error.Let_syntax in
   let%map (module Frontend) = Frontend.of_dialect dialect in
-  let (module Lang) = Language.of_dialect dialect in
+  let (module Lang) = Language_definition.of_dialect dialect in
   ( module Lib.Asm_job.Make_runner (struct
     type ast = Ast.t
 
     module Src_lang = Lang
-    module Dst_lang = Language.Herd7
+    module Dst_lang = Language_definition.Herd7
     module Frontend = Frontend
 
     module Litmus_ast = Litmus.Ast.Make (struct
