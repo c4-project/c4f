@@ -26,13 +26,18 @@ open Core_kernel
 let readme () : string =
   Utils.My_string.format_for_readme
     {|
-The `c` command group contains commands for querying and manipulating
-single C files or litmus tests in a target-independent way.
+The `asm` command group contains commands for querying and manipulating
+single assembly files or litmus tests.
+
+Some of the commands also generalise to single C files or litmus tests, by
+passing them through a nominated compiler and, if necessary, `act`'s
+delitmusifier.  For target-independent operations on single C files/tests,
+see the `c` command group.
 |}
 
 let command : Command.t =
-  Command.group ~summary:"commands for dealing with C files"
+  Command.group ~summary:"commands for dealing with assembly files"
     ~readme
-    [ ("delitmus", C_delitmus.command)
-    ; ("explain", C_explain.command)
-    ; ("fuzz", C_fuzz.command) ]
+    [ ("explain", Asm_explain.command)
+    ; ("litmusify", Asm_litmusify.command)
+    ]

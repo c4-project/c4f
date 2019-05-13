@@ -40,11 +40,10 @@ with the C11 memory model with regards to the assembly they emit.
 let command =
   Command.group ~summary:"the Automagic Compiler Tormentor" ~readme
     [ ("c", C_main.command)
+    ; ("asm", Asm_main.command)
     ; ("compare", Compare.command)
     ; ("configure", Configure.command)
     ; ("diff-states", Diff_states.command)
-    ; ("explain", Explain.command)
-    ; ("litmusify", Litmusify.command)
     ; ("regress", Regress.command)
     ; ("test", Test.command)
     ; ("tool", Tool.command) ]
