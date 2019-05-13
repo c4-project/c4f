@@ -36,8 +36,5 @@ see the `c` command group.
 |}
 
 let command : Command.t =
-  Command.group ~summary:"commands for dealing with assembly files"
-    ~readme
-    [ ("explain", Asm_explain.command)
-    ; ("litmusify", Asm_litmusify.command)
-    ]
+  Command.group ~summary:"commands for dealing with assembly files" ~readme
+    [("explain", Asm_explain.command); ("litmusify", Asm_litmusify.command)]

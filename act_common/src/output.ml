@@ -80,4 +80,4 @@ let print_error_body : Error.t Fmt.t =
          (box Error.pp)))
 
 let print_error (o : t) : 'a Or_error.t -> unit =
-  Fmt.(result ~ok:nop ~error:print_error_body o.ef)
+  Fmt.(result ~ok:nop ~error:(suffix (Fmt.unit "@.") print_error_body)) o.ef

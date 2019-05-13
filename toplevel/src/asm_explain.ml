@@ -34,6 +34,31 @@ let print_symbol_map = function
           (list ~sep:sp (fun f (k, v) -> pf f "@[<hv>%s@ ->@ %s@]" k v))
           map)
 
+let explain_filter (target : Config.Compiler.Target.t) :
+    (module Utils.Filter.S
+       with type aux_i = Config.File_type.t_or_infer
+                         * (   C.Filters.Output.t Utils.Filter.chain_output
+                            -> Asm_job.Explain_config.t Asm_job.t
+                               Config.Compiler.Chain_input.t)
+        and type aux_o = C.Filters.Output.t option
+                         * (unit option * Asm_job.Output.t))
+    Or_error.t =
+  Or_error.tag ~tag:"while getting an explain filter for this target"
+    (Common.delitmus_compile_asm_pipeline target Asm_job.get_explain)
+
+let run_with_input_fn (o : A.Output.t)
+    (file_type : Config.File_type.t_or_infer) target compiler_input_fn
+    infile outfile =
+  Or_error.Let_syntax.(
+    let%bind (module Exp) = explain_filter target in
+    A.Output.pv o "Got explain filter (name %s)" Exp.name ;
+    let%map _, (_, out) =
+      Exp.run_from_string_paths
+        (file_type, compiler_input_fn)
+        ~infile ~outfile
+    in
+    out)
+
 let run file_type compiler_id_or_arch output_format
     (c_globals : string list option) (c_locals : string list option)
     (args : Args.Standard_with_files.t) o cfg =
@@ -46,16 +71,15 @@ let run file_type compiler_id_or_arch output_format
     ignore (c_variables : A.C_variables.Map.t option) ;
     Asm_job.Explain_config.make ?format:output_format ()
   in
-  let%bind (module Exp) = Common.explain_pipeline target in
   let%bind user_cvars = Common.collect_cvars ?c_globals ?c_locals () in
   let compiler_input_fn =
     Common.make_compiler_input o file_type user_cvars explain_cfg passes
   in
-  let%map _, (_, out) =
-    Exp.run_from_string_paths
-      (file_type, compiler_input_fn)
-      ~infile:(Args.Standard_with_files.infile_raw args)
-      ~outfile:(Args.Standard_with_files.outfile_raw args)
+  let infile = Args.Standard_with_files.infile_raw args in
+  let outfile = Args.Standard_with_files.outfile_raw args in
+  A.Output.pv o "About to get and run the explain filter.@." ;
+  let%map out =
+    run_with_input_fn o file_type target compiler_input_fn infile outfile
   in
   A.Output.pw o "@[%a@]@." Asm_job.Output.warn out ;
   print_symbol_map (Asm_job.Output.symbol_map out)

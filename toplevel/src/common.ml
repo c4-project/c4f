@@ -46,13 +46,16 @@ let warn_if_not_tracking_symbols (o : A.Output.t) :
   | Some _ ->
       ()
 
+let get_target_from_id cfg (id : A.Id.t) =
+  Or_error.Let_syntax.(
+    let%map spec =
+      Config.Compiler.Spec.Set.get (Config.Act.compilers cfg) id
+    in
+    `Spec spec)
+
 let get_target cfg = function
   | `Id id ->
-      let open Or_error.Let_syntax in
-      let%map spec =
-        Config.Compiler.Spec.Set.get (Config.Act.compilers cfg) id
-      in
-      `Spec spec
+      get_target_from_id cfg id
   | `Arch _ as arch ->
       Or_error.return arch
 
@@ -82,11 +85,7 @@ end)
 
 let chain_with_delitmus (type aux_i aux_o)
     (module Onto : Filter.S with type aux_i = aux_i and type aux_o = aux_o)
-    :
-    (module Filter.S
-       with type aux_i = Config.File_type.t_or_infer
-                         * (C.Filters.Output.t Filter.chain_output -> aux_i)
-        and type aux_o = C.Filters.Output.t option * aux_o) =
+    =
   (module Chain_with_delitmus (Onto)
   : Filter.S
     with type aux_i = Config.File_type.t_or_infer
@@ -109,17 +108,6 @@ let delitmus_compile_asm_pipeline (type i o)
   >>= Language_support.Resolve_compiler_from_target.chained_filter_from_spec
         target
   >>| chain_with_delitmus
-
-let explain_pipeline (target : Config.Compiler.Target.t) :
-    (module Filter.S
-       with type aux_i = Config.File_type.t_or_infer
-                         * (   C.Filters.Output.t Filter.chain_output
-                            -> Asm_job.Explain_config.t Asm_job.t
-                               Config.Compiler.Chain_input.t)
-        and type aux_o = C.Filters.Output.t option
-                         * (unit option * Asm_job.Output.t))
-    Or_error.t =
-  delitmus_compile_asm_pipeline target Asm_job.get_explain
 
 let litmusify_pipeline (target : Config.Compiler.Target.t) :
     (module Filter.S

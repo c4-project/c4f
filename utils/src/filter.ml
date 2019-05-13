@@ -67,11 +67,11 @@ let copy (_src : Io.In_source.t) (ic : Stdio.In_channel.t)
 (** [route_input_to_file src] creates a temporary file, copies [src]'s
     contents into it, and returns it (provided that no errors occur). *)
 let route_input_to_file (src : Io.In_source.t) : Fpath.t Or_error.t =
-  let open Or_error.Let_syntax in
   let sink = Io.Out_sink.temp ~prefix:"filter" ~ext:"tmp" in
-  let%bind file = Io.Out_sink.to_file_err sink in
-  let%map () = Io.with_input_and_output src sink ~f:copy in
-  file
+  Or_error.Let_syntax.(
+    let%bind file = Io.Out_sink.to_file_err sink in
+    let%map () = Io.with_input_and_output src sink ~f:copy in
+    file)
 
 (** [ensure_input_file src] returns [src] if it points to a file; otherwise,
     it creates a temporary file, copies [src]'s contents into it, and
@@ -88,13 +88,13 @@ let ensure_input_file (src : Io.In_source.t) : Fpath.t Or_error.t =
     completion. *)
 let route_input_from_file (sink : Io.Out_sink.t)
     ~(f : Fpath.t -> 'a Or_error.t) : 'a Or_error.t =
-  let open Or_error.Let_syntax in
   let temp_out = Io.Out_sink.temp ~prefix:"filter" ~ext:"tmp" in
-  let%bind file = Io.Out_sink.to_file_err temp_out in
-  let%bind result = f file in
-  let temp_in = Io.In_source.file file in
-  let%map () = Io.with_input_and_output temp_in sink ~f:copy in
-  result
+  Or_error.Let_syntax.(
+    let%bind file = Io.Out_sink.to_file_err temp_out in
+    let%bind result = f file in
+    let temp_in = Io.In_source.file file in
+    let%map () = Io.with_input_and_output temp_in sink ~f:copy in
+    result)
 
 (** [ensure_output_file sink ~f] passes [sink] to the continuation [f] if it
     points to a file; otherwise, it creates a temporary file, passes that to
@@ -113,12 +113,12 @@ module Make_in_file_only (B : Basic_in_file_only) :
   include B
 
   let run aux src sink =
-    let open Or_error.Let_syntax in
     Or_error.tag
       ~tag:(Printf.sprintf "In filter '%s'" name)
-      (let%bind in_file = ensure_input_file src in
-       Io.Out_sink.with_output sink ~f:(fun _ ->
-           B.run {aux; src; sink} in_file ))
+      Or_error.Let_syntax.(
+        let%bind in_file = ensure_input_file src in
+        Io.Out_sink.with_output sink ~f:(fun _ ->
+            B.run {aux; src; sink} in_file ))
 
   let run_from_string_paths = lift_to_raw_strings ~f:run
 
@@ -132,10 +132,10 @@ module Make_files_only (B : Basic_files_only) :
   let run aux src sink =
     Or_error.tag
       ~tag:(Printf.sprintf "In filter '%s'" name)
-      (let open Or_error.Let_syntax in
-      let%bind infile = ensure_input_file src in
-      ensure_output_file sink ~f:(fun outfile ->
-          B.run {aux; src; sink} ~infile ~outfile ))
+      Or_error.Let_syntax.(
+        let%bind infile = ensure_input_file src in
+        ensure_output_file sink ~f:(fun outfile ->
+            B.run {aux; src; sink} ~infile ~outfile ))
 
   let run_from_string_paths = lift_to_raw_strings ~f:run
 
@@ -157,21 +157,21 @@ module Chain (B : Basic_chain_unconditional) :
     B.Second.tmp_file_ext {aux= snd_aux; src; sink}
 
   let make_temp a_ctx =
-    let open Or_error.Let_syntax in
     let tmp_ext = B.First.tmp_file_ext a_ctx in
     let tmp_out = Io.Out_sink.temp ~prefix:"act" ~ext:tmp_ext in
-    let%map tmp_in = Io.Out_sink.as_in_source tmp_out in
-    (tmp_out, tmp_in)
+    Or_error.Let_syntax.(
+      let%map tmp_in = Io.Out_sink.as_in_source tmp_out in
+      (tmp_out, tmp_in))
 
   let run aux src sink =
     let a_aux = B.first_input aux in
     let a_ctx = {aux= a_aux; src; sink} in
-    let open Or_error.Let_syntax in
-    let%bind a_out, b_in = make_temp a_ctx in
-    let%bind a_output = B.First.run a_aux src a_out in
-    let b_aux = B.second_input aux (`Ran a_output) in
-    let%map b_output = B.Second.run b_aux b_in sink in
-    (a_output, b_output)
+    Or_error.Let_syntax.(
+      let%bind a_out, b_in = make_temp a_ctx in
+      let%bind a_output = B.First.run a_aux src a_out in
+      let b_aux = B.second_input aux (`Ran a_output) in
+      let%map b_output = B.Second.run b_aux b_in sink in
+      (a_output, b_output))
 
   let run_from_string_paths = lift_to_raw_strings ~f:run
 
@@ -259,14 +259,14 @@ Chain_conditional_core (struct
         B.Second.tmp_file_ext {aux= aux `Checking_ahead; src; sink}
 
   let run_chained a_in b_in src snk =
-    let open Or_error.Let_syntax in
-    let%map a_out, b_out = Chained.run (a_in, b_in) src snk in
-    (Some a_out, b_out)
+    Or_error.Let_syntax.(
+      let%map a_out, b_out = Chained.run (a_in, b_in) src snk in
+      (Some a_out, b_out))
 
   let run_unchained b_in_f src snk =
-    let open Or_error.Let_syntax in
-    let%map b_out = B.Second.run (b_in_f `Skipped) src snk in
-    (None, b_out)
+    Or_error.Let_syntax.(
+      let%map b_out = B.Second.run (b_in_f `Skipped) src snk in
+      (None, b_out))
 end)
 
 module Chain_conditional_second (B : Basic_chain_conditional_second) :
@@ -296,14 +296,14 @@ Chain_conditional_core (struct
         B.First.tmp_file_ext {aux; src; sink}
 
   let run_chained a_in b_in src snk =
-    let open Or_error.Let_syntax in
-    let%map a_out, b_out = Chained.run (a_in, b_in) src snk in
-    (a_out, Some b_out)
+    Or_error.Let_syntax.(
+      let%map a_out, b_out = Chained.run (a_in, b_in) src snk in
+      (a_out, Some b_out))
 
   let run_unchained a_in src snk =
-    let open Or_error.Let_syntax in
-    let%map a_out = B.First.run a_in src snk in
-    (a_out, None)
+    Or_error.Let_syntax.(
+      let%map a_out = B.First.run a_in src snk in
+      (a_out, None))
 end)
 
 module Adapt (B : Basic_adapt) :
@@ -323,10 +323,10 @@ module Adapt (B : Basic_adapt) :
 
   let run (new_i : aux_i) (src : Io.In_source.t) (sink : Io.Out_sink.t) :
       aux_o Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind old_i = B.adapt_i new_i in
-    let%bind old_o = B.Original.run old_i src sink in
-    B.adapt_o old_o
+    Or_error.Let_syntax.(
+      let%bind old_i = B.adapt_i new_i in
+      let%bind old_o = B.Original.run old_i src sink in
+      B.adapt_o old_o)
 
   let run_from_string_paths = lift_to_raw_strings ~f:run
 
@@ -347,9 +347,7 @@ Make_in_file_only (struct
   let make_argv (aux : R.aux_i) ~(input : string Copy_spec.t)
       ~(output : string Copy_spec.t) : string list Or_error.t =
     ignore output ;
-    let open Or_error.Let_syntax in
-    let%map file = get_file input in
-    R.argv aux file
+    Or_error.(get_file input >>| R.argv aux)
 
   include R
 

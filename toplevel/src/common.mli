@@ -100,18 +100,16 @@ val lift_command_with_files :
     These are the common pipelines that most of the single-file commands are
     built upon. *)
 
-val explain_pipeline :
+val delitmus_compile_asm_pipeline :
      Config.Compiler.Target.t
+  -> (   (module Asm_job.Runner)
+      -> (module Filter.S with type aux_i = 'i and type aux_o = 'o))
   -> (module Filter.S
         with type aux_i = Config.File_type.t_or_infer
                           * (   C.Filters.Output.t Filter.chain_output
-                             -> Asm_job.Explain_config.t Asm_job.t
-                                Config.Compiler.Chain_input.t)
-         and type aux_o = C.Filters.Output.t option
-                          * (unit option * Asm_job.Output.t))
+                             -> 'i Config.Compiler.Chain_input.t)
+         and type aux_o = C.Filters.Output.t option * (unit option * 'o))
      Or_error.t
-(** [explain_pipeline target] builds a delitmusify-compile-explain pipeline
-    for target [target]. *)
 
 val litmusify_pipeline :
      Config.Compiler.Target.t
