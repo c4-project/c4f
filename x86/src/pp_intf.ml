@@ -43,34 +43,53 @@
    circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
-open Act_common
-open Utils
+open Ast
 
-(** [Has_dialect] is a signature for modules that report a specific dialect. *)
-module type Has_dialect = sig
-  val dialect : Id.t
-  (** [dialect] is the identifier of this module's associated x86 dialect. *)
+(** Signature containing the dialect-specific pretty-printer elements. *)
+module type Dialect = sig
+  val pp_reg : Reg.t Fmt.t
+
+  val pp_indirect : Indirect.t Fmt.t
+
+  val pp_immediate : Disp.t Fmt.t
+
+  val pp_comment :
+    pp:(Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
+  (** [pp_comment ~pp f k] prints a line comment whose body is given by
+      invoking [pp] on [k]. *)
+
+  val pp_template_token : string Fmt.t
 end
 
-(** [S] is the interface of modules containing x86 dialect information. *)
-module type S = sig
-  include Has_dialect
+(** Signature of full dialect pretty-printers. *)
+module type Printer = sig
+  include Dialect
 
-  (** This lets us query a dialect's operand order. *)
-  include Src_dst.S
+  val pp_reg : Reg.t Fmt.t
 
-  val has_size_suffix : bool
-  (** [has_size_suffix] gets whether this dialect uses AT&T-style size
-      suffixes. *)
+  val pp_indirect : Indirect.t Fmt.t
 
-  val symbolic_jump_type : [`Indirect | `Immediate]
-  (** [symbolic_jump_type] gets the type of syntax this dialect _appears_ to
-      use for symbolic jumps.
+  val pp_immediate : Format.formatter -> Disp.t -> unit
 
-      In all x86 dialects, a jump to a label is `jCC LABEL`, where `CC` is
-      `mp` or some condition. Because of the way we parse x86, the label
-      resolves to different abstract syntax depending on the dialect.
+  val pp_location : Location.t Fmt.t
 
-      In AT&T, symbolic jumps look like indirect displacements; in Intel and
-      Herd7, they look like immediate values. *)
+  val pp_bop : Bop.t Fmt.t
+
+  val pp_operand : Operand.t Fmt.t
+
+  val pp_prefix : prefix Fmt.t
+
+  val pp_opcode : Opcode.t Fmt.t
+  (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
+
+  val pp_oplist : Operand.t list Fmt.t
+  (** [pp_oplist f os] pretty-prints operand list [os] on formatter [f]. *)
+
+  val pp_instruction : Instruction.t Fmt.t
+
+  val pp_statement : Statement.t Fmt.t
+
+  val pp : t Fmt.t
+  (** [pp f ast] pretty-prints [ast] on formatter [f]. It ignores any
+      dialect information. *)
 end

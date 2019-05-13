@@ -2,9 +2,8 @@
 
    Copyright (c) 2018, 2019 by Matt Windsor
 
-   (parts (c) 2010-2018 Institut National
-   de Recherche en Informatique et en Automatique, Jade Alglave, and Luc
-   Maranget)
+   (parts (c) 2010-2018 Institut National de Recherche en Informatique et en
+   Automatique, Jade Alglave, and Luc Maranget)
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -132,7 +131,7 @@ end
 
 module Indirect : sig
   (** [t] is the opaque type of indirect memory accesses. *)
-  type t [@@deriving eq]
+  type t [@@deriving equal]
 
   val make :
     ?seg:Reg.t -> ?disp:Disp.t -> ?base:Reg.t -> ?index:Index.t -> unit -> t
@@ -164,11 +163,24 @@ module Indirect : sig
   include Quickcheck.S with type t := t
 end
 
-(** [Location] enumerates memory locations: either indirect
-    seg/disp/base/index stanzas, or registers. *)
+(** A syntactic memory locations.
+
+    These are usually indirect seg/disp/base/index stanzas (see
+    {{!Indirect} Indirect}), or registers (see {{!Reg} Reg}).
+
+    These can also be template interpolation tokens. This is to support
+    assembly syntaxes that represent the template string of a GCC-style
+    inline assembly directive; x86 assembly, technically speaking, has no
+    concept. *)
 module Location : sig
-  type t = Indirect of Indirect.t | Reg of Reg.t
-  [@@deriving sexp, eq, compare]
+  (** Type of locations in an AST. *)
+  type t =
+    | Indirect of Indirect.t  (** An indirect location. *)
+    | Reg of Reg.t  (** A direct register location. *)
+    | Template_token of string
+        (** An interpolation from some form of assembly template, for
+            example GCC's C {i asm} extension. *)
+  [@@deriving sexp, equal, compare]
 
   (** [On_registers] permits enumerating and folding over registers inside a
       location. *)
@@ -198,7 +210,7 @@ module Operand : sig
     | String of string
     | Typ of string  (** Type annotation *)
     | Bop of t * Bop.t * t
-  [@@deriving sexp, eq, compare]
+  [@@deriving sexp, equal, compare]
 
   val location : Location.t -> t
 
@@ -231,7 +243,7 @@ module Instruction : sig
       directives). *)
   type t =
     {prefix: prefix option; opcode: Opcode.t; operands: Operand.t list}
-  [@@deriving sexp, eq, make]
+  [@@deriving sexp, equal, make]
 
   (** [On_locations] permits enumerating and folding over locations inside
       an instruction. *)
@@ -246,7 +258,7 @@ end
 
 module Statement : sig
   type t = Instruction of Instruction.t | Label of string | Nop
-  [@@deriving sexp, eq]
+  [@@deriving sexp, equal]
 
   val instruction : Instruction.t -> t
   (** [instruction] creates an instruction statement. *)
@@ -265,7 +277,7 @@ end
 (** Opaque type of dialect-tagged abstract syntax trees. *)
 type t [@@deriving sexp, equal]
 
-val make : ?program:Statement.t list -> dialect:Id.t ->  unit -> t
+val make : ?program:Statement.t list -> dialect:Id.t -> unit -> t
 (** [make ?program ~dialect ()] makes an AST with program [program]
     (default: empty), tagged with dialect [dialect]. *)
 

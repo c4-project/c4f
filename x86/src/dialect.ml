@@ -86,16 +86,13 @@ module Herd7 = struct
 end
 
 let find_by_id (type a) (table : (Id.t, a) List.Assoc.t Lazy.t)
-    ~(context:string)
-  : (Id.t -> a Or_error.t) Staged.t =
+    ~(context : string) : (Id.t -> a Or_error.t) Staged.t =
   Staged.stage (fun id ->
-  id
-  |> List.Assoc.find (Lazy.force table) ~equal:[%equal: Id.t]
-  |> Result.of_option
-    ~error:(Error.create_s
-              [%message
-                "Unknown or unsupported x86 dialect"
-                  ~context
-                  ~id:(id : Id.t)
-              ]
-      ))
+      id
+      |> List.Assoc.find (Lazy.force table) ~equal:[%equal: Id.t]
+      |> Result.of_option
+           ~error:
+             (Error.create_s
+                [%message
+                  "Unknown or unsupported x86 dialect" ~context
+                    ~id:(id : Id.t)]) )

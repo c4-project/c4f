@@ -1,8 +1,9 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor (parts (c) 2010-2018 Institut National
-   de Recherche en Informatique et en Automatique, Jade Alglave, and Luc
-   Maranget)
+   Copyright (c) 2018, 2019 by Matt Windsor
+
+   (parts (c) 2010-2018 Institut National de Recherche en Informatique et en
+   Automatique, Jade Alglave, and Luc Maranget)
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -23,29 +24,29 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-   This file derives from the Herd7 project
+   This file derives in part from the Herd7 project
    (https://github.com/herd/herdtools7); its original attribution and
    copyright notice follow. *)
 
-(****************************************************************************)
-(* the diy toolsuite *)
-(*  *)
-(* Jade Alglave, University College London, UK. *)
-(* Luc Maranget, INRIA Paris-Rocquencourt, France. *)
-(*  *)
-(* Copyright 2010-present Institut National de Recherche en Informatique et *)
-(* en Automatique and the authors. All rights reserved. *)
-(*  *)
-(* This software is governed by the CeCILL-B license under French law and *)
-(* abiding by the rules of distribution of free software. You can use, *)
-(* modify and/ or redistribute the software under the terms of the CeCILL-B *)
-(* license as circulated by CEA, CNRS and INRIA at the following URL *)
-(* "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
-(****************************************************************************)
+(* the diy toolsuite
+
+   Jade Alglave, University College London, UK.
+
+   Luc Maranget, INRIA Paris-Rocquencourt, France.
+
+   Copyright 2010-present Institut National de Recherche en Informatique et
+   en Automatique and the authors. All rights reserved.
+
+   This software is governed by the CeCILL-B license under French law and by
+   the rules of distribution of free software. You can use, and/ or
+   redistribute the software under the terms of the CeCILL-B license as
+   circulated by CEA, CNRS and INRIA at the following URL
+   "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
 open Base
 open Act_common
 open Ast
+include Pp_intf
 
 let disp_positive = function
   | None ->
@@ -55,37 +56,8 @@ let disp_positive = function
   | _ ->
       true
 
-module type Dialect = sig
-  val pp_reg : Reg.t Fmt.t
-
-  val pp_indirect : Indirect.t Fmt.t
-
-  val pp_immediate : Disp.t Fmt.t
-
-  val pp_comment : pp:'a Fmt.t -> 'a Fmt.t
-end
-
-module type Printer = sig
-  include Dialect
-
-  val pp_location : Location.t Fmt.t
-
-  val pp_bop : Bop.t Fmt.t
-
-  val pp_operand : Operand.t Fmt.t
-
-  val pp_prefix : prefix Fmt.t
-
-  val pp_opcode : Opcode.t Fmt.t
-
-  val pp_oplist : Operand.t list Fmt.t
-
-  val pp_instruction : Instruction.t Fmt.t
-
-  val pp_statement : Statement.t Fmt.t
-
-  val pp : t Fmt.t
-end
+let pp_gcc_asm_template_token : string Fmt.t =
+  Fmt.(hbox (prefix (unit "%%") string))
 
 (* Parts specific to all dialects *)
 module Basic = struct
@@ -103,6 +75,10 @@ end
 (* Parts specific to AT&T *)
 module Att_specific = struct
   let pp_comment ~pp f = Fmt.pf f "@[<h># %a@]" pp
+
+  let pp_template_token : string Fmt.t =
+    (* TODO(@MattWindsor91): this is GCC specific, actually. *)
+    pp_gcc_asm_template_token
 
   let%expect_test "pp_comment: AT&T" =
     Fmt.pr "%a@." (pp_comment ~pp:String.pp) "AT&T comment" ;
@@ -190,6 +166,10 @@ end
 module Intel_specific = struct
   let pp_comment ~pp f = Fmt.pf f "@[<h>; %a@]" pp
 
+  let pp_template_token : string Fmt.t =
+    (* TODO(@MattWindsor91): this is pretty much wrong. *)
+    pp_gcc_asm_template_token
+
   let%expect_test "pp_comment: Intel" =
     Fmt.pr "%a@." (pp_comment ~pp:String.pp) "intel comment" ;
     [%expect {| ; intel comment |}]
@@ -198,6 +178,10 @@ end
 (** Parts specific to Herd7 *)
 module Herd7_specific = struct
   let pp_comment ~pp f = Fmt.pf f "@[<h>// %a@]" pp
+
+  let pp_template_token : string Fmt.t =
+    (* TODO(@MattWindsor91): this is pretty much wrong. *)
+    pp_gcc_asm_template_token
 
   let%expect_test "pp_comment: Herd7" =
     Fmt.pr "%a@." (pp_comment ~pp:String.pp) "herd comment" ;
@@ -297,6 +281,9 @@ module Make (D : Dialect) = struct
         pp_indirect f i
     | Reg r ->
         pp_reg f r
+    | Template_token t ->
+        (* TODO(@MattWindsor91): this is GCC specific *)
+        Fmt.pf f "%%%s" t
 
   let rec pp_operand f = function
     | Operand.Location l ->
@@ -413,14 +400,15 @@ let dialect_table : (Id.t, Ast.t Fmt.t) List.Assoc.t Lazy.t =
     ; (Id.of_string "herd7", Herd7.pp) ]
 
 let get_pp_inner : Id.t -> Ast.t Fmt.t Or_error.t =
-  Staged.unstage (Dialect.find_by_id dialect_table ~context:"Pretty-printing")
+  Staged.unstage
+    (Dialect.find_by_id dialect_table ~context:"Pretty-printing")
 
 let get_pp (id : Id.t) : Ast.t Fmt.t =
   match get_pp_inner id with
-  | Ok fmt -> fmt
+  | Ok fmt ->
+      fmt
   | Error _ ->
-    Fmt.(always "<Error getting pretty-printer>")
+      Fmt.(always "<Error getting pretty-printer>")
 
 (* TODO(@MattWindsor91): shouldn't box here. *)
-let pp_ast =
-  Fmt.box (fun f ast -> get_pp (Ast.dialect ast) f ast)
+let pp_ast = Fmt.box (fun f ast -> get_pp (Ast.dialect ast) f ast)

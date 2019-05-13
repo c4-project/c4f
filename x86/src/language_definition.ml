@@ -108,6 +108,8 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
               Abs.Register_direct (register_abs_type reg)
           | Indirect i ->
               indirect_abs_type i
+          | Template_token _ ->
+              Unknown
       end)
 
       module On_symbols = Ast.Location.On_symbols
@@ -167,7 +169,8 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
         let open Or_error.Let_syntax in
         let body = Ast.program prog in
         let%map bodies' = f body in
-        List.map bodies' ~f:(fun body' -> On_listings.map prog ~f:(fun _ -> body'))
+        List.map bodies' ~f:(fun body' ->
+            On_listings.map prog ~f:(fun _ -> body') )
     end
 
     module Constant = struct
@@ -311,4 +314,5 @@ let dialect_table : (Id.t, (module S)) List.Assoc.t Lazy.t =
 
 let of_dialect : Id.t -> (module S) Or_error.t =
   Staged.unstage
-    (Dialect.find_by_id dialect_table ~context:"finding a language definition")
+    (Dialect.find_by_id dialect_table
+       ~context:"finding a language definition")

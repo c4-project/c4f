@@ -25,6 +25,7 @@
 
 open Base
 open Act_common
+
 include module type of Language_definition_intf
 
 (** [Att] is a language description for the AT&T dialect of x86. *)
@@ -37,6 +38,7 @@ module Intel : S
 module Herd7 : S
 
 val of_dialect : Id.t -> (module S) Or_error.t
-(** [of_dialect id] gets the correct [S] module for the dialect with ID [id].
+(** [of_dialect id] gets the correct [S] module for the dialect with ID
+    [id].
 
     If one doesn't exist, [of_dialect] returns an error. *)

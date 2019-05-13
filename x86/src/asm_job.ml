@@ -25,7 +25,7 @@ open Base
 open Act_common
 module Tx = Travesty_base_exts
 
-let get_runner  (dialect : Id.t) =
+let get_runner (dialect : Id.t) =
   let open Or_error.Let_syntax in
   let%bind (module Frontend) = Frontend.of_dialect dialect in
   let%map (module Lang) = Language_definition.of_dialect dialect in

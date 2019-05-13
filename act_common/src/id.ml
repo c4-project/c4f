@@ -45,13 +45,9 @@ let ( @: ) : string -> t -> t = List.cons
 
 let ( @. ) : t -> t -> t = ( @ )
 
-let hd_reduce (id : t)
-    ~(on_empty: unit -> 'a)
-    ~(f: string -> t -> 'a)
-  : 'a =
-  match id with
-  | [] -> on_empty ()
-  | x :: xs -> f x xs
+let hd_reduce (id : t) ~(on_empty : unit -> 'a) ~(f : string -> t -> 'a) :
+    'a =
+  match id with [] -> on_empty () | x :: xs -> f x xs
 
 let%expect_test "equality is case-insensitive" =
   Sexp.output_hum Out_channel.stdout

@@ -33,18 +33,15 @@ type t
 
 (** {2 Constructing identifiers}
 
-    See also [Identifiable.S].
-*)
+    See also [Identifiable.S]. *)
 
 (** {2 Destructing identifiers}
 
-    See also [Identifiable.S].
-*)
+    See also [Identifiable.S]. *)
 
 val hd_reduce : t -> on_empty:(unit -> 'a) -> f:(string -> t -> 'a) -> 'a
-(** [hd_reduce id ~on_empty ~f] applies [on_empty ()] if [id] is empty,
-    or [f tag id'] if [id] comprises a head tag [tag] and trailing
-    id [id']. *)
+(** [hd_reduce id ~on_empty ~f] applies [on_empty ()] if [id] is empty, or
+    [f tag id'] if [id] comprises a head tag [tag] and trailing id [id']. *)
 
 val of_string_list : string list -> t
 (** [of_string_list tags] produces an identifier from a tag list. *)

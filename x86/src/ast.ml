@@ -308,17 +308,23 @@ module Indirect = struct
 end
 
 module Location = struct
-  type t = Indirect of Indirect.t | Reg of Reg.t
+  type t =
+    | Indirect of Indirect.t
+    | Reg of Reg.t
+    | Template_token of string
   [@@deriving sexp, variants, equal, compare, quickcheck]
 
   (** Base mapper for locations *)
   module Base_map (M : Monad.S) = struct
     module F = Traversable.Helpers (M)
 
-    let map_m x ~indirect ~reg =
+    let map_m (x : t) ~(indirect : Indirect.t -> Indirect.t M.t)
+        ~(reg : Reg.t -> Reg.t M.t) ~(template_token : string -> string M.t)
+        : t M.t =
       Variants.map x
         ~indirect:(F.proc_variant1 indirect)
         ~reg:(F.proc_variant1 reg)
+        ~template_token:(F.proc_variant1 template_token)
   end
 
   module On_registers :
@@ -333,7 +339,8 @@ module Location = struct
       module F = Traversable.Helpers (M)
       module I = Indirect.On_registers.On_monad (M)
 
-      let map_m t ~f = B.map_m t ~indirect:(I.map_m ~f) ~reg:f
+      let map_m t ~f =
+        B.map_m t ~indirect:(I.map_m ~f) ~reg:f ~template_token:M.return
     end
   end)
 
@@ -350,9 +357,11 @@ module Location = struct
       module I = Indirect.On_symbols.On_monad (M)
 
       let map_m t ~f =
-        B.map_m t
-          ~indirect:(I.map_m ~f) (* Registers don't have any symbols *)
-          ~reg:M.return
+        B.map_m t ~indirect:(I.map_m ~f)
+          ~reg:M.return (* Registers don't have any symbols *)
+          ~template_token:M.return
+
+      (* Template tokens don't have any (traversable!) symbols *)
     end
   end)
 end
@@ -650,8 +659,8 @@ module Statement = struct
   end)
 end
 
-(* The ordering here is important to make sure [make] puts
-   the optional 'program' first. *)
+(* The ordering here is important to make sure [make] puts the optional
+   'program' first. *)
 type t = {program: Statement.t list; dialect: Id.t}
 [@@deriving sexp, equal, fields, make]
 

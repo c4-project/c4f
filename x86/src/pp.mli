@@ -55,42 +55,9 @@
     track things like which operand is source and which is destination, and
     these change between dialects. *)
 
-open Ast
+include module type of Pp_intf
 
-module type Printer = sig
-  val pp_reg : Reg.t Fmt.t
-
-  val pp_indirect : Indirect.t Fmt.t
-
-  val pp_immediate : Format.formatter -> Disp.t -> unit
-
-  val pp_comment :
-    pp:(Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
-  (** [pp_comment ~pp f k] prints a line comment whose body is given by
-      invoking [pp] on [k]. *)
-
-  val pp_location : Location.t Fmt.t
-
-  val pp_bop : Bop.t Fmt.t
-
-  val pp_operand : Operand.t Fmt.t
-
-  val pp_prefix : prefix Fmt.t
-
-  val pp_opcode : Opcode.t Fmt.t
-  (** [pp_opcode f op] pretty-prints opcode [op] on formatter [f]. *)
-
-  val pp_oplist : Operand.t list Fmt.t
-  (** [pp_oplist f os] pretty-prints operand list [os] on formatter [f]. *)
-
-  val pp_instruction : Instruction.t Fmt.t
-
-  val pp_statement : Statement.t Fmt.t
-
-  val pp : t Fmt.t
-  (** [pp f ast] pretty-prints [ast] on formatter [f]. It ignores any
-      dialect information. *)
-end
+(** {2 Dialect-specific printers} *)
 
 (** [Att] provides pretty-printing for AT&T-syntax x86. *)
 module Att : Printer
@@ -101,4 +68,8 @@ module Intel : Printer
 (** [Herd7] provides pretty-printing for Herd-syntax x86. *)
 module Herd7 : Printer
 
-val pp_ast : Format.formatter -> t -> unit
+(** {2 Generic AST printers} *)
+
+val pp_ast : Ast.t Fmt.t
+(** [pp_ast] is a formatter that prints a dialect-tagged AST using the
+    appropriate dialect for its tag. *)

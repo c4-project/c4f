@@ -111,24 +111,23 @@ struct
   let segment_offset_to_heap = function
     | Location.Indirect i ->
         segment_offset_to_heap_of_indirect i
-    | Reg _ as l ->
+    | (Reg _ | Template_token _) as l ->
         Ctx.return l
 
   (** [warn_unsupported_registers reg] warns if [reg] isn't likely to be
       understood by Herd. *)
-  let warn_unsupported_registers : Ast.Reg.t -> Ast.Reg.t Ctx.t = function
+  let warn_unsupported_registers : Ast.Reg.t -> unit Ctx.t = function
     | (#Ast.Reg.seg | #Ast.Reg.gp8 | #Ast.Reg.gp16 | #Ast.Reg.sp16) as reg
       ->
         Ctx.(
           warn (Warn.Location (Location.Reg reg))
             (Info.of_string
-               "This register is unlikely to be supported by Herd")
-          >>| fun () -> reg)
-    | (#Ast.Reg.gp32 | #Ast.Reg.sp32 | #Ast.Reg.flag) as reg ->
-        Ctx.return reg
+               "This register is unlikely to be supported by Herd"))
+    | #Ast.Reg.gp32 | #Ast.Reg.sp32 | #Ast.Reg.flag ->
+        Ctx.return ()
 
   let on_register reg =
-    Ctx.(return reg >>= (`Warn |-> warn_unsupported_registers))
+    Ctx.(return reg >>= (`Warn |-> tee_m ~f:warn_unsupported_registers))
 
   let through_all_registers loc =
     let module F = Location.On_registers.On_monad (Ctx) in
@@ -140,8 +139,23 @@ struct
 
   let on_all = Ctx.return
 
-  let on_location loc =
-    Ctx.(return loc >>= segment_offset_to_heap >>= through_all_registers)
+  (** [warn_template_token loc] warns if [loc] is a template token; such
+      tokens aren't sanitisable, and their presence usually suggests that
+      the sanitiser is running on something it shouldn't be running on. *)
+  let warn_template_token : Location.t -> unit Ctx.t = function
+    | Location.Template_token _ as l ->
+        Ctx.(
+          warn (Warn.Location l)
+            (Info.of_string
+               "Template tokens aren't supported by the sanitiser."))
+    | Indirect _ | Reg _ ->
+        Ctx.return ()
+
+  let on_location : Location.t -> Location.t Ctx.t =
+    Ctx.(
+      `Warn
+      |-> tee_m ~f:warn_template_token
+      >=> segment_offset_to_heap >=> through_all_registers)
 
   let on_instruction stm =
     Ctx.(return stm >>| sub_to_add >>| drop_unsupported_lengths)

@@ -158,7 +158,7 @@ module Make (B : Basic) : S = struct
         Some Abstract.Operand.Unknown
     | Location (Ast.Location.Indirect _ as l) ->
         Some (Location (Location.abstract l))
-    | Location (Reg _) | Immediate _ | String _ | Typ _ ->
+    | Location _ | Immediate _ | String _ | Typ _ ->
         None
 
   let register_operand = function
@@ -166,7 +166,7 @@ module Make (B : Basic) : S = struct
         Some Abstract.Operand.Unknown
     | Location (Ast.Location.Reg _ as l) ->
         Some (Location (Location.abstract l))
-    | Location (Indirect _) | Immediate _ | String _ | Typ _ ->
+    | Location _ | Immediate _ | String _ | Typ _ ->
         None
 
   let jump_target_displacement = function
@@ -182,7 +182,7 @@ module Make (B : Basic) : S = struct
         Some (Symbol s)
     | Immediate (Numeric _) | Bop _ ->
         Some Unknown
-    | String _ | Typ _ | Location (Reg _) ->
+    | String _ | Typ _ | Location _ ->
         None
 
   let single_spec_to_classifier = function

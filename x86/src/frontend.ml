@@ -23,7 +23,6 @@
 
 open Base
 open Act_common
-
 include Frontend_intf
 
 module Att : S = Utils.Frontend.Make (struct
@@ -39,8 +38,8 @@ module Att : S = Utils.Frontend.Make (struct
 end)
 
 let dialect_table : (Id.t, (module S)) List.Assoc.t Lazy.t =
-  lazy
-    [ Id.of_string "att", (module Att) ]
+  lazy [(Id.of_string "att", (module Att))]
 
 let of_dialect : Id.t -> (module S) Or_error.t =
-  Staged.unstage (Dialect.find_by_id dialect_table ~context:"parsing frontend")
+  Staged.unstage
+    (Dialect.find_by_id dialect_table ~context:"parsing frontend")
