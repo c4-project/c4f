@@ -21,21 +21,5 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Utils
-
-module M = struct
-  type t = Att | Intel | Herd7 [@@deriving sexp, compare, hash]
-end
-
-module Name_table = String_table.Make (struct
-  type t = M.t
-
-  let table = [(M.Att, "ATT"); (M.Intel, "Intel"); (M.Herd7, "Herd7")]
-end)
-
-include M
-
-include String_table.To_identifiable (struct
-  include M
-  include Name_table
-end)
+(** [S] is the type of x86 language frontends. *)
+module type S = Utils.Frontend.S with type ast := Ast.t

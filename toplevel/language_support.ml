@@ -26,18 +26,17 @@ open Act_common
 
 let lang_procs = [("x86", X86.Asm_job.get_runner)]
 
-let try_get_lang_proc language =
+let try_get_lang_proc (language : string) =
   language
   |> List.Assoc.find ~equal:String.Caseless.equal lang_procs
   |> Result.of_option
        ~error:(Error.create_s [%message "Unknown language" ~language])
 
-let asm_runner_from_arch (arch : Id.t) =
-  match Id.to_string_list arch with
-  | [] ->
-      Or_error.error_string "Missing language name"
-  | lang :: rest ->
-      Result.(try_get_lang_proc lang >>= fun proc -> proc rest)
+let asm_runner_from_arch : Id.t -> (module Lib.Asm_job.Runner) Or_error.t =
+  Id.hd_reduce
+    ~on_empty:(fun () -> Or_error.error_string "Missing language name")
+    ~f:(fun lang rest ->
+      Result.(try_get_lang_proc lang >>= fun proc -> proc rest))
 
 module Gcc : Config.Compiler.Basic = struct
   let compile_args ~args ~emits ~infile ~outfile =

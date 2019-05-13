@@ -1,6 +1,8 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor (parts (c) 2010-2018 Institut National
+   Copyright (c) 2018, 2019 by Matt Windsor
+
+   (parts (c) 2010-2018 Institut National
    de Recherche en Informatique et en Automatique, Jade Alglave, and Luc
    Maranget)
 
@@ -23,7 +25,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-   This file derives from the Herd7 project
+   This file derives in part from the Herd7 project
    (https://github.com/herd/herdtools7); its original attribution and
    copyright notice follow. *)
 
@@ -42,11 +44,13 @@
    circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
+open Act_common
 open Utils
 
 (** [Has_dialect] is a signature for modules that report a specific dialect. *)
 module type Has_dialect = sig
-  val dialect : Dialect_tag.t
+  (** [dialect] is the identifier of this module's associated x86 dialect. *)
+  val dialect : Id.t
 end
 
 (** [S] is the interface of modules containing x86 dialect information. *)

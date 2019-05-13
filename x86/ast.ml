@@ -45,6 +45,7 @@
 
 open Base
 open Base_quickcheck
+open Act_common
 module Tx = Travesty_base_exts
 open Utils
 open Travesty
@@ -649,17 +650,17 @@ module Statement = struct
   end)
 end
 
-(** [t] is the type of an X86 abstract syntax tree, containing the specific
-    X86 syntax dialect and a list of statements. *)
-type t = {syntax: Dialect_tag.t; program: Statement.t list}
-[@@deriving sexp, eq, fields]
+(* The ordering here is important to make sure [make] puts
+   the optional 'program' first. *)
+type t = {program: Statement.t list; dialect: Id.t}
+[@@deriving sexp, equal, fields, make]
 
 (** Base mapper for ASTs *)
 module Base_map (M : Monad.S) = struct
   module F = Traversable.Helpers (M)
 
-  let map_m x ~syntax ~program =
-    Fields.fold ~init:(M.return x) ~syntax:(F.proc_field syntax)
+  let map_m x ~dialect ~program =
+    Fields.fold ~init:(M.return x) ~dialect:(F.proc_field dialect)
       ~program:(F.proc_field program)
 end
 
@@ -675,7 +676,7 @@ Traversable.Make0 (struct
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
 
-    let map_m t ~f = B.map_m t ~program:f ~syntax:M.return
+    let map_m t ~f = B.map_m t ~program:f ~dialect:M.return
   end
 end)
 

@@ -22,17 +22,13 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 module Tx = Travesty_base_exts
 
-let try_get_dialect dialect =
-  dialect |> Dialect_tag.Name_table.of_string
-  |> Result.of_option
-       ~error:(Error.create_s [%message "Unknown X86 dialect" ~dialect])
-
-let get_runner_from_dialect dialect =
+let get_runner  (dialect : Id.t) =
   let open Or_error.Let_syntax in
-  let%map (module Frontend) = Frontend.of_dialect dialect in
-  let (module Lang) = Language_definition.of_dialect dialect in
+  let%bind (module Frontend) = Frontend.of_dialect dialect in
+  let%map (module Lang) = Language_definition.of_dialect dialect in
   ( module Lib.Asm_job.Make_runner (struct
     type ast = Ast.t
 
@@ -66,8 +62,3 @@ let get_runner_from_dialect dialect =
     let program = Fn.id
   end)
   : Lib.Asm_job.Runner )
-
-let get_runner emits_tail =
-  Or_error.(
-    emits_tail |> Tx.List.one >>= try_get_dialect
-    >>= get_runner_from_dialect)

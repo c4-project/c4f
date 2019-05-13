@@ -45,6 +45,8 @@
 
 (** x86 dialect structures. *)
 
+open Act_common
+open Base
 include module type of Dialect_intf
 
 (** [Att] describes the AT&T dialect of x86 assembly. *)
@@ -55,3 +57,11 @@ module Intel : S
 
 (** [Herd7] describes the Herd7 dialect of x86 assembly. *)
 module Herd7 : S
+
+(** [find_by_id table ~context] is a helper for
+    creating dialect-by-ID lookups using lookup table [table];
+    if the dialect is missing, the context hint [context] will
+    be used in the error. *)
+val find_by_id : ((Id.t, 'a) List.Assoc.t Lazy.t)
+  -> context:string
+  -> (Id.t -> 'a Or_error.t) Staged.t

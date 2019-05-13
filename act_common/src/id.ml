@@ -31,19 +31,27 @@ module T = struct
 
   let of_string : string -> t = String.split_on_chars ~on:allowed_id_splits
 
-  let of_string_list : string list -> t = Fn.id
-
   let to_string : t -> string = String.concat ~sep:"."
-
-  let ( @: ) : string -> t -> t = List.cons
-
-  let ( @. ) : t -> t -> t = ( @ )
 
   let module_name : string = "act.Act_common.Id"
 end
 
 include T
 include Identifiable.Make (T)
+
+let of_string_list : string list -> t = Fn.id
+
+let ( @: ) : string -> t -> t = List.cons
+
+let ( @. ) : t -> t -> t = ( @ )
+
+let hd_reduce (id : t)
+    ~(on_empty: unit -> 'a)
+    ~(f: string -> t -> 'a)
+  : 'a =
+  match id with
+  | [] -> on_empty ()
+  | x :: xs -> f x xs
 
 let%expect_test "equality is case-insensitive" =
   Sexp.output_hum Out_channel.stdout

@@ -77,9 +77,10 @@ copyright notice follow. *)
 main:
   | program=list(stm) EOF
     {
-      { syntax = Dialect_tag.Att
-      ; program
-      }
+      Ast.make
+        ~dialect:(Act_common.Id.of_string "att")
+        ~program
+	()
     }
 
 stm:

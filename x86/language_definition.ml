@@ -21,6 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Act_common
 open Core_kernel
 open Travesty_containers
 include Language_definition_intf
@@ -166,7 +167,7 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
         let open Or_error.Let_syntax in
         let body = Ast.program prog in
         let%map bodies' = f body in
-        List.map bodies' ~f:(fun body' -> {prog with program= body'})
+        List.map bodies' ~f:(fun body' -> On_listings.map prog ~f:(fun _ -> body'))
     end
 
     module Constant = struct
@@ -302,10 +303,12 @@ let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
 
 module Herd7 = Make (Dialect.Herd7) (Pp.Herd7)
 
-let of_dialect = function
-  | Dialect_tag.Att ->
-      (module Att : S)
-  | Dialect_tag.Intel ->
-      (module Intel : S)
-  | Dialect_tag.Herd7 ->
-      (module Herd7 : S)
+let dialect_table : (Id.t, (module S)) List.Assoc.t Lazy.t =
+  lazy
+    [ (Id.of_string "att", (module Att))
+    ; (Id.of_string "intel", (module Intel))
+    ; (Id.of_string "herd7", (module Herd7)) ]
+
+let of_dialect : Id.t -> (module S) Or_error.t =
+  Staged.unstage
+    (Dialect.find_by_id dialect_table ~context:"finding a language definition")

@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -30,6 +30,21 @@ open Core_kernel
 
 (** [t] is the type of compiler and machine identifiers. *)
 type t
+
+(** {2 Constructing identifiers}
+
+    See also [Identifiable.S].
+*)
+
+(** {2 Destructing identifiers}
+
+    See also [Identifiable.S].
+*)
+
+val hd_reduce : t -> on_empty:(unit -> 'a) -> f:(string -> t -> 'a) -> 'a
+(** [hd_reduce id ~on_empty ~f] applies [on_empty ()] if [id] is empty,
+    or [f tag id'] if [id] comprises a head tag [tag] and trailing
+    id [id']. *)
 
 val of_string_list : string list -> t
 (** [of_string_list tags] produces an identifier from a tag list. *)

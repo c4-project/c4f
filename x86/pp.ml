@@ -44,6 +44,7 @@
 (****************************************************************************)
 
 open Base
+open Act_common
 open Ast
 
 let disp_positive = function
@@ -366,7 +367,7 @@ module Make (D : Dialect) = struct
         Fmt.pf f " " ; Fmt.cut f ()
 
   (* We don't print newlines out here due to nops and labels. *)
-  let pp = Fmt.(using (fun ast -> ast.program) (list pp_statement))
+  let pp = Fmt.(using Ast.program (list pp_statement))
 end
 
 module Att = Make (Att_specific)
@@ -405,15 +406,21 @@ module Herd7 = Make (struct
   include Intel_and_herd7
 end)
 
+let dialect_table : (Id.t, Ast.t Fmt.t) List.Assoc.t Lazy.t =
+  lazy
+    [ (Id.of_string "att", Att.pp)
+    ; (Id.of_string "intel", Intel.pp)
+    ; (Id.of_string "herd7", Herd7.pp) ]
+
+let get_pp_inner : Id.t -> Ast.t Fmt.t Or_error.t =
+  Staged.unstage (Dialect.find_by_id dialect_table ~context:"Pretty-printing")
+
+let get_pp (id : Id.t) : Ast.t Fmt.t =
+  match get_pp_inner id with
+  | Ok fmt -> fmt
+  | Error _ ->
+    Fmt.(always "<Error getting pretty-printer>")
+
+(* TODO(@MattWindsor91): shouldn't box here. *)
 let pp_ast =
-  Fmt.box (fun f ast ->
-      let pps =
-        match ast.syntax with
-        | Dialect_tag.Att ->
-            Att.pp
-        | Dialect_tag.Intel ->
-            Intel.pp
-        | Dialect_tag.Herd7 ->
-            Herd7.pp
-      in
-      pps f ast )
+  Fmt.box (fun f ast -> get_pp (Ast.dialect ast) f ast)

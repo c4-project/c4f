@@ -24,8 +24,9 @@
 (** Building asm-job runners for x86. *)
 
 open Base
+open Act_common
 
-val get_runner : string list -> (module Lib.Asm_job.Runner) Or_error.t
-(** [get_runner emits_tail] tries to get an asm-job runner for the x86
-    dialect described by [emits_tail] (which should be an architecture
+val get_runner : Id.t -> (module Lib.Asm_job.Runner) Or_error.t
+(** [get_runner dialect] tries to get an asm-job runner for the x86
+    dialect described by [dialect] (which should be an architecture
     identifier, less 'x86'. *)

@@ -1,6 +1,8 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor (parts (c) 2010-2018 Institut National
+   Copyright (c) 2018, 2019 by Matt Windsor
+
+   (parts (c) 2010-2018 Institut National
    de Recherche en Informatique et en Automatique, Jade Alglave, and Luc
    Maranget)
 
@@ -23,28 +25,28 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-   This file derives from the Herd7 project
+   This file derives in part from the Herd7 project
    (https://github.com/herd/herdtools7); its original attribution and
    copyright notice follow. *)
 
-(****************************************************************************)
-(* the diy toolsuite *)
-(*  *)
-(* Jade Alglave, University College London, UK. *)
-(* Luc Maranget, INRIA Paris-Rocquencourt, France. *)
-(*  *)
-(* Copyright 2010-present Institut National de Recherche en Informatique et *)
-(* en Automatique and the authors. All rights reserved. *)
-(*  *)
-(* This software is governed by the CeCILL-B license under French law and *)
-(* abiding by the rules of distribution of free software. You can use, *)
-(* modify and/ or redistribute the software under the terms of the CeCILL-B *)
-(* license as circulated by CEA, CNRS and INRIA at the following URL *)
-(* "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
-(****************************************************************************)
+(* the diy toolsuite
+
+   Jade Alglave, University College London, UK.
+
+   Luc Maranget, INRIA Paris-Rocquencourt, France.
+
+   Copyright 2010-present Institut National de Recherche en Informatique et
+   en Automatique and the authors. All rights reserved.
+
+   This software is governed by the CeCILL-B license under French law and by
+   the rules of distribution of free software. You can use, and/ or
+   redistribute the software under the terms of the CeCILL-B license as
+   circulated by CEA, CNRS and INRIA at the following URL
+   "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
 (** Generic, low-level abstract syntax tree for AT&T and Intel x86 *)
 
+open Act_common
 open Core_kernel
 open Utils
 
@@ -260,8 +262,18 @@ module Statement : sig
     Travesty.Traversable.S0 with type t := t and type Elt.t = string
 end
 
-type t = {syntax: Dialect_tag.t; program: Statement.t list}
-[@@deriving sexp, eq, fields]
+(** Opaque type of dialect-tagged abstract syntax trees. *)
+type t [@@deriving sexp, equal]
+
+val make : ?program:Statement.t list -> dialect:Id.t ->  unit -> t
+(** [make ?program ~dialect ()] makes an AST with program [program]
+    (default: empty), tagged with dialect [dialect]. *)
+
+val dialect : t -> Id.t
+(** [dialect ast] gets the dialect with which [ast] is tagged. *)
+
+val program : t -> Statement.t list
+(** [program ast] gets the list of statements inside [ast]. *)
 
 (** Traversing over the statement list in a [t] *)
 module On_listings :

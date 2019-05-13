@@ -23,6 +23,8 @@
 
 (** Top-level language modules for x86 *)
 
+open Base
+open Act_common
 include module type of Language_definition_intf
 
 (** [Att] is a language description for the AT&T dialect of x86. *)
@@ -34,5 +36,7 @@ module Intel : S
 (** [Herd7] is a language description for the Herd7 dialect of x86. *)
 module Herd7 : S
 
-val of_dialect : Dialect_tag.t -> (module S)
-(** [of_dialect] gets the correct [S] module for a dialect. *)
+val of_dialect : Id.t -> (module S) Or_error.t
+(** [of_dialect id] gets the correct [S] module for the dialect with ID [id].
+
+    If one doesn't exist, [of_dialect] returns an error. *)

@@ -69,8 +69,7 @@ struct
 
   let convert_listing = List.map ~f:convert_statement
 
-  let convert {Ast.program; _} =
+  let convert (ast : Ast.t) =
     (* TODO(@MattWindsor91): check the source dialect. *)
-    let program' = convert_listing program in
-    {Ast.syntax= DD.dialect; program= program'}
+    Ast.On_listings.map ~f:convert_listing ast
 end

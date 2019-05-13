@@ -43,11 +43,13 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 (****************************************************************************)
 
+open Base
 open Utils
+open Act_common
 include Dialect_intf
 
 module Att = struct
-  let dialect = Dialect_tag.Att
+  let dialect : Id.t = Id.of_string "att"
 
   include Src_dst.Make (struct
     let operand_order = Src_dst.Src_then_dst
@@ -59,7 +61,7 @@ module Att = struct
 end
 
 module Intel = struct
-  let dialect = Dialect_tag.Intel
+  let dialect : Id.t = Id.of_string "intel"
 
   include Src_dst.Make (struct
     let operand_order = Src_dst.Dst_then_src
@@ -71,7 +73,7 @@ module Intel = struct
 end
 
 module Herd7 = struct
-  let dialect = Dialect_tag.Herd7
+  let dialect : Id.t = Id.of_string "herd7"
 
   include Src_dst.Make (struct
     let operand_order = Src_dst.Dst_then_src
@@ -82,3 +84,18 @@ module Herd7 = struct
 
   let symbolic_jump_type = `Immediate
 end
+
+let find_by_id (type a) (table : (Id.t, a) List.Assoc.t Lazy.t)
+    ~(context:string)
+  : (Id.t -> a Or_error.t) Staged.t =
+  Staged.stage (fun id ->
+  id
+  |> List.Assoc.find (Lazy.force table) ~equal:[%equal: Id.t]
+  |> Result.of_option
+    ~error:(Error.create_s
+              [%message
+                "Unknown or unsupported x86 dialect"
+                  ~context
+                  ~id:(id : Id.t)
+              ]
+      ))

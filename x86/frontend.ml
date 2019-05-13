@@ -22,8 +22,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Act_common
 
-module type S = Utils.Frontend.S with type ast := Ast.t
+include Frontend_intf
 
 module Att : S = Utils.Frontend.Make (struct
   type ast = Ast.t
@@ -37,9 +38,9 @@ module Att : S = Utils.Frontend.Make (struct
   let message = Att_messages.message
 end)
 
-let of_dialect = function
-  | Dialect_tag.Att ->
-      Or_error.return (module Att : S)
-  | (Dialect_tag.Herd7 | Dialect_tag.Intel) as d ->
-      Or_error.error_s
-        [%message "x86 dialect unsupported" ~dialect:(d : Dialect_tag.t)]
+let dialect_table : (Id.t, (module S)) List.Assoc.t Lazy.t =
+  lazy
+    [ Id.of_string "att", (module Att) ]
+
+let of_dialect : Id.t -> (module S) Or_error.t =
+  Staged.unstage (Dialect.find_by_id dialect_table ~context:"parsing frontend")

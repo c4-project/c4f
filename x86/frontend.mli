@@ -24,13 +24,9 @@
 (** Language frontends for x86 *)
 
 open Base
+open Act_common
 
-(** [S] is the type of x86 language frontends. *)
-module type S = Utils.Frontend.S with type ast := Ast.t
+include module type of Frontend_intf
 
-(** [Att] is a parser/lexer combination for the AT&T syntax of x86 assembly,
-    as emitted by compilers like gcc. *)
-module Att : S
-
-val of_dialect : Dialect_tag.t -> (module S) Or_error.t
+val of_dialect : Id.t -> (module S) Or_error.t
 (** [of_dialect] gets the correct frontend module for a dialect. *)
