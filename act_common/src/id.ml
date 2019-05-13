@@ -21,7 +21,9 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
+open Core_kernel
+module Sx = String_extended
+module Tx = Travesty_core_kernel_exts
 
 module T = struct
   (** [t] is the type of compiler IDs. *)
@@ -48,6 +50,30 @@ let ( @. ) : t -> t -> t = ( @ )
 let hd_reduce (id : t) ~(on_empty : unit -> 'a) ~(f : string -> t -> 'a) :
     'a =
   match id with [] -> on_empty () | x :: xs -> f x xs
+
+let edit_distance : t -> t -> int = Tx.Fn.on to_string ~f:Sx.edit_distance
+
+let suggestions (assoc : (t, 'a) List.Assoc.t) (id : t) : t list =
+  let all =
+    assoc
+    |> List.map ~f:(fun (id', _) -> (id', edit_distance id id'))
+    |> List.sort ~compare:(Comparable.lift Int.compare ~f:snd)
+    |> List.map ~f:fst
+  in
+  List.take all 5
+
+let error_with_suggestions (assoc : (t, 'a) List.Assoc.t) (id : t)
+    ~(id_type : string) () : 'a Or_error.t =
+  let sgs = suggestions assoc id in
+  Or_error.error_s
+    [%message
+      "unknown ID" ~of_type:id_type ~id:(id : t) ~suggestions:(sgs : t list)]
+
+let try_find_assoc_with_suggestions (assoc : (t, 'a) List.Assoc.t) (id : t)
+    ~(id_type : string) : 'a Or_error.t =
+  List.Assoc.find assoc ~equal id
+  |> Option.map ~f:Or_error.return
+  |> Tx.Option.value_f ~default_f:(error_with_suggestions assoc id ~id_type)
 
 let%expect_test "equality is case-insensitive" =
   Sexp.output_hum Out_channel.stdout

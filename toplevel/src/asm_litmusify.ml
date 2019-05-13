@@ -141,11 +141,15 @@ let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
 let get_arch (target : Config.Compiler.Target.t) : Sim.Arch.t =
   Assembly (Config.Compiler.Target.arch target)
 
-let to_machine_id = function
-  | `Id id ->
-      id
-  | `Arch _ ->
-      Config.Machine.Id.default
+let to_machine_id (cfg : Config.Act.t) compiler_id_or_emits :
+    Config.Machine.Id.t Or_error.t =
+  Or_error.Let_syntax.(
+    match%map Common.get_target cfg compiler_id_or_emits with
+    | `Spec s ->
+        s |> Config.Compiler.Spec.With_id.machine
+        |> Config.Machine.Spec.With_id.id
+    | `Arch _ ->
+        Config.Machine.Id.default)
 
 let run file_type (simulator : A.Id.t option) compiler_id_or_emits
     (c_globals : string list option) (c_locals : string list option)
@@ -159,7 +163,8 @@ let run file_type (simulator : A.Id.t option) compiler_id_or_emits
   let module R = Sim_support.Make_resolver (struct
     let cfg = cfg
   end) in
-  let%bind mtab = R.make_table (to_machine_id compiler_id_or_emits) in
+  let%bind machine_id = to_machine_id cfg compiler_id_or_emits in
+  let%bind mtab = R.make_table machine_id in
   let%bind (module Filter) = make_filter filter target mtab in
   let passes =
     Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard

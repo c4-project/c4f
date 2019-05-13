@@ -67,6 +67,8 @@ module type Basic = sig
   (** [t] is the opaque type of specifications. *)
   type t
 
+  val type_name : string
+
   include Common with type t := t
 
   (** [With_id] contains types and functions for handling bundles of spec ID

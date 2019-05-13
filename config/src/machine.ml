@@ -214,6 +214,9 @@ module Spec = struct
 
   include Spec.Make (struct
     include M
+
+    let type_name = "machine"
+
     module With_id = With_id
   end)
 end

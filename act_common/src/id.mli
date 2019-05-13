@@ -59,6 +59,13 @@ val is_prefix : t -> prefix:t -> bool
     An ID is a prefix of another ID if its list of tags is a prefix of the
     other ID's list of tags, modulo case. *)
 
+val try_find_assoc_with_suggestions :
+  (t, 'a) List.Assoc.t -> t -> id_type:string -> 'a Or_error.t
+(** [try_find_assoc_with_suggestions assoc id ~id_type] tries to find an ID
+    [id] in an associative list [assoc]. If it can't find one, it returns an
+    error mentioning [id_type], with edit-distance-based suggestions drawn
+    from [assoc]. *)
+
 (** We can use [t] as an [Identifiable]. *)
 include Identifiable.S with type t := t
 

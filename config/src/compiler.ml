@@ -95,6 +95,9 @@ struct
 
   include Spec.Make (struct
     include M
+
+    let type_name = "compiler"
+
     module With_id = With_id
   end)
 end

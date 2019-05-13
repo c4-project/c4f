@@ -66,6 +66,8 @@ end
 module type Basic = sig
   type t
 
+  val type_name : string
+
   include Common with type t := t
 
   module With_id : S_with_id with type elt := t
@@ -122,13 +124,12 @@ module Make (B : Basic) :
 
     include SM
 
-    let get specs id =
-      List.Assoc.find specs ~equal:Id.equal id
-      |> Option.map ~f:(fun spec -> With_id.make ~id ~spec)
-      |> Result.of_option
-           ~error:
-             (Error.create_s
-                [%message "unknown compiler ID" ~id:(id : Id.t)])
+    let get specs (id : Id.t) =
+      Or_error.Let_syntax.(
+        let%map spec =
+          Id.try_find_assoc_with_suggestions specs id ~id_type:type_name
+        in
+        With_id.make ~id ~spec)
 
     let of_list xs =
       let open Or_error.Let_syntax in
