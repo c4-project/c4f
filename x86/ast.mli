@@ -260,7 +260,7 @@ module Statement : sig
     Travesty.Traversable.S0 with type t := t and type Elt.t = string
 end
 
-type t = {syntax: Dialect.t; program: Statement.t list}
+type t = {syntax: Dialect_tag.t; program: Statement.t list}
 [@@deriving sexp, eq, fields]
 
 (** Traversing over the statement list in a [t] *)

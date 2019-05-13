@@ -44,40 +44,10 @@
 (****************************************************************************)
 
 open Utils
-
-module M = struct
-  type t = Att | Intel | Herd7 [@@deriving compare, hash, sexp]
-end
-
-include M
-
-module Name_table = String_table.Make (struct
-  type nonrec t = t
-
-  let table = [(Att, "ATT"); (Intel, "Intel"); (Herd7, "Herd7")]
-end)
-
-include String_table.To_identifiable (struct
-  include M
-  include Name_table
-end)
-
-module type Has_dialect = sig
-  val dialect : t
-end
-
-module type S = sig
-  include Has_dialect
-
-  include Src_dst.S
-
-  val has_size_suffix : bool
-
-  val symbolic_jump_type : [`Indirect | `Immediate]
-end
+include Dialect_intf
 
 module Att = struct
-  let dialect = Att
+  let dialect = Dialect_tag.Att
 
   include Src_dst.Make (struct
     let operand_order = Src_dst.Src_then_dst
@@ -89,7 +59,7 @@ module Att = struct
 end
 
 module Intel = struct
-  let dialect = Intel
+  let dialect = Dialect_tag.Intel
 
   include Src_dst.Make (struct
     let operand_order = Src_dst.Dst_then_src
@@ -101,7 +71,7 @@ module Intel = struct
 end
 
 module Herd7 = struct
-  let dialect = Herd7
+  let dialect = Dialect_tag.Herd7
 
   include Src_dst.Make (struct
     let operand_order = Src_dst.Dst_then_src

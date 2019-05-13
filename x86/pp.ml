@@ -409,11 +409,11 @@ let pp_ast =
   Fmt.box (fun f ast ->
       let pps =
         match ast.syntax with
-        | Dialect.Att ->
+        | Dialect_tag.Att ->
             Att.pp
-        | Dialect.Intel ->
+        | Dialect_tag.Intel ->
             Intel.pp
-        | Dialect.Herd7 ->
+        | Dialect_tag.Herd7 ->
             Herd7.pp
       in
       pps f ast )

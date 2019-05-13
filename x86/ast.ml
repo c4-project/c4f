@@ -651,7 +651,7 @@ end
 
 (** [t] is the type of an X86 abstract syntax tree, containing the specific
     X86 syntax dialect and a list of statements. *)
-type t = {syntax: Dialect.t; program: Statement.t list}
+type t = {syntax: Dialect_tag.t; program: Statement.t list}
 [@@deriving sexp, eq, fields]
 
 (** Base mapper for ASTs *)

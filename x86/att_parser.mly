@@ -77,7 +77,7 @@ copyright notice follow. *)
 main:
   | program=list(stm) EOF
     {
-      { syntax = Dialect.Att
+      { syntax = Dialect_tag.Att
       ; program
       }
     }

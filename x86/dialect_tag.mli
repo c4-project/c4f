@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,16 +21,22 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Language frontends for x86 *)
+(** Enumeration of the various x86 dialects, and related purposes. *)
 
-open Base
+open Utils
+open Core_kernel
 
-(** [S] is the type of x86 language frontends. *)
-module type S = Utils.Frontend.S with type ast := Ast.t
+(** Enumeration of the various dialects of x86 syntax. *)
+type t =
+  | Att (* AT&T syntax (like GNU as) *)
+  | Intel (* Intel syntax *)
+  | Herd7 (* Herd7 syntax (somewhere in between) *)
+[@@deriving sexp, compare, hash]
 
-(** [Att] is a parser/lexer combination for the AT&T syntax of x86 assembly,
-    as emitted by compilers like gcc. *)
-module Att : S
+(** [Name_table] associates each dialect with its string name. *)
+module Name_table : String_table.S with type t := t
 
-val of_dialect : Dialect_tag.t -> (module S) Or_error.t
-(** [of_dialect] gets the correct frontend module for a dialect. *)
+include Identifiable.S_plain with type t := t
+
+(** Dialect tags can be pretty-printed. *)
+include Pretty_printer.S with type t := t

@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,16 +21,22 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Language frontends for x86 *)
+(** [S] is the signature of language modules over the X86 AST. *)
+module type S = sig
+  include Dialect.S
 
-open Base
+  include Pp.Printer
 
-(** [S] is the type of x86 language frontends. *)
-module type S = Utils.Frontend.S with type ast := Ast.t
+  include
+    Language.Definition.S
+    with type Constant.t = Ast.Operand.t
+     and type Location.t = Ast.Location.t
+     and type Instruction.t = Ast.Instruction.t
+     and type Statement.t = Ast.Statement.t
+     and type Program.t = Ast.t
+     and type Symbol.t = string
 
-(** [Att] is a parser/lexer combination for the AT&T syntax of x86 assembly,
-    as emitted by compilers like gcc. *)
-module Att : S
-
-val of_dialect : Dialect_tag.t -> (module S) Or_error.t
-(** [of_dialect] gets the correct frontend module for a dialect. *)
+  val make_jump_operand : string -> Ast.Operand.t
+  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the correct
+      abstract syntax for this version of x86. *)
+end

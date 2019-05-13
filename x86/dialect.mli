@@ -43,52 +43,9 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 (****************************************************************************)
 
-(** Enumeration of, and facts about, x86 dialects *)
+(** x86 dialect structures. *)
 
-open Utils
-
-(** [t] enumerates the various dialects of x86 syntax. *)
-type t =
-  | Att (* AT&T syntax (like GNU as) *)
-  | Intel (* Intel syntax *)
-  | Herd7 (* Herd7 syntax (somewhere in between) *)
-[@@deriving sexp, compare, hash]
-
-(** [Name_table] associates each dialect with its string name. *)
-module Name_table : String_table.S with type t := t
-
-include Core.Identifiable.S_plain with type t := t
-
-val pp : Format.formatter -> t -> unit
-(** [pp f syn] pretty-prints a dialect name [syn] onto formatter [f]. *)
-
-(** [Has_dialect] is a signature for modules that report a specific dialect. *)
-module type Has_dialect = sig
-  val dialect : t
-end
-
-(** [S] is the interface of modules containing x86 dialect information. *)
-module type S = sig
-  include Has_dialect
-
-  (** This lets us query a dialect's operand order. *)
-  include Src_dst.S
-
-  val has_size_suffix : bool
-  (** [has_size_suffix] gets whether this dialect uses AT&T-style size
-      suffixes. *)
-
-  val symbolic_jump_type : [`Indirect | `Immediate]
-  (** [symbolic_jump_type] gets the type of syntax this dialect _appears_ to
-      use for symbolic jumps.
-
-      In all x86 dialects, a jump to a label is `jCC LABEL`, where `CC` is
-      `mp` or some condition. Because of the way we parse x86, the label
-      resolves to different abstract syntax depending on the dialect.
-
-      In AT&T, symbolic jumps look like indirect displacements; in Intel and
-      Herd7, they look like immediate values. *)
-end
+include module type of Dialect_intf
 
 (** [Att] describes the AT&T dialect of x86 assembly. *)
 module Att : S

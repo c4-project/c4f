@@ -38,8 +38,8 @@ module Att : S = Utils.Frontend.Make (struct
 end)
 
 let of_dialect = function
-  | Dialect.Att ->
+  | Dialect_tag.Att ->
       Or_error.return (module Att : S)
-  | (Dialect.Herd7 | Dialect.Intel) as d ->
+  | (Dialect_tag.Herd7 | Dialect_tag.Intel) as d ->
       Or_error.error_s
-        [%message "x86 dialect unsupported" ~dialect:(d : Dialect.t)]
+        [%message "x86 dialect unsupported" ~dialect:(d : Dialect_tag.t)]

@@ -25,7 +25,7 @@ open Base
 module Tx = Travesty_base_exts
 
 let try_get_dialect dialect =
-  dialect |> Dialect.Name_table.of_string
+  dialect |> Dialect_tag.Name_table.of_string
   |> Result.of_option
        ~error:(Error.create_s [%message "Unknown X86 dialect" ~dialect])
 

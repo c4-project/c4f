@@ -23,23 +23,7 @@
 
 open Core_kernel
 open Travesty_containers
-
-module type S = sig
-  include Dialect.S
-
-  include Pp.Printer
-
-  include
-    Language.Definition.S
-    with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.Location.t
-     and type Instruction.t = Ast.Instruction.t
-     and type Statement.t = Ast.Statement.t
-     and type Program.t = Ast.t
-     and type Symbol.t = string
-
-  val make_jump_operand : string -> Ast.Operand.t
-end
+include Language_definition_intf
 
 module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
   include T
@@ -319,9 +303,9 @@ let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
 module Herd7 = Make (Dialect.Herd7) (Pp.Herd7)
 
 let of_dialect = function
-  | Dialect.Att ->
+  | Dialect_tag.Att ->
       (module Att : S)
-  | Dialect.Intel ->
+  | Dialect_tag.Intel ->
       (module Intel : S)
-  | Dialect.Herd7 ->
+  | Dialect_tag.Herd7 ->
       (module Herd7 : S)

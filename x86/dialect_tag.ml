@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,16 +21,21 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Language frontends for x86 *)
+open Utils
 
-open Base
+module M = struct
+  type t = Att | Intel | Herd7 [@@deriving sexp, compare, hash]
+end
 
-(** [S] is the type of x86 language frontends. *)
-module type S = Utils.Frontend.S with type ast := Ast.t
+module Name_table = String_table.Make (struct
+  type t = M.t
 
-(** [Att] is a parser/lexer combination for the AT&T syntax of x86 assembly,
-    as emitted by compilers like gcc. *)
-module Att : S
+  let table = [(M.Att, "ATT"); (M.Intel, "Intel"); (M.Herd7, "Herd7")]
+end)
 
-val of_dialect : Dialect_tag.t -> (module S) Or_error.t
-(** [of_dialect] gets the correct frontend module for a dialect. *)
+include M
+
+include String_table.To_identifiable (struct
+  include M
+  include Name_table
+end)
