@@ -34,14 +34,6 @@ val warn_if_not_tracking_symbols :
     [c_symbols] is empty. The warning explains that, without any C symbols
     to track, act may make incorrect assumptions. *)
 
-val get_target :
-     Config.Act.t
-  -> [< `Id of Id.t | `Arch of Id.t]
-  -> Config.Compiler.Target.t Or_error.t
-(** [get_target cfg target] processes a choice between compiler ID and
-    architecture ID; if the input is a compiler ID, the compiler is
-    retrieved from [cfg]. *)
-
 val asm_runner_of_target :
   Config.Compiler.Target.t -> (module Asm_job.Runner) Or_error.t
 (** [asm_runner_of_target target] gets the [Asm_job.Runner] associated with
@@ -95,6 +87,15 @@ val lift_command_with_files :
     {{!lift_command} lift_command}, but also handles (and supplies) optional
     input and output files. *)
 
+val lift_asm_command :
+    f:(Args.Standard_asm.t -> Output.t -> Config.Act.t -> unit Or_error.t)
+    -> Args.Standard_asm.t
+    -> unit
+(** [lift_asm_command ~f args] behaves like
+   {{!lift_command_with_files} lift_command_with_files}, but also
+   handles (and supplies) the various standard asm command arguments,
+   including sanitiser passes. *)
+
 (** {2 Single-file pipelines}
 
     These are the common pipelines that most of the single-file commands are
@@ -142,12 +143,14 @@ val make_compiler_input :
     pipeline [dl_output], which contains any postcondition and discovered C
     variables. *)
 
+(** {2 Assembly commands} *)
+
+(* TODO(@MattWindsor91): these should be in a new module. *)
+
 val collect_cvars :
-     ?c_globals:string list
-  -> ?c_locals:string list
-  -> unit
-  -> C_variables.Map.t option Or_error.t
-(** [collect_cvars ?c_globals ?c_locals ()] tries to merge C global and
-    local variable lists, creating a single C variables map.
+  Args.Standard_asm.t ->
+  C_variables.Map.t option Or_error.t
+(** [collect_cvars args] tries to merge the C global and
+    local variable lists given in [args], creating a single C variables map.
 
     This is useful for passing into things like [make_compiler_input]. *)

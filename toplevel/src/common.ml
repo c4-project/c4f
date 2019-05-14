@@ -46,19 +46,6 @@ let warn_if_not_tracking_symbols (o : A.Output.t) :
   | Some _ ->
       ()
 
-let get_target_from_id cfg (id : A.Id.t) =
-  Or_error.Let_syntax.(
-    let%map spec =
-      Config.Compiler.Spec.Set.get (Config.Act.compilers cfg) id
-    in
-    `Spec spec)
-
-let get_target cfg = function
-  | `Id id ->
-      get_target_from_id cfg id
-  | `Arch _ as arch ->
-      Or_error.return arch
-
 let asm_runner_of_target (tgt : Config.Compiler.Target.t) :
     (module Asm_job.Runner) Or_error.t =
   Language_support.asm_runner_from_arch (Config.Compiler.Target.arch tgt)
@@ -159,9 +146,10 @@ let choose_cvars (o : A.Output.t) (user_cvars : A.C_variables.Map.t option)
       (Option.map ~f:C_identifier.Map.keys cvars) ;
   cvars
 
-let collect_cvars ?(c_globals : string list option)
-    ?(c_locals : string list option) () :
-    A.C_variables.Map.t option Or_error.t =
+let collect_cvars (args : Args.Standard_asm.t) :
+  A.C_variables.Map.t option Or_error.t =
+  let c_globals = Args.Standard_asm.c_globals args in
+  let c_locals = Args.Standard_asm.c_locals args in
   let open Or_error.Let_syntax in
   let module V = A.C_variables in
   let%bind globals =
@@ -230,14 +218,25 @@ module Make_lifter (B : Basic_lifter) = struct
     |> A.Output.print_error o
 end
 
-module Standard_lifter = Make_lifter (struct
-  type t = Args.Standard.t
-
-  let as_standard_args = Fn.id
-end)
+module Standard_lifter = Make_lifter (Args.Standard)
 
 let lift_command = Standard_lifter.lift
 
 module With_files_lifter = Make_lifter (Args.Standard_with_files)
 
 let lift_command_with_files = With_files_lifter.lift
+
+module Asm_lifter = Make_lifter (Args.Standard_asm)
+
+(* Asm command lifting is a bit more sophisticated, since
+   [sanitiser_passes] is now a standard argument, and
+   we don't have compiler or machine predicates.
+ *)
+
+let lift_asm_command
+    ~(f : Args.Standard_asm.t -> A.Output.t -> Config.Act.t -> unit Or_error.t)
+    (args : Args.Standard_asm.t) : unit =
+  Asm_lifter.lift
+    ?sanitiser_passes:(Args.Standard_asm.sanitiser_passes args)
+    ~f
+    args

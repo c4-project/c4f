@@ -25,7 +25,6 @@
 
 open Core_kernel
 open Act_common
-open Utils
 
 include module type of Args_intf
 
@@ -33,51 +32,19 @@ include module type of Args_intf
 
 (** Module implementing a common way to retrieve and work with the act
     standard argument set. *)
-module Standard : S_standard
+module Standard : sig
+  type t
+  include S_standard with type t := t and type s := t
+end
 
 (** Variant of {{!Standard} Standard} including arguments for (optional)
     input and output files. This is useful for exposing a filter as an act
     command. *)
-module Standard_with_files : sig
-  (** Opaque type of processed argument records. *)
-  type t
+module Standard_with_files : S_standard_with_files with type s := Standard.t
 
-  include S_standard with type t := t
-
-  val as_standard_args : t -> Standard.t
-  (** [as_standard_args args] extracts a {{!Standard.t} Standard.t} from
-      [args]. *)
-
-  (** {3 Retrieving input and output files} *)
-
-  val infile_raw : t -> string option
-  (** [infile_raw args] gets the input file as provided as an argument, if
-      one indeed was. *)
-
-  val infile_fpath : t -> Fpath.t option Or_error.t
-  (** [infile_fpath args] behaves as {{!infile_raw} infile_raw}, but tries
-      to parse any given input file as an Fpath. This may fail if the path
-      is ill-formed. *)
-
-  val infile_source : t -> Io.In_source.t Or_error.t
-  (** [infile_source args] behaves as {{!infile_raw} infile_raw}, but tries
-      to convert the result to an {{!Io.In_source.t} In_source.t}. This may
-      fail if the path is ill-formed. *)
-
-  val outfile_raw : t -> string option
-  (** [outfile_raw args] gets the output file as provided as an argument, if
-      one indeed was. *)
-
-  val outfile_fpath : t -> Fpath.t option Or_error.t
-  (** [outfile_fpath args] behaves as {{!outfile_raw} outfile_raw}, but
-      tries to parse any given output file as an Fpath. This may fail if the
-      path is ill-formed. *)
-
-  val outfile_sink : t -> Io.Out_sink.t Or_error.t
-  (** [outfile_sink args] behaves as {{!outfile_raw} outfile_raw}, but tries
-      to convert the result to an {{!Io.Out_sink.t} Out_sink.t}. This may
-      fail if the path is ill-formed. *)
-end
+(** Variant of {{!Standard_with_files} Standard_with_files} including
+    the standard [act asm] arguments. *)
+module Standard_asm : S_standard_asm with type s := Standard.t
 
 (** {2 Miscellaneous argument helpers} *)
 
@@ -96,10 +63,6 @@ val arch :
   ?name:string -> ?doc:string -> unit -> Id.t option Command.Param.t
 (** [arch ?name ?doc ()] produces a parameter, normally named [-arch] but
     overridable by [name], that accepts an architecture ID. *)
-
-val compiler_id_or_arch : [> `Arch of Id.t | `Id of Id.t] Command.Param.t
-(** [compiler_id_or_arch] defines a choice between supplying a compiler ID,
-    or a direct architecture. *)
 
 val file_type : [> `C_litmus | `Assembly | `C | `Infer] Command.Param.t
 (** [file_type] defines a parameter for specifying the file type of a single

@@ -59,11 +59,12 @@ let run_with_input_fn (o : A.Output.t)
     in
     out)
 
-let run file_type compiler_id_or_arch output_format
-    (c_globals : string list option) (c_locals : string list option)
-    (args : Args.Standard_with_files.t) o cfg =
+let run
+    output_format
+    (args : Args.Standard_asm.t) o cfg =
   let open Or_error.Let_syntax in
-  let%bind target = Common.get_target cfg compiler_id_or_arch in
+  let raw_target = Args.Standard_asm.target args in
+  let%bind target = Asm_target.resolve ~cfg raw_target in
   let passes =
     Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.explain
   in
@@ -71,12 +72,13 @@ let run file_type compiler_id_or_arch output_format
     ignore (c_variables : A.C_variables.Map.t option) ;
     Asm_job.Explain_config.make ?format:output_format ()
   in
-  let%bind user_cvars = Common.collect_cvars ?c_globals ?c_locals () in
+  let%bind user_cvars = Common.collect_cvars args in
+  let file_type = Args.Standard_asm.file_type args in
   let compiler_input_fn =
     Common.make_compiler_input o file_type user_cvars explain_cfg passes
   in
-  let infile = Args.Standard_with_files.infile_raw args in
-  let outfile = Args.Standard_with_files.outfile_raw args in
+  let infile = Args.Standard_asm.infile_raw args in
+  let outfile = Args.Standard_asm.outfile_raw args in
   A.Output.pv o "About to get and run the explain filter.@." ;
   let%map out =
     run_with_input_fn o file_type target compiler_input_fn infile outfile
@@ -87,11 +89,7 @@ let run file_type compiler_id_or_arch output_format
 let command =
   Command.basic ~summary:"explains act's understanding of an assembly file"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_with_files.get
-      and sanitiser_passes = Args.sanitiser_passes
-      and compiler_id_or_arch = Args.compiler_id_or_arch
-      and c_globals = Args.c_globals
-      and c_locals = Args.c_locals
+      let%map_open standard_args = Args.Standard_asm.get
       and output_format =
         Asm_job.Explain_config.Format.(
           choose_one
@@ -105,10 +103,8 @@ let command =
                    ~doc:"Print explanation as lightly annotated assembly")
             ]
             ~if_nothing_chosen:(`Default_to None))
-      and file_type = Args.file_type in
+      in
       fun () ->
-        Common.lift_command_with_files standard_args ?sanitiser_passes
-          ~with_compiler_tests:false
-          ~f:
-            (run file_type compiler_id_or_arch output_format c_globals
-               c_locals))
+        Common.lift_asm_command standard_args
+          ~f:(run output_format))
+
