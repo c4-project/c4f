@@ -19,7 +19,7 @@ depends: [
   "fpath" {>= "0.7.2" & < "0.8"}
   "menhir" {>= "20181113"}
   "shell" {>= "v0.12" & < "v0.13"}
-  "travesty" {>= "0.4.1" & < "0.5"}
+  "travesty" {>= "0.5.1" & < "0.6"}
   "textutils_kernel" {>= "v0.12" & < "v0.13"}
 ]
 build: ["dune" "build" "-p" name "-j" jobs]
