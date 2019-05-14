@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,34 +21,13 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Base
+(** High-level front-end for assembly translation jobs
 
-module type Basic = Asm_job_intf.Runner_deps (* for now *)
+    [Job] specifies a signature, [Runner], that describes a module that
+    takes an act job specification (of type [t]) and, on success, produces
+    output (of type [output]). Such [Runner]s abstract over all of the I/O
+    plumbing and other infrastructure needed to do the jobs. *)
 
-(** Signature of constructed litmusifier modules. *)
-module type S = sig
-  (** Type of config. *)
-  type conf
+include module type of Runner_intf
 
-  (** Type of formatting directives. *)
-  type fmt
-
-  (** The AST module for the litmus test language we're targeting. *)
-  module Litmus : Litmus.Ast.S
-
-  (** The sanitiser module whose output we're litmusifying. *)
-  module Sanitiser : Sanitiser.S
-
-  val make :
-       config:conf
-    -> redirects:Sanitiser.Redirect.t
-    -> name:string
-    -> programs:Sanitiser.Output.Program.t list
-    -> Litmus.Validated.t Or_error.t
-  (** [make ~config ~redirects ~name ~programs] produces a *)
-
-  val print_litmus :
-    fmt -> Stdio.Out_channel.t -> Litmus.Validated.t -> unit
-  (** [print_litmus fmt oc ast] is the litmus test printer matching the
-      configuration [fmt]. *)
-end
+module Make (B : Basic) : S with module Basic = B

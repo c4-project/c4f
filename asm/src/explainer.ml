@@ -25,6 +25,22 @@ open Core_kernel
 module Tx = Travesty_core_kernel_exts
 include Explainer_intf
 
+(* Aliased because we shadow Config below. *)
+module Sanitiser_pass = Config.Sanitiser_pass
+
+module Config = struct
+  module Format = struct
+    type t = Assembly | Detailed [@@deriving sexp, equal]
+
+    let default = Assembly
+  end
+
+  type t = {format: Format.t [@default Format.default]}
+  [@@deriving sexp, equal, make]
+
+  let default : t = make ()
+end
+
 let pp_details pp_header pp_body =
   Fmt.(
     hvbox ~indent:4 (append (suffix sp (hvbox pp_header)) (braces pp_body)))
@@ -84,8 +100,12 @@ module Make_explanation (B : Basic_explanation) :
   let pp f t = pp_details B.pp pp_body f (original t, t)
 end
 
-module Make (Lang : Language.Definition.S) : S with module Lang := Lang =
-struct
+module Make (B : Runner.S) :
+  S with module Lang = B.Basic.Src_lang and type config = Config.t = struct
+  module Lang = B.Basic.Src_lang
+
+  type config = Config.t
+
   module Loc_explanation = struct
     module Flag = Abstract.Location.Flag
 
@@ -340,4 +360,58 @@ struct
   let print_symbol_table ?(oc : Stdio.Out_channel.t option) (exp : t) : unit
       =
     Abstract.Symbol.Table.print_as_table ?oc exp.symbol_table
+
+  let pp_for_explain_format : Config.Format.t -> t Fmt.t = function
+    | Assembly ->
+        pp_as_assembly
+    | Detailed ->
+        pp
+
+  let output_explanation output_format name outp exp redirects =
+    let f = Format.formatter_of_out_channel outp in
+    pp_for_explain_format output_format f exp ;
+    Format.pp_print_newline f () ;
+    B.make_output name redirects []
+
+  module LS = B.Basic.Src_lang
+  module SS = B.Basic.Single_sanitiser
+
+  let run_explanation (_osrc : Utils.Io.Out_sink.t) (outp : Out_channel.t)
+      ~(in_name : string) ~(program : LS.Program.t)
+      ~(symbols : LS.Symbol.t list) ~(config : config)
+      ~(passes : Sanitiser_pass.Set.t) : Job.Output.t Or_error.t =
+    let open Or_error.Let_syntax in
+    let%map san = SS.sanitise ~passes ~symbols program in
+    let program = SS.Output.programs san in
+    let listing = SS.Output.Program.listing program in
+    let s_table = SS.Output.Program.symbol_table program in
+    let exp = explain listing s_table in
+    let redirects = SS.Output.redirects san in
+    output_explanation config.format in_name outp exp
+      (SS.Redirect.to_string_alist redirects)
+
+  module Filter :
+    Utils.Filter.S
+    with type aux_i = Config.t Job.t
+     and type aux_o = Job.Output.t = B.Make_filter (struct
+    type cfg = Config.t
+
+    let name = "Explainer"
+
+    let tmp_file_ext = "txt"
+
+    let default_config () = Config.default
+
+    let run = run_explanation
+  end)
 end
+
+let get_filter (module Runner : Runner.S) :
+    (module Utils.Filter.S
+       with type aux_i = Config.t Job.t
+        and type aux_o = Job.Output.t) =
+  let module Exp = Make (Runner) in
+  (module Exp.Filter
+  : Utils.Filter.S
+    with type aux_i = Config.t Job.t
+     and type aux_o = Job.Output.t )

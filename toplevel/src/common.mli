@@ -25,7 +25,6 @@
 
 open Core_kernel
 open Act_common
-open Lib
 open Utils
 
 val warn_if_not_tracking_symbols :
@@ -35,7 +34,7 @@ val warn_if_not_tracking_symbols :
     to track, act may make incorrect assumptions. *)
 
 val asm_runner_of_target :
-  Config.Compiler.Target.t -> (module Asm_job.Runner) Or_error.t
+  Config.Compiler.Target.t -> (module Asm.Runner.S) Or_error.t
 (** [asm_runner_of_target target] gets the [Asm_job.Runner] associated with
     a target (either a compiler spec or emits clause). *)
 
@@ -103,7 +102,7 @@ val lift_asm_command :
 
 val delitmus_compile_asm_pipeline :
      Config.Compiler.Target.t
-  -> (   (module Asm_job.Runner)
+  -> (   (module Asm.Runner.S)
       -> (module Filter.S with type aux_i = 'i and type aux_o = 'o))
   -> (module Filter.S
         with type aux_i = Config.File_type.t_or_infer
@@ -117,10 +116,10 @@ val litmusify_pipeline :
   -> (module Filter.S
         with type aux_i = Config.File_type.t_or_infer
                           * (   C.Filters.Output.t Filter.chain_output
-                             -> Sexp.t Litmusifier.Config.t Asm_job.t
+                             -> Sexp.t Asm.Litmusifier.Config.t Asm.Job.t
                                 Config.Compiler.Chain_input.t)
          and type aux_o = C.Filters.Output.t option
-                          * (unit option * Asm_job.Output.t))
+                          * (unit option * Asm.Job.Output.t))
      Or_error.t
 (** [litmusify_pipeline target] builds a delitmusify-compile-litmusify
     pipeline for target [target]. *)
@@ -132,7 +131,7 @@ val make_compiler_input :
   -> (c_variables:C_variables.Map.t option -> 'cfg)
   -> Config.Sanitiser_pass.Set.t
   -> C.Filters.Output.t Filter.chain_output
-  -> 'cfg Asm_job.t Config.Compiler.Chain_input.t
+  -> 'cfg Asm.Job.t Config.Compiler.Chain_input.t
 (** [make_compiler_input o file_type user_cvars cfg_fun passes dl_output]
     generates the input to the compiler stage of a single-file pipeline.
 

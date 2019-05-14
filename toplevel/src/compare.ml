@@ -22,14 +22,13 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
-open Lib
 open Act_common
 open Utils
 
-let litmusify o passes spec c_file =
+let litmusify o (passes : Config.Sanitiser_pass.Set.t) spec c_file =
   let target = `Spec spec in
-  let config = Litmusifier.Config.make ~format:Programs_only () in
-  let litmus_job = Asm_job.(make ~config ~passes ()) in
+  let config = Asm.Litmusifier.Config.make ~format:Programs_only () in
+  let litmus_job = Asm.Job.make ~config ~passes () in
   let open Or_error.Let_syntax in
   let%bind (module Comp_lit) = Common.litmusify_pipeline target in
   let%map _, (_, out) =
@@ -41,7 +40,7 @@ let litmusify o passes spec c_file =
       (Io.In_source.file c_file)
       Io.Out_sink.stdout
   in
-  Output.pw o "@[%a@]@." Asm_job.Output.warn out
+  Output.pw o "@[%a@]@." Asm.Job.Output.warn out
 
 let run_spec_on_file o passes spec ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@." Id.pp

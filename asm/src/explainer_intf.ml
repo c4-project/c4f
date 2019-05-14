@@ -108,6 +108,8 @@ module type Explanation = sig
 end
 
 module type S = sig
+  type config
+
   (** [Lang] is the language definition this explainer is targeting. *)
   module Lang : Language.Definition.S
 
@@ -181,4 +183,9 @@ module type S = sig
   val explain : Lang.Program.t -> Abstract.Symbol.Table.t -> t
   (** [explain prog symbol_table] compiles a [t] for program [prog], whose
       symbol table is [symbol_table]. *)
+
+  module Filter :
+    Utils.Filter.S
+    with type aux_i = config Job.t
+     and type aux_o = Job.Output.t
 end

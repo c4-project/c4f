@@ -23,7 +23,6 @@
 
 open Core_kernel
 open Utils
-open Lib
 open C
 include Compiler_intf
 module Tx = Travesty_core_kernel_exts
@@ -34,6 +33,7 @@ module Make (B : Basic) : S = struct
   include Common.Extend (B)
   module C_id = Config.Compiler.Spec.With_id
   module P_file = Pathset.File
+  module Litmusify = Asm.Litmusifier.Make (R)
 
   let emits = C_id.emits cspec
 
@@ -96,13 +96,13 @@ module Make (B : Basic) : S = struct
       ~out_file:(Fpath.to_string (P_file.asm_litmus_file fs))
       (fun () ->
         let%map output =
-          R.Litmusify.run_from_fpaths
-            (Asm_job.make ~passes:sanitiser_passes ~symbols:cvars ())
+          Litmusify.Filter.run_from_fpaths
+            (Asm.Job.make ~passes:sanitiser_passes ~symbols:cvars ())
             ~infile:(Some (P_file.asm_file fs))
             ~outfile:(Some (P_file.asm_litmus_file fs))
         in
-        A.Output.pw o "@[%a@]@." Asm_job.Output.warn output ;
-        Asm_job.Output.symbol_map output )
+        A.Output.pw o "@[%a@]@." Asm.Job.Output.warn output ;
+        Asm.Job.Output.symbol_map output )
 
   let a_herd_on_pathset_file (fs : Pathset.File.t) :
       Sim.Output.t T.t Or_error.t =

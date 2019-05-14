@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Lib
 open Utils
 module A = Act_common
 module Tx = Travesty_core_kernel_exts
@@ -108,14 +107,14 @@ let make_filter (filter : Post_filter.Cfg.t)
     (module Filter.S
        with type aux_i = ( Config.File_type.t_or_infer
                          * (   C.Filters.Output.t Filter.chain_output
-                            -> Sexp.t Litmusifier.Config.t Asm_job.t
+                            -> Sexp.t Asm.Litmusifier.Config.t Asm.Job.t
                                Config.Compiler.Chain_input.t) )
                          * (   ( C.Filters.Output.t option
-                               * (unit option * Asm_job.Output.t) )
+                               * (unit option * Asm.Job.Output.t) )
                                Filter.chain_output
                             -> Post_filter.Cfg.t)
         and type aux_o = ( C.Filters.Output.t option
-                         * (unit option * Asm_job.Output.t) )
+                         * (unit option * Asm.Job.Output.t) )
                          * unit option)
     Or_error.t =
   let open Or_error in
@@ -130,13 +129,15 @@ let parse_post :
             ~predicate:([%of_sexp: Sexp.t Litmus.Ast_base.Pred.t] sexp) )
 
 let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
-    (c_variables:A.C_variables.Map.t option -> Sexp.t Litmusifier.Config.t)
+    (   c_variables:A.C_variables.Map.t option
+     -> Sexp.t Asm.Litmusifier.Config.t)
     Or_error.t =
   let open Or_error.Let_syntax in
   let%map postcondition =
     Tx.Option.With_errors.map_m post_sexp ~f:parse_post
   in
-  fun ~c_variables -> Litmusifier.Config.make ?postcondition ?c_variables ()
+  fun ~c_variables ->
+    Asm.Litmusifier.Config.make ?postcondition ?c_variables ()
 
 let get_arch (target : Config.Compiler.Target.t) : Sim.Arch.t =
   Assembly (Config.Compiler.Target.arch target)

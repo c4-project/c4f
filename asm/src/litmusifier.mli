@@ -90,9 +90,20 @@ module Config : sig
       fail. *)
 end
 
-module Make (B : Basic) :
+module Make (B : Runner.S) :
   S
-  with type conf := B.Src_lang.Constant.t Config.t
+  with type conf := B.Basic.Src_lang.Constant.t Config.t
    and type fmt := Format.t
-   and type Sanitiser.Redirect.t = B.Multi_sanitiser.Redirect.t
-   and type Sanitiser.Output.Program.t = B.Multi_sanitiser.Output.Program.t
+   and type Sanitiser.Redirect.t = B.Basic.Multi_sanitiser.Redirect.t
+   and type Sanitiser.Output.Program.t =
+              B.Basic.Multi_sanitiser.Output.Program.t
+
+val get_filter :
+     (module Runner.S)
+  -> (module Utils.Filter.S
+        with type aux_i = Sexp.t Config.t Job.t
+         and type aux_o = Job.Output.t)
+(** [get_filter Runner] is [Runner.Litmusify], but with the input type
+    altered slightly so that the constants inside any litmus postconditions
+    are expected to be S-expressions, and unmarshalled into the appropriate
+    language at run-time. *)

@@ -1,0 +1,9 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name asm)
+ (inline_tests)
+ (preprocess
+  (pps ppx_deriving.std ppx_expect ppx_jane))
+ (libraries act_common config fmt fpath abstract litmus lib utils language
+   travesty travesty.core_kernel_exts core_kernel))

@@ -29,7 +29,7 @@ let get_runner (dialect : Id.t) =
   let open Or_error.Let_syntax in
   let%bind (module Frontend) = Frontend.of_dialect dialect in
   let%map (module Lang) = Language_definition.of_dialect dialect in
-  ( module Lib.Asm_job.Make_runner (struct
+  ( module Asm.Runner.Make (struct
     type ast = Ast.t
 
     module Src_lang = Lang
@@ -52,7 +52,6 @@ let get_runner (dialect : Id.t) =
     module Litmus_pp = Litmus.Pp.Make_tabular (Litmus_ast)
     module Multi_sanitiser = Sanitiser.Make_multi (Src_lang)
     module Single_sanitiser = Sanitiser.Make_single (Src_lang)
-    module Explainer = Lib.Explainer.Make (Src_lang)
     module Conv = Conv.Make (Src_lang) (Dst_lang)
 
     let convert_program = Conv.convert
@@ -61,4 +60,4 @@ let get_runner (dialect : Id.t) =
 
     let program = Fn.id
   end)
-  : Lib.Asm_job.Runner )
+  : Asm.Runner.S )

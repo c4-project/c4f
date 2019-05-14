@@ -32,7 +32,7 @@ let try_get_lang_proc (language : string) =
   |> Result.of_option
        ~error:(Error.create_s [%message "Unknown language" ~language])
 
-let asm_runner_from_arch : Id.t -> (module Lib.Asm_job.Runner) Or_error.t =
+let asm_runner_from_arch : Id.t -> (module Asm.Runner.S) Or_error.t =
   Id.hd_reduce
     ~on_empty:(fun () -> Or_error.error_string "Missing language name")
     ~f:(fun lang rest ->

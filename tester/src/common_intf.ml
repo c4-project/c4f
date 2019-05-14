@@ -25,7 +25,6 @@
 
 open Base
 open Act_common
-open Lib
 open Utils
 
 (** [Basic] is the signature common to most tester [Basic] signatures. *)
@@ -59,7 +58,7 @@ module type Basic_machine_and_up = sig
      and type 'a chain_input = 'a Config.Compiler.Chain_input.t
 
   val asm_runner_from_spec :
-    Config.Compiler.Spec.With_id.t -> (module Asm_job.Runner) Or_error.t
+    Config.Compiler.Spec.With_id.t -> (module Asm.Runner.S) Or_error.t
   (** [asm_runner_from_spec cspec] tries to get an [Asm_job.Runner]
       corresponding to [cspec]'s target architecture. *)
 end

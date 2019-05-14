@@ -23,7 +23,6 @@
 
 open Core_kernel
 open Act_common
-open Lib
 open Utils
 
 type spec =
@@ -76,20 +75,22 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Sequence.map ~f:diff_to_error
   |> Sequence.to_list |> Or_error.combine_errors_unit
 
-let regress_run_asm (module L : Asm_job.Runner) (dir : Fpath.t) mode specs
+let regress_run_asm (module L : Asm.Runner.S) (dir : Fpath.t) mode specs
     passes (file : Fpath.t) =
   let open Or_error.Let_syntax in
   let%bind filepath = to_full_path ~dir ~file in
   let%bind spec = find_spec specs file in
   let symbols = spec.c_globals @ spec.c_locals (* for now *) in
-  let input = Asm_job.make ~passes ~symbols in
+  let input = Asm.Job.make ~passes ~symbols in
+  let module Litmusify = Asm.Litmusifier.Make (L) in
+  let module Explain = Asm.Explainer.Make (L) in
   let%map _ =
     match mode with
     | `Litmusify ->
-        L.Litmusify.run_from_fpaths (input ()) ~infile:(Some filepath)
+        Litmusify.Filter.run_from_fpaths (input ()) ~infile:(Some filepath)
           ~outfile:None
     | `Explain ->
-        L.Explain.run_from_fpaths (input ()) ~infile:(Some filepath)
+        Explain.Filter.run_from_fpaths (input ()) ~infile:(Some filepath)
           ~outfile:None
   in
   ()

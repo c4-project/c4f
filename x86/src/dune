@@ -5,7 +5,7 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
- (libraries core_kernel travesty travesty.core_kernel_exts abstract lib
+ (libraries asm core_kernel travesty travesty.core_kernel_exts abstract lib
    litmus utils menhirLib))
 
 (ocamllex

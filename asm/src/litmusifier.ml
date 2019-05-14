@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
 include Litmusifier_intf
 module A = Act_common
 module Tx = Travesty_core_kernel_exts
@@ -86,8 +85,8 @@ end
 
 module Make_aux (B : Basic_aux) = struct
   type t =
-    { locations: C_identifier.t list option
-    ; init: (C_identifier.t, B.Dst_constant.t) List.Assoc.t
+    { locations: Utils.C_identifier.t list option
+    ; init: (Utils.C_identifier.t, B.Dst_constant.t) List.Assoc.t
     ; postcondition: B.Dst_constant.t Litmus.Ast_base.Postcondition.t option
     }
   [@@deriving fields, make]
@@ -97,14 +96,15 @@ module Make_aux (B : Basic_aux) = struct
     |> B.Dst_constant.of_int
 
   let make_init_from_vars (cvars : A.C_variables.Map.t) :
-      (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
-    cvars |> C_identifier.Map.to_alist
+      (Utils.C_identifier.t, B.Dst_constant.t) List.Assoc.t =
+    cvars |> Utils.C_identifier.Map.to_alist
     |> Tx.Alist.bi_map ~left:Fn.id ~right:record_to_constant
 
   let make_init_from_all_heap_symbols (heap_syms : Abstract.Symbol.Set.t) :
-      (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
+      (Utils.C_identifier.t, B.Dst_constant.t) List.Assoc.t =
     heap_syms |> Abstract.Symbol.Set.to_list
-    |> List.map ~f:(fun s -> (C_identifier.of_string s, B.Dst_constant.zero))
+    |> List.map ~f:(fun s ->
+           (Utils.C_identifier.of_string s, B.Dst_constant.zero) )
 
   (** [make_init config redirects progs] makes an init block either by
       taking the information given in [config] and applying [redirects] to
@@ -112,27 +112,27 @@ module Make_aux (B : Basic_aux) = struct
       each heap symbol to zero. *)
   let make_init (cvars_opt : A.C_variables.Map.t option)
       (heap_syms : Abstract.Symbol.Set.t) :
-      (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
+      (Utils.C_identifier.t, B.Dst_constant.t) List.Assoc.t =
     cvars_opt
     |> Option.map ~f:make_init_from_vars
     |> Tx.Option.value_f ~default_f:(fun () ->
            make_init_from_all_heap_symbols heap_syms )
 
   let make_locations_from_config (cvars : A.C_variables.Map.t) :
-      C_identifier.t list =
+      Utils.C_identifier.t list =
     cvars |> A.C_variables.Map.globals |> Set.to_list
 
   let make_locations_from_init
-      (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t) :
-      C_identifier.t list =
+      (init : (Utils.C_identifier.t, B.Dst_constant.t) List.Assoc.t) :
+      Utils.C_identifier.t list =
     List.map ~f:fst init
 
   (** [make_locations cvars_opt init] makes a 'locations' stanza, either by
       taking the variables in [cvars_opt] and applying [redirects] to them,
       or just by taking the LHS of [init]. *)
   let make_locations (cvars_opt : A.C_variables.Map.t option)
-      (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t) :
-      C_identifier.t list =
+      (init : (Utils.C_identifier.t, B.Dst_constant.t) List.Assoc.t) :
+      Utils.C_identifier.t list =
     match cvars_opt with
     | Some cvars ->
         make_locations_from_config cvars
@@ -146,12 +146,12 @@ module Make_aux (B : Basic_aux) = struct
       ~f:B.convert_const
 
   let is_live_symbol (heap_symbols : Abstract.Symbol.Set.t)
-      (cid : C_identifier.t) =
-    Abstract.Symbol.Set.mem heap_symbols (C_identifier.to_string cid)
+      (cid : Utils.C_identifier.t) =
+    Abstract.Symbol.Set.mem heap_symbols (Utils.C_identifier.to_string cid)
 
   let live_symbols_only (heap_symbols : Abstract.Symbol.Set.t) :
       A.C_variables.Map.t -> A.C_variables.Map.t =
-    C_identifier.Map.filter_keys ~f:(is_live_symbol heap_symbols)
+    Utils.C_identifier.Map.filter_keys ~f:(is_live_symbol heap_symbols)
 
   let live_config_variables (config : B.Src_constant.t Config.t)
       (redirects : B.Redirect.t) (heap_symbols : Abstract.Symbol.Set.t) :
@@ -189,14 +189,15 @@ let%test_module "Aux tests" =
       let convert_const = Or_error.return
     end)
 
-    let test_init : (C_identifier.t, int) List.Assoc.t =
-      C_identifier.
+    let test_init : (Utils.C_identifier.t, int) List.Assoc.t =
+      Utils.C_identifier.
         [(of_string "foo", 42); (of_string "bar", 27); (of_string "baz", 53)]
 
     let%expect_test "make_locations_from_init: test init" =
       Stdio.print_s
         [%sexp
-          (Aux.make_locations_from_init test_init : C_identifier.t list)] ;
+          ( Aux.make_locations_from_init test_init
+            : Utils.C_identifier.t list )] ;
       [%expect {| (foo bar baz) |}]
 
     let test_heap_symbols : Abstract.Symbol.Set.t =
@@ -205,7 +206,7 @@ let%test_module "Aux tests" =
     let test_global_cvars : A.C_variables.Map.t =
       A.C_variables.Map.of_single_scope_map
         ~scope:A.C_variables.Scope.Global
-        C_identifier.(
+        Utils.C_identifier.(
           Map.of_alist_exn
             [ (of_string "foo", Some 42)
             ; (of_string "bar", Some 27)
@@ -214,7 +215,7 @@ let%test_module "Aux tests" =
 
     let test_local_cvars : A.C_variables.Map.t =
       A.C_variables.Map.of_single_scope_map ~scope:A.C_variables.Scope.Local
-        C_identifier.(
+        Utils.C_identifier.(
           Map.of_alist_exn
             [ (of_string "burble", Some 99)
             ; (of_string "splink", None)
@@ -226,7 +227,8 @@ let%test_module "Aux tests" =
     let%expect_test "make_locations_from_config: unfiltered example" =
       Stdio.print_s
         [%sexp
-          (Aux.make_locations_from_config test_cvars : C_identifier.t list)] ;
+          ( Aux.make_locations_from_config test_cvars
+            : Utils.C_identifier.t list )] ;
       [%expect {| (bar barbaz blep foo) |}]
 
     let filtered_cvars : A.C_variables.Map.t =
@@ -236,50 +238,50 @@ let%test_module "Aux tests" =
       Stdio.print_s
         [%sexp
           ( Aux.make_locations_from_config filtered_cvars
-            : C_identifier.t list )] ;
+            : Utils.C_identifier.t list )] ;
       [%expect {| (barbaz foo) |}]
   end )
 
-module Make (B : Basic) :
+module Make (B : Runner.S) :
   S
-  with type conf := B.Src_lang.Constant.t Config.t
+  with type conf := B.Basic.Src_lang.Constant.t Config.t
    and type fmt := Format.t
-   and type Sanitiser.Redirect.t = B.Multi_sanitiser.Redirect.t
-   and type Sanitiser.Output.Program.t = B.Multi_sanitiser.Output.Program.t =
-struct
-  module Litmus = B.Litmus_ast
+   and type Sanitiser.Redirect.t = B.Basic.Multi_sanitiser.Redirect.t
+   and type Sanitiser.Output.Program.t =
+              B.Basic.Multi_sanitiser.Output.Program.t = struct
+  module Litmus = B.Basic.Litmus_ast
 
   module Sanitiser = struct
-    include B.Multi_sanitiser
-    module Lang = B.Src_lang
+    include B.Basic.Multi_sanitiser
+    module Lang = B.Basic.Src_lang
   end
 
   module Aux = Make_aux (struct
-    module Src_constant = B.Src_lang.Constant
-    module Dst_constant = B.Dst_lang.Constant
+    module Src_constant = B.Basic.Src_lang.Constant
+    module Dst_constant = B.Basic.Dst_lang.Constant
 
     module Redirect = struct
       include Sanitiser.Redirect
 
-      type sym = B.Src_lang.Symbol.t
+      type sym = B.Basic.Src_lang.Symbol.t
 
-      type sym_set = B.Src_lang.Symbol.Set.t
+      type sym_set = B.Basic.Src_lang.Symbol.Set.t
     end
 
     module Program = Sanitiser.Output.Program
 
-    let convert_const = B.convert_const
+    let convert_const = B.Basic.convert_const
   end)
 
   let print_litmus : Format.t -> Out_channel.t -> Litmus.Validated.t -> unit
       = function
     | Full ->
-        B.Litmus_pp.print
+        B.Basic.Litmus_pp.print
     | Programs_only ->
-        B.Litmus_pp.print_programs
+        B.Basic.Litmus_pp.print_programs
 
   let make_litmus_program (program : Sanitiser.Output.Program.t) =
-    program |> Sanitiser.Output.Program.listing |> B.convert_program
+    program |> Sanitiser.Output.Program.listing |> B.Basic.convert_program
 
   let make_litmus_programs = List.map ~f:make_litmus_program
 
@@ -293,7 +295,7 @@ struct
     |> List.map ~f:get_program_heap_symbols
     |> Abstract.Symbol.Set.union_list
 
-  let make ~(config : B.Src_lang.Constant.t Config.t)
+  let make ~(config : B.Basic.Src_lang.Constant.t Config.t)
       ~(redirects : Sanitiser.Redirect.t) ~(name : string)
       ~(programs : Sanitiser.Output.Program.t list) =
     let open Or_error.Let_syntax in
@@ -305,4 +307,76 @@ struct
     Or_error.tag ~tag:"Couldn't build litmus file."
       (Litmus.Validated.make ~name ~init ~programs:l_programs ?postcondition
          ?locations ())
+
+  module LS = B.Basic.Src_lang
+  module MS = B.Basic.Multi_sanitiser
+
+  let collate_warnings (programs : MS.Output.Program.t list) =
+    List.concat_map programs ~f:MS.Output.Program.warnings
+
+  type config = B.Basic.Src_lang.Constant.t Config.t
+
+  let output_litmus (_osrc : Utils.Io.Out_sink.t) (outp : Out_channel.t)
+      ~(in_name : string) ~(program : LS.Program.t)
+      ~(symbols : LS.Symbol.t list) ~(config : config)
+      ~(passes : Sanitiser_pass.Set.t) : Job.Output.t Or_error.t =
+    let open Or_error.Let_syntax in
+    let%bind o = MS.sanitise ~passes ~symbols program in
+    let redirects = MS.Output.redirects o in
+    let programs = MS.Output.programs o in
+    let warnings = collate_warnings programs in
+    let%map lit = make ~config ~redirects ~name:in_name ~programs in
+    print_litmus (Config.format config) outp lit ;
+    Out_channel.newline outp ;
+    let redirects = MS.Output.redirects o in
+    B.make_output in_name
+      (Sanitiser.Redirect.to_string_alist redirects)
+      warnings
+
+  module Filter :
+    Utils.Filter.S
+    with type aux_i = B.Basic.Src_lang.Constant.t Config.t Job.t
+     and type aux_o = Job.Output.t = B.Make_filter (struct
+    type cfg = config
+
+    let name = "Litmusifier"
+
+    let tmp_file_ext = "litmus"
+
+    let default_config = Config.default
+
+    let run = output_litmus
+  end)
 end
+
+let get_filter (module Runner : Runner.S) =
+  ( module Utils.Filter.Adapt (struct
+    module Lf = Make (Runner)
+    module LS = Runner.Basic.Src_lang
+    module Original = Lf.Filter
+
+    type aux_i = Sexp.t Config.t Job.t
+
+    type aux_o = Job.Output.t
+
+    let adapt_constant (const : Sexp.t) : LS.Constant.t Or_error.t =
+      Or_error.try_with (fun () -> [%of_sexp: LS.Constant.t] const)
+
+    let adapt_postcondition :
+           Sexp.t Litmus.Ast_base.Postcondition.t
+        -> LS.Constant.t Litmus.Ast_base.Postcondition.t Or_error.t =
+      Litmus.Ast_base.Postcondition.On_constants.With_errors.map_m
+        ~f:adapt_constant
+
+    let adapt_config : Sexp.t Config.t -> LS.Constant.t Config.t Or_error.t
+        =
+      Config.transform ~format:Or_error.return ~c_variables:Or_error.return
+        ~postcondition:adapt_postcondition
+
+    let adapt_i = Job.map_m_config ~f:adapt_config
+
+    let adapt_o = Or_error.return
+  end)
+  : Utils.Filter.S
+    with type aux_i = Sexp.t Config.t Job.t
+     and type aux_o = Job.Output.t )

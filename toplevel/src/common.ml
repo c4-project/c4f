@@ -24,7 +24,6 @@
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
 module A = Act_common
-open Lib
 open Utils
 
 let not_tracking_symbols_warning : string =
@@ -47,7 +46,7 @@ let warn_if_not_tracking_symbols (o : A.Output.t) :
       ()
 
 let asm_runner_of_target (tgt : Config.Compiler.Target.t) :
-    (module Asm_job.Runner) Or_error.t =
+    (module Asm.Runner.S) Or_error.t =
   Language_support.asm_runner_from_arch (Config.Compiler.Target.arch tgt)
 
 module Chain_with_delitmus (Onto : Filter.S) :
@@ -82,7 +81,7 @@ let chain_with_delitmus (type aux_i aux_o)
 let delitmus_compile_asm_pipeline (type i o)
     (target : Config.Compiler.Target.t)
     (job_maker :
-         (module Asm_job.Runner)
+         (module Asm.Runner.S)
       -> (module Filter.S with type aux_i = i and type aux_o = o)) :
     (module Filter.S
        with type aux_i = Config.File_type.t_or_infer
@@ -100,12 +99,12 @@ let litmusify_pipeline (target : Config.Compiler.Target.t) :
     (module Filter.S
        with type aux_i = Config.File_type.t_or_infer
                          * (   C.Filters.Output.t Filter.chain_output
-                            -> Sexp.t Litmusifier.Config.t Asm_job.t
+                            -> Sexp.t Asm.Litmusifier.Config.t Asm.Job.t
                                Config.Compiler.Chain_input.t)
         and type aux_o = C.Filters.Output.t option
-                         * (unit option * Asm_job.Output.t))
+                         * (unit option * Asm.Job.Output.t))
     Or_error.t =
-  delitmus_compile_asm_pipeline target Asm_job.get_litmusify_sexp
+  delitmus_compile_asm_pipeline target Asm.Litmusifier.get_filter
 
 let choose_cvars_after_delitmus (o : A.Output.t)
     (user_cvars : A.C_variables.Map.t option)
@@ -152,7 +151,7 @@ let make_compiler_input (o : A.Output.t)
     (config_fn : c_variables:A.C_variables.Map.t option -> 'cfg)
     (passes : Config.Sanitiser_pass.Set.t)
     (dl_output : C.Filters.Output.t Filter.chain_output) :
-    'cfg Asm_job.t Config.Compiler.Chain_input.t =
+    'cfg Asm.Job.t Config.Compiler.Chain_input.t =
   let c_variables = choose_cvars o user_cvars dl_output in
   let symbols =
     c_variables
@@ -160,7 +159,7 @@ let make_compiler_input (o : A.Output.t)
     |> Option.map ~f:(List.map ~f:C_identifier.to_string)
   in
   let config = config_fn ~c_variables in
-  let litmus_job = Asm_job.make ~passes ~config ?symbols () in
+  let litmus_job = Asm.Job.make ~passes ~config ?symbols () in
   Config.Compiler.Chain_input.make
     ~file_type:(Config.File_type.delitmusified file_type)
     ~next:(Fn.const litmus_job)

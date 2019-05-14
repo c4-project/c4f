@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Lib
 module A = Act_common
 
 let print_symbol_map = function
@@ -38,13 +37,13 @@ let explain_filter (target : Config.Compiler.Target.t) :
     (module Utils.Filter.S
        with type aux_i = Config.File_type.t_or_infer
                          * (   C.Filters.Output.t Utils.Filter.chain_output
-                            -> Asm_job.Explain_config.t Asm_job.t
+                            -> Asm.Explainer.Config.t Asm.Job.t
                                Config.Compiler.Chain_input.t)
         and type aux_o = C.Filters.Output.t option
-                         * (unit option * Asm_job.Output.t))
+                         * (unit option * Asm.Job.Output.t))
     Or_error.t =
   Or_error.tag ~tag:"while getting an explain filter for this target"
-    (Common.delitmus_compile_asm_pipeline target Asm_job.get_explain)
+    (Common.delitmus_compile_asm_pipeline target Asm.Explainer.get_filter)
 
 let run_with_input_fn (o : A.Output.t)
     (file_type : Config.File_type.t_or_infer) target compiler_input_fn
@@ -67,7 +66,7 @@ let run output_format (args : Args.Standard_asm.t) o cfg =
   in
   let explain_cfg ~c_variables =
     ignore (c_variables : A.C_variables.Map.t option) ;
-    Asm_job.Explain_config.make ?format:output_format ()
+    Asm.Explainer.Config.make ?format:output_format ()
   in
   let%bind user_cvars = Common.collect_cvars args in
   let file_type = Args.Standard_asm.file_type args in
@@ -80,15 +79,15 @@ let run output_format (args : Args.Standard_asm.t) o cfg =
   let%map out =
     run_with_input_fn o file_type target compiler_input_fn infile outfile
   in
-  A.Output.pw o "@[%a@]@." Asm_job.Output.warn out ;
-  print_symbol_map (Asm_job.Output.symbol_map out)
+  A.Output.pw o "@[%a@]@." Asm.Job.Output.warn out ;
+  print_symbol_map (Asm.Job.Output.symbol_map out)
 
 let command =
   Command.basic ~summary:"explains act's understanding of an assembly file"
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard_asm.get
       and output_format =
-        Asm_job.Explain_config.Format.(
+        Asm.Explainer.Config.Format.(
           choose_one
             [ map
                 ~f:(fun flag -> Option.some_if flag (Some Detailed))

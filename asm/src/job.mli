@@ -30,8 +30,6 @@
 
 open Base
 
-include module type of Asm_job_intf
-
 (** [t] is a description of a single-file job. *)
 type 'cfg t
 
@@ -43,29 +41,13 @@ val make :
   -> 'cfg t
 (** [make ?config ?passes ?symbols ()] makes a job description. *)
 
-module Explain_config : sig
-  module Format : sig
-    (** [t] is an enumeration of output formats for explain jobs. *)
-    type t =
-      | Assembly
-          (** Terse, but as close to parseable assembly as possible *)
-      | Detailed
-          (** More details than [Assembly], but verbose and free-form *)
-    [@@deriving equal]
+val map_m_config : 'a t -> f:('a -> 'b Or_error.t) -> 'b t Or_error.t
 
-    val default : t
-    (** [default] gets the default output format. *)
-  end
+val config : 'cfg t -> 'cfg option
 
-  type t [@@deriving equal, sexp]
+val passes : _ t -> Config.Sanitiser_pass.Set.t
 
-  val make : ?format:Format.t -> unit -> t
-  (** [make ?format ()] builds an [Explain_config] with the given
-      parameters. *)
-
-  val default : t
-  (** [default] gets the default explainer job configuration. *)
-end
+val symbols : _ t -> string list
 
 (** The output of a single-file job. *)
 module Output : sig
@@ -78,39 +60,12 @@ module Output : sig
   val warn : t Fmt.t
   (** [warn f o] prints any warnings attached to output [o] on pretty-print
       formatter [f]. *)
+
+  val make :
+       'warn Fmt.t
+    -> string
+    -> (string, string) List.Assoc.t
+    -> 'warn list
+    -> t
+  (** [make pp_warn iname symbol_map warns] makes a job output. *)
 end
-
-(** Signature of job runners. *)
-module type Runner = sig
-  type const [@@deriving sexp]
-
-  include
-    Gen_runner
-    with type 'cfg inp := 'cfg t
-     and type aux := Output.t
-     and type lcfg := const Litmusifier.Config.t
-     and type ecfg := Explain_config.t
-end
-
-(** [Make_runner] makes a [Runner] from a [Runner_deps] module. *)
-module Make_runner (R : Runner_deps) :
-  Runner with type const = R.Src_lang.Constant.t
-
-(** {2 First-class wrappers for getting job runners} *)
-
-val get_litmusify_sexp :
-     (module Runner)
-  -> (module Utils.Filter.S
-        with type aux_i = Sexp.t Litmusifier.Config.t t
-         and type aux_o = Output.t)
-(** [get_litmusify_sexp Runner] is [Runner.Litmusify], but with the input
-    type altered slightly so that the constants inside any litmus
-    postconditions are expected to be S-expressions, and unmarshalled into
-    the appropriate language at run-time. *)
-
-val get_explain :
-     (module Runner)
-  -> (module Utils.Filter.S
-        with type aux_i = Explain_config.t t
-         and type aux_o = Output.t)
-(** [get_explain Runner] is [Runner.Explain]. *)
