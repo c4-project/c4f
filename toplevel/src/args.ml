@@ -42,7 +42,6 @@ let colour_type : Fmt.style_renderer option Command.Arg_type.t =
 let colour_sexp (sr : Fmt.style_renderer option) : Sexp.t =
   sr |> Colour_table.to_string |> Option.value ~default:"?" |> Sexp.Atom
 
-
 module Other = struct
   open Command.Param
 
@@ -96,7 +95,8 @@ module Other = struct
     flag "c-locals" c_variables_arg_type
       ~doc:"IDS comma-separated list of C local variables to track"
 
-  let sanitiser_passes : Config.Sanitiser_pass.Selector.t Blang.t option Command.Param.t =
+  let sanitiser_passes :
+      Config.Sanitiser_pass.Selector.t Blang.t option Command.Param.t =
     flag "sanitiser-passes"
       (optional
          (sexp_conv [%of_sexp: Config.Sanitiser_pass.Selector.t Blang.t]))
@@ -115,9 +115,9 @@ end
 
 include Other
 
-
 module Standard : sig
   type t
+
   include S_standard with type t := t and type s := t
 end = struct
   type t =
@@ -152,17 +152,21 @@ end = struct
       {verbose; no_warnings; config_file; colour})
 end
 
-module Standard_with_files : S_standard_with_files with type s := Standard.t = struct
+module Standard_with_files :
+  S_standard_with_files with type s := Standard.t = struct
   type t =
     {rest: Standard.t; infile_raw: string option; outfile_raw: string option}
-    [@@deriving fields]
+  [@@deriving fields]
 
   let as_standard_args t = t.rest
 
   module Rest = Standard
+
   include Inherit.Helpers (struct
     type nonrec t = t
+
     type c = Rest.t
+
     let component = as_standard_args
   end)
 
@@ -198,19 +202,22 @@ module Standard_with_files : S_standard_with_files with type s := Standard.t = s
 end
 
 module Standard_asm : S_standard_asm with type s := Standard.t = struct
-  type t = {
-    rest: Standard_with_files.t;
-    c_globals: string list option;
-    c_locals: string list option;
-    file_type : Config.File_type.t_or_infer;
-    target : Asm_target.t;
-    sanitiser_passes : Config.Sanitiser_pass.Selector.t Blang.t option;
-  } [@@deriving fields]
+  type t =
+    { rest: Standard_with_files.t
+    ; c_globals: string list option
+    ; c_locals: string list option
+    ; file_type: Config.File_type.t_or_infer
+    ; target: Asm_target.t
+    ; sanitiser_passes: Config.Sanitiser_pass.Selector.t Blang.t option }
+  [@@deriving fields]
 
   module Rest = Standard_with_files
+
   include Inherit.Helpers (struct
     type nonrec t = t
+
     type c = Rest.t
+
     let component t = t.rest
   end)
 
@@ -243,7 +250,6 @@ module Standard_asm : S_standard_asm with type s := Standard.t = struct
       and c_locals = Other.c_locals
       and sanitiser_passes = Other.sanitiser_passes
       and rest = Standard_with_files.get
-      and file_type = Other.file_type
-      in
+      and file_type = Other.file_type in
       {rest; target; c_globals; c_locals; sanitiser_passes; file_type})
 end

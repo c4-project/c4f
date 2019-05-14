@@ -144,16 +144,14 @@ let get_arch (target : Config.Compiler.Target.t) : Sim.Arch.t =
 let to_machine_id : Config.Compiler.Target.t -> Config.Machine.Id.t =
   function
   | `Spec s ->
-    s |> Config.Compiler.Spec.With_id.machine
-    |> Config.Machine.Spec.With_id.id
+      s |> Config.Compiler.Spec.With_id.machine
+      |> Config.Machine.Spec.With_id.id
   | `Arch _ ->
-    Config.Machine.Id.default
+      Config.Machine.Id.default
 
-let run
-    (simulator : A.Id.t option)
-    (post_sexp : [`Exists of Sexp.t] option)
-    (args : Args.Standard_asm.t) (o : A.Output.t)
-    (cfg : Config.Act.t) : unit Or_error.t =
+let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
+    (args : Args.Standard_asm.t) (o : A.Output.t) (cfg : Config.Act.t) :
+    unit Or_error.t =
   let open Result.Let_syntax in
   let raw_target = Args.Standard_asm.target args in
   let%bind target = Asm_target.resolve ~cfg raw_target in
@@ -201,5 +199,4 @@ let command =
           ~if_nothing_chosen:(`Default_to None)
       in
       fun () ->
-        Common.lift_asm_command standard_args
-          ~f:(run simulator post_sexp))
+        Common.lift_asm_command standard_args ~f:(run simulator post_sexp))

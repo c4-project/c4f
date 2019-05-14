@@ -59,9 +59,7 @@ let run_with_input_fn (o : A.Output.t)
     in
     out)
 
-let run
-    output_format
-    (args : Args.Standard_asm.t) o cfg =
+let run output_format (args : Args.Standard_asm.t) o cfg =
   let open Or_error.Let_syntax in
   let raw_target = Args.Standard_asm.target args in
   let%bind target = Asm_target.resolve ~cfg raw_target in
@@ -104,7 +102,4 @@ let command =
             ]
             ~if_nothing_chosen:(`Default_to None))
       in
-      fun () ->
-        Common.lift_asm_command standard_args
-          ~f:(run output_format))
-
+      fun () -> Common.lift_asm_command standard_args ~f:(run output_format))

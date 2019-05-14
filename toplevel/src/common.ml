@@ -147,7 +147,7 @@ let choose_cvars (o : A.Output.t) (user_cvars : A.C_variables.Map.t option)
   cvars
 
 let collect_cvars (args : Args.Standard_asm.t) :
-  A.C_variables.Map.t option Or_error.t =
+    A.C_variables.Map.t option Or_error.t =
   let c_globals = Args.Standard_asm.c_globals args in
   let c_locals = Args.Standard_asm.c_locals args in
   let open Or_error.Let_syntax in
@@ -228,15 +228,14 @@ let lift_command_with_files = With_files_lifter.lift
 
 module Asm_lifter = Make_lifter (Args.Standard_asm)
 
-(* Asm command lifting is a bit more sophisticated, since
-   [sanitiser_passes] is now a standard argument, and
-   we don't have compiler or machine predicates.
- *)
+(* Asm command lifting is a bit more sophisticated, since [sanitiser_passes]
+   is now a standard argument, and we don't have compiler or machine
+   predicates. *)
 
 let lift_asm_command
-    ~(f : Args.Standard_asm.t -> A.Output.t -> Config.Act.t -> unit Or_error.t)
+    ~(f :
+       Args.Standard_asm.t -> A.Output.t -> Config.Act.t -> unit Or_error.t)
     (args : Args.Standard_asm.t) : unit =
   Asm_lifter.lift
     ?sanitiser_passes:(Args.Standard_asm.sanitiser_passes args)
-    ~f
-    args
+    ~f args

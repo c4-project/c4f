@@ -26,9 +26,7 @@
 open Base
 
 (** Type of top-level command targets, as taken from the command line. *)
-type t =
-  | Arch of Act_common.Id.t
-  | Compiler_id of Act_common.Id.t
+type t = Arch of Act_common.Id.t | Compiler_id of Act_common.Id.t
 
 val arch : Act_common.Id.t -> t
 (** [arch id] is [Arch id]. *)
@@ -37,6 +35,6 @@ val compiler_id : Act_common.Id.t -> t
 (** [compiler_id id] is [Compiler_id id]. *)
 
 val resolve : t -> cfg:Config.Act.t -> Config.Compiler.Target.t Or_error.t
-(** [resolve target ~cfg] passes through [target] if it's a direct architecture
-    reference; if it's a compiler ID, it tries to look up that ID in
-    [cfg], resolving it to a compiler spec. *)
+(** [resolve target ~cfg] passes through [target] if it's a direct
+    architecture reference; if it's a compiler ID, it tries to look up that
+    ID in [cfg], resolving it to a compiler spec. *)

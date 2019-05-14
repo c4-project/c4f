@@ -35,8 +35,8 @@ module type S_standard = sig
   type s
 
   val as_standard_args : t -> s
-  (** [as_standard_args args] restricts [args] to the 'standard arguments' type;
-      this is useful mainly for command lifting. *)
+  (** [as_standard_args args] restricts [args] to the 'standard arguments'
+      type; this is useful mainly for command lifting. *)
 
   val is_verbose : t -> bool
   (** [is_verbose t] gets whether, according to [t], verbose mode is
@@ -105,22 +105,23 @@ module type S_standard_asm = sig
   include S_standard_with_files with type t := t
 
   val c_globals : t -> string list option
-(** [c_globals args] gets the list of user-supplied C global variables, if
-    the user indeed supplied some. *)
+  (** [c_globals args] gets the list of user-supplied C global variables, if
+      the user indeed supplied some. *)
 
   val c_locals : t -> string list option
-(** [c_locals args] gets the list of user-supplied C local variables, if
-    the user indeed supplied some. *)
+  (** [c_locals args] gets the list of user-supplied C local variables, if
+      the user indeed supplied some. *)
 
   val file_type : t -> Config.File_type.t_or_infer
-  (** [file_type args] gets the specified file type for this command's
-      input file. *)
+  (** [file_type args] gets the specified file type for this command's input
+      file. *)
 
   val target : t -> Asm_target.t
-  (** [target args] gets either a defined assembly architecture,
-      or a compiler ID. *)
+  (** [target args] gets either a defined assembly architecture, or a
+      compiler ID. *)
 
-  val sanitiser_passes : t -> Config.Sanitiser_pass.Selector.t Blang.t option
-  (** [sanitiser_passes args] gets the Blang predicate, if any, supplied to filter
-      the sanitiser pass selection. *)
+  val sanitiser_passes :
+    t -> Config.Sanitiser_pass.Selector.t Blang.t option
+  (** [sanitiser_passes args] gets the Blang predicate, if any, supplied to
+      filter the sanitiser pass selection. *)
 end

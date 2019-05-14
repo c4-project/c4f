@@ -88,13 +88,13 @@ val lift_command_with_files :
     input and output files. *)
 
 val lift_asm_command :
-    f:(Args.Standard_asm.t -> Output.t -> Config.Act.t -> unit Or_error.t)
-    -> Args.Standard_asm.t
-    -> unit
+     f:(Args.Standard_asm.t -> Output.t -> Config.Act.t -> unit Or_error.t)
+  -> Args.Standard_asm.t
+  -> unit
 (** [lift_asm_command ~f args] behaves like
-   {{!lift_command_with_files} lift_command_with_files}, but also
-   handles (and supplies) the various standard asm command arguments,
-   including sanitiser passes. *)
+    {{!lift_command_with_files} lift_command_with_files}, but also handles
+    (and supplies) the various standard asm command arguments, including
+    sanitiser passes. *)
 
 (** {2 Single-file pipelines}
 
@@ -148,9 +148,8 @@ val make_compiler_input :
 (* TODO(@MattWindsor91): these should be in a new module. *)
 
 val collect_cvars :
-  Args.Standard_asm.t ->
-  C_variables.Map.t option Or_error.t
-(** [collect_cvars args] tries to merge the C global and
-    local variable lists given in [args], creating a single C variables map.
+  Args.Standard_asm.t -> C_variables.Map.t option Or_error.t
+(** [collect_cvars args] tries to merge the C global and local variable
+    lists given in [args], creating a single C variables map.
 
     This is useful for passing into things like [make_compiler_input]. *)
