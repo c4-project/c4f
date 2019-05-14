@@ -24,7 +24,7 @@
 open Core_kernel
 open Travesty_containers
 module Tx = Travesty_core_kernel_exts
-open Utils
+module A = Act_common
 
 module Mark = struct
   module M = struct
@@ -92,10 +92,10 @@ module Chain_item = struct
     | Value_step of Abstract.Location.t
   [@@deriving sexp]
 
-  let is_read_end {Src_dst.src; _} last_target_dst =
+  let is_read_end {A.Src_dst.src; _} last_target_dst =
     Abstract.Location.is_dereference src last_target_dst
 
-  let is_write_end {Src_dst.src; dst} ~last_target_dst ~last_value_dst =
+  let is_write_end {A.Src_dst.src; dst} ~last_target_dst ~last_value_dst =
     Abstract.Location.(
       is_dereference dst last_target_dst && equal src last_value_dst)
 
@@ -117,7 +117,7 @@ module Chain_item = struct
   let end_of_locations ins locs state =
     if is_end locs state then Some (End ins) else None
 
-  let step_of_locations is_move {Src_dst.src; dst} = function
+  let step_of_locations is_move {A.Src_dst.src; dst} = function
     | _ when not is_move ->
         None
     | (State.Read {last_target_dst; _} | Write {last_target_dst; _})
@@ -243,13 +243,13 @@ module Chain_item = struct
           : int t option )] ;
     [%expect {| ((End 10)) |}]
 
-  let of_operands_as_locations ins is_move {Src_dst.src; dst} state =
+  let of_operands_as_locations ins is_move {A.Src_dst.src; dst} state =
     let open Option.Let_syntax in
     let%bind src_loc = Abstract.Operand.as_location src
     and dst_loc = Abstract.Operand.as_location dst in
     of_locations ins is_move {src= src_loc; dst= dst_loc} state
 
-  let as_possible_new_write ins {Src_dst.src; dst} =
+  let as_possible_new_write ins {A.Src_dst.src; dst} =
     if Abstract.Operand.is_immediate src then
       let open Option.Let_syntax in
       let%map dst_loc = Abstract.Operand.as_location dst in
@@ -277,7 +277,7 @@ module Chain_item = struct
 end
 
 module Portable = struct
-  let operands_as_chain_start ins symbol_table {Src_dst.src; dst} =
+  let operands_as_chain_start ins symbol_table {A.Src_dst.src; dst} =
     let open Option.Let_syntax in
     let is_immediate_heap_src =
       Abstract.Operand.is_immediate_heap_symbol ~symbol_table src

@@ -25,7 +25,7 @@
     and operand bundles. *)
 
 open Base
-open Utils
+open Act_common
 
 (** [t] is the type of single operands. *)
 type t =

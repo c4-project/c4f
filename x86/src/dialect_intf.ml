@@ -43,12 +43,9 @@
    circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
-open Act_common
-open Utils
-
 (** [Has_dialect] is a signature for modules that report a specific dialect. *)
 module type Has_dialect = sig
-  val dialect : Id.t
+  val dialect : Act_common.Id.t
   (** [dialect] is the identifier of this module's associated x86 dialect. *)
 end
 
@@ -57,7 +54,7 @@ module type S = sig
   include Has_dialect
 
   (** This lets us query a dialect's operand order. *)
-  include Src_dst.S
+  include Act_common.Src_dst.S
 
   val has_size_suffix : bool
   (** [has_size_suffix] gets whether this dialect uses AT&T-style size

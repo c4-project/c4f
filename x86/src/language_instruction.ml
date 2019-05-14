@@ -23,7 +23,7 @@
 
 open Base
 module Tx = Travesty_base_exts
-open Utils
+module A = Act_common
 
 (* All expects tests for this module are attached to the concrete
    implementations of each x86 dialect's language module. *)
@@ -110,7 +110,7 @@ module Make (B : Basic) : S = struct
   let classify_src_dst src dst classifiers =
     let open Or_error.Let_syntax in
     let%map src', dst' = classify_double src dst classifiers in
-    {Src_dst.src= src'; dst= dst'}
+    {A.Src_dst.src= src'; dst= dst'}
 
   let single_operand operands ~allowed : Abstract.Operand.Bundle.t =
     error_to_erroneous
@@ -199,7 +199,7 @@ module Make (B : Basic) : S = struct
            (single_spec_to_classifier s1, single_spec_to_classifier s2) )
     |> pairwise_symmetric
 
-  let src_dst_spec_to_classifier {Src_dst.src; dst} s d =
+  let src_dst_spec_to_classifier {A.Src_dst.src; dst} s d =
     Option.both
       (single_spec_to_classifier src s)
       (single_spec_to_classifier dst d)
@@ -309,7 +309,7 @@ module Make (B : Basic) : S = struct
         None
 
   let as_move_elt pos ins =
-    Option.(ins |> as_move_operands >>| Fn.flip Src_dst.get pos)
+    Option.(ins |> as_move_operands >>| Fn.flip A.Src_dst.get pos)
 
   let as_move_immediate ins pos =
     Option.(ins |> as_move_elt pos >>= as_immediate)

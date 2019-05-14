@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    (parts (c) 2010-2018 Institut National de Recherche en Informatique et en
    Automatique, Jade Alglave, and Luc Maranget)
@@ -24,29 +24,29 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-   This file derives from the Herd7 project
+   This file derives in part from the Herd7 project
    (https://github.com/herd/herdtools7); its original attribution and
    copyright notice follow. *)
 
-(****************************************************************************)
-(* the diy toolsuite *)
-(*  *)
-(* Jade Alglave, University College London, UK. *)
-(* Luc Maranget, INRIA Paris-Rocquencourt, France. *)
-(*  *)
-(* Copyright 2010-present Institut National de Recherche en Informatique et *)
-(* en Automatique and the authors. All rights reserved. *)
-(*  *)
-(* This software is governed by the CeCILL-B license under French law and *)
-(* abiding by the rules of distribution of free software. You can use, *)
-(* modify and/ or redistribute the software under the terms of the CeCILL-B *)
-(* license as circulated by CEA, CNRS and INRIA at the following URL *)
-(* "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
-(****************************************************************************)
+(* the diy toolsuite
+
+   Jade Alglave, University College London, UK.
+
+   Luc Maranget, INRIA Paris-Rocquencourt, France.
+
+   Copyright 2010-present Institut National de Recherche en Informatique et
+   en Automatique and the authors. All rights reserved.
+
+   This software is governed by the CeCILL-B license under French law and by
+   the rules of distribution of free software. You can use, and/ or
+   redistribute the software under the terms of the CeCILL-B license as
+   circulated by CEA, CNRS and INRIA at the following URL
+   "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
 (** [Opcode] contains the x86 opcode tables, and operations on them. *)
 
 open Base
+open Act_common
 open Utils
 
 (** [Operand_spec] describes the various types of operand that x86
