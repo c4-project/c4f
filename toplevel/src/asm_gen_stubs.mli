@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** The 'explain' command *)
+(** The 'gen-stubs' command *)
 
 val command : Core_kernel.Command.t
-(** [command] is the top-level 'explain' command. *)
+(** [command] is the top-level 'gen-stubs' command. *)

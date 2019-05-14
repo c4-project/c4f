@@ -22,21 +22,46 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+module A = Act_common
 
 let readme () : string =
   Utils.My_string.format_for_readme
     {|
-The `asm` command group contains commands for querying and manipulating
-single assembly files or litmus tests.
-
-Some of the commands also generalise to single C files or litmus tests, by
-passing them through a nominated compiler and, if necessary, `act`'s
-delitmusifier.  For target-independent operations on single C files/tests,
-see the `c` command group.
+The `asm gen-stubs` command generates GCC assembly directives that can
+be slotted into a simulation harness.
 |}
 
+let run
+  (file_type : [> `Assembly | `C | `C_litmus | `Infer])
+  (compiler_id_or_arch : [> `Arch of A.Id.t | `Id of A.Id.t])
+  (c_globals : string list option)
+  (c_locals : string list option)
+  (args : Args.Standard_with_files.t)
+  (o : A.Output.t)
+  (cfg : Config.Act.t)
+  : unit Or_error.t =
+  ignore file_type;
+  ignore compiler_id_or_arch;
+  ignore c_globals;
+  ignore c_locals;
+  ignore args;
+  ignore o;
+  ignore cfg;
+  Or_error.unimplemented "TODO"
+
 let command : Command.t =
-  Command.group ~summary:"commands for dealing with assembly files" ~readme
-    [("explain", Asm_explain.command);
-     ("gen-stubs", Asm_gen_stubs.command);
-     ("litmusify", Asm_litmusify.command)]
+  Command.basic ~summary:"generates GCC asm stubs from an assembly file"
+    ~readme
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard_with_files.get
+      and sanitiser_passes = Args.sanitiser_passes
+      and compiler_id_or_arch = Args.compiler_id_or_arch
+      and c_globals = Args.c_globals
+      and c_locals = Args.c_locals
+      and file_type = Args.file_type in
+      fun () ->
+        Common.lift_command_with_files standard_args ?sanitiser_passes
+          ~with_compiler_tests:false
+          ~f:
+            (run file_type compiler_id_or_arch c_globals
+               c_locals))
