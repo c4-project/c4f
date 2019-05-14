@@ -25,15 +25,15 @@
     programs. *)
 
 open Core_kernel
+open Act_common
 open Utils
-open Lib
 
 include module type of Analysis_intf
 
 module Herd : sig
   (** [t] is the type of Herd analysis runs. *)
   type t =
-    | Run of Sim_diff.t
+    | Run of Sim.Diff.t
         (** Herd ran on both sides, with the given differential result. *)
     | Disabled  (** Herd was disabled. *)
     | Errored of [`C | `Assembly]  (** Herd encountered an error. *)
@@ -52,7 +52,7 @@ module File : sig
   include Timing.Timed0 with type t := t
 
   val herd : t -> Herd.t
-  (** [herd f] gets the Herd result for file [f]. *)
+  (** [herd f] gets the Herd run for file [f]. *)
 
   val make :
        ?time_taken:Time.Span.t
@@ -61,14 +61,14 @@ module File : sig
     -> unit
     -> t
   (** [make ?time_taken ?time_taken_in_cc ()] creates a file analysis given
-      Herd analysis [herd], total time taken [time_taken], and time taken in
-      the C compiler [time_taken_in_cc]. *)
+      Herd run [herd], total time taken [time_taken], and time taken in the
+      C compiler [time_taken_in_cc]. *)
 
   val time_taken_in_cc : t -> Time.Span.t option
   (** [time_taken_in_cc file] gets an estimate of the time spent compiling
       file [file], if any is available. *)
 
-  val state_set_order : t -> Sim_diff.Order.t option
+  val state_set_order : t -> Sim.Diff.Order.t option
   (** [state_set_order file] gets the partial ordering between the file's C
       and assembly state sets, provided that the file successfully underwent
       testing. *)
@@ -103,17 +103,17 @@ module Machine : sig
 
   include Timing.Timed0 with type t := t
 
-  val compilers : t -> (Config.Id.t, Compiler.t) List.Assoc.t
+  val compilers : t -> (Id.t, Compiler.t) List.Assoc.t
   (** [compilers m] gets an associative list of all analysis results for
       compilers on machine [m]. *)
 
-  val files : t -> (Config.Id.t * string * File.t) list
+  val files : t -> (Id.t * string * File.t) list
   (** [files m] gets a list of (compiler ID, filename, analysis) tuples for
       all files processed on machine [m]. *)
 
   val make :
        ?time_taken:Time.Span.t
-    -> compilers:(Config.Id.t, Compiler.t) List.Assoc.t
+    -> compilers:(Id.t, Compiler.t) List.Assoc.t
     -> unit
     -> t
   (** [make ?time_taken ~compilers ()] creates a compiler analysis given
@@ -126,12 +126,12 @@ type t [@@deriving sexp_of]
 
 val make :
      ?time_taken:Time.Span.t
-  -> machines:(Config.Id.t, Machine.t) List.Assoc.t
+  -> machines:(Id.t, Machine.t) List.Assoc.t
   -> unit
   -> t
 (** [make ?time_taken ~machines ()] creates a top-level analysis given
     machine analyses [machines] and total time taken [time_taken]. *)
 
-val machines : t -> (Config.Id.t, Machine.t) List.Assoc.t
+val machines : t -> (Id.t, Machine.t) List.Assoc.t
 (** [machines t] gets an associative list of all analysis results for
     machines in run [t]. *)

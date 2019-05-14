@@ -24,9 +24,10 @@
 open Core_kernel
 open Utils
 include Litmusifier_intf
+module A = Act_common
+module Tx = Travesty_core_kernel_exts
 
 (* Aliased because we shadow Config below. *)
-module C_vars = Config.C_variables
 module Sanitiser_pass = Config.Sanitiser_pass
 
 module Format = struct
@@ -39,7 +40,7 @@ module Config = struct
   type 'const t =
     { format: Format.t [@default Format.default]
     ; postcondition: 'const Litmus.Ast_base.Postcondition.t option
-    ; c_variables: C_vars.Map.t option }
+    ; c_variables: A.C_variables.Map.t option }
   [@@deriving sexp, equal, fields, make]
 
   let default : unit -> 'a t = make
@@ -51,21 +52,18 @@ module Config = struct
       ~(postcondition :
             a Litmus.Ast_base.Postcondition.t
          -> b Litmus.Ast_base.Postcondition.t Or_error.t)
-      ~(c_variables :
-         Config.C_variables.Map.t -> Config.C_variables.Map.t Or_error.t) :
-      b t Or_error.t =
+      ~(c_variables : A.C_variables.Map.t -> A.C_variables.Map.t Or_error.t)
+      : b t Or_error.t =
     Fields.fold ~init:(Or_error.return initial)
       ~format:(W.proc_field format)
       ~postcondition:(fun x_or_error _ ->
         let open Or_error.Let_syntax in
         let%bind x = x_or_error in
         let post = x.postcondition in
-        let%map post' =
-          Travesty.T_option.With_errors.map_m ~f:postcondition post
-        in
+        let%map post' = Tx.Option.With_errors.map_m ~f:postcondition post in
         {x with postcondition= post'} )
       ~c_variables:
-        (W.proc_field (Travesty.T_option.With_errors.map_m ~f:c_variables))
+        (W.proc_field (Tx.Option.With_errors.map_m ~f:c_variables))
 end
 
 module type Basic_aux = sig
@@ -83,7 +81,7 @@ module type Basic_aux = sig
 
   val convert_const : Src_constant.t -> Dst_constant.t Or_error.t
 
-  module Redirect : Redirect_map.S
+  module Redirect : A.Redirect_map.S
 end
 
 module Make_aux (B : Basic_aux) = struct
@@ -94,14 +92,14 @@ module Make_aux (B : Basic_aux) = struct
     }
   [@@deriving fields, make]
 
-  let record_to_constant (r : C_vars.Record.t) : B.Dst_constant.t =
-    r |> C_vars.Record.initial_value |> Option.value ~default:0
+  let record_to_constant (r : A.C_variables.Record.t) : B.Dst_constant.t =
+    r |> A.C_variables.Record.initial_value |> Option.value ~default:0
     |> B.Dst_constant.of_int
 
-  let make_init_from_vars (cvars : C_vars.Map.t) :
+  let make_init_from_vars (cvars : A.C_variables.Map.t) :
       (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
     cvars |> C_identifier.Map.to_alist
-    |> Travesty.T_alist.bi_map ~left:Fn.id ~right:record_to_constant
+    |> Tx.Alist.bi_map ~left:Fn.id ~right:record_to_constant
 
   let make_init_from_all_heap_symbols (heap_syms : Abstract.Symbol.Set.t) :
       (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
@@ -112,18 +110,17 @@ module Make_aux (B : Basic_aux) = struct
       taking the information given in [config] and applying [redirects] to
       it, or by forcing the heap symbol set [heap_syms] and initialising
       each heap symbol to zero. *)
-  let make_init (cvars_opt : C_vars.Map.t option)
+  let make_init (cvars_opt : A.C_variables.Map.t option)
       (heap_syms : Abstract.Symbol.Set.t) :
       (C_identifier.t, B.Dst_constant.t) List.Assoc.t =
-    match cvars_opt with
-    | Some vars ->
-        make_init_from_vars vars
-    | None ->
-        make_init_from_all_heap_symbols heap_syms
+    cvars_opt
+    |> Option.map ~f:make_init_from_vars
+    |> Tx.Option.value_f ~default_f:(fun () ->
+           make_init_from_all_heap_symbols heap_syms )
 
-  let make_locations_from_config (cvars : C_vars.Map.t) :
+  let make_locations_from_config (cvars : A.C_variables.Map.t) :
       C_identifier.t list =
-    cvars |> C_vars.Map.globals |> Set.to_list
+    cvars |> A.C_variables.Map.globals |> Set.to_list
 
   let make_locations_from_init
       (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t) :
@@ -133,7 +130,7 @@ module Make_aux (B : Basic_aux) = struct
   (** [make_locations cvars_opt init] makes a 'locations' stanza, either by
       taking the variables in [cvars_opt] and applying [redirects] to them,
       or just by taking the LHS of [init]. *)
-  let make_locations (cvars_opt : C_vars.Map.t option)
+  let make_locations (cvars_opt : A.C_variables.Map.t option)
       (init : (C_identifier.t, B.Dst_constant.t) List.Assoc.t) :
       C_identifier.t list =
     match cvars_opt with
@@ -153,16 +150,16 @@ module Make_aux (B : Basic_aux) = struct
     Abstract.Symbol.Set.mem heap_symbols (C_identifier.to_string cid)
 
   let live_symbols_only (heap_symbols : Abstract.Symbol.Set.t) :
-      C_vars.Map.t -> C_vars.Map.t =
+      A.C_variables.Map.t -> A.C_variables.Map.t =
     C_identifier.Map.filter_keys ~f:(is_live_symbol heap_symbols)
 
   let live_config_variables (config : B.Src_constant.t Config.t)
       (redirects : B.Redirect.t) (heap_symbols : Abstract.Symbol.Set.t) :
-      C_vars.Map.t option Or_error.t =
+      A.C_variables.Map.t option Or_error.t =
     let open Or_error.Let_syntax in
     let cvars_opt = Config.c_variables config in
     let%map redirected_cvars_opt =
-      Travesty.T_option.With_errors.map_m cvars_opt
+      Tx.Option.With_errors.map_m cvars_opt
         ~f:(B.Redirect.transform_c_variables redirects)
     in
     Option.map ~f:(live_symbols_only heap_symbols) redirected_cvars_opt
@@ -177,8 +174,7 @@ module Make_aux (B : Basic_aux) = struct
     let locations = make_locations cvars_opt init in
     let src_post_opt = Config.postcondition config in
     let%map postcondition =
-      Travesty.T_option.With_errors.map_m ~f:(make_post redirects)
-        src_post_opt
+      Tx.Option.With_errors.map_m ~f:(make_post redirects) src_post_opt
     in
     make ~locations ~init ?postcondition ()
 end
@@ -186,9 +182,9 @@ end
 let%test_module "Aux tests" =
   ( module struct
     module Aux = Make_aux (struct
-      module Src_constant = Language_constant.Int_direct
-      module Dst_constant = Language_constant.Int_direct
-      module Redirect = Language_symbol.String_direct.R_map
+      module Src_constant = Language.Constant.Int_direct
+      module Dst_constant = Language.Constant.Int_direct
+      module Redirect = Language.Symbol.String_direct.R_map
 
       let convert_const = Or_error.return
     end)
@@ -206,8 +202,9 @@ let%test_module "Aux tests" =
     let test_heap_symbols : Abstract.Symbol.Set.t =
       Abstract.Symbol.Set.of_list ["foo"; "barbaz"; "splink"]
 
-    let test_global_cvars : C_vars.Map.t =
-      C_vars.Map.of_single_scope_map ~scope:C_vars.Scope.Global
+    let test_global_cvars : A.C_variables.Map.t =
+      A.C_variables.Map.of_single_scope_map
+        ~scope:A.C_variables.Scope.Global
         C_identifier.(
           Map.of_alist_exn
             [ (of_string "foo", Some 42)
@@ -215,16 +212,16 @@ let%test_module "Aux tests" =
             ; (of_string "barbaz", None)
             ; (of_string "blep", Some 63) ])
 
-    let test_local_cvars : C_vars.Map.t =
-      C_vars.Map.of_single_scope_map ~scope:C_vars.Scope.Local
+    let test_local_cvars : A.C_variables.Map.t =
+      A.C_variables.Map.of_single_scope_map ~scope:A.C_variables.Scope.Local
         C_identifier.(
           Map.of_alist_exn
             [ (of_string "burble", Some 99)
             ; (of_string "splink", None)
             ; (of_string "herp", Some 21) ])
 
-    let test_cvars : C_vars.Map.t =
-      C_vars.Map.merge test_global_cvars test_local_cvars
+    let test_cvars : A.C_variables.Map.t =
+      A.C_variables.Map.merge test_global_cvars test_local_cvars
 
     let%expect_test "make_locations_from_config: unfiltered example" =
       Stdio.print_s
@@ -232,7 +229,7 @@ let%test_module "Aux tests" =
           (Aux.make_locations_from_config test_cvars : C_identifier.t list)] ;
       [%expect {| (bar barbaz blep foo) |}]
 
-    let filtered_cvars : C_vars.Map.t =
+    let filtered_cvars : A.C_variables.Map.t =
       Aux.live_symbols_only test_heap_symbols test_cvars
 
     let%expect_test "make_locations_from_config: filtered example" =

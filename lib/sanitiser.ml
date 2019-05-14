@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -22,12 +22,13 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Travesty_containers
+module Tx = Travesty_core_kernel_exts
 include Sanitiser_intf
 
 module Make_null_hook
-    (Lang : Language.S)
-    (P : Travesty.Traversable.S1_container) :
+    (Lang : Language.Definition.S)
+    (P : Travesty.Traversable.S1) :
   Hook with module Lang = Lang and module Program_container = P = struct
   module Lang = Lang
   module Ctx = Sanitiser_ctx.Make (Lang)
@@ -59,7 +60,7 @@ module Make (B : Basic) :
   module Zip = Zipper.Int_mark_zipper (* for now *)
 
   module Ctx_Pcon = Program_container.On_monad (Ctx)
-  module Ctx_List = Travesty.T_list.On_monad (Ctx)
+  module Ctx_List = Tx.List.On_monad (Ctx)
   module Ctx_Zip = Zip.On_monad (Ctx)
   module Ctx_Loc = Lang.Instruction.On_locations.On_monad (Ctx)
   module Ctx_Lst = Lang.Program.On_listings.On_monad (Ctx)
@@ -78,20 +79,10 @@ module Make (B : Basic) :
     [@@deriving fields]
   end
 
+  module PC =
+    Travesty.Traversable.Fix_elt (B.Program_container) (Lang.Program)
   module PC_listings =
-    Travesty.Traversable.Chain0 (struct
-        type t = Lang.Program.t Program_container.t
-
-        include B.Program_container.With_elt (Lang.Program)
-      end)
-      (Lang.Program.On_listings)
-
-  module PC_listings_cont = Travesty.Traversable.Make_container0 (struct
-    type t = Lang.Program.t Program_container.t
-
-    include PC_listings
-  end)
-
+    Travesty.Traversable.Chain0 (PC) (Lang.Program.On_listings)
   module Ctx_PC = PC_listings.On_monad (Ctx)
 
   (* TODO(@MattWindsor91): the two functions below are adapted forms of
@@ -101,14 +92,13 @@ module Make (B : Basic) :
 
   let max_measure ~measure ?(default = 0) xs =
     xs
-    |> PC_listings_cont.max_elt
-         ~compare:(Travesty.T_fn.on measure Int.compare)
+    |> PC_listings.max_elt ~compare:(Comparable.lift ~f:measure Int.compare)
     |> Option.value_map ~f:measure ~default
 
   let right_pad ~padding xs =
     let maxlen = max_measure ~measure:List.length xs
     and f = Fn.const padding in
-    PC_listings_cont.map
+    PC_listings.map
       ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f)
       xs
 
@@ -118,24 +108,30 @@ module Make (B : Basic) :
     | Symbol s ->
         s
 
+  let stack_offset_to_heap prog_name offset =
+    Ctx.Let_syntax.(
+      let base_str =
+        Printf.sprintf "t%ss%s" prog_name (address_to_string offset)
+      in
+      let%bind symbol_str =
+        Ctx.add_symbol base_str Abstract.Symbol.Sort.Heap
+      in
+      let%map symbol =
+        Ctx.Monadic.return (Lang.Symbol.require_of_string symbol_str)
+      in
+      Lang.Location.make_heap_loc symbol)
+
   let change_stack_to_heap ins =
-    let open Ctx.Let_syntax in
-    let%bind name = Ctx.get_prog_name in
-    let f loc =
-      match Lang.Location.as_stack_offset loc with
-      | Some offset ->
-          let base_str = sprintf "t%ss%s" name (address_to_string offset) in
-          let%bind symbol_str =
-            Ctx.add_symbol base_str Abstract.Symbol.Sort.Heap
-          in
-          let%map symbol =
-            Ctx.Monadic.return (Lang.Symbol.require_of_string symbol_str)
-          in
-          Lang.Location.make_heap_loc symbol
-      | None ->
-          Ctx.return loc
-    in
-    Ctx_Loc.map_m ~f ins
+    Ctx.Let_syntax.(
+      let%bind prog_name = Ctx.get_prog_name in
+      let f loc =
+        match Lang.Location.as_stack_offset loc with
+        | Some offset ->
+            stack_offset_to_heap prog_name offset
+        | None ->
+            Ctx.return loc
+      in
+      Ctx_Loc.map_m ~f ins)
 
   (** [warn_unknown_instructions stm] emits warnings for each instruction in
       [stm] without a high-level analysis. *)
@@ -287,7 +283,7 @@ module Make (B : Basic) :
 
   let remove_statements_in prog ~where =
     Lang.Program.On_statements.exclude prog
-      ~f:(Travesty.T_list.any ~predicates:where)
+      ~f:(Tx.List.any ~predicates:where)
 
   (** [remove_generally_irrelevant_statements prog] completely removes
       statements in [prog] that have no use in general and cannot be
@@ -487,18 +483,18 @@ end
 
 module Make_single (H : Hook_maker) :
   S
-  with module Lang := H(Travesty.Singleton).Lang
+  with module Lang := H(Singleton).Lang
    and type 'a Program_container.t = 'a = Make (struct
-  include H (Travesty.Singleton)
+  include H (Singleton)
 
   let split = Or_error.return (* no operation *)
 end)
 
 module Make_multi (H : Hook_maker) :
   S
-  with module Lang := H(Travesty.T_list).Lang
+  with module Lang := H(Tx.List).Lang
    and type 'a Program_container.t = 'a list = Make (struct
-  include H (Travesty.T_list)
+  include H (Tx.List)
 
   let split = Lang.Program.split_on_boundaries
 end)

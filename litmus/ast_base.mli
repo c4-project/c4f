@@ -44,7 +44,7 @@ module Pred_elt : sig
 
   (** Traversing monadically over all constants in a predicate element. *)
   module On_constants :
-    Travesty.Traversable.S1_container with type 'const t := 'const t
+    Travesty.Traversable.S1 with type 'const t := 'const t
 end
 
 (** Directly-parametrised AST for predicates. *)
@@ -64,7 +64,7 @@ module Pred : sig
 
   (** Traversing monadically over all constants in a predicate. *)
   module On_constants :
-    Travesty.Traversable.S1_container with type 'const t := 'const t
+    Travesty.Traversable.S1 with type 'const t := 'const t
 end
 
 (** Directly-parametrised AST for postconditions. *)
@@ -80,5 +80,5 @@ module Postcondition : sig
 
   (** Traversing monadically over all constants in a postcondition. *)
   module On_constants :
-    Travesty.Traversable.S1_container with type 'const t := 'const t
+    Travesty.Traversable.S1 with type 'const t := 'const t
 end

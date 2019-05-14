@@ -53,10 +53,10 @@ module type Runner_deps = sig
 
   (** [Src_lang] is the main language used in the jobs, which may differ
       from the [Litmus] language. *)
-  module Src_lang : Language.S
+  module Src_lang : Language.Definition.S
 
   (** [Dst_lang] is the language used in emitted Litmus tests. *)
-  module Dst_lang : Language.S
+  module Dst_lang : Language.Definition.S
 
   module Frontend : Frontend.S with type ast := ast
 

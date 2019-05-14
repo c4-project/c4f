@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
+open Core_kernel
+module Tx = Travesty_core_kernel_exts
 open Utils
 include Asm_job_intf
 
@@ -185,11 +186,15 @@ module Make_runner (B : Runner_deps) :
   let stringify_symbols syms =
     syms |> List.map ~f:stringify_symbol |> Or_error.combine_errors
 
+  let in_source_to_basename (is : Io.In_source.t) : string =
+    is |> Io.In_source.to_file
+    |> Option.value_map
+         ~f:(fun fn -> Fpath.(fn |> rem_ext |> basename))
+         ~default:"stdin"
+
   let run ~f {Filter.aux; src; sink} ic oc : Output.t Or_error.t =
     let open Result.Let_syntax in
-    let name =
-      Filename.(chop_extension (basename (Io.In_source.to_string src)))
-    in
+    let name = in_source_to_basename src in
     let%bind asm = parse src ic in
     let%bind symbols = stringify_symbols aux.symbols in
     f ?config:aux.config name aux.passes symbols (B.program asm) sink oc
@@ -250,7 +255,7 @@ let get_litmusify_sexp (module Runner : Runner) =
     let adapt_i job =
       let open Or_error.Let_syntax in
       let%map config =
-        Travesty.T_option.With_errors.map_m job.config ~f:adapt_config
+        Tx.Option.With_errors.map_m job.config ~f:adapt_config
       in
       {job with config}
 

@@ -31,8 +31,8 @@ module Pred_elt = struct
   let ( ==? ) = eq
 
   module On_constants :
-    Travesty.Traversable.S1_container with type 'const t := 'const t =
-  Travesty.Traversable.Make_container1 (struct
+    Travesty.Traversable.S1 with type 'const t := 'const t =
+  Travesty.Traversable.Make1 (struct
     type nonrec 'const t = 'const t
 
     module On_monad (M : Monad.S) = struct
@@ -67,8 +67,8 @@ module Pred = struct
         Elt x
 
   module On_constants :
-    Travesty.Traversable.S1_container with type 'const t := 'const t =
-  Travesty.Traversable.Make_container1 (struct
+    Travesty.Traversable.S1 with type 'const t := 'const t =
+  Travesty.Traversable.Make1 (struct
     type nonrec 'const t = 'const t
 
     module On_monad (M : Monad.S) = struct
@@ -154,8 +154,8 @@ module Postcondition = struct
   [@@deriving sexp, compare, equal, quickcheck, fields, make]
 
   module On_constants :
-    Travesty.Traversable.S1_container with type 'const t := 'const t =
-  Travesty.Traversable.Make_container1 (struct
+    Travesty.Traversable.S1 with type 'const t := 'const t =
+  Travesty.Traversable.Make1 (struct
     type nonrec 'const t = 'const t
 
     module On_monad (M : Monad.S) = struct

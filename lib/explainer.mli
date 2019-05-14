@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -39,4 +39,4 @@ module Make_explanation (B : Basic_explanation) :
    and module Flag := B.Flag
 
 (** [Make] makes an implementation of [S] for a given language. *)
-module Make (LS : Language.S) : S with module Lang := LS
+module Make (LS : Language.Definition.S) : S with module Lang := LS

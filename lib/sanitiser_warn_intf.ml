@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -28,7 +28,7 @@ open Base
 (** [S] is the interface to the warnings emitted by the sanitiser. *)
 module type S = sig
   (** [Lang] is the language to whose elements we're attaching warnings. *)
-  module Lang : Language.S
+  module Lang : Language.Definition.S
 
   (** [elt] is the type of elements being warned about. *)
   type elt =
@@ -68,5 +68,5 @@ module type Sanitiser_warn = sig
   module type S = S
 
   (** [Make] produces a warnings module for the given language. *)
-  module Make (Lang : Language.S) : S with module Lang := Lang
+  module Make (Lang : Language.Definition.S) : S with module Lang := Lang
 end

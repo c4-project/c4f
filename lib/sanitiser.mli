@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -23,12 +23,13 @@
 
 (** Assembly sanitisation *)
 
+(** @inline *)
 include module type of Sanitiser_intf
 
 (** [Make_null_hook] makes a [Hook] that does nothing. *)
 module Make_null_hook
-    (Lang : Language.S)
-    (P : Travesty.Traversable.S1_container) :
+    (Lang : Language.Definition.S)
+    (P : Travesty.Traversable.S1) :
   Hook with module Lang = Lang and module Program_container = P
 
 (** [Make] implements the assembly sanitiser for a given [Basic]. *)
@@ -42,7 +43,7 @@ module Make (B : Basic) :
     sanitised assembly back as one program. *)
 module Make_single (H : Hook_maker) :
   S
-  with module Lang := H(Travesty.Singleton).Lang
+  with module Lang := H(Travesty_containers.Singleton).Lang
    and type 'a Program_container.t = 'a
 
 (** [Make_multi] implements the assembly sanitiser for a given [Hook_maker],
@@ -50,5 +51,5 @@ module Make_single (H : Hook_maker) :
     programs and splitting them accordingly. *)
 module Make_multi (H : Hook_maker) :
   S
-  with module Lang := H(Travesty.T_list).Lang
+  with module Lang := H(Travesty_core_kernel_exts.List).Lang
    and type 'a Program_container.t = 'a list

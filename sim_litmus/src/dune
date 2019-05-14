@@ -1,0 +1,9 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name sim_litmus)
+ (synopsis "Simulator frontend for the Litmus7 multicore CPU test runner")
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (libraries utils lib sim sim_herdtools_common core_kernel travesty.base_exts
+   travesty.core_kernel_exts))

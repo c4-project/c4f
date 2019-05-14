@@ -11,6 +11,11 @@ clean:
 build:
 	dune build
 
+.PHONY: install
+install:
+	dune build @install
+	opam install .
+
 .PHONY: test
 test:
 	dune runtest --force

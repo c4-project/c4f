@@ -22,11 +22,11 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Lib
+open Act_common
 include Analysis_intf
 
 module Herd = struct
-  type t = Run of Sim_diff.t | Disabled | Errored of [`C | `Assembly]
+  type t = Run of Sim.Diff.t | Disabled | Errored of [`C | `Assembly]
   [@@deriving sexp_of]
 
   let to_string : t -> string = function
@@ -37,7 +37,7 @@ module Herd = struct
     | Disabled ->
         "--disabled--"
     | Run x ->
-        Sim_diff.to_string x
+        Sim.Diff.to_string x
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
 
@@ -57,27 +57,27 @@ module Herd = struct
 
   include Predicates
 
-  let state_set_order : t -> Sim_diff.Order.t option = function
+  let state_set_order : t -> Sim.Diff.Order.t option = function
     | Run (Result r) ->
         Some r
     | Run _ | Errored _ | Disabled ->
         None
 
-  (** Forwards from [Sim_diff.Order]. *)
+  (** Forwards from [Sim.Diff.Order]. *)
   module Order_forwards = struct
     module H = Utils.Inherit.Partial_helpers (struct
       type nonrec t = t
 
-      type c = Sim_diff.Order.t
+      type c = Sim.Diff.Order.t
 
       let component_opt : t -> c option = state_set_order
     end)
 
     let has_deviations : t -> bool =
-      H.forward_bool (Fn.non Sim_diff.Order.is_equal)
+      H.forward_bool (Fn.non Sim.Diff.Order.is_equal)
 
     let has_asm_deviations : t -> bool =
-      H.forward_bool Sim_diff.Order.right_has_uniques
+      H.forward_bool Sim.Diff.Order.right_has_uniques
   end
 
   include Order_forwards
@@ -99,7 +99,7 @@ module File = struct
       let component : t -> c = herd
     end)
 
-    let state_set_order : t -> Sim_diff.Order.t option =
+    let state_set_order : t -> Sim.Diff.Order.t option =
       H.forward Herd.state_set_order
 
     let has_deviations : t -> bool = H.forward Herd.has_deviations
@@ -123,7 +123,7 @@ end
 module Machine = struct
   type t =
     { time_taken: Time.Span.t option
-    ; compilers: (Config.Id.t, Compiler.t) List.Assoc.t }
+    ; compilers: (Id.t, Compiler.t) List.Assoc.t }
   [@@deriving sexp_of, fields, make]
 
   let files m =
@@ -133,6 +133,5 @@ module Machine = struct
 end
 
 type t =
-  { time_taken: Time.Span.t option
-  ; machines: (Config.Id.t, Machine.t) List.Assoc.t }
+  {time_taken: Time.Span.t option; machines: (Id.t, Machine.t) List.Assoc.t}
 [@@deriving sexp_of, fields, make]

@@ -29,6 +29,8 @@
     case in {{!Ast_base} Ast_base}), or indirectly through the module system
     (as is the case in {{!Ast} Ast}. *)
 
+module Id = Act_common.Litmus_id
+
 (** Signature of operations that can be used on Litmus predicate elements. *)
 module type S_pred_elt = sig
   (** Type of identifiers. *)

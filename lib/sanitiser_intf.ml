@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -24,6 +24,7 @@
 (** Assembly sanitisation *)
 
 open Base
+open Act_common
 
 (** [Hook] is an interface for language-specific hooks into the sanitisation
     process. *)
@@ -63,8 +64,8 @@ end
 
 (** [Hook_maker] is the type of functors that generate hooks given a program
     container. *)
-module type Hook_maker = functor (P : Travesty.Traversable.S1_container) -> Hook
-                                                                            with module Program_container = P
+module type Hook_maker = functor (P : Travesty.Traversable.S1) -> Hook
+                                                                  with module Program_container = P
 
 (** [Basic] describes the base functionality we need to supply to a
     sanitiser.
@@ -87,7 +88,7 @@ end
 (** [S] is the interface to a fully-built sanitiser. *)
 module type S = sig
   (** [Lang] is the language over which we are sanitising. *)
-  module Lang : Language.S
+  module Lang : Language.Definition.S
 
   module Warn : Sanitiser_warn.S with module Lang := Lang
 

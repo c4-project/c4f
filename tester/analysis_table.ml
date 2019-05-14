@@ -23,7 +23,8 @@
 
 open Core_kernel (* not Base: we need Time.Span. *)
 
-open Lib
+module Tx = Travesty_core_kernel_exts
+open Act_common
 open Utils
 module A = Analysis
 
@@ -33,24 +34,17 @@ module Interest_level = struct
   type 'a filtered = {data: 'a; level: t}
 end
 
-let pp_span_opt (f : Formatter.t) = function
-  | Some span ->
-      Time.Span.pp f span
-  | None ->
-      String.pp f "-"
+let pp_span_opt = Fmt.(option ~none:(unit "-") Time.Span.pp)
 
 module Row = struct
   type 'a t =
-    { machine_id: Config.Id.t
-    ; compiler_id: Config.Id.t
-    ; filename: string
-    ; analysis: 'a }
+    {machine_id: Id.t; compiler_id: Id.t; filename: string; analysis: 'a}
   [@@deriving sexp_of, fields, make]
 
   let to_table_row (type a) (row : a t) ~(f : a -> string list) :
       Tabulator.row =
-    [ Fmt.strf "%a" Config.Id.pp row.machine_id
-    ; Fmt.strf "%a" Config.Id.pp row.compiler_id
+    [ Fmt.strf "%a" Id.pp row.machine_id
+    ; Fmt.strf "%a" Id.pp row.compiler_id
     ; row.filename ]
     @ f row.analysis
 
@@ -60,13 +54,13 @@ module Row = struct
 
   let filter_map_analysis (row : 'a t) ~(f : 'a -> 'b option) : 'b t option
       =
-    let open Option.Let_syntax in
-    let%map analysis = f row.analysis in
-    with_analysis row ~analysis
+    Option.Let_syntax.(
+      let%map analysis = f row.analysis in
+      with_analysis row ~analysis)
 end
 
-let file_rows_of_machine (machine_id : Config.Id.t) (machine : A.Machine.t)
-    : A.File.t Row.t list =
+let file_rows_of_machine (machine_id : Id.t) (machine : A.Machine.t) :
+    A.File.t Row.t list =
   List.map (A.Machine.files machine)
     ~f:(fun (compiler_id, filename, analysis) ->
       Row.make ~machine_id ~compiler_id ~filename ~analysis )
@@ -85,8 +79,8 @@ let maybe_with_rule last_mid this_mid last_cid this_cid tabulator =
       (* Assume we're on the first row *)
       Tabulator.add_rule ~char:machine_rule tabulator
   | Some lmid, Some lcid ->
-      if Config.Id.equal lmid this_mid then
-        if Config.Id.equal lcid this_cid then Or_error.return tabulator
+      if Id.equal lmid this_mid then
+        if Id.equal lcid this_cid then Or_error.return tabulator
           (* no rule *)
         else Tabulator.add_rule ~char:compiler_rule tabulator
       else Tabulator.add_rule ~char:machine_rule tabulator
@@ -119,7 +113,7 @@ module Make_tabulator (B : Basic_tabulator) :
 
   let with_file (last_mid, last_cid, tabulator)
       (analysis_row : B.analysis Row.t) :
-      (Config.Id.t option * Config.Id.t option * Tabulator.t) Or_error.t =
+      (Id.t option * Id.t option * Tabulator.t) Or_error.t =
     let mid = Row.machine_id analysis_row in
     let cid = Row.compiler_id analysis_row in
     let row = Row.to_table_row analysis_row ~f:B.analysis_to_cells in
@@ -133,8 +127,7 @@ module Make_tabulator (B : Basic_tabulator) :
       Tabulator.t Or_error.t =
     Or_error.(
       rows
-      |> Travesty.T_list.With_errors.fold_m ~init:(None, None, tab)
-           ~f:with_file
+      |> Tx.List.With_errors.fold_m ~init:(None, None, tab) ~f:with_file
       >>| Tuple3.get3)
 
   let to_table (a : data) : Tabulator.t Or_error.t =
@@ -146,10 +139,10 @@ module On_files = struct
     List.concat_map (A.machines a) ~f:(Tuple2.uncurry file_rows_of_machine)
 
   let has_ub_and_below : Analysis.File.t -> bool =
-    Analysis.File.(Travesty.T_fn.disj has_deviations is_undefined)
+    Analysis.File.(Tx.Fn.(has_deviations ||| is_undefined))
 
   let has_deviations_and_below : Analysis.File.t -> bool =
-    Analysis.File.(Travesty.T_fn.disj has_ub_and_below has_errors)
+    Analysis.File.(Tx.Fn.(has_ub_and_below ||| has_errors))
 
   let is_file_interesting : Interest_level.t -> Analysis.File.t -> bool =
     function
@@ -194,30 +187,30 @@ module On_files = struct
 end
 
 module On_deviations = struct
-  let deviating_order_opt (file : A.File.t) : Sim_diff.Order.t option =
-    Travesty.T_option.(
-      file |> A.File.state_set_order |> exclude ~f:Sim_diff.Order.is_equal)
+  let deviating_order_opt (file : A.File.t) : Sim.Diff.Order.t option =
+    Tx.Option.(
+      file |> A.File.state_set_order |> exclude ~f:Sim.Diff.Order.is_equal)
 
   let row_deviating_order_opt :
-      A.File.t Row.t -> Sim_diff.Order.t Row.t option =
+      A.File.t Row.t -> Sim.Diff.Order.t Row.t option =
     Row.filter_map_analysis ~f:deviating_order_opt
 
-  let rows (a : A.t) : Sim_diff.Order.t Row.t list =
+  let rows (a : A.t) : Sim.Diff.Order.t Row.t list =
     a |> On_files.rows |> List.filter_map ~f:row_deviating_order_opt
 
   module M : Tabulator.Tabular with type data = A.t = Make_tabulator (struct
     type data = A.t
 
-    type analysis = Sim_diff.Order.t
+    type analysis = Sim.Diff.Order.t
 
     let rows = rows
 
     let analysis_header : string list =
       ["Num. in C only"; "Num. in ASM only"]
 
-    let analysis_to_cells (ord : Sim_diff.Order.t) : string list =
-      [ Int.to_string (Set.length (Sim_diff.Order.in_left_only ord))
-      ; Int.to_string (Set.length (Sim_diff.Order.in_right_only ord)) ]
+    let analysis_to_cells (ord : Sim.Diff.Order.t) : string list =
+      [ Int.to_string (Set.length (Sim.Diff.Order.in_left_only ord))
+      ; Int.to_string (Set.length (Sim.Diff.Order.in_right_only ord)) ]
   end)
 
   include M

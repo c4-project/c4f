@@ -1,0 +1,8 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name sim)
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (libraries act_common lib utils config fmt fpath travesty travesty.base_exts
+   travesty.core_kernel_exts core shell.string_extended))

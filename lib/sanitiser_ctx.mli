@@ -26,4 +26,4 @@
 include module type of Sanitiser_ctx_intf
 
 (** [Make] builds a context monad for the given language. *)
-module Make (Lang : Language.S) : S with module Lang := Lang
+module Make (Lang : Language.Definition.S) : S with module Lang := Lang
