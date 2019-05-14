@@ -153,14 +153,13 @@ let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
     (args : Args.Standard_asm.t) (o : A.Output.t) (cfg : Config.Act.t) :
     unit Or_error.t =
   let open Result.Let_syntax in
-  let raw_target = Args.Standard_asm.target args in
-  let%bind target = Asm_target.resolve ~cfg raw_target in
-  let machine_id = to_machine_id target in
+  let%bind target = Common.resolve_target args cfg in
   let arch = get_arch target in
   let filter = Post_filter.Cfg.make ?simulator ~arch in
   let module R = Sim_support.Make_resolver (struct
     let cfg = cfg
   end) in
+  let machine_id = to_machine_id target in
   let%bind mtab = R.make_table machine_id in
   let%bind (module Filter) = make_filter filter target mtab in
   let passes =

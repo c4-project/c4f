@@ -147,6 +147,11 @@ val make_compiler_input :
 
 (* TODO(@MattWindsor91): these should be in a new module. *)
 
+val resolve_target :
+  Args.Standard_asm.t -> Config.Act.t -> Config.Compiler.Target.t Or_error.t
+(** [resolve_target args config] gets the target mentioned by [args], and
+    tries to resolve it using [config]. *)
+
 val collect_cvars :
   Args.Standard_asm.t -> C_variables.Map.t option Or_error.t
 (** [collect_cvars args] tries to merge the C global and local variable

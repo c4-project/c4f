@@ -61,8 +61,7 @@ let run_with_input_fn (o : A.Output.t)
 
 let run output_format (args : Args.Standard_asm.t) o cfg =
   let open Or_error.Let_syntax in
-  let raw_target = Args.Standard_asm.target args in
-  let%bind target = Asm_target.resolve ~cfg raw_target in
+  let%bind target = Common.resolve_target args cfg in
   let passes =
     Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.explain
   in
