@@ -339,10 +339,9 @@ module Portable = struct
     try_update_state_and_continue state_maybe current zipper
 end
 
-module Make (B : Sanitiser_base.Basic) :
-  Sanitiser_base.S_program
-  with module Lang := B.Lang
-   and module Ctx := B.Ctx = struct
+module Make (B : Common.Basic) :
+  Common.S_program with module Lang := B.Lang and module Ctx := B.Ctx =
+struct
   include B
   include Portable
   module Ctx_Zip = Zip.On_monad (Ctx)

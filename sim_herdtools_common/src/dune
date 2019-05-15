@@ -5,5 +5,4 @@
  (synopsis "Common glue for Herdtools7-derived simulators")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries utils lib sim core_kernel travesty.base_exts
-   travesty.core_kernel_exts))
+ (libraries utils sim core_kernel travesty.core_kernel_exts))

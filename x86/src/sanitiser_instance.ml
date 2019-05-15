@@ -27,7 +27,7 @@ module Hook (L : Language_definition.S) (P : Travesty.Traversable.S1) =
 struct
   open Ast
   module Lang = L
-  module Ctx = Lib.Sanitiser_ctx.Make (Lang)
+  module Ctx = Sanitiser.Ctx.Make (Lang)
   module Pass = Config.Sanitiser_pass
   module Program_container = P
 
@@ -162,6 +162,6 @@ struct
 end
 
 module Make_single (L : Language_definition.S) =
-  Lib.Sanitiser.Make_single (Hook (L))
+  Sanitiser.Instance.Make_single (Hook (L))
 module Make_multi (L : Language_definition.S) =
-  Lib.Sanitiser.Make_multi (Hook (L))
+  Sanitiser.Instance.Make_multi (Hook (L))

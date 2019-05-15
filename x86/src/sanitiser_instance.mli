@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,7 +21,26 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [Sanitiser_base] contains the base signatures shared by each sanitiser
-    pass. *)
+(** x86-specific functionality for act's sanitiser *)
 
-include module type of Sanitiser_base_intf
+(** [Hook] implements x86-specific sanitisation passes. It requires an
+    [Language.S] module to tell it things about the current x86 dialect (for
+    example, the order of operands). *)
+module Hook (L : Language_definition.S) (P : Travesty.Traversable.S1) :
+  Sanitiser.Instance.Hook
+  with module Lang := L
+   and module Program_container = P
+
+(** [Make_single] directly instantiates a single-program sanitiser for an
+    x86 language definition. *)
+module Make_single (L : Language_definition.S) :
+  Sanitiser.Instance.S
+  with module Lang := L
+   and type 'a Program_container.t = 'a
+
+(** [Make_multi] directly instantiates a multi-program sanitiser for an x86
+    language definition. *)
+module Make_multi (L : Language_definition.S) :
+  Sanitiser.Instance.S
+  with module Lang := L
+   and type 'a Program_container.t = 'a list

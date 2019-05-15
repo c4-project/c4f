@@ -50,8 +50,8 @@ let get_runner (dialect : Id.t) =
     end)
 
     module Litmus_pp = Litmus.Pp.Make_tabular (Litmus_ast)
-    module Multi_sanitiser = Sanitiser.Make_multi (Src_lang)
-    module Single_sanitiser = Sanitiser.Make_single (Src_lang)
+    module Multi_sanitiser = Sanitiser_instance.Make_multi (Src_lang)
+    module Single_sanitiser = Sanitiser_instance.Make_single (Src_lang)
     module Conv = Conv.Make (Src_lang) (Dst_lang)
 
     let convert_program = Conv.convert

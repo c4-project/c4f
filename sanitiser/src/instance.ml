@@ -24,14 +24,14 @@
 open Core_kernel
 open Travesty_containers
 module Tx = Travesty_core_kernel_exts
-include Sanitiser_intf
+include Instance_intf
 
 module Make_null_hook
     (Lang : Language.Definition.S)
     (P : Travesty.Traversable.S1) :
   Hook with module Lang = Lang and module Program_container = P = struct
   module Lang = Lang
-  module Ctx = Sanitiser_ctx.Make (Lang)
+  module Ctx = Ctx.Make (Lang)
   module Program_container = P
 
   let on_all = Ctx.return
@@ -324,8 +324,8 @@ module Make (B : Basic) :
   let remove_useless_jumps =
     Ctx_Lst.map_m ~f:remove_useless_jumps_in_listing
 
-  module Deref = Sanitiser_deref.Make (B)
-  module Symbols = Sanitiser_symbols.Make (B)
+  module Deref = Deref.Make (B)
+  module Symbols = Symbols.Make (B)
 
   let update_symbol_table (prog : Lang.Program.t) =
     let open Ctx.Let_syntax in

@@ -21,10 +21,13 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Assembly sanitisation *)
+(** Sanitiser: instances of assembly sanitisers.
+
+    This module contains the signatures of full-program assembly sanitisers,
+    as well as functors for making them. *)
 
 (** @inline *)
-include module type of Sanitiser_intf
+include module type of Instance_intf
 
 (** [Make_null_hook] makes a [Hook] that does nothing. *)
 module Make_null_hook

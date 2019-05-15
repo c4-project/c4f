@@ -5,7 +5,7 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
- (libraries core abstract lib utils menhirLib))
+ (libraries core config abstract utils menhirLib))
 
 (ocamllex
  (modules lexer))

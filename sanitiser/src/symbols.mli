@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,22 +21,20 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** x86-specific functionality for act's sanitiser *)
+(** Sanitiser passes for global symbol renaming
 
-(** [Hook] implements x86-specific sanitisation passes. It requires an
-    [Language.S] module to tell it things about the current x86 dialect (for
-    example, the order of operands). *)
-module Hook (L : Language_definition.S) (P : Travesty.Traversable.S1) :
-  Lib.Sanitiser.Hook with module Lang := L and module Program_container = P
+    This module provides a global sanitiser pass that performs two renaming
+    sub-passes on all symbols:
 
-(** [Make_single] directly instantiates a single-program sanitiser for an
-    x86 language definition. *)
-module Make_single (L : Language_definition.S) :
-  Lib.Sanitiser.S with module Lang := L and type 'a Program_container.t = 'a
+    {ul
+     {- [`Unmangle_symbols]: replace compiler-mangled symbols with their
+        original C identifiers where doing so is unambiguous;}
+     {- [`Escape_symbols]: replace characters in symbols that are difficult
+        for Herd-like programs to parse with less human-readable (but more
+        machine-readable) equivalents.}} *)
 
-(** [Make_multi] directly instantiates a multi-program sanitiser for an x86
-    language definition. *)
-module Make_multi (L : Language_definition.S) :
-  Lib.Sanitiser.S
-  with module Lang := L
-   and type 'a Program_container.t = 'a list
+module Make (B : Common.Basic) :
+  Common.S_all
+  with module Lang := B.Lang
+   and module Ctx := B.Ctx
+   and module Program_container := B.Program_container

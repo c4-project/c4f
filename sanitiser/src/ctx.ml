@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-include Sanitiser_ctx_intf
+include Ctx_intf
 
 let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string
     =
@@ -35,7 +35,7 @@ let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string
 module Make (Lang : Language.Definition.S) : S with module Lang := Lang =
 struct
   module Lang = Lang
-  module Warn = Sanitiser_warn.Make (Lang)
+  module Warn = Warn.Make (Lang)
   module Pass = Config.Sanitiser_pass
 
   type ctx =

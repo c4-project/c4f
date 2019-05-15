@@ -29,34 +29,34 @@ open Act_common
 (** [Hook] is an interface for language-specific hooks into the sanitisation
     process. *)
 module type Hook = sig
-  include Sanitiser_base.Basic
+  include Common.Basic
 
   include
-    Sanitiser_base.S_all
+    Common.S_all
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
 
   include
-    Sanitiser_base.S_program
+    Common.S_program
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
 
   include
-    Sanitiser_base.S_statement
+    Common.S_statement
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
 
   include
-    Sanitiser_base.S_instruction
+    Common.S_instruction
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
 
   include
-    Sanitiser_base.S_location
+    Common.S_location
     with module Lang := Lang
      and module Ctx := Ctx
      and module Program_container := Program_container
@@ -90,7 +90,7 @@ module type S = sig
   (** [Lang] is the language over which we are sanitising. *)
   module Lang : Language.Definition.S
 
-  module Warn : Sanitiser_warn.S with module Lang := Lang
+  module Warn : Warn.S with module Lang := Lang
 
   (** The type of symbol redirect maps this sanitiser outputs. *)
   module Redirect :

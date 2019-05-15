@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-include Sanitiser_warn_intf
+include Warn_intf
 
 module Make (Lang : Language.Definition.S) : S with module Lang := Lang =
 struct

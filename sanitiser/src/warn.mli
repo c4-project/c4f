@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,9 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Sanitiser: warnings
+(** Sanitiser: warnings *)
 
-    The interface for the sanitiser warnings system is kept in
-    [Sanitiser_warn_intf.ml], to prevent duplication. *)
+(** @inline *)
+include module type of Warn_intf
 
-include Sanitiser_warn_intf.Sanitiser_warn
+(** [Make] produces a warnings module for the given language. *)
+module Make (Lang : Language.Definition.S) : S with module Lang := Lang

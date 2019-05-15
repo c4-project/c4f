@@ -23,7 +23,7 @@
 
 (** Sanitiser: context state monad. *)
 
-include module type of Sanitiser_ctx_intf
+include module type of Ctx_intf
 
 (** [Make] builds a context monad for the given language. *)
 module Make (Lang : Language.Definition.S) : S with module Lang := Lang

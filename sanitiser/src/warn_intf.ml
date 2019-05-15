@@ -63,10 +63,3 @@ module type S = sig
 
   include Pretty_printer.S with type t := t
 end
-
-module type Sanitiser_warn = sig
-  module type S = S
-
-  (** [Make] produces a warnings module for the given language. *)
-  module Make (Lang : Language.Definition.S) : S with module Lang := Lang
-end

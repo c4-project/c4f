@@ -28,7 +28,7 @@ module type Basic = sig
   module Lang : Language.Definition.S
 
   (** [Ctx] is the sanitiser's state monad, specialised over [Lang]. *)
-  module Ctx : Sanitiser_ctx.S with module Lang := Lang
+  module Ctx : Ctx.S with module Lang := Lang
 
   (** [Program_container] is the container used to hold the one or more
       programs being sanitised. *)

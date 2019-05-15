@@ -35,7 +35,7 @@ module type S = sig
   module Litmus : Litmus.Ast.S
 
   (** The sanitiser module whose output we're litmusifying. *)
-  module Sanitiser : Lib.Sanitiser.S
+  module Sanitiser : Sanitiser.Instance.S
 
   val make :
        config:conf

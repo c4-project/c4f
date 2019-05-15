@@ -30,7 +30,7 @@ open Base
 module type S = sig
   module Lang : Language.Definition.S
 
-  module Warn : Sanitiser_warn.S with module Lang := Lang
+  module Warn : Warn.S with module Lang := Lang
 
   type ctx
 

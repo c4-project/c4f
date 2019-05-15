@@ -46,12 +46,12 @@ module type Basic = sig
   module Litmus_pp : Litmus.Pp.S with module Ast = Litmus_ast
 
   module Multi_sanitiser :
-    Lib.Sanitiser.S
+    Sanitiser.Instance.S
     with module Lang := Src_lang
      and type 'a Program_container.t = 'a list
 
   module Single_sanitiser :
-    Lib.Sanitiser.S
+    Sanitiser.Instance.S
     with module Lang := Src_lang
      and type 'a Program_container.t = 'a
 
