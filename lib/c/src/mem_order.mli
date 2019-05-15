@@ -55,7 +55,7 @@ val is_rmw_compatible : t -> bool
 
 (** The Quickcheck implementation pulled in by [Extension_table], by
     default, generates from the whole pool of memory orders. To restrict to
-    those that make sense in a particular context, see {{!gen_load} } et al. *)
+    those that make sense in a particular context, see {{!gen_load} gen_load} et al. *)
 
 val gen_load : t Quickcheck.Generator.t
 (** [gen_load] generates a random memory order suitable for loads. *)

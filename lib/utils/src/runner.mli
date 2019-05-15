@@ -32,7 +32,7 @@ val argv_one_file :
 (** [argv_one_file f] adapts a function that builds an argument list from
     one input file and one output file to one that works on manifests. *)
 
-(** Makes a {!{S}S} from a {{!{Basic}}. *)
+(** Makes a {{!S}S} from a {{!Basic}Basic}. *)
 module Make (B : Basic) : S
 
 (** [Local] just runs commands on the local machine. *)

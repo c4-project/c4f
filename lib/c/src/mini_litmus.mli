@@ -45,5 +45,5 @@ module Ast : Litmus.Ast.S with module Lang = Lang
 module Pp : Litmus.Pp.S with module Ast = Ast
 
 val cvars : Ast.Validated.t -> Act_common.C_variables.Map.t
-(** cvars ast] gets the map of C variables referenced in a mini-C Litmus
+(** [cvars ast] gets the map of C variables referenced in a mini-C Litmus
     test. *)
