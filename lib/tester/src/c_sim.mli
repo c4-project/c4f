@@ -27,4 +27,4 @@ include module type of C_sim_intf
 
 (** [Make] adapts a simulation runner to the C simulation interface, by
     filling in logic specific to running C simulation queries. *)
-module Make (R : Sim.Runner.S) : S
+module Make (R : Act_sim.Runner.S) : S

@@ -52,9 +52,9 @@ module type Basic = sig
   (** [pp_operands f ins] pretty-prints only the instruction operands. *)
 
   include
-    Abstract.Abstractable.S
+    Act_abstract.Abstractable.S
     with type t := t
-     and module Abs := Abstract.Instruction
+     and module Abs := Act_abstract.Instruction
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
@@ -92,7 +92,7 @@ module type Basic = sig
       with a location in position [pos], and, if it is, returns that
       location. *)
 
-  val abs_operands : t -> Abstract.Operand.Bundle.t
+  val abs_operands : t -> Act_abstract.Operand.Bundle.t
   (** [abs_operands ins] gets the abstracted operands of instruction [ins]. *)
 end
 
@@ -164,9 +164,10 @@ module type S = sig
 
   (** We can query abstract properties directly on the concrete instruction
       type. *)
-  include Abstract.Instruction.S_properties with type t := t
+  include Act_abstract.Instruction.S_properties with type t := t
 
   (** We can query abstract operand bundle properties on a concrete
       instruction type, routing through [abs_operands]. *)
-  module On_operands : Abstract.Operand.Bundle.S_properties with type t := t
+  module On_operands :
+    Act_abstract.Operand.Bundle.S_properties with type t := t
 end

@@ -22,10 +22,10 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_common
+module Ac = Act_common
+module Au = Act_utils
 module Tx = Travesty_core_kernel_exts
 include Act_intf
-module My_list = Utils.My_list
 
 module Raw = struct
   module C = Compiler.Cfg_spec
@@ -46,19 +46,19 @@ module Raw = struct
       let ssh (items : Ast.Ssh.t list) : Machine.Ssh.t Or_error.t =
         Or_error.Let_syntax.(
           let%map user =
-            My_list.find_one items ~item_name:"user" ~f:(function
+            Au.My_list.find_one items ~item_name:"user" ~f:(function
               | User u ->
                   Some u
               | _ ->
                   None )
           and host =
-            My_list.find_one items ~item_name:"host" ~f:(function
+            Au.My_list.find_one items ~item_name:"host" ~f:(function
               | Host h ->
                   Some h
               | _ ->
                   None )
           and copy_dir =
-            My_list.find_one items ~item_name:"copy to" ~f:(function
+            Au.My_list.find_one items ~item_name:"copy to" ~f:(function
               | Copy_to c ->
                   Some c
               | _ ->
@@ -75,7 +75,7 @@ module Raw = struct
       let litmus (items : Ast.Litmus.t list) : Litmus_tool.t Or_error.t =
         Or_error.Let_syntax.(
           let%map cmd =
-            My_list.find_one_opt items ~item_name:"cmd" ~f:(function
+            Au.My_list.find_one_opt items ~item_name:"cmd" ~f:(function
                 | Cmd c -> Some c (* | _ -> None *) )
           in
           Litmus_tool.make ?cmd ())
@@ -83,17 +83,17 @@ module Raw = struct
       let machine (items : Ast.Machine.t list) : Machine.Spec.t Or_error.t =
         Or_error.Let_syntax.(
           let%bind enabled =
-            My_list.find_at_most_one items ~item_name:"enabled"
+            Au.My_list.find_at_most_one items ~item_name:"enabled"
               ~f:(function Enabled b -> Some b | _ -> None)
               ~on_empty:(Or_error.return true)
           and litmus_raw =
-            My_list.find_one_opt items ~item_name:"litmus" ~f:(function
+            Au.My_list.find_one_opt items ~item_name:"litmus" ~f:(function
               | Litmus h ->
                   Some h
               | _ ->
                   None )
           and via_raw =
-            My_list.find_one items ~item_name:"via" ~f:(function
+            Au.My_list.find_one items ~item_name:"via" ~f:(function
               | Via v ->
                   Some v
               | _ ->
@@ -106,37 +106,37 @@ module Raw = struct
       let compiler (items : Ast.Compiler.t list) : C.t Or_error.t =
         Or_error.Let_syntax.(
           let%map enabled =
-            My_list.find_at_most_one items ~item_name:"enabled"
+            Au.My_list.find_at_most_one items ~item_name:"enabled"
               ~f:(function Enabled b -> Some b | _ -> None)
               ~on_empty:(Or_error.return true)
           and style =
-            My_list.find_one items ~item_name:"style" ~f:(function
+            Au.My_list.find_one items ~item_name:"style" ~f:(function
               | Style s ->
-                  Some (Id.to_string s)
+                  Some (Ac.Id.to_string s)
               | _ ->
                   None )
           and emits =
-            My_list.find_one items ~item_name:"emits" ~f:(function
+            Au.My_list.find_one items ~item_name:"emits" ~f:(function
               | Emits e ->
                   Some e
               | _ ->
                   None )
           and cmd =
-            My_list.find_one items ~item_name:"cmd" ~f:(function
+            Au.My_list.find_one items ~item_name:"cmd" ~f:(function
               | Cmd c ->
                   Some c
               | _ ->
                   None )
           and argv =
-            My_list.find_at_most_one items ~item_name:"argv"
+            Au.My_list.find_at_most_one items ~item_name:"argv"
               ~f:(function Argv v -> Some v | _ -> None)
               ~on_empty:(return [])
           and herd =
-            My_list.find_at_most_one items ~item_name:"herd"
+            Au.My_list.find_at_most_one items ~item_name:"herd"
               ~f:(function Herd h -> Some h | _ -> None)
               ~on_empty:(return true)
           and machine =
-            My_list.find_at_most_one items ~item_name:"copy to"
+            Au.My_list.find_at_most_one items ~item_name:"copy to"
               ~f:(function Machine m -> Some m | _ -> None)
               ~on_empty:(return Machine.Id.default)
           in
@@ -146,19 +146,19 @@ module Raw = struct
       let cpp (items : Ast.Cpp.t list) =
         Or_error.Let_syntax.(
           let%map cmd =
-            My_list.find_one_opt items ~item_name:"cmd" ~f:(function
+            Au.My_list.find_one_opt items ~item_name:"cmd" ~f:(function
               | Cmd c ->
                   Some c
               | _ ->
                   None )
           and argv =
-            My_list.find_one_opt items ~item_name:"argv" ~f:(function
+            Au.My_list.find_one_opt items ~item_name:"argv" ~f:(function
               | Argv v ->
                   Some v
               | _ ->
                   None )
           and enabled =
-            My_list.find_at_most_one items ~item_name:"enabled"
+            Au.My_list.find_at_most_one items ~item_name:"enabled"
               ~f:(function Enabled b -> Some b | _ -> None)
               ~on_empty:(return true)
           in
@@ -167,13 +167,13 @@ module Raw = struct
       let herd (items : Ast.Herd.t list) =
         Or_error.Let_syntax.(
           let%map cmd =
-            My_list.find_one_opt items ~item_name:"cmd" ~f:(function
+            Au.My_list.find_one_opt items ~item_name:"cmd" ~f:(function
               | Cmd c ->
                   Some c
               | _ ->
                   None )
           and c_model =
-            My_list.find_one_opt items ~item_name:"c_model" ~f:(function
+            Au.My_list.find_one_opt items ~item_name:"c_model" ~f:(function
               | C_model c ->
                   Some c
               | _ ->
@@ -191,7 +191,7 @@ module Raw = struct
       let build_cpp (items : Ast.t) =
         Or_error.Let_syntax.(
           let cpp_ast_result =
-            My_list.find_one_opt items ~item_name:"cpp" ~f:Ast.Top.as_cpp
+            Au.My_list.find_one_opt items ~item_name:"cpp" ~f:Ast.Top.as_cpp
           in
           match%bind cpp_ast_result with
           | Some cpp_ast ->
@@ -202,7 +202,8 @@ module Raw = struct
       let build_herd (items : Ast.t) =
         Or_error.Let_syntax.(
           let herd_ast_result =
-            My_list.find_one_opt items ~item_name:"herd" ~f:Ast.Top.as_herd
+            Au.My_list.find_one_opt items ~item_name:"herd"
+              ~f:Ast.Top.as_herd
           in
           match%bind herd_ast_result with
           | Some herd_ast ->
@@ -231,7 +232,7 @@ module Raw = struct
       let build_fuzz (items : Ast.t) : Fuzz.t option Or_error.t =
         Or_error.Let_syntax.(
           items
-          |> My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
+          |> Au.My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
           >>= Tx.Option.With_errors.map_m ~f:Fuzz.of_ast)
 
       let main (items : Ast.t) : t Or_error.t =
@@ -244,7 +245,7 @@ module Raw = struct
           make ?cpp ?herd ?fuzz ~machines ~compilers ())
     end
 
-    include Utils.Loadable.Make_chain (struct
+    include Au.Loadable.Make_chain (struct
                 type t = Ast.t
 
                 include Frontend
@@ -256,13 +257,13 @@ module Raw = struct
               end)
   end
 
-  include (Raw_load : Utils.Loadable.S with type t := t)
+  include (Raw_load : Au.Loadable.S with type t := t)
 end
 
 let part_chain_fst f g x = match f x with `Fst y -> g y | `Snd y -> `Snd y
 
 (** Helpers for partitioning specs, parametrised on the spec type interface. *)
-module Part_helpers (S : Spec.S) = struct
+module Part_helpers (S : Ac.Spec.S) = struct
   (** [part_enabled x] is a partition_map function that sorts [x] into
       [`Fst] if they're enabled and [`Snd] if not. *)
   let part_enabled (x : S.With_id.t) =
@@ -292,8 +293,8 @@ module M = struct
     ; fuzz: Fuzz.t option [@sexp.option]
     ; herd: Herd.t option [@sexp.option]
     ; sanitiser_passes: default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t
-    ; disabled_compilers: (Id.t, Error.t option) List.Assoc.t
-    ; disabled_machines: (Id.t, Error.t option) List.Assoc.t }
+    ; disabled_compilers: (Ac.Id.t, Error.t option) List.Assoc.t
+    ; disabled_machines: (Ac.Id.t, Error.t option) List.Assoc.t }
   [@@deriving sexp, fields]
 
   module RP = Part_helpers (Raw.C)
@@ -305,8 +306,8 @@ module M = struct
 
   let machines_from_raw (hook : Machine.Spec.With_id.t hook)
       (ms : Machine.Spec.Set.t) :
-      (Machine.Spec.Set.t * (Id.t, Error.t option) List.Assoc.t) Or_error.t
-      =
+      (Machine.Spec.Set.t * (Ac.Id.t, Error.t option) List.Assoc.t)
+      Or_error.t =
     let open Or_error.Let_syntax in
     Machine.Spec.Set.(
       let enabled, disabled =
@@ -331,11 +332,12 @@ module M = struct
       | Ok m ->
           return (`Fst m)
       | _ -> (
-        match List.Assoc.find ~equal:Id.equal disabled mach with
+        match List.Assoc.find ~equal:Ac.Id.equal disabled mach with
         | Some e ->
             return (`Snd (mach, e))
         | None ->
-            error_s [%message "Machine doesn't exist" ~id:(mach : Id.t)] ))
+            error_s [%message "Machine doesn't exist" ~id:(mach : Ac.Id.t)]
+        ))
 
   let part_resolve enabled disabled c =
     let machine_id = Raw.C.With_id.machine c in
@@ -362,9 +364,9 @@ module M = struct
     conf |> herd |> Tx.Option.value_f ~default_f:Herd.default
 
   let compilers_from_raw (ms : Machine.Spec.Set.t)
-      (ms_disabled : (Id.t, Error.t option) List.Assoc.t)
+      (ms_disabled : (Ac.Id.t, Error.t option) List.Assoc.t)
       (hook : C.With_id.t hook) (cs : Raw.C.Set.t) :
-      (C.Set.t * (Id.t, Error.t option) List.Assoc.t) Or_error.t =
+      (C.Set.t * (Ac.Id.t, Error.t option) List.Assoc.t) Or_error.t =
     let open Or_error.Let_syntax in
     Raw.C.Set.(
       let enabled, disabled =

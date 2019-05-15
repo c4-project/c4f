@@ -24,7 +24,7 @@
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
 open Act_common
-open Utils
+open Act_utils
 module Var = Fuzzer_var
 module Subject = Fuzzer_subject
 module State = Fuzzer_state
@@ -109,7 +109,7 @@ module Make_program : Action.S = struct
   let name = Id.of_string "program.make.empty"
 
   let readme () =
-    Utils.My_string.format_for_readme
+    Act_utils.My_string.format_for_readme
       {|
     Generates a new, empty program at one end of the program list.
     This action isn't very useful on its own, but works well in combination
@@ -138,7 +138,7 @@ module Make_global : Action.S = struct
   let name = Id.of_string "var.make.global"
 
   let readme () =
-    Utils.My_string.format_for_readme
+    Act_utils.My_string.format_for_readme
       {|
     Generates a new global integer variable, with a random name, initial value,
     and atomicity.
@@ -214,13 +214,14 @@ let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
           Output.pv o "fuzz: action done.@." ;
           State.Monad.return () )
 
-let make_pool : Config.Fuzz.t -> Action.Pool.t Or_error.t =
+let make_pool : Act_config.Fuzz.t -> Action.Pool.t Or_error.t =
   Action.Pool.make (Lazy.force modules)
 
-let summarise (cfg : Config.Fuzz.t) : Action.Summary.t Id.Map.t Or_error.t =
+let summarise (cfg : Act_config.Fuzz.t) :
+    Action.Summary.t Id.Map.t Or_error.t =
   Or_error.(cfg |> make_pool >>| Action.Pool.summarise)
 
-let mutate_subject (subject : Subject.Test.t) ~(config : Config.Fuzz.t)
+let mutate_subject (subject : Subject.Test.t) ~(config : Act_config.Fuzz.t)
     ~(rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =
   State.Monad.Let_syntax.(
     let cap = 10 in
@@ -235,7 +236,7 @@ let mutate_subject (subject : Subject.Test.t) ~(config : Config.Fuzz.t)
     subject')
 
 let run_with_state (test : Mini_litmus.Ast.Validated.t)
-    ~(config : Config.Fuzz.t) ~(rng : Splittable_random.State.t) :
+    ~(config : Act_config.Fuzz.t) ~(rng : Splittable_random.State.t) :
     Mini_litmus.Ast.Validated.t State.Monad.t =
   let open State.Monad.Let_syntax in
   (* TODO: add uuid to this *)
@@ -282,7 +283,7 @@ let make_initial_state (o : Output.t) (test : Mini_litmus.Ast.Validated.t) :
   State.init ~o ~globals ~locals ()
 
 let run ?(seed : int option) (test : Mini_litmus.Ast.Validated.t)
-    ~(o : Output.t) ~(config : Config.Fuzz.t) :
+    ~(o : Output.t) ~(config : Act_config.Fuzz.t) :
     Mini_litmus.Ast.Validated.t Or_error.t =
   Or_error.(
     make_initial_state o test

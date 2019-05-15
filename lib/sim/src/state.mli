@@ -25,7 +25,7 @@
 
 open Base
 open Act_common
-open Utils
+open Act_utils
 
 (** [t] is the type of states: a binding from name to value. *)
 type t [@@deriving sexp, compare, quickcheck]

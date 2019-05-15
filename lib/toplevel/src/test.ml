@@ -23,7 +23,7 @@
 
 open Core
 open Act_common
-open Utils
+open Act_utils
 
 let report_spec_errors (o : Output.t) = function
   | [] ->
@@ -38,33 +38,34 @@ let report_spec_errors (o : Output.t) = function
 (* TODO(@MattWindsor91): de-hardcode Herd here *)
 let make_tester_config ?(c_simulator : Id.t = Id.of_string "herd")
     ?(asm_simulator : Id.t = Id.of_string "herd") ~(out_root_raw : string)
-    ~(input_mode : Tester.Input_mode.t) o cfg :
-    Tester.Run_config.t Or_error.t =
+    ~(input_mode : Act_tester.Input_mode.t) o cfg :
+    Act_tester.Run_config.t Or_error.t =
   let open Or_error.Let_syntax in
   let%bind output_root_dir = Io.fpath_of_string out_root_raw in
-  let specs = Config.Act.compilers cfg in
+  let specs = Act_config.Act.compilers cfg in
   report_spec_errors o
-    (List.filter_map ~f:snd (Config.Act.disabled_compilers cfg)) ;
+    (List.filter_map ~f:snd (Act_config.Act.disabled_compilers cfg)) ;
   let compilers =
     specs
-    |> Config.Compiler.Spec.Set.map ~f:Config.Compiler.Spec.With_id.id
+    |> Act_config.Compiler.Spec.Set.map
+         ~f:Act_config.Compiler.Spec.With_id.id
     |> Id.Set.of_list
   in
   let%map pathset =
-    Tester.Pathset.Run.make_and_mkdirs {output_root_dir; input_mode}
+    Act_tester.Pathset.Run.make_and_mkdirs {output_root_dir; input_mode}
   in
-  Tester.Run_config.make ~c_simulator ~asm_simulator ~pathset ~compilers
+  Act_tester.Run_config.make ~c_simulator ~asm_simulator ~pathset ~compilers
 
-let make_tester o (cfg : Config.Act.t) timing_mode =
-  let herd_cfg = Config.Act.herd_or_default cfg in
-  ( module Tester.Instance.Make (struct
-    module T = (val Utils.Timing.Mode.to_module timing_mode)
+let make_tester o (cfg : Act_config.Act.t) timing_mode =
+  let herd_cfg = Act_config.Act.herd_or_default cfg in
+  ( module Act_tester.Instance.Make (struct
+    module T = (val Act_utils.Timing.Mode.to_module timing_mode)
 
     module Resolve_compiler = Language_support.Resolve_compiler
 
     let o = o
 
-    module Herd = Sim_herd.Runner.Make (struct
+    module Herd = Act_sim_herd.Runner.Make (struct
       let config = herd_cfg
     end)
 
@@ -74,31 +75,31 @@ let make_tester o (cfg : Config.Act.t) timing_mode =
 
     module C_simulator = Herd
 
-    let compilers = Config.Act.compilers cfg
+    let compilers = Act_config.Act.compilers cfg
 
     let sanitiser_passes =
-      Config.Act.sanitiser_passes cfg
-        ~default:Config.Sanitiser_pass.standard
+      Act_config.Act.sanitiser_passes cfg
+        ~default:Act_config.Sanitiser_pass.standard
 
     let asm_runner_from_spec =
       Fn.compose Language_support.asm_runner_from_arch
-        Config.Compiler.Spec.With_id.emits
+        Act_config.Compiler.Spec.With_id.emits
   end)
-  : Tester.Instance.S )
+  : Act_tester.Instance.S )
 
 let print_table t = Tabulator.print t ; Stdio.print_endline ""
 
 let cook_memalloy in_root_raw =
   let open Or_error.Let_syntax in
   let%bind input_root = Io.fpath_of_string in_root_raw in
-  Tester.Input_mode.memalloy ~input_root
+  Act_tester.Input_mode.memalloy ~input_root
 
 let cook_delitmus files_raw =
   let open Or_error.Let_syntax in
   let%bind files =
     files_raw |> List.map ~f:Io.fpath_of_string |> Or_error.combine_errors
   in
-  Tester.Input_mode.litmus_only ~files
+  Act_tester.Input_mode.litmus_only ~files
 
 let cook_input_mode = function
   | `Memalloy in_root_raw ->
@@ -106,12 +107,13 @@ let cook_input_mode = function
   | `Delitmus files_raw ->
       cook_delitmus files_raw
 
-let output_main_table (analysis : Tester.Analysis.t) : unit Or_error.t =
+let output_main_table (analysis : Act_tester.Analysis.t) : unit Or_error.t =
   (* TODO(@MattWindsor): wire this up *)
   let a =
-    {Tester.Analysis_table.Interest_level.data= analysis; level= All}
+    {Act_tester.Analysis_table.Interest_level.data= analysis; level= All}
   in
-  Or_error.(a |> Tester.Analysis_table.On_files.to_table >>| print_table)
+  Or_error.(
+    a |> Act_tester.Analysis_table.On_files.to_table >>| print_table)
 
 let non_empty : 'a list -> 'a list option = function
   | [] ->
@@ -119,7 +121,8 @@ let non_empty : 'a list -> 'a list option = function
   | xs ->
       Some xs
 
-let pp_deviation_bucket (bucket_name : string) : Sim.State.t list Fmt.t =
+let pp_deviation_bucket (bucket_name : string) : Act_sim.State.t list Fmt.t
+    =
   Fmt.(
     using non_empty
       (option
@@ -130,24 +133,26 @@ let pp_deviation_bucket (bucket_name : string) : Sim.State.t list Fmt.t =
                (suffix sp
                   (styled `Red (const (fmt "In %s only:") bucket_name)))
                (vbox
-                  (list ~sep:sp (using [%sexp_of: Sim.State.t] Sexp.pp_hum)))))))
+                  (list ~sep:sp
+                     (using [%sexp_of: Act_sim.State.t] Sexp.pp_hum)))))))
 
-let to_deviation_lists (ord : Sim.Diff.Order.t) :
-    Sim.State.t list * Sim.State.t list =
-  let l = ord |> Sim.Diff.Order.in_left_only |> Set.to_list in
-  let r = ord |> Sim.Diff.Order.in_right_only |> Set.to_list in
+let to_deviation_lists (ord : Act_sim.Diff.Order.t) :
+    Act_sim.State.t list * Act_sim.State.t list =
+  let l = ord |> Act_sim.Diff.Order.in_left_only |> Set.to_list in
+  let r = ord |> Act_sim.Diff.Order.in_right_only |> Set.to_list in
   (l, r)
 
-let pp_deviation : Sim.Diff.Order.t Fmt.t =
+let pp_deviation : Act_sim.Diff.Order.t Fmt.t =
   Fmt.(
     using to_deviation_lists
       (pair ~sep:sp (pp_deviation_bucket "C") (pp_deviation_bucket "asm")))
 
-let pp_deviation_row : Sim.Diff.Order.t Tester.Analysis_table.Row.t Fmt.t =
+let pp_deviation_row :
+    Act_sim.Diff.Order.t Act_tester.Analysis_table.Row.t Fmt.t =
   Fmt.(
     vbox ~indent:2
       (using
-         Tester.Analysis_table.Row.(
+         Act_tester.Analysis_table.Row.(
            fun x -> (((compiler_id x, machine_id x), filename x), analysis x))
          (pair ~sep:sp
             (hbox
@@ -156,8 +161,8 @@ let pp_deviation_row : Sim.Diff.Order.t Tester.Analysis_table.Row.t Fmt.t =
                   string))
             pp_deviation)))
 
-let output_deviations (analysis : Tester.Analysis.t) : unit =
-  match Tester.Analysis_table.On_deviations.rows analysis with
+let output_deviations (analysis : Act_tester.Analysis.t) : unit =
+  match Act_tester.Analysis_table.On_deviations.rows analysis with
   | [] ->
       ()
   | rs ->
@@ -166,7 +171,7 @@ let output_deviations (analysis : Tester.Analysis.t) : unit =
           (list ~sep:sp pp_deviation_row))
         rs
 
-let output_analysis (analysis : Tester.Analysis.t) : unit Or_error.t =
+let output_analysis (analysis : Act_tester.Analysis.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   let%map () = output_main_table analysis in
   output_deviations analysis
@@ -174,7 +179,7 @@ let output_analysis (analysis : Tester.Analysis.t) : unit Or_error.t =
 let run (c_simulator : Id.t option) (asm_simulator : Id.t option)
     (should_time : bool)
     (input_mode_raw : [< `Delitmus of string list | `Memalloy of string])
-    (out_root_raw : string) (o : Output.t) (cfg : Config.Act.t) :
+    (out_root_raw : string) (o : Output.t) (cfg : Act_config.Act.t) :
     unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind input_mode = cook_input_mode input_mode_raw in

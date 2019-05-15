@@ -1,5 +1,7 @@
 open Base
 include C_sim_intf
+module C = Act_c
+module Sim = Act_sim
 
 module Make (R : Sim.Runner.S) : S = struct
   let no_post_error () : Error.t =

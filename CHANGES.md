@@ -1,5 +1,10 @@
 # Unreleased
 
+## 2019-May-15
+
+- Almost all `act` modules are now publicly exposed as `act.foo` (with
+  name changed from `Foo` to `Act_foo`.)
+
 ## 2019-Apr-24
 
 - New standard flag: `colour`, which takes `always`, `never`, or `auto`

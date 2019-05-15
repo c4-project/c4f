@@ -27,20 +27,20 @@
     [Language.S] module to tell it things about the current x86 dialect (for
     example, the order of operands). *)
 module Hook (L : Language_definition.S) (P : Travesty.Traversable.S1) :
-  Sanitiser.Instance.Hook
+  Act_sanitiser.Instance.Hook
   with module Lang := L
    and module Program_container = P
 
 (** [Make_single] directly instantiates a single-program sanitiser for an
     x86 language definition. *)
 module Make_single (L : Language_definition.S) :
-  Sanitiser.Instance.S
+  Act_sanitiser.Instance.S
   with module Lang := L
    and type 'a Program_container.t = 'a
 
 (** [Make_multi] directly instantiates a multi-program sanitiser for an x86
     language definition. *)
 module Make_multi (L : Language_definition.S) :
-  Sanitiser.Instance.S
+  Act_sanitiser.Instance.S
   with module Lang := L
    and type 'a Program_container.t = 'a list

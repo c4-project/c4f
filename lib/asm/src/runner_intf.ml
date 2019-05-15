@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Utils
+open Act_utils
 
 (** [Basic] is a signature bringing together the modules we need to be able
     to run single-file jobs. *)
@@ -31,27 +31,27 @@ module type Basic = sig
 
   (** [Src_lang] is the main language used in the jobs, which may differ
       from the [Litmus] language. *)
-  module Src_lang : Language.Definition.S
+  module Src_lang : Act_language.Definition.S
 
   (** [Dst_lang] is the language used in emitted Litmus tests. *)
-  module Dst_lang : Language.Definition.S
+  module Dst_lang : Act_language.Definition.S
 
   module Frontend : Frontend.S with type ast := ast
 
   module Litmus_ast :
-    Litmus.Ast.S
+    Act_litmus.Ast.S
     with type Lang.Program.t = Dst_lang.Program.t
      and type Lang.Constant.t = Dst_lang.Constant.t
 
-  module Litmus_pp : Litmus.Pp.S with module Ast = Litmus_ast
+  module Litmus_pp : Act_litmus.Pp.S with module Ast = Litmus_ast
 
   module Multi_sanitiser :
-    Sanitiser.Instance.S
+    Act_sanitiser.Instance.S
     with module Lang := Src_lang
      and type 'a Program_container.t = 'a list
 
   module Single_sanitiser :
-    Sanitiser.Instance.S
+    Act_sanitiser.Instance.S
     with module Lang := Src_lang
      and type 'a Program_container.t = 'a
 
@@ -82,7 +82,7 @@ module type Runnable = sig
     -> program:program
     -> symbols:sym list
     -> config:cfg
-    -> passes:Config.Sanitiser_pass.Set.t
+    -> passes:Act_config.Sanitiser_pass.Set.t
     -> Job.Output.t Or_error.t
 end
 

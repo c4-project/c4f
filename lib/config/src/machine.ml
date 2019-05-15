@@ -22,15 +22,15 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+module Au = Act_utils
 open Act_common
 include Machine_intf
 
 module Forward_basic_spec
-    (I : Inherit.S)
+    (I : Au.Inherit.S)
     (B : Basic_spec with type t := I.c) :
   Basic_spec with type t := I.t and type via := B.via = struct
-  module H = Inherit.Helpers (I)
+  module H = Au.Inherit.Helpers (I)
 
   let runner = H.forward B.runner
 
@@ -95,7 +95,7 @@ module Ssh = struct
 
   module To_config (C : sig
     val ssh : t
-  end) : Ssh.S = struct
+  end) : Au.Ssh.S = struct
     let host = host C.ssh
 
     let user = user C.ssh
@@ -123,16 +123,16 @@ module Via = struct
 
   let to_runner = function
     | Local ->
-        (module Runner.Local : Runner.S)
+        (module Au.Runner.Local : Au.Runner.S)
     | Ssh c ->
-        ( module Utils.Ssh.Runner (struct
+        ( module Au.Ssh.Runner (struct
           include Ssh.To_config (struct
             let ssh = c
           end)
 
           let remote_dir = Fn.const c.copy_dir
         end)
-        : Runner.S )
+        : Au.Runner.S )
 
   let remoteness = function
     | Local ->

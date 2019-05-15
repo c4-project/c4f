@@ -26,7 +26,7 @@
 
 open Core_kernel
 open Act_common
-open Utils
+open Act_utils
 
 (** To reduce duplication, we describe the module types of [Compiler] in
     [Compiler_intf], and import parts of it both here and in the
@@ -123,11 +123,11 @@ module Make (B : Basic_with_run_info) : S
 
 (** Lifts a [S] to a filter. *)
 module S_to_filter (S : S) :
-  Utils.Filter.S with type aux_i = unit and type aux_o = unit
+  Filter.S with type aux_i = unit and type aux_o = unit
 
 (** Shorthand for [Make_filter (S_to_filter (B))]. *)
 module Make_filter (B : Basic_with_run_info) :
-  Utils.Filter.S with type aux_i = unit and type aux_o = unit
+  Filter.S with type aux_i = unit and type aux_o = unit
 
 (** Abstract type of auxiliary input wrappers used for compiler chains. *)
 module Chain_input : sig

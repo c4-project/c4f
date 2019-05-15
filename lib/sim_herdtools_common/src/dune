@@ -1,8 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name sim_herdtools_common)
+ (name act_sim_herdtools_common)
+ (public_name act.sim_herdtools_common)
  (synopsis "Common glue for Herdtools7-derived simulators")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries utils sim core_kernel travesty.core_kernel_exts))
+ (libraries core_kernel travesty.core_kernel_exts act_sim act_utils))

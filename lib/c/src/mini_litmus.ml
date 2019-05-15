@@ -23,12 +23,12 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Utils
+open Act_utils
 open Mini
 module A = Act_common
 
 module Lang :
-  Litmus.Ast.Basic
+  Act_litmus.Ast.Basic
   with type Statement.t =
               [`Stm of Statement.t | `Decl of Initialiser.t named]
    and type Program.t = Function.t named
@@ -74,8 +74,8 @@ module Lang :
   let name = "C"
 end
 
-module Ast = Litmus.Ast.Make (Lang)
-module Pp = Litmus.Pp.Make_sequential (Ast)
+module Ast = Act_litmus.Ast.Make (Lang)
+module Pp = Act_litmus.Pp.Make_sequential (Ast)
 
 let function_cvars_map (tid : int) ((_, func) : Lang.Program.t) :
     A.C_variables.Map.t =

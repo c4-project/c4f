@@ -25,14 +25,14 @@ open Core_kernel
 module A = Act_common
 
 let readme () : string =
-  Utils.My_string.format_for_readme
+  Act_utils.My_string.format_for_readme
     {|
 The `asm gen-stubs` command generates GCC assembly directives that can
 be slotted into a simulation harness.
 |}
 
-let run (args : Args.Standard_asm.t) (o : A.Output.t) (cfg : Config.Act.t) :
-    unit Or_error.t =
+let run (args : Args.Standard_asm.t) (o : A.Output.t)
+    (cfg : Act_config.Act.t) : unit Or_error.t =
   ignore args ;
   ignore o ;
   ignore cfg ;

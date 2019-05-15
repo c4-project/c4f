@@ -28,12 +28,13 @@ let run (file_type : [`C | `Litmus | `Infer]) (output_mode : [`All | `Vars])
   let open Or_error.Let_syntax in
   let%bind infile = Args.Standard_with_files.infile_source args in
   let%bind outfile = Args.Standard_with_files.outfile_sink args in
-  let is_c = Config.File_type.is_c infile file_type in
+  let is_c = Act_config.File_type.is_c infile file_type in
   let cpp_cfg =
-    Option.value (Config.Act.cpp cfg) ~default:(Config.Cpp.default ())
+    Option.value (Act_config.Act.cpp cfg)
+      ~default:(Act_config.Cpp.default ())
   in
-  let (module M) = C.Filters.c_module is_c in
-  let module Cpp_M = C.Cpp.Chain_filter (M) in
+  let (module M) = Act_c.Filters.c_module is_c in
+  let module Cpp_M = Act_c.Cpp.Chain_filter (M) in
   let%map _ = Cpp_M.run (cpp_cfg, Print output_mode) infile outfile in
   ()
 

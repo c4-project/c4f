@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+module Au = Act_utils
 
 module Opcode = struct
   module M = struct
@@ -64,7 +64,7 @@ module Opcode = struct
       if we add more information to abstract instructions later. *)
   module Kind = struct
     include M
-    include Enum.Extend_table (M)
+    include Au.Enum.Extend_table (M)
   end
 
   let kind = Fn.id
@@ -107,7 +107,7 @@ end
 
 module Inherit_predicates
     (P : S_predicates)
-    (I : Utils.Inherit.S_partial with type c := P.t) :
+    (I : Au.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t = struct
   open Option
 
@@ -204,8 +204,8 @@ include Properties
 
 module Inherit_properties
     (P : S_properties)
-    (I : Inherit.S with type c := P.t) : S_properties with type t := I.t =
-struct
+    (I : Au.Inherit.S with type c := P.t) :
+  S_properties with type t := I.t = struct
   let opcode x = P.opcode (I.component x)
 
   let operands x = P.operands (I.component x)
@@ -216,5 +216,5 @@ struct
     include I
   end
 
-  include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
+  include Inherit_predicates (P) (Au.Inherit.Make_partial (I_with_c))
 end

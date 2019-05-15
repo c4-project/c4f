@@ -25,11 +25,11 @@ open Core_kernel
 open Act_common
 
 let run_list_compilers (standard_args : Args.Standard.t) (_o : Output.t)
-    (cfg : Config.Act.t) : unit Or_error.t =
-  let compilers = Config.Act.compilers cfg in
+    (cfg : Act_config.Act.t) : unit Or_error.t =
+  let compilers = Act_config.Act.compilers cfg in
   let verbose = Args.Standard.is_verbose standard_args in
   Fmt.pr "@[<v>%a@]@."
-    (Config.Compiler.Spec.Set.pp_verbose verbose)
+    (Act_config.Compiler.Spec.Set.pp_verbose verbose)
     compilers ;
   Result.ok_unit
 
@@ -44,12 +44,12 @@ let list_compilers_command : Command.t =
 
 let predicate_lists : (string, (module Property.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"
-    , (module Config.Compiler.Property) )
+    , (module Act_config.Compiler.Property) )
   ; ( "Machine predicates (-filter-machines)"
-    , (module Config.Machine.Property) )
+    , (module Act_config.Machine.Property) )
   ; ("Identifier predicates", (module Id.Property))
   ; ( "Sanitiser passes (-sanitiser-passes)"
-    , (module Config.Sanitiser_pass.Selector) ) ]
+    , (module Act_config.Sanitiser_pass.Selector) ) ]
 
 let pp_tree_module : (module Property.S) Fmt.t =
  fun f (module M) -> M.pp_tree f ()
@@ -61,7 +61,7 @@ let pp_predicate_list : (string, (module Property.S)) List.Assoc.t Fmt.t =
       (vbox ~indent:2
          (pair ~sep:sp (suffix (unit ":") string) pp_tree_module)))
 
-let run_list_predicates (_o : Output.t) (_cfg : Config.Act.t) :
+let run_list_predicates (_o : Output.t) (_cfg : Act_config.Act.t) :
     unit Or_error.t =
   Fmt.pr "@[<v>%a@]@." pp_predicate_list predicate_lists ;
   Result.ok_unit
@@ -75,24 +75,25 @@ let list_predicates_command : Command.t =
           ~f:(fun _args -> run_list_predicates))
 
 let list_fuzzer_actions_readme () : string =
-  Utils.My_string.format_for_readme
+  Act_utils.My_string.format_for_readme
     {|
       Reads the current config file, and outputs information about each
       fuzzer action, including its computed weight after taking the config
       into consideration.
     |}
 
-let fuzz_config (cfg : Config.Act.t) : Config.Fuzz.t =
-  cfg |> Config.Act.fuzz |> Option.value ~default:(Config.Fuzz.make ())
+let fuzz_config (cfg : Act_config.Act.t) : Act_config.Fuzz.t =
+  cfg |> Act_config.Act.fuzz
+  |> Option.value ~default:(Act_config.Fuzz.make ())
 
-let pp_fuzz_summaries : C.Fuzzer.Action.Summary.t Id.Map.t Fmt.t =
-  Id.pp_map C.Fuzzer.Action.Summary.pp
+let pp_fuzz_summaries : Act_c.Fuzzer.Action.Summary.t Id.Map.t Fmt.t =
+  Id.pp_map Act_c.Fuzzer.Action.Summary.pp
 
-let run_list_fuzzer_actions (_o : Output.t) (cfg : Config.Act.t) :
+let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Act.t) :
     unit Or_error.t =
   let open Or_error.Let_syntax in
   let fuzz = fuzz_config cfg in
-  let%map summaries = C.Fuzzer.summarise fuzz in
+  let%map summaries = Act_c.Fuzzer.summarise fuzz in
   Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries summaries
 
 let list_fuzzer_actions_command : Command.t =

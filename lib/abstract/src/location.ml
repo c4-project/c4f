@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
 
 module Register = struct
   type t = General of string | Stack_pointer | Unknown
@@ -76,7 +75,7 @@ end
 
 module Inherit_predicates
     (P : S_predicates)
-    (I : Utils.Inherit.S_partial with type c := P.t) :
+    (I : Act_utils.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t = struct
   let is_stack_pointer x =
     Option.exists (I.component_opt x) ~f:P.is_stack_pointer
@@ -170,7 +169,7 @@ module Kind = struct
   end
 
   include M
-  include Enum.Extend_table (M)
+  include Act_utils.Enum.Extend_table (M)
 end
 
 let kind = function

@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 module A = Act_common
 
 let make_initialiser ((ty, value) : Mini.Type.t * Ast_basic.Constant.t) =

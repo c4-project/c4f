@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 type t = Variable of C_identifier.t | Deref of t
 [@@deriving sexp, variants, eq]

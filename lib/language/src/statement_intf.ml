@@ -54,9 +54,9 @@ module type Basic = sig
     Travesty.Traversable.S0 with module Elt = Ins and type t := t
 
   include
-    Abstract.Abstractable.S
+    Act_abstract.Abstractable.S
     with type t := t
-     and module Abs := Abstract.Statement
+     and module Abs := Act_abstract.Statement
 
   val empty : unit -> t
   (** [empty] builds an empty statement. *)
@@ -84,7 +84,7 @@ module type S = sig
   include Basic_with_modules
 
   val is_unused_ordinary_label :
-    t -> symbol_table:Abstract.Symbol.Table.t -> bool
+    t -> symbol_table:Act_abstract.Symbol.Table.t -> bool
   (** [is_unused_ordinary_label stm ~symbol_table] tests whether [stm] is an
       unused (not-jumped-to) label that doesn't have special meaning to act.
       It uses [~symbol_table] in the same way as [is_unused_label]. *)
@@ -95,15 +95,16 @@ module type S = sig
 
   (** We can query abstract properties (and, transitively, abstract
       instruction properties) directly on the concrete statement type. *)
-  include Abstract.Statement.S_properties with type t := t
+  include Act_abstract.Statement.S_properties with type t := t
 
   (** [Extended_flag] expands [Abstract.Statement.Flag] with an extra flag,
       representing program boundaries. *)
   module Extended_flag :
-    Abstract.Flag_enum.S
-    with type t = [Abstract.Statement.Flag.t | `Program_boundary]
+    Act_abstract.Flag_enum.S
+    with type t = [Act_abstract.Statement.Flag.t | `Program_boundary]
 
-  val extended_flags : t -> Abstract.Symbol.Table.t -> Extended_flag.Set.t
+  val extended_flags :
+    t -> Act_abstract.Symbol.Table.t -> Extended_flag.Set.t
   (** [extended_flags stm symbol_table] behaves like [flags], but can also
       return the new flags in [Extended_flag]. *)
 

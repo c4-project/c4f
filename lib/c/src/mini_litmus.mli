@@ -31,7 +31,7 @@
     This language uses {{!Reify} Reify} for all of its pretty-printing
     needs. *)
 module Lang :
-  Litmus.Ast.Basic
+  Act_litmus.Ast.Basic
   with type Statement.t =
               [ `Stm of Mini.Statement.t
               | `Decl of Mini.Identifier.t * Mini.Initialiser.t ]
@@ -39,10 +39,10 @@ module Lang :
    and type Constant.t = Mini.Constant.t
 
 (** The mini-model's full Litmus AST module. *)
-module Ast : Litmus.Ast.S with module Lang = Lang
+module Ast : Act_litmus.Ast.S with module Lang = Lang
 
 (** Pretty-printing for the mini-model's litmus AST. *)
-module Pp : Litmus.Pp.S with module Ast = Ast
+module Pp : Act_litmus.Pp.S with module Ast = Ast
 
 val cvars : Ast.Validated.t -> Act_common.C_variables.Map.t
 (** [cvars ast] gets the map of C variables referenced in a mini-C Litmus

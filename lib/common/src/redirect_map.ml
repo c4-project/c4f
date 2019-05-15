@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Utils
+open Act_utils
 include Redirect_map_intf
 module Alist = Travesty_core_kernel_exts.Alist
 

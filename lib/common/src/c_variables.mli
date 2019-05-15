@@ -36,7 +36,7 @@
     information. *)
 
 open Base
-open Utils
+open Act_utils
 
 (** Flag used to mark C variables with information about their scope. *)
 module Scope : sig

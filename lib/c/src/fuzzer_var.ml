@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Utils
+open Act_utils
 
 module Value = struct
   type t = Int of int

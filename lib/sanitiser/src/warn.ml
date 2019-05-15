@@ -24,8 +24,8 @@
 open Core_kernel
 include Warn_intf
 
-module Make (Lang : Language.Definition.S) : S with module Lang := Lang =
-struct
+module Make (Lang : Act_language.Definition.S) :
+  S with module Lang := Lang = struct
   type elt =
     | Instruction of Lang.Instruction.t
     | Location of Lang.Location.t

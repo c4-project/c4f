@@ -24,7 +24,7 @@
 (** Abstract program model: basic node signatures *)
 
 open Base
-open Utils
+open Act_utils
 
 (** [S] is the baseline signature for all abstract observation types. *)
 module type S = sig

@@ -13,7 +13,6 @@ build:
 
 .PHONY: install
 install:
-	dune build @install
 	opam install .
 
 .PHONY: test
@@ -23,6 +22,14 @@ test:
 .PHONY: fmt
 fmt:
 	dune build @fmt --auto-promote
+
+.PHONY: doc
+doc:
+	dune build @doc
+
+.PHONY: open-doc
+open-doc: doc
+	open _build/default/_doc/_html/index.html
 
 #
 # Commands for making the act paper

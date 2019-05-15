@@ -88,7 +88,7 @@ Time foo 0.33
 
 let print_output_from_string (s : string) : unit =
   print_s
-    [%sexp (Sim_litmus.Reader.read_output_from_string s : Sim.Output.t)]
+    [%sexp (Act_sim_litmus.Reader.read_output_from_string s : Act_sim.Output.t)]
 
 let%expect_test "valid output without postcondition parses correctly" =
   print_output_from_string test_output_valid_no_pc ;

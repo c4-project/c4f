@@ -24,7 +24,7 @@
 (** Outputting test analyses in tabular formats. *)
 
 open Act_common
-open Utils
+open Act_utils
 
 (** Enumeration of levels of 'interestingness', which determine which rows
     appear in certain analysis tables. *)
@@ -82,7 +82,7 @@ module On_files : sig
 end
 
 module On_deviations : sig
-  val rows : Analysis.t -> Sim.Diff.Order.t Row.t list
+  val rows : Analysis.t -> Act_sim.Diff.Order.t Row.t list
   (** [rows x] gets a list of (machine ID, compiler ID, filename, deviation)
       rows for all files in analysis [x] where there are deviations in the
       state analysis. *)

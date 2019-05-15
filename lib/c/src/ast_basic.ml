@@ -212,7 +212,7 @@ module Type_qual = struct
   end
 
   include M
-  include Utils.Enum.Extend_table (M)
+  include Act_utils.Enum.Extend_table (M)
 end
 
 module Prim_type = struct
@@ -242,7 +242,7 @@ module Prim_type = struct
   end
 
   include M
-  include Utils.Enum.Extend_table (M)
+  include Act_utils.Enum.Extend_table (M)
 end
 
 module Storage_class_spec = struct
@@ -259,7 +259,7 @@ module Storage_class_spec = struct
   end
 
   include M
-  include Utils.Enum.Extend_table (M)
+  include Act_utils.Enum.Extend_table (M)
 end
 
 module Array = struct
@@ -325,7 +325,7 @@ module Constant = struct
 end
 
 module Identifier = struct
-  include Utils.C_identifier
+  include Act_utils.C_identifier
 
   let identifier = Fn.id
 end

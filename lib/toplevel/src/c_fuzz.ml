@@ -25,22 +25,19 @@ open Core_kernel
 open Act_common
 
 let run (seed : int option) (args : Args.Standard_with_files.t)
-    (o : Output.t) (act_config : Config.Act.t) : unit Or_error.t =
-  let open Or_error.Let_syntax in
+    (o : Output.t) (act_config : Act_config.Act.t) : unit Or_error.t =
   let config =
-    act_config |> Config.Act.fuzz
-    |> Option.value ~default:(Config.Fuzz.make ())
+    act_config |> Act_config.Act.fuzz
+    |> Option.value ~default:(Act_config.Fuzz.make ())
   in
-  let%map _ =
-    C.Filters.Litmus.run_from_string_paths
-      (C.Filters.Fuzz {seed; o; config})
-      ~infile:(Args.Standard_with_files.infile_raw args)
-      ~outfile:(Args.Standard_with_files.outfile_raw args)
-  in
-  ()
+  Or_error.ignore_m
+    (Act_c.Filters.Litmus.run_from_string_paths
+       (Act_c.Filters.Fuzz {seed; o; config})
+       ~infile:(Args.Standard_with_files.infile_raw args)
+       ~outfile:(Args.Standard_with_files.outfile_raw args))
 
 let readme () : string =
-  Utils.My_string.format_for_readme
+  Act_utils.My_string.format_for_readme
     {|
 `act c fuzz` takes, as input, a C litmus test.  It then performs various
 mutations to the litmus test, and outputs the resulting modified test.

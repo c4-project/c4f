@@ -28,7 +28,7 @@ module type S = sig
   include Pp.Printer
 
   include
-    Language.Definition.S
+    Act_language.Definition.S
     with type Constant.t = Ast.Operand.t
      and type Location.t = Ast.Location.t
      and type Instruction.t = Ast.Instruction.t

@@ -32,7 +32,7 @@ include module type of Filter_intf
 
 val run_direct :
      ?oc:Stdio.Out_channel.t
-  -> Config.Litmus_tool.t
+  -> Act_config.Litmus_tool.t
   -> string list
   -> unit Or_error.t
 (** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
@@ -40,4 +40,4 @@ val run_direct :
     is absent). *)
 
 (** Interface for making a filter over litmus7. *)
-module Make (B : Basic) : Sim.Runner.Basic_filter
+module Make (B : Basic) : Act_sim.Runner.Basic_filter

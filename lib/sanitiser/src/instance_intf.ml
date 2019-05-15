@@ -88,7 +88,7 @@ end
 (** [S] is the interface to a fully-built sanitiser. *)
 module type S = sig
   (** [Lang] is the language over which we are sanitising. *)
-  module Lang : Language.Definition.S
+  module Lang : Act_language.Definition.S
 
   module Warn : Warn.S with module Lang := Lang
 
@@ -117,7 +117,7 @@ module type S = sig
       val warnings : t -> Warn.t list
       (** [warnings t] gets the warning list for this program. *)
 
-      val symbol_table : t -> Abstract.Symbol.Table.t
+      val symbol_table : t -> Act_abstract.Symbol.Table.t
       (** [symbol_table t] gets the program's final symbol table. *)
     end
 
@@ -130,7 +130,7 @@ module type S = sig
   end
 
   val sanitise :
-       ?passes:Config.Sanitiser_pass.Set.t
+       ?passes:Act_config.Sanitiser_pass.Set.t
     -> ?symbols:Lang.Symbol.t list
     -> Lang.Program.t
     -> Output.t Or_error.t

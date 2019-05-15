@@ -24,7 +24,7 @@
 open Core
 open Act_common
 
-let run (_o : Output.t) (_cfg : Config.Act.t)
+let run (_o : Output.t) (_cfg : Act_config.Act.t)
     ~(oracle_raw : [< `Herd of string | `Litmus of string])
     ~(subject_raw : [< `Herd of string | `Litmus of string]) :
     unit Or_error.t =
@@ -58,7 +58,7 @@ let file_flag (name : string) :
       ~if_nothing_chosen:`Raise)
 
 let readme () =
-  Utils.My_string.format_for_readme
+  Act_utils.My_string.format_for_readme
     {|
     `act diff-states` takes two summaries of simulation runs: an
     'oracle' (usually a program _before_ compilation), and a

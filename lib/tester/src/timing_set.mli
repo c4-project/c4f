@@ -23,7 +23,7 @@
 
 (** Modules over bundles of timing reports taken from tester runs. *)
 
-open Utils
+open Act_utils
 
 include module type of Timing_set_intf
 

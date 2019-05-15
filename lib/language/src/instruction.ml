@@ -31,8 +31,8 @@ module Make (B : Basic_with_modules) :
    and module Symbol = B.Symbol = struct
   include B
 
-  include Abstract.Instruction.Inherit_properties
-            (Abstract.Instruction)
+  include Act_abstract.Instruction.Inherit_properties
+            (Act_abstract.Instruction)
             (struct
               type nonrec t = t
 
@@ -40,8 +40,8 @@ module Make (B : Basic_with_modules) :
             end)
 
   module On_operands =
-    Abstract.Operand.Bundle.Inherit_properties
-      (Abstract.Operand.Bundle)
+    Act_abstract.Operand.Bundle.Inherit_properties
+      (Act_abstract.Operand.Bundle)
       (struct
         type nonrec t = t
 

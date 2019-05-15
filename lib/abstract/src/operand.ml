@@ -22,8 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
-module A = Act_common
+module Au = Act_utils
+module Ac = Act_common
 
 (* Define this in a separate module so we can include it as [Elt] below. *)
 module M = struct
@@ -79,7 +79,7 @@ module Kind = struct
   end
 
   include M
-  include Enum.Extend_table (M)
+  include Au.Enum.Extend_table (M)
 end
 
 let kind = function
@@ -116,7 +116,7 @@ end
 
 module Inherit_predicates
     (P : S_predicates)
-    (I : Utils.Inherit.S_partial with type c := P.t) :
+    (I : Au.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t = struct
   include Location.Inherit_predicates
             (P)
@@ -155,7 +155,7 @@ module Flag = struct
   end
 
   include M
-  include Enum.Extend_table (M)
+  include Au.Enum.Extend_table (M)
 end
 
 module type S_properties = sig
@@ -168,7 +168,7 @@ end
 
 module Inherit_properties
     (P : S_properties)
-    (I : Utils.Inherit.S with type c := P.t) :
+    (I : Au.Inherit.S with type c := P.t) :
   S_properties with type t := I.t = struct
   module I_with_c = struct
     type c = P.t
@@ -176,7 +176,7 @@ module Inherit_properties
     include I
   end
 
-  include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
+  include Inherit_predicates (P) (Au.Inherit.Make_partial (I_with_c))
 
   let flags x symbol_table = P.flags (I.component x) symbol_table
 end
@@ -251,11 +251,11 @@ module Bundle = struct
     | None
     | Single of M.t
     | Double of M.t * M.t
-    | Src_dst of (M.t, M.t) A.Src_dst.t
+    | Src_dst of (M.t, M.t) Ac.Src_dst.t
   [@@deriving sexp, variants]
 
   (* Intentionally override the [variants] version. *)
-  let src_dst ~src ~dst = Src_dst {A.Src_dst.src; dst}
+  let src_dst ~src ~dst = Src_dst {Ac.Src_dst.src; dst}
 
   module Kind = struct
     module M = struct
@@ -269,7 +269,7 @@ module Bundle = struct
     end
 
     include M
-    include Enum.Extend_table (M)
+    include Au.Enum.Extend_table (M)
   end
 
   let kind = function
@@ -301,11 +301,11 @@ module Bundle = struct
                  let%map y' = f y in
                  (x', y') ))
           ~src_dst:
-            (H.proc_variant1 (fun {A.Src_dst.src; dst} ->
+            (H.proc_variant1 (fun {Ac.Src_dst.src; dst} ->
                  let open Mo.Let_syntax in
                  let%bind src' = f src in
                  let%map dst' = f dst in
-                 {A.Src_dst.src= src'; dst= dst'} ))
+                 {Ac.Src_dst.src= src'; dst= dst'} ))
     end
   end)
 
@@ -318,7 +318,7 @@ module Bundle = struct
         M.pp f x
     | Double (op1, op2) ->
         Format.fprintf f "@[%a,@ %a@]" M.pp op1 M.pp op2
-    | Src_dst {A.Src_dst.src; dst} ->
+    | Src_dst {Ac.Src_dst.src; dst} ->
         Format.fprintf f "@[%a@ ->@ %a@]" M.pp src M.pp dst
 
   module type S_predicates = sig
@@ -326,7 +326,7 @@ module Bundle = struct
 
     val is_none : t -> bool
 
-    val as_src_dst : t -> (elt, elt) A.Src_dst.t option
+    val as_src_dst : t -> (elt, elt) Ac.Src_dst.t option
 
     val is_src_dst : t -> bool
 
@@ -345,9 +345,9 @@ module Bundle = struct
 
   module Inherit_predicates
       (P : S_predicates)
-      (I : Utils.Inherit.S_partial with type c := P.t) :
+      (I : Au.Inherit.S_partial with type c := P.t) :
     S_predicates with type t := I.t = struct
-    module H = Utils.Inherit.Partial_helpers (struct
+    module H = Au.Inherit.Partial_helpers (struct
       type c = P.t
 
       include I
@@ -398,11 +398,11 @@ module Bundle = struct
     (* Necessary because 'enum' doesn't support argumented constructors *)
     module M2 = struct
       include M
-      include Enum.Make_from_enumerate (M)
+      include Au.Enum.Make_from_enumerate (M)
     end
 
     include M2
-    include Enum.Extend_table (M2)
+    include Au.Enum.Extend_table (M2)
   end
 
   module type S_properties = sig
@@ -417,7 +417,7 @@ module Bundle = struct
 
   module Inherit_properties
       (P : S_properties)
-      (I : Utils.Inherit.S with type c := P.t) :
+      (I : Au.Inherit.S with type c := P.t) :
     S_properties with type t := I.t = struct
     module I_with_c = struct
       type c = P.t
@@ -425,7 +425,7 @@ module Bundle = struct
       include I
     end
 
-    include Inherit_predicates (P) (Utils.Inherit.Make_partial (I_with_c))
+    include Inherit_predicates (P) (Au.Inherit.Make_partial (I_with_c))
 
     let errors x = P.errors (I.component x)
 
@@ -457,13 +457,13 @@ module Bundle = struct
 
     let has_src_where operands ~f =
       match operands with
-      | Src_dst {A.Src_dst.src; _} ->
+      | Src_dst {Ac.Src_dst.src; _} ->
           f src
       | None | Single _ | Double _ ->
           false
 
     let%expect_test "has_src_where is_stack_pointer: positive" =
-      Utils.Io.print_bool
+      Au.Io.print_bool
         (has_src_where ~f:is_stack_pointer
            (src_dst
               ~dst:
@@ -474,7 +474,7 @@ module Bundle = struct
       [%expect {| true |}]
 
     let%expect_test "has_src_where is_stack_pointer: negative" =
-      Utils.Io.print_bool
+      Au.Io.print_bool
         (has_src_where ~f:is_stack_pointer
            (src_dst
               ~src:
@@ -486,13 +486,13 @@ module Bundle = struct
 
     let has_dst_where operands ~f =
       match operands with
-      | Src_dst {A.Src_dst.dst; _} ->
+      | Src_dst {Ac.Src_dst.dst; _} ->
           f dst
       | None | Single _ | Double _ ->
           false
 
     let%expect_test "has_dst_where is_stack_pointer: positive" =
-      Utils.Io.print_bool
+      Au.Io.print_bool
         (has_dst_where ~f:is_stack_pointer
            (src_dst
               ~src:
@@ -503,7 +503,7 @@ module Bundle = struct
       [%expect {| true |}]
 
     let%expect_test "has_dst_where is_stack_pointer: negative" =
-      Utils.Io.print_bool
+      Au.Io.print_bool
         (has_dst_where ~f:is_stack_pointer
            (src_dst
               ~dst:

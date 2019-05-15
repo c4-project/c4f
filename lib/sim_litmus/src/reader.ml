@@ -23,7 +23,7 @@
 
 open Base
 module Tx = Travesty_base_exts
-open Sim_herdtools_common
+module Shc = Act_sim_herdtools_common
 
 (* Map over an optional tuple. *)
 module O2 = Travesty.Bi_mappable.Chain_Bi2_Map1 (Tx.Tuple2) (Option)
@@ -44,14 +44,15 @@ let parse_int (s : string) : int Or_error.t =
 let parse_int_opt : string option -> int option Or_error.t =
   Tx.Option.With_errors.map_m ~f:parse_int
 
-include Reader.Make (struct
+include Shc.Reader.Make (struct
   let try_parse_state_count (line : string) : int option =
     Option.try_with (fun () ->
         Caml.Scanf.sscanf line "Histogram (%d states)" Fn.id )
 
-  let try_split_state_line (line : string) : Reader.state_line Or_error.t =
+  let try_split_state_line (line : string) :
+      Shc.Reader.state_line Or_error.t =
     let occurrences_str, rest = split_line_to_string_tuple line in
     Or_error.Let_syntax.(
       let%map occurrences = parse_int_opt occurrences_str in
-      {Reader.occurrences; rest})
+      {Shc.Reader.occurrences; rest})
 end)

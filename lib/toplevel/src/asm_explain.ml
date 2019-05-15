@@ -33,20 +33,22 @@ let print_symbol_map = function
           (list ~sep:sp (fun f (k, v) -> pf f "@[<hv>%s@ ->@ %s@]" k v))
           map)
 
-let explain_filter (target : Config.Compiler.Target.t) :
-    (module Utils.Filter.S
-       with type aux_i = Config.File_type.t_or_infer
-                         * (   C.Filters.Output.t Utils.Filter.chain_output
-                            -> Asm.Explainer.Config.t Asm.Job.t
-                               Config.Compiler.Chain_input.t)
-        and type aux_o = C.Filters.Output.t option
-                         * (unit option * Asm.Job.Output.t))
+let explain_filter (target : Act_config.Compiler.Target.t) :
+    (module Act_utils.Filter.S
+       with type aux_i = Act_config.File_type.t_or_infer
+                         * (   Act_c.Filters.Output.t
+                               Act_utils.Filter.chain_output
+                            -> Act_asm.Explainer.Config.t Act_asm.Job.t
+                               Act_config.Compiler.Chain_input.t)
+        and type aux_o = Act_c.Filters.Output.t option
+                         * (unit option * Act_asm.Job.Output.t))
     Or_error.t =
   Or_error.tag ~tag:"while getting an explain filter for this target"
-    (Common.delitmus_compile_asm_pipeline target Asm.Explainer.get_filter)
+    (Common.delitmus_compile_asm_pipeline target
+       Act_asm.Explainer.get_filter)
 
 let run_with_input_fn (o : A.Output.t)
-    (file_type : Config.File_type.t_or_infer) target compiler_input_fn
+    (file_type : Act_config.File_type.t_or_infer) target compiler_input_fn
     infile outfile =
   Or_error.Let_syntax.(
     let%bind (module Exp) = explain_filter target in
@@ -62,11 +64,12 @@ let run output_format (args : Args.Standard_asm.t) o cfg =
   let open Or_error.Let_syntax in
   let%bind target = Common.resolve_target args cfg in
   let passes =
-    Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.explain
+    Act_config.Act.sanitiser_passes cfg
+      ~default:Act_config.Sanitiser_pass.explain
   in
   let explain_cfg ~c_variables =
     ignore (c_variables : A.C_variables.Map.t option) ;
-    Asm.Explainer.Config.make ?format:output_format ()
+    Act_asm.Explainer.Config.make ?format:output_format ()
   in
   let%bind user_cvars = Common.collect_cvars args in
   let file_type = Args.Standard_asm.file_type args in
@@ -79,15 +82,15 @@ let run output_format (args : Args.Standard_asm.t) o cfg =
   let%map out =
     run_with_input_fn o file_type target compiler_input_fn infile outfile
   in
-  A.Output.pw o "@[%a@]@." Asm.Job.Output.warn out ;
-  print_symbol_map (Asm.Job.Output.symbol_map out)
+  A.Output.pw o "@[%a@]@." Act_asm.Job.Output.warn out ;
+  print_symbol_map (Act_asm.Job.Output.symbol_map out)
 
 let command =
   Command.basic ~summary:"explains act's understanding of an assembly file"
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard_asm.get
       and output_format =
-        Asm.Explainer.Config.Format.(
+        Act_asm.Explainer.Config.Format.(
           choose_one
             [ map
                 ~f:(fun flag -> Option.some_if flag (Some Detailed))

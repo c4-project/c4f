@@ -47,7 +47,7 @@
 
 open Act_common
 open Core_kernel
-open Utils
+open Act_utils
 
 (** [Reg] contains types and functions for dealing with x86 registers in the
     abstract syntax. *)

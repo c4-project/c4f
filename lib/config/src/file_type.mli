@@ -28,7 +28,7 @@
     assembly, or on a Litmus test, etc. As such, they don't robustly and
     precisely identify file types. *)
 
-open Utils
+open Act_utils
 
 (** Enumeration of the high-level file types understood by most of the bits
     of act that touch the filesystem. *)

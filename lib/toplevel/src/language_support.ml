@@ -24,7 +24,7 @@
 open Core_kernel
 open Act_common
 
-let lang_procs = [("x86", X86.Asm_job.get_runner)]
+let lang_procs = [("x86", Act_x86.Asm_job.get_runner)]
 
 let try_get_lang_proc (language : string) =
   language
@@ -32,13 +32,13 @@ let try_get_lang_proc (language : string) =
   |> Result.of_option
        ~error:(Error.create_s [%message "Unknown language" ~language])
 
-let asm_runner_from_arch : Id.t -> (module Asm.Runner.S) Or_error.t =
+let asm_runner_from_arch : Id.t -> (module Act_asm.Runner.S) Or_error.t =
   Id.hd_reduce
     ~on_empty:(fun () -> Or_error.error_string "Missing language name")
     ~f:(fun lang rest ->
       Result.(try_get_lang_proc lang >>= fun proc -> proc rest) )
 
-module Gcc : Config.Compiler.Basic = struct
+module Gcc : Act_config.Compiler.Basic = struct
   let compile_args ~args ~emits ~infile ~outfile =
     ignore emits ;
     [ "-S" (* emit assembly *)
@@ -49,21 +49,21 @@ module Gcc : Config.Compiler.Basic = struct
   let test_args = ["--version"]
 end
 
-let style_modules = [("gcc", (module Gcc : Config.Compiler.Basic))]
+let style_modules = [("gcc", (module Gcc : Act_config.Compiler.Basic))]
 
 module Resolver :
-  Config.Compiler.Basic_resolver
-  with type spec := Config.Compiler.Spec.With_id.t = struct
-  let resolve (cspec : Config.Compiler.Spec.With_id.t) =
-    let style = Config.Compiler.Spec.With_id.style cspec in
+  Act_config.Compiler.Basic_resolver
+  with type spec := Act_config.Compiler.Spec.With_id.t = struct
+  let resolve (cspec : Act_config.Compiler.Spec.With_id.t) =
+    let style = Act_config.Compiler.Spec.With_id.style cspec in
     List.Assoc.find ~equal:String.Caseless.equal style_modules style
     |> Result.of_option
          ~error:(Error.create_s [%message "Unknown compiler style" ~style])
 end
 
-module Resolve_compiler = Config.Compiler.Make_resolver (Resolver)
+module Resolve_compiler = Act_config.Compiler.Make_resolver (Resolver)
 module Resolve_compiler_from_target =
-  Config.Compiler.Make_target_resolver (Resolver)
+  Act_config.Compiler.Make_target_resolver (Resolver)
 
 let test_compiler cspec =
   let open Or_error.Let_syntax in
@@ -71,13 +71,13 @@ let test_compiler cspec =
   let%map () =
     Or_error.tag_arg (M.test ())
       "A compiler in your spec file didn't respond properly"
-      (Config.Compiler.Spec.With_id.id cspec)
+      (Act_config.Compiler.Spec.With_id.id cspec)
       [%sexp_of: Id.t]
   in
   Some cspec
 
 let filter_compiler predicate cspec =
-  Option.some_if (Config.Compiler.Property.eval_b cspec predicate) cspec
+  Option.some_if (Act_config.Compiler.Property.eval_b cspec predicate) cspec
 
 let compiler_hook with_compiler_tests predicate cspec =
   match filter_compiler predicate cspec with
@@ -89,7 +89,8 @@ let compiler_hook with_compiler_tests predicate cspec =
 
 let machine_hook predicate mspec =
   let eval_b =
-    Config.Machine.Property.eval_b (module Config.Machine.Spec.With_id)
+    Act_config.Machine.Property.eval_b
+      (module Act_config.Machine.Spec.With_id)
   in
   Or_error.return
     ((* TODO(@MattWindsor91): actually test the machine here! *)
@@ -100,8 +101,8 @@ let load_and_process_config ?(compiler_predicate = Blang.true_)
     ?(sanitiser_passes = Blang.base `Default) ?(with_compiler_tests = true)
     (path : Fpath.t) =
   let open Or_error.Let_syntax in
-  let%bind rcfg = Config.Act.Raw.load ~path in
+  let%bind rcfg = Act_config.Act.Raw.load ~path in
   let chook = compiler_hook with_compiler_tests compiler_predicate in
   let mhook = machine_hook machine_predicate in
-  let phook = Config.Sanitiser_pass.Selector.eval_b sanitiser_passes in
-  Config.Act.from_raw rcfg ~chook ~mhook ~phook
+  let phook = Act_config.Sanitiser_pass.Selector.eval_b sanitiser_passes in
+  Act_config.Act.from_raw rcfg ~chook ~mhook ~phook

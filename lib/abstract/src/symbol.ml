@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Utils
+open Act_utils
 
 type t = string [@@deriving sexp, equal]
 

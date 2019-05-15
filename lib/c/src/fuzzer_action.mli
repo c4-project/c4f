@@ -65,7 +65,7 @@ module Pool : sig
   (** Action lists are just weighted lists of first-class action modules. *)
   type t
 
-  val make : (module S) list -> Config.Fuzz.t -> t Or_error.t
+  val make : (module S) list -> Act_config.Fuzz.t -> t Or_error.t
   (** [make actions config] tries to make a weighted action pool by taking
       the actions defined in [action_map] and applying the user-specified
       weight overrides in [config]. *)

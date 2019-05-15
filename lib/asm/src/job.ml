@@ -26,8 +26,8 @@ module Tx = Travesty_core_kernel_exts
 
 type 'cfg t =
   { config: 'cfg option
-  ; passes: Config.Sanitiser_pass.Set.t
-        [@default Config.Sanitiser_pass.standard]
+  ; passes: Act_config.Sanitiser_pass.Set.t
+        [@default Act_config.Sanitiser_pass.standard]
   ; symbols: string list }
 [@@deriving make, fields]
 

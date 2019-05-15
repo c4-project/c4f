@@ -22,4 +22,4 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** [S] is the type of x86 language frontends. *)
-module type S = Utils.Frontend.S with type ast := Ast.t
+module type S = Act_utils.Frontend.S with type ast := Ast.t

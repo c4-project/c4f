@@ -28,8 +28,8 @@ open Act_common
 open Parser
 open Lexing
 
-open Utils.Frontend
-open Utils.Lex_utils
+open Act_utils.Frontend
+open Act_utils.Lex_utils
 
 let keywords = lazy
   (

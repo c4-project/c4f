@@ -84,7 +84,7 @@ end
     doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
-    (I : Utils.Inherit.S_partial with type c := P.t) :
+    (I : Act_utils.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t
 
 (** [Flag] is an enumeration of various single-operand observations. *)
@@ -113,7 +113,7 @@ end
     component. *)
 module Inherit_properties
     (P : S_properties)
-    (I : Utils.Inherit.S with type c := P.t) :
+    (I : Act_utils.Inherit.S with type c := P.t) :
   S_properties with type t := I.t
 
 (** This module contains [S_properties] directly. *)
@@ -199,7 +199,7 @@ module Bundle : sig
       doesn't exist. *)
   module Inherit_predicates
       (P : S_predicates)
-      (I : Utils.Inherit.S_partial with type c := P.t) :
+      (I : Act_utils.Inherit.S_partial with type c := P.t) :
     S_predicates with type t := I.t
 
   (** [Flag] is an enumeration of various operand-bundle observations. *)
@@ -237,7 +237,7 @@ module Bundle : sig
       a component. *)
   module Inherit_properties
       (P : S_properties)
-      (I : Utils.Inherit.S with type c := P.t) :
+      (I : Act_utils.Inherit.S with type c := P.t) :
     S_properties with type t := I.t
 
   (** This module contains [S_properties] directly. *)

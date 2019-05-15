@@ -27,4 +27,4 @@
 
 (** We can use Herd as a simulator runner by supplying it with configuration
     expressed as a {{!Filter.Basic} Filter.Basic} module. *)
-module Make (B : Filter.Basic) : Sim.Runner.S
+module Make (B : Filter.Basic) : Act_sim.Runner.S

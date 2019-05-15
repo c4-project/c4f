@@ -1,8 +1,8 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name sim_herd_tests)
+ (name act_sim_herd_tests)
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries base sim_herd))
+ (libraries base act_sim_herd))

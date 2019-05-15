@@ -28,7 +28,7 @@ open Base
 (** [S] is the interface to the warnings emitted by the sanitiser. *)
 module type S = sig
   (** [Lang] is the language to whose elements we're attaching warnings. *)
-  module Lang : Language.Definition.S
+  module Lang : Act_language.Definition.S
 
   (** [elt] is the type of elements being warned about. *)
   type elt =

@@ -25,7 +25,7 @@ open Core_kernel (* not Base: we need Time.Span. *)
 
 module Tx = Travesty_core_kernel_exts
 open Act_common
-open Utils
+open Act_utils
 module A = Analysis
 
 module Interest_level = struct
@@ -187,30 +187,31 @@ module On_files = struct
 end
 
 module On_deviations = struct
-  let deviating_order_opt (file : A.File.t) : Sim.Diff.Order.t option =
+  let deviating_order_opt (file : A.File.t) : Act_sim.Diff.Order.t option =
     Tx.Option.(
-      file |> A.File.state_set_order |> exclude ~f:Sim.Diff.Order.is_equal)
+      file |> A.File.state_set_order
+      |> exclude ~f:Act_sim.Diff.Order.is_equal)
 
   let row_deviating_order_opt :
-      A.File.t Row.t -> Sim.Diff.Order.t Row.t option =
+      A.File.t Row.t -> Act_sim.Diff.Order.t Row.t option =
     Row.filter_map_analysis ~f:deviating_order_opt
 
-  let rows (a : A.t) : Sim.Diff.Order.t Row.t list =
+  let rows (a : A.t) : Act_sim.Diff.Order.t Row.t list =
     a |> On_files.rows |> List.filter_map ~f:row_deviating_order_opt
 
   module M : Tabulator.Tabular with type data = A.t = Make_tabulator (struct
     type data = A.t
 
-    type analysis = Sim.Diff.Order.t
+    type analysis = Act_sim.Diff.Order.t
 
     let rows = rows
 
     let analysis_header : string list =
       ["Num. in C only"; "Num. in ASM only"]
 
-    let analysis_to_cells (ord : Sim.Diff.Order.t) : string list =
-      [ Int.to_string (Set.length (Sim.Diff.Order.in_left_only ord))
-      ; Int.to_string (Set.length (Sim.Diff.Order.in_right_only ord)) ]
+    let analysis_to_cells (ord : Act_sim.Diff.Order.t) : string list =
+      [ Int.to_string (Set.length (Act_sim.Diff.Order.in_left_only ord))
+      ; Int.to_string (Set.length (Act_sim.Diff.Order.in_right_only ord)) ]
   end)
 
   include M

@@ -23,7 +23,7 @@
 
 (* Don't use Base: it causes us to derive a weaker signature *)
 open Core_kernel
-open Utils
+module Au = Act_utils
 
 (** Litmus-style identifiers.
 
@@ -36,14 +36,14 @@ type t [@@deriving compare, sexp, quickcheck]
 
 (** {2 Constructors} *)
 
-val global : C_identifier.t -> t
+val global : Au.C_identifier.t -> t
 (** [global id] creates a global identifier. *)
 
 val global_of_string : string -> t Or_error.t
 (** [global_of_string str] tries to create a global identifier from [str].
     It fails if [str] isn't a valid C identifier. *)
 
-val local : int -> C_identifier.t -> t
+val local : int -> Au.C_identifier.t -> t
 (** [local tid id] creates a local identifier with the given thread ID. *)
 
 val try_parse : string -> t Or_error.t
@@ -51,17 +51,17 @@ val try_parse : string -> t Or_error.t
 
 (** {2 Accessors} *)
 
-val as_global : t -> C_identifier.t option
+val as_global : t -> Au.C_identifier.t option
 (** [as_global id] gets [Some cid] if [id] is the global identifier [cid],
     or [None] otherwise. *)
 
-val variable_name : t -> C_identifier.t
+val variable_name : t -> Au.C_identifier.t
 (** [variable_name id] gets the underlying variable name of [id]. *)
 
 val tid : t -> int option
 (** [tid id] gets [id]'s thread identifier, if it has one. *)
 
-val to_memalloy_id : t -> C_identifier.t
+val to_memalloy_id : t -> Au.C_identifier.t
 (** [to_memalloy_id id] converts [id] to the corresponding memalloy
     executable-C global variable name.
 

@@ -23,7 +23,7 @@
 
 open Act_common
 open Core_kernel
-open Utils
+open Act_utils
 include Symbol_intf
 
 let program_id_of_demangled sym =
@@ -47,7 +47,7 @@ module Make (B : Basic) : S with type t = B.t = struct
   module Set = struct
     include My_set.Extend (Comp.Set)
 
-    let abstract = Abstract.Symbol.Set.map ~f:B.abstract
+    let abstract = Act_abstract.Symbol.Set.map ~f:B.abstract
   end
 
   include (
@@ -86,10 +86,10 @@ module Make (B : Basic) : S with type t = B.t = struct
     List.hd ids
 
   let is_c_safe (sym : t) : bool =
-    Utils.C_identifier.is_string_safe (to_string sym)
+    Act_utils.C_identifier.is_string_safe (to_string sym)
 
   let is_herd_safe (sym : t) : bool =
-    Utils.C_identifier.Herd_safe.is_string_safe (to_string sym)
+    Act_utils.C_identifier.Herd_safe.is_string_safe (to_string sym)
 
   let is_program_label sym = Option.is_some (program_id_of sym)
 end

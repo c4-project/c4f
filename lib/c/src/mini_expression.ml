@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 module Address = Mini_address
 module Constant = Ast_basic.Constant
 module Env = Mini_env

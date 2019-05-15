@@ -24,7 +24,7 @@
 open Base
 open Act_common
 module Tx = Travesty_base_exts
-open Utils
+open Act_utils
 include Reader_intf
 
 module Automaton = struct
@@ -123,12 +123,12 @@ module Ctx = struct
     type t =
       { a_state: Automaton.t  (** The current automaton state. *)
       ; path: string option  (** The file, if any, we're reading. *)
-      ; obs: Sim.Output.Observation.t
+      ; obs: Act_sim.Output.Observation.t
             (** The observations we've built so far. *) }
     [@@deriving fields, make]
 
     let init : ?path:string -> unit -> t =
-      make ~a_state:Empty ~obs:(Sim.Output.Observation.init ())
+      make ~a_state:Empty ~obs:(Act_sim.Output.Observation.init ())
 
     let map_fld_m (body : t) ~(field : (t, 'a) Field.t)
         ~(f : 'a -> 'a Or_error.t) : t Or_error.t =
@@ -139,7 +139,8 @@ module Ctx = struct
       map_fld_m body ~field:Fields.a_state
 
     let map_obs_m (body : t) :
-           f:(Sim.Output.Observation.t -> Sim.Output.Observation.t Or_error.t)
+           f:(   Act_sim.Output.Observation.t
+              -> Act_sim.Output.Observation.t Or_error.t)
         -> t Or_error.t =
       map_fld_m body ~field:Fields.obs
 
@@ -149,14 +150,15 @@ module Ctx = struct
     let try_enter_state_block (num_states : int) : t -> t Or_error.t =
       map_a_state_m ~f:(Automaton.try_enter_state_block num_states)
 
-    let try_leave_state (state : Sim.State.t) (body : t) : t Or_error.t =
+    let try_leave_state (state : Act_sim.State.t) (body : t) : t Or_error.t
+        =
       Or_error.(
         body
         |> map_a_state_m ~f:Automaton.try_leave_state
-        >>= map_obs_m ~f:(Sim.Output.Observation.add ~state))
+        >>= map_obs_m ~f:(Act_sim.Output.Observation.add ~state))
 
     let try_set_undefined : t -> t Or_error.t =
-      map_obs_m ~f:Sim.Output.Observation.set_undefined
+      map_obs_m ~f:Act_sim.Output.Observation.set_undefined
 
     let try_leave_summary (info : Summary_info.t) (body : t) : t Or_error.t
         =
@@ -175,7 +177,7 @@ module Ctx = struct
 
   let peek_automaton () : Automaton.t t = peek Body.a_state
 
-  let peek_obs () : Sim.Output.Observation.t t = peek Body.obs
+  let peek_obs () : Act_sim.Output.Observation.t t = peek Body.obs
 
   (** [fail_if_bad_state ()] produces an error if the reader ended in a
       state other than Postamble. *)
@@ -183,14 +185,14 @@ module Ctx = struct
     peek_automaton () >>| Automaton.validate_final_state >>| Validate.result
     >>= Monadic.return
 
-  let try_close () : Sim.Output.t t =
+  let try_close () : Act_sim.Output.t t =
     Let_syntax.(
       let%bind _ = fail_if_bad_state () in
       let%map obs = peek_obs () in
-      Sim.Output.Success obs)
+      Act_sim.Output.Success obs)
 
   let run_to_output ?(path : string option) (op : unit t) :
-      Sim.Output.t Or_error.t =
+      Act_sim.Output.t Or_error.t =
     run (op >>= try_close) (Body.init ?path ())
 
   let enter_preamble () : unit t = Monadic.modify Body.try_enter_preamble
@@ -198,7 +200,7 @@ module Ctx = struct
   let enter_state_block (num_states : int) : unit t =
     Monadic.modify (Body.try_enter_state_block num_states)
 
-  let leave_state (parsed_state : Sim.State.t) : unit t =
+  let leave_state (parsed_state : Act_sim.State.t) : unit t =
     Monadic.modify (Body.try_leave_state parsed_state)
 
   let leave_summary (info : Summary_info.t) : unit t =
@@ -247,13 +249,14 @@ module Make_main (B : Basic) = struct
 
     (* The RHS of state lines are always 'binding; binding; binding;', with
        a trailing ;. *)
-    let try_parse_state_line_body (line : string) : Sim.State.t Or_error.t =
+    let try_parse_state_line_body (line : string) :
+        Act_sim.State.t Or_error.t =
       Or_error.(
         line |> String.split ~on:';'
         |> Tx.List.exclude ~f:String.is_empty (* Drop trailing ; *)
-        |> List.map ~f:proc_binding |> Result.all >>= Sim.State.of_alist)
+        |> List.map ~f:proc_binding |> Result.all >>= Act_sim.State.of_alist)
 
-    let try_parse_state_line (line : string) : Sim.State.t Or_error.t =
+    let try_parse_state_line (line : string) : Act_sim.State.t Or_error.t =
       Or_error.Let_syntax.(
         let%bind {rest; _} = B.try_split_state_line line in
         try_parse_state_line_body rest)
@@ -310,15 +313,15 @@ module Make_main (B : Basic) = struct
     Ctx.(get_processor () >>= fun f -> f line')
 end
 
-module Make_load (B : Basic) : Loadable.Basic with type t = Sim.Output.t =
-struct
+module Make_load (B : Basic) :
+  Loadable.Basic with type t = Act_sim.Output.t = struct
   module M = Make_main (B)
   module L = Tx.List.On_monad (Ctx)
   module I = Ic.On_monad (Ctx)
 
-  type nonrec t = Sim.Output.t
+  type nonrec t = Act_sim.Output.t
 
-  let load_from_string (s : string) : Sim.Output.t Or_error.t =
+  let load_from_string (s : string) : Act_sim.Output.t Or_error.t =
     let lines = String.split_lines s in
     Ctx.run_to_output (L.iter_m lines ~f:M.process_line)
 
@@ -326,5 +329,5 @@ struct
     Ctx.run_to_output ?path (I.iter_m ic ~f:M.process_line)
 end
 
-module Make (B : Basic) : Sim.Reader.S =
-  Sim.Reader.Make (Loadable.Make (Make_load (B)))
+module Make (B : Basic) : Act_sim.Reader.S =
+  Act_sim.Reader.Make (Loadable.Make (Make_load (B)))

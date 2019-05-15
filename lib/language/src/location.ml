@@ -27,8 +27,8 @@ module Make (B : Basic_with_modules) :
   S with type t = B.t and module Symbol = B.Symbol = struct
   include B
 
-  include Abstract.Location.Inherit_predicates
-            (Abstract.Location)
+  include Act_abstract.Location.Inherit_predicates
+            (Act_abstract.Location)
             (struct
               type nonrec t = t
 

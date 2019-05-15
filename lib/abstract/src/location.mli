@@ -25,7 +25,6 @@
     functions for locations. *)
 
 open Core_kernel
-open Utils
 
 (** [Address] concerns abstracted registers. *)
 module Register : sig
@@ -95,15 +94,15 @@ end
     doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
-    (I : Utils.Inherit.S_partial with type c := P.t) :
+    (I : Act_utils.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t
 
 module Kind : sig
   type t = Register_direct | Register_indirect | Heap | Unknown
 
-  include Enum.S_table with type t := t
+  include Act_utils.Enum.S_table with type t := t
 
-  include Enum.Extension_table with type t := t
+  include Act_utils.Enum.Extension_table with type t := t
 end
 
 (** This module contains [S_predicates] directly. *)

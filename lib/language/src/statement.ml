@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 include Statement_intf
 module Tx = Travesty_core_kernel_exts
 
@@ -33,11 +33,11 @@ module Make (B : Basic_with_modules) :
 
   module Extended_flag = struct
     module M = struct
-      type t = [Abstract.Statement.Flag.t | `Program_boundary]
+      type t = [Act_abstract.Statement.Flag.t | `Program_boundary]
       [@@deriving sexp, eq, enumerate]
 
       let table =
-        (Abstract.Statement.Flag.table :> (t, string) List.Assoc.t)
+        (Act_abstract.Statement.Flag.table :> (t, string) List.Assoc.t)
         @ [(`Program_boundary, "program boundary")]
     end
 
@@ -49,8 +49,8 @@ module Make (B : Basic_with_modules) :
     end)
   end
 
-  include Abstract.Statement.Inherit_properties
-            (Abstract.Statement)
+  include Act_abstract.Statement.Inherit_properties
+            (Act_abstract.Statement)
             (struct
               type nonrec t = t
 

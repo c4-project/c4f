@@ -24,7 +24,7 @@
 (** Signatures used in redirect maps. *)
 
 open Base
-open Utils
+open Act_utils
 
 module type Basic_symbol = sig
   type t [@@deriving sexp, equal]

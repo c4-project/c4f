@@ -26,7 +26,7 @@ open Act_common
 include Analysis_intf
 
 module Herd = struct
-  type t = Run of Sim.Diff.t | Disabled | Errored of [`C | `Assembly]
+  type t = Run of Act_sim.Diff.t | Disabled | Errored of [`C | `Assembly]
   [@@deriving sexp_of]
 
   let to_string : t -> string = function
@@ -37,7 +37,7 @@ module Herd = struct
     | Disabled ->
         "--disabled--"
     | Run x ->
-        Sim.Diff.to_string x
+        Act_sim.Diff.to_string x
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
 
@@ -57,7 +57,7 @@ module Herd = struct
 
   include Predicates
 
-  let state_set_order : t -> Sim.Diff.Order.t option = function
+  let state_set_order : t -> Act_sim.Diff.Order.t option = function
     | Run (Result r) ->
         Some r
     | Run _ | Errored _ | Disabled ->
@@ -65,19 +65,19 @@ module Herd = struct
 
   (** Forwards from [Sim.Diff.Order]. *)
   module Order_forwards = struct
-    module H = Utils.Inherit.Partial_helpers (struct
+    module H = Act_utils.Inherit.Partial_helpers (struct
       type nonrec t = t
 
-      type c = Sim.Diff.Order.t
+      type c = Act_sim.Diff.Order.t
 
       let component_opt : t -> c option = state_set_order
     end)
 
     let has_deviations : t -> bool =
-      H.forward_bool (Fn.non Sim.Diff.Order.is_equal)
+      H.forward_bool (Fn.non Act_sim.Diff.Order.is_equal)
 
     let has_asm_deviations : t -> bool =
-      H.forward_bool Sim.Diff.Order.right_has_uniques
+      H.forward_bool Act_sim.Diff.Order.right_has_uniques
   end
 
   include Order_forwards
@@ -91,7 +91,7 @@ module File = struct
   [@@deriving sexp_of, fields, make]
 
   module Herd_forwards = struct
-    module H = Utils.Inherit.Helpers (struct
+    module H = Act_utils.Inherit.Helpers (struct
       type nonrec t = t
 
       type c = Herd.t
@@ -99,7 +99,7 @@ module File = struct
       let component : t -> c = herd
     end)
 
-    let state_set_order : t -> Sim.Diff.Order.t option =
+    let state_set_order : t -> Act_sim.Diff.Order.t option =
       H.forward Herd.state_set_order
 
     let has_deviations : t -> bool = H.forward Herd.has_deviations

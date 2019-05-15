@@ -32,7 +32,7 @@
     are used where things expect pointers. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 (** Opaque type of lvalues. *)
 type t [@@deriving sexp, eq, quickcheck]

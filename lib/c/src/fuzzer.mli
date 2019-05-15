@@ -27,7 +27,7 @@ open Core_kernel
 open Act_common
 module Action = Fuzzer_action
 
-val summarise : Config.Fuzz.t -> Action.Summary.t Id.Map.t Or_error.t
+val summarise : Act_config.Fuzz.t -> Action.Summary.t Id.Map.t Or_error.t
 (** [summarise config] tries to get the effective fuzzer weights setup using
     the weighting information in [config]. *)
 
@@ -35,7 +35,7 @@ val run :
      ?seed:int
   -> Mini_litmus.Ast.Validated.t
   -> o:Output.t
-  -> config:Config.Fuzz.t
+  -> config:Act_config.Fuzz.t
   -> Mini_litmus.Ast.Validated.t Or_error.t
 (** [run ?seed test ~o test] mutates [test] using a random number generator
     seeded by [seed]. Any debugging information is printed to the

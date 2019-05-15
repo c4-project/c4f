@@ -28,7 +28,7 @@ open Act_common
 
 val run :
      Output.t
-  -> Config.Act.t
+  -> Act_config.Act.t
   -> oracle_raw:[< `Herd of string | `Litmus of string]
   -> subject_raw:[< `Herd of string | `Litmus of string]
   -> unit Or_error.t

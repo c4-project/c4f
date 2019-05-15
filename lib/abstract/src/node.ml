@@ -24,7 +24,7 @@
 (** Language abstraction layer: base signatures *)
 
 open Base
-open Utils
+open Act_utils
 
 module type S = sig
   type t [@@deriving sexp]

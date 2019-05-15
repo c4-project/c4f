@@ -27,8 +27,8 @@ module Hook (L : Language_definition.S) (P : Travesty.Traversable.S1) =
 struct
   open Ast
   module Lang = L
-  module Ctx = Sanitiser.Ctx.Make (Lang)
-  module Pass = Config.Sanitiser_pass
+  module Ctx = Act_sanitiser.Ctx.Make (Lang)
+  module Pass = Act_config.Sanitiser_pass
   module Program_container = P
 
   let negate = function
@@ -97,7 +97,7 @@ struct
     match (Ast.Indirect.seg i, Ast.Indirect.disp i) with
     | Some s, Some (Disp.Numeric k) ->
         let%bind l = make_segment_offset_heap_loc s k in
-        let%map l' = Ctx.add_symbol l Abstract.Symbol.Sort.Heap in
+        let%map l' = Ctx.add_symbol l Act_abstract.Symbol.Sort.Heap in
         L.Location.make_heap_loc l'
     | _ ->
         Ctx.return (Location.Indirect i)
@@ -162,6 +162,6 @@ struct
 end
 
 module Make_single (L : Language_definition.S) =
-  Sanitiser.Instance.Make_single (Hook (L))
+  Act_sanitiser.Instance.Make_single (Hook (L))
 module Make_multi (L : Language_definition.S) =
-  Sanitiser.Instance.Make_multi (Hook (L))
+  Act_sanitiser.Instance.Make_multi (Hook (L))

@@ -27,7 +27,7 @@ module type Basic = sig
   include Common_intf.Basic_machine_and_up
 
   (** The resolver used to produce simulator runners for machines. *)
-  module Asm_simulator_resolver : Sim.Resolver.S
+  module Asm_simulator_resolver : Act_sim.Resolver.S
 end
 
 module type S = sig

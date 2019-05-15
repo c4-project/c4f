@@ -28,7 +28,7 @@ open Base
 (** [S] is the interface to the state monad used by the sanitiser to carry
     global information around in a sanitisation pass. *)
 module type S = sig
-  module Lang : Language.Definition.S
+  module Lang : Act_language.Definition.S
 
   module Warn : Warn.S with module Lang := Lang
 
@@ -41,7 +41,9 @@ module type S = sig
      and module Inner := Or_error
 
   val initial :
-    passes:Config.Sanitiser_pass.Set.t -> variables:Lang.Symbol.Set.t -> ctx
+       passes:Act_config.Sanitiser_pass.Set.t
+    -> variables:Lang.Symbol.Set.t
+    -> ctx
   (** [initial ~passes ~variables] opens an initial context with the given
       enabled passes and C variables. *)
 
@@ -71,11 +73,11 @@ module type S = sig
    * Conditional execution
    *)
 
-  val is_pass_enabled : Config.Sanitiser_pass.t -> bool t
+  val is_pass_enabled : Act_config.Sanitiser_pass.t -> bool t
   (** [is_pass_enabled pass] is a contextual computation that returns [true]
       provided that [pass] is enabled. *)
 
-  val ( |-> ) : Config.Sanitiser_pass.t -> ('a -> 'a t) -> 'a -> 'a t
+  val ( |-> ) : Act_config.Sanitiser_pass.t -> ('a -> 'a t) -> 'a -> 'a t
   (** [p |-> f] guards a contextual computation [f] on the pass [p]; it
       won't run unless [p] is in the current context's pass set. *)
 
@@ -96,22 +98,24 @@ module type S = sig
    * Symbols
    *)
 
-  val get_symbol_table : Abstract.Symbol.Table.t t
+  val get_symbol_table : Act_abstract.Symbol.Table.t t
   (** [get_symbol_table] is a contextual computation that returns the
       current symbol table. *)
 
   val get_symbols_with_sorts :
-    Abstract.Symbol.Sort.t list -> Abstract.Symbol.Set.t t
+    Act_abstract.Symbol.Sort.t list -> Act_abstract.Symbol.Set.t t
   (** [get_symbols_with_sorts sortlist] is a context computation that gets
       the set of all symbols in the context's symbol table with sorts in
       [sortlist]. *)
 
   val add_symbol :
-    Abstract.Symbol.t -> Abstract.Symbol.Sort.t -> Abstract.Symbol.t t
+       Act_abstract.Symbol.t
+    -> Act_abstract.Symbol.Sort.t
+    -> Act_abstract.Symbol.t t
   (** [add_symbol sym sort] is a context computation that adds [sym] to the
       context symbol table with sort [sort], then passes [sym] through. *)
 
-  val set_symbol_table : Abstract.Symbol.Table.t -> unit t
+  val set_symbol_table : Act_abstract.Symbol.Table.t -> unit t
   (** [set_symbol_table sym sort] is a context computation that replaces the
       current symbol table with [syms]. *)
 

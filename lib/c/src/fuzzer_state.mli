@@ -24,7 +24,7 @@
 (** Fuzzer: state monad *)
 
 open Core_kernel
-open Utils
+open Act_utils
 open Act_common
 
 (** Opaque type of states. *)

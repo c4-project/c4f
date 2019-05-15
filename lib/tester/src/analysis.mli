@@ -26,14 +26,14 @@
 
 open Core_kernel
 open Act_common
-open Utils
+open Act_utils
 
 include module type of Analysis_intf
 
 module Herd : sig
   (** [t] is the type of Herd analysis runs. *)
   type t =
-    | Run of Sim.Diff.t
+    | Run of Act_sim.Diff.t
         (** Herd ran on both sides, with the given differential result. *)
     | Disabled  (** Herd was disabled. *)
     | Errored of [`C | `Assembly]  (** Herd encountered an error. *)
@@ -68,7 +68,7 @@ module File : sig
   (** [time_taken_in_cc file] gets an estimate of the time spent compiling
       file [file], if any is available. *)
 
-  val state_set_order : t -> Sim.Diff.Order.t option
+  val state_set_order : t -> Act_sim.Diff.Order.t option
   (** [state_set_order file] gets the partial ordering between the file's C
       and assembly state sets, provided that the file successfully underwent
       testing. *)

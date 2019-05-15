@@ -25,9 +25,6 @@ open Core_kernel
 module Tx = Travesty_core_kernel_exts
 include Explainer_intf
 
-(* Aliased because we shadow Config below. *)
-module Sanitiser_pass = Config.Sanitiser_pass
-
 module Config = struct
   module Format = struct
     type t = Assembly | Detailed [@@deriving sexp, equal]
@@ -107,17 +104,17 @@ module Make (B : Runner.S) :
   type config = Config.t
 
   module Loc_explanation = struct
-    module Flag = Abstract.Location.Flag
+    module Flag = Act_abstract.Location.Flag
 
     module Base = struct
-      module Abs = Abstract.Location
+      module Abs = Act_abstract.Location
       module Flag = Flag
 
       type elt = Lang.Location.t
 
       let pp = Lang.Location.pp
 
-      type context = Abstract.Symbol.Table.t
+      type context = Act_abstract.Symbol.Table.t
 
       type details = unit
 
@@ -125,7 +122,7 @@ module Make (B : Runner.S) :
 
       let pp_details _f _context = ()
 
-      include Abstract.Abstractable.Make (struct
+      include Act_abstract.Abstractable.Make (struct
         module Abs = Abs
 
         type t = elt
@@ -142,17 +139,17 @@ module Make (B : Runner.S) :
   end
 
   module Ops_explanation = struct
-    module Flag = Abstract.Operand.Bundle.Flag
+    module Flag = Act_abstract.Operand.Bundle.Flag
 
     module Base = struct
-      module Abs = Abstract.Operand.Bundle
+      module Abs = Act_abstract.Operand.Bundle
       module Flag = Flag
 
       type elt = Lang.Instruction.t
 
       let pp = Lang.Instruction.pp_operands
 
-      type context = Abstract.Symbol.Table.t
+      type context = Act_abstract.Symbol.Table.t
 
       type details = unit
 
@@ -160,7 +157,7 @@ module Make (B : Runner.S) :
 
       let pp_details _f _context = ()
 
-      include Abstract.Abstractable.Make (struct
+      include Act_abstract.Abstractable.Make (struct
         module Abs = Abs
 
         type t = elt
@@ -169,15 +166,16 @@ module Make (B : Runner.S) :
       end)
 
       let abs_flags ins =
-        Abstract.Operand.Bundle.flags (Lang.Instruction.abs_operands ins)
+        Act_abstract.Operand.Bundle.flags
+          (Lang.Instruction.abs_operands ins)
     end
 
     type details = Base.details
 
     include Make_explanation (Base)
 
-    include Abstract.Operand.Bundle.Inherit_properties
-              (Abstract.Operand.Bundle)
+    include Act_abstract.Operand.Bundle.Inherit_properties
+              (Act_abstract.Operand.Bundle)
               (struct
                 type nonrec t = t
 
@@ -186,17 +184,17 @@ module Make (B : Runner.S) :
   end
 
   module Ins_explanation = struct
-    module Flag = Abstract.Instruction.Flag
+    module Flag = Act_abstract.Instruction.Flag
 
     module Base = struct
-      module Abs = Abstract.Instruction
+      module Abs = Act_abstract.Instruction
       module Flag = Flag
 
       type elt = Lang.Instruction.t
 
       let pp = Lang.Instruction.pp
 
-      type context = Abstract.Symbol.Table.t
+      type context = Act_abstract.Symbol.Table.t
 
       type details =
         { operands: Ops_explanation.t option
@@ -228,7 +226,9 @@ module Make (B : Runner.S) :
 
       include (
         Lang.Instruction :
-          Abstract.Abstractable.S with module Abs := Abs and type t := elt )
+          Act_abstract.Abstractable.S
+          with module Abs := Abs
+           and type t := elt )
 
       let abs_flags _ _ = Flag.Set.empty
     end
@@ -237,8 +237,8 @@ module Make (B : Runner.S) :
 
     include Make_explanation (Base)
 
-    include Abstract.Instruction.Inherit_properties
-              (Abstract.Instruction)
+    include Act_abstract.Instruction.Inherit_properties
+              (Act_abstract.Instruction)
               (struct
                 type nonrec t = t
 
@@ -250,21 +250,21 @@ module Make (B : Runner.S) :
     module Flag = Lang.Statement.Extended_flag
 
     module Base = struct
-      module Abs = Abstract.Statement
+      module Abs = Act_abstract.Statement
       module Flag = Flag
 
       type elt = Lang.Statement.t
 
       let pp = Lang.Statement.pp
 
-      type context = Abstract.Symbol.Table.t
+      type context = Act_abstract.Symbol.Table.t
 
       type details = {instructions: Ins_explanation.t list}
       [@@deriving fields]
 
       let describe_instructions stm context =
         match Lang.Statement.abs_kind stm with
-        | Abstract.Statement.Kind.Instruction ->
+        | Act_abstract.Statement.Kind.Instruction ->
             stm |> Lang.Statement.On_instructions.to_list
             |> List.map ~f:(fun original ->
                    Ins_explanation.make ~original ~context )
@@ -283,7 +283,9 @@ module Make (B : Runner.S) :
 
       include (
         Lang.Statement :
-          Abstract.Abstractable.S with module Abs := Abs and type t := elt )
+          Act_abstract.Abstractable.S
+          with module Abs := Abs
+           and type t := elt )
 
       let abs_flags = Lang.Statement.extended_flags
     end
@@ -292,8 +294,8 @@ module Make (B : Runner.S) :
 
     include Make_explanation (Base)
 
-    include Abstract.Statement.Inherit_properties
-              (Abstract.Statement)
+    include Act_abstract.Statement.Inherit_properties
+              (Act_abstract.Statement)
               (struct
                 type nonrec t = t
 
@@ -303,7 +305,7 @@ module Make (B : Runner.S) :
 
   type t =
     { statements: Stm_explanation.t list
-    ; symbol_table: Abstract.Symbol.Table.t }
+    ; symbol_table: Act_abstract.Symbol.Table.t }
 
   let explain_statement syms stm =
     Stm_explanation.make ~context:syms ~original:stm
@@ -316,12 +318,12 @@ module Make (B : Runner.S) :
 
   let pp_generic_statement_explanation f exp =
     Stm_explanation.(
-      Fmt.pf f "@[<--@ @[%a%a@]@]" Abstract.Statement.Kind.pp (abs_kind exp)
-        (pp_set_adj Flag.pp_set) (abs_flags exp))
+      Fmt.pf f "@[<--@ @[%a%a@]@]" Act_abstract.Statement.Kind.pp
+        (abs_kind exp) (pp_set_adj Flag.pp_set) (abs_flags exp))
 
   let pp_instruction_explanation f exp ins =
     Ins_explanation.(
-      Fmt.pf f "@[<--@ @[%a%a%a@]@]" Abstract.Instruction.Kind.pp
+      Fmt.pf f "@[<--@ @[%a%a%a@]@]" Act_abstract.Instruction.Kind.pp
         (abs_kind ins) (pp_set_adj Flag.pp_set) (abs_flags ins)
         (pp_set_adj Stm_explanation.Flag.pp_set)
         (Stm_explanation.abs_flags exp))
@@ -338,7 +340,7 @@ module Make (B : Runner.S) :
     (* TODO(@MattWindsor91): emit '<-- xyz' in a comment *)
     Stm_explanation.(
       match abs_kind exp with
-      | Abstract.Statement.Kind.Blank ->
+      | Act_abstract.Statement.Kind.Blank ->
           () (* so as not to clutter up blank lines *)
       | _ ->
           Fmt.pf f "@[<h>%a@ %a@]" Lang.Statement.pp (original exp)
@@ -359,7 +361,7 @@ module Make (B : Runner.S) :
 
   let print_symbol_table ?(oc : Stdio.Out_channel.t option) (exp : t) : unit
       =
-    Abstract.Symbol.Table.print_as_table ?oc exp.symbol_table
+    Act_abstract.Symbol.Table.print_as_table ?oc exp.symbol_table
 
   let pp_for_explain_format : Config.Format.t -> t Fmt.t = function
     | Assembly ->
@@ -376,10 +378,11 @@ module Make (B : Runner.S) :
   module LS = B.Basic.Src_lang
   module SS = B.Basic.Single_sanitiser
 
-  let run_explanation (_osrc : Utils.Io.Out_sink.t) (outp : Out_channel.t)
-      ~(in_name : string) ~(program : LS.Program.t)
+  let run_explanation (_osrc : Act_utils.Io.Out_sink.t)
+      (outp : Out_channel.t) ~(in_name : string) ~(program : LS.Program.t)
       ~(symbols : LS.Symbol.t list) ~(config : config)
-      ~(passes : Sanitiser_pass.Set.t) : Job.Output.t Or_error.t =
+      ~(passes : Act_config.Sanitiser_pass.Set.t) : Job.Output.t Or_error.t
+      =
     let open Or_error.Let_syntax in
     let%map san = SS.sanitise ~passes ~symbols program in
     let program = SS.Output.programs san in
@@ -391,7 +394,7 @@ module Make (B : Runner.S) :
       (SS.Redirect.to_string_alist redirects)
 
   module Filter :
-    Utils.Filter.S
+    Act_utils.Filter.S
     with type aux_i = Config.t Job.t
      and type aux_o = Job.Output.t = B.Make_filter (struct
     type cfg = Config.t
@@ -407,11 +410,11 @@ module Make (B : Runner.S) :
 end
 
 let get_filter (module Runner : Runner.S) :
-    (module Utils.Filter.S
+    (module Act_utils.Filter.S
        with type aux_i = Config.t Job.t
         and type aux_o = Job.Output.t) =
   let module Exp = Make (Runner) in
   (module Exp.Filter
-  : Utils.Filter.S
+  : Act_utils.Filter.S
     with type aux_i = Config.t Job.t
      and type aux_o = Job.Output.t )

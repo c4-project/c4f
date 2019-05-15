@@ -1,10 +1,13 @@
 (library
- (name config)
+ (name act_config)
+ (public_name act.config)
+ (synopsis
+   "Automagic Compiler Tormentor: configuration and config file parsing")
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries act_common fmt fpath menhirLib litmus utils travesty
-   travesty.core_kernel_exts core_kernel))
+ (libraries fmt fpath menhirLib travesty travesty.core_kernel_exts
+   core_kernel act_common act_litmus act_utils))
 
 ;; Config file parser
 

@@ -1,11 +1,13 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name c)
+ (name act_c)
+ (public_name act.c)
+ (synopsis "Automagic Compiler Tormentor: C language support")
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
- (libraries core config abstract utils menhirLib))
+ (libraries core_kernel menhirLib act_common act_config act_utils))
 
 (ocamllex
  (modules lexer))

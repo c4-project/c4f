@@ -57,7 +57,7 @@ module Config : sig
 
   val make :
        ?format:Format.t
-    -> ?postcondition:'const Litmus.Ast_base.Postcondition.t
+    -> ?postcondition:'const Act_litmus.Ast_base.Postcondition.t
     -> ?c_variables:C_variables.Map.t
     -> unit
     -> 'const t
@@ -81,8 +81,8 @@ module Config : sig
   val transform :
        'a t
     -> format:(Format.t -> Format.t Or_error.t)
-    -> postcondition:(   'a Litmus.Ast_base.Postcondition.t
-                      -> 'b Litmus.Ast_base.Postcondition.t Or_error.t)
+    -> postcondition:(   'a Act_litmus.Ast_base.Postcondition.t
+                      -> 'b Act_litmus.Ast_base.Postcondition.t Or_error.t)
     -> c_variables:(C_variables.Map.t -> C_variables.Map.t Or_error.t)
     -> 'b t Or_error.t
   (** [transform config ~format ~postcondition ~c_variables] transforms
@@ -100,7 +100,7 @@ module Make (B : Runner.S) :
 
 val get_filter :
      (module Runner.S)
-  -> (module Utils.Filter.S
+  -> (module Act_utils.Filter.S
         with type aux_i = Sexp.t Config.t Job.t
          and type aux_o = Job.Output.t)
 (** [get_filter Runner] is [Runner.Litmusify], but with the input type

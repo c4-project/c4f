@@ -38,7 +38,7 @@ module Make (B : Basic) : S = struct
 end
 
 module Make_error_filter (B : Basic_error) : Basic_filter =
-Utils.Filter.Make (struct
+Act_utils.Filter.Make (struct
   type aux_i = Arch.t
 
   type aux_o = unit
@@ -47,7 +47,7 @@ Utils.Filter.Make (struct
 
   let tmp_file_ext = Fn.const "tmp"
 
-  let run (_ : _ Utils.Filter.ctx) (_ : Stdio.In_channel.t)
+  let run (_ : _ Act_utils.Filter.ctx) (_ : Stdio.In_channel.t)
       (_ : Stdio.Out_channel.t) : unit Or_error.t =
     Result.Error B.error
 end)
@@ -57,7 +57,7 @@ module Make_error (B : Basic_error) : S = struct
 
   let name : Act_common.Id.t = Act_common.Id.of_string "error"
 
-  let machine_id : Act_common.Id.t = Config.Machine.Id.default
+  let machine_id : Act_common.Id.t = Act_config.Machine.Id.default
 
   type t = Filter.aux_i
 

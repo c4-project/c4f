@@ -1,10 +1,11 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name language)
+ (name act_language)
+ (public_name act.language)
+ (synopsis "Automagic Compiler Tormentor: language abstraction layer")
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries act_common config fmt fpath menhirLib abstract litmus utils
-   travesty travesty.base_exts travesty.core_kernel_exts core
-   shell.string_extended))
+ (libraries core_kernel fmt fpath shell.string_extended travesty
+   travesty.core_kernel_exts act_abstract act_common act_litmus act_utils))

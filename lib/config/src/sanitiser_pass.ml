@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Act_common
-open Utils
+open Act_utils
 
 (* The unusual module nesting here is to make use of various extensions and
    avoid various shadowings. *)

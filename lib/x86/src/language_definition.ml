@@ -62,8 +62,8 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
       let make_heap_loc l =
         Ast.(Location.Indirect (Indirect.make ~disp:(Disp.Symbolic l) ()))
 
-      let register_abs_type : Ast.Reg.t -> Abstract.Location.Register.t =
-        function
+      let register_abs_type : Ast.Reg.t -> Act_abstract.Location.Register.t
+          = function
         (* Technically, [E]SP is the 'stack pointer' on x86. However, stack
            offsets generally descend from [E]BP, so we map it to the
            'abstract' stack pointer. *)
@@ -74,34 +74,34 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
         | #Ast.Reg.sp | #Ast.Reg.flag ->
             Unknown
 
-      let disp_abs_type : Ast.Disp.t -> Abstract.Location.Address.t =
+      let disp_abs_type : Ast.Disp.t -> Act_abstract.Location.Address.t =
         function
         | Ast.Disp.Numeric k ->
-            Abstract.Location.Address.Int k
+            Act_abstract.Location.Address.Int k
         | Ast.Disp.Symbolic k ->
-            Abstract.Location.Address.Symbol k
+            Act_abstract.Location.Address.Symbol k
 
       let indirect_abs_type (i : Ast.Indirect.t) =
-        let open Abstract.Location in
+        let open Act_abstract.Location in
         let open Ast.Indirect in
         match (seg i, disp i, base i, index i) with
         | None, disp, Some b, None ->
             let reg = register_abs_type b in
             let offset =
               Option.value_map disp ~f:disp_abs_type
-                ~default:(Abstract.Location.Address.Int 0)
+                ~default:(Act_abstract.Location.Address.Int 0)
             in
-            Abstract.Location.Register_indirect {reg; offset}
+            Act_abstract.Location.Register_indirect {reg; offset}
         (* This may be over-optimistic. *)
         | None, Some d, None, None ->
-            Abstract.Location.Heap (disp_abs_type d)
+            Act_abstract.Location.Heap (disp_abs_type d)
         | _, _, _, _ ->
             Unknown
 
-      include Abstract.Abstractable.Make (struct
+      include Act_abstract.Abstractable.Make (struct
         type nonrec t = t
 
-        module Abs = Abstract.Location
+        module Abs = Act_abstract.Location
 
         let abstract = function
           | Ast.Location.Reg reg ->
@@ -133,12 +133,12 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
 
       let instruction = Ast.Statement.instruction
 
-      module Abs = Abstract.Statement
+      module Abs = Act_abstract.Statement
 
-      include Abstract.Abstractable.Make (struct
+      include Act_abstract.Abstractable.Make (struct
         type nonrec t = t
 
-        module Abs = Abstract.Statement
+        module Abs = Act_abstract.Statement
         open Abs
 
         let abstract = function
@@ -190,7 +190,7 @@ module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
     end
   end
 
-  include Language.Definition.Make (Basic)
+  include Act_language.Definition.Make (Basic)
 
   let make_jump_operand = Basic.Instruction.make_jump_operand
 end
@@ -218,7 +218,7 @@ let%expect_test "is_program_label: negative, AT&T" =
   [%expect {| false |}]
 
 let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
-  Format.printf "%a@." Abstract.Operand.Bundle.pp
+  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Add)
@@ -229,13 +229,13 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
   [%expect {| $-16 -> reg:sp |}]
 
 let%expect_test "abs_operands: nop -> none" =
-  Format.printf "%a@." Abstract.Operand.Bundle.pp
+  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make ~opcode:(Opcode.Basic `Nop) ())) ;
   [%expect {| none |}]
 
 let%expect_test "abs_operands: jmp, AT&T style" =
-  Format.printf "%a@." Abstract.Operand.Bundle.pp
+  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Jump `Unconditional)
@@ -247,7 +247,7 @@ let%expect_test "abs_operands: jmp, AT&T style" =
   [%expect {| sym:L1 |}]
 
 let%expect_test "abs_operands: pop $42 -> error" =
-  Format.printf "%a@." Abstract.Operand.Bundle.pp
+  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Pop)
@@ -256,7 +256,7 @@ let%expect_test "abs_operands: pop $42 -> error" =
   [%expect {| <ERR: Operand type not allowed here> |}]
 
 let%expect_test "abs_operands: nop $42 -> error" =
-  Format.printf "%a@." Abstract.Operand.Bundle.pp
+  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Nop)
@@ -266,7 +266,7 @@ let%expect_test "abs_operands: nop $42 -> error" =
     {| <ERR: ("Expected zero operands" (got ((Immediate (Numeric 42)))))> |}]
 
 let%expect_test "abs_operands: mov %ESP, %EBP" =
-  Format.printf "%a@." Abstract.Operand.Bundle.pp
+  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Mov)
@@ -277,7 +277,7 @@ let%expect_test "abs_operands: mov %ESP, %EBP" =
   [%expect {| reg:sp -> reg:sp |}]
 
 let%expect_test "abs_operands: movl %ESP, %EBP" =
-  Format.printf "%a@." Abstract.Operand.Bundle.pp
+  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Sized (`Mov, Opcode.Size.Long))
@@ -290,7 +290,7 @@ let%expect_test "abs_operands: movl %ESP, %EBP" =
 module Intel = Make (Dialect.Intel) (Pp.Intel)
 
 let%expect_test "abs_operands: add ESP, -16, Intel" =
-  Format.printf "%a@." Abstract.Operand.Bundle.pp
+  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
     (Intel.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Add)
@@ -301,7 +301,7 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
   [%expect {| $-16 -> reg:sp |}]
 
 let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
-  Format.printf "%a@." Abstract.Operand.Bundle.pp
+  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Mov)

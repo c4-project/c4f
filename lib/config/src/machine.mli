@@ -26,7 +26,7 @@
 
 open Core_kernel
 open Act_common
-open Utils
+open Act_utils
 
 include module type of Machine_intf
 

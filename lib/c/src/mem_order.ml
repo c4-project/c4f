@@ -37,7 +37,7 @@ module M = struct
 end
 
 include M
-include Utils.Enum.Extend_table (M)
+include Act_utils.Enum.Extend_table (M)
 
 let is_load_compatible : t -> bool = function
   | Seq_cst | Acquire | Consume | Relaxed ->

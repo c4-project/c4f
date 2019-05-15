@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Utils
+open Act_utils
 
 (** [t] is an abstracted statement. *)
 type t =
@@ -89,7 +89,7 @@ end
     doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
-    (I : Utils.Inherit.S_partial with type c := P.t) :
+    (I : Act_utils.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t
 
 (** [Flag] is an enumeration of various statement observations. *)
@@ -143,7 +143,7 @@ end
     component. *)
 module Inherit_properties
     (P : S_properties)
-    (I : Utils.Inherit.S with type c := P.t) :
+    (I : Act_utils.Inherit.S with type c := P.t) :
   S_properties with type t := I.t
 
 (** This module contains [S_properties] directly. *)

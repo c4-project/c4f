@@ -24,10 +24,10 @@
 open Core_kernel
 open Act_common
 
-let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Config.Act.t) :
+let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Act_config.Act.t) :
     unit Or_error.t =
-  let herd = Config.Act.herd_or_default cfg in
-  Sim_herd.Filter.run_direct ?arch herd argv
+  let herd = Act_config.Act.herd_or_default cfg in
+  Act_sim_herd.Filter.run_direct ?arch herd argv
 
 let herd_command : Command.t =
   Command.basic ~summary:"runs Herd"
@@ -35,10 +35,10 @@ let herd_command : Command.t =
       let%map_open standard_args = Args.Standard.get
       and arch =
         choose_one
-          [ Args.flag_to_enum_choice (Some Sim.Arch.C) "-c"
+          [ Args.flag_to_enum_choice (Some Act_sim.Arch.C) "-c"
               ~doc:"Use the act.conf-configured model for C"
           ; map
-              ~f:(Option.map ~f:(fun x -> Some (Sim.Arch.Assembly x)))
+              ~f:(Option.map ~f:(fun x -> Some (Act_sim.Arch.Assembly x)))
               (Args.arch
                  ~doc:
                    "Use the act.conf-configured model for this architecture"
@@ -52,15 +52,17 @@ let herd_command : Command.t =
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:(fun _args -> run_herd ?arch ?argv))
 
-let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Config.Act.t) :
-    unit Or_error.t =
+let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Act_config.Act.t)
+    : unit Or_error.t =
   let open Or_error.Let_syntax in
-  let machines = Config.Act.machines cfg in
+  let machines = Act_config.Act.machines cfg in
   let%bind machine =
-    Config.Machine.Spec.Set.get machines Config.Machine.Id.default
+    Act_config.Machine.Spec.Set.get machines Act_config.Machine.Id.default
   in
-  let%bind litmus_cfg = Config.Machine.Spec.With_id.ensure_litmus machine in
-  Sim_litmus.Filter.run_direct litmus_cfg argv
+  let%bind litmus_cfg =
+    Act_config.Machine.Spec.With_id.ensure_litmus machine
+  in
+  Act_sim_litmus.Filter.run_direct litmus_cfg argv
 
 let litmus_command : Command.t =
   Command.basic ~summary:"runs Litmus locally"

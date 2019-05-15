@@ -47,9 +47,9 @@ module type Basic = sig
     Travesty.Traversable.S0 with module Elt = Sym and type t := t
 
   include
-    Abstract.Abstractable.S
+    Act_abstract.Abstractable.S
     with type t := t
-     and module Abs := Abstract.Location
+     and module Abs := Act_abstract.Location
 
   val make_heap_loc : Sym.t -> t
   (** [make_heap_loc sym] creates a location referencing a symbolic heap
@@ -70,7 +70,7 @@ module type S = sig
 
   (** We can query abstract properties directly on the concrete location
       type. *)
-  include Abstract.Location.S_predicates with type t := t
+  include Act_abstract.Location.S_predicates with type t := t
 end
 
 (** [Location] is the interface exposed in the main mli file. *)

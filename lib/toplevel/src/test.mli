@@ -33,7 +33,7 @@ val run :
   -> [< `Delitmus of string list | `Memalloy of string]
   -> string
   -> Output.t
-  -> Config.Act.t
+  -> Act_config.Act.t
   -> unit Or_error.t
 (** [run c_simulator asm_simulator should_time input_mode_raw out_root_raw o
     cfg] runs the test frontend. It accepts input according to

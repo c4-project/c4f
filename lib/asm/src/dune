@@ -1,9 +1,11 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name asm)
+ (name act_asm)
+ (public_name act.asm)
+ (synopsis "Automagic Compiler Tormentor: assembly file manipulations")
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries act_common config fmt fpath abstract litmus utils language
-   sanitiser travesty travesty.core_kernel_exts core_kernel))
+ (libraries core_kernel fmt fpath travesty travesty.core_kernel_exts
+   act_abstract act_common act_config act_language act_sanitiser))

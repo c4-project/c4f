@@ -27,7 +27,7 @@
     that'd normally be typedefs pulled into distinct types. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 (** Primitive types. *)
 module Basic : sig

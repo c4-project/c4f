@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+module Au = Act_utils
 module A = Act_common
 
 module type Basic = sig
@@ -34,14 +35,18 @@ module type Basic = sig
   (** Delitmusified AST *)
   type del
 
-  module Frontend : Utils.Frontend.S with type ast := ast
+  module Frontend : Au.Frontend.S with type ast := ast
 
   val normal_tmp_file_ext : string
 
   val process : ast -> t Or_error.t
 
   val fuzz :
-    ?seed:int -> t -> o:A.Output.t -> config:Config.Fuzz.t -> t Or_error.t
+       ?seed:int
+    -> t
+    -> o:A.Output.t
+    -> config:Act_config.Fuzz.t
+    -> t Or_error.t
 
   val cvars : t -> A.C_variables.Map.t
   (** [cvars vast] should return a list of C identifiers corresponding to
@@ -68,7 +73,7 @@ end
 type mode =
   | Print of [`All | `Vars]
   | Delitmus
-  | Fuzz of {seed: int option; o: A.Output.t; config: Config.Fuzz.t}
+  | Fuzz of {seed: int option; o: A.Output.t; config: Act_config.Fuzz.t}
 
 module Output = struct
   type t =
@@ -78,15 +83,15 @@ module Output = struct
 end
 
 module Make (B : Basic) :
-  Utils.Filter.S with type aux_i = mode and type aux_o = Output.t =
-Utils.Filter.Make (struct
+  Au.Filter.S with type aux_i = mode and type aux_o = Output.t =
+Au.Filter.Make (struct
   type aux_i = mode
 
   type aux_o = Output.t
 
   let name = "C transformer"
 
-  let tmp_file_ext ({aux; _} : mode Utils.Filter.ctx) : string =
+  let tmp_file_ext ({aux; _} : mode Au.Filter.ctx) : string =
     match aux with
     | Print `All ->
         B.normal_tmp_file_ext
@@ -105,7 +110,7 @@ Utils.Filter.Make (struct
     B.cvars_of_delitmus dl
 
   let run_fuzz ?(seed : int option) (vast : B.t) (oc : Out_channel.t)
-      ~(o : A.Output.t) ~(config : Config.Fuzz.t) :
+      ~(o : A.Output.t) ~(config : Act_config.Fuzz.t) :
       A.C_variables.Map.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map fz = B.fuzz ?seed ~o ~config vast in
@@ -113,15 +118,15 @@ Utils.Filter.Make (struct
 
   let print_all (oc : Out_channel.t) _ (x : B.t) : unit = B.print oc x
 
-  let print_vars (oc : Out_channel.t) (vars : Utils.C_identifier.t list) _ :
+  let print_vars (oc : Out_channel.t) (vars : Au.C_identifier.t list) _ :
       unit =
     let f = Caml.Format.formatter_of_out_channel oc in
-    Fmt.(vbox (list ~sep:sp Utils.C_identifier.pp)) f vars
+    Fmt.(vbox (list ~sep:sp Au.C_identifier.pp)) f vars
 
   let print :
          [`All | `Vars]
       -> Out_channel.t
-      -> Utils.C_identifier.t list
+      -> Au.C_identifier.t list
       -> B.t
       -> unit = function
     | `All ->
@@ -132,13 +137,13 @@ Utils.Filter.Make (struct
   let run_print (output_mode : [`All | `Vars]) (vast : B.t)
       (oc : Out_channel.t) : A.C_variables.Map.t Or_error.t =
     let cvars = B.cvars vast in
-    print output_mode oc (Utils.C_identifier.Map.keys cvars) vast ;
+    print output_mode oc (Au.C_identifier.Map.keys cvars) vast ;
     Or_error.return cvars
 
-  let run {Utils.Filter.aux; src; _} ic oc : Output.t Or_error.t =
+  let run {Au.Filter.aux; src; _} ic oc : Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind ast =
-      B.Frontend.load_from_ic ~path:(Utils.Io.In_source.to_string src) ic
+      B.Frontend.load_from_ic ~path:(Au.Io.In_source.to_string src) ic
     in
     let%bind vast = B.process ast in
     let f =
@@ -155,7 +160,7 @@ Utils.Filter.Make (struct
 end)
 
 module Normal_C :
-  Utils.Filter.S with type aux_i = mode and type aux_o = Output.t =
+  Au.Filter.S with type aux_i = mode and type aux_o = Output.t =
 Make (struct
   type ast = Ast.Translation_unit.t
 
@@ -175,7 +180,7 @@ Make (struct
   let process = Mini_convert.translation_unit
 
   let fuzz ?(seed : int option) (_ : t) ~(o : A.Output.t)
-      ~(config : Config.Fuzz.t) : t Or_error.t =
+      ~(config : Act_config.Fuzz.t) : t Or_error.t =
     ignore seed ;
     ignore o ;
     ignore config ;
@@ -196,7 +201,7 @@ Make (struct
 end)
 
 module Litmus :
-  Utils.Filter.S with type aux_i = mode and type aux_o = Output.t =
+  Au.Filter.S with type aux_i = mode and type aux_o = Output.t =
 Make (struct
   type ast = Ast.Litmus.t
 
@@ -230,8 +235,11 @@ Make (struct
   let delitmus = Delitmus.run
 
   let fuzz :
-      ?seed:int -> t -> o:A.Output.t -> config:Config.Fuzz.t -> t Or_error.t
-      =
+         ?seed:int
+      -> t
+      -> o:A.Output.t
+      -> config:Act_config.Fuzz.t
+      -> t Or_error.t =
     Fuzzer.run
 
   let postcondition :
@@ -246,6 +254,5 @@ Make (struct
 end)
 
 let c_module (is_c : bool) :
-    (module Utils.Filter.S with type aux_i = mode and type aux_o = Output.t)
-    =
+    (module Au.Filter.S with type aux_i = mode and type aux_o = Output.t) =
   if is_c then (module Normal_C) else (module Litmus)

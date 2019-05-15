@@ -27,7 +27,7 @@
     about variables. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 (** Type for storing variable values. *)
 module Value : sig

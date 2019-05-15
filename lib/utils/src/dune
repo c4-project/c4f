@@ -1,7 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name utils)
+ (name act_utils)
+ (public_name act.utils)
+ (synopsis "Automagic Compiler Tormentor: non-ACT-specific utility modules")
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))

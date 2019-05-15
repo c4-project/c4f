@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Act_common
-open Utils
+module Au = Act_utils
 include Compiler_intf
 
 module Make_spec (R : Machine.Reference) : S_spec with module Mach = R =
@@ -48,17 +48,17 @@ struct
     let pp f spec =
       Format.pp_open_vbox f 0 ;
       if not spec.enabled then Format.fprintf f "-- DISABLED --@," ;
-      My_format.pp_kv f "Style" String.pp spec.style ;
+      Au.My_format.pp_kv f "Style" String.pp spec.style ;
       Format.pp_print_cut f () ;
-      My_format.pp_kv f "Emits" Id.pp spec.emits ;
+      Au.My_format.pp_kv f "Emits" Id.pp spec.emits ;
       Format.pp_print_cut f () ;
-      My_format.pp_kv f "Command"
+      Au.My_format.pp_kv f "Command"
         (Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp)
         (spec.cmd :: spec.argv) ;
       Format.pp_print_cut f () ;
-      My_format.pp_kv f "Machine" Mach.pp spec.machine ;
+      Au.My_format.pp_kv f "Machine" Mach.pp spec.machine ;
       Format.pp_print_cut f () ;
-      My_format.pp_kv f "Herd"
+      Au.My_format.pp_kv f "Herd"
         (fun f x -> String.pp f (if x then "yes" else "no"))
         spec.herd ;
       Format.pp_close_box f ()
@@ -150,7 +150,7 @@ module type Basic_with_run_info = sig
 
   include With_spec
 
-  module Runner : Runner.S
+  module Runner : Au.Runner.S
 end
 
 module Make (B : Basic_with_run_info) : S = struct
@@ -161,21 +161,21 @@ module Make (B : Basic_with_run_info) : S = struct
   let compile ~(infile : Fpath.t) ~(outfile : Fpath.t) =
     let s = Spec.With_id.spec B.cspec in
     let argv_fun =
-      Utils.Runner.argv_one_file (fun ~input ~output ->
+      Au.Runner.argv_one_file (fun ~input ~output ->
           Or_error.return
             (B.compile_args ~args:(Spec.argv s) ~emits:(Spec.emits s)
                ~infile:input ~outfile:output) )
     in
     B.Runner.run_with_copy ~prog:cmd
-      {input= Copy_spec.file infile; output= Copy_spec.file outfile}
+      {input= Au.Copy_spec.file infile; output= Au.Copy_spec.file outfile}
       argv_fun
 
   let test () = B.Runner.run ~prog:cmd B.test_args
 end
 
 module S_to_filter (S : S) :
-  Utils.Filter.S with type aux_i = unit and type aux_o = unit =
-Utils.Filter.Make_files_only (struct
+  Au.Filter.S with type aux_i = unit and type aux_o = unit =
+Au.Filter.Make_files_only (struct
   type aux_i = unit
 
   type aux_o = unit
@@ -188,7 +188,7 @@ Utils.Filter.Make_files_only (struct
 end)
 
 module Make_filter (B : Basic_with_run_info) :
-  Utils.Filter.S with type aux_i = unit and type aux_o = unit =
+  Au.Filter.S with type aux_i = unit and type aux_o = unit =
   S_to_filter (Make (B))
 
 let runner_from_spec (cspec : Spec.With_id.t) =
@@ -202,19 +202,19 @@ module Chain_input = struct
 end
 
 module Chain_with_compiler
-    (Comp : Utils.Filter.S with type aux_i = unit and type aux_o = unit)
-    (Onto : Utils.Filter.S) :
-  Utils.Filter.S
+    (Comp : Au.Filter.S with type aux_i = unit and type aux_o = unit)
+    (Onto : Au.Filter.S) :
+  Au.Filter.S
   with type aux_i = Onto.aux_i Chain_input.t
    and type aux_o = unit option * Onto.aux_o =
-Utils.Filter.Chain_conditional_first (struct
+Au.Filter.Chain_conditional_first (struct
   module First = Comp
   module Second = Onto
 
   type aux_i = Onto.aux_i Chain_input.t
 
   let lift_next (next : Chain_input.next_mode -> 'a) :
-      unit Filter.chain_output -> 'a = function
+      unit Au.Filter.chain_output -> 'a = function
     | `Checking_ahead ->
         next `Preview
     | `Skipped ->
@@ -222,7 +222,7 @@ Utils.Filter.Chain_conditional_first (struct
     | `Ran () ->
         next `Compile
 
-  let select {Filter.aux; src; _} =
+  let select {Au.Filter.aux; src; _} =
     let file_type = Chain_input.file_type aux in
     let next = Chain_input.next aux in
     let f = lift_next next in
@@ -252,26 +252,26 @@ module Make_resolver (B : Basic_resolver with type spec := Spec.With_id.t) :
   let from_spec = from_resolver_and_spec B.resolve
 
   let filter_from_spec (cspec : Spec.With_id.t) :
-      (module Utils.Filter.S with type aux_i = unit
-                              and type aux_o = unit)
+      (module Au.Filter.S with type aux_i = unit
+                           and type aux_o = unit)
       Or_error.t =
     let open Or_error.Let_syntax in
     let%map (module S) = from_spec cspec in
     (module S_to_filter (S)
-    : Utils.Filter.S
+    : Au.Filter.S
       with type aux_i = unit
        and type aux_o = unit )
 
   let chained_filter_from_spec (type i o) (cspec : Spec.With_id.t)
-      (module Onto : Filter.S with type aux_i = i and type aux_o = o) :
-      (module Utils.Filter.S
+      (module Onto : Au.Filter.S with type aux_i = i and type aux_o = o) :
+      (module Au.Filter.S
          with type aux_i = i Chain_input.t
           and type aux_o = unit option * o)
       Or_error.t =
     let open Or_error.Let_syntax in
     let%map (module F) = filter_from_spec cspec in
     (module Chain_with_compiler (F) (Onto)
-    : Utils.Filter.S
+    : Au.Filter.S
       with type aux_i = i Chain_input.t
        and type aux_o = unit option * o )
 end
@@ -327,16 +327,16 @@ module Make_target_resolver
     let open Or_error.Let_syntax in
     let%map (module S) = from_spec tgt in
     (module S_to_filter (S)
-    : Utils.Filter.S
+    : Au.Filter.S
       with type aux_i = unit
        and type aux_o = unit )
 
   let chained_filter_from_spec (type i o) (tgt : Target.t)
-      (module Onto : Filter.S with type aux_i = i and type aux_o = o) =
+      (module Onto : Au.Filter.S with type aux_i = i and type aux_o = o) =
     let open Or_error.Let_syntax in
     let%map (module F) = filter_from_spec tgt in
     (module Chain_with_compiler (F) (Onto)
-    : Utils.Filter.S
+    : Au.Filter.S
       with type aux_i = i Chain_input.t
        and type aux_o = unit option * o )
 end

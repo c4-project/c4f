@@ -34,15 +34,16 @@ module type Basic = sig
 
   module Pretty : Pp.Printer
 
-  module Symbol : Language.Symbol.Basic with type t := string
+  module Symbol : Act_language.Symbol.Basic with type t := string
 
-  module Location : Language.Location.Basic with type t := Ast.Location.t
+  module Location :
+    Act_language.Location.Basic with type t := Ast.Location.t
 end
 
 (** [S] is the signature of a module produced using [Make]. *)
 module type S = sig
   include
-    Language.Instruction.Basic
+    Act_language.Instruction.Basic
     with type t = Ast.Instruction.t
      and type con = Ast.Operand.t
      and type Sym.t = string

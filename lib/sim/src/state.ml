@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Act_common
-open Utils
+open Act_utils
 
 module M = struct
   type t = string Litmus_id.Map.t [@@deriving sexp, compare]

@@ -24,7 +24,7 @@
 (** [Abstract_symbol] contains types and utilities for abstracted symbols. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 (** Symbols are strings. *)
 type t = string [@@deriving sexp, eq]

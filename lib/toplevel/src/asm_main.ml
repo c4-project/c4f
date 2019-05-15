@@ -24,7 +24,7 @@
 open Core_kernel
 
 let readme () : string =
-  Utils.My_string.format_for_readme
+  Act_utils.My_string.format_for_readme
     {|
 The `asm` command group contains commands for querying and manipulating
 single assembly files or litmus tests.

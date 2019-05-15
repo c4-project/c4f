@@ -23,7 +23,7 @@
 
 open Core
 open Act_common
-open Utils
+open Act_utils
 include Args_intf
 
 module Colour_table = String_table.Make (struct
@@ -96,20 +96,22 @@ module Other = struct
       ~doc:"IDS comma-separated list of C local variables to track"
 
   let sanitiser_passes :
-      Config.Sanitiser_pass.Selector.t Blang.t option Command.Param.t =
+      Act_config.Sanitiser_pass.Selector.t Blang.t option Command.Param.t =
     flag "sanitiser-passes"
       (optional
-         (sexp_conv [%of_sexp: Config.Sanitiser_pass.Selector.t Blang.t]))
+         (sexp_conv [%of_sexp: Act_config.Sanitiser_pass.Selector.t Blang.t]))
       ~doc:"PREDICATE select which sanitiser passes to use"
 
   let compiler_predicate =
     flag "filter-compilers"
-      (optional (sexp_conv [%of_sexp: Config.Compiler.Property.t Blang.t]))
+      (optional
+         (sexp_conv [%of_sexp: Act_config.Compiler.Property.t Blang.t]))
       ~doc:"PREDICATE filter compilers using this predicate"
 
   let machine_predicate =
     flag "filter-machines"
-      (optional (sexp_conv [%of_sexp: Config.Machine.Property.t Blang.t]))
+      (optional
+         (sexp_conv [%of_sexp: Act_config.Machine.Property.t Blang.t]))
       ~doc:"PREDICATE filter machines using this predicate"
 end
 
@@ -206,9 +208,10 @@ module Standard_asm : S_standard_asm with type s := Standard.t = struct
     { rest: Standard_with_files.t
     ; c_globals: string list option
     ; c_locals: string list option
-    ; file_type: Config.File_type.t_or_infer
+    ; file_type: Act_config.File_type.t_or_infer
     ; target: Asm_target.t
-    ; sanitiser_passes: Config.Sanitiser_pass.Selector.t Blang.t option }
+    ; sanitiser_passes: Act_config.Sanitiser_pass.Selector.t Blang.t option
+    }
   [@@deriving fields]
 
   module Rest = Standard_with_files

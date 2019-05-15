@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Utils
+open Act_utils
 open Mini
 
 let map_combine (xs : 'a list) ~(f : 'a -> 'b Or_error.t) :
@@ -533,7 +533,7 @@ let translation_unit (prog : Ast.Translation_unit.t) : Program.t Or_error.t
   and functions = map_combine ~f:func ast_funs in
   Program.make ~globals ~functions
 
-module Litmus_conv = Litmus.Convert.Make (struct
+module Litmus_conv = Act_litmus.Convert.Make (struct
   module From = struct
     include Ast.Litmus
     module Lang = Ast.Litmus_lang

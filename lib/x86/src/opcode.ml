@@ -45,7 +45,7 @@
 
 open Base
 open Act_common
-open Utils
+open Act_utils
 module Tx = Travesty_base_exts
 
 module Operand_spec = struct
@@ -143,10 +143,10 @@ module Sizable = struct
       end) :
       String_table.S with type t := t )
 
-  include Abstract.Abstractable.Make (struct
+  include Act_abstract.Abstractable.Make (struct
     type nonrec t = t
 
-    module Abs = Abstract.Instruction.Opcode
+    module Abs = Act_abstract.Instruction.Opcode
     open Abs
 
     let abstract = function
@@ -200,10 +200,10 @@ module Sized = struct
       end) :
       String_table.S with type t := t )
 
-  include Abstract.Abstractable.Make (struct
+  include Act_abstract.Abstractable.Make (struct
     type nonrec t = t
 
-    module Abs = Abstract.Instruction.Opcode
+    module Abs = Act_abstract.Instruction.Opcode
 
     let abstract (s, _) = Sizable.abstract s
   end)
@@ -232,10 +232,10 @@ module Basic = struct
       end) :
       String_table.S with type t := t )
 
-  include Abstract.Abstractable.Make (struct
+  include Act_abstract.Abstractable.Make (struct
     type nonrec t = t
 
-    module Abs = Abstract.Instruction.Opcode
+    module Abs = Act_abstract.Instruction.Opcode
     open Abs
 
     let abstract = function
@@ -398,10 +398,10 @@ module Jump = struct
       (Conditional ParityEven) -> jpe
       (Conditional ParityOdd) -> jpo |}]
 
-  include Abstract.Abstractable.Make (struct
+  include Act_abstract.Abstractable.Make (struct
     type nonrec t = t
 
-    module Abs = Abstract.Instruction.Opcode
+    module Abs = Act_abstract.Instruction.Opcode
 
     let abstract _ = Abs.Jump
   end)
@@ -415,10 +415,10 @@ type t =
   | Unknown of string
 [@@deriving sexp, eq, variants]
 
-include Abstract.Abstractable.Make (struct
+include Act_abstract.Abstractable.Make (struct
   type nonrec t = t
 
-  module Abs = Abstract.Instruction.Opcode
+  module Abs = Act_abstract.Instruction.Opcode
 
   let abstract = function
     | Basic b ->

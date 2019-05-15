@@ -31,7 +31,7 @@ module type Generic = sig
   (** The name of the action, as an act identifier. *)
 
   val readme : unit -> string
-  (** [readme () builds a long synopsis of this action. *)
+  (** [readme ()] builds a long synopsis of this action. *)
 
   val default_weight : int
   (** The default weight of the action. *)

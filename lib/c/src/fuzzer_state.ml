@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Act_common
-open Utils
+open Act_utils
 
 type t = {vars: Fuzzer_var.Map.t; o: Output.t} [@@deriving fields]
 

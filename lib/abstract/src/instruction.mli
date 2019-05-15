@@ -102,7 +102,7 @@ end
     doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
-    (I : Utils.Inherit.S_partial with type c := P.t) :
+    (I : Act_utils.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t
 
 (** [S_properties] is the signature of any module that can access properties
@@ -125,7 +125,7 @@ end
     component. *)
 module Inherit_properties
     (P : S_properties)
-    (I : Utils.Inherit.S with type c := P.t) :
+    (I : Act_utils.Inherit.S with type c := P.t) :
   S_properties with type t := I.t
 
 (** We include the functions provided in [S_properties], but define them

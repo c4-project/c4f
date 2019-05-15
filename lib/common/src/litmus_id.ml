@@ -23,7 +23,7 @@
 
 (* Don't use Base: it causes us to derive a weaker signature *)
 open Core_kernel
-open Utils
+module Au = Act_utils
 
 (* Comparable.Make_plain depends on Sexpable, and Sexpable.Of_stringable
    depends on Stringable. As a result, we have to implement Id by
@@ -32,15 +32,15 @@ open Utils
 
 module M_str = struct
   type t =
-    | Local of My_quickcheck.Small_non_negative_int.t * C_identifier.t
-    | Global of C_identifier.t
+    | Local of Au.My_quickcheck.Small_non_negative_int.t * Au.C_identifier.t
+    | Global of Au.C_identifier.t
   [@@deriving compare, variants, quickcheck]
 
   let to_string : t -> string = function
     | Local (t, id) ->
-        Printf.sprintf "%d:%s" t (C_identifier.to_string id)
+        Printf.sprintf "%d:%s" t (Au.C_identifier.to_string id)
     | Global id ->
-        C_identifier.to_string id
+        Au.C_identifier.to_string id
 
   let try_parse_local (s : string) : (int * string) option =
     let open Option.Let_syntax in
@@ -52,9 +52,9 @@ module M_str = struct
   let try_parse (s : string) : t Or_error.t =
     match try_parse_local s with
     | Some (t, id) ->
-        Or_error.(id |> C_identifier.create >>| local t)
+        Or_error.(id |> Au.C_identifier.create >>| local t)
     | None ->
-        Or_error.(s |> C_identifier.create >>| global)
+        Or_error.(s |> Au.C_identifier.create >>| global)
 
   let of_string (s : string) : t = Or_error.ok_exn (try_parse s)
 end
@@ -85,9 +85,9 @@ let%expect_test "try_parse: example invalid identifier" =
        utils/c_identifier.ml:58:13))) |}]
 
 let global_of_string (str : string) : t Or_error.t =
-  Or_error.(str |> C_identifier.create >>| global)
+  Or_error.(str |> Au.C_identifier.create >>| global)
 
-let variable_name : t -> C_identifier.t = function
+let variable_name : t -> Au.C_identifier.t = function
   | Local (_, v) | Global v ->
       v
 
@@ -97,28 +97,29 @@ let tid : t -> int option = function
   | Global _ ->
       None
 
-let as_global : t -> C_identifier.t option = function
+let as_global : t -> Au.C_identifier.t option = function
   | Global cid ->
       Some cid
   | Local _ ->
       None
 
-let to_memalloy_id_inner (t : int) (id : C_identifier.t) : string =
-  Printf.sprintf "t%d%s" t (C_identifier.to_string id)
+let to_memalloy_id_inner (t : int) (id : Au.C_identifier.t) : string =
+  Printf.sprintf "t%d%s" t (Au.C_identifier.to_string id)
 
 let%test_unit "to_memalloy_id_inner produces valid identifiers" =
   Base_quickcheck.Test.run_exn
     ( module struct
-      type t = My_quickcheck.Small_non_negative_int.t * C_identifier.t
+      type t = Au.My_quickcheck.Small_non_negative_int.t * Au.C_identifier.t
       [@@deriving sexp, quickcheck]
     end )
     ~f:(fun (t, id) ->
-      [%test_pred: C_identifier.t Or_error.t] ~here:[[%here]] Or_error.is_ok
-        (C_identifier.create (to_memalloy_id_inner t id)) )
+      [%test_pred: Au.C_identifier.t Or_error.t] ~here:[[%here]]
+        Or_error.is_ok
+        Au.(C_identifier.create (to_memalloy_id_inner t id)) )
 
-let to_memalloy_id : t -> C_identifier.t = function
+let to_memalloy_id : t -> Au.C_identifier.t = function
   | Local (t, id) ->
-      C_identifier.of_string (to_memalloy_id_inner t id)
+      Au.C_identifier.of_string (to_memalloy_id_inner t id)
   | Global id ->
       id
 
@@ -133,18 +134,18 @@ let%test_module "Id tests" =
 
     let%test_unit "to_memalloy_id is identity on globals" =
       Base_quickcheck.Test.run_exn
-        (module C_identifier)
+        (module Au.C_identifier)
         ~f:(fun ident ->
-          [%test_eq: C_identifier.t] ~here:[[%here]] ident
+          [%test_eq: Au.C_identifier.t] ~here:[[%here]] ident
             (to_memalloy_id (Global ident)) )
   end )
 
 let pp : t Fmt.t =
  fun f -> function
   | Local (tid, str) ->
-      Fmt.pf f "%d:%a" tid C_identifier.pp str
+      Fmt.pf f "%d:%a" tid Au.C_identifier.pp str
   | Global str ->
-      C_identifier.pp f str
+      Au.C_identifier.pp f str
 
 module Assoc = struct
   type 'a t = (M_sexp.t, 'a) List.Assoc.t

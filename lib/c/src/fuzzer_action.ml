@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Act_common
-open Utils
+open Act_utils
 include Fuzzer_action_intf
 
 let zero_if_not_available (subject : Fuzzer_subject.Test.t) (module A : S)
@@ -113,9 +113,9 @@ module Pool = struct
       (weight_overrides : int Id.Map.t) : ((module S), int) List.Assoc.t =
     List.map ~f:(make_weight_pair weight_overrides) actions
 
-  let make (actions : (module S) list) (config : Config.Fuzz.t) :
+  let make (actions : (module S) list) (config : Act_config.Fuzz.t) :
       t Or_error.t =
-    let weight_overrides_alist = Config.Fuzz.weights config in
+    let weight_overrides_alist = Act_config.Fuzz.weights config in
     Or_error.Let_syntax.(
       let%bind weight_overrides =
         Id.Map.of_alist_or_error weight_overrides_alist

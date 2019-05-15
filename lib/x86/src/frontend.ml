@@ -25,7 +25,7 @@ open Base
 open Act_common
 include Frontend_intf
 
-module Att : S = Utils.Frontend.Make (struct
+module Att : S = Act_utils.Frontend.Make (struct
   type ast = Ast.t
 
   module I = Att_parser.MenhirInterpreter

@@ -32,7 +32,7 @@
     {{!Mini_reify} Reify}. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 include module type of Ast_basic
 

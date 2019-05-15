@@ -24,7 +24,7 @@
 (** Mini-model: module signatures for variable typing environments *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 (** Basic signature of modules carrying a variable typing environment. *)
 module type Basic = sig

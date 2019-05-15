@@ -22,14 +22,15 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Sim_herdtools_common
+module Shc = Act_sim_herdtools_common
 
-include Reader.Make (struct
+include Shc.Reader.Make (struct
   let try_parse_state_count (line : string) : int option =
     Option.try_with (fun () -> Caml.Scanf.sscanf line "States %d" Fn.id)
 
-  let try_split_state_line (line : string) : Reader.state_line Or_error.t =
+  let try_split_state_line (line : string) :
+      Shc.Reader.state_line Or_error.t =
     (* Herd inputs don't have a histogram, so they don't have an occurrence
        count. *)
-    Or_error.return {Reader.occurrences= None; rest= line}
+    Or_error.return {Shc.Reader.occurrences= None; rest= line}
 end)

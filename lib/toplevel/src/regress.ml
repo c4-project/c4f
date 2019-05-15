@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Act_common
-open Utils
+open Act_utils
 
 type spec =
   { c_globals: string list [@sexp.list] [@sexp.omit_nil]
@@ -75,15 +75,15 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Sequence.map ~f:diff_to_error
   |> Sequence.to_list |> Or_error.combine_errors_unit
 
-let regress_run_asm (module L : Asm.Runner.S) (dir : Fpath.t) mode specs
+let regress_run_asm (module L : Act_asm.Runner.S) (dir : Fpath.t) mode specs
     passes (file : Fpath.t) =
   let open Or_error.Let_syntax in
   let%bind filepath = to_full_path ~dir ~file in
   let%bind spec = find_spec specs file in
   let symbols = spec.c_globals @ spec.c_locals (* for now *) in
-  let input = Asm.Job.make ~passes ~symbols in
-  let module Litmusify = Asm.Litmusifier.Make (L) in
-  let module Explain = Asm.Explainer.Make (L) in
+  let input = Act_asm.Job.make ~passes ~symbols in
+  let module Litmusify = Act_asm.Litmusifier.Make (L) in
+  let module Explain = Act_asm.Explainer.Make (L) in
   let%map _ =
     match mode with
     | `Litmusify ->
@@ -123,11 +123,12 @@ let regress_run_asm_many (modename : string) mode passes
     ~f:(regress_run_asm l path mode specs passes)
 
 let regress_explain : Fpath.t -> unit Or_error.t =
-  regress_run_asm_many "Explainer" `Explain Config.Sanitiser_pass.explain
+  regress_run_asm_many "Explainer" `Explain
+    Act_config.Sanitiser_pass.explain
 
 let regress_litmusify : Fpath.t -> unit Or_error.t =
   regress_run_asm_many "Litmusifier" `Litmusify
-    Config.Sanitiser_pass.standard
+    Act_config.Sanitiser_pass.standard
 
 let pp_cvars : C_variables.Map.t Fmt.t =
   Fmt.(
@@ -137,24 +138,25 @@ let pp_cvars : C_variables.Map.t Fmt.t =
          (using C_identifier.Map.keys
             (list ~sep:sp (hbox (prefix (unit "// -@ ") C_identifier.pp))))))
 
-let pp_post : C.Mini_litmus.Ast.Postcondition.t Fmt.t =
+let pp_post : Act_c.Mini_litmus.Ast.Postcondition.t Fmt.t =
   Fmt.(
     prefix
       (unit "@,@,// Postcondition:@,")
-      (hbox (prefix (unit "// ") C.Mini_litmus.Pp.pp_post)))
+      (hbox (prefix (unit "// ") Act_c.Mini_litmus.Pp.pp_post)))
 
-let summarise_c_output (o : C.Filters.Output.t) : unit =
+let summarise_c_output (o : Act_c.Filters.Output.t) : unit =
   Fmt.(
     pr "@[<v>%a%a@]@." pp_cvars
-      (C.Filters.Output.cvars o)
-      (option pp_post) (C.Filters.Output.post o))
+      (Act_c.Filters.Output.cvars o)
+      (option pp_post)
+      (Act_c.Filters.Output.post o))
 
 let delitmus_file (dir : Fpath.t) (file : Fpath.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind path = to_full_path ~dir ~file in
   let%map output =
-    C.Filters.Litmus.run_from_fpaths C.Filters.Delitmus ~infile:(Some path)
-      ~outfile:None
+    Act_c.Filters.Litmus.run_from_fpaths Act_c.Filters.Delitmus
+      ~infile:(Some path) ~outfile:None
   in
   summarise_c_output output
 
@@ -166,7 +168,7 @@ let parse_config_failures (dir : Fpath.t) (file : Fpath.t) : unit Or_error.t
     =
   let open Or_error.Let_syntax in
   let%bind path = to_full_path ~dir ~file in
-  let r = Config.Frontend.load ~path in
+  let r = Act_config.Frontend.load ~path in
   Fmt.(pr "@[%a@]@." (result ~ok:(always "No failures.") ~error:Error.pp)) r ;
   Result.ok_unit
 

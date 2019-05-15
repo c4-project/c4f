@@ -40,14 +40,14 @@ module type Basic_explanation = sig
   type details
 
   (** Items of type [elt] must be abstractable. *)
-  include Abstract.Abstractable.S with type t := elt
+  include Act_abstract.Abstractable.S with type t := elt
 
   (** Items of type [elt] must also be printable. *)
   include Pretty_printer.S with type t := elt
 
   (** [Flag] is the module containing detail flags that may be raised on
       [elt]. *)
-  module Flag : Abstract.Flag_enum.S
+  module Flag : Act_abstract.Flag_enum.S
 
   val abs_flags : elt -> context -> Flag.Set.t
   (** [abs_flags elt context] computes the set of detail flags that apply to
@@ -82,14 +82,14 @@ module type Explanation = sig
 
   (** Each [t] inherits the abstract type projection of its underlying
       [exp]. *)
-  include Abstract.Abstractable.S with type t := t
+  include Act_abstract.Abstractable.S with type t := t
 
   (** Explanations can be pretty-printed. *)
   include Pretty_printer.S with type t := t
 
   (** [Flag] is the module containing detail flags that may be raised on the
       explanation's original element. *)
-  module Flag : Abstract.Flag_enum.S
+  module Flag : Act_abstract.Flag_enum.S
 
   val original : t -> elt
   (** [original exp] gets the original element of an explanation [exp]. *)
@@ -111,14 +111,14 @@ module type S = sig
   type config
 
   (** [Lang] is the language definition this explainer is targeting. *)
-  module Lang : Language.Definition.S
+  module Lang : Act_language.Definition.S
 
   (** [Loc_explanation] provides explanations for locations. *)
   module Loc_explanation :
     Explanation
     with type elt := Lang.Location.t
-     and type context := Abstract.Symbol.Table.t
-     and module Abs := Abstract.Location
+     and type context := Act_abstract.Symbol.Table.t
+     and module Abs := Act_abstract.Location
 
   (** [Ops_explanation] provides explanations for instruction operand
       bundles. *)
@@ -126,13 +126,13 @@ module type S = sig
     include
       Explanation
       with type elt := Lang.Instruction.t
-       and type context := Abstract.Symbol.Table.t
-       and module Abs := Abstract.Operand.Bundle
+       and type context := Act_abstract.Symbol.Table.t
+       and module Abs := Act_abstract.Operand.Bundle
 
     (** As a shorthand, we can query an explanation directly for properties.
         This uses the explanation's stored abstract representation, but
         bypasses its stored flags. *)
-    include Abstract.Operand.Bundle.S_properties with type t := t
+    include Act_abstract.Operand.Bundle.S_properties with type t := t
   end
 
   (** [Ins_explanation] provides explanations for instructions. *)
@@ -140,13 +140,13 @@ module type S = sig
     include
       Explanation
       with type elt := Lang.Instruction.t
-       and type context := Abstract.Symbol.Table.t
-       and module Abs := Abstract.Instruction
+       and type context := Act_abstract.Symbol.Table.t
+       and module Abs := Act_abstract.Instruction
 
     (** As a shorthand, we can query an explanation directly for properties.
         This uses the explanation's stored abstract representation, but
         bypasses its stored flags. *)
-    include Abstract.Instruction.S_properties with type t := t
+    include Act_abstract.Instruction.S_properties with type t := t
   end
 
   (** [Stm_explanation] provides explanations for [statement]s, given symbol
@@ -155,19 +155,19 @@ module type S = sig
     include
       Explanation
       with type elt := Lang.Statement.t
-       and type context := Abstract.Symbol.Table.t
-       and module Abs := Abstract.Statement
+       and type context := Act_abstract.Symbol.Table.t
+       and module Abs := Act_abstract.Statement
 
     (** As a shorthand, we can query an explanation directly for properties.
         This uses the explanation's stored abstract representation, but
         bypasses its stored flags. *)
-    include Abstract.Statement.S_properties with type t := t
+    include Act_abstract.Statement.S_properties with type t := t
   end
 
   (** Type of whole-program explanations. *)
   type t =
     { statements: Stm_explanation.t list
-    ; symbol_table: Abstract.Symbol.Table.t }
+    ; symbol_table: Act_abstract.Symbol.Table.t }
 
   (** We can [pp] explanations. *)
   include Pretty_printer.S with type t := t
@@ -180,12 +180,12 @@ module type S = sig
   (** [pp_as_assembly f exp] prints [exp] in a smaller summary format that
       (ideally) parses as valid assembly. *)
 
-  val explain : Lang.Program.t -> Abstract.Symbol.Table.t -> t
+  val explain : Lang.Program.t -> Act_abstract.Symbol.Table.t -> t
   (** [explain prog symbol_table] compiles a [t] for program [prog], whose
       symbol table is [symbol_table]. *)
 
   module Filter :
-    Utils.Filter.S
+    Act_utils.Filter.S
     with type aux_i = config Job.t
      and type aux_o = Job.Output.t
 end

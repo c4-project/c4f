@@ -23,4 +23,4 @@
 
 (** Frontend for the config file language. *)
 
-include Utils.Frontend.S with type ast := Ast.t
+include Act_utils.Frontend.S with type ast := Ast.t

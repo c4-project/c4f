@@ -1,9 +1,10 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name sim_litmus)
+ (name act_sim_litmus)
+ (public_name act.sim_litmus)
  (synopsis "Simulator frontend for the Litmus7 multicore CPU test runner")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries utils sim sim_herdtools_common core_kernel travesty.base_exts
-   travesty.core_kernel_exts))
+ (libraries core_kernel travesty travesty.core_kernel_exts act_sim
+   act_sim_herdtools_common act_utils))

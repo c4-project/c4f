@@ -26,8 +26,8 @@
 
 open Core_kernel (* for Tuple2 *)
 
+module Au = Act_utils
 module Tx = Travesty_core_kernel_exts
-open Utils
 
 module type Common = sig
   type t [@@deriving sexp]
@@ -150,7 +150,7 @@ module Make (B : Basic) :
       |> Id.Map.of_alist_multi
 
     let pp_id_spec f ~pp id spec =
-      My_format.pp_kv f (Id.to_string id) pp spec
+      Au.My_format.pp_kv f (Id.to_string id) pp spec
 
     let pp_verbose verbose : t Fmt.t =
       Fmt.(

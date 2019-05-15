@@ -28,7 +28,7 @@
     [S]; and a functor from one to the other, [Make]. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 open Act_common
 
 (** [Basic] is the interface act languages must implement for symbol
@@ -44,11 +44,11 @@ module type Basic = sig
   module On_strings :
     Travesty.Traversable.S0 with type Elt.t = String.t and type t = t
 
-  val abstract : t -> Abstract.Symbol.t
+  val abstract : t -> Act_abstract.Symbol.t
   (** [abstract sym] promotes [sym] to an abstract symbol without any
       reverse-engineering. *)
 
-  val abstract_demangle : t -> Abstract.Symbol.t list
+  val abstract_demangle : t -> Act_abstract.Symbol.t list
   (** [abstract_demangle sym] tries to reverse any compiler mangling of
       [sym], returning a list of abstract symbols that correspond to
       possible original values for [sym].
@@ -76,7 +76,7 @@ module type S = sig
 
     include My_set.Extensions with type t := t
 
-    val abstract : t -> Abstract.Symbol.Set.t
+    val abstract : t -> Act_abstract.Symbol.Set.t
     (** [abstract set] applies [abstract] to every symbol in the concrete
         symbol set [set]. *)
   end

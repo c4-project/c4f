@@ -24,5 +24,5 @@
 (** Top-level simulator resolution etc. *)
 
 module Make_resolver (B : sig
-  val cfg : Config.Act.t
-end) : Sim.Resolver.S
+  val cfg : Act_config.Act.t
+end) : Act_sim.Resolver.S

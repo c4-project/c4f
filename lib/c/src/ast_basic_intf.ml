@@ -58,5 +58,5 @@ end
 module type Ast_node_with_identifier = sig
   include Ast_node
 
-  val identifier : t -> Utils.C_identifier.t
+  val identifier : t -> Act_utils.C_identifier.t
 end

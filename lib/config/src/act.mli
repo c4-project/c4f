@@ -42,7 +42,7 @@ module Raw : sig
     -> unit
     -> t
 
-  include Utils.Loadable.S with type t := t
+  include Act_utils.Loadable.S with type t := t
 end
 
 include S with module CSpec := Compiler.Spec

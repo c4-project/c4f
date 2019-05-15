@@ -24,7 +24,7 @@
 (** Mini-model: module signatures and basic types *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 (** Shorthand for pairs of items and their names. *)
 type 'a named = C_identifier.t * 'a [@@deriving eq, sexp]

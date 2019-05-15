@@ -27,7 +27,7 @@ module Tx = Travesty_core_kernel_exts
 include Instance_intf
 
 module Make_null_hook
-    (Lang : Language.Definition.S)
+    (Lang : Act_language.Definition.S)
     (P : Travesty.Traversable.S1) :
   Hook with module Lang = Lang and module Program_container = P = struct
   module Lang = Lang
@@ -71,7 +71,7 @@ module Make (B : Basic) :
       type t =
         { listing: Lang.Program.t
         ; warnings: Warn.t list
-        ; symbol_table: Abstract.Symbol.Table.t }
+        ; symbol_table: Act_abstract.Symbol.Table.t }
       [@@deriving fields]
     end
 
@@ -103,7 +103,7 @@ module Make (B : Basic) :
       xs
 
   let address_to_string = function
-    | Abstract.Location.Address.Int i ->
+    | Act_abstract.Location.Address.Int i ->
         Int.to_string i
     | Symbol s ->
         s
@@ -114,7 +114,7 @@ module Make (B : Basic) :
         Printf.sprintf "t%ss%s" prog_name (address_to_string offset)
       in
       let%bind symbol_str =
-        Ctx.add_symbol base_str Abstract.Symbol.Sort.Heap
+        Ctx.add_symbol base_str Act_abstract.Symbol.Sort.Heap
       in
       let%map symbol =
         Ctx.Monadic.return (Lang.Symbol.require_of_string symbol_str)
@@ -139,18 +139,18 @@ module Make (B : Basic) :
     Ctx.(
       warn_if
         (Lang.Instruction.has_opcode ins
-           ~opcode:Abstract.Instruction.Opcode.Unknown)
+           ~opcode:Act_abstract.Instruction.Opcode.Unknown)
         (Warn.Instruction ins) (Warn.not_understood ())
       >>| fun () -> ins)
 
   let warn_unknown_operands ins abs_operands =
     Ctx.(
       warn_if
-        (Abstract.Operand.Bundle.is_part_unknown abs_operands)
+        (Act_abstract.Operand.Bundle.is_part_unknown abs_operands)
         (Warn.Operands ins) (Warn.not_understood ()))
 
   let warn_erroneous_operands ins abs_operands =
-    Ctx_List.iter_m (Abstract.Operand.Bundle.errors abs_operands)
+    Ctx_List.iter_m (Act_abstract.Operand.Bundle.errors abs_operands)
       ~f:(fun error -> Ctx.warn (Warn.Operands ins) (Warn.erroneous error)
     )
 
@@ -160,7 +160,7 @@ module Make (B : Basic) :
   let warn_unsupported_operands ins =
     (* Don't emit warnings for unknown instructions---the upper warning
        should be enough. *)
-    Abstract.Instruction.(
+    Act_abstract.Instruction.(
       match Lang.Instruction.abs_kind ins with
       | Opcode.Unknown ->
           Ctx.return ins
@@ -176,7 +176,7 @@ module Make (B : Basic) :
       get_symbol_table
       >>= fun symbol_table ->
       let should_warn =
-        Abstract.Operand.Bundle.has_immediate_heap_symbol abs_operands
+        Act_abstract.Operand.Bundle.has_immediate_heap_symbol abs_operands
           ~symbol_table
       in
       warn_if should_warn (Warn.Operands ins)
@@ -206,7 +206,7 @@ module Make (B : Basic) :
   let change_ret_to_end_jump ins =
     if
       Lang.Instruction.has_opcode ins
-        ~opcode:Abstract.Instruction.Opcode.Return
+        ~opcode:Act_abstract.Instruction.Opcode.Return
     then make_end_jump ()
     else Ctx.return ins
 
@@ -260,7 +260,7 @@ module Make (B : Basic) :
   (** [irrelevant_instruction_types] lists the high-level types of
       instruction that can be thrown out when converting to a litmus test. *)
   let irrelevant_instruction_types =
-    Abstract.Instruction.Opcode.Kind.(
+    Act_abstract.Instruction.Opcode.Kind.(
       Set.of_list
         [Call (* -not- Return: these need more subtle translation *); Stack])
 
@@ -472,7 +472,7 @@ module Make (B : Basic) :
 
   let sanitise ?passes ?(symbols = []) (prog : Lang.Program.t) =
     let passes' =
-      Option.value ~default:Config.Sanitiser_pass.standard passes
+      Option.value ~default:Act_config.Sanitiser_pass.standard passes
     in
     let variables = Lang.Symbol.Set.of_list symbols in
     Ctx.(

@@ -1,8 +1,10 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name sim)
+ (name act_sim)
+ (public_name act.sim)
+ (synopsis "Automagic Compiler Tormentor: simulator running framework")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries act_common utils config fmt fpath travesty travesty.base_exts
-   travesty.core_kernel_exts core shell.string_extended))
+ (libraries core fmt fpath shell.string_extended travesty travesty.base_exts
+   travesty.core_kernel_exts act_common act_config act_utils))

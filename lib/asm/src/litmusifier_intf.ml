@@ -32,10 +32,10 @@ module type S = sig
   type fmt
 
   (** The AST module for the litmus test language we're targeting. *)
-  module Litmus : Litmus.Ast.S
+  module Litmus : Act_litmus.Ast.S
 
   (** The sanitiser module whose output we're litmusifying. *)
-  module Sanitiser : Sanitiser.Instance.S
+  module Sanitiser : Act_sanitiser.Instance.S
 
   val make :
        config:conf
@@ -51,7 +51,7 @@ module type S = sig
       configuration [fmt]. *)
 
   module Filter :
-    Utils.Filter.S
+    Act_utils.Filter.S
     with type aux_i = conf Job.t
      and type aux_o = Job.Output.t
 end

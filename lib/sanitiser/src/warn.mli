@@ -27,4 +27,4 @@
 include module type of Warn_intf
 
 (** [Make] produces a warnings module for the given language. *)
-module Make (Lang : Language.Definition.S) : S with module Lang := Lang
+module Make (Lang : Act_language.Definition.S) : S with module Lang := Lang

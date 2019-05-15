@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 type t = Lvalue of Mini_lvalue.t | Ref of t
 [@@deriving sexp, variants, eq]

@@ -24,5 +24,5 @@
 (** Signature containing the parts of a Herd simulator's configuration that
     don't change from run to run. *)
 module type Basic = sig
-  val config : Config.Herd.t
+  val config : Act_config.Herd.t
 end

@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Utils
+open Act_utils
 include Ast_intf
 
 module Make (Lang : Basic) : S with module Lang = Lang = struct

@@ -24,7 +24,7 @@
 open Base
 module Tx = Travesty_base_exts
 open Act_common
-open Utils
+open Act_utils
 
 let validate_fpath (f : Fpath.t -> bool) (expect : string) (fp : Fpath.t) :
     Validate.t =

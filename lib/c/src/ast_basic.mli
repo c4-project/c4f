@@ -135,7 +135,7 @@ module Type_qual : sig
 
   include Ast_node with type t := t
 
-  include Utils.Enum.Extension_table with type t := t
+  include Act_utils.Enum.Extension_table with type t := t
 end
 
 (** Enumeration of primitive types. *)
@@ -154,7 +154,7 @@ module Prim_type : sig
 
   include Ast_node with type t := t
 
-  include Utils.Enum.Extension_table with type t := t
+  include Act_utils.Enum.Extension_table with type t := t
 end
 
 (** Enumeration of storage class specifiers. *)
@@ -164,7 +164,7 @@ module Storage_class_spec : sig
 
   include Ast_node with type t := t
 
-  include Utils.Enum.Extension_table with type t := t
+  include Act_utils.Enum.Extension_table with type t := t
 end
 
 (** {2 Basic AST nodes} *)
@@ -193,7 +193,7 @@ end
 
 (** AST node for identifiers *)
 module Identifier : sig
-  include module type of Utils.C_identifier
+  include module type of Act_utils.C_identifier
 
   include Ast_node_with_identifier with type t := t
 end

@@ -47,7 +47,7 @@ open Base
 open Base_quickcheck
 open Act_common
 module Tx = Travesty_base_exts
-open Utils
+module Au = Act_utils
 open Travesty
 
 module Reg = struct
@@ -130,9 +130,9 @@ module Reg = struct
 
   include M
 
-  include Enum.Extend_table (struct
+  include Au.Enum.Extend_table (struct
     include M
-    include Enum.Make_from_enumerate (M)
+    include Au.Enum.Make_from_enumerate (M)
   end)
 end
 
@@ -204,7 +204,7 @@ module Index = struct
     end
   end)
 
-  module Q : Utils.My_quickcheck.S_with_sexp with type t := t = struct
+  module Q : Au.My_quickcheck.S_with_sexp with type t := t = struct
     let sexp_of_t = sexp_of_t
 
     module G = Base_quickcheck.Generator
@@ -374,7 +374,7 @@ module Bop = struct
   end
 
   include M
-  include Enum.Extend_table (M)
+  include Au.Enum.Extend_table (M)
 end
 
 module Operand = struct
@@ -450,7 +450,7 @@ module Operand = struct
     end
   end)
 
-  module Q : My_quickcheck.S_with_sexp with type t := t = struct
+  module Q : Au.My_quickcheck.S_with_sexp with type t := t = struct
     let sexp_of_t = sexp_of_t
 
     module G = Base_quickcheck.Generator

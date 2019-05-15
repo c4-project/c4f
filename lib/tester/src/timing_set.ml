@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 include Timing_set_intf
 
 module Make (T : Timing.S) : S with type 'a input := 'a T.t = struct

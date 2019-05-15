@@ -24,13 +24,10 @@
 open Core_kernel
 
 let run (args : Args.Standard_with_files.t) _o _cfg =
-  let open Or_error.Let_syntax in
-  let%map _ =
-    C.Filters.Litmus.run_from_string_paths C.Filters.Delitmus
-      ~infile:(Args.Standard_with_files.infile_raw args)
-      ~outfile:(Args.Standard_with_files.outfile_raw args)
-  in
-  ()
+  Or_error.ignore_m
+    (Act_c.Filters.Litmus.run_from_string_paths Act_c.Filters.Delitmus
+       ~infile:(Args.Standard_with_files.infile_raw args)
+       ~outfile:(Args.Standard_with_files.outfile_raw args))
 
 let command : Command.t =
   Command.basic ~summary:"converts a C litmus test to a normal C file"

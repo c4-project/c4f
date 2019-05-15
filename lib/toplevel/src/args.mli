@@ -79,16 +79,16 @@ val c_locals : string list option Command.Param.t
     variables to track during sanitisation. *)
 
 val sanitiser_passes :
-  Config.Sanitiser_pass.Selector.t Blang.t option Command.Param.t
+  Act_config.Sanitiser_pass.Selector.t Blang.t option Command.Param.t
 (** [sanitiser_passes] defines a parameter for collecting a selector
     predicate for sanitiser passes. *)
 
 val compiler_predicate :
-  Config.Compiler.Property.t Blang.t option Command.Param.t
+  Act_config.Compiler.Property.t Blang.t option Command.Param.t
 (** [compiler_predicate] defines a parameter for collecting a filtering
     predicate for compilers. *)
 
 val machine_predicate :
-  Config.Machine.Property.t Blang.t option Command.Param.t
+  Act_config.Machine.Property.t Blang.t option Command.Param.t
 (** [machine_predicate] defines a parameter for collecting a filtering
     predicate for machines. *)

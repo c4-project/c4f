@@ -22,12 +22,12 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Utils
+module Au = Act_utils
 
 type t = {vf: Formatter.t; wf: Formatter.t; ef: Formatter.t}
 
 let maybe_err_formatter on : Formatter.t =
-  if on then Fmt.stderr else My_format.null_formatter ()
+  if on then Fmt.stderr else Au.My_format.null_formatter ()
 
 let make ~verbose ~warnings : t =
   { vf= maybe_err_formatter verbose
@@ -35,7 +35,7 @@ let make ~verbose ~warnings : t =
   ; ef= Fmt.stderr }
 
 let silent () : t =
-  let nullf = My_format.null_formatter () in
+  let nullf = Au.My_format.null_formatter () in
   {vf= nullf; wf= nullf; ef= nullf}
 
 let pv (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.vf

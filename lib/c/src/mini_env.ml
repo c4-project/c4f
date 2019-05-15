@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Travesty_core_kernel_exts
-open Utils
+open Act_utils
 include Mini_env_intf
 
 module Make (E : Basic) : S = struct

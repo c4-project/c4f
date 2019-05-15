@@ -34,10 +34,10 @@ type 'elt source =
       (** This simulation run will get ['elt] directly from the user. *)
 
 (** Type of postcondition input. *)
-type post = C.Mini_litmus.Ast.Postcondition.t
+type post = Act_c.Mini_litmus.Ast.Postcondition.t
 
 (** Type of extensional state-set input. *)
-type ext = Sim.State.Set.t
+type ext = Act_sim.State.Set.t
 
 (** {2 Signatures} *)
 

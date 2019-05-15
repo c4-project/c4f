@@ -23,7 +23,7 @@
 
 open Base
 module Tx = Travesty_base_exts
-open Utils
+open Act_utils
 include Convert_intf
 
 module Make (B : Basic) = struct

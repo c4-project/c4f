@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Utils
+open Act_utils
 include Ast_basic
 include Mini_intf
 module Address = Mini_address

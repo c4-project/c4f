@@ -76,7 +76,7 @@ module type S_standard_with_files = sig
       to parse any given input file as an Fpath. This may fail if the path
       is ill-formed. *)
 
-  val infile_source : t -> Utils.Io.In_source.t Or_error.t
+  val infile_source : t -> Act_utils.Io.In_source.t Or_error.t
   (** [infile_source args] behaves as {{!infile_raw} infile_raw}, but tries
       to convert the result to an {{!Io.In_source.t} In_source.t}. This may
       fail if the path is ill-formed. *)
@@ -90,7 +90,7 @@ module type S_standard_with_files = sig
       tries to parse any given output file as an Fpath. This may fail if the
       path is ill-formed. *)
 
-  val outfile_sink : t -> Utils.Io.Out_sink.t Or_error.t
+  val outfile_sink : t -> Act_utils.Io.Out_sink.t Or_error.t
   (** [outfile_sink args] behaves as {{!outfile_raw} outfile_raw}, but tries
       to convert the result to an {{!Io.Out_sink.t} Out_sink.t}. This may
       fail if the path is ill-formed. *)
@@ -112,7 +112,7 @@ module type S_standard_asm = sig
   (** [c_locals args] gets the list of user-supplied C local variables, if
       the user indeed supplied some. *)
 
-  val file_type : t -> Config.File_type.t_or_infer
+  val file_type : t -> Act_config.File_type.t_or_infer
   (** [file_type args] gets the specified file type for this command's input
       file. *)
 
@@ -121,7 +121,7 @@ module type S_standard_asm = sig
       compiler ID. *)
 
   val sanitiser_passes :
-    t -> Config.Sanitiser_pass.Selector.t Blang.t option
+    t -> Act_config.Sanitiser_pass.Selector.t Blang.t option
   (** [sanitiser_passes args] gets the Blang predicate, if any, supplied to
       filter the sanitiser pass selection. *)
 end

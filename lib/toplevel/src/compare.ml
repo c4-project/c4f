@@ -23,28 +23,28 @@
 
 open Core
 open Act_common
-open Utils
+open Act_utils
 
-let litmusify o (passes : Config.Sanitiser_pass.Set.t) spec c_file =
+let litmusify o (passes : Act_config.Sanitiser_pass.Set.t) spec c_file =
   let target = `Spec spec in
-  let config = Asm.Litmusifier.Config.make ~format:Programs_only () in
-  let litmus_job = Asm.Job.make ~config ~passes () in
+  let config = Act_asm.Litmusifier.Config.make ~format:Programs_only () in
+  let litmus_job = Act_asm.Job.make ~config ~passes () in
   let open Or_error.Let_syntax in
   let%bind (module Comp_lit) = Common.litmusify_pipeline target in
   let%map _, (_, out) =
     Comp_lit.run
       ( `C
       , Fn.const
-          (Config.Compiler.Chain_input.make ~file_type:`C
+          (Act_config.Compiler.Chain_input.make ~file_type:`C
              ~next:(Fn.const litmus_job)) )
       (Io.In_source.file c_file)
       Io.Out_sink.stdout
   in
-  Output.pw o "@[%a@]@." Asm.Job.Output.warn out
+  Output.pw o "@[%a@]@." Act_asm.Job.Output.warn out
 
 let run_spec_on_file o passes spec ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@." Id.pp
-    (Config.Compiler.Spec.With_id.id spec) ;
+    (Act_config.Compiler.Spec.With_id.id spec) ;
   let open Or_error.Let_syntax in
   let%map _ = litmusify o passes spec c_file in
   Format.printf "@[<h>```@]@."
@@ -52,13 +52,14 @@ let run_spec_on_file o passes spec ~c_file =
 let run o cfg ~(c_file_raw : string) =
   let open Or_error.Let_syntax in
   let%bind c_file = Io.fpath_of_string c_file_raw in
-  let specs = Config.Act.compilers cfg in
+  let specs = Act_config.Act.compilers cfg in
   let passes =
-    Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard
+    Act_config.Act.sanitiser_passes cfg
+      ~default:Act_config.Sanitiser_pass.standard
   in
   Fmt.pr "@[<h>#@ %a@]@." Fpath.pp c_file ;
   Or_error.combine_errors_unit
-    (Config.Compiler.Spec.Set.map specs
+    (Act_config.Compiler.Spec.Set.map specs
        ~f:(run_spec_on_file o passes ~c_file))
 
 let command : Command.t =

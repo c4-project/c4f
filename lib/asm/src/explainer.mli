@@ -68,7 +68,7 @@ module Make (B : Runner.S) :
 
 val get_filter :
      (module Runner.S)
-  -> (module Utils.Filter.S
+  -> (module Act_utils.Filter.S
         with type aux_i = Config.t Job.t
          and type aux_o = Job.Output.t)
 (** [get_explain Runner] is [Runner.Explain]. *)

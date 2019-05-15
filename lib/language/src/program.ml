@@ -62,7 +62,7 @@ module Make (B : Basic_with_modules) :
     in
     let compare_against_known sym =
       let asym = Symbol.abstract sym in
-      let is_known = Abstract.Symbol.Set.mem known_heap_symbols asym in
+      let is_known = Act_abstract.Symbol.Set.mem known_heap_symbols asym in
       Option.some_if is_known asym
     in
     let symbols_matching_known =
@@ -82,7 +82,7 @@ module Make (B : Basic_with_modules) :
        heap locations in a jump, and have to re-think this. *)
     |> Tx.List.exclude ~f:Instruction.is_jump
     |> List.concat_map ~f:(heap_symbols_of_instruction ~known_heap_symbols)
-    |> Abstract.Symbol.Set.of_list
+    |> Act_abstract.Symbol.Set.of_list
 
   (** [symbols_in_statements_where filter prog] collects all abstract
       symbols belonging to statements in [prog] that match the filtering
@@ -100,7 +100,7 @@ module Make (B : Basic_with_modules) :
   let label_symbols = symbols_in_statements_where Statement.is_label
 
   let symbols prog ~known_heap_symbols =
-    Abstract.(
+    Act_abstract.(
       Symbol.Table.of_sets
         [ (heap_symbols prog ~known_heap_symbols, Symbol.Sort.Heap)
         ; (jump_symbols prog, Symbol.Sort.Jump)

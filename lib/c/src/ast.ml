@@ -15,9 +15,9 @@
 (****************************************************************************)
 
 open Core_kernel
+module Au = Act_utils
 module Tx = Travesty_core_kernel_exts
 open Ast_basic
-open Utils
 include Ast_intf
 
 let pp_assign_rhs (pp : 'a Fmt.t) : 'a Fmt.t =
@@ -114,12 +114,13 @@ module Parametric = struct
       let pp f = function
         | Literal {kind; name_opt; decls} ->
             Fmt.(
-              pf f "%a@ %a@ %a" B.Kind.pp kind (option C_identifier.pp)
+              pf f "%a@ %a@ %a" B.Kind.pp kind
+                (option Au.C_identifier.pp)
                 name_opt
-                (Utils.My_format.pp_c_braces (list ~sep:sp B.Decl.pp))
+                (Au.My_format.pp_c_braces (list ~sep:sp B.Decl.pp))
                 decls)
         | Named (kind, id) ->
-            Fmt.pf f "%a@ %a" B.Kind.pp kind C_identifier.pp id
+            Fmt.pf f "%a@ %a" B.Kind.pp kind Au.C_identifier.pp id
     end
   end
 
@@ -150,7 +151,7 @@ module Parametric = struct
 
       let rec pp f : t -> unit = function
         | Id i ->
-            Utils.C_identifier.pp f i
+            Au.C_identifier.pp f i
         | Bracket t ->
             Fmt.brackets B.Dec.pp f t
         | Array a ->
@@ -333,13 +334,13 @@ module Parametric = struct
         | Subscript a ->
             Array.pp pp pp f a
         | Field {value; field; access= `Direct} ->
-            Fmt.pf f "%a.%a" pp value C_identifier.pp field
+            Fmt.pf f "%a.%a" pp value Au.C_identifier.pp field
         | Field {value; field; access= `Deref} ->
-            Fmt.pf f "%a->%a" pp value C_identifier.pp field
+            Fmt.pf f "%a->%a" pp value Au.C_identifier.pp field
         | Sizeof_type ty ->
             Fmt.(pf f "sizeof%a" (parens T.pp) ty)
         | Identifier id ->
-            C_identifier.pp f id
+            Au.C_identifier.pp f id
         | String s ->
             (* TODO(@MattWindsor91): escape sequences *)
             Fmt.(quote ~mark:"\"" string) f s
@@ -433,7 +434,7 @@ module Parametric = struct
               pf f "for@ (%a;@ %a;@ %a)@ %a" (option B.Expr.pp) init
                 (option B.Expr.pp) cond (option B.Expr.pp) update pp body)
         | Goto label ->
-            Fmt.pf f "goto@ %a;" C_identifier.pp label
+            Fmt.pf f "goto@ %a;" Au.C_identifier.pp label
         | Return expr ->
             Fmt.(pf f "return@ %a;" (option B.Expr.pp) expr)
     end
@@ -464,7 +465,7 @@ module Parametric = struct
       type t = Elt.t list [@@deriving sexp, eq, compare]
 
       let pp : t Fmt.t =
-        Utils.My_format.pp_c_braces Fmt.(list ~sep:sp (box Elt.pp))
+        Au.My_format.pp_c_braces Fmt.(list ~sep:sp (box Elt.pp))
     end
   end
 end
@@ -484,7 +485,7 @@ end = struct
     Fmt.(
       using
         (fun {name; value} -> (name, value))
-        (pp_opt_assign C_identifier.pp Expr.pp))
+        (pp_opt_assign Au.C_identifier.pp Expr.pp))
 end
 
 and Enum_spec :
@@ -527,7 +528,7 @@ and Type_spec :
     | `Enum spec ->
         Enum_spec.pp f spec
     | `Defined_type tdef ->
-        C_identifier.pp f tdef
+        Au.C_identifier.pp f tdef
 end
 
 and Spec_or_qual : (Ast_node with type t = [Type_spec.t | Type_qual.t]) =
@@ -740,7 +741,7 @@ module Translation_unit = struct
 end
 
 module Litmus_lang :
-  Litmus.Ast.Basic
+  Act_litmus.Ast.Basic
   with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
    and type Program.t = Function_def.t
    and type Constant.t = Constant.t = struct
@@ -762,7 +763,7 @@ module Litmus_lang :
     include Function_def
 
     let name x =
-      Some (C_identifier.to_string (Declarator.identifier x.signature))
+      Some (Au.C_identifier.to_string (Declarator.identifier x.signature))
 
     (* TODO(@MattWindsor91): consider implementing this. The main reason why
        I haven't is because, usually, we'll be converting the litmus test to
@@ -774,9 +775,9 @@ module Litmus_lang :
 end
 
 module Litmus = struct
-  module A = Litmus.Ast.Make (Litmus_lang)
+  module A = Act_litmus.Ast.Make (Litmus_lang)
   include A
-  include Litmus.Pp.Make_sequential (A)
+  include Act_litmus.Pp.Make_sequential (A)
   module Id = Act_common.Litmus_id
 end
 

@@ -24,24 +24,25 @@
 open Core_kernel
 include Ctx_intf
 
-let freshen_label (syms : Abstract.Symbol.Set.t) (prefix : string) : string
-    =
+let freshen_label (syms : Act_abstract.Symbol.Set.t) (prefix : string) :
+    string =
   let rec mu prefix count =
     let str = sprintf "%s%d" prefix count in
-    if Abstract.Symbol.Set.mem syms str then mu prefix (count + 1) else str
+    if Act_abstract.Symbol.Set.mem syms str then mu prefix (count + 1)
+    else str
   in
   mu prefix 0
 
-module Make (Lang : Language.Definition.S) : S with module Lang := Lang =
-struct
+module Make (Lang : Act_language.Definition.S) :
+  S with module Lang := Lang = struct
   module Lang = Lang
   module Warn = Warn.Make (Lang)
-  module Pass = Config.Sanitiser_pass
+  module Pass = Act_config.Sanitiser_pass
 
   type ctx =
     { progname: string
     ; endlabel: string option
-    ; syms: Abstract.Symbol.Table.t
+    ; syms: Act_abstract.Symbol.Table.t
     ; variables: Lang.Symbol.Set.t
     ; redirects: Lang.Symbol.R_map.t
     ; passes: Pass.Set.t
@@ -51,7 +52,7 @@ struct
   let initial ~passes ~variables =
     { progname= "(no program)"
     ; endlabel= None
-    ; syms= Abstract.Symbol.Table.empty
+    ; syms= Act_abstract.Symbol.Table.empty
     ; variables
     ; redirects= Lang.Symbol.R_map.identity ()
     ; passes
@@ -72,7 +73,7 @@ struct
         { ctx with
           progname= name
         ; endlabel= None
-        ; syms= Abstract.Symbol.Table.empty } )
+        ; syms= Act_abstract.Symbol.Table.empty } )
     >>| fun () -> prog
 
   let get_end_label = peek endlabel
@@ -112,12 +113,12 @@ struct
 
   let add_symbol_to_table sym sort =
     modify (fun ctx ->
-        {ctx with syms= Abstract.Symbol.Table.add ctx.syms sym sort} )
+        {ctx with syms= Act_abstract.Symbol.Table.add ctx.syms sym sort} )
 
   let get_symbol_table = peek syms
 
   let get_symbols_with_sorts sorts =
-    Abstract.Symbol.(
+    Act_abstract.Symbol.(
       let open Let_syntax in
       let%map all_syms = get_symbol_table in
       Table.set_of_sorts all_syms (Sort.Set.of_list sorts))
@@ -176,14 +177,14 @@ struct
     sym_name
 
   let make_fresh_label prefix =
-    Abstract.Symbol.(
+    Act_abstract.Symbol.(
       let open Let_syntax in
       let%bind syms = get_symbols_with_sorts [Sort.Jump; Sort.Label] in
       let l = freshen_label syms prefix in
       add_symbol l Sort.Label)
 
   let make_fresh_heap_loc prefix =
-    Abstract.Symbol.(
+    Act_abstract.Symbol.(
       let open Let_syntax in
       let%bind syms = get_symbols_with_sorts [Sort.Heap] in
       let l = freshen_label syms prefix in

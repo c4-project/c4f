@@ -41,5 +41,5 @@ module type Basic = sig
 
   (** The generator this store action uses to create stores. *)
   module Quickcheck (Src : Mini_env.S) (Dst : Mini_env.S) :
-    Utils.My_quickcheck.S_with_sexp with type t := Mini.Atomic_store.t
+    Act_utils.My_quickcheck.S_with_sexp with type t := Mini.Atomic_store.t
 end

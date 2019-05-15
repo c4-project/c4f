@@ -1,0 +1,10 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_litmus)
+ (public_name act.litmus)
+ (synopsis "Automagic Compiler Tormentor: Litmus language support")
+ (inline_tests)
+ (preprocess
+  (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
+ (libraries core_kernel menhirLib act_common act_utils))

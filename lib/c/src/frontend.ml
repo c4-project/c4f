@@ -25,7 +25,7 @@ open Core_kernel
 
 (* TODO(@MattWindsor91): lexer hack *)
 
-module Normal = Utils.Frontend.Make (struct
+module Normal = Act_utils.Frontend.Make (struct
   type ast = Ast.Translation_unit.t
 
   module I = Parser.MenhirInterpreter
@@ -39,7 +39,7 @@ end)
 
 let litmus_predefined_types = String.Set.of_list ["atomic_int"]
 
-module Litmus = Utils.Frontend.Make (struct
+module Litmus = Act_utils.Frontend.Make (struct
   type ast = Ast.Litmus.t
 
   module I = Parser.MenhirInterpreter

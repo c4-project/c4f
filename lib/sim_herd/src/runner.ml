@@ -21,10 +21,11 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-module Make (B : Filter.Basic) : Sim.Runner.S = Sim.Runner.Make (struct
+module Make (B : Filter.Basic) : Act_sim.Runner.S =
+Act_sim.Runner.Make (struct
   let name = Act_common.Id.of_string "herd"
 
-  let machine_id = Config.Machine.Id.default
+  let machine_id = Act_config.Machine.Id.default
 
   module Filter = Filter.Make (B)
   module Reader = Reader

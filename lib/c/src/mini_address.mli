@@ -24,7 +24,7 @@
 (** Mini model: addresses (a lvalue, or reference thereto). *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 (** Opaque type of addresses. *)
 type t [@@deriving sexp, eq, quickcheck]

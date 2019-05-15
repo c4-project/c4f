@@ -54,7 +54,7 @@ module Make (B : Common.Basic) :
     let%bind sym' = Ctx.get_redirect sym in
     if Lang.Symbol.equal sym sym' then f sym else Ctx.return sym'
 
-  module Escape = Language.Symbol_escape.Make (Lang.Symbol)
+  module Escape = Act_language.Symbol_escape.Make (Lang.Symbol)
 
   let add_escape_redirects : unit Ctx.t =
     let open Ctx.Let_syntax in
@@ -81,13 +81,13 @@ module Make (B : Common.Basic) :
   let get_symbols_in_use =
     let open Ctx.Let_syntax in
     let%map symbol_table = Ctx.get_symbol_table in
-    Abstract.Symbol.Table.set symbol_table
+    Act_abstract.Symbol.Table.set symbol_table
 
   let first_unused_symbol used_set candidate_set =
     Lang.Symbol.Set.find candidate_set ~f:(fun candidate ->
         not
-          (Abstract.Symbol.Set.mem used_set (Lang.Symbol.abstract candidate))
-    )
+          (Act_abstract.Symbol.Set.mem used_set
+             (Lang.Symbol.abstract candidate)) )
 
   let actually_unmangle (sym : Lang.Symbol.t) : Lang.Symbol.t Ctx.t =
     let open Ctx.Let_syntax in

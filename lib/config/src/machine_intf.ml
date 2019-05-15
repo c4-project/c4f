@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Utils
+open Act_utils
 open Act_common
 
 (** [Reference] is the signature of references to machines. *)

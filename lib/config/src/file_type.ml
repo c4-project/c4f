@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Utils
+open Act_utils
 
 type t = [`Assembly | `C | `C_litmus]
 

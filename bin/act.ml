@@ -30,7 +30,7 @@ open Core
 open Toplevel
 
 let readme () : string =
-  Utils.My_string.format_for_readme
+  Act_utils.My_string.format_for_readme
     {|
 `act` is a toolkit for testing C compilers.  It predominantly deals
 with concurrency---specifically, checking whether compilers comply

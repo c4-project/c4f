@@ -31,7 +31,7 @@ include module type of Instance_intf
 
 (** [Make_null_hook] makes a [Hook] that does nothing. *)
 module Make_null_hook
-    (Lang : Language.Definition.S)
+    (Lang : Act_language.Definition.S)
     (P : Travesty.Traversable.S1) :
   Hook with module Lang = Lang and module Program_container = P
 

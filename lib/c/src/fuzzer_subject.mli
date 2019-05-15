@@ -28,7 +28,7 @@
     mutation. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 
 (** An item, annotated with information about its source. *)
 module With_source : sig

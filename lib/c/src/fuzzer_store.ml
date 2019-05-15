@@ -56,7 +56,8 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
 
   let select_and_format_chunk (select : bool) (chunk : string) :
       string option =
-    if select then Some (Utils.My_string.format_for_readme chunk) else None
+    if select then Some (Act_utils.My_string.format_for_readme chunk)
+    else None
 
   let readme () =
     readme_chunks ()
@@ -113,9 +114,9 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
       let%map () = error_if_empty "dst" (module Dst) in
       Output.pv o "%a: environments are non-empty@." Id.pp name ;
       Output.pv o "%a: src environment: @[%a@]@." Id.pp name Sexp.pp_hum
-        [%sexp (Src.env : Mini_type.t Utils.C_identifier.Map.t)] ;
+        [%sexp (Src.env : Mini_type.t Act_utils.C_identifier.Map.t)] ;
       Output.pv o "%a: dst environment: @[%a@]@." Id.pp name Sexp.pp_hum
-        [%sexp (Dst.env : Mini_type.t Utils.C_identifier.Map.t)] ;
+        [%sexp (Dst.env : Mini_type.t Act_utils.C_identifier.Map.t)] ;
       let module Gen = B.Quickcheck (Src) (Dst) in
       Output.pv o "%a: built generator module@." Id.pp name ;
       [%quickcheck.generator: Gen.t]

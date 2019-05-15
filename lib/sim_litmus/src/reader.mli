@@ -22,4 +22,4 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Simulation output reader for Litmus7. *)
-include Sim.Reader.S
+include Act_sim.Reader.S

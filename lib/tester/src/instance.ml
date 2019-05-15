@@ -26,25 +26,27 @@ module Tx = Travesty_core_kernel_exts
 open Act_common
 include Instance_intf
 module Machine_assoc =
-  Travesty.Bi_mappable.Fix2_left (Tx.Alist) (Config.Machine.Id)
+  Travesty.Bi_mappable.Fix2_left (Tx.Alist) (Act_config.Machine.Id)
 
 (** Compiler specification sets, grouped by machine. *)
 module Compiler_spec_env = struct
   include Travesty.Bi_mappable.Fix1_right
             (Machine_assoc)
-            (Config.Compiler.Spec.Set)
+            (Act_config.Compiler.Spec.Set)
 
   let group_by_machine specs =
     specs
-    |> Config.Compiler.Spec.Set.group ~f:(fun spec ->
-           Config.Machine.Spec.With_id.id
-             (Config.Compiler.Spec.With_id.machine spec) )
+    |> Act_config.Compiler.Spec.Set.group ~f:(fun spec ->
+           Act_config.Machine.Spec.With_id.id
+             (Act_config.Compiler.Spec.With_id.machine spec) )
     |> Id.Map.to_alist
 
-  let get (cfg : Run_config.t) (compilers : Config.Compiler.Spec.Set.t) : t
-      =
+  let get (cfg : Run_config.t) (compilers : Act_config.Compiler.Spec.Set.t)
+      : t =
     let enabled_ids = Run_config.compilers cfg in
-    let specs = Config.Compiler.Spec.Set.restrict compilers enabled_ids in
+    let specs =
+      Act_config.Compiler.Spec.Set.restrict compilers enabled_ids
+    in
     group_by_machine specs
 end
 
@@ -53,10 +55,11 @@ module Job = struct
   type t =
     { config: Run_config.t
     ; specs: Compiler_spec_env.t
-    ; c_simulations: Sim.Bulk.File_map.t
+    ; c_simulations: Act_sim.Bulk.File_map.t
     ; make_machine:
-        Id.t -> Config.Compiler.Spec.Set.t -> (module Machine.S) Or_error.t
-    }
+           Id.t
+        -> Act_config.Compiler.Spec.Set.t
+        -> (module Machine.S) Or_error.t }
   [@@deriving fields, make]
 
   let run_machine (job : t) (mach_id, mach_compilers) =
@@ -77,8 +80,9 @@ module Make (B : Basic) : S = struct
       Analysis.t =
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
 
-  let make_machine (id : Id.t) (mach_compilers : Config.Compiler.Spec.Set.t)
-      : (module Machine.S) Or_error.t =
+  let make_machine (id : Id.t)
+      (mach_compilers : Act_config.Compiler.Spec.Set.t) :
+      (module Machine.S) Or_error.t =
     Or_error.Let_syntax.(
       let%map asm_simulators = B.Asm_simulator_resolver.make_table id in
       ( module Machine.Make (struct
@@ -91,7 +95,7 @@ module Make (B : Basic) : S = struct
       : Machine.S ))
 
   module H = C_sim.Make (B.C_simulator)
-  module S = Sim.Bulk.Make (B.C_simulator)
+  module S = Act_sim.Bulk.Make (B.C_simulator)
 
   let make_output_path (ps : Pathset.Run.t) : (Fpath.t -> Fpath.t) Staged.t
       =
@@ -100,7 +104,7 @@ module Make (B : Basic) : S = struct
         Pathset.Run.c_sim_file ps name )
 
   let run_c_simulations (config : Run_config.t) :
-      Sim.Bulk.File_map.t Or_error.t =
+      Act_sim.Bulk.File_map.t Or_error.t =
     let input_paths = Run_config.c_litmus_files config in
     let ps = Run_config.pathset config in
     let output_path_f = Staged.unstage (make_output_path ps) in
@@ -108,7 +112,7 @@ module Make (B : Basic) : S = struct
     S.run job
 
   let run_and_time_c_simulations (config : Run_config.t) :
-      Sim.Bulk.File_map.t B.T.t Or_error.t =
+      Act_sim.Bulk.File_map.t B.T.t Or_error.t =
     bracket ~id:B.C_simulator.name ~machine:B.C_simulator.machine_id
       ~stage:"sim" ~sub_stage:"C" (fun () -> run_c_simulations config)
 

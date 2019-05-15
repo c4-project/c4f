@@ -1,8 +1,11 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name abstract)
+ (name act_abstract)
+ (public_name act.abstract)
+ (synopsis "Automagic Compiler Tormentor: abstract program model")
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries utils act_common travesty travesty.core_kernel_exts core_kernel))
+ (libraries core_kernel travesty travesty.core_kernel_exts act_common
+   act_utils))

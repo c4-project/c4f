@@ -26,7 +26,7 @@
 
 open Core_kernel
 open Act_common
-open Utils
+open Act_utils
 
 (** [t] enumerates the various high-level sanitisation passes. *)
 type t =

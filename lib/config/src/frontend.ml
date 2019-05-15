@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Utils.Frontend.Make (struct
+include Act_utils.Frontend.Make (struct
   type ast = Ast.t
 
   module I = Parser.MenhirInterpreter

@@ -47,7 +47,7 @@
 
 open Base
 open Act_common
-open Utils
+open Act_utils
 
 (** [Operand_spec] describes the various types of operand that x86
     instructions can have.
@@ -109,9 +109,9 @@ module Sizable : sig
 
   (** We can convert sizable opcodes to the act abstract form. *)
   include
-    Abstract.Abstractable.S
+    Act_abstract.Abstractable.S
     with type t := t
-     and module Abs := Abstract.Instruction.Opcode
+     and module Abs := Act_abstract.Instruction.Opcode
 
   val get_operand_spec : t -> Operand_spec.t option
   (** [get_operand_spec opcode] tries to get an operand spec for [opcode].
@@ -135,9 +135,9 @@ module Sized : sig
 
   (** We can convert sized opcodes to the act abstract form. *)
   include
-    Abstract.Abstractable.S
+    Act_abstract.Abstractable.S
     with type t := t
-     and module Abs := Abstract.Instruction.Opcode
+     and module Abs := Act_abstract.Instruction.Opcode
 end
 
 (** [Basic] enumerates 'regular' known opcodes that are neither jumps nor
@@ -154,9 +154,9 @@ module Basic : sig
 
   (** We can convert basic opcodes to the act abstract form. *)
   include
-    Abstract.Abstractable.S
+    Act_abstract.Abstractable.S
     with type t := t
-     and module Abs := Abstract.Instruction.Opcode
+     and module Abs := Act_abstract.Instruction.Opcode
 
   val get_operand_spec : t -> Operand_spec.t option
   (** [get_operand_spec opcode] tries to get an operand spec for [opcode].
@@ -208,9 +208,9 @@ module Jump : sig
 
   (** We can convert jumps to the act abstract form. *)
   include
-    Abstract.Abstractable.S
+    Act_abstract.Abstractable.S
     with type t := t
-     and module Abs := Abstract.Instruction.Opcode
+     and module Abs := Act_abstract.Instruction.Opcode
 end
 
 (** [t] enumerates all possible types of opcode. *)
@@ -239,9 +239,9 @@ val unknown : string -> t
 
 (** We can convert elements of [t] to the act abstract form. *)
 include
-  Abstract.Abstractable.S
+  Act_abstract.Abstractable.S
   with type t := t
-   and module Abs := Abstract.Instruction.Opcode
+   and module Abs := Act_abstract.Instruction.Opcode
 
 val of_string : string -> t
 (** [of_string string] parses [string] as an opcode (or opcode-like entity). *)

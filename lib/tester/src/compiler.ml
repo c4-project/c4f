@@ -22,8 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
-open C
+open Act_utils
 include Compiler_intf
 module Tx = Travesty_core_kernel_exts
 module A = Act_common
@@ -31,9 +30,9 @@ module A = Act_common
 module Make (B : Basic) : S = struct
   include B
   include Common.Extend (B)
-  module C_id = Config.Compiler.Spec.With_id
+  module C_id = Act_config.Compiler.Spec.With_id
   module P_file = Pathset.File
-  module Litmusify = Asm.Litmusifier.Make (R)
+  module Litmusify = Act_asm.Litmusifier.Make (R)
 
   let emits = C_id.emits cspec
 
@@ -44,7 +43,7 @@ module Make (B : Basic) : S = struct
   let lower_thread_local_symbol sym =
     A.Litmus_id.(global (to_memalloy_id sym))
 
-  let analyse (c_herd : Sim.Output.t) (a_herd : Sim.Output.t)
+  let analyse (c_herd : Act_sim.Output.t) (a_herd : Act_sim.Output.t)
       (locmap : (A.Litmus_id.t, A.Litmus_id.t) List.Assoc.t) :
       Analysis.Herd.t Or_error.t =
     let open Or_error.Let_syntax in
@@ -61,7 +60,7 @@ module Make (B : Basic) : S = struct
         return (Analysis.Herd.Errored `Assembly)
     | Success oracle, Success subject ->
         let%map outcome =
-          Sim.Diff.run ~oracle ~subject
+          Act_sim.Diff.run ~oracle ~subject
             ~location_map:(fun final_sym ->
               Or_error.return
                 (List.Assoc.find ~equal:[%equal: A.Litmus_id.t] locmap_r
@@ -75,10 +74,10 @@ module Make (B : Basic) : S = struct
       extracts an associative array of mappings [(s, s')] where each [s] is
       a location mentioned in [r]'s state list, and each [s'] is the
       equivalent variable name in the memalloy C witness. *)
-  let locations_of_herd_result : Sim.Output.t -> _ list = function
+  let locations_of_herd_result : Act_sim.Output.t -> _ list = function
     | Success herd ->
-        Sim.Output.Observation.states herd
-        |> List.concat_map ~f:Sim.State.bound
+        Act_sim.Output.Observation.states herd
+        |> List.concat_map ~f:Act_sim.State.bound
         |> List.map ~f:(fun s -> (s, lower_thread_local_symbol s))
     | Skipped _ | Errored _ ->
         []
@@ -97,20 +96,20 @@ module Make (B : Basic) : S = struct
       (fun () ->
         let%map output =
           Litmusify.Filter.run_from_fpaths
-            (Asm.Job.make ~passes:sanitiser_passes ~symbols:cvars ())
+            (Act_asm.Job.make ~passes:sanitiser_passes ~symbols:cvars ())
             ~infile:(Some (P_file.asm_file fs))
             ~outfile:(Some (P_file.asm_litmus_file fs))
         in
-        A.Output.pw o "@[%a@]@." Asm.Job.Output.warn output ;
-        Asm.Job.Output.symbol_map output )
+        A.Output.pw o "@[%a@]@." Act_asm.Job.Output.warn output ;
+        Act_asm.Job.Output.symbol_map output )
 
   let a_herd_on_pathset_file (fs : Pathset.File.t) :
-      Sim.Output.t T.t Or_error.t =
+      Act_sim.Output.t T.t Or_error.t =
     bracket ~id:B.Asm_simulator.name ~stage:"sim" ~sub_stage:"asm"
       ~machine:B.Asm_simulator.machine_id ~in_file:(P_file.name fs)
       ~out_file:(Fpath.to_string (P_file.asm_sim_file fs))
       (fun () ->
-        B.Asm_simulator.run (Sim.Arch.Assembly emits)
+        B.Asm_simulator.run (Act_sim.Arch.Assembly emits)
           ~input_path:(P_file.asm_litmus_file fs)
           ~output_path:(P_file.asm_sim_file fs) )
 
@@ -154,7 +153,7 @@ module Make (B : Basic) : S = struct
   let delitmusify (fs : Pathset.File.t) : unit Or_error.t =
     let open Or_error.Let_syntax in
     let%map _ =
-      Filters.Litmus.run_from_fpaths Filters.Delitmus
+      Act_c.Filters.Litmus.run_from_fpaths Act_c.Filters.Delitmus
         ~infile:(Some (P_file.c_litmus_file fs))
         ~outfile:(Some (P_file.c_file fs))
       (* TODO(@MattWindsor91): use the output from this instead of needing
@@ -169,14 +168,14 @@ module Make (B : Basic) : S = struct
             delitmusify fs ) )
       ~stage:"delitmus" ~in_file:(P_file.name fs) ~id
 
-  let run_single_from_pathset_file (c_sims : Sim.Bulk.File_map.t)
+  let run_single_from_pathset_file (c_sims : Act_sim.Bulk.File_map.t)
       (fs : Pathset.File.t) : (Analysis.Herd.t * TS.t) Or_error.t =
     let open Or_error.Let_syntax in
     (* NB: many of these stages depend on earlier stages' filesystem
        side-effects. These dependencies aren't evident in the binding chain,
        so be careful when re-ordering. *)
     let litmus_path = Pathset.File.c_litmus_file fs in
-    let c_herd_outcome = Sim.Bulk.File_map.get c_sims ~litmus_path in
+    let c_herd_outcome = Act_sim.Bulk.File_map.get c_sims ~litmus_path in
     let litc_to_c_map = locations_of_herd_result c_herd_outcome in
     let%bind cvars = cvars_from_loc_map litc_to_c_map in
     let%bind delitmusifier = delitmusify_if_needed fs in
@@ -198,7 +197,7 @@ module Make (B : Basic) : S = struct
     in
     (analysis, timings)
 
-  let run_single (c_sims : Sim.Bulk.File_map.t) (fs : Pathset.File.t) =
+  let run_single (c_sims : Act_sim.Bulk.File_map.t) (fs : Pathset.File.t) =
     let open Or_error.Let_syntax in
     let%map result =
       T.bracket_join (fun () -> run_single_from_pathset_file c_sims fs)
@@ -208,7 +207,7 @@ module Make (B : Basic) : S = struct
     , Analysis.File.make ~herd ?time_taken:(T.time_taken result)
         ?time_taken_in_cc:(TS.in_compiler timings) () )
 
-  let run (c_sims : Sim.Bulk.File_map.t) =
+  let run (c_sims : Act_sim.Bulk.File_map.t) =
     let open Or_error.Let_syntax in
     let%map files_and_time =
       T.bracket_join (fun () ->

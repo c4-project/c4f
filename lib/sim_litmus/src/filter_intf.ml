@@ -27,9 +27,9 @@ module type Basic = sig
   val machine_id : Act_common.Id.t
   (** The ID of the machine running this Litmus simulator. *)
 
-  val config : Config.Litmus_tool.t
+  val config : Act_config.Litmus_tool.t
   (** The Litmus config to use for this simulator. *)
 
   (** Runner used for running Litmus, possibly remotely. *)
-  module Runner : Utils.Runner.S
+  module Runner : Act_utils.Runner.S
 end

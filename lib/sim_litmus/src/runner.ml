@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-module Make (B : Filter.Basic) : Sim.Runner.S = Sim.Runner.Make (struct
+module Make (B : Filter.Basic) : Act_sim.Runner.S =
+Act_sim.Runner.Make (struct
   let name = Act_common.Id.of_string "litmus"
 
   let machine_id = B.machine_id

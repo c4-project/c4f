@@ -22,24 +22,24 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 module A = Act_common
 module Tx = Travesty_core_kernel_exts
 
 module Post_filter = struct
   module Cfg = struct
-    type t = No_filter | Filter of {id: A.Id.t; arch: Sim.Arch.t}
+    type t = No_filter | Filter of {id: A.Id.t; arch: Act_sim.Arch.t}
 
-    let arch_of_t : t -> Sim.Arch.t Or_error.t = function
+    let arch_of_t : t -> Act_sim.Arch.t Or_error.t = function
       | Filter {arch; _} ->
           Or_error.return arch
       | No_filter ->
           Or_error.error_string
             "Tried to filter despite filtering being disabled"
 
-    let make_filter (arch : Sim.Arch.t) (id : A.Id.t) = Filter {id; arch}
+    let make_filter (arch : Act_sim.Arch.t) (id : A.Id.t) = Filter {id; arch}
 
-    let make ?(simulator : A.Id.t option) ~(arch : Sim.Arch.t) : t =
+    let make ?(simulator : A.Id.t option) ~(arch : Act_sim.Arch.t) : t =
       Option.value_map simulator ~default:No_filter ~f:(make_filter arch)
   end
 
@@ -47,14 +47,14 @@ module Post_filter = struct
 
   (** Adapts a simulator filter to try extract its per-run config from a
       [cfg]. *)
-  module Adapt (S : Sim.Runner.S) : S = Filter.Adapt (struct
+  module Adapt (S : Act_sim.Runner.S) : S = Filter.Adapt (struct
     module Original = S.Filter
 
     type aux_i = Cfg.t
 
     type aux_o = unit
 
-    let adapt_i : Cfg.t -> Sim.Arch.t Or_error.t = Cfg.arch_of_t
+    let adapt_i : Cfg.t -> Act_sim.Arch.t Or_error.t = Cfg.arch_of_t
 
     let adapt_o : unit -> unit Or_error.t = Or_error.return
   end)
@@ -62,7 +62,7 @@ module Post_filter = struct
   module Make_dummy (B : sig
     val error : Error.t
   end) : S =
-    Adapt (Sim.Runner.Make_error (B))
+    Adapt (Act_sim.Runner.Make_error (B))
 
   (** This mainly exists so that there's still a module returned by
       {{!make} make}, even if we don't need one.
@@ -75,13 +75,13 @@ module Post_filter = struct
   end)
 
   (** [make mtab] makes a post-filter module based on the request [which]. *)
-  let make (mtab : Sim.Table.t) : Cfg.t -> (module S) = function
+  let make (mtab : Act_sim.Table.t) : Cfg.t -> (module S) = function
     | No_filter ->
         (module No_filter_dummy)
     | Filter {id; _} ->
-        (module Adapt ((val Sim.Table.get mtab id)))
+        (module Adapt ((val Act_sim.Table.get mtab id)))
 
-  let chain (type i o) (filter : Cfg.t) (mtab : Sim.Table.t)
+  let chain (type i o) (filter : Cfg.t) (mtab : Act_sim.Table.t)
       (module M : Filter.S with type aux_i = i and type aux_o = o) :
       (module Filter.S
          with type aux_i = i * (o Filter.chain_output -> Cfg.t)
@@ -103,55 +103,57 @@ module Post_filter = struct
 end
 
 let make_filter (filter : Post_filter.Cfg.t)
-    (target : Config.Compiler.Target.t) (mtab : Sim.Table.t) :
+    (target : Act_config.Compiler.Target.t) (mtab : Act_sim.Table.t) :
     (module Filter.S
-       with type aux_i = ( Config.File_type.t_or_infer
-                         * (   C.Filters.Output.t Filter.chain_output
-                            -> Sexp.t Asm.Litmusifier.Config.t Asm.Job.t
-                               Config.Compiler.Chain_input.t) )
-                         * (   ( C.Filters.Output.t option
-                               * (unit option * Asm.Job.Output.t) )
+       with type aux_i = ( Act_config.File_type.t_or_infer
+                         * (   Act_c.Filters.Output.t Filter.chain_output
+                            -> Sexp.t Act_asm.Litmusifier.Config.t
+                               Act_asm.Job.t
+                               Act_config.Compiler.Chain_input.t) )
+                         * (   ( Act_c.Filters.Output.t option
+                               * (unit option * Act_asm.Job.Output.t) )
                                Filter.chain_output
                             -> Post_filter.Cfg.t)
-        and type aux_o = ( C.Filters.Output.t option
-                         * (unit option * Asm.Job.Output.t) )
+        and type aux_o = ( Act_c.Filters.Output.t option
+                         * (unit option * Act_asm.Job.Output.t) )
                          * unit option)
     Or_error.t =
   let open Or_error in
   Common.(target |> litmusify_pipeline >>| Post_filter.chain filter mtab)
 
 let parse_post :
-    [`Exists of Sexp.t] -> Sexp.t Litmus.Ast_base.Postcondition.t Or_error.t
-    = function
+       [`Exists of Sexp.t]
+    -> Sexp.t Act_litmus.Ast_base.Postcondition.t Or_error.t = function
   | `Exists sexp ->
       Or_error.try_with (fun () ->
-          Litmus.Ast_base.Postcondition.make ~quantifier:`Exists
-            ~predicate:([%of_sexp: Sexp.t Litmus.Ast_base.Pred.t] sexp) )
+          Act_litmus.Ast_base.Postcondition.make ~quantifier:`Exists
+            ~predicate:([%of_sexp: Sexp.t Act_litmus.Ast_base.Pred.t] sexp)
+      )
 
 let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
     (   c_variables:A.C_variables.Map.t option
-     -> Sexp.t Asm.Litmusifier.Config.t)
+     -> Sexp.t Act_asm.Litmusifier.Config.t)
     Or_error.t =
   let open Or_error.Let_syntax in
   let%map postcondition =
     Tx.Option.With_errors.map_m post_sexp ~f:parse_post
   in
   fun ~c_variables ->
-    Asm.Litmusifier.Config.make ?postcondition ?c_variables ()
+    Act_asm.Litmusifier.Config.make ?postcondition ?c_variables ()
 
-let get_arch (target : Config.Compiler.Target.t) : Sim.Arch.t =
-  Assembly (Config.Compiler.Target.arch target)
+let get_arch (target : Act_config.Compiler.Target.t) : Act_sim.Arch.t =
+  Assembly (Act_config.Compiler.Target.arch target)
 
-let to_machine_id : Config.Compiler.Target.t -> Config.Machine.Id.t =
-  function
+let to_machine_id : Act_config.Compiler.Target.t -> Act_config.Machine.Id.t
+    = function
   | `Spec s ->
-      s |> Config.Compiler.Spec.With_id.machine
-      |> Config.Machine.Spec.With_id.id
+      s |> Act_config.Compiler.Spec.With_id.machine
+      |> Act_config.Machine.Spec.With_id.id
   | `Arch _ ->
-      Config.Machine.Id.default
+      Act_config.Machine.Id.default
 
 let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
-    (args : Args.Standard_asm.t) (o : A.Output.t) (cfg : Config.Act.t) :
+    (args : Args.Standard_asm.t) (o : A.Output.t) (cfg : Act_config.Act.t) :
     unit Or_error.t =
   let open Result.Let_syntax in
   let%bind target = Common.resolve_target args cfg in
@@ -164,7 +166,8 @@ let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
   let%bind mtab = R.make_table machine_id in
   let%bind (module Filter) = make_filter filter target mtab in
   let passes =
-    Config.Act.sanitiser_passes cfg ~default:Config.Sanitiser_pass.standard
+    Act_config.Act.sanitiser_passes cfg
+      ~default:Act_config.Sanitiser_pass.standard
   in
   let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
   let%bind user_cvars = Common.collect_cvars args in

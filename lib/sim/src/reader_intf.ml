@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 (** Shorthand for the specific type of runner a simulator runner expects. *)
-module type Basic = Utils.Loadable.S with type t = Output.t
+module type Basic = Act_utils.Loadable.S with type t = Output.t
 
 (** Extensions for readers, mostly for stand-alone use. *)
 module type Extensions = sig

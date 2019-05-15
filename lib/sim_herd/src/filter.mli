@@ -30,9 +30,9 @@ open Base
 include module type of Filter_intf
 
 val run_direct :
-     ?arch:Sim.Arch.t
+     ?arch:Act_sim.Arch.t
   -> ?oc:Stdio.Out_channel.t
-  -> Config.Herd.t
+  -> Act_config.Herd.t
   -> string list
   -> unit Or_error.t
 (** [run_direct ?arch ?oc config argv] runs the Herd binary configured in
@@ -48,4 +48,4 @@ val run_direct :
 (** We can use Herd as a simulator runner by supplying it with configuration
     expressed as a {{!Basic} Basic} module. *)
 module Make (B : Basic) :
-  Utils.Filter.S with type aux_i = Sim.Arch.t and type aux_o = unit
+  Act_utils.Filter.S with type aux_i = Act_sim.Arch.t and type aux_o = unit

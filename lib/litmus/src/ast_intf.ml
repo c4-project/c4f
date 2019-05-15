@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Utils
+open Act_utils
 module Id = Act_common.Litmus_id
 
 (** {2 Signatures} *)

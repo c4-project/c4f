@@ -41,12 +41,14 @@ module State = struct
   (** [t] is the internal state of the deref chain finder at any given time,
       parametrised on the type of concrete instructions. *)
   type 'ins t =
-    | Read of {first_target_src: 'ins; last_target_dst: Abstract.Location.t}
+    | Read of
+        { first_target_src: 'ins
+        ; last_target_dst: Act_abstract.Location.t }
     | Write of
         { first_target_src: 'ins
         ; first_value_src: 'ins
-        ; last_target_dst: Abstract.Location.t
-        ; last_value_dst: Abstract.Location.t }
+        ; last_target_dst: Act_abstract.Location.t
+        ; last_value_dst: Act_abstract.Location.t }
   [@@deriving sexp]
 
   let update_with_target state new_dst =
@@ -87,16 +89,16 @@ module Chain_item = struct
       item, parametrised on the type of concrete instructions. *)
   type 'ins t =
     | End of 'ins
-    | New_write of 'ins * Abstract.Location.t
-    | Target_step of Abstract.Location.t
-    | Value_step of Abstract.Location.t
+    | New_write of 'ins * Act_abstract.Location.t
+    | Target_step of Act_abstract.Location.t
+    | Value_step of Act_abstract.Location.t
   [@@deriving sexp]
 
   let is_read_end {A.Src_dst.src; _} last_target_dst =
-    Abstract.Location.is_dereference src last_target_dst
+    Act_abstract.Location.is_dereference src last_target_dst
 
   let is_write_end {A.Src_dst.src; dst} ~last_target_dst ~last_value_dst =
-    Abstract.Location.(
+    Act_abstract.Location.(
       is_dereference dst last_target_dst && equal src last_value_dst)
 
   let%expect_test "is_write_end: valid write end" =
@@ -121,10 +123,10 @@ module Chain_item = struct
     | _ when not is_move ->
         None
     | (State.Read {last_target_dst; _} | Write {last_target_dst; _})
-      when Abstract.Location.equal src last_target_dst ->
+      when Act_abstract.Location.equal src last_target_dst ->
         Some (Target_step dst)
     | Write {last_value_dst; _}
-      when Abstract.Location.equal src last_value_dst ->
+      when Act_abstract.Location.equal src last_value_dst ->
         Some (Value_step dst)
     | Read _ | Write _ ->
         None
@@ -139,7 +141,7 @@ module Chain_item = struct
   let%expect_test "of_locations: read chain step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Abstract.Location.(
+        ( Act_abstract.Location.(
             of_locations 10 true
               {src= Heap (Address.Int 20); dst= Heap (Address.Int 10)}
               (Read
@@ -151,7 +153,7 @@ module Chain_item = struct
   let%expect_test "of_locations: not a move, so not a valid step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Abstract.Location.(
+        ( Act_abstract.Location.(
             of_locations 10 false
               {src= Heap (Address.Int 20); dst= Heap (Address.Int 10)}
               (Read
@@ -163,7 +165,7 @@ module Chain_item = struct
   let%expect_test "of_locations: read chain end" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Abstract.Location.(
+        ( Act_abstract.Location.(
             of_locations 10 true
               { src= Register_indirect {reg= General "eax"; offset= Int 0}
               ; dst= Heap (Address.Int 10) }
@@ -176,7 +178,7 @@ module Chain_item = struct
   let%expect_test "of_locations: read chain end, not a move" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Abstract.Location.(
+        ( Act_abstract.Location.(
             of_locations 10 false
               { src= Register_indirect {reg= General "eax"; offset= Int 0}
               ; dst= Heap (Address.Int 10) }
@@ -189,7 +191,7 @@ module Chain_item = struct
   let%expect_test "of_locations: chain break" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Abstract.Location.(
+        ( Act_abstract.Location.(
             of_locations 10 true
               { src= Register_indirect {reg= General "eax"; offset= Int 0}
               ; dst= Heap (Address.Int 10) }
@@ -202,7 +204,7 @@ module Chain_item = struct
   let%expect_test "of_locations: write chain target step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Abstract.Location.(
+        ( Act_abstract.Location.(
             of_locations 10 true
               {src= Heap (Address.Int 20); dst= Heap (Address.Int 10)}
               (Write
@@ -216,7 +218,7 @@ module Chain_item = struct
   let%expect_test "of_locations: write chain value step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Abstract.Location.(
+        ( Act_abstract.Location.(
             of_locations 10 true
               {src= Heap (Address.Int 40); dst= Heap (Address.Int 10)}
               (Write
@@ -230,7 +232,7 @@ module Chain_item = struct
   let%expect_test "of_locations: write chain end" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Abstract.Location.(
+        ( Act_abstract.Location.(
             of_locations 10 true
               { src= Heap (Address.Int 10)
               ; dst= Register_indirect {reg= General "eax"; offset= Int 0}
@@ -245,21 +247,21 @@ module Chain_item = struct
 
   let of_operands_as_locations ins is_move {A.Src_dst.src; dst} state =
     let open Option.Let_syntax in
-    let%bind src_loc = Abstract.Operand.as_location src
-    and dst_loc = Abstract.Operand.as_location dst in
+    let%bind src_loc = Act_abstract.Operand.as_location src
+    and dst_loc = Act_abstract.Operand.as_location dst in
     of_locations ins is_move {src= src_loc; dst= dst_loc} state
 
   let as_possible_new_write ins {A.Src_dst.src; dst} =
-    if Abstract.Operand.is_immediate src then
+    if Act_abstract.Operand.is_immediate src then
       let open Option.Let_syntax in
-      let%map dst_loc = Abstract.Operand.as_location dst in
+      let%map dst_loc = Act_abstract.Operand.as_location dst in
       New_write (ins, dst_loc)
     else None
 
   let%expect_test "as_possible_new_write: valid example" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Abstract.Location.(
+        ( Act_abstract.Location.(
             as_possible_new_write 10
               { src= Int 32
               ; dst=
@@ -280,9 +282,9 @@ module Portable = struct
   let operands_as_chain_start ins symbol_table {A.Src_dst.src; dst} =
     let open Option.Let_syntax in
     let is_immediate_heap_src =
-      Abstract.Operand.is_immediate_heap_symbol ~symbol_table src
+      Act_abstract.Operand.is_immediate_heap_symbol ~symbol_table src
     in
-    let%bind dst_loc = Abstract.Operand.as_location dst in
+    let%bind dst_loc = Act_abstract.Operand.as_location dst in
     Option.some_if is_immediate_heap_src (ins, dst_loc)
 
   let replace_chain_with value zipper =
@@ -347,7 +349,7 @@ struct
   module Ctx_Zip = Zip.On_monad (Ctx)
 
   let is_move =
-    Lang.Instruction.has_opcode ~opcode:Abstract.Instruction.Opcode.Move
+    Lang.Instruction.has_opcode ~opcode:Act_abstract.Instruction.Opcode.Move
 
   let as_move_with_abstract_operands ins =
     let open Option.Let_syntax in

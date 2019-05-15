@@ -32,32 +32,32 @@
 open Core_kernel
 open Act_common
 
-val asm_runner_from_arch : Id.t -> (module Asm.Runner.S) Or_error.t
+val asm_runner_from_arch : Id.t -> (module Act_asm.Runner.S) Or_error.t
 (** [asm_runner_from_arch arch] generates an assembly job runner from an
     architecture ID [arch]. *)
 
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers. *)
 module Resolve_compiler :
-  Config.Compiler.S_resolver
-  with type spec = Config.Compiler.Spec.With_id.t
-   and type 'a chain_input = 'a Config.Compiler.Chain_input.t
+  Act_config.Compiler.S_resolver
+  with type spec = Act_config.Compiler.Spec.With_id.t
+   and type 'a chain_input = 'a Act_config.Compiler.Chain_input.t
 
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers from targets, filling in a dummy compiler if the
     target doesn't mention a compiler. *)
 module Resolve_compiler_from_target :
-  Config.Compiler.S_resolver
-  with type spec = Config.Compiler.Target.t
-   and type 'a chain_input = 'a Config.Compiler.Chain_input.t
+  Act_config.Compiler.S_resolver
+  with type spec = Act_config.Compiler.Target.t
+   and type 'a chain_input = 'a Act_config.Compiler.Chain_input.t
 
 val load_and_process_config :
-     ?compiler_predicate:Config.Compiler.Property.t Blang.t
-  -> ?machine_predicate:Config.Machine.Property.t Blang.t
-  -> ?sanitiser_passes:Config.Sanitiser_pass.Selector.t Blang.t
+     ?compiler_predicate:Act_config.Compiler.Property.t Blang.t
+  -> ?machine_predicate:Act_config.Machine.Property.t Blang.t
+  -> ?sanitiser_passes:Act_config.Sanitiser_pass.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> Fpath.t
-  -> Config.Act.t Or_error.t
+  -> Act_config.Act.t Or_error.t
 (** [load_and_process_config ?compiler_predicate ?machine_predicate
     ?sanitiser_passes ?with_compiler_tests path] loads the config file at
     [path] and optionally tests all machines and compilers therein.

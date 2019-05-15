@@ -30,10 +30,10 @@ module Make (B : Basic) : S = struct
   include Common.Extend (B)
 
   let make_pathset (cfg : Run_config.t)
-      (spec : Config.Compiler.Spec.With_id.t) :
+      (spec : Act_config.Compiler.Spec.With_id.t) :
       Pathset.Compiler.t Or_error.t =
     let open Or_error.Let_syntax in
-    let compiler_id = Config.Compiler.Spec.With_id.id spec in
+    let compiler_id = Act_config.Compiler.Spec.With_id.id spec in
     let%map ps =
       Pathset.Compiler.make_and_mkdirs
         {compiler_id; run= Run_config.pathset cfg}
@@ -42,13 +42,15 @@ module Make (B : Basic) : S = struct
     ps
 
   let make_compiler (cfg : Run_config.t)
-      (spec : Config.Compiler.Spec.With_id.t) :
+      (spec : Act_config.Compiler.Spec.With_id.t) :
       (module Compiler.S) Or_error.t =
     Or_error.Let_syntax.(
       let%bind (module C) = B.Resolve_compiler.from_spec spec in
       let%bind (module R) = B.asm_runner_from_spec spec in
       let asm_simulator_id = Run_config.asm_simulator cfg in
-      let (module AS) = Sim.Table.get B.asm_simulators asm_simulator_id in
+      let (module AS) =
+        Act_sim.Table.get B.asm_simulators asm_simulator_id
+      in
       let%map ps = make_pathset cfg spec in
       ( module Compiler.Make (struct
         include (B : Basic)
@@ -63,18 +65,18 @@ module Make (B : Basic) : S = struct
       end)
       : Compiler.S ))
 
-  let run_compiler (cfg : Run_config.t) (c_sims : Sim.Bulk.File_map.t)
-      (spec : Config.Compiler.Spec.With_id.t) =
-    let open Or_error.Let_syntax in
-    let id = Config.Compiler.Spec.With_id.id spec in
-    let%bind (module TC) = make_compiler cfg spec in
-    let%map result = TC.run c_sims in
-    (id, result)
+  let run_compiler (cfg : Run_config.t) (c_sims : Act_sim.Bulk.File_map.t)
+      (spec : Act_config.Compiler.Spec.With_id.t) =
+    let id = Act_config.Compiler.Spec.With_id.id spec in
+    Or_error.Let_syntax.(
+      let%bind (module TC) = make_compiler cfg spec in
+      let%map result = TC.run c_sims in
+      (id, result))
 
-  let run_compilers (cfg : Run_config.t) (c_sims : Sim.Bulk.File_map.t) :
-      (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
+  let run_compilers (cfg : Run_config.t) (c_sims : Act_sim.Bulk.File_map.t)
+      : (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
     compilers
-    |> Config.Compiler.Spec.Set.map ~f:(run_compiler cfg c_sims)
+    |> Act_config.Compiler.Spec.Set.map ~f:(run_compiler cfg c_sims)
     |> Or_error.combine_errors
 
   let make_analysis (raw : (Id.t, Analysis.Compiler.t) List.Assoc.t T.t) :
@@ -82,7 +84,7 @@ module Make (B : Basic) : S = struct
     Analysis.Machine.make ~compilers:(T.value raw)
       ?time_taken:(T.time_taken raw) ()
 
-  let run (cfg : Run_config.t) (c_sims : Sim.Bulk.File_map.t) :
+  let run (cfg : Run_config.t) (c_sims : Act_sim.Bulk.File_map.t) :
       Analysis.Machine.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map compilers_and_time =
