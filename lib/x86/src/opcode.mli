@@ -100,7 +100,7 @@ module Sizable : sig
     | `Sub
     | `Xchg
     | `Xor ]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, equal]
 
   (** [Sizable] contains a string table for sizable opcodes. These strings
       _don't_ have a size suffix attached; to parse or emit an AT&T-style
@@ -120,7 +120,7 @@ end
 
 (** [Size] contains an enumeration of operand sizes. *)
 module Size : sig
-  type t = Byte | Word | Long [@@deriving sexp, eq]
+  type t = Byte | Word | Long [@@deriving sexp, equal]
 
   (** [Size] contains a string table for AT&T-style size suffixes. *)
   module Suffix_table : String_table.S with type t := t
@@ -128,7 +128,7 @@ end
 
 module Sized : sig
   (** A [Sized.t] is a pair of sizable instruction and actual size. *)
-  type t = Sizable.t * Size.t [@@deriving sexp, eq]
+  type t = Sizable.t * Size.t [@@deriving sexp, equal]
 
   (** [Sized] contains a string table for AT&T-style size-suffixed opcodes. *)
   include String_table.S with type t := t
@@ -146,7 +146,7 @@ module Basic : sig
   (** A [Basic.t] is either a [Sizable.t] or one of several other known
       opcodes. *)
   type t = [Sizable.t | `Leave | `Mfence | `Nop]
-  [@@deriving sexp, eq, enumerate]
+  [@@deriving sexp, equal, enumerate]
 
   (** [Basic] contains a string table for basic opcodes. This is a superset
       of [Sizable]'s string table. *)
@@ -183,7 +183,7 @@ module Condition : sig
     | `Parity
     | `Sign
     | `Zero ]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, equal]
 
   (** [t] enumerates all x86 conditions, including both forms of invertible
       conditions. *)
@@ -194,14 +194,14 @@ module Condition : sig
     | `ECXZero
     | `ParityEven
     | `ParityOdd ]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, equal]
 end
 
 (** [Jump] describes jump instructions. *)
 module Jump : sig
   (** [t] is a description of a jump. *)
   type t = [`Unconditional | `Conditional of Condition.t]
-  [@@deriving sexp, eq]
+  [@@deriving sexp, equal, enumerate]
 
   (** [Jump] contains a string table for jump instructions. *)
   include String_table.S with type t := t
@@ -220,7 +220,7 @@ type t =
   | Jump of Jump.t  (** Jump instruction *)
   | Directive of string  (** Assembler directive *)
   | Unknown of string  (** An opcode we don't (yet) understand. *)
-[@@deriving sexp, eq]
+[@@deriving sexp, equal]
 
 val basic : Basic.t -> t
 (** [basic b] builds a [t] from a basic opcode [b]. *)

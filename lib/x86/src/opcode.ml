@@ -176,7 +176,7 @@ module Sizable = struct
 end
 
 module Size = struct
-  type t = Byte | Word | Long [@@deriving sexp, eq]
+  type t = Byte | Word | Long [@@deriving sexp, equal]
 
   module Suffix_table : String_table.S with type t := t =
   String_table.Make (struct
@@ -187,7 +187,7 @@ module Size = struct
 end
 
 module Sized = struct
-  type t = Sizable.t * Size.t [@@deriving sexp, eq]
+  type t = Sizable.t * Size.t [@@deriving sexp, equal]
 
   include (
     String_table.Make (struct
@@ -211,7 +211,7 @@ end
 
 module Basic = struct
   type t = [Sizable.t | `Leave | `Mfence | `Nop]
-  [@@deriving sexp, eq, enumerate]
+  [@@deriving sexp, equal, enumerate]
 
   (* Note: any NON-SIZABLE opcodes not present in this table map to 'unknown
      operands'. *)
@@ -248,30 +248,6 @@ module Basic = struct
       | `Nop ->
           Nop
   end)
-
-  let%expect_test "Basic: table accounts for all instructions" =
-    Fmt.pr "@[<v>%a@]@."
-      (Fmt.list ~sep:Fmt.sp (fun f opcode ->
-           Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
-             [%sexp (opcode : t)]
-             (Option.value ~default:"(none)" (to_string opcode)) ))
-      all ;
-    [%expect
-      {|
-      Add -> add
-      Call -> call
-      Cmp -> cmp
-      Cmpxchg -> cmpxchg
-      Mov -> mov
-      Pop -> pop
-      Push -> push
-      Ret -> ret
-      Sub -> sub
-      Xchg -> xchg
-      Xor -> xor
-      Leave -> leave
-      Mfence -> mfence
-      Nop -> nop |}]
 end
 
 module Condition = struct
@@ -355,49 +331,6 @@ module Jump = struct
       end) :
       String_table.S with type t := t )
 
-  let%expect_test "Jump: table accounts for all conditions" =
-    Fmt.pr "@[<v>%a@]@."
-      (Fmt.list ~sep:Fmt.sp (fun f opcode ->
-           Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
-             [%sexp (opcode : t)]
-             (Option.value ~default:"(none)" (to_string opcode)) ))
-      all ;
-    [%expect
-      {|
-      Unconditional -> jmp
-      (Conditional Above) -> ja
-      (Conditional AboveEqual) -> jae
-      (Conditional Below) -> jb
-      (Conditional BelowEqual) -> jbe
-      (Conditional Carry) -> jc
-      (Conditional Equal) -> je
-      (Conditional Greater) -> jg
-      (Conditional GreaterEqual) -> jge
-      (Conditional Less) -> jl
-      (Conditional LessEqual) -> jle
-      (Conditional Overflow) -> jo
-      (Conditional Parity) -> jp
-      (Conditional Sign) -> js
-      (Conditional Zero) -> jz
-      (Conditional (Not Above)) -> jna
-      (Conditional (Not AboveEqual)) -> jnae
-      (Conditional (Not Below)) -> jnb
-      (Conditional (Not BelowEqual)) -> jnbe
-      (Conditional (Not Carry)) -> jnc
-      (Conditional (Not Equal)) -> jne
-      (Conditional (Not Greater)) -> jng
-      (Conditional (Not GreaterEqual)) -> jnge
-      (Conditional (Not Less)) -> jnl
-      (Conditional (Not LessEqual)) -> jnle
-      (Conditional (Not Overflow)) -> jno
-      (Conditional (Not Parity)) -> jnp
-      (Conditional (Not Sign)) -> jns
-      (Conditional (Not Zero)) -> jnz
-      (Conditional CXZero) -> jcxz
-      (Conditional ECXZero) -> jecxz
-      (Conditional ParityEven) -> jpe
-      (Conditional ParityOdd) -> jpo |}]
-
   include Act_abstract.Abstractable.Make (struct
     type nonrec t = t
 
@@ -443,27 +376,3 @@ let of_string string =
       ; (fun () -> string |> Sized.of_string >>| sized)
       ; (fun () -> string |> Basic.of_string >>| basic) ]
   |> Option.value ~default:(Unknown string)
-
-let%expect_test "of_string: directive" =
-  Stdio.print_s [%sexp (of_string ".global" : t)] ;
-  [%expect {| (Directive global) |}]
-
-let%expect_test "of_string: conditional jump" =
-  Stdio.print_s [%sexp (of_string "jne" : t)] ;
-  [%expect {| (Jump (Conditional (Not Equal))) |}]
-
-let%expect_test "of_string: unconditional jump" =
-  Stdio.print_s [%sexp (of_string "JMP" : t)] ;
-  [%expect {| (Jump Unconditional) |}]
-
-let%expect_test "of_string: sized opcode" =
-  Stdio.print_s [%sexp (of_string "movl" : t)] ;
-  [%expect {| (Sized (Mov Long)) |}]
-
-let%expect_test "of_string: basic opcode" =
-  Stdio.print_s [%sexp (of_string "MOV" : t)] ;
-  [%expect {| (Basic Mov) |}]
-
-let%expect_test "of_string: not an opcode" =
-  Stdio.print_s [%sexp (of_string "bananas" : t)] ;
-  [%expect {| (Unknown bananas) |}]
