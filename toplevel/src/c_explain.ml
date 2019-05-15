@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Lib
 
 let run (file_type : [`C | `Litmus | `Infer]) (output_mode : [`All | `Vars])
     (args : Args.Standard_with_files.t) _o cfg =
@@ -34,7 +33,7 @@ let run (file_type : [`C | `Litmus | `Infer]) (output_mode : [`All | `Vars])
     Option.value (Config.Act.cpp cfg) ~default:(Config.Cpp.default ())
   in
   let (module M) = C.Filters.c_module is_c in
-  let module Cpp_M = Cpp.Chain_filter (M) in
+  let module Cpp_M = C.Cpp.Chain_filter (M) in
   let%map _ = Cpp_M.run (cpp_cfg, Print output_mode) infile outfile in
   ()
 
