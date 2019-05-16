@@ -6,7 +6,7 @@
  (synopsis "Automagic Compiler Tormentor: C language support")
  (inline_tests)
  (preprocess
-  (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
+  (pps ppx_deriving.std ppx_jane))
  (libraries core_kernel menhirLib act_common act_config act_utils))
 
 (ocamllex

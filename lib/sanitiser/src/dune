@@ -6,7 +6,7 @@
  (synopsis "Automagic Compiler Tormentor: assembly sanitiser framework")
  (inline_tests)
  (preprocess
-  (pps ppx_deriving.std ppx_expect ppx_jane))
+  (pps ppx_deriving.std ppx_jane))
  (libraries core_kernel fmt fpath shell.string_extended travesty
    travesty.core_kernel_exts act_abstract act_common act_config act_language
    act_litmus act_utils))

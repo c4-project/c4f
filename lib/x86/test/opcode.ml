@@ -25,17 +25,19 @@ open Base
 open Stdio
 open Act_x86.Opcode
 
-let%test_module "Basic" = (module struct
-  open Basic
-  let%expect_test "table accounts for all instructions" =
-    Fmt.pr "@[<v>%a@]@."
-      (Fmt.list ~sep:Fmt.sp (fun f opcode ->
-           Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
-             [%sexp (opcode : t)]
-             (Option.value ~default:"(none)" (to_string opcode)) ))
-      all ;
-    [%expect
-      {|
+let%test_module "Basic" =
+  ( module struct
+    open Basic
+
+    let%expect_test "table accounts for all instructions" =
+      Fmt.pr "@[<v>%a@]@."
+        (Fmt.list ~sep:Fmt.sp (fun f opcode ->
+             Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
+               [%sexp (opcode : t)]
+               (Option.value ~default:"(none)" (to_string opcode)) ))
+        all ;
+      [%expect
+        {|
       Add -> add
       Call -> call
       Cmp -> cmp
@@ -50,20 +52,21 @@ let%test_module "Basic" = (module struct
       Leave -> leave
       Mfence -> mfence
       Nop -> nop |}]
-end)
+  end )
 
-let%test_module "Jump" = (module struct
-  open Jump
+let%test_module "Jump" =
+  ( module struct
+    open Jump
 
-  let%expect_test "table accounts for all conditions" =
-    Fmt.pr "@[<v>%a@]@."
-      (Fmt.list ~sep:Fmt.sp (fun f opcode ->
-           Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
-             [%sexp (opcode : t)]
-             (Option.value ~default:"(none)" (to_string opcode)) ))
-      all ;
-    [%expect
-      {|
+    let%expect_test "table accounts for all conditions" =
+      Fmt.pr "@[<v>%a@]@."
+        (Fmt.list ~sep:Fmt.sp (fun f opcode ->
+             Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
+               [%sexp (opcode : t)]
+               (Option.value ~default:"(none)" (to_string opcode)) ))
+        all ;
+      [%expect
+        {|
       Unconditional -> jmp
       (Conditional Above) -> ja
       (Conditional AboveEqual) -> jae
@@ -97,7 +100,7 @@ let%test_module "Jump" = (module struct
       (Conditional ECXZero) -> jecxz
       (Conditional ParityEven) -> jpe
       (Conditional ParityOdd) -> jpo |}]
-end)
+  end )
 
 let%expect_test "of_string: directive" =
   print_s [%sexp (of_string ".global" : t)] ;

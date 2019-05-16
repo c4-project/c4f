@@ -6,7 +6,7 @@
  (synopsis "Automagic Compiler Tormentor: x86 support")
  (inline_tests)
  (preprocess
-  (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
+  (pps ppx_deriving.std ppx_jane))
  (libraries core_kernel travesty travesty.core_kernel_exts menhirLib act_asm
    act_abstract act_sanitiser act_litmus act_utils))
 

@@ -6,6 +6,6 @@
  (synopsis "Automagic Compiler Tormentor: abstract program model")
  (inline_tests)
  (preprocess
-  (pps ppx_deriving.std ppx_expect ppx_jane))
+  (pps ppx_deriving.std ppx_jane))
  (libraries core_kernel travesty travesty.core_kernel_exts act_common
    act_utils))

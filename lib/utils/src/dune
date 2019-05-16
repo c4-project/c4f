@@ -6,7 +6,7 @@
  (synopsis "Automagic Compiler Tormentor: non-ACT-specific utility modules")
  (inline_tests)
  (preprocess
-  (pps ppx_deriving.std ppx_expect ppx_jane))
+  (pps ppx_deriving.std ppx_jane))
  (libraries travesty travesty.base_exts travesty.core_kernel_exts core
    core_kernel shell base stdio sexplib0 shell.string_extended fpath
    menhirLib fmt textutils_kernel.text_block))

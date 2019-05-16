@@ -5,7 +5,7 @@
    "Automagic Compiler Tormentor: configuration and config file parsing")
  (inline_tests)
  (preprocess
-  (pps ppx_deriving.std ppx_expect ppx_jane))
+  (pps ppx_deriving.std ppx_jane))
  (libraries fmt fpath menhirLib travesty travesty.core_kernel_exts
    core_kernel act_common act_litmus act_utils))
 

@@ -42,7 +42,9 @@ Hash=7bfcb06facbe75eff0dc2e656dd34eb4
 |}
 
 let print_output_from_string (s : string) : unit =
-  print_s [%sexp (Act_sim_herd.Reader.read_output_from_string s : Act_sim.Output.t)]
+  print_s
+    [%sexp
+      (Act_sim_herd.Reader.read_output_from_string s : Act_sim.Output.t)]
 
 let%expect_test "valid output without postcondition parses correctly" =
   print_output_from_string test_output_valid_no_pc ;
