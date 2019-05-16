@@ -31,7 +31,7 @@
     This module contains various types and module plumbing for handling
     these cases in a fairly unambiguous way. *)
 
-open Core
+open Base
 
 (** [order] enumerates the different orders of operands for two-operand
     instructions. *)

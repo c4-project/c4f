@@ -6,5 +6,5 @@
  (synopsis "Automagic Compiler Tormentor: common infrastructure")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries core fmt fpath shell.string_extended travesty
+ (libraries fmt shell.string_extended travesty
    travesty.core_kernel_exts act.utils))

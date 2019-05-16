@@ -22,8 +22,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Act_common
-open Core_kernel
+open Base
 open Travesty_containers
+open Stdio
 include Language_definition_intf
 
 module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
@@ -218,7 +219,7 @@ let%expect_test "is_program_label: negative, AT&T" =
   [%expect {| false |}]
 
 let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
-  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Add)
@@ -229,13 +230,13 @@ let%expect_test "abs_operands: add $-16, %ESP, AT&T" =
   [%expect {| $-16 -> reg:sp |}]
 
 let%expect_test "abs_operands: nop -> none" =
-  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make ~opcode:(Opcode.Basic `Nop) ())) ;
   [%expect {| none |}]
 
 let%expect_test "abs_operands: jmp, AT&T style" =
-  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Jump `Unconditional)
@@ -247,7 +248,7 @@ let%expect_test "abs_operands: jmp, AT&T style" =
   [%expect {| sym:L1 |}]
 
 let%expect_test "abs_operands: pop $42 -> error" =
-  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Pop)
@@ -256,7 +257,7 @@ let%expect_test "abs_operands: pop $42 -> error" =
   [%expect {| <ERR: Operand type not allowed here> |}]
 
 let%expect_test "abs_operands: nop $42 -> error" =
-  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Nop)
@@ -266,7 +267,7 @@ let%expect_test "abs_operands: nop $42 -> error" =
     {| <ERR: ("Expected zero operands" (got ((Immediate (Numeric 42)))))> |}]
 
 let%expect_test "abs_operands: mov %ESP, %EBP" =
-  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Mov)
@@ -277,7 +278,7 @@ let%expect_test "abs_operands: mov %ESP, %EBP" =
   [%expect {| reg:sp -> reg:sp |}]
 
 let%expect_test "abs_operands: movl %ESP, %EBP" =
-  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Sized (`Mov, Opcode.Size.Long))
@@ -290,7 +291,7 @@ let%expect_test "abs_operands: movl %ESP, %EBP" =
 module Intel = Make (Dialect.Intel) (Pp.Intel)
 
 let%expect_test "abs_operands: add ESP, -16, Intel" =
-  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
     (Intel.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Add)
@@ -301,7 +302,7 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
   [%expect {| $-16 -> reg:sp |}]
 
 let%expect_test "abs_operands: mov %ESP, $1, AT&T, should be error" =
-  Format.printf "%a@." Act_abstract.Operand.Bundle.pp
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
     (Att.Instruction.abs_operands
        (Ast.Instruction.make
           ~opcode:(Opcode.Basic `Mov)

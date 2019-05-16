@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 
 module Hook (L : Language_definition.S) (P : Travesty.Traversable.S1) =
 struct
@@ -84,7 +84,7 @@ struct
         op
 
   let name_of_segment_offset_heap_loc segment offset program_name =
-    sprintf "t%sg%sd%d" program_name (Ast.Reg.to_string segment) offset
+    Printf.sprintf "t%sg%sd%d" program_name (Ast.Reg.to_string segment) offset
 
   let make_segment_offset_heap_loc segment offset =
     Ctx.(
