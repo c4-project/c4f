@@ -37,13 +37,19 @@ module Register = struct
 end
 
 module Address = struct
-  type t = Int of int | Symbol of Symbol.t [@@deriving sexp, eq]
+  type t = Int of int | Symbol of Symbol.t [@@deriving sexp, equal]
 
   let pp f = function
     | Int k ->
         Int.pp f k
     | Symbol sym ->
-        Format.fprintf f "$%s" sym
+        Fmt.pf f "$%s" sym
+
+  let to_string : t -> string = function
+    | Int k ->
+      Int.to_string k
+    | Symbol s ->
+      s
 end
 
 type t =

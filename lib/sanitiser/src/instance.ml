@@ -102,16 +102,10 @@ module Make (B : Basic) :
       ~f:(fun p -> p @ List.init (maxlen - List.length p) ~f)
       xs
 
-  let address_to_string = function
-    | Act_abstract.Location.Address.Int i ->
-        Int.to_string i
-    | Symbol s ->
-        s
-
   let stack_offset_to_heap prog_name offset =
     Ctx.Let_syntax.(
       let base_str =
-        Printf.sprintf "t%ss%s" prog_name (address_to_string offset)
+        Printf.sprintf "t%ss%s" prog_name (Act_abstract.Location.Address.to_string offset)
       in
       let%bind symbol_str =
         Ctx.add_symbol base_str Act_abstract.Symbol.Sort.Heap

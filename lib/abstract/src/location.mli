@@ -21,12 +21,11 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [Abstract_location] contains the abstract program model types and
-    functions for locations. *)
+(** Abstract program model: types and functions for locations. *)
 
 open Core_kernel
 
-(** [Address] concerns abstracted registers. *)
+(** [Register] concerns abstracted registers. *)
 module Register : sig
   (** [t] is the type of abstracted registers. *)
   type t = General of string | Stack_pointer | Unknown
@@ -41,6 +40,9 @@ module Address : sig
   type t = Int of int | Symbol of Symbol.t [@@deriving sexp, eq]
 
   include Pretty_printer.S with type t := t
+
+  val to_string : t -> string
+  (** [to_string address] gets a string representation of [address]. *)
 end
 
 (** [t] is an abstracted location. *)
