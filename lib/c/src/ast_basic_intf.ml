@@ -49,7 +49,7 @@ open Base
 
 (** Signature of a basic AST node. *)
 module type Ast_node = sig
-  type t [@@deriving sexp, eq, compare]
+  type t [@@deriving sexp, equal, compare]
 
   include Pretty_printer.S with type t := t
 end
@@ -58,5 +58,5 @@ end
 module type Ast_node_with_identifier = sig
   include Ast_node
 
-  val identifier : t -> Act_utils.C_identifier.t
+  val identifier : t -> Act_common.C_id.t
 end

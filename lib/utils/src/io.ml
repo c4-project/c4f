@@ -41,14 +41,6 @@ let fpath_of_string_option : string option -> Fpath.t option Or_error.t =
 let filename_no_ext (f : Fpath.t) : string =
   Fpath.(filename (rem_ext ~multi:true f))
 
-let%expect_test "filename_no_ext: example" =
-  printf "%s\n" (filename_no_ext Fpath.(v "foo" / "bar" / "baz.c")) ;
-  [%expect {| baz |}]
-
-let%expect_test "filename_no_ext: example with double extension" =
-  printf "%s\n" (filename_no_ext Fpath.(v "foo" / "bar" / "baz.c.litmus")) ;
-  [%expect {| baz |}]
-
 module In_source = struct
   type t = File of Fpath.t | Stdin of {file_type: string option}
   [@@deriving variants]
@@ -62,16 +54,6 @@ module In_source = struct
           (String.lstrip ~drop:(Char.equal '.') (Fpath.get_ext fp))
     | Stdin sd ->
         sd.file_type
-
-  let%expect_test "file_type: file with two extensions" =
-    Fmt.(pr "%a@." (option string))
-      (file_type (file (Fpath.v "iriw.c.litmus"))) ;
-    [%expect {| litmus |}]
-
-  let%expect_test "file_type: stdin with specific type" =
-    Fmt.(pr "%a@." (option string))
-      (file_type (stdin ~file_type:"litmus" ())) ;
-    [%expect {| litmus |}]
 
   let to_string : t -> string = function
     | File s ->

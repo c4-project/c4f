@@ -27,8 +27,7 @@ open Core_kernel
 open Act_common
 open Act_utils
 
-val warn_if_not_tracking_symbols :
-  Output.t -> C_identifier.t list option -> unit
+val warn_if_not_tracking_symbols : Output.t -> C_id.t list option -> unit
 (** [warn_if_not_tracking_symbols o c_symbols] prints a warning on [o] if
     [c_symbols] is empty. The warning explains that, without any C symbols
     to track, act may make incorrect assumptions. *)

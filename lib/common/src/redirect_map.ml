@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Act_utils
 include Redirect_map_intf
 module Alist = Travesty_core_kernel_exts.Alist
 
@@ -37,8 +36,7 @@ module Make (B : Basic_symbol) :
   let dest_of_sym (map : t) (sym : B.t) : B.t =
     Option.value (B.Map.find map sym) ~default:sym
 
-  let dest_of_id (map : t) (id : C_identifier.t) : C_identifier.t Or_error.t
-      =
+  let dest_of_id (map : t) (id : C_id.t) : C_id.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind sym = B.of_c_identifier id in
     let redirected_sym = dest_of_sym map sym in
@@ -51,11 +49,10 @@ module Make (B : Basic_symbol) :
     |> List.map ~f:(dest_of_sym map)
     |> B.Set.of_list
 
-  let dest_ids (map : t) ~(sources : C_identifier.Set.t) :
-      C_identifier.Set.t Or_error.t =
+  let dest_ids (map : t) ~(sources : C_id.Set.t) : C_id.Set.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind source_sym_list =
-      sources |> C_identifier.Set.to_list
+      sources |> C_id.Set.to_list
       |> List.map ~f:B.of_c_identifier
       |> Or_error.combine_errors
     in
@@ -66,7 +63,7 @@ module Make (B : Basic_symbol) :
       |> List.map ~f:B.to_c_identifier
       |> Or_error.combine_errors
     in
-    C_identifier.Set.of_list dest_id_list
+    C_id.Set.of_list dest_id_list
 
   let of_symbol_alist : (B.t, B.t) List.Assoc.t -> t Or_error.t =
     B.Map.of_alist_or_error
@@ -85,7 +82,7 @@ module Make (B : Basic_symbol) :
         Or_error.error_s
           [%message
             "Expected a C variable map without thread IDs"
-              ~cvars_with_tids:(cvars_with_tids : C_identifier.t list)]
+              ~cvars_with_tids:(cvars_with_tids : C_id.t list)]
 
   let transform_c_variables (map : t) (cvars : C_variables.Map.t) :
       C_variables.Map.t Or_error.t =
@@ -97,7 +94,7 @@ module Make (B : Basic_symbol) :
                var |> dest_of_id map >>| fun v' -> (v', record) )
         |> Or_error.combine_errors
       in
-      C_identifier.Map.of_alist_or_error alist)
+      C_id.Map.of_alist_or_error alist)
 
   let sources_of_sym (map : t) (dest : B.t) : B.Set.t =
     map
@@ -124,9 +121,9 @@ let%test_module "string redirect maps" =
 
       let of_string = Fn.id
 
-      let of_c_identifier x = x |> C_identifier.to_string |> Or_error.return
+      let of_c_identifier x = x |> C_id.to_string |> Or_error.return
 
-      let to_c_identifier = C_identifier.create
+      let to_c_identifier = C_id.create
     end)
 
     let test_map : M.t =
@@ -186,15 +183,13 @@ let%test_module "string redirect maps" =
       [%expect {| ((alpha) () () (_echo bravo charlie)) |}]
 
     let%expect_test "dest_of_id: in map, valid ID" =
-      let foo = C_identifier.of_string "hotel" in
-      Stdio.print_s
-        [%sexp (M.dest_of_id test_map foo : C_identifier.t Or_error.t)] ;
+      let foo = C_id.of_string "hotel" in
+      Stdio.print_s [%sexp (M.dest_of_id test_map foo : C_id.t Or_error.t)] ;
       [%expect {| (Ok _hotel) |}]
 
     let%expect_test "dest_of_id: in map, invalid ID" =
-      let foo = C_identifier.of_string "_echo" in
-      Stdio.print_s
-        [%sexp (M.dest_of_id test_map foo : C_identifier.t Or_error.t)] ;
+      let foo = C_id.of_string "_echo" in
+      Stdio.print_s [%sexp (M.dest_of_id test_map foo : C_id.t Or_error.t)] ;
       [%expect
         {|
         (Error
@@ -204,21 +199,19 @@ let%test_module "string redirect maps" =
            utils/c_identifier.ml:58:13))) |}]
 
     let%expect_test "dest_of_id: not in map" =
-      let foo = C_identifier.of_string "nope" in
-      Stdio.print_s
-        [%sexp (M.dest_of_id test_map foo : C_identifier.t Or_error.t)] ;
+      let foo = C_id.of_string "nope" in
+      Stdio.print_s [%sexp (M.dest_of_id test_map foo : C_id.t Or_error.t)] ;
       [%expect {| (Ok nope) |}]
 
     let example_cvars_working : C_variables.Map.t =
       C_variables.Map.(
         merge_list
           [ of_single_scope_map ~scope:C_variables.Scope.Local
-              (C_identifier.Map.of_alist_exn
-                 [ (C_identifier.of_string "alpha", Some 27)
-                 ; (C_identifier.of_string "hotel", None) ])
+              (C_id.Map.of_alist_exn
+                 [ (C_id.of_string "alpha", Some 27)
+                 ; (C_id.of_string "hotel", None) ])
           ; of_single_scope_map ~scope:C_variables.Scope.Global
-              (C_identifier.Map.of_alist_exn
-                 [(C_identifier.of_string "BEEP", Some 53)]) ])
+              (C_id.Map.of_alist_exn [(C_id.of_string "BEEP", Some 53)]) ])
 
     let%expect_test "transform_c_variables: working example" =
       Stdio.print_s

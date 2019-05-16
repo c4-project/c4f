@@ -23,15 +23,15 @@
 
 open Base
 open Stdio
-open Act_utils
+module Ac = Act_common
 include Pp_intf
 
-let pp_location_stanza : C_identifier.t list option Fmt.t =
+let pp_location_stanza : Ac.C_id.t list option Fmt.t =
   Fmt.(
     option
       (hbox
          (prefix (unit "locations@ ")
-            (brackets (box (list ~sep:(unit ";@ ") C_identifier.pp))))))
+            (brackets (box (list ~sep:(unit ";@ ") Ac.C_id.pp))))))
 
 module type Basic = sig
   module Ast : Ast.S
@@ -45,12 +45,11 @@ module Make_common (B : Basic) = struct
   let print_programs (oc : Out_channel.t) (ast : B.Ast.Validated.t) : unit =
     B.print_programs_inner oc (B.Ast.Validated.programs ast)
 
-  let pp_init : (C_identifier.t, B.Ast.Lang.Constant.t) List.Assoc.t Fmt.t =
-    My_format.pp_c_braces
+  let pp_init : (Ac.C_id.t, B.Ast.Lang.Constant.t) List.Assoc.t Fmt.t =
+    Act_utils.My_format.pp_c_braces
       Fmt.(
         list ~sep:sp (fun f (l, c) ->
-            pf f "@[%a = %a;@]" C_identifier.pp l B.Ast.Lang.Constant.pp c
-        ))
+            pf f "@[%a = %a;@]" Ac.C_id.pp l B.Ast.Lang.Constant.pp c ))
 
   let pp_quantifier f = function `Exists -> Fmt.string f "exists"
 
@@ -111,12 +110,12 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
                        ~table:(programs : Ast.Lang.Statement.t list list)])
           in
           let rows = List.map ~f:(List.map ~f:pp_instr) programs' in
-          Tabulator.(
+          Act_utils.Tabulator.(
             make ~sep:" | " ~terminator:" ;" ~header () >>= add_rows ~rows)
       end
 
       include M
-      include Tabulator.Extend_tabular (M)
+      include Act_utils.Tabulator.Extend_tabular (M)
     end
 
     let print_listings (oc : Out_channel.t) :

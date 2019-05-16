@@ -325,7 +325,7 @@ module Constant = struct
 end
 
 module Identifier = struct
-  include Act_utils.C_identifier
+  include Act_common.C_id
 
   let identifier = Fn.id
 end

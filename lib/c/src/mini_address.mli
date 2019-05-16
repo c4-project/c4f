@@ -23,9 +23,6 @@
 
 (** Mini model: addresses (a lvalue, or reference thereto). *)
 
-open Core_kernel
-open Act_utils
-
 (** Opaque type of addresses. *)
 type t [@@deriving sexp, eq, quickcheck]
 
@@ -41,11 +38,11 @@ val lvalue : Mini_lvalue.t -> t
 val ref : t -> t
 (** [ref t] constructs a &-reference to [t]. *)
 
-val of_variable : C_identifier.t -> t
+val of_variable : Act_common.C_id.t -> t
 (** [of_variable v] lifts the variable identifier [v] directly to an
     address. *)
 
-val of_variable_ref : C_identifier.t -> t
+val of_variable_ref : Act_common.C_id.t -> t
 (** [of_variable_ref v] lifts the address of variable identifier [v] to an
     address (in C syntax, this would be '&v'). *)
 
@@ -71,15 +68,15 @@ include Mini_intf.S_type_checkable with type t := t
 
 (** Generates random addresses, parametrised on a given lvalue generator. *)
 module Quickcheck_generic
-    (Lv : Quickcheckable.S with type t := Mini_lvalue.t) :
-  Quickcheckable.S with type t := t
+    (Lv : Act_utils.My_quickcheck.S_with_sexp with type t := Mini_lvalue.t) :
+  Act_utils.My_quickcheck.S_with_sexp with type t = t
 
 (** Generates random addresses, constrained over the variables in the given
     environment. *)
 module Quickcheck_on_env (E : Mini_env.S) :
-  Quickcheckable.S with type t := t
+  Act_utils.My_quickcheck.S_with_sexp with type t = t
 
 (** Generates addresses over the given typing environment that have the type
     'atomic_int*'. *)
 module Quickcheck_atomic_int_pointers (E : Mini_env.S) :
-  Quickcheckable.S with type t := t
+  Act_utils.My_quickcheck.S_with_sexp with type t = t

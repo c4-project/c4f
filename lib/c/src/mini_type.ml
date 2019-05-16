@@ -22,7 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_utils
+module Ac = Act_common
+module Au = Act_utils
 
 module Basic = struct
   module M = struct
@@ -32,15 +33,15 @@ module Basic = struct
   end
 
   include M
-  include Enum.Extend_table (M)
+  include Au.Enum.Extend_table (M)
 
   let to_spec : t -> [> Ast.Type_spec.t] = function
     | Int ->
         `Int
     | Bool ->
-        `Defined_type (C_identifier.of_string "bool")
+        `Defined_type (Ac.C_id.of_string "bool")
     | Atomic_int ->
-        `Defined_type (C_identifier.of_string "atomic_int")
+        `Defined_type (Ac.C_id.of_string "atomic_int")
 
   let to_non_atomic : t -> t Or_error.t = function
     | Atomic_int ->

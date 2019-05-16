@@ -193,7 +193,7 @@ end
 
 (** AST node for identifiers *)
 module Identifier : sig
-  include module type of Act_utils.C_identifier
+  include module type of Act_common.C_id
 
   include Ast_node_with_identifier with type t := t
 end

@@ -82,21 +82,21 @@ module Record = struct
 end
 
 module Map = struct
-  type t = Record.t C_identifier.Map.t [@@deriving sexp, equal]
+  type t = Record.t C_id.Map.t [@@deriving sexp, equal]
 
   module Q : My_quickcheck.S_with_sexp with type t := t = struct
     let sexp_of_t = sexp_of_t
 
     let quickcheck_generator =
-      C_identifier.Map.quickcheck_generator
-        C_identifier.quickcheck_generator Record.quickcheck_generator
+      C_id.Map.quickcheck_generator C_id.quickcheck_generator
+        Record.quickcheck_generator
 
     let quickcheck_observer =
-      C_identifier.Map.quickcheck_observer C_identifier.quickcheck_observer
+      C_id.Map.quickcheck_observer C_id.quickcheck_observer
         Record.quickcheck_observer
 
     let quickcheck_shrinker =
-      C_identifier.Map.quickcheck_shrinker C_identifier.quickcheck_shrinker
+      C_id.Map.quickcheck_shrinker C_id.quickcheck_shrinker
         Record.quickcheck_shrinker
   end
 
@@ -104,41 +104,37 @@ module Map = struct
 
   let of_single_scope_map ?(tid : int option)
       ?(scope : Scope.t = Scope.Unknown)
-      (cvars : Initial_value.t C_identifier.Map.t) : t =
-    C_identifier.Map.map cvars ~f:(fun initial_value ->
+      (cvars : Initial_value.t C_id.Map.t) : t =
+    C_id.Map.map cvars ~f:(fun initial_value ->
         Record.make ?tid ~scope ~initial_value () )
 
   let of_single_scope_set ?(tid : int option)
-      ?(scope : Scope.t = Scope.Unknown) (cvars : C_identifier.Set.t) : t =
-    let cvars_map = C_identifier.Set.to_map cvars ~f:(Fn.const None) in
+      ?(scope : Scope.t = Scope.Unknown) (cvars : C_id.Set.t) : t =
+    let cvars_map = C_id.Set.to_map cvars ~f:(Fn.const None) in
     of_single_scope_map ?tid ~scope cvars_map
 
-  let vars_satisfying (map : t) ~(f : Record.t -> bool) : C_identifier.Set.t
-      =
-    map
-    |> C_identifier.Map.filter ~f
-    |> C_identifier.Map.keys |> C_identifier.Set.of_list
+  let vars_satisfying (map : t) ~(f : Record.t -> bool) : C_id.Set.t =
+    map |> C_id.Map.filter ~f |> C_id.Map.keys |> C_id.Set.of_list
 
-  let globals : t -> C_identifier.Set.t =
-    vars_satisfying ~f:Record.is_global
+  let globals : t -> C_id.Set.t = vars_satisfying ~f:Record.is_global
 
-  let locals : t -> C_identifier.Set.t = vars_satisfying ~f:Record.is_local
+  let locals : t -> C_id.Set.t = vars_satisfying ~f:Record.is_local
 
   let resolve_cvar_clashes ~key value =
-    ignore (key : C_identifier.t) ;
+    ignore (key : C_id.t) ;
     Some (Record.resolve_clash value)
 
-  let merge : t -> t -> t = C_identifier.Map.merge ~f:resolve_cvar_clashes
+  let merge : t -> t -> t = C_id.Map.merge ~f:resolve_cvar_clashes
 
   let merge_list_opt (xs : t list) : t option =
     List.reduce_balanced xs ~f:merge
 
   let merge_list (xs : t list) : t =
-    xs |> merge_list_opt |> Option.value ~default:C_identifier.Map.empty
+    xs |> merge_list_opt |> Option.value ~default:C_id.Map.empty
 
   let of_litmus_id_pair ?(scope : Scope.t = Scope.Unknown)
       (id : Litmus_id.t) (initial_value : Initial_value.t) :
-      C_identifier.t * Record.t =
+      C_id.t * Record.t =
     let tid = Litmus_id.tid id in
     let name = Litmus_id.variable_name id in
     (name, Record.make ~scope ?tid ~initial_value ())
@@ -147,14 +143,13 @@ module Map = struct
       (xs : (Litmus_id.t, Initial_value.t) List.Assoc.t) : t Or_error.t =
     xs
     |> List.map ~f:(Tuple2.uncurry (of_litmus_id_pair ?scope))
-    |> C_identifier.Map.of_alist_or_error
+    |> C_id.Map.of_alist_or_error
 
-  let map (m : t)
-      ~(f : C_identifier.t -> Record.t -> C_identifier.t * Record.t) :
+  let map (m : t) ~(f : C_id.t -> Record.t -> C_id.t * Record.t) :
       t Or_error.t =
-    m |> C_identifier.Map.to_alist
+    m |> C_id.Map.to_alist
     |> List.map ~f:(Tuple2.uncurry f)
-    |> C_identifier.Map.of_alist_or_error
+    |> C_id.Map.of_alist_or_error
 end
 
 let%test_module "Map tests" =
@@ -166,8 +161,7 @@ let%test_module "Map tests" =
     let%expect_test "of_value_maps_opt: empty maps" =
       Stdio.print_s
         [%sexp
-          ( Map.merge_list_opt
-              [C_identifier.Map.empty; C_identifier.Map.empty]
+          ( Map.merge_list_opt [C_id.Map.empty; C_id.Map.empty]
             : Map.t option )] ;
       [%expect {| (()) |}]
 
@@ -175,10 +169,10 @@ let%test_module "Map tests" =
       Base_quickcheck.Test.run_exn
         (module Map)
         ~f:(fun m ->
-          [%test_result: C_identifier.Set.t] ~here:[[%here]]
-            ~equal:[%equal: C_identifier.Set.t]
+          [%test_result: C_id.Set.t] ~here:[[%here]]
+            ~equal:[%equal: C_id.Set.t]
             (Map.vars_satisfying m ~f:(Fn.const false))
-            ~expect:C_identifier.Set.empty )
+            ~expect:C_id.Set.empty )
   end )
 
 module String_lang = struct

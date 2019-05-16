@@ -94,7 +94,7 @@
 
 litmus:
   | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF
-    { { Litmus.language = Act_utils.C_identifier.of_string language
+    { { Litmus.language = Act_common.C_id.of_string language
       ; name
       ; decls
       }
@@ -136,8 +136,8 @@ litmus_equality:
   | l = litmus_identifier; EQ_OP; r = constant { Litmus.Pred.elt (Litmus.Pred_elt.(l ==? r)) }
 
 litmus_identifier:
-  | i = IDENTIFIER                     { Litmus.Id.global (Act_utils.C_identifier.of_string i) }
-  | t = INT_LIT; COLON; i = IDENTIFIER { Litmus.Id.local t (Act_utils.C_identifier.of_string i) }
+  | i = IDENTIFIER                     { Litmus.Id.global (Act_common.C_id.of_string i) }
+  | t = INT_LIT; COLON; i = IDENTIFIER { Litmus.Id.local t (Act_common.C_id.of_string i) }
 
 translation_unit:
   | decls = external_declaration+ EOF { decls }
@@ -179,7 +179,7 @@ type_specifier:
   | UNSIGNED                      { `Unsigned }
   | s = struct_or_union_specifier { `Struct_or_union s }
   | e = enum_specifier            { `Enum e }
-  | t = TYPEDEF_NAME              { `Defined_type (Act_utils.C_identifier.of_string t) }
+  | t = TYPEDEF_NAME              { `Defined_type (Act_common.C_id.of_string t) }
 
 type_qualifier:
   | CONST    { `Const }
@@ -459,7 +459,7 @@ constant:
 
 identifier:
 (* The lexer should do C identifier validation for us by construction. *)
-  | i = IDENTIFIER { Act_utils.C_identifier.of_string i }
+  | i = IDENTIFIER { Act_common.C_id.of_string i }
 (* Contextual keywords. *)
-  | LIT_EXISTS { Act_utils.C_identifier.of_string "exists" }
-  | LIT_LOCATIONS { Act_utils.C_identifier.of_string "locations" }
+  | LIT_EXISTS { Act_common.C_id.of_string "exists" }
+  | LIT_LOCATIONS { Act_common.C_id.of_string "locations" }

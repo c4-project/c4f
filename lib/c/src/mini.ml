@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Act_utils
+module Ac = Act_common
 include Ast_basic
 include Mini_intf
 module Address = Mini_address
@@ -126,11 +126,8 @@ module Atomic_store = struct
 
   module Quickcheck_generic
       (Src : Quickcheck.S with type t := Expression.t)
-      (Dst : Quickcheck.S with type t := Address.t) : sig
-    type nonrec t = t [@@deriving sexp_of]
-
-    include My_quickcheck.S_with_sexp with type t := t
-  end = struct
+      (Dst : Quickcheck.S with type t := Address.t) :
+    Act_utils.My_quickcheck.S_with_sexp with type t = t = struct
     type nonrec t = t
 
     let sexp_of_t = sexp_of_t
@@ -161,7 +158,7 @@ module Atomic_store = struct
   end
 
   module Quickcheck_ints (Src : Env.S) (Dst : Env.S) :
-    My_quickcheck.S_with_sexp with type t := t =
+    Act_utils.My_quickcheck.S_with_sexp with type t := t =
     Quickcheck_generic
       (Expression.Quickcheck_int_values
          (Src))
@@ -474,8 +471,8 @@ module Function = struct
     end
   end)
 
-  let cvars (func : t) : C_identifier.Set.t =
-    func |> On_decls.to_list |> List.map ~f:fst |> C_identifier.Set.of_list
+  let cvars (func : t) : Ac.C_id.Set.t =
+    func |> On_decls.to_list |> List.map ~f:fst |> Ac.C_id.Set.of_list
 end
 
 module Program = struct
@@ -518,6 +515,6 @@ module Program = struct
     end
   end)
 
-  let cvars (prog : t) : C_identifier.Set.t =
-    prog |> On_decls.to_list |> List.map ~f:fst |> C_identifier.Set.of_list
+  let cvars (prog : t) : Ac.C_id.Set.t =
+    prog |> On_decls.to_list |> List.map ~f:fst |> Ac.C_id.Set.of_list
 end

@@ -32,7 +32,6 @@
     {{!Mini_reify} Reify}. *)
 
 open Core_kernel
-open Act_utils
 
 include module type of Ast_basic
 
@@ -127,7 +126,7 @@ module Atomic_store : sig
   module Quickcheck_generic
       (Src : Quickcheck.S with type t := Expression.t)
       (Dst : Quickcheck.S with type t := Address.t) :
-    My_quickcheck.S_with_sexp with type t := t
+    Act_utils.My_quickcheck.S_with_sexp with type t := t
 
   (** There isn't a generic quickcheck instance for atomic stores, as we
       can't guarantee type safety in general. *)
@@ -136,7 +135,7 @@ module Atomic_store : sig
       non-atomic integers, using [Src] as the variable typing environment
       for sources and [Dst] as the environment for destinations. *)
   module Quickcheck_ints (Src : Mini_env.S) (Dst : Mini_env.S) :
-    My_quickcheck.S_with_sexp with type t := t
+    Act_utils.My_quickcheck.S_with_sexp with type t := t
 end
 
 (** A (strong, explicit) atomic compare-exchange operation. *)
@@ -236,7 +235,7 @@ module Function : sig
   val body_stms : t -> Statement.t list
   (** [body_decls func] gets [func]'s statements. *)
 
-  val cvars : t -> C_identifier.Set.t
+  val cvars : t -> Act_common.C_id.Set.t
   (** [cvars func] extracts a set of C variable names from [func]. *)
 
   (** {3 Mutators} *)
@@ -284,7 +283,7 @@ module Program : sig
   (** [functions program] gets an associative list of each function in
       [program]. *)
 
-  val cvars : t -> C_identifier.Set.t
+  val cvars : t -> Act_common.C_id.Set.t
   (** [cvars program] extracts a set of C variable names from [program]. *)
 
   (** {3 Mutators} *)

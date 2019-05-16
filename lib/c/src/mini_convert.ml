@@ -22,8 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+module Ac = Act_common
 module Tx = Travesty_core_kernel_exts
-open Act_utils
 open Mini
 
 let map_combine (xs : 'a list) ~(f : 'a -> 'b Or_error.t) :
@@ -79,10 +79,10 @@ let ensure_statements :
           [%message
             "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)] )
 
-let defined_types : (C_identifier.t, Type.Basic.t) List.Assoc.t Lazy.t =
+let defined_types : (Ac.C_id.t, Type.Basic.t) List.Assoc.t Lazy.t =
   lazy
-    [ (C_identifier.of_string "atomic_int", Type.Basic.atomic_int)
-    ; (C_identifier.of_string "bool", Type.Basic.bool) ]
+    [ (Ac.C_id.of_string "atomic_int", Type.Basic.atomic_int)
+    ; (Ac.C_id.of_string "bool", Type.Basic.bool) ]
 
 let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
     Type.Basic.t Or_error.t =
@@ -92,12 +92,11 @@ let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
       return Type.Basic.int
   | `Defined_type t ->
       t
-      |> List.Assoc.find ~equal:C_identifier.equal
-           (Lazy.force defined_types)
+      |> List.Assoc.find ~equal:Ac.C_id.equal (Lazy.force defined_types)
       |> Result.of_option
            ~error:
              (Error.create_s
-                [%message "Unknown defined type" ~got:(t : C_identifier.t)])
+                [%message "Unknown defined type" ~got:(t : Ac.C_id.t)])
   | #Ast.Type_spec.t as spec ->
       Or_error.error_s
         [%message
@@ -236,7 +235,7 @@ let expr_to_identifier (expr : Ast.Expr.t) : Identifier.t Or_error.t =
 let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =
   let open Or_error.Let_syntax in
   let%bind id = expr_to_identifier expr in
-  id |> C_identifier.to_string |> Mem_order.of_string_option
+  id |> Ac.C_id.to_string |> Mem_order.of_string_option
   |> Result.of_option
        ~error:
          (Error.create_s
@@ -250,13 +249,13 @@ let call (call_table : (Ast.Expr.t list -> 'a Or_error.t) id_assoc Lazy.t)
   let%bind func_name = expr_to_identifier func in
   let%bind call_handler =
     func_name
-    |> List.Assoc.find ~equal:C_identifier.equal (Lazy.force call_table)
+    |> List.Assoc.find ~equal:Ac.C_id.equal (Lazy.force call_table)
     |> Result.of_option
          ~error:
            (Error.create_s
               [%message
                 "Unsupported function in expression position"
-                  ~got:(func_name : C_identifier.t)])
+                  ~got:(func_name : Ac.C_id.t)])
   in
   call_handler arguments
 
@@ -276,11 +275,10 @@ let model_atomic_load_explicit : Ast.Expr.t list -> Expression.t Or_error.t
 let expr_call_table :
     (Ast.Expr.t list -> Expression.t Or_error.t) id_assoc Lazy.t =
   lazy
-    [ ( C_identifier.of_string "atomic_load_explicit"
-      , model_atomic_load_explicit ) ]
+    [(Ac.C_id.of_string "atomic_load_explicit", model_atomic_load_explicit)]
 
-let identifier_to_expr (id : C_identifier.t) : Expression.t =
-  match C_identifier.to_string id with
+let identifier_to_expr (id : Ac.C_id.t) : Expression.t =
+  match Ac.C_id.to_string id with
   | "true" ->
       Expression.bool_lit true
   | "false" ->
@@ -331,12 +329,11 @@ let%expect_test "model atomic_load_explicit" =
       ( expr
           Ast.(
             Expr.Call
-              { func=
-                  Identifier (C_identifier.of_string "atomic_load_explicit")
+              { func= Identifier (Ac.C_id.of_string "atomic_load_explicit")
               ; arguments=
-                  [ Prefix (`Ref, Identifier (C_identifier.of_string "x"))
-                  ; Identifier
-                      (C_identifier.of_string "memory_order_seq_cst") ] })
+                  [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
+                  ; Identifier (Ac.C_id.of_string "memory_order_seq_cst") ]
+              })
         : Expression.t Or_error.t )] ;
   [%expect
     {|
@@ -377,8 +374,8 @@ let model_atomic_cmpxchg : Ast.Expr.t list -> Statement.t Or_error.t =
 let expr_stm_call_table :
     (Ast.Expr.t list -> Statement.t Or_error.t) id_assoc Lazy.t =
   lazy
-    [ (C_identifier.of_string "atomic_store_explicit", model_atomic_store)
-    ; ( C_identifier.of_string "atomic_compare_exchange_strong_explicit"
+    [ (Ac.C_id.of_string "atomic_store_explicit", model_atomic_store)
+    ; ( Ac.C_id.of_string "atomic_compare_exchange_strong_explicit"
       , model_atomic_cmpxchg ) ]
 
 let expr_stm : Ast.Expr.t -> Statement.t Or_error.t = function
@@ -460,14 +457,12 @@ let%expect_test "model atomic_store_explicit" =
                  (Expr.Call
                     { func=
                         Identifier
-                          (C_identifier.of_string "atomic_store_explicit")
+                          (Ac.C_id.of_string "atomic_store_explicit")
                     ; arguments=
-                        [ Prefix
-                            (`Ref, Identifier (C_identifier.of_string "x"))
+                        [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
                         ; Constant (Integer 42)
                         ; Identifier
-                            (C_identifier.of_string "memory_order_relaxed")
-                        ] })))
+                            (Ac.C_id.of_string "memory_order_relaxed") ] })))
         : Statement.t Or_error.t )] ;
   [%expect
     {|
@@ -486,19 +481,16 @@ let%expect_test "model atomic cmpxchg" =
                  (Expr.Call
                     { func=
                         Identifier
-                          (C_identifier.of_string
+                          (Ac.C_id.of_string
                              "atomic_compare_exchange_strong_explicit")
                     ; arguments=
-                        [ Prefix
-                            (`Ref, Identifier (C_identifier.of_string "x"))
-                        ; Prefix
-                            (`Ref, Identifier (C_identifier.of_string "y"))
+                        [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
+                        ; Prefix (`Ref, Identifier (Ac.C_id.of_string "y"))
                         ; Constant (Integer 42)
                         ; Identifier
-                            (C_identifier.of_string "memory_order_relaxed")
+                            (Ac.C_id.of_string "memory_order_relaxed")
                         ; Identifier
-                            (C_identifier.of_string "memory_order_relaxed")
-                        ] })))
+                            (Ac.C_id.of_string "memory_order_relaxed") ] })))
         : Statement.t Or_error.t )] ;
   [%expect
     {|

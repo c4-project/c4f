@@ -21,20 +21,33 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** We keep module signatures in {{!Fs_intf} Fs_intf}. *)
-include module type of Fs_intf
+open Base
+open Stdio
+include Act_utils.Io
 
-val filter_files : ?ext:string -> Fpath.t list -> Fpath.t list
-(** [filter_files ?ext flist is [flist] if [ext] is absent, or the result of
-    restricting [flist] to files syntactically having the extension [ext]
-    otherwise. *)
+let%test_module "filename_no_ext" =
+  ( module struct
+    let%expect_test "example" =
+      printf "%s\n" (filename_no_ext Fpath.(v "foo" / "bar" / "baz.c")) ;
+      [%expect {| baz |}]
 
-val subpaths : Fpath.t -> Fpath.t list
-(** [subpaths path] gets all of the syntactic subpaths of [path], according
-    to [Fpath]. *)
+    let%expect_test "example with double extension" =
+      printf "%s\n"
+        (filename_no_ext Fpath.(v "foo" / "bar" / "baz.c.litmus")) ;
+      [%expect {| baz |}]
+  end )
 
-(** [Unix] implements {{!S} S} using Core's Unix support. *)
-module Unix : S
+let%test_module "In_source" =
+  ( module struct
+    open In_source
 
-(* soon (** [Mock] mocks {{!S}S}, containing a mutable dummy filesystem that
-   can be set up by tests. *) module Mock : sig include S end *)
+    let%expect_test "file_type: file with two extensions" =
+      Fmt.(pr "%a@." (option string))
+        (file_type (file (Fpath.v "iriw.c.litmus"))) ;
+      [%expect {| litmus |}]
+
+    let%expect_test "file_type: stdin with specific type" =
+      Fmt.(pr "%a@." (option string))
+        (file_type (stdin ~file_type:"litmus" ())) ;
+      [%expect {| litmus |}]
+  end )

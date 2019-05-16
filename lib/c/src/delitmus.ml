@@ -22,8 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_utils
-module A = Act_common
+module Ac = Act_common
 
 let make_initialiser ((ty, value) : Mini.Type.t * Ast_basic.Constant.t) =
   (* NB: Apparently, we don't need ATOMIC_VAR_INIT here: every known C11
@@ -33,7 +32,7 @@ let make_initialiser ((ty, value) : Mini.Type.t * Ast_basic.Constant.t) =
 
 let parameter_list_equal :
     Mini.Type.t Mini.id_assoc -> Mini.Type.t Mini.id_assoc -> bool =
-  [%equal: (C_identifier.t * Mini.Type.t) list]
+  [%equal: (Ac.C_id.t * Mini.Type.t) list]
 
 let check_parameters_consistent (params : Mini.Type.t Mini.id_assoc)
     (next : Mini.Function.t) : unit Or_error.t =
@@ -63,20 +62,19 @@ let functions_to_parameter_map :
 let merge_init_and_params (init : Ast_basic.Constant.t Mini.id_assoc)
     (params : Mini.Type.t Mini.id_assoc) :
     (Mini.Type.t * Ast_basic.Constant.t) Mini.id_assoc Or_error.t =
-  let i_ids = init |> List.map ~f:fst |> C_identifier.Set.of_list in
-  let p_ids = params |> List.map ~f:fst |> C_identifier.Set.of_list in
-  if C_identifier.Set.equal i_ids p_ids then
+  let i_ids = init |> List.map ~f:fst |> Ac.C_id.Set.of_list in
+  let p_ids = params |> List.map ~f:fst |> Ac.C_id.Set.of_list in
+  if Ac.C_id.Set.equal i_ids p_ids then
     params
     |> List.map ~f:(fun (id, ty) ->
-           (id, (ty, List.Assoc.find_exn ~equal:C_identifier.equal init id))
-       )
+           (id, (ty, List.Assoc.find_exn ~equal:Ac.C_id.equal init id)) )
     |> Or_error.return
   else
     Or_error.error_s
       [%message
         "Init and parameters lists don't agree"
-          ~init_ids:(i_ids : C_identifier.Set.t)
-          ~param_ids:(p_ids : C_identifier.Set.t)]
+          ~init_ids:(i_ids : Ac.C_id.Set.t)
+          ~param_ids:(p_ids : Ac.C_id.Set.t)]
 
 (** [dereference_params params] tries to convert each parameter in [params]
     from a pointer type to a non-pointer type. It fails if any of the
@@ -108,11 +106,10 @@ let make_init_globals (init : Ast_basic.Constant.t Mini.id_assoc)
     >>| List.Assoc.map ~f:make_initialiser)
 
 let qualify_local (t : int) (id : Mini.Identifier.t) : Mini.Identifier.t =
-  A.Litmus_id.(to_memalloy_id (local t id))
+  Ac.Litmus_id.(to_memalloy_id (local t id))
 
 let%expect_test "qualify_local: example" =
-  Fmt.pr "%a@." C_identifier.pp
-    (qualify_local 0 (C_identifier.of_string "r0")) ;
+  Fmt.pr "%a@." Ac.C_id.pp (qualify_local 0 (Ac.C_id.of_string "r0")) ;
   [%expect {| t0r0 |}]
 
 let make_single_func_globals (tid : int) (func : Mini.Function.t) :
@@ -203,7 +200,7 @@ let delitmus_functions :
   List.mapi ~f:(fun tid (name, f) -> (name, delitmus_function tid f))
 
 module Output = struct
-  type t = {program: Mini.Program.t; c_variables: A.C_variables.Map.t}
+  type t = {program: Mini.Program.t; c_variables: Ac.C_variables.Map.t}
   [@@deriving make, fields]
 end
 
@@ -215,18 +212,17 @@ let make_globals (init : Mini.Constant.t Mini.id_assoc)
   let func_globals = make_func_globals function_bodies in
   init_globals @ func_globals
 
-let qualify_if_local (var : C_identifier.t)
-    (record : A.C_variables.Record.t) :
-    C_identifier.t * A.C_variables.Record.t =
-  match A.C_variables.Record.tid record with
+let qualify_if_local (var : Ac.C_id.t) (record : Ac.C_variables.Record.t) :
+    Ac.C_id.t * Ac.C_variables.Record.t =
+  match Ac.C_variables.Record.tid record with
   | None ->
       (var, record)
   | Some tid ->
-      (qualify_local tid var, A.C_variables.Record.remove_tid record)
+      (qualify_local tid var, Ac.C_variables.Record.remove_tid record)
 
-let cvars_with_qualified_locals (cvars : A.C_variables.Map.t) :
-    A.C_variables.Map.t Or_error.t =
-  A.C_variables.Map.map cvars ~f:qualify_if_local
+let cvars_with_qualified_locals (cvars : Ac.C_variables.Map.t) :
+    Ac.C_variables.Map.t Or_error.t =
+  Ac.C_variables.Map.map cvars ~f:qualify_if_local
 
 let run (input : Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
   let open Or_error.Let_syntax in

@@ -24,7 +24,6 @@
 (** Signatures used in redirect maps. *)
 
 open Base
-open Act_utils
 
 module type Basic_symbol = sig
   type t [@@deriving sexp, equal]
@@ -33,9 +32,9 @@ module type Basic_symbol = sig
 
   include Stringable.S with type t := t
 
-  val of_c_identifier : C_identifier.t -> t Or_error.t
+  val of_c_identifier : C_id.t -> t Or_error.t
 
-  val to_c_identifier : t -> C_identifier.t Or_error.t
+  val to_c_identifier : t -> C_id.t Or_error.t
 end
 
 module type S = sig
@@ -86,13 +85,12 @@ module type S = sig
 
   (** {3 Looking up C identifiers} *)
 
-  val dest_of_id : t -> C_identifier.t -> C_identifier.t Or_error.t
+  val dest_of_id : t -> C_id.t -> C_id.t Or_error.t
   (** [dest_of_id map cid] tries to look up a C identifier [cid] in a
       redirect map [map]. It fails if the redirected symbol isn't a valid C
       identifier. *)
 
-  val dest_ids :
-    t -> sources:C_identifier.Set.t -> C_identifier.Set.t Or_error.t
+  val dest_ids : t -> sources:C_id.Set.t -> C_id.Set.t Or_error.t
   (** [dest_ids map ~sources] gets the set of C identifiers that are
       reachable, in [map], from identifiers in [sources]. It can fail if any
       of the symbols aren't expressible as identifiers. *)

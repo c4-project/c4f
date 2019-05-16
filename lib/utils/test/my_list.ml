@@ -21,20 +21,26 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** We keep module signatures in {{!Fs_intf} Fs_intf}. *)
-include module type of Fs_intf
+open Base
+open Act_utils.My_list
 
-val filter_files : ?ext:string -> Fpath.t list -> Fpath.t list
-(** [filter_files ?ext flist is [flist] if [ext] is absent, or the result of
-    restricting [flist] to files syntactically having the extension [ext]
-    otherwise. *)
+let%test_module "find_one_opt" =
+  ( module struct
+    let f (x : int) : string option =
+      Option.some_if (Int.is_pow2 x) (Int.to_string x)
 
-val subpaths : Fpath.t -> Fpath.t list
-(** [subpaths path] gets all of the syntactic subpaths of [path], according
-    to [Fpath]. *)
+    let p (s : string option Or_error.t) : unit =
+      Stdio.print_s [%sexp (s : string option Or_error.t)]
 
-(** [Unix] implements {{!S} S} using Core's Unix support. *)
-module Unix : S
+    let%expect_test "find_one_opt: none" =
+      p (find_one_opt ~f [3; 5; 11; 94]) ;
+      [%expect {| (Ok ()) |}]
 
-(* soon (** [Mock] mocks {{!S}S}, containing a mutable dummy filesystem that
-   can be set up by tests. *) module Mock : sig include S end *)
+    let%expect_test "find_one_opt: one" =
+      p (find_one_opt ~f [3; 4; 5; 11; 94]) ;
+      [%expect {| (Ok (4)) |}]
+
+    let%expect_test "find_one_opt: multiple" =
+      p (find_one_opt ~f [3; 4; 5; 11; 64; 94]) ;
+      [%expect {| (Error "Duplicate item") |}]
+  end )

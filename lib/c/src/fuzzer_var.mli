@@ -27,7 +27,6 @@
     about variables. *)
 
 open Core_kernel
-open Act_utils
 
 (** Type for storing variable values. *)
 module Value : sig
@@ -59,7 +58,7 @@ module Record : sig
       variable of type [ty] that already existed in the program before
       mutation. *)
 
-  val make_existing_local : C_identifier.t -> t
+  val make_existing_local : Act_common.C_id.t -> t
   (** [make_existing_local name] makes a variable record for a local
       variable with name [name] that already existed in the program before
       mutation. *)
@@ -121,12 +120,12 @@ end
 (** Variable maps *)
 module Map : sig
   (** Variable maps associate C identifiers with records. *)
-  type t = Record.t C_identifier.Map.t
+  type t = Record.t Act_common.C_id.Map.t
 
   (** {3 Constructors} *)
 
   val make_existing_var_map :
-    Mini.Type.t C_identifier.Map.t -> C_identifier.Set.t -> t
+    Mini.Type.t Act_common.C_id.Map.t -> Act_common.C_id.Set.t -> t
   (** [make_existing_var_map globals locals] expands a set of known-existing
       C variable names to a var-record map where each name is registered as
       an existing variable.
@@ -138,7 +137,7 @@ module Map : sig
   val env_satisfying_all :
        t
     -> predicates:(Record.t -> bool) list
-    -> Mini.Type.t C_identifier.Map.t
+    -> Mini.Type.t Act_common.C_id.Map.t
   (** [env_satisfying_all map ~predicates] returns a typing environment for
       all variables in [map] with known types, and for which all predicates
       in [predicates] are true. *)
@@ -150,7 +149,7 @@ module Map : sig
       first-class module. *)
 
   val satisfying_all :
-    t -> predicates:(Record.t -> bool) list -> C_identifier.t list
+    t -> predicates:(Record.t -> bool) list -> Act_common.C_id.t list
   (** [satisfying_all map ~predicates] returns a list of all variables in
       [map] for which all predicates in [predicates] are true. *)
 
@@ -163,30 +162,30 @@ module Map : sig
   (** {3 Actions} *)
 
   val register_global :
-    ?initial_value:Value.t -> t -> C_identifier.t -> Mini.Type.t -> t
+    ?initial_value:Value.t -> t -> Act_common.C_id.t -> Mini.Type.t -> t
   (** [register_global ?initial_value map var ty] registers a generated
       global variable with name [var], type [ty], and optional known initial
       value [initial_value] in [map], returning the resulting new map. *)
 
-  val gen_fresh_var : t -> C_identifier.t Quickcheck.Generator.t
+  val gen_fresh_var : t -> Act_common.C_id.t Quickcheck.Generator.t
   (** [gen_fresh_var map] generates random C identifiers that don't shadow
       existing variables in [map]. *)
 
-  val add_dependency : t -> var:C_identifier.t -> t
+  val add_dependency : t -> var:Act_common.C_id.t -> t
   (** [add_dependency map ~var] adds a dependency flag in [map] for [var],
       returning the resulting new map.
 
       This should be done after involving [var] in any atomic actions that
       depend on its known value. *)
 
-  val add_write : t -> var:C_identifier.t -> t
+  val add_write : t -> var:Act_common.C_id.t -> t
   (** [add_write map ~var] adds a write flag in [map] for [var], returning
       the resulting new map.
 
       This should be done after involving [var] in any atomic actions that
       write to it, even if they don't modify its value. *)
 
-  val erase_value : t -> var:C_identifier.t -> t Or_error.t
+  val erase_value : t -> var:Act_common.C_id.t -> t Or_error.t
   (** [erase_value map ~var] erases the known-value field for any mapping
       for [var] in [map], returning the resulting new map.
 

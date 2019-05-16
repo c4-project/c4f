@@ -23,8 +23,6 @@
 
 (** Mini-model: expressions *)
 
-open Core_kernel
-
 (** An atomic load operation. *)
 module Atomic_load : sig
   type t [@@deriving sexp]
@@ -113,12 +111,12 @@ module On_lvalues :
 (** Generates random, type-safe expressions over the given variable typing
     environment, with type 'int'. *)
 module Quickcheck_int_values (E : Mini_env.S) :
-  Quickcheckable.S with type t := t
+  Act_utils.My_quickcheck.S_with_sexp with type t = t
 
 (** Generates random, type-safe expressions over the given variable typing
     environment, with type 'bool'. *)
 module Quickcheck_bool_values (E : Mini_env.S) :
-  Quickcheckable.S with type t := t
+  Act_utils.My_quickcheck.S_with_sexp with type t = t
 
 (** {2 Type checking} *)
 

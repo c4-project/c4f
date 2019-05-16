@@ -21,20 +21,32 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** We keep module signatures in {{!Fs_intf} Fs_intf}. *)
-include module type of Fs_intf
+open Core_kernel
+open Act_utils.Weighted_list
 
-val filter_files : ?ext:string -> Fpath.t list -> Fpath.t list
-(** [filter_files ?ext flist is [flist] if [ext] is absent, or the result of
-    restricting [flist] to files syntactically having the extension [ext]
-    otherwise. *)
+let%test_module "sampling and conversion tests" =
+  ( module struct
+    let wl_one = from_alist_exn [("kappa", 1)]
 
-val subpaths : Fpath.t -> Fpath.t list
-(** [subpaths path] gets all of the syntactic subpaths of [path], according
-    to [Fpath]. *)
+    let wl = from_alist_exn [("keepo", 2); ("frankerz", 5); ("kappa", 1)]
 
-(** [Unix] implements {{!S} S} using Core's Unix support. *)
-module Unix : S
+    let%test_unit "sample: sampling from list of one weight-1 item returns \
+                   that item" =
+      Quickcheck.test (sample_gen_exn wl_one) ~sexp_of:[%sexp_of: string]
+        ~f:
+          ([%test_result: string] ~here:[[%here]] ~equal:[%equal: string]
+             ~expect:"kappa")
 
-(* soon (** [Mock] mocks {{!S}S}, containing a mutable dummy filesystem that
-   can be set up by tests. *) module Mock : sig include S end *)
+    let%test_unit "sample: sampling can return the last item" =
+      Quickcheck.test_can_generate (sample_gen_exn wl)
+        ~sexp_of:[%sexp_of: string]
+        ~f:([%equal: string] "kappa")
+
+    let%expect_test "init: example run" =
+      let f = Fmt.pr "@[%s -> %i@]@." in
+      iter ~f wl ;
+      [%expect {|
+      keepo -> 2
+      frankerz -> 5
+      kappa -> 1 |}]
+  end )

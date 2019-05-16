@@ -24,13 +24,12 @@
 (** Mini-model: module signatures and basic types *)
 
 open Core_kernel
-open Act_utils
 
 (** Shorthand for pairs of items and their names. *)
-type 'a named = C_identifier.t * 'a [@@deriving eq, sexp]
+type 'a named = Act_common.C_id.t * 'a [@@deriving equal, sexp]
 
 (** Shorthand for associative lists with identifier keys. *)
-type 'a id_assoc = (C_identifier.t, 'a) List.Assoc.t [@@deriving sexp]
+type 'a id_assoc = (Act_common.C_id.t, 'a) List.Assoc.t [@@deriving sexp]
 
 (** {2 General signatures} *)
 
@@ -47,10 +46,10 @@ module type S_has_underlying_variable = sig
   (** The type that contains underlying variables. *)
   type t
 
-  val variable_of : t -> C_identifier.t
+  val variable_of : t -> Act_common.C_id.t
   (** [variable_of x] is the underlying variable of [x]. *)
 
-  val variable_in_env : t -> env:_ C_identifier.Map.t -> bool
+  val variable_in_env : t -> env:_ Act_common.C_id.Map.t -> bool
   (** [variable_in_env x ~env] gets whether [x]'s underlying variable name
       is a key in an environment [env]. *)
 end

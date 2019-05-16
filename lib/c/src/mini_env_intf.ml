@@ -23,12 +23,9 @@
 
 (** Mini-model: module signatures for variable typing environments *)
 
-open Core_kernel
-open Act_utils
-
 (** Basic signature of modules carrying a variable typing environment. *)
 module type Basic = sig
-  val env : Mini_type.t C_identifier.Map.t
+  val env : Mini_type.t Act_common.C_id.Map.t
   (** [env] is a variable typing environment. *)
 end
 
@@ -37,9 +34,7 @@ module type S = sig
   include Basic
 
   module Random_var : sig
-    type t = C_identifier.t [@@deriving sexp_of]
-
-    include Quickcheck.S with type t := t
+    type t = Act_common.C_id.t [@@deriving sexp_of, quickcheck]
   end
 
   (** [Random_var] allows generation of random variables from the variable
@@ -55,11 +50,11 @@ module type S = sig
       least one variable whose type is (non-atomic) int, or a pointer
       thereto. *)
 
-  val atomic_int_variables : unit -> Mini_type.t C_identifier.Map.t
+  val atomic_int_variables : unit -> Mini_type.t Act_common.C_id.Map.t
   (** [atomic_int_variables ()] filters the environment, returning a map
       binding only variables whose type is atomic-int, or a pointer thereto. *)
 
-  val int_variables : unit -> Mini_type.t C_identifier.Map.t
+  val int_variables : unit -> Mini_type.t Act_common.C_id.Map.t
   (** [atomic_int_variables ()] filters the environment, returning a map
       binding only variables whose type is (non-atomic) int, or a pointer
       thereto. *)

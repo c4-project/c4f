@@ -23,6 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
+open Act_utils
 
 module type Basic = sig
   val here : Lexing.position
@@ -40,8 +41,11 @@ module Make (B : Basic) = struct
   let validate_sep : (char * char list) Validate.check =
     Validate.pair
       ~fst:(fun c ->
-        Validate.name (sprintf "char '%c'" c) (B.validate_initial_char c) )
-      ~snd:(Validate.list ~name:(sprintf "char '%c'") B.validate_char)
+        Validate.name
+          (Printf.sprintf "char '%c'" c)
+          (B.validate_initial_char c) )
+      ~snd:
+        (Validate.list ~name:(Printf.sprintf "char '%c'") B.validate_char)
 
   let validate : t Validate.check =
    fun id ->
@@ -78,18 +82,6 @@ let of_string : string -> t = create_exn
 let pp : t Fmt.t = Fmt.of_to_string to_string
 
 let is_string_safe (str : string) : bool = Or_error.is_ok (create str)
-
-let%expect_test "is_string_safe: positive example" =
-  Stdio.printf "%b\n" (is_string_safe "t0r0") ;
-  [%expect {| true |}]
-
-let%expect_test "is_string_safe: positive (but not herd-safe) example" =
-  Stdio.printf "%b\n" (is_string_safe "_t0r0") ;
-  [%expect {| true |}]
-
-let%expect_test "is_string_safe: negative example" =
-  Stdio.printf "%b\n" (is_string_safe "0r0") ;
-  [%expect {| false |}]
 
 module Q : Quickcheck.S with type t := t = struct
   let char_or_underscore (c : char Quickcheck.Generator.t) :
@@ -138,14 +130,6 @@ module Herd_safe = struct
   let to_c_identifier (hid : t) : c = hid |> raw |> of_string
 
   let is_string_safe (str : string) : bool = Or_error.is_ok (create str)
-
-  let%expect_test "is_string_safe: positive example" =
-    Stdio.printf "%b\n" (is_string_safe "t0r0") ;
-    [%expect {| true |}]
-
-  let%expect_test "is_string_safe: negative example" =
-    Stdio.printf "%b\n" (is_string_safe "_t0r0") ;
-    [%expect {| false |}]
 
   let to_string : t -> string = raw
 

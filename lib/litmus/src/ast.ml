@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Act_utils
+module Ac = Act_common
 include Ast_intf
 
 module Make (Lang : Basic) : S with module Lang = Lang = struct
@@ -90,7 +90,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   end
 
   module Init = struct
-    type elt = {id: C_identifier.t; value: Lang.Constant.t}
+    type elt = {id: Ac.C_id.t; value: Lang.Constant.t}
     [@@deriving sexp, quickcheck]
 
     type t = elt list [@@deriving sexp, quickcheck]
@@ -101,7 +101,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       | Program of Lang.Program.t
       | Init of Init.t
       | Post of Postcondition.t
-      | Locations of C_identifier.t list
+      | Locations of Ac.C_id.t list
     [@@deriving sexp, variants]
 
     let as_program : t -> Lang.Program.t option =
@@ -125,7 +125,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         ~post:(fun _ -> Option.some)
         ~locations:(fun _ _ -> None)
 
-    let as_locations : t -> C_identifier.t list option =
+    let as_locations : t -> Ac.C_id.t list option =
       Variants.map
         ~program:(fun _ _ -> None)
         ~init:(fun _ _ -> None)
@@ -133,31 +133,30 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         ~locations:(fun _ -> Option.some)
   end
 
-  type t = {language: C_identifier.t; name: string; decls: Decl.t list}
+  type t = {language: Ac.C_id.t; name: string; decls: Decl.t list}
   [@@deriving sexp, fields]
 
   module Validated = struct
     type t =
       { name: string
-      ; init: (C_identifier.t, Lang.Constant.t) List.Assoc.t
-      ; locations: C_identifier.t list option
+      ; init: (Ac.C_id.t, Lang.Constant.t) List.Assoc.t
+      ; locations: Ac.C_id.t list option
       ; programs: Lang.Program.t list
       ; postcondition: Postcondition.t option }
     [@@deriving fields, sexp]
 
     (** [validate_init init] validates an incoming litmus test's init block. *)
-    let validate_init
-        (init : (C_identifier.t, Lang.Constant.t) List.Assoc.t) =
+    let validate_init (init : (Ac.C_id.t, Lang.Constant.t) List.Assoc.t) =
       let module Tr = Travesty in
       let module V = Validate in
       let dup =
-        List.find_a_dup ~compare:(Tx.Fn.on fst ~f:C_identifier.compare) init
+        List.find_a_dup ~compare:(Tx.Fn.on fst ~f:Ac.C_id.compare) init
       in
       let dup_to_err (k, v) =
         V.fail_s
           [%message
             "duplicate item in 'init'"
-              ~location:(k : C_identifier.t)
+              ~location:(k : Ac.C_id.t)
               ~value:(v : Lang.Constant.t)]
       in
       Option.value_map ~default:V.pass ~f:dup_to_err dup
@@ -174,7 +173,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       (* TODO(@MattWindsor91): actual validation here? *)
       Fn.const Validate.pass
 
-    let validate_locations : C_identifier.t list option Validate.check =
+    let validate_locations : Ac.C_id.t list option Validate.check =
       (* TODO(@MattWindsor91): actual validation here? *)
       Fn.const Validate.pass
 
@@ -194,15 +193,15 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
            ~postcondition:(w validate_post))
 
     let get_uniform_globals :
-           Lang.Program.t list
-        -> Lang.Type.t C_identifier.Map.t option Or_error.t = function
+        Lang.Program.t list -> Lang.Type.t Ac.C_id.Map.t option Or_error.t =
+      function
       | [] ->
           Or_error.error_string "empty programs"
       | x :: xs ->
           let s = Lang.Program.global_vars x in
           let is_uniform =
             List.for_all xs ~f:(fun x' ->
-                [%equal: Lang.Type.t C_identifier.Map.t option] s
+                [%equal: Lang.Type.t Ac.C_id.Map.t option] s
                   (Lang.Program.global_vars x') )
           in
           Or_error.(
@@ -212,20 +211,20 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
             >>| fun () -> s)
 
     let check_init_against_globals
-        (init : (C_identifier.t, Lang.Constant.t) List.Assoc.t)
-        (globals : Lang.Type.t C_identifier.Map.t) : unit Or_error.t =
-      let init_keys = init |> List.map ~f:fst |> C_identifier.Set.of_list in
+        (init : (Ac.C_id.t, Lang.Constant.t) List.Assoc.t)
+        (globals : Lang.Type.t Ac.C_id.Map.t) : unit Or_error.t =
+      let init_keys = init |> List.map ~f:fst |> Ac.C_id.Set.of_list in
       let globals_keys =
-        globals |> C_identifier.Map.keys |> C_identifier.Set.of_list
+        globals |> Ac.C_id.Map.keys |> Ac.C_id.Set.of_list
       in
       Or_error.(
-        Tx.Or_error.unless_m (C_identifier.Set.equal init_keys globals_keys)
+        Tx.Or_error.unless_m (Ac.C_id.Set.equal init_keys globals_keys)
           ~f:(fun () ->
             error_s
               [%message
                 "Program global variables aren't compatible with init."
-                  ~in_program:(globals_keys : C_identifier.Set.t)
-                  ~in_init:(init_keys : C_identifier.Set.t)] ))
+                  ~in_program:(globals_keys : Ac.C_id.Set.t)
+                  ~in_init:(init_keys : Ac.C_id.Set.t)] ))
 
     (** [validate_globals] checks an incoming Litmus test to ensure that, if
         its programs explicitly reference global variables, then they
@@ -247,27 +246,26 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
           Option.is_some t.locations || Option.is_some t.postcondition )
         ~if_false:"Test must have a postcondition or location stanza."
 
-    let variables_in_init (candidate : t) : C_identifier.Set.t =
-      candidate |> init |> List.map ~f:fst |> C_identifier.Set.of_list
+    let variables_in_init (candidate : t) : Ac.C_id.Set.t =
+      candidate |> init |> List.map ~f:fst |> Ac.C_id.Set.of_list
 
-    let variables_in_locations (candidate : t) : C_identifier.Set.t =
+    let variables_in_locations (candidate : t) : Ac.C_id.Set.t =
       candidate |> locations
-      |> Option.value_map ~f:C_identifier.Set.of_list
-           ~default:C_identifier.Set.empty
+      |> Option.value_map ~f:Ac.C_id.Set.of_list ~default:Ac.C_id.Set.empty
 
     let validate_location_variables : t Validate.check =
      fun candidate ->
       let in_locations = variables_in_locations candidate in
       let in_init = variables_in_init candidate in
-      let excess = C_identifier.Set.diff in_locations in_init in
-      if C_identifier.Set.is_empty excess then Validate.pass
+      let excess = Ac.C_id.Set.diff in_locations in_init in
+      if Ac.C_id.Set.is_empty excess then Validate.pass
       else
         Validate.fail_s
           [%message
             "One or more locations aren't in the init."
-              ~in_locations:(in_locations : C_identifier.Set.t)
-              ~in_init:(in_init : C_identifier.Set.t)
-              ~excess:(excess : C_identifier.Set.t)]
+              ~in_locations:(in_locations : Ac.C_id.Set.t)
+              ~in_init:(in_init : Ac.C_id.Set.t)
+              ~excess:(excess : Ac.C_id.Set.t)]
 
     let validate_inner : t Validate.check =
       Validate.all
@@ -290,7 +288,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     decls |> List.filter_map ~f:Decl.as_program |> Or_error.return
 
   let get_init (decls : Decl.t list) :
-      (C_identifier.t, Lang.Constant.t) List.Assoc.t Or_error.t =
+      (Ac.C_id.t, Lang.Constant.t) List.Assoc.t Or_error.t =
     Or_error.(
       decls
       |> List.filter_map ~f:Decl.as_init
@@ -300,16 +298,16 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   let get_post (decls : Decl.t list) : Postcondition.t option Or_error.t =
     decls |> List.filter_map ~f:Decl.as_post |> Tx.List.at_most_one
 
-  let get_locations (decls : Decl.t list) :
-      C_identifier.t list option Or_error.t =
+  let get_locations (decls : Decl.t list) : Ac.C_id.t list option Or_error.t
+      =
     decls |> List.filter_map ~f:Decl.as_locations |> Tx.List.at_most_one
 
-  let validate_language : C_identifier.t Validate.check =
+  let validate_language : Ac.C_id.t Validate.check =
     Validate.booltest
-      (fun l -> String.Caseless.equal (C_identifier.to_string l) Lang.name)
+      (fun l -> String.Caseless.equal (Ac.C_id.to_string l) Lang.name)
       ~if_false:"incorrect language"
 
-  let check_language (language : C_identifier.t) =
+  let check_language (language : Ac.C_id.t) =
     Validate.valid_or_error language validate_language
 
   let validate ({language; name; decls} : t) : Validated.t Or_error.t =

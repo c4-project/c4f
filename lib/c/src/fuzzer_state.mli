@@ -24,16 +24,14 @@
 (** Fuzzer: state monad *)
 
 open Core_kernel
-open Act_utils
-open Act_common
 
 (** Opaque type of states. *)
 type t
 
 val init :
-     ?o:Output.t
-  -> globals:Mini.Type.t C_identifier.Map.t
-  -> locals:C_identifier.Set.t
+     ?o:Act_common.Output.t
+  -> globals:Mini.Type.t Act_common.C_id.Map.t
+  -> locals:Act_common.C_id.Set.t
   -> unit
   -> t
 (** [init ?o ~globals ~locals ()] creates an initial state with the global
@@ -45,7 +43,9 @@ val vars : t -> Fuzzer_var.Map.t
 (** [vars state] gets the state's variable map. *)
 
 val vars_satisfying_all :
-  t -> predicates:(Fuzzer_var.Record.t -> bool) list -> C_identifier.t list
+     t
+  -> predicates:(Fuzzer_var.Record.t -> bool) list
+  -> Act_common.C_id.t list
 (** [vars_satisfying_all state ~predicates] returns the list of all
     variables in [state]'s variable list that satisfy [predicates]. *)
 
@@ -67,34 +67,34 @@ module Monad : sig
   val register_global :
        ?initial_value:Fuzzer_var.Value.t
     -> Mini.Type.t
-    -> C_identifier.t
+    -> Act_common.C_id.t
     -> unit t
   (** [register_global ?initial_value ty var] is a stateful action that
       registers a generated variable [var] of type [ty] and optional known
       value [value] into the state, overwriting any existing variable of the
       same name. *)
 
-  val add_dependency : C_identifier.t -> unit t
+  val add_dependency : Act_common.C_id.t -> unit t
   (** [add_dependency var] is a stateful action that adds a dependency flag
       to any known-value record for variable [var].
 
       This should be done after involving [var] in any atomic actions that
       depend on it having a particular known-value. *)
 
-  val add_write : C_identifier.t -> unit t
+  val add_write : Act_common.C_id.t -> unit t
   (** [add_write var] is a stateful action that adds a write flag to
       variable [var].
 
       This should be done after involving [var] in any atomic actions that
       write to it, even if they don't modify it. *)
 
-  val erase_var_value : C_identifier.t -> unit t
+  val erase_var_value : Act_common.C_id.t -> unit t
   (** [erase_var_value var] is a stateful action that erases any known-value
       information for variable [var].
 
       This should be done after involving [var] in any atomic actions that
       modify it. *)
 
-  val output : unit -> Output.t t
+  val output : unit -> Act_common.Output.t t
   (** [output ()] is a stateful action that gets the current output context. *)
 end

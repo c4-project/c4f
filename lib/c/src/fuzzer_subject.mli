@@ -28,7 +28,6 @@
     mutation. *)
 
 open Core_kernel
-open Act_utils
 
 (** An item, annotated with information about its source. *)
 module With_source : sig
@@ -103,7 +102,7 @@ module Test : sig
 
   (** {3 Helpers for mutating tests} *)
 
-  val add_var_to_init : t -> C_identifier.t -> Mini.Constant.t -> t
+  val add_var_to_init : t -> Act_common.C_id.t -> Mini.Constant.t -> t
   (** [add_var_to_init subject var initial_value] adds [var] to [subject]'s
       init block with the initial value [initial_value]. *)
 end

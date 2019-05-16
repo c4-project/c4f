@@ -28,27 +28,25 @@ include Fs_intf
 let default_sort_compare : Fpath.t -> Fpath.t -> int =
   Tx.Fn.on Fpath.to_string ~f:String_extended.collate
 
-let filter_files ?ext (flist : Fpath.t list) =
+let filter_files ?(ext : string option) (flist : Fpath.t list) :
+    Fpath.t list =
   Option.value_map ~default:flist
     ~f:(fun ext -> List.filter ~f:(Fpath.has_ext ext) flist)
     ext
 
-let%test_module "filter_files" =
-  ( module struct
-    let test_files = ["stdio.h"; "conio.h"; "main.c"; "main.o"; "README"]
-
-    let%expect_test "filter_files: no filter" =
-      let result = filter_files (List.map ~f:Fpath.v test_files) in
-      Sexp.output_hum Out_channel.stdout
-        [%sexp (List.map ~f:Fpath.to_string result : string list)] ;
-      [%expect {| (stdio.h conio.h main.c main.o README) |}]
-
-    let%expect_test "filter_files: filter" =
-      let result = filter_files ~ext:"c" (List.map ~f:Fpath.v test_files) in
-      Sexp.output_hum Out_channel.stdout
-        [%sexp (List.map ~f:Fpath.to_string result : string list)] ;
-      [%expect {| (main.c) |}]
-  end )
+let subpaths (path : Fpath.t) : Fpath.t list =
+  let rec mu (prefixes : Fpath.t list) (path : Fpath.t) : Fpath.t list =
+    if
+      Tx.List.any path
+        ~predicates:
+          [Fpath.is_current_dir; Fpath.is_parent_dir; Fpath.is_root]
+    then prefixes
+    else
+      let parent = Fpath.parent path in
+      mu (parent :: prefixes) parent
+  in
+  let npath = Fpath.normalize path in
+  mu [npath] npath
 
 module Unix : S = struct
   type ent_type = File | Dir | Nothing | Unknown
@@ -111,36 +109,6 @@ module Unix : S = struct
 
   let mkdir : Fpath.t -> unit Or_error.t =
     check_is_dir ~on_absent:actually_mkdir
-
-  let subpaths (path : Fpath.t) : Fpath.t list =
-    let rec mu (prefixes : Fpath.t list) (path : Fpath.t) : Fpath.t list =
-      if
-        Tx.List.any path
-          ~predicates:
-            [Fpath.is_current_dir; Fpath.is_parent_dir; Fpath.is_root]
-      then prefixes
-      else
-        let parent = Fpath.parent path in
-        mu (parent :: prefixes) parent
-    in
-    let npath = Fpath.normalize path in
-    mu [npath] npath
-
-  let%expect_test "subpaths: example absolute path" =
-    Fmt.(
-      pr "@[%a@]@." (list ~sep:sp Fpath.pp)
-        (subpaths (Fpath.v "/usr/local/etc/blah/burble/baz"))) ;
-    [%expect
-      {|
-      / /usr/ /usr/local/ /usr/local/etc/ /usr/local/etc/blah/
-      /usr/local/etc/blah/burble/ /usr/local/etc/blah/burble/baz |}]
-
-  let%expect_test "subpaths: example relative path" =
-    Fmt.(
-      pr "@[%a@]@." (list ~sep:sp Fpath.pp)
-        (subpaths (Fpath.v "../inky/pinky/parlez/vous"))) ;
-    [%expect
-      {| ../ ../inky/ ../inky/pinky/ ../inky/pinky/parlez/ ../inky/pinky/parlez/vous |}]
 
   let mkdir_p (path : Fpath.t) =
     Or_error.all_unit (List.map ~f:mkdir (subpaths path))

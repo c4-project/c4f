@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Au = Act_utils
-module A = Act_common
+module Ac = Act_common
 
 module type Basic = sig
   (** Raw AST *)
@@ -44,18 +44,18 @@ module type Basic = sig
   val fuzz :
        ?seed:int
     -> t
-    -> o:A.Output.t
+    -> o:Ac.Output.t
     -> config:Act_config.Fuzz.t
     -> t Or_error.t
 
-  val cvars : t -> A.C_variables.Map.t
+  val cvars : t -> Ac.C_variables.Map.t
   (** [cvars vast] should return a list of C identifiers corresponding to
       all variables in [vast].
 
       [cvars] _may_ de-litmusify the AST in the process; if you already have
       a delitmusified AST, use [cvars_of_delitmus]. *)
 
-  val cvars_of_delitmus : del -> A.C_variables.Map.t
+  val cvars_of_delitmus : del -> Ac.C_variables.Map.t
   (** [cvars_of_delitmus dl] should return a list of C identifiers
       corresponding to all variables in [dl]. *)
 
@@ -73,11 +73,11 @@ end
 type mode =
   | Print of [`All | `Vars]
   | Delitmus
-  | Fuzz of {seed: int option; o: A.Output.t; config: Act_config.Fuzz.t}
+  | Fuzz of {seed: int option; o: Ac.Output.t; config: Act_config.Fuzz.t}
 
 module Output = struct
   type t =
-    { cvars: A.C_variables.Map.t
+    { cvars: Ac.C_variables.Map.t
     ; post: Mini_litmus.Ast.Postcondition.t option }
   [@@deriving fields]
 end
@@ -103,41 +103,37 @@ Au.Filter.Make (struct
         "c.litmus"
 
   let run_delitmus (vast : B.t) (oc : Out_channel.t) :
-      A.C_variables.Map.t Or_error.t =
+      Ac.C_variables.Map.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map dl = B.delitmus vast in
     Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp_del dl ;
     B.cvars_of_delitmus dl
 
   let run_fuzz ?(seed : int option) (vast : B.t) (oc : Out_channel.t)
-      ~(o : A.Output.t) ~(config : Act_config.Fuzz.t) :
-      A.C_variables.Map.t Or_error.t =
+      ~(o : Ac.Output.t) ~(config : Act_config.Fuzz.t) :
+      Ac.C_variables.Map.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map fz = B.fuzz ?seed ~o ~config vast in
     B.print oc fz ; B.cvars vast
 
   let print_all (oc : Out_channel.t) _ (x : B.t) : unit = B.print oc x
 
-  let print_vars (oc : Out_channel.t) (vars : Au.C_identifier.t list) _ :
-      unit =
+  let print_vars (oc : Out_channel.t) (vars : Ac.C_id.t list) _ : unit =
     let f = Caml.Format.formatter_of_out_channel oc in
-    Fmt.(vbox (list ~sep:sp Au.C_identifier.pp)) f vars
+    Fmt.(vbox (list ~sep:sp Ac.C_id.pp)) f vars
 
   let print :
-         [`All | `Vars]
-      -> Out_channel.t
-      -> Au.C_identifier.t list
-      -> B.t
-      -> unit = function
+      [`All | `Vars] -> Out_channel.t -> Ac.C_id.t list -> B.t -> unit =
+    function
     | `All ->
         print_all
     | `Vars ->
         print_vars
 
   let run_print (output_mode : [`All | `Vars]) (vast : B.t)
-      (oc : Out_channel.t) : A.C_variables.Map.t Or_error.t =
+      (oc : Out_channel.t) : Ac.C_variables.Map.t Or_error.t =
     let cvars = B.cvars vast in
-    print output_mode oc (Au.C_identifier.Map.keys cvars) vast ;
+    print output_mode oc (Ac.C_id.Map.keys cvars) vast ;
     Or_error.return cvars
 
   let run {Au.Filter.aux; src; _} ic oc : Output.t Or_error.t =
@@ -179,7 +175,7 @@ Make (struct
 
   let process = Mini_convert.translation_unit
 
-  let fuzz ?(seed : int option) (_ : t) ~(o : A.Output.t)
+  let fuzz ?(seed : int option) (_ : t) ~(o : Ac.Output.t)
       ~(config : Act_config.Fuzz.t) : t Or_error.t =
     ignore seed ;
     ignore o ;
@@ -188,7 +184,7 @@ Make (struct
 
   let cvars prog =
     let raw_cvars = Mini.Program.cvars prog in
-    A.C_variables.Map.of_single_scope_set raw_cvars
+    Ac.C_variables.Map.of_single_scope_set raw_cvars
 
   let cvars_of_delitmus = Nothing.unreachable_code
 
@@ -237,7 +233,7 @@ Make (struct
   let fuzz :
          ?seed:int
       -> t
-      -> o:A.Output.t
+      -> o:Ac.Output.t
       -> config:Act_config.Fuzz.t
       -> t Or_error.t =
     Fuzzer.run
@@ -247,10 +243,10 @@ Make (struct
       =
     Mini_litmus.Ast.Validated.postcondition
 
-  let cvars_of_delitmus : del -> A.C_variables.Map.t =
+  let cvars_of_delitmus : del -> Ac.C_variables.Map.t =
     Delitmus.Output.c_variables
 
-  let cvars : t -> A.C_variables.Map.t = Mini_litmus.cvars
+  let cvars : t -> Ac.C_variables.Map.t = Mini_litmus.cvars
 end)
 
 let c_module (is_c : bool) :

@@ -42,27 +42,6 @@ let find_one_opt (type a b) ?(item_name : string = "item") (items : a list)
   in
   find_at_most_one items ~item_name ~f ~on_empty:(Or_error.return None)
 
-let%test_module "find_one_opt" =
-  ( module struct
-    let f (x : int) : string option =
-      Option.some_if (Int.is_pow2 x) (Int.to_string x)
-
-    let p (s : string option Or_error.t) : unit =
-      Stdio.print_s [%sexp (s : string option Or_error.t)]
-
-    let%expect_test "find_one_opt: none" =
-      p (find_one_opt ~f [3; 5; 11; 94]) ;
-      [%expect {| (Ok ()) |}]
-
-    let%expect_test "find_one_opt: one" =
-      p (find_one_opt ~f [3; 4; 5; 11; 94]) ;
-      [%expect {| (Ok (4)) |}]
-
-    let%expect_test "find_one_opt: multiple" =
-      p (find_one_opt ~f [3; 4; 5; 11; 64; 94]) ;
-      [%expect {| (Error "Duplicate item") |}]
-  end )
-
 let find_one (type a b) ?(item_name : string = "item") (items : a list)
     ~(f : a -> b option) : b Or_error.t =
   find_at_most_one items ~item_name ~f

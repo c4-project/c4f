@@ -21,20 +21,34 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** We keep module signatures in {{!Fs_intf} Fs_intf}. *)
-include module type of Fs_intf
+open Act_utils
 
-val filter_files : ?ext:string -> Fpath.t list -> Fpath.t list
-(** [filter_files ?ext flist is [flist] if [ext] is absent, or the result of
-    restricting [flist] to files syntactically having the extension [ext]
-    otherwise. *)
+let%test_module "is_string_safe (standard)" =
+  ( module struct
+    open Act_common.C_id
 
-val subpaths : Fpath.t -> Fpath.t list
-(** [subpaths path] gets all of the syntactic subpaths of [path], according
-    to [Fpath]. *)
+    let%expect_test "positive example" =
+      Io.print_bool (is_string_safe "t0r0") ;
+      [%expect {| true |}]
 
-(** [Unix] implements {{!S} S} using Core's Unix support. *)
-module Unix : S
+    let%expect_test "positive (but not herd-safe) example" =
+      Io.print_bool (is_string_safe "_t0r0") ;
+      [%expect {| true |}]
 
-(* soon (** [Mock] mocks {{!S}S}, containing a mutable dummy filesystem that
-   can be set up by tests. *) module Mock : sig include S end *)
+    let%expect_test "negative example" =
+      Io.print_bool (is_string_safe "0r0") ;
+      [%expect {| false |}]
+  end )
+
+let%test_module "is_string_safe (Herd-safe)" =
+  ( module struct
+    open Act_common.C_id.Herd_safe
+
+    let%expect_test "is_string_safe: positive example" =
+      Io.print_bool (is_string_safe "t0r0") ;
+      [%expect {| true |}]
+
+    let%expect_test "is_string_safe: negative example" =
+      Io.print_bool (is_string_safe "_t0r0") ;
+      [%expect {| false |}]
+  end )

@@ -31,9 +31,6 @@
     either be lvalues or address-of modifications of other addresses, and
     are used where things expect pointers. *)
 
-open Core_kernel
-open Act_utils
-
 (** Opaque type of lvalues. *)
 type t [@@deriving sexp, eq, quickcheck]
 
@@ -42,7 +39,7 @@ type t [@@deriving sexp, eq, quickcheck]
 
 (** {3 Constructors} *)
 
-val variable : C_identifier.t -> t
+val variable : Act_common.C_id.t -> t
 (** [variable id] constructs an lvalue pointing to variable [id]. It doesn't
     do any validation. *)
 
@@ -50,7 +47,7 @@ val deref : t -> t
 (** [deref lvalue] constructs a dereference ([*]) of another lvalue
     [lvalue].It doesn't do any validation. *)
 
-val on_value_of_typed_id : id:C_identifier.t -> ty:Mini_type.t -> t
+val on_value_of_typed_id : id:Act_common.C_id.t -> ty:Mini_type.t -> t
 (** [on_value_of_typed_id ~id ~ty] constructs an lvalue with underlying
     variable [id] and the right level of indirection to convert from a
     variable of type [ty] to a primitive value.
@@ -60,7 +57,8 @@ val on_value_of_typed_id : id:C_identifier.t -> ty:Mini_type.t -> t
 
 (** {3 Accessors} *)
 
-val reduce : t -> variable:(C_identifier.t -> 'a) -> deref:('a -> 'a) -> 'a
+val reduce :
+  t -> variable:(Act_common.C_id.t -> 'a) -> deref:('a -> 'a) -> 'a
 (** [reduce lvalue ~variable ~deref] applies [variable] on the underlying
     variable of [lvalue], then recursively applies [deref] to the result for
     each layer of indirection in the lvalue. *)
@@ -71,7 +69,9 @@ val is_deref : t -> bool
 
 (** Traversing over identifiers in lvalues. *)
 module On_identifiers :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = C_identifier.t
+  Travesty.Traversable.S0
+  with type t := t
+   and type Elt.t = Act_common.C_id.t
 
 (** We can get to the variable name inside an lvalue. *)
 include Mini_intf.S_has_underlying_variable with type t := t
@@ -82,24 +82,20 @@ include Mini_intf.S_type_checkable with type t := t
 (** {3 Generating random lvalues} *)
 
 (** Generates random lvalues, parametrised on a given identifier generator. *)
-module Quickcheck_generic (Id : Quickcheck.S with type t := C_identifier.t) : sig
-  type nonrec t = t [@@deriving sexp_of]
-
-  include Quickcheck.S with type t := t
+module Quickcheck_generic
+    (Id : Act_utils.My_quickcheck.S_with_sexp
+          with type t := Act_common.C_id.t) : sig
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
 end
 
 (** Generates random lvalues, constrained over the variables in the given
     environment. *)
 module Quickcheck_on_env (E : Mini_env.S) : sig
-  type nonrec t = t [@@deriving sexp_of]
-
-  include Quickcheck.S with type t := t
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
 end
 
 (** Generates random lvalues, constrained over the variables in the given
     environment; each lvalue has a non-atomic-integer value type. *)
 module Quickcheck_int_values (E : Mini_env.S) : sig
-  type nonrec t = t [@@deriving sexp_of]
-
-  include Quickcheck.S with type t := t
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
 end

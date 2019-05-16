@@ -22,14 +22,13 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_common
-open Act_utils
+module Ac = Act_common
 
-type t = {vars: Fuzzer_var.Map.t; o: Output.t} [@@deriving fields]
+type t = {vars: Fuzzer_var.Map.t; o: Ac.Output.t} [@@deriving fields]
 
-let init ?(o : Output.t = Output.silent ())
-    ~(globals : Mini.Type.t C_identifier.Map.t)
-    ~(locals : C_identifier.Set.t) () : t =
+let init ?(o : Ac.Output.t = Ac.Output.silent ())
+    ~(globals : Mini.Type.t Ac.C_id.Map.t) ~(locals : Ac.C_id.Set.t) () : t
+    =
   let vars = Fuzzer_var.Map.make_existing_var_map globals locals in
   {vars; o}
 
@@ -41,22 +40,21 @@ let map_vars (s : t) ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t) : t =
   {s with vars= f s.vars}
 
 let register_global ?(initial_value : Fuzzer_var.Value.t option) (s : t)
-    (var : C_identifier.t) (ty : Mini.Type.t) : t =
+    (var : Ac.C_id.t) (ty : Mini.Type.t) : t =
   map_vars s ~f:(fun v ->
       Fuzzer_var.Map.register_global v ?initial_value var ty )
 
-let add_dependency (s : t) ~(var : C_identifier.t) : t =
+let add_dependency (s : t) ~(var : Ac.C_id.t) : t =
   map_vars s ~f:(Fuzzer_var.Map.add_dependency ~var)
 
-let add_write (s : t) ~(var : C_identifier.t) : t =
+let add_write (s : t) ~(var : Ac.C_id.t) : t =
   map_vars s ~f:(Fuzzer_var.Map.add_write ~var)
 
-let erase_var_value (s : t) ~(var : C_identifier.t) : t Or_error.t =
+let erase_var_value (s : t) ~(var : Ac.C_id.t) : t Or_error.t =
   try_map_vars s ~f:(Fuzzer_var.Map.erase_value ~var)
 
 let vars_satisfying_all (s : t)
-    ~(predicates : (Fuzzer_var.Record.t -> bool) list) : C_identifier.t list
-    =
+    ~(predicates : (Fuzzer_var.Record.t -> bool) list) : Ac.C_id.t list =
   Fuzzer_var.Map.satisfying_all s.vars ~predicates
 
 module Monad = struct
@@ -71,16 +69,16 @@ module Monad = struct
   let with_vars (f : Fuzzer_var.Map.t -> 'a) : 'a t = peek vars >>| f
 
   let register_global ?(initial_value : Fuzzer_var.Value.t option)
-      (ty : Mini.Type.t) (var : C_identifier.t) : unit t =
+      (ty : Mini.Type.t) (var : Ac.C_id.t) : unit t =
     modify (fun s -> register_global ?initial_value s var ty)
 
-  let add_dependency (var : C_identifier.t) : unit t =
+  let add_dependency (var : Ac.C_id.t) : unit t =
     modify (add_dependency ~var)
 
-  let add_write (var : C_identifier.t) : unit t = modify (add_write ~var)
+  let add_write (var : Ac.C_id.t) : unit t = modify (add_write ~var)
 
-  let erase_var_value (var : C_identifier.t) : unit t =
+  let erase_var_value (var : Ac.C_id.t) : unit t =
     Monadic.modify (erase_var_value ~var)
 
-  let output () : Output.t t = peek (fun x -> x.o)
+  let output () : Ac.Output.t t = peek (fun x -> x.o)
 end

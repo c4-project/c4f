@@ -22,8 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+module Ac = Act_common
 module Tx = Travesty_base_exts
-open Act_utils
 include Convert_intf
 
 module Make (B : Basic) = struct
@@ -31,15 +31,14 @@ module Make (B : Basic) = struct
       B.From.Lang.Program.t list -> B.To.Lang.Program.t list Or_error.t =
     Tx.Or_error.combine_map ~f:B.program
 
-  let convert_init_line ((k, v) : C_identifier.t * B.From.Lang.Constant.t) :
-      (C_identifier.t * B.To.Lang.Constant.t) Or_error.t =
+  let convert_init_line ((k, v) : Ac.C_id.t * B.From.Lang.Constant.t) :
+      (Ac.C_id.t * B.To.Lang.Constant.t) Or_error.t =
     let open Or_error.Let_syntax in
     let%map v' = B.constant v in
     (k, v')
 
-  let convert_init
-      (init : (C_identifier.t, B.From.Lang.Constant.t) List.Assoc.t) :
-      (C_identifier.t, B.To.Lang.Constant.t) List.Assoc.t Or_error.t =
+  let convert_init (init : (Ac.C_id.t, B.From.Lang.Constant.t) List.Assoc.t)
+      : (Ac.C_id.t, B.To.Lang.Constant.t) List.Assoc.t Or_error.t =
     init |> List.map ~f:convert_init_line |> Or_error.combine_errors
 
   let convert_pred : B.From.Pred.t -> B.To.Pred.t Or_error.t =

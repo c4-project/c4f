@@ -23,9 +23,8 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Act_utils
 open Mini
-module A = Act_common
+module Ac = Act_common
 
 module Lang :
   Act_litmus.Ast.Basic
@@ -57,7 +56,7 @@ module Lang :
   module Program = struct
     type t = Function.t named [@@deriving sexp]
 
-    let name (n, _) = Some (C_identifier.to_string n)
+    let name (n, _) = Some (Ac.C_id.to_string n)
 
     let listing (_, fn) =
       List.map (Function.body_decls fn) ~f:(fun x -> `Decl x)
@@ -67,7 +66,7 @@ module Lang :
       Fmt.(using (Tuple2.uncurry Mini_reify.func) Ast.External_decl.pp)
 
     let global_vars (_, fn) =
-      fn |> Function.parameters |> C_identifier.Map.of_alist_or_error
+      fn |> Function.parameters |> Ac.C_id.Map.of_alist_or_error
       |> Result.ok
   end
 
@@ -78,15 +77,15 @@ module Ast = Act_litmus.Ast.Make (Lang)
 module Pp = Act_litmus.Pp.Make_sequential (Ast)
 
 let function_cvars_map (tid : int) ((_, func) : Lang.Program.t) :
-    A.C_variables.Map.t =
+    Ac.C_variables.Map.t =
   func |> Function.cvars
-  |> A.C_variables.Map.of_single_scope_set ~tid
-       ~scope:A.C_variables.Scope.Local
+  |> Ac.C_variables.Map.of_single_scope_set ~tid
+       ~scope:Ac.C_variables.Scope.Local
 
-let litmus_local_cvars (ast : Ast.Validated.t) : A.C_variables.Map.t list =
+let litmus_local_cvars (ast : Ast.Validated.t) : Ac.C_variables.Map.t list =
   ast |> Ast.Validated.programs |> List.mapi ~f:function_cvars_map
 
-let constant_to_initial_value : Constant.t -> A.C_variables.Initial_value.t
+let constant_to_initial_value : Constant.t -> Ac.C_variables.Initial_value.t
     = function
   | Integer k ->
       Some k
@@ -95,13 +94,13 @@ let constant_to_initial_value : Constant.t -> A.C_variables.Initial_value.t
 
 (* for now *)
 
-let litmus_global_cvars (ast : Ast.Validated.t) : A.C_variables.Map.t =
+let litmus_global_cvars (ast : Ast.Validated.t) : Ac.C_variables.Map.t =
   ast |> Ast.Validated.init
   |> List.map ~f:(fun (var, k) -> (var, constant_to_initial_value k))
-  |> C_identifier.Map.of_alist_exn (* for now *)
-  |> A.C_variables.Map.of_single_scope_map ~scope:Global
+  |> Ac.C_id.Map.of_alist_exn (* for now *)
+  |> Ac.C_variables.Map.of_single_scope_map ~scope:Global
 
-let cvars (ast : Ast.Validated.t) : A.C_variables.Map.t =
+let cvars (ast : Ast.Validated.t) : Ac.C_variables.Map.t =
   let locals = litmus_local_cvars ast in
   let globals = litmus_global_cvars ast in
-  A.C_variables.Map.merge_list (globals :: locals)
+  Ac.C_variables.Map.merge_list (globals :: locals)

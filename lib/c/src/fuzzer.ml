@@ -23,8 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Act_common
-open Act_utils
+module Ac = Act_common
 module Var = Fuzzer_var
 module Subject = Fuzzer_subject
 module State = Fuzzer_state
@@ -106,7 +105,7 @@ let always : Subject.Test.t -> bool State.Monad.t =
 
 (** Fuzzer action that generates a new, empty program. *)
 module Make_program : Action.S = struct
-  let name = Id.of_string "program.make.empty"
+  let name = Ac.Id.of_string "program.make.empty"
 
   let readme () =
     Act_utils.My_string.format_for_readme
@@ -135,7 +134,7 @@ end
 
 (** Fuzzer action that generates a new global variable. *)
 module Make_global : Action.S = struct
-  let name = Id.of_string "var.make.global"
+  let name = Ac.Id.of_string "var.make.global"
 
   let readme () =
     Act_utils.My_string.format_for_readme
@@ -147,7 +146,7 @@ module Make_global : Action.S = struct
   let default_weight = 2
 
   module Random_state = struct
-    type t = {is_atomic: bool; initial_value: int; name: C_identifier.t}
+    type t = {is_atomic: bool; initial_value: int; name: Ac.C_id.t}
 
     module G = Quickcheck.Generator
 
@@ -183,11 +182,13 @@ let generate_random_state (type rs)
     rs State.Monad.t =
   let open State.Monad.Let_syntax in
   let%bind o = State.Monad.output () in
-  Output.pv o "fuzz: getting random state generator for %a@." Id.pp Act.name ;
+  Ac.Output.pv o "fuzz: getting random state generator for %a@." Ac.Id.pp
+    Act.name ;
   let%map gen = Act.Random_state.gen subject in
-  Output.pv o "fuzz: generating random state for %a...@." Id.pp Act.name ;
+  Ac.Output.pv o "fuzz: generating random state for %a...@." Ac.Id.pp
+    Act.name ;
   let g = Quickcheck.Generator.generate gen ~random ~size:10 in
-  Output.pv o "fuzz: done generating random state.@." ;
+  Ac.Output.pv o "fuzz: done generating random state.@." ;
   g
 
 let run_action (module Act : Action.S) (subject : Subject.Test.t)
@@ -206,19 +207,19 @@ let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
     (rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
   let%bind o = State.Monad.output () in
-  Output.pv o "fuzz: picking action...@." ;
+  Ac.Output.pv o "fuzz: picking action...@." ;
   let%bind action = Action.Pool.pick pool subject rng in
-  Output.pv o "fuzz: done; now running action...@." ;
+  Ac.Output.pv o "fuzz: done; now running action...@." ;
   run_action action subject rng
   >>= State.Monad.tee_m ~f:(fun _ ->
-          Output.pv o "fuzz: action done.@." ;
+          Ac.Output.pv o "fuzz: action done.@." ;
           State.Monad.return () )
 
 let make_pool : Act_config.Fuzz.t -> Action.Pool.t Or_error.t =
   Action.Pool.make (Lazy.force modules)
 
 let summarise (cfg : Act_config.Fuzz.t) :
-    Action.Summary.t Id.Map.t Or_error.t =
+    Action.Summary.t Ac.Id.Map.t Or_error.t =
   Or_error.(cfg |> make_pool >>| Action.Pool.summarise)
 
 let mutate_subject (subject : Subject.Test.t) ~(config : Act_config.Fuzz.t)
@@ -267,13 +268,13 @@ let get_first_func (test : Mini_litmus.Ast.Validated.t) :
 (** [existing_globals test] extracts the existing global variable names and
     types from litmus test [test]. *)
 let existing_globals (test : Mini_litmus.Ast.Validated.t) :
-    Mini.Type.t C_identifier.Map.t Or_error.t =
+    Mini.Type.t Ac.C_id.Map.t Or_error.t =
   Or_error.(
     test |> get_first_func >>| Mini.Function.parameters
-    >>= C_identifier.Map.of_alist_or_error)
+    >>= Ac.C_id.Map.of_alist_or_error)
 
-let make_initial_state (o : Output.t) (test : Mini_litmus.Ast.Validated.t) :
-    State.t Or_error.t =
+let make_initial_state (o : Ac.Output.t)
+    (test : Mini_litmus.Ast.Validated.t) : State.t Or_error.t =
   let open Or_error.Let_syntax in
   let all_cvars = Mini_litmus.cvars test in
   (* TODO(@MattWindsor91): we don't use cvars's globals because we need to
@@ -283,7 +284,7 @@ let make_initial_state (o : Output.t) (test : Mini_litmus.Ast.Validated.t) :
   State.init ~o ~globals ~locals ()
 
 let run ?(seed : int option) (test : Mini_litmus.Ast.Validated.t)
-    ~(o : Output.t) ~(config : Act_config.Fuzz.t) :
+    ~(o : Ac.Output.t) ~(config : Act_config.Fuzz.t) :
     Mini_litmus.Ast.Validated.t Or_error.t =
   Or_error.(
     make_initial_state o test

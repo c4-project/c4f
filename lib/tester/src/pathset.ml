@@ -103,13 +103,8 @@ module Extend (B : Basic) = struct
     Or_error.(i |> make >>= Tx.Or_error.tee_m ~f:mkdirs)
 
   let pp : B.t Fmt.t =
-    let p f (k, v) =
-      My_format.pp_kv f k String.pp (My_filename.concat_list v)
-    in
-    Fmt.(
-      using
-        (fun ps -> List.Assoc.map ~f:Fpath.segs (B.all_dirs ps))
-        (vbox (list ~sep:cut p)))
+    let p f (k, v) = My_format.pp_kv f k Fpath.pp v in
+    Fmt.(using B.all_dirs (vbox (list ~sep:cut p)))
 end
 
 module Run = struct

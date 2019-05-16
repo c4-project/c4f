@@ -22,13 +22,13 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_utils
+module Ac = Act_common
 
-type t = Variable of C_identifier.t | Deref of t
+type t = Variable of Ac.C_id.t | Deref of t
 [@@deriving sexp, variants, eq]
 
-let rec reduce (lv : t) ~(variable : C_identifier.t -> 'a)
-    ~(deref : 'a -> 'a) : 'a =
+let rec reduce (lv : t) ~(variable : Ac.C_id.t -> 'a) ~(deref : 'a -> 'a) :
+    'a =
   match lv with
   | Variable v ->
       variable v
@@ -38,11 +38,11 @@ let rec reduce (lv : t) ~(variable : C_identifier.t -> 'a)
 let is_deref : t -> bool = function Deref _ -> true | Variable _ -> false
 
 module On_identifiers :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = C_identifier.t =
+  Travesty.Traversable.S0 with type t = t and type Elt.t = Ac.C_id.t =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
-  module Elt = C_identifier
+  module Elt = Ac.C_id
 
   module On_monad (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
@@ -53,32 +53,30 @@ Travesty.Traversable.Make0 (struct
   end
 end)
 
-let variable_of : t -> C_identifier.t = reduce ~variable:Fn.id ~deref:Fn.id
+let variable_of : t -> Ac.C_id.t = reduce ~variable:Fn.id ~deref:Fn.id
 
-let variable_in_env (lv : t) ~(env : _ C_identifier.Map.t) : bool =
-  C_identifier.Map.mem env (variable_of lv)
+let variable_in_env (lv : t) ~(env : _ Ac.C_id.Map.t) : bool =
+  Ac.C_id.Map.mem env (variable_of lv)
 
 let%expect_test "variable_in_env: positive variable result, test env" =
   let env = Lazy.force Mini_env.test_env in
   Sexp.output_hum stdout
     [%sexp
-      (variable_in_env ~env (Variable (C_identifier.of_string "foo")) : bool)] ;
+      (variable_in_env ~env (Variable (Ac.C_id.of_string "foo")) : bool)] ;
   [%expect {| true |}]
 
 let%expect_test "variable_in_env: negative variable result, test env" =
   let env = Lazy.force Mini_env.test_env in
   Sexp.output_hum stdout
     [%sexp
-      ( variable_in_env ~env (Variable (C_identifier.of_string "kappa"))
-        : bool )] ;
+      (variable_in_env ~env (Variable (Ac.C_id.of_string "kappa")) : bool)] ;
   [%expect {| false |}]
 
 let%expect_test "variable_in_env: positive deref result, test env" =
   let env = Lazy.force Mini_env.test_env in
   Sexp.output_hum stdout
     [%sexp
-      ( variable_in_env ~env
-          (Deref (Variable (C_identifier.of_string "bar")))
+      ( variable_in_env ~env (Deref (Variable (Ac.C_id.of_string "bar")))
         : bool )] ;
   [%expect {| true |}]
 
@@ -86,8 +84,7 @@ let%expect_test "variable_in_env: negative variable result, test env" =
   let env = Lazy.force Mini_env.test_env in
   Sexp.output_hum stdout
     [%sexp
-      ( variable_in_env ~env
-          (Deref (Variable (C_identifier.of_string "keepo")))
+      ( variable_in_env ~env (Deref (Variable (Ac.C_id.of_string "keepo")))
         : bool )] ;
   [%expect {| false |}]
 
@@ -95,28 +92,26 @@ module Type_check (E : Mini_env.S) = struct
   let rec type_of : t -> Mini_type.t Or_error.t = function
     | Variable v ->
         Result.of_option
-          (C_identifier.Map.find E.env v)
+          (Ac.C_id.Map.find E.env v)
           ~error:
             (Error.create_s
                [%message
                  "Variable not in environment"
-                   ~variable:(v : C_identifier.t)
-                   ~environment:(E.env : Mini_type.t C_identifier.Map.t)])
+                   ~variable:(v : Ac.C_id.t)
+                   ~environment:(E.env : Mini_type.t Ac.C_id.Map.t)])
     | Deref l ->
         Or_error.(l |> type_of >>= Mini_type.deref)
 end
 
 let%expect_test "Type-checking a valid normal variable lvalue" =
   let module T = Type_check ((val Lazy.force Mini_env.test_env_mod)) in
-  let result = T.type_of (Variable (C_identifier.of_string "foo")) in
+  let result = T.type_of (Variable (Ac.C_id.of_string "foo")) in
   Sexp.output_hum stdout [%sexp (result : Mini_type.t Or_error.t)] ;
   [%expect {| (Ok (Normal int)) |}]
 
 let%expect_test "Type-checking an invalid deferencing variable lvalue" =
   let module T = Type_check ((val Lazy.force Mini_env.test_env_mod)) in
-  let result =
-    T.type_of (Deref (Variable (C_identifier.of_string "foo")))
-  in
+  let result = T.type_of (Deref (Variable (Ac.C_id.of_string "foo"))) in
   Sexp.output_hum stdout [%sexp (result : Mini_type.t Or_error.t)] ;
   [%expect {| (Error "not a pointer type") |}]
 
@@ -124,7 +119,7 @@ let anonymise = function Variable v -> `A v | Deref d -> `B d
 
 let deanonymise = function `A v -> Variable v | `B d -> Deref d
 
-module Quickcheck_generic (Id : Quickcheck.S with type t := C_identifier.t) : sig
+module Quickcheck_generic (Id : Quickcheck.S with type t := Ac.C_id.t) : sig
   type nonrec t = t [@@deriving sexp_of]
 
   include Quickcheck.S with type t := t
@@ -152,7 +147,7 @@ end = struct
             [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]] ))
 end
 
-module Quickcheck_id = Quickcheck_generic (C_identifier)
+module Quickcheck_id = Quickcheck_generic (Ac.C_id)
 
 include (Quickcheck_id : module type of Quickcheck_id with type t := t)
 
@@ -160,7 +155,7 @@ let%test_unit "gen: distinctiveness" =
   Quickcheck.test_distinct_values ~sexp_of:[%sexp_of: t] ~trials:20
     ~distinct_values:5 ~compare:[%compare: t] [%quickcheck.generator: t]
 
-let on_value_of_typed_id ~(id : C_identifier.t) ~(ty : Mini_type.t) : t =
+let on_value_of_typed_id ~(id : Ac.C_id.t) ~(ty : Mini_type.t) : t =
   if Mini_type.is_pointer ty then Deref (Variable id) else Variable id
 
 let%test_unit "on_value_of_typed_id: always takes basic type" =
@@ -169,7 +164,7 @@ let%test_unit "on_value_of_typed_id: always takes basic type" =
   Base_quickcheck.Test.run_exn
     (module E.Random_var)
     ~f:(fun id ->
-      let ty = C_identifier.Map.find_exn E.env id in
+      let ty = Ac.C_id.Map.find_exn E.env id in
       [%test_result: Mini_type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of (on_value_of_typed_id ~id ~ty))
         ~expect:(Or_error.return Mini_type.(normal (basic_type ty))) )

@@ -22,14 +22,14 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_utils
+module Ac = Act_common
 
 type t = Lvalue of Mini_lvalue.t | Ref of t
 [@@deriving sexp, variants, eq]
 
-let of_variable (v : C_identifier.t) : t = Lvalue (Mini_lvalue.variable v)
+let of_variable (v : Ac.C_id.t) : t = Lvalue (Mini_lvalue.variable v)
 
-let of_variable_ref (v : C_identifier.t) : t = Ref (of_variable v)
+let of_variable_ref (v : Ac.C_id.t) : t = Ref (of_variable v)
 
 let rec reduce (addr : t) ~(lvalue : Mini_lvalue.t -> 'a) ~(ref : 'a -> 'a)
     : 'a =
@@ -64,13 +64,13 @@ end
 
 let%expect_test "Type-checking a valid normal variable lvalue" =
   let module T = Type_check ((val Lazy.force Mini_env.test_env_mod)) in
-  let result = T.type_of (of_variable (C_identifier.of_string "foo")) in
+  let result = T.type_of (of_variable (Ac.C_id.of_string "foo")) in
   Sexp.output_hum stdout [%sexp (result : Mini_type.t Or_error.t)] ;
   [%expect {| (Ok (Normal int)) |}]
 
 let%expect_test "Type-checking an valid reference lvalue" =
   let module T = Type_check ((val Lazy.force Mini_env.test_env_mod)) in
-  let result = T.type_of (of_variable_ref (C_identifier.of_string "foo")) in
+  let result = T.type_of (of_variable_ref (Ac.C_id.of_string "foo")) in
   Sexp.output_hum stdout [%sexp (result : Mini_type.t Or_error.t)] ;
   [%expect {| (Ok (Pointer_to int)) |}]
 
@@ -109,7 +109,7 @@ module Quickcheck_main = Quickcheck_generic (Mini_lvalue)
 
 include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
-let on_address_of_typed_id ~(id : C_identifier.t) ~(ty : Mini_type.t) : t =
+let on_address_of_typed_id ~(id : Ac.C_id.t) ~(ty : Mini_type.t) : t =
   let lv = of_variable id in
   if Mini_type.is_pointer ty then lv else ref lv
 
@@ -119,21 +119,21 @@ let%test_unit "on_address_of_typed_id: always takes pointer type" =
   Base_quickcheck.Test.run_exn
     (module E.Random_var)
     ~f:(fun id ->
-      let ty = C_identifier.Map.find_exn E.env id in
+      let ty = Ac.C_id.Map.find_exn E.env id in
       [%test_result: Mini_type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of (on_address_of_typed_id ~id ~ty))
         ~expect:(Or_error.return Mini_type.(pointer_to (basic_type ty))) )
 
 let lvalue_of : t -> Mini_lvalue.t = reduce ~lvalue:Fn.id ~ref:Fn.id
 
-let variable_of (addr : t) : C_identifier.t =
+let variable_of (addr : t) : Ac.C_id.t =
   Mini_lvalue.variable_of (lvalue_of addr)
 
 let%test_unit "variable_of: preserved by ref" =
   Base_quickcheck.Test.run_exn
     (module Quickcheck_main)
     ~f:(fun x ->
-      [%test_eq: C_identifier.t] ~here:[[%here]] (variable_of x)
+      [%test_eq: Ac.C_id.t] ~here:[[%here]] (variable_of x)
         (variable_of (ref x)) )
 
 let%expect_test "variable_of: nested example" =
@@ -142,13 +142,13 @@ let%expect_test "variable_of: nested example" =
       (Ref
          (Lvalue
             (Mini_lvalue.deref
-               (Mini_lvalue.variable (C_identifier.of_string "yorick")))))
+               (Mini_lvalue.variable (Ac.C_id.of_string "yorick")))))
   in
   let var = variable_of example in
-  Fmt.pr "%a@." C_identifier.pp var ;
+  Fmt.pr "%a@." Ac.C_id.pp var ;
   [%expect {| yorick |}]
 
-let variable_in_env (addr : t) ~(env : _ C_identifier.Map.t) : bool =
+let variable_in_env (addr : t) ~(env : _ Ac.C_id.Map.t) : bool =
   Mini_lvalue.variable_in_env (lvalue_of addr) ~env
 
 module Quickcheck_on_env (E : Mini_env.S) : sig
@@ -157,7 +157,7 @@ end =
   Quickcheck_generic (Mini_lvalue.Quickcheck_on_env (E))
 
 let variable_in (module E : Mini_env.S) (l : t) : bool =
-  C_identifier.Map.mem E.env (variable_of l)
+  Ac.C_id.Map.mem E.env (variable_of l)
 
 let%test_unit "Quickcheck_on_env: liveness" =
   let e = Lazy.force Mini_env.test_env_mod in

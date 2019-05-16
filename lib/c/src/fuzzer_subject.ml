@@ -22,8 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+module Ac = Act_common
 module Tx = Travesty_core_kernel_exts
-open Act_utils
 
 module With_source = struct
   type 'a t = {item: 'a; source: [`Existing | `Generated]}
@@ -110,8 +110,8 @@ module Program = struct
             With_source.make ~item ~source:`Existing ) }
 
   let try_extract_parameter_type
-      ((n, var) : C_identifier.t * Fuzzer_var.Record.t) :
-      (C_identifier.t * Mini.Type.t) Or_error.t =
+      ((n, var) : Ac.C_id.t * Fuzzer_var.Record.t) :
+      (Ac.C_id.t * Mini.Type.t) Or_error.t =
     Or_error.(
       var |> Fuzzer_var.Record.ty
       |> Result.of_option
@@ -123,15 +123,15 @@ module Program = struct
   let make_function_parameters (vars : Fuzzer_var.Map.t) :
       Mini.Type.t Mini.id_assoc Or_error.t =
     vars
-    |> C_identifier.Map.filter ~f:Fuzzer_var.Record.is_global
-    |> C_identifier.Map.to_alist
+    |> Ac.C_id.Map.filter ~f:Fuzzer_var.Record.is_global
+    |> Ac.C_id.Map.to_alist
     |> List.map ~f:try_extract_parameter_type
     |> Or_error.combine_errors
 
   let to_function (prog : t) ~(vars : Fuzzer_var.Map.t) ~(id : int) :
       Mini.Function.t Mini.named Or_error.t =
     let open Or_error.Let_syntax in
-    let name = C_identifier.of_string (sprintf "P%d" id) in
+    let name = Ac.C_id.of_string (sprintf "P%d" id) in
     let%map parameters = make_function_parameters vars in
     let body_stms = List.map prog.stms ~f:With_source.item in
     let func =
@@ -209,7 +209,7 @@ module Test = struct
       let vars =
         Fuzzer_var.Map.make_existing_var_map
           (Lazy.force Mini_env.test_env)
-          C_identifier.Set.empty
+          Ac.C_id.Set.empty
 
       let run programs =
         let result = programs_to_litmus programs ~vars in
@@ -231,7 +231,7 @@ module Test = struct
     Mini_litmus.Ast.Validated.make ?postcondition ~name ~init:subject.init
       ~programs ()
 
-  let add_var_to_init (subject : t) (var : C_identifier.t)
+  let add_var_to_init (subject : t) (var : Ac.C_id.t)
       (initial_value : Mini.Constant.t) : t =
     {subject with init= (var, initial_value) :: subject.init}
 end

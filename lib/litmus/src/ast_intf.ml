@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_utils
 module Id = Act_common.Litmus_id
 
 (** {2 Signatures} *)
@@ -66,7 +65,7 @@ module type Basic = sig
     val listing : t -> Statement.t list
     (** [listing program] gets [program]'s statement listing. *)
 
-    val global_vars : t -> Type.t C_identifier.Map.t option
+    val global_vars : t -> Type.t Act_common.C_id.Map.t option
     (** [global_vars program] gets the set of global variables referenced by
         [program], if this makes sense for this particular litmus language. *)
 
@@ -125,7 +124,7 @@ module type S = sig
   end
 
   module Init : sig
-    type elt = {id: C_identifier.t; value: Lang.Constant.t}
+    type elt = {id: Act_common.C_id.t; value: Lang.Constant.t}
     [@@deriving sexp]
 
     type t = elt list [@@deriving sexp]
@@ -136,7 +135,7 @@ module type S = sig
       | Program of Lang.Program.t
       | Init of Init.t
       | Post of Postcondition.t
-      | Locations of C_identifier.t list
+      | Locations of Act_common.C_id.t list
     [@@deriving sexp]
 
     val as_program : t -> Lang.Program.t option
@@ -151,13 +150,13 @@ module type S = sig
     (** [as_post decl] returns [Some c] if [decl] is a postcondition [c],
         and [None] otherwise. *)
 
-    val as_locations : t -> C_identifier.t list option
+    val as_locations : t -> Act_common.C_id.t list option
     (** [as_post decl] returns [Some ls] if [decl] is a location list [ls],
         and [None] otherwise. *)
   end
 
   (** The type of (non-validated) litmus ASTs. *)
-  type t = {language: C_identifier.t; name: string; decls: Decl.t list}
+  type t = {language: Act_common.C_id.t; name: string; decls: Decl.t list}
   [@@deriving sexp]
 
   (* TODO(@MattWindsor91): expose constructors *)
@@ -174,14 +173,14 @@ module type S = sig
     val name : t -> string
     (** [name test] gets the name of [test]. *)
 
-    val init : t -> (C_identifier.t, Lang.Constant.t) List.Assoc.t
+    val init : t -> (Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
     (** [init test] gets the initialiser in [test]. *)
 
     val programs : t -> Lang.Program.t list
     (** [programs test] gets the program listings in [test], in left-right
         or top-bottom order. *)
 
-    val locations : t -> C_identifier.t list option
+    val locations : t -> Act_common.C_id.t list option
     (** [locations test] gets the locations stanza for [test], if it exists. *)
 
     val postcondition : t -> Postcondition.t option
@@ -191,10 +190,10 @@ module type S = sig
     (** For pretty-printing, use one of the functors in [Pp]. *)
 
     val make :
-         ?locations:C_identifier.t list
+         ?locations:Act_common.C_id.t list
       -> ?postcondition:Postcondition.t
       -> name:string
-      -> init:(C_identifier.t, Lang.Constant.t) List.Assoc.t
+      -> init:(Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
       -> programs:Lang.Program.t list
       -> unit
       -> t Or_error.t

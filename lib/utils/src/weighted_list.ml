@@ -188,33 +188,6 @@ let fold (wl : 'a t) ~(f : 'b -> 'a -> int -> 'b) : init:'b -> 'b =
 let iter (wl : 'a t) ~(f : 'a -> int -> unit) : unit =
   fold wl ~f:(Fn.const f) ~init:()
 
-let%test_module "sampling and conversion tests" =
-  ( module struct
-    let wl_one = from_alist_exn [("kappa", 1)]
-
-    let wl = from_alist_exn [("keepo", 2); ("frankerz", 5); ("kappa", 1)]
-
-    let%test_unit "sample: sampling from list of one weight-1 item returns \
-                   that item" =
-      Quickcheck.test (sample_gen_exn wl_one) ~sexp_of:[%sexp_of: string]
-        ~f:
-          ([%test_result: string] ~here:[[%here]] ~equal:[%equal: string]
-             ~expect:"kappa")
-
-    let%test_unit "sample: sampling can return the last item" =
-      Quickcheck.test_can_generate (sample_gen_exn wl)
-        ~sexp_of:[%sexp_of: string]
-        ~f:([%equal: string] "kappa")
-
-    let%expect_test "init: example run" =
-      let f = Fmt.pr "@[%s -> %i@]@." in
-      iter ~f wl ;
-      [%expect {|
-      keepo -> 2
-      frankerz -> 5
-      kappa -> 1 |}]
-  end )
-
 module Qc : Quickcheckable.S1 with type 'a t := 'a t = struct
   module G = Quickcheck.Generator
   module O = Quickcheck.Observer

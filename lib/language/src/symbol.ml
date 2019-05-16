@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,8 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Act_common
 open Core_kernel
+module Ac = Act_common
 open Act_utils
 include Symbol_intf
 
@@ -57,24 +57,25 @@ module Make (B : Basic) : S with type t = B.t = struct
        and type comparator_witness = Set.Elt.comparator_witness
        and module Set := Set )
 
-  module R_map : Redirect_map.S with type sym = t and type sym_set = Set.t =
-  Redirect_map.Make (struct
+  module R_map :
+    Ac.Redirect_map.S with type sym = t and type sym_set = Set.t =
+  Ac.Redirect_map.Make (struct
     include B
     include Comp
 
     let of_string (x : string) = Option.value_exn (of_string_opt x)
 
-    let to_c_identifier (s : t) : C_identifier.t Or_error.t =
-      s |> to_string |> C_identifier.create
+    let to_c_identifier (s : t) : Ac.C_id.t Or_error.t =
+      s |> to_string |> Ac.C_id.create
 
-    let of_c_identifier (id : C_identifier.t) : t Or_error.t =
-      id |> C_identifier.to_string |> of_string_opt
+    let of_c_identifier (id : Ac.C_id.t) : t Or_error.t =
+      id |> Ac.C_id.to_string |> of_string_opt
       |> Result.of_option
            ~error:
              (Error.create_s
                 [%message
                   "Couldn't convert identifier to symbol" ~here:[%here]
-                    ~id:(id : C_identifier.t)])
+                    ~id:(id : Ac.C_id.t)])
   end)
 
   let program_id_of sym =
@@ -85,11 +86,10 @@ module Make (B : Basic) : S with type t = B.t = struct
        tie. *)
     List.hd ids
 
-  let is_c_safe (sym : t) : bool =
-    Act_utils.C_identifier.is_string_safe (to_string sym)
+  let is_c_safe (sym : t) : bool = Ac.C_id.is_string_safe (to_string sym)
 
   let is_herd_safe (sym : t) : bool =
-    Act_utils.C_identifier.Herd_safe.is_string_safe (to_string sym)
+    Ac.C_id.Herd_safe.is_string_safe (to_string sym)
 
   let is_program_label sym = Option.is_some (program_id_of sym)
 end

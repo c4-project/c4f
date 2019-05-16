@@ -22,8 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+module Ac = Act_common
 module Tx = Travesty_core_kernel_exts
-open Act_utils
 
 module Value = struct
   type t = Int of int
@@ -83,7 +83,7 @@ module Record = struct
   let make_existing_global (ty : Mini.Type.t) : t =
     make ~ty ~source:`Existing ~scope:`Global ()
 
-  let make_existing_local (_name : C_identifier.t) : t =
+  let make_existing_local (_name : Ac.C_id.t) : t =
     make ~source:`Existing ~scope:`Local ()
 
   let make_generated_global ?(initial_value : Value.t option)
@@ -96,48 +96,47 @@ module Record = struct
 end
 
 module Map = struct
-  type t = Record.t C_identifier.Map.t
+  type t = Record.t Ac.C_id.Map.t
 
-  let make_existing_var_map (globals : Mini.Type.t C_identifier.Map.t)
-      (locals : C_identifier.Set.t) : t =
+  let make_existing_var_map (globals : Mini.Type.t Ac.C_id.Map.t)
+      (locals : Ac.C_id.Set.t) : t =
     let globals_map =
-      C_identifier.Map.map globals ~f:Record.make_existing_global
+      Ac.C_id.Map.map globals ~f:Record.make_existing_global
     in
     let locals_map =
-      C_identifier.Set.to_map locals ~f:Record.make_existing_local
+      Ac.C_id.Set.to_map locals ~f:Record.make_existing_local
     in
-    C_identifier.Map.merge globals_map locals_map ~f:(fun ~key ->
+    Ac.C_id.Map.merge globals_map locals_map ~f:(fun ~key ->
         ignore key ;
         function `Left x | `Right x | `Both (x, _) -> Some x )
 
   let register_global ?(initial_value : Value.t option) (map : t)
-      (key : C_identifier.t) (ty : Mini.Type.t) : t =
+      (key : Ac.C_id.t) (ty : Mini.Type.t) : t =
     let data = Record.make_generated_global ?initial_value ty in
-    C_identifier.Map.set map ~key ~data
+    Ac.C_id.Map.set map ~key ~data
 
-  let change_var (map : t) ~(var : C_identifier.t)
-      ~(f : Record.t -> Record.t) : t =
-    C_identifier.Map.change map var ~f:(Option.map ~f)
+  let change_var (map : t) ~(var : Ac.C_id.t) ~(f : Record.t -> Record.t) :
+      t =
+    Ac.C_id.Map.change map var ~f:(Option.map ~f)
 
-  let add_write : t -> var:C_identifier.t -> t =
-    change_var ~f:Record.add_write
+  let add_write : t -> var:Ac.C_id.t -> t = change_var ~f:Record.add_write
 
-  let add_dependency : t -> var:C_identifier.t -> t =
+  let add_dependency : t -> var:Ac.C_id.t -> t =
     change_var ~f:Record.add_dependency
 
-  let erase_value_inner (map : t) ~(var : C_identifier.t) : t =
-    C_identifier.Map.change map var ~f:(Option.map ~f:Record.erase_value)
+  let erase_value_inner (map : t) ~(var : Ac.C_id.t) : t =
+    Ac.C_id.Map.change map var ~f:(Option.map ~f:Record.erase_value)
 
-  let has_dependencies (map : t) ~(var : C_identifier.t) : bool =
-    Option.exists (C_identifier.Map.find map var) ~f:Record.has_dependencies
+  let has_dependencies (map : t) ~(var : Ac.C_id.t) : bool =
+    Option.exists (Ac.C_id.Map.find map var) ~f:Record.has_dependencies
 
-  let dependency_error (var : C_identifier.t) : unit Or_error.t =
+  let dependency_error (var : Ac.C_id.t) : unit Or_error.t =
     Or_error.error_s
       [%message
         "Tried to erase the known value of a depended-upon variable"
-          ~var:(var : C_identifier.t)]
+          ~var:(var : Ac.C_id.t)]
 
-  let erase_value (map : t) ~(var : C_identifier.t) : t Or_error.t =
+  let erase_value (map : t) ~(var : Ac.C_id.t) : t Or_error.t =
     let open Or_error.Let_syntax in
     let%map () =
       Tx.Or_error.when_m (has_dependencies map ~var) ~f:(fun () ->
@@ -147,13 +146,13 @@ module Map = struct
 
   let submap_satisfying_all (vars : t)
       ~(predicates : (Record.t -> bool) list) : t =
-    vars |> C_identifier.Map.filter ~f:(Tx.List.all ~predicates)
+    vars |> Ac.C_id.Map.filter ~f:(Tx.List.all ~predicates)
 
   let env_satisfying_all (vars : t) ~(predicates : (Record.t -> bool) list)
-      : Mini.Type.t C_identifier.Map.t =
+      : Mini.Type.t Ac.C_id.Map.t =
     vars
     |> submap_satisfying_all ~predicates
-    |> C_identifier.Map.filter_map ~f:Record.ty
+    |> Ac.C_id.Map.filter_map ~f:Record.ty
 
   let env_module_satisfying_all (vars : t)
       ~(predicates : (Record.t -> bool) list) =
@@ -163,16 +162,16 @@ module Map = struct
     : Mini_env.S )
 
   let satisfying_all (vars : t) ~(predicates : (Record.t -> bool) list) :
-      C_identifier.t list =
-    vars |> submap_satisfying_all ~predicates |> C_identifier.Map.keys
+      Ac.C_id.t list =
+    vars |> submap_satisfying_all ~predicates |> Ac.C_id.Map.keys
 
   let exists_satisfying_all (vars : t)
       ~(predicates : (Record.t -> bool) list) : bool =
     not (List.is_empty (satisfying_all vars ~predicates))
 
-  let gen_fresh_var (map : t) : C_identifier.t Quickcheck.Generator.t =
+  let gen_fresh_var (map : t) : Ac.C_id.t Quickcheck.Generator.t =
     Quickcheck.Generator.filter_map
-      [%quickcheck.generator: C_identifier.Herd_safe.t] ~f:(fun hid ->
-        let cid = C_identifier.Herd_safe.to_c_identifier hid in
-        Option.some_if (not (C_identifier.Map.mem map cid)) cid )
+      [%quickcheck.generator: Ac.C_id.Herd_safe.t] ~f:(fun hid ->
+        let cid = Ac.C_id.Herd_safe.to_c_identifier hid in
+        Option.some_if (not (Ac.C_id.Map.mem map cid)) cid )
 end

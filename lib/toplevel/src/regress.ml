@@ -22,8 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_common
-open Act_utils
+module Ac = Act_common
+module Au = Act_utils
 
 type spec =
   { c_globals: string list [@sexp.list] [@sexp.omit_nil]
@@ -99,7 +99,7 @@ let regress_on_files (bin_name : string) (test_dir : Fpath.t)
     ~(ext : string) ~(f : Fpath.t -> unit Or_error.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   printf "# %s tests\n\n" bin_name ;
-  let%bind test_files = Fs.Unix.get_files ~ext test_dir in
+  let%bind test_files = Au.Fs.Unix.get_files ~ext test_dir in
   let results =
     List.map test_files ~f:(fun file ->
         Fmt.pr "## %a\n\n```@." Fpath.pp file ;
@@ -113,11 +113,11 @@ let regress_on_files (bin_name : string) (test_dir : Fpath.t)
 let regress_run_asm_many (modename : string) mode passes
     (test_path : Fpath.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
-  let arch = Id.of_string "x86.att" in
+  let arch = Ac.Id.of_string "x86.att" in
   let path = Fpath.(test_path / "asm" / "x86" / "att" / "") in
   let%bind l = Language_support.asm_runner_from_arch arch in
   let%bind specs = read_specs path in
-  let%bind test_files = Fs.Unix.get_files ~ext:"s" path in
+  let%bind test_files = Au.Fs.Unix.get_files ~ext:"s" path in
   let%bind () = check_files_against_specs specs test_files in
   regress_on_files modename path ~ext:"s"
     ~f:(regress_run_asm l path mode specs passes)
@@ -130,13 +130,13 @@ let regress_litmusify : Fpath.t -> unit Or_error.t =
   regress_run_asm_many "Litmusifier" `Litmusify
     Act_config.Sanitiser_pass.standard
 
-let pp_cvars : C_variables.Map.t Fmt.t =
+let pp_cvars : Ac.C_variables.Map.t Fmt.t =
   Fmt.(
     prefix
       (unit "@,@,// C variables:@,")
       (vbox
-         (using C_identifier.Map.keys
-            (list ~sep:sp (hbox (prefix (unit "// -@ ") C_identifier.pp))))))
+         (using Ac.C_id.Map.keys
+            (list ~sep:sp (hbox (prefix (unit "// -@ ") Ac.C_id.pp))))))
 
 let pp_post : Act_c.Mini_litmus.Ast.Postcondition.t Fmt.t =
   Fmt.(
@@ -182,9 +182,10 @@ let make_regress_command ~(summary : string)
     Command.Let_syntax.(
       let%map_open test_path_raw = anon ("TEST_PATH" %: string) in
       fun () ->
-        let o = Output.make ~verbose:false ~warnings:true in
-        Or_error.(test_path_raw |> Io.fpath_of_string >>= regress_function)
-        |> Output.print_error o)
+        let o = Ac.Output.make ~verbose:false ~warnings:true in
+        Or_error.(
+          test_path_raw |> Au.Io.fpath_of_string >>= regress_function)
+        |> Ac.Output.print_error o)
 
 let command : Command.t =
   Command.group ~summary:"runs regression tests"

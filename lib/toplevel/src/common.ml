@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-module A = Act_common
+module Ac = Act_common
 open Act_utils
 
 let not_tracking_symbols_warning : string =
@@ -38,10 +38,10 @@ let not_tracking_symbols_warning : string =
     or (if possible) use a C litmus test as input.
   |}
 
-let warn_if_not_tracking_symbols (o : A.Output.t) :
-    C_identifier.t list option -> unit = function
+let warn_if_not_tracking_symbols (o : Ac.Output.t) :
+    Ac.C_id.t list option -> unit = function
   | None ->
-      A.Output.pw o "@[%a@]@." Fmt.paragraphs not_tracking_symbols_warning
+      Ac.Output.pw o "@[%a@]@." Fmt.paragraphs not_tracking_symbols_warning
   | Some _ ->
       ()
 
@@ -108,14 +108,14 @@ let litmusify_pipeline (target : Act_config.Compiler.Target.t) :
     Or_error.t =
   delitmus_compile_asm_pipeline target Act_asm.Litmusifier.get_filter
 
-let choose_cvars_after_delitmus (o : A.Output.t)
-    (user_cvars : A.C_variables.Map.t option)
-    (dl_cvars : A.C_variables.Map.t) : A.C_variables.Map.t =
+let choose_cvars_after_delitmus (o : Ac.Output.t)
+    (user_cvars : Ac.C_variables.Map.t option)
+    (dl_cvars : Ac.C_variables.Map.t) : Ac.C_variables.Map.t =
   (* We could use Option.first_some here, but expanding it out gives us the
      ability to verbose-log what we're doing. *)
   let out_cvars message cvars =
-    A.Output.pv o "Using %s:@ %a@." message
-      Fmt.(using C_identifier.Map.keys (list ~sep:comma C_identifier.pp))
+    Ac.Output.pv o "Using %s:@ %a@." message
+      Fmt.(using Ac.C_id.Map.keys (list ~sep:comma Ac.C_id.pp))
       cvars ;
     cvars
   in
@@ -126,10 +126,10 @@ let choose_cvars_after_delitmus (o : A.Output.t)
   | None ->
       out_cvars "cvars found during delitmus" dl_cvars
 
-let choose_cvars_inner (o : A.Output.t)
-    (user_cvars : A.C_variables.Map.t option) :
+let choose_cvars_inner (o : Ac.Output.t)
+    (user_cvars : Ac.C_variables.Map.t option) :
        Act_c.Filters.Output.t Filter.chain_output
-    -> bool * A.C_variables.Map.t option = function
+    -> bool * Ac.C_variables.Map.t option = function
   | `Checking_ahead ->
       (false, None)
   | `Skipped ->
@@ -138,27 +138,27 @@ let choose_cvars_inner (o : A.Output.t)
       let dl_cvars = Act_c.Filters.Output.cvars dl in
       (true, Some (choose_cvars_after_delitmus o user_cvars dl_cvars))
 
-let choose_cvars (o : A.Output.t) (user_cvars : A.C_variables.Map.t option)
+let choose_cvars (o : Ac.Output.t)
+    (user_cvars : Ac.C_variables.Map.t option)
     (dl_output : Act_c.Filters.Output.t Filter.chain_output) :
-    A.C_variables.Map.t option =
+    Ac.C_variables.Map.t option =
   let warn_if_empty, cvars = choose_cvars_inner o user_cvars dl_output in
   if warn_if_empty then
-    warn_if_not_tracking_symbols o
-      (Option.map ~f:C_identifier.Map.keys cvars) ;
+    warn_if_not_tracking_symbols o (Option.map ~f:Ac.C_id.Map.keys cvars) ;
   cvars
 
-let make_compiler_input (o : A.Output.t)
+let make_compiler_input (o : Ac.Output.t)
     (file_type : Act_config.File_type.t_or_infer)
-    (user_cvars : A.C_variables.Map.t option)
-    (config_fn : c_variables:A.C_variables.Map.t option -> 'cfg)
+    (user_cvars : Ac.C_variables.Map.t option)
+    (config_fn : c_variables:Ac.C_variables.Map.t option -> 'cfg)
     (passes : Act_config.Sanitiser_pass.Set.t)
     (dl_output : Act_c.Filters.Output.t Filter.chain_output) :
     'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
   let c_variables = choose_cvars o user_cvars dl_output in
   let symbols =
     c_variables
-    |> Option.map ~f:C_identifier.Map.keys
-    |> Option.map ~f:(List.map ~f:C_identifier.to_string)
+    |> Option.map ~f:Ac.C_id.Map.keys
+    |> Option.map ~f:(List.map ~f:Ac.C_id.to_string)
   in
   let config = config_fn ~c_variables in
   let litmus_job = Act_asm.Job.make ~passes ~config ?symbols () in
@@ -166,8 +166,8 @@ let make_compiler_input (o : A.Output.t)
     ~file_type:(Act_config.File_type.delitmusified file_type)
     ~next:(Fn.const litmus_job)
 
-let make_output_from_standard_args (args : Args.Standard.t) : A.Output.t =
-  A.Output.make
+let make_output_from_standard_args (args : Args.Standard.t) : Ac.Output.t =
+  Ac.Output.make
     ~verbose:(Args.Standard.is_verbose args)
     ~warnings:(Args.Standard.are_warnings_enabled args)
 
@@ -187,7 +187,7 @@ let setup_colour (args : Args.Standard.t) : unit =
 module Make_lifter (B : Basic_lifter) = struct
   let lift ?compiler_predicate ?machine_predicate ?sanitiser_passes
       ?with_compiler_tests
-      ~(f : B.t -> A.Output.t -> Act_config.Act.t -> unit Or_error.t)
+      ~(f : B.t -> Ac.Output.t -> Act_config.Act.t -> unit Or_error.t)
       (args : B.t) : unit =
     let standard_args = B.as_standard_args args in
     setup_colour standard_args ;
@@ -198,7 +198,7 @@ module Make_lifter (B : Basic_lifter) = struct
       >>= Language_support.load_and_process_config ?compiler_predicate
             ?machine_predicate ?sanitiser_passes ?with_compiler_tests
       >>= f args o)
-    |> A.Output.print_error o
+    |> Ac.Output.print_error o
 end
 
 module Standard_lifter = Make_lifter (Args.Standard)
@@ -221,7 +221,7 @@ module Asm_lifter = Make_lifter (Args.Standard_asm)
 let lift_asm_command
     ~(f :
           Args.Standard_asm.t
-       -> A.Output.t
+       -> Ac.Output.t
        -> Act_config.Act.t
        -> unit Or_error.t) (args : Args.Standard_asm.t) : unit =
   Asm_lifter.lift
@@ -234,10 +234,10 @@ let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
   Asm_target.resolve ~cfg raw_target
 
 let collect_cvars (args : Args.Standard_asm.t) :
-    A.C_variables.Map.t option Or_error.t =
+    Ac.C_variables.Map.t option Or_error.t =
   let c_globals = Args.Standard_asm.c_globals args in
   let c_locals = Args.Standard_asm.c_locals args in
-  let module V = A.C_variables in
+  let module V = Ac.C_variables in
   Or_error.Let_syntax.(
     let%bind globals =
       Tx.Option.With_errors.map_m

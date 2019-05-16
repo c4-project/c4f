@@ -105,9 +105,17 @@ module Cumulative : sig
 end
 
 val sample : 'a t -> random:Splittable_random.State.t -> 'a Or_error.t
-(** [sample wl rng] converts [wl] to a cumulative list, then samples it
-    according to the random number generator [rng]. It fails if the
+(** [sample wl ~random] converts [wl] to a cumulative list, then samples it
+    according to the random number generator [random]. It fails if the
     conversion fails.
 
     If you sample from the same list often, consider converting it to a
     cumulative list once, then sampling that directly. *)
+
+val sample_exn : 'a t -> random:Splittable_random.State.t -> 'a
+(** [sample_exn wl ~random] is [sample wl ~random], but raises an exception
+    rather than returning an error monad. *)
+
+val sample_gen_exn : 'a t -> 'a Quickcheck.Generator.t
+(** [sample_gen_exn wl] is [sample_exn], but wrapped up as a Quickcheck
+    generator. *)

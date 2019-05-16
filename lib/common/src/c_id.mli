@@ -76,6 +76,4 @@ module Herd_safe : sig
   val is_string_safe : string -> bool
   (** [is_string_safe str] checks whether [str] is Herd-safe, but doesn't
       return the constructed identifier. *)
-
-  include My_quickcheck.S_with_sexp with type t := t
 end

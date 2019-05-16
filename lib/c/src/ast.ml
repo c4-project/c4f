@@ -15,6 +15,7 @@
 (****************************************************************************)
 
 open Core_kernel
+module Ac = Act_common
 module Au = Act_utils
 module Tx = Travesty_core_kernel_exts
 open Ast_basic
@@ -114,13 +115,11 @@ module Parametric = struct
       let pp f = function
         | Literal {kind; name_opt; decls} ->
             Fmt.(
-              pf f "%a@ %a@ %a" B.Kind.pp kind
-                (option Au.C_identifier.pp)
-                name_opt
+              pf f "%a@ %a@ %a" B.Kind.pp kind (option Ac.C_id.pp) name_opt
                 (Au.My_format.pp_c_braces (list ~sep:sp B.Decl.pp))
                 decls)
         | Named (kind, id) ->
-            Fmt.pf f "%a@ %a" B.Kind.pp kind Au.C_identifier.pp id
+            Fmt.pf f "%a@ %a" B.Kind.pp kind Ac.C_id.pp id
     end
   end
 
@@ -151,7 +150,7 @@ module Parametric = struct
 
       let rec pp f : t -> unit = function
         | Id i ->
-            Au.C_identifier.pp f i
+            Ac.C_id.pp f i
         | Bracket t ->
             Fmt.brackets B.Dec.pp f t
         | Array a ->
@@ -334,13 +333,13 @@ module Parametric = struct
         | Subscript a ->
             Array.pp pp pp f a
         | Field {value; field; access= `Direct} ->
-            Fmt.pf f "%a.%a" pp value Au.C_identifier.pp field
+            Fmt.pf f "%a.%a" pp value Ac.C_id.pp field
         | Field {value; field; access= `Deref} ->
-            Fmt.pf f "%a->%a" pp value Au.C_identifier.pp field
+            Fmt.pf f "%a->%a" pp value Ac.C_id.pp field
         | Sizeof_type ty ->
             Fmt.(pf f "sizeof%a" (parens T.pp) ty)
         | Identifier id ->
-            Au.C_identifier.pp f id
+            Ac.C_id.pp f id
         | String s ->
             (* TODO(@MattWindsor91): escape sequences *)
             Fmt.(quote ~mark:"\"" string) f s
@@ -434,7 +433,7 @@ module Parametric = struct
               pf f "for@ (%a;@ %a;@ %a)@ %a" (option B.Expr.pp) init
                 (option B.Expr.pp) cond (option B.Expr.pp) update pp body)
         | Goto label ->
-            Fmt.pf f "goto@ %a;" Au.C_identifier.pp label
+            Fmt.pf f "goto@ %a;" Ac.C_id.pp label
         | Return expr ->
             Fmt.(pf f "return@ %a;" (option B.Expr.pp) expr)
     end
@@ -485,7 +484,7 @@ end = struct
     Fmt.(
       using
         (fun {name; value} -> (name, value))
-        (pp_opt_assign Au.C_identifier.pp Expr.pp))
+        (pp_opt_assign Ac.C_id.pp Expr.pp))
 end
 
 and Enum_spec :
@@ -528,7 +527,7 @@ and Type_spec :
     | `Enum spec ->
         Enum_spec.pp f spec
     | `Defined_type tdef ->
-        Au.C_identifier.pp f tdef
+        Ac.C_id.pp f tdef
 end
 
 and Spec_or_qual : (Ast_node with type t = [Type_spec.t | Type_qual.t]) =
@@ -763,7 +762,7 @@ module Litmus_lang :
     include Function_def
 
     let name x =
-      Some (Au.C_identifier.to_string (Declarator.identifier x.signature))
+      Some (Ac.C_id.to_string (Declarator.identifier x.signature))
 
     (* TODO(@MattWindsor91): consider implementing this. The main reason why
        I haven't is because, usually, we'll be converting the litmus test to

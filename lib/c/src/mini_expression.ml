@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_utils
+module Ac = Act_common
 module Address = Mini_address
 module Constant = Ast_basic.Constant
 module Env = Mini_env
@@ -77,30 +77,29 @@ module Atomic_load = struct
   let%expect_test "type_of: atomic_int* -> int" =
     let (module E) = Lazy.force Env.test_env_mod in
     let module Ty = Type_check (E) in
-    let src =
-      Address.lvalue (Lvalue.variable (C_identifier.of_string "bar"))
-    in
+    let src = Address.lvalue (Lvalue.variable (Ac.C_id.of_string "bar")) in
     let ld = make ~src ~mo:Mem_order.Seq_cst in
-    Sexp.output_hum stdout [%sexp (Ty.type_of ld : Type.t Or_error.t)] ;
+    Stdio.print_s [%sexp (Ty.type_of ld : Type.t Or_error.t)] ;
     [%expect {| (Ok (Normal int)) |}]
 
-  module Quickcheck_generic (A : Quickcheckable.S with type t := Address.t) : sig
+  module Quickcheck_generic
+      (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t) : sig
     type nonrec t = t [@@deriving sexp_of, quickcheck]
   end = struct
     type nonrec t = t
 
     let sexp_of_t = sexp_of_t
 
-    let quickcheck_generator : t Quickcheck.Generator.t =
-      Quickcheck.Generator.map ~f:of_tuple
+    let quickcheck_generator : t Base_quickcheck.Generator.t =
+      Base_quickcheck.Generator.map ~f:of_tuple
         [%quickcheck.generator: A.t * [%custom Mem_order.gen_load]]
 
-    let quickcheck_observer : t Quickcheck.Observer.t =
-      Quickcheck.Observer.unmap ~f:to_tuple
+    let quickcheck_observer : t Base_quickcheck.Observer.t =
+      Base_quickcheck.Observer.unmap ~f:to_tuple
         [%quickcheck.observer: A.t * Mem_order.t]
 
-    let quickcheck_shrinker : t Quickcheck.Shrinker.t =
-      Quickcheck.Shrinker.map ~f:of_tuple ~f_inverse:to_tuple
+    let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
+      Base_quickcheck.Shrinker.map ~f:of_tuple ~f_inverse:to_tuple
         [%quickcheck.shrinker: A.t * Mem_order.t]
   end
 
@@ -109,21 +108,19 @@ module Atomic_load = struct
   include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 
   module Quickcheck_atomic_ints (E : Env.S) : sig
-    type nonrec t = t [@@deriving sexp_of]
-
-    include Quickcheck.S with type t := t
+    type nonrec t = t [@@deriving sexp_of, quickcheck]
   end =
     Quickcheck_generic (Address.Quickcheck_atomic_int_pointers (E))
 
-  let variable_of (ld : t) : C_identifier.t = Address.variable_of (src ld)
+  let variable_of (ld : t) : Ac.C_id.t = Address.variable_of (src ld)
 
-  let variable_in_env (ld : t) ~(env : _ C_identifier.Map.t) : bool =
+  let variable_in_env (ld : t) ~(env : _ Ac.C_id.Map.t) : bool =
     Address.variable_in_env (src ld) ~env
 
   let%test_unit "Quickcheck_atomic_ints: liveness" =
     let (module E) = Lazy.force Env.test_env_mod in
     let module Q = Quickcheck_atomic_ints (E) in
-    Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
+    Core_kernel.Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
       ~sexp_of:[%sexp_of: t]
       ~f:(variable_in_env ~env:E.env)
 
@@ -259,7 +256,7 @@ module Type_check (E : Env.S) = struct
     Type.(normal Basic.bool)
 end
 
-let quickcheck_observer : t Quickcheck.Observer.t =
+let quickcheck_observer : t Base_quickcheck.Observer.t =
   Quickcheck.Observer.(
     fixed_point (fun mu ->
         unmap ~f:anonymise
@@ -270,25 +267,22 @@ let quickcheck_observer : t Quickcheck.Observer.t =
             | `D of [%custom mu] * [%custom mu]
             | `E of Atomic_load.t ]] ))
 
-module Quickcheck_int_values (E : Env.S) : sig
-  type nonrec t = t [@@deriving sexp_of]
-
-  include Quickcheck.S with type t := t
-end = struct
+module Quickcheck_int_values (E : Env.S) :
+  Act_utils.My_quickcheck.S_with_sexp with type t = t = struct
   type nonrec t = t
 
   let sexp_of_t = sexp_of_t
 
-  module Gen = Quickcheck.Generator
-  module Obs = Quickcheck.Observer
-  module Snk = Quickcheck.Shrinker
+  module Gen = Base_quickcheck.Generator
+  module Obs = Base_quickcheck.Observer
+  module Snk = Base_quickcheck.Shrinker
 
   (** Generates the terminal integer expressions. *)
   let base_generators : t Gen.t list =
     (* Use thunks and let-modules here to prevent accidentally evaluating a
        generator that can't possibly work---eg, an atomic load when we don't
        have any atomic variables. *)
-    List.map ~f:Gen.of_fun
+    List.map ~f:Core_kernel.Quickcheck.Generator.of_fun
       (List.filter_opt
          [ Some (fun () -> Gen.map ~f:constant Constant.gen_int32_constant)
          ; Option.some_if (E.has_atomic_int_variables ()) (fun () ->
@@ -308,7 +302,7 @@ end = struct
   let quickcheck_observer : t Obs.t = quickcheck_observer
 
   (* TODO(@MattWindsor91): implement this *)
-  let quickcheck_shrinker : t Snk.t = Snk.empty ()
+  let quickcheck_shrinker : t Snk.t = Snk.atomic
 end
 
 let test_int_values_liveness_on_mod (module E : Env.S) : unit =
@@ -408,7 +402,7 @@ let%test_module "tests using the standard environment" =
         (module Q)
         ~f:
           ([%test_pred: t]
-             (On_identifiers.for_all ~f:(C_identifier.Map.mem E.env))
+             (On_identifiers.for_all ~f:(Ac.C_id.Map.mem E.env))
              ~here:[[%here]])
 
     let%test_unit "Quickcheck_int_values: all expressions have 'int' type" =

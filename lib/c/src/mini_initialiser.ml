@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_utils
 module Type = Mini_type
 module Constant = Ast_basic.Constant
 
@@ -31,7 +30,7 @@ type t = {ty: Type.t; value: Constant.t option}
 
 module Named : Mini_intf.S_named with type elt := t = struct
   let equal : t Mini_intf.named -> t Mini_intf.named -> bool =
-    [%equal: C_identifier.t * t]
+    [%equal: Act_common.C_id.t * t]
 
   type nonrec t = t Mini_intf.named
 end
