@@ -21,4 +21,6 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Common_intf
+(** Tests over the fully instantiated AT&T-dialect x86 language definition.
+
+    This interface intentionally left blank. *)

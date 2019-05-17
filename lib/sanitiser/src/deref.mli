@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [Sanitiser_deref] is a sanitiser pass that handles dereference chains.
+(** A sanitiser pass that handles dereference chains.
 
     Dereference chains are what act calls compiler-generated runs of
     movements of a heap symbol across locations, followed by a final
@@ -32,5 +32,5 @@
     events. Chains corresponding to write events are harder to detect, but
     will be supported eventually. *)
 
-module Make (B : Common.Basic) :
-  Common.S_program with module Lang := B.Lang and module Ctx := B.Ctx
+module Make (B : Pass.Basic) :
+  Pass.S with type t := B.Lang.Program.t and type 'a ctx := 'a B.Ctx.t

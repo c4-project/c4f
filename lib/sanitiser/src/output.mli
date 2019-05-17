@@ -21,20 +21,14 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [S] is the signature of language modules over the X86 AST. *)
-module type S = sig
-  module Dialect : Dialect.S
+(** Sanitiser: output record. *)
 
-  include
-    Act_language.Definition.S
-    with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.Location.t
-     and type Instruction.t = Ast.Instruction.t
-     and type Statement.t = Ast.Statement.t
-     and type Program.t = Ast.t
-     and type Symbol.t = string
+include module type of Output_intf
 
-  val make_jump_operand : string -> Ast.Operand.t
-  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the correct
-      abstract syntax for this version of x86. *)
-end
+(** Makes an output container over the given basic types. *)
+module Make (B : Basic) :
+  S
+  with type listing = B.listing
+   and type warn = B.warn
+   and type 'l pc = 'l B.pc
+   and type rmap = B.rmap

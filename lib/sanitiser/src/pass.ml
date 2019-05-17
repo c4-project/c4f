@@ -21,20 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [S] is the signature of language modules over the X86 AST. *)
-module type S = sig
-  module Dialect : Dialect.S
+open Base
+include Pass_intf
 
-  include
-    Act_language.Definition.S
-    with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.Location.t
-     and type Instruction.t = Ast.Instruction.t
-     and type Statement.t = Ast.Statement.t
-     and type Program.t = Ast.t
-     and type Symbol.t = string
-
-  val make_jump_operand : string -> Ast.Operand.t
-  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the correct
-      abstract syntax for this version of x86. *)
+module Make_null (Ctx : Monad.S) (Subject : Base.T) :
+  S with type t := Subject.t and type 'a ctx := 'a Ctx.t = struct
+  let run : Subject.t -> Subject.t Ctx.t = Ctx.return
 end

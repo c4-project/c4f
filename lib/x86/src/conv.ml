@@ -34,8 +34,8 @@ struct
   type ast = Ast.t
 
   let swap operands =
-    operands |> SD.to_src_dst
-    |> Option.value_map ~f:DD.of_src_dst ~default:operands
+    operands |> SD.Dialect.to_src_dst
+    |> Option.value_map ~f:DD.Dialect.of_src_dst ~default:operands
 
   (** [swap_instruction ins] does any swapping of operands needed to convert
       from [SD] to [DD]. *)

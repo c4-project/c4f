@@ -26,25 +26,6 @@ open Travesty_containers
 module Tx = Travesty_core_kernel_exts
 include Instance_intf
 
-module Make_null_hook
-    (Lang : Act_language.Definition.S)
-    (P : Travesty.Traversable.S1) :
-  Hook with module Lang = Lang and module Program_container = P = struct
-  module Lang = Lang
-  module Ctx = Ctx.Make (Lang)
-  module Program_container = P
-
-  let on_all = Ctx.return
-
-  let on_program = Ctx.return
-
-  let on_statement = Ctx.return
-
-  let on_instruction = Ctx.return
-
-  let on_location = Ctx.return
-end
-
 module Make (B : Basic) :
   S
   with module Lang := B.Lang
@@ -66,18 +47,15 @@ module Make (B : Basic) :
   module Ctx_Lst = Lang.Program.On_listings.On_monad (Ctx)
   module Ctx_Stm = Lang.Program.On_statements.On_monad (Ctx)
 
-  module Output = struct
-    module Program = struct
-      type t =
-        { listing: Lang.Program.t
-        ; warnings: Warn.t list
-        ; symbol_table: Act_abstract.Symbol.Table.t }
-      [@@deriving fields]
-    end
+  module Output = Output.Make (struct
+    type listing = Lang.Program.t
 
-    type t = {programs: Program.t Program_container.t; redirects: Redirect.t}
-    [@@deriving fields]
-  end
+    type warn = Warn.t
+
+    type 'l pc = 'l Program_container.t
+
+    type rmap = Redirect.t
+  end)
 
   module PC =
     Travesty.Traversable.Fix_elt (B.Program_container) (Lang.Program)
@@ -105,7 +83,8 @@ module Make (B : Basic) :
   let stack_offset_to_heap prog_name offset =
     Ctx.Let_syntax.(
       let base_str =
-        Printf.sprintf "t%ss%s" prog_name (Act_abstract.Location.Address.to_string offset)
+        Printf.sprintf "t%ss%s" prog_name
+          (Act_abstract.Location.Address.to_string offset)
       in
       let%bind symbol_str =
         Ctx.add_symbol base_str Act_abstract.Symbol.Sort.Heap
@@ -207,23 +186,22 @@ module Make (B : Basic) :
   (** [sanitise_loc] performs sanitisation at the single location level. *)
   let sanitise_loc loc =
     let open Ctx in
-    return loc >>= (`Language_hooks |-> B.on_location)
+    return loc >>= (`Language_hooks |-> B.On_location.run)
 
   (** [sanitise_all_locs loc] iterates location sanitisation over every
       location in [loc], threading the context through monadically. *)
   let sanitise_all_locs = Ctx_Loc.map_m ~f:sanitise_loc
 
   (** [sanitise_ins] performs sanitisation at the single instruction level. *)
-  let sanitise_ins ins =
-    let open Ctx in
-    return ins
-    >>= (`Language_hooks |-> B.on_instruction)
-    >>= (`Warn |-> warn_unknown_instructions)
-    >>= (`Warn |-> warn_unsupported_operands)
-    >>= sanitise_all_locs
-    >>= (`Simplify_litmus |-> change_ret_to_end_jump)
-    >>= (`Simplify_litmus |-> change_stack_to_heap)
-    >>= (`Warn |-> warn_untranslated_operands)
+  let sanitise_ins : Lang.Instruction.t -> Lang.Instruction.t Ctx.t =
+    Ctx.(
+      `Language_hooks |-> B.On_instruction.run
+      >=> (`Warn |-> warn_unknown_instructions)
+      >=> (`Warn |-> warn_unsupported_operands)
+      >=> sanitise_all_locs
+      >=> (`Simplify_litmus |-> change_ret_to_end_jump)
+      >=> (`Simplify_litmus |-> change_stack_to_heap)
+      >=> (`Warn |-> warn_untranslated_operands))
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
@@ -241,15 +219,14 @@ module Make (B : Basic) :
     L.map_m ~f:sanitise_ins
 
   (** [sanitise_stm] performs sanitisation at the single statement level. *)
-  let sanitise_stm _ stm =
-    let open Ctx in
-    return stm
-    >>= (`Language_hooks |-> B.on_statement)
-    (* Do warnings after the language-specific hook has done any reduction
-       necessary, but before we start making broad-brush changes to the
-       statements. *)
-    >>= (`Warn |-> warn_unknown_statements)
-    >>= sanitise_all_ins
+  let sanitise_stm _ : Lang.Statement.t -> Lang.Statement.t Ctx.t =
+    Ctx.(
+      `Language_hooks |-> B.On_statement.run
+      (* Do warnings after the language-specific hook has done any reduction
+         necessary, but before we start making broad-brush changes to the
+         statements. *)
+      >=> (`Warn |-> warn_unknown_statements)
+      >=> sanitise_all_ins)
 
   (** [irrelevant_instruction_types] lists the high-level types of
       instruction that can be thrown out when converting to a litmus test. *)
@@ -376,10 +353,10 @@ module Make (B : Basic) :
       (* Initial table population. *)
       >>= tee_m ~f:update_symbol_table
       >>= (`Simplify_litmus |-> add_end_label)
-      >>= (`Language_hooks |-> B.on_program)
+      >>= (`Language_hooks |-> B.On_program.run)
       (* The language hook might have invalidated the symbol tables. *)
       >>= tee_m ~f:update_symbol_table
-      >>= (`Simplify_deref_chains |-> Deref.on_program)
+      >>= (`Simplify_deref_chains |-> Deref.run)
       (* Need to sanitise statements first, in case the sanitisation pass
          makes irrelevant statements (like jumps) relevant again. *)
       >>= Ctx_Stm.mapi_m ~f:sanitise_stm
@@ -428,12 +405,12 @@ module Make (B : Basic) :
         Ctx_List.iter_m (Set.to_list symbols)
           ~f:(find_initial_redirect mangle_map) )
 
-  let build_single_program_output i listing =
-    let open Ctx.Let_syntax in
+  let build_single_program_output i listing : Output.Program.t Ctx.t =
     let name = program_name i listing in
-    let%bind symbol_table = update_and_get_symbol_table listing in
-    let%map warnings = Ctx.take_warnings name in
-    {Output.Program.listing; symbol_table; warnings}
+    Ctx.Let_syntax.(
+      let%bind symbol_table = update_and_get_symbol_table listing in
+      let%map warnings = Ctx.take_warnings name in
+      Output.Program.make ~listing ~symbol_table ~warnings ())
 
   let make_programs_uniform ps =
     right_pad ~padding:(Lang.Statement.empty ()) ps
@@ -451,7 +428,7 @@ module Make (B : Basic) :
     let%map redirects =
       Ctx.Monadic.return (Redirect.of_symbol_alist redirect_alist)
     in
-    {Output.programs; redirects}
+    Output.make ~programs ~redirects
 
   let sanitise_with_ctx (progs : Lang.Program.t Program_container.t) =
     Ctx.(
@@ -461,7 +438,7 @@ module Make (B : Basic) :
       (* We do this last, for two reasons: first, in case the instruction
          sanitisers have introduced invalid variables; and second, so that
          we know that the symbol changes agree across program boundaries.*)
-      >>= Symbols.on_all
+      >>= Symbols.run
       >>= build_output)
 
   let sanitise ?passes ?(symbols = []) (prog : Lang.Program.t) =
@@ -475,7 +452,7 @@ module Make (B : Basic) :
         (initial ~passes:passes' ~variables))
 end
 
-module Make_single (H : Hook_maker) :
+module Make_single (H : Hook.S_maker) :
   S
   with module Lang := H(Singleton).Lang
    and type 'a Program_container.t = 'a = Make (struct
@@ -484,7 +461,7 @@ module Make_single (H : Hook_maker) :
   let split = Or_error.return (* no operation *)
 end)
 
-module Make_multi (H : Hook_maker) :
+module Make_multi (H : Hook.S_maker) :
   S
   with module Lang := H(Tx.List).Lang
    and type 'a Program_container.t = 'a list = Make (struct

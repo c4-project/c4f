@@ -35,44 +35,14 @@ module type Basic = sig
   module Program_container : Travesty.Traversable.S1
 end
 
-(** [S_location] is the standard signature for location passes. *)
-module type S_location = sig
-  include Basic
+(** [S] is the standard signature for sanitiser passes. *)
+module type S = sig
+  (** Type of pass subject. *)
+  type t
 
-  val on_location : Lang.Location.t -> Lang.Location.t Ctx.t
-  (** [on_location loc] runs this sanitiser pass over [loc]. *)
-end
+  (** Type of sanitiser context. *)
+  type 'a ctx
 
-(** [S_instruction] is the standard signature for instruction passes. *)
-module type S_instruction = sig
-  include Basic
-
-  val on_instruction : Lang.Instruction.t -> Lang.Instruction.t Ctx.t
-  (** [on_instruction ins] runs this sanitiser pass over [ins]. *)
-end
-
-(** [S_statement] is the standard signature for statement passes. *)
-module type S_statement = sig
-  include Basic
-
-  val on_statement : Lang.Statement.t -> Lang.Statement.t Ctx.t
-  (** [on_statement stm] runs this sanitiser pass over [stm]. *)
-end
-
-(** [S_program] is the standard signature for program passes. *)
-module type S_program = sig
-  include Basic
-
-  val on_program : Lang.Program.t -> Lang.Program.t Ctx.t
-  (** [on_program prog] runs this sanitiser pass over [prog]. *)
-end
-
-(** [S_all] is the standard signature for passes over a program container. *)
-module type S_all = sig
-  include Basic
-
-  val on_all :
-       Lang.Program.t Program_container.t
-    -> Lang.Program.t Program_container.t Ctx.t
-  (** [on_all progs] runs this sanitiser pass over [progs]. *)
+  val run : t -> t ctx
+  (** [run x] runs this sanitiser pass over [x]. *)
 end

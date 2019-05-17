@@ -7,8 +7,8 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries base travesty travesty.base_exts menhirLib act_asm
-   act_abstract act_sanitiser act_litmus act_utils))
+ (libraries base travesty travesty.base_exts menhirLib act_asm act_abstract
+   act_sanitiser act_litmus act_utils))
 
 (ocamllex
  (modules att_lexer))

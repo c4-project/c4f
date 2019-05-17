@@ -47,9 +47,9 @@ module Address = struct
 
   let to_string : t -> string = function
     | Int k ->
-      Int.to_string k
+        Int.to_string k
     | Symbol s ->
-      s
+        s
 end
 
 type t =

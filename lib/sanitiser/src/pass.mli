@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,20 +21,12 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [S] is the signature of language modules over the X86 AST. *)
-module type S = sig
-  module Dialect : Dialect.S
+(** Sanitiser: base signatures shared by each sanitiser pass. *)
 
-  include
-    Act_language.Definition.S
-    with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.Location.t
-     and type Instruction.t = Ast.Instruction.t
-     and type Statement.t = Ast.Statement.t
-     and type Program.t = Ast.t
-     and type Symbol.t = string
+open Base
 
-  val make_jump_operand : string -> Ast.Operand.t
-  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the correct
-      abstract syntax for this version of x86. *)
-end
+include module type of Pass_intf
+
+(** [Make_null] makes a sanitiser pass that does nothing. *)
+module Make_null (Ctx : Monad.S) (Subject : T) :
+  S with type t := Subject.t and type 'a ctx := 'a Ctx.t

@@ -29,12 +29,6 @@
 (** @inline *)
 include module type of Instance_intf
 
-(** [Make_null_hook] makes a [Hook] that does nothing. *)
-module Make_null_hook
-    (Lang : Act_language.Definition.S)
-    (P : Travesty.Traversable.S1) :
-  Hook with module Lang = Lang and module Program_container = P
-
 (** [Make] implements the assembly sanitiser for a given [Basic]. *)
 module Make (B : Basic) :
   S
@@ -44,7 +38,7 @@ module Make (B : Basic) :
 (** [Make_single] implements the assembly sanitiser for a given
     [Hook_maker], performing no program splitting and returning the
     sanitised assembly back as one program. *)
-module Make_single (H : Hook_maker) :
+module Make_single (H : Hook.S_maker) :
   S
   with module Lang := H(Travesty_containers.Singleton).Lang
    and type 'a Program_container.t = 'a
@@ -52,7 +46,7 @@ module Make_single (H : Hook_maker) :
 (** [Make_multi] implements the assembly sanitiser for a given [Hook_maker],
     treating the incoming assembly as holding multiple label-delimited
     programs and splitting them accordingly. *)
-module Make_multi (H : Hook_maker) :
+module Make_multi (H : Hook.S_maker) :
   S
   with module Lang := H(Travesty_core_kernel_exts.List).Lang
    and type 'a Program_container.t = 'a list

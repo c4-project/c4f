@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Sanitiser passes for global symbol renaming
+(** Sanitiser passes for global symbol renaming.
 
     This module provides a global sanitiser pass that performs two renaming
     sub-passes on all symbols:
@@ -33,8 +33,7 @@
         for Herd-like programs to parse with less human-readable (but more
         machine-readable) equivalents.}} *)
 
-module Make (B : Common.Basic) :
-  Common.S_all
-  with module Lang := B.Lang
-   and module Ctx := B.Ctx
-   and module Program_container := B.Program_container
+module Make (B : Pass.Basic) :
+  Pass.S
+  with type t := B.Lang.Program.t B.Program_container.t
+   and type 'a ctx := 'a B.Ctx.t

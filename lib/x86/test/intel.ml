@@ -21,20 +21,16 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [S] is the signature of language modules over the X86 AST. *)
-module type S = sig
-  module Dialect : Dialect.S
+open Act_x86
+module Intel = Language_definition.Intel
 
-  include
-    Act_language.Definition.S
-    with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.Location.t
-     and type Instruction.t = Ast.Instruction.t
-     and type Statement.t = Ast.Statement.t
-     and type Program.t = Ast.t
-     and type Symbol.t = string
-
-  val make_jump_operand : string -> Ast.Operand.t
-  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the correct
-      abstract syntax for this version of x86. *)
-end
+let%expect_test "abs_operands: add ESP, -16, Intel" =
+  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
+    (Intel.Instruction.abs_operands
+       (Ast.Instruction.make
+          ~opcode:(Opcode.Basic `Add)
+          ~operands:
+            [ Ast.Operand.Location (Ast.Location.Reg `ESP)
+            ; Ast.Operand.Immediate (Ast.Disp.Numeric (-16)) ]
+          ())) ;
+  [%expect {| $-16 -> reg:sp |}]

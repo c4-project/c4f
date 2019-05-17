@@ -21,15 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** x86-specific functionality for act's sanitiser *)
-
-(** [Hook] implements x86-specific sanitisation passes. It requires an
-    [Language.S] module to tell it things about the current x86 dialect (for
-    example, the order of operands). *)
-module Hook (L : Language_definition.S) (P : Travesty.Traversable.S1) :
-  Act_sanitiser.Instance.Hook
-  with module Lang := L
-   and module Program_container = P
+(** x86-specific act sanitisers *)
 
 (** [Make_single] directly instantiates a single-program sanitiser for an
     x86 language definition. *)

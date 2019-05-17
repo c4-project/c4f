@@ -24,48 +24,6 @@
 (** Assembly sanitisation *)
 
 open Base
-open Act_common
-
-(** [Hook] is an interface for language-specific hooks into the sanitisation
-    process. *)
-module type Hook = sig
-  include Common.Basic
-
-  include
-    Common.S_all
-    with module Lang := Lang
-     and module Ctx := Ctx
-     and module Program_container := Program_container
-
-  include
-    Common.S_program
-    with module Lang := Lang
-     and module Ctx := Ctx
-     and module Program_container := Program_container
-
-  include
-    Common.S_statement
-    with module Lang := Lang
-     and module Ctx := Ctx
-     and module Program_container := Program_container
-
-  include
-    Common.S_instruction
-    with module Lang := Lang
-     and module Ctx := Ctx
-     and module Program_container := Program_container
-
-  include
-    Common.S_location
-    with module Lang := Lang
-     and module Ctx := Ctx
-     and module Program_container := Program_container
-end
-
-(** [Hook_maker] is the type of functors that generate hooks given a program
-    container. *)
-module type Hook_maker = functor (P : Travesty.Traversable.S1) -> Hook
-                                                                  with module Program_container = P
 
 (** [Basic] describes the base functionality we need to supply to a
     sanitiser.
@@ -77,7 +35,7 @@ module type Hook_maker = functor (P : Travesty.Traversable.S1) -> Hook
     The dependency on a separate [Program_container] lets us adapt the
     sanitiser to single-program and multi-program contexts more easily. *)
 module type Basic = sig
-  include Hook
+  include Hook.S
 
   val split :
     Lang.Program.t -> Lang.Program.t Program_container.t Or_error.t
@@ -94,7 +52,7 @@ module type S = sig
 
   (** The type of symbol redirect maps this sanitiser outputs. *)
   module Redirect :
-    Redirect_map.S
+    Act_common.Redirect_map.S
     with type sym := Lang.Symbol.t
      and type sym_set := Lang.Symbol.Set.t
 
@@ -102,32 +60,12 @@ module type S = sig
       or programs are held in. *)
   module Program_container : Container.S1
 
-  module Output : sig
-    (** [t] is the type of (successful) sanitiser output. *)
-    type t
-
-    (** [Program] is the abstract data type of a single program's sanitiser
-        output. *)
-    module Program : sig
-      type t
-
-      val listing : t -> Lang.Program.t
-      (** [listing p] gets the final sanitised program listing. *)
-
-      val warnings : t -> Warn.t list
-      (** [warnings t] gets the warning list for this program. *)
-
-      val symbol_table : t -> Act_abstract.Symbol.Table.t
-      (** [symbol_table t] gets the program's final symbol table. *)
-    end
-
-    val programs : t -> Program.t Program_container.t
-    (** [programs t] gets the final sanitised programs. *)
-
-    val redirects : t -> Redirect.t
-    (** [redirects t] gets the final mapping from C-level symbols to the
-        symbols in [programs t]. *)
-  end
+  module Output :
+    Output.S
+    with type listing := Lang.Program.t
+     and type warn := Warn.t
+     and type 'l pc := 'l Program_container.t
+     and type rmap := Redirect.t
 
   val sanitise :
        ?passes:Act_config.Sanitiser_pass.Set.t

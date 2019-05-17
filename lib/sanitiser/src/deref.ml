@@ -341,20 +341,21 @@ module Portable = struct
     try_update_state_and_continue state_maybe current zipper
 end
 
-module Make (B : Common.Basic) :
-  Common.S_program with module Lang := B.Lang and module Ctx := B.Ctx =
+module Make (B : Pass.Basic) :
+  Pass.S with type t := B.Lang.Program.t and type 'a ctx := 'a B.Ctx.t =
 struct
-  include B
   include Portable
-  module Ctx_Zip = Zip.On_monad (Ctx)
+  module Ctx_Zip = Zip.On_monad (B.Ctx)
 
   let is_move =
-    Lang.Instruction.has_opcode ~opcode:Act_abstract.Instruction.Opcode.Move
+    B.Lang.Instruction.has_opcode
+      ~opcode:Act_abstract.Instruction.Opcode.Move
 
   let as_move_with_abstract_operands ins =
-    let open Option.Let_syntax in
-    let%bind ins = Option.some_if (is_move ins) ins in
-    Lang.Instruction.On_operands.as_src_dst ins
+    Option.(
+      ins
+      |> Option.some_if (is_move ins)
+      >>= B.Lang.Instruction.On_operands.as_src_dst)
 
   let instruction_as_chain_start symbol_table ins =
     Option.(
@@ -362,16 +363,16 @@ struct
       >>= operands_as_chain_start ins symbol_table)
 
   let as_chain_start symbol_table stm =
-    Lang.Statement.On_instructions.find_map stm
+    B.Lang.Statement.On_instructions.find_map stm
       ~f:(instruction_as_chain_start symbol_table)
 
   let instruction_as_chain_item state ins =
     let open Option.Let_syntax in
-    let%bind locs = Lang.Instruction.On_operands.as_src_dst ins in
+    let%bind locs = B.Lang.Instruction.On_operands.as_src_dst ins in
     Chain_item.of_operands ins (is_move ins) locs state
 
   let as_chain_item stm state =
-    Lang.Statement.On_instructions.find_map stm
+    B.Lang.Statement.On_instructions.find_map stm
       ~f:(instruction_as_chain_item state)
 
   let find_chain_start symbol_table current =
@@ -385,21 +386,21 @@ struct
   module Direct_move = struct
     let make_read first_move final_move =
       let open Option.Let_syntax in
-      Lang.Instruction.(
+      B.Lang.Instruction.(
         let%bind src_sym = as_move_symbol first_move `Src
         and dst = as_move_location final_move `Dst in
-        let src = Lang.Location.make_heap_loc src_sym in
+        let src = B.Lang.Location.make_heap_loc src_sym in
         let%map ins = Or_error.ok (location_move ~src ~dst) in
-        Lang.Statement.instruction ins)
+        B.Lang.Statement.instruction ins)
 
     let make_write first_move final_move =
       let open Option.Let_syntax in
-      Lang.Instruction.(
+      B.Lang.Instruction.(
         let%bind src = as_move_immediate first_move `Src
         and dst_sym = as_move_symbol final_move `Src in
-        let dst = Lang.Location.make_heap_loc dst_sym in
+        let dst = B.Lang.Location.make_heap_loc dst_sym in
         let%map ins = Or_error.ok (immediate_move ~src ~dst) in
-        Lang.Statement.instruction ins)
+        B.Lang.Statement.instruction ins)
 
     let make final_move = function
       (* TODO(@MattWindsor91): propagate errors here as warnings. *)
@@ -438,7 +439,7 @@ struct
         handle_broken_chain current zipper
 
   let chain_iter state current zipper =
-    Ctx.(
+    B.Ctx.(
       get_symbol_table
       >>| fun symbol_table ->
       match state with
@@ -449,19 +450,19 @@ struct
 
   let run_once_on_zipper prog_zipper =
     Ctx_Zip.fold_m_until prog_zipper ~f:chain_iter ~init:`Not_found
-      ~finish:(fun _ zipper -> Ctx.return zipper)
+      ~finish:(fun _ zipper -> B.Ctx.return zipper)
 
   let rec mu zipper =
-    let open Ctx.Let_syntax in
+    let open B.Ctx.Let_syntax in
     if Zip.is_at_end zipper then return zipper
     else
       let%bind zipper' = run_once_on_zipper zipper in
       assert (Zip.(right_length zipper' < right_length zipper)) ;
       mu zipper'
 
-  let on_listing lst = Ctx.(lst |> Zip.of_list |> mu >>| Zip.to_list)
+  let on_listing lst = B.Ctx.(lst |> Zip.of_list |> mu >>| Zip.to_list)
 
-  module PL = Lang.Program.On_listings.On_monad (Ctx)
+  module PL = B.Lang.Program.On_listings.On_monad (B.Ctx)
 
-  let on_program = PL.map_m ~f:on_listing
+  let run = PL.map_m ~f:on_listing
 end

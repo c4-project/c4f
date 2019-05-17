@@ -21,28 +21,14 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 
-(** Sanitiser passes for global symbol renaming
-
-    This module provides a global sanitiser pass that performs two renaming
-    sub-passes on all symbols:
-
-    {ul
-     {- [`Unmangle_symbols]: replace compiler-mangled symbols with their
-        original C identifiers where doing so is unambiguous;}
-     {- [`Escape_symbols]: replace characters in symbols that are difficult
-        for Herd-like programs to parse with less human-readable (but more
-        machine-readable) equivalents.}} *)
-
-module Make (B : Common.Basic) :
-  Common.S_all
-  with module Lang := B.Lang
-   and module Ctx := B.Ctx
-   and module Program_container := B.Program_container = struct
-  include B
-  module Ctx_Pcon = Program_container.On_monad (Ctx)
-  module Ctx_Prog_Sym = Lang.Program.On_symbols.On_monad (Ctx)
+module Make (B : Pass.Basic) :
+  Pass.S
+  with type t := B.Lang.Program.t B.Program_container.t
+   and type 'a ctx := 'a B.Ctx.t = struct
+  module Ctx_Pcon = B.Program_container.On_monad (B.Ctx)
+  module Ctx_Prog_Sym = B.Lang.Program.On_symbols.On_monad (B.Ctx)
 
   let over_all_symbols progs ~f =
     (* Nested mapping: over symbols in statements in statement lists in
@@ -50,59 +36,59 @@ module Make (B : Common.Basic) :
     Ctx_Pcon.map_m progs ~f:(Ctx_Prog_Sym.map_m ~f)
 
   let get_existing_redirect_or sym ~f =
-    let open Ctx.Let_syntax in
-    let%bind sym' = Ctx.get_redirect sym in
-    if Lang.Symbol.equal sym sym' then f sym else Ctx.return sym'
+    B.Ctx.Let_syntax.(
+      let%bind sym' = B.Ctx.get_redirect sym in
+      if B.Lang.Symbol.equal sym sym' then f sym else B.Ctx.return sym')
 
-  module Escape = Act_language.Symbol_escape.Make (Lang.Symbol)
+  module Escape = Act_language.Symbol_escape.Make (B.Lang.Symbol)
 
-  let add_escape_redirects : unit Ctx.t =
-    let open Ctx.Let_syntax in
-    let%bind to_escape = Ctx.get_variables in
-    Ctx.modify_rmap
-      ~f:(Fn.compose Or_error.return (Escape.escape_rmap ~to_escape))
+  let add_escape_redirects : unit B.Ctx.t =
+    B.Ctx.Let_syntax.(
+      let%bind to_escape = B.Ctx.get_variables in
+      B.Ctx.modify_rmap
+        ~f:(Fn.compose Or_error.return (Escape.escape_rmap ~to_escape)))
 
   (** [redirect_or_escape sym] gets the redirected form of [sym], if one
       exists, or the escaped form of [sym] otherwise. *)
-  let redirect_or_escape (sym : Lang.Symbol.t) : Lang.Symbol.t Ctx.t =
-    get_existing_redirect_or sym ~f:(Fn.compose Ctx.return Escape.escape)
+  let redirect_or_escape (sym : B.Lang.Symbol.t) : B.Lang.Symbol.t B.Ctx.t =
+    get_existing_redirect_or sym ~f:(Fn.compose B.Ctx.return Escape.escape)
 
-  let escape_symbols (progs : Lang.Program.t Program_container.t) :
-      Lang.Program.t Program_container.t Ctx.t =
-    let open Ctx.Let_syntax in
-    (* We do this to make sure that every redirectable symbol known to the
-       sanitiser is escaped, not just the ones that appear in the program. *)
-    let%bind () = add_escape_redirects in
-    (* That said, we do need to make sure that every symbol---not just the
-       redirected ones---is escaped. As a result, we escape any symbol that
-       the above redirection didn't catch. *)
-    over_all_symbols ~f:redirect_or_escape progs
+  let escape_symbols (progs : B.Lang.Program.t B.Program_container.t) :
+      B.Lang.Program.t B.Program_container.t B.Ctx.t =
+    B.Ctx.Let_syntax.(
+      (* We do this to make sure that every redirectable symbol known to the
+         sanitiser is escaped, not just the ones that appear in the program. *)
+      let%bind () = add_escape_redirects in
+      (* That said, we do need to make sure that every symbol---not just the
+         redirected ones---is escaped. As a result, we escape any symbol
+         that the above redirection didn't catch. *)
+      over_all_symbols ~f:redirect_or_escape progs)
 
   let get_symbols_in_use =
-    let open Ctx.Let_syntax in
-    let%map symbol_table = Ctx.get_symbol_table in
-    Act_abstract.Symbol.Table.set symbol_table
+    B.Ctx.(get_symbol_table >>| Act_abstract.Symbol.Table.set)
 
   let first_unused_symbol used_set candidate_set =
-    Lang.Symbol.Set.find candidate_set ~f:(fun candidate ->
+    B.Lang.Symbol.Set.find candidate_set ~f:(fun candidate ->
         not
           (Act_abstract.Symbol.Set.mem used_set
-             (Lang.Symbol.abstract candidate)) )
+             (B.Lang.Symbol.abstract candidate)) )
 
-  let actually_unmangle (sym : Lang.Symbol.t) : Lang.Symbol.t Ctx.t =
-    let open Ctx.Let_syntax in
-    let%bind valid_vars = Ctx.get_variables
-    and possible_sym_vars = Ctx.get_redirect_sources sym
-    and symbols_in_use = get_symbols_in_use in
-    let candidates = Lang.Symbol.Set.inter valid_vars possible_sym_vars in
-    let herd_safe_candidates =
-      Lang.Symbol.(Set.filter ~f:is_herd_safe) candidates
-    in
-    match first_unused_symbol symbols_in_use herd_safe_candidates with
-    | Some sym' ->
-        Ctx.(redirect ~src:sym ~dst:sym' >>| fun () -> sym')
-    | None ->
-        Ctx.return sym
+  let actually_unmangle (sym : B.Lang.Symbol.t) : B.Lang.Symbol.t B.Ctx.t =
+    B.Ctx.Let_syntax.(
+      let%bind valid_vars = B.Ctx.get_variables
+      and possible_sym_vars = B.Ctx.get_redirect_sources sym
+      and symbols_in_use = get_symbols_in_use in
+      let candidates =
+        B.Lang.Symbol.Set.inter valid_vars possible_sym_vars
+      in
+      let herd_safe_candidates =
+        B.Lang.Symbol.(Set.filter ~f:is_herd_safe) candidates
+      in
+      match first_unused_symbol symbols_in_use herd_safe_candidates with
+      | Some sym' ->
+          B.Ctx.(redirect ~src:sym ~dst:sym' >>| fun () -> sym')
+      | None ->
+          B.Ctx.return sym)
 
   let unmangle =
     (* This is important, because trying to unmangle a symbol twice will
@@ -112,9 +98,10 @@ module Make (B : Common.Basic) :
 
   let unmangle_symbols = over_all_symbols ~f:unmangle
 
-  let on_all progs =
-    Ctx.(
-      progs
-      |> (`Unmangle_symbols |-> unmangle_symbols)
-      >>= (`Escape_symbols |-> escape_symbols))
+  let run :
+         B.Lang.Program.t B.Program_container.t
+      -> B.Lang.Program.t B.Program_container.t B.Ctx.t =
+    B.Ctx.(
+      `Unmangle_symbols |-> unmangle_symbols
+      >=> (`Escape_symbols |-> escape_symbols))
 end

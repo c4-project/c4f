@@ -75,14 +75,11 @@ let try_find_assoc_with_suggestions (assoc : (t, 'a) List.Assoc.t) (id : t)
   |> Option.map ~f:Or_error.return
   |> Tx.Option.value_f ~default_f:(error_with_suggestions assoc id ~id_type)
 
-
-
 let to_string_list : t -> string list = Fn.id
 
 let is_prefix id ~prefix =
   List.is_prefix (to_string_list id) ~prefix:(to_string_list prefix)
     ~equal:String.Caseless.equal
-
 
 let has_tag id element = List.mem id element ~equal:String.Caseless.equal
 

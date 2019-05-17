@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,6 +21,23 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Sanitiser: base signatures shared by each sanitiser pass. *)
+include Hook_intf
 
-include module type of Common_intf
+module Make_null
+    (Lang : Act_language.Definition.S)
+    (P : Travesty.Traversable.S1) :
+  S with module Lang = Lang and module Program_container = P = struct
+  module Lang = Lang
+  module Ctx = Ctx.Make (Lang)
+  module Program_container = P
+  module Null = Pass.Make_null (Ctx)
+
+  module On_all = Null (struct
+    type t = Lang.Program.t Program_container.t
+  end)
+
+  module On_program = Null (Lang.Program)
+  module On_statement = Null (Lang.Statement)
+  module On_instruction = Null (Lang.Instruction)
+  module On_location = Null (Lang.Location)
+end

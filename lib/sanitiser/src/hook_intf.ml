@@ -21,20 +21,30 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [S] is the signature of language modules over the X86 AST. *)
+(** [S] is an interface for language-specific hooks into the sanitisation
+    process. *)
 module type S = sig
-  module Dialect : Dialect.S
+  include Pass.Basic
 
-  include
-    Act_language.Definition.S
-    with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.Location.t
-     and type Instruction.t = Ast.Instruction.t
-     and type Statement.t = Ast.Statement.t
-     and type Program.t = Ast.t
-     and type Symbol.t = string
+  module On_all :
+    Pass.S
+    with type t := Lang.Program.t Program_container.t
+     and type 'a ctx := 'a Ctx.t
 
-  val make_jump_operand : string -> Ast.Operand.t
-  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the correct
-      abstract syntax for this version of x86. *)
+  module On_program :
+    Pass.S with type t := Lang.Program.t and type 'a ctx := 'a Ctx.t
+
+  module On_statement :
+    Pass.S with type t := Lang.Statement.t and type 'a ctx := 'a Ctx.t
+
+  module On_instruction :
+    Pass.S with type t := Lang.Instruction.t and type 'a ctx := 'a Ctx.t
+
+  module On_location :
+    Pass.S with type t := Lang.Location.t and type 'a ctx := 'a Ctx.t
 end
+
+(** [S_maker] is the type of functors that generate hooks given a program
+    container. *)
+module type S_maker = functor (P : Travesty.Traversable.S1) -> S
+                                                               with module Program_container = P
