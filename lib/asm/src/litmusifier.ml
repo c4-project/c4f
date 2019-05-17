@@ -234,46 +234,45 @@ let%test_module "Aux tests" =
       [%expect {| (barbaz foo) |}]
   end )
 
-module Make (B : Runner.S) :
+module Make (B : Runner.Basic) :
   S
-  with type conf := B.Basic.Src_lang.Constant.t Config.t
-   and type fmt := Format.t
-   and type Sanitiser.Redirect.t = B.Basic.Multi_sanitiser.Redirect.t
-   and type Sanitiser.Output.Program.t =
-              B.Basic.Multi_sanitiser.Output.Program.t = struct
-  module Litmus = B.Basic.Litmus_ast
+  with type config = B.Src_lang.Constant.t Config.t
+   and type fmt = Format.t
+   and type program =
+              ( B.Src_lang.Element.t
+              , B.Src_lang.Program.t )
+              Act_sanitiser.Output.Program.t
+   and module Redirect := B.Src_lang.Symbol.R_map = struct
+  type config = B.Src_lang.Constant.t Config.t
 
-  module Sanitiser = struct
-    include B.Basic.Multi_sanitiser
-    module Lang = B.Basic.Src_lang
-  end
+  type fmt = Format.t
+
+  type program =
+    ( B.Src_lang.Element.t
+    , B.Src_lang.Program.t )
+    Act_sanitiser.Output.Program.t
+
+  module Litmus = B.Litmus_ast
+  module Sanitiser = Act_sanitiser.Instance.Make_multi (B.Sanitiser_hook)
 
   module Aux = Make_aux (struct
-    module Src_constant = B.Basic.Src_lang.Constant
-    module Dst_constant = B.Basic.Dst_lang.Constant
-
-    module Redirect = struct
-      include Sanitiser.Redirect
-
-      type sym = B.Basic.Src_lang.Symbol.t
-
-      type sym_set = B.Basic.Src_lang.Symbol.Set.t
-    end
-
+    module Src_constant = B.Src_lang.Constant
+    module Dst_constant = B.Dst_lang.Constant
+    module Redirect = B.Src_lang.Symbol.R_map
     module Program = Sanitiser.Output.Program
 
-    let convert_const = B.Basic.convert_const
+    let convert_const = B.convert_const
   end)
 
   let print_litmus : Format.t -> Out_channel.t -> Litmus.Validated.t -> unit
       = function
     | Full ->
-        B.Basic.Litmus_pp.print
+        B.Litmus_pp.print
     | Programs_only ->
-        B.Basic.Litmus_pp.print_programs
+        B.Litmus_pp.print_programs
 
   let make_litmus_program (program : Sanitiser.Output.Program.t) =
-    program |> Sanitiser.Output.Program.listing |> B.Basic.convert_program
+    program |> Sanitiser.Output.Program.listing |> B.convert_program
 
   let make_litmus_programs = List.map ~f:make_litmus_program
 
@@ -287,9 +286,9 @@ module Make (B : Runner.S) :
     |> List.map ~f:get_program_heap_symbols
     |> Act_abstract.Symbol.Set.union_list
 
-  let make ~(config : B.Basic.Src_lang.Constant.t Config.t)
-      ~(redirects : Sanitiser.Redirect.t) ~(name : string)
-      ~(programs : Sanitiser.Output.Program.t list) =
+  let make ~(config : B.Src_lang.Constant.t Config.t)
+      ~(redirects : B.Src_lang.Symbol.R_map.t) ~(name : string)
+      ~(programs : program list) =
     let open Or_error.Let_syntax in
     let heap_symbols = get_heap_symbols programs in
     let%bind {init; locations; postcondition} =
@@ -300,13 +299,10 @@ module Make (B : Runner.S) :
       (Litmus.Validated.make ~name ~init ~programs:l_programs ?postcondition
          ?locations ())
 
-  module LS = B.Basic.Src_lang
-  module MS = B.Basic.Multi_sanitiser
+  module LS = B.Src_lang
 
-  let collate_warnings (programs : MS.Output.Program.t list) =
-    List.concat_map programs ~f:MS.Output.Program.warnings
-
-  type config = B.Basic.Src_lang.Constant.t Config.t
+  let collate_warnings (programs : Sanitiser.Output.Program.t list) =
+    List.concat_map programs ~f:Sanitiser.Output.Program.warnings
 
   let output_litmus (_osrc : Act_utils.Io.Out_sink.t) (outp : Out_channel.t)
       ~(in_name : string) ~(program : LS.Program.t)
@@ -314,22 +310,26 @@ module Make (B : Runner.S) :
       ~(passes : Act_config.Sanitiser_pass.Set.t) : Job.Output.t Or_error.t
       =
     let open Or_error.Let_syntax in
-    let%bind o = MS.sanitise ~passes ~symbols program in
-    let redirects = MS.Output.redirects o in
-    let programs = MS.Output.programs o in
+    let%bind o = Sanitiser.sanitise ~passes ~symbols program in
+    let redirects = Sanitiser.Output.redirects o in
+    let programs = Sanitiser.Output.programs o in
     let warnings = collate_warnings programs in
     let%map lit = make ~config ~redirects ~name:in_name ~programs in
     print_litmus (Config.format config) outp lit ;
     Out_channel.newline outp ;
-    let redirects = MS.Output.redirects o in
-    B.make_output in_name
-      (Sanitiser.Redirect.to_string_alist redirects)
+    let redirects = Sanitiser.Output.redirects o in
+    Job.Output.make Sanitiser.Warn.pp in_name
+      (LS.Symbol.R_map.to_string_alist redirects)
       warnings
 
-  module Filter :
-    Act_utils.Filter.S
-    with type aux_i = B.Basic.Src_lang.Constant.t Config.t Job.t
-     and type aux_o = Job.Output.t = B.Make_filter (struct
+  module Filter : Runner.S with type cfg = config = Runner.Make (struct
+    module Symbol = B.Src_lang.Symbol
+
+    type program = B.Src_lang.Program.t
+
+    let parse_asm _iname isrc _inp =
+      Or_error.(B.Frontend.load_from_isrc isrc >>| B.program)
+
     type cfg = config
 
     let name = "Litmusifier"
@@ -342,34 +342,40 @@ module Make (B : Runner.S) :
   end)
 end
 
-let get_filter (module Runner : Runner.S) =
-  ( module Act_utils.Filter.Adapt (struct
-    module Lf = Make (Runner)
-    module LS = Runner.Basic.Src_lang
-    module Original = Lf.Filter
+let get_filter (module B : Runner.Basic) =
+  ( module struct
+    type cfg = Sexp.t Config.t
 
-    type aux_i = Sexp.t Config.t Job.t
+    module LS = B.Src_lang
 
-    type aux_o = Job.Output.t
+    include Act_utils.Filter.Adapt (struct
+      module Lf = Make (B)
+      module Original = Lf.Filter
 
-    let adapt_constant (const : Sexp.t) : LS.Constant.t Or_error.t =
-      Or_error.try_with (fun () -> [%of_sexp: LS.Constant.t] const)
+      type aux_i = Sexp.t Config.t Job.t
 
-    let adapt_postcondition :
-           Sexp.t Act_litmus.Ast_base.Postcondition.t
-        -> LS.Constant.t Act_litmus.Ast_base.Postcondition.t Or_error.t =
-      Act_litmus.Ast_base.Postcondition.On_constants.With_errors.map_m
-        ~f:adapt_constant
+      type aux_o = Job.Output.t
 
-    let adapt_config : Sexp.t Config.t -> LS.Constant.t Config.t Or_error.t
-        =
-      Config.transform ~format:Or_error.return ~c_variables:Or_error.return
-        ~postcondition:adapt_postcondition
+      let adapt_constant (const : Sexp.t) : LS.Constant.t Or_error.t =
+        Or_error.try_with (fun () -> [%of_sexp: LS.Constant.t] const)
 
-    let adapt_i = Job.map_m_config ~f:adapt_config
+      let adapt_postcondition :
+             Sexp.t Act_litmus.Ast_base.Postcondition.t
+          -> LS.Constant.t Act_litmus.Ast_base.Postcondition.t Or_error.t =
+        Act_litmus.Ast_base.Postcondition.On_constants.With_errors.map_m
+          ~f:adapt_constant
 
-    let adapt_o = Or_error.return
-  end)
-  : Act_utils.Filter.S
-    with type aux_i = Sexp.t Config.t Job.t
-     and type aux_o = Job.Output.t )
+      let adapt_config :
+          Sexp.t Config.t -> LS.Constant.t Config.t Or_error.t =
+        Config.transform ~format:Or_error.return
+          ~c_variables:Or_error.return ~postcondition:adapt_postcondition
+
+      let adapt_i :
+          Sexp.t Config.t Job.t -> LS.Constant.t Config.t Job.t Or_error.t =
+        Job.map_m_config ~f:adapt_config
+
+      let adapt_o = Or_error.return
+    end)
+  end
+  : Runner.S
+    with type cfg = Sexp.t Config.t )

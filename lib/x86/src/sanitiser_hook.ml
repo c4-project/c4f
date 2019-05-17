@@ -79,7 +79,7 @@ struct
       | (#Ast.Reg.seg | #Ast.Reg.gp8 | #Ast.Reg.gp16 | #Ast.Reg.sp16) as reg
         ->
           Ctx.(
-            warn (Warn.Location (Location.Reg reg))
+            warn (L.Element.Location (Location.Reg reg))
               (Info.of_string
                  "This register is unlikely to be supported by Herd"))
       | #Ast.Reg.gp32 | #Ast.Reg.sp32 | #Ast.Reg.flag ->
@@ -98,7 +98,7 @@ struct
     let warn_template_token : Location.t -> unit Ctx.t = function
       | Location.Template_token _ as l ->
           Ctx.(
-            warn (Warn.Location l)
+            warn (L.Element.Location l)
               (Info.of_string
                  "Template tokens aren't supported by the sanitiser."))
       | Indirect _ | Reg _ ->

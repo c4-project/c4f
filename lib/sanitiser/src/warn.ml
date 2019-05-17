@@ -24,45 +24,28 @@
 open Core_kernel
 include Warn_intf
 
-module Make (Lang : Act_language.Definition.S) :
-  S with module Lang := Lang = struct
-  type elt =
-    | Instruction of Lang.Instruction.t
-    | Location of Lang.Location.t
-    | Operands of Lang.Instruction.t
-    | Statement of Lang.Statement.t
-    | Symbol of Lang.Symbol.t
+type 'elt t = {program_name: string; element: 'elt; body: Info.t}
+[@@deriving fields, make]
 
-  type t = {program_name: string; element: elt; body: Info.t}
-  [@@deriving fields, make]
+module Make (Elt : Act_language.Element.S) :
+  S with type t = Elt.t t and type elt = Elt.t = struct
+  type elt = Elt.t
 
-  let pp_elt f = function
-    | Statement s ->
-        Lang.Statement.pp f s
-    | Instruction i | Operands i ->
-        Lang.Instruction.pp f i
-    | Location l ->
-        Lang.Location.pp f l
-    | Symbol s ->
-        Lang.Symbol.pp f s
+  type nonrec t = elt t
 
-  let elt_type_name = function
-    | Instruction _ ->
-        "instruction"
-    | Location _ ->
-        "location"
-    | Operands _ ->
-        "operands of instruction"
-    | Statement _ ->
-        "statement"
-    | Symbol _ ->
-        "symbol"
+  let make = make
+
+  let program_name = program_name
+
+  let element = element
+
+  let body = body
 
   let pp f ent =
     Format.fprintf f "@[<v>@[<h>In program %s,@ in %s@ `%a`:@]@ %a@]"
       ent.program_name
-      (elt_type_name ent.element)
-      pp_elt ent.element Info.pp ent.body
+      (Elt.type_name ent.element)
+      Elt.pp ent.element Info.pp ent.body
 
   let not_understood () =
     Info.of_string "act didn't understand this element"

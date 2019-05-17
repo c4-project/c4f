@@ -63,12 +63,8 @@ module Make_explanation (B : Basic_explanation) :
    and module Flag := B.Flag
 
 (** [Make] makes an implementation of [S] for a given language. *)
-module Make (B : Runner.S) :
-  S with module Lang = B.Basic.Src_lang and type config = Config.t
+module Make (B : Runner.Basic) :
+  S with module Lang = B.Src_lang and type config = Config.t
 
 val get_filter :
-     (module Runner.S)
-  -> (module Act_utils.Filter.S
-        with type aux_i = Config.t Job.t
-         and type aux_o = Job.Output.t)
-(** [get_explain Runner] is [Runner.Explain]. *)
+  (module Runner.Basic) -> (module Runner.S with type cfg = Config.t)

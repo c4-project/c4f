@@ -26,32 +26,37 @@ open Base
 (** Signature of constructed litmusifier modules. *)
 module type S = sig
   (** Type of config. *)
-  type conf
+  type config
 
   (** Type of formatting directives. *)
   type fmt
 
+  (** Type of incoming programs. *)
+  type program
+
   (** The AST module for the litmus test language we're targeting. *)
   module Litmus : Act_litmus.Ast.S
 
-  (** The sanitiser module whose output we're litmusifying. *)
-  module Sanitiser : Act_sanitiser.Instance.S
+  (** The redirect map for this litmusifier's input symbols. *)
+  module Redirect : Act_common.Redirect_map.S
 
   val make :
-       config:conf
-    -> redirects:Sanitiser.Redirect.t
+       config:config
+    -> redirects:Redirect.t
     -> name:string
-    -> programs:Sanitiser.Output.Program.t list
+    -> programs:program list
     -> Litmus.Validated.t Or_error.t
-  (** [make ~config ~redirects ~name ~programs] produces a *)
+  (** [make ~config ~redirects ~name ~programs] litmusifies a list of
+      programs [programs], with test name [name], redirect map [redirects],
+      and configuration [config]. *)
 
   val print_litmus :
     fmt -> Stdio.Out_channel.t -> Litmus.Validated.t -> unit
   (** [print_litmus fmt oc ast] is the litmus test printer matching the
       configuration [fmt]. *)
 
-  module Filter :
-    Act_utils.Filter.S
-    with type aux_i = conf Job.t
-     and type aux_o = Job.Output.t
+  (** [Filter] is the litmusifier packaged up as an assembly job runner, ie
+      a filter accepting an assembly job and outputting a standard job
+      output. *)
+  module Filter : Runner.S with type cfg = config
 end

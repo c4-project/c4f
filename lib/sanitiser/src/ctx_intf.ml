@@ -30,7 +30,8 @@ open Base
 module type S = sig
   module Lang : Act_language.Definition.S
 
-  module Warn : Warn.S with module Lang := Lang
+  module Warn :
+    Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
 
   type ctx
 

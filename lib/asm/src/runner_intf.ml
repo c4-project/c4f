@@ -45,15 +45,10 @@ module type Basic = sig
 
   module Litmus_pp : Act_litmus.Pp.S with module Ast = Litmus_ast
 
-  module Multi_sanitiser :
-    Act_sanitiser.Instance.S
-    with module Lang := Src_lang
-     and type 'a Program_container.t = 'a list
-
-  module Single_sanitiser :
-    Act_sanitiser.Instance.S
-    with module Lang := Src_lang
-     and type 'a Program_container.t = 'a
+  module Sanitiser_hook (P : Travesty.Traversable.S1) :
+    Act_sanitiser.Hook.S
+    with module Lang = Src_lang
+     and module Program_container = P
 
   val convert_program : Src_lang.Program.t -> Dst_lang.Program.t
 
@@ -65,9 +60,16 @@ end
 module type Runnable = sig
   type program
 
+  val parse_asm :
+    string -> Io.In_source.t -> Stdio.In_channel.t -> program Or_error.t
+
   type cfg
 
-  type sym
+  module Symbol : sig
+    type t
+
+    val of_string_opt : string -> t option
+  end
 
   val name : string
 
@@ -80,7 +82,7 @@ module type Runnable = sig
     -> Stdio.Out_channel.t
     -> in_name:string
     -> program:program
-    -> symbols:sym list
+    -> symbols:Symbol.t list
     -> config:cfg
     -> passes:Act_config.Sanitiser_pass.Set.t
     -> Job.Output.t Or_error.t
@@ -88,20 +90,8 @@ end
 
 (** Signature of job runners. *)
 module type S = sig
-  module Basic : Basic
+  (** Type of configuration *)
+  type cfg
 
-  val make_output :
-       string
-    -> (string, string) List.Assoc.t
-    -> Basic.Multi_sanitiser.Warn.t list
-    -> Job.Output.t
-  (** [make_output name symbols warnings] constructs a uniform job output. *)
-
-  (** Uses this runner to construct a filter that performs a specified job
-      on a single assembly file. *)
-  module Make_filter
-      (R : Runnable
-           with type program := Basic.Src_lang.Program.t
-            and type sym := Basic.Src_lang.Symbol.t) :
-    Filter.S with type aux_i = R.cfg Job.t and type aux_o = Job.Output.t
+  include Filter.S with type aux_i = cfg Job.t and type aux_o = Job.Output.t
 end

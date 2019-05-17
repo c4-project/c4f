@@ -32,7 +32,7 @@
 open Core_kernel
 open Act_common
 
-val asm_runner_from_arch : Id.t -> (module Act_asm.Runner.S) Or_error.t
+val asm_runner_from_arch : Id.t -> (module Act_asm.Runner.Basic) Or_error.t
 (** [asm_runner_from_arch arch] generates an assembly job runner from an
     architecture ID [arch]. *)
 

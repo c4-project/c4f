@@ -46,7 +46,7 @@ let warn_if_not_tracking_symbols (o : Ac.Output.t) :
       ()
 
 let asm_runner_of_target (tgt : Act_config.Compiler.Target.t) :
-    (module Act_asm.Runner.S) Or_error.t =
+    (module Act_asm.Runner.Basic) Or_error.t =
   Language_support.asm_runner_from_arch
     (Act_config.Compiler.Target.arch tgt)
 
@@ -79,22 +79,27 @@ let chain_with_delitmus (type aux_i aux_o)
                       * (Act_c.Filters.Output.t Filter.chain_output -> aux_i)
      and type aux_o = Act_c.Filters.Output.t option * aux_o )
 
-let delitmus_compile_asm_pipeline (type i o)
+let delitmus_compile_asm_pipeline (type c)
     (target : Act_config.Compiler.Target.t)
     (job_maker :
-         (module Act_asm.Runner.S)
-      -> (module Filter.S with type aux_i = i and type aux_o = o)) :
+         (module Act_asm.Runner.Basic)
+      -> (module Act_asm.Runner.S with type cfg = c)) :
     (module Filter.S
        with type aux_i = Act_config.File_type.t_or_infer
                          * (   Act_c.Filters.Output.t Filter.chain_output
-                            -> i Act_config.Compiler.Chain_input.t)
-        and type aux_o = Act_c.Filters.Output.t option * (unit option * o))
+                            -> c Act_asm.Job.t
+                               Act_config.Compiler.Chain_input.t)
+        and type aux_o = Act_c.Filters.Output.t option
+                         * (unit option * Act_asm.Job.Output.t))
     Or_error.t =
-  let open Or_error in
-  target |> asm_runner_of_target >>| job_maker
-  >>= Language_support.Resolve_compiler_from_target.chained_filter_from_spec
+  Or_error.Let_syntax.(
+    let%bind (module J) = target |> asm_runner_of_target >>| job_maker in
+    let%map with_compiler =
+      Language_support.Resolve_compiler_from_target.chained_filter_from_spec
         target
-  >>| chain_with_delitmus
+        (module J)
+    in
+    chain_with_delitmus with_compiler)
 
 let litmusify_pipeline (target : Act_config.Compiler.Target.t) :
     (module Filter.S

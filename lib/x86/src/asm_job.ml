@@ -25,39 +25,41 @@ open Base
 open Act_common
 module Tx = Travesty_base_exts
 
-let get_runner (dialect : Id.t) =
+module Make_runner_deps
+    (Frontend : Frontend.S)
+    (Lang : Language_definition.S) : Act_asm.Runner.Basic = struct
+  type ast = Ast.t
+
+  module Src_lang = Lang
+  module Dst_lang = Language_definition.Herd7
+  module Frontend = Frontend
+
+  module Litmus_ast = Act_litmus.Ast.Make (struct
+    module Program = struct
+      include Dst_lang.Program
+
+      let global_vars = Fn.const None
+    end
+
+    include (
+      Dst_lang : module type of Dst_lang with module Program := Program )
+
+    module Type = Unit
+  end)
+
+  module Litmus_pp = Act_litmus.Pp.Make_tabular (Litmus_ast)
+  module Sanitiser_hook = Sanitiser_hook.Make (Src_lang)
+  module Conv = Conv.Make (Src_lang) (Dst_lang)
+
+  let convert_program = Conv.convert
+
+  let convert_const = Or_error.return
+
+  let program = Fn.id
+end
+
+let get_runner (dialect : Id.t) : (module Act_asm.Runner.Basic) Or_error.t =
   let open Or_error.Let_syntax in
   let%bind (module Frontend) = Frontend.of_dialect dialect in
   let%map (module Lang) = Language_definition.of_dialect dialect in
-  ( module Act_asm.Runner.Make (struct
-    type ast = Ast.t
-
-    module Src_lang = Lang
-    module Dst_lang = Language_definition.Herd7
-    module Frontend = Frontend
-
-    module Litmus_ast = Act_litmus.Ast.Make (struct
-      module Program = struct
-        include Dst_lang.Program
-
-        let global_vars = Fn.const None
-      end
-
-      include (
-        Dst_lang : module type of Dst_lang with module Program := Program )
-
-      module Type = Unit
-    end)
-
-    module Litmus_pp = Act_litmus.Pp.Make_tabular (Litmus_ast)
-    module Multi_sanitiser = Sanitiser_instance.Make_multi (Src_lang)
-    module Single_sanitiser = Sanitiser_instance.Make_single (Src_lang)
-    module Conv = Conv.Make (Src_lang) (Dst_lang)
-
-    let convert_program = Conv.convert
-
-    let convert_const = Or_error.return
-
-    let program = Fn.id
-  end)
-  : Act_asm.Runner.S )
+  (module Make_runner_deps (Frontend) (Lang) : Act_asm.Runner.Basic)

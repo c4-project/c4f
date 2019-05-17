@@ -184,8 +184,7 @@ module type S = sig
   (** [explain prog symbol_table] compiles a [t] for program [prog], whose
       symbol table is [symbol_table]. *)
 
-  module Filter :
-    Act_utils.Filter.S
-    with type aux_i = config Job.t
-     and type aux_o = Job.Output.t
+  (** [Filter] is the explainer packaged up as an assembly job runner, ie a
+      filter accepting an assembly job and outputting a standard job output. *)
+  module Filter : Runner.S with type cfg = config
 end

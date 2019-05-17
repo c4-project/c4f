@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,43 +21,49 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Definition_intf
+open Base
+include Element_intf
 
-module Make (B : Basic) :
+module Make (L : Basic) :
   S
-  with type Symbol.t = B.Symbol.t
-   and type Constant.t = B.Constant.t
-   and type Location.t = B.Location.t
-   and type Instruction.t = B.Instruction.t
-   and type Statement.t = B.Statement.t
-   and type Program.t = B.Program.t = struct
-  include (B : Basic_core)
+  with type ins = L.Instruction.t
+   and type loc = L.Location.t
+   and type stm = L.Statement.t
+   and type sym = L.Symbol.t = struct
+  type ins = L.Instruction.t
 
-  module Symbol = Symbol.Make (B.Symbol)
-  module Constant = Constant.Make (B.Constant)
+  type loc = L.Location.t
 
-  module Location = Location.Make (struct
-    module Symbol = Symbol
-    include B.Location
-  end)
+  type stm = L.Statement.t
 
-  module Instruction = Instruction.Make (struct
-    module Constant = Constant
-    module Symbol = Symbol
-    module Location = Location
-    include B.Instruction
-  end)
+  type sym = L.Symbol.t
 
-  module Statement = Statement.Make (struct
-    module Symbol = Symbol
-    module Instruction = Instruction
-    include B.Statement
-  end)
+  type t =
+    | Instruction of L.Instruction.t
+    | Location of L.Location.t
+    | Operands of L.Instruction.t
+    | Statement of L.Statement.t
+    | Symbol of L.Symbol.t
 
-  module Program = Program.Make (struct
-    module Statement = Statement
-    include B.Program
-  end)
+  let pp (f : Formatter.t) : t -> unit = function
+    | Statement s ->
+        L.Statement.pp f s
+    | Instruction i | Operands i ->
+        L.Instruction.pp f i
+    | Location l ->
+        L.Location.pp f l
+    | Symbol s ->
+        L.Symbol.pp f s
 
-  module Element = Element.Make (B)
+  let type_name : t -> string = function
+    | Instruction _ ->
+        "instruction"
+    | Location _ ->
+        "location"
+    | Operands _ ->
+        "operands of instruction"
+    | Statement _ ->
+        "statement"
+    | Symbol _ ->
+        "symbol"
 end

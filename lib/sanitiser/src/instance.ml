@@ -28,13 +28,13 @@ include Instance_intf
 
 module Make (B : Basic) :
   S
-  with module Lang := B.Lang
-   and module Program_container = B.Program_container = struct
-  module Ctx = B.Ctx
-  module Warn = B.Ctx.Warn
-  module Lang = B.Lang
+  with module Lang := B.Hook.Lang
+   and module Program_container = B.Hook.Program_container = struct
+  module Ctx = B.Hook.Ctx
+  module Warn = B.Hook.Ctx.Warn
+  module Lang = B.Hook.Lang
   module Redirect = Lang.Symbol.R_map
-  module Program_container = B.Program_container
+  module Program_container = B.Hook.Program_container
 
   (* Modules for building context-sensitive traversals over program
      containers and lists *)
@@ -50,7 +50,7 @@ module Make (B : Basic) :
   module Output = Output.Make (struct
     type listing = Lang.Program.t
 
-    type warn = Warn.t
+    type warn_elt = Lang.Element.t
 
     type 'l pc = 'l Program_container.t
 
@@ -58,7 +58,7 @@ module Make (B : Basic) :
   end)
 
   module PC =
-    Travesty.Traversable.Fix_elt (B.Program_container) (Lang.Program)
+    Travesty.Traversable.Fix_elt (B.Hook.Program_container) (Lang.Program)
   module PC_listings =
     Travesty.Traversable.Chain0 (PC) (Lang.Program.On_listings)
   module Ctx_PC = PC_listings.On_monad (Ctx)
@@ -113,19 +113,19 @@ module Make (B : Basic) :
       warn_if
         (Lang.Instruction.has_opcode ins
            ~opcode:Act_abstract.Instruction.Opcode.Unknown)
-        (Warn.Instruction ins) (Warn.not_understood ())
+        (Lang.Element.Instruction ins) (Warn.not_understood ())
       >>| fun () -> ins)
 
   let warn_unknown_operands ins abs_operands =
     Ctx.(
       warn_if
         (Act_abstract.Operand.Bundle.is_part_unknown abs_operands)
-        (Warn.Operands ins) (Warn.not_understood ()))
+        (Lang.Element.Operands ins) (Warn.not_understood ()))
 
   let warn_erroneous_operands ins abs_operands =
     Ctx_List.iter_m (Act_abstract.Operand.Bundle.errors abs_operands)
-      ~f:(fun error -> Ctx.warn (Warn.Operands ins) (Warn.erroneous error)
-    )
+      ~f:(fun error ->
+        Ctx.warn (Lang.Element.Operands ins) (Warn.erroneous error) )
 
   (** [warn_unsupported_operands stm] emits warnings for each instruction in
       [stm] whose operands don't have a high-level analysis, or are
@@ -152,7 +152,7 @@ module Make (B : Basic) :
         Act_abstract.Operand.Bundle.has_immediate_heap_symbol abs_operands
           ~symbol_table
       in
-      warn_if should_warn (Warn.Operands ins)
+      warn_if should_warn (Lang.Element.Operands ins)
         (Info.of_string
            ( "Operands contain a heap symbol in immediate position. "
            ^ "This may cause problems for Herd." )))
@@ -186,7 +186,7 @@ module Make (B : Basic) :
   (** [sanitise_loc] performs sanitisation at the single location level. *)
   let sanitise_loc loc =
     let open Ctx in
-    return loc >>= (`Language_hooks |-> B.On_location.run)
+    return loc >>= (`Language_hooks |-> B.Hook.On_location.run)
 
   (** [sanitise_all_locs loc] iterates location sanitisation over every
       location in [loc], threading the context through monadically. *)
@@ -195,7 +195,7 @@ module Make (B : Basic) :
   (** [sanitise_ins] performs sanitisation at the single instruction level. *)
   let sanitise_ins : Lang.Instruction.t -> Lang.Instruction.t Ctx.t =
     Ctx.(
-      `Language_hooks |-> B.On_instruction.run
+      `Language_hooks |-> B.Hook.On_instruction.run
       >=> (`Warn |-> warn_unknown_instructions)
       >=> (`Warn |-> warn_unsupported_operands)
       >=> sanitise_all_locs
@@ -209,7 +209,7 @@ module Make (B : Basic) :
     Ctx.(
       warn_if
         (Lang.Statement.is_unknown stm)
-        (Warn.Statement stm) (Warn.not_understood ())
+        (Lang.Element.Statement stm) (Warn.not_understood ())
       >>| fun () -> stm)
 
   (** [sanitise_all_ins stm] iterates instruction sanitisation over every
@@ -221,7 +221,7 @@ module Make (B : Basic) :
   (** [sanitise_stm] performs sanitisation at the single statement level. *)
   let sanitise_stm _ : Lang.Statement.t -> Lang.Statement.t Ctx.t =
     Ctx.(
-      `Language_hooks |-> B.On_statement.run
+      `Language_hooks |-> B.Hook.On_statement.run
       (* Do warnings after the language-specific hook has done any reduction
          necessary, but before we start making broad-brush changes to the
          statements. *)
@@ -295,8 +295,8 @@ module Make (B : Basic) :
   let remove_useless_jumps =
     Ctx_Lst.map_m ~f:remove_useless_jumps_in_listing
 
-  module Deref = Deref.Make (B)
-  module Symbols = Symbols.Make (B)
+  module Deref = Deref.Make (B.Hook)
+  module Symbols = Symbols.Make (B.Hook)
 
   let update_symbol_table (prog : Lang.Program.t) =
     let open Ctx.Let_syntax in
@@ -353,7 +353,7 @@ module Make (B : Basic) :
       (* Initial table population. *)
       >>= tee_m ~f:update_symbol_table
       >>= (`Simplify_litmus |-> add_end_label)
-      >>= (`Language_hooks |-> B.On_program.run)
+      >>= (`Language_hooks |-> B.Hook.On_program.run)
       (* The language hook might have invalidated the symbol tables. *)
       >>= tee_m ~f:update_symbol_table
       >>= (`Simplify_deref_chains |-> Deref.run)
@@ -456,7 +456,7 @@ module Make_single (H : Hook.S_maker) :
   S
   with module Lang := H(Singleton).Lang
    and type 'a Program_container.t = 'a = Make (struct
-  include H (Singleton)
+  module Hook = H (Singleton)
 
   let split = Or_error.return (* no operation *)
 end)
@@ -465,7 +465,7 @@ module Make_multi (H : Hook.S_maker) :
   S
   with module Lang := H(Tx.List).Lang
    and type 'a Program_container.t = 'a list = Make (struct
-  include H (Tx.List)
+  module Hook = H (Tx.List)
 
-  let split = Lang.Program.split_on_boundaries
+  let split = Hook.Lang.Program.split_on_boundaries
 end)

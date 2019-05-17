@@ -97,9 +97,9 @@ module Make_explanation (B : Basic_explanation) :
   let pp f t = pp_details B.pp pp_body f (original t, t)
 end
 
-module Make (B : Runner.S) :
-  S with module Lang = B.Basic.Src_lang and type config = Config.t = struct
-  module Lang = B.Basic.Src_lang
+module Make (B : Runner.Basic) :
+  S with module Lang = B.Src_lang and type config = Config.t = struct
+  module Lang = B.Src_lang
 
   type config = Config.t
 
@@ -373,10 +373,10 @@ module Make (B : Runner.S) :
     let f = Format.formatter_of_out_channel outp in
     pp_for_explain_format output_format f exp ;
     Format.pp_print_newline f () ;
-    B.make_output name redirects []
+    Job.Output.make (Fmt.always "?") name redirects []
 
-  module LS = B.Basic.Src_lang
-  module SS = B.Basic.Single_sanitiser
+  module LS = B.Src_lang
+  module SS = Act_sanitiser.Instance.Make_single (B.Sanitiser_hook)
 
   let run_explanation (_osrc : Act_utils.Io.Out_sink.t)
       (outp : Out_channel.t) ~(in_name : string) ~(program : LS.Program.t)
@@ -391,13 +391,17 @@ module Make (B : Runner.S) :
     let exp = explain listing s_table in
     let redirects = SS.Output.redirects san in
     output_explanation config.format in_name outp exp
-      (SS.Redirect.to_string_alist redirects)
+      (LS.Symbol.R_map.to_string_alist redirects)
 
-  module Filter :
-    Act_utils.Filter.S
-    with type aux_i = Config.t Job.t
-     and type aux_o = Job.Output.t = B.Make_filter (struct
+  module Filter : Runner.S with type cfg = Config.t = Runner.Make (struct
     type cfg = Config.t
+
+    module Symbol = B.Src_lang.Symbol
+
+    type program = B.Src_lang.Program.t
+
+    let parse_asm _iname isrc _inp =
+      Or_error.(B.Frontend.load_from_isrc isrc >>| B.program)
 
     let name = "Explainer"
 
@@ -409,12 +413,7 @@ module Make (B : Runner.S) :
   end)
 end
 
-let get_filter (module Runner : Runner.S) :
-    (module Act_utils.Filter.S
-       with type aux_i = Config.t Job.t
-        and type aux_o = Job.Output.t) =
-  let module Exp = Make (Runner) in
-  (module Exp.Filter
-  : Act_utils.Filter.S
-    with type aux_i = Config.t Job.t
-     and type aux_o = Job.Output.t )
+let get_filter (module B : Runner.Basic) :
+    (module Runner.S with type cfg = Config.t) =
+  let module Exp = Make (B) in
+  (module Exp.Filter)

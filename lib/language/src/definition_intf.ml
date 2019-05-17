@@ -78,4 +78,11 @@ module type S = sig
   module Statement : Statement.S with module Instruction = Instruction
 
   module Program : Program.S with module Statement = Statement
+
+  module Element :
+    Element.S
+    with type ins = Instruction.t
+     and type loc = Location.t
+     and type stm = Statement.t
+     and type sym = Symbol.t
 end

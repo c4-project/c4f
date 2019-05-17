@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,43 +21,16 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Definition_intf
+(** Language abstraction layer: enumeration of elements.
 
-module Make (B : Basic) :
+    This is useful for providing element-focused warnings and errors. *)
+
+include module type of Element_intf
+
+(** [Make] makes an [S] from a basic language definition. *)
+module Make (L : Basic) :
   S
-  with type Symbol.t = B.Symbol.t
-   and type Constant.t = B.Constant.t
-   and type Location.t = B.Location.t
-   and type Instruction.t = B.Instruction.t
-   and type Statement.t = B.Statement.t
-   and type Program.t = B.Program.t = struct
-  include (B : Basic_core)
-
-  module Symbol = Symbol.Make (B.Symbol)
-  module Constant = Constant.Make (B.Constant)
-
-  module Location = Location.Make (struct
-    module Symbol = Symbol
-    include B.Location
-  end)
-
-  module Instruction = Instruction.Make (struct
-    module Constant = Constant
-    module Symbol = Symbol
-    module Location = Location
-    include B.Instruction
-  end)
-
-  module Statement = Statement.Make (struct
-    module Symbol = Symbol
-    module Instruction = Instruction
-    include B.Statement
-  end)
-
-  module Program = Program.Make (struct
-    module Statement = Statement
-    include B.Program
-  end)
-
-  module Element = Element.Make (B)
-end
+  with type ins = L.Instruction.t
+   and type loc = L.Location.t
+   and type stm = L.Statement.t
+   and type sym = L.Symbol.t

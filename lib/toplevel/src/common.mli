@@ -33,9 +33,9 @@ val warn_if_not_tracking_symbols : Output.t -> C_id.t list option -> unit
     to track, act may make incorrect assumptions. *)
 
 val asm_runner_of_target :
-  Act_config.Compiler.Target.t -> (module Act_asm.Runner.S) Or_error.t
-(** [asm_runner_of_target target] gets the [Asm_job.Runner] associated with
-    a target (either a compiler spec or emits clause). *)
+  Act_config.Compiler.Target.t -> (module Act_asm.Runner.Basic) Or_error.t
+(** [asm_runner_of_target target] gets the runner dependency module
+    associated with a target (either a compiler spec or emits clause). *)
 
 (** Chain a delitmusing pass onto [Onto] conditional on the incoming file
     type. *)
@@ -105,13 +105,15 @@ val lift_asm_command :
 
 val delitmus_compile_asm_pipeline :
      Act_config.Compiler.Target.t
-  -> (   (module Act_asm.Runner.S)
-      -> (module Filter.S with type aux_i = 'i and type aux_o = 'o))
+  -> (   (module Act_asm.Runner.Basic)
+      -> (module Act_asm.Runner.S with type cfg = 'c))
   -> (module Filter.S
         with type aux_i = Act_config.File_type.t_or_infer
                           * (   Act_c.Filters.Output.t Filter.chain_output
-                             -> 'i Act_config.Compiler.Chain_input.t)
-         and type aux_o = Act_c.Filters.Output.t option * (unit option * 'o))
+                             -> 'c Act_asm.Job.t
+                                Act_config.Compiler.Chain_input.t)
+         and type aux_o = Act_c.Filters.Output.t option
+                          * (unit option * Act_asm.Job.Output.t))
      Or_error.t
 
 val litmusify_pipeline :

@@ -59,7 +59,7 @@ module type Basic_machine_and_up = sig
 
   val asm_runner_from_spec :
        Act_config.Compiler.Spec.With_id.t
-    -> (module Act_asm.Runner.S) Or_error.t
+    -> (module Act_asm.Runner.Basic) Or_error.t
   (** [asm_runner_from_spec cspec] tries to get an [Asm_job.Runner]
       corresponding to [cspec]'s target architecture. *)
 end

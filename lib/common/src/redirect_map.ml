@@ -23,7 +23,7 @@
 
 open Base
 include Redirect_map_intf
-module Alist = Travesty_core_kernel_exts.Alist
+module Alist = Travesty_base_exts.Alist
 
 module Make (B : Basic_symbol) :
   S with type sym = B.t and type sym_set = B.Set.t = struct
@@ -31,10 +31,10 @@ module Make (B : Basic_symbol) :
 
   type sym = B.t
 
-  type sym_set = B.Set.t
+  type sym_set = Set.M(B).t
 
   let dest_of_sym (map : t) (sym : B.t) : B.t =
-    Option.value (B.Map.find map sym) ~default:sym
+    Option.value (Map.find map sym) ~default:sym
 
   let dest_of_id (map : t) (id : C_id.t) : C_id.t Or_error.t =
     let open Or_error.Let_syntax in
@@ -45,21 +45,19 @@ module Make (B : Basic_symbol) :
   let dest_syms (map : t) ~(sources : B.Set.t) : B.Set.t =
     (* We can't just take the image of 'sources' in 'map', as this would
        miss out identity mappings. *)
-    sources |> B.Set.to_list
-    |> List.map ~f:(dest_of_sym map)
-    |> B.Set.of_list
+    sources |> Set.to_list |> List.map ~f:(dest_of_sym map) |> B.Set.of_list
 
   let dest_ids (map : t) ~(sources : C_id.Set.t) : C_id.Set.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind source_sym_list =
-      sources |> C_id.Set.to_list
+      sources |> Set.to_list
       |> List.map ~f:B.of_c_identifier
       |> Or_error.combine_errors
     in
-    let source_syms = B.Set.of_list source_sym_list in
+    let source_syms = Set.of_list (module B) source_sym_list in
     let dest_syms = dest_syms map ~sources:source_syms in
     let%map dest_id_list =
-      dest_syms |> B.Set.to_list
+      dest_syms |> Set.to_list
       |> List.map ~f:B.to_c_identifier
       |> Or_error.combine_errors
     in
@@ -94,22 +92,23 @@ module Make (B : Basic_symbol) :
                var |> dest_of_id map >>| fun v' -> (v', record) )
         |> Or_error.combine_errors
       in
-      C_id.Map.of_alist_or_error alist)
+      Map.of_alist_or_error (module C_id) alist)
 
   let sources_of_sym (map : t) (dest : B.t) : B.Set.t =
     map
-    |> B.Map.filter ~f:([%equal: B.t] dest)
-    |> B.Map.keys |> B.Set.of_list
+    |> Map.filter ~f:([%equal: B.t] dest)
+    |> Map.keys
+    |> Set.of_list (module B)
 
   let propagate (src : B.t) (new_dst : B.t) (old_dst : B.t) : B.t =
     if [%equal: B.t] old_dst src then new_dst else old_dst
 
   let redirect ~src ~dst map =
-    let map' = B.Map.set map ~key:src ~data:dst in
+    let map' = Map.set map ~key:src ~data:dst in
     if [%equal: B.t] src dst then map'
-    else B.Map.map map' ~f:(propagate src dst)
+    else Map.map map' ~f:(propagate src dst)
 
-  let identity () : t = B.Map.empty
+  let identity () : t = Map.empty (module B)
 end
 
 let%test_module "string redirect maps" =

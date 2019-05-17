@@ -35,10 +35,11 @@ open Base
     The dependency on a separate [Program_container] lets us adapt the
     sanitiser to single-program and multi-program contexts more easily. *)
 module type Basic = sig
-  include Hook.S
+  module Hook : Hook.S
 
   val split :
-    Lang.Program.t -> Lang.Program.t Program_container.t Or_error.t
+       Hook.Lang.Program.t
+    -> Hook.Lang.Program.t Hook.Program_container.t Or_error.t
   (** [split] splits an assembly script up into the one or more programs
       we'll be sanitising. *)
 end
@@ -48,13 +49,8 @@ module type S = sig
   (** [Lang] is the language over which we are sanitising. *)
   module Lang : Act_language.Definition.S
 
-  module Warn : Warn.S with module Lang := Lang
-
-  (** The type of symbol redirect maps this sanitiser outputs. *)
-  module Redirect :
-    Act_common.Redirect_map.S
-    with type sym := Lang.Symbol.t
-     and type sym_set := Lang.Symbol.Set.t
+  module Warn :
+    Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
 
   (** [Program_container] describes the container that the sanitised program
       or programs are held in. *)
@@ -63,9 +59,10 @@ module type S = sig
   module Output :
     Output.S
     with type listing := Lang.Program.t
-     and type warn := Warn.t
+     and type ('w, 'l) program := ('w, 'l) Output.Program.t
+     and type warn_elt := Lang.Element.t
      and type 'l pc := 'l Program_container.t
-     and type rmap := Redirect.t
+     and type rmap := Lang.Symbol.R_map.t
 
   val sanitise :
        ?passes:Act_config.Sanitiser_pass.Set.t

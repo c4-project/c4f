@@ -21,13 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** High-level front-end for assembly translation jobs
-
-    [Job] specifies a signature, [Runner], that describes a module that
-    takes an act job specification (of type [t]) and, on success, produces
-    output (of type [output]). Such [Runner]s abstract over all of the I/O
-    plumbing and other infrastructure needed to do the jobs. *)
+(** Filter-building helper for assembly translation jobs *)
 
 include module type of Runner_intf
 
-module Make (B : Basic) : S with module Basic = B
+module Make (R : Runnable) : S with type cfg = R.cfg

@@ -23,8 +23,27 @@
 
 (** Sanitiser: warnings *)
 
+open Base
+
 (** @inline *)
 include module type of Warn_intf
 
+(** Opaque type of warnings, parametrised over the element being warned
+    about. *)
+type 'elt t
+
+val program_name : _ t -> string
+(** [program_name warn] gets the name of the program [warn] concerns. *)
+
+val element : 'elt t -> 'elt
+(** [element warn] gets the element [warn] concerns. *)
+
+val body : _ t -> Info.t
+(** [body warn] gets [warn]'s underlying [Info.t]. *)
+
+val make : program_name:string -> element:'elt -> body:Info.t -> 'elt t
+(** [make ~program_name ~element ~body] creates a warning. *)
+
 (** [Make] produces a warnings module for the given language. *)
-module Make (Lang : Act_language.Definition.S) : S with module Lang := Lang
+module Make (Elt : Act_language.Element.S) :
+  S with type t = Elt.t t and type elt = Elt.t

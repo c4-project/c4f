@@ -25,10 +25,16 @@
 
 include module type of Output_intf
 
+module Program : sig
+  (** Opaque (for now). *)
+  type ('warn_elt, 'listing) t
+end
+
 (** Makes an output container over the given basic types. *)
 module Make (B : Basic) :
   S
   with type listing = B.listing
-   and type warn = B.warn
+   and type warn_elt = B.warn_elt
    and type 'l pc = 'l B.pc
    and type rmap = B.rmap
+   and type ('warn, 'listing) program := ('warn, 'listing) Program.t

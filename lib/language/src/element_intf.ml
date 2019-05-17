@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,43 +21,40 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Definition_intf
+open Base
 
-module Make (B : Basic) :
-  S
-  with type Symbol.t = B.Symbol.t
-   and type Constant.t = B.Constant.t
-   and type Location.t = B.Location.t
-   and type Instruction.t = B.Instruction.t
-   and type Statement.t = B.Statement.t
-   and type Program.t = B.Program.t = struct
-  include (B : Basic_core)
+module type Basic = sig
+  module Symbol : Pretty_printer.S
 
-  module Symbol = Symbol.Make (B.Symbol)
-  module Constant = Constant.Make (B.Constant)
+  module Location : Pretty_printer.S
 
-  module Location = Location.Make (struct
-    module Symbol = Symbol
-    include B.Location
-  end)
+  module Instruction : Pretty_printer.S
 
-  module Instruction = Instruction.Make (struct
-    module Constant = Constant
-    module Symbol = Symbol
-    module Location = Location
-    include B.Instruction
-  end)
+  module Statement : Pretty_printer.S
+end
 
-  module Statement = Statement.Make (struct
-    module Symbol = Symbol
-    module Instruction = Instruction
-    include B.Statement
-  end)
+module type S = sig
+  (** Instructions *)
+  type ins
 
-  module Program = Program.Make (struct
-    module Statement = Statement
-    include B.Program
-  end)
+  (** Locations *)
+  type loc
 
-  module Element = Element.Make (B)
+  (** Statements *)
+  type stm
+
+  (** Symbols *)
+  type sym
+
+  type t =
+    | Instruction of ins
+    | Location of loc
+    | Operands of ins
+    | Statement of stm
+    | Symbol of sym
+
+  include Pretty_printer.S with type t := t
+
+  val type_name : t -> string
+  (** [type_name elt] gets a descriptive name for [elt]'s type. *)
 end

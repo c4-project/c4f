@@ -75,8 +75,8 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Sequence.map ~f:diff_to_error
   |> Sequence.to_list |> Or_error.combine_errors_unit
 
-let regress_run_asm (module L : Act_asm.Runner.S) (dir : Fpath.t) mode specs
-    passes (file : Fpath.t) =
+let regress_run_asm (module L : Act_asm.Runner.Basic) (dir : Fpath.t) mode
+    specs passes (file : Fpath.t) =
   let open Or_error.Let_syntax in
   let%bind filepath = to_full_path ~dir ~file in
   let%bind spec = find_spec specs file in

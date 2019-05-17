@@ -23,13 +23,13 @@ fmt:
 doc:
 	cd docs && make html
 
-open-doc: doc
+open-doc:
 	open docs/_build/html/index.html
 
 api-doc:
 	dune build @doc
 
-open-api-doc: api-doc
+open-api-doc:
 	open _build/default/_doc/_html/index.html
 
 #

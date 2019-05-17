@@ -23,20 +23,34 @@
 
 include Output_intf
 
+module Program = struct
+  type ('warn_elt, 'listing) t =
+    { warnings: 'warn_elt Warn.t list
+    ; listing: 'listing
+    ; symbol_table: Act_abstract.Symbol.Table.t }
+  [@@deriving fields, make]
+end
+
 module Make (B : Basic) :
   S
   with type listing = B.listing
-   and type warn = B.warn
+   and type warn_elt = B.warn_elt
    and type 'l pc = 'l B.pc
-   and type rmap = B.rmap = struct
+   and type rmap = B.rmap
+   and type ('warn_elt, 'listing) program := ('warn_elt, 'listing) Program.t =
+struct
   include B
 
   module Program = struct
-    type t =
-      { warnings: warn list
-      ; listing: listing
-      ; symbol_table: Act_abstract.Symbol.Table.t }
-    [@@deriving fields, make]
+    type t = (warn_elt, listing) Program.t
+
+    let warnings = Program.warnings
+
+    let symbol_table = Program.symbol_table
+
+    let listing = Program.listing
+
+    let make = Program.make
   end
 
   type t = {programs: Program.t pc; redirects: rmap}

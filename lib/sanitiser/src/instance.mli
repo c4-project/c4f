@@ -32,8 +32,8 @@ include module type of Instance_intf
 (** [Make] implements the assembly sanitiser for a given [Basic]. *)
 module Make (B : Basic) :
   S
-  with module Lang := B.Lang
-   and type 'a Program_container.t = 'a B.Program_container.t
+  with module Lang := B.Hook.Lang
+   and type 'a Program_container.t = 'a B.Hook.Program_container.t
 
 (** [Make_single] implements the assembly sanitiser for a given
     [Hook_maker], performing no program splitting and returning the

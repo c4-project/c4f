@@ -36,7 +36,7 @@ let freshen_label (syms : Act_abstract.Symbol.Set.t) (prefix : string) :
 module Make (Lang : Act_language.Definition.S) :
   S with module Lang := Lang = struct
   module Lang = Lang
-  module Warn = Warn.Make (Lang)
+  module Warn = Warn.Make (Lang.Element)
   module Pass = Act_config.Sanitiser_pass
 
   type ctx =
