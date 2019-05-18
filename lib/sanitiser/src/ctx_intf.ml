@@ -33,18 +33,15 @@ module type S = sig
   module Warn :
     Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
 
-  type ctx
-
   (** [S] includes a state transformer, [t], with an inner error monad. *)
   include
     Travesty.State_transform.S
-    with type state := ctx
-     and module Inner := Or_error
+     with module Inner := Or_error
 
   val initial :
        passes:Act_config.Sanitiser_pass.Set.t
     -> variables:Lang.Symbol.Set.t
-    -> ctx
+    -> state
   (** [initial ~passes ~variables] opens an initial context with the given
       enabled passes and C variables. *)
 
@@ -52,9 +49,9 @@ module type S = sig
    * Program properties
    *)
 
-  val enter_program : name:string -> Lang.Program.t -> Lang.Program.t t
-  (** [enter_program ~name ~len] is a contextual computation that tells the
-      context we've entered a new program with name [name] and body [body].
+  val enter_program : name:string -> unit t
+  (** [enter_program ~name] is a contextual computation that tells the
+      context we've entered a new program with name [name].
       Any previous program state is expunged. *)
 
   val get_end_label : string option t

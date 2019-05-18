@@ -344,23 +344,28 @@ module Make (B : Basic) :
   let program_name i program =
     Option.value (Lang.Program.name program) ~default:(sprintf "%d" i)
 
+  let sanitise_entered_program : Lang.Program.t -> Lang.Program.t Ctx.t =
+    Ctx.(
+      (* Initial table population. *)
+      tee_m ~f:update_symbol_table
+      >=> (`Simplify_litmus |-> add_end_label)
+      >=> (`Language_hooks |-> B.Hook.On_program.run)
+      (* The language hook might have invalidated the symbol tables. *)
+      >=> tee_m ~f:update_symbol_table
+      >=> (`Simplify_deref_chains |-> Deref.run)
+      (* Need to sanitise statements first, in case the sanitisation pass
+         makes irrelevant statements (like jumps) relevant again. *)
+      >=> Ctx_Stm.mapi_m ~f:sanitise_stm
+      >=> remove_fix)
+
   (** [sanitise_program] performs sanitisation on a single program. *)
   let sanitise_program (i : int) (prog : Lang.Program.t) :
       Lang.Program.t Ctx.t =
     let name = program_name i prog in
     Ctx.(
-      enter_program ~name prog
-      (* Initial table population. *)
-      >>= tee_m ~f:update_symbol_table
-      >>= (`Simplify_litmus |-> add_end_label)
-      >>= (`Language_hooks |-> B.Hook.On_program.run)
-      (* The language hook might have invalidated the symbol tables. *)
-      >>= tee_m ~f:update_symbol_table
-      >>= (`Simplify_deref_chains |-> Deref.run)
-      (* Need to sanitise statements first, in case the sanitisation pass
-         makes irrelevant statements (like jumps) relevant again. *)
-      >>= Ctx_Stm.mapi_m ~f:sanitise_stm
-      >>= remove_fix)
+      enter_program ~name >>= fun () -> sanitise_entered_program prog
+    )
+
 
   let all_symbols_in (progs : Lang.Program.t Program_container.t) =
     progs |> Program_container.to_list
