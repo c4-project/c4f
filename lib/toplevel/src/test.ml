@@ -138,8 +138,8 @@ let pp_deviation_bucket (bucket_name : string) : Act_sim.State.t list Fmt.t
 
 let to_deviation_lists (ord : Act_sim.Diff.Order.t) :
     Act_sim.State.t list * Act_sim.State.t list =
-  let l = ord |> Act_sim.Diff.Order.in_left_only |> Set.to_list in
-  let r = ord |> Act_sim.Diff.Order.in_right_only |> Set.to_list in
+  let l = ord |> Set_partial_order.in_left_only |> Set.to_list in
+  let r = ord |> Set_partial_order.in_right_only |> Set.to_list in
   (l, r)
 
 let pp_deviation : Act_sim.Diff.Order.t Fmt.t =

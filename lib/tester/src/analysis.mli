@@ -37,7 +37,6 @@ module Herd : sig
         (** Herd ran on both sides, with the given differential result. *)
     | Disabled  (** Herd was disabled. *)
     | Errored of [`C | `Assembly]  (** Herd encountered an error. *)
-  [@@deriving sexp_of]
 
   include Pretty_printer.S with type t := t
 
@@ -47,7 +46,7 @@ end
 (** A file analysis. *)
 module File : sig
   (** [t] is the opaque type of a single-file analysis. *)
-  type t [@@deriving sexp_of]
+  type t
 
   include Timing.Timed0 with type t := t
 
@@ -79,7 +78,7 @@ end
 (** A compiler analysis, containing multiple file analyses. *)
 module Compiler : sig
   (** [t] is the opaque type of a single-compiler analysis. *)
-  type t [@@deriving sexp_of]
+  type t
 
   include Timing.Timed0 with type t := t
 
@@ -99,7 +98,7 @@ end
 (** A machine analysis, containing multiple compiler analyses. *)
 module Machine : sig
   (** Opaque type of a machine analysis. *)
-  type t [@@deriving sexp_of]
+  type t
 
   include Timing.Timed0 with type t := t
 
@@ -122,7 +121,7 @@ module Machine : sig
 end
 
 (** [t] is the opaque type of a full analysis. *)
-type t [@@deriving sexp_of]
+type t
 
 val make :
      ?time_taken:Time.Span.t

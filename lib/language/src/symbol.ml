@@ -23,7 +23,6 @@
 
 open Core_kernel
 module Ac = Act_common
-open Act_utils
 include Symbol_intf
 
 let program_id_of_demangled sym =
@@ -45,7 +44,7 @@ module Make (B : Basic) : S with type t = B.t = struct
   module Comp = Comparable.Make (B)
 
   module Set = struct
-    include My_set.Extend (Comp.Set)
+    include Comp.Set
 
     let abstract = Act_abstract.Symbol.Set.map ~f:B.abstract
   end

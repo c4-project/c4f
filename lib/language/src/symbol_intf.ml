@@ -28,14 +28,13 @@
     [S]; and a functor from one to the other, [Make]. *)
 
 open Core_kernel
-open Act_utils
 open Act_common
 
 (** [Basic] is the interface act languages must implement for symbol
     analysis. *)
 module type Basic = sig
   (** [t] is the concrete type of symbols. *)
-  type t [@@deriving compare, eq, sexp]
+  type t [@@deriving compare, equal, sexp]
 
   (** Languages must supply a pretty-printer for their symbols. *)
   include Pretty_printer.S with type t := t
@@ -73,8 +72,6 @@ module type S = sig
   (** [Set] is an extended set module for concrete symbols. *)
   module Set : sig
     include Set.S with type Elt.t = t
-
-    include My_set.Extensions with type t := t
 
     val abstract : t -> Act_abstract.Symbol.Set.t
     (** [abstract set] applies [abstract] to every symbol in the concrete

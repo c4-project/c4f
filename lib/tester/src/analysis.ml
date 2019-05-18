@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -23,11 +23,11 @@
 
 open Core_kernel
 open Act_common
+module Au = Act_utils
 include Analysis_intf
 
 module Herd = struct
   type t = Run of Act_sim.Diff.t | Disabled | Errored of [`C | `Assembly]
-  [@@deriving sexp_of]
 
   let to_string : t -> string = function
     | Errored `Assembly ->
@@ -74,10 +74,10 @@ module Herd = struct
     end)
 
     let has_deviations : t -> bool =
-      H.forward_bool (Fn.non Act_sim.Diff.Order.is_equal)
+      H.forward_bool (Fn.non Au.Set_partial_order.is_equal)
 
     let has_asm_deviations : t -> bool =
-      H.forward_bool Act_sim.Diff.Order.right_has_uniques
+      H.forward_bool Au.Set_partial_order.right_has_uniques
   end
 
   include Order_forwards
@@ -88,7 +88,7 @@ module File = struct
     { time_taken: Time.Span.t option
     ; time_taken_in_cc: Time.Span.t option
     ; herd: Herd.t }
-  [@@deriving sexp_of, fields, make]
+  [@@deriving fields, make]
 
   module Herd_forwards = struct
     module H = Act_utils.Inherit.Helpers (struct
@@ -117,14 +117,14 @@ end
 module Compiler = struct
   type t =
     {time_taken: Time.Span.t option; files: (string, File.t) List.Assoc.t}
-  [@@deriving sexp_of, fields, make]
+  [@@deriving fields, make]
 end
 
 module Machine = struct
   type t =
     { time_taken: Time.Span.t option
     ; compilers: (Id.t, Compiler.t) List.Assoc.t }
-  [@@deriving sexp_of, fields, make]
+  [@@deriving fields, make]
 
   let files m =
     List.concat_map (compilers m) ~f:(fun (cid, compiler) ->
@@ -134,4 +134,4 @@ end
 
 type t =
   {time_taken: Time.Span.t option; machines: (Id.t, Machine.t) List.Assoc.t}
-[@@deriving sexp_of, fields, make]
+[@@deriving fields, make]

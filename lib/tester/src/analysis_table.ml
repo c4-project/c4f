@@ -25,7 +25,7 @@ open Core_kernel (* not Base: we need Time.Span. *)
 
 module Tx = Travesty_core_kernel_exts
 open Act_common
-open Act_utils
+module Au = Act_utils
 module A = Analysis
 
 module Interest_level = struct
@@ -42,7 +42,7 @@ module Row = struct
   [@@deriving sexp_of, fields, make]
 
   let to_table_row (type a) (row : a t) ~(f : a -> string list) :
-      Tabulator.row =
+      Au.Tabulator.row =
     [ Fmt.strf "%a" Id.pp row.machine_id
     ; Fmt.strf "%a" Id.pp row.compiler_id
     ; row.filename ]
@@ -77,13 +77,13 @@ let maybe_with_rule last_mid this_mid last_cid this_cid tabulator =
   match (last_mid, last_cid) with
   | None, _ | _, None ->
       (* Assume we're on the first row *)
-      Tabulator.add_rule ~char:machine_rule tabulator
+      Au.Tabulator.add_rule ~char:machine_rule tabulator
   | Some lmid, Some lcid ->
       if Id.equal lmid this_mid then
         if Id.equal lcid this_cid then Or_error.return tabulator
           (* no rule *)
-        else Tabulator.add_rule ~char:compiler_rule tabulator
-      else Tabulator.add_rule ~char:machine_rule tabulator
+        else Au.Tabulator.add_rule ~char:compiler_rule tabulator
+      else Au.Tabulator.add_rule ~char:machine_rule tabulator
 
 module type Basic_tabulator = sig
   (** Type of analysis. *)
@@ -106,32 +106,32 @@ end
 let common_header : string list = ["Machine"; "Compiler"; "File"]
 
 module Make_tabulator (B : Basic_tabulator) :
-  Tabulator.Tabular with type data = B.data = struct
+  Au.Tabulator.Tabular with type data = B.data = struct
   type data = B.data
 
   let header : string list = common_header @ B.analysis_header
 
   let with_file (last_mid, last_cid, tabulator)
       (analysis_row : B.analysis Row.t) :
-      (Id.t option * Id.t option * Tabulator.t) Or_error.t =
+      (Id.t option * Id.t option * Au.Tabulator.t) Or_error.t =
     let mid = Row.machine_id analysis_row in
     let cid = Row.compiler_id analysis_row in
     let row = Row.to_table_row analysis_row ~f:B.analysis_to_cells in
     Or_error.(
       return tabulator
       >>= maybe_with_rule last_mid mid last_cid cid
-      >>= Tabulator.add_row ~row
+      >>= Au.Tabulator.add_row ~row
       >>| fun t' -> (Some mid, Some cid, t'))
 
-  let with_files (rows : B.analysis Row.t list) (tab : Tabulator.t) :
-      Tabulator.t Or_error.t =
+  let with_files (rows : B.analysis Row.t list) (tab : Au.Tabulator.t) :
+      Au.Tabulator.t Or_error.t =
     Or_error.(
       rows
       |> Tx.List.With_errors.fold_m ~init:(None, None, tab) ~f:with_file
       >>| Tuple3.get3)
 
-  let to_table (a : data) : Tabulator.t Or_error.t =
-    Or_error.(Tabulator.make ~header () >>= with_files (B.rows a))
+  let to_table (a : data) : Au.Tabulator.t Or_error.t =
+    Or_error.(Au.Tabulator.make ~header () >>= with_files (B.rows a))
 end
 
 module On_files = struct
@@ -163,7 +163,7 @@ module On_files = struct
     a.data |> rows |> List.filter ~f:(is_interesting a.level)
 
   module M :
-    Tabulator.Tabular with type data = A.t Interest_level.filtered =
+    Au.Tabulator.Tabular with type data = A.t Interest_level.filtered =
   Make_tabulator (struct
     type data = A.t Interest_level.filtered
 
@@ -183,14 +183,14 @@ module On_files = struct
   end)
 
   include M
-  include Tabulator.Extend_tabular (M)
+  include Au.Tabulator.Extend_tabular (M)
 end
 
 module On_deviations = struct
   let deviating_order_opt (file : A.File.t) : Act_sim.Diff.Order.t option =
     Tx.Option.(
       file |> A.File.state_set_order
-      |> exclude ~f:Act_sim.Diff.Order.is_equal)
+      |> exclude ~f:Au.Set_partial_order.is_equal)
 
   let row_deviating_order_opt :
       A.File.t Row.t -> Act_sim.Diff.Order.t Row.t option =
@@ -199,7 +199,7 @@ module On_deviations = struct
   let rows (a : A.t) : Act_sim.Diff.Order.t Row.t list =
     a |> On_files.rows |> List.filter_map ~f:row_deviating_order_opt
 
-  module M : Tabulator.Tabular with type data = A.t = Make_tabulator (struct
+  module M : Au.Tabulator.Tabular with type data = A.t = Make_tabulator (struct
     type data = A.t
 
     type analysis = Act_sim.Diff.Order.t
@@ -210,10 +210,10 @@ module On_deviations = struct
       ["Num. in C only"; "Num. in ASM only"]
 
     let analysis_to_cells (ord : Act_sim.Diff.Order.t) : string list =
-      [ Int.to_string (Set.length (Act_sim.Diff.Order.in_left_only ord))
-      ; Int.to_string (Set.length (Act_sim.Diff.Order.in_right_only ord)) ]
+      [ Int.to_string (Set.length (Au.Set_partial_order.in_left_only ord))
+      ; Int.to_string (Set.length (Au.Set_partial_order.in_right_only ord)) ]
   end)
 
   include M
-  include Tabulator.Extend_tabular (M)
+  include Au.Tabulator.Extend_tabular (M)
 end

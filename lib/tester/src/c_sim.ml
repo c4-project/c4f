@@ -25,7 +25,7 @@ module Make (R : Sim.Runner.S) : S = struct
         Sim.Output.to_observation_or_error output ~handle_skipped:`Error
       in
       let state_list = Sim.Output.Observation.states obs in
-      Sim.State.Set.of_list state_list)
+      Set.of_list (module Sim.State) state_list)
 
   let run_source (input : 'a source)
       ~(from_test :

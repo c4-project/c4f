@@ -27,7 +27,7 @@ open Act_utils
 
 type t = string [@@deriving sexp, equal]
 
-module Set = My_set.Extend (Set.Make (String))
+module Set = Set.Make (String)
 
 module Sort = struct
   module M = struct

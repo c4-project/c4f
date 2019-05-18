@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 open Act_common
 open Act_utils
 
@@ -30,6 +30,7 @@ module M = struct
 end
 
 include M
+include Comparable.Make (M)
 
 module Q : My_quickcheck.S_with_sexp with type t := t = struct
   include M
@@ -72,5 +73,3 @@ let map ~(location_map : Litmus_id.t -> Litmus_id.t option Or_error.t)
   (* Next, remove any items with no key mapping... *)
   let alist' = List.filter_opt mapped in
   Litmus_id.Map.of_alist_or_error alist'
-
-module Set = My_set.Extend (Set.Make (M))

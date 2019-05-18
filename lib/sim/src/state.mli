@@ -25,10 +25,11 @@
 
 open Base
 open Act_common
-open Act_utils
 
 (** [t] is the type of states: a binding from name to value. *)
 type t [@@deriving sexp, compare, quickcheck]
+
+include Comparable.S with type t := t
 
 val map :
      location_map:(Litmus_id.t -> Litmus_id.t option Or_error.t)
@@ -45,8 +46,6 @@ val map :
 
 val of_alist : (Litmus_id.t, string) List.Assoc.t -> t Or_error.t
 (** [of_alist alist] tries to convert [alist] into a state. *)
-
-module Set : My_set.S with type Elt.t = t
 
 val bound : t -> Litmus_id.t list
 (** [bound t] gets the list of all bound names in [t]. *)

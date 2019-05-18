@@ -37,7 +37,7 @@ type 'elt source =
 type post = Act_c.Mini_litmus.Ast.Postcondition.t
 
 (** Type of extensional state-set input. *)
-type ext = Act_sim.State.Set.t
+type ext = Set.M(Act_sim.State).t
 
 (** {2 Signatures} *)
 

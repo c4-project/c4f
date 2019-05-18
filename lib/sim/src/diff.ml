@@ -23,11 +23,12 @@
 
 open Base
 module A = Act_common
+module Au = Act_utils
 module Tx = Travesty_base_exts
 module Ob = Output.Observation
 
 module Order = struct
-  include State.Set.Partial_order
+  include Au.Set_partial_order.M(State)
 
   let operator : Ordering.t option -> string = function
     | Some Equal ->
@@ -54,7 +55,6 @@ module Order = struct
 end
 
 type t = Oracle_undefined | Subject_undefined | Result of Order.t
-[@@deriving sexp_of]
 
 let pp (f : Formatter.t) : t -> unit = function
   | Subject_undefined ->
@@ -63,7 +63,7 @@ let pp (f : Formatter.t) : t -> unit = function
       Fmt.styled_unit `Cyan "UNDEFINED@ (Oracle)" f ()
   | Result o ->
       Fmt.pf f "Oracle@ %a@ Subject" Order.pp_operator
-        (Order.to_ordering_opt o)
+        (Au.Set_partial_order.to_ordering_opt o)
 
 let to_string : t -> string = function
   | Subject_undefined ->
@@ -72,13 +72,13 @@ let to_string : t -> string = function
       "UNDEFINED (Oracle)"
   | Result o ->
       Printf.sprintf "Oracle %s Subject"
-        (Order.operator (Order.to_ordering_opt o))
+        (Order.operator (Au.Set_partial_order.to_ordering_opt o))
 
 let compare_states ~(oracle_states : State.t list)
     ~(subject_states : State.t list) : t =
   let result =
-    State.Set.(
-      Tx.Fn.on of_list ~f:partial_compare oracle_states subject_states)
+    Tx.Fn.on (Set.of_list (module State))
+      ~f:Au.Set_partial_order.make oracle_states subject_states
   in
   Result result
 

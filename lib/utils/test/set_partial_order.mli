@@ -21,14 +21,4 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Set extensions *)
-
-open Core_kernel
-
-include module type of My_set_intf
-
-(** [Make_extensions] builds set extensions for module [M]. *)
-module Make_extensions (M : Set.S) : Extensions with type t := M.t
-
-(** [Extend] builds and applies set extensions for module [M]. *)
-module Extend (M : Set.S) : S with module Elt = M.Elt
+(** This interface intentionally left blank. *)

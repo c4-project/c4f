@@ -34,8 +34,10 @@
 
 open Base
 
-(** Synonym of [Partial_order] for orderings between state sets. *)
-module Order : module type of State.Set.Partial_order
+(** Synonym of [Set_partial_order] for orderings between state sets. *)
+module Order : sig
+  type t = (State.t, State.comparator_witness) Act_utils.Set_partial_order.t
+end
 
 type t =
   | Oracle_undefined
@@ -43,7 +45,6 @@ type t =
   | Subject_undefined
       (** The subject execution triggered undefined behaviour. *)
   | Result of Order.t  (** Analysis completed with the following result. *)
-[@@deriving sexp_of]
 
 val to_string : t -> string
 (** [to_string result] returns a human-readable string representing

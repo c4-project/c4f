@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -30,11 +30,7 @@ open Act_utils
 type t = string [@@deriving sexp, eq]
 
 (** [Set] is a set module for symbols. *)
-module Set : sig
-  include Set.S with type Elt.t = string
-
-  include My_set.Extensions with type t := t
-end
+module Set : Set.S with type Elt.t = string
 
 (** [Sort] is a module containing an enumeration of symbol sorts. *)
 module Sort : sig
