@@ -25,12 +25,9 @@
 
 open Base
 
-(** [Basic] collects the input required to generate explainers.
-    This should be a subset of {{!Runner.Basic}Runner.Basic}.
- *)
+(** [Basic] collects the input required to generate explainers. This should
+    be a subset of {{!Runner.Basic} Runner.Basic}. *)
 module type Basic = sig
-  type ast
-
   (** [Src_lang] is the language under explanation. *)
   module Src_lang : Act_language.Definition.S
 
@@ -39,8 +36,7 @@ module type Basic = sig
     with module Lang = Src_lang
      and module Program_container = P
 
-  module Frontend : Act_utils.Frontend.S with type ast := ast
-  val program : ast -> Src_lang.Program.t
+  module Program : Act_utils.Loadable.S with type t = Src_lang.Program.t
 end
 
 module type S = sig

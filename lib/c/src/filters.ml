@@ -35,7 +35,7 @@ module type Basic = sig
   (** Delitmusified AST *)
   type del
 
-  module Frontend : Au.Frontend.S with type ast := ast
+  module Frontend : Au.Frontend.S with type t := ast
 
   val normal_tmp_file_ext : string
 

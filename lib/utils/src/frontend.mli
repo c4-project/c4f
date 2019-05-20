@@ -48,12 +48,7 @@ module type Basic = sig
 end
 
 (** [S] is the signature of language frontends. *)
-module type S = sig
-  (** [ast] is the type of the syntax tree outputted by the frontend. *)
-  type ast
-
-  include Loadable.S with type t := ast
-end
+module type S = Loadable.S
 
 (** [Make] lifts an instance of [B] into a frontend. *)
-module Make (B : Basic) : S with type ast := B.ast
+module Make (B : Basic) : S with type t = B.ast

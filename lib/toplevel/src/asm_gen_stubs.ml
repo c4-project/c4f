@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-module A = Act_common
+module Ac = Act_common
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
@@ -33,13 +33,46 @@ be slotted into a simulation harness.
 
 module In = Asm_common.Input
 
+let make_config ~(c_variables : Ac.C_variables.Map.t option) :
+    Act_asm.Stub_gen.Config.t =
+  ignore (c_variables : Ac.C_variables.Map.t option) ;
+  Act_asm.Stub_gen.Config.make ()
+
+let stub_gen_runner (module B : Act_asm.Runner.Basic) :
+    (module Act_asm.Runner.S with type cfg = Act_asm.Stub_gen.Config.t) =
+  let module Sg = Act_asm.Stub_gen.Make (B) in
+  (module Sg.Filter)
+
+let stub_gen_filter (target : Act_config.Compiler.Target.t) :
+    (module Act_utils.Filter.S
+       with type aux_i = Act_config.File_type.t_or_infer
+                         * (   Act_c.Filters.Output.t
+                               Act_utils.Filter.chain_output
+                            -> Act_asm.Stub_gen.Config.t Act_asm.Job.t
+                               Act_config.Compiler.Chain_input.t)
+        and type aux_o = Act_c.Filters.Output.t option
+                         * (unit option * Act_asm.Job.Output.t))
+    Or_error.t =
+  Or_error.tag ~tag:"while getting a stub-gen filter for this target"
+    (Common.delitmus_compile_asm_pipeline target stub_gen_runner)
+
 let run (input : In.t) : unit Or_error.t =
-  ignore input ;
-  Or_error.unimplemented "TODO"
+  let file_type = In.file_type input in
+  let infile = In.infile_raw input in
+  let outfile = In.outfile_raw input in
+  let compiler_input_fn = In.make_compiler_input input make_config in
+  let open Or_error.Let_syntax in
+  let%bind (module Sg) = stub_gen_filter (In.target input) in
+  Or_error.ignore_m
+    (Sg.run_from_string_paths
+       (file_type, compiler_input_fn)
+       ~infile ~outfile)
 
 let command : Command.t =
   Command.basic ~summary:"generates GCC asm stubs from an assembly file"
     ~readme
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard_asm.get in
-      fun () -> Asm_common.lift_command standard_args ~f:run ~default_passes:Act_config.Sanitiser_pass.explain)
+      fun () ->
+        Asm_common.lift_command standard_args ~f:run
+          ~default_passes:Act_config.Sanitiser_pass.explain)

@@ -23,33 +23,39 @@
 
 (** Common infrastructure for [act asm] commands.
 
-    This module sits on top of {{!Common}Common}. *)
+    This module sits on top of {{!Common} Common}. *)
 
 open Base
 
 module Input : sig
-  type t
   (** Opaque type of assembly command input. *)
+  type t
 
   val act_config : t -> Act_config.Act.t
+
   val file_type : t -> Act_config.File_type.t_or_infer
+
   val infile_raw : t -> string option
+
   val outfile_raw : t -> string option
+
   val output : t -> Act_common.Output.t
+
   val sanitiser_passes : t -> Act_config.Sanitiser_pass.Set.t
+
   val target : t -> Act_config.Compiler.Target.t
+
   val user_cvars : t -> Act_common.C_variables.Map.t option
 
   val make_compiler_input :
-    t
+       t
     -> (c_variables:Act_common.C_variables.Map.t option -> 'cfg)
     -> Act_c.Filters.Output.t Act_utils.Filter.chain_output
     -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t
 end
 
-
-val lift_command
-  : Args.Standard_asm.t ->
-  f:(Input.t -> unit Or_error.t) ->
-  default_passes:Act_config.Sanitiser_pass.Set.t ->
-  unit
+val lift_command :
+     Args.Standard_asm.t
+  -> f:(Input.t -> unit Or_error.t)
+  -> default_passes:Act_config.Sanitiser_pass.Set.t
+  -> unit

@@ -155,8 +155,7 @@ let to_machine_id : Act_config.Compiler.Target.t -> Act_config.Machine.Id.t
 module In = Asm_common.Input
 
 let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
-    (input : In.t) :
-    unit Or_error.t =
+    (input : In.t) : unit Or_error.t =
   let cfg = In.act_config input in
   let infile = In.infile_raw input in
   let outfile = In.outfile_raw input in
@@ -172,15 +171,11 @@ let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
     let%bind mtab = R.make_table machine_id in
     let%bind (module Filter) = make_filter filter target mtab in
     let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
-    let compiler_input_fn =
-      In.make_compiler_input input litmus_cfg_fn
-    in
+    let compiler_input_fn = In.make_compiler_input input litmus_cfg_fn in
     Or_error.ignore_m
       (Filter.run_from_string_paths
          ((file_type, compiler_input_fn), Fn.const filter)
-         ~infile
-         ~outfile)
-  )
+         ~infile ~outfile))
 
 let command =
   Command.basic ~summary:"converts an assembly file to a litmus test"
@@ -202,5 +197,4 @@ let command =
       in
       fun () ->
         Asm_common.lift_command standard_args ~f:(run simulator post_sexp)
-          ~default_passes:Act_config.Sanitiser_pass.standard
-    )
+          ~default_passes:Act_config.Sanitiser_pass.standard)

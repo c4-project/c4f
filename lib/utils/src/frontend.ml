@@ -76,13 +76,9 @@ module type Basic = sig
   val message : int -> string
 end
 
-module type S = sig
-  type ast
+module type S = Loadable.S
 
-  include Loadable.S with type t := ast
-end
-
-module Make (B : Basic) : S with type ast := B.ast = struct
+module Make (B : Basic) : S with type t = B.ast = struct
   let fail (_lexbuf : Lexing.lexbuf) = function
     | B.I.HandlingError env ->
         let state = B.I.current_state_number env in

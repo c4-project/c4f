@@ -23,7 +23,6 @@
 
 include Base
 module Tx = Travesty_base_exts
-
 module Ac = Act_common
 
 module Input = struct
@@ -31,10 +30,10 @@ module Input = struct
     { act_config: Act_config.Act.t
     ; args: Args.Standard_asm.t
     ; sanitiser_passes: Act_config.Sanitiser_pass.Set.t
-    ; user_cvars : Ac.C_variables.Map.t option
+    ; user_cvars: Ac.C_variables.Map.t option
     ; target: Act_config.Compiler.Target.t
-    ; output: Act_common.Output.t
-    } [@@deriving fields]
+    ; output: Act_common.Output.t }
+  [@@deriving fields]
 
   let file_type (i : t) : Act_config.File_type.t_or_infer =
     Args.Standard_asm.file_type (args i)
@@ -45,17 +44,13 @@ module Input = struct
   let outfile_raw (i : t) : string option =
     Args.Standard_asm.infile_raw (args i)
 
-  let make_compiler_input
-    (i : t)
-    (config_builder : (c_variables:Act_common.C_variables.Map.t option -> 'cfg))
-    : Act_c.Filters.Output.t Act_utils.Filter.chain_output
-    -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
-    Common.make_compiler_input
-      (output i)
-      (file_type i)
-      (user_cvars i)
-      config_builder
-      (sanitiser_passes i)
+  let make_compiler_input (i : t)
+      (config_builder :
+        c_variables:Act_common.C_variables.Map.t option -> 'cfg) :
+         Act_c.Filters.Output.t Act_utils.Filter.chain_output
+      -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
+    Common.make_compiler_input (output i) (file_type i) (user_cvars i)
+      config_builder (sanitiser_passes i)
 end
 
 let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
@@ -81,28 +76,22 @@ let collect_cvars (args : Args.Standard_asm.t) :
     in
     Option.merge globals locals ~f:(fun x y -> V.Map.merge_list [x; y]))
 
-let with_input
-    (args : Args.Standard_asm.t)
-    (output : Ac.Output.t)
-    (act_config : Act_config.Act.t)
-    ~(f: Input.t -> unit Or_error.t)
-    ~(default_passes: Act_config.Sanitiser_pass.Set.t)
-  : unit Or_error.t =
+let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
+    (act_config : Act_config.Act.t) ~(f : Input.t -> unit Or_error.t)
+    ~(default_passes : Act_config.Sanitiser_pass.Set.t) : unit Or_error.t =
   let sanitiser_passes =
-    Act_config.Act.sanitiser_passes act_config
-      ~default:default_passes
+    Act_config.Act.sanitiser_passes act_config ~default:default_passes
   in
   Or_error.Let_syntax.(
     let%bind user_cvars = collect_cvars args in
     let%bind target = resolve_target args act_config in
-    let input = Input.Fields.create ~act_config ~output ~args ~sanitiser_passes ~user_cvars ~target in
-    f input
-  )
+    let input =
+      Input.Fields.create ~act_config ~output ~args ~sanitiser_passes
+        ~user_cvars ~target
+    in
+    f input)
 
-let lift_command
-  (args : Args.Standard_asm.t)
-  ~(f : Input.t -> unit Or_error.t)
-  ~(default_passes: Act_config.Sanitiser_pass.Set.t)
-  : unit =
-  Common.lift_asm_command_basic args
-    ~f:(with_input ~f ~default_passes)
+let lift_command (args : Args.Standard_asm.t)
+    ~(f : Input.t -> unit Or_error.t)
+    ~(default_passes : Act_config.Sanitiser_pass.Set.t) : unit =
+  Common.lift_asm_command_basic args ~f:(with_input ~f ~default_passes)

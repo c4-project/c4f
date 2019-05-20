@@ -27,6 +27,11 @@ include module type of Stub_gen_intf
 
 module Config : sig
   type t
+
+  val make : unit -> t
+  (** [make ()] makes a stub generator config (which doesn't have anything
+      in it yet, but is reserved for future expansion). *)
 end
 
-module Make (B : Basic) : S with module Lang = B.Src_lang and type config = Config.t
+module Make (B : Basic) :
+  S with module Lang = B.Src_lang and type config = Config.t

@@ -25,14 +25,14 @@
 
 open Base
 
-type ('v, 'cmp) t
 (** Opaque type of partial order results. *)
+type ('v, 'cmp) t
 
 (** {2 Partial conversion to total orderings} *)
 
 val to_ordering_opt : (_, _) t -> Ordering.t option
-(** [to_ordering_opt po] converts [po] to a total ordering if it has one,
-    or return [None] otherwise. *)
+(** [to_ordering_opt po] converts [po] to a total ordering if it has one, or
+    return [None] otherwise. *)
 
 val is_equal : (_, _) t -> bool
 (** [is_equal po] is true if [po] represents set equality. *)
@@ -48,8 +48,7 @@ val is_proper_subset : (_, _) t -> bool
 (** [is_proper_subset po] is true if [po] represents a proper subset. *)
 
 val is_subset : (_, _) t -> bool
-(** [is_subset po] is true if [po] represents a subset (including
-    equality). *)
+(** [is_subset po] is true if [po] represents a subset (including equality). *)
 
 (** {2 Extended queries} *)
 
@@ -73,11 +72,14 @@ val in_right_only : ('v, 'cmp) t -> ('v, 'cmp) Set.t
 (** [in_right_only po] gets the set of all items in the RHS set [po]
     concerns, but not the LHS set. *)
 
-val make :
-  ('v, 'cmp) Set.t -> ('v, 'cmp) Set.t -> ('v, 'cmp) t
-  (** [make x y] compares two sets [x] and [y] by analysing their
-      symmetric difference. *)
+val make : ('v, 'cmp) Set.t -> ('v, 'cmp) Set.t -> ('v, 'cmp) t
+(** [make x y] compares two sets [x] and [y] by analysing their symmetric
+    difference. *)
 
-module M (C : sig type t type comparator_witness end) : sig
+module M (C : sig
+  type t
+
+  type comparator_witness
+end) : sig
   type nonrec t = (C.t, C.comparator_witness) t
 end

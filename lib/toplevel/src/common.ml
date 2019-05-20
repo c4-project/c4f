@@ -217,11 +217,11 @@ let lift_command_with_files = With_files_lifter.lift
 module Asm_lifter = Make_lifter (Args.Standard_asm)
 
 let lift_asm_command_basic
-    ~(f : Args.Standard_asm.t
-      -> Ac.Output.t
+    ~(f :
+          Args.Standard_asm.t
+       -> Ac.Output.t
        -> Act_config.Act.t
        -> unit Or_error.t) (args : Args.Standard_asm.t) : unit =
   Asm_lifter.lift
     ?sanitiser_passes:(Args.Standard_asm.sanitiser_passes args)
     ~f args
-

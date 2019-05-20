@@ -28,11 +28,8 @@ module Tx = Travesty_base_exts
 module Make_runner_deps
     (Frontend : Frontend.S)
     (Lang : Language_definition.S) : Act_asm.Runner.Basic = struct
-  type ast = Ast.t
-
   module Src_lang = Lang
   module Dst_lang = Language_definition.Herd7
-  module Frontend = Frontend
 
   module Litmus_ast = Act_litmus.Ast.Make (struct
     module Program = struct
@@ -55,7 +52,12 @@ module Make_runner_deps
 
   let convert_const = Or_error.return
 
-  let program = Fn.id
+  module Program : Act_utils.Loadable.S with type t = Src_lang.Program.t =
+  struct
+    type t = Src_lang.Program.t
+
+    include Frontend
+  end
 end
 
 let get_runner (dialect : Id.t) : (module Act_asm.Runner.Basic) Or_error.t =

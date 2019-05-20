@@ -34,9 +34,7 @@ module type S = sig
     Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
 
   (** [S] includes a state transformer, [t], with an inner error monad. *)
-  include
-    Travesty.State_transform.S
-     with module Inner := Or_error
+  include Travesty.State_transform.S with module Inner := Or_error
 
   val initial :
        passes:Act_config.Sanitiser_pass.Set.t
@@ -51,8 +49,8 @@ module type S = sig
 
   val enter_program : name:string -> unit t
   (** [enter_program ~name] is a contextual computation that tells the
-      context we've entered a new program with name [name].
-      Any previous program state is expunged. *)
+      context we've entered a new program with name [name]. Any previous
+      program state is expunged. *)
 
   val get_end_label : string option t
   (** [get_end_label] is a contextual computation that returns the program's

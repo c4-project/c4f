@@ -28,10 +28,10 @@ include Runner_intf
 module Make (R : Runnable) : S with type cfg = R.cfg = struct
   type cfg = R.cfg
 
-  let parse isrc inp =
+  let parse isrc =
     let iname = Act_utils.Io.In_source.to_string isrc in
     Or_error.tag_arg
-      (R.parse_asm iname isrc inp)
+      (R.Program.load_from_isrc isrc)
       "Error while parsing assembly" iname String.sexp_of_t
 
   let unstringify_symbol (sym : string) : R.Symbol.t Or_error.t =
@@ -61,11 +61,10 @@ module Make (R : Runnable) : S with type cfg = R.cfg = struct
 
     let run
         ({Act_utils.Filter.aux; src; sink} :
-          R.cfg Job.t Act_utils.Filter.ctx) ic oc : Job.Output.t Or_error.t
-        =
+          R.cfg Job.t Act_utils.Filter.ctx) _ oc : Job.Output.t Or_error.t =
       let in_name = in_source_to_basename src in
       Or_error.Let_syntax.(
-        let%bind program = parse src ic in
+        let%bind program = parse src in
         let%bind symbols = unstringify_symbols (Job.symbols aux) in
         let config =
           Tx.Option.value_f (Job.config aux) ~default_f:R.default_config

@@ -96,7 +96,7 @@ val lift_asm_command_basic :
 (** [lift_asm_command_basic ~f args] behaves like
     {{!lift_command_with_files} lift_command_with_files}, but also handles
     (and supplies) the various standard asm command arguments, including
-    sanitiser passes.  More thorough lifting is left to the [Asm_common]
+    sanitiser passes. More thorough lifting is left to the [Asm_common]
     module. *)
 
 (** {2 Single-file pipelines}

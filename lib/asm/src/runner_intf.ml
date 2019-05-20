@@ -27,16 +27,12 @@ open Act_utils
 (** [Basic] is a signature bringing together the modules we need to be able
     to run single-file jobs. *)
 module type Basic = sig
-  type ast
-
   (** [Src_lang] is the main language used in the jobs, which may differ
       from the [Litmus] language. *)
   module Src_lang : Act_language.Definition.S
 
   (** [Dst_lang] is the language used in emitted Litmus tests. *)
   module Dst_lang : Act_language.Definition.S
-
-  module Frontend : Frontend.S with type ast := ast
 
   module Litmus_ast :
     Act_litmus.Ast.S
@@ -54,14 +50,11 @@ module type Basic = sig
 
   val convert_const : Src_lang.Constant.t -> Dst_lang.Constant.t Or_error.t
 
-  val program : ast -> Src_lang.Program.t
+  module Program : Loadable.S with type t = Src_lang.Program.t
 end
 
 module type Runnable = sig
-  type program
-
-  val parse_asm :
-    string -> Io.In_source.t -> Stdio.In_channel.t -> program Or_error.t
+  module Program : Loadable.S
 
   type cfg
 
@@ -81,7 +74,7 @@ module type Runnable = sig
        Io.Out_sink.t
     -> Stdio.Out_channel.t
     -> in_name:string
-    -> program:program
+    -> program:Program.t
     -> symbols:Symbol.t list
     -> config:cfg
     -> passes:Act_config.Sanitiser_pass.Set.t

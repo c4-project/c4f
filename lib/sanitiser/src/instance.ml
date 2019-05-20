@@ -362,10 +362,7 @@ module Make (B : Basic) :
   let sanitise_program (i : int) (prog : Lang.Program.t) :
       Lang.Program.t Ctx.t =
     let name = program_name i prog in
-    Ctx.(
-      enter_program ~name >>= fun () -> sanitise_entered_program prog
-    )
-
+    Ctx.(enter_program ~name >>= fun () -> sanitise_entered_program prog)
 
   let all_symbols_in (progs : Lang.Program.t Program_container.t) =
     progs |> Program_container.to_list

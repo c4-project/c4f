@@ -324,11 +324,7 @@ module Make (B : Runner.Basic) :
 
   module Filter : Runner.S with type cfg = config = Runner.Make (struct
     module Symbol = B.Src_lang.Symbol
-
-    type program = B.Src_lang.Program.t
-
-    let parse_asm _iname isrc _inp =
-      Or_error.(B.Frontend.load_from_isrc isrc >>| B.program)
+    module Program = B.Program
 
     type cfg = config
 

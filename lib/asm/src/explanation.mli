@@ -55,7 +55,8 @@ module Make_ins (B : Basic_ins) :
    and module Abs := Act_abstract.Instruction
 
 module Make_stm (B : Basic_stm) : sig
-  include S
+  include
+    S
     with type elt := B.Statement.t
      and type context := Act_abstract.Symbol.Table.t
      and module Abs := Act_abstract.Statement

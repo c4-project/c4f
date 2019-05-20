@@ -22,25 +22,26 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-
 include Explanation_intf
 
-let pp_details (pp_header : 'h Fmt.t) (pp_body : 'b Fmt.t) : ('h * 'b) Fmt.t =
+let pp_details (pp_header : 'h Fmt.t) (pp_body : 'b Fmt.t) : ('h * 'b) Fmt.t
+    =
   Fmt.(
     hvbox ~indent:4 (append (suffix sp (hvbox pp_header)) (braces pp_body)))
 
 let pp_named_details (name : string) (pp_body : 'b Fmt.t) : 'b Fmt.t =
   Fmt.(using (fun x -> ((), x)) (pp_details (const string name) pp_body))
 
-let pp_optional_details (name : string) (pp_item : 'b Fmt.t) : 'b option Fmt.t =
+let pp_optional_details (name : string) (pp_item : 'b Fmt.t) :
+    'b option Fmt.t =
   Fmt.option (pp_named_details name pp_item)
 
 let pp_listed_details (name : string) (pp_item : 'b Fmt.t) (f : Formatter.t)
-  : 'b list -> unit = function
+    : 'b list -> unit = function
   | [] ->
-    ()
+      ()
   | ts ->
-    Fmt.(pp_named_details name (list ~sep:comma pp_item)) f ts
+      Fmt.(pp_named_details name (list ~sep:comma pp_item)) f ts
 
 module Make (B : Basic) :
   S
@@ -75,8 +76,8 @@ module Make (B : Basic) :
         ~abs_kind:(fun _ _ -> pf f "@[kind:@ %a;@]@ " B.Abs.Kind.pp)
         ~abstract:(fun _ _ _ -> ())
         ~abs_flags:(fun _ _ flags ->
-            if not (B.Flag.Set.is_empty flags) then
-              pf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags )
+          if not (B.Flag.Set.is_empty flags) then
+            pf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags )
         ~details:(fun _ _ -> B.pp_details f))
 
   let pp f t = pp_details B.pp pp_body f (original t, t)
@@ -106,12 +107,12 @@ module Make_loc (L : Act_language.Location.S) :
     let pp_details _f _context = ()
 
     include Act_abstract.Abstractable.Make (struct
-        module Abs = Abs
+      module Abs = Abs
 
-        type t = elt
+      type t = elt
 
-        let abstract = L.abstract
-      end)
+      let abstract = L.abstract
+    end)
 
     let abs_flags _ _ = Flag.Set.empty
   end
@@ -145,16 +146,15 @@ module Make_ops (L : Act_language.Instruction.S) :
     let pp_details _f _context = ()
 
     include Act_abstract.Abstractable.Make (struct
-        module Abs = Abs
+      module Abs = Abs
 
-        type t = elt
+      type t = elt
 
-        let abstract = L.abs_operands
-      end)
+      let abstract = L.abs_operands
+    end)
 
     let abs_flags ins =
-      Act_abstract.Operand.Bundle.flags
-        (L.abs_operands ins)
+      Act_abstract.Operand.Bundle.flags (L.abs_operands ins)
   end
 
   type details = Base.details
@@ -166,56 +166,50 @@ module Make_ins (B : Basic_ins) :
   S
   with type elt := B.Instruction.t
    and type context := Act_abstract.Symbol.Table.t
-   and module Abs := Act_abstract.Instruction
- = struct
-    module Flag = Act_abstract.Instruction.Flag
+   and module Abs := Act_abstract.Instruction = struct
+  module Flag = Act_abstract.Instruction.Flag
 
-    module Base = struct
-      module Abs = Act_abstract.Instruction
-      module Flag = Flag
+  module Base = struct
+    module Abs = Act_abstract.Instruction
+    module Flag = Flag
 
-      type elt = B.Instruction.t
+    type elt = B.Instruction.t
 
-      let pp = B.Instruction.pp
+    let pp = B.Instruction.pp
 
-      type context = Act_abstract.Symbol.Table.t
+    type context = Act_abstract.Symbol.Table.t
 
-      type details =
-        { operands: B.Ops_expl.t option
-        ; locations: B.Loc_expl.t list }
-      [@@deriving fields]
+    type details =
+      {operands: B.Ops_expl.t option; locations: B.Loc_expl.t list}
+    [@@deriving fields]
 
-      let make_operand_details ins context =
-        if B.Instruction.On_operands.is_none ins then None
-        else Some (B.Ops_expl.make ~context ~original:ins)
+    let make_operand_details ins context =
+      if B.Instruction.On_operands.is_none ins then None
+      else Some (B.Ops_expl.make ~context ~original:ins)
 
-      let make_location_details ins context =
-        let locations = B.Instruction.On_locations.to_list ins in
-        List.map locations ~f:(fun original ->
-            B.Loc_expl.make ~context ~original )
+    let make_location_details ins context =
+      let locations = B.Instruction.On_locations.to_list ins in
+      List.map locations ~f:(fun original ->
+          B.Loc_expl.make ~context ~original )
 
-      let make_details ins context =
-        { operands= make_operand_details ins context
-        ; locations= make_location_details ins context }
+    let make_details ins context =
+      { operands= make_operand_details ins context
+      ; locations= make_location_details ins context }
 
-      let pp_operand_details =
-        pp_optional_details "operands" B.Ops_expl.pp
+    let pp_operand_details = pp_optional_details "operands" B.Ops_expl.pp
 
-      let pp_location_details =
-        pp_listed_details "location" B.Loc_expl.pp
+    let pp_location_details = pp_listed_details "location" B.Loc_expl.pp
 
-      let pp_details f {operands; locations} =
-        Fmt.pf f "%a@ %a" pp_operand_details operands pp_location_details
-          locations
+    let pp_details f {operands; locations} =
+      Fmt.pf f "%a@ %a" pp_operand_details operands pp_location_details
+        locations
 
-      include (
-        B.Instruction :
-          Act_abstract.Abstractable.S
-          with module Abs := Abs
-           and type t := elt )
+    include (
+      B.Instruction :
+        Act_abstract.Abstractable.S with module Abs := Abs and type t := elt )
 
-      let abs_flags _ _ = Flag.Set.empty
-    end
+    let abs_flags _ _ = Flag.Set.empty
+  end
 
   type details = Base.details
 
@@ -223,50 +217,46 @@ module Make_ins (B : Basic_ins) :
 end
 
 module Make_stm (B : Basic_stm) = struct
-    module Flag = B.Statement.Extended_flag
+  module Flag = B.Statement.Extended_flag
 
-    type details = {instructions: B.Ins_expl.t list}
-    [@@deriving fields]
+  type details = {instructions: B.Ins_expl.t list} [@@deriving fields]
 
-    module Base = struct
-      module Abs = Act_abstract.Statement
-      module Flag = Flag
+  module Base = struct
+    module Abs = Act_abstract.Statement
+    module Flag = Flag
 
-      type elt = B.Statement.t
+    type elt = B.Statement.t
 
-      let pp = B.Statement.pp
+    let pp = B.Statement.pp
 
-      type context = Act_abstract.Symbol.Table.t
+    type context = Act_abstract.Symbol.Table.t
 
-      type nonrec details = details
+    type nonrec details = details
 
-      let describe_instructions stm context =
-        match B.Statement.abs_kind stm with
-        | Act_abstract.Statement.Kind.Instruction ->
-            stm |> B.Statement.On_instructions.to_list
-            |> List.map ~f:(fun original ->
-                   B.Ins_expl.make ~original ~context )
-        | Blank | Unknown | Directive | Label ->
-            []
+    let describe_instructions stm context =
+      match B.Statement.abs_kind stm with
+      | Act_abstract.Statement.Kind.Instruction ->
+          stm |> B.Statement.On_instructions.to_list
+          |> List.map ~f:(fun original -> B.Ins_expl.make ~original ~context)
+      | Blank | Unknown | Directive | Label ->
+          []
 
-      let make_details stm context =
-        {instructions= describe_instructions stm context}
+    let make_details stm context =
+      {instructions= describe_instructions stm context}
 
-      let pp_instruction_details =
-        pp_listed_details "instruction" B.Ins_expl.pp
+    let pp_instruction_details =
+      pp_listed_details "instruction" B.Ins_expl.pp
 
-      let pp_details f =
-        Fields_of_details.Direct.iter ~instructions:(fun _ _ ->
-            pp_instruction_details f )
+    let pp_details f =
+      Fields_of_details.Direct.iter ~instructions:(fun _ _ ->
+          pp_instruction_details f )
 
-      include (
-        B.Statement :
-          Act_abstract.Abstractable.S
-          with module Abs := Abs
-           and type t := elt )
+    include (
+      B.Statement :
+        Act_abstract.Abstractable.S with module Abs := Abs and type t := elt )
 
-      let abs_flags = B.Statement.extended_flags
-    end
+    let abs_flags = B.Statement.extended_flags
+  end
 
-    include Make (Base)
+  include Make (Base)
 end

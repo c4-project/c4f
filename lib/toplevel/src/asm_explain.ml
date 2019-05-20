@@ -35,7 +35,7 @@ let print_symbol_map = function
 
 let explain_runner (module B : Act_asm.Runner.Basic) :
     (module Act_asm.Runner.S with type cfg = Act_asm.Explainer.Config.t) =
-  let module Exp = Act_asm.Explainer.Make(B) in
+  let module Exp = Act_asm.Explainer.Make (B) in
   (module Exp.Filter)
 
 let explain_filter (target : Act_config.Compiler.Target.t) :
@@ -77,11 +77,7 @@ let run output_format (input : In.t) =
       ignore (c_variables : A.C_variables.Map.t option) ;
       Act_asm.Explainer.Config.make ?format:output_format ()
     in
-
-    let compiler_input_fn =
-      In.make_compiler_input input explain_cfg
-    in
-
+    let compiler_input_fn = In.make_compiler_input input explain_cfg in
     A.Output.pv o "About to get and run the explain filter.@." ;
     let%map out =
       run_with_input_fn o file_type target compiler_input_fn infile outfile
@@ -107,5 +103,6 @@ let command =
             ]
             ~if_nothing_chosen:(`Default_to None))
       in
-      fun () -> Asm_common.lift_command standard_args ~f:(run output_format)
+      fun () ->
+        Asm_common.lift_command standard_args ~f:(run output_format)
           ~default_passes:Act_config.Sanitiser_pass.explain)

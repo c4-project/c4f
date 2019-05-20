@@ -199,7 +199,8 @@ module On_deviations = struct
   let rows (a : A.t) : Act_sim.Diff.Order.t Row.t list =
     a |> On_files.rows |> List.filter_map ~f:row_deviating_order_opt
 
-  module M : Au.Tabulator.Tabular with type data = A.t = Make_tabulator (struct
+  module M : Au.Tabulator.Tabular with type data = A.t =
+  Make_tabulator (struct
     type data = A.t
 
     type analysis = Act_sim.Diff.Order.t
@@ -211,7 +212,8 @@ module On_deviations = struct
 
     let analysis_to_cells (ord : Act_sim.Diff.Order.t) : string list =
       [ Int.to_string (Set.length (Au.Set_partial_order.in_left_only ord))
-      ; Int.to_string (Set.length (Au.Set_partial_order.in_right_only ord)) ]
+      ; Int.to_string (Set.length (Au.Set_partial_order.in_right_only ord))
+      ]
   end)
 
   include M

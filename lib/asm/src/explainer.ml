@@ -47,10 +47,11 @@ module Make (B : Basic) :
 
   type config = Config.t
 
-  module Loc_explanation = Explanation.Make_loc(Lang.Location)
+  module Loc_explanation = Explanation.Make_loc (Lang.Location)
 
   module Ops_explanation = struct
-    include Explanation.Make_ops(Lang.Instruction)
+    include Explanation.Make_ops (Lang.Instruction)
+
     include Act_abstract.Operand.Bundle.Inherit_properties
               (Act_abstract.Operand.Bundle)
               (struct
@@ -61,13 +62,13 @@ module Make (B : Basic) :
   end
 
   module Ins_explanation = struct
-    include Explanation.Make_ins(struct
-        module Location = Lang.Location
-        module Instruction = Lang.Instruction
+    include Explanation.Make_ins (struct
+      module Location = Lang.Location
+      module Instruction = Lang.Instruction
+      module Loc_expl = Loc_explanation
+      module Ops_expl = Ops_explanation
+    end)
 
-        module Loc_expl = Loc_explanation
-        module Ops_expl = Ops_explanation
-      end)
     include Act_abstract.Instruction.Inherit_properties
               (Act_abstract.Instruction)
               (struct
@@ -79,10 +80,10 @@ module Make (B : Basic) :
 
   module Stm_explanation = struct
     include Explanation.Make_stm (struct
-        module Instruction = Lang.Instruction
-        module Ins_expl = Ins_explanation
-        module Statement = Lang.Statement
-      end)
+      module Instruction = Lang.Instruction
+      module Ins_expl = Ins_explanation
+      module Statement = Lang.Statement
+    end)
 
     include Act_abstract.Statement.Inherit_properties
               (Act_abstract.Statement)
@@ -187,11 +188,7 @@ module Make (B : Basic) :
     type cfg = Config.t
 
     module Symbol = B.Src_lang.Symbol
-
-    type program = B.Src_lang.Program.t
-
-    let parse_asm _iname isrc _inp =
-      Or_error.(B.Frontend.load_from_isrc isrc >>| B.program)
+    module Program = B.Program
 
     let name = "Explainer"
 

@@ -23,8 +23,8 @@
 
 open Base
 
-(** [Basic] is the signature that must be implemented by any
-    module going into [Make]. *)
+(** [Basic] is the signature that must be implemented by any module going
+    into [Make]. *)
 module type Basic = sig
   (** Type of the concrete item being explained. *)
   type elt
@@ -59,10 +59,10 @@ module type Basic = sig
   (** [pp_details f details] pretty-prints [details] on [f]. *)
 end
 
-(** [S] modules contain an abstract data type [t] that
-    encapsulates a concrete but [Abstractable] type [elt] alongside a
-    pre-computed summary of its abstract analysis with respect to a given
-    context of type [context]. *)
+(** [S] modules contain an abstract data type [t] that encapsulates a
+    concrete but [Abstractable] type [elt] alongside a pre-computed summary
+    of its abstract analysis with respect to a given context of type
+    [context]. *)
 module type S = sig
   (** Opaque type of the explanation itself. *)
   type t
@@ -107,12 +107,16 @@ end
 
 module type Basic_ins = sig
   module Location : Act_language.Location.S
+
   module Loc_expl :
     S
     with type elt := Location.t
      and type context := Act_abstract.Symbol.Table.t
      and module Abs := Act_abstract.Location
-  module Instruction : Act_language.Instruction.S with module Location = Location
+
+  module Instruction :
+    Act_language.Instruction.S with module Location = Location
+
   module Ops_expl :
     S
     with type elt := Instruction.t
@@ -122,10 +126,13 @@ end
 
 module type Basic_stm = sig
   module Instruction : Act_language.Instruction.S
+
   module Ins_expl :
     S
     with type elt := Instruction.t
      and type context := Act_abstract.Symbol.Table.t
      and module Abs := Act_abstract.Instruction
-  module Statement : Act_language.Statement.S with module Instruction = Instruction
+
+  module Statement :
+    Act_language.Statement.S with module Instruction = Instruction
 end

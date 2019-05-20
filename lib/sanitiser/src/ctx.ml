@@ -33,50 +33,51 @@ let freshen_label (syms : Act_abstract.Symbol.Set.t) (prefix : string) :
   in
   mu prefix 0
 
-module Err_ctx =
-  Travesty.State_transform.Make2 (Or_error)
+module Err_ctx = Travesty.State_transform.Make2 (Or_error)
 
 (** Parametrised inner state of the sanitiser context monad. *)
 module State = struct
   type ('sset, 'smap, 'warn) t =
     { progname: string [@default "(no program)"]
     ; endlabel: string option
-    ; syms: Act_abstract.Symbol.Table.t [@default Act_abstract.Symbol.Table.empty]
+    ; syms: Act_abstract.Symbol.Table.t
+          [@default Act_abstract.Symbol.Table.empty]
     ; variables: 'sset
     ; redirects: 'smap
     ; passes: Set.M(Act_config.Sanitiser_pass).t
     ; warnings: (string, 'warn) List.Assoc.t [@default []] }
   [@@deriving fields, make]
 
-  let pass_mem (ctx : ('a, 'b, 'c) t) ~(pass : Act_config.Sanitiser_pass.t) : bool =
+  let pass_mem (ctx : ('a, 'b, 'c) t) ~(pass : Act_config.Sanitiser_pass.t)
+      : bool =
     Set.mem ctx.passes pass
 
   let set_end_label (ctx : ('a, 'b, 'c) t) ~(label : string) :
-    ('a, 'b, 'c) t Or_error.t =
+      ('a, 'b, 'c) t Or_error.t =
     match ctx.endlabel with
     | Some s ->
-      Or_error.error_s
-        [%message
-          "Tried to overwrite end label" ~original:s ~replaced:label]
+        Or_error.error_s
+          [%message
+            "Tried to overwrite end label" ~original:s ~replaced:label]
     | None ->
-      Or_error.return {ctx with endlabel= Some label}
+        Or_error.return {ctx with endlabel= Some label}
 
-  let enter_program (ctx : ('a, 'b, 'c) t) ~(name : string) : ('a, 'b, 'c) t =
+  let enter_program (ctx : ('a, 'b, 'c) t) ~(name : string) : ('a, 'b, 'c) t
+      =
     { ctx with
       progname= name
     ; endlabel= None
     ; syms= Act_abstract.Symbol.Table.empty }
 
   let set_symbol_table (ctx : ('a, 'b, 'c) t)
-      ~(syms : Act_abstract.Symbol.Table.t)
-    : ('a, 'b, 'c) t =
+      ~(syms : Act_abstract.Symbol.Table.t) : ('a, 'b, 'c) t =
     {ctx with syms}
 
   let add_symbol_to_table (ctx : ('a, 'b, 'c) t)
-      ~(sym : Act_abstract.Symbol.t)
-      ~(sort : Act_abstract.Symbol.Sort.t)
-    : ('a, 'b, 'c) t =
-    set_symbol_table ctx ~syms:(Act_abstract.Symbol.Table.add ctx.syms sym sort)
+      ~(sym : Act_abstract.Symbol.t) ~(sort : Act_abstract.Symbol.Sort.t) :
+      ('a, 'b, 'c) t =
+    set_symbol_table ctx
+      ~syms:(Act_abstract.Symbol.Table.add ctx.syms sym sort)
 end
 
 (** State monad functions that don't depend on the language definition. *)
@@ -84,21 +85,20 @@ module Common = struct
   let enter_program ~name : (unit, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.(modify (State.enter_program ~name))
 
-  let is_pass_enabled (pass : Act_config.Sanitiser_pass.t)
-    : (bool, (_, _, _) State.t) Err_ctx.t = Err_ctx.peek (State.pass_mem ~pass)
+  let is_pass_enabled (pass : Act_config.Sanitiser_pass.t) :
+      (bool, (_, _, _) State.t) Err_ctx.t =
+    Err_ctx.peek (State.pass_mem ~pass)
 
   let set_end_label (label : string) : (unit, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.Monadic.modify (State.set_end_label ~label)
 
-  let set_symbol_table
-    (syms : Act_abstract.Symbol.Table.t)
-    : (unit, (_, _, _) State.t) Err_ctx.t =
+  let set_symbol_table (syms : Act_abstract.Symbol.Table.t) :
+      (unit, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.modify (State.set_symbol_table ~syms)
 
-  let add_symbol_to_table
-      (sym : Act_abstract.Symbol.t)
-      (sort : Act_abstract.Symbol.Sort.t)
-    : (unit, (_, _, _) State.t) Err_ctx.t =
+  let add_symbol_to_table (sym : Act_abstract.Symbol.t)
+      (sort : Act_abstract.Symbol.Sort.t) :
+      (unit, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.modify (State.add_symbol_to_table ~sym ~sort)
 
   (* The () here is to get around the value restriction. *)
@@ -108,12 +108,12 @@ module Common = struct
   let get_end_label () : (string option, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.peek State.endlabel
 
-  let get_symbol_table () : (Act_abstract.Symbol.Table.t, (_, _, _) State.t) Err_ctx.t =
+  let get_symbol_table () :
+      (Act_abstract.Symbol.Table.t, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.peek State.syms
 
   let get_variables () : ('svars, ('svars, _, _) State.t) Err_ctx.t =
     Err_ctx.peek State.variables
-
 end
 
 module Make (Lang : Act_language.Definition.S) :
@@ -127,22 +127,28 @@ module Make (Lang : Act_language.Definition.S) :
     let redirects = Lang.Symbol.R_map.identity () in
     State.make ~passes ~variables ~redirects ()
 
-  module M = Travesty.State_transform.To_S (Err_ctx) (struct type t = ctx end)
-  include M
+  module M =
+    Travesty.State_transform.To_S
+      (Err_ctx)
+      (struct
+        type t = ctx
+      end)
 
+  include M
   include Common
 
-  (* These all have units in their 'common' definition, so we have to
-     fix them up by applying them a bit. *)
+  (* These all have units in their 'common' definition, so we have to fix
+     them up by applying them a bit. *)
   let get_prog_name = get_prog_name ()
+
   let get_end_label = get_end_label ()
+
   let get_symbol_table = get_symbol_table ()
+
   let get_variables = get_variables ()
 
   let ( |-> ) pass f a =
-    Let_syntax.(
-    if%bind is_pass_enabled pass then f a else return a
-  )
+    Let_syntax.(if%bind is_pass_enabled pass then f a else return a)
 
   let warn element body =
     modify (fun ctx ->

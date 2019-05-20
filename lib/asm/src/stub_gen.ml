@@ -21,14 +21,48 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
 include Stub_gen_intf
 
 module Config = struct
-  type t
+  type t = unit
+
+  (* For future expansion. *)
+  let make () = ()
+
+  let default = make ()
 end
 
-module Make (B : Basic) : S with module Lang = B.Src_lang and type config = Config.t =
-struct
+module Make (B : Basic) :
+  S with module Lang = B.Src_lang and type config = Config.t = struct
   module Lang = B.Src_lang
+
   type config = Config.t
+
+  let run_stub_gen (_osrc : Act_utils.Io.Out_sink.t) (_outp : _)
+      ~(in_name : string) ~(program : Lang.Program.t)
+      ~(symbols : Lang.Symbol.t list) ~(config : config)
+      ~(passes : Act_config.Sanitiser_pass.Set.t) : Job.Output.t Or_error.t
+      =
+    ignore in_name ;
+    ignore program ;
+    ignore symbols ;
+    ignore config ;
+    ignore passes ;
+    Or_error.unimplemented "stub_gen"
+
+  module Filter : Runner.S with type cfg = Config.t = Runner.Make (struct
+    type cfg = Config.t
+
+    module Symbol = B.Src_lang.Symbol
+    module Program = B.Program
+
+    let name = "Stub generator"
+
+    let tmp_file_ext = "txt"
+
+    let default_config () = Config.default
+
+    let run = run_stub_gen
+  end)
 end

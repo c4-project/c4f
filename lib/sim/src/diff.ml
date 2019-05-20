@@ -28,7 +28,7 @@ module Tx = Travesty_base_exts
 module Ob = Output.Observation
 
 module Order = struct
-  include Au.Set_partial_order.M(State)
+  include Au.Set_partial_order.M (State)
 
   let operator : Ordering.t option -> string = function
     | Some Equal ->
@@ -77,7 +77,8 @@ let to_string : t -> string = function
 let compare_states ~(oracle_states : State.t list)
     ~(subject_states : State.t list) : t =
   let result =
-    Tx.Fn.on (Set.of_list (module State))
+    Tx.Fn.on
+      (Set.of_list (module State))
       ~f:Au.Set_partial_order.make oracle_states subject_states
   in
   Result result
