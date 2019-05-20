@@ -58,6 +58,11 @@ module Make_runner_deps
 
     include Frontend
   end
+
+  let as_asm_stub (asm : Ast.t) : Act_c.Asm_stub.t Or_error.t =
+    (* TODO(@MattWindsor91): implement *)
+    ignore (asm : Ast.t) ;
+    Or_error.unimplemented "TODO: x86 asm template dumping"
 end
 
 let get_runner (dialect : Id.t) : (module Act_asm.Runner.Basic) Or_error.t =

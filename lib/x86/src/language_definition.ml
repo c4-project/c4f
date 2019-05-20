@@ -190,13 +190,6 @@ module Make_basic (T : Dialect.S) (P : Pp.Printer) = struct
     include Common.Program
 
     let pp = P.pp
-
-    let dump_as_asm_template (asm : Ast.t) ~(oc : Stdio.Out_channel.t) :
-        unit Or_error.t =
-      (* TODO(@MattWindsor91): implement *)
-      ignore (asm : Ast.t) ;
-      ignore (oc : Stdio.Out_channel.t) ;
-      Or_error.unimplemented "TODO: x86 asm template dumping"
   end
 
   module Constant = struct

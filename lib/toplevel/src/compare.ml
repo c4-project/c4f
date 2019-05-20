@@ -33,9 +33,9 @@ let litmusify o (passes : Act_config.Sanitiser_pass.Set.t) spec c_file =
   let%bind (module Comp_lit) = Common.litmusify_pipeline target in
   let%map _, (_, out) =
     Comp_lit.run
-      ( `C
+      ( C
       , Fn.const
-          (Act_config.Compiler.Chain_input.make ~file_type:`C
+          (Act_config.Compiler.Chain_input.make ~file_type:C
              ~next:(Fn.const litmus_job)) )
       (Io.In_source.file c_file)
       Io.Out_sink.stdout

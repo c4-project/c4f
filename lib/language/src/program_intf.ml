@@ -51,11 +51,6 @@ module type Basic = sig
     t -> f:(stm list -> stm list list Or_error.t) -> t list Or_error.t
   (** [split prog ~f] uses [f] to split [prog]'s statement list into
       sub-lists, then expands each sub-list into a new program. *)
-
-  val dump_as_asm_template : t -> oc:Stdio.Out_channel.t -> unit Or_error.t
-  (** [dump_as_asm_template t ~oc] outputs a GCC assembly template
-      representation of this program onto [oc]. It can fail, for example if
-      the language doesn't support such dumping. *)
 end
 
 (** [Basic_with_modules] extends [Basic] with the fully expanded language

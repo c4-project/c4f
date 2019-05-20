@@ -70,17 +70,26 @@ module Other = struct
       ; map ~f:(Option.map ~f:Asm_target.arch) (arch ()) ]
       ~if_nothing_chosen:`Raise
 
-  let file_type =
-    choose_one
-      [ flag_to_enum_choice `C "c"
-          ~doc:"if given, assume input is C (and compile it)"
-      ; flag_to_enum_choice `C_litmus "c-litmus"
-          ~doc:
-            "if given, assume input is C/litmus (and delitmusify and \
-             compile it)"
-      ; flag_to_enum_choice `Assembly "asm"
-          ~doc:"if given, assume input is assembly" ]
-      ~if_nothing_chosen:(`Default_to `Infer)
+  let file_type : Act_common.File_type.t Command.Param.t =
+    flag_optional_with_default_doc "file-type"
+      (Arg_type.of_alist_exn
+         [ ("assembly", Act_common.File_type.Assembly)
+         ; ("c", C)
+         ; ("litmus", C_litmus) ])
+      [%sexp_of: Act_common.File_type.t] ~default:Act_common.File_type.Infer
+      ~doc:"TYPE force a specific input file type"
+
+  ;;
+  choose_one
+    [ flag_to_enum_choice `C "c"
+        ~doc:"if given, assume input is C (and compile it)"
+    ; flag_to_enum_choice `C_litmus "c-litmus"
+        ~doc:
+          "if given, assume input is C/litmus (and delitmusify and compile \
+           it)"
+    ; flag_to_enum_choice `Assembly "asm"
+        ~doc:"if given, assume input is assembly" ]
+    ~if_nothing_chosen:(`Default_to `Infer)
 
   let c_variables_arg_type =
     optional
@@ -208,7 +217,7 @@ module Standard_asm : S_standard_asm with type s := Standard.t = struct
     { rest: Standard_with_files.t
     ; c_globals: string list option
     ; c_locals: string list option
-    ; file_type: Act_config.File_type.t_or_infer
+    ; file_type: Act_common.File_type.t
     ; target: Asm_target.t
     ; sanitiser_passes: Act_config.Sanitiser_pass.Selector.t Blang.t option
     }

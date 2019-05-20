@@ -46,6 +46,11 @@ module type Basic = sig
     with module Lang = Src_lang
      and module Program_container = P
 
+  val as_asm_stub : Src_lang.Program.t -> Act_c.Asm_stub.t Or_error.t
+  (** [as_asm_stub t ~oc] outputs a GCC assembly stub representation of this
+      program onto [oc]. It can fail, for example if the language doesn't
+      support such dumping. *)
+
   val convert_program : Src_lang.Program.t -> Dst_lang.Program.t
 
   val convert_const : Src_lang.Constant.t -> Dst_lang.Constant.t Or_error.t

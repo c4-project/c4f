@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -135,12 +135,11 @@ module Chain_input : sig
 
   type 'a t
 
-  val file_type : 'a t -> File_type.t_or_infer
+  val file_type : 'a t -> File_type.t
 
   val next : 'a t -> next_mode -> 'a
 
-  val make :
-    file_type:File_type.t_or_infer -> next:(next_mode -> 'a) -> 'a t
+  val make : file_type:File_type.t -> next:(next_mode -> 'a) -> 'a t
 end
 
 (** {2 Resolving spec IDs to compilers} *)

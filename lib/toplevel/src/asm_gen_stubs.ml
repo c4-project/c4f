@@ -45,7 +45,7 @@ let stub_gen_runner (module B : Act_asm.Runner.Basic) :
 
 let stub_gen_filter (target : Act_config.Compiler.Target.t) :
     (module Act_utils.Filter.S
-       with type aux_i = Act_config.File_type.t_or_infer
+       with type aux_i = Act_common.File_type.t
                          * (   Act_c.Filters.Output.t
                                Act_utils.Filter.chain_output
                             -> Act_asm.Stub_gen.Config.t Act_asm.Job.t

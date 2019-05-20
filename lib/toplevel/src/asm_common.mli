@@ -33,7 +33,7 @@ module Input : sig
 
   val act_config : t -> Act_config.Act.t
 
-  val file_type : t -> Act_config.File_type.t_or_infer
+  val file_type : t -> Act_common.File_type.t
 
   val infile_raw : t -> string option
 

@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Tx = Travesty_core_kernel_exts
 include Explainer_intf
 
@@ -161,19 +161,18 @@ module Make (B : Basic) :
         pp
 
   let output_explanation output_format name outp exp redirects =
-    let f = Format.formatter_of_out_channel outp in
-    pp_for_explain_format output_format f exp ;
-    Format.pp_print_newline f () ;
+    let f = Caml.Format.formatter_of_out_channel outp in
+    Fmt.pf f "%a@." (pp_for_explain_format output_format) exp ;
     Job.Output.make (Fmt.always "?") name redirects []
 
   module LS = B.Src_lang
   module SS = Act_sanitiser.Instance.Make_single (B.Sanitiser_hook)
 
   let run_explanation (_osrc : Act_utils.Io.Out_sink.t)
-      (outp : Out_channel.t) ~(in_name : string) ~(program : LS.Program.t)
-      ~(symbols : LS.Symbol.t list) ~(config : config)
-      ~(passes : Act_config.Sanitiser_pass.Set.t) : Job.Output.t Or_error.t
-      =
+      (outp : Stdio.Out_channel.t) ~(in_name : string)
+      ~(program : LS.Program.t) ~(symbols : LS.Symbol.t list)
+      ~(config : config) ~(passes : Act_config.Sanitiser_pass.Set.t) :
+      Job.Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map san = SS.sanitise ~passes ~symbols program in
     let program = SS.Output.programs san in

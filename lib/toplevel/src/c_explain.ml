@@ -22,13 +22,14 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+module Ac = Act_common
 
-let run (file_type : [`C | `Litmus | `Infer]) (output_mode : [`All | `Vars])
+let run (file_type : Ac.File_type.t) (output_mode : [`All | `Vars])
     (args : Args.Standard_with_files.t) _o cfg =
   let open Or_error.Let_syntax in
   let%bind infile = Args.Standard_with_files.infile_source args in
   let%bind outfile = Args.Standard_with_files.outfile_sink args in
-  let is_c = Act_config.File_type.is_c infile file_type in
+  let is_c = Ac.File_type.is_c infile file_type in
   let cpp_cfg =
     Option.value (Act_config.Act.cpp cfg)
       ~default:(Act_config.Cpp.default ())
@@ -42,12 +43,7 @@ let command : Command.t =
   Command.basic ~summary:"explains act's understanding of a C file"
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard_with_files.get
-      and file_type =
-        choose_one
-          [ Args.flag_to_enum_choice `C "c" ~doc:"assume input is raw C"
-          ; Args.flag_to_enum_choice `Litmus "litmus"
-              ~doc:"assume input is a C litmus test" ]
-          ~if_nothing_chosen:(`Default_to `Infer)
+      and file_type = Args.file_type
       and output_mode =
         choose_one
           [ Args.flag_to_enum_choice `All "dump-input"

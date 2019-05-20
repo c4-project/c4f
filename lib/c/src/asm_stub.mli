@@ -21,32 +21,33 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+(** Syntax and support for GCC 'asm' directives. *)
+
 open Base
 
-(** [Basic] collects the input required to generate stubs. This should be a
-    subset of {{!Runner.Basic} Runner.Basic}. *)
-module type Basic = sig
-  (** [Src_lang] is the language under explanation. *)
-  module Src_lang : Act_language.Definition.S
+module Operand : sig
+  (** Opaque type of operands, parametrised over their right-hand side. *)
+  type 'rhs t
 
-  module Sanitiser_hook (P : Travesty.Traversable.S1) :
-    Act_sanitiser.Hook.S
-    with module Lang = Src_lang
-     and module Program_container = P
-
-  module Program : Act_utils.Loadable.S with type t = Src_lang.Program.t
-
-  val as_asm_stub : Src_lang.Program.t -> Act_c.Asm_stub.t Or_error.t
-  (** [as_asm_stub t ~oc] outputs a GCC assembly stub representation of this
-      program onto [oc]. It can fail, for example if the language doesn't
-      support such dumping. *)
+  val make : ?symbol:string -> constr:string -> rhs:'rhs -> unit -> 'rhs t
+  (** [make ?symbol constr rhs ()] makes a GCC asm operand with the
+      constraint [constr], the right hand side [rhs] (a C lvalue for output
+      operands, and a C expression for inputs), and optional symbolic
+      reference [symbol]. *)
 end
 
-module type S = sig
-  (** Opaque type of stub generator config. *)
-  type config
+(** Opaque type of asm directives. *)
+type t
 
-  module Lang : Act_language.Definition.S
+val make :
+     ?clobbers:string list
+  -> ?input_operands:Mini.Expression.t Operand.t list
+  -> ?output_operands:Mini.Lvalue.t Operand.t list
+  -> template:string
+  -> unit
+  -> t
+(** [make ?clobbers ?input_operands ?output_operands ~template ()] builds a
+    GCC asm directive with template body [template], operands
+    [input_operands] and [output_operands], and clobbers [clobbers]. *)
 
-  module Filter : Runner.S with type cfg = config
-end
+include Pretty_printer.S with type t := t

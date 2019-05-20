@@ -35,7 +35,7 @@ module Input = struct
     ; output: Act_common.Output.t }
   [@@deriving fields]
 
-  let file_type (i : t) : Act_config.File_type.t_or_infer =
+  let file_type (i : t) : Act_common.File_type.t =
     Args.Standard_asm.file_type (args i)
 
   let infile_raw (i : t) : string option =

@@ -105,7 +105,7 @@ end
 let make_filter (filter : Post_filter.Cfg.t)
     (target : Act_config.Compiler.Target.t) (mtab : Act_sim.Table.t) :
     (module Filter.S
-       with type aux_i = ( Act_config.File_type.t_or_infer
+       with type aux_i = ( Act_common.File_type.t
                          * (   Act_c.Filters.Output.t Filter.chain_output
                             -> Sexp.t Act_asm.Litmusifier.Config.t
                                Act_asm.Job.t

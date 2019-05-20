@@ -36,20 +36,31 @@ end
 module Make (B : Basic) :
   S with module Lang = B.Src_lang and type config = Config.t = struct
   module Lang = B.Src_lang
+  module San = Act_sanitiser.Instance.Make_single (B.Sanitiser_hook)
 
   type config = Config.t
 
-  let run_stub_gen (_osrc : Act_utils.Io.Out_sink.t) (_outp : _)
-      ~(in_name : string) ~(program : Lang.Program.t)
-      ~(symbols : Lang.Symbol.t list) ~(config : config)
-      ~(passes : Act_config.Sanitiser_pass.Set.t) : Job.Output.t Or_error.t
-      =
-    ignore in_name ;
-    ignore program ;
-    ignore symbols ;
+  let gen_and_dump_asm_stub (listing : Lang.Program.t)
+      (oc : Stdio.Out_channel.t) : unit Or_error.t =
+    Or_error.Let_syntax.(
+      let%map stub = B.as_asm_stub listing in
+      let f = Caml.Format.formatter_of_out_channel oc in
+      Act_c.Asm_stub.pp f stub)
+
+  let run_stub_gen (_osrc : Act_utils.Io.Out_sink.t)
+      (oc : Stdio.Out_channel.t) ~(in_name : string)
+      ~(program : Lang.Program.t) ~(symbols : Lang.Symbol.t list)
+      ~(config : config) ~(passes : Act_config.Sanitiser_pass.Set.t) :
+      Job.Output.t Or_error.t =
     ignore config ;
-    ignore passes ;
-    Or_error.unimplemented "stub_gen"
+    Or_error.Let_syntax.(
+      let%bind san = San.sanitise ~passes ~symbols program in
+      let program = San.Output.programs san in
+      let listing = San.Output.Program.listing program in
+      let%map () = gen_and_dump_asm_stub listing oc in
+      let redirects_raw = San.Output.redirects san in
+      let redirects = Lang.Symbol.R_map.to_string_alist redirects_raw in
+      Job.Output.make (Fmt.always "?") in_name redirects [])
 
   module Filter : Runner.S with type cfg = Config.t = Runner.Make (struct
     type cfg = Config.t

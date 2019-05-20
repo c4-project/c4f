@@ -112,7 +112,7 @@ module type S_standard_asm = sig
   (** [c_locals args] gets the list of user-supplied C local variables, if
       the user indeed supplied some. *)
 
-  val file_type : t -> Act_config.File_type.t_or_infer
+  val file_type : t -> Act_common.File_type.t
   (** [file_type args] gets the specified file type for this command's input
       file. *)
 

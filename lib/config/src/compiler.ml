@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_common
+module Ac = Act_common
 module Au = Act_utils
 include Compiler_intf
 
@@ -36,7 +36,7 @@ struct
       ; argv: string list [@sexp.list]
       ; enabled: bool [@sexp.bool]
       ; style: string
-      ; emits: Id.t
+      ; emits: Ac.Id.t
       ; cmd: string
       ; herd: bool [@sexp.bool] }
     [@@deriving sexp, fields, make]
@@ -45,23 +45,22 @@ struct
        fields] infers. *)
     let is_enabled = enabled
 
-    let pp f spec =
-      Format.pp_open_vbox f 0 ;
-      if not spec.enabled then Format.fprintf f "-- DISABLED --@," ;
-      Au.My_format.pp_kv f "Style" String.pp spec.style ;
-      Format.pp_print_cut f () ;
-      Au.My_format.pp_kv f "Emits" Id.pp spec.emits ;
-      Format.pp_print_cut f () ;
-      Au.My_format.pp_kv f "Command"
-        (Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp)
-        (spec.cmd :: spec.argv) ;
-      Format.pp_print_cut f () ;
-      Au.My_format.pp_kv f "Machine" Mach.pp spec.machine ;
-      Format.pp_print_cut f () ;
-      Au.My_format.pp_kv f "Herd"
-        (fun f x -> String.pp f (if x then "yes" else "no"))
-        spec.herd ;
-      Format.pp_close_box f ()
+    let pp =
+      Fmt.vbox (fun f spec ->
+          if not spec.enabled then Format.fprintf f "-- DISABLED --@," ;
+          Au.My_format.pp_kv f "Style" String.pp spec.style ;
+          Format.pp_print_cut f () ;
+          Au.My_format.pp_kv f "Emits" Ac.Id.pp spec.emits ;
+          Format.pp_print_cut f () ;
+          Au.My_format.pp_kv f "Command"
+            (Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp)
+            (spec.cmd :: spec.argv) ;
+          Format.pp_print_cut f () ;
+          Au.My_format.pp_kv f "Machine" Mach.pp spec.machine ;
+          Format.pp_print_cut f () ;
+          Au.My_format.pp_kv f "Herd"
+            (fun f x -> String.pp f (if x then "yes" else "no"))
+            spec.herd )
 
     let pp_summary =
       let facts spec =
@@ -76,7 +75,7 @@ struct
   include M
 
   module With_id = struct
-    include Spec.With_id (M)
+    include Ac.Spec.With_id (M)
 
     let is_enabled w = M.is_enabled (spec w)
 
@@ -93,7 +92,7 @@ struct
     let machine w = M.machine (spec w)
   end
 
-  include Spec.Make (struct
+  include Ac.Spec.Make (struct
     include M
 
     let type_name = "compiler"
@@ -102,23 +101,24 @@ struct
   end)
 end
 
-module Cfg_spec : S_spec with type Mach.t = Id.t = Make_spec (Machine.Id)
+module Cfg_spec : S_spec with type Mach.t = Ac.Id.t = Make_spec (Machine.Id)
 
 module Spec : S_spec with type Mach.t = Machine.Spec.With_id.t =
   Make_spec (Machine.Spec.With_id)
 
 module Property = struct
-  type t = Id of Id.Property.t | Machine of Machine.Property.t
+  type t = Id of Ac.Id.Property.t | Machine of Machine.Property.t
   [@@deriving sexp, variants]
 
-  let tree_docs : Property.Tree_doc.t =
+  let tree_docs : Ac.Property.Tree_doc.t =
     [ ( "id"
       , {args= ["PROPERTY"]; details= {| See 'identifier predicates'. |}} )
     ; ( "machine"
       , {args= ["PROPERTY"]; details= {| See 'machine predicates'. |}} ) ]
 
   let pp_tree : unit Fmt.t =
-    Property.Tree_doc.pp tree_docs (List.map ~f:fst Variants.descriptions)
+    Ac.Property.Tree_doc.pp tree_docs
+      (List.map ~f:fst Variants.descriptions)
 
   let%expect_test "all properties have documentation" =
     let num_passes =
@@ -131,7 +131,7 @@ module Property = struct
 
   let eval (cspec : Spec.With_id.t) = function
     | Id prop ->
-        Id.Property.eval (Spec.With_id.id cspec) prop
+        Ac.Id.Property.eval (Spec.With_id.id cspec) prop
     | Machine prop ->
         Machine.Property.eval
           (module Machine.Spec.With_id)
@@ -197,7 +197,7 @@ let runner_from_spec (cspec : Spec.With_id.t) =
 module Chain_input = struct
   type next_mode = [`Preview | `No_compile | `Compile]
 
-  type 'a t = {file_type: File_type.t_or_infer; next: next_mode -> 'a}
+  type 'a t = {file_type: Ac.File_type.t; next: next_mode -> 'a}
   [@@deriving make, fields]
 end
 
@@ -226,7 +226,7 @@ Au.Filter.Chain_conditional_first (struct
     let file_type = Chain_input.file_type aux in
     let next = Chain_input.next aux in
     let f = lift_next next in
-    if File_type.is_c src file_type then `Both ((), f) else `One f
+    if Ac.File_type.is_c src file_type then `Both ((), f) else `One f
 end)
 
 let from_resolver_and_spec resolve cspec =
@@ -277,9 +277,9 @@ module Make_resolver (B : Basic_resolver with type spec := Spec.With_id.t) :
 end
 
 module Target = struct
-  type t = [`Spec of Spec.With_id.t | `Arch of Id.t]
+  type t = [`Spec of Spec.With_id.t | `Arch of Ac.Id.t]
 
-  let arch : t -> Id.t = function
+  let arch : t -> Ac.Id.t = function
     | `Spec spec ->
         Spec.With_id.emits spec
     | `Arch arch ->

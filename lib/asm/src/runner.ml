@@ -21,8 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
-module Tx = Travesty_core_kernel_exts
+open Base
+module Tx = Travesty_base_exts
 include Runner_intf
 
 module Make (R : Runnable) : S with type cfg = R.cfg = struct

@@ -22,39 +22,31 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-module Tx = Travesty_base_exts
+open Act_utils
 
-type 'cfg t =
-  { config: 'cfg option
-  ; passes: Act_config.Sanitiser_pass.Set.t
-        [@default Act_config.Sanitiser_pass.standard]
-  ; symbols: string list }
-[@@deriving make, fields]
+type t = Assembly | C | C_litmus | Infer [@@deriving sexp]
 
-let map_m_config (job : 'a t) ~(f : 'a -> 'b Or_error.t) : 'b t Or_error.t =
-  Or_error.Let_syntax.(
-    let%map config = Tx.Option.With_errors.map_m job.config ~f in
-    {job with config})
+let file_type_is (src : Io.In_source.t) (expected : string) : bool =
+  Option.exists (Io.In_source.file_type src) ~f:(String.equal expected)
 
-module Output = struct
-  type t = {symbol_map: (string, string) List.Assoc.t; warn: unit Fmt.t}
-  [@@deriving fields]
+let is_c (src : Io.In_source.t) : t -> bool = function
+  | C ->
+      true
+  | Infer ->
+      file_type_is src "c"
+  | Assembly | C_litmus ->
+      false
 
-  (* Overriding to get the right order. *)
-  let warn (f : Formatter.t) (o : t) : unit = warn o f ()
+let is_c_litmus (src : Io.In_source.t) : t -> bool = function
+  | C_litmus ->
+      true
+  | Infer ->
+      file_type_is src "litmus"
+  | Assembly | C ->
+      false
 
-  let emit_warnings (pp_warning : 'a Fmt.t) (iname : string) :
-      'a list -> unit Fmt.t = function
-    | [] ->
-        Fmt.nop
-    | ws ->
-        let pp f w = Fmt.pf f "@[<h>-@ @[<hov>%a@]@]@," pp_warning w in
-        fun f () ->
-          Fmt.pf f "Warnings@ for@ %s:@ @[<v>%a@]@." iname
-            (fun f -> List.iter ~f:(pp f))
-            ws
-
-  let make (pp_warning : 'a Fmt.t) iname
-      (symbol_map : (string, string) List.Assoc.t) warnings : t =
-    {symbol_map; warn= emit_warnings pp_warning iname warnings}
-end
+let delitmusified : t -> t = function
+  | C_litmus ->
+      C
+  | (Assembly | C | Infer) as x ->
+      x

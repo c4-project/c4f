@@ -42,14 +42,14 @@ val asm_runner_of_target :
 module Chain_with_delitmus (Onto : Filter.S) :
   Filter.S
   with type aux_i =
-              Act_config.File_type.t_or_infer
+              Act_common.File_type.t
               * (Act_c.Filters.Output.t Filter.chain_output -> Onto.aux_i)
    and type aux_o = Act_c.Filters.Output.t option * Onto.aux_o
 
 val chain_with_delitmus :
      (module Filter.S with type aux_i = 'i and type aux_o = 'o)
   -> (module Filter.S
-        with type aux_i = Act_config.File_type.t_or_infer
+        with type aux_i = Act_common.File_type.t
                           * (   Act_c.Filters.Output.t Filter.chain_output
                              -> 'i)
          and type aux_o = Act_c.Filters.Output.t option * 'o)
@@ -109,7 +109,7 @@ val delitmus_compile_asm_pipeline :
   -> (   (module Act_asm.Runner.Basic)
       -> (module Act_asm.Runner.S with type cfg = 'c))
   -> (module Filter.S
-        with type aux_i = Act_config.File_type.t_or_infer
+        with type aux_i = Act_common.File_type.t
                           * (   Act_c.Filters.Output.t Filter.chain_output
                              -> 'c Act_asm.Job.t
                                 Act_config.Compiler.Chain_input.t)
@@ -120,7 +120,7 @@ val delitmus_compile_asm_pipeline :
 val litmusify_pipeline :
      Act_config.Compiler.Target.t
   -> (module Filter.S
-        with type aux_i = Act_config.File_type.t_or_infer
+        with type aux_i = Act_common.File_type.t
                           * (   Act_c.Filters.Output.t Filter.chain_output
                              -> Sexp.t Act_asm.Litmusifier.Config.t
                                 Act_asm.Job.t
@@ -133,7 +133,7 @@ val litmusify_pipeline :
 
 val make_compiler_input :
      Output.t
-  -> Act_config.File_type.t_or_infer
+  -> Act_common.File_type.t
   -> C_variables.Map.t option
   -> (c_variables:C_variables.Map.t option -> 'cfg)
   -> Act_config.Sanitiser_pass.Set.t

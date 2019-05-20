@@ -7,5 +7,5 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries core_kernel fmt fpath travesty travesty.core_kernel_exts
-   act_abstract act_common act_config act_language act_sanitiser))
+ (libraries base fmt fpath travesty travesty.base_exts act_c act_abstract
+   act_common act_config act_language act_sanitiser))

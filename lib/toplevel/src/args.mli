@@ -65,7 +65,7 @@ val arch :
 (** [arch ?name ?doc ()] produces a parameter, normally named [-arch] but
     overridable by [name], that accepts an architecture ID. *)
 
-val file_type : [> `C_litmus | `Assembly | `C | `Infer] Command.Param.t
+val file_type : Act_common.File_type.t Command.Param.t
 (** [file_type] defines a parameter for specifying the file type of a single
     input file. *)
 

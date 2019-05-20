@@ -40,7 +40,7 @@ let explain_runner (module B : Act_asm.Runner.Basic) :
 
 let explain_filter (target : Act_config.Compiler.Target.t) :
     (module Act_utils.Filter.S
-       with type aux_i = Act_config.File_type.t_or_infer
+       with type aux_i = Act_common.File_type.t
                          * (   Act_c.Filters.Output.t
                                Act_utils.Filter.chain_output
                             -> Act_asm.Explainer.Config.t Act_asm.Job.t
@@ -51,9 +51,8 @@ let explain_filter (target : Act_config.Compiler.Target.t) :
   Or_error.tag ~tag:"while getting an explain filter for this target"
     (Common.delitmus_compile_asm_pipeline target explain_runner)
 
-let run_with_input_fn (o : A.Output.t)
-    (file_type : Act_config.File_type.t_or_infer) target compiler_input_fn
-    infile outfile =
+let run_with_input_fn (o : A.Output.t) (file_type : Act_common.File_type.t)
+    target compiler_input_fn infile outfile =
   Or_error.Let_syntax.(
     let%bind (module Exp) = explain_filter target in
     A.Output.pv o "Got explain filter (name %s)" Exp.name ;

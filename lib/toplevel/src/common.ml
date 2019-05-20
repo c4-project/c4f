@@ -53,7 +53,7 @@ let asm_runner_of_target (tgt : Act_config.Compiler.Target.t) :
 module Chain_with_delitmus (Onto : Filter.S) :
   Filter.S
   with type aux_i =
-              Act_config.File_type.t_or_infer
+              Ac.File_type.t
               * (Act_c.Filters.Output.t Filter.chain_output -> Onto.aux_i)
    and type aux_o = Act_c.Filters.Output.t option * Onto.aux_o =
 Filter.Chain_conditional_first (struct
@@ -61,11 +61,11 @@ Filter.Chain_conditional_first (struct
   module Second = Onto
 
   type aux_i =
-    Act_config.File_type.t_or_infer
+    Ac.File_type.t
     * (Act_c.Filters.Output.t Filter.chain_output -> Onto.aux_i)
 
   let select {Filter.aux= file_type, rest; src; _} =
-    if Act_config.File_type.is_c_litmus src file_type then
+    if Act_common.File_type.is_c_litmus src file_type then
       `Both (Act_c.Filters.Delitmus, rest)
     else `One rest
 end)
@@ -75,7 +75,7 @@ let chain_with_delitmus (type aux_i aux_o)
     =
   (module Chain_with_delitmus (Onto)
   : Filter.S
-    with type aux_i = Act_config.File_type.t_or_infer
+    with type aux_i = Ac.File_type.t
                       * (Act_c.Filters.Output.t Filter.chain_output -> aux_i)
      and type aux_o = Act_c.Filters.Output.t option * aux_o )
 
@@ -85,7 +85,7 @@ let delitmus_compile_asm_pipeline (type c)
          (module Act_asm.Runner.Basic)
       -> (module Act_asm.Runner.S with type cfg = c)) :
     (module Filter.S
-       with type aux_i = Act_config.File_type.t_or_infer
+       with type aux_i = Ac.File_type.t
                          * (   Act_c.Filters.Output.t Filter.chain_output
                             -> c Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
@@ -103,7 +103,7 @@ let delitmus_compile_asm_pipeline (type c)
 
 let litmusify_pipeline (target : Act_config.Compiler.Target.t) :
     (module Filter.S
-       with type aux_i = Act_config.File_type.t_or_infer
+       with type aux_i = Ac.File_type.t
                          * (   Act_c.Filters.Output.t Filter.chain_output
                             -> Sexp.t Act_asm.Litmusifier.Config.t
                                Act_asm.Job.t
@@ -152,8 +152,7 @@ let choose_cvars (o : Ac.Output.t)
     warn_if_not_tracking_symbols o (Option.map ~f:Ac.C_id.Map.keys cvars) ;
   cvars
 
-let make_compiler_input (o : Ac.Output.t)
-    (file_type : Act_config.File_type.t_or_infer)
+let make_compiler_input (o : Ac.Output.t) (file_type : Ac.File_type.t)
     (user_cvars : Ac.C_variables.Map.t option)
     (config_fn : c_variables:Ac.C_variables.Map.t option -> 'cfg)
     (passes : Act_config.Sanitiser_pass.Set.t)
@@ -168,7 +167,7 @@ let make_compiler_input (o : Ac.Output.t)
   let config = config_fn ~c_variables in
   let litmus_job = Act_asm.Job.make ~passes ~config ?symbols () in
   Act_config.Compiler.Chain_input.make
-    ~file_type:(Act_config.File_type.delitmusified file_type)
+    ~file_type:(Act_common.File_type.delitmusified file_type)
     ~next:(Fn.const litmus_job)
 
 let make_output_from_standard_args (args : Args.Standard.t) : Ac.Output.t =

@@ -21,32 +21,16 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Base
-
-(** [Basic] collects the input required to generate stubs. This should be a
-    subset of {{!Runner.Basic} Runner.Basic}. *)
-module type Basic = sig
-  (** [Src_lang] is the language under explanation. *)
-  module Src_lang : Act_language.Definition.S
-
-  module Sanitiser_hook (P : Travesty.Traversable.S1) :
-    Act_sanitiser.Hook.S
-    with module Lang = Src_lang
-     and module Program_container = P
-
-  module Program : Act_utils.Loadable.S with type t = Src_lang.Program.t
-
-  val as_asm_stub : Src_lang.Program.t -> Act_c.Asm_stub.t Or_error.t
-  (** [as_asm_stub t ~oc] outputs a GCC assembly stub representation of this
-      program onto [oc]. It can fail, for example if the language doesn't
-      support such dumping. *)
+module Operand = struct
+  type 'rhs t = {symbol: string option; constr: string; rhs: 'rhs}
+  [@@deriving make]
 end
 
-module type S = sig
-  (** Opaque type of stub generator config. *)
-  type config
+type t =
+  { clobbers: string list
+  ; input_operands: Mini.Expression.t Operand.t list
+  ; output_operands: Mini.Lvalue.t Operand.t list
+  ; template: string }
+[@@deriving make]
 
-  module Lang : Act_language.Definition.S
-
-  module Filter : Runner.S with type cfg = config
-end
+let pp : t Fmt.t = Fmt.(nop)
