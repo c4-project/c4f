@@ -152,36 +152,35 @@ let to_machine_id : Act_config.Compiler.Target.t -> Act_config.Machine.Id.t
   | `Arch _ ->
       Act_config.Machine.Id.default
 
+module In = Asm_common.Input
+
 let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
-    (args : Args.Standard_asm.t) (o : A.Output.t) (cfg : Act_config.Act.t) :
+    (input : In.t) :
     unit Or_error.t =
-  let open Result.Let_syntax in
-  let%bind target = Common.resolve_target args cfg in
+  let cfg = In.act_config input in
+  let infile = In.infile_raw input in
+  let outfile = In.outfile_raw input in
+  let target = In.target input in
+  let file_type = In.file_type input in
   let arch = get_arch target in
   let filter = Post_filter.Cfg.make ?simulator ~arch in
   let module R = Sim_support.Make_resolver (struct
     let cfg = cfg
   end) in
   let machine_id = to_machine_id target in
-  let%bind mtab = R.make_table machine_id in
-  let%bind (module Filter) = make_filter filter target mtab in
-  let passes =
-    Act_config.Act.sanitiser_passes cfg
-      ~default:Act_config.Sanitiser_pass.standard
-  in
-  let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
-  let%bind user_cvars = Common.collect_cvars args in
-  let file_type = Args.Standard_asm.file_type args in
-  let compiler_input_fn =
-    Common.make_compiler_input o file_type user_cvars litmus_cfg_fn passes
-  in
-  let%map _ =
-    Filter.run_from_string_paths
-      ((file_type, compiler_input_fn), Fn.const filter)
-      ~infile:(Args.Standard_asm.infile_raw args)
-      ~outfile:(Args.Standard_asm.outfile_raw args)
-  in
-  ()
+  Or_error.Let_syntax.(
+    let%bind mtab = R.make_table machine_id in
+    let%bind (module Filter) = make_filter filter target mtab in
+    let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
+    let compiler_input_fn =
+      In.make_compiler_input input litmus_cfg_fn
+    in
+    Or_error.ignore_m
+      (Filter.run_from_string_paths
+         ((file_type, compiler_input_fn), Fn.const filter)
+         ~infile
+         ~outfile)
+  )
 
 let command =
   Command.basic ~summary:"converts an assembly file to a litmus test"
@@ -202,4 +201,6 @@ let command =
           ~if_nothing_chosen:(`Default_to None)
       in
       fun () ->
-        Common.lift_asm_command standard_args ~f:(run simulator post_sexp))
+        Asm_common.lift_command standard_args ~f:(run simulator post_sexp)
+          ~default_passes:Act_config.Sanitiser_pass.standard
+    )

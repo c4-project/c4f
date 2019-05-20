@@ -21,37 +21,44 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** High-level module for emitting act's internal assembly analysis
+(** High-level explainer output. *)
 
-    [Explainer] contains functors for extracting a pretty-printable summary
-    of an assembly listing as act understands it, through a language module. *)
+include module type of Explanation_intf
 
-include module type of Explainer_intf
-
-module Config : sig
-  module Format : sig
-    (** [t] is an enumeration of output formats for explain jobs. *)
-    type t =
-      | Assembly
-          (** Terse, but as close to parseable assembly as possible *)
-      | Detailed
-          (** More details than [Assembly], but verbose and free-form *)
-    [@@deriving equal]
-
-    val default : t
-    (** [default] gets the default output format. *)
-  end
-
-  type t [@@deriving equal, sexp]
-
-  val make : ?format:Format.t -> unit -> t
-  (** [make ?format ()] builds an [Explain_config] with the given
-      parameters. *)
-
-  val default : t
-  (** [default] gets the default explainer job configuration. *)
-end
-
-(** [Make] makes an implementation of [S] for a given language. *)
+(** [Make (B)] makes an [S] from a [Basic]. *)
 module Make (B : Basic) :
-  S with module Lang = B.Src_lang and type config = Config.t
+  S
+  with type elt := B.elt
+   and type context := B.context
+   and type details := B.details
+   and module Abs := B.Abs
+   and module Flag := B.Flag
+
+(** {2 Specific explanations} *)
+
+module Make_loc (L : Act_language.Location.S) :
+  S
+  with type elt := L.t
+   and type context := Act_abstract.Symbol.Table.t
+   and module Abs := Act_abstract.Location
+
+module Make_ops (L : Act_language.Instruction.S) :
+  S
+  with type elt := L.t
+   and type context := Act_abstract.Symbol.Table.t
+   and module Abs := Act_abstract.Operand.Bundle
+
+module Make_ins (B : Basic_ins) :
+  S
+  with type elt := B.Instruction.t
+   and type context := Act_abstract.Symbol.Table.t
+   and module Abs := Act_abstract.Instruction
+
+module Make_stm (B : Basic_stm) : sig
+  include S
+    with type elt := B.Statement.t
+     and type context := Act_abstract.Symbol.Table.t
+     and module Abs := Act_abstract.Statement
+
+  val instructions : details -> B.Ins_expl.t list
+end

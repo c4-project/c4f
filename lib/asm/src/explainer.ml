@@ -38,142 +38,19 @@ module Config = struct
   let default : t = make ()
 end
 
-let pp_details pp_header pp_body =
-  Fmt.(
-    hvbox ~indent:4 (append (suffix sp (hvbox pp_header)) (braces pp_body)))
-
-let pp_named_details name pp_body f t =
-  Fmt.(pp_details (const string name) pp_body f ((), t))
-
-let pp_optional_details name pp_item =
-  Fmt.option (pp_named_details name pp_item)
-
-let pp_listed_details name pp_item f = function
-  | [] ->
-      ()
-  | ts ->
-      Fmt.(pp_named_details name (list ~sep:comma pp_item)) f ts
-
 let pp_set_adj pp_set f set =
   if not (Set.is_empty set) then Fmt.(prefix sp pp_set) f set
 
-module Make_explanation (B : Basic_explanation) :
-  Explanation
-  with type elt := B.elt
-   and type context := B.context
-   and type details := B.details
-   and module Abs := B.Abs
-   and module Flag := B.Flag = struct
-  type t =
-    { original: B.elt
-    ; abstract: B.Abs.t
-    ; abs_kind: B.Abs.Kind.t
-    ; abs_flags: B.Flag.Set.t
-    ; details: B.details }
-  [@@deriving fields]
-
-  let has_abs_kind k x = B.Abs.Kind.equal k x.abs_kind
-
-  let abs_kind_in ks x = B.Abs.Kind.Set.mem ks x.abs_kind
-
-  let make ~context ~original =
-    { original
-    ; details= B.make_details original context
-    ; abstract= B.abstract original
-    ; abs_kind= B.abs_kind original
-    ; abs_flags= B.abs_flags original context }
-
-  let pp_body f t =
-    Fmt.(
-      Fields.Direct.iter t
-        ~original:(fun _ _ _ -> ())
-        ~abs_kind:(fun _ _ -> pf f "@[kind:@ %a;@]@ " B.Abs.Kind.pp)
-        ~abstract:(fun _ _ _ -> ())
-        ~abs_flags:(fun _ _ flags ->
-          if not (B.Flag.Set.is_empty flags) then
-            pf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags )
-        ~details:(fun _ _ -> B.pp_details f))
-
-  let pp f t = pp_details B.pp pp_body f (original t, t)
-end
-
-module Make (B : Runner.Basic) :
+module Make (B : Basic) :
   S with module Lang = B.Src_lang and type config = Config.t = struct
   module Lang = B.Src_lang
 
   type config = Config.t
 
-  module Loc_explanation = struct
-    module Flag = Act_abstract.Location.Flag
-
-    module Base = struct
-      module Abs = Act_abstract.Location
-      module Flag = Flag
-
-      type elt = Lang.Location.t
-
-      let pp = Lang.Location.pp
-
-      type context = Act_abstract.Symbol.Table.t
-
-      type details = unit
-
-      let make_details _ _ = ()
-
-      let pp_details _f _context = ()
-
-      include Act_abstract.Abstractable.Make (struct
-        module Abs = Abs
-
-        type t = elt
-
-        let abstract = Lang.Location.abstract
-      end)
-
-      let abs_flags _ _ = Flag.Set.empty
-    end
-
-    type details = Base.details
-
-    include Make_explanation (Base)
-  end
+  module Loc_explanation = Explanation.Make_loc(Lang.Location)
 
   module Ops_explanation = struct
-    module Flag = Act_abstract.Operand.Bundle.Flag
-
-    module Base = struct
-      module Abs = Act_abstract.Operand.Bundle
-      module Flag = Flag
-
-      type elt = Lang.Instruction.t
-
-      let pp = Lang.Instruction.pp_operands
-
-      type context = Act_abstract.Symbol.Table.t
-
-      type details = unit
-
-      let make_details _ _ = ()
-
-      let pp_details _f _context = ()
-
-      include Act_abstract.Abstractable.Make (struct
-        module Abs = Abs
-
-        type t = elt
-
-        let abstract = Lang.Instruction.abs_operands
-      end)
-
-      let abs_flags ins =
-        Act_abstract.Operand.Bundle.flags
-          (Lang.Instruction.abs_operands ins)
-    end
-
-    type details = Base.details
-
-    include Make_explanation (Base)
-
+    include Explanation.Make_ops(Lang.Instruction)
     include Act_abstract.Operand.Bundle.Inherit_properties
               (Act_abstract.Operand.Bundle)
               (struct
@@ -184,59 +61,13 @@ module Make (B : Runner.Basic) :
   end
 
   module Ins_explanation = struct
-    module Flag = Act_abstract.Instruction.Flag
+    include Explanation.Make_ins(struct
+        module Location = Lang.Location
+        module Instruction = Lang.Instruction
 
-    module Base = struct
-      module Abs = Act_abstract.Instruction
-      module Flag = Flag
-
-      type elt = Lang.Instruction.t
-
-      let pp = Lang.Instruction.pp
-
-      type context = Act_abstract.Symbol.Table.t
-
-      type details =
-        { operands: Ops_explanation.t option
-        ; locations: Loc_explanation.t list }
-      [@@deriving fields]
-
-      let make_operand_details ins context =
-        if Lang.Instruction.On_operands.is_none ins then None
-        else Some (Ops_explanation.make ~context ~original:ins)
-
-      let make_location_details ins context =
-        let locations = Lang.Instruction.On_locations.to_list ins in
-        List.map locations ~f:(fun original ->
-            Loc_explanation.make ~context ~original )
-
-      let make_details ins context =
-        { operands= make_operand_details ins context
-        ; locations= make_location_details ins context }
-
-      let pp_operand_details =
-        pp_optional_details "operands" Ops_explanation.pp
-
-      let pp_location_details =
-        pp_listed_details "location" Loc_explanation.pp
-
-      let pp_details f {operands; locations} =
-        Fmt.pf f "%a@ %a" pp_operand_details operands pp_location_details
-          locations
-
-      include (
-        Lang.Instruction :
-          Act_abstract.Abstractable.S
-          with module Abs := Abs
-           and type t := elt )
-
-      let abs_flags _ _ = Flag.Set.empty
-    end
-
-    type details = Base.details
-
-    include Make_explanation (Base)
-
+        module Loc_expl = Loc_explanation
+        module Ops_expl = Ops_explanation
+      end)
     include Act_abstract.Instruction.Inherit_properties
               (Act_abstract.Instruction)
               (struct
@@ -247,52 +78,11 @@ module Make (B : Runner.Basic) :
   end
 
   module Stm_explanation = struct
-    module Flag = Lang.Statement.Extended_flag
-
-    module Base = struct
-      module Abs = Act_abstract.Statement
-      module Flag = Flag
-
-      type elt = Lang.Statement.t
-
-      let pp = Lang.Statement.pp
-
-      type context = Act_abstract.Symbol.Table.t
-
-      type details = {instructions: Ins_explanation.t list}
-      [@@deriving fields]
-
-      let describe_instructions stm context =
-        match Lang.Statement.abs_kind stm with
-        | Act_abstract.Statement.Kind.Instruction ->
-            stm |> Lang.Statement.On_instructions.to_list
-            |> List.map ~f:(fun original ->
-                   Ins_explanation.make ~original ~context )
-        | Blank | Unknown | Directive | Label ->
-            []
-
-      let make_details stm context =
-        {instructions= describe_instructions stm context}
-
-      let pp_instruction_details =
-        pp_listed_details "instruction" Ins_explanation.pp
-
-      let pp_details f =
-        Fields_of_details.Direct.iter ~instructions:(fun _ _ ->
-            pp_instruction_details f )
-
-      include (
-        Lang.Statement :
-          Act_abstract.Abstractable.S
-          with module Abs := Abs
-           and type t := elt )
-
-      let abs_flags = Lang.Statement.extended_flags
-    end
-
-    type details = Base.details
-
-    include Make_explanation (Base)
+    include Explanation.Make_stm (struct
+        module Instruction = Lang.Instruction
+        module Ins_expl = Ins_explanation
+        module Statement = Lang.Statement
+      end)
 
     include Act_abstract.Statement.Inherit_properties
               (Act_abstract.Statement)
@@ -329,7 +119,7 @@ module Make (B : Runner.Basic) :
         (Stm_explanation.abs_flags exp))
 
   let pp_explanation f exp =
-    match (Stm_explanation.details exp).instructions with
+    match Stm_explanation.(instructions (details exp)) with
     | [] ->
         pp_generic_statement_explanation f exp
     (* Assume at most one instruction per statement, for now *)
@@ -412,8 +202,3 @@ module Make (B : Runner.Basic) :
     let run = run_explanation
   end)
 end
-
-let get_filter (module B : Runner.Basic) :
-    (module Runner.S with type cfg = Config.t) =
-  let module Exp = Make (B) in
-  (module Exp.Filter)

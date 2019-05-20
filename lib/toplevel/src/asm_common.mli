@@ -21,37 +21,35 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** High-level module for emitting act's internal assembly analysis
+(** Common infrastructure for [act asm] commands.
 
-    [Explainer] contains functors for extracting a pretty-printable summary
-    of an assembly listing as act understands it, through a language module. *)
+    This module sits on top of {{!Common}Common}. *)
 
-include module type of Explainer_intf
+open Base
 
-module Config : sig
-  module Format : sig
-    (** [t] is an enumeration of output formats for explain jobs. *)
-    type t =
-      | Assembly
-          (** Terse, but as close to parseable assembly as possible *)
-      | Detailed
-          (** More details than [Assembly], but verbose and free-form *)
-    [@@deriving equal]
+module Input : sig
+  type t
+  (** Opaque type of assembly command input. *)
 
-    val default : t
-    (** [default] gets the default output format. *)
-  end
+  val act_config : t -> Act_config.Act.t
+  val file_type : t -> Act_config.File_type.t_or_infer
+  val infile_raw : t -> string option
+  val outfile_raw : t -> string option
+  val output : t -> Act_common.Output.t
+  val sanitiser_passes : t -> Act_config.Sanitiser_pass.Set.t
+  val target : t -> Act_config.Compiler.Target.t
+  val user_cvars : t -> Act_common.C_variables.Map.t option
 
-  type t [@@deriving equal, sexp]
-
-  val make : ?format:Format.t -> unit -> t
-  (** [make ?format ()] builds an [Explain_config] with the given
-      parameters. *)
-
-  val default : t
-  (** [default] gets the default explainer job configuration. *)
+  val make_compiler_input :
+    t
+    -> (c_variables:Act_common.C_variables.Map.t option -> 'cfg)
+    -> Act_c.Filters.Output.t Act_utils.Filter.chain_output
+    -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t
 end
 
-(** [Make] makes an implementation of [S] for a given language. *)
-module Make (B : Basic) :
-  S with module Lang = B.Src_lang and type config = Config.t
+
+val lift_command
+  : Args.Standard_asm.t ->
+  f:(Input.t -> unit Or_error.t) ->
+  default_passes:Act_config.Sanitiser_pass.Set.t ->
+  unit

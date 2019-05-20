@@ -31,11 +31,10 @@ The `asm gen-stubs` command generates GCC assembly directives that can
 be slotted into a simulation harness.
 |}
 
-let run (args : Args.Standard_asm.t) (o : A.Output.t)
-    (cfg : Act_config.Act.t) : unit Or_error.t =
-  ignore args ;
-  ignore o ;
-  ignore cfg ;
+module In = Asm_common.Input
+
+let run (input : In.t) : unit Or_error.t =
+  ignore input ;
   Or_error.unimplemented "TODO"
 
 let command : Command.t =
@@ -43,4 +42,4 @@ let command : Command.t =
     ~readme
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard_asm.get in
-      fun () -> Common.lift_asm_command standard_args ~f:run)
+      fun () -> Asm_common.lift_command standard_args ~f:run ~default_passes:Act_config.Sanitiser_pass.explain)

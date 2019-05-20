@@ -21,37 +21,12 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** High-level module for emitting act's internal assembly analysis
+(** The GCC assembly stub generator. *)
 
-    [Explainer] contains functors for extracting a pretty-printable summary
-    of an assembly listing as act understands it, through a language module. *)
-
-include module type of Explainer_intf
+include module type of Stub_gen_intf
 
 module Config : sig
-  module Format : sig
-    (** [t] is an enumeration of output formats for explain jobs. *)
-    type t =
-      | Assembly
-          (** Terse, but as close to parseable assembly as possible *)
-      | Detailed
-          (** More details than [Assembly], but verbose and free-form *)
-    [@@deriving equal]
-
-    val default : t
-    (** [default] gets the default output format. *)
-  end
-
-  type t [@@deriving equal, sexp]
-
-  val make : ?format:Format.t -> unit -> t
-  (** [make ?format ()] builds an [Explain_config] with the given
-      parameters. *)
-
-  val default : t
-  (** [default] gets the default explainer job configuration. *)
+  type t
 end
 
-(** [Make] makes an implementation of [S] for a given language. *)
-module Make (B : Basic) :
-  S with module Lang = B.Src_lang and type config = Config.t
+module Make (B : Basic) : S with module Lang = B.Src_lang and type config = Config.t

@@ -214,44 +214,14 @@ module With_files_lifter = Make_lifter (Args.Standard_with_files)
 
 let lift_command_with_files = With_files_lifter.lift
 
-(* TODO(@MattWindsor91): Everything from here on should be in its own
-   module. *)
-
 module Asm_lifter = Make_lifter (Args.Standard_asm)
 
-(* Asm command lifting is a bit more sophisticated, since [sanitiser_passes]
-   is now a standard argument, and we don't have compiler or machine
-   predicates. *)
-
-let lift_asm_command
-    ~(f :
-          Args.Standard_asm.t
-       -> Ac.Output.t
+let lift_asm_command_basic
+    ~(f : Args.Standard_asm.t
+      -> Ac.Output.t
        -> Act_config.Act.t
        -> unit Or_error.t) (args : Args.Standard_asm.t) : unit =
   Asm_lifter.lift
     ?sanitiser_passes:(Args.Standard_asm.sanitiser_passes args)
     ~f args
 
-let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
-    Act_config.Compiler.Target.t Or_error.t =
-  let raw_target = Args.Standard_asm.target args in
-  Asm_target.resolve ~cfg raw_target
-
-let collect_cvars (args : Args.Standard_asm.t) :
-    Ac.C_variables.Map.t option Or_error.t =
-  let c_globals = Args.Standard_asm.c_globals args in
-  let c_locals = Args.Standard_asm.c_locals args in
-  let module V = Ac.C_variables in
-  Or_error.Let_syntax.(
-    let%bind globals =
-      Tx.Option.With_errors.map_m
-        ~f:(V.String_lang.parse_list ~scope:V.Scope.Global)
-        c_globals
-    in
-    let%map locals =
-      Tx.Option.With_errors.map_m
-        ~f:(V.String_lang.parse_list ~scope:V.Scope.Local)
-        c_locals
-    in
-    Option.merge globals locals ~f:(fun x y -> V.Map.merge_list [x; y]))

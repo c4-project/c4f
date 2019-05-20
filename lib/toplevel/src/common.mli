@@ -86,17 +86,18 @@ val lift_command_with_files :
     {{!lift_command} lift_command}, but also handles (and supplies) optional
     input and output files. *)
 
-val lift_asm_command :
+val lift_asm_command_basic :
      f:(   Args.Standard_asm.t
         -> Output.t
         -> Act_config.Act.t
         -> unit Or_error.t)
   -> Args.Standard_asm.t
   -> unit
-(** [lift_asm_command ~f args] behaves like
+(** [lift_asm_command_basic ~f args] behaves like
     {{!lift_command_with_files} lift_command_with_files}, but also handles
     (and supplies) the various standard asm command arguments, including
-    sanitiser passes. *)
+    sanitiser passes.  More thorough lifting is left to the [Asm_common]
+    module. *)
 
 (** {2 Single-file pipelines}
 
@@ -147,21 +148,3 @@ val make_compiler_input :
     passes [passes]; and the output from the de-litmus stage of the litmus
     pipeline [dl_output], which contains any postcondition and discovered C
     variables. *)
-
-(** {2 Assembly commands} *)
-
-(* TODO(@MattWindsor91): these should be in a new module. *)
-
-val resolve_target :
-     Args.Standard_asm.t
-  -> Act_config.Act.t
-  -> Act_config.Compiler.Target.t Or_error.t
-(** [resolve_target args config] gets the target mentioned by [args], and
-    tries to resolve it using [config]. *)
-
-val collect_cvars :
-  Args.Standard_asm.t -> C_variables.Map.t option Or_error.t
-(** [collect_cvars args] tries to merge the C global and local variable
-    lists given in [args], creating a single C variables map.
-
-    This is useful for passing into things like [make_compiler_input]. *)

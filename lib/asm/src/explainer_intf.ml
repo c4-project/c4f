@@ -25,86 +25,22 @@
 
 open Base
 
-(** [Basic_explanation] is the signature that must be implemented by any
-    module going into [Make_explanation]. *)
-module type Basic_explanation = sig
-  (** Type of the concrete item being explained. *)
-  type elt
+(** [Basic] collects the input required to generate explainers.
+    This should be a subset of {{!Runner.Basic}Runner.Basic}.
+ *)
+module type Basic = sig
+  type ast
 
-  (** Type of context that must be supplied with an item ([elt]) to compute
-      an explanation. *)
-  type context
+  (** [Src_lang] is the language under explanation. *)
+  module Src_lang : Act_language.Definition.S
 
-  (** Type of additional information included in the explanation (for
-      example, recursive explanations of child components). *)
-  type details
+  module Sanitiser_hook (P : Travesty.Traversable.S1) :
+    Act_sanitiser.Hook.S
+    with module Lang = Src_lang
+     and module Program_container = P
 
-  (** Items of type [elt] must be abstractable. *)
-  include Act_abstract.Abstractable.S with type t := elt
-
-  (** Items of type [elt] must also be printable. *)
-  include Pretty_printer.S with type t := elt
-
-  (** [Flag] is the module containing detail flags that may be raised on
-      [elt]. *)
-  module Flag : Act_abstract.Flag_enum.S
-
-  val abs_flags : elt -> context -> Flag.Set.t
-  (** [abs_flags elt context] computes the set of detail flags that apply to
-      [elt] given the context [context]. *)
-
-  val make_details : elt -> context -> details
-  (** [make_details elt context] computes any additional details to attach
-      to the explanation. *)
-
-  val pp_details : Formatter.t -> details -> unit
-  (** [pp_details f details] pretty-prints [details] on [f]. *)
-end
-
-(** [Explanation] modules contain an abstract data type [t] that
-    encapsulates a concrete but [Abstractable] type [elt] alongside a
-    pre-computed summary of its abstract analysis with respect to a given
-    context of type [context]. *)
-module type Explanation = sig
-  (** Opaque type of the explanation itself. *)
-  type t
-
-  (** Type of the concrete item being explained. *)
-  type elt
-
-  (** Type of context that must be supplied with an item ([elt]) to compute
-      an explanation. *)
-  type context
-
-  (** Type of additional information included in the explanation (for
-      example, recursive explanations of child components). *)
-  type details
-
-  (** Each [t] inherits the abstract type projection of its underlying
-      [exp]. *)
-  include Act_abstract.Abstractable.S with type t := t
-
-  (** Explanations can be pretty-printed. *)
-  include Pretty_printer.S with type t := t
-
-  (** [Flag] is the module containing detail flags that may be raised on the
-      explanation's original element. *)
-  module Flag : Act_abstract.Flag_enum.S
-
-  val original : t -> elt
-  (** [original exp] gets the original element of an explanation [exp]. *)
-
-  val details : t -> details
-  (** [details exp] gets the additional details of an explanation [exp]. *)
-
-  val abs_flags : t -> Flag.Set.t
-  (** [abs_flags exp] gets detailed analysis of the element inside [exp] in
-      the form of the abstract representation's flag set. *)
-
-  val make : context:context -> original:elt -> t
-  (** [make ~context ~original] creates a [t] over [original], using
-      [context] to get more detailed information than would normally be
-      available through [abs_type] alone. *)
+  module Frontend : Act_utils.Frontend.S with type ast := ast
+  val program : ast -> Src_lang.Program.t
 end
 
 module type S = sig
@@ -115,7 +51,7 @@ module type S = sig
 
   (** [Loc_explanation] provides explanations for locations. *)
   module Loc_explanation :
-    Explanation
+    Explanation.S
     with type elt := Lang.Location.t
      and type context := Act_abstract.Symbol.Table.t
      and module Abs := Act_abstract.Location
@@ -124,7 +60,7 @@ module type S = sig
       bundles. *)
   module Ops_explanation : sig
     include
-      Explanation
+      Explanation.S
       with type elt := Lang.Instruction.t
        and type context := Act_abstract.Symbol.Table.t
        and module Abs := Act_abstract.Operand.Bundle
@@ -138,7 +74,7 @@ module type S = sig
   (** [Ins_explanation] provides explanations for instructions. *)
   module Ins_explanation : sig
     include
-      Explanation
+      Explanation.S
       with type elt := Lang.Instruction.t
        and type context := Act_abstract.Symbol.Table.t
        and module Abs := Act_abstract.Instruction
@@ -153,7 +89,7 @@ module type S = sig
       tables as context. *)
   module Stm_explanation : sig
     include
-      Explanation
+      Explanation.S
       with type elt := Lang.Statement.t
        and type context := Act_abstract.Symbol.Table.t
        and module Abs := Act_abstract.Statement
