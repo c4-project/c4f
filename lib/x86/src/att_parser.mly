@@ -46,8 +46,8 @@ copyright notice follow. *)
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(* We don't open Core_kernel at the toplevel because Menhir generates exceptions that
-   are ok in the standard library, but deprecated in Core_kernel. *)
+(* We don't open Base at the toplevel because Menhir generates exceptions that
+   are ok in the standard library, but deprecated in Base. *)
  open Ast
 %}
 
@@ -131,7 +131,7 @@ bis:
 segdisp:
   | disp=disp { (None, disp) }
   | segdisp=separated_pair(ATT_REG, COLON, disp)
-    { Core_kernel.(Tuple2.map_fst ~f:Option.some segdisp) }
+    { let (seg, disp) = segdisp in (Some seg, disp) }
 
 (* Memory access: base/index/scale, displacement, or both *)
 indirect:
@@ -181,7 +181,7 @@ prim_operand:
 
 (* Numeric constant: hexadecimal or decimal *)
 k:
-  | hex=ATT_HEX    { Core_kernel.Int.of_string ("0x" ^ hex) }
+  | hex=ATT_HEX    { Base.Int.of_string ("0x" ^ hex) }
     (* 0xDEADBEEF *)
-  | dec=NUM        { Core_kernel.Int.of_string dec }
+  | dec=NUM        { Base.Int.of_string dec }
     (* 42 *)

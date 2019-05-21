@@ -65,6 +65,10 @@ val explain : Set.t
 (** [explain] collects passes that are useful for explaining an assembly
     file without modifying its semantics too much. *)
 
+val light : Set.t
+(** [light] collects passes that clean up the assembly, but don't perform
+    semantics-changing removals or simplifications. *)
+
 val standard : Set.t
 (** [standard] collects passes that are considered safe for general
     litmusification. *)
@@ -76,7 +80,7 @@ module Selector : sig
 
   (** Enumerates the various top-level categories of passes. *)
   module Category : sig
-    type t = [`Standard | `Explain] [@@deriving sexp]
+    type t = [`Standard | `Explain | `Light] [@@deriving sexp]
   end
 
   (** [t] is the base element type of the language. *)

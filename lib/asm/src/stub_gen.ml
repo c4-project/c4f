@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+module Tx = Travesty_base_exts
 include Stub_gen_intf
 
 module Config = struct
@@ -36,16 +37,21 @@ end
 module Make (B : Basic) :
   S with module Lang = B.Src_lang and type config = Config.t = struct
   module Lang = B.Src_lang
-  module San = Act_sanitiser.Instance.Make_single (B.Sanitiser_hook)
+  module San = Act_sanitiser.Instance.Make_multi (B.Sanitiser_hook)
 
   type config = Config.t
 
-  let gen_and_dump_asm_stub (listing : Lang.Program.t)
-      (oc : Stdio.Out_channel.t) : unit Or_error.t =
+  let gen_and_dump_asm_stub (program : San.Output.Program.t)
+      ~(oc : Stdio.Out_channel.t) : unit Or_error.t =
+    let listing = San.Output.Program.listing program in
     Or_error.Let_syntax.(
       let%map stub = B.as_asm_stub listing in
       let f = Caml.Format.formatter_of_out_channel oc in
-      Act_c.Asm_stub.pp f stub)
+      Fmt.pf f "@[<v>%a@]@." Act_c.Asm_stub.pp stub)
+
+  let gen_and_dump_asm_stubs (programs : San.Output.Program.t list)
+      ~(oc : Stdio.Out_channel.t) : unit Or_error.t =
+    Tx.List.With_errors.iter_m ~f:(gen_and_dump_asm_stub ~oc) programs
 
   let run_stub_gen (_osrc : Act_utils.Io.Out_sink.t)
       (oc : Stdio.Out_channel.t) ~(in_name : string)
@@ -55,9 +61,8 @@ module Make (B : Basic) :
     ignore config ;
     Or_error.Let_syntax.(
       let%bind san = San.sanitise ~passes ~symbols program in
-      let program = San.Output.programs san in
-      let listing = San.Output.Program.listing program in
-      let%map () = gen_and_dump_asm_stub listing oc in
+      let programs = San.Output.programs san in
+      let%map () = gen_and_dump_asm_stubs programs ~oc in
       let redirects_raw = San.Output.redirects san in
       let redirects = Lang.Symbol.R_map.to_string_alist redirects_raw in
       Job.Output.make (Fmt.always "?") in_name redirects [])

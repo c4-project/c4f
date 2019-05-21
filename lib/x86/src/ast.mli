@@ -46,7 +46,7 @@
 (** Generic, low-level abstract syntax tree for AT&T and Intel x86 *)
 
 open Act_common
-open Core_kernel
+open Base
 open Act_utils
 
 (** [Disp] concerns displacements. *)
@@ -63,19 +63,17 @@ end
 (** [Index] concerns index-scale pairs. *)
 module Index : sig
   type t = Unscaled of Reg.t | Scaled of Reg.t * int
-  [@@deriving sexp, eq, compare]
+  [@@deriving sexp, equal, quickcheck, compare]
 
   (** [On_registers] permits enumerating and folding over registers inside a
       displacement. *)
   module On_registers :
     Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
-
-  include Quickcheck.S with type t := t
 end
 
 module Indirect : sig
   (** [t] is the opaque type of indirect memory accesses. *)
-  type t [@@deriving equal]
+  type t [@@deriving equal, quickcheck]
 
   val make :
     ?seg:Reg.t -> ?disp:Disp.t -> ?base:Reg.t -> ?index:Index.t -> unit -> t
@@ -103,8 +101,6 @@ module Indirect : sig
       memory access. *)
   module On_symbols :
     Travesty.Traversable.S0 with type t := t and type Elt.t = string
-
-  include Quickcheck.S with type t := t
 end
 
 (** A syntactic memory locations.
@@ -124,7 +120,7 @@ module Location : sig
     | Template_token of string
         (** An interpolation from some form of assembly template, for
             example GCC's C {i asm} extension. *)
-  [@@deriving sexp, equal, compare]
+  [@@deriving sexp, equal, quickcheck, compare]
 
   (** [On_registers] permits enumerating and folding over registers inside a
       location. *)
@@ -135,16 +131,12 @@ module Location : sig
       location. *)
   module On_symbols :
     Travesty.Traversable.S0 with type t := t and type Elt.t = string
-
-  include Quickcheck.S with type t := t
 end
 
 module Bop : sig
-  type t = Plus | Minus [@@deriving sexp]
+  type t = Plus | Minus [@@deriving sexp, quickcheck]
 
   include Enum.Extension_table with type t := t
-
-  include Quickcheck.S with type t := t
 end
 
 module Operand : sig
@@ -154,7 +146,7 @@ module Operand : sig
     | String of string
     | Typ of string  (** Type annotation *)
     | Bop of t * Bop.t * t
-  [@@deriving sexp, equal, compare]
+  [@@deriving sexp, equal, compare, quickcheck]
 
   val location : Location.t -> t
 
@@ -165,8 +157,6 @@ module Operand : sig
   val typ : string -> t
 
   val bop : t -> Bop.t -> t -> t
-
-  include Quickcheck.S with type t := t
 
   (** [On_locations] permits enumerating and folding over locations inside
       an operand. *)

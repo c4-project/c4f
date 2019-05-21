@@ -21,33 +21,11 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Syntax and support for GCC 'asm' directives. *)
+(** GCC assembly stub generation for x86. *)
 
 open Base
 
-module Operand : sig
-  (** Opaque type of operands, parametrised over their right-hand side. *)
-  type 'rhs t
-
-  val make : ?symbol:string -> constr:string -> rhs:'rhs -> unit -> 'rhs t
-  (** [make ?symbol constr rhs ()] makes a GCC asm operand with the
-      constraint [constr], the right hand side [rhs] (a C lvalue for output
-      operands, and a C expression for inputs), and optional symbolic
-      reference [symbol]. *)
-end
-
-(** Opaque type of asm directives. *)
-type t
-
-val make :
-     ?clobbers:string list
-  -> ?input_operands:Ast.Expr.t Operand.t list
-  -> ?output_operands:Ast.Expr.t Operand.t list
-  -> ?template:string list
-  -> unit
-  -> t
-(** [make ?clobbers ?input_operands ?output_operands ?template ()] builds a
-    GCC asm directive with template body [template], operands
-    [input_operands] and [output_operands], and clobbers [clobbers]. *)
-
-include Pretty_printer.S with type t := t
+val run : Ast.t -> Act_c.Asm_stub.t Or_error.t
+(** [run ast] tries to generate a GCC assembly stub for an x86 AST. It fails
+    if the AST isn't tagged with an AT&T dialect (though this may change in
+    the future). *)

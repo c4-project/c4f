@@ -42,7 +42,7 @@ module Input = struct
     Args.Standard_asm.infile_raw (args i)
 
   let outfile_raw (i : t) : string option =
-    Args.Standard_asm.infile_raw (args i)
+    Args.Standard_asm.outfile_raw (args i)
 
   let make_compiler_input (i : t)
       (config_builder :

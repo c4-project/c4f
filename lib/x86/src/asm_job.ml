@@ -46,6 +46,7 @@ module Make_runner_deps
 
   module Litmus_pp = Act_litmus.Pp.Make_tabular (Litmus_ast)
   module Sanitiser_hook = Sanitiser_hook.Make (Src_lang)
+  module Att_conv = Conv.Make (Src_lang) (Language_definition.Att)
   module Conv = Conv.Make (Src_lang) (Dst_lang)
 
   let convert_program = Conv.convert
@@ -59,10 +60,8 @@ module Make_runner_deps
     include Frontend
   end
 
-  let as_asm_stub (asm : Ast.t) : Act_c.Asm_stub.t Or_error.t =
-    (* TODO(@MattWindsor91): implement *)
-    ignore (asm : Ast.t) ;
-    Or_error.unimplemented "TODO: x86 asm template dumping"
+  let as_asm_stub (p : Lang.Program.t) : Act_c.Asm_stub.t Or_error.t =
+    p |> Att_conv.convert |> Stub_gen.run
 end
 
 let get_runner (dialect : Id.t) : (module Act_asm.Runner.Basic) Or_error.t =

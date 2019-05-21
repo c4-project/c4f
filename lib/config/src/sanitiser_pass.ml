@@ -132,6 +132,14 @@ let all_lazy = lazy (all_set ())
 
 let explain = Set.of_list [`Remove_useless]
 
+let light =
+  Set.of_list
+    [ `Remove_useless
+    ; `Remove_litmus (* for now, might need reducing eventually *)
+    ; `Remove_boundaries
+    ; `Unmangle_symbols
+    ; `Warn ]
+
 let standard = all_set ()
 
 module Selector = struct
@@ -139,9 +147,12 @@ module Selector = struct
 
   module Category = struct
     module M = struct
-      type t = [`Standard | `Explain] [@@deriving enum, enumerate]
+      type t = [`Standard | `Light | `Explain] [@@deriving enum, enumerate]
 
-      let table = [(`Standard, "%standard"); (`Explain, "%explain")]
+      let table =
+        [ (`Standard, "%standard")
+        ; (`Light, "%light")
+        ; (`Explain, "%explain") ]
 
       let tree_docs : Property.Tree_doc.t =
         [ ( "%standard"
@@ -149,6 +160,12 @@ module Selector = struct
             ; details=
                 {| Set containing all sanitiser passes that are considered
                  unlikely to change program semantics. |}
+            } )
+        ; ( "%light"
+          , { args= []
+            ; details=
+                {| Set containing sanitiser passes clean up the assembly,
+                 but don't perform semantics-changing removals or simplifications. |}
             } )
         ; ( "%explain"
           , { args= []
@@ -167,6 +184,7 @@ module Selector = struct
       Fmt.(pr "@[<v>%a@]@." (list ~sep:cut pp) (all_list ())) ;
       [%expect {|
         %standard
+        %light
         %explain |}]
   end
 
@@ -197,6 +215,8 @@ module Selector = struct
         standard
     | `Explain ->
         explain
+    | `Light ->
+        light
     | `Default ->
         default
 
