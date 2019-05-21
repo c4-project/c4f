@@ -30,16 +30,16 @@ module Common = struct
   let make_heap_loc l =
     Ast.(Location.Indirect (Indirect.make ~disp:(Disp.Symbolic l) ()))
 
-  let register_abs_type : Ast.Reg.t -> Act_abstract.Location.Register.t =
+  let register_abs_type : Reg.t -> Act_abstract.Location.Register.t =
     function
     (* Technically, [E]SP is the 'stack pointer' on x86. However, stack
        offsets generally descend from [E]BP, so we map it to the 'abstract'
        stack pointer. *)
     | `BP | `EBP | `SP | `ESP ->
         Stack_pointer
-    | #Ast.Reg.gp as reg ->
-        General (Ast.Reg.to_string reg)
-    | #Ast.Reg.sp | #Ast.Reg.flag ->
+    | #Reg.gp as reg ->
+        General (Reg.to_string reg)
+    | #Reg.sp | #Reg.flag ->
         Unknown
 
   let disp_abs_type : Ast.Disp.t -> Act_abstract.Location.Address.t =

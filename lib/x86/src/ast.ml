@@ -50,95 +50,9 @@ module Tx = Travesty_base_exts
 module Au = Act_utils
 open Travesty
 
-module Reg = struct
-  module M = struct
-    type gp8h = [`AH | `BH | `CH | `DH] [@@deriving enumerate, eq, sexp]
-
-    type gp8l = [`AL | `BL | `CL | `DL] [@@deriving enumerate, eq, sexp]
-
-    type gp8 = [gp8h | gp8l] [@@deriving enumerate, eq, sexp]
-
-    type gp16 = [`AX | `BX | `CX | `DX] [@@deriving enumerate, eq, sexp]
-
-    type gp32 = [`EAX | `EBX | `ECX | `EDX] [@@deriving enumerate, eq, sexp]
-
-    type gp = [gp8 | gp16 | gp32] [@@deriving enumerate, eq, sexp]
-
-    type seg = [`CS | `DS | `SS | `ES | `FS | `GS]
-    [@@deriving enumerate, eq, sexp]
-
-    type flag = [`CF | `PF | `AF | `ZF | `SF | `OF]
-    [@@deriving enumerate, eq, sexp]
-
-    type sp16 = [seg | `BP | `SP | `SI | `DI]
-    [@@deriving enumerate, eq, sexp]
-
-    type sp32 = [`EIP | `EBP | `ESP | `ESI | `EDI]
-    [@@deriving enumerate, eq, sexp]
-
-    type sp = [sp16 | sp32] [@@deriving enumerate, eq, sexp]
-
-    type reg8 = gp8
-
-    type reg16 = [gp16 | sp16] [@@deriving enumerate, eq, sexp]
-
-    type reg32 = [gp32 | sp32] [@@deriving enumerate, eq, sexp]
-
-    type t =
-      [gp8 (* can't use reg8 here, it breaks sexp *) | reg16 | reg32 | flag]
-    [@@deriving enumerate, eq, sexp]
-
-    let table : (t, string) List.Assoc.t =
-      [ (`AH, "AH")
-      ; (`AL, "AL")
-      ; (`AX, "AX")
-      ; (`EAX, "EAX")
-      ; (`BH, "BH")
-      ; (`BL, "BL")
-      ; (`BX, "BX")
-      ; (`EBX, "EBX")
-      ; (`CH, "CH")
-      ; (`CL, "CL")
-      ; (`CX, "CX")
-      ; (`ECX, "ECX")
-      ; (`DH, "DH")
-      ; (`DL, "DL")
-      ; (`DX, "DX")
-      ; (`EDX, "EDX")
-      ; (`BP, "BP")
-      ; (`EBP, "EBP")
-      ; (`SI, "SI")
-      ; (`ESI, "ESI")
-      ; (`DI, "DI")
-      ; (`EDI, "EDI")
-      ; (`SP, "SP")
-      ; (`ESP, "ESP")
-      ; (`CS, "CS")
-      ; (`DS, "DS")
-      ; (`SS, "SS")
-      ; (`ES, "ES")
-      ; (`FS, "FS")
-      ; (`GS, "GS")
-      ; (`CF, "CF")
-      ; (`PF, "PF")
-      ; (`AF, "AF")
-      ; (`ZF, "ZF")
-      ; (`SF, "SF")
-      ; (`OF, "OF")
-      ; (`EIP, "EIP") ]
-  end
-
-  include M
-
-  include Au.Enum.Extend_table (struct
-    include M
-    include Au.Enum.Make_from_enumerate (M)
-  end)
-end
-
 module Disp = struct
   type t = Symbolic of string | Numeric of int
-  [@@deriving sexp, variants, eq, compare, quickcheck]
+  [@@deriving sexp, variants, equal, compare, quickcheck]
 
   (* TODO(@MattWindsor91): generate valid symbols only? *)
 

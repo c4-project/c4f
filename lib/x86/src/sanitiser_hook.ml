@@ -41,9 +41,7 @@ struct
 
   module On_location = struct
     let name_of_segment_offset_heap_loc segment offset program_name =
-      Printf.sprintf "t%sg%sd%d" program_name
-        (Ast.Reg.to_string segment)
-        offset
+      Printf.sprintf "t%sg%sd%d" program_name (Reg.to_string segment) offset
 
     let make_segment_offset_heap_loc segment offset =
       Ctx.(
@@ -75,14 +73,13 @@ struct
 
     (** [warn_unsupported_registers reg] warns if [reg] isn't likely to be
         understood by Herd. *)
-    let warn_unsupported_registers : Ast.Reg.t -> unit Ctx.t = function
-      | (#Ast.Reg.seg | #Ast.Reg.gp8 | #Ast.Reg.gp16 | #Ast.Reg.sp16) as reg
-        ->
+    let warn_unsupported_registers : Reg.t -> unit Ctx.t = function
+      | (#Reg.seg | #Reg.gp8 | #Reg.gp16 | #Reg.sp16) as reg ->
           Ctx.(
             warn (L.Element.Location (Location.Reg reg))
               (Info.of_string
                  "This register is unlikely to be supported by Herd"))
-      | #Ast.Reg.gp32 | #Ast.Reg.sp32 | #Ast.Reg.flag ->
+      | #Reg.gp32 | #Reg.sp32 | #Reg.flag ->
           Ctx.return ()
 
     let on_register reg =

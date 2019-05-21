@@ -45,7 +45,7 @@ copyright notice follow. *)
 (****************************************************************************)
 
 {
-open Core
+open Base
 open Lexing
 open Act_utils.Frontend
 open Act_utils.Lex_utils
@@ -75,7 +75,7 @@ rule token = parse
 | "0x" (hexnum as x) { ATT_HEX x }
 | "0x" { lex_error ("Malformed hex constant: " ^ Lexing.lexeme lexbuf) lexbuf }
 | '%' (name as name)
-      { match Ast.Reg.of_string_option name with
+      { match Reg.of_string_option name with
         | Some r -> ATT_REG r
         | None -> lex_error ("Invalid register: " ^ Lexing.lexeme lexbuf) lexbuf
       }
