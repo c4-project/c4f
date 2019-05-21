@@ -24,24 +24,26 @@
 (** [S] is an interface for language-specific hooks into the sanitisation
     process. *)
 module type S = sig
-  include Pass.Basic
+  include Pass_intf.Basic
 
   module On_all :
-    Pass.S
+    Pass_intf.S
     with type t := Lang.Program.t Program_container.t
      and type 'a ctx := 'a Ctx.t
 
   module On_program :
-    Pass.S with type t := Lang.Program.t and type 'a ctx := 'a Ctx.t
+    Pass_intf.S with type t := Lang.Program.t and type 'a ctx := 'a Ctx.t
 
   module On_statement :
-    Pass.S with type t := Lang.Statement.t and type 'a ctx := 'a Ctx.t
+    Pass_intf.S with type t := Lang.Statement.t and type 'a ctx := 'a Ctx.t
 
   module On_instruction :
-    Pass.S with type t := Lang.Instruction.t and type 'a ctx := 'a Ctx.t
+    Pass_intf.S
+    with type t := Lang.Instruction.t
+     and type 'a ctx := 'a Ctx.t
 
   module On_location :
-    Pass.S with type t := Lang.Location.t and type 'a ctx := 'a Ctx.t
+    Pass_intf.S with type t := Lang.Location.t and type 'a ctx := 'a Ctx.t
 end
 
 (** [S_maker] is the type of functors that generate hooks given a program

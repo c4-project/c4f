@@ -23,8 +23,8 @@
 
 open Base
 
-module Make (B : Pass.Basic) :
-  Pass.S
+module Make (B : Pass_intf.Basic) :
+  Pass_intf.S
   with type t := B.Lang.Program.t B.Program_container.t
    and type 'a ctx := 'a B.Ctx.t = struct
   module Ctx_Pcon = B.Program_container.On_monad (B.Ctx)

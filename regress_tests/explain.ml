@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,19 +21,23 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Sanitiser passes for global symbol renaming.
+(** Tests the output of the 'act asm explain' command. *)
 
-    This module provides a global sanitiser pass that performs two renaming
-    sub-passes on all symbols:
+open Core
+module Ac = Act_common
 
-    {ul
-     {- [`Unmangle_symbols]: replace compiler-mangled symbols with their
-        original C identifiers where doing so is unambiguous;}
-     {- [`Escape_symbols]: replace characters in symbols that are difficult
-        for Herd-like programs to parse with less human-readable (but more
-        machine-readable) equivalents.}} *)
+let run (dir : Fpath.t) : unit Or_error.t =
+  let arch = Ac.Id.of_string "x86.att" in
+  Or_error.Let_syntax.(
+    let%bind (module L) =
+      Toplevel.Language_support.asm_runner_from_arch arch
+    in
+    let module Exp = Act_asm.Explainer.Make (L) in
+    Common.regress_run_asm_many
+      (module Exp.Filter)
+      "Explainer" Act_sanitiser.Pass_group.explain dir)
 
-module Make (B : Pass_intf.Basic) :
-  Pass_intf.S
-  with type t := B.Lang.Program.t B.Program_container.t
-   and type 'a ctx := 'a B.Ctx.t
+let command =
+  Common.make_regress_command ~summary:"runs explainer regressions" run
+
+let () = Command.run command

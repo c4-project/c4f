@@ -32,5 +32,5 @@
     events. Chains corresponding to write events are harder to detect, but
     will be supported eventually. *)
 
-module Make (B : Pass.Basic) :
-  Pass.S with type t := B.Lang.Program.t and type 'a ctx := 'a B.Ctx.t
+module Make (B : Pass_intf.Basic) :
+  Pass_intf.S with type t := B.Lang.Program.t and type 'a ctx := 'a B.Ctx.t

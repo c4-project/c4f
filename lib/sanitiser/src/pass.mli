@@ -24,8 +24,7 @@
 (** Sanitiser: base signatures shared by each sanitiser pass. *)
 
 open Base
-
-include module type of Pass_intf
+open Pass_intf
 
 (** [Make_null] makes a sanitiser pass that does nothing. *)
 module Make_null (Ctx : Monad.S) (Subject : T) :

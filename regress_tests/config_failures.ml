@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,19 +21,24 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Sanitiser passes for global symbol renaming.
+(** Tests the output of the 'act c delitmus' command. *)
 
-    This module provides a global sanitiser pass that performs two renaming
-    sub-passes on all symbols:
+open Core
 
-    {ul
-     {- [`Unmangle_symbols]: replace compiler-mangled symbols with their
-        original C identifiers where doing so is unambiguous;}
-     {- [`Escape_symbols]: replace characters in symbols that are difficult
-        for Herd-like programs to parse with less human-readable (but more
-        machine-readable) equivalents.}} *)
+let parse_config_failures ~(file : Fpath.t) ~(path : Fpath.t) :
+    unit Or_error.t =
+  ignore file ;
+  let r = Act_config.Frontend.load ~path in
+  Fmt.(pr "@[%a@]@." (result ~ok:(always "No failures.") ~error:Error.pp)) r ;
+  Result.ok_unit
 
-module Make (B : Pass_intf.Basic) :
-  Pass_intf.S
-  with type t := B.Lang.Program.t B.Program_container.t
-   and type 'a ctx := 'a B.Ctx.t
+let run (test_dir : Fpath.t) : unit Or_error.t =
+  let full_dir = Fpath.(test_dir / "config" / "failures" / "") in
+  Common.regress_on_files "Config parser (failures)" ~dir:full_dir
+    ~ext:"conf" ~f:parse_config_failures
+
+let command =
+  Common.make_regress_command
+    ~summary:"runs config parser failure regressions" run
+
+let () = Command.run command

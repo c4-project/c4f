@@ -21,19 +21,23 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Sanitiser passes for global symbol renaming.
+(** Common functionality for regress tests *)
 
-    This module provides a global sanitiser pass that performs two renaming
-    sub-passes on all symbols:
+open Core_kernel
 
-    {ul
-     {- [`Unmangle_symbols]: replace compiler-mangled symbols with their
-        original C identifiers where doing so is unambiguous;}
-     {- [`Escape_symbols]: replace characters in symbols that are difficult
-        for Herd-like programs to parse with less human-readable (but more
-        machine-readable) equivalents.}} *)
+val regress_on_files :
+     string
+  -> dir:Fpath.t
+  -> ext:string
+  -> f:(file:Fpath.t -> path:Fpath.t -> unit Or_error.t)
+  -> unit Or_error.t
 
-module Make (B : Pass_intf.Basic) :
-  Pass_intf.S
-  with type t := B.Lang.Program.t B.Program_container.t
-   and type 'a ctx := 'a B.Ctx.t
+val regress_run_asm_many :
+     (module Act_asm.Runner.S)
+  -> string
+  -> Set.M(Act_sanitiser.Pass_group).t
+  -> Fpath.t
+  -> unit Or_error.t
+
+val make_regress_command :
+  (Fpath.t -> unit Or_error.t) -> summary:string -> Command.t

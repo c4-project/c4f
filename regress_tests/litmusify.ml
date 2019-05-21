@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,9 +21,23 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** The 'regress' command *)
+(** Tests the output of the 'act asm litmusify' command. *)
 
 open Core
+module Ac = Act_common
 
-val command : Command.t
-(** [command] is the top-level 'regress' command. *)
+let run (dir : Fpath.t) : unit Or_error.t =
+  let arch = Ac.Id.of_string "x86.att" in
+  Or_error.Let_syntax.(
+    let%bind (module L) =
+      Toplevel.Language_support.asm_runner_from_arch arch
+    in
+    let module Lit = Act_asm.Litmusifier.Make (L) in
+    Common.regress_run_asm_many
+      (module Lit.Filter)
+      "Litmusifier" Act_sanitiser.Pass_group.standard dir)
+
+let command =
+  Common.make_regress_command ~summary:"runs litmusifier regressions" run
+
+let () = Command.run command

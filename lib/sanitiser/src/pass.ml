@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Pass_intf
+open Pass_intf
 
 module Make_null (Ctx : Monad.S) (Subject : Base.T) :
   S with type t := Subject.t and type 'a ctx := 'a Ctx.t = struct

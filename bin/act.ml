@@ -44,7 +44,6 @@ let command =
     ; ("compare", Compare.command)
     ; ("configure", Configure.command)
     ; ("diff-states", Diff_states.command)
-    ; ("regress", Regress.command)
     ; ("test", Test.command)
     ; ("tool", Tool.command) ]
 
