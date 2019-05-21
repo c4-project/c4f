@@ -123,12 +123,11 @@ let regress_run_asm_many (modename : string) mode passes
     ~f:(regress_run_asm l path mode specs passes)
 
 let regress_explain : Fpath.t -> unit Or_error.t =
-  regress_run_asm_many "Explainer" `Explain
-    Act_config.Sanitiser_pass.explain
+  regress_run_asm_many "Explainer" `Explain Act_sanitiser.Pass_group.explain
 
 let regress_litmusify : Fpath.t -> unit Or_error.t =
   regress_run_asm_many "Litmusifier" `Litmusify
-    Act_config.Sanitiser_pass.standard
+    Act_sanitiser.Pass_group.standard
 
 let pp_cvars : Ac.C_variables.Map.t Fmt.t =
   Fmt.(

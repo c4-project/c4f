@@ -35,7 +35,7 @@ type 'cfg t
 
 val make :
      ?config:'cfg
-  -> ?passes:Act_config.Sanitiser_pass.Set.t
+  -> ?passes:Set.M(Act_sanitiser.Pass_group).t
   -> ?symbols:string list
   -> unit
   -> 'cfg t
@@ -45,7 +45,7 @@ val map_m_config : 'a t -> f:('a -> 'b Or_error.t) -> 'b t Or_error.t
 
 val config : 'cfg t -> 'cfg option
 
-val passes : _ t -> Act_config.Sanitiser_pass.Set.t
+val passes : _ t -> Set.M(Act_sanitiser.Pass_group).t
 
 val symbols : _ t -> string list
 

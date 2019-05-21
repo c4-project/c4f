@@ -44,12 +44,11 @@ module State = struct
           [@default Act_abstract.Symbol.Table.empty]
     ; variables: 'sset
     ; redirects: 'smap
-    ; passes: Set.M(Act_config.Sanitiser_pass).t
+    ; passes: Set.M(Pass_group).t
     ; warnings: (string, 'warn) List.Assoc.t [@default []] }
   [@@deriving fields, make]
 
-  let pass_mem (ctx : ('a, 'b, 'c) t) ~(pass : Act_config.Sanitiser_pass.t)
-      : bool =
+  let pass_mem (ctx : ('a, 'b, 'c) t) ~(pass : Pass_group.t) : bool =
     Set.mem ctx.passes pass
 
   let set_end_label (ctx : ('a, 'b, 'c) t) ~(label : string) :
@@ -85,7 +84,7 @@ module Common = struct
   let enter_program ~name : (unit, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.(modify (State.enter_program ~name))
 
-  let is_pass_enabled (pass : Act_config.Sanitiser_pass.t) :
+  let is_pass_enabled (pass : Pass_group.t) :
       (bool, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.peek (State.pass_mem ~pass)
 
@@ -119,7 +118,6 @@ end
 module Make (Lang : Act_language.Definition.S) :
   S with module Lang := Lang = struct
   module Warn = Warn.Make (Lang.Element)
-  module Pass = Act_config.Sanitiser_pass
 
   type ctx = (Set.M(Lang.Symbol).t, Lang.Symbol.R_map.t, Warn.t) State.t
 
@@ -147,8 +145,8 @@ module Make (Lang : Act_language.Definition.S) :
 
   let get_variables = get_variables ()
 
-  let ( |-> ) pass f a =
-    Let_syntax.(if%bind is_pass_enabled pass then f a else return a)
+  let guard (f : 'a -> 'a t) ~(on : Pass_group.t) (a : 'a) : 'a t =
+    Let_syntax.(if%bind is_pass_enabled on then f a else return a)
 
   let warn element body =
     modify (fun ctx ->

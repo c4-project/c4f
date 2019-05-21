@@ -8,4 +8,4 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries core_kernel fmt travesty travesty.core_kernel_exts act_abstract
-   act_common act_config act_language act_utils))
+   act_common act_language act_utils))

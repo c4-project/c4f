@@ -151,8 +151,8 @@ module Make (B : Runner.Basic) :
   let output_litmus (_osrc : Act_utils.Io.Out_sink.t) (outp : Out_channel.t)
       ~(in_name : string) ~(program : B.Src_lang.Program.t)
       ~(symbols : B.Src_lang.Symbol.t list) ~(config : config)
-      ~(passes : Act_config.Sanitiser_pass.Set.t) : Job.Output.t Or_error.t
-      =
+      ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
+      Job.Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind o = Sanitiser.sanitise ~passes ~symbols program in
     let redirects = Sanitiser.Output.redirects o in

@@ -197,4 +197,4 @@ let command =
       in
       fun () ->
         Asm_common.lift_command standard_args ~f:(run simulator post_sexp)
-          ~default_passes:Act_config.Sanitiser_pass.standard)
+          ~default_passes:Act_sanitiser.Pass_group.standard)

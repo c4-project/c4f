@@ -102,6 +102,6 @@ module Make (B : Pass.Basic) :
          B.Lang.Program.t B.Program_container.t
       -> B.Lang.Program.t B.Program_container.t B.Ctx.t =
     B.Ctx.(
-      `Unmangle_symbols |-> unmangle_symbols
-      >=> (`Escape_symbols |-> escape_symbols))
+      guard ~on:`Unmangle_symbols unmangle_symbols
+      >=> guard ~on:`Escape_symbols escape_symbols)
 end

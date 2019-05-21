@@ -26,8 +26,8 @@ module Tx = Travesty_base_exts
 
 type 'cfg t =
   { config: 'cfg option
-  ; passes: Act_config.Sanitiser_pass.Set.t
-        [@default Act_config.Sanitiser_pass.standard]
+  ; passes: Set.M(Act_sanitiser.Pass_group).t
+        [@default Act_sanitiser.Pass_group.standard]
   ; symbols: string list }
 [@@deriving make, fields]
 

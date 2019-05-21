@@ -79,7 +79,7 @@ let make_tester o (cfg : Act_config.Act.t) timing_mode =
 
     let sanitiser_passes =
       Act_config.Act.sanitiser_passes cfg
-        ~default:Act_config.Sanitiser_pass.standard
+        ~default:Act_sanitiser.Pass_group.standard
 
     let asm_runner_from_spec =
       Fn.compose Language_support.asm_runner_from_arch

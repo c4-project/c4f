@@ -54,7 +54,7 @@ module Resolve_compiler_from_target :
 val load_and_process_config :
      ?compiler_predicate:Act_config.Compiler.Property.t Blang.t
   -> ?machine_predicate:Act_config.Machine.Property.t Blang.t
-  -> ?sanitiser_passes:Act_config.Sanitiser_pass.Selector.t Blang.t
+  -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> Fpath.t
   -> Act_config.Act.t Or_error.t

@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -65,7 +65,8 @@ val herd_or_default : t -> Herd.t
 val from_raw :
      ?chook:Compiler.Spec.With_id.t hook
   -> ?mhook:Machine.Spec.With_id.t hook
-  -> ?phook:(default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t)
+  -> ?phook:(   default:Set.M(Act_sanitiser.Pass_group).t
+             -> Set.M(Act_sanitiser.Pass_group).t)
   -> Raw.t
   -> t Or_error.t
 (** [from_raw c ?chook ?mhook ?phook] takes a raw config [t] and processes

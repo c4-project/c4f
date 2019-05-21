@@ -186,7 +186,7 @@ module Make (B : Basic) :
   (** [sanitise_loc] performs sanitisation at the single location level. *)
   let sanitise_loc loc =
     let open Ctx in
-    return loc >>= (`Language_hooks |-> B.Hook.On_location.run)
+    return loc >>= guard ~on:`Language_hooks B.Hook.On_location.run
 
   (** [sanitise_all_locs loc] iterates location sanitisation over every
       location in [loc], threading the context through monadically. *)
@@ -195,13 +195,13 @@ module Make (B : Basic) :
   (** [sanitise_ins] performs sanitisation at the single instruction level. *)
   let sanitise_ins : Lang.Instruction.t -> Lang.Instruction.t Ctx.t =
     Ctx.(
-      `Language_hooks |-> B.Hook.On_instruction.run
-      >=> (`Warn |-> warn_unknown_instructions)
-      >=> (`Warn |-> warn_unsupported_operands)
+      guard ~on:`Language_hooks B.Hook.On_instruction.run
+      >=> guard ~on:`Warn warn_unknown_instructions
+      >=> guard ~on:`Warn warn_unsupported_operands
       >=> sanitise_all_locs
-      >=> (`Simplify_litmus |-> change_ret_to_end_jump)
-      >=> (`Simplify_litmus |-> change_stack_to_heap)
-      >=> (`Warn |-> warn_untranslated_operands))
+      >=> guard ~on:`Simplify_litmus change_ret_to_end_jump
+      >=> guard ~on:`Simplify_litmus change_stack_to_heap
+      >=> guard ~on:`Warn warn_untranslated_operands)
 
   (** [warn_unknown_statements stm] emits warnings for each statement in
       [stm] without a high-level analysis. *)
@@ -221,11 +221,11 @@ module Make (B : Basic) :
   (** [sanitise_stm] performs sanitisation at the single statement level. *)
   let sanitise_stm _ : Lang.Statement.t -> Lang.Statement.t Ctx.t =
     Ctx.(
-      `Language_hooks |-> B.Hook.On_statement.run
+      guard ~on:`Language_hooks B.Hook.On_statement.run
       (* Do warnings after the language-specific hook has done any reduction
          necessary, but before we start making broad-brush changes to the
          statements. *)
-      >=> (`Warn |-> warn_unknown_statements)
+      >=> guard ~on:`Warn warn_unknown_statements
       >=> sanitise_all_ins)
 
   (** [irrelevant_instruction_types] lists the high-level types of
@@ -335,9 +335,9 @@ module Make (B : Basic) :
       Ctx.(
         prog
         |> tee_m ~f:update_symbol_table
-        >>= (`Remove_useless |-> remove_generally_irrelevant_statements)
-        >>= (`Remove_litmus |-> remove_litmus_irrelevant_statements)
-        >>= (`Remove_useless |-> remove_useless_jumps))
+        >>= guard ~on:`Remove_useless remove_generally_irrelevant_statements
+        >>= guard ~on:`Remove_litmus remove_litmus_irrelevant_statements
+        >>= guard ~on:`Remove_useless remove_useless_jumps)
     in
     proglen_fix mu prog
 
@@ -348,11 +348,11 @@ module Make (B : Basic) :
     Ctx.(
       (* Initial table population. *)
       tee_m ~f:update_symbol_table
-      >=> (`Simplify_litmus |-> add_end_label)
-      >=> (`Language_hooks |-> B.Hook.On_program.run)
+      >=> guard ~on:`Simplify_litmus add_end_label
+      >=> guard ~on:`Language_hooks B.Hook.On_program.run
       (* The language hook might have invalidated the symbol tables. *)
       >=> tee_m ~f:update_symbol_table
-      >=> (`Simplify_deref_chains |-> Deref.run)
+      >=> guard ~on:`Simplify_deref_chains Deref.run
       (* Need to sanitise statements first, in case the sanitisation pass
          makes irrelevant statements (like jumps) relevant again. *)
       >=> Ctx_Stm.mapi_m ~f:sanitise_stm
@@ -444,9 +444,7 @@ module Make (B : Basic) :
       >>= build_output)
 
   let sanitise ?passes ?(symbols = []) (prog : Lang.Program.t) =
-    let passes' =
-      Option.value ~default:Act_config.Sanitiser_pass.standard passes
-    in
+    let passes' = Option.value ~default:Pass_group.standard passes in
     let variables = Lang.Symbol.Set.of_list symbols in
     Ctx.(
       run

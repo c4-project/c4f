@@ -56,7 +56,7 @@ module Make (B : Basic) :
   let run_stub_gen (_osrc : Act_utils.Io.Out_sink.t)
       (oc : Stdio.Out_channel.t) ~(in_name : string)
       ~(program : Lang.Program.t) ~(symbols : Lang.Symbol.t list)
-      ~(config : config) ~(passes : Act_config.Sanitiser_pass.Set.t) :
+      ~(config : config) ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =
     ignore config ;
     Or_error.Let_syntax.(

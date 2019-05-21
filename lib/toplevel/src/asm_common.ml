@@ -29,7 +29,7 @@ module Input = struct
   type t =
     { act_config: Act_config.Act.t
     ; args: Args.Standard_asm.t
-    ; sanitiser_passes: Act_config.Sanitiser_pass.Set.t
+    ; sanitiser_passes: Set.M(Act_sanitiser.Pass_group).t
     ; user_cvars: Ac.C_variables.Map.t option
     ; target: Act_config.Compiler.Target.t
     ; output: Act_common.Output.t }
@@ -78,7 +78,8 @@ let collect_cvars (args : Args.Standard_asm.t) :
 
 let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
     (act_config : Act_config.Act.t) ~(f : Input.t -> unit Or_error.t)
-    ~(default_passes : Act_config.Sanitiser_pass.Set.t) : unit Or_error.t =
+    ~(default_passes : Set.M(Act_sanitiser.Pass_group).t) : unit Or_error.t
+    =
   let sanitiser_passes =
     Act_config.Act.sanitiser_passes act_config ~default:default_passes
   in
@@ -93,5 +94,5 @@ let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
 
 let lift_command (args : Args.Standard_asm.t)
     ~(f : Input.t -> unit Or_error.t)
-    ~(default_passes : Act_config.Sanitiser_pass.Set.t) : unit =
+    ~(default_passes : Set.M(Act_sanitiser.Pass_group).t) : unit =
   Common.lift_asm_command_basic args ~f:(with_input ~f ~default_passes)

@@ -105,5 +105,5 @@ let load_and_process_config ?(compiler_predicate = Blang.true_)
   let%bind rcfg = Act_config.Act.Raw.load ~path in
   let chook = compiler_hook with_compiler_tests compiler_predicate in
   let mhook = machine_hook machine_predicate in
-  let phook = Act_config.Sanitiser_pass.Selector.eval_b sanitiser_passes in
+  let phook = Act_sanitiser.Pass_group.Selector.eval_b sanitiser_passes in
   Act_config.Act.from_raw rcfg ~chook ~mhook ~phook

@@ -60,7 +60,7 @@ val chain_with_delitmus :
 val lift_command :
      ?compiler_predicate:Act_config.Compiler.Property.t Blang.t
   -> ?machine_predicate:Act_config.Machine.Property.t Blang.t
-  -> ?sanitiser_passes:Act_config.Sanitiser_pass.Selector.t Blang.t
+  -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> f:(Args.Standard.t -> Output.t -> Act_config.Act.t -> unit Or_error.t)
   -> Args.Standard.t
@@ -73,7 +73,7 @@ val lift_command :
 val lift_command_with_files :
      ?compiler_predicate:Act_config.Compiler.Property.t Blang.t
   -> ?machine_predicate:Act_config.Machine.Property.t Blang.t
-  -> ?sanitiser_passes:Act_config.Sanitiser_pass.Selector.t Blang.t
+  -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> f:(   Args.Standard_with_files.t
         -> Output.t
@@ -136,7 +136,7 @@ val make_compiler_input :
   -> Act_common.File_type.t
   -> C_variables.Map.t option
   -> (c_variables:C_variables.Map.t option -> 'cfg)
-  -> Act_config.Sanitiser_pass.Set.t
+  -> Set.M(Act_sanitiser.Pass_group).t
   -> Act_c.Filters.Output.t Filter.chain_output
   -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t
 (** [make_compiler_input o file_type user_cvars cfg_fun passes dl_output]

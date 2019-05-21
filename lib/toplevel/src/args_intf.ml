@@ -121,7 +121,7 @@ module type S_standard_asm = sig
       compiler ID. *)
 
   val sanitiser_passes :
-    t -> Act_config.Sanitiser_pass.Selector.t Blang.t option
+    t -> Act_sanitiser.Pass_group.Selector.t Blang.t option
   (** [sanitiser_passes args] gets the Blang predicate, if any, supplied to
       filter the sanitiser pass selection. *)
 end

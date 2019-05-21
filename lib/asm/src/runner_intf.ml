@@ -82,7 +82,7 @@ module type Runnable = sig
     -> program:Program.t
     -> symbols:Symbol.t list
     -> config:cfg
-    -> passes:Act_config.Sanitiser_pass.Set.t
+    -> passes:Set.M(Act_sanitiser.Pass_group).t
     -> Job.Output.t Or_error.t
 end
 

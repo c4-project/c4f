@@ -38,7 +38,7 @@ module type Basic = sig
 
   module C_simulator : Act_sim.Runner.S
 
-  val sanitiser_passes : Act_config.Sanitiser_pass.Set.t
+  val sanitiser_passes : Set.M(Act_sanitiser.Pass_group).t
   (** [sanitiser_passes] is the set of sanitiser passes the tester should
       use. *)
 end

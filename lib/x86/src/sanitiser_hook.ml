@@ -29,7 +29,6 @@ struct
   open Ast
   module Lang = L
   module Ctx = Act_sanitiser.Ctx.Make (Lang)
-  module Pass = Act_config.Sanitiser_pass
   module Program_container = P
   module Null = Act_sanitiser.Pass.Make_null (Ctx)
   module On_statement = Null (Lang.Statement)
@@ -83,7 +82,8 @@ struct
           Ctx.return ()
 
     let on_register reg =
-      Ctx.(return reg >>= (`Warn |-> tee_m ~f:warn_unsupported_registers))
+      Ctx.(
+        return reg >>= guard ~on:`Warn (tee_m ~f:warn_unsupported_registers))
 
     let through_all_registers loc =
       let module F = Location.On_registers.On_monad (Ctx) in
@@ -103,8 +103,7 @@ struct
 
     let run : Location.t -> Location.t Ctx.t =
       Ctx.(
-        `Warn
-        |-> tee_m ~f:warn_template_token
+        guard ~on:`Warn (tee_m ~f:warn_template_token)
         >=> segment_offset_to_heap >=> through_all_registers)
   end
 

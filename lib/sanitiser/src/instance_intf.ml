@@ -65,7 +65,7 @@ module type S = sig
      and type rmap := Lang.Symbol.R_map.t
 
   val sanitise :
-       ?passes:Act_config.Sanitiser_pass.Set.t
+       ?passes:Set.M(Pass_group).t
     -> ?symbols:Lang.Symbol.t list
     -> Lang.Program.t
     -> Output.t Or_error.t

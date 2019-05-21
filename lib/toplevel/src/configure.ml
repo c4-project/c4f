@@ -49,7 +49,7 @@ let predicate_lists : (string, (module Property.S)) List.Assoc.t =
     , (module Act_config.Machine.Property) )
   ; ("Identifier predicates", (module Id.Property))
   ; ( "Sanitiser passes (-sanitiser-passes)"
-    , (module Act_config.Sanitiser_pass.Selector) ) ]
+    , (module Act_sanitiser.Pass_group.Selector) ) ]
 
 let pp_tree_module : (module Property.S) Fmt.t =
  fun f (module M) -> M.pp_tree f ()

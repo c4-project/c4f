@@ -104,4 +104,4 @@ let command =
       in
       fun () ->
         Asm_common.lift_command standard_args ~f:(run output_format)
-          ~default_passes:Act_config.Sanitiser_pass.explain)
+          ~default_passes:Act_sanitiser.Pass_group.explain)

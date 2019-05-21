@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -171,7 +171,7 @@ module Make (B : Basic) :
   let run_explanation (_osrc : Act_utils.Io.Out_sink.t)
       (outp : Stdio.Out_channel.t) ~(in_name : string)
       ~(program : LS.Program.t) ~(symbols : LS.Symbol.t list)
-      ~(config : config) ~(passes : Act_config.Sanitiser_pass.Set.t) :
+      ~(config : config) ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map san = SS.sanitise ~passes ~symbols program in

@@ -292,7 +292,9 @@ module M = struct
     ; cpp: Cpp.t option [@sexp.option]
     ; fuzz: Fuzz.t option [@sexp.option]
     ; herd: Herd.t option [@sexp.option]
-    ; sanitiser_passes: default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t
+    ; sanitiser_passes:
+           default:Set.M(Act_sanitiser.Pass_group).t
+        -> Set.M(Act_sanitiser.Pass_group).t
     ; disabled_compilers: (Ac.Id.t, Error.t option) List.Assoc.t
     ; disabled_machines: (Ac.Id.t, Error.t option) List.Assoc.t }
   [@@deriving sexp, fields]

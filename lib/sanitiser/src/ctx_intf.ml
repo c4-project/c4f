@@ -37,9 +37,7 @@ module type S = sig
   include Travesty.State_transform.S with module Inner := Or_error
 
   val initial :
-       passes:Act_config.Sanitiser_pass.Set.t
-    -> variables:Lang.Symbol.Set.t
-    -> state
+    passes:Pass_group.Set.t -> variables:Lang.Symbol.Set.t -> state
   (** [initial ~passes ~variables] opens an initial context with the given
       enabled passes and C variables. *)
 
@@ -69,13 +67,13 @@ module type S = sig
    * Conditional execution
    *)
 
-  val is_pass_enabled : Act_config.Sanitiser_pass.t -> bool t
+  val is_pass_enabled : Pass_group.t -> bool t
   (** [is_pass_enabled pass] is a contextual computation that returns [true]
       provided that [pass] is enabled. *)
 
-  val ( |-> ) : Act_config.Sanitiser_pass.t -> ('a -> 'a t) -> 'a -> 'a t
-  (** [p |-> f] guards a contextual computation [f] on the pass [p]; it
-      won't run unless [p] is in the current context's pass set. *)
+  val guard : ('a -> 'a t) -> on:Pass_group.t -> 'a -> 'a t
+  (** [guard f ~on] guards a contextual computation [f] on the pass [on]; it
+      won't run unless [on] is in the current context's pass set. *)
 
   val warn : Warn.elt -> Info.t -> unit t
   (** [warn element body] adds a warning [body] to the current context,

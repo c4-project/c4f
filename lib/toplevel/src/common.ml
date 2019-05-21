@@ -155,7 +155,7 @@ let choose_cvars (o : Ac.Output.t)
 let make_compiler_input (o : Ac.Output.t) (file_type : Ac.File_type.t)
     (user_cvars : Ac.C_variables.Map.t option)
     (config_fn : c_variables:Ac.C_variables.Map.t option -> 'cfg)
-    (passes : Act_config.Sanitiser_pass.Set.t)
+    (passes : Set.M(Act_sanitiser.Pass_group).t)
     (dl_output : Act_c.Filters.Output.t Filter.chain_output) :
     'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
   let c_variables = choose_cvars o user_cvars dl_output in

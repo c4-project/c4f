@@ -25,7 +25,7 @@ open Core
 open Act_common
 open Act_utils
 
-let litmusify o (passes : Act_config.Sanitiser_pass.Set.t) spec c_file =
+let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
   let target = `Spec spec in
   let config = Act_asm.Litmusifier.Config.make ~format:Programs_only () in
   let litmus_job = Act_asm.Job.make ~config ~passes () in
@@ -55,7 +55,7 @@ let run o cfg ~(c_file_raw : string) =
   let specs = Act_config.Act.compilers cfg in
   let passes =
     Act_config.Act.sanitiser_passes cfg
-      ~default:Act_config.Sanitiser_pass.standard
+      ~default:Act_sanitiser.Pass_group.standard
   in
   Fmt.pr "@[<h>#@ %a@]@." Fpath.pp c_file ;
   Or_error.combine_errors_unit

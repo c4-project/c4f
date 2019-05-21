@@ -21,6 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
+
 (** Baseline interface of modules over configuration. *)
 module type S = sig
   module CSpec : Compiler.S_spec
@@ -45,7 +47,9 @@ module type S = sig
   (** [machines c] gets the set of all active machines in configuration [c]. *)
 
   val sanitiser_passes :
-    t -> default:Sanitiser_pass.Set.t -> Sanitiser_pass.Set.t
+       t
+    -> default:Set.M(Act_sanitiser.Pass_group).t
+    -> Set.M(Act_sanitiser.Pass_group).t
   (** [sanitiser_passes c ~default] gets the set of requested sanitiser
       passes, given the default set [default] for the current context. *)
 end

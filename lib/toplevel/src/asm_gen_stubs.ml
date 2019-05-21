@@ -75,4 +75,4 @@ let command : Command.t =
       let%map_open standard_args = Args.Standard_asm.get in
       fun () ->
         Asm_common.lift_command standard_args ~f:run
-          ~default_passes:Act_config.Sanitiser_pass.light)
+          ~default_passes:Act_sanitiser.Pass_group.light)

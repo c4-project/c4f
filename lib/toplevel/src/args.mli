@@ -79,7 +79,7 @@ val c_locals : string list option Command.Param.t
     variables to track during sanitisation. *)
 
 val sanitiser_passes :
-  Act_config.Sanitiser_pass.Selector.t Blang.t option Command.Param.t
+  Act_sanitiser.Pass_group.Selector.t Blang.t option Command.Param.t
 (** [sanitiser_passes] defines a parameter for collecting a selector
     predicate for sanitiser passes. *)
 

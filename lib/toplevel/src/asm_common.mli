@@ -41,7 +41,7 @@ module Input : sig
 
   val output : t -> Act_common.Output.t
 
-  val sanitiser_passes : t -> Act_config.Sanitiser_pass.Set.t
+  val sanitiser_passes : t -> Set.M(Act_sanitiser.Pass_group).t
 
   val target : t -> Act_config.Compiler.Target.t
 
@@ -57,5 +57,5 @@ end
 val lift_command :
      Args.Standard_asm.t
   -> f:(Input.t -> unit Or_error.t)
-  -> default_passes:Act_config.Sanitiser_pass.Set.t
+  -> default_passes:Set.M(Act_sanitiser.Pass_group).t
   -> unit

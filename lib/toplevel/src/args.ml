@@ -105,10 +105,10 @@ module Other = struct
       ~doc:"IDS comma-separated list of C local variables to track"
 
   let sanitiser_passes :
-      Act_config.Sanitiser_pass.Selector.t Blang.t option Command.Param.t =
+      Act_sanitiser.Pass_group.Selector.t Blang.t option Command.Param.t =
     flag "sanitiser-passes"
       (optional
-         (sexp_conv [%of_sexp: Act_config.Sanitiser_pass.Selector.t Blang.t]))
+         (sexp_conv [%of_sexp: Act_sanitiser.Pass_group.Selector.t Blang.t]))
       ~doc:"PREDICATE select which sanitiser passes to use"
 
   let compiler_predicate =
@@ -219,7 +219,7 @@ module Standard_asm : S_standard_asm with type s := Standard.t = struct
     ; c_locals: string list option
     ; file_type: Act_common.File_type.t
     ; target: Asm_target.t
-    ; sanitiser_passes: Act_config.Sanitiser_pass.Selector.t Blang.t option
+    ; sanitiser_passes: Act_sanitiser.Pass_group.Selector.t Blang.t option
     }
   [@@deriving fields]
 
