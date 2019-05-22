@@ -39,11 +39,12 @@ let%test_module "pretty printing" =
            ~clobbers:["rdx"] ()) ;
       [%expect
         {|
-asm volatile ( "rdtsc\n\t"
-        "shl $32, %%rdx\n\t"
-        "or %%rdx, %0"
-        : "=a" (msr)
-        : 
-        : "rdx");
+asm volatile
+  ("rdtsc\n\t"
+   "shl $32, %%rdx\n\t"
+   "or %%rdx, %0"
+   : "=a" (msr)
+   :
+   : "rdx" );
 |}]
   end )
