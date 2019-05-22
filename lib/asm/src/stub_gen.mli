@@ -23,15 +23,22 @@
 
 (** The GCC assembly stub generator. *)
 
-include module type of Stub_gen_intf
-
 module Config : sig
   type t
 
-  val make : unit -> t
-  (** [make ()] makes a stub generator config (which doesn't have anything
-      in it yet, but is reserved for future expansion). *)
+  (** {3 Constructor} *)
+
+  val make : ?separator:string -> unit -> t
+  (** [make ?separator ()] makes a stub generator config with the optional
+      given [separator]. *)
+
+  (** {3 Accessors} *)
+
+  val separator : t -> string option
+  (** [separator] gets the optional separator string that the stub generator
+      will insert between programs if present. *)
 end
 
-module Make (B : Basic) :
-  S with module Lang = B.Src_lang and type config = Config.t
+module type S = Stub_gen_intf.S with type config := Config.t
+
+module Make (B : Stub_gen_intf.Basic) : S with module Lang = B.Src_lang

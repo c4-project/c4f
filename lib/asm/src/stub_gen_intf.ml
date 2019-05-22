@@ -21,6 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+(** Interfaces used in {{!Stub_gen} Stub_gen}. *)
+
 open Base
 
 (** [Basic] collects the input required to generate stubs. This should be a

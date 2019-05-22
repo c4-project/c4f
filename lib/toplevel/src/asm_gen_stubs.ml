@@ -36,7 +36,7 @@ module In = Asm_common.Input
 let make_config ~(c_variables : Ac.C_variables.Map.t option) :
     Act_asm.Stub_gen.Config.t =
   ignore (c_variables : Ac.C_variables.Map.t option) ;
-  Act_asm.Stub_gen.Config.make ()
+  Act_asm.Stub_gen.Config.make ~separator:"// NEXT" ()
 
 let stub_gen_runner (module B : Act_asm.Runner.Basic) :
     (module Act_asm.Runner.S with type cfg = Act_asm.Stub_gen.Config.t) =

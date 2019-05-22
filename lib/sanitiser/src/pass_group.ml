@@ -133,12 +133,7 @@ let all_lazy = lazy (all_set ())
 let explain = Set.of_list [`Remove_useless]
 
 let light =
-  Set.of_list
-    [ `Remove_useless
-    ; `Remove_litmus (* for now, might need reducing eventually *)
-    ; `Remove_boundaries
-    ; `Unmangle_symbols
-    ; `Warn ]
+  Set.of_list [`Remove_useless; `Remove_boundaries; `Unmangle_symbols; `Warn]
 
 let standard = all_set ()
 
