@@ -33,7 +33,8 @@ val warn_if_not_tracking_symbols : Output.t -> C_id.t list option -> unit
     to track, act may make incorrect assumptions. *)
 
 val asm_runner_of_target :
-  Act_config.Compiler.Target.t -> (module Act_asm.Runner.Basic) Or_error.t
+     Act_config.Compiler.Target.t
+  -> (module Act_asm.Runner_intf.Basic) Or_error.t
 (** [asm_runner_of_target target] gets the runner dependency module
     associated with a target (either a compiler spec or emits clause). *)
 
@@ -106,8 +107,8 @@ val lift_asm_command_basic :
 
 val delitmus_compile_asm_pipeline :
      Act_config.Compiler.Target.t
-  -> (   (module Act_asm.Runner.Basic)
-      -> (module Act_asm.Runner.S with type cfg = 'c))
+  -> (   (module Act_asm.Runner_intf.Basic)
+      -> (module Act_asm.Runner_intf.S with type cfg = 'c))
   -> (module Filter.S
         with type aux_i = Act_common.File_type.t
                           * (   Act_c.Filters.Output.t Filter.chain_output

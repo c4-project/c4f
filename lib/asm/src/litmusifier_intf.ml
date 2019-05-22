@@ -58,5 +58,5 @@ module type S = sig
   (** [Filter] is the litmusifier packaged up as an assembly job runner, ie
       a filter accepting an assembly job and outputting a standard job
       output. *)
-  module Filter : Runner.S with type cfg = config
+  module Filter : Runner_intf.S with type cfg = config
 end

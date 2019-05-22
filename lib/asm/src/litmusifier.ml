@@ -23,7 +23,7 @@
 
 open Base
 open Stdio
-include Litmusifier_intf
+open Litmusifier_intf
 module Ac = Act_common
 module Tx = Travesty_core_kernel_exts
 
@@ -64,7 +64,7 @@ module Config = struct
         (W.proc_field (Tx.Option.With_errors.map_m ~f:c_variables))
 end
 
-module Make (B : Runner.Basic) :
+module Make (B : Runner_intf.Basic) :
   S
   with type config = B.Src_lang.Constant.t Config.t
    and type fmt = Format.t
@@ -166,7 +166,7 @@ module Make (B : Runner.Basic) :
       (B.Src_lang.Symbol.R_map.to_string_alist redirects)
       warnings
 
-  module Filter : Runner.S with type cfg = config = Runner.Make (struct
+  module Filter : Runner_intf.S with type cfg = config = Runner.Make (struct
     module Symbol = B.Src_lang.Symbol
     module Program = B.Program
 
@@ -182,7 +182,7 @@ module Make (B : Runner.Basic) :
   end)
 end
 
-let get_filter (module B : Runner.Basic) =
+let get_filter (module B : Runner_intf.Basic) =
   ( module struct
     type cfg = Sexp.t Config.t
 
@@ -217,5 +217,5 @@ let get_filter (module B : Runner.Basic) =
       let adapt_o = Or_error.return
     end)
   end
-  : Runner.S
+  : Runner_intf.S
     with type cfg = Sexp.t Config.t )

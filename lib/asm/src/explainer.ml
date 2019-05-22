@@ -23,7 +23,6 @@
 
 open Base
 module Tx = Travesty_core_kernel_exts
-include Explainer_intf
 
 module Config = struct
   module Format = struct
@@ -38,11 +37,15 @@ module Config = struct
   let default : t = make ()
 end
 
+module type S = Explainer_intf.S with type config := Config.t
+
+module type S_filter = Runner_intf.S with type cfg = Config.t
+
 let pp_set_adj pp_set f set =
   if not (Set.is_empty set) then Fmt.(prefix sp pp_set) f set
 
-module Make (B : Basic) :
-  S with module Lang = B.Src_lang and type config = Config.t = struct
+module Make (B : Explainer_intf.Basic) : S with module Lang = B.Src_lang =
+struct
   module Lang = B.Src_lang
 
   type config = Config.t
@@ -183,7 +186,8 @@ module Make (B : Basic) :
     output_explanation config.format in_name outp exp
       (LS.Symbol.R_map.to_string_alist redirects)
 
-  module Filter : Runner.S with type cfg = Config.t = Runner.Make (struct
+  module Filter : Runner_intf.S with type cfg = Config.t =
+  Runner.Make (struct
     type cfg = Config.t
 
     module Symbol = B.Src_lang.Symbol

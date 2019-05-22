@@ -33,9 +33,6 @@
 open Base
 open Act_common
 
-(** @inline *)
-include module type of Litmusifier_intf
-
 (** Output formats for the litmusifier. *)
 module Format : sig
   (** [t] is an enumeration of output formats for litmus jobs. *)
@@ -90,8 +87,8 @@ module Config : sig
       fail. *)
 end
 
-module Make (B : Runner.Basic) :
-  S
+module Make (B : Runner_intf.Basic) :
+  Litmusifier_intf.S
   with type config = B.Src_lang.Constant.t Config.t
    and type fmt = Format.t
    and type program =
@@ -101,7 +98,8 @@ module Make (B : Runner.Basic) :
    and module Redirect := B.Src_lang.Symbol.R_map
 
 val get_filter :
-  (module Runner.Basic) -> (module Runner.S with type cfg = Sexp.t Config.t)
+     (module Runner_intf.Basic)
+  -> (module Runner_intf.S with type cfg = Sexp.t Config.t)
 (** [get_filter Runner] is [Runner.Litmusify], but with the input type
     altered slightly so that the constants inside any litmus postconditions
     are expected to be S-expressions, and unmarshalled into the appropriate

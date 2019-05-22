@@ -26,8 +26,6 @@
     [Explainer] contains functors for extracting a pretty-printable summary
     of an assembly listing as act understands it, through a language module. *)
 
-include module type of Explainer_intf
-
 module Config : sig
   module Format : sig
     (** [t] is an enumeration of output formats for explain jobs. *)
@@ -52,6 +50,13 @@ module Config : sig
   (** [default] gets the default explainer job configuration. *)
 end
 
+(** {2 Module type synonyms} *)
+
+module type S = Explainer_intf.S with type config := Config.t
+
+module type S_filter = Runner_intf.S with type cfg = Config.t
+
+(** {2 Making an explainer} *)
+
 (** [Make] makes an implementation of [S] for a given language. *)
-module Make (B : Basic) :
-  S with module Lang = B.Src_lang and type config = Config.t
+module Make (B : Explainer_intf.Basic) : S with module Lang = B.Src_lang

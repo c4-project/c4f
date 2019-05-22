@@ -27,7 +27,7 @@ module Tx = Travesty_base_exts
 
 module Make_runner_deps
     (Frontend : Act_utils.Loadable.S with type t := Ast.t)
-    (Lang : Language_definition.S) : Act_asm.Runner.Basic = struct
+    (Lang : Language_definition.S) : Act_asm.Runner_intf.Basic = struct
   module Src_lang = Lang
   module Dst_lang = Language_definition.Herd7
 
@@ -64,8 +64,9 @@ module Make_runner_deps
     p |> Att_conv.convert |> Stub_gen.run
 end
 
-let get_runner (dialect : Id.t) : (module Act_asm.Runner.Basic) Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind (module Frontend) = Frontend.of_dialect dialect in
-  let%map (module Lang) = Language_definition.of_dialect dialect in
-  (module Make_runner_deps (Frontend) (Lang) : Act_asm.Runner.Basic)
+let get_runner (dialect : Id.t) :
+    (module Act_asm.Runner_intf.Basic) Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind (module Frontend) = Frontend.of_dialect dialect in
+    let%map (module Lang) = Language_definition.of_dialect dialect in
+    (module Make_runner_deps (Frontend) (Lang) : Act_asm.Runner_intf.Basic))

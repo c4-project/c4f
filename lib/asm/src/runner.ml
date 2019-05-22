@@ -23,9 +23,9 @@
 
 open Base
 module Tx = Travesty_base_exts
-include Runner_intf
 
-module Make (R : Runnable) : S with type cfg = R.cfg = struct
+module Make (R : Runner_intf.Runnable) :
+  Runner_intf.S with type cfg = R.cfg = struct
   type cfg = R.cfg
 
   let parse isrc =

@@ -33,8 +33,8 @@ let print_symbol_map = function
           (list ~sep:sp (fun f (k, v) -> pf f "@[<hv>%s@ ->@ %s@]" k v))
           map)
 
-let explain_runner (module B : Act_asm.Runner.Basic) :
-    (module Act_asm.Runner.S with type cfg = Act_asm.Explainer.Config.t) =
+let explain_runner (module B : Act_asm.Runner_intf.Basic) :
+    (module Act_asm.Explainer.S_filter) =
   let module Exp = Act_asm.Explainer.Make (B) in
   (module Exp.Filter)
 

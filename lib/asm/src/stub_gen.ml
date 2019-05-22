@@ -33,13 +33,15 @@ end
 
 module type S = S with type config := Config.t
 
+module type S_filter = Runner_intf.S with type cfg = Config.t
+
+(* TODO(@MattWindsor91): don't print separator after the last element. *)
+let print_separator (f : Formatter.t) (config : Config.t) : unit =
+  Option.iter (Config.separator config) ~f:(Fmt.pf f "@[%s@]@.")
+
 module Make (B : Basic) : S with module Lang = B.Src_lang = struct
   module Lang = B.Src_lang
   module San = Act_sanitiser.Instance.Make_multi (B.Sanitiser_hook)
-
-  (* TODO(@MattWindsor91): don't print separator after the last element. *)
-  let print_separator (f : Formatter.t) (config : Config.t) : unit =
-    Option.iter (Config.separator config) ~f:(Fmt.pf f "@[%s@]@.")
 
   let gen_and_dump_asm_stub (i : int) (program : San.Output.Program.t)
       ~(oc : Stdio.Out_channel.t) ~(config : Config.t) : unit Or_error.t =
@@ -70,7 +72,7 @@ module Make (B : Basic) : S with module Lang = B.Src_lang = struct
       let redirects = Lang.Symbol.R_map.to_string_alist redirects_raw in
       Job.Output.make (Fmt.always "?") in_name redirects [])
 
-  module Filter : Runner.S with type cfg = Config.t = Runner.Make (struct
+  module Filter : S_filter = Runner.Make (struct
     type cfg = Config.t
 
     module Symbol = B.Src_lang.Symbol

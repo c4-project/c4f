@@ -26,7 +26,7 @@
 open Base
 open Act_common
 
-val get_runner : Id.t -> (module Act_asm.Runner.Basic) Or_error.t
+val get_runner : Id.t -> (module Act_asm.Runner_intf.Basic) Or_error.t
 (** [get_runner dialect] tries to get the input module for assembly jobs for
     the x86 dialect described by [dialect] (which should be an architecture
     identifier, less 'x86'. *)

@@ -39,6 +39,12 @@ module Config : sig
       will insert between programs if present. *)
 end
 
+(** {2 Module type synonyms} *)
+
 module type S = Stub_gen_intf.S with type config := Config.t
+
+module type S_filter = Runner_intf.S with type cfg = Config.t
+
+(** {2 Making a stub generator} *)
 
 module Make (B : Stub_gen_intf.Basic) : S with module Lang = B.Src_lang

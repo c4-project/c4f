@@ -50,5 +50,5 @@ module type S = sig
 
   module Lang : Act_language.Definition.S
 
-  module Filter : Runner.S with type cfg = config
+  module Filter : Runner_intf.S with type cfg = config
 end

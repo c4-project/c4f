@@ -33,7 +33,7 @@ val regress_on_files :
   -> unit Or_error.t
 
 val regress_run_asm_many :
-     (module Act_asm.Runner.S)
+     (module Act_asm.Runner_intf.S)
   -> string
   -> Set.M(Act_sanitiser.Pass_group).t
   -> Fpath.t

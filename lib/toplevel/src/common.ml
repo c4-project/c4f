@@ -46,7 +46,7 @@ let warn_if_not_tracking_symbols (o : Ac.Output.t) :
       ()
 
 let asm_runner_of_target (tgt : Act_config.Compiler.Target.t) :
-    (module Act_asm.Runner.Basic) Or_error.t =
+    (module Act_asm.Runner_intf.Basic) Or_error.t =
   Language_support.asm_runner_from_arch
     (Act_config.Compiler.Target.arch tgt)
 
@@ -82,8 +82,8 @@ let chain_with_delitmus (type aux_i aux_o)
 let delitmus_compile_asm_pipeline (type c)
     (target : Act_config.Compiler.Target.t)
     (job_maker :
-         (module Act_asm.Runner.Basic)
-      -> (module Act_asm.Runner.S with type cfg = c)) :
+         (module Act_asm.Runner_intf.Basic)
+      -> (module Act_asm.Runner_intf.S with type cfg = c)) :
     (module Filter.S
        with type aux_i = Ac.File_type.t
                          * (   Act_c.Filters.Output.t Filter.chain_output
