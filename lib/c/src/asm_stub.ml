@@ -54,14 +54,13 @@ let pp_operands : Ast.Expr.t Operand.t list Fmt.t =
 
 let pp_clobbers : string list Fmt.t = Fmt.(list ~sep:comma qstring)
 
-let tabify_string (s : string) : string =
-  s ^ "\\n\\t"
+let tabify_string (s : string) : string = s ^ "\\n\\t"
 
 let tabify_template (template : string list) : string list =
   let last = List.length template - 1 in
   List.mapi template ~f:(fun (k : int) (str : string) ->
       let str' = String.strip str in
-      if Int.equal k last then str' else tabify_string str')
+      if Int.equal k last then str' else tabify_string str' )
 
 let pp_template : string list Fmt.t =
   Fmt.(using tabify_template (vbox (list ~sep:sp (quote string))))

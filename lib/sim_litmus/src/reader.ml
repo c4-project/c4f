@@ -28,14 +28,17 @@ module Shc = Act_sim_herdtools_common
 (* Map over an optional tuple. *)
 module O2 = Travesty.Bi_mappable.Chain_Bi2_Map1 (Tx.Tuple2) (Option)
 
+(* In the histogram, *> represents a postcondition-satisfying state, and :>
+   any other state. *)
+
 let strip_with_separator : string -> string =
-  String.strip ~drop:(Tx.Fn.disj Char.is_whitespace (String.mem ":>"))
+  String.strip ~drop:(Tx.Fn.disj Char.is_whitespace (String.mem ":*>"))
 
 let split_line_to_string_tuple (line : string) : string option * string =
-  line |> String.lsplit2 ~on:':'
+  line |> String.lsplit2 ~on:'>'
   |> O2.bi_map
-       ~left:(Fn.compose Option.return String.strip)
-       ~right:strip_with_separator
+       ~left:(Fn.compose Option.return strip_with_separator)
+       ~right:String.strip
   |> Option.value ~default:(None, line)
 
 let parse_int (s : string) : int Or_error.t =

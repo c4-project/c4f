@@ -86,6 +86,39 @@ Observation foo Always 1000000 0
 Time foo 0.33
 |}
 
+(** An example 'valid' (if peculiar) Litmus7 output with a postcondition. *)
+let test_output_valid_pc : string =
+  {|
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Results for SB+SC.litmus %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+X86 SB
+"Fre PodWR Fre PodWR"
+
+{x=0; y=0;}
+
+ P0          | P1          ;
+ MOV [x],$1  | MOV [y],$1  ;
+ MOV EAX,[y] | MOV EAX,[x] ;
+
+exists (0:EAX=0 /\ 1:EAX=0)
+Generated assembler
+Test SB Allowed
+Histogram (4 states)
+289   *>0:EAX=0; 1:EAX=0;
+499805:>0:EAX=1; 1:EAX=0;
+499791:>0:EAX=0; 1:EAX=1;
+115   :>0:EAX=1; 1:EAX=1;
+Ok
+
+Witnesses
+Positive: 289, Negative: 999711
+Condition exists (0:EAX=0 /\ 1:EAX=0) is validated
+Hash=7dbd6b8e6dd4abc2ef3d48b0376fb2e3
+Observation SB Sometimes 289 999711
+Time SB 0.12
+|}
+
 let print_output_from_string (s : string) : unit =
   print_s
     [%sexp
@@ -113,3 +146,13 @@ let%expect_test "valid output without postcondition parses correctly" =
         ((A 1) (B 0) (C 0) (D 0) (x 1) (y 1))
         ((A 0) (B 0) (C 0) (D 0) (x 1) (y 1))))
       (is_undefined false))) |}]
+
+let%expect_test "valid output with postcondition parses correctly" =
+  print_output_from_string test_output_valid_pc ;
+  [%expect
+    {|
+      (Success
+       ((states
+         (((0:EAX 1) (1:EAX 1)) ((0:EAX 0) (1:EAX 1)) ((0:EAX 1) (1:EAX 0))
+          ((0:EAX 0) (1:EAX 0))))
+        (is_undefined false))) |}]
