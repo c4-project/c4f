@@ -245,11 +245,8 @@ module Raw = struct
           make ?cpp ?herd ?fuzz ~machines ~compilers ())
     end
 
-    include Au.Loadable.Make_chain (struct
-                type t = Ast.t
-
-                include Frontend
-              end)
+    include Au.Loadable.Make_chain
+              (Frontend)
               (struct
                 type dst = t
 

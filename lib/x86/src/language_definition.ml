@@ -145,7 +145,7 @@ module Common = struct
   end
 end
 
-module Make_basic (T : Dialect.S) (P : Pp.Printer) = struct
+module Make_basic (T : Dialect_intf.S) (P : Pp_intf.S) = struct
   include Common.Basic
 
   let pp_comment = P.pp_comment
@@ -202,7 +202,7 @@ module Make_basic (T : Dialect.S) (P : Pp.Printer) = struct
   end
 end
 
-module Make (T : Dialect.S) (P : Pp.Printer) : S = struct
+module Make (T : Dialect_intf.S) (P : Pp_intf.S) : S = struct
   module Dialect = T
   module Basic = Make_basic (T) (P)
   include Act_language.Definition.Make (Basic)

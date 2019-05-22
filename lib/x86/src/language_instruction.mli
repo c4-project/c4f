@@ -30,9 +30,9 @@
 (** [Basic] collects all of the prerequisite modules needed to make the
     [Instruction] part of an x86 [Language.S] module. *)
 module type Basic = sig
-  module Dialect : Dialect.S
+  module Dialect : Dialect_intf.S
 
-  module Pretty : Pp.Printer
+  module Pretty : Pp_intf.S
 
   module Symbol : Act_language.Symbol.Basic with type t := string
 

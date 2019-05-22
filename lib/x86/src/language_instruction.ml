@@ -29,9 +29,9 @@ module A = Act_common
    implementations of each x86 dialect's language module. *)
 
 module type Basic = sig
-  module Dialect : Dialect.S
+  module Dialect : Dialect_intf.S
 
-  module Pretty : Pp.Printer
+  module Pretty : Pp_intf.S
 
   module Symbol : Act_language.Symbol.Basic with type t := string
 

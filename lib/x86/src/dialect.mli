@@ -43,12 +43,15 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 (****************************************************************************)
 
-(** x86 dialect structures. *)
+(** x86 dialects.
+
+    This module contains implementations of
+    {{!Dialect_intf.S} Dialect_intf.S} for each x86 dialect understood by
+    act. *)
 
 open Act_common
 open Base
-
-include module type of Dialect_intf
+open Dialect_intf
 
 (** [Att] describes the AT&T dialect of x86 assembly. *)
 module Att : S

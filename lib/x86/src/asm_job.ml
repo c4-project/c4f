@@ -26,7 +26,7 @@ open Act_common
 module Tx = Travesty_base_exts
 
 module Make_runner_deps
-    (Frontend : Frontend.S)
+    (Frontend : Act_utils.Loadable.S with type t := Ast.t)
     (Lang : Language_definition.S) : Act_asm.Runner.Basic = struct
   module Src_lang = Lang
   module Dst_lang = Language_definition.Herd7

@@ -45,9 +45,9 @@
 
 open Base
 module A = Act_common
-include Dialect_intf
+open Dialect_intf
 
-module Att = struct
+module Att : S = struct
   let dialect : A.Id.t = A.Id.of_string "att"
 
   include A.Src_dst.Make (struct
@@ -59,7 +59,7 @@ module Att = struct
   let symbolic_jump_type = `Indirect
 end
 
-module Intel = struct
+module Intel : S = struct
   let dialect : A.Id.t = A.Id.of_string "intel"
 
   include A.Src_dst.Make (struct
@@ -71,7 +71,7 @@ module Intel = struct
   let symbolic_jump_type = `Immediate
 end
 
-module Herd7 = struct
+module Herd7 : S = struct
   let dialect : A.Id.t = A.Id.of_string "herd7"
 
   include A.Src_dst.Make (struct

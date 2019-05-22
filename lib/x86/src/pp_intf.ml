@@ -62,7 +62,7 @@ module type Dialect = sig
 end
 
 (** Signature of full dialect pretty-printers. *)
-module type Printer = sig
+module type S = sig
   include Dialect
 
   val pp_reg : Reg.t Fmt.t

@@ -26,7 +26,9 @@
 open Base
 open Act_common
 
-include module type of Frontend_intf
+(** [Att] is the AT&T-dialect x86 frontend. *)
+module Att : Act_utils.Loadable.S with type t = Ast.t
 
-val of_dialect : Id.t -> (module S) Or_error.t
+val of_dialect :
+  Id.t -> (module Act_utils.Loadable.S with type t = Ast.t) Or_error.t
 (** [of_dialect] gets the correct frontend module for a dialect. *)

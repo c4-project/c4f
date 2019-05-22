@@ -25,8 +25,16 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-let make_template_location : Ast.Location.t -> Ast.Location.t =
- fun _ -> Ast.Location.Template_token "TODO"
+let make_template_indirect (ind : Ast.Indirect.t) : string =
+  ignore ind ; "TODO"
+
+let make_template_location : Ast.Location.t -> Ast.Location.t = function
+  | Reg r ->
+      Ast.Location.Template_token (Reg.to_string r)
+  | Indirect i ->
+      Ast.Location.Template_token (make_template_indirect i)
+  | Template_token _ as tok ->
+      tok
 
 let make_template_instruction : Ast.Instruction.t -> Ast.Instruction.t =
   Ast.Instruction.On_locations.map ~f:make_template_location

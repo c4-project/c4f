@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018, 2019 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -22,27 +22,28 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Act_common
+open Act_c.Asm_stub
 
-module Att : Act_utils.Loadable.S with type t = Ast.t =
-Act_utils.Frontend.Make (struct
-  type ast = Ast.t
+let%test_module "pretty printing" =
+  ( module struct
+    let test : t -> unit = Fmt.pr "@[%a@]@." pp
 
-  module I = Att_parser.MenhirInterpreter
+    let c_id (s : string) : Act_c.Ast.Expr.t =
+      Act_c.Ast.Expr.Identifier (Act_common.C_id.of_string s)
 
-  let lex = Att_lexer.token
-
-  let parse = Att_parser.Incremental.main
-
-  let message = Att_messages.message
-end)
-
-let dialect_table :
-    (Id.t, (module Act_utils.Loadable.S with type t = Ast.t)) List.Assoc.t
-    Lazy.t =
-  lazy [(Id.of_string "att", (module Att))]
-
-let of_dialect :
-    Id.t -> (module Act_utils.Loadable.S with type t = Ast.t) Or_error.t =
-  Staged.unstage
-    (Dialect.find_by_id dialect_table ~context:"parsing frontend")
+    let%expect_test "rdtsc example from GCC documentation" =
+      test
+        (make
+           ~template:["rdtsc"; "shl $32, %%rdx"; "or %%rdx, %0"]
+           ~output_operands:[Operand.make ~constr:"=a" ~rhs:(c_id "msr") ()]
+           ~clobbers:["rdx"] ()) ;
+      [%expect
+        {|
+asm volatile ( "rdtsc\n\t"
+        "shl $32, %%rdx\n\t"
+        "or %%rdx, %0"
+        : "=a" (msr)
+        : 
+        : "rdx");
+|}]
+  end )

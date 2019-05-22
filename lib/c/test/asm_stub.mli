@@ -21,5 +21,4 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [S] is the type of x86 language frontends. *)
-module type S = Act_utils.Frontend.S with type t := Ast.t
+(** This interface intentionally left blank. *)

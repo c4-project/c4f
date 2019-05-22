@@ -46,7 +46,7 @@
 open Base
 open Act_common
 open Ast
-include Pp_intf
+open Pp_intf
 
 let disp_positive = function
   | None ->

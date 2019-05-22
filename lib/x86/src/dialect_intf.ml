@@ -43,6 +43,12 @@
    circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
+(** Module signatures for dialects.
+
+    These signatures cover the parts of the x86 syntax that are different
+    between dialects, but don't manifest in the way the dialect is
+    pretty-printed. *)
+
 (** [Has_dialect] is a signature for modules that report a specific dialect. *)
 module type Has_dialect = sig
   val dialect : Act_common.Id.t

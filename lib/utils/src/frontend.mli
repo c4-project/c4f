@@ -47,8 +47,5 @@ module type Basic = sig
   val message : int -> string
 end
 
-(** [S] is the signature of language frontends. *)
-module type S = Loadable.S
-
 (** [Make] lifts an instance of [B] into a frontend. *)
-module Make (B : Basic) : S with type t = B.ast
+module Make (B : Basic) : Loadable.S with type t = B.ast

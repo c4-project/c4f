@@ -23,6 +23,8 @@
 
 open Base
 
+let qstring : string Fmt.t = Fmt.(quote string)
+
 module Operand = struct
   type 'rhs t = {symbol: string option; constr: string; rhs: 'rhs}
   [@@deriving make]
@@ -33,8 +35,8 @@ module Operand = struct
   let pp (type rhs) (pp_rhs : rhs Fmt.t) (f : Formatter.t) (op : rhs t) :
       unit =
     Fmt.(
-      pf f "@[%a%s@ %a]" pp_symbol op.symbol op.constr (parens pp_rhs)
-        op.rhs)
+      pf f "@[%a%a@ %a@]" pp_symbol op.symbol qstring op.constr
+        (parens pp_rhs) op.rhs)
 end
 
 type t =
@@ -50,17 +52,32 @@ let pp_line (pp : 'a Fmt.t) : 'a Fmt.t =
 let pp_operands : Ast.Expr.t Operand.t list Fmt.t =
   Fmt.(list ~sep:comma (Operand.pp Ast.Expr.pp))
 
-let pp_clobbers : string list Fmt.t = Fmt.(list ~sep:comma string)
+let pp_clobbers : string list Fmt.t = Fmt.(list ~sep:comma qstring)
+
+let tabify_template (template : string list) : string list =
+  let last = List.length template - 1 in
+  List.mapi template ~f:(fun (k : int) (str : string) ->
+      if Int.equal k last then str else str ^ "\\n\\t" )
+
+let pp_template : string list Fmt.t =
+  Fmt.(using tabify_template (vbox (list ~sep:sp (quote string))))
 
 let pp_inner (f : Formatter.t) (stub : t) : unit =
   let has_clobbers = not (List.is_empty (clobbers stub)) in
   let has_inputs =
     has_clobbers || not (List.is_empty (input_operands stub))
   in
-  Fmt.(list ~sep:cut string) f (template stub) ;
+  pp_template f (template stub) ;
+  Fmt.sp f () ;
   pp_line pp_operands f (output_operands stub) ;
-  if has_inputs then pp_line pp_operands f (input_operands stub) ;
+  Fmt.sp f () ;
+  if has_inputs then (
+    pp_line pp_operands f (input_operands stub) ;
+    Fmt.sp f () ) ;
   if has_clobbers then pp_line pp_clobbers f (clobbers stub)
 
 let pp : t Fmt.t =
-  Fmt.(vbox ~indent:2 (prefix (unit "asm volatile") (parens pp_inner)))
+  Fmt.(
+    box ~indent:2
+      (prefix (unit "asm volatile@ ")
+         (suffix (unit ";") (parens (vbox pp_inner)))))

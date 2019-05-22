@@ -24,7 +24,7 @@
 (** Language frontends for C *)
 
 (** Frontend for 'normal' C (C89 at time of writing). *)
-module Normal : Act_utils.Frontend.S with type t := Ast.Translation_unit.t
+module Normal : Act_utils.Loadable.S with type t = Ast.Translation_unit.t
 
 (** Frontend for C-based litmus tests. *)
-module Litmus : Act_utils.Frontend.S with type t := Ast.Litmus.t
+module Litmus : Act_utils.Loadable.S with type t = Ast.Litmus.t

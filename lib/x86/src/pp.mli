@@ -55,18 +55,18 @@
     track things like which operand is source and which is destination, and
     these change between dialects. *)
 
-include module type of Pp_intf
+open Pp_intf
 
 (** {2 Dialect-specific printers} *)
 
 (** [Att] provides pretty-printing for AT&T-syntax x86. *)
-module Att : Printer
+module Att : S
 
 (** [Intel] provides pretty-printing for Intel-syntax x86. *)
-module Intel : Printer
+module Intel : S
 
 (** [Herd7] provides pretty-printing for Herd-syntax x86. *)
-module Herd7 : Printer
+module Herd7 : S
 
 (** {2 Generic AST printers} *)
 

@@ -23,7 +23,7 @@
 
 (** [S] is the signature of language modules over the X86 AST. *)
 module type S = sig
-  module Dialect : Dialect.S
+  module Dialect : Dialect_intf.S
 
   include
     Act_language.Definition.S
