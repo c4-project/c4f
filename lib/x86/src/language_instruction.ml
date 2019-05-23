@@ -147,9 +147,9 @@ module Make (B : Basic) : S = struct
   let immediate_operand = function
     | Ast.Operand.Bop _ ->
         Some Act_abstract.Operand.Unknown
-    | Immediate (Ast.Disp.Numeric k) ->
+    | Immediate (Disp.Numeric k) ->
         Some (Int k)
-    | Immediate (Ast.Disp.Symbolic s) ->
+    | Immediate (Disp.Symbolic s) ->
         Some (Symbol s)
     | Location _ | String _ | Typ _ ->
         None
@@ -171,7 +171,7 @@ module Make (B : Basic) : S = struct
         None
 
   let jump_target_displacement = function
-    | Some (Ast.Disp.Symbolic s) ->
+    | Some (Disp.Symbolic s) ->
         Act_abstract.Operand.Symbol s
     | _ ->
         Unknown
@@ -179,7 +179,7 @@ module Make (B : Basic) : S = struct
   let jump_target_operand = function
     | Ast.Operand.Location (Ast.Location.Indirect i) ->
         Some (jump_target_displacement (Ast.Indirect.disp i))
-    | Immediate (Ast.Disp.Symbolic s) ->
+    | Immediate (Disp.Symbolic s) ->
         Some (Symbol s)
     | Immediate (Numeric _) | Bop _ ->
         Some Unknown
@@ -299,9 +299,9 @@ module Make (B : Basic) : S = struct
         None
 
   let as_immediate_symbol = function
-    | Ast.Operand.Immediate (Ast.Disp.Symbolic l) ->
-        Some l
-    | Bop _ | Immediate _ | Location _ | String _ | Typ _ ->
+    | Ast.Operand.Immediate i ->
+        Disp.as_symbol i
+    | Bop _ | Location _ | String _ | Typ _ ->
         None
 
   let as_immediate = function

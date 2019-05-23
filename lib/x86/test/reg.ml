@@ -21,16 +21,28 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Stdio
 open Act_x86
-module Intel = Language_definition.Intel
 
-let%expect_test "abs_operands: add ESP, -16, Intel" =
-  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
-    (Intel.Instruction.abs_operands
-       (Ast.Instruction.make
-          ~opcode:(Opcode.Basic `Add)
-          ~operands:
-            [ Ast.Operand.Location (Ast.Location.Reg `ESP)
-            ; Ast.Operand.Immediate (Disp.Numeric (-16)) ]
-          ())) ;
-  [%expect {| $-16 -> reg:sp |}]
+let%test_module "Abstract classification" =
+  ( module struct
+    let test (r : Reg.t) : unit =
+      r |> Reg.abs_kind |> Act_abstract.Register.Kind.to_string
+      |> print_endline
+
+    let%expect_test "EBP is a stack pointer" =
+      test `EBP ;
+      [%expect {| |}]
+
+    let%expect_test "ESP is a stack pointer" =
+      test `ESP ;
+      [%expect {| |}]
+
+    let%expect_test "ZF is a special-purpose register" =
+      test `ZF ;
+      [%expect {| |}]
+
+    let%expect_test "EAX is a general-purpose register" =
+      test `EAX ;
+      [%expect {| |}]
+  end )

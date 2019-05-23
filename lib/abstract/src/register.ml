@@ -21,16 +21,39 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Act_x86
-module Intel = Language_definition.Intel
+open Base
 
-let%expect_test "abs_operands: add ESP, -16, Intel" =
-  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
-    (Intel.Instruction.abs_operands
-       (Ast.Instruction.make
-          ~opcode:(Opcode.Basic `Add)
-          ~operands:
-            [ Ast.Operand.Location (Ast.Location.Reg `ESP)
-            ; Ast.Operand.Immediate (Disp.Numeric (-16)) ]
-          ())) ;
-  [%expect {| $-16 -> reg:sp |}]
+type t = General of string | Stack_pointer | Unknown
+[@@deriving sexp, equal]
+
+let pp f = function
+  | General name ->
+      Fmt.pf f "@[gen:@,%s@]" name
+  | Stack_pointer ->
+      String.pp f "sp"
+  | Unknown ->
+      String.pp f "unknown"
+
+module Kind = struct
+  module M = struct
+    type t = General | Stack_pointer | Unknown [@@deriving sexp, enum]
+
+    let table =
+      [ (General, "general")
+      ; (Stack_pointer, "stack-pointer")
+      ; (Unknown, "unknown") ]
+  end
+
+  include M
+  include Act_utils.Enum.Extend_table (M)
+end
+
+let kind : t -> Kind.t = function
+  | General _ ->
+      General
+  | Stack_pointer ->
+      Stack_pointer
+  | Unknown ->
+      Unknown
+
+module Flag = Flag_enum.None

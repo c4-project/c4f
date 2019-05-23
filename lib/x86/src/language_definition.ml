@@ -30,23 +30,10 @@ module Common = struct
   let make_heap_loc l =
     Ast.(Location.Indirect (Indirect.make ~disp:(Disp.Symbolic l) ()))
 
-  let register_abs_type : Reg.t -> Act_abstract.Location.Register.t =
-    function
-    (* Technically, [E]SP is the 'stack pointer' on x86. However, stack
-       offsets generally descend from [E]BP, so we map it to the 'abstract'
-       stack pointer. *)
-    | `BP | `EBP | `SP | `ESP ->
-        Stack_pointer
-    | #Reg.gp as reg ->
-        General (Reg.to_string reg)
-    | #Reg.sp | #Reg.flag ->
-        Unknown
-
-  let disp_abs_type : Ast.Disp.t -> Act_abstract.Location.Address.t =
-    function
-    | Ast.Disp.Numeric k ->
+  let disp_abs_type : Disp.t -> Act_abstract.Location.Address.t = function
+    | Disp.Numeric k ->
         Act_abstract.Location.Address.Int k
-    | Ast.Disp.Symbolic k ->
+    | Disp.Symbolic k ->
         Act_abstract.Location.Address.Symbol k
 
   let indirect_abs_type (i : Ast.Indirect.t) =
@@ -54,7 +41,7 @@ module Common = struct
     let open Ast.Indirect in
     match (seg i, disp i, base i, index i) with
     | None, disp, Some b, None ->
-        let reg = register_abs_type b in
+        let reg = Reg.abstract b in
         let offset =
           Option.value_map disp ~f:disp_abs_type
             ~default:(Act_abstract.Location.Address.Int 0)
@@ -73,7 +60,7 @@ module Common = struct
 
     let abstract = function
       | Ast.Location.Reg reg ->
-          Abs.Register_direct (register_abs_type reg)
+          Abs.Register_direct (Reg.abstract reg)
       | Indirect i ->
           indirect_abs_type i
       | Template_token _ ->
@@ -198,7 +185,7 @@ module Make_basic (T : Dialect_intf.S) (P : Pp_intf.S) = struct
 
     let pp = P.pp_operand
 
-    let of_int (k : int) = Ast.Operand.Immediate (Ast.Disp.Numeric k)
+    let of_int (k : int) = Ast.Operand.Immediate (Disp.Numeric k)
   end
 end
 

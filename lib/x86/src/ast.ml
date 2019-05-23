@@ -50,42 +50,6 @@ module Tx = Travesty_base_exts
 module Au = Act_utils
 open Travesty
 
-module Disp = struct
-  type t = Symbolic of string | Numeric of int
-  [@@deriving sexp, variants, equal, compare, quickcheck]
-
-  (* TODO(@MattWindsor91): generate valid symbols only? *)
-
-  (** Base mapper for displacements *)
-  module Base_map (M : Monad.S) = struct
-    module F = Traversable.Helpers (M)
-
-    let map_m (x : t) ~symbolic ~numeric : t M.t =
-      Variants.map x
-        ~symbolic:(F.proc_variant1 symbolic)
-        ~numeric:(F.proc_variant1 numeric)
-  end
-
-  module On_symbols :
-    Traversable.S0 with type t = t and type Elt.t = string =
-  Traversable.Make0 (struct
-    type nonrec t = t
-
-    module Elt = String
-
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module F = Traversable.Helpers (M)
-
-      let map_m t ~f =
-        B.map_m t
-          ~symbolic:
-            f (* Numeric displacements, of course, have no symbols *)
-          ~numeric:M.return
-    end
-  end)
-end
-
 module Index = struct
   type t = Unscaled of Reg.t | Scaled of Reg.t * int
   [@@deriving sexp, variants, eq, compare]

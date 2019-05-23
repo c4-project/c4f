@@ -130,3 +130,20 @@ include Au.Enum.Extend_table (struct
   include M
   include Au.Enum.Make_from_enumerate (M)
 end)
+
+include Act_abstract.Abstractable.Make (struct
+  type nonrec t = t
+
+  module Abs = Act_abstract.Register
+
+  let abstract : t -> Act_abstract.Register.t = function
+    (* Technically, [E]SP is the 'stack pointer' on x86. However, stack
+       offsets generally descend from [E]BP, so we map it to the 'abstract'
+       stack pointer. *)
+    | `BP | `EBP | `SP | `ESP ->
+        Stack_pointer
+    | #gp as reg ->
+        General (to_string reg)
+    | #sp | #flag ->
+        Unknown
+end)

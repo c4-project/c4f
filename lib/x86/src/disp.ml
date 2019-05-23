@@ -44,61 +44,40 @@
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
 open Base
+open Base_quickcheck
+open Travesty
+module Tx = Travesty_base_exts
 
-(** x86 registers *)
+type t = Symbolic of string | Numeric of int
+[@@deriving sexp, variants, equal, compare, quickcheck]
 
-(** [gp8h] enumerates the 8-bit 'high' general-purpose registers. *)
-type gp8h = [`AH | `BH | `CH | `DH] [@@deriving equal, sexp]
+(* TODO(@MattWindsor91): generate valid symbols only? *)
 
-(** [gp8l] enumerates the 8-bit 'low' general-purpose registers. *)
-type gp8l = [`AL | `BL | `CL | `DL] [@@deriving enumerate, equal, sexp]
+(** Base mapper for displacements *)
+module Base_map (M : Monad.S) = struct
+  module F = Traversable.Helpers (M)
 
-(** [gp8] enumerates the 8-bit general-purpose registers. *)
-type gp8 = [gp8h | gp8l] [@@deriving enumerate, equal, sexp]
+  let map_m (x : t) ~symbolic ~numeric : t M.t =
+    Variants.map x
+      ~symbolic:(F.proc_variant1 symbolic)
+      ~numeric:(F.proc_variant1 numeric)
+end
 
-(** [gp16] enumerates the 16-bit general-purpose registers. *)
-type gp16 = [`AX | `BX | `CX | `DX] [@@deriving enumerate, equal, sexp]
+module On_symbols : Traversable.S0 with type t = t and type Elt.t = string =
+Traversable.Make0 (struct
+  type nonrec t = t
 
-(** [gp32] enumerates the 32-bit general-purpose registers. *)
-type gp32 = [`EAX | `EBX | `ECX | `EDX] [@@deriving enumerate, equal, sexp]
+  module Elt = String
 
-(** [gp] enumerates the general-purpose registers. *)
-type gp = [gp8 | gp16 | gp32] [@@deriving enumerate, equal, sexp]
+  module On_monad (M : Monad.S) = struct
+    module B = Base_map (M)
+    module F = Traversable.Helpers (M)
 
-(** [seg] enumerates the segment registers. *)
-type seg = [`CS | `DS | `SS | `ES | `FS | `GS]
-[@@deriving enumerate, equal, sexp]
+    let map_m t ~f =
+      B.map_m t
+        ~symbolic:f (* Numeric displacements, of course, have no symbols *)
+        ~numeric:M.return
+  end
+end)
 
-(** [flag] enumerates the flag registers. *)
-type flag = [`CF | `PF | `AF | `ZF | `SF | `OF]
-[@@deriving enumerate, equal, sexp]
-
-(** [sp16] enumerates the 16-bit special purpose registers. *)
-type sp16 = [seg | `BP | `SP | `SI | `DI]
-[@@deriving enumerate, equal, sexp]
-
-(** [sp32] enumerates the 32-bit special-purpose registers. *)
-type sp32 = [`EIP | `EBP | `ESP | `ESI | `EDI]
-[@@deriving enumerate, equal, sexp]
-
-(** [sp] enumerates the special-purpose registers. *)
-type sp = [sp16 | sp32] [@@deriving enumerate, equal, sexp]
-
-(** [reg8] enumerates all 8-bit registers. *)
-type reg8 = gp8
-
-(** [reg16] enumerates all 16-bit registers. *)
-type reg16 = [gp16 | sp16] [@@deriving enumerate, equal, sexp]
-
-(** [reg32] enumerates all 32-bit registers. *)
-type reg32 = [gp32 | sp32] [@@deriving enumerate, equal, sexp]
-
-(** [t] enumerates all commonly used registers available in 32-bit x86. *)
-type t = [reg8 | reg16 | reg32 | flag]
-
-include Act_utils.Enum.Extension_table with type t := t
-
-include
-  Act_abstract.Abstractable.S
-  with type t := t
-   and module Abs := Act_abstract.Register
+let as_symbol : t -> string option = On_symbols.find ~f:Tx.Fn.always

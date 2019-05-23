@@ -75,7 +75,7 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Sequence.map ~f:diff_to_error
   |> Sequence.to_list |> Or_error.combine_errors_unit
 
-let regress_run_asm (module Job : Act_asm.Runner.S) specs
+let regress_run_asm (module Job : Act_asm.Runner_intf.S) specs
     (passes : Set.M(Act_sanitiser.Pass_group).t) ~(file : Fpath.t)
     ~(path : Fpath.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
@@ -107,8 +107,8 @@ let regress_on_files (bin_name : string) ~(dir : Fpath.t) ~(ext : string)
   let%map () = Or_error.combine_errors_unit results in
   printf "\nRan %d test(s).\n" (List.length test_files)
 
-let regress_run_asm_many (module Job : Act_asm.Runner.S) (modename : string)
-    passes (test_path : Fpath.t) : unit Or_error.t =
+let regress_run_asm_many (module Job : Act_asm.Runner_intf.S)
+    (modename : string) passes (test_path : Fpath.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   let dir = Fpath.(test_path / "asm" / "x86" / "att" / "") in
   let%bind specs = read_specs dir in

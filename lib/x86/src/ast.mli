@@ -49,17 +49,6 @@ open Act_common
 open Base
 open Act_utils
 
-(** [Disp] concerns displacements. *)
-module Disp : sig
-  type t = Symbolic of string | Numeric of int
-  [@@deriving sexp, equal, quickcheck, compare]
-
-  (** [On_symbols] permits enumerating and folding over symbols inside a
-      displacement. *)
-  module On_symbols :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = string
-end
-
 (** [Index] concerns index-scale pairs. *)
 module Index : sig
   type t = Unscaled of Reg.t | Scaled of Reg.t * int

@@ -21,16 +21,22 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Act_x86
-module Intel = Language_definition.Intel
+(** Abstract program model: registers. *)
 
-let%expect_test "abs_operands: add ESP, -16, Intel" =
-  Fmt.pr "%a@." Act_abstract.Operand.Bundle.pp
-    (Intel.Instruction.abs_operands
-       (Ast.Instruction.make
-          ~opcode:(Opcode.Basic `Add)
-          ~operands:
-            [ Ast.Operand.Location (Ast.Location.Reg `ESP)
-            ; Ast.Operand.Immediate (Disp.Numeric (-16)) ]
-          ())) ;
-  [%expect {| $-16 -> reg:sp |}]
+open Base
+
+(** [t] is the type of abstracted registers. *)
+type t = General of string | Stack_pointer | Unknown
+[@@deriving sexp, equal]
+
+module Kind : sig
+  type t = General | Stack_pointer | Unknown
+
+  include Act_utils.Enum.S_table with type t := t
+
+  include Act_utils.Enum.Extension_table with type t := t
+end
+
+include Pretty_printer.S with type t := t
+
+include Node.S with type t := t and module Kind := Kind

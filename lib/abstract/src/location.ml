@@ -23,19 +23,6 @@
 
 open Core_kernel
 
-module Register = struct
-  type t = General of string | Stack_pointer | Unknown
-  [@@deriving sexp, eq]
-
-  let pp f = function
-    | General name ->
-        Format.fprintf f "@[gen:@,%s@]" name
-    | Stack_pointer ->
-        String.pp f "sp"
-    | Unknown ->
-        String.pp f "unknown"
-end
-
 module Address = struct
   type t = Int of int | Symbol of Symbol.t [@@deriving sexp, equal]
 
@@ -57,7 +44,7 @@ type t =
   | Register_indirect of {reg: Register.t; offset: Address.t}
   | Heap of Address.t
   | Unknown
-[@@deriving sexp, eq]
+[@@deriving sexp, equal]
 
 module type S_predicates = sig
   type t

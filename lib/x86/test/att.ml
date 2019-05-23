@@ -22,30 +22,30 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Stdio
 open Act_x86
+module Io = Act_utils.Io
 module Att = Language_definition.Att
 
 let%test_module "is_program_label" =
   ( module struct
     let%expect_test "positive Mach-O example, AT&T" =
-      printf "%b" (Att.Symbol.is_program_label "_P0") ;
+      Io.print_bool (Att.Symbol.is_program_label "_P0") ;
       [%expect {| true |}]
 
     let%expect_test "positive ELF example, AT&T" =
-      printf "%b" (Att.Symbol.is_program_label "P0") ;
+      Io.print_bool (Att.Symbol.is_program_label "P0") ;
       [%expect {| true |}]
 
     let%expect_test "wrong suffix, Mach-O, AT&T" =
-      printf "%b" (Att.Symbol.is_program_label "_P0P") ;
+      Io.print_bool (Att.Symbol.is_program_label "_P0P") ;
       [%expect {| false |}]
 
     let%expect_test "wrong suffix, ELF, AT&T" =
-      printf "%b" (Att.Symbol.is_program_label "P0P") ;
+      Io.print_bool (Att.Symbol.is_program_label "P0P") ;
       [%expect {| false |}]
 
     let%expect_test "negative, AT&T" =
-      printf "%b" (Att.Symbol.is_program_label "_P-1") ;
+      Io.print_bool (Att.Symbol.is_program_label "_P-1") ;
       [%expect {| false |}]
   end )
 
@@ -61,7 +61,7 @@ let%test_module "abs_operands" =
         (Ast.Instruction.make
            ~opcode:(Opcode.Basic `Add)
            ~operands:
-             [ Ast.Operand.Immediate (Ast.Disp.Numeric (-16))
+             [ Ast.Operand.Immediate (Disp.Numeric (-16))
              ; Ast.Operand.Location (Ast.Location.Reg `ESP) ]
            ()) ;
       [%expect {| $-16 -> reg:sp |}]
@@ -77,8 +77,7 @@ let%test_module "abs_operands" =
            ~operands:
              [ Ast.Operand.Location
                  (Ast.Location.Indirect
-                    (Ast.Indirect.make ~disp:(Ast.Disp.Symbolic "L1") ()))
-             ]
+                    (Ast.Indirect.make ~disp:(Disp.Symbolic "L1") ())) ]
            ()) ;
       [%expect {| sym:L1 |}]
 
@@ -86,7 +85,7 @@ let%test_module "abs_operands" =
       test
         (Ast.Instruction.make
            ~opcode:(Opcode.Basic `Pop)
-           ~operands:[Ast.Operand.Immediate (Ast.Disp.Numeric 42)]
+           ~operands:[Ast.Operand.Immediate (Disp.Numeric 42)]
            ()) ;
       [%expect {| <ERR: Operand type not allowed here> |}]
 
@@ -94,7 +93,7 @@ let%test_module "abs_operands" =
       test
         (Ast.Instruction.make
            ~opcode:(Opcode.Basic `Nop)
-           ~operands:[Ast.Operand.Immediate (Ast.Disp.Numeric 42)]
+           ~operands:[Ast.Operand.Immediate (Disp.Numeric 42)]
            ()) ;
       [%expect
         {| <ERR: ("Expected zero operands" (got ((Immediate (Numeric 42)))))> |}]
@@ -125,7 +124,7 @@ let%test_module "abs_operands" =
            ~opcode:(Opcode.Basic `Mov)
            ~operands:
              [ Ast.Operand.Location (Ast.Location.Reg `ESP)
-             ; Ast.Operand.Immediate (Ast.Disp.Numeric 1) ]
+             ; Ast.Operand.Immediate (Disp.Numeric 1) ]
            ()) ;
       [%expect {| <ERR: Operand types not allowed here> |}]
   end )

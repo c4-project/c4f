@@ -23,21 +23,12 @@
 
 (** Abstract program model: types and functions for locations. *)
 
-open Core_kernel
-
-(** [Register] concerns abstracted registers. *)
-module Register : sig
-  (** [t] is the type of abstracted registers. *)
-  type t = General of string | Stack_pointer | Unknown
-  [@@deriving sexp, eq]
-
-  include Pretty_printer.S with type t := t
-end
+open Base
 
 (** [Address] concerns abstracted addresses and address offsets. *)
 module Address : sig
   (** [t] is the type of abstracted addresses and address offsets. *)
-  type t = Int of int | Symbol of Symbol.t [@@deriving sexp, eq]
+  type t = Int of int | Symbol of Symbol.t [@@deriving sexp, equal]
 
   include Pretty_printer.S with type t := t
 
@@ -51,7 +42,7 @@ type t =
   | Register_indirect of {reg: Register.t; offset: Address.t}
   | Heap of Address.t
   | Unknown
-[@@deriving sexp, eq]
+[@@deriving sexp, equal]
 
 (** [S_predicates] is the signature of any module that can access simple
     predicates over an abstract location. *)
