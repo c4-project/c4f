@@ -9,9 +9,9 @@ command group.
    :maxdepth: 2
    :caption: Contents:
 
-   asm_explain
-   asm_gen_stubs
-   asm_litmusify
+   explain
+   gen_stubs
+   litmusify
 
 Command conventions
 -------------------
