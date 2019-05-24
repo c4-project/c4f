@@ -25,9 +25,8 @@
     loaded from a file or string, and functors for adding convenience
     functions to such types for loading from a variety of sources. *)
 
-open Core_kernel
-
-include module type of Loadable_intf
+open Base
+open Loadable_intf
 
 (** [Make] extends a [Basic] into an [S]. *)
 module Make (B : Basic) : S with type t = B.t
@@ -50,4 +49,4 @@ module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
 (** Lifts a {{!S} S} to a {{!Filter.S} Filter.S} that outputs nothing to its
     target file and returns the loaded data as auxiliary output. *)
 module To_filter (L : S) :
-  Filter.S with type aux_i = unit and type aux_o = L.t
+  Filter_intf.S with type aux_i = unit and type aux_o = L.t

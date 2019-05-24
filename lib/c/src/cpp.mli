@@ -29,12 +29,12 @@ open Act_utils
 
 (** [Filter] exposes a filter interface onto a configured C preprocessor. *)
 module Filter :
-  Filter.S with type aux_i = Act_config.Cpp.t and type aux_o = unit
+  Filter_intf.S with type aux_i = Act_config.Cpp.t and type aux_o = unit
 
 (** [Chain_filter] exposes a filter that attaches in front of another filter
     [Dest] (that reads in C programs) and performs C preprocessing
     beforehand if the given config enables it. *)
-module Chain_filter (Dest : Act_utils.Filter.S) :
-  Act_utils.Filter.S
+module Chain_filter (Dest : Act_utils.Filter_intf.S) :
+  Act_utils.Filter_intf.S
   with type aux_i = Act_config.Cpp.t * Dest.aux_i
    and type aux_o = unit option * Dest.aux_o

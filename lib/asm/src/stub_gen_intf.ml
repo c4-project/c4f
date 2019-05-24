@@ -36,7 +36,8 @@ module type Basic = sig
     with module Lang = Src_lang
      and module Program_container = P
 
-  module Program : Act_utils.Loadable.S with type t = Src_lang.Program.t
+  module Program :
+    Act_utils.Loadable_intf.S with type t = Src_lang.Program.t
 
   val as_asm_stub : Src_lang.Program.t -> Act_c.Asm_stub.t Or_error.t
   (** [as_asm_stub t ~oc] outputs a GCC assembly stub representation of this

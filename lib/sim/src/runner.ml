@@ -47,7 +47,7 @@ Act_utils.Filter.Make (struct
 
   let tmp_file_ext = Fn.const "tmp"
 
-  let run (_ : _ Act_utils.Filter.ctx) (_ : Stdio.In_channel.t)
+  let run (_ : _ Act_utils.Filter_intf.ctx) (_ : Stdio.In_channel.t)
       (_ : Stdio.Out_channel.t) : unit Or_error.t =
     Result.Error B.error
 end)

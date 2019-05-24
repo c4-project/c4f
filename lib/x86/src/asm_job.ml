@@ -26,7 +26,7 @@ open Act_common
 module Tx = Travesty_base_exts
 
 module Make_runner_deps
-    (Frontend : Act_utils.Loadable.S with type t := Ast.t)
+    (Frontend : Frontend.S)
     (Lang : Language_definition.S) : Act_asm.Runner_intf.Basic = struct
   module Src_lang = Lang
   module Dst_lang = Language_definition.Herd7
@@ -53,12 +53,9 @@ module Make_runner_deps
 
   let convert_const = Or_error.return
 
-  module Program : Act_utils.Loadable.S with type t = Src_lang.Program.t =
-  struct
-    type t = Src_lang.Program.t
-
-    include Frontend
-  end
+  module Program :
+    Act_utils.Loadable_intf.S with type t = Src_lang.Program.t =
+    Frontend
 
   let as_asm_stub (p : Lang.Program.t) : Act_c.Asm_stub.t Or_error.t =
     p |> Att_conv.convert |> Stub_gen.run

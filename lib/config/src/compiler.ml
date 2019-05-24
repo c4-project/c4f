@@ -174,7 +174,7 @@ module Make (B : Basic_with_run_info) : S = struct
 end
 
 module S_to_filter (S : S) :
-  Au.Filter.S with type aux_i = unit and type aux_o = unit =
+  Au.Filter_intf.S with type aux_i = unit and type aux_o = unit =
 Au.Filter.Make_files_only (struct
   type aux_i = unit
 
@@ -188,7 +188,7 @@ Au.Filter.Make_files_only (struct
 end)
 
 module Make_filter (B : Basic_with_run_info) :
-  Au.Filter.S with type aux_i = unit and type aux_o = unit =
+  Au.Filter_intf.S with type aux_i = unit and type aux_o = unit =
   S_to_filter (Make (B))
 
 let runner_from_spec (cspec : Spec.With_id.t) =
@@ -202,9 +202,9 @@ module Chain_input = struct
 end
 
 module Chain_with_compiler
-    (Comp : Au.Filter.S with type aux_i = unit and type aux_o = unit)
-    (Onto : Au.Filter.S) :
-  Au.Filter.S
+    (Comp : Au.Filter_intf.S with type aux_i = unit and type aux_o = unit)
+    (Onto : Au.Filter_intf.S) :
+  Au.Filter_intf.S
   with type aux_i = Onto.aux_i Chain_input.t
    and type aux_o = unit option * Onto.aux_o =
 Au.Filter.Chain_conditional_first (struct
@@ -214,7 +214,7 @@ Au.Filter.Chain_conditional_first (struct
   type aux_i = Onto.aux_i Chain_input.t
 
   let lift_next (next : Chain_input.next_mode -> 'a) :
-      unit Au.Filter.chain_output -> 'a = function
+      unit Au.Filter_intf.chain_output -> 'a = function
     | `Checking_ahead ->
         next `Preview
     | `Skipped ->
@@ -222,7 +222,7 @@ Au.Filter.Chain_conditional_first (struct
     | `Ran () ->
         next `Compile
 
-  let select {Au.Filter.aux; src; _} =
+  let select {Au.Filter_intf.aux; src; _} =
     let file_type = Chain_input.file_type aux in
     let next = Chain_input.next aux in
     let f = lift_next next in
@@ -252,28 +252,30 @@ module Make_resolver (B : Basic_resolver with type spec := Spec.With_id.t) :
   let from_spec = from_resolver_and_spec B.resolve
 
   let filter_from_spec (cspec : Spec.With_id.t) :
-      (module Au.Filter.S with type aux_i = unit
-                           and type aux_o = unit)
+      (module Au.Filter_intf.S with type aux_i = unit
+                                and type aux_o = unit)
       Or_error.t =
-    let open Or_error.Let_syntax in
-    let%map (module S) = from_spec cspec in
-    (module S_to_filter (S)
-    : Au.Filter.S
-      with type aux_i = unit
-       and type aux_o = unit )
+    Or_error.Let_syntax.(
+      let%map (module S) = from_spec cspec in
+      (module S_to_filter (S)
+      : Au.Filter_intf.S
+        with type aux_i = unit
+         and type aux_o = unit ))
 
   let chained_filter_from_spec (type i o) (cspec : Spec.With_id.t)
-      (module Onto : Au.Filter.S with type aux_i = i and type aux_o = o) :
-      (module Au.Filter.S
+      (module Onto : Au.Filter_intf.S
+        with type aux_i = i
+         and type aux_o = o) :
+      (module Au.Filter_intf.S
          with type aux_i = i Chain_input.t
           and type aux_o = unit option * o)
       Or_error.t =
-    let open Or_error.Let_syntax in
-    let%map (module F) = filter_from_spec cspec in
-    (module Chain_with_compiler (F) (Onto)
-    : Au.Filter.S
-      with type aux_i = i Chain_input.t
-       and type aux_o = unit option * o )
+    Or_error.Let_syntax.(
+      let%map (module F) = filter_from_spec cspec in
+      (module Chain_with_compiler (F) (Onto)
+      : Au.Filter_intf.S
+        with type aux_i = i Chain_input.t
+         and type aux_o = unit option * o ))
 end
 
 module Target = struct
@@ -324,19 +326,21 @@ module Make_target_resolver
           : S )
 
   let filter_from_spec (tgt : Target.t) =
-    let open Or_error.Let_syntax in
-    let%map (module S) = from_spec tgt in
-    (module S_to_filter (S)
-    : Au.Filter.S
-      with type aux_i = unit
-       and type aux_o = unit )
+    Or_error.Let_syntax.(
+      let%map (module S) = from_spec tgt in
+      (module S_to_filter (S)
+      : Au.Filter_intf.S
+        with type aux_i = unit
+         and type aux_o = unit ))
 
   let chained_filter_from_spec (type i o) (tgt : Target.t)
-      (module Onto : Au.Filter.S with type aux_i = i and type aux_o = o) =
+      (module Onto : Au.Filter_intf.S
+        with type aux_i = i
+         and type aux_o = o) =
     let open Or_error.Let_syntax in
     let%map (module F) = filter_from_spec tgt in
     (module Chain_with_compiler (F) (Onto)
-    : Au.Filter.S
+    : Au.Filter_intf.S
       with type aux_i = i Chain_input.t
        and type aux_o = unit option * o )
 end

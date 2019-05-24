@@ -24,7 +24,7 @@
 open Core_kernel
 
 module Filter :
-  Act_utils.Filter.S
+  Act_utils.Filter_intf.S
   with type aux_i = Act_config.Cpp.t
    and type aux_o = unit = Act_utils.Filter.Make_on_runner (struct
   module Runner = Act_utils.Runner.Local
@@ -40,8 +40,8 @@ module Filter :
   let argv aux (infile : string) = Act_config.Cpp.argv aux @ [infile]
 end)
 
-module Chain_filter (Dest : Act_utils.Filter.S) :
-  Act_utils.Filter.S
+module Chain_filter (Dest : Act_utils.Filter_intf.S) :
+  Act_utils.Filter_intf.S
   with type aux_i = Act_config.Cpp.t * Dest.aux_i
    and type aux_o = unit option * Dest.aux_o =
 Act_utils.Filter.Chain_conditional_first (struct
@@ -50,7 +50,7 @@ Act_utils.Filter.Chain_conditional_first (struct
 
   type aux_i = Act_config.Cpp.t * Dest.aux_i
 
-  let select {Act_utils.Filter.aux= cfg, rest; _} =
+  let select {Act_utils.Filter_intf.aux= cfg, rest; _} =
     if Act_config.Cpp.enabled cfg then `Both (cfg, Fn.const rest)
     else `One (Fn.const rest)
 end)

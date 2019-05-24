@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Reader_intf
+open Reader_intf
 
 module Extend (B : Basic) : Extensions = struct
   let read_output_from_string (s : string) : Output.t =

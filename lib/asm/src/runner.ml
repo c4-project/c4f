@@ -60,8 +60,9 @@ module Make (R : Runner_intf.Runnable) :
     let tmp_file_ext _ = R.tmp_file_ext
 
     let run
-        ({Act_utils.Filter.aux; src; sink} :
-          R.cfg Job.t Act_utils.Filter.ctx) _ oc : Job.Output.t Or_error.t =
+        ({Act_utils.Filter_intf.aux; src; sink} :
+          R.cfg Job.t Act_utils.Filter_intf.ctx) _ oc :
+        Job.Output.t Or_error.t =
       let in_name = in_source_to_basename src in
       Or_error.Let_syntax.(
         let%bind program = parse src in

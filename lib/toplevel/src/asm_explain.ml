@@ -39,10 +39,10 @@ let explain_runner (module B : Act_asm.Runner_intf.Basic) :
   (module Exp.Filter)
 
 let explain_filter (target : Act_config.Compiler.Target.t) :
-    (module Act_utils.Filter.S
+    (module Act_utils.Filter_intf.S
        with type aux_i = Act_common.File_type.t
                          * (   Act_c.Filters.Output.t
-                               Act_utils.Filter.chain_output
+                               Act_utils.Filter_intf.chain_output
                             -> Act_asm.Explainer.Config.t Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
         and type aux_o = Act_c.Filters.Output.t option

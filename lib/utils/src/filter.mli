@@ -28,8 +28,7 @@
     and composing filters over the [Io] abstractions. *)
 
 open Base
-
-include module type of Filter_intf
+open Filter_intf
 
 val lift_to_raw_strings :
      f:('i -> Io.In_source.t -> Io.Out_sink.t -> 'o Or_error.t)

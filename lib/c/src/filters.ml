@@ -35,7 +35,7 @@ module type Basic = sig
   (** Delitmusified AST *)
   type del
 
-  module Frontend : Au.Loadable.S with type t = ast
+  module Frontend : Au.Loadable_intf.S with type t = ast
 
   val normal_tmp_file_ext : string
 
@@ -83,7 +83,7 @@ module Output = struct
 end
 
 module Make (B : Basic) :
-  Au.Filter.S with type aux_i = mode and type aux_o = Output.t =
+  Au.Filter_intf.S with type aux_i = mode and type aux_o = Output.t =
 Au.Filter.Make (struct
   type aux_i = mode
 
@@ -91,7 +91,7 @@ Au.Filter.Make (struct
 
   let name = "C transformer"
 
-  let tmp_file_ext ({aux; _} : mode Au.Filter.ctx) : string =
+  let tmp_file_ext ({aux; _} : mode Au.Filter_intf.ctx) : string =
     match aux with
     | Print `All ->
         B.normal_tmp_file_ext
@@ -136,7 +136,7 @@ Au.Filter.Make (struct
     print output_mode oc (Ac.C_id.Map.keys cvars) vast ;
     Or_error.return cvars
 
-  let run {Au.Filter.aux; src; _} ic oc : Output.t Or_error.t =
+  let run {Au.Filter_intf.aux; src; _} ic oc : Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind ast =
       B.Frontend.load_from_ic ~path:(Au.Io.In_source.to_string src) ic
@@ -156,7 +156,7 @@ Au.Filter.Make (struct
 end)
 
 module Normal_C :
-  Au.Filter.S with type aux_i = mode and type aux_o = Output.t =
+  Au.Filter_intf.S with type aux_i = mode and type aux_o = Output.t =
 Make (struct
   type ast = Ast.Translation_unit.t
 
@@ -197,7 +197,7 @@ Make (struct
 end)
 
 module Litmus :
-  Au.Filter.S with type aux_i = mode and type aux_o = Output.t =
+  Au.Filter_intf.S with type aux_i = mode and type aux_o = Output.t =
 Make (struct
   type ast = Ast.Litmus.t
 
@@ -250,5 +250,7 @@ Make (struct
 end)
 
 let c_module (is_c : bool) :
-    (module Au.Filter.S with type aux_i = mode and type aux_o = Output.t) =
+    (module Au.Filter_intf.S
+       with type aux_i = mode
+        and type aux_o = Output.t) =
   if is_c then (module Normal_C) else (module Litmus)

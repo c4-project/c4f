@@ -60,12 +60,15 @@ end
 (** {2 Filter modules} *)
 
 (** Filter for dealing with 'normal' C programs. *)
-module Normal_C : Filter.S with type aux_i = mode and type aux_o = Output.t
+module Normal_C :
+  Filter_intf.S with type aux_i = mode and type aux_o = Output.t
 
 (** Filter for dealing with 'litmusified' C programs. *)
-module Litmus : Filter.S with type aux_i = mode and type aux_o = Output.t
+module Litmus :
+  Filter_intf.S with type aux_i = mode and type aux_o = Output.t
 
 val c_module :
-  bool -> (module Filter.S with type aux_i = mode and type aux_o = Output.t)
+     bool
+  -> (module Filter_intf.S with type aux_i = mode and type aux_o = Output.t)
 (** [c_module is_c] is [Normal_C] when [is_c] is true, and [Litmus]
     otherwise. *)

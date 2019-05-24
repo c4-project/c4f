@@ -28,7 +28,7 @@ open Act_utils
 
 (** Shorthand for the specific type of filter a simulator runner expects. *)
 module type Basic_filter =
-  Filter.S with type aux_i = Arch.t and type aux_o = unit
+  Filter_intf.S with type aux_i = Arch.t and type aux_o = unit
 
 (** Input for generating simulators that always fail with a particular error
     on use. *)
@@ -64,7 +64,7 @@ module type Basic = sig
 
   (** Simulator runners must be able to load back their output into the
       simulator output format. *)
-  module Reader : Reader.Basic
+  module Reader : Reader_intf.Basic
 end
 
 (** {3 Output interfaces} *)

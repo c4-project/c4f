@@ -123,11 +123,11 @@ module Make (B : Basic_with_run_info) : S
 
 (** Lifts a [S] to a filter. *)
 module S_to_filter (S : S) :
-  Filter.S with type aux_i = unit and type aux_o = unit
+  Filter_intf.S with type aux_i = unit and type aux_o = unit
 
 (** Shorthand for [Make_filter (S_to_filter (B))]. *)
 module Make_filter (B : Basic_with_run_info) :
-  Filter.S with type aux_i = unit and type aux_o = unit
+  Filter_intf.S with type aux_i = unit and type aux_o = unit
 
 (** Abstract type of auxiliary input wrappers used for compiler chains. *)
 module Chain_input : sig

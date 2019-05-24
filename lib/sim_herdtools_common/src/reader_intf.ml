@@ -25,14 +25,10 @@
 
 open Base
 
-(** Type of split state lines. *)
-type state_line =
-  { occurrences: int option
-        (** Optional number of occurrences for this state. *)
-  ; rest: string  (** The (so far unparsed) rest of the state line. *) }
-
 (** Signature over the tool-specific parts of a Herdtools output scraper. *)
 module type Basic = sig
+  type state_line
+
   val try_parse_state_count : string -> int option
   (** [try_parse_state_count line] should return [Some k] if preamble line
       [line] contains a state count with [k] states, and [None] otherwise.

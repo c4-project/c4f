@@ -50,7 +50,7 @@ module Input : sig
   val make_compiler_input :
        t
     -> (c_variables:Act_common.C_variables.Map.t option -> 'cfg)
-    -> Act_c.Filters.Output.t Act_utils.Filter.chain_output
+    -> Act_c.Filters.Output.t Act_utils.Filter_intf.chain_output
     -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t
 end
 

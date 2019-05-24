@@ -55,11 +55,11 @@ module type Basic = sig
 
   val convert_const : Src_lang.Constant.t -> Dst_lang.Constant.t Or_error.t
 
-  module Program : Loadable.S with type t = Src_lang.Program.t
+  module Program : Loadable_intf.S with type t = Src_lang.Program.t
 end
 
 module type Runnable = sig
-  module Program : Loadable.S
+  module Program : Loadable_intf.S
 
   type cfg
 
@@ -91,5 +91,6 @@ module type S = sig
   (** Type of configuration *)
   type cfg
 
-  include Filter.S with type aux_i = cfg Job.t and type aux_o = Job.Output.t
+  include
+    Filter_intf.S with type aux_i = cfg Job.t and type aux_o = Job.Output.t
 end

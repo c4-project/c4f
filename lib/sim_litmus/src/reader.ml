@@ -53,9 +53,9 @@ include Shc.Reader.Make (struct
         Caml.Scanf.sscanf line "Histogram (%d states)" Fn.id )
 
   let try_split_state_line (line : string) :
-      Shc.Reader.state_line Or_error.t =
+      Shc.Reader.State_line.t Or_error.t =
     let occurrences_str, rest = split_line_to_string_tuple line in
     Or_error.Let_syntax.(
       let%map occurrences = parse_int_opt occurrences_str in
-      {Shc.Reader.occurrences; rest})
+      {Shc.Reader.State_line.occurrences; rest})
 end)

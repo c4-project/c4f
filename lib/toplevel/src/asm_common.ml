@@ -47,7 +47,7 @@ module Input = struct
   let make_compiler_input (i : t)
       (config_builder :
         c_variables:Act_common.C_variables.Map.t option -> 'cfg) :
-         Act_c.Filters.Output.t Act_utils.Filter.chain_output
+         Act_c.Filters.Output.t Act_utils.Filter_intf.chain_output
       -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
     Common.make_compiler_input (output i) (file_type i) (user_cvars i)
       config_builder (sanitiser_passes i)

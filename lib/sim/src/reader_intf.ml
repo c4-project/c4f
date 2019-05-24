@@ -21,8 +21,9 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Shorthand for the specific type of runner a simulator runner expects. *)
-module type Basic = Act_utils.Loadable.S with type t = Output.t
+(** Shorthand for the specific type of loadable module a simulator runner
+    expects. *)
+module type Basic = Act_utils.Loadable_intf.S with type t = Output.t
 
 (** Extensions for readers, mostly for stand-alone use. *)
 module type Extensions = sig

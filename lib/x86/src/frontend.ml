@@ -24,8 +24,9 @@
 open Base
 open Act_common
 
-module Att : Act_utils.Loadable.S with type t = Ast.t =
-Act_utils.Frontend.Make (struct
+module type S = Act_utils.Loadable_intf.S with type t = Ast.t
+
+module Att : S = Act_utils.Frontend.Make (struct
   type ast = Ast.t
 
   module I = Att_parser.MenhirInterpreter
@@ -37,12 +38,9 @@ Act_utils.Frontend.Make (struct
   let message = Att_messages.message
 end)
 
-let dialect_table :
-    (Id.t, (module Act_utils.Loadable.S with type t = Ast.t)) List.Assoc.t
-    Lazy.t =
+let dialect_table : (Id.t, (module S)) List.Assoc.t Lazy.t =
   lazy [(Id.of_string "att", (module Att))]
 
-let of_dialect :
-    Id.t -> (module Act_utils.Loadable.S with type t = Ast.t) Or_error.t =
+let of_dialect : Id.t -> (module S) Or_error.t =
   Staged.unstage
     (Dialect.find_by_id dialect_table ~context:"parsing frontend")

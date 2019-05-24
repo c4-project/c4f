@@ -43,7 +43,8 @@ module Post_filter = struct
       Option.value_map simulator ~default:No_filter ~f:(make_filter arch)
   end
 
-  module type S = Filter.S with type aux_i = Cfg.t and type aux_o = unit
+  module type S =
+    Filter_intf.S with type aux_i = Cfg.t and type aux_o = unit
 
   (** Adapts a simulator filter to try extract its per-run config from a
       [cfg]. *)
@@ -82,15 +83,15 @@ module Post_filter = struct
         (module Adapt ((val Act_sim.Table.get mtab id)))
 
   let chain (type i o) (filter : Cfg.t) (mtab : Act_sim.Table.t)
-      (module M : Filter.S with type aux_i = i and type aux_o = o) :
-      (module Filter.S
-         with type aux_i = i * (o Filter.chain_output -> Cfg.t)
+      (module M : Filter_intf.S with type aux_i = i and type aux_o = o) :
+      (module Filter_intf.S
+         with type aux_i = i * (o Filter_intf.chain_output -> Cfg.t)
           and type aux_o = o * unit option) =
     let (module Post) = make mtab filter in
     ( module Filter.Chain_conditional_second (struct
-      type aux_i = i * (o Filter.chain_output -> Cfg.t)
+      type aux_i = i * (o Filter_intf.chain_output -> Cfg.t)
 
-      let select {Filter.aux= rest, cfg; _} =
+      let select {Filter_intf.aux= rest, cfg; _} =
         match cfg `Checking_ahead with
         | Cfg.No_filter ->
             `One rest
@@ -104,15 +105,16 @@ end
 
 let make_filter (filter : Post_filter.Cfg.t)
     (target : Act_config.Compiler.Target.t) (mtab : Act_sim.Table.t) :
-    (module Filter.S
+    (module Filter_intf.S
        with type aux_i = ( Act_common.File_type.t
-                         * (   Act_c.Filters.Output.t Filter.chain_output
+                         * (   Act_c.Filters.Output.t
+                               Filter_intf.chain_output
                             -> Sexp.t Act_asm.Litmusifier.Config.t
                                Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t) )
                          * (   ( Act_c.Filters.Output.t option
                                * (unit option * Act_asm.Job.Output.t) )
-                               Filter.chain_output
+                               Filter_intf.chain_output
                             -> Post_filter.Cfg.t)
         and type aux_o = ( Act_c.Filters.Output.t option
                          * (unit option * Act_asm.Job.Output.t) )

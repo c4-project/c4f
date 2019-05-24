@@ -40,18 +40,20 @@ val asm_runner_of_target :
 
 (** Chain a delitmusing pass onto [Onto] conditional on the incoming file
     type. *)
-module Chain_with_delitmus (Onto : Filter.S) :
-  Filter.S
+module Chain_with_delitmus (Onto : Filter_intf.S) :
+  Filter_intf.S
   with type aux_i =
               Act_common.File_type.t
-              * (Act_c.Filters.Output.t Filter.chain_output -> Onto.aux_i)
+              * (   Act_c.Filters.Output.t Filter_intf.chain_output
+                 -> Onto.aux_i)
    and type aux_o = Act_c.Filters.Output.t option * Onto.aux_o
 
 val chain_with_delitmus :
-     (module Filter.S with type aux_i = 'i and type aux_o = 'o)
-  -> (module Filter.S
+     (module Filter_intf.S with type aux_i = 'i and type aux_o = 'o)
+  -> (module Filter_intf.S
         with type aux_i = Act_common.File_type.t
-                          * (   Act_c.Filters.Output.t Filter.chain_output
+                          * (   Act_c.Filters.Output.t
+                                Filter_intf.chain_output
                              -> 'i)
          and type aux_o = Act_c.Filters.Output.t option * 'o)
 (** [chain_with_delitmus onto] is [Chain_with_delitmus], but lifted to
@@ -109,9 +111,10 @@ val delitmus_compile_asm_pipeline :
      Act_config.Compiler.Target.t
   -> (   (module Act_asm.Runner_intf.Basic)
       -> (module Act_asm.Runner_intf.S with type cfg = 'c))
-  -> (module Filter.S
+  -> (module Filter_intf.S
         with type aux_i = Act_common.File_type.t
-                          * (   Act_c.Filters.Output.t Filter.chain_output
+                          * (   Act_c.Filters.Output.t
+                                Filter_intf.chain_output
                              -> 'c Act_asm.Job.t
                                 Act_config.Compiler.Chain_input.t)
          and type aux_o = Act_c.Filters.Output.t option
@@ -120,9 +123,10 @@ val delitmus_compile_asm_pipeline :
 
 val litmusify_pipeline :
      Act_config.Compiler.Target.t
-  -> (module Filter.S
+  -> (module Filter_intf.S
         with type aux_i = Act_common.File_type.t
-                          * (   Act_c.Filters.Output.t Filter.chain_output
+                          * (   Act_c.Filters.Output.t
+                                Filter_intf.chain_output
                              -> Sexp.t Act_asm.Litmusifier.Config.t
                                 Act_asm.Job.t
                                 Act_config.Compiler.Chain_input.t)
@@ -138,7 +142,7 @@ val make_compiler_input :
   -> C_variables.Map.t option
   -> (c_variables:C_variables.Map.t option -> 'cfg)
   -> Set.M(Act_sanitiser.Pass_group).t
-  -> Act_c.Filters.Output.t Filter.chain_output
+  -> Act_c.Filters.Output.t Filter_intf.chain_output
   -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t
 (** [make_compiler_input o file_type user_cvars cfg_fun passes dl_output]
     generates the input to the compiler stage of a single-file pipeline.

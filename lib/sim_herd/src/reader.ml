@@ -29,8 +29,8 @@ include Shc.Reader.Make (struct
     Option.try_with (fun () -> Caml.Scanf.sscanf line "States %d" Fn.id)
 
   let try_split_state_line (line : string) :
-      Shc.Reader.state_line Or_error.t =
+      Shc.Reader.State_line.t Or_error.t =
     (* Herd inputs don't have a histogram, so they don't have an occurrence
        count. *)
-    Or_error.return {Shc.Reader.occurrences= None; rest= line}
+    Or_error.return {Shc.Reader.State_line.occurrences= None; rest= line}
 end)

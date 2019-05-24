@@ -21,8 +21,9 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
-include Loadable_intf
+open Base
+open Sexplib
+open Loadable_intf
 
 module Make (B : Basic) : S with type t = B.t = struct
   include B
@@ -61,7 +62,8 @@ module Of_sexpable (B : Sexpable.S) : S with type t = B.t = Make (struct
 end)
 
 module To_filter (L : S) :
-  Filter.S with type aux_i = unit and type aux_o = L.t = Filter.Make (struct
+  Filter_intf.S with type aux_i = unit and type aux_o = L.t =
+Filter.Make (struct
   type aux_i = unit
 
   type aux_o = L.t

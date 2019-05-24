@@ -254,7 +254,7 @@ module Raw = struct
               end)
   end
 
-  include (Raw_load : Au.Loadable.S with type t := t)
+  include (Raw_load : Au.Loadable_intf.S with type t := t)
 end
 
 let part_chain_fst f g x = match f x with `Fst y -> g y | `Snd y -> `Snd y

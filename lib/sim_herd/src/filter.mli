@@ -48,4 +48,6 @@ val run_direct :
 (** We can use Herd as a simulator runner by supplying it with configuration
     expressed as a {{!Basic} Basic} module. *)
 module Make (B : Basic) :
-  Act_utils.Filter.S with type aux_i = Act_sim.Arch.t and type aux_o = unit
+  Act_utils.Filter_intf.S
+  with type aux_i = Act_sim.Arch.t
+   and type aux_o = unit

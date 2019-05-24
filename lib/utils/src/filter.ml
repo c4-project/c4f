@@ -22,8 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+open Filter_intf
 module Tx = Travesty_base_exts
-include Filter_intf
 
 let lift_to_raw_strings
     ~(f : 'i -> Io.In_source.t -> Io.Out_sink.t -> 'o Or_error.t)

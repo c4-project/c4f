@@ -26,9 +26,11 @@
 open Base
 open Act_common
 
-(** [Att] is the AT&T-dialect x86 frontend. *)
-module Att : Act_utils.Loadable.S with type t = Ast.t
+(** Synonym for loadables that load x86 ASTs. *)
+module type S = Act_utils.Loadable_intf.S with type t = Ast.t
 
-val of_dialect :
-  Id.t -> (module Act_utils.Loadable.S with type t = Ast.t) Or_error.t
+(** [Att] is the AT&T-dialect x86 frontend. *)
+module Att : S
+
+val of_dialect : Id.t -> (module S) Or_error.t
 (** [of_dialect] gets the correct frontend module for a dialect. *)

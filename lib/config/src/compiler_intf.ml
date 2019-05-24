@@ -148,7 +148,7 @@ module type S_resolver = sig
 
   val filter_from_spec :
        spec
-    -> (module Act_utils.Filter.S
+    -> (module Act_utils.Filter_intf.S
           with type aux_i = unit
            and type aux_o = unit)
        Or_error.t
@@ -157,8 +157,10 @@ module type S_resolver = sig
 
   val chained_filter_from_spec :
        spec
-    -> (module Act_utils.Filter.S with type aux_i = 'i and type aux_o = 'o)
-    -> (module Act_utils.Filter.S
+    -> (module Act_utils.Filter_intf.S
+          with type aux_i = 'i
+           and type aux_o = 'o)
+    -> (module Act_utils.Filter_intf.S
           with type aux_i = 'i chain_input
            and type aux_o = unit option * 'o)
        Or_error.t

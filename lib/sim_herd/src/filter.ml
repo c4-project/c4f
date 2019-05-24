@@ -62,8 +62,9 @@ let run_direct ?(arch : Act_sim.Arch.t option)
     (Act_utils.Runner.Local.run ~oc ~prog argv')
 
 module Make (B : Basic) :
-  Act_utils.Filter.S with type aux_i = Act_sim.Arch.t and type aux_o = unit =
-Act_utils.Filter.Make_on_runner (struct
+  Act_utils.Filter_intf.S
+  with type aux_i = Act_sim.Arch.t
+   and type aux_o = unit = Act_utils.Filter.Make_on_runner (struct
   module Runner = Act_utils.Runner.Local
 
   type aux_i = Act_sim.Arch.t

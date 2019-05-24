@@ -25,7 +25,12 @@ open Base
 open Act_common
 module Tx = Travesty_base_exts
 open Act_utils
-include Reader_intf
+
+module State_line = struct
+  type t = {occurrences: int option; rest: string}
+end
+
+module type Basic = Reader_intf.Basic with type state_line := State_line.t
 
 module Automaton = struct
   (** The current automaton state of a Herd reader. *)
@@ -314,7 +319,7 @@ module Make_main (B : Basic) = struct
 end
 
 module Make_load (B : Basic) :
-  Loadable.Basic with type t = Act_sim.Output.t = struct
+  Loadable_intf.Basic with type t = Act_sim.Output.t = struct
   module M = Make_main (B)
   module L = Tx.List.On_monad (Ctx)
   module I = Ic.On_monad (Ctx)
@@ -329,5 +334,5 @@ module Make_load (B : Basic) :
     Ctx.run_to_output ?path (I.iter_m ic ~f:M.process_line)
 end
 
-module Make (B : Basic) : Act_sim.Reader.S =
+module Make (B : Basic) : Act_sim.Reader_intf.S =
   Act_sim.Reader.Make (Loadable.Make (Make_load (B)))
