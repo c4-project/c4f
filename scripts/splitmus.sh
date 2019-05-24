@@ -4,8 +4,12 @@
 # a litmus test in cross-compile mode, then uses act's stub generator
 # to generate a more faithful test.
 
+SCRIPTDIR=${SCRIPTDIR="./scripts"}
+
 # Programs
 ACT=${ACT="act"}
+GAWK=${GAWK="gawk"}  # Used for awk scripts with GNU extensions.
+AWK=${AWK=${GAWK}}  # Used for everything else.
 
 # Parameters
 infile="${1}"
@@ -23,8 +27,19 @@ get_litmus_name ()
     head -n1 "${infile}" | cut -d ' ' -f 2
 }
 
+strip_litmus()
+{
+    infile="${1}"
+    blank="${2}"
+
+    ${AWK} -f "${SCRIPTDIR}"/strip_litmus.awk -v blank="${blank}" "${infile}"
+}
+
 name=$(get_litmus_name "${infile}")
 
-# TODO(@MattWindsor91): everything else :/
+# TODO(@MattWindsor91): this'll need generalising for other
+# architectures.
+strip_litmus "${infile}" "mfence"
+
 
 
