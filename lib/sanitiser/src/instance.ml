@@ -84,7 +84,7 @@ module Make (B : Basic) :
     Ctx.Let_syntax.(
       let base_str =
         Printf.sprintf "t%ss%s" prog_name
-          (Act_abstract.Location.Address.to_string offset)
+          (Act_abstract.Address.to_string offset)
       in
       let%bind symbol_str =
         Ctx.add_symbol base_str Act_abstract.Symbol.Sort.Heap

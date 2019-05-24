@@ -34,3 +34,43 @@ let%expect_test "abs_operands: add ESP, -16, Intel" =
             ; Ast.Operand.Immediate (Disp.Numeric (-16)) ]
           ())) ;
   [%expect {| $-16 -> reg:sp |}]
+
+let%test_module "Pretty-printing" =
+  ( module struct
+    open Act_x86.Pp.Intel
+
+    let%expect_test "pp_comment: Intel" =
+      Fmt.pr "%a@." (pp_comment ~pp:Fmt.string) "intel comment" ;
+      [%expect {| ; intel comment |}]
+
+    let%expect_test "pp_reg: intel, EAX" =
+      Fmt.pr "%a@." pp_reg `EAX ;
+      [%expect {| EAX |}]
+
+    let%expect_test "pp_indirect: intel, +ve numeric displacement only" =
+      Fmt.pr "%a@." pp_indirect (Indirect.make ~disp:(Disp.Numeric 2001) ()) ;
+      [%expect {| [2001] |}]
+
+    let%expect_test "pp_indirect: Intel, +ve disp and base" =
+      Fmt.pr "%a@." pp_indirect
+        (Indirect.make ~disp:(Disp.Numeric 76) ~base:`EAX ()) ;
+      [%expect {| [EAX+76] |}]
+
+    let%expect_test "pp_indirect: Intel, zero disp only" =
+      Fmt.pr "%a@." pp_indirect (Indirect.make ~disp:(Disp.Numeric 0) ()) ;
+      [%expect {| [0] |}]
+
+    let%expect_test "pp_indirect: Intel, +ve disp and base" =
+      Fmt.pr "%a@." pp_indirect
+        (Indirect.make ~disp:(Disp.Numeric (-42)) ~base:`ECX ()) ;
+      [%expect {| [ECX-42] |}]
+
+    let%expect_test "pp_indirect: Intel, base only" =
+      Fmt.pr "%a@." pp_indirect (Indirect.make ~base:`EDX ()) ;
+      [%expect {| [EDX] |}]
+
+    let%expect_test "pp_indirect: Intel, zero disp and base" =
+      Fmt.pr "%a@." pp_indirect
+        (Indirect.make ~disp:(Disp.Numeric 0) ~base:`EDX ()) ;
+      [%expect {| [EDX] |}]
+  end )

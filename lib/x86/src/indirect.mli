@@ -43,23 +43,36 @@
    circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
-(** x86 AST: displacements *)
+(** x86 AST: indirect memory accesses. *)
 
-type t = Symbolic of string | Numeric of int
-[@@deriving sexp, equal, quickcheck, compare]
+open Base
 
-include
-  Act_abstract.Abstractable.S
-  with type t := t
-   and module Abs := Act_abstract.Address
+(** [t] is the opaque type of indirect memory accesses. *)
+type t [@@deriving sexp, compare, equal, quickcheck]
 
-(** {2 Symbols} *)
+val make :
+  ?seg:Reg.t -> ?disp:Disp.t -> ?base:Reg.t -> ?index:Index.t -> unit -> t
+(** [make ?seg ?disp ?base ?index ()] makes an [Indirect] with the given
+    fields (if present). *)
+
+val base : t -> Reg.t option
+(** [base] gets the indirect base, if any. *)
+
+val seg : t -> Reg.t option
+(** [seg] gets the indirect segment, if any. *)
+
+val disp : t -> Disp.t option
+(** [disp] gets the indirect displacement, if any. *)
+
+val index : t -> Index.t option
+(** [index] gets the indirect index, if any. *)
+
+(** [On_registers] permits enumerating and folding over registers inside a
+    memory access. *)
+module On_registers :
+  Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
 
 (** [On_symbols] permits enumerating and folding over symbols inside a
-    displacement. *)
+    memory access. *)
 module On_symbols :
   Travesty.Traversable.S0 with type t := t and type Elt.t = string
-
-val as_symbol : t -> string option
-(** [as_symbol t] returns [Some s] if [t] is a symbol [s], and [None]
-    otherwise. *)

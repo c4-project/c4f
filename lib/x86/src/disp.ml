@@ -80,4 +80,16 @@ Traversable.Make0 (struct
   end
 end)
 
+include Act_abstract.Abstractable.Make (struct
+  type nonrec t = t
+
+  module Abs = Act_abstract.Address
+
+  let abstract : t -> Act_abstract.Address.t = function
+    | Numeric k ->
+        Act_abstract.Address.Int k
+    | Symbolic k ->
+        Act_abstract.Address.Symbol k
+end)
+
 let as_symbol : t -> string option = On_symbols.find ~f:Tx.Fn.always

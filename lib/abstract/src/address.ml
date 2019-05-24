@@ -21,28 +21,29 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Stdio
-open Act_x86
+open Base
 
-let%test_module "Abstract classification" =
-  ( module struct
-    let test (r : Reg.t) : unit =
-      r |> Reg.abs_kind |> Act_abstract.Register.Kind.to_string
-      |> print_endline
+type t = Int of int | Symbol of Symbol.t [@@deriving sexp, equal]
 
-    let%expect_test "EBP is a stack pointer" =
-      test `EBP ;
-      [%expect {| stack-pointer |}]
+let pp f = function Int k -> Int.pp f k | Symbol sym -> Fmt.pf f "$%s" sym
 
-    let%expect_test "ESP is a stack pointer" =
-      test `ESP ;
-      [%expect {| stack-pointer |}]
+let to_string : t -> string = function
+  | Int k ->
+      Int.to_string k
+  | Symbol s ->
+      s
 
-    let%expect_test "ZF is a special-purpose register" =
-      test `ZF ;
-      [%expect {| unknown |}]
+module Kind = struct
+  module M = struct
+    type t = Int | Symbol [@@deriving sexp, enum]
 
-    let%expect_test "EAX is a general-purpose register" =
-      test `EAX ;
-      [%expect {| general |}]
-  end )
+    let table = [(Int, "int"); (Symbol, "symbol")]
+  end
+
+  include M
+  include Act_utils.Enum.Extend_table (M)
+end
+
+module Flag = Flag_enum.None
+
+let kind : t -> Kind.t = function Int _ -> Int | Symbol _ -> Symbol

@@ -178,7 +178,7 @@ module Make (B : Basic) : S = struct
 
   let jump_target_operand = function
     | Ast.Operand.Location (Ast.Location.Indirect i) ->
-        Some (jump_target_displacement (Ast.Indirect.disp i))
+        Some (jump_target_displacement (Indirect.disp i))
     | Immediate (Disp.Symbolic s) ->
         Some (Symbol s)
     | Immediate (Numeric _) | Bop _ ->

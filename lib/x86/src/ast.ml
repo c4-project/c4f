@@ -50,147 +50,12 @@ module Tx = Travesty_base_exts
 module Au = Act_utils
 open Travesty
 
-module Index = struct
-  type t = Unscaled of Reg.t | Scaled of Reg.t * int
-  [@@deriving sexp, variants, eq, compare]
-
-  (** Base mapper for indices *)
-  module Base_map (M : Monad.S) = struct
-    module F = Traversable.Helpers (M)
-
-    let map_m (x : t) ~unscaled ~scaled : t M.t =
-      Variants.map x
-        ~unscaled:(F.proc_variant1 unscaled)
-        ~scaled:(F.proc_variant2 scaled)
-  end
-
-  (** Recursive mapper for registers *)
-  module On_registers :
-    Traversable.S0 with type t = t and type Elt.t = Reg.t =
-  Traversable.Make0 (struct
-    type nonrec t = t
-
-    module Elt = Reg
-
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module F = Traversable.Helpers (M)
-
-      let map_m t ~f =
-        B.map_m t ~unscaled:f
-          ~scaled:M.(fun (r, k) -> f r >>| fun r' -> (r', k))
-    end
-  end)
-
-  module Q : Au.My_quickcheck.S_with_sexp with type t := t = struct
-    let sexp_of_t = sexp_of_t
-
-    module G = Base_quickcheck.Generator
-    module O = Base_quickcheck.Observer
-    module S = Base_quickcheck.Shrinker
-
-    let anonymise = function
-      | Unscaled reg ->
-          `A reg
-      | Scaled (reg, s) ->
-          `B (reg, s)
-
-    let deanonymise = function
-      | `A reg ->
-          Unscaled reg
-      | `B (reg, s) ->
-          Scaled (reg, s)
-
-    let quickcheck_generator : t G.t =
-      G.map ~f:deanonymise
-        [%quickcheck.generator:
-          [ `A of Reg.t
-          | `B of Reg.t * [%custom G.small_strictly_positive_int] ]]
-
-    let quickcheck_observer : t O.t =
-      O.unmap ~f:anonymise
-        [%quickcheck.observer: [`A of Reg.t | `B of Reg.t * int]]
-
-    let quickcheck_shrinker : t S.t =
-      S.map ~f:deanonymise ~f_inverse:anonymise
-        [%quickcheck.shrinker: [`A of Reg.t | `B of Reg.t * int]]
-  end
-
-  include Q
-end
-
-(*
- * Memory addresses
- *)
-
-module Indirect = struct
-  type t =
-    { seg: Reg.t option
-    ; disp: Disp.t option
-    ; base: Reg.t option
-    ; index: Index.t option }
-  [@@deriving sexp, eq, compare, fields, make, quickcheck]
-
-  (** Base mapper for memory addresses *)
-  module Base_map (M : Monad.S) = struct
-    module F = Traversable.Helpers (M)
-
-    let map_m indirect ~seg ~disp ~base ~index =
-      Fields.fold ~init:(M.return indirect) ~seg:(F.proc_field seg)
-        ~disp:(F.proc_field disp) ~base:(F.proc_field base)
-        ~index:(F.proc_field index)
-  end
-
-  (** Recursive mapper for symbols *)
-  module On_symbols :
-    Traversable.S0 with type t = t and type Elt.t = string =
-  Traversable.Make0 (struct
-    type nonrec t = t
-
-    module Elt = String
-
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module D = Disp.On_symbols.On_monad (M)
-      module O = Tx.Option.On_monad (M)
-
-      let map_m t ~f =
-        B.map_m t
-          ~disp:
-            (O.map_m ~f:(D.map_m ~f))
-            (* Segments, bases, and indices have no symbols. *)
-          ~seg:M.return ~base:M.return ~index:M.return
-    end
-  end)
-
-  (** Recursive mapper for registers *)
-  module On_registers :
-    Traversable.S0 with type t = t and type Elt.t = Reg.t =
-  Traversable.Make0 (struct
-    type nonrec t = t
-
-    module Elt = Reg
-
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module O = Tx.Option.On_monad (M)
-      module I = Index.On_registers.On_monad (M)
-
-      let map_m t ~f =
-        B.map_m t ~seg:(O.map_m ~f) ~base:(O.map_m ~f)
-          ~index:
-            (O.map_m ~f:(I.map_m ~f)) (* Displacements have no registers. *)
-          ~disp:M.return
-    end
-  end)
-end
-
 module Location = struct
   type t =
     | Indirect of Indirect.t
     | Reg of Reg.t
     | Template_token of string
-  [@@deriving sexp, variants, equal, compare, quickcheck]
+  [@@deriving sexp, variants, compare, equal, quickcheck]
 
   (** Base mapper for locations *)
   module Base_map (M : Monad.S) = struct
@@ -262,7 +127,7 @@ module Operand = struct
     | String of string
     | Typ of string
     | Bop of t * Bop.t * t
-  [@@deriving sexp, variants, eq, compare]
+  [@@deriving sexp, variants, compare, equal]
 
   (** Base mapper for operands *)
   module Base_map (M : Monad.S) = struct

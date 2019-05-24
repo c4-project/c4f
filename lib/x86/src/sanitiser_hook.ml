@@ -50,7 +50,7 @@ struct
 
     let segment_offset_to_heap_of_indirect i =
       let open Ctx.Let_syntax in
-      match (Ast.Indirect.seg i, Ast.Indirect.disp i) with
+      match (Indirect.seg i, Indirect.disp i) with
       | Some s, Some (Disp.Numeric k) ->
           let%bind l = make_segment_offset_heap_loc s k in
           let%map l' = Ctx.add_symbol l Act_abstract.Symbol.Sort.Heap in

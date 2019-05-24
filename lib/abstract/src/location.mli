@@ -25,17 +25,6 @@
 
 open Base
 
-(** [Address] concerns abstracted addresses and address offsets. *)
-module Address : sig
-  (** [t] is the type of abstracted addresses and address offsets. *)
-  type t = Int of int | Symbol of Symbol.t [@@deriving sexp, equal]
-
-  include Pretty_printer.S with type t := t
-
-  val to_string : t -> string
-  (** [to_string address] gets a string representation of [address]. *)
-end
-
 (** [t] is an abstracted location. *)
 type t =
   | Register_direct of Register.t

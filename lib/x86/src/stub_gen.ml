@@ -25,8 +25,7 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-let make_template_indirect (ind : Ast.Indirect.t) : string =
-  ignore ind ; "TODO"
+let make_template_indirect (ind : Indirect.t) : string = ignore ind ; "TODO"
 
 let make_template_location : Ast.Location.t -> Ast.Location.t = function
   | Reg r ->

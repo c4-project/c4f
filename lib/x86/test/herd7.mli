@@ -21,28 +21,6 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Stdio
-open Act_x86
+(** Tests over the fully instantiated Herd7-dialect x86 language definition.
 
-let%test_module "Abstract classification" =
-  ( module struct
-    let test (r : Reg.t) : unit =
-      r |> Reg.abs_kind |> Act_abstract.Register.Kind.to_string
-      |> print_endline
-
-    let%expect_test "EBP is a stack pointer" =
-      test `EBP ;
-      [%expect {| stack-pointer |}]
-
-    let%expect_test "ESP is a stack pointer" =
-      test `ESP ;
-      [%expect {| stack-pointer |}]
-
-    let%expect_test "ZF is a special-purpose register" =
-      test `ZF ;
-      [%expect {| unknown |}]
-
-    let%expect_test "EAX is a general-purpose register" =
-      test `EAX ;
-      [%expect {| general |}]
-  end )
+    This interface intentionally left blank. *)

@@ -43,23 +43,67 @@
    circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
-(** x86 AST: displacements *)
+(** x86 AST: indirect memory accesses. *)
 
-type t = Symbolic of string | Numeric of int
-[@@deriving sexp, equal, quickcheck, compare]
+open Base
+open Base_quickcheck
+module Trav = Travesty.Traversable
+module Tx = Travesty_base_exts
 
-include
-  Act_abstract.Abstractable.S
-  with type t := t
-   and module Abs := Act_abstract.Address
+type t =
+  { seg: Reg.t option
+  ; disp: Disp.t option
+  ; base: Reg.t option
+  ; index: Index.t option }
+[@@deriving sexp, equal, compare, fields, make, quickcheck]
 
-(** {2 Symbols} *)
+(** Base mapper for memory addresses *)
+module Base_map (M : Monad.S) = struct
+  module F = Trav.Helpers (M)
 
-(** [On_symbols] permits enumerating and folding over symbols inside a
-    displacement. *)
-module On_symbols :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = string
+  let map_m indirect ~seg ~disp ~base ~index =
+    Fields.fold ~init:(M.return indirect) ~seg:(F.proc_field seg)
+      ~disp:(F.proc_field disp) ~base:(F.proc_field base)
+      ~index:(F.proc_field index)
+end
 
-val as_symbol : t -> string option
-(** [as_symbol t] returns [Some s] if [t] is a symbol [s], and [None]
-    otherwise. *)
+(** Recursive mapper for symbols *)
+module On_symbols : Trav.S0 with type t = t and type Elt.t = string =
+Trav.Make0 (struct
+  type nonrec t = t
+
+  module Elt = String
+
+  module On_monad (M : Monad.S) = struct
+    module B = Base_map (M)
+    module D = Disp.On_symbols.On_monad (M)
+    module O = Tx.Option.On_monad (M)
+
+    let map_m t ~f =
+      B.map_m t
+        ~disp:
+          (O.map_m ~f:(D.map_m ~f))
+          (* Segments, bases, and indices have no symbols. *)
+        ~seg:M.return ~base:M.return ~index:M.return
+  end
+end)
+
+(** Recursive mapper for registers *)
+module On_registers : Trav.S0 with type t = t and type Elt.t = Reg.t =
+Trav.Make0 (struct
+  type nonrec t = t
+
+  module Elt = Reg
+
+  module On_monad (M : Monad.S) = struct
+    module B = Base_map (M)
+    module O = Tx.Option.On_monad (M)
+    module I = Index.On_registers.On_monad (M)
+
+    let map_m t ~f =
+      B.map_m t ~seg:(O.map_m ~f) ~base:(O.map_m ~f)
+        ~index:
+          (O.map_m ~f:(I.map_m ~f)) (* Displacements have no registers. *)
+        ~disp:M.return
+  end
+end)

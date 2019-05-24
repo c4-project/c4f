@@ -43,23 +43,12 @@
    circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
-(** x86 AST: displacements *)
+(** x86 AST: index-scale pairs *)
 
-type t = Symbolic of string | Numeric of int
+type t = Unscaled of Reg.t | Scaled of Reg.t * int
 [@@deriving sexp, equal, quickcheck, compare]
 
-include
-  Act_abstract.Abstractable.S
-  with type t := t
-   and module Abs := Act_abstract.Address
-
-(** {2 Symbols} *)
-
-(** [On_symbols] permits enumerating and folding over symbols inside a
+(** [On_registers] permits enumerating and folding over registers inside a
     displacement. *)
-module On_symbols :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = string
-
-val as_symbol : t -> string option
-(** [as_symbol t] returns [Some s] if [t] is a symbol [s], and [None]
-    otherwise. *)
+module On_registers :
+  Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t

@@ -141,7 +141,7 @@ module Chain_item = struct
   let%expect_test "of_locations: read chain step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Act_abstract.Location.(
+        ( Act_abstract.(
             of_locations 10 true
               {src= Heap (Address.Int 20); dst= Heap (Address.Int 10)}
               (Read
@@ -153,7 +153,7 @@ module Chain_item = struct
   let%expect_test "of_locations: not a move, so not a valid step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Act_abstract.Location.(
+        ( Act_abstract.(
             of_locations 10 false
               {src= Heap (Address.Int 20); dst= Heap (Address.Int 10)}
               (Read
@@ -165,7 +165,7 @@ module Chain_item = struct
   let%expect_test "of_locations: read chain end" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Act_abstract.Location.(
+        ( Act_abstract.(
             of_locations 10 true
               { src= Register_indirect {reg= General "eax"; offset= Int 0}
               ; dst= Heap (Address.Int 10) }
@@ -178,7 +178,7 @@ module Chain_item = struct
   let%expect_test "of_locations: read chain end, not a move" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Act_abstract.Location.(
+        ( Act_abstract.(
             of_locations 10 false
               { src= Register_indirect {reg= General "eax"; offset= Int 0}
               ; dst= Heap (Address.Int 10) }
@@ -191,7 +191,7 @@ module Chain_item = struct
   let%expect_test "of_locations: chain break" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Act_abstract.Location.(
+        ( Act_abstract.(
             of_locations 10 true
               { src= Register_indirect {reg= General "eax"; offset= Int 0}
               ; dst= Heap (Address.Int 10) }
@@ -204,7 +204,7 @@ module Chain_item = struct
   let%expect_test "of_locations: write chain target step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Act_abstract.Location.(
+        ( Act_abstract.(
             of_locations 10 true
               {src= Heap (Address.Int 20); dst= Heap (Address.Int 10)}
               (Write
@@ -218,7 +218,7 @@ module Chain_item = struct
   let%expect_test "of_locations: write chain value step" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Act_abstract.Location.(
+        ( Act_abstract.(
             of_locations 10 true
               {src= Heap (Address.Int 40); dst= Heap (Address.Int 10)}
               (Write
@@ -232,7 +232,7 @@ module Chain_item = struct
   let%expect_test "of_locations: write chain end" =
     Sexp.output_hum Out_channel.stdout
       [%sexp
-        ( Act_abstract.Location.(
+        ( Act_abstract.(
             of_locations 10 true
               { src= Heap (Address.Int 10)
               ; dst= Register_indirect {reg= General "eax"; offset= Int 0}

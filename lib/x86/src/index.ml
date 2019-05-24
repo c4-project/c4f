@@ -43,23 +43,72 @@
    circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
-(** x86 AST: displacements *)
+open Base
+open Base_quickcheck
+module Au = Act_utils
+module Trav = Travesty.Traversable
 
-type t = Symbolic of string | Numeric of int
-[@@deriving sexp, equal, quickcheck, compare]
+type t = Unscaled of Reg.t | Scaled of Reg.t * int
+[@@deriving sexp, variants, eq, compare]
 
-include
-  Act_abstract.Abstractable.S
-  with type t := t
-   and module Abs := Act_abstract.Address
+(** Base mapper for indices *)
+module Base_map (M : Monad.S) = struct
+  module F = Trav.Helpers (M)
 
-(** {2 Symbols} *)
+  let map_m (x : t) ~unscaled ~scaled : t M.t =
+    Variants.map x
+      ~unscaled:(F.proc_variant1 unscaled)
+      ~scaled:(F.proc_variant2 scaled)
+end
 
-(** [On_symbols] permits enumerating and folding over symbols inside a
-    displacement. *)
-module On_symbols :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = string
+(** Recursive mapper for registers *)
+module On_registers : Trav.S0 with type t = t and type Elt.t = Reg.t =
+Trav.Make0 (struct
+  type nonrec t = t
 
-val as_symbol : t -> string option
-(** [as_symbol t] returns [Some s] if [t] is a symbol [s], and [None]
-    otherwise. *)
+  module Elt = Reg
+
+  module On_monad (M : Monad.S) = struct
+    module B = Base_map (M)
+    module F = Trav.Helpers (M)
+
+    let map_m t ~f =
+      B.map_m t ~unscaled:f
+        ~scaled:M.(fun (r, k) -> f r >>| fun r' -> (r', k))
+  end
+end)
+
+module Q : Au.My_quickcheck.S_with_sexp with type t := t = struct
+  let sexp_of_t = sexp_of_t
+
+  module G = Base_quickcheck.Generator
+  module O = Base_quickcheck.Observer
+  module S = Base_quickcheck.Shrinker
+
+  let anonymise = function
+    | Unscaled reg ->
+        `A reg
+    | Scaled (reg, s) ->
+        `B (reg, s)
+
+  let deanonymise = function
+    | `A reg ->
+        Unscaled reg
+    | `B (reg, s) ->
+        Scaled (reg, s)
+
+  let quickcheck_generator : t G.t =
+    G.map ~f:deanonymise
+      [%quickcheck.generator:
+        [`A of Reg.t | `B of Reg.t * [%custom G.small_strictly_positive_int]]]
+
+  let quickcheck_observer : t O.t =
+    O.unmap ~f:anonymise
+      [%quickcheck.observer: [`A of Reg.t | `B of Reg.t * int]]
+
+  let quickcheck_shrinker : t S.t =
+    S.map ~f:deanonymise ~f_inverse:anonymise
+      [%quickcheck.shrinker: [`A of Reg.t | `B of Reg.t * int]]
+end
+
+include Q

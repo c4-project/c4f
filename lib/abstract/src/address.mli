@@ -21,28 +21,26 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Stdio
-open Act_x86
+(** Abstracted addresses and address offsets. *)
 
-let%test_module "Abstract classification" =
-  ( module struct
-    let test (r : Reg.t) : unit =
-      r |> Reg.abs_kind |> Act_abstract.Register.Kind.to_string
-      |> print_endline
+open Base
 
-    let%expect_test "EBP is a stack pointer" =
-      test `EBP ;
-      [%expect {| stack-pointer |}]
+(** [t] is the type of abstracted addresses and address offsets. *)
+type t = Int of int | Symbol of Symbol.t [@@deriving sexp, equal]
 
-    let%expect_test "ESP is a stack pointer" =
-      test `ESP ;
-      [%expect {| stack-pointer |}]
+module Kind : sig
+  type t = Int | Symbol
 
-    let%expect_test "ZF is a special-purpose register" =
-      test `ZF ;
-      [%expect {| unknown |}]
+  include Act_utils.Enum.S_table with type t := t
 
-    let%expect_test "EAX is a general-purpose register" =
-      test `EAX ;
-      [%expect {| general |}]
-  end )
+  include Act_utils.Enum.Extension_table with type t := t
+end
+
+include Pretty_printer.S with type t := t
+
+include Node.S with type t := t and module Kind := Kind
+
+(** {2 Actions specific to addresses} *)
+
+val to_string : t -> string
+(** [to_string address] gets a string representation of [address]. *)

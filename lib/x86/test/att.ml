@@ -77,7 +77,7 @@ let%test_module "abs_operands" =
            ~operands:
              [ Ast.Operand.Location
                  (Ast.Location.Indirect
-                    (Ast.Indirect.make ~disp:(Disp.Symbolic "L1") ())) ]
+                    (Indirect.make ~disp:(Disp.Symbolic "L1") ())) ]
            ()) ;
       [%expect {| sym:L1 |}]
 
@@ -127,4 +127,84 @@ let%test_module "abs_operands" =
              ; Ast.Operand.Immediate (Disp.Numeric 1) ]
            ()) ;
       [%expect {| <ERR: Operand types not allowed here> |}]
+  end )
+
+let%test_module "Pretty-printing" =
+  ( module struct
+    open Pp.Att
+
+    let%expect_test "pp_comment: AT&T" =
+      Fmt.pr "%a@." (pp_comment ~pp:Fmt.string) "AT&T comment" ;
+      [%expect {| # AT&T comment |}]
+
+    let%expect_test "pp_reg: AT&T, ESP" =
+      Fmt.pr "%a@." pp_reg `ESP ;
+      [%expect {| %ESP |}]
+
+    let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
+      Fmt.pr "%a@." pp_indirect (Indirect.make ~disp:(Disp.Numeric 2001) ()) ;
+      [%expect {| 2001 |}]
+
+    let%expect_test "pp_indirect: AT&T, +ve disp and base" =
+      Fmt.pr "%a@." pp_indirect
+        (Indirect.make ~disp:(Disp.Numeric 76) ~base:`EAX ()) ;
+      [%expect {| 76(%EAX) |}]
+
+    let%expect_test "pp_indirect: AT&T, zero disp only" =
+      Fmt.pr "%a@." pp_indirect (Indirect.make ~disp:(Disp.Numeric 0) ()) ;
+      [%expect {| 0 |}]
+
+    let%expect_test "pp_indirect: AT&T, -ve disp and base" =
+      Fmt.pr "%a@." pp_indirect
+        (Indirect.make ~disp:(Disp.Numeric (-42)) ~base:`ECX ()) ;
+      [%expect {| -42(%ECX) |}]
+
+    let%expect_test "pp_indirect: AT&T, base only" =
+      Fmt.pr "%a@." pp_indirect (Indirect.make ~base:`EDX ()) ;
+      [%expect {| (%EDX) |}]
+
+    let%expect_test "pp_indirect: AT&T, zero disp and base" =
+      Fmt.pr "%a@." pp_indirect
+        (Indirect.make ~disp:(Disp.Numeric 0) ~base:`EDX ()) ;
+      [%expect {| (%EDX) |}]
+
+    let%expect_test "pp_immediate: AT&T, positive number" =
+      Fmt.pr "%a@." pp_immediate (Disp.Numeric 24) ;
+      [%expect {| $24 |}]
+
+    let%expect_test "pp_immediate: AT&T, zero" =
+      Fmt.pr "%a@." pp_immediate (Disp.Numeric 0) ;
+      [%expect {| $0 |}]
+
+    let%expect_test "pp_immediate: AT&T, negative number" =
+      Fmt.pr "%a@." pp_immediate (Disp.Numeric (-42)) ;
+      [%expect {| $-42 |}]
+
+    let%expect_test "pp_immediate: AT&T, symbolic" =
+      Fmt.pr "%a@." pp_immediate (Disp.Symbolic "kappa") ;
+      [%expect {| $kappa |}]
+
+    let%expect_test "pp_opcode: directive" =
+      Fmt.pr "%a@." pp_opcode (Opcode.Directive "text") ;
+      [%expect {| .text |}]
+
+    let%expect_test "pp_opcode: jmp" =
+      Fmt.pr "%a@." pp_opcode (Opcode.Jump `Unconditional) ;
+      [%expect {| jmp |}]
+
+    let%expect_test "pp_opcode: jge" =
+      Fmt.pr "%a@." pp_opcode (Opcode.Jump (`Conditional `GreaterEqual)) ;
+      [%expect {| jge |}]
+
+    let%expect_test "pp_opcode: jnz" =
+      Fmt.pr "%a@." pp_opcode (Opcode.Jump (`Conditional (`Not `Zero))) ;
+      [%expect {| jnz |}]
+
+    let%expect_test "pp_opcode: mov" =
+      Fmt.pr "%a@." pp_opcode (Opcode.Basic `Mov) ;
+      [%expect {| mov |}]
+
+    let%expect_test "pp_opcode: movw (AT&T)" =
+      Fmt.pr "%a@." pp_opcode (Opcode.Sized (`Mov, Opcode.Size.Word)) ;
+      [%expect {| movw |}]
   end )

@@ -30,26 +30,20 @@ module Common = struct
   let make_heap_loc l =
     Ast.(Location.Indirect (Indirect.make ~disp:(Disp.Symbolic l) ()))
 
-  let disp_abs_type : Disp.t -> Act_abstract.Location.Address.t = function
-    | Disp.Numeric k ->
-        Act_abstract.Location.Address.Int k
-    | Disp.Symbolic k ->
-        Act_abstract.Location.Address.Symbol k
-
-  let indirect_abs_type (i : Ast.Indirect.t) =
+  let indirect_abs_type (i : Indirect.t) =
     let open Act_abstract.Location in
-    let open Ast.Indirect in
+    let open Indirect in
     match (seg i, disp i, base i, index i) with
     | None, disp, Some b, None ->
         let reg = Reg.abstract b in
         let offset =
-          Option.value_map disp ~f:disp_abs_type
-            ~default:(Act_abstract.Location.Address.Int 0)
+          Option.value_map disp ~f:Disp.abstract
+            ~default:(Act_abstract.Address.Int 0)
         in
         Act_abstract.Location.Register_indirect {reg; offset}
     (* This may be over-optimistic. *)
     | None, Some d, None, None ->
-        Act_abstract.Location.Heap (disp_abs_type d)
+        Act_abstract.Location.Heap (Disp.abstract d)
     | _, _, _, _ ->
         Unknown
 

@@ -57,7 +57,7 @@ let disp_positive = function
       true
 
 let pp_gcc_asm_template_token : string Fmt.t =
-  Fmt.(hbox (prefix (unit "%%") string))
+  Fmt.(hbox (prefix (unit "%%") (brackets string)))
 
 (* Parts specific to all dialects *)
 module Basic = struct
@@ -80,15 +80,7 @@ module Att_specific = struct
     (* TODO(@MattWindsor91): this is GCC specific, actually. *)
     pp_gcc_asm_template_token
 
-  let%expect_test "pp_comment: AT&T" =
-    Fmt.pr "%a@." (pp_comment ~pp:String.pp) "AT&T comment" ;
-    [%expect {| # AT&T comment |}]
-
   let pp_reg f reg = Fmt.pf f "@[%%%s@]" (Reg.to_string reg)
-
-  let%expect_test "pp_reg: AT&T, ESP" =
-    Fmt.pr "%a@." pp_reg `ESP ;
-    [%expect {| %ESP |}]
 
   let pp_index f = function
     | Index.Unscaled r ->
@@ -116,50 +108,7 @@ module Att_specific = struct
     Fmt.option (Basic.pp_disp ~show_zero) f in_disp ;
     pp_bis f in_base in_index
 
-  let%expect_test "pp_indirect: AT&T, +ve numeric displacement only" =
-    Fmt.pr "%a@." pp_indirect (Indirect.make ~disp:(Disp.Numeric 2001) ()) ;
-    [%expect {| 2001 |}]
-
-  let%expect_test "pp_indirect: AT&T, +ve disp and base" =
-    Fmt.pr "%a@." pp_indirect
-      (Indirect.make ~disp:(Disp.Numeric 76) ~base:`EAX ()) ;
-    [%expect {| 76(%EAX) |}]
-
-  let%expect_test "pp_indirect: AT&T, zero disp only" =
-    Fmt.pr "%a@." pp_indirect (Indirect.make ~disp:(Disp.Numeric 0) ()) ;
-    [%expect {| 0 |}]
-
-  let%expect_test "pp_indirect: AT&T, -ve disp and base" =
-    Fmt.pr "%a@." pp_indirect
-      (Indirect.make ~disp:(Disp.Numeric (-42)) ~base:`ECX ()) ;
-    [%expect {| -42(%ECX) |}]
-
-  let%expect_test "pp_indirect: AT&T, base only" =
-    Fmt.pr "%a@." pp_indirect (Indirect.make ~base:`EDX ()) ;
-    [%expect {| (%EDX) |}]
-
-  let%expect_test "pp_indirect: AT&T, zero disp and base" =
-    Fmt.pr "%a@." pp_indirect
-      (Indirect.make ~disp:(Disp.Numeric 0) ~base:`EDX ()) ;
-    [%expect {| (%EDX) |}]
-
   let pp_immediate f = Fmt.pf f "@[$%a@]" (Basic.pp_disp ~show_zero:true)
-
-  let%expect_test "pp_immediate: AT&T, positive number" =
-    Fmt.pr "%a@." pp_immediate (Disp.Numeric 24) ;
-    [%expect {| $24 |}]
-
-  let%expect_test "pp_immediate: AT&T, zero" =
-    Fmt.pr "%a@." pp_immediate (Disp.Numeric 0) ;
-    [%expect {| $0 |}]
-
-  let%expect_test "pp_immediate: AT&T, negative number" =
-    Fmt.pr "%a@." pp_immediate (Disp.Numeric (-42)) ;
-    [%expect {| $-42 |}]
-
-  let%expect_test "pp_immediate: AT&T, symbolic" =
-    Fmt.pr "%a@." pp_immediate (Disp.Symbolic "kappa") ;
-    [%expect {| $kappa |}]
 end
 
 (** Parts specific to Intel *)
@@ -169,10 +118,6 @@ module Intel_specific = struct
   let pp_template_token : string Fmt.t =
     (* TODO(@MattWindsor91): this is pretty much wrong. *)
     pp_gcc_asm_template_token
-
-  let%expect_test "pp_comment: Intel" =
-    Fmt.pr "%a@." (pp_comment ~pp:String.pp) "intel comment" ;
-    [%expect {| ; intel comment |}]
 end
 
 (** Parts specific to Herd7 *)
@@ -182,19 +127,11 @@ module Herd7_specific = struct
   let pp_template_token : string Fmt.t =
     (* TODO(@MattWindsor91): this is pretty much wrong. *)
     pp_gcc_asm_template_token
-
-  let%expect_test "pp_comment: Herd7" =
-    Fmt.pr "%a@." (pp_comment ~pp:String.pp) "herd comment" ;
-    [%expect {| // herd comment |}]
 end
 
 (** Parts common to Intel and Herd7 *)
 module Intel_and_herd7 = struct
   let pp_reg f reg = String.pp f (Reg.to_string reg)
-
-  let%expect_test "pp_reg: intel, EAX" =
-    Fmt.pr "%a@." pp_reg `EAX ;
-    [%expect {| EAX |}]
 
   let pp_index f = function
     | Index.Unscaled r ->
@@ -227,33 +164,6 @@ module Intel_and_herd7 = struct
              if plus_between_bis_d then char f '+' ;
              let show_zero = Option.(is_none in_base && is_none in_index) in
              option (Basic.pp_disp ~show_zero) f in_disp )))
-
-  let%expect_test "pp_indirect: intel, +ve numeric displacement only" =
-    Fmt.pr "%a@." pp_indirect (Indirect.make ~disp:(Disp.Numeric 2001) ()) ;
-    [%expect {| [2001] |}]
-
-  let%expect_test "pp_indirect: Intel, +ve disp and base" =
-    Fmt.pr "%a@." pp_indirect
-      (Indirect.make ~disp:(Disp.Numeric 76) ~base:`EAX ()) ;
-    [%expect {| [EAX+76] |}]
-
-  let%expect_test "pp_indirect: Intel, zero disp only" =
-    Fmt.pr "%a@." pp_indirect (Indirect.make ~disp:(Disp.Numeric 0) ()) ;
-    [%expect {| [0] |}]
-
-  let%expect_test "pp_indirect: Intel, +ve disp and base" =
-    Fmt.pr "%a@." pp_indirect
-      (Indirect.make ~disp:(Disp.Numeric (-42)) ~base:`ECX ()) ;
-    [%expect {| [ECX-42] |}]
-
-  let%expect_test "pp_indirect: Intel, base only" =
-    Fmt.pr "%a@." pp_indirect (Indirect.make ~base:`EDX ()) ;
-    [%expect {| [EDX] |}]
-
-  let%expect_test "pp_indirect: Intel, zero disp and base" =
-    Fmt.pr "%a@." pp_indirect
-      (Indirect.make ~disp:(Disp.Numeric 0) ~base:`EDX ()) ;
-    [%expect {| [EDX] |}]
 
   let pp_immediate = Basic.pp_disp ~show_zero:true
 end
@@ -358,30 +268,6 @@ module Make (D : Dialect) = struct
 end
 
 module Att = Make (Att_specific)
-
-let%expect_test "pp_opcode: directive" =
-  Fmt.pr "%a@." Att.pp_opcode (Opcode.Directive "text") ;
-  [%expect {| .text |}]
-
-let%expect_test "pp_opcode: jmp" =
-  Fmt.pr "%a@." Att.pp_opcode (Opcode.Jump `Unconditional) ;
-  [%expect {| jmp |}]
-
-let%expect_test "pp_opcode: jge" =
-  Fmt.pr "%a@." Att.pp_opcode (Opcode.Jump (`Conditional `GreaterEqual)) ;
-  [%expect {| jge |}]
-
-let%expect_test "pp_opcode: jnz" =
-  Fmt.pr "%a@." Att.pp_opcode (Opcode.Jump (`Conditional (`Not `Zero))) ;
-  [%expect {| jnz |}]
-
-let%expect_test "pp_opcode: mov" =
-  Fmt.pr "%a@." Att.pp_opcode (Opcode.Basic `Mov) ;
-  [%expect {| mov |}]
-
-let%expect_test "pp_opcode: movw (AT&T)" =
-  Fmt.pr "%a@." Att.pp_opcode (Opcode.Sized (`Mov, Opcode.Size.Word)) ;
-  [%expect {| movw |}]
 
 module Intel = Make (struct
   include Intel_specific

@@ -23,22 +23,6 @@
 
 open Core_kernel
 
-module Address = struct
-  type t = Int of int | Symbol of Symbol.t [@@deriving sexp, equal]
-
-  let pp f = function
-    | Int k ->
-        Int.pp f k
-    | Symbol sym ->
-        Fmt.pf f "$%s" sym
-
-  let to_string : t -> string = function
-    | Int k ->
-        Int.to_string k
-    | Symbol s ->
-        s
-end
-
 type t =
   | Register_direct of Register.t
   | Register_indirect of {reg: Register.t; offset: Address.t}

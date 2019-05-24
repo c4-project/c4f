@@ -49,50 +49,7 @@ open Act_common
 open Base
 open Act_utils
 
-(** [Index] concerns index-scale pairs. *)
-module Index : sig
-  type t = Unscaled of Reg.t | Scaled of Reg.t * int
-  [@@deriving sexp, equal, quickcheck, compare]
-
-  (** [On_registers] permits enumerating and folding over registers inside a
-      displacement. *)
-  module On_registers :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
-end
-
-module Indirect : sig
-  (** [t] is the opaque type of indirect memory accesses. *)
-  type t [@@deriving equal, quickcheck]
-
-  val make :
-    ?seg:Reg.t -> ?disp:Disp.t -> ?base:Reg.t -> ?index:Index.t -> unit -> t
-  (** [make ?seg ?disp ?base ?index ()] makes an [Indirect] with the given
-      fields (if present). *)
-
-  val base : t -> Reg.t option
-  (** [base] gets the indirect base, if any. *)
-
-  val seg : t -> Reg.t option
-  (** [seg] gets the indirect segment, if any. *)
-
-  val disp : t -> Disp.t option
-  (** [disp] gets the indirect displacement, if any. *)
-
-  val index : t -> Index.t option
-  (** [index] gets the indirect index, if any. *)
-
-  (** [On_registers] permits enumerating and folding over registers inside a
-      memory access. *)
-  module On_registers :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
-
-  (** [On_symbols] permits enumerating and folding over symbols inside a
-      memory access. *)
-  module On_symbols :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = string
-end
-
-(** A syntactic memory locations.
+(** A syntactic memory location.
 
     These are usually indirect seg/disp/base/index stanzas (see
     {{!Indirect} Indirect}), or registers (see {{!Reg} Reg}).
@@ -109,7 +66,7 @@ module Location : sig
     | Template_token of string
         (** An interpolation from some form of assembly template, for
             example GCC's C {i asm} extension. *)
-  [@@deriving sexp, equal, quickcheck, compare]
+  [@@deriving sexp, compare, equal, quickcheck]
 
   (** [On_registers] permits enumerating and folding over registers inside a
       location. *)
@@ -135,7 +92,7 @@ module Operand : sig
     | String of string
     | Typ of string  (** Type annotation *)
     | Bop of t * Bop.t * t
-  [@@deriving sexp, equal, compare, quickcheck]
+  [@@deriving sexp, compare, equal, quickcheck]
 
   val location : Location.t -> t
 
