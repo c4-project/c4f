@@ -1,0 +1,10 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_tester)
+ (public_name act.tester)
+ (synopsis "Automagic Compiler Tormentor: main compiler tester")
+ (inline_tests)
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (libraries core_kernel act_asm act_c act_common act_sim act_utils))

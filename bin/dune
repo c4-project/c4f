@@ -5,64 +5,6 @@
  (libraries core toplevel))
 
 (rule
- (targets explain.regress.output)
- (action
-  (with-stdout-to
-   explain.regress.output
-   (run act regress "explain" "tests")))
- (deps
-  "tests/asm/x86/att/spec"
-  (glob_files "tests/asm/x86/att/*.s")))
-
-(alias
- (name runtest)
- (action
-  (diff explain.regress.expected explain.regress.output)))
-
-(rule
- (targets litmusify.regress.output)
- (action
-  (with-stdout-to
-   litmusify.regress.output
-   (run act regress "litmusify" "tests")))
- (deps
-  "tests/asm/x86/att/spec"
-  (glob_files "tests/asm/x86/att/*.s")))
-
-(alias
- (name runtest)
- (action
-  (diff litmusify.regress.expected litmusify.regress.output)))
-
-(rule
- (targets delitmus.regress.output)
- (action
-  (with-stdout-to
-   delitmus.regress.output
-   (run act regress "delitmus" "tests/litmus/")))
- (deps
-  (glob_files "tests/litmus/*.litmus")))
-
-(alias
- (name runtest)
- (action
-  (diff delitmus.regress.expected delitmus.regress.output)))
-
-(rule
- (targets config_failures.regress.output)
- (action
-  (with-stdout-to
-   config_failures.regress.output
-   (run act regress "config-failures" "tests/config/failures/")))
- (deps
-  (glob_files "tests/config/failures/*.conf")))
-
-(alias
- (name runtest)
- (action
-  (diff config_failures.regress.expected config_failures.regress.output)))
-
-(rule
  (targets specs.output)
  (action
   (with-stdout-to

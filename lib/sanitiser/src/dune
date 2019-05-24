@@ -1,0 +1,11 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_sanitiser)
+ (public_name act.sanitiser)
+ (synopsis "Automagic Compiler Tormentor: assembly sanitiser framework")
+ (inline_tests)
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (libraries core_kernel fmt travesty travesty.core_kernel_exts act_abstract
+   act_common act_language act_utils))

@@ -1,0 +1,11 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_asm)
+ (public_name act.asm)
+ (synopsis "Automagic Compiler Tormentor: assembly file manipulations")
+ (inline_tests)
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (libraries base fmt fpath travesty travesty.base_exts act_c act_abstract
+   act_common act_config act_language act_sanitiser))

@@ -1,0 +1,28 @@
+(library
+ (name act_config)
+ (public_name act.config)
+ (synopsis
+   "Automagic Compiler Tormentor: configuration and config file parsing")
+ (inline_tests)
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (libraries fmt fpath menhirLib travesty travesty.core_kernel_exts
+   core_kernel act_common act_litmus act_utils act_sanitiser))
+
+;; Config file parser
+
+(menhir
+ (infer false)
+ (flags "--table")
+ (modules parser))
+
+(ocamllex
+ (modules lexer))
+
+(rule
+ (targets messages.ml)
+ (action
+  (with-stdout-to
+   "%{targets}"
+   (run "%{bin:menhir}" "--compile-errors" "%{dep:config.messages}"
+     "parser.mly"))))

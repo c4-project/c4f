@@ -1,8 +1,0 @@
-;; -*- mode: lisp; -*-
-
-(library
- (name litmus)
- (inline_tests)
- (preprocess
-  (pps ppx_deriving.std ppx_expect ppx_jane ppx_sexp_message))
- (libraries act_common core utils menhirLib))

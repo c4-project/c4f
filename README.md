@@ -1,6 +1,7 @@
 # act: automagic compiler tormentor
 
 [![Build Status](https://travis-ci.com/MattWindsor91/act.svg?branch=master)](https://travis-ci.com/MattWindsor91/act)
+[![Documentation Status](https://readthedocs.org/projects/automagic-compiler-tormentor/badge/?version=latest)](https://automagic-compiler-tormentor.readthedocs.io/en/latest/?badge=latest)
 
 `act` is a toolbox for finding
 concurrency memory model discrepancies between C code and its

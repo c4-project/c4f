@@ -1,0 +1,8 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_c_test)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane))
+ (libraries base fmt act_c))

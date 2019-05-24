@@ -1,0 +1,12 @@
+(tests
+ (names explain delitmus litmusify config_failures)
+ (preprocess
+  (pps ppx_jane))
+ (libraries core toplevel fpath)
+ (action
+  (run %{test} input))
+ (deps
+  "input/asm/x86/att/spec"
+  (glob_files "input/config/failures/*.conf")
+  (glob_files "input/litmus/*.litmus")
+  (glob_files "input/asm/x86/att/*.s")))

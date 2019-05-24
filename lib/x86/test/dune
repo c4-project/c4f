@@ -1,0 +1,8 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_x86_tests)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane))
+ (libraries base act_x86))

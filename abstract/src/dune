@@ -1,8 +1,0 @@
-;; -*- mode: lisp; -*-
-
-(library
- (name abstract)
- (inline_tests)
- (preprocess
-  (pps ppx_deriving.std ppx_expect ppx_jane))
- (libraries utils act_common travesty travesty.core_kernel_exts core_kernel))

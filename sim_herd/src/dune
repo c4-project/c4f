@@ -1,9 +1,0 @@
-;; -*- mode: lisp; -*-
-
-(library
- (name sim_herd)
- (synopsis "Simulator frontend for the Herd7 multicore CPU simulator")
- (preprocess
-  (pps ppx_deriving.std ppx_jane))
- (libraries utils sim sim_herdtools_common core_kernel
-   travesty.core_kernel_exts))

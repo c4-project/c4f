@@ -1,0 +1,8 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_sim_litmus_tests)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane))
+ (libraries base act_sim_litmus))
