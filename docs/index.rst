@@ -9,11 +9,16 @@ Welcome to the ACT documentation
 ``ACT`` (the Automagic Compiler Tormentor) is a project for setting up C
 compiler concurrency tests.
 
+.. warning:: This documentation is a heavy work-in progress, and is very incomplete.
+   Check back frequently for updates.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   intro
    commands
+   scripts
 
 Indices and tables
 ==================
