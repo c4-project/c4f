@@ -26,7 +26,7 @@
 
 open Core
 include Ssh_intf
-module R = Runner
+module Pb = Plumbing
 
 type t = {user: string option [@sexp.option]; host: string}
 [@@deriving sexp, fields, make]
@@ -64,10 +64,11 @@ module Scp (Conf : S) = struct
       @ if recurse then ["-r" (* recursive *)] else []
     in
     let argv = flags @ [scp_stanza remote; Fpath.to_string local] in
-    R.Local.run ~prog:"scp" argv
+    Pb.Runner.Local.run ~prog:"scp" argv
 end
 
-module Runner (Conf : Basic_runner) : R.S = R.Make (struct
+module Runner (Conf : Basic_runner) : Pb.Runner_types.S =
+Pb.Runner.Make (struct
   open Conf
   module Scp = Scp (Conf)
 
@@ -95,8 +96,8 @@ module Runner (Conf : Basic_runner) : R.S = R.Make (struct
         ~error:(Error.of_string "Internal: file list length changed.")
       >>= combine_errors_unit)
 
-  let copy_spec_to_remote : Fpath.t Copy_spec.t -> string Copy_spec.t =
-    function
+  let copy_spec_to_remote : Fpath.t Pb.Copy_spec.t -> string Pb.Copy_spec.t
+      = function
     | Directory local ->
         Directory (Conf.remote_dir local)
     | Files fs ->
@@ -107,7 +108,7 @@ module Runner (Conf : Basic_runner) : R.S = R.Make (struct
   let scp_spec
       ~(dir_action : local:Fpath.t -> remote:string -> unit Or_error.t)
       ~(file_action : local:Fpath.t -> remote:string -> unit Or_error.t)
-      (cs : Fpath.t Copy_spec.t) : string Copy_spec.t Or_error.t =
+      (cs : Fpath.t Pb.Copy_spec.t) : string Pb.Copy_spec.t Or_error.t =
     let open Or_error.Let_syntax in
     let rcs = copy_spec_to_remote cs in
     let%map () =
@@ -125,30 +126,31 @@ module Runner (Conf : Basic_runner) : R.S = R.Make (struct
     in
     rcs
 
-  let scp_send_spec : Fpath.t Copy_spec.t -> string Copy_spec.t Or_error.t =
+  let scp_send_spec :
+      Fpath.t Pb.Copy_spec.t -> string Pb.Copy_spec.t Or_error.t =
     scp_spec ~dir_action:(Scp.send ~recurse:true)
       ~file_action:(Scp.send ~recurse:false)
 
   let scp_receive_spec :
-      Fpath.t Copy_spec.t -> string Copy_spec.t Or_error.t =
+      Fpath.t Pb.Copy_spec.t -> string Pb.Copy_spec.t Or_error.t =
     scp_spec
       ~dir_action:(fun ~local ~remote ->
         Scp.receive ~recurse:true ~remote ~local )
       ~file_action:(fun ~local ~remote ->
         Scp.receive ~recurse:false ~remote ~local )
 
-  let pre (cs_pair : Fpath.t Copy_spec.Pair.t) :
-      string Copy_spec.Pair.t Or_error.t =
+  let pre (cs_pair : Fpath.t Pb.Copy_spec.Pair.t) :
+      string Pb.Copy_spec.Pair.t Or_error.t =
     let open Or_error.Let_syntax in
-    let%bind () = Copy_spec.validate_local cs_pair.input in
+    let%bind () = Pb.Copy_spec.validate_local cs_pair.input in
     let%map input' = scp_send_spec cs_pair.input in
     let output' = copy_spec_to_remote cs_pair.output in
-    {Copy_spec.Pair.input= input'; output= output'}
+    {Pb.Copy_spec.Pair.input= input'; output= output'}
 
-  let post (cs : Fpath.t Copy_spec.t) : unit Or_error.t =
+  let post (cs : Fpath.t Pb.Copy_spec.t) : unit Or_error.t =
     let open Or_error.Let_syntax in
     let%bind _ = scp_receive_spec cs in
-    Copy_spec.validate_local cs
+    Pb.Copy_spec.validate_local cs
 
   let run_one oc prog args =
     let open Or_error in

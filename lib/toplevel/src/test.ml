@@ -41,7 +41,9 @@ let make_tester_config ?(c_simulator : Id.t = Id.of_string "herd")
     ~(input_mode : Act_tester.Input_mode.t) o cfg :
     Act_tester.Run_config.t Or_error.t =
   let open Or_error.Let_syntax in
-  let%bind output_root_dir = Io.fpath_of_string out_root_raw in
+  let%bind output_root_dir =
+    Plumbing.Fpath_helpers.of_string out_root_raw
+  in
   let specs = Act_config.Act.compilers cfg in
   report_spec_errors o
     (List.filter_map ~f:snd (Act_config.Act.disabled_compilers cfg)) ;
@@ -91,13 +93,15 @@ let print_table t = Tabulator.print t ; Stdio.print_endline ""
 
 let cook_memalloy in_root_raw =
   let open Or_error.Let_syntax in
-  let%bind input_root = Io.fpath_of_string in_root_raw in
+  let%bind input_root = Plumbing.Fpath_helpers.of_string in_root_raw in
   Act_tester.Input_mode.memalloy ~input_root
 
 let cook_delitmus files_raw =
   let open Or_error.Let_syntax in
   let%bind files =
-    files_raw |> List.map ~f:Io.fpath_of_string |> Or_error.combine_errors
+    files_raw
+    |> List.map ~f:Plumbing.Fpath_helpers.of_string
+    |> Or_error.combine_errors
   in
   Act_tester.Input_mode.litmus_only ~files
 

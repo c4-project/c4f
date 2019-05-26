@@ -76,7 +76,7 @@ module type S_standard_with_files = sig
       to parse any given input file as an Fpath. This may fail if the path
       is ill-formed. *)
 
-  val infile_source : t -> Act_utils.Io.In_source.t Or_error.t
+  val infile_source : t -> Plumbing.Input.t Or_error.t
   (** [infile_source args] behaves as {{!infile_raw} infile_raw}, but tries
       to convert the result to an {{!Io.In_source.t} In_source.t}. This may
       fail if the path is ill-formed. *)
@@ -90,7 +90,7 @@ module type S_standard_with_files = sig
       tries to parse any given output file as an Fpath. This may fail if the
       path is ill-formed. *)
 
-  val outfile_sink : t -> Act_utils.Io.Out_sink.t Or_error.t
+  val outfile_sink : t -> Plumbing.Output.t Or_error.t
   (** [outfile_sink args] behaves as {{!outfile_raw} outfile_raw}, but tries
       to convert the result to an {{!Io.Out_sink.t} Out_sink.t}. This may
       fail if the path is ill-formed. *)

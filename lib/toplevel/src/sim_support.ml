@@ -34,7 +34,7 @@ let litmus_config (machine : Act_config.Machine.Spec.With_id.t) :
     [%sexp_of: Act_config.Machine.Id.t]
 
 let try_make_litmus_filter (machine : Act_config.Machine.Spec.With_id.t) :
-    (module Act_sim.Runner.S) Or_error.t =
+    (module Act_sim.Runner_intf.S) Or_error.t =
   Or_error.Let_syntax.(
     let%map litmus_cfg = litmus_config machine in
     let (module R) = Act_config.Machine.Spec.With_id.runner machine in
@@ -45,23 +45,24 @@ let try_make_litmus_filter (machine : Act_config.Machine.Spec.With_id.t) :
 
       module Runner = R
     end)
-    : Act_sim.Runner.S ))
+    : Act_sim.Runner_intf.S ))
 
 let make_error (e : Error.t) =
   ( module Act_sim.Runner.Make_error (struct
     let error = e
   end)
-  : Act_sim.Runner.S )
+  : Act_sim.Runner_intf.S )
 
 let make_litmus_filter (machine : Act_config.Machine.Spec.With_id.t) :
-    (module Act_sim.Runner.S) =
+    (module Act_sim.Runner_intf.S) =
   match try_make_litmus_filter machine with
   | Ok m ->
       m
   | Error e ->
       make_error e
 
-let make_herd_filter (cfg : Act_config.Act.t) : (module Act_sim.Runner.S) =
+let make_herd_filter (cfg : Act_config.Act.t) :
+    (module Act_sim.Runner_intf.S) =
   let cfg = Act_config.Act.herd_or_default cfg in
   ( module Act_sim_herd.Runner.Make (struct
     let config = cfg

@@ -43,7 +43,7 @@ end
 module type S = sig
   include Basic
 
-  val load_from_isrc : Io.In_source.t -> t Or_error.t
+  val load_from_isrc : Plumbing.Input.t -> t Or_error.t
   (** [load_from_isrc is] loads a [t] from an input source [is]. *)
 
   val load : path:Fpath.t -> t Or_error.t

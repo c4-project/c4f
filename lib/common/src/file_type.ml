@@ -22,14 +22,13 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Act_utils
 
 type t = Assembly | C | C_litmus | Infer [@@deriving sexp]
 
-let file_type_is (src : Io.In_source.t) (expected : string) : bool =
-  Option.exists (Io.In_source.file_type src) ~f:(String.equal expected)
+let file_type_is (src : Plumbing.Input.t) (expected : string) : bool =
+  Option.exists (Plumbing.Input.file_type src) ~f:(String.equal expected)
 
-let is_c (src : Io.In_source.t) : t -> bool = function
+let is_c (src : Plumbing.Input.t) : t -> bool = function
   | C ->
       true
   | Infer ->
@@ -37,7 +36,7 @@ let is_c (src : Io.In_source.t) : t -> bool = function
   | Assembly | C_litmus ->
       false
 
-let is_c_litmus (src : Io.In_source.t) : t -> bool = function
+let is_c_litmus (src : Plumbing.Input.t) : t -> bool = function
   | C_litmus ->
       true
   | Infer ->

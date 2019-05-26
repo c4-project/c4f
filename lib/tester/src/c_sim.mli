@@ -23,8 +23,6 @@
 
 (** Using simulators to determine the expected behaviour of a C litmus test. *)
 
-include module type of C_sim_intf
-
 (** [Make] adapts a simulation runner to the C simulation interface, by
     filling in logic specific to running C simulation queries. *)
-module Make (R : Act_sim.Runner.S) : S
+module Make (R : Act_sim.Runner_intf.S) : C_sim_intf.S

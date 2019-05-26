@@ -27,7 +27,6 @@
     C/Litmus programs from a file (or stdin), doing something to them, and
     outputting the results to a file (or stdout). *)
 
-open Act_utils
 open Act_common
 
 (** {2 Flags} *)
@@ -59,16 +58,15 @@ end
 
 (** {2 Filter modules} *)
 
+module type S =
+  Plumbing.Filter.S with type aux_i = mode and type aux_o = Output.t
+
 (** Filter for dealing with 'normal' C programs. *)
-module Normal_C :
-  Filter_intf.S with type aux_i = mode and type aux_o = Output.t
+module Normal_C : S
 
 (** Filter for dealing with 'litmusified' C programs. *)
-module Litmus :
-  Filter_intf.S with type aux_i = mode and type aux_o = Output.t
+module Litmus : S
 
-val c_module :
-     bool
-  -> (module Filter_intf.S with type aux_i = mode and type aux_o = Output.t)
+val c_module : bool -> (module S)
 (** [c_module is_c] is [Normal_C] when [is_c] is true, and [Litmus]
     otherwise. *)

@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Act_utils
 open Act_common
 
 (** [Reference] is the signature of references to machines. *)
@@ -67,6 +66,6 @@ module type Basic_spec = sig
   (** [ensure_litmus spec] behaves as [litmus spec], but returns a
       descriptive error if the Litmus configuration is missing. *)
 
-  val runner : t -> (module Runner.S)
+  val runner : t -> (module Plumbing.Runner_types.S)
   (** [to_runner spec] gets a runner for the machine spec [spec]. *)
 end

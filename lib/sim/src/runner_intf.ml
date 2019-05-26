@@ -22,13 +22,12 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Act_utils
 
 (** {3 Input interfaces} *)
 
 (** Shorthand for the specific type of filter a simulator runner expects. *)
 module type Basic_filter =
-  Filter_intf.S with type aux_i = Arch.t and type aux_o = unit
+  Plumbing.Filter.S with type aux_i = Arch.t and type aux_o = unit
 
 (** Input for generating simulators that always fail with a particular error
     on use. *)

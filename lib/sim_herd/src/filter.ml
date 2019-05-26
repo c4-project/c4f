@@ -24,7 +24,8 @@
 open Base
 open Stdio
 open Act_common
-include Filter_intf
+open Filter_intf
+module Pb = Plumbing
 
 let model_for_arch (config : Act_config.Herd.t) :
     Act_sim.Arch.t -> string option = function
@@ -59,13 +60,12 @@ let run_direct ?(arch : Act_sim.Arch.t option)
   let prog = Act_config.Herd.cmd config in
   let argv' = make_argv_from_config config arch argv in
   Or_error.tag ~tag:"While running herd"
-    (Act_utils.Runner.Local.run ~oc ~prog argv')
+    (Plumbing.Runner.Local.run ~oc ~prog argv')
 
 module Make (B : Basic) :
-  Act_utils.Filter_intf.S
-  with type aux_i = Act_sim.Arch.t
-   and type aux_o = unit = Act_utils.Filter.Make_on_runner (struct
-  module Runner = Act_utils.Runner.Local
+  Pb.Filter.S with type aux_i = Act_sim.Arch.t and type aux_o = unit =
+Plumbing.Filter.Make_on_runner (struct
+  module Runner = Plumbing.Runner.Local
 
   type aux_i = Act_sim.Arch.t
 

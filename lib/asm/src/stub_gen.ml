@@ -58,8 +58,7 @@ module Make (B : Basic) : S with module Lang = B.Src_lang = struct
     |> List.mapi ~f:(gen_and_dump_asm_stub ~oc ~config)
     |> Or_error.combine_errors_unit
 
-  let run_stub_gen (_osrc : Act_utils.Io.Out_sink.t)
-      (oc : Stdio.Out_channel.t) ~(in_name : string)
+  let run_stub_gen (oc : Stdio.Out_channel.t) ~(in_name : string)
       ~(program : Lang.Program.t) ~(symbols : Lang.Symbol.t list)
       ~(config : Config.t) ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =

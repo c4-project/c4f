@@ -83,7 +83,7 @@ let regress_run_asm (module Job : Act_asm.Runner_intf.S) specs
   let symbols = spec.c_globals @ spec.c_locals (* for now *) in
   let input = Act_asm.Job.make ~passes ~symbols in
   let%map _ =
-    Job.run_from_fpaths (input ()) ~infile:(Some path) ~outfile:None
+    Job.run (input ()) (Plumbing.Input.of_fpath path) Plumbing.Output.stdout
   in
   ()
 
@@ -125,5 +125,6 @@ let make_regress_command (regress_function : Fpath.t -> unit Or_error.t)
       fun () ->
         let o = Ac.Output.make ~verbose:false ~warnings:true in
         Or_error.(
-          test_path_raw |> Au.Io.fpath_of_string >>= regress_function)
+          test_path_raw |> Plumbing.Fpath_helpers.of_string
+          >>= regress_function)
         |> Ac.Output.print_error o)

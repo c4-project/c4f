@@ -25,7 +25,7 @@ open Base
 module Tx = Travesty_base_exts
 open Act_common
 
-type t = (module Runner.S) Id.Map.t
+type t = (module Runner_intf.S) Id.Map.t
 
 let make_not_found_runner (id : Id.t) () =
   ( module Runner.Make_error (struct
@@ -34,11 +34,11 @@ let make_not_found_runner (id : Id.t) () =
         [%message
           "No simulator with the given ID was found." ~id:(id : Id.t)]
   end)
-  : Runner.S )
+  : Runner_intf.S )
 
-let get (table : t) (id : Id.t) : (module Runner.S) =
+let get (table : t) (id : Id.t) : (module Runner_intf.S) =
   Tx.Option.value_f (Id.Map.find table id)
     ~default_f:(make_not_found_runner id)
 
-let make : (Id.t, (module Runner.S)) List.Assoc.t -> t Or_error.t =
+let make : (Id.t, (module Runner_intf.S)) List.Assoc.t -> t Or_error.t =
   Id.Map.of_alist_or_error

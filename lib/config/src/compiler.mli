@@ -26,7 +26,6 @@
 
 open Core_kernel
 open Act_common
-open Act_utils
 
 (** To reduce duplication, we describe the module types of [Compiler] in
     [Compiler_intf], and import parts of it both here and in the
@@ -108,7 +107,7 @@ module type Basic_with_run_info = sig
 
   include With_spec
 
-  module Runner : Runner.S
+  module Runner : Plumbing.Runner_types.S
 end
 
 (** [Make] produces a runnable compiler satisfying [S] from a
@@ -123,11 +122,11 @@ module Make (B : Basic_with_run_info) : S
 
 (** Lifts a [S] to a filter. *)
 module S_to_filter (S : S) :
-  Filter_intf.S with type aux_i = unit and type aux_o = unit
+  Plumbing.Filter.S with type aux_i = unit and type aux_o = unit
 
 (** Shorthand for [Make_filter (S_to_filter (B))]. *)
 module Make_filter (B : Basic_with_run_info) :
-  Filter_intf.S with type aux_i = unit and type aux_o = unit
+  Plumbing.Filter.S with type aux_i = unit and type aux_o = unit
 
 (** Abstract type of auxiliary input wrappers used for compiler chains. *)
 module Chain_input : sig

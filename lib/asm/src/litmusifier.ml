@@ -148,8 +148,8 @@ module Make (B : Runner_intf.Basic) :
   let collate_warnings (programs : Sanitiser.Output.Program.t list) =
     List.concat_map programs ~f:Sanitiser.Output.Program.warnings
 
-  let output_litmus (_osrc : Act_utils.Io.Out_sink.t) (outp : Out_channel.t)
-      ~(in_name : string) ~(program : B.Src_lang.Program.t)
+  let output_litmus (outp : Out_channel.t) ~(in_name : string)
+      ~(program : B.Src_lang.Program.t)
       ~(symbols : B.Src_lang.Symbol.t list) ~(config : config)
       ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =
@@ -188,7 +188,7 @@ let get_filter (module B : Runner_intf.Basic) =
 
     module LS = B.Src_lang
 
-    include Act_utils.Filter.Adapt (struct
+    include Plumbing.Filter.Adapt (struct
       module Lf = Make (B)
       module Original = Lf.Filter
 

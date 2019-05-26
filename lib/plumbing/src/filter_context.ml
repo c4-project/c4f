@@ -22,32 +22,19 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Stdio
-include Act_utils.Io
 
-let%test_module "filename_no_ext" =
-  ( module struct
-    let%expect_test "example" =
-      printf "%s\n" (filename_no_ext Fpath.(v "foo" / "bar" / "baz.c")) ;
-      [%expect {| baz |}]
+type 'aux t = {aux: 'aux; input: Input.t; output: Output.t}
+[@@deriving make, fields]
 
-    let%expect_test "example with double extension" =
-      printf "%s\n"
-        (filename_no_ext Fpath.(v "foo" / "bar" / "baz.c.litmus")) ;
-      [%expect {| baz |}]
-  end )
+module On_aux : Travesty.Traversable.S1 with type 'a t := 'a t =
+Travesty.Traversable.Make1 (struct
+  type nonrec 'a t = 'a t
 
-let%test_module "In_source" =
-  ( module struct
-    open In_source
-
-    let%expect_test "file_type: file with two extensions" =
-      Fmt.(pr "%a@." (option string))
-        (file_type (file (Fpath.v "iriw.c.litmus"))) ;
-      [%expect {| litmus |}]
-
-    let%expect_test "file_type: stdin with specific type" =
-      Fmt.(pr "%a@." (option string))
-        (file_type (stdin ~file_type:"litmus" ())) ;
-      [%expect {| litmus |}]
-  end )
+  module On_monad (M : Monad.S) = struct
+    let map_m (ctx : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
+      M.Let_syntax.(
+        let aux = aux ctx in
+        let%map aux' = f aux in
+        {ctx with aux= aux'})
+  end
+end)

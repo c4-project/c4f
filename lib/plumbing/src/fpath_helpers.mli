@@ -21,21 +21,23 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Interaction with the 'Litmus' tool.
-
-    This is the tool that supports running of Litmus tests on real hardware,
-    and not to be confused with the tests itself. *)
+(** Miscellaneous helpers for dealing with [Fpath]s. *)
 
 open Base
 
-val run_direct :
-     ?oc:Stdio.Out_channel.t
-  -> Act_config.Litmus_tool.t
-  -> string list
-  -> unit Or_error.t
-(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
-    and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
-    is absent). *)
+val of_string : string -> Fpath.t Or_error.t
+(** [of_string str] is [Fpath.of_string str], but with the error changed to
+    an [Or_error.t]. *)
 
-(** Interface for making a filter over litmus7. *)
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.Basic_filter
+val of_string_option : string option -> Fpath.t option Or_error.t
+(** [of_string_option str_opt] lifts [fpath_of_string] over optional
+    strings. *)
+
+val lift_str :
+  string option -> f:(Fpath.t -> 'a) -> default:'a -> 'a Or_error.t
+(** [lift_str str_opt ~f ~default] is a more general form of
+    [of_string_option] that applies [f] over [of_string] of [str_opt] if it
+    exists, and returns [default] if it doesn't. *)
+
+val filename_no_ext : Fpath.t -> string
+(** [filename_no_ext path] is the filename of [path], less any extension(s). *)

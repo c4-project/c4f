@@ -47,6 +47,10 @@ val validate_local : Fpath.t t -> unit Or_error.t
 (** [validate_local cs] validates a local copy spec by seeing if the listed
     files and directories actually exist. *)
 
+val get_file : string t -> string Or_error.t
+(** [get_file cs] tries to extract a single file from [cs], and fails if
+    more than one file, or no files, are mentioned in it. *)
+
 val map : 'a t -> f:('a -> 'b) -> 'b t
 (** [map cs ~f] maps [f] over all of the paths in [cs]. *)
 

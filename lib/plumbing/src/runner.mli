@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,21 +21,18 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Interaction with the 'Litmus' tool.
-
-    This is the tool that supports running of Litmus tests on real hardware,
-    and not to be confused with the tests itself. *)
+(** Quick and easy process running *)
 
 open Base
+open Runner_types
 
-val run_direct :
-     ?oc:Stdio.Out_channel.t
-  -> Act_config.Litmus_tool.t
-  -> string list
-  -> unit Or_error.t
-(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
-    and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
-    is absent). *)
+val argv_one_file :
+  (string, 'a) argv_fun -> (string Copy_spec.t, 'a) argv_fun
+(** [argv_one_file f] adapts a function that builds an argument list from
+    one input file and one output file to one that works on manifests. *)
 
-(** Interface for making a filter over litmus7. *)
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.Basic_filter
+(** Makes a {{!S} S} from a {{!Basic} Basic}. *)
+module Make (B : Basic) : S
+
+(** [Local] just runs commands on the local machine. *)
+module Local : S

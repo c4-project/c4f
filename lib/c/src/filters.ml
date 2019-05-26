@@ -23,6 +23,7 @@
 
 open Core_kernel
 module Au = Act_utils
+module Pb = Plumbing
 module Ac = Act_common
 
 module type Basic = sig
@@ -82,17 +83,18 @@ module Output = struct
   [@@deriving fields]
 end
 
-module Make (B : Basic) :
-  Au.Filter_intf.S with type aux_i = mode and type aux_o = Output.t =
-Au.Filter.Make (struct
+module type S =
+  Plumbing.Filter.S with type aux_i = mode and type aux_o = Output.t
+
+module Make (B : Basic) : S = Pb.Filter.Make (struct
   type aux_i = mode
 
   type aux_o = Output.t
 
   let name = "C transformer"
 
-  let tmp_file_ext ({aux; _} : mode Au.Filter_intf.ctx) : string =
-    match aux with
+  let tmp_file_ext (ctx : mode Pb.Filter_context.t) : string =
+    match Pb.Filter_context.aux ctx with
     | Print `All ->
         B.normal_tmp_file_ext
     | Print `Vars ->
@@ -136,28 +138,28 @@ Au.Filter.Make (struct
     print output_mode oc (Ac.C_id.Map.keys cvars) vast ;
     Or_error.return cvars
 
-  let run {Au.Filter_intf.aux; src; _} ic oc : Output.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind ast =
-      B.Frontend.load_from_ic ~path:(Au.Io.In_source.to_string src) ic
-    in
-    let%bind vast = B.process ast in
-    let f =
-      match aux with
-      | Print output_mode ->
-          run_print output_mode
-      | Delitmus ->
-          run_delitmus
-      | Fuzz {seed; o; config} ->
-          run_fuzz ?seed ~o ~config
-    in
-    let%map cvars = f vast oc in
-    {Output.cvars; post= B.postcondition vast}
+  let run (ctx : mode Pb.Filter_context.t) ic oc : Output.t Or_error.t =
+    let aux = Pb.Filter_context.aux ctx in
+    let input = Pb.Filter_context.input ctx in
+    Or_error.Let_syntax.(
+      let%bind ast =
+        B.Frontend.load_from_ic ~path:(Pb.Input.to_string input) ic
+      in
+      let%bind vast = B.process ast in
+      let f =
+        match aux with
+        | Print output_mode ->
+            run_print output_mode
+        | Delitmus ->
+            run_delitmus
+        | Fuzz {seed; o; config} ->
+            run_fuzz ?seed ~o ~config
+      in
+      let%map cvars = f vast oc in
+      {Output.cvars; post= B.postcondition vast})
 end)
 
-module Normal_C :
-  Au.Filter_intf.S with type aux_i = mode and type aux_o = Output.t =
-Make (struct
+module Normal_C : S = Make (struct
   type ast = Ast.Translation_unit.t
 
   type t = Mini.Program.t
@@ -196,9 +198,7 @@ Make (struct
   let pp_del _ (x : del) : unit = Nothing.unreachable_code x
 end)
 
-module Litmus :
-  Au.Filter_intf.S with type aux_i = mode and type aux_o = Output.t =
-Make (struct
+module Litmus : S = Make (struct
   type ast = Ast.Litmus.t
 
   type t = Mini_litmus.Ast.Validated.t
@@ -249,8 +249,5 @@ Make (struct
   let cvars : t -> Ac.C_variables.Map.t = Mini_litmus.cvars
 end)
 
-let c_module (is_c : bool) :
-    (module Au.Filter_intf.S
-       with type aux_i = mode
-        and type aux_o = Output.t) =
+let c_module (is_c : bool) : (module S) =
   if is_c then (module Normal_C) else (module Litmus)

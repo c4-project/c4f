@@ -21,19 +21,17 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+(** Signatures used in the plumbing module. *)
+
 open Stdio
 open Base
 
-(** Collection of all the context used by filters to make internal
-    decisions. *)
-type 'aux ctx = {aux: 'aux; src: Io.In_source.t; sink: Io.Out_sink.t}
-
-(** Type used when forwarding the output of the first item in a chained
-    filter to the input of a second. *)
-type 'o chain_output = [`Checking_ahead | `Skipped | `Ran of 'o]
-
 (** Types and values common to both the basic and full filter signatures. *)
 module type Common = sig
+  (** Type of context supplied to filter functions; this is filled in in
+      {{!Filter} Filter}. *)
+  type 'aux ctx
+
   (** Type of any auxiliary state consumed by this filter. *)
   type aux_i
 
@@ -74,97 +72,9 @@ end
 module type S = sig
   include Common
 
-  val run : aux_i -> Io.In_source.t -> Io.Out_sink.t -> aux_o Or_error.t
+  val run : aux_i -> Input.t -> Output.t -> aux_o Or_error.t
   (** [run aux source sink] runs this filter on [source], outputs to [sink],
       reads and returns any auxiliary state on success. *)
-
-  val run_from_fpaths :
-       aux_i
-    -> infile:Fpath.t option
-    -> outfile:Fpath.t option
-    -> aux_o Or_error.t
-  (** [run_from_fpaths aux ~infile ~outfile] runs this filter on [infile]
-      (if [None], use stdin), outputs to [outfile] (if [None], use stdout),
-      and returns any auxiliary state on success. *)
-
-  val run_from_string_paths :
-       aux_i
-    -> infile:string option
-    -> outfile:string option
-    -> aux_o Or_error.t
-  (** [run_from_string_paths aux ~infile ~outfile] runs this filter on
-      [infile] (if [None], use stdin), outputs to [outfile] (if [None], use
-      stdout), and returns any auxiliary state on success. *)
-end
-
-(** Basic signature of inputs needed to build a chain. *)
-module type Basic_chain = sig
-  (** The first filter. *)
-  module First : S
-
-  (** The second filter. *)
-  module Second : S
-
-  (** Combined auxiliary input. *)
-  type aux_i
-end
-
-(** Signature of inputs needed to build an unconditional chain. *)
-module type Basic_chain_unconditional = sig
-  include Basic_chain
-
-  val first_input : aux_i -> First.aux_i
-  (** [first_input in] should extract the input for the first chained filter
-      from [in]. *)
-
-  val second_input : aux_i -> First.aux_o chain_output -> Second.aux_i
-  (** [second_input in first_out] should extract the input for the second
-      chained filter from [in] and the output [first_out] from the first
-      filter. [first_out] may be missing; this usually occurs when the
-      second input is needed before the first filter has run. *)
-end
-
-(** Signature of inputs needed to build a conditional chain. *)
-module type Basic_chain_conditional = sig
-  include Basic_chain
-
-  (** Auxiliary input used when not chaining. *)
-  type aux_i_single
-
-  val select :
-       aux_i ctx
-    -> [ `Both of First.aux_i * (First.aux_o chain_output -> Second.aux_i)
-       | `One of aux_i_single ]
-  (** [select ctx] should return [`Both] when the optional filter should be
-      run (which filter this is depends on the functor). *)
-end
-
-(** Signature of inputs needed to build a conditional chain with the first
-    filter being conditional. *)
-module type Basic_chain_conditional_first = sig
-  (** The first filter. *)
-  module First : S
-
-  (** The second filter. *)
-  module Second : S
-
-  include
-    Basic_chain_conditional
-    with module First := First
-     and module Second := Second
-     and type aux_i_single := First.aux_o chain_output -> Second.aux_i
-end
-
-(** Signature of inputs needed to build a conditional chain with the second
-    filter being conditional. *)
-module type Basic_chain_conditional_second = sig
-  (** The first filter. *)
-  module First : S
-
-  include
-    Basic_chain_conditional
-    with module First := First
-     and type aux_i_single := First.aux_i
 end
 
 (** Signature of inputs needed to adapt a filter. *)
@@ -191,7 +101,7 @@ module type Basic_on_runner = sig
   include Common with type aux_o := unit
 
   (** The runner to use to run the program. *)
-  module Runner : Runner.S
+  module Runner : Runner_types.S
 
   val prog : aux_i -> string
   (** [prog aux] gets the program to run, given the auxiliary input [aux]. *)

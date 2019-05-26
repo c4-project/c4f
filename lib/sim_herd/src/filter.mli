@@ -26,8 +26,7 @@
     For running Herd as a simulator, see {{!Runner} Runner}. *)
 
 open Base
-
-include module type of Filter_intf
+open Filter_intf
 
 val run_direct :
      ?arch:Act_sim.Arch.t
@@ -48,6 +47,4 @@ val run_direct :
 (** We can use Herd as a simulator runner by supplying it with configuration
     expressed as a {{!Basic} Basic} module. *)
 module Make (B : Basic) :
-  Act_utils.Filter_intf.S
-  with type aux_i = Act_sim.Arch.t
-   and type aux_o = unit
+  Plumbing.Filter.S with type aux_i = Act_sim.Arch.t and type aux_o = unit

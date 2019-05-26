@@ -21,21 +21,22 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Interaction with the 'Litmus' tool.
-
-    This is the tool that supports running of Litmus tests on real hardware,
-    and not to be confused with the tests itself. *)
-
 open Base
 
-val run_direct :
-     ?oc:Stdio.Out_channel.t
-  -> Act_config.Litmus_tool.t
-  -> string list
-  -> unit Or_error.t
-(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
-    and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
-    is absent). *)
+let of_string (s : string) : Fpath.t Or_error.t =
+  Result.map_error (Fpath.of_string s) ~f:(function `Msg s ->
+      Error.of_string s )
 
-(** Interface for making a filter over litmus7. *)
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.Basic_filter
+let lift_str (s : string option) ~(f : Fpath.t -> 'a) ~(default : 'a) :
+    'a Or_error.t =
+  match s with
+  | None ->
+      Or_error.return default
+  | Some s ->
+      Or_error.(s |> of_string >>| f)
+
+let of_string_option : string option -> Fpath.t option Or_error.t =
+  lift_str ~f:Option.some ~default:None
+
+let filename_no_ext (f : Fpath.t) : string =
+  Fpath.(filename (rem_ext ~multi:true f))

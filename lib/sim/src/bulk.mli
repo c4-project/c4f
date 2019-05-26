@@ -25,8 +25,6 @@
 
 open Base
 
-include module type of Bulk_intf
-
 module File_map : sig
   (** Opaque type of file maps *)
   type t
@@ -40,4 +38,5 @@ module File_map : sig
       ~litmus_path. *)
 end
 
-module Make (R : Runner.S) : S with type file_map := File_map.t
+module Make (R : Runner_intf.S) :
+  Bulk_intf.S with type file_map := File_map.t

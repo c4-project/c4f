@@ -35,9 +35,9 @@ module Input : sig
 
   val file_type : t -> Act_common.File_type.t
 
-  val infile_raw : t -> string option
+  val pb_input : t -> Plumbing.Input.t
 
-  val outfile_raw : t -> string option
+  val pb_output : t -> Plumbing.Output.t
 
   val output : t -> Act_common.Output.t
 
@@ -50,7 +50,7 @@ module Input : sig
   val make_compiler_input :
        t
     -> (c_variables:Act_common.C_variables.Map.t option -> 'cfg)
-    -> Act_c.Filters.Output.t Act_utils.Filter_intf.chain_output
+    -> Act_c.Filters.Output.t Plumbing.Filter_chain.Chain_output.t
     -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t
 end
 

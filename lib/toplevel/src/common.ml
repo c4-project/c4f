@@ -24,7 +24,7 @@
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
 module Ac = Act_common
-open Act_utils
+module Pb = Plumbing
 
 let not_tracking_symbols_warning : string =
   {|
@@ -50,35 +50,38 @@ let asm_runner_of_target (tgt : Act_config.Compiler.Target.t) :
   Language_support.asm_runner_from_arch
     (Act_config.Compiler.Target.arch tgt)
 
-module Chain_with_delitmus (Onto : Filter_intf.S) :
-  Filter_intf.S
+module Chain_with_delitmus (Onto : Pb.Filter.S) :
+  Pb.Filter.S
   with type aux_i =
               Ac.File_type.t
-              * (   Act_c.Filters.Output.t Filter_intf.chain_output
+              * (   Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t
                  -> Onto.aux_i)
    and type aux_o = Act_c.Filters.Output.t option * Onto.aux_o =
-Filter.Chain_conditional_first (struct
+Pb.Filter_chain.Make_conditional_first (struct
   module First = Act_c.Filters.Litmus
   module Second = Onto
 
   type aux_i =
     Ac.File_type.t
-    * (Act_c.Filters.Output.t Filter_intf.chain_output -> Onto.aux_i)
+    * (Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t -> Onto.aux_i)
 
-  let select {Filter_intf.aux= file_type, rest; src; _} =
-    if Act_common.File_type.is_c_litmus src file_type then
+  let select ctx =
+    let file_type, rest = Pb.Filter_context.aux ctx in
+    let input = Pb.Filter_context.input ctx in
+    if Act_common.File_type.is_c_litmus input file_type then
       `Both (Act_c.Filters.Delitmus, rest)
     else `One rest
 end)
 
 let chain_with_delitmus (type aux_i aux_o)
-    (module Onto : Filter_intf.S
+    (module Onto : Pb.Filter.S
       with type aux_i = aux_i
        and type aux_o = aux_o) =
   (module Chain_with_delitmus (Onto)
-  : Filter_intf.S
+  : Pb.Filter.S
     with type aux_i = Ac.File_type.t
-                      * (   Act_c.Filters.Output.t Filter_intf.chain_output
+                      * (   Act_c.Filters.Output.t
+                            Pb.Filter_chain.Chain_output.t
                          -> aux_i)
      and type aux_o = Act_c.Filters.Output.t option * aux_o )
 
@@ -87,10 +90,10 @@ let delitmus_compile_asm_pipeline (type c)
     (job_maker :
          (module Act_asm.Runner_intf.Basic)
       -> (module Act_asm.Runner_intf.S with type cfg = c)) :
-    (module Filter_intf.S
+    (module Pb.Filter.S
        with type aux_i = Ac.File_type.t
                          * (   Act_c.Filters.Output.t
-                               Filter_intf.chain_output
+                               Pb.Filter_chain.Chain_output.t
                             -> c Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
         and type aux_o = Act_c.Filters.Output.t option
@@ -106,10 +109,10 @@ let delitmus_compile_asm_pipeline (type c)
     chain_with_delitmus with_compiler)
 
 let litmusify_pipeline (target : Act_config.Compiler.Target.t) :
-    (module Filter_intf.S
+    (module Pb.Filter.S
        with type aux_i = Ac.File_type.t
                          * (   Act_c.Filters.Output.t
-                               Filter_intf.chain_output
+                               Pb.Filter_chain.Chain_output.t
                             -> Sexp.t Act_asm.Litmusifier.Config.t
                                Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
@@ -138,19 +141,19 @@ let choose_cvars_after_delitmus (o : Ac.Output.t)
 
 let choose_cvars_inner (o : Ac.Output.t)
     (user_cvars : Ac.C_variables.Map.t option) :
-       Act_c.Filters.Output.t Filter_intf.chain_output
+       Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t
     -> bool * Ac.C_variables.Map.t option = function
-  | `Checking_ahead ->
+  | Checking_ahead ->
       (false, None)
-  | `Skipped ->
+  | Skipped ->
       (true, user_cvars)
-  | `Ran dl ->
+  | Ran dl ->
       let dl_cvars = Act_c.Filters.Output.cvars dl in
       (true, Some (choose_cvars_after_delitmus o user_cvars dl_cvars))
 
 let choose_cvars (o : Ac.Output.t)
     (user_cvars : Ac.C_variables.Map.t option)
-    (dl_output : Act_c.Filters.Output.t Filter_intf.chain_output) :
+    (dl_output : Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t) :
     Ac.C_variables.Map.t option =
   let warn_if_empty, cvars = choose_cvars_inner o user_cvars dl_output in
   if warn_if_empty then
@@ -161,7 +164,7 @@ let make_compiler_input (o : Ac.Output.t) (file_type : Ac.File_type.t)
     (user_cvars : Ac.C_variables.Map.t option)
     (config_fn : c_variables:Ac.C_variables.Map.t option -> 'cfg)
     (passes : Set.M(Act_sanitiser.Pass_group).t)
-    (dl_output : Act_c.Filters.Output.t Filter_intf.chain_output) :
+    (dl_output : Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t) :
     'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
   let c_variables = choose_cvars o user_cvars dl_output in
   let symbols =
@@ -203,7 +206,7 @@ module Make_lifter (B : Basic_lifter) = struct
     let o = make_output_from_standard_args standard_args in
     Or_error.(
       Args.Standard.config_file standard_args
-      |> Io.fpath_of_string
+      |> Plumbing.Fpath_helpers.of_string
       >>= Language_support.load_and_process_config ?compiler_predicate
             ?machine_predicate ?sanitiser_passes ?with_compiler_tests
       >>= f args o)

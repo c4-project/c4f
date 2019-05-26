@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Act_utils
 module A = Act_common
 module Tx = Travesty_core_kernel_exts
 
@@ -44,11 +43,12 @@ module Post_filter = struct
   end
 
   module type S =
-    Filter_intf.S with type aux_i = Cfg.t and type aux_o = unit
+    Plumbing.Filter.S with type aux_i = Cfg.t and type aux_o = unit
 
   (** Adapts a simulator filter to try extract its per-run config from a
       [cfg]. *)
-  module Adapt (S : Act_sim.Runner.S) : S = Filter.Adapt (struct
+  module Adapt (S : Act_sim.Runner_intf.S) : S =
+  Plumbing.Filter.Adapt (struct
     module Original = S.Filter
 
     type aux_i = Cfg.t
@@ -83,16 +83,20 @@ module Post_filter = struct
         (module Adapt ((val Act_sim.Table.get mtab id)))
 
   let chain (type i o) (filter : Cfg.t) (mtab : Act_sim.Table.t)
-      (module M : Filter_intf.S with type aux_i = i and type aux_o = o) :
-      (module Filter_intf.S
-         with type aux_i = i * (o Filter_intf.chain_output -> Cfg.t)
+      (module M : Plumbing.Filter.S with type aux_i = i and type aux_o = o)
+      :
+      (module Plumbing.Filter.S
+         with type aux_i = i
+                           * (   o Plumbing.Filter_chain.Chain_output.t
+                              -> Cfg.t)
           and type aux_o = o * unit option) =
     let (module Post) = make mtab filter in
-    ( module Filter.Chain_conditional_second (struct
-      type aux_i = i * (o Filter_intf.chain_output -> Cfg.t)
+    ( module Plumbing.Filter_chain.Make_conditional_second (struct
+      type aux_i = i * (o Plumbing.Filter_chain.Chain_output.t -> Cfg.t)
 
-      let select {Filter_intf.aux= rest, cfg; _} =
-        match cfg `Checking_ahead with
+      let select ctx =
+        let rest, cfg = Plumbing.Filter_context.aux ctx in
+        match cfg Plumbing.Filter_chain.Chain_output.Checking_ahead with
         | Cfg.No_filter ->
             `One rest
         | Cfg.Filter _ ->
@@ -105,16 +109,16 @@ end
 
 let make_filter (filter : Post_filter.Cfg.t)
     (target : Act_config.Compiler.Target.t) (mtab : Act_sim.Table.t) :
-    (module Filter_intf.S
+    (module Plumbing.Filter.S
        with type aux_i = ( Act_common.File_type.t
                          * (   Act_c.Filters.Output.t
-                               Filter_intf.chain_output
+                               Plumbing.Filter_chain.Chain_output.t
                             -> Sexp.t Act_asm.Litmusifier.Config.t
                                Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t) )
                          * (   ( Act_c.Filters.Output.t option
                                * (unit option * Act_asm.Job.Output.t) )
-                               Filter_intf.chain_output
+                               Plumbing.Filter_chain.Chain_output.t
                             -> Post_filter.Cfg.t)
         and type aux_o = ( Act_c.Filters.Output.t option
                          * (unit option * Act_asm.Job.Output.t) )
@@ -159,8 +163,8 @@ module In = Asm_common.Input
 let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
     (input : In.t) : unit Or_error.t =
   let cfg = In.act_config input in
-  let infile = In.infile_raw input in
-  let outfile = In.outfile_raw input in
+  let infile = In.pb_input input in
+  let outfile = In.pb_output input in
   let target = In.target input in
   let file_type = In.file_type input in
   let arch = get_arch target in
@@ -175,9 +179,9 @@ let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
     let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
     let compiler_input_fn = In.make_compiler_input input litmus_cfg_fn in
     Or_error.ignore_m
-      (Filter.run_from_string_paths
+      (Filter.run
          ((file_type, compiler_input_fn), Fn.const filter)
-         ~infile ~outfile))
+         infile outfile))
 
 let command =
   Command.basic ~summary:"converts an assembly file to a litmus test"

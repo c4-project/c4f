@@ -23,17 +23,16 @@
 
 open Base
 open Stdio
-include Filter_intf
 
 let run_direct ?(oc : Out_channel.t = stdout)
     (cfg : Act_config.Litmus_tool.t) (argv : string list) : unit Or_error.t
     =
   let prog = Act_config.Litmus_tool.cmd cfg in
   Or_error.tag ~tag:"While running litmus"
-    (Act_utils.Runner.Local.run ~oc ~prog argv)
+    (Plumbing.Runner.Local.run ~oc ~prog argv)
 
-module Make (B : Basic) : Act_sim.Runner.Basic_filter =
-Act_utils.Filter.Make_on_runner (struct
+module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.Basic_filter =
+Plumbing.Filter.Make_on_runner (struct
   module Runner = B.Runner
 
   type aux_i = Act_sim.Arch.t

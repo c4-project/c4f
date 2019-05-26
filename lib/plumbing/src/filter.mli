@@ -28,21 +28,42 @@
     and composing filters over the [Io] abstractions. *)
 
 open Base
-open Filter_intf
+open Filter_types
 
-val lift_to_raw_strings :
-     f:('i -> Io.In_source.t -> Io.Out_sink.t -> 'o Or_error.t)
-  -> 'i
-  -> infile:string option
-  -> outfile:string option
-  -> 'o Or_error.t
+(** {2 Type synonyms using Filter_context} *)
 
-val lift_to_fpaths :
-     f:('i -> Io.In_source.t -> Io.Out_sink.t -> 'o Or_error.t)
-  -> 'i
-  -> infile:Fpath.t option
-  -> outfile:Fpath.t option
-  -> 'o Or_error.t
+(** Type synonym for {{!Filter_types.Basic} Filter_types.Basic}, fixing
+    [ctx] to [Filter_context.t]. *)
+module type Basic = Basic with type 'aux ctx := 'aux Filter_context.t
+
+(** Type synonym for
+    {{!Filter_types.Basic_in_file_only} Filter_types.Basic_in_file_only},
+    fixing [ctx] to [Filter_context.t]. *)
+module type Basic_in_file_only =
+  Basic_in_file_only with type 'aux ctx := 'aux Filter_context.t
+
+(** Type synonym for
+    {{!Filter_types.Basic_files_only} Filter_types.Basic_files_only}, fixing
+    [ctx] to [Filter_context.t]. *)
+module type Basic_files_only =
+  Basic_files_only with type 'aux ctx := 'aux Filter_context.t
+
+(** Type synonym for {{!Filter_types.Basic_adapt} Filter_types.Basic_adapt},
+    fixing [ctx] to [Filter_context.t]. *)
+module type Basic_adapt =
+  Basic_adapt with type 'aux Original.ctx := 'aux Filter_context.t
+
+(** Type synonym for
+    {{!Filter_types.Basic_on_runner} Filter_types.Basic_on_runner}, fixing
+    [ctx] to [Filter_context.t]. *)
+module type Basic_on_runner =
+  Basic_on_runner with type 'aux ctx := 'aux Filter_context.t
+
+(** Type synonym for {{!Filter_types.S} Filter_types.S}, fixing [ctx] to
+    [Filter_context.t]. *)
+module type S = S with type 'aux ctx = 'aux Filter_context.t
+
+(** {2 Making filters} *)
 
 (** Makes a filter from a {{!Basic} Basic}. *)
 module Make (B : Basic) :
@@ -60,32 +81,6 @@ module Make_files_only (B : Basic_files_only) :
     some program accessors. *)
 module Make_on_runner (R : Basic_on_runner) :
   S with type aux_i = R.aux_i and type aux_o = unit
-
-(** Chains two filters together using temporary files. *)
-module Chain (B : Basic_chain_unconditional) :
-  S
-  with type aux_i = B.aux_i
-   and type aux_o = B.First.aux_o * B.Second.aux_o
-
-(** Simplified version of {{!Chain} Chain} that assumes that the auxiliary
-    input is a tuple of the input to the first filter, and a function for
-    generating the input to the second filter. *)
-module Chain_tuple (First : S) (Second : S) :
-  S
-  with type aux_i = First.aux_i * (First.aux_o chain_output -> Second.aux_i)
-   and type aux_o = First.aux_o * Second.aux_o
-
-(** Chains an optional filter onto a mandatory one. *)
-module Chain_conditional_first (B : Basic_chain_conditional_first) :
-  S
-  with type aux_i = B.aux_i
-   and type aux_o = B.First.aux_o option * B.Second.aux_o
-
-(** Chains a mandatory filter onto an optional one. *)
-module Chain_conditional_second (B : Basic_chain_conditional_second) :
-  S
-  with type aux_i = B.aux_i
-   and type aux_o = B.First.aux_o * B.Second.aux_o option
 
 (** Adapts the auxiliary types of an existing filter, performing partial
     mappings to and from a new pair of auxiliary types. *)

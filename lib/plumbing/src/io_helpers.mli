@@ -21,21 +21,30 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Interaction with the 'Litmus' tool.
-
-    This is the tool that supports running of Litmus tests on real hardware,
-    and not to be confused with the tests itself. *)
+(** Helper functions for dealing with various patterns of {{!Input} Input}
+    and {{!Output} Output} usage. *)
 
 open Base
+open Stdio
 
-val run_direct :
-     ?oc:Stdio.Out_channel.t
-  -> Act_config.Litmus_tool.t
-  -> string list
-  -> unit Or_error.t
-(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
-    and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
-    is absent). *)
+val with_input_and_output :
+     Input.t
+  -> Output.t
+  -> f:(In_channel.t -> Out_channel.t -> 'a Or_error.t)
+  -> 'a Or_error.t
+(** [with_input_and_output i o ~f] runs [f] with the appropriate channels
+    pointed to by [i] and [o]. *)
 
-(** Interface for making a filter over litmus7. *)
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.Basic_filter
+val lift_to_raw_strings :
+     f:('i -> Input.t -> Output.t -> 'o Or_error.t)
+  -> 'i
+  -> infile:string option
+  -> outfile:string option
+  -> 'o Or_error.t
+
+val lift_to_fpaths :
+     f:('i -> Input.t -> Output.t -> 'o Or_error.t)
+  -> 'i
+  -> infile:Fpath.t option
+  -> outfile:Fpath.t option
+  -> 'o Or_error.t

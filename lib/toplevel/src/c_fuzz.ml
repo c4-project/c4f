@@ -30,11 +30,13 @@ let run (seed : int option) (args : Args.Standard_with_files.t)
     act_config |> Act_config.Act.fuzz
     |> Option.value ~default:(Act_config.Fuzz.make ())
   in
-  Or_error.ignore_m
-    (Act_c.Filters.Litmus.run_from_string_paths
-       (Act_c.Filters.Fuzz {seed; o; config})
-       ~infile:(Args.Standard_with_files.infile_raw args)
-       ~outfile:(Args.Standard_with_files.outfile_raw args))
+  Or_error.Let_syntax.(
+    let%bind input = Args.Standard_with_files.infile_source args in
+    let%bind output = Args.Standard_with_files.outfile_sink args in
+    Or_error.ignore_m
+      (Act_c.Filters.Litmus.run
+         (Act_c.Filters.Fuzz {seed; o; config})
+         input output))
 
 let readme () : string =
   Act_utils.My_string.format_for_readme

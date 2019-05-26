@@ -29,11 +29,11 @@ open Act_common
 (** Opaque type of runner tables. *)
 type t
 
-val get : t -> Id.t -> (module Runner.S)
+val get : t -> Id.t -> (module Runner_intf.S)
 (** [get table id] gets the simulator runner with id [id] from table
     [table], if one exists. If not, it gets a dummy runner that produces a
     'simulator not found' error when used. *)
 
-val make : (Id.t, (module Runner.S)) List.Assoc.t -> t Or_error.t
+val make : (Id.t, (module Runner_intf.S)) List.Assoc.t -> t Or_error.t
 (** [make assoc] makes a runner table from an associative list [assoc] from
     simulator identifiers to runner implementations. *)

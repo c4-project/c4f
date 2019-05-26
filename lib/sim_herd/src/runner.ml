@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-module Make (B : Filter.Basic) : Act_sim.Runner.S =
+module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.S =
 Act_sim.Runner.Make (struct
   let name = Act_common.Id.of_string "herd"
 

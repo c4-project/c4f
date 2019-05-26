@@ -21,21 +21,23 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Interaction with the 'Litmus' tool.
-
-    This is the tool that supports running of Litmus tests on real hardware,
-    and not to be confused with the tests itself. *)
-
 open Base
+open Stdio
 
-val run_direct :
-     ?oc:Stdio.Out_channel.t
-  -> Act_config.Litmus_tool.t
-  -> string list
-  -> unit Or_error.t
-(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
-    and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
-    is absent). *)
+let with_input_and_output (i : Input.t) (o : Output.t)
+    ~(f : In_channel.t -> Out_channel.t -> 'a Or_error.t) : 'a Or_error.t =
+  Input.with_input i ~f:(fun ic -> Output.with_output o ~f:(f ic))
 
-(** Interface for making a filter over litmus7. *)
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.Basic_filter
+let lift_to_raw_strings ~(f : 'i -> Input.t -> Output.t -> 'o Or_error.t)
+    (aux_in : 'i) ~(infile : string option) ~(outfile : string option) :
+    'o Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind i = Input.of_string_opt infile
+    and o = Output.of_string_opt outfile in
+    f aux_in i o)
+
+let lift_to_fpaths ~(f : 'i -> Input.t -> Output.t -> 'o Or_error.t)
+    (aux_in : 'i) ~(infile : Fpath.t option) ~(outfile : Fpath.t option) :
+    'o Or_error.t =
+  let i = Input.of_fpath_opt infile and o = Output.of_fpath_opt outfile in
+  f aux_in i o

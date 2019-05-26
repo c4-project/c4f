@@ -26,7 +26,6 @@
 
 open Core_kernel
 open Act_common
-open Act_utils
 
 include module type of Machine_intf
 
@@ -81,7 +80,7 @@ module Ssh : sig
   (** [To_config] lifts a [t] to an [Ssh.S]. *)
   module To_config (C : sig
     val ssh : t
-  end) : Ssh.S
+  end) : Act_utils.Ssh.S
 end
 
 (** [Id] is an extension onto base [Id] that lets such items be machine
@@ -106,7 +105,7 @@ module Via : sig
   (** [t] can be pretty-printed. *)
   include Pretty_printer.S with type t := t
 
-  val to_runner : t -> (module Runner.S)
+  val to_runner : t -> (module Plumbing.Runner_types.S)
   (** [to_runner via] builds a runner module for a [via]. *)
 
   val remoteness : t -> [> `Local | `Remote | `Unknown]

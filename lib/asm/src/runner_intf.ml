@@ -76,8 +76,7 @@ module type Runnable = sig
   val default_config : unit -> cfg
 
   val run :
-       Io.Out_sink.t
-    -> Stdio.Out_channel.t
+       Stdio.Out_channel.t
     -> in_name:string
     -> program:Program.t
     -> symbols:Symbol.t list
@@ -92,5 +91,7 @@ module type S = sig
   type cfg
 
   include
-    Filter_intf.S with type aux_i = cfg Job.t and type aux_o = Job.Output.t
+    Plumbing.Filter.S
+    with type aux_i = cfg Job.t
+     and type aux_o = Job.Output.t
 end

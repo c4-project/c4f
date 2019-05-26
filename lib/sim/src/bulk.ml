@@ -23,7 +23,6 @@
 
 open Base
 module Tx = Travesty_base_exts
-include Bulk_intf
 
 module File_map = struct
   type t = Output.t Map.M(String).t
@@ -41,7 +40,8 @@ module File_map = struct
     Option.value found ~default:(Output.not_found litmus_path)
 end
 
-module Make (R : Runner.S) : S with type file_map := File_map.t = struct
+module Make (R : Runner_intf.S) :
+  Bulk_intf.S with type file_map := File_map.t = struct
   module Job = struct
     type t =
       { input_paths: Fpath.t list

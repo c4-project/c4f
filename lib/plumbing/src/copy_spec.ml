@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
+module Tx = Travesty_base_exts
 
 type 'path t = Directory of 'path | Files of 'path list | Nothing
 [@@deriving variants]
@@ -36,6 +37,14 @@ let map (spec : 'a t) ~(f : 'a -> 'b) : 'b t =
       Files (List.map ~f fs)
   | Nothing ->
       Nothing
+
+let get_file : string t -> string Or_error.t = function
+  | Files fs ->
+      Tx.List.one fs
+  | Directory _ ->
+      Or_error.error_string "Expected one file; got directory"
+  | Nothing ->
+      Or_error.error_string "Expected one file; got nothing"
 
 let validate_dir (dir_f : Fpath.t) : unit Or_error.t =
   let dir = Fpath.to_string dir_f in

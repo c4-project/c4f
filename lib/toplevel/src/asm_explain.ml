@@ -39,10 +39,10 @@ let explain_runner (module B : Act_asm.Runner_intf.Basic) :
   (module Exp.Filter)
 
 let explain_filter (target : Act_config.Compiler.Target.t) :
-    (module Act_utils.Filter_intf.S
+    (module Plumbing.Filter.S
        with type aux_i = Act_common.File_type.t
                          * (   Act_c.Filters.Output.t
-                               Act_utils.Filter_intf.chain_output
+                               Plumbing.Filter_chain.Chain_output.t
                             -> Act_asm.Explainer.Config.t Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
         and type aux_o = Act_c.Filters.Output.t option
@@ -57,9 +57,7 @@ let run_with_input_fn (o : A.Output.t) (file_type : Act_common.File_type.t)
     let%bind (module Exp) = explain_filter target in
     A.Output.pv o "Got explain filter (name %s)" Exp.name ;
     let%map _, (_, out) =
-      Exp.run_from_string_paths
-        (file_type, compiler_input_fn)
-        ~infile ~outfile
+      Exp.run (file_type, compiler_input_fn) infile outfile
     in
     out)
 
@@ -67,8 +65,8 @@ module In = Asm_common.Input
 
 let run output_format (input : In.t) =
   let o = In.output input in
-  let infile = In.infile_raw input in
-  let outfile = In.outfile_raw input in
+  let infile = In.pb_input input in
+  let outfile = In.pb_output input in
   let target = In.target input in
   let file_type = In.file_type input in
   Or_error.Let_syntax.(

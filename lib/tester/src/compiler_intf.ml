@@ -36,7 +36,7 @@ module type Basic = sig
 
   (** The simulator runner for simulating assembly Litmus tests on this
       compiler. *)
-  module Asm_simulator : Act_sim.Runner.S
+  module Asm_simulator : Act_sim.Runner_intf.S
 
   val ps : Pathset.Compiler.t
   (** [ps] tells the tester where it can find input files, and where it

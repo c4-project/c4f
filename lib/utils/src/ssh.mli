@@ -51,7 +51,7 @@ module Make (Conf : sig
 end) : S
 
 (** [Runner] provides a [Run.Runner] using the given SSH config. *)
-module Runner (Conf : Basic_runner) : Runner.S
+module Runner (Conf : Basic_runner) : Plumbing.Runner_types.S
 
 (** [Scp] provides SCP file transfer operations, given an [S]. *)
 module Scp (Conf : S) : sig

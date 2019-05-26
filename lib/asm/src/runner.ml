@@ -29,7 +29,7 @@ module Make (R : Runner_intf.Runnable) :
   type cfg = R.cfg
 
   let parse isrc =
-    let iname = Act_utils.Io.In_source.to_string isrc in
+    let iname = Plumbing.Input.to_string isrc in
     Or_error.tag_arg
       (R.Program.load_from_isrc isrc)
       "Error while parsing assembly" iname String.sexp_of_t
@@ -44,13 +44,13 @@ module Make (R : Runner_intf.Runnable) :
   let unstringify_symbols : string list -> R.Symbol.t list Or_error.t =
     Tx.Or_error.combine_map ~f:unstringify_symbol
 
-  let in_source_to_basename (is : Act_utils.Io.In_source.t) : string =
-    is |> Act_utils.Io.In_source.to_file
+  let in_source_to_basename (is : Plumbing.Input.t) : string =
+    is |> Plumbing.Input.to_file
     |> Option.value_map
          ~f:(fun fn -> Fpath.(fn |> rem_ext |> basename))
          ~default:"stdin"
 
-  include Act_utils.Filter.Make (struct
+  include Plumbing.Filter.Make (struct
     type aux_i = R.cfg Job.t
 
     type aux_o = Job.Output.t
@@ -59,18 +59,18 @@ module Make (R : Runner_intf.Runnable) :
 
     let tmp_file_ext _ = R.tmp_file_ext
 
-    let run
-        ({Act_utils.Filter_intf.aux; src; sink} :
-          R.cfg Job.t Act_utils.Filter_intf.ctx) _ oc :
+    let run (ctx : R.cfg Job.t Plumbing.Filter_context.t) _ oc :
         Job.Output.t Or_error.t =
-      let in_name = in_source_to_basename src in
+      let aux = Plumbing.Filter_context.aux ctx in
+      let input = Plumbing.Filter_context.input ctx in
+      let in_name = in_source_to_basename input in
       Or_error.Let_syntax.(
-        let%bind program = parse src in
+        let%bind program = parse input in
         let%bind symbols = unstringify_symbols (Job.symbols aux) in
         let config =
           Tx.Option.value_f (Job.config aux) ~default_f:R.default_config
         in
         let passes = Job.passes aux in
-        R.run ~in_name ~program ~symbols ~config ~passes sink oc)
+        R.run ~in_name ~program ~symbols ~config ~passes oc)
   end)
 end

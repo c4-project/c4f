@@ -44,10 +44,10 @@ let stub_gen_runner (module B : Act_asm.Runner_intf.Basic) :
   (module Sg.Filter)
 
 let stub_gen_filter (target : Act_config.Compiler.Target.t) :
-    (module Act_utils.Filter_intf.S
+    (module Plumbing.Filter.S
        with type aux_i = Act_common.File_type.t
                          * (   Act_c.Filters.Output.t
-                               Act_utils.Filter_intf.chain_output
+                               Plumbing.Filter_chain.Chain_output.t
                             -> Act_asm.Stub_gen.Config.t Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
         and type aux_o = Act_c.Filters.Output.t option
@@ -58,15 +58,13 @@ let stub_gen_filter (target : Act_config.Compiler.Target.t) :
 
 let run (input : In.t) : unit Or_error.t =
   let file_type = In.file_type input in
-  let infile = In.infile_raw input in
-  let outfile = In.outfile_raw input in
   let compiler_input_fn = In.make_compiler_input input make_config in
-  let open Or_error.Let_syntax in
-  let%bind (module Sg) = stub_gen_filter (In.target input) in
-  Or_error.ignore_m
-    (Sg.run_from_string_paths
-       (file_type, compiler_input_fn)
-       ~infile ~outfile)
+  Or_error.Let_syntax.(
+    let%bind (module Sg) = stub_gen_filter (In.target input) in
+    Or_error.ignore_m
+      (Sg.run
+         (file_type, compiler_input_fn)
+         (In.pb_input input) (In.pb_output input)))
 
 let command : Command.t =
   Command.basic ~summary:"generates GCC asm stubs from an assembly file"

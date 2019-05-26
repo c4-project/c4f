@@ -24,7 +24,7 @@
 (** Quick and easy process running *)
 
 open Core
-include Runner_intf
+open Runner_types
 
 let argv_one_file (fn : (string, 'a) argv_fun) :
     (string Copy_spec.t, 'a) argv_fun =

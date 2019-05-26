@@ -51,8 +51,9 @@ let delitmus_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   ignore file ;
   Or_error.Let_syntax.(
     let%map output =
-      Act_c.Filters.Litmus.run_from_fpaths Act_c.Filters.Delitmus
-        ~infile:(Some path) ~outfile:None
+      Act_c.Filters.Litmus.run Act_c.Filters.Delitmus
+        (Plumbing.Input.of_fpath path)
+        Plumbing.Output.stdout
     in
     summarise_c_output output)
 

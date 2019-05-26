@@ -22,23 +22,24 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Runner_intf
+open Runner_intf
 
 module Make (B : Basic) : S = struct
   include (B : Common)
 
-  let run (ctx : Arch.t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
+  let run (arch : Arch.t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
       Output.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind () =
-        Filter.run_from_fpaths ctx ~infile:(Some input_path)
-          ~outfile:(Some output_path)
+        Filter.run arch
+          (Plumbing.Input.of_fpath input_path)
+          (Plumbing.Output.of_fpath output_path)
       in
       B.Reader.load ~path:output_path)
 end
 
 module Make_error_filter (B : Basic_error) : Basic_filter =
-Act_utils.Filter.Make (struct
+Plumbing.Filter.Make (struct
   type aux_i = Arch.t
 
   type aux_o = unit
@@ -47,7 +48,7 @@ Act_utils.Filter.Make (struct
 
   let tmp_file_ext = Fn.const "tmp"
 
-  let run (_ : _ Act_utils.Filter_intf.ctx) (_ : Stdio.In_channel.t)
+  let run (_ : _ Plumbing.Filter_context.t) (_ : Stdio.In_channel.t)
       (_ : Stdio.Out_channel.t) : unit Or_error.t =
     Result.Error B.error
 end)

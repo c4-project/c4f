@@ -200,16 +200,16 @@ module Standard_with_files :
       {rest; infile_raw; outfile_raw})
 
   let infile_fpath (args : t) : Fpath.t option Or_error.t =
-    args |> infile_raw |> Io.fpath_of_string_option
+    args |> infile_raw |> Plumbing.Fpath_helpers.of_string_option
 
-  let infile_source (args : t) : Io.In_source.t Or_error.t =
-    args |> infile_raw |> Io.In_source.of_string_opt
+  let infile_source (args : t) : Plumbing.Input.t Or_error.t =
+    args |> infile_raw |> Plumbing.Input.of_string_opt
 
   let outfile_fpath (args : t) : Fpath.t option Or_error.t =
-    args |> outfile_raw |> Io.fpath_of_string_option
+    args |> outfile_raw |> Plumbing.Fpath_helpers.of_string_option
 
-  let outfile_sink (args : t) : Io.Out_sink.t Or_error.t =
-    args |> outfile_raw |> Io.Out_sink.of_string_opt
+  let outfile_sink (args : t) : Plumbing.Output.t Or_error.t =
+    args |> outfile_raw |> Plumbing.Output.of_string_opt
 end
 
 module Standard_asm : S_standard_asm with type s := Standard.t = struct

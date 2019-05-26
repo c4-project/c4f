@@ -24,6 +24,7 @@
 include Base
 module Tx = Travesty_base_exts
 module Ac = Act_common
+module Pb = Plumbing
 
 module Input = struct
   type t =
@@ -32,22 +33,18 @@ module Input = struct
     ; sanitiser_passes: Set.M(Act_sanitiser.Pass_group).t
     ; user_cvars: Ac.C_variables.Map.t option
     ; target: Act_config.Compiler.Target.t
+    ; pb_input: Plumbing.Input.t
+    ; pb_output: Plumbing.Output.t
     ; output: Act_common.Output.t }
   [@@deriving fields]
 
   let file_type (i : t) : Act_common.File_type.t =
     Args.Standard_asm.file_type (args i)
 
-  let infile_raw (i : t) : string option =
-    Args.Standard_asm.infile_raw (args i)
-
-  let outfile_raw (i : t) : string option =
-    Args.Standard_asm.outfile_raw (args i)
-
   let make_compiler_input (i : t)
       (config_builder :
         c_variables:Act_common.C_variables.Map.t option -> 'cfg) :
-         Act_c.Filters.Output.t Act_utils.Filter_intf.chain_output
+         Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t
       -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
     Common.make_compiler_input (output i) (file_type i) (user_cvars i)
       config_builder (sanitiser_passes i)
@@ -86,9 +83,11 @@ let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
   Or_error.Let_syntax.(
     let%bind user_cvars = collect_cvars args in
     let%bind target = resolve_target args act_config in
+    let%bind pb_input = Args.Standard_asm.infile_source args in
+    let%bind pb_output = Args.Standard_asm.outfile_sink args in
     let input =
       Input.Fields.create ~act_config ~output ~args ~sanitiser_passes
-        ~user_cvars ~target
+        ~user_cvars ~target ~pb_input ~pb_output
     in
     f input)
 

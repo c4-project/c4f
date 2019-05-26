@@ -1,0 +1,10 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name plumbing)
+ (public_name act.plumbing)
+ (synopsis "Modules for building Unix-style filters and other pipework")
+ (preprocess
+  (pps ppx_deriving.std ppx_jane))
+ (libraries core core_kernel base shell stdio fpath fmt travesty
+   travesty.base_exts))

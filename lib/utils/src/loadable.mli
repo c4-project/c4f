@@ -49,4 +49,4 @@ module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
 (** Lifts a {{!S} S} to a {{!Filter.S} Filter.S} that outputs nothing to its
     target file and returns the loaded data as auxiliary output. *)
 module To_filter (L : S) :
-  Filter_intf.S with type aux_i = unit and type aux_o = L.t
+  Plumbing.Filter.S with type aux_i = unit and type aux_o = L.t

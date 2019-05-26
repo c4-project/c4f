@@ -171,8 +171,7 @@ struct
   module LS = B.Src_lang
   module SS = Act_sanitiser.Instance.Make_single (B.Sanitiser_hook)
 
-  let run_explanation (_osrc : Act_utils.Io.Out_sink.t)
-      (outp : Stdio.Out_channel.t) ~(in_name : string)
+  let run_explanation (outp : Stdio.Out_channel.t) ~(in_name : string)
       ~(program : LS.Program.t) ~(symbols : LS.Symbol.t list)
       ~(config : config) ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =

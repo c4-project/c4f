@@ -36,7 +36,7 @@ module type Basic = sig
   (** [o] tells the tester how to output warnings, errors, and other
       information. *)
 
-  module C_simulator : Act_sim.Runner.S
+  module C_simulator : Act_sim.Runner_intf.S
 
   val sanitiser_passes : Set.M(Act_sanitiser.Pass_group).t
   (** [sanitiser_passes] is the set of sanitiser passes the tester should

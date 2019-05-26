@@ -21,21 +21,38 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Interaction with the 'Litmus' tool.
+(** Type of output into a filter or similar construct.
 
-    This is the tool that supports running of Litmus tests on real hardware,
-    and not to be confused with the tests itself. *)
+    This module contains a type that describes how a filter should dispose
+    of its output---for example, into a local file, or on standard output. *)
 
 open Base
+open Stdio
 
-val run_direct :
-     ?oc:Stdio.Out_channel.t
-  -> Act_config.Litmus_tool.t
-  -> string list
-  -> unit Or_error.t
-(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
-    and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
-    is absent). *)
+(** Opaque type of outputs. *)
+type t
 
-(** Interface for making a filter over litmus7. *)
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.Basic_filter
+(** @inline *)
+include Io_types.Common with type t := t
+
+(** {2 Constructing an output} *)
+
+val file : Fpath.t -> t
+(** [file fname] creates an output sink for a given filename. *)
+
+val stdout : t
+(** [stdout] is the standard output sink. *)
+
+val temp : prefix:string -> ext:string -> t
+(** [temp ~prefix ~ext] creates an output sink for a temporary file with the
+    given prefix and extension. *)
+
+(** {2 Consuming an output} *)
+
+val as_input : t -> Input.t Or_error.t
+(** [as_input o] tries to get an {{!Input.t} input} pointing to the same
+    data as [o]. *)
+
+val with_output : t -> f:(Out_channel.t -> 'a Or_error.t) -> 'a Or_error.t
+(** [with_output o ~f] runs [f] connected to the output channel pointed to
+    by [o]. *)

@@ -28,8 +28,6 @@
     assembly, or on a Litmus test, etc. As such, they don't robustly and
     precisely identify file types. *)
 
-open Act_utils
-
 (** Enumeration of the high-level file types understood by most of the bits
     of act that touch the filesystem, including the possibility of deferring
     working out the file type to a different channel. *)
@@ -37,12 +35,12 @@ type t = Assembly | C | C_litmus | Infer [@@deriving sexp]
 
 (** {2 Classifiers with inference from filenames} *)
 
-val is_c : Io.In_source.t -> t -> bool
+val is_c : Plumbing.Input.t -> t -> bool
 (** [is_c infile filetype] decides whether [infile] is a C file---from its
     extension if [filetype] is [`Infer], or by whether or not [filetype] is
     [`C]. *)
 
-val is_c_litmus : Io.In_source.t -> t -> bool
+val is_c_litmus : Plumbing.Input.t -> t -> bool
 (** [is_c_litmus infile filetype] decides whether [infile] is a C/litmus
     file---from its extension if [filetype] is [`Infer], or by whether or
     not [filetype] is [`C_litmus]. *)

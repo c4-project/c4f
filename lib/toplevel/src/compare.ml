@@ -23,7 +23,6 @@
 
 open Core
 open Act_common
-open Act_utils
 
 let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
   let target = `Spec spec in
@@ -37,8 +36,8 @@ let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
       , Fn.const
           (Act_config.Compiler.Chain_input.make ~file_type:C
              ~next:(Fn.const litmus_job)) )
-      (Io.In_source.file c_file)
-      Io.Out_sink.stdout
+      (Plumbing.Input.file c_file)
+      Plumbing.Output.stdout
   in
   Output.pw o "@[%a@]@." Act_asm.Job.Output.warn out
 
@@ -51,7 +50,7 @@ let run_spec_on_file o passes spec ~c_file =
 
 let run o cfg ~(c_file_raw : string) =
   let open Or_error.Let_syntax in
-  let%bind c_file = Io.fpath_of_string c_file_raw in
+  let%bind c_file = Plumbing.Fpath_helpers.of_string c_file_raw in
   let specs = Act_config.Act.compilers cfg in
   let passes =
     Act_config.Act.sanitiser_passes cfg

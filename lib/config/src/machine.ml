@@ -23,6 +23,7 @@
 
 open Core_kernel
 module Au = Act_utils
+module Pb = Plumbing
 open Act_common
 include Machine_intf
 
@@ -123,7 +124,7 @@ module Via = struct
 
   let to_runner = function
     | Local ->
-        (module Au.Runner.Local : Au.Runner.S)
+        (module Pb.Runner.Local : Pb.Runner_types.S)
     | Ssh c ->
         ( module Au.Ssh.Runner (struct
           include Ssh.To_config (struct
@@ -132,7 +133,7 @@ module Via = struct
 
           let remote_dir = Fn.const c.copy_dir
         end)
-        : Au.Runner.S )
+        : Pb.Runner_types.S )
 
   let remoteness = function
     | Local ->

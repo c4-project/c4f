@@ -94,10 +94,10 @@ module Make (B : Basic) : S = struct
       ~out_file:(Fpath.to_string (P_file.asm_litmus_file fs))
       (fun () ->
         let%map output =
-          Litmusify.Filter.run_from_fpaths
+          Litmusify.Filter.run
             (Act_asm.Job.make ~passes:sanitiser_passes ~symbols:cvars ())
-            ~infile:(Some (P_file.asm_file fs))
-            ~outfile:(Some (P_file.asm_litmus_file fs))
+            (Plumbing.Input.of_fpath (P_file.asm_file fs))
+            (Plumbing.Output.of_fpath (P_file.asm_litmus_file fs))
         in
         Ac.Output.pw o "@[%a@]@." Act_asm.Job.Output.warn output ;
         Act_asm.Job.Output.symbol_map output )
@@ -153,9 +153,9 @@ module Make (B : Basic) : S = struct
   let delitmusify (fs : Pathset.File.t) : unit Or_error.t =
     let open Or_error.Let_syntax in
     let%map _ =
-      Act_c.Filters.Litmus.run_from_fpaths Act_c.Filters.Delitmus
-        ~infile:(Some (P_file.c_litmus_file fs))
-        ~outfile:(Some (P_file.c_file fs))
+      Act_c.Filters.Litmus.run Act_c.Filters.Delitmus
+        (Plumbing.Input.of_fpath (P_file.c_litmus_file fs))
+        (Plumbing.Output.of_fpath (P_file.c_file fs))
       (* TODO(@MattWindsor91): use the output from this instead of needing
          to run Herd. *)
     in

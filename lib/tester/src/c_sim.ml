@@ -1,9 +1,9 @@
 open Base
-include C_sim_intf
 module C = Act_c
 module Sim = Act_sim
+open C_sim_intf
 
-module Make (R : Sim.Runner.S) : S = struct
+module Make (R : Sim.Runner_intf.S) : S = struct
   let no_post_error () : Error.t =
     Error.of_string "This Litmus test doesn't have a postcondition."
 

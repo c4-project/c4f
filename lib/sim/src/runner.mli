@@ -28,10 +28,7 @@
     implementing that interface using a filter wrapper over the simulator
     and a simulator output parser. *)
 
-(** @inline *)
-include module type of Runner_intf
-
 (** [Make] makes a simulator runner from a [Basic]. *)
-module Make (B : Basic) : S
+module Make (B : Runner_intf.Basic) : Runner_intf.S
 
-module Make_error (B : Basic_error) : S
+module Make_error (B : Runner_intf.Basic_error) : Runner_intf.S

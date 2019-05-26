@@ -31,5 +31,5 @@ module type Basic = sig
   (** The Litmus config to use for this simulator. *)
 
   (** Runner used for running Litmus, possibly remotely. *)
-  module Runner : Act_utils.Runner.S
+  module Runner : Plumbing.Runner_types.S
 end

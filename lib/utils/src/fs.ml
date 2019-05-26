@@ -22,6 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core
+module Pb = Plumbing
 module Tx = Travesty_core_kernel_exts
 include Fs_intf
 
@@ -127,7 +128,7 @@ module Unix : S = struct
     let open Or_error.Let_syntax in
     let%bind file_str_array = readdir (Fpath.to_string path) in
     let file_strs = Array.to_list file_str_array in
-    let%map files = map_combine ~f:Io.fpath_of_string file_strs in
+    let%map files = map_combine ~f:Pb.Fpath_helpers.of_string file_strs in
     let with_ext = filter_files ?ext files in
     List.sort ~compare with_ext
 end

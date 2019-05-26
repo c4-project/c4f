@@ -28,14 +28,14 @@ open Loadable_intf
 module Make (B : Basic) : S with type t = B.t = struct
   include B
 
-  let path_of_is (is : Io.In_source.t) : string option =
-    is |> Io.In_source.to_file |> Option.map ~f:Fpath.to_string
+  let path_of_is (is : Plumbing.Input.t) : string option =
+    is |> Plumbing.Input.to_file |> Option.map ~f:Fpath.to_string
 
-  let load_from_isrc =
-    Io.In_source.with_input ~f:(fun is ic ->
+  let load_from_isrc is =
+    Plumbing.Input.with_input is ~f:(fun ic ->
         load_from_ic ?path:(path_of_is is) ic )
 
-  let load ~path = load_from_isrc (Io.In_source.file path)
+  let load ~path = load_from_isrc (Plumbing.Input.file path)
 end
 
 module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
@@ -62,8 +62,8 @@ module Of_sexpable (B : Sexpable.S) : S with type t = B.t = Make (struct
 end)
 
 module To_filter (L : S) :
-  Filter_intf.S with type aux_i = unit and type aux_o = L.t =
-Filter.Make (struct
+  Plumbing.Filter.S with type aux_i = unit and type aux_o = L.t =
+Plumbing.Filter.Make (struct
   type aux_i = unit
 
   type aux_o = L.t
