@@ -162,6 +162,6 @@ module type S_resolver = sig
            and type aux_o = 'o)
     -> (module Plumbing.Filter_types.S
           with type aux_i = 'i chain_input
-           and type aux_o = unit option * 'o)
+           and type aux_o = 'o)
        Or_error.t
 end

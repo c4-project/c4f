@@ -30,7 +30,7 @@ let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
   let litmus_job = Act_asm.Job.make ~config ~passes () in
   let open Or_error.Let_syntax in
   let%bind (module Comp_lit) = Common.litmusify_pipeline target in
-  let%map _, (_, out) =
+  let%map _, out =
     Comp_lit.run
       ( C
       , Fn.const

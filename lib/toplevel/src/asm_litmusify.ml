@@ -88,10 +88,14 @@ module Post_filter = struct
          and type aux_o = o) :
       (module Plumbing.Filter_types.S
          with type aux_i = i * (o Plumbing.Chain_context.t -> Cfg.t)
-          and type aux_o = o * unit option) =
+          and type aux_o = o) =
     let (module Post) = make mtab filter in
     ( module Plumbing.Filter_chain.Make_conditional_second (struct
       type aux_i = i * (o Plumbing.Chain_context.t -> Cfg.t)
+
+      type aux_o = o
+
+      let combine_output (x : o) (_ : unit option) : aux_o = x
 
       let select ctx =
         let rest, cfg = Plumbing.Filter_context.aux ctx in
@@ -116,12 +120,11 @@ let make_filter (filter : Post_filter.Cfg.t)
                                Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t) )
                          * (   ( Act_c.Filters.Output.t option
-                               * (unit option * Act_asm.Job.Output.t) )
+                               * Act_asm.Job.Output.t )
                                Plumbing.Chain_context.t
                             -> Post_filter.Cfg.t)
-        and type aux_o = ( Act_c.Filters.Output.t option
-                         * (unit option * Act_asm.Job.Output.t) )
-                         * unit option)
+        and type aux_o = Act_c.Filters.Output.t option
+                         * Act_asm.Job.Output.t)
     Or_error.t =
   let open Or_error in
   Common.(target |> litmusify_pipeline >>| Post_filter.chain filter mtab)

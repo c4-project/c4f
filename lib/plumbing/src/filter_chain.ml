@@ -25,12 +25,10 @@ open Base
 open Filter_chain_types
 
 module Make (B : Basic_unconditional) :
-  Filter_types.S
-  with type aux_i = B.aux_i
-   and type aux_o = B.First.aux_o * B.Second.aux_o = struct
+  Filter_types.S with type aux_i = B.aux_i and type aux_o = B.aux_o = struct
   type aux_i = B.aux_i
 
-  type aux_o = B.First.aux_o * B.Second.aux_o
+  type aux_o = B.aux_o
 
   let name = Printf.sprintf "(%s | %s)" B.First.name B.Second.name
 
@@ -57,7 +55,7 @@ module Make (B : Basic_unconditional) :
       let%bind a_output = B.First.run a_aux input a_out in
       let b_aux = B.second_input aux (Ran a_output) in
       let%map b_output = B.Second.run b_aux b_in output in
-      (a_output, b_output))
+      B.combine_output a_output b_output)
 end
 
 module Make_tuple (First : Filter_types.S) (Second : Filter_types.S) :
@@ -65,14 +63,19 @@ module Make_tuple (First : Filter_types.S) (Second : Filter_types.S) :
   with type aux_i =
               First.aux_i * (First.aux_o Chain_context.t -> Second.aux_i)
    and type aux_o = First.aux_o * Second.aux_o = Make (struct
+  type aux_i = First.aux_i * (First.aux_o Chain_context.t -> Second.aux_i)
+
+  type aux_o = First.aux_o * Second.aux_o
+
   module First = First
   module Second = Second
 
-  type aux_i = First.aux_i * (First.aux_o Chain_context.t -> Second.aux_i)
+  let first_input : aux_i -> First.aux_i = fst
 
-  let first_input = fst
+  let second_input : aux_i -> First.aux_o Chain_context.t -> Second.aux_i =
+    snd
 
-  let second_input = snd
+  let combine_output (f : First.aux_o) (s : Second.aux_o) : aux_o = (f, s)
 end)
 
 module type Chain_conditional_variables = sig
@@ -115,17 +118,19 @@ module Make_conditional_core (B : Chain_conditional_variables) = struct
 end
 
 module Make_conditional_first (B : Basic_conditional_first) :
-  Filter_types.S
-  with type aux_i = B.aux_i
-   and type aux_o = B.First.aux_o option * B.Second.aux_o =
+  Filter_types.S with type aux_i = B.aux_i and type aux_o = B.aux_o =
 Make_conditional_core (struct
   module BCC = struct
     include B
 
     type aux_i_single = B.First.aux_o Chain_context.t -> B.Second.aux_i
+
+    type 'a first_o_wrapper = 'a option
+
+    type 'a second_o_wrapper = 'a
   end
 
-  type aux_o = B.First.aux_o option * B.Second.aux_o
+  type aux_o = B.aux_o
 
   module Chained = Make_tuple (B.First) (B.Second)
 
@@ -144,31 +149,33 @@ Make_conditional_core (struct
 
   let run_chained (a_in : B.First.aux_i)
       (b_in : B.First.aux_o Chain_context.t -> B.Second.aux_i)
-      (input : Input.t) (output : Output.t) =
+      (input : Input.t) (output : Output.t) : B.aux_o Or_error.t =
     Or_error.Let_syntax.(
       let%map a_out, b_out = Chained.run (a_in, b_in) input output in
-      (Some a_out, b_out))
+      B.combine_output (Some a_out) b_out)
 
   let run_unchained
       (b_in_f : B.First.aux_o Chain_context.t -> B.Second.aux_i)
-      (input : Input.t) (output : Output.t) =
+      (input : Input.t) (output : Output.t) : B.aux_o Or_error.t =
     Or_error.Let_syntax.(
       let%map b_out = B.Second.run (b_in_f Skipped) input output in
-      (None, b_out))
+      B.combine_output None b_out)
 end)
 
 module Make_conditional_second (B : Basic_conditional_second) :
-  Filter_types.S
-  with type aux_i = B.aux_i
-   and type aux_o = B.First.aux_o * B.Second.aux_o option =
+  Filter_types.S with type aux_i = B.aux_i and type aux_o = B.aux_o =
 Make_conditional_core (struct
   module BCC = struct
     include B
 
     type aux_i_single = B.First.aux_i
+
+    type 'a first_o_wrapper = 'a
+
+    type 'a second_o_wrapper = 'a option
   end
 
-  type aux_o = B.First.aux_o * B.Second.aux_o option
+  type aux_o = B.aux_o
 
   module Chained = Make_tuple (B.First) (B.Second)
 
@@ -188,13 +195,16 @@ Make_conditional_core (struct
         B.First.tmp_file_ext
           (Filter_context.On_aux.map ~f:(fun _ -> aux) ctx)
 
-  let run_chained a_in b_in src snk =
+  let run_chained (a_in : B.First.aux_i)
+      (b_in : B.First.aux_o Chain_context.t -> B.Second.aux_i)
+      (input : Input.t) (output : Output.t) : B.aux_o Or_error.t =
     Or_error.Let_syntax.(
-      let%map a_out, b_out = Chained.run (a_in, b_in) src snk in
-      (a_out, Some b_out))
+      let%map a_out, b_out = Chained.run (a_in, b_in) input output in
+      B.combine_output a_out (Some b_out))
 
-  let run_unchained a_in src snk =
+  let run_unchained (a_in : B.First.aux_i) (input : Input.t)
+      (output : Output.t) : B.aux_o Or_error.t =
     Or_error.Let_syntax.(
-      let%map a_out = B.First.run a_in src snk in
-      (a_out, None))
+      let%map a_out = B.First.run a_in input output in
+      B.combine_output a_out None)
 end)

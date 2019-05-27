@@ -51,7 +51,7 @@ let stub_gen_filter (target : Act_config.Compiler.Target.t) :
                             -> Act_asm.Stub_gen.Config.t Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
         and type aux_o = Act_c.Filters.Output.t option
-                         * (unit option * Act_asm.Job.Output.t))
+                         * Act_asm.Job.Output.t)
     Or_error.t =
   Or_error.tag ~tag:"while getting a stub-gen filter for this target"
     (Common.delitmus_compile_asm_pipeline target stub_gen_runner)

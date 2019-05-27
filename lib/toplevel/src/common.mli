@@ -117,7 +117,7 @@ val delitmus_compile_asm_pipeline :
                              -> 'c Act_asm.Job.t
                                 Act_config.Compiler.Chain_input.t)
          and type aux_o = Act_c.Filters.Output.t option
-                          * (unit option * Act_asm.Job.Output.t))
+                          * Act_asm.Job.Output.t)
      Or_error.t
 
 val litmusify_pipeline :
@@ -130,7 +130,7 @@ val litmusify_pipeline :
                                 Act_asm.Job.t
                                 Act_config.Compiler.Chain_input.t)
          and type aux_o = Act_c.Filters.Output.t option
-                          * (unit option * Act_asm.Job.Output.t))
+                          * Act_asm.Job.Output.t)
      Or_error.t
 (** [litmusify_pipeline target] builds a delitmusify-compile-litmusify
     pipeline for target [target]. *)

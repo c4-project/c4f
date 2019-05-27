@@ -64,6 +64,10 @@ Pb.Filter_chain.Make_conditional_first (struct
     Ac.File_type.t
     * (Act_c.Filters.Output.t Pb.Chain_context.t -> Onto.aux_i)
 
+  type aux_o = Act_c.Filters.Output.t option * Onto.aux_o
+
+  let combine_output = Tuple2.create
+
   let select ctx =
     let file_type, rest = Pb.Filter_context.aux ctx in
     let input = Pb.Filter_context.input ctx in
@@ -93,7 +97,7 @@ let delitmus_compile_asm_pipeline (type c)
                             -> c Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
         and type aux_o = Act_c.Filters.Output.t option
-                         * (unit option * Act_asm.Job.Output.t))
+                         * Act_asm.Job.Output.t)
     Or_error.t =
   Or_error.Let_syntax.(
     let%bind (module J) = target |> asm_runner_of_target >>| job_maker in
@@ -112,7 +116,7 @@ let litmusify_pipeline (target : Act_config.Compiler.Target.t) :
                                Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
         and type aux_o = Act_c.Filters.Output.t option
-                         * (unit option * Act_asm.Job.Output.t))
+                         * Act_asm.Job.Output.t)
     Or_error.t =
   delitmus_compile_asm_pipeline target Act_asm.Litmusifier.get_filter
 

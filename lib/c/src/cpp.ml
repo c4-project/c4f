@@ -43,12 +43,16 @@ end)
 module Chain_filter (Dest : Pb.Filter_types.S) :
   Pb.Filter_types.S
   with type aux_i = Act_config.Cpp.t * Dest.aux_i
-   and type aux_o = unit option * Dest.aux_o =
+   and type aux_o = Dest.aux_o =
 Pb.Filter_chain.Make_conditional_first (struct
   module First = Filter
   module Second = Dest
 
   type aux_i = Act_config.Cpp.t * Dest.aux_i
+
+  type aux_o = Dest.aux_o
+
+  let combine_output (_ : unit option) (o : Dest.aux_o) : aux_o = o
 
   let select ctx =
     let cfg, rest = Plumbing.Filter_context.aux ctx in

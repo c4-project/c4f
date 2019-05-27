@@ -207,12 +207,16 @@ module Chain_with_compiler
     (Onto : Pb.Filter_types.S) :
   Pb.Filter_types.S
   with type aux_i = Onto.aux_i Chain_input.t
-   and type aux_o = unit option * Onto.aux_o =
+   and type aux_o = Onto.aux_o =
 Pb.Filter_chain.Make_conditional_first (struct
   module First = Comp
   module Second = Onto
 
   type aux_i = Onto.aux_i Chain_input.t
+
+  type aux_o = Onto.aux_o
+
+  let combine_output (_ : unit option) (o : Onto.aux_o) : aux_o = o
 
   let lift_next (next : Chain_input.next_mode -> 'a) :
       unit Pb.Chain_context.t -> 'a = function
@@ -271,14 +275,14 @@ module Make_resolver (B : Basic_resolver with type spec := Spec.With_id.t) :
          and type aux_o = o) :
       (module Pb.Filter_types.S
          with type aux_i = i Chain_input.t
-          and type aux_o = unit option * o)
+          and type aux_o = o)
       Or_error.t =
     Or_error.Let_syntax.(
       let%map (module F) = filter_from_spec cspec in
       (module Chain_with_compiler (F) (Onto)
       : Pb.Filter_types.S
         with type aux_i = i Chain_input.t
-         and type aux_o = unit option * o ))
+         and type aux_o = o ))
 end
 
 module Target = struct
@@ -345,5 +349,5 @@ module Make_target_resolver
     (module Chain_with_compiler (F) (Onto)
     : Pb.Filter_types.S
       with type aux_i = i Chain_input.t
-       and type aux_o = unit option * o )
+       and type aux_o = o )
 end

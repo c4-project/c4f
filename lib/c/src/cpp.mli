@@ -37,4 +37,4 @@ module Filter :
 module Chain_filter (Dest : Plumbing.Filter_types.S) :
   Plumbing.Filter_types.S
   with type aux_i = Act_config.Cpp.t * Dest.aux_i
-   and type aux_o = unit option * Dest.aux_o
+   and type aux_o = Dest.aux_o

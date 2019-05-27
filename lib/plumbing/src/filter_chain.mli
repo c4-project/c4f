@@ -23,34 +23,18 @@
 
 (** Functors for chaining together {{!Filter} filters}. *)
 
-open Base
 open Filter_chain_types
 
 (** {2 Chaining filters together} *)
 
 (** Chains two filters together using temporary files. *)
 module Make (B : Basic_unconditional) :
-  Filter_types.S
-  with type aux_i = B.aux_i
-   and type aux_o = B.First.aux_o * B.Second.aux_o
-
-(** Simplified version of {{!Chain} Chain} that assumes that the auxiliary
-    input is a tuple of the input to the first filter, and a function for
-    generating the input to the second filter. *)
-module Make_tuple (First : Filter_types.S) (Second : Filter_types.S) :
-  Filter_types.S
-  with type aux_i =
-              First.aux_i * (First.aux_o Chain_context.t -> Second.aux_i)
-   and type aux_o = First.aux_o * Second.aux_o
+  Filter_types.S with type aux_i = B.aux_i and type aux_o = B.aux_o
 
 (** Chains an optional filter onto a mandatory one. *)
 module Make_conditional_first (B : Basic_conditional_first) :
-  Filter_types.S
-  with type aux_i = B.aux_i
-   and type aux_o = B.First.aux_o option * B.Second.aux_o
+  Filter_types.S with type aux_i = B.aux_i and type aux_o = B.aux_o
 
 (** Chains a mandatory filter onto an optional one. *)
 module Make_conditional_second (B : Basic_conditional_second) :
-  Filter_types.S
-  with type aux_i = B.aux_i
-   and type aux_o = B.First.aux_o * B.Second.aux_o option
+  Filter_types.S with type aux_i = B.aux_i and type aux_o = B.aux_o
