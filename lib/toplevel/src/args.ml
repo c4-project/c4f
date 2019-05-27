@@ -73,9 +73,10 @@ module Other = struct
   let file_type : Act_common.File_type.t Command.Param.t =
     flag_optional_with_default_doc "file-type"
       (Arg_type.of_alist_exn
-         [ ("assembly", Act_common.File_type.Assembly)
+         [ ("asm", Act_common.File_type.Asm)
+         ; ("asm-litmus", Act_common.File_type.Asm_litmus)
          ; ("c", C)
-         ; ("litmus", C_litmus) ])
+         ; ("c-litmus", C_litmus) ])
       [%sexp_of: Act_common.File_type.t] ~default:Act_common.File_type.Infer
       ~doc:"TYPE force a specific input file type"
 

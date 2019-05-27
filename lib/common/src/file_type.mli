@@ -31,7 +31,7 @@
 (** Enumeration of the high-level file types understood by most of the bits
     of act that touch the filesystem, including the possibility of deferring
     working out the file type to a different channel. *)
-type t = Assembly | C | C_litmus | Infer [@@deriving sexp]
+type t = Asm | Asm_litmus | C | C_litmus | Infer [@@deriving sexp]
 
 (** {2 Classifiers with inference from filenames} *)
 

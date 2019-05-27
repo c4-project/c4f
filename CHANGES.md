@@ -5,6 +5,9 @@
 - `act asm litmusify` no longer supports piping through a simulator.
   Running a simulator on a single litmus test using its simulator ID will
   become a separate feature later on.
+- File type overrides are now of the form
+  `-file-type X`, where `X` is `asm`, `asm-litmus`, `c`, or `c-litmus`.
+  (Part of this change predates this change report.)
 
 ## 2019-May-15
 

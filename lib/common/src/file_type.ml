@@ -23,7 +23,7 @@
 
 open Base
 
-type t = Assembly | C | C_litmus | Infer [@@deriving sexp]
+type t = Asm | Asm_litmus | C | C_litmus | Infer [@@deriving sexp]
 
 let file_type_is (src : Plumbing.Input.t) (expected : string) : bool =
   Option.exists (Plumbing.Input.file_type src) ~f:(String.equal expected)
@@ -33,7 +33,7 @@ let is_c (src : Plumbing.Input.t) : t -> bool = function
       true
   | Infer ->
       file_type_is src "c"
-  | Assembly | C_litmus ->
+  | Asm | Asm_litmus | C_litmus ->
       false
 
 let is_c_litmus (src : Plumbing.Input.t) : t -> bool = function
@@ -41,11 +41,13 @@ let is_c_litmus (src : Plumbing.Input.t) : t -> bool = function
       true
   | Infer ->
       file_type_is src "litmus"
-  | Assembly | C ->
+  | Asm | Asm_litmus | C ->
       false
 
 let delitmusified : t -> t = function
   | C_litmus ->
       C
-  | (Assembly | C | Infer) as x ->
+  | Asm_litmus ->
+    Asm
+  | (Asm | C | Infer) as x ->
       x
