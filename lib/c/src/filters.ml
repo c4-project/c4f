@@ -84,7 +84,7 @@ module Output = struct
 end
 
 module type S =
-  Plumbing.Filter.S with type aux_i = mode and type aux_o = Output.t
+  Plumbing.Filter_types.S with type aux_i = mode and type aux_o = Output.t
 
 module Make (B : Basic) : S = Pb.Filter.Make (struct
   type aux_i = mode

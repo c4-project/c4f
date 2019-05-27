@@ -62,7 +62,7 @@ module Of_sexpable (B : Sexpable.S) : S with type t = B.t = Make (struct
 end)
 
 module To_filter (L : S) :
-  Plumbing.Filter.S with type aux_i = unit and type aux_o = L.t =
+  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = L.t =
 Plumbing.Filter.Make (struct
   type aux_i = unit
 

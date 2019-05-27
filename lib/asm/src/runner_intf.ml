@@ -91,7 +91,7 @@ module type S = sig
   type cfg
 
   include
-    Plumbing.Filter.S
+    Plumbing.Filter_types.S
     with type aux_i = cfg Job.t
      and type aux_o = Job.Output.t
 end

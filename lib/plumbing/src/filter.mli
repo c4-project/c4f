@@ -30,39 +30,6 @@
 open Base
 open Filter_types
 
-(** {2 Type synonyms using Filter_context} *)
-
-(** Type synonym for {{!Filter_types.Basic} Filter_types.Basic}, fixing
-    [ctx] to [Filter_context.t]. *)
-module type Basic = Basic with type 'aux ctx := 'aux Filter_context.t
-
-(** Type synonym for
-    {{!Filter_types.Basic_in_file_only} Filter_types.Basic_in_file_only},
-    fixing [ctx] to [Filter_context.t]. *)
-module type Basic_in_file_only =
-  Basic_in_file_only with type 'aux ctx := 'aux Filter_context.t
-
-(** Type synonym for
-    {{!Filter_types.Basic_files_only} Filter_types.Basic_files_only}, fixing
-    [ctx] to [Filter_context.t]. *)
-module type Basic_files_only =
-  Basic_files_only with type 'aux ctx := 'aux Filter_context.t
-
-(** Type synonym for {{!Filter_types.Basic_adapt} Filter_types.Basic_adapt},
-    fixing [ctx] to [Filter_context.t]. *)
-module type Basic_adapt =
-  Basic_adapt with type 'aux Original.ctx := 'aux Filter_context.t
-
-(** Type synonym for
-    {{!Filter_types.Basic_on_runner} Filter_types.Basic_on_runner}, fixing
-    [ctx] to [Filter_context.t]. *)
-module type Basic_on_runner =
-  Basic_on_runner with type 'aux ctx := 'aux Filter_context.t
-
-(** Type synonym for {{!Filter_types.S} Filter_types.S}, fixing [ctx] to
-    [Filter_context.t]. *)
-module type S = S with type 'aux ctx = 'aux Filter_context.t
-
 (** {2 Making filters} *)
 
 (** Makes a filter from a {{!Basic} Basic}. *)
@@ -81,6 +48,10 @@ module Make_files_only (B : Basic_files_only) :
     some program accessors. *)
 module Make_on_runner (R : Basic_on_runner) :
   S with type aux_i = R.aux_i and type aux_o = unit
+
+(** {2 Adapting filters}
+
+    Filter chaining is in {{!Filter_chain} another module}. *)
 
 (** Adapts the auxiliary types of an existing filter, performing partial
     mappings to and from a new pair of auxiliary types. *)

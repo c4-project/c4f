@@ -27,7 +27,7 @@ open Base
 
 (** Shorthand for the specific type of filter a simulator runner expects. *)
 module type Basic_filter =
-  Plumbing.Filter.S with type aux_i = Arch.t and type aux_o = unit
+  Plumbing.Filter_types.S with type aux_i = Arch.t and type aux_o = unit
 
 (** Input for generating simulators that always fail with a particular error
     on use. *)

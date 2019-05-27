@@ -63,7 +63,7 @@ let run_direct ?(arch : Act_sim.Arch.t option)
     (Plumbing.Runner.Local.run ~oc ~prog argv')
 
 module Make (B : Basic) :
-  Pb.Filter.S with type aux_i = Act_sim.Arch.t and type aux_o = unit =
+  Pb.Filter_types.S with type aux_i = Act_sim.Arch.t and type aux_o = unit =
 Plumbing.Filter.Make_on_runner (struct
   module Runner = Plumbing.Runner.Local
 

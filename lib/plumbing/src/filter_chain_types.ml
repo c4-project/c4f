@@ -25,21 +25,14 @@
 
 (** Basic signature of inputs needed to build a chain. *)
 module type Basic = sig
-  (** Placeholder for input context. *)
-  type 'aux_i ctx
-
-  (** Placeholder for the record used for forwarding chain output to the
-      second item. *)
-  type 'aux_o chain_output
-
   (** Combined auxiliary input. *)
   type aux_i
 
   (** The first filter. *)
-  module First : Filter_types.S with type 'a ctx = 'a ctx
+  module First : Filter_types.S
 
   (** The second filter. *)
-  module Second : Filter_types.S with type 'a ctx = 'a ctx
+  module Second : Filter_types.S
 end
 
 (** Signature of inputs needed to build an unconditional chain. *)
@@ -50,7 +43,7 @@ module type Basic_unconditional = sig
   (** [first_input in] should extract the input for the first chained filter
       from [in]. *)
 
-  val second_input : aux_i -> First.aux_o chain_output -> Second.aux_i
+  val second_input : aux_i -> First.aux_o Chain_context.t -> Second.aux_i
   (** [second_input in first_out] should extract the input for the second
       chained filter from [in] and the output [first_out] from the first
       filter. [first_out] may be missing; this usually occurs when the
@@ -65,8 +58,8 @@ module type Basic_conditional = sig
   type aux_i_single
 
   val select :
-       aux_i ctx
-    -> [ `Both of First.aux_i * (First.aux_o chain_output -> Second.aux_i)
+       aux_i Filter_context.t
+    -> [ `Both of First.aux_i * (First.aux_o Chain_context.t -> Second.aux_i)
        | `One of aux_i_single ]
   (** [select ctx] should return [`Both] when the optional filter should be
       run (which filter this is depends on the functor). *)
@@ -75,40 +68,27 @@ end
 (** Signature of inputs needed to build a conditional chain with the first
     filter being conditional. *)
 module type Basic_conditional_first = sig
-  (** Placeholder for input context. *)
-  type 'aux_i ctx
-
-  (** Placeholder for the record used for forwarding chain output to the
-      second item. *)
-  type 'aux_o chain_output
-
   (** The first filter. *)
-  module First : Filter_types.S with type 'a ctx = 'a ctx
+  module First : Filter_types.S
 
   (** The second filter. *)
-  module Second : Filter_types.S with type 'a ctx = 'a ctx
+  module Second : Filter_types.S
 
   include
     Basic_conditional
-    with type 'aux_i ctx := 'aux_i ctx
-     and module First := First
+    with module First := First
      and module Second := Second
-     and type 'aux_o chain_output := 'aux_o chain_output
-     and type aux_i_single := First.aux_o chain_output -> Second.aux_i
+     and type aux_i_single := First.aux_o Chain_context.t -> Second.aux_i
 end
 
 (** Signature of inputs needed to build a conditional chain with the second
     filter being conditional. *)
 module type Basic_conditional_second = sig
-  (** Placeholder for input context. *)
-  type 'aux_i ctx
-
   (** The first filter. *)
-  module First : Filter_types.S with type 'a ctx = 'a ctx
+  module First : Filter_types.S
 
   include
     Basic_conditional
-    with type 'aux_i ctx := 'aux_i ctx
-     and module First := First
+    with module First := First
      and type aux_i_single := First.aux_i
 end

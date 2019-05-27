@@ -27,12 +27,14 @@
 
 (** [Filter] exposes a filter interface onto a configured C preprocessor. *)
 module Filter :
-  Plumbing.Filter.S with type aux_i = Act_config.Cpp.t and type aux_o = unit
+  Plumbing.Filter_types.S
+  with type aux_i = Act_config.Cpp.t
+   and type aux_o = unit
 
 (** [Chain_filter] exposes a filter that attaches in front of another filter
     [Dest] (that reads in C programs) and performs C preprocessing
     beforehand if the given config enables it. *)
-module Chain_filter (Dest : Plumbing.Filter.S) :
-  Plumbing.Filter.S
+module Chain_filter (Dest : Plumbing.Filter_types.S) :
+  Plumbing.Filter_types.S
   with type aux_i = Act_config.Cpp.t * Dest.aux_i
    and type aux_o = unit option * Dest.aux_o

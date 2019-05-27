@@ -46,7 +46,8 @@ module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
 
 (** {2 Interoperability with filters} *)
 
-(** Lifts a {{!S} S} to a {{!Filter.S} Filter.S} that outputs nothing to its
-    target file and returns the loaded data as auxiliary output. *)
+(** Lifts a {{!S} S} to a {{!Plumbing.Filter_types.S} filter} that outputs
+    nothing to its target file and returns the loaded data as auxiliary
+    output. *)
 module To_filter (L : S) :
-  Plumbing.Filter.S with type aux_i = unit and type aux_o = L.t
+  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = L.t

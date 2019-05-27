@@ -25,30 +25,12 @@ open Base
 open Filter_types
 module Tx = Travesty_base_exts
 
-module type Basic = Basic with type 'aux ctx := 'aux Filter_context.t
-
-module type Basic_in_file_only =
-  Basic_in_file_only with type 'aux ctx := 'aux Filter_context.t
-
-module type Basic_files_only =
-  Basic_files_only with type 'aux ctx := 'aux Filter_context.t
-
-module type Basic_adapt =
-  Basic_adapt with type 'aux Original.ctx := 'aux Filter_context.t
-
-module type Basic_on_runner =
-  Basic_on_runner with type 'aux ctx := 'aux Filter_context.t
-
-module type S = S with type 'aux ctx = 'aux Filter_context.t
-
 let wrap_error (name : string) : 'a Or_error.t -> 'a Or_error.t =
   Or_error.tag ~tag:(Printf.sprintf "In filter '%s'" name)
 
 module Make (B : Basic) :
   S with type aux_i = B.aux_i and type aux_o = B.aux_o = struct
   include B
-
-  type 'aux ctx = 'aux Filter_context.t
 
   let run (aux : aux_i) (input : Input.t) (output : Output.t) =
     let ctx = Filter_context.make ~aux ~input ~output in
@@ -110,8 +92,6 @@ module Make_in_file_only (B : Basic_in_file_only) :
   S with type aux_i = B.aux_i and type aux_o = B.aux_o = struct
   include B
 
-  type 'aux ctx = 'aux Filter_context.t
-
   let run (aux : aux_i) (input : Input.t) (output : Output.t) =
     let ctx = Filter_context.make ~aux ~input ~output in
     wrap_error name
@@ -123,8 +103,6 @@ end
 module Make_files_only (B : Basic_files_only) :
   S with type aux_i = B.aux_i and type aux_o = B.aux_o = struct
   include B
-
-  type 'aux ctx = 'aux Filter_context.t
 
   let run (aux : aux_i) (input : Input.t) (output : Output.t) =
     let ctx = Filter_context.make ~aux ~input ~output in
@@ -142,8 +120,6 @@ module Adapt (B : Basic_adapt) :
   type aux_o = B.aux_o
 
   let name = B.Original.name
-
-  type 'a ctx = 'a Filter_context.t
 
   let adapt_ctx (ctx : aux_i Filter_context.t) :
       B.Original.aux_i Filter_context.t Or_error.t =

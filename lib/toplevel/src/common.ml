@@ -50,12 +50,11 @@ let asm_runner_of_target (tgt : Act_config.Compiler.Target.t) :
   Language_support.asm_runner_from_arch
     (Act_config.Compiler.Target.arch tgt)
 
-module Chain_with_delitmus (Onto : Pb.Filter.S) :
-  Pb.Filter.S
+module Chain_with_delitmus (Onto : Pb.Filter_types.S) :
+  Pb.Filter_types.S
   with type aux_i =
               Ac.File_type.t
-              * (   Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t
-                 -> Onto.aux_i)
+              * (Act_c.Filters.Output.t Pb.Chain_context.t -> Onto.aux_i)
    and type aux_o = Act_c.Filters.Output.t option * Onto.aux_o =
 Pb.Filter_chain.Make_conditional_first (struct
   module First = Act_c.Filters.Litmus
@@ -63,7 +62,7 @@ Pb.Filter_chain.Make_conditional_first (struct
 
   type aux_i =
     Ac.File_type.t
-    * (Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t -> Onto.aux_i)
+    * (Act_c.Filters.Output.t Pb.Chain_context.t -> Onto.aux_i)
 
   let select ctx =
     let file_type, rest = Pb.Filter_context.aux ctx in
@@ -74,15 +73,13 @@ Pb.Filter_chain.Make_conditional_first (struct
 end)
 
 let chain_with_delitmus (type aux_i aux_o)
-    (module Onto : Pb.Filter.S
+    (module Onto : Pb.Filter_types.S
       with type aux_i = aux_i
        and type aux_o = aux_o) =
   (module Chain_with_delitmus (Onto)
-  : Pb.Filter.S
+  : Pb.Filter_types.S
     with type aux_i = Ac.File_type.t
-                      * (   Act_c.Filters.Output.t
-                            Pb.Filter_chain.Chain_output.t
-                         -> aux_i)
+                      * (Act_c.Filters.Output.t Pb.Chain_context.t -> aux_i)
      and type aux_o = Act_c.Filters.Output.t option * aux_o )
 
 let delitmus_compile_asm_pipeline (type c)
@@ -90,10 +87,9 @@ let delitmus_compile_asm_pipeline (type c)
     (job_maker :
          (module Act_asm.Runner_intf.Basic)
       -> (module Act_asm.Runner_intf.S with type cfg = c)) :
-    (module Pb.Filter.S
+    (module Pb.Filter_types.S
        with type aux_i = Ac.File_type.t
-                         * (   Act_c.Filters.Output.t
-                               Pb.Filter_chain.Chain_output.t
+                         * (   Act_c.Filters.Output.t Pb.Chain_context.t
                             -> c Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
         and type aux_o = Act_c.Filters.Output.t option
@@ -109,10 +105,9 @@ let delitmus_compile_asm_pipeline (type c)
     chain_with_delitmus with_compiler)
 
 let litmusify_pipeline (target : Act_config.Compiler.Target.t) :
-    (module Pb.Filter.S
+    (module Pb.Filter_types.S
        with type aux_i = Ac.File_type.t
-                         * (   Act_c.Filters.Output.t
-                               Pb.Filter_chain.Chain_output.t
+                         * (   Act_c.Filters.Output.t Pb.Chain_context.t
                             -> Sexp.t Act_asm.Litmusifier.Config.t
                                Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t)
@@ -141,7 +136,7 @@ let choose_cvars_after_delitmus (o : Ac.Output.t)
 
 let choose_cvars_inner (o : Ac.Output.t)
     (user_cvars : Ac.C_variables.Map.t option) :
-       Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t
+       Act_c.Filters.Output.t Pb.Chain_context.t
     -> bool * Ac.C_variables.Map.t option = function
   | Checking_ahead ->
       (false, None)
@@ -153,7 +148,7 @@ let choose_cvars_inner (o : Ac.Output.t)
 
 let choose_cvars (o : Ac.Output.t)
     (user_cvars : Ac.C_variables.Map.t option)
-    (dl_output : Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t) :
+    (dl_output : Act_c.Filters.Output.t Pb.Chain_context.t) :
     Ac.C_variables.Map.t option =
   let warn_if_empty, cvars = choose_cvars_inner o user_cvars dl_output in
   if warn_if_empty then
@@ -164,7 +159,7 @@ let make_compiler_input (o : Ac.Output.t) (file_type : Ac.File_type.t)
     (user_cvars : Ac.C_variables.Map.t option)
     (config_fn : c_variables:Ac.C_variables.Map.t option -> 'cfg)
     (passes : Set.M(Act_sanitiser.Pass_group).t)
-    (dl_output : Act_c.Filters.Output.t Pb.Filter_chain.Chain_output.t) :
+    (dl_output : Act_c.Filters.Output.t Pb.Chain_context.t) :
     'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
   let c_variables = choose_cvars o user_cvars dl_output in
   let symbols =

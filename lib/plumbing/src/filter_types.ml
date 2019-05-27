@@ -28,10 +28,6 @@ open Base
 
 (** Types and values common to both the basic and full filter signatures. *)
 module type Common = sig
-  (** Type of context supplied to filter functions; this is filled in in
-      {{!Filter} Filter}. *)
-  type 'aux ctx
-
   (** Type of any auxiliary state consumed by this filter. *)
   type aux_i
 
@@ -41,7 +37,7 @@ module type Common = sig
   val name : string
   (** [name] is the name of this filter. *)
 
-  val tmp_file_ext : aux_i ctx -> string
+  val tmp_file_ext : aux_i Filter_context.t -> string
   (** [tmp_file_ext ctx] gives the extension that any temporary files output
       by this filter should have, given the context [ctx]. *)
 end
@@ -49,7 +45,11 @@ end
 module type Basic = sig
   include Common
 
-  val run : aux_i ctx -> In_channel.t -> Out_channel.t -> aux_o Or_error.t
+  val run :
+       aux_i Filter_context.t
+    -> In_channel.t
+    -> Out_channel.t
+    -> aux_o Or_error.t
 end
 
 (** Input signature for filters that require physical files in input
@@ -57,7 +57,8 @@ end
 module type Basic_in_file_only = sig
   include Common
 
-  val run : aux_i ctx -> Fpath.t -> Out_channel.t -> aux_o Or_error.t
+  val run :
+    aux_i Filter_context.t -> Fpath.t -> Out_channel.t -> aux_o Or_error.t
 end
 
 (** Input signature for filters that require physical files in both input
@@ -66,7 +67,10 @@ module type Basic_files_only = sig
   include Common
 
   val run :
-    aux_i ctx -> infile:Fpath.t -> outfile:Fpath.t -> aux_o Or_error.t
+       aux_i Filter_context.t
+    -> infile:Fpath.t
+    -> outfile:Fpath.t
+    -> aux_o Or_error.t
 end
 
 module type S = sig

@@ -59,7 +59,7 @@ end
 (** {2 Filter modules} *)
 
 module type S =
-  Plumbing.Filter.S with type aux_i = mode and type aux_o = Output.t
+  Plumbing.Filter_types.S with type aux_i = mode and type aux_o = Output.t
 
 (** Filter for dealing with 'normal' C programs. *)
 module Normal_C : S

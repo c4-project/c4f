@@ -21,41 +21,4 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Common infrastructure for [act asm] commands.
-
-    This module sits on top of {{!Common} Common}. *)
-
-open Base
-
-module Input : sig
-  (** Opaque type of assembly command input. *)
-  type t
-
-  val act_config : t -> Act_config.Act.t
-
-  val file_type : t -> Act_common.File_type.t
-
-  val pb_input : t -> Plumbing.Input.t
-
-  val pb_output : t -> Plumbing.Output.t
-
-  val output : t -> Act_common.Output.t
-
-  val sanitiser_passes : t -> Set.M(Act_sanitiser.Pass_group).t
-
-  val target : t -> Act_config.Compiler.Target.t
-
-  val user_cvars : t -> Act_common.C_variables.Map.t option
-
-  val make_compiler_input :
-       t
-    -> (c_variables:Act_common.C_variables.Map.t option -> 'cfg)
-    -> Act_c.Filters.Output.t Plumbing.Chain_context.t
-    -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t
-end
-
-val lift_command :
-     Args.Standard_asm.t
-  -> f:(Input.t -> unit Or_error.t)
-  -> default_passes:Set.M(Act_sanitiser.Pass_group).t
-  -> unit
+type 'aux_o t = Checking_ahead | Skipped | Ran of 'aux_o

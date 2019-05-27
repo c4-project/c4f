@@ -175,7 +175,7 @@ module Make (B : Basic_with_run_info) : S = struct
 end
 
 module S_to_filter (S : S) :
-  Pb.Filter.S with type aux_i = unit and type aux_o = unit =
+  Pb.Filter_types.S with type aux_i = unit and type aux_o = unit =
 Pb.Filter.Make_files_only (struct
   type aux_i = unit
 
@@ -189,7 +189,7 @@ Pb.Filter.Make_files_only (struct
 end)
 
 module Make_filter (B : Basic_with_run_info) :
-  Pb.Filter.S with type aux_i = unit and type aux_o = unit =
+  Pb.Filter_types.S with type aux_i = unit and type aux_o = unit =
   S_to_filter (Make (B))
 
 let runner_from_spec (cspec : Spec.With_id.t) =
@@ -203,9 +203,9 @@ module Chain_input = struct
 end
 
 module Chain_with_compiler
-    (Comp : Pb.Filter.S with type aux_i = unit and type aux_o = unit)
-    (Onto : Pb.Filter.S) :
-  Pb.Filter.S
+    (Comp : Pb.Filter_types.S with type aux_i = unit and type aux_o = unit)
+    (Onto : Pb.Filter_types.S) :
+  Pb.Filter_types.S
   with type aux_i = Onto.aux_i Chain_input.t
    and type aux_o = unit option * Onto.aux_o =
 Pb.Filter_chain.Make_conditional_first (struct
@@ -215,7 +215,7 @@ Pb.Filter_chain.Make_conditional_first (struct
   type aux_i = Onto.aux_i Chain_input.t
 
   let lift_next (next : Chain_input.next_mode -> 'a) :
-      unit Pb.Filter_chain.Chain_output.t -> 'a = function
+      unit Pb.Chain_context.t -> 'a = function
     | Checking_ahead ->
         next `Preview
     | Skipped ->
@@ -255,27 +255,28 @@ module Make_resolver (B : Basic_resolver with type spec := Spec.With_id.t) :
   let from_spec = from_resolver_and_spec B.resolve
 
   let filter_from_spec (cspec : Spec.With_id.t) :
-      (module Pb.Filter.S with type aux_i = unit
-                           and type aux_o = unit)
+      (module Pb.Filter_types.S with type aux_i = unit
+                                 and type aux_o = unit)
       Or_error.t =
     Or_error.Let_syntax.(
       let%map (module S) = from_spec cspec in
       (module S_to_filter (S)
-      : Pb.Filter.S
+      : Pb.Filter_types.S
         with type aux_i = unit
          and type aux_o = unit ))
 
   let chained_filter_from_spec (type i o) (cspec : Spec.With_id.t)
-      (module Onto : Pb.Filter.S with type aux_i = i
-                                  and type aux_o = o) :
-      (module Pb.Filter.S
+      (module Onto : Pb.Filter_types.S
+        with type aux_i = i
+         and type aux_o = o) :
+      (module Pb.Filter_types.S
          with type aux_i = i Chain_input.t
           and type aux_o = unit option * o)
       Or_error.t =
     Or_error.Let_syntax.(
       let%map (module F) = filter_from_spec cspec in
       (module Chain_with_compiler (F) (Onto)
-      : Pb.Filter.S
+      : Pb.Filter_types.S
         with type aux_i = i Chain_input.t
          and type aux_o = unit option * o ))
 end
@@ -331,17 +332,18 @@ module Make_target_resolver
     Or_error.Let_syntax.(
       let%map (module S) = from_spec tgt in
       (module S_to_filter (S)
-      : Pb.Filter.S
+      : Pb.Filter_types.S
         with type aux_i = unit
          and type aux_o = unit ))
 
   let chained_filter_from_spec (type i o) (tgt : Target.t)
-      (module Onto : Pb.Filter.S with type aux_i = i
-                                  and type aux_o = o) =
+      (module Onto : Pb.Filter_types.S
+        with type aux_i = i
+         and type aux_o = o) =
     let open Or_error.Let_syntax in
     let%map (module F) = filter_from_spec tgt in
     (module Chain_with_compiler (F) (Onto)
-    : Pb.Filter.S
+    : Pb.Filter_types.S
       with type aux_i = i Chain_input.t
        and type aux_o = unit option * o )
 end

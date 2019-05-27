@@ -25,7 +25,7 @@ open Core_kernel
 module Pb = Plumbing
 
 module Filter :
-  Pb.Filter.S with type aux_i = Act_config.Cpp.t and type aux_o = unit =
+  Pb.Filter_types.S with type aux_i = Act_config.Cpp.t and type aux_o = unit =
 Pb.Filter.Make_on_runner (struct
   module Runner = Pb.Runner.Local
 
@@ -40,8 +40,8 @@ Pb.Filter.Make_on_runner (struct
   let argv aux (infile : string) = Act_config.Cpp.argv aux @ [infile]
 end)
 
-module Chain_filter (Dest : Pb.Filter.S) :
-  Pb.Filter.S
+module Chain_filter (Dest : Pb.Filter_types.S) :
+  Pb.Filter_types.S
   with type aux_i = Act_config.Cpp.t * Dest.aux_i
    and type aux_o = unit option * Dest.aux_o =
 Pb.Filter_chain.Make_conditional_first (struct

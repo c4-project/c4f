@@ -43,7 +43,7 @@ module Post_filter = struct
   end
 
   module type S =
-    Plumbing.Filter.S with type aux_i = Cfg.t and type aux_o = unit
+    Plumbing.Filter_types.S with type aux_i = Cfg.t and type aux_o = unit
 
   (** Adapts a simulator filter to try extract its per-run config from a
       [cfg]. *)
@@ -83,20 +83,19 @@ module Post_filter = struct
         (module Adapt ((val Act_sim.Table.get mtab id)))
 
   let chain (type i o) (filter : Cfg.t) (mtab : Act_sim.Table.t)
-      (module M : Plumbing.Filter.S with type aux_i = i and type aux_o = o)
-      :
-      (module Plumbing.Filter.S
-         with type aux_i = i
-                           * (   o Plumbing.Filter_chain.Chain_output.t
-                              -> Cfg.t)
+      (module M : Plumbing.Filter_types.S
+        with type aux_i = i
+         and type aux_o = o) :
+      (module Plumbing.Filter_types.S
+         with type aux_i = i * (o Plumbing.Chain_context.t -> Cfg.t)
           and type aux_o = o * unit option) =
     let (module Post) = make mtab filter in
     ( module Plumbing.Filter_chain.Make_conditional_second (struct
-      type aux_i = i * (o Plumbing.Filter_chain.Chain_output.t -> Cfg.t)
+      type aux_i = i * (o Plumbing.Chain_context.t -> Cfg.t)
 
       let select ctx =
         let rest, cfg = Plumbing.Filter_context.aux ctx in
-        match cfg Plumbing.Filter_chain.Chain_output.Checking_ahead with
+        match cfg Plumbing.Chain_context.Checking_ahead with
         | Cfg.No_filter ->
             `One rest
         | Cfg.Filter _ ->
@@ -109,16 +108,16 @@ end
 
 let make_filter (filter : Post_filter.Cfg.t)
     (target : Act_config.Compiler.Target.t) (mtab : Act_sim.Table.t) :
-    (module Plumbing.Filter.S
+    (module Plumbing.Filter_types.S
        with type aux_i = ( Act_common.File_type.t
                          * (   Act_c.Filters.Output.t
-                               Plumbing.Filter_chain.Chain_output.t
+                               Plumbing.Chain_context.t
                             -> Sexp.t Act_asm.Litmusifier.Config.t
                                Act_asm.Job.t
                                Act_config.Compiler.Chain_input.t) )
                          * (   ( Act_c.Filters.Output.t option
                                * (unit option * Act_asm.Job.Output.t) )
-                               Plumbing.Filter_chain.Chain_output.t
+                               Plumbing.Chain_context.t
                             -> Post_filter.Cfg.t)
         and type aux_o = ( Act_c.Filters.Output.t option
                          * (unit option * Act_asm.Job.Output.t) )

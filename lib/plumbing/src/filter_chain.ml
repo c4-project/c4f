@@ -24,36 +24,10 @@
 open Base
 open Filter_chain_types
 
-module Chain_output = struct
-  type 'aux_o t = Checking_ahead | Skipped | Ran of 'aux_o
-end
-
-module type Basic_unconditional =
-  Basic_unconditional
-  with type 'aux ctx := 'aux Filter_context.t
-   and type 'aux chain_output := 'aux Chain_output.t
-
-module type Basic_conditional =
-  Basic_conditional
-  with type 'aux ctx := 'aux Filter_context.t
-   and type 'aux chain_output := 'aux Chain_output.t
-
-module type Basic_conditional_first =
-  Basic_conditional_first
-  with type 'aux_i ctx := 'aux_i Filter_context.t
-   and type 'aux_o chain_output := 'aux_o Chain_output.t
-
-module type Basic_conditional_second =
-  Basic_conditional_second
-  with type 'aux_i ctx := 'aux_i Filter_context.t
-   and type 'aux_o chain_output := 'aux_o Chain_output.t
-
 module Make (B : Basic_unconditional) :
-  Filter.S
+  Filter_types.S
   with type aux_i = B.aux_i
    and type aux_o = B.First.aux_o * B.Second.aux_o = struct
-  type 'a ctx = 'a Filter_context.t
-
   type aux_i = B.aux_i
 
   type aux_o = B.First.aux_o * B.Second.aux_o
@@ -61,7 +35,7 @@ module Make (B : Basic_unconditional) :
   let name = Printf.sprintf "(%s | %s)" B.First.name B.Second.name
 
   let check_second_input (aux : B.aux_i) : B.Second.aux_i =
-    B.second_input aux Chain_output.Checking_ahead
+    B.second_input aux Chain_context.Checking_ahead
 
   let tmp_file_ext (ctx : B.aux_i Filter_context.t) : string =
     let ctx' = Filter_context.On_aux.map ~f:check_second_input ctx in
@@ -86,15 +60,15 @@ module Make (B : Basic_unconditional) :
       (a_output, b_output))
 end
 
-module Make_tuple (First : Filter.S) (Second : Filter.S) :
-  Filter.S
+module Make_tuple (First : Filter_types.S) (Second : Filter_types.S) :
+  Filter_types.S
   with type aux_i =
-              First.aux_i * (First.aux_o Chain_output.t -> Second.aux_i)
+              First.aux_i * (First.aux_o Chain_context.t -> Second.aux_i)
    and type aux_o = First.aux_o * Second.aux_o = Make (struct
   module First = First
   module Second = Second
 
-  type aux_i = First.aux_i * (First.aux_o Chain_output.t -> Second.aux_i)
+  type aux_i = First.aux_i * (First.aux_o Chain_context.t -> Second.aux_i)
 
   let first_input = fst
 
@@ -112,7 +86,7 @@ module type Chain_conditional_variables = sig
 
   val run_chained :
        BCC.First.aux_i
-    -> (BCC.First.aux_o Chain_output.t -> BCC.Second.aux_i)
+    -> (BCC.First.aux_o Chain_context.t -> BCC.Second.aux_i)
     -> Input.t
     -> Output.t
     -> aux_o Or_error.t
@@ -122,8 +96,6 @@ module type Chain_conditional_variables = sig
 end
 
 module Make_conditional_core (B : Chain_conditional_variables) = struct
-  type 'a ctx = 'a Filter_context.t
-
   type aux_i = B.BCC.aux_i
 
   type aux_o = B.aux_o
@@ -143,14 +115,14 @@ module Make_conditional_core (B : Chain_conditional_variables) = struct
 end
 
 module Make_conditional_first (B : Basic_conditional_first) :
-  Filter.S
+  Filter_types.S
   with type aux_i = B.aux_i
    and type aux_o = B.First.aux_o option * B.Second.aux_o =
 Make_conditional_core (struct
   module BCC = struct
     include B
 
-    type aux_i_single = B.First.aux_o Chain_output.t -> B.Second.aux_i
+    type aux_i_single = B.First.aux_o Chain_context.t -> B.Second.aux_i
   end
 
   type aux_o = B.First.aux_o option * B.Second.aux_o
@@ -171,14 +143,14 @@ Make_conditional_core (struct
         B.Second.tmp_file_ext ctx'
 
   let run_chained (a_in : B.First.aux_i)
-      (b_in : B.First.aux_o Chain_output.t -> B.Second.aux_i)
+      (b_in : B.First.aux_o Chain_context.t -> B.Second.aux_i)
       (input : Input.t) (output : Output.t) =
     Or_error.Let_syntax.(
       let%map a_out, b_out = Chained.run (a_in, b_in) input output in
       (Some a_out, b_out))
 
   let run_unchained
-      (b_in_f : B.First.aux_o Chain_output.t -> B.Second.aux_i)
+      (b_in_f : B.First.aux_o Chain_context.t -> B.Second.aux_i)
       (input : Input.t) (output : Output.t) =
     Or_error.Let_syntax.(
       let%map b_out = B.Second.run (b_in_f Skipped) input output in
@@ -186,7 +158,7 @@ Make_conditional_core (struct
 end)
 
 module Make_conditional_second (B : Basic_conditional_second) :
-  Filter.S
+  Filter_types.S
   with type aux_i = B.aux_i
    and type aux_o = B.First.aux_o * B.Second.aux_o option =
 Make_conditional_core (struct

@@ -47,4 +47,6 @@ val run_direct :
 (** We can use Herd as a simulator runner by supplying it with configuration
     expressed as a {{!Basic} Basic} module. *)
 module Make (B : Basic) :
-  Plumbing.Filter.S with type aux_i = Act_sim.Arch.t and type aux_o = unit
+  Plumbing.Filter_types.S
+  with type aux_i = Act_sim.Arch.t
+   and type aux_o = unit
