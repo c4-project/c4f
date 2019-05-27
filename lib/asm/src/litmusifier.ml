@@ -83,7 +83,7 @@ module Make (B : Runner_intf.Basic) :
     Act_sanitiser.Output.Program.t
 
   module Litmus = B.Litmus_ast
-  module Sanitiser = Act_sanitiser.Instance.Make_multi (B.Sanitiser_hook)
+  module Sanitiser = Act_sanitiser.Instance.Make (B.Sanitiser_hook)
 
   let print_litmus : Format.t -> Out_channel.t -> Litmus.Validated.t -> unit
       = function

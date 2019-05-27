@@ -28,9 +28,6 @@ module type Basic = sig
   (** Type of language elements, used for warnings. *)
   type warn_elt
 
-  (** Traversable container used to store programs. *)
-  type 'l pc
-
   (** Type of redirect maps. *)
   type rmap
 end
@@ -70,14 +67,14 @@ module type S = sig
         symbol table [symbol_table]. *)
   end
 
-  val programs : t -> Program.t pc
+  val programs : t -> Program.t list
   (** [programs t] gets the final sanitised programs. *)
 
   val redirects : t -> rmap
   (** [redirects t] gets the final mapping from C-level symbols to the
       symbols in [programs t]. *)
 
-  val make : programs:Program.t pc -> redirects:rmap -> t
-  (** [make ~programs ~redirects] makes an output using the given container
-      of programs [programs] and redirects map [redirects]. *)
+  val make : ?programs:Program.t list -> redirects:rmap -> unit -> t
+  (** [make ?programs ~redirects ()] makes an output using the given list of
+      programs [programs] and redirects map [redirects]. *)
 end

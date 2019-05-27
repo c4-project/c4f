@@ -23,19 +23,17 @@
 
 open Base
 
-module Make (L : Language_definition.S) (P : Travesty.Traversable.S1) :
-  Act_sanitiser.Hook.S with module Lang = L and module Program_container = P =
-struct
+module Make (L : Language_definition.S) :
+  Act_sanitiser.Hook_intf.S with module Lang = L = struct
   open Ast
   module Lang = L
   module Ctx = Act_sanitiser.Ctx.Make (Lang)
-  module Program_container = P
   module Null = Act_sanitiser.Pass.Make_null (Ctx)
   module On_statement = Null (Lang.Statement)
   module On_program = Null (Lang.Program)
 
   module On_all = Null (struct
-    type t = Lang.Program.t Program_container.t
+    type t = Lang.Program.t list
   end)
 
   module On_location = struct

@@ -23,11 +23,6 @@
 
 (** Assembly sanitisation: language-specific hooks *)
 
-(** @inline *)
-include module type of Hook_intf
-
 (** [Make_null] makes an [S] that does nothing. *)
-module Make_null
-    (Lang : Act_language.Definition.S)
-    (P : Travesty.Traversable.S1) :
-  S with module Lang = Lang and module Program_container = P
+module Make_null (Lang : Act_language.Definition.S) :
+  Hook_intf.S with module Lang = Lang

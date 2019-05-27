@@ -31,10 +31,8 @@ module type Basic = sig
   (** [Src_lang] is the language under explanation. *)
   module Src_lang : Act_language.Definition.S
 
-  module Sanitiser_hook (P : Travesty.Traversable.S1) :
-    Act_sanitiser.Hook.S
-    with module Lang = Src_lang
-     and module Program_container = P
+  module Sanitiser_hook :
+    Act_sanitiser.Hook_intf.S with module Lang = Src_lang
 
   module Program :
     Act_utils.Loadable_intf.S with type t = Src_lang.Program.t

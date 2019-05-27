@@ -25,25 +25,6 @@
 
 open Base
 
-(** [Basic] describes the base functionality we need to supply to a
-    sanitiser.
-
-    It includes both a [Hook] that inserts language-specific sanitisers into
-    the sanitiser, and a description of how we split the incoming assembly
-    into programs and traverse over them.
-
-    The dependency on a separate [Program_container] lets us adapt the
-    sanitiser to single-program and multi-program contexts more easily. *)
-module type Basic = sig
-  module Hook : Hook.S
-
-  val split :
-       Hook.Lang.Program.t
-    -> Hook.Lang.Program.t Hook.Program_container.t Or_error.t
-  (** [split] splits an assembly script up into the one or more programs
-      we'll be sanitising. *)
-end
-
 (** [S] is the interface to a fully-built sanitiser. *)
 module type S = sig
   (** [Lang] is the language over which we are sanitising. *)
@@ -52,16 +33,11 @@ module type S = sig
   module Warn :
     Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
 
-  (** [Program_container] describes the container that the sanitised program
-      or programs are held in. *)
-  module Program_container : Container.S1
-
   module Output :
-    Output.S
+    Output_intf.S
     with type listing := Lang.Program.t
      and type ('w, 'l) program := ('w, 'l) Output.Program.t
      and type warn_elt := Lang.Element.t
-     and type 'l pc := 'l Program_container.t
      and type rmap := Lang.Symbol.R_map.t
 
   val sanitise :

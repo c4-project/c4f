@@ -181,14 +181,14 @@ struct
     Job.Output.make (Fmt.always "?") name redirects []
 
   module LS = B.Src_lang
-  module SS = Act_sanitiser.Instance.Make_multi (B.Sanitiser_hook)
+  module San = Act_sanitiser.Instance.Make (B.Sanitiser_hook)
 
-  let explain_san_program (program : SS.Output.Program.t) : t =
-    let listing = SS.Output.Program.listing program in
-    let s_table = SS.Output.Program.symbol_table program in
+  let explain_san_program (program : San.Output.Program.t) : t =
+    let listing = San.Output.Program.listing program in
+    let s_table = San.Output.Program.symbol_table program in
     explain listing s_table
 
-  let explain_san_programs : SS.Output.Program.t list -> t list =
+  let explain_san_programs : San.Output.Program.t list -> t list =
     List.map ~f:explain_san_program
 
   let run_explanation (outp : Stdio.Out_channel.t) ~(in_name : string)
@@ -196,10 +196,10 @@ struct
       ~(config : config) ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =
     let open Or_error.Let_syntax in
-    let%map san = SS.sanitise ~passes ~symbols program in
-    let programs = SS.Output.programs san in
+    let%map san = San.sanitise ~passes ~symbols program in
+    let programs = San.Output.programs san in
     let explanations = explain_san_programs programs in
-    let redirects = SS.Output.redirects san in
+    let redirects = San.Output.redirects san in
     output_explanation config.format in_name outp explanations
       (LS.Symbol.R_map.to_string_alist redirects)
 

@@ -23,7 +23,7 @@
 
 (** Sanitiser: output record. *)
 
-include module type of Output_intf
+open Output_intf
 
 module Program : sig
   (** Opaque (for now). *)
@@ -35,6 +35,5 @@ module Make (B : Basic) :
   S
   with type listing = B.listing
    and type warn_elt = B.warn_elt
-   and type 'l pc = 'l B.pc
    and type rmap = B.rmap
    and type ('warn, 'listing) program := ('warn, 'listing) Program.t

@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Output_intf
+open Output_intf
 
 module Program = struct
   type ('warn_elt, 'listing) t =
@@ -35,7 +35,6 @@ module Make (B : Basic) :
   S
   with type listing = B.listing
    and type warn_elt = B.warn_elt
-   and type 'l pc = 'l B.pc
    and type rmap = B.rmap
    and type ('warn_elt, 'listing) program := ('warn_elt, 'listing) Program.t =
 struct
@@ -53,6 +52,6 @@ struct
     let make = Program.make
   end
 
-  type t = {programs: Program.t pc; redirects: rmap}
+  type t = {programs: Program.t list; redirects: rmap}
   [@@deriving fields, make]
 end

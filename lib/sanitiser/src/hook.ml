@@ -21,19 +21,14 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Hook_intf
-
-module Make_null
-    (Lang : Act_language.Definition.S)
-    (P : Travesty.Traversable.S1) :
-  S with module Lang = Lang and module Program_container = P = struct
+module Make_null (Lang : Act_language.Definition.S) :
+  Hook_intf.S with module Lang = Lang = struct
   module Lang = Lang
   module Ctx = Ctx.Make (Lang)
-  module Program_container = P
   module Null = Pass.Make_null (Ctx)
 
   module On_all = Null (struct
-    type t = Lang.Program.t Program_container.t
+    type t = Lang.Program.t list
   end)
 
   module On_program = Null (Lang.Program)

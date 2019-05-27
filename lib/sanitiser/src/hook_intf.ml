@@ -28,7 +28,7 @@ module type S = sig
 
   module On_all :
     Pass_intf.S
-    with type t := Lang.Program.t Program_container.t
+    with type t := Lang.Program.t list
      and type 'a ctx := 'a Ctx.t
 
   module On_program :
@@ -45,8 +45,3 @@ module type S = sig
   module On_location :
     Pass_intf.S with type t := Lang.Location.t and type 'a ctx := 'a Ctx.t
 end
-
-(** [S_maker] is the type of functors that generate hooks given a program
-    container. *)
-module type S_maker = functor (P : Travesty.Traversable.S1) -> S
-                                                               with module Program_container = P

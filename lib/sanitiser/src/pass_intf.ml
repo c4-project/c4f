@@ -29,10 +29,6 @@ module type Basic = sig
 
   (** [Ctx] is the sanitiser's state monad, specialised over [Lang]. *)
   module Ctx : Ctx.S with module Lang := Lang
-
-  (** [Program_container] is the container used to hold the one or more
-      programs being sanitised. *)
-  module Program_container : Travesty.Traversable.S1
 end
 
 (** [S] is the standard signature for sanitiser passes. *)

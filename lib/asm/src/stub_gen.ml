@@ -41,7 +41,7 @@ let print_separator (f : Formatter.t) (config : Config.t) : unit =
 
 module Make (B : Basic) : S with module Lang = B.Src_lang = struct
   module Lang = B.Src_lang
-  module San = Act_sanitiser.Instance.Make_multi (B.Sanitiser_hook)
+  module San = Act_sanitiser.Instance.Make (B.Sanitiser_hook)
 
   let gen_and_dump_asm_stub (i : int) (program : San.Output.Program.t)
       ~(oc : Stdio.Out_channel.t) ~(config : Config.t) : unit Or_error.t =

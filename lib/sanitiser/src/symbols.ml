@@ -25,9 +25,9 @@ open Base
 
 module Make (B : Pass_intf.Basic) :
   Pass_intf.S
-  with type t := B.Lang.Program.t B.Program_container.t
+  with type t := B.Lang.Program.t list
    and type 'a ctx := 'a B.Ctx.t = struct
-  module Ctx_Pcon = B.Program_container.On_monad (B.Ctx)
+  module Ctx_Pcon = Travesty_base_exts.List.On_monad (B.Ctx)
   module Ctx_Prog_Sym = B.Lang.Program.On_symbols.On_monad (B.Ctx)
 
   let over_all_symbols progs ~f =
@@ -53,8 +53,8 @@ module Make (B : Pass_intf.Basic) :
   let redirect_or_escape (sym : B.Lang.Symbol.t) : B.Lang.Symbol.t B.Ctx.t =
     get_existing_redirect_or sym ~f:(Fn.compose B.Ctx.return Escape.escape)
 
-  let escape_symbols (progs : B.Lang.Program.t B.Program_container.t) :
-      B.Lang.Program.t B.Program_container.t B.Ctx.t =
+  let escape_symbols (progs : B.Lang.Program.t list) :
+      B.Lang.Program.t list B.Ctx.t =
     B.Ctx.Let_syntax.(
       (* We do this to make sure that every redirectable symbol known to the
          sanitiser is escaped, not just the ones that appear in the program. *)
@@ -98,9 +98,7 @@ module Make (B : Pass_intf.Basic) :
 
   let unmangle_symbols = over_all_symbols ~f:unmangle
 
-  let run :
-         B.Lang.Program.t B.Program_container.t
-      -> B.Lang.Program.t B.Program_container.t B.Ctx.t =
+  let run : B.Lang.Program.t list -> B.Lang.Program.t list B.Ctx.t =
     B.Ctx.(
       guard ~on:`Unmangle_symbols unmangle_symbols
       >=> guard ~on:`Escape_symbols escape_symbols)
