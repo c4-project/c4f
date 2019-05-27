@@ -57,19 +57,10 @@ let delitmus_compile_asm_pipeline (type c)
       -> (module Act_asm.Runner_intf.S with type cfg = c)) :
     (module Act_asm.Pipeline.S with type cfg = c) Or_error.t =
   Or_error.Let_syntax.(
-    let%bind (module J) = target |> asm_runner_of_target >>| job_maker in
-    let%map (module Jc) =
-      Language_support.Resolve_compiler_from_target.chained_filter_from_spec
-        target
-        (module J)
-    in
-    ( module Act_asm.Pipeline.Make (struct
-      type cfg = J.cfg
-
-      include Jc
-    end)
-    : Act_asm.Pipeline.S
-      with type cfg = c ))
+    let%bind job = target |> asm_runner_of_target >>| job_maker in
+    Act_asm.Pipeline.make
+      (module Language_support.Resolve_compiler_from_target)
+      job target)
 
 let litmusify_pipeline (target : Act_config.Compiler.Target.t) :
     (module Act_asm.Pipeline.S

@@ -39,7 +39,7 @@ let asm_runner_from_arch :
     ~f:(fun lang rest ->
       Result.(try_get_lang_proc lang >>= fun proc -> proc rest) )
 
-module Gcc : Act_config.Compiler.Basic = struct
+module Gcc : Act_config.Compiler_intf.Basic = struct
   let compile_args ~args ~emits ~infile ~outfile =
     ignore emits ;
     [ "-S" (* emit assembly *)
@@ -50,10 +50,10 @@ module Gcc : Act_config.Compiler.Basic = struct
   let test_args = ["--version"]
 end
 
-let style_modules = [("gcc", (module Gcc : Act_config.Compiler.Basic))]
+let style_modules = [("gcc", (module Gcc : Act_config.Compiler_intf.Basic))]
 
 module Resolver :
-  Act_config.Compiler.Basic_resolver
+  Act_config.Compiler_intf.Basic_resolver
   with type spec := Act_config.Compiler.Spec.With_id.t = struct
   let resolve (cspec : Act_config.Compiler.Spec.With_id.t) =
     let style = Act_config.Compiler.Spec.With_id.style cspec in

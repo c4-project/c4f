@@ -55,7 +55,6 @@ module type Basic_machine_and_up = sig
   module Resolve_compiler :
     Act_config.Compiler.S_resolver
     with type spec = Act_config.Compiler.Spec.With_id.t
-     and type 'a chain_input = 'a Act_config.Compiler.Chain_input.t
 
   val asm_runner_from_spec :
        Act_config.Compiler.Spec.With_id.t

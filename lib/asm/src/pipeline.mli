@@ -21,7 +21,9 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Functors and types for building assembly job pipelines that take in
+open Base
+
+(** Functions and types for building assembly job pipelines that take in
     C/Litmus, C, and assembly files, performing the necessary
     transformations. *)
 
@@ -80,13 +82,8 @@ module type S = sig
      and type aux_o = Output.t
 end
 
-module type Basic = sig
-  type cfg
-
-  include
-    Pb.Filter_types.S
-    with type aux_i = cfg Job.t Act_config.Compiler.Chain_input.t
-     and type aux_o = Job.Output.t
-end
-
-module Make (J : Basic) : S with type cfg = J.cfg
+val make :
+     (module Act_config.Compiler.S_resolver with type spec = 'spec)
+  -> (module Runner_intf.S with type cfg = 'c)
+  -> 'spec
+  -> (module S with type cfg = 'c) Or_error.t

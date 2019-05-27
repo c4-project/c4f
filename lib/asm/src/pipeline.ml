@@ -21,6 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
 module Ac = Act_common
 module Pb = Plumbing
 
@@ -85,3 +86,18 @@ module Make (J : Basic) : S with type cfg = J.cfg = struct
       else `One rest
   end)
 end
+
+let make (type c spec)
+    (module Resolver : Act_config.Compiler.S_resolver with type spec = spec)
+    (module Runner : Runner_intf.S with type cfg = c) (target : spec) :
+    (module S with type cfg = c) Or_error.t =
+  Or_error.Let_syntax.(
+    let%map (module Chained_runner) =
+      Resolver.chained_filter_from_spec target (module Runner)
+    in
+    let module B = struct
+      type cfg = c
+
+      include Chained_runner
+    end in
+    (module Make (B) : S with type cfg = c))

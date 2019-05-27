@@ -42,7 +42,6 @@ val asm_runner_from_arch :
 module Resolve_compiler :
   Act_config.Compiler.S_resolver
   with type spec = Act_config.Compiler.Spec.With_id.t
-   and type 'a chain_input = 'a Act_config.Compiler.Chain_input.t
 
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers from targets, filling in a dummy compiler if the
@@ -50,7 +49,6 @@ module Resolve_compiler :
 module Resolve_compiler_from_target :
   Act_config.Compiler.S_resolver
   with type spec = Act_config.Compiler.Target.t
-   and type 'a chain_input = 'a Act_config.Compiler.Chain_input.t
 
 val load_and_process_config :
      ?compiler_predicate:Act_config.Compiler.Property.t Blang.t

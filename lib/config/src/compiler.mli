@@ -26,11 +26,7 @@
 
 open Core_kernel
 open Act_common
-
-(** To reduce duplication, we describe the module types of [Compiler] in
-    [Compiler_intf], and import parts of it both here and in the
-    implementation. *)
-include module type of Compiler_intf
+open Compiler_intf
 
 (** [Make_spec] is a functor for building compiler specifications
     parametrised on machine references.
@@ -141,19 +137,20 @@ module Chain_input : sig
   val make : file_type:File_type.t -> next:(next_mode -> 'a) -> 'a t
 end
 
+(** Version of {{!Compiler_intf.S_resolver} Compiler_intf.S_resolver} with
+    the chain input fixed. *)
+module type S_resolver =
+  S_resolver with type 'a chain_input := 'a Chain_input.t
+
 (** {2 Resolving spec IDs to compilers} *)
 
 (** Constructs a {{!S_resolver} S_resolver} from a
     {{!Basic_resolver} Basic_resolver} over direct compiler specs. *)
 module Make_resolver (B : Basic_resolver with type spec := Spec.With_id.t) :
-  S_resolver
-  with type spec = Spec.With_id.t
-   and type 'a chain_input = 'a Chain_input.t
+  S_resolver with type spec = Spec.With_id.t
 
 (** Constructs a {{!S_resolver} S_resolver} over targets from a
     {{!Basic_resolver} Basic_resolver}. *)
 module Make_target_resolver
     (B : Basic_resolver with type spec := Spec.With_id.t) :
-  S_resolver
-  with type spec = Target.t
-   and type 'a chain_input = 'a Chain_input.t
+  S_resolver with type spec = Target.t

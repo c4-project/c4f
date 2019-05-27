@@ -25,7 +25,7 @@ open Core_kernel
 module Ac = Act_common
 module Au = Act_utils
 module Pb = Plumbing
-include Compiler_intf
+open Compiler_intf
 
 module Make_spec (R : Machine.Reference) : S_spec with module Mach = R =
 struct
@@ -202,6 +202,9 @@ module Chain_input = struct
   [@@deriving make, fields]
 end
 
+module type S_resolver =
+  S_resolver with type 'a chain_input := 'a Chain_input.t
+
 module Chain_with_compiler
     (Comp : Pb.Filter_types.S with type aux_i = unit and type aux_o = unit)
     (Onto : Pb.Filter_types.S) :
@@ -249,12 +252,8 @@ let from_resolver_and_spec resolve cspec =
   : S )
 
 module Make_resolver (B : Basic_resolver with type spec := Spec.With_id.t) :
-  S_resolver
-  with type spec = Spec.With_id.t
-   and type 'a chain_input = 'a Chain_input.t = struct
+  S_resolver with type spec = Spec.With_id.t = struct
   type spec = Spec.With_id.t
-
-  type 'a chain_input = 'a Chain_input.t
 
   let from_spec = from_resolver_and_spec B.resolve
 
@@ -313,12 +312,8 @@ end
 
 module Make_target_resolver
     (B : Basic_resolver with type spec := Spec.With_id.t) :
-  S_resolver
-  with type spec = Target.t
-   and type 'a chain_input = 'a Chain_input.t = struct
+  S_resolver with type spec = Target.t = struct
   type spec = Target.t
-
-  type 'a chain_input = 'a Chain_input.t
 
   let from_spec = function
     | `Spec cspec ->
