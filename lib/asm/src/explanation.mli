@@ -23,7 +23,7 @@
 
 (** High-level explainer output. *)
 
-include module type of Explanation_intf
+open Explanation_intf
 
 (** [Make (B)] makes an [S] from a [Basic]. *)
 module Make (B : Basic) :

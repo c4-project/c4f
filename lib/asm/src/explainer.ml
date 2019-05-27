@@ -163,13 +163,33 @@ struct
     | Detailed ->
         pp
 
-  let output_explanation output_format name outp exp redirects =
+  let index : 'a list -> (int, 'a) List.Assoc.t =
+    List.mapi ~f:(fun i v -> (i, v))
+
+  let output_explanation output_format name outp exps redirects =
     let f = Caml.Format.formatter_of_out_channel outp in
-    Fmt.pf f "%a@." (pp_for_explain_format output_format) exp ;
+    let pp =
+      Fmt.(
+        using index
+          (vbox
+             (list ~sep:sp
+                (pair ~sep:sp
+                   (hbox (prefix (unit "-- program ") int))
+                   (pp_for_explain_format output_format)))))
+    in
+    Fmt.pf f "%a@." pp exps ;
     Job.Output.make (Fmt.always "?") name redirects []
 
   module LS = B.Src_lang
-  module SS = Act_sanitiser.Instance.Make_single (B.Sanitiser_hook)
+  module SS = Act_sanitiser.Instance.Make_multi (B.Sanitiser_hook)
+
+  let explain_san_program (program : SS.Output.Program.t) : t =
+    let listing = SS.Output.Program.listing program in
+    let s_table = SS.Output.Program.symbol_table program in
+    explain listing s_table
+
+  let explain_san_programs : SS.Output.Program.t list -> t list =
+    List.map ~f:explain_san_program
 
   let run_explanation (outp : Stdio.Out_channel.t) ~(in_name : string)
       ~(program : LS.Program.t) ~(symbols : LS.Symbol.t list)
@@ -177,12 +197,10 @@ struct
       Job.Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let%map san = SS.sanitise ~passes ~symbols program in
-    let program = SS.Output.programs san in
-    let listing = SS.Output.Program.listing program in
-    let s_table = SS.Output.Program.symbol_table program in
-    let exp = explain listing s_table in
+    let programs = SS.Output.programs san in
+    let explanations = explain_san_programs programs in
     let redirects = SS.Output.redirects san in
-    output_explanation config.format in_name outp exp
+    output_explanation config.format in_name outp explanations
       (LS.Symbol.R_map.to_string_alist redirects)
 
   module Filter : Runner_intf.S with type cfg = Config.t =

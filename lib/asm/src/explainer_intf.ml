@@ -48,7 +48,7 @@ module type S = sig
 
   (** [Loc_explanation] provides explanations for locations. *)
   module Loc_explanation :
-    Explanation.S
+    Explanation_intf.S
     with type elt := Lang.Location.t
      and type context := Act_abstract.Symbol.Table.t
      and module Abs := Act_abstract.Location
@@ -57,7 +57,7 @@ module type S = sig
       bundles. *)
   module Ops_explanation : sig
     include
-      Explanation.S
+      Explanation_intf.S
       with type elt := Lang.Instruction.t
        and type context := Act_abstract.Symbol.Table.t
        and module Abs := Act_abstract.Operand.Bundle
@@ -71,7 +71,7 @@ module type S = sig
   (** [Ins_explanation] provides explanations for instructions. *)
   module Ins_explanation : sig
     include
-      Explanation.S
+      Explanation_intf.S
       with type elt := Lang.Instruction.t
        and type context := Act_abstract.Symbol.Table.t
        and module Abs := Act_abstract.Instruction
@@ -86,7 +86,7 @@ module type S = sig
       tables as context. *)
   module Stm_explanation : sig
     include
-      Explanation.S
+      Explanation_intf.S
       with type elt := Lang.Statement.t
        and type context := Act_abstract.Symbol.Table.t
        and module Abs := Act_abstract.Statement

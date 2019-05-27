@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Explanation_intf
+open Explanation_intf
 
 let pp_details (pp_header : 'h Fmt.t) (pp_body : 'b Fmt.t) : ('h * 'b) Fmt.t
     =
@@ -43,8 +43,8 @@ let pp_listed_details (name : string) (pp_item : 'b Fmt.t) (f : Formatter.t)
   | ts ->
       Fmt.(pp_named_details name (list ~sep:comma pp_item)) f ts
 
-module Make (B : Basic) :
-  S
+module Make (B : Explanation_intf.Basic) :
+  Explanation_intf.S
   with type elt := B.elt
    and type context := B.context
    and type details := B.details

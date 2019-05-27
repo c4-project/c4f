@@ -3,6 +3,7 @@
 ## clang_macho_o3_xchg.s
 
 ```
+-- program 0
 _P0:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -12,6 +13,7 @@ movl $1, %EAX # <-- move
 xchgl %EAX, _y # <-- RMW
 popl %EBP # <-- stack (manipulates stack)
 retl # <-- return
+-- program 1
 _P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -25,6 +27,7 @@ retl # <-- return
 ## gcc_elf_o0_stackchk.s
 
 ```
+-- program 0
 P0:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -47,6 +50,7 @@ call __stack_chk_fail # <-- call
 .L2:  # <-- label
 leave # <-- call
 ret # <-- return
+-- program 1
 P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -73,6 +77,7 @@ ret # <-- return
 ## gcc_macho_o0_deref_cmpxchg.s
 
 ```
+-- program 0
 _P0:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -93,6 +98,7 @@ movl %EDX, _t0r0 # <-- move
 L3:  # <-- label
 leave # <-- call
 ret # <-- return
+-- program 1
 _P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -109,6 +115,7 @@ ret # <-- return
 ## gcc_macho_o0_deref_write.s
 
 ```
+-- program 0
 _P0:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -126,6 +133,7 @@ movl $1, _x # <-- move
 L3:  # <-- label
 leave # <-- call
 ret # <-- return
+-- program 1
 _P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -148,6 +156,7 @@ ret # <-- return
 ## gcc_macho_o0_immediate_heap.s
 
 ```
+-- program 0
 _P0:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -166,6 +175,7 @@ movl -8(%EBP), %EAX # <-- move
 movl %EDX, (%EAX) # <-- move
 leave # <-- call
 ret # <-- return
+-- program 1
 _P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -188,6 +198,7 @@ ret # <-- return
 ## gcc_macho_o0_moves.s
 
 ```
+-- program 0
 _P0:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
@@ -203,6 +214,7 @@ movl $1, _x # <-- move
 L3:  # <-- label
 leave # <-- call
 ret # <-- return
+-- program 1
 _P1:  # <-- label (unused label, program boundary)
 pushl %EBP # <-- stack (manipulates stack)
 movl %ESP, %EBP # <-- move (manipulates stack)
