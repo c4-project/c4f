@@ -28,63 +28,63 @@ module Pb = Plumbing
 
 let%test_module "is_c" =
   ( module struct
-    let%expect_test "is_c: infer on untyped stdin" =
+    let%expect_test "infer on untyped stdin" =
       Au.Io.print_bool (is_c (Pb.Input.stdin ()) Infer) ;
       [%expect {| false |}]
 
-    let%expect_test "is_c: infer on C-typed stdin" =
+    let%expect_test "infer on C-typed stdin" =
       Au.Io.print_bool (is_c (Pb.Input.stdin ~file_type:"c" ()) Infer) ;
       [%expect {| true |}]
 
-    let%expect_test "is_c: infer on asm-typed stdin" =
+    let%expect_test "infer on asm-typed stdin" =
       Au.Io.print_bool (is_c (Pb.Input.stdin ~file_type:"s" ()) Infer) ;
       [%expect {| false |}]
 
-    let%expect_test "is_c: infer on C-typed file" =
+    let%expect_test "infer on C-typed file" =
       Au.Io.print_bool (is_c (Pb.Input.file (Fpath.v "hello.c")) Infer) ;
       [%expect {| true |}]
 
-    let%expect_test "is_c: infer on asm-typed file" =
+    let%expect_test "infer on asm-typed file" =
       Au.Io.print_bool (is_c (Pb.Input.file (Fpath.v "hello.s")) Infer) ;
       [%expect {| false |}]
 
-    let%expect_test "is_c: override C on untyped stdin" =
+    let%expect_test "override C on untyped stdin" =
       Au.Io.print_bool (is_c (Pb.Input.stdin ()) C) ;
       [%expect {| true |}]
 
-    let%expect_test "is_c: override C on C-typed stdin" =
+    let%expect_test "override C on C-typed stdin" =
       Au.Io.print_bool (is_c (Pb.Input.stdin ~file_type:"c" ()) C) ;
       [%expect {| true |}]
 
-    let%expect_test "is_c: override C on asm-typed stdin" =
+    let%expect_test "override C on asm-typed stdin" =
       Au.Io.print_bool (is_c (Pb.Input.stdin ~file_type:"s" ()) C) ;
       [%expect {| true |}]
 
-    let%expect_test "is_c: override C on C-typed file" =
+    let%expect_test "override C on C-typed file" =
       Au.Io.print_bool (is_c (Pb.Input.file (Fpath.v "hello.c")) C) ;
       [%expect {| true |}]
 
-    let%expect_test "is_c: override C on asm-typed file" =
+    let%expect_test "override C on asm-typed file" =
       Au.Io.print_bool (is_c (Pb.Input.file (Fpath.v "hello.s")) C) ;
       [%expect {| true |}]
 
-    let%expect_test "is_c: override non-C on untyped stdin" =
-      Au.Io.print_bool (is_c (Pb.Input.stdin ()) Assembly) ;
+    let%expect_test "override non-C on untyped stdin" =
+      Au.Io.print_bool (is_c (Pb.Input.stdin ()) Asm) ;
       [%expect {| false |}]
 
-    let%expect_test "is_c: override non-C on C-typed stdin" =
-      Au.Io.print_bool (is_c (Pb.Input.stdin ~file_type:"c" ()) Assembly) ;
+    let%expect_test "override non-C on C-typed stdin" =
+      Au.Io.print_bool (is_c (Pb.Input.stdin ~file_type:"c" ()) Asm) ;
       [%expect {| false |}]
 
-    let%expect_test "is_c: override non-C on asm-typed stdin" =
-      Au.Io.print_bool (is_c (Pb.Input.stdin ~file_type:"s" ()) Assembly) ;
+    let%expect_test "override non-C on asm-typed stdin" =
+      Au.Io.print_bool (is_c (Pb.Input.stdin ~file_type:"s" ()) Asm) ;
       [%expect {| false |}]
 
-    let%expect_test "is_c: override non-C on C-typed file" =
-      Au.Io.print_bool (is_c (Pb.Input.file (Fpath.v "hello.c")) Assembly) ;
+    let%expect_test "override non-C on C-typed file" =
+      Au.Io.print_bool (is_c (Pb.Input.file (Fpath.v "hello.c")) Asm) ;
       [%expect {| false |}]
 
-    let%expect_test "is_c: override non-C on asm-typed file" =
-      Au.Io.print_bool (is_c (Pb.Input.file (Fpath.v "hello.s")) Assembly) ;
+    let%expect_test "override non-C on asm-typed file" =
+      Au.Io.print_bool (is_c (Pb.Input.file (Fpath.v "hello.s")) Asm) ;
       [%expect {| false |}]
   end )

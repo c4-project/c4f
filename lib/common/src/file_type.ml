@@ -48,6 +48,6 @@ let delitmusified : t -> t = function
   | C_litmus ->
       C
   | Asm_litmus ->
-    Asm
+      Asm
   | (Asm | C | Infer) as x ->
       x
