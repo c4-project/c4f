@@ -1,5 +1,11 @@
 # Unreleased
 
+## 2019-May-27
+
+- `act asm litmusify` no longer supports piping through a simulator.
+  Running a simulator on a single litmus test using its simulator ID will
+  become a separate feature later on.
+
 ## 2019-May-15
 
 - Almost all `act` modules are now publicly exposed as `act.foo` (with

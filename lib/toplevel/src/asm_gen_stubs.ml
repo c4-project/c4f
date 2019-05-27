@@ -44,26 +44,19 @@ let stub_gen_runner (module B : Act_asm.Runner_intf.Basic) :
   (module Sg.Filter)
 
 let stub_gen_filter (target : Act_config.Compiler.Target.t) :
-    (module Plumbing.Filter_types.S
-       with type aux_i = Act_common.File_type.t
-                         * (   Act_c.Filters.Output.t
-                               Plumbing.Chain_context.t
-                            -> Act_asm.Stub_gen.Config.t Act_asm.Job.t
-                               Act_config.Compiler.Chain_input.t)
-        and type aux_o = Act_c.Filters.Output.t option
-                         * Act_asm.Job.Output.t)
+    (module Act_asm.Pipeline.S with type cfg = Act_asm.Stub_gen.Config.t)
     Or_error.t =
   Or_error.tag ~tag:"while getting a stub-gen filter for this target"
     (Common.delitmus_compile_asm_pipeline target stub_gen_runner)
 
 let run (input : In.t) : unit Or_error.t =
   let file_type = In.file_type input in
-  let compiler_input_fn = In.make_compiler_input input make_config in
+  let job_input = In.make_compiler_input input make_config in
   Or_error.Let_syntax.(
     let%bind (module Sg) = stub_gen_filter (In.target input) in
     Or_error.ignore_m
       (Sg.run
-         (file_type, compiler_input_fn)
+         (Act_asm.Pipeline.Input.make ~file_type ~job_input)
          (In.pb_input input) (In.pb_output input)))
 
 let command : Command.t =

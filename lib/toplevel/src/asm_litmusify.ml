@@ -25,110 +25,6 @@ open Core_kernel
 module A = Act_common
 module Tx = Travesty_core_kernel_exts
 
-module Post_filter = struct
-  module Cfg = struct
-    type t = No_filter | Filter of {id: A.Id.t; arch: Act_sim.Arch.t}
-
-    let arch_of_t : t -> Act_sim.Arch.t Or_error.t = function
-      | Filter {arch; _} ->
-          Or_error.return arch
-      | No_filter ->
-          Or_error.error_string
-            "Tried to filter despite filtering being disabled"
-
-    let make_filter (arch : Act_sim.Arch.t) (id : A.Id.t) = Filter {id; arch}
-
-    let make ?(simulator : A.Id.t option) ~(arch : Act_sim.Arch.t) : t =
-      Option.value_map simulator ~default:No_filter ~f:(make_filter arch)
-  end
-
-  module type S =
-    Plumbing.Filter_types.S with type aux_i = Cfg.t and type aux_o = unit
-
-  (** Adapts a simulator filter to try extract its per-run config from a
-      [cfg]. *)
-  module Adapt (S : Act_sim.Runner_intf.S) : S =
-  Plumbing.Filter.Adapt (struct
-    module Original = S.Filter
-
-    type aux_i = Cfg.t
-
-    type aux_o = unit
-
-    let adapt_i : Cfg.t -> Act_sim.Arch.t Or_error.t = Cfg.arch_of_t
-
-    let adapt_o : unit -> unit Or_error.t = Or_error.return
-  end)
-
-  module Make_dummy (B : sig
-    val error : Error.t
-  end) : S =
-    Adapt (Act_sim.Runner.Make_error (B))
-
-  (** This mainly exists so that there's still a module returned by
-      {{!make} make}, even if we don't need one.
-
-      In practice, {{!chain} chain} makes sure that this filter is never
-      run. *)
-  module No_filter_dummy : S = Make_dummy (struct
-    let error =
-      Error.of_string "Tried to use a filter when none was requested"
-  end)
-
-  (** [make mtab] makes a post-filter module based on the request [which]. *)
-  let make (mtab : Act_sim.Table.t) : Cfg.t -> (module S) = function
-    | No_filter ->
-        (module No_filter_dummy)
-    | Filter {id; _} ->
-        (module Adapt ((val Act_sim.Table.get mtab id)))
-
-  let chain (type i o) (filter : Cfg.t) (mtab : Act_sim.Table.t)
-      (module M : Plumbing.Filter_types.S
-        with type aux_i = i
-         and type aux_o = o) :
-      (module Plumbing.Filter_types.S
-         with type aux_i = i * (o Plumbing.Chain_context.t -> Cfg.t)
-          and type aux_o = o) =
-    let (module Post) = make mtab filter in
-    ( module Plumbing.Filter_chain.Make_conditional_second (struct
-      type aux_i = i * (o Plumbing.Chain_context.t -> Cfg.t)
-
-      type aux_o = o
-
-      let combine_output (x : o) (_ : unit option) : aux_o = x
-
-      let select ctx =
-        let rest, cfg = Plumbing.Filter_context.aux ctx in
-        match cfg Plumbing.Chain_context.Checking_ahead with
-        | Cfg.No_filter ->
-            `One rest
-        | Cfg.Filter _ ->
-            `Both (rest, cfg)
-
-      module First = M
-      module Second = Post
-    end) )
-end
-
-let make_filter (filter : Post_filter.Cfg.t)
-    (target : Act_config.Compiler.Target.t) (mtab : Act_sim.Table.t) :
-    (module Plumbing.Filter_types.S
-       with type aux_i = ( Act_common.File_type.t
-                         * (   Act_c.Filters.Output.t
-                               Plumbing.Chain_context.t
-                            -> Sexp.t Act_asm.Litmusifier.Config.t
-                               Act_asm.Job.t
-                               Act_config.Compiler.Chain_input.t) )
-                         * (   ( Act_c.Filters.Output.t option
-                               * Act_asm.Job.Output.t )
-                               Plumbing.Chain_context.t
-                            -> Post_filter.Cfg.t)
-        and type aux_o = Act_c.Filters.Output.t option
-                         * Act_asm.Job.Output.t)
-    Or_error.t =
-  let open Or_error in
-  Common.(target |> litmusify_pipeline >>| Post_filter.chain filter mtab)
-
 let parse_post :
        [`Exists of Sexp.t]
     -> Sexp.t Act_litmus.Ast_base.Postcondition.t Or_error.t = function
@@ -149,47 +45,31 @@ let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
   fun ~c_variables ->
     Act_asm.Litmusifier.Config.make ?postcondition ?c_variables ()
 
-let get_arch (target : Act_config.Compiler.Target.t) : Act_sim.Arch.t =
-  Assembly (Act_config.Compiler.Target.arch target)
-
-let to_machine_id : Act_config.Compiler.Target.t -> Act_config.Machine.Id.t
-    = function
-  | `Spec s ->
-      s |> Act_config.Compiler.Spec.With_id.machine
-      |> Act_config.Machine.Spec.With_id.id
-  | `Arch _ ->
-      Act_config.Machine.Id.default
-
 module In = Asm_common.Input
 
-let run (simulator : A.Id.t option) (post_sexp : [`Exists of Sexp.t] option)
-    (input : In.t) : unit Or_error.t =
+let run (post_sexp : [`Exists of Sexp.t] option) (input : In.t) :
+    unit Or_error.t =
   let cfg = In.act_config input in
   let infile = In.pb_input input in
   let outfile = In.pb_output input in
   let target = In.target input in
   let file_type = In.file_type input in
-  let arch = get_arch target in
-  let filter = Post_filter.Cfg.make ?simulator ~arch in
   let module R = Sim_support.Make_resolver (struct
     let cfg = cfg
   end) in
-  let machine_id = to_machine_id target in
   Or_error.Let_syntax.(
-    let%bind mtab = R.make_table machine_id in
-    let%bind (module Filter) = make_filter filter target mtab in
+    let%bind (module Filter) = Common.litmusify_pipeline target in
     let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
-    let compiler_input_fn = In.make_compiler_input input litmus_cfg_fn in
+    let job_input = In.make_compiler_input input litmus_cfg_fn in
     Or_error.ignore_m
       (Filter.run
-         ((file_type, compiler_input_fn), Fn.const filter)
+         (Act_asm.Pipeline.Input.make ~file_type ~job_input)
          infile outfile))
 
 let command =
   Command.basic ~summary:"converts an assembly file to a litmus test"
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard_asm.get
-      and simulator = Args.simulator ()
       and post_sexp =
         choose_one
           [ map
@@ -204,5 +84,5 @@ let command =
           ~if_nothing_chosen:(`Default_to None)
       in
       fun () ->
-        Asm_common.lift_command standard_args ~f:(run simulator post_sexp)
+        Asm_common.lift_command standard_args ~f:(run post_sexp)
           ~default_passes:Act_sanitiser.Pass_group.standard)

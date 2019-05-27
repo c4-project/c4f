@@ -28,18 +28,19 @@ let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
   let target = `Spec spec in
   let config = Act_asm.Litmusifier.Config.make ~format:Programs_only () in
   let litmus_job = Act_asm.Job.make ~config ~passes () in
-  let open Or_error.Let_syntax in
-  let%bind (module Comp_lit) = Common.litmusify_pipeline target in
-  let%map _, out =
-    Comp_lit.run
-      ( C
-      , Fn.const
-          (Act_config.Compiler.Chain_input.make ~file_type:C
-             ~next:(Fn.const litmus_job)) )
-      (Plumbing.Input.file c_file)
-      Plumbing.Output.stdout
+  let job_input =
+    Fn.const
+      (Act_config.Compiler.Chain_input.make ~file_type:C
+         ~next:(Fn.const litmus_job))
   in
-  Output.pw o "@[%a@]@." Act_asm.Job.Output.warn out
+  let input = Act_asm.Pipeline.Input.make ~file_type:C ~job_input in
+  Or_error.Let_syntax.(
+    let%bind (module Comp_lit) = Common.litmusify_pipeline target in
+    let%map out =
+      Comp_lit.run input (Plumbing.Input.file c_file) Plumbing.Output.stdout
+    in
+    Output.pw o "@[%a@]@." Act_asm.Job.Output.warn
+      (Act_asm.Pipeline.Output.job_output out))
 
 let run_spec_on_file o passes spec ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@." Id.pp

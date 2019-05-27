@@ -50,73 +50,30 @@ let asm_runner_of_target (tgt : Act_config.Compiler.Target.t) :
   Language_support.asm_runner_from_arch
     (Act_config.Compiler.Target.arch tgt)
 
-module Chain_with_delitmus (Onto : Pb.Filter_types.S) :
-  Pb.Filter_types.S
-  with type aux_i =
-              Ac.File_type.t
-              * (Act_c.Filters.Output.t Pb.Chain_context.t -> Onto.aux_i)
-   and type aux_o = Act_c.Filters.Output.t option * Onto.aux_o =
-Pb.Filter_chain.Make_conditional_first (struct
-  module First = Act_c.Filters.Litmus
-  module Second = Onto
-
-  type aux_i =
-    Ac.File_type.t
-    * (Act_c.Filters.Output.t Pb.Chain_context.t -> Onto.aux_i)
-
-  type aux_o = Act_c.Filters.Output.t option * Onto.aux_o
-
-  let combine_output = Tuple2.create
-
-  let select ctx =
-    let file_type, rest = Pb.Filter_context.aux ctx in
-    let input = Pb.Filter_context.input ctx in
-    if Act_common.File_type.is_c_litmus input file_type then
-      `Both (Act_c.Filters.Delitmus, rest)
-    else `One rest
-end)
-
-let chain_with_delitmus (type aux_i aux_o)
-    (module Onto : Pb.Filter_types.S
-      with type aux_i = aux_i
-       and type aux_o = aux_o) =
-  (module Chain_with_delitmus (Onto)
-  : Pb.Filter_types.S
-    with type aux_i = Ac.File_type.t
-                      * (Act_c.Filters.Output.t Pb.Chain_context.t -> aux_i)
-     and type aux_o = Act_c.Filters.Output.t option * aux_o )
-
 let delitmus_compile_asm_pipeline (type c)
     (target : Act_config.Compiler.Target.t)
     (job_maker :
          (module Act_asm.Runner_intf.Basic)
       -> (module Act_asm.Runner_intf.S with type cfg = c)) :
-    (module Pb.Filter_types.S
-       with type aux_i = Ac.File_type.t
-                         * (   Act_c.Filters.Output.t Pb.Chain_context.t
-                            -> c Act_asm.Job.t
-                               Act_config.Compiler.Chain_input.t)
-        and type aux_o = Act_c.Filters.Output.t option
-                         * Act_asm.Job.Output.t)
-    Or_error.t =
+    (module Act_asm.Pipeline.S with type cfg = c) Or_error.t =
   Or_error.Let_syntax.(
     let%bind (module J) = target |> asm_runner_of_target >>| job_maker in
-    let%map with_compiler =
+    let%map (module Jc) =
       Language_support.Resolve_compiler_from_target.chained_filter_from_spec
         target
         (module J)
     in
-    chain_with_delitmus with_compiler)
+    ( module Act_asm.Pipeline.Make (struct
+      type cfg = J.cfg
+
+      include Jc
+    end)
+    : Act_asm.Pipeline.S
+      with type cfg = c ))
 
 let litmusify_pipeline (target : Act_config.Compiler.Target.t) :
-    (module Pb.Filter_types.S
-       with type aux_i = Ac.File_type.t
-                         * (   Act_c.Filters.Output.t Pb.Chain_context.t
-                            -> Sexp.t Act_asm.Litmusifier.Config.t
-                               Act_asm.Job.t
-                               Act_config.Compiler.Chain_input.t)
-        and type aux_o = Act_c.Filters.Output.t option
-                         * Act_asm.Job.Output.t)
+    (module Act_asm.Pipeline.S
+       with type cfg = Sexp.t Act_asm.Litmusifier.Config.t)
     Or_error.t =
   delitmus_compile_asm_pipeline target Act_asm.Litmusifier.get_filter
 

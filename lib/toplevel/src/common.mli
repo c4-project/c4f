@@ -37,28 +37,6 @@ val asm_runner_of_target :
 (** [asm_runner_of_target target] gets the runner dependency module
     associated with a target (either a compiler spec or emits clause). *)
 
-(** Chain a delitmusing pass onto [Onto] conditional on the incoming file
-    type. *)
-module Chain_with_delitmus (Onto : Plumbing.Filter_types.S) :
-  Plumbing.Filter_types.S
-  with type aux_i =
-              Act_common.File_type.t
-              * (   Act_c.Filters.Output.t Plumbing.Chain_context.t
-                 -> Onto.aux_i)
-   and type aux_o = Act_c.Filters.Output.t option * Onto.aux_o
-
-val chain_with_delitmus :
-     (module Plumbing.Filter_types.S with type aux_i = 'i and type aux_o = 'o)
-  -> (module Plumbing.Filter_types.S
-        with type aux_i = Act_common.File_type.t
-                          * (   Act_c.Filters.Output.t
-                                Plumbing.Chain_context.t
-                             -> 'i)
-         and type aux_o = Act_c.Filters.Output.t option * 'o)
-(** [chain_with_delitmus onto] is [Chain_with_delitmus], but lifted to
-    first-class modules for conveniently slotting into chain builder
-    pipelines. *)
-
 val lift_command :
      ?compiler_predicate:Act_config.Compiler.Property.t Blang.t
   -> ?machine_predicate:Act_config.Machine.Property.t Blang.t
@@ -110,27 +88,12 @@ val delitmus_compile_asm_pipeline :
      Act_config.Compiler.Target.t
   -> (   (module Act_asm.Runner_intf.Basic)
       -> (module Act_asm.Runner_intf.S with type cfg = 'c))
-  -> (module Plumbing.Filter_types.S
-        with type aux_i = Act_common.File_type.t
-                          * (   Act_c.Filters.Output.t
-                                Plumbing.Chain_context.t
-                             -> 'c Act_asm.Job.t
-                                Act_config.Compiler.Chain_input.t)
-         and type aux_o = Act_c.Filters.Output.t option
-                          * Act_asm.Job.Output.t)
-     Or_error.t
+  -> (module Act_asm.Pipeline.S with type cfg = 'c) Or_error.t
 
 val litmusify_pipeline :
      Act_config.Compiler.Target.t
-  -> (module Plumbing.Filter_types.S
-        with type aux_i = Act_common.File_type.t
-                          * (   Act_c.Filters.Output.t
-                                Plumbing.Chain_context.t
-                             -> Sexp.t Act_asm.Litmusifier.Config.t
-                                Act_asm.Job.t
-                                Act_config.Compiler.Chain_input.t)
-         and type aux_o = Act_c.Filters.Output.t option
-                          * Act_asm.Job.Output.t)
+  -> (module Act_asm.Pipeline.S
+        with type cfg = Sexp.t Act_asm.Litmusifier.Config.t)
      Or_error.t
 (** [litmusify_pipeline target] builds a delitmusify-compile-litmusify
     pipeline for target [target]. *)
