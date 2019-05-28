@@ -43,39 +43,38 @@ module Make (B : Basic) : S with module Lang = B.Src_lang = struct
   module Lang = B.Src_lang
   module San = Act_sanitiser.Instance.Make (B.Sanitiser_hook)
 
-  let gen_and_dump_asm_stub (i : int) (program : San.Output.Program.t)
+  let gen_and_dump_asm_stub (i : int) (program : Lang.Program.t)
       ~(oc : Stdio.Out_channel.t) ~(config : Config.t) : unit Or_error.t =
     let f = Caml.Format.formatter_of_out_channel oc in
     if Int.(i <> 0) then print_separator f config ;
-    let listing = San.Output.Program.listing program in
     Or_error.Let_syntax.(
-      let%map stub = B.as_asm_stub i listing in
+      let%map stub = B.as_asm_stub i program in
       Fmt.pf f "@[<v>%a@]@." Act_c.Asm_stub.pp stub)
 
-  let gen_and_dump_asm_stubs (programs : San.Output.Program.t list)
+  let gen_and_dump_asm_stubs (programs : Lang.Program.t list)
       ~(oc : Stdio.Out_channel.t) ~(config : Config.t) : unit Or_error.t =
     programs
     |> List.mapi ~f:(gen_and_dump_asm_stub ~oc ~config)
     |> Or_error.combine_errors_unit
 
-  let run_stub_gen (oc : Stdio.Out_channel.t) ~(in_name : string)
-      ~(program : Lang.Program.t) ~(symbols : Lang.Symbol.t list)
-      ~(config : Config.t) ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
-      Job.Output.t Or_error.t =
+  let run_stub_gen ?(c_variables : Act_common.C_variables.Map.t option)
+      (oc : Stdio.Out_channel.t) ~(in_name : string)
+      ~(programs : Lang.Program.t list)
+      ~(config : Config.t) :
+      unit Or_error.t =
     ignore config ;
-    Or_error.Let_syntax.(
-      let%bind san = San.sanitise ~passes ~symbols program in
-      let programs = San.Output.programs san in
-      let%map () = gen_and_dump_asm_stubs programs ~oc ~config in
-      let redirects_raw = San.Output.redirects san in
-      let redirects = Lang.Symbol.R_map.to_string_alist redirects_raw in
-      Job.Output.make (Fmt.always "?") in_name redirects [])
+    ignore c_variables ;
+    ignore in_name ;
+    gen_and_dump_asm_stubs programs ~oc ~config
 
   module Filter : S_filter = Runner.Make (struct
     type cfg = Config.t
+    type aux_o = unit
 
     module Symbol = B.Src_lang.Symbol
-    module Program = B.Program
+
+    type program = B.Src_lang.Program.t
+    module Litmus = B.Litmus
 
     let name = "Stub generator"
 

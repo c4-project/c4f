@@ -34,8 +34,8 @@ module type Basic = sig
   module Sanitiser_hook :
     Act_sanitiser.Hook_intf.S with module Lang = Src_lang
 
-  module Program :
-    Act_utils.Loadable_intf.S with type t = Src_lang.Program.t
+  module Litmus :
+    Act_utils.Loadable_intf.S with type t = Src_lang.Program.t list
 
   val as_asm_stub : int -> Src_lang.Program.t -> Act_c.Asm_stub.t Or_error.t
   (** [as_asm_stub tid program] builds a GCC assembly stub representation of

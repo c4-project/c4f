@@ -55,8 +55,12 @@ module type S = sig
   (** [print_litmus fmt oc ast] is the litmus test printer matching the
       configuration [fmt]. *)
 
-  (** [Filter] is the litmusifier packaged up as an assembly job runner, ie
-      a filter accepting an assembly job and outputting a standard job
-      output. *)
-  module Filter : Runner_intf.S with type cfg = config
+  (** [Filter] is the litmusifier packaged up as a filter.
+      As it outputs the constructed litmus programs to the requested
+      output, and dumps warnings to stderr, it doesn't
+      return them in its auxiliary output. *)
+
+  module Filter : Plumbing.Filter_types.S
+    with type aux_i = config
+     and type aux_o = (unit, unit, (string, string) List.Assoc.t) Act_sanitiser.Output.t
 end

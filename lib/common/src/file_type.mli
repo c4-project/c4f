@@ -37,13 +37,23 @@ type t = Asm | Asm_litmus | C | C_litmus | Infer [@@deriving sexp]
 
 val is_c : Plumbing.Input.t -> t -> bool
 (** [is_c infile filetype] decides whether [infile] is a C file---from its
-    extension if [filetype] is [`Infer], or by whether or not [filetype] is
-    [`C]. *)
+    extension if [filetype] is [Infer], or by whether or not [filetype] is
+    [C]. *)
 
 val is_c_litmus : Plumbing.Input.t -> t -> bool
 (** [is_c_litmus infile filetype] decides whether [infile] is a C/litmus
-    file---from its extension if [filetype] is [`Infer], or by whether or
-    not [filetype] is [`C_litmus]. *)
+    file---from its extension if [filetype] is [Infer], or by whether or
+    not [filetype] is [C_litmus]. *)
+
+val is_asm : Plumbing.Input.t -> t -> bool
+(** [is_asm infile filetype] decides whether [infile] is an assembly
+   file---from its extension if [filetype] is [Infer], or by whether
+   or not [filetype] is [Asm]. *)
+
+val is_asm_litmus : Plumbing.Input.t -> t -> bool
+(** [is_c_litmus infile filetype] decides whether [infile] is a C/litmus
+    file---from its extension if [filetype] is [Infer], or by whether or
+    not [filetype] is [Asm_litmus]. *)
 
 (** {2 Conversions} *)
 

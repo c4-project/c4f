@@ -46,6 +46,10 @@ module Format : sig
   (** [default] gets the default output format. *)
 end
 
+module Output : sig
+  type t = (unit, unit, (string, string) List.Assoc.t) Act_sanitiser.Output.t
+end
+
 (** Configuration for a litmusifier run. *)
 module Config : sig
   type 'const t [@@deriving equal, sexp]
@@ -97,10 +101,14 @@ module Make (B : Runner_intf.Basic) :
               Act_sanitiser.Output.Program.t
    and module Redirect := B.Src_lang.Symbol.R_map
 
+(*
 val get_filter :
      (module Runner_intf.Basic)
-  -> (module Runner_intf.S with type cfg = Sexp.t Config.t)
+  -> (module Plumbing.Filter_types.S
+       with type aux_i = Sexp.t Config.t
+        and type aux_o = Output.t)
 (** [get_filter Runner] is [Runner.Litmusify], but with the input type
     altered slightly so that the constants inside any litmus postconditions
     are expected to be S-expressions, and unmarshalled into the appropriate
     language at run-time. *)
+*)

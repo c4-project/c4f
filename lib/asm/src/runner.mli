@@ -23,4 +23,4 @@
 
 (** Filter-building helper for assembly translation jobs *)
 
-module Make (R : Runner_intf.Runnable) : Runner_intf.S with type cfg = R.cfg
+module Make (R : Runner_intf.Runnable) : Runner_intf.S with type cfg = R.cfg and type aux_o = R.aux_o

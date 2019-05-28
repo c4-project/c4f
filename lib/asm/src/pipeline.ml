@@ -24,23 +24,33 @@
 open Base
 module Ac = Act_common
 module Pb = Plumbing
+module Tx = Travesty_base_exts
 
 type 'a chain_input = 'a Act_compiler.Instance.Chain_input.t
 
 module Input = struct
-  type 'job t =
+  type ('lconst, 'jconf) t =
     { file_type: Ac.File_type.t
+    ; litmus_config : Sexp.t Litmusifier.Config.t
+    ; litmus_input :
+        (Act_c.Filters.Output.t Pb.Chain_context.t
+        -> 'job Job.t chain_input.t
+        -> 'lconst Litmusifier.Config.t Job.t chain_input)
     ; job_input:
-        Act_c.Filters.Output.t Pb.Chain_context.t -> 'job Job.t chain_input
-    }
+        (('lconst, unit) Act_sanitiser.Output.t
+        -> 'jconf Job.t chain_input) }
   [@@deriving make, fields]
 end
 
 module Output = struct
   type t =
-    {c_output: Act_c.Filters.Output.t option; job_output: Job.Output.t}
+    { c_output: Act_c.Filters.Output.t option
+    ; job_output: Job.Output.t
+    }
   [@@deriving make, fields]
 end
+
+
 
 module type S = sig
   type cfg
@@ -58,6 +68,47 @@ module type Basic = sig
     Pb.Filter_types.S
     with type aux_i = cfg Job.t chain_input
      and type aux_o = Job.Output.t
+end
+
+module Add_litmusify
+    (Lang : Act_language.Definition.S)
+    (J : Runner_intf.S with type aux_o = unit)
+    (Lit : Runner_intf.S with type cfg = Lang.Constant.t Litmusifier.Config.t
+    and type aux_o = Job.Output.t) = struct
+  type cfg = J.cfg
+
+  include Pb.Filter_chain.Make_conditional_first (struct
+    module First = Lit
+    module Second = J
+
+    type aux_i = J.cfg Input.t
+
+    type aux_o = Job.Output.t
+
+    (* TODO(@MattWindsor91): separate job output and litmus output *)
+    let combine_output (litmus_output :  option)
+        () : Job.Output.t =
+      Tx.Option.value_f litmus_output ~default_f:Job.Output.default
+
+    let make_litmus_input (inp : J.cfg Input.t) : Lang.Constant.t Litmusifier.Config.t Job.t =
+      Job.make ~config:(Input.litmus_config inp)
+
+    let make_job_input (inp : J.cfg Input.t) : (Lang.Program.t, Lang.Element.t) Sanitiser.Output.t =
+      Sanitiser.Output.
+      ;;
+
+    let select (ctx : J.cfg Input.t Pb.Filter_context.t) :
+        [ `Both of
+          First.aux_i * (First.aux_o Pb.Chain_context.t -> Second.aux_i)
+        | `One of First.aux_o Pb.Chain_context.t -> Second.aux_i ] =
+      let aux = Pb.Filter_context.aux ctx in
+      let file_type = Input.file_type aux in
+      let input = Pb.Filter_context.input ctx in
+      if Act_common.File_type.is_asm_litmus input file_type then
+      `One aux
+      else `Both (Input.litmus_config aux, aux)
+
+    end)
 end
 
 module Make (J : Basic) : S with type cfg = J.cfg = struct

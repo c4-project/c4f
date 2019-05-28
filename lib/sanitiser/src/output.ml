@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Output_intf
+open Base
 
 module Program = struct
   type ('warn_elt, 'listing) t =
@@ -29,29 +29,23 @@ module Program = struct
     ; listing: 'listing
     ; symbol_table: Act_abstract.Symbol.Table.t }
   [@@deriving fields, make]
+
+  let strip_listing (p : ('warn_elt, _) t) : ('warn_elt, unit) t =
+    { p with listing = () }
 end
 
-module Make (B : Basic) :
-  S
-  with type listing = B.listing
-   and type warn_elt = B.warn_elt
-   and type rmap = B.rmap
-   and type ('warn_elt, 'listing) program := ('warn_elt, 'listing) Program.t =
-struct
-  include B
+type ('warn_elt, 'listing, 'rmap) t =
+  { programs: ('warn_elt, 'listing) Program.t list;
+    redirects: 'rmap
+  }
+[@@deriving fields, make]
 
-  module Program = struct
-    type t = (warn_elt, listing) Program.t
+let map_programs (output : ('w1, 'l1, 'rmap) t)
+    ~(f: ('w1, 'l1) Program.t -> ('w2, 'l2) Program.t)
+    : ('w2, 'l2, 'rmap) t =
+  { output with programs = List.map ~f output.programs }
 
-    let warnings = Program.warnings
-
-    let symbol_table = Program.symbol_table
-
-    let listing = Program.listing
-
-    let make = Program.make
-  end
-
-  type t = {programs: Program.t list; redirects: rmap}
-  [@@deriving fields, make]
-end
+let map_redirects (output : ('w, 'l, 'r1) t)
+    ~(f: 'r1 -> 'r2)
+    : ('w, 'l, 'r2) t =
+  { output with redirects = f output.redirects }

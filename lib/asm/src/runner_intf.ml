@@ -54,12 +54,18 @@ module type Basic = sig
   val convert_const : Src_lang.Constant.t -> Dst_lang.Constant.t Or_error.t
 
   module Program : Loadable_intf.S with type t = Src_lang.Program.t
+
+  module Litmus : Loadable_intf.S with type t = Src_lang.Program.t list
 end
 
 module type Runnable = sig
-  module Program : Loadable_intf.S
+  type program
+
+  module Litmus : Loadable_intf.S with type t = program list
 
   type cfg
+
+  type aux_o
 
   module Symbol : sig
     type t
@@ -74,13 +80,12 @@ module type Runnable = sig
   val default_config : unit -> cfg
 
   val run :
-       Stdio.Out_channel.t
+    ?c_variables:Act_common.C_variables.Map.t
+    -> Stdio.Out_channel.t
     -> in_name:string
-    -> program:Program.t
-    -> symbols:Symbol.t list
+    -> programs:program list
     -> config:cfg
-    -> passes:Set.M(Act_sanitiser.Pass_group).t
-    -> Job.Output.t Or_error.t
+    -> aux_o Or_error.t
 end
 
 (** Signature of job runners. *)
@@ -91,5 +96,4 @@ module type S = sig
   include
     Plumbing.Filter_types.S
     with type aux_i = cfg Job.t
-     and type aux_o = Job.Output.t
 end

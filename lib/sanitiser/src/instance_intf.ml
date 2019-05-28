@@ -33,18 +33,11 @@ module type S = sig
   module Warn :
     Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
 
-  module Output :
-    Output_intf.S
-    with type listing := Lang.Program.t
-     and type ('w, 'l) program := ('w, 'l) Output.Program.t
-     and type warn_elt := Lang.Element.t
-     and type rmap := Lang.Symbol.R_map.t
-
   val sanitise :
        ?passes:Set.M(Pass_group).t
     -> ?symbols:Lang.Symbol.t list
     -> Lang.Program.t
-    -> Output.t Or_error.t
+    -> (Lang.Element.t, Lang.Program.t, Lang.Symbol.R_map.t) Output.t Or_error.t
   (** [sanitise ?passes ?symbols stms] sanitises a statement list [stms],
       returning one or more program lists with various litmus-unfriendly
       elements removed or simplified.

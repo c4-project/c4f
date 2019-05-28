@@ -40,8 +40,24 @@ let is_c_litmus (src : Plumbing.Input.t) : t -> bool = function
   | C_litmus ->
       true
   | Infer ->
-      file_type_is src "litmus"
+      file_type_is src "c.litmus"
   | Asm | Asm_litmus | C ->
+      false
+
+let is_asm (src : Plumbing.Input.t) : t -> bool = function
+  | Asm ->
+      true
+  | Infer ->
+      file_type_is src "s" || file_type_is src "asm"
+  | C | Asm_litmus | C_litmus ->
+      false
+
+let is_asm_litmus (src : Plumbing.Input.t) : t -> bool = function
+  | Asm_litmus ->
+      true
+  | Infer ->
+      file_type_is src "s.litmus" || file_type_is src "asm.litmus"
+  | Asm | C_litmus | C ->
       false
 
 let delitmusified : t -> t = function

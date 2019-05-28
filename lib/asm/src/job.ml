@@ -28,7 +28,7 @@ type 'cfg t =
   { config: 'cfg option
   ; passes: Set.M(Act_sanitiser.Pass_group).t
         [@default Act_sanitiser.Pass_group.standard]
-  ; symbols: string list }
+  ; c_variables: Act_common.C_variables.Map.t option }
 [@@deriving make, fields]
 
 let map_m_config (job : 'a t) ~(f : 'a -> 'b Or_error.t) : 'b t Or_error.t =
@@ -36,9 +36,14 @@ let map_m_config (job : 'a t) ~(f : 'a -> 'b Or_error.t) : 'b t Or_error.t =
     let%map config = Tx.Option.With_errors.map_m job.config ~f in
     {job with config})
 
+(*
+(* TODO(@MattWindsor91): only the litmusifier uses this now. *)
 module Output = struct
-  type t = {symbol_map: (string, string) List.Assoc.t; warn: unit Fmt.t}
+  type t = {
+    symbol_map: (string, string) List.Assoc.t; warn: unit Fmt.t}
   [@@deriving fields]
+
+  let default () : t = { symbol_map = []; warn = Fmt.nop }
 
   (* Overriding to get the right order. *)
   let warn (f : Formatter.t) (o : t) : unit = warn o f ()
@@ -58,3 +63,4 @@ module Output = struct
       (symbol_map : (string, string) List.Assoc.t) warnings : t =
     {symbol_map; warn= emit_warnings pp_warning iname warnings}
 end
+*)

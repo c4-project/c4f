@@ -36,7 +36,7 @@ type 'cfg t
 val make :
      ?config:'cfg
   -> ?passes:Set.M(Act_sanitiser.Pass_group).t
-  -> ?symbols:string list
+  -> ?c_variables:Act_common.C_variables.Map.t
   -> unit
   -> 'cfg t
 (** [make ?config ?passes ?symbols ()] makes a job description. *)
@@ -47,25 +47,4 @@ val config : 'cfg t -> 'cfg option
 
 val passes : _ t -> Set.M(Act_sanitiser.Pass_group).t
 
-val symbols : _ t -> string list
-
-(** The output of a single-file job. *)
-module Output : sig
-  type t
-
-  val symbol_map : t -> (string, string) List.Assoc.t
-  (** [symbol_map o] returns the mapping from pre-compiler symbols (given in
-      the input [t]) to mangled assembly symbols for the job output [o]. *)
-
-  val warn : t Fmt.t
-  (** [warn f o] prints any warnings attached to output [o] on pretty-print
-      formatter [f]. *)
-
-  val make :
-       'warn Fmt.t
-    -> string
-    -> (string, string) List.Assoc.t
-    -> 'warn list
-    -> t
-  (** [make pp_warn iname symbol_map warns] makes a job output. *)
-end
+val c_variables : _ t -> Act_common.C_variables.Map.t option

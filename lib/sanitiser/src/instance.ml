@@ -42,14 +42,6 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
   module Ctx_Lst = Lang.Program.On_listings.On_monad (Ctx)
   module Ctx_Stm = Lang.Program.On_statements.On_monad (Ctx)
 
-  module Output = Output.Make (struct
-    type listing = Lang.Program.t
-
-    type warn_elt = Lang.Element.t
-
-    type rmap = Redirect.t
-  end)
-
   module PC = Travesty.Traversable.Fix_elt (Tx.List) (Lang.Program)
   module PC_listings =
     Travesty.Traversable.Chain0 (PC) (Lang.Program.On_listings)
@@ -398,7 +390,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
         Ctx_List.iter_m (Set.to_list symbols)
           ~f:(find_initial_redirect mangle_map) )
 
-  let build_single_program_output i listing : Output.Program.t Ctx.t =
+  let build_single_program_output i listing : (Lang.Element.t, Lang.Program.t) Output.Program.t Ctx.t =
     let name = program_name i listing in
     Ctx.Let_syntax.(
       let%bind symbol_table = update_and_get_symbol_table listing in
@@ -408,7 +400,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
   let make_programs_uniform ps =
     right_pad ~padding:(Lang.Statement.empty ()) ps
 
-  let build_output (rough_programs : Lang.Program.t list) : Output.t Ctx.t =
+  let build_output (rough_programs : Lang.Program.t list) : (Lang.Element.t, Lang.Program.t, Lang.Symbol.R_map.t) Output.t Ctx.t =
     (* TODO: this should be the same as Language.make_uniform *)
     let listings = make_programs_uniform rough_programs in
     Ctx.Let_syntax.(

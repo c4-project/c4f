@@ -31,8 +31,9 @@ module Config = struct
     let default = Assembly
   end
 
-  type t = {format: Format.t [@default Format.default]}
-  [@@deriving sexp, equal, make]
+  type t = { format: Format.t [@default Format.default]
+           ; symbol_tables : (int, Act_abstract.Symbol.Table.t) List.Assoc.t [@default []] }
+  [@@deriving make]
 
   let default : t = make ()
 end
@@ -166,7 +167,7 @@ struct
   let index : 'a list -> (int, 'a) List.Assoc.t =
     List.mapi ~f:(fun i v -> (i, v))
 
-  let output_explanation output_format name outp exps redirects =
+  let output_explanation output_format _name outp exps _redirects =
     let f = Caml.Format.formatter_of_out_channel outp in
     let pp =
       Fmt.(
@@ -177,8 +178,7 @@ struct
                    (hbox (prefix (unit "-- program ") int))
                    (pp_for_explain_format output_format)))))
     in
-    Fmt.pf f "%a@." pp exps ;
-    Job.Output.make (Fmt.always "?") name redirects []
+    Fmt.pf f "%a@." pp exps
 
   module LS = B.Src_lang
   module San = Act_sanitiser.Instance.Make (B.Sanitiser_hook)
@@ -188,24 +188,33 @@ struct
     let s_table = San.Output.Program.symbol_table program in
     explain listing s_table
 
-  let explain_san_programs : San.Output.Program.t list -> t list =
-    List.map ~f:explain_san_program
+  let explain_programs (programs: Lang.Program.t list)
+    (symbol_tables: Act_abstract.Symbol.Table.t Map.M(Int).t)
+-> t list =
+    List.mapi ~f:(fun i p ->
+        explain_san_program
 
-  let run_explanation (outp : Stdio.Out_channel.t) ~(in_name : string)
-      ~(program : LS.Program.t) ~(symbols : LS.Symbol.t list)
-      ~(config : config) ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
-      Job.Output.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%map san = San.sanitise ~passes ~symbols program in
-    let programs = San.Output.programs san in
-    let explanations = explain_san_programs programs in
+  let try_get_symbol_tables : Job.Output.t option -> Act_abstract.Symbol.Table.t Map.M(Int).t =
+    Option.value_map ~f:Job.Output.symbol_tables ~default:[]
+
+  let run_explanation
+    ?(litmus_output : Job.Output.t option)
+    (outp : Stdio.Out_channel.t) ~(in_name : string)
+    ~(programs : LS.Program.t)
+    ~(config : config) :
+    unit Or_error.t =
+    let symbol_tables = try_get_symbol_tables litmus_output in
+    Or_error.Let_syntax.(
+    let explanations = explain_programs programs symbol_tables in
     let redirects = San.Output.redirects san in
     output_explanation config.format in_name outp explanations
       (LS.Symbol.R_map.to_string_alist redirects)
+  )
 
-  module Filter : Runner_intf.S with type cfg = Config.t =
+  module Filter : Runner_intf.S with type cfg = Config.t and type aux_o = unit =
   Runner.Make (struct
     type cfg = Config.t
+    type aux_o = unit
 
     module Symbol = B.Src_lang.Symbol
     module Program = B.Program

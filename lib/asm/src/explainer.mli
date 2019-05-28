@@ -21,6 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
+
 (** High-level module for emitting act's internal assembly analysis
 
     [Explainer] contains functors for extracting a pretty-printable summary
@@ -34,13 +36,13 @@ module Config : sig
           (** Terse, but as close to parseable assembly as possible *)
       | Detailed
           (** More details than [Assembly], but verbose and free-form *)
-    [@@deriving equal]
+    [@@deriving equal, sexp]
 
     val default : t
     (** [default] gets the default output format. *)
   end
 
-  type t [@@deriving equal, sexp]
+  type t
 
   val make : ?format:Format.t -> unit -> t
   (** [make ?format ()] builds an [Explain_config] with the given

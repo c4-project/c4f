@@ -64,13 +64,13 @@ module Output : sig
   (** {3 Constructors} *)
 
   val make :
-    ?c_output:Act_c.Filters.Output.t -> job_output:Job.Output.t -> unit -> t
+    ?c_output:Act_c.Filters.Output.t -> litmus_output:(unit, unit, unit) Act_sanitiser.Output.t -> unit -> t
 
   (** {3 Accessors} *)
 
   val c_output : t -> Act_c.Filters.Output.t option
 
-  val job_output : t -> Job.Output.t
+  val litmus_output : t -> (unit, unit, unit) Act_sanitiser.Output.t
 end
 
 module type S = sig
