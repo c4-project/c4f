@@ -57,8 +57,9 @@ module Make_runner_deps
     Act_utils.Loadable_intf.S with type t = Src_lang.Program.t =
     Frontend
 
-  let as_asm_stub (p : Lang.Program.t) : Act_c.Asm_stub.t Or_error.t =
-    p |> Att_conv.convert |> Stub_gen.run
+  let as_asm_stub (tid : int) (p : Lang.Program.t) :
+      Act_c.Asm_stub.t Or_error.t =
+    p |> Att_conv.convert |> Stub_gen.run tid
 end
 
 let get_runner (dialect : Id.t) :

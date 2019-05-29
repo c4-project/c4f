@@ -259,13 +259,12 @@ module Operand = struct
 
   include Q
 
+  let symbolic (body : string) : t = Immediate (Disp.symbolic body)
+
   let%expect_test "symbol fold over bop" =
     let ast =
       bop
-        (bop
-           (immediate (Disp.Symbolic "a"))
-           Bop.Plus
-           (immediate (Disp.Symbolic "b")))
+        (bop (symbolic "a") Bop.Plus (symbolic "b"))
         Bop.Minus
         (location
            (Location.Indirect (Indirect.make ~disp:(Disp.Symbolic "c") ())))
@@ -347,6 +346,13 @@ module Instruction = struct
           ~prefix:M.return ~opcode:M.return
     end
   end)
+
+  let op_on_label (opcode : Opcode.t) (label : string) : t =
+    make ~opcode ~operands:[Operand.symbolic label] ()
+
+  let jmp_label : string -> t = op_on_label Opcode.jmp
+
+  let call_label : string -> t = op_on_label Opcode.call
 end
 
 module Statement = struct

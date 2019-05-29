@@ -376,3 +376,7 @@ let of_string string =
       ; (fun () -> string |> Sized.of_string >>| sized)
       ; (fun () -> string |> Basic.of_string >>| basic) ]
   |> Option.value ~default:(Unknown string)
+
+let call : t = Basic `Call
+
+let jmp : t = Jump `Unconditional

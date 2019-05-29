@@ -192,8 +192,7 @@ module Make (D : Dialect) = struct
     | Reg r ->
         pp_reg f r
     | Template_token t ->
-        (* TODO(@MattWindsor91): this is GCC specific *)
-        Fmt.pf f "%%%s" t
+        pp_template_token f t
 
   let rec pp_operand f = function
     | Operand.Location l ->

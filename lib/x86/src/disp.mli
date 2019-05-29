@@ -53,6 +53,14 @@ include
   with type t := t
    and module Abs := Act_abstract.Address
 
+(** {2 Constructors} *)
+
+val symbolic : string -> t
+(** [symbolic s] is [Symbolic s]. *)
+
+val numeric : int -> t
+(** [numeric s] is [Numeric s]. *)
+
 (** {2 Symbols} *)
 
 (** [On_symbols] permits enumerating and folding over symbols inside a

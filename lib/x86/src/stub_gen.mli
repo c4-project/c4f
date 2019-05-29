@@ -25,7 +25,7 @@
 
 open Base
 
-val run : Ast.t -> Act_c.Asm_stub.t Or_error.t
-(** [run ast] tries to generate a GCC assembly stub for an x86 AST. It fails
-    if the AST isn't tagged with an AT&T dialect (though this may change in
-    the future). *)
+val run : int -> Ast.t -> Act_c.Asm_stub.t Or_error.t
+(** [run tid ast] tries to generate a GCC assembly stub for an x86 AST [ast]
+    corresponding to thread ID [tid]. It fails if the AST isn't tagged with
+    an AT&T dialect (though this may change in the future). *)

@@ -49,7 +49,7 @@ module Make (B : Basic) : S with module Lang = B.Src_lang = struct
     if Int.(i <> 0) then print_separator f config ;
     let listing = San.Output.Program.listing program in
     Or_error.Let_syntax.(
-      let%map stub = B.as_asm_stub listing in
+      let%map stub = B.as_asm_stub i listing in
       Fmt.pf f "@[<v>%a@]@." Act_c.Asm_stub.pp stub)
 
   let gen_and_dump_asm_stubs (programs : San.Output.Program.t list)

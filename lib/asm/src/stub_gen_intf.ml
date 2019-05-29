@@ -37,10 +37,10 @@ module type Basic = sig
   module Program :
     Act_utils.Loadable_intf.S with type t = Src_lang.Program.t
 
-  val as_asm_stub : Src_lang.Program.t -> Act_c.Asm_stub.t Or_error.t
-  (** [as_asm_stub t ~oc] outputs a GCC assembly stub representation of this
-      program onto [oc]. It can fail, for example if the language doesn't
-      support such dumping. *)
+  val as_asm_stub : int -> Src_lang.Program.t -> Act_c.Asm_stub.t Or_error.t
+  (** [as_asm_stub tid program] builds a GCC assembly stub representation of
+      program [program], with thread ID [tid]. It can fail: for example, if
+      the language doesn't support such dumping. *)
 end
 
 module type S = sig

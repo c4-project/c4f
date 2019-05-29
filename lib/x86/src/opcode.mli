@@ -229,7 +229,9 @@ val sized : Sized.t -> t
 (** [sized s] builds a [t] from a sized opcode [s]. *)
 
 val jump : Jump.t -> t
-(** [jump j] builds a [t] from a jump opcode [j]. *)
+(** [jump j] builds a [t] from a jump opcode [j]; not to be confused with
+    {{!jmp} jmp (with no U)}, which specifically builds an {i unconditional}
+    jump. *)
 
 val directive : string -> t
 (** [directive name] builds a [t] from a directive with name [name]. *)
@@ -245,3 +247,13 @@ include
 
 val of_string : string -> t
 (** [of_string string] parses [string] as an opcode (or opcode-like entity). *)
+
+(** {2 Common opcodes} *)
+
+val call : t
+(** [cal] is CALL. *)
+
+val jmp : t
+(** [jmp] is JMP (unconditional jump); not to be confused with
+    {{!jump} jump (with a U)}, which builds jump instructions given an
+    explicit jump style. *)

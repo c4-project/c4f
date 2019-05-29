@@ -94,9 +94,14 @@ module Operand : sig
     | Bop of t * Bop.t * t
   [@@deriving sexp, compare, equal, quickcheck]
 
+  (** {3 Constructors} *)
+
   val location : Location.t -> t
 
   val immediate : Disp.t -> t
+
+  val symbolic : string -> t
+  (** [symbolic body] is shorthand for [immediate (Disp.symbolic body]. *)
 
   val string : string -> t
 
@@ -134,6 +139,18 @@ module Instruction : sig
       instruction. *)
   module On_symbols :
     Travesty.Traversable.S0 with type t := t and type Elt.t = string
+
+  val op_on_label : Opcode.t -> string -> t
+  (** [op_on_label opcode label] produces an instruction with opcode
+      [opcode] and label argument [label]. *)
+
+  val jmp_label : string -> t
+  (** [jmp_label label] produces an unconditional jump to the label with
+      name [label]. *)
+
+  val call_label : string -> t
+  (** [call_label label] produces a procedure call to the label with name
+      [label]. *)
 end
 
 module Statement : sig
