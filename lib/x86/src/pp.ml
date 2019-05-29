@@ -56,13 +56,8 @@ let disp_positive = function
   | _ ->
       true
 
-let pp_gcc_asm_template_token : string Fmt.t =
-  Fmt.(hbox (prefix (unit "%%") (brackets string)))
-
-(* Parts specific to all dialects *)
-module Basic = struct
-  (* * Displacements *)
-
+(** Parts common to all dialects *)
+module Common = struct
   let pp_disp ?(show_zero = true) f = function
     | Disp.Symbolic s ->
         Fmt.string f s
@@ -70,68 +65,101 @@ module Basic = struct
         ()
     | Disp.Numeric k ->
         Fmt.int f k
+
+  let pp_bop (f : Formatter.t) : Bop.t -> unit = function
+    | Plus ->
+        Fmt.char f '+'
+    | Minus ->
+        Fmt.char f '-'
+
+  let string_escape : string -> string =
+    Staged.unstage
+      (String.Escaping.escape_gen_exn ~escape_char:'\\'
+         ~escapeworthy_map:[('\x00', '0'); ('"', '"'); ('\\', '\\')])
 end
 
-(* Parts specific to AT&T *)
-module Att_specific = struct
-  let pp_comment ~pp f = Fmt.pf f "@[<h># %a@]" pp
+let pp_seg (pp_reg : Reg.t Fmt.t) : Reg.t Fmt.t =
+  Fmt.(suffix (unit ":") pp_reg)
 
-  let pp_template_token : string Fmt.t =
-    (* TODO(@MattWindsor91): this is GCC specific, actually. *)
-    pp_gcc_asm_template_token
-
-  let pp_reg f reg = Fmt.pf f "@[%%%s@]" (Reg.to_string reg)
-
+module Att_reg_dependent (B : sig
+  val pp_reg : Reg.t Fmt.t
+end) =
+struct
   let pp_index f = function
     | Index.Unscaled r ->
-        pp_reg f r
+        B.pp_reg f r
     | Scaled (r, i) ->
-        Fmt.pf f "%a,@ %d" pp_reg r i
+        Fmt.pf f "%a,@ %d" B.pp_reg r i
 
-  let pp_indirect f indirect =
-    let pp_seg f = Fmt.pf f "%a:" pp_reg in
-    let pp_bis f bo iso =
-      match (bo, iso) with
-      | None, None ->
-          ()
-      | Some b, None ->
-          Fmt.pf f "(%a)" pp_reg b
-      | _, Some i ->
-          Fmt.(pf f "(%a,%a)" (option pp_reg)) bo pp_index i
-    in
+  let pp_bis f bo iso =
+    match (bo, iso) with
+    | None, None ->
+        ()
+    | Some b, None ->
+        Fmt.pf f "(%a)" B.pp_reg b
+    | _, Some i ->
+        Fmt.(pf f "(%a,%a)" (option B.pp_reg)) bo pp_index i
+
+  let pp_seg : Reg.t Fmt.t = pp_seg B.pp_reg
+
+  let pp_indirect (f : Formatter.t) (indirect : Indirect.t) : unit =
     let in_seg = Indirect.seg indirect in
     let in_base = Indirect.base indirect in
     let in_disp = Indirect.disp indirect in
     let in_index = Indirect.index indirect in
     Fmt.option pp_seg f in_seg ;
     let show_zero = Option.(is_none in_base && is_none in_index) in
-    Fmt.option (Basic.pp_disp ~show_zero) f in_disp ;
+    Fmt.option (Common.pp_disp ~show_zero) f in_disp ;
     pp_bis f in_base in_index
+end
 
-  let pp_immediate f = Fmt.pf f "@[$%a@]" (Basic.pp_disp ~show_zero:true)
+let pp_gcc_asm_template_token : string Fmt.t =
+  Fmt.(hbox (prefix (unit "%%") (brackets string)))
+
+(** Parts common to both AT&T and AT&T-in-GCC dialects. *)
+module Att_and_gcc = struct
+  let pp_comment ~pp f = Fmt.pf f "@[<h># %a@]" pp
+
+  let pp_immediate f = Fmt.pf f "@[$%a@]" (Common.pp_disp ~show_zero:true)
+end
+
+let pp_unexpected_template_token : string Fmt.t =
+  Fmt.always "<FIXME: template token outside of GCC dialect>"
+
+(* Parts specific to AT&T *)
+module Att_specific = struct
+  let pp_reg : Reg.t Fmt.t =
+    Fmt.(box (prefix (always "%%") (using Reg.to_string string)))
+
+  let pp_template_token : string Fmt.t = pp_unexpected_template_token
+end
+
+(** Parts specific to GCC asm directives *)
+module Gcc_specific = struct
+  (* The difference between this and the AT&T one is the extra escaping %,
+     to disambiguate between registers and template tokens. *)
+  let pp_reg : Reg.t Fmt.t =
+    Fmt.(box (prefix (always "%%%%") (using Reg.to_string string)))
+
+  let pp_template_token : string Fmt.t =
+    pp_gcc_asm_template_token
 end
 
 (** Parts specific to Intel *)
 module Intel_specific = struct
   let pp_comment ~pp f = Fmt.pf f "@[<h>; %a@]" pp
-
-  let pp_template_token : string Fmt.t =
-    (* TODO(@MattWindsor91): this is pretty much wrong. *)
-    pp_gcc_asm_template_token
 end
 
 (** Parts specific to Herd7 *)
 module Herd7_specific = struct
   let pp_comment ~pp f = Fmt.pf f "@[<h>// %a@]" pp
-
-  let pp_template_token : string Fmt.t =
-    (* TODO(@MattWindsor91): this is pretty much wrong. *)
-    pp_gcc_asm_template_token
 end
 
 (** Parts common to Intel and Herd7 *)
 module Intel_and_herd7 = struct
   let pp_reg f reg = String.pp f (Reg.to_string reg)
+
+  let pp_template_token : string Fmt.t = pp_unexpected_template_token
 
   let pp_index f = function
     | Index.Unscaled r ->
@@ -139,7 +167,7 @@ module Intel_and_herd7 = struct
     | Scaled (r, i) ->
         Fmt.pf f "%a*%d" pp_reg r i
 
-  let pp_seg f = Fmt.pf f "%a:" pp_reg
+  let pp_seg : Reg.t Fmt.t = pp_seg pp_reg
 
   let pp_indirect =
     Fmt.(
@@ -163,28 +191,14 @@ module Intel_and_herd7 = struct
              in
              if plus_between_bis_d then char f '+' ;
              let show_zero = Option.(is_none in_base && is_none in_index) in
-             option (Basic.pp_disp ~show_zero) f in_disp )))
+             option (Common.pp_disp ~show_zero) f in_disp )))
 
-  let pp_immediate = Basic.pp_disp ~show_zero:true
+  let pp_immediate = Common.pp_disp ~show_zero:true
 end
 
 module Make (D : Dialect) = struct
-  include Basic
+  include Common
   include D
-
-  (* * Operators *)
-
-  let pp_bop (f : Formatter.t) : Bop.t -> unit = function
-    | Plus ->
-        Fmt.char f '+'
-    | Minus ->
-        Fmt.char f '-'
-
-  (* * Operands *)
-
-  let string_escape =
-    String.Escaping.escape_gen_exn ~escape_char:'\\'
-      ~escapeworthy_map:[('\x00', '0'); ('"', '"'); ('\\', '\\')]
 
   let pp_location f = function
     | Location.Indirect i ->
@@ -200,7 +214,7 @@ module Make (D : Dialect) = struct
     | Operand.Immediate d ->
         pp_immediate f d
     | Operand.String s ->
-        Fmt.pf f "\"%s\"" (Staged.unstage string_escape s)
+        Fmt.pf f "\"%s\"" (string_escape s)
     | Operand.Typ ty ->
         Fmt.pf f "@@%s" ty
     | Operand.Bop (l, b, r) ->
@@ -216,13 +230,9 @@ module Make (D : Dialect) = struct
         (* Glue between operator and operands *)
         Fmt.(prefix sp (list ~sep:comma pp_operand)) f operands
 
-  (* * Prefixes *)
-
   let prefix_string = function PreLock -> "lock"
 
   let pp_prefix = Fmt.(suffix sp (using prefix_string string))
-
-  (* * Opcodes *)
 
   let pp_opcode f = function
     | Opcode.Directive s ->
@@ -243,14 +253,10 @@ module Make (D : Dialect) = struct
         |> Option.value ~default:"<FIXME: JUMP WITH NO STRING EQUIVALENT>"
         |> String.pp f
 
-  (* * Instructions *)
-
   let pp_instruction f {Instruction.prefix= p; opcode; operands} =
     Fmt.(
       pf f "@[@[%a%a@]%a@]" (option pp_prefix) p pp_opcode opcode pp_oplist
         operands)
-
-  (* * Statements *)
 
   let pp_statement f = function
     | Statement.Instruction i ->
@@ -266,7 +272,17 @@ module Make (D : Dialect) = struct
   let pp = Fmt.(using Ast.program (list pp_statement))
 end
 
-module Att = Make (Att_specific)
+module Att = Make (struct
+  include Att_specific
+  include Att_and_gcc
+  include Att_reg_dependent (Att_specific)
+end)
+
+module Gcc = Make (struct
+  include Gcc_specific
+  include Att_and_gcc
+  include Att_reg_dependent (Gcc_specific)
+end)
 
 module Intel = Make (struct
   include Intel_specific
@@ -281,6 +297,7 @@ end)
 let dialect_table : (Id.t, Ast.t Fmt.t) List.Assoc.t Lazy.t =
   lazy
     [ (Id.of_string "att", Att.pp)
+    ; (Id.of_string "gcc", Gcc.pp)
     ; (Id.of_string "intel", Intel.pp)
     ; (Id.of_string "herd7", Herd7.pp) ]
 

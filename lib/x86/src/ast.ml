@@ -347,12 +347,12 @@ module Instruction = struct
     end
   end)
 
-  let op_on_label (opcode : Opcode.t) (label : string) : t =
-    make ~opcode ~operands:[Operand.symbolic label] ()
+  let single (opcode : Opcode.t) (operand : Operand.t) : t =
+    make ~opcode ~operands:[operand] ()
 
-  let jmp_label : string -> t = op_on_label Opcode.jmp
+  let jmp : Operand.t -> t = single Opcode.jmp
 
-  let call_label : string -> t = op_on_label Opcode.call
+  let call : Operand.t -> t = single Opcode.call
 end
 
 module Statement = struct
@@ -412,6 +412,9 @@ end
    'program' first. *)
 type t = {program: Statement.t list; dialect: Id.t}
 [@@deriving sexp, equal, fields, make]
+
+let with_dialect_id (ast : t) ~(id:Act_common.Id.t) : t =
+  { ast with dialect = id }
 
 (** Base mapper for ASTs *)
 module Base_map (M : Monad.S) = struct

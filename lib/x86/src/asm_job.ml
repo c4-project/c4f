@@ -46,8 +46,9 @@ module Make_runner_deps
 
   module Litmus_pp = Act_litmus.Pp.Make_tabular (Litmus_ast)
   module Sanitiser_hook = Sanitiser_hook.Make (Src_lang)
-  module Att_conv = Conv.Make (Src_lang) (Language_definition.Att)
+  module Gcc_conv = Conv.Make (Src_lang) (Language_definition.Gcc)
   module Conv = Conv.Make (Src_lang) (Dst_lang)
+  module Stub_gen = Stub_gen.Make (Dialect.Gcc) (Pp.Gcc)
 
   let convert_program = Conv.convert
 
@@ -59,7 +60,7 @@ module Make_runner_deps
 
   let as_asm_stub (tid : int) (p : Lang.Program.t) :
       Act_c.Asm_stub.t Or_error.t =
-    p |> Att_conv.convert |> Stub_gen.run tid
+    Or_error.(p |> Gcc_conv.convert >>= Stub_gen.run tid)
 end
 
 let get_runner (dialect : Id.t) :

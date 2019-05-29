@@ -95,7 +95,7 @@ module Make (B : Runner_intf.Basic) :
   let make_litmus_program (program : Sanitiser.Output.Program.t) =
     program |> Sanitiser.Output.Program.listing |> B.convert_program
 
-  let make_litmus_programs = List.map ~f:make_litmus_program
+  let make_litmus_programs = Tx.Or_error.combine_map ~f:make_litmus_program
 
   let get_program_heap_symbols prog =
     prog |> Sanitiser.Output.Program.symbol_table
@@ -140,7 +140,7 @@ module Make (B : Runner_intf.Basic) :
       let init = Litmusifier_aux.init aux in
       let postcondition = Litmusifier_aux.postcondition aux in
       let locations = Litmusifier_aux.locations aux in
-      let l_programs = make_litmus_programs programs in
+      let%bind l_programs = make_litmus_programs programs in
       Or_error.tag ~tag:"Couldn't build litmus file."
         (Litmus.Validated.make ~name ~init ~programs:l_programs
            ?postcondition ?locations ()))

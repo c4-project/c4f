@@ -47,42 +47,107 @@ open Base
 module A = Act_common
 open Dialect_intf
 
-module Att : S = struct
-  let dialect : A.Id.t = A.Id.of_string "att"
+module Make (B : Basic) : S = struct
+  include B
+  include A.Src_dst.Make (B)
 
-  include A.Src_dst.Make (struct
-    let operand_order = A.Src_dst.Src_then_dst
-  end)
+  let make_jump_operand (jsym : string) : Ast.Operand.t =
+    Ast.(
+      let disp = Disp.Symbolic jsym in
+      match symbolic_jump_type with
+      | `Indirect ->
+          Operand.Location (Location.Indirect (Indirect.make ~disp ()))
+      | `Immediate ->
+          Operand.Immediate disp)
 
-  let has_size_suffix = true
+  let call_to_symbol : string -> Ast.Instruction.t =
+    Fn.compose Ast.Instruction.call make_jump_operand
+
+  let jmp_to_symbol : string -> Ast.Instruction.t =
+    Fn.compose Ast.Instruction.jmp make_jump_operand
+end
+
+(** Facts common to the AT&T-style dialects [Att] and [Gcc]. *)
+module Att_like = struct
+  let operand_order = A.Src_dst.Src_then_dst
 
   let symbolic_jump_type = `Indirect
+
+  let has_size_suffix = true
 end
 
-module Intel : S = struct
-  let dialect : A.Id.t = A.Id.of_string "intel"
+module Att : S = Make (struct
+  let dialect_id : A.Id.t = A.Id.of_string "att"
 
-  include A.Src_dst.Make (struct
-    let operand_order = A.Src_dst.Dst_then_src
-  end)
+  let readme () : string =
+    Act_utils.My_string.format_for_readme
+      {|
+        x86 dialect corresponding to the AT&T syntax natively understood
+        by GNU as, and consequently GCC and similar compilers.
+      |}
 
-  let has_size_suffix = false
+  include Att_like
+
+  let is_asm_template = false
+end)
+
+module Gcc : S = Make (struct
+  let dialect_id : A.Id.t = A.Id.of_string "gcc"
+
+  let readme () : string =
+    Act_utils.My_string.format_for_readme
+      {|
+        x86 dialect corresponding to the slightly escaped form of AT&T
+        syntax used in GCC's asm templates.  This dialect mainly exists
+        to make `act`'s job in emitting such templates easier, and isn't
+        generally useful outside of that job.
+      |}
+
+  include Att_like
+
+  let is_asm_template = true
+end)
+
+(** Facts common to the Intel-style dialects [Intel] and [herd7]. *)
+module Intel_like = struct
+  let operand_order = A.Src_dst.Dst_then_src
 
   let symbolic_jump_type = `Immediate
+
+  let is_asm_template = false
 end
 
-module Herd7 : S = struct
-  let dialect : A.Id.t = A.Id.of_string "herd7"
+module Intel : S = Make (struct
+  let dialect_id : A.Id.t = A.Id.of_string "intel"
 
-  include A.Src_dst.Make (struct
-    let operand_order = A.Src_dst.Dst_then_src
-  end)
+  let readme () : string =
+    Act_utils.My_string.format_for_readme
+      {|
+        x86 dialect corresponding to the Intel syntax natively understood
+        by Microsoft's build tools.
+      |}
+
+  include Intel_like
+
+  let has_size_suffix = false
+end)
+
+module Herd7 : S = Make (struct
+  let dialect_id : A.Id.t = A.Id.of_string "herd7"
+
+  let readme () : string =
+    Act_utils.My_string.format_for_readme
+      {|
+        x86 dialect corresponding to the syntax used in Herdtools7-style
+        Litmus tests; generally Intel-style, but with some pieces of C
+        and AT&T syntax carried over.
+      |}
+
+  include Intel_like
 
   (* Surprisingly, this is true---for some operations, anyway. *)
   let has_size_suffix = true
-
-  let symbolic_jump_type = `Immediate
-end
+end)
 
 let find_by_id (type a) (table : (A.Id.t, a) List.Assoc.t Lazy.t)
     ~(context : string) : (A.Id.t -> a Or_error.t) Staged.t =

@@ -33,8 +33,4 @@ module type S = sig
      and type Statement.t = Ast.Statement.t
      and type Program.t = Ast.t
      and type Symbol.t = string
-
-  val make_jump_operand : string -> Ast.Operand.t
-  (** [make_jump_operand jsym] expands a jump symbol [jsym] to the correct
-      abstract syntax for this version of x86. *)
 end

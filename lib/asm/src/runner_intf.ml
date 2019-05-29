@@ -49,7 +49,7 @@ module type Basic = sig
       program [t], with thread ID [tid], onto [oc]. It can fail, for example
       if the language doesn't support such dumping. *)
 
-  val convert_program : Src_lang.Program.t -> Dst_lang.Program.t
+  val convert_program : Src_lang.Program.t -> Dst_lang.Program.t Or_error.t
 
   val convert_const : Src_lang.Constant.t -> Dst_lang.Constant.t Or_error.t
 

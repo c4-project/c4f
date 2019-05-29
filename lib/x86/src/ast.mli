@@ -140,17 +140,19 @@ module Instruction : sig
   module On_symbols :
     Travesty.Traversable.S0 with type t := t and type Elt.t = string
 
-  val op_on_label : Opcode.t -> string -> t
-  (** [op_on_label opcode label] produces an instruction with opcode
-      [opcode] and label argument [label]. *)
+  val single : Opcode.t -> Operand.t -> t
+  (** [single opcode operand] produces an instruction with opcode [opcode]
+      and single operand [operand]. *)
 
-  val jmp_label : string -> t
-  (** [jmp_label label] produces an unconditional jump to the label with
-      name [label]. *)
+  val jmp : Operand.t -> t
+  (** [jmp target] produces an unconditional jump to the location described
+      by [target]. It doesn't handle making sure the target is a valid jump
+      location. *)
 
-  val call_label : string -> t
-  (** [call_label label] produces a procedure call to the label with name
-      [label]. *)
+  val call : Operand.t -> t
+  (** [call label] produces a procedure call to the location described by
+      [target]. It doesn't handle making sure the target is a valid jump
+      location. *)
 end
 
 module Statement : sig
@@ -183,6 +185,12 @@ val dialect : t -> Id.t
 
 val program : t -> Statement.t list
 (** [program ast] gets the list of statements inside [ast]. *)
+
+val with_dialect_id : t -> id:Act_common.Id.t -> t
+(** [with_dialect_id ast] replaces the dialect tag in [ast].
+
+    It does {i not} perform the appropriate conversions necessary to port an
+    AST from one x86 dialect to the other; see {{!Conv}Conv}. *)
 
 (** Traversing over the statement list in a [t] *)
 module On_listings :

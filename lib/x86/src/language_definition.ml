@@ -187,17 +187,17 @@ module Make (T : Dialect_intf.S) (P : Pp_intf.S) : S = struct
   module Dialect = T
   module Basic = Make_basic (T) (P)
   include Act_language.Definition.Make (Basic)
-
-  let make_jump_operand = Basic.Instruction.make_jump_operand
 end
 
 module Att = Make (Dialect.Att) (Pp.Att)
+module Gcc = Make (Dialect.Gcc) (Pp.Gcc)
 module Intel = Make (Dialect.Intel) (Pp.Intel)
 module Herd7 = Make (Dialect.Herd7) (Pp.Herd7)
 
 let dialect_table : (Id.t, (module S)) List.Assoc.t Lazy.t =
   lazy
     [ (Id.of_string "att", (module Att))
+    ; (Id.of_string "gcc", (module Gcc))
     ; (Id.of_string "intel", (module Intel))
     ; (Id.of_string "herd7", (module Herd7)) ]
 

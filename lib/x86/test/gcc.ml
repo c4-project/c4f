@@ -21,11 +21,14 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Various input/output helpers, mostly used for testing. *)
+open Act_x86
+module Io = Act_utils.Io
 
-val print_bool : bool -> unit
-(** [print_bool b] prints the truth value of [b] to stdout. *)
+let%test_module "Pretty-printing" =
+  ( module struct
+    open Pp.Gcc
 
-val prn : 'a Fmt.t -> 'a -> unit
-(** [prn pp x] prints [x] to stdout using [pp], followed by a hard newline. *)
-
+    let%expect_test "pp_reg: EAX" =
+      Io.prn pp_reg `EAX;
+      [%expect {| %%EAX |}]
+  end)

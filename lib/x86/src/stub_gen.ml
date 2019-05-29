@@ -25,74 +25,89 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-let make_template_indirect (ind : Indirect.t) : string = ignore ind ; "TODO"
+module Make (D : Dialect_intf.S) (Pp : Pp_intf.S) = struct
+  let make_template_indirect (ind : Indirect.t) : string =
+    ignore ind ; "TODO"
 
-let make_template_location : Ast.Location.t -> Ast.Location.t = function
-  | Reg r ->
-      Ast.Location.Template_token (Reg.to_string r)
-  | Indirect i ->
-      Ast.Location.Template_token (make_template_indirect i)
-  | Template_token _ as tok ->
-      tok
+  let make_template_location : Ast.Location.t -> Ast.Location.t = function
+    | Reg r ->
+        Ast.Location.Template_token (Reg.to_string r)
+    | Indirect i ->
+        Ast.Location.Template_token (make_template_indirect i)
+    | Template_token _ as tok ->
+        tok
 
-let make_template_instruction : Ast.Instruction.t -> Ast.Instruction.t =
-  Ast.Instruction.On_locations.map ~f:make_template_location
+  let make_template_instruction : Ast.Instruction.t -> Ast.Instruction.t =
+    Ast.Instruction.On_locations.map ~f:make_template_location
 
-let make_template_statement : Ast.Statement.t -> Ast.Statement.t =
-  Ast.Statement.On_instructions.map ~f:make_template_instruction
+  let make_template_statement : Ast.Statement.t -> Ast.Statement.t =
+    Ast.Statement.On_instructions.map ~f:make_template_instruction
 
-(** Part of stub generator that handles the presence of a final 'ret'
-    instruction in a thread's assembly by synthesising a procedure call,
-    followed immediately by a jump over the procedure body. *)
-module Ret = struct
-  let preamble ~(prog_label : string) ~(after_ret_label : string) :
+  (** Part of stub generator that handles the presence of a final 'ret'
+      instruction in a thread's assembly by synthesising a procedure call,
+      followed immediately by a jump over the procedure body. *)
+  module Ret = struct
+    let preamble ~(prog_label : string) ~(after_ret_label : string) :
+        Ast.Statement.t list =
+      [ Instruction (D.call_to_symbol prog_label)
+      ; Instruction (D.jmp_to_symbol after_ret_label) ]
+
+    let postamble ~(after_ret_label : string) : Ast.Statement.t list =
+      [Label after_ret_label]
+
+    let add_trampoline (tid : int) (statements : Ast.Statement.t list) :
+        Ast.Statement.t list =
+      (* TODO(@MattWindsor91): check whether we have a ret, and only do this
+         if we do *)
+      (* TODO(@MattWindsor91): check whether we have a leave, and add an
+         enter to match *)
+      (* TODO(@MattWindsor91): find/synthesise program boundary *)
+      let prog_label = Printf.sprintf "P%d" tid in
+      let after_ret_label = Printf.sprintf "_after_P%d" tid in
+      List.concat
+        [ preamble ~prog_label ~after_ret_label
+        ; statements
+        ; postamble ~after_ret_label ]
+  end
+
+  let make_template_statements (tid : int) (asm : Ast.t) :
       Ast.Statement.t list =
-    [ Instruction (Ast.Instruction.call_label prog_label)
-    ; Instruction (Ast.Instruction.jmp_label after_ret_label) ]
+    let asm' = Ast.On_statements.map asm ~f:make_template_statement in
+    let statements = Ast.On_statements.to_list asm' in
+    Ret.add_trampoline tid statements
 
-  let postamble ~(after_ret_label : string) : Ast.Statement.t list =
-    [Label after_ret_label]
+  let make_template (tid : int) (asm : Ast.t) : string list =
+    let statements = make_template_statements tid asm in
+    List.map ~f:(Fmt.strf "@[%a@]@." Pp.pp_statement) statements
 
-  let add_trampoline (tid : int) (statements : Ast.Statement.t list) :
-      Ast.Statement.t list =
-    (* TODO(@MattWindsor91): check whether we have a ret, and only do this
-       if we do *)
-    (* TODO(@MattWindsor91): check whether we have a leave, and add an enter
-       to match *)
-    (* TODO(@MattWindsor91): find/synthesise program boundary *)
-    let prog_label = Printf.sprintf "P%d" tid in
-    let after_ret_label = Printf.sprintf "_after_P%d" tid in
-    List.concat
-      [ preamble ~prog_label ~after_ret_label
-      ; statements
-      ; postamble ~after_ret_label ]
+  let wrong_dialect_error (actual_dialect : Ac.Id.t) : unit Or_error.t =
+    Or_error.error_s
+      [%message
+        "Input AST reports a different dialect from the one we expected."
+          ~expected_dialect:(D.dialect_id : Ac.Id.t)
+          ~actual_dialect:(actual_dialect : Ac.Id.t)]
+
+  let not_template_compatible_error (actual_dialect : Ac.Id.t) :
+      unit Or_error.t =
+    Or_error.error_s
+      [%message
+        "Stub generation requires an assembly template-compatible input \
+         dialect."
+          ~actual_dialect:(actual_dialect : Ac.Id.t)]
+
+  let check_dialect (asm : Ast.t) : unit Or_error.t =
+    let actual_dialect = Ast.dialect asm in
+    Or_error.Let_syntax.(
+      let%bind () =
+        Tx.Or_error.unless_m D.is_asm_template ~f:(fun () ->
+            not_template_compatible_error actual_dialect )
+      in
+      Tx.Or_error.unless_m (Ac.Id.equal D.dialect_id actual_dialect)
+        ~f:(fun () -> wrong_dialect_error actual_dialect))
+
+  let run (tid : int) (asm : Ast.t) : Act_c.Asm_stub.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%map () = check_dialect asm in
+      let template = make_template tid asm in
+      Act_c.Asm_stub.make ~template ())
 end
-
-let make_template_statements (tid : int) (asm : Ast.t) :
-    Ast.Statement.t list =
-  let asm' = Ast.On_statements.map asm ~f:make_template_statement in
-  let statements = Ast.On_statements.to_list asm' in
-  Ret.add_trampoline tid statements
-
-let make_template (tid : int) (asm : Ast.t) : string list =
-  let statements = make_template_statements tid asm in
-  List.map ~f:(Fmt.strf "@[%a@]@." Pp.Att.pp_statement) statements
-
-(** Safety guard to ensure that we only run stub-gen on AT&T assembly. In
-    practice, the higher levels of the x86 language definition perform an
-    automatic conversion to AT&T, and so this just guards against internal
-    errors. *)
-let require_att (asm : Ast.t) : unit Or_error.t =
-  Tx.Or_error.unless_m
-    (Ac.Id.has_tag (Ast.dialect asm) "att")
-    ~f:(fun () ->
-      Or_error.error_s
-        [%message
-          "Stub generation requires AT&T dialect assembly input."
-            ~actual_dialect:(Ast.dialect asm : Ac.Id.t)] )
-
-let run (tid : int) (asm : Ast.t) : Act_c.Asm_stub.t Or_error.t =
-  Or_error.Let_syntax.(
-    let%map () = require_att asm in
-    let template = make_template tid asm in
-    Act_c.Asm_stub.make ~template ())

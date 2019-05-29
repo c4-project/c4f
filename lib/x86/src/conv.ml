@@ -22,11 +22,13 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
+module Tx = Travesty_base_exts
+module Ac = Act_common
 
 module type S = sig
   type ast
 
-  val convert : ast -> ast
+  val convert : ast -> ast Or_error.t
 end
 
 module Make (SD : Language_definition.S) (DD : Language_definition.S) =
@@ -56,7 +58,7 @@ struct
     if SD.Instruction.is_jump ins then
       match SD.Instruction.abs_operands ins with
       | Act_abstract.Operand.(Bundle.Single (Symbol jsym)) ->
-          {ins with operands= [DD.make_jump_operand jsym]}
+          {ins with operands= [DD.Dialect.make_jump_operand jsym]}
       | _ ->
           ins
     else ins
@@ -69,7 +71,21 @@ struct
 
   let convert_listing = List.map ~f:convert_statement
 
-  let convert (ast : Ast.t) =
-    (* TODO(@MattWindsor91): check the source dialect. *)
-    Ast.On_listings.map ~f:convert_listing ast
+  let wrong_dialect_error (actual_dialect : Act_common.Id.t) : unit Or_error.t =
+    Or_error.error_s
+      [%message
+        "Tried to convert an AST with a different dialect from the one this converter supports."
+          ~expected_dialect:(SD.Dialect.dialect_id : Act_common.Id.t)
+          ~actual_dialect:(actual_dialect : Act_common.Id.t)]
+
+  let check_source_dialect (ast : Ast.t) : unit Or_error.t =
+    let actual_dialect = Ast.dialect ast in
+    Tx.Or_error.unless_m (Ac.Id.equal SD.Dialect.dialect_id actual_dialect)
+      ~f:(fun () -> wrong_dialect_error actual_dialect)
+
+  let convert (ast : Ast.t) : Ast.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%map () = check_source_dialect ast in
+      ast |> Ast.On_listings.map ~f:convert_listing |> Ast.with_dialect_id ~id:DD.Dialect.dialect_id
+    )
 end

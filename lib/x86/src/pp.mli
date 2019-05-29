@@ -46,9 +46,9 @@
 (** Pretty-printing for x86.
 
     This module is organised along dialect boundaries: first, we give an
-    interface module [Printer] that exposes the most useful pretty-printers
-    for the x86 AST; then, we give an implementation for each of the
-    dialects we support.
+    interface module {{!Pp_intf.S} S} that exposes the most useful
+    pretty-printers for the x86 AST; then, we give an implementation for
+    each of the dialects we support.
 
     Note that changing the pretty-printer from one dialect to another does
     *NOT* result in valid assembly output in that dialect! The AST doesn't
@@ -61,6 +61,9 @@ open Pp_intf
 
 (** [Att] provides pretty-printing for AT&T-syntax x86. *)
 module Att : S
+
+(** [Gcc] provides pretty-printing for GCC asm block x86. *)
+module Gcc : S
 
 (** [Intel] provides pretty-printing for Intel-syntax x86. *)
 module Intel : S

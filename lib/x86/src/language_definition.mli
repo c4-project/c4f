@@ -31,6 +31,10 @@ include module type of Language_definition_intf
 (** [Att] is a language description for the AT&T dialect of x86. *)
 module Att : S
 
+(** [Gcc] is a language description for the GCC inline-assembly dialect of
+    x86. *)
+module Gcc : S
+
 (** [Intel] is a language description for the Intel dialect of x86. *)
 module Intel : S
 

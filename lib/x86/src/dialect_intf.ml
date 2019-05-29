@@ -51,16 +51,26 @@
 
 (** [Has_dialect] is a signature for modules that report a specific dialect. *)
 module type Has_dialect = sig
-  val dialect : Act_common.Id.t
+  val dialect_id : Act_common.Id.t
   (** [dialect] is the identifier of this module's associated x86 dialect. *)
 end
 
-(** [S] is the interface of modules containing x86 dialect information. *)
-module type S = sig
+(** [Basic] is the basic interface of modules containing x86 dialect
+    information. *)
+module type Basic = sig
   include Has_dialect
 
-  (** This lets us query a dialect's operand order. *)
-  include Act_common.Src_dst.S
+  val readme : unit -> string
+  (** [readme ()] gets a free-form, human-readable, description of this
+      dialect. *)
+
+  val operand_order : Act_common.Src_dst.order
+  (** [operand_order] describes the order in which this dialect lays out
+      source/dest instruction operands. *)
+
+  val is_asm_template : bool
+  (** [is_asm_template] describes whether this dialect supports template
+      interpolations in its AST. *)
 
   val has_size_suffix : bool
   (** [has_size_suffix] gets whether this dialect uses AT&T-style size
@@ -76,4 +86,23 @@ module type S = sig
 
       In AT&T, symbolic jumps look like indirect displacements; in Intel and
       Herd7, they look like immediate values. *)
+end
+
+(** [S] is the type of fully-instantiated dialect modules. *)
+module type S = sig
+  include Basic
+
+  include Act_common.Src_dst.S
+
+  val make_jump_operand : string -> Ast.Operand.t
+  (** [make_jump_operand sym] makes the appropriate form of a symbolic jump
+      operand for this dialect. *)
+
+  val call_to_symbol : string -> Ast.Instruction.t
+  (** [call_to_symbol sym] generates the dialect-appropriate symbolic
+      procedure call instruction towards [sym]. *)
+
+  val jmp_to_symbol : string -> Ast.Instruction.t
+  (** [jmp_to_symbol sym] generates the dialect-appropriate symbolic jump
+      instruction towards [sym]. *)
 end

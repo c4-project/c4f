@@ -21,11 +21,6 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Various input/output helpers, mostly used for testing. *)
+(** Tests over the fully instantiated GCC-dialect x86 language definition.
 
-val print_bool : bool -> unit
-(** [print_bool b] prints the truth value of [b] to stdout. *)
-
-val prn : 'a Fmt.t -> 'a -> unit
-(** [prn pp x] prints [x] to stdout using [pp], followed by a hard newline. *)
-
+    This interface intentionally left blank. *)

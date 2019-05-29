@@ -21,14 +21,16 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
+
 (** Conversion between x86 dialects *)
 
 (** [S] is the interface of dialect conversion modules. *)
 module type S = sig
   type ast
 
-  val convert : ast -> ast
-  (** [convert] converts a program from one dialect to another. *)
+  val convert : ast -> ast Or_error.t
+  (** [convert] tries to convert a program from one dialect to another. *)
 end
 
 (** [Make SD DD] makes a conversion from x86 dialect SD to dialect DD. *)

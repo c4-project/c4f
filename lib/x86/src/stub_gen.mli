@@ -25,7 +25,11 @@
 
 open Base
 
-val run : int -> Ast.t -> Act_c.Asm_stub.t Or_error.t
-(** [run tid ast] tries to generate a GCC assembly stub for an x86 AST [ast]
-    corresponding to thread ID [tid]. It fails if the AST isn't tagged with
-    an AT&T dialect (though this may change in the future). *)
+(** Make a stub generator for the given dialect. *)
+module Make (D : Dialect_intf.S) (P : Pp_intf.S) : sig
+  val run : int -> Ast.t -> Act_c.Asm_stub.t Or_error.t
+  (** [run tid ast] tries to generate a GCC assembly stub for an x86 AST
+      [ast] corresponding to thread ID [tid]. It fails if the AST isn't
+      tagged with a compatible dialect (though this may change in the
+      future). *)
+end

@@ -59,26 +59,17 @@ module Make (B : Basic) : S = struct
 
   module Sym = String
   module Loc = Ast.Location
+  module Src_dst = Act_common.Src_dst.Make (Dialect)
 
   type con = Ast.Operand.t
 
-  let make_jump_operand jsym =
-    Ast.(
-      let disp = Disp.Symbolic jsym in
-      match Dialect.symbolic_jump_type with
-      | `Indirect ->
-          Operand.Location (Location.Indirect (Indirect.make ~disp ()))
-      | `Immediate ->
-          Operand.Immediate disp)
+  let make_jump_operand jsym = B.Dialect.make_jump_operand jsym
 
   let pp = B.Pretty.pp_instruction
 
   let pp_operands f ins = B.Pretty.pp_oplist f ins.Ast.Instruction.operands
 
-  let jump l =
-    Ast.Instruction.make
-      ~opcode:(Opcode.Jump `Unconditional)
-      ~operands:[make_jump_operand l] ()
+  let jump = B.Dialect.jmp_to_symbol
 
   let zero_operands (operands : Ast.Operand.t list) :
       Act_abstract.Operand.Bundle.t =
@@ -123,7 +114,7 @@ module Make (B : Basic) : S = struct
   let src_dst_operands operands ~allowed =
     error_to_erroneous
       Or_error.Let_syntax.(
-        let%bind {src; dst} = Dialect.to_src_dst_or_error operands in
+        let%bind {src; dst} = Src_dst.to_src_dst_or_error operands in
         let%map {src= src'; dst= dst'} = classify_src_dst src dst allowed in
         Act_abstract.Operand.Bundle.src_dst ~src:src' ~dst:dst')
 
@@ -290,7 +281,7 @@ module Make (B : Basic) : S = struct
       | _ ->
           None
     in
-    Dialect.to_src_dst ops
+    Src_dst.to_src_dst ops
 
   let as_location = function
     | Ast.Operand.Location l ->
@@ -327,7 +318,7 @@ module Make (B : Basic) : S = struct
     Or_error.return
       (Ast.Instruction.make
          ~opcode:(Basic `Mov)
-         ~operands:(Dialect.of_src_dst {src; dst})
+         ~operands:(Src_dst.of_src_dst {src; dst})
          ())
 
   let location_move ~src ~dst =
