@@ -23,7 +23,7 @@
 
 (** Abstract type of C preprocessor configurations. *)
 
-include Program.S
+include Act_common.Program.S
 
 val make : enabled:bool -> ?cmd:string -> ?argv:string list -> unit -> t
 (** [make ~enabled ?cmd ?argv ()] makes a CPP configuration block. *)

@@ -25,7 +25,7 @@ module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.S =
 Act_sim.Runner.Make (struct
   let name = Act_common.Id.of_string "herd"
 
-  let machine_id = Act_config.Machine.Id.default
+  let machine_id = Act_compiler.Machine.Id.default
 
   module Filter = Filter.Make (B)
   module Reader = Reader

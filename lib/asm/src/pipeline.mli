@@ -44,7 +44,7 @@ module Input : sig
   val make :
        file_type:Ac.File_type.t
     -> job_input:(   Act_c.Filters.Output.t Pb.Chain_context.t
-                  -> 'job Job.t Act_config.Compiler.Chain_input.t)
+                  -> 'job Job.t Act_compiler.Instance.Chain_input.t)
     -> 'job t
 
   (** {3 Accessors} *)
@@ -54,7 +54,7 @@ module Input : sig
   val job_input :
        'job t
     -> Act_c.Filters.Output.t Pb.Chain_context.t
-    -> 'job Job.t Act_config.Compiler.Chain_input.t
+    -> 'job Job.t Act_compiler.Instance.Chain_input.t
 end
 
 module Output : sig
@@ -83,7 +83,7 @@ module type S = sig
 end
 
 val make :
-     (module Act_config.Compiler.S_resolver with type spec = 'spec)
+     (module Act_compiler.Instance.S_resolver with type spec = 'spec)
   -> (module Runner_intf.S with type cfg = 'c)
   -> 'spec
   -> (module S with type cfg = 'c) Or_error.t

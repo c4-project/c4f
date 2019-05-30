@@ -58,7 +58,7 @@ module Make_error (B : Basic_error) : S = struct
 
   let name : Act_common.Id.t = Act_common.Id.of_string "error"
 
-  let machine_id : Act_common.Id.t = Act_config.Machine.Id.default
+  let machine_id : Act_common.Id.t = Act_compiler.Machine.Id.default
 
   type t = Filter.aux_i
 

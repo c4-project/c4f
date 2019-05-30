@@ -71,10 +71,12 @@ struct
 
   let convert_listing = List.map ~f:convert_statement
 
-  let wrong_dialect_error (actual_dialect : Act_common.Id.t) : unit Or_error.t =
+  let wrong_dialect_error (actual_dialect : Act_common.Id.t) :
+      unit Or_error.t =
     Or_error.error_s
       [%message
-        "Tried to convert an AST with a different dialect from the one this converter supports."
+        "Tried to convert an AST with a different dialect from the one \
+         this converter supports."
           ~expected_dialect:(SD.Dialect.dialect_id : Act_common.Id.t)
           ~actual_dialect:(actual_dialect : Act_common.Id.t)]
 
@@ -86,6 +88,7 @@ struct
   let convert (ast : Ast.t) : Ast.t Or_error.t =
     Or_error.Let_syntax.(
       let%map () = check_source_dialect ast in
-      ast |> Ast.On_listings.map ~f:convert_listing |> Ast.with_dialect_id ~id:DD.Dialect.dialect_id
-    )
+      ast
+      |> Ast.On_listings.map ~f:convert_listing
+      |> Ast.with_dialect_id ~id:DD.Dialect.dialect_id)
 end

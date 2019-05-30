@@ -28,4 +28,3 @@ val print_bool : bool -> unit
 
 val prn : 'a Fmt.t -> 'a -> unit
 (** [prn pp x] prints [x] to stdout using [pp], followed by a hard newline. *)
-

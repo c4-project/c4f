@@ -25,17 +25,16 @@ open Core_kernel
 module Ac = Act_common
 module Au = Act_utils
 module Tx = Travesty_core_kernel_exts
-include Act_intf
 
 module Raw = struct
-  module C = Compiler.Cfg_spec
+  module C = Act_compiler.Instance.Cfg_spec
 
   type t =
     { cpp: Cpp.t option [@sexp.option]
     ; herd: Herd.t option [@sexp.option]
     ; fuzz: Fuzz.t option [@sexp.option]
     ; compilers: C.Set.t
-    ; machines: Machine.Spec.Set.t }
+    ; machines: Act_compiler.Machine.Spec.Set.t }
   [@@deriving sexp, make, fields]
 
   let sanitiser_passes _ ~default = default
@@ -43,7 +42,8 @@ module Raw = struct
   module Raw_load = struct
     (** Reading in config from an AST. *)
     module File = struct
-      let ssh (items : Ast.Ssh.t list) : Machine.Ssh.t Or_error.t =
+      let ssh (items : Ast.Ssh.t list) :
+          Act_compiler.Machine.Ssh.t Or_error.t =
         Or_error.Let_syntax.(
           let%map user =
             Au.My_list.find_one items ~item_name:"user" ~f:(function
@@ -64,23 +64,25 @@ module Raw = struct
               | _ ->
                   None )
           in
-          Machine.Ssh.make ~user ~host ~copy_dir ())
+          Act_compiler.Machine.Ssh.make ~user ~host ~copy_dir ())
 
       let via = function
         | Ast.Via.Local ->
-            Or_error.return Machine.Via.Local
+            Or_error.return Act_compiler.Machine.Via.Local
         | Ssh items ->
-            Or_error.(ssh items >>| Machine.Via.ssh)
+            Or_error.(ssh items >>| Act_compiler.Machine.Via.ssh)
 
-      let litmus (items : Ast.Litmus.t list) : Litmus_tool.t Or_error.t =
+      let litmus (items : Ast.Litmus.t list) :
+          Act_compiler.Litmus_tool.t Or_error.t =
         Or_error.Let_syntax.(
           let%map cmd =
             Au.My_list.find_one_opt items ~item_name:"cmd" ~f:(function
                 | Cmd c -> Some c (* | _ -> None *) )
           in
-          Litmus_tool.make ?cmd ())
+          Act_compiler.Litmus_tool.make ?cmd ())
 
-      let machine (items : Ast.Machine.t list) : Machine.Spec.t Or_error.t =
+      let machine (items : Ast.Machine.t list) :
+          Act_compiler.Machine.Spec.t Or_error.t =
         Or_error.Let_syntax.(
           let%bind enabled =
             Au.My_list.find_at_most_one items ~item_name:"enabled"
@@ -101,7 +103,7 @@ module Raw = struct
           in
           let%map litmus = Tx.Option.With_errors.map_m ~f:litmus litmus_raw
           and via = via via_raw in
-          Machine.Spec.make ?litmus ~enabled ~via ())
+          Act_compiler.Machine.Spec.make ?litmus ~enabled ~via ())
 
       let compiler (items : Ast.Compiler.t list) : C.t Or_error.t =
         Or_error.Let_syntax.(
@@ -138,10 +140,10 @@ module Raw = struct
           and machine =
             Au.My_list.find_at_most_one items ~item_name:"copy to"
               ~f:(function Machine m -> Some m | _ -> None)
-              ~on_empty:(return Machine.Id.default)
+              ~on_empty:(return Act_compiler.Machine.Id.default)
           in
-          Compiler.Cfg_spec.make ~enabled ~style ~emits ~cmd ~argv ~herd
-            ~machine ())
+          Act_compiler.Instance.Cfg_spec.make ~enabled ~style ~emits ~cmd
+            ~argv ~herd ~machine ())
 
       let cpp (items : Ast.Cpp.t list) =
         Or_error.Let_syntax.(
@@ -217,8 +219,8 @@ module Raw = struct
           |> List.filter_map ~f:Ast.Top.as_machine
           |> Tx.List.With_errors.map_m ~f:(fun (id, spec_ast) ->
                  let%map spec = machine spec_ast in
-                 Machine.Spec.With_id.make ~id ~spec )
-          >>= Machine.Spec.Set.of_list)
+                 Act_compiler.Machine.Spec.With_id.make ~id ~spec )
+          >>= Act_compiler.Machine.Spec.Set.of_list)
 
       let build_compilers (items : Ast.t) =
         Or_error.Let_syntax.(
@@ -226,8 +228,8 @@ module Raw = struct
           |> List.filter_map ~f:Ast.Top.as_compiler
           |> Tx.List.With_errors.map_m ~f:(fun (id, spec_ast) ->
                  let%map spec = compiler spec_ast in
-                 Compiler.Cfg_spec.With_id.make ~id ~spec )
-          >>= Compiler.Cfg_spec.Set.of_list)
+                 Act_compiler.Instance.Cfg_spec.With_id.make ~id ~spec )
+          >>= Act_compiler.Instance.Cfg_spec.Set.of_list)
 
       let build_fuzz (items : Ast.t) : Fuzz.t option Or_error.t =
         Or_error.Let_syntax.(
@@ -281,11 +283,11 @@ module Part_helpers (S : Ac.Spec.S) = struct
 end
 
 module M = struct
-  module C = Compiler.Spec
+  module C = Act_compiler.Instance.Spec
 
   type t =
     { compilers: C.Set.t
-    ; machines: Machine.Spec.Set.t
+    ; machines: Act_compiler.Machine.Spec.Set.t
     ; cpp: Cpp.t option [@sexp.option]
     ; fuzz: Fuzz.t option [@sexp.option]
     ; herd: Herd.t option [@sexp.option]
@@ -298,28 +300,29 @@ module M = struct
 
   module RP = Part_helpers (Raw.C)
   module CP = Part_helpers (C)
-  module MP = Part_helpers (Machine.Spec)
+  module MP = Part_helpers (Act_compiler.Machine.Spec)
 
   (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
   type 't hook = 't -> 't option Or_error.t
 
-  let machines_from_raw (hook : Machine.Spec.With_id.t hook)
-      (ms : Machine.Spec.Set.t) :
-      (Machine.Spec.Set.t * (Ac.Id.t, Error.t option) List.Assoc.t)
+  let machines_from_raw (hook : Act_compiler.Machine.Spec.With_id.t hook)
+      (ms : Act_compiler.Machine.Spec.Set.t) :
+      ( Act_compiler.Machine.Spec.Set.t
+      * (Ac.Id.t, Error.t option) List.Assoc.t )
       Or_error.t =
     let open Or_error.Let_syntax in
-    Machine.Spec.Set.(
+    Act_compiler.Machine.Spec.Set.(
       let enabled, disabled =
         partition_map
           ~f:(part_chain_fst MP.part_enabled (MP.part_hook hook))
           ms
       in
       (* TODO(@MattWindsor91): test machines *)
-      let%map enabled' = Machine.Spec.Set.of_list enabled in
+      let%map enabled' = of_list enabled in
       (enabled', disabled))
 
   let build_compiler (rawc : Raw.C.With_id.t)
-      (mach : Machine.Spec.With_id.t) : C.t =
+      (mach : Act_compiler.Machine.Spec.With_id.t) : C.t =
     Raw.C.With_id.(
       C.make ~enabled:(is_enabled rawc) ~style:(style rawc)
         ~emits:(emits rawc) ~cmd:(cmd rawc) ~argv:(argv rawc)
@@ -327,7 +330,7 @@ module M = struct
 
   let find_machine enabled disabled mach =
     Or_error.(
-      match Machine.Spec.Set.get enabled mach with
+      match Act_compiler.Machine.Spec.Set.get enabled mach with
       | Ok m ->
           return (`Fst m)
       | _ -> (
@@ -362,7 +365,7 @@ module M = struct
   let herd_or_default (conf : t) : Herd.t =
     conf |> herd |> Tx.Option.value_f ~default_f:Herd.default
 
-  let compilers_from_raw (ms : Machine.Spec.Set.t)
+  let compilers_from_raw (ms : Act_compiler.Machine.Spec.Set.t)
       (ms_disabled : (Ac.Id.t, Error.t option) List.Assoc.t)
       (hook : C.With_id.t hook) (cs : Raw.C.Set.t) :
       (C.Set.t * (Ac.Id.t, Error.t option) List.Assoc.t) Or_error.t =

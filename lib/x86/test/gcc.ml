@@ -29,6 +29,6 @@ let%test_module "Pretty-printing" =
     open Pp.Gcc
 
     let%expect_test "pp_reg: EAX" =
-      Io.prn pp_reg `EAX;
+      Io.prn pp_reg `EAX ;
       [%expect {| %%EAX |}]
-  end)
+  end )

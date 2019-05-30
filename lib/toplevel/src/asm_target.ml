@@ -27,15 +27,15 @@ module A = Act_common
 type t = Arch of A.Id.t | Compiler_id of A.Id.t [@@deriving variants]
 
 let resolve_compiler (cfg : Act_config.Act.t) (id : A.Id.t) :
-    Act_config.Compiler.Target.t Or_error.t =
+    Act_compiler.Instance.Target.t Or_error.t =
   Or_error.Let_syntax.(
     let%map spec =
-      Act_config.Compiler.Spec.Set.get (Act_config.Act.compilers cfg) id
+      Act_compiler.Instance.Spec.Set.get (Act_config.Act.compilers cfg) id
     in
     `Spec spec)
 
 let resolve (target : t) ~(cfg : Act_config.Act.t) :
-    Act_config.Compiler.Target.t Or_error.t =
+    Act_compiler.Instance.Target.t Or_error.t =
   Variants.map
     ~compiler_id:(fun _ -> resolve_compiler cfg)
     ~arch:(fun _ arch -> Or_error.return (`Arch arch))

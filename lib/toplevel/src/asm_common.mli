@@ -43,7 +43,7 @@ module Input : sig
 
   val sanitiser_passes : t -> Set.M(Act_sanitiser.Pass_group).t
 
-  val target : t -> Act_config.Compiler.Target.t
+  val target : t -> Act_compiler.Instance.Target.t
 
   val user_cvars : t -> Act_common.C_variables.Map.t option
 
@@ -51,7 +51,7 @@ module Input : sig
        t
     -> (c_variables:Act_common.C_variables.Map.t option -> 'cfg)
     -> Act_c.Filters.Output.t Plumbing.Chain_context.t
-    -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t
+    -> 'cfg Act_asm.Job.t Act_compiler.Instance.Chain_input.t
 end
 
 val lift_command :

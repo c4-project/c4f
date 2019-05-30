@@ -25,27 +25,26 @@
 
 open Base
 open Act_common
-
-include module type of Act_intf
+open Act_intf
 
 (** [Raw] represents act configuration loaded directly from a spec file,
     without any compiler testing or expansion. *)
 module Raw : sig
-  include S with module CSpec := Compiler.Cfg_spec
+  include S with module CSpec := Act_compiler.Instance.Cfg_spec
 
   val make :
        ?cpp:Cpp.t
     -> ?herd:Herd.t
     -> ?fuzz:Fuzz.t
-    -> compilers:Compiler.Cfg_spec.Set.t
-    -> machines:Machine.Spec.Set.t
+    -> compilers:Act_compiler.Instance.Cfg_spec.Set.t
+    -> machines:Act_compiler.Machine.Spec.Set.t
     -> unit
     -> t
 
   include Act_utils.Loadable_intf.S with type t := t
 end
 
-include S with module CSpec := Compiler.Spec
+include S with module CSpec := Act_compiler.Instance.Spec
 
 (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
 type 't hook = 't -> 't option Or_error.t
@@ -63,8 +62,8 @@ val herd_or_default : t -> Herd.t
     if [c] has no Herd configuration. *)
 
 val from_raw :
-     ?chook:Compiler.Spec.With_id.t hook
-  -> ?mhook:Machine.Spec.With_id.t hook
+     ?chook:Act_compiler.Instance.Spec.With_id.t hook
+  -> ?mhook:Act_compiler.Machine.Spec.With_id.t hook
   -> ?phook:(   default:Set.M(Act_sanitiser.Pass_group).t
              -> Set.M(Act_sanitiser.Pass_group).t)
   -> Raw.t

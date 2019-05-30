@@ -25,6 +25,7 @@ open Core_kernel
 module Tx = Travesty_core_kernel_exts
 module Ac = Act_common
 module Pb = Plumbing
+module Cc_target = Act_compiler.Instance.Target
 
 let not_tracking_symbols_warning : string =
   {|
@@ -45,13 +46,11 @@ let warn_if_not_tracking_symbols (o : Ac.Output.t) :
   | Some _ ->
       ()
 
-let asm_runner_of_target (tgt : Act_config.Compiler.Target.t) :
+let asm_runner_of_target (tgt : Cc_target.t) :
     (module Act_asm.Runner_intf.Basic) Or_error.t =
-  Language_support.asm_runner_from_arch
-    (Act_config.Compiler.Target.arch tgt)
+  Language_support.asm_runner_from_arch (Cc_target.arch tgt)
 
-let delitmus_compile_asm_pipeline (type c)
-    (target : Act_config.Compiler.Target.t)
+let delitmus_compile_asm_pipeline (type c) (target : Cc_target.t)
     (job_maker :
          (module Act_asm.Runner_intf.Basic)
       -> (module Act_asm.Runner_intf.S with type cfg = c)) :
@@ -62,7 +61,7 @@ let delitmus_compile_asm_pipeline (type c)
       (module Language_support.Resolve_compiler_from_target)
       job target)
 
-let litmusify_pipeline (target : Act_config.Compiler.Target.t) :
+let litmusify_pipeline (target : Cc_target.t) :
     (module Act_asm.Pipeline.S
        with type cfg = Sexp.t Act_asm.Litmusifier.Config.t)
     Or_error.t =
@@ -112,7 +111,7 @@ let make_compiler_input (o : Ac.Output.t) (file_type : Ac.File_type.t)
     (config_fn : c_variables:Ac.C_variables.Map.t option -> 'cfg)
     (passes : Set.M(Act_sanitiser.Pass_group).t)
     (dl_output : Act_c.Filters.Output.t Pb.Chain_context.t) :
-    'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
+    'cfg Act_asm.Job.t Act_compiler.Instance.Chain_input.t =
   let c_variables = choose_cvars o user_cvars dl_output in
   let symbols =
     c_variables
@@ -121,7 +120,7 @@ let make_compiler_input (o : Ac.Output.t) (file_type : Ac.File_type.t)
   in
   let config = config_fn ~c_variables in
   let litmus_job = Act_asm.Job.make ~passes ~config ?symbols () in
-  Act_config.Compiler.Chain_input.make
+  Act_compiler.Instance.Chain_input.make
     ~file_type:(Act_common.File_type.delitmusified file_type)
     ~next:(Fn.const litmus_job)
 

@@ -26,13 +26,13 @@
 
 open Core_kernel
 open Act_common
-open Compiler_intf
+open Instance_types
 
 (** [Make_spec] is a functor for building compiler specifications
     parametrised on machine references.
 
     See [Cfg_spec] and [Spec] for implementations of this functor. *)
-module Make_spec (M : Machine.Reference) : S_spec with module Mach = M
+module Make_spec (M : Machine_types.Reference) : S_spec with module Mach = M
 
 (** [Cfg_spec] is a module describing compiler specs where machine
     references are unresolved IDs. This is the format used in the

@@ -25,10 +25,10 @@ open Core_kernel
 module Ac = Act_common
 module Au = Act_utils
 module Pb = Plumbing
-open Compiler_intf
+open Instance_types
 
-module Make_spec (R : Machine.Reference) : S_spec with module Mach = R =
-struct
+module Make_spec (R : Machine_types.Reference) :
+  S_spec with module Mach = R = struct
   module Mach = R
 
   module M = struct
@@ -48,27 +48,34 @@ struct
 
     let pp =
       Fmt.vbox (fun f spec ->
-          if not spec.enabled then Format.fprintf f "-- DISABLED --@," ;
+          if not spec.enabled then Fmt.pf f "-- DISABLED --@," ;
           Au.My_format.pp_kv f "Style" String.pp spec.style ;
-          Format.pp_print_cut f () ;
+          Fmt.cut f () ;
           Au.My_format.pp_kv f "Emits" Ac.Id.pp spec.emits ;
-          Format.pp_print_cut f () ;
+          Fmt.cut f () ;
           Au.My_format.pp_kv f "Command"
-            (Format.pp_print_list ~pp_sep:Format.pp_print_space String.pp)
+            (Fmt.list ~sep:Fmt.sp String.pp)
             (spec.cmd :: spec.argv) ;
-          Format.pp_print_cut f () ;
+          Fmt.cut f () ;
           Au.My_format.pp_kv f "Machine" Mach.pp spec.machine ;
-          Format.pp_print_cut f () ;
+          Fmt.cut f () ;
           Au.My_format.pp_kv f "Herd"
             (fun f x -> String.pp f (if x then "yes" else "no"))
             spec.herd )
 
+    (* TODO(@MattWindsor91): this duplicates some code in Machine.Property. *)
+    let is_remote (r : R.t) : bool =
+      match R.remoteness r with
+      | `Remote ->
+          true
+      | `Local | `Unknown ->
+          false
+
     let pp_summary =
       let facts spec =
-        List.concat
-          [ (if enabled spec then [] else ["(DISABLED)"])
-          ; ( if R.remoteness (machine spec) = `Remote then ["(REMOTE)"]
-            else [] ) ]
+        List.filter_opt
+          [ Option.some_if (enabled spec) "(DISABLED)"
+          ; Option.some_if (is_remote (machine spec)) "(REMOTE)" ]
       in
       Fmt.(using facts (hbox (list ~sep:sp string)))
   end

@@ -25,7 +25,7 @@ open Core_kernel
 module Au = Act_utils
 module Pb = Plumbing
 open Act_common
-include Machine_intf
+open Machine_types
 
 module Forward_basic_spec
     (I : Au.Inherit.S)

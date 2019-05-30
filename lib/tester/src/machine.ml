@@ -25,15 +25,17 @@ open Base
 open Act_common
 include Machine_intf
 
+(* Module aliases *)
+module C_spec = Act_compiler.Instance.Spec
+
 module Make (B : Basic) : S = struct
   include B
   include Common.Extend (B)
 
-  let make_pathset (cfg : Run_config.t)
-      (spec : Act_config.Compiler.Spec.With_id.t) :
+  let make_pathset (cfg : Run_config.t) (spec : C_spec.With_id.t) :
       Pathset.Compiler.t Or_error.t =
     let open Or_error.Let_syntax in
-    let compiler_id = Act_config.Compiler.Spec.With_id.id spec in
+    let compiler_id = C_spec.With_id.id spec in
     let%map ps =
       Pathset.Compiler.make_and_mkdirs
         {compiler_id; run= Run_config.pathset cfg}
@@ -41,9 +43,8 @@ module Make (B : Basic) : S = struct
     Output.pv o "%a@." Pathset.Compiler.pp ps ;
     ps
 
-  let make_compiler (cfg : Run_config.t)
-      (spec : Act_config.Compiler.Spec.With_id.t) :
-      (module Compiler.S) Or_error.t =
+  let make_compiler (cfg : Run_config.t) (spec : C_spec.With_id.t) :
+      (module Compiler_intf.S) Or_error.t =
     Or_error.Let_syntax.(
       let%bind (module C) = B.Resolve_compiler.from_spec spec in
       let%bind (module R) = B.asm_runner_from_spec spec in
@@ -63,11 +64,11 @@ module Make (B : Basic) : S = struct
 
         let cspec = spec
       end)
-      : Compiler.S ))
+      : Compiler_intf.S ))
 
   let run_compiler (cfg : Run_config.t) (c_sims : Act_sim.Bulk.File_map.t)
-      (spec : Act_config.Compiler.Spec.With_id.t) =
-    let id = Act_config.Compiler.Spec.With_id.id spec in
+      (spec : C_spec.With_id.t) =
+    let id = C_spec.With_id.id spec in
     Or_error.Let_syntax.(
       let%bind (module TC) = make_compiler cfg spec in
       let%map result = TC.run c_sims in
@@ -76,7 +77,7 @@ module Make (B : Basic) : S = struct
   let run_compilers (cfg : Run_config.t) (c_sims : Act_sim.Bulk.File_map.t)
       : (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =
     compilers
-    |> Act_config.Compiler.Spec.Set.map ~f:(run_compiler cfg c_sims)
+    |> C_spec.Set.map ~f:(run_compiler cfg c_sims)
     |> Or_error.combine_errors
 
   let make_analysis (raw : (Id.t, Analysis.Compiler.t) List.Assoc.t T.t) :

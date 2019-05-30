@@ -413,8 +413,8 @@ end
 type t = {program: Statement.t list; dialect: Id.t}
 [@@deriving sexp, equal, fields, make]
 
-let with_dialect_id (ast : t) ~(id:Act_common.Id.t) : t =
-  { ast with dialect = id }
+let with_dialect_id (ast : t) ~(id : Act_common.Id.t) : t =
+  {ast with dialect= id}
 
 (** Base mapper for ASTs *)
 module Base_map (M : Monad.S) = struct

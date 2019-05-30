@@ -24,24 +24,25 @@
 open Base
 open Act_common
 module Tx = Travesty_base_exts
+module M_spec = Act_compiler.Machine.Spec
 
-let litmus_config (machine : Act_config.Machine.Spec.With_id.t) :
-    Act_config.Litmus_tool.t Or_error.t =
+let litmus_config (machine : M_spec.With_id.t) :
+    Act_compiler.Litmus_tool.t Or_error.t =
   Or_error.tag_arg
-    (Tx.Option.one (Act_config.Machine.Spec.With_id.litmus machine))
+    (Tx.Option.one (M_spec.With_id.litmus machine))
     "While trying to find litmus config for machine"
-    (Act_config.Machine.Spec.With_id.id machine)
-    [%sexp_of: Act_config.Machine.Id.t]
+    (M_spec.With_id.id machine)
+    [%sexp_of: Id.t]
 
-let try_make_litmus_filter (machine : Act_config.Machine.Spec.With_id.t) :
+let try_make_litmus_filter (machine : M_spec.With_id.t) :
     (module Act_sim.Runner_intf.S) Or_error.t =
   Or_error.Let_syntax.(
     let%map litmus_cfg = litmus_config machine in
-    let (module R) = Act_config.Machine.Spec.With_id.runner machine in
+    let (module R) = M_spec.With_id.runner machine in
     ( module Act_sim_litmus.Runner.Make (struct
       let config = litmus_cfg
 
-      let machine_id = Act_config.Machine.Spec.With_id.id machine
+      let machine_id = M_spec.With_id.id machine
 
       module Runner = R
     end)
@@ -53,7 +54,7 @@ let make_error (e : Error.t) =
   end)
   : Act_sim.Runner_intf.S )
 
-let make_litmus_filter (machine : Act_config.Machine.Spec.With_id.t) :
+let make_litmus_filter (machine : M_spec.With_id.t) :
     (module Act_sim.Runner_intf.S) =
   match try_make_litmus_filter machine with
   | Ok m ->
@@ -69,8 +70,7 @@ let make_herd_filter (cfg : Act_config.Act.t) :
   end) )
 
 let make_simulator_table (cfg : Act_config.Act.t)
-    (machine : Act_config.Machine.Spec.With_id.t) :
-    Act_sim.Table.t Or_error.t =
+    (machine : M_spec.With_id.t) : Act_sim.Table.t Or_error.t =
   Act_sim.Table.make
     [ (Id.of_string "herd", make_herd_filter cfg)
     ; (Id.of_string "litmus", make_litmus_filter machine) ]
@@ -78,9 +78,8 @@ let make_simulator_table (cfg : Act_config.Act.t)
 module Make_resolver (B : sig
   val cfg : Act_config.Act.t
 end) : Act_sim.Resolver.S = struct
-  let get_machine :
-      Act_common.Id.t -> Act_config.Machine.Spec.With_id.t Or_error.t =
-    Act_config.Machine.Spec.Set.get (Act_config.Act.machines B.cfg)
+  let get_machine : Act_common.Id.t -> M_spec.With_id.t Or_error.t =
+    M_spec.Set.get (Act_config.Act.machines B.cfg)
 
   let make_table (id : Act_common.Id.t) : Act_sim.Table.t Or_error.t =
     Or_error.Let_syntax.(

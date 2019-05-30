@@ -25,6 +25,9 @@ open Core
 open Act_common
 open Act_utils
 
+(* Module shorthand *)
+module Cc_spec = Act_compiler.Instance.Spec
+
 let report_spec_errors (o : Output.t) = function
   | [] ->
       ()
@@ -48,10 +51,7 @@ let make_tester_config ?(c_simulator : Id.t = Id.of_string "herd")
   report_spec_errors o
     (List.filter_map ~f:snd (Act_config.Act.disabled_compilers cfg)) ;
   let compilers =
-    specs
-    |> Act_config.Compiler.Spec.Set.map
-         ~f:Act_config.Compiler.Spec.With_id.id
-    |> Id.Set.of_list
+    specs |> Cc_spec.(Set.map ~f:With_id.id) |> Id.Set.of_list
   in
   let%map pathset =
     Act_tester.Pathset.Run.make_and_mkdirs {output_root_dir; input_mode}
@@ -84,8 +84,7 @@ let make_tester o (cfg : Act_config.Act.t) timing_mode =
         ~default:Act_sanitiser.Pass_group.standard
 
     let asm_runner_from_spec =
-      Fn.compose Language_support.asm_runner_from_arch
-        Act_config.Compiler.Spec.With_id.emits
+      Fn.compose Language_support.asm_runner_from_arch Cc_spec.With_id.emits
   end)
   : Act_tester.Instance.S )
 

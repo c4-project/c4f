@@ -23,6 +23,7 @@
 
 open Core_kernel
 open Act_common
+module M_spec = Act_compiler.Machine.Spec
 
 let run_herd ?arch ?(argv = []) (_o : Output.t) (cfg : Act_config.Act.t) :
     unit Or_error.t =
@@ -57,11 +58,9 @@ let run_litmus_locally ?(argv = []) (_o : Output.t) (cfg : Act_config.Act.t)
   let open Or_error.Let_syntax in
   let machines = Act_config.Act.machines cfg in
   let%bind machine =
-    Act_config.Machine.Spec.Set.get machines Act_config.Machine.Id.default
+    M_spec.Set.get machines Act_compiler.Machine.Id.default
   in
-  let%bind litmus_cfg =
-    Act_config.Machine.Spec.With_id.ensure_litmus machine
-  in
+  let%bind litmus_cfg = M_spec.With_id.ensure_litmus machine in
   Act_sim_litmus.Filter.run_direct litmus_cfg argv
 
 let litmus_command : Command.t =

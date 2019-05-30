@@ -23,7 +23,7 @@
 
 (** Tester: single-compiler test runners. *)
 
-include module type of Compiler_intf
+open Compiler_intf
 
 (** [Make] produces a compiler-specific test runner from a [Basic]. *)
 module Make (B : Basic) : S

@@ -25,7 +25,7 @@ open Base
 
 (** Baseline interface of modules over configuration. *)
 module type S = sig
-  module CSpec : Compiler_intf.S_spec
+  module CSpec : Act_compiler.Instance_types.S_spec
 
   type t [@@deriving sexp]
 
@@ -43,7 +43,7 @@ module type S = sig
   (** [compilers c] gets the set of all active compilers in configuration
       [c]. *)
 
-  val machines : t -> Machine.Spec.Set.t
+  val machines : t -> Act_compiler.Machine.Spec.Set.t
   (** [machines c] gets the set of all active machines in configuration [c]. *)
 
   val sanitiser_passes :

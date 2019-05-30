@@ -35,7 +35,7 @@ val compiler_id : Act_common.Id.t -> t
 (** [compiler_id id] is [Compiler_id id]. *)
 
 val resolve :
-  t -> cfg:Act_config.Act.t -> Act_config.Compiler.Target.t Or_error.t
+  t -> cfg:Act_config.Act.t -> Act_compiler.Instance.Target.t Or_error.t
 (** [resolve target ~cfg] passes through [target] if it's a direct
     architecture reference; if it's a compiler ID, it tries to look up that
     ID in [cfg], resolving it to a compiler spec. *)

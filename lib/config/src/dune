@@ -7,7 +7,7 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries fmt fpath menhirLib travesty travesty.core_kernel_exts
-   core_kernel act_common act_litmus act_utils act_sanitiser))
+   core_kernel act_common act_compiler act_litmus act_utils act_sanitiser))
 
 ;; Config file parser
 

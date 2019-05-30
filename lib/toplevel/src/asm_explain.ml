@@ -38,7 +38,7 @@ let explain_runner (module B : Act_asm.Runner_intf.Basic) :
   let module Exp = Act_asm.Explainer.Make (B) in
   (module Exp.Filter)
 
-let explain_filter (target : Act_config.Compiler.Target.t) :
+let explain_filter (target : Act_compiler.Instance.Target.t) :
     (module Act_asm.Pipeline.S with type cfg = Act_asm.Explainer.Config.t)
     Or_error.t =
   Or_error.tag ~tag:"while getting an explain filter for this target"

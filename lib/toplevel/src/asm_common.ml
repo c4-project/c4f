@@ -32,7 +32,7 @@ module Input = struct
     ; args: Args.Standard_asm.t
     ; sanitiser_passes: Set.M(Act_sanitiser.Pass_group).t
     ; user_cvars: Ac.C_variables.Map.t option
-    ; target: Act_config.Compiler.Target.t
+    ; target: Act_compiler.Instance.Target.t
     ; pb_input: Plumbing.Input.t
     ; pb_output: Plumbing.Output.t
     ; output: Act_common.Output.t }
@@ -45,13 +45,13 @@ module Input = struct
       (config_builder :
         c_variables:Act_common.C_variables.Map.t option -> 'cfg) :
          Act_c.Filters.Output.t Pb.Chain_context.t
-      -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t =
+      -> 'cfg Act_asm.Job.t Act_compiler.Instance.Chain_input.t =
     Common.make_compiler_input (output i) (file_type i) (user_cvars i)
       config_builder (sanitiser_passes i)
 end
 
 let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
-    Act_config.Compiler.Target.t Or_error.t =
+    Act_compiler.Instance.Target.t Or_error.t =
   let raw_target = Args.Standard_asm.target args in
   Asm_target.resolve ~cfg raw_target
 

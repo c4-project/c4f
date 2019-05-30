@@ -22,14 +22,14 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-include Compiler_intf
+open Compiler_intf
 module Tx = Travesty_core_kernel_exts
 module Ac = Act_common
 
 module Make (B : Basic) : S = struct
   include B
   include Common.Extend (B)
-  module C_id = Act_config.Compiler.Spec.With_id
+  module C_id = Act_compiler.Instance.Spec.With_id
   module P_file = Pathset.File
   module Litmusify = Act_asm.Litmusifier.Make (R)
 

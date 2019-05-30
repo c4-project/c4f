@@ -3,7 +3,7 @@ open Base
 type t = {cmd: string [@default "litmus7"] [@drop_if_default]}
 [@@deriving sexp, fields, make]
 
-module M : Program.S with type t := t = struct
+module M : Act_common.Program.S with type t := t = struct
   let cmd = cmd
 
   let sexp_of_t = sexp_of_t

@@ -101,7 +101,7 @@ herd_item:
 
 id_or_default:
   | id = IDENTIFIER { id }
-  | DEFAULT         { Machine.Id.default }
+  | DEFAULT         { Act_compiler.Machine.Id.default }
 
 machine_stanza:
   | s = id_stanza(MACHINE, id_or_default, machine_item) { s }

@@ -33,7 +33,7 @@ module type Basic_spec = sig
   (** [Mach] is some module for resolving references to the machine on which
       a compiler is located. This can either be an inline machine
       specification module, or a more indirect form of reference. *)
-  module Mach : Machine.Reference
+  module Mach : Machine_types.Reference
 
   (** [t] is the opaque type of compiler specifications. To construct a [t],
       read one in as an S-expression; a proper constructor may appear in

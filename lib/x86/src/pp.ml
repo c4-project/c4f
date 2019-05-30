@@ -141,8 +141,7 @@ module Gcc_specific = struct
   let pp_reg : Reg.t Fmt.t =
     Fmt.(box (prefix (always "%%%%") (using Reg.to_string string)))
 
-  let pp_template_token : string Fmt.t =
-    pp_gcc_asm_template_token
+  let pp_template_token : string Fmt.t = pp_gcc_asm_template_token
 end
 
 (** Parts specific to Intel *)

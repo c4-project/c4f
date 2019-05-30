@@ -190,7 +190,7 @@ val with_dialect_id : t -> id:Act_common.Id.t -> t
 (** [with_dialect_id ast] replaces the dialect tag in [ast].
 
     It does {i not} perform the appropriate conversions necessary to port an
-    AST from one x86 dialect to the other; see {{!Conv}Conv}. *)
+    AST from one x86 dialect to the other; see {{!Conv} Conv}. *)
 
 (** Traversing over the statement list in a [t] *)
 module On_listings :

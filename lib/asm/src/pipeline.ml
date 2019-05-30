@@ -25,12 +25,14 @@ open Base
 module Ac = Act_common
 module Pb = Plumbing
 
+type 'a chain_input = 'a Act_compiler.Instance.Chain_input.t
+
 module Input = struct
   type 'job t =
     { file_type: Ac.File_type.t
     ; job_input:
-           Act_c.Filters.Output.t Pb.Chain_context.t
-        -> 'job Job.t Act_config.Compiler.Chain_input.t }
+        Act_c.Filters.Output.t Pb.Chain_context.t -> 'job Job.t chain_input
+    }
   [@@deriving make, fields]
 end
 
@@ -54,7 +56,7 @@ module type Basic = sig
 
   include
     Pb.Filter_types.S
-    with type aux_i = cfg Job.t Act_config.Compiler.Chain_input.t
+    with type aux_i = cfg Job.t chain_input
      and type aux_o = Job.Output.t
 end
 
@@ -88,7 +90,8 @@ module Make (J : Basic) : S with type cfg = J.cfg = struct
 end
 
 let make (type c spec)
-    (module Resolver : Act_config.Compiler.S_resolver with type spec = spec)
+    (module Resolver : Act_compiler.Instance.S_resolver
+      with type spec = spec)
     (module Runner : Runner_intf.S with type cfg = c) (target : spec) :
     (module S with type cfg = c) Or_error.t =
   Or_error.Let_syntax.(

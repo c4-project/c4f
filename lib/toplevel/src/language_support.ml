@@ -24,6 +24,10 @@
 open Core_kernel
 open Act_common
 
+(* Module shorthand *)
+module C_spec = Act_compiler.Instance.Spec
+module C_types = Act_compiler.Instance_types
+
 let lang_procs = [("x86", Act_x86.Asm_job.get_runner)]
 
 let try_get_lang_proc (language : string) =
@@ -39,7 +43,7 @@ let asm_runner_from_arch :
     ~f:(fun lang rest ->
       Result.(try_get_lang_proc lang >>= fun proc -> proc rest) )
 
-module Gcc : Act_config.Compiler_intf.Basic = struct
+module Gcc : C_types.Basic = struct
   let compile_args ~args ~emits ~infile ~outfile =
     ignore emits ;
     [ "-S" (* emit assembly *)
@@ -50,21 +54,22 @@ module Gcc : Act_config.Compiler_intf.Basic = struct
   let test_args = ["--version"]
 end
 
-let style_modules = [("gcc", (module Gcc : Act_config.Compiler_intf.Basic))]
+let style_modules : (string, (module C_types.Basic)) List.Assoc.t =
+  [("gcc", (module Gcc))]
 
 module Resolver :
-  Act_config.Compiler_intf.Basic_resolver
-  with type spec := Act_config.Compiler.Spec.With_id.t = struct
-  let resolve (cspec : Act_config.Compiler.Spec.With_id.t) =
-    let style = Act_config.Compiler.Spec.With_id.style cspec in
+  Act_compiler.Instance_types.Basic_resolver
+  with type spec := C_spec.With_id.t = struct
+  let resolve (cspec : C_spec.With_id.t) =
+    let style = C_spec.With_id.style cspec in
     List.Assoc.find ~equal:String.Caseless.equal style_modules style
     |> Result.of_option
          ~error:(Error.create_s [%message "Unknown compiler style" ~style])
 end
 
-module Resolve_compiler = Act_config.Compiler.Make_resolver (Resolver)
+module Resolve_compiler = Act_compiler.Instance.Make_resolver (Resolver)
 module Resolve_compiler_from_target =
-  Act_config.Compiler.Make_target_resolver (Resolver)
+  Act_compiler.Instance.Make_target_resolver (Resolver)
 
 let test_compiler cspec =
   let open Or_error.Let_syntax in
@@ -72,13 +77,14 @@ let test_compiler cspec =
   let%map () =
     Or_error.tag_arg (M.test ())
       "A compiler in your spec file didn't respond properly"
-      (Act_config.Compiler.Spec.With_id.id cspec)
-      [%sexp_of: Id.t]
+      (C_spec.With_id.id cspec) [%sexp_of: Id.t]
   in
   Some cspec
 
 let filter_compiler predicate cspec =
-  Option.some_if (Act_config.Compiler.Property.eval_b cspec predicate) cspec
+  Option.some_if
+    (Act_compiler.Instance.Property.eval_b cspec predicate)
+    cspec
 
 let compiler_hook with_compiler_tests predicate cspec =
   match filter_compiler predicate cspec with
@@ -90,8 +96,8 @@ let compiler_hook with_compiler_tests predicate cspec =
 
 let machine_hook predicate mspec =
   let eval_b =
-    Act_config.Machine.Property.eval_b
-      (module Act_config.Machine.Spec.With_id)
+    Act_compiler.Machine.Property.eval_b
+      (module Act_compiler.Machine.Spec.With_id)
   in
   Or_error.return
     ((* TODO(@MattWindsor91): actually test the machine here! *)

@@ -24,13 +24,16 @@
 open Core
 open Act_common
 
+(* Module shorthand *)
+module Cc_spec = Act_compiler.Instance.Spec
+
 let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
   let target = `Spec spec in
   let config = Act_asm.Litmusifier.Config.make ~format:Programs_only () in
   let litmus_job = Act_asm.Job.make ~config ~passes () in
   let job_input =
     Fn.const
-      (Act_config.Compiler.Chain_input.make ~file_type:C
+      (Act_compiler.Instance.Chain_input.make ~file_type:C
          ~next:(Fn.const litmus_job))
   in
   let input = Act_asm.Pipeline.Input.make ~file_type:C ~job_input in
@@ -44,7 +47,7 @@ let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
 
 let run_spec_on_file o passes spec ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@." Id.pp
-    (Act_config.Compiler.Spec.With_id.id spec) ;
+    (Cc_spec.With_id.id spec) ;
   let open Or_error.Let_syntax in
   let%map _ = litmusify o passes spec c_file in
   Format.printf "@[<h>```@]@."
@@ -59,8 +62,7 @@ let run o cfg ~(c_file_raw : string) =
   in
   Fmt.pr "@[<h>#@ %a@]@." Fpath.pp c_file ;
   Or_error.combine_errors_unit
-    (Act_config.Compiler.Spec.Set.map specs
-       ~f:(run_spec_on_file o passes ~c_file))
+    (Cc_spec.Set.map specs ~f:(run_spec_on_file o passes ~c_file))
 
 let command : Command.t =
   Command.basic

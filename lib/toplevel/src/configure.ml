@@ -24,13 +24,14 @@
 open Core_kernel
 open Act_common
 
+(* Module shorthand *)
+module Cc_spec = Act_compiler.Instance.Spec
+
 let run_list_compilers (standard_args : Args.Standard.t) (_o : Output.t)
     (cfg : Act_config.Act.t) : unit Or_error.t =
   let compilers = Act_config.Act.compilers cfg in
   let verbose = Args.Standard.is_verbose standard_args in
-  Fmt.pr "@[<v>%a@]@."
-    (Act_config.Compiler.Spec.Set.pp_verbose verbose)
-    compilers ;
+  Fmt.pr "@[<v>%a@]@." (Cc_spec.Set.pp_verbose verbose) compilers ;
   Result.ok_unit
 
 let list_compilers_command : Command.t =
@@ -44,9 +45,9 @@ let list_compilers_command : Command.t =
 
 let predicate_lists : (string, (module Property.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"
-    , (module Act_config.Compiler.Property) )
+    , (module Act_compiler.Instance.Property) )
   ; ( "Machine predicates (-filter-machines)"
-    , (module Act_config.Machine.Property) )
+    , (module Act_compiler.Machine.Property) )
   ; ("Identifier predicates", (module Id.Property))
   ; ( "Sanitiser passes (-sanitiser-passes)"
     , (module Act_sanitiser.Pass_group.Selector) ) ]

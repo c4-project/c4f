@@ -26,26 +26,26 @@ module Tx = Travesty_core_kernel_exts
 open Act_common
 include Instance_intf
 module Machine_assoc =
-  Travesty.Bi_mappable.Fix2_left (Tx.Alist) (Act_config.Machine.Id)
+  Travesty.Bi_mappable.Fix2_left (Tx.Alist) (Act_compiler.Machine.Id)
 
 (** Compiler specification sets, grouped by machine. *)
 module Compiler_spec_env = struct
   include Travesty.Bi_mappable.Fix1_right
             (Machine_assoc)
-            (Act_config.Compiler.Spec.Set)
+            (Act_compiler.Instance.Spec.Set)
 
   let group_by_machine specs =
     specs
-    |> Act_config.Compiler.Spec.Set.group ~f:(fun spec ->
-           Act_config.Machine.Spec.With_id.id
-             (Act_config.Compiler.Spec.With_id.machine spec) )
+    |> Act_compiler.Instance.Spec.Set.group ~f:(fun spec ->
+           Act_compiler.Machine.Spec.With_id.id
+             (Act_compiler.Instance.Spec.With_id.machine spec) )
     |> Id.Map.to_alist
 
-  let get (cfg : Run_config.t) (compilers : Act_config.Compiler.Spec.Set.t)
-      : t =
+  let get (cfg : Run_config.t)
+      (compilers : Act_compiler.Instance.Spec.Set.t) : t =
     let enabled_ids = Run_config.compilers cfg in
     let specs =
-      Act_config.Compiler.Spec.Set.restrict compilers enabled_ids
+      Act_compiler.Instance.Spec.Set.restrict compilers enabled_ids
     in
     group_by_machine specs
 end
@@ -58,7 +58,7 @@ module Job = struct
     ; c_simulations: Act_sim.Bulk.File_map.t
     ; make_machine:
            Id.t
-        -> Act_config.Compiler.Spec.Set.t
+        -> Act_compiler.Instance.Spec.Set.t
         -> (module Machine.S) Or_error.t }
   [@@deriving fields, make]
 
@@ -81,7 +81,7 @@ module Make (B : Basic) : S = struct
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
 
   let make_machine (id : Id.t)
-      (mach_compilers : Act_config.Compiler.Spec.Set.t) :
+      (mach_compilers : Act_compiler.Instance.Spec.Set.t) :
       (module Machine.S) Or_error.t =
     Or_error.Let_syntax.(
       let%map asm_simulators = B.Asm_simulator_resolver.make_table id in

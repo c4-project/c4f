@@ -23,7 +23,7 @@
 
 (** Abstract type of Litmus7 configurations. *)
 
-include Program.S
+include Act_common.Program.S
 
 val make : ?cmd:string -> unit -> t
 (** [make ?cmd] creates a Litmus-tool config. *)

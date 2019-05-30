@@ -30,7 +30,7 @@ open Base
 
 val run_direct :
      ?oc:Stdio.Out_channel.t
-  -> Act_config.Litmus_tool.t
+  -> Act_compiler.Litmus_tool.t
   -> string list
   -> unit Or_error.t
 (** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]

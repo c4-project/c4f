@@ -26,8 +26,7 @@
 
 open Core_kernel
 open Act_common
-
-include module type of Machine_intf
+open Machine_types
 
 (** [Property] contains a mini-language for querying machine references,
     suitable for use in [Blang]. *)

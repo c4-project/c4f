@@ -48,16 +48,16 @@ end
 module type Basic_machine_and_up = sig
   include Basic
 
-  val compilers : Act_config.Compiler.Spec.Set.t
+  val compilers : Act_compiler.Instance.Spec.Set.t
   (** [compilers] is the set of all enabled compilers for this machine. *)
 
   (** Module used to resolve compiler specs to compiler modules. *)
   module Resolve_compiler :
-    Act_config.Compiler.S_resolver
-    with type spec = Act_config.Compiler.Spec.With_id.t
+    Act_compiler.Instance.S_resolver
+    with type spec = Act_compiler.Instance.Spec.With_id.t
 
   val asm_runner_from_spec :
-       Act_config.Compiler.Spec.With_id.t
+       Act_compiler.Instance.Spec.With_id.t
     -> (module Act_asm.Runner_intf.Basic) Or_error.t
   (** [asm_runner_from_spec cspec] tries to get an [Asm_job.Runner]
       corresponding to [cspec]'s target architecture. *)

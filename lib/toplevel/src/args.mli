@@ -84,11 +84,11 @@ val sanitiser_passes :
     predicate for sanitiser passes. *)
 
 val compiler_predicate :
-  Act_config.Compiler.Property.t Blang.t option Command.Param.t
+  Act_compiler.Instance.Property.t Blang.t option Command.Param.t
 (** [compiler_predicate] defines a parameter for collecting a filtering
     predicate for compilers. *)
 
 val machine_predicate :
-  Act_config.Machine.Property.t Blang.t option Command.Param.t
+  Act_compiler.Machine.Property.t Blang.t option Command.Param.t
 (** [machine_predicate] defines a parameter for collecting a filtering
     predicate for machines. *)

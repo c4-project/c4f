@@ -25,9 +25,9 @@ open Base
 open Stdio
 
 let run_direct ?(oc : Out_channel.t = stdout)
-    (cfg : Act_config.Litmus_tool.t) (argv : string list) : unit Or_error.t
-    =
-  let prog = Act_config.Litmus_tool.cmd cfg in
+    (cfg : Act_compiler.Litmus_tool.t) (argv : string list) :
+    unit Or_error.t =
+  let prog = Act_compiler.Litmus_tool.cmd cfg in
   Or_error.tag ~tag:"While running litmus"
     (Plumbing.Runner.Local.run ~oc ~prog argv)
 
@@ -41,7 +41,7 @@ Plumbing.Filter.Make_on_runner (struct
 
   let tmp_file_ext = Fn.const "txt"
 
-  let prog (_arch : Act_sim.Arch.t) = Act_config.Litmus_tool.cmd B.config
+  let prog (_arch : Act_sim.Arch.t) = Act_compiler.Litmus_tool.cmd B.config
 
   let argv _cfg (path : string) = [path]
 end)

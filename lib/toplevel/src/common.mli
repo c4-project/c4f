@@ -32,14 +32,14 @@ val warn_if_not_tracking_symbols : Output.t -> C_id.t list option -> unit
     to track, act may make incorrect assumptions. *)
 
 val asm_runner_of_target :
-     Act_config.Compiler.Target.t
+     Act_compiler.Instance.Target.t
   -> (module Act_asm.Runner_intf.Basic) Or_error.t
 (** [asm_runner_of_target target] gets the runner dependency module
     associated with a target (either a compiler spec or emits clause). *)
 
 val lift_command :
-     ?compiler_predicate:Act_config.Compiler.Property.t Blang.t
-  -> ?machine_predicate:Act_config.Machine.Property.t Blang.t
+     ?compiler_predicate:Act_compiler.Instance.Property.t Blang.t
+  -> ?machine_predicate:Act_compiler.Machine.Property.t Blang.t
   -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> f:(Args.Standard.t -> Output.t -> Act_config.Act.t -> unit Or_error.t)
@@ -51,8 +51,8 @@ val lift_command :
     configuration, creating an [Output.t], and printing top-level errors. *)
 
 val lift_command_with_files :
-     ?compiler_predicate:Act_config.Compiler.Property.t Blang.t
-  -> ?machine_predicate:Act_config.Machine.Property.t Blang.t
+     ?compiler_predicate:Act_compiler.Instance.Property.t Blang.t
+  -> ?machine_predicate:Act_compiler.Machine.Property.t Blang.t
   -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> f:(   Args.Standard_with_files.t
@@ -85,13 +85,13 @@ val lift_asm_command_basic :
     built upon. *)
 
 val delitmus_compile_asm_pipeline :
-     Act_config.Compiler.Target.t
+     Act_compiler.Instance.Target.t
   -> (   (module Act_asm.Runner_intf.Basic)
       -> (module Act_asm.Runner_intf.S with type cfg = 'c))
   -> (module Act_asm.Pipeline.S with type cfg = 'c) Or_error.t
 
 val litmusify_pipeline :
-     Act_config.Compiler.Target.t
+     Act_compiler.Instance.Target.t
   -> (module Act_asm.Pipeline.S
         with type cfg = Sexp.t Act_asm.Litmusifier.Config.t)
      Or_error.t
@@ -105,7 +105,7 @@ val make_compiler_input :
   -> (c_variables:C_variables.Map.t option -> 'cfg)
   -> Set.M(Act_sanitiser.Pass_group).t
   -> Act_c.Filters.Output.t Plumbing.Chain_context.t
-  -> 'cfg Act_asm.Job.t Act_config.Compiler.Chain_input.t
+  -> 'cfg Act_asm.Job.t Act_compiler.Instance.Chain_input.t
 (** [make_compiler_input o file_type user_cvars cfg_fun passes dl_output]
     generates the input to the compiler stage of a single-file pipeline.
 
