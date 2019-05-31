@@ -12,7 +12,7 @@ module Make (R : Sim.Runner_intf.S) : S = struct
     ignore (output_path : Fpath.t) ;
     (* We don't need to talk to the simulator *)
     Or_error.Let_syntax.(
-      let%bind ast = C.Frontend.Litmus.load ~path:input_path in
+      let%bind ast = Act_c_lang.Frontend.Litmus.load ~path:input_path in
       let%bind mini = C.Mini_convert.litmus_of_raw_ast ast in
       let post = C.Mini_litmus.Ast.Validated.postcondition mini in
       Result.of_option post ~error:(no_post_error ()))

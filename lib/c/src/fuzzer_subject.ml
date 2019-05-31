@@ -32,7 +32,7 @@ end
 
 module Program = struct
   type t =
-    { decls: Mini.Initialiser.t Mini.id_assoc
+    { decls: Mini.Initialiser.t Mini_intf.id_assoc
     ; stms: Mini.Statement.t With_source.t list }
   [@@deriving sexp]
 
@@ -121,7 +121,7 @@ module Program = struct
   (** [make_function_parameters vars] creates a uniform function parameter
       list for a C litmus test using the global variable records in [vars]. *)
   let make_function_parameters (vars : Fuzzer_var.Map.t) :
-      Mini.Type.t Mini.id_assoc Or_error.t =
+      Mini.Type.t Mini_intf.id_assoc Or_error.t =
     vars
     |> Ac.C_id.Map.filter ~f:Fuzzer_var.Record.is_global
     |> Ac.C_id.Map.to_alist
@@ -129,7 +129,7 @@ module Program = struct
     |> Or_error.combine_errors
 
   let to_function (prog : t) ~(vars : Fuzzer_var.Map.t) ~(id : int) :
-      Mini.Function.t Mini.named Or_error.t =
+      Mini.Function.t Mini_intf.named Or_error.t =
     let open Or_error.Let_syntax in
     let name = Ac.C_id.of_string (sprintf "P%d" id) in
     let%map parameters = make_function_parameters vars in
@@ -141,7 +141,8 @@ module Program = struct
 end
 
 module Test = struct
-  type t = {init: Mini.Constant.t Mini.id_assoc; programs: Program.t list}
+  type t =
+    {init: Mini.Constant.t Mini_intf.id_assoc; programs: Program.t list}
   [@@deriving sexp]
 
   let add_new_program (test : t) : t =

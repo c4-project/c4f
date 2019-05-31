@@ -24,8 +24,9 @@
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
 module Ac = Act_common
-include Ast_basic
-include Mini_intf
+module Constant = Act_c_lang.Ast_basic.Constant
+module Identifier = Act_c_lang.Ast_basic.Identifier
+module Pointer = Act_c_lang.Ast_basic.Pointer
 module Address = Mini_address
 module Env = Mini_env
 module Expression = Mini_expression
@@ -33,6 +34,7 @@ module Initialiser = Mini_initialiser
 module Lvalue = Mini_lvalue
 module Type = Mini_type
 module Atomic_load = Expression.Atomic_load
+open Mini_intf
 
 module Assign = struct
   type t = {lvalue: Lvalue.t; rvalue: Expression.t}
@@ -158,7 +160,7 @@ module Atomic_store = struct
   end
 
   module Quickcheck_ints (Src : Env.S) (Dst : Env.S) :
-    Act_utils.My_quickcheck.S_with_sexp with type t := t =
+    Act_utils.My_quickcheck.S_with_sexp with type t = t =
     Quickcheck_generic
       (Expression.Quickcheck_int_values
          (Src))

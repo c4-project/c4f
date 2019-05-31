@@ -41,16 +41,16 @@ end
 
 type t =
   { clobbers: string list
-  ; input_operands: Ast.Expr.t Operand.t list
-  ; output_operands: Ast.Expr.t Operand.t list
+  ; input_operands: Act_c_lang.Ast.Expr.t Operand.t list
+  ; output_operands: Act_c_lang.Ast.Expr.t Operand.t list
   ; template: string list }
 [@@deriving make, fields]
 
 let pp_line (pp : 'a Fmt.t) : 'a Fmt.t =
   Fmt.(hbox (prefix (unit ":@ ") (suffix sp pp)))
 
-let pp_operands : Ast.Expr.t Operand.t list Fmt.t =
-  Fmt.(list ~sep:comma (Operand.pp Ast.Expr.pp))
+let pp_operands : Act_c_lang.Ast.Expr.t Operand.t list Fmt.t =
+  Fmt.(list ~sep:comma (Operand.pp Act_c_lang.Ast.Expr.pp))
 
 let pp_clobbers : string list Fmt.t = Fmt.(list ~sep:comma qstring)
 

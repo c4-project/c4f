@@ -23,16 +23,17 @@
 
 (** Functions for reifying a mini-model into an AST. *)
 
-val func : Mini.Identifier.t -> Mini.Function.t -> Ast.External_decl.t
+val func :
+  Mini.Identifier.t -> Mini.Function.t -> Act_c_lang.Ast.External_decl.t
 (** [func id f] reifies the mini-function [f], with name [id], into the C
     AST. *)
 
-val program : Mini.Program.t -> Ast.Translation_unit.t
+val program : Mini.Program.t -> Act_c_lang.Ast.Translation_unit.t
 (** [program p] reifies the mini-program [p] into the C AST. *)
 
-val decl : Mini.Identifier.t -> Mini.Initialiser.t -> Ast.Decl.t
+val decl : Mini.Identifier.t -> Mini.Initialiser.t -> Act_c_lang.Ast.Decl.t
 (** [decl id d] reifies the mini-declaration [d], with name [id], into the C
     AST. *)
 
-val stm : Mini.Statement.t -> Ast.Stm.t
+val stm : Mini.Statement.t -> Act_c_lang.Ast.Stm.t
 (** [stm s] reifies the mini-statement [s] into the C AST. *)

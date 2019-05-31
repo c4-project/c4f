@@ -27,7 +27,7 @@
     and lighter than their {{!Mini} Mini} versions, and more suited to
     mutation. *)
 
-open Core_kernel
+open Base
 
 (** An item, annotated with information about its source. *)
 module With_source : sig
@@ -48,7 +48,7 @@ end
 module Program : sig
   (** Transparent type of fuzzable programs. *)
   type t =
-    { decls: Mini.Initialiser.t Mini.id_assoc
+    { decls: Mini.Initialiser.t Mini_intf.id_assoc
     ; stms: Mini.Statement.t With_source.t list }
   [@@deriving sexp]
 
@@ -64,7 +64,7 @@ module Program : sig
        t
     -> vars:Fuzzer_var.Map.t
     -> id:int
-    -> Mini.Function.t Mini.named Or_error.t
+    -> Mini.Function.t Mini_intf.named Or_error.t
   (** [to_function prog ~vars ~id] lifts a subject-program [prog] with ID
       [prog_id] back into a Litmus function, adding a parameter list
       generated from [vars]. *)
@@ -73,7 +73,8 @@ end
 (** Fuzzable representation of a litmus test. *)
 module Test : sig
   (** Transparent type of fuzzable litmus tests. *)
-  type t = {init: Mini.Constant.t Mini.id_assoc; programs: Program.t list}
+  type t =
+    {init: Mini.Constant.t Mini_intf.id_assoc; programs: Program.t list}
   [@@deriving sexp]
 
   val add_new_program : t -> t

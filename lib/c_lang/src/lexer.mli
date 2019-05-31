@@ -9,7 +9,8 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Lexing X86 assembly *)
+open Base
 
-val token : Sedlexing.lexbuf -> Att_parser.token
-(** [token lexbuf] is a Sedlex lexer for AT&T-dialect x86. *)
+val token : Set.M(String).t -> Sedlexing.lexbuf -> Parser.token
+(** [token typedefs lexbuf] lexes the next token in [lexbuf]. It supports
+    the C 'lexer hack' by taking in a set of known typedefs [typedefs]. *)

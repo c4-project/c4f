@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Type = Mini_type
-module Constant = Ast_basic.Constant
+module Constant = Act_c_lang.Ast_basic.Constant
 
 type t = {ty: Type.t; value: Constant.t option}
 [@@deriving sexp, make, eq, fields, quickcheck]

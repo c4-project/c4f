@@ -45,7 +45,7 @@ module Basic : sig
 
   include Enum.Extension_table with type t := t
 
-  val to_spec : t -> [> Ast.Type_spec.t]
+  val to_spec : t -> [> Act_c_lang.Ast.Type_spec.t]
   (** [to_spec btype] converts a basic type to a type spec. *)
 
   val to_non_atomic : t -> t Or_error.t

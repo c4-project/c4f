@@ -67,7 +67,7 @@ val atomic_load : Atomic_load.t -> t
 val bool_lit : bool -> t
 (** [bool_lit b] lifts a Boolean literal [b] to an expression. *)
 
-val constant : Ast_basic.Constant.t -> t
+val constant : Act_c_lang.Ast_basic.Constant.t -> t
 (** [constant k] lifts a C constant [k] to an expression. *)
 
 val eq : t -> t -> t
@@ -81,7 +81,7 @@ val lvalue : Mini_lvalue.t -> t
 val reduce :
      t
   -> bool_lit:(bool -> 'a)
-  -> constant:(Ast_basic.Constant.t -> 'a)
+  -> constant:(Act_c_lang.Ast_basic.Constant.t -> 'a)
   -> lvalue:(Mini_lvalue.t -> 'a)
   -> atomic_load:(Atomic_load.t -> 'a)
   -> eq:('a -> 'a -> 'a)
@@ -100,7 +100,7 @@ module On_addresses :
 module On_identifiers :
   Travesty.Traversable.S0
   with type t = t
-   and type Elt.t = Ast_basic.Identifier.t
+   and type Elt.t = Act_c_lang.Ast_basic.Identifier.t
 
 (** Traversing over lvalues in expressions. *)
 module On_lvalues :

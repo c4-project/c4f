@@ -41,8 +41,8 @@ type t
 
 val make :
      ?clobbers:string list
-  -> ?input_operands:Ast.Expr.t Operand.t list
-  -> ?output_operands:Ast.Expr.t Operand.t list
+  -> ?input_operands:Act_c_lang.Ast.Expr.t Operand.t list
+  -> ?output_operands:Act_c_lang.Ast.Expr.t Operand.t list
   -> ?template:string list
   -> unit
   -> t

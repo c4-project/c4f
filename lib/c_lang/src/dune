@@ -1,29 +1,27 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_x86)
- (public_name act.x86)
- (synopsis "Automagic Compiler Tormentor: x86 support")
+ (name act_c_lang)
+ (public_name act.c_lang)
+ (synopsis "Automagic Compiler Tormentor: C AST and frontend")
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
- (libraries base travesty travesty.base_exts menhirLib act_asm act_abstract
-   act_sanitiser act_litmus act_utils sedlex)
+ (libraries core_kernel menhirLib act_common act_config act_utils sedlex)
  (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )
 
 (menhir
  (infer false)
  (flags "--table")
- (modules att_parser))
+ (modules parser))
 
 ;; These rules generate the error message tables for each parser.
 ;; They're probably not as portable as they could be.
 
 (rule
- (targets att_messages.ml)
+ (targets c_messages.ml)
  (action
   (with-stdout-to
    "%{targets}"
-   (run "%{bin:menhir}" "--compile-errors" "%{dep:att.messages}"
-     "att_parser.mly"))))
+   (run "%{bin:menhir}" "--compile-errors" "%{dep:c.messages}" "parser.mly"))))

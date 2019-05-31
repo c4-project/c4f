@@ -28,8 +28,8 @@ let%test_module "pretty printing" =
   ( module struct
     let test : t -> unit = Fmt.pr "@[%a@]@." pp
 
-    let c_id (s : string) : Act_c.Ast.Expr.t =
-      Act_c.Ast.Expr.Identifier (Act_common.C_id.of_string s)
+    let c_id (s : string) : Act_c_lang.Ast.Expr.t =
+      Act_c_lang.Ast.Expr.Identifier (Act_common.C_id.of_string s)
 
     let%expect_test "rdtsc example from GCC documentation" =
       test

@@ -24,6 +24,7 @@
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
 open Mini
+open Mini_intf
 module Ac = Act_common
 
 module Lang :
@@ -44,7 +45,7 @@ module Lang :
       | `Stm stm ->
           `Stm (Mini_reify.stm stm)
 
-    let pp = Fmt.using reify Ast.Litmus_lang.Statement.pp
+    let pp = Fmt.using reify Act_c_lang.Ast.Litmus_lang.Statement.pp
 
     let empty () = `Stm (Statement.nop ())
 
@@ -63,7 +64,10 @@ module Lang :
       @ List.map (Function.body_stms fn) ~f:(fun x -> `Stm x)
 
     let pp =
-      Fmt.(using (Tuple2.uncurry Mini_reify.func) Ast.External_decl.pp)
+      Fmt.(
+        using
+          (Tuple2.uncurry Mini_reify.func)
+          Act_c_lang.Ast.External_decl.pp)
 
     let global_vars (_, fn) =
       fn |> Function.parameters |> Ac.C_id.Map.of_alist_or_error

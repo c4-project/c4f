@@ -25,6 +25,7 @@ open Core_kernel
 module Au = Act_utils
 module Pb = Plumbing
 module Ac = Act_common
+module Ast = Act_c_lang.Ast
 
 module type Basic = sig
   (** Raw AST *)
@@ -168,7 +169,7 @@ module Normal_C : S = Make (struct
 
   let normal_tmp_file_ext = "c"
 
-  module Frontend = Frontend.Normal
+  module Frontend = Act_c_lang.Frontend.Normal
 
   let print oc tu =
     let f = Caml.Format.formatter_of_out_channel oc in
@@ -207,7 +208,7 @@ module Litmus : S = Make (struct
 
   let normal_tmp_file_ext = "litmus"
 
-  module Frontend = Frontend.Litmus
+  module Frontend = Act_c_lang.Frontend.Litmus
 
   let print = Mini_litmus.Pp.print
 

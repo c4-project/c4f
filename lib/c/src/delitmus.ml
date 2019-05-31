@@ -24,17 +24,18 @@
 open Core_kernel
 module Ac = Act_common
 
-let make_initialiser ((ty, value) : Mini.Type.t * Ast_basic.Constant.t) =
+let make_initialiser ((ty, value) : Mini.Type.t * Mini.Constant.t) =
   (* NB: Apparently, we don't need ATOMIC_VAR_INIT here: every known C11
      compiler can make do without it, and as a result it's obsolete as of
      C17. *)
   Mini.Initialiser.make ~ty ~value ()
 
 let parameter_list_equal :
-    Mini.Type.t Mini.id_assoc -> Mini.Type.t Mini.id_assoc -> bool =
+    Mini.Type.t Mini_intf.id_assoc -> Mini.Type.t Mini_intf.id_assoc -> bool
+    =
   [%equal: (Ac.C_id.t * Mini.Type.t) list]
 
-let check_parameters_consistent (params : Mini.Type.t Mini.id_assoc)
+let check_parameters_consistent (params : Mini.Type.t Mini_intf.id_assoc)
     (next : Mini.Function.t) : unit Or_error.t =
   let params' = Mini.Function.parameters next in
   if parameter_list_equal params params' then Result.ok_unit
@@ -42,11 +43,12 @@ let check_parameters_consistent (params : Mini.Type.t Mini.id_assoc)
     Or_error.error_s
       [%message
         "Functions do not agree on parameter lists"
-          ~first_example:(params : Mini.Type.t Mini.id_assoc)
-          ~second_example:(params' : Mini.Type.t Mini.id_assoc)]
+          ~first_example:(params : Mini.Type.t Mini_intf.id_assoc)
+          ~second_example:(params' : Mini.Type.t Mini_intf.id_assoc)]
 
 let functions_to_parameter_map :
-    Mini.Function.t list -> Mini.Type.t Mini.id_assoc Or_error.t = function
+    Mini.Function.t list -> Mini.Type.t Mini_intf.id_assoc Or_error.t =
+  function
   | [] ->
       Or_error.error_string "need at least one function"
   | x :: xs ->
@@ -59,9 +61,9 @@ let functions_to_parameter_map :
       in
       params
 
-let merge_init_and_params (init : Ast_basic.Constant.t Mini.id_assoc)
-    (params : Mini.Type.t Mini.id_assoc) :
-    (Mini.Type.t * Ast_basic.Constant.t) Mini.id_assoc Or_error.t =
+let merge_init_and_params (init : Mini.Constant.t Mini_intf.id_assoc)
+    (params : Mini.Type.t Mini_intf.id_assoc) :
+    (Mini.Type.t * Mini.Constant.t) Mini_intf.id_assoc Or_error.t =
   let i_ids = init |> List.map ~f:fst |> Ac.C_id.Set.of_list in
   let p_ids = params |> List.map ~f:fst |> Ac.C_id.Set.of_list in
   if Ac.C_id.Set.equal i_ids p_ids then
@@ -83,8 +85,8 @@ let merge_init_and_params (init : Ast_basic.Constant.t Mini.id_assoc)
     Since we assume that litmus tests contain pointers to the global
     variables in their parameter lists, failure of this function generally
     means the litmus test being delitmusified is ill-formed. *)
-let dereference_params (params : Mini.Type.t Mini.id_assoc) :
-    Mini.Type.t Mini.id_assoc Or_error.t =
+let dereference_params (params : Mini.Type.t Mini_intf.id_assoc) :
+    Mini.Type.t Mini_intf.id_assoc Or_error.t =
   Or_error.(
     params
     |> List.map ~f:(fun (id, ty) ->
@@ -97,9 +99,9 @@ let dereference_params (params : Mini.Type.t Mini.id_assoc) :
 
     It fails if the functions list is empty, is inconsistent with its
     parameters, or the parameters don't match the initialiser. *)
-let make_init_globals (init : Ast_basic.Constant.t Mini.id_assoc)
+let make_init_globals (init : Mini.Constant.t Mini_intf.id_assoc)
     (functions : Mini.Function.t list) :
-    (Ast_basic.Identifier.t, Mini.Initialiser.t) List.Assoc.t Or_error.t =
+    (Mini.Identifier.t, Mini.Initialiser.t) List.Assoc.t Or_error.t =
   Or_error.(
     functions |> functions_to_parameter_map >>= dereference_params
     >>= merge_init_and_params init
@@ -113,13 +115,13 @@ let%expect_test "qualify_local: example" =
   [%expect {| t0r0 |}]
 
 let make_single_func_globals (tid : int) (func : Mini.Function.t) :
-    Mini.Initialiser.t Mini.id_assoc =
+    Mini.Initialiser.t Mini_intf.id_assoc =
   List.map
     ~f:(fun (k, v) -> (qualify_local tid k, v))
     (Mini.Function.body_decls func)
 
 let make_func_globals (funcs : Mini.Function.t list) :
-    Mini.Initialiser.t Mini.id_assoc =
+    Mini.Initialiser.t Mini_intf.id_assoc =
   funcs |> List.mapi ~f:make_single_func_globals |> List.concat
 
 module Global_reduce (L : sig
@@ -182,7 +184,8 @@ let global_reduce (tid : int) (locals : Mini.Identifier.Set.t) :
   end) in
   M.proc_stms
 
-let delitmus_stms (tid : int) (locals : Mini.Initialiser.t Mini.id_assoc) :
+let delitmus_stms (tid : int)
+    (locals : Mini.Initialiser.t Mini_intf.id_assoc) :
     Mini.Statement.t list -> Mini.Statement.t list =
   let locals_set =
     locals |> List.map ~f:fst |> Mini.Identifier.Set.of_list
@@ -196,7 +199,8 @@ let delitmus_function (tid : int) (func : Mini.Function.t) : Mini.Function.t
     ~body_stms:(delitmus_stms tid locals)
 
 let delitmus_functions :
-    Mini.Function.t Mini.id_assoc -> Mini.Function.t Mini.id_assoc =
+    Mini.Function.t Mini_intf.id_assoc -> Mini.Function.t Mini_intf.id_assoc
+    =
   List.mapi ~f:(fun tid (name, f) -> (name, delitmus_function tid f))
 
 module Output = struct
@@ -204,9 +208,9 @@ module Output = struct
   [@@deriving make, fields]
 end
 
-let make_globals (init : Mini.Constant.t Mini.id_assoc)
+let make_globals (init : Mini.Constant.t Mini_intf.id_assoc)
     (function_bodies : Mini.Function.t list) :
-    Mini_initialiser.t Mini.id_assoc Or_error.t =
+    Mini_initialiser.t Mini_intf.id_assoc Or_error.t =
   let open Or_error.Let_syntax in
   let%map init_globals = make_init_globals init function_bodies in
   let func_globals = make_func_globals function_bodies in

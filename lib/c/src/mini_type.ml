@@ -35,7 +35,7 @@ module Basic = struct
   include M
   include Au.Enum.Extend_table (M)
 
-  let to_spec : t -> [> Ast.Type_spec.t] = function
+  let to_spec : t -> [> Act_c_lang.Ast.Type_spec.t] = function
     | Int ->
         `Int
     | Bool ->

@@ -24,9 +24,9 @@
 open Core_kernel
 module Ac = Act_common
 module Address = Mini_address
-module Constant = Ast_basic.Constant
+module Constant = Act_c_lang.Ast_basic.Constant
 module Env = Mini_env
-module Identifier = Ast_basic.Identifier
+module Identifier = Act_c_lang.Ast_basic.Identifier
 module Lvalue = Mini_lvalue
 module Type = Mini_type
 

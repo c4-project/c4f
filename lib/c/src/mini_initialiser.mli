@@ -28,7 +28,8 @@ type t [@@deriving sexp, eq, quickcheck]
 
 (** {3 Constructors} *)
 
-val make : ty:Mini_type.t -> ?value:Ast_basic.Constant.t -> unit -> t
+val make :
+  ty:Mini_type.t -> ?value:Act_c_lang.Ast_basic.Constant.t -> unit -> t
 (** [make ~ty ?value ()] makes an initialiser with type [ty] and optional
     initialised value [value]. *)
 
@@ -37,7 +38,7 @@ val make : ty:Mini_type.t -> ?value:Ast_basic.Constant.t -> unit -> t
 val ty : t -> Mini_type.t
 (** [ty init] gets the type of [init]. *)
 
-val value : t -> Ast_basic.Constant.t option
+val value : t -> Act_c_lang.Ast_basic.Constant.t option
 (** [value init] gets the initialised value of [init], if it has one. *)
 
 (** Allows using the type of named initialiser in certain functors. *)

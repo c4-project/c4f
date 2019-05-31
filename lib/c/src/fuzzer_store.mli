@@ -23,7 +23,7 @@
 
 (** C fuzzer: actions that generate store instructions. *)
 
-include module type of Fuzzer_store_intf
+open Fuzzer_store_intf
 
 (** {2 Functors} *)
 

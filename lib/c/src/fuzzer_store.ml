@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Ac = Act_common
-include Fuzzer_store_intf
+open Fuzzer_store_intf
 
 (* Module shorthands *)
 module Action = Fuzzer_action
@@ -190,13 +190,13 @@ end)
 
 let%test_module "int tests" =
   ( module struct
-    let init : Mini.Constant.t Mini.id_assoc Lazy.t =
+    let init : Mini.Constant.t Mini_intf.id_assoc Lazy.t =
       lazy
         Mini.
           [ (Identifier.of_string "x", Constant.Integer 27)
           ; (Identifier.of_string "y", Constant.Integer 53) ]
 
-    let globals : Mini.Type.t Mini.id_assoc Lazy.t =
+    let globals : Mini.Type.t Mini_intf.id_assoc Lazy.t =
       lazy
         Mini.
           [ (Identifier.of_string "x", Type.(pointer_to Basic.atomic_int))
@@ -296,7 +296,8 @@ let%test_module "int tests" =
         Or_error.combine_errors prog_results
       in
       Fmt.(
-        pr "%a@." (result ~ok:(list Ast.External_decl.pp) ~error:Error.pp))
+        pr "%a@."
+          (result ~ok:(list Act_c_lang.Ast.External_decl.pp) ~error:Error.pp))
         r ;
       [%expect
         {|

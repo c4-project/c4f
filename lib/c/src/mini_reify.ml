@@ -1,10 +1,12 @@
 open Core_kernel
 open Mini
+open Mini_intf
+module Ast = Act_c_lang.Ast
 
 let to_initialiser (value : Constant.t) : Ast.Initialiser.t =
   Assign (Constant value)
 
-let type_to_spec (ty : Type.t) : [> Ast.Type_spec.t] =
+let type_to_spec (ty : Type.t) : [> Act_c_lang.Ast.Type_spec.t] =
   (* We translate the level of indirection separately, in [type_to_pointer]. *)
   Type.Basic.to_spec (Type.basic_type ty)
 

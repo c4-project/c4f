@@ -25,6 +25,8 @@ open Core_kernel
 module Ac = Act_common
 module Tx = Travesty_core_kernel_exts
 open Mini
+open Mini_intf
+module Ast = Act_c_lang.Ast
 
 let map_combine (xs : 'a list) ~(f : 'a -> 'b Or_error.t) :
     'b list Or_error.t =
@@ -101,16 +103,16 @@ let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
       Or_error.error_s
         [%message
           "This type isn't supported (yet)" ~got:(spec : Ast.Type_spec.t)]
-  | #Type_qual.t as qual ->
+  | #Act_c_lang.Ast_basic.Type_qual.t as qual ->
       Or_error.error_s
         [%message
           "This type qualifier isn't supported (yet)"
-            ~got:(qual : Type_qual.t)]
-  | #Storage_class_spec.t as spec ->
+            ~got:(qual : Act_c_lang.Ast_basic.Type_qual.t)]
+  | #Act_c_lang.Ast_basic.Storage_class_spec.t as spec ->
       Or_error.error_s
         [%message
           "This storage-class specifier isn't supported (yet)"
-            ~got:(spec : Storage_class_spec.t)]
+            ~got:(spec : Act_c_lang.Ast_basic.Storage_class_spec.t)]
 
 let declarator_to_id : Ast.Declarator.t -> (Identifier.t * bool) Or_error.t
     = function
@@ -296,7 +298,8 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
     | _ ->
         Or_error.error_s
           [%message
-            "Unsupported binary operator" ~got:(op : Operators.Bin.t)]
+            "Unsupported binary operator"
+              ~got:(op : Act_c_lang.Ast_basic.Operators.Bin.t)]
   in
   function
   | Brackets e ->

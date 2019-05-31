@@ -32,10 +32,10 @@
     {{!Mini_reify} Reify}. *)
 
 open Core_kernel
-
-include module type of Ast_basic
-
-include module type of Mini_intf
+module Constant = Act_c_lang.Ast_basic.Constant
+module Identifier = Act_c_lang.Ast_basic.Identifier
+module Pointer = Act_c_lang.Ast_basic.Pointer
+open Mini_intf
 
 (** Re-exporting {{!Mini_type} Type}. *)
 module Type = Mini_type
@@ -78,11 +78,11 @@ module Assign : sig
 
   (** Traversing over atomic-action addresses in assignments. *)
   module On_addresses :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Address.t
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t
 
   (** Traversing over lvalues in assignments. *)
   module On_lvalues :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Lvalue.t
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t
 end
 
 (** An atomic store operation. *)
@@ -126,7 +126,7 @@ module Atomic_store : sig
   module Quickcheck_generic
       (Src : Quickcheck.S with type t := Expression.t)
       (Dst : Quickcheck.S with type t := Address.t) :
-    Act_utils.My_quickcheck.S_with_sexp with type t := t
+    Act_utils.My_quickcheck.S_with_sexp with type t = t
 
   (** There isn't a generic quickcheck instance for atomic stores, as we
       can't guarantee type safety in general. *)
@@ -135,7 +135,7 @@ module Atomic_store : sig
       non-atomic integers, using [Src] as the variable typing environment
       for sources and [Dst] as the environment for destinations. *)
   module Quickcheck_ints (Src : Mini_env.S) (Dst : Mini_env.S) :
-    Act_utils.My_quickcheck.S_with_sexp with type t := t
+    Act_utils.My_quickcheck.S_with_sexp with type t = t
 end
 
 (** A (strong, explicit) atomic compare-exchange operation. *)
@@ -180,11 +180,11 @@ module Atomic_cmpxchg : sig
 
   (** Traversing over atomic-action addresses in atomic compare-exchanges. *)
   module On_addresses :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Address.t
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t
 
   (** Traversing over lvalues in atomic compare-exchanges. *)
   module On_lvalues :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Lvalue.t
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t
 end
 
 (** A statement.

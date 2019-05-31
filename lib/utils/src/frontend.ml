@@ -21,12 +21,14 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
-open Lexing
+open Core_kernel
+open Sedlexing
 
 module Error_range = struct
   module M = struct
-    type t = Lexing.position * Lexing.position
+    open Lexing
+
+    type t = position * position
 
     let from_file (from, _) = from.pos_fname
 
@@ -62,7 +64,7 @@ end
 exception LexError of string * Error_range.t
 
 let lex_error msg lexbuf =
-  raise (LexError (msg, (lexbuf.lex_start_p, lexbuf.lex_curr_p)))
+  raise (LexError (msg, Sedlexing.lexing_positions lexbuf))
 
 module type Basic = sig
   type ast
@@ -71,13 +73,13 @@ module type Basic = sig
 
   val lex : lexbuf -> I.token
 
-  val parse : position -> ast I.checkpoint
+  val parse : Lexing.position -> ast I.checkpoint
 
   val message : int -> string
 end
 
 module Make (B : Basic) : Loadable_intf.S with type t = B.ast = struct
-  let fail (_lexbuf : Lexing.lexbuf) = function
+  let fail (_lexbuf : lexbuf) = function
     | B.I.HandlingError env ->
         let state = B.I.current_state_number env in
         let details = B.message state in
@@ -89,12 +91,13 @@ module Make (B : Basic) : Loadable_intf.S with type t = B.ast = struct
     | _ ->
         assert false
 
-  let loop lexbuf checkpoint =
-    let supplier = B.I.lexer_lexbuf_to_supplier B.lex lexbuf in
+  let loop (lexbuf : lexbuf) checkpoint =
+    let supplier = Sedlexing.with_tokenizer B.lex lexbuf in
     B.I.loop_handle Or_error.return (fail lexbuf) supplier checkpoint
 
-  let parse lexbuf =
-    try loop lexbuf (B.parse lexbuf.lex_curr_p)
+  let parse (lexbuf : lexbuf) =
+    let _, cur_pos = Sedlexing.lexing_positions lexbuf in
+    try loop lexbuf (B.parse cur_pos)
     with LexError (details, position) ->
       Or_error.error_s
         [%message
@@ -104,13 +107,12 @@ module Make (B : Basic) : Loadable_intf.S with type t = B.ast = struct
     type t = B.ast
 
     let load_from_ic ?(path = "(stdin)") ic =
-      let lexbuf = from_channel ic in
-      lexbuf.lex_curr_p <- {lexbuf.lex_curr_p with pos_fname= path} ;
-      parse lexbuf
+      let lexbuf = Utf8.from_channel ic in
+      set_filename lexbuf path ; parse lexbuf
 
     let load_from_string str =
-      let lexbuf = from_string str in
-      lexbuf.lex_curr_p <- {lexbuf.lex_curr_p with pos_fname= "(string)"} ;
+      let lexbuf = Utf8.from_string str in
+      set_filename lexbuf "(string)" ;
       parse lexbuf
   end
 

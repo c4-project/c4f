@@ -21,10 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Lexing
+open Sedlexing
 
 module Error_range : sig
-  type t = position * position [@@deriving sexp_of]
+  type t = Lexing.position * Lexing.position [@@deriving sexp_of]
 end
 
 exception LexError of string * Error_range.t
@@ -42,7 +42,7 @@ module type Basic = sig
 
   val lex : lexbuf -> I.token
 
-  val parse : position -> ast I.checkpoint
+  val parse : Lexing.position -> ast I.checkpoint
 
   val message : int -> string
 end
