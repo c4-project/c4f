@@ -29,4 +29,8 @@ module type S = sig
   val make_table : Act_common.Id.t -> Table.t Or_error.t
   (** [make_table machine_id] creates the table of available simulators on
       machine [machine_id]. *)
+
+  val resolve_single : Act_common.Id.t -> (module Runner_intf.S) Or_error.t
+  (** [resolve_single id] resolves a single simulator with fully qualified
+      ID [id]. *)
 end

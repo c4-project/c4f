@@ -24,7 +24,7 @@
 open Base
 open Runner_intf
 
-module Make (B : Basic) : S = struct
+module Make (B : Basic_from_filter) : S = struct
   include (B : Common)
 
   let run (arch : Arch.t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
@@ -58,7 +58,7 @@ module Make_error (B : Basic_error) : S = struct
 
   let name : Act_common.Id.t = Act_common.Id.of_string "error"
 
-  let machine_id : Act_common.Id.t = Act_compiler.Machine.Id.default
+  let machine_id : Act_common.Id.t = Act_common.Id.of_string "none"
 
   type t = Filter.aux_i
 

@@ -27,7 +27,5 @@
     multiple machines. Each run refers to a directory of input files, and
     various pieces of per-run config. *)
 
-include module type of Instance_intf
-
 (** [Make] makes a full test runner from a [Basic]. *)
-module Make (B : Basic) : S
+module Make (B : Instance_intf.Basic) : Instance_intf.S

@@ -24,16 +24,15 @@
 open Base
 open Stdio
 open Act_common
-open Filter_intf
 module Pb = Plumbing
 
-let model_for_arch (config : Act_config.Herd.t) :
+let model_for_arch (config : Act_sim.Spec.t) :
     Act_sim.Arch.t -> string option = function
   | C ->
-      Act_config.Herd.c_model config
+      Act_sim.Spec.c_model config
   | Assembly emits_spec ->
       List.Assoc.find
-        (Act_config.Herd.asm_models config)
+        (Act_sim.Spec.asm_models config)
         emits_spec ~equal:[%equal: Id.t]
 
 let make_argv ?(model : string option) (rest : string list) =
@@ -49,23 +48,24 @@ let%expect_test "make_argv: override model" =
   print_s [%sexp (argv : string list)] ;
   [%expect {| (-model c11_lahav.cat herd7) |}]
 
-let make_argv_from_config (config : Act_config.Herd.t)
+let make_argv_from_config (config : Act_sim.Spec.t)
     (arch : Act_sim.Arch.t option) (rest : string list) =
   let model = Option.bind ~f:(model_for_arch config) arch in
   make_argv ?model rest
 
 let run_direct ?(arch : Act_sim.Arch.t option)
-    ?(oc : Out_channel.t = Out_channel.stdout) (config : Act_config.Herd.t)
+    ?(oc : Out_channel.t = Out_channel.stdout) (config : Act_sim.Spec.t)
     (argv : string list) : unit Or_error.t =
-  let prog = Act_config.Herd.cmd config in
+  let prog = Act_sim.Spec.cmd config in
   let argv' = make_argv_from_config config arch argv in
   Or_error.tag ~tag:"While running herd"
     (Plumbing.Runner.Local.run ~oc ~prog argv')
 
-module Make (B : Basic) :
+module Make (B : Act_sim.Runner_intf.Basic) :
   Pb.Filter_types.S with type aux_i = Act_sim.Arch.t and type aux_o = unit =
 Plumbing.Filter.Make_on_runner (struct
-  module Runner = Plumbing.Runner.Local
+  (* TODO(@MattWindsor91): this invariably can now be rolled into Sim_litmus *)
+  module Runner = B.Runner
 
   type aux_i = Act_sim.Arch.t
 
@@ -73,7 +73,7 @@ Plumbing.Filter.Make_on_runner (struct
 
   let tmp_file_ext = Fn.const "txt"
 
-  let prog _t = Act_config.Herd.cmd B.config
+  let prog _t = Act_sim.Spec.cmd B.spec
 
-  let argv t path = make_argv_from_config B.config (Some t) [path]
+  let argv t path = make_argv_from_config B.spec (Some t) [path]
 end)

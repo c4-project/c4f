@@ -26,6 +26,7 @@ components.  It *doesn't* cover:
    intro/index
    commands/index
    scripts/index
+   conf/index
 
 .. _README: https://github.com/MattWindsor91/act/blob/master/README.md
 .. _odoc: https://MattWindsor91.github.io/act

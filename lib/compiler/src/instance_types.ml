@@ -22,75 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Act_common
-
-(** [Basic_spec] is the signature common to any sort of compiler
-    specification, including [With_id] pairs.
-
-    In practice, modules implementing this will either be [S_spec] or
-    [S_spec.With_id]. *)
-module type Basic_spec = sig
-  (** [Mach] is some module for resolving references to the machine on which
-      a compiler is located. This can either be an inline machine
-      specification module, or a more indirect form of reference. *)
-  module Mach : Machine_types.Reference
-
-  (** [t] is the opaque type of compiler specifications. To construct a [t],
-      read one in as an S-expression; a proper constructor may appear in
-      later revisions. *)
-  type t
-
-  val style : t -> string
-  (** [style c] gets the invocation style of [c]. *)
-
-  val emits : t -> Id.t
-  (** [emits c] gets the architecture emitted by [c]. *)
-
-  val cmd : t -> string
-  (** [cmd] gets the command used to invoke [c]. *)
-
-  val argv : t -> string list
-  (** [argv] gets any extra arguments to supply to [c]. *)
-
-  val herd : t -> bool
-  (** [herd c] gets whether Herd auto-running is enabled for [c]. *)
-
-  val machine : t -> Mach.t
-  (** [machine] gets the machine reference for [c]. *)
-end
-
-(** [S_spec] is the interface of modules defining compiler specification
-    types.
-
-    In most cases, the 'correct' spec module to use is [Spec]. *)
-module type S_spec = sig
-  include Basic_spec
-
-  val make :
-       ?machine:Mach.t
-    -> ?argv:string list
-    -> enabled:bool
-    -> style:string
-    -> emits:Id.t
-    -> cmd:string
-    -> herd:bool
-    -> unit
-    -> t
-  (** [make ?machine ?argv ~enabled ~style ~emits ~cmd ~herd ()] creates a
-      compiler spec with the given fields.
-
-      These fields are subject to change, and as such [make] is an unstable
-      API. *)
-
-  (** We extend [With_id] to include all of the accessors from [Basic_spec]. *)
-  module With_id : sig
-    include Spec.S_with_id with type elt := t
-
-    include Basic_spec with type t := t and module Mach := Mach
-  end
-
-  include Spec.S with type t := t and module With_id := With_id
-end
 
 (** [Basic] is the basic interface compilers must implement. *)
 module type Basic = sig
@@ -100,7 +31,7 @@ module type Basic = sig
 
   val compile_args :
        args:string list
-    -> emits:Id.t
+    -> emits:Act_common.Id.t
     -> infile:string
     -> outfile:string
     -> string list
@@ -121,47 +52,18 @@ module type S = sig
       assembly to [outfile] and returning any errors that arise. *)
 end
 
-(** {2 Resolving spec IDs to compilers}
-
-    These signatures describe modules that allow one to retrieve
-    (first-class) compiler modules at run-time from compiler specifications. *)
-
-(** Basic input type of resolvers. *)
-module type Basic_resolver = sig
-  (** Type of specifications consumed by this resolver. *)
-  type spec
-
-  val resolve : spec -> (module Basic) Or_error.t
+(** [With_spec] is an interface for modules containing a (full) compiler
+    specification. *)
+module type With_spec = sig
+  val cspec : Spec.With_id.t
 end
 
-(** Signature of fully-instantiated resolvers. *)
-module type S_resolver = sig
-  (** Type of specifications consumed by this resolver. *)
-  type spec
+(** [Basic_with_run_info] is a signature collecting both a base compiler
+    specification and context about how to run the compiler. *)
+module type Basic_with_run_info = sig
+  include Basic
 
-  (** Type of chained-filter input. *)
-  type 'a chain_input
+  include With_spec
 
-  val from_spec : spec -> (module S) Or_error.t
-  (** [from_spec spec] attempts to produce a first-class compiler module
-      corresponding to [spec]. *)
-
-  val filter_from_spec :
-       spec
-    -> (module Plumbing.Filter_types.S
-          with type aux_i = unit
-           and type aux_o = unit)
-       Or_error.t
-  (** [filter_from_spec spec] attempts to produce a first-class compiler
-      filter corresponding to [spec]. *)
-
-  val chained_filter_from_spec :
-       spec
-    -> (module Plumbing.Filter_types.S
-          with type aux_i = 'i
-           and type aux_o = 'o)
-    -> (module Plumbing.Filter_types.S
-          with type aux_i = 'i chain_input
-           and type aux_o = 'o)
-       Or_error.t
+  module Runner : Plumbing.Runner_types.S
 end

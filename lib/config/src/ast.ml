@@ -33,12 +33,12 @@ module Fuzz = struct
   type t = Action of Id.t * int option [@@deriving sexp]
 end
 
-module Litmus = struct
-  type t = Cmd of string [@@deriving sexp]
-end
-
-module Herd = struct
-  type t = Cmd of string | C_model of string | Asm_model of Id.t * string
+module Sim = struct
+  type t =
+    | Cmd of string
+    | Style of Id.t
+    | C_model of string
+    | Asm_model of Id.t * string
   [@@deriving sexp]
 end
 
@@ -51,11 +51,6 @@ module Via = struct
   type t = Local | Ssh of Ssh.t list [@@deriving sexp]
 end
 
-module Machine = struct
-  type t = Enabled of bool | Via of Via.t | Litmus of Litmus.t list
-  [@@deriving sexp]
-end
-
 module Compiler = struct
   type t =
     | Enabled of bool [@sexp.bool]
@@ -63,22 +58,48 @@ module Compiler = struct
     | Emits of Id.t
     | Cmd of string
     | Argv of string list [@sexp.list]
-    | Herd of bool [@sexp.bool]
-    | Machine of Id.t
   [@@deriving sexp]
+end
+
+module Machine = struct
+  type t =
+    | Compiler of Id.t * Compiler.t list [@sexp.list]
+    | Enabled of bool
+    | Via of Via.t
+    | Sim of Id.t * Sim.t list [@sexp.list]
+  [@@deriving sexp]
+
+  let as_compiler : t -> (Id.t * Compiler.t list) option = function
+    | Compiler (i, c) ->
+        Some (i, c)
+    | _ ->
+        None
+end
+
+module Default = struct
+  module Category = struct
+    type t = Arch | Compiler | Machine | Sim [@@deriving sexp]
+  end
+
+  type t = Try of Category.t * Id.t [@@deriving sexp]
 end
 
 module Top = struct
   type t =
     | Cpp of Cpp.t list [@sexp.list]
+    | Default of Default.t list [@sexp.list]
     | Fuzz of Fuzz.t list [@sexp.list]
-    | Herd of Herd.t list [@sexp.list]
     | Machine of Id.t * Machine.t list [@sexp.list]
-    | Compiler of Id.t * Compiler.t list [@sexp.list]
   [@@deriving sexp, variants]
 
   let as_cpp : t -> Cpp.t list option = function
     | Cpp c ->
+        Some c
+    | _ ->
+        None
+
+  let as_default : t -> Default.t list option = function
+    | Default c ->
         Some c
     | _ ->
         None
@@ -89,21 +110,9 @@ module Top = struct
     | _ ->
         None
 
-  let as_herd : t -> Herd.t list option = function
-    | Herd h ->
-        Some h
-    | _ ->
-        None
-
   let as_machine : t -> (Id.t * Machine.t list) option = function
     | Machine (i, m) ->
         Some (i, m)
-    | _ ->
-        None
-
-  let as_compiler : t -> (Id.t * Compiler.t list) option = function
-    | Compiler (i, c) ->
-        Some (i, c)
     | _ ->
         None
 end

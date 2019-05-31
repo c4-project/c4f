@@ -24,15 +24,14 @@
 open Base
 open Stdio
 
-let run_direct ?(oc : Out_channel.t = stdout)
-    (cfg : Act_compiler.Litmus_tool.t) (argv : string list) :
-    unit Or_error.t =
-  let prog = Act_compiler.Litmus_tool.cmd cfg in
+let run_direct ?(oc : Out_channel.t = stdout) (cfg : Act_sim.Spec.t)
+    (argv : string list) : unit Or_error.t =
+  let prog = Act_sim.Spec.cmd cfg in
   Or_error.tag ~tag:"While running litmus"
     (Plumbing.Runner.Local.run ~oc ~prog argv)
 
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.Basic_filter =
-Plumbing.Filter.Make_on_runner (struct
+module Make (B : Act_sim.Runner_intf.Basic) :
+  Act_sim.Runner_intf.Basic_filter = Plumbing.Filter.Make_on_runner (struct
   module Runner = B.Runner
 
   type aux_i = Act_sim.Arch.t
@@ -41,7 +40,7 @@ Plumbing.Filter.Make_on_runner (struct
 
   let tmp_file_ext = Fn.const "txt"
 
-  let prog (_arch : Act_sim.Arch.t) = Act_compiler.Litmus_tool.cmd B.config
+  let prog (_arch : Act_sim.Arch.t) = Act_sim.Spec.cmd B.spec
 
   let argv _cfg (path : string) = [path]
 end)

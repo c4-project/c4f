@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.S =
+module Make (B : Act_sim.Runner_intf.Basic) : Act_sim.Runner_intf.S =
 Act_sim.Runner.Make (struct
   let name = Act_common.Id.of_string "litmus"
 
@@ -30,3 +30,6 @@ Act_sim.Runner.Make (struct
   module Filter = Filter.Make (B)
   module Reader = Reader
 end)
+
+let make (module B : Act_sim.Runner_intf.Basic) =
+  (module Make (B) : Act_sim.Runner_intf.S)

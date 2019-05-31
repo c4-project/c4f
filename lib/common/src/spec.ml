@@ -26,35 +26,70 @@
 
 open Core_kernel (* for Tuple2 *)
 
+open Spec_types
 module Au = Act_utils
 module Tx = Travesty_core_kernel_exts
 
-module type Common = sig
-  type t [@@deriving sexp]
+module Set = struct
+  type 'spec t = (Id.t * 'spec) list [@@deriving equal]
 
-  val is_enabled : t -> bool
+  let empty (type a) : a t = []
 
-  include Pretty_printer.S with type t := t
+  let restrict (set : 'spec t) ~(identifiers : Id.Set.t) : 'spec t =
+    List.filter set ~f:(Fn.compose (Id.Set.mem identifiers) fst)
 
-  val pp_summary : t Fmt.t
+  let partition_map (type a b) (t : 'spec t)
+      ~(f : Id.t -> 'spec -> [`Fst of a | `Snd of b]) : a list * b list =
+    List.partition_map t ~f:(Tuple2.uncurry f)
+
+  let map (type a) (t : 'spec t) ~(f : Id.t -> 'spec -> a) : a list =
+    List.map t ~f:(Tuple2.uncurry f)
+
+  let of_map (type spec) : spec Map.M(Id).t -> spec t = Map.to_alist
+
+  let try_match_fqid (fqid : Id.t) (spec_id : Id.t) (spec : 'spec) :
+      (Id.t * 'spec) option =
+    Option.some_if (Id.is_prefix fqid ~prefix:spec_id) (spec_id, spec)
+
+  let get_using_fqid (specs : 'spec t) ?(id_type : string = "unknown")
+      ~(fqid : Id.t) : (Id.t * 'spec) Or_error.t =
+    specs
+    |> List.find_map ~f:(Tuple2.uncurry (try_match_fqid fqid))
+    |> Result.of_option
+         ~error:
+           (Error.create_s
+              [%message
+                "No specification exists matching all or part of this FQID."
+                  ~id_type
+                  ~fqid:(fqid : Id.t)])
+
+  let get specs ?(id_type : string = "unknown") (id : Id.t) =
+    Id.try_find_assoc_with_suggestions specs id ~id_type
+
+  module On_specs : Travesty.Traversable.S1 with type 'a t = 'a t =
+  Travesty.Traversable.Make1 (struct
+    type nonrec 'a t = 'a t
+
+    module On_monad (M : Monad.S) = struct
+      module LM = Tx.List.On_monad (M)
+
+      let map_m (set : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
+        LM.map_m set ~f:(fun (i, v) -> M.(v |> f >>| Tuple2.create i))
+    end
+  end)
 end
 
-module type S_with_id = sig
-  type elt
-
+module type S = sig
   type t
 
-  include Common with type t := t
-
-  val make : id:Id.t -> spec:elt -> t
-
-  val id : t -> Id.t
-
-  val spec : t -> elt
+  include Spec_types.S with type Set.t = t Set.t and type t := t
 end
 
-module With_id (C : Common) : S_with_id with type elt := C.t = struct
-  type t = {id: Id.t; spec: C.t} [@@deriving fields, make, sexp]
+module With_id (C : Spec_types.Common) :
+  Spec_types.S_with_id with type elt = C.t = struct
+  type elt = C.t
+
+  type t = {id: Id.t; spec: C.t} [@@deriving fields, make, equal]
 
   let is_enabled x = C.is_enabled (spec x)
 
@@ -63,72 +98,35 @@ module With_id (C : Common) : S_with_id with type elt := C.t = struct
   let pp f x = C.pp f (spec x)
 end
 
-module type Basic = sig
-  type t
-
-  val type_name : string
-
-  include Common with type t := t
-
-  module With_id : S_with_id with type elt := t
-end
-
-module type S = sig
-  include Basic
-
-  module Set : sig
-    type t [@@deriving sexp]
-
-    include Pretty_printer.S with type t := t
-
-    val pp_verbose : bool -> t Fmt.t
-
-    val get : t -> Id.t -> With_id.t Or_error.t
-
-    val of_list : With_id.t list -> t Or_error.t
-
-    val restrict : t -> Id.Set.t -> t
-
-    val partition_map :
-      t -> f:(With_id.t -> [`Fst of 'a | `Snd of 'b]) -> 'a list * 'b list
-
-    val group : t -> f:(With_id.t -> Id.t) -> t Id.Map.t
-
-    val map : t -> f:(With_id.t -> 'a) -> 'a list
-  end
-
-  val pp_verbose : bool -> t Fmt.t
-end
-
 module Make (B : Basic) :
-  S with type t := B.t and module With_id := B.With_id = struct
+  S with type t = B.t and module With_id = B.With_id = struct
   include B
 
   let pp_verbose verbose = if verbose then pp else pp_summary
 
   module Set = struct
-    (* Wrapping this so that we can use [of_sexp] below. *)
-    module SM = struct
-      type t = (Id.t, B.t) List.Assoc.t [@@deriving sexp]
+    type t = B.t Set.t [@@deriving equal]
 
-      let restrict (set : t) (identifiers : Id.Set.t) : t =
-        List.filter set ~f:(Fn.compose (Id.Set.mem identifiers) fst)
+    let restrict : t -> identifiers:Id.Set.t -> t = Set.restrict
 
-      let partition_map t ~f =
-        List.partition_map t ~f:(fun (id, spec) ->
-            f (With_id.make ~id ~spec) )
+    let partition_map (t : t)
+        ~(f : B.With_id.t -> [`Fst of 'a | `Snd of 'b]) : 'a list * 'b list
+        =
+      Set.partition_map t ~f:(fun id spec -> f (With_id.make ~id ~spec))
 
-      let map t ~f =
-        List.map t ~f:(fun (id, spec) -> f (With_id.make ~id ~spec))
-    end
+    let map (t : t) ~(f : B.With_id.t -> 'a) : 'a list =
+      Set.map t ~f:(fun id spec -> f (With_id.make ~id ~spec))
 
-    include SM
+    let get_using_fqid (specs : t) ~(fqid : Id.t) : With_id.t Or_error.t =
+      Or_error.Let_syntax.(
+        let%map id, spec =
+          Set.get_using_fqid specs ~fqid ~id_type:type_name
+        in
+        With_id.make ~id ~spec)
 
     let get specs (id : Id.t) =
       Or_error.Let_syntax.(
-        let%map spec =
-          Id.try_find_assoc_with_suggestions specs id ~id_type:type_name
-        in
+        let%map spec = Set.get specs id ~id_type:type_name in
         With_id.make ~id ~spec)
 
     let of_list xs =

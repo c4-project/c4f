@@ -1,75 +1,52 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+(** A record containing processed common configuration used for most ACT
+    tools. This includes the {{!Global} global configuration} from act.conf,
+    as well as pre-filtered machines and sanitiser passes. *)
 
-(** Act's top-level configuration. *)
+(* TODO(@MattWindsor91): eventually, this should be split into assembly and
+   C configuration. *)
 
 open Base
 open Act_common
-open Act_intf
 
-(** [Raw] represents act configuration loaded directly from a spec file,
-    without any compiler testing or expansion. *)
-module Raw : sig
-  include S with module CSpec := Act_compiler.Instance.Cfg_spec
-
-  val make :
-       ?cpp:Cpp.t
-    -> ?herd:Herd.t
-    -> ?fuzz:Fuzz.t
-    -> compilers:Act_compiler.Instance.Cfg_spec.Set.t
-    -> machines:Act_compiler.Machine.Spec.Set.t
-    -> unit
-    -> t
-
-  include Act_utils.Loadable_intf.S with type t := t
-end
-
-include S with module CSpec := Act_compiler.Instance.Spec
+include Global_types.S
 
 (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
 type 't hook = 't -> 't option Or_error.t
 
 val disabled_compilers : t -> (Id.t * Error.t option) list
-(** [disabled_compilers c] reports all disabled compiler IDs in the given
-    config, along with any reason why. *)
+(** [disabled_compilers c] reports all (fully qualified) disabled compiler
+    IDs in the given config, along with any reason why. *)
 
 val disabled_machines : t -> (Id.t * Error.t option) list
 (** [disabled_machines c] reports all disabled machines in the given config,
     along with any reason why. *)
 
-val herd_or_default : t -> Herd.t
-(** [herd_or_default c] behaves as [herd c], but substitutes [Herd.default]
-    if [c] has no Herd configuration. *)
+(* TODO(@MattWindsor91): this shouldn't be in here? *)
+val sanitiser_passes :
+     t
+  -> default:Set.M(Act_sanitiser.Pass_group).t
+  -> Set.M(Act_sanitiser.Pass_group).t
 
-val from_raw :
-     ?chook:Act_compiler.Instance.Spec.With_id.t hook
-  -> ?mhook:Act_compiler.Machine.Spec.With_id.t hook
+val make :
+     ?chook:Act_compiler.Machine_spec.Qualified_compiler.t hook
+  -> ?mhook:Act_compiler.Machine_spec.With_id.t hook
   -> ?phook:(   default:Set.M(Act_sanitiser.Pass_group).t
              -> Set.M(Act_sanitiser.Pass_group).t)
-  -> Raw.t
+  -> Global.t
   -> t Or_error.t
-(** [from_raw c ?chook ?mhook ?phook] takes a raw config [t] and processes
-    it by:
+(** [make ?chook ?mhook ?phook global] takes a global config [t] and
+    processes it by:
 
     - applying the given testing hooks onto the compilers and machines, and
       disabling any that fail;
@@ -80,3 +57,33 @@ val from_raw :
     machine through unaltered), and should return [Ok (Some x)] when the
     element is enabled and passing; [Ok None] when the element is disabled;
     and [Error e] when the element is enabled and failing. *)
+
+(** {2 Resolving components across machines by fully qualified ID}
+
+    When a user asks for a certain compiler/simulator/etc on the command
+    line, ACT expects a single 'fully qualified' ID: the identifier of the
+    machine, followed by the identifier of the component relative to the
+    machine. These functions resolve those IDs, checking every machine in
+    the config in turn. *)
+
+val compiler :
+     t
+  -> fqid:Id.t
+  -> Act_compiler.Machine_spec.Qualified_compiler.t Or_error.t
+(** [compiler c ~fqid] looks up a compiler with the fully qualified ID
+    [fqid] (that is, the concatenation of the machine ID and the compiler
+    ID) in [c]'s specification sets. *)
+
+val sim :
+  t -> fqid:Id.t -> Act_compiler.Machine_spec.Qualified_sim.t Or_error.t
+(** [compiler c ~fqid] looks up a simulator with the fully qualified ID
+    [fqid] (that is, the concatenation of the machine ID and the compiler
+    ID) in [c]'s specification sets. *)
+
+val all_compilers : t -> Act_compiler.Machine_spec.Qualified_compiler.t list
+(** [all_compilers c] returns a list of qualified specifications for all
+    compilers, across all machines. *)
+
+val all_sims : t -> Act_compiler.Machine_spec.Qualified_sim.t list
+(** [all_sims c] returns a list of qualified specifications for all
+    simulators, across all machines. *)

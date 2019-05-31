@@ -28,6 +28,9 @@ open Base
 module type Basic = sig
   include Common_intf.Basic_machine_and_up
 
+  val spec : Act_compiler.Machine_spec.With_id.t
+  (** [spec] is the specification of this machine. *)
+
   val asm_simulators : Act_sim.Table.t
   (** The table of simulators available to this machine. *)
 end

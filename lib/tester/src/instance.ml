@@ -23,53 +23,32 @@
 
 open Core_kernel
 module Tx = Travesty_core_kernel_exts
-open Act_common
-include Instance_intf
+open Instance_intf
 module Machine_assoc =
-  Travesty.Bi_mappable.Fix2_left (Tx.Alist) (Act_compiler.Machine.Id)
-
-(** Compiler specification sets, grouped by machine. *)
-module Compiler_spec_env = struct
-  include Travesty.Bi_mappable.Fix1_right
-            (Machine_assoc)
-            (Act_compiler.Instance.Spec.Set)
-
-  let group_by_machine specs =
-    specs
-    |> Act_compiler.Instance.Spec.Set.group ~f:(fun spec ->
-           Act_compiler.Machine.Spec.With_id.id
-             (Act_compiler.Instance.Spec.With_id.machine spec) )
-    |> Id.Map.to_alist
-
-  let get (cfg : Run_config.t)
-      (compilers : Act_compiler.Instance.Spec.Set.t) : t =
-    let enabled_ids = Run_config.compilers cfg in
-    let specs =
-      Act_compiler.Instance.Spec.Set.restrict compilers enabled_ids
-    in
-    group_by_machine specs
-end
+  Travesty.Bi_mappable.Fix2_left (Tx.Alist) (Act_common.Id)
 
 (** Bundle of everything used in a tester job. *)
 module Job = struct
   type t =
     { config: Run_config.t
-    ; specs: Compiler_spec_env.t
+    ; specs: Act_compiler.Machine_spec.Set.t
     ; c_simulations: Act_sim.Bulk.File_map.t
     ; make_machine:
-           Id.t
-        -> Act_compiler.Instance.Spec.Set.t
-        -> (module Machine.S) Or_error.t }
+        Act_compiler.Machine_spec.With_id.t -> (module Machine.S) Or_error.t
+    }
   [@@deriving fields, make]
 
-  let run_machine (job : t) (mach_id, mach_compilers) =
+  let run_machine (job : t)
+      (mach_spec : Act_compiler.Machine_spec.With_id.t) =
     Or_error.Let_syntax.(
-      let%bind (module TM) = make_machine job mach_id mach_compilers in
+      let%bind (module TM) = make_machine job mach_spec in
       let%map analysis = TM.run (config job) (c_simulations job) in
-      (mach_id, analysis))
+      (Act_compiler.Machine_spec.With_id.id mach_spec, analysis))
 
   let run (job : t) : Analysis.Machine.t Machine_assoc.t Or_error.t =
-    job |> specs |> Tx.Or_error.combine_map ~f:(run_machine job)
+    job |> specs
+    |> Act_compiler.Machine_spec.Set.map ~f:(run_machine job)
+    |> Or_error.combine_errors
 end
 
 module Make (B : Basic) : S = struct
@@ -80,15 +59,15 @@ module Make (B : Basic) : S = struct
       Analysis.t =
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
 
-  let make_machine (id : Id.t)
-      (mach_compilers : Act_compiler.Instance.Spec.Set.t) :
+  let make_machine (spec : Act_compiler.Machine_spec.With_id.t) :
       (module Machine.S) Or_error.t =
     Or_error.Let_syntax.(
+      let id = Act_compiler.Machine_spec.With_id.id spec in
       let%map asm_simulators = B.Asm_simulator_resolver.make_table id in
       ( module Machine.Make (struct
         include B
 
-        let compilers = mach_compilers
+        let spec = spec
 
         let asm_simulators = asm_simulators
       end)
@@ -121,8 +100,7 @@ module Make (B : Basic) : S = struct
       (* TODO(@MattWindsor91): do something with the times. *)
       let%map c_simulations_t = run_and_time_c_simulations config in
       let c_simulations = T.value c_simulations_t in
-      let specs = Compiler_spec_env.get config compilers in
-      Job.make ~config ~c_simulations ~specs ~make_machine)
+      Job.make ~config ~c_simulations ~specs:B.machines ~make_machine)
 
   let run_job_timed (job : Job.t) :
       Analysis.Machine.t Machine_assoc.t T.t Or_error.t =

@@ -25,6 +25,18 @@ open Base
 
 (** {3 Input interfaces} *)
 
+(** Usual input for simulator runner functors. *)
+module type Basic = sig
+  val machine_id : Act_common.Id.t
+  (** The ID of the machine running this simulator. *)
+
+  val spec : Spec.t
+  (** The simulator spec describing how to run this simulator. *)
+
+  (** Runner used for running the simulator, possibly remotely. *)
+  module Runner : Plumbing.Runner_types.S
+end
+
 (** Shorthand for the specific type of filter a simulator runner expects. *)
 module type Basic_filter =
   Plumbing.Filter_types.S with type aux_i = Arch.t and type aux_o = unit
@@ -58,7 +70,7 @@ end
     Such runners consist of two stages: a filter that runs the simulator on
     a litmus test to produce an opaque file output, and a loader that reads
     that output back in as generic simulator output. *)
-module type Basic = sig
+module type Basic_from_filter = sig
   include Common
 
   (** Simulator runners must be able to load back their output into the

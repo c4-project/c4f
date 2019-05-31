@@ -26,7 +26,8 @@ open Act_common
 open Act_utils
 
 (* Module shorthand *)
-module Cc_spec = Act_compiler.Instance.Spec
+module Cc_spec = Act_compiler.Spec
+module Cq_spec = Act_compiler.Machine_spec.Qualified_compiler
 
 let report_spec_errors (o : Output.t) = function
   | [] ->
@@ -38,6 +39,13 @@ let report_spec_errors (o : Output.t) = function
         Fmt.(list Error.pp ~sep:cut)
         es
 
+(* TODO(@MattWindsor91): do this through proper forwarding *)
+let qual_id : Cq_spec.t -> Id.t =
+  Fn.compose Act_compiler.Spec.With_id.id Cq_spec.c_spec
+
+let qual_emits : Cq_spec.t -> Id.t =
+  Fn.compose Act_compiler.Spec.With_id.emits Cq_spec.c_spec
+
 (* TODO(@MattWindsor91): de-hardcode Herd here *)
 let make_tester_config ?(c_simulator : Id.t = Id.of_string "herd")
     ?(asm_simulator : Id.t = Id.of_string "herd") ~(out_root_raw : string)
@@ -47,46 +55,44 @@ let make_tester_config ?(c_simulator : Id.t = Id.of_string "herd")
   let%bind output_root_dir =
     Plumbing.Fpath_helpers.of_string out_root_raw
   in
-  let specs = Act_config.Act.compilers cfg in
+  let specs = Act_config.Act.all_compilers cfg in
   report_spec_errors o
     (List.filter_map ~f:snd (Act_config.Act.disabled_compilers cfg)) ;
-  let compilers =
-    specs |> Cc_spec.(Set.map ~f:With_id.id) |> Id.Set.of_list
-  in
+  let compilers = specs |> List.map ~f:qual_id |> Id.Set.of_list in
   let%map pathset =
     Act_tester.Pathset.Run.make_and_mkdirs {output_root_dir; input_mode}
   in
   Act_tester.Run_config.make ~c_simulator ~asm_simulator ~pathset ~compilers
 
 let make_tester o (cfg : Act_config.Act.t) timing_mode =
-  let herd_cfg = Act_config.Act.herd_or_default cfg in
-  ( module Act_tester.Instance.Make (struct
-    module T = (val Act_utils.Timing.Mode.to_module timing_mode)
+  let module Sim_resolver = Sim_support.Make_resolver (struct
+    let cfg = cfg
+  end) in
+  Or_error.Let_syntax.(
+    (* TODO(@MattWindsor91): de-hardcode Herd here, too. *)
+    let%map (module Herd) =
+      Sim_resolver.resolve_single (Id.of_string "herd")
+    in
+    ( module Act_tester.Instance.Make (struct
+      module T = (val Act_utils.Timing.Mode.to_module timing_mode)
 
-    module Resolve_compiler = Language_support.Resolve_compiler
+      module Resolve_compiler = Language_support.Resolve_compiler
 
-    let o = o
+      let o = o
 
-    module Herd = Act_sim_herd.Runner.Make (struct
-      let config = herd_cfg
+      module Asm_simulator_resolver = Sim_resolver
+      module C_simulator = Herd
+
+      let machines = Act_config.Act.machines cfg
+
+      let sanitiser_passes =
+        Act_config.Act.sanitiser_passes cfg
+          ~default:Act_sanitiser.Pass_group.standard
+
+      let asm_runner_from_spec =
+        Fn.compose Language_support.asm_runner_from_arch qual_emits
     end)
-
-    module Asm_simulator_resolver = Sim_support.Make_resolver (struct
-      let cfg = cfg
-    end)
-
-    module C_simulator = Herd
-
-    let compilers = Act_config.Act.compilers cfg
-
-    let sanitiser_passes =
-      Act_config.Act.sanitiser_passes cfg
-        ~default:Act_sanitiser.Pass_group.standard
-
-    let asm_runner_from_spec =
-      Fn.compose Language_support.asm_runner_from_arch Cc_spec.With_id.emits
-  end)
-  : Act_tester.Instance.S )
+    : Act_tester.Instance_intf.S ))
 
 let print_table t = Tabulator.print t ; Stdio.print_endline ""
 
@@ -193,7 +199,7 @@ let run (c_simulator : Id.t option) (asm_simulator : Id.t option)
   let timing_mode =
     Timing.Mode.(if should_time then Enabled else Disabled)
   in
-  let (module T) = make_tester o cfg timing_mode in
+  let%bind (module T) = make_tester o cfg timing_mode in
   let%bind analysis = T.run tester_cfg in
   output_analysis analysis
 

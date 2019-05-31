@@ -26,6 +26,11 @@ open Base
 module type Basic = sig
   include Common_intf.Basic_machine_and_up
 
+  val machines : Act_compiler.Machine_spec.Set.t
+  (** [machines] is the set of machine specifications available for use in
+      tester runs. Each specification contains information about the
+      compilers available to it. *)
+
   (** The resolver used to produce simulator runners for machines. *)
   module Asm_simulator_resolver : Act_sim.Resolver.S
 end

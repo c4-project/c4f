@@ -42,8 +42,8 @@ module type Basic = sig
   (** [ps] tells the tester where it can find input files, and where it
       should put output files, for this compiler. *)
 
-  (** [Basic_compiler] instances must provide a compiler spec and ID. *)
-  include Act_compiler.Instance.With_spec
+  val spec : Act_compiler.Spec.With_id.t
+  (** [spec] is the compiler's ID-tagged specification. *)
 end
 
 (** User-facing interface for running compiler tests on a single compiler. *)

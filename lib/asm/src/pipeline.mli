@@ -83,7 +83,7 @@ module type S = sig
 end
 
 val make :
-     (module Act_compiler.Instance.S_resolver with type spec = 'spec)
+     (module Act_compiler.Resolver.S with type spec = 'spec)
   -> (module Runner_intf.S with type cfg = 'c)
   -> 'spec
   -> (module S with type cfg = 'c) Or_error.t

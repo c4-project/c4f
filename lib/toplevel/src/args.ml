@@ -121,7 +121,7 @@ module Other = struct
   let machine_predicate =
     flag "filter-machines"
       (optional
-         (sexp_conv [%of_sexp: Act_compiler.Machine.Property.t Blang.t]))
+         (sexp_conv [%of_sexp: Act_compiler.Machine_property.t Blang.t]))
       ~doc:"PREDICATE filter machines using this predicate"
 end
 
