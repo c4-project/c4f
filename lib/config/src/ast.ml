@@ -21,55 +21,61 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
 open Act_common
 
 module Cpp = struct
   type t = Cmd of string | Argv of string list | Enabled of bool
+  [@@deriving sexp]
 end
 
 module Fuzz = struct
-  type t = Action of Id.t * int option
+  type t = Action of Id.t * int option [@@deriving sexp]
 end
 
 module Litmus = struct
-  type t = Cmd of string
+  type t = Cmd of string [@@deriving sexp]
 end
 
 module Herd = struct
   type t = Cmd of string | C_model of string | Asm_model of Id.t * string
+  [@@deriving sexp]
 end
 
 module Ssh = struct
   type t = User of string | Host of string | Copy_to of string
+  [@@deriving sexp]
 end
 
 module Via = struct
-  type t = Local | Ssh of Ssh.t list
+  type t = Local | Ssh of Ssh.t list [@@deriving sexp]
 end
 
 module Machine = struct
   type t = Enabled of bool | Via of Via.t | Litmus of Litmus.t list
+  [@@deriving sexp]
 end
 
 module Compiler = struct
   type t =
-    | Enabled of bool
+    | Enabled of bool [@sexp.bool]
     | Style of Id.t
     | Emits of Id.t
     | Cmd of string
-    | Argv of string list
-    | Herd of bool
+    | Argv of string list [@sexp.list]
+    | Herd of bool [@sexp.bool]
     | Machine of Id.t
+  [@@deriving sexp]
 end
 
 module Top = struct
   type t =
-    | Cpp of Cpp.t list
-    | Fuzz of Fuzz.t list
-    | Herd of Herd.t list
-    | Machine of Id.t * Machine.t list
-    | Compiler of Id.t * Compiler.t list
-  [@@deriving variants]
+    | Cpp of Cpp.t list [@sexp.list]
+    | Fuzz of Fuzz.t list [@sexp.list]
+    | Herd of Herd.t list [@sexp.list]
+    | Machine of Id.t * Machine.t list [@sexp.list]
+    | Compiler of Id.t * Compiler.t list [@sexp.list]
+  [@@deriving sexp, variants]
 
   let as_cpp : t -> Cpp.t list option = function
     | Cpp c ->
@@ -102,4 +108,4 @@ module Top = struct
         None
 end
 
-type t = Top.t list
+type t = (Top.t list[@sexp.list]) [@@deriving sexp]

@@ -3,7 +3,6 @@
  (public_name act.config)
  (synopsis
    "Automagic Compiler Tormentor: configuration and config file parsing")
- (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
  (libraries fmt fpath menhirLib travesty travesty.core_kernel_exts sedlex

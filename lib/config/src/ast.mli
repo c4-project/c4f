@@ -31,31 +31,34 @@ open Act_common
 (** Items in a C-preprocessor stanza *)
 module Cpp : sig
   type t = Cmd of string | Argv of string list | Enabled of bool
+  [@@deriving sexp]
 end
 
 (** Items in a fuzzer stanza *)
 module Fuzz : sig
-  type t = Action of Id.t * int option
+  type t = Action of Id.t * int option [@@deriving sexp]
 end
 
 (** Items in a Litmus stanza *)
 module Litmus : sig
-  type t = Cmd of string
+  type t = Cmd of string [@@deriving sexp]
 end
 
 (** Items in a Herd stanza *)
 module Herd : sig
   type t = Cmd of string | C_model of string | Asm_model of Id.t * string
+  [@@deriving sexp]
 end
 
 (** Items in a SSH stanza *)
 module Ssh : sig
   type t = User of string | Host of string | Copy_to of string
+  [@@deriving sexp]
 end
 
 (** Items in a via stanza *)
 module Via : sig
-  type t = Local | Ssh of Ssh.t list
+  type t = Local | Ssh of Ssh.t list [@@deriving sexp]
 end
 
 (** Items in a machine stanza *)
@@ -66,6 +69,7 @@ module Machine : sig
     | Via of Via.t  (** Where the machine is located. *)
     | Litmus of Litmus.t list
         (** Information about how to run `litmus` on this machine. *)
+  [@@deriving sexp]
 end
 
 (** Items in a compiler stanza *)
@@ -78,6 +82,7 @@ module Compiler : sig
     | Argv of string list
     | Herd of bool
     | Machine of Id.t
+  [@@deriving sexp]
 end
 
 (** Items at the top level *)
@@ -88,6 +93,7 @@ module Top : sig
     | Herd of Herd.t list  (** A Herd config block. *)
     | Machine of Id.t * Machine.t list  (** A machine config block. *)
     | Compiler of Id.t * Compiler.t list  (** A compiler config block. *)
+  [@@deriving sexp]
 
   val as_cpp : t -> Cpp.t list option
   (** [as_cpp top] is [Some c] if [top] is [Cpp c], and [None] otherwise. *)
@@ -108,4 +114,4 @@ module Top : sig
 end
 
 (** A config AST is a list of top-level items. *)
-type t = Top.t list
+type t = Top.t list [@@deriving sexp]
