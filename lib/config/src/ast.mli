@@ -39,14 +39,13 @@ module Fuzz : sig
   type t = Action of Id.t * int option [@@deriving sexp]
 end
 
-(** Items in a Litmus stanza *)
-module Litmus : sig
-  type t = Cmd of string [@@deriving sexp]
-end
-
-(** Items in a Herd stanza *)
-module Herd : sig
-  type t = Cmd of string | C_model of string | Asm_model of Id.t * string
+(** Items in a simulator stanza *)
+module Sim : sig
+  type t =
+    | Cmd of string
+    | Style of Id.t
+    | C_model of string
+    | Asm_model of Id.t * string
   [@@deriving sexp]
 end
 
@@ -61,17 +60,6 @@ module Via : sig
   type t = Local | Ssh of Ssh.t list [@@deriving sexp]
 end
 
-(** Items in a machine stanza *)
-module Machine : sig
-  (** Type of machine stanza items. *)
-  type t =
-    | Enabled of bool  (** Whether or not the machine is enabled. *)
-    | Via of Via.t  (** Where the machine is located. *)
-    | Litmus of Litmus.t list
-        (** Information about how to run `litmus` on this machine. *)
-  [@@deriving sexp]
-end
-
 (** Items in a compiler stanza *)
 module Compiler : sig
   type t =
@@ -80,36 +68,58 @@ module Compiler : sig
     | Emits of Id.t
     | Cmd of string
     | Argv of string list
-    | Herd of bool
-    | Machine of Id.t
   [@@deriving sexp]
+end
+
+(** Items in a machine stanza *)
+module Machine : sig
+  (** Type of machine stanza items. *)
+  type t =
+    | Compiler of Id.t * Compiler.t list
+        (** A compiler on this particular machine. *)
+    | Enabled of bool  (** Whether or not the machine is enabled. *)
+    | Via of Via.t  (** Where the machine is located. *)
+    | Sim of Id.t * Sim.t list
+        (** Information about how to run a particular simulator on this
+            machine. *)
+  [@@deriving sexp]
+
+  val as_compiler : t -> (Id.t * Compiler.t list) option
+  (** [as_compiler top] is [Some (i, c)] if [top] is [Compiler (i, c)], and
+      [None] otherwise. *)
+end
+
+(** Items in a default stanza *)
+module Default : sig
+  (** Categories of default item *)
+  module Category : sig
+    type t = Arch | Compiler | Machine | Sim [@@deriving sexp]
+  end
+
+  type t = Try of Category.t * Id.t [@@deriving sexp]
 end
 
 (** Items at the top level *)
 module Top : sig
   type t =
     | Cpp of Cpp.t list  (** A C preprocessor config block. *)
+    | Default of Default.t list  (** A default resolution config block. *)
     | Fuzz of Fuzz.t list  (** A fuzzer config block. *)
-    | Herd of Herd.t list  (** A Herd config block. *)
     | Machine of Id.t * Machine.t list  (** A machine config block. *)
-    | Compiler of Id.t * Compiler.t list  (** A compiler config block. *)
   [@@deriving sexp]
 
   val as_cpp : t -> Cpp.t list option
   (** [as_cpp top] is [Some c] if [top] is [Cpp c], and [None] otherwise. *)
 
+  val as_default : t -> Default.t list option
+  (** [as_default top] is [Some c] if [top] is [Default c], and [None]
+      otherwise. *)
+
   val as_fuzz : t -> Fuzz.t list option
   (** [as_fuzz top] is [Some f] if [top] is [Fuzz f], and [None] otherwise. *)
 
-  val as_herd : t -> Herd.t list option
-  (** [as_herd top] is [Some h] if [top] is [Herd h], and [None] otherwise. *)
-
   val as_machine : t -> (Id.t * Machine.t list) option
   (** [as_machine top] is [Some (i, m)] if [top] is [Machine (i, m)], and
-      [None] otherwise. *)
-
-  val as_compiler : t -> (Id.t * Compiler.t list) option
-  (** [as_compiler top] is [Some (i, c)] if [top] is [Compiler (i, c)], and
       [None] otherwise. *)
 end
 

@@ -81,6 +81,16 @@ let is_prefix id ~prefix =
   List.is_prefix (to_string_list id) ~prefix:(to_string_list prefix)
     ~equal:String.Caseless.equal
 
+let drop_prefix (id : t) ~(prefix : t) : t Or_error.t =
+  if is_prefix id ~prefix then
+    Or_error.return (List.drop id (List.length prefix))
+  else
+    Or_error.error_s
+      [%message
+        "The given prefix ID is not a prefix of the other ID."
+          ~id:(id : t)
+          ~prefix:(prefix : t)]
+
 let has_tag id element = List.mem id element ~equal:String.Caseless.equal
 
 let pp_pair (ppe : 'e Fmt.t) : (t * 'e) Fmt.t =

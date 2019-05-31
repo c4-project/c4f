@@ -22,50 +22,44 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Act_common
 
-(** [Reference] is the signature of references to machines. *)
-module type Reference = sig
-  (** [t] is the type of machine references. *)
-  type t [@@deriving sexp]
-
-  include Pretty_printer.S with type t := t
-
-  val default : t
-  (** [default] is the default machine reference, used whenever a reference
-      is omitted in a compiler specification. *)
-
-  val id : t -> Id.t
-  (** [id m] gets the machine ID of this reference. *)
-
-  val remoteness : t -> [`Remote | `Local | `Unknown]
-  (** [remoteness m] returns a guess as to whether machine reference [m] is
-      a reference to a remote machine. *)
-end
-
-(** [Basic_spec] is the signature common to any sort of machine
-    specification, including [With_id] pairs.
+(** [S_spec] is the signature common to any sort of machine specification,
+    including [With_id] pairs.
 
     In practice, modules implementing this will either be [Spec] or
     [Spec.With_id]. *)
-module type Basic_spec = sig
+module type S_spec = sig
   (** [t] describes a machine. *)
   type t
 
   (** Type of 'via' blocks. *)
   type via
 
+  include Pretty_printer.S with type t := t
+
+  (** {3 Compilers attached to this spec} *)
+
+  val compilers : t -> Spec.Set.t
+  (** [compilers spec] gets the compiler specifications attached to [spec]. *)
+
+  (** {3 Simulators attached to this spec} *)
+
+  val sims : t -> Act_sim.Spec.Set.t
+  (** [sims spec] gets the simulator specifications attached to [spec]. *)
+
+  val sim : t -> id:Act_common.Id.t -> Act_sim.Spec.With_id.t Or_error.t
+  (** [sim spec ~id] gets the high-level specification in [spec] for the
+      simulator with identifier [id], if one exists. *)
+
+  (** {3 Running things on this machine} *)
+
   val via : t -> via
   (** [via spec] gets the [via] stanza of a machine spec [spec]. *)
 
-  val litmus : t -> Litmus_tool.t option
-  (** [litmus spec] gets any available configuration in [spec] for the
-      Litmus tool. *)
-
-  val ensure_litmus : t -> Litmus_tool.t Or_error.t
-  (** [ensure_litmus spec] behaves as [litmus spec], but returns a
-      descriptive error if the Litmus configuration is missing. *)
+  val remoteness : t -> [`Remote | `Local | `Unknown]
+  (** [remoteness m] returns a guess as to whether machine reference [m] is
+      a reference to a remote machine. *)
 
   val runner : t -> (module Plumbing.Runner_types.S)
-  (** [to_runner spec] gets a runner for the machine spec [spec]. *)
+  (** [runner spec] gets a runner for the machine spec [spec]. *)
 end

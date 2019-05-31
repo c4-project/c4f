@@ -28,7 +28,7 @@
     implementing that interface using a filter wrapper over the simulator
     and a simulator output parser. *)
 
-(** [Make] makes a simulator runner from a [Basic]. *)
-module Make (B : Runner_intf.Basic) : Runner_intf.S
+(** [Make] makes a simulator runner from a [Basic_from_filter]. *)
+module Make (B : Runner_intf.Basic_from_filter) : Runner_intf.S
 
 module Make_error (B : Runner_intf.Basic_error) : Runner_intf.S

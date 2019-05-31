@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -21,9 +21,32 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Abstract type of Litmus7 configurations. *)
+(** Mini-language for querying machine specifications, suitable for use in
+    [Blang]. *)
 
-include Act_common.Program.S
+open Core_kernel
+open Act_common
 
-val make : ?cmd:string -> unit -> t
-(** [make ?cmd] creates a Litmus-tool config. *)
+(** [t] is the opaque type of property queries. *)
+type t [@@deriving sexp]
+
+val id : Id.Property.t -> t
+(** [id] constructs a query over a machine's ID. *)
+
+val is_remote : t
+(** [is_remote] constructs a query that asks if a machine is known to be
+    remote. *)
+
+val is_local : t
+(** [is_local] constructs a query that asks if a machine is known to be
+    local. *)
+
+val eval : Machine_spec.With_id.t -> t -> bool
+(** [eval R reference property] evaluates [property] over [reference], with
+    respect to module [R]. *)
+
+val eval_b : Machine_spec.With_id.t -> t Blang.t -> bool
+(** [eval_b R reference expr] evaluates a [Blang] expression [expr] over
+    [reference], with respect to module [R]. *)
+
+include Property.S with type t := t

@@ -25,13 +25,25 @@ open Core_kernel
 open Act_common
 
 (* Module shorthand *)
-module Cc_spec = Act_compiler.Instance.Spec
+module Cc_spec = Act_compiler.Spec
+
+let pp_compiler (verbose : bool) (f : Formatter.t)
+    (compiler : Cc_spec.With_id.t) : unit =
+  Fmt.pf f "@[<v 2>@[<h>%a@]@ %a@]" Id.pp
+    (Cc_spec.With_id.id compiler)
+    (Cc_spec.pp_verbose verbose)
+    (Cc_spec.With_id.spec compiler)
 
 let run_list_compilers (standard_args : Args.Standard.t) (_o : Output.t)
     (cfg : Act_config.Act.t) : unit Or_error.t =
-  let compilers = Act_config.Act.compilers cfg in
+  let compilers = Act_config.Act.all_compilers cfg in
   let verbose = Args.Standard.is_verbose standard_args in
-  Fmt.pr "@[<v>%a@]@." (Cc_spec.Set.pp_verbose verbose) compilers ;
+  Fmt.(
+    pr "@[<v>%a@]@."
+      (list
+         (using Act_compiler.Machine_spec.Qualified_compiler.c_spec
+            (pp_compiler verbose)))
+      compilers) ;
   Result.ok_unit
 
 let list_compilers_command : Command.t =
@@ -47,7 +59,7 @@ let predicate_lists : (string, (module Property.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"
     , (module Act_compiler.Instance.Property) )
   ; ( "Machine predicates (-filter-machines)"
-    , (module Act_compiler.Machine.Property) )
+    , (module Act_compiler.Machine_property) )
   ; ("Identifier predicates", (module Id.Property))
   ; ( "Sanitiser passes (-sanitiser-passes)"
     , (module Act_sanitiser.Pass_group.Selector) ) ]

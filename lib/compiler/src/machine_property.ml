@@ -21,32 +21,41 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Base
+open Core_kernel
+module Au = Act_utils
+module Pb = Plumbing
 open Act_common
 
-(** Configuration needed to find and execute Herd. *)
+type t = Id of Id.Property.t | Is_remote | Is_local
+[@@deriving sexp, variants]
 
-include Program.S
+let eval (spec : Machine_spec.With_id.t) = function
+  | Id prop ->
+      Id.Property.eval (Machine_spec.With_id.id spec) prop
+  | Is_remote ->
+      Machine_spec.With_id.remoteness spec = `Remote
+  | Is_local ->
+      Machine_spec.With_id.remoteness spec = `Local
 
-(** {2 Constructors} *)
+let eval_b spec expr = Blang.eval expr (eval spec)
 
-val make :
-     ?cmd:string
-  -> ?c_model:string
-  -> ?asm_models:(Id.t, string) List.Assoc.t
-  -> unit
-  -> t
+let tree_docs : Property.Tree_doc.t =
+  [ ("id", {args= ["PROPERTY"]; details= {| See 'identifier predicates'. |}})
+  ; ( "is_remote"
+    , { args= []
+      ; details= {| Selects machines that are known to be remote. |} } )
+  ; ( "is_local"
+    , {args= []; details= {| Selects machines that are known to be local. |}}
+    ) ]
 
-(** {2 Accessors}
+let pp_tree : unit Fmt.t =
+  Property.Tree_doc.pp tree_docs (List.map ~f:fst Variants.descriptions)
 
-    These accessors complement the existing ones pulled in by
-    {{!Program.S} Program.S}. *)
-
-val c_model : t -> string option
-(** [c_models cfg] gets the configured C model overrides in [cfg], if one
-    exists. *)
-
-val asm_models : t -> (Id.t, string) List.Assoc.t
-(** [asm_models cfg] gets the list of configured assembly model overrides in
-    [cfg]. Each override maps an architecture, represented by its config ID,
-    to a path. *)
+let%expect_test "all properties have documentation" =
+  let num_passes =
+    Variants.descriptions |> List.map ~f:fst
+    |> List.map ~f:(List.Assoc.mem tree_docs ~equal:String.Caseless.equal)
+    |> List.count ~f:not
+  in
+  Fmt.pr "@[<v>%d@]@." num_passes ;
+  [%expect {| 0 |}]

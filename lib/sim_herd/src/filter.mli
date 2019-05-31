@@ -26,12 +26,11 @@
     For running Herd as a simulator, see {{!Runner} Runner}. *)
 
 open Base
-open Filter_intf
 
 val run_direct :
      ?arch:Act_sim.Arch.t
   -> ?oc:Stdio.Out_channel.t
-  -> Act_config.Herd.t
+  -> Act_sim.Spec.t
   -> string list
   -> unit Or_error.t
 (** [run_direct ?arch ?oc config argv] runs the Herd binary configured in
@@ -46,7 +45,7 @@ val run_direct :
 
 (** We can use Herd as a simulator runner by supplying it with configuration
     expressed as a {{!Basic} Basic} module. *)
-module Make (B : Basic) :
+module Make (B : Act_sim.Runner_intf.Basic) :
   Plumbing.Filter_types.S
   with type aux_i = Act_sim.Arch.t
    and type aux_o = unit

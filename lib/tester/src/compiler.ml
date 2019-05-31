@@ -29,13 +29,13 @@ module Ac = Act_common
 module Make (B : Basic) : S = struct
   include B
   include Common.Extend (B)
-  module C_id = Act_compiler.Instance.Spec.With_id
+  module C_id = Act_compiler.Spec.With_id
   module P_file = Pathset.File
   module Litmusify = Act_asm.Litmusifier.Make (R)
 
-  let emits = C_id.emits cspec
+  let emits = C_id.emits spec
 
-  let id = C_id.id cspec
+  let id = C_id.id spec
 
   (** [lower_thread_local_symbol] converts thread-local symbols of the form
       `0:r0` into the memalloy witness equivalent, `t0r0`. *)

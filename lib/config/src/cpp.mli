@@ -23,7 +23,24 @@
 
 (** Abstract type of C preprocessor configurations. *)
 
-include Act_common.Program.S
+(** Opaque CPP configuration type. *)
+type t [@@deriving sexp]
+
+(** {2 Constructors} *)
 
 val make : enabled:bool -> ?cmd:string -> ?argv:string list -> unit -> t
 (** [make ~enabled ?cmd ?argv ()] makes a CPP configuration block. *)
+
+(** {2 Accessors} *)
+
+val default : unit -> t
+(** [default ()] gets the default configuration for the C preprocessor. *)
+
+val enabled : t -> bool
+(** [enabled cfg] gets whether this program is enabled, according to [cfg]. *)
+
+val cmd : t -> string
+(** [cmd cfg] gets the configured command. *)
+
+val argv : t -> string list
+(** [argv cfg] gets the configured arguments. *)

@@ -24,107 +24,33 @@
 (** [Spec] contains general interfaces for dealing with specifications of
     machines and compilers. *)
 
-open Core
+open Base
 
-(** [Common] contains the signature common both to plain specification
-    modules ([Basic]) and the with-ID forms ([S_with_id]). *)
-module type Common = sig
-  (** [t] is the opaque type of specifications. *)
-  type t [@@deriving sexp]
+(** Specification sets, parametrised directly on the spec type.
 
-  val is_enabled : t -> bool
-  (** [is_enabled spec] returns true if [spec] is enabled. *)
+    As 'proper' specification types have several operations needed for full
+    use of specification sets, this module has very few available
+    operations. See the [Set] module constructed on specification types for
+    more useful functionality. *)
+module Set : sig
+  (** Opaque type of specification sets. *)
+  type 'spec t
 
-  include Pretty_printer.S with type t := t
+  val empty : 'spec t
+  (** [empty] is the empty specification set. *)
 
-  val pp_summary : Format.formatter -> t -> unit
-  (** [pp_summary f spec] prints a one-line summary of [spec]. *)
+  val restrict : 'spec t -> identifiers:Id.Set.t -> 'spec t
+
+  val of_map : 'spec Map.M(Id).t -> 'spec t
+
+  (** We can monadically traverse the specifications in a set. *)
+  module On_specs : Travesty.Traversable.S1 with type 'a t = 'a t
 end
 
-(** [S_with_id] is a signature for types bundling a spec ID and a type. *)
-module type S_with_id = sig
-  (** [elt] is the type of elements inside the bundle. *)
-  type elt
-
-  (** [t] is the opaque type of specification-ID bundles. *)
-  type t
-
-  include Common with type t := t
-
-  val make : id:Id.t -> spec:elt -> t
-  (** [make ~id ~spec] creates a new [With_id.t] pair. *)
-
-  val id : t -> Id.t
-  (** [id w] gets the ID component of a [w]. *)
-
-  val spec : t -> elt
-  (** [spec w] gets the spec component of [w]. *)
-end
-
-(** [Basic] is the basic interface of both compiler and machine
-    specifications. *)
-module type Basic = sig
-  (** [t] is the opaque type of specifications. *)
-  type t
-
-  val type_name : string
-
-  include Common with type t := t
-
-  (** [With_id] contains types and functions for handling bundles of spec ID
-      and spec. *)
-  module With_id : S_with_id with type elt := t
-end
-
-(** [S] is the top-level, outward-facing interface of both compiler and
-    machine specifications. *)
 module type S = sig
-  include Basic
+  type t
 
-  (** [Set] is the interface of modules for dealing with sets of compiler
-      specs. *)
-  module Set : sig
-    (** [t] is the type of sets. *)
-    type t [@@deriving sexp]
-
-    include Pretty_printer.S with type t := t
-
-    val pp_verbose : bool -> Format.formatter -> t -> unit
-    (** [pp_verbose verbose f specs] prints a [specs] with the level of
-        verbosity implied by [verbose]. *)
-
-    val get : t -> Id.t -> With_id.t Or_error.t
-    (** [get specs id] tries to look up ID [id] in [specs], and emits an
-        error if it can't. *)
-
-    val of_list : With_id.t list -> t Or_error.t
-    (** [of_list xs] tries to make a set from [xs]. It raises an error if
-        [xs] contains duplicate IDs. *)
-
-    val restrict : t -> Id.Set.t -> t
-    (** [restrict specs ids] returns the map corresponding to [specs], but
-        with all specs removed whose ID is not in [ids]. *)
-
-    val partition_map :
-      t -> f:(With_id.t -> [`Fst of 'a | `Snd of 'b]) -> 'a list * 'b list
-    (** [partition_map specs ~f] applies a partitioning predicate [f] to the
-        specifications in [specs], returning those marked [`Fst] in the
-        first bucket and those marked [`Snd] in the second. *)
-
-    val group : t -> f:(With_id.t -> Id.t) -> t Id.Map.t
-    (** [group specs ~f] groups [specs] into buckets according to some
-        grouping function [f]. [f] returns specification IDs; the idea is
-        that this allows grouping of specifications by references to other,
-        larger specifications. *)
-
-    val map : t -> f:(With_id.t -> 'a) -> 'a list
-    (** [map specs ~f] applies a mapper [f] to the specifications in
-        [specs], returning the results as a list. *)
-  end
-
-  val pp_verbose : bool -> Format.formatter -> t -> unit
-  (** [pp_verbose verbose f spec] prints a [spec] with the level of
-      verbosity implied by [verbose]. *)
+  include Spec_types.S with type Set.t = t Set.t and type t := t
 end
 
 (** [With_id] is a basic implementation of [S_with_id] for specs with type
@@ -132,8 +58,9 @@ end
 
     Usually, spec modules should extend [With_id] to implement the various
     accessors they expose on the spec type itself, for convenience. *)
-module With_id (C : Common) : S_with_id with type elt := C.t
+module With_id (C : Spec_types.Common) :
+  Spec_types.S_with_id with type elt = C.t
 
 (** [Make] makes an [S] from a [Basic]. *)
-module Make (B : Basic) :
-  S with type t := B.t and module With_id := B.With_id
+module Make (B : Spec_types.Basic) :
+  S with type t = B.t and module With_id = B.With_id

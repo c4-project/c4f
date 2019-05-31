@@ -26,5 +26,10 @@
     For just running Herd directly, or as a filter, see {{!Filter} Filter}. *)
 
 (** We can use Herd as a simulator runner by supplying it with configuration
-    expressed as a {{!Filter.Basic} Filter.Basic} module. *)
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.S
+    expressed as a {{!Act_sim.Runner_intf.Basic} Act_sim.Runner_intf.Basic}
+    module. *)
+module Make (B : Act_sim.Runner_intf.Basic) : Act_sim.Runner_intf.S
+
+val make :
+  (module Act_sim.Runner_intf.Basic) -> (module Act_sim.Runner_intf.S)
+(** [make (module B)] is a first-class version of [Make (B)]. *)

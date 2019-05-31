@@ -43,7 +43,7 @@ module Input : sig
 
   val sanitiser_passes : t -> Set.M(Act_sanitiser.Pass_group).t
 
-  val target : t -> Act_compiler.Instance.Target.t
+  val target : t -> Act_compiler.Target.t
 
   val user_cvars : t -> Act_common.C_variables.Map.t option
 

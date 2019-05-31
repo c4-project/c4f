@@ -21,21 +21,49 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Baseline interface for external program configuration. *)
-module type S = sig
-  (** The type of program configuration. *)
-  type t [@@deriving sexp]
+open Base
+module Ac = Act_common
 
-  val default : unit -> t
-  (** [default ()] gets the default configuration for this program. *)
+module M = struct
+  type t =
+    { cmd: string [@default "herd7"] [@drop_if_default]
+    ; argv: string list [@sexp.list]
+    ; c_model: string option [@sexp.option]
+    ; asm_models: (Ac.Id.t * string) list [@default []] [@drop_if_default]
+    ; style: Ac.Id.t }
+  [@@deriving sexp, fields, make, equal]
 
-  val enabled : t -> bool
-  (** [enabled cfg] gets whether this program is enabled, according to
-      [cfg]. *)
+  let enabled _ = true
 
-  val cmd : t -> string
-  (** [cmd cfg] gets the configured command. *)
+  let cmd = cmd
 
-  val argv : t -> string list
-  (** [argv cfg] gets the configured arguments. *)
+  let sexp_of_t = sexp_of_t
+
+  let t_of_sexp = t_of_sexp
 end
+
+(* There is a _lot_ of module acrobatics here to make sure we only define
+   't' once.
+
+   TODO(@MattWindsor91): when 4.08 arrives, check to see if this is really
+   necessary. *)
+include M
+
+module Spec_common = struct
+  type t = M.t [@@deriving sexp, equal]
+
+  let is_enabled = enabled
+
+  let type_name = "sim"
+
+  let pp_summary : t Fmt.t = Fmt.always "TODO"
+
+  let pp : t Fmt.t = Fmt.always "TODO"
+end
+
+module Spec = Ac.Spec.Make (struct
+  include Spec_common
+  module With_id = Ac.Spec.With_id (Spec_common)
+end)
+
+include (Spec : module type of Spec with type t := M.t)

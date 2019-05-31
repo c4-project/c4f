@@ -89,6 +89,6 @@ val compiler_predicate :
     predicate for compilers. *)
 
 val machine_predicate :
-  Act_compiler.Machine.Property.t Blang.t option Command.Param.t
+  Act_compiler.Machine_property.t Blang.t option Command.Param.t
 (** [machine_predicate] defines a parameter for collecting a filtering
     predicate for machines. *)

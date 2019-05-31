@@ -25,7 +25,8 @@ open Core
 open Act_common
 
 (* Module shorthand *)
-module Cc_spec = Act_compiler.Instance.Spec
+module Cc_spec = Act_compiler.Spec
+module Cq_spec = Act_compiler.Machine_spec.Qualified_compiler
 
 let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
   let target = `Spec spec in
@@ -45,9 +46,9 @@ let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
     Output.pw o "@[%a@]@." Act_asm.Job.Output.warn
       (Act_asm.Pipeline.Output.job_output out))
 
-let run_spec_on_file o passes spec ~c_file =
+let run_spec_on_file o passes (spec : Cq_spec.t) ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@." Id.pp
-    (Cc_spec.With_id.id spec) ;
+    (Cc_spec.With_id.id (Cq_spec.c_spec spec)) ;
   let open Or_error.Let_syntax in
   let%map _ = litmusify o passes spec c_file in
   Format.printf "@[<h>```@]@."
@@ -55,14 +56,14 @@ let run_spec_on_file o passes spec ~c_file =
 let run o cfg ~(c_file_raw : string) =
   let open Or_error.Let_syntax in
   let%bind c_file = Plumbing.Fpath_helpers.of_string c_file_raw in
-  let specs = Act_config.Act.compilers cfg in
+  let specs = Act_config.Act.all_compilers cfg in
   let passes =
     Act_config.Act.sanitiser_passes cfg
       ~default:Act_sanitiser.Pass_group.standard
   in
   Fmt.pr "@[<h>#@ %a@]@." Fpath.pp c_file ;
   Or_error.combine_errors_unit
-    (Cc_spec.Set.map specs ~f:(run_spec_on_file o passes ~c_file))
+    (List.map specs ~f:(run_spec_on_file o passes ~c_file))
 
 let command : Command.t =
   Command.basic

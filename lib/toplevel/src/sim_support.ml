@@ -22,31 +22,38 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Act_common
+module Ac = Act_common
 module Tx = Travesty_base_exts
-module M_spec = Act_compiler.Machine.Spec
+module M_spec = Act_compiler.Machine_spec
 
-let litmus_config (machine : M_spec.With_id.t) :
-    Act_compiler.Litmus_tool.t Or_error.t =
-  Or_error.tag_arg
-    (Tx.Option.one (M_spec.With_id.litmus machine))
-    "While trying to find litmus config for machine"
-    (M_spec.With_id.id machine)
-    [%sexp_of: Id.t]
+let sim_procs :
+    ( Ac.Id.t
+    , (module Act_sim.Runner_intf.Basic) -> (module Act_sim.Runner_intf.S)
+    )
+    List.Assoc.t =
+  [ (Ac.Id.of_string "herd", Act_sim_herd.Runner.make)
+  ; (Ac.Id.of_string "litmus", Act_sim_litmus.Runner.make) ]
 
-let try_make_litmus_filter (machine : M_spec.With_id.t) :
+let try_get_sim_proc (style_id : Ac.Id.t) :
+    ((module Act_sim.Runner_intf.Basic) -> (module Act_sim.Runner_intf.S))
+    Or_error.t =
+  Ac.Id.try_find_assoc_with_suggestions sim_procs style_id
+    ~id_type:"sim style"
+
+let try_make_sim (machine : M_spec.With_id.t) (spec : Act_sim.Spec.t) :
     (module Act_sim.Runner_intf.S) Or_error.t =
   Or_error.Let_syntax.(
-    let%map litmus_cfg = litmus_config machine in
+    let%map make_sim = try_get_sim_proc (Act_sim.Spec.style spec) in
     let (module R) = M_spec.With_id.runner machine in
-    ( module Act_sim_litmus.Runner.Make (struct
-      let config = litmus_cfg
+    let module Basic : Act_sim.Runner_intf.Basic = struct
+      let spec = spec
 
       let machine_id = M_spec.With_id.id machine
 
       module Runner = R
-    end)
-    : Act_sim.Runner_intf.S ))
+    end in
+    let (module Sim) = make_sim (module Basic) in
+    (module Sim : Act_sim.Runner_intf.S))
 
 let make_error (e : Error.t) =
   ( module Act_sim.Runner.Make_error (struct
@@ -54,26 +61,23 @@ let make_error (e : Error.t) =
   end)
   : Act_sim.Runner_intf.S )
 
-let make_litmus_filter (machine : M_spec.With_id.t) :
+let make_sim (machine : M_spec.With_id.t) (spec : Act_sim.Spec.t) :
     (module Act_sim.Runner_intf.S) =
-  match try_make_litmus_filter machine with
-  | Ok m ->
-      m
-  | Error e ->
-      make_error e
+  match try_make_sim machine spec with Ok m -> m | Error e -> make_error e
 
-let make_herd_filter (cfg : Act_config.Act.t) :
-    (module Act_sim.Runner_intf.S) =
-  let cfg = Act_config.Act.herd_or_default cfg in
-  ( module Act_sim_herd.Runner.Make (struct
-    let config = cfg
-  end) )
+let make_sim_alist_entry (machine : M_spec.With_id.t)
+    (spec : Act_sim.Spec.With_id.t) :
+    Ac.Id.t * (module Act_sim.Runner_intf.S) =
+  let id = Act_sim.Spec.With_id.id spec in
+  let spec = Act_sim.Spec.With_id.spec spec in
+  let mdl = make_sim machine spec in
+  (id, mdl)
 
-let make_simulator_table (cfg : Act_config.Act.t)
-    (machine : M_spec.With_id.t) : Act_sim.Table.t Or_error.t =
-  Act_sim.Table.make
-    [ (Id.of_string "herd", make_herd_filter cfg)
-    ; (Id.of_string "litmus", make_litmus_filter machine) ]
+let make_simulator_table (machine : M_spec.With_id.t) :
+    Act_sim.Table.t Or_error.t =
+  machine |> Act_compiler.Machine_spec.With_id.sims
+  |> Act_sim.Spec.Set.map ~f:(make_sim_alist_entry machine)
+  |> Act_sim.Table.make
 
 module Make_resolver (B : sig
   val cfg : Act_config.Act.t
@@ -81,8 +85,19 @@ end) : Act_sim.Resolver.S = struct
   let get_machine : Act_common.Id.t -> M_spec.With_id.t Or_error.t =
     M_spec.Set.get (Act_config.Act.machines B.cfg)
 
-  let make_table (id : Act_common.Id.t) : Act_sim.Table.t Or_error.t =
+  (* TODO(@MattWindsor91): use B.cfg to set up default simulators. *)
+
+  let make_table (machine_id : Act_common.Id.t) : Act_sim.Table.t Or_error.t
+      =
     Or_error.Let_syntax.(
-      let%bind machine = get_machine id in
-      make_simulator_table B.cfg machine)
+      let%bind machine = get_machine machine_id in
+      make_simulator_table machine)
+
+  let resolve_single (fqid : Act_common.Id.t) :
+      (module Act_sim.Runner_intf.S) Or_error.t =
+    Or_error.Let_syntax.(
+      let%map q_spec = Act_config.Act.sim B.cfg ~fqid in
+      let m_spec = Act_compiler.Machine_spec.Qualified_sim.m_spec q_spec in
+      let s_spec = Act_compiler.Machine_spec.Qualified_sim.s_spec q_spec in
+      make_sim m_spec (Act_sim.Spec.With_id.spec s_spec))
 end

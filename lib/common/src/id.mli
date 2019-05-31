@@ -59,6 +59,10 @@ val is_prefix : t -> prefix:t -> bool
     An ID is a prefix of another ID if its list of tags is a prefix of the
     other ID's list of tags, modulo case. *)
 
+val drop_prefix : t -> prefix:t -> t Or_error.t
+(** [drop_prefix id ~prefix] returns [id] with [prefix] removed, or an error
+    if [is_prefix id ~prefix] is false. *)
+
 val try_find_assoc_with_suggestions :
   (t, 'a) List.Assoc.t -> t -> id_type:string -> 'a Or_error.t
 (** [try_find_assoc_with_suggestions assoc id ~id_type] tries to find an ID

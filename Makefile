@@ -24,12 +24,14 @@ doc:
 	cd docs && make html
 
 open-doc:
+	xdg-open "file://$(shell pwd)/docs/_build/html/index.html" ||\
 	open docs/_build/html/index.html
 
 api-doc:
 	dune build @doc
 
 open-api-doc:
+	xdg-open "file://$(shell pwd)/_build/default/_doc/_html/index.html" ||\
 	open _build/default/_doc/_html/index.html
 
 #

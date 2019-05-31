@@ -40,19 +40,18 @@ val asm_runner_from_arch :
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers. *)
 module Resolve_compiler :
-  Act_compiler.Instance.S_resolver
-  with type spec = Act_compiler.Instance.Spec.With_id.t
+  Act_compiler.Resolver.S
+  with type spec = Act_compiler.Machine_spec.Qualified_compiler.t
 
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers from targets, filling in a dummy compiler if the
     target doesn't mention a compiler. *)
 module Resolve_compiler_from_target :
-  Act_compiler.Instance.S_resolver
-  with type spec = Act_compiler.Instance.Target.t
+  Act_compiler.Resolver.S with type spec = Act_compiler.Target.t
 
 val load_and_process_config :
      ?compiler_predicate:Act_compiler.Instance.Property.t Blang.t
-  -> ?machine_predicate:Act_compiler.Machine.Property.t Blang.t
+  -> ?machine_predicate:Act_compiler.Machine_property.t Blang.t
   -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> Fpath.t

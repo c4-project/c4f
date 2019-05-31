@@ -24,12 +24,13 @@ SOFTWARE. *)
 
 %token (* delimiters *) LBRACE RBRACE EOF EOL
 %token (* main groups *) MACHINE COMPILER FUZZ
-%token (* program subgroups *) CPP HERD LITMUS
-%token (* common keywords *) ENABLED CMD ARGV DEFAULT
+%token (* program subgroups *) CPP SIM
+%token (* default resolutipn *) DEFAULT TRY
+%token (* common keywords *) ENABLED CMD ARGV
 %token (* fuzz-specific keywords *) ACTION WEIGHT
 %token (* Herd-specific keywords *) ASM_MODEL C_MODEL
 %token (* machine-specific keywords *) VIA SSH HOST USER COPY TO LOCAL
-%token (* compiler-specific keywords *) STYLE EMITS
+%token (* compiler-specific keywords *) STYLE ARCH
 
 %token <bool>   BOOL
 %token <string> STRING
@@ -53,20 +54,20 @@ SOFTWARE. *)
 simple_stanza(n, x):
   | xs = preceded(n, stanza(x)) { xs }
 
-id_stanza(n, i, x):
-  | n; id = i; xs = stanza(x) { (id, xs) }
+id_stanza(n, x):
+  | n; id = IDENTIFIER; xs = stanza(x) { (id, xs) }
 
+id_directive(n):
+  | id = preceded(n, IDENTIFIER) { id }
 
 main:
   | stanzas = line_list(top_stanza); EOF { stanzas }
 
 top_stanza:
   | c = cpp_stanza      {                 Ast.Top.Cpp      c      }
+  | d = default_stanza  {                 Ast.Top.Default  d      }
   | f = fuzz_stanza     {                 Ast.Top.Fuzz     f      }
-  | h = herd_stanza     {                 Ast.Top.Herd     h      }
-  (* Litmus stanzas are machine-specific. *)
   | x = machine_stanza  { let i, m = x in Ast.Top.Machine  (i, m) }
-  | x = compiler_stanza { let i, c = x in Ast.Top.Compiler (i, c) }
 
 cpp_stanza:
   | items = simple_stanza(CPP, cpp_item) { items }
@@ -75,6 +76,18 @@ cpp_item:
   | b = enabled { Ast.Cpp.Enabled b  }
   | c = cmd     { Ast.Cpp.Cmd     c  }
   | vs = argv   { Ast.Cpp.Argv    vs }
+
+default_stanza:
+  | items = simple_stanza(DEFAULT, default_item) { items }
+
+default_item:
+  | TRY; cat = try_category; id = IDENTIFIER { Ast.Default.Try (cat, id) }
+
+try_category:
+  | ARCH     { Ast.Default.Category.Arch }
+  | COMPILER { Ast.Default.Category.Compiler }
+  | MACHINE  { Ast.Default.Category.Machine }
+  | SIM      { Ast.Default.Category.Sim }
 
 fuzz_stanza:
   | items = simple_stanza(FUZZ, fuzz_item) { items }
@@ -85,31 +98,23 @@ fuzz_item:
 fuzz_weight:
   | WEIGHT; w = INTEGER { w }
 
-litmus_stanza:
-  | items = simple_stanza(LITMUS, litmus_item) { items }
+sim_stanza:
+  | s = id_stanza(SIM, sim_item) { s }
 
-litmus_item:
-  | c = cmd                               { Ast.Litmus.Cmd c }
-
-herd_stanza:
-  | items = simple_stanza(HERD, herd_item) { items }
-
-herd_item:
-  | c = cmd                               { Ast.Herd.Cmd c }
-  | C_MODEL;   s = STRING                 { Ast.Herd.C_model s }
-  | ASM_MODEL; e = IDENTIFIER; s = STRING { Ast.Herd.Asm_model (e, s) }
-
-id_or_default:
-  | id = IDENTIFIER { id }
-  | DEFAULT         { Act_compiler.Machine.Id.default }
+sim_item:
+  | c = cmd                               { Ast.Sim.Cmd c }
+  | s = id_directive(STYLE)               { Ast.Sim.Style s }
+  | C_MODEL;   s = STRING                 { Ast.Sim.C_model s }
+  | ASM_MODEL; e = IDENTIFIER; s = STRING { Ast.Sim.Asm_model (e, s) }
 
 machine_stanza:
-  | s = id_stanza(MACHINE, id_or_default, machine_item) { s }
+  | s = id_stanza(MACHINE, machine_item) { s }
 
 machine_item:
-  | b = enabled         { Ast.Machine.Enabled b }
-  | VIA; v = via_stanza { Ast.Machine.Via     v }
-  | l = litmus_stanza   { Ast.Machine.Litmus  l }
+  | b = enabled         {                 Ast.Machine.Enabled  b      }
+  | VIA; v = via_stanza {                 Ast.Machine.Via      v      }
+  | x = compiler_stanza { let i, c = x in Ast.Machine.Compiler (i, c) }
+  | x = sim_stanza      { let i, s = x in Ast.Machine.Sim      (i, s) }
 
 via_stanza:
   | LOCAL                                { Ast.Via.Local }
@@ -121,17 +126,14 @@ ssh_item:
   | COPY; TO; copy_to = STRING { Ast.Ssh.Copy_to copy_to }
 
 compiler_stanza:
-  | s = id_stanza(COMPILER, IDENTIFIER, compiler_item) { s }
-  (* Compilers don't have a 'default' identifier. *)
+  | s = id_stanza(COMPILER, compiler_item) { s }
 
 compiler_item:
   | b = enabled                    { Ast.Compiler.Enabled b }
   | c = cmd                        { Ast.Compiler.Cmd     c }
   | vs = argv                      { Ast.Compiler.Argv    vs }
-  | STYLE;   style = IDENTIFIER    { Ast.Compiler.Style   style }
-  | EMITS;   emits = IDENTIFIER    { Ast.Compiler.Emits   emits }
-  | HERD;    on    = BOOL          { Ast.Compiler.Herd    on }
-  | MACHINE; mach  = id_or_default { Ast.Compiler.Machine mach }
+  | style = id_directive(STYLE)    { Ast.Compiler.Style   style }
+  | emits = id_directive(ARCH)     { Ast.Compiler.Emits   emits }
 
 cmd:
   | CMD; c = STRING { c }

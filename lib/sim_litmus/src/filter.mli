@@ -30,7 +30,7 @@ open Base
 
 val run_direct :
      ?oc:Stdio.Out_channel.t
-  -> Act_compiler.Litmus_tool.t
+  -> Act_sim.Spec.t
   -> string list
   -> unit Or_error.t
 (** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
@@ -38,4 +38,5 @@ val run_direct :
     is absent). *)
 
 (** Interface for making a filter over litmus7. *)
-module Make (B : Filter_intf.Basic) : Act_sim.Runner_intf.Basic_filter
+module Make (B : Act_sim.Runner_intf.Basic) :
+  Act_sim.Runner_intf.Basic_filter
