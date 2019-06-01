@@ -1,0 +1,14 @@
+# Config parser (valid) tests
+
+## comments_only.conf
+
+```
+()
+```
+## empty.conf
+
+```
+()
+```
+
+Ran 2 test(s).

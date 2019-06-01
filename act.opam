@@ -21,6 +21,7 @@ depends: [
   "shell" {>= "v0.12" & < "v0.13"}
   "travesty" {>= "0.5.1" & < "0.6"}
   "textutils_kernel" {>= "v0.12" & < "v0.13"}
+  "sedlex" {>= "2.0" & < "2.1"}
 ]
 build: ["dune" "build" "-p" name "-j" jobs]
 run-test: ["dune" "runtest" "-p" name "-j" jobs]
