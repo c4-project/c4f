@@ -28,8 +28,10 @@ module Aux = Act_asm.Litmusifier_aux
 
 let%test_module "making locations from init" =
   ( module struct
-    let test (init : (Ac.C_id.t, int) List.Assoc.t) : unit =
-      let locs = Aux.make_locations ~init () in
+    type pc = int Act_litmus.Ast_base.Postcondition.t
+
+    let test ?(postcondition : pc option) (init : (Ac.C_id.t, int) List.Assoc.t) : unit =
+      let locs = Aux.make_locations ~init ?postcondition () in
       print_s [%sexp (locs : Ac.C_id.t list)]
 
     let%expect_test "test init" =
@@ -38,7 +40,18 @@ let%test_module "making locations from init" =
           [ (of_string "foo", 42)
           ; (of_string "bar", 27)
           ; (of_string "baz", 53) ] ;
-      [%expect {| (foo bar baz) |}]
+      [%expect {| (bar baz foo) |}]
+
+    let%expect_test "test init with postcondition mentioning global variable" =
+      test
+          ~postcondition:(Act_litmus.Ast_base.(Postcondition.(
+              make
+                ~quantifier:`Exists
+                ~predicate:Pred_elt.(Elt (Act_common.Litmus_id.of_string "barbaz" ==? 6))
+            )))
+        Ac.C_id.
+          [ (of_string "foo", 42); (of_string "bar", 27) ];
+      [%expect {| (bar barbaz foo) |}]
   end )
 
 let%test_module "making locations from variable map" =

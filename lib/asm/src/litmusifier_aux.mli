@@ -46,13 +46,15 @@ val make_init :
     [heap_syms] to [of_int 0]. *)
 
 val make_locations :
-     ?c_variables:Act_common.C_variables.Map.t
+     ?postcondition:'const Act_litmus.Ast_base.Postcondition.t
+  -> ?c_variables:Act_common.C_variables.Map.t
   -> init:(Act_common.C_id.t, _) List.Assoc.t
   -> unit
   -> Act_common.C_id.t list
-(** [make_locations ?c_variables ~init ()] makes a 'locations' stanza,
+(** [make_locations ?postcondition ?c_variables ~init ()] makes a 'locations' stanza,
     either from the variables in [c_variables] (if present), or by or just
-    by taking the LHS of [init]. *)
+    by taking the LHS of [init].  It adds any global variables mentioned in the
+    postcondition, if given. *)
 
 val is_live_symbol :
   Act_common.C_id.t -> heap_symbols:Act_abstract.Symbol.Set.t -> bool

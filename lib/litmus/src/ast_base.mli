@@ -26,7 +26,8 @@
     These parts of the litmus AST have no module-level dependency on the
     underlying language of the litmus tests. *)
 
-include module type of Ast_base_intf
+open Base
+open Ast_base_intf
 
 (** Directly-parametrised AST for basic predicate elements.
 
@@ -41,6 +42,17 @@ module Pred_elt : sig
     with type id := Id.t
      and type 'const t := 'const t
      and type 'const elt := 'const
+
+  (** {3 Constructors} *)
+
+  val ( ==? ) : Id.t -> 'const -> 'const t
+
+  (** {3 Traversals} *)
+
+  (** Traversing monadically over all identifiers in a predicate element,
+      fixing the constant type to some [Const.t]. *)
+  module On_identifiers (Const : T) :
+    Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t
 
   (** Traversing monadically over all constants in a predicate element. *)
   module On_constants :
@@ -62,6 +74,19 @@ module Pred : sig
     with type 'const t := 'const t
      and type 'const elt := 'const Pred_elt.t
 
+  (** {3 Constructors} *)
+
+  val ( && ) : 'const t -> 'const t -> 'const t
+
+  val ( || ) : 'const t -> 'const t -> 'const t
+
+  (** {3 Traversals} *)
+
+  (** Traversing monadically over all identifiers in a predicate,
+      fixing the constant type to some [Const.t]. *)
+  module On_identifiers (Const : T) :
+    Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t
+
   (** Traversing monadically over all constants in a predicate. *)
   module On_constants :
     Travesty.Traversable.S1 with type 'const t := 'const t
@@ -77,6 +102,13 @@ module Postcondition : sig
     S_postcondition
     with type 'const t := 'const t
      and type 'const pred := 'const Pred.t
+
+  (** {3 Traversals} *)
+
+  (** Traversing monadically over all identifiers in a postcondition,
+      fixing the constant type to some [Const.t]. *)
+  module On_identifiers (Const : T) :
+    Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t
 
   (** Traversing monadically over all constants in a postcondition. *)
   module On_constants :
