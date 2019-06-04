@@ -1,44 +1,89 @@
-# This is an example of an act config file.
-# It tells act which compilers to run, how to run them, and where to find
-# the various external tools it uses.
+# This is an example of ACT config file.
+# It tells ACT which compilers and simulators to run, how to run them, and
+# various other things.
 #
 # Any run of characters from a # to the end of the line is a comment.
 
-# The `herd` block tells act how to find and use Herd.
-# If you omit this block, Herd analysis gets disabled.
-herd {
-  # 'cmd' tells us where Herd is.
-  # You can omit this if herd7 is on PATH.
-  cmd "herd7"
+# An ACT config file is made up of various brace-delimited blocks, containing
+# either more blocks or directives.  Each directive spans one line.
 
-  # `c_model` overrides Herd's choice of cat model when reading in C
-  # litmus tests.
-  # You can omit this if you intend to use the normal model.
-  c_model "c11_lahav.cat"
-
-  # Each 'asm_model' overrides Herd's choice of model when reading in
-  # litmus tests for a particular architecture (given by a dotted identifier).
-  # Again, you can omit these if you intend to use the normal models.
-  asm_model x86.att   "x86_example.cat"
-  asm_model x86.intel "x86_example.cat"
-}
-
-# Each `machine IDENTIFIER` block tells act about a machine, giving it the
-# dotted identifier IDENTIFIER.
+# Here is a `machine` block.
 #
-# The machine with identifier `default` is special---it's the machine that
-# compilers run on if not specifically tied to one.  It needs defining, so
-# we'll define it first.
-machine default {
+# Each `machine IDENTIFIER` block tells act about a machine, giving it the
+# dotted identifier IDENTIFIER.  Compilers and simulators run on machines, and
+# so their configuration lies inside a `machine` block.
+#
+# Usually, there'll be at least one machine: the local computer.  In this
+# example, we give this machine the name `this`.
+machine this {
   # The `via` directive tells act how to reach this machine.
   # `via local` tells act the machine is the one on which act is running.
   via local
 
-  # As well as Herd, `act` has some support for the Litmus7 tool.
-  # Since Litmus7 runs litmus tests on a specific machine, we configure
-  # it at the machine level.
-  litmus {
-    cmd "litmus7"
+  # A `sim` block configures a simulator on a machine.  Simulators take
+  # litmus tests, simulate (or execute, etc.) them, and return information
+  # about the potential final states of the test.
+  sim herd {
+    # 'cmd' tells us where Herd is.
+    cmd "herd7"
+
+    # Each simulator block requires a `style ID` directive; this tells ACT
+    # how it should execute the simulator, and how to interpret the simulator's
+    # results.
+    style herd
+
+    # The next few directives only make sense when `style` is `herd`, but they
+    # are allowed (and silently ignored) in other cases.
+
+    # `c_model` overrides Herd's choice of cat model when reading in C
+    # litmus tests.
+    # You can omit this if you intend to use the normal model.
+    c_model "c11_lahav.cat"
+
+    # Each 'asm_model' overrides Herd's choice of model when reading in
+    # litmus tests for a particular architecture (given by a dotted identifier).
+    # Again, you can omit these if you intend to use the normal models.
+    asm_model x86.att   "x86_example.cat"
+    asm_model x86.intel "x86_example.cat"
+  }
+
+  # This block specifies a compiler we'll call `gcc.x86`.  Compiler
+  # IDs are dot-separated lists; each item in the list corresponds to a level
+  # in the directory hierarchy act builds in `test` mode.
+  #
+  # Whenever you want to refer to a compiler by identifier on an act
+  # command line, you need to join the list elements with one of the
+  # following characters: '.', ' ', '/', or '\'.  For example, you
+  # could refer to this compiler as 'gcc/x86'.
+  compiler gcc.x86 {
+    # As with machines, 'enabled BOOL' enables or disables a
+    # compiler.  If a compiler is enabled, but its machine isn't,
+    # the compiler won't run.
+    enabled on  # optional, defaults to `on`
+
+    # `style` tells us what sort of interface the compiler exposes.
+    #
+    # Currently, we only support `gcc` here; later, we might have
+    # support for MSVC, etc.
+    #
+    # act runs some lightweight checks to make sure that the
+    # compiler actually obeys the style choice.
+    style gcc
+
+    # `arch` tells act which language the compiler is emitting.
+    # Each language may have a sub-dialect, in which case 'arch' is
+    # a dotted identifier.
+    # Currently, we only support `x86.att' (AT&T syntax x86).
+    arch x86.att
+
+    # 'cmd' gives the command name for the compiler.  This should
+    # point to somewhere in the user's PATH, or be an absolute path.
+    cmd "gcc"
+
+    # 'argv' gives the list of arguments to the compiler.
+    # Internally, act adds its own arguments, so don't assume that these are the
+    # only ones.
+    argv "-m32" "-DNO_PTHREADS"
   }
 }
 
@@ -75,55 +120,16 @@ machine example {
   #   across.  This may get optimised in future versions, but, until
   #   then, be warned that the process may be slow and
   #   traffic-intensive.
-}
 
-# Now, we define the compilers themselves.
-#
-# This block specifies a compiler we'll call `gcc.x86`.  Compiler
-# IDs are dot-separated lists; each item in the list corresponds to a level
-# in the directory hierarchy act builds in `test` mode.
-#
-# Whenever you want to refer to a compiler by identifier on an act
-# command line, you need to join the list elements with one of the
-# following characters: '.', ' ', '/', or '\'.  For example, you
-# could refer to this compiler as 'gcc/x86'.
-compiler gcc.x86 {
-  # As with machines, 'enabled BOOL' enables or disables a
-  # compiler.  If a compiler is enabled, but its machine isn't,
-  # the compiler won't run.
-  enabled on  # optional, defaults to `on`
-
-  # `style` tells us what sort of interface the compiler exposes.
-  #
-  # Currently, we only support `gcc` here; later, we might have
-  # support for MSVC, etc.
-  #
-  # act runs some lightweight checks to make sure that the
-  # compiler actually obeys the style choice.
-  style gcc
-
-  # `emits` tells act which language the compiler is emitting.
-  # Each language may have a sub-dialect, in which case 'emits' is
-  # a dotted identifier.
-  # Currently, we only support `(x86 att)' (AT&T syntax x86).
-  emits x86.att
-
-  # 'cmd' gives the command name for the compiler.  This should
-  # point to somewhere in the user's PATH, or be an absolute path.
-  cmd "gcc"
-
-  # 'argv' gives the list of arguments to the compiler.
-  # Internally, act adds its own arguments, so don't assume that these are the
-  # only ones.
-  argv "-m32" "-DNO_PTHREADS"
-
-  # To tell act not to run herd automatically on test runs,
-  # change this to `herd off`.
-  #
-  # Note that herd always runs locally, even on remote targets.
-  herd on  # optional, defaults to 'on'
-
-  # By default, act assumes the compiler exists on the default machine.
-  # To override this, add `machine ID`.
-  machine default  # optional, defaults to `default`
+  # You can give two compilers in two different machines the same name.
+  # To disambiguate, for example when specifying a compiler on the command line,
+  # prefix the ID by the machine ID (for example, `this.gcc.x86` vs
+  # `example.gcc.x86`.
+  compiler gcc.x86 {
+    enabled on
+    style gcc
+    arch x86.att
+    cmd "gcc"
+    argv "-m32" "-DNO_PTHREADS"
+  }
 }
