@@ -5,10 +5,17 @@
 ```
 ()
 ```
+## defaults.conf
+
+```
+((Default
+  ((Try Arch (x86 att)) (Try Machine (localhost))
+   (Try Compiler (localhost gcc x86 normal)) (Try Sim (herd)))))
+```
 ## empty.conf
 
 ```
 ()
 ```
 
-Ran 2 test(s).
+Ran 3 test(s).
