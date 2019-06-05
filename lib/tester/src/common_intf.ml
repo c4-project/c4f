@@ -50,11 +50,11 @@ module type Basic_machine_and_up = sig
 
   (** Module used to resolve compiler specs to compiler modules. *)
   module Resolve_compiler :
-    Act_compiler.Resolver.S
-    with type spec = Act_compiler.Machine_spec.Qualified_compiler.t
+    Act_machine.Resolver.S
+    with type spec = Act_machine.Spec.Qualified_compiler.t
 
   val asm_runner_from_spec :
-       Act_compiler.Machine_spec.Qualified_compiler.t
+       Act_machine.Spec.Qualified_compiler.t
     -> (module Act_asm.Runner_intf.Basic) Or_error.t
   (** [asm_runner_from_spec cspec] tries to get an [Asm_job.Runner]
       corresponding to [cspec]'s target architecture. *)

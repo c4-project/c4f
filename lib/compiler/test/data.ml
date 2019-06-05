@@ -15,12 +15,10 @@ module Ac = Act_common
 
 module Spec_sets = struct
   let gcc_spec : Spec.t Lazy.t =
-    lazy (
-      Spec.make ~cmd:"gcc" ~style:(Ac.Id.of_string "gcc")
-        ~emits:(Ac.Id.of_string "x86.att")
-        ~enabled:true
-        ()
-    )
+    lazy
+      (Spec.make ~cmd:"gcc" ~style:(Ac.Id.of_string "gcc")
+         ~emits:(Ac.Id.of_string "x86.att")
+         ~enabled:true ())
 
   let single_gcc_compiler : Spec.Set.t Lazy.t =
     Lazy.Let_syntax.(
@@ -29,6 +27,5 @@ module Spec_sets = struct
         (Spec.Set.of_list
            [ Spec.With_id.make
                ~id:(Ac.Id.of_string "gcc.x86.normal")
-               ~spec:gcc_spec ])
-    )
+               ~spec:gcc_spec ]))
 end

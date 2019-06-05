@@ -13,18 +13,19 @@ open Base
 module Ac = Act_common
 module Au = Act_utils
 module Tx = Travesty_core_kernel_exts
-module C = Act_compiler.Spec
+module C_spec = Act_compiler.Spec
+module M_spec = Act_machine.Spec
 
 type t =
   { cpp: Cpp.t option [@sexp.option]
   ; defaults: Ast.Default.t list [@sexp.list]
   ; fuzz: Fuzz.t option [@sexp.option]
-  ; machines: Act_compiler.Machine_spec.Set.t }
+  ; machines: M_spec.Set.t }
 [@@deriving make, fields]
 
 module Load : Au.Loadable_intf.S with type t = t = struct
   module File = struct
-    let ssh (items : Ast.Ssh.t list) : Act_compiler.Ssh.t Or_error.t =
+    let ssh (items : Ast.Ssh.t list) : Act_machine.Ssh.t Or_error.t =
       Or_error.Let_syntax.(
         let%map user =
           Au.My_list.find_one items ~item_name:"user" ~f:(function
@@ -45,13 +46,13 @@ module Load : Au.Loadable_intf.S with type t = t = struct
             | _ ->
                 None )
         in
-        Act_compiler.Ssh.make ~user ~host ~copy_dir ())
+        Act_machine.Ssh.make ~user ~host ~copy_dir ())
 
     let via = function
       | Ast.Via.Local ->
-          Or_error.return Act_compiler.Via.Local
+          Or_error.return Act_machine.Via.Local
       | Ssh items ->
-          Or_error.(ssh items >>| Act_compiler.Via.ssh)
+          Or_error.(ssh items >>| Act_machine.Via.ssh)
 
     let simulator (items : Ast.Sim.t list) : Act_sim.Spec.t Or_error.t =
       Or_error.Let_syntax.(
@@ -83,7 +84,7 @@ module Load : Au.Loadable_intf.S with type t = t = struct
         in
         Act_sim.Spec.make ?cmd ?c_model ~asm_models ~style ())
 
-    let compiler (items : Ast.Compiler.t list) : C.t Or_error.t =
+    let compiler (items : Ast.Compiler.t list) : C_spec.t Or_error.t =
       Or_error.Let_syntax.(
         let%map enabled =
           Au.My_list.find_at_most_one items ~item_name:"enabled"
@@ -153,8 +154,7 @@ module Load : Au.Loadable_intf.S with type t = t = struct
         Ast.Machine.t list -> Act_compiler.Spec.t Ac.Spec.Set.t Or_error.t =
       try_get_named_specs ~f:try_get_named_compiler
 
-    let machine (items : Ast.Machine.t list) :
-        Act_compiler.Machine_spec.t Or_error.t =
+    let machine (items : Ast.Machine.t list) : M_spec.t Or_error.t =
       Or_error.Let_syntax.(
         let%bind enabled =
           Au.My_list.find_at_most_one items ~item_name:"enabled"
@@ -170,7 +170,7 @@ module Load : Au.Loadable_intf.S with type t = t = struct
                 None )
         in
         let%map via = via via_raw in
-        Act_compiler.Machine_spec.make ~sims ~compilers ~enabled ~via ())
+        M_spec.make ~sims ~compilers ~enabled ~via ())
 
     let cpp (items : Ast.Cpp.t list) =
       Or_error.Let_syntax.(
@@ -210,8 +210,8 @@ module Load : Au.Loadable_intf.S with type t = t = struct
         |> List.filter_map ~f:Ast.Top.as_machine
         |> Tx.List.With_errors.map_m ~f:(fun (id, spec_ast) ->
                let%map spec = machine spec_ast in
-               Act_compiler.Machine_spec.With_id.make ~id ~spec )
-        >>= Act_compiler.Machine_spec.Set.of_list)
+               M_spec.With_id.make ~id ~spec )
+        >>= M_spec.Set.of_list)
 
     let build_fuzz (items : Ast.t) : Fuzz.t option Or_error.t =
       Or_error.Let_syntax.(

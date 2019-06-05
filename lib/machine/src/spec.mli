@@ -13,12 +13,12 @@
 
 open Base
 
-include Machine_types.S_spec with type via := Via.t
+include Spec_types.S with type via := Via.t
 
 val make :
      ?enabled:bool
   -> ?via:Via.t
-  -> ?compilers:Spec.Set.t
+  -> ?compilers:Act_compiler.Spec.Set.t
   -> ?sims:Act_sim.Spec.Set.t
   -> unit
   -> t
@@ -33,7 +33,7 @@ val make :
 module With_id : sig
   include Act_common.Spec_types.S_with_id with type elt := t
 
-  include Machine_types.S_spec with type t := t and type via := Via.t
+  include Spec_types.S with type t := t and type via := Via.t
 end
 
 (** Machine specifications are specifications. *)
@@ -43,12 +43,16 @@ include Act_common.Spec.S with type t := t and module With_id := With_id
     specification. (Technically, there is only one, but phrasing it as a
     traversable helps us compose it to form {{!On_compilers} On_compilers}.) *)
 module On_compiler_set :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = Spec.Set.t
+  Travesty.Traversable.S0
+  with type t = t
+   and type Elt.t = Act_compiler.Spec.Set.t
 
 (** We can monadically traverse the compiler specifications in a machine
     specification. *)
 module On_compilers :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = Spec.t
+  Travesty.Traversable.S0
+  with type t = t
+   and type Elt.t = Act_compiler.Spec.t
 
 (** Bundles of compiler and machine specification. *)
 module Qualified_compiler : sig
@@ -56,11 +60,11 @@ module Qualified_compiler : sig
 
   (** {3 Constructors} *)
 
-  val make : c_spec:Spec.With_id.t -> m_spec:With_id.t -> t
+  val make : c_spec:Act_compiler.Spec.With_id.t -> m_spec:With_id.t -> t
 
   (** {3 Accessors} *)
 
-  val c_spec : t -> Spec.With_id.t
+  val c_spec : t -> Act_compiler.Spec.With_id.t
   (** [c_spec spec] strips the machine spec from [spec], turning it into an
       {{!With_id.t} ordinary With_id.t}. *)
 
@@ -68,7 +72,7 @@ module Qualified_compiler : sig
   (** [m_spec spec] accesses the bundled machine specification inside
       [spec]. *)
 
-  include Spec_types.S with type t := t
+  include Act_compiler.Spec_types.S with type t := t
 end
 
 module Qualified_sim : sig

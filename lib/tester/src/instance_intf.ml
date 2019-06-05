@@ -26,7 +26,7 @@ open Base
 module type Basic = sig
   include Common_intf.Basic_machine_and_up
 
-  val machines : Act_compiler.Machine_spec.Set.t
+  val machines : Act_machine.Spec.Set.t
   (** [machines] is the set of machine specifications available for use in
       tester runs. Each specification contains information about the
       compilers available to it. *)

@@ -15,19 +15,20 @@
 
 (** Version of {{!Resolver_types.Basic} Resolver_types.Basic} with the
     specification type fixed. *)
-module type Basic = Resolver_types.Basic with type spec := Spec.With_id.t
+module type Basic =
+  Resolver_types.Basic with type spec := Act_compiler.Spec.With_id.t
 
 (** Version of {{!Resolver_types.S} Resolver_types.S} with the chain input
     fixed. *)
 module type S =
-  Resolver_types.S with type 'a chain_input := 'a Instance.Chain_input.t
+  Resolver_types.S
+  with type 'a chain_input := 'a Act_compiler.Instance.Chain_input.t
 
 (** {2 Resolving spec IDs to compilers} *)
 
 (** Constructs a {{!S_resolver} S_resolver} from a
     {{!Basic_resolver} Basic_resolver} over direct compiler specs. *)
-module Make (B : Basic) :
-  S with type spec = Machine_spec.Qualified_compiler.t
+module Make (B : Basic) : S with type spec = Spec.Qualified_compiler.t
 
 (** Constructs a {{!S_resolver} S_resolver} over targets from a
     {{!Basic_resolver} Basic_resolver}. *)

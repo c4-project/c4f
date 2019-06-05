@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Act_common
-module M_spec = Act_compiler.Machine_spec
+module M_spec = Act_machine.Spec
 
 let run_sim ?(arch = Act_sim.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
     (_o : Output.t) (cfg : Act_config.Act.t) : unit Or_error.t =

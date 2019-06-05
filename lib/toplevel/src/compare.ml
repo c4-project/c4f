@@ -25,8 +25,8 @@ open Core
 open Act_common
 
 (* Module shorthand *)
-module Cc_spec = Act_compiler.Spec
-module Cq_spec = Act_compiler.Machine_spec.Qualified_compiler
+module C_spec = Act_compiler.Spec
+module Cq_spec = Act_machine.Spec.Qualified_compiler
 
 let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
   let target = `Spec spec in
@@ -48,7 +48,7 @@ let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
 
 let run_spec_on_file o passes (spec : Cq_spec.t) ~c_file =
   Format.printf "@[<v>@,@[<h>##@ %a@]@,@,```@]@." Id.pp
-    (Cc_spec.With_id.id (Cq_spec.c_spec spec)) ;
+    (C_spec.With_id.id (Cq_spec.c_spec spec)) ;
   let open Or_error.Let_syntax in
   let%map _ = litmusify o passes spec c_file in
   Format.printf "@[<h>```@]@."

@@ -11,17 +11,18 @@
 
 open Base
 module Ac = Act_common
-module Q_spec = Machine_spec.Qualified_compiler
+module C_spec = Act_compiler.Spec
+module Cq_spec = Spec.Qualified_compiler
 
-type t = [`Spec of Q_spec.t | `Arch of Ac.Id.t]
+type t = [`Spec of Cq_spec.t | `Arch of Ac.Id.t]
 
 let arch : t -> Ac.Id.t = function
   | `Spec spec ->
-      Spec.With_id.emits (Q_spec.c_spec spec)
+      C_spec.With_id.emits (Cq_spec.c_spec spec)
   | `Arch arch ->
       arch
 
-let ensure_spec : t -> Q_spec.t Or_error.t = function
+let ensure_spec : t -> Cq_spec.t Or_error.t = function
   | `Spec spec ->
       Or_error.return spec
   | `Arch _ ->
