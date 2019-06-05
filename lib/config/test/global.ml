@@ -64,7 +64,6 @@ let%test_module "accessors" =
       [%expect {| (((weights ()))) |}]
 
     let%expect_test "machines" =
-      Fmt.pr "@[%a@]@." Am.Spec.Set.pp
-        (Global.machines global) ;
+      Fmt.pr "@[%a@]@." Am.Spec.Set.pp (Global.machines global) ;
       [%expect {| localhost: local |}]
   end )

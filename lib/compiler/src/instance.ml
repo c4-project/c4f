@@ -1,69 +1,21 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
-
-open Core_kernel
+open Base
 module Ac = Act_common
 module Au = Act_utils
 module Pb = Plumbing
-open Instance_types
 
-module Property = struct
-  type t = Id of Ac.Id.Property.t [@@deriving sexp, variants]
-
-  let tree_docs : Ac.Property.Tree_doc.t =
-    [ ( "id"
-      , {args= ["PROPERTY"]; details= {| See 'identifier predicates'. |}} )
-    ]
-
-  let pp_tree : unit Fmt.t =
-    Ac.Property.Tree_doc.pp tree_docs
-      (List.map ~f:fst Variants.descriptions)
-
-  let%expect_test "all properties have documentation" =
-    let num_passes =
-      Variants.descriptions |> List.map ~f:fst
-      |> List.map ~f:(List.Assoc.mem tree_docs ~equal:String.Caseless.equal)
-      |> List.count ~f:not
-    in
-    Fmt.pr "@[<v>%d@]@." num_passes ;
-    [%expect {| 0 |}]
-
-  let eval (cspec : Spec.With_id.t) = function
-    | Id prop ->
-        Ac.Id.Property.eval (Spec.With_id.id cspec) prop
-
-  let eval_b cspec expr = Blang.eval expr (eval cspec)
-end
-
-module type Basic_with_run_info = sig
-  include Basic
-
-  val cspec : Spec.With_id.t
-
-  module Runner : Pb.Runner_types.S
-end
-
-module Make (B : Basic_with_run_info) : S = struct
+module Make (B : Instance_types.Basic_with_run_info) : Instance_types.S =
+struct
   include B
 
   let cmd = Spec.With_id.cmd B.cspec
@@ -83,7 +35,7 @@ module Make (B : Basic_with_run_info) : S = struct
   let test () = B.Runner.run ~prog:cmd B.test_args
 end
 
-module S_to_filter (S : S) :
+module S_to_filter (S : Instance_types.S) :
   Pb.Filter_types.S with type aux_i = unit and type aux_o = unit =
 Pb.Filter.Make_files_only (struct
   type aux_i = unit
@@ -97,7 +49,7 @@ Pb.Filter.Make_files_only (struct
   let run _ = S.compile
 end)
 
-module Make_filter (B : Basic_with_run_info) :
+module Make_filter (B : Instance_types.Basic_with_run_info) :
   Pb.Filter_types.S with type aux_i = unit and type aux_o = unit =
   S_to_filter (Make (B))
 
@@ -144,7 +96,7 @@ end)
 
 module Fail (E : sig
   val error : Error.t
-end) : S = struct
+end) : Instance_types.S = struct
   let test () = Result.ok_unit
 
   let compile ~infile ~outfile =

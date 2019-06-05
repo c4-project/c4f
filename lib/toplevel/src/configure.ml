@@ -54,7 +54,7 @@ let list_compilers_command : Command.t =
 
 let predicate_lists : (string, (module Property.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"
-    , (module Act_compiler.Instance.Property) )
+    , (module Act_compiler.Property) )
   ; ("Machine predicates (-filter-machines)", (module Act_machine.Property))
   ; ("Identifier predicates", (module Id.Property))
   ; ( "Sanitiser passes (-sanitiser-passes)"

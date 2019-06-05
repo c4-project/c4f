@@ -98,9 +98,7 @@ let test_compiler (spec : Cq_spec.t) : Cq_spec.t option Or_error.t =
 
 let filter_compiler predicate (spec : Cq_spec.t) : Cq_spec.t option =
   let cspec = Cq_spec.c_spec spec in
-  Option.some_if
-    (Act_compiler.Instance.Property.eval_b cspec predicate)
-    spec
+  Option.some_if (Act_compiler.Property.eval_b cspec predicate) spec
 
 let compiler_hook with_compiler_tests predicate (spec : Cq_spec.t) :
     Cq_spec.t option Or_error.t =
