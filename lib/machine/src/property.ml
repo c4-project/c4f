@@ -22,24 +22,24 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
+module Ac = Act_common
 module Au = Act_utils
 module Pb = Plumbing
-open Act_common
 
-type t = Id of Id.Property.t | Is_remote | Is_local
+type t = Id of Ac.Id.Property.t | Is_remote | Is_local
 [@@deriving sexp, variants]
 
-let eval (spec : Machine_spec.With_id.t) = function
+let eval (spec : Spec.With_id.t) = function
   | Id prop ->
-      Id.Property.eval (Machine_spec.With_id.id spec) prop
+      Ac.Id.Property.eval (Spec.With_id.id spec) prop
   | Is_remote ->
-      Machine_spec.With_id.remoteness spec = `Remote
+      Spec.With_id.remoteness spec = `Remote
   | Is_local ->
-      Machine_spec.With_id.remoteness spec = `Local
+      Spec.With_id.remoteness spec = `Local
 
 let eval_b spec expr = Blang.eval expr (eval spec)
 
-let tree_docs : Property.Tree_doc.t =
+let tree_docs : Ac.Property.Tree_doc.t =
   [ ("id", {args= ["PROPERTY"]; details= {| See 'identifier predicates'. |}})
   ; ( "is_remote"
     , { args= []
@@ -49,7 +49,7 @@ let tree_docs : Property.Tree_doc.t =
     ) ]
 
 let pp_tree : unit Fmt.t =
-  Property.Tree_doc.pp tree_docs (List.map ~f:fst Variants.descriptions)
+  Ac.Property.Tree_doc.pp tree_docs (List.map ~f:fst Variants.descriptions)
 
 let%expect_test "all properties have documentation" =
   let num_passes =

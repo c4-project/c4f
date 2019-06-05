@@ -20,7 +20,8 @@ module type Basic = sig
   (** Type of specifications consumed by this resolver. *)
   type spec
 
-  val resolve : spec -> (module Instance_types.Basic) Or_error.t
+  val resolve :
+    spec -> (module Act_compiler.Instance_types.Basic) Or_error.t
 end
 
 (** Signature of fully-instantiated resolvers. *)
@@ -31,7 +32,7 @@ module type S = sig
   (** Type of chained-filter input. *)
   type 'a chain_input
 
-  val from_spec : spec -> (module Instance_types.S) Or_error.t
+  val from_spec : spec -> (module Act_compiler.Instance_types.S) Or_error.t
   (** [from_spec spec] attempts to produce a first-class compiler module
       corresponding to [spec]. *)
 

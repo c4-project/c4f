@@ -6,7 +6,8 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
  (libraries fmt fpath menhirLib travesty travesty.core_kernel_exts sedlex
-   core_kernel act_common act_compiler act_litmus act_utils act_sanitiser)
+   core_kernel act_common act_compiler act_litmus act_utils act_sanitiser
+   act_machine)
  (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )
 

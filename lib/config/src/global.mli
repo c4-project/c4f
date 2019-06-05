@@ -23,7 +23,7 @@ val make :
      ?cpp:Cpp.t
   -> ?defaults:Ast.Default.t list
   -> ?fuzz:Fuzz.t
-  -> machines:Act_compiler.Machine_spec.Set.t
+  -> machines:Act_machine.Spec.Set.t
   -> unit
   -> t
 (** [make ?cpp ?defaults ?fuzz ~machines ()] constructs a global

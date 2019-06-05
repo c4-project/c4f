@@ -25,12 +25,11 @@
     [Blang]. *)
 
 open Core_kernel
-open Act_common
 
 (** [t] is the opaque type of property queries. *)
 type t [@@deriving sexp]
 
-val id : Id.Property.t -> t
+val id : Act_common.Id.Property.t -> t
 (** [id] constructs a query over a machine's ID. *)
 
 val is_remote : t
@@ -41,12 +40,12 @@ val is_local : t
 (** [is_local] constructs a query that asks if a machine is known to be
     local. *)
 
-val eval : Machine_spec.With_id.t -> t -> bool
+val eval : Spec.With_id.t -> t -> bool
 (** [eval R reference property] evaluates [property] over [reference], with
     respect to module [R]. *)
 
-val eval_b : Machine_spec.With_id.t -> t Blang.t -> bool
+val eval_b : Spec.With_id.t -> t Blang.t -> bool
 (** [eval_b R reference expr] evaluates a [Blang] expression [expr] over
     [reference], with respect to module [R]. *)
 
-include Property.S with type t := t
+include Act_common.Property.S with type t := t

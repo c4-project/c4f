@@ -16,13 +16,12 @@ open Base
 
 (** [t] is either a machine-qualified compiler specification, or a raw
     architecture. *)
-type t =
-  [`Spec of Machine_spec.Qualified_compiler.t | `Arch of Act_common.Id.t]
+type t = [`Spec of Spec.Qualified_compiler.t | `Arch of Act_common.Id.t]
 
 val arch : t -> Act_common.Id.t
 (** [arch_of_target target] gets the architecture ID associated with
     [target]. *)
 
-val ensure_spec : t -> Machine_spec.Qualified_compiler.t Or_error.t
+val ensure_spec : t -> Spec.Qualified_compiler.t Or_error.t
 (** [ensure_spec target] extracts a compiler spec from [target], failing if
     it is a raw architecture. *)

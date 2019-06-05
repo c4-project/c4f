@@ -25,7 +25,7 @@ open Core_kernel
 module Tx = Travesty_core_kernel_exts
 module Ac = Act_common
 module Pb = Plumbing
-module Cc_target = Act_compiler.Target
+module Cc_target = Act_machine.Target
 
 let not_tracking_symbols_warning : string =
   {|

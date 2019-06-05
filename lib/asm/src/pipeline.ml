@@ -90,7 +90,7 @@ module Make (J : Basic) : S with type cfg = J.cfg = struct
 end
 
 let make (type c spec)
-    (module Resolver : Act_compiler.Resolver.S with type spec = spec)
+    (module Resolver : Act_machine.Resolver.S with type spec = spec)
     (module Runner : Runner_intf.S with type cfg = c) (target : spec) :
     (module S with type cfg = c) Or_error.t =
   Or_error.Let_syntax.(

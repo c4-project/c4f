@@ -22,8 +22,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-module Tx = Travesty_core_kernel_exts
 open Instance_intf
+module Tx = Travesty_core_kernel_exts
+module M_spec = Act_machine.Spec
 module Machine_assoc =
   Travesty.Bi_mappable.Fix2_left (Tx.Alist) (Act_common.Id)
 
@@ -31,23 +32,20 @@ module Machine_assoc =
 module Job = struct
   type t =
     { config: Run_config.t
-    ; specs: Act_compiler.Machine_spec.Set.t
+    ; specs: M_spec.Set.t
     ; c_simulations: Act_sim.Bulk.File_map.t
-    ; make_machine:
-        Act_compiler.Machine_spec.With_id.t -> (module Machine.S) Or_error.t
-    }
+    ; make_machine: M_spec.With_id.t -> (module Machine.S) Or_error.t }
   [@@deriving fields, make]
 
-  let run_machine (job : t)
-      (mach_spec : Act_compiler.Machine_spec.With_id.t) =
+  let run_machine (job : t) (mach_spec : M_spec.With_id.t) =
     Or_error.Let_syntax.(
       let%bind (module TM) = make_machine job mach_spec in
       let%map analysis = TM.run (config job) (c_simulations job) in
-      (Act_compiler.Machine_spec.With_id.id mach_spec, analysis))
+      (M_spec.With_id.id mach_spec, analysis))
 
   let run (job : t) : Analysis.Machine.t Machine_assoc.t Or_error.t =
     job |> specs
-    |> Act_compiler.Machine_spec.Set.map ~f:(run_machine job)
+    |> M_spec.Set.map ~f:(run_machine job)
     |> Or_error.combine_errors
 end
 
@@ -59,10 +57,10 @@ module Make (B : Basic) : S = struct
       Analysis.t =
     Analysis.make ~machines:(T.value raw) ?time_taken:(T.time_taken raw) ()
 
-  let make_machine (spec : Act_compiler.Machine_spec.With_id.t) :
-      (module Machine.S) Or_error.t =
+  let make_machine (spec : M_spec.With_id.t) : (module Machine.S) Or_error.t
+      =
     Or_error.Let_syntax.(
-      let id = Act_compiler.Machine_spec.With_id.id spec in
+      let id = M_spec.With_id.id spec in
       let%map asm_simulators = B.Asm_simulator_resolver.make_table id in
       ( module Machine.Make (struct
         include B

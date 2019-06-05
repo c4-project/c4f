@@ -14,7 +14,7 @@ module Ac = Act_common
 module Au = Act_utils
 module Tx = Travesty_core_kernel_exts
 module C_spec = Act_compiler.Spec
-module M_spec = Act_compiler.Machine_spec
+module M_spec = Act_machine.Spec
 module Cq_spec = M_spec.Qualified_compiler
 module Sq_spec = M_spec.Qualified_sim
 
@@ -50,8 +50,7 @@ end
 type t =
   { disabled_compilers: (Ac.Id.t, Error.t option) List.Assoc.t [@default []]
   ; disabled_machines: (Ac.Id.t, Error.t option) List.Assoc.t [@default []]
-  ; machines: Act_compiler.Machine_spec.Set.t
-        [@default Act_common.Spec.Set.empty]
+  ; machines: M_spec.Set.t [@default Act_common.Spec.Set.empty]
   ; global: Global.t
   ; sanitiser_passes:
          default:Set.M(Act_sanitiser.Pass_group).t
@@ -69,7 +68,7 @@ module Filterer = struct
             [@default []]
       ; disabled_machines: (Ac.Id.t, Error.t option) List.Assoc.t
             [@default []]
-      ; m_hook: Act_compiler.Machine_spec.With_id.t hook
+      ; m_hook: M_spec.With_id.t hook
       ; c_hook: Cq_spec.t hook }
     [@@deriving fields, make]
 
@@ -106,8 +105,7 @@ module Filterer = struct
 
     let get_compiler_hook : Cq_spec.t hook t = peek Ctx.c_hook
 
-    let get_machine_hook : Act_compiler.Machine_spec.With_id.t hook t =
-      peek Ctx.m_hook
+    let get_machine_hook : M_spec.With_id.t hook t = peek Ctx.m_hook
   end
 
   module CP = Part_helpers (struct
@@ -118,9 +116,9 @@ module Filterer = struct
     let id x = C_spec.With_id.id (Cq_spec.c_spec x)
   end)
 
-  module MP = Part_helpers (Act_compiler.Machine_spec.With_id)
+  module MP = Part_helpers (M_spec.With_id)
   module M_list = Tx.List.On_monad (M)
-  module M_comp = Act_compiler.Machine_spec.On_compiler_set.On_monad (M)
+  module M_comp = M_spec.On_compiler_set.On_monad (M)
 
   let part_compilers hook (m_spec : M_spec.With_id.t)
       (c_spec : C_spec.With_id.t) =
@@ -141,33 +139,31 @@ module Filterer = struct
         M.Monadic.return
           (C_spec.Set.of_list (List.map ~f:Cq_spec.c_spec enabled))))
 
-  let filter_compilers_in_machine_spec (spec : Act_compiler.Machine_spec.t)
-      ~(machine_id : Ac.Id.t) : Act_compiler.Machine_spec.t M.t =
+  let filter_compilers_in_machine_spec (spec : M_spec.t)
+      ~(machine_id : Ac.Id.t) : M_spec.t M.t =
     (* TODO(@MattWindsor91): there's WAY too much with-id combining and
        separating here... *)
     let m_spec = M_spec.With_id.make ~spec ~id:machine_id in
     M_comp.map_m spec ~f:(filter_compilers ~m_spec)
 
-  let filter_compilers_in_machine (m : Act_compiler.Machine_spec.With_id.t)
-      : Act_compiler.Machine_spec.With_id.t M.t =
-    let id = Act_compiler.Machine_spec.With_id.id m in
-    let spec = Act_compiler.Machine_spec.With_id.spec m in
+  let filter_compilers_in_machine (m : M_spec.With_id.t) :
+      M_spec.With_id.t M.t =
+    let id = M_spec.With_id.id m in
+    let spec = M_spec.With_id.spec m in
     M.Let_syntax.(
       let%map spec' =
         filter_compilers_in_machine_spec spec ~machine_id:id
       in
-      Act_compiler.Machine_spec.With_id.make ~id ~spec:spec')
+      M_spec.With_id.make ~id ~spec:spec')
 
   let filter_compilers_in_machines :
-         Act_compiler.Machine_spec.With_id.t list
-      -> Act_compiler.Machine_spec.With_id.t list M.t =
+      M_spec.With_id.t list -> M_spec.With_id.t list M.t =
     M_list.map_m ~f:filter_compilers_in_machine
 
-  let filter_machines (ms : Act_compiler.Machine_spec.Set.t) :
-      Act_compiler.Machine_spec.Set.t M.t =
+  let filter_machines (ms : M_spec.Set.t) : M_spec.Set.t M.t =
     M.Let_syntax.(
       let%bind hook = M.get_machine_hook in
-      Act_compiler.Machine_spec.Set.(
+      M_spec.Set.(
         let enabled, disabled =
           partition_map
             ~f:(part_chain_fst MP.part_enabled (MP.part_hook hook))
@@ -178,9 +174,8 @@ module Filterer = struct
         let%bind enabled' = filter_compilers_in_machines enabled in
         M.Monadic.return (of_list enabled')))
 
-  let filter (m_hook : Act_compiler.Machine_spec.With_id.t hook)
-      (c_hook : Cq_spec.t hook) (raw_ms : Act_compiler.Machine_spec.Set.t) :
-      (Ctx.t * Act_compiler.Machine_spec.Set.t) Or_error.t =
+  let filter (m_hook : M_spec.With_id.t hook) (c_hook : Cq_spec.t hook)
+      (raw_ms : M_spec.Set.t) : (Ctx.t * M_spec.Set.t) Or_error.t =
     M.run' (filter_machines raw_ms) (Ctx.make ~m_hook ~c_hook ())
 end
 
@@ -211,7 +206,7 @@ let defaults = H.forward Global.defaults
 
 let machine_of_fqid (cfg : t) ~(fqid : Ac.Id.t) :
     M_spec.With_id.t Or_error.t =
-  cfg |> machines |> Act_compiler.Machine_spec.Set.get_using_fqid ~fqid
+  cfg |> machines |> M_spec.Set.get_using_fqid ~fqid
 
 let compiler (cfg : t) ~(fqid : Ac.Id.t) : Cq_spec.t Or_error.t =
   Or_error.Let_syntax.(

@@ -32,13 +32,13 @@ val warn_if_not_tracking_symbols : Output.t -> C_id.t list option -> unit
     to track, act may make incorrect assumptions. *)
 
 val asm_runner_of_target :
-  Act_compiler.Target.t -> (module Act_asm.Runner_intf.Basic) Or_error.t
+  Act_machine.Target.t -> (module Act_asm.Runner_intf.Basic) Or_error.t
 (** [asm_runner_of_target target] gets the runner dependency module
     associated with a target (either a compiler spec or emits clause). *)
 
 val lift_command :
      ?compiler_predicate:Act_compiler.Instance.Property.t Blang.t
-  -> ?machine_predicate:Act_compiler.Machine_property.t Blang.t
+  -> ?machine_predicate:Act_machine.Property.t Blang.t
   -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> f:(Args.Standard.t -> Output.t -> Act_config.Act.t -> unit Or_error.t)
@@ -51,7 +51,7 @@ val lift_command :
 
 val lift_command_with_files :
      ?compiler_predicate:Act_compiler.Instance.Property.t Blang.t
-  -> ?machine_predicate:Act_compiler.Machine_property.t Blang.t
+  -> ?machine_predicate:Act_machine.Property.t Blang.t
   -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
   -> f:(   Args.Standard_with_files.t
@@ -84,13 +84,13 @@ val lift_asm_command_basic :
     built upon. *)
 
 val delitmus_compile_asm_pipeline :
-     Act_compiler.Target.t
+     Act_machine.Target.t
   -> (   (module Act_asm.Runner_intf.Basic)
       -> (module Act_asm.Runner_intf.S with type cfg = 'c))
   -> (module Act_asm.Pipeline.S with type cfg = 'c) Or_error.t
 
 val litmusify_pipeline :
-     Act_compiler.Target.t
+     Act_machine.Target.t
   -> (module Act_asm.Pipeline.S
         with type cfg = Sexp.t Act_asm.Litmusifier.Config.t)
      Or_error.t

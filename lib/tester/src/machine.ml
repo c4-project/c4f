@@ -24,17 +24,16 @@
 open Base
 open Act_common
 include Machine_intf
-
-(* Module aliases *)
 module C_spec = Act_compiler.Spec
-module Q_spec = Act_compiler.Machine_spec.Qualified_compiler
+module Cq_spec = Act_machine.Spec.Qualified_compiler
+module M_spec = Act_machine.Spec
 
 module Make (B : Basic) : S = struct
   include B
   include Common.Extend (B)
 
-  let qualify_compiler (spec : C_spec.With_id.t) : Q_spec.t =
-    Q_spec.make ~c_spec:spec ~m_spec:B.spec
+  let qualify_compiler (spec : C_spec.With_id.t) : Cq_spec.t =
+    Cq_spec.make ~c_spec:spec ~m_spec:B.spec
 
   let make_pathset (cfg : Run_config.t) (spec : C_spec.With_id.t) :
       Pathset.Compiler.t Or_error.t =
@@ -47,9 +46,9 @@ module Make (B : Basic) : S = struct
     Output.pv o "%a@." Pathset.Compiler.pp ps ;
     ps
 
-  let make_compiler (cfg : Run_config.t) (spec : Q_spec.t) :
+  let make_compiler (cfg : Run_config.t) (spec : Cq_spec.t) :
       (module Compiler_intf.S) Or_error.t =
-    let c_spec = Q_spec.c_spec spec in
+    let c_spec = Cq_spec.c_spec spec in
     Or_error.Let_syntax.(
       let%bind (module C) = B.Resolve_compiler.from_spec spec in
       let%bind (module R) = B.asm_runner_from_spec spec in
@@ -80,8 +79,7 @@ module Make (B : Basic) : S = struct
       let%map result = TC.run c_sims in
       (id, result))
 
-  let compilers () : C_spec.Set.t =
-    Act_compiler.Machine_spec.With_id.compilers B.spec
+  let compilers () : C_spec.Set.t = M_spec.With_id.compilers B.spec
 
   let run_compilers (cfg : Run_config.t) (c_sims : Act_sim.Bulk.File_map.t)
       : (Id.t, Analysis.Compiler.t) List.Assoc.t Or_error.t =

@@ -18,6 +18,6 @@ module Spec_sets : sig
   (** [gcc_spec] evaluates to an example GCC compiler spec. *)
 
   val single_gcc_compiler : Spec.Set.t Lazy.t
-  (** [single_gcc_compiler] evaluates to an example compiler specset containing
-      only [gcc_spec]. *)
+  (** [single_gcc_compiler] evaluates to an example compiler specset
+      containing only [gcc_spec]. *)
 end

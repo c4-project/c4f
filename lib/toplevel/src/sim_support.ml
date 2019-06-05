@@ -24,7 +24,7 @@
 open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
-module M_spec = Act_compiler.Machine_spec
+module M_spec = Act_machine.Spec
 
 let sim_procs :
     ( Ac.Id.t
@@ -75,7 +75,7 @@ let make_sim_alist_entry (machine : M_spec.With_id.t)
 
 let make_simulator_table (machine : M_spec.With_id.t) :
     Act_sim.Table.t Or_error.t =
-  machine |> Act_compiler.Machine_spec.With_id.sims
+  machine |> M_spec.With_id.sims
   |> Act_sim.Spec.Set.map ~f:(make_sim_alist_entry machine)
   |> Act_sim.Table.make
 
@@ -97,7 +97,7 @@ end) : Act_sim.Resolver.S = struct
       (module Act_sim.Runner_intf.S) Or_error.t =
     Or_error.Let_syntax.(
       let%map q_spec = Act_config.Act.sim B.cfg ~fqid in
-      let m_spec = Act_compiler.Machine_spec.Qualified_sim.m_spec q_spec in
-      let s_spec = Act_compiler.Machine_spec.Qualified_sim.s_spec q_spec in
+      let m_spec = M_spec.Qualified_sim.m_spec q_spec in
+      let s_spec = M_spec.Qualified_sim.s_spec q_spec in
       make_sim m_spec (Act_sim.Spec.With_id.spec s_spec))
 end

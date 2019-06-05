@@ -23,12 +23,9 @@
 
 open Base
 
-(** [S_spec] is the signature common to any sort of machine specification,
-    including [With_id] pairs.
-
-    In practice, modules implementing this will either be [Spec] or
-    [Spec.With_id]. *)
-module type S_spec = sig
+(** Signature common to any sort of machine specification, including
+    [With_id] pairs. *)
+module type S = sig
   (** [t] describes a machine. *)
   type t
 
@@ -39,7 +36,7 @@ module type S_spec = sig
 
   (** {3 Compilers attached to this spec} *)
 
-  val compilers : t -> Spec.Set.t
+  val compilers : t -> Act_compiler.Spec.Set.t
   (** [compilers spec] gets the compiler specifications attached to [spec]. *)
 
   (** {3 Simulators attached to this spec} *)

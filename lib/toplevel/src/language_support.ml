@@ -26,8 +26,9 @@ open Act_common
 
 (* Module shorthand *)
 module C_spec = Act_compiler.Spec
-module Mw_spec = Act_compiler.Machine_spec.With_id
-module Cq_spec = Act_compiler.Machine_spec.Qualified_compiler
+module M_spec = Act_machine.Spec
+module Mw_spec = M_spec.With_id
+module Cq_spec = Act_machine.Spec.Qualified_compiler
 module C_types = Act_compiler.Instance_types
 
 let lang_procs = [("x86", Act_x86.Asm_job.get_runner)]
@@ -69,7 +70,7 @@ end
 let style_modules : (Id.t, (module C_types.Basic)) List.Assoc.t =
   [(Id.of_string "gcc", (module Gcc))]
 
-module Resolver : Act_compiler.Resolver.Basic = struct
+module Resolver : Act_machine.Resolver.Basic = struct
   let resolve (cspec : C_spec.With_id.t) =
     let style = C_spec.With_id.style cspec in
     List.Assoc.find ~equal:Id.equal style_modules style
@@ -79,9 +80,9 @@ module Resolver : Act_compiler.Resolver.Basic = struct
               [%message "Unknown compiler style" ~style:(style : Id.t)])
 end
 
-module Resolve_compiler = Act_compiler.Resolver.Make (Resolver)
+module Resolve_compiler = Act_machine.Resolver.Make (Resolver)
 module Resolve_compiler_from_target =
-  Act_compiler.Resolver.Make_on_target (Resolver)
+  Act_machine.Resolver.Make_on_target (Resolver)
 
 let test_compiler (spec : Cq_spec.t) : Cq_spec.t option Or_error.t =
   let c_spec = Cq_spec.c_spec spec in
@@ -112,7 +113,7 @@ let compiler_hook with_compiler_tests predicate (spec : Cq_spec.t) :
 
 let machine_hook predicate (mspec : Mw_spec.t) : Mw_spec.t option Or_error.t
     =
-  let eval_b = Act_compiler.Machine_property.eval_b in
+  let eval_b = Act_machine.Property.eval_b in
   Or_error.return
     ((* TODO(@MattWindsor91): actually test the machine here! *)
      Option.some_if (eval_b mspec predicate) mspec)

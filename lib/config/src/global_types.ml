@@ -24,6 +24,6 @@ module type S = sig
   val fuzz : t -> Fuzz.t option
   (** [fuzz c] gets the fuzzer config, if any, to use for configuration [c]. *)
 
-  val machines : t -> Act_compiler.Machine_spec.Set.t
+  val machines : t -> Act_machine.Spec.Set.t
   (** [machines c] gets the set of all active machines in configuration [c]. *)
 end
