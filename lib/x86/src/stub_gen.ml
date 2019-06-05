@@ -28,9 +28,7 @@ module Tx = Travesty_base_exts
 module Make (D : Dialect_intf.S) (Pp : Pp_intf.S) = struct
   let make_template_indirect (ind : Indirect.t) : string =
     (* TODO(@MattWindsor91): support for other indirections *)
-    ind
-    |> Indirect.as_symbolic_disp_only
-    |> Option.value ~default:"???"
+    ind |> Indirect.as_symbolic_disp_only |> Option.value ~default:"???"
 
   let make_template_location : Ast.Location.t -> Ast.Location.t = function
     | Reg r ->
@@ -108,9 +106,21 @@ module Make (D : Dialect_intf.S) (Pp : Pp_intf.S) = struct
       Tx.Or_error.unless_m (Ac.Id.equal D.dialect_id actual_dialect)
         ~f:(fun () -> wrong_dialect_error actual_dialect))
 
+  let used_registers_in_ast : Ast.t -> Set.M(Reg).t =
+    Fn.compose (Set.of_list (module Reg)) Ast.On_registers.to_list
+
+  let make_clobbers (asm : Ast.t) : string list =
+    let used_registers = used_registers_in_ast asm in
+    let used_register_names =
+      used_registers |> Set.to_list
+      |> List.map ~f:(Fn.compose String.lowercase Reg.to_string)
+    in
+    List.concat [["cc"; "memory"]; used_register_names]
+
   let run (tid : int) (asm : Ast.t) : Act_c.Asm_stub.t Or_error.t =
     Or_error.Let_syntax.(
       let%map () = check_dialect asm in
       let template = make_template tid asm in
-      Act_c.Asm_stub.make ~template ())
+      let clobbers = make_clobbers asm in
+      Act_c.Asm_stub.make ~template ~clobbers ())
 end

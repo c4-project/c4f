@@ -300,7 +300,6 @@ module Instruction = struct
         ~opcode:(F.proc_field opcode) ~operands:(F.proc_field operands)
   end
 
-  (** Recursive mapper for symbols in instructions *)
   module On_symbols :
     Traversable.S0 with type t = t and type Elt.t = string =
   Traversable.Make0 (struct
@@ -324,7 +323,6 @@ module Instruction = struct
     end
   end)
 
-  (** Recursive mapper for locations in instructions *)
   module On_locations :
     Traversable.S0 with type t = t and type Elt.t = Location.t =
   Traversable.Make0 (struct
@@ -346,6 +344,10 @@ module Instruction = struct
           ~prefix:M.return ~opcode:M.return
     end
   end)
+
+  module On_registers :
+    Traversable.S0 with type t = t and type Elt.t = Reg.t =
+    Traversable.Chain0 (On_locations) (Location.On_registers)
 
   let single (opcode : Opcode.t) (operand : Operand.t) : t =
     make ~opcode ~operands:[operand] ()
@@ -369,7 +371,6 @@ module Statement = struct
         ~label:(F.proc_variant1 label) ~nop:(F.proc_variant0 nop)
   end
 
-  (** Recursive mapper for instructions in statements *)
   module On_instructions :
     Traversable.S0 with type t = t and type Elt.t = Instruction.t =
   Traversable.Make0 (struct
@@ -388,7 +389,6 @@ module Statement = struct
     end
   end)
 
-  (** Recursive mapper for symbols in statements *)
   module On_symbols :
     Traversable.S0 with type t = t and type Elt.t = string =
   Traversable.Make0 (struct
@@ -406,6 +406,10 @@ module Statement = struct
           ~label:f (* These don't contain symbols: *) ~nop:M.return
     end
   end)
+
+  module On_registers :
+    Traversable.S0 with type t = t and type Elt.t = Reg.t =
+    Traversable.Chain0 (On_instructions) (Instruction.On_registers)
 end
 
 (* The ordering here is important to make sure [make] puts the optional
@@ -446,3 +450,7 @@ module On_statements :
   Traversable.Chain0
     (On_listings)
     (Traversable.Fix_elt (Tx.List) (Statement))
+
+module On_registers :
+  Traversable.S0 with type t = t and type Elt.t = Reg.t =
+  Traversable.Chain0 (On_statements) (Statement.On_registers)

@@ -71,12 +71,12 @@ module Location : sig
   (** [On_registers] permits enumerating and folding over registers inside a
       location. *)
   module On_registers :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Reg.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside a
       location. *)
   module On_symbols :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = string
+    Travesty.Traversable.S0 with type t = t and type Elt.t = string
 end
 
 module Bop : sig
@@ -112,12 +112,12 @@ module Operand : sig
   (** [On_locations] permits enumerating and folding over locations inside
       an operand. *)
   module On_locations :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Location.t
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       operand. *)
   module On_symbols :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = string
+    Travesty.Traversable.S0 with type t = t and type Elt.t = string
 end
 
 type prefix = PreLock [@@deriving sexp]
@@ -133,12 +133,17 @@ module Instruction : sig
   (** [On_locations] permits enumerating and folding over locations inside
       an instruction. *)
   module On_locations :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Location.t
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       instruction. *)
   module On_symbols :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = string
+    Travesty.Traversable.S0 with type t = t and type Elt.t = string
+
+  (** [On_registers] permits enumerating and folding over registers inside
+      an instruction. *)
+  module On_registers :
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Reg.t
 
   val single : Opcode.t -> Operand.t -> t
   (** [single opcode operand] produces an instruction with opcode [opcode]
@@ -165,12 +170,17 @@ module Statement : sig
   (** [On_instructions] permits enumerating and folding over instructions
       inside a statement. *)
   module On_instructions :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Instruction.t
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Instruction.t
 
-  (** [On_symbols] permits enumerating and folding over symbols inside an
-      operand. *)
+  (** [On_symbols] permits enumerating and folding over symbols inside a
+      statement. *)
   module On_symbols :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = string
+    Travesty.Traversable.S0 with type t = t and type Elt.t = string
+
+  (** [On_registers] permits enumerating and folding over registers inside a
+      statement. *)
+  module On_registers :
+    Travesty.Traversable.S0 with type t = t and type Elt.t = Reg.t
 end
 
 (** Opaque type of dialect-tagged abstract syntax trees. *)
@@ -194,8 +204,13 @@ val with_dialect_id : t -> id:Act_common.Id.t -> t
 
 (** Traversing over the statement list in a [t] *)
 module On_listings :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = Statement.t list
+  Travesty.Traversable.S0 with type t = t and type Elt.t = Statement.t list
 
 (** Traversing over all statements in a [t] *)
 module On_statements :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = Statement.t
+  Travesty.Traversable.S0 with type t = t and type Elt.t = Statement.t
+
+(** [On_registers] permits enumerating and folding over registers inside a.
+    AST. *)
+module On_registers :
+  Travesty.Traversable.S0 with type t = t and type Elt.t = Reg.t
