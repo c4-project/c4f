@@ -24,20 +24,6 @@ let%test_module "accessors" = (module struct
   let defaults : Ast.Default.t list =
     Ast.Default.[ Try (Compiler, Ac.Id.of_string "localhost.gcc.x86.normal")
                 ; Try (Arch, Ac.Id.of_string "x86.att") ]
-
-  let localhost_gcc_spec : Acc.Spec.t =
-    Acc.Spec.make ~cmd:"gcc" ~style:(Ac.Id.of_string "gcc")
-      ~emits:(Ac.Id.of_string "x86.att")
-      ~enabled:true
-      ()
-
-  let localhost_compilers : Acc.Spec.Set.t =
-    Or_error.ok_exn
-      (Acc.Spec.Set.of_list
-         [ Acc.Spec.With_id.make
-             ~id:(Ac.Id.of_string "gcc.x86.normal")
-             ~spec:localhost_gcc_spec ])
-
   let localhost_herd_spec : Act_sim.Spec.t =
     Act_sim.Spec.make ~cmd:"herd7" ~style:(Ac.Id.of_string "herd")
       ()
@@ -51,7 +37,7 @@ let%test_module "accessors" = (module struct
 
   let localhost_spec : Acc.Machine_spec.t =
     Acc.Machine_spec.make ~enabled:true ~via:Acc.Via.local
-      ~compilers:localhost_compilers ~sims:localhost_sims ()
+      ~compilers:(Lazy.force Act_compiler_test.Data.Spec_sets.single_gcc_compiler) ~sims:localhost_sims ()
 
   let machines : Acc.Machine_spec.Set.t =
     Or_error.ok_exn
