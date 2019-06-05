@@ -126,4 +126,4 @@ let load_and_process_config ?(compiler_predicate = Blang.true_)
   let chook = compiler_hook with_compiler_tests compiler_predicate in
   let mhook = machine_hook machine_predicate in
   let phook = Act_sanitiser.Pass_group.Selector.eval_b sanitiser_passes in
-  Act_config.Act.make rcfg ~chook ~mhook ~phook
+  Act_config.Act.of_global rcfg ~chook ~mhook ~phook
