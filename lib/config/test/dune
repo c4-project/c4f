@@ -1,0 +1,8 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_config_test)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane))
+ (libraries base act_config act_common act_utils))
