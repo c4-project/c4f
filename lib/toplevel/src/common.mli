@@ -37,7 +37,7 @@ val asm_runner_of_target :
     associated with a target (either a compiler spec or emits clause). *)
 
 val lift_command :
-     ?compiler_predicate:Act_compiler.Instance.Property.t Blang.t
+     ?compiler_predicate:Act_compiler.Property.t Blang.t
   -> ?machine_predicate:Act_machine.Property.t Blang.t
   -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
@@ -50,7 +50,7 @@ val lift_command :
     configuration, creating an [Output.t], and printing top-level errors. *)
 
 val lift_command_with_files :
-     ?compiler_predicate:Act_compiler.Instance.Property.t Blang.t
+     ?compiler_predicate:Act_compiler.Property.t Blang.t
   -> ?machine_predicate:Act_machine.Property.t Blang.t
   -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)

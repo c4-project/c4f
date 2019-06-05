@@ -1,31 +1,17 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
-
-(** [Compiler] contains the high-level interface for specifying and invoking
-    compilers. *)
+(** High-level interface for specifying and invoking compilers. *)
 
 open Core_kernel
-open Instance_types
 
 (** A compiler that always passes its tests, but fails with [E.error] on
     runtime.
@@ -34,30 +20,11 @@ open Instance_types
     one that can be sidestepped over if the compiler never gets run. *)
 module Fail (E : sig
   val error : Error.t
-end) : S
-
-(** [Property] contains a mini-language for querying compiler specs,
-    suitable for use in [Blang]. *)
-module Property : sig
-  (** [t] is the opaque type of property queries. *)
-  type t [@@deriving sexp]
-
-  val id : Act_common.Id.Property.t -> t
-  (** [id] constructs a query over a compiler's ID. *)
-
-  val eval : Spec.With_id.t -> t -> bool
-  (** [eval cspec property] evaluates [property] over [cspec]. *)
-
-  val eval_b : Spec.With_id.t -> t Blang.t -> bool
-  (** [eval_b cspec expr] evaluates a [Blang] expression [expr] over
-      [cspec]. *)
-
-  include Act_common.Property.S with type t := t
-end
+end) : Instance_types.S
 
 (** [Make] produces a runnable compiler satisfying [S] from a
     [Basic_with_run_info]. *)
-module Make (B : Basic_with_run_info) : S
+module Make (B : Instance_types.Basic_with_run_info) : Instance_types.S
 
 (** {2 Filters}
 
@@ -66,11 +33,11 @@ module Make (B : Basic_with_run_info) : S
     similar passes. *)
 
 (** Lifts a [S] to a filter. *)
-module S_to_filter (S : S) :
+module S_to_filter (S : Instance_types.S) :
   Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit
 
 (** Shorthand for [Make_filter (S_to_filter (B))]. *)
-module Make_filter (B : Basic_with_run_info) :
+module Make_filter (B : Instance_types.Basic_with_run_info) :
   Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit
 
 (** Abstract type of auxiliary input wrappers used for compiler chains. *)

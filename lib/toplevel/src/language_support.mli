@@ -50,7 +50,7 @@ module Resolve_compiler_from_target :
   Act_machine.Resolver.S with type spec = Act_machine.Target.t
 
 val load_and_process_config :
-     ?compiler_predicate:Act_compiler.Instance.Property.t Blang.t
+     ?compiler_predicate:Act_compiler.Property.t Blang.t
   -> ?machine_predicate:Act_machine.Property.t Blang.t
   -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)

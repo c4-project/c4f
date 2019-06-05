@@ -114,8 +114,7 @@ module Other = struct
 
   let compiler_predicate =
     flag "filter-compilers"
-      (optional
-         (sexp_conv [%of_sexp: Act_compiler.Instance.Property.t Blang.t]))
+      (optional (sexp_conv [%of_sexp: Act_compiler.Property.t Blang.t]))
       ~doc:"PREDICATE filter compilers using this predicate"
 
   let machine_predicate =
