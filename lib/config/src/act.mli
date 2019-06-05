@@ -24,6 +24,40 @@ include Global_types.S
 (** ['t hook] is the type of testing hooks sent to [from_raw]. *)
 type 't hook = 't -> 't option Or_error.t
 
+(** {2 Constructors} *)
+
+val make :
+     ?disabled_compilers:(Id.t, Error.t option) List.Assoc.t
+  -> ?disabled_machines:(Id.t, Error.t option) List.Assoc.t
+  -> ?machines:Act_compiler.Machine_spec.Set.t
+  -> global:Global.t
+  -> sanitiser_passes:(   default:Set.M(Act_sanitiser.Pass_group).t
+                       -> Set.M(Act_sanitiser.Pass_group).t)
+  -> unit
+  -> t
+
+val of_global :
+     ?chook:Act_compiler.Machine_spec.Qualified_compiler.t hook
+  -> ?mhook:Act_compiler.Machine_spec.With_id.t hook
+  -> ?phook:(   default:Set.M(Act_sanitiser.Pass_group).t
+             -> Set.M(Act_sanitiser.Pass_group).t)
+  -> Global.t
+  -> t Or_error.t
+(** [of_global ?chook ?mhook ?phook global] takes a global config [t] and
+    processes it by:
+
+    - applying the given testing hooks onto the compilers and machines, and
+      disabling any that fail;
+    - resolving machine references, and disabling any broken ones;
+    - installing [phook] as the sanitiser pass selector.
+
+    Testing hooks are optional (and default to passing the compiler or
+    machine through unaltered), and should return [Ok (Some x)] when the
+    element is enabled and passing; [Ok None] when the element is disabled;
+    and [Error e] when the element is enabled and failing. *)
+
+(** {2 Projections} *)
+
 val disabled_compilers : t -> (Id.t * Error.t option) list
 (** [disabled_compilers c] reports all (fully qualified) disabled compiler
     IDs in the given config, along with any reason why. *)
@@ -38,25 +72,13 @@ val sanitiser_passes :
   -> default:Set.M(Act_sanitiser.Pass_group).t
   -> Set.M(Act_sanitiser.Pass_group).t
 
-val make :
-     ?chook:Act_compiler.Machine_spec.Qualified_compiler.t hook
-  -> ?mhook:Act_compiler.Machine_spec.With_id.t hook
-  -> ?phook:(   default:Set.M(Act_sanitiser.Pass_group).t
-             -> Set.M(Act_sanitiser.Pass_group).t)
-  -> Global.t
-  -> t Or_error.t
-(** [make ?chook ?mhook ?phook global] takes a global config [t] and
-    processes it by:
+val all_compilers : t -> Act_compiler.Machine_spec.Qualified_compiler.t list
+(** [all_compilers c] returns a list of qualified specifications for all
+    compilers, across all machines. *)
 
-    - applying the given testing hooks onto the compilers and machines, and
-      disabling any that fail;
-    - resolving machine references, and disabling any broken ones;
-    - installing [phook] as the sanitiser pass selector.
-
-    Testing hooks are optional (and default to passing the compiler or
-    machine through unaltered), and should return [Ok (Some x)] when the
-    element is enabled and passing; [Ok None] when the element is disabled;
-    and [Error e] when the element is enabled and failing. *)
+val all_sims : t -> Act_compiler.Machine_spec.Qualified_sim.t list
+(** [all_sims c] returns a list of qualified specifications for all
+    simulators, across all machines. *)
 
 (** {2 Resolving components across machines by fully qualified ID}
 
@@ -79,11 +101,3 @@ val sim :
 (** [compiler c ~fqid] looks up a simulator with the fully qualified ID
     [fqid] (that is, the concatenation of the machine ID and the compiler
     ID) in [c]'s specification sets. *)
-
-val all_compilers : t -> Act_compiler.Machine_spec.Qualified_compiler.t list
-(** [all_compilers c] returns a list of qualified specifications for all
-    compilers, across all machines. *)
-
-val all_sims : t -> Act_compiler.Machine_spec.Qualified_sim.t list
-(** [all_sims c] returns a list of qualified specifications for all
-    simulators, across all machines. *)
