@@ -63,8 +63,7 @@ let make_locations_from_init (init : (Ac.C_id.t, _) List.Assoc.t) :
     Set.M(Ac.C_id).t =
   init |> List.map ~f:fst |> Set.of_list (module Ac.C_id)
 
-let make_global_locations
-    ?(c_variables : Ac.C_variables.Map.t option)
+let make_global_locations ?(c_variables : Ac.C_variables.Map.t option)
     ~(init : (Ac.C_id.t, _) List.Assoc.t) () : Set.M(Ac.C_id).t =
   match c_variables with
   | Some cvars ->
@@ -74,19 +73,18 @@ let make_global_locations
 
 let add_postcondition_locations (type const)
     (postcondition : const Act_litmus.Ast_base.Postcondition.t)
-    ~(globals : Set.M(Ac.C_id).t)
-  : Set.M(Ac.C_id).t =
-  let module It = Act_litmus.Ast_base.Postcondition.On_identifiers(struct type t = const end) in
+    ~(globals : Set.M(Ac.C_id).t) : Set.M(Ac.C_id).t =
+  let module It = Act_litmus.Ast_base.Postcondition.On_identifiers (struct
+    type t = const
+  end) in
   let pc_ids = It.to_list postcondition in
   let pc_c_ids = List.filter_map ~f:Act_common.Litmus_id.as_global pc_ids in
   Set.(union globals (of_list (module Ac.C_id) pc_c_ids))
 
 let try_add_postcondition_locations
     ?(postcondition : 'const Act_litmus.Ast_base.Postcondition.t option)
-    (globals : Set.M(Ac.C_id).t)
-  : Set.M(Ac.C_id).t =
-  Option.value_map postcondition
-    ~default:globals
+    (globals : Set.M(Ac.C_id).t) : Set.M(Ac.C_id).t =
+  Option.value_map postcondition ~default:globals
     ~f:(add_postcondition_locations ~globals)
 
 let make_locations
@@ -115,5 +113,7 @@ let make ?(c_variables : Ac.C_variables.Map.t option)
   let init =
     make_init ?c_variables:live_cvars_opt ~heap_symbols ~of_int ()
   in
-  let locations = make_locations ?postcondition ?c_variables:live_cvars_opt ~init () in
+  let locations =
+    make_locations ?postcondition ?c_variables:live_cvars_opt ~init ()
+  in
   make ~locations ~init ?postcondition ()

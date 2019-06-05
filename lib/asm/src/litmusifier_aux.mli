@@ -51,10 +51,10 @@ val make_locations :
   -> init:(Act_common.C_id.t, _) List.Assoc.t
   -> unit
   -> Act_common.C_id.t list
-(** [make_locations ?postcondition ?c_variables ~init ()] makes a 'locations' stanza,
-    either from the variables in [c_variables] (if present), or by or just
-    by taking the LHS of [init].  It adds any global variables mentioned in the
-    postcondition, if given. *)
+(** [make_locations ?postcondition ?c_variables ~init ()] makes a
+    'locations' stanza, either from the variables in [c_variables] (if
+    present), or by or just by taking the LHS of [init]. It adds any global
+    variables mentioned in the postcondition, if given. *)
 
 val is_live_symbol :
   Act_common.C_id.t -> heap_symbols:Act_abstract.Symbol.Set.t -> bool

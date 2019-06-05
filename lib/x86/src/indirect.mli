@@ -55,6 +55,8 @@ val make :
 (** [make ?seg ?disp ?base ?index ()] makes an [Indirect] with the given
     fields (if present). *)
 
+(** {2 Projections} *)
+
 val base : t -> Reg.t option
 (** [base] gets the indirect base, if any. *)
 
@@ -66,6 +68,16 @@ val disp : t -> Disp.t option
 
 val index : t -> Index.t option
 (** [index] gets the indirect index, if any. *)
+
+val as_disp_only : t -> Disp.t option
+(** [as_disp_only i] returns [Some d] if [i] contains only a displacement
+    [d], and [None] otherwise. *)
+
+val as_symbolic_disp_only : t -> string option
+(** [as_symbolic_disp_only i] returns [Some s] if [i] contains only a
+    symbolic displacement [s], and [None] otherwise. *)
+
+(** {2 Traversals} *)
 
 (** [On_registers] permits enumerating and folding over registers inside a
     memory access. *)

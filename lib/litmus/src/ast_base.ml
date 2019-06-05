@@ -30,21 +30,25 @@ module Pred_elt = struct
 
   let ( ==? ) = eq
 
-  (* TODO(@MattWindsor91): this is clearly a bi-traversable,
-     but we don't have any support for those! *)
+  (* TODO(@MattWindsor91): this is clearly a bi-traversable, but we don't
+     have any support for those! *)
   module On_identifiers (Const : T) :
     Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t =
-    Travesty.Traversable.Make0 (struct
-      type nonrec t = Const.t t
-      module Elt = Id
+  Travesty.Traversable.Make0 (struct
+    type nonrec t = Const.t t
 
-      module On_monad (M : Monad.S) = struct
-        module H = Travesty.Traversable.Helpers (M)
+    module Elt = Id
 
-        let map_m (t : t) ~(f : Id.t -> Id.t M.t) : t M.t =
-          Variants.map t ~eq:(H.proc_variant2 (fun (id, c) -> M.(id |> f >>| fun id' -> (id', c))))
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module H = Travesty.Traversable.Helpers (M)
+
+      let map_m (t : t) ~(f : Id.t -> Id.t M.t) : t M.t =
+        Variants.map t
+          ~eq:
+            (H.proc_variant2 (fun (id, c) ->
+                 M.(id |> f >>| fun id' -> (id', c)) ))
+    end
+  end)
 
   module On_constants :
     Travesty.Traversable.S1 with type 'const t := 'const t =
@@ -80,32 +84,33 @@ module Pred = struct
     | Elt x ->
         Elt x
 
-  (* TODO(@MattWindsor91): this is clearly a bi-traversable,
-     but we don't have any support for those! *)
+  (* TODO(@MattWindsor91): this is clearly a bi-traversable, but we don't
+     have any support for those! *)
   module On_identifiers (Const : T) :
     Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t =
-    Travesty.Traversable.Make0 (struct
-      type nonrec t = Const.t t
-      module Elt = Id
+  Travesty.Traversable.Make0 (struct
+    type nonrec t = Const.t t
 
-      module On_monad (M : Monad.S) = struct
-        module Ma = Applicative.Of_monad (M)
-        module Elt_i = Pred_elt.On_identifiers (Const)
-        module Elt = Elt_i.On_monad (M)
-        module H = Travesty.Traversable.Helpers (M)
+    module Elt = Id
 
-        let rec map_m (t : t) ~(f : Id.t -> Id.t M.t) : t M.t =
-          Variants.map t
-            ~bracket:(H.proc_variant1 (map_m ~f))
-            ~or_:(H.proc_variant2
-                    (fun (l, r) ->
-                       Ma.map2 ~f: Tuple2.create (map_m ~f l) (map_m ~f r)))
-            ~and_:(H.proc_variant2
-                    (fun (l, r) ->
-                       Ma.map2 ~f: Tuple2.create (map_m ~f l) (map_m ~f r)))
-            ~elt:(H.proc_variant1 (Elt.map_m ~f))
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module Ma = Applicative.Of_monad (M)
+      module Elt_i = Pred_elt.On_identifiers (Const)
+      module Elt = Elt_i.On_monad (M)
+      module H = Travesty.Traversable.Helpers (M)
+
+      let rec map_m (t : t) ~(f : Id.t -> Id.t M.t) : t M.t =
+        Variants.map t
+          ~bracket:(H.proc_variant1 (map_m ~f))
+          ~or_:
+            (H.proc_variant2 (fun (l, r) ->
+                 Ma.map2 ~f:Tuple2.create (map_m ~f l) (map_m ~f r) ))
+          ~and_:
+            (H.proc_variant2 (fun (l, r) ->
+                 Ma.map2 ~f:Tuple2.create (map_m ~f l) (map_m ~f r) ))
+          ~elt:(H.proc_variant1 (Elt.map_m ~f))
+    end
+  end)
 
   module On_constants :
     Travesty.Traversable.S1 with type 'const t := 'const t =
@@ -194,26 +199,26 @@ module Postcondition = struct
   type 'const t = {quantifier: [`Exists]; predicate: 'const Pred.t}
   [@@deriving sexp, compare, equal, quickcheck, fields, make]
 
-  (* TODO(@MattWindsor91): this is clearly a bi-traversable,
-     but we don't have any support for those! *)
+  (* TODO(@MattWindsor91): this is clearly a bi-traversable, but we don't
+     have any support for those! *)
   module On_identifiers (Const : T) :
     Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t =
-    Travesty.Traversable.Make0 (struct
-      type nonrec t = Const.t t
-      module Elt = Id
+  Travesty.Traversable.Make0 (struct
+    type nonrec t = Const.t t
 
-      module On_monad (M : Monad.S) = struct
-        module Ma = Applicative.Of_monad (M)
-        module Pr_i = Pred.On_identifiers (Const)
-        module Pr = Pr_i.On_monad (M)
-        module H = Travesty.Traversable.Helpers (M)
+    module Elt = Id
 
-        let map_m (t : t) ~(f : Id.t -> Id.t M.t) : t M.t =
-          Fields.fold ~init:(M.return t)
-            ~quantifier:(H.proc_field M.return)
-            ~predicate:(H.proc_field (Pr.map_m ~f))
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module Ma = Applicative.Of_monad (M)
+      module Pr_i = Pred.On_identifiers (Const)
+      module Pr = Pr_i.On_monad (M)
+      module H = Travesty.Traversable.Helpers (M)
+
+      let map_m (t : t) ~(f : Id.t -> Id.t M.t) : t M.t =
+        Fields.fold ~init:(M.return t) ~quantifier:(H.proc_field M.return)
+          ~predicate:(H.proc_field (Pr.map_m ~f))
+    end
+  end)
 
   module On_constants :
     Travesty.Traversable.S1 with type 'const t := 'const t =

@@ -82,8 +82,8 @@ module Pred : sig
 
   (** {3 Traversals} *)
 
-  (** Traversing monadically over all identifiers in a predicate,
-      fixing the constant type to some [Const.t]. *)
+  (** Traversing monadically over all identifiers in a predicate, fixing the
+      constant type to some [Const.t]. *)
   module On_identifiers (Const : T) :
     Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t
 
@@ -105,8 +105,8 @@ module Postcondition : sig
 
   (** {3 Traversals} *)
 
-  (** Traversing monadically over all identifiers in a postcondition,
-      fixing the constant type to some [Const.t]. *)
+  (** Traversing monadically over all identifiers in a postcondition, fixing
+      the constant type to some [Const.t]. *)
   module On_identifiers (Const : T) :
     Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t
 

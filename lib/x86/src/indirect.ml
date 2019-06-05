@@ -107,3 +107,12 @@ Trav.Make0 (struct
         ~disp:M.return
   end
 end)
+
+let as_disp_only : t -> Disp.t option = function
+  | {disp= Some d; base= None; seg= None; index= None} ->
+      Some d
+  | _ ->
+      None
+
+let as_symbolic_disp_only : t -> string option =
+  Tx.Option.compose_m as_disp_only Disp.as_symbol
