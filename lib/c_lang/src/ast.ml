@@ -14,7 +14,7 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 (****************************************************************************)
 
-open Core_kernel
+open Base
 module Ac = Act_common
 module Au = Act_utils
 module Tx = Travesty_core_kernel_exts

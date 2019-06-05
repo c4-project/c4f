@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 
 module M = struct
   type t = Seq_cst | Release | Acquire | Acq_rel | Relaxed | Consume
@@ -57,14 +57,14 @@ let is_rmw_compatible : t -> bool = function
   | Acquire | Consume | Release ->
       false
 
-let gen_load : t Quickcheck.Generator.t =
-  Quickcheck.Generator.filter ~f:is_load_compatible
+let gen_load : t Base_quickcheck.Generator.t =
+  Base_quickcheck.Generator.filter ~f:is_load_compatible
     [%quickcheck.generator: t]
 
-let gen_store : t Quickcheck.Generator.t =
-  Quickcheck.Generator.filter ~f:is_store_compatible
+let gen_store : t Base_quickcheck.Generator.t =
+  Base_quickcheck.Generator.filter ~f:is_store_compatible
     [%quickcheck.generator: t]
 
-let gen_rmw : t Quickcheck.Generator.t =
-  Quickcheck.Generator.filter ~f:is_rmw_compatible
+let gen_rmw : t Base_quickcheck.Generator.t =
+  Base_quickcheck.Generator.filter ~f:is_rmw_compatible
     [%quickcheck.generator: t]

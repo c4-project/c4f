@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Core_kernel (* not Base; for Blang *)
+
 module Tx = Travesty_core_kernel_exts
 module Ac = Act_common
 include Ast_intf
