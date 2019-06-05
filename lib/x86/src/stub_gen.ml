@@ -27,7 +27,10 @@ module Tx = Travesty_base_exts
 
 module Make (D : Dialect_intf.S) (Pp : Pp_intf.S) = struct
   let make_template_indirect (ind : Indirect.t) : string =
-    ignore ind ; "TODO"
+    (* TODO(@MattWindsor91): support for other indirections *)
+    ind
+    |> Indirect.as_symbolic_disp_only
+    |> Option.value ~default:"???"
 
   let make_template_location : Ast.Location.t -> Ast.Location.t = function
     | Reg r ->
