@@ -39,7 +39,7 @@ type t =
       (** This operand is known and valid, but doesn't yet have an abstract
           representation. *)
   | Unknown  (** This operand is not yet understood by act. *)
-[@@deriving sexp, eq]
+[@@deriving sexp, equal]
 
 (** [S_predicates] is the signature of any module that can access simple
     predicates over an abstract statement. *)

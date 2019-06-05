@@ -11,7 +11,7 @@
 
 (** High-level interface for specifying and invoking compilers. *)
 
-open Core_kernel
+open Base
 
 (** A compiler that always passes its tests, but fails with [E.error] on
     runtime.

@@ -23,7 +23,7 @@
 
 (** Enumeration of C11 memory orders. *)
 
-open Core_kernel
+open Base
 
 type t =
   | Seq_cst  (** [memory_order_seq_cst] *)
@@ -58,12 +58,12 @@ val is_rmw_compatible : t -> bool
     those that make sense in a particular context, see
     {{!gen_load} gen_load} et al. *)
 
-val gen_load : t Quickcheck.Generator.t
+val gen_load : t Base_quickcheck.Generator.t
 (** [gen_load] generates a random memory order suitable for loads. *)
 
-val gen_store : t Quickcheck.Generator.t
+val gen_store : t Base_quickcheck.Generator.t
 (** [gen_load] generates a random memory order suitable for stores. *)
 
-val gen_rmw : t Quickcheck.Generator.t
+val gen_rmw : t Base_quickcheck.Generator.t
 (** [gen_load] generates a random memory order suitable for
     read-modify-writes. *)

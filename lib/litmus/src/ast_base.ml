@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Core_kernel (* not Base; for extended quickcheck *)
+
 open Ast_base_intf
 
 module Pred_elt = struct
@@ -104,10 +105,10 @@ module Pred = struct
           ~bracket:(H.proc_variant1 (map_m ~f))
           ~or_:
             (H.proc_variant2 (fun (l, r) ->
-                 Ma.map2 ~f:Tuple2.create (map_m ~f l) (map_m ~f r) ))
+                 Ma.both (map_m ~f l) (map_m ~f r) ))
           ~and_:
             (H.proc_variant2 (fun (l, r) ->
-                 Ma.map2 ~f:Tuple2.create (map_m ~f l) (map_m ~f r) ))
+                 Ma.both (map_m ~f l) (map_m ~f r) ))
           ~elt:(H.proc_variant1 (Elt.map_m ~f))
     end
   end)

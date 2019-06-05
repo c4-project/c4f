@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core
+open Core (* not Base or Core_kernel; for Sys *)
+
 module Tx = Travesty_base_exts
 
 type 'path t = Directory of 'path | Files of 'path list | Nothing

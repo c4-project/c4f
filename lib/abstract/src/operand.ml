@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
+open Stdio
 module Au = Act_utils
 module Ac = Act_common
 
@@ -45,17 +46,17 @@ module M = struct
     | Erroneous of err
     | Other
     | Unknown
-  [@@deriving sexp, eq]
+  [@@deriving sexp, equal]
 
   let pp f = function
     | Int k ->
-        Format.fprintf f "@[<h>$%d@]" k
+        Fmt.pf f "@[<h>$%d@]" k
     | Erroneous e ->
-        Format.fprintf f "@[<h><ERR: %a>@]" Error.pp e
+        Fmt.pf f "@[<h><ERR: %a>@]" Error.pp e
     | Location loc ->
         Location.pp f loc
     | Symbol s ->
-        Format.fprintf f "@[<h>sym:%s@]" s
+        Fmt.pf f "@[<h>sym:%s@]" s
     | Other ->
         String.pp f "other"
     | Unknown ->
@@ -240,7 +241,7 @@ module Properties : S_properties with type t := t = struct
     [ (is_jump_symbol o, `Jump_symbol)
     ; (is_immediate_heap_symbol o ~symbol_table, `Immediate_heap_symbol)
     ; (is_stack_pointer o, `Stack_pointer) ]
-    |> List.filter_map ~f:(Tuple2.uncurry Option.some_if)
+    |> List.filter_map ~f:(fun (x, y) -> Option.some_if x y)
     |> Flag.Set.of_list
 end
 
@@ -317,9 +318,9 @@ module Bundle = struct
     | Single x ->
         M.pp f x
     | Double (op1, op2) ->
-        Format.fprintf f "@[%a,@ %a@]" M.pp op1 M.pp op2
+        Fmt.pf f "@[%a,@ %a@]" M.pp op1 M.pp op2
     | Src_dst {Ac.Src_dst.src; dst} ->
-        Format.fprintf f "@[%a@ ->@ %a@]" M.pp src M.pp dst
+        Fmt.pf f "@[%a@ ->@ %a@]" M.pp src M.pp dst
 
   module type S_predicates = sig
     type t
@@ -531,7 +532,7 @@ module Bundle = struct
                  Location
                    Location.(Register_direct (Register.General "EAX")) })
       in
-      Sexp.output_hum Out_channel.stdout [%sexp (result : bool)] ;
+      print_s [%sexp (result : bool)] ;
       [%expect {| true |}]
 
     let%expect_test "has_immediate_heap_symbol: src/dst negative" =
@@ -549,7 +550,7 @@ module Bundle = struct
                  Location
                    Location.(Register_direct (Register.General "EAX")) })
       in
-      Sexp.output_hum Out_channel.stdout [%sexp (result : bool)] ;
+      print_s [%sexp (result : bool)] ;
       [%expect {| false |}]
 
     let is_single_jump_symbol_where operands ~f =
