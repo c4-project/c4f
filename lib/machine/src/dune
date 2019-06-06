@@ -3,6 +3,7 @@
  (public_name act.machine)
  (synopsis "Automagic Compiler Tormentor: machine specifications")
  (inline_tests)
+ (modules_without_implementation ("qualified_types"))
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries fmt fpath travesty travesty.core_kernel_exts core_kernel
