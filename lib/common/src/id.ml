@@ -62,7 +62,7 @@ let suggestions (assoc : (t, 'a) List.Assoc.t) (id : t) : t list =
   in
   List.take all 5
 
-let error_with_suggestions (assoc : (t, 'a) List.Assoc.t) (id : t)
+let error_with_suggestions (assoc : (t, _) List.Assoc.t) (id : t)
     ~(id_type : string) () : 'a Or_error.t =
   let sgs = suggestions assoc id in
   Or_error.error_s
@@ -80,6 +80,17 @@ let to_string_list : t -> string list = Fn.id
 let is_prefix id ~prefix =
   List.is_prefix (to_string_list id) ~prefix:(to_string_list prefix)
     ~equal:String.Caseless.equal
+
+let try_match_prefix (prefix : t) (value : 'v) ~(full_id : t) :
+    (t * 'v) option =
+  Option.some_if (is_prefix full_id ~prefix) (prefix, value)
+
+let try_find_assoc_with_suggestions_prefix (assoc : (t, 'a) List.Assoc.t)
+    (full_id : t) ~(id_type : string) : (t * 'a) Or_error.t =
+  List.find_map assoc ~f:(Tuple2.uncurry (try_match_prefix ~full_id))
+  |> Option.map ~f:Or_error.return
+  |> Tx.Option.value_f
+       ~default_f:(error_with_suggestions assoc full_id ~id_type)
 
 let drop_prefix (id : t) ~(prefix : t) : t Or_error.t =
   if is_prefix id ~prefix then

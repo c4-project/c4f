@@ -47,23 +47,12 @@ module Set = struct
 
   let of_map (type spec) : spec Map.M(Id).t -> spec t = Map.to_alist
 
-  let try_match_fqid (fqid : Id.t) (spec_id : Id.t) (spec : 'spec) :
-      (Id.t * 'spec) option =
-    Option.some_if (Id.is_prefix fqid ~prefix:spec_id) (spec_id, spec)
+  let get_using_fqid (type spec) ?(id_type : string = "unknown")
+      (specs : spec t) ~(fqid : Id.t) : (Id.t * spec) Or_error.t =
+    Id.try_find_assoc_with_suggestions_prefix specs fqid ~id_type
 
-  let get_using_fqid (specs : 'spec t) ?(id_type : string = "unknown")
-      ~(fqid : Id.t) : (Id.t * 'spec) Or_error.t =
-    specs
-    |> List.find_map ~f:(Tuple2.uncurry (try_match_fqid fqid))
-    |> Result.of_option
-         ~error:
-           (Error.create_s
-              [%message
-                "No specification exists matching all or part of this FQID."
-                  ~id_type
-                  ~fqid:(fqid : Id.t)])
-
-  let get specs ?(id_type : string = "unknown") (id : Id.t) =
+  let get (type spec) ?(id_type : string = "unknown") (specs : spec t)
+      ~(id : Id.t) : spec Or_error.t =
     Id.try_find_assoc_with_suggestions specs id ~id_type
 
   module On_specs : Travesty.Traversable.S1 with type 'a t = 'a t =
@@ -126,7 +115,7 @@ module Make (B : Basic) :
 
     let get specs (id : Id.t) =
       Or_error.Let_syntax.(
-        let%map spec = Set.get specs id ~id_type:type_name in
+        let%map spec = Set.get specs ~id ~id_type:type_name in
         With_id.make ~id ~spec)
 
     let of_list xs =

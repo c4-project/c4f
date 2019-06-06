@@ -70,6 +70,16 @@ val try_find_assoc_with_suggestions :
     error mentioning [id_type], with edit-distance-based suggestions drawn
     from [assoc]. *)
 
+(* TODO(@MattWindsor91): this should get the first LONGEST prefix, not the
+   first prefix. *)
+
+val try_find_assoc_with_suggestions_prefix :
+  (t, 'a) List.Assoc.t -> t -> id_type:string -> (t * 'a) Or_error.t
+(** [try_find_assoc_with_suggestions_prefix assoc id ~id_type] behaves as
+    [try_find_assoc_with_suggestions], but finds the first element of
+    [assoc] whose ID is a prefix of [id], and returns that ID alongside the
+    result. *)
+
 (** We can use [t] as an [Identifiable]. *)
 include Identifiable.S with type t := t
 

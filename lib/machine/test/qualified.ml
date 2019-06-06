@@ -29,16 +29,25 @@ let%test_module "compiler lookup" =
 
     let%expect_test "positive example" =
       test (Act_common.Id.of_string "localhost.gcc.x86.normal") ;
-      [%expect {|
+      [%expect
+        {|
         Style: gcc
         Emits: x86.att
         Command: gcc |}]
 
-    let%expect_test "negative example" =
+    let%expect_test "negative example: wrong compiler" =
       test (Act_common.Id.of_string "localhost.clang.x86.O3") ;
-      [%expect {|
+      [%expect
+        {|
         ("unknown ID" (of_type compiler) (id (clang x86 O3))
          (suggestions ((gcc x86 normal)))) |}]
+
+    let%expect_test "negative example: wrong machine" =
+      test (Act_common.Id.of_string "kappa.gcc.x86.normal") ;
+      [%expect
+        {|
+        ("unknown ID" (of_type machine) (id (kappa gcc x86 normal))
+         (suggestions ((localhost)))) |}]
   end )
 
 let%test_module "sim lookup" =
@@ -59,5 +68,13 @@ let%test_module "sim lookup" =
 
     let%expect_test "negative example" =
       test (Act_common.Id.of_string "localhost.litmus") ;
-      [%expect {| ("unknown ID" (of_type sim) (id (litmus)) (suggestions ((herd)))) |}]
+      [%expect
+        {| ("unknown ID" (of_type sim) (id (litmus)) (suggestions ((herd)))) |}]
+
+    let%expect_test "negative example: wrong machine" =
+      test (Act_common.Id.of_string "kappa.herd") ;
+      [%expect
+        {|
+        ("unknown ID" (of_type machine) (id (kappa herd))
+         (suggestions ((localhost)))) |}]
   end )

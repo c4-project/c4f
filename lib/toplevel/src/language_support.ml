@@ -49,7 +49,7 @@ let asm_runner_from_arch :
 module Gcc : C_types.Basic = struct
   let emit_assembly_args : string list = ["-S"]
 
-  let no_position_independence_args : string list = ["-no-fpic"]
+  let no_position_independence_args : string list = ["-fno-pic"]
 
   let output_args (file : string) : string list = ["-o"; file]
 
