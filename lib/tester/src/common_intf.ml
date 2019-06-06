@@ -50,8 +50,7 @@ module type Basic_machine_and_up = sig
 
   (** Module used to resolve compiler specs to compiler modules. *)
   module Resolve_compiler :
-    Act_machine.Resolver.S
-    with type spec = Act_machine.Qualified.Compiler.t
+    Act_machine.Resolver.S with type spec = Act_machine.Qualified.Compiler.t
 
   val asm_runner_from_spec :
        Act_machine.Qualified.Compiler.t

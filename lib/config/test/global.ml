@@ -26,27 +26,8 @@ let%test_module "accessors" =
         [ Try (Compiler, Ac.Id.of_string "localhost.gcc.x86.normal")
         ; Try (Arch, Ac.Id.of_string "x86.att") ]
 
-    let localhost_herd_spec : Act_sim.Spec.t =
-      Act_sim.Spec.make ~cmd:"herd7" ~style:(Ac.Id.of_string "herd") ()
-
-    let localhost_sims : Act_sim.Spec.Set.t =
-      Or_error.ok_exn
-        (Act_sim.Spec.Set.of_list
-           [ Act_sim.Spec.With_id.make ~id:(Ac.Id.of_string "herd")
-               ~spec:localhost_herd_spec ])
-
-    let localhost_spec : Am.Spec.t =
-      Am.Spec.make ~enabled:true ~via:Am.Via.local
-        ~compilers:
-          (Lazy.force Act_compiler_test.Data.Spec_sets.single_gcc_compiler)
-        ~sims:localhost_sims ()
-
     let machines : Am.Spec.Set.t =
-      Or_error.ok_exn
-        (Am.Spec.Set.of_list
-           [ Am.Spec.With_id.make
-               ~id:(Ac.Id.of_string "localhost")
-               ~spec:localhost_spec ])
+      Lazy.force Act_machine_test.Data.Spec_sets.single_local_machine
 
     let global : Global.t = Global.make ~cpp ~fuzz ~defaults ~machines ()
 

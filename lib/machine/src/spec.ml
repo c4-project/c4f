@@ -126,4 +126,3 @@ module On_specs =
 module On_compilers :
   Travesty.Traversable.S0 with type t = M.t and type Elt.t = C_spec.t =
   Travesty.Traversable.Chain0 (On_compiler_set) (On_specs)
-

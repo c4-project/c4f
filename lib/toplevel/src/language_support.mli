@@ -40,8 +40,7 @@ val asm_runner_from_arch :
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers. *)
 module Resolve_compiler :
-  Act_machine.Resolver.S
-  with type spec = Act_machine.Qualified.Compiler.t
+  Act_machine.Resolver.S with type spec = Act_machine.Qualified.Compiler.t
 
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers from targets, filling in a dummy compiler if the
