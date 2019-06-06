@@ -28,7 +28,7 @@ open Act_common
 module C_spec = Act_compiler.Spec
 module M_spec = Act_machine.Spec
 module Mw_spec = M_spec.With_id
-module Cq_spec = Act_machine.Spec.Qualified_compiler
+module Cq_spec = Act_machine.Qualified.Compiler
 module C_types = Act_compiler.Instance_types
 
 let lang_procs = [("x86", Act_x86.Asm_job.get_runner)]

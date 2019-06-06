@@ -37,7 +37,7 @@ val make :
   -> t
 
 val of_global :
-     ?chook:Act_machine.Spec.Qualified_compiler.t hook
+     ?chook:Act_machine.Qualified.Compiler.t hook
   -> ?mhook:Act_machine.Spec.With_id.t hook
   -> ?phook:(   default:Set.M(Act_sanitiser.Pass_group).t
              -> Set.M(Act_sanitiser.Pass_group).t)
@@ -72,11 +72,11 @@ val sanitiser_passes :
   -> default:Set.M(Act_sanitiser.Pass_group).t
   -> Set.M(Act_sanitiser.Pass_group).t
 
-val all_compilers : t -> Act_machine.Spec.Qualified_compiler.t list
+val all_compilers : t -> Act_machine.Qualified.Compiler.t list
 (** [all_compilers c] returns a list of qualified specifications for all
     compilers, across all machines. *)
 
-val all_sims : t -> Act_machine.Spec.Qualified_sim.t list
+val all_sims : t -> Act_machine.Qualified.Sim.t list
 (** [all_sims c] returns a list of qualified specifications for all
     simulators, across all machines. *)
 
@@ -89,12 +89,12 @@ val all_sims : t -> Act_machine.Spec.Qualified_sim.t list
     the config in turn. *)
 
 val compiler :
-  t -> fqid:Id.t -> Act_machine.Spec.Qualified_compiler.t Or_error.t
+  t -> fqid:Id.t -> Act_machine.Qualified.Compiler.t Or_error.t
 (** [compiler c ~fqid] looks up a compiler with the fully qualified ID
     [fqid] (that is, the concatenation of the machine ID and the compiler
     ID) in [c]'s specification sets. *)
 
-val sim : t -> fqid:Id.t -> Act_machine.Spec.Qualified_sim.t Or_error.t
+val sim : t -> fqid:Id.t -> Act_machine.Qualified.Sim.t Or_error.t
 (** [compiler c ~fqid] looks up a simulator with the fully qualified ID
     [fqid] (that is, the concatenation of the machine ID and the compiler
     ID) in [c]'s specification sets. *)

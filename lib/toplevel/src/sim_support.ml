@@ -25,6 +25,7 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 module M_spec = Act_machine.Spec
+module Sq_spec = Act_machine.Qualified.Sim
 
 let sim_procs :
     ( Ac.Id.t
@@ -97,7 +98,7 @@ end) : Act_sim.Resolver.S = struct
       (module Act_sim.Runner_intf.S) Or_error.t =
     Or_error.Let_syntax.(
       let%map q_spec = Act_config.Act.sim B.cfg ~fqid in
-      let m_spec = M_spec.Qualified_sim.m_spec q_spec in
-      let s_spec = M_spec.Qualified_sim.s_spec q_spec in
+      let m_spec = Sq_spec.m_spec q_spec in
+      let s_spec = Sq_spec.s_spec q_spec in
       make_sim m_spec (Act_sim.Spec.With_id.spec s_spec))
 end

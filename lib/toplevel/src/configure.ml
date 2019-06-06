@@ -24,7 +24,7 @@
 open Core_kernel
 open Act_common
 module C_spec = Act_compiler.Spec
-module M_spec = Act_machine.Spec
+module Cq_spec = Act_machine.Qualified.Compiler
 
 let pp_compiler (verbose : bool) (f : Formatter.t)
     (compiler : C_spec.With_id.t) : unit =
@@ -39,7 +39,7 @@ let run_list_compilers (standard_args : Args.Standard.t) (_o : Output.t)
   let verbose = Args.Standard.is_verbose standard_args in
   Fmt.(
     pr "@[<v>%a@]@."
-      (list (using M_spec.Qualified_compiler.c_spec (pp_compiler verbose)))
+      (list (using Cq_spec.c_spec (pp_compiler verbose)))
       compilers) ;
   Result.ok_unit
 

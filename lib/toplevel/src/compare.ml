@@ -26,7 +26,7 @@ open Act_common
 
 (* Module shorthand *)
 module C_spec = Act_compiler.Spec
-module Cq_spec = Act_machine.Spec.Qualified_compiler
+module Cq_spec = Act_machine.Qualified.Compiler
 
 let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
   let target = `Spec spec in

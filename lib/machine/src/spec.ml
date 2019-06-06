@@ -127,30 +127,3 @@ module On_compilers :
   Travesty.Traversable.S0 with type t = M.t and type Elt.t = C_spec.t =
   Travesty.Traversable.Chain0 (On_compiler_set) (On_specs)
 
-module Qualified_compiler = struct
-  type t = {c_spec: C_spec.With_id.t; m_spec: With_id.t}
-  [@@deriving make, fields, equal]
-
-  module H = Act_utils.Inherit.Helpers (struct
-    type nonrec t = t
-
-    type c = C_spec.With_id.t
-
-    let component = c_spec
-  end)
-
-  let style = H.forward C_spec.With_id.style
-
-  let emits = H.forward C_spec.With_id.emits
-
-  let cmd = H.forward C_spec.With_id.cmd
-
-  let argv = H.forward C_spec.With_id.argv
-end
-
-module Qualified_sim = struct
-  type t = {s_spec: Act_sim.Spec.With_id.t; m_spec: With_id.t}
-  [@@deriving make, fields, equal]
-
-  (* TODO(@MattWindsor91): properly chain here? *)
-end
