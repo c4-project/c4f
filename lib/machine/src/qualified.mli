@@ -14,8 +14,7 @@
 
 (** Bundles of compiler and machine specification. *)
 module Compiler : sig
-  (** Opaque type of machine-qualified compiler specifications. *)
-  type t [@@deriving equal]
+  include Qualified_types.S
 
   (** {3 Constructors} *)
 
@@ -27,10 +26,6 @@ module Compiler : sig
   val c_spec : t -> Act_compiler.Spec.With_id.t
   (** [c_spec spec] strips the machine spec from [spec], turning it into an
       {{!With_id.t} ordinary With_id.t}. *)
-
-  val m_spec : t -> Spec.With_id.t
-  (** [m_spec spec] accesses the bundled machine specification inside
-      [spec]. *)
 
   (** {3 Using qualified compiler specifications as compiler specifications} *)
 
@@ -56,3 +51,13 @@ module Sim : sig
   (** [m_spec spec] accesses the bundled machine specification inside
       [spec]. *)
 end
+
+(** {2 Implementing lookup} *)
+
+(** Implements fully-qualified ID lookup of compilers inside machine spec
+    sets. *)
+module Lookup_compilers : Qualified_types.S_lookup with type t = Compiler.t
+
+(** Implements fully-qualified ID lookup of simulators inside machine spec
+    sets. *)
+module Lookup_sims : Qualified_types.S_lookup with type t = Sim.t

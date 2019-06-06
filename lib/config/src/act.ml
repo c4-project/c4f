@@ -204,44 +204,14 @@ let fuzz = H.forward Global.fuzz
 
 let defaults = H.forward Global.defaults
 
-let machine_of_fqid (cfg : t) ~(fqid : Ac.Id.t) :
-    M_spec.With_id.t Or_error.t =
-  cfg |> machines |> M_spec.Set.get_using_fqid ~fqid
-
 let compiler (cfg : t) ~(fqid : Ac.Id.t) : Cq_spec.t Or_error.t =
-  Or_error.Let_syntax.(
-    let%bind m_spec = machine_of_fqid cfg ~fqid in
-    let%bind compiler_id =
-      Ac.Id.drop_prefix fqid ~prefix:(M_spec.With_id.id m_spec)
-    in
-    let compilers = M_spec.With_id.compilers m_spec in
-    let%map c_spec = C_spec.Set.get compilers compiler_id in
-    Cq_spec.make ~c_spec ~m_spec)
+  Act_machine.Qualified.Lookup_compilers.lookup (machines cfg) ~fqid
 
 let sim (cfg : t) ~(fqid : Ac.Id.t) : Sq_spec.t Or_error.t =
-  Or_error.Let_syntax.(
-    let%bind m_spec = machine_of_fqid cfg ~fqid in
-    let%bind sim_id =
-      Ac.Id.drop_prefix fqid ~prefix:(M_spec.With_id.id m_spec)
-    in
-    let sims = M_spec.With_id.sims m_spec in
-    let%map s_spec = Act_sim.Spec.Set.get sims sim_id in
-    Sq_spec.make ~s_spec ~m_spec)
-
-let all (cfg : t) ~(f : M_spec.With_id.t -> 'a list) : 'a list =
-  cfg |> machines |> M_spec.Set.map ~f |> List.concat
-
-let qualified_compilers_for_machine (m_spec : M_spec.With_id.t) :
-    Cq_spec.t list =
-  m_spec |> M_spec.With_id.compilers
-  |> C_spec.Set.map ~f:(fun c_spec -> Cq_spec.make ~m_spec ~c_spec)
-
-let qualified_sims_for_machine (m_spec : M_spec.With_id.t) : Sq_spec.t list
-    =
-  m_spec |> M_spec.With_id.sims
-  |> Act_sim.Spec.Set.map ~f:(fun s_spec -> Sq_spec.make ~m_spec ~s_spec)
+  Act_machine.Qualified.Lookup_sims.lookup (machines cfg) ~fqid
 
 let all_compilers : t -> Cq_spec.t list =
-  all ~f:qualified_compilers_for_machine
+  Fn.compose Act_machine.Qualified.Lookup_compilers.all machines
 
-let all_sims : t -> Sq_spec.t list = all ~f:qualified_sims_for_machine
+let all_sims : t -> Sq_spec.t list =
+  Fn.compose Act_machine.Qualified.Lookup_sims.all machines
