@@ -88,8 +88,7 @@ val all_sims : t -> Act_machine.Qualified.Sim.t list
     machine. These functions resolve those IDs, checking every machine in
     the config in turn. *)
 
-val compiler :
-  t -> fqid:Id.t -> Act_machine.Qualified.Compiler.t Or_error.t
+val compiler : t -> fqid:Id.t -> Act_machine.Qualified.Compiler.t Or_error.t
 (** [compiler c ~fqid] looks up a compiler with the fully qualified ID
     [fqid] (that is, the concatenation of the machine ID and the compiler
     ID) in [c]'s specification sets. *)

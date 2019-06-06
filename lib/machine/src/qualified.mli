@@ -14,12 +14,13 @@
 
 (** Bundles of compiler and machine specification. *)
 module Compiler : sig
-  type t [@@deriving equal]
   (** Opaque type of machine-qualified compiler specifications. *)
+  type t [@@deriving equal]
 
   (** {3 Constructors} *)
 
-  val make : c_spec:Act_compiler.Spec.With_id.t -> m_spec:Spec.With_id.t -> t
+  val make :
+    c_spec:Act_compiler.Spec.With_id.t -> m_spec:Spec.With_id.t -> t
 
   (** {3 Accessors} *)
 
@@ -38,8 +39,8 @@ end
 
 (** Bundles of simulator and machine specification. *)
 module Sim : sig
-  type t [@@deriving equal]
   (** Opaque type of machine-qualified sim specifications. *)
+  type t [@@deriving equal]
 
   (** {3 Constructors} *)
 

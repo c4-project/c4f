@@ -244,5 +244,4 @@ let qualified_sims_for_machine (m_spec : M_spec.With_id.t) : Sq_spec.t list
 let all_compilers : t -> Cq_spec.t list =
   all ~f:qualified_compilers_for_machine
 
-let all_sims : t -> Sq_spec.t list =
-  all ~f:qualified_sims_for_machine
+let all_sims : t -> Sq_spec.t list = all ~f:qualified_sims_for_machine
