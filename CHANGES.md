@@ -1,5 +1,21 @@
 # Unreleased
 
+## 2019-Jun-06
+
+- The structure of `act.conf`s has changed drastically.  The key points are:
+    - Compilers, simulators, and other such potentially-remote tools are now
+      nested inside machines, and referred to by the concatenation of the
+      machine ID and element ID.
+    - Simulator configuration no longer takes a `herd` or `litmus` stanza, but
+      instead a `sim ID` stanza.  A `style ID` (where `ID` is `herd` or `litmus`
+      inside the stanza tells ACT how to invoke and interpret the simulator.
+    - `emits` is now `arch`.
+    - There is a `default` stanza (for specifying which architecture,
+      compiler, machine, etc. to try by default), but it isn't yet usable.
+      Hooking this up to the resolution systems is future work.
+- Bugs and oddities caused by the above changes are currently being ironed
+  out.
+
 ## 2019-May-27
 
 - `act asm litmusify` no longer supports piping through a simulator.
