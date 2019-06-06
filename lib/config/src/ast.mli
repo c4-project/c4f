@@ -28,15 +28,21 @@ open Act_common
     The config {{!Config_parser} parser} emits this AST; later on, the
     {{!Config.File} config module proper} uses it to build a raw config. *)
 
+open Base
+
 (** Items in a C-preprocessor stanza *)
 module Cpp : sig
   type t = Cmd of string | Argv of string list | Enabled of bool
   [@@deriving sexp]
+
+  include Pretty_printer.S with type t := t
 end
 
 (** Items in a fuzzer stanza *)
 module Fuzz : sig
   type t = Action of Id.t * int option [@@deriving sexp]
+
+  include Pretty_printer.S with type t := t
 end
 
 (** Items in a simulator stanza *)
@@ -47,17 +53,23 @@ module Sim : sig
     | C_model of string
     | Asm_model of Id.t * string
   [@@deriving sexp]
+
+  include Pretty_printer.S with type t := t
 end
 
 (** Items in a SSH stanza *)
 module Ssh : sig
   type t = User of string | Host of string | Copy_to of string
   [@@deriving sexp]
+
+  include Pretty_printer.S with type t := t
 end
 
 (** Items in a via stanza *)
 module Via : sig
   type t = Local | Ssh of Ssh.t list [@@deriving sexp]
+
+  include Pretty_printer.S with type t := t
 end
 
 (** Items in a compiler stanza *)
@@ -69,6 +81,8 @@ module Compiler : sig
     | Cmd of string
     | Argv of string list
   [@@deriving sexp]
+
+  include Pretty_printer.S with type t := t
 end
 
 (** Items in a machine stanza *)
@@ -84,6 +98,8 @@ module Machine : sig
             machine. *)
   [@@deriving sexp]
 
+  include Pretty_printer.S with type t := t
+
   val as_compiler : t -> (Id.t * Compiler.t list) option
   (** [as_compiler top] is [Some (i, c)] if [top] is [Compiler (i, c)], and
       [None] otherwise. *)
@@ -94,9 +110,13 @@ module Default : sig
   (** Categories of default item *)
   module Category : sig
     type t = Arch | Compiler | Machine | Sim [@@deriving sexp]
+
+    include Act_utils.Enum.Extension_table with type t := t
   end
 
   type t = Try of Category.t * Id.t [@@deriving sexp]
+
+  include Pretty_printer.S with type t := t
 end
 
 (** Items at the top level *)
@@ -107,6 +127,8 @@ module Top : sig
     | Fuzz of Fuzz.t list  (** A fuzzer config block. *)
     | Machine of Id.t * Machine.t list  (** A machine config block. *)
   [@@deriving sexp]
+
+  include Pretty_printer.S with type t := t
 
   val as_cpp : t -> Cpp.t list option
   (** [as_cpp top] is [Some c] if [top] is [Cpp c], and [None] otherwise. *)
