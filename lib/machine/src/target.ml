@@ -12,7 +12,7 @@
 open Base
 module Ac = Act_common
 module C_spec = Act_compiler.Spec
-module Cq_spec = Spec.Qualified_compiler
+module Cq_spec = Qualified.Compiler
 
 type t = [`Spec of Cq_spec.t | `Arch of Ac.Id.t]
 

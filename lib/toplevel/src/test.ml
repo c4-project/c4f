@@ -24,7 +24,7 @@
 open Core
 open Act_common
 open Act_utils
-module Cq_spec = Act_machine.Spec.Qualified_compiler
+module Cq_spec = Act_machine.Qualified.Compiler
 
 let report_spec_errors (o : Output.t) = function
   | [] ->

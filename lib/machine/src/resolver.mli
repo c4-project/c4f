@@ -28,7 +28,7 @@ module type S =
 
 (** Constructs a {{!S_resolver} S_resolver} from a
     {{!Basic_resolver} Basic_resolver} over direct compiler specs. *)
-module Make (B : Basic) : S with type spec = Spec.Qualified_compiler.t
+module Make (B : Basic) : S with type spec = Qualified.Compiler.t
 
 (** Constructs a {{!S_resolver} S_resolver} over targets from a
     {{!Basic_resolver} Basic_resolver}. *)

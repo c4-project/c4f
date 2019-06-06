@@ -15,8 +15,8 @@ module Au = Act_utils
 module Tx = Travesty_core_kernel_exts
 module C_spec = Act_compiler.Spec
 module M_spec = Act_machine.Spec
-module Cq_spec = M_spec.Qualified_compiler
-module Sq_spec = M_spec.Qualified_sim
+module Cq_spec = Act_machine.Qualified.Compiler
+module Sq_spec = Act_machine.Qualified.Sim
 
 let part_chain_fst f g x = match f x with `Fst y -> g y | `Snd y -> `Snd y
 
@@ -244,5 +244,5 @@ let qualified_sims_for_machine (m_spec : M_spec.With_id.t) : Sq_spec.t list
 let all_compilers : t -> Cq_spec.t list =
   all ~f:qualified_compilers_for_machine
 
-let all_sims : t -> M_spec.Qualified_sim.t list =
+let all_sims : t -> Sq_spec.t list =
   all ~f:qualified_sims_for_machine

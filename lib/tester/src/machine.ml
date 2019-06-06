@@ -25,7 +25,7 @@ open Base
 open Act_common
 include Machine_intf
 module C_spec = Act_compiler.Spec
-module Cq_spec = Act_machine.Spec.Qualified_compiler
+module Cq_spec = Act_machine.Qualified.Compiler
 module M_spec = Act_machine.Spec
 
 module Make (B : Basic) : S = struct

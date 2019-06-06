@@ -21,7 +21,7 @@ module type S =
   Resolver_types.S
   with type 'a chain_input := 'a Act_compiler.Instance.Chain_input.t
 
-module Sp = Spec.Qualified_compiler
+module Sp = Qualified.Compiler
 
 let from_resolver_and_spec
     (resolve :
