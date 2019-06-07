@@ -10,8 +10,8 @@
    project root for more information. *)
 
 open Base
-open Act_compiler
 module Ac = Act_common
+module Spec = Act_compiler.Spec
 
 module Spec_sets = struct
   let gcc_spec : Spec.t Lazy.t =
@@ -19,6 +19,12 @@ module Spec_sets = struct
       (Spec.make ~cmd:"gcc" ~style:(Ac.Id.of_string "gcc")
          ~emits:(Ac.Id.of_string "x86.att")
          ~enabled:true ())
+
+  let disabled_gcc_spec : Spec.t Lazy.t =
+    lazy
+      (Spec.make ~cmd:"gcc" ~style:(Ac.Id.of_string "gcc")
+         ~emits:(Ac.Id.of_string "x86.att")
+         ~enabled:false ())
 
   let single_gcc_compiler : Spec.Set.t Lazy.t =
     Lazy.Let_syntax.(

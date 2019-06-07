@@ -11,13 +11,15 @@
 
 (** Sample compiler specifications and suchlike for tests. *)
 
-open Act_compiler
-
 module Spec_sets : sig
-  val gcc_spec : Spec.t Lazy.t
+  val gcc_spec : Act_compiler.Spec.t Lazy.t
   (** [gcc_spec] evaluates to an example GCC compiler spec. *)
 
-  val single_gcc_compiler : Spec.Set.t Lazy.t
+  val disabled_gcc_spec : Act_compiler.Spec.t Lazy.t
+  (** [disabled_gcc_spec] evaluates to an example GCC compiler spec that has
+      been disabled in the configuration. *)
+
+  val single_gcc_compiler : Act_compiler.Spec.Set.t Lazy.t
   (** [single_gcc_compiler] evaluates to an example compiler specset
       containing only [gcc_spec]. *)
 end
