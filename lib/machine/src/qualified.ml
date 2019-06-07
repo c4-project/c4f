@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+module Tx = Travesty_base_exts
 module C_spec = Act_compiler.Spec
 module S_spec = Act_sim.Spec
 module M_spec = Spec
@@ -63,7 +64,7 @@ module Make_lookup (B : Basic_lookup) :
   Qualified_types.S_lookup with type t = B.t = struct
   type t = B.t
 
-  let lookup (machines : Spec.Set.t) ~(fqid : Act_common.Id.t) :
+  let lookup_direct (machines : Spec.Set.t) ~(fqid : Act_common.Id.t) :
       t Or_error.t =
     Or_error.Let_syntax.(
       let%bind m_spec = Spec.Set.get_using_fqid machines ~fqid in
@@ -73,6 +74,26 @@ module Make_lookup (B : Basic_lookup) :
       let specs = B.from_machine (Spec.With_id.spec m_spec) in
       let%map spec = B.Inner.Set.get specs inner_id in
       B.qualify spec ~m_spec)
+
+  let lookup_default_fallback (defaults : Act_common.Id.t list)
+      (initial_error : Error.t) (machines : Spec.Set.t)
+      (fqid : Act_common.Id.t) =
+    let result =
+      Or_error.find_map_ok defaults ~f:(fun default ->
+          let fqid = Act_common.Id.(default @. fqid) in
+          lookup_direct machines ~fqid )
+    in
+    (* We want default resolution to be 'hidden' in the error case; errors
+       returned should refer to the original resolution attempt. *)
+    Tx.Or_error.map_right result ~f:(Fn.const initial_error)
+
+  let lookup ?(defaults : Act_common.Id.t list = []) (machines : Spec.Set.t)
+      ~(fqid : Act_common.Id.t) : t Or_error.t =
+    match (defaults, lookup_direct machines ~fqid) with
+    | [], result | _, (Ok _ as result) ->
+        result
+    | _, Error err ->
+        lookup_default_fallback defaults err machines fqid
 
   let all_on_machine (m_spec : Spec.With_id.t) : t list =
     m_spec |> Spec.With_id.spec |> B.from_machine

@@ -36,9 +36,17 @@ module type S_lookup = sig
   (** The qualified final specification type. *)
   type t
 
-  val lookup : Spec.Set.t -> fqid:Act_common.Id.t -> t Or_error.t
-  (** [lookup machines ~fqid] looks up a specification using its fully
-      qualified ID [fqid] in [machines]. *)
+  val lookup :
+       ?defaults:Act_common.Id.t list
+    -> Spec.Set.t
+    -> fqid:Act_common.Id.t
+    -> t Or_error.t
+  (** [lookup ?defaults machines ~fqid] looks up a specification using its
+      fully qualified ID [fqid] in [machines].
+
+      The lookup first tries [fqid] itself; if this fails, and [defaults] is
+      present and non-empty, then it tries again with the result of
+      prefixing each ID in [defaults] to [fqid] in turn. *)
 
   val all : Spec.Set.t -> t list
   (** [all machines] returns a list of qualified forms of all specifications
