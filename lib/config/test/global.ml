@@ -38,7 +38,7 @@ let%test_module "accessors" =
     let%expect_test "defaults" =
       print_s [%sexp (Global.defaults global : Ast.Default.t list)] ;
       [%expect
-        {| ((Try Compiler (localhost gcc x86 normal)) (Try Arch (x86 att))) |}]
+        {| ((Try compiler (localhost gcc x86 normal)) (Try arch (x86 att))) |}]
 
     let%expect_test "fuzz" =
       print_s [%sexp (Global.fuzz global : Fuzz.t option)] ;

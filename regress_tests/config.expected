@@ -9,8 +9,8 @@
 
 ```
 ((Default
-  ((Try Arch (x86 att)) (Try Machine (localhost))
-   (Try Compiler (localhost gcc x86 normal)) (Try Sim (herd)))))
+  ((Try arch (x86 att)) (Try machine (localhost))
+   (Try compiler (localhost gcc x86 normal)) (Try sim (herd)))))
 ```
 ## empty.conf
 

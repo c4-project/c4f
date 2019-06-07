@@ -39,7 +39,7 @@ module M = struct
 
   let pp_summary =
     let facts spec =
-      List.filter_opt [Option.some_if (enabled spec) "(DISABLED)"]
+      List.filter_opt [Option.some_if (not (enabled spec)) "(DISABLED)"]
     in
     Fmt.(using facts (hbox (list ~sep:sp string)))
 end
