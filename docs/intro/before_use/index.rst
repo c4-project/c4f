@@ -1,6 +1,5 @@
-************
-Introduction
-************
+Before using ACT
+================
 
 .. warning:: Under construction.
 
@@ -8,4 +7,4 @@ Introduction
    :maxdepth: 2
    :caption: Contents:
 
-   before_use/index
+   autoconf
