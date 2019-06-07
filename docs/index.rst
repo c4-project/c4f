@@ -6,15 +6,15 @@
 Welcome to the ACT documentation
 ================================
 
-*Automagic Compiler Tormentor*, or ``act``, is a project for setting
+*Automagic Compiler Tormentor*, or ACT, is a project for setting
 up C compiler concurrency tests.
 
-This documentation covers how to use ``act`` and its various
+This documentation covers how to use ACT and its various
 components.  It *doesn't* cover:
 
-- how to build ``act`` (see the project `README`_);
-- the ``act`` API (see the auto-generated `odoc`_ documentation);
-- any of the academic theory behind ``act`` (there'll be a paper on it eventually).
+- how to build ACT (see the project `README`_);
+- the ACT API (see the auto-generated `odoc`_ documentation);
+- any of the academic theory behind ACT (there'll be a paper on it eventually).
 
 .. warning:: This documentation is a heavy work-in progress, and is very incomplete.
    Check back frequently for updates.
