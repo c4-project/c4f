@@ -28,23 +28,12 @@ module Load : Au.Loadable_intf.S with type t = t = struct
     let ssh (items : Ast.Ssh.t list) : Act_machine.Ssh.t Or_error.t =
       Or_error.Let_syntax.(
         let%map user =
-          Au.My_list.find_one items ~item_name:"user" ~f:(function
-            | User u ->
-                Some u
-            | _ ->
-                None )
+          Au.My_list.find_one items ~item_name:"user" ~f:Ast.Ssh.as_user
         and host =
-          Au.My_list.find_one items ~item_name:"host" ~f:(function
-            | Host h ->
-                Some h
-            | _ ->
-                None )
+          Au.My_list.find_one items ~item_name:"host" ~f:Ast.Ssh.as_host
         and copy_dir =
-          Au.My_list.find_one items ~item_name:"copy to" ~f:(function
-            | Copy_to c ->
-                Some c
-            | _ ->
-                None )
+          Au.My_list.find_one items ~item_name:"copy to"
+            ~f:Ast.Ssh.as_copy_to
         in
         Act_machine.Ssh.make ~user ~host ~copy_dir ())
 

@@ -127,6 +127,24 @@ module Ssh = struct
           pp_directive pp_qstring f ("host", s)
       | Copy_to s ->
           pp_directive pp_qstring f ("copy_to", s))
+
+  let as_user : t -> string option = function
+    | User u ->
+        Some u
+    | Host _ | Copy_to _ ->
+        None
+
+  let as_host : t -> string option = function
+    | Host h ->
+        Some h
+    | User _ | Copy_to _ ->
+        None
+
+  let as_copy_to : t -> string option = function
+    | Copy_to c ->
+        Some c
+    | Host _ | User _ ->
+        None
 end
 
 module Via = struct
@@ -223,7 +241,7 @@ module Top = struct
     | Default of Default.t list [@sexp.list]
     | Fuzz of Fuzz.t list [@sexp.list]
     | Machine of Id.t * Machine.t list [@sexp.list]
-  [@@deriving sexp, variants]
+  [@@deriving sexp]
 
   let as_cpp : t -> Cpp.t list option = function
     | Cpp c ->
