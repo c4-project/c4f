@@ -204,11 +204,16 @@ let fuzz = H.forward Global.fuzz
 
 let defaults = H.forward Global.defaults
 
+let default_machines : t -> Ac.Id.t list =
+  Fn.compose Default.machines defaults
+
 let compiler (cfg : t) ~(fqid : Ac.Id.t) : Cq_spec.t Or_error.t =
-  Act_machine.Qualified.Lookup_compilers.lookup (machines cfg) ~fqid
+  Act_machine.Qualified.Lookup_compilers.lookup
+    ~defaults:(default_machines cfg) (machines cfg) ~fqid
 
 let sim (cfg : t) ~(fqid : Ac.Id.t) : Sq_spec.t Or_error.t =
-  Act_machine.Qualified.Lookup_sims.lookup (machines cfg) ~fqid
+  Act_machine.Qualified.Lookup_sims.lookup ~defaults:(default_machines cfg)
+    (machines cfg) ~fqid
 
 let all_compilers : t -> Cq_spec.t list =
   Fn.compose Act_machine.Qualified.Lookup_compilers.all machines

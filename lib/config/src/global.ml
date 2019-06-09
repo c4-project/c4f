@@ -18,7 +18,7 @@ module M_spec = Act_machine.Spec
 
 type t =
   { cpp: Cpp.t option [@sexp.option]
-  ; defaults: Ast.Default.t list [@sexp.list]
+  ; defaults: Default.t [@default Default.make ()] [@sexp.drop_if_default]
   ; fuzz: Fuzz.t option [@sexp.option]
   ; machines: M_spec.Set.t }
 [@@deriving make, fields]
@@ -193,34 +193,41 @@ module Load : Au.Loadable_intf.S with type t = t = struct
         | None ->
             return None)
 
-    let build_machines (items : Ast.t) =
+    let machine_with_id (id : Ac.Id.t) (spec_ast : Ast.Machine.t list) :
+        M_spec.With_id.t Or_error.t =
       Or_error.Let_syntax.(
+        let%map spec = machine spec_ast in
+        M_spec.With_id.make ~id ~spec)
+
+    let build_machines (items : Ast.t) =
+      Or_error.(
         items
         |> List.filter_map ~f:Ast.Top.as_machine
-        |> Tx.List.With_errors.map_m ~f:(fun (id, spec_ast) ->
-               let%map spec = machine spec_ast in
-               M_spec.With_id.make ~id ~spec )
+        |> Tx.List.With_errors.map_m ~f:(fun (i, s) -> machine_with_id i s)
         >>= M_spec.Set.of_list)
 
-    let build_fuzz (items : Ast.t) : Fuzz.t option Or_error.t =
-      Or_error.Let_syntax.(
-        items
-        |> Au.My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
-        >>= Tx.Option.With_errors.map_m ~f:Fuzz.of_ast)
+    let build_fuzz : Ast.t -> Fuzz.t option Or_error.t =
+      Tx.Or_error.(
+        Au.My_list.find_one_opt ~item_name:"fuzz" ~f:Ast.Top.as_fuzz
+        >=> Tx.Option.With_errors.map_m ~f:Fuzz.of_ast)
 
-    let main (items : Ast.t) : t Or_error.t =
+    let build_defaults : Ast.t -> Default.t Or_error.t =
+      Tx.Or_error.(
+        Au.My_list.find_one_opt ~item_name:"default" ~f:Ast.Top.as_default
+        >=> Tx.Option.With_errors.map_m ~f:Default.of_ast
+        >=> fun xo ->
+        Or_error.return (Option.value xo ~default:(Default.make ())))
+
+    let f (items : Ast.t) : t Or_error.t =
       Or_error.Let_syntax.(
         let%map cpp = build_cpp items
         and fuzz = build_fuzz items
-        and machines = build_machines items in
-        make ?cpp ?fuzz ~machines ())
+        and machines = build_machines items
+        and defaults = build_defaults items in
+        make ?cpp ?fuzz ~machines ~defaults ())
+
+    type dst = t
   end
 
-  include Au.Loadable.Make_chain
-            (Frontend)
-            (struct
-              type dst = t
-
-              let f = File.main
-            end)
+  include Au.Loadable.Make_chain (Frontend) (File)
 end
