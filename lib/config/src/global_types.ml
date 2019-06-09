@@ -19,7 +19,8 @@ module type S = sig
   (** [cpp c] gets the C preprocessor config, if any, to use for
       configuration [c]. *)
 
-  val defaults : t -> Ast.Default.t list
+  val defaults : t -> Default.t
+  (** [defaults c] gets the defaults set specified by configuration [c]. *)
 
   val fuzz : t -> Fuzz.t option
   (** [fuzz c] gets the fuzzer config, if any, to use for configuration [c]. *)

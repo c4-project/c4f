@@ -15,30 +15,49 @@ open Act_config
 module Ac = Act_common
 module Am = Act_machine
 
+module Data = struct
+  let cpp : Cpp.t Lazy.t = Lazy.from_fun Cpp.default
+
+  let fuzz : Fuzz.t Lazy.t = Lazy.from_fun Fuzz.make
+
+  (* These defaults should line up with the ones in Machine.Test.Qualified.
+
+     TODO(@MattWindsor91): unify them. *)
+
+  let defaults : Default.t Lazy.t =
+    Lazy.from_fun
+      Ac.Id.(
+        Default.make
+          ~machines:[of_string "foo"; of_string "bar"; of_string "localhost"]
+          ~compilers:[of_string "localhost.gcc.x86.normal"]
+          ~arches:[of_string "x86.att"])
+
+  let machines : Am.Spec.Set.t Lazy.t =
+    Act_machine_test.Data.Spec_sets.single_local_machine
+
+  let global : Global.t Lazy.t =
+    Lazy.Let_syntax.(
+      let%map cpp = cpp
+      and fuzz = fuzz
+      and defaults = defaults
+      and machines = machines in
+      Global.make ~cpp ~fuzz ~defaults ~machines ())
+end
+
 let%test_module "accessors" =
   ( module struct
-    let cpp : Cpp.t = Cpp.default ()
-
-    let fuzz : Fuzz.t = Fuzz.make ()
-
-    let defaults : Ast.Default.t list =
-      Ast.Default.
-        [ Try (Compiler, Ac.Id.of_string "localhost.gcc.x86.normal")
-        ; Try (Arch, Ac.Id.of_string "x86.att") ]
-
-    let machines : Am.Spec.Set.t =
-      Lazy.force Act_machine_test.Data.Spec_sets.single_local_machine
-
-    let global : Global.t = Global.make ~cpp ~fuzz ~defaults ~machines ()
+    let global = Lazy.force Data.global
 
     let%expect_test "cpp" =
       print_s [%sexp (Global.cpp global : Cpp.t option)] ;
       [%expect {| (((enabled true) (cmd ()) (argv ()))) |}]
 
     let%expect_test "defaults" =
-      print_s [%sexp (Global.defaults global : Ast.Default.t list)] ;
+      print_s [%sexp (Global.defaults global : Default.t)] ;
       [%expect
-        {| ((Try compiler (localhost gcc x86 normal)) (Try arch (x86 att))) |}]
+        {|
+          ((arches ((x86 att))) (compilers ((localhost gcc x86 normal)))
+           (machines ((foo) (bar) (localhost))) (sims ())) |}]
 
     let%expect_test "fuzz" =
       print_s [%sexp (Global.fuzz global : Fuzz.t option)] ;
