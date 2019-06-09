@@ -63,6 +63,12 @@ module Ssh : sig
   [@@deriving sexp]
 
   include Pretty_printer.S with type t := t
+
+  val as_user : t -> string option
+
+  val as_host : t -> string option
+
+  val as_copy_to : t -> string option
 end
 
 (** Items in a via stanza *)
