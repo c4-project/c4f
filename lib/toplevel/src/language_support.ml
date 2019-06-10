@@ -46,34 +46,8 @@ let asm_runner_from_arch :
     ~f:(fun lang rest ->
       Result.(try_get_lang_proc lang >>= fun proc -> proc rest) )
 
-module Gcc : C_types.Basic = struct
-  let mode_args : Act_compiler.Mode.t -> string list = function
-    | Assembly ->
-        ["-S"]
-    | Object ->
-        ["-c"]
-
-  let no_position_independence_args : string list = ["-fno-pic"]
-
-  let output_args (file : string) : string list = ["-o"; file]
-
-  let input_args (file : string) : string list = [file]
-
-  let compile_args ~user_args ~(arch : Id.t) ~(mode : Act_compiler.Mode.t)
-      ~infile ~outfile =
-    ignore arch ;
-    List.concat
-      [ mode_args mode
-      ; no_position_independence_args
-      ; user_args
-      ; output_args outfile
-      ; input_args infile ]
-
-  let test_args = ["--version"]
-end
-
 let style_modules : (Id.t, (module C_types.Basic)) List.Assoc.t =
-  [(Id.of_string "gcc", (module Gcc))]
+  [(Id.of_string "gcc", (module Act_compiler_gcc.Instance))]
 
 module Resolver : Act_machine.Resolver.Basic = struct
   let resolve (cspec : C_spec.With_id.t) =

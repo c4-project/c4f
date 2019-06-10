@@ -1,0 +1,6 @@
+(library
+ (name act_compiler_gcc)
+ (public_name act.compiler_gcc)
+ (preprocess
+  (pps ppx_jane))
+ (libraries base act_common act_compiler))
