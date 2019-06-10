@@ -48,9 +48,11 @@ module type S = sig
   val test : unit -> unit Or_error.t
   (** [test ()] tests that the compiler is working. *)
 
-  val compile : infile:Fpath.t -> outfile:Fpath.t -> unit Or_error.t
-  (** [compile ~infile ~outfile] runs the compiler on [infile], emitting
-      assembly to [outfile] and returning any errors that arise. *)
+  val compile :
+    Mode.t -> infile:Fpath.t -> outfile:Fpath.t -> unit Or_error.t
+  (** [compile mode ~infile ~outfile] runs the compiler on [infile],
+      emitting the output specified by [mode] to [outfile] and returning any
+      errors that arise. *)
 end
 
 (** [With_spec] is an interface for modules containing a (full) compiler

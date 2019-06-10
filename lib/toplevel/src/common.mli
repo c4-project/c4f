@@ -104,7 +104,7 @@ val make_compiler_input :
   -> (c_variables:C_variables.Map.t option -> 'cfg)
   -> Set.M(Act_sanitiser.Pass_group).t
   -> Act_c.Filters.Output.t Plumbing.Chain_context.t
-  -> 'cfg Act_asm.Job.t Act_compiler.Instance.Chain_input.t
+  -> 'cfg Act_asm.Job.t Act_compiler.Filter.Chain_input.t
 (** [make_compiler_input o file_type user_cvars cfg_fun passes dl_output]
     generates the input to the compiler stage of a single-file pipeline.
 

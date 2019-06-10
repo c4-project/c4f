@@ -22,7 +22,7 @@ module type Basic =
     fixed. *)
 module type S =
   Resolver_types.S
-  with type 'a chain_input := 'a Act_compiler.Instance.Chain_input.t
+  with type 'a chain_input := 'a Act_compiler.Filter.Chain_input.t
 
 (** {2 Resolving spec IDs to compilers} *)
 

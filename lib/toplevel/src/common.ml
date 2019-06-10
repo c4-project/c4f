@@ -111,7 +111,7 @@ let make_compiler_input (o : Ac.Output.t) (file_type : Ac.File_type.t)
     (config_fn : c_variables:Ac.C_variables.Map.t option -> 'cfg)
     (passes : Set.M(Act_sanitiser.Pass_group).t)
     (dl_output : Act_c.Filters.Output.t Pb.Chain_context.t) :
-    'cfg Act_asm.Job.t Act_compiler.Instance.Chain_input.t =
+    'cfg Act_asm.Job.t Act_compiler.Filter.Chain_input.t =
   let c_variables = choose_cvars o user_cvars dl_output in
   let symbols =
     c_variables
@@ -120,7 +120,8 @@ let make_compiler_input (o : Ac.Output.t) (file_type : Ac.File_type.t)
   in
   let config = config_fn ~c_variables in
   let litmus_job = Act_asm.Job.make ~passes ~config ?symbols () in
-  Act_compiler.Instance.Chain_input.make
+  Act_compiler.Filter.Chain_input.make
+    ~mode:Act_compiler.Mode.Assembly (* for now *)
     ~file_type:(Act_common.File_type.delitmusified file_type)
     ~next:(Fn.const litmus_job)
 

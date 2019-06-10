@@ -36,12 +36,7 @@ module type S = sig
   (** [from_spec spec] attempts to produce a first-class compiler module
       corresponding to [spec]. *)
 
-  val filter_from_spec :
-       spec
-    -> (module Plumbing.Filter_types.S
-          with type aux_i = unit
-           and type aux_o = unit)
-       Or_error.t
+  val filter_from_spec : spec -> (module Act_compiler.Filter.S) Or_error.t
   (** [filter_from_spec spec] attempts to produce a first-class compiler
       filter corresponding to [spec]. *)
 

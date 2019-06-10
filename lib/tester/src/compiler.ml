@@ -85,8 +85,8 @@ module Make (B : Basic) : S = struct
     bracket ~id ~stage:"cc" ~in_file:(P_file.name fs)
       ~out_file:(Fpath.to_string (P_file.asm_file fs))
       (fun () ->
-        C.compile ~infile:(P_file.c_file fs) ~outfile:(P_file.asm_file fs)
-        )
+        C.compile Act_compiler.Mode.Assembly ~infile:(P_file.c_file fs)
+          ~outfile:(P_file.asm_file fs) )
 
   let litmusify_single (fs : Pathset.File.t) (cvars : string list) =
     let open Or_error.Let_syntax in
