@@ -47,7 +47,11 @@ let asm_runner_from_arch :
       Result.(try_get_lang_proc lang >>= fun proc -> proc rest) )
 
 module Gcc : C_types.Basic = struct
-  let emit_assembly_args : string list = ["-S"]
+  let mode_args : Act_compiler.Mode.t -> string list = function
+    | Assembly ->
+        ["-S"]
+    | Object ->
+        ["-c"]
 
   let no_position_independence_args : string list = ["-fno-pic"]
 
@@ -55,12 +59,13 @@ module Gcc : C_types.Basic = struct
 
   let input_args (file : string) : string list = [file]
 
-  let compile_args ~args ~emits ~infile ~outfile =
-    ignore emits ;
+  let compile_args ~user_args ~(arch : Id.t) ~(mode : Act_compiler.Mode.t)
+      ~infile ~outfile =
+    ignore arch ;
     List.concat
-      [ emit_assembly_args
+      [ mode_args mode
       ; no_position_independence_args
-      ; args
+      ; user_args
       ; output_args outfile
       ; input_args infile ]
 
