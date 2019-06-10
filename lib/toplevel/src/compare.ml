@@ -34,7 +34,7 @@ let litmusify o (passes : Set.M(Act_sanitiser.Pass_group).t) spec c_file =
   let litmus_job = Act_asm.Job.make ~config ~passes () in
   let job_input =
     Fn.const
-      (Act_compiler.Instance.Chain_input.make ~file_type:C
+      (Act_compiler.Filter.Chain_input.make ~mode:Assembly ~file_type:C
          ~next:(Fn.const litmus_job))
   in
   let input = Act_asm.Pipeline.Input.make ~file_type:C ~job_input in

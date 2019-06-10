@@ -25,7 +25,7 @@ open Base
 module Ac = Act_common
 module Pb = Plumbing
 
-type 'a chain_input = 'a Act_compiler.Instance.Chain_input.t
+type 'a chain_input = 'a Act_compiler.Filter.Chain_input.t
 
 module Input = struct
   type 'job t =

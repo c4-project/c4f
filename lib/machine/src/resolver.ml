@@ -13,13 +13,14 @@ open Base
 module Pb = Plumbing
 module C_instance = Act_compiler.Instance
 module C_instance_t = Act_compiler.Instance_types
+module C_filter = Act_compiler.Filter
 
 module type Basic =
   Resolver_types.Basic with type spec := Act_compiler.Spec.With_id.t
 
 module type S =
   Resolver_types.S
-  with type 'a chain_input := 'a Act_compiler.Instance.Chain_input.t
+  with type 'a chain_input := 'a Act_compiler.Filter.Chain_input.t
 
 module Sp = Qualified.Compiler
 
@@ -45,30 +46,24 @@ module Make (B : Basic) : S with type spec = Sp.t = struct
   let from_spec : spec -> (module C_instance_t.S) Or_error.t =
     from_resolver_and_spec B.resolve
 
-  let filter_from_spec (cspec : Sp.t) :
-      (module Pb.Filter_types.S with type aux_i = unit
-                                 and type aux_o = unit)
-      Or_error.t =
+  let filter_from_spec (cspec : Sp.t) : (module C_filter.S) Or_error.t =
     Or_error.Let_syntax.(
       let%map (module M) = from_spec cspec in
-      (module C_instance.S_to_filter (M)
-      : Pb.Filter_types.S
-        with type aux_i = unit
-         and type aux_o = unit ))
+      (module C_filter.Make (M) : C_filter.S))
 
   let chained_filter_from_spec (type i o) (cspec : Sp.t)
       (module Onto : Pb.Filter_types.S
         with type aux_i = i
          and type aux_o = o) :
       (module Pb.Filter_types.S
-         with type aux_i = i C_instance.Chain_input.t
+         with type aux_i = i C_filter.Chain_input.t
           and type aux_o = o)
       Or_error.t =
     Or_error.Let_syntax.(
       let%map (module F) = filter_from_spec cspec in
-      (module C_instance.Chain_with_compiler (F) (Onto)
+      (module C_filter.Chain_with_compiler (F) (Onto)
       : Pb.Filter_types.S
-        with type aux_i = i C_instance.Chain_input.t
+        with type aux_i = i C_filter.Chain_input.t
          and type aux_o = o ))
 end
 
@@ -87,13 +82,10 @@ module Make_on_target (B : Basic) : S with type spec = Target.t = struct
           end)
           : C_instance_t.S )
 
-  let filter_from_spec (tgt : Target.t) =
+  let filter_from_spec (tgt : Target.t) : (module C_filter.S) Or_error.t =
     Or_error.Let_syntax.(
       let%map (module M) = from_spec tgt in
-      (module C_instance.S_to_filter (M)
-      : Pb.Filter_types.S
-        with type aux_i = unit
-         and type aux_o = unit ))
+      (module C_filter.Make (M) : C_filter.S))
 
   let chained_filter_from_spec (type i o) (tgt : Target.t)
       (module Onto : Pb.Filter_types.S
@@ -101,8 +93,8 @@ module Make_on_target (B : Basic) : S with type spec = Target.t = struct
          and type aux_o = o) =
     let open Or_error.Let_syntax in
     let%map (module F) = filter_from_spec tgt in
-    (module C_instance.Chain_with_compiler (F) (Onto)
+    (module C_filter.Chain_with_compiler (F) (Onto)
     : Pb.Filter_types.S
-      with type aux_i = i C_instance.Chain_input.t
+      with type aux_i = i C_filter.Chain_input.t
        and type aux_o = o )
 end
