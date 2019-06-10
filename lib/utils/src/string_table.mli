@@ -23,7 +23,7 @@
 
 (** Case-insentitive bidirectional string lookup table modules *)
 
-open Core
+open Core_kernel
 
 (** [Table] is a signature containing the raw string table itself. *)
 module type Table = sig

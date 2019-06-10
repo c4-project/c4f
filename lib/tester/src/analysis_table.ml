@@ -23,7 +23,7 @@
 
 open Core_kernel (* not Base: we need Time.Span. *)
 
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 open Act_common
 module Au = Act_utils
 module A = Analysis

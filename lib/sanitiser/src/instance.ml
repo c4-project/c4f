@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Travesty_containers
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 open Instance_intf
 
 module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct

@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Ac = Act_common
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 open Mini
 open Mini_intf
 module Ast = Act_c_lang.Ast

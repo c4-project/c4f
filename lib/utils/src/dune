@@ -6,8 +6,9 @@
  (synopsis "Automagic Compiler Tormentor: non-ACT-specific utility modules")
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
- (libraries sedlex plumbing travesty travesty.base_exts
-   travesty.core_kernel_exts core core_kernel shell base stdio sexplib0
-   shell.string_extended fpath menhirLib fmt textutils_kernel.text_block)
+ (libraries splittable_random sedlex plumbing travesty travesty.base_exts
+   travesty.core_kernel_exts core core_kernel shell base base.caml stdio
+   sexplib sexplib0 shell.string_extended fpath menhirLib fmt
+   textutils_kernel.text_block)
  (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )

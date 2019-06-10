@@ -6,5 +6,6 @@
  (modules_without_implementation ("qualified_types"))
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries fmt fpath travesty travesty.core_kernel_exts core_kernel
-   act_common act_utils act_sim act_compiler))
+ (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
+   sexplib0 fmt fpath travesty base base.caml travesty.base_exts core_kernel
+   act.common act.utils plumbing act.sim act.compiler))

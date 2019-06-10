@@ -7,4 +7,7 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries core_kernel act_asm act_c act_common act_sim act_utils))
+ (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
+   sexplib0 travesty travesty.base_exts base base.caml core_kernel fmt fpath
+   plumbing act.asm act.c act.c_lang act.compiler act.common act.machine
+   act.sanitiser act.sim act.utils))

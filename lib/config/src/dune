@@ -5,9 +5,9 @@
    "Automagic Compiler Tormentor: configuration and config file parsing")
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
- (libraries fmt fpath menhirLib travesty travesty.core_kernel_exts sedlex
-   core_kernel act_common act_compiler act_litmus act_utils act_sanitiser
-   act_machine)
+ (libraries sexplib0 fmt fpath menhirLib travesty travesty.core_kernel_exts
+   sedlex base.caml core_kernel act.common act.compiler act.litmus act.sim
+   act.utils act.sanitiser act.machine)
  (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )
 

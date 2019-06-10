@@ -6,5 +6,5 @@
  (synopsis "Modules for building Unix-style filters and other pipework")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries core core_kernel base shell stdio fpath fmt travesty
-   travesty.base_exts))
+ (libraries result sexplib sexplib0 core core_kernel base base.caml shell
+   shell.low_level_process stdio fpath fmt travesty travesty.base_exts))

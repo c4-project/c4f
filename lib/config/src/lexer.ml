@@ -104,7 +104,7 @@ let rec token (lexbuf : Sedlexing.lexbuf) : token =
   | '"' ->
       Lu.read_string (fun x -> STRING x) lexbuf
   | Opt '-', num ->
-      INTEGER (Core.Int.of_string (S.Utf8.lexeme lexbuf))
+      INTEGER (Int.of_string (S.Utf8.lexeme lexbuf))
   | c_id ->
       lex_possible_keyword (S.Utf8.lexeme lexbuf)
   | _ ->

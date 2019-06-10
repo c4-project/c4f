@@ -17,7 +17,7 @@
 open Base
 module Ac = Act_common
 module Au = Act_utils
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 open Ast_basic
 include Ast_intf
 
