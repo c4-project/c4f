@@ -4,6 +4,9 @@
  (name act_sim)
  (public_name act.sim)
  (synopsis "Automagic Compiler Tormentor: simulator running framework")
+ (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries base fmt fpath travesty travesty.base_exts act_common act_utils))
+ (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config
+   sexplib0 stdio base base.caml core_kernel fmt fpath travesty
+   travesty.base_exts act.common act.utils plumbing))

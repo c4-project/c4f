@@ -24,7 +24,7 @@
 (** [Tabulator] is an abstract data type for building tables of
     pretty-printed values. *)
 
-open Core
+open Base
 
 (** [t] is the opaque type of a tabulator. *)
 type t

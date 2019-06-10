@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Compiler_intf
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 module Ac = Act_common
 
 module Make (B : Basic) : S = struct

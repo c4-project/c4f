@@ -23,7 +23,7 @@
 
 open Core_kernel (* not Base; for Blang *)
 
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 module Ac = Act_common
 include Ast_intf
 

@@ -25,7 +25,7 @@ open Base
 open Stdio
 open Litmusifier_intf
 module Ac = Act_common
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 
 module Format = struct
   type t = Full | Programs_only [@@deriving sexp, equal]

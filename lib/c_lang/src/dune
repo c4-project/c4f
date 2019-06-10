@@ -7,7 +7,9 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
- (libraries core_kernel menhirLib act_common act_config act_utils sedlex)
+ (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
+   sexplib0 base.caml core_kernel fmt menhirLib act_common act.config
+   act.litmus act.sim act.utils sedlex travesty.base_exts)
  (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )
 

@@ -24,7 +24,7 @@
 open Core_kernel
 open Act_utils
 include Statement_intf
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 
 module Make (B : Basic_with_modules) :
   S with type t = B.t and module Instruction = B.Instruction = struct

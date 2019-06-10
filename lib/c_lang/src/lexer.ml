@@ -111,7 +111,7 @@ let rec token (typedefs : Set.M(String).t) (lexbuf : S.lexbuf) : token =
       Act_utils.Lex_utils.skip_line lexbuf ;
       token typedefs lexbuf
   | Opt '-', num ->
-      INT_LIT (Core.Int.of_string (S.Utf8.lexeme lexbuf))
+      INT_LIT (Int.of_string (S.Utf8.lexeme lexbuf))
   | ';' ->
       SEMI
   | ',' ->

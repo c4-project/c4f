@@ -6,4 +6,5 @@
  (synopsis "Common glue for Herdtools7-derived simulators")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries core_kernel travesty.core_kernel_exts act_sim act_utils))
+ (libraries sexplib0 stdio shell.string_extended core_kernel travesty
+   travesty.base_exts act.common act.sim act.utils))

@@ -4,7 +4,9 @@
  (name act_sim_herd)
  (public_name act.sim_herd)
  (synopsis "Simulator frontend for the Herd7 multicore CPU simulator")
+ (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries core_kernel travesty.core_kernel_exts act_sim
-   act_sim_herdtools_common act_utils))
+ (libraries ppx_inline_test.config ppx_expect.common ppx_expect.config stdio
+   base base.caml core_kernel travesty.core_kernel_exts act.common
+   act.plumbing act.sim act.sim_herdtools_common act.utils))

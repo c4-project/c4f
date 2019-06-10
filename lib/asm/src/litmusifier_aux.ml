@@ -24,7 +24,7 @@
 open Base
 include Litmusifier_intf
 module Ac = Act_common
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 
 type 'const t =
   { locations: Ac.C_id.t list option

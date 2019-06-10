@@ -7,4 +7,5 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries core_kernel menhirLib act_common act_utils))
+ (libraries sexplib0 stdio base base.caml core_kernel fmt menhirLib travesty
+   travesty.base_exts act.common act.utils))

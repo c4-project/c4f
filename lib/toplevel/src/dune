@@ -5,6 +5,7 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries core fmt fmt.tty unix act_c act_compiler act_compiler_gcc
-   act_config act_sanitiser act_sim act_sim_herd act_sim_litmus act_tester
-   act_x86))
+ (libraries sexplib0 stdio base.caml core_kernel core fpath fmt fmt.tty unix
+   travesty.base_exts plumbing act.asm act.c act.common act.compiler
+   act.compiler_gcc act.config act.machine act.litmus act.sanitiser act.sim
+   act.sim_herd act.sim_litmus act.tester act.utils act.x86))

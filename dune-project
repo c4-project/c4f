@@ -1,4 +1,5 @@
-(lang dune 1.9)
+(lang dune 1.10)
 (name act)
 (using menhir 2.0)
 (using fmt 1.1)
+(implicit_transitive_deps false)

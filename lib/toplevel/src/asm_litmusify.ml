@@ -23,7 +23,7 @@
 
 open Core_kernel
 module A = Act_common
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 
 let parse_post :
        [`Exists of Sexp.t]

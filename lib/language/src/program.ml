@@ -23,7 +23,7 @@
 
 open Base
 include Program_intf
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 
 module Make (B : Basic_with_modules) :
   S with type t = B.t and module Statement = B.Statement = struct

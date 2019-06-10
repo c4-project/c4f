@@ -7,5 +7,6 @@
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries base fmt fpath travesty travesty.base_exts act_c act_abstract
-   act_common act_config act_language act_sanitiser))
+ (libraries sexplib0 stdio base base.caml core_kernel fmt fpath travesty
+   travesty.base_exts plumbing act.utils act.common act.compiler act.abstract
+   act.c act.litmus act.config act.language act.machine act.sanitiser))

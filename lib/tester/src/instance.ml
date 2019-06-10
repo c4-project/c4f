@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Instance_intf
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 module M_spec = Act_machine.Spec
 module Machine_assoc =
   Travesty.Bi_mappable.Fix2_left (Tx.Alist) (Act_common.Id)

@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-open Travesty_core_kernel_exts
+open Travesty_base_exts
 module Ac = Act_common
 include Mini_env_intf
 

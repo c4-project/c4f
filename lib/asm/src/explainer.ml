@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 
 module Config = struct
   module Format = struct

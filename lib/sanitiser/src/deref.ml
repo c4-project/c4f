@@ -23,7 +23,7 @@
 
 open Core_kernel
 open Travesty_containers
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 module A = Act_common
 
 module Mark = struct

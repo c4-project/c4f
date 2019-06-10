@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Core_kernel
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 module Ac = Act_common
 module Var = Fuzzer_var
 module Subject = Fuzzer_subject
