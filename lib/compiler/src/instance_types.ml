@@ -30,16 +30,17 @@ module type Basic = sig
       it works. Usually, this will be some form of version command. *)
 
   val compile_args :
-       args:string list
-    -> emits:Act_common.Id.t
+       user_args:string list
+    -> arch:Act_common.Id.t
+    -> mode:Mode.t
     -> infile:string
     -> outfile:string
     -> string list
-  (** [compile_args ~args ~emits ~infile ~outfile] takes the set of
-      arguments [args] the user supplied, the name of the architecture
-      [emits] the compiler is going to emit, the input file [infile], and
-      the output file [outfile], and produces a final argument vector to
-      send to the compiler. *)
+  (** [compile_args ~user_args ~arch ~mode] takes the set of arguments
+      [args] the user supplied, the name of the architecture [arch] the
+      compiler is going to emit, information about the compilation mode
+      [mode], and input [infile] and output [outfile] files; it then
+      produces a final argument vector to send to the compiler. *)
 end
 
 (** [S] is the outward-facing interface of compiler modules. *)

@@ -20,17 +20,22 @@ struct
 
   let cmd = Spec.With_id.cmd B.cspec
 
-  let compile ~(infile : Fpath.t) ~(outfile : Fpath.t) =
-    let s = Spec.With_id.spec B.cspec in
-    let argv_fun =
-      Pb.Runner.argv_one_file (fun ~input ~output ->
-          Or_error.return
-            (B.compile_args ~args:(Spec.argv s) ~emits:(Spec.emits s)
-               ~infile:input ~outfile:output) )
-    in
+  let make_argv_fun (spec : Spec.t) (mode : Mode.t) =
+    let user_args = Spec.argv spec in
+    let arch = Spec.emits spec in
+    Pb.Runner.argv_one_file (fun ~input ~output ->
+        Or_error.return
+          (B.compile_args ~user_args ~arch ~mode ~infile:input
+             ~outfile:output) )
+
+  let compile_with_mode (mode : Mode.t) ~(infile : Fpath.t)
+      ~(outfile : Fpath.t) =
+    let spec = Spec.With_id.spec B.cspec in
     B.Runner.run_with_copy ~prog:cmd
       {input= Pb.Copy_spec.file infile; output= Pb.Copy_spec.file outfile}
-      argv_fun
+      (make_argv_fun spec mode)
+
+  let compile = compile_with_mode Mode.Assembly
 
   let test () = B.Runner.run ~prog:cmd B.test_args
 end
