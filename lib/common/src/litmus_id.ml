@@ -82,7 +82,7 @@ let%expect_test "try_parse: example invalid identifier" =
     (Error
      ("validation failed"
       (1 ("validation errors" (("fst.char '1'" "Invalid initial character.")))
-       utils/c_identifier.ml:58:13))) |}]
+       lib/common/src/c_id.ml:62:13))) |}]
 
 let global_of_string (str : string) : t Or_error.t =
   Or_error.(str |> C_id.create >>| global)

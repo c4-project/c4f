@@ -5,4 +5,4 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries base act_utils))
+ (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config stdio base core_kernel fpath fmt act_utils))

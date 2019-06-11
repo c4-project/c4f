@@ -2,7 +2,7 @@
  (names explain delitmus litmusify config config_failures)
  (preprocess
   (pps ppx_jane))
- (libraries core toplevel fpath)
+ (libraries sexplib0 base.caml core_kernel core stdio fmt toplevel fpath plumbing act.asm act.c act.common act.config act.sanitiser act.utils)
  (action
   (run %{test} input))
  (deps
