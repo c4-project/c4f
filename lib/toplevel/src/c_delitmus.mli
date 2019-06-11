@@ -23,7 +23,5 @@
 
 (** Command for act's C/Litmus delitmusifier. *)
 
-open Core_kernel
-
-val command : Command.t
+val command : Core_kernel.Command.t
 (** [command] is the top-level 'c delitmus' command. *)

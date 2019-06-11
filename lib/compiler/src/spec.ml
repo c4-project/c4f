@@ -13,6 +13,30 @@ open Base
 module Ac = Act_common
 module Au = Act_utils
 
+module Forward_spec
+    (Outer : Equal.S)
+    (Inner : Spec_types.S)
+    (Forwarding : Au.Inherit.S with type c := Inner.t and type t := Outer.t) :
+  Spec_types.S with type t := Outer.t = struct
+  module H = Act_utils.Inherit.Helpers (struct
+    type t = Outer.t
+
+    type c = Inner.t
+
+    include Forwarding
+  end)
+
+  let equal = Outer.equal
+
+  let style = H.forward Inner.style
+
+  let emits = H.forward Inner.emits
+
+  let cmd = H.forward Inner.cmd
+
+  let argv = H.forward Inner.argv
+end
+
 module M = struct
   type t =
     { argv: string list [@sexp.list]
@@ -48,23 +72,10 @@ module With_id = struct
   module W = Ac.Spec.With_id (M)
   include W
 
-  module H = Act_utils.Inherit.Helpers (struct
-    type t = W.t
-
-    type c = M.t
-
-    let component = spec
-  end)
-
-  let is_enabled = H.forward M.is_enabled
-
-  let style = H.forward M.style
-
-  let emits = H.forward M.emits
-
-  let cmd = H.forward M.cmd
-
-  let argv = H.forward M.argv
+  include Forward_spec (W) (M)
+            (struct
+              let component = W.spec
+            end)
 end
 
 module Spec_basic = struct

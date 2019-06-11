@@ -9,10 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Type of compiler run modes. *)
-type t =
-  | Assembly  (** Compiling a single file to assembly. *)
-  | Object  (** Compiling a single file to object code. *)
-[@@deriving sexp]
+(** Command for invoking ACT's compilers in a standalone manner. *)
 
-include Act_utils.Enum.Extension_table with type t := t
+val command : Core_kernel.Command.t
+(** [command] is the top-level 'c compile' command. *)

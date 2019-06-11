@@ -25,8 +25,7 @@
 
 open Core_kernel
 open Act_common
-
-include module type of Args_intf
+open Args_intf
 
 (** {2 The standard arguments} *)
 
@@ -92,3 +91,7 @@ val machine_predicate :
   Act_machine.Property.t Blang.t option Command.Param.t
 (** [machine_predicate] defines a parameter for collecting a filtering
     predicate for machines. *)
+
+val asm_target : Asm_target.t Command.Param.t
+(** [asm_target] defines a parameter for collecting an assembly target
+    (architecture or compiler). *)
