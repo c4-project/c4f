@@ -1,5 +1,10 @@
 # Unreleased
 
+## 2019-Jun-11
+
+- New command `act c compile`, for compiling single files without testing or
+  litmusifying them.
+
 ## 2019-Jun-06
 
 - The structure of `act.conf`s has changed drastically.  The key points are:
