@@ -33,5 +33,6 @@ single C files or litmus tests in a target-independent way.
 let command : Command.t =
   Command.group ~summary:"commands for dealing with C files" ~readme
     [ ("delitmus", C_delitmus.command)
+    ; ("compile", C_compile.command)
     ; ("explain", C_explain.command)
     ; ("fuzz", C_fuzz.command) ]

@@ -24,7 +24,7 @@
 open Core
 open Act_common
 open Act_utils
-include Args_intf
+open Args_intf
 
 module Colour_table = String_table.Make (struct
   type t = Fmt.style_renderer option

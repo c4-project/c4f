@@ -5,4 +5,5 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config base base.caml stdio fmt act.abstract act.utils act.x86))
+ (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config base
+   base.caml stdio fmt act.abstract act.utils act.x86))

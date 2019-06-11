@@ -9,4 +9,11 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-type t = Assembly | Object
+module M = struct
+  type t = Assembly | Object [@@deriving enum]
+
+  let table = [(Assembly, "assembly"); (Object, "object")]
+end
+
+include M
+include Act_utils.Enum.Extend_table (M)
