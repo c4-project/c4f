@@ -34,8 +34,16 @@ let mode_param : Act_compiler.Mode.t Command.Param.t =
     ~doc:"MODE the output mode with which to invoke the compiler"
     Act_compiler.Mode.sexp_of_t
 
+let readme () : string =
+  Act_utils.My_string.format_for_readme
+    {|
+    This command runs a compiler, given its fully qualified identifier, on
+    a single input file.  It either outputs an assembly (.s) file (the default),
+    or an object (.o) file.
+    |}
+
 let command : Command.t =
-  Command.basic ~summary:"runs the given compiler on "
+  Command.basic ~summary:"runs the given compiler on a single file" ~readme
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard_with_files.get
       and raw_target = Args.asm_target
