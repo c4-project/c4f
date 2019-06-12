@@ -43,10 +43,13 @@ module Input : sig
 
   val target : t -> Act_machine.Target.t
 
-  val user_cvars : t -> Act_common.C_variables.Map.t option
+  val c_litmus_aux : t -> Act_delitmus.Output.Aux.t
+  (** [c_litmus_aux in] gets the auxiliary information associated with any
+      C litmus test that was previously processed into the input to this
+      assembly command. *)
 
   val make_job_input :
-    t -> (Act_common.C_variables.Map.t option -> 'cfg) -> 'cfg Act_asm.Job.t
+    t -> (Act_delitmus.Output.Aux.t -> 'cfg) -> 'cfg Act_asm.Job.t
 end
 
 val lift_command :

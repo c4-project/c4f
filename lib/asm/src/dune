@@ -9,4 +9,4 @@
   (pps ppx_deriving.std ppx_jane))
  (libraries sexplib0 stdio base base.caml core_kernel fmt fpath travesty
    travesty.base_exts plumbing act.utils act.common act.compiler act.abstract
-   act.c act.litmus act.config act.language act.machine act.sanitiser))
+   act.c act.litmus act.config act.delitmus act.language act.machine act.sanitiser))

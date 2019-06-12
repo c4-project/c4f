@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Core_kernel
 module Tx = Travesty_base_exts
@@ -49,17 +37,6 @@ let warn_if_not_tracking_symbols (o : Ac.Output.t) :
 let asm_runner_of_target (tgt : Cc_target.t) :
     (module Act_asm.Runner_intf.Basic) Or_error.t =
   Language_support.asm_runner_from_arch (Cc_target.arch tgt)
-
-let make_job_input (c_variables : Ac.C_variables.Map.t option)
-    (config_fn : Ac.C_variables.Map.t option -> 'cfg)
-    (passes : Set.M(Act_sanitiser.Pass_group).t) : 'cfg Act_asm.Job.t =
-  let symbols =
-    c_variables
-    |> Option.map ~f:Ac.C_id.Map.keys
-    |> Option.map ~f:(List.map ~f:Ac.C_id.to_string)
-  in
-  let config = config_fn c_variables in
-  Act_asm.Job.make ~passes ~config ?symbols ()
 
 let make_output_from_standard_args (args : Args.Standard.t) : Ac.Output.t =
   Ac.Output.make

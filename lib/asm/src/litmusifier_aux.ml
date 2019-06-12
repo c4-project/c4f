@@ -22,15 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Litmusifier_intf
 module Ac = Act_common
 module Tx = Travesty_base_exts
-
-type 'const t =
-  { locations: Ac.C_id.t list option
-  ; init: (Ac.C_id.t, 'const) List.Assoc.t
-  ; postcondition: 'const Act_litmus.Ast_base.Postcondition.t option }
-[@@deriving fields, make]
 
 let record_to_constant (r : Ac.C_variables.Record.t)
     ~(of_int : int -> 'const) : 'const =
@@ -106,7 +99,7 @@ let live_symbols_only (c_variables : Ac.C_variables.Map.t)
 let make ?(c_variables : Ac.C_variables.Map.t option)
     ?(postcondition : 'const Act_litmus.Ast_base.Postcondition.t option)
     ~(heap_symbols : Act_abstract.Symbol.Set.t) ~(of_int : int -> 'const) :
-    'const t =
+    'const Act_litmus.Aux.t =
   let live_cvars_opt =
     Option.map ~f:(live_symbols_only ~heap_symbols) c_variables
   in
@@ -116,4 +109,4 @@ let make ?(c_variables : Ac.C_variables.Map.t option)
   let locations =
     make_locations ?postcondition ?c_variables:live_cvars_opt ~init ()
   in
-  make ~locations ~init ?postcondition ()
+  Act_litmus.Aux.make ~locations ~init ?postcondition ()

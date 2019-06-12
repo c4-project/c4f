@@ -77,9 +77,3 @@ val lift_asm_command_basic :
     (and supplies) the various standard asm command arguments, including
     sanitiser passes. More thorough lifting is left to the [Asm_common]
     module. *)
-
-val make_job_input :
-     C_variables.Map.t option
-  -> (C_variables.Map.t option -> 'cfg)
-  -> Set.M(Act_sanitiser.Pass_group).t
-  -> 'cfg Act_asm.Job.t
