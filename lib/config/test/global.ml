@@ -16,8 +16,6 @@ module Ac = Act_common
 module Am = Act_machine
 
 module Data = struct
-  let cpp : Cpp.t Lazy.t = Lazy.from_fun Cpp.default
-
   let fuzz : Fuzz.t Lazy.t = Lazy.from_fun Fuzz.make
 
   (* These defaults should line up with the ones in Machine.Test.Qualified.
@@ -37,20 +35,13 @@ module Data = struct
 
   let global : Global.t Lazy.t =
     Lazy.Let_syntax.(
-      let%map cpp = cpp
-      and fuzz = fuzz
-      and defaults = defaults
-      and machines = machines in
-      Global.make ~cpp ~fuzz ~defaults ~machines ())
+      let%map fuzz = fuzz and defaults = defaults and machines = machines in
+      Global.make ~fuzz ~defaults ~machines ())
 end
 
 let%test_module "accessors" =
   ( module struct
     let global = Lazy.force Data.global
-
-    let%expect_test "cpp" =
-      print_s [%sexp (Global.cpp global : Cpp.t option)] ;
-      [%expect {| (((enabled true) (cmd ()) (argv ()))) |}]
 
     let%expect_test "defaults" =
       print_s [%sexp (Global.defaults global : Default.t)] ;

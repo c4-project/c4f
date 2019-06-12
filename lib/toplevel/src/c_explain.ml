@@ -28,17 +28,12 @@ module Ac = Act_common
     @MattWindsor91 ): re-enable litmus mode *)
 
 let run (output_mode : [`All | `Vars]) (args : Args.Standard_with_files.t)
-    _o cfg =
+    _o _cfg =
   let open Or_error.Let_syntax in
   let%bind infile = Args.Standard_with_files.infile_source args in
   let%bind outfile = Args.Standard_with_files.outfile_sink args in
-  let cpp_cfg =
-    Option.value (Act_config.Act.cpp cfg)
-      ~default:(Act_config.Cpp.default ())
-  in
   let (module M) = Act_c.Filters.c_module true in
-  let module Cpp_M = Act_c.Cpp.Chain_filter (M) in
-  let%map _ = Cpp_M.run (cpp_cfg, Print output_mode) infile outfile in
+  let%map _ = M.run (Print output_mode) infile outfile in
   ()
 
 let command : Command.t =

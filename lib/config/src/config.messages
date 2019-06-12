@@ -191,15 +191,6 @@ main: FUZZ LBRACE ACTION IDENTIFIER WEIGHT WEIGHT
 
 Expected an integer weight after `weight`
 
-main: CPP VIA
-##
-## Ends in an error in state: 105.
-##
-## simple_stanza(CPP,cpp_item) -> CPP . LBRACE separated_nonempty_list(EOL,option(cpp_item)) RBRACE [ EOL EOF ]
-##
-## The known suffix of the stack is as follows:
-## CPP
-##
 main: MACHINE IDENTIFIER LBRACE VIA SSH VIA
 ##
 ## Ends in an error in state: 5.
@@ -296,16 +287,6 @@ main: MACHINE IDENTIFIER LBRACE SIM IDENTIFIER LBRACE CMD VIA
 
 Expected a quoted command name or path
 
-main: CPP LBRACE ENABLED BOOL VIA
-##
-## Ends in an error in state: 109.
-##
-## separated_nonempty_list(EOL,option(cpp_item)) -> option(cpp_item) . [ RBRACE ]
-## separated_nonempty_list(EOL,option(cpp_item)) -> option(cpp_item) . EOL separated_nonempty_list(EOL,option(cpp_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(cpp_item)
-##
 main: MACHINE IDENTIFIER LBRACE SIM IDENTIFIER LBRACE C_MODEL STRING VIA
 ##
 ## Ends in an error in state: 38.
@@ -381,30 +362,6 @@ main: MACHINE IDENTIFIER LBRACE COMPILER IDENTIFIER LBRACE ARGV STRING VIA
 ##
 
 Expected a closing brace (to terminate this block), another string, or a newline
-
-
-main: CPP LBRACE EOL VIA
-##
-## Ends in an error in state: 110.
-##
-## separated_nonempty_list(EOL,option(cpp_item)) -> option(cpp_item) EOL . separated_nonempty_list(EOL,option(cpp_item)) [ RBRACE ]
-##
-## The known suffix of the stack is as follows:
-## option(cpp_item) EOL
-##
-main: CPP LBRACE VIA
-##
-## Ends in an error in state: 106.
-##
-## simple_stanza(CPP,cpp_item) -> CPP LBRACE . separated_nonempty_list(EOL,option(cpp_item)) RBRACE [ EOL EOF ]
-##
-## The known suffix of the stack is as follows:
-## CPP LBRACE
-##
-
-Expected a valid C preprocessor configuration item; for example:
-- `cmd "/path/to/cpp"`
-- `enabled BOOL`
 
 main: MACHINE IDENTIFIER LBRACE RBRACE VIA
 ##

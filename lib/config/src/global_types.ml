@@ -15,10 +15,6 @@ open Base
 module type S = sig
   type t
 
-  val cpp : t -> Cpp.t option
-  (** [cpp c] gets the C preprocessor config, if any, to use for
-      configuration [c]. *)
-
   val defaults : t -> Default.t
   (** [defaults c] gets the defaults set specified by configuration [c]. *)
 

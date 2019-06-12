@@ -40,7 +40,6 @@ let keywords : token String_map.t Lazy.t =
        ; ("asm_model", ASM_MODEL)
        ; ("c_model", C_MODEL)
        ; ("cmd", CMD)
-       ; ("cpp", CPP)
        ; ("compiler", COMPILER)
        ; ("copy", COPY)
        ; ("default", DEFAULT)
