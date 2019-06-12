@@ -30,14 +30,6 @@ open Act_common
 
 open Base
 
-(** Items in a C-preprocessor stanza *)
-module Cpp : sig
-  type t = Cmd of string | Argv of string list | Enabled of bool
-  [@@deriving sexp]
-
-  include Pretty_printer.S with type t := t
-end
-
 (** Items in a fuzzer stanza *)
 module Fuzz : sig
   type t = Action of Id.t * int option [@@deriving sexp]
@@ -128,16 +120,12 @@ end
 (** Items at the top level *)
 module Top : sig
   type t =
-    | Cpp of Cpp.t list  (** A C preprocessor config block. *)
     | Default of Default.t list  (** A default resolution config block. *)
     | Fuzz of Fuzz.t list  (** A fuzzer config block. *)
     | Machine of Id.t * Machine.t list  (** A machine config block. *)
   [@@deriving sexp]
 
   include Pretty_printer.S with type t := t
-
-  val as_cpp : t -> Cpp.t list option
-  (** [as_cpp top] is [Some c] if [top] is [Cpp c], and [None] otherwise. *)
 
   val as_default : t -> Default.t list option
   (** [as_default top] is [Some c] if [top] is [Default c], and [None]

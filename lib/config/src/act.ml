@@ -198,8 +198,6 @@ module H = Act_utils.Inherit.Helpers (struct
   let component = global
 end)
 
-let cpp = H.forward Global.cpp
-
 let fuzz = H.forward Global.fuzz
 
 let defaults = H.forward Global.defaults

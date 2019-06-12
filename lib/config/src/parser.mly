@@ -23,8 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. *)
 
 %token (* delimiters *) LBRACE RBRACE EOF EOL
-%token (* main groups *) MACHINE COMPILER FUZZ
-%token (* program subgroups *) CPP SIM
+%token (* main groups *) MACHINE COMPILER SIM FUZZ
 %token (* default resolutipn *) DEFAULT TRY
 %token (* common keywords *) ENABLED CMD ARGV
 %token (* fuzz-specific keywords *) ACTION WEIGHT
@@ -64,18 +63,9 @@ main:
   | stanzas = line_list(top_stanza); EOF { stanzas }
 
 top_stanza:
-  | c = cpp_stanza      {                 Ast.Top.Cpp      c      }
   | d = default_stanza  {                 Ast.Top.Default  d      }
   | f = fuzz_stanza     {                 Ast.Top.Fuzz     f      }
   | x = machine_stanza  { let i, m = x in Ast.Top.Machine  (i, m) }
-
-cpp_stanza:
-  | items = simple_stanza(CPP, cpp_item) { items }
-
-cpp_item:
-  | b = enabled { Ast.Cpp.Enabled b  }
-  | c = cmd     { Ast.Cpp.Cmd     c  }
-  | vs = argv   { Ast.Cpp.Argv    vs }
 
 default_stanza:
   | items = simple_stanza(DEFAULT, default_item) { items }

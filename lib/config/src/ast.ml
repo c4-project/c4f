@@ -63,21 +63,6 @@ module Pp_helpers = struct
     Fmt.using (fun x -> ("enabled", x)) (pp_directive pp_bool)
 end
 
-module Cpp = struct
-  type t = Cmd of string | Argv of string list | Enabled of bool
-  [@@deriving sexp]
-
-  let pp (f : Formatter.t) : t -> unit =
-    Pp_helpers.(
-      function
-      | Cmd c ->
-          pp_cmd f c
-      | Argv xs ->
-          pp_argv f xs
-      | Enabled b ->
-          pp_enabled f b)
-end
-
 module Fuzz = struct
   type t = Action of Id.t * int option [@@deriving sexp]
 
@@ -237,17 +222,10 @@ end
 
 module Top = struct
   type t =
-    | Cpp of Cpp.t list [@sexp.list]
     | Default of Default.t list [@sexp.list]
     | Fuzz of Fuzz.t list [@sexp.list]
     | Machine of Id.t * Machine.t list [@sexp.list]
   [@@deriving sexp]
-
-  let as_cpp : t -> Cpp.t list option = function
-    | Cpp c ->
-        Some c
-    | _ ->
-        None
 
   let as_default : t -> Default.t list option = function
     | Default c ->
@@ -274,8 +252,6 @@ module Top = struct
           pp_id_stanza Machine.pp f (("machine", i), ms)
       | Fuzz fs ->
           pp_simple_stanza Fuzz.pp f ("fuzz", fs)
-      | Cpp cs ->
-          pp_simple_stanza Cpp.pp f ("cpp", cs)
       | Default ds ->
           pp_simple_stanza Default.pp f ("default", ds))
 end

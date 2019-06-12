@@ -20,14 +20,13 @@ type t
 (** {2 Construction and loading} *)
 
 val make :
-     ?cpp:Cpp.t
-  -> ?defaults:Default.t
+     ?defaults:Default.t
   -> ?fuzz:Fuzz.t
   -> machines:Act_machine.Spec.Set.t
   -> unit
   -> t
-(** [make ?cpp ?defaults ?fuzz ~machines ()] constructs a global
-    configuration record from the given pieces of configuration. *)
+(** [make ?defaults ?fuzz ~machines ()] constructs a global configuration
+    record from the given pieces of configuration. *)
 
 (** Module for loading the global configuration from an act.conf file. *)
 module Load : Act_utils.Loadable_intf.S with type t = t

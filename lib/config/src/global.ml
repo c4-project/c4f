@@ -17,8 +17,7 @@ module C_spec = Act_compiler.Spec
 module M_spec = Act_machine.Spec
 
 type t =
-  { cpp: Cpp.t option [@sexp.option]
-  ; defaults: Default.t [@default Default.make ()] [@sexp.drop_if_default]
+  { defaults: Default.t [@default Default.make ()] [@sexp.drop_if_default]
   ; fuzz: Fuzz.t option [@sexp.option]
   ; machines: M_spec.Set.t }
 [@@deriving make, fields]
@@ -161,38 +160,6 @@ module Load : Au.Loadable_intf.S with type t = t = struct
         let%map via = via via_raw in
         M_spec.make ~sims ~compilers ~enabled ~via ())
 
-    let cpp (items : Ast.Cpp.t list) =
-      Or_error.Let_syntax.(
-        let%map cmd =
-          Au.My_list.find_one_opt items ~item_name:"cmd" ~f:(function
-            | Cmd c ->
-                Some c
-            | _ ->
-                None )
-        and argv =
-          Au.My_list.find_one_opt items ~item_name:"argv" ~f:(function
-            | Argv v ->
-                Some v
-            | _ ->
-                None )
-        and enabled =
-          Au.My_list.find_at_most_one items ~item_name:"enabled"
-            ~f:(function Enabled b -> Some b | _ -> None)
-            ~on_empty:(return true)
-        in
-        Cpp.make ~enabled ?cmd ?argv ())
-
-    let build_cpp (items : Ast.t) =
-      Or_error.Let_syntax.(
-        let cpp_ast_result =
-          Au.My_list.find_one_opt items ~item_name:"cpp" ~f:Ast.Top.as_cpp
-        in
-        match%bind cpp_ast_result with
-        | Some cpp_ast ->
-            cpp cpp_ast >>| Option.some
-        | None ->
-            return None)
-
     let machine_with_id (id : Ac.Id.t) (spec_ast : Ast.Machine.t list) :
         M_spec.With_id.t Or_error.t =
       Or_error.Let_syntax.(
@@ -220,11 +187,10 @@ module Load : Au.Loadable_intf.S with type t = t = struct
 
     let f (items : Ast.t) : t Or_error.t =
       Or_error.Let_syntax.(
-        let%map cpp = build_cpp items
-        and fuzz = build_fuzz items
+        let%map fuzz = build_fuzz items
         and machines = build_machines items
         and defaults = build_defaults items in
-        make ?cpp ?fuzz ~machines ~defaults ())
+        make ?fuzz ~machines ~defaults ())
 
     type dst = t
   end
