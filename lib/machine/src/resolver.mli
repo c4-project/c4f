@@ -18,18 +18,14 @@
 module type Basic =
   Resolver_types.Basic with type spec := Act_compiler.Spec.With_id.t
 
-(** Version of {{!Resolver_types.S} Resolver_types.S} with the chain input
-    fixed. *)
-module type S =
-  Resolver_types.S
-  with type 'a chain_input := 'a Act_compiler.Filter.Chain_input.t
-
 (** {2 Resolving spec IDs to compilers} *)
 
 (** Constructs a {{!S_resolver} S_resolver} from a
     {{!Basic_resolver} Basic_resolver} over direct compiler specs. *)
-module Make (B : Basic) : S with type spec = Qualified.Compiler.t
+module Make (B : Basic) :
+  Resolver_types.S with type spec = Qualified.Compiler.t
 
 (** Constructs a {{!S_resolver} S_resolver} over targets from a
     {{!Basic_resolver} Basic_resolver}. *)
-module Make_on_target (B : Basic) : S with type spec = Target.t
+module Make_on_target (B : Basic) :
+  Resolver_types.S with type spec = Target.t

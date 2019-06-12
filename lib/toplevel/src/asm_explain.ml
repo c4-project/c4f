@@ -39,22 +39,16 @@ let explain_runner (module B : Act_asm.Runner_intf.Basic) :
   (module Exp.Filter)
 
 let explain_filter (target : Act_machine.Target.t) :
-    (module Act_asm.Pipeline.S with type cfg = Act_asm.Explainer.Config.t)
-    Or_error.t =
-  Or_error.tag ~tag:"while getting an explain filter for this target"
-    (Common.delitmus_compile_asm_pipeline target explain_runner)
+    (module Act_asm.Explainer.S_filter) Or_error.t =
+  Or_error.(
+    tag ~tag:"while getting an explain filter for this target"
+      (target |> Common.asm_runner_of_target >>| explain_runner))
 
-let run_with_input_fn (o : A.Output.t) (file_type : Act_common.File_type.t)
-    target job_input infile outfile =
+let run_with_input (o : A.Output.t) target job_input infile outfile =
   Or_error.Let_syntax.(
     let%bind (module Exp) = explain_filter target in
     A.Output.pv o "Got explain filter (name %s)" Exp.name ;
-    let%map out =
-      Exp.run
-        (Act_asm.Pipeline.Input.make ~file_type ~job_input)
-        infile outfile
-    in
-    Act_asm.Pipeline.Output.job_output out)
+    Exp.run job_input infile outfile)
 
 module In = Asm_common.Input
 
@@ -63,17 +57,13 @@ let run output_format (input : In.t) =
   let infile = In.pb_input input in
   let outfile = In.pb_output input in
   let target = In.target input in
-  let file_type = In.file_type input in
   Or_error.Let_syntax.(
-    let explain_cfg ~c_variables =
-      ignore (c_variables : A.C_variables.Map.t option) ;
+    let explain_cfg _c_variables =
       Act_asm.Explainer.Config.make ?format:output_format ()
     in
-    let compiler_input_fn = In.make_compiler_input input explain_cfg in
+    let job_input = In.make_job_input input explain_cfg in
     A.Output.pv o "About to get and run the explain filter.@." ;
-    let%map out =
-      run_with_input_fn o file_type target compiler_input_fn infile outfile
-    in
+    let%map out = run_with_input o target job_input infile outfile in
     A.Output.pw o "@[%a@]@." Act_asm.Job.Output.warn out ;
     print_symbol_map (Act_asm.Job.Output.symbol_map out))
 

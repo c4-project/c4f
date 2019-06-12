@@ -35,14 +35,13 @@ let parse_post :
       )
 
 let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
-    (   c_variables:A.C_variables.Map.t option
-     -> Sexp.t Act_asm.Litmusifier.Config.t)
+    (A.C_variables.Map.t option -> Sexp.t Act_asm.Litmusifier.Config.t)
     Or_error.t =
   let open Or_error.Let_syntax in
   let%map postcondition =
     Tx.Option.With_errors.map_m post_sexp ~f:parse_post
   in
-  fun ~c_variables ->
+  fun c_variables ->
     Act_asm.Litmusifier.Config.make ?postcondition ?c_variables ()
 
 module In = Asm_common.Input
@@ -53,18 +52,17 @@ let run (post_sexp : [`Exists of Sexp.t] option) (input : In.t) :
   let infile = In.pb_input input in
   let outfile = In.pb_output input in
   let target = In.target input in
-  let file_type = In.file_type input in
   let module R = Sim_support.Make_resolver (struct
     let cfg = cfg
   end) in
   Or_error.Let_syntax.(
-    let%bind (module Filter) = Common.litmusify_pipeline target in
+    let%bind (module Filter) =
+      target |> Common.asm_runner_of_target
+      >>| Act_asm.Litmusifier.get_filter
+    in
     let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
-    let job_input = In.make_compiler_input input litmus_cfg_fn in
-    Or_error.ignore_m
-      (Filter.run
-         (Act_asm.Pipeline.Input.make ~file_type ~job_input)
-         infile outfile))
+    let job_input = In.make_job_input input litmus_cfg_fn in
+    Or_error.ignore_m (Filter.run job_input infile outfile))
 
 let command =
   Command.basic ~summary:"converts an assembly file to a litmus test"

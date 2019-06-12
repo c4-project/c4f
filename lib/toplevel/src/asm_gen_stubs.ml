@@ -33,9 +33,7 @@ be slotted into a simulation harness.
 
 module In = Asm_common.Input
 
-let make_config ~(c_variables : Ac.C_variables.Map.t option) :
-    Act_asm.Stub_gen.Config.t =
-  ignore (c_variables : Ac.C_variables.Map.t option) ;
+let make_config _ : Act_asm.Stub_gen.Config.t =
   Act_asm.Stub_gen.Config.make ~separator:"// NEXT" ()
 
 let stub_gen_runner (module B : Act_asm.Runner_intf.Basic) :
@@ -44,20 +42,17 @@ let stub_gen_runner (module B : Act_asm.Runner_intf.Basic) :
   (module Sg.Filter)
 
 let stub_gen_filter (target : Act_machine.Target.t) :
-    (module Act_asm.Pipeline.S with type cfg = Act_asm.Stub_gen.Config.t)
-    Or_error.t =
-  Or_error.tag ~tag:"while getting a stub-gen filter for this target"
-    (Common.delitmus_compile_asm_pipeline target stub_gen_runner)
+    (module Act_asm.Stub_gen.S_filter) Or_error.t =
+  Or_error.(
+    tag ~tag:"while getting a stub-gen filter for this target"
+      (target |> Common.asm_runner_of_target >>| stub_gen_runner))
 
 let run (input : In.t) : unit Or_error.t =
-  let file_type = In.file_type input in
-  let job_input = In.make_compiler_input input make_config in
+  let job_input = In.make_job_input input make_config in
   Or_error.Let_syntax.(
     let%bind (module Sg) = stub_gen_filter (In.target input) in
     Or_error.ignore_m
-      (Sg.run
-         (Act_asm.Pipeline.Input.make ~file_type ~job_input)
-         (In.pb_input input) (In.pb_output input)))
+      (Sg.run job_input (In.pb_input input) (In.pb_output input)))
 
 let command : Command.t =
   Command.basic ~summary:"generates GCC asm stubs from an assembly file"

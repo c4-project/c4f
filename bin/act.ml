@@ -41,7 +41,6 @@ let command =
   Command.group ~summary:"the Automagic Compiler Tormentor" ~readme
     [ ("c", C_main.command)
     ; ("asm", Asm_main.command)
-    ; ("compare", Compare.command)
     ; ("configure", Configure.command)
     ; ("diff-states", Diff_states.command)
     ; ("test", Test.command)
