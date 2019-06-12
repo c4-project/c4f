@@ -70,28 +70,6 @@ module Other = struct
       ; map ~f:(Option.map ~f:Asm_target.arch) (arch ()) ]
       ~if_nothing_chosen:`Raise
 
-  let file_type : Act_common.File_type.t Command.Param.t =
-    flag_optional_with_default_doc "file-type"
-      (Arg_type.of_alist_exn
-         [ ("asm", Act_common.File_type.Asm)
-         ; ("asm-litmus", Act_common.File_type.Asm_litmus)
-         ; ("c", C)
-         ; ("c-litmus", C_litmus) ])
-      [%sexp_of: Act_common.File_type.t] ~default:Act_common.File_type.Infer
-      ~doc:"TYPE force a specific input file type"
-
-  ;;
-  choose_one
-    [ flag_to_enum_choice `C "c"
-        ~doc:"if given, assume input is C (and compile it)"
-    ; flag_to_enum_choice `C_litmus "c-litmus"
-        ~doc:
-          "if given, assume input is C/litmus (and delitmusify and compile \
-           it)"
-    ; flag_to_enum_choice `Assembly "asm"
-        ~doc:"if given, assume input is assembly" ]
-    ~if_nothing_chosen:(`Default_to `Infer)
-
   let c_variables_arg_type =
     optional
       (Arg_type.comma_separated ~unique_values:true ~strip_whitespace:true
@@ -216,7 +194,6 @@ module Standard_asm : S_standard_asm with type s := Standard.t = struct
     { rest: Standard_with_files.t
     ; c_globals: string list option
     ; c_locals: string list option
-    ; file_type: Act_common.File_type.t
     ; target: Asm_target.t
     ; sanitiser_passes: Act_sanitiser.Pass_group.Selector.t Blang.t option
     }
@@ -260,7 +237,6 @@ module Standard_asm : S_standard_asm with type s := Standard.t = struct
       and c_globals = Other.c_globals
       and c_locals = Other.c_locals
       and sanitiser_passes = Other.sanitiser_passes
-      and rest = Standard_with_files.get
-      and file_type = Other.file_type in
-      {rest; target; c_globals; c_locals; sanitiser_passes; file_type})
+      and rest = Standard_with_files.get in
+      {rest; target; c_globals; c_locals; sanitiser_passes})
 end

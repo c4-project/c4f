@@ -50,80 +50,16 @@ let asm_runner_of_target (tgt : Cc_target.t) :
     (module Act_asm.Runner_intf.Basic) Or_error.t =
   Language_support.asm_runner_from_arch (Cc_target.arch tgt)
 
-let delitmus_compile_asm_pipeline (type c) (target : Cc_target.t)
-    (job_maker :
-         (module Act_asm.Runner_intf.Basic)
-      -> (module Act_asm.Runner_intf.S with type cfg = c)) :
-    (module Act_asm.Pipeline.S with type cfg = c) Or_error.t =
-  Or_error.Let_syntax.(
-    let%bind job = target |> asm_runner_of_target >>| job_maker in
-    Act_asm.Pipeline.make
-      (module Language_support.Resolve_compiler_from_target)
-      job target)
-
-let litmusify_pipeline (target : Cc_target.t) :
-    (module Act_asm.Pipeline.S
-       with type cfg = Sexp.t Act_asm.Litmusifier.Config.t)
-    Or_error.t =
-  delitmus_compile_asm_pipeline target Act_asm.Litmusifier.get_filter
-
-let choose_cvars_after_delitmus (o : Ac.Output.t)
-    (user_cvars : Ac.C_variables.Map.t option)
-    (dl_cvars : Ac.C_variables.Map.t) : Ac.C_variables.Map.t =
-  (* We could use Option.first_some here, but expanding it out gives us the
-     ability to verbose-log what we're doing. *)
-  let out_cvars message cvars =
-    Ac.Output.pv o "Using %s:@ %a@." message
-      Fmt.(using Ac.C_id.Map.keys (list ~sep:comma Ac.C_id.pp))
-      cvars ;
-    cvars
-  in
-  match user_cvars with
-  | Some cvars ->
-      out_cvars
-        "user-supplied cvars (overriding those found during delitmus)" cvars
-  | None ->
-      out_cvars "cvars found during delitmus" dl_cvars
-
-let choose_cvars_inner (o : Ac.Output.t)
-    (user_cvars : Ac.C_variables.Map.t option) :
-       Act_c.Filters.Output.t Pb.Chain_context.t
-    -> bool * Ac.C_variables.Map.t option = function
-  | Checking_ahead ->
-      (false, None)
-  | Skipped ->
-      (true, user_cvars)
-  | Ran dl ->
-      let dl_cvars = Act_c.Filters.Output.cvars dl in
-      (true, Some (choose_cvars_after_delitmus o user_cvars dl_cvars))
-
-let choose_cvars (o : Ac.Output.t)
-    (user_cvars : Ac.C_variables.Map.t option)
-    (dl_output : Act_c.Filters.Output.t Pb.Chain_context.t) :
-    Ac.C_variables.Map.t option =
-  let warn_if_empty, cvars = choose_cvars_inner o user_cvars dl_output in
-  if warn_if_empty then
-    warn_if_not_tracking_symbols o (Option.map ~f:Ac.C_id.Map.keys cvars) ;
-  cvars
-
-let make_compiler_input (o : Ac.Output.t) (file_type : Ac.File_type.t)
-    (user_cvars : Ac.C_variables.Map.t option)
-    (config_fn : c_variables:Ac.C_variables.Map.t option -> 'cfg)
-    (passes : Set.M(Act_sanitiser.Pass_group).t)
-    (dl_output : Act_c.Filters.Output.t Pb.Chain_context.t) :
-    'cfg Act_asm.Job.t Act_compiler.Filter.Chain_input.t =
-  let c_variables = choose_cvars o user_cvars dl_output in
+let make_job_input (c_variables : Ac.C_variables.Map.t option)
+    (config_fn : Ac.C_variables.Map.t option -> 'cfg)
+    (passes : Set.M(Act_sanitiser.Pass_group).t) : 'cfg Act_asm.Job.t =
   let symbols =
     c_variables
     |> Option.map ~f:Ac.C_id.Map.keys
     |> Option.map ~f:(List.map ~f:Ac.C_id.to_string)
   in
-  let config = config_fn ~c_variables in
-  let litmus_job = Act_asm.Job.make ~passes ~config ?symbols () in
-  Act_compiler.Filter.Chain_input.make
-    ~mode:Act_compiler.Mode.Assembly (* for now *)
-    ~file_type:(Act_common.File_type.delitmusified file_type)
-    ~next:(Fn.const litmus_job)
+  let config = config_fn c_variables in
+  Act_asm.Job.make ~passes ~config ?symbols ()
 
 let make_output_from_standard_args (args : Args.Standard.t) : Ac.Output.t =
   Ac.Output.make

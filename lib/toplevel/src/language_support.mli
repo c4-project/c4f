@@ -40,13 +40,14 @@ val asm_runner_from_arch :
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers. *)
 module Resolve_compiler :
-  Act_machine.Resolver.S with type spec = Act_machine.Qualified.Compiler.t
+  Act_machine.Resolver_types.S
+  with type spec = Act_machine.Qualified.Compiler.t
 
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers from targets, filling in a dummy compiler if the
     target doesn't mention a compiler. *)
 module Resolve_compiler_from_target :
-  Act_machine.Resolver.S with type spec = Act_machine.Target.t
+  Act_machine.Resolver_types.S with type spec = Act_machine.Target.t
 
 val load_and_process_config :
      ?compiler_predicate:Act_compiler.Property.t Blang.t

@@ -38,16 +38,10 @@ module Input = struct
     ; output: Act_common.Output.t }
   [@@deriving fields]
 
-  let file_type (i : t) : Act_common.File_type.t =
-    Args.Standard_asm.file_type (args i)
-
-  let make_compiler_input (i : t)
-      (config_builder :
-        c_variables:Act_common.C_variables.Map.t option -> 'cfg) :
-         Act_c.Filters.Output.t Pb.Chain_context.t
-      -> 'cfg Act_asm.Job.t Act_compiler.Filter.Chain_input.t =
-    Common.make_compiler_input (output i) (file_type i) (user_cvars i)
-      config_builder (sanitiser_passes i)
+  let make_job_input (i : t)
+      (config_fn : Ac.C_variables.Map.t option -> 'cfg) : 'cfg Act_asm.Job.t
+      =
+    Common.make_job_input (user_cvars i) config_fn (sanitiser_passes i)
 end
 
 let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :

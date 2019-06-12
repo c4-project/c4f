@@ -29,9 +29,6 @@ module type S = sig
   (** Type of specifications consumed by this resolver. *)
   type spec
 
-  (** Type of chained-filter input. *)
-  type 'a chain_input
-
   val from_spec : spec -> (module Act_compiler.Instance_types.S) Or_error.t
   (** [from_spec spec] attempts to produce a first-class compiler module
       corresponding to [spec]. *)
@@ -39,14 +36,4 @@ module type S = sig
   val filter_from_spec : spec -> (module Act_compiler.Filter.S) Or_error.t
   (** [filter_from_spec spec] attempts to produce a first-class compiler
       filter corresponding to [spec]. *)
-
-  val chained_filter_from_spec :
-       spec
-    -> (module Plumbing.Filter_types.S
-          with type aux_i = 'i
-           and type aux_o = 'o)
-    -> (module Plumbing.Filter_types.S
-          with type aux_i = 'i chain_input
-           and type aux_o = 'o)
-       Or_error.t
 end

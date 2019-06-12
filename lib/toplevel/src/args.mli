@@ -64,10 +64,6 @@ val arch :
 (** [arch ?name ?doc ()] produces a parameter, normally named [-arch] but
     overridable by [name], that accepts an architecture ID. *)
 
-val file_type : Act_common.File_type.t Command.Param.t
-(** [file_type] defines a parameter for specifying the file type of a single
-    input file. *)
-
 val c_globals : string list option Command.Param.t
 (** [c_globals] defines a parameter for collecting a list of global C
     variables to track during sanitisation (and place in any generated

@@ -78,39 +78,8 @@ val lift_asm_command_basic :
     sanitiser passes. More thorough lifting is left to the [Asm_common]
     module. *)
 
-(** {2 Single-file pipelines}
-
-    These are the common pipelines that most of the single-file commands are
-    built upon. *)
-
-val delitmus_compile_asm_pipeline :
-     Act_machine.Target.t
-  -> (   (module Act_asm.Runner_intf.Basic)
-      -> (module Act_asm.Runner_intf.S with type cfg = 'c))
-  -> (module Act_asm.Pipeline.S with type cfg = 'c) Or_error.t
-
-val litmusify_pipeline :
-     Act_machine.Target.t
-  -> (module Act_asm.Pipeline.S
-        with type cfg = Sexp.t Act_asm.Litmusifier.Config.t)
-     Or_error.t
-(** [litmusify_pipeline target] builds a delitmusify-compile-litmusify
-    pipeline for target [target]. *)
-
-val make_compiler_input :
-     Output.t
-  -> Act_common.File_type.t
-  -> C_variables.Map.t option
-  -> (c_variables:C_variables.Map.t option -> 'cfg)
+val make_job_input :
+     C_variables.Map.t option
+  -> (C_variables.Map.t option -> 'cfg)
   -> Set.M(Act_sanitiser.Pass_group).t
-  -> Act_c.Filters.Output.t Plumbing.Chain_context.t
-  -> 'cfg Act_asm.Job.t Act_compiler.Filter.Chain_input.t
-(** [make_compiler_input o file_type user_cvars cfg_fun passes dl_output]
-    generates the input to the compiler stage of a single-file pipeline.
-
-    It takes the original file type [file_type]; the user-supplied C
-    variables [user_cvars]; a function [cfg_fun] to generate a litmusifier
-    configuration given the final C global variable set, the sanitiser
-    passes [passes]; and the output from the de-litmus stage of the litmus
-    pipeline [dl_output], which contains any postcondition and discovered C
-    variables. *)
+  -> 'cfg Act_asm.Job.t
