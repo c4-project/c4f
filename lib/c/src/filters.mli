@@ -35,7 +35,6 @@ open Act_common
 type mode =
   | Print of [`All | `Vars]
       (** Pretty-print all, or part, of the result (useful for debugging). *)
-  | Delitmus  (** If the input is a C/Litmus file, try convert it to C. *)
   | Fuzz of {seed: int option; o: Output.t; config: Act_config.Fuzz.t}
       (** If the input is a C/Litmus file, fuzz it and return a mutated
           version. *)

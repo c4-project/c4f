@@ -80,8 +80,12 @@ let regress_run_asm (module Job : Act_asm.Runner_intf.S) specs
     ~(path : Fpath.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind spec = find_spec specs file in
+  (* TODO(@MattWindsor91): fix this 
   let symbols = spec.c_globals @ spec.c_locals (* for now *) in
-  let input = Act_asm.Job.make ~passes ~symbols in
+  let aux = Act_delitmus.Output.Aux.make ~litmus_aux:Act_lit *)
+  ignore spec;
+  let aux = Act_delitmus.Output.Aux.empty (* wrong!! *) in
+  let input = Act_asm.Job.make ~passes ~aux in
   let%map _ =
     Job.run (input ()) (Plumbing.Input.of_fpath path) Plumbing.Output.stdout
   in

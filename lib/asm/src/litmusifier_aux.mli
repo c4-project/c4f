@@ -72,25 +72,12 @@ val live_symbols_only :
 
 (** {2 Making auxiliary fields in one go} *)
 
-(** Opaque type of auxiliary Litmus records. *)
-type 'const t
-
-val locations : _ t -> Act_common.C_id.t list option
-(** [locations aux] gets the computed location stanza of [aux], if any. *)
-
-val init : 'const t -> (Act_common.C_id.t, 'const) List.Assoc.t
-(** [init aux] gets the computed init block of [aux]. *)
-
-val postcondition :
-  'const t -> 'const Act_litmus.Ast_base.Postcondition.t option
-(** [postcondition aux] gets the postcondition given in [aux], if any. *)
-
 val make :
      ?c_variables:Act_common.C_variables.Map.t
   -> ?postcondition:'const Act_litmus.Ast_base.Postcondition.t
   -> heap_symbols:Act_abstract.Symbol.Set.t
   -> of_int:(int -> 'const)
-  -> 'const t
+  -> 'const Act_litmus.Aux.t
 (** [make ?c_variables ?postcondition ~heap_symbols ~of_int] makes a record
     of Litmus auxiliary fields by processing the optional variable map
     [c_variables] against the heap symbol set [heap_symbols], adding the

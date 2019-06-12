@@ -117,7 +117,7 @@ module Make (B : Runner_intf.Basic) :
   let make_aux (config : B.Src_lang.Constant.t Config.t)
       (redirects : B.Src_lang.Symbol.R_map.t)
       (heap_symbols : Act_abstract.Symbol.Set.t) :
-      B.Dst_lang.Constant.t Litmusifier_aux.t Or_error.t =
+      B.Dst_lang.Constant.t Act_litmus.Aux.t Or_error.t =
     let cvars_opt = Config.c_variables config in
     Or_error.Let_syntax.(
       let%bind redirected_cvars_opt =
@@ -137,9 +137,9 @@ module Make (B : Runner_intf.Basic) :
     let heap_symbols = get_heap_symbols programs in
     Or_error.Let_syntax.(
       let%bind aux = make_aux config redirects heap_symbols in
-      let init = Litmusifier_aux.init aux in
-      let postcondition = Litmusifier_aux.postcondition aux in
-      let locations = Litmusifier_aux.locations aux in
+      let init = Act_litmus.Aux.init aux in
+      let postcondition = Act_litmus.Aux.postcondition aux in
+      let locations = Act_litmus.Aux.locations aux in
       let%bind l_programs = make_litmus_programs programs in
       Or_error.tag ~tag:"Couldn't build litmus file."
         (Litmus.Validated.make ~name ~init ~programs:l_programs

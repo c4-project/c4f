@@ -34,9 +34,6 @@ module type Basic = sig
   (** Validated AST *)
   type t
 
-  (** Delitmusified AST *)
-  type del
-
   module Frontend : Au.Loadable_intf.S with type t = ast
 
   val normal_tmp_file_ext : string
@@ -57,24 +54,15 @@ module type Basic = sig
       [cvars] _may_ de-litmusify the AST in the process; if you already have
       a delitmusified AST, use [cvars_of_delitmus]. *)
 
-  val cvars_of_delitmus : del -> Ac.C_variables.Map.t
-  (** [cvars_of_delitmus dl] should return a list of C identifiers
-      corresponding to all variables in [dl]. *)
-
   val postcondition : t -> Mini_litmus.Ast.Postcondition.t option
   (** [postcondition vast] should get the Litmus postcondition of [vast], if
       one exists. *)
 
   val print : Out_channel.t -> t -> unit
-
-  val delitmus : t -> del Or_error.t
-
-  val pp_del : del Fmt.t
 end
 
 type mode =
   | Print of [`All | `Vars]
-  | Delitmus
   | Fuzz of {seed: int option; o: Ac.Output.t; config: Act_config.Fuzz.t}
 
 module Output = struct
@@ -100,17 +88,8 @@ module Make (B : Basic) : S = Pb.Filter.Make (struct
         B.normal_tmp_file_ext
     | Print `Vars ->
         "txt"
-    | Delitmus ->
-        "c"
     | Fuzz _ ->
         "c.litmus"
-
-  let run_delitmus (vast : B.t) (oc : Out_channel.t) :
-      Ac.C_variables.Map.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%map dl = B.delitmus vast in
-    Fmt.pf (Format.formatter_of_out_channel oc) "%a@." B.pp_del dl ;
-    B.cvars_of_delitmus dl
 
   let run_fuzz ?(seed : int option) (vast : B.t) (oc : Out_channel.t)
       ~(o : Ac.Output.t) ~(config : Act_config.Fuzz.t) :
@@ -151,8 +130,6 @@ module Make (B : Basic) : S = Pb.Filter.Make (struct
         match aux with
         | Print output_mode ->
             run_print output_mode
-        | Delitmus ->
-            run_delitmus
         | Fuzz {seed; o; config} ->
             run_fuzz ?seed ~o ~config
       in
@@ -164,8 +141,6 @@ module Normal_C : S = Make (struct
   type ast = Ast.Translation_unit.t
 
   type t = Mini.Program.t
-
-  type del = Nothing.t (* Can't delitmus a C file *)
 
   let normal_tmp_file_ext = "c"
 
@@ -189,22 +164,13 @@ module Normal_C : S = Make (struct
     let raw_cvars = Mini.Program.cvars prog in
     Ac.C_variables.Map.of_single_scope_set raw_cvars
 
-  let cvars_of_delitmus = Nothing.unreachable_code
-
   let postcondition = Fn.const None
-
-  let delitmus (_ : t) : del Or_error.t =
-    Or_error.error_string "Can't delitmus a normal C file"
-
-  let pp_del _ (x : del) : unit = Nothing.unreachable_code x
 end)
 
 module Litmus : S = Make (struct
   type ast = Ast.Litmus.t
 
   type t = Mini_litmus.Ast.Validated.t
-
-  type del = Delitmus.Output.t
 
   let normal_tmp_file_ext = "litmus"
 
@@ -213,23 +179,6 @@ module Litmus : S = Make (struct
   let print = Mini_litmus.Pp.print
 
   let process = Mini_convert.litmus_of_raw_ast
-
-  let prelude : string list =
-    [ "// <!> Auto-generated from a litmus test by act."
-    ; "#include <stdatomic.h>"
-    ; "" ]
-
-  let pp_prelude : unit Fmt.t =
-    Fmt.(const (vbox (list ~sep:sp string)) prelude)
-
-  let pp_del : del Fmt.t =
-    Fmt.(
-      prefix pp_prelude
-        (using
-           (Fn.compose Mini_reify.program Delitmus.Output.program)
-           (vbox Ast.Translation_unit.pp)))
-
-  let delitmus = Delitmus.run
 
   let fuzz :
          ?seed:int
@@ -243,9 +192,6 @@ module Litmus : S = Make (struct
       Mini_litmus.Ast.Validated.t -> Mini_litmus.Ast.Postcondition.t option
       =
     Mini_litmus.Ast.Validated.postcondition
-
-  let cvars_of_delitmus : del -> Ac.C_variables.Map.t =
-    Delitmus.Output.c_variables
 
   let cvars : t -> Ac.C_variables.Map.t = Mini_litmus.cvars
 end)

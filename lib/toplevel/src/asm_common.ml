@@ -31,7 +31,7 @@ module Input = struct
     { act_config: Act_config.Act.t
     ; args: Args.Standard_asm.t
     ; sanitiser_passes: Set.M(Act_sanitiser.Pass_group).t
-    ; user_cvars: Ac.C_variables.Map.t option
+    ; c_litmus_aux: Act_delitmus.Output.Aux.t
     ; target: Act_machine.Target.t
     ; pb_input: Plumbing.Input.t
     ; pb_output: Plumbing.Output.t
@@ -39,9 +39,11 @@ module Input = struct
   [@@deriving fields]
 
   let make_job_input (i : t)
-      (config_fn : Ac.C_variables.Map.t option -> 'cfg) : 'cfg Act_asm.Job.t
+      (config_fn : Act_delitmus.Output.Aux.t -> 'cfg) : 'cfg Act_asm.Job.t
       =
-    Common.make_job_input (user_cvars i) config_fn (sanitiser_passes i)
+    let aux = c_litmus_aux i in
+    let config = config_fn aux in
+    Act_asm.Job.make ~config ~passes:(sanitiser_passes i) ~aux ()
 end
 
 let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
@@ -49,23 +51,9 @@ let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
   let raw_target = Args.Standard_asm.target args in
   Asm_target.resolve ~cfg raw_target
 
-let collect_cvars (args : Args.Standard_asm.t) :
-    Ac.C_variables.Map.t option Or_error.t =
-  let c_globals = Args.Standard_asm.c_globals args in
-  let c_locals = Args.Standard_asm.c_locals args in
-  let module V = Ac.C_variables in
-  Or_error.Let_syntax.(
-    let%bind globals =
-      Tx.Option.With_errors.map_m
-        ~f:(V.String_lang.parse_list ~scope:V.Scope.Global)
-        c_globals
-    in
-    let%map locals =
-      Tx.Option.With_errors.map_m
-        ~f:(V.String_lang.parse_list ~scope:V.Scope.Local)
-        c_locals
-    in
-    Option.merge globals locals ~f:(fun x y -> V.Map.merge_list [x; y]))
+let get_aux (_args : Args.Standard_asm.t) : Act_delitmus.Output.Aux.t Or_error.t =
+  Stdio.eprintf "FIXME: aux input isn't supported yet.";
+  Or_error.return Act_delitmus.Output.Aux.empty
 
 let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
     (act_config : Act_config.Act.t) ~(f : Input.t -> unit Or_error.t)
@@ -75,13 +63,13 @@ let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
     Act_config.Act.sanitiser_passes act_config ~default:default_passes
   in
   Or_error.Let_syntax.(
-    let%bind user_cvars = collect_cvars args in
+    let%bind c_litmus_aux = get_aux args in
     let%bind target = resolve_target args act_config in
     let%bind pb_input = Args.Standard_asm.infile_source args in
     let%bind pb_output = Args.Standard_asm.outfile_sink args in
     let input =
       Input.Fields.create ~act_config ~output ~args ~sanitiser_passes
-        ~user_cvars ~target ~pb_input ~pb_output
+        ~c_litmus_aux ~target ~pb_input ~pb_output
     in
     f input)
 

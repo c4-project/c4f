@@ -9,5 +9,5 @@
   (pps ppx_deriving.std ppx_jane))
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
    sexplib0 travesty travesty.base_exts base base.caml core_kernel fmt fpath
-   plumbing act.asm act.c act.c_lang act.compiler act.common act.machine
+   plumbing act.asm act.c act.c_lang act.compiler act.common act.delitmus act.litmus act.machine
    act.sanitiser act.sim act.utils))

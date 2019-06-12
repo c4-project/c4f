@@ -16,7 +16,7 @@ let run (args : Args.Standard_with_files.t) _o _cfg =
     let%bind input = Args.Standard_with_files.infile_source args in
     let%bind output = Args.Standard_with_files.outfile_sink args in
     Or_error.ignore_m
-      (Act_c.Filters.Litmus.run Act_c.Filters.Delitmus input output))
+      (Act_delitmus.Filter.run () input output))
 
 let command : Command.t =
   Command.basic ~summary:"converts a C litmus test to a normal C file"

@@ -3,7 +3,7 @@
  (preprocess
   (pps ppx_jane))
  (libraries sexplib0 base.caml core_kernel core stdio fmt toplevel fpath
-   plumbing act.asm act.c act.common act.config act.sanitiser act.utils)
+   plumbing act.asm act.c act.common act.config act.delitmus act.sanitiser act.utils)
  (action
   (run %{test} input))
  (deps

@@ -25,28 +25,17 @@ open Core_kernel
 module A = Act_common
 module Tx = Travesty_base_exts
 
-let parse_post :
-       [`Exists of Sexp.t]
-    -> Sexp.t Act_litmus.Ast_base.Postcondition.t Or_error.t = function
-  | `Exists sexp ->
-      Or_error.try_with (fun () ->
-          Act_litmus.Ast_base.Postcondition.make ~quantifier:`Exists
-            ~predicate:([%of_sexp: Sexp.t Act_litmus.Ast_base.Pred.t] sexp)
-      )
-
-let make_litmus_config_fn (post_sexp : [`Exists of Sexp.t] option) :
-    (A.C_variables.Map.t option -> Sexp.t Act_asm.Litmusifier.Config.t)
-    Or_error.t =
-  let open Or_error.Let_syntax in
-  let%map postcondition =
-    Tx.Option.With_errors.map_m post_sexp ~f:parse_post
-  in
-  fun c_variables ->
-    Act_asm.Litmusifier.Config.make ?postcondition ?c_variables ()
+let litmus_config_fn (aux : Act_delitmus.Output.Aux.t)
+  : Sexp.t Act_asm.Litmusifier.Config.t =
+  (* TODO(@MattWindsor91): maybe don't break the litmus aux up. *)
+  let litmus_aux = Act_delitmus.Output.Aux.litmus_aux aux in
+  let postcondition = Act_litmus.Aux.postcondition litmus_aux in
+  let c_variables = Act_delitmus.Output.Aux.c_variables aux in
+  Act_asm.Litmusifier.Config.make ?postcondition ~c_variables ()
 
 module In = Asm_common.Input
 
-let run (post_sexp : [`Exists of Sexp.t] option) (input : In.t) :
+let run (input : In.t) :
     unit Or_error.t =
   let cfg = In.act_config input in
   let infile = In.pb_input input in
@@ -60,27 +49,13 @@ let run (post_sexp : [`Exists of Sexp.t] option) (input : In.t) :
       target |> Common.asm_runner_of_target
       >>| Act_asm.Litmusifier.get_filter
     in
-    let%bind litmus_cfg_fn = make_litmus_config_fn post_sexp in
-    let job_input = In.make_job_input input litmus_cfg_fn in
+    let job_input = In.make_job_input input litmus_config_fn in
     Or_error.ignore_m (Filter.run job_input infile outfile))
 
 let command =
   Command.basic ~summary:"converts an assembly file to a litmus test"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_asm.get
-      and post_sexp =
-        choose_one
-          [ map
-              ~f:(Option.map ~f:(fun x -> Some (`Exists x)))
-              (flag "exists"
-                 (* We can't actually type-check the postcondition until we
-                    have a target language! *)
-                 (optional sexp)
-                 ~doc:
-                   "PREDICATE an 'exists' postcondition to attach to the \
-                    resulting Litmus test") ]
-          ~if_nothing_chosen:(`Default_to None)
-      in
+      let%map_open standard_args = Args.Standard_asm.get in
       fun () ->
-        Asm_common.lift_command standard_args ~f:(run post_sexp)
+        Asm_common.lift_command standard_args ~f:run
           ~default_passes:Act_sanitiser.Pass_group.standard)
