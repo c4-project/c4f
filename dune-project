@@ -23,13 +23,14 @@
     ppx_deriving
     ppx_import
     ppx_jane
-    (core (and (>= "v0.12") (< "v0.13")))
+    (core (and (>= v0.12) (< v0.13)))
     (fmt (and (>= 0.8.5) (< 0.9)))
-    (fpath (and (>= "0.7.2") (< "0.8")))
-    (menhir (>= "20181113"))
-    (shell (and (>= "v0.12") (< "v0.13")))
-    (travesty (and (>= "0.5.1") (< "0.6")))
-    (textutils_kernel (and (>= "v0.12") (< "v0.13")))
-    (sedlex (and (>= "2.0") (< "2.1")))
+    (fpath (and (>= 0.7.2) (< 0.8)))
+    (menhir (>= 20181113))
+    (sedlex (and (>= 2.0) (< 2.1)))
+    (shell (and (>= v0.12) (< v0.13)))
+    (textutils_kernel (and (>= v0.12) (< v0.13)))
+    (travesty (and (>= 0.5.1) (< 0.6)))
+    (yojson (and (>= 1.7) (< 1.8)))
   ))
 

@@ -39,7 +39,7 @@ module type Basic = sig
     with type Lang.Program.t = Dst_lang.Program.t
      and type Lang.Constant.t = Dst_lang.Constant.t
 
-  module Litmus_pp : Act_litmus.Pp.S with module Ast = Litmus_ast
+  module Litmus_pp : Act_litmus.Pp_intf.S with module Ast = Litmus_ast
 
   module Sanitiser_hook :
     Act_sanitiser.Hook_intf.S with module Lang = Src_lang

@@ -42,7 +42,7 @@ module Lang :
 module Ast : Act_litmus.Ast.S with module Lang = Lang
 
 (** Pretty-printing for the mini-model's litmus AST. *)
-module Pp : Act_litmus.Pp.S with module Ast = Ast
+module Pp : Act_litmus.Pp_intf.S with module Ast = Ast
 
 val cvars : Ast.Validated.t -> Act_common.C_variables.Map.t
 (** [cvars ast] gets the map of C variables referenced in a mini-C Litmus
