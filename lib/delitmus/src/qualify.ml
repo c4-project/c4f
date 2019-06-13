@@ -12,22 +12,27 @@
 open Base
 
 (* Note: These functions don't yet make sure that they're generating fresh
-         (ie not globally shadowed) names.  Eventually, they should all take
-         an optional set of global identifiers, and should try some munging
-         if they generate clashes. *)
+   (ie not globally shadowed) names. Eventually, they should all take an
+   optional set of global identifiers, and should try some munging if they
+   generate clashes. *)
 
 let litmus_id (id : Act_common.Litmus_id.t) : Act_c.Mini.Identifier.t =
-  Act_common.Litmus_id.to_memalloy_id id 
+  Act_common.Litmus_id.to_memalloy_id id
 
-let local (t : int) (id : Act_c.Mini.Identifier.t) : Act_c.Mini.Identifier.t =
+let local (t : int) (id : Act_c.Mini.Identifier.t) : Act_c.Mini.Identifier.t
+    =
   litmus_id (Act_common.Litmus_id.local t id)
 
-let locals_in_statement (module T : Thread.S) : Act_c.Mini.Statement.t -> Act_c.Mini.Statement.t =
+let locals_in_statement (module T : Thread.S) :
+    Act_c.Mini.Statement.t -> Act_c.Mini.Statement.t =
   Act_c.Mini.Statement.On_identifiers.map
     ~f:(T.when_local ~over:Fn.id ~f:(local T.tid))
 
-let postcondition (pc : Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t) : Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t =
-  let module M = Act_litmus.Ast_base.Postcondition.On_identifiers(Act_c.Mini.Constant) in
+let postcondition
+    (pc : Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t) :
+    Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t =
+  let module M =
+    Act_litmus.Ast_base.Postcondition.On_identifiers (Act_c.Mini.Constant) in
   (* TODO(@MattWindsor91): perhaps don't qualify things we've already
    * qualified. *)
   M.map pc ~f:(Fn.compose Act_common.Litmus_id.global litmus_id)

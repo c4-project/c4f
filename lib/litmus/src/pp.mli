@@ -24,11 +24,14 @@
 (** Pretty-printers for Litmus tests *)
 
 module Generic : sig
-  val pp_post : Base.Formatter.t -> 'const Ast_base.Postcondition.t -> pp_const:('const Fmt.t) -> unit
+  val pp_post :
+       Base.Formatter.t
+    -> 'const Ast_base.Postcondition.t
+    -> pp_const:'const Fmt.t
+    -> unit
   (** [pp_post f post ~pp_const] pretty_prints a postcondition, using the
       pretty-printer [pp_const] for constants. *)
 end
-
 
 (** {2 Functors for existing ASTs} *)
 

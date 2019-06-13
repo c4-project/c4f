@@ -6,5 +6,5 @@
  (synopsis "Automagic Compiler Tormentor: Litmus language support")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries sexplib0 stdio base base.caml core_kernel yojson fmt menhirLib travesty
-   travesty.base_exts act.common act.utils))
+ (libraries sexplib0 stdio base base.caml core_kernel yojson fmt menhirLib
+   travesty travesty.base_exts act.common act.utils))

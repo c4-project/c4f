@@ -14,9 +14,10 @@ module Mini = Act_c.Mini
 module type S = [%import: (module Thread.S)]
 
 module Make (B : sig
-    val tid : int
-    val locals : Mini.Identifier.Set.t
-  end) : S = struct
+  val tid : int
+
+  val locals : Mini.Identifier.Set.t
+end) : S = struct
   let tid = B.tid
 
   let is_local : Mini.Identifier.t -> bool =

@@ -17,7 +17,7 @@ module Aux : sig
   type t
 
   val make :
-    litmus_aux:(Act_c.Mini.Constant.t Act_litmus.Aux.t)
+       litmus_aux:Act_c.Mini.Constant.t Act_litmus.Aux.t
     -> c_variables:Act_common.C_variables.Map.t
     -> t
 
@@ -48,8 +48,6 @@ val aux : t -> Aux.t
 (** [aux output] gets the extracted (and potentially re-arranged) auxiliary
     Litmus information stored in [output]. *)
 
-(*
-val c_variables : t -> Act_common.C_variables.Map.t
-(** [c_variables output] gets a map containing information about each
-      global and local variable contained in the de-litmusified program. *)
-*)
+(* val c_variables : t -> Act_common.C_variables.Map.t (** [c_variables
+   output] gets a map containing information about each global and local
+   variable contained in the de-litmusified program. *) *)
