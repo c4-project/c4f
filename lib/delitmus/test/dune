@@ -7,5 +7,5 @@
  (preprocess
   (pps ppx_jane))
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
- fmt act.common act.delitmus))
+ base.caml fmt act.c act.c_lang act.common act.delitmus))
 

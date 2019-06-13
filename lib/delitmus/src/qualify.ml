@@ -11,13 +11,11 @@
 
 open Base
 
-module Mini = Act_c.Mini
-
-let local (t : int) (id : Mini.Identifier.t) : Mini.Identifier.t =
+let local (t : int) (id : Act_c.Mini.Identifier.t) : Act_c.Mini.Identifier.t =
   Act_common.Litmus_id.(to_memalloy_id (local t id))
 
-let locals_in_statement (module T : Thread.S) : Mini.Statement.t -> Mini.Statement.t =
-  Mini.Statement.On_identifiers.map
+let locals_in_statement (module T : Thread.S) : Act_c.Mini.Statement.t -> Act_c.Mini.Statement.t =
+  Act_c.Mini.Statement.On_identifiers.map
     ~f:(T.when_local ~over:Fn.id ~f:(local T.tid))
 
 
