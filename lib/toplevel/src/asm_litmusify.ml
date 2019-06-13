@@ -26,7 +26,7 @@ module A = Act_common
 module Tx = Travesty_base_exts
 
 let litmus_config_fn (aux : Act_delitmus.Output.Aux.t)
-  : Sexp.t Act_asm.Litmusifier.Config.t =
+  : Act_c.Mini.Constant.t Act_asm.Litmusifier.Config.t =
   (* TODO(@MattWindsor91): maybe don't break the litmus aux up. *)
   let litmus_aux = Act_delitmus.Output.Aux.litmus_aux aux in
   let postcondition = Act_litmus.Aux.postcondition litmus_aux in
@@ -45,10 +45,8 @@ let run (input : In.t) :
     let cfg = cfg
   end) in
   Or_error.Let_syntax.(
-    let%bind (module Filter) =
-      target |> Common.asm_runner_of_target
-      >>| Act_asm.Litmusifier.get_filter
-    in
+    let%bind (module Runner) = Common.asm_runner_of_target target in
+    let module Filter = Act_asm.Litmusifier.Make_filter_with_c_aux (Runner) in
     let job_input = In.make_job_input input litmus_config_fn in
     Or_error.ignore_m (Filter.run job_input infile outfile))
 

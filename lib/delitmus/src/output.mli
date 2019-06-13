@@ -17,11 +17,11 @@ module Aux : sig
   type t
 
   val make :
-    litmus_aux:(Sexp.t Act_litmus.Aux.t)
+    litmus_aux:(Act_c.Mini.Constant.t Act_litmus.Aux.t)
     -> c_variables:Act_common.C_variables.Map.t
     -> t
 
-  val litmus_aux : t -> Sexp.t Act_litmus.Aux.t
+  val litmus_aux : t -> Act_c.Mini.Constant.t Act_litmus.Aux.t
 
   (* TODO(@MattWindsor91): probably shouldn't expose this *)
 

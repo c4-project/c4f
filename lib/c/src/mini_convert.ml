@@ -28,10 +28,6 @@ open Mini
 open Mini_intf
 module Ast = Act_c_lang.Ast
 
-let map_combine (xs : 'a list) ~(f : 'a -> 'b Or_error.t) :
-    'b list Or_error.t =
-  xs |> List.map ~f |> Or_error.combine_errors
-
 (** [sift_decls maybe_decl_list] tries to separate [maybe_decl_list] into a
     list of declarations followed immediately by a list of code, C89-style. *)
 let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
@@ -62,7 +58,7 @@ let%expect_test "sift_decls: mixed example" =
     definition. *)
 let ensure_functions :
     Ast.External_decl.t list -> Ast.Function_def.t list Or_error.t =
-  map_combine ~f:(function
+  Tx.Or_error.combine_map ~f:(function
     | `Fun f ->
         Or_error.return f
     | d ->
@@ -73,7 +69,7 @@ let ensure_functions :
     statement. *)
 let ensure_statements :
     Ast.Compound_stm.Elt.t list -> Ast.Stm.t list Or_error.t =
-  map_combine ~f:(function
+  Tx.Or_error.combine_map ~f:(function
     | `Stm f ->
         Or_error.return f
     | d ->
@@ -185,7 +181,7 @@ let param_type_list : Ast.Param_type_list.t -> Type.t id_assoc Or_error.t =
   | {style= `Variadic; _} ->
       Or_error.error_string "Variadic arguments not supported"
   | {style= `Normal; params} ->
-      map_combine ~f:param_decl params
+      Tx.Or_error.combine_map ~f:param_decl params
 
 let func_signature :
     Ast.Declarator.t -> (Identifier.t * Type.t id_assoc) Or_error.t =
@@ -508,8 +504,8 @@ let func_body (body : Ast.Compound_stm.t) :
   let open Or_error.Let_syntax in
   let%bind ast_decls, ast_nondecls = sift_decls body in
   let%bind ast_stms = ensure_statements ast_nondecls in
-  let%map decls = map_combine ~f:decl ast_decls
-  and stms = map_combine ~f:stm ast_stms in
+  let%map decls = Tx.Or_error.combine_map ~f:decl ast_decls
+  and stms = Tx.Or_error.combine_map ~f:stm ast_stms in
   (decls, stms)
 
 let func (f : Ast.Function_def.t) : (Identifier.t * Function.t) Or_error.t =
@@ -524,8 +520,8 @@ let translation_unit (prog : Ast.Translation_unit.t) : Program.t Or_error.t
   let open Or_error.Let_syntax in
   let%bind ast_decls, ast_nondecls = sift_decls prog in
   let%bind ast_funs = ensure_functions ast_nondecls in
-  let%map globals = map_combine ~f:decl ast_decls
-  and functions = map_combine ~f:func ast_funs in
+  let%map globals = Tx.Or_error.combine_map ~f:decl ast_decls
+  and functions = Tx.Or_error.combine_map ~f:func ast_funs in
   Program.make ~globals ~functions
 
 module Litmus_conv = Act_litmus.Convert.Make (struct

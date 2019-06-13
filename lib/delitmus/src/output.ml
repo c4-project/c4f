@@ -13,7 +13,7 @@ open Base
 module Tx = Travesty_base_exts
 
 module Aux = struct
-  type t = { litmus_aux : Sexp.t Act_litmus.Aux.t
+  type t = { litmus_aux : Act_c.Mini.Constant.t Act_litmus.Aux.t
            ; c_variables : Act_common.C_variables.Map.t
            } [@@deriving make, fields]
 
