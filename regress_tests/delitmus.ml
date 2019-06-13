@@ -41,17 +41,12 @@ let pp_post : Act_c.Mini_litmus.Ast.Postcondition.t Fmt.t =
       (hbox (prefix (unit "// ") Act_c.Mini_litmus.Pp.pp_post)))
 
 let summarise_c_output (aux : Act_delitmus.Output.Aux.t) : unit =
-  Fmt.(
-    pr "@[<v>%a@]@." pp_cvars
-      (Act_delitmus.Output.Aux.c_variables aux)
-  (* TODO: fix
   let laux = Act_delitmus.Output.Aux.litmus_aux aux in
   Fmt.(
     pr "@[<v>%a%a@]@." pp_cvars
       (Act_delitmus.Output.Aux.c_variables aux)
       (option pp_post)
-      (
-      (Act_litmus.Aux. .Filters.Output.Aux.post o)) *))
+      (Act_litmus.Aux.postcondition laux))
 
 let delitmus_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   ignore file ;

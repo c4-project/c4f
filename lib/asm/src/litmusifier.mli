@@ -97,10 +97,11 @@ module Make (B : Runner_intf.Basic) :
               Act_sanitiser.Output.Program.t
    and module Redirect := B.Src_lang.Symbol.R_map
 
-val get_filter :
-     (module Runner_intf.Basic)
-  -> (module Runner_intf.S with type cfg = Sexp.t Config.t)
-(** [get_filter Runner] is [Runner.Litmusify], but with the input type
-    altered slightly so that the constants inside any litmus postconditions
-    are expected to be S-expressions, and unmarshalled into the appropriate
-    language at run-time. *)
+module Make_filter_with_c_aux (B : Runner_intf.Basic) :
+  Runner_intf.S with type cfg = Act_c.Mini.Constant.t Config.t
+(** [Make_filter_with_c_aux B] makes a litmusifier filter, but adapts it
+    such that its auxiliary input is in terms of C constants rather than the
+    native ones of the litmus target language.  This is useful for connecting
+    to anything that reads its auxiliary input from a delitmus aux file, which
+    uses C constants. *)
+
