@@ -188,6 +188,15 @@ let cvars_with_qualified_locals (cvars : Ac.C_variables.Map.t) :
     Ac.C_variables.Map.t Or_error.t =
   Ac.C_variables.Map.map cvars ~f:qualify_if_local
 
+let make_litmus_aux (input :C.Mini_litmus.Ast.Validated.t) : C.Mini.Constant.t Act_litmus.Aux.t =
+    let postcondition = Option.map (C.Mini_litmus.Ast.Validated.postcondition input)
+        ~f:Qualify.postcondition in
+    (* These _should_ be ok to pass through verbatim; they only use
+       global variables. *)
+    let init = C.Mini_litmus.Ast.Validated.init input in
+    let locations = C.Mini_litmus.Ast.Validated.locations input in
+    Act_litmus.Aux.make ?postcondition ~init ?locations ()
+
 let run (input :C.Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
   (* TODO(@MattWindsor91): the variable logic here is completely wrong!
      It needs to maintain the full Litmus identifiers at all times,
@@ -201,9 +210,7 @@ let run (input :C.Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
     let%bind globals = make_globals init function_bodies in
     let program =C.Mini.Program.make ~globals ~functions in
     let%map c_variables = cvars_with_qualified_locals raw_c_variables in
-    (* TODO(@MattWindsor91): pull in the locations, postcondition, etc from
-       the existing test, filtered through the renamings we've made. *)
-    let litmus_aux = Act_litmus.Aux.make () in
+    let litmus_aux = make_litmus_aux input in 
     let aux = Output.Aux.make ~litmus_aux ~c_variables in
     Output.make ~program ~aux
   )
