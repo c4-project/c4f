@@ -16,15 +16,20 @@ module type S = sig
   val tid : int
   (** [tid] is the thread ID of the thread. *)
 
-  val when_local : 'a -> over:('a -> Act_c.Mini.Identifier.t) -> f:('a -> 'a) -> 'a
-  (** [when_local x ~over ~f] returns [f x] when [over x] is local, and [x] otherwise. *)
+  val when_local :
+    'a -> over:('a -> Act_c.Mini.Identifier.t) -> f:('a -> 'a) -> 'a
+  (** [when_local x ~over ~f] returns [f x] when [over x] is local, and [x]
+      otherwise. *)
 
-  val when_global : 'a -> over:('a -> Act_c.Mini.Identifier.t) -> f:('a -> 'a) -> 'a
-  (** [when_local x ~over ~f] returns [x] when [over x] is local, and [f x] otherwise. *)
+  val when_global :
+    'a -> over:('a -> Act_c.Mini.Identifier.t) -> f:('a -> 'a) -> 'a
+  (** [when_local x ~over ~f] returns [x] when [over x] is local, and [f x]
+      otherwise. *)
 end
 
 (** Makes a thread context module from a thread ID and local environment. *)
 module Make (B : sig
   val tid : int
+
   val locals : Act_c.Mini.Identifier.Set.t
-  end) : S 
+end) : S

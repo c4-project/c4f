@@ -34,7 +34,8 @@ module Generic = struct
            (prefix (unit "locations@ ")
               (brackets (box (list ~sep:(unit ";@ ") Ac.C_id.pp))))))
 
-  let rec pp_predicate (f : Formatter.t) (pred : 'const Ast_base.Pred.t) ~(pp_const : 'const Fmt.t) : unit =
+  let rec pp_predicate (f : Formatter.t) (pred : 'const Ast_base.Pred.t)
+      ~(pp_const : 'const Fmt.t) : unit =
     let mu = pp_predicate ~pp_const in
     match pred with
     | Bracket p ->
@@ -46,9 +47,12 @@ module Generic = struct
     | Elt (Eq (i, c)) ->
         Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
 
-  let pp_quantifier (f : Formatter.t) : [`Exists] -> unit = function `Exists -> Fmt.string f "exists"
+  let pp_quantifier (f : Formatter.t) : [`Exists] -> unit = function
+    | `Exists ->
+        Fmt.string f "exists"
 
-  let pp_post (f : Formatter.t) (pc : 'const Ast_base.Postcondition.t) ~(pp_const : 'const Fmt.t) : unit =
+  let pp_post (f : Formatter.t) (pc : 'const Ast_base.Postcondition.t)
+      ~(pp_const : 'const Fmt.t) : unit =
     let {Ast_base.Postcondition.quantifier; predicate} = pc in
     Fmt.(box (pair ~sep:sp pp_quantifier (parens (pp_predicate ~pp_const))))
       f (quantifier, predicate)
@@ -82,7 +86,8 @@ module Make_common (B : Basic) = struct
     print_programs oc litmus ;
     Fmt.pf f "@." ;
     Generic.pp_location_stanza f (B.Ast.Validated.locations litmus) ;
-    Fmt.(option (prefix (unit "@,@,") pp_post)) f
+    Fmt.(option (prefix (unit "@,@,") pp_post))
+      f
       (B.Ast.Validated.postcondition litmus) ;
     Caml.Format.pp_print_flush f ()
 

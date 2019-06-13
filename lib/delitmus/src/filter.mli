@@ -1,4 +1,3 @@
-
 (* The Automagic Compiler Tormentor
 
    Copyright (c) 2018--2019 Matt Windsor and contributors
@@ -12,5 +11,7 @@
 
 (** C delitmusifying as a filter. *)
 
-include Plumbing.Filter_types.S with type aux_i = unit
-                                 and type aux_o = Output.Aux.t
+include
+  Plumbing.Filter_types.S
+  with type aux_i = unit
+   and type aux_o = Output.Aux.t

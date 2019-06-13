@@ -182,43 +182,44 @@ module Make (B : Runner_intf.Basic) :
   end)
 end
 
-module Make_filter_with_c_aux (B : Runner_intf.Basic)
-  : Runner_intf.S
-    with type cfg = Act_c.Mini.Constant.t Config.t = struct
+module Make_filter_with_c_aux (B : Runner_intf.Basic) :
+  Runner_intf.S with type cfg = Act_c.Mini.Constant.t Config.t = struct
   type cfg = Act_c.Mini.Constant.t Config.t
 
   module LS = B.Src_lang
 
   include Plumbing.Filter.Adapt (struct
-      module Lf = Make (B)
-      module Original = Lf.Filter
+    module Lf = Make (B)
+    module Original = Lf.Filter
 
-      type aux_i = cfg Job.t
+    type aux_i = cfg Job.t
 
-      type aux_o = Job.Output.t
+    type aux_o = Job.Output.t
 
-      let adapt_constant : Act_c.Mini.Constant.t -> LS.Constant.t Or_error.t =
-        function
-        | Integer i ->
+    let adapt_constant : Act_c.Mini.Constant.t -> LS.Constant.t Or_error.t =
+      function
+      | Integer i ->
           Or_error.return (LS.Constant.of_int i)
-        | Float _ -> Or_error.error_string "floats not yet supported in litmusified postconditions"
-        | Char _ -> Or_error.error_string "chars not yet supported in litmusified postconditions"
+      | Float _ ->
+          Or_error.error_string
+            "floats not yet supported in litmusified postconditions"
+      | Char _ ->
+          Or_error.error_string
+            "chars not yet supported in litmusified postconditions"
 
-      let adapt_postcondition :
-        Act_c.Mini_litmus.Ast.Postcondition.t
+    let adapt_postcondition :
+           Act_c.Mini_litmus.Ast.Postcondition.t
         -> LS.Constant.t Act_litmus.Ast_base.Postcondition.t Or_error.t =
-        Act_litmus.Ast_base.Postcondition.On_constants.With_errors.map_m
-          ~f:adapt_constant
+      Act_litmus.Ast_base.Postcondition.On_constants.With_errors.map_m
+        ~f:adapt_constant
 
-      let adapt_config :
-        cfg -> LS.Constant.t Config.t Or_error.t =
-        Config.transform ~format:Or_error.return
-          ~c_variables:Or_error.return ~postcondition:adapt_postcondition
+    let adapt_config : cfg -> LS.Constant.t Config.t Or_error.t =
+      Config.transform ~format:Or_error.return ~c_variables:Or_error.return
+        ~postcondition:adapt_postcondition
 
-      let adapt_i :
-        cfg Job.t -> LS.Constant.t Config.t Job.t Or_error.t =
-        Job.map_m_config ~f:adapt_config
+    let adapt_i : cfg Job.t -> LS.Constant.t Config.t Job.t Or_error.t =
+      Job.map_m_config ~f:adapt_config
 
-      let adapt_o = Or_error.return
-    end)
+    let adapt_o = Or_error.return
+  end)
 end

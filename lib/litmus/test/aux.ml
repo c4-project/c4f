@@ -9,6 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-let%test_module "JSON" = (module struct
-  (* Space for rent. *)
-end)
+let%test_module "JSON" =
+  ( module struct
+    (* Space for rent. *)
+  end )

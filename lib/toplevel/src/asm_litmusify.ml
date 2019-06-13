@@ -25,8 +25,8 @@ open Core_kernel
 module A = Act_common
 module Tx = Travesty_base_exts
 
-let litmus_config_fn (aux : Act_delitmus.Output.Aux.t)
-  : Act_c.Mini.Constant.t Act_asm.Litmusifier.Config.t =
+let litmus_config_fn (aux : Act_delitmus.Output.Aux.t) :
+    Act_c.Mini.Constant.t Act_asm.Litmusifier.Config.t =
   (* TODO(@MattWindsor91): maybe don't break the litmus aux up. *)
   let litmus_aux = Act_delitmus.Output.Aux.litmus_aux aux in
   let postcondition = Act_litmus.Aux.postcondition litmus_aux in
@@ -35,8 +35,7 @@ let litmus_config_fn (aux : Act_delitmus.Output.Aux.t)
 
 module In = Asm_common.Input
 
-let run (input : In.t) :
-    unit Or_error.t =
+let run (input : In.t) : unit Or_error.t =
   let cfg = In.act_config input in
   let infile = In.pb_input input in
   let outfile = In.pb_output input in

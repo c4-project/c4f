@@ -75,16 +75,23 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Sequence.map ~f:diff_to_error
   |> Sequence.to_list |> Or_error.combine_errors_unit
 
+let spec_to_aux (spec : spec) : Act_delitmus.Output.Aux.t =
+  (* TODO(@MattWindsor91): this is a bit of a hack. *)
+  let symbols = spec.c_globals @ spec.c_locals (* for now *) in
+  let symbol_cids = List.map ~f:Act_common.C_id.of_string symbols in
+  let symbol_set = Set.of_list (module Act_common.C_id) symbol_cids in
+  let c_variables =
+    Act_common.C_variables.Map.of_single_scope_set symbol_set
+  in
+  let litmus_aux = Act_litmus.Aux.make () in
+  Act_delitmus.Output.Aux.make ~litmus_aux ~c_variables
+
 let regress_run_asm (module Job : Act_asm.Runner_intf.S) specs
     (passes : Set.M(Act_sanitiser.Pass_group).t) ~(file : Fpath.t)
     ~(path : Fpath.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind spec = find_spec specs file in
-  (* TODO(@MattWindsor91): fix this 
-  let symbols = spec.c_globals @ spec.c_locals (* for now *) in
-  let aux = Act_delitmus.Output.Aux.make ~litmus_aux:Act_lit *)
-  ignore spec;
-  let aux = Act_delitmus.Output.Aux.empty (* wrong!! *) in
+  let aux = spec_to_aux spec in
   let input = Act_asm.Job.make ~passes ~aux in
   let%map _ =
     Job.run (input ()) (Plumbing.Input.of_fpath path) Plumbing.Output.stdout

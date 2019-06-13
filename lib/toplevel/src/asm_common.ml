@@ -38,9 +38,8 @@ module Input = struct
     ; output: Act_common.Output.t }
   [@@deriving fields]
 
-  let make_job_input (i : t)
-      (config_fn : Act_delitmus.Output.Aux.t -> 'cfg) : 'cfg Act_asm.Job.t
-      =
+  let make_job_input (i : t) (config_fn : Act_delitmus.Output.Aux.t -> 'cfg)
+      : 'cfg Act_asm.Job.t =
     let aux = c_litmus_aux i in
     let config = config_fn aux in
     Act_asm.Job.make ~config ~passes:(sanitiser_passes i) ~aux ()
@@ -51,8 +50,9 @@ let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
   let raw_target = Args.Standard_asm.target args in
   Asm_target.resolve ~cfg raw_target
 
-let get_aux (_args : Args.Standard_asm.t) : Act_delitmus.Output.Aux.t Or_error.t =
-  Stdio.eprintf "FIXME: aux input isn't supported yet.";
+let get_aux (_args : Args.Standard_asm.t) :
+    Act_delitmus.Output.Aux.t Or_error.t =
+  Stdio.eprintf "FIXME: aux input isn't supported yet." ;
   Or_error.return Act_delitmus.Output.Aux.empty
 
 let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
