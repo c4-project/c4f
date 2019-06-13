@@ -43,4 +43,12 @@ val postcondition :
   'const t -> 'const Ast_base.Postcondition.t option
 (** [postcondition aux] gets the postcondition given in [aux], if any. *)
 
+(** {2 Serialisation} *)
 
+module Json (Const : sig
+    type t
+    include Pretty_printer.S with type t := t
+    val to_json : t -> Yojson.Basic.t
+  end): sig
+  val to_json : Const.t t -> Yojson.Basic.t
+end

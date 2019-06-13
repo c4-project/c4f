@@ -1,0 +1,8 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_litmus_test)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane))
+ (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config act.litmus))

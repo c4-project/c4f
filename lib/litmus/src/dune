@@ -4,8 +4,7 @@
  (name act_litmus)
  (public_name act.litmus)
  (synopsis "Automagic Compiler Tormentor: Litmus language support")
- (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries sexplib0 stdio base base.caml core_kernel fmt menhirLib travesty
+ (libraries sexplib0 stdio base base.caml core_kernel yojson fmt menhirLib travesty
    travesty.base_exts act.common act.utils))

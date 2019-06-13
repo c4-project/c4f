@@ -24,14 +24,35 @@
 open Base
 open Stdio
 module Ac = Act_common
-include Pp_intf
+open Pp_intf
 
-let pp_location_stanza : Ac.C_id.t list option Fmt.t =
-  Fmt.(
-    option
-      (hbox
-         (prefix (unit "locations@ ")
-            (brackets (box (list ~sep:(unit ";@ ") Ac.C_id.pp))))))
+module Generic = struct
+  let pp_location_stanza : Ac.C_id.t list option Fmt.t =
+    Fmt.(
+      option
+        (hbox
+           (prefix (unit "locations@ ")
+              (brackets (box (list ~sep:(unit ";@ ") Ac.C_id.pp))))))
+
+  let rec pp_predicate (f : Formatter.t) (pred : 'const Ast_base.Pred.t) ~(pp_const : 'const Fmt.t) : unit =
+    let mu = pp_predicate ~pp_const in
+    match pred with
+    | Bracket p ->
+        Fmt.parens mu f p
+    | Or (l, r) ->
+        Fmt.pf f "%a@ \\/@ %a" mu l mu r
+    | And (l, r) ->
+        Fmt.pf f "%a@ /\\@ %a" mu l mu r
+    | Elt (Eq (i, c)) ->
+        Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
+
+  let pp_quantifier (f : Formatter.t) : [`Exists] -> unit = function `Exists -> Fmt.string f "exists"
+
+  let pp_post (f : Formatter.t) (pc : 'const Ast_base.Postcondition.t) ~(pp_const : 'const Fmt.t) : unit =
+    let {Ast_base.Postcondition.quantifier; predicate} = pc in
+    Fmt.(box (pair ~sep:sp pp_quantifier (parens (pp_predicate ~pp_const))))
+      f (quantifier, predicate)
+end
 
 module type Basic = sig
   module Ast : Ast.S
@@ -51,21 +72,8 @@ module Make_common (B : Basic) = struct
         list ~sep:sp (fun f (l, c) ->
             pf f "@[%a = %a;@]" Ac.C_id.pp l B.Ast.Lang.Constant.pp c ))
 
-  let pp_quantifier f = function `Exists -> Fmt.string f "exists"
-
-  let rec pp_predicate f : B.Ast.Pred.t -> unit = function
-    | Bracket pred ->
-        Fmt.parens pp_predicate f pred
-    | Or (l, r) ->
-        Fmt.pf f "%a@ \\/@ %a" pp_predicate l pp_predicate r
-    | And (l, r) ->
-        Fmt.pf f "%a@ /\\@ %a" pp_predicate l pp_predicate r
-    | Elt (Eq (i, c)) ->
-        Fmt.pf f "%a@ ==@ %a" Id.pp i B.Ast.Lang.Constant.pp c
-
-  let pp_post f {Ast_base.Postcondition.quantifier; predicate} =
-    Fmt.(box (pair ~sep:sp pp_quantifier (parens pp_predicate)))
-      f (quantifier, predicate)
+  let pp_post : B.Ast.Lang.Constant.t Ast_base.Postcondition.t Fmt.t =
+    Generic.pp_post ~pp_const:B.Ast.Lang.Constant.pp
 
   let print_body (oc : Out_channel.t) (litmus : B.Ast.Validated.t) : unit =
     let f = Caml.Format.formatter_of_out_channel oc in
@@ -73,9 +81,8 @@ module Make_common (B : Basic) = struct
     Fmt.pf f "@.@." ;
     print_programs oc litmus ;
     Fmt.pf f "@." ;
-    pp_location_stanza f (B.Ast.Validated.locations litmus) ;
-    Fmt.(option (prefix (unit "@,@,") pp_post))
-      f
+    Generic.pp_location_stanza f (B.Ast.Validated.locations litmus) ;
+    Fmt.(option (prefix (unit "@,@,") pp_post)) f
       (B.Ast.Validated.postcondition litmus) ;
     Caml.Format.pp_print_flush f ()
 
