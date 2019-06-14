@@ -40,3 +40,16 @@ module Litmus = Act_utils.Frontend.Make (struct
 
   let message = C_messages.message
 end)
+
+module Litmus_post = Act_utils.Frontend.Make (struct
+  type ast = Ast.Litmus.Postcondition.t
+
+  module I = Parser.MenhirInterpreter
+
+  let lex : Sedlexing.lexbuf -> I.token =
+    Lexer.token litmus_predefined_types
+
+  let parse = Parser.Incremental.litmus_postcondition
+
+  let message = C_messages.message
+end)
