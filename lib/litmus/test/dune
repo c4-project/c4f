@@ -6,4 +6,4 @@
  (preprocess
   (pps ppx_jane))
  (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config base
-   base.caml stdio yojson act.common act.litmus))
+   base.caml stdio yojson act.c_lang act.common act.litmus))

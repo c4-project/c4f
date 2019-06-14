@@ -182,13 +182,16 @@ module Alist = struct
 
   module U = Yojson.Safe.Util
 
-  let of_yojson_exn (rhs : Yojson.Safe.t -> 'r) (json : Yojson.Safe.t) : 'r t =
-    json
-    |> U.to_assoc
+  let of_yojson_exn (rhs : Yojson.Safe.t -> 'r) (json : Yojson.Safe.t) :
+      'r t =
+    json |> U.to_assoc
     |> Travesty_base_exts.Alist.bi_map ~left:of_string ~right:rhs
 
-  let of_yojson (rhs : Yojson.Safe.t -> ('r, string) Result.t) (json : Yojson.Safe.t) : ('r t, string) Result.t =
-    let rhs' (json : Yojson.Safe.t) : 'r = Result.ok_or_failwith (rhs json) in
+  let of_yojson (rhs : Yojson.Safe.t -> ('r, string) Result.t)
+      (json : Yojson.Safe.t) : ('r t, string) Result.t =
+    let rhs' (json : Yojson.Safe.t) : 'r =
+      Result.ok_or_failwith (rhs json)
+    in
     let result = Result.try_with (fun () -> of_yojson_exn rhs' json) in
     Result.map_error ~f:Exn.to_string result
 end
