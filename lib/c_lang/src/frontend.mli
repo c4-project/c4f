@@ -29,3 +29,8 @@ module Normal :
 
 (** Frontend for C-based litmus tests. *)
 module Litmus : Plumbing.Loadable_types.S with type t = Ast.Litmus.t
+
+(** Frontend for postconditions; used specifically for parsing auxiliary
+    JSON files. *)
+module Litmus_post :
+  Plumbing.Loadable_types.S with type t = Ast.Litmus.Postcondition.t

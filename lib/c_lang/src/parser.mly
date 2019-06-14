@@ -28,8 +28,17 @@
 %token <char> CHAR_LIT
 %token <string> STRING
 
-%token LPAR RPAR LBRACE RBRACE LBRACK RBRACK
-%token COMMA COLON DOT DOTS ARROW QUESTION
+%token LPAR "("
+%token RPAR ")"
+%token LBRACE "{"
+%token RBRACE "}"
+%token LBRACK "["
+%token RBRACK "]"
+%token COMMA ","
+%token COLON ":"
+%token DOT "."
+%token DOTS ARROW QUESTION
+%token SEMI ";"
 %token CHAR INT SHORT LONG FLOAT DOUBLE VOID SIGNED UNSIGNED
 %token AUTO REGISTER STATIC EXTERN TYPEDEF
 %token CONST VOLATILE
@@ -37,11 +46,12 @@
 %token DO FOR WHILE IF ELSE
 %token SWITCH CASE DEFAULT GOTO BREAK CONTINUE RETURN
 %token SIZEOF
-%token SEMI
 
-%token EQ STAR_EQ DIV_EQ MOD_EQ ADD_EQ SUB_EQ SHL_EQ SHR_EQ AND_EQ XOR_EQ PIPE_EQ
+%token EQ "="
+%token STAR_EQ DIV_EQ MOD_EQ ADD_EQ SUB_EQ SHL_EQ SHR_EQ AND_EQ XOR_EQ PIPE_EQ
 %token LAND LOR LNOT
-%token EQ_OP NEQ_OP
+%token EQ_OP "=="
+%token NEQ_OP "!="
 %token LT LE GT GE
 
 %token XOR PIPE AND SHR SHL NOT
@@ -50,7 +60,9 @@
 %token ADD SUB
 %token STAR DIV MOD
 
-%token LIT_EXISTS LIT_AND LIT_OR LIT_LOCATIONS
+%token LIT_EXISTS LIT_LOCATIONS
+%token LIT_AND (* /\; not expressible as an alias *)
+%token LIT_OR (* \/; not expressible as an alias *)
 
 %type <Ast.Translation_unit.t> translation_unit
 %start translation_unit
@@ -58,31 +70,10 @@
 %type <Ast.Litmus.t> litmus
 %start litmus
 
+%type <Ast.Litmus.Postcondition.t> litmus_postcondition
+%start litmus_postcondition
+
 %%
-
-%inline clist(x):
-  | xs = separated_list(COMMA, x) { xs }
-
-%inline nclist(x):
-  | xs = separated_nonempty_list(COMMA, x) { xs }
-
-%inline slist(x):
-  | xs = separated_list(SEMI, x) { xs }
-
-%inline nslist(x):
-  | xs = separated_nonempty_list(SEMI, x) { xs }
-
-%inline braced(x):
-  | xs = delimited(LBRACE, x, RBRACE) { xs }
-
-%inline bracketed(x):
-  | xs = delimited(LBRACK, x, RBRACK) { xs }
-
-%inline parened(x):
-  | xs = delimited(LPAR, x, RPAR) { xs }
-
-%inline endsemi(x):
-  | xs = terminated(x, SEMI) { xs }
 
 %inline left_binop(this_level, next_level, op):
   | e = next_level { e }
@@ -92,52 +83,56 @@
   | e = next_level { e }
   | l = next_level; o = op; r = this_level { Expr.Binary (l, o, r) }
 
-litmus:
-  | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF
+let clist(x) == separated_list(",", x)
+let nclist(x) == separated_nonempty_list(",", x)
+let slist(x) == separated_list(";", x)
+let braced(x) == delimited("{", x, "}")
+let bracketed(x) == delimited("[", x, "]")
+let parened(x) == delimited("(", x, ")")
+let endsemi(x) == terminated(x, ";")
+
+let litmus :=
+  | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF;
     { { Litmus.language = Act_common.C_id.of_string language
       ; name
       ; decls
       }
     }
 
-litmus_declaration:
-  | decl = litmus_initialiser   { Litmus.Decl.Init      decl }
-  | post = litmus_postcondition { Litmus.Decl.Post      post }
-  | locs = litmus_locations     { Litmus.Decl.Locations locs }
-  | decl = function_definition  { Litmus.Decl.Program   decl }
+let litmus_declaration :=
+  | ~ = litmus_initialiser;   < Litmus.Decl.Init >
+  | ~ = litmus_postcondition; < Litmus.Decl.Post >
+  | ~ = litmus_locations;     < Litmus.Decl.Locations >
+  | ~ = function_definition;  < Litmus.Decl.Program >
 
-litmus_init_stm:
-  | id = identifier; EQ; value = constant { { Litmus.Init.id; value } }
+let litmus_init_stm :=
+  | id = identifier; "="; value = constant; { { Litmus.Init.id; value } }
 
-litmus_initialiser:
-  | xs = braced(list(endsemi(litmus_init_stm))) { xs }
+let litmus_initialiser := braced(list(endsemi(litmus_init_stm)))
 
-(* locations [ foo; bar; baz ] *)
-litmus_locations:
-  | LIT_LOCATIONS; xs = bracketed(slist(identifier)) { xs }
+let litmus_locations := LIT_LOCATIONS; bracketed(slist(identifier))
 
-litmus_quantifier:
-  | LIT_EXISTS { `Exists }
+let litmus_quantifier := LIT_EXISTS; { `Exists }
 
-litmus_postcondition:
-  | quantifier = litmus_quantifier; predicate = parened(litmus_disjunct)
+let litmus_postcondition :=
+  | quantifier = litmus_quantifier; predicate = parened(litmus_disjunct);
     { Litmus.Postcondition.make ~quantifier ~predicate }
 
-litmus_disjunct:
-  | e = litmus_conjunct { e }
-  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct { Litmus.Pred.(l || r) }
+let litmus_disjunct :=
+  | litmus_conjunct
+  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { Litmus.Pred.(l || r) }
 
-litmus_conjunct:
-  | e = litmus_equality { e }
-  | l = litmus_conjunct; LIT_AND; r = litmus_equality { Litmus.Pred.(l && r) }
+let litmus_conjunct :=
+  | litmus_equality
+  | l = litmus_conjunct; LIT_AND; r = litmus_equality; { Litmus.Pred.(l && r) }
 
-litmus_equality:
-  | e = parened(litmus_disjunct) { Litmus.Pred.bracket e }
-  | l = litmus_identifier; EQ_OP; r = constant { Litmus.Pred.elt (Litmus.Pred_elt.(l ==? r)) }
+let litmus_equality :=
+  | ~ = parened(litmus_disjunct); < Litmus.Pred.bracket >
+  | l = litmus_identifier; "=="; r = constant; { Litmus.Pred.elt (Litmus.Pred_elt.(l ==? r)) }
 
-litmus_identifier:
-  | i = IDENTIFIER                     { Litmus.Id.global (Act_common.C_id.of_string i) }
-  | t = INT_LIT; COLON; i = IDENTIFIER { Litmus.Id.local t (Act_common.C_id.of_string i) }
+let litmus_identifier :=
+  | i = IDENTIFIER;                     { Litmus.Id.global (Act_common.C_id.of_string i) }
+  | t = INT_LIT; COLON; i = IDENTIFIER; { Litmus.Id.local t (Act_common.C_id.of_string i) }
 
 translation_unit:
   | decls = external_declaration+ EOF { decls }
@@ -249,9 +244,9 @@ parameter_type_list:
       ; style = if variadic then `Variadic else `Normal
       } }
 
-parameter_declarator:
-  | d = declarator           { `Concrete d }
-  | d = abstract_declarator? { `Abstract d }
+let parameter_declarator :=
+  | ~ = declarator;           < `Concrete >
+  | ~ = abstract_declarator?; < `Abstract >
 
 parameter_declaration:
   | qualifiers = declaration_specifier+; declarator = parameter_declarator
@@ -280,18 +275,18 @@ direct_abstract_declarator:
   | lhs = direct_abstract_declarator?; pars = parened(parameter_type_list?)
     { Direct_abs_declarator.Fun_decl (lhs, pars) }
 
-statement:
-  | s = labelled_statement   { s }
-  | s = expression_statement { s }
-  | s = compound_statement   { Stm.Compound s }
-  | s = selection_statement  { s }
-  | s = iteration_statement  { s }
-  | s = jump_statement       { s }
+let statement :=
+  | labelled_statement
+  | expression_statement
+  | ~ = compound_statement; < Stm.Compound >
+  | selection_statement
+  | iteration_statement
+  | jump_statement
 
-labelled_statement:
-  | id = identifier; COLON; s = statement { Stm.Label (Label.Normal id, s) }
-  | CASE; cond = constant_expression; s = statement { Stm.Label (Label.Case cond, s) }
-  | DEFAULT; COLON; s = statement { Stm.Label (Label.Default, s) }
+let labelled_statement :=
+  | id = identifier; ":"; s = statement; { Stm.Label (Label.Normal id, s) }
+  | CASE; cond = constant_expression; s = statement; { Stm.Label (Label.Case cond, s) }
+  | DEFAULT; COLON; s = statement; { Stm.Label (Label.Default, s) }
 
 expression_statement:
   | e = endsemi(expression?) { Stm.Expr e }
@@ -369,9 +364,9 @@ and_expression:
 
 equality_expression:
   | e = left_binop(equality_expression, relational_expression, equality_operator) { e }
-equality_operator:
-  | EQ_OP  { `Eq } (* == *)
-  | NEQ_OP { `Ne } (* != *)
+let equality_operator :=
+  | "=="; { `Eq }
+  | "!="; { `Ne }
 
 relational_expression:
   | e = left_binop(relational_expression, shift_expression, relational_operator) { e }
