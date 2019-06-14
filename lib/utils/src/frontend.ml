@@ -78,7 +78,8 @@ module type Basic = sig
   val message : int -> string
 end
 
-module Make (B : Basic) : Plumbing.Loadable_types.S with type t = B.ast = struct
+module Make (B : Basic) : Plumbing.Loadable_types.S with type t = B.ast =
+struct
   let fail (_lexbuf : lexbuf) = function
     | B.I.HandlingError env ->
         let state = B.I.current_state_number env in

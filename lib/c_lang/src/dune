@@ -8,8 +8,8 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
-   sexplib0 base.caml core_kernel fmt menhirLib plumbing act.common act.config
-   act.litmus act.sim act.utils sedlex travesty.base_exts)
+   sexplib0 base.caml core_kernel fmt menhirLib plumbing act.common
+   act.config act.litmus act.sim act.utils sedlex travesty.base_exts)
  (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )
 

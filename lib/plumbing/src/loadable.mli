@@ -26,7 +26,9 @@ module Of_sexpable (B : Sexpable.S) : Loadable_types.S with type t = B.t
 
 (** Makes a new {{!S} S} from chaining a basic loadable [B] to a
     transformation function described in [C]. *)
-module Make_chain (B : Loadable_types.Basic) (C : Loadable_types.Basic_chain with type src := B.t) :
+module Make_chain
+    (B : Loadable_types.Basic)
+    (C : Loadable_types.Basic_chain with type src := B.t) :
   Loadable_types.S with type t = C.dst
 
 (** {3 Interoperability with filters} *)

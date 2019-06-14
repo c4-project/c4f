@@ -24,20 +24,22 @@
 open Base
 open Sexplib
 
-module Make (B : Loadable_types.Basic) : Loadable_types.S with type t = B.t = struct
+module Make (B : Loadable_types.Basic) :
+  Loadable_types.S with type t = B.t = struct
   include B
 
   let path_of_is (is : Input.t) : string option =
     is |> Input.to_file |> Option.map ~f:Fpath.to_string
 
   let load_from_isrc (is : Input.t) : t Or_error.t =
-    Input.with_input is ~f:(fun ic ->
-        load_from_ic ?path:(path_of_is is) ic )
+    Input.with_input is ~f:(fun ic -> load_from_ic ?path:(path_of_is is) ic)
 
   let load ~path = load_from_isrc (Input.file path)
 end
 
-module Make_chain (B : Loadable_types.Basic) (C : Loadable_types.Basic_chain with type src := B.t) :
+module Make_chain
+    (B : Loadable_types.Basic)
+    (C : Loadable_types.Basic_chain with type src := B.t) :
   Loadable_types.S with type t = C.dst = Make (struct
   type t = C.dst
 
@@ -46,7 +48,8 @@ module Make_chain (B : Loadable_types.Basic) (C : Loadable_types.Basic_chain wit
   let load_from_ic ?path ic = Or_error.(B.load_from_ic ?path ic >>= C.f)
 end)
 
-module Of_sexpable (B : Sexpable.S) : Loadable_types.S with type t = B.t = Make (struct
+module Of_sexpable (B : Sexpable.S) : Loadable_types.S with type t = B.t =
+Make (struct
   type t = B.t
 
   let wrap name f =
