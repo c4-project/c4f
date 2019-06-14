@@ -49,7 +49,7 @@ module Json (Const : sig
 
   include Pretty_printer.S with type t := t
 
-  val to_json : t -> Yojson.Basic.t
-end) : sig
-  val to_json : Const.t t -> Yojson.Basic.t
-end
+  include Plumbing.Loadable_types.Jsonable with type t := t
+
+  val parse_post_string : string -> t Ast_base.Postcondition.t Or_error.t
+end) : Plumbing.Loadable_types.Jsonable with type t = Const.t t

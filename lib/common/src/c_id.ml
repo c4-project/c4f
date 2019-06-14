@@ -83,6 +83,22 @@ let pp : t Fmt.t = Fmt.of_to_string to_string
 
 let is_string_safe (str : string) : bool = Or_error.is_ok (create str)
 
+module Json : Plumbing.Loadable_types.Jsonable with type t := t = struct
+  let to_yojson (id : t) : Yojson.Safe.t = `String (raw id)
+
+  let of_yojson (json : Yojson.Safe.t) : (t, string) Result.t =
+    Result.(
+      json |> Yojson.Safe.Util.to_string_option
+      |> of_option ~error:(Error.of_string "Not a JSON string.")
+      >>= create
+      |> Result.map_error ~f:Error.to_string_hum)
+
+  let of_yojson_exn (json : Yojson.Safe.t) : t =
+    json |> Yojson.Safe.Util.to_string |> of_string
+end
+
+include Json
+
 module Q : Quickcheck.S with type t := t = struct
   let char_or_underscore (c : char Quickcheck.Generator.t) :
       char Quickcheck.Generator.t =
@@ -155,4 +171,24 @@ module Herd_safe = struct
   end
 
   include Q
+end
+
+module Alist = struct
+  include Travesty.Bi_mappable.Fix2_left (Travesty_base_exts.Alist) (M)
+
+  let to_yojson (rhs : 'r -> Yojson.Safe.t) (assoc : 'r t) : Yojson.Safe.t =
+    `Assoc
+      (Travesty_base_exts.Alist.bi_map assoc ~left:to_string ~right:rhs)
+
+  module U = Yojson.Safe.Util
+
+  let of_yojson_exn (rhs : Yojson.Safe.t -> 'r) (json : Yojson.Safe.t) : 'r t =
+    json
+    |> U.to_assoc
+    |> Travesty_base_exts.Alist.bi_map ~left:of_string ~right:rhs
+
+  let of_yojson (rhs : Yojson.Safe.t -> ('r, string) Result.t) (json : Yojson.Safe.t) : ('r t, string) Result.t =
+    let rhs' (json : Yojson.Safe.t) : 'r = Result.ok_or_failwith (rhs json) in
+    let result = Result.try_with (fun () -> of_yojson_exn rhs' json) in
+    Result.map_error ~f:Exn.to_string result
 end

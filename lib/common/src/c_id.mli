@@ -43,6 +43,8 @@ include Comparable.S with type t := t
 
 include Pretty_printer.S with type t := t
 
+include Plumbing.Loadable_types.Jsonable with type t := t
+
 (** Note that [of_string] is [create_exn]; ie, it can fail. *)
 include Stringable.S with type t := t
 
@@ -76,4 +78,20 @@ module Herd_safe : sig
   val is_string_safe : string -> bool
   (** [is_string_safe str] checks whether [str] is Herd-safe, but doesn't
       return the constructed identifier. *)
+end
+
+(** Associative lists with C identifier keys, with derived operations. *)
+module Alist : sig
+  include
+    Travesty.Bi_mappable.S1_right
+    with type 'r t = (t, 'r) List.Assoc.t
+     and type left := t
+
+  val to_yojson : ('r -> Yojson.Safe.t) -> 'r t -> Yojson.Safe.t
+  (** [to_yojson rhs assoc] serialises [assoc] to a JSON object, using [rhs]
+      as the serialiser for values. *)
+
+  val of_yojson_exn : (Yojson.Safe.t -> 'r) -> Yojson.Safe.t -> 'r t
+
+  val of_yojson : (Yojson.Safe.t -> ('r, string) Result.t) -> Yojson.Safe.t -> ('r t, string) Result.t
 end

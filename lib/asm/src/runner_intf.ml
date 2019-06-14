@@ -52,7 +52,8 @@ module type Basic = sig
 
   val convert_const : Src_lang.Constant.t -> Dst_lang.Constant.t Or_error.t
 
-  module Program : Plumbing.Loadable_types.S with type t = Src_lang.Program.t
+  module Program :
+    Plumbing.Loadable_types.S with type t = Src_lang.Program.t
 end
 
 module type Runnable = sig
