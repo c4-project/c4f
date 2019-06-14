@@ -24,7 +24,7 @@
 open Base
 open Act_common
 
-module type S = Act_utils.Loadable_intf.S with type t = Ast.t
+module type S = Plumbing.Loadable_types.S with type t = Ast.t
 
 module Att : S = Act_utils.Frontend.Make (struct
   type ast = Ast.t

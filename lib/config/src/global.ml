@@ -22,7 +22,7 @@ type t =
   ; machines: M_spec.Set.t }
 [@@deriving make, fields]
 
-module Load : Au.Loadable_intf.S with type t = t = struct
+module Load : Plumbing.Loadable_types.S with type t = t = struct
   module File = struct
     let ssh (items : Ast.Ssh.t list) : Act_machine.Ssh.t Or_error.t =
       Or_error.Let_syntax.(
@@ -195,5 +195,5 @@ module Load : Au.Loadable_intf.S with type t = t = struct
     type dst = t
   end
 
-  include Au.Loadable.Make_chain (Frontend) (File)
+  include Plumbing.Loadable.Make_chain (Frontend) (File)
 end

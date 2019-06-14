@@ -78,7 +78,7 @@ module type Basic = sig
   val message : int -> string
 end
 
-module Make (B : Basic) : Loadable_intf.S with type t = B.ast = struct
+module Make (B : Basic) : Plumbing.Loadable_types.S with type t = B.ast = struct
   let fail (_lexbuf : lexbuf) = function
     | B.I.HandlingError env ->
         let state = B.I.current_state_number env in
@@ -103,7 +103,7 @@ module Make (B : Basic) : Loadable_intf.S with type t = B.ast = struct
         [%message
           "Lexing error" ~position:(position : Error_range.t) ~details]
 
-  module Load : Loadable_intf.Basic with type t = B.ast = struct
+  module Load : Plumbing.Loadable_types.Basic with type t = B.ast = struct
     type t = B.ast
 
     let load_from_ic ?(path = "(stdin)") ic =
@@ -116,5 +116,5 @@ module Make (B : Basic) : Loadable_intf.S with type t = B.ast = struct
       parse lexbuf
   end
 
-  include Loadable.Make (Load)
+  include Plumbing.Loadable.Make (Load)
 end

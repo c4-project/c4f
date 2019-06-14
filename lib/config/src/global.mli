@@ -29,7 +29,7 @@ val make :
     record from the given pieces of configuration. *)
 
 (** Module for loading the global configuration from an act.conf file. *)
-module Load : Act_utils.Loadable_intf.S with type t = t
+module Load : Plumbing.Loadable_types.S with type t = t
 
 (** {2 Projections} *)
 

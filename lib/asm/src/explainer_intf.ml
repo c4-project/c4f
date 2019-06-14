@@ -35,7 +35,7 @@ module type Basic = sig
     Act_sanitiser.Hook_intf.S with module Lang = Src_lang
 
   module Program :
-    Act_utils.Loadable_intf.S with type t = Src_lang.Program.t
+    Plumbing.Loadable_types.S with type t = Src_lang.Program.t
 end
 
 module type S = sig

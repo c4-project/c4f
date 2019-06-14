@@ -48,4 +48,4 @@ module type Basic = sig
 end
 
 (** [Make] lifts an instance of [B] into a frontend. *)
-module Make (B : Basic) : Loadable_intf.S with type t = B.ast
+module Make (B : Basic) : Plumbing.Loadable_types.S with type t = B.ast

@@ -55,7 +55,7 @@ module Make_runner_deps
   let convert_const = Or_error.return
 
   module Program :
-    Act_utils.Loadable_intf.S with type t = Src_lang.Program.t =
+    Plumbing.Loadable_types.S with type t = Src_lang.Program.t =
     Frontend
 
   let as_asm_stub (tid : int) (p : Lang.Program.t) :
