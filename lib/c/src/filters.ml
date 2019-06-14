@@ -34,7 +34,7 @@ module type Basic = sig
   (** Validated AST *)
   type t
 
-  module Frontend : Au.Loadable_intf.S with type t = ast
+  module Frontend : Pb.Loadable_types.S with type t = ast
 
   val normal_tmp_file_ext : string
 

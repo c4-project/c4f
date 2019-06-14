@@ -23,4 +23,4 @@
 
 (** Frontend for the config file language. *)
 
-include Act_utils.Loadable_intf.S with type t = Ast.t
+include Plumbing.Loadable_types.S with type t = Ast.t

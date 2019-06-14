@@ -24,7 +24,6 @@
 open Base
 open Act_common
 module Tx = Travesty_base_exts
-open Act_utils
 
 module State_line = struct
   type t = {occurrences: int option; rest: string}
@@ -319,7 +318,7 @@ module Make_main (B : Basic) = struct
 end
 
 module Make_load (B : Basic) :
-  Loadable_intf.Basic with type t = Act_sim.Output.t = struct
+  Plumbing.Loadable_types.Basic with type t = Act_sim.Output.t = struct
   module M = Make_main (B)
   module L = Tx.List.On_monad (Ctx)
   module I = Ic.On_monad (Ctx)
@@ -335,4 +334,4 @@ module Make_load (B : Basic) :
 end
 
 module Make (B : Basic) : Act_sim.Reader_intf.S =
-  Act_sim.Reader.Make (Loadable.Make (Make_load (B)))
+  Act_sim.Reader.Make (Plumbing.Loadable.Make (Make_load (B)))

@@ -27,7 +27,7 @@ open Base
 open Act_common
 
 (** Synonym for loadables that load x86 ASTs. *)
-module type S = Act_utils.Loadable_intf.S with type t = Ast.t
+module type S = Plumbing.Loadable_types.S with type t = Ast.t
 
 (** [Att] is the AT&T-dialect x86 frontend. *)
 module Att : S

@@ -23,23 +23,22 @@
 
 open Base
 open Sexplib
-open Loadable_intf
 
-module Make (B : Basic) : S with type t = B.t = struct
+module Make (B : Loadable_types.Basic) : Loadable_types.S with type t = B.t = struct
   include B
 
-  let path_of_is (is : Plumbing.Input.t) : string option =
-    is |> Plumbing.Input.to_file |> Option.map ~f:Fpath.to_string
+  let path_of_is (is : Input.t) : string option =
+    is |> Input.to_file |> Option.map ~f:Fpath.to_string
 
-  let load_from_isrc is =
-    Plumbing.Input.with_input is ~f:(fun ic ->
+  let load_from_isrc (is : Input.t) : t Or_error.t =
+    Input.with_input is ~f:(fun ic ->
         load_from_ic ?path:(path_of_is is) ic )
 
-  let load ~path = load_from_isrc (Plumbing.Input.file path)
+  let load ~path = load_from_isrc (Input.file path)
 end
 
-module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
-  S with type t = C.dst = Make (struct
+module Make_chain (B : Loadable_types.Basic) (C : Loadable_types.Basic_chain with type src := B.t) :
+  Loadable_types.S with type t = C.dst = Make (struct
   type t = C.dst
 
   let load_from_string str = Or_error.(str |> B.load_from_string >>= C.f)
@@ -47,7 +46,7 @@ module Make_chain (B : Basic) (C : Basic_chain with type src := B.t) :
   let load_from_ic ?path ic = Or_error.(B.load_from_ic ?path ic >>= C.f)
 end)
 
-module Of_sexpable (B : Sexpable.S) : S with type t = B.t = Make (struct
+module Of_sexpable (B : Sexpable.S) : Loadable_types.S with type t = B.t = Make (struct
   type t = B.t
 
   let wrap name f =
@@ -61,9 +60,9 @@ module Of_sexpable (B : Sexpable.S) : S with type t = B.t = Make (struct
     wrap path (fun () -> B.t_of_sexp (Sexp.input_sexp ic))
 end)
 
-module To_filter (L : S) :
-  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = L.t =
-Plumbing.Filter.Make (struct
+module To_filter (L : Loadable_types.S) :
+  Filter_types.S with type aux_i = unit and type aux_o = L.t =
+Filter.Make (struct
   type aux_i = unit
 
   type aux_o = L.t

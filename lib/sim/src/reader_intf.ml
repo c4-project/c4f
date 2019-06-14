@@ -23,7 +23,7 @@
 
 (** Shorthand for the specific type of loadable module a simulator runner
     expects. *)
-module type Basic = Act_utils.Loadable_intf.S with type t = Output.t
+module type Basic = Plumbing.Loadable_types.S with type t = Output.t
 
 (** Extensions for readers, mostly for stand-alone use. *)
 module type Extensions = sig
