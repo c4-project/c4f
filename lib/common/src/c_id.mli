@@ -93,5 +93,8 @@ module Alist : sig
 
   val of_yojson_exn : (Yojson.Safe.t -> 'r) -> Yojson.Safe.t -> 'r t
 
-  val of_yojson : (Yojson.Safe.t -> ('r, string) Result.t) -> Yojson.Safe.t -> ('r t, string) Result.t
+  val of_yojson :
+       (Yojson.Safe.t -> ('r, string) Result.t)
+    -> Yojson.Safe.t
+    -> ('r t, string) Result.t
 end

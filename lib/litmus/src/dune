@@ -7,5 +7,5 @@
  (preprocess
   (pps ppx_deriving_yojson ppx_deriving.std ppx_jane))
  (libraries sexplib0 stdio base base.caml core_kernel yojson
-   ppx_deriving_yojson.runtime result fmt menhirLib travesty travesty.base_exts
-   act.common act.utils plumbing))
+   ppx_deriving_yojson.runtime result fmt menhirLib travesty
+   travesty.base_exts act.common act.utils plumbing))
