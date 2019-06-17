@@ -24,6 +24,7 @@ depends: [
   "ppx_import"
   "ppx_jane"
   "core" {>= "v0.12" & < "v0.13"}
+  "core_extended" {>= "v0.12" & < "v0.13"}
   "fmt" {>= "0.8.5" & < "0.9"}
   "fpath" {>= "0.7.2" & < "0.8"}
   "menhir" {>= "20181113"}

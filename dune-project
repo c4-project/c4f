@@ -25,6 +25,7 @@
     ppx_import
     ppx_jane
     (core (and (>= v0.12) (< v0.13)))
+    (core_extended (and (>= v0.12) (< v0.13)))
     (fmt (and (>= 0.8.5) (< 0.9)))
     (fpath (and (>= 0.7.2) (< 0.8)))
     (menhir (>= 20181113))
