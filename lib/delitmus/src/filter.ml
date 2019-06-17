@@ -28,7 +28,7 @@ let pp_del : Output.t Fmt.t =
          (vbox Act_c_lang.Ast.Translation_unit.pp)))
 
 let delitmusify_and_print (vast : Act_c.Mini_litmus.Ast.Validated.t)
-    (oc : Stdio.Out_channel.t) : Output.Aux.t Or_error.t =
+    (oc : Stdio.Out_channel.t) : Aux.t Or_error.t =
   Or_error.Let_syntax.(
     let%map dl = Runner.run vast in
     Fmt.pf (Caml.Format.formatter_of_out_channel oc) "%a@." pp_del dl ;
@@ -37,7 +37,7 @@ let delitmusify_and_print (vast : Act_c.Mini_litmus.Ast.Validated.t)
 include Pb.Filter.Make (struct
   type aux_i = unit
 
-  type aux_o = Output.Aux.t
+  type aux_o = Aux.t
 
   let name = "delitmus"
 

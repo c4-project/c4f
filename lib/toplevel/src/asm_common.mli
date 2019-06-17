@@ -43,13 +43,13 @@ module Input : sig
 
   val target : t -> Act_machine.Target.t
 
-  val c_litmus_aux : t -> Act_delitmus.Output.Aux.t
+  val c_litmus_aux : t -> Act_delitmus.Aux.t
   (** [c_litmus_aux in] gets the auxiliary information associated with any C
       litmus test that was previously processed into the input to this
       assembly command. *)
 
   val make_job_input :
-    t -> (Act_delitmus.Output.Aux.t -> 'cfg) -> 'cfg Act_asm.Job.t
+    t -> (Act_delitmus.Aux.t -> 'cfg) -> 'cfg Act_asm.Job.t
 end
 
 val lift_command :

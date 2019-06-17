@@ -33,7 +33,7 @@ be slotted into a simulation harness.
 
 module In = Asm_common.Input
 
-let make_config (_aux : Act_delitmus.Output.Aux.t) :
+let make_config (_aux : Act_delitmus.Aux.t) :
     Act_asm.Stub_gen.Config.t =
   Act_asm.Stub_gen.Config.make ~separator:"// NEXT" ()
 

@@ -218,5 +218,5 @@ let run (input : C.Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
     let program = C.Mini.Program.make ~globals ~functions in
     let%map c_variables = cvars_with_qualified_locals raw_c_variables in
     let litmus_aux = make_litmus_aux input in
-    let aux = Output.Aux.make ~litmus_aux ~c_variables in
+    let aux = Aux.make ~litmus_aux ~c_variables in
     Output.make ~program ~aux)

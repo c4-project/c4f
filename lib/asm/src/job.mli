@@ -36,7 +36,7 @@ type 'cfg t
 val make :
      ?config:'cfg
   -> ?passes:Set.M(Act_sanitiser.Pass_group).t
-  -> ?aux:Act_delitmus.Output.Aux.t
+  -> ?aux:Act_delitmus.Aux.t
   -> unit
   -> 'cfg t
 (** [make ?config ?passes ?symbols ()] makes a job description. *)
