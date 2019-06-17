@@ -14,4 +14,4 @@
 include
   Plumbing.Filter_types.S
   with type aux_i = unit
-   and type aux_o = Output.Aux.t
+   and type aux_o = Aux.t

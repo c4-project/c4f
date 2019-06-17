@@ -89,7 +89,7 @@ module Make (B : Basic) : S = struct
           ~outfile:(P_file.asm_file fs) )
 
   let litmusify_single (fs : Pathset.File.t)
-      (aux : Act_delitmus.Output.Aux.t) =
+      (aux : Act_delitmus.Aux.t) =
     Or_error.Let_syntax.(
       let%map output =
         Litmusify.Filter.run
@@ -101,7 +101,7 @@ module Make (B : Basic) : S = struct
       Act_asm.Job.Output.symbol_map output)
 
   let litmusify_single_and_time (fs : Pathset.File.t)
-      (aux : Act_delitmus.Output.Aux.t) =
+      (aux : Act_delitmus.Aux.t) =
     bracket ~id ~stage:"litmus" ~in_file:(P_file.name fs)
       ~out_file:(Fpath.to_string (P_file.asm_litmus_file fs))
       (fun () -> litmusify_single fs aux)
@@ -178,8 +178,8 @@ module Make (B : Basic) : S = struct
       ~stage:"delitmus" ~in_file:(P_file.name fs) ~id
 
   let aux_from_cvars (c_variables : Ac.C_variables.Map.t) :
-      Act_delitmus.Output.Aux.t =
-    Act_delitmus.Output.Aux.make ~litmus_aux:(Act_litmus.Aux.make ())
+      Act_delitmus.Aux.t =
+    Act_delitmus.Aux.make ~litmus_aux:(Act_litmus.Aux.make ())
       ~c_variables
 
   let run_single_from_pathset_file (c_sims : Act_sim.Bulk.File_map.t)

@@ -28,7 +28,7 @@ type 'cfg t =
   { config: 'cfg option
   ; passes: Set.M(Act_sanitiser.Pass_group).t
         [@default Act_sanitiser.Pass_group.standard]
-  ; aux: Act_delitmus.Output.Aux.t [@default Act_delitmus.Output.Aux.empty]
+  ; aux: Act_delitmus.Aux.t [@default Act_delitmus.Aux.empty]
   }
 [@@deriving make, fields]
 
@@ -38,7 +38,7 @@ let map_m_config (job : 'a t) ~(f : 'a -> 'b Or_error.t) : 'b t Or_error.t =
     {job with config})
 
 let symbols (job : _ t) : string list =
-  Act_delitmus.Output.Aux.symbols (aux job)
+  Act_delitmus.Aux.symbols (aux job)
 
 module Output = struct
   type t = {symbol_map: (string, string) List.Assoc.t; warn: unit Fmt.t}
