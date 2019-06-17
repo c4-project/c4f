@@ -17,7 +17,7 @@ type 'const t =
   { locations: Ac.C_id.t list option
   ; init: (Ac.C_id.t, 'const) List.Assoc.t [@default []]
   ; postcondition: 'const Ast_base.Postcondition.t option }
-[@@deriving fields, make]
+[@@deriving fields, make, sexp]
 
 (* We can't easily derive yojson for the whole thing, since the
    postcondition serialisation depends on being able to pretty-print and

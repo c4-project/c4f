@@ -18,7 +18,7 @@
 open Base
 
 (** Opaque type of auxiliary Litmus records. *)
-type 'const t
+type 'const t [@@deriving sexp]
 
 (** {2 Constructors} *)
 
