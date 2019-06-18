@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Sx = String_extended
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 
 module T = struct
   (** [t] is the type of compiler IDs. *)

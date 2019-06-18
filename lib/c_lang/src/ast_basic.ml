@@ -350,6 +350,12 @@ module Constant = struct
 
   let gen_int32_constant : t Quickcheck.Generator.t =
     Quickcheck.Generator.map ~f:integer gen_int32_as_int
+
+  let to_int : t -> int Or_error.t =
+    function
+    | Integer k -> Or_error.return k
+    | Char _ -> Or_error.error_string "expected integer literal, got char"
+    | Float _ -> Or_error.error_string "expected integer literal, got float"
 end
 
 module Identifier = struct

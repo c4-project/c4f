@@ -49,14 +49,14 @@ module Pred_elt : sig
 
   (** {3 Traversals} *)
 
-  (** Traversing monadically over all identifiers in a predicate element,
-      fixing the constant type to some [Const.t]. *)
-  module On_identifiers (Const : T) :
-    Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t
+  (** Bi-traversing monadically over all identifiers in a predicate element
+      on the left, and all constants on the right. *)
+  include Travesty.Bi_traversable.S1_right with type 'c t := 'c t and type left = Id.t
 
-  (** Traversing monadically over all constants in a predicate element. *)
-  module On_constants :
-    Travesty.Traversable.S1 with type 'const t := 'const t
+  (** Bi-traversing monadically over all C identifiers in a predicate
+      on the left, and all constants on the right. *)
+  module On_c_identifiers :
+    Travesty.Bi_traversable.S1_right with type 'c t = 'c t and type left = Act_common.C_id.t
 end
 
 (** Directly-parametrised AST for predicates. *)
@@ -82,14 +82,14 @@ module Pred : sig
 
   (** {3 Traversals} *)
 
-  (** Traversing monadically over all identifiers in a predicate, fixing the
-      constant type to some [Const.t]. *)
-  module On_identifiers (Const : T) :
-    Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t
+  (** Bi-traversing monadically over all identifiers in a predicate
+      on the left, and all constants on the right. *)
+  include Travesty.Bi_traversable.S1_right with type 'c t := 'c t and type left = Id.t
 
-  (** Traversing monadically over all constants in a predicate. *)
-  module On_constants :
-    Travesty.Traversable.S1 with type 'const t := 'const t
+  (** Bi-traversing monadically over all C identifiers in a predicate
+      on the left, and all constants on the right. *)
+  module On_c_identifiers :
+    Travesty.Bi_traversable.S1_right with type 'c t = 'c t and type left = Act_common.C_id.t
 end
 
 (** Directly-parametrised AST for postconditions. *)
@@ -105,12 +105,12 @@ module Postcondition : sig
 
   (** {3 Traversals} *)
 
-  (** Traversing monadically over all identifiers in a postcondition, fixing
-      the constant type to some [Const.t]. *)
-  module On_identifiers (Const : T) :
-    Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t
+  (** Bi-traversing monadically over all Litmus identifiers in a predicate
+      on the left, and all constants on the right. *)
+  include Travesty.Bi_traversable.S1_right with type 'c t := 'c t and type left = Id.t
 
-  (** Traversing monadically over all constants in a postcondition. *)
-  module On_constants :
-    Travesty.Traversable.S1 with type 'const t := 'const t
+  (** Bi-traversing monadically over all C identifiers in a predicate
+      on the left, and all constants on the right. *)
+  module On_c_identifiers :
+    Travesty.Bi_traversable.S1_right with type 'c t = 'c t and type left = Act_common.C_id.t
 end

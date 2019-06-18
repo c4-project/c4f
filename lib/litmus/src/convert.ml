@@ -42,7 +42,7 @@ module Make (B : Basic) = struct
     init |> List.map ~f:convert_init_line |> Or_error.combine_errors
 
   let convert_pred : B.From.Pred.t -> B.To.Pred.t Or_error.t =
-    Ast_base.Pred.On_constants.With_errors.map_m ~f:B.constant
+    Ast_base.Pred.With_errors.map_right_m ~f:B.constant
 
   let convert_post (post : B.From.Postcondition.t) :
       B.To.Postcondition.t Or_error.t =
