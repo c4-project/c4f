@@ -75,16 +75,17 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Sequence.map ~f:diff_to_error
   |> Sequence.to_list |> Or_error.combine_errors_unit
 
-let spec_to_aux (spec : spec) : Act_delitmus.Output.Aux.t =
+let spec_to_aux (spec : spec) : Act_delitmus.Aux.t =
   (* TODO(@MattWindsor91): this is a bit of a hack. *)
   let symbols = spec.c_globals @ spec.c_locals (* for now *) in
-  let symbol_cids = List.map ~f:Act_common.C_id.of_string symbols in
-  let symbol_set = Set.of_list (module Act_common.C_id) symbol_cids in
-  let c_variables =
-    Act_common.C_variables.Map.of_single_scope_set symbol_set
+  let symbol_lids = List.map ~f:Act_common.Litmus_id.of_string symbols in
+  let symbol_set = Set.of_list (module Act_common.Litmus_id) symbol_lids in
+  let var_map =
+    Act_delitmus.Var_map.of_set_with_qualifier
+      symbol_set ~qualifier:(fun (x : Act_common.Litmus_id.t) -> Some (Act_delitmus.Qualify.litmus_id x))
   in
   let litmus_aux = Act_litmus.Aux.make () in
-  Act_delitmus.Output.Aux.make ~litmus_aux ~c_variables
+  Act_delitmus.Aux.make ~litmus_aux ~var_map ()
 
 let regress_run_asm (module Job : Act_asm.Runner_intf.S) specs
     (passes : Set.M(Act_sanitiser.Pass_group).t) ~(file : Fpath.t)

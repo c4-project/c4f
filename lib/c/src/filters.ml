@@ -47,78 +47,36 @@ module type Basic = sig
     -> config:Act_config.Fuzz.t
     -> t Or_error.t
 
-  val cvars : t -> Ac.C_variables.Map.t
-  (** [cvars vast] should return a list of C identifiers corresponding to
-      all variables in [vast].
-
-      [cvars] _may_ de-litmusify the AST in the process; if you already have
-      a delitmusified AST, use [cvars_of_delitmus]. *)
-
-  val postcondition : t -> Mini_litmus.Ast.Postcondition.t option
-  (** [postcondition vast] should get the Litmus postcondition of [vast], if
-      one exists. *)
-
   val print : Out_channel.t -> t -> unit
 end
 
 type mode =
-  | Print of [`All | `Vars]
+  | Print
   | Fuzz of {seed: int option; o: Ac.Output.t; config: Act_config.Fuzz.t}
 
-module Output = struct
-  type t =
-    { cvars: Ac.C_variables.Map.t
-    ; post: Mini_litmus.Ast.Postcondition.t option }
-  [@@deriving fields]
-end
-
 module type S =
-  Plumbing.Filter_types.S with type aux_i = mode and type aux_o = Output.t
+  Plumbing.Filter_types.S with type aux_i = mode and type aux_o = unit
 
 module Make (B : Basic) : S = Pb.Filter.Make (struct
   type aux_i = mode
 
-  type aux_o = Output.t
+  type aux_o = unit
 
   let name = "C transformer"
 
   let tmp_file_ext (ctx : mode Pb.Filter_context.t) : string =
     match Pb.Filter_context.aux ctx with
-    | Print `All ->
+    | Print ->
         B.normal_tmp_file_ext
-    | Print `Vars ->
-        "txt"
     | Fuzz _ ->
         "c.litmus"
 
-  let run_fuzz ?(seed : int option) (vast : B.t) (oc : Out_channel.t)
+  let run_fuzz ?(seed : int option) (oc : Out_channel.t) (vast : B.t)
       ~(o : Ac.Output.t) ~(config : Act_config.Fuzz.t) :
-      Ac.C_variables.Map.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%map fz = B.fuzz ?seed ~o ~config vast in
-    B.print oc fz ; B.cvars vast
+      unit Or_error.t =
+    Or_error.(vast |> B.fuzz ?seed ~o ~config >>| B.print oc)
 
-  let print_all (oc : Out_channel.t) _ (x : B.t) : unit = B.print oc x
-
-  let print_vars (oc : Out_channel.t) (vars : Ac.C_id.t list) _ : unit =
-    let f = Caml.Format.formatter_of_out_channel oc in
-    Fmt.(vbox (list ~sep:sp Ac.C_id.pp)) f vars
-
-  let print :
-      [`All | `Vars] -> Out_channel.t -> Ac.C_id.t list -> B.t -> unit =
-    function
-    | `All ->
-        print_all
-    | `Vars ->
-        print_vars
-
-  let run_print (output_mode : [`All | `Vars]) (vast : B.t)
-      (oc : Out_channel.t) : Ac.C_variables.Map.t Or_error.t =
-    let cvars = B.cvars vast in
-    print output_mode oc (Ac.C_id.Map.keys cvars) vast ;
-    Or_error.return cvars
-
-  let run (ctx : mode Pb.Filter_context.t) ic oc : Output.t Or_error.t =
+  let run (ctx : mode Pb.Filter_context.t) ic oc : unit Or_error.t =
     let aux = Pb.Filter_context.aux ctx in
     let input = Pb.Filter_context.input ctx in
     Or_error.Let_syntax.(
@@ -126,15 +84,11 @@ module Make (B : Basic) : S = Pb.Filter.Make (struct
         B.Frontend.load_from_ic ~path:(Pb.Input.to_string input) ic
       in
       let%bind vast = B.process ast in
-      let f =
-        match aux with
-        | Print output_mode ->
-            run_print output_mode
-        | Fuzz {seed; o; config} ->
-            run_fuzz ?seed ~o ~config
-      in
-      let%map cvars = f vast oc in
-      {Output.cvars; post= B.postcondition vast})
+      match aux with
+      | Print ->
+        B.print oc vast; Result.ok_unit
+      | Fuzz {seed; o; config} ->
+        run_fuzz ?seed ~o ~config oc vast)
 end)
 
 module Normal_C : S = Make (struct
@@ -159,12 +113,6 @@ module Normal_C : S = Make (struct
     ignore o ;
     ignore config ;
     Or_error.error_string "Can't fuzz a normal C file"
-
-  let cvars prog =
-    let raw_cvars = Mini.Program.cvars prog in
-    Ac.C_variables.Map.of_single_scope_set raw_cvars
-
-  let postcondition = Fn.const None
 end)
 
 module Litmus : S = Make (struct
@@ -187,13 +135,6 @@ module Litmus : S = Make (struct
       -> config:Act_config.Fuzz.t
       -> t Or_error.t =
     Fuzzer.run
-
-  let postcondition :
-      Mini_litmus.Ast.Validated.t -> Mini_litmus.Ast.Postcondition.t option
-      =
-    Mini_litmus.Ast.Validated.postcondition
-
-  let cvars : t -> Ac.C_variables.Map.t = Mini_litmus.cvars
 end)
 
 let c_module (is_c : bool) : (module S) =

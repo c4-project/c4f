@@ -15,13 +15,14 @@
     as well as information about the variables and thread IDs that were in
     use in the body of the Litmus test. *)
 
-type t
+type t [@@deriving equal]
 
 (** {2 Constructors} *)
 
 val make :
-  litmus_aux:Act_c.Mini.Constant.t Act_litmus.Aux.t
-  -> c_variables:Act_common.C_variables.Map.t
+  ?litmus_aux:Act_c.Mini.Constant.t Act_litmus.Aux.t
+  -> var_map:Var_map.t
+  -> unit
   -> t
 
 val empty : t
@@ -30,7 +31,7 @@ val empty : t
 
 val litmus_aux : t -> Act_c.Mini.Constant.t Act_litmus.Aux.t
 
-val c_variables : t -> Act_common.C_variables.Map.t
+val var_map : t -> Var_map.t
 
 val symbols : t -> string list
 

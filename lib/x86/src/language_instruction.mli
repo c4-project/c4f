@@ -34,7 +34,7 @@ module type Basic = sig
 
   module Pretty : Pp_intf.S
 
-  module Symbol : Act_language.Symbol.Basic with type t := string
+  module Symbol : Act_language.Symbol_intf.Basic with type t := string
 
   module Location :
     Act_language.Location.Basic with type t := Ast.Location.t

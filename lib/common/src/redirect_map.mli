@@ -21,8 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** @inline *)
-include module type of Redirect_map_intf
+open Redirect_map_intf
 
 (** Makes a redirect map for the symbol module represented by [B]. *)
 module Make (B : Basic_symbol) :

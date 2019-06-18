@@ -116,27 +116,14 @@ module Make (B : Basic) : S = struct
           ~input_path:(P_file.asm_litmus_file fs)
           ~output_path:(P_file.asm_sim_file fs) )
 
-  let cvar_from_loc_map_entry (id : Ac.Litmus_id.t) : Ac.C_id.t Or_error.t =
-    Result.of_option
-      (Ac.Litmus_id.as_global id)
-      ~error:(Error.of_string "Internal error: got a non-local C location")
-
-  let global_cvars_from_loc_map
-      (loc_map : (Ac.Litmus_id.t, Ac.Litmus_id.t) List.Assoc.t) :
-      Set.M(Ac.C_id).t Or_error.t =
-    Or_error.(
-      loc_map
-      |> Tx.Or_error.combine_map ~f:(fun (_, id) ->
-             cvar_from_loc_map_entry id )
-      >>| Set.of_list (module Ac.C_id))
-
   let cvars_from_loc_map
       (loc_map : (Ac.Litmus_id.t, Ac.Litmus_id.t) List.Assoc.t) :
-      Ac.C_variables.Map.t Or_error.t =
+      Act_delitmus.Var_map.t Or_error.t =
     Or_error.(
-      loc_map |> global_cvars_from_loc_map
-      >>| Ac.C_variables.Map.of_single_scope_set
-            ~scope:Ac.C_variables.Scope.Global)
+      loc_map
+      |> Tx.Alist.map_right ~f:Ac.Litmus_id.as_global
+      |> Map.of_alist_or_error (module Ac.Litmus_id)
+      >>| Act_delitmus.Var_map.of_map)
 
   let lift_str_map (str_map : (string, string) List.Assoc.t) :
       (Ac.Litmus_id.t, Ac.Litmus_id.t) List.Assoc.t Or_error.t =
@@ -177,10 +164,10 @@ module Make (B : Basic) : S = struct
             delitmusify fs ) )
       ~stage:"delitmus" ~in_file:(P_file.name fs) ~id
 
-  let aux_from_cvars (c_variables : Ac.C_variables.Map.t) :
+  let aux_from_cvars (var_map : Act_delitmus.Var_map.t) :
       Act_delitmus.Aux.t =
     Act_delitmus.Aux.make ~litmus_aux:(Act_litmus.Aux.make ())
-      ~c_variables
+      ~var_map ()
 
   let run_single_from_pathset_file (c_sims : Act_sim.Bulk.File_map.t)
       (fs : Pathset.File.t) : (Analysis.Herd.t * TS.t) Or_error.t =

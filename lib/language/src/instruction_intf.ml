@@ -148,7 +148,7 @@ module type Basic_with_modules = sig
 
   module Location : Location.S
 
-  module Symbol : Symbol.S
+  module Symbol : Symbol_intf.S
 
   include
     Basic

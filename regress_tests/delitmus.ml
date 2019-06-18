@@ -26,12 +26,12 @@
 open Core
 module Ac = Act_common
 
-let pp_cvars : Ac.C_variables.Map.t Fmt.t =
+let pp_var_map : Act_delitmus.Var_map.t Fmt.t =
   Fmt.(
     prefix
-      (unit "@,@,// C variables:@,")
+      (unit "@,@,// C global variables:@,")
       (vbox
-         (using Ac.C_id.Map.keys
+         (using (Fn.compose Set.to_list Act_delitmus.Var_map.global_c_variables)
             (list ~sep:sp (hbox (prefix (unit "// -@ ") Ac.C_id.pp))))))
 
 let pp_post : Act_c.Mini_litmus.Ast.Postcondition.t Fmt.t =
@@ -40,11 +40,11 @@ let pp_post : Act_c.Mini_litmus.Ast.Postcondition.t Fmt.t =
       (unit "@,@,// Postcondition:@,")
       (hbox (prefix (unit "// ") Act_c.Mini_litmus.Pp.pp_post)))
 
-let summarise_c_output (aux : Act_delitmus.Output.Aux.t) : unit =
-  let laux = Act_delitmus.Output.Aux.litmus_aux aux in
+let summarise_c_output (aux : Act_delitmus.Aux.t) : unit =
+  let laux = Act_delitmus.Aux.litmus_aux aux in
   Fmt.(
-    pr "@[<v>%a%a@]@." pp_cvars
-      (Act_delitmus.Output.Aux.c_variables aux)
+    pr "@[<v>%a%a@]@." pp_var_map
+      (Act_delitmus.Aux.var_map aux)
       (option pp_post)
       (Act_litmus.Aux.postcondition laux))
 

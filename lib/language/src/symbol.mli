@@ -24,8 +24,7 @@
 (** Language interface: Symbols *)
 
 open Base
-
-include module type of Symbol_intf
+open Symbol_intf
 
 (** [Make] produces an instance of [S] from an instance of [Basic]. *)
 module Make (B : Basic) : S with type t = B.t

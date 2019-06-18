@@ -13,22 +13,21 @@ open Base
 module Tx = Travesty_base_exts
 
 type t =
-  { litmus_aux: Act_c.Mini.Constant.t Act_litmus.Aux.t
-  ; c_variables: Act_common.C_variables.Map.t }
-[@@deriving make, fields]
+  { litmus_aux: Act_c.Mini.Constant.t Act_litmus.Aux.t [@default Act_litmus.Aux.empty]
+  ; var_map: Var_map.t }
+[@@deriving make, fields, equal]
 
 (* TODO(@MattWindsor91): validate litmus locations/etc against the
    variable map. *)
 
 let symbols (aux : t) : string list =
-  aux |> c_variables
-  |> Act_common.C_variables.Map.vars_satisfying ~f:Tx.Fn.always
+  aux |> var_map
+  |> Var_map.global_c_variables
   |> Set.to_list
   |> List.map ~f:Act_common.C_id.to_string
 
 let empty : t =
-  { litmus_aux= Act_litmus.Aux.make ()
-  ; c_variables=
-      Or_error.ok_exn (Act_common.C_variables.Map.of_litmus_id_alist [])
+  { litmus_aux= Act_litmus.Aux.empty
+  ; var_map= Var_map.empty
   }
 

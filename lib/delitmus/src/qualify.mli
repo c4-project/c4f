@@ -23,7 +23,7 @@ open Base
     litmus constructs. Generally, these contain the requisite thread IDs
     in-place, meaning we needn't carry around a thread context. *)
 
-val litmus_id : Act_common.Litmus_id.t -> Act_c.Mini.Identifier.t
+val litmus_id : Act_common.Litmus_id.t -> Act_common.C_id.t
 (** [litmus_id id] qualifies a litmus identifier [id], using any thread
     information therein. *)
 
@@ -39,7 +39,7 @@ val postcondition :
     Generally, these do _not_ contain self-starting thread context, and so
     we need to carry around increasing amounts of auxiliary information. *)
 
-val local : int -> Act_c.Mini.Identifier.t -> Act_c.Mini.Identifier.t
+val local : int -> Act_common.C_id.t -> Act_common.C_id.t
 (** [local tid id] qualifies a local variable [id] using the thread
     identifier [tid]. *)
 

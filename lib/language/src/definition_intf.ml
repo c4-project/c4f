@@ -41,7 +41,7 @@ module type Basic = sig
 
   module Constant : Constant.Basic
 
-  module Symbol : Symbol.Basic
+  module Symbol : Symbol_intf.Basic
 
   module Location : Location.Basic with module Sym := Symbol
 
@@ -65,7 +65,7 @@ module type S = sig
 
   module Constant : Constant.S
 
-  module Symbol : Symbol.S
+  module Symbol : Symbol_intf.S
 
   module Location : Location.S with module Symbol = Symbol
 

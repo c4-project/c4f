@@ -38,7 +38,7 @@ module type S = sig
   module Litmus : Act_litmus.Ast.S
 
   (** The redirect map for this litmusifier's input symbols. *)
-  module Redirect : Act_common.Redirect_map.S
+  module Redirect : Act_common.Redirect_map_intf.S
 
   val make :
        config:config

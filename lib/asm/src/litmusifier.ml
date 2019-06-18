@@ -34,46 +34,35 @@ module Format = struct
 end
 
 module Config = struct
-  type 'const t =
+  type t =
     { format: Format.t [@default Format.default]
-    ; postcondition: 'const Act_litmus.Ast_base.Postcondition.t option
-    ; c_variables: Ac.C_variables.Map.t option }
-  [@@deriving sexp, equal, fields, make]
+    ; aux: Act_delitmus.Aux.t [@default Act_delitmus.Aux.empty]
+    }
+  [@@deriving equal, fields, make]
 
-  let default : unit -> 'a t = make
+  let default : unit -> t = make
 
   module W = Travesty.Traversable.Helpers (Or_error)
 
-  let transform (type a b) (initial : a t)
+  let transform (initial : t)
       ~(format : Format.t -> Format.t Or_error.t)
-      ~(postcondition :
-            a Act_litmus.Ast_base.Postcondition.t
-         -> b Act_litmus.Ast_base.Postcondition.t Or_error.t)
-      ~(c_variables :
-         Ac.C_variables.Map.t -> Ac.C_variables.Map.t Or_error.t) :
-      b t Or_error.t =
+      ~(aux : Act_delitmus.Aux.t -> Act_delitmus.Aux.t Or_error.t) :
+      t Or_error.t =
     Fields.fold ~init:(Or_error.return initial)
       ~format:(W.proc_field format)
-      ~postcondition:(fun x_or_error _ ->
-        let open Or_error.Let_syntax in
-        let%bind x = x_or_error in
-        let post = x.postcondition in
-        let%map post' = Tx.Option.With_errors.map_m ~f:postcondition post in
-        {x with postcondition= post'} )
-      ~c_variables:
-        (W.proc_field (Tx.Option.With_errors.map_m ~f:c_variables))
+      ~aux:(W.proc_field aux)
 end
 
 module Make (B : Runner_intf.Basic) :
   S
-  with type config = B.Src_lang.Constant.t Config.t
+  with type config = Config.t
    and type fmt = Format.t
    and type program =
               ( B.Src_lang.Element.t
               , B.Src_lang.Program.t )
               Act_sanitiser.Output.Program.t
    and module Redirect := B.Src_lang.Symbol.R_map = struct
-  type config = B.Src_lang.Constant.t Config.t
+  type config = Config.t
 
   type fmt = Format.t
 
@@ -97,46 +86,20 @@ module Make (B : Runner_intf.Basic) :
 
   let make_litmus_programs = Tx.Or_error.combine_map ~f:make_litmus_program
 
-  let get_program_heap_symbols prog =
-    prog |> Sanitiser.Output.Program.symbol_table
-    |> Act_abstract.Symbol.(Fn.flip Table.set_of_sort Sort.Heap)
-
-  let get_heap_symbols (programs : Sanitiser.Output.Program.t list) :
-      Act_abstract.Symbol.Set.t =
-    programs
-    |> List.map ~f:get_program_heap_symbols
-    |> Act_abstract.Symbol.Set.union_list
-
-  let make_post :
-         B.Src_lang.Constant.t Act_litmus.Ast_base.Postcondition.t
-      -> B.Dst_lang.Constant.t Act_litmus.Ast_base.Postcondition.t
-         Or_error.t =
-    Act_litmus.Ast_base.Postcondition.On_constants.With_errors.map_m
-      ~f:B.convert_const
-
-  let make_aux (config : B.Src_lang.Constant.t Config.t)
-      (redirects : B.Src_lang.Symbol.R_map.t)
-      (heap_symbols : Act_abstract.Symbol.Set.t) :
+  let make_aux (config : Config.t)
+      (redirects : B.Src_lang.Symbol.R_map.t) :
       B.Dst_lang.Constant.t Act_litmus.Aux.t Or_error.t =
-    let cvars_opt = Config.c_variables config in
-    Or_error.Let_syntax.(
-      let%bind redirected_cvars_opt =
-        Tx.Option.With_errors.map_m cvars_opt
-          ~f:(B.Src_lang.Symbol.R_map.transform_c_variables redirects)
-      in
-      let%map postcondition =
-        Tx.Option.With_errors.map_m ~f:make_post
-          (Config.postcondition config)
-      in
-      Litmusifier_aux.make ?c_variables:redirected_cvars_opt ~heap_symbols
-        ?postcondition ~of_int:B.Dst_lang.Constant.of_int)
+    let dl_aux = Config.aux config in
+    let c_litmus_aux = Act_delitmus.Aux.litmus_aux dl_aux in
+    ignore c_litmus_aux;
+    ignore redirects;
+    Or_error.unimplemented "TODO(@MattWindsor91): fix up later"
 
-  let make ~(config : B.Src_lang.Constant.t Config.t)
+  let make ~(config : Config.t)
       ~(redirects : B.Src_lang.Symbol.R_map.t) ~(name : string)
       ~(programs : program list) =
-    let heap_symbols = get_heap_symbols programs in
     Or_error.Let_syntax.(
-      let%bind aux = make_aux config redirects heap_symbols in
+      let%bind aux = make_aux config redirects in
       let init = Act_litmus.Aux.init aux in
       let postcondition = Act_litmus.Aux.postcondition aux in
       let locations = Act_litmus.Aux.locations aux in
@@ -179,47 +142,5 @@ module Make (B : Runner_intf.Basic) :
     let default_config = Config.default
 
     let run = output_litmus
-  end)
-end
-
-module Make_filter_with_c_aux (B : Runner_intf.Basic) :
-  Runner_intf.S with type cfg = Act_c.Mini.Constant.t Config.t = struct
-  type cfg = Act_c.Mini.Constant.t Config.t
-
-  module LS = B.Src_lang
-
-  include Plumbing.Filter.Adapt (struct
-    module Lf = Make (B)
-    module Original = Lf.Filter
-
-    type aux_i = cfg Job.t
-
-    type aux_o = Job.Output.t
-
-    let adapt_constant : Act_c.Mini.Constant.t -> LS.Constant.t Or_error.t =
-      function
-      | Integer i ->
-          Or_error.return (LS.Constant.of_int i)
-      | Float _ ->
-          Or_error.error_string
-            "floats not yet supported in litmusified postconditions"
-      | Char _ ->
-          Or_error.error_string
-            "chars not yet supported in litmusified postconditions"
-
-    let adapt_postcondition :
-           Act_c.Mini_litmus.Ast.Postcondition.t
-        -> LS.Constant.t Act_litmus.Ast_base.Postcondition.t Or_error.t =
-      Act_litmus.Ast_base.Postcondition.On_constants.With_errors.map_m
-        ~f:adapt_constant
-
-    let adapt_config : cfg -> LS.Constant.t Config.t Or_error.t =
-      Config.transform ~format:Or_error.return ~c_variables:Or_error.return
-        ~postcondition:adapt_postcondition
-
-    let adapt_i : cfg Job.t -> LS.Constant.t Config.t Job.t Or_error.t =
-      Job.map_m_config ~f:adapt_config
-
-    let adapt_o = Or_error.return
   end)
 end
