@@ -25,40 +25,42 @@ let empty (type k) : k t =
   ; postcondition = None
   }
 
+module BT : Travesty.Bi_traversable.S1_right
+  with type 'const t := 'const t
+   and type left = Act_common.C_id.t
+  = Travesty.Bi_traversable.Make1_right (struct
+    type nonrec 'const t = 'const t
+    type left = Act_common.C_id.t
+
+    module On_monad (M : Monad.S) = struct
+      module MA = Travesty_base_exts.Alist.On_monad (M)
+
+      module PostO =
+        Travesty.Bi_traversable.Chain_Bi1_right_Traverse1
+          (Ast_base.Postcondition.On_c_identifiers)
+          (Travesty_base_exts.Option)
+      module MP = PostO.On_monad (M)
+
+      module Mx = Travesty.Monad_exts.Extend (M)
+
+      let bi_map_m (type a b) (aux : a t)
+          ~(left : Ac.C_id.t -> Ac.C_id.t M.t)
+          ~(right : a -> b M.t)
+          : b t M.t =
+        let locations = locations aux in
+        M.Let_syntax.(
+          let%map init = MA.bi_map_m (init aux) ~left ~right
+          and postcondition = MP.bi_map_m (postcondition aux) ~left ~right in
+          make ~init ?locations ?postcondition ()
+        )
+
+    end
+  end)
+include BT
+
 (* We can't easily derive yojson for the whole thing, since the
    postcondition serialisation depends on being able to pretty-print and
    parse the postcondition rather than recursively serialising it. *)
-
-module On_constants : Travesty.Traversable.S1 with type 'a t = 'a t =
-  Travesty.Traversable.Make1 (struct
-    type nonrec 'a t = 'a t
-
-    module On_monad (M : Monad.S) = struct
-      module ML = Travesty_base_exts.List.On_monad (M)
-      module MO = Travesty_base_exts.Option.On_monad (M)
-      module MP = Ast_base.Postcondition.On_constants.On_monad (M)
-
-      module H = Travesty.Traversable.Helpers (M)
-
-      let map_init_m (type a b) (init : (Ac.C_id.t, a) List.Assoc.t) ~(f : a -> b M.t)
-          : (Ac.C_id.t, b) List.Assoc.t M.t =
-        (* TODO(@MattWindsor91): bitraversable!! *)
-        ML.map_m ~f:(fun (x, y) -> M.(y |> f >>| fun y' -> (x, y'))) init
-
-      let map_postcondition_m (type a b) (post : a Ast_base.Postcondition.t option)
-        ~(f : a -> b M.t)
-        : b Ast_base.Postcondition.t option M.t =
-        MO.map_m post ~f:(MP.map_m ~f)
-
-      let map_m (type a b) (aux : a t) ~(f : a -> b M.t) : b t M.t =
-        let locations = locations aux in
-        M.Let_syntax.(
-          let%map init = map_init_m ~f (init aux)
-          and postcondition = map_postcondition_m ~f (postcondition aux) in
-          make ~init ?locations ?postcondition ()
-        )
-    end
-  end)
 
 module Json (Const : sig
   type t

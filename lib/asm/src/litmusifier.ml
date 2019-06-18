@@ -86,14 +86,16 @@ module Make (B : Runner_intf.Basic) :
 
   let make_litmus_programs = Tx.Or_error.combine_map ~f:make_litmus_program
 
+  module Make_aux = Litmusifier_aux.Make (struct
+      module Symbol = B.Src_lang.Symbol
+      module Constant = B.Dst_lang.Constant
+    end)
+
   let make_aux (config : Config.t)
-      (redirects : B.Src_lang.Symbol.R_map.t) :
+      (redirect_map : B.Src_lang.Symbol.R_map.t) :
       B.Dst_lang.Constant.t Act_litmus.Aux.t Or_error.t =
     let dl_aux = Config.aux config in
-    let c_litmus_aux = Act_delitmus.Aux.litmus_aux dl_aux in
-    ignore c_litmus_aux;
-    ignore redirects;
-    Or_error.unimplemented "TODO(@MattWindsor91): fix up later"
+    Make_aux.of_delitmus_aux dl_aux ~redirect_map
 
   let make ~(config : Config.t)
       ~(redirects : B.Src_lang.Symbol.R_map.t) ~(name : string)

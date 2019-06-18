@@ -12,7 +12,7 @@
 open Base
 module Ac = Act_common
 module Au = Act_utils
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 module C_spec = Act_compiler.Spec
 module M_spec = Act_machine.Spec
 

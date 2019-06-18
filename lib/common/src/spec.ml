@@ -28,7 +28,7 @@ open Core_kernel (* for Tuple2 *)
 
 open Spec_types
 module Au = Act_utils
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 
 module Set = struct
   type 'spec t = (Id.t * 'spec) list [@@deriving equal]

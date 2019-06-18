@@ -31,36 +31,38 @@ module Pred_elt = struct
 
   let ( ==? ) = eq
 
-  (* TODO(@MattWindsor91): this is clearly a bi-traversable, but we don't
-     have any support for those! *)
-  module On_identifiers (Const : T) :
-    Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t =
-  Travesty.Traversable.Make0 (struct
-    type nonrec t = Const.t t
+  module BT : Travesty.Bi_traversable.S1_right
+    with type 'const t := 'const t
+     and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
+      type nonrec 'const t = 'const t
+      type left = Id.t
 
-    module Elt = Id
+      module On_monad (M: Monad.S) = struct
+        let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
+          match t with
+          | Eq (id, c) ->
+            M.Let_syntax.(
+              let%map id' = left id and c' = right c in Eq (id', c'))
+      end
+    end)
+  include BT
 
-    module On_monad (M : Monad.S) = struct
-      module H = Travesty.Traversable.Helpers (M)
+  (* TODO(@MattWindsor91): this is yet another pattern that needs putting into
+     Travesty *)
+  module On_c_identifiers : Travesty.Bi_traversable.S1_right
+    with type 'const t = 'const t
+     and type left = Act_common.C_id.t = Travesty.Bi_traversable.Make1_right (struct
+      type nonrec 'const t = 'const t
+      type left = Act_common.C_id.t
 
-      let map_m (t : t) ~(f : Id.t -> Id.t M.t) : t M.t =
-        Variants.map t
-          ~eq:
-            (H.proc_variant2 (fun (id, c) ->
-                 M.(id |> f >>| fun id' -> (id', c)) ))
-    end
-  end)
+      module On_monad (M: Monad.S) = struct
+        module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
 
-  module On_constants :
-    Travesty.Traversable.S1 with type 'const t := 'const t =
-  Travesty.Traversable.Make1 (struct
-    type nonrec 'const t = 'const t
-
-    module On_monad (M : Monad.S) = struct
-      let map_m (t : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
-        Variants.map t ~eq:(fun v id c -> M.(c |> f >>| v.constructor id))
-    end
-  end)
+        module B = On_monad (M)
+        let bi_map_m (t : 'a t) ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
+          B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
+      end
+    end)
 end
 
 module Pred = struct
@@ -85,57 +87,50 @@ module Pred = struct
     | Elt x ->
         Elt x
 
-  (* TODO(@MattWindsor91): this is clearly a bi-traversable, but we don't
-     have any support for those! *)
-  module On_identifiers (Const : T) :
-    Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t =
-  Travesty.Traversable.Make0 (struct
-    type nonrec t = Const.t t
+  module BT : Travesty.Bi_traversable.S1_right
+    with type 'const t := 'const t
+     and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
+      type nonrec 'const t = 'const t
+      type left = Id.t
 
-    module Elt = Id
+      module On_monad (M: Monad.S) = struct
+        module Pe = Pred_elt.On_monad (M)
 
-    module On_monad (M : Monad.S) = struct
-      module Ma = Applicative.Of_monad (M)
-      module Elt_i = Pred_elt.On_identifiers (Const)
-      module Elt = Elt_i.On_monad (M)
-      module H = Travesty.Traversable.Helpers (M)
+        let rec bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
+          M.Let_syntax.(
+          match t with
+          | Bracket x ->
+            let%map x' = bi_map_m ~left ~right x in Bracket x'
+          | Or (l, r) ->
+              let%map l' = bi_map_m ~left ~right l
+              and r' = bi_map_m ~left ~right r
+              in Or (l', r')
+          | And (l, r) ->
+              let%map l' = bi_map_m ~left ~right l
+              and r' = bi_map_m ~left ~right r
+              in And (l', r')
+          | Elt x ->
+            let%map x' = Pe.bi_map_m ~left ~right x in Elt x'
+        )
+      end
+    end)
+  include BT
 
-      let rec map_m (t : t) ~(f : Id.t -> Id.t M.t) : t M.t =
-        Variants.map t
-          ~bracket:(H.proc_variant1 (map_m ~f))
-          ~or_:
-            (H.proc_variant2 (fun (l, r) ->
-                 Ma.both (map_m ~f l) (map_m ~f r) ))
-          ~and_:
-            (H.proc_variant2 (fun (l, r) ->
-                 Ma.both (map_m ~f l) (map_m ~f r) ))
-          ~elt:(H.proc_variant1 (Elt.map_m ~f))
-    end
-  end)
+  module On_c_identifiers : Travesty.Bi_traversable.S1_right
+    with type 'const t = 'const t
+     and type left = Act_common.C_id.t = Travesty.Bi_traversable.Make1_right (struct
+      type nonrec 'const t = 'const t
+      type left = Act_common.C_id.t
 
-  module On_constants :
-    Travesty.Traversable.S1 with type 'const t := 'const t =
-  Travesty.Traversable.Make1 (struct
-    type nonrec 'const t = 'const t
+      module On_monad (M: Monad.S) = struct
+        module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
 
-    module On_monad (M : Monad.S) = struct
-      module Ma = Applicative.Of_monad (M)
-      module Elt = Pred_elt.On_constants.On_monad (M)
+        module B = On_monad (M)
+        let bi_map_m (t : 'a t) ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
+          B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
+      end
+    end)
 
-      let rec map_m (t : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
-        Variants.map t
-          ~bracket:Ma.(fun v r -> return v.constructor <*> map_m ~f r)
-          ~or_:
-            Ma.(
-              fun v l r ->
-                return v.constructor <*> map_m ~f l <*> map_m ~f r)
-          ~and_:
-            Ma.(
-              fun v l r ->
-                return v.constructor <*> map_m ~f l <*> map_m ~f r)
-          ~elt:Ma.(fun v e -> return v.constructor <*> Elt.map_m ~f e)
-    end
-  end)
 
   module Q : Quickcheck.S1 with type 'const t := 'const t = struct
     module G = Quickcheck.Generator
@@ -200,44 +195,37 @@ module Postcondition = struct
   type 'const t = {quantifier: [`Exists]; predicate: 'const Pred.t}
   [@@deriving sexp, compare, equal, quickcheck, fields, make]
 
-  (* TODO(@MattWindsor91): this is clearly a bi-traversable, but we don't
-     have any support for those! *)
-  module On_identifiers (Const : T) :
-    Travesty.Traversable.S0 with type t = Const.t t and type Elt.t = Id.t =
-  Travesty.Traversable.Make0 (struct
-    type nonrec t = Const.t t
+  module BT : Travesty.Bi_traversable.S1_right
+    with type 'const t := 'const t
+     and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
+      type nonrec 'const t = 'const t
+      type left = Id.t
 
-    module Elt = Id
+      module On_monad (M: Monad.S) = struct
+        module Pr = Pred.On_monad (M)
 
-    module On_monad (M : Monad.S) = struct
-      module Ma = Applicative.Of_monad (M)
-      module Pr_i = Pred.On_identifiers (Const)
-      module Pr = Pr_i.On_monad (M)
-      module H = Travesty.Traversable.Helpers (M)
+        let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
+          let quantifier = quantifier t in
+          M.Let_syntax.(
+            let%map predicate = Pr.bi_map_m ~left ~right (predicate t) in
+            make ~quantifier ~predicate
+          )
+      end
+    end)
+  include BT
 
-      let map_m (t : t) ~(f : Id.t -> Id.t M.t) : t M.t =
-        Fields.fold ~init:(M.return t) ~quantifier:(H.proc_field M.return)
-          ~predicate:(H.proc_field (Pr.map_m ~f))
-    end
-  end)
+  module On_c_identifiers : Travesty.Bi_traversable.S1_right
+    with type 'const t = 'const t
+     and type left = Act_common.C_id.t = Travesty.Bi_traversable.Make1_right (struct
+      type nonrec 'const t = 'const t
+      type left = Act_common.C_id.t
 
-  module On_constants :
-    Travesty.Traversable.S1 with type 'const t := 'const t =
-  Travesty.Traversable.Make1 (struct
-    type nonrec 'const t = 'const t
+      module On_monad (M: Monad.S) = struct
+        module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
 
-    module On_monad (M : Monad.S) = struct
-      module Elt = Pred.On_constants.On_monad (M)
-
-      let map_m (t : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
-        Fields.fold ~init:(M.return t)
-          ~quantifier:(fun xm _fld -> xm)
-          ~predicate:(fun xm _fld ->
-            let open M.Let_syntax in
-            let%bind x = xm in
-            let p = x.predicate in
-            let%map p' = Elt.map_m ~f p in
-            make ~quantifier:x.quantifier ~predicate:p' )
-    end
-  end)
+        module B = On_monad (M)
+        let bi_map_m (t : 'a t) ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
+          B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
+      end
+    end)
 end

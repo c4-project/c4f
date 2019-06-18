@@ -23,7 +23,7 @@
 
 open Core
 module Pb = Plumbing
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 include Fs_intf
 
 let default_sort_compare : Fpath.t -> Fpath.t -> int =

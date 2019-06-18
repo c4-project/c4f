@@ -7,5 +7,5 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries stdio base base.caml core_kernel travesty travesty.base_exts
-   travesty.core_kernel_exts act.common act.plumbing act.sim
+   act.common act.plumbing act.sim
    act.sim_herdtools_common act.utils))

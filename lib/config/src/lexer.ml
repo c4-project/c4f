@@ -21,10 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 open Act_common
 open Parser
-module Tx = Travesty_core_kernel_exts
+module Tx = Travesty_base_exts
 module S = Sedlexing
 module F = Act_utils.Frontend
 module Lu = Act_utils.Lex_utils

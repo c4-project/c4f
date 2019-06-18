@@ -176,6 +176,8 @@ module Constant : sig
 
   include Ast_node with type t := t
 
+  val to_int : t -> int Or_error.t
+
   (** {3 JSON serialisation} *)
   include Plumbing.Loadable_types.Jsonable with type t := t
 

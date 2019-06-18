@@ -31,8 +31,6 @@ let locals_in_statement (module T : Thread.S) :
 let postcondition
     (pc : Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t) :
     Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t =
-  let module M =
-    Act_litmus.Ast_base.Postcondition.On_identifiers (Act_c.Mini.Constant) in
   (* TODO(@MattWindsor91): perhaps don't qualify things we've already
    * qualified. *)
-  M.map pc ~f:(Fn.compose Act_common.Litmus_id.global litmus_id)
+  Act_litmus.Ast_base.Postcondition.map_left pc ~f:(Fn.compose Act_common.Litmus_id.global litmus_id)

@@ -34,7 +34,7 @@ module M_str = struct
   type t =
     | Local of Au.My_quickcheck.Small_non_negative_int.t * C_id.t
     | Global of C_id.t
-  [@@deriving compare, variants, quickcheck]
+  [@@deriving compare, equal, variants, quickcheck]
 
   let to_string : t -> string = function
     | Local (t, id) ->
@@ -66,6 +66,23 @@ end
 
 include M_sexp
 include Comparable.Make (M_sexp)
+
+module On_c_identifiers : Travesty.Traversable.S0
+  with type t = t
+   and type Elt.t = C_id.t =
+  Travesty.Traversable.Make0 (struct
+    type nonrec t = t
+    module Elt = C_id
+
+    module On_monad (M : Monad.S) = struct
+      module H = Travesty.Traversable.Helpers (M)
+      let map_m (lid : t) ~(f : C_id.t -> C_id.t M.t) : t M.t =
+        Variants.map lid
+          ~global:(H.proc_variant1 f)
+          ~local:(H.proc_variant2
+                    (fun (tid, x) -> M.(x |> f >>| Tuple2.create tid)))
+    end
+  end)
 
 let%expect_test "try_parse: example local identifier" =
   Stdio.print_s [%sexp (try_parse "0:r1" : t Or_error.t)] ;
