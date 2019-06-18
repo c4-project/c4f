@@ -26,12 +26,8 @@ module A = Act_common
 module Tx = Travesty_base_exts
 
 let litmus_config_fn (aux : Act_delitmus.Aux.t) :
-    Act_c.Mini.Constant.t Act_asm.Litmusifier.Config.t =
-  (* TODO(@MattWindsor91): maybe don't break the litmus aux up. *)
-  let litmus_aux = Act_delitmus.Aux.litmus_aux aux in
-  let postcondition = Act_litmus.Aux.postcondition litmus_aux in
-  let c_variables = Act_delitmus.Aux.c_variables aux in
-  Act_asm.Litmusifier.Config.make ?postcondition ~c_variables ()
+    Act_asm.Litmusifier.Config.t =
+  Act_asm.Litmusifier.Config.make ~aux ()
 
 module In = Asm_common.Input
 
@@ -45,9 +41,9 @@ let run (input : In.t) : unit Or_error.t =
   end) in
   Or_error.Let_syntax.(
     let%bind (module Runner) = Common.asm_runner_of_target target in
-    let module Filter = Act_asm.Litmusifier.Make_filter_with_c_aux (Runner) in
+    let module Lit = Act_asm.Litmusifier.Make (Runner) in
     let job_input = In.make_job_input input litmus_config_fn in
-    Or_error.ignore_m (Filter.run job_input infile outfile))
+    Or_error.ignore_m (Lit.Filter.run job_input infile outfile))
 
 let command =
   Command.basic ~summary:"converts an assembly file to a litmus test"

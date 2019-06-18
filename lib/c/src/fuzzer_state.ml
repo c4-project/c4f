@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Ac = Act_common
 
 type t = {vars: Fuzzer_var.Map.t; o: Ac.Output.t} [@@deriving fields]

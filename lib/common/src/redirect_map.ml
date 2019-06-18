@@ -22,7 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Redirect_map_intf
+open Redirect_map_intf
 module Alist = Travesty_base_exts.Alist
 
 module Make (B : Basic_symbol) :
@@ -68,31 +68,6 @@ module Make (B : Basic_symbol) :
 
   let to_string_alist (map : t) : (string, string) List.Assoc.t =
     map |> Map.to_alist |> Alist.bi_map ~left:B.to_string ~right:B.to_string
-
-  let check_no_tids (cvars : C_variables.Map.t) : unit Or_error.t =
-    let cvars_with_tids =
-      cvars |> Map.filter ~f:C_variables.Record.has_tid |> Map.keys
-    in
-    match cvars_with_tids with
-    | [] ->
-        Result.ok_unit
-    | _ ->
-        Or_error.error_s
-          [%message
-            "Expected a C variable map without thread IDs"
-              ~cvars_with_tids:(cvars_with_tids : C_id.t list)]
-
-  let transform_c_variables (map : t) (cvars : C_variables.Map.t) :
-      C_variables.Map.t Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind () = check_no_tids cvars in
-      let%bind alist =
-        cvars |> Map.to_alist
-        |> List.map ~f:(fun (var, record) ->
-               var |> dest_of_id map >>| fun v' -> (v', record) )
-        |> Or_error.combine_errors
-      in
-      Map.of_alist_or_error (module C_id) alist)
 
   let sources_of_sym (map : t) (dest : B.t) : B.Set.t =
     map
@@ -201,26 +176,4 @@ let%test_module "string redirect maps" =
       let foo = C_id.of_string "nope" in
       Stdio.print_s [%sexp (M.dest_of_id test_map foo : C_id.t Or_error.t)] ;
       [%expect {| (Ok nope) |}]
-
-    let example_cvars_working : C_variables.Map.t =
-      C_variables.Map.(
-        merge_list
-          [ of_single_scope_map ~scope:C_variables.Scope.Local
-              (C_id.Map.of_alist_exn
-                 [ (C_id.of_string "alpha", Some 27)
-                 ; (C_id.of_string "hotel", None) ])
-          ; of_single_scope_map ~scope:C_variables.Scope.Global
-              (C_id.Map.of_alist_exn [(C_id.of_string "BEEP", Some 53)]) ])
-
-    let%expect_test "transform_c_variables: working example" =
-      Stdio.print_s
-        [%sexp
-          ( M.transform_c_variables test_map example_cvars_working
-            : C_variables.Map.t Or_error.t )] ;
-      [%expect
-        {|
-      (Ok
-       ((BEEP ((scope Global) (initial_value (53)) (tid ())))
-        (_hotel ((scope Local) (initial_value ()) (tid ())))
-        (alpha ((scope Local) (initial_value (27)) (tid ()))))) |}]
   end )

@@ -54,6 +54,10 @@ val as_global : t -> C_id.t option
 (** [as_global id] gets [Some cid] if [id] is the global identifier [cid],
     or [None] otherwise. *)
 
+val as_local : t -> (int * C_id.t) option
+(** [as_local id] gets [Some (tid, cid)] if [id] is the local identifier [cid]
+    in thread [tid], or [None] otherwise. *)
+
 val variable_name : t -> C_id.t
 (** [variable_name id] gets the underlying variable name of [id]. *)
 

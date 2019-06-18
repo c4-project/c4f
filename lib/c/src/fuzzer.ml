@@ -273,14 +273,19 @@ let existing_globals (test : Mini_litmus.Ast.Validated.t) :
     test |> get_first_func >>| Mini.Function.parameters
     >>= Ac.C_id.Map.of_alist_or_error)
 
+let to_locals : Set.M(Ac.Litmus_id).t -> Set.M(Ac.C_id).t =
+  (* TODO(@MattWindsor91): do we need to keep the thread IDs? *)
+  Set.filter_map (module Ac.C_id)
+    ~f:(Fn.compose (Option.map ~f:snd) Ac.Litmus_id.as_local)
+
 let make_initial_state (o : Ac.Output.t)
     (test : Mini_litmus.Ast.Validated.t) : State.t Or_error.t =
   let open Or_error.Let_syntax in
-  let all_cvars = Mini_litmus.cvars test in
+  let all_vars = Mini_litmus.vars test in
   (* TODO(@MattWindsor91): we don't use cvars's globals because we need to
      know the types of the variables. This seems a _bit_ clunky. *)
   let%map globals = existing_globals test in
-  let locals = Act_common.C_variables.Map.locals all_cvars in
+  let locals = to_locals all_vars in
   State.init ~o ~globals ~locals ()
 
 let run ?(seed : int option) (test : Mini_litmus.Ast.Validated.t)

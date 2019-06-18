@@ -89,11 +89,11 @@ let global_of_string (str : string) : t Or_error.t =
 
 let variable_name : t -> C_id.t = function Local (_, v) | Global v -> v
 
-let tid : t -> int option = function
-  | Local (i, _) ->
-      Some i
-  | Global _ ->
-      None
+let as_local : t -> (int * C_id.t) option = function
+  | Local (i, v) -> Some (i, v) | Global _ -> None
+
+let tid : t -> int option =
+  Fn.compose (Option.map ~f:fst) as_local
 
 let as_global : t -> C_id.t option = function
   | Global cid ->

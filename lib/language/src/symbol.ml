@@ -23,7 +23,7 @@
 
 open Core_kernel
 module Ac = Act_common
-include Symbol_intf
+open Symbol_intf
 
 let program_id_of_demangled sym =
   let open Option.Let_syntax in
@@ -57,7 +57,7 @@ module Make (B : Basic) : S with type t = B.t = struct
        and module Set := Set )
 
   module R_map :
-    Ac.Redirect_map.S with type sym = t and type sym_set = Set.t =
+    Ac.Redirect_map_intf.S with type sym = t and type sym_set = Set.t =
   Ac.Redirect_map.Make (struct
     include B
     include Comp

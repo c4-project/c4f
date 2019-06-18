@@ -94,12 +94,4 @@ module type S = sig
   (** [dest_ids map ~sources] gets the set of C identifiers that are
       reachable, in [map], from identifiers in [sources]. It can fail if any
       of the symbols aren't expressible as identifiers. *)
-
-  val transform_c_variables :
-    t -> C_variables.Map.t -> C_variables.Map.t Or_error.t
-  (** [transform_c_variables map cvars] tries to apply the redirects in
-      [map] to [cvars].
-
-      It fails if the resulting map would have duplicate keys, or if [cvars]
-      has any variables with thread IDs (these should be flattened first). *)
 end

@@ -59,7 +59,7 @@ end
 (** [Basic_with_modules] extends [Basic] with the fully expanded language
     abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
-  module Symbol : Symbol.S
+  module Symbol : Symbol_intf.S
 
   include Basic with module Sym := Symbol
 end

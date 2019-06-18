@@ -16,10 +16,10 @@ open Base
    optional set of global identifiers, and should try some munging if they
    generate clashes. *)
 
-let litmus_id (id : Act_common.Litmus_id.t) : Act_c.Mini.Identifier.t =
+let litmus_id (id : Act_common.Litmus_id.t) : Act_common.C_id.t =
   Act_common.Litmus_id.to_memalloy_id id
 
-let local (t : int) (id : Act_c.Mini.Identifier.t) : Act_c.Mini.Identifier.t
+let local (t : int) (id : Act_c.Mini.Identifier.t) : Act_common.C_id.t
     =
   litmus_id (Act_common.Litmus_id.local t id)
 

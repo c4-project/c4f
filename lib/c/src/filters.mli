@@ -33,32 +33,16 @@ open Act_common
 
 (** The operation to use in the filter. *)
 type mode =
-  | Print of [`All | `Vars]
-      (** Pretty-print all, or part, of the result (useful for debugging). *)
+  | Print
+      (** Pretty-print the result (useful for debugging). *)
   | Fuzz of {seed: int option; o: Output.t; config: Act_config.Fuzz.t}
       (** If the input is a C/Litmus file, fuzz it and return a mutated
           version. *)
 
-(** {2 The output record} *)
-
-(** Abstract data type of auxiliary output from the C filters. *)
-module Output : sig
-  type t
-
-  val cvars : t -> C_variables.Map.t
-  (** [cvars out] gets the set of C variable names observed in the
-      transformed program, alongside any information available about their
-      scope. *)
-
-  val post : t -> Mini_litmus.Ast.Postcondition.t option
-  (** [post out] gets the Litmus postcondition observed in the transformed
-      program, if any. *)
-end
-
 (** {2 Filter modules} *)
 
 module type S =
-  Plumbing.Filter_types.S with type aux_i = mode and type aux_o = Output.t
+  Plumbing.Filter_types.S with type aux_i = mode and type aux_o = unit
 
 (** Filter for dealing with 'normal' C programs. *)
 module Normal_C : S

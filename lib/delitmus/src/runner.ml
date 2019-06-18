@@ -179,18 +179,6 @@ let make_globals (init : C.Mini.Constant.t C.Mini_intf.id_assoc)
     let%map init_globals = make_init_globals init function_bodies in
     init_globals @ func_globals)
 
-let qualify_if_local (var : Ac.C_id.t) (record : Ac.C_variables.Record.t) :
-    Ac.C_id.t * Ac.C_variables.Record.t =
-  match Ac.C_variables.Record.tid record with
-  | None ->
-      (var, record)
-  | Some tid ->
-      (Qualify.local tid var, Ac.C_variables.Record.remove_tid record)
-
-let cvars_with_qualified_locals (cvars : Ac.C_variables.Map.t) :
-    Ac.C_variables.Map.t Or_error.t =
-  Ac.C_variables.Map.map cvars ~f:qualify_if_local
-
 let make_litmus_aux (input : C.Mini_litmus.Ast.Validated.t) :
     C.Mini.Constant.t Act_litmus.Aux.t =
   let postcondition =
@@ -204,19 +192,34 @@ let make_litmus_aux (input : C.Mini_litmus.Ast.Validated.t) :
   let locations = C.Mini_litmus.Ast.Validated.locations input in
   Act_litmus.Aux.make ?postcondition ~init ?locations ()
 
-let run (input : C.Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
-  (* TODO(@MattWindsor91): the variable logic here is completely wrong! It
-     needs to maintain the full Litmus identifiers at all times, then build
-     a mapping. *)
-  let init = C.Mini_litmus.Ast.Validated.init input in
+let make_var_map
+    (input : C.Mini_litmus.Ast.Validated.t)
+    ~(qualifier : Ac.Litmus_id.t -> Ac.C_id.t option) 
+  : Var_map.t =
+  Var_map.of_set_with_qualifier (C.Mini_litmus.vars input) ~qualifier
+
+let make_aux (input : C.Mini_litmus.Ast.Validated.t)
+    ~(qualifier : Ac.Litmus_id.t -> Ac.C_id.t option)
+  : Aux.t =
+  let var_map = make_var_map input ~qualifier in
+  let litmus_aux = make_litmus_aux input in
+  Aux.make ~litmus_aux ~var_map ()
+
+let make_program (input : C.Mini_litmus.Ast.Validated.t)
+    (aux : Aux.t)
+  : C.Mini.Program.t Or_error.t =
   let raw_functions = C.Mini_litmus.Ast.Validated.programs input in
   let function_bodies = List.map ~f:snd raw_functions in
   let functions = delitmus_functions raw_functions in
-  let raw_c_variables = C.Mini_litmus.cvars input in
+  let init = Act_litmus.Aux.init (Aux.litmus_aux aux) in
   Or_error.Let_syntax.(
-    let%bind globals = make_globals init function_bodies in
-    let program = C.Mini.Program.make ~globals ~functions in
-    let%map c_variables = cvars_with_qualified_locals raw_c_variables in
-    let litmus_aux = make_litmus_aux input in
-    let aux = Aux.make ~litmus_aux ~c_variables in
+    let%map globals = make_globals init function_bodies in
+    C.Mini.Program.make ~globals ~functions
+  )
+
+let run (input : C.Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
+  let qualifier x = Some (Qualify.litmus_id x) in
+  let aux = make_aux input ~qualifier in
+  Or_error.Let_syntax.(
+    let%map program = make_program input aux in
     Output.make ~program ~aux)

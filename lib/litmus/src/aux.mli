@@ -18,7 +18,7 @@
 open Base
 
 (** Opaque type of auxiliary Litmus records. *)
-type 'const t [@@deriving sexp]
+type 'const t [@@deriving equal, sexp]
 
 (** {2 Constructors} *)
 
@@ -30,6 +30,9 @@ val make :
   -> 'const t
 (** [make ?locations ?init ?postcondition ()] makes an auxiliary record with
     the given fields. *)
+
+val empty : 'const t
+(** [empty] is the empty auxiliary record. *)
 
 (** {2 Accessors} *)
 
