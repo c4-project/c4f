@@ -22,6 +22,7 @@ type t [@@deriving equal, yojson]
 val make :
   ?litmus_aux:Act_c.Mini.Constant.t Act_litmus.Aux.t
   -> var_map:Var_map.t
+  -> num_threads:int
   -> unit
   -> t
 
