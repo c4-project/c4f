@@ -64,14 +64,9 @@ val arch :
 (** [arch ?name ?doc ()] produces a parameter, normally named [-arch] but
     overridable by [name], that accepts an architecture ID. *)
 
-val c_globals : string list option Command.Param.t
-(** [c_globals] defines a parameter for collecting a list of global C
-    variables to track during sanitisation (and place in any generated
-    locations stanzas). *)
-
-val c_locals : string list option Command.Param.t
-(** [c_locals] defines a parameter for collecting a list of local C
-    variables to track during sanitisation. *)
+val aux_file : string option Command.Param.t
+(** [aux_file] defines a parameter for receiving the path of an input litmus
+    aux file. *)
 
 val sanitiser_passes :
   Act_sanitiser.Pass_group.Selector.t Blang.t option Command.Param.t

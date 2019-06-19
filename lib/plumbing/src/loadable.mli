@@ -18,9 +18,14 @@ module Make (B : Loadable_types.Basic) : Loadable_types.S with type t = B.t
 
 (** {3 Loading from standard formats} *)
 
-(** [Of_sexpable] extends a [Sexpable] into an [S]; the added methods load
+(** [Of_sexpable] extends a [Sexpable.S] into an [S]; the added methods load
     S-expressions. *)
 module Of_sexpable (B : Sexpable.S) : Loadable_types.S with type t = B.t
+
+(** [Of_jsonable] extends a [Of_jsonable] into an [S]; the added methods load
+    JSON. *)
+module Of_jsonable (B : Loadable_types.Of_jsonable) : Loadable_types.S with type t = B.t
+
 
 (** {3 Chaining} *)
 

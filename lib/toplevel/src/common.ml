@@ -15,25 +15,6 @@ module Ac = Act_common
 module Pb = Plumbing
 module Cc_target = Act_machine.Target
 
-let not_tracking_symbols_warning : string =
-  {|
-    The set of known C variables is empty.
-
-    This can lead to `act` making incorrect assumptions;
-    for example, it may fail to work out which assembly symbols
-    refer to heap locations.
-
-    To fix this, specify `-c-globals 'symbol1,symbol2,etc'` (and/or `-c-locals`),
-    or (if possible) use a C litmus test as input.
-  |}
-
-let warn_if_not_tracking_symbols (o : Ac.Output.t) :
-    Ac.C_id.t list option -> unit = function
-  | None ->
-      Ac.Output.pw o "@[%a@]@." Fmt.paragraphs not_tracking_symbols_warning
-  | Some _ ->
-      ()
-
 let asm_runner_of_target (tgt : Cc_target.t) :
     (module Act_asm.Runner_intf.Basic) Or_error.t =
   Language_support.asm_runner_from_arch (Cc_target.arch tgt)

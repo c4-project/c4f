@@ -85,7 +85,7 @@ let spec_to_aux (spec : spec) : Act_delitmus.Aux.t =
       symbol_set ~qualifier:(fun (x : Act_common.Litmus_id.t) -> Some (Act_delitmus.Qualify.litmus_id x))
   in
   let litmus_aux = Act_litmus.Aux.make () in
-  Act_delitmus.Aux.make ~litmus_aux ~var_map ()
+  Act_delitmus.Aux.make ~litmus_aux ~var_map ~num_threads:0 ()
 
 let regress_run_asm (module Job : Act_asm.Runner_intf.S) specs
     (passes : Set.M(Act_sanitiser.Pass_group).t) ~(file : Fpath.t)

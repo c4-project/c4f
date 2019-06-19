@@ -26,12 +26,18 @@ end
 (* Nasty hack to get the derivations for [t] to work. *)
 let equal_int = Base.Int.equal
 
-type t =
-  { litmus_aux: C_aux.t [@default Act_litmus.Aux.empty]
-  ; var_map: Var_map.t
-  ; num_threads: int
-  }
-[@@deriving make, fields, equal, yojson]
+module M = struct
+  type t =
+    { litmus_aux: C_aux.t [@default Act_litmus.Aux.empty]
+    ; var_map: Var_map.t
+    ; num_threads: int
+    }
+  [@@deriving make, fields, equal, yojson]
+
+  let of_yojson_exn (j : Yojson.Safe.t) : t =
+    j |> of_yojson |> Base.Result.ok_or_failwith
+end
+include M
 
 (* Using Base above this line interferes with yojson! *)
 open Base
@@ -51,3 +57,6 @@ let empty : t =
   ; num_threads= 0
   }
 
+module Load : Plumbing.Loadable_types.S with type t := t =
+  Plumbing.Loadable.Of_jsonable (M)
+include Load
