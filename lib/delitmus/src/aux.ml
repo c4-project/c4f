@@ -23,9 +23,14 @@ module C_aux = struct
   include J
 end
 
+(* Nasty hack to get the derivations for [t] to work. *)
+let equal_int = Base.Int.equal
+
 type t =
   { litmus_aux: C_aux.t [@default Act_litmus.Aux.empty]
-  ; var_map: Var_map.t }
+  ; var_map: Var_map.t
+  ; num_threads: int
+  }
 [@@deriving make, fields, equal, yojson]
 
 (* Using Base above this line interferes with yojson! *)
@@ -43,5 +48,6 @@ let symbols (aux : t) : string list =
 let empty : t =
   { litmus_aux= Act_litmus.Aux.empty
   ; var_map= Var_map.empty
+  ; num_threads= 0
   }
 

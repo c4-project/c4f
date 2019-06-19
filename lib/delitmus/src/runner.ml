@@ -203,7 +203,8 @@ let make_aux (input : C.Mini_litmus.Ast.Validated.t)
   : Aux.t =
   let var_map = make_var_map input ~qualifier in
   let litmus_aux = make_litmus_aux input in
-  Aux.make ~litmus_aux ~var_map ()
+  let num_threads = List.length (C.Mini_litmus.Ast.Validated.programs input) in
+  Aux.make ~litmus_aux ~var_map ~num_threads ()
 
 let make_program (input : C.Mini_litmus.Ast.Validated.t)
     (aux : Aux.t)

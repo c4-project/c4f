@@ -166,8 +166,9 @@ module Make (B : Basic) : S = struct
 
   let aux_from_cvars (var_map : Act_delitmus.Var_map.t) :
       Act_delitmus.Aux.t =
+    (* TODO(@MattWindsor91): wire up everything else here *)
     Act_delitmus.Aux.make ~litmus_aux:(Act_litmus.Aux.make ())
-      ~var_map ()
+      ~var_map ~num_threads:0 ()
 
   let run_single_from_pathset_file (c_sims : Act_sim.Bulk.File_map.t)
       (fs : Pathset.File.t) : (Analysis.Herd.t * TS.t) Or_error.t =
