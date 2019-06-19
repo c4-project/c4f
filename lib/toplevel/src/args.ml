@@ -70,18 +70,10 @@ module Other = struct
       ; map ~f:(Option.map ~f:Asm_target.arch) (arch ()) ]
       ~if_nothing_chosen:`Raise
 
-  let c_variables_arg_type =
-    optional
-      (Arg_type.comma_separated ~unique_values:true ~strip_whitespace:true
-         string)
-
-  let c_globals =
-    flag "c-globals" c_variables_arg_type
-      ~doc:"IDS comma-separated list of C global variables to track"
-
-  let c_locals =
-    flag "c-locals" c_variables_arg_type
-      ~doc:"IDS comma-separated list of C local variables to track"
+  let aux_file : string option Command.Param.t =
+    flag "aux-file"
+      (optional Filename.arg_type)
+      ~doc:"FILE path to a JSON file containing auxiliary litmus information for this file"
 
   let sanitiser_passes :
       Act_sanitiser.Pass_group.Selector.t Blang.t option Command.Param.t =
@@ -192,8 +184,7 @@ end
 module Standard_asm : S_standard_asm with type s := Standard.t = struct
   type t =
     { rest: Standard_with_files.t
-    ; c_globals: string list option
-    ; c_locals: string list option
+    ; aux_file: string option
     ; target: Asm_target.t
     ; sanitiser_passes: Act_sanitiser.Pass_group.Selector.t Blang.t option
     }
@@ -234,9 +225,8 @@ module Standard_asm : S_standard_asm with type s := Standard.t = struct
   let get =
     Command.Let_syntax.(
       let%map_open target = Other.asm_target
-      and c_globals = Other.c_globals
-      and c_locals = Other.c_locals
+      and aux_file = Other.aux_file
       and sanitiser_passes = Other.sanitiser_passes
       and rest = Standard_with_files.get in
-      {rest; target; c_globals; c_locals; sanitiser_passes})
+      {rest; target; aux_file; sanitiser_passes})
 end

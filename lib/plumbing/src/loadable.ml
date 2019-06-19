@@ -48,20 +48,31 @@ module Make_chain
   let load_from_ic ?path ic = Or_error.(B.load_from_ic ?path ic >>= C.f)
 end)
 
+let wrap (name : string) (f : unit -> 't) : 't Or_error.t =
+  Or_error.tag_arg (Or_error.try_with f) "While reading from" name
+    [%sexp_of: string]
+
 module Of_sexpable (B : Sexpable.S) : Loadable_types.S with type t = B.t =
 Make (struct
   type t = B.t
 
-  let wrap name f =
-    Or_error.tag_arg (Or_error.try_with f) "While reading from" name
-      [%sexp_of: string]
-
-  let load_from_string s =
+  let load_from_string (s : string) : t Or_error.t =
     wrap "string" (fun () -> Sexp.of_string_conv_exn s B.t_of_sexp)
 
-  let load_from_ic ?(path = "stdin") ic =
+  let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) : t Or_error.t =
     wrap path (fun () -> B.t_of_sexp (Sexp.input_sexp ic))
 end)
+
+module Of_jsonable (B: Loadable_types.Of_jsonable) : Loadable_types.S with type t = B.t =
+  Make (struct
+    type t = B.t
+
+    let load_from_string (s : string) : t Or_error.t =
+      wrap "string" (fun () -> B.of_yojson_exn (Yojson.Safe.from_string s))
+
+    let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) : t Or_error.t =
+      wrap path (fun () -> B.of_yojson_exn (Yojson.Safe.from_channel ~fname:path ic))
+  end)
 
 module To_filter (L : Loadable_types.S) :
   Filter_types.S with type aux_i = unit and type aux_o = L.t =

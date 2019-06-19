@@ -50,10 +50,31 @@ let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
   let raw_target = Args.Standard_asm.target args in
   Asm_target.resolve ~cfg raw_target
 
-let get_aux (_args : Args.Standard_asm.t) :
+let no_aux_warning : string =
+  {|
+    Warning: no 'aux file' was provided on the command line.
+
+    Without an aux file, ACT can't tell what the correct Litmus postcondition,
+    locations, initial values, or mappings between variable names are, and may
+    produce erroneous output.
+
+    To supply an aux file, pass '-aux-file path' at the command line.
+ |}
+
+let warn_no_aux (o : Act_common.Output.t) : unit =
+  Ac.Output.pw o "@[%a@]@." Fmt.paragraphs no_aux_warning
+
+let get_aux (args : Args.Standard_asm.t) ~(output : Act_common.Output.t) :
     Act_delitmus.Aux.t Or_error.t =
-  Stdio.eprintf "FIXME: aux input isn't supported yet." ;
-  Or_error.return Act_delitmus.Aux.empty
+  match Args.Standard_asm.aux_file args with
+  | Some auxf ->
+    Or_error.(
+      Some auxf |> Pb.Input.of_string_opt >>=
+      Act_delitmus.Aux.load_from_isrc
+    )
+  | None ->
+    warn_no_aux output;
+    Or_error.return Act_delitmus.Aux.empty
 
 let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
     (act_config : Act_config.Act.t) ~(f : Input.t -> unit Or_error.t)
@@ -63,7 +84,7 @@ let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
     Act_config.Act.sanitiser_passes act_config ~default:default_passes
   in
   Or_error.Let_syntax.(
-    let%bind c_litmus_aux = get_aux args in
+    let%bind c_litmus_aux = get_aux args ~output in
     let%bind target = resolve_target args act_config in
     let%bind pb_input = Args.Standard_asm.infile_source args in
     let%bind pb_output = Args.Standard_asm.outfile_sink args in

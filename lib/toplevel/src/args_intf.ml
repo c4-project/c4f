@@ -104,13 +104,8 @@ module type S_standard_asm = sig
 
   include S_standard_with_files with type t := t
 
-  val c_globals : t -> string list option
-  (** [c_globals args] gets the list of user-supplied C global variables, if
-      the user indeed supplied some. *)
-
-  val c_locals : t -> string list option
-  (** [c_locals args] gets the list of user-supplied C local variables, if
-      the user indeed supplied some. *)
+  val aux_file : t -> string option
+  (** [aux_file args] gets the path of a litmus aux file, if user supplied one. *)
 
   val target : t -> Asm_target.t
   (** [target args] gets either a defined assembly architecture, or a

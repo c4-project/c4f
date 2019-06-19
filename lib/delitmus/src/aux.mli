@@ -36,3 +36,4 @@ val var_map : t -> Var_map.t
 
 val symbols : t -> string list
 
+include Plumbing.Loadable_types.S with type t := t
