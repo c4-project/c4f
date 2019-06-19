@@ -9,7 +9,21 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-val rewrite_all :
-  Act_c.Mini.Function.t Act_c.Mini_intf.id_assoc
-  -> Act_c.Mini.Function.t Act_c.Mini_intf.id_assoc
+open Base
 
+module type S = sig
+  val rewrite_all :
+    Act_c.Mini.Function.t Act_c.Mini_intf.id_assoc
+    -> var_map:Var_map.t
+    -> Act_c.Mini.Function.t Act_c.Mini_intf.id_assoc Or_error.t
+    (** [rewrite_all fs ~var_map] rewrites all functions in [fs], using the
+        mappings in [var_map] to resolve lifted locals. *)
+end
+
+module Vars_as_globals : S
+(** Function rewriter for the 'vars as globals' flavour of delitmus.  It
+    lowers all global references from pointers to values. *)
+
+module Vars_as_parameters : S
+(** Function rewriter for the 'vars as parameters' flavour of delitmus.  It
+    raises all local references from values to pointers. *)
