@@ -31,38 +31,48 @@ module Pred_elt = struct
 
   let ( ==? ) = eq
 
-  module BT : Travesty.Bi_traversable.S1_right
+  module BT :
+    Travesty.Bi_traversable.S1_right
     with type 'const t := 'const t
      and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
-      type nonrec 'const t = 'const t
-      type left = Id.t
+    type nonrec 'const t = 'const t
 
-      module On_monad (M: Monad.S) = struct
-        let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
-          match t with
-          | Eq (id, c) ->
+    type left = Id.t
+
+    module On_monad (M : Monad.S) = struct
+      let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
+          ~(right : 'a -> 'b M.t) : 'b t M.t =
+        match t with
+        | Eq (id, c) ->
             M.Let_syntax.(
-              let%map id' = left id and c' = right c in Eq (id', c'))
-      end
-    end)
+              let%map id' = left id and c' = right c in
+              Eq (id', c'))
+    end
+  end)
+
   include BT
 
-  (* TODO(@MattWindsor91): this is yet another pattern that needs putting into
-     Travesty *)
-  module On_c_identifiers : Travesty.Bi_traversable.S1_right
+  (* TODO(@MattWindsor91): this is yet another pattern that needs putting
+     into Travesty *)
+  module On_c_identifiers :
+    Travesty.Bi_traversable.S1_right
     with type 'const t = 'const t
-     and type left = Act_common.C_id.t = Travesty.Bi_traversable.Make1_right (struct
-      type nonrec 'const t = 'const t
-      type left = Act_common.C_id.t
+     and type left = Act_common.C_id.t =
+  Travesty.Bi_traversable.Make1_right (struct
+    type nonrec 'const t = 'const t
 
-      module On_monad (M: Monad.S) = struct
-        module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
+    type left = Act_common.C_id.t
 
-        module B = On_monad (M)
-        let bi_map_m (t : 'a t) ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
-          B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
+      module B = On_monad (M)
+
+      let bi_map_m (t : 'a t)
+          ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t)
+          ~(right : 'a -> 'b M.t) : 'b t M.t =
+        B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
+    end
+  end)
 end
 
 module Pred = struct
@@ -87,50 +97,59 @@ module Pred = struct
     | Elt x ->
         Elt x
 
-  module BT : Travesty.Bi_traversable.S1_right
+  module BT :
+    Travesty.Bi_traversable.S1_right
     with type 'const t := 'const t
      and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
-      type nonrec 'const t = 'const t
-      type left = Id.t
+    type nonrec 'const t = 'const t
 
-      module On_monad (M: Monad.S) = struct
-        module Pe = Pred_elt.On_monad (M)
+    type left = Id.t
 
-        let rec bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
-          M.Let_syntax.(
+    module On_monad (M : Monad.S) = struct
+      module Pe = Pred_elt.On_monad (M)
+
+      let rec bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
+          ~(right : 'a -> 'b M.t) : 'b t M.t =
+        M.Let_syntax.(
           match t with
           | Bracket x ->
-            let%map x' = bi_map_m ~left ~right x in Bracket x'
+              let%map x' = bi_map_m ~left ~right x in
+              Bracket x'
           | Or (l, r) ->
               let%map l' = bi_map_m ~left ~right l
-              and r' = bi_map_m ~left ~right r
-              in Or (l', r')
+              and r' = bi_map_m ~left ~right r in
+              Or (l', r')
           | And (l, r) ->
               let%map l' = bi_map_m ~left ~right l
-              and r' = bi_map_m ~left ~right r
-              in And (l', r')
+              and r' = bi_map_m ~left ~right r in
+              And (l', r')
           | Elt x ->
-            let%map x' = Pe.bi_map_m ~left ~right x in Elt x'
-        )
-      end
-    end)
+              let%map x' = Pe.bi_map_m ~left ~right x in
+              Elt x')
+    end
+  end)
+
   include BT
 
-  module On_c_identifiers : Travesty.Bi_traversable.S1_right
+  module On_c_identifiers :
+    Travesty.Bi_traversable.S1_right
     with type 'const t = 'const t
-     and type left = Act_common.C_id.t = Travesty.Bi_traversable.Make1_right (struct
-      type nonrec 'const t = 'const t
-      type left = Act_common.C_id.t
+     and type left = Act_common.C_id.t =
+  Travesty.Bi_traversable.Make1_right (struct
+    type nonrec 'const t = 'const t
 
-      module On_monad (M: Monad.S) = struct
-        module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
+    type left = Act_common.C_id.t
 
-        module B = On_monad (M)
-        let bi_map_m (t : 'a t) ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
-          B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
+      module B = On_monad (M)
 
+      let bi_map_m (t : 'a t)
+          ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t)
+          ~(right : 'a -> 'b M.t) : 'b t M.t =
+        B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
+    end
+  end)
 
   module Q : Quickcheck.S1 with type 'const t := 'const t = struct
     module G = Quickcheck.Generator
@@ -195,37 +214,45 @@ module Postcondition = struct
   type 'const t = {quantifier: [`Exists]; predicate: 'const Pred.t}
   [@@deriving sexp, compare, equal, quickcheck, fields, make]
 
-  module BT : Travesty.Bi_traversable.S1_right
+  module BT :
+    Travesty.Bi_traversable.S1_right
     with type 'const t := 'const t
      and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
-      type nonrec 'const t = 'const t
-      type left = Id.t
+    type nonrec 'const t = 'const t
 
-      module On_monad (M: Monad.S) = struct
-        module Pr = Pred.On_monad (M)
+    type left = Id.t
 
-        let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
-          let quantifier = quantifier t in
-          M.Let_syntax.(
-            let%map predicate = Pr.bi_map_m ~left ~right (predicate t) in
-            make ~quantifier ~predicate
-          )
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module Pr = Pred.On_monad (M)
+
+      let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
+          ~(right : 'a -> 'b M.t) : 'b t M.t =
+        let quantifier = quantifier t in
+        M.Let_syntax.(
+          let%map predicate = Pr.bi_map_m ~left ~right (predicate t) in
+          make ~quantifier ~predicate)
+    end
+  end)
+
   include BT
 
-  module On_c_identifiers : Travesty.Bi_traversable.S1_right
+  module On_c_identifiers :
+    Travesty.Bi_traversable.S1_right
     with type 'const t = 'const t
-     and type left = Act_common.C_id.t = Travesty.Bi_traversable.Make1_right (struct
-      type nonrec 'const t = 'const t
-      type left = Act_common.C_id.t
+     and type left = Act_common.C_id.t =
+  Travesty.Bi_traversable.Make1_right (struct
+    type nonrec 'const t = 'const t
 
-      module On_monad (M: Monad.S) = struct
-        module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
+    type left = Act_common.C_id.t
 
-        module B = On_monad (M)
-        let bi_map_m (t : 'a t) ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t) ~(right : 'a -> 'b M.t) : 'b t M.t =
-          B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
-      end
-    end)
+    module On_monad (M : Monad.S) = struct
+      module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
+      module B = On_monad (M)
+
+      let bi_map_m (t : 'a t)
+          ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t)
+          ~(right : 'a -> 'b M.t) : 'b t M.t =
+        B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
+    end
+  end)
 end

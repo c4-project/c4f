@@ -36,8 +36,7 @@ let run (dir : Fpath.t) : unit Or_error.t =
     Common.regress_run_asm_many
       (module Lit.Filter)
       "Litmusifier" Act_sanitiser.Pass_group.standard dir
-      ~config_fn:(fun aux -> Act_asm.Litmusifier.Config.make ~aux ()) 
-  )
+      ~config_fn:(fun aux -> Act_asm.Litmusifier.Config.make ~aux ()))
 
 let command =
   Common.make_regress_command ~summary:"runs litmusifier regressions" run

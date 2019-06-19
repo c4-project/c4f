@@ -72,8 +72,7 @@ module Make (B : Basic) : S = Pb.Filter.Make (struct
         "c.litmus"
 
   let run_fuzz ?(seed : int option) (oc : Out_channel.t) (vast : B.t)
-      ~(o : Ac.Output.t) ~(config : Act_config.Fuzz.t) :
-      unit Or_error.t =
+      ~(o : Ac.Output.t) ~(config : Act_config.Fuzz.t) : unit Or_error.t =
     Or_error.(vast |> B.fuzz ?seed ~o ~config >>| B.print oc)
 
   let run (ctx : mode Pb.Filter_context.t) ic oc : unit Or_error.t =
@@ -86,9 +85,9 @@ module Make (B : Basic) : S = Pb.Filter.Make (struct
       let%bind vast = B.process ast in
       match aux with
       | Print ->
-        B.print oc vast; Result.ok_unit
+          B.print oc vast ; Result.ok_unit
       | Fuzz {seed; o; config} ->
-        run_fuzz ?seed ~o ~config oc vast)
+          run_fuzz ?seed ~o ~config oc vast)
 end)
 
 module Normal_C : S = Make (struct

@@ -26,8 +26,8 @@ module Input = struct
     ; output: Act_common.Output.t }
   [@@deriving fields]
 
-  let make_job_input (i : t) (config_fn : Act_delitmus.Aux.t -> 'cfg)
-      : 'cfg Act_asm.Job.t =
+  let make_job_input (i : t) (config_fn : Act_delitmus.Aux.t -> 'cfg) :
+      'cfg Act_asm.Job.t =
     let aux = c_litmus_aux i in
     let config = config_fn aux in
     Act_asm.Job.make ~config ~passes:(sanitiser_passes i) ()
@@ -56,13 +56,12 @@ let get_aux (args : Args.Standard_asm.t) ~(output : Act_common.Output.t) :
     Act_delitmus.Aux.t Or_error.t =
   match Args.Standard_asm.aux_file args with
   | Some auxf ->
-    Or_error.(
-      Some auxf |> Pb.Input.of_string_opt >>=
-      Act_delitmus.Aux.load_from_isrc
-    )
+      Or_error.(
+        Some auxf |> Pb.Input.of_string_opt
+        >>= Act_delitmus.Aux.load_from_isrc)
   | None ->
-    warn_no_aux output;
-    Or_error.return Act_delitmus.Aux.empty
+      warn_no_aux output ;
+      Or_error.return Act_delitmus.Aux.empty
 
 let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
     (act_config : Act_config.Act.t) ~(f : Input.t -> unit Or_error.t)

@@ -192,31 +192,28 @@ let make_litmus_aux (input : C.Mini_litmus.Ast.Validated.t) :
   let locations = C.Mini_litmus.Ast.Validated.locations input in
   Act_litmus.Aux.make ?postcondition ~init ?locations ()
 
-let make_var_map
-    (input : C.Mini_litmus.Ast.Validated.t)
-    ~(qualifier : Ac.Litmus_id.t -> Ac.C_id.t option) 
-  : Var_map.t =
+let make_var_map (input : C.Mini_litmus.Ast.Validated.t)
+    ~(qualifier : Ac.Litmus_id.t -> Ac.C_id.t option) : Var_map.t =
   Var_map.of_set_with_qualifier (C.Mini_litmus.vars input) ~qualifier
 
 let make_aux (input : C.Mini_litmus.Ast.Validated.t)
-    ~(qualifier : Ac.Litmus_id.t -> Ac.C_id.t option)
-  : Aux.t =
+    ~(qualifier : Ac.Litmus_id.t -> Ac.C_id.t option) : Aux.t =
   let var_map = make_var_map input ~qualifier in
   let litmus_aux = make_litmus_aux input in
-  let num_threads = List.length (C.Mini_litmus.Ast.Validated.programs input) in
+  let num_threads =
+    List.length (C.Mini_litmus.Ast.Validated.programs input)
+  in
   Aux.make ~litmus_aux ~var_map ~num_threads ()
 
-let make_program (input : C.Mini_litmus.Ast.Validated.t)
-    (aux : Aux.t)
-  : C.Mini.Program.t Or_error.t =
+let make_program (input : C.Mini_litmus.Ast.Validated.t) (aux : Aux.t) :
+    C.Mini.Program.t Or_error.t =
   let raw_functions = C.Mini_litmus.Ast.Validated.programs input in
   let function_bodies = List.map ~f:snd raw_functions in
   let functions = delitmus_functions raw_functions in
   let init = Act_litmus.Aux.init (Aux.litmus_aux aux) in
   Or_error.Let_syntax.(
     let%map globals = make_globals init function_bodies in
-    C.Mini.Program.make ~globals ~functions
-  )
+    C.Mini.Program.make ~globals ~functions)
 
 let run (input : C.Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
   let qualifier x = Some (Qualify.litmus_id x) in

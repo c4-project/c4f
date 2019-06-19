@@ -67,22 +67,22 @@ end
 include M_sexp
 include Comparable.Make (M_sexp)
 
-module On_c_identifiers : Travesty.Traversable.S0
-  with type t = t
-   and type Elt.t = C_id.t =
-  Travesty.Traversable.Make0 (struct
-    type nonrec t = t
-    module Elt = C_id
+module On_c_identifiers :
+  Travesty.Traversable.S0 with type t = t and type Elt.t = C_id.t =
+Travesty.Traversable.Make0 (struct
+  type nonrec t = t
 
-    module On_monad (M : Monad.S) = struct
-      module H = Travesty.Traversable.Helpers (M)
-      let map_m (lid : t) ~(f : C_id.t -> C_id.t M.t) : t M.t =
-        Variants.map lid
-          ~global:(H.proc_variant1 f)
-          ~local:(H.proc_variant2
-                    (fun (tid, x) -> M.(x |> f >>| Tuple2.create tid)))
-    end
-  end)
+  module Elt = C_id
+
+  module On_monad (M : Monad.S) = struct
+    module H = Travesty.Traversable.Helpers (M)
+
+    let map_m (lid : t) ~(f : C_id.t -> C_id.t M.t) : t M.t =
+      Variants.map lid ~global:(H.proc_variant1 f)
+        ~local:
+          (H.proc_variant2 (fun (tid, x) -> M.(x |> f >>| Tuple2.create tid)))
+  end
+end)
 
 let%expect_test "try_parse: example local identifier" =
   Stdio.print_s [%sexp (try_parse "0:r1" : t Or_error.t)] ;
@@ -107,10 +107,12 @@ let global_of_string (str : string) : t Or_error.t =
 let variable_name : t -> C_id.t = function Local (_, v) | Global v -> v
 
 let as_local : t -> (int * C_id.t) option = function
-  | Local (i, v) -> Some (i, v) | Global _ -> None
+  | Local (i, v) ->
+      Some (i, v)
+  | Global _ ->
+      None
 
-let tid : t -> int option =
-  Fn.compose (Option.map ~f:fst) as_local
+let tid : t -> int option = Fn.compose (Option.map ~f:fst) as_local
 
 let as_global : t -> C_id.t option = function
   | Global cid ->

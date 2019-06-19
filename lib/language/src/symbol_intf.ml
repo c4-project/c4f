@@ -85,7 +85,8 @@ module type S = sig
      and module Set := Set
 
   (** [R_map] is an implementation of [Redirect_map] for this symbol type. *)
-  module R_map : Redirect_map_intf.S with type sym = t and type sym_set = Set.t
+  module R_map :
+    Redirect_map_intf.S with type sym = t and type sym_set = Set.t
 
   val of_string_opt : string -> t option
   (** [of_string_opt t] tries to interpret [s] as a symbol. This function

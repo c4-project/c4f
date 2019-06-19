@@ -59,13 +59,13 @@ module Make (B : Basic) : S with module Lang = B.Src_lang = struct
     |> Or_error.combine_errors_unit
 
   let run_stub_gen (oc : Stdio.Out_channel.t) ~(in_name : string)
-      ~(program : Lang.Program.t)
-      ~(config : Config.t) ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
+      ~(program : Lang.Program.t) ~(config : Config.t)
+      ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =
     ignore config ;
     Or_error.Let_syntax.(
       (* TODO(@MattWindsor91): connect this back up. *)
-      Stdio.eprintf "FIXME: SYMBOLS NOT PASSED CORRECTLY\n";
+      Stdio.eprintf "FIXME: SYMBOLS NOT PASSED CORRECTLY\n" ;
       let symbols = [] in
       let%bind san = San.sanitise ~passes ~symbols program in
       let programs = San.Output.programs san in

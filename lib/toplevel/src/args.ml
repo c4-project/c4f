@@ -73,7 +73,9 @@ module Other = struct
   let aux_file : string option Command.Param.t =
     flag "aux-file"
       (optional Filename.arg_type)
-      ~doc:"FILE path to a JSON file containing auxiliary litmus information for this file"
+      ~doc:
+        "FILE path to a JSON file containing auxiliary litmus information \
+         for this file"
 
   let sanitiser_passes :
       Act_sanitiser.Pass_group.Selector.t Blang.t option Command.Param.t =

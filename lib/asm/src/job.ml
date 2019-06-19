@@ -27,8 +27,7 @@ module Tx = Travesty_base_exts
 type 'cfg t =
   { config: 'cfg option
   ; passes: Set.M(Act_sanitiser.Pass_group).t
-        [@default Act_sanitiser.Pass_group.standard]
-  }
+        [@default Act_sanitiser.Pass_group.standard] }
 [@@deriving make, fields]
 
 let map_m_config (job : 'a t) ~(f : 'a -> 'b Or_error.t) : 'b t Or_error.t =

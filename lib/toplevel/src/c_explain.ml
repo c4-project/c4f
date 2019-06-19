@@ -26,8 +26,7 @@ module Ac = Act_common
 
 (* TODO(@MattWindsor91): re-enable litmus mode *)
 
-let run (args : Args.Standard_with_files.t)
-    _o _cfg =
+let run (args : Args.Standard_with_files.t) _o _cfg =
   let open Or_error.Let_syntax in
   let%bind infile = Args.Standard_with_files.infile_source args in
   let%bind outfile = Args.Standard_with_files.outfile_sink args in
@@ -38,8 +37,7 @@ let run (args : Args.Standard_with_files.t)
 let command : Command.t =
   Command.basic ~summary:"explains act's understanding of a C file"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_with_files.get
-      in
+      let%map_open standard_args = Args.Standard_with_files.get in
       fun () ->
         Common.lift_command_with_files standard_args
           ~with_compiler_tests:false ~f:run)

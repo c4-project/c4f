@@ -55,8 +55,8 @@ val as_global : t -> C_id.t option
     or [None] otherwise. *)
 
 val as_local : t -> (int * C_id.t) option
-(** [as_local id] gets [Some (tid, cid)] if [id] is the local identifier [cid]
-    in thread [tid], or [None] otherwise. *)
+(** [as_local id] gets [Some (tid, cid)] if [id] is the local identifier
+    [cid] in thread [tid], or [None] otherwise. *)
 
 val variable_name : t -> C_id.t
 (** [variable_name id] gets the underlying variable name of [id]. *)
@@ -85,9 +85,8 @@ include Pretty_printer.S with type t := t
 include Comparable.S with type t := t
 
 (** Monadic traversal over the C identifier part of a Litmus identifier. *)
-module On_c_identifiers : Travesty.Traversable.S0
-  with type t = t
-   and type Elt.t = C_id.t
+module On_c_identifiers :
+  Travesty.Traversable.S0 with type t = t and type Elt.t = C_id.t
 
 (** Helpers for parsing, and handling, associative lists over litmus IDs. *)
 module Assoc : sig
