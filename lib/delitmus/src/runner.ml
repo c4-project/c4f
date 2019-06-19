@@ -107,70 +107,6 @@ let make_func_globals (funcs : C.Mini.Function.t list) :
     C.Mini.Initialiser.t C.Mini_intf.id_assoc =
   funcs |> List.mapi ~f:make_single_func_globals |> List.concat
 
-module Global_reduce (T : Thread.S) = struct
-  (** [address_globals stm] converts each address in [stm] over a global
-      variable [v] to [&*v], ready for {{!ref_globals} ref_globals} to
-      reduce to [&v]. *)
-  let address_globals : C.Mini.Statement.t -> C.Mini.Statement.t =
-    C.Mini.Statement.On_addresses.map
-      ~f:
-        (T.when_global ~over:C.Mini.Address.variable_of ~f:(fun addr ->
-             (* The added deref here will be removed in [ref_globals]. *)
-             C.Mini.Address.ref
-               (C.Mini.Address.On_lvalues.map ~f:C.Mini.Lvalue.deref addr)
-         ))
-
-  (** [ref_globals stm] turns all dereferences of global variables in [stm]
-      into direct accesses to the same variables. *)
-  let ref_globals : C.Mini.Statement.t -> C.Mini.Statement.t =
-    C.Mini.Statement.On_lvalues.map
-      ~f:
-        C.Mini.Lvalue.(
-          T.when_global ~over:variable_of
-            ~f:(Fn.compose variable variable_of))
-
-  (** [proc_stm stm] runs all of the global-handling functions on a single
-      statement. *)
-  let proc_stm (stm : C.Mini.Statement.t) : C.Mini.Statement.t =
-    stm |> address_globals |> ref_globals
-    |> Qualify.locals_in_statement (module T)
-
-  (** [proc_stms stms] runs all of the global-handling functions on multiple
-      statements. *)
-  let proc_stms : C.Mini.Statement.t list -> C.Mini.Statement.t list =
-    List.map ~f:proc_stm
-end
-
-let global_reduce (tid : int) (locals : C.Mini.Identifier.Set.t) :
-    C.Mini.Statement.t list -> C.Mini.Statement.t list =
-  let module T = Thread.Make (struct
-    let tid = tid
-
-    let locals = locals
-  end) in
-  let module M = Global_reduce (T) in
-  M.proc_stms
-
-let delitmus_stms (tid : int)
-    (locals : C.Mini.Initialiser.t C.Mini_intf.id_assoc) :
-    C.Mini.Statement.t list -> C.Mini.Statement.t list =
-  let locals_set =
-    locals |> List.map ~f:fst |> C.Mini.Identifier.Set.of_list
-  in
-  global_reduce tid locals_set
-
-let delitmus_function (tid : int) (func : C.Mini.Function.t) :
-    C.Mini.Function.t =
-  let locals = C.Mini.Function.body_decls func in
-  C.Mini.Function.map func ~parameters:(Fn.const [])
-    ~body_decls:(Fn.const [])
-    ~body_stms:(delitmus_stms tid locals)
-
-let delitmus_functions :
-       C.Mini.Function.t C.Mini_intf.id_assoc
-    -> C.Mini.Function.t C.Mini_intf.id_assoc =
-  List.mapi ~f:(fun tid (name, f) -> (name, delitmus_function tid f))
-
 let make_globals (init : C.Mini.Constant.t C.Mini_intf.id_assoc)
     (function_bodies : C.Mini.Function.t list) :
     C.Mini_initialiser.t C.Mini_intf.id_assoc Or_error.t =
@@ -209,7 +145,7 @@ let make_program (input : C.Mini_litmus.Ast.Validated.t) (aux : Aux.t) :
     C.Mini.Program.t Or_error.t =
   let raw_functions = C.Mini_litmus.Ast.Validated.programs input in
   let function_bodies = List.map ~f:snd raw_functions in
-  let functions = delitmus_functions raw_functions in
+  let functions = Function_rewriter.rewrite_all raw_functions in
   let init = Act_litmus.Aux.init (Aux.litmus_aux aux) in
   Or_error.Let_syntax.(
     let%map globals = make_globals init function_bodies in
