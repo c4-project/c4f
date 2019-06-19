@@ -26,27 +26,13 @@
 open Core
 module Ac = Act_common
 
-let pp_var_map : Act_delitmus.Var_map.t Fmt.t =
+let pp_aux : Act_delitmus.Aux.t Fmt.t =
   Fmt.(
-    prefix
-      (unit "@,@,// C global variables:@,")
-      (vbox
-         (using (Fn.compose Set.to_list Act_delitmus.Var_map.global_c_variables)
-            (list ~sep:sp (hbox (prefix (unit "// -@ ") Ac.C_id.pp))))))
+    using Act_delitmus.Aux.to_yojson (Yojson.Safe.pretty_print ~std:false)
+  )
 
-let pp_post : Act_c.Mini_litmus.Ast.Postcondition.t Fmt.t =
-  Fmt.(
-    prefix
-      (unit "@,@,// Postcondition:@,")
-      (hbox (prefix (unit "// ") Act_c.Mini_litmus.Pp.pp_post)))
-
-let summarise_c_output (aux : Act_delitmus.Aux.t) : unit =
-  let laux = Act_delitmus.Aux.litmus_aux aux in
-  Fmt.(
-    pr "@[<v>%a%a@]@." pp_var_map
-      (Act_delitmus.Aux.var_map aux)
-      (option pp_post)
-      (Act_litmus.Aux.postcondition laux))
+let print_aux : Act_delitmus.Aux.t -> unit =
+  Fmt.pr "@[<v>@ /* --Begin auxiliary output--@ @ %a@ @ --End auxiliary output-- */@]@." pp_aux
 
 let delitmus_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   ignore file ;
@@ -56,7 +42,7 @@ let delitmus_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
         (Plumbing.Input.of_fpath path)
         Plumbing.Output.stdout
     in
-    summarise_c_output output)
+    print_aux output)
 
 let run (test_dir : Fpath.t) : unit Or_error.t =
   let full_dir = Fpath.(test_dir / "litmus" / "") in
