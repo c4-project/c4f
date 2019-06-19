@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Converts a single C litmus test to an assembly litmus test.
+
+ACT="${ACT="act"}"
+
+usage()
+{
+	echo "usage: $0 COMPILER LIT_FILE"
+	exit
+}
+
+if [ $# -ne 2 ]; then
+	usage
+fi
+
+compiler=$1
+lit_file=$2
+
+# Most other invocations of mktemp aren't portable.
+tmpdir="$(mktemp -d)" || exit
+
+auxfile="${tmpdir}/aux.json"
+cfile="${tmpdir}/out.c"
+sfile="${tmpdir}/out.s"
+
+"${ACT}" c delitmus -aux "${auxfile}" "${lit_file}" -o "${cfile}"
+"${ACT}" c compile -compiler "${compiler}" "${cfile}" -o "${sfile}"
+"${ACT}" asm litmusify -compiler "${compiler}" -aux "${auxfile}" "${sfile}"
+
+rm -r "${tmpdir}"
+
