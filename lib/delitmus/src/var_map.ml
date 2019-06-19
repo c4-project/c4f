@@ -12,6 +12,7 @@
 open Base
 
 module Ac = Act_common
+module Tx = Travesty_base_exts
 
 type t = (Ac.C_id.t option) Map.M(Ac.Litmus_id).t
 
@@ -65,3 +66,27 @@ let build_set (type e w)
 
 let global_c_variables : t -> Set.M(Ac.C_id).t =
   build_set (module Ac.C_id) ~f:(fun _ data -> data)
+
+module Json : Plumbing.Loadable_types.Jsonable with type t := t = struct
+  let to_yojson (map : t) : Yojson.Safe.t =
+    let alist =
+      map
+      |> Map.to_alist
+      |> Tx.Alist.bi_map ~left:Ac.Litmus_id.to_string ~right:[%to_yojson: Ac.C_id.t option]
+    in `Assoc alist
+
+  module U = Yojson.Safe.Util
+
+  let of_yojson_exn (json : Yojson.Safe.t) : t =
+    json
+    |> U.to_assoc
+    |> Tx.Alist.bi_map ~left:Ac.Litmus_id.of_string
+      ~right:(fun x -> x |> [%of_yojson: Ac.C_id.t option] |> Result.ok_or_failwith)
+    |> Map.of_alist_exn (module Ac.Litmus_id)
+    |> of_map
+
+  let of_yojson (json : Yojson.Safe.t) : (t, string) Result.t =
+    Result.try_with (fun () -> of_yojson_exn json)
+    |> Result.map_error ~f:Exn.to_string
+end
+include Json

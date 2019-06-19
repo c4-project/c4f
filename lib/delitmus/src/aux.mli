@@ -15,7 +15,7 @@
     as well as information about the variables and thread IDs that were in
     use in the body of the Litmus test. *)
 
-type t [@@deriving equal]
+type t [@@deriving equal, yojson]
 
 (** {2 Constructors} *)
 
