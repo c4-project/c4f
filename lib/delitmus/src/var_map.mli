@@ -48,3 +48,7 @@ val lookup_and_require_global : t -> id:Act_common.Litmus_id.t -> Act_common.C_i
     variable [id] in [map], or an error otherwise (ie, [id] was not mapped
     to a global C variable, or not seen at all). *)
 
+(** {2 Interface implementations} *)
+
+include Plumbing.Loadable_types.Jsonable with type t := t
+(** A var map can be serialised to, and deserialised from, (Yo)JSON. *)

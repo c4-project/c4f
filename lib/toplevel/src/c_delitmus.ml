@@ -9,18 +9,31 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Core_kernel
+open Core
 
-let run (args : Args.Standard_with_files.t) _o _cfg =
+let write_aux (aux : Act_delitmus.Aux.t) (output_fname : string) : unit Or_error.t =
+  let aux_json = Act_delitmus.Aux.to_yojson aux in
+  Or_error.try_with (fun () ->
+      Stdio.Out_channel.with_file output_fname
+        ~f:(fun oc -> Yojson.Safe.pretty_to_channel oc aux_json))
+
+let run ?(aux_output : string option) 
+    (args : Args.Standard_with_files.t) _o _cfg
+  =
   Or_error.Let_syntax.(
     let%bind input = Args.Standard_with_files.infile_source args in
     let%bind output = Args.Standard_with_files.outfile_sink args in
-    Or_error.ignore_m (Act_delitmus.Filter.run () input output))
+    let%bind aux = Act_delitmus.Filter.run () input output in
+    Travesty_base_exts.Option.With_errors.iter_m aux_output ~f:(write_aux aux)
+  )
 
 let command : Command.t =
   Command.basic ~summary:"converts a C litmus test to a normal C file"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_with_files.get in
+      let%map_open standard_args = Args.Standard_with_files.get
+      and aux_output = flag "aux-output" (optional Filename.arg_type)
+              ~doc:("FILE if given, the filename to write auxiliary litmus information to")
+      in
       fun () ->
         Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false ~f:run)
+          ~with_compiler_tests:false ~f:(run ?aux_output))

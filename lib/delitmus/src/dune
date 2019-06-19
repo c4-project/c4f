@@ -5,6 +5,7 @@
  (public_name act.delitmus)
  (synopsis "Automagic Compiler Tormentor: C de-litmusifier")
  (preprocess
-  (staged_pps ppx_import ppx_deriving.std ppx_jane))
- (libraries sexplib0 base base.caml core_kernel stdio fmt yojson
+  (staged_pps ppx_import ppx_deriving.std ppx_deriving_yojson ppx_jane))
+ (libraries sexplib0 result base base.caml core_kernel stdio fmt yojson
+   ppx_deriving_yojson.runtime
    travesty.base_exts plumbing act.c act.c_lang act.common act.litmus))
