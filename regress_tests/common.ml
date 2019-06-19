@@ -25,26 +25,54 @@ open Core_kernel
 module Ac = Act_common
 module Au = Act_utils
 
-type spec =
-  { c_globals: string list [@sexp.list] [@sexp.omit_nil]
-  ; c_locals: string list [@sexp.list] [@sexp.omit_nil] }
-[@@deriving sexp]
+module Spec = struct
+  module M = struct
+    type t = (string, Act_delitmus.Aux.t) List.Assoc.t
 
-let find_spec specs (path : Fpath.t) =
+    module SRM : Monad.S with type 'a t = ('a, string) Result.t =
+      struct
+        type 'a t = ('a, string) Result.t
+        include (Result : Monad.S with type 'a t := ('a, string) Result.t)
+      end
+    module List_of_alist =
+      Travesty.Bi_traversable.Chain_Bi2_Traverse1
+        (Travesty_base_exts.Alist)
+        (Travesty_base_exts.List)
+    module List_of_alist_SRM = List_of_alist.On_monad(SRM)
+
+    let of_yojson (j : Yojson.Safe.t) : (t, string) Result.t =
+      Result.Let_syntax.(
+        let jsons =
+          [j]
+          |> Yojson.Safe.Util.filter_assoc
+          |> List_of_alist_SRM.map_right_m ~f:Act_delitmus.Aux.of_yojson
+        in
+        match%bind jsons with
+        | [x] -> Result.return x
+        | _ -> Result.fail "Expected a JSON object here"
+      )
+    let of_yojson_exn (j : Yojson.Safe.t) : t =
+      j |> of_yojson |> Result.ok_or_failwith
+  end
+  include M
+  module Load : Plumbing.Loadable_types.S with type t := t =
+    Plumbing.Loadable.Of_jsonable (M)
+  include Load
+end
+
+let find_aux (spec : Spec.t) (path : Fpath.t)
+              : Act_delitmus.Aux.t Or_error.t =
   let file = Fpath.to_string path in
   file
-  |> List.Assoc.find specs ~equal:String.Caseless.equal
+  |> List.Assoc.find spec ~equal:String.Caseless.equal
   |> Result.of_option
        ~error:
          (Error.create_s
             [%message "File mentioned in spec is missing" ~file])
 
-let read_specs path =
-  let spec_file = Fpath.(path / "spec") in
-  Or_error.try_with (fun () ->
-      Sexp.load_sexp_conv_exn
-        (Fpath.to_string spec_file)
-        [%of_sexp: (string, spec) List.Assoc.t] )
+let read_specs (path : Fpath.t) : Spec.t Or_error.t =
+  let spec_file = Fpath.(path / "spec.json") in
+  Spec.load_from_isrc (Plumbing.Input.of_fpath spec_file)
 
 let diff_to_error = function
   | First file ->
@@ -75,25 +103,13 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Sequence.map ~f:diff_to_error
   |> Sequence.to_list |> Or_error.combine_errors_unit
 
-let spec_to_aux (spec : spec) : Act_delitmus.Aux.t =
-  (* TODO(@MattWindsor91): this is a bit of a hack. *)
-  let symbols = spec.c_globals @ spec.c_locals (* for now *) in
-  let symbol_lids = List.map ~f:Act_common.Litmus_id.of_string symbols in
-  let symbol_set = Set.of_list (module Act_common.Litmus_id) symbol_lids in
-  let var_map =
-    Act_delitmus.Var_map.of_set_with_qualifier
-      symbol_set ~qualifier:(fun (x : Act_common.Litmus_id.t) -> Some (Act_delitmus.Qualify.litmus_id x))
-  in
-  let litmus_aux = Act_litmus.Aux.make () in
-  Act_delitmus.Aux.make ~litmus_aux ~var_map ~num_threads:0 ()
-
-let regress_run_asm (module Job : Act_asm.Runner_intf.S) specs
+let regress_run_asm (type cfg) (module Job : Act_asm.Runner_intf.S with type cfg = cfg) (spec : Spec.t)
     (passes : Set.M(Act_sanitiser.Pass_group).t) ~(file : Fpath.t)
+    ~(config_fn : Act_delitmus.Aux.t -> cfg)
     ~(path : Fpath.t) : unit Or_error.t =
   let open Or_error.Let_syntax in
-  let%bind spec = find_spec specs file in
-  let aux = spec_to_aux spec in
-  let input = Act_asm.Job.make ~passes ~aux in
+  let%bind aux = find_aux spec file in
+  let input = Act_asm.Job.make ~passes ~config:(config_fn aux) in
   let%map _ =
     Job.run (input ()) (Plumbing.Input.of_fpath path) Plumbing.Output.stdout
   in
@@ -119,15 +135,17 @@ let regress_on_files (bin_name : string) ~(dir : Fpath.t) ~(ext : string)
   let%map () = Or_error.combine_errors_unit results in
   printf "\nRan %d test(s).\n" (List.length test_files)
 
-let regress_run_asm_many (module Job : Act_asm.Runner_intf.S)
-    (modename : string) passes (test_path : Fpath.t) : unit Or_error.t =
+let regress_run_asm_many (type cfg) (module Job : Act_asm.Runner_intf.S with type cfg = cfg)
+    (modename : string) passes (test_path : Fpath.t)
+    ~(config_fn : Act_delitmus.Aux.t -> cfg)
+  : unit Or_error.t =
   let open Or_error.Let_syntax in
   let dir = Fpath.(test_path / "asm" / "x86" / "att" / "") in
   let%bind specs = read_specs dir in
   let%bind test_files = Au.Fs.Unix.get_files ~ext:"s" dir in
   let%bind () = check_files_against_specs specs test_files in
   regress_on_files modename ~dir ~ext:"s"
-    ~f:(regress_run_asm (module Job) specs passes)
+    ~f:(regress_run_asm (module Job) specs passes ~config_fn)
 
 let make_regress_command (regress_function : Fpath.t -> unit Or_error.t)
     ~(summary : string) : Command.t =

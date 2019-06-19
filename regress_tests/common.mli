@@ -33,10 +33,11 @@ val regress_on_files :
   -> unit Or_error.t
 
 val regress_run_asm_many :
-     (module Act_asm.Runner_intf.S)
+     (module Act_asm.Runner_intf.S with type cfg = 'cfg)
   -> string
   -> Set.M(Act_sanitiser.Pass_group).t
   -> Fpath.t
+  -> config_fn:(Act_delitmus.Aux.t -> 'cfg)
   -> unit Or_error.t
 
 val make_regress_command :

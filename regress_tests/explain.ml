@@ -35,7 +35,9 @@ let run (dir : Fpath.t) : unit Or_error.t =
     let module Exp = Act_asm.Explainer.Make (L) in
     Common.regress_run_asm_many
       (module Exp.Filter)
-      "Explainer" Act_sanitiser.Pass_group.explain dir)
+      "Explainer" Act_sanitiser.Pass_group.explain dir
+      ~config_fn:(fun aux -> Act_asm.Explainer.Config.make ~aux ()) 
+  )
 
 let command =
   Common.make_regress_command ~summary:"runs explainer regressions" run

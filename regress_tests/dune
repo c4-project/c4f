@@ -2,13 +2,13 @@
  (names explain delitmus litmusify config config_failures)
  (preprocess
   (pps ppx_jane))
- (libraries sexplib0 base.caml core_kernel core stdio fmt toplevel fpath
+ (libraries ppx_deriving_yojson.runtime result yojson sexplib0 base.caml core_kernel core stdio fmt toplevel fpath
    plumbing act.asm act.c act.common act.config act.delitmus act.litmus
-   act.sanitiser act.utils)
+   act.sanitiser act.utils travesty travesty.base_exts)
  (action
   (run %{test} input))
  (deps
-  "input/asm/x86/att/spec"
+  "input/asm/x86/att/spec.json"
   (glob_files "input/config/valid/*.conf")
   (glob_files "input/config/failures/*.conf")
   (glob_files "input/litmus/*.litmus")

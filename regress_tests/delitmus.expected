@@ -31,7 +31,9 @@ P3()
 }
 
 
-// C variables:
+// C global variables:
+// - t2r0
+// - t2r1
 // - t3r0
 // - t3r1
 // - x
@@ -83,12 +85,14 @@ P4()
 }
 
 
-// C variables:
+// C global variables:
 // - MaJgQmON3yu
 // - VFTQNWN
 // - ZgoV7uel9o
 // - m02M5s
 // - ne0J8wrPQam
+// - t3r0
+// - t3r1
 // - t4r0
 // - t4r1
 // - x
@@ -117,7 +121,7 @@ P1()
 { atomic_store_explicit(&x, 1, memory_order_relaxed); }
 
 
-// C variables:
+// C global variables:
 // - t0r0
 // - x
 
@@ -136,7 +140,7 @@ P0()
 { x = 1; t0r0 = x; }
 
 
-// C variables:
+// C global variables:
 // - t0r0
 // - x
 
@@ -170,7 +174,8 @@ P2()
 }
 
 
-// C variables:
+// C global variables:
+// - t1r0
 // - t1r1
 // - t2r0
 // - x

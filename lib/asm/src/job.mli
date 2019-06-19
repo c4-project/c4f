@@ -36,18 +36,15 @@ type 'cfg t
 val make :
      ?config:'cfg
   -> ?passes:Set.M(Act_sanitiser.Pass_group).t
-  -> ?aux:Act_delitmus.Aux.t
   -> unit
   -> 'cfg t
-(** [make ?config ?passes ?symbols ()] makes a job description. *)
+(** [make ?config ?passes ()] makes a job description. *)
 
 val map_m_config : 'a t -> f:('a -> 'b Or_error.t) -> 'b t Or_error.t
 
 val config : 'cfg t -> 'cfg option
 
 val passes : _ t -> Set.M(Act_sanitiser.Pass_group).t
-
-val symbols : _ t -> string list
 
 (** The output of a single-file job. *)
 module Output : sig

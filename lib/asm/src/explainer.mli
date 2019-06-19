@@ -40,10 +40,10 @@ module Config : sig
     (** [default] gets the default output format. *)
   end
 
-  type t [@@deriving equal, sexp]
+  type t [@@deriving equal]
 
-  val make : ?format:Format.t -> unit -> t
-  (** [make ?format ()] builds an [Explain_config] with the given
+  val make : ?format:Format.t -> ?aux:Act_delitmus.Aux.t -> unit -> t
+  (** [make ?format ?aux ()] builds an [Explain_config] with the given
       parameters. *)
 
   val default : t
