@@ -29,39 +29,44 @@ module Spec = struct
   module M = struct
     type t = (string, Act_delitmus.Aux.t) List.Assoc.t
 
-    module SRM : Monad.S with type 'a t = ('a, string) Result.t =
-      struct
-        type 'a t = ('a, string) Result.t
-        include (Result : Monad.S with type 'a t := ('a, string) Result.t)
-      end
+    module SRM : Monad.S with type 'a t = ('a, string) Result.t = struct
+      type 'a t = ('a, string) Result.t
+
+      include (Result : Monad.S with type 'a t := ('a, string) Result.t)
+    end
+
     module List_of_alist =
       Travesty.Bi_traversable.Chain_Bi2_Traverse1
         (Travesty_base_exts.Alist)
         (Travesty_base_exts.List)
-    module List_of_alist_SRM = List_of_alist.On_monad(SRM)
+    module List_of_alist_SRM = List_of_alist.On_monad (SRM)
 
     let of_yojson (j : Yojson.Safe.t) : (t, string) Result.t =
       Result.Let_syntax.(
         let jsons =
-          [j]
-          |> Yojson.Safe.Util.filter_assoc
+          [j] |> Yojson.Safe.Util.filter_assoc
           |> List_of_alist_SRM.map_right_m ~f:Act_delitmus.Aux.of_yojson
         in
         match%bind jsons with
-        | [x] -> Result.return x
-        | _ -> Result.fail "Expected a JSON object here"
-      )
+        | [x] ->
+            Result.return x
+        | _ ->
+            Result.fail "Expected a JSON object here")
+
     let of_yojson_exn (j : Yojson.Safe.t) : t =
       j |> of_yojson |> Result.ok_or_failwith
   end
+
   include M
+
   module Load : Plumbing.Loadable_types.S with type t := t =
     Plumbing.Loadable.Of_jsonable (M)
+
   include Load
 end
 
-let find_aux (spec : Spec.t) (path : Fpath.t)
-              : Act_delitmus.Aux.t Or_error.t =
+let find_aux (spec : Spec.t) (path : Fpath.t) :
+    Act_delitmus.Aux.t Or_error.t =
   let file = Fpath.to_string path in
   file
   |> List.Assoc.find spec ~equal:String.Caseless.equal
@@ -103,10 +108,11 @@ let check_files_against_specs specs (test_paths : Fpath.t list) =
   |> Sequence.map ~f:diff_to_error
   |> Sequence.to_list |> Or_error.combine_errors_unit
 
-let regress_run_asm (type cfg) (module Job : Act_asm.Runner_intf.S with type cfg = cfg) (spec : Spec.t)
+let regress_run_asm (type cfg)
+    (module Job : Act_asm.Runner_intf.S with type cfg = cfg) (spec : Spec.t)
     (passes : Set.M(Act_sanitiser.Pass_group).t) ~(file : Fpath.t)
-    ~(config_fn : Act_delitmus.Aux.t -> cfg)
-    ~(path : Fpath.t) : unit Or_error.t =
+    ~(config_fn : Act_delitmus.Aux.t -> cfg) ~(path : Fpath.t) :
+    unit Or_error.t =
   let open Or_error.Let_syntax in
   let%bind aux = find_aux spec file in
   let input = Act_asm.Job.make ~passes ~config:(config_fn aux) in
@@ -135,10 +141,10 @@ let regress_on_files (bin_name : string) ~(dir : Fpath.t) ~(ext : string)
   let%map () = Or_error.combine_errors_unit results in
   printf "\nRan %d test(s).\n" (List.length test_files)
 
-let regress_run_asm_many (type cfg) (module Job : Act_asm.Runner_intf.S with type cfg = cfg)
+let regress_run_asm_many (type cfg)
+    (module Job : Act_asm.Runner_intf.S with type cfg = cfg)
     (modename : string) passes (test_path : Fpath.t)
-    ~(config_fn : Act_delitmus.Aux.t -> cfg)
-  : unit Or_error.t =
+    ~(config_fn : Act_delitmus.Aux.t -> cfg) : unit Or_error.t =
   let open Or_error.Let_syntax in
   let dir = Fpath.(test_path / "asm" / "x86" / "att" / "") in
   let%bind specs = read_specs dir in

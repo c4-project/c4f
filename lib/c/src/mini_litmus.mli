@@ -47,5 +47,5 @@ module Ast : Act_litmus.Ast.S with module Lang = Lang
 module Pp : Act_litmus.Pp_intf.S with module Ast = Ast
 
 val vars : Ast.Validated.t -> Set.M(Act_common.Litmus_id).t
-(** [vars ast] gets the set of variables referenced in a mini-C Litmus
-    test, in the form of Litmus thread-ID-qualified identifiers. *)
+(** [vars ast] gets the set of variables referenced in a mini-C Litmus test,
+    in the form of Litmus thread-ID-qualified identifiers. *)

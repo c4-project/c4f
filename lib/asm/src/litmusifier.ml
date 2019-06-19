@@ -36,21 +36,18 @@ end
 module Config = struct
   type t =
     { format: Format.t [@default Format.default]
-    ; aux: Act_delitmus.Aux.t [@default Act_delitmus.Aux.empty]
-    }
+    ; aux: Act_delitmus.Aux.t [@default Act_delitmus.Aux.empty] }
   [@@deriving equal, fields, make]
 
   let default : unit -> t = make
 
   module W = Travesty.Traversable.Helpers (Or_error)
 
-  let transform (initial : t)
-      ~(format : Format.t -> Format.t Or_error.t)
+  let transform (initial : t) ~(format : Format.t -> Format.t Or_error.t)
       ~(aux : Act_delitmus.Aux.t -> Act_delitmus.Aux.t Or_error.t) :
       t Or_error.t =
     Fields.fold ~init:(Or_error.return initial)
-      ~format:(W.proc_field format)
-      ~aux:(W.proc_field aux)
+      ~format:(W.proc_field format) ~aux:(W.proc_field aux)
 end
 
 module Make (B : Runner_intf.Basic) :
@@ -87,9 +84,9 @@ module Make (B : Runner_intf.Basic) :
   let make_litmus_programs = Tx.Or_error.combine_map ~f:make_litmus_program
 
   module Make_aux = Litmusifier_aux.Make (struct
-      module Symbol = B.Src_lang.Symbol
-      module Constant = B.Dst_lang.Constant
-    end)
+    module Symbol = B.Src_lang.Symbol
+    module Constant = B.Dst_lang.Constant
+  end)
 
   let make_aux (config : Config.t)
       (redirect_map : B.Src_lang.Symbol.R_map.t) :
@@ -97,9 +94,8 @@ module Make (B : Runner_intf.Basic) :
     let dl_aux = Config.aux config in
     Make_aux.of_delitmus_aux dl_aux ~redirect_map
 
-  let make ~(config : Config.t)
-      ~(redirects : B.Src_lang.Symbol.R_map.t) ~(name : string)
-      ~(programs : program list) =
+  let make ~(config : Config.t) ~(redirects : B.Src_lang.Symbol.R_map.t)
+      ~(name : string) ~(programs : program list) =
     Or_error.Let_syntax.(
       let%bind aux = make_aux config redirects in
       let init = Act_litmus.Aux.init aux in
@@ -120,12 +116,12 @@ module Make (B : Runner_intf.Basic) :
         (Error.create_s
            [%message "Symbol can't be converted from string" ~symbol:sym])
 
-  let unstringify_symbols : string list -> B.Src_lang.Symbol.t list Or_error.t =
+  let unstringify_symbols :
+      string list -> B.Src_lang.Symbol.t list Or_error.t =
     Tx.Or_error.combine_map ~f:unstringify_symbol
 
   let output_litmus (outp : Out_channel.t) ~(in_name : string)
-      ~(program : B.Src_lang.Program.t)
-      ~(config : Config.t)
+      ~(program : B.Src_lang.Program.t) ~(config : Config.t)
       ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =
     let open Or_error.Let_syntax in

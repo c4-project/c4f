@@ -6,5 +6,5 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common base
-   base.caml sexplib sexplib0 fmt fpath travesty
-   core_kernel act.common act.utils act.plumbing act.sim))
+   base.caml sexplib sexplib0 fmt fpath travesty core_kernel act.common
+   act.utils act.plumbing act.sim))

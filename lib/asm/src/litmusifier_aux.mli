@@ -12,11 +12,12 @@
 open Base
 
 module Make (B : sig
-    module Constant : Act_language.Constant_intf.S
-    module Symbol : Act_language.Symbol_intf.S
-  end) : sig
-  val of_delitmus_aux : Act_delitmus.Aux.t
+  module Constant : Act_language.Constant_intf.S
+
+  module Symbol : Act_language.Symbol_intf.S
+end) : sig
+  val of_delitmus_aux :
+       Act_delitmus.Aux.t
     -> redirect_map:B.Symbol.R_map.t
     -> B.Constant.t Act_litmus.Aux.t Or_error.t
 end
- 

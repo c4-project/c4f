@@ -9,5 +9,4 @@
   (pps ppx_deriving.std ppx_jane))
  (libraries ppx_expect.config ppx_expect.common ppx_inline_test.config
    sexplib sexplib0 stdio base base.caml core_kernel fmt travesty
-   travesty.base_exts
-   act.common act.utils))
+   travesty.base_exts act.common act.utils))

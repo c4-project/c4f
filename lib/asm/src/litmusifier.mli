@@ -51,14 +51,9 @@ module Config : sig
 
   (** {3 Constructors} *)
 
-  val make :
-       ?format:Format.t
-    -> ?aux:Act_delitmus.Aux.t
-    -> unit
-    -> t
-  (** [make ?format ?aux ()] builds a litmusifier
-      config
-      with the given parameters. *)
+  val make : ?format:Format.t -> ?aux:Act_delitmus.Aux.t -> unit -> t
+  (** [make ?format ?aux ()] builds a litmusifier config with the given
+      parameters. *)
 
   val default : unit -> t
   (** [default ()] gets the default Litmus job configuration. *)

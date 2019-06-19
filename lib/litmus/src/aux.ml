@@ -19,43 +19,36 @@ type 'const t =
   ; postcondition: 'const Ast_base.Postcondition.t option }
 [@@deriving fields, make, equal, sexp]
 
-let empty (type k) : k t =
-  { locations = None
-  ; init = []
-  ; postcondition = None
-  }
+let empty (type k) : k t = {locations= None; init= []; postcondition= None}
 
-module BT : Travesty.Bi_traversable.S1_right
+module BT :
+  Travesty.Bi_traversable.S1_right
   with type 'const t := 'const t
-   and type left = Act_common.C_id.t
-  = Travesty.Bi_traversable.Make1_right (struct
-    type nonrec 'const t = 'const t
-    type left = Act_common.C_id.t
+   and type left = Act_common.C_id.t =
+Travesty.Bi_traversable.Make1_right (struct
+  type nonrec 'const t = 'const t
 
-    module On_monad (M : Monad.S) = struct
-      module MA = Travesty_base_exts.Alist.On_monad (M)
+  type left = Act_common.C_id.t
 
-      module PostO =
-        Travesty.Bi_traversable.Chain_Bi1_right_Traverse1
-          (Ast_base.Postcondition.On_c_identifiers)
-          (Travesty_base_exts.Option)
-      module MP = PostO.On_monad (M)
+  module On_monad (M : Monad.S) = struct
+    module MA = Travesty_base_exts.Alist.On_monad (M)
+    module PostO =
+      Travesty.Bi_traversable.Chain_Bi1_right_Traverse1
+        (Ast_base.Postcondition.On_c_identifiers)
+        (Travesty_base_exts.Option)
+    module MP = PostO.On_monad (M)
+    module Mx = Travesty.Monad_exts.Extend (M)
 
-      module Mx = Travesty.Monad_exts.Extend (M)
+    let bi_map_m (type a b) (aux : a t) ~(left : Ac.C_id.t -> Ac.C_id.t M.t)
+        ~(right : a -> b M.t) : b t M.t =
+      let locations = locations aux in
+      M.Let_syntax.(
+        let%map init = MA.bi_map_m (init aux) ~left ~right
+        and postcondition = MP.bi_map_m (postcondition aux) ~left ~right in
+        make ~init ?locations ?postcondition ())
+  end
+end)
 
-      let bi_map_m (type a b) (aux : a t)
-          ~(left : Ac.C_id.t -> Ac.C_id.t M.t)
-          ~(right : a -> b M.t)
-          : b t M.t =
-        let locations = locations aux in
-        M.Let_syntax.(
-          let%map init = MA.bi_map_m (init aux) ~left ~right
-          and postcondition = MP.bi_map_m (postcondition aux) ~left ~right in
-          make ~init ?locations ?postcondition ()
-        )
-
-    end
-  end)
 include BT
 
 (* We can't easily derive yojson for the whole thing, since the

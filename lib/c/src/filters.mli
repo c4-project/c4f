@@ -33,8 +33,7 @@ open Act_common
 
 (** The operation to use in the filter. *)
 type mode =
-  | Print
-      (** Pretty-print the result (useful for debugging). *)
+  | Print  (** Pretty-print the result (useful for debugging). *)
   | Fuzz of {seed: int option; o: Output.t; config: Act_config.Fuzz.t}
       (** If the input is a C/Litmus file, fuzz it and return a mutated
           version. *)

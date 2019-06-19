@@ -31,10 +31,9 @@ module Config = struct
     let default = Assembly
   end
 
-  type t = {format: Format.t [@default Format.default]
-           
-    ; aux: Act_delitmus.Aux.t [@default Act_delitmus.Aux.empty]
-           }
+  type t =
+    { format: Format.t [@default Format.default]
+    ; aux: Act_delitmus.Aux.t [@default Act_delitmus.Aux.empty] }
   [@@deriving equal, fields, make]
 
   let default : t = make ()
@@ -194,8 +193,8 @@ struct
   let explain_san_programs : San.Output.Program.t list -> t list =
     List.map ~f:explain_san_program
 
-(* TODO(@MattWindsor91): this is temporary until we can decouple
-   sanitisation and litmusification. *)
+  (* TODO(@MattWindsor91): this is temporary until we can decouple
+     sanitisation and litmusification. *)
   let unstringify_symbol (sym : string) : B.Src_lang.Symbol.t Or_error.t =
     Result.of_option
       (B.Src_lang.Symbol.of_string_opt sym)
@@ -203,12 +202,13 @@ struct
         (Error.create_s
            [%message "Symbol can't be converted from string" ~symbol:sym])
 
-  let unstringify_symbols : string list -> B.Src_lang.Symbol.t list Or_error.t =
+  let unstringify_symbols :
+      string list -> B.Src_lang.Symbol.t list Or_error.t =
     Tx.Or_error.combine_map ~f:unstringify_symbol
 
   let run_explanation (outp : Stdio.Out_channel.t) ~(in_name : string)
-      ~(program : LS.Program.t)
-      ~(config : config) ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
+      ~(program : LS.Program.t) ~(config : config)
+      ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =
     let open Or_error.Let_syntax in
     let aux = Config.aux config in

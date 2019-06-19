@@ -51,12 +51,17 @@ module Pred_elt : sig
 
   (** Bi-traversing monadically over all identifiers in a predicate element
       on the left, and all constants on the right. *)
-  include Travesty.Bi_traversable.S1_right with type 'c t := 'c t and type left = Id.t
+  include
+    Travesty.Bi_traversable.S1_right
+    with type 'c t := 'c t
+     and type left = Id.t
 
-  (** Bi-traversing monadically over all C identifiers in a predicate
-      on the left, and all constants on the right. *)
+  (** Bi-traversing monadically over all C identifiers in a predicate on the
+      left, and all constants on the right. *)
   module On_c_identifiers :
-    Travesty.Bi_traversable.S1_right with type 'c t = 'c t and type left = Act_common.C_id.t
+    Travesty.Bi_traversable.S1_right
+    with type 'c t = 'c t
+     and type left = Act_common.C_id.t
 end
 
 (** Directly-parametrised AST for predicates. *)
@@ -82,14 +87,19 @@ module Pred : sig
 
   (** {3 Traversals} *)
 
-  (** Bi-traversing monadically over all identifiers in a predicate
-      on the left, and all constants on the right. *)
-  include Travesty.Bi_traversable.S1_right with type 'c t := 'c t and type left = Id.t
+  (** Bi-traversing monadically over all identifiers in a predicate on the
+      left, and all constants on the right. *)
+  include
+    Travesty.Bi_traversable.S1_right
+    with type 'c t := 'c t
+     and type left = Id.t
 
-  (** Bi-traversing monadically over all C identifiers in a predicate
-      on the left, and all constants on the right. *)
+  (** Bi-traversing monadically over all C identifiers in a predicate on the
+      left, and all constants on the right. *)
   module On_c_identifiers :
-    Travesty.Bi_traversable.S1_right with type 'c t = 'c t and type left = Act_common.C_id.t
+    Travesty.Bi_traversable.S1_right
+    with type 'c t = 'c t
+     and type left = Act_common.C_id.t
 end
 
 (** Directly-parametrised AST for postconditions. *)
@@ -107,10 +117,15 @@ module Postcondition : sig
 
   (** Bi-traversing monadically over all Litmus identifiers in a predicate
       on the left, and all constants on the right. *)
-  include Travesty.Bi_traversable.S1_right with type 'c t := 'c t and type left = Id.t
+  include
+    Travesty.Bi_traversable.S1_right
+    with type 'c t := 'c t
+     and type left = Id.t
 
-  (** Bi-traversing monadically over all C identifiers in a predicate
-      on the left, and all constants on the right. *)
+  (** Bi-traversing monadically over all C identifiers in a predicate on the
+      left, and all constants on the right. *)
   module On_c_identifiers :
-    Travesty.Bi_traversable.S1_right with type 'c t = 'c t and type left = Act_common.C_id.t
+    Travesty.Bi_traversable.S1_right
+    with type 'c t = 'c t
+     and type left = Act_common.C_id.t
 end

@@ -59,20 +59,23 @@ Make (struct
   let load_from_string (s : string) : t Or_error.t =
     wrap "string" (fun () -> Sexp.of_string_conv_exn s B.t_of_sexp)
 
-  let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) : t Or_error.t =
+  let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) :
+      t Or_error.t =
     wrap path (fun () -> B.t_of_sexp (Sexp.input_sexp ic))
 end)
 
-module Of_jsonable (B: Loadable_types.Of_jsonable) : Loadable_types.S with type t = B.t =
-  Make (struct
-    type t = B.t
+module Of_jsonable (B : Loadable_types.Of_jsonable) :
+  Loadable_types.S with type t = B.t = Make (struct
+  type t = B.t
 
-    let load_from_string (s : string) : t Or_error.t =
-      wrap "string" (fun () -> B.of_yojson_exn (Yojson.Safe.from_string s))
+  let load_from_string (s : string) : t Or_error.t =
+    wrap "string" (fun () -> B.of_yojson_exn (Yojson.Safe.from_string s))
 
-    let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) : t Or_error.t =
-      wrap path (fun () -> B.of_yojson_exn (Yojson.Safe.from_channel ~fname:path ic))
-  end)
+  let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) :
+      t Or_error.t =
+    wrap path (fun () ->
+        B.of_yojson_exn (Yojson.Safe.from_channel ~fname:path ic) )
+end)
 
 module To_filter (L : Loadable_types.S) :
   Filter_types.S with type aux_i = unit and type aux_o = L.t =

@@ -8,5 +8,5 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries ppx_inline_test.config ppx_expect.common ppx_expect.config stdio
-   base base.caml core_kernel act.common
-   act.plumbing act.sim act.sim_herdtools_common act.utils))
+   base base.caml core_kernel act.common act.plumbing act.sim
+   act.sim_herdtools_common act.utils))

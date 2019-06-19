@@ -105,7 +105,8 @@ module type S_standard_asm = sig
   include S_standard_with_files with type t := t
 
   val aux_file : t -> string option
-  (** [aux_file args] gets the path of a litmus aux file, if user supplied one. *)
+  (** [aux_file args] gets the path of a litmus aux file, if user supplied
+      one. *)
 
   val target : t -> Asm_target.t
   (** [target args] gets either a defined assembly architecture, or a

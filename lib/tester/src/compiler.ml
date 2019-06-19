@@ -88,12 +88,9 @@ module Make (B : Basic) : S = struct
         C.compile Act_compiler.Mode.Assembly ~infile:(P_file.c_file fs)
           ~outfile:(P_file.asm_file fs) )
 
-  let litmusify_single (fs : Pathset.File.t)
-      (aux : Act_delitmus.Aux.t) =
+  let litmusify_single (fs : Pathset.File.t) (aux : Act_delitmus.Aux.t) =
     Or_error.Let_syntax.(
-      let config =
-        Act_asm.Litmusifier.Config.make ~aux ()
-      in
+      let config = Act_asm.Litmusifier.Config.make ~aux () in
       let%map output =
         Litmusify.Filter.run
           (Act_asm.Job.make ~passes:sanitiser_passes ~config ())
@@ -167,11 +164,11 @@ module Make (B : Basic) : S = struct
             delitmusify fs ) )
       ~stage:"delitmus" ~in_file:(P_file.name fs) ~id
 
-  let aux_from_cvars (var_map : Act_delitmus.Var_map.t) :
-      Act_delitmus.Aux.t =
+  let aux_from_cvars (var_map : Act_delitmus.Var_map.t) : Act_delitmus.Aux.t
+      =
     (* TODO(@MattWindsor91): wire up everything else here *)
-    Act_delitmus.Aux.make ~litmus_aux:(Act_litmus.Aux.make ())
-      ~var_map ~num_threads:0 ()
+    Act_delitmus.Aux.make ~litmus_aux:(Act_litmus.Aux.make ()) ~var_map
+      ~num_threads:0 ()
 
   let run_single_from_pathset_file (c_sims : Act_sim.Bulk.File_map.t)
       (fs : Pathset.File.t) : (Analysis.Herd.t * TS.t) Or_error.t =

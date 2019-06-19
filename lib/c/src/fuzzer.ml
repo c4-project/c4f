@@ -275,7 +275,8 @@ let existing_globals (test : Mini_litmus.Ast.Validated.t) :
 
 let to_locals : Set.M(Ac.Litmus_id).t -> Set.M(Ac.C_id).t =
   (* TODO(@MattWindsor91): do we need to keep the thread IDs? *)
-  Set.filter_map (module Ac.C_id)
+  Set.filter_map
+    (module Ac.C_id)
     ~f:(Fn.compose (Option.map ~f:snd) Ac.Litmus_id.as_local)
 
 let make_initial_state (o : Ac.Output.t)

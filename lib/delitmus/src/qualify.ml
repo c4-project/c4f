@@ -19,8 +19,7 @@ open Base
 let litmus_id (id : Act_common.Litmus_id.t) : Act_common.C_id.t =
   Act_common.Litmus_id.to_memalloy_id id
 
-let local (t : int) (id : Act_c.Mini.Identifier.t) : Act_common.C_id.t
-    =
+let local (t : int) (id : Act_c.Mini.Identifier.t) : Act_common.C_id.t =
   litmus_id (Act_common.Litmus_id.local t id)
 
 let locals_in_statement (module T : Thread.S) :
@@ -33,4 +32,5 @@ let postcondition
     Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t =
   (* TODO(@MattWindsor91): perhaps don't qualify things we've already
    * qualified. *)
-  Act_litmus.Ast_base.Postcondition.map_left pc ~f:(Fn.compose Act_common.Litmus_id.global litmus_id)
+  Act_litmus.Ast_base.Postcondition.map_left pc
+    ~f:(Fn.compose Act_common.Litmus_id.global litmus_id)
