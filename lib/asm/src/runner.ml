@@ -34,16 +34,6 @@ module Make (R : Runner_intf.Runnable) :
       (R.Program.load_from_isrc isrc)
       "Error while parsing assembly" iname String.sexp_of_t
 
-  let unstringify_symbol (sym : string) : R.Symbol.t Or_error.t =
-    Result.of_option
-      (R.Symbol.of_string_opt sym)
-      ~error:
-        (Error.create_s
-           [%message "Symbol can't be converted from string" ~symbol:sym])
-
-  let unstringify_symbols : string list -> R.Symbol.t list Or_error.t =
-    Tx.Or_error.combine_map ~f:unstringify_symbol
-
   let in_source_to_basename (is : Plumbing.Input.t) : string =
     is |> Plumbing.Input.to_file
     |> Option.value_map
@@ -66,11 +56,10 @@ module Make (R : Runner_intf.Runnable) :
       let in_name = in_source_to_basename input in
       Or_error.Let_syntax.(
         let%bind program = parse input in
-        let%bind symbols = unstringify_symbols (Job.symbols aux) in
         let config =
           Tx.Option.value_f (Job.config aux) ~default_f:R.default_config
         in
         let passes = Job.passes aux in
-        R.run ~in_name ~program ~symbols ~config ~passes oc)
+        R.run ~in_name ~program ~config ~passes oc)
   end)
 end

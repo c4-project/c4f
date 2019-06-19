@@ -20,21 +20,7 @@ locations [x; y]
 ```
 X86 gcc_elf_o0_stackchk
 
-{
-    t0gGSd200 = 0;
-    t0gGSd201 = 0;
-    t0r0 = 0;
-    t0sZM12 = 0;
-    t0sZM16 = 0;
-    t0sZM20 = 0;
-    t1gGSd200 = 0;
-    t1gGSd201 = 0;
-    t1sZM12 = 0;
-    t1sZM16 = 0;
-    t1sZM20 = 0;
-    x = 0;
-    y = 0;
-}
+{ x = 0; y = 0; }
 
 P0                    | P1                    ;
 movl EAX, [t0gGSd200] | movl EAX, [t1gGSd200] ;
@@ -51,15 +37,14 @@ movl [t0r0], EAX      | mfence                ;
 movl EAX, [t0sZM12]   | movl EAX, [t1sZM12]   ;
 xor EAX, [t0gGSd201]  | xor EAX, [t1gGSd201]  ;
 
-locations [t0gGSd200; t0gGSd201; t0r0; t0sZM12; t0sZM16; t0sZM20; t1gGSd200;
-           t1gGSd201; t1sZM12; t1sZM16; t1sZM20; x; y]
+locations [x; y]
 ```
 ## gcc_macho_o0_deref_cmpxchg.s
 
 ```
 X86 gcc_macho_o0_deref_cmpxchg
 
-{ t0r0 = 0; t0sZM4 = 0; t0sZM8 = 0; x = 0; }
+{ x = 0; y = 0; }
 
 P0                      | P1         ;
 movl [t0r0], 0          | mov [x], 1 ;
@@ -77,14 +62,14 @@ jne L3                  |            ;
 movl [t0r0], EDX        |            ;
 L3:                     |            ;
 
-locations [t0r0; t0sZM4; t0sZM8; x]
+locations [x; y]
 ```
 ## gcc_macho_o0_deref_write.s
 
 ```
 X86 gcc_macho_o0_deref_write
 
-{ t0r0 = 0; t0sZM8 = 0; t1r0 = 0; x = 0; y = 0; }
+{ x = 0; y = 0; }
 
 P0                 | P1               ;
 mov EAX, [y]       | movl EAX, [x]    ;
@@ -97,14 +82,14 @@ jne L3             | L6:              ;
 movl [x], 1        |                  ;
 L3:                |                  ;
 
-locations [t0r0; t0sZM8; t1r0; x; y]
+locations [x; y]
 ```
 ## gcc_macho_o0_immediate_heap.s
 
 ```
 X86 gcc_macho_o0_immediate_heap
 
-{ t0r0 = 0; t0sZM12 = 0; x = 0; y = 0; }
+{ x = 0; y = 0; }
 
 P0                  | P1         ;
 mov EAX, [x]        | mov [y], 2 ;
@@ -113,14 +98,14 @@ movl EAX, [t0sZM12] |            ;
 movl [t0r0], EAX    |            ;
 mov [y], 1          |            ;
 
-locations [t0r0; t0sZM12; x; y]
+locations [x; y]
 ```
 ## gcc_macho_o0_moves.s
 
 ```
 X86 gcc_macho_o0_moves
 
-{ t0r0 = 0; t0sZM4 = 0; t1r0 = 0; t1sZM4 = 0; x = 0; y = 0; }
+{ x = 0; y = 0; }
 
 P0                 | P1                 ;
 movl EAX, [y]      | movl EAX, [x]      ;
@@ -134,7 +119,7 @@ movl [x], 1        | movl [y], EAX      ;
 L3:                | mfence             ;
                    | L6:                ;
 
-locations [t0r0; t0sZM4; t1r0; t1sZM4; x; y]
+locations [x; y]
 ```
 
 Ran 6 test(s).

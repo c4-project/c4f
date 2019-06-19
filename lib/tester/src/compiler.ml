@@ -91,9 +91,12 @@ module Make (B : Basic) : S = struct
   let litmusify_single (fs : Pathset.File.t)
       (aux : Act_delitmus.Aux.t) =
     Or_error.Let_syntax.(
+      let config =
+        Act_asm.Litmusifier.Config.make ~aux ()
+      in
       let%map output =
         Litmusify.Filter.run
-          (Act_asm.Job.make ~passes:sanitiser_passes ~aux ())
+          (Act_asm.Job.make ~passes:sanitiser_passes ~config ())
           (Plumbing.Input.of_fpath (P_file.asm_file fs))
           (Plumbing.Output.of_fpath (P_file.asm_litmus_file fs))
       in

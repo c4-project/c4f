@@ -77,7 +77,6 @@ module type Runnable = sig
        Stdio.Out_channel.t
     -> in_name:string
     -> program:Program.t
-    -> symbols:Symbol.t list
     -> config:cfg
     -> passes:Set.M(Act_sanitiser.Pass_group).t
     -> Job.Output.t Or_error.t

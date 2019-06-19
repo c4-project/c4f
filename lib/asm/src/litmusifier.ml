@@ -113,12 +113,25 @@ module Make (B : Runner_intf.Basic) :
   let collate_warnings (programs : Sanitiser.Output.Program.t list) =
     List.concat_map programs ~f:Sanitiser.Output.Program.warnings
 
+  let unstringify_symbol (sym : string) : B.Src_lang.Symbol.t Or_error.t =
+    Result.of_option
+      (B.Src_lang.Symbol.of_string_opt sym)
+      ~error:
+        (Error.create_s
+           [%message "Symbol can't be converted from string" ~symbol:sym])
+
+  let unstringify_symbols : string list -> B.Src_lang.Symbol.t list Or_error.t =
+    Tx.Or_error.combine_map ~f:unstringify_symbol
+
   let output_litmus (outp : Out_channel.t) ~(in_name : string)
       ~(program : B.Src_lang.Program.t)
-      ~(symbols : B.Src_lang.Symbol.t list) ~(config : config)
+      ~(config : Config.t)
       ~(passes : Set.M(Act_sanitiser.Pass_group).t) :
       Job.Output.t Or_error.t =
     let open Or_error.Let_syntax in
+    let aux = Config.aux config in
+    let symbol_strs = Act_delitmus.Aux.symbols aux in
+    let%bind symbols = unstringify_symbols symbol_strs in
     let%bind o = Sanitiser.sanitise ~passes ~symbols program in
     let redirects = Sanitiser.Output.redirects o in
     let programs = Sanitiser.Output.programs o in

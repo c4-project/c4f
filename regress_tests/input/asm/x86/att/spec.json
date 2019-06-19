@@ -1,0 +1,80 @@
+{
+	"clang_macho_o3_xchg.s":
+	{
+		"num_threads": 2,
+		"litmus_aux": {
+			"locations": [ "x", "y" ],
+			"init": { "x": 0, "y": 0 }
+		},
+		"var_map" : {
+			"x": "x",
+			"y": "y"
+		}
+	},
+	"gcc_elf_o0_stackchk.s":
+	{
+		"num_threads": 2,
+		"litmus_aux": {
+			"locations": [ "x", "y" ],
+			"init": { "x": 0, "y": 0 }
+		},
+		"var_map" : {
+			"x": "x",
+			"y": "y",
+			"0:r0": "t0r0"
+		}
+	},
+	"gcc_macho_o0_deref_cmpxchg.s":
+	{
+		"num_threads": 2,
+		"litmus_aux": {
+			"locations": [ "x", "y" ],
+			"init": { "x": 0, "y": 0 }
+		},
+		"var_map" : {
+			"x": "x",
+			"0:r0": "t0r0"
+		}
+	},
+	"gcc_macho_o0_deref_write.s":
+	{
+		"num_threads": 2,
+		"litmus_aux": {
+			"locations": [ "x", "y" ],
+			"init": { "x": 0, "y": 0 }
+		},
+		"var_map" : {
+			"x": "x",
+			"y": "y",
+			"0:r0": "t0r0",
+			"1:r0": "t1r0"
+		}
+	},
+	"gcc_macho_o0_immediate_heap.s":
+	{
+		"num_threads": 2,
+		"litmus_aux": {
+			"locations": [ "x", "y" ],
+			"init": { "x": 0, "y": 0 }
+		},
+		"var_map" : {
+			"x": "x",
+			"y": "y",
+			"0:r0": "t0r0"
+		}
+	},
+	"gcc_macho_o0_moves.s":
+	{
+		"num_threads": 2,
+		"litmus_aux": {
+			"locations": [ "x", "y" ],
+			"init": { "x": 0, "y": 0 }
+		},
+		"var_map" : {
+			"x": "x",
+			"y": "y",
+			"0:r0": "t0r0",
+			"1:r0": "t1r0"
+		}
+	}
+}
