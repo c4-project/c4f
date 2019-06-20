@@ -25,11 +25,20 @@ open Core_kernel
 module Ac = Act_common
 
 type t = Lvalue of Mini_lvalue.t | Ref of t
-[@@deriving sexp, variants, eq]
+[@@deriving sexp, variants, equal]
 
 let of_variable (v : Ac.C_id.t) : t = Lvalue (Mini_lvalue.variable v)
 
 let of_variable_ref (v : Ac.C_id.t) : t = Ref (of_variable v)
+
+let ref_lvalue (l : Mini_lvalue.t) : t =
+  match Mini_lvalue.un_deref l with
+  | Ok l' -> lvalue l'
+  | Error _ -> ref (lvalue l)
+
+let ref_normal : t -> t = function
+  | Lvalue k -> ref_lvalue k
+  | x -> ref x
 
 let rec reduce (addr : t) ~(lvalue : Mini_lvalue.t -> 'a) ~(ref : 'a -> 'a)
     : 'a =
@@ -38,6 +47,13 @@ let rec reduce (addr : t) ~(lvalue : Mini_lvalue.t -> 'a) ~(ref : 'a -> 'a)
       lvalue lv
   | Ref rest ->
       ref (reduce rest ~lvalue ~ref)
+
+let underlying_lvalue = reduce ~lvalue:Fn.id ~ref:Fn.id
+
+let ref_depth = reduce ~lvalue:(Fn.const 0) ~ref:Int.succ
+
+let normalise (addr : t) : t =
+  Fn.apply_n_times ~n:(ref_depth addr) ref_normal (lvalue (underlying_lvalue addr))
 
 module On_lvalues :
   Travesty.Traversable.S0 with type t = t and type Elt.t = Mini_lvalue.t =
@@ -65,13 +81,13 @@ end
 let%expect_test "Type-checking a valid normal variable lvalue" =
   let module T = Type_check ((val Lazy.force Mini_env.test_env_mod)) in
   let result = T.type_of (of_variable (Ac.C_id.of_string "foo")) in
-  Sexp.output_hum stdout [%sexp (result : Mini_type.t Or_error.t)] ;
+  Stdio.print_s [%sexp (result : Mini_type.t Or_error.t)] ;
   [%expect {| (Ok (Normal int)) |}]
 
 let%expect_test "Type-checking an valid reference lvalue" =
   let module T = Type_check ((val Lazy.force Mini_env.test_env_mod)) in
   let result = T.type_of (of_variable_ref (Ac.C_id.of_string "foo")) in
-  Sexp.output_hum stdout [%sexp (result : Mini_type.t Or_error.t)] ;
+  Stdio.print_s [%sexp (result : Mini_type.t Or_error.t)] ;
   [%expect {| (Ok (Pointer_to int)) |}]
 
 let anonymise = function Lvalue v -> `A v | Ref d -> `B d

@@ -38,6 +38,19 @@ val lvalue : Mini_lvalue.t -> t
 val ref : t -> t
 (** [ref t] constructs a &-reference to [t]. *)
 
+val ref_lvalue : Mini_lvalue.t -> t
+(** [ref_lvalue lv] constructs a &-reference to [lv].  If [lv] is already a
+    dereference, it strips one layer of dereferencing instead of creating a
+    new layer of indirection. *)
+
+val ref_normal : t -> t
+(** [ref_normal t] constructs a &-reference to [t], but uses
+    {{!ref_lvalue} ref_lvalue} if [t] is an lvalue. *)
+
+val normalise : t -> t
+(** [normalise addr] reconstructs [addr], using {{!ref_normal} ref_normal} for every layer
+    of indirection. *)
+
 val of_variable : Act_common.C_id.t -> t
 (** [of_variable v] lifts the variable identifier [v] directly to an
     address. *)
