@@ -90,19 +90,19 @@ let map_subject_states (states : State.t list)
   |> List.map ~f:(State.map ~location_map ~value_map)
   |> Or_error.combine_errors
 
-let domain_error (one_domain : A.Litmus_id.Set.t)
-    (another_domain : A.Litmus_id.Set.t) : unit Or_error.t =
+let domain_error (one_domain : Set.M(A.Litmus_id).t)
+    (another_domain : Set.M(A.Litmus_id).t) : unit Or_error.t =
   Or_error.error_s
     [%message
       "Domains of states are inconsistent: for example,"
-        ~one_domain:(one_domain : A.Litmus_id.Set.t)
-        ~another_domain:(another_domain : A.Litmus_id.Set.t)]
+        ~one_domain:(one_domain : Set.M(A.Litmus_id).t)
+        ~another_domain:(another_domain : Set.M(A.Litmus_id).t)]
 
-let check_domain_consistency (xs_domains : A.Litmus_id.Set.t Sequence.t)
-    (x_domain : A.Litmus_id.Set.t) : unit Or_error.t =
+let check_domain_consistency (xs_domains : Set.M(A.Litmus_id).t Sequence.t)
+    (x_domain : Set.M(A.Litmus_id).t) : unit Or_error.t =
   let inconsistencies : unit Or_error.t Sequence.t =
     xs_domains
-    |> Sequence.filter ~f:(Fn.non ([%equal: A.Litmus_id.Set.t] x_domain))
+    |> Sequence.filter ~f:(Fn.non (Set.equal x_domain))
     |> Sequence.map ~f:(domain_error x_domain)
   in
   Or_error.combine_errors_unit (Sequence.to_list inconsistencies)
@@ -111,7 +111,7 @@ let%test_module "check_domain_consistency expects tests" =
   ( module struct
     let test_x_domain =
       A.Litmus_id.(
-        Set.of_list [of_string "0:foo"; of_string "1:bar"; of_string "baz"])
+        Set.of_list (module A.Litmus_id) [of_string "0:foo"; of_string "1:bar"; of_string "baz"])
 
     let%expect_test "no other domains" =
       Stdio.print_s
@@ -131,7 +131,7 @@ let%test_module "check_domain_consistency expects tests" =
 
     let%expect_test "inconsistent domains" =
       let doms =
-        Sequence.singleton A.Litmus_id.(Set.of_list [of_string "0:foo"])
+        Sequence.singleton A.Litmus_id.(Set.of_list (module A.Litmus_id) [of_string "0:foo"])
       in
       Stdio.print_s
         [%sexp
@@ -143,11 +143,11 @@ let%test_module "check_domain_consistency expects tests" =
         (one_domain (baz 0:foo 1:bar)) (another_domain (0:foo)))) |}]
   end )
 
-let get_domain : State.t list -> A.Litmus_id.Set.t Or_error.t = function
+let get_domain : State.t list -> Set.M(A.Litmus_id).t Or_error.t = function
   | [] ->
-      Or_error.return A.Litmus_id.Set.empty
+      Or_error.return (Set.empty (module A.Litmus_id))
   | x :: xs ->
-      let dom s = A.Litmus_id.Set.of_list (State.bound s) in
+      let dom s = Set.of_list (module A.Litmus_id) (State.bound s) in
       let xs_domains = Sequence.map ~f:dom (Sequence.of_list xs) in
       Tx.Or_error.tee_m (dom x) ~f:(check_domain_consistency xs_domains)
 

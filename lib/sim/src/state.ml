@@ -26,7 +26,7 @@ open Act_common
 open Act_utils
 
 module M = struct
-  type t = string Litmus_id.Map.t [@@deriving sexp, compare]
+  type t = string Map.M(Litmus_id).t [@@deriving sexp, compare]
 end
 
 include M
@@ -34,28 +34,30 @@ include Comparable.Make (M)
 
 module Q : My_quickcheck.S_with_sexp with type t := t = struct
   include M
+  open Base_quickcheck
 
-  let quickcheck_generator =
-    Litmus_id.Map.quickcheck_generator [%quickcheck.generator: Litmus_id.t]
+  let quickcheck_generator : t Generator.t =
+    Generator.map_t_m (module Litmus_id)
+      [%quickcheck.generator: Litmus_id.t]
       Base_quickcheck.quickcheck_generator_string
 
-  let quickcheck_observer =
-    Litmus_id.Map.quickcheck_observer [%quickcheck.observer: Litmus_id.t]
+  let quickcheck_observer : t Observer.t =
+    Observer.map_t [%quickcheck.observer: Litmus_id.t]
       Base_quickcheck.quickcheck_observer_string
 
-  let quickcheck_shrinker =
-    Litmus_id.Map.quickcheck_shrinker [%quickcheck.shrinker: Litmus_id.t]
+  let quickcheck_shrinker : t Shrinker.t =
+    Shrinker.map_t [%quickcheck.shrinker: Litmus_id.t]
       Base_quickcheck.quickcheck_shrinker_string
 end
 
 include Q
 
-let of_alist = Litmus_id.Map.of_alist_or_error
+let of_alist = Map.of_alist_or_error (module Litmus_id)
 
-let bound = Litmus_id.Map.keys
+let bound : t -> Litmus_id.t list = Map.keys
 
-let restrict (state : t) ~(domain : Litmus_id.Set.t) : t =
-  Litmus_id.Map.filter_keys state ~f:(Litmus_id.Set.mem domain)
+let restrict (state : t) ~(domain : Set.M(Litmus_id).t) : t =
+  Map.filter_keys state ~f:(Set.mem domain)
 
 let map ~(location_map : Litmus_id.t -> Litmus_id.t option Or_error.t)
     ~(value_map : string -> string Or_error.t) (state : t) : t Or_error.t =
@@ -67,9 +69,9 @@ let map ~(location_map : Litmus_id.t -> Litmus_id.t option Or_error.t)
     let%map k' = ko in
     (k', v')
   in
-  let alist = Litmus_id.Map.to_alist state in
+  let alist = Map.to_alist state in
   (* First, fail the map if there were any errors... *)
   let%bind mapped = Or_error.combine_errors (List.map ~f alist) in
   (* Next, remove any items with no key mapping... *)
   let alist' = List.filter_opt mapped in
-  Litmus_id.Map.of_alist_or_error alist'
+  Map.of_alist_or_error (module Litmus_id) alist'

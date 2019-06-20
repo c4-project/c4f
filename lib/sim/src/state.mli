@@ -50,6 +50,6 @@ val of_alist : (Litmus_id.t, string) List.Assoc.t -> t Or_error.t
 val bound : t -> Litmus_id.t list
 (** [bound t] gets the list of all bound names in [t]. *)
 
-val restrict : t -> domain:Litmus_id.Set.t -> t
+val restrict : t -> domain:Set.M(Litmus_id).t -> t
 (** [restrict t ~domain] removes all mappings in [t] that don't reference
     identifiers in [domain]. *)
