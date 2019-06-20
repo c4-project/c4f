@@ -34,7 +34,15 @@ module M_str = struct
   type t =
     | Local of Au.My_quickcheck.Small_non_negative_int.t * C_id.t
     | Global of C_id.t
-  [@@deriving compare, equal, variants, quickcheck]
+  [@@deriving equal, variants, quickcheck]
+
+  let compare (x : t) (y : t) =
+    match x, y with
+    | Global _, Local _ -> -1
+    | Local _, Global _ -> 1
+    | Global x, Global y -> [%compare: C_id.t] x y
+    | Local (xi, x), Local (yi, y) ->
+      [%compare: int * C_id.t] (xi, x) (yi, y)
 
   let to_string : t -> string = function
     | Local (t, id) ->
@@ -84,23 +92,6 @@ Travesty.Traversable.Make0 (struct
   end
 end)
 
-let%expect_test "try_parse: example local identifier" =
-  Stdio.print_s [%sexp (try_parse "0:r1" : t Or_error.t)] ;
-  [%expect {| (Ok 0:r1) |}]
-
-let%expect_test "try_parse: example global identifier" =
-  Stdio.print_s [%sexp (try_parse "x" : t Or_error.t)] ;
-  [%expect {| (Ok x) |}]
-
-let%expect_test "try_parse: example invalid identifier" =
-  Stdio.print_s [%sexp (try_parse "0:1" : t Or_error.t)] ;
-  [%expect
-    {|
-    (Error
-     ("validation failed"
-      (1 ("validation errors" (("fst.char '1'" "Invalid initial character.")))
-       lib/common/src/c_id.ml:62:13))) |}]
-
 let global_of_string (str : string) : t Or_error.t =
   Or_error.(str |> C_id.create >>| global)
 
@@ -123,38 +114,11 @@ let as_global : t -> C_id.t option = function
 let to_memalloy_id_inner (t : int) (id : C_id.t) : string =
   Printf.sprintf "t%d%s" t (C_id.to_string id)
 
-let%test_unit "to_memalloy_id_inner produces valid identifiers" =
-  Base_quickcheck.Test.run_exn
-    ( module struct
-      type t = Au.My_quickcheck.Small_non_negative_int.t * C_id.t
-      [@@deriving sexp, quickcheck]
-    end )
-    ~f:(fun (t, id) ->
-      [%test_pred: C_id.t Or_error.t] ~here:[[%here]] Or_error.is_ok
-        (C_id.create (to_memalloy_id_inner t id)) )
-
 let to_memalloy_id : t -> C_id.t = function
   | Local (t, id) ->
       C_id.of_string (to_memalloy_id_inner t id)
   | Global id ->
       id
-
-let%test_module "Id tests" =
-  ( module struct
-    let%test_unit "to_string->of_string is identity" =
-      Base_quickcheck.Test.run_exn
-        (module M_sexp)
-        ~f:(fun ident ->
-          [%test_eq: t] ~here:[[%here]] ident (of_string (to_string ident))
-          )
-
-    let%test_unit "to_memalloy_id is identity on globals" =
-      Base_quickcheck.Test.run_exn
-        (module C_id)
-        ~f:(fun ident ->
-          [%test_eq: C_id.t] ~here:[[%here]] ident
-            (to_memalloy_id (Global ident)) )
-  end )
 
 let pp : t Fmt.t =
  fun f -> function
@@ -209,3 +173,8 @@ module Assoc = struct
     |> List.map ~f:(try_parse_pair ~value_parser)
     |> Or_error.combine_errors
 end
+
+let is_in_scope (id: t) ~(from:int) : bool =
+  match id with
+  | Global _ -> true
+  | Local (tid, _) -> Int.equal tid from

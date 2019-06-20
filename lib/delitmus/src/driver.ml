@@ -32,7 +32,7 @@ struct
       (id : Ac.Litmus_id.t)
       : (Ac.C_id.t * C.Mini.Initialiser.t) Or_error.t =
     Or_error.Let_syntax.(
-      let%bind cid = Context.lookup_global ~id ctx in
+      let%bind cid = Context.lookup_and_require_global ~id ctx in
       let value = Context.lookup_initial_value ~id ctx in
       let%map ty = Context.lookup_type ~id ctx in
       (cid, C.Mini.Initialiser.make ~ty ?value ())
@@ -40,8 +40,8 @@ struct
 
   let make_globals (ctx : Context.t)
       : C.Mini_initialiser.t C.Mini_intf.id_assoc Or_error.t =
-    let globals = Var_map.globally_mapped_litmus_ids (Context.var_map ctx) in
-    globals
+    ctx
+    |> Context.globally_mapped_litmus_ids
     |> Set.to_list
     |> Tx.Or_error.combine_map ~f:(make_global ctx)
 
@@ -71,14 +71,14 @@ struct
     in
     Aux.make ~litmus_aux ~var_map ~num_threads ()
 
-  let make_program (input : C.Mini_litmus.Ast.Validated.t) (ctx : Context.t) :
+  let make_program (input : C.Mini_litmus.Ast.Validated.t) (context : Context.t) :
       C.Mini.Program.t Or_error.t =
     let raw_functions = C.Mini_litmus.Ast.Validated.programs input in
     Or_error.Let_syntax.(
       let%bind functions =
-        B.Function.rewrite_all raw_functions ~var_map:(Context.var_map ctx)
+        B.Function.rewrite_all raw_functions ~context
       in
-      let%map globals = make_globals ctx in
+      let%map globals = make_globals context in
       C.Mini.Program.make ~globals ~functions)
 
   let parameter_list_equal :

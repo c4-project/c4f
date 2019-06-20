@@ -71,6 +71,13 @@ val to_memalloy_id : t -> C_id.t
     This is [x] where [id = Global x], and ["tXY"] where
     [id = Local (X, Y)]. *)
 
+(** {2 Queries} *)
+
+val is_in_scope : t -> from:int -> bool
+(** [is_in_scope id ~from] asks whether [id] is in scope from the point of
+    view of the thread with ID [from].  This is true if, and only if, [id]
+    is global or is a local with ID [from]. *)
+
 (** {2 Interface implementations} *)
 
 (** Litmus identifiers can be converted to and from strings. Note that

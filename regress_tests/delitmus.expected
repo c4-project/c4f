@@ -40,12 +40,12 @@ P3()
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "var_map": {
+    "x": "x",
+    "y": "y",
     "2:r0": "t2r0",
     "2:r1": "t2r1",
     "3:r0": "t3r0",
-    "3:r1": "t3r1",
-    "x": "x",
-    "y": "y"
+    "3:r1": "t3r1"
   },
   "num_threads": 4
 } 
@@ -114,17 +114,17 @@ P4()
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "var_map": {
-    "3:r0": "t3r0",
-    "3:r1": "t3r1",
-    "4:r0": "t4r0",
-    "4:r1": "t4r1",
     "MaJgQmON3yu": "MaJgQmON3yu",
     "VFTQNWN": "VFTQNWN",
     "ZgoV7uel9o": "ZgoV7uel9o",
     "m02M5s": "m02M5s",
     "ne0J8wrPQam": "ne0J8wrPQam",
     "x": "x",
-    "y": "y"
+    "y": "y",
+    "3:r0": "t3r0",
+    "3:r1": "t3r1",
+    "4:r0": "t4r0",
+    "4:r1": "t4r1"
   },
   "num_threads": 5
 } 
@@ -157,7 +157,7 @@ P1()
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
   },
-  "var_map": { "0:r0": "t0r0", "x": "x" },
+  "var_map": { "x": "x", "0:r0": "t0r0" },
   "num_threads": 2
 } 
 --End auxiliary output-- */
@@ -181,7 +181,7 @@ P0()
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
   },
-  "var_map": { "0:r0": "t0r0", "x": "x" },
+  "var_map": { "x": "x", "0:r0": "t0r0" },
   "num_threads": 1
 } 
 --End auxiliary output-- */
@@ -221,11 +221,11 @@ P2()
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
   },
   "var_map": {
+    "x": "x",
+    "y": "y",
     "1:r0": "t1r0",
     "1:r1": "t1r1",
-    "2:r0": "t2r0",
-    "x": "x",
-    "y": "y"
+    "2:r0": "t2r0"
   },
   "num_threads": 3
 } 
