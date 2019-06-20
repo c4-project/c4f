@@ -22,11 +22,6 @@ let litmus_id (id : Act_common.Litmus_id.t) : Act_common.C_id.t =
 let local (t : int) (id : Act_c.Mini.Identifier.t) : Act_common.C_id.t =
   litmus_id (Act_common.Litmus_id.local t id)
 
-let locals_in_statement (module T : Thread.S) :
-    Act_c.Mini.Statement.t -> Act_c.Mini.Statement.t =
-  Act_c.Mini.Statement.On_identifiers.map
-    ~f:(T.when_local ~over:Fn.id ~f:(local T.tid))
-
 let postcondition
     (pc : Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t) :
     Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t =

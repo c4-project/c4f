@@ -436,10 +436,10 @@ module Function = struct
   let with_body_stms (func : t) (new_stms : Statement.t list) : t =
     {func with body_stms= new_stms}
 
-  module Base_map (M : Monad.S) = struct
+  module On_monad (M : Monad.S) = struct
     module F = Travesty.Traversable.Helpers (M)
 
-    let bmap (func : t)
+    let map_m (func : t)
         ~(parameters : Type.t id_assoc -> Type.t id_assoc M.t)
         ~(body_decls : Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
         ~(body_stms : Statement.t list -> Statement.t list M.t) : t M.t =
@@ -450,8 +450,8 @@ module Function = struct
   end
 
   let map =
-    let module M = Base_map (Monad.Ident) in
-    M.bmap
+    let module M = On_monad (Monad.Ident) in
+    M.map_m
 
   module On_decls :
     Travesty.Traversable.S0
@@ -463,12 +463,12 @@ module Function = struct
     module Elt = Initialiser.Named
 
     module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
+      module B = On_monad (M)
       module L = Tx.List.On_monad (M)
 
       let map_m (func : t)
           ~(f : Initialiser.Named.t -> Initialiser.Named.t M.t) =
-        B.bmap func ~parameters:M.return ~body_decls:(L.map_m ~f)
+        B.map_m func ~parameters:M.return ~body_decls:(L.map_m ~f)
           ~body_stms:M.return
     end
   end)

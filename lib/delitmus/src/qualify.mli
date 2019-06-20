@@ -42,8 +42,3 @@ val postcondition :
 val local : int -> Act_common.C_id.t -> Act_common.C_id.t
 (** [local tid id] qualifies a local variable [id] using the thread
     identifier [tid]. *)
-
-val locals_in_statement :
-  (module Thread.S) -> Act_c.Mini.Statement.t -> Act_c.Mini.Statement.t
-(** [locals_in_statement thread statement] qualifies all local variables in
-    the mini-statement [statement] using the information in [thread]. *)

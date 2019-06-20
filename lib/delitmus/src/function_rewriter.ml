@@ -17,49 +17,60 @@ module type S = [%import: (module Function_rewriter.S)]
 
 module Make (Basic : sig
   (* TODO(@MattWindsor91): add the differences between drivers here. *)
+  val rewrite_local_cid : Act_common.C_id.t -> tid:int -> var_map:Var_map.t -> Act_common.C_id.t Or_error.t
 end) =
 struct
-  module Rewriter_with_thread (T : Thread.S) = struct
+  module Rewriter_with_thread (Ctx : sig
+      module T : Thread.S
+      val var_map : Var_map.t
+    end) = struct
     (** [address_globals stm] converts each address in [stm] over a global
         variable [v] to [&*v], ready for {{!ref_globals} ref_globals} to
         reduce to [&v]. *)
-    let address_globals : C.Mini.Statement.t -> C.Mini.Statement.t =
-      C.Mini.Statement.On_addresses.map
+    let address_globals : C.Mini.Statement.t -> C.Mini.Statement.t Or_error.t =
+      C.Mini.Statement.On_addresses.With_errors.map_m
         ~f:
-          (T.when_global ~over:C.Mini.Address.variable_of ~f:(fun addr ->
+          (Ctx.T.when_global ~over:C.Mini.Address.variable_of ~f:(fun addr ->
                (* The added deref here will be removed in [ref_globals]. *)
+               Or_error.return (
                C.Mini.Address.ref
-                 (C.Mini.Address.On_lvalues.map ~f:C.Mini.Lvalue.deref addr)
+                 (C.Mini.Address.On_lvalues.map ~f:C.Mini.Lvalue.deref addr))
            ))
 
     (** [ref_globals stm] turns all dereferences of global variables in
         [stm] into direct accesses to the same variables. *)
-    let ref_globals : C.Mini.Statement.t -> C.Mini.Statement.t =
-      C.Mini.Statement.On_lvalues.map
+    let ref_globals : C.Mini.Statement.t -> C.Mini.Statement.t Or_error.t =
+      C.Mini.Statement.On_lvalues.With_errors.map_m
         ~f:
           C.Mini.Lvalue.(
-            T.when_global ~over:variable_of
-              ~f:(Fn.compose variable variable_of))
+            Ctx.T.when_global ~over:variable_of
+              ~f:(Fn.compose Or_error.return (Fn.compose variable variable_of)))
 
-    let proc_stm (stm : C.Mini.Statement.t) : C.Mini.Statement.t =
-      stm |> address_globals |> ref_globals
-      |> Qualify.locals_in_statement (module T)
+    let rewrite_locals_in_statement :
+      Act_c.Mini.Statement.t -> Act_c.Mini.Statement.t Or_error.t =
+      Act_c.Mini.Statement.On_identifiers.With_errors.map_m
+        ~f:(Ctx.T.when_local ~over:Fn.id ~f:(Basic.rewrite_local_cid ~var_map:Ctx.var_map ~tid:Ctx.T.tid))
+
+    let rewrite_statement (stm : C.Mini.Statement.t) : C.Mini.Statement.t Or_error.t =
+      Or_error.(stm |> address_globals >>= ref_globals
+                                           >>= rewrite_locals_in_statement)
 
     let rewrite_statements :
-        C.Mini.Statement.t list -> C.Mini.Statement.t list =
-      List.map ~f:proc_stm
+        C.Mini.Statement.t list -> C.Mini.Statement.t list Or_error.t =
+      Tx.Or_error.combine_map ~f:rewrite_statement
 
-    let populate_parameters _func = []
+    let populate_parameters _func = Or_error.return []
+
+    module F = C.Mini.Function.On_monad(Or_error)
 
     let rewrite (func : C.Mini.Function.t) =
-      C.Mini.Function.map func
+      F.map_m func
         ~parameters:(fun _ -> populate_parameters func)
-        ~body_decls:(Fn.const []) ~body_stms:rewrite_statements
+        ~body_decls:(fun _ -> Or_error.return []) ~body_stms:rewrite_statements
   end
 
   let rewrite (tid : int) (func : C.Mini.Function.t) ~(var_map : Var_map.t)
       : C.Mini.Function.t Or_error.t =
-    ignore var_map ;
     let module T = Thread.Make (struct
       let tid = tid
 
@@ -67,8 +78,11 @@ struct
         func |> C.Mini.Function.body_decls |> List.map ~f:fst
         |> C.Mini.Identifier.Set.of_list
     end) in
-    let module M = Rewriter_with_thread (T) in
-    Or_error.return (M.rewrite func)
+    let module M = Rewriter_with_thread (struct
+        module T = T
+        let var_map = var_map
+      end) in
+    M.rewrite func
 
   let rewrite_all (fs : C.Mini.Function.t C.Mini_intf.id_assoc)
       ~(var_map : Var_map.t) :
@@ -77,6 +91,17 @@ struct
         Tx.Tuple2.With_errors.map_right_m ~f:(rewrite tid ~var_map) )
 end
 
-module Vars_as_globals = Make ()
+module Vars_as_globals = Make (struct
 
-module Vars_as_parameters = Make ()
+    let rewrite_local_cid (cid: Act_common.C_id.t) ~(tid: int) ~(var_map: Var_map.t) : Act_common.C_id.t Or_error.t =
+    Var_map.lookup_and_require_global var_map
+      ~id:(Act_common.Litmus_id.local tid cid)
+  end)
+
+module Vars_as_parameters = Make (struct
+    let rewrite_local_cid (cid: Act_common.C_id.t) ~(tid: int) ~(var_map: Var_map.t) :
+      Act_common.C_id.t Or_error.t =
+  ignore (tid : int);
+  ignore (var_map : Var_map.t);
+  Or_error.return cid
+  end)
