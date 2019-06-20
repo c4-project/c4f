@@ -256,11 +256,11 @@ module Function : sig
   (** {3 Traversals} *)
 
   module On_monad (M : Monad.S) : sig
-    val map_m
-      : t
-      ->  parameters :(Type.t id_assoc -> Type.t id_assoc M.t)
-      ->  body_decls :(Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
-      ->  body_stms :(Statement.t list -> Statement.t list M.t)
+    val map_m :
+         t
+      -> parameters:(Type.t id_assoc -> Type.t id_assoc M.t)
+      -> body_decls:(Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
+      -> body_stms:(Statement.t list -> Statement.t list M.t)
       -> t M.t
   end
 

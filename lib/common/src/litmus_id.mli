@@ -62,8 +62,8 @@ val to_memalloy_id : t -> C_id.t
 
 val is_in_scope : t -> from:int -> bool
 (** [is_in_scope id ~from] asks whether [id] is in scope from the point of
-    view of the thread with ID [from].  This is true if, and only if, [id]
-    is global or is a local with ID [from]. *)
+    view of the thread with ID [from]. This is true if, and only if, [id] is
+    global or is a local with ID [from]. *)
 
 (** {2 Interface implementations} *)
 

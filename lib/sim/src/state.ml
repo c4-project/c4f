@@ -37,7 +37,8 @@ module Q : My_quickcheck.S_with_sexp with type t := t = struct
   open Base_quickcheck
 
   let quickcheck_generator : t Generator.t =
-    Generator.map_t_m (module Litmus_id)
+    Generator.map_t_m
+      (module Litmus_id)
       [%quickcheck.generator: Litmus_id.t]
       Base_quickcheck.quickcheck_generator_string
 
