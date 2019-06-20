@@ -38,6 +38,10 @@ val of_set_with_qualifier :
 
 (** {2 Projections} *)
 
+val unmapped_litmus_ids : t -> Set.M(Act_common.Litmus_id).t
+(** [unmapped_litmus_ids map] gets the set of litmus IDs that the delitmusifier
+    did not map to global C variables in [map]. *)
+
 val globally_mapped_litmus_ids : t -> Set.M(Act_common.Litmus_id).t
 (** [globally_mapped_litmus_ids map] gets the set of litmus IDs that the delitmusifier
     mapped to global C variables in [map]. *)

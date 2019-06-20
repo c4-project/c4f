@@ -63,6 +63,9 @@ let build_set (type e w)
     ~f:(fun ~key ~data set ->
       Option.value_map (f key data) ~default:set ~f:(Set.add set) )
 
+let unmapped_litmus_ids : t -> Set.M(Ac.Litmus_id).t =
+  build_set (module Ac.Litmus_id) ~f:(fun k data -> if Option.is_none data then Some k else None)
+
 let globally_mapped_litmus_ids : t -> Set.M(Ac.Litmus_id).t =
   build_set (module Ac.Litmus_id) ~f:(fun k data -> if Option.is_some data then Some k else None)
 

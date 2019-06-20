@@ -140,7 +140,7 @@ let%test_module "check_domain_consistency expects tests" =
         {|
       (Error
        ("Domains of states are inconsistent: for example,"
-        (one_domain (0:foo 1:bar baz)) (another_domain (0:foo)))) |}]
+        (one_domain (baz 0:foo 1:bar)) (another_domain (0:foo)))) |}]
   end )
 
 let get_domain : State.t list -> A.Litmus_id.Set.t Or_error.t = function
