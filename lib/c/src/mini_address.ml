@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Ac = Act_common
 
 type t = Lvalue of Mini_lvalue.t | Ref of t
@@ -83,27 +83,29 @@ let anonymise = function Lvalue v -> `A v | Ref d -> `B d
 let deanonymise = function `A v -> Lvalue v | `B d -> Ref d
 
 module Quickcheck_generic
-    (Lv : Quickcheckable.S with type t := Mini_lvalue.t) : sig
+    (Lv : Act_utils.My_quickcheck.S_with_sexp with type t := Mini_lvalue.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
+  open Base_quickcheck
+
   type nonrec t = t
 
   let sexp_of_t = sexp_of_t
 
-  let quickcheck_generator : t Quickcheck.Generator.t =
-    Quickcheck.Generator.(
+  let quickcheck_generator : t Generator.t =
+    Generator.(
       recursive_union
         [map [%quickcheck.generator: Lv.t] ~f:lvalue]
         ~f:(fun mu -> [map mu ~f:ref]))
 
-  let quickcheck_observer : t Quickcheck.Observer.t =
-    Quickcheck.Observer.(
+  let quickcheck_observer : t Observer.t =
+    Observer.(
       fixed_point (fun mu ->
           unmap ~f:anonymise
             [%quickcheck.observer: [`A of Lv.t | `B of [%custom mu]]] ))
 
-  let quickcheck_shrinker : t Quickcheck.Shrinker.t =
-    Quickcheck.Shrinker.(
+  let quickcheck_shrinker : t Shrinker.t =
+    Shrinker.(
       fixed_point (fun mu ->
           map ~f:deanonymise ~f_inverse:anonymise
             [%quickcheck.shrinker: [`A of Lv.t | `B of [%custom mu]]] ))
@@ -131,14 +133,15 @@ end =
 module Quickcheck_atomic_int_pointers (E : Mini_env.S) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
+  open Base_quickcheck
+
   type nonrec t = t
 
   let sexp_of_t = sexp_of_t
 
-  let quickcheck_generator : t Quickcheck.Generator.t =
-    Quickcheck.Generator.map
-      (Quickcheck.Generator.of_list
-         (Map.to_alist (E.atomic_int_variables ())))
+  let quickcheck_generator : t Generator.t =
+    Generator.map
+      (Generator.of_list (Map.to_alist (E.atomic_int_variables ())))
       ~f:(fun (id, ty) -> on_address_of_typed_id ~id ~ty)
 
   module Q = Quickcheck_on_env (E)
