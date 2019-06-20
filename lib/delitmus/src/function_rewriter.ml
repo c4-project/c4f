@@ -15,20 +15,19 @@ module Tx = Travesty_base_exts
 
 module type S = [%import: (module Function_rewriter.S)]
 
-type 'a local_rw_fun =
-       'a
-    -> tid:int
-    -> context:Context.t
-    -> 'a Or_error.t
+type 'a local_rw_fun = 'a -> tid:int -> context:Context.t -> 'a Or_error.t
 
 type 'a rw_fun = 'a -> 'a Or_error.t
 
 module Make (Basic : sig
   val rewrite_local_address : Act_c.Mini.Address.t rw_fun
+
   val rewrite_local_lvalue : Act_c.Mini.Lvalue.t rw_fun
+
   val rewrite_local_cid : Act_common.C_id.t local_rw_fun
 
   val rewrite_global_address : Act_c.Mini.Address.t rw_fun
+
   val rewrite_global_lvalue : Act_c.Mini.Lvalue.t rw_fun
 end) =
 struct
@@ -40,41 +39,40 @@ struct
   struct
     let rewrite_lvalue_if_global :
         Act_c.Mini.Lvalue.t -> Act_c.Mini.Lvalue.t Or_error.t =
-      (Ctx.T.when_global ~over:Act_c.Mini.Lvalue.variable_of
-         ~f:Basic.rewrite_global_lvalue)
+      Ctx.T.when_global ~over:Act_c.Mini.Lvalue.variable_of
+        ~f:Basic.rewrite_global_lvalue
 
     let rewrite_address_if_global :
         Act_c.Mini.Address.t -> Act_c.Mini.Address.t Or_error.t =
-      (Ctx.T.when_global ~over:Act_c.Mini.Address.variable_of
-         ~f:Basic.rewrite_global_address)
+      Ctx.T.when_global ~over:Act_c.Mini.Address.variable_of
+        ~f:Basic.rewrite_global_address
 
     let rewrite_lvalue_if_local :
         Act_c.Mini.Lvalue.t -> Act_c.Mini.Lvalue.t Or_error.t =
-      (Ctx.T.when_local ~over:Act_c.Mini.Lvalue.variable_of
-         ~f:Basic.rewrite_local_lvalue)
+      Ctx.T.when_local ~over:Act_c.Mini.Lvalue.variable_of
+        ~f:Basic.rewrite_local_lvalue
 
     let rewrite_address_if_local :
         Act_c.Mini.Address.t -> Act_c.Mini.Address.t Or_error.t =
-      (Ctx.T.when_local ~over:Act_c.Mini.Address.variable_of
-         ~f:Basic.rewrite_local_address)
+      Ctx.T.when_local ~over:Act_c.Mini.Address.variable_of
+        ~f:Basic.rewrite_local_address
 
     let rewrite_id_if_local :
         Act_common.C_id.t -> Act_common.C_id.t Or_error.t =
-      (Ctx.T.when_local ~over:Fn.id
-         ~f:
-           (Basic.rewrite_local_cid ~context:Ctx.context ~tid:Ctx.T.tid))
+      Ctx.T.when_local ~over:Fn.id
+        ~f:(Basic.rewrite_local_cid ~context:Ctx.context ~tid:Ctx.T.tid)
 
     let rewrite_ids :
         Act_c.Mini.Statement.t -> Act_c.Mini.Statement.t Or_error.t =
       Act_c.Mini.Statement.On_identifiers.With_errors.map_m
         ~f:rewrite_id_if_local
 
-    (* When rewriting global lvalues (as part of a var-as-global run),
-       we do it _after_ address rewriting, as the address
-       rewriting will temporarily _increase_ the amount of indirection.
+    (* When rewriting global lvalues (as part of a var-as-global run), we do
+       it _after_ address rewriting, as the address rewriting will
+       temporarily _increase_ the amount of indirection.
 
-       When rewriting local lvalues (as part of a var-as-parameter run),
-       we do it _before_ address rewriting, as the address rewriting will
+       When rewriting local lvalues (as part of a var-as-parameter run), we
+       do it _before_ address rewriting, as the address rewriting will
        temporarily _decrease_ the amount of indirection. *)
 
     let rewrite_global_lvalues :
@@ -90,13 +88,15 @@ struct
     let rewrite_addresses :
         Act_c.Mini.Statement.t -> Act_c.Mini.Statement.t Or_error.t =
       Act_c.Mini.Statement.On_addresses.With_errors.map_m
-        ~f:Tx.Or_error.(rewrite_address_if_local >=> rewrite_address_if_global)
+        ~f:
+          Tx.Or_error.(
+            rewrite_address_if_local >=> rewrite_address_if_global)
 
-    let rewrite_statement : C.Mini.Statement.t ->
-        C.Mini.Statement.t Or_error.t =
+    let rewrite_statement :
+        C.Mini.Statement.t -> C.Mini.Statement.t Or_error.t =
       Tx.Or_error.(
-        rewrite_local_lvalues >=> rewrite_addresses >=> rewrite_global_lvalues >=> rewrite_ids
-      )
+        rewrite_local_lvalues >=> rewrite_addresses
+        >=> rewrite_global_lvalues >=> rewrite_ids)
 
     let rewrite_statements :
         C.Mini.Statement.t list -> C.Mini.Statement.t list Or_error.t =
@@ -156,27 +156,30 @@ struct
 end
 
 module Vars_as_globals = Make (struct
-  let rewrite_global_address (addr : Act_c.Mini.Address.t)
-  : Act_c.Mini.Address.t Or_error.t =
+  let rewrite_global_address (addr : Act_c.Mini.Address.t) :
+      Act_c.Mini.Address.t Or_error.t =
     let is_deref =
-      C.Mini.Address.On_lvalues.exists addr
-        ~f:(C.Mini.Lvalue.is_deref)
+      C.Mini.Address.On_lvalues.exists addr ~f:C.Mini.Lvalue.is_deref
     in
     let addr' =
-      if is_deref then addr else
+      if is_deref then addr
+      else
         (* The added deref here will be removed in lvalue rewriting. *)
-        (C.Mini.Address.ref
-           (C.Mini.Address.On_lvalues.map ~f:C.Mini.Lvalue.deref
-              addr))
-    in Or_error.return addr'
+        C.Mini.Address.ref
+          (C.Mini.Address.On_lvalues.map ~f:C.Mini.Lvalue.deref addr)
+    in
+    Or_error.return addr'
 
-  let rewrite_global_lvalue : Act_c.Mini.Lvalue.t -> Act_c.Mini.Lvalue.t Or_error.t =
+  let rewrite_global_lvalue :
+      Act_c.Mini.Lvalue.t -> Act_c.Mini.Lvalue.t Or_error.t =
     Act_c.Mini.Lvalue.un_deref
 
-  let rewrite_local_address (addr : Act_c.Mini.Address.t) : Act_c.Mini.Address.t Or_error.t =
+  let rewrite_local_address (addr : Act_c.Mini.Address.t) :
+      Act_c.Mini.Address.t Or_error.t =
     Or_error.return addr
 
-  let rewrite_local_lvalue (lv : Act_c.Mini.Lvalue.t) : Act_c.Mini.Lvalue.t Or_error.t =
+  let rewrite_local_lvalue (lv : Act_c.Mini.Lvalue.t) :
+      Act_c.Mini.Lvalue.t Or_error.t =
     Or_error.return lv
 
   let rewrite_local_cid (cid : Act_common.C_id.t) ~(tid : int)
@@ -186,19 +189,22 @@ module Vars_as_globals = Make (struct
 end)
 
 module Vars_as_parameters = Make (struct
-  let rewrite_global_address : Act_c.Mini.Address.t ->
-  Act_c.Mini.Address.t Or_error.t =
+  let rewrite_global_address :
+      Act_c.Mini.Address.t -> Act_c.Mini.Address.t Or_error.t =
     Or_error.return
 
-  let rewrite_global_lvalue : Act_c.Mini.Lvalue.t -> Act_c.Mini.Lvalue.t Or_error.t =
+  let rewrite_global_lvalue :
+      Act_c.Mini.Lvalue.t -> Act_c.Mini.Lvalue.t Or_error.t =
     Or_error.return
 
-  let rewrite_local_lvalue : Act_c.Mini.Lvalue.t -> Act_c.Mini.Lvalue.t Or_error.t =
-   (* The added deref here will be removed in address rewriting if
-      not needed. *)
+  let rewrite_local_lvalue :
+      Act_c.Mini.Lvalue.t -> Act_c.Mini.Lvalue.t Or_error.t =
+    (* The added deref here will be removed in address rewriting if not
+       needed. *)
     Fn.compose Or_error.return C.Mini.Lvalue.deref
 
-  let rewrite_local_address : Act_c.Mini.Address.t -> Act_c.Mini.Address.t Or_error.t =
+  let rewrite_local_address :
+      Act_c.Mini.Address.t -> Act_c.Mini.Address.t Or_error.t =
     Fn.compose Or_error.return C.Mini.Address.normalise
 
   let rewrite_local_cid (cid : Act_common.C_id.t) ~(tid : int)
