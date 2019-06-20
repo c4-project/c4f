@@ -111,7 +111,9 @@ let%test_module "check_domain_consistency expects tests" =
   ( module struct
     let test_x_domain =
       A.Litmus_id.(
-        Set.of_list (module A.Litmus_id) [of_string "0:foo"; of_string "1:bar"; of_string "baz"])
+        Set.of_list
+          (module A.Litmus_id)
+          [of_string "0:foo"; of_string "1:bar"; of_string "baz"])
 
     let%expect_test "no other domains" =
       Stdio.print_s
@@ -131,7 +133,8 @@ let%test_module "check_domain_consistency expects tests" =
 
     let%expect_test "inconsistent domains" =
       let doms =
-        Sequence.singleton A.Litmus_id.(Set.of_list (module A.Litmus_id) [of_string "0:foo"])
+        Sequence.singleton
+          A.Litmus_id.(Set.of_list (module A.Litmus_id) [of_string "0:foo"])
       in
       Stdio.print_s
         [%sexp

@@ -37,12 +37,15 @@ module M_str = struct
   [@@deriving equal, variants, quickcheck]
 
   let compare (x : t) (y : t) =
-    match x, y with
-    | Global _, Local _ -> -1
-    | Local _, Global _ -> 1
-    | Global x, Global y -> [%compare: C_id.t] x y
+    match (x, y) with
+    | Global _, Local _ ->
+        -1
+    | Local _, Global _ ->
+        1
+    | Global x, Global y ->
+        [%compare: C_id.t] x y
     | Local (xi, x), Local (yi, y) ->
-      [%compare: int * C_id.t] (xi, x) (yi, y)
+        [%compare: int * C_id.t] (xi, x) (yi, y)
 
   let to_string : t -> string = function
     | Local (t, id) ->
@@ -88,7 +91,8 @@ Travesty.Traversable.Make0 (struct
     let map_m (lid : t) ~(f : C_id.t -> C_id.t M.t) : t M.t =
       Variants.map lid ~global:(H.proc_variant1 f)
         ~local:
-          (H.proc_variant2 (fun (tid, x) -> M.(x |> f >>| fun x' -> (tid, x'))))
+          (H.proc_variant2 (fun (tid, x) ->
+               M.(x |> f >>| fun x' -> (tid, x')) ))
   end
 end)
 
@@ -174,7 +178,5 @@ module Assoc = struct
     |> Or_error.combine_errors
 end
 
-let is_in_scope (id: t) ~(from:int) : bool =
-  match id with
-  | Global _ -> true
-  | Local (tid, _) -> Int.equal tid from
+let is_in_scope (id : t) ~(from : int) : bool =
+  match id with Global _ -> true | Local (tid, _) -> Int.equal tid from

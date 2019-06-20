@@ -12,32 +12,35 @@
 open Base
 
 type t =
-  { type_map : Act_c.Mini.Type.t Map.M(Act_common.Litmus_id).t
-  ; aux : Aux.t
-  ; local_inits : (int, ((Act_common.C_id.t, Act_c.Mini.Constant.t) List.Assoc.t)) List.Assoc.t
-  } [@@deriving fields]
+  { type_map: Act_c.Mini.Type.t Map.M(Act_common.Litmus_id).t
+  ; aux: Aux.t
+  ; local_inits:
+      ( int
+      , (Act_common.C_id.t, Act_c.Mini.Constant.t) List.Assoc.t )
+      List.Assoc.t }
+[@@deriving fields]
 
 let make = Fields.create
 
-let not_found_error (id : Act_common.Litmus_id.t) (trying_to_find : string) :
-  Error.t =
+let not_found_error (id : Act_common.Litmus_id.t) (trying_to_find : string)
+    : Error.t =
   Error.of_lazy_t
-    (lazy
+    ( lazy
       (Error.create_s
-         [%message "Identifier not found in context."
-             ~trying_to_find
-             ~id:(id : Act_common.Litmus_id.t)
-         ]))
+         [%message
+           "Identifier not found in context." ~trying_to_find
+             ~id:(id : Act_common.Litmus_id.t)]) )
 
-let lookup_type (ctx : t) ~(id:Act_common.Litmus_id.t) : Act_c.Mini.Type.t Or_error.t
-  =
+let lookup_type (ctx : t) ~(id : Act_common.Litmus_id.t) :
+    Act_c.Mini.Type.t Or_error.t =
   Result.of_option
     (Map.find (type_map ctx) id)
     ~error:(not_found_error id "type")
 
 let var_map (ctx : t) : Var_map.t = Aux.var_map (aux ctx)
 
-let lookup_and_require_global (ctx : t) : id:Act_common.Litmus_id.t -> Act_common.C_id.t Or_error.t =
+let lookup_and_require_global (ctx : t) :
+    id:Act_common.Litmus_id.t -> Act_common.C_id.t Or_error.t =
   Var_map.lookup_and_require_global (var_map ctx)
 
 let unmapped_litmus_ids (ctx : t) : Set.M(Act_common.Litmus_id).t =
@@ -46,19 +49,22 @@ let unmapped_litmus_ids (ctx : t) : Set.M(Act_common.Litmus_id).t =
 let globally_mapped_litmus_ids (ctx : t) : Set.M(Act_common.Litmus_id).t =
   Var_map.globally_mapped_litmus_ids (var_map ctx)
 
-let lookup_initial_value_global (ctx : t) ~(id:Act_common.C_id.t) : Act_c.Mini.Constant.t option =
+let lookup_initial_value_global (ctx : t) ~(id : Act_common.C_id.t) :
+    Act_c.Mini.Constant.t option =
   let init = ctx |> aux |> Aux.litmus_aux |> Act_litmus.Aux.init in
   List.Assoc.find ~equal:Act_common.C_id.equal init id
 
-let lookup_initial_value_local (ctx : t) ~(tid:int) ~(id:Act_common.C_id.t) : Act_c.Mini.Constant.t option =
+let lookup_initial_value_local (ctx : t) ~(tid : int)
+    ~(id : Act_common.C_id.t) : Act_c.Mini.Constant.t option =
   Option.(
     List.Assoc.find ~equal:Int.equal (local_inits ctx) tid
-    >>= fun init -> List.Assoc.find ~equal:Act_common.C_id.equal init id
-  )
+    >>= fun init -> List.Assoc.find ~equal:Act_common.C_id.equal init id)
 
-let lookup_initial_value (ctx : t) ~(id:Act_common.Litmus_id.t) : Act_c.Mini.Constant.t option =
+let lookup_initial_value (ctx : t) ~(id : Act_common.Litmus_id.t) :
+    Act_c.Mini.Constant.t option =
   match Act_common.Litmus_id.as_local id with
-  | Some (tid, id) -> lookup_initial_value_local ctx ~tid ~id
+  | Some (tid, id) ->
+      lookup_initial_value_local ctx ~tid ~id
   | None ->
-    Option.bind (Act_common.Litmus_id.as_global id)
-      ~f:(fun id -> lookup_initial_value_global ctx ~id)
+      Option.bind (Act_common.Litmus_id.as_global id) ~f:(fun id ->
+          lookup_initial_value_global ctx ~id )
