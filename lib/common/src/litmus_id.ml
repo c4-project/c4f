@@ -21,9 +21,9 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(* Don't use Base: it causes us to derive a weaker signature *)
-open Core_kernel
+open Base
 module Au = Act_utils
+module Tx = Travesty_base_exts
 
 (* Comparable.Make_plain depends on Sexpable, and Sexpable.Of_stringable
    depends on Stringable. As a result, we have to implement Id by
@@ -88,7 +88,7 @@ Travesty.Traversable.Make0 (struct
     let map_m (lid : t) ~(f : C_id.t -> C_id.t M.t) : t M.t =
       Variants.map lid ~global:(H.proc_variant1 f)
         ~local:
-          (H.proc_variant2 (fun (tid, x) -> M.(x |> f >>| Tuple2.create tid)))
+          (H.proc_variant2 (fun (tid, x) -> M.(x |> f >>| fun x' -> (tid, x'))))
   end
 end)
 
@@ -133,7 +133,7 @@ module Assoc = struct
   let split_initial (str : string) : string * string option =
     str |> String.rsplit2 ~on:'='
     |> Option.value_map
-         ~f:(Tuple2.map_snd ~f:Option.some)
+         ~f:(Tx.Tuple2.map_right ~f:Option.some)
          ~default:(str, None)
 
   let split_and_strip_initial (str : string) : string * string option =
