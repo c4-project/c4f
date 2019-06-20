@@ -36,15 +36,23 @@ let print_aux : Act_delitmus.Aux.t -> unit =
      output-- */@]@."
     pp_aux
 
-let delitmus_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
-  ignore file ;
+let delitmus_file_with_style
+    (style : Act_delitmus.Runner.Style.t) ~(path : Fpath.t) : unit Or_error.t =
+  printf "//\n// style: %s\n//\n\n"
+    (Act_delitmus.Runner.Style.to_string style);
   Or_error.Let_syntax.(
     let%map output =
-      Act_delitmus.Filter.run Act_delitmus.Runner.Style.Vars_as_globals
+      Act_delitmus.Filter.run style
         (Plumbing.Input.of_fpath path)
         Plumbing.Output.stdout
     in
     print_aux output)
+
+let delitmus_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
+  ignore file ;
+  Or_error.combine_errors_unit
+    (List.map Act_delitmus.Runner.Style.all
+    ~f:(delitmus_file_with_style ~path))
 
 let run (test_dir : Fpath.t) : unit Or_error.t =
   let full_dir = Fpath.(test_dir / "litmus" / "") in

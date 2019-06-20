@@ -3,6 +3,10 @@
 ## iriw.c.litmus
 
 ```
+//
+// style: vars-as-globals
+//
+
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 atomic_int x = 0;
@@ -50,10 +54,59 @@ P3()
   "num_threads": 4
 } 
 --End auxiliary output-- */
+//
+// style: vars-as-parameters
+//
+
+// <!> Auto-generated from a litmus test by act.
+#include <stdatomic.h>
+void
+P0(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(x, 1, memory_order_seq_cst); }
+void
+P1(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(y, 1, memory_order_seq_cst); }
+void
+P2(atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(x, memory_order_acquire);
+    *r1 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+void
+P3(atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(y, memory_order_acquire);
+    *r1 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_aux": {
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "var_map": {
+    "x": null,
+    "y": null,
+    "2:r0": null,
+    "2:r1": null,
+    "3:r0": null,
+    "3:r1": null
+  },
+  "num_threads": 4
+} 
+--End auxiliary output-- */
 ```
 ## iriw_fuzz_redundant.c.litmus
 
 ```
+//
+// style: vars-as-globals
+//
+
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 int MaJgQmON3yu = 2728;
@@ -129,10 +182,87 @@ P4()
   "num_threads": 5
 } 
 --End auxiliary output-- */
+//
+// style: vars-as-parameters
+//
+
+// <!> Auto-generated from a litmus test by act.
+#include <stdatomic.h>
+void
+P0(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(ne0J8wrPQam, 3417, memory_order_seq_cst); }
+void
+P1(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{
+    atomic_store_explicit(ne0J8wrPQam, 481486, memory_order_relaxed);
+    atomic_store_explicit(x, 1, memory_order_seq_cst);
+}
+void
+P2(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(y, 1, memory_order_seq_cst); }
+void
+P3(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(x, memory_order_acquire);
+    *r1 = atomic_load_explicit(y, memory_order_seq_cst);
+    atomic_store_explicit(ne0J8wrPQam, -7, memory_order_seq_cst);
+}
+void
+P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(y, memory_order_acquire);
+    *r1 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_aux": {
+    "locations": [
+      "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x",
+      "y"
+    ],
+    "init": {
+      "MaJgQmON3yu": 2728,
+      "ZgoV7uel9o": 1073,
+      "VFTQNWN": -13,
+      "m02M5s": -64856,
+      "ne0J8wrPQam": -12197004,
+      "x": 0,
+      "y": 0
+    },
+    "postcondition":
+      "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+  },
+  "var_map": {
+    "MaJgQmON3yu": null,
+    "VFTQNWN": null,
+    "ZgoV7uel9o": null,
+    "m02M5s": null,
+    "ne0J8wrPQam": null,
+    "x": null,
+    "y": null,
+    "3:r0": null,
+    "3:r1": null,
+    "4:r0": null,
+    "4:r1": null
+  },
+  "num_threads": 5
+} 
+--End auxiliary output-- */
 ```
 ## memalloy_cmpxchg.c.litmus
 
 ```
+//
+// style: vars-as-globals
+//
+
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 atomic_int x = 0;
@@ -161,10 +291,43 @@ P1()
   "num_threads": 2
 } 
 --End auxiliary output-- */
+//
+// style: vars-as-parameters
+//
+
+// <!> Auto-generated from a litmus test by act.
+#include <stdatomic.h>
+void
+P0(atomic_int *x, int *r0)
+{
+    *r0 = 0;
+    atomic_compare_exchange_strong_explicit(x, r0, 2, memory_order_relaxed,
+                                            memory_order_relaxed);
+}
+void
+P1(atomic_int *x)
+{ atomic_store_explicit(x, 1, memory_order_relaxed); }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_aux": {
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
+  },
+  "var_map": { "x": null, "0:r0": null },
+  "num_threads": 2
+} 
+--End auxiliary output-- */
 ```
 ## memalloy_na_int.c.litmus
 
 ```
+//
+// style: vars-as-globals
+//
+
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 int x = 0;
@@ -185,10 +348,36 @@ P0()
   "num_threads": 1
 } 
 --End auxiliary output-- */
+//
+// style: vars-as-parameters
+//
+
+// <!> Auto-generated from a litmus test by act.
+#include <stdatomic.h>
+void
+P0(int *x, int *r0)
+{ *x = 1; *r0 = *x; }
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_aux": {
+    "locations": null,
+    "init": { "x": 0 },
+    "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
+  },
+  "var_map": { "x": null, "0:r0": null },
+  "num_threads": 1
+} 
+--End auxiliary output-- */
 ```
 ## rwc.c.litmus
 
 ```
+//
+// style: vars-as-globals
+//
+
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 atomic_int x = 0;
@@ -226,6 +415,46 @@ P2()
     "1:r0": "t1r0",
     "1:r1": "t1r1",
     "2:r0": "t2r0"
+  },
+  "num_threads": 3
+} 
+--End auxiliary output-- */
+//
+// style: vars-as-parameters
+//
+
+// <!> Auto-generated from a litmus test by act.
+#include <stdatomic.h>
+void
+P0(atomic_int *x, atomic_int *y)
+{ atomic_store_explicit(x, 1, memory_order_seq_cst); }
+void
+P1(atomic_int *x, atomic_int *y, int *r0, int *r1)
+{
+    *r0 = atomic_load_explicit(x, memory_order_acquire);
+    *r1 = atomic_load_explicit(y, memory_order_seq_cst);
+}
+void
+P2(atomic_int *x, atomic_int *y, int *r0)
+{
+    atomic_store_explicit(y, 1, memory_order_seq_cst);
+    *r0 = atomic_load_explicit(x, memory_order_seq_cst);
+}
+
+/* --Begin auxiliary output--
+
+{
+  "litmus_aux": {
+    "locations": null,
+    "init": { "x": 0, "y": 0 },
+    "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
+  },
+  "var_map": {
+    "x": null,
+    "y": null,
+    "1:r0": null,
+    "1:r1": null,
+    "2:r0": null
   },
   "num_threads": 3
 } 

@@ -31,8 +31,10 @@
     either be lvalues or address-of modifications of other addresses, and
     are used where things expect pointers. *)
 
+open Base
+
 (** Opaque type of lvalues. *)
-type t [@@deriving sexp, eq, quickcheck]
+type t [@@deriving sexp, equal, quickcheck]
 
 (** Note that the default quickcheck instance generates random lvalues
     without constraint. *)
@@ -45,7 +47,11 @@ val variable : Act_common.C_id.t -> t
 
 val deref : t -> t
 (** [deref lvalue] constructs a dereference ([*]) of another lvalue
-    [lvalue].It doesn't do any validation. *)
+    [lvalue]. It doesn't do any validation. *)
+
+val un_deref : t -> t Or_error.t
+(** [un_deref lvalue] tries to remove one layer of dereferencing from
+    [lvalue]. It fails if [lvalue] is already a variable type. *)
 
 val on_value_of_typed_id : id:Act_common.C_id.t -> ty:Mini_type.t -> t
 (** [on_value_of_typed_id ~id ~ty] constructs an lvalue with underlying
