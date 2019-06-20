@@ -12,5 +12,31 @@
 open Base
 module C = Act_c
 
-let run (input : C.Mini_litmus.Ast.Validated.t) : Output.t Or_error.t =
-  Driver.Vars_as_globals.run input
+module Style = struct
+  module M = struct
+    type t = Vars_as_globals | Vars_as_parameters
+    [@@deriving compare, equal, enumerate]
+
+    let table : (t, string) List.Assoc.t =
+      [ (Vars_as_globals, "vars-as-globals")
+      ; (Vars_as_parameters, "vars-as-parameters") ]
+  end
+
+  include M
+
+  include Act_utils.Enum.Extend_table (struct
+    include M
+    include Act_utils.Enum.Make_from_enumerate (M)
+  end)
+end
+
+let driver_of_style : Style.t -> (module Driver.S) = function
+  | Vars_as_globals ->
+      (module Driver.Vars_as_globals)
+  | Vars_as_parameters ->
+      (module Driver.Vars_as_parameters)
+
+let run (input : C.Mini_litmus.Ast.Validated.t) ~(style : Style.t) :
+    Output.t Or_error.t =
+  let (module M) = driver_of_style style in
+  M.run input
