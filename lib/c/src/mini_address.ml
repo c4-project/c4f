@@ -33,12 +33,12 @@ let of_variable_ref (v : Ac.C_id.t) : t = Ref (of_variable v)
 
 let ref_lvalue (l : Mini_lvalue.t) : t =
   match Mini_lvalue.un_deref l with
-  | Ok l' -> lvalue l'
-  | Error _ -> ref (lvalue l)
+  | Ok l' ->
+      lvalue l'
+  | Error _ ->
+      ref (lvalue l)
 
-let ref_normal : t -> t = function
-  | Lvalue k -> ref_lvalue k
-  | x -> ref x
+let ref_normal : t -> t = function Lvalue k -> ref_lvalue k | x -> ref x
 
 let rec reduce (addr : t) ~(lvalue : Mini_lvalue.t -> 'a) ~(ref : 'a -> 'a)
     : 'a =
@@ -48,12 +48,12 @@ let rec reduce (addr : t) ~(lvalue : Mini_lvalue.t -> 'a) ~(ref : 'a -> 'a)
   | Ref rest ->
       ref (reduce rest ~lvalue ~ref)
 
-let underlying_lvalue = reduce ~lvalue:Fn.id ~ref:Fn.id
+let lvalue_of : t -> Mini_lvalue.t = reduce ~lvalue:Fn.id ~ref:Fn.id
 
 let ref_depth = reduce ~lvalue:(Fn.const 0) ~ref:Int.succ
 
 let normalise (addr : t) : t =
-  Fn.apply_n_times ~n:(ref_depth addr) ref_normal (lvalue (underlying_lvalue addr))
+  Fn.apply_n_times ~n:(ref_depth addr) ref_normal (lvalue (lvalue_of addr))
 
 module On_lvalues :
   Travesty.Traversable.S0 with type t = t and type Elt.t = Mini_lvalue.t =
@@ -77,18 +77,6 @@ module Type_check (E : Mini_env.S) = struct
   let type_of : t -> Mini_type.t Or_error.t =
     reduce ~lvalue:L.type_of ~ref:(Or_error.bind ~f:Mini_type.ref)
 end
-
-let%expect_test "Type-checking a valid normal variable lvalue" =
-  let module T = Type_check ((val Lazy.force Mini_env.test_env_mod)) in
-  let result = T.type_of (of_variable (Ac.C_id.of_string "foo")) in
-  Stdio.print_s [%sexp (result : Mini_type.t Or_error.t)] ;
-  [%expect {| (Ok (Normal int)) |}]
-
-let%expect_test "Type-checking an valid reference lvalue" =
-  let module T = Type_check ((val Lazy.force Mini_env.test_env_mod)) in
-  let result = T.type_of (of_variable_ref (Ac.C_id.of_string "foo")) in
-  Stdio.print_s [%sexp (result : Mini_type.t Or_error.t)] ;
-  [%expect {| (Ok (Pointer_to int)) |}]
 
 let anonymise = function Lvalue v -> `A v | Ref d -> `B d
 
@@ -129,40 +117,8 @@ let on_address_of_typed_id ~(id : Ac.C_id.t) ~(ty : Mini_type.t) : t =
   let lv = of_variable id in
   if Mini_type.is_pointer ty then lv else ref lv
 
-let%test_unit "on_address_of_typed_id: always takes pointer type" =
-  let (module E) = Lazy.force Mini_env.test_env_mod in
-  let module Tc = Type_check (E) in
-  Base_quickcheck.Test.run_exn
-    (module E.Random_var)
-    ~f:(fun id ->
-      let ty = Ac.C_id.Map.find_exn E.env id in
-      [%test_result: Mini_type.t Or_error.t] ~here:[[%here]]
-        (Tc.type_of (on_address_of_typed_id ~id ~ty))
-        ~expect:(Or_error.return Mini_type.(pointer_to (basic_type ty))) )
-
-let lvalue_of : t -> Mini_lvalue.t = reduce ~lvalue:Fn.id ~ref:Fn.id
-
 let variable_of (addr : t) : Ac.C_id.t =
   Mini_lvalue.variable_of (lvalue_of addr)
-
-let%test_unit "variable_of: preserved by ref" =
-  Base_quickcheck.Test.run_exn
-    (module Quickcheck_main)
-    ~f:(fun x ->
-      [%test_eq: Ac.C_id.t] ~here:[[%here]] (variable_of x)
-        (variable_of (ref x)) )
-
-let%expect_test "variable_of: nested example" =
-  let example =
-    Ref
-      (Ref
-         (Lvalue
-            (Mini_lvalue.deref
-               (Mini_lvalue.variable (Ac.C_id.of_string "yorick")))))
-  in
-  let var = variable_of example in
-  Fmt.pr "%a@." Ac.C_id.pp var ;
-  [%expect {| yorick |}]
 
 let variable_in_env (addr : t) ~(env : _ Ac.C_id.Map.t) : bool =
   Mini_lvalue.variable_in_env (lvalue_of addr) ~env
@@ -171,23 +127,6 @@ module Quickcheck_on_env (E : Mini_env.S) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end =
   Quickcheck_generic (Mini_lvalue.Quickcheck_on_env (E))
-
-let variable_in (module E : Mini_env.S) (l : t) : bool =
-  Ac.C_id.Map.mem E.env (variable_of l)
-
-let%test_unit "Quickcheck_on_env: liveness" =
-  let e = Lazy.force Mini_env.test_env_mod in
-  let module Q = Quickcheck_on_env ((val e)) in
-  Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
-    ~sexp_of:[%sexp_of: t] ~f:(variable_in e)
-
-let%test_unit "Quickcheck_on_env: generated underlying variables in \
-               environment" =
-  let e = Lazy.force Mini_env.test_env_mod in
-  let module Q = Quickcheck_on_env ((val e)) in
-  Base_quickcheck.Test.run_exn
-    (module Q)
-    ~f:([%test_pred: t] ~here:[[%here]] (variable_in e))
 
 module Quickcheck_atomic_int_pointers (E : Mini_env.S) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
@@ -208,28 +147,3 @@ end = struct
 
   let quickcheck_shrinker = [%quickcheck.shrinker: Q.t]
 end
-
-let%test_unit "Quickcheck_atomic_int_pointers: liveness" =
-  let e = Lazy.force Mini_env.test_env_mod in
-  let module Q = Quickcheck_atomic_int_pointers ((val e)) in
-  Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
-    ~sexp_of:[%sexp_of: t] ~trials:20 ~f:(variable_in e)
-
-let%test_unit "Quickcheck_atomic_int_pointers: generated underlying \
-               variables in environment" =
-  let e = Lazy.force Mini_env.test_env_mod in
-  let module Q = Quickcheck_atomic_int_pointers ((val e)) in
-  Base_quickcheck.Test.run_exn
-    (module Q)
-    ~f:([%test_pred: t] ~here:[[%here]] (variable_in e))
-
-let%test_unit "Quickcheck_int_values: generated lvalues have '*atomic_int' \
-               type" =
-  let e = Lazy.force Mini_env.test_env_mod in
-  let module Q = Quickcheck_atomic_int_pointers ((val e)) in
-  let module Tc = Type_check ((val e)) in
-  Base_quickcheck.Test.run_exn
-    (module Q)
-    ~f:(fun lv ->
-      [%test_result: Mini_type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
-        ~expect:(Or_error.return Mini_type.(pointer_to Basic.atomic_int)) )

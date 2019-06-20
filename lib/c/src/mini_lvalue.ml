@@ -39,8 +39,9 @@ let is_deref : t -> bool = function Deref _ -> true | Variable _ -> false
 
 let un_deref : t -> t Or_error.t = function
   | Variable _ ->
-    Or_error.error_string "can't & a variable lvalue"
-  | Deref x -> Or_error.return x
+      Or_error.error_string "can't & a variable lvalue"
+  | Deref x ->
+      Or_error.return x
 
 module On_identifiers :
   Travesty.Traversable.S0 with type t = t and type Elt.t = Ac.C_id.t =

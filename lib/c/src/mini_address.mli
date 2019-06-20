@@ -39,7 +39,7 @@ val ref : t -> t
 (** [ref t] constructs a &-reference to [t]. *)
 
 val ref_lvalue : Mini_lvalue.t -> t
-(** [ref_lvalue lv] constructs a &-reference to [lv].  If [lv] is already a
+(** [ref_lvalue lv] constructs a &-reference to [lv]. If [lv] is already a
     dereference, it strips one layer of dereferencing instead of creating a
     new layer of indirection. *)
 
@@ -48,8 +48,8 @@ val ref_normal : t -> t
     {{!ref_lvalue} ref_lvalue} if [t] is an lvalue. *)
 
 val normalise : t -> t
-(** [normalise addr] reconstructs [addr], using {{!ref_normal} ref_normal} for every layer
-    of indirection. *)
+(** [normalise addr] reconstructs [addr], using {{!ref_normal} ref_normal}
+    for every layer of indirection. *)
 
 val of_variable : Act_common.C_id.t -> t
 (** [of_variable v] lifts the variable identifier [v] directly to an
@@ -58,6 +58,8 @@ val of_variable : Act_common.C_id.t -> t
 val of_variable_ref : Act_common.C_id.t -> t
 (** [of_variable_ref v] lifts the address of variable identifier [v] to an
     address (in C syntax, this would be '&v'). *)
+
+val on_address_of_typed_id : id:Act_common.C_id.t -> ty:Mini_type.t -> t
 
 (** {3 Accessors} *)
 
