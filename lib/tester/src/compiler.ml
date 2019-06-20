@@ -149,7 +149,7 @@ module Make (B : Basic) : S = struct
   let delitmusify (fs : Pathset.File.t) : unit Or_error.t =
     let open Or_error.Let_syntax in
     let%map _ =
-      Act_delitmus.Filter.run ()
+      Act_delitmus.Filter.run Act_delitmus.Runner.Style.Vars_as_globals
         (Plumbing.Input.of_fpath (P_file.c_litmus_file fs))
         (Plumbing.Output.of_fpath (P_file.c_file fs))
       (* TODO(@MattWindsor91): use the output from this instead of needing

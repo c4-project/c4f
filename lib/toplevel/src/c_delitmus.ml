@@ -19,11 +19,11 @@ let write_aux (aux : Act_delitmus.Aux.t) (output_fname : string) :
           Yojson.Safe.pretty_to_channel oc aux_json ) )
 
 let run ?(aux_output : string option) (args : Args.Standard_with_files.t) _o
-    _cfg =
+    _cfg ~(style : Act_delitmus.Runner.Style.t) =
   Or_error.Let_syntax.(
     let%bind input = Args.Standard_with_files.infile_source args in
     let%bind output = Args.Standard_with_files.outfile_sink args in
-    let%bind aux = Act_delitmus.Filter.run () input output in
+    let%bind aux = Act_delitmus.Filter.run style input output in
     Travesty_base_exts.Option.With_errors.iter_m aux_output
       ~f:(write_aux aux))
 
@@ -37,7 +37,15 @@ let command : Command.t =
           ~doc:
             "FILE if given, the filename to write auxiliary litmus \
              information to"
+      and style =
+        Act_delitmus.Runner.Style.(
+          flag_optional_with_default_doc "style"
+            (Arg_type.of_alist_exn
+               [ ("vars-as-globals", Vars_as_globals)
+               ; ("vars-as-parameters", Vars_as_parameters) ])
+            [%sexp_of: Act_delitmus.Runner.Style.t] ~default:Vars_as_globals
+            ~doc:"STYLE_NAME the style of delitmus action to run")
       in
       fun () ->
         Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false ~f:(run ?aux_output))
+          ~with_compiler_tests:false ~f:(run ~style ?aux_output))

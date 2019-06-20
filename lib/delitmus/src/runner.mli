@@ -13,5 +13,15 @@
 
 open Base
 
-val run : Act_c.Mini_litmus.Ast.Validated.t -> Output.t Or_error.t
-(** [run litmus] runs de-litmusification on [litmus]. *)
+(** Enumeration of different styles of delitmusification. *)
+module Style : sig
+  type t = Vars_as_globals | Vars_as_parameters
+  [@@deriving compare, equal, enumerate]
+
+  include Act_utils.Enum.Extension_table with type t := t
+end
+
+val run :
+  Act_c.Mini_litmus.Ast.Validated.t -> style:Style.t -> Output.t Or_error.t
+(** [run litmus ~style] runs de-litmusification on [litmus] according to
+    style [style]. *)
