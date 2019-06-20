@@ -40,7 +40,7 @@ let delitmus_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   ignore file ;
   Or_error.Let_syntax.(
     let%map output =
-      Act_delitmus.Filter.run ()
+      Act_delitmus.Filter.run Act_delitmus.Runner.Style.Vars_as_globals
         (Plumbing.Input.of_fpath path)
         Plumbing.Output.stdout
     in
