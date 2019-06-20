@@ -9,6 +9,8 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+open Base
+
 module Mini = Act_c.Mini
 
 module type S = [%import: (module Thread.S)]
@@ -23,11 +25,11 @@ end) : S = struct
   let is_local : Mini.Identifier.t -> bool =
     Mini.Identifier.Set.mem B.locals
 
-  let when_local (v : 'a) ~(over : 'a -> Mini.Identifier.t) ~(f : 'a -> 'a)
-      : 'a =
-    if is_local (over v) then f v else v
+  let when_local (v : 'a) ~(over : 'a -> Mini.Identifier.t) ~(f : 'a -> 'a Or_error.t)
+      : 'a Or_error.t =
+    if is_local (over v) then f v else Or_error.return v
 
-  let when_global (v : 'a) ~(over : 'a -> Mini.Identifier.t) ~(f : 'a -> 'a)
-      : 'a =
-    if is_local (over v) then v else f v
+  let when_global (v : 'a) ~(over : 'a -> Mini.Identifier.t) ~(f : 'a -> 'a Or_error.t)
+      : 'a Or_error.t =
+    if is_local (over v) then Or_error.return v else f v
 end

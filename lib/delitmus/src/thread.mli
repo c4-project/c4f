@@ -11,18 +11,20 @@
 
 (** Delitmusifier: thread contexts as modules. *)
 
+open Base
+
 (** Module type of modularised thread contexts. *)
 module type S = sig
   val tid : int
   (** [tid] is the thread ID of the thread. *)
 
   val when_local :
-    'a -> over:('a -> Act_c.Mini.Identifier.t) -> f:('a -> 'a) -> 'a
+    'a -> over:('a -> Act_c.Mini.Identifier.t) -> f:('a -> 'a Or_error.t) -> 'a Or_error.t
   (** [when_local x ~over ~f] returns [f x] when [over x] is local, and [x]
       otherwise. *)
 
   val when_global :
-    'a -> over:('a -> Act_c.Mini.Identifier.t) -> f:('a -> 'a) -> 'a
+    'a -> over:('a -> Act_c.Mini.Identifier.t) -> f:('a -> 'a Or_error.t) -> 'a Or_error.t
   (** [when_local x ~over ~f] returns [x] when [over x] is local, and [f x]
       otherwise. *)
 end
