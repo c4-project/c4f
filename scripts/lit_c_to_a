@@ -1,21 +1,20 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Converts a single C litmus test to an assembly litmus test.
 
 ACT="${ACT="act"}"
 
-usage()
-{
+usage() {
 	echo "usage: $0 COMPILER LIT_FILE"
-	exit
+	exit 1
 }
 
-if [ $# -ne 2 ]; then
+if [[ $# -ne 2 ]]; then
 	usage
 fi
 
-compiler=$1
-lit_file=$2
+compiler="$1"
+lit_file="$2"
 
 # Most other invocations of mktemp aren't portable.
 tmpdir="$(mktemp -d)" || exit

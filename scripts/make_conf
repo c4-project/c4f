@@ -14,7 +14,7 @@ error()
 # Prints a 'this item not found' error.
 #
 # Arguments:
-#   1: the item that hsan't been found.
+#   1: the item that hasn't been found.
 not_found()
 {
 	error "'$1' not found, not adding to act.conf."

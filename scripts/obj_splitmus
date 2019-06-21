@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+#
+# A driver that works by running Litmus on a stubbed-out version of
+# a litmus test in cross-compile mode, then generates an object file
+# containing the body of the litmus test and links it into the
+# Litmus harness.
+#
+# Similar to, but more heavyweight than, normal `splitmus`.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
+
+# Programs
+ACT=${ACT="act"}
+GAWK=${GAWK="gawk"}  # Used for awk scripts with GNU extensions.
+AWK=${AWK=${GAWK}}  # Used for everything else.
+LITMUS=${LITMUS="litmus7"}
+
+# Prints the self-reported name of an assembly Litmus test to stdout.
+#
+# $1: path of Litmus file
+get_litmus_name() {
+  local infile="${1}"
+  # The first line of a Litmus test is 'ARCH NAME', where ' ' is just
+  # a regular space, so we can get the name of the test from that.
+  #
+  # TODO(@MattWindsor91): make act able to do this sort of litmus-test
+  #                       header reading.
+  head -n1 "${infile}" | cut -d ' ' -f 2
+}
+
+
+# Runs the splicing Awk script on the given stub and C files; dumps the results
+# to stdout.
+#
+# $1: path to stub file
+# $2: path to litmus C file
+splice()
+{
+	_stubfile="${1}"
+	_cfile="${2}"
+
+	${AWK} -f "${SCRIPTDIR}"/splice.awk "${_stubfile}" "${_cfile}"
+
+	unset _stubfile _cfile
+}
+
+# Makes a temporary file and emits the assembly stubs for the given test into it.
+#
+# $1: path to input file
+# $2: input file's Litmus name
+# $3: compiler (TO BE REMOVED)
+make_stubs()
+{
+	_infile="${1}"
+	_name="${2}"
+	_compiler="${3}"
+
+	_stubtmpl="act-${_name}-XXXXXX.s.stubs"
+	_stubfile="$(mktemp "${_stubtmpl}")"
+	"${ACT}" asm gen-stubs -compiler "${_compiler}" "${_infile}" > "${_stubfile}"
+	echo "${_stubfile}"
+
+	unset _infile _name _compiler _stubtmpl _stubfile
+}
+
+# Makes a temporary file and emits the assembly litmus for the given test into
+# it.
+#
+# $1: path to input file
+# $2: input file's Litmus name
+# $3: compiler (TO BE REMOVED)
+make_asm_litmus()
+{
+  _infile="${1}"
+  _name="${2}"
+  _compiler="${3}"
+
+  _slittmpl="act-${_name}-XXXXXX.s.litmus"
+  _slitfile="$(mktemp "${_slittmpl}")"
+  "${ACT}" asm litmusify -compiler "${_compiler}" "${_infile}" > "${_slitfile}"
+  echo "${_slitfile}"
+
+  unset _infile _name _compiler _slittmpl _slitfile
+}
+
+# Makes a temporary file and emits a stripped version of the given litmus file
+# into it.
+#
+# $1: path to litmus file to strip
+# $2: input file's Litmus name
+# $3: ASM instruction to use to pad out stripped files
+make_stripped_litmus()
+{
+  _slitfile="${1}"
+  _name="${2}"
+  _blank="${3}"
+
+  _striptmpl="act-${_name}-XXXXXX-stripped.s.litmus"
+  _stripfile="$(mktemp "${_striptmpl}")"
+  strip_litmus "${_slitfile}" "${_blank}" > "${_stripfile}"
+
+  echo "${_stripfile}"
+
+  unset _slitfile _name _blank _striptmpl _stripfile
+}
+
+# Produces a ready-to-splice Litmus harness from a delitmus aux file.
+#
+# Globals:
+#   - SCRIPTDIR (read)
+#   - ACT (read)
+#   - LITMUS (read)
+#
+# Arguments:
+#   1: the compiler ID.
+#   2: path to the delitmus aux file to use when generating the harness.
+#   3: path to which a skeleton assembly file should be written.
+#   4: path to which a skeleton assembly Litmus test should be written.
+#   5: directory into which the Litmus harness should be constructed.
+make_litmus_harness() {
+  local compiler="${1}"
+  local auxfile="${2}"
+  local skelfile="${3}"
+  local alitfile="${4}"
+  local litdir="${5}"
+
+  python3 "${SCRIPTDIR}/gen_asm_skel.py" "${auxfile}" > "${skelfile}"
+  "${ACT}" asm litmusify -compiler "${compiler}" -aux "${auxfile}" -o "${alitfile}" "${skelfile}"
+  "${LITMUS}" "${alitfile}" -o "${litdir}"
+}
+
+# Prints the script's usage and exits.
+usage() {
+  echo "usage: ${0} COMPILER FILE"
+  exit 1
+}
+
+# Parameters
+[[ "$#" -ne "2" ]] && usage
+compiler="${1}"
+infile="${2}"
+
+name="$(get_litmus_name "${infile}")"
+
+tmpdir="$(mktemp -d)" || exit 2
+
+auxfile="${tmpdir}/${name}.aux.json"
+objfile="${tmpdir}/${name}.o"
+cfile="${tmpdir}/${name}.c"
+stubfile="${tmpdir}/${name}.stubs.c"
+skelfile="${tmpdir}/${name}.skel.s"
+alitfile="${tmpdir}/${name}.litmus"
+
+
+litdir="${tmpdir}/exec"
+mkdir "${litdir}"
+
+"${ACT}" c delitmus -style vars-as-parameters -aux "${auxfile}" -o "${cfile}" "${infile}"
+"${ACT}" c compile -compiler "${compiler}" -o "${objfile}" "${cfile}"
+
+make_litmus_harness "${compiler}" "${auxfile}" "${skelfile}" "${alitfile}" "${litdir}"
+
+python3 "${SCRIPTDIR}/gen_call_stubs.py" "${auxfile}" > "${stubfile}"
+
+echo "${tmpdir}"
