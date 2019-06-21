@@ -23,9 +23,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     aux_path = pathlib.Path(args.aux)
-    aux = act_py.auxfile.load(aux_path)
+    aux = act_py.auxfile.Aux.load(aux_path)
 
-    num_threads = act_py.auxfile.get_num_threads(aux)
-    for i in range(num_threads):
-        vars = act_py.auxfile.variables_of_thread(aux, i)
-        output_call(i, vars)
+    for i in range(aux.num_threads):
+        output_call(i, aux.variables_of_thread(i))
