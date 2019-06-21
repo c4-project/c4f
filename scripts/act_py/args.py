@@ -11,20 +11,7 @@
 
 import argparse
 
-import act_py
-import act_py.auxfile
-import act_py.args
-import act_py.litmus_id
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(parents=[act_py.args.aux_in_parser])
-    args = parser.parse_args()
-
-    with open(args.aux) as f:
-        aux = act_py.auxfile.load(f)
-
-    aux.rewrite_locals(lambda x: x.qualified)
-
-    with open(args.aux, mode='w') as fp:
-        aux.dump(fp)
+"""A parser that contains a positional argument for taking an auxiliary JSON file."""
+aux_in_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
+aux_in_parser.add_argument('aux', help='Path to the auxiliary JSON file created during a previous delitmus pass.')
 
