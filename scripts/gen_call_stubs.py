@@ -10,6 +10,7 @@ import act_py.litmus_id
 def function_name_of_id(tid : int) -> str:
     return f'P{tid}'
 
+
 def call_string(tid: int, variables: typing.Iterable[str]) -> str:
     """
     Generates a string corresponding to a C function call.
@@ -39,7 +40,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    with open(args.aux) as f:
-        aux: act_py.auxfile.Aux = act_py.auxfile.Aux.load(f)
-
+    aux: act_py.auxfile.Aux = act_py.auxfile.load_path(args.aux)
     output_calls(aux)

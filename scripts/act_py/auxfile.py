@@ -8,7 +8,7 @@
 # ACT is based in part on code from the Herdtools7 project
 # (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
 # project root for more information. *)
-
+import dataclasses
 import pathlib
 import typing
 import json
@@ -20,16 +20,12 @@ from . import litmus_id
 @dataclass
 class LitmusAux:
     locations: typing.Optional[typing.List[str]]
-    init: typing.Optional[typing.Dict[str,int]]
+    init: typing.Optional[typing.Dict[str, int]]
     postcondition: typing.Optional[str]
 
-    @staticmethod
-    def of_dict(aux_dict: typing.Dict[str, typing.Any]):
-        locations = aux_dict['locations']
-        init = aux_dict['init']
-        postcondition = aux_dict['postcondition']
-        return LitmusAux(locations, init, postcondition)
-
+    def rewrite_locals(self, rewriter: typing.Callable[[litmus_id.Lid], str]):
+        if self.postcondition is not None:
+            self.postcondition = litmus_id.rewrite_post_locals(self.postcondition, rewriter)
 
 @dataclass
 class Aux:
@@ -37,21 +33,24 @@ class Aux:
     var_map: typing.Dict[str, typing.Optional[str]]
     litmus_aux: LitmusAux
 
-    @staticmethod
-    def of_dict(aux_dict: typing.Dict[str, typing.Any]):
-        num_threads = aux_dict['num_threads']
-        var_map = aux_dict['var_map']
-        litmus_aux = LitmusAux.of_dict(aux_dict['litmus_aux'])
-        return Aux(num_threads, var_map, litmus_aux)
+    def __str__(self) -> str:
+        """Converts this aux record to a string.
 
-    @staticmethod
-    def load(fd: typing.TextIO) -> 'Aux':
-        aux_dict: typing.Dict[str, typing.Any] = json.load(fd)
-        return Aux.of_dict(aux_dict)
+        :return: A compact JSON serialisation of the aux record.
+        """
+        return json.dumps(dataclasses.asdict(self))
 
     @property
     def litmus_ids(self) -> typing.Iterator[litmus_id.Lid]:
         return (litmus_id.parse(k) for k in self.var_map.keys())
+
+    def dump(self, fp: typing.TextIO) -> None:
+        """Dumps this aux record to a file.
+
+        :param fp: A file-like object to use as the target of the write.
+        :return: Nothing.
+        """
+        json.dump(dataclasses.asdict(self), fp, indent='\t')
 
     def variables_of_thread(self, tid: int) -> typing.Iterator[str]:
         """Yields the C identifier of each variable in this auxiliary record that is visible from the given thread ID.
@@ -60,3 +59,30 @@ class Aux:
         :return: A generator yielding the C identifier of each global variable, or local variable of the given thread.
         """
         return (l.var for l in self.litmus_ids if l.tid is None or tid == l.tid)
+
+    def rewrite_locals(self, rewriter: typing.Callable[[litmus_id.Lid], str]):
+        self.litmus_aux.rewrite_locals(rewriter)
+
+
+def litmus_of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusAux:
+    locations = aux_dict['locations']
+    init = aux_dict['init']
+    postcondition = aux_dict['postcondition']
+    return LitmusAux(locations, init, postcondition)
+
+
+def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> Aux:
+    num_threads: int = aux_dict['num_threads']
+    var_map: typing.Dict[str, typing.Optional[str]] = aux_dict['var_map']
+    litmus_aux: LitmusAux = litmus_of_dict(aux_dict['litmus_aux'])
+    return Aux(num_threads, var_map, litmus_aux)
+
+
+def load(fp: typing.TextIO) -> Aux:
+    aux_dict: typing.Dict[str, typing.Any] = json.load(fp)
+    return of_dict(aux_dict)
+
+
+def load_path(p: typing.Union[str, pathlib.Path]) -> Aux:
+    with open(p) as fp:
+        return load(fp)

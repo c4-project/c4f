@@ -20,8 +20,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    with open(args.aux) as f:
-        aux: act_py.auxfile.Aux = act_py.auxfile.Aux.load(f)
+    aux: act_py.auxfile.Aux = act_py.auxfile.load_path(args.aux)
 
     for i in range(aux.num_threads):
         output_thread(i)
