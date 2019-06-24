@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+# Prints the self-reported name of an assembly Litmus test to stdout.
+#
+# Arguments:
+#   1: path of Litmus file
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+infile="$1"
+
+# The first line of a Litmus test is 'ARCH NAME', where ' ' is just
+# a regular space, so we can get the name of the test from that.
+
+head -n1 "${infile}" | cut -d ' ' -f 2

@@ -5,7 +5,7 @@
 # containing the body of the litmus test and links it into the
 # Litmus harness.
 #
-# Similar to, but more heavyweight than, normal `splitmus`.
+# This script is a wrapper around `obj_splitmus_gen`.
 
 set -o errexit
 set -o pipefail
@@ -18,105 +18,6 @@ ACT=${ACT="act"}
 LITMUS=${LITMUS="litmus7"}
 SED=${SED="sed"}
 
-# Prints the self-reported name of an assembly Litmus test to stdout.
-#
-# $1: path of Litmus file
-get_litmus_name() {
-  local infile="$1"
-  # The first line of a Litmus test is 'ARCH NAME', where ' ' is just
-  # a regular space, so we can get the name of the test from that.
-  #
-  # TODO(@MattWindsor91): make act able to do this sort of litmus-test
-  #                       header reading.
-  head -n1 "${infile}" | cut -d ' ' -f 2
-}
-
-# Runs the delitmusifier and compiler on an input litmus test, saving an
-# aux file and header file for future consumption.
-#
-# Globals:
-#   - ACT (read)
-#   - SCRIPTDIR (read)
-#
-# Arguments:
-#   1: the compiler ID.
-#   2: path to the C litmus test to delitmusify and compile.
-#   3: path to which a delitmus auxiliary file should be written.
-#   4: path to which the intermediate C file should be written.
-#   5: path to which a header file exposing the C file's functions should be written.
-#   4: path to which the compiled object code should be written.
-delitmus_and_compile() {
-  local compiler="$1"
-  local infile="$2"
-  local auxfile="$3"
-  local cfile="$4"
-  local hfile="$5"
-  local objfile="$6"
-
-  "${ACT}" c delitmus -style vars-as-parameters -aux "${auxfile}" -o "${cfile}" "${infile}"
-  "${ACT}" c compile -compiler "${compiler}" -mode object -o "${objfile}" "${cfile}"
-  "${SCRIPTDIR}"/make_header.awk "${cfile}" > "${hfile}"
-}
-
-# Produces a ready-to-splice Litmus harness from a delitmus aux file.
-#
-# Globals:
-#   - ACT (read)
-#   - LITMUS (read)
-#   - SCRIPTDIR (read)
-#
-# Arguments:
-#   1: the compiler ID.
-#   2: path to the delitmus aux file to use when generating the harness.
-#   3: path to which a skeleton assembly file should be written.
-#   4: path to which a skeleton assembly Litmus test should be written.
-#   5: directory into which the Litmus harness should be constructed.
-make_litmus_harness() {
-  local compiler="$1"
-  local auxfile="$2"
-  local skelfile="$3"
-  local alitfile="$4"
-  local litdir="$5"
-
-  "${SCRIPTDIR}/qualify_aux.py" "${auxfile}"
-  "${SCRIPTDIR}/gen_asm_skel.py" "${auxfile}" > "${skelfile}"
-  "${ACT}" asm litmusify -compiler "${compiler}" -aux "${auxfile}" -o "${alitfile}" "${skelfile}"
-  "${LITMUS}" "${alitfile}" -c11 true -o "${litdir}"
-}
-
-# Splices function calls corresponding to an object-file test candidate into a
-# Litmus harness.  The object file, and its corresponding header, must be
-# called 'body'.
-#
-# Globals:
-#   - SCRIPTDIR (read)
-#   - SED (read)
-#
-# Arguments:
-#   1: path to the delitmus aux file to use when generating the harness.
-#   2: path to the Litmus harness Makefile.
-#   3: path to the Litmus harness's main .c file.
-#   4: path to which a function call stub file should be written.
-splice_litmus() {
-  local auxfile="$1"
-  local makefile="$2"
-  local runfile="$3"
-  local stubfile="$4"
-
-  "${SCRIPTDIR}/gen_call_stubs.py" "${auxfile}" > "${stubfile}"
-  "${SCRIPTDIR}"/splice.awk "${stubfile}" "${runfile}" > "${runfile}.new"
-  mv "${runfile}.new" "${runfile}"
-
-  "${SED}" '
-    /#include "utils.h"/ a\
-    #include "body.h"
-  ' "${runfile}" > "${runfile}.new"
-  mv "${runfile}.new" "${runfile}"
-
-  "${SED}" "s/UTILS=/UTILS=body.o /" "${makefile}" > "${makefile}.new"
-  mv "${makefile}.new" "${makefile}"
-}
-
 # Prints the script's usage and exits.
 usage() {
   echo "usage: $0 COMPILER FILE"
@@ -126,32 +27,10 @@ usage() {
 # Parameters
 [[ "$#" -ne "2" ]] && usage
 compiler="$1"
-infile="${2}"
-
-name="$(get_litmus_name "${infile}")"
+infile="$2"
+name="$("${SCRIPTDIR}/litmus_test_name" "${infile}")"
 
 tmpdir="$(mktemp -d)" || exit 2
-echo "${tmpdir}"
-
-auxfile="${tmpdir}/${name}.aux.json"
-cfile="${tmpdir}/${name}.c"
-stubfile="${tmpdir}/${name}.stubs.c"
-skelfile="${tmpdir}/${name}.skel.s"
-alitfile="${tmpdir}/${name}.litmus"
-
-litdir="${tmpdir}/exec"
-mkdir "${litdir}"
-
-runfile="${litdir}/${name}.c"
-
-# TODO(@MattWindsor91): what if $name is body?
-objfile="${litdir}/body.o"
-hfile="${litdir}/body.h"
-
-makefile="${litdir}/Makefile"
-
-delitmus_and_compile "${compiler}" "${infile}" "${auxfile}" "${cfile}" "${hfile}" "${objfile}"
-make_litmus_harness "${compiler}" "${auxfile}" "${skelfile}" "${alitfile}" "${litdir}"
-splice_litmus "${auxfile}" "${makefile}" "${runfile}" "${stubfile}"
-
-cd "${litdir}" && make
+"${SCRIPTDIR}/obj_splitmus_gen" "${compiler}" "${infile}" "${name}" "${tmpdir}" > /dev/null
+"${tmpdir}/exec/${name}.exe"
+rm -r "${tmpdir}"
