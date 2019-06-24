@@ -54,33 +54,38 @@ make_litmus_harness() {
   "${SCRIPTDIR}/qualify_aux.py" "${auxfile}"
   "${SCRIPTDIR}/gen_asm_skel.py" "${auxfile}" > "${skelfile}"
   "${ACT}" asm litmusify -compiler "${compiler}" -aux "${auxfile}" -o "${alitfile}" "${skelfile}"
-  "${LITMUS}" "${alitfile}" -o "${litdir}"
+  "${LITMUS}" "${alitfile}" -c11 true -o "${litdir}"
 }
 
 # Splices function calls corresponding to an object-file test candidate into a
-# Litmus harness.
+# Litmus harness.  The object file, and its corresponding header, must be
+# called 'body'.
 #
 # Globals:
 #   - SCRIPTDIR (read)
 #
 # Arguments:
-#   1: the name of the test object file, local to the Litmus harness directory.
-#   2: path to the delitmus aux file to use when generating the harness.
-#   3: path to the Litmus harness Makefile.
-#   4: path to the Litmus harness's main .c file.
-#   5: path to which a function call stub file should be written.
+#   1: path to the delitmus aux file to use when generating the harness.
+#   2: path to the Litmus harness Makefile.
+#   3: path to the Litmus harness's main .c file.
+#   4: path to which a function call stub file should be written.
 splice_litmus() {
-  local objname="$1"
-  local auxfile="$2"
-  local makefile="$3"
-  local runfile="$4"
-  local stubfile="$5"
+  local auxfile="$1"
+  local makefile="$2"
+  local runfile="$3"
+  local stubfile="$4"
 
   "${SCRIPTDIR}/gen_call_stubs.py" "${auxfile}" > "${stubfile}"
   "${SCRIPTDIR}"/splice.awk "${stubfile}" "${runfile}" > "${runfile}.new"
   mv "${runfile}.new" "${runfile}"
 
-  "${SED}" "s/UTILS=/UTILS=${objname} /" "${makefile}" > "${makefile}.new"
+  "${SED}" '
+    /#include "utils.h"/ a\
+    #include "body.h"
+  ' "${runfile}" > "${runfile}.new"
+  mv "${runfile}.new" "${runfile}"
+
+  "${SED}" "s/UTILS=/UTILS=body.o /" "${makefile}" > "${makefile}.new"
   mv "${makefile}.new" "${makefile}"
 }
 
@@ -110,14 +115,18 @@ litdir="${tmpdir}/exec"
 mkdir "${litdir}"
 
 runfile="${litdir}/${name}.c"
-objname="${name}_body.o" # Can't be $name.o; this clashes with Litmus harness
-objfile="${litdir}/${objname}"
+
+# TODO(@MattWindsor91): what if $name is body?
+objfile="${litdir}/body.o"
+hfile="${litdir}/body.h"
+
 makefile="${litdir}/Makefile"
 
 "${ACT}" c delitmus -style vars-as-parameters -aux "${auxfile}" -o "${cfile}" "${infile}"
 "${ACT}" c compile -compiler "${compiler}" -mode object -o "${objfile}" "${cfile}"
+"${SCRIPTDIR}"/make_header.awk "${cfile}" > "${hfile}"
 
 make_litmus_harness "${compiler}" "${auxfile}" "${skelfile}" "${alitfile}" "${litdir}"
-splice_litmus "${objname}" "${auxfile}" "${makefile}" "${runfile}" "${stubfile}"
+splice_litmus "${auxfile}" "${makefile}" "${runfile}" "${stubfile}"
 
 cd "${litdir}" && make
