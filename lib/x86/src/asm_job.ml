@@ -48,7 +48,6 @@ module Make_runner_deps
   module Sanitiser_hook = Sanitiser_hook.Make (Src_lang)
   module Gcc_conv = Conv.Make (Src_lang) (Language_definition.Gcc)
   module Conv = Conv.Make (Src_lang) (Dst_lang)
-  module Stub_gen = Stub_gen.Make (Dialect.Gcc) (Pp.Gcc)
 
   let convert_program = Conv.convert
 
@@ -57,10 +56,6 @@ module Make_runner_deps
   module Program :
     Plumbing.Loadable_types.S with type t = Src_lang.Program.t =
     Frontend
-
-  let as_asm_stub (tid : int) (p : Lang.Program.t) :
-      Act_c.Asm_stub.t Or_error.t =
-    Or_error.(p |> Gcc_conv.convert >>= Stub_gen.run tid)
 end
 
 let get_runner (dialect : Id.t) :

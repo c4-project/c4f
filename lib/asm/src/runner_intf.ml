@@ -43,11 +43,6 @@ module type Basic = sig
   module Sanitiser_hook :
     Act_sanitiser.Hook_intf.S with module Lang = Src_lang
 
-  val as_asm_stub : int -> Src_lang.Program.t -> Act_c.Asm_stub.t Or_error.t
-  (** [as_asm_stub tid t ~oc] outputs a GCC assembly stub representation of
-      program [t], with thread ID [tid], onto [oc]. It can fail, for example
-      if the language doesn't support such dumping. *)
-
   val convert_program : Src_lang.Program.t -> Dst_lang.Program.t Or_error.t
 
   val convert_const : Src_lang.Constant.t -> Dst_lang.Constant.t Or_error.t
