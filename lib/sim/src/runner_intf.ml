@@ -63,6 +63,10 @@ module type Common = sig
       output files. The filter shouldn't produce any auxiliary output, and
       should accept an architecture as its input. *)
   module Filter : Basic_filter
+
+  (** Simulator runners must be able to load back their output into the
+      simulator output format. *)
+  module Reader : Reader_intf.Basic
 end
 
 (** Basic interface for simulator runners constructed from filters.
@@ -72,10 +76,6 @@ end
     that output back in as generic simulator output. *)
 module type Basic_from_filter = sig
   include Common
-
-  (** Simulator runners must be able to load back their output into the
-      simulator output format. *)
-  module Reader : Reader_intf.Basic
 end
 
 (** {3 Output interfaces} *)

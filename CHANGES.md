@@ -2,8 +2,10 @@
 
 ## 2019-Jun-24
 
-- `act tool sim` is now `act backend`, in anticipation of a cross-board
+- `act tool sim` is now `act backend run`, in anticipation of a cross-board
   rename.
+- New command `act backend parse`, which parses the output of a configured
+  simulator and outputs an observation record as a JSON file.
 
 ## 2019-Jun-11
 

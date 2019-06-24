@@ -26,7 +26,7 @@ open Base_quickcheck
 
 module Observation = struct
   type t = {states: State.t list; is_undefined: bool}
-  [@@deriving fields, sexp_of, quickcheck]
+  [@@deriving fields, sexp_of, quickcheck, yojson]
 
   (** [init ()] generates an initial [t]. *)
   let init () = {states= []; is_undefined= false}

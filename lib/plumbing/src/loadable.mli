@@ -24,7 +24,7 @@ module Of_sexpable (B : Sexpable.S) : Loadable_types.S with type t = B.t
 
 (** [Of_jsonable] extends a [Of_jsonable] into an [S]; the added methods
     load JSON. *)
-module Of_jsonable (B : Loadable_types.Of_jsonable) :
+module Of_jsonable (B : Jsonable_types.Of) :
   Loadable_types.S with type t = B.t
 
 (** {3 Chaining} *)

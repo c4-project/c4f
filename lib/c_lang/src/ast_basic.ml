@@ -341,9 +341,6 @@ module Constant = struct
           | _ ->
               Result.fail "malformed JSON encoding of C literal" ) ))
 
-  let of_yojson_exn (json : Yojson.Safe.t) : t =
-    json |> of_yojson |> Result.ok_or_failwith
-
   let gen_int32_as_int : int Quickcheck.Generator.t =
     Quickcheck.Generator.map [%quickcheck.generator: int32] ~f:(fun x ->
         Option.value ~default:0 (Int.of_int32 x) )

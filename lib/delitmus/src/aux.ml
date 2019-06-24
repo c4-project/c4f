@@ -15,7 +15,7 @@ module Tx = Travesty_base_exts
 module C_aux = struct
   type t = Act_c.Mini.Constant.t Act_litmus.Aux.t [@@deriving equal]
 
-  module J : Plumbing.Loadable_types.Jsonable with type t := t =
+  module J : Plumbing.Jsonable_types.S with type t := t =
   Act_litmus.Aux.Json (struct
     include Act_c.Mini.Constant
 
@@ -34,9 +34,6 @@ module M = struct
     ; var_map: Var_map.t
     ; num_threads: int }
   [@@deriving make, fields, equal, yojson]
-
-  let of_yojson_exn (j : Yojson.Safe.t) : t =
-    j |> of_yojson |> Base.Result.ok_or_failwith
 end
 
 include M

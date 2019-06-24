@@ -43,7 +43,7 @@ include Comparable.S with type t := t
 
 include Pretty_printer.S with type t := t
 
-include Plumbing.Loadable_types.Jsonable with type t := t
+include Plumbing.Jsonable_types.S with type t := t
 
 (** Note that [of_string] is [create_exn]; ie, it can fail. *)
 include Stringable.S with type t := t

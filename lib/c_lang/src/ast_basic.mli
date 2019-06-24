@@ -179,7 +179,7 @@ module Constant : sig
   val to_int : t -> int Or_error.t
 
   (** {3 JSON serialisation} *)
-  include Plumbing.Loadable_types.Jsonable with type t := t
+  include Plumbing.Jsonable_types.S with type t := t
 
   (** {3 Quickcheck} *)
 

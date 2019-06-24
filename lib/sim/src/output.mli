@@ -27,7 +27,7 @@ open Base
 
 module Observation : sig
   (** Opaque type of a simulator observation record. *)
-  type t [@@deriving sexp_of, quickcheck]
+  type t [@@deriving sexp_of, quickcheck, yojson]
 
   (** {2 Constructing an observation record} *)
 

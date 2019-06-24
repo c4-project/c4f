@@ -25,54 +25,32 @@ open Core
 open Act_common
 
 let run (_o : Output.t) (_cfg : Act_config.Act.t)
-    ~(oracle_raw : [< `Herd of string | `Litmus of string])
-    ~(subject_raw : [< `Herd of string | `Litmus of string]) :
+    ~(oracle_raw : string)
+    ~(subject_raw : string) :
     unit Or_error.t =
   ignore oracle_raw ;
   ignore subject_raw ;
   Or_error.unimplemented "TBC"
 
-let herd_flag (name : string) : [> `Herd of string] option Command.Param.t =
-  Command.(
-    Param.map
-      ~f:(Option.map ~f:(fun x -> `Herd x))
-      (Param.flag (name ^ "-herd")
-         (Flag.optional Filename.arg_type)
-         ~doc:("FILENAME read Herd7 output for " ^ name ^ " from this file")))
-
-let litmus_flag (name : string) :
-    [> `Litmus of string] option Command.Param.t =
-  Command.(
-    Param.map
-      ~f:(Option.map ~f:(fun x -> `Litmus x))
-      (Param.flag (name ^ "-litmus")
-         (Flag.optional Filename.arg_type)
-         ~doc:
-           ("FILENAME read Litmus7 output for " ^ name ^ " from this file")))
-
-let file_flag (name : string) :
-    [> `Herd of string | `Litmus of string] Command.Param.t =
-  Command.(
-    Param.choose_one
-      [herd_flag name; litmus_flag name]
-      ~if_nothing_chosen:`Raise)
-
 let readme () =
   Act_utils.My_string.format_for_readme
     {|
-    `act diff-states` takes two summaries of simulation runs: an
+    `act diff-states` takes two summaries of backend runs: an
     'oracle' (usually a program _before_ compilation), and a
     'subject' (usually the same program _after_ compilation).  It
     then parses the summaries, applies any provided variable name
     mappings, and compares the sets of final states on both ends.
+
+    Both runs must be in ACT's state JSON format.
   |}
 
 let command : Command.t =
   Command.basic ~summary:"compares two simulation runs" ~readme
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard.get
-      and oracle_raw = file_flag "oracle"
-      and subject_raw = file_flag "subject" in
+      and oracle_raw = anon ("ORACLE_NAME" %: Filename.arg_type)
+      and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type)
+      in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:(fun _args -> run ~oracle_raw ~subject_raw))
