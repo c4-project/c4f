@@ -29,6 +29,8 @@ module Make (Basic : sig
   val rewrite_global_address : Act_c.Mini.Address.t rw_fun
 
   val rewrite_global_lvalue : Act_c.Mini.Lvalue.t rw_fun
+
+  val rewrite_function_name : Act_common.C_id.t rw_fun
 end) =
 struct
   module Rewriter_with_thread (Ctx : sig
@@ -152,7 +154,8 @@ struct
       ~(context : Context.t) :
       C.Mini.Function.t C.Mini_intf.id_assoc Or_error.t =
     Tx.List.With_errors.mapi_m fs ~f:(fun tid ->
-        Tx.Tuple2.With_errors.map_right_m ~f:(rewrite tid ~context) )
+        Tx.Tuple2.With_errors.bi_map_m ~left:Basic.rewrite_function_name
+          ~right:(rewrite tid ~context) )
 end
 
 module Vars_as_globals = Make (struct
@@ -186,6 +189,10 @@ module Vars_as_globals = Make (struct
       ~(context : Context.t) : Act_common.C_id.t Or_error.t =
     Context.lookup_and_require_global context
       ~id:(Act_common.Litmus_id.local tid cid)
+
+  let rewrite_function_name :
+      Act_common.C_id.t -> Act_common.C_id.t Or_error.t =
+    Or_error.return
 end)
 
 module Vars_as_parameters = Make (struct
@@ -212,4 +219,11 @@ module Vars_as_parameters = Make (struct
     ignore (tid : int) ;
     ignore (context : Context.t) ;
     Or_error.return cid
+
+  let rewrite_function_name (fname : Act_common.C_id.t) :
+      Act_common.C_id.t Or_error.t =
+    (* TODO(@MattWindsor91): make this customisable? *)
+    let fname_str = Act_common.C_id.to_string fname in
+    let fname_str' = fname_str ^ "_body" in
+    Act_common.C_id.create fname_str'
 end)
