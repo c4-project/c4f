@@ -60,10 +60,10 @@ module Json (Const : sig
 
   include Pretty_printer.S with type t := t
 
-  include Plumbing.Loadable_types.Jsonable with type t := t
+  include Plumbing.Jsonable_types.S with type t := t
 
   val parse_post_string : string -> t Ast_base.Postcondition.t Or_error.t
-end) : Plumbing.Loadable_types.Jsonable with type t = Const.t t = struct
+end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
   type nonrec t = Const.t t
 
   let opt (foo : 'a option) ~(f : 'a -> Yojson.Safe.t) : Yojson.Safe.t =
@@ -109,7 +109,4 @@ end) : Plumbing.Loadable_types.Jsonable with type t = Const.t t = struct
         postcondition_of_json (U.member "postcondition" json)
       in
       make ?locations ~init ?postcondition ())
-
-  let of_yojson_exn (json : Yojson.Safe.t) : t =
-    Result.ok_or_failwith (of_yojson json)
 end

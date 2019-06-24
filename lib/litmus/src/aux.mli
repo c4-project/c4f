@@ -61,7 +61,7 @@ module Json (Const : sig
 
   include Pretty_printer.S with type t := t
 
-  include Plumbing.Loadable_types.Jsonable with type t := t
+  include Plumbing.Jsonable_types.S with type t := t
 
   val parse_post_string : string -> t Ast_base.Postcondition.t Or_error.t
-end) : Plumbing.Loadable_types.Jsonable with type t = Const.t t
+end) : Plumbing.Jsonable_types.S with type t = Const.t t

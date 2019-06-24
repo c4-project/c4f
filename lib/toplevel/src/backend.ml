@@ -23,20 +23,18 @@
 
 open Core_kernel
 open Act_common
-module M_spec = Act_machine.Spec
 
-let run_sim ?(arch = Act_sim.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
+let run_backend ?(arch = Act_sim.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
     (_o : Output.t) (cfg : Act_config.Act.t) : unit Or_error.t =
   let module Res = Sim_support.Make_resolver (struct
     let cfg = cfg
   end) in
   Or_error.Let_syntax.(
-    (* TODO(@MattWindsor91): use argv, etc. *)
     let%bind (module Sim) = Res.resolve_single fqid in
     Sim.Filter.run arch (Plumbing.Input.stdin ()) Plumbing.Output.stdout
-    (*Sim.run_direct ?arch cfg argv*))
+    )
 
-let command : Command.t =
+let run_command : Command.t =
   Command.basic ~summary:"runs a configured test backend"
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard.get
@@ -44,17 +42,53 @@ let command : Command.t =
       and arch =
         choose_one
           [ Args.flag_to_enum_choice (Some Act_sim.Arch.C) "-c"
-              ~doc:"Use the act.conf-configured model for C"
+              ~doc:"Tells the backend to test the input against the C memory model"
           ; map
               ~f:(Option.map ~f:(fun x -> Some (Act_sim.Arch.Assembly x)))
               (Args.arch
                  ~doc:
-                   "Use the act.conf-configured model for this architecture"
+                   "ARCH tells the backend to test the input against the given architecture"
                  ()) ]
           ~if_nothing_chosen:(`Default_to None)
-        (* and argv = flag "--" Command.Flag.escape ~doc:"STRINGS Arguments
-           to send to Herd directly." *)
       in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:(fun _args -> run_sim ?arch (* ?argv *) ?fqid:sim))
+          ~f:(fun _args -> run_backend ?arch ?fqid:sim))
+
+let parse_backend ?(fqid : Id.t = Id.of_string "herd")
+    (_o : Output.t) (cfg : Act_config.Act.t) : unit Or_error.t =
+  let module Res = Sim_support.Make_resolver (struct
+    let cfg = cfg
+  end) in
+  Or_error.Let_syntax.(
+    let%bind (module Sim) = Res.resolve_single fqid in
+    let%bind out = Sim.Reader.load_from_isrc (Plumbing.Input.stdin ()) in
+    let%map obs = Act_sim.Output.to_observation_or_error ~handle_skipped:`Error out in
+    Yojson.Safe.pretty_to_channel Stdio.Out_channel.stdout
+      (Act_sim.Output.Observation.to_yojson obs)
+    )
+
+let parse_command : Command.t =
+  Command.basic ~summary:"parses native output from a configured test backend"
+    Command.Let_syntax.(
+      let%map_open standard_args = Args.Standard.get
+      and sim = Args.simulator ()
+      in
+      fun () ->
+        Common.lift_command standard_args ~with_compiler_tests:false
+          ~f:(fun _args -> parse_backend ?fqid:sim))
+
+
+
+let readme () : string =
+  Act_utils.My_string.format_for_readme
+    {|
+The `backend` command group contains commands for running test backends,
+as well as processing their results.
+|}
+
+
+let command : Command.t =
+  Command.group ~summary:"commands for dealing with test backends" ~readme
+    [ ("run", run_command)
+    ; ("parse", parse_command) ]

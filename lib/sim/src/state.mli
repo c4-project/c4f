@@ -27,7 +27,7 @@ open Base
 open Act_common
 
 (** [t] is the type of states: a binding from name to value. *)
-type t [@@deriving sexp, compare, quickcheck]
+type t [@@deriving sexp, compare, yojson, quickcheck]
 
 include Comparable.S with type t := t
 

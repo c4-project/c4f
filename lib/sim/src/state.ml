@@ -25,12 +25,17 @@ open Base
 open Act_common
 open Act_utils
 
+module Tx = Travesty_base_exts
+
 module M = struct
   type t = string Map.M(Litmus_id).t [@@deriving sexp, compare]
 end
 
 include M
 include Comparable.Make (M)
+
+module J : Plumbing.Jsonable_types.S with type t := t = Plumbing.Jsonable.Make_map (Litmus_id) (Plumbing.Jsonable.String)
+include J
 
 module Q : My_quickcheck.S_with_sexp with type t := t = struct
   include M

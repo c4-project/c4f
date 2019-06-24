@@ -29,8 +29,8 @@ open Act_common
 val run :
      Output.t
   -> Act_config.Act.t
-  -> oracle_raw:[< `Herd of string | `Litmus of string]
-  -> subject_raw:[< `Herd of string | `Litmus of string]
+  -> oracle_raw:string
+  -> subject_raw:string
   -> unit Or_error.t
 (** [run o cfg ~oracle_raw ~subject_raw] runs the state differ, accepting
     simulator input from the files named by [oracle_raw] and [subject_raw]. *)

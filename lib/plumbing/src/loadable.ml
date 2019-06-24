@@ -64,17 +64,20 @@ Make (struct
     wrap path (fun () -> B.t_of_sexp (Sexp.input_sexp ic))
 end)
 
-module Of_jsonable (B : Loadable_types.Of_jsonable) :
+module Of_jsonable (B : Jsonable_types.Of) :
   Loadable_types.S with type t = B.t = Make (struct
   type t = B.t
 
+  let of_yojson_exn (j : Yojson.Safe.t) : t =
+    Result.ok_or_failwith (B.of_yojson j)
+
   let load_from_string (s : string) : t Or_error.t =
-    wrap "string" (fun () -> B.of_yojson_exn (Yojson.Safe.from_string s))
+    wrap "string" (fun () -> of_yojson_exn (Yojson.Safe.from_string s))
 
   let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) :
       t Or_error.t =
     wrap path (fun () ->
-        B.of_yojson_exn (Yojson.Safe.from_channel ~fname:path ic) )
+        of_yojson_exn (Yojson.Safe.from_channel ~fname:path ic) )
 end)
 
 module To_filter (L : Loadable_types.S) :

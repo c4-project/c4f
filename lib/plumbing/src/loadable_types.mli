@@ -56,35 +56,3 @@ module type Basic_chain = sig
       of [dst]. *)
 end
 
-(** {2 JSON}
-
-    These module types are here because they're currently only used by
-    [Loadable], but may move later on. *)
-
-(** Signature of things that can be serialised to (safe Yo-)json. *)
-module type To_jsonable = sig
-  type t
-
-  val to_yojson : t -> Yojson.Safe.t
-end
-
-(** Signature of things that can be deserialised from (safe Yo-)json.
-
-    Deliberately aligned with the API of [ppx_deriving_yojson]. *)
-module type Of_jsonable = sig
-  type t
-
-  val of_yojson : Yojson.Safe.t -> (t, string) Result.t
-
-  val of_yojson_exn : Yojson.Safe.t -> t
-end
-
-(** Signature of things that can be serialised to, and deserialised from,
-    (safe Yo-)json. *)
-module type Jsonable = sig
-  type t
-
-  include To_jsonable with type t := t
-
-  include Of_jsonable with type t := t
-end
