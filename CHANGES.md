@@ -1,5 +1,10 @@
 # Unreleased
 
+## 2019-Jun-24
+
+- `act tool sim` is now `act backend`, in anticipation of a cross-board
+  rename.
+
 ## 2019-Jun-11
 
 - New command `act c compile`, for compiling single files without testing or

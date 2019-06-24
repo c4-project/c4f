@@ -36,8 +36,8 @@ let run_sim ?(arch = Act_sim.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
     Sim.Filter.run arch (Plumbing.Input.stdin ()) Plumbing.Output.stdout
     (*Sim.run_direct ?arch cfg argv*))
 
-let sim_command : Command.t =
-  Command.basic ~summary:"runs a simulator"
+let command : Command.t =
+  Command.basic ~summary:"runs a configured test backend"
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard.get
       and sim = Args.simulator ()
@@ -58,7 +58,3 @@ let sim_command : Command.t =
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:(fun _args -> run_sim ?arch (* ?argv *) ?fqid:sim))
-
-let command : Command.t =
-  Command.group ~summary:"runs external tools directly"
-    [("sim", sim_command)]

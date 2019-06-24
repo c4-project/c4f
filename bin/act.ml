@@ -44,6 +44,6 @@ let command =
     ; ("configure", Configure.command)
     ; ("diff-states", Diff_states.command)
     ; ("test", Test.command)
-    ; ("tool", Tool.command) ]
+    ; ("backend", Backend.command) ]
 
 let () = Command.run command
