@@ -75,8 +75,8 @@ let%test_module "JSON serialisation" =
   ( module struct
     let test (json_str : string) : unit =
       let json = Yojson.Safe.from_string json_str in
-      let aux = J.of_yojson_exn json in
-      print_s [%sexp (aux : int A.t)]
+      let aux = J.of_yojson json in
+      print_s [%sexp (aux : (int A.t, string) Result.t)]
 
     let%expect_test "SBSC example aux without a postcondition" =
       test
@@ -87,7 +87,7 @@ let%test_module "JSON serialisation" =
         }
         |} ;
       [%expect
-        {| ((locations ((x y))) (init ((x 0) (y 0))) (postcondition ())) |}]
+        {| (Ok ((locations ((x y))) (init ((x 0) (y 0))) (postcondition ()))) |}]
   end )
 
 (* TODO(@MattWindsor91): test with postcondition *)

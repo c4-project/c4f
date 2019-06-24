@@ -26,37 +26,7 @@ module Ac = Act_common
 module Au = Act_utils
 
 module Spec = struct
-  module M = struct
-    type t = (string, Act_delitmus.Aux.t) List.Assoc.t
-
-    module SRM : Monad.S with type 'a t = ('a, string) Result.t = struct
-      type 'a t = ('a, string) Result.t
-
-      include (Result : Monad.S with type 'a t := ('a, string) Result.t)
-    end
-
-    module List_of_alist =
-      Travesty.Bi_traversable.Chain_Bi2_Traverse1
-        (Travesty_base_exts.Alist)
-        (Travesty_base_exts.List)
-    module List_of_alist_SRM = List_of_alist.On_monad (SRM)
-
-    let of_yojson (j : Yojson.Safe.t) : (t, string) Result.t =
-      Result.Let_syntax.(
-        let jsons =
-          [j] |> Yojson.Safe.Util.filter_assoc
-          |> List_of_alist_SRM.map_right_m ~f:Act_delitmus.Aux.of_yojson
-        in
-        match%bind jsons with
-        | [x] ->
-            Result.return x
-        | _ ->
-            Result.fail "Expected a JSON object here")
-
-    let of_yojson_exn (j : Yojson.Safe.t) : t =
-      j |> of_yojson |> Result.ok_or_failwith
-  end
-
+  module M = Plumbing.Jsonable.Make_alist (String) (Act_delitmus.Aux)
   include M
 
   module Load : Plumbing.Loadable_types.S with type t := t =
