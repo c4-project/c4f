@@ -2,6 +2,7 @@
 
 import argparse
 
+import act_py.args
 import act_py.auxfile
 
 
@@ -15,9 +16,7 @@ def output_thread(id: int):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('aux')
-
+    parser = argparse.ArgumentParser(parents=[act_py.args.aux_in_parser])
     args = parser.parse_args()
 
     aux: act_py.auxfile.Aux = act_py.auxfile.load_path(args.aux)

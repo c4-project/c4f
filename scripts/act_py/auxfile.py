@@ -52,13 +52,14 @@ class Aux:
         """
         json.dump(dataclasses.asdict(self), fp, indent='\t')
 
-    def variables_of_thread(self, tid: int) -> typing.Iterator[str]:
+    def variables_of_thread(self, tid: int) -> typing.Iterator[litmus_id.Lid]:
         """Yields the C identifier of each variable in this auxiliary record that is visible from the given thread ID.
 
         :param tid: The ID of the thread whose local variables we want.
-        :return: A generator yielding the C identifier of each global variable, or local variable of the given thread.
+        :return: A generator yielding the Litmus identifier of each global variable, or local variable of the given
+                 thread.
         """
-        return (l.var for l in self.litmus_ids if l.tid is None or tid == l.tid)
+        return (l for l in self.litmus_ids if l.tid is None or tid == l.tid)
 
     def rewrite_locals(self, rewriter: typing.Callable[[litmus_id.Lid], str]):
         self.litmus_aux.rewrite_locals(rewriter)

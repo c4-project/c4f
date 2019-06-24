@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # The Automagic Compiler Tormentor
 #
 # Copyright (c) 2018--2019 Matt Windsor and contributors
@@ -15,6 +16,8 @@ import act_py
 import act_py.auxfile
 import act_py.args
 import act_py.litmus_id
+
+# TODO(@MattWindsor91): fix up ACT so that this isn't necessary.
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[act_py.args.aux_in_parser])

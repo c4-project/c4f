@@ -61,19 +61,19 @@ P3()
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 void
-P0(atomic_int *x, atomic_int *y)
+P0_body(atomic_int *x, atomic_int *y)
 { atomic_store_explicit(x, 1, memory_order_seq_cst); }
 void
-P1(atomic_int *x, atomic_int *y)
+P1_body(atomic_int *x, atomic_int *y)
 { atomic_store_explicit(y, 1, memory_order_seq_cst); }
 void
-P2(atomic_int *x, atomic_int *y, int *r0, int *r1)
+P2_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
 {
     *r0 = atomic_load_explicit(x, memory_order_acquire);
     *r1 = atomic_load_explicit(y, memory_order_seq_cst);
 }
 void
-P3(atomic_int *x, atomic_int *y, int *r0, int *r1)
+P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
 {
     *r0 = atomic_load_explicit(y, memory_order_acquire);
     *r1 = atomic_load_explicit(x, memory_order_seq_cst);
@@ -189,31 +189,33 @@ P4()
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 void
-P0(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
-   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+P0_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
 { atomic_store_explicit(ne0J8wrPQam, 3417, memory_order_seq_cst); }
 void
-P1(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
-   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+P1_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
 {
     atomic_store_explicit(ne0J8wrPQam, 481486, memory_order_relaxed);
     atomic_store_explicit(x, 1, memory_order_seq_cst);
 }
 void
-P2(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
-   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
+P2_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
 { atomic_store_explicit(y, 1, memory_order_seq_cst); }
 void
-P3(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
-   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *r0, int *r1)
+P3_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *r0,
+        int *r1)
 {
     *r0 = atomic_load_explicit(x, memory_order_acquire);
     *r1 = atomic_load_explicit(y, memory_order_seq_cst);
     atomic_store_explicit(ne0J8wrPQam, -7, memory_order_seq_cst);
 }
 void
-P4(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
-   atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *r0, int *r1)
+P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
+        atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y, int *r0,
+        int *r1)
 {
     *r0 = atomic_load_explicit(y, memory_order_acquire);
     *r1 = atomic_load_explicit(x, memory_order_seq_cst);
@@ -298,14 +300,14 @@ P1()
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 void
-P0(atomic_int *x, int *r0)
+P0_body(atomic_int *x, int *r0)
 {
     *r0 = 0;
     atomic_compare_exchange_strong_explicit(x, r0, 2, memory_order_relaxed,
                                             memory_order_relaxed);
 }
 void
-P1(atomic_int *x)
+P1_body(atomic_int *x)
 { atomic_store_explicit(x, 1, memory_order_relaxed); }
 
 /* --Begin auxiliary output--
@@ -355,7 +357,7 @@ P0()
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 void
-P0(int *x, int *r0)
+P0_body(int *x, int *r0)
 { *x = 1; *r0 = *x; }
 
 /* --Begin auxiliary output--
@@ -426,16 +428,16 @@ P2()
 // <!> Auto-generated from a litmus test by act.
 #include <stdatomic.h>
 void
-P0(atomic_int *x, atomic_int *y)
+P0_body(atomic_int *x, atomic_int *y)
 { atomic_store_explicit(x, 1, memory_order_seq_cst); }
 void
-P1(atomic_int *x, atomic_int *y, int *r0, int *r1)
+P1_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
 {
     *r0 = atomic_load_explicit(x, memory_order_acquire);
     *r1 = atomic_load_explicit(y, memory_order_seq_cst);
 }
 void
-P2(atomic_int *x, atomic_int *y, int *r0)
+P2_body(atomic_int *x, atomic_int *y, int *r0)
 {
     atomic_store_explicit(y, 1, memory_order_seq_cst);
     *r0 = atomic_load_explicit(x, memory_order_seq_cst);
