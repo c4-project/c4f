@@ -10,8 +10,8 @@
 
 BEGIN {
   # The current thread being captured or spliced.
-  # This is 1-indexed, so 0 represents the gap before the first thread.
-  thread = 1;
+  thread = 0;
+  filesize[0] = 0;
 
   # States of the splicer.
   S_CAPTURING = 0;
@@ -21,14 +21,14 @@ BEGIN {
   S_SPLICING_INNER = 4;
   S_SPLICING_IN_PROGRESS = 5;
   state = S_CAPTURING;
-
-  filesize[thread] = 0;
 }
 
 # End of thread.
 state == S_CAPTURING && /^\/\/ NEXT/ {
   state = S_CHANGING_THREAD;
+
   thread++;
+  filesize[thread] = 0;
 }
 
 # End of splice input.
@@ -46,7 +46,6 @@ state == S_CAPTURING {
 # Assuming Litmus lays out its threads in sequential order.
 state == S_SPLICING_OUTER && /static void \*P[0-9]+\(void \*_vb\) \{/ {
   state = S_SPLICING_INNER;
-  thread++;
 }
 
 # Start of region to splice out.
@@ -60,6 +59,7 @@ state == S_SPLICING_INNER && /^asm __volatile__ \($/ {
 # End of thread harness function.
 state == S_SPLICING_INNER && /return NULL;/ {
   state = S_SPLICING_OUTER;
+  thread++;
 }
 
 # Print bits of harness that aren't to be spliced over.
