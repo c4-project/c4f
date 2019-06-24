@@ -43,7 +43,6 @@ let command =
     ; ("asm", Asm_main.command)
     ; ("configure", Configure.command)
     ; ("diff-states", Diff_states.command)
-    ; ("test", Test.command)
     ; ("backend", Backend.command) ]
 
 let () = Command.run command
