@@ -31,12 +31,39 @@ get_litmus_name() {
   head -n1 "${infile}" | cut -d ' ' -f 2
 }
 
+# Runs the delitmusifier and compiler on an input litmus test, saving an
+# aux file and header file for future consumption.
+#
+# Globals:
+#   - ACT (read)
+#   - SCRIPTDIR (read)
+#
+# Arguments:
+#   1: the compiler ID.
+#   2: path to the C litmus test to delitmusify and compile.
+#   3: path to which a delitmus auxiliary file should be written.
+#   4: path to which the intermediate C file should be written.
+#   5: path to which a header file exposing the C file's functions should be written.
+#   4: path to which the compiled object code should be written.
+delitmus_and_compile() {
+  local compiler="$1"
+  local infile="$2"
+  local auxfile="$3"
+  local cfile="$4"
+  local hfile="$5"
+  local objfile="$6"
+
+  "${ACT}" c delitmus -style vars-as-parameters -aux "${auxfile}" -o "${cfile}" "${infile}"
+  "${ACT}" c compile -compiler "${compiler}" -mode object -o "${objfile}" "${cfile}"
+  "${SCRIPTDIR}"/make_header.awk "${cfile}" > "${hfile}"
+}
+
 # Produces a ready-to-splice Litmus harness from a delitmus aux file.
 #
 # Globals:
-#   - SCRIPTDIR (read)
 #   - ACT (read)
 #   - LITMUS (read)
+#   - SCRIPTDIR (read)
 #
 # Arguments:
 #   1: the compiler ID.
@@ -63,6 +90,7 @@ make_litmus_harness() {
 #
 # Globals:
 #   - SCRIPTDIR (read)
+#   - SED (read)
 #
 # Arguments:
 #   1: path to the delitmus aux file to use when generating the harness.
@@ -122,10 +150,7 @@ hfile="${litdir}/body.h"
 
 makefile="${litdir}/Makefile"
 
-"${ACT}" c delitmus -style vars-as-parameters -aux "${auxfile}" -o "${cfile}" "${infile}"
-"${ACT}" c compile -compiler "${compiler}" -mode object -o "${objfile}" "${cfile}"
-"${SCRIPTDIR}"/make_header.awk "${cfile}" > "${hfile}"
-
+delitmus_and_compile "${compiler}" "${infile}" "${auxfile}" "${cfile}" "${hfile}" "${objfile}"
 make_litmus_harness "${compiler}" "${auxfile}" "${skelfile}" "${alitfile}" "${litdir}"
 splice_litmus "${auxfile}" "${makefile}" "${runfile}" "${stubfile}"
 

@@ -55,7 +55,7 @@ def arguments_of_thread(tid: int, aux: act_py.auxfile.Aux) -> typing.Iterator[st
 
 def output_calls(aux: act_py.auxfile.Aux):
     call_strings = (call_string(i, arguments_of_thread(i, aux)) for i in range(aux.num_threads))
-    print(*call_strings, sep='\n// NEXT\n')
+    print(*call_strings, sep='\n// NEXT\n', end='\n// END\n')
 
 
 if __name__ == '__main__':

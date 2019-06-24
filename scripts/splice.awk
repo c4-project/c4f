@@ -1,76 +1,84 @@
-#!/usr/bin/env gawk -f
+#!/usr/bin/env awk -f
 #
-# Given a series of files p0, p1, .., pn of assembly directives and a final
-# Litmus C file, splices each file's content over the assembly directive
-# in the Litmus file.  Changes in file, as well as comments starting with
-# // NEXT, move to the next thread.
+# Takes a series of files representing threads of input to splice into a
+# Litmus C file, then the file itself, and splices each thread over the
+# corresponding assembly directive in the Litmus file.
 #
-# Requires gawk.
+# In the threads-to-splice part of the input, comments starting with // NEXT
+# move to the next thread, and a comment starting with // END finishes splice
+# input and begins the target Litmus file.
 
 BEGIN {
-  # The current program being captured.
-  # This is 1-indexed, so 0 represents the gap before the first program.
-  program_in = 1;
-}
+  # The current thread being captured or spliced.
+  # This is 1-indexed, so 0 represents the gap before the first thread.
+  thread = 1;
 
-BEGINFILE {
   # States of the splicer.
-  in_litmus = (ARGIND == ARGC - 1);
-  in_program = 0;
-  is_splicing = 0;
-  is_changing_program = 0;
+  S_CAPTURING = 0;
+  S_CHANGING_THREAD = 1;
+  S_ABOUT_TO_SPLICE = 2;
+  S_SPLICING_OUTER = 3;
+  S_SPLICING_INNER = 4;
+  S_SPLICING_IN_PROGRESS = 5;
+  state = S_CAPTURING;
 
-  # The current program being spliced.
-  # This is 1-indexed, so 0 represents the gap before the first program.
-  program = 0;
-
-  filesize[program_in] = 0;
+  filesize[thread] = 0;
 }
 
-# The two different ways to change program when capturing.
-ENDFILE {
-  if (!in_litmus) {
-    program_in++;
-  }
-}
-!in_litmus && /^\/\/ NEXT/ {
-  is_changing_program = 1;
-  program_in++;
+# End of thread.
+state == S_CAPTURING && /^\/\/ NEXT/ {
+  state = S_CHANGING_THREAD;
+  thread++;
 }
 
-# Capture each line of each non-Litmus program for later splicing.
-!in_litmus {
-  file[program_in,filesize[program_in]] = $0;
-  filesize[program_in]++;
+# End of splice input.
+state == S_CAPTURING && /^\/\/ END/ {
+  state = S_ABOUT_TO_SPLICE;
+  thread = 0;
 }
 
-!in_litmus && is_changing_program {
-  is_changing_program = 0;
+# Capture each line of each non-Litmus thread for later splicing.
+state == S_CAPTURING {
+  file[thread,filesize[thread]] = $0;
+  filesize[thread]++;
 }
 
-# Assuming Litmus lays out its programs in sequential order.
-in_litmus && /static void \*P[0-9]+\(void \*_vb\) \{/ {
-  in_program = 1;
-  program++;
+# Assuming Litmus lays out its threads in sequential order.
+state == S_SPLICING_OUTER && /static void \*P[0-9]+\(void \*_vb\) \{/ {
+  state = S_SPLICING_INNER;
+  thread++;
 }
 
-in_program && /^asm __volatile__ \($/ {
-  is_splicing = 1;
+# Start of region to splice out.
+state == S_SPLICING_INNER && /^asm __volatile__ \($/ {
+  state = S_SPLICING_IN_PROGRESS;
 
-  fs = filesize[program];
-  for (i = 0; i < fs; i++) print file[program,i];
+  fs = filesize[thread];
+  for (i = 0; i < fs; i++) print file[thread,i];
 }
 
-in_program && /return NULL;/ {
-  in_program = 0;
+# End of thread harness function.
+state == S_SPLICING_INNER && /return NULL;/ {
+  state = S_SPLICING_OUTER;
 }
 
-in_litmus && !is_splicing {
+# Print bits of harness that aren't to be spliced over.
+state == S_SPLICING_OUTER || state == S_SPLICING_INNER {
   print $0;
 }
 
 # This goes after the catch-all print statement to avoid accidentally printing
-# the );.
-is_splicing && /^);$/ {
-  is_splicing = 0;
+# the ); when moving to S_SPLICING_INNER.
+state == S_SPLICING_IN_PROGRESS && /^);$/ {
+  state = S_SPLICING_INNER;
 }
+
+# Making sure we properly skip over the special comments when capturing:
+# we don't want to either capture them (// NEXT) or emit them (// END).
+state == S_CHANGING_THREAD {
+  state = S_CAPTURING;
+}
+state == S_ABOUT_TO_SPLICE {
+  state = S_SPLICING_OUTER;
+}
+
