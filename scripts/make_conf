@@ -6,8 +6,7 @@
 #
 # Arguments:
 #   1: the error to print.
-error()
-{
+error() {
 	echo "$0: $1" >&2
 }
 
@@ -15,8 +14,7 @@ error()
 #
 # Arguments:
 #   1: the item that hasn't been found.
-not_found()
-{
+not_found() {
 	error "'$1' not found, not adding to act.conf."
 }
 
@@ -24,8 +22,7 @@ not_found()
 # machine.
 #
 # Uses global variable `arch`.
-gcc_like_arch()
-{
+gcc_like_arch() {
 	case "${arch}" in
 	x86 )
 		echo "x86.att"
@@ -43,10 +40,9 @@ gcc_like_arch()
 # $2: the optimisation level, as a number (eg -Ofast isn't supported).
 #
 # Uses global variable `is_64`.
-gcc_like_optimisation_level()
-{
-	_compiler="${1}"
-	_optlevel="${2}"
+gcc_like_optimisation_level() {
+	_compiler="$1"
+	_optlevel="$2"
 
 	printf '\n    compiler %s.%s.O%d {\n' "${_compiler}" "${arch}" "${_optlevel}"
 	printf '        style gcc \n'
@@ -65,8 +61,7 @@ gcc_like_optimisation_level()
 #
 # Arguments:
 #    1: the compiler command.
-gcc_like()
-{
+gcc_like() {
 	_compiler="${1}"
 	"${_compiler}" --version >/dev/null 2>&1 || {
 		not_found "${_compiler}" && return
@@ -83,8 +78,7 @@ gcc_like()
 # Arguments:
 #   1: the sim command
 #   2: the style ("herd" or "litmus")
-herdtools_like()
-{
+herdtools_like() {
 	_sim="${1}"
 	_style="${2}"
 
@@ -101,15 +95,13 @@ herdtools_like()
 }
 
 # Finds and outputs compiler stanzas for the local machine.
-compilers()
-{
+compilers() {
 	gcc_like "gcc"
 	gcc_like "clang"
 }
 
 # Finds and outputs simulator stanzas for the local machine.
-simulators()
-{
+simulators() {
 	herdtools_like "herd" "herd"
 	herdtools_like "herd7" "herd"
 	herdtools_like "litmus" "litmus"
@@ -120,9 +112,8 @@ simulators()
 #
 # Globals:
 #   - host (write)
-setup_host()
-{
-	host="$(hostname -s)"
+setup_host() {
+	host="$(hostname -s | tr '-' '_')"
 	if [ -z "${host}" ]; then
 		host="localhost"
 	fi
@@ -135,8 +126,7 @@ setup_host()
 #   - raw_arch (write)
 #   - arch (write)
 #   - is_64 (write)
-setup_arch()
-{
+setup_arch() {
 	raw_arch="$(uname -m)"
 	case "${raw_arch}" in
 		x86_64 )
@@ -155,8 +145,7 @@ setup_arch()
 # Globals:
 #   - host (read/write)
 #   - raw_arch (read/write)
-main()
-{
+main() {
 	setup_host
 	setup_arch
 
