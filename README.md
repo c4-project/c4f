@@ -84,10 +84,10 @@ missing dependency.
 
 #### Additional dependencies
 
-- To run most of ACT's scripts, you'll need GNU bash, GNU awk, and Python
-  3.7 or later.
+- To run most of ACT's scripts, you'll need GNU bash, POSIX-compatible awk, and
+  Python 3.7+.
   By default, the scripts expect these to be installed in `PATH` as `bash`,
-  `gawk`, and `python3`.
+  `awk`, and `python3`.
 - To run test subjects as simulations using Herd, or on machines using Litmus7,
   you'll need [herdtools7](https://github.com/herd/herdtools7) (which is
   [available on OPAM](https://opam.ocaml.org/packages/herdtools7/)).
