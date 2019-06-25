@@ -19,16 +19,23 @@ from . import litmus_id
 
 @dataclass
 class LitmusAux:
+    """Representation of the part of an ACT 'aux file' that contains Litmus-specific information."""
+
     locations: typing.Optional[typing.List[str]]
     init: typing.Optional[typing.Dict[str, int]]
     postcondition: typing.Optional[str]
 
     def rewrite_locals(self, rewriter: typing.Callable[[litmus_id.Lid], str]):
         if self.postcondition is not None:
-            self.postcondition = litmus_id.rewrite_post_locals(self.postcondition, rewriter)
+            self.postcondition = litmus_id.rewrite_post_locals(
+                self.postcondition, rewriter
+            )
+
 
 @dataclass
 class Aux:
+    """Representation of an ACT 'aux file'."""
+
     num_threads: int
     var_map: typing.Dict[str, typing.Optional[str]]
     litmus_aux: LitmusAux
@@ -50,7 +57,7 @@ class Aux:
         :param fp: A file-like object to use as the target of the write.
         :return: Nothing.
         """
-        json.dump(dataclasses.asdict(self), fp, indent='\t')
+        json.dump(dataclasses.asdict(self), fp, indent="\t")
 
     def variables_of_thread(self, tid: int) -> typing.Iterator[litmus_id.Lid]:
         """Yields the C identifier of each variable in this auxiliary record that is visible from the given thread ID.
@@ -66,16 +73,16 @@ class Aux:
 
 
 def litmus_of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusAux:
-    locations = aux_dict['locations']
-    init = aux_dict['init']
-    postcondition = aux_dict['postcondition']
+    locations = aux_dict["locations"]
+    init = aux_dict["init"]
+    postcondition = aux_dict["postcondition"]
     return LitmusAux(locations, init, postcondition)
 
 
 def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> Aux:
-    num_threads: int = aux_dict['num_threads']
-    var_map: typing.Dict[str, typing.Optional[str]] = aux_dict['var_map']
-    litmus_aux: LitmusAux = litmus_of_dict(aux_dict['litmus_aux'])
+    num_threads: int = aux_dict["num_threads"]
+    var_map: typing.Dict[str, typing.Optional[str]] = aux_dict["var_map"]
+    litmus_aux: LitmusAux = litmus_of_dict(aux_dict["litmus_aux"])
     return Aux(num_threads, var_map, litmus_aux)
 
 

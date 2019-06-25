@@ -7,15 +7,15 @@ import act_py.auxfile
 
 
 def label_of_id(id: int) -> str:
-    return f'P{id}'
+    return f"P{id}"
 
 
 def output_thread(id: int):
-    print(label_of_id(id), ':', sep='')
+    print(label_of_id(id), ":", sep="")
     print("\tmfence")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[act_py.args.aux_in_parser])
     args = parser.parse_args()
 

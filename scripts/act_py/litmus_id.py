@@ -17,6 +17,7 @@ from dataclasses import dataclass
 @dataclass
 class Lid:
     """A split representation of a Litmus ID."""
+
     tid: typing.Optional[int]
     var: str
 
@@ -28,7 +29,7 @@ class Lid:
         't0r0'
 
         """
-        return self.var if self.tid is None else f't{self.tid}{self.var}'
+        return self.var if self.tid is None else f"t{self.tid}{self.var}"
 
 
 def parse(id_str: str) -> Lid:
@@ -46,13 +47,15 @@ def parse(id_str: str) -> Lid:
     :param id_str: The identifier string to parse.
     :return: A Litmus ID object corresponding to the input string.
     """
-    (l, colon, r) = id_str.partition(':')
-    tid: typing.Optional[int] = None if colon == '' else int(l)
-    var: str = l if colon == '' else r
+    (l, colon, r) = id_str.partition(":")
+    tid: typing.Optional[int] = None if colon == "" else int(l)
+    var: str = l if colon == "" else r
     return Lid(tid, var)
 
 
-local_re: typing.Pattern[str] = re.compile(r'(?P<tid>[0-9]+):(?P<var>[_a-zA-Z]\w*)', re.ASCII)
+local_re: typing.Pattern[str] = re.compile(
+    r"(?P<tid>[0-9]+):(?P<var>[_a-zA-Z]\w*)", re.ASCII
+)
 
 
 def rewrite_post_locals(post_str: str, op: typing.Callable[[Lid], str]) -> str:
@@ -62,4 +65,6 @@ def rewrite_post_locals(post_str: str, op: typing.Callable[[Lid], str]) -> str:
     >>> rewrite_post_locals('exists (0:a == 6 /\\ 1:b == 4 /\\ x == 5)', lambda x: x.qualified)
     'exists (t0a == 6 /\\\\ t1b == 4 /\\\\ x == 5)'
     """
-    return local_re.sub(lambda match: op(Lid(int(match['tid']), match['var'])), post_str)
+    return local_re.sub(
+        lambda match: op(Lid(int(match["tid"]), match["var"])), post_str
+    )
