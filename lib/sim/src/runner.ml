@@ -38,23 +38,21 @@ module Make (B : Basic_from_filter) : S = struct
       B.Reader.load ~path:output_path)
 end
 
-module Make_error_reader (B : Basic_error) : Reader_intf.S =
-  struct
+module Make_error_reader (B : Basic_error) : Reader_intf.S = struct
+  include Plumbing.Loadable.Make (struct
+    type t = Output.t
 
-    include Plumbing.Loadable.Make (struct
-        type t = Output.t
-        let load_from_ic ?(path: string option) (_ic : Stdio.In_channel.t) : Output.t Or_error.t =
-          ignore path;
-          Result.Error B.error
+    let load_from_ic ?(path : string option) (_ic : Stdio.In_channel.t) :
+        Output.t Or_error.t =
+      ignore path ; Result.Error B.error
 
-        let load_from_string (_str : string) : Output.t Or_error.t =
-          Result.Error B.error
-      end)
+    let load_from_string (_str : string) : Output.t Or_error.t =
+      Result.Error B.error
+  end)
 
-    let read_output_from_string (_s : string) : Output.t =
-      Output.Errored {err = B.error}
-  end
-
+  let read_output_from_string (_s : string) : Output.t =
+    Output.Errored {err= B.error}
+end
 
 module Make_error_filter (B : Basic_error) : Basic_filter =
 Plumbing.Filter.Make (struct

@@ -26,24 +26,18 @@ open Act_common
 module C_spec = Act_compiler.Spec
 module Cq_spec = Act_machine.Qualified.Compiler
 
-let pp_compiler_verbose
-  (f : Formatter.t)
-    (spec : Cq_spec.t) : unit =
+let pp_compiler_verbose (f : Formatter.t) (spec : Cq_spec.t) : unit =
   let compiler = Cq_spec.c_spec spec in
-  Fmt.pf f "@[<v 2>@[<h>%a/%a@]@ %a@]"
-    Id.pp
+  Fmt.pf f "@[<v 2>@[<h>%a/%a@]@ %a@]" Id.pp
     (Act_machine.Spec.With_id.id (Cq_spec.m_spec spec))
     Id.pp
     (C_spec.With_id.id compiler)
     C_spec.pp
     (C_spec.With_id.spec compiler)
 
-let pp_compiler_terse
-  (f : Formatter.t)
-    (spec : Cq_spec.t) : unit =
+let pp_compiler_terse (f : Formatter.t) (spec : Cq_spec.t) : unit =
   let compiler = Cq_spec.c_spec spec in
-  Fmt.pf f "@[<h>%a@ %a@ %a@]"
-    Id.pp
+  Fmt.pf f "@[<h>%a@ %a@ %a@]" Id.pp
     (Act_machine.Spec.With_id.id (Cq_spec.m_spec spec))
     Id.pp
     (C_spec.With_id.id compiler)
@@ -51,16 +45,13 @@ let pp_compiler_terse
     (C_spec.With_id.spec compiler)
 
 let pp_compiler (verbose : bool) : Cq_spec.t Fmt.t =
-  if verbose then pp_compiler_verbose else pp_compiler_terse 
+  if verbose then pp_compiler_verbose else pp_compiler_terse
 
 let run_list_compilers (standard_args : Args.Standard.t) (_o : Output.t)
     (cfg : Act_config.Act.t) : unit Or_error.t =
   let compilers = Act_config.Act.all_compilers cfg in
   let verbose = Args.Standard.is_verbose standard_args in
-  Fmt.(
-    pr "@[<v>%a@]@."
-      (list (pp_compiler verbose))
-      compilers) ;
+  Fmt.(pr "@[<v>%a@]@." (list (pp_compiler verbose)) compilers) ;
   Result.ok_unit
 
 let list_compilers_command : Command.t =
@@ -69,14 +60,10 @@ let list_compilers_command : Command.t =
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard.get
       and compiler_predicate = Args.compiler_predicate
-      and machine_predicate = Args.machine_predicate
-      in
+      and machine_predicate = Args.machine_predicate in
       fun () ->
-        Common.lift_command standard_args
-          ?compiler_predicate
-          ?machine_predicate
-          ~with_compiler_tests:true
-          ~f:run_list_compilers)
+        Common.lift_command standard_args ?compiler_predicate
+          ?machine_predicate ~with_compiler_tests:true ~f:run_list_compilers)
 
 let predicate_lists : (string, (module Property.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"

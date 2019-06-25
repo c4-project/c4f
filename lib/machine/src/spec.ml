@@ -105,8 +105,9 @@ include (
   MS : module type of MS with type t := M.t and module With_id := With_id )
 
 module On_compiler_set :
-  Travesty.Traversable_types.S0 with type t = M.t and type Elt.t = C_spec.Set.t =
-Travesty.Traversable.Make0 (struct
+  Travesty.Traversable_types.S0
+  with type t = M.t
+   and type Elt.t = C_spec.Set.t = Travesty.Traversable.Make0 (struct
   type t = M.t
 
   module Elt = C_spec.Set

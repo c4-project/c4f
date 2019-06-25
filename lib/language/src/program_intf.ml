@@ -69,10 +69,14 @@ module type S = sig
       statements of listings). *)
   module On_statements : sig
     include
-      Travesty.Traversable_types.S0 with type Elt.t = Statement.t and type t := t
+      Travesty.Traversable_types.S0
+      with type Elt.t = Statement.t
+       and type t := t
 
     include
-      Travesty.Filter_mappable_types.S0 with type elt := Elt.t and type t := t
+      Travesty.Filter_mappable_types.S0
+      with type elt := Elt.t
+       and type t := t
   end
 
   val listing : t -> Statement.t list

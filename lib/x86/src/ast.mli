@@ -112,7 +112,9 @@ module Operand : sig
   (** [On_locations] permits enumerating and folding over locations inside
       an operand. *)
   module On_locations :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t
+    Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       operand. *)
@@ -133,7 +135,9 @@ module Instruction : sig
   (** [On_locations] permits enumerating and folding over locations inside
       an instruction. *)
   module On_locations :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t
+    Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       instruction. *)
@@ -170,7 +174,9 @@ module Statement : sig
   (** [On_instructions] permits enumerating and folding over instructions
       inside a statement. *)
   module On_instructions :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Instruction.t
+    Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Instruction.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside a
       statement. *)
@@ -204,7 +210,9 @@ val with_dialect_id : t -> id:Act_common.Id.t -> t
 
 (** Traversing over the statement list in a [t] *)
 module On_listings :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Statement.t list
+  Travesty.Traversable_types.S0
+  with type t = t
+   and type Elt.t = Statement.t list
 
 (** Traversing over all statements in a [t] *)
 module On_statements :

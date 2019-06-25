@@ -95,7 +95,9 @@ module type S_identifier_traversable = sig
 
   (** Traversing over identifiers. *)
   module On_identifiers :
-    Travesty.Traversable_types.S0 with type t := t and type Elt.t = identifier
+    Travesty.Traversable_types.S0
+    with type t := t
+     and type Elt.t = identifier
 end
 
 module type S_statement = sig

@@ -55,4 +55,3 @@ module type Basic_chain = sig
   (** [f src] is a potentially-failing transformation from [src] to a member
       of [dst]. *)
 end
-

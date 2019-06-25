@@ -61,7 +61,8 @@ module Base_map (M : Monad.S) = struct
 end
 
 (** Recursive mapper for registers *)
-module On_registers : Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t =
+module On_registers :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 

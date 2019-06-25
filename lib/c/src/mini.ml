@@ -351,7 +351,9 @@ module Statement :
   end)
 
   module On_identifiers :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Identifier.t =
+    Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Identifier.t =
     Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 end
 
@@ -397,8 +399,9 @@ module If_statement :
   end)
 
   module On_addresses :
-    Travesty.Traversable_types.S0 with type t := t and type Elt.t = Address.t =
-  Travesty.Traversable.Make0 (struct
+    Travesty.Traversable_types.S0
+    with type t := t
+     and type Elt.t = Address.t = Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Address
@@ -417,7 +420,9 @@ module If_statement :
   end)
 
   module On_identifiers :
-    Travesty.Traversable_types.S0 with type t := t and type Elt.t = Identifier.t =
+    Travesty.Traversable_types.S0
+    with type t := t
+     and type Elt.t = Identifier.t =
     Travesty.Traversable.Chain0 (struct
         type nonrec t = t
 

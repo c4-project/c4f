@@ -223,7 +223,9 @@ Travesty.Traversable.Make0 (struct
 end)
 
 module On_identifiers :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Identifier.t =
+  Travesty.Traversable_types.S0
+  with type t = t
+   and type Elt.t = Identifier.t =
   Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 
 module Type_check (E : Env.S) = struct

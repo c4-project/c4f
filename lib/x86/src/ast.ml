@@ -152,8 +152,9 @@ module Operand = struct
 
   (** Recursive mapper for locations in operands *)
   module On_locations :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t =
-  Travesty.Traversable.Make0 (struct
+    Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Location.t = Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location
@@ -323,8 +324,9 @@ module Instruction = struct
   end)
 
   module On_locations :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t =
-  Travesty.Traversable.Make0 (struct
+    Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Location.t = Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location
@@ -371,8 +373,9 @@ module Statement = struct
   end
 
   module On_instructions :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Instruction.t =
-  Travesty.Traversable.Make0 (struct
+    Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Instruction.t = Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Instruction
@@ -429,8 +432,9 @@ module Base_map (M : Monad.S) = struct
 end
 
 module On_listings :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Statement.t list =
-Travesty.Traversable.Make0 (struct
+  Travesty.Traversable_types.S0
+  with type t = t
+   and type Elt.t = Statement.t list = Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = struct
