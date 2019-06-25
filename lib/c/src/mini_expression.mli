@@ -49,11 +49,15 @@ module Atomic_load : sig
 
   (** Traversing over atomic-action addresses in atomic loads. *)
   module On_addresses :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mini_address.t
+    Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Mini_address.t
 
   (** Traversing over lvalues in atomic loads. *)
   module On_lvalues :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mini_lvalue.t
+    Travesty.Traversable_types.S0
+    with type t = t
+     and type Elt.t = Mini_lvalue.t
 end
 
 (** Opaque type of expressions. *)
@@ -94,7 +98,9 @@ val reduce :
 
 (** Traversing over atomic-action addresses in expressions. *)
 module On_addresses :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mini_address.t
+  Travesty.Traversable_types.S0
+  with type t = t
+   and type Elt.t = Mini_address.t
 
 (** Traversing over identifiers in expressions. *)
 module On_identifiers :
@@ -104,7 +110,9 @@ module On_identifiers :
 
 (** Traversing over lvalues in expressions. *)
 module On_lvalues :
-  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mini_lvalue.t
+  Travesty.Traversable_types.S0
+  with type t = t
+   and type Elt.t = Mini_lvalue.t
 
 (** {2 Generation and quickchecking} *)
 

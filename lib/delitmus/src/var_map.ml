@@ -77,6 +77,8 @@ let global_c_variables : t -> Set.M(Ac.C_id).t =
   build_set (module Ac.C_id) ~f:(fun _ data -> data)
 
 module Json : Plumbing.Jsonable_types.S with type t := t =
-  Plumbing.Jsonable.Make_map (Ac.Litmus_id) (Plumbing.Jsonable.Option (Ac.C_id))
+  Plumbing.Jsonable.Make_map
+    (Ac.Litmus_id)
+    (Plumbing.Jsonable.Option (Ac.C_id))
 
 include Json

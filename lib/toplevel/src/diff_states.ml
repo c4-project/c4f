@@ -24,10 +24,8 @@
 open Core
 open Act_common
 
-let run (_o : Output.t) (_cfg : Act_config.Act.t)
-    ~(oracle_raw : string)
-    ~(subject_raw : string) :
-    unit Or_error.t =
+let run (_o : Output.t) (_cfg : Act_config.Act.t) ~(oracle_raw : string)
+    ~(subject_raw : string) : unit Or_error.t =
   ignore oracle_raw ;
   ignore subject_raw ;
   Or_error.unimplemented "TBC"
@@ -49,8 +47,7 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard.get
       and oracle_raw = anon ("ORACLE_NAME" %: Filename.arg_type)
-      and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type)
-      in
+      and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type) in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:(fun _args -> run ~oracle_raw ~subject_raw))

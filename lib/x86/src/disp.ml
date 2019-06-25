@@ -62,7 +62,8 @@ module Base_map (M : Monad.S) = struct
       ~numeric:(F.proc_variant1 numeric)
 end
 
-module On_symbols : Travesty.Traversable_types.S0 with type t = t and type Elt.t = string =
+module On_symbols :
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = string =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 

@@ -111,7 +111,9 @@ module Atomic_store : sig
 
   (** Traversing over atomic-action addresses in atomic stores. *)
   module On_addresses :
-    Travesty.Traversable_types.S0 with type t := t and type Elt.t = Address.t
+    Travesty.Traversable_types.S0
+    with type t := t
+     and type Elt.t = Address.t
 
   (** Traversing over lvalues in atomic stores. *)
   module On_lvalues :

@@ -13,22 +13,21 @@
 
 open Base
 
-module Make_alist
-    (K : Stringable.S)
-    (V : Jsonable_types.S)
-  : Jsonable_types.S with type t = (K.t, V.t) List.Assoc.t
+module Make_alist (K : Stringable.S) (V : Jsonable_types.S) :
+  Jsonable_types.S with type t = (K.t, V.t) List.Assoc.t
 
-module Make_map
-    (K : sig
-       type t
-       include Comparable.S with type t := t
-       include Stringable.S with type t := t
-     end)
-    (V : Jsonable_types.S)
-  : Jsonable_types.S with type t = V.t Map.M(K).t
+module Make_map (K : sig
+  type t
+
+  include Comparable.S with type t := t
+
+  include Stringable.S with type t := t
+end)
+(V : Jsonable_types.S) : Jsonable_types.S with type t = V.t Map.M(K).t
 
 (** Strings packaged up as a json-able type. *)
 module String : Jsonable_types.S with type t = string
 
 (** Lifts a json-able type over options. *)
-module Option (B : Jsonable_types.S) : Jsonable_types.S with type t = B.t option
+module Option (B : Jsonable_types.S) :
+  Jsonable_types.S with type t = B.t option
