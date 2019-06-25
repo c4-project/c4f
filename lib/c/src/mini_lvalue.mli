@@ -75,7 +75,7 @@ val is_deref : t -> bool
 
 (** Traversing over identifiers in lvalues. *)
 module On_identifiers :
-  Travesty.Traversable.S0
+  Travesty.Traversable_types.S0
   with type t := t
    and type Elt.t = Act_common.C_id.t
 

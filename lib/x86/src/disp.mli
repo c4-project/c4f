@@ -66,7 +66,7 @@ val numeric : int -> t
 (** [On_symbols] permits enumerating and folding over symbols inside a
     displacement. *)
 module On_symbols :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = string
+  Travesty.Traversable_types.S0 with type t := t and type Elt.t = string
 
 val as_symbol : t -> string option
 (** [as_symbol t] returns [Some s] if [t] is a symbol [s], and [None]

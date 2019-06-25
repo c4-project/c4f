@@ -79,7 +79,7 @@ include M_sexp
 include Comparable.Make (M_sexp)
 
 module On_c_identifiers :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = C_id.t =
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = C_id.t =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 

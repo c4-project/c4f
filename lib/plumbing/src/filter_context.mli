@@ -43,4 +43,4 @@ val output : _ t -> Output.t
 
 (** {2 Transforming the auxiliary input} *)
 
-module On_aux : Travesty.Traversable.S1 with type 'a t := 'a t
+module On_aux : Travesty.Traversable_types.S1 with type 'a t := 'a t

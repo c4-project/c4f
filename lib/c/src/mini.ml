@@ -50,7 +50,7 @@ module Assign = struct
   end
 
   module On_lvalues :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -65,7 +65,7 @@ module Assign = struct
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -95,7 +95,7 @@ module Atomic_store = struct
   end
 
   module On_lvalues :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -112,7 +112,7 @@ module Atomic_store = struct
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -190,7 +190,7 @@ module Atomic_cmpxchg = struct
   end
 
   module On_lvalues :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -208,7 +208,7 @@ module Atomic_cmpxchg = struct
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -295,7 +295,7 @@ module Statement :
      end up with unsafe module recursion. *)
 
   module On_lvalues :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -323,7 +323,7 @@ module Statement :
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -351,7 +351,7 @@ module Statement :
   end)
 
   module On_identifiers :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Identifier.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Identifier.t =
     Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 end
 
@@ -377,7 +377,7 @@ module If_statement :
   module Base_map (M : Monad.S) = Ifs_base_map (M)
 
   module On_lvalues :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Lvalue.t =
+    Travesty.Traversable_types.S0 with type t := t and type Elt.t = Lvalue.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -397,7 +397,7 @@ module If_statement :
   end)
 
   module On_addresses :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Address.t =
+    Travesty.Traversable_types.S0 with type t := t and type Elt.t = Address.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -417,7 +417,7 @@ module If_statement :
   end)
 
   module On_identifiers :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = Identifier.t =
+    Travesty.Traversable_types.S0 with type t := t and type Elt.t = Identifier.t =
     Travesty.Traversable.Chain0 (struct
         type nonrec t = t
 
@@ -454,7 +454,7 @@ module Function = struct
     M.map_m
 
   module On_decls :
-    Travesty.Traversable.S0
+    Travesty.Traversable_types.S0
     with type t = t
      and type Elt.t = Initialiser.Named.t =
   Travesty.Traversable.Make0 (struct
@@ -497,7 +497,7 @@ module Program = struct
   end
 
   module On_decls :
-    Travesty.Traversable.S0
+    Travesty.Traversable_types.S0
     with type t = t
      and type Elt.t = Initialiser.Named.t =
   Travesty.Traversable.Make0 (struct

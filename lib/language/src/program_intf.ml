@@ -39,7 +39,7 @@ module type Basic = sig
 
       For individual statements, use [On_statements] in {{!S} S}. *)
   module On_listings :
-    Travesty.Traversable.S0 with type Elt.t = stm list and type t := t
+    Travesty.Traversable_types.S0 with type Elt.t = stm list and type t := t
 
   val name : t -> string option
   (** [name prog] gets the declared name of [prog], if it has one.
@@ -69,10 +69,10 @@ module type S = sig
       statements of listings). *)
   module On_statements : sig
     include
-      Travesty.Traversable.S0 with type Elt.t = Statement.t and type t := t
+      Travesty.Traversable_types.S0 with type Elt.t = Statement.t and type t := t
 
     include
-      Travesty.Filter_mappable.S0 with type elt := Elt.t and type t := t
+      Travesty.Filter_mappable_types.S0 with type elt := Elt.t and type t := t
   end
 
   val listing : t -> Statement.t list
@@ -81,7 +81,7 @@ module type S = sig
   (** Traversal over every symbol in the program (transitive across symbols
       of statements). *)
   module On_symbols :
-    Travesty.Traversable.S0
+    Travesty.Traversable_types.S0
     with type Elt.t = Statement.Instruction.Symbol.t
      and type t := t
 

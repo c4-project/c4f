@@ -80,7 +80,7 @@ include Comparable.S with type t := t
 
 (** Monadic traversal over the C identifier part of a Litmus identifier. *)
 module On_c_identifiers :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = C_id.t
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = C_id.t
 
 (** Helpers for parsing, and handling, associative lists over litmus IDs. *)
 module Assoc : sig

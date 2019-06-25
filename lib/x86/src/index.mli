@@ -51,4 +51,4 @@ type t = Unscaled of Reg.t | Scaled of Reg.t * int
 (** [On_registers] permits enumerating and folding over registers inside a
     displacement. *)
 module On_registers :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
+  Travesty.Traversable_types.S0 with type t := t and type Elt.t = Reg.t

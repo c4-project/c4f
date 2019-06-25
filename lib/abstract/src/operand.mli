@@ -245,7 +245,7 @@ module Bundle : sig
 
   (** Operand bundles are traversable containers. *)
   include
-    Travesty.Traversable.S0
+    Travesty.Traversable_types.S0
     with type Elt.t = elt
      and type elt := elt
      and type t := t

@@ -56,7 +56,7 @@ let normalise (addr : t) : t =
   Fn.apply_n_times ~n:(ref_depth addr) ref_normal (lvalue (lvalue_of addr))
 
 module On_lvalues :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = Mini_lvalue.t =
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Mini_lvalue.t =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 

@@ -44,7 +44,7 @@ let un_deref : t -> t Or_error.t = function
       Or_error.return x
 
 module On_identifiers :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = Ac.C_id.t =
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Ac.C_id.t =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 

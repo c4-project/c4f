@@ -32,7 +32,7 @@ module Pred_elt = struct
   let ( ==? ) = eq
 
   module BT :
-    Travesty.Bi_traversable.S1_right
+    Travesty.Bi_traversable_types.S1_right
     with type 'const t := 'const t
      and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
     type nonrec 'const t = 'const t
@@ -55,7 +55,7 @@ module Pred_elt = struct
   (* TODO(@MattWindsor91): this is yet another pattern that needs putting
      into Travesty *)
   module On_c_identifiers :
-    Travesty.Bi_traversable.S1_right
+    Travesty.Bi_traversable_types.S1_right
     with type 'const t = 'const t
      and type left = Act_common.C_id.t =
   Travesty.Bi_traversable.Make1_right (struct
@@ -98,7 +98,7 @@ module Pred = struct
         Elt x
 
   module BT :
-    Travesty.Bi_traversable.S1_right
+    Travesty.Bi_traversable_types.S1_right
     with type 'const t := 'const t
      and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
     type nonrec 'const t = 'const t
@@ -132,7 +132,7 @@ module Pred = struct
   include BT
 
   module On_c_identifiers :
-    Travesty.Bi_traversable.S1_right
+    Travesty.Bi_traversable_types.S1_right
     with type 'const t = 'const t
      and type left = Act_common.C_id.t =
   Travesty.Bi_traversable.Make1_right (struct
@@ -215,7 +215,7 @@ module Postcondition = struct
   [@@deriving sexp, compare, equal, quickcheck, fields, make]
 
   module BT :
-    Travesty.Bi_traversable.S1_right
+    Travesty.Bi_traversable_types.S1_right
     with type 'const t := 'const t
      and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
     type nonrec 'const t = 'const t
@@ -237,7 +237,7 @@ module Postcondition = struct
   include BT
 
   module On_c_identifiers :
-    Travesty.Bi_traversable.S1_right
+    Travesty.Bi_traversable_types.S1_right
     with type 'const t = 'const t
      and type left = Act_common.C_id.t =
   Travesty.Bi_traversable.Make1_right (struct

@@ -47,7 +47,6 @@
 
 open Base
 open Base_quickcheck
-module Trav = Travesty.Traversable
 module Tx = Travesty_base_exts
 
 type t =
@@ -59,7 +58,7 @@ type t =
 
 (** Base mapper for memory addresses *)
 module Base_map (M : Monad.S) = struct
-  module F = Trav.Helpers (M)
+  module F = Travesty.Traversable.Helpers (M)
 
   let map_m indirect ~seg ~disp ~base ~index =
     Fields.fold ~init:(M.return indirect) ~seg:(F.proc_field seg)
@@ -68,8 +67,8 @@ module Base_map (M : Monad.S) = struct
 end
 
 (** Recursive mapper for symbols *)
-module On_symbols : Trav.S0 with type t = t and type Elt.t = string =
-Trav.Make0 (struct
+module On_symbols : Travesty.Traversable_types.S0 with type t = t and type Elt.t = string =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = String
@@ -89,8 +88,8 @@ Trav.Make0 (struct
 end)
 
 (** Recursive mapper for registers *)
-module On_registers : Trav.S0 with type t = t and type Elt.t = Reg.t =
-Trav.Make0 (struct
+module On_registers : Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = Reg

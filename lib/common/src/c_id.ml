@@ -171,7 +171,7 @@ module Herd_safe = struct
 end
 
 module Alist = struct
-  include Travesty.Bi_mappable.Fix2_left (Travesty_base_exts.Alist) (M)
+  include Travesty.Bi_traversable.Fix2_left (Travesty_base_exts.Alist) (M)
 
   let to_yojson (rhs : 'r -> Yojson.Safe.t) (assoc : 'r t) : Yojson.Safe.t =
     `Assoc

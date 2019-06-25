@@ -75,7 +75,7 @@ module type S_address_traversable = sig
 
   (** Traversing over atomic-action addresses. *)
   module On_addresses :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = address
+    Travesty.Traversable_types.S0 with type t := t and type Elt.t = address
 end
 
 module type S_lvalue_traversable = sig
@@ -85,7 +85,7 @@ module type S_lvalue_traversable = sig
 
   (** Traversing over lvalues. *)
   module On_lvalues :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = lvalue
+    Travesty.Traversable_types.S0 with type t := t and type Elt.t = lvalue
 end
 
 module type S_identifier_traversable = sig
@@ -95,7 +95,7 @@ module type S_identifier_traversable = sig
 
   (** Traversing over identifiers. *)
   module On_identifiers :
-    Travesty.Traversable.S0 with type t := t and type Elt.t = identifier
+    Travesty.Traversable_types.S0 with type t := t and type Elt.t = identifier
 end
 
 module type S_statement = sig

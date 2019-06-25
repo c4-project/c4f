@@ -58,11 +58,11 @@ module type Basic = sig
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
-    Travesty.Traversable.S0 with module Elt = Sym and type t := t
+    Travesty.Traversable_types.S0 with module Elt = Sym and type t := t
 
   (** ...and over locations. *)
   module On_locations :
-    Travesty.Traversable.S0 with module Elt = Loc and type t := t
+    Travesty.Traversable_types.S0 with module Elt = Loc and type t := t
 
   val jump : string -> t
   (** [jump sym] builds an unconditional jump to symbol [sym]. *)
