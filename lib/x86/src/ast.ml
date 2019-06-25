@@ -48,7 +48,6 @@ open Base_quickcheck
 open Act_common
 module Tx = Travesty_base_exts
 module Au = Act_utils
-open Travesty
 
 module Location = struct
   type t =
@@ -59,7 +58,7 @@ module Location = struct
 
   (** Base mapper for locations *)
   module Base_map (M : Monad.S) = struct
-    module F = Traversable.Helpers (M)
+    module F = Travesty.Traversable.Helpers (M)
 
     let map_m (x : t) ~(indirect : Indirect.t -> Indirect.t M.t)
         ~(reg : Reg.t -> Reg.t M.t) ~(template_token : string -> string M.t)
@@ -71,15 +70,15 @@ module Location = struct
   end
 
   module On_registers :
-    Traversable.S0 with type t = t and type Elt.t = Reg.t =
-  Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Reg
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module F = Traversable.Helpers (M)
+      module F = Travesty.Traversable.Helpers (M)
       module I = Indirect.On_registers.On_monad (M)
 
       let map_m t ~f =
@@ -88,15 +87,15 @@ module Location = struct
   end)
 
   module On_symbols :
-    Traversable.S0 with type t = t and type Elt.t = string =
-  Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = string =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module F = Traversable.Helpers (M)
+      module F = Travesty.Traversable.Helpers (M)
       module I = Indirect.On_symbols.On_monad (M)
 
       let map_m t ~f =
@@ -131,7 +130,7 @@ module Operand = struct
 
   (** Base mapper for operands *)
   module Base_map (M : Monad.S) = struct
-    module F = Traversable.Helpers (M)
+    module F = Travesty.Traversable.Helpers (M)
 
     let rec map_m (x : t) ~location ~immediate ~string ~typ ~bop : t M.t =
       Variants.map x
@@ -153,15 +152,15 @@ module Operand = struct
 
   (** Recursive mapper for locations in operands *)
   module On_locations :
-    Traversable.S0 with type t = t and type Elt.t = Location.t =
-  Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module F = Traversable.Helpers (M)
+      module F = Travesty.Traversable.Helpers (M)
 
       let map_m t ~f =
         B.map_m t ~location:f (* These don't contain locations: *)
@@ -173,8 +172,8 @@ module Operand = struct
 
   (** Recursive mapper for symbols in operands *)
   module On_symbols :
-    Traversable.S0 with type t = t and type Elt.t = string =
-  Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = string =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
@@ -293,7 +292,7 @@ module Instruction = struct
 
   (** Base mapper for instructions *)
   module Base_map (M : Monad.S) = struct
-    module F = Traversable.Helpers (M)
+    module F = Travesty.Traversable.Helpers (M)
 
     let map_m ins ~prefix ~opcode ~operands =
       Fields.fold ~init:(M.return ins) ~prefix:(F.proc_field prefix)
@@ -301,8 +300,8 @@ module Instruction = struct
   end
 
   module On_symbols :
-    Traversable.S0 with type t = t and type Elt.t = string =
-  Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = string =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
@@ -310,7 +309,7 @@ module Instruction = struct
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module F = Traversable.Helpers (M)
+      module F = Travesty.Traversable.Helpers (M)
       module OS = Operand.On_symbols.On_monad (M)
       module L = Tx.List.On_monad (M)
 
@@ -324,15 +323,15 @@ module Instruction = struct
   end)
 
   module On_locations :
-    Traversable.S0 with type t = t and type Elt.t = Location.t =
-  Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Location.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module F = Traversable.Helpers (M)
+      module F = Travesty.Traversable.Helpers (M)
       module OL = Operand.On_locations.On_monad (M)
       module L = Tx.List.On_monad (M)
 
@@ -346,8 +345,8 @@ module Instruction = struct
   end)
 
   module On_registers :
-    Traversable.S0 with type t = t and type Elt.t = Reg.t =
-    Traversable.Chain0 (On_locations) (Location.On_registers)
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t =
+    Travesty.Traversable.Chain0 (On_locations) (Location.On_registers)
 
   let single (opcode : Opcode.t) (operand : Operand.t) : t =
     make ~opcode ~operands:[operand] ()
@@ -363,7 +362,7 @@ module Statement = struct
 
   (** Base mapper for statements *)
   module Base_map (M : Monad.S) = struct
-    module F = Traversable.Helpers (M)
+    module F = Travesty.Traversable.Helpers (M)
 
     let map_m x ~instruction ~label ~nop =
       Variants.map x
@@ -372,15 +371,15 @@ module Statement = struct
   end
 
   module On_instructions :
-    Traversable.S0 with type t = t and type Elt.t = Instruction.t =
-  Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Instruction.t =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Instruction
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module F = Traversable.Helpers (M)
+      module F = Travesty.Traversable.Helpers (M)
       module I = Instruction.On_symbols.On_monad (M)
 
       let map_m t ~f =
@@ -390,15 +389,15 @@ module Statement = struct
   end)
 
   module On_symbols :
-    Traversable.S0 with type t = t and type Elt.t = string =
-  Traversable.Make0 (struct
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = string =
+  Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = String
 
     module On_monad (M : Monad.S) = struct
       module B = Base_map (M)
-      module F = Traversable.Helpers (M)
+      module F = Travesty.Traversable.Helpers (M)
       module I = Instruction.On_symbols.On_monad (M)
 
       let map_m t ~f =
@@ -408,8 +407,8 @@ module Statement = struct
   end)
 
   module On_registers :
-    Traversable.S0 with type t = t and type Elt.t = Reg.t =
-    Traversable.Chain0 (On_instructions) (Instruction.On_registers)
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t =
+    Travesty.Traversable.Chain0 (On_instructions) (Instruction.On_registers)
 end
 
 (* The ordering here is important to make sure [make] puts the optional
@@ -422,7 +421,7 @@ let with_dialect_id (ast : t) ~(id : Act_common.Id.t) : t =
 
 (** Base mapper for ASTs *)
 module Base_map (M : Monad.S) = struct
-  module F = Traversable.Helpers (M)
+  module F = Travesty.Traversable.Helpers (M)
 
   let map_m x ~dialect ~program =
     Fields.fold ~init:(M.return x) ~dialect:(F.proc_field dialect)
@@ -430,8 +429,8 @@ module Base_map (M : Monad.S) = struct
 end
 
 module On_listings :
-  Traversable.S0 with type t = t and type Elt.t = Statement.t list =
-Traversable.Make0 (struct
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Statement.t list =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = struct
@@ -446,11 +445,11 @@ Traversable.Make0 (struct
 end)
 
 module On_statements :
-  Traversable.S0 with type t = t and type Elt.t = Statement.t =
-  Traversable.Chain0
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Statement.t =
+  Travesty.Traversable.Chain0
     (On_listings)
-    (Traversable.Fix_elt (Tx.List) (Statement))
+    (Travesty.Traversable.Fix_elt (Tx.List) (Statement))
 
 module On_registers :
-  Traversable.S0 with type t = t and type Elt.t = Reg.t =
-  Traversable.Chain0 (On_statements) (Statement.On_registers)
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t =
+  Travesty.Traversable.Chain0 (On_statements) (Statement.On_registers)

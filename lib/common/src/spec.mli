@@ -44,7 +44,7 @@ module Set : sig
   val of_map : 'spec Map.M(Id).t -> 'spec t
 
   (** We can monadically traverse the specifications in a set. *)
-  module On_specs : Travesty.Traversable.S1 with type 'a t = 'a t
+  module On_specs : Travesty.Traversable_types.S1 with type 'a t = 'a t
 end
 
 module type S = sig

@@ -82,9 +82,9 @@ val as_symbolic_disp_only : t -> string option
 (** [On_registers] permits enumerating and folding over registers inside a
     memory access. *)
 module On_registers :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = Reg.t
+  Travesty.Traversable_types.S0 with type t := t and type Elt.t = Reg.t
 
 (** [On_symbols] permits enumerating and folding over symbols inside a
     memory access. *)
 module On_symbols :
-  Travesty.Traversable.S0 with type t := t and type Elt.t = string
+  Travesty.Traversable_types.S0 with type t := t and type Elt.t = string

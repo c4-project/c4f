@@ -52,7 +52,7 @@ val vars_satisfying_all :
 (** The state monad. *)
 module Monad : sig
   include
-    Travesty.State_transform.S
+    Travesty.State_transform_types.S
     with type state := t
      and module Inner := Or_error
 

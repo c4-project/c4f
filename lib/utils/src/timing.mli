@@ -78,7 +78,7 @@ module type S = sig
 
   include Timed1 with type 'a t := 'a t
 
-  include Travesty.Traversable.S1 with type 'a t := 'a t
+  include Travesty.Traversable_types.S1 with type 'a t := 'a t
 end
 
 (** [Make] makes a [Timer] from a [S]. *)

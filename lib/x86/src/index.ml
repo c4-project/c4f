@@ -46,14 +46,13 @@
 open Base
 open Base_quickcheck
 module Au = Act_utils
-module Trav = Travesty.Traversable
 
 type t = Unscaled of Reg.t | Scaled of Reg.t * int
 [@@deriving sexp, variants, eq, compare]
 
 (** Base mapper for indices *)
 module Base_map (M : Monad.S) = struct
-  module F = Trav.Helpers (M)
+  module F = Travesty.Traversable.Helpers (M)
 
   let map_m (x : t) ~unscaled ~scaled : t M.t =
     Variants.map x
@@ -62,15 +61,15 @@ module Base_map (M : Monad.S) = struct
 end
 
 (** Recursive mapper for registers *)
-module On_registers : Trav.S0 with type t = t and type Elt.t = Reg.t =
-Trav.Make0 (struct
+module On_registers : Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = Reg
 
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
-    module F = Trav.Helpers (M)
+    module F = Travesty.Traversable.Helpers (M)
 
     let map_m t ~f =
       B.map_m t ~unscaled:f

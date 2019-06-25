@@ -22,7 +22,7 @@ type 'const t =
 let empty (type k) : k t = {locations= None; init= []; postcondition= None}
 
 module BT :
-  Travesty.Bi_traversable.S1_right
+  Travesty.Bi_traversable_types.S1_right
   with type 'const t := 'const t
    and type left = Act_common.C_id.t =
 Travesty.Bi_traversable.Make1_right (struct

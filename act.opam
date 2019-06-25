@@ -31,6 +31,6 @@ depends: [
   "sedlex" {>= "2.0" & < "3"}
   "shell" {>= "v0.12" & < "v0.13"}
   "textutils_kernel" {>= "v0.12" & < "v0.13"}
-  "travesty" {>= "0.5.1" & < "0.6"}
+  "travesty" {>= "0.6.0" & < "0.7"}
   "yojson" {>= "1.7" & < "2"}
 ]

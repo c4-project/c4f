@@ -83,7 +83,7 @@ end
 (** Associative lists with C identifier keys, with derived operations. *)
 module Alist : sig
   include
-    Travesty.Bi_mappable.S1_right
+    Travesty.Bi_traversable_types.S1_right
     with type 'r t = (t, 'r) List.Assoc.t
      and type left := t
 

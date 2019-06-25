@@ -45,7 +45,6 @@
 
 open Base
 open Base_quickcheck
-open Travesty
 module Tx = Travesty_base_exts
 
 type t = Symbolic of string | Numeric of int
@@ -55,7 +54,7 @@ type t = Symbolic of string | Numeric of int
 
 (** Base mapper for displacements *)
 module Base_map (M : Monad.S) = struct
-  module F = Traversable.Helpers (M)
+  module F = Travesty.Traversable.Helpers (M)
 
   let map_m (x : t) ~symbolic ~numeric : t M.t =
     Variants.map x
@@ -63,15 +62,15 @@ module Base_map (M : Monad.S) = struct
       ~numeric:(F.proc_variant1 numeric)
 end
 
-module On_symbols : Traversable.S0 with type t = t and type Elt.t = string =
-Traversable.Make0 (struct
+module On_symbols : Travesty.Traversable_types.S0 with type t = t and type Elt.t = string =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = String
 
   module On_monad (M : Monad.S) = struct
     module B = Base_map (M)
-    module F = Traversable.Helpers (M)
+    module F = Travesty.Traversable.Helpers (M)
 
     let map_m t ~f =
       B.map_m t

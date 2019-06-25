@@ -26,7 +26,7 @@ open Base
 type 'aux t = {aux: 'aux; input: Input.t; output: Output.t}
 [@@deriving make, fields]
 
-module On_aux : Travesty.Traversable.S1 with type 'a t := 'a t =
+module On_aux : Travesty.Traversable_types.S1 with type 'a t := 'a t =
 Travesty.Traversable.Make1 (struct
   type nonrec 'a t = 'a t
 

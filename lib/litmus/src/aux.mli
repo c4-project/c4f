@@ -50,7 +50,7 @@ val postcondition : 'const t -> 'const Ast_base.Postcondition.t option
 (** We permit monadic bi-traversal over the C identifiers and constants in a
     litmus auxiliary record, potentially changing the constant type. *)
 include
-  Travesty.Bi_traversable.S1_right
+  Travesty.Bi_traversable_types.S1_right
   with type 'const t := 'const t
    and type left = Act_common.C_id.t
 

@@ -47,11 +47,11 @@ module type Basic = sig
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
-    Travesty.Traversable.S0 with module Elt = Sym and type t := t
+    Travesty.Traversable_types.S0 with module Elt = Sym and type t := t
 
   (** ...and over instructions. *)
   module On_instructions :
-    Travesty.Traversable.S0 with module Elt = Ins and type t := t
+    Travesty.Traversable_types.S0 with module Elt = Ins and type t := t
 
   include
     Act_abstract.Abstractable.S

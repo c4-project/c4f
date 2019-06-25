@@ -47,7 +47,7 @@ module Atomic_load = struct
   end
 
   module On_addresses :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -61,7 +61,7 @@ module Atomic_load = struct
   end)
 
   module On_lvalues :
-    Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
     Travesty.Traversable.Chain0 (On_addresses) (Address.On_lvalues)
 
   module Type_check (E : Env.S) = struct
@@ -171,7 +171,7 @@ let anonymise = function
       `E ld
 
 module On_addresses :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = Address.t =
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
@@ -197,7 +197,7 @@ Travesty.Traversable.Make0 (struct
 end)
 
 module On_lvalues :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = Lvalue.t =
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
 Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
@@ -223,7 +223,7 @@ Travesty.Traversable.Make0 (struct
 end)
 
 module On_identifiers :
-  Travesty.Traversable.S0 with type t = t and type Elt.t = Identifier.t =
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Identifier.t =
   Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 
 module Type_check (E : Env.S) = struct

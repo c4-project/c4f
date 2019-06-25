@@ -55,7 +55,7 @@ module Set = struct
       ~(id : Id.t) : spec Or_error.t =
     Id.try_find_assoc_with_suggestions specs id ~id_type
 
-  module On_specs : Travesty.Traversable.S1 with type 'a t = 'a t =
+  module On_specs : Travesty.Traversable_types.S1 with type 'a t = 'a t =
   Travesty.Traversable.Make1 (struct
     type nonrec 'a t = 'a t
 
