@@ -9,7 +9,7 @@ import act_py.litmus_id
 
 
 def function_name_of_id(tid: int) -> str:
-    return f'P{tid}_body'
+    return f"P{tid}_body"
 
 
 def call_string(tid: int, variables: typing.Iterable[str]) -> str:
@@ -25,8 +25,8 @@ def call_string(tid: int, variables: typing.Iterable[str]) -> str:
     :return: a string of C syntax representing the call
     """
     name: str = function_name_of_id(tid)
-    body: str = ', '.join(variables)
-    return f'{name}({body});'
+    body: str = ", ".join(variables)
+    return f"{name}({body});"
 
 
 def argument_of_var(var: act_py.litmus_id.Lid) -> str:
@@ -54,11 +54,13 @@ def arguments_of_thread(tid: int, aux: act_py.auxfile.Aux) -> typing.Iterator[st
 
 
 def output_calls(aux: act_py.auxfile.Aux):
-    call_strings = (call_string(i, arguments_of_thread(i, aux)) for i in range(aux.num_threads))
-    print(*call_strings, sep='\n// NEXT\n', end='\n// END\n')
+    call_strings = (
+        call_string(i, arguments_of_thread(i, aux)) for i in range(aux.num_threads)
+    )
+    print(*call_strings, sep="\n// NEXT\n", end="\n// END\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[act_py.args.aux_in_parser])
     args = parser.parse_args()
 

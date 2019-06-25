@@ -13,5 +13,7 @@ import argparse
 
 """A parser that contains a positional argument for taking an auxiliary JSON file."""
 aux_in_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
-aux_in_parser.add_argument('aux', help='Path to the auxiliary JSON file created during a previous delitmus pass.')
-
+aux_in_parser.add_argument(
+    "aux",
+    help="Path to the auxiliary JSON file created during a previous delitmus pass.",
+)

@@ -19,7 +19,7 @@ import act_py.litmus_id
 
 # TODO(@MattWindsor91): fix up ACT so that this isn't necessary.
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[act_py.args.aux_in_parser])
     args = parser.parse_args()
 
@@ -28,6 +28,5 @@ if __name__ == '__main__':
 
     aux.rewrite_locals(lambda x: x.qualified)
 
-    with open(args.aux, mode='w') as fp:
+    with open(args.aux, mode="w") as fp:
         aux.dump(fp)
-
