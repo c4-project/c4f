@@ -1,4 +1,4 @@
-#!/usr/bin/env awk -f
+#!/usr/bin/awk -f
 #
 # Takes a series of files representing threads of input to splice into a
 # Litmus C file, then the file itself, and splices each thread over the

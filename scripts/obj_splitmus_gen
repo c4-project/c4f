@@ -61,7 +61,6 @@ make_litmus_harness() {
   local alitfile="$4"
   local litdir="$5"
 
-  "${SCRIPTDIR}/qualify_aux.py" "${auxfile}"
   "${SCRIPTDIR}/gen_asm_skel.py" "${auxfile}" > "${skelfile}"
   "${ACT}" asm litmusify -compiler "${compiler}" -aux "${auxfile}" -o "${alitfile}" "${skelfile}"
   "${LITMUS}" "${alitfile}" -c11 true -o "${litdir}"

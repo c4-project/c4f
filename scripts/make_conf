@@ -19,6 +19,12 @@ class Target(enum.Enum):
     X64_ATT = "x64.att"
     X86_ATT = "x86.att"
 
+    @property
+    def short_name(self) -> str:
+        """The most significant part of the target's ID."""
+        (sn, _, _) = self.value.partition(".")
+        return sn
+
     def force_32bit(self, arch: str) -> bool:
         """Tests whether 32-bit mode needs to be forced in a compiler."""
         return self is Target.X86_ATT and arch == "x86_64"
@@ -46,12 +52,12 @@ class Compiler:
 
     @property
     def args_str(self) -> str:
-        return " ".join(self.args)
+        return " ".join((f"\"{a}\"" for a in self.args))
 
     def print(self) -> None:
         print(f"        style {self.style}")
         print(f"        arch  {self.target.value}")
-        print(f"        cmd   {self.cmd}")
+        print(f"        cmd   \"{self.cmd}\"")
         print(f"        argv  {self.args_str}")
 
 
@@ -64,7 +70,7 @@ class Backend:
 
     def print(self) -> None:
         print(f"        style {self.style}")
-        print(f"        cmd   {self.cmd}")
+        print(f"        cmd   \"{self.cmd}\"")
 
 
 @dataclass
@@ -95,6 +101,7 @@ class Machine:
     def print(self) -> None:
         self.print_header()
         print(f"machine {self.id} {{")
+        print("    via local")
         self.print_compilers()
         self.print_backends()
         print("}")
@@ -148,7 +155,7 @@ def gcc_like_compiler_stanzas(
     """
     targets = gcc_targets_of_arch[arch]
     for (target, olevel) in itertools.product(targets, olevels):
-        id = ".".join([cmd, target.value, f"O{olevel}"])
+        id = ".".join([cmd, target.short_name, f"O{olevel}"])
         compiler = gcc_like_compiler_stanza(cmd, arch, target, olevel)
         yield (id, compiler)
 
@@ -221,6 +228,15 @@ def lookup_local_machine() -> Machine:
     return Machine(id, arch, compilers, backends)
 
 
+def print_default(mach: Machine) -> None:
+    print('default {')
+    print(f'    try machine {mach.id}')
+    print('}') 
+
+
 if __name__ == "__main__":
     mach: Machine = lookup_local_machine()
     mach.print()
+    print()
+    print_default(mach)
+
