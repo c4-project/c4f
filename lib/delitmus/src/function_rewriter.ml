@@ -104,10 +104,11 @@ struct
         C.Mini.Statement.t list -> C.Mini.Statement.t list Or_error.t =
       Tx.Or_error.combine_map ~f:rewrite_statement
 
-    let expand_parameter (id : Act_common.Litmus_id.t) :
+    let expand_parameter (id : Act_common.Litmus_id.t)
+      (record : Var_map.Record.t) :
         (Act_common.C_id.t * Act_c.Mini.Type.t) Or_error.t =
+      let ty = Var_map.Record.c_type record in
       Or_error.Let_syntax.(
-        let%bind ty = Context.lookup_type Ctx.context ~id in
         let%map pty = Act_c.Mini.Type.ref ty in
         (Act_common.Litmus_id.variable_name id, pty))
 
@@ -116,14 +117,14 @@ struct
       (* We assume that all variables that aren't mapped to global
          variables, and relevant to this thread, are supposed to be passed
          in as parameters. *)
-      let all_unmapped = Context.unmapped_litmus_ids Ctx.context in
+      let var_map = Context.var_map Ctx.context in
+      let all_unmapped = Var_map.globally_unmapped_vars var_map in
       let relevant_unmapped =
-        Set.filter
-          ~f:(Act_common.Litmus_id.is_in_scope ~from:Ctx.T.tid)
+        List.filter
+          ~f:(fun (k, _) -> Act_common.Litmus_id.is_in_scope k ~from:Ctx.T.tid)
           all_unmapped
       in
-      relevant_unmapped |> Set.to_list
-      |> Tx.Or_error.combine_map ~f:expand_parameter
+      Tx.Or_error.combine_map ~f:(fun (i, r) -> expand_parameter i r) relevant_unmapped
 
     module F = C.Mini.Function.On_monad (Or_error)
 
@@ -187,7 +188,8 @@ module Vars_as_globals = Make (struct
 
   let rewrite_local_cid (cid : Act_common.C_id.t) ~(tid : int)
       ~(context : Context.t) : Act_common.C_id.t Or_error.t =
-    Context.lookup_and_require_global context
+    let vm = Context.var_map context in
+    Var_map.lookup_and_require_global vm
       ~id:(Act_common.Litmus_id.local tid cid)
 
   let rewrite_function_name :

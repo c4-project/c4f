@@ -52,7 +52,7 @@ end
 
 module M = struct
   type t = Normal of Basic.t | Pointer_to of Basic.t
-  [@@deriving sexp, variants, eq, compare, quickcheck]
+  [@@deriving sexp, variants, equal, compare, quickcheck]
 end
 
 include M
@@ -92,6 +92,21 @@ let to_non_atomic : t -> t Or_error.t = function
       Or_error.(k |> Basic.to_non_atomic >>| normal)
   | Pointer_to k ->
       Or_error.(k |> Basic.to_non_atomic >>| pointer_to)
+
+module Str = struct
+  type nonrec t = t
+  let to_string : t -> string = function
+    | Normal k -> Basic.to_string k
+    | Pointer_to k -> "*" ^ Basic.to_string k
+
+  let of_string (str : string) : t =
+    if String.is_suffix str ~suffix:"*"
+    then Pointer_to (Basic.of_string (String.drop_suffix str 1))
+    else Normal (Basic.of_string str)
+end
+include (Str : Stringable.S with type t := t)
+module Json : Plumbing.Jsonable_types.S with type t := t = Plumbing.Jsonable.Of_stringable (Str)
+include Json
 
 let%test_unit "basic_type_is compatibility with basic_type" =
   Base_quickcheck.Test.run_exn

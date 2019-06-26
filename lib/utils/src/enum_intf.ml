@@ -117,6 +117,8 @@ module type Extension_table = sig
 
   include Identifiable.S_common with type t := t
 
+  include Plumbing.Jsonable_types.S with type t := t
+
   val of_string_option : string -> t option
   (** [of_string_option] is the same as [of_string] in [StringTable.Intf],
       but renamed so as not to clash with the [Stringable] version. *)

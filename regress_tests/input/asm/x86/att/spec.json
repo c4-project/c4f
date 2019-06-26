@@ -7,8 +7,8 @@
 			"init": { "x": 0, "y": 0 }
 		},
 		"var_map" : {
-			"x": "x",
-			"y": "y"
+			"x": { "is_global": true, "c_type": "atomic_int", "c_id": "x" },
+			"y": { "is_global": true, "c_type": "atomic_int", "c_id": "y" }
 		}
 	},
 	"gcc_elf_o0_stackchk.s":
@@ -19,9 +19,9 @@
 			"init": { "x": 0, "y": 0 }
 		},
 		"var_map" : {
-			"x": "x",
-			"y": "y",
-			"0:r0": "t0r0"
+			"x": { "is_global": true, "c_type": "atomic_int", "c_id": "x" },
+			"y": { "is_global": true, "c_type": "atomic_int", "c_id": "y" },
+			"0:r0": { "is_global": true, "c_type": "int", "c_id": "t0r0" }
 		}
 	},
 	"gcc_macho_o0_deref_cmpxchg.s":
@@ -32,8 +32,8 @@
 			"init": { "x": 0, "y": 0 }
 		},
 		"var_map" : {
-			"x": "x",
-			"0:r0": "t0r0"
+			"x": { "is_global": true, "c_type": "atomic_int", "c_id": "x" },
+			"0:r0": { "is_global": true, "c_type": "int", "c_id": "t0r0" }
 		}
 	},
 	"gcc_macho_o0_deref_write.s":
@@ -44,10 +44,10 @@
 			"init": { "x": 0, "y": 0 }
 		},
 		"var_map" : {
-			"x": "x",
-			"y": "y",
-			"0:r0": "t0r0",
-			"1:r0": "t1r0"
+			"x": { "is_global": true, "c_type": "atomic_int", "c_id": "x" },
+			"y": { "is_global": true, "c_type": "atomic_int", "c_id": "y" },
+			"0:r0": { "is_global": true, "c_type": "int", "c_id": "t0r0" },
+			"1:r0": { "is_global": true, "c_type": "int", "c_id": "t1r0" }
 		}
 	},
 	"gcc_macho_o0_immediate_heap.s":
@@ -58,9 +58,9 @@
 			"init": { "x": 0, "y": 0 }
 		},
 		"var_map" : {
-			"x": "x",
-			"y": "y",
-			"0:r0": "t0r0"
+			"x": { "is_global": true, "c_type": "atomic_int", "c_id": "x" },
+			"y": { "is_global": true, "c_type": "atomic_int", "c_id": "y" },
+			"0:r0": { "is_global": true, "c_type": "int", "c_id": "t0r0" }
 		}
 	},
 	"gcc_macho_o0_moves.s":
@@ -71,10 +71,10 @@
 			"init": { "x": 0, "y": 0 }
 		},
 		"var_map" : {
-			"x": "x",
-			"y": "y",
-			"0:r0": "t0r0",
-			"1:r0": "t1r0"
+			"x": { "is_global": true, "c_type": "atomic_int", "c_id": "x" },
+			"y": { "is_global": true, "c_type": "atomic_int", "c_id": "y" },
+			"0:r0": { "is_global": true, "c_type": "int", "c_id": "t0r0" },
+			"1:r0": { "is_global": true, "c_type": "int", "c_id": "t1r0" }
 		}
 	}
 }

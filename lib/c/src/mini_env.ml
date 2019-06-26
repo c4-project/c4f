@@ -72,17 +72,16 @@ module Make (E : Basic) : S = struct
     Ac.C_id.Map.filter E.env ~f:Mini_type.(basic_type_is ~basic:Basic.int)
 end
 
-let test_env : Mini_type.t Ac.C_id.Map.t Lazy.t =
+let test_env : Mini_type.t Map.M(Ac.C_id).t Lazy.t =
   lazy
-    Ac.C_id.(
-      Map.of_alist_exn
-        Mini_type.
-          [ (of_string "foo", normal Basic.int)
-          ; (of_string "bar", pointer_to Basic.atomic_int)
-          ; (of_string "barbaz", normal Basic.bool)
-          ; (of_string "x", normal Basic.atomic_int)
-          ; (of_string "y", normal Basic.atomic_int)
-          ; (of_string "blep", pointer_to Basic.int) ])
+    (Map.of_alist_exn (module Ac.C_id)
+    Mini_type.(
+          [ (Ac.C_id.of_string "foo", normal Basic.int)
+          ; (Ac.C_id.of_string "bar", pointer_to Basic.atomic_int)
+          ; (Ac.C_id.of_string "barbaz", normal Basic.bool)
+          ; (Ac.C_id.of_string "x", normal Basic.atomic_int)
+          ; (Ac.C_id.of_string "y", normal Basic.atomic_int)
+          ; (Ac.C_id.of_string "blep", pointer_to Basic.int) ]))
 
 let lift_to_lazy_mod (e : Mini_type.t Ac.C_id.Map.t Lazy.t) :
     (module S) Lazy.t =
