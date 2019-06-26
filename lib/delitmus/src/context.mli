@@ -17,27 +17,16 @@ type t
 (** {2 Constructors} *)
 
 val make :
-     type_map:Act_c.Mini.Type.t Map.M(Act_common.Litmus_id).t
-  -> aux:Aux.t
+     aux:Aux.t
   -> local_inits:( int
                  , (Act_common.C_id.t, Act_c.Mini.Constant.t) List.Assoc.t
                  )
                  List.Assoc.t
   -> t
 
-(** {2 Variable lookups} *)
+(** {2 Components} *)
 
-val lookup_type :
-  t -> id:Act_common.Litmus_id.t -> Act_c.Mini.Type.t Or_error.t
-
-val unmapped_litmus_ids : t -> Set.M(Act_common.Litmus_id).t
-(** [unmapped_litmus_ids map] gets the set of litmus IDs that the
-    delitmusifier did not map to global C variables in [map]. *)
-
-val globally_mapped_litmus_ids : t -> Set.M(Act_common.Litmus_id).t
-
-val lookup_and_require_global :
-  t -> id:Act_common.Litmus_id.t -> Act_common.C_id.t Or_error.t
+val var_map : t -> Var_map.t
 
 val lookup_initial_value :
   t -> id:Act_common.Litmus_id.t -> Act_c.Mini.Constant.t option

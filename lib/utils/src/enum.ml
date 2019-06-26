@@ -46,7 +46,9 @@ Hashable.Make (struct
   include Make_compare_hash_basic (E)
 end)
 
-module Make_quickcheck (E : S) : Quickcheck.S with type t := E.t = struct
+module Make_quickcheck (E : S_sexp) : My_quickcheck.S_with_sexp with type t := E.t = struct
+  let sexp_of_t = E.sexp_of_t
+
   module G = Quickcheck.Generator
   module O = Quickcheck.Observer
   module S = Quickcheck.Shrinker
@@ -112,16 +114,19 @@ struct
 
   module Id : Identifiable.S_common with type t := E.t =
     String_table.To_identifiable (Basic_id)
-
   include Id
+
+  include Plumbing.Jsonable.Of_stringable (struct
+      type t = E.t
+      include Id
+    end)
 
   (* Identifiable, for some reason, doesn't contain both sides of sexp
      conversion, so we have to manually retrieve [t_of_sexp] ourselves. *)
   module Sexp = struct
     module Sexp = Sexpable.Of_stringable (struct
       type t = E.t
-
-      include String_table.To_stringable (Basic_id)
+      include Id
     end)
 
     let sexp_of_t = Id.sexp_of_t

@@ -54,7 +54,15 @@ module Basic : sig
 end
 
 (** Opaque type of types. *)
-type t [@@deriving eq, sexp, compare, quickcheck]
+type t [@@deriving equal, sexp, compare, quickcheck]
+
+(** Types can be converted to strings; this conversion is quite limited in
+    both directions, mapping "basic*" for pointer types and "normal" for basic
+    types only. *)
+include Stringable.S with type t := t
+
+(** Types can be converted to JSON by stringification. *)
+include Plumbing.Jsonable_types.S with type t := t
 
 val normal : Basic.t -> t
 (** [normal ty] lifts a basic type [ty] to a scalar type. *)

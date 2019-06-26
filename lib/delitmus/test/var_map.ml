@@ -17,15 +17,34 @@ let%test_module "with example map" =
     module M = Act_delitmus.Var_map
     module Li = Act_common.Litmus_id
     module Ci = Act_common.C_id
+    module Ct = Act_c.Mini_type
+    module Rc = M.Record
 
     let map : M.t =
       M.of_map
         (Map.of_alist_exn
            (module Li)
-           [ (Li.of_string "0:r0", Some (Ci.of_string "t0r0"))
-           ; (Li.of_string "1:r0", Some (Ci.of_string "t1r0"))
-           ; (Li.of_string "1:tmp", None)
-           ; (Li.of_string "x", Some (Ci.of_string "x")) ])
+           [ (Li.of_string "0:r0",
+              Rc.make
+                ~c_id:(Ci.of_string "t0r0")
+                ~c_type:(Ct.normal Ct.Basic.int)
+                ~is_global:true
+             )
+           ; (Li.of_string "1:r0",
+              Rc.make
+                ~c_id:(Ci.of_string "t1r0")
+                ~c_type:(Ct.normal Ct.Basic.bool)
+                ~is_global:true)
+           ; (Li.of_string "1:tmp",
+              Rc.make
+                ~c_id:(Ci.of_string "t1tmp")
+                ~c_type:(Ct.normal Ct.Basic.int)
+                ~is_global:false)
+           ; (Li.of_string "x",
+              Rc.make
+                ~c_id:(Ci.of_string "x")
+                ~c_type:(Ct.normal Ct.Basic.atomic_int)
+                ~is_global:true) ])
 
     let%expect_test "global_c_variables" =
       Set.iter

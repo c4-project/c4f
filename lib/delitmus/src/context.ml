@@ -12,8 +12,7 @@
 open Base
 
 type t =
-  { type_map: Act_c.Mini.Type.t Map.M(Act_common.Litmus_id).t
-  ; aux: Aux.t
+  { aux: Aux.t
   ; local_inits:
       ( int
       , (Act_common.C_id.t, Act_c.Mini.Constant.t) List.Assoc.t )
@@ -22,32 +21,7 @@ type t =
 
 let make = Fields.create
 
-let not_found_error (id : Act_common.Litmus_id.t) (trying_to_find : string)
-    : Error.t =
-  Error.of_lazy_t
-    ( lazy
-      (Error.create_s
-         [%message
-           "Identifier not found in context." ~trying_to_find
-             ~id:(id : Act_common.Litmus_id.t)]) )
-
-let lookup_type (ctx : t) ~(id : Act_common.Litmus_id.t) :
-    Act_c.Mini.Type.t Or_error.t =
-  Result.of_option
-    (Map.find (type_map ctx) id)
-    ~error:(not_found_error id "type")
-
 let var_map (ctx : t) : Var_map.t = Aux.var_map (aux ctx)
-
-let lookup_and_require_global (ctx : t) :
-    id:Act_common.Litmus_id.t -> Act_common.C_id.t Or_error.t =
-  Var_map.lookup_and_require_global (var_map ctx)
-
-let unmapped_litmus_ids (ctx : t) : Set.M(Act_common.Litmus_id).t =
-  Var_map.unmapped_litmus_ids (var_map ctx)
-
-let globally_mapped_litmus_ids (ctx : t) : Set.M(Act_common.Litmus_id).t =
-  Var_map.globally_mapped_litmus_ids (var_map ctx)
 
 let lookup_initial_value_global (ctx : t) ~(id : Act_common.C_id.t) :
     Act_c.Mini.Constant.t option =
