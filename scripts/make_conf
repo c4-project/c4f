@@ -1,168 +1,226 @@
-#!/bin/sh
-#
+#!/usr/bin/env python3
+
 # Automatically generates an act.conf for the local machine and puts it on stdout.
 
-# Prints an error string to stderr.
-#
-# Arguments:
-#   1: the error to print.
-error() {
-	echo "$0: $1" >&2
+import collections
+import enum
+import itertools
+import platform
+import subprocess
+import sys
+import typing
+from dataclasses import dataclass
+from datetime import datetime
+
+
+class Target(enum.Enum):
+    """Enumeration of target IDs supported in act.conf 'arch' directives."""
+
+    X64_ATT = "x64.att"
+    X86_ATT = "x86.att"
+
+    def force_32bit(self, arch: str) -> bool:
+        """Tests whether 32-bit mode needs to be forced in a compiler."""
+        return self is Target.X86_ATT and arch == "x86_64"
+
+
+gcc_like_compilers = ["gcc", "clang"]
+olevels = [0, 3]
+
+gcc_targets_of_arch = {
+    "x86_64": [Target.X86_ATT, Target.X64_ATT],
+    "i386": [Target.X86_ATT],
 }
 
-# Prints a 'this item not found' error.
-#
-# Arguments:
-#   1: the item that hasn't been found.
-not_found() {
-	error "'$1' not found, not adding to act.conf."
-}
+herdtools_backends = {"herd": ["herd", "herd7"], "litmus": ["litmus", "litmus7"]}
 
-# Emits the appropriate 'arch' ID for a GCC-like compiler running on this
-# machine.
-#
-# Uses global variable `arch`.
-gcc_like_arch() {
-	case "${arch}" in
-	x86 )
-		echo "x86.att"
-	;;
-	* )
-		echo "unknown"
-	;;
-	esac
-}
 
-# Emits a compiler stanza for a particular O-level of a GCC-like compiler.
-# Assumes that the compiler has already been checked.
-#
-# $1: the compiler command.
-# $2: the optimisation level, as a number (eg -Ofast isn't supported).
-#
-# Uses global variable `is_64`.
-gcc_like_optimisation_level() {
-	_compiler="$1"
-	_optlevel="$2"
+@dataclass
+class Compiler:
+    """Information about a compiler on an ACT target machine."""
 
-	printf '\n    compiler %s.%s.O%d {\n' "${_compiler}" "${arch}" "${_optlevel}"
-	printf '        style gcc \n'
-	printf '        arch  %s \n' "$(gcc_like_arch)"
-	printf '        cmd   "%s" \n' "${_compiler}"
+    style: str
+    target: Target
+    cmd: str
+    args: typing.List[str]
 
-	printf "        argv  "
-	[ -z "${is_64}" ] || printf '"-m32" '
-	[ "${_optlevel}" -eq "0" ] || printf '"-O%d" ' "${_optlevel}"
-	echo '"-DNO_PTHREADS"'
+    @property
+    def args_str(self) -> str:
+        return " ".join(self.args)
 
-	echo "    }"
-}
+    def print(self) -> None:
+        print(f"        style {self.style}")
+        print(f"        arch  {self.target.value}")
+        print(f"        cmd   {self.cmd}")
+        print(f"        argv  {self.args_str}")
 
-# Tries to emit a compiler stanza for a GCC-like compiler.
-#
-# Arguments:
-#    1: the compiler command.
-gcc_like() {
-	_compiler="${1}"
-	"${_compiler}" --version >/dev/null 2>&1 || {
-		not_found "${_compiler}" && return
-	}
 
-	for _optlevel in "0" "3";
-	do
-		gcc_like_optimisation_level "${_compiler}" "${_optlevel}"
-	done
-}
+@dataclass
+class Backend:
+    """Information about a backend on an ACT target machine."""
 
-# Tries to emit a compiler stanza for a generic herdtools sim.
-#
-# Arguments:
-#   1: the sim command
-#   2: the style ("herd" or "litmus")
-herdtools_like() {
-	_sim="${1}"
-	_style="${2}"
+    style: str
+    cmd: str
 
-	"${_sim}" -version >/dev/null 2>&1 || {
-		not_found "${_sim}" && return
-	}
+    def print(self) -> None:
+        print(f"        style {self.style}")
+        print(f"        cmd   {self.cmd}")
 
-	printf '\n    sim %s {\n' "${_sim}"
 
-	printf '        style %s \n' "${_style}"
-	printf '        cmd   "%s" \n' "${_sim}"
+@dataclass
+class Machine:
+    """Information about an ACT target machine."""
 
-	echo "    }"
-}
+    id: str
+    arch: str
+    compilers: typing.Mapping[str, Compiler]
+    backends: typing.Mapping[str, Backend]
 
-# Finds and outputs compiler stanzas for the local machine.
-compilers() {
-	gcc_like "gcc"
-	gcc_like "clang"
-}
+    def print_compilers(self) -> None:
+        for (key, val) in self.compilers.items():
+            print(f"    compiler {key} {{")
+            val.print()
+            print("    }")
 
-# Finds and outputs simulator stanzas for the local machine.
-simulators() {
-	herdtools_like "herd" "herd"
-	herdtools_like "herd7" "herd"
-	herdtools_like "litmus" "litmus"
-	herdtools_like "litmus7" "litmus"
-}
+    def print_backends(self) -> None:
+        for (key, val) in self.backends.items():
+            print(f"    sim {key} {{")
+            val.print()
+            print("    }")
 
-# Works out the correct name for the machine, and stores it in `host`.
-#
-# Globals:
-#   - host (write)
-setup_host() {
-	host="$(hostname -s | tr '-' '_')"
-	if [ -z "${host}" ]; then
-		host="localhost"
-	fi
-}
+    def print_header(self) -> None:
+        print(f"# Auto-generated act.conf for '{self.id}' (architecture {self.arch}).")
+        print(f"# Generated on {datetime.today()}.")
 
-# Populates various global variables according to the machine architecture, and
-# terminates the script if the architecture isn't supported by ACT.
-#
-# Globals:
-#   - raw_arch (write)
-#   - arch (write)
-#   - is_64 (write)
-setup_arch() {
-	raw_arch="$(uname -m)"
-	case "${raw_arch}" in
-		x86_64 )
-			arch="x86"
-			is_64=1
-			;;
-		* )
-			error "Unsupported architecture: ${raw_arch}"
-			exit 1
-			;;
-	esac
-}
+    def print(self) -> None:
+        self.print_header()
+        print(f"machine {self.id} {{")
+        self.print_compilers()
+        self.print_backends()
+        print("}")
 
-# Main entry point.
-#
-# Globals:
-#   - host (read/write)
-#   - raw_arch (read/write)
-main() {
-	setup_host
-	setup_arch
 
-	echo "# Auto-generated act.conf for '${host}' (architecture ${raw_arch})."
-	echo "# Generated on $(date)."
-	echo
-	echo "machine ${host} {"
-	echo "    via local"
+nodetrans = str.maketrans("-", "_")
 
-	compilers
-	simulators
 
-	echo "}"
-	echo
-	echo "default {"
-	echo "    try machine ${host}"
-	echo "}"
-}
+def trim_node(full_node: str) -> str:
+    (node_prefix, _, _) = full_node.partition(".")
+    return node_prefix.translate(nodetrans)
 
-main
+
+def gcc_args(arch: str, target: Target, olevel: int) -> typing.Iterator[str]:
+    if target.force_32bit(arch):
+        yield "-m32"
+    if olevel != 0:
+        yield f"-O{olevel}"
+    yield "-DNO_PTHREADS"
+
+
+def command_works(cmd: str, *args: str) -> bool:
+    """Runs the given command with the given argument list, and returns whether
+    it succeeded.
+    """
+    try:
+        test: subprocess.CompletedProcess = subprocess.run(
+            [cmd, *args], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        return test.returncode == 0
+    except FileNotFoundError:
+        # Assume this is a missing program
+        return False
+
+
+def gcc_like_compiler_stanza(
+    cmd: str, arch: str, target: Target, olevel: int
+) -> Compiler:
+    """Emits a compiler stanza for a particular O-level of a GCC-like compiler.
+    Assumes that the compiler has already been checked.
+    """
+    args = list(gcc_args(arch, target, olevel))
+    return Compiler(style="gcc", target=target, cmd=cmd, args=args)
+
+
+def gcc_like_compiler_stanzas(
+    cmd: str, arch: str
+) -> typing.Iterator[typing.Tuple[str, Compiler]]:
+    """Emits a set of compiler stanzas for a particular GCC-like compiler.
+    Assumes that the compiler has already been checked.
+    """
+    targets = gcc_targets_of_arch[arch]
+    for (target, olevel) in itertools.product(targets, olevels):
+        id = ".".join([cmd, target.value, f"O{olevel}"])
+        compiler = gcc_like_compiler_stanza(cmd, arch, target, olevel)
+        yield (id, compiler)
+
+
+def lookup_gcc_like_compiler(cmd: str, arch: str) -> typing.Mapping[str, Compiler]:
+    """Tests to see if the named GCC-like compiler exists.
+    If so, emits a dictionary containing one or more stanzas for it.
+    If not, emits an empty dictionary.
+    """
+    return (
+        dict(gcc_like_compiler_stanzas(cmd, arch))
+        if command_works(cmd, "--version")
+        else {}
+    )
+
+
+def lookup_gcc_like_compilers(arch: str) -> typing.Mapping[str, Compiler]:
+    return collections.ChainMap(
+        *(lookup_gcc_like_compiler(cmd, arch) for cmd in gcc_like_compilers)
+    )
+
+
+def lookup_local_compilers(arch: str) -> typing.Mapping[str, Compiler]:
+    # Space for future expansion
+    return lookup_gcc_like_compilers(arch)
+
+
+def herdtools_backend_stanzas(
+    cmd: str, style: str
+) -> typing.Iterator[typing.Tuple[str, Backend]]:
+    yield (cmd, Backend(cmd=cmd, style=style))
+
+
+def lookup_herdtools_backend(cmd: str, style: str) -> typing.Mapping[str, Backend]:
+    """Tests to see if the named Herdtools-style backend exists.
+    If so, emits a dictionary containing one or more stanzas for it.
+    If not, emits an empty dictionary.
+    """
+    return (
+        dict(herdtools_backend_stanzas(cmd, style))
+        if command_works(cmd, "-version")
+        else {}
+    )
+
+
+def lookup_herdtools_backends() -> typing.Mapping[str, Backend]:
+    return collections.ChainMap(
+        *(
+            lookup_herdtools_backend(cmd, style)
+            for (style, cmds) in herdtools_backends.items()
+            for cmd in cmds
+        )
+    )
+
+
+def lookup_local_backends() -> typing.Mapping[str, Backend]:
+    # Space for future expansion
+    return lookup_herdtools_backends()
+
+
+def lookup_local_machine() -> Machine:
+    node = platform.node()
+    id = "localhost" if node.isspace() else trim_node(node)
+
+    arch = platform.machine()
+
+    compilers: typing.Mapping[str, Compiler] = lookup_local_compilers(arch)
+    backends: typing.Mapping[str, Backend] = lookup_local_backends()
+
+    return Machine(id, arch, compilers, backends)
+
+
+if __name__ == "__main__":
+    mach: Machine = lookup_local_machine()
+    mach.print()
