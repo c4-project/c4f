@@ -1,4 +1,4 @@
-#!/usr/bin/env awk -f
+#!/usr/bin/awk -f
 #
 # Given an assembly Litmus test, replaces the body of the test with
 # the contents of the externally provided variable `blank`.

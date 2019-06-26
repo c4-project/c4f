@@ -33,11 +33,26 @@ class LitmusAux:
 
 
 @dataclass
+class VarRecord:
+    """Representation of a var-map record in an ACT 'aux file'."""
+
+    is_global: bool
+    c_id: str
+    c_type: str
+
+    def __str__(self) -> str:
+        """Converts this aux record to a string.
+
+        :return: A compact JSON serialisation of the aux record.
+        """
+        return json.dumps(dataclasses.asdict(self))
+
+@dataclass
 class Aux:
     """Representation of an ACT 'aux file'."""
 
     num_threads: int
-    var_map: typing.Dict[str, typing.Optional[str]]
+    var_map: typing.Dict[str, VarRecord]
     litmus_aux: LitmusAux
 
     def __str__(self) -> str:
@@ -79,9 +94,16 @@ def litmus_of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusAux:
     return LitmusAux(locations, init, postcondition)
 
 
+def var_record_of_dict(vr_dict : typing.Dict[str, typing.Any]) -> VarRecord:
+    is_global = bool(vr_dict["is_global"])
+    c_id = str(vr_dict["c_id"])
+    c_type = str(vr_dict["c_type"])
+    return VarRecord(is_global=is_global, c_id=c_id, c_type=c_type)
+
+
 def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> Aux:
     num_threads: int = aux_dict["num_threads"]
-    var_map: typing.Dict[str, typing.Optional[str]] = aux_dict["var_map"]
+    var_map: typing.Dict[str, VarRecord] = { k: var_record_of_dict(v) for (k, v) in aux_dict["var_map"].items() }
     litmus_aux: LitmusAux = litmus_of_dict(aux_dict["litmus_aux"])
     return Aux(num_threads, var_map, litmus_aux)
 
