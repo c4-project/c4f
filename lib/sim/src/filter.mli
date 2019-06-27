@@ -10,20 +10,8 @@
    project root for more information. *)
 
 open Base
-module Ac = Act_common
-module Pb = Plumbing
 
 module type S =
-  Pb.Filter_types.S with type aux_i = Mode.t and type aux_o = unit
+  Plumbing.Filter_types.S with type aux_i = Arch.t and type aux_o = unit
 
-module Make (S : Instance_types.S) : S = Pb.Filter.Make_files_only (struct
-  type aux_i = Mode.t
-
-  type aux_o = unit
-
-  let name = "C compiler"
-
-  let run (ctx : Mode.t Pb.Filter_context.t) :
-      infile:Fpath.t -> outfile:Fpath.t -> unit Or_error.t =
-    S.compile (Pb.Filter_context.aux ctx)
-end)
+module Make_error (B : sig val error : Error.t end) : S

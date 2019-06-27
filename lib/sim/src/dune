@@ -5,6 +5,7 @@
  (public_name act.sim)
  (synopsis "Automagic Compiler Tormentor: simulator running framework")
  (inline_tests)
+ (modules_without_implementation runner_types)
  (preprocess
   (pps ppx_deriving.std ppx_deriving_yojson ppx_jane))
  (libraries result ppx_deriving_yojson.runtime yojson ppx_expect.common

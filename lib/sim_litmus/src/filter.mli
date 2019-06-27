@@ -38,5 +38,4 @@ val run_direct :
     is absent). *)
 
 (** Interface for making a filter over litmus7. *)
-module Make (B : Act_sim.Runner_intf.Basic) :
-  Act_sim.Runner_intf.Basic_filter
+module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Filter.S

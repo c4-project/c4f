@@ -28,7 +28,26 @@
     implementing that interface using a filter wrapper over the simulator
     and a simulator output parser. *)
 
-(** [Make] makes a simulator runner from a [Basic_from_filter]. *)
-module Make (B : Runner_intf.Basic_from_filter) : Runner_intf.S
+open Base
 
-module Make_error (B : Runner_intf.Basic_error) : Runner_intf.S
+(** [Make] makes a simulator runner. *)
+module Make (B : sig
+    module Reader : Reader_intf.S
+    module Unchecked_filter : Filter.S
+
+    val make_harness_unchecked :
+      Arch.t
+      -> input_path:Fpath.t
+      -> output_dir:Fpath.t
+      -> string list Or_error.t
+  end) : Runner_types.S
+
+module Make_error (B : sig val error : Error.t end) : Runner_types.S
+
+(** [no_make_harness] is a dummy value for [make_harness] that raises an error
+    stating that the backend doesn't support it. *)
+val no_make_harness :
+      Arch.t
+      -> input_path:Fpath.t
+      -> output_dir:Fpath.t
+      -> string list Or_error.t

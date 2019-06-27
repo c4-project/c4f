@@ -36,10 +36,6 @@ module type Common = sig
 
   val name : string
   (** [name] is the name of this filter. *)
-
-  val tmp_file_ext : aux_i Filter_context.t -> string
-  (** [tmp_file_ext ctx] gives the extension that any temporary files output
-      by this filter should have, given the context [ctx]. *)
 end
 
 module type Basic = sig

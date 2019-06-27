@@ -6,5 +6,5 @@
  (synopsis "Simulator frontend for the Litmus7 multicore CPU test runner")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries stdio base base.caml core_kernel travesty travesty.base_exts
+ (libraries fpath stdio base base.caml core_kernel travesty travesty.base_exts
    act.common act.plumbing act.sim act.sim_herdtools_common act.utils))

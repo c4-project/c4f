@@ -42,8 +42,6 @@ include Pb.Filter.Make (struct
 
   let name = "delitmus"
 
-  let tmp_file_ext _ = "c"
-
   let run (ctx : Runner.Style.t Pb.Filter_context.t) ic oc :
       aux_o Or_error.t =
     let style = Pb.Filter_context.aux ctx in
