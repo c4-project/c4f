@@ -24,8 +24,8 @@ components.  It *doesn't* cover:
    :caption: Contents:
 
    intro/index
-   commands/index
    scripts/index
+   commands/index
    conf/index
 
 .. _README: https://github.com/MattWindsor91/act/blob/master/README.md
