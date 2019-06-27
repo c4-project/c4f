@@ -45,13 +45,17 @@ module Make_lifter (B : Basic_lifter) = struct
     let standard_args = B.as_standard_args args in
     setup_colour standard_args ;
     let o = make_output_from_standard_args standard_args in
-    Or_error.(
-      Args.Standard.config_file standard_args
-      |> Plumbing.Fpath_helpers.of_string
-      >>= Language_support.load_and_process_config ?compiler_predicate
-            ?machine_predicate ?sanitiser_passes ?with_compiler_tests
-      >>= f args o)
-    |> Ac.Output.print_error o
+    let result =
+      Or_error.(
+        Args.Standard.config_file standard_args
+        |> Plumbing.Fpath_helpers.of_string
+        >>= Language_support.load_and_process_config ?compiler_predicate
+              ?machine_predicate ?sanitiser_passes ?with_compiler_tests
+        >>= f args o)
+    in
+    if Or_error.is_error result then (
+      Ac.Output.print_error o result ;
+      exit 1 )
 end
 
 module Standard_lifter = Make_lifter (Args.Standard)
