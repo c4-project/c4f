@@ -52,12 +52,12 @@ class Compiler:
 
     @property
     def args_str(self) -> str:
-        return " ".join((f"\"{a}\"" for a in self.args))
+        return " ".join((f'"{a}"' for a in self.args))
 
     def print(self) -> None:
         print(f"        style {self.style}")
         print(f"        arch  {self.target.value}")
-        print(f"        cmd   \"{self.cmd}\"")
+        print(f'        cmd   "{self.cmd}"')
         print(f"        argv  {self.args_str}")
 
 
@@ -70,7 +70,7 @@ class Backend:
 
     def print(self) -> None:
         print(f"        style {self.style}")
-        print(f"        cmd   \"{self.cmd}\"")
+        print(f'        cmd   "{self.cmd}"')
 
 
 @dataclass
@@ -229,9 +229,9 @@ def lookup_local_machine() -> Machine:
 
 
 def print_default(mach: Machine) -> None:
-    print('default {')
-    print(f'    try machine {mach.id}')
-    print('}') 
+    print("default {")
+    print(f"    try machine {mach.id}")
+    print("}")
 
 
 if __name__ == "__main__":
@@ -239,4 +239,3 @@ if __name__ == "__main__":
     mach.print()
     print()
     print_default(mach)
-

@@ -37,7 +37,9 @@ class TestInstance:
         :param subject: The name of the file under test, substituted for 'subject' in the driver template.
         :return:
         """
-        return driver_template.format(compiler=self.compiler, subject=self.subject, backend=self.backend)
+        return driver_template.format(
+            compiler=self.compiler, subject=self.subject, backend=self.backend
+        )
 
     def run(self, driver_template: str):
         cmd = self.populate_driver(driver_template)
@@ -71,27 +73,22 @@ class Test:
 
 
 def machine_test_from_dict(d: typing.Mapping[str, typing.Any]) -> MachineTest:
-    compilers = [ str(compiler) for compiler in d['compilers'] ]
-    backend = str(d['backend'])
+    compilers = [str(compiler) for compiler in d["compilers"]]
+    backend = str(d["backend"])
     return MachineTest(compilers=compilers, backend=backend)
 
 
 def test_from_dict(d: typing.Mapping[str, typing.Any]) -> Test:
-    machines = { mid: machine_test_from_dict(md) for mid, md in d['machines'].items() }
-    subjects = [ str(subject) for subject in d['subjects'] ]
-    driver = str(d['driver'])
+    machines = {mid: machine_test_from_dict(md) for mid, md in d["machines"].items()}
+    subjects = [str(subject) for subject in d["subjects"]]
+    driver = str(d["driver"])
     return Test(machines=machines, subjects=subjects, driver=driver)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-            'test',
-            type=str,
-            help="The input test file."
-            )
+    parser.add_argument("test", type=str, help="The input test file.")
     args = parser.parse_args()
     with open(args.test) as fp:
         test = test_from_dict(json.load(fp))
     test.run()
-
