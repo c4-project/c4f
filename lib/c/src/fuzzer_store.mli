@@ -27,11 +27,11 @@ open Fuzzer_store_intf
 
 (** {2 Functors} *)
 
-(** [Make (B)] makes a store action given the basic configuration in [B]. *)
 module Make (B : Basic) : Fuzzer_action.S
+(** [Make (B)] makes a store action given the basic configuration in [B]. *)
 
 (** {2 Pre-made modules} *)
 
+module Int : Fuzzer_action.S
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)
-module Int : Fuzzer_action.S

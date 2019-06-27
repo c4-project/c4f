@@ -50,7 +50,7 @@ let parse_int_opt : string option -> int option Or_error.t =
 include Shc.Reader.Make (struct
   let try_parse_state_count (line : string) : int option =
     Option.try_with (fun () ->
-        Caml.Scanf.sscanf line "Histogram (%d states)" Fn.id )
+        Caml.Scanf.sscanf line "Histogram (%d states)" Fn.id)
 
   let try_split_state_line (line : string) :
       Shc.Reader.State_line.t Or_error.t =

@@ -41,14 +41,14 @@ let%test_module "Id tests" =
         (module Ac.Litmus_id)
         ~f:(fun ident ->
           [%test_eq: Ac.Litmus_id.t] ~here:[[%here]] ident
-            Ac.Litmus_id.(of_string (to_string ident)) )
+            Ac.Litmus_id.(of_string (to_string ident)))
 
     let%test_unit "to_memalloy_id is identity on globals" =
       Base_quickcheck.Test.run_exn
         (module Ac.C_id)
         ~f:(fun ident ->
           [%test_eq: Ac.C_id.t] ~here:[[%here]] ident
-            Ac.Litmus_id.(to_memalloy_id (global ident)) )
+            Ac.Litmus_id.(to_memalloy_id (global ident)))
   end )
 
 let%test_module "is_in_scope" =

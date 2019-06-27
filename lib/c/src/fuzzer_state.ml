@@ -42,7 +42,7 @@ let map_vars (s : t) ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t) : t =
 let register_global ?(initial_value : Fuzzer_var.Value.t option) (s : t)
     (var : Ac.C_id.t) (ty : Mini.Type.t) : t =
   map_vars s ~f:(fun v ->
-      Fuzzer_var.Map.register_global v ?initial_value var ty )
+      Fuzzer_var.Map.register_global v ?initial_value var ty)
 
 let add_dependency (s : t) ~(var : Ac.C_id.t) : t =
   map_vars s ~f:(Fuzzer_var.Map.add_dependency ~var)

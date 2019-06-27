@@ -13,8 +13,8 @@
 
 open Base
 
-(** Opaque type of default ID collections. *)
 type t [@@deriving sexp]
+(** Opaque type of default ID collections. *)
 
 (** {2 Constructors} *)
 

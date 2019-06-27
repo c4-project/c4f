@@ -31,8 +31,8 @@ open Act_utils
 
 (** Primitive types. *)
 module Basic : sig
-  (** Opaque type of basic types. *)
   type t
+  (** Opaque type of basic types. *)
 
   val bool : t
   (** [bool] is the (C99?) Boolean type. *)
@@ -53,16 +53,18 @@ module Basic : sig
       to the atomic type [btype]. It fails if [btype] isn't atomic. *)
 end
 
-(** Opaque type of types. *)
 type t [@@deriving equal, sexp, compare, quickcheck]
+(** Opaque type of types. *)
 
+include
+  Stringable.S with type t := t
 (** Types can be converted to strings; this conversion is quite limited in
-    both directions, mapping "basic*" for pointer types and "normal" for basic
-    types only. *)
-include Stringable.S with type t := t
+    both directions, mapping "basic*" for pointer types and "normal" for
+    basic types only. *)
 
+include
+  Plumbing.Jsonable_types.S with type t := t
 (** Types can be converted to JSON by stringification. *)
-include Plumbing.Jsonable_types.S with type t := t
 
 val normal : Basic.t -> t
 (** [normal ty] lifts a basic type [ty] to a scalar type. *)

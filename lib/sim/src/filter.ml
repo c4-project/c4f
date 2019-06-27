@@ -14,8 +14,9 @@ open Base
 module type S =
   Plumbing.Filter_types.S with type aux_i = Arch.t and type aux_o = unit
 
-module Make_error (B : sig val error : Error.t end) : S =
-Plumbing.Filter.Make (struct
+module Make_error (B : sig
+  val error : Error.t
+end) : S = Plumbing.Filter.Make (struct
   type aux_i = Arch.t
 
   type aux_o = unit

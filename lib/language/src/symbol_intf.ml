@@ -33,11 +33,12 @@ open Act_common
 (** [Basic] is the interface act languages must implement for symbol
     analysis. *)
 module type Basic = sig
-  (** [t] is the concrete type of symbols. *)
   type t [@@deriving compare, equal, sexp]
+  (** [t] is the concrete type of symbols. *)
 
+  include
+    Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their symbols. *)
-  include Pretty_printer.S with type t := t
 
   (** They must allow traversal over any string parts of the symbol. *)
   module On_strings :
@@ -80,9 +81,9 @@ module type S = sig
 
   include
     Comparable.S
-    with type t := t
-     and type comparator_witness = Set.Elt.comparator_witness
-     and module Set := Set
+      with type t := t
+       and type comparator_witness = Set.Elt.comparator_witness
+       and module Set := Set
 
   (** [R_map] is an implementation of [Redirect_map] for this symbol type. *)
   module R_map :

@@ -37,14 +37,14 @@ module Standard : sig
   include S_standard with type t := t and type s := t
 end
 
+module Standard_with_files : S_standard_with_files with type s := Standard.t
 (** Variant of {{!Standard} Standard} including arguments for (optional)
     input and output files. This is useful for exposing a filter as an act
     command. *)
-module Standard_with_files : S_standard_with_files with type s := Standard.t
 
+module Standard_asm : S_standard_asm with type s := Standard.t
 (** Variant of {{!Standard_with_files} Standard_with_files} including the
     standard [act asm] arguments. *)
-module Standard_asm : S_standard_asm with type s := Standard.t
 
 (** {2 Miscellaneous argument helpers} *)
 

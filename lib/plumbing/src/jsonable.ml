@@ -71,19 +71,18 @@ struct
     Sx.(Alist.of_yojson >=> of_alist)
 end
 
-module Of_stringable (E : Stringable.S) : Jsonable_types.S with type t = E.t =
-struct
+module Of_stringable (E : Stringable.S) :
+  Jsonable_types.S with type t = E.t = struct
   type t = E.t
+
   let to_yojson (x : E.t) : Yojson.Safe.t = `String (E.to_string x)
-  let of_yojson (j : Yojson.Safe.t): (E.t, string) Result.t =
-    protect ~f:(fun () ->
-        j
-        |> Yojson.Safe.Util.to_string
-        |> E.of_string
-      )
+
+  let of_yojson (j : Yojson.Safe.t) : (E.t, string) Result.t =
+    protect ~f:(fun () -> j |> Yojson.Safe.Util.to_string |> E.of_string)
 end
 
-module String : Jsonable_types.S with type t = string = Of_stringable (String)
+module String : Jsonable_types.S with type t = string =
+  Of_stringable (String)
 
 module Option (B : Jsonable_types.S) :
   Jsonable_types.S with type t = B.t option = struct

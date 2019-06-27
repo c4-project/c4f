@@ -26,8 +26,8 @@
 
 open Base
 
-(** Opaque type of output contexts. *)
 type t
+(** Opaque type of output contexts. *)
 
 (** {2 Constructors} *)
 

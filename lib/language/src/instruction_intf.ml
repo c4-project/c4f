@@ -33,28 +33,29 @@ open Core_kernel
 (** [Basic] is the interface act languages must implement for instruction
     analysis. *)
 module type Basic = sig
-  (** Type of instructions. *)
   type t [@@deriving sexp, eq]
+  (** Type of instructions. *)
 
-  (** [con] is the type of constants. *)
   type con
+  (** [con] is the type of constants. *)
 
-  (** The type of locations inside instructions. *)
   module Loc : Equal.S
+  (** The type of locations inside instructions. *)
 
-  (** The type of concrete symbols. *)
   module Sym : Equal.S
+  (** The type of concrete symbols. *)
 
+  include
+    Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their instructions. *)
-  include Pretty_printer.S with type t := t
 
   val pp_operands : Format.formatter -> t -> unit
   (** [pp_operands f ins] pretty-prints only the instruction operands. *)
 
   include
     Act_abstract.Abstractable.S
-    with type t := t
-     and module Abs := Act_abstract.Instruction
+      with type t := t
+       and module Abs := Act_abstract.Instruction
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
@@ -101,11 +102,11 @@ end
 
     Implementations of [S] contain implementations of [R_map]. *)
 module type R_map = sig
-  (** [t] is the opaque type of a redirect map. *)
   type t
+  (** [t] is the opaque type of a redirect map. *)
 
-  (** [sym] is the type of symbols. *)
   type sym [@@deriving sexp, eq]
+  (** [sym] is the type of symbols. *)
 
   (** [r_dest] is the type of destination results used in [R_map]. *)
   type r_dest =
@@ -152,9 +153,9 @@ module type Basic_with_modules = sig
 
   include
     Basic
-    with type con := Constant.t
-     and module Loc := Location
-     and module Sym := Symbol
+      with type con := Constant.t
+       and module Loc := Location
+       and module Sym := Symbol
 end
 
 (** [S] is an expanded interface onto an act language's instruction
@@ -162,12 +163,13 @@ end
 module type S = sig
   include Basic_with_modules
 
+  include
+    Act_abstract.Instruction.S_properties with type t := t
   (** We can query abstract properties directly on the concrete instruction
       type. *)
-  include Act_abstract.Instruction.S_properties with type t := t
 
-  (** We can query abstract operand bundle properties on a concrete
-      instruction type, routing through [abs_operands]. *)
   module On_operands :
     Act_abstract.Operand.Bundle.S_properties with type t := t
+  (** We can query abstract operand bundle properties on a concrete
+      instruction type, routing through [abs_operands]. *)
 end

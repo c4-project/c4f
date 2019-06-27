@@ -51,7 +51,7 @@ module Table = struct
 
   let of_sets =
     List.concat_map ~f:(fun (set, sort) ->
-        List.map ~f:(fun sym -> (sym, sort)) (Set.to_list set) )
+        List.map ~f:(fun sym -> (sym, sort)) (Set.to_list set))
 
   let add tbl sym sort = (sym, sort) :: tbl
 
@@ -63,7 +63,7 @@ module Table = struct
   let set_of_sorts tbl sorts =
     tbl
     |> List.filter_map ~f:(fun (sym, sort) ->
-           if Sort.Set.mem sorts sort then Some sym else None )
+           if Sort.Set.mem sorts sort then Some sym else None)
     |> Set.of_list
 
   let set_of_sort tbl sort = set_of_sorts tbl (Sort.Set.singleton sort)

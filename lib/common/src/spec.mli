@@ -33,8 +33,8 @@ open Base
     operations. See the [Set] module constructed on specification types for
     more useful functionality. *)
 module Set : sig
-  (** Opaque type of specification sets. *)
   type 'spec t
+  (** Opaque type of specification sets. *)
 
   val empty : 'spec t
   (** [empty] is the empty specification set. *)
@@ -43,8 +43,8 @@ module Set : sig
 
   val of_map : 'spec Map.M(Id).t -> 'spec t
 
-  (** We can monadically traverse the specifications in a set. *)
   module On_specs : Travesty.Traversable_types.S1 with type 'a t = 'a t
+  (** We can monadically traverse the specifications in a set. *)
 end
 
 module type S = sig
@@ -53,13 +53,13 @@ module type S = sig
   include Spec_types.S with type Set.t = t Set.t and type t := t
 end
 
+module With_id (C : Spec_types.Common) :
+  Spec_types.S_with_id with type elt = C.t
 (** [With_id] is a basic implementation of [S_with_id] for specs with type
     [B.t].
 
     Usually, spec modules should extend [With_id] to implement the various
     accessors they expose on the spec type itself, for convenience. *)
-module With_id (C : Spec_types.Common) :
-  Spec_types.S_with_id with type elt = C.t
 
 (** [Make] makes an [S] from a [Basic]. *)
 module Make (B : Spec_types.Basic) :

@@ -22,12 +22,12 @@ module type S = sig
   val run : Act_c.Mini_litmus.Ast.Validated.t -> Output.t Or_error.t
 end
 
+module Vars_as_globals : S
 (** Driver for the 'vars as globals' flavour of delitmus. It moves all
     variables into the global scope, changing all global references from
     pointers to values. *)
-module Vars_as_globals : S
 
+module Vars_as_parameters : S
 (** Driver for the 'vars as parameters' flavour of delitmus. It moves all
     variables into the function parameter list, changing all local
     references from values to pointers. *)
-module Vars_as_parameters : S

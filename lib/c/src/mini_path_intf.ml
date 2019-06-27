@@ -27,14 +27,14 @@ open Core_kernel
 
 (** {2 Phantom types for path GADTs} *)
 
-(** Marks a path as reaching an existing expression. *)
 type on_expr [@@deriving sexp_of]
+(** Marks a path as reaching an existing expression. *)
 
-(** Marks a path as reaching an existing statement. *)
 type on_stm [@@deriving sexp_of]
+(** Marks a path as reaching an existing statement. *)
 
-(** Marks a path as reaching a space where we can insert a statement. *)
 type stm_hole [@@deriving sexp_of]
+(** Marks a path as reaching a space where we can insert a statement. *)
 
 (** {2 Path GADTs} *)
 
@@ -127,8 +127,8 @@ module type S_statement_list = sig
 
   include
     S_stm_container
-    with type 'a t := 'a list_path
-     and type target := target list
+      with type 'a t := 'a list_path
+       and type target := target list
 end
 
 (** Signature of paths over functions *)

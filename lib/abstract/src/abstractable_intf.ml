@@ -24,8 +24,8 @@
 (** [Basic] is a common signature for things that have an abstract type,
     implementing [Abstract.S], that can be queried. *)
 module type Basic = sig
-  (** [t] is the concrete type. *)
   type t
+  (** [t] is the concrete type. *)
 
   module Abs : Node.S
 

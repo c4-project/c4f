@@ -47,8 +47,8 @@
 
 open Base
 
-(** [t] is the opaque type of indirect memory accesses. *)
 type t [@@deriving sexp, compare, equal, quickcheck]
+(** [t] is the opaque type of indirect memory accesses. *)
 
 val make :
   ?seg:Reg.t -> ?disp:Disp.t -> ?base:Reg.t -> ?index:Index.t -> unit -> t

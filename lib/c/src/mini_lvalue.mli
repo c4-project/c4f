@@ -33,8 +33,8 @@
 
 open Base
 
-(** Opaque type of lvalues. *)
 type t [@@deriving sexp, equal, quickcheck]
+(** Opaque type of lvalues. *)
 
 (** Note that the default quickcheck instance generates random lvalues
     without constraint. *)
@@ -76,21 +76,23 @@ val is_deref : t -> bool
 (** Traversing over identifiers in lvalues. *)
 module On_identifiers :
   Travesty.Traversable_types.S0
-  with type t := t
-   and type Elt.t = Act_common.C_id.t
+    with type t := t
+     and type Elt.t = Act_common.C_id.t
 
+include
+  Mini_intf.S_has_underlying_variable with type t := t
 (** We can get to the variable name inside an lvalue. *)
-include Mini_intf.S_has_underlying_variable with type t := t
 
+include
+  Mini_intf.S_type_checkable with type t := t
 (** Type-checking for lvalues. *)
-include Mini_intf.S_type_checkable with type t := t
 
 (** {3 Generating random lvalues} *)
 
 (** Generates random lvalues, parametrised on a given identifier generator. *)
 module Quickcheck_generic
     (Id : Act_utils.My_quickcheck.S_with_sexp
-          with type t := Act_common.C_id.t) : sig
+            with type t := Act_common.C_id.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end
 

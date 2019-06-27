@@ -220,7 +220,7 @@ module Ic = struct
         ~f:(fun xm line ->
           M.Let_syntax.(
             let%bind x = xm in
-            f x line) )
+            f x line))
 
     let iter_m (ic : Stdio.In_channel.t) ~(f : string -> unit M.t) :
         unit M.t =

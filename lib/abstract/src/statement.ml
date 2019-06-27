@@ -224,7 +224,7 @@ module Properties : S_properties with type t := t = struct
 
   let is_unused_label stm ~symbol_table =
     is_label_where stm ~f:(fun label ->
-        Symbol.(not (Table.mem symbol_table label ~sort:Sort.Jump)) )
+        Symbol.(not (Table.mem symbol_table label ~sort:Sort.Jump)))
 
   let is_instruction_where stm ~f = exists ~instruction:f stm
 
@@ -244,7 +244,7 @@ module Properties : S_properties with type t := t = struct
 
   let is_jump_pair j l =
     is_symbolic_jump_where j ~f:(fun j_sym ->
-        is_label_where l ~f:(Symbol.equal j_sym) )
+        is_label_where l ~f:(Symbol.equal j_sym))
 
   let flags stm symbol_table =
     [ (is_unused_label ~symbol_table stm, `UnusedLabel)

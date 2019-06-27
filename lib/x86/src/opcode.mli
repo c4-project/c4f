@@ -102,16 +102,17 @@ module Sizable : sig
     | `Xor ]
   [@@deriving sexp, equal]
 
+  include
+    String_table.S with type t := t
   (** [Sizable] contains a string table for sizable opcodes. These strings
       _don't_ have a size suffix attached; to parse or emit an AT&T-style
       opcode with size suffix, use [Sized]. *)
-  include String_table.S with type t := t
 
   (** We can convert sizable opcodes to the act abstract form. *)
   include
     Act_abstract.Abstractable.S
-    with type t := t
-     and module Abs := Act_abstract.Instruction.Opcode
+      with type t := t
+       and module Abs := Act_abstract.Instruction.Opcode
 
   val get_operand_spec : t -> Operand_spec.t option
   (** [get_operand_spec opcode] tries to get an operand spec for [opcode].
@@ -122,41 +123,43 @@ end
 module Size : sig
   type t = Byte | Word | Long [@@deriving sexp, equal]
 
-  (** [Size] contains a string table for AT&T-style size suffixes. *)
   module Suffix_table : String_table.S with type t := t
+  (** [Size] contains a string table for AT&T-style size suffixes. *)
 end
 
 module Sized : sig
-  (** A [Sized.t] is a pair of sizable instruction and actual size. *)
   type t = Sizable.t * Size.t [@@deriving sexp, equal]
+  (** A [Sized.t] is a pair of sizable instruction and actual size. *)
 
+  include
+    String_table.S with type t := t
   (** [Sized] contains a string table for AT&T-style size-suffixed opcodes. *)
-  include String_table.S with type t := t
 
   (** We can convert sized opcodes to the act abstract form. *)
   include
     Act_abstract.Abstractable.S
-    with type t := t
-     and module Abs := Act_abstract.Instruction.Opcode
+      with type t := t
+       and module Abs := Act_abstract.Instruction.Opcode
 end
 
 (** [Basic] enumerates 'regular' known opcodes that are neither jumps nor
     sizable. *)
 module Basic : sig
-  (** A [Basic.t] is either a [Sizable.t] or one of several other known
-      opcodes. *)
   type t = [Sizable.t | `Leave | `Mfence | `Nop]
   [@@deriving sexp, equal, enumerate]
+  (** A [Basic.t] is either a [Sizable.t] or one of several other known
+      opcodes. *)
 
+  include
+    String_table.S with type t := t
   (** [Basic] contains a string table for basic opcodes. This is a superset
       of [Sizable]'s string table. *)
-  include String_table.S with type t := t
 
   (** We can convert basic opcodes to the act abstract form. *)
   include
     Act_abstract.Abstractable.S
-    with type t := t
-     and module Abs := Act_abstract.Instruction.Opcode
+      with type t := t
+       and module Abs := Act_abstract.Instruction.Opcode
 
   val get_operand_spec : t -> Operand_spec.t option
   (** [get_operand_spec opcode] tries to get an operand spec for [opcode].
@@ -165,9 +168,6 @@ end
 
 (** [Condition] describes jump conditions. *)
 module Condition : sig
-  (** [invertible] enumerates all of the x86 conditions that can be inverted
-      with a 'not' prefix (for example, 'above' (A) becomes 'not above'
-      (NA). *)
   type invertible =
     [ `Above
     | `AboveEqual
@@ -184,9 +184,10 @@ module Condition : sig
     | `Sign
     | `Zero ]
   [@@deriving sexp, equal]
+  (** [invertible] enumerates all of the x86 conditions that can be inverted
+      with a 'not' prefix (for example, 'above' (A) becomes 'not above'
+      (NA). *)
 
-  (** [t] enumerates all x86 conditions, including both forms of invertible
-      conditions. *)
   type t =
     [ invertible
     | `Not of invertible
@@ -195,22 +196,25 @@ module Condition : sig
     | `ParityEven
     | `ParityOdd ]
   [@@deriving sexp, equal]
+  (** [t] enumerates all x86 conditions, including both forms of invertible
+      conditions. *)
 end
 
 (** [Jump] describes jump instructions. *)
 module Jump : sig
-  (** [t] is a description of a jump. *)
   type t = [`Unconditional | `Conditional of Condition.t]
   [@@deriving sexp, equal, enumerate]
+  (** [t] is a description of a jump. *)
 
+  include
+    String_table.S with type t := t
   (** [Jump] contains a string table for jump instructions. *)
-  include String_table.S with type t := t
 
   (** We can convert jumps to the act abstract form. *)
   include
     Act_abstract.Abstractable.S
-    with type t := t
-     and module Abs := Act_abstract.Instruction.Opcode
+      with type t := t
+       and module Abs := Act_abstract.Instruction.Opcode
 end
 
 (** [t] enumerates all possible types of opcode. *)
@@ -242,8 +246,8 @@ val unknown : string -> t
 (** We can convert elements of [t] to the act abstract form. *)
 include
   Act_abstract.Abstractable.S
-  with type t := t
-   and module Abs := Act_abstract.Instruction.Opcode
+    with type t := t
+     and module Abs := Act_abstract.Instruction.Opcode
 
 val of_string : string -> t
 (** [of_string string] parses [string] as an opcode (or opcode-like entity). *)

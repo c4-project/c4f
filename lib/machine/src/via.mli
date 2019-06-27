@@ -22,8 +22,8 @@ val local : t
 val ssh : Ssh.t -> t
 (** [ssh ssh_config] is a [Via] for a SSH connection. *)
 
-(** [t] can be pretty-printed. *)
 include Pretty_printer.S with type t := t
+(** [t] can be pretty-printed. *)
 
 val to_runner : t -> (module Plumbing.Runner_types.S)
 (** [to_runner via] builds a runner module for a [via]. *)

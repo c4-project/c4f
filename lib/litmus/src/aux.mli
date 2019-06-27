@@ -17,8 +17,8 @@
 
 open Base
 
-(** Opaque type of auxiliary Litmus records. *)
 type 'const t [@@deriving equal, sexp]
+(** Opaque type of auxiliary Litmus records. *)
 
 (** {2 Constructors} *)
 
@@ -51,8 +51,8 @@ val postcondition : 'const t -> 'const Ast_base.Postcondition.t option
     litmus auxiliary record, potentially changing the constant type. *)
 include
   Travesty.Bi_traversable_types.S1_right
-  with type 'const t := 'const t
-   and type left = Act_common.C_id.t
+    with type 'const t := 'const t
+     and type left = Act_common.C_id.t
 
 (** {2 Serialisation} *)
 

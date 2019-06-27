@@ -38,11 +38,11 @@ end
 
 (** Basic signature used for constructing qualified lookups. *)
 module type Basic_lookup = sig
-  (** The unqualified inner specification module. *)
   module Inner : Act_common.Spec.S
+  (** The unqualified inner specification module. *)
 
-  (** The qualified final specification type. *)
   type t
+  (** The qualified final specification type. *)
 
   val from_machine : Spec.t -> Inner.Set.t
   (** [from_machine] gets the list of unqualified specifications for the
@@ -74,7 +74,7 @@ module Make_lookup (B : Basic_lookup) :
     let result =
       Or_error.find_map_ok defaults ~f:(fun default ->
           let fqid = Act_common.Id.(default @. fqid) in
-          lookup_direct machines ~fqid )
+          lookup_direct machines ~fqid)
     in
     (* We want default resolution to be 'hidden' in the error case; errors
        returned should refer to the original resolution attempt. *)

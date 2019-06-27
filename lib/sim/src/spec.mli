@@ -28,8 +28,9 @@ open Act_common
 
 type t
 
+include
+  Act_common.Spec.S with type t := t
 (** Simulator specifications are specifications. *)
-include Act_common.Spec.S with type t := t
 
 (** {2 Constructors} *)
 

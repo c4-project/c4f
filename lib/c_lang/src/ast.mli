@@ -29,36 +29,35 @@ and Enum_spec :
 
 and Struct_decl :
   (S_g_decl
-  with type qual := Spec_or_qual.t
-   and type decl := Struct_declarator.t list)
+    with type qual := Spec_or_qual.t
+     and type decl := Struct_declarator.t list)
 
 and Type_spec :
   (S_type_spec
-  with type su := Struct_or_union_spec.t
-   and type en := Enum_spec.t)
+    with type su := Struct_or_union_spec.t
+     and type en := Enum_spec.t)
 
 and Spec_or_qual : (Ast_node with type t = [Type_spec.t | Type_qual.t])
 
 and Decl_spec :
   (Ast_node
-  with type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t])
+    with type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t])
 
 and Type_name :
   (S_g_decl
-  with type qual := Spec_or_qual.t
-   and type decl := Abs_declarator.t option)
+    with type qual := Spec_or_qual.t
+     and type decl := Abs_declarator.t option)
 
 and Struct_or_union_spec :
   (S_composite_spec
-  with type kind := [`Struct | `Union]
-   and type decl := Struct_decl.t)
+    with type kind := [`Struct | `Union]
+     and type decl := Struct_decl.t)
 
 and Param_decl :
   (S_g_decl
-  with type qual := Decl_spec.t
-   and type decl :=
-              [ `Concrete of Declarator.t
-              | `Abstract of Abs_declarator.t option ])
+    with type qual := Decl_spec.t
+     and type decl :=
+          [`Concrete of Declarator.t | `Abstract of Abs_declarator.t option])
 
 and Param_type_list : sig
   type t = {params: Param_decl.t list; style: [`Normal | `Variadic]}
@@ -67,22 +66,22 @@ end
 
 and Direct_declarator :
   (S_direct_declarator
-  with type dec := Declarator.t
-   and type par := Param_type_list.t
-   and type expr := Expr.t)
+    with type dec := Declarator.t
+     and type par := Param_type_list.t
+     and type expr := Expr.t)
 
 and Declarator : (S_declarator with type ddec := Direct_declarator.t)
 
 and Struct_declarator :
   (S_struct_declarator
-  with type dec := Declarator.t
-   and type expr := Expr.t)
+    with type dec := Declarator.t
+     and type expr := Expr.t)
 
 and Direct_abs_declarator :
   (S_direct_abs_declarator
-  with type dec := Abs_declarator.t
-   and type par := Param_type_list.t
-   and type expr := Expr.t)
+    with type dec := Abs_declarator.t
+     and type par := Param_type_list.t
+     and type expr := Expr.t)
 
 and Abs_declarator :
   (S_abs_declarator with type ddec := Direct_abs_declarator.t)
@@ -102,16 +101,16 @@ end
 
 module Decl :
   S_g_decl
-  with type qual := Decl_spec.t
-   and type decl := Init_declarator.t list
+    with type qual := Decl_spec.t
+     and type decl := Init_declarator.t list
 
 module Label : S_label with type expr := Expr.t
 
 module rec Stm :
   (S_stm
-  with type com := Compound_stm.t
-   and type expr := Expr.t
-   and type lbl := Label.t)
+    with type com := Compound_stm.t
+     and type expr := Expr.t
+     and type lbl := Label.t)
 
 and Compound_stm :
   (S_compound_stm with type decl := Decl.t and type stm := Stm.t)
@@ -141,9 +140,9 @@ end
 
 module Litmus_lang :
   Act_litmus.Ast.Basic
-  with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
-   and type Program.t = Function_def.t
-   and type Constant.t = Constant.t
+    with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
+     and type Program.t = Function_def.t
+     and type Constant.t = Constant.t
 
 module Litmus : sig
   include Act_litmus.Ast.S with module Lang := Litmus_lang

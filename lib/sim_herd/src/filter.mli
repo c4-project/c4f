@@ -47,5 +47,5 @@ val run_direct :
     expressed as a {{!Basic} Basic} module. *)
 module Make (B : Act_sim.Runner_types.Basic) :
   Plumbing.Filter_types.S
-  with type aux_i = Act_sim.Arch.t
-   and type aux_o = unit
+    with type aux_i = Act_sim.Arch.t
+     and type aux_o = unit

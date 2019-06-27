@@ -90,7 +90,7 @@ module Record = struct
       (ty : Mini.Type.t) : t =
     let known_value =
       Option.map initial_value ~f:(fun value ->
-          Known_value.make ~value ~has_dependencies:false )
+          Known_value.make ~value ~has_dependencies:false)
     in
     make ~ty ~source:`Generated ~scope:`Global ?known_value ()
 end
@@ -108,7 +108,7 @@ module Map = struct
     in
     Ac.C_id.Map.merge globals_map locals_map ~f:(fun ~key ->
         ignore key ;
-        function `Left x | `Right x | `Both (x, _) -> Some x )
+        function `Left x | `Right x | `Both (x, _) -> Some x)
 
   let register_global ?(initial_value : Value.t option) (map : t)
       (key : Ac.C_id.t) (ty : Mini.Type.t) : t =
@@ -140,7 +140,7 @@ module Map = struct
     let open Or_error.Let_syntax in
     let%map () =
       Tx.Or_error.when_m (has_dependencies map ~var) ~f:(fun () ->
-          dependency_error var )
+          dependency_error var)
     in
     erase_value_inner map ~var
 
@@ -158,8 +158,7 @@ module Map = struct
       ~(predicates : (Record.t -> bool) list) =
     ( module Mini_env.Make (struct
       let env = env_satisfying_all ~predicates vars
-    end)
-    : Mini_env.S )
+    end) : Mini_env.S )
 
   let satisfying_all (vars : t) ~(predicates : (Record.t -> bool) list) :
       Ac.C_id.t list =
@@ -173,5 +172,5 @@ module Map = struct
     Quickcheck.Generator.filter_map
       [%quickcheck.generator: Ac.C_id.Herd_safe.t] ~f:(fun hid ->
         let cid = Ac.C_id.Herd_safe.to_c_identifier hid in
-        Option.some_if (not (Ac.C_id.Map.mem map cid)) cid )
+        Option.some_if (not (Ac.C_id.Map.mem map cid)) cid)
 end

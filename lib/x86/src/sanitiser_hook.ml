@@ -120,7 +120,7 @@ module Make (L : Language_definition.S) :
         | {src= Operand.Immediate s; dst} ->
             Some {src= negate s; dst}
         | _ ->
-            None )
+            None)
 
     let sub_to_add_inner = function
       | {Instruction.prefix; opcode= Opcode.Basic `Sub; operands} as op ->
@@ -130,7 +130,7 @@ module Make (L : Language_definition.S) :
       | {prefix; opcode= Sized (`Sub, s); operands} as op ->
           Option.value_map ~default:op
             ~f:(fun ops' ->
-              {prefix; opcode= Sized (`Add, s); operands= ops'} )
+              {prefix; opcode= Sized (`Add, s); operands= ops'})
             (sub_to_add_ops operands)
       | x ->
           x

@@ -50,8 +50,8 @@ type t = Symbolic of string | Numeric of int
 
 include
   Act_abstract.Abstractable.S
-  with type t := t
-   and module Abs := Act_abstract.Address
+    with type t := t
+     and module Abs := Act_abstract.Address
 
 (** {2 Constructors} *)
 

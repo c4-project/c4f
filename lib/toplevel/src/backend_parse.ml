@@ -12,7 +12,8 @@
 open Core_kernel
 open Act_common
 
-let run ?(fqid : Id.t = Id.of_string "herd") (args : Args.Standard_with_files.t) (_o : Output.t)
+let run ?(fqid : Id.t = Id.of_string "herd")
+    (args : Args.Standard_with_files.t) (_o : Output.t)
     (cfg : Act_config.Act.t) : unit Or_error.t =
   let module Res = Sim_support.Make_resolver (struct
     let cfg = cfg
@@ -36,7 +37,5 @@ let command : Command.t =
       let%map_open standard_args = Args.Standard_with_files.get
       and sim = Args.simulator () in
       fun () ->
-        Common.lift_command_with_files standard_args ~with_compiler_tests:false
-          ~f:(run ?fqid:sim))
-
-
+        Common.lift_command_with_files standard_args
+          ~with_compiler_tests:false ~f:(run ?fqid:sim))

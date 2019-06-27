@@ -30,8 +30,8 @@ include module type of Ssh_intf
 
 (** {2 SSH configuration records} *)
 
-(** [t] contains a SSH hostname and optional user. *)
 type t
+(** [t] contains a SSH hostname and optional user. *)
 
 val host : t -> string
 (** [host ssh] gets the configured host for [ssh]. *)
@@ -45,13 +45,13 @@ val make : ?user:string -> host:string -> unit -> t
 
 (** {2 Functors} *)
 
-(** [Make] makes an [S] from a [t]. *)
 module Make (Conf : sig
   val ssh : t
 end) : S
+(** [Make] makes an [S] from a [t]. *)
 
-(** [Runner] provides a [Run.Runner] using the given SSH config. *)
 module Runner (Conf : Basic_runner) : Plumbing.Runner_types.S
+(** [Runner] provides a [Run.Runner] using the given SSH config. *)
 
 (** [Scp] provides SCP file transfer operations, given an [S]. *)
 module Scp (Conf : S) : sig

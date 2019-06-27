@@ -37,5 +37,5 @@ module type S = sig
   include Act_utils.Enum.Extension_table with type t := t
 end
 
-(** [None] is a dummy implementation of [S]. *)
 module None : S with type t = Nothing.t
+(** [None] is a dummy implementation of [S]. *)

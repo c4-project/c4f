@@ -25,20 +25,20 @@ open Base
 
 (** Signature of constructed litmusifier modules. *)
 module type S = sig
-  (** Type of config. *)
   type config
+  (** Type of config. *)
 
-  (** Type of formatting directives. *)
   type fmt
+  (** Type of formatting directives. *)
 
-  (** Type of incoming programs. *)
   type program
+  (** Type of incoming programs. *)
 
-  (** The AST module for the litmus test language we're targeting. *)
   module Litmus : Act_litmus.Ast.S
+  (** The AST module for the litmus test language we're targeting. *)
 
-  (** The redirect map for this litmusifier's input symbols. *)
   module Redirect : Act_common.Redirect_map_intf.S
+  (** The redirect map for this litmusifier's input symbols. *)
 
   val make :
        config:config
@@ -55,8 +55,8 @@ module type S = sig
   (** [print_litmus fmt oc ast] is the litmus test printer matching the
       configuration [fmt]. *)
 
+  module Filter : Runner_intf.S with type cfg = config
   (** [Filter] is the litmusifier packaged up as an assembly job runner, ie
       a filter accepting an assembly job and outputting a standard job
       output. *)
-  module Filter : Runner_intf.S with type cfg = config
 end

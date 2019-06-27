@@ -30,7 +30,7 @@ val user : t -> string option
 val copy_dir : t -> string
 (** [copy_dir] gets the remote directory to which we'll be copying work. *)
 
-(** [To_config] lifts a [t] to an [Ssh.S]. *)
 module To_config (C : sig
   val ssh : t
 end) : Act_utils.Ssh.S
+(** [To_config] lifts a [t] to an [Ssh.S]. *)

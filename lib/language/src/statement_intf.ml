@@ -33,17 +33,18 @@ open Core_kernel
 (** [Basic] is the interface act languages must implement for statement
     analysis. *)
 module type Basic = sig
-  (** The type of statements, which must be sexpable and equatable. *)
   type t [@@deriving sexp, eq]
+  (** The type of statements, which must be sexpable and equatable. *)
 
-  (** Type of instructions inside statements. *)
   module Ins : Equal.S
+  (** Type of instructions inside statements. *)
 
-  (** Type of concrete symbols. *)
   module Sym : Equal.S
+  (** Type of concrete symbols. *)
 
+  include
+    Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their statements. *)
-  include Pretty_printer.S with type t := t
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
@@ -55,8 +56,8 @@ module type Basic = sig
 
   include
     Act_abstract.Abstractable.S
-    with type t := t
-     and module Abs := Act_abstract.Statement
+      with type t := t
+       and module Abs := Act_abstract.Statement
 
   val empty : unit -> t
   (** [empty] builds an empty statement. *)
@@ -75,8 +76,8 @@ module type Basic_with_modules = sig
 
   include
     Basic
-    with module Sym := Instruction.Symbol
-     and module Ins := Instruction
+      with module Sym := Instruction.Symbol
+       and module Ins := Instruction
 end
 
 (** [S] is an expanded interface onto an act language's statement analysis. *)
@@ -93,15 +94,16 @@ module type S = sig
   (** [is_program_boundary stm] tests whether [stm] is a program boundary
       per act's conventions. *)
 
+  include
+    Act_abstract.Statement.S_properties with type t := t
   (** We can query abstract properties (and, transitively, abstract
       instruction properties) directly on the concrete statement type. *)
-  include Act_abstract.Statement.S_properties with type t := t
 
-  (** [Extended_flag] expands [Abstract.Statement.Flag] with an extra flag,
-      representing program boundaries. *)
   module Extended_flag :
     Act_abstract.Flag_enum.S
-    with type t = [Act_abstract.Statement.Flag.t | `Program_boundary]
+      with type t = [Act_abstract.Statement.Flag.t | `Program_boundary]
+  (** [Extended_flag] expands [Abstract.Statement.Flag] with an extra flag,
+      representing program boundaries. *)
 
   val extended_flags :
     t -> Act_abstract.Symbol.Table.t -> Extended_flag.Set.t

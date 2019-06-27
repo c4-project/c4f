@@ -25,12 +25,12 @@
 
 open Base
 
-(** @inline *)
 include module type of Warn_intf
+(** @inline *)
 
+type 'elt t
 (** Opaque type of warnings, parametrised over the element being warned
     about. *)
-type 'elt t
 
 val program_name : _ t -> string
 (** [program_name warn] gets the name of the program [warn] concerns. *)

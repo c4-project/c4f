@@ -255,14 +255,14 @@ end
 
 module Statement :
   S_statement
-  with type address := Address.t
-   and type assign := Assign.t
-   and type atomic_cmpxchg := Atomic_cmpxchg.t
-   and type atomic_store := Atomic_store.t
-   and type identifier := Identifier.t
-   and type if_stm := if_statement
-   and type t = statement
-   and type lvalue := Lvalue.t = struct
+    with type address := Address.t
+     and type assign := Assign.t
+     and type atomic_cmpxchg := Atomic_cmpxchg.t
+     and type atomic_store := Atomic_store.t
+     and type identifier := Identifier.t
+     and type if_stm := if_statement
+     and type t = statement
+     and type lvalue := Lvalue.t = struct
   type t = statement [@@deriving sexp]
 
   let assign = P_statement.assign
@@ -352,19 +352,19 @@ module Statement :
 
   module On_identifiers :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Identifier.t =
+      with type t = t
+       and type Elt.t = Identifier.t =
     Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 end
 
 module If_statement :
   S_if_statement
-  with type expr := Expression.t
-   and type stm := Statement.t
-   and type t = if_statement
-   and type address := Address.t
-   and type identifier := Identifier.t
-   and type lvalue := Lvalue.t = struct
+    with type expr := Expression.t
+     and type stm := Statement.t
+     and type t = if_statement
+     and type address := Address.t
+     and type identifier := Identifier.t
+     and type lvalue := Lvalue.t = struct
   type t = if_statement [@@deriving sexp]
 
   let cond = Field.get Fields_of_if_statement.cond
@@ -400,8 +400,8 @@ module If_statement :
 
   module On_addresses :
     Travesty.Traversable_types.S0
-    with type t := t
-     and type Elt.t = Address.t = Travesty.Traversable.Make0 (struct
+      with type t := t
+       and type Elt.t = Address.t = Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Address
@@ -421,9 +421,10 @@ module If_statement :
 
   module On_identifiers :
     Travesty.Traversable_types.S0
-    with type t := t
-     and type Elt.t = Identifier.t =
-    Travesty.Traversable.Chain0 (struct
+      with type t := t
+       and type Elt.t = Identifier.t =
+    Travesty.Traversable.Chain0
+      (struct
         type nonrec t = t
 
         include On_lvalues
@@ -460,8 +461,8 @@ module Function = struct
 
   module On_decls :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Initialiser.Named.t =
+      with type t = t
+       and type Elt.t = Initialiser.Named.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
@@ -503,8 +504,8 @@ module Program = struct
 
   module On_decls :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Initialiser.Named.t =
+      with type t = t
+       and type Elt.t = Initialiser.Named.t =
   Travesty.Traversable.Make0 (struct
     type nonrec t = t
 

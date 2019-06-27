@@ -23,5 +23,6 @@
 
 (** Helper functions and modules for enums *)
 
+include
+  Enum_intf.Enum
 (** We keep all declarations in [Enum_intf], to reduce duplication. *)
-include Enum_intf.Enum

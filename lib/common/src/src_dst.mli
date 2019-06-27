@@ -40,8 +40,8 @@ type order =
   | Dst_then_src (* Destination then source (eg. in x86, Intel) *)
 [@@deriving sexp]
 
-(** [t] is a source and destination pair, with unambiguous names. *)
 type ('s, 'd) t = {src: 's; dst: 'd} [@@deriving sexp]
+(** [t] is a source and destination pair, with unambiguous names. *)
 
 val src : ('s, 'd) t -> 's
 (** [src sd] gets the source of [sd]. *)
@@ -92,5 +92,5 @@ module type S = sig
       destination operand, and maps [f] over them if successful. *)
 end
 
-(** [Make] takes a [Has_order] and generates the appropriate utility module. *)
 module Make (H : Has_order) : S
+(** [Make] takes a [Has_order] and generates the appropriate utility module. *)

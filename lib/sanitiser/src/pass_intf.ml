@@ -24,20 +24,20 @@
 (** [Basic] is the standard input signature for functors creating sanitiser
     passes. *)
 module type Basic = sig
-  (** [Lang] provides language-specific functionality. *)
   module Lang : Act_language.Definition.S
+  (** [Lang] provides language-specific functionality. *)
 
-  (** [Ctx] is the sanitiser's state monad, specialised over [Lang]. *)
   module Ctx : Ctx.S with module Lang := Lang
+  (** [Ctx] is the sanitiser's state monad, specialised over [Lang]. *)
 end
 
 (** [S] is the standard signature for sanitiser passes. *)
 module type S = sig
-  (** Type of pass subject. *)
   type t
+  (** Type of pass subject. *)
 
-  (** Type of sanitiser context. *)
   type 'a ctx
+  (** Type of sanitiser context. *)
 
   val run : t -> t ctx
   (** [run x] runs this sanitiser pass over [x]. *)

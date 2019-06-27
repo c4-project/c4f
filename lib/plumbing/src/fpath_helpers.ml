@@ -25,7 +25,7 @@ open Base
 
 let of_string (s : string) : Fpath.t Or_error.t =
   Result.map_error (Fpath.of_string s) ~f:(function `Msg s ->
-      Error.of_string s )
+      Error.of_string s)
 
 let lift_str (s : string option) ~(f : Fpath.t -> 'a) ~(default : 'a) :
     'a Or_error.t =

@@ -30,7 +30,7 @@ include module type of Element_intf
 (** [Make] makes an [S] from a basic language definition. *)
 module Make (L : Basic) :
   S
-  with type ins = L.Instruction.t
-   and type loc = L.Location.t
-   and type stm = L.Statement.t
-   and type sym = L.Symbol.t
+    with type ins = L.Instruction.t
+     and type loc = L.Location.t
+     and type stm = L.Statement.t
+     and type sym = L.Symbol.t

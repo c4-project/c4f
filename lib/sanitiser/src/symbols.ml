@@ -25,8 +25,8 @@ open Base
 
 module Make (B : Pass_intf.Basic) :
   Pass_intf.S
-  with type t := B.Lang.Program.t list
-   and type 'a ctx := 'a B.Ctx.t = struct
+    with type t := B.Lang.Program.t list
+     and type 'a ctx := 'a B.Ctx.t = struct
   module Ctx_Pcon = Travesty_base_exts.List.On_monad (B.Ctx)
   module Ctx_Prog_Sym = B.Lang.Program.On_symbols.On_monad (B.Ctx)
 
@@ -71,7 +71,7 @@ module Make (B : Pass_intf.Basic) :
     B.Lang.Symbol.Set.find candidate_set ~f:(fun candidate ->
         not
           (Act_abstract.Symbol.Set.mem used_set
-             (B.Lang.Symbol.abstract candidate)) )
+             (B.Lang.Symbol.abstract candidate)))
 
   let actually_unmangle (sym : B.Lang.Symbol.t) : B.Lang.Symbol.t B.Ctx.t =
     B.Ctx.Let_syntax.(

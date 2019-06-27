@@ -82,10 +82,10 @@ end
 
 module Make (B : Runner_intf.Basic) :
   Litmusifier_intf.S
-  with type config = Config.t
-   and type fmt = Format.t
-   and type program =
-              ( B.Src_lang.Element.t
-              , B.Src_lang.Program.t )
-              Act_sanitiser.Output.Program.t
-   and module Redirect := B.Src_lang.Symbol.R_map
+    with type config = Config.t
+     and type fmt = Format.t
+     and type program =
+          ( B.Src_lang.Element.t
+          , B.Src_lang.Program.t )
+          Act_sanitiser.Output.Program.t
+     and module Redirect := B.Src_lang.Symbol.R_map

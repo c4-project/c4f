@@ -25,10 +25,10 @@
 
     For just running Herd directly, or as a filter, see {{!Filter} Filter}. *)
 
-(** We can use Herd as a simulator runner by supplying it with configuration
-    expressed as a {{!Act_sim.Runner_types.Basic} Act_sim.Runner_types.Basic}
-    module. *)
 module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Runner_types.S
+(** We can use Herd as a simulator runner by supplying it with configuration
+    expressed as a
+    {{!Act_sim.Runner_types.Basic} Act_sim.Runner_types.Basic} module. *)
 
 val make :
   (module Act_sim.Runner_types.Basic) -> (module Act_sim.Runner_types.S)

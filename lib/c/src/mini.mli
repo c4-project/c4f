@@ -37,24 +37,24 @@ module Identifier = Act_c_lang.Ast_basic.Identifier
 module Pointer = Act_c_lang.Ast_basic.Pointer
 open Mini_intf
 
-(** Re-exporting {{!Mini_type} Type}. *)
 module Type = Mini_type
+(** Re-exporting {{!Mini_type} Type}. *)
 
-(** Re-exporting {{!Mini_initialiser} Initialiser}. *)
 module Initialiser = Mini_initialiser
+(** Re-exporting {{!Mini_initialiser} Initialiser}. *)
 
-(** Re-exporting {{!Mini_lvalue} Lvalue}. *)
 module Lvalue = Mini_lvalue
+(** Re-exporting {{!Mini_lvalue} Lvalue}. *)
 
-(** Re-exporting {{!Mini_address} Address}. *)
 module Address = Mini_address
+(** Re-exporting {{!Mini_address} Address}. *)
 
-(** Re-exporting {{!Mini_expression} Expression}. *)
 module Expression = Mini_expression
+(** Re-exporting {{!Mini_expression} Expression}. *)
 
+module Atomic_load = Expression.Atomic_load
 (** Re-exporting {{!Atomic_load} Atomic_load} from within
     {{!Expression} Expression}. *)
-module Atomic_load = Expression.Atomic_load
 
 (** A non-atomic assignment. *)
 module Assign : sig
@@ -112,8 +112,8 @@ module Atomic_store : sig
   (** Traversing over atomic-action addresses in atomic stores. *)
   module On_addresses :
     Travesty.Traversable_types.S0
-    with type t := t
-     and type Elt.t = Address.t
+      with type t := t
+       and type Elt.t = Address.t
 
   (** Traversing over lvalues in atomic stores. *)
   module On_lvalues :
@@ -121,23 +121,23 @@ module Atomic_store : sig
 
   (** {3 Generating and quickchecking} *)
 
-  (** [Quickcheck_generic (Src) (Dst)] generates random stores, using [Src]
-      to generate source expressions and [Dst] to generate destination
-      addresses. It uses [Mem_order]'s store-compatible generator to pick
-      random memory orders. *)
   module Quickcheck_generic
       (Src : Quickcheck.S with type t := Expression.t)
       (Dst : Quickcheck.S with type t := Address.t) :
     Act_utils.My_quickcheck.S_with_sexp with type t = t
+  (** [Quickcheck_generic (Src) (Dst)] generates random stores, using [Src]
+      to generate source expressions and [Dst] to generate destination
+      addresses. It uses [Mem_order]'s store-compatible generator to pick
+      random memory orders. *)
 
   (** There isn't a generic quickcheck instance for atomic stores, as we
       can't guarantee type safety in general. *)
 
+  module Quickcheck_ints (Src : Mini_env.S) (Dst : Mini_env.S) :
+    Act_utils.My_quickcheck.S_with_sexp with type t = t
   (** [Quickcheck_ints (E)] generates random stores from atomic integers to
       non-atomic integers, using [Src] as the variable typing environment
       for sources and [Dst] as the environment for destinations. *)
-  module Quickcheck_ints (Src : Mini_env.S) (Dst : Mini_env.S) :
-    Act_utils.My_quickcheck.S_with_sexp with type t = t
 end
 
 (** A (strong, explicit) atomic compare-exchange operation. *)
@@ -195,21 +195,21 @@ end
     statements, for simplicity. *)
 module rec Statement :
   (S_statement
-  with type address := Address.t
-   and type assign := Assign.t
-   and type atomic_cmpxchg := Atomic_cmpxchg.t
-   and type atomic_store := Atomic_store.t
-   and type identifier := Identifier.t
-   and type if_stm := If_statement.t
-   and type lvalue := Lvalue.t)
+    with type address := Address.t
+     and type assign := Assign.t
+     and type atomic_cmpxchg := Atomic_cmpxchg.t
+     and type atomic_store := Atomic_store.t
+     and type identifier := Identifier.t
+     and type if_stm := If_statement.t
+     and type lvalue := Lvalue.t)
 
 and If_statement :
   (S_if_statement
-  with type expr := Expression.t
-   and type stm := Statement.t
-   and type address := Address.t
-   and type identifier := Identifier.t
-   and type lvalue := Lvalue.t)
+    with type expr := Expression.t
+     and type stm := Statement.t
+     and type address := Address.t
+     and type identifier := Identifier.t
+     and type lvalue := Lvalue.t)
 
 (** A function (less its name). *)
 module Function : sig
@@ -270,8 +270,8 @@ module Function : sig
       function. *)
   module On_decls :
     Travesty.Traversable_types.S0
-    with type t := t
-     and type Elt.t := Initialiser.t named
+      with type t := t
+       and type Elt.t := Initialiser.t named
 end
 
 module Program : sig
@@ -309,6 +309,6 @@ module Program : sig
       program. *)
   module On_decls :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Initialiser.t named
+      with type t = t
+       and type Elt.t = Initialiser.t named
 end

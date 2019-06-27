@@ -44,12 +44,13 @@ end
 (** [S_predicates] is the signature of any module that can access simple
     predicates over an abstract statement. *)
 module type S_predicates = sig
-  (** [t] is the type we're querying. *)
   type t
+  (** [t] is the type we're querying. *)
 
+  include
+    Instruction.S_predicates with type t := t
   (** We can apply instruction predicates to an abstract statement; they
       return [false] when the statement isn't an instruction. *)
-  include Instruction.S_predicates with type t := t
 
   val is_directive : t -> bool
   (** [is_directive stm] decides whether [stm] appears to be an assembler
@@ -84,13 +85,13 @@ module type S_predicates = sig
   (** [is_unknown stm] tests whether [stm] is an unknown statement. *)
 end
 
-(** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
-    optional component. Each predicate returns false when the component
-    doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
     (I : Act_utils.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t
+(** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
+    optional component. Each predicate returns false when the component
+    doesn't exist. *)
 
 (** [Flag] is an enumeration of various statement observations. *)
 module Flag : sig
@@ -106,11 +107,12 @@ end
 (** [S_properties] is the signature of any module that can access properties
     (including predicates) of an abstract statement. *)
 module type S_properties = sig
-  (** [t] is the type we're querying. *)
   type t
+  (** [t] is the type we're querying. *)
 
+  include
+    S_predicates with type t := t
   (** Anything that can access properties can also access predicates. *)
-  include S_predicates with type t := t
 
   val exists :
        ?directive:(string -> bool)
@@ -139,15 +141,16 @@ module type S_properties = sig
       table [symbol_table]. *)
 end
 
-(** [Inherit_properties] generates a [S_properties] by inheriting it from a
-    component. *)
 module Inherit_properties
     (P : S_properties)
     (I : Act_utils.Inherit.S with type c := P.t) :
   S_properties with type t := I.t
+(** [Inherit_properties] generates a [S_properties] by inheriting it from a
+    component. *)
 
+include
+  S_properties with type t := t
 (** This module contains [S_properties] directly. *)
-include S_properties with type t := t
 
 include
   Node.S with type t := t and module Kind := Kind and module Flag := Flag

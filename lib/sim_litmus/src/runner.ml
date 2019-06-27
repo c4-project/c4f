@@ -28,16 +28,19 @@ Act_sim.Runner.Make (struct
   module Unchecked_filter = Filter.Make (B)
   module Reader = Reader
 
-  let make_harness_unchecked (_arch: Act_sim.Arch.t) ~(input_path: Fpath.t) ~(output_dir: Fpath.t) :
-    string list Or_error.t =
+  let make_harness_unchecked (_arch : Act_sim.Arch.t)
+      ~(input_path : Fpath.t) ~(output_dir : Fpath.t) :
+      string list Or_error.t =
     let prog = Act_sim.Spec.cmd B.spec in
     let output_dir = Fpath.(output_dir / "") in
-    let argv = [ Fpath.to_string input_path; "-o"; Fpath.to_string output_dir ] in
+    let argv =
+      [Fpath.to_string input_path; "-o"; Fpath.to_string output_dir]
+    in
     Or_error.Let_syntax.(
-      let%map () = Or_error.tag ~tag:"While running litmus"
-          (B.Runner.run ~prog argv)
-      in ["make"; "sh ./run.sh"]
-    )
+      let%map () =
+        Or_error.tag ~tag:"While running litmus" (B.Runner.run ~prog argv)
+      in
+      ["make"; "sh ./run.sh"])
 end)
 
 let make (module B : Act_sim.Runner_types.Basic) =

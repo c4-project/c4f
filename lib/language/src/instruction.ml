@@ -25,10 +25,10 @@ include Instruction_intf
 
 module Make (B : Basic_with_modules) :
   S
-  with type t = B.t
-   and module Constant = B.Constant
-   and module Location = B.Location
-   and module Symbol = B.Symbol = struct
+    with type t = B.t
+     and module Constant = B.Constant
+     and module Location = B.Location
+     and module Symbol = B.Symbol = struct
   include B
 
   include Act_abstract.Instruction.Inherit_properties

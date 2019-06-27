@@ -23,27 +23,28 @@
 
 open Base
 
-let no_make_harness
-    (_arch : Arch.t) ~(input_path: Fpath.t) ~(output_dir: Fpath.t)
-    : string list Or_error.t =
-      ignore (input_path: Fpath.t);
-      ignore (output_dir: Fpath.t);
-    Or_error.error_string "This backend doesn't support harness making."
+let no_make_harness (_arch : Arch.t) ~(input_path : Fpath.t)
+    ~(output_dir : Fpath.t) : string list Or_error.t =
+  ignore (input_path : Fpath.t) ;
+  ignore (output_dir : Fpath.t) ;
+  Or_error.error_string "This backend doesn't support harness making."
 
 module Make (B : sig
-    module Reader : Reader_intf.S
-    module Unchecked_filter : Filter.S
+  module Reader : Reader_intf.S
 
-    val make_harness_unchecked :
-      Arch.t
-      -> input_path:Fpath.t
-      -> output_dir:Fpath.t
-      -> string list Or_error.t
-  end) : Runner_types.S = struct
+  module Unchecked_filter : Filter.S
+
+  val make_harness_unchecked :
+       Arch.t
+    -> input_path:Fpath.t
+    -> output_dir:Fpath.t
+    -> string list Or_error.t
+end) : Runner_types.S = struct
   module Reader = B.Reader
 
   (* TODO(@MattWindsor91): check these! *)
   module Filter = B.Unchecked_filter
+
   let make_harness = B.make_harness_unchecked
 
   let run (arch : Arch.t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
@@ -57,7 +58,9 @@ module Make (B : sig
       B.Reader.load ~path:output_path)
 end
 
-module Make_error_reader (B : sig val error : Error.t end) : Reader_intf.S = struct
+module Make_error_reader (B : sig
+  val error : Error.t
+end) : Reader_intf.S = struct
   include Plumbing.Loadable.Make (struct
     type t = Output.t
 
@@ -73,17 +76,17 @@ module Make_error_reader (B : sig val error : Error.t end) : Reader_intf.S = str
     Output.Errored {err= B.error}
 end
 
-module Make_error (B : sig val error : Error.t end) : Runner_types.S = struct
+module Make_error (B : sig
+  val error : Error.t
+end) : Runner_types.S = struct
   module Reader = Make_error_reader (B)
   module Filter = Filter.Make_error (B)
 
   let make_harness = no_make_harness
 
-  (*
-  let name : Act_common.Id.t = Act_common.Id.of_string "error"
+  (* let name : Act_common.Id.t = Act_common.Id.of_string "error"
 
-  let machine_id : Act_common.Id.t = Act_common.Id.of_string "none"
-     *)
+     let machine_id : Act_common.Id.t = Act_common.Id.of_string "none" *)
 
   type t = Filter.aux_i
 

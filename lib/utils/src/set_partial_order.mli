@@ -25,8 +25,8 @@
 
 open Base
 
-(** Opaque type of partial order results. *)
 type ('v, 'cmp) t
+(** Opaque type of partial order results. *)
 
 (** {2 Partial conversion to total orderings} *)
 

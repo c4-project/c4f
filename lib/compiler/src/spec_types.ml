@@ -15,8 +15,8 @@
     In practice, modules implementing this will either be [Spec] or
     [Spec.With_id]. *)
 module type S = sig
-  (** Opaque type of compiler specifications. *)
   type t [@@deriving equal]
+  (** Opaque type of compiler specifications. *)
 
   val style : t -> Act_common.Id.t
   (** [style c] gets the invocation style of [c]. *)

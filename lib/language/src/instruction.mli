@@ -29,7 +29,7 @@ include module type of Instruction_intf
     [Basic_with_modules]. *)
 module Make (B : Basic_with_modules) :
   S
-  with type t = B.t
-   and module Constant = B.Constant
-   and module Location = B.Location
-   and module Symbol = B.Symbol
+    with type t = B.t
+     and module Constant = B.Constant
+     and module Location = B.Location
+     and module Symbol = B.Symbol

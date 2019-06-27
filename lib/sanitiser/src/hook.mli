@@ -23,6 +23,6 @@
 
 (** Assembly sanitisation: language-specific hooks *)
 
-(** [Make_null] makes an [S] that does nothing. *)
 module Make_null (Lang : Act_language.Definition.S) :
   Hook_intf.S with module Lang = Lang
+(** [Make_null] makes an [S] that does nothing. *)

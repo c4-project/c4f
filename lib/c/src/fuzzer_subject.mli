@@ -46,15 +46,15 @@ end
 
 (** Fuzzable representation of a program. *)
 module Program : sig
-  (** Transparent type of fuzzable programs. *)
   type t =
     { decls: Mini.Initialiser.t Mini_intf.id_assoc
     ; stms: Mini.Statement.t With_source.t list }
   [@@deriving sexp]
+  (** Transparent type of fuzzable programs. *)
 
+  module Path : Mini_path.S_function with type target := t
   (** Allows production and consumption of random paths over fuzzable
       programs in the same way as normal mini functions. *)
-  module Path : Mini_path.S_function with type target := t
 
   val of_function : Mini.Function.t -> t
   (** [of_litmus func] converts a mini-model C function [func] to the
@@ -72,18 +72,18 @@ end
 
 (** Fuzzable representation of a litmus test. *)
 module Test : sig
-  (** Transparent type of fuzzable litmus tests. *)
   type t =
     {init: Mini.Constant.t Mini_intf.id_assoc; programs: Program.t list}
   [@@deriving sexp]
+  (** Transparent type of fuzzable litmus tests. *)
 
   val add_new_program : t -> t
   (** [add_new_program test] appends a new, empty program onto [test]'s
       programs list, returning the resulting test. *)
 
+  module Path : Mini_path.S_program with type target := t
   (** Allows production and consumption of random paths over fuzzable tests
       in the same way as normal mini programs. *)
-  module Path : Mini_path.S_program with type target := t
 
   val of_litmus : Mini_litmus.Ast.Validated.t -> t
   (** [of_litmus test] converts a validated C litmus test [test] to the

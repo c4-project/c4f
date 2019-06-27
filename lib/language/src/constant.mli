@@ -23,11 +23,11 @@
 
 (** Language abstraction layer: Constants *)
 
-(** @inline *)
 include module type of Constant_intf
+(** @inline *)
 
-(** [Make] produces an instance of [S] from an instance of [Basic]. *)
 module Make (B : Basic) : S with type t = B.t
+(** [Make] produces an instance of [S] from an instance of [Basic]. *)
 
-(** [Int_direct] allows integers to be used as constants directly. *)
 module Int_direct : S with type t = int
+(** [Int_direct] allows integers to be used as constants directly. *)

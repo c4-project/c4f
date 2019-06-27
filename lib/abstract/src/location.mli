@@ -36,8 +36,8 @@ type t =
 (** [S_predicates] is the signature of any module that can access simple
     predicates over an abstract location. *)
 module type S_predicates = sig
-  (** [t] is the type we're querying. *)
   type t
+  (** [t] is the type we're querying. *)
 
   val is_stack_pointer : t -> bool
   (** [is_stack_pointer loc] tests whether [loc] is a direct reference to a
@@ -71,13 +71,13 @@ module type S_predicates = sig
       routing through a location equal to [dst]. *)
 end
 
-(** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
-    optional component. Each predicate returns false when the component
-    doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
     (I : Act_utils.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t
+(** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
+    optional component. Each predicate returns false when the component
+    doesn't exist. *)
 
 module Kind : sig
   type t = Register_direct | Register_indirect | Heap | Unknown
@@ -87,7 +87,8 @@ module Kind : sig
   include Act_utils.Enum.Extension_table with type t := t
 end
 
+include
+  S_predicates with type t := t
 (** This module contains [S_predicates] directly. *)
-include S_predicates with type t := t
 
 include Node.S with type t := t and module Kind := Kind

@@ -23,8 +23,8 @@
 
 (** Mini-model: initialisers. *)
 
-(** Opaque type of initialisers. *)
 type t [@@deriving sexp, eq, quickcheck]
+(** Opaque type of initialisers. *)
 
 (** {3 Constructors} *)
 
@@ -41,5 +41,5 @@ val ty : t -> Mini_type.t
 val value : t -> Act_c_lang.Ast_basic.Constant.t option
 (** [value init] gets the initialised value of [init], if it has one. *)
 
-(** Allows using the type of named initialiser in certain functors. *)
 module Named : Mini_intf.S_named with type elt := t
+(** Allows using the type of named initialiser in certain functors. *)

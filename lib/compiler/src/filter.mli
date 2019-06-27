@@ -19,5 +19,5 @@
 module type S =
   Plumbing.Filter_types.S with type aux_i = Mode.t and type aux_o = unit
 
-(** Lifts an [S] to a filter. *)
 module Make (S : Instance_types.S) : S
+(** Lifts an [S] to a filter. *)

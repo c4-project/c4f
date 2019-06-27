@@ -105,7 +105,7 @@ struct
       Tx.Or_error.combine_map ~f:rewrite_statement
 
     let expand_parameter (id : Act_common.Litmus_id.t)
-      (record : Var_map.Record.t) :
+        (record : Var_map.Record.t) :
         (Act_common.C_id.t * Act_c.Mini.Type.t) Or_error.t =
       let ty = Var_map.Record.c_type record in
       Or_error.Let_syntax.(
@@ -121,10 +121,13 @@ struct
       let all_unmapped = Var_map.globally_unmapped_vars var_map in
       let relevant_unmapped =
         List.filter
-          ~f:(fun (k, _) -> Act_common.Litmus_id.is_in_scope k ~from:Ctx.T.tid)
+          ~f:(fun (k, _) ->
+            Act_common.Litmus_id.is_in_scope k ~from:Ctx.T.tid)
           all_unmapped
       in
-      Tx.Or_error.combine_map ~f:(fun (i, r) -> expand_parameter i r) relevant_unmapped
+      Tx.Or_error.combine_map
+        ~f:(fun (i, r) -> expand_parameter i r)
+        relevant_unmapped
 
     module F = C.Mini.Function.On_monad (Or_error)
 
@@ -156,7 +159,7 @@ struct
       C.Mini.Function.t C.Mini_intf.id_assoc Or_error.t =
     Tx.List.With_errors.mapi_m fs ~f:(fun tid ->
         Tx.Tuple2.With_errors.bi_map_m ~left:Basic.rewrite_function_name
-          ~right:(rewrite tid ~context) )
+          ~right:(rewrite tid ~context))
 end
 
 module Vars_as_globals = Make (struct

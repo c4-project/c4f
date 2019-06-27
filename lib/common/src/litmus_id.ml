@@ -92,7 +92,7 @@ Travesty.Traversable.Make0 (struct
       Variants.map lid ~global:(H.proc_variant1 f)
         ~local:
           (H.proc_variant2 (fun (tid, x) ->
-               M.(x |> f >>| fun x' -> (tid, x')) ))
+               M.(x |> f >>| fun x' -> (tid, x'))))
   end
 end)
 

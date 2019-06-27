@@ -38,14 +38,14 @@ module type Basic_symbol = sig
 end
 
 module type S = sig
-  (** Type of symbols. *)
   type sym
+  (** Type of symbols. *)
 
-  (** Type of symbol sets. *)
   type sym_set
+  (** Type of symbol sets. *)
 
-  (** Opaque type of redirect maps. *)
   type t [@@deriving sexp_of]
+  (** Opaque type of redirect maps. *)
 
   (** {3 Constructors} *)
 

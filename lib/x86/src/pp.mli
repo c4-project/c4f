@@ -59,17 +59,17 @@ open Pp_intf
 
 (** {2 Dialect-specific printers} *)
 
-(** [Att] provides pretty-printing for AT&T-syntax x86. *)
 module Att : S
+(** [Att] provides pretty-printing for AT&T-syntax x86. *)
 
-(** [Gcc] provides pretty-printing for GCC asm block x86. *)
 module Gcc : S
+(** [Gcc] provides pretty-printing for GCC asm block x86. *)
 
-(** [Intel] provides pretty-printing for Intel-syntax x86. *)
 module Intel : S
+(** [Intel] provides pretty-printing for Intel-syntax x86. *)
 
-(** [Herd7] provides pretty-printing for Herd-syntax x86. *)
 module Herd7 : S
+(** [Herd7] provides pretty-printing for Herd-syntax x86. *)
 
 (** {2 Generic AST printers} *)
 

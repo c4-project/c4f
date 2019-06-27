@@ -15,10 +15,8 @@ module Tx = Travesty_base_exts
 
 module Record = struct
   type t =
-    { c_type: Act_c.Mini.Type.t
-    ; c_id: Act_common.C_id.t
-    ; is_global: bool
-    } [@@deriving fields, yojson, equal]
+    {c_type: Act_c.Mini.Type.t; c_id: Act_common.C_id.t; is_global: bool}
+  [@@deriving fields, yojson, equal]
 
   let make = Fields.create
 
@@ -41,38 +39,34 @@ let lookup_and_require_global (map : t) ~(id : Ac.Litmus_id.t) :
         [%message
           "Litmus identifier doesn't match any in the auxiliary var map"
             ~id:(id : Ac.Litmus_id.t)]
-  | Some { is_global = false; _ } ->
+  | Some {is_global= false; _} ->
       Or_error.error_s
         [%message
           "Litmus identifier was mapped to something other than a global \
            variable"
             ~id:(id : Ac.Litmus_id.t)]
-  | Some { c_id = x; _ } ->
+  | Some {c_id= x; _} ->
       Or_error.return x
 
 let build_set (type e w)
     (module Carrier : Comparable.S
       with type t = e
        and type comparator_witness = w)
-    ~(f : Ac.Litmus_id.t -> Record.t -> e option) :
-    t -> Set.M(Carrier).t =
+    ~(f : Ac.Litmus_id.t -> Record.t -> e option) : t -> Set.M(Carrier).t =
   Map.fold
     ~init:(Set.empty (module Carrier))
     ~f:(fun ~key ~data set ->
-      Option.value_map (f key data) ~default:set ~f:(Set.add set) )
+      Option.value_map (f key data) ~default:set ~f:(Set.add set))
 
 let globally_unmapped_vars : t -> (Ac.Litmus_id.t, Record.t) List.Assoc.t =
-  Tx.Fn.Compose_syntax.(
-    Map.filter ~f:Record.is_not_global >> Map.to_alist
-  )
+  Tx.Fn.Compose_syntax.(Map.filter ~f:Record.is_not_global >> Map.to_alist)
 
 let globally_mapped_vars : t -> (Ac.Litmus_id.t, Record.t) List.Assoc.t =
-  Tx.Fn.Compose_syntax.(
-    Map.filter ~f:Record.is_global >> Map.to_alist
-  )
+  Tx.Fn.Compose_syntax.(Map.filter ~f:Record.is_global >> Map.to_alist)
 
 let global_c_variables : t -> Set.M(Ac.C_id).t =
-  build_set (module Ac.C_id)
+  build_set
+    (module Ac.C_id)
     ~f:(fun _ r -> Record.(Option.some_if (is_global r) (c_id r)))
 
 module Json : Plumbing.Jsonable_types.S with type t := t =

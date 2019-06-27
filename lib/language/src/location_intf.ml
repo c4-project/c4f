@@ -33,14 +33,15 @@ open Core_kernel
 (** [Basic] is the interface act languages must implement for location
     analysis. *)
 module type Basic = sig
-  (** [t] is the type of locations. *)
   type t [@@deriving sexp, eq]
+  (** [t] is the type of locations. *)
 
-  (** Type of concrete symbols. *)
   module Sym : Equal.S
+  (** Type of concrete symbols. *)
 
+  include
+    Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their locations. *)
-  include Pretty_printer.S with type t := t
 
   (** They must allow traversal over symbols... *)
   module On_symbols :
@@ -48,8 +49,8 @@ module type Basic = sig
 
   include
     Act_abstract.Abstractable.S
-    with type t := t
-     and module Abs := Act_abstract.Location
+      with type t := t
+       and module Abs := Act_abstract.Location
 
   val make_heap_loc : Sym.t -> t
   (** [make_heap_loc sym] creates a location referencing a symbolic heap
@@ -68,9 +69,10 @@ end
 module type S = sig
   include Basic_with_modules
 
+  include
+    Act_abstract.Location.S_predicates with type t := t
   (** We can query abstract properties directly on the concrete location
       type. *)
-  include Act_abstract.Location.S_predicates with type t := t
 end
 
 (** [Location] is the interface exposed in the main mli file. *)

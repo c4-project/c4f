@@ -139,5 +139,5 @@ module Top : sig
       [None] otherwise. *)
 end
 
-(** A config AST is a list of top-level items. *)
 type t = Top.t list [@@deriving sexp]
+(** A config AST is a list of top-level items. *)

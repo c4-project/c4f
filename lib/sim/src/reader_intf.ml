@@ -21,9 +21,9 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+module type Basic = Plumbing.Loadable_types.S with type t = Output.t
 (** Shorthand for the specific type of loadable module a simulator runner
     expects. *)
-module type Basic = Plumbing.Loadable_types.S with type t = Output.t
 
 (** Extensions for readers, mostly for stand-alone use. *)
 module type Extensions = sig

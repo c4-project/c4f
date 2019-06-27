@@ -30,24 +30,27 @@
 
 open Base
 
-(** [Make] makes a simulator runner. *)
 module Make (B : sig
-    module Reader : Reader_intf.S
-    module Unchecked_filter : Filter.S
+  module Reader : Reader_intf.S
 
-    val make_harness_unchecked :
-      Arch.t
-      -> input_path:Fpath.t
-      -> output_dir:Fpath.t
-      -> string list Or_error.t
-  end) : Runner_types.S
+  module Unchecked_filter : Filter.S
 
-module Make_error (B : sig val error : Error.t end) : Runner_types.S
+  val make_harness_unchecked :
+       Arch.t
+    -> input_path:Fpath.t
+    -> output_dir:Fpath.t
+    -> string list Or_error.t
+end) : Runner_types.S
+(** [Make] makes a simulator runner. *)
 
-(** [no_make_harness] is a dummy value for [make_harness] that raises an error
-    stating that the backend doesn't support it. *)
+module Make_error (B : sig
+  val error : Error.t
+end) : Runner_types.S
+
 val no_make_harness :
-      Arch.t
-      -> input_path:Fpath.t
-      -> output_dir:Fpath.t
-      -> string list Or_error.t
+     Arch.t
+  -> input_path:Fpath.t
+  -> output_dir:Fpath.t
+  -> string list Or_error.t
+(** [no_make_harness] is a dummy value for [make_harness] that raises an
+    error stating that the backend doesn't support it. *)

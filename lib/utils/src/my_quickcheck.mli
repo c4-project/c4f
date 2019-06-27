@@ -23,8 +23,8 @@
 
 open Core_kernel
 
-(** Miscellaneous utilities for the Jane Street quickcheck system. *)
 include module type of My_quickcheck_intf
+(** Miscellaneous utilities for the Jane Street quickcheck system. *)
 
 val gen_string_initial :
      initial:char Quickcheck.Generator.t

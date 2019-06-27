@@ -191,7 +191,7 @@ Travesty.Traversable.Make0 (struct
                let open M.Let_syntax in
                let%bind l' = map_m l ~f in
                let%map r' = map_m r ~f in
-               (l', r') ))
+               (l', r')))
         ~atomic_load:(F.proc_variant1 (A.map_m ~f))
   end
 end)
@@ -217,15 +217,15 @@ Travesty.Traversable.Make0 (struct
                let open M.Let_syntax in
                let%bind l' = map_m l ~f in
                let%map r' = map_m r ~f in
-               (l', r') ))
+               (l', r')))
         ~atomic_load:(F.proc_variant1 (A.map_m ~f))
   end
 end)
 
 module On_identifiers :
   Travesty.Traversable_types.S0
-  with type t = t
-   and type Elt.t = Identifier.t =
+    with type t = t
+     and type Elt.t = Identifier.t =
   Travesty.Traversable.Chain0 (On_lvalues) (Lvalue.On_identifiers)
 
 module Type_check (E : Env.S) = struct
@@ -267,7 +267,7 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
             | `B of Constant.t
             | `C of Lvalue.t
             | `D of [%custom mu] * [%custom mu]
-            | `E of Atomic_load.t ]] ))
+            | `E of Atomic_load.t ]]))
 
 module Quickcheck_int_values (E : Env.S) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t = struct
@@ -289,10 +289,10 @@ module Quickcheck_int_values (E : Env.S) :
          [ Some (fun () -> Gen.map ~f:constant Constant.gen_int32_constant)
          ; Option.some_if (E.has_atomic_int_variables ()) (fun () ->
                let module A = Atomic_load.Quickcheck_atomic_ints (E) in
-               Gen.map ~f:atomic_load [%quickcheck.generator: A.t] )
+               Gen.map ~f:atomic_load [%quickcheck.generator: A.t])
          ; Option.some_if (E.has_int_variables ()) (fun () ->
                let module L = Lvalue.Quickcheck_int_values (E) in
-               Gen.map ~f:lvalue [%quickcheck.generator: L.t] ) ])
+               Gen.map ~f:lvalue [%quickcheck.generator: L.t]) ])
 
   (* let recursive_generators (_mu : t Gen.t) : t Gen.t list = [] (* No
      useful recursive expression types yet. *) ;; *)
@@ -314,7 +314,7 @@ let test_int_values_liveness_on_mod (module E : Env.S) : unit =
     ~sexp_of:[%sexp_of: t] ~f:(fun e ->
       Type.(
         [%compare.equal: t Or_error.t] (Ty.type_of e)
-          (Or_error.return (normal Basic.int))) )
+          (Or_error.return (normal Basic.int))))
 
 let test_int_values_distinctiveness_on_mod (module E : Env.S) : unit =
   let module Ty = Type_check (E) in
@@ -390,7 +390,7 @@ let test_all_expressions_have_type
     ~f:(fun e ->
       [%test_result: Type.t Or_error.t] (Ty.type_of e) ~here:[[%here]]
         ~equal:[%compare.equal: Type.t Or_error.t]
-        ~expect:(Or_error.return ty) )
+        ~expect:(Or_error.return ty))
 
 let%test_module "tests using the standard environment" =
   ( module struct
@@ -415,7 +415,7 @@ let%test_module "tests using the standard environment" =
     let%test_unit "Quickcheck_int_values: all referenced variables in \
                    environment" =
       test_all_expressions_in_env (fun e ->
-          (module Quickcheck_int_values ((val e))) )
+          (module Quickcheck_int_values ((val e))))
 
     let%test_unit "Quickcheck_bool_values: all expressions have 'bool' type"
         =
@@ -426,5 +426,5 @@ let%test_module "tests using the standard environment" =
     let%test_unit "Quickcheck_bool_values: all referenced variables in \
                    environment" =
       test_all_expressions_in_env (fun e ->
-          (module Quickcheck_bool_values ((val e))) )
+          (module Quickcheck_bool_values ((val e))))
   end )

@@ -36,7 +36,7 @@ module Make_statement_list (M : S_statement) :
         Tx.List.insert dest index (M.lift_stm stm)
     | At {index; rest} ->
         Tx.List.With_errors.replace_m dest index ~f:(fun x ->
-            Or_error.(M.insert_stm rest stm x >>| Option.some) )
+            Or_error.(M.insert_stm rest stm x >>| Option.some))
 
   let transform_stm (path : on_stm list_path)
       ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t)
@@ -44,7 +44,7 @@ module Make_statement_list (M : S_statement) :
     match path with
     | At {index; rest} ->
         Tx.List.With_errors.replace_m dest index ~f:(fun x ->
-            Or_error.(M.transform_stm rest ~f x >>| Option.some) )
+            Or_error.(M.transform_stm rest ~f x >>| Option.some))
     | Insert_at _ ->
         Or_error.error_s
           [%message
@@ -114,7 +114,7 @@ struct
   let gen_if_stm_insert_stm (i : Mini.If_statement.t) :
       stm_hole stm_path Quickcheck.Generator.t =
     Quickcheck.Generator.map (If_statement.gen_insert_stm i) ~f:(fun x ->
-        In_if x )
+        In_if x)
 
   let try_gen_insert_stm :
       Mini.Statement.t -> stm_hole stm_path Quickcheck.Generator.t option =
@@ -179,7 +179,7 @@ let%test_unit "insertions into an empty list are always at index 0" =
     | Insert_at 0 ->
         ()
     | _ ->
-        failwith "Unexpected path" )
+        failwith "Unexpected path")
 
 module Function : S_function with type target := Mini.Function.t = struct
   type target = Mini.Function.t
@@ -220,7 +220,7 @@ module Program : S_program with type target := Mini.Program.t = struct
     let prog_gens =
       List.mapi (Mini.Program.functions prog) ~f:(fun index (_, func) ->
           Quickcheck.Generator.map (Function.gen_insert_stm func)
-            ~f:(fun rest -> On_program {index; rest}) )
+            ~f:(fun rest -> On_program {index; rest}))
     in
     Quickcheck.Generator.union prog_gens
 
@@ -236,7 +236,7 @@ module Program : S_program with type target := Mini.Program.t = struct
           Tx.List.With_errors.replace_m functions index
             ~f:(fun (name, func) ->
               let%map func' = f rest func in
-              Some (name, func') )
+              Some (name, func'))
         in
         Mini.Program.with_functions prog functions'
 

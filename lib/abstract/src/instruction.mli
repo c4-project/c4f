@@ -51,15 +51,17 @@ module Opcode : sig
      jumps in sanitisation. *)
 
   (** [Opcode] is an abstraction that is currently its own kind enumeration. *)
-  include Node.S with type t := t and type Kind.t = t
+  include
+    Node.S with type t := t and type Kind.t = t
 end
 
-(** Type of an abstracted instruction, including operands. *)
 type t [@@deriving sexp]
+(** Type of an abstracted instruction, including operands. *)
 
 (** When using this module as an abstraction, the kind of each instruction
     is exactly the kind of its opcode. *)
-include Node.S with type t := t and module Kind = Opcode.Kind
+include
+  Node.S with type t := t and module Kind = Opcode.Kind
 
 val make : opcode:Opcode.t -> operands:Operand.Bundle.t -> t
 (** [make ~opcode ~operands] makes a [t] from an [opcode] and an [operands]
@@ -68,8 +70,8 @@ val make : opcode:Opcode.t -> operands:Operand.Bundle.t -> t
 (** [S_predicates] is the signature of any module that can access simple
     predicates over an abstract instruction. *)
 module type S_predicates = sig
-  (** The type we're querying. *)
   type t
+  (** The type we're querying. *)
 
   val has_opcode : t -> opcode:Opcode.Kind.t -> bool
   (** [has_opcode ins ~opcode] tests whether [ins] has opcode [opcode]. *)
@@ -97,22 +99,23 @@ module type S_predicates = sig
       stack pointer. *)
 end
 
-(** [Inherit_predicates] generates a [S_properties] by inheriting it from an
-    optional component. Each predicate returns false when the component
-    doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
     (I : Act_utils.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t
+(** [Inherit_predicates] generates a [S_properties] by inheriting it from an
+    optional component. Each predicate returns false when the component
+    doesn't exist. *)
 
 (** [S_properties] is the signature of any module that can access properties
     (including predicates) of an abstract instruction. *)
 module type S_properties = sig
-  (** The type we're querying. *)
   type t
+  (** The type we're querying. *)
 
+  include
+    S_predicates with type t := t
   (** Anything that can access properties can also access predicates. *)
-  include S_predicates with type t := t
 
   val opcode : t -> Opcode.t
   (** [opcode x] gets the opcode of [x]. *)
@@ -121,14 +124,15 @@ module type S_properties = sig
   (** [operands x] gets the operands of [x]. *)
 end
 
-(** [Inherit_properties] generates a [S_properties] by inheriting it from a
-    component. *)
 module Inherit_properties
     (P : S_properties)
     (I : Act_utils.Inherit.S with type c := P.t) :
   S_properties with type t := I.t
+(** [Inherit_properties] generates a [S_properties] by inheriting it from a
+    component. *)
 
+include
+  S_properties with type t := t
 (** We include the functions provided in [S_properties], but define them
     over [with_operands] rather than [t]. This is because some of the
     operations require operand analysis. *)
-include S_properties with type t := t

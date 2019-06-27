@@ -26,11 +26,11 @@
 open Core_kernel
 open Act_utils
 
-(** Symbols are strings. *)
 type t = string [@@deriving sexp, eq]
+(** Symbols are strings. *)
 
-(** [Set] is a set module for symbols. *)
 module Set : Set.S with type Elt.t = string
+(** [Set] is a set module for symbols. *)
 
 (** [Sort] is a module containing an enumeration of symbol sorts. *)
 module Sort : sig
@@ -79,9 +79,11 @@ module Table : sig
       is present, we additionally require that [symbol] has sort [sort] in
       [tbl]. *)
 
+  include
+    Tabulator.Tabular with type data := t
   (** Tables can be turned into [Tabulator] instances. *)
-  include Tabulator.Tabular with type data := t
 
+  include
+    Tabulator.Tabular_extensions with type data := t
   (** They can also, therefore, be pretty-printed as tables. *)
-  include Tabulator.Tabular_extensions with type data := t
 end

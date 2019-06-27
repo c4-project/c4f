@@ -23,8 +23,8 @@
 
 (** Abstract type of C preprocessor configurations. *)
 
-(** Opaque CPP configuration type. *)
 type t [@@deriving sexp]
+(** Opaque CPP configuration type. *)
 
 (** {2 Constructors} *)
 

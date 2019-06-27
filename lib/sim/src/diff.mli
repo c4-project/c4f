@@ -50,9 +50,10 @@ val to_string : t -> string
 (** [to_string result] returns a human-readable string representing
     [result]. *)
 
+include
+  Pretty_printer.S with type t := t
 (** We can also pretty-print diff results, with similar results to running
     [to_string]. *)
-include Pretty_printer.S with type t := t
 
 val run :
      oracle:Output.Observation.t

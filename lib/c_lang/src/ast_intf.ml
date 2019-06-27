@@ -52,11 +52,11 @@ open Ast_basic
 
 (** Signature of general declaration nodes. *)
 module type S_g_decl = sig
-  (** Type of qualifiers. *)
   type qual
+  (** Type of qualifiers. *)
 
-  (** Type of declarators. *)
   type decl
+  (** Type of declarators. *)
 
   type t = {qualifiers: qual list; declarator: decl}
 
@@ -65,17 +65,15 @@ end
 
 (** Signature of general composite (enum, struct, union) specifiers. *)
 module type S_composite_spec = sig
-  (** Type of kind of composite spec (eg. 'enum'). *)
   type kind
+  (** Type of kind of composite spec (eg. 'enum'). *)
 
-  (** Type of internal declarations. *)
   type decl
+  (** Type of internal declarations. *)
 
   type t =
     | Literal of
-        { kind: kind
-        ; name_opt: Identifier.t option
-        ; decls: decl list }
+        {kind: kind; name_opt: Identifier.t option; decls: decl list}
     | Named of kind * Identifier.t
 
   include Ast_node with type t := t
@@ -85,14 +83,14 @@ end
 
 (** Signature of direct declarators. *)
 module type S_direct_declarator = sig
-  (** Type of declarators. *)
   type dec
+  (** Type of declarators. *)
 
-  (** Type of parameters. *)
   type par
+  (** Type of parameters. *)
 
-  (** Type of expressions. *)
   type expr
+  (** Type of expressions. *)
 
   type t =
     | Id of Identifier.t
@@ -106,8 +104,8 @@ end
 
 (** Signature of declarators. *)
 module type S_declarator = sig
-  (** Type of direct declarators. *)
   type ddec
+  (** Type of direct declarators. *)
 
   type t = {pointer: Pointer.t option; direct: ddec}
 
@@ -116,14 +114,14 @@ end
 
 (** Signature of direct abstract declarators. *)
 module type S_direct_abs_declarator = sig
-  (** Type of abstract declarators. *)
   type dec
+  (** Type of abstract declarators. *)
 
-  (** Type of parameters. *)
   type par
+  (** Type of parameters. *)
 
-  (** Type of expressions. *)
   type expr
+  (** Type of expressions. *)
 
   type t =
     | Bracket of dec
@@ -135,8 +133,8 @@ end
 
 (** Signature of abstract declarators. *)
 module type S_abs_declarator = sig
-  (** Type of direct abstract declarators. *)
   type ddec
+  (** Type of direct abstract declarators. *)
 
   type t = Pointer of Pointer.t | Direct of Pointer.t option * ddec
 
@@ -145,11 +143,11 @@ end
 
 (** Signature of struct declarators. *)
 module type S_struct_declarator = sig
-  (** Type of declarations. *)
   type dec
+  (** Type of declarations. *)
 
-  (** Type of expressions. *)
   type expr
+  (** Type of expressions. *)
 
   type t = Regular of dec | Bitfield of dec option * expr
 
@@ -160,8 +158,8 @@ end
 
 (** Signature of expression nodes. *)
 module type S_expr = sig
-  (** Type of type names. *)
   module Ty : Ast_node
+  (** Type of type names. *)
 
   type t =
     | Prefix of Operators.Pre.t * t
@@ -186,8 +184,8 @@ end
 
 (** Signature of labels *)
 module type S_label = sig
-  (** Type of expressions used in case labels. *)
   type expr
+  (** Type of expressions used in case labels. *)
 
   type t = Normal of Identifier.t | Case of expr | Default
 
@@ -196,11 +194,11 @@ end
 
 (** Signature of compound statements *)
 module type S_compound_stm = sig
-  (** Type of declarations. *)
   type decl
+  (** Type of declarations. *)
 
-  (** Type of statements. *)
   type stm
+  (** Type of statements. *)
 
   module Elt : Ast_node with type t = [`Stm of stm | `Decl of decl]
 
@@ -213,14 +211,14 @@ end
 
 (** Signature of statements *)
 module type S_stm = sig
-  (** Type of compound statements. *)
   type com
+  (** Type of compound statements. *)
 
-  (** Type of expressions. *)
   type expr
+  (** Type of expressions. *)
 
-  (** Type of labels. *)
   type lbl
+  (** Type of labels. *)
 
   type t =
     | Label of lbl * t
@@ -231,10 +229,7 @@ module type S_stm = sig
     | While of expr * t
     | Do_while of t * expr
     | For of
-        { init: expr option
-        ; cond: expr option
-        ; update: expr option
-        ; body: t }
+        {init: expr option; cond: expr option; update: expr option; body: t}
     | Goto of Identifier.t
     | Continue
     | Break
@@ -245,11 +240,11 @@ end
 
 (** Signature of type specifiers *)
 module type S_type_spec = sig
-  (** Type of struct-or-union specifiers. *)
   type su
+  (** Type of struct-or-union specifiers. *)
 
-  (** Type of enum specifiers. *)
   type en
+  (** Type of enum specifiers. *)
 
   type t =
     [ Prim_type.t
@@ -262,8 +257,8 @@ end
 
 (** Signature of parameter type lists *)
 module type S_param_type_list = sig
-  (** Type of parameter declarations. *)
   type pdecl
+  (** Type of parameter declarations. *)
 
   type t = {params: pdecl list; style: [`Normal | `Variadic]}
 

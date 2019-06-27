@@ -156,4 +156,4 @@ let find_by_id (type a) (table : (A.Id.t, a) List.Assoc.t Lazy.t)
       context
   in
   Staged.stage (fun id ->
-      A.Id.try_find_assoc_with_suggestions (Lazy.force table) id ~id_type )
+      A.Id.try_find_assoc_with_suggestions (Lazy.force table) id ~id_type)

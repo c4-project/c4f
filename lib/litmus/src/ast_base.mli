@@ -39,9 +39,9 @@ module Pred_elt : sig
 
   include
     S_pred_elt
-    with type id := Id.t
-     and type 'const t := 'const t
-     and type 'const elt := 'const
+      with type id := Id.t
+       and type 'const t := 'const t
+       and type 'const elt := 'const
 
   (** {3 Constructors} *)
 
@@ -53,15 +53,15 @@ module Pred_elt : sig
       on the left, and all constants on the right. *)
   include
     Travesty.Bi_traversable_types.S1_right
-    with type 'c t := 'c t
-     and type left = Id.t
+      with type 'c t := 'c t
+       and type left = Id.t
 
   (** Bi-traversing monadically over all C identifiers in a predicate on the
       left, and all constants on the right. *)
   module On_c_identifiers :
     Travesty.Bi_traversable_types.S1_right
-    with type 'c t = 'c t
-     and type left = Act_common.C_id.t
+      with type 'c t = 'c t
+       and type left = Act_common.C_id.t
 end
 
 (** Directly-parametrised AST for predicates. *)
@@ -76,8 +76,8 @@ module Pred : sig
 
   include
     S_pred
-    with type 'const t := 'const t
-     and type 'const elt := 'const Pred_elt.t
+      with type 'const t := 'const t
+       and type 'const elt := 'const Pred_elt.t
 
   (** {3 Constructors} *)
 
@@ -91,27 +91,27 @@ module Pred : sig
       left, and all constants on the right. *)
   include
     Travesty.Bi_traversable_types.S1_right
-    with type 'c t := 'c t
-     and type left = Id.t
+      with type 'c t := 'c t
+       and type left = Id.t
 
   (** Bi-traversing monadically over all C identifiers in a predicate on the
       left, and all constants on the right. *)
   module On_c_identifiers :
     Travesty.Bi_traversable_types.S1_right
-    with type 'c t = 'c t
-     and type left = Act_common.C_id.t
+      with type 'c t = 'c t
+       and type left = Act_common.C_id.t
 end
 
 (** Directly-parametrised AST for postconditions. *)
 module Postcondition : sig
-  (** Type of Litmus postconditions. *)
   type 'const t = {quantifier: [`Exists]; predicate: 'const Pred.t}
   [@@deriving sexp, compare, equal, quickcheck]
+  (** Type of Litmus postconditions. *)
 
   include
     S_postcondition
-    with type 'const t := 'const t
-     and type 'const pred := 'const Pred.t
+      with type 'const t := 'const t
+       and type 'const pred := 'const Pred.t
 
   (** {3 Traversals} *)
 
@@ -119,13 +119,13 @@ module Postcondition : sig
       on the left, and all constants on the right. *)
   include
     Travesty.Bi_traversable_types.S1_right
-    with type 'c t := 'c t
-     and type left = Id.t
+      with type 'c t := 'c t
+       and type left = Id.t
 
   (** Bi-traversing monadically over all C identifiers in a predicate on the
       left, and all constants on the right. *)
   module On_c_identifiers :
     Travesty.Bi_traversable_types.S1_right
-    with type 'c t = 'c t
-     and type left = Act_common.C_id.t
+      with type 'c t = 'c t
+       and type left = Act_common.C_id.t
 end

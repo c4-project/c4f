@@ -33,8 +33,7 @@ module C_types = Act_compiler.Instance_types
 
 (* TODO(@MattWindsor91): distinguish between x86 and x64 here. *)
 let lang_procs =
-  [ ("x86", Act_x86.Asm_job.get_runner)
-  ; ("x64", Act_x86.Asm_job.get_runner) ]
+  [("x86", Act_x86.Asm_job.get_runner); ("x64", Act_x86.Asm_job.get_runner)]
 
 let try_get_lang_proc (language : string) =
   language
@@ -47,7 +46,7 @@ let asm_runner_from_arch :
   Id.hd_reduce
     ~on_empty:(fun () -> Or_error.error_string "Missing language name")
     ~f:(fun lang rest ->
-      Result.(try_get_lang_proc lang >>= fun proc -> proc rest) )
+      Result.(try_get_lang_proc lang >>= fun proc -> proc rest))
 
 let style_modules : (Id.t, (module C_types.Basic)) List.Assoc.t =
   [(Id.of_string "gcc", (module Act_compiler_gcc.Instance))]

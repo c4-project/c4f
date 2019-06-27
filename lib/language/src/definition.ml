@@ -25,12 +25,12 @@ include Definition_intf
 
 module Make (B : Basic) :
   S
-  with type Symbol.t = B.Symbol.t
-   and type Constant.t = B.Constant.t
-   and type Location.t = B.Location.t
-   and type Instruction.t = B.Instruction.t
-   and type Statement.t = B.Statement.t
-   and type Program.t = B.Program.t = struct
+    with type Symbol.t = B.Symbol.t
+     and type Constant.t = B.Constant.t
+     and type Location.t = B.Location.t
+     and type Instruction.t = B.Instruction.t
+     and type Statement.t = B.Statement.t
+     and type Program.t = B.Program.t = struct
   include (B : Basic_core)
 
   module Symbol = Symbol.Make (B.Symbol)

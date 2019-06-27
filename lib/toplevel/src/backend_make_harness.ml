@@ -12,8 +12,8 @@
 open Core_kernel
 open Act_common
 
-let run ?(arch = Act_sim.Arch.C)
-    ?(fqid : Id.t = Id.of_string "herd") (args : Args.Standard_with_files.t) (_o : Output.t)
+let run ?(arch = Act_sim.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
+    (args : Args.Standard_with_files.t) (_o : Output.t)
     (cfg : Act_config.Act.t) : unit Or_error.t =
   let module Res = Sim_support.Make_resolver (struct
     let cfg = cfg
@@ -25,11 +25,11 @@ let run ?(arch = Act_sim.Arch.C)
     let%bind input_path = Plumbing.Input.to_file_err input in
     let%bind output_dir = Plumbing.Output.to_file_err output in
     let%map cmds = Sim.make_harness arch ~input_path ~output_dir in
-    List.iter ~f:Stdio.print_endline cmds
-  )
+    List.iter ~f:Stdio.print_endline cmds)
 
 let command : Command.t =
-  Command.basic ~summary:"runs a configured test backend in harness-making mode"
+  Command.basic
+    ~summary:"runs a configured test backend in harness-making mode"
     Command.Let_syntax.(
       let%map_open standard_args = Args.Standard_with_files.get
       and sim = Args.simulator ()
@@ -49,5 +49,5 @@ let command : Command.t =
           ~if_nothing_chosen:(`Default_to None)
       in
       fun () ->
-        Common.lift_command_with_files standard_args ~with_compiler_tests:false
-          ~f:(run ?arch ?fqid:sim))
+        Common.lift_command_with_files standard_args
+          ~with_compiler_tests:false ~f:(run ?arch ?fqid:sim))

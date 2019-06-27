@@ -37,12 +37,12 @@ include Act_common.Spec.S with type t := t and module With_id := With_id
 
 (** {2 Helpers for constructing expanded specifications} *)
 
-(** Forwards (most of) the implementation of a compiler spec to an inner
-    component. (Equality isn't forwarded, and must be provided explicitly. *)
 module Forward_spec
     (Outer : Equal.S)
     (Inner : Spec_types.S)
     (Forwarding : Act_utils.Inherit.S
-                  with type c := Inner.t
-                   and type t := Outer.t) :
+                    with type c := Inner.t
+                     and type t := Outer.t) :
   Spec_types.S with type t := Outer.t
+(** Forwards (most of) the implementation of a compiler spec to an inner
+    component. (Equality isn't forwarded, and must be provided explicitly. *)

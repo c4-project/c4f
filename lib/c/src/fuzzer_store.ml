@@ -291,7 +291,7 @@ let%test_module "int tests" =
           List.mapi test.programs ~f:(fun id p ->
               p
               |> Fuzzer_subject.Program.to_function ~vars ~id
-              >>| Tuple2.uncurry Mini_reify.func )
+              >>| Tuple2.uncurry Mini_reify.func)
         in
         Or_error.combine_errors prog_results
       in

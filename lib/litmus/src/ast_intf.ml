@@ -89,9 +89,9 @@ module type S = sig
 
     include
       Ast_base_intf.S_pred_elt
-      with type 'const t := t
-       and type 'const elt := Lang.Constant.t
-       and type id := Id.t
+        with type 'const t := t
+         and type 'const elt := Lang.Constant.t
+         and type id := Id.t
   end
 
   module Pred : sig
@@ -100,8 +100,8 @@ module type S = sig
 
     include
       Ast_base_intf.S_pred
-      with type 'const t := t
-       and type 'const elt := Pred_elt.t
+        with type 'const t := t
+         and type 'const elt := Pred_elt.t
 
     val of_blang : Pred_elt.t Blang.t -> t Or_error.t
     (** [of_blang blang] converts [blang], a Blang expression over
@@ -119,8 +119,8 @@ module type S = sig
 
     include
       Ast_base_intf.S_postcondition
-      with type 'const t := t
-       and type 'const pred := Pred.t
+        with type 'const t := t
+         and type 'const pred := Pred.t
   end
 
   module Init : sig
@@ -155,9 +155,9 @@ module type S = sig
         and [None] otherwise. *)
   end
 
-  (** The type of (non-validated) litmus ASTs. *)
   type t = {language: Act_common.C_id.t; name: string; decls: Decl.t list}
   [@@deriving sexp]
+  (** The type of (non-validated) litmus ASTs. *)
 
   (* TODO(@MattWindsor91): expose constructors *)
 
@@ -167,8 +167,8 @@ module type S = sig
       language, exactly one init block, at most one postcondition block, and
       a set of appropriately named programs. *)
   module Validated : sig
-    (** The abstract type of a validated litmus AST. *)
     type t [@@deriving sexp_of]
+    (** The abstract type of a validated litmus AST. *)
 
     val name : t -> string
     (** [name test] gets the name of [test]. *)
@@ -211,11 +211,11 @@ end
 
 (** Signature of inputs to the [Convert] functor. *)
 module type Basic_convert = sig
-  (** The Litmus language from which we're converting. *)
   module From : S
+  (** The Litmus language from which we're converting. *)
 
-  (** The Litmus language to which we're converting. *)
   module To : S
+  (** The Litmus language to which we're converting. *)
 
   val constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t
   (** [constant k] tries to convert [k] to the new language. *)

@@ -28,38 +28,38 @@ open Explanation_intf
 (** [Make (B)] makes an [S] from a [Basic]. *)
 module Make (B : Basic) :
   S
-  with type elt := B.elt
-   and type context := B.context
-   and type details := B.details
-   and module Abs := B.Abs
-   and module Flag := B.Flag
+    with type elt := B.elt
+     and type context := B.context
+     and type details := B.details
+     and module Abs := B.Abs
+     and module Flag := B.Flag
 
 (** {2 Specific explanations} *)
 
 module Make_loc (L : Act_language.Location.S) :
   S
-  with type elt := L.t
-   and type context := Act_abstract.Symbol.Table.t
-   and module Abs := Act_abstract.Location
+    with type elt := L.t
+     and type context := Act_abstract.Symbol.Table.t
+     and module Abs := Act_abstract.Location
 
 module Make_ops (L : Act_language.Instruction.S) :
   S
-  with type elt := L.t
-   and type context := Act_abstract.Symbol.Table.t
-   and module Abs := Act_abstract.Operand.Bundle
+    with type elt := L.t
+     and type context := Act_abstract.Symbol.Table.t
+     and module Abs := Act_abstract.Operand.Bundle
 
 module Make_ins (B : Basic_ins) :
   S
-  with type elt := B.Instruction.t
-   and type context := Act_abstract.Symbol.Table.t
-   and module Abs := Act_abstract.Instruction
+    with type elt := B.Instruction.t
+     and type context := Act_abstract.Symbol.Table.t
+     and module Abs := Act_abstract.Instruction
 
 module Make_stm (B : Basic_stm) : sig
   include
     S
-    with type elt := B.Statement.t
-     and type context := Act_abstract.Symbol.Table.t
-     and module Abs := Act_abstract.Statement
+      with type elt := B.Statement.t
+       and type context := Act_abstract.Symbol.Table.t
+       and module Abs := Act_abstract.Statement
 
   val instructions : details -> B.Ins_expl.t list
 end

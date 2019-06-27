@@ -34,17 +34,17 @@ open Base
     needs. *)
 module Lang :
   Act_litmus.Ast.Basic
-  with type Statement.t =
-              [ `Stm of Mini.Statement.t
-              | `Decl of Mini.Identifier.t * Mini.Initialiser.t ]
-   and type Program.t = Mini.Identifier.t * Mini.Function.t
-   and type Constant.t = Mini.Constant.t
+    with type Statement.t =
+          [ `Stm of Mini.Statement.t
+          | `Decl of Mini.Identifier.t * Mini.Initialiser.t ]
+     and type Program.t = Mini.Identifier.t * Mini.Function.t
+     and type Constant.t = Mini.Constant.t
 
-(** The mini-model's full Litmus AST module. *)
 module Ast : Act_litmus.Ast.S with module Lang = Lang
+(** The mini-model's full Litmus AST module. *)
 
-(** Pretty-printing for the mini-model's litmus AST. *)
 module Pp : Act_litmus.Pp_intf.S with module Ast = Ast
+(** Pretty-printing for the mini-model's litmus AST. *)
 
 val vars : Ast.Validated.t -> Set.M(Act_common.Litmus_id).t
 (** [vars ast] gets the set of variables referenced in a mini-C Litmus test,

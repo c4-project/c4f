@@ -52,9 +52,9 @@ module Make (B : Basic) : S with type t = B.t = struct
   include (
     Comp :
       Comparable.S
-      with type t := t
-       and type comparator_witness = Set.Elt.comparator_witness
-       and module Set := Set )
+        with type t := t
+         and type comparator_witness = Set.Elt.comparator_witness
+         and module Set := Set )
 
   module R_map :
     Ac.Redirect_map_intf.S with type sym = t and type sym_set = Set.t =

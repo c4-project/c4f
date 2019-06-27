@@ -34,8 +34,8 @@ end
 
 (** Bundles of simulator and machine specification. *)
 module Sim : sig
-  (** Opaque type of machine-qualified sim specifications. *)
   type t [@@deriving equal]
+  (** Opaque type of machine-qualified sim specifications. *)
 
   (** {3 Constructors} *)
 
@@ -54,10 +54,10 @@ end
 
 (** {2 Implementing lookup} *)
 
+module Lookup_compilers : Qualified_types.S_lookup with type t = Compiler.t
 (** Implements fully-qualified ID lookup of compilers inside machine spec
     sets. *)
-module Lookup_compilers : Qualified_types.S_lookup with type t = Compiler.t
 
+module Lookup_sims : Qualified_types.S_lookup with type t = Sim.t
 (** Implements fully-qualified ID lookup of simulators inside machine spec
     sets. *)
-module Lookup_sims : Qualified_types.S_lookup with type t = Sim.t

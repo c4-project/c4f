@@ -29,8 +29,8 @@
 open Base
 open Act_common
 
-(** Opaque type of fuzzer configurations. *)
 type t [@@deriving sexp]
+(** Opaque type of fuzzer configurations. *)
 
 (** {2 Constructors} *)
 

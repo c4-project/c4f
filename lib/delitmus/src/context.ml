@@ -41,4 +41,4 @@ let lookup_initial_value (ctx : t) ~(id : Act_common.Litmus_id.t) :
       lookup_initial_value_local ctx ~tid ~id
   | None ->
       Option.bind (Act_common.Litmus_id.as_global id) ~f:(fun id ->
-          lookup_initial_value_global ctx ~id )
+          lookup_initial_value_global ctx ~id)

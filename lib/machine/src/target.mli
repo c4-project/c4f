@@ -14,9 +14,9 @@
 
 open Base
 
+type t = [`Spec of Qualified.Compiler.t | `Arch of Act_common.Id.t]
 (** [t] is either a machine-qualified compiler specification, or a raw
     architecture. *)
-type t = [`Spec of Qualified.Compiler.t | `Arch of Act_common.Id.t]
 
 val arch : t -> Act_common.Id.t
 (** [arch_of_target target] gets the architecture ID associated with

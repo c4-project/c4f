@@ -30,8 +30,8 @@
 
 open Base
 
-(** [t] is a description of a single-file job. *)
 type 'cfg t
+(** [t] is a description of a single-file job. *)
 
 val make :
      ?config:'cfg

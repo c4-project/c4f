@@ -33,11 +33,11 @@ end
 
 module Make (B : Basic) :
   S
-  with type listing = B.listing
-   and type warn_elt = B.warn_elt
-   and type rmap = B.rmap
-   and type ('warn_elt, 'listing) program := ('warn_elt, 'listing) Program.t =
-struct
+    with type listing = B.listing
+     and type warn_elt = B.warn_elt
+     and type rmap = B.rmap
+     and type ('warn_elt, 'listing) program :=
+          ('warn_elt, 'listing) Program.t = struct
   include B
 
   module Program = struct

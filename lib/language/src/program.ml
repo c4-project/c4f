@@ -31,7 +31,8 @@ module Make (B : Basic_with_modules) :
   module Tr = Travesty.Traversable
 
   module On_statements = struct
-    include Tr.Chain0 (struct
+    include Tr.Chain0
+              (struct
                 type t = B.t
 
                 include On_listings
@@ -92,7 +93,7 @@ module Make (B : Basic_with_modules) :
     |> List.filter_map ~f:(fun p ->
            if filter p then
              Some (Symbol.Set.of_list (Statement.On_symbols.to_list p))
-           else None )
+           else None)
     |> Symbol.Set.union_list |> Symbol.Set.abstract
 
   let jump_symbols = symbols_in_statements_where Statement.is_jump

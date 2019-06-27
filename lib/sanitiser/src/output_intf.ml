@@ -22,25 +22,25 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 module type Basic = sig
-  (** Type of raw program listings. *)
   type listing
+  (** Type of raw program listings. *)
 
-  (** Type of language elements, used for warnings. *)
   type warn_elt
+  (** Type of language elements, used for warnings. *)
 
-  (** Type of redirect maps. *)
   type rmap
+  (** Type of redirect maps. *)
 end
 
 (** Signature of sanitiser output modules. *)
 module type S = sig
   include Basic
 
-  (** Erased and replaced with [Output.Program.t]. *)
   type ('a, 'b) program
+  (** Erased and replaced with [Output.Program.t]. *)
 
-  (** [t] is the type of (successful) sanitiser output. *)
   type t
+  (** [t] is the type of (successful) sanitiser output. *)
 
   (** [Program] is the abstract data type of a single program's sanitiser
       output. *)

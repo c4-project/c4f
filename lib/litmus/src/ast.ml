@@ -203,12 +203,11 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
           let is_uniform =
             List.for_all xs ~f:(fun x' ->
                 [%equal: Lang.Type.t Ac.C_id.Map.t option] s
-                  (Lang.Program.global_vars x') )
+                  (Lang.Program.global_vars x'))
           in
           Or_error.(
             Tx.Or_error.unless_m is_uniform ~f:(fun () ->
-                error_string "Programs disagree on global variables sets."
-            )
+                error_string "Programs disagree on global variables sets.")
             >>| fun () -> s)
 
     let check_init_against_globals
@@ -225,7 +224,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
               [%message
                 "Program global variables aren't compatible with init."
                   ~in_program:(globals_keys : Ac.C_id.Set.t)
-                  ~in_init:(init_keys : Ac.C_id.Set.t)] ))
+                  ~in_init:(init_keys : Ac.C_id.Set.t)]))
 
     (** [validate_globals] checks an incoming Litmus test to ensure that, if
         its programs explicitly reference global variables, then they
@@ -237,14 +236,14 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
           | None ->
               Result.ok_unit
           | Some gs ->
-              check_init_against_globals (init candidate) gs )
+              check_init_against_globals (init candidate) gs)
 
     (** [validate_post_or_location_exists] checks an incoming Litmus test to
         ensure that it has either a postcondition or a locations stanza. *)
     let validate_post_or_location_exists : t Validate.check =
       Validate.booltest
         (fun t ->
-          Option.is_some t.locations || Option.is_some t.postcondition )
+          Option.is_some t.locations || Option.is_some t.postcondition)
         ~if_false:"Test must have a postcondition or location stanza."
 
     let variables_in_init (candidate : t) : Ac.C_id.Set.t =

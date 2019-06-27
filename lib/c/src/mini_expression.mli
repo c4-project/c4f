@@ -41,27 +41,28 @@ module Atomic_load : sig
   val mo : t -> Mem_order.t
   (** [mo ld] gets [ld]'s memory order. *)
 
+  include
+    Mini_intf.S_has_underlying_variable with type t := t
   (** We can get to the variable name inside an atomic load (that is, the
       source variable). *)
-  include Mini_intf.S_has_underlying_variable with type t := t
 
   (** {3 Traversals} *)
 
   (** Traversing over atomic-action addresses in atomic loads. *)
   module On_addresses :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Mini_address.t
+      with type t = t
+       and type Elt.t = Mini_address.t
 
   (** Traversing over lvalues in atomic loads. *)
   module On_lvalues :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Mini_lvalue.t
+      with type t = t
+       and type Elt.t = Mini_lvalue.t
 end
 
-(** Opaque type of expressions. *)
 type t [@@deriving sexp]
+(** Opaque type of expressions. *)
 
 (** {2 Constructors} *)
 
@@ -99,34 +100,35 @@ val reduce :
 (** Traversing over atomic-action addresses in expressions. *)
 module On_addresses :
   Travesty.Traversable_types.S0
-  with type t = t
-   and type Elt.t = Mini_address.t
+    with type t = t
+     and type Elt.t = Mini_address.t
 
 (** Traversing over identifiers in expressions. *)
 module On_identifiers :
   Travesty.Traversable_types.S0
-  with type t = t
-   and type Elt.t = Act_c_lang.Ast_basic.Identifier.t
+    with type t = t
+     and type Elt.t = Act_c_lang.Ast_basic.Identifier.t
 
 (** Traversing over lvalues in expressions. *)
 module On_lvalues :
   Travesty.Traversable_types.S0
-  with type t = t
-   and type Elt.t = Mini_lvalue.t
+    with type t = t
+     and type Elt.t = Mini_lvalue.t
 
 (** {2 Generation and quickchecking} *)
 
-(** Generates random, type-safe expressions over the given variable typing
-    environment, with type 'int'. *)
 module Quickcheck_int_values (E : Mini_env.S) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t
-
 (** Generates random, type-safe expressions over the given variable typing
-    environment, with type 'bool'. *)
+    environment, with type 'int'. *)
+
 module Quickcheck_bool_values (E : Mini_env.S) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t
+(** Generates random, type-safe expressions over the given variable typing
+    environment, with type 'bool'. *)
 
 (** {2 Type checking} *)
 
+include
+  Mini_intf.S_type_checkable with type t := t
 (** Type-checking for expressions. *)
-include Mini_intf.S_type_checkable with type t := t

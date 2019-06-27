@@ -34,17 +34,17 @@ module type Basic = sig
 end
 
 module type S = sig
-  (** Instructions *)
   type ins
+  (** Instructions *)
 
-  (** Locations *)
   type loc
+  (** Locations *)
 
-  (** Statements *)
   type stm
+  (** Statements *)
 
-  (** Symbols *)
   type sym
+  (** Symbols *)
 
   type t =
     | Instruction of ins

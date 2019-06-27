@@ -17,8 +17,8 @@ open Base
     identifier, and capture the type of identifier seen in Litmus
     postconditions. *)
 
-(** Opaque type of litmus-style identifiers. *)
 type t [@@deriving compare, sexp, quickcheck]
+(** Opaque type of litmus-style identifiers. *)
 
 (** {2 Constructors} *)
 
@@ -67,16 +67,19 @@ val is_in_scope : t -> from:int -> bool
 
 (** {2 Interface implementations} *)
 
+include
+  Stringable.S with type t := t
 (** Litmus identifiers can be converted to and from strings. Note that
     conversion from strings can fail if the C identifier parts don't obey C
     identifier validation. *)
-include Stringable.S with type t := t
 
+include
+  Pretty_printer.S with type t := t
 (** Litmus identifiers can be pretty-printed. *)
-include Pretty_printer.S with type t := t
 
+include
+  Comparable.S with type t := t
 (** Litmus identifiers suit various comparable scenarios, such as map keys. *)
-include Comparable.S with type t := t
 
 (** Monadic traversal over the C identifier part of a Litmus identifier. *)
 module On_c_identifiers :

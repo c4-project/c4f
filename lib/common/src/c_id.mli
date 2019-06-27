@@ -28,8 +28,8 @@
 
 open Core_kernel
 
-(** Opaque type of C identifier strings. *)
 type t [@@deriving bin_io, compare, hash, sexp, quickcheck]
+(** Opaque type of C identifier strings. *)
 
 val create : string -> t Or_error.t
 (** [create str] creates a C identifier string from [str]. It returns an
@@ -45,8 +45,9 @@ include Pretty_printer.S with type t := t
 
 include Plumbing.Jsonable_types.S with type t := t
 
+include
+  Stringable.S with type t := t
 (** Note that [of_string] is [create_exn]; ie, it can fail. *)
-include Stringable.S with type t := t
 
 val is_string_safe : string -> bool
 (** [is_string_safe str] checks whether [str] is C-safe, but doesn't return
@@ -65,8 +66,9 @@ module Herd_safe : sig
 
   include Pretty_printer.S with type t := t
 
+  include
+    Stringable.S with type t := t
   (** Note that [of_string] is [create_exn]; ie, it can fail. *)
-  include Stringable.S with type t := t
 
   val of_c_identifier : c -> t Or_error.t
   (** [of_c_identifier cid] tries to create a Herd-safe identifier from
@@ -84,8 +86,8 @@ end
 module Alist : sig
   include
     Travesty.Bi_traversable_types.S1_right
-    with type 'r t = (t, 'r) List.Assoc.t
-     and type left := t
+      with type 'r t = (t, 'r) List.Assoc.t
+       and type left := t
 
   val to_yojson : ('r -> Yojson.Safe.t) -> 'r t -> Yojson.Safe.t
   (** [to_yojson rhs assoc] serialises [assoc] to a JSON object, using [rhs]

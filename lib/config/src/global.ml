@@ -49,26 +49,26 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
             | Cmd c ->
                 Some c
             | _ ->
-                None )
+                None)
         and c_model =
           Au.My_list.find_one_opt items ~item_name:"c_model" ~f:(function
             | C_model c ->
                 Some c
             | _ ->
-                None )
+                None)
         and style =
           Au.My_list.find_one items ~item_name:"style" ~f:(function
             | Style s ->
                 Some s
             | _ ->
-                None )
+                None)
         in
         let asm_models =
           List.filter_map items ~f:(function
             | Asm_model (k, v) ->
                 Some (k, v)
             | _ ->
-                None )
+                None)
         in
         Act_sim.Spec.make ?cmd ?c_model ~asm_models ~style ())
 
@@ -83,19 +83,19 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
             | Style s ->
                 Some s
             | _ ->
-                None )
+                None)
         and emits =
           Au.My_list.find_one items ~item_name:"emits" ~f:(function
             | Emits e ->
                 Some e
             | _ ->
-                None )
+                None)
         and cmd =
           Au.My_list.find_one items ~item_name:"cmd" ~f:(function
             | Cmd c ->
                 Some c
             | _ ->
-                None )
+                None)
         and argv =
           Au.My_list.find_at_most_one items ~item_name:"argv"
             ~f:(function Argv v -> Some v | _ -> None)
@@ -155,7 +155,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
             | Via v ->
                 Some v
             | _ ->
-                None )
+                None)
         in
         let%map via = via via_raw in
         M_spec.make ~sims ~compilers ~enabled ~via ())

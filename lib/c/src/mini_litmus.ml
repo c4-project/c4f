@@ -29,10 +29,10 @@ module Ac = Act_common
 
 module Lang :
   Act_litmus.Ast.Basic
-  with type Statement.t =
-              [`Stm of Statement.t | `Decl of Initialiser.t named]
-   and type Program.t = Function.t named
-   and type Constant.t = Constant.t = struct
+    with type Statement.t =
+          [`Stm of Statement.t | `Decl of Initialiser.t named]
+     and type Program.t = Function.t named
+     and type Constant.t = Constant.t = struct
   module Constant = Constant
 
   module Statement = struct

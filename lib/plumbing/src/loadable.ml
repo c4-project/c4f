@@ -77,7 +77,7 @@ module Of_jsonable (B : Jsonable_types.Of) :
   let load_from_ic ?(path = "stdin") (ic : Stdio.In_channel.t) :
       t Or_error.t =
     wrap path (fun () ->
-        of_yojson_exn (Yojson.Safe.from_channel ~fname:path ic) )
+        of_yojson_exn (Yojson.Safe.from_channel ~fname:path ic))
 end)
 
 module To_filter (L : Loadable_types.S) :

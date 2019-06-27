@@ -28,8 +28,7 @@ let to_runner = function
         end)
 
         let remote_dir = Fn.const (Ssh.copy_dir c)
-      end)
-      : Pb.Runner_types.S )
+      end) : Pb.Runner_types.S )
 
 let remoteness = function
   | Local ->

@@ -26,11 +26,11 @@
 
 open Base
 
-(** [t] is the opaque type of a tabulator. *)
 type t
+(** [t] is the opaque type of a tabulator. *)
 
-(** [row] is the type of a tabulator row. *)
 type row = string list
+(** [row] is the type of a tabulator row. *)
 
 val make :
   ?sep:string -> ?terminator:string -> header:row -> unit -> t Or_error.t
@@ -78,6 +78,6 @@ module type Tabular_extensions = sig
       instead used. *)
 end
 
-(** [Extend_tabular] makes a [Tabular_extensions] out of a [Tabular]. *)
 module Extend_tabular (T : Tabular) :
   Tabular_extensions with type data := T.data
+(** [Extend_tabular] makes a [Tabular_extensions] out of a [Tabular]. *)

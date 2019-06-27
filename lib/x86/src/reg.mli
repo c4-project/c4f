@@ -47,58 +47,58 @@ open Base
 
 (** x86 registers *)
 
-(** [gp8h] enumerates the 8-bit 'high' general-purpose registers. *)
 type gp8h = [`AH | `BH | `CH | `DH] [@@deriving equal, sexp]
+(** [gp8h] enumerates the 8-bit 'high' general-purpose registers. *)
 
-(** [gp8l] enumerates the 8-bit 'low' general-purpose registers. *)
 type gp8l = [`AL | `BL | `CL | `DL] [@@deriving enumerate, equal, sexp]
+(** [gp8l] enumerates the 8-bit 'low' general-purpose registers. *)
 
-(** [gp8] enumerates the 8-bit general-purpose registers. *)
 type gp8 = [gp8h | gp8l] [@@deriving enumerate, equal, sexp]
+(** [gp8] enumerates the 8-bit general-purpose registers. *)
 
-(** [gp16] enumerates the 16-bit general-purpose registers. *)
 type gp16 = [`AX | `BX | `CX | `DX] [@@deriving enumerate, equal, sexp]
+(** [gp16] enumerates the 16-bit general-purpose registers. *)
 
-(** [gp32] enumerates the 32-bit general-purpose registers. *)
 type gp32 = [`EAX | `EBX | `ECX | `EDX] [@@deriving enumerate, equal, sexp]
+(** [gp32] enumerates the 32-bit general-purpose registers. *)
 
-(** [gp] enumerates the general-purpose registers. *)
 type gp = [gp8 | gp16 | gp32] [@@deriving enumerate, equal, sexp]
+(** [gp] enumerates the general-purpose registers. *)
 
-(** [seg] enumerates the segment registers. *)
 type seg = [`CS | `DS | `SS | `ES | `FS | `GS]
 [@@deriving enumerate, equal, sexp]
+(** [seg] enumerates the segment registers. *)
 
-(** [flag] enumerates the flag registers. *)
 type flag = [`CF | `PF | `AF | `ZF | `SF | `OF]
 [@@deriving enumerate, equal, sexp]
+(** [flag] enumerates the flag registers. *)
 
-(** [sp16] enumerates the 16-bit special purpose registers. *)
 type sp16 = [seg | `BP | `SP | `SI | `DI]
 [@@deriving enumerate, equal, sexp]
+(** [sp16] enumerates the 16-bit special purpose registers. *)
 
-(** [sp32] enumerates the 32-bit special-purpose registers. *)
 type sp32 = [`EIP | `EBP | `ESP | `ESI | `EDI]
 [@@deriving enumerate, equal, sexp]
+(** [sp32] enumerates the 32-bit special-purpose registers. *)
 
-(** [sp] enumerates the special-purpose registers. *)
 type sp = [sp16 | sp32] [@@deriving enumerate, equal, sexp]
+(** [sp] enumerates the special-purpose registers. *)
 
-(** [reg8] enumerates all 8-bit registers. *)
 type reg8 = gp8
+(** [reg8] enumerates all 8-bit registers. *)
 
-(** [reg16] enumerates all 16-bit registers. *)
 type reg16 = [gp16 | sp16] [@@deriving enumerate, equal, sexp]
+(** [reg16] enumerates all 16-bit registers. *)
 
-(** [reg32] enumerates all 32-bit registers. *)
 type reg32 = [gp32 | sp32] [@@deriving enumerate, equal, sexp]
+(** [reg32] enumerates all 32-bit registers. *)
 
-(** [t] enumerates all commonly used registers available in 32-bit x86. *)
 type t = [reg8 | reg16 | reg32 | flag]
+(** [t] enumerates all commonly used registers available in 32-bit x86. *)
 
 include Act_utils.Enum.Extension_table with type t := t
 
 include
   Act_abstract.Abstractable.S
-  with type t := t
-   and module Abs := Act_abstract.Register
+    with type t := t
+     and module Abs := Act_abstract.Register

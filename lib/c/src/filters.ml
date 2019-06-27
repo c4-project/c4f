@@ -28,11 +28,11 @@ module Ac = Act_common
 module Ast = Act_c_lang.Ast
 
 module type Basic = sig
-  (** Raw AST *)
   type ast
+  (** Raw AST *)
 
-  (** Validated AST *)
   type t
+  (** Validated AST *)
 
   module Frontend : Pb.Loadable_types.S with type t = ast
 

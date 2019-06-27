@@ -26,14 +26,15 @@ open Base
 (** [Basic] is the interface act languages must implement for program
     analysis. *)
 module type Basic = sig
-  (** Type of programs. *)
   type t [@@deriving sexp, eq]
+  (** Type of programs. *)
 
-  (** Type of statements inside programs. *)
   type stm
+  (** Type of statements inside programs. *)
 
+  include
+    Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their programs. *)
-  include Pretty_printer.S with type t := t
 
   (** They must allow traversal over statement lists (as a block).
 
@@ -70,13 +71,13 @@ module type S = sig
   module On_statements : sig
     include
       Travesty.Traversable_types.S0
-      with type Elt.t = Statement.t
-       and type t := t
+        with type Elt.t = Statement.t
+         and type t := t
 
     include
       Travesty.Filter_mappable_types.S0
-      with type elt := Elt.t
-       and type t := t
+        with type elt := Elt.t
+         and type t := t
   end
 
   val listing : t -> Statement.t list
@@ -86,8 +87,8 @@ module type S = sig
       of statements). *)
   module On_symbols :
     Travesty.Traversable_types.S0
-    with type Elt.t = Statement.Instruction.Symbol.t
-     and type t := t
+      with type Elt.t = Statement.Instruction.Symbol.t
+       and type t := t
 
   val symbols :
        t

@@ -37,5 +37,5 @@ val run_direct :
     and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
     is absent). *)
 
-(** Interface for making a filter over litmus7. *)
 module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Filter.S
+(** Interface for making a filter over litmus7. *)

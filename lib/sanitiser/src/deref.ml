@@ -42,8 +42,7 @@ module State = struct
       parametrised on the type of concrete instructions. *)
   type 'ins t =
     | Read of
-        { first_target_src: 'ins
-        ; last_target_dst: Act_abstract.Location.t }
+        {first_target_src: 'ins; last_target_dst: Act_abstract.Location.t}
     | Write of
         { first_target_src: 'ins
         ; first_value_src: 'ins
