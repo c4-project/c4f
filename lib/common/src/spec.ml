@@ -125,7 +125,7 @@ module Make (B : Basic) :
         |> List.find_all_dups ~compare:(Tx.Fn.on With_id.id ~f:Id.compare)
         |> List.map ~f:(fun x ->
                Or_error.error_s
-                 [%message "duplicate ID" ~id:(With_id.id x : Id.t)] )
+                 [%message "duplicate ID" ~id:(With_id.id x : Id.t)])
         |> Or_error.combine_errors_unit
       in
       List.map ~f:(fun x -> (With_id.id x, With_id.spec x)) xs
@@ -133,7 +133,7 @@ module Make (B : Basic) :
     let group t ~f =
       t
       |> List.map ~f:(fun (id, spec) ->
-             (f (With_id.make ~id ~spec), (id, spec)) )
+             (f (With_id.make ~id ~spec), (id, spec)))
       |> Id.Map.of_alist_multi
 
     let pp_id_spec f ~pp id spec =
@@ -143,7 +143,7 @@ module Make (B : Basic) :
       Fmt.(
         vbox
           (list ~sep:cut (fun f ->
-               Tuple2.uncurry (pp_id_spec ~pp:(pp_verbose verbose) f) )))
+               Tuple2.uncurry (pp_id_spec ~pp:(pp_verbose verbose) f))))
 
     let pp : t Fmt.t = pp_verbose true
   end

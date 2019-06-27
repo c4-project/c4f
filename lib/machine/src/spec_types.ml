@@ -26,11 +26,11 @@ open Base
 (** Signature common to any sort of machine specification, including
     [With_id] pairs. *)
 module type S = sig
-  (** [t] describes a machine. *)
   type t
+  (** [t] describes a machine. *)
 
-  (** Type of 'via' blocks. *)
   type via
+  (** Type of 'via' blocks. *)
 
   include Pretty_printer.S with type t := t
 

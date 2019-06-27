@@ -116,7 +116,7 @@ module Common = struct
       let body = Ast.program prog in
       let%map bodies' = f body in
       List.map bodies' ~f:(fun body' ->
-          On_listings.map prog ~f:(fun _ -> body') )
+          On_listings.map prog ~f:(fun _ -> body'))
   end
 
   module Basic = struct

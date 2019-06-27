@@ -26,8 +26,8 @@
 open Base
 open Symbol_intf
 
-(** [Make] produces an instance of [S] from an instance of [Basic]. *)
 module Make (B : Basic) : S with type t = B.t
+(** [Make] produces an instance of [S] from an instance of [Basic]. *)
 
-(** Allows the use of strings as language symbols (mainly for testing). *)
 module String_direct : S with type t = string
+(** Allows the use of strings as language symbols (mainly for testing). *)

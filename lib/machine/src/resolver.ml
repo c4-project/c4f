@@ -33,8 +33,7 @@ let from_resolver_and_spec
 
       include B
       module Runner = Runner
-    end)
-    : C_instance_t.S ))
+    end) : C_instance_t.S ))
 
 module Make (B : Basic) : Resolver_types.S with type spec = Sp.t = struct
   type spec = Sp.t
@@ -61,8 +60,7 @@ module Make_on_target (B : Basic) :
             let error =
               Error.of_string
                 "To run a compiler, you must supply a compiler ID."
-          end)
-          : C_instance_t.S )
+          end) : C_instance_t.S )
 
   let filter_from_spec (tgt : Target.t) : (module C_filter.S) Or_error.t =
     Or_error.Let_syntax.(

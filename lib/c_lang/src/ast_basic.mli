@@ -50,8 +50,8 @@
 
 open Core_kernel
 
-(** As usual, the signatures are in a separate 'intf' module. *)
 include module type of Ast_basic_intf
+(** As usual, the signatures are in a separate 'intf' module. *)
 
 (** {2 Enumerations} *)
 
@@ -178,13 +178,15 @@ module Constant : sig
 
   val to_int : t -> int Or_error.t
 
+  include
+    Plumbing.Jsonable_types.S with type t := t
   (** {3 JSON serialisation} *)
-  include Plumbing.Jsonable_types.S with type t := t
 
   (** {3 Quickcheck} *)
 
+  include
+    Quickcheckable.S with type t := t
   (** The default generators generate any valid constant. *)
-  include Quickcheckable.S with type t := t
 
   val gen_int32_as_int : int Quickcheck.Generator.t
   (** [gen_int32_as_int] generates an [int] whose domain is that of [int32].
@@ -203,8 +205,8 @@ module Identifier : sig
   include Ast_node_with_identifier with type t := t
 end
 
-(** Ast node for pointers *)
 module Pointer : Ast_node with type t = Type_qual.t list list
+(** Ast node for pointers *)
 
 (** Reusable AST building block for array subscripts *)
 module Array : sig
@@ -213,11 +215,11 @@ module Array : sig
   val pp : 'a Fmt.t -> 'i Fmt.t -> ('a, 'i) t Fmt.t
 
   module type S = sig
-    (** Type of arrays. *)
     type arr
+    (** Type of arrays. *)
 
-    (** Type of indices. *)
     type idx
+    (** Type of indices. *)
 
     type nonrec t = (arr, idx) t [@@deriving sexp]
 

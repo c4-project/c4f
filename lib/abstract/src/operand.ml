@@ -300,13 +300,13 @@ module Bundle = struct
                  let open Mo.Let_syntax in
                  let%bind x' = f x in
                  let%map y' = f y in
-                 (x', y') ))
+                 (x', y')))
           ~src_dst:
             (H.proc_variant1 (fun {Ac.Src_dst.src; dst} ->
                  let open Mo.Let_syntax in
                  let%bind src' = f src in
                  let%map dst' = f dst in
-                 {Ac.Src_dst.src= src'; dst= dst'} ))
+                 {Ac.Src_dst.src= src'; dst= dst'}))
     end
   end)
 
@@ -392,7 +392,7 @@ module Bundle = struct
             ; (`On_dst flag, str ^ " on dest")
             ; (`On_fst flag, str ^ " on operand 1")
             ; (`On_snd flag, str ^ " on operand 2")
-            ; (`On_self flag, str) ] )
+            ; (`On_self flag, str) ])
           Flag.table
     end
 

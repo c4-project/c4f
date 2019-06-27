@@ -163,7 +163,7 @@ module Cumulative = struct
   let get (cl : 'a t) (position : int) : 'a =
     let possible =
       List.drop_while cl.rows ~f:(fun {weight; _} ->
-          Weight.raw weight < position )
+          Weight.raw weight < position)
     in
     Row.item (List.hd_exn possible)
 

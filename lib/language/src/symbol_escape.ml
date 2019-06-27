@@ -59,7 +59,7 @@ module Make (S : Symbol_intf.S) = struct
   let escape_rmap (map : S.R_map.t) ~(to_escape : S.Set.t) : S.R_map.t =
     let escapes = escape_all (S.Set.to_list to_escape) in
     List.fold escapes ~init:map ~f:(fun map (src, dst) ->
-        S.R_map.redirect map ~src ~dst )
+        S.R_map.redirect map ~src ~dst)
 end
 
 let%test_module "escaping on a toy symbol module" =
@@ -79,13 +79,13 @@ let%test_module "escaping on a toy symbol module" =
           let quickcheck_generator =
             Base_quickcheck.Generator.filter
               [%quickcheck.generator: string * string] ~f:(fun (x, y) ->
-                not (String.equal x y) )
+                not (String.equal x y))
 
           let quickcheck_shrinker = [%quickcheck.shrinker: string * string]
         end )
         ~f:
           ([%test_pred: string * string] ~here:[[%here]] (fun (x, y) ->
-               not (Tx.Fn.on M.escape ~f:String.equal x y) ))
+               not (Tx.Fn.on M.escape ~f:String.equal x y)))
 
     (* TODO(@MattWindsor91): fix this test let%expect_test "escape_rmap:
        sample" = let test_map =

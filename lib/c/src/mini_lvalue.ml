@@ -144,13 +144,13 @@ end = struct
     Quickcheck.Observer.(
       fixed_point (fun mu ->
           unmap ~f:anonymise
-            [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]] ))
+            [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]]))
 
   let quickcheck_shrinker : t Quickcheck.Shrinker.t =
     Quickcheck.Shrinker.(
       fixed_point (fun mu ->
           map ~f:deanonymise ~f_inverse:anonymise
-            [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]] ))
+            [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]]))
 end
 
 module Quickcheck_id = Quickcheck_generic (Ac.C_id)
@@ -173,7 +173,7 @@ let%test_unit "on_value_of_typed_id: always takes basic type" =
       let ty = Ac.C_id.Map.find_exn E.env id in
       [%test_result: Mini_type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of (on_value_of_typed_id ~id ~ty))
-        ~expect:(Or_error.return Mini_type.(normal (basic_type ty))) )
+        ~expect:(Or_error.return Mini_type.(normal (basic_type ty))))
 
 module Quickcheck_on_env (E : Mini_env.S) : sig
   type nonrec t = t [@@deriving sexp_of]
@@ -241,4 +241,4 @@ let%test_unit "Quickcheck_int_values: generated lvalues have 'int' type" =
     (module Q)
     ~f:(fun lv ->
       [%test_result: Mini_type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
-        ~expect:(Or_error.return Mini_type.(normal Basic.int)) )
+        ~expect:(Or_error.return Mini_type.(normal Basic.int)))

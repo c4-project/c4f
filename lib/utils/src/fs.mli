@@ -21,8 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** We keep module signatures in {{!Fs_intf} Fs_intf}. *)
 include module type of Fs_intf
+(** We keep module signatures in {{!Fs_intf} Fs_intf}. *)
 
 val filter_files : ?ext:string -> Fpath.t list -> Fpath.t list
 (** [filter_files ?ext flist is [flist] if [ext] is absent, or the result of
@@ -33,8 +33,8 @@ val subpaths : Fpath.t -> Fpath.t list
 (** [subpaths path] gets all of the syntactic subpaths of [path], according
     to [Fpath]. *)
 
-(** [Unix] implements {{!S} S} using Core's Unix support. *)
 module Unix : S
+(** [Unix] implements {{!S} S} using Core's Unix support. *)
 
 (* soon (** [Mock] mocks {{!S}S}, containing a mutable dummy filesystem that
    can be set up by tests. *) module Mock : sig include S end *)

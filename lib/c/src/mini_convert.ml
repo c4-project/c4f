@@ -34,12 +34,13 @@ let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
     ('d list * 'a list) Or_error.t =
   Or_error.(
     Tx.List.With_errors.fold_m maybe_decl_list
-      ~init:(Fqueue.empty, Fqueue.empty) ~f:(fun (decls, rest) -> function
+      ~init:(Fqueue.empty, Fqueue.empty) ~f:(fun (decls, rest) ->
+      function
       | `Decl d ->
           if Fqueue.is_empty rest then return (Fqueue.enqueue decls d, rest)
           else error_string "Declarations must go before code."
       | item ->
-          return (decls, Fqueue.enqueue rest item) )
+          return (decls, Fqueue.enqueue rest item))
     >>| fun (decls, rest) -> (Fqueue.to_list decls, Fqueue.to_list rest))
 
 let%expect_test "sift_decls: mixed example" =
@@ -63,7 +64,7 @@ let ensure_functions :
         Or_error.return f
     | d ->
         Or_error.error_s
-          [%message "Expected a function" ~got:(d : Ast.External_decl.t)] )
+          [%message "Expected a function" ~got:(d : Ast.External_decl.t)])
 
 (** [ensure_statements xs] makes sure that each member of [xs] is a
     statement. *)
@@ -75,7 +76,7 @@ let ensure_statements :
     | d ->
         Or_error.error_s
           [%message
-            "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)] )
+            "Expected a statement" ~got:(d : Ast.Compound_stm.Elt.t)])
 
 let defined_types : (Ac.C_id.t, Type.Basic.t) List.Assoc.t Lazy.t =
   lazy

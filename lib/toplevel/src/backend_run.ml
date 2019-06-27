@@ -12,10 +12,8 @@
 open Core_kernel
 open Act_common
 
-let run ?(arch = Act_sim.Arch.C)
-    ?(fqid : Id.t = Id.of_string "herd")
-    (args: Args.Standard_with_files.t)
-    (_o : Output.t)
+let run ?(arch = Act_sim.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
+    (args : Args.Standard_with_files.t) (_o : Output.t)
     (cfg : Act_config.Act.t) : unit Or_error.t =
   let module Res = Sim_support.Make_resolver (struct
     let cfg = cfg
@@ -24,8 +22,7 @@ let run ?(arch = Act_sim.Arch.C)
     let%bind input = Args.Standard_with_files.infile_source args in
     let%bind output = Args.Standard_with_files.outfile_sink args in
     let%bind (module Sim) = Res.resolve_single fqid in
-    Sim.Filter.run arch input output
-  )
+    Sim.Filter.run arch input output)
 
 let command : Command.t =
   Command.basic ~summary:"runs a configured test backend"
@@ -48,5 +45,5 @@ let command : Command.t =
           ~if_nothing_chosen:(`Default_to None)
       in
       fun () ->
-        Common.lift_command_with_files standard_args ~with_compiler_tests:false
-          ~f:(run ?arch ?fqid:sim))
+        Common.lift_command_with_files standard_args
+          ~with_compiler_tests:false ~f:(run ?arch ?fqid:sim))

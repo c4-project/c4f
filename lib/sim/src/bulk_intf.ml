@@ -25,8 +25,8 @@ open Base
 
 (** Signature of bulk (multi-file) simulation runners. *)
 module type S = sig
-  (** Opaque type of file maps. *)
   type file_map
+  (** Opaque type of file maps. *)
 
   (** Bundle of inputs needed for a bulk job. *)
   module Job : sig

@@ -16,7 +16,7 @@ let write_aux (aux : Act_delitmus.Aux.t) (output_fname : string) :
   let aux_json = Act_delitmus.Aux.to_yojson aux in
   Or_error.try_with (fun () ->
       Stdio.Out_channel.with_file output_fname ~f:(fun oc ->
-          Yojson.Safe.pretty_to_channel oc aux_json ) )
+          Yojson.Safe.pretty_to_channel oc aux_json))
 
 let run ?(aux_output : string option) (args : Args.Standard_with_files.t) _o
     _cfg ~(style : Act_delitmus.Runner.Style.t) =

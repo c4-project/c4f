@@ -151,7 +151,7 @@ module Make (Lang : Act_language.Definition.S) :
   let warn element body =
     modify (fun ctx ->
         let warning = Warn.make ~program_name:ctx.progname ~element ~body in
-        {ctx with warnings= (ctx.progname, warning) :: ctx.warnings} )
+        {ctx with warnings= (ctx.progname, warning) :: ctx.warnings})
 
   let warn_if predicate element body =
     when_m predicate ~f:(fun () -> warn element body)
@@ -161,9 +161,9 @@ module Make (Lang : Act_language.Definition.S) :
         let prog_warnings, rest_warnings =
           List.partition_map ctx.warnings ~f:(fun (pn, warn) ->
               if String.equal pn program_name then `Fst warn
-              else `Snd (pn, warn) )
+              else `Snd (pn, warn))
         in
-        ({ctx with warnings= rest_warnings}, prog_warnings) )
+        ({ctx with warnings= rest_warnings}, prog_warnings))
 
   let get_symbols_with_sorts sorts =
     Act_abstract.Symbol.(
@@ -185,7 +185,8 @@ module Make (Lang : Act_language.Definition.S) :
       (Lang.Symbol.t, Lang.Symbol.t) List.Assoc.t t =
     let open Let_syntax in
     let%map rds = peek State.redirects in
-    List.map syms ~f:(fun sym -> (sym, Lang.Symbol.R_map.dest_of_sym rds sym))
+    List.map syms ~f:(fun sym ->
+        (sym, Lang.Symbol.R_map.dest_of_sym rds sym))
 
   let get_all_redirect_targets : Lang.Symbol.Set.t t =
     let open Let_syntax in
@@ -203,7 +204,7 @@ module Make (Lang : Act_language.Definition.S) :
     Monadic.modify (fun ctx ->
         let open Or_error.Let_syntax in
         let%map rds' = f rds in
-        {ctx with redirects= rds'} )
+        {ctx with redirects= rds'})
 
   (* TODO(@MattWindsor91): propagate changes to the abstract map *)
 

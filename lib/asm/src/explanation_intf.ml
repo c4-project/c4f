@@ -26,26 +26,28 @@ open Base
 (** [Basic] is the signature that must be implemented by any module going
     into [Make]. *)
 module type Basic = sig
-  (** Type of the concrete item being explained. *)
   type elt
+  (** Type of the concrete item being explained. *)
 
+  type context
   (** Type of context that must be supplied with an item ([elt]) to compute
       an explanation. *)
-  type context
 
+  type details
   (** Type of additional information included in the explanation (for
       example, recursive explanations of child components). *)
-  type details
 
+  include
+    Act_abstract.Abstractable.S with type t := elt
   (** Items of type [elt] must be abstractable. *)
-  include Act_abstract.Abstractable.S with type t := elt
 
+  include
+    Pretty_printer.S with type t := elt
   (** Items of type [elt] must also be printable. *)
-  include Pretty_printer.S with type t := elt
 
+  module Flag : Act_abstract.Flag_enum.S
   (** [Flag] is the module containing detail flags that may be raised on
       [elt]. *)
-  module Flag : Act_abstract.Flag_enum.S
 
   val abs_flags : elt -> context -> Flag.Set.t
   (** [abs_flags elt context] computes the set of detail flags that apply to
@@ -64,30 +66,32 @@ end
     of its abstract analysis with respect to a given context of type
     [context]. *)
 module type S = sig
-  (** Opaque type of the explanation itself. *)
   type t
+  (** Opaque type of the explanation itself. *)
 
-  (** Type of the concrete item being explained. *)
   type elt
+  (** Type of the concrete item being explained. *)
 
+  type context
   (** Type of context that must be supplied with an item ([elt]) to compute
       an explanation. *)
-  type context
 
+  type details
   (** Type of additional information included in the explanation (for
       example, recursive explanations of child components). *)
-  type details
 
+  include
+    Act_abstract.Abstractable.S with type t := t
   (** Each [t] inherits the abstract type projection of its underlying
       [exp]. *)
-  include Act_abstract.Abstractable.S with type t := t
 
+  include
+    Pretty_printer.S with type t := t
   (** Explanations can be pretty-printed. *)
-  include Pretty_printer.S with type t := t
 
+  module Flag : Act_abstract.Flag_enum.S
   (** [Flag] is the module containing detail flags that may be raised on the
       explanation's original element. *)
-  module Flag : Act_abstract.Flag_enum.S
 
   val original : t -> elt
   (** [original exp] gets the original element of an explanation [exp]. *)
@@ -110,18 +114,18 @@ module type Basic_ins = sig
 
   module Loc_expl :
     S
-    with type elt := Location.t
-     and type context := Act_abstract.Symbol.Table.t
-     and module Abs := Act_abstract.Location
+      with type elt := Location.t
+       and type context := Act_abstract.Symbol.Table.t
+       and module Abs := Act_abstract.Location
 
   module Instruction :
     Act_language.Instruction.S with module Location = Location
 
   module Ops_expl :
     S
-    with type elt := Instruction.t
-     and type context := Act_abstract.Symbol.Table.t
-     and module Abs := Act_abstract.Operand.Bundle
+      with type elt := Instruction.t
+       and type context := Act_abstract.Symbol.Table.t
+       and module Abs := Act_abstract.Operand.Bundle
 end
 
 module type Basic_stm = sig
@@ -129,9 +133,9 @@ module type Basic_stm = sig
 
   module Ins_expl :
     S
-    with type elt := Instruction.t
-     and type context := Act_abstract.Symbol.Table.t
-     and module Abs := Act_abstract.Instruction
+      with type elt := Instruction.t
+       and type context := Act_abstract.Symbol.Table.t
+       and module Abs := Act_abstract.Instruction
 
   module Statement :
     Act_language.Statement.S with module Instruction = Instruction

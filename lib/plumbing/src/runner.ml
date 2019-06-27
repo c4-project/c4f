@@ -94,8 +94,7 @@ module Local : S = Make (struct
     let%bind out =
       Or_error.tag_arg
         (Or_error.try_with_join (fun () ->
-             return (Low_level_process.run ~prog ~args ~stdoutf ~stderrf ())
-         ))
+             return (Low_level_process.run ~prog ~args ~stdoutf ~stderrf ())))
         "Failed to run a child process:" (prog :: args)
         [%sexp_of: string list]
     in

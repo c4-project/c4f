@@ -141,18 +141,18 @@ module type Enum = sig
 
   module type Extension_table = Extension_table
 
-  (** [Make_from_enumerate] makes an [S] from an [S_enumerate]. *)
   module Make_from_enumerate (E : S_enumerate) : S with type t := E.t
+  (** [Make_from_enumerate] makes an [S] from an [S_enumerate]. *)
 
-  (** [Make_comparable] generates a [Comparable.S] from an [Enum.S_sexp]. *)
   module Make_comparable (E : S_sexp) : Comparable.S with type t := E.t
+  (** [Make_comparable] generates a [Comparable.S] from an [Enum.S_sexp]. *)
 
-  (** [Make_hashable] generates a [Hashable.S] from an [Enum.S_sexp]. *)
   module Make_hashable (E : S_sexp) : Hashable.S with type t := E.t
+  (** [Make_hashable] generates a [Hashable.S] from an [Enum.S_sexp]. *)
 
-  (** [Extend] makes an enum extension. *)
   module Extend (E : S_sexp) : Extension with type t := E.t
+  (** [Extend] makes an enum extension. *)
 
-  (** [Extend] makes an enum extension with table support. *)
   module Extend_table (E : S_table) : Extension_table with type t := E.t
+  (** [Extend] makes an enum extension with table support. *)
 end

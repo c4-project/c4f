@@ -44,10 +44,10 @@ end
 module type S = sig
   include
     Act_language.Instruction.Basic
-    with type t = Ast.Instruction.t
-     and type con = Ast.Operand.t
-     and type Sym.t = string
-     and type Loc.t = Ast.Location.t
+      with type t = Ast.Instruction.t
+       and type con = Ast.Operand.t
+       and type Sym.t = string
+       and type Loc.t = Ast.Location.t
 
   val make_jump_operand : string -> Ast.Operand.t
   (** [make_jump_operand sym] turns [sym] into a jump operand.
@@ -56,5 +56,5 @@ module type S = sig
       being part of the instruction setup, but this may change in future. *)
 end
 
-(** [Make (B)] generates a [S] from a [Basic] [B]. *)
 module Make (B : Basic) : S
+(** [Make (B)] generates a [S] from a [Basic] [B]. *)

@@ -26,11 +26,11 @@
 open Base
 open Act_common
 
-(** Synonym for loadables that load x86 ASTs. *)
 module type S = Plumbing.Loadable_types.S with type t = Ast.t
+(** Synonym for loadables that load x86 ASTs. *)
 
-(** [Att] is the AT&T-dialect x86 frontend. *)
 module Att : S
+(** [Att] is the AT&T-dialect x86 frontend. *)
 
 val of_dialect : Id.t -> (module S) Or_error.t
 (** [of_dialect] gets the correct frontend module for a dialect. *)

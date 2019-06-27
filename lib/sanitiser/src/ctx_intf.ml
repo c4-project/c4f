@@ -33,8 +33,9 @@ module type S = sig
   module Warn :
     Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
 
+  include
+    Travesty.State_transform_types.S with module Inner := Or_error
   (** [S] includes a state transformer, [t], with an inner error monad. *)
-  include Travesty.State_transform_types.S with module Inner := Or_error
 
   val initial :
     passes:Pass_group.Set.t -> variables:Lang.Symbol.Set.t -> state

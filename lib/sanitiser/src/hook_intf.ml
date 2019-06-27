@@ -28,8 +28,8 @@ module type S = sig
 
   module On_all :
     Pass_intf.S
-    with type t := Lang.Program.t list
-     and type 'a ctx := 'a Ctx.t
+      with type t := Lang.Program.t list
+       and type 'a ctx := 'a Ctx.t
 
   module On_program :
     Pass_intf.S with type t := Lang.Program.t and type 'a ctx := 'a Ctx.t
@@ -39,8 +39,8 @@ module type S = sig
 
   module On_instruction :
     Pass_intf.S
-    with type t := Lang.Instruction.t
-     and type 'a ctx := 'a Ctx.t
+      with type t := Lang.Instruction.t
+       and type 'a ctx := 'a Ctx.t
 
   module On_location :
     Pass_intf.S with type t := Lang.Location.t and type 'a ctx := 'a Ctx.t

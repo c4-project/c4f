@@ -39,7 +39,7 @@ module type Basic = sig
   (** If true, only allow stores to variables that are known not to already
       have writes. This can help avoid combinatorial explosions. *)
 
-  (** The generator this store action uses to create stores. *)
   module Quickcheck (Src : Mini_env.S) (Dst : Mini_env.S) :
     Act_utils.My_quickcheck.S_with_sexp with type t := Mini.Atomic_store.t
+  (** The generator this store action uses to create stores. *)
 end

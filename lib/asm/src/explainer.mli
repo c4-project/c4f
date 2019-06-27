@@ -58,5 +58,5 @@ module type S_filter = Runner_intf.S with type cfg = Config.t
 
 (** {2 Making an explainer} *)
 
-(** [Make] makes an implementation of [S] for a given language. *)
 module Make (B : Explainer_intf.Basic) : S with module Lang = B.Src_lang
+(** [Make] makes an implementation of [S] for a given language. *)

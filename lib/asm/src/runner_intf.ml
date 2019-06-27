@@ -26,17 +26,17 @@ open Base
 (** [Basic] is a signature bringing together the modules we need to be able
     to run single-file jobs. *)
 module type Basic = sig
+  module Src_lang : Act_language.Definition.S
   (** [Src_lang] is the main language used in the jobs, which may differ
       from the [Litmus] language. *)
-  module Src_lang : Act_language.Definition.S
 
-  (** [Dst_lang] is the language used in emitted Litmus tests. *)
   module Dst_lang : Act_language.Definition.S
+  (** [Dst_lang] is the language used in emitted Litmus tests. *)
 
   module Litmus_ast :
     Act_litmus.Ast.S
-    with type Lang.Program.t = Dst_lang.Program.t
-     and type Lang.Constant.t = Dst_lang.Constant.t
+      with type Lang.Program.t = Dst_lang.Program.t
+       and type Lang.Constant.t = Dst_lang.Constant.t
 
   module Litmus_pp : Act_litmus.Pp_intf.S with module Ast = Litmus_ast
 
@@ -79,11 +79,11 @@ end
 
 (** Signature of job runners. *)
 module type S = sig
-  (** Type of configuration *)
   type cfg
+  (** Type of configuration *)
 
   include
     Plumbing.Filter_types.S
-    with type aux_i = cfg Job.t
-     and type aux_o = Job.Output.t
+      with type aux_i = cfg Job.t
+       and type aux_o = Job.Output.t
 end

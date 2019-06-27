@@ -19,8 +19,8 @@ open Base
 (** {2 Types for qualified specs} *)
 
 module type S = sig
-  (** Opaque type of the qualified specification itself. *)
   type t [@@deriving equal]
+  (** Opaque type of the qualified specification itself. *)
 
   (** {3 Accessors} *)
 
@@ -33,8 +33,8 @@ end
 
 (** Signature of modules that implement qualified lookup. *)
 module type S_lookup = sig
-  (** The qualified final specification type. *)
   type t
+  (** The qualified final specification type. *)
 
   val lookup :
        ?defaults:Act_common.Id.t list

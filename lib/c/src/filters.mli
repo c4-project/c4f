@@ -43,11 +43,11 @@ type mode =
 module type S =
   Plumbing.Filter_types.S with type aux_i = mode and type aux_o = unit
 
-(** Filter for dealing with 'normal' C programs. *)
 module Normal_C : S
+(** Filter for dealing with 'normal' C programs. *)
 
-(** Filter for dealing with 'litmusified' C programs. *)
 module Litmus : S
+(** Filter for dealing with 'litmusified' C programs. *)
 
 val c_module : bool -> (module S)
 (** [c_module is_c] is [Normal_C] when [is_c] is true, and [Litmus]

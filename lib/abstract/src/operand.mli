@@ -44,12 +44,13 @@ type t =
 (** [S_predicates] is the signature of any module that can access simple
     predicates over an abstract statement. *)
 module type S_predicates = sig
-  (** [t] is the type we're querying. *)
   type t
+  (** [t] is the type we're querying. *)
 
+  include
+    Location.S_predicates with type t := t
   (** Any predicate on a location also works on an operand; it responds
       negatively if the operand isn't a location. *)
-  include Location.S_predicates with type t := t
 
   val as_location : t -> Location.t option
   (** [as_location operand] returns [Some loc] if [operand] is a location
@@ -79,13 +80,13 @@ module type S_predicates = sig
       and, if so, whether it matches predicate [f]. *)
 end
 
-(** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
-    optional component. Each predicate returns false when the component
-    doesn't exist. *)
 module Inherit_predicates
     (P : S_predicates)
     (I : Act_utils.Inherit.S_partial with type c := P.t) :
   S_predicates with type t := I.t
+(** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
+    optional component. Each predicate returns false when the component
+    doesn't exist. *)
 
 (** [Flag] is an enumeration of various single-operand observations. *)
 module Flag : sig
@@ -98,34 +99,36 @@ end
 (** [S_properties] is the signature of any module that can access properties
     (including predicates) of an abstract operand. *)
 module type S_properties = sig
-  (** [t] is the type we're querying. *)
   type t
+  (** [t] is the type we're querying. *)
 
+  include
+    S_predicates with type t := t
   (** Anything that can access properties can also access predicates. *)
-  include S_predicates with type t := t
 
   val flags : t -> Symbol.Table.t -> Flag.Set.t
   (** [flags x symbol_table] gets the statement flags for [x] given symbol
       table [symbol_table]. *)
 end
 
-(** [Inherit_properties] generates a [S_properties] by inheriting it from a
-    component. *)
 module Inherit_properties
     (P : S_properties)
     (I : Act_utils.Inherit.S with type c := P.t) :
   S_properties with type t := I.t
+(** [Inherit_properties] generates a [S_properties] by inheriting it from a
+    component. *)
 
+include
+  S_properties with type t := t
 (** This module contains [S_properties] directly. *)
-include S_properties with type t := t
 
 include Node.S with type t := t and module Flag := Flag
 
 (** [Bundle] is the abstract data type of collections of operands, such as
     those attached to an instruction. *)
 module Bundle : sig
-  (** [elt] is a synonym for the single operand type. *)
   type elt = t
+  (** [elt] is a synonym for the single operand type. *)
 
   (** [t] is an abstracted operand bundle. *)
   type t =
@@ -155,8 +158,8 @@ module Bundle : sig
   (** [S_predicates] is the signature of any module that can access simple
       predicates over an operand bundle. *)
   module type S_predicates = sig
-    (** [t] is the type we're querying. *)
     type t
+    (** [t] is the type we're querying. *)
 
     val is_none : t -> bool
     (** [is_none bundle] returns [true] if [bundle] contains no operands. *)
@@ -194,13 +197,13 @@ module Bundle : sig
         contains a single operand that matches [is_jump_symbol_where ~f]. *)
   end
 
-  (** [Inherit_predicates] generates a [S_predicates] by inheriting it from
-      an optional component. Each predicate returns false when the component
-      doesn't exist. *)
   module Inherit_predicates
       (P : S_predicates)
       (I : Act_utils.Inherit.S_partial with type c := P.t) :
     S_predicates with type t := I.t
+  (** [Inherit_predicates] generates a [S_predicates] by inheriting it from
+      an optional component. Each predicate returns false when the component
+      doesn't exist. *)
 
   (** [Flag] is an enumeration of various operand-bundle observations. *)
   module Flag : sig
@@ -218,11 +221,12 @@ module Bundle : sig
   (** [S_properties] is the signature of any module that can access
       properties (including predicates) of an abstract operand bundle. *)
   module type S_properties = sig
-    (** [t] is the type we're querying. *)
     type t
+    (** [t] is the type we're querying. *)
 
+    include
+      S_predicates with type t := t
     (** Anything that can access properties can also access predicates. *)
-    include S_predicates with type t := t
 
     val errors : t -> Error.t list
     (** [errors bundle] retrieves a list of error messages corresponding to
@@ -233,22 +237,23 @@ module Bundle : sig
         table [symbol_table]. *)
   end
 
-  (** [Inherit_properties] generates a [S_properties] by inheriting it from
-      a component. *)
   module Inherit_properties
       (P : S_properties)
       (I : Act_utils.Inherit.S with type c := P.t) :
     S_properties with type t := I.t
+  (** [Inherit_properties] generates a [S_properties] by inheriting it from
+      a component. *)
 
+  include
+    S_properties with type t := t
   (** This module contains [S_properties] directly. *)
-  include S_properties with type t := t
 
   (** Operand bundles are traversable containers. *)
   include
     Travesty.Traversable_types.S0
-    with type Elt.t = elt
-     and type elt := elt
-     and type t := t
+      with type Elt.t = elt
+       and type elt := elt
+       and type t := t
 
   include Node.S with type t := t and module Flag := Flag
 

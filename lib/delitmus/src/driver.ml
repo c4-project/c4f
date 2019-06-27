@@ -18,13 +18,14 @@ module type S = [%import: (module Driver.S)]
 
 module Make (B : sig
   val globals_become_globals : bool
+
   val locals_become_globals : bool
 
   module Function : Function_rewriter.S
 end) =
 struct
-  let make_global (ctx : Context.t) (id : Ac.Litmus_id.t) (record : Var_map.Record.t) :
-      (Ac.C_id.t * C.Mini.Initialiser.t) =
+  let make_global (ctx : Context.t) (id : Ac.Litmus_id.t)
+      (record : Var_map.Record.t) : Ac.C_id.t * C.Mini.Initialiser.t =
     let value = Context.lookup_initial_value ~id ctx in
     let cid = Var_map.Record.c_id record in
     let ty = Var_map.Record.c_type record in
@@ -73,22 +74,20 @@ struct
 
   let lift_global_var_alist :
          (Act_common.C_id.t, C.Mini.Type.t) List.Assoc.t
-      -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t Or_error.t =
-    Tx.Or_error.combine_map
-      ~f:(fun (c_id, ptr_type) ->
-          let lit_id = Act_common.Litmus_id.global c_id in
-          Or_error.Let_syntax.(
-            let%map c_type = Act_c.Mini.Type.deref ptr_type in
-            (lit_id, Var_map.Record.make
-              ~c_type
-              ~is_global:B.globals_become_globals
-              ~c_id)
-          ))
+      -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t Or_error.t
+      =
+    Tx.Or_error.combine_map ~f:(fun (c_id, ptr_type) ->
+        let lit_id = Act_common.Litmus_id.global c_id in
+        Or_error.Let_syntax.(
+          let%map c_type = Act_c.Mini.Type.deref ptr_type in
+          ( lit_id
+          , Var_map.Record.make ~c_type ~is_global:B.globals_become_globals
+              ~c_id )))
 
   let make_global_var_alist :
          C.Mini.Function.t list
-      -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t Or_error.t =
-    function
+      -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t Or_error.t
+      = function
     | [] ->
         Or_error.error_string "need at least one function"
     | x :: xs ->
@@ -102,20 +101,17 @@ struct
   let make_local_var_alist (tid : int) (f : C.Mini.Function.t) :
       (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t =
     f |> C.Mini.Function.body_decls
-    |> List.map
-      ~f:(fun (local_c_id, init) ->
-          let lit_id = Act_common.Litmus_id.local tid local_c_id in
-          let c_id = Qualify.litmus_id lit_id in
-          let c_type = C.Mini.Initialiser.ty init in
-          (lit_id, Var_map.Record.make
-             ~c_type
-             ~is_global:B.locals_become_globals
-             ~c_id)
-        )
+    |> List.map ~f:(fun (local_c_id, init) ->
+           let lit_id = Act_common.Litmus_id.local tid local_c_id in
+           let c_id = Qualify.litmus_id lit_id in
+           let c_type = C.Mini.Initialiser.ty init in
+           ( lit_id
+           , Var_map.Record.make ~c_type ~is_global:B.locals_become_globals
+               ~c_id ))
 
   let make_local_var_alists :
          C.Mini.Function.t list
-         -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t list =
+      -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t list =
     List.mapi ~f:make_local_var_alist
 
   let make_var_map (functions : C.Mini.Function.t list) :
@@ -124,20 +120,18 @@ struct
       let%bind global_alist = make_global_var_alist functions in
       let local_alists = make_local_var_alists functions in
       let alist = List.concat (global_alist :: local_alists) in
-      let%map map = Map.of_alist_or_error (module Act_common.Litmus_id) alist in
+      let%map map =
+        Map.of_alist_or_error (module Act_common.Litmus_id) alist
+      in
       Var_map.of_map map)
 
-  let make_aux (input : C.Mini_litmus.Ast.Validated.t)
-       : Aux.t Or_error.t =
-    let programs = 
-      C.Mini_litmus.Ast.Validated.programs input
-    in
+  let make_aux (input : C.Mini_litmus.Ast.Validated.t) : Aux.t Or_error.t =
+    let programs = C.Mini_litmus.Ast.Validated.programs input in
     let litmus_aux = make_litmus_aux input in
     let num_threads = List.length programs in
     Or_error.Let_syntax.(
       let%map var_map = make_var_map (List.map ~f:snd programs) in
-      Aux.make ~litmus_aux ~var_map ~num_threads ()
-    )
+      Aux.make ~litmus_aux ~var_map ~num_threads ())
 
   let make_program (input : C.Mini_litmus.Ast.Validated.t)
       (context : Context.t) : C.Mini.Program.t Or_error.t =
@@ -151,7 +145,7 @@ struct
       (Act_common.C_id.t, C.Mini.Constant.t) List.Assoc.t =
     fn |> C.Mini.Function.body_decls
     |> List.filter_map ~f:(fun (id, init) ->
-           Option.(init |> C.Mini.Initialiser.value >>| fun v -> (id, v)) )
+           Option.(init |> C.Mini.Initialiser.value >>| fun v -> (id, v)))
 
   let make_local_inits :
          C.Mini.Function.t list
@@ -160,8 +154,7 @@ struct
          List.Assoc.t =
     List.mapi ~f:(fun tid fn -> (tid, make_local_init fn))
 
-  let make_context (input : C.Mini_litmus.Ast.Validated.t)
-      (aux : Aux.t) :
+  let make_context (input : C.Mini_litmus.Ast.Validated.t) (aux : Aux.t) :
       Context.t =
     (* We can get the context just from looking at functions, because of the
        way in which C litmus tests are constructed. *)
@@ -181,6 +174,7 @@ end
 
 module Vars_as_globals = Make (struct
   let globals_become_globals = true
+
   let locals_become_globals = true
 
   module Function = Function_rewriter.Vars_as_globals
@@ -188,6 +182,7 @@ end)
 
 module Vars_as_parameters = Make (struct
   let globals_become_globals = false
+
   let locals_become_globals = false
 
   module Function = Function_rewriter.Vars_as_parameters

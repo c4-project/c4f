@@ -13,19 +13,19 @@
 
 (** {2 Signatures with fixed types} *)
 
-(** Version of {{!Resolver_types.Basic} Resolver_types.Basic} with the
-    specification type fixed. *)
 module type Basic =
   Resolver_types.Basic with type spec := Act_compiler.Spec.With_id.t
+(** Version of {{!Resolver_types.Basic} Resolver_types.Basic} with the
+    specification type fixed. *)
 
 (** {2 Resolving spec IDs to compilers} *)
 
-(** Constructs a {{!S_resolver} S_resolver} from a
-    {{!Basic_resolver} Basic_resolver} over direct compiler specs. *)
 module Make (B : Basic) :
   Resolver_types.S with type spec = Qualified.Compiler.t
+(** Constructs a {{!S_resolver} S_resolver} from a
+    {{!Basic_resolver} Basic_resolver} over direct compiler specs. *)
 
-(** Constructs a {{!S_resolver} S_resolver} over targets from a
-    {{!Basic_resolver} Basic_resolver}. *)
 module Make_on_target (B : Basic) :
   Resolver_types.S with type spec = Target.t
+(** Constructs a {{!S_resolver} S_resolver} over targets from a
+    {{!Basic_resolver} Basic_resolver}. *)

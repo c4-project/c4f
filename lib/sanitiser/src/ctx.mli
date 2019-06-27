@@ -25,5 +25,5 @@
 
 include module type of Ctx_intf
 
-(** [Make] builds a context monad for the given language. *)
 module Make (Lang : Act_language.Definition.S) : S with module Lang := Lang
+(** [Make] builds a context monad for the given language. *)

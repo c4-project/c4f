@@ -28,7 +28,6 @@ open Core_kernel
 open Act_common
 open Act_utils
 
-(** [t] enumerates the various high-level sanitisation passes. *)
 type t =
   [ `Escape_symbols
     (** Mangle symbols to ensure litmus tools can lex them. *)
@@ -57,9 +56,11 @@ type t =
   | `Unmangle_symbols
     (** Where possible, replace symbols with their original C identifiers. *)
   | `Warn  (** Warn about things the sanitiser doesn't understand. *) ]
+(** [t] enumerates the various high-level sanitisation passes. *)
 
+include
+  Enum.Extension_table with type t := t
 (** We include the usual enum extensions for [Pass]. *)
-include Enum.Extension_table with type t := t
 
 val explain : Set.t
 (** [explain] collects passes that are useful for explaining an assembly
@@ -75,15 +76,14 @@ val standard : Set.t
 
 (** A [Blang]-based language for selecting sanitiser passes. *)
 module Selector : sig
-  (** [elt] is just a renaming of the outermost [t]. *)
   type elt = t
+  (** [elt] is just a renaming of the outermost [t]. *)
 
   (** Enumerates the various top-level categories of passes. *)
   module Category : sig
     type t = [`Standard | `Explain | `Light] [@@deriving sexp]
   end
 
-  (** [t] is the base element type of the language. *)
   type t =
     [ elt
     | Category.t
@@ -91,10 +91,12 @@ module Selector : sig
       (** Select whichever set is the default for the given act command. *)
     ]
   [@@deriving sexp]
+  (** [t] is the base element type of the language. *)
 
+  include
+    Property.S with type t := t
   (** This module implements the usual interface for looking up predicate
       documentation. *)
-  include Property.S with type t := t
 
   val eval_b : t Blang.t -> default:Set.t -> Set.t
   (** [eval_b stm ~default] evaluates a [Blang] statement [stm], mapping

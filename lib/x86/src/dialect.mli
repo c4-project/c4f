@@ -52,17 +52,17 @@ open Act_common
 open Base
 open Dialect_intf
 
-(** [Att] describes the AT&T dialect of x86 assembly. *)
 module Att : S
+(** [Att] describes the AT&T dialect of x86 assembly. *)
 
-(** [Gcc] describes the GCC inline assembly dialect of x86 assembly. *)
 module Gcc : S
+(** [Gcc] describes the GCC inline assembly dialect of x86 assembly. *)
 
-(** [Intel] describes the Intel dialect of x86 assembly. *)
 module Intel : S
+(** [Intel] describes the Intel dialect of x86 assembly. *)
 
-(** [Herd7] describes the Herd7 dialect of x86 assembly. *)
 module Herd7 : S
+(** [Herd7] describes the Herd7 dialect of x86 assembly. *)
 
 val find_by_id :
      (Id.t, 'a) List.Assoc.t Lazy.t

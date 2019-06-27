@@ -28,8 +28,8 @@
 open Base
 
 module Input : sig
-  (** Opaque type of assembly command input. *)
   type t
+  (** Opaque type of assembly command input. *)
 
   val act_config : t -> Act_config.Act.t
 

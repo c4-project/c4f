@@ -26,10 +26,10 @@ include Element_intf
 
 module Make (L : Basic) :
   S
-  with type ins = L.Instruction.t
-   and type loc = L.Location.t
-   and type stm = L.Statement.t
-   and type sym = L.Symbol.t = struct
+    with type ins = L.Instruction.t
+     and type loc = L.Location.t
+     and type stm = L.Statement.t
+     and type sym = L.Symbol.t = struct
   type ins = L.Instruction.t
 
   type loc = L.Location.t

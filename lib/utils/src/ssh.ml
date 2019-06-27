@@ -135,9 +135,9 @@ Pb.Runner.Make (struct
       Fpath.t Pb.Copy_spec.t -> string Pb.Copy_spec.t Or_error.t =
     scp_spec
       ~dir_action:(fun ~local ~remote ->
-        Scp.receive ~recurse:true ~remote ~local )
+        Scp.receive ~recurse:true ~remote ~local)
       ~file_action:(fun ~local ~remote ->
-        Scp.receive ~recurse:false ~remote ~local )
+        Scp.receive ~recurse:false ~remote ~local)
 
   let pre (cs_pair : Fpath.t Pb.Copy_spec.Pair.t) :
       string Pb.Copy_spec.Pair.t Or_error.t =
@@ -160,7 +160,7 @@ Pb.Runner.Make (struct
           (try_with (fun () ->
                Shell.ssh_lines "%s %s" prog
                  (String.concat ~sep:" " args)
-                 ~host ?user ))
+                 ~host ?user))
           "Error running remote command via ssh:"
           (host, Option.value ~default:"(default user)" user)
           [%sexp_of: string * string]

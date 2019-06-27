@@ -35,9 +35,9 @@
 
 include module type of Mini_env_intf
 
+module Make (E : Basic) : S
 (** [Make (E)] extends a basic environment module with various functions and
     generators. *)
-module Make (E : Basic) : S
 
 (** {2 Test environments}
 

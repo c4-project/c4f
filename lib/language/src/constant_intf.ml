@@ -32,14 +32,16 @@ open Core_kernel
 (** [Basic] is the interface act languages must implement for constant
     analysis. *)
 module type Basic = sig
-  (** [t] is the type of constants. *)
   type t [@@deriving compare, eq, sexp]
+  (** [t] is the type of constants. *)
 
+  include
+    Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their constants. *)
-  include Pretty_printer.S with type t := t
 
+  include
+    Quickcheck.S with type t := t
   (** Languages must supply a Quickcheck generator for their constants. *)
-  include Quickcheck.S with type t := t
 
   val of_int : int -> t
   (** [of_int] lifts an integer to a constant. *)

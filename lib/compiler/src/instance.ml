@@ -26,7 +26,7 @@ struct
     Pb.Runner.argv_one_file (fun ~input ~output ->
         Or_error.return
           (B.compile_args ~user_args ~arch ~mode ~infile:input
-             ~outfile:output) )
+             ~outfile:output))
 
   let compile (mode : Mode.t) ~(infile : Fpath.t) ~(outfile : Fpath.t) =
     let spec = Spec.With_id.spec B.cspec in

@@ -47,9 +47,9 @@ module type Basic = sig
 
   module Instruction :
     Instruction.Basic
-    with type con = Constant.t
-     and module Loc := Location
-     and module Sym := Symbol
+      with type con = Constant.t
+       and module Loc := Location
+       and module Sym := Symbol
 
   module Statement :
     Statement.Basic with module Ins := Instruction and module Sym := Symbol
@@ -71,9 +71,9 @@ module type S = sig
 
   module Instruction :
     Instruction.S
-    with module Constant = Constant
-     and module Location = Location
-     and module Symbol = Symbol
+      with module Constant = Constant
+       and module Location = Location
+       and module Symbol = Symbol
 
   module Statement : Statement.S with module Instruction = Instruction
 
@@ -81,8 +81,8 @@ module type S = sig
 
   module Element :
     Element.S
-    with type ins = Instruction.t
-     and type loc = Location.t
-     and type stm = Statement.t
-     and type sym = Symbol.t
+      with type ins = Instruction.t
+       and type loc = Location.t
+       and type stm = Statement.t
+       and type sym = Symbol.t
 end

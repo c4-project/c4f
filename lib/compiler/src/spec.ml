@@ -59,7 +59,7 @@ module M = struct
         Fmt.cut f () ;
         Au.My_format.pp_kv f "Command"
           (Fmt.list ~sep:Fmt.sp String.pp)
-          (spec.cmd :: spec.argv) )
+          (spec.cmd :: spec.argv))
 
   let pp_summary =
     let facts spec =

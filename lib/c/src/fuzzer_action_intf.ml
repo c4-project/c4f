@@ -38,8 +38,8 @@ module type Generic = sig
 
   (** Random state on which this action depends. *)
   module Random_state : sig
-    (** The type of any random state on which this action depends. *)
     type t
+    (** The type of any random state on which this action depends. *)
 
     val gen : subject -> t Quickcheck.Generator.t Fuzzer_state.Monad.t
     (** [gen subject] is a stateful computation that, given subject

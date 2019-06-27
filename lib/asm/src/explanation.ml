@@ -45,11 +45,11 @@ let pp_listed_details (name : string) (pp_item : 'b Fmt.t) (f : Formatter.t)
 
 module Make (B : Explanation_intf.Basic) :
   Explanation_intf.S
-  with type elt := B.elt
-   and type context := B.context
-   and type details := B.details
-   and module Abs := B.Abs
-   and module Flag := B.Flag = struct
+    with type elt := B.elt
+     and type context := B.context
+     and type details := B.details
+     and module Abs := B.Abs
+     and module Flag := B.Flag = struct
   type t =
     { original: B.elt
     ; abstract: B.Abs.t
@@ -77,7 +77,7 @@ module Make (B : Explanation_intf.Basic) :
         ~abstract:(fun _ _ _ -> ())
         ~abs_flags:(fun _ _ flags ->
           if not (B.Flag.Set.is_empty flags) then
-            pf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags )
+            pf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags)
         ~details:(fun _ _ -> B.pp_details f))
 
   let pp f t = pp_details B.pp pp_body f (original t, t)
@@ -85,9 +85,9 @@ end
 
 module Make_loc (L : Act_language.Location.S) :
   S
-  with type elt := L.t
-   and type context := Act_abstract.Symbol.Table.t
-   and module Abs := Act_abstract.Location = struct
+    with type elt := L.t
+     and type context := Act_abstract.Symbol.Table.t
+     and module Abs := Act_abstract.Location = struct
   module Flag = Act_abstract.Location.Flag
 
   module Base = struct
@@ -124,9 +124,9 @@ end
 
 module Make_ops (L : Act_language.Instruction.S) :
   S
-  with type elt := L.t
-   and type context := Act_abstract.Symbol.Table.t
-   and module Abs := Act_abstract.Operand.Bundle = struct
+    with type elt := L.t
+     and type context := Act_abstract.Symbol.Table.t
+     and module Abs := Act_abstract.Operand.Bundle = struct
   module Flag = Act_abstract.Operand.Bundle.Flag
 
   module Base = struct
@@ -164,9 +164,9 @@ end
 
 module Make_ins (B : Basic_ins) :
   S
-  with type elt := B.Instruction.t
-   and type context := Act_abstract.Symbol.Table.t
-   and module Abs := Act_abstract.Instruction = struct
+    with type elt := B.Instruction.t
+     and type context := Act_abstract.Symbol.Table.t
+     and module Abs := Act_abstract.Instruction = struct
   module Flag = Act_abstract.Instruction.Flag
 
   module Base = struct
@@ -190,7 +190,7 @@ module Make_ins (B : Basic_ins) :
     let make_location_details ins context =
       let locations = B.Instruction.On_locations.to_list ins in
       List.map locations ~f:(fun original ->
-          B.Loc_expl.make ~context ~original )
+          B.Loc_expl.make ~context ~original)
 
     let make_details ins context =
       { operands= make_operand_details ins context
@@ -237,7 +237,8 @@ module Make_stm (B : Basic_stm) = struct
       match B.Statement.abs_kind stm with
       | Act_abstract.Statement.Kind.Instruction ->
           stm |> B.Statement.On_instructions.to_list
-          |> List.map ~f:(fun original -> B.Ins_expl.make ~original ~context)
+          |> List.map ~f:(fun original ->
+                 B.Ins_expl.make ~original ~context)
       | Blank | Unknown | Directive | Label ->
           []
 
@@ -249,7 +250,7 @@ module Make_stm (B : Basic_stm) = struct
 
     let pp_details f =
       Fields_of_details.Direct.iter ~instructions:(fun _ _ ->
-          pp_instruction_details f )
+          pp_instruction_details f)
 
     include (
       B.Statement :

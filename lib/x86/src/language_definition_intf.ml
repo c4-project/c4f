@@ -27,10 +27,10 @@ module type S = sig
 
   include
     Act_language.Definition.S
-    with type Constant.t = Ast.Operand.t
-     and type Location.t = Ast.Location.t
-     and type Instruction.t = Ast.Instruction.t
-     and type Statement.t = Ast.Statement.t
-     and type Program.t = Ast.t
-     and type Symbol.t = string
+      with type Constant.t = Ast.Operand.t
+       and type Location.t = Ast.Location.t
+       and type Instruction.t = Ast.Instruction.t
+       and type Statement.t = Ast.Statement.t
+       and type Program.t = Ast.t
+       and type Symbol.t = string
 end

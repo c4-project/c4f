@@ -28,16 +28,16 @@
     different, and fills in the common ground. *)
 
 module State_line : sig
-  (** Type of split state lines. *)
   type t =
     { occurrences: int option
           (** Optional number of occurrences for this state. *)
     ; rest: string  (** The (so far unparsed) rest of the state line. *) }
+  (** Type of split state lines. *)
 end
 
+module type Basic = Reader_intf.Basic with type state_line := State_line.t
 (** Synonym for {{!Reader_intf.Basic} Reader_intf.Basic} with [state_line]
     fixed. *)
-module type Basic = Reader_intf.Basic with type state_line := State_line.t
 
-(** Makes an output scraper for the Herdtools7 simulator described in [B]. *)
 module Make (B : Basic) : Act_sim.Reader_intf.S
+(** Makes an output scraper for the Herdtools7 simulator described in [B]. *)

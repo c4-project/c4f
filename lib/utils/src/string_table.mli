@@ -61,8 +61,8 @@ module type S = sig
       an exception if [t] has no string in the table. . *)
 end
 
-(** [Make] lifts a [Table] into a module satisfying [Intf]. *)
 module Make (T : Table) : S with type t := T.t
+(** [Make] lifts a [Table] into a module satisfying [Intf]. *)
 
 (** [Basic_identifiable] is the signature that must be implemented to use
     string tables as [Identifiable]s through [To_identifiable]. *)
@@ -78,12 +78,12 @@ module type Basic_identifiable = sig
   val hash_fold_t : Hash.state -> t -> Hash.state
 end
 
-(** [To_stringable] produces a plain stringable instance given a string
-    table and a comparator. *)
 module To_stringable (T : Basic_identifiable) :
   Stringable.S with type t := T.t
-
-(** [To_identifiable] produces a plain identifiable instance given a string
+(** [To_stringable] produces a plain stringable instance given a string
     table and a comparator. *)
+
 module To_identifiable (T : Basic_identifiable) :
   Identifiable.S_plain with type t := T.t
+(** [To_identifiable] produces a plain identifiable instance given a string
+    table and a comparator. *)

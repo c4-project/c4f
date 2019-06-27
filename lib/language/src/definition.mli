@@ -23,15 +23,15 @@
 
 (** High-level interface to languages supported by act *)
 
-(** @inline *)
 include module type of Definition_intf
+(** @inline *)
 
 (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
 module Make (B : Basic) :
   S
-  with type Constant.t = B.Constant.t
-   and type Location.t = B.Location.t
-   and type Instruction.t = B.Instruction.t
-   and type Program.t = B.Program.t
-   and type Statement.t = B.Statement.t
-   and type Symbol.t = B.Symbol.t
+    with type Constant.t = B.Constant.t
+     and type Location.t = B.Location.t
+     and type Instruction.t = B.Instruction.t
+     and type Program.t = B.Program.t
+     and type Statement.t = B.Statement.t
+     and type Symbol.t = B.Symbol.t

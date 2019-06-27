@@ -27,18 +27,18 @@ open Base
 
 (** [S] is the interface to a fully-built sanitiser. *)
 module type S = sig
-  (** [Lang] is the language over which we are sanitising. *)
   module Lang : Act_language.Definition.S
+  (** [Lang] is the language over which we are sanitising. *)
 
   module Warn :
     Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
 
   module Output :
     Output_intf.S
-    with type listing := Lang.Program.t
-     and type ('w, 'l) program := ('w, 'l) Output.Program.t
-     and type warn_elt := Lang.Element.t
-     and type rmap := Lang.Symbol.R_map.t
+      with type listing := Lang.Program.t
+       and type ('w, 'l) program := ('w, 'l) Output.Program.t
+       and type warn_elt := Lang.Element.t
+       and type rmap := Lang.Symbol.R_map.t
 
   val sanitise :
        ?passes:Set.M(Pass_group).t

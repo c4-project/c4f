@@ -28,18 +28,18 @@ open Act_common
 
 include module type of Language_definition_intf
 
-(** [Att] is a language description for the AT&T dialect of x86. *)
 module Att : S
+(** [Att] is a language description for the AT&T dialect of x86. *)
 
+module Gcc : S
 (** [Gcc] is a language description for the GCC inline-assembly dialect of
     x86. *)
-module Gcc : S
 
-(** [Intel] is a language description for the Intel dialect of x86. *)
 module Intel : S
+(** [Intel] is a language description for the Intel dialect of x86. *)
 
-(** [Herd7] is a language description for the Herd7 dialect of x86. *)
 module Herd7 : S
+(** [Herd7] is a language description for the Herd7 dialect of x86. *)
 
 val of_dialect : Id.t -> (module S) Or_error.t
 (** [of_dialect id] gets the correct [S] module for the dialect with ID

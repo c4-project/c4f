@@ -79,7 +79,7 @@ let make ?(sep = "  ") ?terminator ~header () =
   ; terminator
   ; columns=
       List.init (List.length header) ~f:(fun i ->
-          Column.init (length_at i header) ) }
+          Column.init (length_at i header)) }
 
 let validate_length (table : t) : row Validate.check =
   Validate.booltest
@@ -136,7 +136,7 @@ module Print = struct
     let columns = List.map ~f:Column.to_text_block (columns table) in
     let headered_columns =
       List.map2_exn (header table) columns ~f:(fun h_cell column ->
-          Text_block.(vcat [text h_cell; column]) )
+          Text_block.(vcat [text h_cell; column]))
     in
     Text_block.hcat (headered_columns @ make_terminator table)
 

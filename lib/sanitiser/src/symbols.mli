@@ -35,5 +35,5 @@
 
 module Make (B : Pass_intf.Basic) :
   Pass_intf.S
-  with type t := B.Lang.Program.t list
-   and type 'a ctx := 'a B.Ctx.t
+    with type t := B.Lang.Program.t list
+     and type 'a ctx := 'a B.Ctx.t

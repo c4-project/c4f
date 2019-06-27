@@ -30,8 +30,8 @@ let run_direct ?(oc : Out_channel.t = stdout) (cfg : Act_sim.Spec.t)
   Or_error.tag ~tag:"While running litmus"
     (Plumbing.Runner.Local.run ~oc ~prog argv)
 
-module Make (B : Act_sim.Runner_types.Basic) :
-  Act_sim.Filter.S = Plumbing.Filter.Make_on_runner (struct
+module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Filter.S =
+Plumbing.Filter.Make_on_runner (struct
   module Runner = B.Runner
 
   type aux_i = Act_sim.Arch.t

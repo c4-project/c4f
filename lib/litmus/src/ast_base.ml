@@ -33,8 +33,8 @@ module Pred_elt = struct
 
   module BT :
     Travesty.Bi_traversable_types.S1_right
-    with type 'const t := 'const t
-     and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
+      with type 'const t := 'const t
+       and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
     type nonrec 'const t = 'const t
 
     type left = Id.t
@@ -56,8 +56,8 @@ module Pred_elt = struct
      into Travesty *)
   module On_c_identifiers :
     Travesty.Bi_traversable_types.S1_right
-    with type 'const t = 'const t
-     and type left = Act_common.C_id.t =
+      with type 'const t = 'const t
+       and type left = Act_common.C_id.t =
   Travesty.Bi_traversable.Make1_right (struct
     type nonrec 'const t = 'const t
 
@@ -99,8 +99,8 @@ module Pred = struct
 
   module BT :
     Travesty.Bi_traversable_types.S1_right
-    with type 'const t := 'const t
-     and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
+      with type 'const t := 'const t
+       and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
     type nonrec 'const t = 'const t
 
     type left = Id.t
@@ -133,8 +133,8 @@ module Pred = struct
 
   module On_c_identifiers :
     Travesty.Bi_traversable_types.S1_right
-    with type 'const t = 'const t
-     and type left = Act_common.C_id.t =
+      with type 'const t = 'const t
+       and type left = Act_common.C_id.t =
   Travesty.Bi_traversable.Make1_right (struct
     type nonrec 'const t = 'const t
 
@@ -186,7 +186,7 @@ module Pred = struct
               [%quickcheck.generator:
                 [ `A of [%custom mu]
                 | `B of [%custom mu] * [%custom mu]
-                | `C of [%custom mu] * [%custom mu] ]] ] )
+                | `C of [%custom mu] * [%custom mu] ]] ])
 
     let quickcheck_observer (elt : 'const O.t) : 'const t O.t =
       O.fixed_point (fun mu ->
@@ -195,7 +195,7 @@ module Pred = struct
               [ `A of [%custom mu]
               | `B of [%custom mu] * [%custom mu]
               | `C of [%custom mu] * [%custom mu]
-              | `D of [%custom elt] Pred_elt.t ]] )
+              | `D of [%custom elt] Pred_elt.t ]])
 
     let quickcheck_shrinker (elt : 'const S.t) : 'const t S.t =
       S.fixed_point (fun mu ->
@@ -204,7 +204,7 @@ module Pred = struct
               [ `A of [%custom mu]
               | `B of [%custom mu] * [%custom mu]
               | `C of [%custom mu] * [%custom mu]
-              | `D of [%custom elt] Pred_elt.t ]] )
+              | `D of [%custom elt] Pred_elt.t ]])
   end
 
   include Q
@@ -216,8 +216,8 @@ module Postcondition = struct
 
   module BT :
     Travesty.Bi_traversable_types.S1_right
-    with type 'const t := 'const t
-     and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
+      with type 'const t := 'const t
+       and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
     type nonrec 'const t = 'const t
 
     type left = Id.t
@@ -238,8 +238,8 @@ module Postcondition = struct
 
   module On_c_identifiers :
     Travesty.Bi_traversable_types.S1_right
-    with type 'const t = 'const t
-     and type left = Act_common.C_id.t =
+      with type 'const t = 'const t
+       and type left = Act_common.C_id.t =
   Travesty.Bi_traversable.Make1_right (struct
     type nonrec 'const t = 'const t
 

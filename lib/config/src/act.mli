@@ -21,8 +21,8 @@ open Act_common
 
 include Global_types.S
 
-(** ['t hook] is the type of testing hooks sent to [from_raw]. *)
 type 't hook = 't -> 't option Or_error.t
+(** ['t hook] is the type of testing hooks sent to [from_raw]. *)
 
 (** {2 Constructors} *)
 

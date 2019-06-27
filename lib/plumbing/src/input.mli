@@ -29,11 +29,11 @@
 open Base
 open Stdio
 
-(** Opaque type of inputs. *)
 type t
+(** Opaque type of inputs. *)
 
-(** @inline *)
 include Io_types.Common with type t := t
+(** @inline *)
 
 (** {2 Constructing an input} *)
 

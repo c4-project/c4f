@@ -47,7 +47,7 @@ module Make (E : Basic) : S = struct
                   "Tried to get a random variable from an empty environment"
                     ~here:[%here]]
           | xs ->
-              Quickcheck.Generator.of_list xs )
+              Quickcheck.Generator.of_list xs)
 
     (* It's not clear whether we need a different observer here? *)
     let quickcheck_observer = Ac.C_id.quickcheck_observer
@@ -74,14 +74,15 @@ end
 
 let test_env : Mini_type.t Map.M(Ac.C_id).t Lazy.t =
   lazy
-    (Map.of_alist_exn (module Ac.C_id)
-    Mini_type.(
-          [ (Ac.C_id.of_string "foo", normal Basic.int)
-          ; (Ac.C_id.of_string "bar", pointer_to Basic.atomic_int)
-          ; (Ac.C_id.of_string "barbaz", normal Basic.bool)
-          ; (Ac.C_id.of_string "x", normal Basic.atomic_int)
-          ; (Ac.C_id.of_string "y", normal Basic.atomic_int)
-          ; (Ac.C_id.of_string "blep", pointer_to Basic.int) ]))
+    (Map.of_alist_exn
+       (module Ac.C_id)
+       Mini_type.
+         [ (Ac.C_id.of_string "foo", normal Basic.int)
+         ; (Ac.C_id.of_string "bar", pointer_to Basic.atomic_int)
+         ; (Ac.C_id.of_string "barbaz", normal Basic.bool)
+         ; (Ac.C_id.of_string "x", normal Basic.atomic_int)
+         ; (Ac.C_id.of_string "y", normal Basic.atomic_int)
+         ; (Ac.C_id.of_string "blep", pointer_to Basic.int) ])
 
 let lift_to_lazy_mod (e : Mini_type.t Ac.C_id.Map.t Lazy.t) :
     (module S) Lazy.t =
@@ -90,8 +91,7 @@ let lift_to_lazy_mod (e : Mini_type.t Ac.C_id.Map.t Lazy.t) :
     >>| fun env ->
     ( module Make (struct
       let env = env
-    end)
-    : S ))
+    end) : S ))
 
 let test_env_mod : (module S) Lazy.t = lift_to_lazy_mod test_env
 

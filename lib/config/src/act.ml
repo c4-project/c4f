@@ -77,7 +77,7 @@ module Filterer = struct
         ~(machine_id : Ac.Id.t) : t =
       let qualified_compilers =
         Tx.Alist.map_left new_compilers ~f:(fun compiler_id ->
-            Ac.Id.(machine_id @. compiler_id) )
+            Ac.Id.(machine_id @. compiler_id))
       in
       { ctx with
         disabled_compilers= ctx.disabled_compilers @ qualified_compilers }

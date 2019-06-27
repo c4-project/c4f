@@ -32,8 +32,8 @@ open Core_kernel
 
 (** [Timed1] is a signature for arity-1 things that contain a timestamp. *)
 module type Timed1 = sig
-  (** [t] is the type of something being timed. *)
   type 'a t
+  (** [t] is the type of something being timed. *)
 
   val time_taken : 'a t -> Time.Span.t option
   (** [time_taken t] gets a record of the time spent processing [t]. *)
@@ -52,13 +52,13 @@ module type Timer = sig
   (** [time ()] returns the current time, if this [Timer] supports doing so. *)
 end
 
+module Null_timer : Timer
 (** [Null_timer] is an implemention of [Timer] that returns [None] for each
     invocation of [time]. *)
-module Null_timer : Timer
 
+module Now_timer : Timer
 (** [Now_timer] is an implementation of [Timer] that uses [Time.now] for
     [time]. *)
-module Now_timer : Timer
 
 (** [S] is a signature for containers associating an arbitrary type with a
     timestamp. *)
@@ -81,8 +81,8 @@ module type S = sig
   include Travesty.Traversable_types.S1 with type 'a t := 'a t
 end
 
-(** [Make] makes a [Timer] from a [S]. *)
 module Make (T : Timer) : S
+(** [Make] makes a [Timer] from a [S]. *)
 
 (** Enumeration of different ways in which the timer can work. *)
 module Mode : sig

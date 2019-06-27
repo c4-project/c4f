@@ -126,21 +126,21 @@ module Sizable = struct
 
   include (
     String_table.Make (struct
-        type nonrec t = t
+      type nonrec t = t
 
-        let table =
-          [ (`Add, "add")
-          ; (`Call, "call")
-          ; (`Cmp, "cmp")
-          ; (`Cmpxchg, "cmpxchg")
-          ; (`Mov, "mov")
-          ; (`Pop, "pop")
-          ; (`Push, "push")
-          ; (`Ret, "ret")
-          ; (`Sub, "sub")
-          ; (`Xchg, "xchg")
-          ; (`Xor, "xor") ]
-      end) :
+      let table =
+        [ (`Add, "add")
+        ; (`Call, "call")
+        ; (`Cmp, "cmp")
+        ; (`Cmpxchg, "cmpxchg")
+        ; (`Mov, "mov")
+        ; (`Pop, "pop")
+        ; (`Push, "push")
+        ; (`Ret, "ret")
+        ; (`Sub, "sub")
+        ; (`Xchg, "xchg")
+        ; (`Xor, "xor") ]
+    end) :
       String_table.S with type t := t )
 
   include Act_abstract.Abstractable.Make (struct
@@ -191,13 +191,13 @@ module Sized = struct
 
   include (
     String_table.Make (struct
-        type nonrec t = t
+      type nonrec t = t
 
-        let table =
-          List.map
-            ~f:(fun ((op, ops), (sz, szs)) -> ((op, sz), ops ^ szs))
-            (List.cartesian_product Sizable.table Size.Suffix_table.table)
-      end) :
+      let table =
+        List.map
+          ~f:(fun ((op, ops), (sz, szs)) -> ((op, sz), ops ^ szs))
+          (List.cartesian_product Sizable.table Size.Suffix_table.table)
+    end) :
       String_table.S with type t := t )
 
   include Act_abstract.Abstractable.Make (struct
@@ -224,12 +224,12 @@ module Basic = struct
 
   include (
     String_table.Make (struct
-        type nonrec t = t
+      type nonrec t = t
 
-        let table =
-          (Sizable.table :> (t, string) List.Assoc.t)
-          @ [(`Leave, "leave"); (`Mfence, "mfence"); (`Nop, "nop")]
-      end) :
+      let table =
+        (Sizable.table :> (t, string) List.Assoc.t)
+        @ [(`Leave, "leave"); (`Mfence, "mfence"); (`Nop, "nop")]
+    end) :
       String_table.S with type t := t )
 
   include Act_abstract.Abstractable.Make (struct
@@ -304,15 +304,15 @@ module Condition = struct
 
   include (
     String_table.Make (struct
-        type nonrec t = t
+      type nonrec t = t
 
-        let table =
-          List.bind ~f:build_inv_condition Inv_table.table
-          @ [ (`CXZero, "cxz")
-            ; (`ECXZero, "ecxz")
-            ; (`ParityEven, "pe")
-            ; (`ParityOdd, "po") ]
-      end) :
+      let table =
+        List.bind ~f:build_inv_condition Inv_table.table
+        @ [ (`CXZero, "cxz")
+          ; (`ECXZero, "ecxz")
+          ; (`ParityEven, "pe")
+          ; (`ParityOdd, "po") ]
+    end) :
       String_table.S with type t := t )
 end
 
@@ -322,13 +322,13 @@ module Jump = struct
 
   include (
     String_table.Make (struct
-        type nonrec t = t
+      type nonrec t = t
 
-        (* Jump instructions are always jC for some condition C, except jmp. *)
-        let f (x, s) = (`Conditional x, "j" ^ s)
+      (* Jump instructions are always jC for some condition C, except jmp. *)
+      let f (x, s) = (`Conditional x, "j" ^ s)
 
-        let table = (`Unconditional, "jmp") :: List.map ~f Condition.table
-      end) :
+      let table = (`Unconditional, "jmp") :: List.map ~f Condition.table
+    end) :
       String_table.S with type t := t )
 
   include Act_abstract.Abstractable.Make (struct

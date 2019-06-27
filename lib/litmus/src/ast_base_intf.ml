@@ -33,15 +33,15 @@ module Id = Act_common.Litmus_id
 
 (** Signature of operations that can be used on Litmus predicate elements. *)
 module type S_pred_elt = sig
-  (** Type of identifiers. *)
   type id
+  (** Type of identifiers. *)
 
-  (** Type of constants, possibly parametrised directly. *)
   type 'const elt
+  (** Type of constants, possibly parametrised directly. *)
 
+  type 'const t
   (** Type of predicate elements, possibly parametrised directly by language
       constants. *)
-  type 'const t
 
   val ( ==? ) : id -> 'const elt -> 'const t
   (** [l ==? r] constructs an equality constraint. *)
@@ -49,13 +49,13 @@ end
 
 (** Signature of operations that can be used on Litmus predicates. *)
 module type S_pred = sig
+  type 'const t
   (** Type of predicates, possibly parametrised directly by language
       constants. *)
-  type 'const t
 
+  type 'const elt
   (** Type of predicate elements, possibly parametrised directly by language
       constants. *)
-  type 'const elt
 
   val ( || ) : 'const t -> 'const t -> 'const t
   (** [l || r] constructs a disjunction. *)
@@ -75,13 +75,13 @@ end
 
 (** Signature of operations that can be used on Litmus postconditions. *)
 module type S_postcondition = sig
+  type 'const t
   (** Type of postconditions, possibly parametrised directly by language
       constants. *)
-  type 'const t
 
+  type 'const pred
   (** Type of predicates, possibly parametrised directly by language
       constants. *)
-  type 'const pred
 
   val make : quantifier:[`Exists] -> predicate:'const pred -> 'const t
   (** [make ~quantifier ~predicate] constructs a postcondition. *)

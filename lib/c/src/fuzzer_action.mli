@@ -40,14 +40,15 @@ module Adjusted_weight : sig
     | Adjusted of {original: int; actual: int}
         (** The weight has changed from [original] to [actual]. *)
 
+  include
+    Pretty_printer.S with type t := t
   (** Adjusted weights may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
 end
 
 (** A summary of a fuzzer action after weight adjustment. *)
 module Summary : sig
-  (** Opaque type of summaries. *)
   type t
+  (** Opaque type of summaries. *)
 
   val weight : t -> Adjusted_weight.t
   (** [weight summary] gets the final 'adjusted' weight of the action
@@ -56,14 +57,15 @@ module Summary : sig
   val readme : t -> string
   (** [readme summary] gets the README of the action described by [summary]. *)
 
+  include
+    Pretty_printer.S with type t := t
   (** Summaries may be pretty-printed. *)
-  include Pretty_printer.S with type t := t
 end
 
 (** A weighted pool of fuzzer actions. *)
 module Pool : sig
-  (** Action lists are just weighted lists of first-class action modules. *)
   type t
+  (** Action lists are just weighted lists of first-class action modules. *)
 
   val make : (module S) list -> Act_config.Fuzz.t -> t Or_error.t
   (** [make actions config] tries to make a weighted action pool by taking

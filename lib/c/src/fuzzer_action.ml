@@ -126,8 +126,7 @@ module Pool = struct
   let summarise : t -> Summary.t Id.Map.t =
     Weighted_list.fold ~init:Id.Map.empty
       ~f:(fun map (module M : S) user_weight ->
-        Map.set map ~key:M.name ~data:(Summary.make (module M) user_weight)
-    )
+        Map.set map ~key:M.name ~data:(Summary.make (module M) user_weight))
 
   module W = Weighted_list.On_monad (struct
     include Fuzzer_state.Monad

@@ -28,11 +28,11 @@ open Core
 (** Signature of modules describing argument bundles that include the
     standard arguments. *)
 module type S_standard = sig
-  (** A record collecting the standard argument values. *)
   type t
+  (** A record collecting the standard argument values. *)
 
-  (** The standard arguments record type, used by [as_standard_args]. *)
   type s
+  (** The standard arguments record type, used by [as_standard_args]. *)
 
   val as_standard_args : t -> s
   (** [as_standard_args args] restricts [args] to the 'standard arguments'
@@ -60,8 +60,8 @@ end
 (** Signature of modules describing argument bundles that include the
     standard and standard-file arguments. *)
 module type S_standard_with_files = sig
-  (** Opaque type of processed argument records. *)
   type t
+  (** Opaque type of processed argument records. *)
 
   include S_standard with type t := t
 
@@ -99,8 +99,8 @@ end
 (** Signature of modules describing argument bundles that include the
     standard `act asm` arguments. *)
 module type S_standard_asm = sig
-  (** Opaque type of processed argument records. *)
   type t
+  (** Opaque type of processed argument records. *)
 
   include S_standard_with_files with type t := t
 

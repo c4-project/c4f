@@ -46,7 +46,8 @@ Hashable.Make (struct
   include Make_compare_hash_basic (E)
 end)
 
-module Make_quickcheck (E : S_sexp) : My_quickcheck.S_with_sexp with type t := E.t = struct
+module Make_quickcheck (E : S_sexp) :
+  My_quickcheck.S_with_sexp with type t := E.t = struct
   let sexp_of_t = E.sexp_of_t
 
   module G = Quickcheck.Generator
@@ -71,7 +72,7 @@ module Make_from_enumerate (E : S_enumerate) : S with type t := E.t = struct
 
   let to_enum elt =
     List.find_mapi_exn E.all ~f:(fun i elt' ->
-        Option.some_if (E.equal elt elt') i )
+        Option.some_if (E.equal elt elt') i)
 
   let of_enum = List.nth E.all
 end
@@ -114,18 +115,21 @@ struct
 
   module Id : Identifiable.S_common with type t := E.t =
     String_table.To_identifiable (Basic_id)
+
   include Id
 
   include Plumbing.Jsonable.Of_stringable (struct
-      type t = E.t
-      include Id
-    end)
+    type t = E.t
+
+    include Id
+  end)
 
   (* Identifiable, for some reason, doesn't contain both sides of sexp
      conversion, so we have to manually retrieve [t_of_sexp] ourselves. *)
   module Sexp = struct
     module Sexp = Sexpable.Of_stringable (struct
       type t = E.t
+
       include Id
     end)
 

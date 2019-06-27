@@ -28,5 +28,5 @@
 
 open Instance_intf
 
-(** [Make] implements the assembly sanitiser for a given hook. *)
 module Make (H : Hook_intf.S) : S with module Lang := H.Lang
+(** [Make] implements the assembly sanitiser for a given hook. *)

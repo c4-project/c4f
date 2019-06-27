@@ -23,8 +23,8 @@
 
 (** x86-specific functionality for act's sanitiser *)
 
+module Make (L : Language_definition.S) :
+  Act_sanitiser.Hook_intf.S with module Lang = L
 (** [Make] implements x86-specific sanitisation passes. It requires an
     [Language_definition.S] module to tell it things about the current x86
     dialect (for example, the order of operands). *)
-module Make (L : Language_definition.S) :
-  Act_sanitiser.Hook_intf.S with module Lang = L

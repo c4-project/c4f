@@ -190,7 +190,7 @@ module Intel_and_herd7 = struct
              in
              if plus_between_bis_d then char f '+' ;
              let show_zero = Option.(is_none in_base && is_none in_index) in
-             option (Common.pp_disp ~show_zero) f in_disp )))
+             option (Common.pp_disp ~show_zero) f in_disp)))
 
   let pp_immediate = Common.pp_disp ~show_zero:true
 end

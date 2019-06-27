@@ -23,5 +23,5 @@
 
 (** Simulation output reader for Herd7. *)
 
-(** @inline *)
 include Act_sim.Reader_intf.S
+(** @inline *)

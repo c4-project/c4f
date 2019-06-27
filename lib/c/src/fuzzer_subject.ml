@@ -71,7 +71,7 @@ module Program = struct
 
   module Stm_list_path :
     Mini_path.S_statement_list
-    with type target = Mini.Statement.t With_source.t =
+      with type target = Mini.Statement.t With_source.t =
     Mini_path.Make_statement_list (Stm_path)
 
   module Path : Mini_path.S_function with type target := t = struct
@@ -107,7 +107,7 @@ module Program = struct
     { decls= Mini.Function.body_decls func
     ; stms=
         List.map (Mini.Function.body_stms func) ~f:(fun item ->
-            With_source.make ~item ~source:`Existing ) }
+            With_source.make ~item ~source:`Existing) }
 
   let try_extract_parameter_type
       ((n, var) : Ac.C_id.t * Fuzzer_var.Record.t) :
@@ -158,7 +158,7 @@ module Test = struct
       let prog_gens =
         List.mapi test.programs ~f:(fun index prog ->
             Quickcheck.Generator.map (Program.Path.gen_insert_stm prog)
-              ~f:(fun rest -> Mini_path.On_program {index; rest}) )
+              ~f:(fun rest -> Mini_path.On_program {index; rest}))
       in
       Quickcheck.Generator.union prog_gens
 
@@ -172,7 +172,7 @@ module Test = struct
           let programs = test.programs in
           let%map programs' =
             Tx.List.With_errors.replace_m programs index ~f:(fun func ->
-                func |> f rest >>| Option.some )
+                func |> f rest >>| Option.some)
           in
           {test with programs= programs'}
 

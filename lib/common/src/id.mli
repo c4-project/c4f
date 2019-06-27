@@ -28,8 +28,8 @@
 
 open Core_kernel
 
-(** [t] is the type of compiler and machine identifiers. *)
 type t
+(** [t] is the type of compiler and machine identifiers. *)
 
 (** {2 Constructing identifiers}
 
@@ -80,8 +80,9 @@ val try_find_assoc_with_suggestions_prefix :
     [assoc] whose ID is a prefix of [id], and returns that ID alongside the
     result. *)
 
+include
+  Identifiable.S with type t := t
 (** We can use [t] as an [Identifiable]. *)
-include Identifiable.S with type t := t
 
 (** {2 Operators for building identifiers} *)
 
@@ -106,11 +107,11 @@ val pp_map : 'e Fmt.t -> 'e Map.t Fmt.t
 (** [Property] contains a mini-language for querying IDs, suitable for use
     in [Blang]. *)
 module Property : sig
-  (** [id] is a synonym for the identifier type. *)
   type id = t
+  (** [id] is a synonym for the identifier type. *)
 
-  (** [t] is the opaque type of property queries. *)
   type t [@@deriving sexp]
+  (** [t] is the opaque type of property queries. *)
 
   val has_tag : string -> t
   (** [has_tag s str] constructs a membership test over a string [str]. *)

@@ -43,7 +43,7 @@ module Make (B : Basic) = struct
       ~fst:(fun c ->
         Validate.name
           (Printf.sprintf "char '%c'" c)
-          (B.validate_initial_char c) )
+          (B.validate_initial_char c))
       ~snd:
         (Validate.list ~name:(Printf.sprintf "char '%c'") B.validate_char)
 
@@ -115,7 +115,7 @@ module Q : Quickcheck.S with type t := t = struct
     Quickcheck.Shrinker.create (fun ident ->
         ident |> raw
         |> Quickcheck.Shrinker.shrink String.quickcheck_shrinker
-        |> Sequence.filter_map ~f:(Fn.compose Result.ok create) )
+        |> Sequence.filter_map ~f:(Fn.compose Result.ok create))
 end
 
 include Q
@@ -164,7 +164,7 @@ module Herd_safe = struct
       Quickcheck.Shrinker.create (fun ident ->
           ident |> raw
           |> Quickcheck.Shrinker.shrink String.quickcheck_shrinker
-          |> Sequence.filter_map ~f:(Fn.compose Result.ok create) )
+          |> Sequence.filter_map ~f:(Fn.compose Result.ok create))
   end
 
   include Q

@@ -27,11 +27,11 @@ open Base
 
 (** [S] is the interface to the warnings emitted by the sanitiser. *)
 module type S = sig
-  (** [elt] is the type of elements being warned about. *)
   type elt
+  (** [elt] is the type of elements being warned about. *)
 
-  (** [t] is the opaque type of warnings. *)
   type t
+  (** [t] is the opaque type of warnings. *)
 
   val program_name : t -> string
   (** [program_name warn] gets the name of the program [warn] concerns. *)

@@ -33,8 +33,8 @@
 
 open Core_kernel
 
-(** Opaque type of weighted lists, parametrised on value. *)
 type 'a t [@@deriving sexp_of, quickcheck]
+(** Opaque type of weighted lists, parametrised on value. *)
 
 (** {2 Constructors} *)
 
@@ -89,11 +89,11 @@ val iter : 'a t -> f:('a -> int -> unit) -> unit
 (** Type of weighted lists that have been re-arranged to list weights
     cumulatively. *)
 module Cumulative : sig
-  (** Synonym for weighted lists. *)
   type 'a w = 'a t
+  (** Synonym for weighted lists. *)
 
-  (** Opaque type of cumulative lists. *)
   type 'a t [@@deriving sexp_of]
+  (** Opaque type of cumulative lists. *)
 
   val of_weighted_list : 'a w -> 'a t Or_error.t
   (** [of_weighted_list wl] converts [wl] to a cumulative list. It fails if

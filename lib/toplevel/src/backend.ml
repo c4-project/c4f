@@ -22,5 +22,4 @@ let command : Command.t =
   Command.group ~summary:"commands for dealing with test backends" ~readme
     [ ("make-harness", Backend_make_harness.command)
     ; ("parse", Backend_parse.command)
-    ; ("run", Backend_run.command)
-    ]
+    ; ("run", Backend_run.command) ]

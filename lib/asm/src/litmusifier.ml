@@ -52,13 +52,13 @@ end
 
 module Make (B : Runner_intf.Basic) :
   S
-  with type config = Config.t
-   and type fmt = Format.t
-   and type program =
-              ( B.Src_lang.Element.t
-              , B.Src_lang.Program.t )
-              Act_sanitiser.Output.Program.t
-   and module Redirect := B.Src_lang.Symbol.R_map = struct
+    with type config = Config.t
+     and type fmt = Format.t
+     and type program =
+          ( B.Src_lang.Element.t
+          , B.Src_lang.Program.t )
+          Act_sanitiser.Output.Program.t
+     and module Redirect := B.Src_lang.Symbol.R_map = struct
   type config = Config.t
 
   type fmt = Format.t

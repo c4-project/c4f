@@ -20,7 +20,7 @@ let%test_module "variable_of" =
         (module Act_c.Mini_address)
         ~f:(fun x ->
           [%test_eq: Act_common.C_id.t] ~here:[[%here]] (variable_of x)
-            (variable_of (ref x)) )
+            (variable_of (ref x)))
 
     let%expect_test "variable_of: nested example" =
       let example =
@@ -64,7 +64,7 @@ let%test_unit "on_address_of_typed_id: always takes pointer type" =
       [%test_result: Act_c.Mini_type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of (on_address_of_typed_id ~id ~ty))
         ~expect:
-          (Or_error.return Act_c.Mini_type.(pointer_to (basic_type ty))) )
+          (Or_error.return Act_c.Mini_type.(pointer_to (basic_type ty))))
 
 let variable_in (module E : Act_c.Mini_env.S) (l : t) : bool =
   Act_common.C_id.Map.mem E.env (variable_of l)
@@ -108,4 +108,4 @@ let%test_unit "Quickcheck_int_values: generated lvalues have '*atomic_int' \
       [%test_result: Act_c.Mini_type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of lv)
         ~expect:
-          (Or_error.return Act_c.Mini_type.(pointer_to Basic.atomic_int)) )
+          (Or_error.return Act_c.Mini_type.(pointer_to Basic.atomic_int)))

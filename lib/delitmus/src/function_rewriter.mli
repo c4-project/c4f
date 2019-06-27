@@ -20,10 +20,10 @@ module type S = sig
       mappings in [context] to resolve lifted locals. *)
 end
 
+module Vars_as_globals : S
 (** Function rewriter for the 'vars as globals' flavour of delitmus. It
     lowers all global references from pointers to values. *)
-module Vars_as_globals : S
 
+module Vars_as_parameters : S
 (** Function rewriter for the 'vars as parameters' flavour of delitmus. It
     raises all local references from values to pointers. *)
-module Vars_as_parameters : S

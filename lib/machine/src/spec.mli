@@ -37,19 +37,20 @@ module With_id : sig
 end
 
 (** Machine specifications are specifications. *)
-include Act_common.Spec.S with type t := t and module With_id := With_id
+include
+  Act_common.Spec.S with type t := t and module With_id := With_id
 
 (** We can monadically traverse the compiler specification sets in a machine
     specification. (Technically, there is only one, but phrasing it as a
     traversable helps us compose it to form {{!On_compilers} On_compilers}.) *)
 module On_compiler_set :
   Travesty.Traversable_types.S0
-  with type t = t
-   and type Elt.t = Act_compiler.Spec.Set.t
+    with type t = t
+     and type Elt.t = Act_compiler.Spec.Set.t
 
 (** We can monadically traverse the compiler specifications in a machine
     specification. *)
 module On_compilers :
   Travesty.Traversable_types.S0
-  with type t = t
-   and type Elt.t = Act_compiler.Spec.t
+    with type t = t
+     and type Elt.t = Act_compiler.Spec.t

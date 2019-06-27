@@ -77,7 +77,8 @@ end
 module With_id = struct
   include Ac.Spec.With_id (M)
 
-  include Forward_basic_spec (struct
+  include Forward_basic_spec
+            (struct
               type nonrec t = t
 
               type c = M.t
@@ -106,8 +107,8 @@ include (
 
 module On_compiler_set :
   Travesty.Traversable_types.S0
-  with type t = M.t
-   and type Elt.t = C_spec.Set.t = Travesty.Traversable.Make0 (struct
+    with type t = M.t
+     and type Elt.t = C_spec.Set.t = Travesty.Traversable.Make0 (struct
   type t = M.t
 
   module Elt = C_spec.Set

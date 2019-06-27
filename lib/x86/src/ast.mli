@@ -113,8 +113,8 @@ module Operand : sig
       an operand. *)
   module On_locations :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Location.t
+      with type t = t
+       and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       operand. *)
@@ -126,18 +126,18 @@ type prefix = PreLock [@@deriving sexp]
 
 (** [Instruction] contains the instruction type and related operations. *)
 module Instruction : sig
-  (** [t] is the type of instructions (and instruction-like things, such as
-      directives). *)
   type t =
     {prefix: prefix option; opcode: Opcode.t; operands: Operand.t list}
   [@@deriving sexp, equal, make]
+  (** [t] is the type of instructions (and instruction-like things, such as
+      directives). *)
 
   (** [On_locations] permits enumerating and folding over locations inside
       an instruction. *)
   module On_locations :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Location.t
+      with type t = t
+       and type Elt.t = Location.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside an
       instruction. *)
@@ -175,8 +175,8 @@ module Statement : sig
       inside a statement. *)
   module On_instructions :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Instruction.t
+      with type t = t
+       and type Elt.t = Instruction.t
 
   (** [On_symbols] permits enumerating and folding over symbols inside a
       statement. *)
@@ -189,8 +189,8 @@ module Statement : sig
     Travesty.Traversable_types.S0 with type t = t and type Elt.t = Reg.t
 end
 
-(** Opaque type of dialect-tagged abstract syntax trees. *)
 type t [@@deriving sexp, equal]
+(** Opaque type of dialect-tagged abstract syntax trees. *)
 
 val make : ?program:Statement.t list -> dialect:Id.t -> unit -> t
 (** [make ?program ~dialect ()] makes an AST with program [program]
@@ -211,8 +211,8 @@ val with_dialect_id : t -> id:Act_common.Id.t -> t
 (** Traversing over the statement list in a [t] *)
 module On_listings :
   Travesty.Traversable_types.S0
-  with type t = t
-   and type Elt.t = Statement.t list
+    with type t = t
+     and type Elt.t = Statement.t list
 
 (** Traversing over all statements in a [t] *)
 module On_statements :

@@ -119,8 +119,8 @@ end
 
 (** Variable maps *)
 module Map : sig
-  (** Variable maps associate C identifiers with records. *)
   type t = Record.t Act_common.C_id.Map.t
+  (** Variable maps associate C identifiers with records. *)
 
   (** {3 Constructors} *)
 

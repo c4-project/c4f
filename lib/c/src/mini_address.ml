@@ -57,8 +57,8 @@ let normalise (addr : t) : t =
 
 module On_lvalues :
   Travesty.Traversable_types.S0
-  with type t = t
-   and type Elt.t = Mini_lvalue.t = Travesty.Traversable.Make0 (struct
+    with type t = t
+     and type Elt.t = Mini_lvalue.t = Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = Mini_lvalue
@@ -103,13 +103,13 @@ end = struct
     Observer.(
       fixed_point (fun mu ->
           unmap ~f:anonymise
-            [%quickcheck.observer: [`A of Lv.t | `B of [%custom mu]]] ))
+            [%quickcheck.observer: [`A of Lv.t | `B of [%custom mu]]]))
 
   let quickcheck_shrinker : t Shrinker.t =
     Shrinker.(
       fixed_point (fun mu ->
           map ~f:deanonymise ~f_inverse:anonymise
-            [%quickcheck.shrinker: [`A of Lv.t | `B of [%custom mu]]] ))
+            [%quickcheck.shrinker: [`A of Lv.t | `B of [%custom mu]]]))
 end
 
 module Quickcheck_main = Quickcheck_generic (Mini_lvalue)

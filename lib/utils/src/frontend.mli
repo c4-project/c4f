@@ -47,5 +47,5 @@ module type Basic = sig
   val message : int -> string
 end
 
-(** [Make] lifts an instance of [B] into a frontend. *)
 module Make (B : Basic) : Plumbing.Loadable_types.S with type t = B.ast
+(** [Make] lifts an instance of [B] into a frontend. *)

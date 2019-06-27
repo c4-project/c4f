@@ -117,7 +117,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
   let warn_erroneous_operands ins abs_operands =
     Ctx_List.iter_m (Act_abstract.Operand.Bundle.errors abs_operands)
       ~f:(fun error ->
-        Ctx.warn (Lang.Element.Operands ins) (Warn.erroneous error) )
+        Ctx.warn (Lang.Element.Operands ins) (Warn.erroneous error))
 
   (** [warn_unsupported_operands stm] emits warnings for each instruction in
       [stm] whose operands don't have a high-level analysis, or are
@@ -239,8 +239,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
           let open Ctx.Let_syntax in
           let%bind prog' = f prog in
           let len' = Lang.Program.On_statements.length prog' in
-          if len = len' then Ctx.return (prog', len') else mu (prog', len')
-          )
+          if len = len' then Ctx.return (prog', len') else mu (prog', len'))
         (prog, -1)
       >>| fst)
 
@@ -308,7 +307,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
     let%bind lbl = Ctx.make_fresh_label prefix in
     let%map () = Ctx.set_end_label lbl in
     Lang.Program.On_listings.map prog ~f:(fun s ->
-        s @ [Lang.Statement.label lbl] )
+        s @ [Lang.Statement.label lbl])
 
   (** [add_end_label] adds an end-of-program label to the current program. *)
   let add_end_label (prog : Lang.Program.t) : Lang.Program.t Ctx.t =
@@ -367,7 +366,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
     all_symbols
     |> List.concat_map ~f:(fun dst ->
            List.map (Lang.Symbol.abstract_demangle dst) ~f:(fun src ->
-               (src, dst) ) )
+               (src, dst)))
     |> String.Map.of_alist_reduce ~f:(fun _ y -> y)
 
   let warn_missing_redirect () : Info.t =
@@ -396,7 +395,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
     Ctx.unless_m (Set.is_empty symbols) ~f:(fun () ->
         let mangle_map = make_mangle_map progs in
         Ctx_List.iter_m (Set.to_list symbols)
-          ~f:(find_initial_redirect mangle_map) )
+          ~f:(find_initial_redirect mangle_map))
 
   let build_single_program_output i listing : Output.Program.t Ctx.t =
     let name = program_name i listing in

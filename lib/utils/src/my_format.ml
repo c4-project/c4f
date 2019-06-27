@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-let null_formatter () = Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
+let null_formatter () =
+  Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
 
 let pp_c_braces (pi : 'a Fmt.t) : 'a Fmt.t =
   Fmt.(

@@ -43,9 +43,9 @@ module type S = sig
     include Enum.Extension_table with type t := t
   end
 
+  module Flag : Flag_enum.S
   (** [Flag] is a (potentially unpopulated) set of additional flags that can
       be attached to an observation. *)
-  module Flag : Flag_enum.S
 
   val kind : t -> Kind.t
   (** [kind x] gets the underlying kind of [x]. *)

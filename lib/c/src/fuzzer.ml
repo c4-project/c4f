@@ -71,7 +71,7 @@ let%test_unit "random_index is always in bounds" =
            | None ->
                List.is_empty xs
            | Some i ->
-               Option.is_some (List.nth xs i) ))
+               Option.is_some (List.nth xs i)))
 
 (** [random_item srng xs] behaves like
     {{!List.random_element} List.random_element}, but uses a splittable RNG
@@ -97,7 +97,7 @@ let%test_unit "random_item is always a valid item" =
            | None ->
                List.is_empty xs
            | Some x ->
-               List.mem ~equal:Int.equal xs x ))
+               List.mem ~equal:Int.equal xs x))
 
 (** Shorthand for stating that a fuzzer action is always available. *)
 let always : Subject.Test.t -> bool State.Monad.t =
@@ -213,7 +213,7 @@ let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
   run_action action subject rng
   >>= State.Monad.tee_m ~f:(fun _ ->
           Ac.Output.pv o "fuzz: action done.@." ;
-          State.Monad.return () )
+          State.Monad.return ())
 
 let make_pool : Act_config.Fuzz.t -> Action.Pool.t Or_error.t =
   Action.Pool.make (Lazy.force modules)
@@ -232,7 +232,7 @@ let mutate_subject (subject : Subject.Test.t) ~(config : Act_config.Fuzz.t)
           if Int.(remaining = 0) then return (remaining, subject')
           else
             let%bind subject'' = mutate_subject_step pool subject' rng in
-            mu (remaining - 1, subject'') )
+            mu (remaining - 1, subject''))
     in
     subject')
 
@@ -247,7 +247,7 @@ let run_with_state (test : Mini_litmus.Ast.Validated.t)
   let%bind subject' = mutate_subject subject ~config ~rng in
   State.Monad.with_vars_m (fun vars ->
       State.Monad.Monadic.return
-        (Subject.Test.to_litmus ~vars ~name ?postcondition subject') )
+        (Subject.Test.to_litmus ~vars ~name ?postcondition subject'))
 
 (** [get_first_func test] tries to get the first function in a validated
     litmus AST [test]. *)

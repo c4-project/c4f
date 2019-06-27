@@ -95,17 +95,24 @@ let to_non_atomic : t -> t Or_error.t = function
 
 module Str = struct
   type nonrec t = t
+
   let to_string : t -> string = function
-    | Normal k -> Basic.to_string k
-    | Pointer_to k -> "*" ^ Basic.to_string k
+    | Normal k ->
+        Basic.to_string k
+    | Pointer_to k ->
+        "*" ^ Basic.to_string k
 
   let of_string (str : string) : t =
-    if String.is_suffix str ~suffix:"*"
-    then Pointer_to (Basic.of_string (String.drop_suffix str 1))
+    if String.is_suffix str ~suffix:"*" then
+      Pointer_to (Basic.of_string (String.drop_suffix str 1))
     else Normal (Basic.of_string str)
 end
+
 include (Str : Stringable.S with type t := t)
-module Json : Plumbing.Jsonable_types.S with type t := t = Plumbing.Jsonable.Of_stringable (Str)
+
+module Json : Plumbing.Jsonable_types.S with type t := t =
+  Plumbing.Jsonable.Of_stringable (Str)
+
 include Json
 
 let%test_unit "basic_type_is compatibility with basic_type" =
@@ -113,4 +120,4 @@ let%test_unit "basic_type_is compatibility with basic_type" =
     (module M)
     ~f:
       ([%test_pred: t] ~here:[[%here]] (fun t ->
-           basic_type_is t ~basic:(basic_type t) ))
+           basic_type_is t ~basic:(basic_type t)))

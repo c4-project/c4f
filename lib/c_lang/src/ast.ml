@@ -71,11 +71,11 @@ module Parametric = struct
     module type S = S_g_decl
 
     module type Basic = sig
-      (** Type of qualifiers. *)
       module Qual : Ast_node
+      (** Type of qualifiers. *)
 
-      (** Type of declarators. *)
       module Decl : Ast_node
+      (** Type of declarators. *)
     end
 
     module Make (B : Basic) :
@@ -137,9 +137,9 @@ module Parametric = struct
 
     module Make (B : Basic) :
       S
-      with type dec := B.Dec.t
-       and type par := B.Par.t
-       and type expr := B.Expr.t = struct
+        with type dec := B.Dec.t
+         and type par := B.Par.t
+         and type expr := B.Expr.t = struct
       type t =
         | Id of Identifier.t
         | Bracket of B.Dec.t
@@ -211,9 +211,9 @@ module Parametric = struct
 
     module Make (B : Basic) :
       S
-      with type dec := B.Dec.t
-       and type par := B.Par.t
-       and type expr := B.Expr.t = struct
+        with type dec := B.Dec.t
+         and type par := B.Par.t
+         and type expr := B.Expr.t = struct
       type t =
         | Bracket of B.Dec.t
         | Array of (t option, B.Expr.t option) Array.t
@@ -384,9 +384,9 @@ module Parametric = struct
 
     module Make (B : Basic) :
       S
-      with type com := B.Com.t
-       and type expr := B.Expr.t
-       and type lbl := B.Lbl.t = struct
+        with type com := B.Com.t
+         and type expr := B.Expr.t
+         and type lbl := B.Lbl.t = struct
       type t =
         | Label of B.Lbl.t * t
         | Expr of B.Expr.t option
@@ -501,8 +501,8 @@ end)
 
 and Struct_decl :
   (S_g_decl
-  with type qual := Spec_or_qual.t
-   and type decl := Struct_declarator.t list) =
+    with type qual := Spec_or_qual.t
+     and type decl := Struct_declarator.t list) =
 Parametric.G_decl.Make (struct
   module Qual = Spec_or_qual
   module Decl = List_of (Struct_declarator) (Space)
@@ -510,8 +510,8 @@ end)
 
 and Type_spec :
   (S_type_spec
-  with type su := Struct_or_union_spec.t
-   and type en := Enum_spec.t) = struct
+    with type su := Struct_or_union_spec.t
+     and type en := Enum_spec.t) = struct
   type t =
     [ Prim_type.t
     | `Struct_or_union of Struct_or_union_spec.t
@@ -546,7 +546,8 @@ end
 
 and Decl_spec :
   (Ast_node
-  with type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t]) = struct
+    with type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t]) =
+struct
   type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t]
   [@@deriving sexp_of, eq, compare]
 
@@ -565,8 +566,8 @@ end
 
 and Type_name :
   (S_g_decl
-  with type qual := Spec_or_qual.t
-   and type decl := Abs_declarator.t option) =
+    with type qual := Spec_or_qual.t
+     and type decl := Abs_declarator.t option) =
 Parametric.G_decl.Make (struct
   module Qual = Spec_or_qual
   module Decl = Optional (Abs_declarator)
@@ -574,8 +575,9 @@ end)
 
 and Struct_or_union_spec :
   (S_composite_spec
-  with type kind := [`Struct | `Union]
-   and type decl := Struct_decl.t) = Parametric.Composite_spec.Make (struct
+    with type kind := [`Struct | `Union]
+     and type decl := Struct_decl.t) =
+Parametric.Composite_spec.Make (struct
   module Kind = struct
     type t = [`Struct | `Union] [@@deriving sexp, eq, compare]
 
@@ -593,10 +595,9 @@ end)
 
 and Param_decl :
   (S_g_decl
-  with type qual := Decl_spec.t
-   and type decl :=
-              [ `Concrete of Declarator.t
-              | `Abstract of Abs_declarator.t option ]) =
+    with type qual := Decl_spec.t
+     and type decl :=
+          [`Concrete of Declarator.t | `Abstract of Abs_declarator.t option]) =
 Parametric.G_decl.Make (struct
   module Qual = Decl_spec
 
@@ -619,9 +620,9 @@ and Param_type_list :
 
 and Direct_declarator :
   (S_direct_declarator
-  with type dec := Declarator.t
-   and type par := Param_type_list.t
-   and type expr := Expr.t) = Parametric.Direct_declarator.Make (struct
+    with type dec := Declarator.t
+     and type par := Param_type_list.t
+     and type expr := Expr.t) = Parametric.Direct_declarator.Make (struct
   module Dec = Declarator
   module Par = Param_type_list
   module Expr = Expr
@@ -633,17 +634,18 @@ and Declarator :
 
 and Struct_declarator :
   (S_struct_declarator
-  with type dec := Declarator.t
-   and type expr := Expr.t) = Parametric.Struct_declarator.Make (struct
+    with type dec := Declarator.t
+     and type expr := Expr.t) = Parametric.Struct_declarator.Make (struct
   module Dec = Declarator
   module Expr = Expr
 end)
 
 and Direct_abs_declarator :
   (S_direct_abs_declarator
-  with type dec := Abs_declarator.t
-   and type par := Param_type_list.t
-   and type expr := Expr.t) = Parametric.Direct_abs_declarator.Make (struct
+    with type dec := Abs_declarator.t
+     and type par := Param_type_list.t
+     and type expr := Expr.t) =
+Parametric.Direct_abs_declarator.Make (struct
   module Dec = Abs_declarator
   module Par = Param_type_list
   module Expr = Expr
@@ -684,9 +686,9 @@ module Label = Parametric.Label.Make (Expr)
 
 module rec Stm :
   (S_stm
-  with type com := Compound_stm.t
-   and type expr := Expr.t
-   and type lbl := Label.t) = Parametric.Stm.Make (struct
+    with type com := Compound_stm.t
+     and type expr := Expr.t
+     and type lbl := Label.t) = Parametric.Stm.Make (struct
   module Com = Compound_stm
   module Expr = Expr
   module Lbl = Label
@@ -741,9 +743,9 @@ end
 
 module Litmus_lang :
   Act_litmus.Ast.Basic
-  with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
-   and type Program.t = Function_def.t
-   and type Constant.t = Constant.t = struct
+    with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
+     and type Program.t = Function_def.t
+     and type Constant.t = Constant.t = struct
   let name = "C"
 
   module Constant = Constant
@@ -787,7 +789,7 @@ let%test_unit "debracket is idempotent" =
   Base_quickcheck.Test.run_exn
     (module P)
     ~f:(fun pred ->
-      [%test_eq: P.t] (P.debracket pred) (P.debracket (P.debracket pred)) )
+      [%test_eq: P.t] (P.debracket pred) (P.debracket (P.debracket pred)))
 
 let%test_unit "litmus to blang to litmus round-trip" =
   let module P = Litmus.Pred in
@@ -796,4 +798,4 @@ let%test_unit "litmus to blang to litmus round-trip" =
     ~f:(fun pred ->
       let blang = P.to_blang pred in
       let pred' = Or_error.ok_exn (P.of_blang blang) in
-      [%test_eq: P.t] (P.debracket pred) pred' )
+      [%test_eq: P.t] (P.debracket pred) pred')

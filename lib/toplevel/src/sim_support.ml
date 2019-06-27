@@ -59,8 +59,7 @@ let try_make_sim (machine : M_spec.With_id.t) (spec : Act_sim.Spec.t) :
 let make_error (e : Error.t) =
   ( module Act_sim.Runner.Make_error (struct
     let error = e
-  end)
-  : Act_sim.Runner_types.S )
+  end) : Act_sim.Runner_types.S )
 
 let make_sim (machine : M_spec.With_id.t) (spec : Act_sim.Spec.t) :
     (module Act_sim.Runner_types.S) =

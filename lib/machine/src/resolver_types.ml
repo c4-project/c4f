@@ -17,8 +17,8 @@ open Base
     (first-class) compiler modules at run-time from compiler specifications. *)
 
 module type Basic = sig
-  (** Type of specifications consumed by this resolver. *)
   type spec
+  (** Type of specifications consumed by this resolver. *)
 
   val resolve :
     spec -> (module Act_compiler.Instance_types.Basic) Or_error.t
@@ -26,8 +26,8 @@ end
 
 (** Signature of fully-instantiated resolvers. *)
 module type S = sig
-  (** Type of specifications consumed by this resolver. *)
   type spec
+  (** Type of specifications consumed by this resolver. *)
 
   val from_spec : spec -> (module Act_compiler.Instance_types.S) Or_error.t
   (** [from_spec spec] attempts to produce a first-class compiler module

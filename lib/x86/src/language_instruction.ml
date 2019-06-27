@@ -42,10 +42,10 @@ end
 module type S = sig
   include
     Act_language.Instruction.Basic
-    with type t = Ast.Instruction.t
-     and type con = Ast.Operand.t
-     and type Sym.t = string
-     and type Loc.t = Ast.Location.t
+      with type t = Ast.Instruction.t
+       and type con = Ast.Operand.t
+       and type Sym.t = string
+       and type Loc.t = Ast.Location.t
 
   val make_jump_operand : string -> Ast.Operand.t
 end
@@ -133,7 +133,7 @@ module Make (B : Basic) : S = struct
   let pairwise_symmetric =
     List.concat_map ~f:(fun (c1, c2) ->
         [ (fun op1 op2 -> Option.both (c1 op1) (c2 op2))
-        ; (fun op1 op2 -> Option.both (c2 op1) (c1 op2)) ] )
+        ; (fun op1 op2 -> Option.both (c2 op1) (c1 op2)) ])
 
   let immediate_operand = function
     | Ast.Operand.Bop _ ->
@@ -188,7 +188,7 @@ module Make (B : Basic) : S = struct
   let symmetric_specs_to_classifiers specs =
     specs
     |> List.map ~f:(fun (s1, s2) ->
-           (single_spec_to_classifier s1, single_spec_to_classifier s2) )
+           (single_spec_to_classifier s1, single_spec_to_classifier s2))
     |> pairwise_symmetric
 
   let src_dst_spec_to_classifier {A.Src_dst.src; dst} s d =
@@ -234,7 +234,7 @@ module Make (B : Basic) : S = struct
                ~default:
                  (Fn.const Act_abstract.Operand.(Bundle.Single Unknown))
         in
-        (opcode, spec) )
+        (opcode, spec))
 
   let basic_operands (operands : Ast.Operand.t list)
       (opcode : [< Opcode.Basic.t]) =

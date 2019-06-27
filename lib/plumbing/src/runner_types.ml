@@ -49,8 +49,8 @@ module type Basic = sig
       line-by-line to it as it ends. *)
 end
 
-(** Type of functions that return argument vectors. *)
 type ('m, 'a) argv_fun = input:'m -> output:'m -> 'a Or_error.t
+(** Type of functions that return argument vectors. *)
 
 (** Outward-facing interface of process runners. *)
 module type S = sig

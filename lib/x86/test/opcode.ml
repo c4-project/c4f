@@ -34,7 +34,7 @@ let%test_module "Basic" =
         (Fmt.list ~sep:Fmt.sp (fun f opcode ->
              Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
                [%sexp (opcode : t)]
-               (Option.value ~default:"(none)" (to_string opcode)) ))
+               (Option.value ~default:"(none)" (to_string opcode))))
         all ;
       [%expect
         {|
@@ -63,7 +63,7 @@ let%test_module "Jump" =
         (Fmt.list ~sep:Fmt.sp (fun f opcode ->
              Fmt.pf f "@[<h>%a -> %s@]" Sexp.pp_hum
                [%sexp (opcode : t)]
-               (Option.value ~default:"(none)" (to_string opcode)) ))
+               (Option.value ~default:"(none)" (to_string opcode))))
         all ;
       [%expect
         {|

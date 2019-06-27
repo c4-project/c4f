@@ -25,8 +25,8 @@
 
 open Core_kernel
 
-(** Opaque type of states. *)
 type t
+(** Opaque type of states. *)
 
 val init :
      ?o:Act_common.Output.t
@@ -53,8 +53,8 @@ val vars_satisfying_all :
 module Monad : sig
   include
     Travesty.State_transform_types.S
-    with type state := t
-     and module Inner := Or_error
+      with type state := t
+       and module Inner := Or_error
 
   val with_vars_m : (Fuzzer_var.Map.t -> 'a t) -> 'a t
   (** [with_vars_m f] is a stateful action that binds the stateful action

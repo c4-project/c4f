@@ -25,11 +25,11 @@
 
 open Core_kernel
 
-(** Shorthand for pairs of items and their names. *)
 type 'a named = Act_common.C_id.t * 'a [@@deriving equal, sexp]
+(** Shorthand for pairs of items and their names. *)
 
-(** Shorthand for associative lists with identifier keys. *)
 type 'a id_assoc = (Act_common.C_id.t, 'a) List.Assoc.t [@@deriving sexp]
+(** Shorthand for associative lists with identifier keys. *)
 
 (** {2 General signatures} *)
 
@@ -43,8 +43,8 @@ end
 
 (** Signature of abstract data types that wrap some C variable name. *)
 module type S_has_underlying_variable = sig
-  (** The type that contains underlying variables. *)
   type t
+  (** The type that contains underlying variables. *)
 
   val variable_of : t -> Act_common.C_id.t
   (** [variable_of x] is the underlying variable of [x]. *)
@@ -56,8 +56,8 @@ end
 
 (** Signature of parts of the mini-model that implement type checking. *)
 module type S_type_checkable = sig
-  (** The type being checked. *)
   type t
+  (** The type being checked. *)
 
   module Type_check (E : Mini_env.S) : sig
     val type_of : t -> Mini_type.t Or_error.t
@@ -96,8 +96,8 @@ module type S_identifier_traversable = sig
   (** Traversing over identifiers. *)
   module On_identifiers :
     Travesty.Traversable_types.S0
-    with type t := t
-     and type Elt.t = identifier
+      with type t := t
+       and type Elt.t = identifier
 end
 
 module type S_statement = sig

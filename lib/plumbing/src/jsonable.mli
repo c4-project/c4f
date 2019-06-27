@@ -25,12 +25,13 @@ module Make_map (K : sig
 end)
 (V : Jsonable_types.S) : Jsonable_types.S with type t = V.t Map.M(K).t
 
-(** Lifts stringable types to json-able types, where conversion is to/from strings. *)
 module Of_stringable (E : Stringable.S) : Jsonable_types.S with type t = E.t
+(** Lifts stringable types to json-able types, where conversion is to/from
+    strings. *)
 
-(** Strings packaged up as a json-able type. *)
 module String : Jsonable_types.S with type t = string
+(** Strings packaged up as a json-able type. *)
 
-(** Lifts a json-able type over options. *)
 module Option (B : Jsonable_types.S) :
   Jsonable_types.S with type t = B.t option
+(** Lifts a json-able type over options. *)

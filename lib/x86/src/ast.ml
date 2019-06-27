@@ -147,14 +147,14 @@ module Operand = struct
                let%map r' =
                  map_m ~location ~immediate ~string ~typ ~bop r
                in
-               (l', b', r') ))
+               (l', b', r')))
   end
 
   (** Recursive mapper for locations in operands *)
   module On_locations :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Location.t = Travesty.Traversable.Make0 (struct
+      with type t = t
+       and type Elt.t = Location.t = Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location
@@ -234,7 +234,7 @@ module Operand = struct
           [ G.map
               ~f:(fun (l, b, r) -> Bop (l, b, r))
               [%quickcheck.generator: [%custom mu] * Bop.t * [%custom mu]]
-          ] )
+          ])
 
     let quickcheck_observer : t O.t =
       O.fixed_point (fun mu ->
@@ -244,7 +244,7 @@ module Operand = struct
               | `B of Disp.t
               | `C of string
               | `D of string
-              | `E of [%custom mu] * Bop.t * [%custom mu] ]] )
+              | `E of [%custom mu] * Bop.t * [%custom mu] ]])
 
     let quickcheck_shrinker : t S.t =
       S.fixed_point (fun mu ->
@@ -254,7 +254,7 @@ module Operand = struct
               | `B of Disp.t
               | `C of string
               | `D of string
-              | `E of [%custom mu] * Bop.t * [%custom mu] ]] )
+              | `E of [%custom mu] * Bop.t * [%custom mu] ]])
   end
 
   include Q
@@ -325,8 +325,8 @@ module Instruction = struct
 
   module On_locations :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Location.t = Travesty.Traversable.Make0 (struct
+      with type t = t
+       and type Elt.t = Location.t = Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Location
@@ -374,8 +374,8 @@ module Statement = struct
 
   module On_instructions :
     Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Instruction.t = Travesty.Traversable.Make0 (struct
+      with type t = t
+       and type Elt.t = Instruction.t = Travesty.Traversable.Make0 (struct
     type nonrec t = t
 
     module Elt = Instruction
@@ -433,8 +433,8 @@ end
 
 module On_listings :
   Travesty.Traversable_types.S0
-  with type t = t
-   and type Elt.t = Statement.t list = Travesty.Traversable.Make0 (struct
+    with type t = t
+     and type Elt.t = Statement.t list = Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = struct
