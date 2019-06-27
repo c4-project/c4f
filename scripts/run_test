@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+# The Automagic Compiler Tormentor
+#
+# Copyright (c) 2018--2019 Matt Windsor and contributors
+#
+# ACT itself is licensed under the MIT License. See the LICENSE file in the
+# project root for more information.
+#
+# ACT is based in part on code from the Herdtools7 project
+# (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+# project root for more information. *)
+
+import argparse
+import collections
+import json
+import typing
+import subprocess
+from dataclasses import dataclass
+
+
+@dataclass
+class TestInstance:
+    """Object representing a single run of the tester, with a given machine, compiler, and file."""
+
+    compiler: str
+    subject: str
+    backend: str
+
+    def populate_driver(self, driver_template: str) -> str:
+        """Populates a driver template with test run data, turning it into a shell command.
+        >>> TestInstance(compiler="spam", subject="eggs").populate_driver(
+        ...     "./scripts/obj_splitmus {compiler} {subject}")
+        './scripts/obj_splitmus spam eggs'
+
+        :param driver_template: A format template into which we substitute test run data.
+        :param compiler: The compiler fully-qualified-ID, substituted for 'compiler' in the driver template.
+        :param subject: The name of the file under test, substituted for 'subject' in the driver template.
+        :return:
+        """
+        return driver_template.format(compiler=self.compiler, subject=self.subject, backend=self.backend)
+
+    def run(self, driver_template: str):
+        cmd = self.populate_driver(driver_template)
+        subprocess.run(cmd, shell=True)
+
+
+@dataclass
+class MachineTest:
+    compilers: typing.List[str]
+    backend: str
+
+    def run(self, machine_id: str, driver: str, subjects: typing.List[str]):
+        for compiler_id in self.compilers:
+            fqid = ".".join([machine_id, compiler_id])
+            for subject in subjects:
+                ti: TestInstance = TestInstance(fqid, subject, self.backend)
+                ti.run(driver)
+
+
+@dataclass
+class Test:
+    """A specification of how to run a compiler test."""
+
+    machines: typing.Mapping[str, MachineTest]
+    subjects: typing.List[str]
+    driver: str
+
+    def run(self):
+        for (machine_id, machine_spec) in self.machines.items():
+            machine_spec.run(machine_id, self.driver, self.subjects)
+
+
+def machine_test_from_dict(d: typing.Mapping[str, typing.Any]) -> MachineTest:
+    compilers = [ str(compiler) for compiler in d['compilers'] ]
+    backend = str(d['backend'])
+    return MachineTest(compilers=compilers, backend=backend)
+
+
+def test_from_dict(d: typing.Mapping[str, typing.Any]) -> Test:
+    machines = { mid: machine_test_from_dict(md) for mid, md in d['machines'].items() }
+    subjects = [ str(subject) for subject in d['subjects'] ]
+    driver = str(d['driver'])
+    return Test(machines=machines, subjects=subjects, driver=driver)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+            'test',
+            type=str,
+            help="The input test file."
+            )
+    args = parser.parse_args()
+    with open(args.test) as fp:
+        test = test_from_dict(json.load(fp))
+    test.run()
+
