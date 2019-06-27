@@ -31,7 +31,10 @@ module Mw_spec = M_spec.With_id
 module Cq_spec = Act_machine.Qualified.Compiler
 module C_types = Act_compiler.Instance_types
 
-let lang_procs = [("x86", Act_x86.Asm_job.get_runner)]
+(* TODO(@MattWindsor91): distinguish between x86 and x64 here. *)
+let lang_procs =
+  [ ("x86", Act_x86.Asm_job.get_runner)
+  ; ("x64", Act_x86.Asm_job.get_runner) ]
 
 let try_get_lang_proc (language : string) =
   language
