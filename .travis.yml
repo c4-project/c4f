@@ -10,4 +10,3 @@ env:
   - OCAML_VERSION=4.07 PACKAGE=act
 os:
   - linux
-  - osx
