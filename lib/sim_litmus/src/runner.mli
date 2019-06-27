@@ -21,15 +21,13 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulator-runner interface for Herd.
+(** Simulator-runner interface for Litmus. *)
 
-    For just running Herd directly, or as a filter, see {{!Filter} Filter}. *)
-
-(** We can use Herd as a simulator runner by supplying it with configuration
-    expressed as a {{!Act_sim.Runner_intf.Basic} Act_sim.Runner_intf.Basic}
+(** We can use Litmus as a simulator runner by supplying it with configuration
+    expressed as a {{!Act_sim.Runner_types.Basic} Act_sim.Runner_types.Basic}
     module. *)
-module Make (B : Act_sim.Runner_intf.Basic) : Act_sim.Runner_intf.S
+module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Runner_types.S
 
 val make :
-  (module Act_sim.Runner_intf.Basic) -> (module Act_sim.Runner_intf.S)
+  (module Act_sim.Runner_types.Basic) -> (module Act_sim.Runner_types.S)
 (** [make (module B)] is a first-class version of [Make (B)]. *)

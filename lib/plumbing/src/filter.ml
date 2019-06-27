@@ -121,17 +121,6 @@ module Adapt (B : Basic_adapt) :
 
   let name = B.Original.name
 
-  let adapt_ctx (ctx : aux_i Filter_context.t) :
-      B.Original.aux_i Filter_context.t Or_error.t =
-    Filter_context.On_aux.With_errors.map_m ctx ~f:B.adapt_i
-
-  let tmp_file_ext (ctx : aux_i Filter_context.t) : string =
-    match adapt_ctx ctx with
-    | Result.Ok ctx' ->
-        B.Original.tmp_file_ext ctx'
-    | Result.Error _ ->
-        "tmp"
-
   let run (new_i : aux_i) (src : Input.t) (sink : Output.t) :
       aux_o Or_error.t =
     Or_error.Let_syntax.(

@@ -89,7 +89,5 @@ Filter.Make (struct
 
   let name = "(loading)"
 
-  let tmp_file_ext = Fn.const "tmp"
-
   let run _ctx ic _oc = L.load_from_ic ic
 end)

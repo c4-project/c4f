@@ -26,11 +26,7 @@ open Base
 (** Signature of modules that resolve a machine ID we want to simulate on
     into a table of available simulators on that machine. *)
 module type S = sig
-  val make_table : Act_common.Id.t -> Table.t Or_error.t
-  (** [make_table machine_id] creates the table of available simulators on
-      machine [machine_id]. *)
-
-  val resolve_single : Act_common.Id.t -> (module Runner_intf.S) Or_error.t
+  val resolve_single : Act_common.Id.t -> (module Runner_types.S) Or_error.t
   (** [resolve_single id] resolves a single simulator with fully qualified
       ID [id]. *)
 end

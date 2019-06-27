@@ -47,8 +47,6 @@ module Make (R : Runner_intf.Runnable) :
 
     let name = R.name
 
-    let tmp_file_ext _ = R.tmp_file_ext
-
     let run (ctx : R.cfg Job.t Plumbing.Filter_context.t) _ oc :
         Job.Output.t Or_error.t =
       let aux = Plumbing.Filter_context.aux ctx in

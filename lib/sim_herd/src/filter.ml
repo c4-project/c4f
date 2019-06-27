@@ -61,8 +61,7 @@ let run_direct ?(arch : Act_sim.Arch.t option)
   Or_error.tag ~tag:"While running herd"
     (Plumbing.Runner.Local.run ~oc ~prog argv')
 
-module Make (B : Act_sim.Runner_intf.Basic) :
-  Pb.Filter_types.S with type aux_i = Act_sim.Arch.t and type aux_o = unit =
+module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Filter.S =
 Plumbing.Filter.Make_on_runner (struct
   (* TODO(@MattWindsor91): this invariably can now be rolled into Sim_litmus *)
   module Runner = B.Runner
@@ -70,8 +69,6 @@ Plumbing.Filter.Make_on_runner (struct
   type aux_i = Act_sim.Arch.t
 
   let name = "Herd tool"
-
-  let tmp_file_ext = Fn.const "txt"
 
   let prog _t = Act_sim.Spec.cmd B.spec
 

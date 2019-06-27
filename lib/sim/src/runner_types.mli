@@ -21,6 +21,13 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+(** Backend runner interfaces.
+
+    This module provides a standard interface for interacting with C and
+    assembly backends, such as Herd and Litmus, as well as a functor for
+    implementing that interface using a filter wrapper over the simulator
+    and a simulator output parser. *)
+
 open Base
 
 (** {3 Input interfaces} *)
@@ -37,19 +44,38 @@ module type Basic = sig
   module Runner : Plumbing.Runner_types.S
 end
 
-(** Shorthand for the specific type of filter a simulator runner expects. *)
-module type Basic_filter =
-  Plumbing.Filter_types.S with type aux_i = Arch.t and type aux_o = unit
+(** {3 Output interfaces} *)
 
-(** Input for generating simulators that always fail with a particular error
-    on use. *)
-module type Basic_error = sig
-  val error : Error.t
-  (** The error to return on use. *)
+(** Main interface for simulator runners. *)
+module type S = sig
+  (** Allows reading in this simulator's output. *)
+  module Reader : Reader_intf.S
+
+  (** Allows running the simulator as a filter. *)
+  module Filter : Filter.S
+
+  val make_harness :
+       Arch.t
+    -> input_path:Fpath.t
+    -> output_dir:Fpath.t
+    -> string list Or_error.t
+  (** [make_harness ctx ~input_path ~output_dir], on backends that support it,
+      constructs an executable environment in the output directory [output_dir],
+      and returns a list of shell commands that, when run inside that directory, perform a
+      test on [input_path] and return the results as a file that can be read
+      using [read]. *)
+
+  val run :
+       Arch.t
+    -> input_path:Fpath.t
+    -> output_path:Fpath.t
+    -> Output.t Or_error.t
+  (** [run ctx ~input_path ~output_path] runs the simulator on [input_path],
+      using [ctx] as context, outputs to [output_path], and then tries to
+      load back the results as generic simulator output. *)
 end
 
-(** Signature common to both [Basic] and fully instantiated ([S]) runners. *)
-module type Common = sig
+(*
   val name : Act_common.Id.t
   (** [name] is the name of the simulator, as an act ID. This can differ
       from the ID under which this simulator was registered in any runner
@@ -62,34 +88,9 @@ module type Common = sig
   (** The main body of the simulator runner is a filter from litmus tests to
       output files. The filter shouldn't produce any auxiliary output, and
       should accept an architecture as its input. *)
-  module Filter : Basic_filter
+  module Filter : Filter.S
 
   (** Simulator runners must be able to load back their output into the
       simulator output format. *)
   module Reader : Reader_intf.Basic
-end
-
-(** Basic interface for simulator runners constructed from filters.
-
-    Such runners consist of two stages: a filter that runs the simulator on
-    a litmus test to produce an opaque file output, and a loader that reads
-    that output back in as generic simulator output. *)
-module type Basic_from_filter = sig
-  include Common
-end
-
-(** {3 Output interfaces} *)
-
-(** Main interface for simulator runners. *)
-module type S = sig
-  include Common
-
-  val run :
-       Arch.t
-    -> input_path:Fpath.t
-    -> output_path:Fpath.t
-    -> Output.t Or_error.t
-  (** [run ctx ~input_path ~output_path] runs the simulator on [input_path],
-      using [ctx] as context, outputs to [output_path], and then tries to
-      load back the results as generic simulator output. *)
-end
+end *)

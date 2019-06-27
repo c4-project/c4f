@@ -36,8 +36,6 @@ module type Basic = sig
 
   module Frontend : Pb.Loadable_types.S with type t = ast
 
-  val normal_tmp_file_ext : string
-
   val process : ast -> t Or_error.t
 
   val fuzz :
@@ -64,13 +62,6 @@ module Make (B : Basic) : S = Pb.Filter.Make (struct
 
   let name = "C transformer"
 
-  let tmp_file_ext (ctx : mode Pb.Filter_context.t) : string =
-    match Pb.Filter_context.aux ctx with
-    | Print ->
-        B.normal_tmp_file_ext
-    | Fuzz _ ->
-        "c.litmus"
-
   let run_fuzz ?(seed : int option) (oc : Out_channel.t) (vast : B.t)
       ~(o : Ac.Output.t) ~(config : Act_config.Fuzz.t) : unit Or_error.t =
     Or_error.(vast |> B.fuzz ?seed ~o ~config >>| B.print oc)
@@ -95,8 +86,6 @@ module Normal_C : S = Make (struct
 
   type t = Mini.Program.t
 
-  let normal_tmp_file_ext = "c"
-
   module Frontend = Act_c_lang.Frontend.Normal
 
   let print oc tu =
@@ -118,8 +107,6 @@ module Litmus : S = Make (struct
   type ast = Ast.Litmus.t
 
   type t = Mini_litmus.Ast.Validated.t
-
-  let normal_tmp_file_ext = "litmus"
 
   module Frontend = Act_c_lang.Frontend.Litmus
 

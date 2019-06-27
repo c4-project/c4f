@@ -2,6 +2,7 @@
  (public_name act)
  (preprocess
   (pps ppx_jane))
+ (modules act)
  (libraries core_kernel core toplevel act.utils))
 
 (rule

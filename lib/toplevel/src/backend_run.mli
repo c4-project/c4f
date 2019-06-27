@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** The 'backend' command *)
+(** The 'backend run' command *)
 
 val command : Core_kernel.Command.t
-(** [command] is the top-level 'backend' command. *)
+(** [command] is the top-level 'backend run' command. *)
