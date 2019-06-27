@@ -55,15 +55,17 @@ delitmus_and_compile() {
 #   4: path to which a skeleton assembly Litmus test should be written.
 #   5: directory into which the Litmus harness should be constructed.
 make_litmus_harness() {
-  local compiler="$1"
-  local auxfile="$2"
-  local skelfile="$3"
-  local alitfile="$4"
-  local litdir="$5"
+  local backend="$1"
+  local compiler="$2"
+  local auxfile="$3"
+  local skelfile="$4"
+  local alitfile="$5"
+  local litdir="$6"
 
   "${SCRIPTDIR}/gen_asm_skel.py" "${auxfile}" > "${skelfile}"
   "${ACT}" asm litmusify -compiler "${compiler}" -aux "${auxfile}" -o "${alitfile}" "${skelfile}"
-  "${LITMUS}" "${alitfile}" -c11 true -o "${litdir}"
+  # TODO(@MattWindsor91): store the outputted commands somewhere and run them
+  "${ACT}" backend make-harness -sim "${backend}" "${alitfile}" -output "${litdir}" > /dev/null
 }
 
 # Splices function calls corresponding to an object-file test candidate into a
@@ -101,16 +103,17 @@ splice_litmus() {
 
 # Prints the script's usage and exits.
 usage() {
-  echo "usage: $0 COMPILER FILE TEST_NAME TARGET_DIR"
+  echo "usage: $0 BACKEND_ID COMPILER_ID FILE TEST_NAME TARGET_DIR" >&2
   exit 1
 }
 
 # Parameters
-[[ "$#" -ne "4" ]] && usage
-compiler="$1"
-infile="$2"
-name="$3"
-tmpdir="$4"
+[[ "$#" -ne "5" ]] && usage
+backend="$1"
+compiler="$2"
+infile="$3"
+name="$4"
+tmpdir="$5"
 
 auxfile="${tmpdir}/${name}.aux.json"
 cfile="${tmpdir}/${name}.c"
@@ -130,7 +133,7 @@ hfile="${litdir}/body.h"
 makefile="${litdir}/Makefile"
 
 delitmus_and_compile "${compiler}" "${infile}" "${auxfile}" "${cfile}" "${hfile}" "${objfile}"
-make_litmus_harness "${compiler}" "${auxfile}" "${skelfile}" "${alitfile}" "${litdir}"
+make_litmus_harness "${backend}" "${compiler}" "${auxfile}" "${skelfile}" "${alitfile}" "${litdir}"
 splice_litmus "${auxfile}" "${makefile}" "${runfile}" "${stubfile}"
 
 cd "${litdir}" && make

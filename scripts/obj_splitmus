@@ -20,17 +20,18 @@ SED=${SED="sed"}
 
 # Prints the script's usage and exits.
 usage() {
-  echo "usage: $0 COMPILER FILE"
+  echo "usage: $0 LITMUS_ID COMPILER_ID FILE" >&2
   exit 1
 }
 
 # Parameters
-[[ "$#" -ne "2" ]] && usage
-compiler="$1"
-infile="$2"
+[[ "$#" -ne "3" ]] && usage
+backend="$1"
+compiler="$2"
+infile="$3"
 name="$("${SCRIPTDIR}/litmus_test_name" "${infile}")"
 
 tmpdir="$(mktemp -d)" || exit 2
-"${SCRIPTDIR}/obj_splitmus_gen" "${compiler}" "${infile}" "${name}" "${tmpdir}" > /dev/null
-"${tmpdir}/exec/${name}.exe"
+"${SCRIPTDIR}/obj_splitmus_gen" "${backend}" "${compiler}" "${infile}" "${name}" "${tmpdir}" > /dev/null
+"${tmpdir}/exec/${name}.exe" | "${ACT}" backend parse -sim "${backend}"
 rm -r "${tmpdir}"
