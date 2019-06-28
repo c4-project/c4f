@@ -115,7 +115,7 @@ module Common = struct
     Err_ctx.peek State.variables
 end
 
-module Make (Lang : Act_language.Definition.S) :
+module Make (Lang : Act_language.Definition_types.S) :
   S with module Lang := Lang = struct
   module Warn = Warn.Make (Lang.Element)
 

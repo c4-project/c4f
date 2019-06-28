@@ -23,18 +23,17 @@
 
 open Core_kernel
 open Act_utils
-include Statement_intf
 module Tx = Travesty_base_exts
 
-module Make (B : Basic_with_modules) :
-  S with type t = B.t and module Instruction = B.Instruction = struct
+module Make (B : Statement_types.Basic_with_modules) :
+  Statement_types.S with type t = B.t and module Instruction = B.Instruction = struct
   include B
   module Symbol = Instruction.Symbol
 
   module Extended_flag = struct
     module M = struct
       type t = [Act_abstract.Statement.Flag.t | `Program_boundary]
-      [@@deriving sexp, eq, enumerate]
+      [@@deriving sexp, equal, enumerate]
 
       let table =
         (Act_abstract.Statement.Flag.table :> (t, string) List.Assoc.t)

@@ -21,12 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Constant_intf
-
-module Make (B : Basic) : S with type t = B.t = struct
+module Make (B : Constant_types.Basic) : Constant_types.S with type t = B.t = struct
   include B
 
   let zero = of_int 0
 end
 
-module Int_direct : S with type t = int = Make (Core_kernel.Int)
+module Int_direct : Constant_types.S with type t = int = Make (Core_kernel.Int)

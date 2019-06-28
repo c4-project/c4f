@@ -26,7 +26,7 @@ open Base
 (** [Basic] is the interface act languages must implement for program
     analysis. *)
 module type Basic = sig
-  type t [@@deriving sexp, eq]
+  type t [@@deriving sexp, equal]
   (** Type of programs. *)
 
   type stm
@@ -57,7 +57,7 @@ end
 (** [Basic_with_modules] extends [Basic] with the fully expanded language
     abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
-  module Statement : Statement.S
+  module Statement : Statement_types.S
 
   include Basic with type stm := Statement.t
 end

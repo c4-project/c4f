@@ -24,7 +24,7 @@
 (** [Basic] is the standard input signature for functors creating sanitiser
     passes. *)
 module type Basic = sig
-  module Lang : Act_language.Definition.S
+  module Lang : Act_language.Definition_types.S
   (** [Lang] provides language-specific functionality. *)
 
   module Ctx : Ctx.S with module Lang := Lang

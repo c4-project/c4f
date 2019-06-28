@@ -35,7 +35,7 @@ val escape_string : string -> string
 (** [escape_string s] performs symbol escaping on the string [s]. *)
 
 (** Builds symbol escaping functions over a language symbol type. *)
-module Make (S : Symbol_intf.S) : sig
+module Make (S : Symbol_types.S) : sig
   val escape : S.t -> S.t
   (** [escape s] performs symbol escaping on the symbol [s]. *)
 

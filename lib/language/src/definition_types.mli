@@ -39,22 +39,22 @@ end
 module type Basic = sig
   include Basic_core
 
-  module Constant : Constant.Basic
+  module Constant : Constant_types.Basic
 
-  module Symbol : Symbol_intf.Basic
+  module Symbol : Symbol_types.Basic
 
-  module Location : Location.Basic with module Sym := Symbol
+  module Location : Location_types.Basic with module Sym := Symbol
 
   module Instruction :
-    Instruction.Basic
+    Instruction_types.Basic
       with type con = Constant.t
        and module Loc := Location
        and module Sym := Symbol
 
   module Statement :
-    Statement.Basic with module Ins := Instruction and module Sym := Symbol
+    Statement_types.Basic with module Ins := Instruction and module Sym := Symbol
 
-  module Program : Program.Basic with type stm := Statement.t
+  module Program : Program_types.Basic with type stm := Statement.t
 end
 
 (** [S] is the user-facing interface module for act languages. Usually, you
@@ -63,24 +63,24 @@ end
 module type S = sig
   include Basic_core
 
-  module Constant : Constant.S
+  module Constant : Constant_types.S
 
-  module Symbol : Symbol_intf.S
+  module Symbol : Symbol_types.S
 
-  module Location : Location.S with module Symbol = Symbol
+  module Location : Location_types.S with module Symbol = Symbol
 
   module Instruction :
-    Instruction.S
+    Instruction_types.S
       with module Constant = Constant
        and module Location = Location
        and module Symbol = Symbol
 
-  module Statement : Statement.S with module Instruction = Instruction
+  module Statement : Statement_types.S with module Instruction = Instruction
 
-  module Program : Program.S with module Statement = Statement
+  module Program : Program_types.S with module Statement = Statement
 
   module Element :
-    Element.S
+    Element_types.S
       with type ins = Instruction.t
        and type loc = Location.t
        and type stm = Statement.t

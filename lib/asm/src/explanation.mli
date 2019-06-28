@@ -36,13 +36,13 @@ module Make (B : Basic) :
 
 (** {2 Specific explanations} *)
 
-module Make_loc (L : Act_language.Location.S) :
+module Make_loc (L : Act_language.Location_types.S) :
   S
     with type elt := L.t
      and type context := Act_abstract.Symbol.Table.t
      and module Abs := Act_abstract.Location
 
-module Make_ops (L : Act_language.Instruction.S) :
+module Make_ops (L : Act_language.Instruction_types.S) :
   S
     with type elt := L.t
      and type context := Act_abstract.Symbol.Table.t

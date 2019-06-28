@@ -22,10 +22,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Element_intf
 
-module Make (L : Basic) :
-  S
+module Make (L : Element_types.Basic) :
+  Element_types.S
     with type ins = L.Instruction.t
      and type loc = L.Location.t
      and type stm = L.Statement.t

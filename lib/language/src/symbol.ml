@@ -23,7 +23,6 @@
 
 open Core_kernel
 module Ac = Act_common
-open Symbol_intf
 
 let program_id_of_demangled sym =
   let open Option.Let_syntax in
@@ -36,7 +35,7 @@ let%expect_test "program_id_of_demangled: valid" =
     [%sexp (program_id_of_demangled "P0" : int option)] ;
   [%expect {| (0) |}]
 
-module Make (B : Basic) : S with type t = B.t = struct
+module Make (B : Symbol_types.Basic) : Symbol_types.S with type t = B.t = struct
   include B
 
   let of_string_opt (s : string) = Result.ok (B.require_of_string s)
@@ -93,7 +92,7 @@ module Make (B : Basic) : S with type t = B.t = struct
   let is_program_label sym = Option.is_some (program_id_of sym)
 end
 
-module String_direct : S with type t = string = Make (struct
+module String_direct : Symbol_types.S with type t = string = Make (struct
   include String
 
   let abstract = Fn.id

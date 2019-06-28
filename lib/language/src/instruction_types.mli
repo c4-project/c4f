@@ -28,7 +28,7 @@
     interface the rest of act gets, [S]; and a functor from one to the
     other, [Make]. *)
 
-open Core_kernel
+open Core_kernel (* TODO: drop to Base *)
 
 (** [Basic] is the interface act languages must implement for instruction
     analysis. *)
@@ -49,7 +49,7 @@ module type Basic = sig
     Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their instructions. *)
 
-  val pp_operands : Format.formatter -> t -> unit
+  val pp_operands : t Fmt.t
   (** [pp_operands f ins] pretty-prints only the instruction operands. *)
 
   include
@@ -145,11 +145,11 @@ end
 (** [Basic_with_modules] extends [Basic] with the fully expanded language
     abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
-  module Constant : Constant.S
+  module Constant : Constant_types.S
 
-  module Location : Location.S
+  module Location : Location_types.S
 
-  module Symbol : Symbol_intf.S
+  module Symbol : Symbol_types.S
 
   include
     Basic

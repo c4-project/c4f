@@ -28,7 +28,7 @@ open Base
 (** [Basic] collects the input required to generate explainers. This should
     be a subset of {{!Runner.Basic} Runner.Basic}. *)
 module type Basic = sig
-  module Src_lang : Act_language.Definition.S
+  module Src_lang : Act_language.Definition_types.S
   (** [Src_lang] is the language under explanation. *)
 
   module Sanitiser_hook :
@@ -41,7 +41,7 @@ end
 module type S = sig
   type config
 
-  module Lang : Act_language.Definition.S
+  module Lang : Act_language.Definition_types.S
   (** [Lang] is the language definition this explainer is targeting. *)
 
   (** [Loc_explanation] provides explanations for locations. *)

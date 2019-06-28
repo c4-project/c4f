@@ -21,17 +21,15 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Definition_intf
-
-module Make (B : Basic) :
-  S
+module Make (B : Definition_types.Basic) :
+  Definition_types.S
     with type Symbol.t = B.Symbol.t
      and type Constant.t = B.Constant.t
      and type Location.t = B.Location.t
      and type Instruction.t = B.Instruction.t
      and type Statement.t = B.Statement.t
      and type Program.t = B.Program.t = struct
-  include (B : Basic_core)
+  include (B : Definition_types.Basic_core)
 
   module Symbol = Symbol.Make (B.Symbol)
   module Constant = Constant.Make (B.Constant)

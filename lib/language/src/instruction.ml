@@ -21,10 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Instruction_intf
-
-module Make (B : Basic_with_modules) :
-  S
+module Make (B : Instruction_types.Basic_with_modules) :
+  Instruction_types.S
     with type t = B.t
      and module Constant = B.Constant
      and module Location = B.Location

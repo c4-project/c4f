@@ -23,12 +23,10 @@
 
 (** Language abstraction layer: Instructions *)
 
-include module type of Instruction_intf
-
 (** [Make] produces an instance of [S] from an instance of
     [Basic_with_modules]. *)
-module Make (B : Basic_with_modules) :
-  S
+module Make (B : Instruction_types.Basic_with_modules) :
+  Instruction_types.S
     with type t = B.t
      and module Constant = B.Constant
      and module Location = B.Location

@@ -72,7 +72,7 @@ end
 (** [Basic_with_modules] extends [Basic] with the fully expanded language
     abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
-  module Instruction : Instruction.S
+  module Instruction : Instruction_types.S
 
   include
     Basic

@@ -28,12 +28,12 @@
     interface the rest of act gets, [S]; and a functor from one to the
     other, [Make]. *)
 
-open Core_kernel
+open Base
 
 (** [Basic] is the interface act languages must implement for location
     analysis. *)
 module type Basic = sig
-  type t [@@deriving sexp, eq]
+  type t [@@deriving sexp, equal]
   (** [t] is the type of locations. *)
 
   module Sym : Equal.S
@@ -60,7 +60,7 @@ end
 (** [Basic_with_modules] extends [Basic] with the fully expanded language
     abstraction layer modules on which [Make] depends. *)
 module type Basic_with_modules = sig
-  module Symbol : Symbol_intf.S
+  module Symbol : Symbol_types.S
 
   include Basic with module Sym := Symbol
 end

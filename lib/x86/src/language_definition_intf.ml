@@ -26,7 +26,7 @@ module type S = sig
   module Dialect : Dialect_intf.S
 
   include
-    Act_language.Definition.S
+    Act_language.Definition_types.S
       with type Constant.t = Ast.Operand.t
        and type Location.t = Ast.Location.t
        and type Instruction.t = Ast.Instruction.t

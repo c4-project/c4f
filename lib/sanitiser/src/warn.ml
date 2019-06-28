@@ -27,7 +27,7 @@ include Warn_intf
 type 'elt t = {program_name: string; element: 'elt; body: Info.t}
 [@@deriving fields, make]
 
-module Make (Elt : Act_language.Element.S) :
+module Make (Elt : Act_language.Element_types.S) :
   S with type t = Elt.t t and type elt = Elt.t = struct
   type elt = Elt.t
 

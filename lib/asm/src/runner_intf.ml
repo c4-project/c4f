@@ -26,11 +26,11 @@ open Base
 (** [Basic] is a signature bringing together the modules we need to be able
     to run single-file jobs. *)
 module type Basic = sig
-  module Src_lang : Act_language.Definition.S
+  module Src_lang : Act_language.Definition_types.S
   (** [Src_lang] is the main language used in the jobs, which may differ
       from the [Litmus] language. *)
 
-  module Dst_lang : Act_language.Definition.S
+  module Dst_lang : Act_language.Definition_types.S
   (** [Dst_lang] is the language used in emitted Litmus tests. *)
 
   module Litmus_ast :

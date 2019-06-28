@@ -110,7 +110,7 @@ module type S = sig
 end
 
 module type Basic_ins = sig
-  module Location : Act_language.Location.S
+  module Location : Act_language.Location_types.S
 
   module Loc_expl :
     S
@@ -119,7 +119,7 @@ module type Basic_ins = sig
        and module Abs := Act_abstract.Location
 
   module Instruction :
-    Act_language.Instruction.S with module Location = Location
+    Act_language.Instruction_types.S with module Location = Location
 
   module Ops_expl :
     S
@@ -129,7 +129,7 @@ module type Basic_ins = sig
 end
 
 module type Basic_stm = sig
-  module Instruction : Act_language.Instruction.S
+  module Instruction : Act_language.Instruction_types.S
 
   module Ins_expl :
     S
@@ -138,5 +138,5 @@ module type Basic_stm = sig
        and module Abs := Act_abstract.Instruction
 
   module Statement :
-    Act_language.Statement.S with module Instruction = Instruction
+    Act_language.Statement_types.S with module Instruction = Instruction
 end

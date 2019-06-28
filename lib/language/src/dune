@@ -5,6 +5,7 @@
  (public_name act.language)
  (synopsis "Automagic Compiler Tormentor: language abstraction layer")
  (inline_tests)
+ (modules_without_implementation constant_types definition_types element_types instruction_types location_types program_types statement_types symbol_types)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common

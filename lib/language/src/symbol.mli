@@ -24,10 +24,9 @@
 (** Language interface: Symbols *)
 
 open Base
-open Symbol_intf
 
-module Make (B : Basic) : S with type t = B.t
+module Make (B : Symbol_types.Basic) : Symbol_types.S with type t = B.t
 (** [Make] produces an instance of [S] from an instance of [Basic]. *)
 
-module String_direct : S with type t = string
+module String_direct : Symbol_types.S with type t = string
 (** Allows the use of strings as language symbols (mainly for testing). *)

@@ -83,7 +83,7 @@ module Make (B : Explanation_intf.Basic) :
   let pp f t = pp_details B.pp pp_body f (original t, t)
 end
 
-module Make_loc (L : Act_language.Location.S) :
+module Make_loc (L : Act_language.Location_types.S) :
   S
     with type elt := L.t
      and type context := Act_abstract.Symbol.Table.t
@@ -122,7 +122,7 @@ module Make_loc (L : Act_language.Location.S) :
   include Make (Base)
 end
 
-module Make_ops (L : Act_language.Instruction.S) :
+module Make_ops (L : Act_language.Instruction_types.S) :
   S
     with type elt := L.t
      and type context := Act_abstract.Symbol.Table.t

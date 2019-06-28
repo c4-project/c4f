@@ -45,5 +45,5 @@ val make : program_name:string -> element:'elt -> body:Info.t -> 'elt t
 (** [make ~program_name ~element ~body] creates a warning. *)
 
 (** [Make] produces a warnings module for the given language. *)
-module Make (Elt : Act_language.Element.S) :
+module Make (Elt : Act_language.Element_types.S) :
   S with type t = Elt.t t and type elt = Elt.t

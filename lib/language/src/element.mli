@@ -25,11 +25,9 @@
 
     This is useful for providing element-focused warnings and errors. *)
 
-include module type of Element_intf
-
 (** [Make] makes an [S] from a basic language definition. *)
-module Make (L : Basic) :
-  S
+module Make (L : Element_types.Basic) :
+  Element_types.S
     with type ins = L.Instruction.t
      and type loc = L.Location.t
      and type stm = L.Statement.t

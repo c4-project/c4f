@@ -28,7 +28,7 @@ open Base
 (** [S] is the interface to the state monad used by the sanitiser to carry
     global information around in a sanitisation pass. *)
 module type S = sig
-  module Lang : Act_language.Definition.S
+  module Lang : Act_language.Definition_types.S
 
   module Warn :
     Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t

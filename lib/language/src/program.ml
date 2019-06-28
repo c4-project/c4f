@@ -22,11 +22,10 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Program_intf
 module Tx = Travesty_base_exts
 
-module Make (B : Basic_with_modules) :
-  S with type t = B.t and module Statement = B.Statement = struct
+module Make (B : Program_types.Basic_with_modules) :
+  Program_types.S with type t = B.t and module Statement = B.Statement = struct
   include B
   module Tr = Travesty.Traversable
 

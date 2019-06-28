@@ -27,7 +27,7 @@ open Base
 
 (** [S] is the interface to a fully-built sanitiser. *)
 module type S = sig
-  module Lang : Act_language.Definition.S
+  module Lang : Act_language.Definition_types.S
   (** [Lang] is the language over which we are sanitising. *)
 
   module Warn :

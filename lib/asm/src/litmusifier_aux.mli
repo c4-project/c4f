@@ -12,9 +12,9 @@
 open Base
 
 module Make (B : sig
-  module Constant : Act_language.Constant_intf.S
+  module Constant : Act_language.Constant_types.S
 
-  module Symbol : Act_language.Symbol_intf.S
+  module Symbol : Act_language.Symbol_types.S
 end) : sig
   val of_delitmus_aux :
        Act_delitmus.Aux.t

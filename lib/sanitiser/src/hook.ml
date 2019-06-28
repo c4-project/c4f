@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-module Make_null (Lang : Act_language.Definition.S) :
+module Make_null (Lang : Act_language.Definition_types.S) :
   Hook_intf.S with module Lang = Lang = struct
   module Lang = Lang
   module Ctx = Ctx.Make (Lang)

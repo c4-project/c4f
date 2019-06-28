@@ -21,10 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-include Location_intf
-
-module Make (B : Basic_with_modules) :
-  S with type t = B.t and module Symbol = B.Symbol = struct
+module Make (B : Location_types.Basic_with_modules) :
+  Location_types.S with type t = B.t and module Symbol = B.Symbol = struct
   include B
 
   include Act_abstract.Location.Inherit_predicates
