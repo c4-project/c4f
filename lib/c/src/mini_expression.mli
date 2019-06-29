@@ -1,72 +1,22 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Mini-model: expressions *)
-
-(** An atomic load operation. *)
-module Atomic_load : sig
-  type t [@@deriving sexp]
-
-  (** {3 Constructors} *)
-
-  val make : src:Mini_address.t -> mo:Mem_order.t -> t
-  (** [atomic_load ~src ~dst ~mo] constructs an explicit atomic load
-      expression with source [src] and memory order [mo]. *)
-
-  (** {3 Accessors} *)
-
-  val src : t -> Mini_address.t
-  (** [src ld] gets [ld]'s source address. *)
-
-  val mo : t -> Mem_order.t
-  (** [mo ld] gets [ld]'s memory order. *)
-
-  include
-    Mini_intf.S_has_underlying_variable with type t := t
-  (** We can get to the variable name inside an atomic load (that is, the
-      source variable). *)
-
-  (** {3 Traversals} *)
-
-  (** Traversing over atomic-action addresses in atomic loads. *)
-  module On_addresses :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Mini_address.t
-
-  (** Traversing over lvalues in atomic loads. *)
-  module On_lvalues :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Mini_lvalue.t
-end
 
 type t [@@deriving sexp]
 (** Opaque type of expressions. *)
 
 (** {2 Constructors} *)
 
-val atomic_load : Atomic_load.t -> t
+val atomic_load : Mini_atomic_load.t -> t
 (** [atomic_load a] lifts an atomic load [a] to an expression. *)
 
 val bool_lit : bool -> t
@@ -88,7 +38,7 @@ val reduce :
   -> bool_lit:(bool -> 'a)
   -> constant:(Act_c_lang.Ast_basic.Constant.t -> 'a)
   -> lvalue:(Mini_lvalue.t -> 'a)
-  -> atomic_load:(Atomic_load.t -> 'a)
+  -> atomic_load:(Mini_atomic_load.t -> 'a)
   -> eq:('a -> 'a -> 'a)
   -> 'a
 (** [reduce expr ~bool_lit ~constant ~lvalue ~atomic_load ~eq] recursively

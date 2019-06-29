@@ -34,7 +34,7 @@ module Expression = Mini_expression
 module Initialiser = Mini_initialiser
 module Lvalue = Mini_lvalue
 module Type = Mini_type
-module Atomic_load = Expression.Atomic_load
+module Atomic_load = Mini_atomic_load
 open Mini_intf
 
 module Atomic_store = struct

@@ -52,9 +52,8 @@ module Address = Mini_address
 module Expression = Mini_expression
 (** Re-exporting {{!Mini_expression} Expression}. *)
 
-module Atomic_load = Expression.Atomic_load
-(** Re-exporting {{!Atomic_load} Atomic_load} from within
-    {{!Expression} Expression}. *)
+module Atomic_load = Mini_atomic_load
+(** Re-exporting {{!Atomic_load} Atomic_load}. *)
 
 module Assign = Mini_assign
 (** Re-exporting {{!Mini_assign} Assign}. *)
