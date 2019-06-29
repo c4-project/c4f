@@ -31,7 +31,6 @@
     (which may fail). To get an AST (for printing, etc.), use
     {{!Mini_reify} Reify}. *)
 
-open Base
 module Constant = Act_c_lang.Ast_basic.Constant
 module Identifier = Act_c_lang.Ast_basic.Identifier
 module Pointer = Act_c_lang.Ast_basic.Pointer
@@ -67,68 +66,8 @@ module Assign = Mini_assign
 module Statement = Mini_statement
 (** Re-exporting {{!Mini_statement} Statement}. *)
 
-(** A function (less its name). *)
-module Function : sig
-  type t [@@deriving sexp]
-
-  (** {3 Constructors} *)
-
-  val make :
-       parameters:Type.t id_assoc
-    -> body_decls:Initialiser.t id_assoc
-    -> ?body_stms:Statement.t list
-    -> unit
-    -> t
-  (** [make ~parameters ~body_decls ?body_stms] creates a function with the
-      given contents. *)
-
-  (** {3 Accessors} *)
-
-  val parameters : t -> Type.t id_assoc
-  (** [parameters func] gets [func]'s parameter list. *)
-
-  val body_decls : t -> Initialiser.t id_assoc
-  (** [body_decls func] gets [func]'s in-body variable declarations. *)
-
-  val body_stms : t -> Statement.t list
-  (** [body_decls func] gets [func]'s statements. *)
-
-  val cvars : t -> Act_common.C_id.Set.t
-  (** [cvars func] extracts a set of C variable names from [func]. *)
-
-  (** {3 Mutators} *)
-
-  val with_body_stms : t -> Statement.t list -> t
-  (** [with_body_stms func new_stms] produces a new function by substituting
-      [new_stms] for [func]'s body statements. *)
-
-  val map :
-       t
-    -> parameters:(Type.t id_assoc -> Type.t id_assoc)
-    -> body_decls:(Initialiser.t id_assoc -> Initialiser.t id_assoc)
-    -> body_stms:(Statement.t list -> Statement.t list)
-    -> t
-  (** [map func ~parameters ~body_decls ~body_stms] runs the given functions
-      over the respective parts of a function. *)
-
-  (** {3 Traversals} *)
-
-  module On_monad (M : Monad.S) : sig
-    val map_m :
-         t
-      -> parameters:(Type.t id_assoc -> Type.t id_assoc M.t)
-      -> body_decls:(Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
-      -> body_stms:(Statement.t list -> Statement.t list M.t)
-      -> t M.t
-  end
-
-  (** [On_decls] allows traversal over all of the declarations inside a
-      function. *)
-  module On_decls :
-    Travesty.Traversable_types.S0
-      with type t := t
-       and type Elt.t := Initialiser.t named
-end
+module Function = Mini_function
+(** Re-exporting {{!Mini_function} Function}. *)
 
 module Program : sig
   type t [@@deriving sexp]
