@@ -21,9 +21,6 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
-module Tx = Travesty_base_exts
-module Ac = Act_common
 module Address = Mini_address
 module Assign = Mini_assign
 module Atomic_cmpxchg = Mini_atomic_cmpxchg
@@ -39,48 +36,4 @@ module Lvalue = Mini_lvalue
 module Pointer = Act_c_lang.Ast_basic.Pointer
 module Statement = Mini_statement
 module Type = Mini_type
-open Mini_intf
-
-module Program = struct
-  type t = {globals: Initialiser.t id_assoc; functions: Function.t id_assoc}
-  [@@deriving sexp, fields, make]
-
-  let with_functions (program : t) (new_functions : Function.t id_assoc) : t
-      =
-    {program with functions= new_functions}
-
-  module Base_map (M : Monad.S) = struct
-    module F = Travesty.Traversable.Helpers (M)
-
-    let bmap (program : t)
-        ~(globals : Initialiser.t id_assoc -> Initialiser.t id_assoc M.t)
-        ~(functions : Function.t id_assoc -> Function.t id_assoc M.t) :
-        t M.t =
-      Fields.fold ~init:(M.return program) ~globals:(F.proc_field globals)
-        ~functions:(F.proc_field functions)
-  end
-
-  module On_decls :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Initialiser.Named.t =
-  Travesty.Traversable.Make0 (struct
-    type nonrec t = t
-
-    module Elt = Initialiser.Named
-
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module L = Tx.List.On_monad (M)
-      module F = Function.On_decls.On_monad (M)
-
-      let map_m (program : t) ~(f : Elt.t -> Elt.t M.t) =
-        B.bmap program ~globals:(L.map_m ~f)
-          ~functions:
-            (L.map_m ~f:(fun (k, v) -> M.(F.map_m ~f v >>| Tuple2.create k)))
-    end
-  end)
-
-  let cvars (prog : t) : Ac.C_id.Set.t =
-    prog |> On_decls.to_list |> List.map ~f:fst |> Ac.C_id.Set.of_list
-end
+module Program = Mini_program

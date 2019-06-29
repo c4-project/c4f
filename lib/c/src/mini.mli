@@ -34,7 +34,6 @@
 module Constant = Act_c_lang.Ast_basic.Constant
 module Identifier = Act_c_lang.Ast_basic.Identifier
 module Pointer = Act_c_lang.Ast_basic.Pointer
-open Mini_intf
 
 module Type = Mini_type
 (** Re-exporting {{!Mini_type} Type}. *)
@@ -69,41 +68,5 @@ module Statement = Mini_statement
 module Function = Mini_function
 (** Re-exporting {{!Mini_function} Function}. *)
 
-module Program : sig
-  type t [@@deriving sexp]
-
-  (** {3 Constructors} *)
-
-  val make :
-    globals:Initialiser.t id_assoc -> functions:Function.t id_assoc -> t
-  (** [make ~globals ~functions] makes a program with global variable
-      declarations [globals] and function definitions [functions]. *)
-
-  (** {3 Accessors} *)
-
-  val globals : t -> Initialiser.t id_assoc
-  (** [globals program] gets an associative list of each global initialiser
-      in [program]. *)
-
-  val functions : t -> Function.t id_assoc
-  (** [functions program] gets an associative list of each function in
-      [program]. *)
-
-  val cvars : t -> Act_common.C_id.Set.t
-  (** [cvars program] extracts a set of C variable names from [program]. *)
-
-  (** {3 Mutators} *)
-
-  val with_functions : t -> Function.t id_assoc -> t
-  (** [with_functions prog new_functions] creates a new program by
-      substituting [new_functions] for [prog]'s functions. *)
-
-  (** {3 Traversals} *)
-
-  (** [On_decls] allows traversal over all of the declarations inside a
-      program. *)
-  module On_decls :
-    Travesty.Traversable_types.S0
-      with type t = t
-       and type Elt.t = Initialiser.t named
-end
+module Program = Mini_program
+(** Re-exporting {{!Mini_program} Program}. *)
