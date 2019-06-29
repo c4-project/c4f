@@ -94,14 +94,14 @@ let rec stm : Statement.t -> Ast.Stm.t =
   Statement.map ~assign ~atomic_cmpxchg ~atomic_store ~if_stm
     ~nop:(fun () -> Expr None)
 
-and if_stm (ifs : If_statement.t) : Ast.Stm.t =
+and if_stm (ifs : Statement.If.t) : Ast.Stm.t =
   If
-    { cond= expr (If_statement.cond ifs)
+    { cond= expr (Statement.If.cond ifs)
     ; t_branch=
         Compound
-          (List.map ~f:(fun x -> `Stm (stm x)) (If_statement.t_branch ifs))
+          (List.map ~f:(fun x -> `Stm (stm x)) (Statement.If.t_branch ifs))
     ; f_branch=
-        ( match If_statement.f_branch ifs with
+        ( match Statement.If.f_branch ifs with
         | [] ->
             None
         | fb ->

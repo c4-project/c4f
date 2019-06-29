@@ -424,7 +424,7 @@ let model_if (model_stm : Ast.Stm.t -> Statement.t Or_error.t)
   in
   let%map t_branch = model_if_branch t_list
   and f_branch = model_if_branch f_list in
-  let ifs = If_statement.make ~cond ~t_branch ~f_branch () in
+  let ifs = Statement.If.make ~cond ~t_branch ~f_branch () in
   Statement.if_stm ifs
 
 let rec stm : Ast.Stm.t -> Statement.t Or_error.t = function

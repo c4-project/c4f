@@ -88,7 +88,7 @@ struct
           ~target:(dest : Mini.Statement.t)]
 
   let handle_in_if (dest : Mini.Statement.t)
-      ~(f : Mini.If_statement.t -> Mini.If_statement.t Or_error.t) :
+      ~(f : Mini.Statement.If.t -> Mini.Statement.If.t Or_error.t) :
       Mini.Statement.t Or_error.t =
     Mini.Statement.map dest
       ~if_stm:(fun ifs -> Or_error.(ifs |> f >>| Mini.Statement.if_stm))
@@ -113,7 +113,7 @@ struct
     | This ->
         f dest
 
-  let gen_if_stm_insert_stm (i : Mini.If_statement.t) :
+  let gen_if_stm_insert_stm (i : Mini.Statement.If.t) :
       stm_hole stm_path Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.map (If_statement.gen_insert_stm i)
       ~f:(fun x -> In_if x)
@@ -131,18 +131,18 @@ and Statement_list :
   (S_statement_list with type target = Mini.Statement.t) =
   Make_statement_list (Statement)
 
-and If_statement : (S_if_statement with type target = Mini.If_statement.t) =
+and If_statement : (S_if_statement with type target = Mini.Statement.If.t) =
 struct
-  type target = Mini.If_statement.t
+  type target = Mini.Statement.If.t
 
-  module B = Mini.If_statement.Base_map (Or_error)
+  module B = Mini.Statement.If.Base_map (Or_error)
 
   let handle_stm (type a) (path : a if_path)
       ~(f :
             a list_path
          -> Mini.Statement.t list
-         -> Mini.Statement.t list Or_error.t) (ifs : Mini.If_statement.t) :
-      Mini.If_statement.t Or_error.t =
+         -> Mini.Statement.t list Or_error.t) (ifs : Mini.Statement.If.t) :
+      Mini.Statement.If.t Or_error.t =
     match path with
     | Block {branch; rest} ->
         let t_branch, f_branch =
@@ -154,12 +154,12 @@ struct
         Or_error.error_string "Not a statement path"
 
   let insert_stm (path : stm_hole if_path) (stm : Mini.Statement.t) :
-      Mini.If_statement.t -> Mini.If_statement.t Or_error.t =
+      Mini.Statement.If.t -> Mini.Statement.If.t Or_error.t =
     handle_stm path ~f:(fun rest -> Statement_list.insert_stm rest stm)
 
   let transform_stm (path : on_stm if_path)
       ~(f : Mini.Statement.t -> Mini.Statement.t Or_error.t) :
-      Mini.If_statement.t -> Mini.If_statement.t Or_error.t =
+      Mini.Statement.If.t -> Mini.Statement.If.t Or_error.t =
     handle_stm path ~f:(Statement_list.transform_stm ~f)
 
   let gen_insert_stm_for_branch (branch : bool)
@@ -169,11 +169,11 @@ struct
       ~f:(fun rest -> Block {branch; rest})
       (Statement_list.gen_insert_stm branch_stms)
 
-  let gen_insert_stm (ifs : Mini.If_statement.t) :
+  let gen_insert_stm (ifs : Mini.Statement.If.t) :
       stm_hole if_path Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.union
-      [ gen_insert_stm_for_branch true (Mini.If_statement.t_branch ifs)
-      ; gen_insert_stm_for_branch false (Mini.If_statement.f_branch ifs) ]
+      [ gen_insert_stm_for_branch true (Mini.Statement.If.t_branch ifs)
+      ; gen_insert_stm_for_branch false (Mini.Statement.If.f_branch ifs) ]
 end
 
 let%test_unit "insertions into an empty list are always at index 0" =

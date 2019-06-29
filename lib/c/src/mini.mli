@@ -52,6 +52,9 @@ module Address = Mini_address
 module Expression = Mini_expression
 (** Re-exporting {{!Mini_expression} Expression}. *)
 
+module Atomic_cmpxchg = Mini_atomic_cmpxchg
+(** Re-exporting {{!Mini_atomic_cmpxchg} Atomic_cmpxchg}. *)
+
 module Atomic_load = Mini_atomic_load
 (** Re-exporting {{!Mini_atomic_load} Atomic_load}. *)
 
@@ -61,76 +64,8 @@ module Atomic_store = Mini_atomic_store
 module Assign = Mini_assign
 (** Re-exporting {{!Mini_assign} Assign}. *)
 
-(** A (strong, explicit) atomic compare-exchange operation. *)
-module Atomic_cmpxchg : sig
-  type t [@@deriving sexp]
-
-  (** {3 Constructors} *)
-
-  val make :
-       obj:Address.t
-    -> expected:Address.t
-    -> desired:Expression.t
-    -> succ:Mem_order.t
-    -> fail:Mem_order.t
-    -> t
-  (** [make ~obj ~expected ~desired ~succ ~fail] constructs an explicit
-      strong compare-exchange with object [obj], expected value store
-      [expected], desired final value [desired], and memory orders [succ] on
-      success and [fail] on failure. *)
-
-  (** {3 Accessors} *)
-
-  val obj : t -> Address.t
-  (** [obj cmpxchg] gets [cmpxchg]'s object address (the main target of the
-      operation). *)
-
-  val expected : t -> Address.t
-  (** [expected cmpxchg] gets [cmpxchg]'s expected address (the location
-      that holds the expected value, and receives the actual value). *)
-
-  val desired : t -> Expression.t
-  (** [desired cmpxchg] gets [cmpxchg]'s desired-value expression (written
-      to the object on success). *)
-
-  val succ : t -> Mem_order.t
-  (** [succ cmpxchg] gets [cmpxchg]'s memory order on success. *)
-
-  val fail : t -> Mem_order.t
-  (** [fail cmpxchg] gets [cmpxchg]'s memory order on failure. *)
-
-  (** {3 Traversals} *)
-
-  (** Traversing over atomic-action addresses in atomic compare-exchanges. *)
-  module On_addresses :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
-
-  (** Traversing over lvalues in atomic compare-exchanges. *)
-  module On_lvalues :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
-end
-
-(** A statement.
-
-    We treat some things that are technically expressions in C as
-    statements, for simplicity. *)
-module rec Statement :
-  (S_statement
-    with type address := Address.t
-     and type assign := Assign.t
-     and type atomic_cmpxchg := Atomic_cmpxchg.t
-     and type atomic_store := Atomic_store.t
-     and type identifier := Identifier.t
-     and type if_stm := If_statement.t
-     and type lvalue := Lvalue.t)
-
-and If_statement :
-  (S_if_statement
-    with type expr := Expression.t
-     and type stm := Statement.t
-     and type address := Address.t
-     and type identifier := Identifier.t
-     and type lvalue := Lvalue.t)
+module Statement = Mini_statement
+(** Re-exporting {{!Mini_statement} Statement}. *)
 
 (** A function (less its name). *)
 module Function : sig

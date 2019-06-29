@@ -32,7 +32,7 @@ module Statement : S_statement with type target = Mini.Statement.t
 
 module Statement_list : S_statement_list with type target = Mini.Statement.t
 
-module If_statement : S_if_statement with type target = Mini.If_statement.t
+module If_statement : S_if_statement with type target = Mini.Statement.If.t
 
 module Function : S_function with type target := Mini.Function.t
 
