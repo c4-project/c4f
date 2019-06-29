@@ -53,65 +53,13 @@ module Expression = Mini_expression
 (** Re-exporting {{!Mini_expression} Expression}. *)
 
 module Atomic_load = Mini_atomic_load
-(** Re-exporting {{!Atomic_load} Atomic_load}. *)
+(** Re-exporting {{!Mini_atomic_load} Atomic_load}. *)
+
+module Atomic_store = Mini_atomic_store
+(** Re-exporting {{!Mini_atomic_store} Atomic_store}. *)
 
 module Assign = Mini_assign
 (** Re-exporting {{!Mini_assign} Assign}. *)
-
-(** An atomic store operation. *)
-module Atomic_store : sig
-  type t [@@deriving sexp]
-
-  (** {3 Constructors} *)
-
-  val make : src:Expression.t -> dst:Address.t -> mo:Mem_order.t -> t
-  (** [atomic_store ~src ~dst ~mo] constructs an explicit atomic store
-      expression with source [src], destination [dst], and memory order
-      [mo]. *)
-
-  (** {3 Accessors} *)
-
-  val dst : t -> Address.t
-  (** [dst st] gets [st]'s destination address. *)
-
-  val src : t -> Expression.t
-  (** [src st] gets [st]'s source expression. *)
-
-  val mo : t -> Mem_order.t
-  (** [mo st] gets [st]'s memory order. *)
-
-  (** {3 Traversals} *)
-
-  (** Traversing over atomic-action addresses in atomic stores. *)
-  module On_addresses :
-    Travesty.Traversable_types.S0
-      with type t := t
-       and type Elt.t = Address.t
-
-  (** Traversing over lvalues in atomic stores. *)
-  module On_lvalues :
-    Travesty.Traversable_types.S0 with type t := t and type Elt.t = Lvalue.t
-
-  (** {3 Generating and quickchecking} *)
-
-  module Quickcheck_generic
-      (Src : Act_utils.My_quickcheck.S_with_sexp with type t := Expression.t)
-      (Dst : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t) :
-    Act_utils.My_quickcheck.S_with_sexp with type t = t
-  (** [Quickcheck_generic (Src) (Dst)] generates random stores, using [Src]
-      to generate source expressions and [Dst] to generate destination
-      addresses. It uses [Mem_order]'s store-compatible generator to pick
-      random memory orders. *)
-
-  (** There isn't a generic quickcheck instance for atomic stores, as we
-      can't guarantee type safety in general. *)
-
-  module Quickcheck_ints (Src : Mini_env.S) (Dst : Mini_env.S) :
-    Act_utils.My_quickcheck.S_with_sexp with type t = t
-  (** [Quickcheck_ints (E)] generates random stores from atomic integers to
-      non-atomic integers, using [Src] as the variable typing environment
-      for sources and [Dst] as the environment for destinations. *)
-end
 
 (** A (strong, explicit) atomic compare-exchange operation. *)
 module Atomic_cmpxchg : sig
