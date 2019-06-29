@@ -292,7 +292,9 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
   let update_symbol_table (prog : Lang.Program.t) =
     let open Ctx.Let_syntax in
     let%bind targets = Ctx.get_all_redirect_targets in
-    let known_heap_symbols = Lang.Symbol.Set.abstract targets in
+    let known_heap_symbols =
+      Set.map (module Act_abstract.Symbol) ~f:Lang.Symbol.abstract targets
+    in
     let symbols' = Lang.Program.symbols prog ~known_heap_symbols in
     Ctx.set_symbol_table symbols'
 
@@ -355,7 +357,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
     let name = program_name i prog in
     Ctx.(enter_program ~name >>= fun () -> sanitise_entered_program prog)
 
-  let all_symbols_in : Lang.Program.t list -> Redirect.sym list =
+  let all_symbols_in : Lang.Program.t list -> Redirect.Sym.t list =
     List.concat_map ~f:Lang.Program.On_symbols.to_list
 
   let make_mangle_map (progs : Lang.Program.t list) =
@@ -435,7 +437,7 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
 
   let sanitise ?passes ?(symbols = []) (prog : Lang.Program.t) =
     let passes' = Option.value ~default:Pass_group.standard passes in
-    let variables = Lang.Symbol.Set.of_list symbols in
+    let variables = Set.of_list (module Lang.Symbol) symbols in
     Ctx.(
       run
         ( Monadic.return (Lang.Program.split_on_boundaries prog)

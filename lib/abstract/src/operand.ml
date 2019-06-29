@@ -521,8 +521,8 @@ module Bundle = struct
       let symbol_table =
         Symbol.(
           Table.of_sets
-            [ (Set.of_list ["foo"; "bar"; "baz"], Sort.Heap)
-            ; (Set.of_list ["froz"], Sort.Label) ])
+            [ (Set.of_list (module Symbol) ["foo"; "bar"; "baz"], Sort.Heap)
+            ; (Set.of_list (module Symbol) ["froz"], Sort.Label) ])
       in
       let result =
         has_immediate_heap_symbol ~symbol_table
@@ -539,8 +539,8 @@ module Bundle = struct
       let symbol_table =
         Symbol.(
           Table.of_sets
-            [ (Set.of_list ["foo"; "bar"; "baz"], Sort.Heap)
-            ; (Set.of_list ["froz"], Sort.Label) ])
+            [ (Set.of_list (module Symbol) ["foo"; "bar"; "baz"], Sort.Heap)
+            ; (Set.of_list (module Symbol) ["froz"], Sort.Label) ])
       in
       let result =
         has_immediate_heap_symbol ~symbol_table

@@ -23,7 +23,5 @@
 
 (** The litmusify command *)
 
-open Core
-
-val command : Command.t
+val command : Core_kernel.Command.t
 (** [command] is the top-level Litmusify command. *)

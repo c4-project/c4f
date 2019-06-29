@@ -32,7 +32,7 @@ module Make (B : Definition_types.Basic) :
   include (B : Definition_types.Basic_core)
 
   module Symbol = Symbol.Make (B.Symbol)
-  module Constant = Constant.Make (B.Constant)
+  module Constant = B.Constant
 
   module Location = Location.Make (struct
     module Symbol = Symbol

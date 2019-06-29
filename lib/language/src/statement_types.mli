@@ -28,7 +28,7 @@
     interface the rest of act gets, [S]; and a functor from one to the
     other, [Make]. *)
 
-open Core_kernel
+open Base
 
 (** [Basic] is the interface act languages must implement for statement
     analysis. *)

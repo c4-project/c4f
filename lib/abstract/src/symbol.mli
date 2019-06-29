@@ -23,14 +23,13 @@
 
 (** [Abstract_symbol] contains types and utilities for abstracted symbols. *)
 
-open Core_kernel
+open Base
 open Act_utils
 
-type t = string [@@deriving sexp, eq]
+module M = String
 (** Symbols are strings. *)
 
-module Set : Set.S with type Elt.t = string
-(** [Set] is a set module for symbols. *)
+include module type of M
 
 (** [Sort] is a module containing an enumeration of symbol sorts. *)
 module Sort : sig
@@ -49,7 +48,7 @@ module Table : sig
   val empty : t
   (** [empty] is the empty table. *)
 
-  val of_sets : (Set.t, Sort.t) List.Assoc.t -> t
+  val of_sets : (Set.M(M).t, Sort.t) List.Assoc.t -> t
   (** [of_sets sets] expands a symbol-set-to-sort associative list into a
       [t]. *)
 
@@ -63,15 +62,15 @@ module Table : sig
 
       If [sym] also maps to another sort, those mappings remain. *)
 
-  val set_of_sorts : t -> Sort.Set.t -> Set.t
+  val set_of_sorts : t -> Sort.Set.t -> Set.M(M).t
   (** [set_of_sorts tbl sorts] returns all symbols in [tbl] with a sort in
       [sorts], as a symbol set. *)
 
-  val set_of_sort : t -> Sort.t -> Set.t
+  val set_of_sort : t -> Sort.t -> Set.M(M).t
   (** [set_of_sort tbl sort] returns all symbols in [tbl] with sort [sort],
       as a symbol set. *)
 
-  val set : t -> Set.t
+  val set : t -> Set.M(M).t
   (** [set tbl] returns all symbols in [tbl] as a symbol set. *)
 
   val mem : t -> ?sort:Sort.t -> elt -> bool

@@ -31,7 +31,9 @@ module type S = sig
   (** [Lang] is the language over which we are sanitising. *)
 
   module Warn :
-    Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
+    Warn_intf.S
+      with type t = Lang.Element.t Warn.t
+       and type elt = Lang.Element.t
 
   module Output :
     Output_intf.S

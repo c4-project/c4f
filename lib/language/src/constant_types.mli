@@ -27,30 +27,18 @@
     constant analysis, [Basic]; the expanded interface the rest of act gets,
     [S]; and a functor from one to the other, [Make]. *)
 
-open Core_kernel
+open Base
 
-(** [Basic] is the interface act languages must implement for constant
-    analysis. *)
-module type Basic = sig
-  type t [@@deriving compare, eq, sexp]
+(** [S] is the interface act languages must implement for constant analysis.
+    There is no [Basic]. *)
+module type S = sig
+  type t [@@deriving compare, equal, sexp, quickcheck]
   (** [t] is the type of constants. *)
 
   include
     Pretty_printer.S with type t := t
   (** Languages must supply a pretty-printer for their constants. *)
 
-  include
-    Quickcheck.S with type t := t
-  (** Languages must supply a Quickcheck generator for their constants. *)
-
   val of_int : int -> t
   (** [of_int] lifts an integer to a constant. *)
-end
-
-(** [S] is an expanded interface onto an act language's constant analysis. *)
-module type S = sig
-  include Basic
-
-  val zero : t
-  (** [zero] is a constant representing numeric zero. *)
 end

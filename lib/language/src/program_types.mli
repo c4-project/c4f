@@ -92,7 +92,7 @@ module type S = sig
 
   val symbols :
        t
-    -> known_heap_symbols:Act_abstract.Symbol.Set.t
+    -> known_heap_symbols:Set.M(Act_abstract.Symbol).t
     -> Act_abstract.Symbol.Table.t
   (** [symbols ~known_heap_symbols prog] calculates the symbol table for
       [prog]. It uses [known_heap_symbols] to help work out corner cases in

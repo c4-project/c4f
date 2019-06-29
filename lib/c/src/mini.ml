@@ -27,6 +27,7 @@ module Ac = Act_common
 module Constant = Act_c_lang.Ast_basic.Constant
 module Identifier = Act_c_lang.Ast_basic.Identifier
 module Pointer = Act_c_lang.Ast_basic.Pointer
+module Assign = Mini_assign
 module Address = Mini_address
 module Env = Mini_env
 module Expression = Mini_expression
@@ -35,50 +36,6 @@ module Lvalue = Mini_lvalue
 module Type = Mini_type
 module Atomic_load = Expression.Atomic_load
 open Mini_intf
-
-module Assign = struct
-  type t = {lvalue: Lvalue.t; rvalue: Expression.t}
-  [@@deriving sexp, fields, make]
-
-  module Base_map (M : Monad.S) = struct
-    module F = Travesty.Traversable.Helpers (M)
-
-    let bmap (assign : t) ~(lvalue : Lvalue.t F.traversal)
-        ~(rvalue : Expression.t F.traversal) : t M.t =
-      Fields.fold ~init:(M.return assign) ~lvalue:(F.proc_field lvalue)
-        ~rvalue:(F.proc_field rvalue)
-  end
-
-  module On_lvalues :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
-  Travesty.Traversable.Make0 (struct
-    type nonrec t = t
-
-    module Elt = Lvalue
-
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module E = Expression.On_lvalues.On_monad (M)
-
-      let map_m x ~f = B.bmap x ~lvalue:f ~rvalue:(E.map_m ~f)
-    end
-  end)
-
-  module On_addresses :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
-  Travesty.Traversable.Make0 (struct
-    type nonrec t = t
-
-    module Elt = Address
-
-    module On_monad (M : Monad.S) = struct
-      module B = Base_map (M)
-      module E = Expression.On_addresses.On_monad (M)
-
-      let map_m x ~f = B.bmap x ~lvalue:M.return ~rvalue:(E.map_m ~f)
-    end
-  end)
-end
 
 module Atomic_store = struct
   type t = {src: Expression.t; dst: Address.t; mo: Mem_order.t}

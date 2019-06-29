@@ -25,7 +25,8 @@ open Base
 module Tx = Travesty_base_exts
 
 module Make (B : Program_types.Basic_with_modules) :
-  Program_types.S with type t = B.t and module Statement = B.Statement = struct
+  Program_types.S with type t = B.t and module Statement = B.Statement =
+struct
   include B
   module Tr = Travesty.Traversable
 
@@ -62,7 +63,7 @@ module Make (B : Program_types.Basic_with_modules) :
     in
     let compare_against_known sym =
       let asym = Symbol.abstract sym in
-      let is_known = Act_abstract.Symbol.Set.mem known_heap_symbols asym in
+      let is_known = Set.mem known_heap_symbols asym in
       Option.some_if is_known asym
     in
     let symbols_matching_known =
@@ -82,7 +83,7 @@ module Make (B : Program_types.Basic_with_modules) :
        heap locations in a jump, and have to re-think this. *)
     |> Tx.List.exclude ~f:Instruction.is_jump
     |> List.concat_map ~f:(heap_symbols_of_instruction ~known_heap_symbols)
-    |> Act_abstract.Symbol.Set.of_list
+    |> Set.of_list (module Act_abstract.Symbol)
 
   (** [symbols_in_statements_where filter prog] collects all abstract
       symbols belonging to statements in [prog] that match the filtering
@@ -91,15 +92,18 @@ module Make (B : Program_types.Basic_with_modules) :
     prog |> On_statements.to_list
     |> List.filter_map ~f:(fun p ->
            if filter p then
-             Some (Symbol.Set.of_list (Statement.On_symbols.to_list p))
+             Some
+               (Set.of_list (module Symbol) (Statement.On_symbols.to_list p))
            else None)
-    |> Symbol.Set.union_list |> Symbol.Set.abstract
+    |> Set.union_list (module Symbol)
+    |> Set.map (module Act_abstract.Symbol) ~f:Symbol.abstract
 
   let jump_symbols = symbols_in_statements_where Statement.is_jump
 
   let label_symbols = symbols_in_statements_where Statement.is_label
 
-  let symbols prog ~known_heap_symbols =
+  let symbols prog ~(known_heap_symbols : Set.M(Act_abstract.Symbol).t) :
+      Act_abstract.Symbol.Table.t =
     Act_abstract.(
       Symbol.Table.of_sets
         [ (heap_symbols prog ~known_heap_symbols, Symbol.Sort.Heap)

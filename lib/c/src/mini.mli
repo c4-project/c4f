@@ -31,7 +31,7 @@
     (which may fail). To get an AST (for printing, etc.), use
     {{!Mini_reify} Reify}. *)
 
-open Core_kernel
+open Base
 module Constant = Act_c_lang.Ast_basic.Constant
 module Identifier = Act_c_lang.Ast_basic.Identifier
 module Pointer = Act_c_lang.Ast_basic.Pointer
@@ -56,34 +56,8 @@ module Atomic_load = Expression.Atomic_load
 (** Re-exporting {{!Atomic_load} Atomic_load} from within
     {{!Expression} Expression}. *)
 
-(** A non-atomic assignment. *)
-module Assign : sig
-  type t [@@deriving sexp]
-
-  (** {3 Constructors} *)
-
-  val make : lvalue:Lvalue.t -> rvalue:Expression.t -> t
-  (** [make ~lvalue ~rvalue] constructs an assignment of [rvalue] to
-      [lvalue]. *)
-
-  (** {3 Accessors} *)
-
-  val lvalue : t -> Lvalue.t
-  (** [lvalue asn] gets [asn]'s destination lvalue. *)
-
-  val rvalue : t -> Expression.t
-  (** [rvalue asn] gets [asn]'s source expression (rvalue). *)
-
-  (** {3 Traversals} *)
-
-  (** Traversing over atomic-action addresses in assignments. *)
-  module On_addresses :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
-
-  (** Traversing over lvalues in assignments. *)
-  module On_lvalues :
-    Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
-end
+module Assign = Mini_assign
+(** Re-exporting {{!Mini_assign} Assign}. *)
 
 (** An atomic store operation. *)
 module Atomic_store : sig
@@ -122,8 +96,8 @@ module Atomic_store : sig
   (** {3 Generating and quickchecking} *)
 
   module Quickcheck_generic
-      (Src : Quickcheck.S with type t := Expression.t)
-      (Dst : Quickcheck.S with type t := Address.t) :
+      (Src : Act_utils.My_quickcheck.S_with_sexp with type t := Expression.t)
+      (Dst : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t) :
     Act_utils.My_quickcheck.S_with_sexp with type t = t
   (** [Quickcheck_generic (Src) (Dst)] generates random stores, using [Src]
       to generate source expressions and [Dst] to generate destination

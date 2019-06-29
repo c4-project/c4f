@@ -4,11 +4,10 @@
  (name act_language)
  (public_name act.language)
  (synopsis "Automagic Compiler Tormentor: language abstraction layer")
- (inline_tests)
- (modules_without_implementation constant_types definition_types element_types instruction_types location_types program_types statement_types symbol_types)
+ (modules_without_implementation constant_types definition_types
+   element_types instruction_types location_types program_types
+   statement_types symbol_types)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
- (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
-   sexplib0 stdio base base.caml core_kernel fmt fpath shell.string_extended
-   travesty travesty.base_exts travesty.containers act_abstract act_common
-   act_litmus act_utils))
+ (libraries sexplib0 stdio base base.caml core_kernel fmt travesty
+   travesty.base_exts travesty.containers act_abstract act_common act_utils))

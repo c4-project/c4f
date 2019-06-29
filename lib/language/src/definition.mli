@@ -23,7 +23,6 @@
 
 (** High-level interface to languages supported by act *)
 
-
 (** [Make] builds a module satisfying [S] from one satisfying [Basic]. *)
 module Make (B : Definition_types.Basic) :
   Definition_types.S

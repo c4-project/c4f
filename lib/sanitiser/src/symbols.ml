@@ -68,19 +68,15 @@ module Make (B : Pass_intf.Basic) :
     B.Ctx.(get_symbol_table >>| Act_abstract.Symbol.Table.set)
 
   let first_unused_symbol used_set candidate_set =
-    B.Lang.Symbol.Set.find candidate_set ~f:(fun candidate ->
-        not
-          (Act_abstract.Symbol.Set.mem used_set
-             (B.Lang.Symbol.abstract candidate)))
+    Set.find candidate_set ~f:(fun candidate ->
+        not (Set.mem used_set (B.Lang.Symbol.abstract candidate)))
 
   let actually_unmangle (sym : B.Lang.Symbol.t) : B.Lang.Symbol.t B.Ctx.t =
     B.Ctx.Let_syntax.(
       let%bind valid_vars = B.Ctx.get_variables
       and possible_sym_vars = B.Ctx.get_redirect_sources sym
       and symbols_in_use = get_symbols_in_use in
-      let candidates =
-        B.Lang.Symbol.Set.inter valid_vars possible_sym_vars
-      in
+      let candidates = Set.inter valid_vars possible_sym_vars in
       let herd_safe_candidates =
         B.Lang.Symbol.(Set.filter ~f:is_herd_safe) candidates
       in

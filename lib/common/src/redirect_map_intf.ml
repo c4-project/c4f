@@ -28,7 +28,7 @@ open Base
 module type Basic_symbol = sig
   type t [@@deriving sexp, equal]
 
-  include Core_kernel.Comparable.S with type t := t
+  include Comparable.S with type t := t
 
   include Stringable.S with type t := t
 
@@ -38,18 +38,19 @@ module type Basic_symbol = sig
 end
 
 module type S = sig
-  type sym
-  (** Type of symbols. *)
+  (** Module of symbols. *)
+  module Sym : sig
+    type t
 
-  type sym_set
-  (** Type of symbol sets. *)
+    type comparator_witness
+  end
 
   type t [@@deriving sexp_of]
   (** Opaque type of redirect maps. *)
 
   (** {3 Constructors} *)
 
-  val of_symbol_alist : (sym, sym) List.Assoc.t -> t Or_error.t
+  val of_symbol_alist : (Sym.t, Sym.t) List.Assoc.t -> t Or_error.t
   (** [of_symbol_alist alist] tries to lift [alist] into a redirect map. It
       fails if there are duplicate keys. *)
 
@@ -58,7 +59,7 @@ module type S = sig
 
   (** {3 Mutators} *)
 
-  val redirect : src:sym -> dst:sym -> t -> t
+  val redirect : src:Sym.t -> dst:Sym.t -> t -> t
   (** [redirect ~src ~dst rmap] marks [src] as having redirected to [dst] in
       [rmap]. It is safe for [src] and [dst] to be equal; this clears the
       redirection. *)
@@ -70,16 +71,16 @@ module type S = sig
 
   (** {3 Looking up symbols} *)
 
-  val dest_of_sym : t -> sym -> sym
+  val dest_of_sym : t -> Sym.t -> Sym.t
   (** [dest_of_sym map sym] tries to look up a symbol [sym] in a redirect
       map [map]. It returns [sym] if [sym] has no redirection. *)
 
-  val dest_syms : t -> sources:sym_set -> sym_set
+  val dest_syms : t -> sources:Set.M(Sym).t -> Set.M(Sym).t
   (** [dest_syms map ~sources] collects all of the destination symbols in
       [map] that are reachable from the source symbols [sources]. This is a
       useful approximation as to which symbols are heap references. *)
 
-  val sources_of_sym : t -> sym -> sym_set
+  val sources_of_sym : t -> Sym.t -> Set.M(Sym).t
   (** [sources_of_sym rmap dst] gives all of the symbols that map to [dst]
       in [rmap]. *)
 
@@ -90,7 +91,7 @@ module type S = sig
       redirect map [map]. It fails if the redirected symbol isn't a valid C
       identifier. *)
 
-  val dest_ids : t -> sources:C_id.Set.t -> C_id.Set.t Or_error.t
+  val dest_ids : t -> sources:Set.M(C_id).t -> Set.M(C_id).t Or_error.t
   (** [dest_ids map ~sources] gets the set of C identifiers that are
       reachable, in [map], from identifiers in [sources]. It can fail if any
       of the symbols aren't expressible as identifiers. *)

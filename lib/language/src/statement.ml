@@ -21,12 +21,13 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 open Act_utils
 module Tx = Travesty_base_exts
 
 module Make (B : Statement_types.Basic_with_modules) :
-  Statement_types.S with type t = B.t and module Instruction = B.Instruction = struct
+  Statement_types.S with type t = B.t and module Instruction = B.Instruction =
+struct
   include B
   module Symbol = Instruction.Symbol
 

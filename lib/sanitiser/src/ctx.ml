@@ -23,13 +23,12 @@
 
 open Base
 include Ctx_intf
+module Asym = Act_abstract.Symbol
 
-let freshen_label (syms : Act_abstract.Symbol.Set.t) (prefix : string) :
-    string =
+let freshen_label (syms : Set.M(Asym).t) (prefix : string) : string =
   let rec mu prefix count =
     let str = Printf.sprintf "%s%d" prefix count in
-    if Act_abstract.Symbol.Set.mem syms str then mu prefix (count + 1)
-    else str
+    if Set.mem syms str then mu prefix (count + 1) else str
   in
   mu prefix 0
 
@@ -40,8 +39,7 @@ module State = struct
   type ('sset, 'smap, 'warn) t =
     { progname: string [@default "(no program)"]
     ; endlabel: string option
-    ; syms: Act_abstract.Symbol.Table.t
-          [@default Act_abstract.Symbol.Table.empty]
+    ; syms: Asym.Table.t [@default Asym.Table.empty]
     ; variables: 'sset
     ; redirects: 'smap
     ; passes: Set.M(Pass_group).t
@@ -63,20 +61,15 @@ module State = struct
 
   let enter_program (ctx : ('a, 'b, 'c) t) ~(name : string) : ('a, 'b, 'c) t
       =
-    { ctx with
-      progname= name
-    ; endlabel= None
-    ; syms= Act_abstract.Symbol.Table.empty }
+    {ctx with progname= name; endlabel= None; syms= Asym.Table.empty}
 
-  let set_symbol_table (ctx : ('a, 'b, 'c) t)
-      ~(syms : Act_abstract.Symbol.Table.t) : ('a, 'b, 'c) t =
+  let set_symbol_table (ctx : ('a, 'b, 'c) t) ~(syms : Asym.Table.t) :
+      ('a, 'b, 'c) t =
     {ctx with syms}
 
-  let add_symbol_to_table (ctx : ('a, 'b, 'c) t)
-      ~(sym : Act_abstract.Symbol.t) ~(sort : Act_abstract.Symbol.Sort.t) :
-      ('a, 'b, 'c) t =
-    set_symbol_table ctx
-      ~syms:(Act_abstract.Symbol.Table.add ctx.syms sym sort)
+  let add_symbol_to_table (ctx : ('a, 'b, 'c) t) ~(sym : Asym.t)
+      ~(sort : Asym.Sort.t) : ('a, 'b, 'c) t =
+    set_symbol_table ctx ~syms:(Asym.Table.add ctx.syms sym sort)
 end
 
 (** State monad functions that don't depend on the language definition. *)
@@ -91,12 +84,11 @@ module Common = struct
   let set_end_label (label : string) : (unit, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.Monadic.modify (State.set_end_label ~label)
 
-  let set_symbol_table (syms : Act_abstract.Symbol.Table.t) :
+  let set_symbol_table (syms : Asym.Table.t) :
       (unit, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.modify (State.set_symbol_table ~syms)
 
-  let add_symbol_to_table (sym : Act_abstract.Symbol.t)
-      (sort : Act_abstract.Symbol.Sort.t) :
+  let add_symbol_to_table (sym : Asym.t) (sort : Asym.Sort.t) :
       (unit, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.modify (State.add_symbol_to_table ~sym ~sort)
 
@@ -107,8 +99,7 @@ module Common = struct
   let get_end_label () : (string option, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.peek State.endlabel
 
-  let get_symbol_table () :
-      (Act_abstract.Symbol.Table.t, (_, _, _) State.t) Err_ctx.t =
+  let get_symbol_table () : (Asym.Table.t, (_, _, _) State.t) Err_ctx.t =
     Err_ctx.peek State.syms
 
   let get_variables () : ('svars, ('svars, _, _) State.t) Err_ctx.t =
@@ -165,18 +156,19 @@ module Make (Lang : Act_language.Definition_types.S) :
         in
         ({ctx with warnings= rest_warnings}, prog_warnings))
 
-  let get_symbols_with_sorts sorts =
-    Act_abstract.Symbol.(
+  let get_symbols_with_sorts (sorts : Asym.Sort.t list) : Set.M(Asym).t t =
+    let sort_set = Set.of_list (module Asym.Sort) sorts in
+    Asym.(
       let open Let_syntax in
       let%map all_syms = get_symbol_table in
-      Table.set_of_sorts all_syms (Sort.Set.of_list sorts))
+      Table.set_of_sorts all_syms sort_set)
 
   let get_redirect (sym : Lang.Symbol.t) : Lang.Symbol.t t =
     let open Let_syntax in
     let%map rds = peek State.redirects in
     Lang.Symbol.R_map.dest_of_sym rds sym
 
-  let get_redirect_sources (sym : Lang.Symbol.t) : Lang.Symbol.Set.t t =
+  let get_redirect_sources (sym : Lang.Symbol.t) : Set.M(Lang.Symbol).t t =
     let open Let_syntax in
     let%map rds = peek State.redirects in
     Lang.Symbol.R_map.sources_of_sym rds sym
@@ -188,7 +180,7 @@ module Make (Lang : Act_language.Definition_types.S) :
     List.map syms ~f:(fun sym ->
         (sym, Lang.Symbol.R_map.dest_of_sym rds sym))
 
-  let get_all_redirect_targets : Lang.Symbol.Set.t t =
+  let get_all_redirect_targets : Set.M(Lang.Symbol).t t =
     let open Let_syntax in
     let%bind rds = peek State.redirects in
     let%map sources = peek State.variables in
@@ -212,7 +204,7 @@ module Make (Lang : Act_language.Definition_types.S) :
     modify_rmap
       ~f:(Fn.compose Or_error.return (Lang.Symbol.R_map.redirect ~src ~dst))
 
-  let add_symbol sym_name sort =
+  let add_symbol (sym_name : Asym.t) (sort : Asym.Sort.t) : Asym.t t =
     let open Let_syntax in
     let%bind () = add_symbol_to_table sym_name sort in
     let%bind sym =
@@ -221,17 +213,18 @@ module Make (Lang : Act_language.Definition_types.S) :
     let%map () = redirect ~src:sym ~dst:sym in
     sym_name
 
-  let make_fresh_label prefix =
-    Act_abstract.Symbol.(
-      let open Let_syntax in
-      let%bind syms = get_symbols_with_sorts [Sort.Jump; Sort.Label] in
+  let make_fresh_symbol (prefix : string) ~(of_sort : Asym.Sort.t)
+      ~(fresh_in_sorts : Asym.Sort.t list) : Asym.t t =
+    Let_syntax.(
+      let%bind syms = get_symbols_with_sorts fresh_in_sorts in
       let l = freshen_label syms prefix in
-      add_symbol l Sort.Label)
+      add_symbol l of_sort)
 
-  let make_fresh_heap_loc prefix =
-    Act_abstract.Symbol.(
-      let open Let_syntax in
-      let%bind syms = get_symbols_with_sorts [Sort.Heap] in
-      let l = freshen_label syms prefix in
-      add_symbol l Sort.Heap)
+  let make_fresh_label : string -> Asym.t t =
+    make_fresh_symbol ~of_sort:Asym.Sort.Label
+      ~fresh_in_sorts:Asym.Sort.[Jump; Label]
+
+  let make_fresh_heap_loc : string -> Asym.t t =
+    make_fresh_symbol ~of_sort:Asym.Sort.Heap
+      ~fresh_in_sorts:Asym.Sort.[Heap]
 end

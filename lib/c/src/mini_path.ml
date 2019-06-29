@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Tx = Travesty_base_exts
 include Mini_path_intf
 
@@ -52,22 +52,24 @@ module Make_statement_list (M : S_statement) :
               ~path:(path : on_stm list_path)]
 
   let gen_insert_stm_on (index : int) (single_dest : target) :
-      stm_hole list_path Quickcheck.Generator.t list =
+      stm_hole list_path Base_quickcheck.Generator.t list =
     let insert_after =
-      Quickcheck.Generator.return (Insert_at (index + 1))
+      Base_quickcheck.Generator.return (Insert_at (index + 1))
     in
     let insert_into =
       single_dest |> M.try_gen_insert_stm
       |> Option.map
-           ~f:(Quickcheck.Generator.map ~f:(fun rest -> At {index; rest}))
+           ~f:
+             (Base_quickcheck.Generator.map ~f:(fun rest ->
+                  At {index; rest}))
       |> Option.to_list
     in
     insert_after :: insert_into
 
   let gen_insert_stm (dest : target list) :
-      stm_hole list_path Quickcheck.Generator.t =
-    Quickcheck.Generator.union
-      ( Quickcheck.Generator.return (Insert_at 0)
+      stm_hole list_path Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.union
+      ( Base_quickcheck.Generator.return (Insert_at 0)
       :: List.concat_mapi ~f:gen_insert_stm_on dest )
 end
 
@@ -112,12 +114,13 @@ struct
         f dest
 
   let gen_if_stm_insert_stm (i : Mini.If_statement.t) :
-      stm_hole stm_path Quickcheck.Generator.t =
-    Quickcheck.Generator.map (If_statement.gen_insert_stm i) ~f:(fun x ->
-        In_if x)
+      stm_hole stm_path Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.map (If_statement.gen_insert_stm i)
+      ~f:(fun x -> In_if x)
 
   let try_gen_insert_stm :
-      Mini.Statement.t -> stm_hole stm_path Quickcheck.Generator.t option =
+         Mini.Statement.t
+      -> stm_hole stm_path Base_quickcheck.Generator.t option =
     Mini.Statement.map
       ~if_stm:(Fn.compose Option.some gen_if_stm_insert_stm)
       ~assign:(Fn.const None) ~atomic_cmpxchg:(Fn.const None)
@@ -161,32 +164,37 @@ struct
 
   let gen_insert_stm_for_branch (branch : bool)
       (branch_stms : Mini.Statement.t list) :
-      stm_hole if_path Quickcheck.Generator.t =
-    Quickcheck.Generator.map
+      stm_hole if_path Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.map
       ~f:(fun rest -> Block {branch; rest})
       (Statement_list.gen_insert_stm branch_stms)
 
   let gen_insert_stm (ifs : Mini.If_statement.t) :
-      stm_hole if_path Quickcheck.Generator.t =
-    Quickcheck.Generator.union
+      stm_hole if_path Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.union
       [ gen_insert_stm_for_branch true (Mini.If_statement.t_branch ifs)
       ; gen_insert_stm_for_branch false (Mini.If_statement.f_branch ifs) ]
 end
 
 let%test_unit "insertions into an empty list are always at index 0" =
-  Quickcheck.test (Statement_list.gen_insert_stm [])
-    ~sexp_of:[%sexp_of: stm_hole list_path] ~f:(function
-    | Insert_at 0 ->
-        ()
-    | _ ->
-        failwith "Unexpected path")
+  Base_quickcheck.Test.run_exn
+    ( module struct
+      type t = stm_hole list_path
+
+      let sexp_of_t = [%sexp_of: stm_hole list_path]
+
+      let quickcheck_generator = Statement_list.gen_insert_stm []
+
+      let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+    end )
+    ~f:(function Insert_at 0 -> () | _ -> failwith "Unexpected path")
 
 module Function : S_function with type target := Mini.Function.t = struct
   type target = Mini.Function.t
 
   let gen_insert_stm (func : target) :
-      stm_hole function_path Quickcheck.Generator.t =
-    Quickcheck.Generator.map
+      stm_hole function_path Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.map
       (Statement_list.gen_insert_stm (Mini.Function.body_stms func))
       ~f:(fun path -> On_statements path)
 
@@ -216,13 +224,13 @@ module Program : S_program with type target := Mini.Program.t = struct
   type target = Mini.Program.t
 
   let gen_insert_stm (prog : target) :
-      stm_hole program_path Quickcheck.Generator.t =
+      stm_hole program_path Base_quickcheck.Generator.t =
     let prog_gens =
       List.mapi (Mini.Program.functions prog) ~f:(fun index (_, func) ->
-          Quickcheck.Generator.map (Function.gen_insert_stm func)
+          Base_quickcheck.Generator.map (Function.gen_insert_stm func)
             ~f:(fun rest -> On_program {index; rest}))
     in
-    Quickcheck.Generator.union prog_gens
+    Base_quickcheck.Generator.union prog_gens
 
   let handle_stm (type a) (path : a program_path)
       ~(f :

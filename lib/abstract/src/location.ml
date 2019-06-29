@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 
 type t =
   | Register_direct of Register.t
@@ -76,7 +76,7 @@ module Inherit_predicates
   let is_dereference src dst =
     Option.exists
       (Option.both (I.component_opt src) (I.component_opt dst))
-      ~f:(Tuple2.uncurry P.is_dereference)
+      ~f:(fun (x, y) -> P.is_dereference x y)
 end
 
 module Predicates : S_predicates with type t := t = struct
@@ -119,17 +119,15 @@ include Predicates
 
 let pp f = function
   | Register_direct reg ->
-      Format.fprintf f "reg:%a" Register.pp reg
+      Fmt.pf f "reg:%a" Register.pp reg
   | Register_indirect {reg; offset= Int 0} ->
-      Format.fprintf f "*(reg:%a)" Register.pp reg
+      Fmt.pf f "*(reg:%a)" Register.pp reg
   | Register_indirect {reg; offset= Int k} when k < 0 ->
-      Format.fprintf f "@[*(@,reg:%a@ -@ %d@,)@]" Register.pp reg
-        (Int.abs k)
+      Fmt.pf f "@[*(@,reg:%a@ -@ %d@,)@]" Register.pp reg (Int.abs k)
   | Register_indirect {reg; offset} ->
-      Format.fprintf f "@[*(@,reg:%a@ +@ %a@,)@]" Register.pp reg Address.pp
-        offset
+      Fmt.pf f "@[*(@,reg:%a@ +@ %a@,)@]" Register.pp reg Address.pp offset
   | Heap addr ->
-      Format.fprintf f "*(heap:%a)" Address.pp addr
+      Fmt.pf f "*(heap:%a)" Address.pp addr
   | Unknown ->
       String.pp f "unknown"
 

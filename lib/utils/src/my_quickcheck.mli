@@ -21,15 +21,15 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 
 include module type of My_quickcheck_intf
 (** Miscellaneous utilities for the Jane Street quickcheck system. *)
 
 val gen_string_initial :
-     initial:char Quickcheck.Generator.t
-  -> rest:char Quickcheck.Generator.t
-  -> string Quickcheck.Generator.t
+     initial:char Base_quickcheck.Generator.t
+  -> rest:char Base_quickcheck.Generator.t
+  -> string Base_quickcheck.Generator.t
 (** [gen_string_initial ~initial ~rest] is a Quickcheck generator that
     produces non-empty strings whose first character draws from [initial]
     and all other characters from [rest]. *)

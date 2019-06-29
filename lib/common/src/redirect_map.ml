@@ -25,13 +25,10 @@ open Base
 open Redirect_map_intf
 module Alist = Travesty_base_exts.Alist
 
-module Make (B : Basic_symbol) :
-  S with type sym = B.t and type sym_set = B.Set.t = struct
-  type t = B.t B.Map.t [@@deriving sexp]
+module Make (B : Basic_symbol) : S with module Sym = B = struct
+  module Sym = B
 
-  type sym = B.t
-
-  type sym_set = Set.M(B).t
+  type t = B.t Map.M(B).t [@@deriving sexp]
 
   let dest_of_sym (map : t) (sym : B.t) : B.t =
     Option.value (Map.find map sym) ~default:sym
@@ -42,10 +39,12 @@ module Make (B : Basic_symbol) :
     let redirected_sym = dest_of_sym map sym in
     B.to_c_identifier redirected_sym
 
-  let dest_syms (map : t) ~(sources : B.Set.t) : B.Set.t =
+  let dest_syms (map : t) ~(sources : Set.M(B).t) : Set.M(B).t =
     (* We can't just take the image of 'sources' in 'map', as this would
        miss out identity mappings. *)
-    sources |> Set.to_list |> List.map ~f:(dest_of_sym map) |> B.Set.of_list
+    sources |> Set.to_list
+    |> List.map ~f:(dest_of_sym map)
+    |> Set.of_list (module B)
 
   let dest_ids (map : t) ~(sources : C_id.Set.t) : C_id.Set.t Or_error.t =
     let open Or_error.Let_syntax in
@@ -64,12 +63,12 @@ module Make (B : Basic_symbol) :
     C_id.Set.of_list dest_id_list
 
   let of_symbol_alist : (B.t, B.t) List.Assoc.t -> t Or_error.t =
-    B.Map.of_alist_or_error
+    Map.of_alist_or_error (module B)
 
   let to_string_alist (map : t) : (string, string) List.Assoc.t =
     map |> Map.to_alist |> Alist.bi_map ~left:B.to_string ~right:B.to_string
 
-  let sources_of_sym (map : t) (dest : B.t) : B.Set.t =
+  let sources_of_sym (map : t) (dest : B.t) : Set.M(B).t =
     map
     |> Map.filter ~f:([%equal: B.t] dest)
     |> Map.keys

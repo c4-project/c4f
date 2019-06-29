@@ -21,14 +21,15 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 include My_quickcheck_intf
 
-let gen_string_initial ~(initial : char Quickcheck.Generator.t)
-    ~(rest : char Quickcheck.Generator.t) : string Quickcheck.Generator.t =
-  Quickcheck.Generator.(
-    map ~f:(Tuple2.uncurry ( ^ ))
-      (tuple2 (map ~f:String.of_char initial) (String.gen' rest)))
+let gen_string_initial ~(initial : char Base_quickcheck.Generator.t)
+    ~(rest : char Base_quickcheck.Generator.t) :
+    string Base_quickcheck.Generator.t =
+  Base_quickcheck.Generator.Let_syntax.(
+    let%map x = initial and y = Base_quickcheck.Generator.string_of rest in
+    String.of_char x ^ y)
 
 module Small_non_negative_int : sig
   include module type of Int
@@ -39,4 +40,8 @@ end = struct
 
   let quickcheck_generator =
     Base_quickcheck.Generator.small_positive_or_zero_int
+
+  let quickcheck_shrinker = Base_quickcheck.Shrinker.int
+
+  let quickcheck_observer = Base_quickcheck.Observer.int
 end

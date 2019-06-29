@@ -39,7 +39,7 @@ end
 module type Basic = sig
   include Basic_core
 
-  module Constant : Constant_types.Basic
+  module Constant : Constant_types.S
 
   module Symbol : Symbol_types.Basic
 
@@ -52,7 +52,9 @@ module type Basic = sig
        and module Sym := Symbol
 
   module Statement :
-    Statement_types.Basic with module Ins := Instruction and module Sym := Symbol
+    Statement_types.Basic
+      with module Ins := Instruction
+       and module Sym := Symbol
 
   module Program : Program_types.Basic with type stm := Statement.t
 end

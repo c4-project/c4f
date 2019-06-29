@@ -21,13 +21,11 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Tx = Travesty_base_exts
 open Act_utils
-
-type t = string [@@deriving sexp, equal]
-
-module Set = Set.Make (String)
+module M = String
+include M
 
 module Sort = struct
   module M = struct
@@ -45,32 +43,32 @@ module Table = struct
 
   (* Not necessarily an associative list: each symbol might be in multiple
      different sort buckets. *)
-  type nonrec t = (t * Sort.t) list
+  type t = (M.t * Sort.t) list
 
-  let empty = []
+  let empty : t = []
 
-  let of_sets =
+  let of_sets : (Set.M(M).t * Sort.t) list -> t =
     List.concat_map ~f:(fun (set, sort) ->
         List.map ~f:(fun sym -> (sym, sort)) (Set.to_list set))
 
-  let add tbl sym sort = (sym, sort) :: tbl
+  let add (tbl : t) (sym : M.t) (sort : Sort.t) : t = (sym, sort) :: tbl
 
-  let remove tbl sym sort =
-    Tx.List.exclude
-      ~f:(Tuple2.equal ~eq1:String.equal ~eq2:Sort.equal (sym, sort))
-      tbl
+  let remove (tbl : t) (sym : M.t) (sort : Sort.t) =
+    Tx.List.exclude ~f:([%equal: M.t * Sort.t] (sym, sort)) tbl
 
-  let set_of_sorts tbl sorts =
+  let set_of_sorts (tbl : t) (sorts : Set.M(Sort).t) : Set.M(M).t =
     tbl
     |> List.filter_map ~f:(fun (sym, sort) ->
-           if Sort.Set.mem sorts sort then Some sym else None)
-    |> Set.of_list
+           if Set.mem sorts sort then Some sym else None)
+    |> Set.of_list (module M)
 
-  let set_of_sort tbl sort = set_of_sorts tbl (Sort.Set.singleton sort)
+  let set_of_sort (tbl : t) (sort : Sort.t) : Set.M(M).t =
+    set_of_sorts tbl (Sort.Set.singleton sort)
 
-  let set tbl = tbl |> List.map ~f:fst |> Set.of_list
+  let set (tbl : t) : Set.M(M).t =
+    tbl |> List.map ~f:fst |> Set.of_list (module M)
 
-  let mem tbl ?sort symbol =
+  let mem (tbl : t) ?(sort : Sort.t option) (symbol : M.t) : bool =
     let actual_sort = List.Assoc.find tbl ~equal:String.equal symbol in
     Option.is_some actual_sort
     && (Option.is_none sort || Option.equal Sort.equal sort actual_sort)

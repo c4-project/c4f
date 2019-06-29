@@ -39,7 +39,7 @@ module Make (S : Symbol_types.S) : sig
   val escape : S.t -> S.t
   (** [escape s] performs symbol escaping on the symbol [s]. *)
 
-  val escape_rmap : S.R_map.t -> to_escape:S.Set.t -> S.R_map.t
+  val escape_rmap : S.R_map.t -> to_escape:Set.M(S).t -> S.R_map.t
   (** [escape_rmap map ~to_escape] tries to escape every symbol in
       [to_escape] by adding a corresponding redirect mapping in [map]. *)
 end

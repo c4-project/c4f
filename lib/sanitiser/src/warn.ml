@@ -21,8 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
-include Warn_intf
+open Base
+open Warn_intf
 
 type 'elt t = {program_name: string; element: 'elt; body: Info.t}
 [@@deriving fields, make]
@@ -42,7 +42,7 @@ module Make (Elt : Act_language.Element_types.S) :
   let body = body
 
   let pp f ent =
-    Format.fprintf f "@[<v>@[<h>In program %s,@ in %s@ `%a`:@]@ %a@]"
+    Fmt.pf f "@[<v>@[<h>In program %s,@ in %s@ `%a`:@]@ %a@]"
       ent.program_name
       (Elt.type_name ent.element)
       Elt.pp ent.element Info.pp ent.body

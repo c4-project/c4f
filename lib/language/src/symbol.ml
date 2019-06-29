@@ -21,45 +21,35 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Ac = Act_common
 
-let program_id_of_demangled sym =
+let program_id_of_demangled (sym : string) : int option =
   let open Option.Let_syntax in
   let%bind num_s = String.chop_prefix ~prefix:"P" sym in
   let%bind num = Caml.int_of_string_opt num_s in
   Option.some_if (Int.is_non_negative num) num
 
-let%expect_test "program_id_of_demangled: valid" =
-  Sexp.output Out_channel.stdout
-    [%sexp (program_id_of_demangled "P0" : int option)] ;
-  [%expect {| (0) |}]
+module Make (B : Symbol_types.Basic) : Symbol_types.S with type t = B.t =
+struct
+  module Sym = struct
+    include B
 
-module Make (B : Symbol_types.Basic) : Symbol_types.S with type t = B.t = struct
-  include B
+    let of_string_opt (s : string) = Result.ok (B.require_of_string s)
 
-  let of_string_opt (s : string) = Result.ok (B.require_of_string s)
+    module Comp : Comparable.S with type t := t = Comparable.Make (B)
 
-  module Comp = Comparable.Make (B)
-
-  module Set = struct
-    include Comp.Set
-
-    let abstract = Act_abstract.Symbol.Set.map ~f:B.abstract
+    include Comp
   end
 
-  include (
-    Comp :
-      Comparable.S
-        with type t := t
-         and type comparator_witness = Set.Elt.comparator_witness
-         and module Set := Set )
+  include Sym
 
   module R_map :
-    Ac.Redirect_map_intf.S with type sym = t and type sym_set = Set.t =
+    Ac.Redirect_map_intf.S
+      with type Sym.t = t
+       and type Sym.comparator_witness = comparator_witness =
   Ac.Redirect_map.Make (struct
-    include B
-    include Comp
+    include Sym
 
     let of_string (x : string) = Option.value_exn (of_string_opt x)
 

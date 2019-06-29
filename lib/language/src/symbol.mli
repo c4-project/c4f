@@ -30,3 +30,7 @@ module Make (B : Symbol_types.Basic) : Symbol_types.S with type t = B.t
 
 module String_direct : Symbol_types.S with type t = string
 (** Allows the use of strings as language symbols (mainly for testing). *)
+
+val program_id_of_demangled : string -> int option
+(** [program_id_of_demangled s] tries to interpret [s] as a demangled
+    thread-program label, and returns its thread ID if possible. *)

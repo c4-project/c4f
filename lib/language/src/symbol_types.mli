@@ -27,7 +27,7 @@
     symbol analysis, [Basic]; the expanded interface the rest of act gets,
     [S]; and a functor from one to the other, [Make]. *)
 
-open Core_kernel
+open Base
 open Act_common
 
 (** [Basic] is the interface act languages must implement for symbol
@@ -70,24 +70,13 @@ end
 module type S = sig
   include Basic
 
-  (** [Set] is an extended set module for concrete symbols. *)
-  module Set : sig
-    include Set.S with type Elt.t = t
-
-    val abstract : t -> Act_abstract.Symbol.Set.t
-    (** [abstract set] applies [abstract] to every symbol in the concrete
-        symbol set [set]. *)
-  end
-
-  include
-    Comparable.S
-      with type t := t
-       and type comparator_witness = Set.Elt.comparator_witness
-       and module Set := Set
+  include Comparable.S with type t := t
 
   (** [R_map] is an implementation of [Redirect_map] for this symbol type. *)
   module R_map :
-    Redirect_map_intf.S with type sym = t and type sym_set = Set.t
+    Redirect_map_intf.S
+      with type Sym.t = t
+       and type Sym.comparator_witness = comparator_witness
 
   val of_string_opt : string -> t option
   (** [of_string_opt t] tries to interpret [s] as a symbol. This function

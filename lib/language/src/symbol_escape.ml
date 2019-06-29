@@ -45,56 +45,14 @@ let escape_string : string -> string =
          ; ('Z', 'Z')
            (* Z *) ])
 
-let%expect_test "escape_string: sample" =
-  Stdio.print_string
-    (escape_string "_foo$bar.BAZ@lorem-ipsum+dolor,sit%amet") ;
-  [%expect {| ZUfooZDbarZFBAZZZTloremZMipsumZAdolorZCsitZPamet |}]
-
 module Make (S : Symbol_types.S) = struct
   let escape : S.t -> S.t = S.On_strings.map ~f:escape_string
 
   let escape_all : S.t list -> (S.t, S.t) List.Assoc.t =
     List.map ~f:(fun x -> (x, escape x))
 
-  let escape_rmap (map : S.R_map.t) ~(to_escape : S.Set.t) : S.R_map.t =
-    let escapes = escape_all (S.Set.to_list to_escape) in
+  let escape_rmap (map : S.R_map.t) ~(to_escape : Set.M(S).t) : S.R_map.t =
+    let escapes = escape_all (Set.to_list to_escape) in
     List.fold escapes ~init:map ~f:(fun map (src, dst) ->
         S.R_map.redirect map ~src ~dst)
 end
-
-let%test_module "escaping on a toy symbol module" =
-  ( module struct
-    module M = Make (Symbol.String_direct)
-
-    let%expect_test "escape: sample" =
-      Stdio.print_string (M.escape "_example_two%100.5@@etc,etc,etc$6") ;
-      [%expect {| ZUexampleZUtwoZP100ZF5ZTZTetcZCetcZCetcZD6 |}]
-
-    let%test_unit "escape: should be injective" =
-      let open Base_quickcheck in
-      Test.run_exn
-        ( module struct
-          type t = string * string [@@deriving sexp]
-
-          let quickcheck_generator =
-            Base_quickcheck.Generator.filter
-              [%quickcheck.generator: string * string] ~f:(fun (x, y) ->
-                not (String.equal x y))
-
-          let quickcheck_shrinker = [%quickcheck.shrinker: string * string]
-        end )
-        ~f:
-          ([%test_pred: string * string] ~here:[[%here]] (fun (x, y) ->
-               not (Tx.Fn.on M.escape ~f:String.equal x y)))
-
-    (* TODO(@MattWindsor91): fix this test let%expect_test "escape_rmap:
-       sample" = let test_map =
-
-       let result = Or_error.(Language_symbol.string_test_rmap |> Lazy.force
-       >>= M.escape_rmap) in Stdio.print_s [%sexp (result :
-       Language_symbol.String_direct.R_map.t Or_error.t)]; [%expect {| (Ok
-       (($kilo (MapsTo ZPdelta)) (%delta (MapsTo ZPdelta)) (.foxtrot (MapsTo
-       ZFfoxtrot)) (_echo (MapsTo ZFfoxtrot)) (alpha Identity) (bravo
-       (MapsTo ZFfoxtrot)) (charlie (MapsTo ZFfoxtrot)) (whiskey Identity)))
-       |}] ;; *)
-  end )

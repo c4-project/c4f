@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 open Travesty_containers
 module Tx = Travesty_base_exts
 module A = Act_common
@@ -101,7 +101,7 @@ module Chain_item = struct
       is_dereference dst last_target_dst && equal src last_value_dst)
 
   let%expect_test "is_write_end: valid write end" =
-    printf "%b"
+    Stdio.printf "%b"
       (is_write_end
          { src= Heap (Int 20)
          ; dst= Register_indirect {reg= General "eax"; offset= Int 0} }
@@ -138,7 +138,7 @@ module Chain_item = struct
       ; (fun () -> step_of_locations is_move locs state) ]
 
   let%expect_test "of_locations: read chain step" =
-    Sexp.output_hum Out_channel.stdout
+    Stdio.print_s
       [%sexp
         ( Act_abstract.(
             of_locations 10 true
@@ -150,7 +150,7 @@ module Chain_item = struct
     [%expect {| ((Target_step (Heap (Int 10)))) |}]
 
   let%expect_test "of_locations: not a move, so not a valid step" =
-    Sexp.output_hum Out_channel.stdout
+    Stdio.print_s
       [%sexp
         ( Act_abstract.(
             of_locations 10 false
@@ -162,7 +162,7 @@ module Chain_item = struct
     [%expect {| () |}]
 
   let%expect_test "of_locations: read chain end" =
-    Sexp.output_hum Out_channel.stdout
+    Stdio.print_s
       [%sexp
         ( Act_abstract.(
             of_locations 10 true
@@ -175,7 +175,7 @@ module Chain_item = struct
     [%expect {| ((End 10)) |}]
 
   let%expect_test "of_locations: read chain end, not a move" =
-    Sexp.output_hum Out_channel.stdout
+    Stdio.print_s
       [%sexp
         ( Act_abstract.(
             of_locations 10 false
@@ -188,7 +188,7 @@ module Chain_item = struct
     [%expect {| ((End 10)) |}]
 
   let%expect_test "of_locations: chain break" =
-    Sexp.output_hum Out_channel.stdout
+    Stdio.print_s
       [%sexp
         ( Act_abstract.(
             of_locations 10 true
@@ -201,7 +201,7 @@ module Chain_item = struct
     [%expect {| () |}]
 
   let%expect_test "of_locations: write chain target step" =
-    Sexp.output_hum Out_channel.stdout
+    Stdio.print_s
       [%sexp
         ( Act_abstract.(
             of_locations 10 true
@@ -215,7 +215,7 @@ module Chain_item = struct
     [%expect {| ((Target_step (Heap (Int 10)))) |}]
 
   let%expect_test "of_locations: write chain value step" =
-    Sexp.output_hum Out_channel.stdout
+    Stdio.print_s
       [%sexp
         ( Act_abstract.(
             of_locations 10 true
@@ -229,7 +229,7 @@ module Chain_item = struct
     [%expect {| ((Value_step (Heap (Int 10)))) |}]
 
   let%expect_test "of_locations: write chain end" =
-    Sexp.output_hum Out_channel.stdout
+    Stdio.print_s
       [%sexp
         ( Act_abstract.(
             of_locations 10 true
@@ -258,7 +258,7 @@ module Chain_item = struct
     else None
 
   let%expect_test "as_possible_new_write: valid example" =
-    Sexp.output_hum Out_channel.stdout
+    Stdio.print_s
       [%sexp
         ( Act_abstract.Location.(
             as_possible_new_write 10
@@ -302,7 +302,7 @@ module Portable = struct
         >>= On_option.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 174 *)
         >>= replace_chain_with 64 >>| to_list)
     in
-    Sexp.output_hum Out_channel.stdout [%sexp (result : int list option)] ;
+    Stdio.print_s [%sexp (result : int list option)] ;
     [%expect {| ((10 40 64 174 -12)) |}]
 
   let%expect_test "replace_chain_with_value: missing mark" =
@@ -314,7 +314,7 @@ module Portable = struct
         >>= On_option.step_m ~steps:2 ~on_empty:(Fn.const None) (* on 174 *)
         >>= replace_chain_with 64 >>| to_list)
     in
-    Sexp.output_hum Out_channel.stdout [%sexp (result : int list option)] ;
+    Stdio.print_s [%sexp (result : int list option)] ;
     [%expect {| () |}]
 
   let handle_broken_chain current zipper =

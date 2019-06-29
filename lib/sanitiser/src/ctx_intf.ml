@@ -31,14 +31,16 @@ module type S = sig
   module Lang : Act_language.Definition_types.S
 
   module Warn :
-    Warn.S with type t = Lang.Element.t Warn.t and type elt = Lang.Element.t
+    Warn_intf.S
+      with type t = Lang.Element.t Warn.t
+       and type elt = Lang.Element.t
 
   include
     Travesty.State_transform_types.S with module Inner := Or_error
   (** [S] includes a state transformer, [t], with an inner error monad. *)
 
   val initial :
-    passes:Pass_group.Set.t -> variables:Lang.Symbol.Set.t -> state
+    passes:Pass_group.Set.t -> variables:Set.M(Lang.Symbol).t -> state
   (** [initial ~passes ~variables] opens an initial context with the given
       enabled passes and C variables. *)
 
@@ -98,7 +100,7 @@ module type S = sig
       current symbol table. *)
 
   val get_symbols_with_sorts :
-    Act_abstract.Symbol.Sort.t list -> Act_abstract.Symbol.Set.t t
+    Act_abstract.Symbol.Sort.t list -> Set.M(Act_abstract.Symbol).t t
   (** [get_symbols_with_sorts sortlist] is a context computation that gets
       the set of all symbols in the context's symbol table with sorts in
       [sortlist]. *)
@@ -114,7 +116,7 @@ module type S = sig
   (** [set_symbol_table sym sort] is a context computation that replaces the
       current symbol table with [syms]. *)
 
-  val get_variables : Lang.Symbol.Set.t t
+  val get_variables : Set.M(Lang.Symbol).t t
   (** [get_variables] looks up the original set of C variables passed into
       this sanitiser context on creation. *)
 
@@ -122,7 +124,7 @@ module type S = sig
   (** [get_redirect sym] looks up [sym] in the concrete symbol redirection
       table. If [sym] redirects to itself, the result is [sym]. *)
 
-  val get_redirect_sources : Lang.Symbol.t -> Lang.Symbol.Set.t t
+  val get_redirect_sources : Lang.Symbol.t -> Set.M(Lang.Symbol).t t
   (** [get_redirect_sources sym] returns all symbols that redirect to [sym]
       in the currnet context. *)
 
@@ -132,7 +134,7 @@ module type S = sig
       concrete symbol redirection table, and builds an associative list from
       each such symbol that has a redirection. *)
 
-  val get_all_redirect_targets : Lang.Symbol.Set.t t
+  val get_all_redirect_targets : Set.M(Lang.Symbol).t t
   (** [get_all_redirect_targets] gets a list of all symbols currently set as
       the target of a redirect. *)
 

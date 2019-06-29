@@ -25,9 +25,6 @@
 
 open Base
 
-include module type of Warn_intf
-(** @inline *)
-
 type 'elt t
 (** Opaque type of warnings, parametrised over the element being warned
     about. *)
@@ -46,4 +43,4 @@ val make : program_name:string -> element:'elt -> body:Info.t -> 'elt t
 
 (** [Make] produces a warnings module for the given language. *)
 module Make (Elt : Act_language.Element_types.S) :
-  S with type t = Elt.t t and type elt = Elt.t
+  Warn_intf.S with type t = Elt.t t and type elt = Elt.t

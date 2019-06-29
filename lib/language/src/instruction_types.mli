@@ -28,12 +28,12 @@
     interface the rest of act gets, [S]; and a functor from one to the
     other, [Make]. *)
 
-open Core_kernel (* TODO: drop to Base *)
+open Base
 
 (** [Basic] is the interface act languages must implement for instruction
     analysis. *)
 module type Basic = sig
-  type t [@@deriving sexp, eq]
+  type t [@@deriving sexp, equal]
   (** Type of instructions. *)
 
   type con
@@ -95,51 +95,6 @@ module type Basic = sig
 
   val abs_operands : t -> Act_abstract.Operand.Bundle.t
   (** [abs_operands ins] gets the abstracted operands of instruction [ins]. *)
-end
-
-(** [R_map] is the interface of a map-like structure that represents
-    redirections from symbols to other symbols.
-
-    Implementations of [S] contain implementations of [R_map]. *)
-module type R_map = sig
-  type t
-  (** [t] is the opaque type of a redirect map. *)
-
-  type sym [@@deriving sexp, eq]
-  (** [sym] is the type of symbols. *)
-
-  (** [r_dest] is the type of destination results used in [R_map]. *)
-  type r_dest =
-    | Identity  (** The map redirects this symbol to itself *)
-    | MapsTo of sym  (** The map redirects this symbol here *)
-  [@@deriving sexp, eq]
-
-  module Set : Set.S with type Elt.t = sym
-
-  val make : Set.t -> t
-  (** [make s] creates a redirect map with the initial source set [s]. Each
-      symbol is registered as mapping to itself. *)
-
-  val redirect : src:sym -> dst:sym -> t -> t Or_error.t
-  (** [redirect ~src ~dst rmap] marks [src] as having redirected to [dst] in
-      [rmap]. It is safe for [src] and [dst] to be equal: in such cases we
-      register that a redirection happened, but otherwise don't do anything.
-
-      [redirect] fails if [dst] is a registered source other than [src];
-      this is to prevent cycles. *)
-
-  val dest_of : t -> sym -> r_dest option
-  (** [dest_of rmap src] gives the final destination of [src] as an
-      [r_dest]. *)
-
-  val all_dests : t -> Set.t
-  (** [all_dests rmap] collects all of the destination symbols in [rmap].
-      This is a useful approximation as to which symbols are heap
-      references. *)
-
-  val sources_of : t -> sym -> sym list
-  (** [sources_of rmap dst] gives all of the symbols that map to [dst] in
-      [rmap]. *)
 end
 
 (** [Basic_with_modules] extends [Basic] with the fully expanded language
