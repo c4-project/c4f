@@ -27,7 +27,7 @@ module Ac = Act_common
 type t = {vars: Fuzzer_var.Map.t; o: Ac.Output.t} [@@deriving fields]
 
 let init ?(o : Ac.Output.t = Ac.Output.silent ())
-    ~(globals : Mini.Type.t Ac.C_id.Map.t) ~(locals : Ac.C_id.Set.t) () : t
+    ~(globals : Act_c_mini.Type.t Ac.C_id.Map.t) ~(locals : Ac.C_id.Set.t) () : t
     =
   let vars = Fuzzer_var.Map.make_existing_var_map globals locals in
   {vars; o}
@@ -40,7 +40,7 @@ let map_vars (s : t) ~(f : Fuzzer_var.Map.t -> Fuzzer_var.Map.t) : t =
   {s with vars= f s.vars}
 
 let register_global ?(initial_value : Fuzzer_var.Value.t option) (s : t)
-    (var : Ac.C_id.t) (ty : Mini.Type.t) : t =
+    (var : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
   map_vars s ~f:(fun v ->
       Fuzzer_var.Map.register_global v ?initial_value var ty)
 
@@ -69,7 +69,7 @@ module Monad = struct
   let with_vars (f : Fuzzer_var.Map.t -> 'a) : 'a t = peek vars >>| f
 
   let register_global ?(initial_value : Fuzzer_var.Value.t option)
-      (ty : Mini.Type.t) (var : Ac.C_id.t) : unit t =
+      (ty : Act_c_mini.Type.t) (var : Ac.C_id.t) : unit t =
     modify (fun s -> register_global ?initial_value s var ty)
 
   let add_dependency (var : Ac.C_id.t) : unit t =

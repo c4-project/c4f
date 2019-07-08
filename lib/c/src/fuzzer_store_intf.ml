@@ -24,8 +24,8 @@
 open Act_common
 
 type rst =
-  { store: Mini.Atomic_store.t
-  ; path: Mini_path.stm_hole Mini_path.program_path }
+  { store: Act_c_mini.Atomic_store.t
+  ; path: Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path }
 
 (** Basic template for fuzzer store action modules. *)
 module type Basic = sig
@@ -39,7 +39,7 @@ module type Basic = sig
   (** If true, only allow stores to variables that are known not to already
       have writes. This can help avoid combinatorial explosions. *)
 
-  module Quickcheck (Src : Mini_env.S) (Dst : Mini_env.S) :
-    Act_utils.My_quickcheck.S_with_sexp with type t := Mini.Atomic_store.t
+  module Quickcheck (Src : Act_c_mini.Env_types.S) (Dst : Act_c_mini.Env_types.S) :
+    Act_utils.My_quickcheck.S_with_sexp with type t := Act_c_mini.Atomic_store.t
   (** The generator this store action uses to create stores. *)
 end

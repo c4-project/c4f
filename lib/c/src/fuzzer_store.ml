@@ -88,24 +88,24 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
 
     module G = Quickcheck.Generator
 
-    let src_env (vars : Var.Map.t) : (module Mini_env.S) =
+    let src_env (vars : Var.Map.t) : (module Act_c_mini.Env_types.S) =
       let predicates = Lazy.force src_restrictions in
       Var.Map.env_module_satisfying_all ~predicates vars
 
-    let dst_env (vars : Var.Map.t) : (module Mini_env.S) =
+    let dst_env (vars : Var.Map.t) : (module Act_c_mini.Env_types.S) =
       let predicates = Lazy.force dst_restrictions in
       Var.Map.env_module_satisfying_all ~predicates vars
 
-    let error_if_empty (env : string) (module M : Mini_env.S) :
+    let error_if_empty (env : string) (module M : Act_c_mini.Env_types.S) :
         unit Or_error.t =
-      if Mini.Identifier.Map.is_empty M.env then
+      if Act_common.C_id.Map.is_empty M.env then
         Or_error.error_s
           [%message
             "Internal error: Environment was empty." ~here:[%here] ~env]
       else Result.ok_unit
 
     let gen_store (o : Ac.Output.t) (vars : Var.Map.t) :
-        Mini.Atomic_store.t G.t Or_error.t =
+        Act_c_mini.Atomic_store.t G.t Or_error.t =
       let (module Src) = src_env vars in
       let (module Dst) = dst_env vars in
       Ac.Output.pv o "%a: got environments@." Ac.Id.pp name ;
@@ -115,10 +115,10 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
       Ac.Output.pv o "%a: environments are non-empty@." Ac.Id.pp name ;
       Ac.Output.pv o "%a: src environment: @[%a@]@." Ac.Id.pp name
         Sexp.pp_hum
-        [%sexp (Src.env : Mini_type.t Ac.C_id.Map.t)] ;
+        [%sexp (Src.env : Act_c_mini.Type.t Ac.C_id.Map.t)] ;
       Ac.Output.pv o "%a: dst environment: @[%a@]@." Ac.Id.pp name
         Sexp.pp_hum
-        [%sexp (Dst.env : Mini_type.t Ac.C_id.Map.t)] ;
+        [%sexp (Dst.env : Act_c_mini.Type.t Ac.C_id.Map.t)] ;
       let module Gen = B.Quickcheck (Src) (Dst) in
       Ac.Output.pv o "%a: built generator module@." Ac.Id.pp name ;
       [%quickcheck.generator: Gen.t]
@@ -147,27 +147,27 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
 
   (* This action writes to the destination, so we no longer have a known
      value for it. *)
-  let mark_store_dst (store : Mini.Atomic_store.t) : unit State.Monad.t =
+  let mark_store_dst (store : Act_c_mini.Atomic_store.t) : unit State.Monad.t =
     let open State.Monad.Let_syntax in
-    let dst = Mini.Atomic_store.dst store in
-    let dst_var = Mini.Address.variable_of dst in
+    let dst = Act_c_mini.Atomic_store.dst store in
+    let dst_var = Act_c_mini.Address.variable_of dst in
     let%bind () = State.Monad.erase_var_value dst_var in
     State.Monad.add_write dst_var
 
-  module Exp_idents = Mini.Expression.On_identifiers.On_monad (State.Monad)
+  module Exp_idents = Act_c_mini.Expression.On_identifiers.On_monad (State.Monad)
 
   (* This action also introduces dependencies on every variable in the
      source. *)
-  let add_dependencies_to_store_src (store : Mini.Atomic_store.t) :
+  let add_dependencies_to_store_src (store : Act_c_mini.Atomic_store.t) :
       unit State.Monad.t =
     Exp_idents.iter_m
-      (Mini.Atomic_store.src store)
+      (Act_c_mini.Atomic_store.src store)
       ~f:State.Monad.add_dependency
 
   let run (subject : Subject.Test.t) ({store; path} : Random_state.t) :
       Subject.Test.t State.Monad.t =
     let open State.Monad.Let_syntax in
-    let store_stm = Mini.Statement.atomic_store store in
+    let store_stm = Act_c_mini.Statement.atomic_store store in
     let%bind o = State.Monad.output () in
     Ac.Output.pv o "%a: Erasing known value of store destination@." Ac.Id.pp
       name ;
@@ -185,46 +185,45 @@ module Int : Action.S with type Random_state.t = rst = Make (struct
 
   let default_weight = 3
 
-  module Quickcheck = Mini.Atomic_store.Quickcheck_ints
+  module Quickcheck = Act_c_mini.Atomic_store.Quickcheck_ints
 end)
 
 let%test_module "int tests" =
   ( module struct
-    let init : Mini.Constant.t Mini_intf.id_assoc Lazy.t =
+    let init : Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
       lazy
-        Mini.
-          [ (Identifier.of_string "x", Constant.Integer 27)
-          ; (Identifier.of_string "y", Constant.Integer 53) ]
+        [ (Act_common.C_id.of_string "x", Act_c_lang.Ast_basic.Constant.Integer 27)
+        ; (Act_common.C_id.of_string "y", Act_c_lang.Ast_basic.Constant.Integer 53) ]
 
-    let globals : Mini.Type.t Mini_intf.id_assoc Lazy.t =
+    let globals : Act_c_mini.Type.t Act_c_mini.Named.Alist.t Lazy.t =
       lazy
-        Mini.
-          [ (Identifier.of_string "x", Type.(pointer_to Basic.atomic_int))
-          ; (Identifier.of_string "y", Type.(pointer_to Basic.atomic_int))
+        Act_c_mini.
+          [ (Act_common.C_id.of_string "x", Type.(pointer_to Basic.atomic_int))
+          ; (Act_common.C_id.of_string "y", Type.(pointer_to Basic.atomic_int))
           ]
 
-    let body_stms : Mini.Statement.t list Lazy.t =
+    let body_stms : Act_c_mini.Statement.t list Lazy.t =
       lazy
-        Mini.
+        Act_c_mini.
           [ Statement.atomic_store
               (Atomic_store.make
-                 ~src:(Expression.constant (Constant.Integer 42))
-                 ~dst:(Address.of_variable (Identifier.of_string "x"))
+                 ~src:(Expression.constant (Act_c_lang.Ast_basic.Constant.Integer 42))
+                 ~dst:(Address.of_variable (Act_common.C_id.of_string "x"))
                  ~mo:Mem_order.Seq_cst)
           ; Statement.nop ()
           ; Statement.atomic_store
               (Atomic_store.make
                  ~src:
                    (Expression.lvalue
-                      (Lvalue.variable (Identifier.of_string "foo")))
-                 ~dst:(Address.of_variable (Identifier.of_string "y"))
+                      (Lvalue.variable (Act_common.C_id.of_string "foo")))
+                 ~dst:(Address.of_variable (Act_common.C_id.of_string "y"))
                  ~mo:Mem_order.Relaxed) ]
 
     let programs : Fuzzer_subject.Program.t list Lazy.t =
       let open Lazy.Let_syntax in
       let%bind parameters = globals in
       let%map body_stms = body_stms in
-      Mini.
+      Act_c_mini.
         [ Fuzzer_subject.Program.of_function
             (Function.make ~parameters ~body_decls:[] ~body_stms ()) ]
 
@@ -234,20 +233,20 @@ let%test_module "int tests" =
       let%map programs = programs in
       {Fuzzer_subject.Test.init; programs}
 
-    let path : Mini_path.stm_hole Mini_path.program_path Lazy.t =
+    let path : Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path Lazy.t =
       lazy
-        Mini_path.(On_program {index= 0; rest= On_statements (Insert_at 2)})
+        (On_program {index= 0; rest= On_statements (Insert_at 2)})
 
-    let store : Mini.Atomic_store.t Lazy.t =
+    let store : Act_c_mini.Atomic_store.t Lazy.t =
       lazy
-        Mini.(
+        Act_c_mini.(
           Atomic_store.make
             ~src:
               (Expression.atomic_load
                  (Atomic_load.make
-                    ~src:(Address.of_variable (Identifier.of_string "gen2"))
+                    ~src:(Address.of_variable (Act_common.C_id.of_string "gen2"))
                     ~mo:Mem_order.Seq_cst))
-            ~dst:(Address.of_variable (Identifier.of_string "gen1"))
+            ~dst:(Address.of_variable (Act_common.C_id.of_string "gen1"))
             ~mo:Mem_order.Seq_cst)
 
     let random_state : Int.Random_state.t Lazy.t =
@@ -259,20 +258,20 @@ let%test_module "int tests" =
     let prepare_fuzzer_state () : unit Fuzzer_state.Monad.t =
       Fuzzer_state.Monad.(
         register_global
-          Mini_type.(pointer_to Basic.atomic_int)
-          (Mini.Identifier.of_string "gen1")
+          Act_c_mini.Type.(pointer_to Basic.atomic_int)
+          (Act_common.C_id.of_string "gen1")
           ~initial_value:(Fuzzer_var.Value.Int 1337)
         >>= fun () ->
         register_global
-          Mini_type.(pointer_to Basic.atomic_int)
-          (Mini.Identifier.of_string "gen2")
+          Act_c_mini.Type.(pointer_to Basic.atomic_int)
+          (Act_common.C_id.of_string "gen2")
           ~initial_value:(Fuzzer_var.Value.Int (-55)))
 
     let init_fuzzer_state : Fuzzer_state.t Lazy.t =
       let open Lazy.Let_syntax in
       let%map globals_alist = globals in
-      let globals = Mini.Identifier.Map.of_alist_exn globals_alist in
-      Fuzzer_state.init ~globals ~locals:Mini.Identifier.Set.empty ()
+      let globals = Act_common.C_id.Map.of_alist_exn globals_alist in
+      Fuzzer_state.init ~globals ~locals:Act_common.C_id.Set.empty ()
 
     let run_test () : (Fuzzer_state.t * Fuzzer_subject.Test.t) Or_error.t =
       Fuzzer_state.Monad.(
@@ -289,9 +288,8 @@ let%test_module "int tests" =
         let vars = Fuzzer_state.vars state in
         let prog_results =
           List.mapi test.programs ~f:(fun id p ->
-              p
-              |> Fuzzer_subject.Program.to_function ~vars ~id
-              >>| Tuple2.uncurry Mini_reify.func)
+              let%map fn = Fuzzer_subject.Program.to_function ~vars ~id p in
+              Act_c_mini.(Reify.func (Named.name fn) (Named.value fn)))
         in
         Or_error.combine_errors prog_results
       in
@@ -319,7 +317,7 @@ let%test_module "int tests" =
                 ~predicates:[Fuzzer_var.Record.is_global])
       in
       Sexp.output_hum stdout
-        [%sexp (result : Mini.Identifier.t list Or_error.t)] ;
+        [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
       [%expect {| (Ok (gen1 gen2 x y)) |}]
 
     let%expect_test "test int store: variables with known values" =
@@ -330,7 +328,7 @@ let%test_module "int tests" =
                 ~predicates:[Fuzzer_var.Record.has_known_value])
       in
       Sexp.output_hum stdout
-        [%sexp (result : Mini.Identifier.t list Or_error.t)] ;
+        [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
       [%expect {| (Ok (gen2)) |}]
 
     let%expect_test "test int store: variables with dependencies" =
@@ -341,6 +339,6 @@ let%test_module "int tests" =
                 ~predicates:[Fuzzer_var.Record.has_dependencies])
       in
       Sexp.output_hum stdout
-        [%sexp (result : Mini.Identifier.t list Or_error.t)] ;
+        [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
       [%expect {| (Ok (gen2)) |}]
   end )

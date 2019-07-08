@@ -13,9 +13,9 @@ open Base
 
 module type S = sig
   val rewrite_all :
-       Act_c.Mini.Function.t Act_c.Mini_intf.id_assoc
+       Act_c_mini.Function.t Act_c_mini.Named.t list
     -> context:Context.t
-    -> Act_c.Mini.Function.t Act_c.Mini_intf.id_assoc Or_error.t
+    -> Act_c_mini.Function.t Act_c_mini.Named.t list Or_error.t
   (** [rewrite_all fs ~context] rewrites all functions in [fs], using the
       mappings in [context] to resolve lifted locals. *)
 end

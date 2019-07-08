@@ -16,11 +16,11 @@ type t
 
 (** {2 Constructors} *)
 
-val make : program:Act_c.Mini.Program.t -> aux:Aux.t -> t
+val make : program:Act_c_mini.Program.t -> aux:Aux.t -> t
 
 (** {2 Accessors} *)
 
-val program : t -> Act_c.Mini.Program.t
+val program : t -> Act_c_mini.Program.t
 (** [program output] gets the de-litmusified program. *)
 
 val aux : t -> Aux.t

@@ -30,7 +30,7 @@ type t
 
 val init :
      ?o:Act_common.Output.t
-  -> globals:Mini.Type.t Act_common.C_id.Map.t
+  -> globals:Act_c_mini.Type.t Act_common.C_id.Map.t
   -> locals:Act_common.C_id.Set.t
   -> unit
   -> t
@@ -66,7 +66,7 @@ module Monad : sig
 
   val register_global :
        ?initial_value:Fuzzer_var.Value.t
-    -> Mini.Type.t
+    -> Act_c_mini.Type.t
     -> Act_common.C_id.t
     -> unit t
   (** [register_global ?initial_value ty var] is a stateful action that

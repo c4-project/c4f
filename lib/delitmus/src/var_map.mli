@@ -22,12 +22,12 @@ module Record : sig
   type t [@@deriving yojson, equal]
 
   val make :
-       c_type:Act_c.Mini.Type.t
+       c_type:Act_c_mini.Type.t
     -> c_id:Act_common.C_id.t
     -> is_global:bool
     -> t
 
-  val c_type : t -> Act_c.Mini.Type.t
+  val c_type : t -> Act_c_mini.Type.t
   (** [c_type r] gets the C type of [r]. *)
 
   val c_id : t -> Act_common.C_id.t

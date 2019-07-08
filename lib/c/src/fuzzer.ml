@@ -39,8 +39,8 @@ let make_rng : int option -> Splittable_random.State.t = function
   | None ->
       Splittable_random.State.create (Random.State.make_self_init ())
 
-let int_type ~(is_atomic : bool) ~(is_global : bool) : Mini.Type.t =
-  let module T = Mini.Type in
+let int_type ~(is_atomic : bool) ~(is_global : bool) : Act_c_mini.Type.t =
+  let module T = Act_c_mini.Type in
   let basic = if is_atomic then T.Basic.atomic_int else T.Basic.int in
   T.of_basic basic ~is_pointer:is_global
 
@@ -51,7 +51,7 @@ let%expect_test "int_type: combinatoric" =
         ; int_type ~is_atomic:false ~is_global:true
         ; int_type ~is_atomic:true ~is_global:false
         ; int_type ~is_atomic:true ~is_global:true ]
-        : Mini.Type.t list )] ;
+        : Act_c_mini.Type.t list )] ;
   [%expect
     {| ((Normal int) (Pointer_to int) (Normal atomic_int) (Pointer_to atomic_int)) |}]
 
@@ -153,7 +153,7 @@ module Make_global : Action.S = struct
     let gen' (vars : Var.Map.t) : t G.t =
       let open G.Let_syntax in
       let%bind is_atomic = G.bool in
-      let%bind initial_value = Mini.Constant.gen_int32_as_int in
+      let%bind initial_value = Act_c_lang.Ast_basic.Constant.gen_int32_as_int in
       let%map name = Var.Map.gen_fresh_var vars in
       {is_atomic; initial_value; name}
 
@@ -172,7 +172,7 @@ module Make_global : Action.S = struct
       State.Monad.register_global ty name
         ~initial_value:(Var.Value.Int initial_value)
     in
-    let const = Mini.Constant.Integer initial_value in
+    let const = Act_c_lang.Ast_basic.Constant.Integer initial_value in
     Subject.Test.add_var_to_init subject name const
 end
 
@@ -236,13 +236,13 @@ let mutate_subject (subject : Subject.Test.t) ~(config : Act_config.Fuzz.t)
     in
     subject')
 
-let run_with_state (test : Mini_litmus.Ast.Validated.t)
+let run_with_state (test : Act_c_mini.Litmus.Ast.Validated.t)
     ~(config : Act_config.Fuzz.t) ~(rng : Splittable_random.State.t) :
-    Mini_litmus.Ast.Validated.t State.Monad.t =
+    Act_c_mini.Litmus.Ast.Validated.t State.Monad.t =
   let open State.Monad.Let_syntax in
   (* TODO: add uuid to this *)
-  let name = Mini_litmus.Ast.Validated.name test in
-  let postcondition = Mini_litmus.Ast.Validated.postcondition test in
+  let name = Act_c_mini.Litmus.Ast.Validated.name test in
+  let postcondition = Act_c_mini.Litmus.Ast.Validated.postcondition test in
   let subject = Subject.Test.of_litmus test in
   let%bind subject' = mutate_subject subject ~config ~rng in
   State.Monad.with_vars_m (fun vars ->
@@ -251,26 +251,24 @@ let run_with_state (test : Mini_litmus.Ast.Validated.t)
 
 (** [get_first_func test] tries to get the first function in a validated
     litmus AST [test]. *)
-let get_first_func (test : Mini_litmus.Ast.Validated.t) :
-    Mini.Function.t Or_error.t =
-  let open Or_error.Let_syntax in
+let get_first_func (test : Act_c_mini.Litmus.Ast.Validated.t) :
+    Act_c_mini.Function.t Or_error.t =
+  Or_error.(
   (* If this is a validated litmus test, it _should_ have at least one
      function, and each function _should_ report the right global variables. *)
-  let%map _name, func =
-    test |> Mini_litmus.Ast.Validated.programs |> List.hd
+    test |> Act_c_mini.Litmus.Ast.Validated.programs |> List.hd
     |> Result.of_option
          ~error:
            (Error.of_string
               "Internal error: validated litmus had no functions")
-  in
-  func
+       >>| Act_c_mini.Named.value)
 
 (** [existing_globals test] extracts the existing global variable names and
     types from litmus test [test]. *)
-let existing_globals (test : Mini_litmus.Ast.Validated.t) :
-    Mini.Type.t Ac.C_id.Map.t Or_error.t =
+let existing_globals (test : Act_c_mini.Litmus.Ast.Validated.t) :
+    Act_c_mini.Type.t Ac.C_id.Map.t Or_error.t =
   Or_error.(
-    test |> get_first_func >>| Mini.Function.parameters
+    test |> get_first_func >>| Act_c_mini.Function.parameters
     >>= Ac.C_id.Map.of_alist_or_error)
 
 let to_locals : Set.M(Ac.Litmus_id).t -> Set.M(Ac.C_id).t =
@@ -280,18 +278,18 @@ let to_locals : Set.M(Ac.Litmus_id).t -> Set.M(Ac.C_id).t =
     ~f:(Fn.compose (Option.map ~f:snd) Ac.Litmus_id.as_local)
 
 let make_initial_state (o : Ac.Output.t)
-    (test : Mini_litmus.Ast.Validated.t) : State.t Or_error.t =
+    (test : Act_c_mini.Litmus.Ast.Validated.t) : State.t Or_error.t =
   let open Or_error.Let_syntax in
-  let all_vars = Mini_litmus.vars test in
+  let all_vars = Act_c_mini.Litmus.vars test in
   (* TODO(@MattWindsor91): we don't use cvars's globals because we need to
      know the types of the variables. This seems a _bit_ clunky. *)
   let%map globals = existing_globals test in
   let locals = to_locals all_vars in
   State.init ~o ~globals ~locals ()
 
-let run ?(seed : int option) (test : Mini_litmus.Ast.Validated.t)
+let run ?(seed : int option) (test : Act_c_mini.Litmus.Ast.Validated.t)
     ~(o : Ac.Output.t) ~(config : Act_config.Fuzz.t) :
-    Mini_litmus.Ast.Validated.t Or_error.t =
+    Act_c_mini.Litmus.Ast.Validated.t Or_error.t =
   Or_error.(
     make_initial_state o test
     >>= State.Monad.run (run_with_state test ~config ~rng:(make_rng seed)))

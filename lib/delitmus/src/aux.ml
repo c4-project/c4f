@@ -13,11 +13,11 @@ module Tx = Travesty_base_exts
 
 (* TODO(@MattWindsor91): perhaps move this outwards. *)
 module C_aux = struct
-  type t = Act_c.Mini.Constant.t Act_litmus.Aux.t [@@deriving equal]
+  type t = Act_c_lang.Ast_basic.Constant.t Act_litmus.Aux.t [@@deriving equal]
 
   module J : Plumbing.Jsonable_types.S with type t := t =
   Act_litmus.Aux.Json (struct
-    include Act_c.Mini.Constant
+    include Act_c_lang.Ast_basic.Constant
 
     let parse_post_string = Act_c_lang.Frontend.Litmus_post.load_from_string
   end)

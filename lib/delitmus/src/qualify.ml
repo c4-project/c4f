@@ -19,12 +19,12 @@ open Base
 let litmus_id (id : Act_common.Litmus_id.t) : Act_common.C_id.t =
   Act_common.Litmus_id.to_memalloy_id id
 
-let local (t : int) (id : Act_c.Mini.Identifier.t) : Act_common.C_id.t =
+let local (t : int) (id : Act_common.C_id.t) : Act_common.C_id.t =
   litmus_id (Act_common.Litmus_id.local t id)
 
 let postcondition
-    (pc : Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t) :
-    Act_c.Mini.Constant.t Act_litmus.Ast_base.Postcondition.t =
+    (pc : Act_c_mini.Litmus.Ast.Postcondition.t) :
+    Act_c_mini.Litmus.Ast.Postcondition.t =
   (* TODO(@MattWindsor91): perhaps don't qualify things we've already
    * qualified. *)
   Act_litmus.Ast_base.Postcondition.map_left pc

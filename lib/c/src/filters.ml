@@ -84,16 +84,16 @@ end)
 module Normal_C : S = Make (struct
   type ast = Ast.Translation_unit.t
 
-  type t = Mini.Program.t
+  type t = Act_c_mini.Program.t
 
   module Frontend = Act_c_lang.Frontend.Normal
 
   let print oc tu =
     let f = Caml.Format.formatter_of_out_channel oc in
-    let program = Mini_reify.program tu in
+    let program = Act_c_mini.Reify.program tu in
     Ast.Translation_unit.pp f program
 
-  let process = Mini_convert.translation_unit
+  let process = Act_c_mini.Convert.translation_unit
 
   let fuzz ?(seed : int option) (_ : t) ~(o : Ac.Output.t)
       ~(config : Act_config.Fuzz.t) : t Or_error.t =
@@ -106,13 +106,13 @@ end)
 module Litmus : S = Make (struct
   type ast = Ast.Litmus.t
 
-  type t = Mini_litmus.Ast.Validated.t
+  type t = Act_c_mini.Litmus.Ast.Validated.t
 
   module Frontend = Act_c_lang.Frontend.Litmus
 
-  let print = Mini_litmus.Pp.print
+  let print = Act_c_mini.Litmus.Pp.print
 
-  let process = Mini_convert.litmus_of_raw_ast
+  let process = Act_c_mini.Convert.litmus_of_raw_ast
 
   let fuzz :
          ?seed:int

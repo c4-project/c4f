@@ -22,6 +22,6 @@ module Style : sig
 end
 
 val run :
-  Act_c.Mini_litmus.Ast.Validated.t -> style:Style.t -> Output.t Or_error.t
+  Act_c_mini.Litmus.Ast.Validated.t -> style:Style.t -> Output.t Or_error.t
 (** [run litmus ~style] runs de-litmusification on [litmus] according to
     style [style]. *)

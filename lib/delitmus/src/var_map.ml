@@ -15,7 +15,7 @@ module Tx = Travesty_base_exts
 
 module Record = struct
   type t =
-    {c_type: Act_c.Mini.Type.t; c_id: Act_common.C_id.t; is_global: bool}
+    {c_type: Act_c_mini.Type.t; c_id: Act_common.C_id.t; is_global: bool}
   [@@deriving fields, yojson, equal]
 
   let make = Fields.create

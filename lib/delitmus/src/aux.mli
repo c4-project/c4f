@@ -20,7 +20,7 @@ type t [@@deriving equal, yojson]
 (** {2 Constructors} *)
 
 val make :
-     ?litmus_aux:Act_c.Mini.Constant.t Act_litmus.Aux.t
+     ?litmus_aux:Act_c_lang.Ast_basic.Constant.t Act_litmus.Aux.t
   -> var_map:Var_map.t
   -> num_threads:int
   -> unit
@@ -30,7 +30,7 @@ val empty : t
 
 (** {2 Accessors} *)
 
-val litmus_aux : t -> Act_c.Mini.Constant.t Act_litmus.Aux.t
+val litmus_aux : t -> Act_c_lang.Ast_basic.Constant.t Act_litmus.Aux.t
 
 val var_map : t -> Var_map.t
 

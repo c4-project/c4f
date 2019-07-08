@@ -26,24 +26,24 @@ module Ac = Act_common
 module Tx = Travesty_base_exts
 
 module Value = struct
-  type t = Int of int
+  type t = Int of int [@@deriving equal]
 end
 
 module Known_value = struct
   type t = {value: Value.t; has_dependencies: bool}
-  [@@deriving fields, make]
+  [@@deriving fields, make, equal]
 
   let add_dependency (kv : t) : t = {kv with has_dependencies= true}
 end
 
 module Record = struct
   type t =
-    { ty: Mini.Type.t option
+    { ty: Act_c_mini.Type.t option
     ; source: [`Existing | `Generated]
     ; scope: [`Global | `Local]
     ; known_value: Known_value.t option
     ; has_writes: bool [@default false] }
-  [@@deriving fields, make]
+  [@@deriving fields, make, equal]
 
   let is_global : t -> bool = function
     | {scope= `Global; _} ->
@@ -53,7 +53,7 @@ module Record = struct
 
   let is_atomic : t -> bool = function
     | {ty= Some ty; _} ->
-        Mini.Type.is_atomic ty
+        Act_c_mini.Type.is_atomic ty
     | {ty= None; _} ->
         false
 
@@ -80,14 +80,14 @@ module Record = struct
 
   let erase_value (record : t) : t = {record with known_value= None}
 
-  let make_existing_global (ty : Mini.Type.t) : t =
+  let make_existing_global (ty : Act_c_mini.Type.t) : t =
     make ~ty ~source:`Existing ~scope:`Global ()
 
   let make_existing_local (_name : Ac.C_id.t) : t =
     make ~source:`Existing ~scope:`Local ()
 
   let make_generated_global ?(initial_value : Value.t option)
-      (ty : Mini.Type.t) : t =
+      (ty : Act_c_mini.Type.t) : t =
     let known_value =
       Option.map initial_value ~f:(fun value ->
           Known_value.make ~value ~has_dependencies:false)
@@ -98,7 +98,7 @@ end
 module Map = struct
   type t = Record.t Ac.C_id.Map.t
 
-  let make_existing_var_map (globals : Mini.Type.t Ac.C_id.Map.t)
+  let make_existing_var_map (globals : Act_c_mini.Type.t Ac.C_id.Map.t)
       (locals : Ac.C_id.Set.t) : t =
     let globals_map =
       Ac.C_id.Map.map globals ~f:Record.make_existing_global
@@ -111,7 +111,7 @@ module Map = struct
         function `Left x | `Right x | `Both (x, _) -> Some x)
 
   let register_global ?(initial_value : Value.t option) (map : t)
-      (key : Ac.C_id.t) (ty : Mini.Type.t) : t =
+      (key : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
     let data = Record.make_generated_global ?initial_value ty in
     Ac.C_id.Map.set map ~key ~data
 
@@ -149,16 +149,16 @@ module Map = struct
     vars |> Ac.C_id.Map.filter ~f:(Tx.List.all ~predicates)
 
   let env_satisfying_all (vars : t) ~(predicates : (Record.t -> bool) list)
-      : Mini.Type.t Ac.C_id.Map.t =
+      : Act_c_mini.Type.t Ac.C_id.Map.t =
     vars
     |> submap_satisfying_all ~predicates
     |> Ac.C_id.Map.filter_map ~f:Record.ty
 
   let env_module_satisfying_all (vars : t)
       ~(predicates : (Record.t -> bool) list) =
-    ( module Mini_env.Make (struct
+    ( module Act_c_mini.Env.Make (struct
       let env = env_satisfying_all ~predicates vars
-    end) : Mini_env.S )
+    end) : Act_c_mini.Env_types.S )
 
   let satisfying_all (vars : t) ~(predicates : (Record.t -> bool) list) :
       Ac.C_id.t list =

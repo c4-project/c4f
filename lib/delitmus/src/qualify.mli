@@ -28,8 +28,8 @@ val litmus_id : Act_common.Litmus_id.t -> Act_common.C_id.t
     information therein. *)
 
 val postcondition :
-     Act_c.Mini_litmus.Ast.Postcondition.t
-  -> Act_c.Mini_litmus.Ast.Postcondition.t
+     Act_c_mini.Litmus.Ast.Postcondition.t
+  -> Act_c_mini.Litmus.Ast.Postcondition.t
 (** [locals_in_statement thread statement] qualifies all local variables in
     the mini-statement [statement] using the information in [thread]. *)
 

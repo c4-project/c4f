@@ -33,10 +33,10 @@ val summarise : Act_config.Fuzz.t -> Action.Summary.t Id.Map.t Or_error.t
 
 val run :
      ?seed:int
-  -> Mini_litmus.Ast.Validated.t
+  -> Act_c_mini.Litmus.Ast.Validated.t
   -> o:Output.t
   -> config:Act_config.Fuzz.t
-  -> Mini_litmus.Ast.Validated.t Or_error.t
+  -> Act_c_mini.Litmus.Ast.Validated.t Or_error.t
 (** [run ?seed test ~o test] mutates [test] using a random number generator
     seeded by [seed]. Any debugging information is printed to the
     appropriate formatters on [o]. *)

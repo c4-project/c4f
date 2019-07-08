@@ -10,25 +10,24 @@
    project root for more information. *)
 
 open Base
-module Mini = Act_c.Mini
+module Mini = Act_c_mini
 
 module type S = [%import: (module Thread.S)]
 
 module Make (B : sig
   val tid : int
 
-  val locals : Mini.Identifier.Set.t
+  val locals : Set.M(Act_common.C_id).t
 end) : S = struct
   let tid = B.tid
 
-  let is_local : Mini.Identifier.t -> bool =
-    Mini.Identifier.Set.mem B.locals
+  let is_local : Act_common.C_id.t -> bool = Set.mem B.locals
 
-  let when_local (v : 'a) ~(over : 'a -> Mini.Identifier.t)
+  let when_local (v : 'a) ~(over : 'a -> Act_common.C_id.t)
       ~(f : 'a -> 'a Or_error.t) : 'a Or_error.t =
     if is_local (over v) then f v else Or_error.return v
 
-  let when_global (v : 'a) ~(over : 'a -> Mini.Identifier.t)
+  let when_global (v : 'a) ~(over : 'a -> Act_common.C_id.t)
       ~(f : 'a -> 'a Or_error.t) : 'a Or_error.t =
     if is_local (over v) then Or_error.return v else f v
 end

@@ -44,16 +44,16 @@ end
      {- whether that value is depended upon (meaning we can't use the
         variable as the target of a value-changing operation).}} *)
 module Known_value : sig
-  type t = {value: Value.t; has_dependencies: bool}
+  type t = {value: Value.t; has_dependencies: bool} [@@deriving equal]
 end
 
 (** Variable records *)
 module Record : sig
-  type t
+  type t [@@deriving equal]
 
   (** {3 Constructors} *)
 
-  val make_existing_global : Mini.Type.t -> t
+  val make_existing_global : Act_c_mini.Type.t -> t
   (** [make_existing_global ty] makes a variable record for a global
       variable of type [ty] that already existed in the program before
       mutation. *)
@@ -63,7 +63,7 @@ module Record : sig
       variable with name [name] that already existed in the program before
       mutation. *)
 
-  val make_generated_global : ?initial_value:Value.t -> Mini.Type.t -> t
+  val make_generated_global : ?initial_value:Value.t -> Act_c_mini.Type.t -> t
   (** [make_generated_global ?initial_value ty] makes a variable record for
       a fuzzer-generated global variable of type [ty] and with initial value
       [value]. *)
@@ -91,7 +91,7 @@ module Record : sig
 
   (** {3 Properties} *)
 
-  val ty : t -> Mini.Type.t option
+  val ty : t -> Act_c_mini.Type.t option
   (** Gets the type of the variable, if known. *)
 
   (** {3 Actions} *)
@@ -125,7 +125,7 @@ module Map : sig
   (** {3 Constructors} *)
 
   val make_existing_var_map :
-    Mini.Type.t Act_common.C_id.Map.t -> Act_common.C_id.Set.t -> t
+    Act_c_mini.Type.t Act_common.C_id.Map.t -> Act_common.C_id.Set.t -> t
   (** [make_existing_var_map globals locals] expands a set of known-existing
       C variable names to a var-record map where each name is registered as
       an existing variable.
@@ -137,13 +137,13 @@ module Map : sig
   val env_satisfying_all :
        t
     -> predicates:(Record.t -> bool) list
-    -> Mini.Type.t Act_common.C_id.Map.t
+    -> Act_c_mini.Type.t Act_common.C_id.Map.t
   (** [env_satisfying_all map ~predicates] returns a typing environment for
       all variables in [map] with known types, and for which all predicates
       in [predicates] are true. *)
 
   val env_module_satisfying_all :
-    t -> predicates:(Record.t -> bool) list -> (module Mini_env.S)
+    t -> predicates:(Record.t -> bool) list -> (module Act_c_mini.Env_types.S)
   (** [env_module_satisfying_all map ~predicates] behaves like
       {{!env_satisfying_all} env_satisfying_all}, but wraps the result in a
       first-class module. *)
@@ -162,7 +162,7 @@ module Map : sig
   (** {3 Actions} *)
 
   val register_global :
-    ?initial_value:Value.t -> t -> Act_common.C_id.t -> Mini.Type.t -> t
+    ?initial_value:Value.t -> t -> Act_common.C_id.t -> Act_c_mini.Type.t -> t
   (** [register_global ?initial_value map var ty] registers a generated
       global variable with name [var], type [ty], and optional known initial
       value [initial_value] in [map], returning the resulting new map. *)

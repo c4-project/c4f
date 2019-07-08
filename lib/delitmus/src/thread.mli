@@ -20,7 +20,7 @@ module type S = sig
 
   val when_local :
        'a
-    -> over:('a -> Act_c.Mini.Identifier.t)
+    -> over:('a -> Act_common.C_id.t)
     -> f:('a -> 'a Or_error.t)
     -> 'a Or_error.t
   (** [when_local x ~over ~f] returns [f x] when [over x] is local, and [x]
@@ -28,7 +28,7 @@ module type S = sig
 
   val when_global :
        'a
-    -> over:('a -> Act_c.Mini.Identifier.t)
+    -> over:('a -> Act_common.C_id.t)
     -> f:('a -> 'a Or_error.t)
     -> 'a Or_error.t
   (** [when_local x ~over ~f] returns [x] when [over x] is local, and [f x]
@@ -38,6 +38,6 @@ end
 module Make (B : sig
   val tid : int
 
-  val locals : Act_c.Mini.Identifier.Set.t
+  val locals : Act_common.C_id.Set.t
 end) : S
 (** Makes a thread context module from a thread ID and local environment. *)

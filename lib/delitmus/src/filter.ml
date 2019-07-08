@@ -24,10 +24,10 @@ let pp_del : Output.t Fmt.t =
   Fmt.(
     prefix pp_prelude
       (using
-         (Fn.compose Act_c.Mini_reify.program Output.program)
+         (Fn.compose Act_c_mini.Reify.program Output.program)
          (vbox Act_c_lang.Ast.Translation_unit.pp)))
 
-let delitmusify_and_print (vast : Act_c.Mini_litmus.Ast.Validated.t)
+let delitmusify_and_print (vast : Act_c_mini.Litmus.Ast.Validated.t)
     (oc : Stdio.Out_channel.t) ~(style : Runner.Style.t) : Aux.t Or_error.t
     =
   Or_error.Let_syntax.(
@@ -52,6 +52,6 @@ include Pb.Filter.Make (struct
           ~path:(Pb.Input.to_string input)
           ic
       in
-      let%bind vast = Act_c.Mini_convert.litmus_of_raw_ast ast in
+      let%bind vast = Act_c_mini.Convert.litmus_of_raw_ast ast in
       delitmusify_and_print vast oc ~style)
 end)
