@@ -11,36 +11,24 @@
 """Miscellaneous I/O utility functions."""
 
 
-import os
+import pathlib
 
 
-def write_text(out_file: str, contents: str) -> None:
+def write_text(out_file: pathlib.Path, contents: str) -> None:
     """Writes a whole string to a file in one go.
 
     :param out_file: The path of the file to write to (truncating).
     :param contents: The contents to write to the file.
     """
-    with open(out_file, "w") as fp:
+    with out_file.open("w") as fp:
         fp.write(contents)
 
 
-def try_mkdir(dir_path: str) -> None:
-    """Tries to make a directory; silently succeeds if it already exists.
-
-    :param dir_path: The path to make, if possible.
-    """
-    try:
-        os.mkdir(dir_path)
-    except FileExistsError as e:
-        if not os.path.isdir(dir_path):
-            raise e
-
-
-def check_file_exists(file_path: str) -> None:
+def check_file_exists(file_path: pathlib.Path) -> None:
     """Checks that the given file path exists.
     Raises `FileNotFoundError` if not.
 
     :param file_path: The path of the subject to test.
     """
-    if not os.path.isfile(file_path):
+    if not file_path.is_file():
         raise FileNotFoundError(file_path)

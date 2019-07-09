@@ -12,7 +12,7 @@
 
 from dataclasses import dataclass
 import logging
-import os
+import pathlib
 import subprocess
 import typing
 
@@ -27,7 +27,7 @@ class TestSubject:
     """Contains information about a single test subject."""
 
     name: str
-    path: str
+    path: pathlib.Path
 
     @property
     def driver_dict(self) -> typing.Mapping[str, typing.Any]:
@@ -76,7 +76,7 @@ class TestEnv:
 
     subjects: typing.List[TestSubject]
     driver: str
-    output_dir: str
+    output_dir: pathlib.Path
 
     def prepare(self) -> None:
         """Prepares the environment by making the output directory, etc."""
@@ -85,14 +85,14 @@ class TestEnv:
 
     def make_output_dir(self) -> None:
         """Tries to make the output directory if it doesn't yet exist."""
-        io_utils.try_mkdir(self.output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def prepare_subjects(self) -> None:
         """Prepares the environment for each each test subject."""
         for subject in self.subjects:
             subject.prepare()
 
-    def output_dir_for(self, subject: TestSubject, compiler: str) -> str:
+    def output_dir_for(self, subject: TestSubject, compiler: str) -> pathlib.Path:
         """Gets the appropriate subdirectory of this environment's output directory
         for a specific subject and compiler.
 
@@ -103,7 +103,7 @@ class TestEnv:
         :return: The path to the output directory.
         """
         name: str = "_".join([subject.name, id_to_dir(compiler)])
-        return os.path.join(self.output_dir, name)
+        return self.output_dir / name
 
     def populate_driver(self, **data: str) -> str:
         """Populates this environment's designated driver template with test run data,
@@ -159,8 +159,9 @@ class TestInstance:
 
     def run(self) -> None:
         """Runs this test instance."""
+        self.output_dir.mkdir(exist_ok=True)
+
         logger.info("%s: running driver", str(self))
-        io_utils.try_mkdir(self.output_dir)
         proc: subprocess.CompletedProcess = subprocess.run(
             self.driver_command, shell=True, text=True, capture_output=True
         )
@@ -195,23 +196,23 @@ class TestInstance:
         return self.env.populate_driver(**self.driver_dict)
 
     @property
-    def error_file(self) -> str:
+    def error_file(self) -> pathlib.Path:
         """Gets the path to the file to which any detailed errors reported for this instance will be written.
 
         :return: The error file path.
         """
-        return os.path.join(self.output_dir, "errors")
+        return self.output_dir / "errors"
 
     @property
-    def state_file(self) -> str:
+    def state_file(self) -> pathlib.Path:
         """Gets the path to the file to which any final state information for this instance will be written.
 
         :return: The state file path.
         """
-        return os.path.join(self.output_dir, "state.json")
+        return self.output_dir / "state.json"
 
     @property
-    def output_dir(self) -> str:
+    def output_dir(self) -> pathlib.Path:
         """Gets the path to the directory to which any intermediate and final output for this instance will be written.
 
         :return: The output directory path.
@@ -292,11 +293,11 @@ def machine_test_from_dict(d: typing.Mapping[str, typing.Any]) -> MachineTest:
 
 def test_env_from_dict(d: typing.Mapping[str, typing.Any]) -> TestEnv:
     subjects = [
-        TestSubject(name=str(name), path=str(path))
+        TestSubject(name=str(name), path=pathlib.Path(path))
         for name, path in d["subjects"].items()
     ]
     driver = str(d["driver"])
-    output_dir = str(d["output_dir"])
+    output_dir = pathlib.Path(d["output_dir"])
     return TestEnv(subjects=subjects, driver=driver, output_dir=output_dir)
 
 
