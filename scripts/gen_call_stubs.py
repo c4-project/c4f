@@ -64,5 +64,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(parents=[act_py.args.aux_in_parser])
     args = parser.parse_args()
 
-    aux: act_py.auxfile.Aux = act_py.auxfile.load_path(args.aux)
+    aux: act_py.auxfile.Aux = act_py.auxfile.load(args.aux)
     output_calls(aux)

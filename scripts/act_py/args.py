@@ -15,5 +15,6 @@ import argparse
 aux_in_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
 aux_in_parser.add_argument(
     "aux",
+    type=argparse.FileType("r"),
     help="Path to the auxiliary JSON file created during a previous delitmus pass.",
 )

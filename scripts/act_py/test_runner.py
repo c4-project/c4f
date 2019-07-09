@@ -8,6 +8,7 @@
 # ACT is based in part on code from the Herdtools7 project
 # (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
 # project root for more information. *)
+"""The main part of the ACT high-level test runner."""
 
 from dataclasses import dataclass
 import logging
@@ -39,7 +40,34 @@ class TestSubject:
     def prepare(self) -> None:
         """Prepares the environment for this subject."""
         io_utils.check_file_exists(self.path)
-        io_utils.try_mkdir(self.path)
+
+
+id_to_dir_replacements : typing.List[typing.Tuple[str, str]] = [
+    ("_", "__"),
+    ("/", "_F"),
+    ("\\", "_B"),
+    (".", "_D"),
+]
+
+
+def id_to_dir(identifier: str) -> str:
+    """Converts an ACT ID to a format safe for use as a path component.
+
+    The focus is on bijectivity rather than human-readability.
+
+    Example:
+
+    >>> id_to_dir("spam_spam_spam.sausage.eggs/ham.and\\spam")
+    "spam__spam__spam_Dsausage_Deggs_Fham_Dand_Bspam"
+
+    :param identifier:
+        The ID to convert.
+    :return:
+        The converted ID.
+    """
+    for (f, t) in id_to_dir_replacements:
+        identifier = identifier.replace(f, t)
+    return identifier
 
 
 @dataclass
@@ -64,16 +92,18 @@ class TestEnv:
         for subject in self.subjects:
             subject.prepare()
 
-    def output_dir_for(self, subject: TestSubject) -> str:
+    def output_dir_for(self, subject: TestSubject, compiler: str) -> str:
         """Gets the appropriate subdirectory of this environment's output directory
-        for a specific subject.
+        for a specific subject and compiler.
 
         This method doesn't create the directory itself.
 
         :param subject: The subject for which we need an output directory.
+        :param compiler: The compiler for which we need an output directory.
         :return: The path to the output directory.
         """
-        return os.path.join(self.output_dir, subject.name)
+        name: str = "_".join([subject.name, id_to_dir(compiler)])
+        return os.path.join(self.output_dir, name)
 
     def populate_driver(self, **data: str) -> str:
         """Populates this environment's designated driver template with test run data,
@@ -128,7 +158,9 @@ class TestInstance:
         }
 
     def run(self) -> None:
+        """Runs this test instance."""
         logger.info("%s: running driver", str(self))
+        io_utils.try_mkdir(self.output_dir)
         proc: subprocess.CompletedProcess = subprocess.run(
             self.driver_command, shell=True, text=True, capture_output=True
         )
@@ -184,7 +216,7 @@ class TestInstance:
 
         :return: The output directory path.
         """
-        return self.env.output_dir_for(self.subject)
+        return self.env.output_dir_for(self.subject, self.compiler)
 
     def __str__(self):
         return f"{self.compiler}!{self.subject.name}"
@@ -212,11 +244,26 @@ class MachineTest:
     backend: str
 
     def run(self, machine_id: str, env: TestEnv) -> None:
+        """Runs tests for all compilers on this machine.
+
+        :param machine_id:
+            The ID of the machine, used to generate fully qualified compiler
+            IDs.
+        :param env:
+            The `TestEnv` containing test subjects and drivers.
+        """
         for compiler_id in self.compilers:
             q_compiler_id = qualify_id(machine_id, compiler_id)
-            self.run_compiler(env, q_compiler_id)
+            self.run_compiler(q_compiler_id, env)
 
-    def run_compiler(self, env: TestEnv, q_compiler_id: str) -> None:
+    def run_compiler(self, q_compiler_id: str, env: TestEnv) -> None:
+        """Runs tests for a single compiler on this machine.
+
+        :param q_compiler_id:
+            The fully qualified ID of the compiler.
+        :param env:
+            The `TestEnv` containing test subjects and drivers.
+        """
         for subject in env.subjects:
             ti: TestInstance = TestInstance(
                 backend=self.backend, compiler=q_compiler_id, subject=subject, env=env
@@ -231,11 +278,8 @@ class Test:
     env: TestEnv
     machines: typing.Mapping[str, MachineTest]
 
-    def run(self):
-        """
-        Runs the test specified by this object.
-        :return:
-        """
+    def run(self) -> None:
+        """Runs the test specified by this object."""
         for (machine_id, machine_spec) in self.machines.items():
             machine_spec.run(machine_id, self.env)
 

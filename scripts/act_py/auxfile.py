@@ -112,10 +112,10 @@ def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> Aux:
 
 
 def load(fp: typing.TextIO) -> Aux:
+    """Loads an aux file from a file pointer.
+
+    :param fp: The (text) file pointer from which we will load an aux file.
+    :return: The resulting `Aux` object.
+    """
     aux_dict: typing.Dict[str, typing.Any] = json.load(fp)
     return of_dict(aux_dict)
-
-
-def load_path(p: typing.Union[str, pathlib.Path]) -> Aux:
-    with open(p) as fp:
-        return load(fp)
