@@ -69,7 +69,7 @@ state == S_SPLICING_OUTER || state == S_SPLICING_INNER {
 
 # This goes after the catch-all print statement to avoid accidentally printing
 # the ); when moving to S_SPLICING_INNER.
-state == S_SPLICING_IN_PROGRESS && /^);$/ {
+state == S_SPLICING_IN_PROGRESS && /^\);$/ {
   state = S_SPLICING_INNER;
 }
 
