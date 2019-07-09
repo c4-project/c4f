@@ -32,12 +32,17 @@ class TestSubject:
         """
         return {"subject_name": self.name, "subject_path": self.path}
 
+    def prepare(self) -> None:
+        """Prepares the environment for this subject."""
+        io_utils.check_file_exists(self.path)
+        io_utils.try_mkdir(self.path)
+
 
 @dataclass
 class TestEnv:
     """The part of a test specification that doesn't change between machines."""
 
-    subjects: typing.Mapping[str, str]
+    subjects: typing.List[TestSubject]
     driver: str
     output_dir: str
 
@@ -52,9 +57,8 @@ class TestEnv:
 
     def prepare_subjects(self) -> None:
         """Prepares the environment for each each test subject."""
-        for path in self.subjects.values():
-            io_utils.check_file_exists(path)
-            io_utils.try_mkdir(path)
+        for subject in self.subjects:
+            subject.prepare()
 
     def output_dir_for(self, subject: TestSubject) -> str:
         """Gets the appropriate subdirectory of this environment's output directory
@@ -115,9 +119,25 @@ class TestInstance:
         return {
             "backend": self.backend,
             "compiler": self.compiler,
-            "dir": self.env.output_dir_for(self.subject),
+            "dir": self.output_dir,
             **self.subject.driver_dict,
         }
+
+    def run(self) -> None:
+        proc: subprocess.CompletedProcess = subprocess.run(
+            self.driver_command, shell=True, text=True, capture_output=True
+        )
+        self.write_files(proc)
+
+    def write_files(self, proc: subprocess.CompletedProcess) -> None:
+        """Writes the output of a driver to specific files in the output
+        directory.
+
+        :param proc: The completed process corresponding to the driver.
+        """
+        io_utils.write_text(self.error_file, proc.stderr)
+        if proc.returncode == 0:
+            io_utils.write_text(self.state_file, proc.stdout)
 
     @property
     def driver_command(self) -> str:
@@ -126,8 +146,29 @@ class TestInstance:
         """
         return self.env.populate_driver(**self.driver_dict)
 
-    def run(self):
-        subprocess.run(self.driver_command, shell=True)
+    @property
+    def error_file(self) -> str:
+        """Gets the path to the file to which any detailed errors reported for this instance will be written.
+
+        :return: The error file path.
+        """
+        return os.path.join(self.output_dir, "errors")
+
+    @property
+    def state_file(self) -> str:
+        """Gets the path to the file to which any final state information for this instance will be written.
+
+        :return: The state file path.
+        """
+        return os.path.join(self.output_dir, "state.json")
+
+    @property
+    def output_dir(self) -> str:
+        """Gets the path to the directory to which any intermediate and final output for this instance will be written.
+
+        :return: The output directory path.
+        """
+        return self.env.output_dir_for(self.subject)
 
 
 def qualify_id(machine_id: str, compiler_id: str) -> str:
@@ -146,26 +187,27 @@ def qualify_id(machine_id: str, compiler_id: str) -> str:
 
 @dataclass
 class MachineTest:
+    """A specification of how to run a multi-compiler test on one machine."""
+
     compilers: typing.List[str]
     backend: str
 
-    def run(self, machine_id: str, env: TestEnv):
+    def run(self, machine_id: str, env: TestEnv) -> None:
         for compiler_id in self.compilers:
             q_compiler_id = qualify_id(machine_id, compiler_id)
-            for (subject_name, subject_path) in env.subjects.items():
-                subject: TestSubject = TestSubject(name=subject_name, path=subject_path)
-                ti: TestInstance = TestInstance(
-                    backend=self.backend,
-                    compiler=q_compiler_id,
-                    subject=subject,
-                    env=env,
-                )
-                ti.run()
+            self.run_compiler(env, q_compiler_id)
+
+    def run_compiler(self, env: TestEnv, q_compiler_id: str) -> None:
+        for subject in env.subjects:
+            ti: TestInstance = TestInstance(
+                backend=self.backend, compiler=q_compiler_id, subject=subject, env=env
+            )
+            ti.run()
 
 
 @dataclass
 class Test:
-    """A specification of how to run a compiler test."""
+    """A specification of how to run a multi-compiler test."""
 
     env: TestEnv
     machines: typing.Mapping[str, MachineTest]
@@ -186,7 +228,10 @@ def machine_test_from_dict(d: typing.Mapping[str, typing.Any]) -> MachineTest:
 
 
 def test_env_from_dict(d: typing.Mapping[str, typing.Any]) -> TestEnv:
-    subjects = {str(name): str(subject) for name, subject in d["subjects"].items()}
+    subjects = [
+        TestSubject(name=str(name), path=str(path))
+        for name, path in d["subjects"].items()
+    ]
     driver = str(d["driver"])
     output_dir = str(d["output_dir"])
     return TestEnv(subjects=subjects, driver=driver, output_dir=output_dir)

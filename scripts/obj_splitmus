@@ -33,5 +33,4 @@ name="$("${SCRIPTDIR}/litmus_test_name" "${infile}")"
 
 tmpdir="$(mktemp -d)" || exit 2
 "${SCRIPTDIR}/obj_splitmus_gen" "${backend}" "${compiler}" "${infile}" "${name}" "${tmpdir}" > /dev/null
-"${tmpdir}/exec/${name}.exe" | "${ACT}" backend parse -sim "${backend}"
 rm -r "${tmpdir}"

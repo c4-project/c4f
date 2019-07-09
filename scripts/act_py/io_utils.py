@@ -14,6 +14,16 @@
 import os
 
 
+def write_text(out_file: str, contents: str) -> None:
+    """Writes a whole string to a file in one go.
+
+    :param out_file: The path of the file to write to (truncating).
+    :param contents: The contents to write to the file.
+    """
+    with open(out_file, "w") as fp:
+        fp.write(contents)
+
+
 def try_mkdir(dir_path: str) -> None:
     """Tries to make a directory; silently succeeds if it already exists.
 

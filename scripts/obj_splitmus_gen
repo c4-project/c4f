@@ -136,4 +136,5 @@ delitmus_and_compile "${compiler}" "${infile}" "${auxfile}" "${cfile}" "${hfile}
 make_litmus_harness "${backend}" "${compiler}" "${auxfile}" "${skelfile}" "${alitfile}" "${litdir}"
 splice_litmus "${auxfile}" "${makefile}" "${runfile}" "${stubfile}"
 
-cd "${litdir}" && make
+(cd "${litdir}" && make >/dev/null)
+"${litdir}/${name}.exe" | "${ACT}" backend parse -sim "${backend}"
