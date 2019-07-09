@@ -11,14 +11,44 @@
 # project root for more information. *)
 
 import argparse
+import logging
+import typing
 import json
 from act_py import test_runner
 
+
+def run_from_spec_file(fp: typing.TextIO) -> None:
+    """Loads a test specification JSON file from `fp`, and runs the resulting test.
+
+    :param fp: The file-pointer from which we load the JSON.
+    """
+    test = test_runner.test_from_dict(json.load(fp))
+    test.run()
+
+
+def config_logger(loglevel: str) -> None:
+    """Sets up the logger using the given log level.
+
+    :param loglevel: The log level specified on the command line.
+    """
+    numeric_level = getattr(logging, loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError("Invalid log level: %s" % loglevel)
+    logging.basicConfig(level=numeric_level)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("test", type=str, help="The input test file.")
+    parser.add_argument(
+        "test", type=argparse.FileType("r"), help="The input test file."
+    )
+    parser.add_argument(
+        "--log",
+        type=str,
+        default="WARNING",
+        help="The log level (eg. DEBUG, INFO, WARNING, ERROR, or CRITICAL).",
+    )
     args = parser.parse_args()
 
-    with open(args.test) as fp:
-        test = test_runner.test_from_dict(json.load(fp))
-    test.run()
+    config_logger(args.log)
+    run_from_spec_file(args.test)

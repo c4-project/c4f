@@ -10,11 +10,15 @@
 # project root for more information. *)
 
 from dataclasses import dataclass
-import typing
+import logging
 import os
 import subprocess
+import typing
 
 from act_py import io_utils
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -124,10 +128,22 @@ class TestInstance:
         }
 
     def run(self) -> None:
+        logger.info("%s: running driver", str(self))
         proc: subprocess.CompletedProcess = subprocess.run(
             self.driver_command, shell=True, text=True, capture_output=True
         )
+        self.log_result(proc)
         self.write_files(proc)
+
+    def log_result(self, proc: subprocess.CompletedProcess) -> None:
+        """Logs the exit code of a driver.
+
+        :param proc: The completed process corresponding to the driver.
+        """
+        if proc.returncode == 0:
+            logger.info("%s: success", str(self))
+        else:
+            logger.error("%s: failed: see %s for details", str(self), self.error_file)
 
     def write_files(self, proc: subprocess.CompletedProcess) -> None:
         """Writes the output of a driver to specific files in the output
@@ -169,6 +185,9 @@ class TestInstance:
         :return: The output directory path.
         """
         return self.env.output_dir_for(self.subject)
+
+    def __str__(self):
+        return f"{self.compiler}!{self.subject.name}"
 
 
 def qualify_id(machine_id: str, compiler_id: str) -> str:
