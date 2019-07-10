@@ -12,7 +12,6 @@
 ;; Config file parser
 
 (menhir
- (infer false)
  (flags "--table")
  (modules parser))
 

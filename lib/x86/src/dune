@@ -13,7 +13,6 @@
    act.sanitiser act.language act.litmus act.utils sedlex plumbing))
 
 (menhir
- (infer false)
  (flags "--table")
  (modules att_parser))
 
