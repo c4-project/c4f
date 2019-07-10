@@ -11,29 +11,29 @@
 
 open Base
 open Stdio
-
 module Pb = Plumbing
 
 module Aux = struct
-  type t = { seed: int option; o: Act_common.Output.t; config: Act_config.Fuzz.t }
+  type t =
+    {seed: int option; o: Act_common.Output.t; config: Act_config.Fuzz.t}
 end
 
-include
-  Pb.Filter.Make (struct
-    type aux_i = Aux.t
-    type aux_o = unit
+include Pb.Filter.Make (struct
+  type aux_i = Aux.t
 
-    let name = "Mini-C explainer"
+  type aux_o = unit
 
-    let run (ctx : Aux.t Pb.Filter_context.t) (ic : In_channel.t) (oc : Out_channel.t)
-        : unit Or_error.t =
-      let {Aux.seed; o; config} = Pb.Filter_context.aux ctx in
-      let input = Pb.Filter_context.input ctx in
-      Or_error.(
-        ic
-        |> Act_c_lang.Frontend.Litmus.load_from_ic ~path:(Pb.Input.to_string input)
-        >>= Act_c_mini.Convert.litmus_of_raw_ast
-        >>= Fuzzer.run ?seed ~o ~config
-        >>| Act_c_mini.Litmus.Pp.print oc
-      )
-  end)
+  let name = "Mini-C explainer"
+
+  let run (ctx : Aux.t Pb.Filter_context.t) (ic : In_channel.t)
+      (oc : Out_channel.t) : unit Or_error.t =
+    let {Aux.seed; o; config} = Pb.Filter_context.aux ctx in
+    let input = Pb.Filter_context.input ctx in
+    Or_error.(
+      ic
+      |> Act_c_lang.Frontend.Litmus.load_from_ic
+           ~path:(Pb.Input.to_string input)
+      >>= Act_c_mini.Convert.litmus_of_raw_ast
+      >>= Fuzzer.run ?seed ~o ~config
+      >>| Act_c_mini.Litmus.Pp.print oc)
+end)

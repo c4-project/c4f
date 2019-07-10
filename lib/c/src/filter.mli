@@ -14,10 +14,10 @@
 (** {2 Fuzzer config as an auxiliary input} *)
 
 module Aux : sig
-  type t = { seed: int option; o: Act_common.Output.t; config: Act_config.Fuzz.t }
+  type t =
+    {seed: int option; o: Act_common.Output.t; config: Act_config.Fuzz.t}
   (** Type of auxiliary input to the fuzzer filter. *)
 end
 
-include Plumbing.Filter_types.S with type aux_i = Aux.t and type aux_o = unit
-
-
+include
+  Plumbing.Filter_types.S with type aux_i = Aux.t and type aux_o = unit

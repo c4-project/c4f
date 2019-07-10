@@ -9,5 +9,4 @@
  (libraries splittable_random sedlex plumbing travesty travesty.base_exts
    core core_kernel shell base base.caml stdio sexplib sexplib0
    shell.string_extended fpath menhirLib fmt textutils_kernel.text_block
-   yojson)
- )
+   yojson))
