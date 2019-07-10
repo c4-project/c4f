@@ -11,7 +11,7 @@
 
 import argparse
 
-"""A parser that contains a positional argument for taking an auxiliary JSON file."""
+# A parser that contains a positional argument for taking an auxiliary JSON file.
 aux_in_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
 aux_in_parser.add_argument(
     "aux",

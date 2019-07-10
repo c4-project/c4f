@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Automatically generates an act.conf for the local machine and puts it on stdout.
+"""Automatically generates an act.conf for the local machine and puts it on stdout."""
 
 import collections
 import enum

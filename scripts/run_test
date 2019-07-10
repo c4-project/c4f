@@ -17,6 +17,16 @@ import json
 from act_py import test_runner
 
 
+readme: str = """Low-level interface onto the test runner.
+
+This script accepts a compiler test expressed as a JSON specification,
+runs it, and emits results (errors and states) in the specified directory
+structure.
+
+To create a JSON specification, use `make_test`.
+"""
+
+
 def run_from_spec_file(fp: typing.TextIO) -> None:
     """Loads a test specification JSON file from `fp`, and runs the resulting test.
 
@@ -38,7 +48,7 @@ def config_logger(loglevel: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=readme)
     parser.add_argument(
         "test", type=argparse.FileType("r"), help="The input test file."
     )

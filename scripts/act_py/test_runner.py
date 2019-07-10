@@ -9,15 +9,15 @@
 # (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
 # project root for more information. *)
 """The main part of the ACT high-level test runner."""
-
+import dataclasses
+import json
 from dataclasses import dataclass
 import logging
 import pathlib
 import subprocess
 import typing
 
-from act_py import io_utils
-
+from act_py import io_utils, json_utils
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TestSubject:
     """Contains information about a single test subject."""
-
     name: str
     path: pathlib.Path
 
@@ -42,7 +41,7 @@ class TestSubject:
         io_utils.check_file_exists(self.path)
 
 
-id_to_dir_replacements : typing.List[typing.Tuple[str, str]] = [
+id_to_dir_replacements: typing.List[typing.Tuple[str, str]] = [
     ("_", "__"),
     ("/", "_F"),
     ("\\", "_B"),
@@ -284,6 +283,13 @@ class Test:
         for (machine_id, machine_spec) in self.machines.items():
             machine_spec.run(machine_id, self.env)
 
+    def dump(self, fp: typing.TextIO) -> None:
+        """Dumps this test, as JSON, to the given file pointer.
+
+        :param fp: The file to which we are dumping this test.
+        """
+        json.dump(self, fp, sort_keys=True, indent=4, cls=json_utils.ExtendedEncoder)
+
 
 def machine_test_from_dict(d: typing.Mapping[str, typing.Any]) -> MachineTest:
     compilers = [str(compiler) for compiler in d["compilers"]]
@@ -291,11 +297,14 @@ def machine_test_from_dict(d: typing.Mapping[str, typing.Any]) -> MachineTest:
     return MachineTest(compilers=compilers, backend=backend)
 
 
+def test_subject_from_dict(d: typing.Mapping[str, typing.Any]) -> TestSubject:
+    name = str(d["name"])
+    path = pathlib.Path(d["path"])
+    return TestSubject(name=name, path=path)
+
+
 def test_env_from_dict(d: typing.Mapping[str, typing.Any]) -> TestEnv:
-    subjects = [
-        TestSubject(name=str(name), path=pathlib.Path(path))
-        for name, path in d["subjects"].items()
-    ]
+    subjects = [ test_subject_from_dict(subject) for subject in d["subjects"] ]
     driver = str(d["driver"])
     output_dir = pathlib.Path(d["output_dir"])
     return TestEnv(subjects=subjects, driver=driver, output_dir=output_dir)

@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+
+
+import argparse
+import os
+import pathlib
+import sys
+import typing
+
+from act_py import test_runner
+
+
+# TODO(@MattWindsor91): understand drivers other than obj_splitmus.
+
+
+obj_splitmus_name: str = os.path.join(os.path.dirname(__file__), "obj_splitmus_gen")
+
+
+obj_splitmus_driver: str = obj_splitmus_name + " {backend} {compiler} {subject_path} {subject_name} {dir}"
+
+
+def make_test(subject_paths: typing.List[pathlib.Path]) -> test_runner.Test:
+    subjects = [inspect_subject(path) for path in subject_paths]
+
+    env: test_runner.TestEnv = test_runner.TestEnv(subjects, obj_splitmus_driver, pathlib.Path("."))
+    machines: typing.Mapping[str, test_runner.MachineTest] = dict()
+    return test_runner.Test(env, machines)
+
+
+def inspect_subject(path: pathlib.Path) -> test_runner.TestSubject:
+    """Visits the subject path `path` and infers the rest of the subject data.
+
+    :param path: The path to visit.
+    :return: The resulting `test_runner.TestSubject`.
+    """
+    with path.open() as fp:
+        name: str = get_subject_name(fp)
+    return test_runner.TestSubject(name, path)
+
+
+def get_subject_name(fp: typing.TextIO) -> str:
+    """Reads the subject name from the top of a Litmus test.
+
+    :param fp:
+        The file pointer to read.
+    :return:
+        The name mentioned in the header of the Litmus test.
+    """
+    fp.seek(0)
+    header: str = fp.readline()
+    header_chunks = header.split()
+    return header_chunks[1].strip()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-o",
+        "--output",
+        metavar="DIR",
+        type=pathlib.Path,
+        default=pathlib.Path("./output"),
+        help="The directory to which the test will output its results.",
+    )
+    parser.add_argument(
+        "-m",
+        "--machines",
+        metavar="SEXP",
+        type=str,
+        help="A filtering predicate to use to restrict the machines under test.",
+    )
+    parser.add_argument(
+        "-c",
+        "--compilers",
+        metavar="SEXP",
+        type=str,
+        help="A filtering predicate to use to restrict the compilers under test.",
+    )
+    parser.add_argument(
+        "subjects",
+        metavar="FILE",
+        type=pathlib.Path,
+        nargs="+",
+        help="The C/litmus files to test.",
+    )
+    args = parser.parse_args()
+    test: test_runner.Test = make_test(args.subjects)
+    test.dump(sys.stdout)
+
+
