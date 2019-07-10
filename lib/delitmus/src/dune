@@ -7,5 +7,5 @@
  (preprocess
   (staged_pps ppx_import ppx_deriving.std ppx_deriving_yojson ppx_jane))
  (libraries sexplib0 result base base.caml core_kernel stdio fmt yojson
-   ppx_deriving_yojson.runtime travesty.base_exts plumbing act.c act.c_lang
+   ppx_deriving_yojson.runtime travesty.base_exts plumbing act.c_lang
    act.c_mini act.common act.litmus act.utils))

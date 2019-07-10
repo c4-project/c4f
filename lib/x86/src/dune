@@ -9,7 +9,7 @@
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
    sexplib0 base base.caml core_kernel fmt travesty travesty.base_exts
-   travesty.containers menhirLib act.asm act.abstract act.c act.common
+   travesty.containers menhirLib act.asm act.abstract act.common
    act.sanitiser act.language act.litmus act.utils sedlex plumbing)
  (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )
