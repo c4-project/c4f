@@ -11,7 +11,6 @@
    sexplib0 base base.caml core_kernel fmt travesty travesty.base_exts
    travesty.containers menhirLib act.asm act.abstract act.common
    act.sanitiser act.language act.litmus act.utils sedlex plumbing)
- (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )
 
 (menhir

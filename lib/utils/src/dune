@@ -10,5 +10,4 @@
    core core_kernel shell base base.caml stdio sexplib sexplib0
    shell.string_extended fpath menhirLib fmt textutils_kernel.text_block
    yojson)
- (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )

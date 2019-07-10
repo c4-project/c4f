@@ -8,7 +8,6 @@
  (libraries sexplib0 fmt fpath menhirLib travesty travesty.base_exts sedlex
    base.caml core_kernel plumbing act.common act.compiler act.litmus act.sim
    act.utils act.sanitiser act.machine)
- (flags :standard -w -39) ; Temporary; see https://github.com/ocaml-community/sedlex/pull/73
  )
 
 ;; Config file parser
