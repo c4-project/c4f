@@ -24,11 +24,10 @@ depends: [
   "ppx_import"
   "ppx_jane"
   "core" {>= "v0.12" & < "v0.13"}
-  "core_extended" {>= "v0.12" & < "v0.13"}
   "fmt" {>= "0.8.5" & < "0.9"}
   "fpath" {>= "0.7.2" & < "0.8"}
   "menhir" {>= "20181113"}
-  "sedlex" {>= "2.0" & < "3"}
+  "sedlex" {>= "2.1" & < "3"}
   "shell" {>= "v0.12" & < "v0.13"}
   "textutils_kernel" {>= "v0.12" & < "v0.13"}
   "travesty" {>= "0.6.0" & < "0.7"}
