@@ -59,7 +59,7 @@ def make_predicate_args(
     :return: An iterator of act command arguments.
     """
     if machine_predicate is not None:
-        yield "-filter-compilers"
+        yield "-filter-machines"
         yield machine_predicate
     if compiler_predicate is not None:
         yield "-filter-compilers"
