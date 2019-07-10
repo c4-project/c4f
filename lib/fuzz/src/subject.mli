@@ -62,7 +62,7 @@ module Program : sig
 
   val to_function :
        t
-    -> vars:Fuzzer_var.Map.t
+    -> vars:Var.Map.t
     -> id:int
     -> Act_c_mini.Function.t Act_c_mini.Named.t Or_error.t
   (** [to_function prog ~vars ~id] lifts a subject-program [prog] with ID
@@ -94,7 +94,7 @@ module Test : sig
        ?postcondition:Act_c_lang.Ast_basic.Constant.t
                       Act_litmus.Postcondition.t
     -> t
-    -> vars:Fuzzer_var.Map.t
+    -> vars:Var.Map.t
     -> name:string
     -> Act_c_mini.Litmus.Ast.Validated.t Or_error.t
   (** [to_litmus ?postcondition subject ~vars ~name] tries to reconstitute a

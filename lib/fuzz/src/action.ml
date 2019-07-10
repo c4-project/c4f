@@ -24,17 +24,16 @@
 open Base
 open Act_common
 open Act_utils
-include Fuzzer_action_intf
 
-let zero_if_not_available (subject : Fuzzer_subject.Test.t) (module A : S)
-    (weight : int) : int Fuzzer_state.Monad.t =
-  let open Fuzzer_state.Monad.Let_syntax in
+let zero_if_not_available (subject : Subject.Test.t)
+    (module A : Action_types.S) (weight : int) : int State.Monad.t =
+  let open State.Monad.Let_syntax in
   if%map A.available subject then weight else 0
 
 module Adjusted_weight = struct
   type t = Not_adjusted of int | Adjusted of {original: int; actual: int}
 
-  let make (module M : S) (user_weight : int) : t =
+  let make (module M : Action_types.S) (user_weight : int) : t =
     if user_weight = M.default_weight then Not_adjusted M.default_weight
     else Adjusted {original= M.default_weight; actual= user_weight}
 
@@ -56,8 +55,10 @@ end
 module Summary = struct
   type t = {weight: Adjusted_weight.t; readme: string} [@@deriving fields]
 
-  let make (module M : S) (user_weight : int) : t =
-    let weight = Adjusted_weight.make (module M : S) user_weight in
+  let make (module M : Action_types.S) (user_weight : int) : t =
+    let weight =
+      Adjusted_weight.make (module M : Action_types.S) user_weight
+    in
     let readme = M.readme () in
     {weight; readme}
 
@@ -98,23 +99,24 @@ module Summary = struct
 end
 
 module Pool = struct
-  type t = (module S) Weighted_list.t
+  type t = (module Action_types.S) Weighted_list.t
 
-  let make_weight_pair (weight_overrides : int Id.Map.t) (module M : S) :
-      (module S) * int =
+  let make_weight_pair (weight_overrides : int Id.Map.t)
+      (module M : Action_types.S) : (module Action_types.S) * int =
     let weight =
       M.name
       |> Id.Map.find weight_overrides
       |> Option.value ~default:M.default_weight
     in
-    ((module M : S), weight)
+    ((module M : Action_types.S), weight)
 
-  let make_weight_alist (actions : (module S) list)
-      (weight_overrides : int Id.Map.t) : ((module S), int) List.Assoc.t =
+  let make_weight_alist (actions : (module Action_types.S) list)
+      (weight_overrides : int Id.Map.t) :
+      ((module Action_types.S), int) List.Assoc.t =
     List.map ~f:(make_weight_pair weight_overrides) actions
 
-  let make (actions : (module S) list) (config : Act_config.Fuzz.t) :
-      t Or_error.t =
+  let make (actions : (module Action_types.S) list)
+      (config : Act_config.Fuzz.t) : t Or_error.t =
     let weight_overrides_alist = Act_config.Fuzz.weights config in
     Or_error.Let_syntax.(
       let%bind weight_overrides =
@@ -125,26 +127,27 @@ module Pool = struct
 
   let summarise : t -> Summary.t Id.Map.t =
     Weighted_list.fold ~init:Id.Map.empty
-      ~f:(fun map (module M : S) user_weight ->
+      ~f:(fun map (module M : Action_types.S) user_weight ->
         Map.set map ~key:M.name ~data:(Summary.make (module M) user_weight))
 
   module W = Weighted_list.On_monad (struct
-    include Fuzzer_state.Monad
+    include State.Monad
 
-    let lift = Fuzzer_state.Monad.Monadic.return
+    let lift = State.Monad.Monadic.return
   end)
 
-  (** [to_available_only wl subject] is a stateful action that modifies [wl]
-      to pull any actions not available on [subject] to weight 0. *)
-  let to_available_only (wl : t) (subject : Fuzzer_subject.Test.t) :
-      t Fuzzer_state.Monad.t =
+  (** [to_available_only wl ~subject] is a stateful action that modifies
+      [wl] to pull any actions not available on [subject] to weight 0. *)
+  let to_available_only (wl : t) ~(subject : Subject.Test.t) :
+      t State.Monad.t =
     W.adjust_weights_m wl ~f:(zero_if_not_available subject)
 
-  let pick (table : t) (subject : Fuzzer_subject.Test.t)
-      (random : Splittable_random.State.t) : (module S) Fuzzer_state.Monad.t
-      =
-    let open Fuzzer_state.Monad.Let_syntax in
-    let%bind available = to_available_only table subject in
-    Fuzzer_state.Monad.Monadic.return
-      (Weighted_list.sample available ~random)
+  let pick (table : t) (subject : Subject.Test.t)
+      (random : Splittable_random.State.t) :
+      (module Action_types.S) State.Monad.t =
+    State.Monad.(
+      table
+      |> to_available_only ~subject
+      >>= Fn.compose State.Monad.Monadic.return
+            (Weighted_list.sample ~random))
 end

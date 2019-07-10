@@ -24,11 +24,7 @@
 open Core_kernel
 module Tx = Travesty_base_exts
 module Ac = Act_common
-module Var = Fuzzer_var
-module Subject = Fuzzer_subject
-module State = Fuzzer_state
 module State_list = Tx.List.On_monad (State.Monad)
-module Action = Fuzzer_action
 
 (** [make_rng seed] creates a splittable RNG; if [seed] is [Some s], [s]
     will be used as the RNG's seed, otherwise a low-entropy system-derived
@@ -104,7 +100,7 @@ let always : Subject.Test.t -> bool State.Monad.t =
   Fn.const (State.Monad.return true)
 
 (** Fuzzer action that generates a new, empty program. *)
-module Make_program : Action.S = struct
+module Make_program : Action_types.S = struct
   let name = Ac.Id.of_string "program.make.empty"
 
   let readme () =
@@ -133,7 +129,7 @@ module Make_program : Action.S = struct
 end
 
 (** Fuzzer action that generates a new global variable. *)
-module Make_global : Action.S = struct
+module Make_global : Action_types.S = struct
   let name = Ac.Id.of_string "var.make.global"
 
   let readme () =
@@ -179,7 +175,7 @@ module Make_global : Action.S = struct
 end
 
 let generate_random_state (type rs)
-    (module Act : Action.S with type Random_state.t = rs)
+    (module Act : Action_types.S with type Random_state.t = rs)
     (subject : Subject.Test.t) (random : Splittable_random.State.t) :
     rs State.Monad.t =
   let open State.Monad.Let_syntax in
@@ -193,17 +189,17 @@ let generate_random_state (type rs)
   Ac.Output.pv o "fuzz: done generating random state.@." ;
   g
 
-let run_action (module Act : Action.S) (subject : Subject.Test.t)
+let run_action (module Act : Action_types.S) (subject : Subject.Test.t)
     (rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =
   let open State.Monad.Let_syntax in
   let%bind state = generate_random_state (module Act) subject rng in
   Act.run subject state
 
-let modules : (module Action.S) list Lazy.t =
+let modules : (module Action_types.S) list Lazy.t =
   lazy
-    [ (module Make_global : Action.S)
-    ; (module Fuzzer_store.Int : Action.S)
-    ; (module Make_program : Action.S) ]
+    [ (module Make_global : Action_types.S)
+    ; (module Store.Int : Action_types.S)
+    ; (module Make_program : Action_types.S) ]
 
 let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
     (rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =

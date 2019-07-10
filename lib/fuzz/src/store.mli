@@ -23,15 +23,30 @@
 
 (** C fuzzer: actions that generate store instructions. *)
 
-open Fuzzer_store_intf
-
 (** {2 Functors} *)
 
-module Make (B : Basic) : Fuzzer_action.S
+module Make (B : sig
+  val name : Act_common.Id.t
+  (** The name of this store action. *)
+
+  val default_weight : int
+  (** The default weight of this store action. *)
+
+  val forbid_already_written : bool
+  (** If true, only allow stores to variables that are known not to already
+      have writes. This can help avoid combinatorial explosions. *)
+
+  module Quickcheck
+      (Src : Act_c_mini.Env_types.S)
+      (Dst : Act_c_mini.Env_types.S) :
+    Act_utils.My_quickcheck.S_with_sexp
+      with type t := Act_c_mini.Atomic_store.t
+  (** The generator this store action uses to create stores. *)
+end) : Action_types.S
 (** [Make (B)] makes a store action given the basic configuration in [B]. *)
 
 (** {2 Pre-made modules} *)
 
-module Int : Fuzzer_action.S
+module Int : Action_types.S
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)

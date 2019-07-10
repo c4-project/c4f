@@ -25,7 +25,6 @@
 
 open Core_kernel
 open Act_common
-module Action = Fuzzer_action
 
 val summarise : Act_config.Fuzz.t -> Action.Summary.t Id.Map.t Or_error.t
 (** [summarise config] tries to get the effective fuzzer weights setup using

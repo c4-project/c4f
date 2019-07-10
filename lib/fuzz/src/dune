@@ -1,12 +1,13 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_c)
- (public_name act.c)
- (synopsis "Automagic Compiler Tormentor: high-level C language support")
+ (name act_fuzz)
+ (public_name act.fuzz)
+ (synopsis "Automagic Compiler Tormentor: Mini-C fuzzer")
  (inline_tests)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
+ (modules_without_implementation action_types)
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
    splittable_random sexplib0 stdio base.caml core_kernel fmt travesty
    travesty.base_exts plumbing act.common act.config act.litmus act.utils

@@ -108,14 +108,14 @@ let fuzz_config (cfg : Act_config.Act.t) : Act_config.Fuzz.t =
   cfg |> Act_config.Act.fuzz
   |> Option.value ~default:(Act_config.Fuzz.make ())
 
-let pp_fuzz_summaries : Act_c.Fuzzer.Action.Summary.t Id.Map.t Fmt.t =
-  Id.pp_map Act_c.Fuzzer.Action.Summary.pp
+let pp_fuzz_summaries : Act_fuzz.Action.Summary.t Id.Map.t Fmt.t =
+  Id.pp_map Act_fuzz.Action.Summary.pp
 
 let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Act.t) :
     unit Or_error.t =
   let open Or_error.Let_syntax in
   let fuzz = fuzz_config cfg in
-  let%map summaries = Act_c.Fuzzer.summarise fuzz in
+  let%map summaries = Act_fuzz.Fuzzer.summarise fuzz in
   Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries summaries
 
 let list_fuzzer_actions_command : Command.t =

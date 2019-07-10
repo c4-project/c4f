@@ -26,8 +26,6 @@
 open Base
 open Act_common
 
-include module type of Fuzzer_action_intf
-
 (** {2 Summaries of actions}
 
     To build these summaries, see {{!Pool.summarise} Pool.summarise} below. *)
@@ -67,7 +65,8 @@ module Pool : sig
   type t
   (** Action lists are just weighted lists of first-class action modules. *)
 
-  val make : (module S) list -> Act_config.Fuzz.t -> t Or_error.t
+  val make :
+    (module Action_types.S) list -> Act_config.Fuzz.t -> t Or_error.t
   (** [make actions config] tries to make a weighted action pool by taking
       the actions defined in [action_map] and applying the user-specified
       weight overrides in [config]. *)
@@ -78,9 +77,9 @@ module Pool : sig
 
   val pick :
        t
-    -> Fuzzer_subject.Test.t
+    -> Subject.Test.t
     -> Splittable_random.State.t
-    -> (module S) Fuzzer_state.Monad.t
+    -> (module Action_types.S) State.Monad.t
   (** [pick pool subject rng] is a stateful action that picks a
       weighted-random action module from [pool] that is available on
       [subject], using [pool] as a random number generator. *)

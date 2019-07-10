@@ -41,20 +41,20 @@ module type Generic = sig
     type t
     (** The type of any random state on which this action depends. *)
 
-    val gen : subject -> t Quickcheck.Generator.t Fuzzer_state.Monad.t
+    val gen : subject -> t Quickcheck.Generator.t State.Monad.t
     (** [gen subject] is a stateful computation that, given subject
         [subject] and the current state, generates a random amount of random
         state for this fuzzer action. *)
   end
 
-  val available : subject -> bool Fuzzer_state.Monad.t
+  val available : subject -> bool State.Monad.t
   (** [available subject] is a stateful computation that, given subject
       [subject] and the current state, decides whether this action can run
       (given any member of [Random_state.t]). *)
 
-  val run : subject -> Random_state.t -> subject Fuzzer_state.Monad.t
+  val run : subject -> Random_state.t -> subject State.Monad.t
   (** [run subject random] is a stateful computation that runs this action
       on [subject] with random state [random]. *)
 end
 
-module type S = Generic with type subject := Fuzzer_subject.Test.t
+module type S = Generic with type subject := Subject.Test.t

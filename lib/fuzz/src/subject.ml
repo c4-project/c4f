@@ -112,24 +112,24 @@ module Program = struct
         List.map (Act_c_mini.Function.body_stms func) ~f:(fun item ->
             With_source.make ~item ~source:`Existing) }
 
-  let try_extract_parameter_type (var : Fuzzer_var.Record.t) :
+  let try_extract_parameter_type (var : Var.Record.t) :
       Act_c_mini.Type.t Or_error.t =
-    var |> Fuzzer_var.Record.ty
+    var |> Var.Record.ty
     |> Result.of_option
          ~error:(Error.of_string "Internal error: missing global type")
 
-  module R_alist = Act_c_mini.Named.Alist.As_named (Fuzzer_var.Record)
+  module R_alist = Act_c_mini.Named.Alist.As_named (Var.Record)
 
   (** [make_function_parameters vars] creates a uniform function parameter
       list for a C litmus test using the global variable records in [vars]. *)
-  let make_function_parameters (vars : Fuzzer_var.Map.t) :
+  let make_function_parameters (vars : Var.Map.t) :
       Act_c_mini.Type.t Act_c_mini.Named.Alist.t Or_error.t =
     vars
-    |> Ac.C_id.Map.filter ~f:Fuzzer_var.Record.is_global
+    |> Ac.C_id.Map.filter ~f:Var.Record.is_global
     |> Ac.C_id.Map.to_alist
     |> Tx.Alist.With_errors.map_right_m ~f:try_extract_parameter_type
 
-  let to_function (prog : t) ~(vars : Fuzzer_var.Map.t) ~(id : int) :
+  let to_function (prog : t) ~(vars : Var.Map.t) ~(id : int) :
       Act_c_mini.Function.t Act_c_mini.Named.t Or_error.t =
     let name = Ac.C_id.of_string (sprintf "P%d" id) in
     let body_stms = List.map prog.stms ~f:With_source.item in
@@ -202,8 +202,8 @@ module Test = struct
     { init= Act_c_mini.Litmus.Ast.Validated.init test
     ; programs= programs_of_litmus test }
 
-  let programs_to_litmus (progs : Program.t list) ~(vars : Fuzzer_var.Map.t)
-      : Act_c_mini.Litmus.Lang.Program.t list Or_error.t =
+  let programs_to_litmus (progs : Program.t list) ~(vars : Var.Map.t) :
+      Act_c_mini.Litmus.Lang.Program.t list Or_error.t =
     progs
     |> List.filter ~f:Program.has_statements
     |> List.mapi ~f:(fun id -> Program.to_function ~vars ~id)
@@ -215,7 +215,7 @@ module Test = struct
       [@@deriving sexp_of]
 
       let vars =
-        Fuzzer_var.Map.make_existing_var_map
+        Var.Map.make_existing_var_map
           (Lazy.force Act_c_mini.Env.test_env)
           Ac.C_id.Set.empty
 
@@ -234,7 +234,7 @@ module Test = struct
   let to_litmus
       ?(postcondition :
          Act_c_lang.Ast_basic.Constant.t Act_litmus.Postcondition.t option)
-      (subject : t) ~(vars : Fuzzer_var.Map.t) ~(name : string) :
+      (subject : t) ~(vars : Var.Map.t) ~(name : string) :
       Act_c_mini.Litmus.Ast.Validated.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind programs = programs_to_litmus ~vars subject.programs in

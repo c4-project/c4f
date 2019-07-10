@@ -96,9 +96,9 @@ module Record = struct
 end
 
 module Map = struct
-  type t = Record.t Ac.C_id.Map.t
+  type t = Record.t Map.M(Ac.C_id).t
 
-  let make_existing_var_map (globals : Act_c_mini.Type.t Ac.C_id.Map.t)
+  let make_existing_var_map (globals : Act_c_mini.Type.t Map.M(Ac.C_id).t)
       (locals : Ac.C_id.Set.t) : t =
     let globals_map =
       Ac.C_id.Map.map globals ~f:Record.make_existing_global

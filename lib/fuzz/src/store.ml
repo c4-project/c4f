@@ -23,15 +23,28 @@
 
 open Core_kernel
 module Ac = Act_common
-open Fuzzer_store_intf
 
-(* Module shorthands *)
-module Action = Fuzzer_action
-module Subject = Fuzzer_subject
-module State = Fuzzer_state
-module Var = Fuzzer_var
+module Random_state = struct
+  type t =
+    { store: Act_c_mini.Atomic_store.t
+    ; path: Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path }
 
-module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
+  let of_tuple (store, path) = {store; path}
+end
+
+module Make (B : sig
+  val name : Ac.Id.t
+
+  val default_weight : int
+
+  val forbid_already_written : bool
+
+  module Quickcheck
+      (Src : Act_c_mini.Env_types.S)
+      (Dst : Act_c_mini.Env_types.S) :
+    Act_utils.My_quickcheck.S_with_sexp
+      with type t := Act_c_mini.Atomic_store.t
+end) : Action_types.S with type Random_state.t = Random_state.t = struct
   let name = B.name
 
   let default_weight = B.default_weight
@@ -82,9 +95,9 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
         @ if B.forbid_already_written then [Fn.non has_writes] else [])
 
   module Random_state = struct
-    type t = rst
+    type t = Random_state.t
 
-    let of_tuple (store, path) = {store; path}
+    let of_tuple = Random_state.of_tuple
 
     module G = Quickcheck.Generator
 
@@ -180,7 +193,8 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
       (Subject.Test.Path.insert_stm path store_stm subject)
 end
 
-module Int : Action.S with type Random_state.t = rst = Make (struct
+module Int : Action_types.S with type Random_state.t = Random_state.t =
+Make (struct
   let name = Ac.Id.of_string "store.make.int.single"
 
   let forbid_already_written = true (* for now *)
@@ -227,19 +241,19 @@ let%test_module "int tests" =
                  ~dst:(Address.of_variable (Act_common.C_id.of_string "y"))
                  ~mo:Mem_order.Relaxed) ]
 
-    let programs : Fuzzer_subject.Program.t list Lazy.t =
+    let programs : Subject.Program.t list Lazy.t =
       let open Lazy.Let_syntax in
       let%bind parameters = globals in
       let%map body_stms = body_stms in
       Act_c_mini.
-        [ Fuzzer_subject.Program.of_function
+        [ Subject.Program.of_function
             (Function.make ~parameters ~body_decls:[] ~body_stms ()) ]
 
-    let test_subject : Fuzzer_subject.Test.t Lazy.t =
+    let test_subject : Subject.Test.t Lazy.t =
       let open Lazy.Let_syntax in
       let%bind init = init in
       let%map programs = programs in
-      {Fuzzer_subject.Test.init; programs}
+      {Subject.Test.init; programs}
 
     let path : Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path Lazy.t
         =
@@ -263,28 +277,28 @@ let%test_module "int tests" =
       let open Lazy.Let_syntax in
       let%bind store = store in
       let%map path = path in
-      {store; path}
+      {Random_state.store; path}
 
-    let prepare_fuzzer_state () : unit Fuzzer_state.Monad.t =
-      Fuzzer_state.Monad.(
+    let prepare_fuzzer_state () : unit State.Monad.t =
+      State.Monad.(
         register_global
           Act_c_mini.Type.(pointer_to Basic.atomic_int)
           (Act_common.C_id.of_string "gen1")
-          ~initial_value:(Fuzzer_var.Value.Int 1337)
+          ~initial_value:(Var.Value.Int 1337)
         >>= fun () ->
         register_global
           Act_c_mini.Type.(pointer_to Basic.atomic_int)
           (Act_common.C_id.of_string "gen2")
-          ~initial_value:(Fuzzer_var.Value.Int (-55)))
+          ~initial_value:(Var.Value.Int (-55)))
 
-    let init_fuzzer_state : Fuzzer_state.t Lazy.t =
+    let init_fuzzer_state : State.t Lazy.t =
       let open Lazy.Let_syntax in
       let%map globals_alist = globals in
       let globals = Act_common.C_id.Map.of_alist_exn globals_alist in
-      Fuzzer_state.init ~globals ~locals:Act_common.C_id.Set.empty ()
+      State.init ~globals ~locals:Act_common.C_id.Set.empty ()
 
-    let run_test () : (Fuzzer_state.t * Fuzzer_subject.Test.t) Or_error.t =
-      Fuzzer_state.Monad.(
+    let run_test () : (State.t * Subject.Test.t) Or_error.t =
+      State.Monad.(
         run'
           ( prepare_fuzzer_state ()
           >>= fun () ->
@@ -295,10 +309,10 @@ let%test_module "int tests" =
       let r =
         let open Or_error.Let_syntax in
         let%bind state, test = run_test () in
-        let vars = Fuzzer_state.vars state in
+        let vars = State.vars state in
         let prog_results =
           List.mapi test.programs ~f:(fun id p ->
-              let%map fn = Fuzzer_subject.Program.to_function ~vars ~id p in
+              let%map fn = Subject.Program.to_function ~vars ~id p in
               Act_c_mini.(Reify.func (Named.name fn) (Named.value fn)))
         in
         Or_error.combine_errors prog_results
@@ -323,8 +337,7 @@ let%test_module "int tests" =
       let result =
         Or_error.(
           run_test () >>| fst
-          >>| Fuzzer_state.vars_satisfying_all
-                ~predicates:[Fuzzer_var.Record.is_global])
+          >>| State.vars_satisfying_all ~predicates:[Var.Record.is_global])
       in
       Sexp.output_hum stdout
         [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
@@ -334,8 +347,8 @@ let%test_module "int tests" =
       let result =
         Or_error.(
           run_test () >>| fst
-          >>| Fuzzer_state.vars_satisfying_all
-                ~predicates:[Fuzzer_var.Record.has_known_value])
+          >>| State.vars_satisfying_all
+                ~predicates:[Var.Record.has_known_value])
       in
       Sexp.output_hum stdout
         [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
@@ -345,8 +358,8 @@ let%test_module "int tests" =
       let result =
         Or_error.(
           run_test () >>| fst
-          >>| Fuzzer_state.vars_satisfying_all
-                ~predicates:[Fuzzer_var.Record.has_dependencies])
+          >>| State.vars_satisfying_all
+                ~predicates:[Var.Record.has_dependencies])
       in
       Sexp.output_hum stdout
         [%sexp (result : Act_common.C_id.t list Or_error.t)] ;

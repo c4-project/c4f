@@ -39,13 +39,11 @@ val init :
     context [o] is provided, it can be used for logging verbose/debug
     information during the fuzzing process. *)
 
-val vars : t -> Fuzzer_var.Map.t
+val vars : t -> Var.Map.t
 (** [vars state] gets the state's variable map. *)
 
 val vars_satisfying_all :
-     t
-  -> predicates:(Fuzzer_var.Record.t -> bool) list
-  -> Act_common.C_id.t list
+  t -> predicates:(Var.Record.t -> bool) list -> Act_common.C_id.t list
 (** [vars_satisfying_all state ~predicates] returns the list of all
     variables in [state]'s variable list that satisfy [predicates]. *)
 
@@ -56,16 +54,16 @@ module Monad : sig
       with type state := t
        and module Inner := Or_error
 
-  val with_vars_m : (Fuzzer_var.Map.t -> 'a t) -> 'a t
+  val with_vars_m : (Var.Map.t -> 'a t) -> 'a t
   (** [with_vars_m f] is a stateful action that binds the stateful action
       [f] over the current variable map. *)
 
-  val with_vars : (Fuzzer_var.Map.t -> 'a) -> 'a t
+  val with_vars : (Var.Map.t -> 'a) -> 'a t
   (** [with_vars f] is a variant of {{!with_vars_m} with_vars_m} which maps
       across [f] rather than binding. *)
 
   val register_global :
-       ?initial_value:Fuzzer_var.Value.t
+       ?initial_value:Var.Value.t
     -> Act_c_mini.Type.t
     -> Act_common.C_id.t
     -> unit t
