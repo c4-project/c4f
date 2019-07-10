@@ -32,5 +32,5 @@ infile="$3"
 name="$("${SCRIPTDIR}/litmus_test_name" "${infile}")"
 
 tmpdir="$(mktemp -d)" || exit 2
-"${SCRIPTDIR}/obj_splitmus_gen" "${backend}" "${compiler}" "${infile}" "${name}" "${tmpdir}" > /dev/null
+"${SCRIPTDIR}/obj_splitmus_gen" "${backend}" "${compiler}" "${infile}" "${name}" "${tmpdir}"
 rm -r "${tmpdir}"

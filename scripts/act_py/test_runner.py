@@ -238,6 +238,7 @@ class Test:
 
     def run(self) -> None:
         """Runs the test specified by this object."""
+        self.env.prepare()
         for (machine_id, machine_spec) in self.machines.items():
             machine_spec.run(machine_id, self.env)
 
