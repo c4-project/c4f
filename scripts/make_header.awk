@@ -6,17 +6,18 @@
 # and won't work for C files in general.
 
 BEGIN {
-  next_line_is_decl = 0;
+  in_decl = 0;
 
   print "#include <stdatomic.h>"
 }
 
-next_line_is_decl {
-  next_line_is_decl = 0;
-  printf "void %s;\n", $0;
+# Start of function
+!in_decl && /^ *void/ { in_decl = 1; }
+
+# End of function
+in_decl && /^ *\{/ {
+  in_decl = 0;
+  print ";";
 }
 
-# Start of function
-!next_line_is_decl && /^ *void/ {
-  next_line_is_decl = 1;
-}
+in_decl { print $0; }
