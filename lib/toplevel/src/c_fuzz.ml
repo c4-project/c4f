@@ -34,9 +34,7 @@ let run (seed : int option) (args : Args.Standard_with_files.t)
     let%bind input = Args.Standard_with_files.infile_source args in
     let%bind output = Args.Standard_with_files.outfile_sink args in
     Or_error.ignore_m
-      (Act_c.Filters.Litmus.run
-         (Act_c.Filters.Fuzz {seed; o; config})
-         input output))
+      (Act_c.Filter.run {seed; o; config} input output))
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
