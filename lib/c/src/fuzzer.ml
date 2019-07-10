@@ -153,7 +153,9 @@ module Make_global : Action.S = struct
     let gen' (vars : Var.Map.t) : t G.t =
       let open G.Let_syntax in
       let%bind is_atomic = G.bool in
-      let%bind initial_value = Act_c_lang.Ast_basic.Constant.gen_int32_as_int in
+      let%bind initial_value =
+        Act_c_lang.Ast_basic.Constant.gen_int32_as_int
+      in
       let%map name = Var.Map.gen_fresh_var vars in
       {is_atomic; initial_value; name}
 
@@ -254,14 +256,15 @@ let run_with_state (test : Act_c_mini.Litmus.Ast.Validated.t)
 let get_first_func (test : Act_c_mini.Litmus.Ast.Validated.t) :
     Act_c_mini.Function.t Or_error.t =
   Or_error.(
-  (* If this is a validated litmus test, it _should_ have at least one
-     function, and each function _should_ report the right global variables. *)
+    (* If this is a validated litmus test, it _should_ have at least one
+       function, and each function _should_ report the right global
+       variables. *)
     test |> Act_c_mini.Litmus.Ast.Validated.programs |> List.hd
     |> Result.of_option
          ~error:
            (Error.of_string
               "Internal error: validated litmus had no functions")
-       >>| Act_c_mini.Named.value)
+    >>| Act_c_mini.Named.value)
 
 (** [existing_globals test] extracts the existing global variable names and
     types from litmus test [test]. *)

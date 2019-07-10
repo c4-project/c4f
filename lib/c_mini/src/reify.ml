@@ -13,7 +13,8 @@ let type_to_pointer (ty : Type.t) : Act_c_lang.Ast_basic.Pointer.t option =
   (* We translate the actual underlying type separately, in [type_to_spec]. *)
   Option.some_if (Type.is_pointer ty) [[]]
 
-let id_declarator (ty : Type.t) (id : Act_common.C_id.t) : Ast.Declarator.t =
+let id_declarator (ty : Type.t) (id : Act_common.C_id.t) : Ast.Declarator.t
+    =
   {pointer= type_to_pointer ty; direct= Id id}
 
 let decl (id : Act_common.C_id.t) (elt : Initialiser.t) : Ast.Decl.t =
@@ -27,16 +28,18 @@ let decl (id : Act_common.C_id.t) (elt : Initialiser.t) : Ast.Decl.t =
 let decls : Initialiser.t Named.Alist.t -> [> `Decl of Ast.Decl.t] list =
   List.map ~f:(fun (k, v) -> `Decl (decl k v))
 
-let func_parameter (id : Act_common.C_id.t) (ty : Type.t) : Ast.Param_decl.t =
+let func_parameter (id : Act_common.C_id.t) (ty : Type.t) : Ast.Param_decl.t
+    =
   { qualifiers= [type_to_spec ty]
   ; declarator= `Concrete (id_declarator ty id) }
 
-let func_parameters (parameters : Type.t Named.Alist.t) : Ast.Param_type_list.t =
+let func_parameters (parameters : Type.t Named.Alist.t) :
+    Ast.Param_type_list.t =
   { params= List.map ~f:(Tuple2.uncurry func_parameter) parameters
   ; style= `Normal }
 
-let func_signature (id : Act_common.C_id.t) (parameters : Type.t Named.Alist.t) :
-    Ast.Declarator.t =
+let func_signature (id : Act_common.C_id.t)
+    (parameters : Type.t Named.Alist.t) : Ast.Declarator.t =
   {pointer= None; direct= Fun_decl (Id id, func_parameters parameters)}
 
 let lvalue_to_expr : Lvalue.t -> Ast.Expr.t =
@@ -59,7 +62,8 @@ let atomic_load_to_expr (ld : Atomic_load.t) : Ast.Expr.t =
     ; mem_order_to_expr (Atomic_load.mo ld) ]
 
 let bool_lit_to_expr (b : bool) : Ast.Expr.t =
-  Ast.Expr.Identifier (Act_common.C_id.of_string (if b then "true" else "false"))
+  Ast.Expr.Identifier
+    (Act_common.C_id.of_string (if b then "true" else "false"))
 
 let expr : Expression.t -> Ast.Expr.t =
   Expression.reduce ~bool_lit:bool_lit_to_expr

@@ -29,9 +29,7 @@
 
 open Base
 
-val func :
-     Act_c_lang.Ast.Function_def.t
-  -> Function.t Named.t Or_error.t
+val func : Act_c_lang.Ast.Function_def.t -> Function.t Named.t Or_error.t
 (** [func ast] tries to interpret a C function definition AST as a
     mini-model function. *)
 
@@ -41,8 +39,7 @@ val translation_unit :
     mini-model program. *)
 
 val litmus :
-     Act_c_lang.Ast.Litmus.Validated.t
-  -> Litmus.Ast.Validated.t Or_error.t
+  Act_c_lang.Ast.Litmus.Validated.t -> Litmus.Ast.Validated.t Or_error.t
 (** [litmus test] tries to interpret a Litmus test over the full C AST as
     one over the mini-model. *)
 

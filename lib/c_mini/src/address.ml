@@ -40,8 +40,8 @@ let ref_lvalue (l : Lvalue.t) : t =
 
 let ref_normal : t -> t = function Lvalue k -> ref_lvalue k | x -> ref x
 
-let rec reduce (addr : t) ~(lvalue : Lvalue.t -> 'a) ~(ref : 'a -> 'a)
-    : 'a =
+let rec reduce (addr : t) ~(lvalue : Lvalue.t -> 'a) ~(ref : 'a -> 'a) : 'a
+    =
   match addr with
   | Lvalue lv ->
       lvalue lv
@@ -56,9 +56,8 @@ let normalise (addr : t) : t =
   Fn.apply_n_times ~n:(ref_depth addr) ref_normal (lvalue (lvalue_of addr))
 
 module On_lvalues :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Lvalue.t = Travesty.Traversable.Make0 (struct
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = Lvalue
@@ -120,8 +119,7 @@ let on_address_of_typed_id ~(id : Ac.C_id.t) ~(ty : Type.t) : t =
   let lv = of_variable id in
   if Type.is_pointer ty then lv else ref lv
 
-let variable_of (addr : t) : Ac.C_id.t =
-  Lvalue.variable_of (lvalue_of addr)
+let variable_of (addr : t) : Ac.C_id.t = Lvalue.variable_of (lvalue_of addr)
 
 let variable_in_env (addr : t) ~(env : _ Ac.C_id.Map.t) : bool =
   Lvalue.variable_in_env (lvalue_of addr) ~env

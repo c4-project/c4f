@@ -35,8 +35,7 @@ open Base
 module Lang :
   Act_litmus.Ast.Basic
     with type Statement.t =
-          [ `Stm of Statement.t
-          | `Decl of Initialiser.t Named.t ]
+          [`Stm of Statement.t | `Decl of Initialiser.t Named.t]
      and type Program.t = Function.t Named.t
      and type Constant.t = Act_c_lang.Ast_basic.Constant.t
 

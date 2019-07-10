@@ -34,8 +34,9 @@ module Generic = struct
            (prefix (unit "locations@ ")
               (brackets (box (list ~sep:(unit ";@ ") Ac.C_id.pp))))))
 
-  let rec pp_predicate (f : Formatter.t) (pred : 'const Ast_base.Pred.t)
-      ~(pp_const : 'const Fmt.t) : unit =
+  let rec pp_predicate (f : Formatter.t)
+      (pred : 'const Postcondition.Pred.t) ~(pp_const : 'const Fmt.t) : unit
+      =
     let mu = pp_predicate ~pp_const in
     match pred with
     | Bracket p ->
@@ -51,9 +52,10 @@ module Generic = struct
     | `Exists ->
         Fmt.string f "exists"
 
-  let pp_post (f : Formatter.t) (pc : 'const Ast_base.Postcondition.t)
+  let pp_post (f : Formatter.t) (pc : 'const Postcondition.t)
       ~(pp_const : 'const Fmt.t) : unit =
-    let {Ast_base.Postcondition.quantifier; predicate} = pc in
+    let predicate = Postcondition.predicate pc in
+    let quantifier = Postcondition.quantifier pc in
     Fmt.(box (pair ~sep:sp pp_quantifier (parens (pp_predicate ~pp_const))))
       f (quantifier, predicate)
 end
@@ -76,7 +78,7 @@ module Make_common (B : Basic) = struct
         list ~sep:sp (fun f (l, c) ->
             pf f "@[%a = %a;@]" Ac.C_id.pp l B.Ast.Lang.Constant.pp c))
 
-  let pp_post : B.Ast.Lang.Constant.t Ast_base.Postcondition.t Fmt.t =
+  let pp_post : B.Ast.Lang.Constant.t Postcondition.t Fmt.t =
     Generic.pp_post ~pp_const:B.Ast.Lang.Constant.pp
 
   let print_body (oc : Out_channel.t) (litmus : B.Ast.Validated.t) : unit =

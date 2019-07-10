@@ -57,12 +57,10 @@ module Make (E : Env_types.Basic) : Env_types.S = struct
   end
 
   let has_atomic_int_variables () : bool =
-    Ac.C_id.Map.exists E.env
-      ~f:Type.(basic_type_is ~basic:Basic.atomic_int)
+    Ac.C_id.Map.exists E.env ~f:Type.(basic_type_is ~basic:Basic.atomic_int)
 
   let atomic_int_variables () : Type.t Ac.C_id.Map.t =
-    Ac.C_id.Map.filter E.env
-      ~f:Type.(basic_type_is ~basic:Basic.atomic_int)
+    Ac.C_id.Map.filter E.env ~f:Type.(basic_type_is ~basic:Basic.atomic_int)
 
   let has_int_variables () : bool =
     Ac.C_id.Map.exists E.env ~f:Type.(basic_type_is ~basic:Basic.int)
@@ -99,8 +97,7 @@ let test_env_atomic_ptrs_only : Type.t Ac.C_id.Map.t Lazy.t =
     test_env
     >>| Ac.C_id.Map.filter
           ~f:
-            Type.(
-              Fn.(is_pointer &&& basic_type_is ~basic:Basic.atomic_int)))
+            Type.(Fn.(is_pointer &&& basic_type_is ~basic:Basic.atomic_int)))
 
 let test_env_atomic_ptrs_only_mod : (module Env_types.S) Lazy.t =
   lift_to_lazy_mod test_env_atomic_ptrs_only

@@ -83,46 +83,6 @@ end
 module type S = sig
   module Lang : Basic
 
-  module Pred_elt : sig
-    type t = Lang.Constant.t Ast_base.Pred_elt.t
-    [@@deriving compare, sexp, equal, quickcheck]
-
-    include
-      Ast_base_intf.S_pred_elt
-        with type 'const t := t
-         and type 'const elt := Lang.Constant.t
-         and type id := Id.t
-  end
-
-  module Pred : sig
-    type t = Lang.Constant.t Ast_base.Pred.t
-    [@@deriving compare, sexp, equal, quickcheck]
-
-    include
-      Ast_base_intf.S_pred
-        with type 'const t := t
-         and type 'const elt := Pred_elt.t
-
-    val of_blang : Pred_elt.t Blang.t -> t Or_error.t
-    (** [of_blang blang] converts [blang], a Blang expression over
-        {{!Pred_elt.t} Pred_elt}, to a {{!t} t}. It may fail if the
-        expression contains elements inexpressible in the Litmus syntax. *)
-
-    val to_blang : t -> Pred_elt.t Blang.t
-    (** [of_blang pred] converts a [pred] to Blang expression over
-        {{!Pred_elt.t} Pred_elt}. *)
-  end
-
-  module Postcondition : sig
-    type t = Lang.Constant.t Ast_base.Postcondition.t
-    [@@deriving sexp, compare, equal, quickcheck]
-
-    include
-      Ast_base_intf.S_postcondition
-        with type 'const t := t
-         and type 'const pred := Pred.t
-  end
-
   module Init : sig
     type elt = {id: Act_common.C_id.t; value: Lang.Constant.t}
     [@@deriving sexp]
@@ -134,7 +94,7 @@ module type S = sig
     type t =
       | Program of Lang.Program.t
       | Init of Init.t
-      | Post of Postcondition.t
+      | Post of Lang.Constant.t Postcondition.t
       | Locations of Act_common.C_id.t list
     [@@deriving sexp]
 
@@ -146,7 +106,7 @@ module type S = sig
     (** [as_init decl] returns [Some i] if [decl] is an init-block [i], and
         [None] otherwise. *)
 
-    val as_post : t -> Postcondition.t option
+    val as_post : t -> Lang.Constant.t Postcondition.t option
     (** [as_post decl] returns [Some c] if [decl] is a postcondition [c],
         and [None] otherwise. *)
 
@@ -183,7 +143,7 @@ module type S = sig
     val locations : t -> Act_common.C_id.t list option
     (** [locations test] gets the locations stanza for [test], if it exists. *)
 
-    val postcondition : t -> Postcondition.t option
+    val postcondition : t -> Lang.Constant.t Postcondition.t option
     (** [postcondition test] gets the postcondition of [test], if one
         exists. *)
 
@@ -191,7 +151,7 @@ module type S = sig
 
     val make :
          ?locations:Act_common.C_id.t list
-      -> ?postcondition:Postcondition.t
+      -> ?postcondition:Lang.Constant.t Postcondition.t
       -> name:string
       -> init:(Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
       -> programs:Lang.Program.t list

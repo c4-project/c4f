@@ -24,9 +24,8 @@ module Base_map (M : Monad.S) = struct
 end
 
 module On_lvalues :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Lvalue.t = Travesty.Traversable.Make0 (struct
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = Lvalue
@@ -40,9 +39,8 @@ module On_lvalues :
 end)
 
 module On_addresses :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Address.t = Travesty.Traversable.Make0 (struct
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t =
+Travesty.Traversable.Make0 (struct
   type nonrec t = t
 
   module Elt = Address

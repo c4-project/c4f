@@ -16,7 +16,7 @@ module Ac = Act_common
 type 'const t =
   { locations: Ac.C_id.t list option
   ; init: (Ac.C_id.t * 'const) list
-  ; postcondition: 'const Ast_base.Postcondition.t option }
+  ; postcondition: 'const Postcondition.t option }
 [@@deriving fields, make, equal, sexp]
 
 let empty (type k) : k t = {locations= None; init= []; postcondition= None}
@@ -34,7 +34,7 @@ Travesty.Bi_traversable.Make1_right (struct
     module MA = Travesty_base_exts.Alist.On_monad (M)
     module PostO =
       Travesty.Bi_traversable.Chain_Bi1_right_Traverse1
-        (Ast_base.Postcondition.On_c_identifiers)
+        (Postcondition.On_c_identifiers)
         (Travesty_base_exts.Option)
     module MP = PostO.On_monad (M)
     module Mx = Travesty.Monad_exts.Extend (M)
@@ -62,15 +62,14 @@ module Json (Const : sig
 
   include Plumbing.Jsonable_types.S with type t := t
 
-  val parse_post_string : string -> t Ast_base.Postcondition.t Or_error.t
+  val parse_post_string : string -> t Postcondition.t Or_error.t
 end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
   type nonrec t = Const.t t
 
   let opt (foo : 'a option) ~(f : 'a -> Yojson.Safe.t) : Yojson.Safe.t =
     Option.value_map foo ~f ~default:`Null
 
-  let postcondition_to_json (pc : Const.t Ast_base.Postcondition.t) :
-      Yojson.Safe.t =
+  let postcondition_to_json (pc : Const.t Postcondition.t) : Yojson.Safe.t =
     `String
       (Fmt.strf "@[<h>%a@]" (Pp.Generic.pp_post ~pp_const:Const.pp) pc)
 
@@ -87,7 +86,7 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
   module U = Yojson.Safe.Util
 
   let postcondition_of_json (json : Yojson.Safe.t) :
-      (Const.t Ast_base.Postcondition.t option, string) Result.t =
+      (Const.t Postcondition.t option, string) Result.t =
     let result =
       Or_error.Let_syntax.(
         let%bind post_str =

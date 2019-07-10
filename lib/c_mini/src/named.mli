@@ -22,12 +22,12 @@ val make : 'a -> name:Act_common.C_id.t -> 'a t
 (** [make value ~name] tags [value] with identifier [name]. *)
 
 val seq_of_alist : (Act_common.C_id.t, 'a) List.Assoc.t -> 'a t Sequence.t
-(** [seq_of_alist xs] converts an identifier-keyed association list [xs]
-    to a sequence of named values. *)
+(** [seq_of_alist xs] converts an identifier-keyed association list [xs] to
+    a sequence of named values. *)
 
 val list_of_alist : (Act_common.C_id.t, 'a) List.Assoc.t -> 'a t list
-(** [list_of_alist xs] converts an identifier-keyed association list [xs]
-    to a list of named values. *)
+(** [list_of_alist xs] converts an identifier-keyed association list [xs] to
+    a list of named values. *)
 
 (** {2 Projections} *)
 
@@ -39,24 +39,26 @@ val value : 'a t -> 'a
 
 val alist_of_seq : 'a t Sequence.t -> (Act_common.C_id.t, 'a) List.Assoc.t
 (** [alist_of_seq xs] converts a sequence of named values [xs] to an
-   identifier-keyed association list. *)
+    identifier-keyed association list. *)
 
 val alist_of_list : 'a t list -> (Act_common.C_id.t, 'a) List.Assoc.t
-(** [list_of_alist xs] converts an identifier-keyed association list [xs]
-    to a list of named values. *)
+(** [list_of_alist xs] converts an identifier-keyed association list [xs] to
+    a list of named values. *)
 
 (** {2 Traversing} *)
 
-include Travesty.Bi_traversable_types.S1_right with type 'r t := 'r t and
-type left = Act_common.C_id.t
+include
+  Travesty.Bi_traversable_types.S1_right
+    with type 'r t := 'r t
+     and type left = Act_common.C_id.t
 
 (** {2 Helpers for associative lists of C identifiers and values} *)
 
 module Alist : sig
-  module As_named (A : Equal.S) : Travesty.Traversable_types.S0
-    with type Elt.t = A.t t
-     and type t = (Act_common.C_id.t, A.t) List.Assoc.t
+  module As_named (A : Equal.S) :
+    Travesty.Traversable_types.S0
+      with type Elt.t = A.t t
+       and type t = (Act_common.C_id.t, A.t) List.Assoc.t
 
   type 'a t = (Act_common.C_id.t, 'a) List.Assoc.t [@@deriving sexp, equal]
 end
-

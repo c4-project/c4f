@@ -13,7 +13,8 @@ module Tx = Travesty_base_exts
 
 (* TODO(@MattWindsor91): perhaps move this outwards. *)
 module C_aux = struct
-  type t = Act_c_lang.Ast_basic.Constant.t Act_litmus.Aux.t [@@deriving equal]
+  type t = Act_c_lang.Ast_basic.Constant.t Act_litmus.Aux.t
+  [@@deriving equal]
 
   module J : Plumbing.Jsonable_types.S with type t := t =
   Act_litmus.Aux.Json (struct

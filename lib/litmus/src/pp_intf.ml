@@ -35,6 +35,6 @@ module type S = sig
   (** [print_programs oc ast] prints the program table of [ast] on output
       channel [oc], omitting all of the other parts of the AST. *)
 
-  val pp_post : Formatter.t -> Ast.Postcondition.t -> unit
+  val pp_post : Formatter.t -> Ast.Lang.Constant.t Postcondition.t -> unit
   (** [pp_post f post] prints the postcondition [post] on formatter [f]. *)
 end

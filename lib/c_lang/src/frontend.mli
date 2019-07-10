@@ -31,6 +31,7 @@ module Litmus : Plumbing.Loadable_types.S with type t = Ast.Litmus.t
 (** Frontend for C-based litmus tests. *)
 
 module Litmus_post :
-  Plumbing.Loadable_types.S with type t = Ast.Litmus.Postcondition.t
+  Plumbing.Loadable_types.S
+    with type t = Ast_basic.Constant.t Act_litmus.Postcondition.t
 (** Frontend for postconditions; used specifically for parsing auxiliary
     JSON files. *)

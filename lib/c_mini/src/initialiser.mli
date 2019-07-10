@@ -28,8 +28,7 @@ type t [@@deriving sexp, equal, quickcheck]
 
 (** {3 Constructors} *)
 
-val make :
-  ty:Type.t -> ?value:Act_c_lang.Ast_basic.Constant.t -> unit -> t
+val make : ty:Type.t -> ?value:Act_c_lang.Ast_basic.Constant.t -> unit -> t
 (** [make ~ty ?value ()] makes an initialiser with type [ty] and optional
     initialised value [value]. *)
 

@@ -36,15 +36,11 @@ include
 
 (** Traversing over atomic-action addresses in atomic loads. *)
 module On_addresses :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Address.t
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Address.t
 
 (** Traversing over lvalues in atomic loads. *)
 module On_lvalues :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Lvalue.t
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
 
 (** {2 Generation and quickchecking}
 

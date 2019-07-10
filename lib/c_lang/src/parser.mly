@@ -70,7 +70,7 @@
 %type <Ast.Litmus.t> litmus
 %start litmus
 
-%type <Ast.Litmus.Postcondition.t> litmus_postcondition
+%type <Ast_basic.Constant.t Act_litmus.Postcondition.t> litmus_postcondition
 %start litmus_postcondition
 
 %%
@@ -116,19 +116,19 @@ let litmus_quantifier := LIT_EXISTS; { `Exists }
 
 let litmus_postcondition :=
   | quantifier = litmus_quantifier; predicate = parened(litmus_disjunct);
-    { Litmus.Postcondition.make ~quantifier ~predicate }
+    { Act_litmus.Postcondition.make ~quantifier ~predicate }
 
 let litmus_disjunct :=
   | litmus_conjunct
-  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { Litmus.Pred.(l || r) }
+  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { Act_litmus.Postcondition.Pred.(l || r) }
 
 let litmus_conjunct :=
   | litmus_equality
-  | l = litmus_conjunct; LIT_AND; r = litmus_equality; { Litmus.Pred.(l && r) }
+  | l = litmus_conjunct; LIT_AND; r = litmus_equality; { Act_litmus.Postcondition.Pred.(l && r) }
 
 let litmus_equality :=
-  | ~ = parened(litmus_disjunct); < Litmus.Pred.bracket >
-  | l = litmus_identifier; "=="; r = constant; { Litmus.Pred.elt (Litmus.Pred_elt.(l ==? r)) }
+  | ~ = parened(litmus_disjunct); < Act_litmus.Postcondition.Pred.bracket >
+  | l = litmus_identifier; "=="; r = constant; { Act_litmus.Postcondition.(Pred.elt (Pred_elt.(l ==? r))) }
 
 let litmus_identifier :=
   | i = IDENTIFIER;                     { Litmus.Id.global (Act_common.C_id.of_string i) }

@@ -30,66 +30,6 @@ include Ast_intf
 module Make (Lang : Basic) : S with module Lang = Lang = struct
   module Lang = Lang
 
-  module Pred_elt = struct
-    type t = Lang.Constant.t Ast_base.Pred_elt.t
-    [@@deriving sexp, compare, equal, quickcheck]
-
-    let ( ==? ) = Ast_base.Pred_elt.( ==? )
-  end
-
-  module Pred = struct
-    type t = Lang.Constant.t Ast_base.Pred.t
-    [@@deriving sexp, compare, equal, quickcheck]
-
-    let bracket = Ast_base.Pred.bracket
-
-    let debracket = Ast_base.Pred.debracket
-
-    let ( || ) = Ast_base.Pred.( || )
-
-    let ( && ) = Ast_base.Pred.( && )
-
-    let elt = Ast_base.Pred.elt
-
-    let rec of_blang : Pred_elt.t Blang.t -> t Or_error.t = function
-      | And (l, r) ->
-          let open Or_error.Let_syntax in
-          let%map l' = of_blang l and r' = of_blang r in
-          Ast_base.Pred.And (l', r')
-      | Or (l, r) ->
-          let open Or_error.Let_syntax in
-          let%map l' = of_blang l and r' = of_blang r in
-          Ast_base.Pred.Or (l', r')
-      | Base x ->
-          Or_error.return (Ast_base.Pred.Elt x)
-      | (True | False | Not _ | If _) as b ->
-          Or_error.error_s
-            [%message
-              "This Blang element isn't supported in Litmus predicates"
-                ~element:(b : Pred_elt.t Blang.t)]
-
-    let rec to_blang : t -> Pred_elt.t Blang.t = function
-      | Bracket x ->
-          to_blang x
-      | Or (l, r) ->
-          Blang.O.(to_blang l || to_blang r)
-      | And (l, r) ->
-          Blang.O.(to_blang l && to_blang r)
-      | Elt x ->
-          Blang.base x
-  end
-
-  module Postcondition = struct
-    type t = Lang.Constant.t Ast_base.Postcondition.t
-    [@@deriving sexp, compare, equal, quickcheck]
-
-    let predicate = Ast_base.Postcondition.predicate
-
-    let quantifier = Ast_base.Postcondition.quantifier
-
-    let make = Ast_base.Postcondition.make
-  end
-
   module Init = struct
     type elt = {id: Ac.C_id.t; value: Lang.Constant.t}
     [@@deriving sexp, quickcheck]
@@ -101,7 +41,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     type t =
       | Program of Lang.Program.t
       | Init of Init.t
-      | Post of Postcondition.t
+      | Post of Lang.Constant.t Postcondition.t
       | Locations of Ac.C_id.t list
     [@@deriving sexp, variants]
 
@@ -119,7 +59,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
         ~post:(fun _ _ -> None)
         ~locations:(fun _ _ -> None)
 
-    let as_post : t -> Postcondition.t option =
+    let as_post : t -> Lang.Constant.t Postcondition.t option =
       Variants.map
         ~program:(fun _ _ -> None)
         ~init:(fun _ _ -> None)
@@ -143,7 +83,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       ; init: (Ac.C_id.t, Lang.Constant.t) List.Assoc.t
       ; locations: Ac.C_id.t list option
       ; programs: Lang.Program.t list
-      ; postcondition: Postcondition.t option }
+      ; postcondition: Lang.Constant.t Postcondition.t option }
     [@@deriving fields, sexp]
 
     (** [validate_init init] validates an incoming litmus test's init block. *)
@@ -170,7 +110,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
           (* TODO(@MattWindsor91): duplicate name checking *)
          ]
 
-    let validate_post : Postcondition.t option Validate.check =
+    let validate_post :
+        Lang.Constant.t Postcondition.t option Validate.check =
       (* TODO(@MattWindsor91): actual validation here? *)
       Fn.const Validate.pass
 
@@ -295,7 +236,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
       |> Tx.List.one
       >>| List.map ~f:(fun {Init.id; value} -> (id, value)))
 
-  let get_post (decls : Decl.t list) : Postcondition.t option Or_error.t =
+  let get_post (decls : Decl.t list) :
+      Lang.Constant.t Postcondition.t option Or_error.t =
     decls |> List.filter_map ~f:Decl.as_post |> Tx.List.at_most_one
 
   let get_locations (decls : Decl.t list) : Ac.C_id.t list option Or_error.t

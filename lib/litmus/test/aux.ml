@@ -26,10 +26,10 @@ module J = A.Json (struct
     |> Result.map_error ~f:Exn.to_string
 
   let parse_post_string (s : string) :
-      int Act_litmus.Ast_base.Postcondition.t Or_error.t =
+      int Act_litmus.Postcondition.t Or_error.t =
     Or_error.try_with (fun () ->
         s |> Parsexp.Single.parse_string_exn
-        |> [%of_sexp: int Act_litmus.Ast_base.Postcondition.t])
+        |> [%of_sexp: int Act_litmus.Postcondition.t])
 end)
 
 let%test_module "JSON deserialisation" =
@@ -53,11 +53,11 @@ let%test_module "JSON deserialisation" =
       let x = Ac.C_id.of_string "x" in
       let y = Ac.C_id.of_string "y" in
       let init : (Ac.C_id.t, int) List.Assoc.t = [(x, 0); (y, 0)] in
-      let postcondition : int Act_litmus.Ast_base.Postcondition.t =
-        Act_litmus.Ast_base.
-          { quantifier= `Exists
-          ; predicate=
-              Pred.(Elt Pred_elt.(a 0 ==? 0) && Elt Pred_elt.(a 1 ==? 1)) }
+      let postcondition : int Act_litmus.Postcondition.t =
+        Act_litmus.Postcondition.(
+          make ~quantifier:`Exists
+            ~predicate:
+              Pred.(Elt Pred_elt.(a 0 ==? 0) && Elt Pred_elt.(a 1 ==? 1)))
       in
       let locations : Ac.C_id.t list = [x; y] in
       let aux = A.make ~init ~postcondition ~locations () in

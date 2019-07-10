@@ -24,8 +24,8 @@
 (** Fuzzer: subjects of fuzzing
 
     This module contains types for programs and litmus tests that are looser
-    and lighter than their {{!Act_c_mini} Act_c_mini} versions, and more suited to
-    mutation. *)
+    and lighter than their {{!Act_c_mini} Act_c_mini} versions, and more
+    suited to mutation. *)
 
 open Base
 
@@ -73,7 +73,8 @@ end
 (** Fuzzable representation of a litmus test. *)
 module Test : sig
   type t =
-    {init: Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t; programs: Program.t list}
+    { init: Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t
+    ; programs: Program.t list }
   [@@deriving sexp]
   (** Transparent type of fuzzable litmus tests. *)
 
@@ -90,7 +91,8 @@ module Test : sig
       intermediate form used for fuzzing. *)
 
   val to_litmus :
-       ?postcondition:Act_c_mini.Litmus.Ast.Postcondition.t
+       ?postcondition:Act_c_lang.Ast_basic.Constant.t
+                      Act_litmus.Postcondition.t
     -> t
     -> vars:Fuzzer_var.Map.t
     -> name:string
@@ -103,7 +105,8 @@ module Test : sig
 
   (** {3 Helpers for mutating tests} *)
 
-  val add_var_to_init : t -> Act_common.C_id.t -> Act_c_lang.Ast_basic.Constant.t -> t
+  val add_var_to_init :
+    t -> Act_common.C_id.t -> Act_c_lang.Ast_basic.Constant.t -> t
   (** [add_var_to_init subject var initial_value] adds [var] to [subject]'s
       init block with the initial value [initial_value]. *)
 end

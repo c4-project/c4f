@@ -41,18 +41,22 @@ module Make (B : Basic) = struct
       : (Ac.C_id.t, B.To.Lang.Constant.t) List.Assoc.t Or_error.t =
     init |> List.map ~f:convert_init_line |> Or_error.combine_errors
 
-  let convert_pred : B.From.Pred.t -> B.To.Pred.t Or_error.t =
-    Ast_base.Pred.With_errors.map_right_m ~f:B.constant
+  let convert_pred :
+         B.From.Lang.Constant.t Postcondition.Pred.t
+      -> B.To.Lang.Constant.t Postcondition.Pred.t Or_error.t =
+    Postcondition.Pred.With_errors.map_right_m ~f:B.constant
 
-  let convert_post (post : B.From.Postcondition.t) :
-      B.To.Postcondition.t Or_error.t =
+  let convert_post (post : B.From.Lang.Constant.t Postcondition.t) :
+      B.To.Lang.Constant.t Postcondition.t Or_error.t =
     let open Or_error.Let_syntax in
-    let%map predicate = convert_pred post.predicate in
-    {Ast_base.Postcondition.quantifier= post.quantifier; predicate}
+    let%map predicate = convert_pred (Postcondition.predicate post) in
+    Postcondition.make
+      ~quantifier:(Postcondition.quantifier post)
+      ~predicate
 
   let convert_post_opt :
-         B.From.Postcondition.t option
-      -> B.To.Postcondition.t option Or_error.t =
+         B.From.Lang.Constant.t Postcondition.t option
+      -> B.To.Lang.Constant.t Postcondition.t option Or_error.t =
     Tx.Option.With_errors.map_m ~f:convert_post
 
   let convert (old : B.From.Validated.t) : B.To.Validated.t Or_error.t =

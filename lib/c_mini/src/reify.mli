@@ -23,8 +23,7 @@
 
 (** Functions for reifying a mini-model into an AST. *)
 
-val func :
-  Act_common.C_id.t -> Function.t -> Act_c_lang.Ast.External_decl.t
+val func : Act_common.C_id.t -> Function.t -> Act_c_lang.Ast.External_decl.t
 (** [func id f] reifies the mini-function [f], with name [id], into the C
     AST. *)
 

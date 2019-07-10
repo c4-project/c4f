@@ -39,8 +39,7 @@ val cvars : t -> Set.M(Act_common.C_id).t
 
 (** {2 Mutators} *)
 
-val with_functions :
-  t -> (Act_common.C_id.t, Function.t) List.Assoc.t -> t
+val with_functions : t -> (Act_common.C_id.t, Function.t) List.Assoc.t -> t
 (** [with_functions prog new_functions] creates a new program by
     substituting [new_functions] for [prog]'s functions. *)
 

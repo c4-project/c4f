@@ -39,11 +39,13 @@ module Lang :
 
     let reify : t -> _ = function
       | `Decl named_init ->
-          `Decl (Reify.decl (Named.name named_init) (Named.value named_init))
+          `Decl
+            (Reify.decl (Named.name named_init) (Named.value named_init))
       | `Stm stm ->
           `Stm (Reify.stm stm)
 
-    let pp : t Fmt.t = Fmt.using reify Act_c_lang.Ast.Litmus_lang.Statement.pp
+    let pp : t Fmt.t =
+      Fmt.using reify Act_c_lang.Ast.Litmus_lang.Statement.pp
 
     let empty () : t = `Stm (Statement.nop ())
 
@@ -55,11 +57,13 @@ module Lang :
   module Program = struct
     type t = Function.t Named.t [@@deriving sexp]
 
-    let name (nd : t) : string option = Some (Ac.C_id.to_string (Named.name nd))
+    let name (nd : t) : string option =
+      Some (Ac.C_id.to_string (Named.name nd))
 
     let listing (np : t) : Statement.t list =
       let fn = Named.value np in
-      List.map (Function.body_decls fn) ~f:(fun (name, value) -> `Decl (Named.make value ~name))
+      List.map (Function.body_decls fn) ~f:(fun (name, value) ->
+          `Decl (Named.make value ~name))
       @ List.map (Function.body_stms fn) ~f:(fun x -> `Stm x)
 
     let pp : t Fmt.t =
@@ -69,9 +73,8 @@ module Lang :
           Act_c_lang.Ast.External_decl.pp)
 
     let global_vars (np : t) =
-      np |> Named.value |>
-      Function.parameters |> Ac.C_id.Map.of_alist_or_error
-      |> Result.ok
+      np |> Named.value |> Function.parameters
+      |> Ac.C_id.Map.of_alist_or_error |> Result.ok
   end
 
   let name = "C"
@@ -82,9 +85,7 @@ module Pp = Act_litmus.Pp.Make_sequential (Ast)
 
 let function_vars (tid : int) (func : Lang.Program.t) :
     Set.M(Ac.Litmus_id).t =
-  func
-  |> Named.value
-  |> Function.cvars
+  func |> Named.value |> Function.cvars
   |> Set.map (module Ac.Litmus_id) ~f:(Ac.Litmus_id.local tid)
 
 let litmus_local_vars (ast : Ast.Validated.t) : Set.M(Ac.Litmus_id).t =

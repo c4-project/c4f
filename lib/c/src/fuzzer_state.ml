@@ -27,8 +27,8 @@ module Ac = Act_common
 type t = {vars: Fuzzer_var.Map.t; o: Ac.Output.t} [@@deriving fields]
 
 let init ?(o : Ac.Output.t = Ac.Output.silent ())
-    ~(globals : Act_c_mini.Type.t Ac.C_id.Map.t) ~(locals : Ac.C_id.Set.t) () : t
-    =
+    ~(globals : Act_c_mini.Type.t Ac.C_id.Map.t) ~(locals : Ac.C_id.Set.t)
+    () : t =
   let vars = Fuzzer_var.Map.make_existing_var_map globals locals in
   {vars; o}
 

@@ -109,8 +109,8 @@ let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
           "This storage-class specifier isn't supported (yet)"
             ~got:(spec : Act_c_lang.Ast_basic.Storage_class_spec.t)]
 
-let declarator_to_id : Ast.Declarator.t -> (Act_common.C_id.t * bool) Or_error.t
-    = function
+let declarator_to_id :
+    Ast.Declarator.t -> (Act_common.C_id.t * bool) Or_error.t = function
   | {pointer= Some [[]]; direct= Id id} ->
       Or_error.return (id, true)
   | {pointer= Some _; _} as decl ->
@@ -126,7 +126,8 @@ let declarator_to_id : Ast.Declarator.t -> (Act_common.C_id.t * bool) Or_error.t
           "Unsupported direct declarator"
             ~got:(x.direct : Ast.Direct_declarator.t)]
 
-let value_of_initialiser : Ast.Initialiser.t -> Act_c_lang.Ast_basic.Constant.t Or_error.t =
+let value_of_initialiser :
+    Ast.Initialiser.t -> Act_c_lang.Ast_basic.Constant.t Or_error.t =
   function
   | Assign (Constant v) ->
       Or_error.return v
@@ -175,20 +176,19 @@ let param_decl : Ast.Param_decl.t -> Type.t Named.t Or_error.t = function
       let value = Type.of_basic ~is_pointer basic_type in
       Named.make value ~name
 
-let param_type_list : Ast.Param_type_list.t -> Type.t Named.Alist.t Or_error.t =
-  function
+let param_type_list :
+    Ast.Param_type_list.t -> Type.t Named.Alist.t Or_error.t = function
   | {style= `Variadic; _} ->
       Or_error.error_string "Variadic arguments not supported"
   | {style= `Normal; params} ->
       Or_error.(
         params
         |> Tx.Or_error.combine_map ~f:param_decl
-           >>| Named.alist_of_list
-         )
+        >>| Named.alist_of_list)
 
 let func_signature :
-    Ast.Declarator.t -> (Act_common.C_id.t * Type.t Named.Alist.t) Or_error.t =
-  function
+       Ast.Declarator.t
+    -> (Act_common.C_id.t * Type.t Named.Alist.t) Or_error.t = function
   | {pointer= Some _; _} ->
       Or_error.error_string "Pointers not supported yet"
   | {pointer= None; direct= Fun_decl (Id name, param_list)} ->
@@ -240,11 +240,13 @@ let expr_to_memory_order (expr : Ast.Expr.t) : Mem_order.t Or_error.t =
   |> Result.of_option
        ~error:
          (Error.create_s
-            [%message "Unsupported memory order" ~got:(id : Act_common.C_id.t)])
+            [%message
+              "Unsupported memory order" ~got:(id : Act_common.C_id.t)])
 
 (** [call call_table func arguments] models a function call with function
     [func] and arguments [arguments], using the modellers in [call_table]. *)
-let call (call_table : (Ast.Expr.t list -> 'a Or_error.t) Named.Alist.t Lazy.t)
+let call
+    (call_table : (Ast.Expr.t list -> 'a Or_error.t) Named.Alist.t Lazy.t)
     (func : Ast.Expr.t) (arguments : Ast.Expr.t list) : 'a Or_error.t =
   let open Or_error.Let_syntax in
   let%bind func_name = expr_to_identifier func in
@@ -513,10 +515,10 @@ let func_body (body : Ast.Compound_stm.t) :
 
 let func (f : Ast.Function_def.t) : Function.t Named.t Or_error.t =
   Or_error.Let_syntax.(
-  let%bind () = Validate.result (validate_func f) in
-  let%map name, parameters = func_signature f.signature
-  and body_decls, body_stms = func_body f.body in
-  Named.make ~name (Function.make ~parameters ~body_decls ~body_stms ()))
+    let%bind () = Validate.result (validate_func f) in
+    let%map name, parameters = func_signature f.signature
+    and body_decls, body_stms = func_body f.body in
+    Named.make ~name (Function.make ~parameters ~body_decls ~body_stms ()))
 
 let translation_unit (prog : Ast.Translation_unit.t) : Program.t Or_error.t
     =
@@ -526,8 +528,7 @@ let translation_unit (prog : Ast.Translation_unit.t) : Program.t Or_error.t
     let%map globals = Tx.Or_error.combine_map ~f:decl ast_decls
     and function_list = Tx.Or_error.combine_map ~f:func ast_funs in
     let functions = Named.alist_of_list function_list in
-    Program.make ~globals ~functions
-  )
+    Program.make ~globals ~functions)
 
 module Litmus_conv = Act_litmus.Convert.Make (struct
   module From = struct
@@ -542,8 +543,7 @@ module Litmus_conv = Act_litmus.Convert.Make (struct
   let constant = Or_error.return
 end)
 
-let litmus :
-    Ast.Litmus.Validated.t -> Litmus.Ast.Validated.t Or_error.t =
+let litmus : Ast.Litmus.Validated.t -> Litmus.Ast.Validated.t Or_error.t =
   Litmus_conv.convert
 
 let litmus_of_raw_ast (ast : Ast.Litmus.t) =

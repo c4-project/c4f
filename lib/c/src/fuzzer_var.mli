@@ -63,7 +63,8 @@ module Record : sig
       variable with name [name] that already existed in the program before
       mutation. *)
 
-  val make_generated_global : ?initial_value:Value.t -> Act_c_mini.Type.t -> t
+  val make_generated_global :
+    ?initial_value:Value.t -> Act_c_mini.Type.t -> t
   (** [make_generated_global ?initial_value ty] makes a variable record for
       a fuzzer-generated global variable of type [ty] and with initial value
       [value]. *)
@@ -143,7 +144,9 @@ module Map : sig
       in [predicates] are true. *)
 
   val env_module_satisfying_all :
-    t -> predicates:(Record.t -> bool) list -> (module Act_c_mini.Env_types.S)
+       t
+    -> predicates:(Record.t -> bool) list
+    -> (module Act_c_mini.Env_types.S)
   (** [env_module_satisfying_all map ~predicates] behaves like
       {{!env_satisfying_all} env_satisfying_all}, but wraps the result in a
       first-class module. *)
@@ -162,7 +165,11 @@ module Map : sig
   (** {3 Actions} *)
 
   val register_global :
-    ?initial_value:Value.t -> t -> Act_common.C_id.t -> Act_c_mini.Type.t -> t
+       ?initial_value:Value.t
+    -> t
+    -> Act_common.C_id.t
+    -> Act_c_mini.Type.t
+    -> t
   (** [register_global ?initial_value map var ty] registers a generated
       global variable with name [var], type [ty], and optional known initial
       value [initial_value] in [map], returning the resulting new map. *)

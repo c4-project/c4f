@@ -61,7 +61,7 @@ type 'a program_path =
 (** {2 Signatures}
 
     We don't keep these in a separate MLI file, because they depend directly
-    and intricately on the types defined above.  *)
+    and intricately on the types defined above. *)
 
 (** General signature of paths. *)
 module type S_path = sig
@@ -69,8 +69,7 @@ module type S_path = sig
 
   type target
 
-  val insert_stm :
-    stm_hole t -> Statement.t -> target -> target Or_error.t
+  val insert_stm : stm_hole t -> Statement.t -> target -> target Or_error.t
   (** [insert_stm path stm dest] tries to insert [stm] into the part of
       [dest] pointed to by [path]. *)
 

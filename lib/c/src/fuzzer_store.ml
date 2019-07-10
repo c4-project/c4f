@@ -147,14 +147,16 @@ module Make (B : Basic) : Action.S with type Random_state.t = rst = struct
 
   (* This action writes to the destination, so we no longer have a known
      value for it. *)
-  let mark_store_dst (store : Act_c_mini.Atomic_store.t) : unit State.Monad.t =
+  let mark_store_dst (store : Act_c_mini.Atomic_store.t) :
+      unit State.Monad.t =
     let open State.Monad.Let_syntax in
     let dst = Act_c_mini.Atomic_store.dst store in
     let dst_var = Act_c_mini.Address.variable_of dst in
     let%bind () = State.Monad.erase_var_value dst_var in
     State.Monad.add_write dst_var
 
-  module Exp_idents = Act_c_mini.Expression.On_identifiers.On_monad (State.Monad)
+  module Exp_idents =
+    Act_c_mini.Expression.On_identifiers.On_monad (State.Monad)
 
   (* This action also introduces dependencies on every variable in the
      source. *)
@@ -190,24 +192,30 @@ end)
 
 let%test_module "int tests" =
   ( module struct
-    let init : Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
+    let init :
+        Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
       lazy
-        [ (Act_common.C_id.of_string "x", Act_c_lang.Ast_basic.Constant.Integer 27)
-        ; (Act_common.C_id.of_string "y", Act_c_lang.Ast_basic.Constant.Integer 53) ]
+        [ ( Act_common.C_id.of_string "x"
+          , Act_c_lang.Ast_basic.Constant.Integer 27 )
+        ; ( Act_common.C_id.of_string "y"
+          , Act_c_lang.Ast_basic.Constant.Integer 53 ) ]
 
     let globals : Act_c_mini.Type.t Act_c_mini.Named.Alist.t Lazy.t =
       lazy
         Act_c_mini.
-          [ (Act_common.C_id.of_string "x", Type.(pointer_to Basic.atomic_int))
-          ; (Act_common.C_id.of_string "y", Type.(pointer_to Basic.atomic_int))
-          ]
+          [ ( Act_common.C_id.of_string "x"
+            , Type.(pointer_to Basic.atomic_int) )
+          ; ( Act_common.C_id.of_string "y"
+            , Type.(pointer_to Basic.atomic_int) ) ]
 
     let body_stms : Act_c_mini.Statement.t list Lazy.t =
       lazy
         Act_c_mini.
           [ Statement.atomic_store
               (Atomic_store.make
-                 ~src:(Expression.constant (Act_c_lang.Ast_basic.Constant.Integer 42))
+                 ~src:
+                   (Expression.constant
+                      (Act_c_lang.Ast_basic.Constant.Integer 42))
                  ~dst:(Address.of_variable (Act_common.C_id.of_string "x"))
                  ~mo:Mem_order.Seq_cst)
           ; Statement.nop ()
@@ -233,9 +241,9 @@ let%test_module "int tests" =
       let%map programs = programs in
       {Fuzzer_subject.Test.init; programs}
 
-    let path : Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path Lazy.t =
-      lazy
-        (On_program {index= 0; rest= On_statements (Insert_at 2)})
+    let path : Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path Lazy.t
+        =
+      lazy (On_program {index= 0; rest= On_statements (Insert_at 2)})
 
     let store : Act_c_mini.Atomic_store.t Lazy.t =
       lazy
@@ -244,7 +252,9 @@ let%test_module "int tests" =
             ~src:
               (Expression.atomic_load
                  (Atomic_load.make
-                    ~src:(Address.of_variable (Act_common.C_id.of_string "gen2"))
+                    ~src:
+                      (Address.of_variable
+                         (Act_common.C_id.of_string "gen2"))
                     ~mo:Mem_order.Seq_cst))
             ~dst:(Address.of_variable (Act_common.C_id.of_string "gen1"))
             ~mo:Mem_order.Seq_cst)

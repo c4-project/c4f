@@ -1,29 +1,17 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Core_kernel (* not Base; for extended quickcheck *)
 
-open Ast_base_intf
+module Id = Act_common.Litmus_id
 
 module Pred_elt = struct
   type 'const t = Eq of Id.t * 'const
@@ -210,49 +198,47 @@ module Pred = struct
   include Q
 end
 
-module Postcondition = struct
-  type 'const t = {quantifier: [`Exists]; predicate: 'const Pred.t}
-  [@@deriving sexp, compare, equal, quickcheck, fields, make]
+type 'const t = {quantifier: [`Exists]; predicate: 'const Pred.t}
+[@@deriving sexp, compare, equal, quickcheck, fields, make]
 
-  module BT :
-    Travesty.Bi_traversable_types.S1_right
-      with type 'const t := 'const t
-       and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
-    type nonrec 'const t = 'const t
+module BT :
+  Travesty.Bi_traversable_types.S1_right
+    with type 'const t := 'const t
+     and type left = Id.t = Travesty.Bi_traversable.Make1_right (struct
+  type nonrec 'const t = 'const t
 
-    type left = Id.t
+  type left = Id.t
 
-    module On_monad (M : Monad.S) = struct
-      module Pr = Pred.On_monad (M)
+  module On_monad (M : Monad.S) = struct
+    module Pr = Pred.On_monad (M)
 
-      let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
-          ~(right : 'a -> 'b M.t) : 'b t M.t =
-        let quantifier = quantifier t in
-        M.Let_syntax.(
-          let%map predicate = Pr.bi_map_m ~left ~right (predicate t) in
-          make ~quantifier ~predicate)
-    end
-  end)
+    let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
+        ~(right : 'a -> 'b M.t) : 'b t M.t =
+      let quantifier = quantifier t in
+      M.Let_syntax.(
+        let%map predicate = Pr.bi_map_m ~left ~right (predicate t) in
+        make ~quantifier ~predicate)
+  end
+end)
 
-  include BT
+include BT
 
-  module On_c_identifiers :
-    Travesty.Bi_traversable_types.S1_right
-      with type 'const t = 'const t
-       and type left = Act_common.C_id.t =
-  Travesty.Bi_traversable.Make1_right (struct
-    type nonrec 'const t = 'const t
+module On_c_identifiers :
+  Travesty.Bi_traversable_types.S1_right
+    with type 'const t = 'const t
+     and type left = Act_common.C_id.t =
+Travesty.Bi_traversable.Make1_right (struct
+  type nonrec 'const t = 'const t
 
-    type left = Act_common.C_id.t
+  type left = Act_common.C_id.t
 
-    module On_monad (M : Monad.S) = struct
-      module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
-      module B = On_monad (M)
+  module On_monad (M : Monad.S) = struct
+    module Lid_cid = Act_common.Litmus_id.On_c_identifiers.On_monad (M)
+    module B = On_monad (M)
 
-      let bi_map_m (t : 'a t)
-          ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t)
-          ~(right : 'a -> 'b M.t) : 'b t M.t =
-        B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
-    end
-  end)
-end
+    let bi_map_m (t : 'a t)
+        ~(left : Act_common.C_id.t -> Act_common.C_id.t M.t)
+        ~(right : 'a -> 'b M.t) : 'b t M.t =
+      B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
+  end
+end)

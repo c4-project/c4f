@@ -65,8 +65,7 @@ module On_monad (M : Monad.S) : sig
     -> parameters:(   (Act_common.C_id.t, Type.t) List.Assoc.t
                    -> (Act_common.C_id.t, Type.t) List.Assoc.t M.t)
     -> body_decls:(   (Act_common.C_id.t, Initialiser.t) List.Assoc.t
-                   -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t
-                      M.t)
+                   -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t M.t)
     -> body_stms:(Statement.t list -> Statement.t list M.t)
     -> t M.t
 end

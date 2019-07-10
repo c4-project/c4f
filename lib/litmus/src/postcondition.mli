@@ -27,25 +27,18 @@
     underlying language of the litmus tests. *)
 
 open Base
-open Ast_base_intf
 
 (** Directly-parametrised AST for basic predicate elements.
 
     The distinction between [Pred_elt] and {{!Pred} Pred} mainly exists to
     make conversion to and from other languages, like [Blang], easier. *)
 module Pred_elt : sig
-  type 'const t = Eq of Id.t * 'const
+  type 'const t = Eq of Act_common.Litmus_id.t * 'const
   [@@deriving sexp, compare, equal, quickcheck]
-
-  include
-    S_pred_elt
-      with type id := Id.t
-       and type 'const t := 'const t
-       and type 'const elt := 'const
 
   (** {3 Constructors} *)
 
-  val ( ==? ) : Id.t -> 'const -> 'const t
+  val ( ==? ) : Act_common.Litmus_id.t -> 'const -> 'const t
 
   (** {3 Traversals} *)
 
@@ -54,7 +47,7 @@ module Pred_elt : sig
   include
     Travesty.Bi_traversable_types.S1_right
       with type 'c t := 'c t
-       and type left = Id.t
+       and type left = Act_common.Litmus_id.t
 
   (** Bi-traversing monadically over all C identifiers in a predicate on the
       left, and all constants on the right. *)
@@ -74,16 +67,20 @@ module Pred : sig
     | Elt of 'const Pred_elt.t
   [@@deriving sexp, compare, equal, quickcheck]
 
-  include
-    S_pred
-      with type 'const t := 'const t
-       and type 'const elt := 'const Pred_elt.t
-
   (** {3 Constructors} *)
 
   val ( && ) : 'const t -> 'const t -> 'const t
 
   val ( || ) : 'const t -> 'const t -> 'const t
+
+  val elt : 'const Pred_elt.t -> 'const t
+  (** [elt x] lifts [x] to a predicate. *)
+
+  val bracket : 'const t -> 'const t
+  (** [bracket x] surrounds [x] with parentheses. *)
+
+  val debracket : 'const t -> 'const t
+  (** [debracket pred] removes any brackets in [pred]. *)
 
   (** {3 Traversals} *)
 
@@ -92,7 +89,7 @@ module Pred : sig
   include
     Travesty.Bi_traversable_types.S1_right
       with type 'c t := 'c t
-       and type left = Id.t
+       and type left = Act_common.Litmus_id.t
 
   (** Bi-traversing monadically over all C identifiers in a predicate on the
       left, and all constants on the right. *)
@@ -102,30 +99,32 @@ module Pred : sig
        and type left = Act_common.C_id.t
 end
 
-(** Directly-parametrised AST for postconditions. *)
-module Postcondition : sig
-  type 'const t = {quantifier: [`Exists]; predicate: 'const Pred.t}
-  [@@deriving sexp, compare, equal, quickcheck]
-  (** Type of Litmus postconditions. *)
+(** {2 AST for postconditions} *)
 
-  include
-    S_postcondition
-      with type 'const t := 'const t
-       and type 'const pred := 'const Pred.t
+type 'const t [@@deriving sexp, compare, equal, quickcheck]
+(** Type of Litmus postconditions. *)
 
-  (** {3 Traversals} *)
+val make : quantifier:[`Exists] -> predicate:'const Pred.t -> 'const t
+(** [make ~quantifier ~predicate] constructs a postcondition. *)
 
-  (** Bi-traversing monadically over all Litmus identifiers in a predicate
-      on the left, and all constants on the right. *)
-  include
-    Travesty.Bi_traversable_types.S1_right
-      with type 'c t := 'c t
-       and type left = Id.t
+val quantifier : 'const t -> [`Exists]
+(** [quantifier post] gets [post]'s quantifier. *)
 
-  (** Bi-traversing monadically over all C identifiers in a predicate on the
-      left, and all constants on the right. *)
-  module On_c_identifiers :
-    Travesty.Bi_traversable_types.S1_right
-      with type 'c t = 'c t
-       and type left = Act_common.C_id.t
-end
+val predicate : 'const t -> 'const Pred.t
+(** [predicate post] gets [post]'s predicate. *)
+
+(** {3 Traversals} *)
+
+(** Bi-traversing monadically over all Litmus identifiers in a predicate on
+    the left, and all constants on the right. *)
+include
+  Travesty.Bi_traversable_types.S1_right
+    with type 'c t := 'c t
+     and type left = Act_common.Litmus_id.t
+
+(** Bi-traversing monadically over all C identifiers in a predicate on the
+    left, and all constants on the right. *)
+module On_c_identifiers :
+  Travesty.Bi_traversable_types.S1_right
+    with type 'c t = 'c t
+     and type left = Act_common.C_id.t

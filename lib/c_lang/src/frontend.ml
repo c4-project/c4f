@@ -42,7 +42,7 @@ module Litmus = Act_utils.Frontend.Make (struct
 end)
 
 module Litmus_post = Act_utils.Frontend.Make (struct
-  type ast = Ast.Litmus.Postcondition.t
+  type ast = Ast_basic.Constant.t Act_litmus.Postcondition.t
 
   module I = Parser.MenhirInterpreter
 

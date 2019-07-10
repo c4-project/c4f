@@ -28,9 +28,7 @@ type t [@@deriving sexp, compare, equal, quickcheck]
 
 (** Traversing over lvalues in addresses. *)
 module On_lvalues :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Lvalue.t
+  Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
 
 (** {3 Constructors} *)
 

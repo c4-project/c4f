@@ -17,10 +17,10 @@ module Make (B : sig
   module Symbol : Act_language.Symbol_types.S
 end) =
 struct
-  let transform_constant (c: Act_c_lang.Ast_basic.Constant.t) :
+  let transform_constant (c : Act_c_lang.Ast_basic.Constant.t) :
       B.Constant.t Or_error.t =
-    Or_error.(c |>
-    Act_c_lang.Ast_basic.Constant.to_int >>| B.Constant.of_int)
+    Or_error.(
+      c |> Act_c_lang.Ast_basic.Constant.to_int >>| B.Constant.of_int)
 
   let transform_id (id : Act_common.C_id.t)
       ~(redirect_map : B.Symbol.R_map.t) : Act_common.C_id.t Or_error.t =

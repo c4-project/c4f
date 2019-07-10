@@ -273,8 +273,10 @@ end = struct
 end
 
 let test_all_expressions_have_type
-    (f : (module Env_types.S) -> (module Base_quickcheck.Test.S with type t = t))
-    (ty : Type.t) : unit =
+    (f :
+         (module Env_types.S)
+      -> (module Base_quickcheck.Test.S with type t = t)) (ty : Type.t) :
+    unit =
   let env = Lazy.force Env.test_env_mod in
   let (module Q) = f env in
   let module Ty = Type_check ((val env)) in
@@ -289,8 +291,8 @@ let%test_module "tests using the standard environment" =
   ( module struct
     let test_all_expressions_in_env
         (f :
-          (module Env_types.S) -> (module Base_quickcheck.Test.S with type t = t))
-        : unit =
+             (module Env_types.S)
+          -> (module Base_quickcheck.Test.S with type t = t)) : unit =
       let (module E) = Lazy.force Env.test_env_mod in
       let (module Q) = f (module E) in
       Base_quickcheck.Test.run_exn

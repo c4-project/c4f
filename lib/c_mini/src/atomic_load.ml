@@ -12,7 +12,8 @@
 open Base
 module Ac = Act_common
 
-type t = {src: Address.t; mo: Mem_order.t} [@@deriving sexp, fields, make, equal]
+type t = {src: Address.t; mo: Mem_order.t}
+[@@deriving sexp, fields, make, equal]
 
 let to_tuple ({src; mo} : t) : Address.t * Mem_order.t = (src, mo)
 

@@ -30,8 +30,7 @@ let%test_module "variable_of" =
              (lvalue
                 Act_c_mini.(
                   Lvalue.deref
-                    (Lvalue.variable
-                       (Act_common.C_id.of_string "yorick")))))
+                    (Lvalue.variable (Act_common.C_id.of_string "yorick")))))
       in
       let var = variable_of example in
       Fmt.pr "%a@." Act_common.C_id.pp var ;
@@ -74,15 +73,13 @@ let%expect_test "Quickcheck_on_env: liveness" =
   let e = Lazy.force Act_c_mini.Env.test_env_mod in
   let module Qc = Quickcheck_on_env ((val e)) in
   Q.Test.with_sample_exn [%quickcheck.generator: Qc.t]
-    ~config:{ Base_quickcheck.Test.default_config with test_count = 20 }
+    ~config:{Base_quickcheck.Test.default_config with test_count= 20}
     ~f:(fun sequence ->
-        sequence
-        |> Sequence.to_list
-        |> List.dedup_and_sort ~compare:[%compare: Act_c_mini.Address.t]
-        |> List.map ~f:sexp_of_t
-        |> List.iter ~f:print_s
-      );
-	[%expect {|
+      sequence |> Sequence.to_list
+      |> List.dedup_and_sort ~compare:[%compare: Act_c_mini.Address.t]
+      |> List.map ~f:sexp_of_t |> List.iter ~f:print_s) ;
+  [%expect
+    {|
   (Lvalue (Variable bar))
   (Lvalue (Variable barbaz))
   (Lvalue (Variable blep))
@@ -115,15 +112,13 @@ let%expect_test "Quickcheck_atomic_int_pointers: liveness" =
   let e = Lazy.force Act_c_mini.Env.test_env_mod in
   let module Qc = Quickcheck_atomic_int_pointers ((val e)) in
   Q.Test.with_sample_exn [%quickcheck.generator: Qc.t]
-    ~config:{ Base_quickcheck.Test.default_config with test_count = 20 }
+    ~config:{Base_quickcheck.Test.default_config with test_count= 20}
     ~f:(fun sequence ->
-        sequence
-        |> Sequence.to_list
-        |> List.dedup_and_sort ~compare:[%compare: Act_c_mini.Address.t]
-        |> List.map ~f:sexp_of_t
-        |> List.iter ~f:print_s
-      );
-  [%expect {|
+      sequence |> Sequence.to_list
+      |> List.dedup_and_sort ~compare:[%compare: Act_c_mini.Address.t]
+      |> List.map ~f:sexp_of_t |> List.iter ~f:print_s) ;
+  [%expect
+    {|
     (Lvalue (Variable bar))
     (Ref (Lvalue (Variable x)))
     (Ref (Lvalue (Variable y))) |}]

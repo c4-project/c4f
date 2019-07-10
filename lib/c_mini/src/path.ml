@@ -25,7 +25,9 @@ open Base
 module Tx = Travesty_base_exts
 
 type on_expr = [%import: Path.on_expr] [@@deriving sexp_of]
+
 type on_stm = [%import: Path.on_stm] [@@deriving sexp_of]
+
 type stm_hole = [%import: Path.stm_hole] [@@deriving sexp_of]
 
 (* We can't import these three, as they're recursive. *)
@@ -45,14 +47,21 @@ and 'a if_path =
 [@@deriving sexp_of]
 
 type 'a function_path = [%import: Path.function_path]
+
 type 'a program_path = [%import: Path.program_path]
 
 module type S_path = [%import: (module Path.S_path)]
+
 module type S_statement = [%import: (module Path.S_statement)]
+
 module type S_stm_container = [%import: (module Path.S_stm_container)]
+
 module type S_if_statement = [%import: (module Path.S_if_statement)]
+
 module type S_statement_list = [%import: (module Path.S_statement_list)]
+
 module type S_function = [%import: (module Path.S_function)]
+
 module type S_program = [%import: (module Path.S_program)]
 
 module Make_statement_list (M : S_statement) :
@@ -69,8 +78,8 @@ module Make_statement_list (M : S_statement) :
             Or_error.(M.insert_stm rest stm x >>| Option.some))
 
   let transform_stm (path : on_stm list_path)
-      ~(f : Statement.t -> Statement.t Or_error.t)
-      (dest : target list) : target list Or_error.t =
+      ~(f : Statement.t -> Statement.t Or_error.t) (dest : target list) :
+      target list Or_error.t =
     match path with
     | At {index; rest} ->
         Tx.List.With_errors.replace_m dest index ~f:(fun x ->
@@ -105,8 +114,7 @@ end
 
 module Stm = Statement
 
-module rec Statement : (S_statement with type target = Stm.t) =
-struct
+module rec Statement : (S_statement with type target = Stm.t) = struct
   type target = Stm.t
 
   let lift_stm = Fn.id
@@ -116,26 +124,23 @@ struct
   let in_if_error (dest : Stm.t) (_ : 'a) : 'b Or_error.t =
     Or_error.error_s
       [%message
-        "Invalid target for 'in_if' path" [%here]
-          ~target:(dest : Stm.t)]
+        "Invalid target for 'in_if' path" [%here] ~target:(dest : Stm.t)]
 
-  let handle_in_if (dest : Stm.t)
-      ~(f : Stm.If.t -> Stm.If.t Or_error.t) :
+  let handle_in_if (dest : Stm.t) ~(f : Stm.If.t -> Stm.If.t Or_error.t) :
       Stm.t Or_error.t =
     Stm.map dest
       ~if_stm:(fun ifs -> Or_error.(ifs |> f >>| Stm.if_stm))
       ~assign:(in_if_error dest) ~atomic_cmpxchg:(in_if_error dest)
       ~atomic_store:(in_if_error dest) ~nop:(in_if_error dest)
 
-  let insert_stm (path : stm_hole stm_path) (stm : Stm.t)
-      (dest : Stm.t) : Stm.t Or_error.t =
+  let insert_stm (path : stm_hole stm_path) (stm : Stm.t) (dest : Stm.t) :
+      Stm.t Or_error.t =
     match path with
     | In_if rest ->
         handle_in_if ~f:(If_statement.insert_stm rest stm) dest
 
   let transform_stm (path : on_stm stm_path)
-      ~(f : Stm.t -> Stm.t Or_error.t)
-      (dest : Stm.t) : Stm.t Or_error.t =
+      ~(f : Stm.t -> Stm.t Or_error.t) (dest : Stm.t) : Stm.t Or_error.t =
     match path with
     | In_if rest ->
         handle_in_if ~f:(If_statement.transform_stm rest ~f) dest
@@ -148,30 +153,24 @@ struct
       ~f:(fun x -> In_if x)
 
   let try_gen_insert_stm :
-         Stm.t
-      -> stm_hole stm_path Base_quickcheck.Generator.t option =
+      Stm.t -> stm_hole stm_path Base_quickcheck.Generator.t option =
     Stm.map
       ~if_stm:(Fn.compose Option.some gen_if_stm_insert_stm)
       ~assign:(Fn.const None) ~atomic_cmpxchg:(Fn.const None)
       ~atomic_store:(Fn.const None) ~nop:(Fn.const None)
 end
 
-and Statement_list :
-  (S_statement_list with type target = Stm.t) =
+and Statement_list : (S_statement_list with type target = Stm.t) =
   Make_statement_list (Statement)
 
-and If_statement : (S_if_statement with type target = Stm.If.t) =
-struct
+and If_statement : (S_if_statement with type target = Stm.If.t) = struct
   type target = Stm.If.t
 
   module B = Stm.If.Base_map (Or_error)
 
   let handle_stm (type a) (path : a if_path)
-      ~(f :
-            a list_path
-         -> Stm.t list
-         -> Stm.t list Or_error.t) (ifs : Stm.If.t) :
-      Stm.If.t Or_error.t =
+      ~(f : a list_path -> Stm.t list -> Stm.t list Or_error.t)
+      (ifs : Stm.If.t) : Stm.If.t Or_error.t =
     match path with
     | Block {branch; rest} ->
         let t_branch, f_branch =
@@ -186,13 +185,11 @@ struct
       Stm.If.t -> Stm.If.t Or_error.t =
     handle_stm path ~f:(fun rest -> Statement_list.insert_stm rest stm)
 
-  let transform_stm (path : on_stm if_path)
-      ~(f : Stm.t -> Stm.t Or_error.t) :
-      Stm.If.t -> Stm.If.t Or_error.t =
+  let transform_stm (path : on_stm if_path) ~(f : Stm.t -> Stm.t Or_error.t)
+      : Stm.If.t -> Stm.If.t Or_error.t =
     handle_stm path ~f:(Statement_list.transform_stm ~f)
 
-  let gen_insert_stm_for_branch (branch : bool)
-      (branch_stms : Stm.t list) :
+  let gen_insert_stm_for_branch (branch : bool) (branch_stms : Stm.t list) :
       stm_hole if_path Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.map
       ~f:(fun rest -> Block {branch; rest})
@@ -230,24 +227,19 @@ module Function : S_function with type target := Function.t = struct
       ~f:(fun path -> On_statements path)
 
   let handle_stm (type a) (path : a function_path)
-      ~(f :
-            a list_path
-         -> Stm.t list
-         -> Stm.t list Or_error.t) (func : Function.t) :
-      Function.t Or_error.t =
+      ~(f : a list_path -> Stm.t list -> Stm.t list Or_error.t)
+      (func : Function.t) : Function.t Or_error.t =
     match path with
     | On_statements rest ->
         Or_error.(
-          f rest (Function.body_stms func)
-          >>| Function.with_body_stms func)
+          f rest (Function.body_stms func) >>| Function.with_body_stms func)
 
   let insert_stm (path : stm_hole function_path) (stm : Stm.t) :
       target -> target Or_error.t =
     handle_stm path ~f:(fun rest -> Statement_list.insert_stm rest stm)
 
   let transform_stm (path : on_stm function_path)
-      ~(f : Stm.t -> Stm.t Or_error.t) :
-      target -> target Or_error.t =
+      ~(f : Stm.t -> Stm.t Or_error.t) : target -> target Or_error.t =
     handle_stm path ~f:(Statement_list.transform_stm ~f)
 end
 
@@ -264,9 +256,8 @@ module Program : S_program with type target := Program.t = struct
     Base_quickcheck.Generator.union prog_gens
 
   let handle_stm (type a) (path : a program_path)
-      ~(f :
-         a function_path -> Fun.t -> Fun.t Or_error.t)
-      (prog : target) : target Or_error.t =
+      ~(f : a function_path -> Fun.t -> Fun.t Or_error.t) (prog : target) :
+      target Or_error.t =
     let open Or_error.Let_syntax in
     match path with
     | On_program {index; rest} ->
@@ -284,7 +275,6 @@ module Program : S_program with type target := Program.t = struct
     handle_stm path ~f:(fun rest -> Function.insert_stm rest stm)
 
   let transform_stm (path : on_stm program_path)
-      ~(f : Stm.t -> Stm.t Or_error.t) :
-      target -> target Or_error.t =
+      ~(f : Stm.t -> Stm.t Or_error.t) : target -> target Or_error.t =
     handle_stm path ~f:(Function.transform_stm ~f)
 end

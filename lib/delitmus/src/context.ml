@@ -15,7 +15,8 @@ type t =
   { aux: Aux.t
   ; local_inits:
       ( int
-      , (Act_common.C_id.t, Act_c_lang.Ast_basic.Constant.t) List.Assoc.t )
+      , (Act_common.C_id.t, Act_c_lang.Ast_basic.Constant.t) List.Assoc.t
+      )
       List.Assoc.t }
 [@@deriving fields]
 

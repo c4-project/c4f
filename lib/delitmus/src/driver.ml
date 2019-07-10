@@ -64,8 +64,10 @@ struct
       Or_error.error_s
         [%message
           "Functions do not agree on parameter lists"
-            ~first_example:(params : Act_c_mini.Type.t Act_c_mini.Named.Alist.t)
-            ~second_example:(params' : Act_c_mini.Type.t Act_c_mini.Named.Alist.t)]
+            ~first_example:
+              (params : Act_c_mini.Type.t Act_c_mini.Named.Alist.t)
+            ~second_example:
+              (params' : Act_c_mini.Type.t Act_c_mini.Named.Alist.t)]
 
   (* In a memalloy style litmus test, the globals start as fully typed
      pointer parameters, so we scrape the global type context from there. In
@@ -124,12 +126,15 @@ struct
       in
       Var_map.of_map map)
 
-  let make_aux (input : Act_c_mini.Litmus.Ast.Validated.t) : Aux.t Or_error.t =
+  let make_aux (input : Act_c_mini.Litmus.Ast.Validated.t) :
+      Aux.t Or_error.t =
     let programs = Act_c_mini.Litmus.Ast.Validated.programs input in
     let litmus_aux = make_litmus_aux input in
     let num_threads = List.length programs in
     Or_error.Let_syntax.(
-      let%map var_map = make_var_map (List.map ~f:Act_c_mini.Named.value programs) in
+      let%map var_map =
+        make_var_map (List.map ~f:Act_c_mini.Named.value programs)
+      in
       Aux.make ~litmus_aux ~var_map ~num_threads ())
 
   let make_program (input : Act_c_mini.Litmus.Ast.Validated.t)
@@ -137,7 +142,9 @@ struct
     let raw_functions = Act_c_mini.Litmus.Ast.Validated.programs input in
     let globals = make_globals context in
     Or_error.Let_syntax.(
-      let%map function_list = B.Function.rewrite_all raw_functions ~context in
+      let%map function_list =
+        B.Function.rewrite_all raw_functions ~context
+      in
       let functions = Act_c_mini.Named.alist_of_list function_list in
       Act_c_mini.Program.make ~globals ~functions)
 
@@ -145,26 +152,30 @@ struct
       (Act_common.C_id.t, Act_c_lang.Ast_basic.Constant.t) List.Assoc.t =
     fn |> Act_c_mini.Function.body_decls
     |> List.filter_map ~f:(fun (id, init) ->
-           Option.(init |> Act_c_mini.Initialiser.value >>| fun v -> (id, v)))
+           Option.(
+             init |> Act_c_mini.Initialiser.value >>| fun v -> (id, v)))
 
   let make_local_inits :
          Act_c_mini.Function.t list
       -> ( int
-         , (Act_common.C_id.t, Act_c_lang.Ast_basic.Constant.t) List.Assoc.t )
+         , (Act_common.C_id.t, Act_c_lang.Ast_basic.Constant.t) List.Assoc.t
+         )
          List.Assoc.t =
     List.mapi ~f:(fun tid fn -> (tid, make_local_init fn))
 
-  let make_context (input : Act_c_mini.Litmus.Ast.Validated.t) (aux : Aux.t) :
-      Context.t =
+  let make_context (input : Act_c_mini.Litmus.Ast.Validated.t) (aux : Aux.t)
+      : Context.t =
     (* We can get the context just from looking at functions, because of the
        way in which C litmus tests are constructed. *)
     let functions =
-      List.map ~f:Act_c_mini.Named.value (Act_c_mini.Litmus.Ast.Validated.programs input)
+      List.map ~f:Act_c_mini.Named.value
+        (Act_c_mini.Litmus.Ast.Validated.programs input)
     in
     let local_inits = make_local_inits functions in
     Context.make ~aux ~local_inits
 
-  let run (input : Act_c_mini.Litmus.Ast.Validated.t) : Output.t Or_error.t =
+  let run (input : Act_c_mini.Litmus.Ast.Validated.t) : Output.t Or_error.t
+      =
     Or_error.Let_syntax.(
       let%bind aux = make_aux input in
       let context = make_context input aux in

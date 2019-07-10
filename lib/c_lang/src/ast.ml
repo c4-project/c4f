@@ -782,20 +782,17 @@ module Litmus = struct
   module Id = Act_common.Litmus_id
 end
 
+module LP = Act_litmus.Postcondition.Pred
+
+module P = struct
+  type t = Litmus_lang.Constant.t LP.t
+  [@@deriving sexp, quickcheck, compare, equal]
+end
+
 (** {2 Quickcheck tests} *)
 
 let%test_unit "debracket is idempotent" =
-  let module P = Litmus.Pred in
   Base_quickcheck.Test.run_exn
     (module P)
     ~f:(fun pred ->
-      [%test_eq: P.t] (P.debracket pred) (P.debracket (P.debracket pred)))
-
-let%test_unit "litmus to blang to litmus round-trip" =
-  let module P = Litmus.Pred in
-  Base_quickcheck.Test.run_exn
-    (module P)
-    ~f:(fun pred ->
-      let blang = P.to_blang pred in
-      let pred' = Or_error.ok_exn (P.of_blang blang) in
-      [%test_eq: P.t] (P.debracket pred) pred')
+      [%test_eq: P.t] (LP.debracket pred) (LP.debracket (LP.debracket pred)))

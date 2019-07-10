@@ -45,8 +45,8 @@ module Program = struct
     [%expect {| false |}]
 
   module Stm_path :
-    Act_c_mini.Path.S_statement with type target = Act_c_mini.Statement.t With_source.t =
-  struct
+    Act_c_mini.Path.S_statement
+      with type target = Act_c_mini.Statement.t With_source.t = struct
     type target = Act_c_mini.Statement.t With_source.t
 
     let lower_stm = With_source.item
@@ -78,7 +78,8 @@ module Program = struct
     type target = t
 
     let gen_insert_stm ({stms; _} : target) :
-        Act_c_mini.Path.stm_hole Act_c_mini.Path.function_path Quickcheck.Generator.t =
+        Act_c_mini.Path.stm_hole Act_c_mini.Path.function_path
+        Quickcheck.Generator.t =
       Quickcheck.Generator.map (Stm_list_path.gen_insert_stm stms)
         ~f:(fun path -> Act_c_mini.Path.On_statements path)
 
@@ -86,18 +87,20 @@ module Program = struct
         ~(f :
               a Act_c_mini.Path.list_path
            -> Act_c_mini.Statement.t With_source.t list
-           -> Act_c_mini.Statement.t With_source.t list Or_error.t) (prog : t) :
-        t Or_error.t =
+           -> Act_c_mini.Statement.t With_source.t list Or_error.t)
+        (prog : t) : t Or_error.t =
       match path with
       | On_statements rest ->
           Or_error.(
             f rest prog.stms >>| fun stms' -> {prog with stms= stms'})
 
-    let insert_stm (path : Act_c_mini.Path.stm_hole Act_c_mini.Path.function_path)
+    let insert_stm
+        (path : Act_c_mini.Path.stm_hole Act_c_mini.Path.function_path)
         (stm : Act_c_mini.Statement.t) : target -> target Or_error.t =
       handle_stm path ~f:(fun rest -> Stm_list_path.insert_stm rest stm)
 
-    let transform_stm (path : Act_c_mini.Path.on_stm Act_c_mini.Path.function_path)
+    let transform_stm
+        (path : Act_c_mini.Path.on_stm Act_c_mini.Path.function_path)
         ~(f : Act_c_mini.Statement.t -> Act_c_mini.Statement.t Or_error.t) :
         target -> target Or_error.t =
       handle_stm path ~f:(Stm_list_path.transform_stm ~f)
@@ -113,7 +116,7 @@ module Program = struct
       Act_c_mini.Type.t Or_error.t =
     var |> Fuzzer_var.Record.ty
     |> Result.of_option
-      ~error:(Error.of_string "Internal error: missing global type")
+         ~error:(Error.of_string "Internal error: missing global type")
 
   module R_alist = Act_c_mini.Named.Alist.As_named (Fuzzer_var.Record)
 
@@ -133,15 +136,16 @@ module Program = struct
     Or_error.Let_syntax.(
       let%map parameters = make_function_parameters vars in
       let func =
-        Act_c_mini.Function.make ~parameters ~body_decls:prog.decls ~body_stms ()
+        Act_c_mini.Function.make ~parameters ~body_decls:prog.decls
+          ~body_stms ()
       in
-      Act_c_mini.Named.make func ~name
-    )
+      Act_c_mini.Named.make func ~name)
 end
 
 module Test = struct
   type t =
-    {init: Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t; programs: Program.t list}
+    { init: Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t
+    ; programs: Program.t list }
   [@@deriving sexp]
 
   let add_new_program (test : t) : t =
@@ -153,7 +157,8 @@ module Test = struct
     type stm = Act_c_mini.Statement.t
 
     let gen_insert_stm (test : target) :
-        Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path Quickcheck.Generator.t =
+        Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path
+        Quickcheck.Generator.t =
       let prog_gens =
         List.mapi test.programs ~f:(fun index prog ->
             Quickcheck.Generator.map (Program.Path.gen_insert_stm prog)
@@ -163,8 +168,9 @@ module Test = struct
 
     let handle_stm (type a) (path : a Act_c_mini.Path.program_path)
         ~(f :
-           a Act_c_mini.Path.function_path -> Program.t -> Program.t Or_error.t)
-        (test : target) : target Or_error.t =
+              a Act_c_mini.Path.function_path
+           -> Program.t
+           -> Program.t Or_error.t) (test : target) : target Or_error.t =
       let open Or_error.Let_syntax in
       match path with
       | On_program {index; rest} ->
@@ -175,11 +181,13 @@ module Test = struct
           in
           {test with programs= programs'}
 
-    let insert_stm (path : Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path)
+    let insert_stm
+        (path : Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path)
         (stm : stm) : target -> target Or_error.t =
       handle_stm path ~f:(fun rest -> Program.Path.insert_stm rest stm)
 
-    let transform_stm (path : Act_c_mini.Path.on_stm Act_c_mini.Path.program_path)
+    let transform_stm
+        (path : Act_c_mini.Path.on_stm Act_c_mini.Path.program_path)
         ~(f : Act_c_mini.Statement.t -> Act_c_mini.Statement.t Or_error.t) :
         target -> target Or_error.t =
       handle_stm path ~f:(Program.Path.transform_stm ~f)
@@ -223,13 +231,15 @@ module Test = struct
         [%expect {| (Ok ()) |}]
     end )
 
-  let to_litmus ?(postcondition : Act_c_mini.Litmus.Ast.Postcondition.t option)
+  let to_litmus
+      ?(postcondition :
+         Act_c_lang.Ast_basic.Constant.t Act_litmus.Postcondition.t option)
       (subject : t) ~(vars : Fuzzer_var.Map.t) ~(name : string) :
       Act_c_mini.Litmus.Ast.Validated.t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind programs = programs_to_litmus ~vars subject.programs in
-    Act_c_mini.Litmus.Ast.Validated.make ?postcondition ~name ~init:subject.init
-      ~programs ()
+    Act_c_mini.Litmus.Ast.Validated.make ?postcondition ~name
+      ~init:subject.init ~programs ()
 
   let add_var_to_init (subject : t) (var : Ac.C_id.t)
       (initial_value : Act_c_lang.Ast_basic.Constant.t) : t =

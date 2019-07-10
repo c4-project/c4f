@@ -25,7 +25,7 @@ type 'const t [@@deriving equal, sexp]
 val make :
      ?locations:Act_common.C_id.t list
   -> ?init:(Act_common.C_id.t, 'const) List.Assoc.t
-  -> ?postcondition:'const Ast_base.Postcondition.t
+  -> ?postcondition:'const Postcondition.t
   -> unit
   -> 'const t
 (** [make ?locations ?init ?postcondition ()] makes an auxiliary record with
@@ -42,7 +42,7 @@ val locations : _ t -> Act_common.C_id.t list option
 val init : 'const t -> (Act_common.C_id.t, 'const) List.Assoc.t
 (** [init aux] gets the computed init block of [aux]. *)
 
-val postcondition : 'const t -> 'const Ast_base.Postcondition.t option
+val postcondition : 'const t -> 'const Postcondition.t option
 (** [postcondition aux] gets the postcondition given in [aux], if any. *)
 
 (** {2 Traversals} *)
@@ -63,5 +63,5 @@ module Json (Const : sig
 
   include Plumbing.Jsonable_types.S with type t := t
 
-  val parse_post_string : string -> t Ast_base.Postcondition.t Or_error.t
+  val parse_post_string : string -> t Postcondition.t Or_error.t
 end) : Plumbing.Jsonable_types.S with type t = Const.t t
