@@ -3,6 +3,8 @@
 # Inner part of `obj_splitmus` that populates a directory with a litmus test
 # harness.
 
+# TODO(@MattWindsor91): support remote invocation?
+
 set -o errexit
 set -o pipefail
 set -o nounset

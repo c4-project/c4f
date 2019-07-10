@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-
+# The Automagic Compiler Tormentor
+#
+# Copyright (c) 2018--2019 Matt Windsor and contributors
+#
+# ACT itself is licensed under the MIT License. See the LICENSE file in the
+# project root for more information.
+#
+# ACT is based in part on code from the Herdtools7 project
+# (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+# project root for more information.
+"""Generates a test JSON file to use with the 'run_test' script."""
 
 import argparse
 import os
@@ -7,10 +17,11 @@ import pathlib
 import sys
 import typing
 
-from act_py import test_runner
+from act_py import act_id, machine_info, test_runner
 
 
 # TODO(@MattWindsor91): understand drivers other than obj_splitmus.
+# TODO(@MattWindsor91): understand backends other than machine.litmus.
 
 
 obj_splitmus_name: str = os.path.join(os.path.dirname(__file__), "obj_splitmus_gen")
@@ -19,11 +30,20 @@ obj_splitmus_name: str = os.path.join(os.path.dirname(__file__), "obj_splitmus_g
 obj_splitmus_driver: str = obj_splitmus_name + " {backend} {compiler} {subject_path} {subject_name} {dir}"
 
 
-def make_test(subject_paths: typing.List[pathlib.Path]) -> test_runner.Test:
+def make_test(
+    output_dir: pathlib.Path,
+    subject_paths: typing.List[pathlib.Path],
+    machine_predicate: typing.Optional[str],
+    compiler_predicate: typing.Optional[str],
+) -> test_runner.Test:
     subjects = [inspect_subject(path) for path in subject_paths]
 
-    env: test_runner.TestEnv = test_runner.TestEnv(subjects, obj_splitmus_driver, pathlib.Path("."))
-    machines: typing.Mapping[str, test_runner.MachineTest] = dict()
+    env: test_runner.TestEnv = test_runner.TestEnv(
+        subjects, obj_splitmus_driver, output_dir
+    )
+    machines: typing.Mapping[act_id.Id, test_runner.MachineTest] = get_machines(
+        compiler_predicate=compiler_predicate, machine_predicate=machine_predicate
+    )
     return test_runner.Test(env, machines)
 
 
@@ -52,7 +72,41 @@ def get_subject_name(fp: typing.TextIO) -> str:
     return header_chunks[1].strip()
 
 
-if __name__ == '__main__':
+def get_machines(
+    machine_predicate: typing.Optional[str], compiler_predicate: typing.Optional[str]
+) -> typing.Mapping[act_id.Id, test_runner.MachineTest]:
+    """Gets machine information from ACT's configuration in `test_runner.MachineTest` form.
+
+    :param machine_predicate:
+        An optional S-expression representing the machine filtering predicate
+        to use.
+    :param compiler_predicate:
+        An optional S-expression representing the compiler filtering predicate
+        to use.
+    :return: The captured machines.
+    """
+    raw_machines = machine_info.get_machines(
+        compiler_predicate=compiler_predicate, machine_predicate=machine_predicate
+    )
+    return {k: expand_machine(k, compilers) for k, compilers in raw_machines.items()}
+
+
+def expand_machine(
+    machine_id: act_id.Id, compilers: typing.Iterable[act_id.Id]
+) -> test_runner.MachineTest:
+    """Expands a raw machine listing into a testable machine.
+
+    :param machine_id: The ID of the machine to expand.
+    :param compilers: The machine to expand.
+    :return: The result of expanding `raw_machine`.
+    """
+    # TODO(@MattWindsor91): actually search for the correct backend.
+    return test_runner.MachineTest(
+        list(compilers), act_id.qualify(machine_id, act_id.Id("litmus"))
+    )
+
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-o",
@@ -65,6 +119,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "-m",
         "--machines",
+        dest="machine_predicate",
         metavar="SEXP",
         type=str,
         help="A filtering predicate to use to restrict the machines under test.",
@@ -72,6 +127,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "-c",
         "--compilers",
+        dest="compiler_predicate",
         metavar="SEXP",
         type=str,
         help="A filtering predicate to use to restrict the compilers under test.",
@@ -84,7 +140,10 @@ if __name__ == '__main__':
         help="The C/litmus files to test.",
     )
     args = parser.parse_args()
-    test: test_runner.Test = make_test(args.subjects)
+    test: test_runner.Test = make_test(
+        output_dir=args.output,
+        subject_paths=args.subjects,
+        compiler_predicate=args.compiler_predicate,
+        machine_predicate=args.machine_predicate,
+    )
     test.dump(sys.stdout)
-
-

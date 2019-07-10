@@ -17,6 +17,7 @@ import os
 
 class ExtendedEncoder(json.JSONEncoder):
     """JSON encoder that understands pathlike and dataclass objects."""
+
     def default(self, obj):
         if isinstance(obj, os.PathLike):
             return os.fspath(obj)

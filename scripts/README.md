@@ -1,6 +1,6 @@
 # Unix scripts
 
-This directory contains shell scripts that assist in use, and
+This directory contains shell, Python, and AWK scripts that assist in use, and
 semi-automated testing, of `act`.
 
 Most of these tests require some sort of pre-existing environment that we can't

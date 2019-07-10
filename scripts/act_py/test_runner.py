@@ -7,9 +7,8 @@
 #
 # ACT is based in part on code from the Herdtools7 project
 # (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
-# project root for more information. *)
+# project root for more information.
 """The main part of the ACT high-level test runner."""
-import dataclasses
 import json
 from dataclasses import dataclass
 import logging
@@ -17,7 +16,7 @@ import pathlib
 import subprocess
 import typing
 
-from act_py import io_utils, json_utils
+from act_py import act_id, io_utils, json_utils
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TestSubject:
     """Contains information about a single test subject."""
+
     name: str
     path: pathlib.Path
 
@@ -39,34 +39,6 @@ class TestSubject:
     def prepare(self) -> None:
         """Prepares the environment for this subject."""
         io_utils.check_file_exists(self.path)
-
-
-id_to_dir_replacements: typing.List[typing.Tuple[str, str]] = [
-    ("_", "__"),
-    ("/", "_F"),
-    ("\\", "_B"),
-    (".", "_D"),
-]
-
-
-def id_to_dir(identifier: str) -> str:
-    """Converts an ACT ID to a format safe for use as a path component.
-
-    The focus is on bijectivity rather than human-readability.
-
-    Example:
-
-    >>> id_to_dir("spam_spam_spam.sausage.eggs/ham.and\\spam")
-    "spam__spam__spam_Dsausage_Deggs_Fham_Dand_Bspam"
-
-    :param identifier:
-        The ID to convert.
-    :return:
-        The converted ID.
-    """
-    for (f, t) in id_to_dir_replacements:
-        identifier = identifier.replace(f, t)
-    return identifier
 
 
 @dataclass
@@ -91,7 +63,7 @@ class TestEnv:
         for subject in self.subjects:
             subject.prepare()
 
-    def output_dir_for(self, subject: TestSubject, compiler: str) -> pathlib.Path:
+    def output_dir_for(self, subject: TestSubject, compiler: act_id.Id) -> pathlib.Path:
         """Gets the appropriate subdirectory of this environment's output directory
         for a specific subject and compiler.
 
@@ -101,7 +73,7 @@ class TestEnv:
         :param compiler: The compiler for which we need an output directory.
         :return: The path to the output directory.
         """
-        name: str = "_".join([subject.name, id_to_dir(compiler)])
+        name: str = "_".join([subject.name, act_id.to_dir(compiler)])
         return self.output_dir / name
 
     def populate_driver(self, **data: str) -> str:
@@ -135,8 +107,8 @@ class TestEnv:
 class TestInstance:
     """Object representing a single run of the tester, with a given machine, compiler, and subject."""
 
-    backend: str
-    compiler: str
+    backend: act_id.Id
+    compiler: act_id.Id
     subject: TestSubject
     env: TestEnv
 
@@ -222,28 +194,14 @@ class TestInstance:
         return f"{self.compiler}!{self.subject.name}"
 
 
-def qualify_id(machine_id: str, compiler_id: str) -> str:
-    """Fully-qualifies a compiler ID by appending it to a machine ID.
-
-    Examples:
-
-    >>> qualify_id("localhost", "gcc.x86.O3")
-    "localhost.gcc.x86.O3"
-
-    >>> qualify_id("", "gcc.x86.O3")
-    "gcc.x86.O3"
-    """
-    return compiler_id if machine_id.isspace() else ".".join([machine_id, compiler_id])
-
-
 @dataclass
 class MachineTest:
     """A specification of how to run a multi-compiler test on one machine."""
 
-    compilers: typing.List[str]
-    backend: str
+    compilers: typing.List[act_id.Id]
+    backend: act_id.Id
 
-    def run(self, machine_id: str, env: TestEnv) -> None:
+    def run(self, machine_id: act_id.Id, env: TestEnv) -> None:
         """Runs tests for all compilers on this machine.
 
         :param machine_id:
@@ -253,10 +211,10 @@ class MachineTest:
             The `TestEnv` containing test subjects and drivers.
         """
         for compiler_id in self.compilers:
-            q_compiler_id = qualify_id(machine_id, compiler_id)
+            q_compiler_id = act_id.qualify(machine_id, compiler_id)
             self.run_compiler(q_compiler_id, env)
 
-    def run_compiler(self, q_compiler_id: str, env: TestEnv) -> None:
+    def run_compiler(self, q_compiler_id: act_id.Id, env: TestEnv) -> None:
         """Runs tests for a single compiler on this machine.
 
         :param q_compiler_id:
@@ -276,7 +234,7 @@ class Test:
     """A specification of how to run a multi-compiler test."""
 
     env: TestEnv
-    machines: typing.Mapping[str, MachineTest]
+    machines: typing.Mapping[act_id.Id, MachineTest]
 
     def run(self) -> None:
         """Runs the test specified by this object."""
@@ -292,8 +250,8 @@ class Test:
 
 
 def machine_test_from_dict(d: typing.Mapping[str, typing.Any]) -> MachineTest:
-    compilers = [str(compiler) for compiler in d["compilers"]]
-    backend = str(d["backend"])
+    compilers = [act_id.Id(compiler) for compiler in d["compilers"]]
+    backend = act_id.Id(d["backend"])
     return MachineTest(compilers=compilers, backend=backend)
 
 
@@ -304,7 +262,7 @@ def test_subject_from_dict(d: typing.Mapping[str, typing.Any]) -> TestSubject:
 
 
 def test_env_from_dict(d: typing.Mapping[str, typing.Any]) -> TestEnv:
-    subjects = [ test_subject_from_dict(subject) for subject in d["subjects"] ]
+    subjects = [test_subject_from_dict(subject) for subject in d["subjects"]]
     driver = str(d["driver"])
     output_dir = pathlib.Path(d["output_dir"])
     return TestEnv(subjects=subjects, driver=driver, output_dir=output_dir)
@@ -319,7 +277,7 @@ def test_from_dict(d: typing.Mapping[str, typing.Any]) -> Test:
     :return: The `Test` whose fields correspond to the data in `d`.
     """
     machines = {
-        str(mid): machine_test_from_dict(md) for mid, md in d["machines"].items()
+        act_id.Id(mid): machine_test_from_dict(md) for mid, md in d["machines"].items()
     }
     env = test_env_from_dict(d["env"])
     return Test(machines=machines, env=env)
