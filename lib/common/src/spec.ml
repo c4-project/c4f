@@ -1,30 +1,18 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** [Spec] contains general interfaces for dealing with specifications of
     machines and compilers. *)
 
-open Core_kernel (* for Tuple2 *)
+open Base
 
 open Spec_types
 module Au = Act_utils
@@ -40,10 +28,10 @@ module Set = struct
 
   let partition_map (type a b) (t : 'spec t)
       ~(f : Id.t -> 'spec -> [`Fst of a | `Snd of b]) : a list * b list =
-    List.partition_map t ~f:(Tuple2.uncurry f)
+    List.partition_map t ~f:(fun (i, s) -> f i s)
 
   let map (type a) (t : 'spec t) ~(f : Id.t -> 'spec -> a) : a list =
-    List.map t ~f:(Tuple2.uncurry f)
+    List.map t ~f:(fun (i, s) -> f i s)
 
   let of_map (type spec) : spec Map.M(Id).t -> spec t = Map.to_alist
 
@@ -63,7 +51,7 @@ module Set = struct
       module LM = Tx.List.On_monad (M)
 
       let map_m (set : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
-        LM.map_m set ~f:(fun (i, v) -> M.(v |> f >>| Tuple2.create i))
+        LM.map_m set ~f:(fun (i, v) -> M.(v |> f >>| fun v' -> (i, v')))
     end
   end)
 end
@@ -142,8 +130,8 @@ module Make (B : Basic) :
     let pp_verbose verbose : t Fmt.t =
       Fmt.(
         vbox
-          (list ~sep:cut (fun f ->
-               Tuple2.uncurry (pp_id_spec ~pp:(pp_verbose verbose) f))))
+          (list ~sep:cut (fun f (i, s) ->
+               (pp_id_spec ~pp:(pp_verbose verbose) f) i s )))
 
     let pp : t Fmt.t = pp_verbose true
   end

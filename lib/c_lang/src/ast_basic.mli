@@ -48,7 +48,7 @@
     We declare these separately from the {{!Ast} rest of the AST} to break
     dependency cycles. *)
 
-open Core_kernel
+open Base
 
 include module type of Ast_basic_intf
 (** As usual, the signatures are in a separate 'intf' module. *)
@@ -172,7 +172,7 @@ end
 (** AST node for constants *)
 module Constant : sig
   type t = Char of char | Float of float | Integer of int
-  [@@deriving sexp]
+  [@@deriving sexp, quickcheck]
 
   include Ast_node with type t := t
 
@@ -184,16 +184,12 @@ module Constant : sig
 
   (** {3 Quickcheck} *)
 
-  include
-    Quickcheckable.S with type t := t
-  (** The default generators generate any valid constant. *)
-
-  val gen_int32_as_int : int Quickcheck.Generator.t
+  val gen_int32_as_int : int Base_quickcheck.Generator.t
   (** [gen_int32_as_int] generates an [int] whose domain is that of [int32].
       This is useful for making sure that we don't generate integers that
       could overflow when running tests on 32-bit platforms. *)
 
-  val gen_int32_constant : t Quickcheck.Generator.t
+  val gen_int32_constant : t Base_quickcheck.Generator.t
   (** [gen_int32_constant] generates an integer constant using
       {{!gen_int32_as_int} gen_int32_as_int}. *)
 end
