@@ -1,9 +1,13 @@
 (executable
  (public_name act)
- (preprocess
-  (pps ppx_jane))
  (modules act)
- (libraries core_kernel core toplevel act.utils))
+ (libraries base core_kernel core toplevel act.utils))
+
+(executable
+ (name act_fuzz)
+ (public_name act-fuzz)
+ (modules act_fuzz)
+ (libraries base core_kernel core toplevel act.utils))
 
 (rule
  (targets specs.output)
