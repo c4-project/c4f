@@ -27,13 +27,13 @@ open Base
 
 (** {2 Phantom types for path GADTs} *)
 
-type on_expr [@@deriving sexp_of]
+type on_expr [@@deriving sexp]
 (** Marks a path as reaching an existing expression. *)
 
-type on_stm [@@deriving sexp_of]
+type on_stm [@@deriving sexp]
 (** Marks a path as reaching an existing statement. *)
 
-type stm_hole [@@deriving sexp_of]
+type stm_hole [@@deriving sexp]
 (** Marks a path as reaching a space where we can insert a statement. *)
 
 (** {2 Path GADTs} *)
@@ -54,9 +54,11 @@ and 'a if_path =
 [@@deriving sexp_of]
 
 type 'a function_path = On_statements : 'a list_path -> 'a function_path
+[@@deriving sexp_of]
 
 type 'a program_path =
   | On_program : {index: int; rest: 'a function_path} -> 'a program_path
+[@@deriving sexp_of]
 
 (** {2 Signatures}
 

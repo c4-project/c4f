@@ -24,11 +24,11 @@
 open Base
 module Tx = Travesty_base_exts
 
-type on_expr = [%import: Path.on_expr] [@@deriving sexp_of]
+type on_expr = [%import: Path.on_expr] [@@deriving sexp]
 
-type on_stm = [%import: Path.on_stm] [@@deriving sexp_of]
+type on_stm = [%import: Path.on_stm] [@@deriving sexp]
 
-type stm_hole = [%import: Path.stm_hole] [@@deriving sexp_of]
+type stm_hole = [%import: Path.stm_hole] [@@deriving sexp]
 
 (* We can't import these three, as they're recursive. *)
 type 'a stm_path =
@@ -46,9 +46,9 @@ and 'a if_path =
   | Cond : on_expr if_path
 [@@deriving sexp_of]
 
-type 'a function_path = [%import: Path.function_path]
+type 'a function_path = [%import: Path.function_path] [@@deriving sexp_of]
 
-type 'a program_path = [%import: Path.program_path]
+type 'a program_path = [%import: Path.program_path] [@@deriving sexp_of]
 
 module type S_path = [%import: (module Path.S_path)]
 

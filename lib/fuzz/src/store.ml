@@ -25,10 +25,13 @@ open Base
 module Ac = Act_common
 
 module Random_state = struct
+  (* We don't give [gen] here, because it depends quite a lot on the
+     functor arguments of [Make]. *)
+
   type t =
     { store: Act_c_mini.Atomic_store.t
     ; path: Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path }
-  [@@deriving fields, make]
+  [@@deriving fields, make, sexp_of]
 end
 
 module Make (B : sig
@@ -95,7 +98,7 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
         @ if B.forbid_already_written then [Fn.non has_writes] else [])
 
   module Random_state = struct
-    type t = Random_state.t
+    type t = Random_state.t [@@deriving sexp_of]
 
     module G = Base_quickcheck.Generator
 
