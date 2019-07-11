@@ -23,53 +23,6 @@ let make_rng : int option -> Splittable_random.State.t = function
   | None ->
       Splittable_random.State.create (Random.State.make_self_init ())
 
-(** Fuzzer action that generates a new global variable. *)
-module Make_global : Action_types.S = struct
-  let name = Ac.Id.of_string "var.make.global"
-
-  let readme () =
-    Act_utils.My_string.format_for_readme
-      {|
-    Generates a new global integer variable, with a random name, initial value,
-    and atomicity.
-    |}
-
-  let default_weight = 2
-
-  module Random_state = struct
-    type t = {is_atomic: bool; initial_value: int; name: Ac.C_id.t}
-    [@@deriving sexp]
-
-    module G = Base_quickcheck.Generator
-
-    let gen' (vars : Var.Map.t) : t G.t =
-      let open G.Let_syntax in
-      let%bind is_atomic = G.bool in
-      let%bind initial_value =
-        Act_c_lang.Ast_basic.Constant.gen_int32_as_int
-      in
-      let%map name = Var.Map.gen_fresh_var vars in
-      {is_atomic; initial_value; name}
-
-    let gen (_subject : Subject.Test.t) : t G.t State.Monad.t =
-      State.Monad.with_vars gen'
-  end
-
-  let available = Action.always
-
-  let run (subject : Subject.Test.t)
-      ({is_atomic; initial_value; name} : Random_state.t) :
-      Subject.Test.t State.Monad.t =
-    let ty = Act_c_mini.Type.int_type ~is_atomic ~is_pointer:true in
-    let open State.Monad.Let_syntax in
-    let%map () =
-      State.Monad.register_global ty name
-        ~initial_value:(Var.Value.Int initial_value)
-    in
-    let const = Act_c_lang.Ast_basic.Constant.Integer initial_value in
-    Subject.Test.add_var_to_init subject name const
-end
-
 let generate_random_state (type rs)
     (module Act : Action_types.S with type Random_state.t = rs)
     (subject : Subject.Test.t) (random : Splittable_random.State.t) :
@@ -93,7 +46,7 @@ let run_action (module Act : Action_types.S) (subject : Subject.Test.t)
 
 let modules : (module Action_types.S) list Lazy.t =
   lazy
-    [ (module Make_global : Action_types.S)
+    [ (module Var_actions.Make_global : Action_types.S)
     ; (module Store_actions.Int : Action_types.S)
     ; (module Program_actions.Make_empty : Action_types.S) ]
 

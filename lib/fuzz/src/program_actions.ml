@@ -38,5 +38,3 @@ module Make_empty : Action_types.S with type Random_state.t = unit = struct
       Subject.Test.t State.Monad.t =
     State.Monad.return (Subject.Test.add_new_program subject)
 end
-
-

@@ -95,4 +95,5 @@ end
 (** {2 Helpers for building actions} *)
 
 val always : Subject.Test.t -> bool State.Monad.t
-(** [always test] always returns [true] without modifying or inspecting the fuzzer state. *)
+(** [always test] always returns [true] without modifying or inspecting the
+    fuzzer state. *)
