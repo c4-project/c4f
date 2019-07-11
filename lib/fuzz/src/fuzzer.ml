@@ -1,27 +1,15 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
-
-open Core_kernel
+open Base
 module Tx = Travesty_base_exts
 module Ac = Act_common
 module State_list = Tx.List.On_monad (State.Monad)
@@ -34,66 +22,6 @@ let make_rng : int option -> Splittable_random.State.t = function
       Splittable_random.State.of_int seed
   | None ->
       Splittable_random.State.create (Random.State.make_self_init ())
-
-let int_type ~(is_atomic : bool) ~(is_global : bool) : Act_c_mini.Type.t =
-  let module T = Act_c_mini.Type in
-  let basic = if is_atomic then T.Basic.atomic_int else T.Basic.int in
-  T.of_basic basic ~is_pointer:is_global
-
-let%expect_test "int_type: combinatoric" =
-  Sexp.output_hum stdout
-    [%sexp
-      ( [ int_type ~is_atomic:false ~is_global:false
-        ; int_type ~is_atomic:false ~is_global:true
-        ; int_type ~is_atomic:true ~is_global:false
-        ; int_type ~is_atomic:true ~is_global:true ]
-        : Act_c_mini.Type.t list )] ;
-  [%expect
-    {| ((Normal int) (Pointer_to int) (Normal atomic_int) (Pointer_to atomic_int)) |}]
-
-let random_index (srng : Splittable_random.State.t) (xs : 'a list) :
-    int option =
-  if List.is_empty xs then None
-  else Some (Splittable_random.int srng ~lo:0 ~hi:(List.length xs - 1))
-
-let%test_unit "random_index is always in bounds" =
-  let rng = Random.State.make_self_init ~allow_in_tests:true () in
-  let srng = Splittable_random.State.create rng in
-  Core_kernel.Quickcheck.test ~shrinker:[%quickcheck.shrinker: int list]
-    ~sexp_of:[%sexp_of: int list] [%quickcheck.generator: int list]
-    ~f:
-      ([%test_pred: int list] ~here:[[%here]] (fun xs ->
-           match random_index srng xs with
-           | None ->
-               List.is_empty xs
-           | Some i ->
-               Option.is_some (List.nth xs i)))
-
-(** [random_item srng xs] behaves like
-    {{!List.random_element} List.random_element}, but uses a splittable RNG
-    for compatibility with Quickcheck etc. *)
-let random_item (srng : Splittable_random.State.t) (xs : 'a list) :
-    'a option =
-  Option.(random_index srng xs >>= List.nth xs)
-
-let%expect_test "random item: empty list" =
-  let deterministic_srng = Splittable_random.State.of_int 0 in
-  Sexp.output_hum stdout
-    [%sexp (random_item deterministic_srng [] : int option)] ;
-  [%expect {| () |}]
-
-let%test_unit "random_item is always a valid item" =
-  let rng = Random.State.make_self_init ~allow_in_tests:true () in
-  let srng = Splittable_random.State.create rng in
-  Core_kernel.Quickcheck.test ~shrinker:[%quickcheck.shrinker: int list]
-    ~sexp_of:[%sexp_of: int list] [%quickcheck.generator: int list]
-    ~f:
-      ([%test_pred: int list] ~here:[[%here]] (fun xs ->
-           match random_item srng xs with
-           | None ->
-               List.is_empty xs
-           | Some x ->
-               List.mem ~equal:Int.equal xs x))
 
 (** Shorthand for stating that a fuzzer action is always available. *)
 let always : Subject.Test.t -> bool State.Monad.t =
@@ -117,8 +45,8 @@ module Make_program : Action_types.S = struct
     type t = unit
 
     let gen (_subject : Subject.Test.t) :
-        t Quickcheck.Generator.t State.Monad.t =
-      State.Monad.return (Quickcheck.Generator.return ())
+        t Base_quickcheck.Generator.t State.Monad.t =
+      State.Monad.return (Base_quickcheck.Generator.return ())
   end
 
   let available = always
@@ -144,7 +72,7 @@ module Make_global : Action_types.S = struct
   module Random_state = struct
     type t = {is_atomic: bool; initial_value: int; name: Ac.C_id.t}
 
-    module G = Quickcheck.Generator
+    module G = Base_quickcheck.Generator
 
     let gen' (vars : Var.Map.t) : t G.t =
       let open G.Let_syntax in
@@ -164,8 +92,8 @@ module Make_global : Action_types.S = struct
   let run (subject : Subject.Test.t)
       ({is_atomic; initial_value; name} : Random_state.t) :
       Subject.Test.t State.Monad.t =
+    let ty = Act_c_mini.Type.int_type ~is_atomic ~is_pointer:true in
     let open State.Monad.Let_syntax in
-    let ty = int_type ~is_atomic ~is_global:true in
     let%map () =
       State.Monad.register_global ty name
         ~initial_value:(Var.Value.Int initial_value)
@@ -185,7 +113,7 @@ let generate_random_state (type rs)
   let%map gen = Act.Random_state.gen subject in
   Ac.Output.pv o "fuzz: generating random state for %a...@." Ac.Id.pp
     Act.name ;
-  let g = Quickcheck.Generator.generate gen ~random ~size:10 in
+  let g = Base_quickcheck.Generator.generate gen ~random ~size:10 in
   Ac.Output.pv o "fuzz: done generating random state.@." ;
   g
 

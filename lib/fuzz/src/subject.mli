@@ -56,9 +56,18 @@ module Program : sig
   (** Allows production and consumption of random paths over fuzzable
       programs in the same way as normal mini functions. *)
 
+  (** {3 Constructors} *)
+
+  val empty : t
+  (** [empty] is the empty program. *)
+
   val of_function : Act_c_mini.Function.t -> t
   (** [of_litmus func] converts a mini-model C function [func] to the
       intermediate form used for fuzzing. *)
+
+  val has_statements : t -> bool
+  (** [has_statements prog] is true if, and only if, [prog] contains at
+      least one statement. *)
 
   val to_function :
        t
@@ -68,6 +77,15 @@ module Program : sig
   (** [to_function prog ~vars ~id] lifts a subject-program [prog] with ID
       [prog_id] back into a Litmus function, adding a parameter list
       generated from [vars]. *)
+
+  val list_to_litmus :
+       t list
+    -> vars:Var.Map.t
+    -> Act_c_mini.Litmus.Lang.Program.t list Or_error.t
+  (** [list_to_litmus progs ~vars] lifts a list [progs] of subject-programs
+      back into Litmus programs, adding parameter lists generated from
+      [vars], and using the physical position of each program in the list to
+      generate its thread ID. *)
 end
 
 (** Fuzzable representation of a litmus test. *)

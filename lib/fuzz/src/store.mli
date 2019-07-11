@@ -23,6 +23,21 @@
 
 (** C fuzzer: actions that generate store instructions. *)
 
+(** {2 Random state} *)
+
+module Random_state : sig
+  type t
+
+  val make :
+       store:Act_c_mini.Atomic_store.t
+    -> path:Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path
+    -> t
+
+  val store : t -> Act_c_mini.Atomic_store.t
+
+  val path : t -> Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path
+end
+
 (** {2 Functors} *)
 
 module Make (B : sig
@@ -42,11 +57,11 @@ module Make (B : sig
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Act_c_mini.Atomic_store.t
   (** The generator this store action uses to create stores. *)
-end) : Action_types.S
+end) : Action_types.S with type Random_state.t = Random_state.t
 (** [Make (B)] makes a store action given the basic configuration in [B]. *)
 
 (** {2 Pre-made modules} *)
 
-module Int : Action_types.S
+module Int : Action_types.S with type Random_state.t = Random_state.t
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)

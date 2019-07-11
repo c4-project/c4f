@@ -46,3 +46,13 @@ let find_one (type a b) ?(item_name : string = "item") (items : a list)
     ~(f : a -> b option) : b Or_error.t =
   find_at_most_one items ~item_name ~f
     ~on_empty:(Or_error.errorf "Expected at least one %s" item_name)
+
+let random_index (xs : 'a list) ~(random : Splittable_random.State.t) :
+    int option =
+  if List.is_empty xs then None
+  else Some (Splittable_random.int random ~lo:0 ~hi:(List.length xs - 1))
+
+let random_item (xs : 'a list) ~(random : Splittable_random.State.t) :
+    'a option =
+  Option.(random_index ~random xs >>= List.nth xs)
+

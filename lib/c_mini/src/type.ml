@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Ac = Act_common
 module Au = Act_utils
 
@@ -92,6 +92,10 @@ let to_non_atomic : t -> t Or_error.t = function
       Or_error.(k |> Basic.to_non_atomic >>| normal)
   | Pointer_to k ->
       Or_error.(k |> Basic.to_non_atomic >>| pointer_to)
+
+let int_type ~(is_atomic : bool) ~(is_pointer : bool) : t =
+  let basic = Basic.(if is_atomic then atomic_int else int) in
+  of_basic basic ~is_pointer
 
 module Str = struct
   type nonrec t = t

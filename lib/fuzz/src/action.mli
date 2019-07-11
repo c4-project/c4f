@@ -48,6 +48,13 @@ module Summary : sig
   type t
   (** Opaque type of summaries. *)
 
+  val make : weight:Adjusted_weight.t -> readme:string -> t
+  (** [make ~weight ~summary] makes a fuzzer action summary. *)
+
+  val of_action : (module Action_types.S) -> user_weight:int -> t
+  (** [of_action action ~user_weight] makes a fuzzer action summary using an
+      action module [action] and the given user weighting [user_weight]. *)
+
   val weight : t -> Adjusted_weight.t
   (** [weight summary] gets the final 'adjusted' weight of the action
       described by [summary]. *)

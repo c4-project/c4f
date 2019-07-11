@@ -51,3 +51,21 @@ val find_one :
 (** [find_one ?item_name items ~f] tries to find an item in [items] for
     which [f] returns [Some]. It returns the result if precisely one exists,
     and an error otherwise. *)
+
+(** {2 Using a splittable RNG to access elements} *)
+
+val random_index
+  : _ list
+    -> random:Splittable_random.State.t
+    -> int option
+(** [random_index xs ~random] returns [None] if [xs] is empty, and [Some i],
+    where [i] is a random number generated with [random] between [0] and
+    [length xs] exclusive, otherwise. *)
+
+val random_item 
+  : 'a list
+    -> random:Splittable_random.State.t
+    -> 'a option
+(** [random_item xs ~random] behaves like
+    {{!List.random_element} List.random_element}, but uses a splittable RNG
+    for compatibility with Quickcheck etc. *)

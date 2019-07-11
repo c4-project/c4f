@@ -23,7 +23,7 @@
 
 (** The 'act' mutation-based C litmus test fuzzer. *)
 
-open Core_kernel
+open Base
 open Act_common
 
 val summarise : Act_config.Fuzz.t -> Action.Summary.t Id.Map.t Or_error.t

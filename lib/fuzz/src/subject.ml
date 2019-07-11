@@ -36,13 +36,9 @@ module Program = struct
     ; stms: Act_c_mini.Statement.t With_source.t list }
   [@@deriving sexp]
 
-  let empty () : t = {decls= []; stms= []}
+  let empty : t = {decls= []; stms= []}
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
-
-  let%expect_test "empty program has no statements" =
-    Fmt.(pr "%a@." (using has_statements bool) (empty ())) ;
-    [%expect {| false |}]
 
   module Stm_path :
     Act_c_mini.Path.S_statement
@@ -140,6 +136,14 @@ module Program = struct
           ~body_stms ()
       in
       Act_c_mini.Named.make func ~name)
+
+  let list_to_litmus (progs : t list) ~(vars : Var.Map.t) :
+      Act_c_mini.Litmus.Lang.Program.t list Or_error.t =
+    progs
+    |> List.filter_mapi ~f:(fun id prog ->
+           if has_statements prog then Some (to_function ~vars ~id prog)
+           else None)
+    |> Or_error.combine_errors
 end
 
 module Test = struct
@@ -149,7 +153,7 @@ module Test = struct
   [@@deriving sexp]
 
   let add_new_program (test : t) : t =
-    {test with programs= Program.empty () :: test.programs}
+    {test with programs= Program.empty :: test.programs}
 
   module Path : Act_c_mini.Path.S_program with type target := t = struct
     type target = t
@@ -202,42 +206,13 @@ module Test = struct
     { init= Act_c_mini.Litmus.Ast.Validated.init test
     ; programs= programs_of_litmus test }
 
-  let programs_to_litmus (progs : Program.t list) ~(vars : Var.Map.t) :
-      Act_c_mini.Litmus.Lang.Program.t list Or_error.t =
-    progs
-    |> List.filter ~f:Program.has_statements
-    |> List.mapi ~f:(fun id -> Program.to_function ~vars ~id)
-    |> Or_error.combine_errors
-
-  let%test_module "using sample environment" =
-    ( module struct
-      type r = Act_c_mini.Litmus.Lang.Program.t list Or_error.t
-      [@@deriving sexp_of]
-
-      let vars =
-        Var.Map.make_existing_var_map
-          (Lazy.force Act_c_mini.Env.test_env)
-          Ac.C_id.Set.empty
-
-      let run programs =
-        let result = programs_to_litmus programs ~vars in
-        Sexp.output_hum stdout [%sexp (result : r)]
-
-      let%expect_test "programs_to_litmus: empty test" =
-        run [] ; [%expect {| (Ok ()) |}]
-
-      let%expect_test "programs_to_litmus: empty programs" =
-        run (List.init 5 ~f:(fun _ -> Program.empty ())) ;
-        [%expect {| (Ok ()) |}]
-    end )
-
   let to_litmus
       ?(postcondition :
          Act_c_lang.Ast_basic.Constant.t Act_litmus.Postcondition.t option)
       (subject : t) ~(vars : Var.Map.t) ~(name : string) :
       Act_c_mini.Litmus.Ast.Validated.t Or_error.t =
     let open Or_error.Let_syntax in
-    let%bind programs = programs_to_litmus ~vars subject.programs in
+    let%bind programs = Program.list_to_litmus ~vars subject.programs in
     Act_c_mini.Litmus.Ast.Validated.make ?postcondition ~name
       ~init:subject.init ~programs ()
 

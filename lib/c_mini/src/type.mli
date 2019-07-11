@@ -66,6 +66,8 @@ include
   Plumbing.Jsonable_types.S with type t := t
 (** Types can be converted to JSON by stringification. *)
 
+(** {2 Constructors} *)
+
 val normal : Basic.t -> t
 (** [normal ty] lifts a basic type [ty] to a scalar type. *)
 
@@ -75,6 +77,10 @@ val pointer_to : Basic.t -> t
 val of_basic : Basic.t -> is_pointer:bool -> t
 (** [of_basic ty ~is_pointer] lifts a basic type [ty] to a pointer type if
     [is_pointer] is true, and a normal one otherwise. *)
+
+val int_type : is_atomic:bool -> is_pointer:bool -> t
+(** [int_type ~is_atomic ~is_pointer] constructs the right integer type
+    according to the flags [is_atomic] and [is_pointer]. *)
 
 (** {2 Modifiers} *)
 
