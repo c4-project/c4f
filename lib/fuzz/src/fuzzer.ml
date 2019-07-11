@@ -23,39 +23,6 @@ let make_rng : int option -> Splittable_random.State.t = function
   | None ->
       Splittable_random.State.create (Random.State.make_self_init ())
 
-(** Shorthand for stating that a fuzzer action is always available. *)
-let always : Subject.Test.t -> bool State.Monad.t =
-  Fn.const (State.Monad.return true)
-
-(** Fuzzer action that generates a new, empty program. *)
-module Make_program : Action_types.S = struct
-  let name = Ac.Id.of_string "program.make.empty"
-
-  let readme () =
-    Act_utils.My_string.format_for_readme
-      {|
-    Generates a new, empty program at one end of the program list.
-    This action isn't very useful on its own, but works well in combination
-    with other actions that construct statements and control flows.
-    |}
-
-  let default_weight = 1
-
-  module Random_state = struct
-    include Unit
-
-    let gen (_subject : Subject.Test.t) :
-        t Base_quickcheck.Generator.t State.Monad.t =
-      State.Monad.return (Base_quickcheck.Generator.return ())
-  end
-
-  let available = always
-
-  let run (subject : Subject.Test.t) (() : Random_state.t) :
-      Subject.Test.t State.Monad.t =
-    State.Monad.return (Subject.Test.add_new_program subject)
-end
-
 (** Fuzzer action that generates a new global variable. *)
 module Make_global : Action_types.S = struct
   let name = Ac.Id.of_string "var.make.global"
@@ -88,7 +55,7 @@ module Make_global : Action_types.S = struct
       State.Monad.with_vars gen'
   end
 
-  let available = always
+  let available = Action.always
 
   let run (subject : Subject.Test.t)
       ({is_atomic; initial_value; name} : Random_state.t) :
@@ -127,8 +94,8 @@ let run_action (module Act : Action_types.S) (subject : Subject.Test.t)
 let modules : (module Action_types.S) list Lazy.t =
   lazy
     [ (module Make_global : Action_types.S)
-    ; (module Store.Int : Action_types.S)
-    ; (module Make_program : Action_types.S) ]
+    ; (module Store_actions.Int : Action_types.S)
+    ; (module Program_actions.Make_empty : Action_types.S) ]
 
 let mutate_subject_step (pool : Action.Pool.t) (subject : Subject.Test.t)
     (rng : Splittable_random.State.t) : Subject.Test.t State.Monad.t =

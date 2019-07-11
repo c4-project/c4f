@@ -91,3 +91,8 @@ module Pool : sig
       weighted-random action module from [pool] that is available on
       [subject], using [pool] as a random number generator. *)
 end
+
+(** {2 Helpers for building actions} *)
+
+val always : Subject.Test.t -> bool State.Monad.t
+(** [always test] always returns [true] without modifying or inspecting the fuzzer state. *)

@@ -13,6 +13,10 @@ open Base
 open Act_common
 open Act_utils
 
+(** Shorthand for stating that a fuzzer action is always available. *)
+let always : Subject.Test.t -> bool State.Monad.t =
+  Fn.const (State.Monad.return true)
+
 let zero_if_not_available (subject : Subject.Test.t)
     (module A : Action_types.S) (weight : int) : int State.Monad.t =
   State.Monad.Let_syntax.(if%map A.available subject then weight else 0)

@@ -15,7 +15,7 @@ open Stdio
 let%test_module "int tests" =
   ( module struct
     open Act_fuzz
-    open Store
+    open Store_actions
 
     let init :
         Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
