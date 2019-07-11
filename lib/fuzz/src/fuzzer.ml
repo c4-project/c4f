@@ -42,7 +42,7 @@ module Make_program : Action_types.S = struct
   let default_weight = 1
 
   module Random_state = struct
-    type t = unit [@@deriving sexp_of]
+    include Unit
 
     let gen (_subject : Subject.Test.t) :
         t Base_quickcheck.Generator.t State.Monad.t =
@@ -70,7 +70,8 @@ module Make_global : Action_types.S = struct
   let default_weight = 2
 
   module Random_state = struct
-    type t = {is_atomic: bool; initial_value: int; name: Ac.C_id.t} [@@deriving sexp_of]
+    type t = {is_atomic: bool; initial_value: int; name: Ac.C_id.t}
+    [@@deriving sexp]
 
     module G = Base_quickcheck.Generator
 

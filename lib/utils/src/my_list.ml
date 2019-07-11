@@ -55,4 +55,3 @@ let random_index (xs : 'a list) ~(random : Splittable_random.State.t) :
 let random_item (xs : 'a list) ~(random : Splittable_random.State.t) :
     'a option =
   Option.(random_index ~random xs >>= List.nth xs)
-

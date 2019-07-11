@@ -25,40 +25,20 @@
 
 open Base
 
-(** {2 Phantom types for path GADTs} *)
+(** {2 Path types} *)
 
-type on_expr [@@deriving sexp]
-(** Marks a path as reaching an existing expression. *)
+type stm_path = In_if of if_path | This [@@deriving sexp]
 
-type on_stm [@@deriving sexp]
-(** Marks a path as reaching an existing statement. *)
+and list_path = Insert_at of int | At of {index: int; rest: stm_path}
+[@@deriving sexp]
 
-type stm_hole [@@deriving sexp]
-(** Marks a path as reaching a space where we can insert a statement. *)
+and if_path = Block of {branch: bool; rest: list_path} | Cond
+[@@deriving sexp]
 
-(** {2 Path GADTs} *)
+type function_path = On_statements of list_path [@@deriving sexp]
 
-type 'a stm_path =
-  | In_if : 'a if_path -> 'a stm_path
-  | This : on_stm stm_path
-[@@deriving sexp_of]
-
-and 'a list_path =
-  | Insert_at : int -> 'a list_path
-  | At : {index: int; rest: 'a stm_path} -> 'a list_path
-[@@deriving sexp_of]
-
-and 'a if_path =
-  | Block : {branch: bool; rest: 'a list_path} -> 'a if_path
-  | Cond : on_expr if_path
-[@@deriving sexp_of]
-
-type 'a function_path = On_statements : 'a list_path -> 'a function_path
-[@@deriving sexp_of]
-
-type 'a program_path =
-  | On_program : {index: int; rest: 'a function_path} -> 'a program_path
-[@@deriving sexp_of]
+type program_path = On_program of {index: int; rest: function_path}
+[@@deriving sexp]
 
 (** {2 Signatures}
 
@@ -67,16 +47,17 @@ type 'a program_path =
 
 (** General signature of paths. *)
 module type S_path = sig
-  type 'a t
+  type t
+  (** Type of paths. *)
 
   type target
 
-  val insert_stm : stm_hole t -> Statement.t -> target -> target Or_error.t
+  val insert_stm : t -> Statement.t -> target -> target Or_error.t
   (** [insert_stm path stm dest] tries to insert [stm] into the part of
       [dest] pointed to by [path]. *)
 
   val transform_stm :
-       on_stm t
+       t
     -> f:(Statement.t -> Statement.t Or_error.t)
     -> target
     -> target Or_error.t
@@ -88,7 +69,7 @@ end
 module type S_statement = sig
   type target
 
-  include S_path with type 'a t := 'a stm_path and type target := target
+  include S_path with type t := stm_path and type target := target
 
   val lift_stm : Statement.t -> target
   (** [lift_stm s] lifts a generated statement [s] to the target type of
@@ -99,7 +80,7 @@ module type S_statement = sig
       of this path. *)
 
   val try_gen_insert_stm :
-    target -> stm_hole stm_path Base_quickcheck.Generator.t option
+    target -> stm_path Base_quickcheck.Generator.t option
   (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
       for statement insertion paths targeting [dest].
 
@@ -110,7 +91,7 @@ end
 module type S_stm_container = sig
   include S_path
 
-  val gen_insert_stm : target -> stm_hole t Base_quickcheck.Generator.t
+  val gen_insert_stm : target -> t Base_quickcheck.Generator.t
   (** [gen_insert_stm dest] creates a Quickcheck-style generator for
       statement insertion paths targeting [dest]. *)
 end
@@ -119,10 +100,9 @@ end
 module type S_if_statement = sig
   type target
 
-  include S_path with type 'a t := 'a if_path and type target := target
+  include S_path with type t := if_path and type target := target
 
-  include
-    S_stm_container with type 'a t := 'a if_path and type target := target
+  include S_stm_container with type t := if_path and type target := target
 end
 
 (** Signature of paths over statement lists *)
@@ -130,19 +110,17 @@ module type S_statement_list = sig
   type target
 
   include
-    S_stm_container
-      with type 'a t := 'a list_path
-       and type target := target list
+    S_stm_container with type t := list_path and type target := target list
 end
 
 (** Signature of paths over functions *)
 module type S_function = sig
-  include S_stm_container with type 'a t := 'a function_path
+  include S_stm_container with type t := function_path
 end
 
 (** Signature of paths over programs *)
 module type S_program = sig
-  include S_stm_container with type 'a t := 'a program_path
+  include S_stm_container with type t := program_path
 end
 
 (** {2 Functors} *)

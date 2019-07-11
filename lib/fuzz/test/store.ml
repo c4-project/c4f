@@ -66,8 +66,7 @@ let%test_module "int tests" =
       let%map programs = programs in
       {Subject.Test.init; programs}
 
-    let path : Act_c_mini.Path.stm_hole Act_c_mini.Path.program_path Lazy.t
-        =
+    let path : Act_c_mini.Path.program_path Lazy.t =
       lazy (On_program {index= 0; rest= On_statements (Insert_at 2)})
 
     let store : Act_c_mini.Atomic_store.t Lazy.t =

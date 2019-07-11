@@ -54,7 +54,8 @@ end
 let%test_unit "random_index is always in bounds" =
   let rng = Random.State.make_self_init ~allow_in_tests:true () in
   let random = Splittable_random.State.create rng in
-  Test.run_exn (module Int_list)
+  Test.run_exn
+    (module Int_list)
     ~f:
       ([%test_pred: int list] ~here:[[%here]] (fun xs ->
            match random_index ~random xs with
@@ -65,14 +66,14 @@ let%test_unit "random_index is always in bounds" =
 
 let%expect_test "random item: empty list" =
   let deterministic_srng = Splittable_random.State.of_int 0 in
-  print_s
-    [%sexp (random_item ~random:deterministic_srng [] : int option)] ;
+  print_s [%sexp (random_item ~random:deterministic_srng [] : int option)] ;
   [%expect {| () |}]
 
 let%test_unit "random_item is always a valid item" =
   let rng = Random.State.make_self_init ~allow_in_tests:true () in
   let random = Splittable_random.State.create rng in
-  Test.run_exn (module Int_list)
+  Test.run_exn
+    (module Int_list)
     ~f:
       ([%test_pred: int list] ~here:[[%here]] (fun xs ->
            match random_item ~random xs with
@@ -80,5 +81,3 @@ let%test_unit "random_item is always a valid item" =
                List.is_empty xs
            | Some x ->
                List.mem ~equal:Int.equal xs x))
-
-
