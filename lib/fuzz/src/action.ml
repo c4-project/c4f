@@ -113,3 +113,14 @@ module Pool = struct
       >>= Fn.compose State.Monad.Monadic.return
             (Weighted_list.sample ~random))
 end
+
+module No_random_state :
+  Action_types.S_random_state
+    with type t = unit
+     and type subject := Subject.Test.t = struct
+  include Unit
+
+  let gen (_subject : Subject.Test.t) :
+      t Base_quickcheck.Generator.t State.Monad.t =
+    State.Monad.return (Base_quickcheck.Generator.return ())
+end

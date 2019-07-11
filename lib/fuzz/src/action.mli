@@ -97,3 +97,9 @@ end
 val always : Subject.Test.t -> bool State.Monad.t
 (** [always test] always returns [true] without modifying or inspecting the
     fuzzer state. *)
+
+(** Dummy random state module for actions that take no random state. *)
+module No_random_state :
+  Action_types.S_random_state
+    with type t = unit
+     and type subject := Subject.Test.t

@@ -24,13 +24,7 @@ module Make_empty : Action_types.S with type Random_state.t = unit = struct
 
   let default_weight = 1
 
-  module Random_state = struct
-    include Unit
-
-    let gen (_subject : Subject.Test.t) :
-        t Base_quickcheck.Generator.t State.Monad.t =
-      State.Monad.return (Base_quickcheck.Generator.return ())
-  end
+  module Random_state = Action.No_random_state
 
   let available = Action.always
 
