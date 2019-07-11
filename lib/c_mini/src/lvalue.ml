@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Core_kernel (* for Quickcheck.test_distinct_values *)
+
 module Ac = Act_common
 
 type t = Variable of Ac.C_id.t | Deref of t
@@ -66,21 +67,21 @@ let variable_in_env (lv : t) ~(env : _ Ac.C_id.Map.t) : bool =
 
 let%expect_test "variable_in_env: positive variable result, test env" =
   let env = Lazy.force Env.test_env in
-  Sexp.output_hum stdout
+  Stdio.print_s
     [%sexp
       (variable_in_env ~env (Variable (Ac.C_id.of_string "foo")) : bool)] ;
   [%expect {| true |}]
 
 let%expect_test "variable_in_env: negative variable result, test env" =
   let env = Lazy.force Env.test_env in
-  Sexp.output_hum stdout
+  Stdio.print_s
     [%sexp
       (variable_in_env ~env (Variable (Ac.C_id.of_string "kappa")) : bool)] ;
   [%expect {| false |}]
 
 let%expect_test "variable_in_env: positive deref result, test env" =
   let env = Lazy.force Env.test_env in
-  Sexp.output_hum stdout
+  Stdio.print_s
     [%sexp
       ( variable_in_env ~env (Deref (Variable (Ac.C_id.of_string "bar")))
         : bool )] ;
@@ -88,7 +89,7 @@ let%expect_test "variable_in_env: positive deref result, test env" =
 
 let%expect_test "variable_in_env: negative variable result, test env" =
   let env = Lazy.force Env.test_env in
-  Sexp.output_hum stdout
+  Stdio.print_s
     [%sexp
       ( variable_in_env ~env (Deref (Variable (Ac.C_id.of_string "keepo")))
         : bool )] ;
@@ -112,42 +113,41 @@ end
 let%expect_test "Type-checking a valid normal variable lvalue" =
   let module T = Type_check ((val Lazy.force Env.test_env_mod)) in
   let result = T.type_of (Variable (Ac.C_id.of_string "foo")) in
-  Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)] ;
+  Stdio.print_s [%sexp (result : Type.t Or_error.t)] ;
   [%expect {| (Ok (Normal int)) |}]
 
 let%expect_test "Type-checking an invalid deferencing variable lvalue" =
   let module T = Type_check ((val Lazy.force Env.test_env_mod)) in
   let result = T.type_of (Deref (Variable (Ac.C_id.of_string "foo"))) in
-  Sexp.output_hum stdout [%sexp (result : Type.t Or_error.t)] ;
+  Stdio.print_s [%sexp (result : Type.t Or_error.t)] ;
   [%expect {| (Error "not a pointer type") |}]
 
 let anonymise = function Variable v -> `A v | Deref d -> `B d
 
 let deanonymise = function `A v -> Variable v | `B d -> Deref d
 
-module Quickcheck_generic (Id : Quickcheck.S with type t := Ac.C_id.t) : sig
-  type nonrec t = t [@@deriving sexp_of]
-
-  include Quickcheck.S with type t := t
+module Quickcheck_generic
+    (Id : Act_utils.My_quickcheck.S_with_sexp with type t := Ac.C_id.t) : sig
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
   type nonrec t = t
 
   let sexp_of_t = sexp_of_t
 
-  let quickcheck_generator : t Quickcheck.Generator.t =
-    Quickcheck.Generator.(
+  let quickcheck_generator : t Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.(
       recursive_union
         [map [%quickcheck.generator: Id.t] ~f:variable]
         ~f:(fun mu -> [map mu ~f:deref]))
 
-  let quickcheck_observer : t Quickcheck.Observer.t =
-    Quickcheck.Observer.(
+  let quickcheck_observer : t Base_quickcheck.Observer.t =
+    Base_quickcheck.Observer.(
       fixed_point (fun mu ->
           unmap ~f:anonymise
             [%quickcheck.observer: [`A of Id.t | `B of [%custom mu]]]))
 
-  let quickcheck_shrinker : t Quickcheck.Shrinker.t =
-    Quickcheck.Shrinker.(
+  let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
+    Base_quickcheck.Shrinker.(
       fixed_point (fun mu ->
           map ~f:deanonymise ~f_inverse:anonymise
             [%quickcheck.shrinker: [`A of Id.t | `B of [%custom mu]]]))

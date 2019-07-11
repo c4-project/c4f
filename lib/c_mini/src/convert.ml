@@ -21,7 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Core_kernel (* for Fqueue *)
+
 module Ac = Act_common
 module Tx = Travesty_base_exts
 module Ast = Act_c_lang.Ast
@@ -49,8 +50,7 @@ let%expect_test "sift_decls: mixed example" =
       >>| Tuple2.map_snd
             ~f:(List.map ~f:(function `Decl _ -> "DECL" | `Ndecl x -> x)))
   in
-  Sexp.output_hum Stdio.stdout
-    [%sexp (result : (string list * string list) Or_error.t)] ;
+  Stdio.print_s [%sexp (result : (string list * string list) Or_error.t)] ;
   [%expect {| (Ok ((foo bar) (baz barbaz))) |}]
 
 (** [ensure_functions xs] makes sure that each member of [xs] is a function
@@ -328,7 +328,7 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
         [%message "Unsupported expression" ~got:(e : Ast.Expr.t)]
 
 let%expect_test "model atomic_load_explicit" =
-  Sexp.output_hum Stdio.stdout
+  Stdio.print_s
     [%sexp
       ( expr
           Ast.(
@@ -452,7 +452,7 @@ let rec stm : Ast.Stm.t -> Statement.t Or_error.t = function
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]
 
 let%expect_test "model atomic_store_explicit" =
-  Sexp.output_hum Stdio.stdout
+  Stdio.print_s
     [%sexp
       ( stm
           Ast.(
@@ -476,7 +476,7 @@ let%expect_test "model atomic_store_explicit" =
          (mo memory_order_relaxed)))) |}]
 
 let%expect_test "model atomic cmpxchg" =
-  Sexp.output_hum Stdio.stdout
+  Stdio.print_s
     [%sexp
       ( stm
           Ast.(
