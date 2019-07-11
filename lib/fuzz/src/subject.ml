@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
@@ -74,8 +74,8 @@ module Program = struct
     type target = t
 
     let gen_insert_stm ({stms; _} : target) :
-        Act_c_mini.Path.function_path Quickcheck.Generator.t =
-      Quickcheck.Generator.map (Stm_list_path.gen_insert_stm stms)
+        Act_c_mini.Path.function_path Base_quickcheck.Generator.t =
+      Base_quickcheck.Generator.map (Stm_list_path.gen_insert_stm stms)
         ~f:(fun path -> Act_c_mini.Path.On_statements path)
 
     let handle_stm (path : Act_c_mini.Path.function_path)
@@ -124,7 +124,7 @@ module Program = struct
 
   let to_function (prog : t) ~(vars : Var.Map.t) ~(id : int) :
       Act_c_mini.Function.t Act_c_mini.Named.t Or_error.t =
-    let name = Ac.C_id.of_string (sprintf "P%d" id) in
+    let name = Ac.C_id.of_string (Printf.sprintf "P%d" id) in
     let body_stms = List.map prog.stms ~f:With_source.item in
     Or_error.Let_syntax.(
       let%map parameters = make_function_parameters vars in
@@ -158,13 +158,13 @@ module Test = struct
     type stm = Act_c_mini.Statement.t
 
     let gen_insert_stm (test : target) :
-        Act_c_mini.Path.program_path Quickcheck.Generator.t =
+        Act_c_mini.Path.program_path Base_quickcheck.Generator.t =
       let prog_gens =
         List.mapi test.programs ~f:(fun index prog ->
-            Quickcheck.Generator.map (Program.Path.gen_insert_stm prog)
+            Base_quickcheck.Generator.map (Program.Path.gen_insert_stm prog)
               ~f:(fun rest -> Act_c_mini.Path.On_program {index; rest}))
       in
-      Quickcheck.Generator.union prog_gens
+      Base_quickcheck.Generator.union prog_gens
 
     let handle_stm (path : Act_c_mini.Path.program_path)
         ~(f :

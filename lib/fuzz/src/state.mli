@@ -23,7 +23,7 @@
 
 (** Fuzzer: state monad *)
 
-open Core_kernel
+open Base
 
 type t
 (** Opaque type of states. *)

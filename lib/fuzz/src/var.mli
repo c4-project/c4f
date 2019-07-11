@@ -26,7 +26,7 @@
     This module defines the types that the fuzzer uses to store information
     about variables. *)
 
-open Core_kernel
+open Base
 
 (** Type for storing variable values. *)
 module Value : sig
@@ -174,7 +174,7 @@ module Map : sig
       global variable with name [var], type [ty], and optional known initial
       value [initial_value] in [map], returning the resulting new map. *)
 
-  val gen_fresh_var : t -> Act_common.C_id.t Quickcheck.Generator.t
+  val gen_fresh_var : t -> Act_common.C_id.t Base_quickcheck.Generator.t
   (** [gen_fresh_var map] generates random C identifiers that don't shadow
       existing variables in [map]. *)
 
