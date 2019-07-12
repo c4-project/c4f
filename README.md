@@ -72,9 +72,14 @@ We've tested ACT on:
 
 At a bare minimum, you'll need:
 
-- OCaml (4.07+; last tested with version 4.07.1);
+- OCaml (4.08+; last tested with version 4.08);
 - opam (2; last tested with version 2.0.4);
 - dune (1.10+; last tested with version 1.10).
+
+**Note**: At time of writing, Homebrew doesn't provide OCaml 4.08.  You'll
+need to first install opam, then create an
+[opam switch](https://opam.ocaml.org/doc/Usage.html#opam-switch) targeting
+4.08, _then_ install dune and everything else.
 
 You'll need some OCaml libraries, too: ACT's `act.opam` file lists these.
 If you build and install ACT using `opam install .`, OPAM will get them
