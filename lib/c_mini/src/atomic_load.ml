@@ -13,7 +13,7 @@ open Base
 module Ac = Act_common
 
 type t = {src: Address.t; mo: Mem_order.t}
-[@@deriving sexp, fields, make, equal]
+[@@deriving sexp, fields, make, compare, equal]
 
 let to_tuple ({src; mo} : t) : Address.t * Mem_order.t = (src, mo)
 
@@ -92,7 +92,7 @@ include (Quickcheck_main : module type of Quickcheck_main with type t := t)
 module Quickcheck_atomic_ints (E : Env_types.S) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end =
-  Quickcheck_generic (Address.Quickcheck_atomic_int_pointers (E))
+  Quickcheck_generic (Address_gen.Atomic_int_pointers (E))
 
 let variable_of (ld : t) : Ac.C_id.t = Address.variable_of (src ld)
 

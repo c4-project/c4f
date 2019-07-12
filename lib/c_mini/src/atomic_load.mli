@@ -11,7 +11,7 @@
 
 (** An atomic load operation. *)
 
-type t [@@deriving sexp, quickcheck, equal]
+type t [@@deriving sexp, quickcheck, compare, equal]
 
 (** {2 Constructors} *)
 

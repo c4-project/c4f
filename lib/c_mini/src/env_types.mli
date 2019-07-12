@@ -35,12 +35,11 @@ end
 module type S = sig
   include Basic
 
+  (** [Random_var] allows generation of random variables from the variable
+      environment. *)
   module Random_var : sig
     type t = Act_common.C_id.t [@@deriving sexp_of, quickcheck]
   end
-
-  (** [Random_var] allows generation of random variables from the variable
-      environment. *)
 
   val has_variables_of_basic_type : Type.Basic.t -> bool
   (** [has_variables_of_basic_type t] is true provided that the environment

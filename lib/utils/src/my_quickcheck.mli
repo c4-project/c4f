@@ -23,8 +23,19 @@
 
 open Base
 
-include module type of My_quickcheck_intf
 (** Miscellaneous utilities for the Jane Street quickcheck system. *)
+
+(** Signature of modules that expose a type with both sexp-of and quickcheck
+    functionality. *)
+module type S_with_sexp = sig
+  type t [@@deriving sexp_of, quickcheck]
+end
+
+(** Signature of modules that, in addition, have comparison, and therefore
+    can be checked for unique sampling. *)
+module type S_sample = sig
+  type t [@@deriving sexp, compare, quickcheck]
+end
 
 val gen_string_initial :
      initial:char Base_quickcheck.Generator.t
@@ -40,3 +51,8 @@ module Small_non_negative_int : sig
 
   include S_with_sexp with type t := int
 end
+
+val print_sample : (module S_sample) -> unit
+(** [print_sample m] runs the quickcheck generator in [m] a small number of
+    times, sorts and de-duplicates the results, and prints them as
+    S-expressions to stdout. *)

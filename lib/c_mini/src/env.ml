@@ -72,8 +72,10 @@ let test_env : Type.t Map.M(Ac.C_id).t Lazy.t =
          [ (Ac.C_id.of_string "foo", normal Basic.int)
          ; (Ac.C_id.of_string "bar", pointer_to Basic.atomic_int)
          ; (Ac.C_id.of_string "barbaz", normal Basic.bool)
+         ; (Ac.C_id.of_string "foobaz", pointer_to Basic.atomic_bool)
          ; (Ac.C_id.of_string "x", normal Basic.atomic_int)
          ; (Ac.C_id.of_string "y", normal Basic.atomic_int)
+         ; (Ac.C_id.of_string "z", normal Basic.atomic_bool)
          ; (Ac.C_id.of_string "blep", pointer_to Basic.int) ])
 
 let lift_to_lazy_mod (e : Type.t Ac.C_id.Map.t Lazy.t) :

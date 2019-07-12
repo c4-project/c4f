@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Mini-model: lvalues.
 
@@ -87,23 +75,16 @@ include
   Types.S_type_checkable with type t := t
 (** Type-checking for lvalues. *)
 
-(** {3 Generating random lvalues} *)
+(** {3 Generating random lvalues}
+
+    The default quickcheck instance random lvalues without constraint. We
+    also provide several modules with more specific restrictions. Most of
+    these are in {{!Lvalue_gen}Lvalue_gen}, but we expose their common
+    ancestor, {{!Quickcheck_generic}Quickcheck_generic}}, here by necessity. *)
 
 (** Generates random lvalues, parametrised on a given identifier generator. *)
 module Quickcheck_generic
     (Id : Act_utils.My_quickcheck.S_with_sexp
             with type t := Act_common.C_id.t) : sig
-  type nonrec t = t [@@deriving sexp_of, quickcheck]
-end
-
-(** Generates random lvalues, constrained over the variables in the given
-    environment. *)
-module Quickcheck_on_env (E : Env_types.S) : sig
-  type nonrec t = t [@@deriving sexp_of, quickcheck]
-end
-
-(** Generates random lvalues, constrained over the variables in the given
-    environment; each lvalue has a non-atomic-integer value type. *)
-module Quickcheck_int_values (E : Env_types.S) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end

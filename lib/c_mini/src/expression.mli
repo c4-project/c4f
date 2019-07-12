@@ -11,7 +11,7 @@
 
 (** Mini-model: expressions *)
 
-type t [@@deriving sexp, equal]
+type t [@@deriving sexp, compare, equal]
 (** Opaque type of expressions. *)
 
 (** {2 Constructors} *)
@@ -61,17 +61,12 @@ module On_identifiers :
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t
 
-(** {2 Generation and quickchecking} *)
+(** {2 Generation and quickchecking}
 
-module Quickcheck_int_values (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = t
-(** Generates random, type-safe expressions over the given variable typing
-    environment, with type 'int'. *)
+    See {{!Expression_gen} Expression_gen}. *)
 
-module Quickcheck_bool_values (E : Env_types.S) :
-  Act_utils.My_quickcheck.S_with_sexp with type t = t
-(** Generates random, type-safe expressions over the given variable typing
-    environment, with type 'bool'. *)
+val quickcheck_observer : t Base_quickcheck.Observer.t
+(** Blanket observer for all expression generators. *)
 
 (** {2 Type checking} *)
 
