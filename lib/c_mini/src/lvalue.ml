@@ -208,7 +208,8 @@ end = struct
 
   let quickcheck_generator : t Quickcheck.Generator.t =
     Quickcheck.Generator.map
-      (Quickcheck.Generator.of_list (Map.to_alist (E.int_variables ())))
+      (Quickcheck.Generator.of_list
+         (Map.to_alist (E.variables_of_basic_type Type.Basic.int)))
       ~f:(fun (id, ty) -> on_value_of_typed_id ~id ~ty)
 
   module Q = Quickcheck_on_env (E)

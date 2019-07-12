@@ -97,3 +97,8 @@ module Quickcheck_atomic_int_pointers (E : Env_types.S) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t
 (** Generates addresses over the given typing environment that have the type
     'atomic_int*'. *)
+
+module Quickcheck_atomic_bool_pointers (E : Env_types.S) :
+  Act_utils.My_quickcheck.S_with_sexp with type t = t
+(** Generates addresses over the given typing environment that have the type
+    'atomic_bool*'. *)

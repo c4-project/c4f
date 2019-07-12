@@ -129,23 +129,36 @@ module Quickcheck_on_env (E : Env_types.S) : sig
 end =
   Quickcheck_generic (Lvalue.Quickcheck_on_env (E))
 
-module Quickcheck_atomic_int_pointers (E : Env_types.S) : sig
+module Quickcheck_typed_pointers_on_env (T : sig
+  val basic_type : Type.Basic.t
+end)
+(E : Env_types.S) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
 end = struct
   open Base_quickcheck
-
-  type nonrec t = t
-
-  let sexp_of_t = sexp_of_t
+  include Quickcheck_on_env (E) (* to override as needed *)
 
   let quickcheck_generator : t Generator.t =
     Generator.map
-      (Generator.of_list (Map.to_alist (E.atomic_int_variables ())))
+      (Generator.of_list
+         (Map.to_alist (E.variables_of_basic_type T.basic_type)))
       ~f:(fun (id, ty) -> on_address_of_typed_id ~id ~ty)
-
-  module Q = Quickcheck_on_env (E)
-
-  let quickcheck_observer = [%quickcheck.observer: Q.t]
-
-  let quickcheck_shrinker = [%quickcheck.shrinker: Q.t]
 end
+
+module Quickcheck_atomic_int_pointers (E : Env_types.S) : sig
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
+end =
+  Quickcheck_typed_pointers_on_env
+    (struct
+      let basic_type = Type.Basic.atomic_int
+    end)
+    (E)
+
+module Quickcheck_atomic_bool_pointers (E : Env_types.S) : sig
+  type nonrec t = t [@@deriving sexp_of, quickcheck]
+end =
+  Quickcheck_typed_pointers_on_env
+    (struct
+      let basic_type = Type.Basic.atomic_bool
+    end)
+    (E)

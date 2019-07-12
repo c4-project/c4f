@@ -94,3 +94,10 @@ module Quickcheck_ints (Src : Env_types.S) (Dst : Env_types.S) :
     (Expression.Quickcheck_int_values
        (Src))
        (Address.Quickcheck_atomic_int_pointers (Dst))
+
+module Quickcheck_bools (Src : Env_types.S) (Dst : Env_types.S) :
+  Act_utils.My_quickcheck.S_with_sexp with type t = t =
+  Quickcheck_generic
+    (Expression.Quickcheck_bool_values
+       (Src))
+       (Address.Quickcheck_atomic_bool_pointers (Dst))

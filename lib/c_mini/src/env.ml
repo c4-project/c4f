@@ -56,17 +56,12 @@ module Make (E : Env_types.Basic) : Env_types.S = struct
     let quickcheck_shrinker = Quickcheck.Shrinker.empty ()
   end
 
-  let has_atomic_int_variables () : bool =
-    Ac.C_id.Map.exists E.env ~f:Type.(basic_type_is ~basic:Basic.atomic_int)
+  let has_variables_of_basic_type (basic : Type.Basic.t) : bool =
+    Map.exists E.env ~f:Type.(basic_type_is ~basic)
 
-  let atomic_int_variables () : Type.t Ac.C_id.Map.t =
-    Ac.C_id.Map.filter E.env ~f:Type.(basic_type_is ~basic:Basic.atomic_int)
-
-  let has_int_variables () : bool =
-    Ac.C_id.Map.exists E.env ~f:Type.(basic_type_is ~basic:Basic.int)
-
-  let int_variables () : Type.t Map.M(Ac.C_id).t =
-    Ac.C_id.Map.filter E.env ~f:Type.(basic_type_is ~basic:Basic.int)
+  let variables_of_basic_type (basic : Type.Basic.t) :
+      Type.t Map.M(Ac.C_id).t =
+    Map.filter E.env ~f:Type.(basic_type_is ~basic)
 end
 
 let test_env : Type.t Map.M(Ac.C_id).t Lazy.t =

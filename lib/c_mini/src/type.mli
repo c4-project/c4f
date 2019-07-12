@@ -40,6 +40,9 @@ module Basic : sig
   val int : t
   (** [int] is the int type. *)
 
+  val atomic_bool : t
+  (** [atomic_bool] is the atomic_bool type. *)
+
   val atomic_int : t
   (** [atomic_int] is the atomic_int type. *)
 
@@ -47,6 +50,9 @@ module Basic : sig
 
   val to_spec : t -> [> Act_c_lang.Ast.Type_spec.t]
   (** [to_spec btype] converts a basic type to a type spec. *)
+
+  val is_atomic : t -> bool
+  (** [is_atomic btype] is true if the basic type [btype] is atomic. *)
 
   val to_non_atomic : t -> t Or_error.t
   (** [to_non_atomic btype] tries to get the non-atomic type corresponding
@@ -77,6 +83,10 @@ val pointer_to : Basic.t -> t
 val of_basic : Basic.t -> is_pointer:bool -> t
 (** [of_basic ty ~is_pointer] lifts a basic type [ty] to a pointer type if
     [is_pointer] is true, and a normal one otherwise. *)
+
+val bool_type : is_atomic:bool -> is_pointer:bool -> t
+(** [bool_type ~is_atomic ~is_pointer] constructs the right Boolean type
+    according to the flags [is_atomic] and [is_pointer]. *)
 
 val int_type : is_atomic:bool -> is_pointer:bool -> t
 (** [int_type ~is_atomic ~is_pointer] constructs the right integer type

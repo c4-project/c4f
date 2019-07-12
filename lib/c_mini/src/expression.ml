@@ -180,10 +180,13 @@ module Quickcheck_int_values (E : Env_types.S) :
     List.map ~f:Core_kernel.Quickcheck.Generator.of_fun
       (List.filter_opt
          [ Some (fun () -> Gen.map ~f:constant Constant.gen_int32_constant)
-         ; Option.some_if (E.has_atomic_int_variables ()) (fun () ->
+         ; Option.some_if
+             (E.has_variables_of_basic_type Type.Basic.atomic_int)
+             (fun () ->
                let module A = Atomic_load.Quickcheck_atomic_ints (E) in
                Gen.map ~f:atomic_load [%quickcheck.generator: A.t])
-         ; Option.some_if (E.has_int_variables ()) (fun () ->
+         ; Option.some_if (E.has_variables_of_basic_type Type.Basic.int)
+             (fun () ->
                let module L = Lvalue.Quickcheck_int_values (E) in
                Gen.map ~f:lvalue [%quickcheck.generator: L.t]) ])
 

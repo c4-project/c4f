@@ -23,6 +23,8 @@
 
 (** Mini-model: module signatures for variable typing environments *)
 
+open Base
+
 (** Basic signature of modules carrying a variable typing environment. *)
 module type Basic = sig
   val env : Type.t Act_common.C_id.Map.t
@@ -40,22 +42,12 @@ module type S = sig
   (** [Random_var] allows generation of random variables from the variable
       environment. *)
 
-  val has_atomic_int_variables : unit -> bool
-  (** [has_atomic_int_variables ()] is true provided that the environment
-      has at least one variable whose type is atomic-int, or a pointer
-      thereto. *)
+  val has_variables_of_basic_type : Type.Basic.t -> bool
+  (** [has_variables_of_basic_type t] is true provided that the environment
+      has at least one variable whose basic type is [t]. *)
 
-  val has_int_variables : unit -> bool
-  (** [has_int_variables ()] is true provided that the environment has at
-      least one variable whose type is (non-atomic) int, or a pointer
-      thereto. *)
-
-  val atomic_int_variables : unit -> Type.t Act_common.C_id.Map.t
-  (** [atomic_int_variables ()] filters the environment, returning a map
-      binding only variables whose type is atomic-int, or a pointer thereto. *)
-
-  val int_variables : unit -> Type.t Act_common.C_id.Map.t
-  (** [atomic_int_variables ()] filters the environment, returning a map
-      binding only variables whose type is (non-atomic) int, or a pointer
-      thereto. *)
+  val variables_of_basic_type :
+    Type.Basic.t -> Type.t Map.M(Act_common.C_id).t
+  (** [atomic_int_variables t] filters the environment, returning a map
+      binding only variables whose basic type is [t]. *)
 end

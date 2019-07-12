@@ -25,29 +25,58 @@ open Base
 module Ac = Act_common
 module Au = Act_utils
 
+module Prim = struct
+  type t = Int | Bool [@@deriving variants, equal, enumerate]
+end
+
 module Basic = struct
   module M = struct
-    type t = Int | Atomic_int | Bool [@@deriving variants, enum]
+    type t = {atomic: bool; prim: Prim.t} [@@deriving equal, enumerate]
 
-    let table = [(Int, "int"); (Atomic_int, "atomic_int"); (Bool, "bool")]
+    let int_type ~(is_atomic : bool) : t = {atomic= is_atomic; prim= Int}
+
+    let int = int_type ~is_atomic:false
+
+    let atomic_int = int_type ~is_atomic:true
+
+    let bool_type ~(is_atomic : bool) : t = {atomic= is_atomic; prim= Bool}
+
+    let bool = bool_type ~is_atomic:false
+
+    let atomic_bool = bool_type ~is_atomic:true
+
+    let table =
+      [ (int, "int")
+      ; (atomic_int, "atomic_int")
+      ; (bool, "bool")
+      ; (atomic_bool, "atomic_bool") ]
+  end
+
+  module M_enum = struct
+    include M
+    include Au.Enum.Make_from_enumerate (M)
   end
 
   include M
-  include Au.Enum.Extend_table (M)
+  include Au.Enum.Extend_table (M_enum)
 
   let to_spec : t -> [> Act_c_lang.Ast.Type_spec.t] = function
-    | Int ->
+    | {atomic= false; prim= Int} ->
         `Int
-    | Bool ->
-        `Defined_type (Ac.C_id.of_string "bool")
-    | Atomic_int ->
+    | {atomic= true; prim= Int} ->
         `Defined_type (Ac.C_id.of_string "atomic_int")
+    | {atomic= false; prim= Bool} ->
+        `Defined_type (Ac.C_id.of_string "bool")
+    | {atomic= true; prim= Bool} ->
+        `Defined_type (Ac.C_id.of_string "atomic_bool")
 
   let to_non_atomic : t -> t Or_error.t = function
-    | Atomic_int ->
-        Or_error.return Int
-    | Bool | Int ->
+    | {atomic= true; prim} ->
+        Or_error.return {atomic= false; prim}
+    | _ ->
         Or_error.error_string "already non-atomic"
+
+  let is_atomic ({atomic; _} : t) : bool = atomic
 end
 
 module M = struct
@@ -83,7 +112,7 @@ let ref : t -> t Or_error.t = function
   | Pointer_to _ ->
       Or_error.error_string "already a pointer type"
 
-let is_atomic (ty : t) : bool = basic_type_is ty ~basic:Atomic_int
+let is_atomic (ty : t) : bool = Basic.is_atomic (basic_type ty)
 
 (* for now *)
 
@@ -93,9 +122,11 @@ let to_non_atomic : t -> t Or_error.t = function
   | Pointer_to k ->
       Or_error.(k |> Basic.to_non_atomic >>| pointer_to)
 
+let bool_type ~(is_atomic : bool) ~(is_pointer : bool) : t =
+  of_basic (Basic.bool_type ~is_atomic) ~is_pointer
+
 let int_type ~(is_atomic : bool) ~(is_pointer : bool) : t =
-  let basic = Basic.(if is_atomic then atomic_int else int) in
-  of_basic basic ~is_pointer
+  of_basic (Basic.int_type ~is_atomic) ~is_pointer
 
 module Str = struct
   type nonrec t = t
