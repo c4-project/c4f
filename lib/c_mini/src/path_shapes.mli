@@ -13,22 +13,20 @@
 
 open Base
 
-(** An index in a list selector. *)
 type index = int [@@deriving sexp]
+(** An index in a list selector. *)
 
-(** A branch in an if-statement selector. *)
 type branch = bool [@@deriving sexp]
+(** A branch in an if-statement selector. *)
 
 (** A path focusing on a statement. *)
 type stm = In_if of ifs | This_stm [@@deriving sexp]
 
 (** A path focusing on a list of statements. *)
-and stm_list = Insert of index | In_stm of index * stm
-[@@deriving sexp]
+and stm_list = Insert of index | In_stm of index * stm [@@deriving sexp]
 
 (** A path focusing on an if-statement. *)
-and ifs = In_block of branch * stm_list | This_cond
-[@@deriving sexp]
+and ifs = In_block of branch * stm_list | This_cond [@@deriving sexp]
 
 (** A path focusing on a function. *)
 type func = In_stms of stm_list [@@deriving sexp]

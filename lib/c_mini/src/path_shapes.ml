@@ -12,15 +12,14 @@
 open Base
 
 type index = int [@@deriving sexp]
+
 type branch = bool [@@deriving sexp]
 
 type stm = In_if of ifs | This_stm [@@deriving sexp]
 
-and stm_list = Insert of index | In_stm of index * stm
-[@@deriving sexp]
+and stm_list = Insert of index | In_stm of index * stm [@@deriving sexp]
 
-and ifs = In_block of branch * stm_list | This_cond
-[@@deriving sexp]
+and ifs = In_block of branch * stm_list | This_cond [@@deriving sexp]
 
 let in_if (rest : ifs) : stm = In_if rest
 

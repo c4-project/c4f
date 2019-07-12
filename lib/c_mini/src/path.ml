@@ -166,10 +166,7 @@ let%test_unit "insertions into an empty list are always at index 0" =
       let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
     end )
     ~f:(function
-      | Path_shapes.Insert 0 ->
-          ()
-      | _ ->
-          failwith "Unexpected path")
+      | Path_shapes.Insert 0 -> () | _ -> failwith "Unexpected path")
 
 module Fun = Function
 
