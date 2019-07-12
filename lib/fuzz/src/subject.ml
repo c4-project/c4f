@@ -41,7 +41,7 @@ module Program = struct
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
 
   module Stm_path :
-    Act_c_mini.Path.S_statement
+    Act_c_mini.Path_types.S_statement
       with type target = Act_c_mini.Statement.t With_source.t = struct
     type target = Act_c_mini.Statement.t With_source.t
 
@@ -66,34 +66,36 @@ module Program = struct
   end
 
   module Stm_list_path :
-    Act_c_mini.Path.S_statement_list
+    Act_c_mini.Path_types.S_statement_list
       with type target = Act_c_mini.Statement.t With_source.t =
     Act_c_mini.Path.Make_statement_list (Stm_path)
 
-  module Path : Act_c_mini.Path.S_function with type target := t = struct
+  module Path : Act_c_mini.Path_types.S_function with type target := t =
+  struct
     type target = t
 
     let gen_insert_stm ({stms; _} : target) :
-        Act_c_mini.Path.function_path Base_quickcheck.Generator.t =
-      Base_quickcheck.Generator.map (Stm_list_path.gen_insert_stm stms)
-        ~f:(fun path -> Act_c_mini.Path.On_statements path)
+        Act_c_mini.Path_shapes.func Base_quickcheck.Generator.t =
+      Base_quickcheck.Generator.map
+        (Stm_list_path.gen_insert_stm stms)
+        ~f:Act_c_mini.Path_shapes.in_stms
 
-    let handle_stm (path : Act_c_mini.Path.function_path)
+    let handle_stm (path : Act_c_mini.Path_shapes.func)
         ~(f :
-              Act_c_mini.Path.list_path
+              Act_c_mini.Path_shapes.stm_list
            -> Act_c_mini.Statement.t With_source.t list
            -> Act_c_mini.Statement.t With_source.t list Or_error.t)
         (prog : t) : t Or_error.t =
       match path with
-      | On_statements rest ->
+      | In_stms rest ->
           Or_error.(
             f rest prog.stms >>| fun stms' -> {prog with stms= stms'})
 
-    let insert_stm (path : Act_c_mini.Path.function_path)
+    let insert_stm (path : Act_c_mini.Path_shapes.func)
         (stm : Act_c_mini.Statement.t) : target -> target Or_error.t =
       handle_stm path ~f:(fun rest -> Stm_list_path.insert_stm rest stm)
 
-    let transform_stm (path : Act_c_mini.Path.function_path)
+    let transform_stm (path : Act_c_mini.Path_shapes.func)
         ~(f : Act_c_mini.Statement.t -> Act_c_mini.Statement.t Or_error.t) :
         target -> target Or_error.t =
       handle_stm path ~f:(Stm_list_path.transform_stm ~f)
@@ -152,28 +154,29 @@ module Test = struct
   let add_new_program (test : t) : t =
     {test with programs= Program.empty :: test.programs}
 
-  module Path : Act_c_mini.Path.S_program with type target := t = struct
+  module Path : Act_c_mini.Path_types.S_program with type target := t =
+  struct
     type target = t
 
     type stm = Act_c_mini.Statement.t
 
     let gen_insert_stm (test : target) :
-        Act_c_mini.Path.program_path Base_quickcheck.Generator.t =
+        Act_c_mini.Path_shapes.program Base_quickcheck.Generator.t =
       let prog_gens =
         List.mapi test.programs ~f:(fun index prog ->
-            Base_quickcheck.Generator.map (Program.Path.gen_insert_stm prog)
-              ~f:(fun rest -> Act_c_mini.Path.On_program {index; rest}))
+            Base_quickcheck.Generator.map
+              (Program.Path.gen_insert_stm prog)
+              ~f:(Act_c_mini.Path_shapes.in_func index))
       in
       Base_quickcheck.Generator.union prog_gens
 
-    let handle_stm (path : Act_c_mini.Path.program_path)
+    let handle_stm (path : Act_c_mini.Path_shapes.program)
         ~(f :
-              Act_c_mini.Path.function_path
-           -> Program.t
-           -> Program.t Or_error.t) (test : target) : target Or_error.t =
+           Act_c_mini.Path_shapes.func -> Program.t -> Program.t Or_error.t)
+        (test : target) : target Or_error.t =
       let open Or_error.Let_syntax in
       match path with
-      | On_program {index; rest} ->
+      | In_func {index; rest} ->
           let programs = test.programs in
           let%map programs' =
             Tx.List.With_errors.replace_m programs index ~f:(fun func ->
@@ -181,11 +184,11 @@ module Test = struct
           in
           {test with programs= programs'}
 
-    let insert_stm (path : Act_c_mini.Path.program_path) (stm : stm) :
+    let insert_stm (path : Act_c_mini.Path_shapes.program) (stm : stm) :
         target -> target Or_error.t =
       handle_stm path ~f:(fun rest -> Program.Path.insert_stm rest stm)
 
-    let transform_stm (path : Act_c_mini.Path.program_path)
+    let transform_stm (path : Act_c_mini.Path_shapes.program)
         ~(f : Act_c_mini.Statement.t -> Act_c_mini.Statement.t Or_error.t) :
         target -> target Or_error.t =
       handle_stm path ~f:(Program.Path.transform_stm ~f)

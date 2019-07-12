@@ -30,12 +30,12 @@ module Random_state : sig
 
   val make :
        store:Act_c_mini.Atomic_store.t
-    -> path:Act_c_mini.Path.program_path
+    -> path:Act_c_mini.Path_shapes.program
     -> t
 
   val store : t -> Act_c_mini.Atomic_store.t
 
-  val path : t -> Act_c_mini.Path.program_path
+  val path : t -> Act_c_mini.Path_shapes.program
 end
 
 (** {2 Functors} *)

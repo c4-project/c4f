@@ -13,7 +13,9 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-module type S = [%import: (module Driver.S)]
+module type S = sig
+  val run : Act_c_mini.Litmus.Ast.Validated.t -> Output.t Or_error.t
+end
 
 module Make (B : sig
   val globals_become_globals : bool

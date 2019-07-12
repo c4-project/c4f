@@ -22,7 +22,6 @@
     (dune (and :build (>= 1.10) (< 2)))
     (ppx_deriving_yojson (and (>= 3.5) (< 4)))
     ppx_deriving
-    ppx_import
     ppx_jane
     (core (and (>= v0.12) (< v0.13)))
     (fmt (and (>= 0.8.5) (< 0.9)))

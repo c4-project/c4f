@@ -1,139 +1,36 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+(** Mini-model: path-based traversal.
 
-(** Mini-model: path-based traversal *)
+    This module includes functors that create functionality for walking down
+    mini-C constructs
 
-open Base
-
-(** {2 Path types} *)
-
-type stm_path = In_if of if_path | This [@@deriving sexp]
-
-and list_path = Insert_at of int | At of {index: int; rest: stm_path}
-[@@deriving sexp]
-
-and if_path = Block of {branch: bool; rest: list_path} | Cond
-[@@deriving sexp]
-
-type function_path = On_statements of list_path [@@deriving sexp]
-
-type program_path = On_program of {index: int; rest: function_path}
-[@@deriving sexp]
-
-(** {2 Signatures}
-
-    We don't keep these in a separate MLI file, because they depend directly
-    and intricately on the types defined above. *)
-
-(** General signature of paths. *)
-module type S_path = sig
-  type t
-  (** Type of paths. *)
-
-  type target
-
-  val insert_stm : t -> Statement.t -> target -> target Or_error.t
-  (** [insert_stm path stm dest] tries to insert [stm] into the part of
-      [dest] pointed to by [path]. *)
-
-  val transform_stm :
-       t
-    -> f:(Statement.t -> Statement.t Or_error.t)
-    -> target
-    -> target Or_error.t
-  (** [transform_stm path ~f dest] tries to modify the statement at [stm]
-      using [f]. *)
-end
-
-(** Signature of paths over statements and statement-like entities. *)
-module type S_statement = sig
-  type target
-
-  include S_path with type t := stm_path and type target := target
-
-  val lift_stm : Statement.t -> target
-  (** [lift_stm s] lifts a generated statement [s] to the target type of
-      this path. *)
-
-  val lower_stm : target -> Statement.t
-  (** [lower_stm s] lowers a generated statement [s] to the statement type
-      of this path. *)
-
-  val try_gen_insert_stm :
-    target -> stm_path Base_quickcheck.Generator.t option
-  (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
-      for statement insertion paths targeting [dest].
-
-      It can return [None] if [dest] has no position at which statements can
-      be inserted. *)
-end
-
-module type S_stm_container = sig
-  include S_path
-
-  val gen_insert_stm : target -> t Base_quickcheck.Generator.t
-  (** [gen_insert_stm dest] creates a Quickcheck-style generator for
-      statement insertion paths targeting [dest]. *)
-end
-
-(** Signature of paths over conditionals *)
-module type S_if_statement = sig
-  type target
-
-  include S_path with type t := if_path and type target := target
-
-  include S_stm_container with type t := if_path and type target := target
-end
-
-(** Signature of paths over statement lists *)
-module type S_statement_list = sig
-  type target
-
-  include
-    S_stm_container with type t := list_path and type target := target list
-end
-
-(** Signature of paths over functions *)
-module type S_function = sig
-  include S_stm_container with type t := function_path
-end
-
-(** Signature of paths over programs *)
-module type S_program = sig
-  include S_stm_container with type t := program_path
-end
+    We define path-based traversal over mini-C constructs in a generalised,
+    functor based way so that we can expand it to slightly modified mini-C
+    representations, such as those used in the fuzzer. *)
 
 (** {2 Functors} *)
 
-module Make_statement_list (M : S_statement) :
-  S_statement_list with type target = M.target
+module Make_statement_list (M : Path_types.S_statement) :
+  Path_types.S_statement_list with type target = M.target
 
-module Statement_list : S_statement_list with type target = Statement.t
+module Statement_list :
+  Path_types.S_statement_list with type target = Statement.t
 
-module If_statement : S_if_statement with type target = Statement.If.t
+module If_statement :
+  Path_types.S_if_statement with type target = Statement.If.t
 
-module Statement : S_statement with type target = Statement.t
+module Statement : Path_types.S_statement with type target = Statement.t
 
-module Function : S_function with type target := Function.t
+module Function : Path_types.S_function with type target := Function.t
 
-module Program : S_program with type target := Program.t
+module Program : Path_types.S_program with type target := Program.t

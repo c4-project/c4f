@@ -13,7 +13,12 @@ open Base
 module C = Act_c_mini
 module Tx = Travesty_base_exts
 
-module type S = [%import: (module Function_rewriter.S)]
+module type S = sig
+  val rewrite_all :
+       Act_c_mini.Function.t Act_c_mini.Named.t list
+    -> context:Context.t
+    -> Act_c_mini.Function.t Act_c_mini.Named.t list Or_error.t
+end
 
 type 'a local_rw_fun = 'a -> tid:int -> context:Context.t -> 'a Or_error.t
 

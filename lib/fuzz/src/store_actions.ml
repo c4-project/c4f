@@ -29,7 +29,7 @@ module Random_state = struct
      arguments of [Make]. *)
 
   type t =
-    {store: Act_c_mini.Atomic_store.t; path: Act_c_mini.Path.program_path}
+    {store: Act_c_mini.Atomic_store.t; path: Act_c_mini.Path_shapes.program}
   [@@deriving fields, make, sexp]
 end
 

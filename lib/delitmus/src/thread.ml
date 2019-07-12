@@ -12,7 +12,21 @@
 open Base
 module Mini = Act_c_mini
 
-module type S = [%import: (module Thread.S)]
+module type S = sig
+  val tid : int
+
+  val when_local :
+       'a
+    -> over:('a -> Act_common.C_id.t)
+    -> f:('a -> 'a Or_error.t)
+    -> 'a Or_error.t
+
+  val when_global :
+       'a
+    -> over:('a -> Act_common.C_id.t)
+    -> f:('a -> 'a Or_error.t)
+    -> 'a Or_error.t
+end
 
 module Make (B : sig
   val tid : int
