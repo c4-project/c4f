@@ -73,15 +73,15 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
     `String
       (Fmt.strf "@[<h>%a@]" (Pp.Generic.pp_post ~pp_const:Const.pp) pc)
 
+  (* This doesn't appear to be in scope, for some reason. *)
+  let safe_map = Ppx_deriving_yojson_runtime.safe_map
+
   let to_yojson (aux : t) : Yojson.Safe.t =
-    (* Need to open Caml because some of to_yojson's code depends on the
-       stdlib versions of some things Base shadows. *)
     `Assoc
-      Caml.
-        [ ("locations", [%to_yojson: Ac.C_id.t list option] (locations aux))
-        ; ("init", [%to_yojson: Const.t Ac.C_id.Alist.t] (init aux))
-        ; ("postcondition", opt ~f:postcondition_to_json (postcondition aux))
-        ]
+      [ ("locations", [%to_yojson: Ac.C_id.t list option] (locations aux))
+      ; ("init", [%to_yojson: Const.t Ac.C_id.Alist.t] (init aux))
+      ; ("postcondition", opt ~f:postcondition_to_json (postcondition aux))
+      ]
 
   module U = Yojson.Safe.Util
 

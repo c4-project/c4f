@@ -13,7 +13,6 @@
     machines and compilers. *)
 
 open Base
-
 open Spec_types
 module Au = Act_utils
 module Tx = Travesty_base_exts
@@ -131,7 +130,7 @@ module Make (B : Basic) :
       Fmt.(
         vbox
           (list ~sep:cut (fun f (i, s) ->
-               (pp_id_spec ~pp:(pp_verbose verbose) f) i s )))
+               (pp_id_spec ~pp:(pp_verbose verbose) f) i s)))
 
     let pp : t Fmt.t = pp_verbose true
   end

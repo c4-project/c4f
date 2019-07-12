@@ -20,7 +20,7 @@
   (depends
     (ocaml (>= 4.07))
     (dune (and :build (>= 1.10) (< 2)))
-    (ppx_deriving_yojson (and (>= 3.4) (< 4)))
+    (ppx_deriving_yojson (and (>= 3.5) (< 4)))
     ppx_deriving
     ppx_import
     ppx_jane
