@@ -19,9 +19,9 @@ module Make_statement_list (M : Path_types.S_statement) :
   let insert_stm (path : Path_shapes.stm_list) (stm : Statement.t)
       (dest : target list) : target list Or_error.t =
     match path with
-    | Insert {index} ->
+    | Insert index ->
         Tx.List.insert dest index (M.lift_stm stm)
-    | In_stm {index; rest} ->
+    | In_stm (index, rest) ->
         Tx.List.With_errors.replace_m dest index ~f:(fun x ->
             Or_error.(M.insert_stm rest stm x >>| Option.some))
 
@@ -29,7 +29,7 @@ module Make_statement_list (M : Path_types.S_statement) :
       ~(f : Statement.t -> Statement.t Or_error.t) (dest : target list) :
       target list Or_error.t =
     match path with
-    | In_stm {index; rest} ->
+    | In_stm (index, rest) ->
         Tx.List.With_errors.replace_m dest index ~f:(fun x ->
             Or_error.(M.transform_stm rest ~f x >>| Option.some))
     | Insert _ ->
@@ -126,7 +126,7 @@ struct
       ~(f : Path_shapes.stm_list -> Stm.t list -> Stm.t list Or_error.t)
       (ifs : Stm.If.t) : Stm.If.t Or_error.t =
     match path with
-    | In_block {branch; rest} ->
+    | In_block (branch, rest) ->
         let t_branch, f_branch =
           ( (if branch then f rest else Or_error.return)
           , if branch then Or_error.return else f rest )
@@ -166,7 +166,7 @@ let%test_unit "insertions into an empty list are always at index 0" =
       let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
     end )
     ~f:(function
-      | Path_shapes.Insert {index= 0} ->
+      | Path_shapes.Insert 0 ->
           ()
       | _ ->
           failwith "Unexpected path")
@@ -218,7 +218,7 @@ module Program : Path_types.S_program with type target := Program.t = struct
       target Or_error.t =
     let open Or_error.Let_syntax in
     match path with
-    | In_func {index; rest} ->
+    | In_func (index, rest) ->
         let functions = Program.functions prog in
         let%map functions' =
           Tx.List.With_errors.replace_m functions index

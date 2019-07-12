@@ -176,7 +176,7 @@ module Test = struct
         (test : target) : target Or_error.t =
       let open Or_error.Let_syntax in
       match path with
-      | In_func {index; rest} ->
+      | In_func (index, rest) ->
           let programs = test.programs in
           let%map programs' =
             Tx.List.With_errors.replace_m programs index ~f:(fun func ->
