@@ -46,7 +46,8 @@ let command : Command.t =
   Command.basic ~summary:"performs fuzzing mutations on a C litmus test"
     ~readme
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_with_files.get
+      let%map_open standard_args =
+        ignore anon ; Args.Standard_with_files.get
       and seed =
         flag "seed" (optional int)
           ~doc:"INT use this integer as the seed to the fuzzer RNG"

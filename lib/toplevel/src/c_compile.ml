@@ -45,7 +45,7 @@ let readme () : string =
 let command : Command.t =
   Command.basic ~summary:"runs the given compiler on a single file" ~readme
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_with_files.get
+      let%map standard_args = Args.Standard_with_files.get
       and raw_target = Args.asm_target
       and mode = mode_param in
       fun () ->

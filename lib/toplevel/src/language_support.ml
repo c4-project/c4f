@@ -94,8 +94,8 @@ let machine_hook predicate (mspec : Mw_spec.t) : Mw_spec.t option Or_error.t
     =
   let eval_b = Act_machine.Property.eval_b in
   Or_error.return
-    ((* TODO(@MattWindsor91): actually test the machine here! *)
-     Option.some_if (eval_b mspec predicate) mspec)
+    (* TODO(@MattWindsor91): actually test the machine here! *)
+    (Option.some_if (eval_b mspec predicate) mspec)
 
 let load_and_process_config ?(compiler_predicate = Blang.true_)
     ?(machine_predicate = Blang.true_)

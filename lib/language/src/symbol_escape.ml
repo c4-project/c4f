@@ -26,9 +26,9 @@ module Tx = Travesty_base_exts
 
 let escape_string : string -> string =
   Staged.unstage
-    ((* We could always just use something like Base36 here, but this seems
-        a bit more human-readable. *)
-     String.Escaping.escape_gen_exn
+    (* We could always just use something like Base36 here, but this seems a
+       bit more human-readable. *)
+    (String.Escaping.escape_gen_exn
        ~escape_char:
          'Z'
          (* We escape some things that couldn't possibly appear in legal x86

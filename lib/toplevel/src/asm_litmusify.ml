@@ -48,7 +48,7 @@ let run (input : In.t) : unit Or_error.t =
 let command =
   Command.basic ~summary:"converts an assembly file to a litmus test"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_asm.get in
+      let%map standard_args = Args.Standard_asm.get in
       fun () ->
         Asm_common.lift_command standard_args ~f:run
           ~default_passes:Act_sanitiser.Pass_group.standard)

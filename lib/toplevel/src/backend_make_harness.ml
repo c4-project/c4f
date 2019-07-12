@@ -31,8 +31,9 @@ let command : Command.t =
   Command.basic
     ~summary:"runs a configured test backend in harness-making mode"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_with_files.get
-      and sim = Args.simulator ()
+      let%map_open standard_args =
+        ignore anon ; Args.Standard_with_files.get
+      and sim = ignore anon ; Args.simulator ()
       and arch =
         choose_one
           [ Args.flag_to_enum_choice (Some Act_sim.Arch.C) "-c"

@@ -70,7 +70,7 @@ let run output_format (input : In.t) =
 let command =
   Command.basic ~summary:"explains act's understanding of an assembly file"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_asm.get
+      let%map_open standard_args = ignore anon ; Args.Standard_asm.get
       and output_format =
         Act_asm.Explainer.Config.Format.(
           choose_one

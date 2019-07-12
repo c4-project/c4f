@@ -30,7 +30,8 @@ let run ?(aux_output : string option) (args : Args.Standard_with_files.t) _o
 let command : Command.t =
   Command.basic ~summary:"converts a C litmus test to a normal C file"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard_with_files.get
+      let%map_open standard_args =
+        ignore anon ; Args.Standard_with_files.get
       and aux_output =
         flag "aux-output"
           (optional Filename.arg_type)

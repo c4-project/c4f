@@ -296,7 +296,9 @@ module Parametric = struct
   module Expr = struct
     module type S = S_expr
 
-    module Make (T : Ast_node) : S with module Ty := T = struct
+    module Make (T : Ast_node) : S with module Ty = T = struct
+      module Ty = T
+
       type t =
         | Prefix of Operators.Pre.t * t
         | Postfix of t * Operators.Post.t
@@ -469,7 +471,7 @@ module Parametric = struct
   end
 end
 
-module rec Expr : (S_expr with module Ty := Type_name) =
+module rec Expr : (S_expr with type Ty.t = Type_name.t) =
   Parametric.Expr.Make (Type_name)
 
 and Enumerator : sig

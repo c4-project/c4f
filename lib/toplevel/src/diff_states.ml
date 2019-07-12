@@ -45,7 +45,7 @@ let readme () =
 let command : Command.t =
   Command.basic ~summary:"compares two simulation runs" ~readme
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard.get
+      let%map_open standard_args = ignore anon ; Args.Standard.get
       and oracle_raw = anon ("ORACLE_NAME" %: Filename.arg_type)
       and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type) in
       fun () ->

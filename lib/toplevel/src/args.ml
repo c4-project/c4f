@@ -167,7 +167,7 @@ module Standard_with_files :
         flag "output"
           (optional Filename.arg_type)
           ~doc:"FILE the output file (default: stdout)"
-      and rest = Standard.get in
+      and rest = ignore anon ; Standard.get in
       {rest; infile_raw; outfile_raw})
 
   let infile_fpath (args : t) : Fpath.t option Or_error.t =
@@ -226,7 +226,7 @@ module Standard_asm : S_standard_asm with type s := Standard.t = struct
 
   let get =
     Command.Let_syntax.(
-      let%map_open target = Other.asm_target
+      let%map target = Other.asm_target
       and aux_file = Other.aux_file
       and sanitiser_passes = Other.sanitiser_passes
       and rest = Standard_with_files.get in

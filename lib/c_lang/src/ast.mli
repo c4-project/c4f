@@ -18,7 +18,7 @@ open Ast_basic
 
 include module type of Ast_intf
 
-module rec Expr : (S_expr with module Ty := Type_name)
+module rec Expr : (S_expr with type Ty.t = Type_name.t)
 
 and Enumerator : sig
   type t = {name: Identifier.t; value: Expr.t option} [@@deriving sexp]

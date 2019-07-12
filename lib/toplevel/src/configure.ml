@@ -58,7 +58,7 @@ let list_compilers_command : Command.t =
   Command.basic
     ~summary:"outputs information about the current compiler specs"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard.get
+      let%map standard_args = Args.Standard.get
       and compiler_predicate = Args.compiler_predicate
       and machine_predicate = Args.machine_predicate in
       fun () ->
@@ -91,7 +91,7 @@ let run_list_predicates (_o : Output.t) (_cfg : Act_config.Act.t) :
 let list_predicates_command : Command.t =
   Command.basic ~summary:"describes the filtering predicate languages"
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard.get in
+      let%map standard_args = Args.Standard.get in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:(fun _args -> run_list_predicates))
@@ -122,7 +122,7 @@ let list_fuzzer_actions_command : Command.t =
   Command.basic ~summary:"outputs the current fuzzer weight table"
     ~readme:list_fuzzer_actions_readme
     Command.Let_syntax.(
-      let%map_open standard_args = Args.Standard.get in
+      let%map standard_args = Args.Standard.get in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:(fun _args -> run_list_fuzzer_actions))
