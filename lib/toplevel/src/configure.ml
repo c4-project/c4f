@@ -63,7 +63,8 @@ let list_compilers_command : Command.t =
       and machine_predicate = Args.machine_predicate in
       fun () ->
         Common.lift_command standard_args ?compiler_predicate
-          ?machine_predicate ~with_compiler_tests:true ~f:run_list_compilers)
+          ?machine_predicate ~with_compiler_tests:true
+          ~f:(run_list_compilers standard_args))
 
 let predicate_lists : (string, (module Property.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"
@@ -94,7 +95,7 @@ let list_predicates_command : Command.t =
       let%map standard_args = Args.Standard.get in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:(fun _args -> run_list_predicates))
+          ~f:run_list_predicates)
 
 let list_fuzzer_actions_readme () : string =
   Act_utils.My_string.format_for_readme
@@ -125,7 +126,7 @@ let list_fuzzer_actions_command : Command.t =
       let%map standard_args = Args.Standard.get in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:(fun _args -> run_list_fuzzer_actions))
+          ~f:run_list_fuzzer_actions)
 
 let command : Command.t =
   Command.group ~summary:"commands for dealing with act configuration"

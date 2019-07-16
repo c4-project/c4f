@@ -24,56 +24,26 @@ let make_output_from_standard_args (args : Args.Standard.t) : Ac.Output.t =
     ~verbose:(Args.Standard.is_verbose args)
     ~warnings:(Args.Standard.are_warnings_enabled args)
 
-(** Used as input to {{!Make_lifter} Make_lifter}. *)
-module type Basic_lifter = sig
-  type t
-
-  val as_standard_args : t -> Args.Standard.t
-end
-
 let setup_colour (args : Args.Standard.t) : unit =
   let style_renderer = Args.Standard.colour args in
   Fmt_tty.setup_std_outputs ?style_renderer ()
 
-(** Since the command lifters are fairly uniform except for the specific
-    argument bundle they pass through, we use a functor to construct them. *)
-module Make_lifter (B : Basic_lifter) = struct
-  let lift ?compiler_predicate ?machine_predicate ?sanitiser_passes
-      ?with_compiler_tests
-      ~(f : B.t -> Ac.Output.t -> Act_config.Act.t -> unit Or_error.t)
-      (args : B.t) : unit =
-    let standard_args = B.as_standard_args args in
-    setup_colour standard_args ;
-    let o = make_output_from_standard_args standard_args in
-    let result =
-      Or_error.(
-        Args.Standard.config_file standard_args
-        |> Plumbing.Fpath_helpers.of_string
-        >>= Language_support.load_and_process_config ?compiler_predicate
-              ?machine_predicate ?sanitiser_passes ?with_compiler_tests
-        >>= f args o)
-    in
-    if Or_error.is_error result then (
-      Ac.Output.print_error o result ;
-      exit 1 )
-end
-
-module Standard_lifter = Make_lifter (Args.Standard)
-
-let lift_command = Standard_lifter.lift
-
-module With_files_lifter = Make_lifter (Args.Standard_with_files)
-
-let lift_command_with_files = With_files_lifter.lift
-
-module Asm_lifter = Make_lifter (Args.Standard_asm)
-
-let lift_asm_command_basic
-    ~(f :
-          Args.Standard_asm.t
-       -> Ac.Output.t
-       -> Act_config.Act.t
-       -> unit Or_error.t) (args : Args.Standard_asm.t) : unit =
-  Asm_lifter.lift
-    ?sanitiser_passes:(Args.Standard_asm.sanitiser_passes args)
-    ~f args
+let lift_command
+    ?(compiler_predicate : Act_compiler.Property.t Blang.t option)
+    ?(machine_predicate : Act_machine.Property.t Blang.t option)
+    ?(sanitiser_passes : Act_sanitiser.Pass_group.Selector.t Blang.t option)
+    ?(with_compiler_tests : bool option) (args : Args.Standard.t)
+    ~(f : Ac.Output.t -> Act_config.Act.t -> unit Or_error.t) : unit =
+  setup_colour args ;
+  let o = make_output_from_standard_args args in
+  let result =
+    Or_error.(
+      Args.Standard.config_file args
+      |> Plumbing.Fpath_helpers.of_string
+      >>= Language_support.load_and_process_config ?compiler_predicate
+            ?machine_predicate ?sanitiser_passes ?with_compiler_tests
+      >>= f o)
+  in
+  if Or_error.is_error result then (
+    Ac.Output.print_error o result ;
+    exit 1 )

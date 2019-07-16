@@ -24,39 +24,10 @@ val lift_command :
   -> ?machine_predicate:Act_machine.Property.t Blang.t
   -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
-  -> f:(Args.Standard.t -> Output.t -> Act_config.Act.t -> unit Or_error.t)
   -> Args.Standard.t
+  -> f:(Output.t -> Act_config.Act.t -> unit Or_error.t)
   -> unit
 (** [lift_command ?compiler_predicate ?machine_predicate ?sanitiser_passes
-    ?with_compiler_tests ~f standard_args] lifts a command body [f],
+    ?with_compiler_tests standard_args ~f] lifts a command body [f],
     performing common book-keeping such as loading and testing the
     configuration, creating an [Output.t], and printing top-level errors. *)
-
-val lift_command_with_files :
-     ?compiler_predicate:Act_compiler.Property.t Blang.t
-  -> ?machine_predicate:Act_machine.Property.t Blang.t
-  -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
-  -> ?with_compiler_tests:bool (* default true *)
-  -> f:(   Args.Standard_with_files.t
-        -> Output.t
-        -> Act_config.Act.t
-        -> unit Or_error.t)
-  -> Args.Standard_with_files.t
-  -> unit
-(** [lift_command_with_files ?compiler_predicate ?machine_predicate
-    ?sanitiser_passes ?with_compiler_tests ~f args] behaves like
-    {{!lift_command} lift_command}, but also handles (and supplies) optional
-    input and output files. *)
-
-val lift_asm_command_basic :
-     f:(   Args.Standard_asm.t
-        -> Output.t
-        -> Act_config.Act.t
-        -> unit Or_error.t)
-  -> Args.Standard_asm.t
-  -> unit
-(** [lift_asm_command_basic ~f args] behaves like
-    {{!lift_command_with_files} lift_command_with_files}, but also handles
-    (and supplies) the various standard asm command arguments, including
-    sanitiser passes. More thorough lifting is left to the [Asm_common]
-    module. *)

@@ -70,11 +70,12 @@ let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
   let sanitiser_passes =
     Act_config.Act.sanitiser_passes act_config ~default:default_passes
   in
+  let f_args = Args.Standard_asm.rest args in
   Or_error.Let_syntax.(
     let%bind c_litmus_aux = get_aux args ~output in
     let%bind target = resolve_target args act_config in
-    let%bind pb_input = Args.Standard_asm.infile_source args in
-    let%bind pb_output = Args.Standard_asm.outfile_sink args in
+    let%bind pb_input = Args.With_files.infile_source f_args in
+    let%bind pb_output = Args.With_files.outfile_sink f_args in
     let input =
       Input.Fields.create ~act_config ~output ~args ~sanitiser_passes
         ~c_litmus_aux ~target ~pb_input ~pb_output
@@ -84,4 +85,6 @@ let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
 let lift_command (args : Args.Standard_asm.t)
     ~(f : Input.t -> unit Or_error.t)
     ~(default_passes : Set.M(Act_sanitiser.Pass_group).t) : unit =
-  Common.lift_asm_command_basic args ~f:(with_input ~f ~default_passes)
+  let f_args = Args.Standard_asm.rest args in
+  let s_args = Args.With_files.rest f_args in
+  Common.lift_command s_args ~f:(with_input args ~f ~default_passes)

@@ -12,16 +12,17 @@
 open Core_kernel
 module Cq_spec = Act_machine.Qualified.Compiler
 
-let run (args : Args.Standard_with_files.t) (_o : Act_common.Output.t)
-    (cfg : Act_config.Act.t) ~(raw_target : Asm_target.t)
-    ~(mode : Act_compiler.Mode.t) : unit Or_error.t =
+let run (args : Args.Standard.t Args.With_files.t)
+    (_o : Act_common.Output.t) (cfg : Act_config.Act.t)
+    ~(raw_target : Asm_target.t) ~(mode : Act_compiler.Mode.t) :
+    unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind target = Asm_target.resolve ~cfg raw_target in
     let%bind (module R) =
       Language_support.Resolve_compiler_from_target.filter_from_spec target
     in
-    let%bind input = Args.Standard_with_files.infile_source args in
-    let%bind output = Args.Standard_with_files.outfile_sink args in
+    let%bind input = Args.With_files.infile_source args in
+    let%bind output = Args.With_files.outfile_sink args in
     Or_error.ignore_m (R.run mode input output))
 
 let mode_type : Act_compiler.Mode.t Command.Arg_type.t =
@@ -45,9 +46,11 @@ let readme () : string =
 let command : Command.t =
   Command.basic ~summary:"runs the given compiler on a single file" ~readme
     Command.Let_syntax.(
-      let%map standard_args = Args.Standard_with_files.get
+      let%map standard_args = Args.(With_files.get Standard.get)
       and raw_target = Args.asm_target
       and mode = mode_param in
       fun () ->
-        Common.lift_command_with_files standard_args
-          ~with_compiler_tests:false ~f:(run ~raw_target ~mode))
+        Common.lift_command
+          (Args.With_files.rest standard_args)
+          ~with_compiler_tests:false
+          ~f:(run standard_args ~raw_target ~mode))

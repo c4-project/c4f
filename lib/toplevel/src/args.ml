@@ -24,7 +24,6 @@
 open Core
 open Act_common
 open Act_utils
-open Args_intf
 
 module Colour_table = String_table.Make (struct
   type t = Fmt.style_renderer option
@@ -97,19 +96,13 @@ end
 
 include Other
 
-module Standard : sig
-  type t
-
-  include S_standard with type t := t and type s := t
-end = struct
+module Standard = struct
   type t =
     { verbose: bool
     ; no_warnings: bool
     ; colour: Fmt.style_renderer option
     ; config_file: string }
   [@@deriving fields]
-
-  let as_standard_args = Fn.id
 
   let is_verbose t = t.verbose
 
@@ -134,58 +127,37 @@ end = struct
       {verbose; no_warnings; config_file; colour})
 end
 
-module Standard_with_files :
-  S_standard_with_files with type s := Standard.t = struct
-  type t =
-    {rest: Standard.t; infile_raw: string option; outfile_raw: string option}
+module With_files = struct
+  type 'a t =
+    {rest: 'a; infile_raw: string option; outfile_raw: string option}
   [@@deriving fields]
 
-  let as_standard_args t = t.rest
-
-  module Rest = Standard
-
-  include Inherit.Helpers (struct
-    type nonrec t = t
-
-    type c = Rest.t
-
-    let component = as_standard_args
-  end)
-
-  let is_verbose = forward Rest.is_verbose
-
-  let are_warnings_enabled = forward Rest.are_warnings_enabled
-
-  let config_file = forward Rest.config_file
-
-  let colour = forward Rest.colour
-
-  let get =
+  let get (type a) (rest : a Command.Param.t) : a t Command.Param.t =
     Command.Let_syntax.(
       let%map_open infile_raw = anon (maybe ("FILE" %: Filename.arg_type))
       and outfile_raw =
         flag "output"
           (optional Filename.arg_type)
           ~doc:"FILE the output file (default: stdout)"
-      and rest = ignore anon ; Standard.get in
+      and rest = ignore anon ; rest in
       {rest; infile_raw; outfile_raw})
 
-  let infile_fpath (args : t) : Fpath.t option Or_error.t =
+  let infile_fpath (args : _ t) : Fpath.t option Or_error.t =
     args |> infile_raw |> Plumbing.Fpath_helpers.of_string_option
 
-  let infile_source (args : t) : Plumbing.Input.t Or_error.t =
+  let infile_source (args : _ t) : Plumbing.Input.t Or_error.t =
     args |> infile_raw |> Plumbing.Input.of_string_opt
 
-  let outfile_fpath (args : t) : Fpath.t option Or_error.t =
+  let outfile_fpath (args : _ t) : Fpath.t option Or_error.t =
     args |> outfile_raw |> Plumbing.Fpath_helpers.of_string_option
 
-  let outfile_sink (args : t) : Plumbing.Output.t Or_error.t =
+  let outfile_sink (args : _ t) : Plumbing.Output.t Or_error.t =
     args |> outfile_raw |> Plumbing.Output.of_string_opt
 
   let run_filter (type i o)
       (module F : Plumbing.Filter_types.S
         with type aux_i = i
-         and type aux_o = o) (args : t) ~(aux_in : i) : o Or_error.t =
+         and type aux_o = o) (args : _ t) ~(aux_in : i) : o Or_error.t =
     Or_error.Let_syntax.(
       let%bind input = infile_source args in
       let%bind output = outfile_sink args in
@@ -194,7 +166,7 @@ module Standard_with_files :
   let run_filter_with_aux_out (type i o) ?(aux_out_filename : string option)
       (module F : Plumbing.Filter_types.S
         with type aux_i = i
-         and type aux_o = o) (args : t) ~(aux_in : i)
+         and type aux_o = o) (args : _ t) ~(aux_in : i)
       ~(aux_out_f : o -> Stdio.Out_channel.t -> unit Or_error.t) :
       unit Or_error.t =
     Or_error.Let_syntax.(
@@ -205,57 +177,20 @@ module Standard_with_files :
               Stdio.Out_channel.with_file filename ~f:(aux_out_f aux_out))))
 end
 
-module Standard_asm : S_standard_asm with type s := Standard.t = struct
+module Standard_asm = struct
   type t =
-    { rest: Standard_with_files.t
+    { rest: Standard.t With_files.t
     ; aux_file: string option
     ; target: Asm_target.t
     ; sanitiser_passes: Act_sanitiser.Pass_group.Selector.t Blang.t option
     }
   [@@deriving fields]
 
-  module Rest = Standard_with_files
-
-  include Inherit.Helpers (struct
-    type nonrec t = t
-
-    type c = Rest.t
-
-    let component t = t.rest
-  end)
-
-  let run_filter f = forward (Rest.run_filter f)
-
-  let run_filter_with_aux_out ?aux_out_filename f =
-    forward (Rest.run_filter_with_aux_out ?aux_out_filename f)
-
-  let is_verbose = forward Rest.is_verbose
-
-  let as_standard_args = forward Rest.as_standard_args
-
-  let are_warnings_enabled = forward Rest.are_warnings_enabled
-
-  let config_file = forward Rest.config_file
-
-  let colour = forward Rest.colour
-
-  let infile_raw = forward Rest.infile_raw
-
-  let infile_fpath = forward Rest.infile_fpath
-
-  let infile_source = forward Rest.infile_source
-
-  let outfile_raw = forward Rest.outfile_raw
-
-  let outfile_fpath = forward Rest.outfile_fpath
-
-  let outfile_sink = forward Rest.outfile_sink
-
   let get =
     Command.Let_syntax.(
       let%map target = Other.asm_target
       and aux_file = Other.aux_file
       and sanitiser_passes = Other.sanitiser_passes
-      and rest = Standard_with_files.get in
+      and rest = With_files.get Standard.get in
       {rest; target; aux_file; sanitiser_passes})
 end

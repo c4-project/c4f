@@ -50,4 +50,4 @@ let command : Command.t =
       and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type) in
       fun () ->
         Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:(fun _args -> run ~oracle_raw ~subject_raw))
+          ~f:(run ~oracle_raw ~subject_raw))
