@@ -11,21 +11,16 @@
 
 open Core
 
-let write_aux (aux : Act_delitmus.Aux.t) (output_fname : string) :
+let write_aux (aux : Act_delitmus.Aux.t) (oc : Stdio.Out_channel.t) :
     unit Or_error.t =
   let aux_json = Act_delitmus.Aux.to_yojson aux in
-  Or_error.try_with (fun () ->
-      Stdio.Out_channel.with_file output_fname ~f:(fun oc ->
-          Yojson.Safe.pretty_to_channel oc aux_json))
+  Or_error.try_with (fun () -> Yojson.Safe.pretty_to_channel oc aux_json)
 
 let run ?(aux_output : string option) (args : Args.Standard_with_files.t) _o
     _cfg ~(style : Act_delitmus.Runner.Style.t) =
-  Or_error.Let_syntax.(
-    let%bind input = Args.Standard_with_files.infile_source args in
-    let%bind output = Args.Standard_with_files.outfile_sink args in
-    let%bind aux = Act_delitmus.Filter.run style input output in
-    Travesty_base_exts.Option.With_errors.iter_m aux_output
-      ~f:(write_aux aux))
+  Args.Standard_with_files.run_filter_with_aux_out
+    (module Act_delitmus.Filter)
+    args ~aux_in:style ~aux_out_f:write_aux ?aux_out_filename:aux_output
 
 let command : Command.t =
   Command.basic ~summary:"converts a C litmus test to a normal C file"

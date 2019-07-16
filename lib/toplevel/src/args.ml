@@ -181,6 +181,28 @@ module Standard_with_files :
 
   let outfile_sink (args : t) : Plumbing.Output.t Or_error.t =
     args |> outfile_raw |> Plumbing.Output.of_string_opt
+
+  let run_filter (type i o)
+      (module F : Plumbing.Filter_types.S
+        with type aux_i = i
+         and type aux_o = o) (args : t) ~(aux_in : i) : o Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind input = infile_source args in
+      let%bind output = outfile_sink args in
+      F.run aux_in input output)
+
+  let run_filter_with_aux_out (type i o) ?(aux_out_filename : string option)
+      (module F : Plumbing.Filter_types.S
+        with type aux_i = i
+         and type aux_o = o) (args : t) ~(aux_in : i)
+      ~(aux_out_f : o -> Stdio.Out_channel.t -> unit Or_error.t) :
+      unit Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind aux_out = run_filter (module F) args ~aux_in in
+      Travesty_base_exts.Option.With_errors.iter_m aux_out_filename
+        ~f:(fun filename ->
+          Or_error.try_with_join (fun () ->
+              Stdio.Out_channel.with_file filename ~f:(aux_out_f aux_out))))
 end
 
 module Standard_asm : S_standard_asm with type s := Standard.t = struct
@@ -201,6 +223,11 @@ module Standard_asm : S_standard_asm with type s := Standard.t = struct
 
     let component t = t.rest
   end)
+
+  let run_filter f = forward (Rest.run_filter f)
+
+  let run_filter_with_aux_out ?aux_out_filename f =
+    forward (Rest.run_filter_with_aux_out ?aux_out_filename f)
 
   let is_verbose = forward Rest.is_verbose
 

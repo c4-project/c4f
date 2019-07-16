@@ -94,6 +94,32 @@ module type S_standard_with_files = sig
   (** [outfile_sink args] behaves as {{!outfile_raw} outfile_raw}, but tries
       to convert the result to an {{!Io.Out_sink.t} Out_sink.t}. This may
       fail if the path is ill-formed. *)
+
+  val run_filter :
+       (module Plumbing.Filter_types.S
+          with type aux_i = 'i
+           and type aux_o = 'o)
+    -> t
+    -> aux_in:'i
+    -> 'o Or_error.t
+  (** [run_filter f args ~aux_in] runs the filter [f] with the file input
+      and output arguments specified in [args], and the auxiliary input
+      [aux_in], returning the auxiliary output or errors arising. *)
+
+  val run_filter_with_aux_out :
+       ?aux_out_filename:string
+    -> (module Plumbing.Filter_types.S
+          with type aux_i = 'i
+           and type aux_o = 'o)
+    -> t
+    -> aux_in:'i
+    -> aux_out_f:('o -> Stdio.Out_channel.t -> unit Or_error.t)
+    -> unit Or_error.t
+  (** [run_filter_with_aux_out ?aux_out_filename f args ~aux_in ~aux_out_f]
+      runs the filter [f] with the file input and output arguments specified
+      in [args], and the auxiliary input [aux_in]; it then outputs the
+      auxiliary output to the file named by [aux_out_filename], using
+      [aux_out_f], or otherwise discards it. It returns any errors arising. *)
 end
 
 (** Signature of modules describing argument bundles that include the
