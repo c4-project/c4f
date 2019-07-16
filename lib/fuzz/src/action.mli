@@ -86,8 +86,19 @@ val always : Subject.Test.t -> bool State.Monad.t
 (** [always test] always returns [true] without modifying or inspecting the
     fuzzer state. *)
 
+(** {3 Helpers for building action payloads} *)
+
+(** Adapts payload generators that don't depend on the state of the program. *)
+module Pure_random_state (S : sig
+    type t [@@deriving sexp]
+    val quickcheck_generator : t Base_quickcheck.Generator.t
+  end) :
+  Action_types.S_random_state
+    with type t = S.t
+     and type subject = Subject.Test.t
+
 (** Dummy random state module for actions that take no random state. *)
 module No_random_state :
   Action_types.S_random_state
     with type t = unit
-     and type subject := Subject.Test.t
+     and type subject = Subject.Test.t

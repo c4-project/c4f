@@ -13,7 +13,6 @@ open Base
 open Act_common
 open Act_utils
 
-(** Shorthand for stating that a fuzzer action is always available. *)
 let always : Subject.Test.t -> bool State.Monad.t =
   Fn.const (State.Monad.return true)
 
@@ -114,13 +113,23 @@ module Pool = struct
             (Weighted_list.sample ~random))
 end
 
+module Pure_random_state (S : sig
+    type t [@@deriving sexp]
+    val quickcheck_generator : t Base_quickcheck.Generator.t
+  end) :
+  Action_types.S_random_state
+    with type t = S.t
+     and type subject = Subject.Test.t = struct
+  include S
+  type subject = Subject.Test.t
+  let gen (_subject : subject) : t Base_quickcheck.Generator.t State.Monad.t =
+    State.Monad.return S.quickcheck_generator
+end
+
 module No_random_state :
   Action_types.S_random_state
     with type t = unit
-     and type subject := Subject.Test.t = struct
-  include Unit
-
-  let gen (_subject : Subject.Test.t) :
-      t Base_quickcheck.Generator.t State.Monad.t =
-    State.Monad.return (Base_quickcheck.Generator.return ())
-end
+     and type subject = Subject.Test.t = Pure_random_state (struct
+    include Unit
+    let quickcheck_generator = Base_quickcheck.Generator.return ()
+  end)
