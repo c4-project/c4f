@@ -35,7 +35,8 @@ val run :
   -> Act_c_mini.Litmus.Ast.Validated.t
   -> o:Output.t
   -> config:Act_config.Fuzz.t
-  -> Act_c_mini.Litmus.Ast.Validated.t Or_error.t
+  -> (Act_c_mini.Litmus.Ast.Validated.t * Trace.t) Or_error.t
 (** [run ?seed test ~o test] mutates [test] using a random number generator
     seeded by [seed]. Any debugging information is printed to the
-    appropriate formatters on [o]. *)
+    appropriate formatters on [o], and a trace of all run actions is
+    returned alongside the new test. *)

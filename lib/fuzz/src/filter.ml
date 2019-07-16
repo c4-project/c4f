@@ -21,19 +21,21 @@ end
 include Pb.Filter.Make (struct
   type aux_i = Aux.t
 
-  type aux_o = unit
+  type aux_o = Trace.t
 
-  let name = "Mini-C explainer"
+  let name = "Fuzzer"
 
   let run (ctx : Aux.t Pb.Filter_context.t) (ic : In_channel.t)
-      (oc : Out_channel.t) : unit Or_error.t =
+      (oc : Out_channel.t) : Trace.t Or_error.t =
     let {Aux.seed; o; config} = Pb.Filter_context.aux ctx in
     let input = Pb.Filter_context.input ctx in
-    Or_error.(
-      ic
-      |> Act_c_lang.Frontend.Litmus.load_from_ic
-           ~path:(Pb.Input.to_string input)
-      >>= Act_c_mini.Convert.litmus_of_raw_ast
-      >>= Fuzzer.run ?seed ~o ~config
-      >>| Act_c_mini.Litmus.Pp.print oc)
+    Or_error.Let_syntax.(
+      let%bind raw = Act_c_lang.Frontend.Litmus.load_from_ic
+          ~path:(Pb.Input.to_string input) ic
+      in
+      let%bind test = Act_c_mini.Convert.litmus_of_raw_ast raw in
+      let%map (test', trace) = Fuzzer.run ?seed ~o ~config test in
+      Act_c_mini.Litmus.Pp.print oc test';
+      trace
+    )
 end)

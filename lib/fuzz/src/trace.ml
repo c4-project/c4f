@@ -22,7 +22,3 @@ let add (type p) (trace: t) ~(action: (module Action_types.S with type Random_st
   let name = Action.name in
   let payload = Action.Random_state.sexp_of_t payload in
   Fqueue.enqueue trace { name; payload }
-
-
-(** [add t ~id ~action ~state] appends action [action], with name [id] and
-    payload [payload], to the trace. *)
