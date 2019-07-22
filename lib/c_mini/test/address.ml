@@ -39,7 +39,7 @@ let%test_module "variable_of" =
 
 let%test_module "Type-check" =
   ( module struct
-    module T = Type_check ((val Lazy.force Act_c_mini.Env.test_env_mod))
+    module T = Type_check ((val Lazy.force Env.test_env_mod))
 
     let test (addr : t) : unit =
       let result = T.type_of addr in
@@ -55,7 +55,7 @@ let%test_module "Type-check" =
   end )
 
 let%test_unit "on_address_of_typed_id: always takes pointer type" =
-  let (module E) = Lazy.force Act_c_mini.Env.test_env_mod in
+  let (module E) = Lazy.force Env.test_env_mod in
   let module Tc = Type_check (E) in
   Base_quickcheck.Test.run_exn
     (module E.Random_var)

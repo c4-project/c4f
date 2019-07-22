@@ -10,41 +10,40 @@
    project root for more information. *)
 
 open Base
-open Act_c_mini
-open Address_gen
+module Src = Act_c_mini
 module Q = Base_quickcheck
+module Qx = Act_utils.My_quickcheck
 
-let variable_in (module E : Env_types.S) (l : Address.t) : bool =
-  Act_common.C_id.Map.mem E.env (Address.variable_of l)
+let variable_in (module E : Src.Env_types.S) (l : Src.Address.t) : bool =
+  Map.mem E.env (Src.Address.variable_of l)
 
-let print_sample = Act_utils.My_quickcheck.print_sample
-
-let test_in_env (module E : Env_types.S)
-    (module Qc : Act_utils.My_quickcheck.S_with_sexp
-      with type t = Act_c_mini.Address.t) : unit =
+let test_in_env (module E : Src.Env_types.S)
+    (module Qc : Qx.S_with_sexp with type t = Src.Address.t) : unit =
   Q.Test.run_exn
     (module Qc)
-    ~f:([%test_pred: Address.t] ~here:[[%here]] (variable_in (module E)))
+    ~f:
+      ([%test_pred: Src.Address.t] ~here:[[%here]] (variable_in (module E)))
 
-let test_type (module E : Env_types.S)
-    (module Qc : Act_utils.My_quickcheck.S_with_sexp with type t = Address.t)
-    (expected : Type.t) : unit =
-  let module Tc = Address.Type_check (E) in
+let test_type (module E : Src.Env_types.S)
+    (module Qc : Qx.S_with_sexp with type t = Src.Address.t)
+    (expected : Src.Type.t) : unit =
+  let module Tc = Src.Address.Type_check (E) in
   Q.Test.run_exn
     (module Qc)
     ~f:(fun lv ->
-      [%test_result: Act_c_mini.Type.t Or_error.t] ~here:[[%here]]
-        (Tc.type_of lv)
+      [%test_result: Src.Type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
         ~expect:(Or_error.return expected))
 
 let%test_module "On_env" =
   ( module struct
+    let e = Lazy.force Env.test_env_mod
+
+    module Qc = Src.Address_gen.On_env ((val e))
+
     let%expect_test "sample" =
-      let e = Lazy.force Act_c_mini.Env.test_env_mod in
-      let module Qc = On_env ((val e)) in
-      print_sample
+      Qx.print_sample
         ( module struct
-          include Act_c_mini.Address
+          include Src.Address
           include Qc
         end ) ;
       [%expect
@@ -69,19 +68,19 @@ let%test_module "On_env" =
   (Ref (Ref (Ref (Lvalue (Deref (Variable y)))))) |}]
 
     let%test_unit "generated underlying variables in environment" =
-      let e = Lazy.force Act_c_mini.Env.test_env_mod in
-      test_in_env e (module On_env ((val e)))
+      test_in_env e (module Qc)
   end )
 
 let%test_module "Atomic_int_pointers" =
   ( module struct
-    let e = Lazy.force Act_c_mini.Env.test_env_mod
+    let e = Lazy.force Env.test_env_mod
+
+    module Qc = Src.Address_gen.Atomic_int_pointers ((val e))
 
     let%expect_test "liveness" =
-      let module Qc = Atomic_int_pointers ((val e)) in
-      print_sample
+      Qx.print_sample
         ( module struct
-          include Act_c_mini.Address
+          include Src.Address
           include Qc
         end ) ;
       [%expect
@@ -91,23 +90,22 @@ let%test_module "Atomic_int_pointers" =
     (Ref (Lvalue (Variable y))) |}]
 
     let%test_unit "generated underlying variables in environment" =
-      test_in_env e (module Atomic_int_pointers ((val e)))
+      test_in_env e (module Qc)
 
     let%test_unit "generated lvalues have '*atomic_int' type" =
-      test_type e
-        (module Atomic_int_pointers ((val e)))
-        Act_c_mini.Type.(pointer_to Basic.atomic_int)
+      test_type e (module Qc) Src.Type.(pointer_to Basic.atomic_int)
   end )
 
 let%test_module "Atomic_bool_pointers" =
   ( module struct
-    let e = Lazy.force Act_c_mini.Env.test_env_mod
+    let e = Lazy.force Env.test_env_mod
+
+    module Qc = Src.Address_gen.Atomic_bool_pointers ((val e))
 
     let%expect_test "Atomic_bool_pointers: liveness" =
-      let module Qc = Atomic_bool_pointers ((val e)) in
-      print_sample
+      Qx.print_sample
         ( module struct
-          include Act_c_mini.Address
+          include Src.Address
           include Qc
         end ) ;
       [%expect
@@ -116,10 +114,8 @@ let%test_module "Atomic_bool_pointers" =
       (Ref (Lvalue (Variable z))) |}]
 
     let%test_unit "generated underlying variables in environment" =
-      test_in_env e (module Atomic_bool_pointers ((val e)))
+      test_in_env e (module Qc)
 
     let%test_unit "generated lvalues have '*atomic_bool' type" =
-      test_type e
-        (module Atomic_bool_pointers ((val e)))
-        Act_c_mini.Type.(pointer_to Basic.atomic_bool)
+      test_type e (module Qc) Src.Type.(pointer_to Basic.atomic_bool)
   end )

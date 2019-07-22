@@ -1,39 +1,22 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Mini-model: module signatures for variable typing environments *)
 
 open Base
 
-(** Basic signature of modules carrying a variable typing environment. *)
-module type Basic = sig
-  val env : Type.t Act_common.C_id.Map.t
-  (** [env] is a variable typing environment. *)
-end
-
 (** Extended signature of environment modules. *)
 module type S = sig
-  include Basic
+  val env : Type.t Map.M(Act_common.C_id).t
+  (** [env] is a variable typing environment. *)
 
   (** [Random_var] allows generation of random variables from the variable
       environment. *)
@@ -49,4 +32,18 @@ module type S = sig
     Type.Basic.t -> Type.t Map.M(Act_common.C_id).t
   (** [atomic_int_variables t] filters the environment, returning a map
       binding only variables whose basic type is [t]. *)
+end
+
+(** {2 Known values}
+
+    Some generators require information about the current known values of a
+    set of variables. These signatures extend the idea of a typing
+    environment with a known-values map. *)
+
+module type S_with_known_values = sig
+  include S
+
+  val known_values : Act_common.C_id.t -> Set.M(Int).t option
+  (** [known_values var] gets the set of all {i possible} known values of
+      [var]. If [var] has no known values, [known_values var] is [None]. *)
 end

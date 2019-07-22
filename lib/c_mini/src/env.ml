@@ -1,59 +1,51 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
-
-open Core_kernel
-open Travesty_base_exts
+open Base
 module Ac = Act_common
 
-module Make (E : Env_types.Basic) : Env_types.S = struct
+module Make (E : sig
+  val env : Type.t Map.M(Act_common.C_id).t
+end) =
+struct
   let env = E.env
 
   module Random_var : sig
     type t = Ac.C_id.t [@@deriving sexp_of, quickcheck]
   end = struct
+    open Base_quickcheck
+
     type t = Ac.C_id.t
 
     let sexp_of_t = Ac.C_id.sexp_of_t
 
-    let quickcheck_generator : Ac.C_id.t Quickcheck.Generator.t =
+    let quickcheck_generator : Ac.C_id.t Generator.t =
       (* We use a thunk here to prevent the generator from immediately
          raising an error if we try to create an empty environment. *)
-      Quickcheck.Generator.of_fun (fun () ->
-          match Ac.C_id.Map.keys E.env with
-          | [] ->
-              Error.raise_s
-                [%message
-                  "Tried to get a random variable from an empty environment"
-                    ~here:[%here]]
-          | xs ->
-              Quickcheck.Generator.of_list xs)
+      Generator.Let_syntax.(
+        match%bind return (Map.keys E.env) with
+        | [] ->
+            Error.raise_s
+              [%message
+                "Tried to get a random variable from an empty environment"
+                  ~here:[%here]]
+        | xs ->
+            Generator.of_list xs)
 
     (* It's not clear whether we need a different observer here? *)
     let quickcheck_observer = Ac.C_id.quickcheck_observer
 
     (* Don't reduce identifiers, as this might make them no longer members
        of the environment. *)
-    let quickcheck_shrinker = Quickcheck.Shrinker.empty ()
+    let quickcheck_shrinker = Shrinker.atomic
   end
 
   let has_variables_of_basic_type (basic : Type.Basic.t) : bool =
@@ -64,39 +56,13 @@ module Make (E : Env_types.Basic) : Env_types.S = struct
     Map.filter E.env ~f:Type.(basic_type_is ~basic)
 end
 
-let test_env : Type.t Map.M(Ac.C_id).t Lazy.t =
-  lazy
-    (Map.of_alist_exn
-       (module Ac.C_id)
-       Type.
-         [ (Ac.C_id.of_string "foo", normal Basic.int)
-         ; (Ac.C_id.of_string "bar", pointer_to Basic.atomic_int)
-         ; (Ac.C_id.of_string "barbaz", normal Basic.bool)
-         ; (Ac.C_id.of_string "foobaz", pointer_to Basic.atomic_bool)
-         ; (Ac.C_id.of_string "x", normal Basic.atomic_int)
-         ; (Ac.C_id.of_string "y", normal Basic.atomic_int)
-         ; (Ac.C_id.of_string "z", normal Basic.atomic_bool)
-         ; (Ac.C_id.of_string "blep", pointer_to Basic.int) ])
+module Make_with_known_values (E : sig
+  val env : Type.t Map.M(Act_common.C_id).t
 
-let lift_to_lazy_mod (e : Type.t Ac.C_id.Map.t Lazy.t) :
-    (module Env_types.S) Lazy.t =
-  Lazy.(
-    e
-    >>| fun env ->
-    ( module Make (struct
-      let env = env
-    end) : Env_types.S ))
+  val known_values : Set.M(Int).t Map.M(Act_common.C_id).t
+end) : Env_types.S_with_known_values = struct
+  include Make (E)
 
-let test_env_mod : (module Env_types.S) Lazy.t = lift_to_lazy_mod test_env
-
-let test_env_atomic_ptrs_only : Type.t Ac.C_id.Map.t Lazy.t =
-  Lazy.(
-    test_env
-    >>| Ac.C_id.Map.filter
-          ~f:
-            Type.(Fn.(is_pointer &&& basic_type_is ~basic:Basic.atomic_int)))
-
-let test_env_atomic_ptrs_only_mod : (module Env_types.S) Lazy.t =
-  lift_to_lazy_mod test_env_atomic_ptrs_only
-
-let empty_env_mod = lift_to_lazy_mod (lazy Ac.C_id.Map.empty)
+  let known_values : Act_common.C_id.t -> Set.M(Int).t option =
+    Map.find E.known_values
+end

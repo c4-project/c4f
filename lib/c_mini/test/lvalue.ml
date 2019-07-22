@@ -11,8 +11,7 @@
 
 open Base
 open Stdio
-open Act_c_mini
-open Lvalue
+open Act_c_mini.Lvalue
 module Q = Base_quickcheck
 
 let%expect_test "variable_in_env: positive variable result, test env" =
@@ -52,7 +51,7 @@ let%expect_test "variable_in_env: negative variable result, test env" =
 let%expect_test "Type-checking a valid normal variable lvalue" =
   let module T = Type_check ((val Lazy.force Env.test_env_mod)) in
   let result = T.type_of (variable (Act_common.C_id.of_string "foo")) in
-  print_s [%sexp (result : Type.t Or_error.t)] ;
+  print_s [%sexp (result : Act_c_mini.Type.t Or_error.t)] ;
   [%expect {| (Ok (Normal int)) |}]
 
 let%expect_test "Type-checking an invalid deferencing variable lvalue" =
@@ -60,11 +59,11 @@ let%expect_test "Type-checking an invalid deferencing variable lvalue" =
   let result =
     T.type_of (deref (variable (Act_common.C_id.of_string "foo")))
   in
-  print_s [%sexp (result : Type.t Or_error.t)] ;
+  print_s [%sexp (result : Act_c_mini.Type.t Or_error.t)] ;
   [%expect {| (Error "not a pointer type") |}]
 
 let%expect_test "gen: sample" =
-  Act_utils.My_quickcheck.print_sample (module Lvalue) ;
+  Act_utils.My_quickcheck.print_sample (module Act_c_mini.Lvalue) ;
   [%expect
     {|
     (Variable J___r8___Ps_____rS_K)
@@ -93,6 +92,6 @@ let%test_unit "on_value_of_typed_id: always takes basic type" =
     (module E.Random_var)
     ~f:(fun id ->
       let ty = Map.find_exn E.env id in
-      [%test_result: Type.t Or_error.t] ~here:[[%here]]
+      [%test_result: Act_c_mini.Type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of (on_value_of_typed_id ~id ~ty))
-        ~expect:(Or_error.return Type.(normal (basic_type ty))))
+        ~expect:(Or_error.return Act_c_mini.Type.(normal (basic_type ty))))

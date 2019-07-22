@@ -30,7 +30,7 @@ let%test_module "using sample environment" =
 
     let vars =
       Var.Map.make_existing_var_map
-        (Lazy.force Act_c_mini.Env.test_env)
+        (Lazy.force Act_c_mini_test.Env.test_env)
         Act_common.C_id.Set.empty
 
     let run programs =

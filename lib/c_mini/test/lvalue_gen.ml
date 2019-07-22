@@ -10,42 +10,39 @@
    project root for more information. *)
 
 open Base
-open Act_c_mini
-open Lvalue_gen
 module Q = Base_quickcheck
+module Src = Act_c_mini
 
-let variable_in (module E : Env_types.S) (l : Lvalue.t) : bool =
-  Act_common.C_id.Map.mem E.env (Lvalue.variable_of l)
+let variable_in (module E : Src.Env_types.S) (l : Src.Lvalue.t) : bool =
+  Act_common.C_id.Map.mem E.env (Src.Lvalue.variable_of l)
 
 let print_sample = Act_utils.My_quickcheck.print_sample
 
-let test_in_env (module E : Env_types.S)
-    (module Qc : Act_utils.My_quickcheck.S_with_sexp with type t = Lvalue.t)
-    : unit =
+let test_in_env (module E : Src.Env_types.S)
+    (module Qc : Act_utils.My_quickcheck.S_with_sexp
+      with type t = Src.Lvalue.t) : unit =
   Q.Test.run_exn
     (module Qc)
-    ~f:([%test_pred: Lvalue.t] ~here:[[%here]] (variable_in (module E)))
+    ~f:([%test_pred: Src.Lvalue.t] ~here:[[%here]] (variable_in (module E)))
 
-let test_type (module E : Act_c_mini.Env_types.S)
+let test_type (module E : Src.Env_types.S)
     (module Qc : Act_utils.My_quickcheck.S_with_sexp
-      with type t = Act_c_mini.Lvalue.t) (expected : Act_c_mini.Type.t) :
-    unit =
-  let module Tc = Lvalue.Type_check (E) in
+      with type t = Src.Lvalue.t) (expected : Src.Type.t) : unit =
+  let module Tc = Src.Lvalue.Type_check (E) in
   Q.Test.run_exn
     (module Qc)
     ~f:(fun lv ->
-      [%test_result: Act_c_mini.Type.t Or_error.t] ~here:[[%here]]
-        (Tc.type_of lv)
+      [%test_result: Src.Type.t Or_error.t] ~here:[[%here]] (Tc.type_of lv)
         ~expect:(Or_error.return expected))
 
 let%test_module "On_env" =
   ( module struct
     let%expect_test "sample" =
-      let e = Lazy.force Act_c_mini.Env.test_env_mod in
-      let module Qc = On_env ((val e)) in
+      let e = Lazy.force Env.test_env_mod in
+      let module Qc = Src.Lvalue_gen.On_env ((val e)) in
       print_sample
         ( module struct
-          include Act_c_mini.Lvalue
+          include Src.Lvalue
           include Qc
         end ) ;
       [%expect
@@ -68,19 +65,21 @@ let%test_module "On_env" =
         (Deref (Deref (Deref (Deref (Deref (Variable bar)))))) |}]
 
     let%test_unit "generated underlying variables in environment" =
-      let e = Lazy.force Act_c_mini.Env.test_env_mod in
-      test_in_env e (module On_env ((val e)))
+      let e = Lazy.force Env.test_env_mod in
+      test_in_env e (module Src.Lvalue_gen.On_env ((val e)))
   end )
 
 let%test_module "Int_values" =
   ( module struct
-    let e = Lazy.force Act_c_mini.Env.test_env_mod
+    let e = Lazy.force Env.test_env_mod
 
-    let print_sample (module E : Act_c_mini.Env_types.S) =
+    module Qc = Src.Lvalue_gen.Int_values ((val e))
+
+    let print_sample (module E : Src.Env_types.S) =
       print_sample
         ( module struct
-          include Act_c_mini.Lvalue
-          include Int_values (E)
+          include Src.Lvalue
+          include Src.Lvalue_gen.Int_values (E)
         end )
 
     let%expect_test "sample" =
@@ -91,33 +90,31 @@ let%test_module "Int_values" =
           (Deref (Variable blep)) |}]
 
     let%test_unit "generated underlying variables in environment" =
-      test_in_env e (module Int_values ((val e)))
+      test_in_env e (module Qc)
 
     let%test_unit "generated lvalues have 'int' type" =
-      test_type e
-        (module Int_values ((val e)))
-        Act_c_mini.Type.(normal Basic.int)
+      test_type e (module Qc) Src.Type.(normal Basic.int)
   end )
 
 let%test_module "Bool_values" =
   ( module struct
-    let e = Lazy.force Act_c_mini.Env.test_env_mod
+    let e = Lazy.force Env.test_env_mod
 
-    let print_sample (module E : Act_c_mini.Env_types.S) =
+    let print_sample (module E : Src.Env_types.S) =
       print_sample
         ( module struct
-          include Act_c_mini.Lvalue
-          include Bool_values (E)
+          include Src.Lvalue
+          include Src.Lvalue_gen.Bool_values (E)
         end )
 
     let%expect_test "sample" =
       print_sample e ; [%expect {| (Variable barbaz) |}]
 
     let%test_unit "generated underlying variables in environment" =
-      test_in_env e (module Bool_values ((val e)))
+      test_in_env e (module Src.Lvalue_gen.Bool_values ((val e)))
 
     let%test_unit "generated lvalues have 'bool' type" =
       test_type e
-        (module Bool_values ((val e)))
-        Act_c_mini.Type.(normal Basic.bool)
+        (module Src.Lvalue_gen.Bool_values ((val e)))
+        Src.Type.(normal Basic.bool)
   end )

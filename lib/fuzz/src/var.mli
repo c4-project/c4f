@@ -120,7 +120,7 @@ end
 
 (** Variable maps *)
 module Map : sig
-  type t = Record.t Act_common.C_id.Map.t
+  type t = Record.t Map.M(Act_common.C_id).t
   (** Variable maps associate C identifiers with records. *)
 
   (** {3 Constructors} *)

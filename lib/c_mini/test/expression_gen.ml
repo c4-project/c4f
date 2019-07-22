@@ -10,48 +10,45 @@
    project root for more information. *)
 
 open Base
-open Act_c_mini
-open Expression_gen
+module Src = Act_c_mini
 module Q = Base_quickcheck
-
-let print_sample = Act_utils.My_quickcheck.print_sample
+module Qx = Act_utils.My_quickcheck
 
 let test_all_expressions_have_type
     (f :
-         (module Env_types.S)
-      -> (module Base_quickcheck.Test.S with type t = Expression.t))
-    (ty : Type.t) : unit =
+         (module Src.Env_types.S)
+      -> (module Q.Test.S with type t = Src.Expression.t)) (ty : Src.Type.t)
+    : unit =
   let env = Lazy.force Env.test_env_mod in
-  let (module Q) = f env in
-  let module Ty = Expression.Type_check ((val env)) in
-  Base_quickcheck.Test.run_exn
-    (module Q)
+  let (module Qc) = f env in
+  let module Ty = Src.Expression.Type_check ((val env)) in
+  Q.Test.run_exn
+    (module Qc)
     ~f:(fun e ->
-      [%test_result: Type.t Or_error.t] (Ty.type_of e) ~here:[[%here]]
-        ~equal:[%compare.equal: Type.t Or_error.t]
+      [%test_result: Src.Type.t Or_error.t] (Ty.type_of e) ~here:[[%here]]
+        ~equal:[%compare.equal: Src.Type.t Or_error.t]
         ~expect:(Or_error.return ty))
 
 let test_all_expressions_in_env
     (f :
-         (module Env_types.S)
-      -> (module Base_quickcheck.Test.S with type t = Expression.t)) : unit
-    =
+         (module Src.Env_types.S)
+      -> (module Q.Test.S with type t = Src.Expression.t)) : unit =
   let (module E) = Lazy.force Env.test_env_mod in
   let (module Q) = f (module E) in
   Base_quickcheck.Test.run_exn
     (module Q)
     ~f:
-      ([%test_pred: Expression.t]
-         (Expression.On_identifiers.for_all ~f:(Map.mem E.env))
+      ([%test_pred: Src.Expression.t]
+         (Src.Expression.On_identifiers.for_all ~f:(Map.mem E.env))
          ~here:[[%here]])
 
 let%test_module "Int_values" =
   ( module struct
-    let print_sample (module E : Act_c_mini.Env_types.S) =
-      print_sample
+    let print_sample (module E : Src.Env_types.S) =
+      Qx.print_sample
         ( module struct
-          include Act_c_mini.Expression
-          include Int_values (E)
+          include Src.Expression
+          include Src.Expression_gen.Int_values (E)
         end )
 
     let%expect_test "sample" =
@@ -115,20 +112,21 @@ let%test_module "Int_values" =
 
     let%test_unit "all expressions have 'int' type" =
       test_all_expressions_have_type
-        (fun e -> (module Int_values ((val e))))
-        Type.(normal Basic.int)
+        (fun e -> (module Src.Expression_gen.Int_values ((val e))))
+        Src.Type.(normal Basic.int)
 
     let%test_unit "all referenced variables in environment" =
-      test_all_expressions_in_env (fun e -> (module Int_values ((val e))))
+      test_all_expressions_in_env (fun e ->
+          (module Src.Expression_gen.Int_values ((val e))))
   end )
 
 let%test_module "Bool_values" =
   ( module struct
-    let print_sample (module E : Act_c_mini.Env_types.S) =
-      print_sample
+    let print_sample (module E : Src.Env_types.S) =
+      Qx.print_sample
         ( module struct
-          include Act_c_mini.Expression
-          include Bool_values (E)
+          include Src.Expression
+          include Src.Expression_gen.Bool_values (E)
         end )
 
     let%expect_test "sample" =
@@ -195,9 +193,10 @@ let%test_module "Bool_values" =
 
     let%test_unit "all expressions have 'bool' type" =
       test_all_expressions_have_type
-        (fun e -> (module Bool_values ((val e))))
-        Type.(normal Basic.bool)
+        (fun e -> (module Src.Expression_gen.Bool_values ((val e))))
+        Src.Type.(normal Basic.bool)
 
     let%test_unit "all referenced variables in environment" =
-      test_all_expressions_in_env (fun e -> (module Bool_values ((val e))))
+      test_all_expressions_in_env (fun e ->
+          (module Src.Expression_gen.Bool_values ((val e))))
   end )

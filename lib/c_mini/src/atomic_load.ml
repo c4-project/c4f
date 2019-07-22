@@ -56,14 +56,6 @@ module Type_check (E : Env_types.S) = struct
     Type.to_non_atomic a
 end
 
-let%expect_test "type_of: atomic_int* -> int" =
-  let (module E) = Lazy.force Env.test_env_mod in
-  let module Ty = Type_check (E) in
-  let src = Address.lvalue (Lvalue.variable (Ac.C_id.of_string "bar")) in
-  let ld = make ~src ~mo:Mem_order.Seq_cst in
-  Stdio.print_s [%sexp (Ty.type_of ld : Type.t Or_error.t)] ;
-  [%expect {| (Ok (Normal int)) |}]
-
 module Quickcheck_generic
     (A : Act_utils.My_quickcheck.S_with_sexp with type t := Address.t) : sig
   type nonrec t = t [@@deriving sexp_of, quickcheck]
@@ -98,18 +90,3 @@ let variable_of (ld : t) : Ac.C_id.t = Address.variable_of (src ld)
 
 let variable_in_env (ld : t) ~(env : _ Ac.C_id.Map.t) : bool =
   Address.variable_in_env (src ld) ~env
-
-let%test_unit "Quickcheck_atomic_ints: liveness" =
-  let (module E) = Lazy.force Env.test_env_mod in
-  let module Q = Quickcheck_atomic_ints (E) in
-  Core_kernel.Quickcheck.test_can_generate [%quickcheck.generator: Q.t]
-    ~sexp_of:[%sexp_of: t]
-    ~f:(variable_in_env ~env:E.env)
-
-let%test_unit "Quickcheck_atomic_ints: generated underlying variables in \
-               environment" =
-  let (module E) = Lazy.force Env.test_env_mod in
-  let module Q = Quickcheck_atomic_ints (E) in
-  Base_quickcheck.Test.run_exn
-    (module Q)
-    ~f:([%test_pred: t] ~here:[[%here]] (variable_in_env ~env:E.env))
