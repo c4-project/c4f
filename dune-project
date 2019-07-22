@@ -32,5 +32,8 @@
     (textutils_kernel (and (>= v0.12) (< v0.13)))
     (travesty (and (>= 0.6.0) (< 0.7)))
     (yojson (and (>= 1.7) (< 2)))
-  ))
+    ))
 
+; Local Variables:
+; mode: lisp
+; End:

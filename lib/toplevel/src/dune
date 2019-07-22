@@ -1,3 +1,5 @@
+; -*- mode: lisp; -*-
+
 (library
  (name toplevel)
  ; This module is deliberately left private, as it's so tightly coupled to the

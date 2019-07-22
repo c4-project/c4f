@@ -12,49 +12,67 @@
 open Base
 open Base_quickcheck
 open Stdio
-
 open Act_fuzz
 open Act_fuzz.Trace
 
-let%test_module "S-expression representation" = (module struct
-  module Dummy_payload = struct
-    type t = { foo: int; bar: bool; baz: string } [@@deriving sexp, quickcheck]
-  end
+let%test_module "S-expression representation" =
+  ( module struct
+    module Dummy_payload = struct
+      type t = {foo: int; bar: bool; baz: string}
+      [@@deriving sexp, quickcheck]
+    end
 
-  module Dummy_action : Action_types.S with type Random_state.t = Dummy_payload.t = struct
-    let name = Act_common.Id.of_string "dummy.action"
-    let available = Action.always
-    let default_weight = 1
-    let readme () = {| This is a module that is almost, but not quite, entirely unlike a fuzzer action. |}
-    module Random_state = Action.Pure_random_state(Dummy_payload)
+    module Dummy_action :
+      Action_types.S with type Random_state.t = Dummy_payload.t = struct
+      let name = Act_common.Id.of_string "dummy.action"
 
-    let run subject _rstate = State.Monad.return subject
-  end
+      let available = Action.always
 
-  module Another_dummy_action : Action_types.S with type Random_state.t = unit = struct
-    let name = Act_common.Id.of_string "another.dummy.action"
-    let available = Action.always
-    let default_weight = 1
-    let readme () = {| This is also a module that is almost, but not quite, entirely unlike a fuzzer action. |}
-    module Random_state = Action.No_random_state
+      let default_weight = 1
 
-    let run subject _rstate = State.Monad.return subject
-  end
+      let readme () =
+        {| This is a module that is almost, but not quite, entirely unlike a fuzzer action. |}
 
-  let%expect_test "empty trace" =
-    print_s [%sexp (empty : t)];
-    [%expect {| () |}]
+      module Random_state = Action.Pure_random_state (Dummy_payload)
 
-  let%expect_test "example trace" =
-    let trace =
-      empty
-      |> add ~action:(module Dummy_action) ~payload:{ foo = 27; bar = true; baz = "hello" }
-      |> add ~action:(module Another_dummy_action) ~payload:()
-      |> add ~action:(module Dummy_action) ~payload:{ foo = 53; bar = false; baz = "world" }
-    in
-    print_s [%sexp (trace : t)];
-    [%expect {|
+      let run subject _rstate = State.Monad.return subject
+    end
+
+    module Another_dummy_action :
+      Action_types.S with type Random_state.t = unit = struct
+      let name = Act_common.Id.of_string "another.dummy.action"
+
+      let available = Action.always
+
+      let default_weight = 1
+
+      let readme () =
+        {| This is also a module that is almost, but not quite, entirely unlike a fuzzer action. |}
+
+      module Random_state = Action.No_random_state
+
+      let run subject _rstate = State.Monad.return subject
+    end
+
+    let%expect_test "empty trace" =
+      print_s [%sexp (empty : t)] ;
+      [%expect {| () |}]
+
+    let%expect_test "example trace" =
+      let trace =
+        empty
+        |> add
+             ~action:(module Dummy_action)
+             ~payload:{foo= 27; bar= true; baz= "hello"}
+        |> add ~action:(module Another_dummy_action) ~payload:()
+        |> add
+             ~action:(module Dummy_action)
+             ~payload:{foo= 53; bar= false; baz= "world"}
+      in
+      print_s [%sexp (trace : t)] ;
+      [%expect
+        {|
       (((name (dummy action)) (payload ((foo 27) (bar true) (baz hello))))
        ((name (another dummy action)) (payload ()))
        ((name (dummy action)) (payload ((foo 53) (bar false) (baz world))))) |}]
-end)
+  end )

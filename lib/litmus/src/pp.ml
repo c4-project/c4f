@@ -61,7 +61,7 @@ module Generic = struct
 end
 
 module type Basic = sig
-  module Ast : Ast.S
+  module Ast : Ast_types.S
 
   val print_programs_inner :
     Out_channel.t -> Ast.Lang.Program.t list -> unit
@@ -100,7 +100,7 @@ module Make_common (B : Basic) = struct
       litmus
 end
 
-module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
+module Make_tabular (Ast : Ast_types.S) : S with module Ast = Ast = struct
   module Ast = Ast
 
   module Specific = struct
@@ -154,7 +154,8 @@ module Make_tabular (Ast : Ast.S) : S with module Ast = Ast = struct
   end)
 end
 
-module Make_sequential (Ast : Ast.S) : S with module Ast = Ast = struct
+module Make_sequential (Ast : Ast_types.S) : S with module Ast = Ast =
+struct
   module Ast = Ast
 
   module Specific = struct

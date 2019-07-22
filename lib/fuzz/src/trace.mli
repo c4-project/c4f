@@ -22,6 +22,10 @@ type t [@@deriving sexp]
 val empty : t
 (** The empty trace. *)
 
-val add : t -> action:(module Action_types.S with type Random_state.t = 'r) -> payload:'r -> t
+val add :
+     t
+  -> action:(module Action_types.S with type Random_state.t = 'r)
+  -> payload:'r
+  -> t
 (** [add t ~action ~state] appends action [action], with name [id] and
     payload [payload], to the trace. *)

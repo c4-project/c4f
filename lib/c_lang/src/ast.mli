@@ -139,13 +139,13 @@ module Translation_unit : sig
 end
 
 module Litmus_lang :
-  Act_litmus.Ast.Basic
+  Act_litmus.Ast_types.Basic
     with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
      and type Program.t = Function_def.t
      and type Constant.t = Constant.t
 
 module Litmus : sig
-  include Act_litmus.Ast.S with module Lang := Litmus_lang
+  include Act_litmus.Ast_types.S with module Lang := Litmus_lang
 
   module Id : module type of Act_common.Litmus_id
 end

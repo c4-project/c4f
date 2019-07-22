@@ -26,7 +26,7 @@ module Tx = Travesty_base_exts
 module Ac = Act_common
 
 module Lang :
-  Act_litmus.Ast.Basic
+  Act_litmus.Ast_types.Basic
     with type Statement.t =
           [`Stm of Statement.t | `Decl of Initialiser.t Named.t]
      and type Program.t = Function.t Named.t

@@ -26,7 +26,7 @@ open Stdio
 module Id = Act_common.Litmus_id
 
 module type S = sig
-  module Ast : Ast.S
+  module Ast : Ast_types.S
 
   val print : Out_channel.t -> Ast.Validated.t -> unit
   (** [print oc ast] prints [ast] on output channel [oc]. *)

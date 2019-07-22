@@ -34,7 +34,7 @@ module type Basic = sig
   (** [Dst_lang] is the language used in emitted Litmus tests. *)
 
   module Litmus_ast :
-    Act_litmus.Ast.S
+    Act_litmus.Ast_types.S
       with type Lang.Program.t = Dst_lang.Program.t
        and type Lang.Constant.t = Dst_lang.Constant.t
 

@@ -25,7 +25,7 @@ open Core_kernel (* not Base; for Blang *)
 
 module Tx = Travesty_base_exts
 module Ac = Act_common
-include Ast_intf
+open Ast_types
 
 module Make (Lang : Basic) : S with module Lang = Lang = struct
   module Lang = Lang

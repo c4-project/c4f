@@ -744,7 +744,7 @@ module Translation_unit = struct
 end
 
 module Litmus_lang :
-  Act_litmus.Ast.Basic
+  Act_litmus.Ast_types.Basic
     with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
      and type Program.t = Function_def.t
      and type Constant.t = Constant.t = struct

@@ -25,10 +25,10 @@ open Base
 
 (** Signature of inputs to the {{!Convert.Make} Make} functor. *)
 module type Basic = sig
-  module From : Ast.S
+  module From : Ast_types.S
   (** The Litmus language from which we're converting. *)
 
-  module To : Ast.S
+  module To : Ast_types.S
   (** The Litmus language to which we're converting. *)
 
   val constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t

@@ -13,8 +13,9 @@ open Core (* for Filename.arg_type *)
 
 open Act_common
 
-let write_trace (trace : Act_fuzz.Trace.t) (oc : Stdio.Out_channel.t) : unit Or_error.t =
-  Sexp.output_hum oc [%sexp (trace : Act_fuzz.Trace.t)];
+let write_trace (trace : Act_fuzz.Trace.t) (oc : Stdio.Out_channel.t) :
+    unit Or_error.t =
+  Sexp.output_hum oc [%sexp (trace : Act_fuzz.Trace.t)] ;
   Result.ok_unit
 
 let run ?(seed : int option) ?(trace_output : string option)

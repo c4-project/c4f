@@ -23,8 +23,7 @@
 
 (** Top-level AST for Litmus tests *)
 
-include module type of Ast_intf
-(** @inline *)
+open Ast_types
 
 module Make (Lang : Basic) : S with module Lang = Lang
 (** [Make] is a functor that, given a language described by [Basic],

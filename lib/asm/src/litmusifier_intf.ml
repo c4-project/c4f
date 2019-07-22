@@ -34,7 +34,7 @@ module type S = sig
   type program
   (** Type of incoming programs. *)
 
-  module Litmus : Act_litmus.Ast.S
+  module Litmus : Act_litmus.Ast_types.S
   (** The AST module for the litmus test language we're targeting. *)
 
   module Redirect : Act_common.Redirect_map_intf.S

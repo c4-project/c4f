@@ -33,13 +33,13 @@ open Base
     This language uses {{!Reify} Reify} for all of its pretty-printing
     needs. *)
 module Lang :
-  Act_litmus.Ast.Basic
+  Act_litmus.Ast_types.Basic
     with type Statement.t =
           [`Stm of Statement.t | `Decl of Initialiser.t Named.t]
      and type Program.t = Function.t Named.t
      and type Constant.t = Act_c_lang.Ast_basic.Constant.t
 
-module Ast : Act_litmus.Ast.S with module Lang = Lang
+module Ast : Act_litmus.Ast_types.S with module Lang = Lang
 (** The mini-model's full Litmus AST module. *)
 
 module Pp : Act_litmus.Pp_intf.S with module Ast = Ast

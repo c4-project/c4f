@@ -30,12 +30,13 @@ include Pb.Filter.Make (struct
     let {Aux.seed; o; config} = Pb.Filter_context.aux ctx in
     let input = Pb.Filter_context.input ctx in
     Or_error.Let_syntax.(
-      let%bind raw = Act_c_lang.Frontend.Litmus.load_from_ic
-          ~path:(Pb.Input.to_string input) ic
+      let%bind raw =
+        Act_c_lang.Frontend.Litmus.load_from_ic
+          ~path:(Pb.Input.to_string input)
+          ic
       in
       let%bind test = Act_c_mini.Convert.litmus_of_raw_ast raw in
-      let%map (test', trace) = Fuzzer.run ?seed ~o ~config test in
-      Act_c_mini.Litmus.Pp.print oc test';
-      trace
-    )
+      let%map test', trace = Fuzzer.run ?seed ~o ~config test in
+      Act_c_mini.Litmus.Pp.print oc test' ;
+      trace)
 end)
