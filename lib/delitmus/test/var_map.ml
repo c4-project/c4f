@@ -26,16 +26,16 @@ let%test_module "with example map" =
            (module Li)
            [ ( Li.of_string "0:r0"
              , Rc.make ~c_id:(Ci.of_string "t0r0")
-                 ~c_type:(Ct.normal Ct.Basic.int) ~is_global:true )
+                 ~c_type:(Ct.int ()) ~is_global:true )
            ; ( Li.of_string "1:r0"
              , Rc.make ~c_id:(Ci.of_string "t1r0")
-                 ~c_type:(Ct.normal Ct.Basic.bool) ~is_global:true )
+                 ~c_type:(Ct.bool ()) ~is_global:true )
            ; ( Li.of_string "1:tmp"
              , Rc.make ~c_id:(Ci.of_string "t1tmp")
-                 ~c_type:(Ct.normal Ct.Basic.int) ~is_global:false )
+                 ~c_type:(Ct.int ()) ~is_global:false )
            ; ( Li.of_string "x"
              , Rc.make ~c_id:(Ci.of_string "x")
-                 ~c_type:(Ct.normal Ct.Basic.atomic_int)
+                 ~c_type:(Ct.int ~atomic:true ())
                  ~is_global:true ) ])
 
     let%expect_test "global_c_variables" =

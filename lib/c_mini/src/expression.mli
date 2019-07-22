@@ -14,6 +14,22 @@
 type t [@@deriving sexp, compare, equal]
 (** Opaque type of expressions. *)
 
+(** {2 Binary operators} *)
+
+module Bop : sig
+  type t = Eq | L_and | L_or [@@deriving sexp, compare, equal]
+  (** Enumeration of binary operators. *)
+
+  val eq : t
+  (** [eq] is the equality operator. *)
+
+  val l_and : t
+  (** [l_and] is the logical AND operator. *)
+
+  val l_or : t
+  (** [l_or] is the logical OR operator. *)
+end
+
 (** {2 Constructors} *)
 
 val atomic_load : Atomic_load.t -> t
@@ -25,8 +41,18 @@ val bool_lit : bool -> t
 val constant : Act_c_lang.Ast_basic.Constant.t -> t
 (** [constant k] lifts a C constant [k] to an expression. *)
 
+val bop : Bop.t -> t -> t -> t
+(** [bop b l r] builds an arbitrary bop expression. *)
+
 val eq : t -> t -> t
-(** [eq l r] generates an equality expression. *)
+(** [eq l r] builds an equality expression. *)
+
+val l_and : t -> t -> t
+(** [l_and l r] builds a logical AND expression. *)
+
+val l_or : t -> t -> t
+(** [l_or l r] builds a logical OR expression. *)
+
 
 val lvalue : Lvalue.t -> t
 (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
@@ -39,9 +65,9 @@ val reduce :
   -> constant:(Act_c_lang.Ast_basic.Constant.t -> 'a)
   -> lvalue:(Lvalue.t -> 'a)
   -> atomic_load:(Atomic_load.t -> 'a)
-  -> eq:('a -> 'a -> 'a)
+  -> bop:(Bop.t -> 'a -> 'a -> 'a)
   -> 'a
-(** [reduce expr ~bool_lit ~constant ~lvalue ~atomic_load ~eq] recursively
+(** [reduce expr ~bool_lit ~constant ~lvalue ~atomic_load ~bop] recursively
     reduces [expr] to a single value, using the given functions at each
     corresponding stage of the expression tree. *)
 

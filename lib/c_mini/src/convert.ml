@@ -78,15 +78,16 @@ let ensure_statements :
 
 let defined_types : (Ac.C_id.t, Type.Basic.t) List.Assoc.t Lazy.t =
   lazy
-    [ (Ac.C_id.of_string "atomic_int", Type.Basic.atomic_int)
-    ; (Ac.C_id.of_string "bool", Type.Basic.bool) ]
+    Type.Basic.[ (Ac.C_id.of_string "atomic_bool", bool ~atomic:true ())
+               ; (Ac.C_id.of_string "atomic_int", int ~atomic:true ())
+               ; (Ac.C_id.of_string "bool", bool ()) ]
 
 let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
     Type.Basic.t Or_error.t =
   let open Or_error.Let_syntax in
   match%bind Tx.List.one quals with
   | `Int ->
-      return Type.Basic.int
+      return (Type.Basic.int ())
   | `Defined_type t ->
       t
       |> List.Assoc.find ~equal:Ac.C_id.equal (Lazy.force defined_types)
@@ -143,11 +144,11 @@ let decl (d : Ast.Decl.t) : (Act_common.C_id.t * Initialiser.t) Or_error.t =
   let open Or_error.Let_syntax in
   let%bind basic_type = qualifiers_to_basic_type d.qualifiers in
   let%bind idecl = Tx.List.one d.declarator in
-  let%bind name, is_pointer = declarator_to_id idecl.declarator in
+  let%bind name, pointer = declarator_to_id idecl.declarator in
   let%map value =
     Tx.Option.With_errors.map_m idecl.initialiser ~f:value_of_initialiser
   in
-  let ty = Type.of_basic ~is_pointer basic_type in
+  let ty = Type.of_basic ~pointer basic_type in
   (name, Initialiser.make ~ty ?value ())
 
 let validate_func_void_type (f : Ast.Function_def.t) : Validate.t =
@@ -172,8 +173,8 @@ let param_decl : Ast.Param_decl.t -> Type.t Named.t Or_error.t = function
   | {qualifiers; declarator= `Concrete declarator} ->
       let open Or_error.Let_syntax in
       let%map basic_type = qualifiers_to_basic_type qualifiers
-      and name, is_pointer = declarator_to_id declarator in
-      let value = Type.of_basic ~is_pointer basic_type in
+      and name, pointer = declarator_to_id declarator in
+      let value = Type.of_basic ~pointer basic_type in
       Named.make value ~name
 
 let param_type_list :

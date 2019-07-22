@@ -113,7 +113,7 @@ let%test_module "Int_values" =
     let%test_unit "all expressions have 'int' type" =
       test_all_expressions_have_type
         (fun e -> (module Src.Expression_gen.Int_values ((val e))))
-        Src.Type.(normal Basic.int)
+        Src.Type.(int ())
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->
@@ -136,19 +136,19 @@ let%test_module "Bool_values" =
       (Bool_lit false)
       (Bool_lit true)
       (Lvalue (Variable barbaz))
-      (Eq (Constant (Integer -879720314))
+      (Bop Eq (Constant (Integer -879720314))
        (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_acquire))))
-      (Eq (Constant (Integer -209))
+      (Bop Eq (Constant (Integer -209))
        (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_consume))))
-      (Eq (Constant (Integer -24)) (Lvalue (Variable foo)))
-      (Eq (Constant (Integer 8)) (Constant (Integer -98)))
-      (Eq (Constant (Integer 7471)) (Constant (Integer 1234853)))
-      (Eq (Constant (Integer 12062)) (Constant (Integer 918)))
-      (Eq (Lvalue (Variable foo)) (Lvalue (Variable foo)))
-      (Eq
+      (Bop Eq (Constant (Integer -24)) (Lvalue (Variable foo)))
+      (Bop Eq (Constant (Integer 8)) (Constant (Integer -98)))
+      (Bop Eq (Constant (Integer 7471)) (Constant (Integer 1234853)))
+      (Bop Eq (Constant (Integer 12062)) (Constant (Integer 918)))
+      (Bop Eq (Lvalue (Variable foo)) (Lvalue (Variable foo)))
+      (Bop Eq
        (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_acquire)))
        (Constant (Integer 57529197)))
-      (Eq
+      (Bop Eq
        (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_relaxed)))
        (Lvalue (Deref (Variable blep)))) |}]
 
@@ -158,21 +158,23 @@ let%test_module "Bool_values" =
         {|
       (Bool_lit false)
       (Bool_lit true)
-      (Eq (Constant (Integer -32276))
+      (Bop Eq (Constant (Integer -32276))
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_consume))))
-      (Eq (Constant (Integer -22537)) (Constant (Integer -28705)))
-      (Eq (Constant (Integer -18)) (Constant (Integer 664)))
-      (Eq (Constant (Integer 6)) (Constant (Integer -32)))
-      (Eq (Constant (Integer 20))
+      (Bop Eq (Constant (Integer -22537)) (Constant (Integer -28705)))
+      (Bop Eq (Constant (Integer -18)) (Constant (Integer 664)))
+      (Bop Eq (Constant (Integer 6)) (Constant (Integer -32)))
+      (Bop Eq (Constant (Integer 20))
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_consume))))
-      (Eq (Constant (Integer 1129))
+      (Bop Eq (Constant (Integer 1129))
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst))))
-      (Eq (Constant (Integer 1136)) (Constant (Integer 13418)))
-      (Eq (Constant (Integer 14202)) (Constant (Integer -1736309620)))
-      (Eq (Constant (Integer 18140)) (Constant (Integer -1)))
-      (Eq (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
+      (Bop Eq (Constant (Integer 1136)) (Constant (Integer 13418)))
+      (Bop Eq (Constant (Integer 14202)) (Constant (Integer -1736309620)))
+      (Bop Eq (Constant (Integer 18140)) (Constant (Integer -1)))
+      (Bop Eq
+       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
        (Constant (Integer 10703535)))
-      (Eq (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
+      (Bop Eq
+       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_acquire)))) |}]
 
     let%expect_test "sample (environment is empty)" =
@@ -181,20 +183,20 @@ let%test_module "Bool_values" =
         {|
       (Bool_lit false)
       (Bool_lit true)
-      (Eq (Constant (Integer -38250)) (Constant (Integer -37287526)))
-      (Eq (Constant (Integer -32276)) (Constant (Integer -23556581)))
-      (Eq (Constant (Integer -4713)) (Constant (Integer -780780327)))
-      (Eq (Constant (Integer 664)) (Constant (Integer 7627)))
-      (Eq (Constant (Integer 1129)) (Constant (Integer -31235266)))
-      (Eq (Constant (Integer 7471)) (Constant (Integer 1234853)))
-      (Eq (Constant (Integer 509412)) (Constant (Integer -972508553)))
-      (Eq (Constant (Integer 57529197)) (Constant (Integer 115)))
-      (Eq (Constant (Integer 89301152)) (Constant (Integer -96))) |}]
+      (Bop Eq (Constant (Integer -38250)) (Constant (Integer -37287526)))
+      (Bop Eq (Constant (Integer -32276)) (Constant (Integer -23556581)))
+      (Bop Eq (Constant (Integer -4713)) (Constant (Integer -780780327)))
+      (Bop Eq (Constant (Integer 664)) (Constant (Integer 7627)))
+      (Bop Eq (Constant (Integer 1129)) (Constant (Integer -31235266)))
+      (Bop Eq (Constant (Integer 7471)) (Constant (Integer 1234853)))
+      (Bop Eq (Constant (Integer 509412)) (Constant (Integer -972508553)))
+      (Bop Eq (Constant (Integer 57529197)) (Constant (Integer 115)))
+      (Bop Eq (Constant (Integer 89301152)) (Constant (Integer -96))) |}]
 
     let%test_unit "all expressions have 'bool' type" =
       test_all_expressions_have_type
         (fun e -> (module Src.Expression_gen.Bool_values ((val e))))
-        Src.Type.(normal Basic.bool)
+        Src.Type.(bool ())
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->

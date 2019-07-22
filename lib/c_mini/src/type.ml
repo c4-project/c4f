@@ -33,23 +33,15 @@ module Basic = struct
   module M = struct
     type t = {atomic: bool; prim: Prim.t} [@@deriving equal, enumerate]
 
-    let int_type ~(is_atomic : bool) : t = {atomic= is_atomic; prim= Int}
+    let int ?(atomic : bool = false) () : t = {atomic; prim= Int}
 
-    let int = int_type ~is_atomic:false
+    let bool ?(atomic : bool = false) () : t = {atomic; prim= Bool}
 
-    let atomic_int = int_type ~is_atomic:true
-
-    let bool_type ~(is_atomic : bool) : t = {atomic= is_atomic; prim= Bool}
-
-    let bool = bool_type ~is_atomic:false
-
-    let atomic_bool = bool_type ~is_atomic:true
-
-    let table =
-      [ (int, "int")
-      ; (atomic_int, "atomic_int")
-      ; (bool, "bool")
-      ; (atomic_bool, "atomic_bool") ]
+    let table: (t, string) List.Assoc.t =
+      [ (int (), "int")
+      ; (int ~atomic:true (), "atomic_int")
+      ; (bool (), "bool")
+      ; (bool ~atomic:true (), "atomic_bool") ]
   end
 
   module M_enum = struct
@@ -86,8 +78,8 @@ end
 
 include M
 
-let of_basic (ty : Basic.t) ~(is_pointer : bool) : t =
-  (if is_pointer then pointer_to else normal) ty
+let of_basic ?(pointer : bool = false) (ty : Basic.t) : t =
+  (if pointer then pointer_to else normal) ty
 
 let basic_type : t -> Basic.t = function Normal x | Pointer_to x -> x
 
@@ -122,11 +114,11 @@ let to_non_atomic : t -> t Or_error.t = function
   | Pointer_to k ->
       Or_error.(k |> Basic.to_non_atomic >>| pointer_to)
 
-let bool_type ~(is_atomic : bool) ~(is_pointer : bool) : t =
-  of_basic (Basic.bool_type ~is_atomic) ~is_pointer
+let bool ?(atomic : bool option) ?(pointer : bool option) () : t =
+  of_basic (Basic.bool ?atomic ()) ?pointer
 
-let int_type ~(is_atomic : bool) ~(is_pointer : bool) : t =
-  of_basic (Basic.int_type ~is_atomic) ~is_pointer
+let int ?(atomic : bool option) ?(pointer : bool option) () : t =
+  of_basic (Basic.int ?atomic ()) ?pointer
 
 module Str = struct
   type nonrec t = t

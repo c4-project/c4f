@@ -20,3 +20,8 @@ module Bool_values (E : Env_types.S) :
   Act_utils.My_quickcheck.S_with_sexp with type t = Expression.t
 (** Generates random, type-safe expressions over the given variable typing
     environment, with type 'bool'. *)
+
+module Bool_tautologies (E : Env_types.S_with_known_values) :
+  Act_utils.My_quickcheck.S_with_sexp with type t = Expression.t
+(** Generates random, type-safe expressions over the given variable typing
+    environment, with type 'bool' and guaranteed 'true' value. *)

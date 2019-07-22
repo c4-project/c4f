@@ -38,7 +38,7 @@ module Atomic_int_pointers (E : Env_types.S) : sig
 end =
   Typed_pointers_on_env
     (struct
-      let basic_type = Type.Basic.atomic_int
+      let basic_type = Type.Basic.int ~atomic:true ()
     end)
     (E)
 
@@ -47,6 +47,6 @@ module Atomic_bool_pointers (E : Env_types.S) : sig
 end =
   Typed_pointers_on_env
     (struct
-      let basic_type = Type.Basic.atomic_bool
+      let basic_type = Type.Basic.bool ~atomic:true ()
     end)
     (E)

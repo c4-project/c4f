@@ -51,7 +51,7 @@ module Make_global :
   let run (subject : Subject.Test.t)
       ({is_atomic; initial_value; name} : Random_state.t) :
       Subject.Test.t State.Monad.t =
-    let ty = Act_c_mini.Type.int_type ~is_atomic ~is_pointer:true in
+    let ty = Act_c_mini.Type.int ~atomic:is_atomic ~pointer:true () in
     let open State.Monad.Let_syntax in
     let%map () =
       State.Monad.register_global ty name

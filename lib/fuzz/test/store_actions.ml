@@ -29,9 +29,9 @@ let%test_module "int tests" =
       lazy
         Act_c_mini.
           [ ( Act_common.C_id.of_string "x"
-            , Type.(pointer_to Basic.atomic_int) )
+            , Type.(int ~pointer:true ~atomic:true ()))
           ; ( Act_common.C_id.of_string "y"
-            , Type.(pointer_to Basic.atomic_int) ) ]
+            , Type.(int ~pointer:true ~atomic:true ())) ]
 
     let body_stms : Act_c_mini.Statement.t list Lazy.t =
       lazy
@@ -92,12 +92,12 @@ let%test_module "int tests" =
     let prepare_fuzzer_state () : unit State.Monad.t =
       State.Monad.(
         register_global
-          Act_c_mini.Type.(pointer_to Basic.atomic_int)
+          Act_c_mini.Type.(int ~pointer:true ~atomic:true ())
           (Act_common.C_id.of_string "gen1")
           ~initial_value:(Var.Value.Int 1337)
         >>= fun () ->
         register_global
-          Act_c_mini.Type.(pointer_to Basic.atomic_int)
+          Act_c_mini.Type.(int ~pointer:true ~atomic:true ())
           (Act_common.C_id.of_string "gen2")
           ~initial_value:(Var.Value.Int (-55)))
 

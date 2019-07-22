@@ -20,14 +20,14 @@ let test_env : Type.t Map.M(Ac.C_id).t Lazy.t =
     (Map.of_alist_exn
        (module Ac.C_id)
        Type.
-         [ (Ac.C_id.of_string "foo", normal Basic.int)
-         ; (Ac.C_id.of_string "bar", pointer_to Basic.atomic_int)
-         ; (Ac.C_id.of_string "barbaz", normal Basic.bool)
-         ; (Ac.C_id.of_string "foobaz", pointer_to Basic.atomic_bool)
-         ; (Ac.C_id.of_string "x", normal Basic.atomic_int)
-         ; (Ac.C_id.of_string "y", normal Basic.atomic_int)
-         ; (Ac.C_id.of_string "z", normal Basic.atomic_bool)
-         ; (Ac.C_id.of_string "blep", pointer_to Basic.int) ])
+         [ (Ac.C_id.of_string "foo", int ())
+         ; (Ac.C_id.of_string "bar", int ~pointer:true ~atomic:true ())
+         ; (Ac.C_id.of_string "barbaz", bool ())
+         ; (Ac.C_id.of_string "foobaz", bool ~pointer:true ~atomic:true ())
+         ; (Ac.C_id.of_string "x", int ~atomic:true ())
+         ; (Ac.C_id.of_string "y", int ~atomic:true ())
+         ; (Ac.C_id.of_string "z", bool ~atomic:true ())
+         ; (Ac.C_id.of_string "blep", int ~pointer:true ()) ])
 
 let lift_to_lazy_mod (e : Type.t Ac.C_id.Map.t Lazy.t) :
     (module Env_types.S) Lazy.t =
@@ -46,7 +46,7 @@ let test_env_atomic_ptrs_only : Type.t Ac.C_id.Map.t Lazy.t =
     >>| Ac.C_id.Map.filter
           ~f:
             Type.(
-              Tx.Fn.(is_pointer &&& basic_type_is ~basic:Basic.atomic_int)))
+              Tx.Fn.(is_pointer &&& basic_type_is ~basic:Basic.(int ~atomic:true ()))))
 
 let test_env_atomic_ptrs_only_mod : (module Env_types.S) Lazy.t =
   lift_to_lazy_mod test_env_atomic_ptrs_only

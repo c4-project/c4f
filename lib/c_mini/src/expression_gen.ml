@@ -38,9 +38,9 @@ module Int_values (E : Env_types.S) :
         , fun () ->
             Q.Generator.map ~f:Expression.constant
               Constant.gen_int32_constant )
-      ; ( E.has_variables_of_basic_type Type.Basic.atomic_int
+      ; ( E.has_variables_of_basic_type Type.Basic.(int ~atomic:true ())
         , gen_atomic_int_load )
-      ; (E.has_variables_of_basic_type Type.Basic.int, gen_int_lvalue) ]
+      ; (E.has_variables_of_basic_type Type.Basic.(int ()), gen_int_lvalue) ]
 
   (* let recursive_generators (_mu : t Gen.t) : t Gen.t list = [] (* No
      useful recursive expression types yet. *) ;; *)
@@ -86,7 +86,7 @@ end = struct
     eval_guards
       [ (true, fun () -> gen_const)
       ; (true, fun () -> gen_int_relational)
-      ; (E.has_variables_of_basic_type Type.Basic.bool, gen_bool_lvalue) ]
+      ; (E.has_variables_of_basic_type Type.Basic.(bool ()), gen_bool_lvalue) ]
 
   let quickcheck_generator : t Q.Generator.t =
     Q.Generator.union base_generators
@@ -96,4 +96,45 @@ end = struct
 
   (* TODO(@MattWindsor91): implement this *)
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
+end
+
+module Bool_tautologies (E : Env_types.S_with_known_values) : sig
+  type t = Expression.t [@@deriving sexp_of, quickcheck]
+end = struct
+  (* Define by using the bool-values quickcheck instance, but swap out the
+     generator. *)
+  module BV = Bool_values (E)
+  include BV
+
+  let base_generators : t Q.Generator.t list =
+    (* Use thunks here to prevent accidentally evaluating a generator that
+       can't possibly work---eg, an atomic load when we don't have any
+       atomic variables. *)
+    eval_guards
+      [ (true, fun () -> Q.Generator.return (Expression.bool_lit true))
+      ]
+
+  let gen_and (mu : t Q.Generator.t) : t Q.Generator.t =
+    (* Since both sides of a tautological AND must be tautological, we
+       use the tautological generator twice. *)
+    Q.Generator.map2 mu mu ~f:Expression.l_and
+
+  let gen_short_or (mu : t Q.Generator.t) : t Q.Generator.t =
+    (* Ensuring short-circuit by using tautological generator first. *)
+    Q.Generator.map2 mu BV.quickcheck_generator ~f:Expression.l_or
+
+  let gen_long_or (mu : t Q.Generator.t) : t Q.Generator.t =
+    (* We need at least one of the terms to be tautological; this is the
+       'long' version that only guarantees the RHS is. *)
+    Q.Generator.map2 BV.quickcheck_generator mu ~f:Expression.l_or
+
+  let recursive_generators (mu : t Q.Generator.t) : t Q.Generator.t list =
+    eval_guards
+      [ (true, fun () -> gen_and mu)
+      ; (true, fun () -> gen_short_or mu)
+      ; (true, fun () -> gen_long_or mu) ]
+
+  let quickcheck_generator : t Q.Generator.t =
+    Q.Generator.recursive_union base_generators
+      ~f:recursive_generators
 end

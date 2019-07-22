@@ -34,17 +34,11 @@ module Basic : sig
   type t
   (** Opaque type of basic types. *)
 
-  val bool : t
-  (** [bool] is the (C99?) Boolean type. *)
+  val bool : ?atomic:bool -> unit -> t
+  (** [bool ?atomic ()] is the (C99?) Boolean, or C11 atomic_bool, type. *)
 
-  val int : t
-  (** [int] is the int type. *)
-
-  val atomic_bool : t
-  (** [atomic_bool] is the atomic_bool type. *)
-
-  val atomic_int : t
-  (** [atomic_int] is the atomic_int type. *)
+  val int : ?atomic:bool -> unit -> t
+  (** [int] is the int, or C11 atomic_int, type. *)
 
   include Enum.Extension_table with type t := t
 
@@ -80,17 +74,19 @@ val normal : Basic.t -> t
 val pointer_to : Basic.t -> t
 (** [pointer_to ty] lifts a basic type [ty] to a pointer type. *)
 
-val of_basic : Basic.t -> is_pointer:bool -> t
-(** [of_basic ty ~is_pointer] lifts a basic type [ty] to a pointer type if
-    [is_pointer] is true, and a normal one otherwise. *)
+val of_basic : ?pointer:bool -> Basic.t -> t
+(** [of_basic ?is_pointer ty] lifts a basic type [ty] to a pointer type if
+    [is_pointer] is true, and a normal one otherwise (and by default). *)
 
-val bool_type : is_atomic:bool -> is_pointer:bool -> t
-(** [bool_type ~is_atomic ~is_pointer] constructs the right Boolean type
-    according to the flags [is_atomic] and [is_pointer]. *)
+val bool : ?atomic:bool -> ?pointer:bool -> unit -> t
+(** [bool ?atomic ?pointer ()] constructs the right Boolean type
+    according to the flags [atomic] and [pointer], both of which
+    default to [false]. *)
 
-val int_type : is_atomic:bool -> is_pointer:bool -> t
-(** [int_type ~is_atomic ~is_pointer] constructs the right integer type
-    according to the flags [is_atomic] and [is_pointer]. *)
+val int : ?atomic:bool -> ?pointer:bool -> unit -> t
+(** [int ?atomic ?pointer ()] constructs the right integer type
+    according to the flags [atomic] and [pointer], both of which
+    default to [false]. *)
 
 (** {2 Modifiers} *)
 

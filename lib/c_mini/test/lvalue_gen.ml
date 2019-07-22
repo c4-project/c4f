@@ -93,7 +93,7 @@ let%test_module "Int_values" =
       test_in_env e (module Qc)
 
     let%test_unit "generated lvalues have 'int' type" =
-      test_type e (module Qc) Src.Type.(normal Basic.int)
+      test_type e (module Qc) Src.Type.(int ())
   end )
 
 let%test_module "Bool_values" =
@@ -116,5 +116,5 @@ let%test_module "Bool_values" =
     let%test_unit "generated lvalues have 'bool' type" =
       test_type e
         (module Src.Lvalue_gen.Bool_values ((val e)))
-        Src.Type.(normal Basic.bool)
+        Src.Type.(bool ())
   end )

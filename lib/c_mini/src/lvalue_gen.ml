@@ -38,7 +38,7 @@ module Int_values (E : Env_types.S) : sig
 end =
   Typed_values_on_env
     (struct
-      let basic_type = Type.Basic.int
+      let basic_type = Type.Basic.int ()
     end)
     (E)
 
@@ -47,6 +47,6 @@ module Bool_values (E : Env_types.S) : sig
 end =
   Typed_values_on_env
     (struct
-      let basic_type = Type.Basic.bool
+      let basic_type = Type.Basic.bool ()
     end)
     (E)

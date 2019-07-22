@@ -65,11 +65,16 @@ let bool_lit_to_expr (b : bool) : Ast.Expr.t =
   Ast.Expr.Identifier
     (Act_common.C_id.of_string (if b then "true" else "false"))
 
+let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t = function
+  | Expression.Bop.Eq -> `Eq
+  | L_and -> `Land
+  | L_or -> `Lor
+
 let expr : Expression.t -> Ast.Expr.t =
   Expression.reduce ~bool_lit:bool_lit_to_expr
     ~constant:(fun k -> Ast.Expr.Constant k)
     ~lvalue:lvalue_to_expr ~atomic_load:atomic_load_to_expr
-    ~eq:(fun l r -> Binary (l, `Eq, r))
+    ~bop:(fun b l r -> Binary (l, bop b, r))
 
 let known_call_stm (name : string) (args : Ast.Expr.t list) : Ast.Stm.t =
   Expr (Some (known_call name args))
