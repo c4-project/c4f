@@ -55,12 +55,12 @@ let%test_module "Int_values" =
       print_sample (Lazy.force Env.test_env_mod) ;
       [%expect
         {|
-      (Constant (Integer -879720314))
-      (Constant (Integer -186))
-      (Constant (Integer 7627))
-      (Constant (Integer 1234853))
-      (Constant (Integer 57529197))
-      (Constant (Integer 470264907))
+      (Constant (Int -879720314))
+      (Constant (Int -186))
+      (Constant (Int 7627))
+      (Constant (Int 1234853))
+      (Constant (Int 57529197))
+      (Constant (Int 470264907))
       (Lvalue (Variable foo))
       (Lvalue (Deref (Variable blep)))
       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
@@ -73,13 +73,13 @@ let%test_module "Int_values" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only_mod) ;
       [%expect
         {|
-      (Constant (Integer -112015996))
-      (Constant (Integer -1))
-      (Constant (Integer 1136))
-      (Constant (Integer 7627))
-      (Constant (Integer 13418))
-      (Constant (Integer 33417))
-      (Constant (Integer 10703535))
+      (Constant (Int -112015996))
+      (Constant (Int -1))
+      (Constant (Int 1136))
+      (Constant (Int 7627))
+      (Constant (Int 13418))
+      (Constant (Int 33417))
+      (Constant (Int 10703535))
       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_acquire)))
       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_relaxed)))
@@ -89,26 +89,26 @@ let%test_module "Int_values" =
       print_sample (Lazy.force Env.empty_env_mod) ;
       [%expect
         {|
-      (Constant (Integer -2147483648))
-      (Constant (Integer -879720314))
-      (Constant (Integer -780780327))
-      (Constant (Integer -50348097))
-      (Constant (Integer -6117475))
-      (Constant (Integer -5530953))
-      (Constant (Integer -4713))
-      (Constant (Integer -18))
-      (Constant (Integer -1))
-      (Constant (Integer 31))
-      (Constant (Integer 664))
-      (Constant (Integer 1136))
-      (Constant (Integer 7627))
-      (Constant (Integer 13418))
-      (Constant (Integer 31453))
-      (Constant (Integer 33417))
-      (Constant (Integer 10703535))
-      (Constant (Integer 22551631))
-      (Constant (Integer 71885327))
-      (Constant (Integer 470264907)) |}]
+      (Constant (Int -2147483648))
+      (Constant (Int -879720314))
+      (Constant (Int -780780327))
+      (Constant (Int -50348097))
+      (Constant (Int -6117475))
+      (Constant (Int -5530953))
+      (Constant (Int -4713))
+      (Constant (Int -18))
+      (Constant (Int -1))
+      (Constant (Int 31))
+      (Constant (Int 664))
+      (Constant (Int 1136))
+      (Constant (Int 7627))
+      (Constant (Int 13418))
+      (Constant (Int 31453))
+      (Constant (Int 33417))
+      (Constant (Int 10703535))
+      (Constant (Int 22551631))
+      (Constant (Int 71885327))
+      (Constant (Int 470264907)) |}]
 
     let%test_unit "all expressions have 'int' type" =
       test_all_expressions_have_type
@@ -133,21 +133,21 @@ let%test_module "Bool_values" =
       print_sample (Lazy.force Env.test_env_mod) ;
       [%expect
         {|
-      (Bool_lit false)
-      (Bool_lit true)
+      (Constant (Bool false))
+      (Constant (Bool true))
       (Lvalue (Variable barbaz))
-      (Bop Eq (Constant (Integer -879720314))
+      (Bop Eq (Constant (Int -879720314))
        (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_acquire))))
-      (Bop Eq (Constant (Integer -209))
+      (Bop Eq (Constant (Int -209))
        (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_consume))))
-      (Bop Eq (Constant (Integer -24)) (Lvalue (Variable foo)))
-      (Bop Eq (Constant (Integer 8)) (Constant (Integer -98)))
-      (Bop Eq (Constant (Integer 7471)) (Constant (Integer 1234853)))
-      (Bop Eq (Constant (Integer 12062)) (Constant (Integer 918)))
+      (Bop Eq (Constant (Int -24)) (Lvalue (Variable foo)))
+      (Bop Eq (Constant (Int 8)) (Constant (Int -98)))
+      (Bop Eq (Constant (Int 7471)) (Constant (Int 1234853)))
+      (Bop Eq (Constant (Int 12062)) (Constant (Int 918)))
       (Bop Eq (Lvalue (Variable foo)) (Lvalue (Variable foo)))
       (Bop Eq
        (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_acquire)))
-       (Constant (Integer 57529197)))
+       (Constant (Int 57529197)))
       (Bop Eq
        (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_relaxed)))
        (Lvalue (Deref (Variable blep)))) |}]
@@ -156,23 +156,23 @@ let%test_module "Bool_values" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only_mod) ;
       [%expect
         {|
-      (Bool_lit false)
-      (Bool_lit true)
-      (Bop Eq (Constant (Integer -32276))
+      (Constant (Bool false))
+      (Constant (Bool true))
+      (Bop Eq (Constant (Int -32276))
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_consume))))
-      (Bop Eq (Constant (Integer -22537)) (Constant (Integer -28705)))
-      (Bop Eq (Constant (Integer -18)) (Constant (Integer 664)))
-      (Bop Eq (Constant (Integer 6)) (Constant (Integer -32)))
-      (Bop Eq (Constant (Integer 20))
+      (Bop Eq (Constant (Int -22537)) (Constant (Int -28705)))
+      (Bop Eq (Constant (Int -18)) (Constant (Int 664)))
+      (Bop Eq (Constant (Int 6)) (Constant (Int -32)))
+      (Bop Eq (Constant (Int 20))
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_consume))))
-      (Bop Eq (Constant (Integer 1129))
+      (Bop Eq (Constant (Int 1129))
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst))))
-      (Bop Eq (Constant (Integer 1136)) (Constant (Integer 13418)))
-      (Bop Eq (Constant (Integer 14202)) (Constant (Integer -1736309620)))
-      (Bop Eq (Constant (Integer 18140)) (Constant (Integer -1)))
+      (Bop Eq (Constant (Int 1136)) (Constant (Int 13418)))
+      (Bop Eq (Constant (Int 14202)) (Constant (Int -1736309620)))
+      (Bop Eq (Constant (Int 18140)) (Constant (Int -1)))
       (Bop Eq
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
-       (Constant (Integer 10703535)))
+       (Constant (Int 10703535)))
       (Bop Eq
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
        (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_acquire)))) |}]
@@ -181,17 +181,17 @@ let%test_module "Bool_values" =
       print_sample (Lazy.force Env.empty_env_mod) ;
       [%expect
         {|
-      (Bool_lit false)
-      (Bool_lit true)
-      (Bop Eq (Constant (Integer -38250)) (Constant (Integer -37287526)))
-      (Bop Eq (Constant (Integer -32276)) (Constant (Integer -23556581)))
-      (Bop Eq (Constant (Integer -4713)) (Constant (Integer -780780327)))
-      (Bop Eq (Constant (Integer 664)) (Constant (Integer 7627)))
-      (Bop Eq (Constant (Integer 1129)) (Constant (Integer -31235266)))
-      (Bop Eq (Constant (Integer 7471)) (Constant (Integer 1234853)))
-      (Bop Eq (Constant (Integer 509412)) (Constant (Integer -972508553)))
-      (Bop Eq (Constant (Integer 57529197)) (Constant (Integer 115)))
-      (Bop Eq (Constant (Integer 89301152)) (Constant (Integer -96))) |}]
+      (Constant (Bool false))
+      (Constant (Bool true))
+      (Bop Eq (Constant (Int -38250)) (Constant (Int -37287526)))
+      (Bop Eq (Constant (Int -32276)) (Constant (Int -23556581)))
+      (Bop Eq (Constant (Int -4713)) (Constant (Int -780780327)))
+      (Bop Eq (Constant (Int 664)) (Constant (Int 7627)))
+      (Bop Eq (Constant (Int 1129)) (Constant (Int -31235266)))
+      (Bop Eq (Constant (Int 7471)) (Constant (Int 1234853)))
+      (Bop Eq (Constant (Int 509412)) (Constant (Int -972508553)))
+      (Bop Eq (Constant (Int 57529197)) (Constant (Int 115)))
+      (Bop Eq (Constant (Int 89301152)) (Constant (Int -96))) |}]
 
     let%test_unit "all expressions have 'bool' type" =
       test_all_expressions_have_type

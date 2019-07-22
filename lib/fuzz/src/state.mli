@@ -18,8 +18,8 @@ type t
 
 val init :
      ?o:Act_common.Output.t
-  -> globals:Act_c_mini.Type.t Act_common.C_id.Map.t
-  -> locals:Act_common.C_id.Set.t
+  -> globals:Act_c_mini.Type.t Map.M(Act_common.C_id).t
+  -> locals:Set.M(Act_common.C_id).t
   -> unit
   -> t
 (** [init ?o ~globals ~locals ()] creates an initial state with the global
@@ -51,7 +51,7 @@ module Monad : sig
       across [f] rather than binding. *)
 
   val register_global :
-       ?initial_value:Var.Value.t
+       ?initial_value:Act_c_mini.Constant.t
     -> Act_c_mini.Type.t
     -> Act_common.C_id.t
     -> unit t

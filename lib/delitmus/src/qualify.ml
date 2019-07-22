@@ -22,9 +22,8 @@ let litmus_id (id : Act_common.Litmus_id.t) : Act_common.C_id.t =
 let local (t : int) (id : Act_common.C_id.t) : Act_common.C_id.t =
   litmus_id (Act_common.Litmus_id.local t id)
 
-let postcondition
-    (pc : Act_c_lang.Ast_basic.Constant.t Act_litmus.Postcondition.t) :
-    Act_c_lang.Ast_basic.Constant.t Act_litmus.Postcondition.t =
+let postcondition (pc : Act_c_mini.Constant.t Act_litmus.Postcondition.t) :
+    Act_c_mini.Constant.t Act_litmus.Postcondition.t =
   (* TODO(@MattWindsor91): perhaps don't qualify things we've already
    * qualified. *)
   Act_litmus.Postcondition.map_left pc

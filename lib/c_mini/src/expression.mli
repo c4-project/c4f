@@ -17,8 +17,8 @@ type t [@@deriving sexp, compare, equal]
 (** {2 Binary operators} *)
 
 module Bop : sig
-  type t = Eq | L_and | L_or [@@deriving sexp, compare, equal]
   (** Enumeration of binary operators. *)
+  type t = Eq | L_and | L_or [@@deriving sexp, compare, equal]
 
   val eq : t
   (** [eq] is the equality operator. *)
@@ -38,8 +38,8 @@ val atomic_load : Atomic_load.t -> t
 val bool_lit : bool -> t
 (** [bool_lit b] lifts a Boolean literal [b] to an expression. *)
 
-val constant : Act_c_lang.Ast_basic.Constant.t -> t
-(** [constant k] lifts a C constant [k] to an expression. *)
+val constant : Constant.t -> t
+(** [constant k] lifts a constant [k] to an expression. *)
 
 val bop : Bop.t -> t -> t -> t
 (** [bop b l r] builds an arbitrary bop expression. *)
@@ -53,7 +53,6 @@ val l_and : t -> t -> t
 val l_or : t -> t -> t
 (** [l_or l r] builds a logical OR expression. *)
 
-
 val lvalue : Lvalue.t -> t
 (** [lvalue lv] lifts a lvalue [lv] to an expression. *)
 
@@ -61,8 +60,7 @@ val lvalue : Lvalue.t -> t
 
 val reduce :
      t
-  -> bool_lit:(bool -> 'a)
-  -> constant:(Act_c_lang.Ast_basic.Constant.t -> 'a)
+  -> constant:(Constant.t -> 'a)
   -> lvalue:(Lvalue.t -> 'a)
   -> atomic_load:(Atomic_load.t -> 'a)
   -> bop:(Bop.t -> 'a -> 'a -> 'a)
@@ -81,7 +79,7 @@ module On_addresses :
 module On_identifiers :
   Travesty.Traversable_types.S0
     with type t = t
-     and type Elt.t = Act_c_lang.Ast_basic.Identifier.t
+     and type Elt.t = Act_common.C_id.t
 
 (** Traversing over lvalues in expressions. *)
 module On_lvalues :

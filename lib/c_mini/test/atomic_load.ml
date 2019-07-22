@@ -22,7 +22,7 @@ let%expect_test "type_of: atomic_int* -> int" =
   in
   let ld = Src.Atomic_load.make ~src ~mo:Src.Mem_order.Seq_cst in
   print_s [%sexp (Ty.type_of ld : Src.Type.t Or_error.t)] ;
-  [%expect {| (Ok (Normal int)) |}]
+  [%expect {| (Ok int) |}]
 
 let%test_unit "Quickcheck_atomic_ints: liveness" =
   let (module E) = Lazy.force Env.test_env_mod in

@@ -46,7 +46,9 @@ let test_env_atomic_ptrs_only : Type.t Ac.C_id.Map.t Lazy.t =
     >>| Ac.C_id.Map.filter
           ~f:
             Type.(
-              Tx.Fn.(is_pointer &&& basic_type_is ~basic:Basic.(int ~atomic:true ()))))
+              Tx.Fn.(
+                is_pointer
+                &&& basic_type_is ~basic:Basic.(int ~atomic:true ()))))
 
 let test_env_atomic_ptrs_only_mod : (module Env_types.S) Lazy.t =
   lift_to_lazy_mod test_env_atomic_ptrs_only

@@ -11,7 +11,6 @@
 
 open Base
 module Q = Base_quickcheck
-module Constant = Act_c_lang.Ast_basic.Constant
 
 let eval_guards : (bool * (unit -> 'a)) list -> 'a list =
   List.filter_map ~f:(fun (g, f) -> if g then Some (f ()) else None)
@@ -36,11 +35,11 @@ module Int_values (E : Env_types.S) :
     eval_guards
       [ ( true
         , fun () ->
-            Q.Generator.map ~f:Expression.constant
-              Constant.gen_int32_constant )
+            Q.Generator.map ~f:Expression.constant Constant.gen_int32 )
       ; ( E.has_variables_of_basic_type Type.Basic.(int ~atomic:true ())
         , gen_atomic_int_load )
-      ; (E.has_variables_of_basic_type Type.Basic.(int ()), gen_int_lvalue) ]
+      ; (E.has_variables_of_basic_type Type.Basic.(int ()), gen_int_lvalue)
+      ]
 
   (* let recursive_generators (_mu : t Gen.t) : t Gen.t list = [] (* No
      useful recursive expression types yet. *) ;; *)
@@ -86,7 +85,8 @@ end = struct
     eval_guards
       [ (true, fun () -> gen_const)
       ; (true, fun () -> gen_int_relational)
-      ; (E.has_variables_of_basic_type Type.Basic.(bool ()), gen_bool_lvalue) ]
+      ; (E.has_variables_of_basic_type Type.Basic.(bool ()), gen_bool_lvalue)
+      ]
 
   let quickcheck_generator : t Q.Generator.t =
     Q.Generator.union base_generators
@@ -111,12 +111,11 @@ end = struct
        can't possibly work---eg, an atomic load when we don't have any
        atomic variables. *)
     eval_guards
-      [ (true, fun () -> Q.Generator.return (Expression.bool_lit true))
-      ]
+      [(true, fun () -> Q.Generator.return (Expression.bool_lit true))]
 
   let gen_and (mu : t Q.Generator.t) : t Q.Generator.t =
-    (* Since both sides of a tautological AND must be tautological, we
-       use the tautological generator twice. *)
+    (* Since both sides of a tautological AND must be tautological, we use
+       the tautological generator twice. *)
     Q.Generator.map2 mu mu ~f:Expression.l_and
 
   let gen_short_or (mu : t Q.Generator.t) : t Q.Generator.t =
@@ -135,6 +134,5 @@ end = struct
       ; (true, fun () -> gen_long_or mu) ]
 
   let quickcheck_generator : t Q.Generator.t =
-    Q.Generator.recursive_union base_generators
-      ~f:recursive_generators
+    Q.Generator.recursive_union base_generators ~f:recursive_generators
 end

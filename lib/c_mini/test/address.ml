@@ -47,11 +47,11 @@ let%test_module "Type-check" =
 
     let%expect_test "Type-checking a valid normal variable lvalue" =
       test (of_variable (Act_common.C_id.of_string "foo")) ;
-      [%expect {| (Ok (Normal int)) |}]
+      [%expect {| (Ok int) |}]
 
     let%expect_test "Type-checking an valid reference lvalue" =
       test (of_variable_ref (Act_common.C_id.of_string "foo")) ;
-      [%expect {| (Ok (Pointer_to int)) |}]
+      [%expect {| (Ok int*) |}]
   end )
 
 let%test_unit "on_address_of_typed_id: always takes pointer type" =

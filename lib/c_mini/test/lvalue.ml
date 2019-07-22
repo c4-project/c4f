@@ -52,7 +52,7 @@ let%expect_test "Type-checking a valid normal variable lvalue" =
   let module T = Type_check ((val Lazy.force Env.test_env_mod)) in
   let result = T.type_of (variable (Act_common.C_id.of_string "foo")) in
   print_s [%sexp (result : Act_c_mini.Type.t Or_error.t)] ;
-  [%expect {| (Ok (Normal int)) |}]
+  [%expect {| (Ok int) |}]
 
 let%expect_test "Type-checking an invalid deferencing variable lvalue" =
   let module T = Type_check ((val Lazy.force Env.test_env_mod)) in

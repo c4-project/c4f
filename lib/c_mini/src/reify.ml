@@ -1,9 +1,28 @@
+(* The Automagic Compiler Tormentor
+
+   Copyright (c) 2018--2019 Matt Windsor and contributors
+
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
+
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
+
 open Core_kernel
 module Ast = Act_c_lang.Ast
-module Constant = Act_c_lang.Ast_basic.Constant
+
+let bool_lit_to_expr (b : bool) : Ast.Expr.t =
+  Ast.Expr.Identifier
+    (Act_common.C_id.of_string (if b then "true" else "false"))
+
+let constant_to_expr : Constant.t -> Ast.Expr.t =
+  Constant.reduce
+    ~int:(fun i -> Ast.Expr.Constant (Integer i))
+    ~bool:bool_lit_to_expr
 
 let to_initialiser (value : Constant.t) : Ast.Initialiser.t =
-  Assign (Constant value)
+  Assign (constant_to_expr value)
 
 let type_to_spec (ty : Type.t) : [> Act_c_lang.Ast.Type_spec.t] =
   (* We translate the level of indirection separately, in [type_to_pointer]. *)
@@ -61,20 +80,19 @@ let atomic_load_to_expr (ld : Atomic_load.t) : Ast.Expr.t =
     [ address_to_expr (Atomic_load.src ld)
     ; mem_order_to_expr (Atomic_load.mo ld) ]
 
-let bool_lit_to_expr (b : bool) : Ast.Expr.t =
-  Ast.Expr.Identifier
-    (Act_common.C_id.of_string (if b then "true" else "false"))
-
-let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t = function
-  | Expression.Bop.Eq -> `Eq
-  | L_and -> `Land
-  | L_or -> `Lor
+let bop : Expression.Bop.t -> Act_c_lang.Ast_basic.Operators.Bin.t =
+  function
+  | Expression.Bop.Eq ->
+      `Eq
+  | L_and ->
+      `Land
+  | L_or ->
+      `Lor
 
 let expr : Expression.t -> Ast.Expr.t =
-  Expression.reduce ~bool_lit:bool_lit_to_expr
-    ~constant:(fun k -> Ast.Expr.Constant k)
-    ~lvalue:lvalue_to_expr ~atomic_load:atomic_load_to_expr
-    ~bop:(fun b l r -> Binary (l, bop b, r))
+  Expression.reduce ~constant:constant_to_expr ~lvalue:lvalue_to_expr
+    ~atomic_load:atomic_load_to_expr ~bop:(fun b l r ->
+      Binary (l, bop b, r))
 
 let known_call_stm (name : string) (args : Ast.Expr.t list) : Ast.Stm.t =
   Expr (Some (known_call name args))

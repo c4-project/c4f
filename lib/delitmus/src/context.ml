@@ -15,8 +15,7 @@ type t =
   { aux: Aux.t
   ; local_inits:
       ( int
-      , (Act_common.C_id.t, Act_c_lang.Ast_basic.Constant.t) List.Assoc.t
-      )
+      , (Act_common.C_id.t, Act_c_mini.Constant.t) List.Assoc.t )
       List.Assoc.t }
 [@@deriving fields]
 
@@ -25,18 +24,18 @@ let make = Fields.create
 let var_map (ctx : t) : Var_map.t = Aux.var_map (aux ctx)
 
 let lookup_initial_value_global (ctx : t) ~(id : Act_common.C_id.t) :
-    Act_c_lang.Ast_basic.Constant.t option =
+    Act_c_mini.Constant.t option =
   let init = ctx |> aux |> Aux.litmus_aux |> Act_litmus.Aux.init in
   List.Assoc.find ~equal:Act_common.C_id.equal init id
 
 let lookup_initial_value_local (ctx : t) ~(tid : int)
-    ~(id : Act_common.C_id.t) : Act_c_lang.Ast_basic.Constant.t option =
+    ~(id : Act_common.C_id.t) : Act_c_mini.Constant.t option =
   Option.(
     List.Assoc.find ~equal:Int.equal (local_inits ctx) tid
     >>= fun init -> List.Assoc.find ~equal:Act_common.C_id.equal init id)
 
 let lookup_initial_value (ctx : t) ~(id : Act_common.Litmus_id.t) :
-    Act_c_lang.Ast_basic.Constant.t option =
+    Act_c_mini.Constant.t option =
   match Act_common.Litmus_id.as_local id with
   | Some (tid, id) ->
       lookup_initial_value_local ctx ~tid ~id

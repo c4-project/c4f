@@ -147,7 +147,7 @@ end
 
 module Test = struct
   type t =
-    { init: Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t
+    { init: Act_c_mini.Constant.t Act_c_mini.Named.Alist.t
     ; programs: Program.t list }
   [@@deriving sexp]
 
@@ -205,7 +205,7 @@ module Test = struct
 
   let to_litmus
       ?(postcondition :
-         Act_c_lang.Ast_basic.Constant.t Act_litmus.Postcondition.t option)
+         Act_c_mini.Constant.t Act_litmus.Postcondition.t option)
       (subject : t) ~(vars : Var.Map.t) ~(name : string) :
       Act_c_mini.Litmus.Ast.Validated.t Or_error.t =
     let open Or_error.Let_syntax in
@@ -214,6 +214,6 @@ module Test = struct
       ~init:subject.init ~programs ()
 
   let add_var_to_init (subject : t) (var : Ac.C_id.t)
-      (initial_value : Act_c_lang.Ast_basic.Constant.t) : t =
+      (initial_value : Act_c_mini.Constant.t) : t =
     {subject with init= (var, initial_value) :: subject.init}
 end

@@ -39,7 +39,7 @@ struct
     List.map ~f:(fun (i, v) -> make_global ctx i v) global_recs
 
   let make_litmus_aux (input : Act_c_mini.Litmus.Ast.Validated.t) :
-      Act_c_lang.Ast_basic.Constant.t Act_litmus.Aux.t =
+      Act_c_mini.Constant.t Act_litmus.Aux.t =
     let postcondition =
       Option.map
         (Act_c_mini.Litmus.Ast.Validated.postcondition input)
@@ -151,7 +151,7 @@ struct
       Act_c_mini.Program.make ~globals ~functions)
 
   let make_local_init (fn : Act_c_mini.Function.t) :
-      (Act_common.C_id.t, Act_c_lang.Ast_basic.Constant.t) List.Assoc.t =
+      (Act_common.C_id.t, Act_c_mini.Constant.t) List.Assoc.t =
     fn |> Act_c_mini.Function.body_decls
     |> List.filter_map ~f:(fun (id, init) ->
            Option.(
@@ -160,8 +160,7 @@ struct
   let make_local_inits :
          Act_c_mini.Function.t list
       -> ( int
-         , (Act_common.C_id.t, Act_c_lang.Ast_basic.Constant.t) List.Assoc.t
-         )
+         , (Act_common.C_id.t, Act_c_mini.Constant.t) List.Assoc.t )
          List.Assoc.t =
     List.mapi ~f:(fun tid fn -> (tid, make_local_init fn))
 

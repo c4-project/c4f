@@ -12,7 +12,10 @@
 open Base
 
 module Global_random_state = struct
-  type t = {is_atomic: bool; initial_value: int; name: Act_common.C_id.t}
+  type t =
+    { is_atomic: bool
+    ; initial_value: Act_c_mini.Constant.t
+    ; name: Act_common.C_id.t }
   [@@deriving sexp]
 end
 
@@ -36,9 +39,7 @@ module Make_global :
     let gen' (vars : Var.Map.t) : t G.t =
       let open G.Let_syntax in
       let%bind is_atomic = G.bool in
-      let%bind initial_value =
-        Act_c_lang.Ast_basic.Constant.gen_int32_as_int
-      in
+      let%bind initial_value = Act_c_mini.Constant.gen_int32 in
       let%map name = Var.Map.gen_fresh_var vars in
       {is_atomic; initial_value; name}
 
@@ -53,10 +54,6 @@ module Make_global :
       Subject.Test.t State.Monad.t =
     let ty = Act_c_mini.Type.int ~atomic:is_atomic ~pointer:true () in
     let open State.Monad.Let_syntax in
-    let%map () =
-      State.Monad.register_global ty name
-        ~initial_value:(Var.Value.Int initial_value)
-    in
-    let const = Act_c_lang.Ast_basic.Constant.Integer initial_value in
-    Subject.Test.add_var_to_init subject name const
+    let%map () = State.Monad.register_global ty name ~initial_value in
+    Subject.Test.add_var_to_init subject name initial_value
 end

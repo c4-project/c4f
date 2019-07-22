@@ -21,8 +21,7 @@ let%expect_test "bool: combinatoric" =
           ; bool ~atomic:true ~pointer:false ()
           ; bool ~atomic:true ~pointer:true () ]
         : Act_c_mini.Type.t list )] ;
-  [%expect
-    {| ((Normal bool) (Pointer_to bool) (Normal atomic_bool) (Pointer_to atomic_bool)) |}]
+  [%expect {| (bool bool* atomic_bool atomic_bool*) |}]
 
 let%expect_test "int: combinatoric" =
   print_s
@@ -33,5 +32,4 @@ let%expect_test "int: combinatoric" =
           ; int ~atomic:true ~pointer:false ()
           ; int ~atomic:true ~pointer:true () ]
         : Act_c_mini.Type.t list )] ;
-  [%expect
-    {| ((Normal int) (Pointer_to int) (Normal atomic_int) (Pointer_to atomic_int)) |}]
+  [%expect {| (int int* atomic_int atomic_int*) |}]

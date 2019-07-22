@@ -27,7 +27,7 @@ let try_map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t Or_error.t) :
 let map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t) : t =
   {s with vars= f s.vars}
 
-let register_global ?(initial_value : Var.Value.t option) (s : t)
+let register_global ?(initial_value : Act_c_mini.Constant.t option) (s : t)
     (var : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
   map_vars s ~f:(fun v -> Var.Map.register_global v ?initial_value var ty)
 
@@ -55,7 +55,7 @@ module Monad = struct
 
   let with_vars (f : Var.Map.t -> 'a) : 'a t = peek vars >>| f
 
-  let register_global ?(initial_value : Var.Value.t option)
+  let register_global ?(initial_value : Act_c_mini.Constant.t option)
       (ty : Act_c_mini.Type.t) (var : Ac.C_id.t) : unit t =
     modify (fun s -> register_global ?initial_value s var ty)
 

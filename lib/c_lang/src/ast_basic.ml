@@ -316,31 +316,6 @@ module Constant = struct
     | Integer i ->
         Fmt.int f i
 
-  let to_yojson : t -> Yojson.Safe.t = function
-    | Char c ->
-        `String (Char.to_string c)
-    | Float d ->
-        `Float d
-    | Integer i ->
-        `Int i
-
-  let of_yojson (json : Yojson.Safe.t) : (t, string) Result.t =
-    let js = [json] in
-    Yojson.Safe.Util.(
-      match filter_int js with
-      | [i] ->
-          Result.return (Integer i)
-      | _ -> (
-        match filter_float js with
-        | [j] ->
-            Result.return (Float j)
-        | _ -> (
-          match filter_string js with
-          | [s] when String.length s = 1 ->
-              Result.return (Char s.[0])
-          | _ ->
-              Result.fail "malformed JSON encoding of C literal" ) ))
-
   let gen_int32_as_int : int Quickcheck.Generator.t =
     Quickcheck.Generator.map [%quickcheck.generator: int32] ~f:(fun x ->
         Option.value ~default:0 (Int.of_int32 x))

@@ -78,9 +78,10 @@ let ensure_statements :
 
 let defined_types : (Ac.C_id.t, Type.Basic.t) List.Assoc.t Lazy.t =
   lazy
-    Type.Basic.[ (Ac.C_id.of_string "atomic_bool", bool ~atomic:true ())
-               ; (Ac.C_id.of_string "atomic_int", int ~atomic:true ())
-               ; (Ac.C_id.of_string "bool", bool ()) ]
+    Type.Basic.
+      [ (Ac.C_id.of_string "atomic_bool", bool ~atomic:true ())
+      ; (Ac.C_id.of_string "atomic_int", int ~atomic:true ())
+      ; (Ac.C_id.of_string "bool", bool ()) ]
 
 let qualifiers_to_basic_type (quals : [> Ast.Decl_spec.t] list) :
     Type.Basic.t Or_error.t =
@@ -127,11 +128,19 @@ let declarator_to_id :
           "Unsupported direct declarator"
             ~got:(x.direct : Ast.Direct_declarator.t)]
 
-let value_of_initialiser :
-    Ast.Initialiser.t -> Act_c_lang.Ast_basic.Constant.t Or_error.t =
+let constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t =
+  function
+  | Integer k ->
+      Or_error.return (Constant.int k)
+  | Char _ | Float _ ->
+      Or_error.error_string "Unsupported constant type"
+
+let value_of_initialiser : Ast.Initialiser.t -> Constant.t Or_error.t =
   function
   | Assign (Constant v) ->
-      Or_error.return v
+      (* TODO(@MattWindsor91): Boolean initialisers aren't covered by this
+         case, as C99 Boolean 'constant's are identifiers. *)
+      constant v
   | Assign x ->
       Or_error.error_s
         [%message
@@ -141,15 +150,15 @@ let value_of_initialiser :
 
 (** [decl d] translates a declaration into an identifier-initialiser pair. *)
 let decl (d : Ast.Decl.t) : (Act_common.C_id.t * Initialiser.t) Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind basic_type = qualifiers_to_basic_type d.qualifiers in
-  let%bind idecl = Tx.List.one d.declarator in
-  let%bind name, pointer = declarator_to_id idecl.declarator in
-  let%map value =
-    Tx.Option.With_errors.map_m idecl.initialiser ~f:value_of_initialiser
-  in
-  let ty = Type.of_basic ~pointer basic_type in
-  (name, Initialiser.make ~ty ?value ())
+  Or_error.Let_syntax.(
+    let%bind basic_type = qualifiers_to_basic_type d.qualifiers in
+    let%bind idecl = Tx.List.one d.declarator in
+    let%bind name, pointer = declarator_to_id idecl.declarator in
+    let%map value =
+      Tx.Option.With_errors.map_m idecl.initialiser ~f:value_of_initialiser
+    in
+    let ty = Type.of_basic ~pointer basic_type in
+    (name, Initialiser.make ~ty ?value ()))
 
 let validate_func_void_type (f : Ast.Function_def.t) : Validate.t =
   match f.decl_specs with
@@ -309,7 +318,7 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
   | Binary (l, op, r) ->
       model_binary l op r
   | Constant k ->
-      Or_error.return (Expression.constant k)
+      Or_error.map ~f:Expression.constant (constant k)
   | Identifier id ->
       Or_error.return (identifier_to_expr id)
   | Prefix (`Deref, expr) ->
@@ -473,7 +482,7 @@ let%expect_test "model atomic_store_explicit" =
     {|
       (Ok
        (Atomic_store
-        ((src (Constant (Integer 42))) (dst (Ref (Lvalue (Variable x))))
+        ((src (Constant (Int 42))) (dst (Ref (Lvalue (Variable x))))
          (mo memory_order_relaxed)))) |}]
 
 let%expect_test "model atomic cmpxchg" =
@@ -502,7 +511,7 @@ let%expect_test "model atomic cmpxchg" =
       (Ok
        (Atomic_cmpxchg
         ((obj (Ref (Lvalue (Variable x)))) (expected (Ref (Lvalue (Variable y))))
-         (desired (Constant (Integer 42))) (succ memory_order_relaxed)
+         (desired (Constant (Int 42))) (succ memory_order_relaxed)
          (fail memory_order_relaxed)))) |}]
 
 let func_body (body : Ast.Compound_stm.t) :
@@ -541,7 +550,8 @@ module Litmus_conv = Act_litmus.Convert.Make (struct
 
   let program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t = func
 
-  let constant = Or_error.return
+  let constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t =
+    constant
 end)
 
 let litmus : Ast.Litmus.Validated.t -> Litmus.Ast.Validated.t Or_error.t =

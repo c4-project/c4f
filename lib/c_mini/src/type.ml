@@ -37,7 +37,7 @@ module Basic = struct
 
     let bool ?(atomic : bool = false) () : t = {atomic; prim= Bool}
 
-    let table: (t, string) List.Assoc.t =
+    let table : (t, string) List.Assoc.t =
       [ (int (), "int")
       ; (int ~atomic:true (), "atomic_int")
       ; (bool (), "bool")
@@ -71,9 +71,27 @@ module Basic = struct
   let is_atomic ({atomic; _} : t) : bool = atomic
 end
 
-module M = struct
+module M1 = struct
   type t = Normal of Basic.t | Pointer_to of Basic.t
-  [@@deriving sexp, variants, equal, compare, quickcheck]
+  [@@deriving variants, equal, compare, quickcheck]
+
+  let of_string (s : string) : t =
+    match String.chop_suffix s ~suffix:"*" with
+    | None ->
+        Normal (Basic.of_string s)
+    | Some s' ->
+        Pointer_to (Basic.of_string s')
+
+  let to_string : t -> string = function
+    | Normal b ->
+        Basic.to_string b
+    | Pointer_to b ->
+        Basic.to_string b ^ "*"
+end
+
+module M = struct
+  include M1
+  include Sexpable.Of_stringable (M1)
 end
 
 include M

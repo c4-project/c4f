@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Tx = Travesty_base_exts
 module Ac = Act_common
 
@@ -30,8 +30,8 @@ module Lang :
     with type Statement.t =
           [`Stm of Statement.t | `Decl of Initialiser.t Named.t]
      and type Program.t = Function.t Named.t
-     and type Constant.t = Act_c_lang.Ast_basic.Constant.t = struct
-  module Constant = Act_c_lang.Ast_basic.Constant
+     and type Constant.t = Constant.t = struct
+  module Constant = Constant
 
   module Statement = struct
     type t = [`Stm of Statement.t | `Decl of Initialiser.t Named.t]

@@ -17,30 +17,25 @@ let%test_module "int tests" =
     open Act_fuzz
     open Store_actions
 
-    let init :
-        Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
+    let init : Act_c_mini.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
       lazy
-        [ ( Act_common.C_id.of_string "x"
-          , Act_c_lang.Ast_basic.Constant.Integer 27 )
-        ; ( Act_common.C_id.of_string "y"
-          , Act_c_lang.Ast_basic.Constant.Integer 53 ) ]
+        [ (Act_common.C_id.of_string "x", Act_c_mini.Constant.int 27)
+        ; (Act_common.C_id.of_string "y", Act_c_mini.Constant.int 53) ]
 
     let globals : Act_c_mini.Type.t Act_c_mini.Named.Alist.t Lazy.t =
       lazy
         Act_c_mini.
           [ ( Act_common.C_id.of_string "x"
-            , Type.(int ~pointer:true ~atomic:true ()))
+            , Type.(int ~pointer:true ~atomic:true ()) )
           ; ( Act_common.C_id.of_string "y"
-            , Type.(int ~pointer:true ~atomic:true ())) ]
+            , Type.(int ~pointer:true ~atomic:true ()) ) ]
 
     let body_stms : Act_c_mini.Statement.t list Lazy.t =
       lazy
         Act_c_mini.
           [ Statement.atomic_store
               (Atomic_store.make
-                 ~src:
-                   (Expression.constant
-                      (Act_c_lang.Ast_basic.Constant.Integer 42))
+                 ~src:(Expression.constant (Act_c_mini.Constant.int 42))
                  ~dst:(Address.of_variable (Act_common.C_id.of_string "x"))
                  ~mo:Mem_order.Seq_cst)
           ; Statement.nop ()
@@ -94,12 +89,12 @@ let%test_module "int tests" =
         register_global
           Act_c_mini.Type.(int ~pointer:true ~atomic:true ())
           (Act_common.C_id.of_string "gen1")
-          ~initial_value:(Var.Value.Int 1337)
+          ~initial_value:(Act_c_mini.Constant.int 1337)
         >>= fun () ->
         register_global
           Act_c_mini.Type.(int ~pointer:true ~atomic:true ())
           (Act_common.C_id.of_string "gen2")
-          ~initial_value:(Var.Value.Int (-55)))
+          ~initial_value:(Act_c_mini.Constant.int (-55)))
 
     let init_fuzzer_state : State.t Lazy.t =
       let open Lazy.Let_syntax in

@@ -28,7 +28,7 @@ type t [@@deriving sexp, equal, quickcheck]
 
 (** {3 Constructors} *)
 
-val make : ty:Type.t -> ?value:Act_c_lang.Ast_basic.Constant.t -> unit -> t
+val make : ty:Type.t -> ?value:Constant.t -> unit -> t
 (** [make ~ty ?value ()] makes an initialiser with type [ty] and optional
     initialised value [value]. *)
 
@@ -37,5 +37,5 @@ val make : ty:Type.t -> ?value:Act_c_lang.Ast_basic.Constant.t -> unit -> t
 val ty : t -> Type.t
 (** [ty init] gets the type of [init]. *)
 
-val value : t -> Act_c_lang.Ast_basic.Constant.t option
+val value : t -> Constant.t option
 (** [value init] gets the initialised value of [init], if it has one. *)

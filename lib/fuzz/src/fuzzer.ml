@@ -151,10 +151,10 @@ let get_first_func (test : Act_c_mini.Litmus.Ast.Validated.t) :
 (** [existing_globals test] extracts the existing global variable names and
     types from litmus test [test]. *)
 let existing_globals (test : Act_c_mini.Litmus.Ast.Validated.t) :
-    Act_c_mini.Type.t Ac.C_id.Map.t Or_error.t =
+    Act_c_mini.Type.t Map.M(Ac.C_id).t Or_error.t =
   Or_error.(
     test |> get_first_func >>| Act_c_mini.Function.parameters
-    >>= Ac.C_id.Map.of_alist_or_error)
+    >>= Map.of_alist_or_error (module Ac.C_id))
 
 let to_locals : Set.M(Ac.Litmus_id).t -> Set.M(Ac.C_id).t =
   (* TODO(@MattWindsor91): do we need to keep the thread IDs? *)

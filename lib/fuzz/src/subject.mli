@@ -91,7 +91,7 @@ end
 (** Fuzzable representation of a litmus test. *)
 module Test : sig
   type t =
-    { init: Act_c_lang.Ast_basic.Constant.t Act_c_mini.Named.Alist.t
+    { init: Act_c_mini.Constant.t Act_c_mini.Named.Alist.t
     ; programs: Program.t list }
   [@@deriving sexp]
   (** Transparent type of fuzzable litmus tests. *)
@@ -109,8 +109,7 @@ module Test : sig
       intermediate form used for fuzzing. *)
 
   val to_litmus :
-       ?postcondition:Act_c_lang.Ast_basic.Constant.t
-                      Act_litmus.Postcondition.t
+       ?postcondition:Act_c_mini.Constant.t Act_litmus.Postcondition.t
     -> t
     -> vars:Var.Map.t
     -> name:string
@@ -123,8 +122,7 @@ module Test : sig
 
   (** {3 Helpers for mutating tests} *)
 
-  val add_var_to_init :
-    t -> Act_common.C_id.t -> Act_c_lang.Ast_basic.Constant.t -> t
+  val add_var_to_init : t -> Act_common.C_id.t -> Act_c_mini.Constant.t -> t
   (** [add_var_to_init subject var initial_value] adds [var] to [subject]'s
       init block with the initial value [initial_value]. *)
 end

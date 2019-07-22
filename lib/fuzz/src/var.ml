@@ -13,12 +13,8 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-module Value = struct
-  type t = Int of int [@@deriving equal]
-end
-
 module Known_value = struct
-  type t = {value: Value.t; has_dependencies: bool}
+  type t = {value: Act_c_mini.Constant.t; has_dependencies: bool}
   [@@deriving fields, make, equal]
 
   let add_dependency (kv : t) : t = {kv with has_dependencies= true}
@@ -74,7 +70,7 @@ module Record = struct
   let make_existing_local (_name : Ac.C_id.t) : t =
     make ~source:`Existing ~scope:`Local ()
 
-  let make_generated_global ?(initial_value : Value.t option)
+  let make_generated_global ?(initial_value : Act_c_mini.Constant.t option)
       (ty : Act_c_mini.Type.t) : t =
     let known_value =
       Option.map initial_value ~f:(fun value ->
@@ -87,25 +83,23 @@ module Map = struct
   type t = Record.t Map.M(Ac.C_id).t
 
   let make_existing_var_map (globals : Act_c_mini.Type.t Map.M(Ac.C_id).t)
-      (locals : Ac.C_id.Set.t) : t =
-    let globals_map =
-      Ac.C_id.Map.map globals ~f:Record.make_existing_global
-    in
+      (locals : Set.M(Ac.C_id).t) : t =
+    let globals_map = Map.map globals ~f:Record.make_existing_global in
     let locals_map =
       Ac.C_id.Set.to_map locals ~f:Record.make_existing_local
     in
-    Ac.C_id.Map.merge globals_map locals_map ~f:(fun ~key ->
+    Map.merge globals_map locals_map ~f:(fun ~key ->
         ignore key ;
         function `Left x | `Right x | `Both (x, _) -> Some x)
 
-  let register_global ?(initial_value : Value.t option) (map : t)
-      (key : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
+  let register_global ?(initial_value : Act_c_mini.Constant.t option)
+      (map : t) (key : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
     let data = Record.make_generated_global ?initial_value ty in
-    Ac.C_id.Map.set map ~key ~data
+    Map.set map ~key ~data
 
   let change_var (map : t) ~(var : Ac.C_id.t) ~(f : Record.t -> Record.t) :
       t =
-    Ac.C_id.Map.change map var ~f:(Option.map ~f)
+    Map.change map var ~f:(Option.map ~f)
 
   let add_write : t -> var:Ac.C_id.t -> t = change_var ~f:Record.add_write
 

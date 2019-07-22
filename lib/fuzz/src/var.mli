@@ -28,11 +28,6 @@
 
 open Base
 
-(** Type for storing variable values. *)
-module Value : sig
-  type t = Int of int
-end
-
 (** A variable 'known-value' record.
 
     These records are used to decide:
@@ -44,7 +39,8 @@ end
      {- whether that value is depended upon (meaning we can't use the
         variable as the target of a value-changing operation).}} *)
 module Known_value : sig
-  type t = {value: Value.t; has_dependencies: bool} [@@deriving equal]
+  type t = {value: Act_c_mini.Constant.t; has_dependencies: bool}
+  [@@deriving equal]
 end
 
 (** Variable records *)
@@ -64,7 +60,7 @@ module Record : sig
       mutation. *)
 
   val make_generated_global :
-    ?initial_value:Value.t -> Act_c_mini.Type.t -> t
+    ?initial_value:Act_c_mini.Constant.t -> Act_c_mini.Type.t -> t
   (** [make_generated_global ?initial_value ty] makes a variable record for
       a fuzzer-generated global variable of type [ty] and with initial value
       [value]. *)
@@ -165,7 +161,7 @@ module Map : sig
   (** {3 Actions} *)
 
   val register_global :
-       ?initial_value:Value.t
+       ?initial_value:Act_c_mini.Constant.t
     -> t
     -> Act_common.C_id.t
     -> Act_c_mini.Type.t

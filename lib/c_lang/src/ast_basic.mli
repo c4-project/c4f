@@ -178,10 +178,6 @@ module Constant : sig
 
   val to_int : t -> int Or_error.t
 
-  include
-    Plumbing.Jsonable_types.S with type t := t
-  (** {3 JSON serialisation} *)
-
   (** {3 Quickcheck} *)
 
   val gen_int32_as_int : int Base_quickcheck.Generator.t

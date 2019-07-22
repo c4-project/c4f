@@ -29,6 +29,10 @@
 
 open Base
 
+val constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t
+(** [constant ast] tries to interpret a C constant AST as a mini-model
+    constant. *)
+
 val func : Act_c_lang.Ast.Function_def.t -> Function.t Named.t Or_error.t
 (** [func ast] tries to interpret a C function definition AST as a
     mini-model function. *)
