@@ -11,6 +11,8 @@
 
 (** Mini-model: expressions *)
 
+open Base
+
 type t [@@deriving sexp, compare, equal]
 (** Opaque type of expressions. *)
 
@@ -37,6 +39,9 @@ val atomic_load : Atomic_load.t -> t
 
 val bool_lit : bool -> t
 (** [bool_lit b] lifts a Boolean literal [b] to an expression. *)
+
+val int_lit : int -> t
+(** [int_lit i] lifts an integer literal [i] to an expression. *)
 
 val constant : Constant.t -> t
 (** [constant k] lifts a constant [k] to an expression. *)
@@ -65,7 +70,7 @@ val reduce :
   -> atomic_load:(Atomic_load.t -> 'a)
   -> bop:(Bop.t -> 'a -> 'a -> 'a)
   -> 'a
-(** [reduce expr ~bool_lit ~constant ~lvalue ~atomic_load ~bop] recursively
+(** [reduce expr ~constant ~lvalue ~atomic_load ~bop] recursively
     reduces [expr] to a single value, using the given functions at each
     corresponding stage of the expression tree. *)
 
@@ -97,3 +102,16 @@ val quickcheck_observer : t Base_quickcheck.Observer.t
 include
   Types.S_type_checkable with type t := t
 (** Type-checking for expressions. *)
+
+(** {2 Evaluating expressions} *)
+
+module Eval : sig
+  val as_constant
+    : t -> env:(Lvalue.t -> Constant.t Or_error.t) -> Constant.t Or_error.t
+  (** [as_constant expr ~env] evaluates expression [expr] in the context of the
+      abstract environment (store/heap) model [env], returning a constant if the
+      evaluation succeeded or an error otherwise. *)
+
+  val empty_env : Lvalue.t -> Constant.t Or_error.t
+  (** [empty_env] maps all lvalues to errors. *)
+end
