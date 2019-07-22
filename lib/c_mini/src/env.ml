@@ -59,10 +59,10 @@ end
 module Make_with_known_values (E : sig
   val env : Type.t Map.M(Act_common.C_id).t
 
-  val known_values : Set.M(Int).t Map.M(Act_common.C_id).t
+  val known_values : Set.M(Constant).t Map.M(Act_common.C_id).t
 end) : Env_types.S_with_known_values = struct
   include Make (E)
 
-  let known_values : Act_common.C_id.t -> Set.M(Int).t option =
+  let known_values : Act_common.C_id.t -> Set.M(Constant).t option =
     Map.find E.known_values
 end

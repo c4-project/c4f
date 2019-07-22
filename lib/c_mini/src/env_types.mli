@@ -43,7 +43,7 @@ end
 module type S_with_known_values = sig
   include S
 
-  val known_values : Act_common.C_id.t -> Set.M(Int).t option
+  val known_values : Act_common.C_id.t -> Set.M(Constant).t option
   (** [known_values var] gets the set of all {i possible} known values of
       [var]. If [var] has no known values, [known_values var] is [None]. *)
 end

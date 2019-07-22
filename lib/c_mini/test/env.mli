@@ -26,6 +26,14 @@ val test_env : Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
 val test_env_mod : (module Act_c_mini.Env_types.S) Lazy.t
 (** {{!test_env} test_env} packaged as a first-class module. *)
 
+val det_known_value_mod : (module Act_c_mini.Env_types.S_with_known_values) Lazy.t
+(** [det_known_value_mod] expands {{!test_env_mod} test_env_mod} to
+    contain singleton known values for all non-pointer variables. *)
+
+val det_known_value_eval : Act_c_mini.Lvalue.t -> Act_c_mini.Constant.t Or_error.t
+(** [det_known_value_eval lv] returns the constant value associated with [lv]
+    in {{!det_known_value_mod}det_known_value_mod}, if any. *)
+
 val test_env_atomic_ptrs_only :
   Act_c_mini.Type.t Map.M(Act_common.C_id).t Lazy.t
 (** [test_env_atomic_ptrs_only] is an environment that contains only

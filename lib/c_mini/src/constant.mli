@@ -19,6 +19,8 @@ open Base
 type t [@@deriving compare, equal, sexp, quickcheck]
 (** Opaque type of constants. *)
 
+include Comparable.S with type t := t
+  
 include Plumbing.Jsonable_types.S with type t := t
 
 include Pretty_printer.S with type t := t

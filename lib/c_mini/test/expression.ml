@@ -16,9 +16,12 @@ module Src = Act_c_mini
 
 let%test_module "Eval" = (module struct
 
-  let test_pure (e : Src.Expression.t) : unit =
-    let k = Src.Expression.Eval.(as_constant e ~env:empty_env) in
+  let test (e : Src.Expression.t) ~(env : Src.Lvalue.t -> Src.Constant.t Or_error.t) : unit =
+    let k = Src.Expression.Eval.as_constant e ~env in
     print_s [%sexp (k : Src.Constant.t Or_error.t)]
+
+  let test_pure : Src.Expression.t -> unit =
+    test ~env:Src.Expression.Eval.empty_env
 
   let invalid_expr : Src.Expression.t =
     Src.Expression.(eq (int_lit 27) (bool_lit false))
@@ -65,4 +68,29 @@ let%test_module "Eval" = (module struct
       (Error
        ("eq: types of constants are incompatible" (left (Int 27))
         (right (Bool false)))) |}]
+
+  let%expect_test "example true env-sensitive Boolean expression" =
+    test ~env:Env.det_known_value_eval
+      Src.Expression.(
+        l_and
+          (eq (lvalue (Src.Lvalue.variable (Act_common.C_id.of_string "x"))) (int_lit 27))
+          (l_or (bool_lit true) (bool_lit false))
+      );
+    [%expect {| (Ok (Bool true)) |}]
+
+  let%expect_test "example false env-sensitive Boolean expression" =
+    test ~env:Env.det_known_value_eval
+      Src.Expression.(
+        l_and
+          (l_or (bool_lit true) (bool_lit false))
+          (eq (lvalue (Src.Lvalue.variable (Act_common.C_id.of_string "y"))) (int_lit 27))
+      );
+    [%expect {| (Ok (Bool false)) |}]
+
+  let%expect_test "example invalid env-sensitive Boolean expression" =
+    test ~env:Env.det_known_value_eval
+      Src.Expression.(
+        eq (lvalue (Src.Lvalue.variable (Act_common.C_id.of_string "a"))) (int_lit 27)
+      );
+    [%expect {| (Error "env doesn't contain this value") |}]
 end)

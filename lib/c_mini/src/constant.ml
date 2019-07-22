@@ -12,8 +12,13 @@
 open Base
 open Base_quickcheck
 
-type t = Bool of bool | Int of int
-[@@deriving compare, equal, sexp, quickcheck, variants]
+module M = struct
+  type t = Bool of bool | Int of int
+  [@@deriving compare, equal, sexp, quickcheck, variants]
+end
+
+include M
+include Comparable.Make (M)
 
 let truth : t = Bool true
 
