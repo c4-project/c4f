@@ -24,6 +24,8 @@
 (** [Abstract_instruction] contains types and utilities for abstracted
     instructions. *)
 
+open Base
+
 (** [Opcode] provides an abstraction over instruction opcodes. *)
 module Opcode : sig
   (** [t] is an abstracted opcode. *)
@@ -76,7 +78,7 @@ module type S_predicates = sig
   val has_opcode : t -> opcode:Opcode.Kind.t -> bool
   (** [has_opcode ins ~opcode] tests whether [ins] has opcode [opcode]. *)
 
-  val opcode_in : t -> opcodes:Opcode.Kind.Set.t -> bool
+  val opcode_in : t -> opcodes:Set.M(Opcode.Kind).t -> bool
   (** [opcode_in ins ~opcodes] tests whether [ins] has an opcode in
       [opcodes]. *)
 

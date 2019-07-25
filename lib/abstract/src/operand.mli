@@ -106,7 +106,7 @@ module type S_properties = sig
     S_predicates with type t := t
   (** Anything that can access properties can also access predicates. *)
 
-  val flags : t -> Symbol.Table.t -> Flag.Set.t
+  val flags : t -> Symbol.Table.t -> Set.M(Flag).t
   (** [flags x symbol_table] gets the statement flags for [x] given symbol
       table [symbol_table]. *)
 end
@@ -232,7 +232,7 @@ module Bundle : sig
     (** [errors bundle] retrieves a list of error messages corresponding to
         erroneous operands (if any) in [bundle]. *)
 
-    val flags : t -> Symbol.Table.t -> Flag.Set.t
+    val flags : t -> Symbol.Table.t -> Set.M(Flag).t
     (** [flags x symbol_table] gets the statement flags for [x] given symbol
         table [symbol_table]. *)
   end

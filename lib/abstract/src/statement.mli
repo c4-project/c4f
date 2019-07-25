@@ -21,6 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
 open Act_utils
 
 (** [t] is an abstracted statement. *)
@@ -136,7 +137,7 @@ module type S_properties = sig
   (** [iter ?directive ?instruction ?label ?blank ?unknown stm] executes any
       of the optional side-effecting functions that apply to [stm]. *)
 
-  val flags : t -> Symbol.Table.t -> Flag.Set.t
+  val flags : t -> Symbol.Table.t -> Set.M(Flag).t
   (** [flags x symbol_table] gets the statement flags for [x] given symbol
       table [symbol_table]. *)
 end

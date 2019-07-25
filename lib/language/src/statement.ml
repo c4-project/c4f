@@ -66,17 +66,15 @@ struct
   let coerced_flags stm symbol_table =
     let abs_flags = flags stm symbol_table in
     let coerce x = (x :> Extended_flag.t) in
-    Extended_flag.Set.map abs_flags ~f:coerce
+    Set.map (module Extended_flag) abs_flags ~f:coerce
 
   let new_flags stm _symbol_table =
     if is_program_boundary stm then
-      Extended_flag.Set.singleton `Program_boundary
-    else Extended_flag.Set.empty
+      Set.singleton (module Extended_flag) `Program_boundary
+    else Set.empty (module Extended_flag)
 
   let extended_flags stm symbol_table =
-    Extended_flag.Set.union
-      (coerced_flags stm symbol_table)
-      (new_flags stm symbol_table)
+    Set.union (coerced_flags stm symbol_table) (new_flags stm symbol_table)
 
   let make_uniform : t list list -> t list list =
     Tx.List.right_pad ~padding:(empty ())

@@ -24,7 +24,8 @@
 (** [Sanitiser_pass] contains an enumeration [t] of high-level passes that
     can be enabled or disabled. *)
 
-open Core_kernel
+open Core_kernel (* for Blang *)
+
 open Act_common
 open Act_utils
 
@@ -62,15 +63,15 @@ include
   Enum.Extension_table with type t := t
 (** We include the usual enum extensions for [Pass]. *)
 
-val explain : Set.t
+val explain : (t, comparator_witness) Set.t
 (** [explain] collects passes that are useful for explaining an assembly
     file without modifying its semantics too much. *)
 
-val light : Set.t
+val light : (t, comparator_witness) Set.t
 (** [light] collects passes that clean up the assembly, but don't perform
     semantics-changing removals or simplifications. *)
 
-val standard : Set.t
+val standard : (t, comparator_witness) Set.t
 (** [standard] collects passes that are considered safe for general
     litmusification. *)
 
@@ -98,7 +99,10 @@ module Selector : sig
   (** This module implements the usual interface for looking up predicate
       documentation. *)
 
-  val eval_b : t Blang.t -> default:Set.t -> Set.t
+  val eval_b :
+       t Blang.t
+    -> default:(elt, comparator_witness) Set.t
+    -> (elt, comparator_witness) Set.t
   (** [eval_b stm ~default] evaluates a [Blang] statement [stm], mapping
       `Default` to the set [default]. *)
 end

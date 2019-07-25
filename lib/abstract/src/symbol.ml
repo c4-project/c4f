@@ -63,7 +63,7 @@ module Table = struct
     |> Set.of_list (module M)
 
   let set_of_sort (tbl : t) (sort : Sort.t) : Set.M(M).t =
-    set_of_sorts tbl (Sort.Set.singleton sort)
+    set_of_sorts tbl (Set.singleton (module Sort) sort)
 
   let set (tbl : t) : Set.M(M).t =
     tbl |> List.map ~f:fst |> Set.of_list (module M)
@@ -76,7 +76,7 @@ module Table = struct
   module Tabulate : Tabulator.Tabular with type data = t = struct
     type data = t
 
-    let to_row (symbol, sorts) = [symbol; Fmt.strf "%a" Sort.pp sorts]
+    let to_row (symbol, sorts) = [symbol; Sort.to_string sorts]
 
     let to_table table =
       let open Result.Monad_infix in

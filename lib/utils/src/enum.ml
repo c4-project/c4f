@@ -21,51 +21,53 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Tx = Travesty_base_exts
 include Enum_intf
 
-module Make_compare_hash_basic (E : S) = struct
+module Make_comparable (E : S_sexp) : Comparable.S with type t := E.t =
+Comparable.Make (struct
+  include E
+
   let compare = Comparable.lift ~f:E.to_enum Int.compare
+end)
+
+module Make_hashable (E : S) : sig
+  type t = E.t [@@deriving hash]
+end = struct
+  type t = E.t
 
   let hash x = Int.hash (E.to_enum x)
 
   let hash_fold_t s x = Int.hash_fold_t s (E.to_enum x)
 end
 
-module Make_comparable (E : S_sexp) : Comparable.S with type t := E.t =
-Comparable.Make (struct
-  include E
-  include Make_compare_hash_basic (E)
-end)
+module Make_quickcheck (E : sig
+  type t [@@deriving hash]
 
-module Make_hashable (E : S_sexp) : Hashable.S with type t := E.t =
-Hashable.Make (struct
-  include E
-  include Make_comparable (E)
-  include Make_compare_hash_basic (E)
-end)
+  include S_sexp with type t := t
+end) : My_quickcheck.S_with_sexp with type t = E.t = struct
+  type t = E.t
 
-module Make_quickcheck (E : S_sexp) :
-  My_quickcheck.S_with_sexp with type t := E.t = struct
   let sexp_of_t = E.sexp_of_t
 
-  module G = Quickcheck.Generator
-  module O = Quickcheck.Observer
-  module S = Quickcheck.Shrinker
+  module G = Base_quickcheck.Generator
+  module O = Base_quickcheck.Observer
+  module S = Base_quickcheck.Shrinker
 
   let of_enum_exn x = x |> E.of_enum |> Option.value_exn
 
   let quickcheck_generator =
-    G.map ~f:of_enum_exn (Int.gen_uniform_incl E.min E.max)
+    G.map ~f:of_enum_exn (G.int_uniform_inclusive E.min E.max)
 
-  let quickcheck_observer =
-    O.enum (E.max - 1) ~f:(fun x -> E.to_enum x - E.min)
+  let quickcheck_observer = O.of_hash_fold E.hash_fold_t
 
-  let quickcheck_shrinker = S.empty ()
+  let quickcheck_shrinker = S.atomic
 end
 
-module Make_from_enumerate (E : S_enumerate) : S with type t := E.t = struct
+module Make_from_enumerate (E : S_enumerate) : S with type t = E.t = struct
+  type t = E.t
+
   let min = 0
 
   let max = List.length E.all - 1
@@ -78,11 +80,18 @@ module Make_from_enumerate (E : S_enumerate) : S with type t := E.t = struct
 end
 
 module Extend (E : S_sexp) : Extension with type t := E.t = struct
-  include Make_comparable (E)
-  include Make_hashable (E)
-  include Make_quickcheck (E)
+  module EH = struct
+    include E
+    include Make_hashable (E)
+  end
 
-  include (E : Sexpable.S with type t := E.t)
+  module EC = struct
+    include EH
+    include Make_quickcheck (EH)
+    include Make_comparable (EH)
+  end
+
+  include EC
 
   let of_enum = E.of_enum
 
@@ -98,45 +107,34 @@ module Extend (E : S_sexp) : Extension with type t := E.t = struct
     List.map ~f:of_enum_exn
       (List.range ~stride:1 ~start:`inclusive ~stop:`inclusive E.min E.max)
 
-  let all_set () = Set.of_list (all_list ())
+  let all_set () = Set.of_list (module EC) (all_list ())
 end
 
 module Extend_table (E : S_table) : Extension_table with type t := E.t =
 struct
-  module Tbl = String_table.Make (E)
+  module Tbl = String_table.Make (struct
+    include E
+
+    let equal = Comparable.lift Int.equal ~f:E.to_enum
+  end)
+
   include Tbl
 
   module Basic_id = struct
-    type t = E.t
-
+    include E
+    include Make_hashable (E)
     include Tbl
-    include Make_compare_hash_basic (E)
   end
 
-  module Id : Identifiable.S_common with type t := E.t =
-    String_table.To_identifiable (Basic_id)
+  module Id : Stringable.S with type t = E.t = struct
+    type t = E.t
+
+    include String_table.To_stringable (Basic_id)
+  end
 
   include Id
-
-  include Plumbing.Jsonable.Of_stringable (struct
-    type t = E.t
-
-    include Id
-  end)
-
-  (* Identifiable, for some reason, doesn't contain both sides of sexp
-     conversion, so we have to manually retrieve [t_of_sexp] ourselves. *)
-  module Sexp = struct
-    module Sexp = Sexpable.Of_stringable (struct
-      type t = E.t
-
-      include Id
-    end)
-
-    let sexp_of_t = Id.sexp_of_t
-
-    let t_of_sexp = Sexp.t_of_sexp
-  end
+  include Plumbing.Jsonable.Of_stringable (Id)
+  module Sexp = Sexpable.Of_stringable (Id)
 
   include Extend (struct
     include E
@@ -144,6 +142,8 @@ struct
   end)
 
   let of_string_option = Tbl.of_string
+
+  let pp : t Fmt.t = Fmt.of_to_string to_string
 
   let pp_set = Fmt.(using Set.to_list (parens (box (list ~sep:comma pp))))
 end

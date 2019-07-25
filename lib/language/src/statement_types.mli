@@ -33,7 +33,7 @@ open Base
 (** [Basic] is the interface act languages must implement for statement
     analysis. *)
 module type Basic = sig
-  type t [@@deriving sexp, eq]
+  type t [@@deriving sexp, equal]
   (** The type of statements, which must be sexpable and equatable. *)
 
   module Ins : Equal.S
@@ -106,7 +106,7 @@ module type S = sig
       representing program boundaries. *)
 
   val extended_flags :
-    t -> Act_abstract.Symbol.Table.t -> Extended_flag.Set.t
+    t -> Act_abstract.Symbol.Table.t -> Set.M(Extended_flag).t
   (** [extended_flags stm symbol_table] behaves like [flags], but can also
       return the new flags in [Extended_flag]. *)
 

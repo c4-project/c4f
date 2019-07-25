@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Au = Act_utils
 
 module Opcode = struct
@@ -82,7 +82,7 @@ module Kind = Opcode.Kind
 let kind {opcode; _} = Opcode.kind opcode
 
 let pp f ins =
-  Format.fprintf f "@[<hv>%a@ (@,%a@,)@]" Opcode.Kind.pp (opcode ins)
+  Fmt.pf f "@[<hv>%a@ (@,%a@,)@]" Opcode.Kind.pp (opcode ins)
     Operand.Bundle.pp (operands ins)
 
 module Flag = Flag_enum.None
@@ -92,7 +92,7 @@ module type S_predicates = sig
 
   val has_opcode : t -> opcode:Opcode.Kind.t -> bool
 
-  val opcode_in : t -> opcodes:Opcode.Kind.Set.t -> bool
+  val opcode_in : t -> opcodes:Set.M(Opcode.Kind).t -> bool
 
   val is_jump : t -> bool
 
@@ -148,8 +148,7 @@ module Properties : S_properties with type t := t = struct
   let has_opcode {opcode= actual; _} ~opcode =
     Opcode.Kind.equal opcode actual
 
-  let opcode_in {opcode= actual; _} ~opcodes =
-    Opcode.Kind.Set.mem opcodes actual
+  let opcode_in {opcode= actual; _} ~opcodes = Set.mem opcodes actual
 
   let is_jump = has_opcode ~opcode:Jump
 
@@ -163,16 +162,14 @@ module Properties : S_properties with type t := t = struct
     let result =
       is_symbolic_jump (make ~opcode:Jump ~operands:Operand.Bundle.None)
     in
-    Out_channel.printf "%b" result ;
-    [%expect {| false |}]
+    Stdio.printf "%b" result ; [%expect {| false |}]
 
   let%expect_test "is_symbolic_jump: jump to immediate symbol" =
     let result =
       is_symbolic_jump
         (make ~opcode:Jump ~operands:Operand.(Bundle.Single (Symbol "foo")))
     in
-    Out_channel.printf "%b" result ;
-    [%expect {| true |}]
+    Stdio.printf "%b" result ; [%expect {| true |}]
 
   let%expect_test "is_symbolic_jump: jump to heap symbol" =
     let result =
@@ -183,8 +180,7 @@ module Properties : S_properties with type t := t = struct
                Bundle.Single
                  (Location Location.(Heap (Address.Symbol "foo")))))
     in
-    Out_channel.printf "%b" result ;
-    [%expect {| true |}]
+    Stdio.printf "%b" result ; [%expect {| true |}]
 
   let is_nop {opcode; _} = Opcode.Kind.equal opcode Nop
 

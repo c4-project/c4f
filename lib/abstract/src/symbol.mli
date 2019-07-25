@@ -62,7 +62,7 @@ module Table : sig
 
       If [sym] also maps to another sort, those mappings remain. *)
 
-  val set_of_sorts : t -> Sort.Set.t -> Set.M(M).t
+  val set_of_sorts : t -> Set.M(Sort).t -> Set.M(M).t
   (** [set_of_sorts tbl sorts] returns all symbols in [tbl] with a sort in
       [sorts], as a symbol set. *)
 

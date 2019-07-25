@@ -223,8 +223,9 @@ module Make (H : Hook_intf.S) : S with module Lang := H.Lang = struct
   (** [irrelevant_instruction_types] lists the high-level types of
       instruction that can be thrown out when converting to a litmus test. *)
   let irrelevant_instruction_types =
-    Act_abstract.Instruction.Opcode.Kind.(
+    Act_abstract.Instruction.Opcode.(
       Set.of_list
+        (module Kind)
         [Call (* -not- Return: these need more subtle translation *); Stack])
 
   let instruction_is_irrelevant =

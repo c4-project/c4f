@@ -21,6 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
+
 (** [Basic] is a common signature for things that have an abstract type,
     implementing [Abstract.S], that can be queried. *)
 module type Basic = sig
@@ -44,7 +46,7 @@ module type S = sig
   val has_abs_kind : Abs.Kind.t -> t -> bool
   (** [has_abs_kind t x] returns [true] if [x] has abstract kind [t]. *)
 
-  val abs_kind_in : Abs.Kind.Set.t -> t -> bool
+  val abs_kind_in : Set.M(Abs.Kind).t -> t -> bool
   (** [abs_kind_in set x] returns [true] if [x]'s abstract kind is a member
       of [set]. *)
 end

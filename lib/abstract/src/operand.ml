@@ -28,16 +28,11 @@ module Ac = Act_common
 
 (* Define this in a separate module so we can include it as [Elt] below. *)
 module M = struct
-  (* For some reason, [eq]'s [@equal] override doesn't work, and [equal] in
-     ppx_compare hasn't stabilised yet, so we have to do this dance to
-     implement error equality. *)
-  type err = Error.t
+  (* Errors don't have [equal], so we have to do this dance to implement
+     error equality. *)
+  type err = Error.t [@@deriving sexp]
 
-  let equal_err = Comparable.lift [%equal: Sexp.t] ~f:Error.sexp_of_t
-
-  let err_of_sexp = Error.t_of_sexp
-
-  let sexp_of_err = Error.sexp_of_t
+  let equal_err = [%compare.equal: Error.t]
 
   type t =
     | Int of int
@@ -164,7 +159,7 @@ module type S_properties = sig
 
   include S_predicates with type t := t
 
-  val flags : t -> Symbol.Table.t -> Flag.Set.t
+  val flags : t -> Symbol.Table.t -> Set.M(Flag).t
 end
 
 module Inherit_properties
@@ -242,7 +237,7 @@ module Properties : S_properties with type t := t = struct
     ; (is_immediate_heap_symbol o ~symbol_table, `Immediate_heap_symbol)
     ; (is_stack_pointer o, `Stack_pointer) ]
     |> List.filter_map ~f:(fun (x, y) -> Option.some_if x y)
-    |> Flag.Set.of_list
+    |> Set.of_list (module Flag)
 end
 
 include Properties
@@ -413,7 +408,7 @@ module Bundle = struct
 
     val errors : t -> Error.t list
 
-    val flags : t -> Symbol.Table.t -> Flag.Set.t
+    val flags : t -> Symbol.Table.t -> Set.M(Flag).t
   end
 
   module Inherit_properties
@@ -570,20 +565,35 @@ module Bundle = struct
       bundle |> to_list |> List.filter_map ~f
 
     let flags operands symbol_table =
-      Flag.Set.(
+      Set.(
         match operands with
         | None ->
-            empty
+            empty (module Flag)
         | Single o ->
-            map ~f:(fun x -> `On_self x) (flags o symbol_table)
+            map
+              (module Flag)
+              ~f:(fun x -> `On_self x)
+              (flags o symbol_table)
         | Double (o1, o2) ->
             union
-              (map ~f:(fun x -> `On_fst x) (flags o1 symbol_table))
-              (map ~f:(fun x -> `On_snd x) (flags o2 symbol_table))
+              (map
+                 (module Flag)
+                 ~f:(fun x -> `On_fst x)
+                 (flags o1 symbol_table))
+              (map
+                 (module Flag)
+                 ~f:(fun x -> `On_snd x)
+                 (flags o2 symbol_table))
         | Src_dst {src; dst} ->
             union
-              (map ~f:(fun x -> `On_src x) (flags src symbol_table))
-              (map ~f:(fun x -> `On_dst x) (flags dst symbol_table)))
+              (map
+                 (module Flag)
+                 ~f:(fun x -> `On_src x)
+                 (flags src symbol_table))
+              (map
+                 (module Flag)
+                 ~f:(fun x -> `On_dst x)
+                 (flags dst symbol_table)))
   end
 
   include Properties

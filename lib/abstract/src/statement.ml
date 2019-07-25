@@ -21,7 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Core_kernel
+open Base
 module Au = Act_utils
 
 type t =
@@ -36,9 +36,9 @@ let pp f = function
   | Blank ->
       ()
   | Directive d ->
-      Format.fprintf f ".%s" d
+      Fmt.pf f ".%s" d
   | Label l ->
-      Format.fprintf f ":%s" l
+      Fmt.pf f ":%s" l
   | Instruction ins ->
       Instruction.pp f ins
   | Unknown ->
@@ -145,7 +145,7 @@ module Inherit_predicates
   let is_jump_pair x y =
     exists
       (both (I.component_opt x) (I.component_opt y))
-      ~f:(Tuple2.uncurry P.is_jump_pair)
+      ~f:(fun (x, y) -> P.is_jump_pair x y)
 end
 
 module type S_properties = sig
@@ -171,7 +171,7 @@ module type S_properties = sig
     -> t
     -> unit
 
-  val flags : t -> Symbol.Table.t -> Flag.Set.t
+  val flags : t -> Symbol.Table.t -> Set.M(Flag).t
 end
 
 module Inherit_properties
@@ -249,8 +249,8 @@ module Properties : S_properties with type t := t = struct
   let flags stm symbol_table =
     [ (is_unused_label ~symbol_table stm, `UnusedLabel)
     ; (is_stack_manipulation stm, `StackManip) ]
-    |> List.filter_map ~f:(Tuple2.uncurry Option.some_if)
-    |> Flag.Set.of_list
+    |> List.filter_map ~f:(fun (x, y) -> Option.some_if x y)
+    |> Set.of_list (module Flag)
 end
 
 include Properties

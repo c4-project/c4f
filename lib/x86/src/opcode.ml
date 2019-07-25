@@ -102,7 +102,7 @@ module Sizable = struct
       `Sub
     | `Xchg
     | `Xor ]
-  [@@deriving sexp, eq, enumerate]
+  [@@deriving sexp, equal, enumerate]
 
   (* Note: any SIZABLE opcodes not present in this table map to 'unknown
      operands'. *)
@@ -127,6 +127,8 @@ module Sizable = struct
   include (
     String_table.Make (struct
       type nonrec t = t
+
+      let equal = equal
 
       let table =
         [ (`Add, "add")
@@ -182,6 +184,8 @@ module Size = struct
   String_table.Make (struct
     type nonrec t = t
 
+    let equal = equal
+
     let table = [(Byte, "b"); (Word, "w"); (Long, "l")]
   end)
 end
@@ -192,6 +196,8 @@ module Sized = struct
   include (
     String_table.Make (struct
       type nonrec t = t
+
+      let equal = equal
 
       let table =
         List.map
@@ -225,6 +231,8 @@ module Basic = struct
   include (
     String_table.Make (struct
       type nonrec t = t
+
+      let equal = equal
 
       let table =
         (Sizable.table :> (t, string) List.Assoc.t)
@@ -266,11 +274,11 @@ module Condition = struct
     | `Parity
     | `Sign
     | `Zero ]
-  [@@deriving sexp, eq, enumerate]
+  [@@deriving sexp, equal, enumerate]
 
   (** Intermediate table used to build the main condition table. *)
   module Inv_table = String_table.Make (struct
-    type t = invertible
+    type t = invertible [@@deriving equal]
 
     let table =
       [ (`Above, "a")
@@ -296,7 +304,7 @@ module Condition = struct
     | `ECXZero
     | `ParityEven
     | `ParityOdd ]
-  [@@deriving sexp, eq, enumerate]
+  [@@deriving sexp, equal, enumerate]
 
   (** [build_inv_condition (ic, s) builds, for an invertible condition C,
       string table entries for C and NC. *)
@@ -305,6 +313,8 @@ module Condition = struct
   include (
     String_table.Make (struct
       type nonrec t = t
+
+      let equal = equal
 
       let table =
         List.bind ~f:build_inv_condition Inv_table.table
@@ -318,11 +328,13 @@ end
 
 module Jump = struct
   type t = [`Unconditional | `Conditional of Condition.t]
-  [@@deriving sexp, eq, enumerate]
+  [@@deriving sexp, equal, enumerate]
 
   include (
     String_table.Make (struct
       type nonrec t = t
+
+      let equal = equal
 
       (* Jump instructions are always jC for some condition C, except jmp. *)
       let f (x, s) = (`Conditional x, "j" ^ s)

@@ -54,13 +54,13 @@ module Make (B : Explanation_intf.Basic) :
     { original: B.elt
     ; abstract: B.Abs.t
     ; abs_kind: B.Abs.Kind.t
-    ; abs_flags: B.Flag.Set.t
+    ; abs_flags: Set.M(B.Flag).t
     ; details: B.details }
   [@@deriving fields]
 
   let has_abs_kind k x = B.Abs.Kind.equal k x.abs_kind
 
-  let abs_kind_in ks x = B.Abs.Kind.Set.mem ks x.abs_kind
+  let abs_kind_in ks x = Set.mem ks x.abs_kind
 
   let make ~context ~original =
     { original
@@ -76,7 +76,7 @@ module Make (B : Explanation_intf.Basic) :
         ~abs_kind:(fun _ _ -> pf f "@[kind:@ %a;@]@ " B.Abs.Kind.pp)
         ~abstract:(fun _ _ _ -> ())
         ~abs_flags:(fun _ _ flags ->
-          if not (B.Flag.Set.is_empty flags) then
+          if not (Set.is_empty flags) then
             pf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags)
         ~details:(fun _ _ -> B.pp_details f))
 
@@ -114,7 +114,7 @@ module Make_loc (L : Act_language.Location_types.S) :
       let abstract = L.abstract
     end)
 
-    let abs_flags _ _ = Flag.Set.empty
+    let abs_flags _ _ : Set.M(Flag).t = Set.empty (module Flag)
   end
 
   type details = Base.details
@@ -208,7 +208,7 @@ module Make_ins (B : Basic_ins) :
       B.Instruction :
         Act_abstract.Abstractable.S with module Abs := Abs and type t := elt )
 
-    let abs_flags _ _ = Flag.Set.empty
+    let abs_flags _ _ : Set.M(Flag).t = Set.empty (module Flag)
   end
 
   type details = Base.details

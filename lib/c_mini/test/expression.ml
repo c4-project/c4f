@@ -93,7 +93,8 @@ let%test_module "Eval" =
           eq
             (lvalue (Src.Lvalue.variable (Act_common.C_id.of_string "a")))
             (int_lit 27)) ;
-      [%expect {| (Error "env doesn't contain this value") |}]
+      [%expect
+        {| (Error ("Variable not found in typing environment." (id a))) |}]
 
     let%expect_test "example atomic load" =
       let e = Lazy.force Env.test_env_mod in
@@ -105,7 +106,7 @@ let%test_module "Eval" =
                  ~src:
                    (Or_error.ok_exn
                       (Address.of_id_in_env e
-                         ~id:(Act_common.C_id.of_string "bar")))
+                         ~id:(Act_common.C_id.of_string "y")))
                  ~mo:Act_c_mini.Mem_order.Seq_cst))) ;
-      [%expect {| (Error "env doesn't contain this value") |}]
+      [%expect {| (Ok (Int 53)) |}]
   end )

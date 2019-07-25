@@ -23,7 +23,7 @@
 
 (** Case-insentitive bidirectional string lookup table modules *)
 
-open Core_kernel
+open Base
 
 (** [Table] is a signature containing the raw string table itself. *)
 module type Table = sig
@@ -50,40 +50,22 @@ module type S = sig
   (** [of_string_exn str] behaves as [of_string str], but raises an
       exception if the string isn't in the table. *)
 
-  val to_string : ?equal:(t -> t -> bool) -> t -> string option
-  (** [to_string ?equal t] looks up the string equivalent of [t] in the
-      string table.
+  val to_string : t -> string option
+  (** [to_string t] looks up the string equivalent of [t] in the string
+      table. *)
 
-      If provided, it uses [equal] as the comparator; it defaults to [=]. *)
-
-  val to_string_exn : ?equal:(t -> t -> bool) -> t -> string
-  (** [to_string_exn ?equal t] behaves as [to_string ?equal t], but raises
-      an exception if [t] has no string in the table. . *)
+  val to_string_exn : t -> string
+  (** [to_string_exn t] behaves as [to_string t], but raises an exception if
+      [t] has no string in the table. . *)
 end
 
-module Make (T : Table) : S with type t := T.t
+module Make (T : sig
+  type t [@@deriving equal]
+
+  include Table with type t := t
+end) : S with type t = T.t
 (** [Make] lifts a [Table] into a module satisfying [Intf]. *)
 
-(** [Basic_identifiable] is the signature that must be implemented to use
-    string tables as [Identifiable]s through [To_identifiable]. *)
-module type Basic_identifiable = sig
-  type t
-
-  include S with type t := t
-
-  val compare : t -> t -> int
-
-  val hash : t -> int
-
-  val hash_fold_t : Hash.state -> t -> Hash.state
-end
-
-module To_stringable (T : Basic_identifiable) :
-  Stringable.S with type t := T.t
+module To_stringable (T : S) : Stringable.S with type t := T.t
 (** [To_stringable] produces a plain stringable instance given a string
-    table and a comparator. *)
-
-module To_identifiable (T : Basic_identifiable) :
-  Identifiable.S_plain with type t := T.t
-(** [To_identifiable] produces a plain identifiable instance given a string
-    table and a comparator. *)
+    table. *)

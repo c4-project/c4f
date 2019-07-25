@@ -26,14 +26,24 @@ open Act_common
 open Act_utils
 
 module Colour_table = String_table.Make (struct
+  let equal_style_renderer (x : Fmt.style_renderer) (y : Fmt.style_renderer)
+      : bool =
+    match (x, y) with
+    | `Ansi_tty, `Ansi_tty | `None, `None ->
+        true
+    | `Ansi_tty, `None | `None, `Ansi_tty ->
+        false
+
   type t = Fmt.style_renderer option
+
+  let equal : t -> t -> bool = Option.equal equal_style_renderer
 
   let table =
     [(Some `None, "never"); (Some `Ansi_tty, "always"); (None, "auto")]
 end)
 
 let colour_map : Fmt.style_renderer option String.Map.t =
-  String.Map.of_alist_exn (List.Assoc.inverse Colour_table.table)
+  Map.of_alist_exn (module String) (List.Assoc.inverse Colour_table.table)
 
 let colour_type : Fmt.style_renderer option Command.Arg_type.t =
   Command.Arg_type.of_map colour_map

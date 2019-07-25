@@ -40,7 +40,7 @@ module type S = sig
   (** [S] includes a state transformer, [t], with an inner error monad. *)
 
   val initial :
-    passes:Pass_group.Set.t -> variables:Set.M(Lang.Symbol).t -> state
+    passes:Set.M(Pass_group).t -> variables:Set.M(Lang.Symbol).t -> state
   (** [initial ~passes ~variables] opens an initial context with the given
       enabled passes and C variables. *)
 

@@ -49,7 +49,7 @@ module type Basic = sig
   (** [Flag] is the module containing detail flags that may be raised on
       [elt]. *)
 
-  val abs_flags : elt -> context -> Flag.Set.t
+  val abs_flags : elt -> context -> Set.M(Flag).t
   (** [abs_flags elt context] computes the set of detail flags that apply to
       [elt] given the context [context]. *)
 
@@ -99,7 +99,7 @@ module type S = sig
   val details : t -> details
   (** [details exp] gets the additional details of an explanation [exp]. *)
 
-  val abs_flags : t -> Flag.Set.t
+  val abs_flags : t -> Set.M(Flag).t
   (** [abs_flags exp] gets detailed analysis of the element inside [exp] in
       the form of the abstract representation's flag set. *)
 

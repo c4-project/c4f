@@ -43,8 +43,7 @@ module Single_passes = struct
   end
 
   include M
-  module ET = Enum.Extend_table (M)
-  include ET
+  include Enum.Extend_table (M)
 
   let tree_docs : Property.Tree_doc.t =
     [ ( "escape-symbols"
@@ -119,15 +118,17 @@ let%expect_test "all passes accounted for" =
 
 let all_lazy = lazy (all_set ())
 
-let explain = Set.of_list [`Remove_useless]
+let explain = Set.of_list (module Single_passes) [`Remove_useless]
 
 let light =
-  Set.of_list [`Remove_useless; `Remove_boundaries; `Unmangle_symbols; `Warn]
+  Set.of_list
+    (module Single_passes)
+    [`Remove_useless; `Remove_boundaries; `Unmangle_symbols; `Warn]
 
 let standard = all_set ()
 
 module Selector = struct
-  type elt = Single_passes.t [@@deriving eq, enumerate]
+  type elt = Single_passes.t [@@deriving equal, enumerate]
 
   module Category = struct
     module M = struct
@@ -173,7 +174,7 @@ module Selector = struct
   end
 
   module M = struct
-    type t = [elt | Category.t | `Default] [@@deriving eq, enumerate]
+    type t = [elt | Category.t | `Default] [@@deriving equal, enumerate]
 
     let table =
       List.concat
@@ -191,10 +192,10 @@ module Selector = struct
 
   let __t_of_sexp__ = t_of_sexp (* ?! *)
 
-  let eval (default : Single_passes.Set.t) : t -> Single_passes.Set.t =
-    function
+  let eval (default : Set.M(Single_passes).t) : t -> Set.M(Single_passes).t
+      = function
     | #elt as pass ->
-        Single_passes.Set.singleton pass
+        Set.singleton (module Single_passes) pass
     | `Standard ->
         standard
     | `Explain ->
@@ -227,14 +228,16 @@ module Selector = struct
   let pp_tree : unit Fmt.t =
     Property.Tree_doc.pp tree_docs (List.map ~f:snd table)
 
-  let eval_b pred ~default =
+  let eval_b (pred : t Blang.t) ~(default : Set.M(Single_passes).t) :
+      Set.M(Single_passes).t =
     Blang.eval_set ~universe:all_lazy (eval default) pred
 
   let%expect_test "eval_b: standard and not explain" =
     let blang = Blang.O.(base `Standard && not (base `Explain)) in
     Stdio.print_s
       [%sexp
-        (eval_b blang ~default:Single_passes.Set.empty : Single_passes.Set.t)] ;
+        ( eval_b blang ~default:(Set.empty (module Single_passes))
+          : Set.M(Single_passes).t )] ;
     [%expect
       {|
       (escape-symbols language-hooks remove-boundaries remove-litmus

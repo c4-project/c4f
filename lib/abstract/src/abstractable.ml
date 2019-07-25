@@ -21,6 +21,7 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
 include Abstractable_intf
 
 module Make (B : Basic) : S with type t := B.t and module Abs := B.Abs =
@@ -31,5 +32,5 @@ struct
 
   let has_abs_kind ty x = Abs.Kind.equal ty (abs_kind x)
 
-  let abs_kind_in tys x = Abs.Kind.Set.mem tys (abs_kind x)
+  let abs_kind_in tys x = Set.mem tys (abs_kind x)
 end
