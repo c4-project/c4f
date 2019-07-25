@@ -21,12 +21,12 @@ module Tx = Travesty_base_exts
 open Ast_basic
 include Ast_intf
 
-let pp_assign_rhs (pp : 'a Fmt.t) : 'a Fmt.t =
-  Fmt.(prefix (unit "@ =@ ") pp)
+let pp_assign_rhs (type a) (pp : a Fmt.t) : a Fmt.t =
+  Fmt.((any "@ =@ ") ++ pp)
 
-let pp_opt_assign (ppl : 'l Fmt.t) (ppr : 'r Fmt.t) : ('l * 'r option) Fmt.t
+let pp_opt_assign (type l r) (ppl : l Fmt.t) (ppr : r Fmt.t) : (l * r option) Fmt.t
     =
-  Fmt.(append ppl (option (pp_assign_rhs ppr)))
+  Fmt.(pair ~sep:nop ppl (option (pp_assign_rhs ppr)))
 
 module Optional (N : Ast_node) : Ast_node with type t = N.t option = struct
   type t = N.t option [@@deriving sexp, eq, compare]
@@ -48,15 +48,15 @@ end
 
 module List_of (N : Ast_node) (S : Sep) : Ast_node with type t = N.t list =
 struct
-  type t = N.t list [@@deriving sexp, eq, compare]
+  type t = N.t list [@@deriving sexp, equal, compare]
 
   let pp = Fmt.list ~sep:S.sep N.pp
 end
 
 module End_semi (N : Ast_node) : Ast_node with type t = N.t = struct
-  type t = N.t [@@deriving sexp, eq, compare]
+  type t = N.t [@@deriving sexp, equal, compare]
 
-  let pp = Fmt.suffix (Fmt.unit ";") N.pp
+  let pp = Fmt.(N.pp ++ any ";")
 end
 
 (** AST nodes parametrised to break dependency cycles.
@@ -156,10 +156,10 @@ module Parametric = struct
         | Array a ->
             Array.pp pp (Fmt.option B.Expr.pp) f a
         | Fun_decl (t, ps) ->
-            Fmt.(append pp (parens B.Par.pp) f (t, ps))
+            Fmt.(pair ~sep:nop pp (parens B.Par.pp) f (t, ps))
         | Fun_call (t, ps) ->
             Fmt.(
-              append pp (parens (list ~sep:comma Identifier.pp)) f (t, ps))
+              pair ~sep:nop pp (parens (list ~sep:comma Identifier.pp)) f (t, ps))
 
       let rec identifier = function
         | Id x ->
@@ -182,7 +182,7 @@ module Parametric = struct
     module Make (D : Ast_node_with_identifier) : S with type ddec := D.t =
     struct
       type t = {pointer: Pointer.t option; direct: D.t}
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let identifier {direct; _} = D.identifier direct
 
@@ -190,7 +190,7 @@ module Parametric = struct
         Fmt.(
           using
             (fun {pointer; direct} -> (pointer, direct))
-            (append (option Pointer.pp) D.pp))
+            (pair ~sep:nop (option Pointer.pp) D.pp))
     end
   end
 
@@ -226,7 +226,7 @@ module Parametric = struct
         | Array a ->
             Fmt.(Array.pp (option pp) (option B.Expr.pp) f a)
         | Fun_decl (t, ps) ->
-            Fmt.(append (option pp) (parens (option B.Par.pp)) f (t, ps))
+            Fmt.(pair ~sep:nop (option pp) (parens (option B.Par.pp)) f (t, ps))
     end
   end
 
@@ -242,7 +242,7 @@ module Parametric = struct
         | Pointer ptr ->
             Pointer.pp f ptr
         | Direct (mptr, direct) ->
-            Fmt.(append (option Pointer.pp) D.pp) f (mptr, direct)
+            Fmt.(pair ~sep:nop (option Pointer.pp) D.pp) f (mptr, direct)
     end
   end
 
@@ -266,10 +266,10 @@ module Parametric = struct
             B.Dec.pp f decl
         | Bitfield (mdecl, bitsize) ->
             Fmt.(
-              append
+              pair ~sep:nop
                 (* Trying to get 'X : Y' if X exists, and ': Y' if not. *)
-                (option (suffix sp B.Dec.pp))
-                (prefix (unit ":@ ") B.Expr.pp)
+                (option (B.Dec.pp ++ sp))
+                ((any ":@ ") ++ B.Expr.pp)
                 f (mdecl, bitsize))
     end
   end
@@ -279,7 +279,7 @@ module Parametric = struct
 
     module Make (E : Ast_node) : S with type expr := E.t = struct
       type t = Normal of Identifier.t | Case of E.t | Default
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let pp_body (f : Base.Formatter.t) : t -> unit = function
         | Normal id ->
@@ -289,7 +289,7 @@ module Parametric = struct
         | Default ->
             Fmt.string f "default"
 
-      let pp : t Fmt.t = Fmt.(suffix (unit ":") pp_body)
+      let pp : t Fmt.t = Fmt.(pp_body ++ (any ":"))
     end
   end
 
@@ -316,13 +316,13 @@ module Parametric = struct
         | String of String.t
         | Constant of Constant.t
         | Brackets of t
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let rec pp f : t -> unit = function
         | Prefix (pre, t) ->
-            Fmt.append Operators.Pre.pp pp f (pre, t)
+            Fmt.pair ~sep:Fmt.nop Operators.Pre.pp pp f (pre, t)
         | Postfix (t, post) ->
-            Fmt.append pp Operators.Post.pp f (t, post)
+            Fmt.pair ~sep:Fmt.nop pp Operators.Post.pp f (t, post)
         | Binary (l, bin, r) ->
             Fmt.pf f "%a@ %a@ %a" pp l Operators.Bin.pp bin pp r
         | Ternary {cond; t_expr; f_expr} ->
@@ -369,7 +369,7 @@ module Parametric = struct
         Fmt.(
           using
             (fun {params; style} -> (params, style))
-            (append (list ~sep:comma P.pp) pp_style))
+            (pair ~sep:nop (list ~sep:comma P.pp) pp_style))
     end
   end
 
@@ -412,13 +412,13 @@ module Parametric = struct
         | Label (label, labelled) ->
             Fmt.(pair ~sep:sp B.Lbl.pp pp f (label, labelled))
         | Expr e ->
-            Fmt.(suffix (unit ";") (option B.Expr.pp) f e)
+            Fmt.((option B.Expr.pp ++ (any ";")) f e)
         | Compound com ->
             B.Com.pp f com
         | If {cond; t_branch; f_branch} ->
             Fmt.(
               pf f "if@ (%a)@ %a%a" B.Expr.pp cond pp t_branch
-                (option (prefix (unit "@ else@ ") pp))
+                (option ((any "@ else@ ") ++ pp))
                 f_branch)
         | Switch (cond, rest) ->
             Fmt.(pf f "switch@ (%a)@ %a" B.Expr.pp cond pp rest)
@@ -480,9 +480,9 @@ and Enumerator : sig
   include Ast_node with type t := t
 end = struct
   type t = {name: Identifier.t; value: Expr.t option}
-  [@@deriving sexp, eq, compare]
+  [@@deriving sexp, equal, compare]
 
-  let pp =
+  let pp : t Fmt.t =
     Fmt.(
       using
         (fun {name; value} -> (name, value))
@@ -715,7 +715,7 @@ module Function_def = struct
     Fmt.(
       using
         (function [] -> None | x -> Some x)
-        (option (prefix (unit "@ ") (list ~sep:sp Decl.pp))))
+        (option ((any "@ ") ++ (list ~sep:sp Decl.pp))))
 
   let pp (f : Base.Formatter.t) {decl_specs; signature; decls; body} : unit
       =

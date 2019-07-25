@@ -44,7 +44,7 @@ module type S = Explainer_intf.S with type config := Config.t
 module type S_filter = Runner_intf.S with type cfg = Config.t
 
 let pp_set_adj pp_set f set =
-  if not (Set.is_empty set) then Fmt.(prefix sp pp_set) f set
+  if not (Set.is_empty set) then Fmt.(sp ++ pp_set) f set
 
 module Make (B : Explainer_intf.Basic) : S with module Lang = B.Src_lang =
 struct
@@ -176,7 +176,7 @@ struct
           (vbox
              (list ~sep:sp
                 (pair ~sep:sp
-                   (hbox (prefix (unit "-- program ") int))
+                   (hbox ((any "-- program ") ++ int))
                    (pp_for_explain_format output_format)))))
     in
     Fmt.pf f "%a@." pp exps ;

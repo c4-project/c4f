@@ -42,13 +42,13 @@ module Order = struct
 
   let colour : Ordering.t option -> Fmt.style = function
     | Some Equal ->
-        `Green
+        `Fg `Green
     | Some Less ->
-        `Red
+        `Fg `Red
     | Some Greater ->
-        `Yellow
+        `Fg `Yellow
     | None ->
-        `Magenta
+        `Fg `Magenta
 
   let pp_operator (f : Formatter.t) (op : Ordering.t option) : unit =
     Fmt.(styled (colour op) (using operator string)) f op
@@ -58,9 +58,9 @@ type t = Oracle_undefined | Subject_undefined | Result of Order.t
 
 let pp (f : Formatter.t) : t -> unit = function
   | Subject_undefined ->
-      Fmt.styled_unit `Cyan "UNDEFINED@ (Subject)" f ()
+      Fmt.styled (`Fg `Cyan) (Fmt.any "UNDEFINED@ (Subject)") f ()
   | Oracle_undefined ->
-      Fmt.styled_unit `Cyan "UNDEFINED@ (Oracle)" f ()
+      Fmt.styled (`Fg `Cyan) (Fmt.any "UNDEFINED@ (Oracle)") f ()
   | Result o ->
       Fmt.pf f "Oracle@ %a@ Subject" Order.pp_operator
         (Au.Set_partial_order.to_ordering_opt o)

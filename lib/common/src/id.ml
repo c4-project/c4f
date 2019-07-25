@@ -105,7 +105,7 @@ let drop_prefix (id : t) ~(prefix : t) : t Or_error.t =
 let has_tag id element = List.mem id element ~equal:String.Caseless.equal
 
 let pp_pair (ppe : 'e Fmt.t) : (t * 'e) Fmt.t =
-  Fmt.(vbox ~indent:2 (pair (suffix (unit ":") pp) ppe))
+  Fmt.(vbox ~indent:2 (pair (pp ++ any ":") ppe))
 
 let pp_alist (ppe : 'e Fmt.t) : (t, 'e) List.Assoc.t Fmt.t =
   Fmt.(vbox (list ~sep:cut (pp_pair ppe)))

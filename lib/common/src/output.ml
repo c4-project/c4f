@@ -46,25 +46,27 @@ let pe (type a) (o : t) : (a, Formatter.t, unit) format -> a = Fmt.pf o.ef
 
 module Stage_banner = struct
   let pp_stage : string Fmt.t =
-    Fmt.(styled `Magenta (using String.uppercase string))
+    Fmt.(styled (`Fg `Magenta) (using String.uppercase string))
 
-  let pp_sub_stage : string Fmt.t = Fmt.(parens (styled `Cyan string))
+  let pp_sub_stage : string Fmt.t = Fmt.(parens (styled (`Fg `Cyan) string))
 
-  let pp_id : Id.t Fmt.t = Fmt.(brackets (styled `Blue Id.pp))
+  let pp_id : Id.t Fmt.t = Fmt.(brackets (styled (`Fg `Blue) Id.pp))
 
   let pp_machine : Id.t Fmt.t =
-    Fmt.(prefix (unit "@@@,") (styled `Yellow Id.pp))
+    Fmt.((any "@@@,") ++ (styled (`Fg `Yellow) Id.pp))
 
-  let pp_in_file : string Fmt.t = Fmt.(prefix (unit "@ ") string)
+  let pp_in_file : string Fmt.t = Fmt.(sp ++ string)
 
-  let pp_out_file : string Fmt.t = Fmt.(prefix (unit "@ ->@ ") string)
+  let pp_out_file : string Fmt.t = Fmt.((any "@ ->@ ") ++ string)
 
   let run ?(id : Id.t option) ?(machine : Id.t option)
       ?(in_file : string option) ?(out_file : string option)
       ?(sub_stage : string option) (o : t) ~(stage : string) : unit =
+    (* Gets shadowed by Fmt. *)
+    let i = id in
     Fmt.(
       pv o "@[@[<h>%a@,%a@,%a@,%a@]@,@[<h>%a@]@,@[<h>%a@]@]@." pp_stage
-        stage (option pp_sub_stage) sub_stage (option pp_id) id
+        stage (option pp_sub_stage) sub_stage (option pp_id) i
         (option pp_machine) machine (option pp_in_file) in_file
         (option pp_out_file) out_file)
 end
@@ -74,10 +76,8 @@ let log_stage = Stage_banner.run
 let print_error_body : Error.t Fmt.t =
   Fmt.(
     vbox ~indent:2
-      (prefix
-         (suffix sp
-            (hbox (styled_unit `Red "act encountered a top-level error:")))
-         (box Error.pp)))
+      ((hbox (styled (`Fg `Red) (any "ACT encountered a top-level error:@ ")))
+      ++ (box Error.pp)))
 
 let print_error (o : t) : 'a Or_error.t -> unit =
-  Fmt.(result ~ok:nop ~error:(suffix (Fmt.unit "@.") print_error_body)) o.ef
+  Fmt.(result ~ok:nop ~error:(print_error_body ++ any "@.")) o.ef

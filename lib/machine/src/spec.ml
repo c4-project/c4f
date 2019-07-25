@@ -34,14 +34,14 @@ module M = struct
     | true ->
         ()
     | false ->
-        Fmt.unit "@ (DISABLED)" f ()
+        Fmt.any "@ (DISABLED)" f ()
 
   let pp =
     Fmt.(
       hbox
         (using
            (fun {via; enabled; _} -> (via, enabled))
-           (append Via.pp pp_enabled)))
+           (pair ~sep:nop Via.pp pp_enabled)))
 
   let pp_summary = pp (* for now *)
 

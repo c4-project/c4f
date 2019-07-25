@@ -27,7 +27,7 @@ open Explanation_intf
 let pp_details (pp_header : 'h Fmt.t) (pp_body : 'b Fmt.t) : ('h * 'b) Fmt.t
     =
   Fmt.(
-    hvbox ~indent:4 (append (suffix sp (hvbox pp_header)) (braces pp_body)))
+    hvbox ~indent:4 (pair ~sep:nop ((hvbox pp_header) ++ sp) (braces pp_body)))
 
 let pp_named_details (name : string) (pp_body : 'b Fmt.t) : 'b Fmt.t =
   Fmt.(using (fun x -> ((), x)) (pp_details (const string name) pp_body))

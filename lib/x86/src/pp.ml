@@ -79,7 +79,7 @@ module Common = struct
 end
 
 let pp_seg (pp_reg : Reg.t Fmt.t) : Reg.t Fmt.t =
-  Fmt.(suffix (unit ":") pp_reg)
+  Fmt.(pp_reg ++ (any ":"))
 
 module Att_reg_dependent (B : sig
   val pp_reg : Reg.t Fmt.t
@@ -114,7 +114,7 @@ struct
 end
 
 let pp_gcc_asm_template_token : string Fmt.t =
-  Fmt.(hbox (prefix (unit "%%") (brackets string)))
+  Fmt.(hbox ((any "%%") ++ (brackets string)))
 
 (** Parts common to both AT&T and AT&T-in-GCC dialects. *)
 module Att_and_gcc = struct
@@ -129,7 +129,7 @@ let pp_unexpected_template_token : string Fmt.t =
 (* Parts specific to AT&T *)
 module Att_specific = struct
   let pp_reg : Reg.t Fmt.t =
-    Fmt.(box (prefix (always "%%") (using Reg.to_string string)))
+    Fmt.(box ((any "%%") ++ (using Reg.to_string string)))
 
   let pp_template_token : string Fmt.t = pp_unexpected_template_token
 end
@@ -139,7 +139,7 @@ module Gcc_specific = struct
   (* The difference between this and the AT&T one is the extra escaping %,
      to disambiguate between registers and template tokens. *)
   let pp_reg : Reg.t Fmt.t =
-    Fmt.(box (prefix (always "%%%%") (using Reg.to_string string)))
+    Fmt.(box ((any "%%%%") ++ (using Reg.to_string string)))
 
   let pp_template_token : string Fmt.t = pp_gcc_asm_template_token
 end
@@ -227,11 +227,11 @@ module Make (D : Dialect) = struct
         ()
     | operands ->
         (* Glue between operator and operands *)
-        Fmt.(prefix sp (list ~sep:comma pp_operand)) f operands
+        Fmt.(sp ++ (list ~sep:comma pp_operand)) f operands
 
   let prefix_string = function PreLock -> "lock"
 
-  let pp_prefix = Fmt.(suffix sp (using prefix_string string))
+  let pp_prefix = Fmt.((using prefix_string string) ++ sp)
 
   let pp_opcode f = function
     | Opcode.Directive s ->

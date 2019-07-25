@@ -31,9 +31,9 @@ module Adjusted_weight = struct
     Fmt.(
       function
       | 0 ->
-          styled_unit `Red "disabled" f ()
+          styled (`Fg `Red) (any "disabled") f ()
       | k ->
-          styled `Green (suffix (unit "x") int) f k)
+          styled (`Fg `Green) (int ++ (any "x")) f k)
 
   let pp (f : Formatter.t) : t -> unit = function
     | Not_adjusted o ->

@@ -26,8 +26,8 @@ let null_formatter () =
 
 let pp_c_braces (pi : 'a Fmt.t) : 'a Fmt.t =
   Fmt.(
-    hvbox (suffix (unit "@ }") (hvbox ~indent:4 (prefix (unit "{@ ") pi))))
+    hvbox ((hvbox ~indent:4 ((any "{@ ") ++ pi)) ++ (any "@ }")))
 
 let pp_kv f k pv v =
-  Fmt.(hvbox ~indent:1 (pair ~sep:(const (suffix sp char) ':') string pv))
+  Fmt.(hvbox ~indent:1 (pair ~sep:(const (char ++ sp) ':') string pv))
     f (k, v)

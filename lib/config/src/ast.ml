@@ -31,11 +31,10 @@ module Pp_helpers = struct
   let pp_stanza_base (pp_header : 'h Fmt.t) (pp_directive : 'd Fmt.t) :
       ('h * 'd list) Fmt.t =
     Fmt.(
-      suffix (unit "@ }")
         (vbox ~indent:2
            (pair ~sep:sp
-              (hbox (suffix (unit "@ {") pp_header))
-              (list ~sep:sp pp_directive))))
+              (hbox (pp_header ++ any "@ {"))
+              (list ~sep:sp pp_directive))) ++ any "@ }")
 
   let pp_simple_stanza (pp_directive : 'd Fmt.t) : (string * 'd list) Fmt.t
       =
@@ -190,7 +189,7 @@ module Machine = struct
       | Enabled b ->
           pp_enabled f b
       | Via v ->
-          Fmt.(hbox (prefix (unit "via@ ") Via.pp)) f v
+          Fmt.(hbox ((any "via@ ") ++ Via.pp)) f v
       | Sim (i, ss) ->
           pp_id_stanza Sim.pp f (("sim", i), ss))
 end

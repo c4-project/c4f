@@ -23,7 +23,7 @@ let parse_config_failures ~(file : Fpath.t) ~(path : Fpath.t) :
   Fmt.(
     pr "@[%a@]@."
       (result ~ok:pp_ast
-         ~error:(prefix (unit "UNEXPECTED ERROR:@ ") Error.pp)))
+         ~error:((any "UNEXPECTED ERROR:@ ") ++ Error.pp)))
     r ;
   Result.ok_unit
 
