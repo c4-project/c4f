@@ -70,8 +70,8 @@ val reduce :
   -> atomic_load:(Atomic_load.t -> 'a)
   -> bop:(Bop.t -> 'a -> 'a -> 'a)
   -> 'a
-(** [reduce expr ~constant ~lvalue ~atomic_load ~bop] recursively
-    reduces [expr] to a single value, using the given functions at each
+(** [reduce expr ~constant ~lvalue ~atomic_load ~bop] recursively reduces
+    [expr] to a single value, using the given functions at each
     corresponding stage of the expression tree. *)
 
 (** {2 Traversals} *)
@@ -106,12 +106,12 @@ include
 (** {2 Evaluating expressions} *)
 
 module Eval : sig
-  val as_constant
-    : t -> env:(Lvalue.t -> Constant.t Or_error.t) -> Constant.t Or_error.t
-  (** [as_constant expr ~env] evaluates expression [expr] in the context of the
-      abstract environment (store/heap) model [env], returning a constant if the
-      evaluation succeeded or an error otherwise. *)
+  val as_constant :
+    t -> env:(Address.t -> Constant.t Or_error.t) -> Constant.t Or_error.t
+  (** [as_constant expr ~env] evaluates expression [expr] in the context of
+      the abstract environment (store/heap) model [env], returning a
+      constant if the evaluation succeeded or an error otherwise. *)
 
-  val empty_env : Lvalue.t -> Constant.t Or_error.t
+  val empty_env : Address.t -> Constant.t Or_error.t
   (** [empty_env] maps all lvalues to errors. *)
 end

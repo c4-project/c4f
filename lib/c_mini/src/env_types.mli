@@ -24,6 +24,9 @@ module type S = sig
     type t = Act_common.C_id.t [@@deriving sexp_of, quickcheck]
   end
 
+  val type_of : Act_common.C_id.t -> Type.t Or_error.t
+  (** [type of id] tries to get the type of [id] in the typing environment. *)
+
   val has_variables_of_basic_type : Type.Basic.t -> bool
   (** [has_variables_of_basic_type t] is true provided that the environment
       has at least one variable whose basic type is [t]. *)

@@ -54,6 +54,13 @@ struct
   let variables_of_basic_type (basic : Type.Basic.t) :
       Type.t Map.M(Ac.C_id).t =
     Map.filter E.env ~f:Type.(basic_type_is ~basic)
+
+  let type_of (id : Ac.C_id.t) : Type.t Or_error.t =
+    Result.of_option (Map.find E.env id)
+      ~error:
+        (Error.create_s
+           [%message
+             "Variable not found in typing environment." ~id:(id : Ac.C_id.t)])
 end
 
 module Make_with_known_values (E : sig

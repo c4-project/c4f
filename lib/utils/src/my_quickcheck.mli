@@ -52,7 +52,9 @@ module Small_non_negative_int : sig
   include S_with_sexp with type t := int
 end
 
-val print_sample : (module S_sample) -> unit
-(** [print_sample m] runs the quickcheck generator in [m] a small number of
-    times, sorts and de-duplicates the results, and prints them as
-    S-expressions to stdout. *)
+val print_sample :
+  ?printer:('a -> unit) -> (module S_sample with type t = 'a) -> unit
+(** [print_sample ?printer m] runs the quickcheck generator in [m] a small
+    number of times, sorts and de-duplicates the results, and prints them to
+    stdout, using [printer] if given or an S-expression representation
+    otherwise. *)

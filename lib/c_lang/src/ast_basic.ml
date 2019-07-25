@@ -265,7 +265,7 @@ end
 module Array = struct
   type ('a, 'i) t = {array: 'a; index: 'i} [@@deriving sexp, eq, compare]
 
-  let pp (ppa : 'a Fmt.t) (ppi: 'i Fmt.t) : ('a, 'i) t Fmt.t =
+  let pp (ppa : 'a Fmt.t) (ppi : 'i Fmt.t) : ('a, 'i) t Fmt.t =
     Fmt.(
       using
         (fun {array; index} -> (array, index))
@@ -342,5 +342,5 @@ module Pointer : Ast_node with type t = Type_qual.t list list = struct
   type t = Type_qual.t list list [@@deriving sexp, eq, compare]
 
   let pp : t Fmt.t =
-    Fmt.(list ~sep:sp ((any "*") ++ (list ~sep:sp Type_qual.pp)))
+    Fmt.(list ~sep:sp (any "*" ++ list ~sep:sp Type_qual.pp))
 end

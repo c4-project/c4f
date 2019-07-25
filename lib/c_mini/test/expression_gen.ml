@@ -14,12 +14,15 @@ module Src = Act_c_mini
 module Q = Base_quickcheck
 module Qx = Act_utils.My_quickcheck
 
+let printer (e : Src.Expression.t) : unit =
+  e |> Src.Reify.expr |> Fmt.(pr "@[%a@]@." (parens Act_c_lang.Ast.Expr.pp))
+
 let test_all_expressions_have_type
     (f :
-         (module Src.Env_types.S)
+         (module Src.Env_types.S_with_known_values)
       -> (module Q.Test.S with type t = Src.Expression.t)) (ty : Src.Type.t)
     : unit =
-  let env = Lazy.force Env.test_env_mod in
+  let env = Lazy.force Env.det_known_value_mod in
   let (module Qc) = f env in
   let module Ty = Src.Expression.Type_check ((val env)) in
   Q.Test.run_exn
@@ -31,9 +34,9 @@ let test_all_expressions_have_type
 
 let test_all_expressions_in_env
     (f :
-         (module Src.Env_types.S)
+         (module Src.Env_types.S_with_known_values)
       -> (module Q.Test.S with type t = Src.Expression.t)) : unit =
-  let (module E) = Lazy.force Env.test_env_mod in
+  let (module E) = Lazy.force Env.det_known_value_mod in
   let (module Q) = f (module E) in
   Base_quickcheck.Test.run_exn
     (module Q)
@@ -42,10 +45,27 @@ let test_all_expressions_in_env
          (Src.Expression.On_identifiers.for_all ~f:(Map.mem E.env))
          ~here:[[%here]])
 
+let test_all_expressions_evaluate
+    (f :
+         (module Src.Env_types.S_with_known_values)
+      -> (module Q.Test.S with type t = Src.Expression.t))
+    ~(pred : Src.Constant.t -> bool) : unit =
+  let env_mod = Lazy.force Env.det_known_value_mod in
+  let env = Src.Address.eval_on_env env_mod in
+  let (module Qc) = f env_mod in
+  Q.Test.run_exn
+    (module Qc)
+    ~f:(fun e ->
+      [%test_result: bool Or_error.t]
+        (let k_result = Src.Expression.Eval.as_constant ~env e in
+         Or_error.map ~f:pred k_result)
+        ~expect:(Or_error.return true)
+        ~equal:[%compare.equal: bool Or_error.t] ~here:[[%here]])
+
 let%test_module "Int_values" =
   ( module struct
     let print_sample (module E : Src.Env_types.S) =
-      Qx.print_sample
+      Qx.print_sample ~printer
         ( module struct
           include Src.Expression
           include Src.Expression_gen.Int_values (E)
@@ -55,60 +75,60 @@ let%test_module "Int_values" =
       print_sample (Lazy.force Env.test_env_mod) ;
       [%expect
         {|
-      (Constant (Int -879720314))
-      (Constant (Int -186))
-      (Constant (Int 7627))
-      (Constant (Int 1234853))
-      (Constant (Int 57529197))
-      (Constant (Int 470264907))
-      (Lvalue (Variable foo))
-      (Lvalue (Deref (Variable blep)))
-      (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
-      (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_acquire)))
-      (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_relaxed)))
-      (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_consume)))
-      (Atomic_load ((src (Ref (Lvalue (Variable y)))) (mo memory_order_acquire))) |}]
+      (-879720314)
+      (-186)
+      (7627)
+      (1234853)
+      (57529197)
+      (470264907)
+      (foo)
+      (*blep)
+      (atomic_load_explicit(bar, memory_order_seq_cst))
+      (atomic_load_explicit(&x, memory_order_acquire))
+      (atomic_load_explicit(&x, memory_order_relaxed))
+      (atomic_load_explicit(&x, memory_order_consume))
+      (atomic_load_explicit(&y, memory_order_acquire)) |}]
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only_mod) ;
       [%expect
         {|
-      (Constant (Int -112015996))
-      (Constant (Int -1))
-      (Constant (Int 1136))
-      (Constant (Int 7627))
-      (Constant (Int 13418))
-      (Constant (Int 33417))
-      (Constant (Int 10703535))
-      (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
-      (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_acquire)))
-      (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_relaxed)))
-      (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_consume))) |}]
+      (-112015996)
+      (-1)
+      (1136)
+      (7627)
+      (13418)
+      (33417)
+      (10703535)
+      (atomic_load_explicit(bar, memory_order_seq_cst))
+      (atomic_load_explicit(bar, memory_order_acquire))
+      (atomic_load_explicit(bar, memory_order_relaxed))
+      (atomic_load_explicit(bar, memory_order_consume)) |}]
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env_mod) ;
       [%expect
         {|
-      (Constant (Int -2147483648))
-      (Constant (Int -879720314))
-      (Constant (Int -780780327))
-      (Constant (Int -50348097))
-      (Constant (Int -6117475))
-      (Constant (Int -5530953))
-      (Constant (Int -4713))
-      (Constant (Int -18))
-      (Constant (Int -1))
-      (Constant (Int 31))
-      (Constant (Int 664))
-      (Constant (Int 1136))
-      (Constant (Int 7627))
-      (Constant (Int 13418))
-      (Constant (Int 31453))
-      (Constant (Int 33417))
-      (Constant (Int 10703535))
-      (Constant (Int 22551631))
-      (Constant (Int 71885327))
-      (Constant (Int 470264907)) |}]
+      (-2147483648)
+      (-879720314)
+      (-780780327)
+      (-50348097)
+      (-6117475)
+      (-5530953)
+      (-4713)
+      (-18)
+      (-1)
+      (31)
+      (664)
+      (1136)
+      (7627)
+      (13418)
+      (31453)
+      (33417)
+      (10703535)
+      (22551631)
+      (71885327)
+      (470264907) |}]
 
     let%test_unit "all expressions have 'int' type" =
       test_all_expressions_have_type
@@ -123,7 +143,7 @@ let%test_module "Int_values" =
 let%test_module "Bool_values" =
   ( module struct
     let print_sample (module E : Src.Env_types.S) =
-      Qx.print_sample
+      Qx.print_sample ~printer
         ( module struct
           include Src.Expression
           include Src.Expression_gen.Bool_values (E)
@@ -133,70 +153,136 @@ let%test_module "Bool_values" =
       print_sample (Lazy.force Env.test_env_mod) ;
       [%expect
         {|
-      (Constant (Bool false))
-      (Constant (Bool true))
-      (Lvalue (Variable barbaz))
-      (Bop Eq (Constant (Int -879720314))
-       (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_acquire))))
-      (Bop Eq (Constant (Int -209))
-       (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_consume))))
-      (Bop Eq (Constant (Int -24)) (Lvalue (Variable foo)))
-      (Bop Eq (Constant (Int 8)) (Constant (Int -98)))
-      (Bop Eq (Constant (Int 7471)) (Constant (Int 1234853)))
-      (Bop Eq (Constant (Int 12062)) (Constant (Int 918)))
-      (Bop Eq (Lvalue (Variable foo)) (Lvalue (Variable foo)))
-      (Bop Eq
-       (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_acquire)))
-       (Constant (Int 57529197)))
-      (Bop Eq
-       (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_relaxed)))
-       (Lvalue (Deref (Variable blep)))) |}]
+      (false)
+      (true)
+      (barbaz)
+      (-879720314 == atomic_load_explicit(&x, memory_order_acquire))
+      (-209 == atomic_load_explicit(&x, memory_order_consume))
+      (-24 == foo)
+      (8 == -98)
+      (7471 == 1234853)
+      (12062 == 918)
+      (foo == foo)
+      (atomic_load_explicit(&x, memory_order_acquire) == 57529197)
+      (atomic_load_explicit(&x, memory_order_relaxed) == *blep) |}]
 
     let%expect_test "sample (environment has only atomic_int*)" =
       print_sample (Lazy.force Env.test_env_atomic_ptrs_only_mod) ;
       [%expect
         {|
-      (Constant (Bool false))
-      (Constant (Bool true))
-      (Bop Eq (Constant (Int -32276))
-       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_consume))))
-      (Bop Eq (Constant (Int -22537)) (Constant (Int -28705)))
-      (Bop Eq (Constant (Int -18)) (Constant (Int 664)))
-      (Bop Eq (Constant (Int 6)) (Constant (Int -32)))
-      (Bop Eq (Constant (Int 20))
-       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_consume))))
-      (Bop Eq (Constant (Int 1129))
-       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst))))
-      (Bop Eq (Constant (Int 1136)) (Constant (Int 13418)))
-      (Bop Eq (Constant (Int 14202)) (Constant (Int -1736309620)))
-      (Bop Eq (Constant (Int 18140)) (Constant (Int -1)))
-      (Bop Eq
-       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
-       (Constant (Int 10703535)))
-      (Bop Eq
-       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_seq_cst)))
-       (Atomic_load ((src (Lvalue (Variable bar))) (mo memory_order_acquire)))) |}]
+      (false)
+      (true)
+      (-32276 == atomic_load_explicit(bar, memory_order_consume))
+      (-22537 == -28705)
+      (-18 == 664)
+      (6 == -32)
+      (20 == atomic_load_explicit(bar, memory_order_consume))
+      (1129 == atomic_load_explicit(bar, memory_order_seq_cst))
+      (1136 == 13418)
+      (14202 == -1736309620)
+      (18140 == -1)
+      (atomic_load_explicit(bar, memory_order_seq_cst) == 10703535)
+      (atomic_load_explicit(bar, memory_order_seq_cst) ==
+       atomic_load_explicit(bar, memory_order_acquire)) |}]
 
     let%expect_test "sample (environment is empty)" =
       print_sample (Lazy.force Env.empty_env_mod) ;
       [%expect
         {|
-      (Constant (Bool false))
-      (Constant (Bool true))
-      (Bop Eq (Constant (Int -38250)) (Constant (Int -37287526)))
-      (Bop Eq (Constant (Int -32276)) (Constant (Int -23556581)))
-      (Bop Eq (Constant (Int -4713)) (Constant (Int -780780327)))
-      (Bop Eq (Constant (Int 664)) (Constant (Int 7627)))
-      (Bop Eq (Constant (Int 1129)) (Constant (Int -31235266)))
-      (Bop Eq (Constant (Int 7471)) (Constant (Int 1234853)))
-      (Bop Eq (Constant (Int 509412)) (Constant (Int -972508553)))
-      (Bop Eq (Constant (Int 57529197)) (Constant (Int 115)))
-      (Bop Eq (Constant (Int 89301152)) (Constant (Int -96))) |}]
+      (false)
+      (true)
+      (-38250 == -37287526)
+      (-32276 == -23556581)
+      (-4713 == -780780327)
+      (664 == 7627)
+      (1129 == -31235266)
+      (7471 == 1234853)
+      (509412 == -972508553)
+      (57529197 == 115)
+      (89301152 == -96) |}]
+
+    let test_fun (module E : Src.Env_types.S_with_known_values) =
+      (module Src.Expression_gen.Bool_values (E) : Q.Test.S
+        with type t = Src.Expression.t )
 
     let%test_unit "all expressions have 'bool' type" =
-      test_all_expressions_have_type
-        (fun e -> (module Src.Expression_gen.Bool_values ((val e))))
-        Src.Type.(bool ())
+      test_all_expressions_have_type test_fun Src.Type.(bool ())
+
+    (* TODO(@MattWindsor91): we can't currently check that all expressions
+       evaluate safely to Booleans, as the evaluator and known values
+       tracker don't understand atomic loads. *)
+
+    let%test_unit "all referenced variables in environment" =
+      test_all_expressions_in_env (fun e ->
+          (module Src.Expression_gen.Bool_values ((val e))))
+  end )
+
+let%test_module "Bool_tautologies" =
+  ( module struct
+    let print_sample (module E : Src.Env_types.S_with_known_values) =
+      Qx.print_sample ~printer
+        ( module struct
+          include Src.Expression
+          include Src.Expression_gen.Bool_tautologies (E)
+        end )
+
+    let%expect_test "sample" =
+      print_sample (Lazy.force Env.det_known_value_mod) ;
+      [%expect
+        {|
+          (true)
+          (true && atomic_load_explicit(&y, memory_order_relaxed) == foo || true)
+          (false || true)
+          (true || barbaz)
+          (true || foo == atomic_load_explicit(&y, memory_order_seq_cst))
+          (barbaz || true || -209 == atomic_load_explicit(&y, memory_order_consume))
+          (-5 == foo || -312 == foo || 1317973 == foo ||
+           atomic_load_explicit(&y, memory_order_relaxed) == 1 || true && barbaz ||
+           true && true)
+          (206117 == atomic_load_explicit(&y, memory_order_relaxed) || true)
+          (57529197 == 115 || true)
+          (atomic_load_explicit(&y, memory_order_consume) ==
+           atomic_load_explicit(&y, memory_order_seq_cst) || true)
+          (true || barbaz && -1 == 13585 || false || true && true || foo == -452191315
+           && true && true && true && true && true && true && true || true && true ||
+           barbaz)
+          (true || 470264907 == -879720314 && true ||
+           atomic_load_explicit(&x, memory_order_relaxed) == foo || false)
+          (true && true && false || 0 == -149 || true || barbaz && true && true || true
+           && true || barbaz || barbaz && true && true || barbaz && barbaz ||
+           atomic_load_explicit(&y, memory_order_relaxed) == 323 || -3005 == 32743007
+           || true && true || false || barbaz || true || barbaz || false || false &&
+           true && true || barbaz || 99 == foo && true && barbaz || true || -427 ==
+           atomic_load_explicit(&x, memory_order_acquire) ||
+           atomic_load_explicit(&y, memory_order_consume) == -2548 &&
+           atomic_load_explicit(&x, memory_order_seq_cst) == -1 || true || barbaz ||
+           true && barbaz || true && true || false ||
+           atomic_load_explicit(&y, memory_order_consume) == foo && barbaz || true &&
+           true && false || false || true || 1 == foo && -3531150 == -64 || true || foo
+           == 483016954 || true && true && true || true || -1 ==
+           atomic_load_explicit(&x, memory_order_seq_cst) && barbaz || true || barbaz
+           || foo == atomic_load_explicit(&x, memory_order_consume) || true || barbaz
+           || foo == foo && true || barbaz || true && true || false)
+          (true || true || barbaz || barbaz || true || barbaz)
+          (true || true && barbaz || true || true && true || barbaz && true || true &&
+           true || barbaz || true)
+          (true && false || false || false || true || barbaz || false || true && true
+           && true && barbaz || atomic_load_explicit(&y, memory_order_relaxed) == 800
+           || foo == atomic_load_explicit(&y, memory_order_seq_cst) || true && true ||
+           true || true || barbaz && true && true || true && foo == foo || barbaz ||
+           true && true || true && true || barbaz && barbaz || true || false || false
+           || true || barbaz) |}]
+
+    let test_fun (module E : Src.Env_types.S_with_known_values) =
+      (module Src.Expression_gen.Bool_tautologies (E) : Q.Test.S
+        with type t = Src.Expression.t )
+
+    let%test_unit "all expressions have 'bool' type" =
+      test_all_expressions_have_type test_fun Src.Type.(bool ())
+
+    let%test_unit "all expressions evaluate to 'true'" =
+      test_all_expressions_evaluate test_fun ~pred:(fun x ->
+          match Src.Constant.as_bool x with Ok b -> b | _ -> false)
 
     let%test_unit "all referenced variables in environment" =
       test_all_expressions_in_env (fun e ->

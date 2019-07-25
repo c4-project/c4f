@@ -81,8 +81,7 @@ let pp_tree_module : (module Property.S) Fmt.t =
 let pp_predicate_list : (string, (module Property.S)) List.Assoc.t Fmt.t =
   Fmt.(
     list ~sep:(any "@,@,")
-      (vbox ~indent:2
-         (pair ~sep:sp (string ++ any ":") pp_tree_module)))
+      (vbox ~indent:2 (pair ~sep:sp (string ++ any ":") pp_tree_module)))
 
 let run_list_predicates (_o : Output.t) (_cfg : Act_config.Act.t) :
     unit Or_error.t =

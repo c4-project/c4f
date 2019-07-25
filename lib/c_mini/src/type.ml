@@ -160,9 +160,6 @@ module Json : Plumbing.Jsonable_types.S with type t := t =
 
 include Json
 
-let%test_unit "basic_type_is compatibility with basic_type" =
-  Base_quickcheck.Test.run_exn
-    (module M)
-    ~f:
-      ([%test_pred: t] ~here:[[%here]] (fun t ->
-           basic_type_is t ~basic:(basic_type t)))
+let check (t1 : t) (t2 : t) : unit Or_error.t =
+  if equal t1 t2 then Result.ok_unit
+  else Or_error.error_s [%message "Type mismatch" ~t1:(t1 : t) ~t2:(t2 : t)]

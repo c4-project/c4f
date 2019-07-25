@@ -53,11 +53,11 @@ module Stage_banner = struct
   let pp_id : Id.t Fmt.t = Fmt.(brackets (styled (`Fg `Blue) Id.pp))
 
   let pp_machine : Id.t Fmt.t =
-    Fmt.((any "@@@,") ++ (styled (`Fg `Yellow) Id.pp))
+    Fmt.(any "@@@," ++ styled (`Fg `Yellow) Id.pp)
 
   let pp_in_file : string Fmt.t = Fmt.(sp ++ string)
 
-  let pp_out_file : string Fmt.t = Fmt.((any "@ ->@ ") ++ string)
+  let pp_out_file : string Fmt.t = Fmt.(any "@ ->@ " ++ string)
 
   let run ?(id : Id.t option) ?(machine : Id.t option)
       ?(in_file : string option) ?(out_file : string option)
@@ -76,8 +76,8 @@ let log_stage = Stage_banner.run
 let print_error_body : Error.t Fmt.t =
   Fmt.(
     vbox ~indent:2
-      ((hbox (styled (`Fg `Red) (any "ACT encountered a top-level error:@ ")))
-      ++ (box Error.pp)))
+      ( hbox (styled (`Fg `Red) (any "ACT encountered a top-level error:@ "))
+      ++ box Error.pp ))
 
 let print_error (o : t) : 'a Or_error.t -> unit =
   Fmt.(result ~ok:nop ~error:(print_error_body ++ any "@.")) o.ef

@@ -33,3 +33,11 @@ let%expect_test "int: combinatoric" =
           ; int ~atomic:true ~pointer:true () ]
         : Act_c_mini.Type.t list )] ;
   [%expect {| (int int* atomic_int atomic_int*) |}]
+
+let%test_unit "basic_type_is compatibility with basic_type" =
+  Base_quickcheck.Test.run_exn
+    (module Act_c_mini.Type)
+    ~f:
+      Act_c_mini.Type.(
+        [%test_pred: t] ~here:[[%here]] (fun t ->
+            basic_type_is t ~basic:(basic_type t)))

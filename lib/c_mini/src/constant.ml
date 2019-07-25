@@ -30,6 +30,10 @@ let type_of : t -> Type.t = function
   | Int _ ->
       Type.int ()
 
+let is_bool : t -> bool = function Bool _ -> true | Int _ -> false
+
+let is_int : t -> bool = function Int _ -> true | Bool _ -> false
+
 let reduce (k : t) ~(int : int -> 'a) ~(bool : bool -> 'a) : 'a =
   match k with Bool b -> bool b | Int i -> int i
 

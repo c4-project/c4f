@@ -22,10 +22,10 @@ open Ast_basic
 include Ast_intf
 
 let pp_assign_rhs (type a) (pp : a Fmt.t) : a Fmt.t =
-  Fmt.((any "@ =@ ") ++ pp)
+  Fmt.(any "@ =@ " ++ pp)
 
-let pp_opt_assign (type l r) (ppl : l Fmt.t) (ppr : r Fmt.t) : (l * r option) Fmt.t
-    =
+let pp_opt_assign (type l r) (ppl : l Fmt.t) (ppr : r Fmt.t) :
+    (l * r option) Fmt.t =
   Fmt.(pair ~sep:nop ppl (option (pp_assign_rhs ppr)))
 
 module Optional (N : Ast_node) : Ast_node with type t = N.t option = struct
@@ -159,7 +159,9 @@ module Parametric = struct
             Fmt.(pair ~sep:nop pp (parens B.Par.pp) f (t, ps))
         | Fun_call (t, ps) ->
             Fmt.(
-              pair ~sep:nop pp (parens (list ~sep:comma Identifier.pp)) f (t, ps))
+              pair ~sep:nop pp
+                (parens (list ~sep:comma Identifier.pp))
+                f (t, ps))
 
       let rec identifier = function
         | Id x ->
@@ -226,7 +228,8 @@ module Parametric = struct
         | Array a ->
             Fmt.(Array.pp (option pp) (option B.Expr.pp) f a)
         | Fun_decl (t, ps) ->
-            Fmt.(pair ~sep:nop (option pp) (parens (option B.Par.pp)) f (t, ps))
+            Fmt.(
+              pair ~sep:nop (option pp) (parens (option B.Par.pp)) f (t, ps))
     end
   end
 
@@ -269,7 +272,7 @@ module Parametric = struct
               pair ~sep:nop
                 (* Trying to get 'X : Y' if X exists, and ': Y' if not. *)
                 (option (B.Dec.pp ++ sp))
-                ((any ":@ ") ++ B.Expr.pp)
+                (any ":@ " ++ B.Expr.pp)
                 f (mdecl, bitsize))
     end
   end
@@ -289,7 +292,7 @@ module Parametric = struct
         | Default ->
             Fmt.string f "default"
 
-      let pp : t Fmt.t = Fmt.(pp_body ++ (any ":"))
+      let pp : t Fmt.t = Fmt.(pp_body ++ any ":")
     end
   end
 
@@ -412,13 +415,13 @@ module Parametric = struct
         | Label (label, labelled) ->
             Fmt.(pair ~sep:sp B.Lbl.pp pp f (label, labelled))
         | Expr e ->
-            Fmt.((option B.Expr.pp ++ (any ";")) f e)
+            Fmt.((option B.Expr.pp ++ any ";") f e)
         | Compound com ->
             B.Com.pp f com
         | If {cond; t_branch; f_branch} ->
             Fmt.(
               pf f "if@ (%a)@ %a%a" B.Expr.pp cond pp t_branch
-                (option ((any "@ else@ ") ++ pp))
+                (option (any "@ else@ " ++ pp))
                 f_branch)
         | Switch (cond, rest) ->
             Fmt.(pf f "switch@ (%a)@ %a" B.Expr.pp cond pp rest)
@@ -715,7 +718,7 @@ module Function_def = struct
     Fmt.(
       using
         (function [] -> None | x -> Some x)
-        (option ((any "@ ") ++ (list ~sep:sp Decl.pp))))
+        (option (any "@ " ++ list ~sep:sp Decl.pp)))
 
   let pp (f : Base.Formatter.t) {decl_specs; signature; decls; body} : unit
       =

@@ -34,5 +34,8 @@ val decl : Act_common.C_id.t -> Initialiser.t -> Act_c_lang.Ast.Decl.t
 (** [decl id d] reifies the mini-declaration [d], with name [id], into the C
     AST. *)
 
+val expr : Expression.t -> Act_c_lang.Ast.Expr.t
+(** [expr e] reifies the mini-expression [e] into the C AST. *)
+
 val stm : Statement.t -> Act_c_lang.Ast.Stm.t
 (** [stm s] reifies the mini-statement [s] into the C AST. *)

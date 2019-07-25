@@ -20,7 +20,7 @@ type t [@@deriving compare, equal, sexp, quickcheck]
 (** Opaque type of constants. *)
 
 include Comparable.S with type t := t
-  
+
 include Plumbing.Jsonable_types.S with type t := t
 
 include Pretty_printer.S with type t := t
@@ -41,11 +41,19 @@ val truth : t
 val falsehood : t
 (** [falsehood] is the 'false' Boolean constant. *)
 
-(** {2 Extracting constants of specific types} *)
+(** {2 Queries} *)
+
+val is_bool : t -> bool
+(** [is_bool k] is true if [k] is a Boolean constant. *)
+
+val is_int : t -> bool
+(** [is_int k] is true if [k] is an integer constant. *)
 
 val reduce : t -> int:(int -> 'a) -> bool:(bool -> 'a) -> 'a
 (** [reduce k] destructs [k] using [int] if [k] is an integer constant and
     [bool] if it is a Boolean constant. *)
+
+(** {3 Extracting constants of specific types} *)
 
 val as_bool : t -> bool Or_error.t
 (** [as_bool k] returns [Some b] if [k] is a Boolean constant [b]; and an

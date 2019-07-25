@@ -22,8 +22,7 @@ let parse_config_failures ~(file : Fpath.t) ~(path : Fpath.t) :
   let r = Act_config.Frontend.load ~path in
   Fmt.(
     pr "@[%a@]@."
-      (result ~ok:pp_ast
-         ~error:((any "UNEXPECTED ERROR:@ ") ++ Error.pp)))
+      (result ~ok:pp_ast ~error:(any "UNEXPECTED ERROR:@ " ++ Error.pp)))
     r ;
   Result.ok_unit
 

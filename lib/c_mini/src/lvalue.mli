@@ -75,6 +75,14 @@ include
   Types.S_type_checkable with type t := t
 (** Type-checking for lvalues. *)
 
+(** {3 Safe accessors}
+
+    These accessors return an error if the address isn't in the right shape. *)
+
+val as_variable : t -> Act_common.C_id.t Or_error.t
+(** [as_variable lv] returns [lv], then returns it as a variable ID if it is
+    one, or an error otherwise. *)
+
 (** {3 Generating random lvalues}
 
     The default quickcheck instance random lvalues without constraint. We

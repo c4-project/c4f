@@ -41,7 +41,7 @@ module Tree_doc = struct
     Fmt.(
       using
         (function k, [] -> (k, None) | k, v -> (k, Some v))
-        (pair ~sep:nop string (option (sp ++ (list ~sep:sp string)))))
+        (pair ~sep:nop string (option (sp ++ list ~sep:sp string))))
 
   let pp_maybe : (string * elt option) Fmt.t =
     Fmt.(

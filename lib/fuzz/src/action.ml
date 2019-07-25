@@ -33,7 +33,7 @@ module Adjusted_weight = struct
       | 0 ->
           styled (`Fg `Red) (any "disabled") f ()
       | k ->
-          styled (`Fg `Green) (int ++ (any "x")) f k)
+          styled (`Fg `Green) (int ++ any "x") f k)
 
   let pp (f : Formatter.t) : t -> unit = function
     | Not_adjusted o ->

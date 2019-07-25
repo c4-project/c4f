@@ -55,6 +55,29 @@ let ref_depth = reduce ~lvalue:(Fn.const 0) ~ref:Int.succ
 let normalise (addr : t) : t =
   Fn.apply_n_times ~n:(ref_depth addr) ref_normal (lvalue (lvalue_of addr))
 
+let deref (addr : t) : t Or_error.t =
+  (* Do _not_ normalise, for the reasons mentioned in normalise's MLI doc *)
+  match addr with
+  | Ref x ->
+      Or_error.return x
+  | Lvalue _ ->
+      Or_error.error_s
+        [%message
+          "Can't safely dereference this address" ~address:(addr : t)]
+
+let as_lvalue (addr : t) : Lvalue.t Or_error.t =
+  match normalise addr with
+  | Lvalue x ->
+      Or_error.return x
+  | Ref _ ->
+      Or_error.error_s
+        [%message
+          "Can't safely convert this address to an lvalue"
+            ~address:(addr : t)]
+
+let as_variable (addr : t) : Ac.C_id.t Or_error.t =
+  Or_error.(addr |> as_lvalue >>= Lvalue.as_variable)
+
 module On_lvalues :
   Travesty.Traversable_types.S0 with type t = t and type Elt.t = Lvalue.t =
 Travesty.Traversable.Make0 (struct
@@ -119,7 +142,38 @@ let on_address_of_typed_id ~(id : Ac.C_id.t) ~(ty : Type.t) : t =
   let lv = of_variable id in
   if Type.is_pointer ty then lv else ref lv
 
+let of_id_in_env (module E : Env_types.S) ~(id : Ac.C_id.t) : t Or_error.t =
+  Or_error.Let_syntax.(
+    let%map ty = E.type_of id in
+    on_address_of_typed_id ~id ~ty)
+
 let variable_of (addr : t) : Ac.C_id.t = Lvalue.variable_of (lvalue_of addr)
 
-let variable_in_env (addr : t) ~(env : _ Ac.C_id.Map.t) : bool =
+let variable_in_env (addr : t) ~(env : _ Map.M(Ac.C_id).t) : bool =
   Lvalue.variable_in_env (lvalue_of addr) ~env
+
+let check_address_var (module Env : Env_types.S_with_known_values)
+    (addr : t) : Act_common.C_id.t Or_error.t =
+  let module A_check = Type_check (Env) in
+  Or_error.Let_syntax.(
+    (* Addresses must have the same type as the entry for the variable in
+       the environment. *)
+    let v = variable_of addr in
+    let%bind v_type = Env.type_of v in
+    let%bind a_type = A_check.type_of addr in
+    let%map () =
+      Or_error.tag_arg
+        (Type.check v_type a_type)
+        "Checking address var type" addr sexp_of_t
+    in
+    v)
+
+let get_single_known_value (module Env : Env_types.S_with_known_values)
+    (v : Act_common.C_id.t) : Constant.t Or_error.t =
+  let value_opt = Option.(v |> Env.known_values >>= Set.choose) in
+  Result.of_option value_opt
+    ~error:(Error.of_string "env doesn't contain this value")
+
+let eval_on_env (env : (module Env_types.S_with_known_values)) (addr : t) :
+    Constant.t Or_error.t =
+  Or_error.(addr |> check_address_var env >>= get_single_known_value env)

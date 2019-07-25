@@ -11,6 +11,8 @@
 
 (** Mini model: addresses (a lvalue, or reference thereto). *)
 
+open Base
+
 type t [@@deriving sexp, compare, equal, quickcheck]
 (** Opaque type of addresses. *)
 
@@ -37,7 +39,16 @@ val ref_normal : t -> t
 
 val normalise : t -> t
 (** [normalise addr] reconstructs [addr], using {{!ref_normal} ref_normal}
-    for every layer of indirection. *)
+    for every layer of indirection.
+
+    Note that this operation can remove information about which operations
+    are safe to perform on an address. For example, `&*foo` implies that
+    `foo` is a pointer type (and therefore `*foo` is valid): normalisation
+    will reduce it to `foo`, which doesn't. *)
+
+val deref : t -> t Or_error.t
+(** [deref addr] tries to strip a level of reference from [addr]. It fails
+    if the un-normalised form of [addr] is an lvalue. *)
 
 val of_variable : Act_common.C_id.t -> t
 (** [of_variable v] lifts the variable identifier [v] directly to an
@@ -49,6 +60,9 @@ val of_variable_ref : Act_common.C_id.t -> t
 
 val on_address_of_typed_id : id:Act_common.C_id.t -> ty:Type.t -> t
 
+val of_id_in_env :
+  (module Env_types.S) -> id:Act_common.C_id.t -> t Or_error.t
+
 (** {3 Accessors} *)
 
 val reduce : t -> lvalue:(Lvalue.t -> 'a) -> ref:('a -> 'a) -> 'a
@@ -56,9 +70,24 @@ val reduce : t -> lvalue:(Lvalue.t -> 'a) -> ref:('a -> 'a) -> 'a
     of [addr], then recursively applies [ref] to the result for each layer
     of address-taking in the address. *)
 
+val lvalue_of : t -> Lvalue.t
+(** [lvalue_of addr] gets the underlying lvalue of [addr]. *)
+
 include
   Types.S_has_underlying_variable with type t := t
 (** We can get to the variable name inside an address. *)
+
+(** {3 Safe accessors}
+
+    These accessors return an error if the address isn't in the right shape. *)
+
+val as_lvalue : t -> Lvalue.t Or_error.t
+(** [as_lvalue addr] normalises [addr], then returns it as an
+    {{!Lvalue.t} lvalue} if it is one, or an error otherwise. *)
+
+val as_variable : t -> Act_common.C_id.t Or_error.t
+(** [as_variable addr] normalises [addr], then returns it as a variable ID
+    if it is one, or an error otherwise. *)
 
 (** {3 Type-checking} *)
 
@@ -77,3 +106,9 @@ module Quickcheck_generic
     (Lv : Act_utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :
   Act_utils.My_quickcheck.S_with_sexp with type t = t
 (** Generates random addresses, parametrised on a given lvalue generator. *)
+
+val eval_on_env :
+  (module Env_types.S_with_known_values) -> t -> Constant.t Or_error.t
+(** [eval_on_env env address] tries to evaluate an address [lv] against the
+    known-value tracking of an environment [env]. Currently, it supports
+    only scalars; it rejects any ref or deref addresses. *)

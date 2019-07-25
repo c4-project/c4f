@@ -54,6 +54,18 @@ let%test_module "Type-check" =
       [%expect {| (Ok int*) |}]
   end )
 
+let%test_module "deref" =
+  ( module struct
+    let%test_unit "deref of ref is identity" =
+      Base_quickcheck.Test.run_exn
+        (module Act_c_mini.Address)
+        ~f:(fun addr ->
+          [%test_result: Act_c_mini.Address.t Or_error.t] ~here:[[%here]]
+            ~equal:[%compare.equal: Act_c_mini.Address.t Or_error.t]
+            Act_c_mini.Address.(deref (ref addr))
+            ~expect:(Or_error.return addr))
+  end )
+
 let%test_unit "on_address_of_typed_id: always takes pointer type" =
   let (module E) = Lazy.force Env.test_env_mod in
   let module Tc = Type_check (E) in

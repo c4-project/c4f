@@ -26,7 +26,7 @@
     This is a conservative subset of C11's type system, with a few things
     that'd normally be typedefs pulled into distinct types. *)
 
-open Core_kernel
+open Base
 open Act_utils
 
 (** Primitive types. *)
@@ -114,3 +114,6 @@ val is_atomic : t -> bool
 
 val is_pointer : t -> bool
 (** [is_pointer ty] returns whether [ty] is a pointer type. *)
+
+val check : t -> t -> unit Or_error.t
+(** [check t1 t2] raises an error if [t1] is not equal to [t2]. *)

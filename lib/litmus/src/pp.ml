@@ -31,8 +31,7 @@ module Generic = struct
     Fmt.(
       option
         (hbox
-           ((any "locations@ ") ++
-              (brackets (box (list ~sep:semi Ac.C_id.pp))))))
+           (any "locations@ " ++ brackets (box (list ~sep:semi Ac.C_id.pp)))))
 
   let rec pp_predicate (f : Formatter.t)
       (pred : 'const Postcondition.Pred.t) ~(pp_const : 'const Fmt.t) : unit
@@ -88,7 +87,7 @@ module Make_common (B : Basic) = struct
     print_programs oc litmus ;
     Fmt.pf f "@." ;
     Generic.pp_location_stanza f (B.Ast.Validated.locations litmus) ;
-    Fmt.(option ((any "@,@,") ++ pp_post))
+    Fmt.(option (any "@,@," ++ pp_post))
       f
       (B.Ast.Validated.postcondition litmus) ;
     Caml.Format.pp_print_flush f ()

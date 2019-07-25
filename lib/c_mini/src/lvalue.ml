@@ -63,7 +63,16 @@ end)
 let variable_of : t -> Ac.C_id.t = reduce ~variable:Fn.id ~deref:Fn.id
 
 let variable_in_env (lv : t) ~(env : _ Ac.C_id.Map.t) : bool =
-  Ac.C_id.Map.mem env (variable_of lv)
+  Map.mem env (variable_of lv)
+
+let as_variable (lv : t) : Ac.C_id.t Or_error.t =
+  match lv with
+  | Variable x ->
+      Or_error.return x
+  | Deref _ ->
+      Or_error.error_s
+        [%message
+          "Can't safely convert this lvalue to a variable" ~lvalue:(lv : t)]
 
 module Type_check (E : Env_types.S) = struct
   let rec type_of : t -> Type.t Or_error.t = function

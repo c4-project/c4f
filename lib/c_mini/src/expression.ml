@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Core_kernel
 module Ac = Act_common
@@ -38,6 +26,7 @@ type t =
 [@@deriving sexp, variants, compare, equal]
 
 let int_lit (i : int) : t = constant (Constant.int i)
+
 let bool_lit (b : bool) : t = constant (Constant.bool b)
 
 let eq : t -> t -> t = bop Bop.Eq
@@ -46,25 +35,25 @@ let l_and : t -> t -> t = bop Bop.L_and
 
 let l_or : t -> t -> t = bop Bop.L_or
 
-let map (expr : t) ~(constant : Constant.t -> 'a)
-    ~(lvalue : Lvalue.t -> 'a) ~(atomic_load : Atomic_load.t -> 'a)
-    ~(bop : Bop.t -> t -> t -> 'a) : 'a =
+let map (expr : t) ~(constant : Constant.t -> 'a) ~(lvalue : Lvalue.t -> 'a)
+    ~(atomic_load : Atomic_load.t -> 'a) ~(bop : Bop.t -> t -> t -> 'a) : 'a
+    =
   match expr with
   | Constant k ->
-    constant k
+      constant k
   | Lvalue l ->
-    lvalue l
+      lvalue l
   | Atomic_load ld ->
-    atomic_load ld
+      atomic_load ld
   | Bop (b, x, y) ->
-    bop b x y
+      bop b x y
 
 let reduce (expr : t) ~(constant : Constant.t -> 'a)
     ~(lvalue : Lvalue.t -> 'a) ~(atomic_load : Atomic_load.t -> 'a)
     ~(bop : Bop.t -> 'a -> 'a -> 'a) : 'a =
   let rec mu (expr : t) =
-    map expr ~constant ~lvalue ~atomic_load
-      ~bop:(fun b l r -> bop b (mu l) (mu r))
+    map expr ~constant ~lvalue ~atomic_load ~bop:(fun b l r ->
+        bop b (mu l) (mu r))
   in
   mu expr
 
@@ -191,46 +180,57 @@ let quickcheck_observer : t Base_quickcheck.Observer.t =
             | `D of Atomic_load.t ]]))
 
 module Eval = struct
-  let eval_logical (l : t) (r : t) ~(short_value : bool) ~(mu : t -> Constant.t Or_error.t)
-    : Constant.t Or_error.t =
+  let eval_logical (l : t) (r : t) ~(short_value : bool)
+      ~(mu : t -> Constant.t Or_error.t) : Constant.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind l_const = mu l in
       let%bind l_value = Constant.as_bool l_const in
-      if Bool.equal l_value short_value
-      then Or_error.return l_const
-      else mu r
-    )
+      if Bool.equal l_value short_value then Or_error.return l_const
+      else mu r)
 
   let eval_land = eval_logical ~short_value:false
+
   let eval_lor = eval_logical ~short_value:true
 
   let eval_eq (l : t) (r : t) ~(mu : t -> Constant.t Or_error.t) =
     Or_error.Let_syntax.(
       let%bind l_const = mu l in
       let%bind r_const = mu r in
-      if Comparable.lift [%equal: Type.t] ~f:Constant.type_of l_const r_const
-      then Or_error.return (Constant.bool ([%equal: Constant.t] l_const r_const))
-      else Or_error.error_s
-          [%message "eq: types of constants are incompatible"
-              ~left:(l_const: Constant.t)
-              ~right:(r_const: Constant.t)
-          ]
-    )
+      if
+        Comparable.lift [%equal: Type.t] ~f:Constant.type_of l_const r_const
+      then
+        Or_error.return
+          (Constant.bool ([%equal: Constant.t] l_const r_const))
+      else
+        Or_error.error_s
+          [%message
+            "eq: types of constants are incompatible"
+              ~left:(l_const : Constant.t)
+              ~right:(r_const : Constant.t)])
 
-  let as_constant (expr: t) ~(env:Lvalue.t -> Constant.t Or_error.t) : Constant.t Or_error.t =
+  let eval_atomic_load (atomic_load : Atomic_load.t)
+      ~(env : Address.t -> Constant.t Or_error.t) : Constant.t Or_error.t =
+    (* We don't specifically handle memory order here, since we assume that
+       the known-values environment refers to things that are already fully
+       propagated through memory. *)
+    Or_error.(atomic_load |> Atomic_load.src |> Address.deref >>= env)
+
+  let as_constant (expr : t) ~(env : Address.t -> Constant.t Or_error.t) :
+      Constant.t Or_error.t =
     let rec mu : t -> Constant.t Or_error.t =
       (* We map rather than reduce to support short-circuiting evaluation. *)
-      map
-      ~constant:Or_error.return
-      ~lvalue:env
-      ~atomic_load:(fun _ -> Or_error.error_string "atomic load evals not supported yet")
-      ~bop:(function
-          | L_and -> eval_land ~mu
-          | L_or -> eval_lor ~mu
-          | Eq -> eval_eq ~mu
-        )
-    in mu expr
+      map ~constant:Or_error.return ~lvalue:(Fn.compose env Address.lvalue)
+        ~atomic_load:(eval_atomic_load ~env) ~bop:(function
+        | L_and ->
+            eval_land ~mu
+        | L_or ->
+            eval_lor ~mu
+        | Eq ->
+            eval_eq ~mu)
+    in
+    mu expr
 
-  let empty_env (_ : Lvalue.t) : Constant.t Or_error.t =
-    Or_error.error_string "tried to access an lvalue in an empty environment"
+  let empty_env (_ : Address.t) : Constant.t Or_error.t =
+    Or_error.error_string
+      "tried to access an address in an empty environment"
 end

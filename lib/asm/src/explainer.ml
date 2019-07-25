@@ -176,7 +176,7 @@ struct
           (vbox
              (list ~sep:sp
                 (pair ~sep:sp
-                   (hbox ((any "-- program ") ++ int))
+                   (hbox (any "-- program " ++ int))
                    (pp_for_explain_format output_format)))))
     in
     Fmt.pf f "%a@." pp exps ;
