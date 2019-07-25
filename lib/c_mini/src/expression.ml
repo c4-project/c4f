@@ -213,7 +213,7 @@ module Eval = struct
     (* We don't specifically handle memory order here, since we assume that
        the known-values environment refers to things that are already fully
        propagated through memory. *)
-    Or_error.(atomic_load |> Atomic_load.src |> Address.deref >>= env)
+    atomic_load |> Atomic_load.src |> Address.deref |> env
 
   let as_constant (expr : t) ~(env : Address.t -> Constant.t Or_error.t) :
       Constant.t Or_error.t =

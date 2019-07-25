@@ -63,7 +63,9 @@ let det_known_values : Set.M(Src.Constant).t Map.M(Ac.C_id).t Lazy.t =
           ~f:(Set.singleton (module Src.Constant))
           Src.Constant.
             [ (Ac.C_id.of_string "foo", int 4)
+            ; (Ac.C_id.of_string "bar", int 95)
             ; (Ac.C_id.of_string "barbaz", bool true)
+            ; (Ac.C_id.of_string "foobaz", bool true)
             ; (Ac.C_id.of_string "x", int 27)
             ; (Ac.C_id.of_string "y", int 53)
             ; (Ac.C_id.of_string "z", bool false)
@@ -72,7 +74,7 @@ let det_known_values : Set.M(Src.Constant).t Map.M(Ac.C_id).t Lazy.t =
 let det_known_value_mod : (module Src.Env_types.S_with_known_values) Lazy.t
     =
   Lazy.Let_syntax.(
-    let%bind (module Env) = test_env_scalars_only_mod in
+    let%bind (module Env) = test_env_mod in
     let%map known_values = det_known_values in
     ( module Src.Env.Make_with_known_values (struct
       include Env

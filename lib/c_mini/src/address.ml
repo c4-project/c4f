@@ -55,15 +55,12 @@ let ref_depth = reduce ~lvalue:(Fn.const 0) ~ref:Int.succ
 let normalise (addr : t) : t =
   Fn.apply_n_times ~n:(ref_depth addr) ref_normal (lvalue (lvalue_of addr))
 
-let deref (addr : t) : t Or_error.t =
-  (* Do _not_ normalise, for the reasons mentioned in normalise's MLI doc *)
-  match addr with
+let deref (addr : t) : t =
+  match normalise addr with
   | Ref x ->
-      Or_error.return x
-  | Lvalue _ ->
-      Or_error.error_s
-        [%message
-          "Can't safely dereference this address" ~address:(addr : t)]
+      x
+  | Lvalue l ->
+      Lvalue (Lvalue.deref l)
 
 let as_lvalue (addr : t) : Lvalue.t Or_error.t =
   match normalise addr with
@@ -159,7 +156,7 @@ let check_address_var (module Env : Env_types.S_with_known_values)
     (* Addresses must have the same type as the entry for the variable in
        the environment. *)
     let v = variable_of addr in
-    let%bind v_type = Env.type_of v in
+    let%bind v_type = Env.type_of_known_value v in
     let%bind a_type = A_check.type_of addr in
     let%map () =
       Or_error.tag_arg

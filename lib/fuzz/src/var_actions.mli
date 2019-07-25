@@ -14,7 +14,7 @@
 (** Random state required for {{!Make_global} Make_global}. *)
 module Global_random_state : sig
   type t =
-    { is_atomic: bool
+    { basic_type: Act_c_mini.Type.Basic.t
     ; initial_value: Act_c_mini.Constant.t
     ; name: Act_common.C_id.t }
   [@@deriving sexp]

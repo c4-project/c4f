@@ -46,9 +46,10 @@ val normalise : t -> t
     `foo` is a pointer type (and therefore `*foo` is valid): normalisation
     will reduce it to `foo`, which doesn't. *)
 
-val deref : t -> t Or_error.t
-(** [deref addr] tries to strip a level of reference from [addr]. It fails
-    if the un-normalised form of [addr] is an lvalue. *)
+val deref : t -> t
+(** [deref addr] tries to strip a level of reference from [addr]. If the
+    normalised form of [addr] is an lvalue, it returns the result of
+    directly dereferencing from that lvalue instead. *)
 
 val of_variable : Act_common.C_id.t -> t
 (** [of_variable v] lifts the variable identifier [v] directly to an

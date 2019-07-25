@@ -14,6 +14,18 @@ module Q = Base_quickcheck
 open Stdio
 open Act_c_mini.Address
 
+let%test_module "normalise" =
+  ( module struct
+    let%test_unit "normalise is idempotent" =
+      Base_quickcheck.Test.run_exn
+        (module Act_c_mini.Address)
+        ~f:(fun addr ->
+          [%test_result: Act_c_mini.Address.t] ~here:[[%here]]
+            ~equal:[%equal: Act_c_mini.Address.t]
+            Act_c_mini.Address.(normalise (normalise addr))
+            ~expect:(normalise addr))
+  end )
+
 let%test_module "variable_of" =
   ( module struct
     let%test_unit "variable_of: preserved by ref" =
@@ -56,14 +68,14 @@ let%test_module "Type-check" =
 
 let%test_module "deref" =
   ( module struct
-    let%test_unit "deref of ref is identity" =
+    let%test_unit "deref of ref is equivalent to normalise" =
       Base_quickcheck.Test.run_exn
         (module Act_c_mini.Address)
         ~f:(fun addr ->
-          [%test_result: Act_c_mini.Address.t Or_error.t] ~here:[[%here]]
-            ~equal:[%compare.equal: Act_c_mini.Address.t Or_error.t]
+          [%test_result: Act_c_mini.Address.t] ~here:[[%here]]
+            ~equal:[%equal: Act_c_mini.Address.t]
             Act_c_mini.Address.(deref (ref addr))
-            ~expect:(Or_error.return addr))
+            ~expect:(normalise addr))
   end )
 
 let%test_unit "on_address_of_typed_id: always takes pointer type" =

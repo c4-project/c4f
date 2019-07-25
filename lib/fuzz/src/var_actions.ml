@@ -13,7 +13,7 @@ open Base
 
 module Global_random_state = struct
   type t =
-    { is_atomic: bool
+    { basic_type: Act_c_mini.Type.Basic.t
     ; initial_value: Act_c_mini.Constant.t
     ; name: Act_common.C_id.t }
   [@@deriving sexp]
@@ -26,8 +26,8 @@ module Make_global :
   let readme () =
     Act_utils.My_string.format_for_readme
       {|
-    Generates a new global integer variable, with a random name, initial value,
-    and atomicity.
+    Generates a new global variable, with a random name, initial value,
+    and primitive type.
     |}
 
   let default_weight = 2
@@ -37,11 +37,11 @@ module Make_global :
     module G = Base_quickcheck.Generator
 
     let gen' (vars : Var.Map.t) : t G.t =
-      let open G.Let_syntax in
-      let%bind is_atomic = G.bool in
-      let%bind initial_value = Act_c_mini.Constant.gen_int32 in
-      let%map name = Var.Map.gen_fresh_var vars in
-      {is_atomic; initial_value; name}
+      G.Let_syntax.(
+        let%bind basic_type = Act_c_mini.Type.Basic.quickcheck_generator in
+        let%bind initial_value = Act_c_mini.Constant.gen_int32 in
+        let%map name = Var.Map.gen_fresh_var vars in
+        {basic_type; initial_value; name})
 
     let gen (_subject : Subject.Test.t) : t G.t State.Monad.t =
       State.Monad.with_vars gen'
@@ -50,9 +50,9 @@ module Make_global :
   let available = Action.always
 
   let run (subject : Subject.Test.t)
-      ({is_atomic; initial_value; name} : Random_state.t) :
+      ({basic_type; initial_value; name} : Random_state.t) :
       Subject.Test.t State.Monad.t =
-    let ty = Act_c_mini.Type.int ~atomic:is_atomic ~pointer:true () in
+    let ty = Act_c_mini.Type.of_basic basic_type ~pointer:true in
     let open State.Monad.Let_syntax in
     let%map () = State.Monad.register_global ty name ~initial_value in
     Subject.Test.add_var_to_init subject name initial_value

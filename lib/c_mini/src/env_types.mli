@@ -49,4 +49,10 @@ module type S_with_known_values = sig
   val known_values : Act_common.C_id.t -> Set.M(Constant).t option
   (** [known_values var] gets the set of all {i possible} known values of
       [var]. If [var] has no known values, [known_values var] is [None]. *)
+
+  val type_of_known_value : Act_common.C_id.t -> Type.t Or_error.t
+  (** [type_of_known_value id] behaves like [type_of id], but returns the
+      type associated with the known-value information stored for [id]. This
+      is [type_of id] for non-pointer-typed variables, and the non-pointer
+      equivalent otherwise. *)
 end
