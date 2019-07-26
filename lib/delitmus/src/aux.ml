@@ -54,7 +54,9 @@ let symbols (aux : t) : string list =
   |> List.map ~f:Act_common.C_id.to_string
 
 let empty : t =
-  {litmus_aux= Act_litmus.Aux.empty; var_map= Act_common.Scoped_map.empty; num_threads= 0}
+  { litmus_aux= Act_litmus.Aux.empty
+  ; var_map= Act_common.Scoped_map.empty
+  ; num_threads= 0 }
 
 module Load : Plumbing.Loadable_types.S with type t := t =
   Plumbing.Loadable.Of_jsonable (M)

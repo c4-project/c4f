@@ -148,7 +148,10 @@ module Map : sig
       in [predicates] are true. *)
 
   val exists_satisfying_all :
-    t -> scope:Act_common.Scope.t -> predicates:(Record.t -> bool) list -> bool
+       t
+    -> scope:Act_common.Scope.t
+    -> predicates:(Record.t -> bool) list
+    -> bool
   (** [exists_satisfying_all map ~scope ~predicates] returns whether there
       exists at least one variable in [map] in scope with regards to [scope]
       and for which all predicates in [predicates] are true. *)
@@ -177,15 +180,15 @@ module Map : sig
       depend on its known value. *)
 
   val add_write : t -> id:Act_common.Litmus_id.t -> t
-  (** [add_write map ~id] adds a write flag in [map] for [id], returning
-      the resulting new map.
+  (** [add_write map ~id] adds a write flag in [map] for [id], returning the
+      resulting new map.
 
       This should be done after involving [id] in any atomic actions that
       write to it, even if they don't modify its value. *)
 
   val erase_value : t -> id:Act_common.Litmus_id.t -> t Or_error.t
-  (** [erase_value map ~id] erases the known-value field for any mapping
-      for [id] in [map], returning the resulting new map.
+  (** [erase_value map ~id] erases the known-value field for any mapping for
+      [id] in [map], returning the resulting new map.
 
       [erase_value] fails if [id] is mapped to a record whose known value
       field is present and has dependencies. This is a precaution to flag up

@@ -34,8 +34,8 @@ module Record : sig
   (** [c_id r] gets the delitmusified C variable name of [r]. *)
 
   val mapped_to_global : t -> bool
-  (** [mapped_to_global r] gets whether [r]'s variable has been mapped into the
-      global scope. *)
+  (** [mapped_to_global r] gets whether [r]'s variable has been mapped into
+      the global scope. *)
 end
 
 type t = Record.t Act_common.Scoped_map.t [@@deriving equal]

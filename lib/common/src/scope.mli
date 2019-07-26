@@ -21,7 +21,6 @@ val of_litmus_id : Litmus_id.t -> t
 
 val id_in_scope : t -> id:Litmus_id.t -> bool
 
-val reduce : (t * 'a) -> (t * 'a) -> t * 'a
-(** [reduce l r] returns [r] if the scope tag of [l] is global and
-    [r] is local, [l] if vice versa, or an undefined choice of the
-    two otherwise. *)
+val reduce : t * 'a -> t * 'a -> t * 'a
+(** [reduce l r] returns [l] if the scope tag of [l] is local and [r] is
+    global, [r] if vice versa, or an undefined choice of the two otherwise. *)

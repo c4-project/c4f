@@ -21,10 +21,9 @@ let of_litmus_id (id : Litmus_id.t) : t =
 let id_in_scope (scope : t) ~(id : Litmus_id.t) : bool =
   match scope with
   | Global ->
-      true
+      Litmus_id.is_global id
   | Local from ->
       Litmus_id.is_in_scope id ~from
 
 let reduce (type a) (l : t * a) (r : t * a) : t * a =
-  if 0 <= Comparable.lift ~f:fst [%compare: t] l r
-  then l else r
+  if Comparable.lift ~f:fst [%compare: t] l r <= 0 then l else r

@@ -22,6 +22,12 @@ type t [@@deriving compare, sexp, quickcheck]
 
 (** {2 Constructors} *)
 
+val try_parse : string -> t Or_error.t
+(** [try_parse str] tries to parse [str] as a Litmus identifier. For an
+    exception-based alternative, use {{!of_string} of_string}. *)
+
+(** {3 Global identifiers} *)
+
 val global : C_id.t -> t
 (** [global id] creates a global identifier. *)
 
@@ -29,11 +35,9 @@ val global_of_string : string -> t Or_error.t
 (** [global_of_string str] tries to create a global identifier from [str].
     It fails if [str] isn't a valid C identifier. *)
 
+(** {3 Local identifiers} *)
 val local : int -> C_id.t -> t
 (** [local tid id] creates a local identifier with the given thread ID. *)
-
-val try_parse : string -> t Or_error.t
-(** [try_parse str] tries to parse [str] as a Litmus identifier. *)
 
 (** {2 Accessors} *)
 

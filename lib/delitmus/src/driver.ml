@@ -84,8 +84,8 @@ struct
         Or_error.Let_syntax.(
           let%map c_type = Act_c_mini.Type.deref ptr_type in
           ( lit_id
-          , Var_map.Record.make ~c_type ~mapped_to_global:B.globals_become_globals
-              ~c_id )))
+          , Var_map.Record.make ~c_type
+              ~mapped_to_global:B.globals_become_globals ~c_id )))
 
   let make_global_var_alist :
          Act_c_mini.Function.t list
@@ -109,8 +109,8 @@ struct
            let c_id = Qualify.litmus_id lit_id in
            let c_type = Act_c_mini.Initialiser.ty init in
            ( lit_id
-           , Var_map.Record.make ~c_type ~mapped_to_global:B.locals_become_globals
-               ~c_id ))
+           , Var_map.Record.make ~c_type
+               ~mapped_to_global:B.locals_become_globals ~c_id ))
 
   let make_local_var_alists :
          Act_c_mini.Function.t list

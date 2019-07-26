@@ -78,8 +78,8 @@ module Map = struct
 
   let make_existing_var_map :
       Act_c_mini.Type.t option Map.M(Ac.Litmus_id).t -> t =
-      Fn.compose Ac.Scoped_map.of_litmus_id_map
-        (Map.mapi ~f:(fun ~key ~data -> Record.make_existing key data))
+    Fn.compose Ac.Scoped_map.of_litmus_id_map
+      (Map.mapi ~f:(fun ~key ~data -> Record.make_existing key data))
 
   let register_global ?(initial_value : Act_c_mini.Constant.t option)
       (map : t) (id : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
@@ -98,8 +98,10 @@ module Map = struct
 
   let has_dependencies (map : t) ~(id : Ac.Litmus_id.t) : bool =
     match Ac.Scoped_map.find_by_litmus_id map ~id with
-    | Ok r -> Record.has_dependencies r
-    | _ -> false
+    | Ok r ->
+        Record.has_dependencies r
+    | _ ->
+        false
 
   let dependency_error (var : Ac.Litmus_id.t) : unit Or_error.t =
     Or_error.error_s
@@ -125,7 +127,9 @@ module Map = struct
   let env_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
       ~(predicates : (Record.t -> bool) list) :
       Act_c_mini.Type.t Map.M(Ac.C_id).t =
-    vars |> Ac.Scoped_map.to_c_id_map ~scope |> type_submap_satisfying_all ~predicates
+    vars
+    |> Ac.Scoped_map.to_c_id_map ~scope
+    |> type_submap_satisfying_all ~predicates
 
   let env_module_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
       ~(predicates : (Record.t -> bool) list) =
