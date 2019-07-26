@@ -60,6 +60,10 @@ module Record : sig
   val is_global : t -> bool
   (** [is_global vr] returns whether [vr] is a global variable. *)
 
+  val has_basic_type : t -> basic:Act_c_mini.Type.Basic.t -> bool
+  (** [has_type vr t] returns whether [vr] is known to have the basic type
+      [t]. *)
+
   val is_atomic : t -> bool
   (** [is_atomic vr] returns whether [vr] is an atomic variable. *)
 

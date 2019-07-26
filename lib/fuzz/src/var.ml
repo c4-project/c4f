@@ -31,11 +31,11 @@ module Record = struct
 
   let is_global (r : t) : bool = Ac.Scope.is_global (scope r)
 
-  let is_atomic : t -> bool = function
-    | {ty= Some ty; _} ->
-        Act_c_mini.Type.is_atomic ty
-    | {ty= None; _} ->
-        false
+  let has_basic_type (r : t) ~(basic : Act_c_mini.Type.Basic.t) : bool =
+    Option.exists ~f:(Act_c_mini.Type.basic_type_is ~basic) (ty r)
+
+  let is_atomic (r : t) : bool =
+    Option.exists ~f:Act_c_mini.Type.is_atomic (ty r)
 
   let was_generated : t -> bool = function
     | {source= `Generated; _} ->

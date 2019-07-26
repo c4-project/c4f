@@ -12,10 +12,10 @@ void P0(atomic_int *x, atomic_int *y) {
 }
 
 void P1(atomic_int *x, atomic_int *y) {
-  int b;
+  int a;
   atomic_store_explicit(y, 1, memory_order_relaxed);
-  b = atomic_load_explicit(x, memory_order_relaxed);
+  a = atomic_load_explicit(x, memory_order_relaxed);
 }
 
-exists (0:a == 0 /\ 1:b == 0)
+exists (0:a == 0 /\ 1:a == 0)
 

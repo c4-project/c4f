@@ -51,6 +51,10 @@ module Make (B : sig
   (** If true, only allow stores to variables that are known not to already
       have writes. This can help avoid combinatorial explosions. *)
 
+  val dst_type : Act_c_mini.Type.Basic.t
+  (** The expected basic type of destination variables. This must line up
+      with the generator. *)
+
   module Quickcheck
       (Src : Act_c_mini.Env_types.S)
       (Dst : Act_c_mini.Env_types.S) :

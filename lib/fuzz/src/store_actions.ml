@@ -44,6 +44,8 @@ module Make (B : sig
 
   val forbid_already_written : bool
 
+  val dst_type : Act_c_mini.Type.Basic.t
+
   module Quickcheck
       (Src : Act_c_mini.Env_types.S)
       (Dst : Act_c_mini.Env_types.S) :
@@ -92,6 +94,7 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
       Var.Record.(
         [ is_atomic
         ; was_generated
+        ; has_basic_type ~basic:B.dst_type
           (* This is to make sure that we don't change the observable
              semantics of the program over its original variables. *)
         ; Fn.non has_dependencies
@@ -117,7 +120,7 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
 
     let error_if_empty (env : string) (module M : Act_c_mini.Env_types.S) :
         unit Or_error.t =
-      if Act_common.C_id.Map.is_empty M.env then
+      if Map.is_empty M.env then
         Or_error.error_s
           [%message
             "Internal error: Environment was empty." ~here:[%here] ~env]
@@ -216,6 +219,8 @@ end
 module Int : Action_types.S with type Random_state.t = Random_state.t =
 Make (struct
   let name = Ac.Id.of_string "store.make.int.single"
+
+  let dst_type = Act_c_mini.Type.Basic.int ~atomic:true ()
 
   let forbid_already_written = true (* for now *)
 
