@@ -43,8 +43,12 @@ module Make_global :
         let%map name = Var.Map.gen_fresh_var vars in
         {basic_type; initial_value; name})
 
-    let gen (_subject : Subject.Test.t) : t G.t State.Monad.t =
-      State.Monad.with_vars gen'
+    let gen (_subject : Subject.Test.t)
+        ~(random : Splittable_random.State.t) : t State.Monad.t =
+      State.Monad.(
+        Let_syntax.(
+          let%map generator = with_vars gen' in
+          Base_quickcheck.Generator.generate generator ~random ~size:10))
   end
 
   let available = Action.always

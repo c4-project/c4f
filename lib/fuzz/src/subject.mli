@@ -73,15 +73,13 @@ module Program : sig
        t
     -> vars:Var.Map.t
     -> id:int
-    -> Act_c_mini.Function.t Act_c_mini.Named.t Or_error.t
+    -> Act_c_mini.Function.t Act_c_mini.Named.t
   (** [to_function prog ~vars ~id] lifts a subject-program [prog] with ID
       [prog_id] back into a Litmus function, adding a parameter list
       generated from [vars]. *)
 
   val list_to_litmus :
-       t list
-    -> vars:Var.Map.t
-    -> Act_c_mini.Litmus.Lang.Program.t list Or_error.t
+    t list -> vars:Var.Map.t -> Act_c_mini.Litmus.Lang.Program.t list
   (** [list_to_litmus progs ~vars] lifts a list [progs] of subject-programs
       back into Litmus programs, adding parameter lists generated from
       [vars], and using the physical position of each program in the list to

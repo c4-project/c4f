@@ -107,42 +107,33 @@ module Program = struct
         List.map (Act_c_mini.Function.body_stms func) ~f:(fun item ->
             With_source.make ~item ~source:`Existing) }
 
-  let try_extract_parameter_type (var : Var.Record.t) :
-      Act_c_mini.Type.t Or_error.t =
-    var |> Var.Record.ty
-    |> Result.of_option
-         ~error:(Error.of_string "Internal error: missing global type")
-
   module R_alist = Act_c_mini.Named.Alist.As_named (Var.Record)
 
   (** [make_function_parameters vars] creates a uniform function parameter
       list for a C litmus test using the global variable records in [vars]. *)
   let make_function_parameters (vars : Var.Map.t) :
-      Act_c_mini.Type.t Act_c_mini.Named.Alist.t Or_error.t =
+      Act_c_mini.Type.t Act_c_mini.Named.Alist.t =
     vars
-    |> Ac.C_id.Map.filter ~f:Var.Record.is_global
-    |> Ac.C_id.Map.to_alist
-    |> Tx.Alist.With_errors.map_right_m ~f:try_extract_parameter_type
+    |> Var.Map.env_satisfying_all ~scope:Global ~predicates:[]
+    |> Map.to_alist
 
   let to_function (prog : t) ~(vars : Var.Map.t) ~(id : int) :
-      Act_c_mini.Function.t Act_c_mini.Named.t Or_error.t =
+      Act_c_mini.Function.t Act_c_mini.Named.t =
     let name = Ac.C_id.of_string (Printf.sprintf "P%d" id) in
     let body_stms = List.map prog.stms ~f:With_source.item in
-    Or_error.Let_syntax.(
-      let%map parameters = make_function_parameters vars in
-      let func =
-        Act_c_mini.Function.make ~parameters ~body_decls:prog.decls
-          ~body_stms ()
-      in
-      Act_c_mini.Named.make func ~name)
+    let parameters = make_function_parameters vars in
+    let func =
+      Act_c_mini.Function.make ~parameters ~body_decls:prog.decls ~body_stms
+        ()
+    in
+    Act_c_mini.Named.make func ~name
 
   let list_to_litmus (progs : t list) ~(vars : Var.Map.t) :
-      Act_c_mini.Litmus.Lang.Program.t list Or_error.t =
+      Act_c_mini.Litmus.Lang.Program.t list =
     progs
     |> List.filter_mapi ~f:(fun id prog ->
            if has_statements prog then Some (to_function ~vars ~id prog)
            else None)
-    |> Or_error.combine_errors
 end
 
 module Test = struct
@@ -208,8 +199,7 @@ module Test = struct
          Act_c_mini.Constant.t Act_litmus.Postcondition.t option)
       (subject : t) ~(vars : Var.Map.t) ~(name : string) :
       Act_c_mini.Litmus.Ast.Validated.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind programs = Program.list_to_litmus ~vars subject.programs in
+    let programs = Program.list_to_litmus ~vars subject.programs in
     Act_c_mini.Litmus.Ast.Validated.make ?postcondition ~name
       ~init:subject.init ~programs ()
 

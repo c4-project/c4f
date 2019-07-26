@@ -7,4 +7,4 @@
   (pps ppx_jane))
  (libraries sexplib0 splittable_random ppx_expect.common ppx_expect.config
    ppx_inline_test.config base base.caml core_kernel stdio fmt act.fuzz
-   act.c_lang act.c_mini act.common act_c_mini_test))
+   act.c_lang act.c_mini act.common act.utils act_c_mini_test))

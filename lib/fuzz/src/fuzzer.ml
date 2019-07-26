@@ -35,65 +35,63 @@ let modules : (module Action_types.S) list Lazy.t =
 module Outer_state = struct
   type t =
     {pool: Action.Pool.t; random: Splittable_random.State.t; trace: Trace.t}
+  [@@deriving fields]
+
+  module Monad = Travesty.State_transform.Make (struct
+    type nonrec t = t
+
+    module Inner = State.Monad
+  end)
 end
 
-module Outer_state_monad = Travesty.State_transform.Make (struct
-  type t = Outer_state.t
-
-  module Inner = State.Monad
-end)
-
-let output () : Ac.Output.t Outer_state_monad.t =
-  Outer_state_monad.Monadic.return (State.Monad.output ())
+let output () : Ac.Output.t Outer_state.Monad.t =
+  Outer_state.Monad.Monadic.return (State.Monad.output ())
 
 let generate_payload (type rs)
     (module Act : Action_types.S with type Random_state.t = rs)
-    (subject : Subject.Test.t) : rs Outer_state_monad.t =
-  let open Outer_state_monad.Let_syntax in
+    (subject : Subject.Test.t) : rs Outer_state.Monad.t =
+  let open Outer_state.Monad.Let_syntax in
   let%bind o = output () in
-  let%bind random = Outer_state_monad.peek (fun x -> x.random) in
-  Ac.Output.pv o "fuzz: getting random state generator for %a@." Ac.Id.pp
-    Act.name ;
-  let%map gen =
-    Outer_state_monad.Monadic.return (Act.Random_state.gen subject)
-  in
+  let%bind random = Outer_state.Monad.peek Outer_state.random in
   Ac.Output.pv o "fuzz: generating random state for %a...@." Ac.Id.pp
     Act.name ;
-  let g = Base_quickcheck.Generator.generate gen ~random ~size:10 in
+  let%map g =
+    Outer_state.Monad.Monadic.return (Act.Random_state.gen subject ~random)
+  in
   Ac.Output.pv o "fuzz: done generating random state.@." ;
   g
 
 let pick_action (subject : Subject.Test.t) :
-    (module Action_types.S) Outer_state_monad.t =
-  Outer_state_monad.Let_syntax.(
-    let%bind {pool; random; _} = Outer_state_monad.peek Fn.id in
-    Outer_state_monad.Monadic.return (Action.Pool.pick pool subject random))
+    (module Action_types.S) Outer_state.Monad.t =
+  Outer_state.Monad.Let_syntax.(
+    let%bind {pool; random; _} = Outer_state.Monad.peek Fn.id in
+    Outer_state.Monad.Monadic.return (Action.Pool.pick pool subject random))
 
 let log_action (type p)
     (action : (module Action_types.S with type Random_state.t = p))
-    (payload : p) : unit Outer_state_monad.t =
-  Outer_state_monad.modify (fun x ->
+    (payload : p) : unit Outer_state.Monad.t =
+  Outer_state.Monad.modify (fun x ->
       {x with trace= Trace.add x.trace ~action ~payload})
 
 let run_action (subject : Subject.Test.t) (module Action : Action_types.S) :
-    Subject.Test.t Outer_state_monad.t =
-  Outer_state_monad.Let_syntax.(
+    Subject.Test.t Outer_state.Monad.t =
+  Outer_state.Monad.Let_syntax.(
     (* We can't, AFAIK, move the payload out of this function, as then the
        subject step runner would become dependent on the exact type of the
        payload, and this is encapsulated in [Action]. *)
     let%bind payload = generate_payload (module Action) subject in
     let%bind () = log_action (module Action) payload in
-    Outer_state_monad.Monadic.return (Action.run subject payload))
+    Outer_state.Monad.Monadic.return (Action.run subject payload))
 
 let mutate_subject_step (subject : Subject.Test.t) :
-    Subject.Test.t Outer_state_monad.t =
-  Outer_state_monad.Let_syntax.(
+    Subject.Test.t Outer_state.Monad.t =
+  Outer_state.Monad.Let_syntax.(
     let%bind o = output () in
     Ac.Output.pv o "fuzz: picking action...@." ;
     let%bind action = pick_action subject in
     Ac.Output.pv o "fuzz: done; now running action...@." ;
     run_action subject action
-    >>= Outer_state_monad.tee ~f:(fun _ ->
+    >>= Outer_state.Monad.tee ~f:(fun _ ->
             Ac.Output.pv o "fuzz: action done.@."))
 
 let make_pool : Act_config.Fuzz.t -> Action.Pool.t Or_error.t =
@@ -104,11 +102,11 @@ let summarise (cfg : Act_config.Fuzz.t) :
   Or_error.(cfg |> make_pool >>| Action.Pool.summarise)
 
 let mutate_subject (subject : Subject.Test.t) :
-    Subject.Test.t Outer_state_monad.t =
-  Outer_state_monad.Let_syntax.(
+    Subject.Test.t Outer_state.Monad.t =
+  Outer_state.Monad.Let_syntax.(
     let cap = 10 in
     let%map _, subject' =
-      Outer_state_monad.fix (cap, subject)
+      Outer_state.Monad.fix (cap, subject)
         ~f:(fun mu (remaining, subject') ->
           if Int.(remaining = 0) then return (remaining, subject')
           else
@@ -118,8 +116,8 @@ let mutate_subject (subject : Subject.Test.t) :
     subject')
 
 let run_with_state (test : Act_c_mini.Litmus.Ast.Validated.t) :
-    Act_c_mini.Litmus.Ast.Validated.t Outer_state_monad.t =
-  Outer_state_monad.Let_syntax.(
+    Act_c_mini.Litmus.Ast.Validated.t Outer_state.Monad.t =
+  Outer_state.Monad.Let_syntax.(
     (* TODO: add uuid to this *)
     let name = Act_c_mini.Litmus.Ast.Validated.name test in
     let postcondition =
@@ -127,7 +125,7 @@ let run_with_state (test : Act_c_mini.Litmus.Ast.Validated.t) :
     in
     let subject = Subject.Test.of_litmus test in
     let%bind subject' = mutate_subject subject in
-    Outer_state_monad.Monadic.return
+    Outer_state.Monad.Monadic.return
       State.Monad.(
         with_vars_m (fun vars ->
             Monadic.return
@@ -156,11 +154,9 @@ let existing_globals (test : Act_c_mini.Litmus.Ast.Validated.t) :
     test |> get_first_func >>| Act_c_mini.Function.parameters
     >>= Map.of_alist_or_error (module Ac.C_id))
 
-let to_locals : Set.M(Ac.Litmus_id).t -> Set.M(Ac.C_id).t =
+let to_locals : Set.M(Ac.Litmus_id).t -> Set.M(Ac.Litmus_id).t =
   (* TODO(@MattWindsor91): do we need to keep the thread IDs? *)
-  Set.filter_map
-    (module Ac.C_id)
-    ~f:(Fn.compose (Option.map ~f:snd) Ac.Litmus_id.as_local)
+  Set.filter ~f:Ac.Litmus_id.is_local
 
 let make_inner_state (o : Ac.Output.t)
     (test : Act_c_mini.Litmus.Ast.Validated.t) : State.t Or_error.t =
@@ -186,7 +182,7 @@ let run ?(seed : int option) (test : Act_c_mini.Litmus.Ast.Validated.t)
     let%bind outer_state = make_outer_state seed config in
     let%map outer_state', test' =
       State.Monad.run
-        (Outer_state_monad.run' (run_with_state test) outer_state)
+        (Outer_state.Monad.run' (run_with_state test) outer_state)
         inner_state
     in
     (test', outer_state'.trace))

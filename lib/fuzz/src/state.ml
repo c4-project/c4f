@@ -11,13 +11,22 @@
 
 open Base
 module Ac = Act_common
+module Tx = Travesty_base_exts
 
 type t = {vars: Var.Map.t; o: Ac.Output.t} [@@deriving fields]
 
 let init ?(o : Ac.Output.t = Ac.Output.silent ())
-    ~(globals : Act_c_mini.Type.t Ac.C_id.Map.t) ~(locals : Ac.C_id.Set.t)
-    () : t =
-  let vars = Var.Map.make_existing_var_map globals locals in
+    ~(globals : Act_c_mini.Type.t Map.M(Ac.C_id).t)
+    ~(locals : Set.M(Ac.Litmus_id).t) () : t =
+  let globals' =
+    globals |> Map.to_alist
+    |> Tx.Alist.bi_map ~left:Ac.Litmus_id.global ~right:Option.some
+  in
+  let locals' = locals |> Set.to_list |> List.map ~f:(fun x -> (x, None)) in
+  let var_map =
+    Map.of_alist_exn (module Ac.Litmus_id) (globals' @ locals')
+  in
+  let vars = Var.Map.make_existing_var_map var_map in
   {vars; o}
 
 let try_map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t Or_error.t) :
@@ -31,18 +40,18 @@ let register_global ?(initial_value : Act_c_mini.Constant.t option) (s : t)
     (var : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
   map_vars s ~f:(fun v -> Var.Map.register_global v ?initial_value var ty)
 
-let add_dependency (s : t) ~(var : Ac.C_id.t) : t =
+let add_dependency (s : t) ~(var : Ac.Litmus_id.t) : t =
   map_vars s ~f:(Var.Map.add_dependency ~var)
 
-let add_write (s : t) ~(var : Ac.C_id.t) : t =
+let add_write (s : t) ~(var : Ac.Litmus_id.t) : t =
   map_vars s ~f:(Var.Map.add_write ~var)
 
-let erase_var_value (s : t) ~(var : Ac.C_id.t) : t Or_error.t =
+let erase_var_value (s : t) ~(var : Ac.Litmus_id.t) : t Or_error.t =
   try_map_vars s ~f:(Var.Map.erase_value ~var)
 
-let vars_satisfying_all (s : t) ~(predicates : (Var.Record.t -> bool) list)
-    : Ac.C_id.t list =
-  Var.Map.satisfying_all s.vars ~predicates
+let vars_satisfying_all (s : t) ~(scope : Var.Scope.t)
+    ~(predicates : (Var.Record.t -> bool) list) : Ac.C_id.t list =
+  Var.Map.satisfying_all s.vars ~scope ~predicates
 
 module Monad = struct
   include Travesty.State_transform.Make (struct
@@ -55,16 +64,19 @@ module Monad = struct
 
   let with_vars (f : Var.Map.t -> 'a) : 'a t = peek vars >>| f
 
+  let resolve (id : Ac.C_id.t) ~(scope : Var.Scope.t) : Ac.Litmus_id.t t =
+    with_vars (Var.Map.resolve ~id ~scope)
+
   let register_global ?(initial_value : Act_c_mini.Constant.t option)
       (ty : Act_c_mini.Type.t) (var : Ac.C_id.t) : unit t =
     modify (fun s -> register_global ?initial_value s var ty)
 
-  let add_dependency (var : Ac.C_id.t) : unit t =
+  let add_dependency (var : Ac.Litmus_id.t) : unit t =
     modify (add_dependency ~var)
 
-  let add_write (var : Ac.C_id.t) : unit t = modify (add_write ~var)
+  let add_write (var : Ac.Litmus_id.t) : unit t = modify (add_write ~var)
 
-  let erase_var_value (var : Ac.C_id.t) : unit t =
+  let erase_var_value (var : Ac.Litmus_id.t) : unit t =
     Monadic.modify (erase_var_value ~var)
 
   let output () : Ac.Output.t t = peek (fun x -> x.o)

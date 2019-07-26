@@ -231,18 +231,18 @@ let%test_module "Bool_tautologies" =
       [%expect
         {|
           (true)
-          (true && atomic_load_explicit(&y, memory_order_relaxed) == foo || true)
+          (true && atomic_load_explicit(&x, memory_order_relaxed) == *blep || true)
           (false || true)
           (true || barbaz)
-          (true || foo == atomic_load_explicit(&y, memory_order_seq_cst))
-          (barbaz || true || -209 == atomic_load_explicit(&y, memory_order_consume))
-          (-5 == foo || -312 == foo || 1317973 == foo ||
-           atomic_load_explicit(&y, memory_order_relaxed) == 1 || true && barbaz ||
+          (true || *blep == atomic_load_explicit(bar, memory_order_seq_cst))
+          (barbaz || true || -209 == atomic_load_explicit(&x, memory_order_consume))
+          (-5 == *blep || -312 == *blep || 1317973 == foo ||
+           atomic_load_explicit(&x, memory_order_relaxed) == 1 || true && barbaz ||
            true && true)
-          (206117 == atomic_load_explicit(&y, memory_order_relaxed) || true)
+          (206117 == atomic_load_explicit(bar, memory_order_relaxed) || true)
           (57529197 == 115 || true)
           (atomic_load_explicit(&y, memory_order_consume) ==
-           atomic_load_explicit(&y, memory_order_seq_cst) || true)
+           atomic_load_explicit(&x, memory_order_seq_cst) || true)
           (true || barbaz && -1 == 13585 || false || true && true || foo == -452191315
            && true && true && true && true && true && true && true || true && true ||
            barbaz)
@@ -250,28 +250,28 @@ let%test_module "Bool_tautologies" =
            atomic_load_explicit(&x, memory_order_relaxed) == foo || false)
           (true && true && false || 0 == -149 || true || barbaz && true && true || true
            && true || barbaz || barbaz && true && true || barbaz && barbaz ||
-           atomic_load_explicit(&y, memory_order_relaxed) == 323 || -3005 == 32743007
+           atomic_load_explicit(bar, memory_order_relaxed) == 323 || -3005 == 32743007
            || true && true || false || barbaz || true || barbaz || false || false &&
-           true && true || barbaz || 99 == foo && true && barbaz || true || -427 ==
+           true && true || barbaz || 99 == *blep && true && barbaz || true || -427 ==
            atomic_load_explicit(&x, memory_order_acquire) ||
-           atomic_load_explicit(&y, memory_order_consume) == -2548 &&
-           atomic_load_explicit(&x, memory_order_seq_cst) == -1 || true || barbaz ||
+           atomic_load_explicit(&x, memory_order_consume) == -2548 &&
+           atomic_load_explicit(&y, memory_order_seq_cst) == -1 || true || barbaz ||
            true && barbaz || true && true || false ||
-           atomic_load_explicit(&y, memory_order_consume) == foo && barbaz || true &&
-           true && false || false || true || 1 == foo && -3531150 == -64 || true || foo
-           == 483016954 || true && true && true || true || -1 ==
-           atomic_load_explicit(&x, memory_order_seq_cst) && barbaz || true || barbaz
-           || foo == atomic_load_explicit(&x, memory_order_consume) || true || barbaz
-           || foo == foo && true || barbaz || true && true || false)
+           atomic_load_explicit(&y, memory_order_consume) == *blep && barbaz || true &&
+           true && false || false || true || 1 == foo && -3531150 == -64 || true ||
+           *blep == 483016954 || true && true && true || true || -1 ==
+           atomic_load_explicit(bar, memory_order_seq_cst) && barbaz || true || barbaz
+           || *blep == atomic_load_explicit(bar, memory_order_consume) || true ||
+           barbaz || foo == foo && true || barbaz || true && true || false)
           (true || true || barbaz || barbaz || true || barbaz)
           (true || true && barbaz || true || true && true || barbaz && true || true &&
            true || barbaz || true)
           (true && false || false || false || true || barbaz || false || true && true
            && true && barbaz || atomic_load_explicit(&y, memory_order_relaxed) == 800
-           || foo == atomic_load_explicit(&y, memory_order_seq_cst) || true && true ||
-           true || true || barbaz && true && true || true && foo == foo || barbaz ||
-           true && true || true && true || barbaz && barbaz || true || false || false
-           || true || barbaz) |}]
+           || *blep == atomic_load_explicit(&y, memory_order_seq_cst) || true && true
+           || true || true || barbaz && true && true || true && foo == *blep || barbaz
+           || true && true || true && true || barbaz && barbaz || true || false ||
+           false || true || barbaz) |}]
 
     let test_fun (module E : Src.Env_types.S_with_known_values) =
       (module Src.Expression_gen.Bool_tautologies (E) : Q.Test.S

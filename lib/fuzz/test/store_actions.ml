@@ -99,8 +99,12 @@ let%test_module "int tests" =
     let init_fuzzer_state : State.t Lazy.t =
       let open Lazy.Let_syntax in
       let%map globals_alist = globals in
-      let globals = Act_common.C_id.Map.of_alist_exn globals_alist in
-      State.init ~globals ~locals:Act_common.C_id.Set.empty ()
+      let globals =
+        Map.of_alist_exn (module Act_common.C_id) globals_alist
+      in
+      State.init ~globals
+        ~locals:(Set.empty (module Act_common.Litmus_id))
+        ()
 
     let run_test () : (State.t * Subject.Test.t) Or_error.t =
       State.Monad.(
@@ -113,14 +117,11 @@ let%test_module "int tests" =
     let%expect_test "test int store: programs" =
       let r =
         let open Or_error.Let_syntax in
-        let%bind state, test = run_test () in
+        let%map state, test = run_test () in
         let vars = State.vars state in
-        let prog_results =
-          List.mapi test.programs ~f:(fun id p ->
-              let%map fn = Subject.Program.to_function ~vars ~id p in
-              Act_c_mini.(Reify.func (Named.name fn) (Named.value fn)))
-        in
-        Or_error.combine_errors prog_results
+        List.mapi test.programs ~f:(fun id p ->
+            let fn = Subject.Program.to_function ~vars ~id p in
+            Act_c_mini.(Reify.func (Named.name fn) (Named.value fn)))
       in
       Fmt.(
         pr "%a@."
@@ -142,7 +143,8 @@ let%test_module "int tests" =
       let result =
         Or_error.(
           run_test () >>| fst
-          >>| State.vars_satisfying_all ~predicates:[Var.Record.is_global])
+          >>| State.vars_satisfying_all ~scope:(Local 0)
+                ~predicates:[Var.Record.is_global])
       in
       print_s [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
       [%expect {| (Ok (gen1 gen2 x y)) |}]
@@ -151,7 +153,7 @@ let%test_module "int tests" =
       let result =
         Or_error.(
           run_test () >>| fst
-          >>| State.vars_satisfying_all
+          >>| State.vars_satisfying_all ~scope:(Local 0)
                 ~predicates:[Var.Record.has_known_value])
       in
       print_s [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
@@ -161,7 +163,7 @@ let%test_module "int tests" =
       let result =
         Or_error.(
           run_test () >>| fst
-          >>| State.vars_satisfying_all
+          >>| State.vars_satisfying_all ~scope:(Local 0)
                 ~predicates:[Var.Record.has_dependencies])
       in
       print_s [%sexp (result : Act_common.C_id.t list Or_error.t)] ;

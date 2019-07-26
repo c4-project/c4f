@@ -125,16 +125,22 @@ end) :
 
   type subject = Subject.Test.t
 
-  let gen (_subject : subject) : t Base_quickcheck.Generator.t State.Monad.t
-      =
-    State.Monad.return S.quickcheck_generator
+  let gen (_subject : subject) ~(random : Splittable_random.State.t) :
+      t State.Monad.t =
+    State.Monad.return
+      (Base_quickcheck.Generator.generate ~size:10 ~random
+         S.quickcheck_generator)
 end
 
 module No_random_state :
   Action_types.S_random_state
     with type t = unit
-     and type subject = Subject.Test.t = Pure_random_state (struct
+     and type subject = Subject.Test.t = struct
   include Unit
 
-  let quickcheck_generator = Base_quickcheck.Generator.return ()
-end)
+  type subject = Subject.Test.t
+
+  let gen (_ : subject) ~(random : Splittable_random.State.t) =
+    ignore (random : Splittable_random.State.t) ;
+    State.Monad.return ()
+end

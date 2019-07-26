@@ -24,6 +24,10 @@
 open Base
 module Ac = Act_common
 
+let tid_of_path : Act_c_mini.Path_shapes.program -> int = function
+  | In_func (t, _) ->
+      t
+
 module Random_state = struct
   (* We don't give [gen] here, because it depends quite a lot on the functor
      arguments of [Make]. *)
@@ -101,13 +105,15 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
 
     module G = Base_quickcheck.Generator
 
-    let src_env (vars : Var.Map.t) : (module Act_c_mini.Env_types.S) =
+    let src_env (vars : Var.Map.t) ~(tid : int) :
+        (module Act_c_mini.Env_types.S) =
       let predicates = Lazy.force src_restrictions in
-      Var.Map.env_module_satisfying_all ~predicates vars
+      Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
 
-    let dst_env (vars : Var.Map.t) : (module Act_c_mini.Env_types.S) =
+    let dst_env (vars : Var.Map.t) ~(tid : int) :
+        (module Act_c_mini.Env_types.S) =
       let predicates = Lazy.force dst_restrictions in
-      Var.Map.env_module_satisfying_all ~predicates vars
+      Var.Map.env_module_satisfying_all ~predicates ~scope:(Local tid) vars
 
     let error_if_empty (env : string) (module M : Act_c_mini.Env_types.S) :
         unit Or_error.t =
@@ -117,10 +123,12 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
             "Internal error: Environment was empty." ~here:[%here] ~env]
       else Result.ok_unit
 
-    let gen_store (o : Ac.Output.t) (vars : Var.Map.t) :
-        Act_c_mini.Atomic_store.t G.t Or_error.t =
-      let (module Src) = src_env vars in
-      let (module Dst) = dst_env vars in
+    let gen_store (o : Ac.Output.t) (vars : Var.Map.t) ~(tid : int)
+        ~(random : Splittable_random.State.t) :
+        Act_c_mini.Atomic_store.t Or_error.t =
+      Ac.Output.pv o "%a: generating store...@." Ac.Id.pp name ;
+      let (module Src) = src_env vars ~tid in
+      let (module Dst) = dst_env vars ~tid in
       Ac.Output.pv o "%a: got environments@." Ac.Id.pp name ;
       let open Or_error.Let_syntax in
       let%bind () = error_if_empty "src" (module Src) in
@@ -134,30 +142,35 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
         [%sexp (Dst.env : Act_c_mini.Type.t Ac.C_id.Map.t)] ;
       let module Gen = B.Quickcheck (Src) (Dst) in
       Ac.Output.pv o "%a: built generator module@." Ac.Id.pp name ;
-      [%quickcheck.generator: Gen.t]
+      Base_quickcheck.Generator.generate ~random ~size:10
+        [%quickcheck.generator: Gen.t]
 
-    let gen' (o : Ac.Output.t) (subject : Subject.Test.t) (vars : Var.Map.t)
-        : t G.t Or_error.t =
-      let open Or_error.Let_syntax in
-      Ac.Output.pv o "%a: building generators...@." Ac.Id.pp name ;
-      let%map g_store = gen_store o vars in
-      Ac.Output.pv o "%a: built store generator@." Ac.Id.pp name ;
-      let g_path = Subject.Test.Path.gen_insert_stm subject in
-      Ac.Output.pv o "%a: built path generator@." Ac.Id.pp name ;
-      G.map2
-        ~f:(fun store path -> Random_state.make ~store ~path)
-        g_store g_path
+    let gen_path (o : Ac.Output.t) (subject : Subject.Test.t)
+        ~(random : Splittable_random.State.t) :
+        Act_c_mini.Path_shapes.program =
+      Ac.Output.pv o "%a: generating path...@." Ac.Id.pp name ;
+      Base_quickcheck.Generator.generate ~random ~size:10
+        (Subject.Test.Path.gen_insert_stm subject)
 
-    let gen (subject : Subject.Test.t) : t G.t State.Monad.t =
+    let gen' (o : Ac.Output.t) (subject : Subject.Test.t)
+        ~(random : Splittable_random.State.t) (vars : Var.Map.t) :
+        t Or_error.t =
+      let path = gen_path o subject ~random in
+      Or_error.Let_syntax.(
+        let%map store = gen_store o vars ~tid:(tid_of_path path) ~random in
+        Random_state.make ~store ~path)
+
+    let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
+        : t State.Monad.t =
       let open State.Monad.Let_syntax in
       let%bind o = State.Monad.output () in
       State.Monad.with_vars_m
-        (Fn.compose State.Monad.Monadic.return (gen' o subject))
+        (Fn.compose State.Monad.Monadic.return (gen' o subject ~random))
   end
 
   let available _ =
     State.Monad.with_vars
-      (Var.Map.exists_satisfying_all
+      (Var.Map.exists_satisfying_all ~scope:Var.Scope.Global
          ~predicates:(Lazy.force dst_restrictions))
 
   (* This action writes to the destination, so we no longer have a known
@@ -166,7 +179,9 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
       unit State.Monad.t =
     let open State.Monad.Let_syntax in
     let dst = Act_c_mini.Atomic_store.dst store in
-    let dst_var = Act_c_mini.Address.variable_of dst in
+    let dst_var =
+      Act_common.Litmus_id.global (Act_c_mini.Address.variable_of dst)
+    in
     let%bind () = State.Monad.erase_var_value dst_var in
     State.Monad.add_write dst_var
 
@@ -175,24 +190,27 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
 
   (* This action also introduces dependencies on every variable in the
      source. *)
-  let add_dependencies_to_store_src (store : Act_c_mini.Atomic_store.t) :
-      unit State.Monad.t =
-    Exp_idents.iter_m
-      (Act_c_mini.Atomic_store.src store)
-      ~f:State.Monad.add_dependency
+  let add_dependencies_to_store_src (store : Act_c_mini.Atomic_store.t)
+      ~(tid : int) : unit State.Monad.t =
+    Exp_idents.iter_m (Act_c_mini.Atomic_store.src store) ~f:(fun c_id ->
+        State.Monad.(
+          Let_syntax.(
+            let%bind l_id = resolve c_id ~scope:(Local tid) in
+            add_dependency l_id)))
 
   let run (subject : Subject.Test.t) ({store; path} : Random_state.t) :
       Subject.Test.t State.Monad.t =
-    let open State.Monad.Let_syntax in
     let store_stm = Act_c_mini.Statement.atomic_store store in
-    let%bind o = State.Monad.output () in
-    Ac.Output.pv o "%a: Erasing known value of store destination@." Ac.Id.pp
-      name ;
-    let%bind () = mark_store_dst store in
-    Ac.Output.pv o "%a: Adding dependency to store source@." Ac.Id.pp name ;
-    let%bind () = add_dependencies_to_store_src store in
-    State.Monad.Monadic.return
-      (Subject.Test.Path.insert_stm path store_stm subject)
+    let tid = tid_of_path path in
+    State.Monad.Let_syntax.(
+      let%bind o = State.Monad.output () in
+      Ac.Output.pv o "%a: Erasing known value of store destination@."
+        Ac.Id.pp name ;
+      let%bind () = mark_store_dst store in
+      Ac.Output.pv o "%a: Adding dependency to store source@." Ac.Id.pp name ;
+      let%bind () = add_dependencies_to_store_src store ~tid in
+      State.Monad.Monadic.return
+        (Subject.Test.Path.insert_stm path store_stm subject))
 end
 
 module Int : Action_types.S with type Random_state.t = Random_state.t =

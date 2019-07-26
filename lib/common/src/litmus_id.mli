@@ -37,9 +37,17 @@ val try_parse : string -> t Or_error.t
 
 (** {2 Accessors} *)
 
+val is_global : t -> bool
+(** [is_global id] is [true] if [id] is a global identifier, or [false]
+    otherwise. *)
+
 val as_global : t -> C_id.t option
 (** [as_global id] gets [Some cid] if [id] is the global identifier [cid],
     or [None] otherwise. *)
+
+val is_local : t -> bool
+(** [is_local id] is [true] if [id] is a local identifier, or [false]
+    otherwise. *)
 
 val as_local : t -> (int * C_id.t) option
 (** [as_local id] gets [Some (tid, cid)] if [id] is the local identifier

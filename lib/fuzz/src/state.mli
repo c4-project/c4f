@@ -19,7 +19,7 @@ type t
 val init :
      ?o:Act_common.Output.t
   -> globals:Act_c_mini.Type.t Map.M(Act_common.C_id).t
-  -> locals:Set.M(Act_common.C_id).t
+  -> locals:Set.M(Act_common.Litmus_id).t
   -> unit
   -> t
 (** [init ?o ~globals ~locals ()] creates an initial state with the global
@@ -31,9 +31,13 @@ val vars : t -> Var.Map.t
 (** [vars state] gets the state's variable map. *)
 
 val vars_satisfying_all :
-  t -> predicates:(Var.Record.t -> bool) list -> Act_common.C_id.t list
-(** [vars_satisfying_all state ~predicates] returns the list of all
-    variables in [state]'s variable list that satisfy [predicates]. *)
+     t
+  -> scope:Var.Scope.t
+  -> predicates:(Var.Record.t -> bool) list
+  -> Act_common.C_id.t list
+(** [vars_satisfying_all state ~scope ~predicates] returns the list of all
+    variables in [state]'s variable list that are in scope at [scope] and
+    satisfy [predicates]. *)
 
 (** The state monad. *)
 module Monad : sig
@@ -50,6 +54,11 @@ module Monad : sig
   (** [with_vars f] is a variant of {{!with_vars_m} with_vars_m} which maps
       across [f] rather than binding. *)
 
+  val resolve :
+    Act_common.C_id.t -> scope:Var.Scope.t -> Act_common.Litmus_id.t t
+  (** [resolve id ~scope] tries to get the Litmus-style ID corresponding to
+      the resolution of [id] in scope [scope]. *)
+
   val register_global :
        ?initial_value:Act_c_mini.Constant.t
     -> Act_c_mini.Type.t
@@ -60,21 +69,21 @@ module Monad : sig
       value [value] into the state, overwriting any existing variable of the
       same name. *)
 
-  val add_dependency : Act_common.C_id.t -> unit t
+  val add_dependency : Act_common.Litmus_id.t -> unit t
   (** [add_dependency var] is a stateful action that adds a dependency flag
       to any known-value record for variable [var].
 
       This should be done after involving [var] in any atomic actions that
       depend on it having a particular known-value. *)
 
-  val add_write : Act_common.C_id.t -> unit t
+  val add_write : Act_common.Litmus_id.t -> unit t
   (** [add_write var] is a stateful action that adds a write flag to
       variable [var].
 
       This should be done after involving [var] in any atomic actions that
       write to it, even if they don't modify it. *)
 
-  val erase_var_value : Act_common.C_id.t -> unit t
+  val erase_var_value : Act_common.Litmus_id.t -> unit t
   (** [erase_var_value var] is a stateful action that erases any known-value
       information for variable [var].
 
