@@ -32,7 +32,7 @@ val vars : t -> Var.Map.t
 
 val vars_satisfying_all :
      t
-  -> scope:Var.Scope.t
+  -> scope:Act_common.Scope.t
   -> predicates:(Var.Record.t -> bool) list
   -> Act_common.C_id.t list
 (** [vars_satisfying_all state ~scope ~predicates] returns the list of all
@@ -55,7 +55,7 @@ module Monad : sig
       across [f] rather than binding. *)
 
   val resolve :
-    Act_common.C_id.t -> scope:Var.Scope.t -> Act_common.Litmus_id.t t
+    Act_common.C_id.t -> scope:Act_common.Scope.t -> Act_common.Litmus_id.t t
   (** [resolve id ~scope] tries to get the Litmus-style ID corresponding to
       the resolution of [id] in scope [scope]. *)
 

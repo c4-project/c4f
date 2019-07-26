@@ -21,21 +21,21 @@ let%test_module "with example map" =
     module Rc = M.Record
 
     let map : M.t =
-      M.of_map
+      Act_common.Scoped_map.of_litmus_id_map
         (Map.of_alist_exn
            (module Li)
            [ ( Li.of_string "0:r0"
              , Rc.make ~c_id:(Ci.of_string "t0r0") ~c_type:(Ct.int ())
-                 ~is_global:true )
+                 ~mapped_to_global:true )
            ; ( Li.of_string "1:r0"
              , Rc.make ~c_id:(Ci.of_string "t1r0") ~c_type:(Ct.bool ())
-                 ~is_global:true )
+                 ~mapped_to_global:true )
            ; ( Li.of_string "1:tmp"
              , Rc.make ~c_id:(Ci.of_string "t1tmp") ~c_type:(Ct.int ())
-                 ~is_global:false )
+                 ~mapped_to_global:false )
            ; ( Li.of_string "x"
              , Rc.make ~c_id:(Ci.of_string "x")
-                 ~c_type:(Ct.int ~atomic:true ()) ~is_global:true ) ])
+                 ~c_type:(Ct.int ~atomic:true ()) ~mapped_to_global:true ) ])
 
     let%expect_test "global_c_variables" =
       Set.iter

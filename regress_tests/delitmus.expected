@@ -44,12 +44,12 @@ P3()
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "is_global": true },
-    "y": { "c_type": "atomic_int", "c_id": "y", "is_global": true },
-    "2:r0": { "c_type": "int", "c_id": "t2r0", "is_global": true },
-    "2:r1": { "c_type": "int", "c_id": "t2r1", "is_global": true },
-    "3:r0": { "c_type": "int", "c_id": "t3r0", "is_global": true },
-    "3:r1": { "c_type": "int", "c_id": "t3r1", "is_global": true }
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": true },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": true },
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to_global": true },
+    "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to_global": true },
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to_global": true },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to_global": true }
   },
   "num_threads": 4
 } 
@@ -89,12 +89,12 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
       "exists (t2r0 == 1 /\\ t2r1 == 0 /\\ t3r0 == 1 /\\ t3r1 == 0)"
   },
   "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "is_global": false },
-    "y": { "c_type": "atomic_int", "c_id": "y", "is_global": false },
-    "2:r0": { "c_type": "int", "c_id": "t2r0", "is_global": false },
-    "2:r1": { "c_type": "int", "c_id": "t2r1", "is_global": false },
-    "3:r0": { "c_type": "int", "c_id": "t3r0", "is_global": false },
-    "3:r1": { "c_type": "int", "c_id": "t3r1", "is_global": false }
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": false },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": false },
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to_global": false },
+    "2:r1": { "c_type": "int", "c_id": "t2r1", "mapped_to_global": false },
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to_global": false },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to_global": false }
   },
   "num_threads": 4
 } 
@@ -170,26 +170,30 @@ P4()
     "MaJgQmON3yu": {
       "c_type": "int",
       "c_id": "MaJgQmON3yu",
-      "is_global": true
+      "mapped_to_global": true
     },
-    "VFTQNWN": { "c_type": "int", "c_id": "VFTQNWN", "is_global": true },
+    "VFTQNWN": {
+      "c_type": "int",
+      "c_id": "VFTQNWN",
+      "mapped_to_global": true
+    },
     "ZgoV7uel9o": {
       "c_type": "int",
       "c_id": "ZgoV7uel9o",
-      "is_global": true
+      "mapped_to_global": true
     },
-    "m02M5s": { "c_type": "int", "c_id": "m02M5s", "is_global": true },
+    "m02M5s": { "c_type": "int", "c_id": "m02M5s", "mapped_to_global": true },
     "ne0J8wrPQam": {
       "c_type": "atomic_int",
       "c_id": "ne0J8wrPQam",
-      "is_global": true
+      "mapped_to_global": true
     },
-    "x": { "c_type": "atomic_int", "c_id": "x", "is_global": true },
-    "y": { "c_type": "atomic_int", "c_id": "y", "is_global": true },
-    "3:r0": { "c_type": "int", "c_id": "t3r0", "is_global": true },
-    "3:r1": { "c_type": "int", "c_id": "t3r1", "is_global": true },
-    "4:r0": { "c_type": "int", "c_id": "t4r0", "is_global": true },
-    "4:r1": { "c_type": "int", "c_id": "t4r1", "is_global": true }
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": true },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": true },
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to_global": true },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to_global": true },
+    "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to_global": true },
+    "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to_global": true }
   },
   "num_threads": 5
 } 
@@ -257,26 +261,34 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
     "MaJgQmON3yu": {
       "c_type": "int",
       "c_id": "MaJgQmON3yu",
-      "is_global": false
+      "mapped_to_global": false
     },
-    "VFTQNWN": { "c_type": "int", "c_id": "VFTQNWN", "is_global": false },
+    "VFTQNWN": {
+      "c_type": "int",
+      "c_id": "VFTQNWN",
+      "mapped_to_global": false
+    },
     "ZgoV7uel9o": {
       "c_type": "int",
       "c_id": "ZgoV7uel9o",
-      "is_global": false
+      "mapped_to_global": false
     },
-    "m02M5s": { "c_type": "int", "c_id": "m02M5s", "is_global": false },
+    "m02M5s": {
+      "c_type": "int",
+      "c_id": "m02M5s",
+      "mapped_to_global": false
+    },
     "ne0J8wrPQam": {
       "c_type": "atomic_int",
       "c_id": "ne0J8wrPQam",
-      "is_global": false
+      "mapped_to_global": false
     },
-    "x": { "c_type": "atomic_int", "c_id": "x", "is_global": false },
-    "y": { "c_type": "atomic_int", "c_id": "y", "is_global": false },
-    "3:r0": { "c_type": "int", "c_id": "t3r0", "is_global": false },
-    "3:r1": { "c_type": "int", "c_id": "t3r1", "is_global": false },
-    "4:r0": { "c_type": "int", "c_id": "t4r0", "is_global": false },
-    "4:r1": { "c_type": "int", "c_id": "t4r1", "is_global": false }
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": false },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": false },
+    "3:r0": { "c_type": "int", "c_id": "t3r0", "mapped_to_global": false },
+    "3:r1": { "c_type": "int", "c_id": "t3r1", "mapped_to_global": false },
+    "4:r0": { "c_type": "int", "c_id": "t4r0", "mapped_to_global": false },
+    "4:r1": { "c_type": "int", "c_id": "t4r1", "mapped_to_global": false }
   },
   "num_threads": 5
 } 
@@ -314,8 +326,8 @@ P1()
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
   },
   "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "is_global": true },
-    "0:r0": { "c_type": "int", "c_id": "t0r0", "is_global": true }
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": true },
+    "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to_global": true }
   },
   "num_threads": 2
 } 
@@ -346,8 +358,8 @@ P1_body(atomic_int *x)
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
   },
   "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "is_global": false },
-    "0:r0": { "c_type": "int", "c_id": "t0r0", "is_global": false }
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": false },
+    "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to_global": false }
   },
   "num_threads": 2
 } 
@@ -377,8 +389,8 @@ P0()
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
   },
   "var_map": {
-    "x": { "c_type": "int", "c_id": "x", "is_global": true },
-    "0:r0": { "c_type": "int", "c_id": "t0r0", "is_global": true }
+    "x": { "c_type": "int", "c_id": "x", "mapped_to_global": true },
+    "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to_global": true }
   },
   "num_threads": 1
 } 
@@ -402,8 +414,8 @@ P0_body(int *x, int *r0)
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
   },
   "var_map": {
-    "x": { "c_type": "int", "c_id": "x", "is_global": false },
-    "0:r0": { "c_type": "int", "c_id": "t0r0", "is_global": false }
+    "x": { "c_type": "int", "c_id": "x", "mapped_to_global": false },
+    "0:r0": { "c_type": "int", "c_id": "t0r0", "mapped_to_global": false }
   },
   "num_threads": 1
 } 
@@ -448,11 +460,11 @@ P2()
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
   },
   "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "is_global": true },
-    "y": { "c_type": "atomic_int", "c_id": "y", "is_global": true },
-    "1:r0": { "c_type": "int", "c_id": "t1r0", "is_global": true },
-    "1:r1": { "c_type": "int", "c_id": "t1r1", "is_global": true },
-    "2:r0": { "c_type": "int", "c_id": "t2r0", "is_global": true }
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": true },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": true },
+    "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to_global": true },
+    "1:r1": { "c_type": "int", "c_id": "t1r1", "mapped_to_global": true },
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to_global": true }
   },
   "num_threads": 3
 } 
@@ -488,11 +500,11 @@ P2_body(atomic_int *x, atomic_int *y, int *r0)
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
   },
   "var_map": {
-    "x": { "c_type": "atomic_int", "c_id": "x", "is_global": false },
-    "y": { "c_type": "atomic_int", "c_id": "y", "is_global": false },
-    "1:r0": { "c_type": "int", "c_id": "t1r0", "is_global": false },
-    "1:r1": { "c_type": "int", "c_id": "t1r1", "is_global": false },
-    "2:r0": { "c_type": "int", "c_id": "t2r0", "is_global": false }
+    "x": { "c_type": "atomic_int", "c_id": "x", "mapped_to_global": false },
+    "y": { "c_type": "atomic_int", "c_id": "y", "mapped_to_global": false },
+    "1:r0": { "c_type": "int", "c_id": "t1r0", "mapped_to_global": false },
+    "1:r1": { "c_type": "int", "c_id": "t1r1", "mapped_to_global": false },
+    "2:r0": { "c_type": "int", "c_id": "t2r0", "mapped_to_global": false }
   },
   "num_threads": 3
 } 

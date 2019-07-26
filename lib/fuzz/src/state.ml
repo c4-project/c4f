@@ -40,16 +40,16 @@ let register_global ?(initial_value : Act_c_mini.Constant.t option) (s : t)
     (var : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
   map_vars s ~f:(fun v -> Var.Map.register_global v ?initial_value var ty)
 
-let add_dependency (s : t) ~(var : Ac.Litmus_id.t) : t =
-  map_vars s ~f:(Var.Map.add_dependency ~var)
+let add_dependency (s : t) ~(id : Ac.Litmus_id.t) : t =
+  map_vars s ~f:(Var.Map.add_dependency ~id)
 
-let add_write (s : t) ~(var : Ac.Litmus_id.t) : t =
-  map_vars s ~f:(Var.Map.add_write ~var)
+let add_write (s : t) ~(id : Ac.Litmus_id.t) : t =
+  map_vars s ~f:(Var.Map.add_write ~id)
 
-let erase_var_value (s : t) ~(var : Ac.Litmus_id.t) : t Or_error.t =
-  try_map_vars s ~f:(Var.Map.erase_value ~var)
+let erase_var_value (s : t) ~(id : Ac.Litmus_id.t) : t Or_error.t =
+  try_map_vars s ~f:(Var.Map.erase_value ~id)
 
-let vars_satisfying_all (s : t) ~(scope : Var.Scope.t)
+let vars_satisfying_all (s : t) ~(scope : Ac.Scope.t)
     ~(predicates : (Var.Record.t -> bool) list) : Ac.C_id.t list =
   Var.Map.satisfying_all s.vars ~scope ~predicates
 
@@ -64,20 +64,20 @@ module Monad = struct
 
   let with_vars (f : Var.Map.t -> 'a) : 'a t = peek vars >>| f
 
-  let resolve (id : Ac.C_id.t) ~(scope : Var.Scope.t) : Ac.Litmus_id.t t =
-    with_vars (Var.Map.resolve ~id ~scope)
+  let resolve (id : Ac.C_id.t) ~(scope : Ac.Scope.t) : Ac.Litmus_id.t t =
+    with_vars (Ac.Scoped_map.resolve ~id ~scope)
 
   let register_global ?(initial_value : Act_c_mini.Constant.t option)
       (ty : Act_c_mini.Type.t) (var : Ac.C_id.t) : unit t =
     modify (fun s -> register_global ?initial_value s var ty)
 
-  let add_dependency (var : Ac.Litmus_id.t) : unit t =
-    modify (add_dependency ~var)
+  let add_dependency (id : Ac.Litmus_id.t) : unit t =
+    modify (add_dependency ~id)
 
-  let add_write (var : Ac.Litmus_id.t) : unit t = modify (add_write ~var)
+  let add_write (id : Ac.Litmus_id.t) : unit t = modify (add_write ~id)
 
-  let erase_var_value (var : Ac.Litmus_id.t) : unit t =
-    Monadic.modify (erase_var_value ~var)
+  let erase_var_value (id : Ac.Litmus_id.t) : unit t =
+    Monadic.modify (erase_var_value ~id)
 
   let output () : Ac.Output.t t = peek (fun x -> x.o)
 end

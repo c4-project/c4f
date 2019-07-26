@@ -28,18 +28,6 @@
 
 open Base
 
-(** A lightweight notion of scope used in the fuzzer. *)
-module Scope : sig
-  (** Type of scopes. *)
-  type t = Local of int | Global [@@deriving compare, equal]
-
-  val is_global : t -> bool
-
-  val of_litmus_id : Act_common.Litmus_id.t -> t
-
-  val id_in_scope : t -> id:Act_common.Litmus_id.t -> bool
-end
-
 (** A variable 'known-value' record.
 
     These records are used to decide:
@@ -116,10 +104,10 @@ module Record : sig
       that modify it. *)
 end
 
-(** Variable maps *)
+(** {2 Variable maps} *)
 module Map : sig
-  type t
-  (** Opaque type of variable maps. *)
+  type t = Record.t Act_common.Scoped_map.t
+  (** Fuzzer variable maps are a specific kind of scoped map. *)
 
   (** {3 Constructors} *)
 
@@ -131,16 +119,9 @@ module Map : sig
 
   (** {3 Queries} *)
 
-  val resolve :
-    t -> id:Act_common.C_id.t -> scope:Scope.t -> Act_common.Litmus_id.t
-  (** [resolve map ~id ~scope] returns the thread-local version of [id]
-      against [scope] if such a version exists in the variable map, or the
-      global version of [id] otherwise. It doesn't always check whether [id]
-      is in the variable map. *)
-
   val env_satisfying_all :
        t
-    -> scope:Scope.t
+    -> scope:Act_common.Scope.t
     -> predicates:(Record.t -> bool) list
     -> Act_c_mini.Type.t Map.M(Act_common.C_id).t
   (** [env_satisfying_all map ~scope ~predicates] returns a typing
@@ -150,7 +131,7 @@ module Map : sig
 
   val env_module_satisfying_all :
        t
-    -> scope:Scope.t
+    -> scope:Act_common.Scope.t
     -> predicates:(Record.t -> bool) list
     -> (module Act_c_mini.Env_types.S)
   (** [env_module_satisfying_all ?tid map ~predicates] behaves like
@@ -159,7 +140,7 @@ module Map : sig
 
   val satisfying_all :
        t
-    -> scope:Scope.t
+    -> scope:Act_common.Scope.t
     -> predicates:(Record.t -> bool) list
     -> Act_common.C_id.t list
   (** [satisfying_all ?tid map ~predicates] returns a list of all variables
@@ -167,7 +148,7 @@ module Map : sig
       in [predicates] are true. *)
 
   val exists_satisfying_all :
-    t -> scope:Scope.t -> predicates:(Record.t -> bool) list -> bool
+    t -> scope:Act_common.Scope.t -> predicates:(Record.t -> bool) list -> bool
   (** [exists_satisfying_all map ~scope ~predicates] returns whether there
       exists at least one variable in [map] in scope with regards to [scope]
       and for which all predicates in [predicates] are true. *)
@@ -188,28 +169,28 @@ module Map : sig
   (** [gen_fresh_var map] generates random C identifiers that don't shadow
       existing variables (regardless of thread ID) in [map]. *)
 
-  val add_dependency : t -> var:Act_common.Litmus_id.t -> t
-  (** [add_dependency map ~var] adds a dependency flag in [map] for [var],
+  val add_dependency : t -> id:Act_common.Litmus_id.t -> t
+  (** [add_dependency map ~id] adds a dependency flag in [map] for [id],
       returning the resulting new map.
 
-      This should be done after involving [var] in any atomic actions that
+      This should be done after involving [id] in any atomic actions that
       depend on its known value. *)
 
-  val add_write : t -> var:Act_common.Litmus_id.t -> t
-  (** [add_write map ~var] adds a write flag in [map] for [var], returning
+  val add_write : t -> id:Act_common.Litmus_id.t -> t
+  (** [add_write map ~id] adds a write flag in [map] for [id], returning
       the resulting new map.
 
-      This should be done after involving [var] in any atomic actions that
+      This should be done after involving [id] in any atomic actions that
       write to it, even if they don't modify its value. *)
 
-  val erase_value : t -> var:Act_common.Litmus_id.t -> t Or_error.t
-  (** [erase_value map ~var] erases the known-value field for any mapping
-      for [var] in [map], returning the resulting new map.
+  val erase_value : t -> id:Act_common.Litmus_id.t -> t Or_error.t
+  (** [erase_value map ~id] erases the known-value field for any mapping
+      for [id] in [map], returning the resulting new map.
 
-      [erase_value] fails if [var] is mapped to a record whose known value
+      [erase_value] fails if [id] is mapped to a record whose known value
       field is present and has dependencies. This is a precaution to flag up
-      unsafe attempts to alter [var]'s value.
+      unsafe attempts to alter [id]'s value.
 
-      This should be done after involving [var] in any atomic actions that
+      This should be done after involving [id] in any atomic actions that
       modify it. *)
 end

@@ -170,7 +170,7 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
 
   let available _ =
     State.Monad.with_vars
-      (Var.Map.exists_satisfying_all ~scope:Var.Scope.Global
+      (Var.Map.exists_satisfying_all ~scope:Ac.Scope.Global
          ~predicates:(Lazy.force dst_restrictions))
 
   (* This action writes to the destination, so we no longer have a known

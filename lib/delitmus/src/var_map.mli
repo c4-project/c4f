@@ -24,33 +24,24 @@ module Record : sig
   val make :
        c_type:Act_c_mini.Type.t
     -> c_id:Act_common.C_id.t
-    -> is_global:bool
+    -> mapped_to_global:bool
     -> t
 
   val c_type : t -> Act_c_mini.Type.t
   (** [c_type r] gets the C type of [r]. *)
 
   val c_id : t -> Act_common.C_id.t
-  (** [c_type r] gets the delitmusified C type of [r]. *)
+  (** [c_id r] gets the delitmusified C variable name of [r]. *)
 
-  val is_global : t -> bool
-  (** [is_global r] gets whether [r]'s variable has been mapped into the
+  val mapped_to_global : t -> bool
+  (** [mapped_to_global r] gets whether [r]'s variable has been mapped into the
       global scope. *)
 end
 
-type t [@@deriving equal]
-(** Opaque type of variable maps. *)
+type t = Record.t Act_common.Scoped_map.t [@@deriving equal]
+(** Delitmus variable maps are a specific case of scoped map. *)
 
-(** {2 Constructors} *)
-
-val empty : t
-(** [empty] is the empty variable map. *)
-
-val of_map : Record.t Map.M(Act_common.Litmus_id).t -> t
-(** [of_map map] creates a variable map from a [Base]-style map between
-    Litmus variables and their records. *)
-
-(** {2 Projections} *)
+(** {2 Projections specific to delitmus variable maps} *)
 
 val globally_unmapped_vars :
   t -> (Act_common.Litmus_id.t, Record.t) List.Assoc.t
