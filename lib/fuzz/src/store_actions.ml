@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Base
 module Ac = Act_common
@@ -54,6 +42,9 @@ module Make (B : sig
 end) : Action_types.S with type Random_state.t = Random_state.t = struct
   let name = B.name
 
+  let log (o : Ac.Output.t) (sub_stage : string) : unit =
+    Ac.Output.log_stage o ~stage:(Ac.Id.to_string B.name) ~sub_stage
+
   let default_weight = B.default_weight
 
   (** [readme_chunks ()] generates fragments of unformatted README text
@@ -65,6 +56,9 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
        global variable.
        |}
       )
+    ; ( true
+      , Printf.sprintf "This operation generates '%s's."
+          (Act_c_mini.Type.Basic.to_string B.dst_type) )
     ; ( B.forbid_already_written
       , {|
        This version of the action only stores to variables that haven't
@@ -126,32 +120,44 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
             "Internal error: Environment was empty." ~here:[%here] ~env]
       else Result.ok_unit
 
+    let log_environment (o : Ac.Output.t) (env_name : string)
+        (env : Act_c_mini.Type.t Map.M(Ac.C_id).t) : unit =
+      Ac.Output.pv o "%s environment: %a@." env_name Sexp.pp_hum
+        [%sexp (env : Act_c_mini.Type.t Map.M(Ac.C_id).t)]
+
+    let log_environments (o : Ac.Output.t)
+        (src_env : Act_c_mini.Type.t Map.M(Ac.C_id).t)
+        (dst_env : Act_c_mini.Type.t Map.M(Ac.C_id).t) : unit =
+      log_environment o "source" src_env ;
+      log_environment o "dest" dst_env
+
+    let gen_store_with_envs (module Src : Act_c_mini.Env_types.S)
+        (module Dst : Act_c_mini.Env_types.S) (o : Ac.Output.t)
+        ~(random : Splittable_random.State.t) :
+        Act_c_mini.Atomic_store.t Or_error.t =
+      Or_error.Let_syntax.(
+        let%bind () = error_if_empty "src" (module Src) in
+        let%map () = error_if_empty "dst" (module Dst) in
+        log o "environments are non-empty" ;
+        log_environments o Src.env Dst.env ;
+        let module Gen = B.Quickcheck (Src) (Dst) in
+        log o "built generator module" ;
+        Base_quickcheck.Generator.generate ~random ~size:10
+          [%quickcheck.generator: Gen.t])
+
     let gen_store (o : Ac.Output.t) (vars : Var.Map.t) ~(tid : int)
         ~(random : Splittable_random.State.t) :
         Act_c_mini.Atomic_store.t Or_error.t =
-      Ac.Output.pv o "%a: generating store...@." Ac.Id.pp name ;
-      let (module Src) = src_env vars ~tid in
-      let (module Dst) = dst_env vars ~tid in
-      Ac.Output.pv o "%a: got environments@." Ac.Id.pp name ;
-      let open Or_error.Let_syntax in
-      let%bind () = error_if_empty "src" (module Src) in
-      let%map () = error_if_empty "dst" (module Dst) in
-      Ac.Output.pv o "%a: environments are non-empty@." Ac.Id.pp name ;
-      Ac.Output.pv o "%a: src environment: @[%a@]@." Ac.Id.pp name
-        Sexp.pp_hum
-        [%sexp (Src.env : Act_c_mini.Type.t Ac.C_id.Map.t)] ;
-      Ac.Output.pv o "%a: dst environment: @[%a@]@." Ac.Id.pp name
-        Sexp.pp_hum
-        [%sexp (Dst.env : Act_c_mini.Type.t Ac.C_id.Map.t)] ;
-      let module Gen = B.Quickcheck (Src) (Dst) in
-      Ac.Output.pv o "%a: built generator module@." Ac.Id.pp name ;
-      Base_quickcheck.Generator.generate ~random ~size:10
-        [%quickcheck.generator: Gen.t]
+      log o "generating store..." ;
+      let src_mod = src_env vars ~tid in
+      let dst_mod = dst_env vars ~tid in
+      log o "got environments" ;
+      gen_store_with_envs src_mod dst_mod o ~random
 
     let gen_path (o : Ac.Output.t) (subject : Subject.Test.t)
         ~(random : Splittable_random.State.t) :
         Act_c_mini.Path_shapes.program =
-      Ac.Output.pv o "%a: generating path...@." Ac.Id.pp name ;
+      log o "Generating path" ;
       Base_quickcheck.Generator.generate ~random ~size:10
         (Subject.Test.Path.gen_insert_stm subject)
 
@@ -207,10 +213,9 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
     let tid = tid_of_path path in
     State.Monad.Let_syntax.(
       let%bind o = State.Monad.output () in
-      Ac.Output.pv o "%a: Erasing known value of store destination@."
-        Ac.Id.pp name ;
+      log o "Erasing known value of store destination" ;
       let%bind () = mark_store_dst store in
-      Ac.Output.pv o "%a: Adding dependency to store source@." Ac.Id.pp name ;
+      log o "Adding dependency to store source" ;
       let%bind () = add_dependencies_to_store_src store ~tid in
       State.Monad.Monadic.return
         (Subject.Test.Path.insert_stm path store_stm subject))
