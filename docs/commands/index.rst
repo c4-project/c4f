@@ -12,4 +12,5 @@ lower-level commands are useful, too.
    main/index
    asm/index
    c/index
+   fuzz/index
    misc/index

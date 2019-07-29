@@ -18,5 +18,6 @@ These live in the ``./scripts`` directory.
    :maxdepth: 2
    :caption: Contents:
 
+   fuzz_many
    make_conf
    test_drivers
