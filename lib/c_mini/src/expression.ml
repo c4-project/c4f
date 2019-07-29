@@ -25,6 +25,8 @@ type t =
   | Bop of Bop.t * t * t
 [@@deriving sexp, variants, compare, equal]
 
+let variable (v : Ac.C_id.t) : t = lvalue (Lvalue.variable v)
+
 let int_lit (i : int) : t = constant (Constant.int i)
 
 let bool_lit (b : bool) : t = constant (Constant.bool b)

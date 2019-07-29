@@ -55,13 +55,11 @@ let test_env_scalars_only_mod : (module Src.Env_types.S) Lazy.t =
 
 let empty_env_mod = lift_to_lazy_mod (lazy (Map.empty (module Ac.C_id)))
 
-let det_known_values : Set.M(Src.Constant).t Map.M(Ac.C_id).t Lazy.t =
+let det_known_values : Src.Constant.t Map.M(Ac.C_id).t Lazy.t =
   lazy
     (Map.of_alist_exn
        (module Ac.C_id)
-       (Tx.Alist.map_right
-          ~f:(Set.singleton (module Src.Constant))
-          Src.Constant.
+          (Src.Constant.
             [ (Ac.C_id.of_string "foo", int 4)
             ; (Ac.C_id.of_string "bar", int 95)
             ; (Ac.C_id.of_string "barbaz", bool true)

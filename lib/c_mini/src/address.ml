@@ -167,7 +167,7 @@ let check_address_var (module Env : Env_types.S_with_known_values)
 
 let get_single_known_value (module Env : Env_types.S_with_known_values)
     (v : Act_common.C_id.t) : Constant.t Or_error.t =
-  let value_opt = Option.(v |> Env.known_values >>= Set.choose) in
+  let value_opt = Env.known_value v in
   Result.of_option value_opt
     ~error:(Error.of_string "env doesn't contain this value")
 

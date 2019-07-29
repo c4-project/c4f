@@ -98,20 +98,83 @@ end = struct
   let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
 end
 
-module Bool_tautologies (E : Env_types.S_with_known_values) : sig
+module Known_value_comparisons (Env : Env_types.S_with_known_values) : sig
+  type t = Expression.t [@@deriving sexp_of, quickcheck]
+end = struct
+  type t = Expression.t [@@deriving sexp_of]
+
+  let generate_int (var_ref : Expression.t) (value : int) : t Q.Generator.t =
+    (* TODO(@MattWindsor91): do more here? *)
+    Q.Generator.Let_syntax.(
+      let%map op =
+        Q.Generator.of_list
+          Expression.Bop.[Eq] (* TODO(@MattWindsor91): inequalities *)
+      in
+      Expression.(bop op var_ref (int_lit value)))
+
+  let generate_bool (var_ref : Expression.t) (value : bool) : t Q.Generator.t =
+    (* TODO(@MattWindsor91): do more here? *)
+    let basic_eq = Expression.(eq var_ref (bool_lit value)) in
+    let candidates =
+      if value
+      then [ var_ref (* implicit true *); basic_eq ]
+      else [ basic_eq ]
+    in
+    Q.Generator.of_list candidates
+
+  let make_var_ref (id : Act_common.C_id.t) (ty : Type.t) : Expression.t =
+    (* TODO(@MattWindsor91): can we do more than SC here? *)
+    let lv = (Lvalue.on_value_of_typed_id ~id ~ty) in
+    if Type.is_atomic ty
+    then Expression.atomic_load (Atomic_load.make ~src:(Address.ref_lvalue lv) ~mo:Mem_order.Seq_cst)
+    else Expression.lvalue lv
+
+  let quickcheck_generator : t Q.Generator.t =
+    (* CAUTION: this generator is only defined when at least one known
+       value exists. *)
+    Q.Generator.Let_syntax.(
+      let%bind (id, (ty, value)) =
+        Env.variables_with_known_values
+        |> Lazy.force
+        |> Map.to_alist
+        |> Q.Generator.of_list
+      in
+      let var_ref : Expression.t = make_var_ref id ty
+      in
+      Constant.reduce value
+        ~int:(generate_int var_ref)
+        ~bool:(generate_bool var_ref)
+    )
+
+  let quickcheck_observer : t Q.Observer.t =
+    [%quickcheck.observer: Expression.t]
+
+  (* TODO(@MattWindsor91): implement this *)
+  let quickcheck_shrinker : t Q.Shrinker.t = Q.Shrinker.atomic
+end
+
+module Bool_tautologies (Env : Env_types.S_with_known_values) : sig
   type t = Expression.t [@@deriving sexp_of, quickcheck]
 end = struct
   (* Define by using the bool-values quickcheck instance, but swap out the
      generator. *)
-  module BV = Bool_values (E)
+  module BV = Bool_values (Env)
   include BV
+
+  let is_var_eq_tenable : bool Lazy.t =
+    Lazy.map ~f:(Fn.non Map.is_empty) Env.variables_with_known_values
+
 
   let base_generators : t Q.Generator.t list =
     (* Use thunks here to prevent accidentally evaluating a generator that
        can't possibly work---eg, an atomic load when we don't have any
        atomic variables. *)
     eval_guards
-      [(true, fun () -> Q.Generator.return (Expression.bool_lit true))]
+      [(true, fun () -> Q.Generator.return (Expression.bool_lit true))
+      ; (Lazy.force is_var_eq_tenable, fun () ->
+            let module Var_eq = Known_value_comparisons (Env) in
+            Var_eq.quickcheck_generator)
+      ]
 
   let gen_and (mu : t Q.Generator.t) : t Q.Generator.t =
     (* Since both sides of a tautological AND must be tautological, we use

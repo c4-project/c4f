@@ -43,7 +43,7 @@ end) : Env_types.S
 module Make_with_known_values (E : sig
   val env : Type.t Map.M(Act_common.C_id).t
 
-  val known_values : Set.M(Constant).t Map.M(Act_common.C_id).t
+  val known_values : Constant.t Map.M(Act_common.C_id).t
 end) : Env_types.S_with_known_values
 (** [Make (E)] extends a basic environment module with various functions and
     generators. *)
