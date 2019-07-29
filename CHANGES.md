@@ -2,7 +2,8 @@
 
 ## 2019-Jul-29
 
-- Amongst other things, `act c fuzz` is now `act-fuzz` (ie a new program).
+- Amongst other things, `act c fuzz` is now `act-fuzz run` (ie a new program).
+- Action weight listing is now `act-fuzz list-actions`.
 
 ## 2019-Jun-24
 

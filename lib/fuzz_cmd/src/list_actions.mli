@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Command for running ACT's C/Litmus fuzz-testing mutator. *)
+(** Command for listing ACT's C/Litmus fuzz-tester's action pool. *)
 
 val command : Core_kernel.Command.t
-(** [command] is the 'run' command. *)
+(** [command] is the 'list-actions' command. *)
