@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Base
 module A = Act_common
@@ -90,74 +78,10 @@ let map_subject_states (states : State.t list)
   |> List.map ~f:(State.map ~location_map ~value_map)
   |> Or_error.combine_errors
 
-let domain_error (one_domain : Set.M(A.Litmus_id).t)
-    (another_domain : Set.M(A.Litmus_id).t) : unit Or_error.t =
-  Or_error.error_s
-    [%message
-      "Domains of states are inconsistent: for example,"
-        ~one_domain:(one_domain : Set.M(A.Litmus_id).t)
-        ~another_domain:(another_domain : Set.M(A.Litmus_id).t)]
-
-let check_domain_consistency (xs_domains : Set.M(A.Litmus_id).t Sequence.t)
-    (x_domain : Set.M(A.Litmus_id).t) : unit Or_error.t =
-  let inconsistencies : unit Or_error.t Sequence.t =
-    xs_domains
-    |> Sequence.filter ~f:(Fn.non (Set.equal x_domain))
-    |> Sequence.map ~f:(domain_error x_domain)
-  in
-  Or_error.combine_errors_unit (Sequence.to_list inconsistencies)
-
-let%test_module "check_domain_consistency expects tests" =
-  ( module struct
-    let test_x_domain =
-      A.Litmus_id.(
-        Set.of_list
-          (module A.Litmus_id)
-          [of_string "0:foo"; of_string "1:bar"; of_string "baz"])
-
-    let%expect_test "no other domains" =
-      Stdio.print_s
-        [%sexp
-          ( check_domain_consistency Sequence.empty test_x_domain
-            : unit Or_error.t )] ;
-      [%expect {| (Ok ()) |}]
-
-    let%expect_test "only consistent domains" =
-      let doms =
-        Sequence.of_list (List.init 10 ~f:(Fn.const test_x_domain))
-      in
-      Stdio.print_s
-        [%sexp
-          (check_domain_consistency doms test_x_domain : unit Or_error.t)] ;
-      [%expect {| (Ok ()) |}]
-
-    let%expect_test "inconsistent domains" =
-      let doms =
-        Sequence.singleton
-          A.Litmus_id.(Set.of_list (module A.Litmus_id) [of_string "0:foo"])
-      in
-      Stdio.print_s
-        [%sexp
-          (check_domain_consistency doms test_x_domain : unit Or_error.t)] ;
-      [%expect
-        {|
-      (Error
-       ("Domains of states are inconsistent: for example,"
-        (one_domain (baz 0:foo 1:bar)) (another_domain (0:foo)))) |}]
-  end )
-
-let get_domain : State.t list -> Set.M(A.Litmus_id).t Or_error.t = function
-  | [] ->
-      Or_error.return (Set.empty (module A.Litmus_id))
-  | x :: xs ->
-      let dom s = Set.of_list (module A.Litmus_id) (State.bound s) in
-      let xs_domains = Sequence.map ~f:dom (Sequence.of_list xs) in
-      Tx.Or_error.tee_m (dom x) ~f:(check_domain_consistency xs_domains)
-
 let filter_oracle_states ~(raw_oracle_states : State.t list)
     ~(subject_states : State.t list) : State.t list Or_error.t =
   let open Or_error.Let_syntax in
-  let%map domain = get_domain subject_states in
+  let%map domain = State.common_domain subject_states in
   List.map raw_oracle_states ~f:(State.restrict ~domain)
 
 let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)

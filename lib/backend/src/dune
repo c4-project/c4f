@@ -4,11 +4,10 @@
  (name act_backend)
  (public_name act.backend)
  (synopsis "Automagic Compiler Tormentor: backend running framework")
- (inline_tests)
  (modules_without_implementation runner_types)
  (preprocess
   (pps ppx_deriving.std ppx_deriving_yojson ppx_jane))
  (libraries result ppx_deriving_yojson.runtime yojson ppx_expect.common
-   ppx_expect.config ppx_inline_test.config sexplib0 stdio base base.caml
+	    sexplib0 stdio base base.caml
    core_kernel fmt fpath travesty travesty.base_exts act.common act.utils
    plumbing))

@@ -1,0 +1,10 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_backend_test)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane))
+ (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config
+ stdio base
+   base.caml fmt act.backend act.common act.utils))
