@@ -1,5 +1,9 @@
 # Unreleased
 
+## 2019-Jul-29
+
+- Amongst other things, `act c fuzz` is now `act-fuzz` (ie a new program).
+
 ## 2019-Jun-24
 
 - `act tool sim` is now `act backend run`, in anticipation of a cross-board

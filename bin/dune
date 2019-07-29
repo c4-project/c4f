@@ -7,7 +7,7 @@
  (name act_fuzz)
  (public_name act-fuzz)
  (modules act_fuzz)
- (libraries base core_kernel core toplevel act.utils))
+ (libraries base core_kernel core toplevel fuzz_cmd act.utils))
 
 (rule
  (targets specs.output)

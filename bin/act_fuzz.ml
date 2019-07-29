@@ -9,8 +9,6 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Main entry point for the ACT fuzzer.
+(** Main entry point for the ACT fuzzer. *)
 
-    This will eventually replace `act c fuzz` entirely. *)
-
-let () = Core.Command.run Toplevel.C_fuzz.command
+let () = Core.Command.run Fuzz_cmd.Run.command
