@@ -19,7 +19,7 @@ val make :
      ?enabled:bool
   -> ?via:Via.t
   -> ?compilers:Act_compiler.Spec.Set.t
-  -> ?sims:Act_sim.Spec.Set.t
+  -> ?backends:Act_backend.Spec.Set.t
   -> unit
   -> t
 (** [make ?enabled ?via ?sims ()] creates a machine spec with the given

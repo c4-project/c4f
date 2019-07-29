@@ -23,7 +23,7 @@
 
 open Base
 module Tx = Travesty_base_exts
-module Shc = Act_sim_herdtools_common
+module Shc = Act_backend_herdtools_common
 
 (* Map over an optional tuple. *)
 module O2 = Travesty.Bi_mappable.Chain_Bi2_Map1 (Tx.Tuple2) (Option)

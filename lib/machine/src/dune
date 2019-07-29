@@ -8,4 +8,4 @@
   (pps ppx_deriving.std ppx_jane))
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
    sexplib0 fmt fpath travesty base base.caml travesty.base_exts core_kernel
-   act.common act.utils plumbing act.sim act.compiler))
+   act.common act.utils plumbing act.backend act.compiler))

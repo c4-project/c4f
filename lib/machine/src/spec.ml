@@ -13,22 +13,22 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 module C_spec = Act_compiler.Spec
-module S_spec = Act_sim.Spec
+module S_spec = Act_backend.Spec
 
 module M = struct
   type t =
     { enabled: bool [@default true] [@sexp_drop_default.equal]
     ; via: Via.t [@default Via.local] [@sexp_drop_default.equal]
     ; compilers: C_spec.Set.t [@default Act_common.Spec.Set.empty]
-    ; sims: S_spec.Set.t [@default Act_common.Spec.Set.empty] }
+    ; backends: S_spec.Set.t [@default Act_common.Spec.Set.empty] }
   [@@deriving fields, equal, make]
 
   (* We use a different name for the getter than the one [@@deriving fields]
      infers. *)
   let is_enabled = enabled
 
-  let sim (spec : t) ~(id : Ac.Id.t) : Act_sim.Spec.With_id.t Or_error.t =
-    Act_sim.Spec.Set.get (sims spec) id
+  let backend (spec : t) ~(id : Ac.Id.t) : Act_backend.Spec.With_id.t Or_error.t =
+    Act_backend.Spec.Set.get (backends spec) id
 
   let pp_enabled (f : Base.Formatter.t) : bool -> unit = function
     | true ->
@@ -65,9 +65,9 @@ module Forward_basic_spec
 
   let runner = H.forward B.runner
 
-  let sim = H.forward B.sim
+  let backend = H.forward B.backend
 
-  let sims = H.forward B.sims
+  let backends = H.forward B.backends
 
   let via = H.forward B.via
 

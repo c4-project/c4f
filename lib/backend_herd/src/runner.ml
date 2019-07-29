@@ -21,13 +21,13 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Runner_types.S =
-Act_sim.Runner.Make (struct
+module Make (B : Act_backend.Runner_types.Basic) : Act_backend.Runner_types.S =
+Act_backend.Runner.Make (struct
   module Unchecked_filter = Filter.Make (B)
   module Reader = Reader
 
-  let make_harness_unchecked = Act_sim.Runner.no_make_harness
+  let make_harness_unchecked = Act_backend.Runner.no_make_harness
 end)
 
-let make (module B : Act_sim.Runner_types.Basic) =
-  (module Make (B) : Act_sim.Runner_types.S)
+let make (module B : Act_backend.Runner_types.Basic) =
+  (module Make (B) : Act_backend.Runner_types.S)

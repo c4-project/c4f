@@ -12,7 +12,7 @@
 open Base
 module Tx = Travesty_base_exts
 module C_spec = Act_compiler.Spec
-module S_spec = Act_sim.Spec
+module S_spec = Act_backend.Spec
 module M_spec = Spec
 
 module Compiler = struct
@@ -113,10 +113,10 @@ module Lookup_sims : Qualified_types.S_lookup with type t = Sim.t =
 Make_lookup (struct
   type t = Sim.t
 
-  module Inner = Act_sim.Spec
+  module Inner = Act_backend.Spec
 
-  let from_machine = Spec.sims
+  let from_machine = Spec.backends
 
-  let qualify (s_spec : Act_sim.Spec.With_id.t) ~(m_spec : Spec.With_id.t) =
+  let qualify (s_spec : Act_backend.Spec.With_id.t) ~(m_spec : Spec.With_id.t) =
     Sim.make ~s_spec ~m_spec
 end)

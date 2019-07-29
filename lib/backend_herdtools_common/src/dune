@@ -1,10 +1,10 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_sim_herdtools_common)
- (public_name act.sim_herdtools_common)
+ (name act_backend_herdtools_common)
+ (public_name act.backend_herdtools_common)
  (synopsis "Common glue for Herdtools7-derived simulators")
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries sexplib0 stdio shell.string_extended core_kernel travesty
-   travesty.base_exts plumbing act.common act.sim act.utils))
+   travesty.base_exts plumbing act.common act.backend act.utils))

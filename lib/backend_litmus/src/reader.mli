@@ -21,23 +21,6 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Functor for building Herdtools7 output scrapers.
+(** Simulation output reader for Litmus7. *)
 
-    Both Herd7 and Litmus7 have similar, but not quite identical, output.
-    This module provides {{!Make} a functor} that accepts the bits that are
-    different, and fills in the common ground. *)
-
-module State_line : sig
-  type t =
-    { occurrences: int option
-          (** Optional number of occurrences for this state. *)
-    ; rest: string  (** The (so far unparsed) rest of the state line. *) }
-  (** Type of split state lines. *)
-end
-
-module type Basic = Reader_intf.Basic with type state_line := State_line.t
-(** Synonym for {{!Reader_intf.Basic} Reader_intf.Basic} with [state_line]
-    fixed. *)
-
-module Make (B : Basic) : Act_sim.Reader_intf.S
-(** Makes an output scraper for the Herdtools7 simulator described in [B]. *)
+include Act_backend.Reader_intf.S

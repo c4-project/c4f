@@ -21,15 +21,31 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulator-runner interface for Herd.
+(** Filter interface for Herd.
 
-    For just running Herd directly, or as a filter, see {{!Filter} Filter}. *)
+    For running Herd as a simulator, see {{!Runner} Runner}. *)
 
-module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Runner_types.S
+open Base
+
+val run_direct :
+     ?arch:Act_backend.Arch.t
+  -> ?oc:Stdio.Out_channel.t
+  -> Act_backend.Spec.t
+  -> string list
+  -> unit Or_error.t
+(** [run_direct ?arch ?oc config argv] runs the Herd binary configured in
+    [config], with the arguments in [argv] plus, if [arch] is present, any
+    arguments required to effect [config]'s configuration for [arch] (like
+    model overrides etc.). Any output will be sent to [oc], or standard
+    output if [oc] is absent.
+
+    Most Herd use-cases should use {{!run} run} or {{!Filter} Filter}
+    instead -- this is a lower-level function intended for things like the
+    `act tool` command. *)
+
 (** We can use Herd as a simulator runner by supplying it with configuration
-    expressed as a
-    {{!Act_sim.Runner_types.Basic} Act_sim.Runner_types.Basic} module. *)
-
-val make :
-  (module Act_sim.Runner_types.Basic) -> (module Act_sim.Runner_types.S)
-(** [make (module B)] is a first-class version of [Make (B)]. *)
+    expressed as a {{!Basic} Basic} module. *)
+module Make (B : Act_backend.Runner_types.Basic) :
+  Plumbing.Filter_types.S
+    with type aux_i = Act_backend.Arch.t
+     and type aux_o = unit

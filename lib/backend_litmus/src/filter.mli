@@ -21,27 +21,21 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+(** Interaction with the 'Litmus' tool.
+
+    This is the tool that supports running of Litmus tests on real hardware,
+    and not to be confused with the tests itself. *)
+
 open Base
 
-module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Runner_types.S =
-Act_sim.Runner.Make (struct
-  module Unchecked_filter = Filter.Make (B)
-  module Reader = Reader
+val run_direct :
+     ?oc:Stdio.Out_channel.t
+  -> Act_backend.Spec.t
+  -> string list
+  -> unit Or_error.t
+(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
+    and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
+    is absent). *)
 
-  let make_harness_unchecked (_arch : Act_sim.Arch.t)
-      ~(input_path : Fpath.t) ~(output_dir : Fpath.t) :
-      string list Or_error.t =
-    let prog = Act_sim.Spec.cmd B.spec in
-    let output_dir = Fpath.(output_dir / "") in
-    let argv =
-      [Fpath.to_string input_path; "-o"; Fpath.to_string output_dir]
-    in
-    Or_error.Let_syntax.(
-      let%map () =
-        Or_error.tag ~tag:"While running litmus" (B.Runner.run ~prog argv)
-      in
-      ["make"; "sh ./run.sh"])
-end)
-
-let make (module B : Act_sim.Runner_types.Basic) =
-  (module Make (B) : Act_sim.Runner_types.S)
+module Make (B : Act_backend.Runner_types.Basic) : Act_backend.Filter.S
+(** Interface for making a filter over litmus7. *)

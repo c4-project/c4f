@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_sim)
- (public_name act.sim)
- (synopsis "Automagic Compiler Tormentor: simulator running framework")
+ (name act_backend)
+ (public_name act.backend)
+ (synopsis "Automagic Compiler Tormentor: backend running framework")
  (inline_tests)
  (modules_without_implementation runner_types)
  (preprocess

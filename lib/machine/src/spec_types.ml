@@ -39,14 +39,14 @@ module type S = sig
   val compilers : t -> Act_compiler.Spec.Set.t
   (** [compilers spec] gets the compiler specifications attached to [spec]. *)
 
-  (** {3 Simulators attached to this spec} *)
+  (** {3 Backends attached to this spec} *)
 
-  val sims : t -> Act_sim.Spec.Set.t
-  (** [sims spec] gets the simulator specifications attached to [spec]. *)
+  val backends : t -> Act_backend.Spec.Set.t
+  (** [backends spec] gets the backend specifications attached to [spec]. *)
 
-  val sim : t -> id:Act_common.Id.t -> Act_sim.Spec.With_id.t Or_error.t
+  val backend : t -> id:Act_common.Id.t -> Act_backend.Spec.With_id.t Or_error.t
   (** [sim spec ~id] gets the high-level specification in [spec] for the
-      simulator with identifier [id], if one exists. *)
+      backend with identifier [id], if one exists. *)
 
   (** {3 Running things on this machine} *)
 

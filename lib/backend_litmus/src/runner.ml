@@ -21,7 +21,27 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulation output reader for Litmus7. *)
+open Base
 
-include Act_sim.Reader_intf.S
-(** @inline *)
+module Make (B : Act_backend.Runner_types.Basic) : Act_backend.Runner_types.S =
+Act_backend.Runner.Make (struct
+  module Unchecked_filter = Filter.Make (B)
+  module Reader = Reader
+
+  let make_harness_unchecked (_arch : Act_backend.Arch.t)
+      ~(input_path : Fpath.t) ~(output_dir : Fpath.t) :
+      string list Or_error.t =
+    let prog = Act_backend.Spec.cmd B.spec in
+    let output_dir = Fpath.(output_dir / "") in
+    let argv =
+      [Fpath.to_string input_path; "-o"; Fpath.to_string output_dir]
+    in
+    Or_error.Let_syntax.(
+      let%map () =
+        Or_error.tag ~tag:"While running litmus" (B.Runner.run ~prog argv)
+      in
+      ["make"; "sh ./run.sh"])
+end)
+
+let make (module B : Act_backend.Runner_types.Basic) =
+  (module Make (B) : Act_backend.Runner_types.S)

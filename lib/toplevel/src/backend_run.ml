@@ -12,7 +12,7 @@
 open Core_kernel
 open Act_common
 
-let run ?(arch = Act_sim.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
+let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
     (args : Args.Standard.t Args.With_files.t) (_o : Output.t)
     (cfg : Act_config.Act.t) : unit Or_error.t =
   let module Res = Sim_support.Make_resolver (struct
@@ -31,12 +31,12 @@ let command : Command.t =
       and sim = ignore anon ; Args.simulator ()
       and arch =
         choose_one
-          [ Args.flag_to_enum_choice (Some Act_sim.Arch.C) "-c"
+          [ Args.flag_to_enum_choice (Some Act_backend.Arch.C) "-c"
               ~doc:
                 "Tells the backend to test the input against the C memory \
                  model"
           ; map
-              ~f:(Option.map ~f:(fun x -> Some (Act_sim.Arch.Assembly x)))
+              ~f:(Option.map ~f:(fun x -> Some (Act_backend.Arch.Assembly x)))
               (Args.arch
                  ~doc:
                    "ARCH tells the backend to test the input against the \

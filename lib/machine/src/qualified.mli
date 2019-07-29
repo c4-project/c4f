@@ -39,11 +39,11 @@ module Sim : sig
 
   (** {3 Constructors} *)
 
-  val make : s_spec:Act_sim.Spec.With_id.t -> m_spec:Spec.With_id.t -> t
+  val make : s_spec:Act_backend.Spec.With_id.t -> m_spec:Spec.With_id.t -> t
 
   (** {3 Accessors} *)
 
-  val s_spec : t -> Act_sim.Spec.With_id.t
+  val s_spec : t -> Act_backend.Spec.With_id.t
   (** [s_spec spec] strips the machine spec from [spec], turning it into an
       {{!Act_sim.Spec.With_id.t} ordinary Act_sim.Spec.With_id.t}. *)
 

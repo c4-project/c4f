@@ -29,24 +29,24 @@ module Sq_spec = Act_machine.Qualified.Sim
 
 let sim_procs :
     ( Ac.Id.t
-    , (module Act_sim.Runner_types.Basic) -> (module Act_sim.Runner_types.S)
+    , (module Act_backend.Runner_types.Basic) -> (module Act_backend.Runner_types.S)
     )
     List.Assoc.t =
-  [ (Ac.Id.of_string "herd", Act_sim_herd.Runner.make)
-  ; (Ac.Id.of_string "litmus", Act_sim_litmus.Runner.make) ]
+  [ (Ac.Id.of_string "herd", Act_backend_herd.Runner.make)
+  ; (Ac.Id.of_string "litmus", Act_backend_litmus.Runner.make) ]
 
 let try_get_sim_proc (style_id : Ac.Id.t) :
-    ((module Act_sim.Runner_types.Basic) -> (module Act_sim.Runner_types.S))
+    ((module Act_backend.Runner_types.Basic) -> (module Act_backend.Runner_types.S))
     Or_error.t =
   Ac.Id.try_find_assoc_with_suggestions sim_procs style_id
     ~id_type:"sim style"
 
-let try_make_sim (machine : M_spec.With_id.t) (spec : Act_sim.Spec.t) :
-    (module Act_sim.Runner_types.S) Or_error.t =
+let try_make_sim (machine : M_spec.With_id.t) (spec : Act_backend.Spec.t) :
+    (module Act_backend.Runner_types.S) Or_error.t =
   Or_error.Let_syntax.(
-    let%map make_sim = try_get_sim_proc (Act_sim.Spec.style spec) in
+    let%map make_sim = try_get_sim_proc (Act_backend.Spec.style spec) in
     let (module R) = M_spec.With_id.runner machine in
-    let module Basic : Act_sim.Runner_types.Basic = struct
+    let module Basic : Act_backend.Runner_types.Basic = struct
       let spec = spec
 
       let machine_id = M_spec.With_id.id machine
@@ -54,27 +54,27 @@ let try_make_sim (machine : M_spec.With_id.t) (spec : Act_sim.Spec.t) :
       module Runner = R
     end in
     let (module Sim) = make_sim (module Basic) in
-    (module Sim : Act_sim.Runner_types.S))
+    (module Sim : Act_backend.Runner_types.S))
 
 let make_error (e : Error.t) =
-  ( module Act_sim.Runner.Make_error (struct
+  ( module Act_backend.Runner.Make_error (struct
     let error = e
-  end) : Act_sim.Runner_types.S )
+  end) : Act_backend.Runner_types.S )
 
-let make_sim (machine : M_spec.With_id.t) (spec : Act_sim.Spec.t) :
-    (module Act_sim.Runner_types.S) =
+let make_sim (machine : M_spec.With_id.t) (spec : Act_backend.Spec.t) :
+    (module Act_backend.Runner_types.S) =
   match try_make_sim machine spec with Ok m -> m | Error e -> make_error e
 
 module Make_resolver (B : sig
   val cfg : Act_config.Act.t
-end) : Act_sim.Resolver.S = struct
+end) : Act_backend.Resolver.S = struct
   (* TODO(@MattWindsor91): use B.cfg to set up default simulators. *)
 
   let resolve_single (fqid : Act_common.Id.t) :
-      (module Act_sim.Runner_types.S) Or_error.t =
+      (module Act_backend.Runner_types.S) Or_error.t =
     Or_error.Let_syntax.(
       let%map q_spec = Act_config.Act.sim B.cfg ~fqid in
       let m_spec = Sq_spec.m_spec q_spec in
       let s_spec = Sq_spec.s_spec q_spec in
-      make_sim m_spec (Act_sim.Spec.With_id.spec s_spec))
+      make_sim m_spec (Act_backend.Spec.With_id.spec s_spec))
 end

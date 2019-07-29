@@ -21,21 +21,15 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Interaction with the 'Litmus' tool.
+(** Simulator-runner interface for Herd.
 
-    This is the tool that supports running of Litmus tests on real hardware,
-    and not to be confused with the tests itself. *)
+    For just running Herd directly, or as a filter, see {{!Filter} Filter}. *)
 
-open Base
+module Make (B : Act_backend.Runner_types.Basic) : Act_backend.Runner_types.S
+(** We can use Herd as a simulator runner by supplying it with configuration
+    expressed as a
+    {{!Act_backend.Runner_types.Basic} Act_backend.Runner_types.Basic} module. *)
 
-val run_direct :
-     ?oc:Stdio.Out_channel.t
-  -> Act_sim.Spec.t
-  -> string list
-  -> unit Or_error.t
-(** [run_direct ?oc cfg argv] runs Litmus locally, with configuration [cfg]
-    and arguments [argv], and outputs its results to [oc] (or stdout if [oc]
-    is absent). *)
-
-module Make (B : Act_sim.Runner_types.Basic) : Act_sim.Filter.S
-(** Interface for making a filter over litmus7. *)
+val make :
+  (module Act_backend.Runner_types.Basic) -> (module Act_backend.Runner_types.S)
+(** [make (module B)] is a first-class version of [Make (B)]. *)

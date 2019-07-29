@@ -21,7 +21,16 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Simulation output reader for Herd7. *)
+open Base
+module Shc = Act_backend_herdtools_common
 
-include Act_sim.Reader_intf.S
-(** @inline *)
+include Shc.Reader.Make (struct
+  let try_parse_state_count (line : string) : int option =
+    Option.try_with (fun () -> Caml.Scanf.sscanf line "States %d" Fn.id)
+
+  let try_split_state_line (line : string) :
+      Shc.Reader.State_line.t Or_error.t =
+    (* Herd inputs don't have a histogram, so they don't have an occurrence
+       count. *)
+    Or_error.return {Shc.Reader.State_line.occurrences= None; rest= line}
+end)

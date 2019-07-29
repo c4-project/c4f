@@ -91,7 +91,7 @@ let%test_module "sim lookup" =
         Act_machine.Qualified.Lookup_sims.lookup machines ~fqid
       in
       print_result
-        (Fmt.using Act_machine.Qualified.Sim.s_spec Act_sim.Spec.With_id.pp)
+        (Fmt.using Act_machine.Qualified.Sim.s_spec Act_backend.Spec.With_id.pp)
         result
 
     let%expect_test "positive example" =

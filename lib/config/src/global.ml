@@ -42,7 +42,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
       | Ssh items ->
           Or_error.(ssh items >>| Act_machine.Via.ssh)
 
-    let simulator (items : Ast.Sim.t list) : Act_sim.Spec.t Or_error.t =
+    let simulator (items : Ast.Sim.t list) : Act_backend.Spec.t Or_error.t =
       Or_error.Let_syntax.(
         let%map cmd =
           Au.My_list.find_one_opt items ~item_name:"cmd" ~f:(function
@@ -70,7 +70,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
             | _ ->
                 None)
         in
-        Act_sim.Spec.make ?cmd ?c_model ~asm_models ~style ())
+        Act_backend.Spec.make ?cmd ?c_model ~asm_models ~style ())
 
     let compiler (items : Ast.Compiler.t list) : C_spec.t Or_error.t =
       Or_error.Let_syntax.(
@@ -105,7 +105,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
 
     let try_get_named_simulator :
            Ast.Machine.t
-        -> (Act_common.Id.t * Act_sim.Spec.t) option Or_error.t = function
+        -> (Act_common.Id.t * Act_backend.Spec.t) option Or_error.t = function
       | Sim (n, s) ->
           Or_error.Let_syntax.(
             let%map s' = simulator s in
@@ -135,7 +135,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
         >>| Ac.Spec.Set.of_map)
 
     let try_get_named_simulators :
-        Ast.Machine.t list -> Act_sim.Spec.t Ac.Spec.Set.t Or_error.t =
+        Ast.Machine.t list -> Act_backend.Spec.t Ac.Spec.Set.t Or_error.t =
       try_get_named_specs ~f:try_get_named_simulator
 
     let try_get_named_compilers :
@@ -148,7 +148,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
           Au.My_list.find_at_most_one items ~item_name:"enabled"
             ~f:(function Enabled b -> Some b | _ -> None)
             ~on_empty:(Or_error.return true)
-        and sims = try_get_named_simulators items
+        and backends = try_get_named_simulators items
         and compilers = try_get_named_compilers items
         and via_raw =
           Au.My_list.find_one items ~item_name:"via" ~f:(function
@@ -158,7 +158,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
                 None)
         in
         let%map via = via via_raw in
-        M_spec.make ~sims ~compilers ~enabled ~via ())
+        M_spec.make ~backends ~compilers ~enabled ~via ())
 
     let machine_with_id (id : Ac.Id.t) (spec_ast : Ast.Machine.t list) :
         M_spec.With_id.t Or_error.t =
