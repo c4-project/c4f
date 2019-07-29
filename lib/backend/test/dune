@@ -7,4 +7,4 @@
   (pps ppx_jane))
  (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config
  stdio base
-   base.caml fmt act.backend act.common act.utils))
+   base.caml fmt travesty travesty.base_exts act.backend act.common act.utils))

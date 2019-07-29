@@ -14,6 +14,7 @@ open Stdio
 
 module A = Act_common
 module Src = Act_backend
+module Tx = Travesty_base_exts
 
 let%test_module "common_domain" =
   ( module struct
@@ -25,7 +26,7 @@ let%test_module "common_domain" =
 
     let state_exn (xs : (string, string) List.Assoc.t) : Src.State.t =
       xs
-      |> List.map ~f:(fun (x, y) -> A.Litmus_id.of_string x, y)
+      |> Tx.Alist.map_left ~f:A.Litmus_id.of_string
       |> Src.State.of_alist
       |> Or_error.ok_exn
 

@@ -18,6 +18,7 @@ type t [@@deriving sexp, compare, yojson, quickcheck]
 (** [t] is the type of states: a binding from name to value. *)
 
 include Comparable.S with type t := t
+include Pretty_printer.S with type t := t
 
 val map :
      location_map:(Litmus_id.t -> Litmus_id.t option Or_error.t)
