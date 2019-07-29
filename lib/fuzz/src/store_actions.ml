@@ -42,8 +42,7 @@ module Make (B : sig
 end) : Action_types.S with type Random_state.t = Random_state.t = struct
   let name = B.name
 
-  let log (o : Ac.Output.t) (sub_stage : string) : unit =
-    Ac.Output.log_stage o ~stage:(Ac.Id.to_string B.name) ~sub_stage
+  include Action.Make_log (B)
 
   let default_weight = B.default_weight
 
@@ -138,20 +137,20 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
       Or_error.Let_syntax.(
         let%bind () = error_if_empty "src" (module Src) in
         let%map () = error_if_empty "dst" (module Dst) in
-        log o "environments are non-empty" ;
+        log o "Environments are non-empty" ;
         log_environments o Src.env Dst.env ;
         let module Gen = B.Quickcheck (Src) (Dst) in
-        log o "built generator module" ;
+        log o "Built generator module" ;
         Base_quickcheck.Generator.generate ~random ~size:10
           [%quickcheck.generator: Gen.t])
 
     let gen_store (o : Ac.Output.t) (vars : Var.Map.t) ~(tid : int)
         ~(random : Splittable_random.State.t) :
         Act_c_mini.Atomic_store.t Or_error.t =
-      log o "generating store..." ;
+      log o "Generating store" ;
       let src_mod = src_env vars ~tid in
       let dst_mod = dst_env vars ~tid in
-      log o "got environments" ;
+      log o "Found environments for store" ;
       gen_store_with_envs src_mod dst_mod o ~random
 
     let gen_path (o : Ac.Output.t) (subject : Subject.Test.t)
@@ -207,18 +206,25 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
             let%bind l_id = resolve c_id ~scope:(Local tid) in
             add_dependency l_id)))
 
-  let run (subject : Subject.Test.t) ({store; path} : Random_state.t) :
-      Subject.Test.t State.Monad.t =
-    let store_stm = Act_c_mini.Statement.atomic_store store in
-    let tid = tid_of_path path in
+  let do_bookkeeping (store : Act_c_mini.Atomic_store.t)
+      ~(tid : int) : unit State.Monad.t =
     State.Monad.Let_syntax.(
       let%bind o = State.Monad.output () in
       log o "Erasing known value of store destination" ;
       let%bind () = mark_store_dst store in
       log o "Adding dependency to store source" ;
-      let%bind () = add_dependencies_to_store_src store ~tid in
+      add_dependencies_to_store_src store ~tid
+    )
+
+  let run (subject : Subject.Test.t) ({store; path} : Random_state.t) :
+      Subject.Test.t State.Monad.t =
+    let store_stm = Act_c_mini.Statement.atomic_store store in
+    let tid = tid_of_path path in
+    State.Monad.Let_syntax.(
+      let%bind () = do_bookkeeping store ~tid in
       State.Monad.Monadic.return
-        (Subject.Test.Path.insert_stm path store_stm subject))
+        (Subject.Test.Path.insert_stm path store_stm subject)
+    )
 end
 
 module Int : Action_types.S with type Random_state.t = Random_state.t =

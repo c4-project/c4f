@@ -144,3 +144,16 @@ module No_random_state :
     ignore (random : Splittable_random.State.t) ;
     State.Monad.return ()
 end
+
+module Make_log (B : sig
+    val name : Act_common.Id.t
+  end) : sig
+  val log : Act_common.Output.t -> string -> unit
+end = struct
+  let log (o : Act_common.Output.t) (s : string) : unit =
+    Fmt.(
+      Act_common.Output.pv o
+        "@[<h>%a:@ @[%a@]@]@."
+        (styled (`Fg `Green) Act_common.Id.pp) B.name Fmt.lines s
+    )
+end
