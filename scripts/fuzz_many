@@ -33,7 +33,7 @@ fuzz_file ()
     for k in $(seq "${count}");
     do
         out_file="${dir_name}/${base_name}_${k}.litmus"
-        "${act}" c fuzz "${in_file}" -o "${out_file}"
+        "${act}" run "${in_file}" -o "${out_file}"
     done
 }
 
@@ -59,14 +59,14 @@ then
 fi
 
 # Programs
-ACT=${ACT="act"}
+ACT_FUZZ=${ACT_FUZZ="act-fuzz"}
 
 dir_name="fuzz_$(date '+%y_%m_%d_%H_%M_%S')"
 mkdir "${dir_name}"
 
 for file in "${@}";
 do
-    fuzz_file "${ACT}" "${dir_name}" "${file}" "${count}"
+    fuzz_file "${ACT_FUZZ}" "${dir_name}" "${file}" "${count}"
 done
 
 symlink_name="_fuzz_latest"
