@@ -14,6 +14,7 @@ import typing
 import json
 from dataclasses import dataclass
 
+from act_py import json_utils
 from . import litmus_id
 
 
@@ -36,7 +37,7 @@ class LitmusAux:
 class VarRecord:
     """Representation of a var-map record in an ACT 'aux file'."""
 
-    is_global: bool
+    mapped_to_global: bool
     c_id: str
     c_type: str
 
@@ -96,10 +97,10 @@ def litmus_of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusAux:
 
 
 def var_record_of_dict(vr_dict: typing.Dict[str, typing.Any]) -> VarRecord:
-    is_global = bool(vr_dict["is_global"])
-    c_id = str(vr_dict["c_id"])
-    c_type = str(vr_dict["c_type"])
-    return VarRecord(is_global=is_global, c_id=c_id, c_type=c_type)
+    mapped_to_global = json_utils.bool_field(vr_dict, "mapped_to_global", "var record")
+    c_id = json_utils.str_field(vr_dict, "c_id", "var record")
+    c_type = json_utils.str_field(vr_dict, "c_type", "var record")
+    return VarRecord(mapped_to_global=mapped_to_global, c_id=c_id, c_type=c_type)
 
 
 def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> Aux:
