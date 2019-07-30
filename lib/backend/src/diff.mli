@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Comparing two simulation outputs.
 
@@ -33,6 +21,26 @@
     values, mapping from the subject back to the oracle. *)
 
 open Base
+
+(** A map from subject locations to oracle locations. *)
+module Location_map : sig
+  type t = Act_common.Litmus_id.t option Map.M(Act_common.Litmus_id).t
+  (** Location maps are just partials Base-maps from litmus IDs to litmus IDs. *)
+
+  include Plumbing.Jsonable_types.S with type t := t
+  include Plumbing.Loadable_types.S with type t := t
+
+  val reflexive
+    : Set.M(Act_common.Litmus_id).t ->
+    t
+  (** [reflexive vars] makes a reflexive location map (one that maps
+     each item in [vars] to itself). *)
+
+  val output : t -> onto:Plumbing.Output.t -> unit Or_error.t
+  (** [output vars ~onto] serialises [vars] to JSON and outputs it as
+     instructed by [onto].  It fails if [onto] doesn't point to a valid
+     output. *)
+end
 
 (** Synonym of [Set_partial_order] for orderings between state sets. *)
 module Order : sig
@@ -58,8 +66,7 @@ include
 val run :
      oracle:Output.Observation.t
   -> subject:Output.Observation.t
-  -> location_map:Act_common.Litmus_id.t option
-                  Map.M(Act_common.Litmus_id).t
+  -> location_map:Location_map.t
   -> t Or_error.t
 (** [run ~oracle ~subject ~location_map] applies the partial map
     [location_map] to every state binding in [subject], then analyses it

@@ -17,9 +17,9 @@ let write_aux (aux : Act_delitmus.Aux.t) (oc : Stdio.Out_channel.t) :
   Or_error.try_with (fun () -> Yojson.Safe.pretty_to_channel oc aux_json)
 
 let run ?(aux_output : string option)
-    (args : Args.Standard.t Args.With_files.t) _o _cfg
+    (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t) _o _cfg
     ~(style : Act_delitmus.Runner.Style.t) =
-  Args.With_files.run_filter_with_aux_out
+  Toplevel.Args.With_files.run_filter_with_aux_out
     (module Act_delitmus.Filter)
     args ~aux_in:style ~aux_out_f:write_aux ?aux_out_filename:aux_output
 
@@ -27,8 +27,7 @@ let command : Command.t =
   Command.basic ~summary:"converts a C litmus test to a normal C file"
     Command.Let_syntax.(
       let%map_open standard_args =
-        ignore anon ;
-        Args.(With_files.get Standard.get)
+        Toplevel.Args.(With_files.get Standard.get)
       and aux_output =
         flag "aux-output"
           (optional Filename.arg_type)
@@ -45,7 +44,7 @@ let command : Command.t =
             ~doc:"STYLE_NAME the style of delitmus action to run")
       in
       fun () ->
-        Common.lift_command
-          (Args.With_files.rest standard_args)
+        Toplevel.Common.lift_command
+          (Toplevel.Args.With_files.rest standard_args)
           ~with_compiler_tests:false
           ~f:(run standard_args ~style ?aux_output))

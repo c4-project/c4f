@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_sim_litmus_tests)
+ (name act_backend_litmus_tests)
  (inline_tests)
  (preprocess
   (pps ppx_jane))
  (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config base
-   stdio act.sim act.sim_litmus))
+   stdio act.backend act.backend_litmus))

@@ -47,11 +47,10 @@ include Pb.Filter.Make (struct
     let style = Pb.Filter_context.aux ctx in
     let input = Pb.Filter_context.input ctx in
     Or_error.Let_syntax.(
-      let%bind ast =
-        Act_c_lang.Frontend.Litmus.load_from_ic
+      let%bind vast =
+        Act_c_mini.Frontend.load_from_ic
           ~path:(Pb.Input.to_string input)
           ic
       in
-      let%bind vast = Act_c_mini.Convert.litmus_of_raw_ast ast in
       delitmusify_and_print vast oc ~style)
 end)

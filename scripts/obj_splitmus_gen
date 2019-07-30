@@ -13,6 +13,7 @@ SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
 
 # Programs
 ACT=${ACT="act"}
+ACT_C=${ACT_C="act-c"}
 LITMUS=${LITMUS="litmus7"}
 SED=${SED="sed"}
 
@@ -20,7 +21,7 @@ SED=${SED="sed"}
 # aux file and header file for future consumption.
 #
 # Globals:
-#   - ACT (read)
+#   - ACT_C (read)
 #   - SCRIPTDIR (read)
 #
 # Arguments:
@@ -38,8 +39,8 @@ delitmus_and_compile() {
   local hfile="$5"
   local objfile="$6"
 
-  "${ACT}" c delitmus -style vars-as-parameters -aux "${auxfile}" -o "${cfile}" "${infile}"
-  "${ACT}" c compile -compiler "${compiler}" -mode object -o "${objfile}" "${cfile}"
+  "${ACT_C}" delitmus -style vars-as-parameters -aux "${auxfile}" -o "${cfile}" "${infile}"
+  "${ACT_C}" compile -compiler "${compiler}" -mode object -o "${objfile}" "${cfile}"
   "${SCRIPTDIR}"/make_header.awk "${cfile}" > "${hfile}"
 }
 

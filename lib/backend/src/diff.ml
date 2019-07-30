@@ -15,6 +15,33 @@ module Au = Act_utils
 module Tx = Travesty_base_exts
 module Ob = Output.Observation
 
+module Location_map = struct
+  type t = A.Litmus_id.t option Map.M(A.Litmus_id).t
+
+  module Json = Plumbing.Jsonable.Make_map (A.Litmus_id) (Plumbing.Jsonable.Option(A.Litmus_id))
+  include (Json : module type of Json with type t := t)
+  module Load = Plumbing.Loadable.Of_jsonable (Json)
+  include (Load : module type of Load with type t := t)
+
+  let reflexive
+    (vars : Set.M(Act_common.Litmus_id).t)
+  : t =
+    vars
+    |> Set.to_sequence ~order:`Increasing
+    |> Sequence.map ~f:(fun x -> (x, Some x))
+    |> Map.of_increasing_sequence (module Act_common.Litmus_id)
+    |> Or_error.ok_exn
+
+  let output (map : t) ~(onto : Plumbing.Output.t) : unit Or_error.t =
+    Plumbing.Output.with_output onto
+      ~f:(fun oc ->
+          map
+          |> to_yojson
+          |> Yojson.Safe.pretty_to_channel oc;
+          Stdio.Out_channel.newline oc;
+          Result.ok_unit)
+end
+
 module Order = struct
   include Au.Set_partial_order.M (State)
 
@@ -105,7 +132,7 @@ let not_in_subject_error (location : A.Litmus_id.t) : Error.t Lazy.t =
            ~location:(location : A.Litmus_id.t)])
 
 let map_subject_states (states : State.t list)
-    ~(location_map : A.Litmus_id.t option Map.M(A.Litmus_id).t) =
+    ~(location_map : Location_map.t) =
   Tx.Or_error.combine_map states
     ~f:
       (State.map ~value_map:Or_error.return ~location_map:(fun l ->
@@ -120,7 +147,7 @@ let filter_oracle_states ~(raw_oracle_states : State.t list)
   List.map raw_oracle_states ~f:(State.restrict ~domain)
 
 let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
-    ~(location_map : A.Litmus_id.t option Map.M(A.Litmus_id).t) :
+    ~(location_map : Location_map.t) :
     t Or_error.t =
   let open Or_error.Let_syntax in
   let raw_oracle_states = Ob.states oracle in
@@ -134,7 +161,7 @@ let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
   compare_states ~oracle_states ~subject_states
 
 let run ~(oracle : Ob.t) ~(subject : Ob.t)
-    ~(location_map : A.Litmus_id.t option Map.M(A.Litmus_id).t) :
+    ~(location_map : Location_map.t) :
     t Or_error.t =
   if Ob.is_undefined oracle then Or_error.return Oracle_undefined
   else if Ob.is_undefined subject then Or_error.return Subject_undefined

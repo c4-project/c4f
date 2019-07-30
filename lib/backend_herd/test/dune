@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_sim_herd_tests)
+ (name act_backend_herd_tests)
  (inline_tests)
  (preprocess
   (pps ppx_jane))
  (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config base
-   stdio act.sim act.sim_herd))
+   stdio act.backend act.backend_herd))

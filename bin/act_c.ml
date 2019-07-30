@@ -9,7 +9,6 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Top-level for act's `diff_states` command *)
+(** Main entry point for the miscellaneous ACT C language services. *)
 
-val command : Core_kernel.Command.t
-(** [command] packages up the diff_states command as a [Command.t]. *)
+let () = Core.Command.run C_cmd.Main.command

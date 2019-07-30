@@ -1,10 +1,10 @@
 (tests
- (names explain delitmus litmusify config config_failures)
+ (names explain delitmus litmusify config config_failures reflexive_locmap)
  (preprocess
   (pps ppx_jane))
  (libraries ppx_deriving_yojson.runtime result yojson sexplib0 base.caml
    core_kernel core stdio fmt toplevel fpath plumbing act.asm act.fuzz
-   act.common act.config act.delitmus act.litmus act.sanitiser act.utils
+   act.backend act.c_mini act.common act.config act.delitmus act.litmus act.sanitiser act.utils
    travesty travesty.base_exts)
  (action
   (run %{test} input))

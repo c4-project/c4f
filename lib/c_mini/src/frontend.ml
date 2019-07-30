@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Top-level for act's `diff_states` command *)
-
-val command : Core_kernel.Command.t
-(** [command] packages up the diff_states command as a [Command.t]. *)
+include Plumbing.Loadable.Make_chain (Act_c_lang.Frontend.Litmus) (struct
+    type dst = Litmus.Ast.Validated.t
+    let f = Convert.litmus_of_raw_ast
+  end)

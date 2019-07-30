@@ -49,8 +49,7 @@ let command : Command.t =
         flag "trace-output"
           (optional Filename.arg_type)
           ~doc:
-            "FILE if given, the filename to write auxiliary litmus \
-             information to"
+            "FILE if given, write a trace of completed fuzz actions to this filename"
       in
       fun () ->
         Toplevel.Common.lift_command

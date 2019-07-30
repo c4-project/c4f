@@ -9,7 +9,15 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Top-level for act's `diff_states` command *)
+open Core_kernel
 
-val command : Core_kernel.Command.t
-(** [command] packages up the diff_states command as a [Command.t]. *)
+let readme () : string =
+  Act_utils.My_string.format_for_readme
+    {|
+Commands for querying and manipulating
+single C files or litmus tests in a target-independent way.
+|}
+
+let command : Command.t =
+  Command.group ~summary:"commands for dealing with C files" ~readme
+    [("delitmus", Delitmus.command); ("compile", Compile.command)]

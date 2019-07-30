@@ -9,7 +9,11 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Top-level for act's `diff_states` command *)
+(** Frontend for mini-C litmus tests.
 
-val command : Core_kernel.Command.t
-(** [command] packages up the diff_states command as a [Command.t]. *)
+    This module allows code to read mini-C litmus tests in directly,
+    rather than reading a full C litmus test then converting
+    manually.  It also therefore insulates against future changes in the
+    abstract/full C representation. *)
+
+include Plumbing.Loadable_types.S with type t = Litmus.Ast.Validated.t
