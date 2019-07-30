@@ -94,6 +94,7 @@ splice_litmus() {
   "${SCRIPTDIR}"/splice.awk "${stubfile}" "${runfile}" > "${runfile}.new"
   mv "${runfile}.new" "${runfile}"
 
+  # shellcheck disable=SC1004
   "${SED}" '
     /#include "utils.h"/ a\
     #include "body.h"
