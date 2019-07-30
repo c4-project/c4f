@@ -77,9 +77,74 @@ let%test_module "run" = (module struct
 
   let%expect_test "no subject states" =
     test (Ob.init ());
-    [%expect {||}]
+    [%expect {|
+      Oracle >> Subject
+      In oracle only:
+        {} |}]
+
+  let smaller_subject : Ob.t =
+      Ob.init ()
+      |> add_state_exn
+        [ "t0a", "potato"
+        ; "t0b", "waffles"
+        ; "t1a", "true"
+        ; "t1b", "6"
+        ; "x", "100"
+        ; "y", "kg"
+        ]
+      |> add_state_exn
+        [ "t0a", "sweet"
+        ; "t0b", "waffles"
+        ; "t1a", "false"
+        ; "t1b", "42"
+        ; "x", "100"
+        ; "y", "cwt"
+        ]
+
+  let%expect_test "smaller subject states" =
+    test smaller_subject;
+    [%expect {|
+      Oracle >> Subject
+      In oracle only:
+        {x = 99; y = kg; 0:a = potato; 0:b = wedges; 1:a = true; 1:b = 42} |}]
+
+  let equivalent_subject : Ob.t =
+    smaller_subject
+      |> add_state_exn
+        [ "t0a", "potato"
+        ; "t0b", "wedges"
+        ; "t1a", "true"
+        ; "t1b", "42"
+        ; "x", "99"
+        ; "y", "kg"
+        ]
 
   let%expect_test "equivalent subject states" =
+    test equivalent_subject;
+    [%expect {|
+      Oracle == Subject |}]
+
+
+  let larger_subject : Ob.t =
+    equivalent_subject
+      |> add_state_exn
+        [ "t0a", "potato"
+        ; "t0b", "heads"
+        ; "t1a", "true"
+        ; "t1b", "2"
+        ; "x", "99"
+        ; "y", "red balloons"
+        ]
+
+  let%expect_test "larger subject states" =
+    test larger_subject;
+    [%expect {|
+      Oracle << Subject
+      In subject only:
+        {x = 99; y = red balloons; 0:a = potato; 0:b = heads; 1:a = true; 1:b = 2} |}]
+
+
+  let%expect_test "uncorrelated subject states" =
     test (
     Ob.(
       init ()
@@ -109,5 +174,10 @@ let%test_module "run" = (module struct
         ]
     )
     );
-    [%expect {||}]
+    [%expect {|
+      Oracle <> Subject
+      In oracle only:
+        {x = 100; y = cwt; 0:a = sweet; 0:b = waffles; 1:a = false; 1:b = 42}
+      In subject only:
+        {x = 100; y = percent; 0:a = sweet; 0:b = waffles; 1:a = false; 1:b = 42} |}]
 end)

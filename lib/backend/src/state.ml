@@ -100,5 +100,5 @@ let map ~(location_map : A.Litmus_id.t -> A.Litmus_id.t option Or_error.t)
 let pp : t Fmt.t =
   Fmt.(
     using Map.to_alist
-      (list (box (pair ~sep:(any ":@ ") A.Litmus_id.pp string))
+      (braces (list ~sep:semi (box (pair ~sep:(any "@ =@ ") A.Litmus_id.pp string)))
   ))
