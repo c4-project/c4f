@@ -58,8 +58,9 @@ include
 val run :
      oracle:Output.Observation.t
   -> subject:Output.Observation.t
-  -> location_map:(Act_common.Litmus_id.t option Map.M(Act_common.Litmus_id).t)
+  -> location_map:Act_common.Litmus_id.t option
+                  Map.M(Act_common.Litmus_id).t
   -> t Or_error.t
-(** [run ~oracle ~subject ~location_map] applies the partial
-    map [location_map] to every state binding in
-    [subject], then analyses it against [oracle]. *)
+(** [run ~oracle ~subject ~location_map] applies the partial map
+    [location_map] to every state binding in [subject], then analyses it
+    against [oracle]. *)

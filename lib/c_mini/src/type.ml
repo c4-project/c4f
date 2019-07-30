@@ -50,7 +50,7 @@ module Basic = struct
     | {atomic= true; prim= Bool} ->
         `Defined_type (Ac.C_id.of_string "atomic_bool")
 
-  let strip_atomic (t : t) : t = { t with atomic = false }
+  let strip_atomic (t : t) : t = {t with atomic= false}
 
   let to_non_atomic : t -> t Or_error.t = function
     | {atomic= true; prim} ->
@@ -118,9 +118,9 @@ let is_atomic (ty : t) : bool = Basic.is_atomic (basic_type ty)
 
 let strip_atomic : t -> t = function
   | Normal k ->
-    k |> Basic.strip_atomic |> normal
+      k |> Basic.strip_atomic |> normal
   | Pointer_to k ->
-    k |> Basic.strip_atomic |> pointer_to
+      k |> Basic.strip_atomic |> pointer_to
 
 let to_non_atomic : t -> t Or_error.t = function
   | Normal k ->

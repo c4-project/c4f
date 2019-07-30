@@ -25,7 +25,8 @@ let run ?(fqid : Id.t = Id.of_string "herd")
     let%bind out = Sim.Reader.load_from_isrc input in
     Plumbing.Output.with_output output ~f:(fun oc ->
         let%map obs =
-          Act_backend.Output.to_observation_or_error ~handle_skipped:`Error out
+          Act_backend.Output.to_observation_or_error ~handle_skipped:`Error
+            out
         in
         Yojson.Safe.pretty_to_channel oc
           (Act_backend.Output.Observation.to_yojson obs)))

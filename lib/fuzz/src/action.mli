@@ -106,7 +106,7 @@ module No_random_state :
 
 (** Makes a basic logging function for an action. *)
 module Make_log (B : sig
-    val name : Act_common.Id.t
-  end) : sig
+  val name : Act_common.Id.t
+end) : sig
   val log : Act_common.Output.t -> string -> unit
 end

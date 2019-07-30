@@ -27,7 +27,8 @@ module M = struct
      infers. *)
   let is_enabled = enabled
 
-  let backend (spec : t) ~(id : Ac.Id.t) : Act_backend.Spec.With_id.t Or_error.t =
+  let backend (spec : t) ~(id : Ac.Id.t) :
+      Act_backend.Spec.With_id.t Or_error.t =
     Act_backend.Spec.Set.get (backends spec) id
 
   let pp_enabled (f : Base.Formatter.t) : bool -> unit = function

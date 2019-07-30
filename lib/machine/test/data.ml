@@ -15,7 +15,8 @@ module Am = Act_machine
 
 module Spec_sets = struct
   let localhost_herd_spec : Act_backend.Spec.t Lazy.t =
-    lazy (Act_backend.Spec.make ~cmd:"herd7" ~style:(Ac.Id.of_string "herd") ())
+    lazy
+      (Act_backend.Spec.make ~cmd:"herd7" ~style:(Ac.Id.of_string "herd") ())
 
   let localhost_backends : Act_backend.Spec.Set.t Lazy.t =
     Lazy.Let_syntax.(

@@ -23,11 +23,14 @@
 
 (** Simulator-runner interface for Litmus. *)
 
-module Make (B : Act_backend.Runner_types.Basic) : Act_backend.Runner_types.S
+module Make (B : Act_backend.Runner_types.Basic) :
+  Act_backend.Runner_types.S
 (** We can use Litmus as a simulator runner by supplying it with
     configuration expressed as a
-    {{!Act_backend.Runner_types.Basic} Act_backend.Runner_types.Basic} module. *)
+    {{!Act_backend.Runner_types.Basic} Act_backend.Runner_types.Basic}
+    module. *)
 
 val make :
-  (module Act_backend.Runner_types.Basic) -> (module Act_backend.Runner_types.S)
+     (module Act_backend.Runner_types.Basic)
+  -> (module Act_backend.Runner_types.S)
 (** [make (module B)] is a first-class version of [Make (B)]. *)

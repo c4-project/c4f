@@ -105,7 +105,8 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
 
     let try_get_named_simulator :
            Ast.Machine.t
-        -> (Act_common.Id.t * Act_backend.Spec.t) option Or_error.t = function
+        -> (Act_common.Id.t * Act_backend.Spec.t) option Or_error.t =
+      function
       | Sim (n, s) ->
           Or_error.Let_syntax.(
             let%map s' = simulator s in

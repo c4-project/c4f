@@ -21,8 +21,8 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-module Make (B : Act_backend.Runner_types.Basic) : Act_backend.Runner_types.S =
-Act_backend.Runner.Make (struct
+module Make (B : Act_backend.Runner_types.Basic) :
+  Act_backend.Runner_types.S = Act_backend.Runner.Make (struct
   module Unchecked_filter = Filter.Make (B)
   module Reader = Reader
 

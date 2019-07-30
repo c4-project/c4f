@@ -25,26 +25,24 @@ let print (cmp : (int, Int.comparator_witness) t) : unit =
     (set_to_string (in_right_only cmp))
 
 module Test_cases = struct
-  let lift (f : Set.M(Int).t -> Set.M(Int).t -> unit)
-    (l : int list) (r : int list) : unit =
+  let lift (f : Set.M(Int).t -> Set.M(Int).t -> unit) (l : int list)
+      (r : int list) : unit =
     f (Set.of_list (module Int) l) (Set.of_list (module Int) r)
 
-  let with_empty_sets (f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit = lift f [] []
+  let with_empty_sets (f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit =
+    lift f [] []
 
-  let with_equal_sets
-(f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit =
+  let with_equal_sets (f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit =
     lift f [1; 2; 3; 4; 5; 6] [6; 5; 4; 3; 2; 1]
 
-  let with_subset_sets
-(f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit =
+  let with_subset_sets (f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit =
     lift f [1; 2; 3] [1; 2; 3; 4; 5; 6]
 
-  let with_superset_sets
-(f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit =
+  let with_superset_sets (f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit =
     lift f [6; 5; 4; 3; 2; 1] [3; 2; 1]
 
-  let with_unordered_sets
-(f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit =
+  let with_unordered_sets (f : Set.M(Int).t -> Set.M(Int).t -> unit) : unit
+      =
     lift f [1; 2; 3; 4] [3; 4; 5; 6]
 end
 
@@ -52,8 +50,7 @@ let%test_module "make" =
   ( module struct
     open Test_cases
 
-    let test (x : Set.M(Int).t) (y : Set.M(Int).t) : unit =
-      print (make x y)
+    let test (x : Set.M(Int).t) (y : Set.M(Int).t) : unit = print (make x y)
 
     let%expect_test "empty sets" =
       with_empty_sets test ; [%expect {| {} | {} |}]
@@ -70,12 +67,13 @@ let%test_module "make" =
       with_unordered_sets test ; [%expect {| {1, 2} | {5, 6} |}]
   end )
 
-let%test_module "to ordering" = (module struct
+let%test_module "to ordering" =
+  ( module struct
     open Test_cases
 
     let test (x : Set.M(Int).t) (y : Set.M(Int).t) : unit =
-       let spo = (make x y) in
-       print_s [%sexp (to_ordering_opt spo : Ordering.t option)]
+      let spo = make x y in
+      print_s [%sexp (to_ordering_opt spo : Ordering.t option)]
 
     let%expect_test "empty sets" =
       with_empty_sets test ; [%expect {| (Equal) |}]
@@ -89,5 +87,5 @@ let%test_module "to ordering" = (module struct
     let%expect_test "equal" = with_equal_sets test ; [%expect {| (Equal) |}]
 
     let%expect_test "no order" =
-      with_unordered_sets test ; [%expect {| () |}]  
-end)
+      with_unordered_sets test ; [%expect {| () |}]
+  end )

@@ -6,4 +6,5 @@
  ; act binaries that it's not particularly useful on its own.
  (preprocess
   (pps ppx_jane))
- (libraries stdio base base.caml core_kernel core fmt plumbing toplevel act.common act.config act.fuzz act.utils))
+ (libraries stdio base base.caml core_kernel core fmt plumbing toplevel
+   act.common act.config act.fuzz act.utils))

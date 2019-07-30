@@ -29,14 +29,15 @@ module Sq_spec = Act_machine.Qualified.Sim
 
 let sim_procs :
     ( Ac.Id.t
-    , (module Act_backend.Runner_types.Basic) -> (module Act_backend.Runner_types.S)
-    )
+    ,    (module Act_backend.Runner_types.Basic)
+      -> (module Act_backend.Runner_types.S) )
     List.Assoc.t =
   [ (Ac.Id.of_string "herd", Act_backend_herd.Runner.make)
   ; (Ac.Id.of_string "litmus", Act_backend_litmus.Runner.make) ]
 
 let try_get_sim_proc (style_id : Ac.Id.t) :
-    ((module Act_backend.Runner_types.Basic) -> (module Act_backend.Runner_types.S))
+    (   (module Act_backend.Runner_types.Basic)
+     -> (module Act_backend.Runner_types.S))
     Or_error.t =
   Ac.Id.try_find_assoc_with_suggestions sim_procs style_id
     ~id_type:"sim style"

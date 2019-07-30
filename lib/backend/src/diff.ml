@@ -49,37 +49,33 @@ let pp_undefined : string Fmt.t =
 
 let pp_summary (f : Formatter.t) : t -> unit = function
   | Subject_undefined ->
-    pp_undefined f "Subject"
+      pp_undefined f "Subject"
   | Oracle_undefined ->
-    pp_undefined f "Oracle"
+      pp_undefined f "Oracle"
   | Result o ->
       Fmt.pf f "Oracle@ %a@ Subject" Order.pp_operator
         (Au.Set_partial_order.to_ordering_opt o)
 
-let pp_side_set (side : string) (f : Formatter.t) (set : Set.M(State).t) : unit =
-  if not (Set.is_empty set)
-  then Fmt.(
-      Fmt.pf f "@[<v 2>In %s only:@ %a@]"
-        side
+let pp_side_set (side : string) (f : Formatter.t) (set : Set.M(State).t) :
+    unit =
+  if not (Set.is_empty set) then
+    Fmt.(
+      Fmt.pf f "@[<v 2>In %s only:@ %a@]" side
         (using Set.to_list (list ~sep:cut State.pp))
         set)
 
 let pp_specifics (f : Formatter.t) : t -> unit = function
   | Result o ->
-    Au.Set_partial_order.(
-      Fmt.(
-        using in_left_only (pp_side_set "oracle")
-        ++
-        (if is_unordered o then sp else nop)
-        ++
-        using in_right_only (pp_side_set "subject")
-      )
-    ) f o
-  | Subject_undefined | Oracle_undefined -> ()
+      Au.Set_partial_order.(
+        Fmt.(
+          using in_left_only (pp_side_set "oracle")
+          ++ (if is_unordered o then sp else nop)
+          ++ using in_right_only (pp_side_set "subject")))
+        f o
+  | Subject_undefined | Oracle_undefined ->
+      ()
 
-let pp : t Fmt.t =
-  Fmt.(vbox (box pp_summary ++ sp ++ box pp_specifics))
-
+let pp : t Fmt.t = Fmt.(vbox (box pp_summary ++ sp ++ box pp_specifics))
 
 let to_string : t -> string = function
   | Subject_undefined ->
@@ -100,23 +96,22 @@ let compare_states ~(oracle_states : State.t list)
   Result result
 
 let not_in_subject_error (location : A.Litmus_id.t) : Error.t Lazy.t =
-  (* TODO(@MattWindsor91): is this even an error?  are there examples where this
-     legitimately happens eg. compiler optimisations? *)
+  (* TODO(@MattWindsor91): is this even an error? are there examples where
+     this legitimately happens eg. compiler optimisations? *)
   lazy
     (Error.create_s
-       [%message "Location present in the oracle but absent in the subject"
-           ~location:(location : A.Litmus_id.t)]
-    )
+       [%message
+         "Location present in the oracle but absent in the subject"
+           ~location:(location : A.Litmus_id.t)])
 
 let map_subject_states (states : State.t list)
     ~(location_map : A.Litmus_id.t option Map.M(A.Litmus_id).t) =
-    Tx.Or_error.combine_map states ~f:(
-    State.map
-      ~value_map:Or_error.return
-      ~location_map:(fun l ->
-          l |> Map.find location_map |>
-          Result.of_option
-            ~error:(Error.(of_lazy_t (not_in_subject_error l)))))
+  Tx.Or_error.combine_map states
+    ~f:
+      (State.map ~value_map:Or_error.return ~location_map:(fun l ->
+           l |> Map.find location_map
+           |> Result.of_option
+                ~error:Error.(of_lazy_t (not_in_subject_error l))))
 
 let filter_oracle_states ~(raw_oracle_states : State.t list)
     ~(subject_states : State.t list) : State.t list Or_error.t =
@@ -125,8 +120,8 @@ let filter_oracle_states ~(raw_oracle_states : State.t list)
   List.map raw_oracle_states ~f:(State.restrict ~domain)
 
 let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
-    ~(location_map : A.Litmus_id.t option Map.M(A.Litmus_id).t)
-  : t Or_error.t =
+    ~(location_map : A.Litmus_id.t option Map.M(A.Litmus_id).t) :
+    t Or_error.t =
   let open Or_error.Let_syntax in
   let raw_oracle_states = Ob.states oracle in
   let raw_subject_states = Ob.states subject in
@@ -139,7 +134,8 @@ let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
   compare_states ~oracle_states ~subject_states
 
 let run ~(oracle : Ob.t) ~(subject : Ob.t)
-    ~(location_map : A.Litmus_id.t option Map.M(A.Litmus_id).t) : t Or_error.t =
+    ~(location_map : A.Litmus_id.t option Map.M(A.Litmus_id).t) :
+    t Or_error.t =
   if Ob.is_undefined oracle then Or_error.return Oracle_undefined
   else if Ob.is_undefined subject then Or_error.return Subject_undefined
   else run_defined ~oracle ~subject ~location_map

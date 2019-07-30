@@ -73,15 +73,11 @@ end) : Env_types.S_with_known_values = struct
   let known_value : Act_common.C_id.t -> Constant.t option =
     Map.find E.known_values
 
-  let variables_with_known_values : (Type.t * Constant.t) Map.M(Act_common.C_id).t Lazy.t =
-    lazy (
-      Map.filter_mapi E.env
-        ~f:(fun ~key ~(data : Type.t) ->
-            Option.(
-              key |> known_value >>| fun const -> (data, const)
-            )
-          )
-    )
+  let variables_with_known_values :
+      (Type.t * Constant.t) Map.M(Act_common.C_id).t Lazy.t =
+    lazy
+      (Map.filter_mapi E.env ~f:(fun ~key ~(data : Type.t) ->
+           Option.(key |> known_value >>| fun const -> (data, const))))
 
   let type_of_known_value (id : Ac.C_id.t) : Type.t Or_error.t =
     Or_error.(id |> type_of >>| Type.basic_type >>| Type.of_basic)

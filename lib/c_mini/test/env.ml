@@ -59,15 +59,15 @@ let det_known_values : Src.Constant.t Map.M(Ac.C_id).t Lazy.t =
   lazy
     (Map.of_alist_exn
        (module Ac.C_id)
-          (Src.Constant.
-            [ (Ac.C_id.of_string "foo", int 4)
-            ; (Ac.C_id.of_string "bar", int 95)
-            ; (Ac.C_id.of_string "barbaz", bool true)
-            ; (Ac.C_id.of_string "foobaz", bool true)
-            ; (Ac.C_id.of_string "x", int 27)
-            ; (Ac.C_id.of_string "y", int 53)
-            ; (Ac.C_id.of_string "z", bool false)
-            ; (Ac.C_id.of_string "blep", int 99) ]))
+       Src.Constant.
+         [ (Ac.C_id.of_string "foo", int 4)
+         ; (Ac.C_id.of_string "bar", int 95)
+         ; (Ac.C_id.of_string "barbaz", bool true)
+         ; (Ac.C_id.of_string "foobaz", bool true)
+         ; (Ac.C_id.of_string "x", int 27)
+         ; (Ac.C_id.of_string "y", int 53)
+         ; (Ac.C_id.of_string "z", bool false)
+         ; (Ac.C_id.of_string "blep", int 99) ])
 
 let det_known_value_mod : (module Src.Env_types.S_with_known_values) Lazy.t
     =

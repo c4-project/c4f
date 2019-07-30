@@ -146,14 +146,13 @@ module No_random_state :
 end
 
 module Make_log (B : sig
-    val name : Act_common.Id.t
-  end) : sig
+  val name : Act_common.Id.t
+end) : sig
   val log : Act_common.Output.t -> string -> unit
 end = struct
   let log (o : Act_common.Output.t) (s : string) : unit =
     Fmt.(
-      Act_common.Output.pv o
-        "@[<h>%a:@ @[%a@]@]@."
-        (styled (`Fg `Green) Act_common.Id.pp) B.name Fmt.lines s
-    )
+      Act_common.Output.pv o "@[<h>%a:@ @[%a@]@]@."
+        (styled (`Fg `Green) Act_common.Id.pp)
+        B.name Fmt.lines s)
 end

@@ -11,7 +11,6 @@
 
 open Base
 open Act_utils
-
 module A = Act_common
 module Tx = Travesty_base_exts
 
@@ -50,8 +49,8 @@ include Q
 
 let of_alist = Map.of_alist_or_error (module A.Litmus_id)
 
-let domain : t -> Set.M(A.Litmus_id).t = Fn.compose (Set.of_list (module A.Litmus_id)) Map.keys
-
+let domain : t -> Set.M(A.Litmus_id).t =
+  Fn.compose (Set.of_list (module A.Litmus_id)) Map.keys
 
 let domain_error (one_domain : Set.M(A.Litmus_id).t)
     (another_domain : Set.M(A.Litmus_id).t) : unit Or_error.t =
@@ -100,5 +99,6 @@ let map ~(location_map : A.Litmus_id.t -> A.Litmus_id.t option Or_error.t)
 let pp : t Fmt.t =
   Fmt.(
     using Map.to_alist
-      (braces (list ~sep:semi (box (pair ~sep:(any "@ =@ ") A.Litmus_id.pp string)))
-  ))
+      (braces
+         (list ~sep:semi
+            (box (pair ~sep:(any "@ =@ ") A.Litmus_id.pp string)))))

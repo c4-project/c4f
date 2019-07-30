@@ -154,8 +154,8 @@ module Ctx = struct
     let try_enter_state_block (num_states : int) : t -> t Or_error.t =
       map_a_state_m ~f:(Automaton.try_enter_state_block num_states)
 
-    let try_leave_state (state : Act_backend.State.t) (body : t) : t Or_error.t
-        =
+    let try_leave_state (state : Act_backend.State.t) (body : t) :
+        t Or_error.t =
       Or_error.(
         body
         |> map_a_state_m ~f:Automaton.try_leave_state
@@ -258,9 +258,11 @@ module Make_main (B : Basic) = struct
       Or_error.(
         line |> String.split ~on:';'
         |> Tx.List.exclude ~f:String.is_empty (* Drop trailing ; *)
-        |> List.map ~f:proc_binding |> Result.all >>= Act_backend.State.of_alist)
+        |> List.map ~f:proc_binding |> Result.all
+        >>= Act_backend.State.of_alist)
 
-    let try_parse_state_line (line : string) : Act_backend.State.t Or_error.t =
+    let try_parse_state_line (line : string) :
+        Act_backend.State.t Or_error.t =
       Or_error.Let_syntax.(
         let%bind {rest; _} = B.try_split_state_line line in
         try_parse_state_line_body rest)

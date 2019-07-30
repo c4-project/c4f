@@ -18,6 +18,7 @@ type t [@@deriving sexp, compare, yojson, quickcheck]
 (** [t] is the type of states: a binding from name to value. *)
 
 include Comparable.S with type t := t
+
 include Pretty_printer.S with type t := t
 
 val map :
@@ -43,8 +44,8 @@ val domain : t -> Set.M(Litmus_id).t
 
 val common_domain : t list -> Set.M(Litmus_id).t Or_error.t
 (** [common_domain t] gets the list of all bound names across [ts] if the
-states in [ts] agree on a single such list, or an inconsistency error
-otherwise.*)
+    states in [ts] agree on a single such list, or an inconsistency error
+    otherwise.*)
 
 val restrict : t -> domain:Set.M(Litmus_id).t -> t
 (** [restrict t ~domain] removes all mappings in [t] that don't reference

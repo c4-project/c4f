@@ -117,6 +117,7 @@ Make_lookup (struct
 
   let from_machine = Spec.backends
 
-  let qualify (s_spec : Act_backend.Spec.With_id.t) ~(m_spec : Spec.With_id.t) =
+  let qualify (s_spec : Act_backend.Spec.With_id.t)
+      ~(m_spec : Spec.With_id.t) =
     Sim.make ~s_spec ~m_spec
 end)

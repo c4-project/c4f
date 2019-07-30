@@ -42,7 +42,8 @@ let command : Command.t =
                 "Tells the backend to test the input against the C memory \
                  model"
           ; map
-              ~f:(Option.map ~f:(fun x -> Some (Act_backend.Arch.Assembly x)))
+              ~f:
+                (Option.map ~f:(fun x -> Some (Act_backend.Arch.Assembly x)))
               (Args.arch
                  ~doc:
                    "ARCH tells the backend to test the input against the \

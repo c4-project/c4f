@@ -31,11 +31,8 @@ let pp_fuzz_summaries : Act_fuzz.Action.Summary.t Id.Map.t Fmt.t =
 let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Act.t) :
     unit Or_error.t =
   Or_error.(
-    cfg
-    |> fuzz_config
-    |> Act_fuzz.Fuzzer.summarise
-    >>| Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries
-  )
+    cfg |> fuzz_config |> Act_fuzz.Fuzzer.summarise
+    >>| Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries)
 
 let command : Command.t =
   Command.basic ~summary:"outputs the current fuzzer weight table"
@@ -43,5 +40,5 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map standard_args = Toplevel.Args.Standard.get in
       fun () ->
-        Toplevel.Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:run_list_fuzzer_actions)
+        Toplevel.Common.lift_command standard_args
+          ~with_compiler_tests:false ~f:run_list_fuzzer_actions)

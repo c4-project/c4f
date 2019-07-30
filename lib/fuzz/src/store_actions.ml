@@ -206,15 +206,14 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
             let%bind l_id = resolve c_id ~scope:(Local tid) in
             add_dependency l_id)))
 
-  let do_bookkeeping (store : Act_c_mini.Atomic_store.t)
-      ~(tid : int) : unit State.Monad.t =
+  let do_bookkeeping (store : Act_c_mini.Atomic_store.t) ~(tid : int) :
+      unit State.Monad.t =
     State.Monad.Let_syntax.(
       let%bind o = State.Monad.output () in
       log o "Erasing known value of store destination" ;
       let%bind () = mark_store_dst store in
       log o "Adding dependency to store source" ;
-      add_dependencies_to_store_src store ~tid
-    )
+      add_dependencies_to_store_src store ~tid)
 
   let run (subject : Subject.Test.t) ({store; path} : Random_state.t) :
       Subject.Test.t State.Monad.t =
@@ -223,8 +222,7 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
     State.Monad.Let_syntax.(
       let%bind () = do_bookkeeping store ~tid in
       State.Monad.Monadic.return
-        (Subject.Test.Path.insert_stm path store_stm subject)
-    )
+        (Subject.Test.Path.insert_stm path store_stm subject))
 end
 
 module Int : Action_types.S with type Random_state.t = Random_state.t =

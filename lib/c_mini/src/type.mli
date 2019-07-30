@@ -41,8 +41,8 @@ module Basic : sig
       to the atomic type [btype]. It fails if [btype] isn't atomic. *)
 
   val strip_atomic : t -> t
-  (** [strip_atomic btype] behaves as [to_non_atomic btype] if [btype]
-      is atomic, and returns [btype] if not. *)
+  (** [strip_atomic btype] behaves as [to_non_atomic btype] if [btype] is
+      atomic, and returns [btype] if not. *)
 end
 
 type t [@@deriving equal, sexp, compare, quickcheck]
@@ -85,8 +85,8 @@ val to_non_atomic : t -> t Or_error.t
     atomic type [ty]. It fails if [ty] isn't atomic. *)
 
 val strip_atomic : t -> t
-(** [strip_atomic ty] behaves as [to_non_atomic ty] if [ty]
-    is atomic, and returns [ty] if not. *)
+(** [strip_atomic ty] behaves as [to_non_atomic ty] if [ty] is atomic, and
+    returns [ty] if not. *)
 
 val deref : t -> t Or_error.t
 (** [deref ty] tries to strip a layer of pointer indirection off [ty]. It

@@ -49,12 +49,11 @@ module type S_with_known_values = sig
   val known_value : Act_common.C_id.t -> Constant.t option
   (** [known_value var] gets the known value of [var], if any. *)
 
-  val variables_with_known_values
-    : (Type.t * Constant.t) Map.M(Act_common.C_id).t Lazy.t
-  (** [variables_with_known_values] creates a map from variable IDs to
-      their types and
-      definitely-known values, discarding any variable IDs for which there is
-      no known value. *)
+  val variables_with_known_values :
+    (Type.t * Constant.t) Map.M(Act_common.C_id).t Lazy.t
+  (** [variables_with_known_values] creates a map from variable IDs to their
+      types and definitely-known values, discarding any variable IDs for
+      which there is no known value. *)
 
   val type_of_known_value : Act_common.C_id.t -> Type.t Or_error.t
   (** [type_of_known_value id] behaves like [type_of id], but returns the
