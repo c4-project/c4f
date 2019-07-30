@@ -11,16 +11,14 @@
 
 open Core_kernel
 
-let run (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t) (_o : Act_common.Output.t) (_cfg : Act_config.Act.t) : unit Or_error.t =
+let run (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t)
+    (_o : Act_common.Output.t) (_cfg : Act_config.Act.t) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind i = Toplevel.Args.With_files.infile_source args in
     let%bind vast = Act_c_mini.Frontend.load_from_isrc i in
     let vars = Act_c_mini.Litmus.vars vast in
     let%bind o = Toplevel.Args.With_files.outfile_sink args in
-    Act_backend.Diff.Location_map.(
-      vars |> reflexive |> output ~onto:o
-    )
-  )
+    Act_backend.Diff.Location_map.(vars |> reflexive |> output ~onto:o))
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
@@ -34,8 +32,7 @@ example, to test ACT's fuzzer.
 |}
 
 let command : Command.t =
-  Command.basic ~summary:"outputs a reflexive location map"
-    ~readme
+  Command.basic ~summary:"outputs a reflexive location map" ~readme
     Command.Let_syntax.(
       let%map_open standard_args =
         ignore anon ;
@@ -44,5 +41,4 @@ let command : Command.t =
       fun () ->
         Toplevel.Common.lift_command
           (Toplevel.Args.With_files.rest standard_args)
-          ~with_compiler_tests:false
-          ~f:(run standard_args))
+          ~with_compiler_tests:false ~f:(run standard_args))

@@ -17,4 +17,5 @@
     fuzzer. *)
 
 val command : Core_kernel.Command.t
-(** [command] is the top-level command for generating reflexive location maps. *)
+(** [command] is the top-level command for generating reflexive location
+    maps. *)

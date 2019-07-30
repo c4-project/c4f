@@ -19,7 +19,8 @@ let run (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t)
   Or_error.Let_syntax.(
     let%bind target = Toplevel.Asm_target.resolve ~cfg raw_target in
     let%bind (module R) =
-      Toplevel.Language_support.Resolve_compiler_from_target.filter_from_spec target
+      Toplevel.Language_support.Resolve_compiler_from_target
+      .filter_from_spec target
     in
     let%bind input = Toplevel.Args.With_files.infile_source args in
     let%bind output = Toplevel.Args.With_files.outfile_sink args in

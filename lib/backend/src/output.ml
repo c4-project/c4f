@@ -17,6 +17,7 @@ module Observation = struct
     type t = {states: State.t list; is_undefined: bool}
     [@@deriving fields, sexp_of, quickcheck, yojson]
   end
+
   include M
   include Plumbing.Loadable.Of_jsonable (M)
 

@@ -46,7 +46,8 @@ module Make (B : Basic_symbol) : S with module Sym = B = struct
     |> List.map ~f:(dest_of_sym map)
     |> Set.of_list (module B)
 
-  let dest_ids (map : t) ~(sources : Set.M(C_id).t) : Set.M(C_id).t Or_error.t =
+  let dest_ids (map : t) ~(sources : Set.M(C_id).t) :
+      Set.M(C_id).t Or_error.t =
     let open Or_error.Let_syntax in
     let%bind source_sym_list =
       sources |> Set.to_list

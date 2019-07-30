@@ -85,7 +85,8 @@ include
     conversion from strings can fail if the C identifier parts don't obey C
     identifier validation. *)
 
-include Plumbing.Jsonable_types.S with type t := t
+include
+  Plumbing.Jsonable_types.S with type t := t
 (** Litmus-style identifiers are trivially serialisable to, and
     deserialisable from, JSON; we just encode them as strings. *)
 

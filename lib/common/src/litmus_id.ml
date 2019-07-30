@@ -174,5 +174,3 @@ end
 
 let is_in_scope (id : t) ~(from : int) : bool =
   match id with Global _ -> true | Local (tid, _) -> Int.equal tid from
-
-

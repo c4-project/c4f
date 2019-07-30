@@ -48,9 +48,7 @@ include Pb.Filter.Make (struct
     let input = Pb.Filter_context.input ctx in
     Or_error.Let_syntax.(
       let%bind vast =
-        Act_c_mini.Frontend.load_from_ic
-          ~path:(Pb.Input.to_string input)
-          ic
+        Act_c_mini.Frontend.load_from_ic ~path:(Pb.Input.to_string input) ic
       in
       delitmusify_and_print vast oc ~style)
 end)

@@ -15,18 +15,15 @@
 open Core
 module Ac = Act_common
 
-let gen_locmap_for_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
+let gen_locmap_for_file ~(file : Fpath.t) ~(path : Fpath.t) :
+    unit Or_error.t =
   ignore file ;
   Or_error.(
     (* TODO(@MattWindsor91): this duplicates a lot of the command it's
        supposed to be testing. *)
-    path
-    |> Plumbing.Input.of_fpath
-    |> Act_c_mini.Frontend.load_from_isrc
-    >>| Act_c_mini.Litmus.vars
-    >>| Act_backend.Diff.Location_map.reflexive
-    >>= Act_backend.Diff.Location_map.output ~onto:Plumbing.Output.stdout
-  )
+    path |> Plumbing.Input.of_fpath |> Act_c_mini.Frontend.load_from_isrc
+    >>| Act_c_mini.Litmus.vars >>| Act_backend.Diff.Location_map.reflexive
+    >>= Act_backend.Diff.Location_map.output ~onto:Plumbing.Output.stdout)
 
 let run (test_dir : Fpath.t) : unit Or_error.t =
   let full_dir = Fpath.(test_dir / "litmus" / "") in

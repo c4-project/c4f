@@ -18,14 +18,18 @@ module Ob = Output.Observation
 module Location_map = struct
   type t = A.Litmus_id.t option Map.M(A.Litmus_id).t
 
-  module Json = Plumbing.Jsonable.Make_map (A.Litmus_id) (Plumbing.Jsonable.Option(A.Litmus_id))
+  module Json =
+    Plumbing.Jsonable.Make_map
+      (A.Litmus_id)
+      (Plumbing.Jsonable.Option (A.Litmus_id))
+
   include (Json : module type of Json with type t := t)
+
   module Load = Plumbing.Loadable.Of_jsonable (Json)
+
   include (Load : module type of Load with type t := t)
 
-  let reflexive
-    (vars : Set.M(Act_common.Litmus_id).t)
-  : t =
+  let reflexive (vars : Set.M(Act_common.Litmus_id).t) : t =
     vars
     |> Set.to_sequence ~order:`Increasing
     |> Sequence.map ~f:(fun x -> (x, Some x))
@@ -33,13 +37,10 @@ module Location_map = struct
     |> Or_error.ok_exn
 
   let output (map : t) ~(onto : Plumbing.Output.t) : unit Or_error.t =
-    Plumbing.Output.with_output onto
-      ~f:(fun oc ->
-          map
-          |> to_yojson
-          |> Yojson.Safe.pretty_to_channel oc;
-          Stdio.Out_channel.newline oc;
-          Result.ok_unit)
+    Plumbing.Output.with_output onto ~f:(fun oc ->
+        map |> to_yojson |> Yojson.Safe.pretty_to_channel oc ;
+        Stdio.Out_channel.newline oc ;
+        Result.ok_unit)
 end
 
 module Order = struct
@@ -147,8 +148,7 @@ let filter_oracle_states ~(raw_oracle_states : State.t list)
   List.map raw_oracle_states ~f:(State.restrict ~domain)
 
 let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
-    ~(location_map : Location_map.t) :
-    t Or_error.t =
+    ~(location_map : Location_map.t) : t Or_error.t =
   let open Or_error.Let_syntax in
   let raw_oracle_states = Ob.states oracle in
   let raw_subject_states = Ob.states subject in
@@ -160,9 +160,8 @@ let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
   in
   compare_states ~oracle_states ~subject_states
 
-let run ~(oracle : Ob.t) ~(subject : Ob.t)
-    ~(location_map : Location_map.t) :
-    t Or_error.t =
+let run ~(oracle : Ob.t) ~(subject : Ob.t) ~(location_map : Location_map.t)
+    : t Or_error.t =
   if Ob.is_undefined oracle then Or_error.return Oracle_undefined
   else if Ob.is_undefined subject then Or_error.return Subject_undefined
   else run_defined ~oracle ~subject ~location_map

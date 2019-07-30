@@ -17,7 +17,8 @@ module Observation : sig
   type t [@@deriving sexp_of, quickcheck, yojson]
   (** Opaque type of a simulator observation record. *)
 
-  include Plumbing.Loadable_types.S with type t := t
+  include
+    Plumbing.Loadable_types.S with type t := t
   (** Observations can be loaded from JSON files. *)
 
   (** {2 Constructing an observation record} *)
