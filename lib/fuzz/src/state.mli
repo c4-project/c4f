@@ -16,14 +16,13 @@ open Base
 type t
 (** Opaque type of states. *)
 
-val init :
+val make :
      ?o:Act_common.Output.t
-  -> globals:Act_c_mini.Type.t Map.M(Act_common.C_id).t
-  -> locals:Set.M(Act_common.Litmus_id).t
+  -> vars:Var.Map.t
   -> unit
   -> t
-(** [init ?o ~globals ~locals ()] creates an initial state with the global
-    variable map [globals], and local variable set [locals]. If an output
+(** [make ?o ~vars ()] creates an initial state with the variable
+    map [vars]. If an output
     context [o] is provided, it can be used for logging verbose/debug
     information during the fuzzing process. *)
 

@@ -34,9 +34,6 @@ val functions : t -> (Act_common.C_id.t, Function.t) List.Assoc.t
 (** [functions program] gets an associative list of each function in
     [program]. *)
 
-val cvars : t -> Set.M(Act_common.C_id).t
-(** [cvars program] extracts a set of C variable names from [program]. *)
-
 (** {2 Mutators} *)
 
 val with_functions : t -> (Act_common.C_id.t, Function.t) List.Assoc.t -> t

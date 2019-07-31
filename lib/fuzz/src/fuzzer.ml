@@ -131,40 +131,11 @@ let run_with_state (test : Act_c_mini.Litmus.Ast.Validated.t) :
             Monadic.return
               (Subject.Test.to_litmus ~vars ~name ?postcondition subject'))))
 
-(** [get_first_func test] tries to get the first function in a validated
-    litmus AST [test]. *)
-let get_first_func (test : Act_c_mini.Litmus.Ast.Validated.t) :
-    Act_c_mini.Function.t Or_error.t =
-  Or_error.(
-    (* If this is a validated litmus test, it _should_ have at least one
-       function, and each function _should_ report the right global
-       variables. *)
-    test |> Act_c_mini.Litmus.Ast.Validated.programs |> List.hd
-    |> Result.of_option
-         ~error:
-           (Error.of_string
-              "Internal error: validated litmus had no functions")
-    >>| Act_c_mini.Named.value)
-
-(** [existing_globals test] extracts the existing global variable names and
-    types from litmus test [test]. *)
-let existing_globals (test : Act_c_mini.Litmus.Ast.Validated.t) :
-    Act_c_mini.Type.t Map.M(Ac.C_id).t Or_error.t =
-  Or_error.(
-    test |> get_first_func >>| Act_c_mini.Function.parameters
-    >>= Map.of_alist_or_error (module Ac.C_id))
-
-let to_locals : Set.M(Ac.Litmus_id).t -> Set.M(Ac.Litmus_id).t =
-  (* TODO(@MattWindsor91): do we need to keep the thread IDs? *)
-  Set.filter ~f:Ac.Litmus_id.is_local
-
 let make_inner_state (o : Ac.Output.t)
     (test : Act_c_mini.Litmus.Ast.Validated.t) : State.t Or_error.t =
   Or_error.Let_syntax.(
-    let all_vars = Act_c_mini.Litmus.vars test in
-    let%map globals = existing_globals test in
-    let locals = to_locals all_vars in
-    State.init ~o ~globals ~locals ())
+    let%map vars = Var.Map.make_existing_var_map test in
+    State.make ~o ~vars ())
 
 let make_outer_state (seed : int option) (config : Act_config.Fuzz.t) :
     Outer_state.t Or_error.t =

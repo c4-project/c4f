@@ -16,7 +16,7 @@ let run (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t)
   Or_error.Let_syntax.(
     let%bind i = Toplevel.Args.With_files.infile_source args in
     let%bind vast = Act_c_mini.Frontend.load_from_isrc i in
-    let vars = Act_c_mini.Litmus.vars vast in
+    let%bind vars = Act_c_mini.Litmus_vars.make_set vast in
     let%bind o = Toplevel.Args.With_files.outfile_sink args in
     Act_backend.Diff.Location_map.(vars |> reflexive |> output ~onto:o))
 

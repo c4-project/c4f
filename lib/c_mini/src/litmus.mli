@@ -26,8 +26,6 @@
     This module declares modules and functions for manipulating litmus tests
     over act's 'mini' subset of C. *)
 
-open Base
-
 (** The mini-model, packaged up as a Litmus language.
 
     This language uses {{!Reify} Reify} for all of its pretty-printing
@@ -44,7 +42,3 @@ module Ast : Act_litmus.Ast_types.S with module Lang = Lang
 
 module Pp : Act_litmus.Pp_intf.S with module Ast = Ast
 (** Pretty-printing for the mini-model's litmus AST. *)
-
-val vars : Ast.Validated.t -> Set.M(Act_common.Litmus_id).t
-(** [vars ast] gets the set of variables referenced in a mini-C Litmus test,
-    in the form of Litmus thread-ID-qualified identifiers. *)

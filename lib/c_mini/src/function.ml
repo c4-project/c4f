@@ -64,6 +64,3 @@ Travesty.Traversable.Make0 (struct
         ~body_stms:M.return
   end
 end)
-
-let cvars (func : t) : Ac.C_id.Set.t =
-  func |> On_decls.to_list |> List.map ~f:Named.name |> Ac.C_id.Set.of_list

@@ -51,82 +51,17 @@ struct
     let locations = Act_c_mini.Litmus.Ast.Validated.locations input in
     Act_litmus.Aux.make ?postcondition ~init ?locations ()
 
-  let parameter_list_equal :
-         (Act_common.C_id.t, Act_c_mini.Type.t) List.Assoc.t
-      -> (Act_common.C_id.t, Act_c_mini.Type.t) List.Assoc.t
-      -> bool =
-    [%equal: (Ac.C_id.t * Act_c_mini.Type.t) list]
-
-  let check_parameters_consistent
-      (params : Act_c_mini.Type.t Act_c_mini.Named.Alist.t)
-      (next : Act_c_mini.Function.t) : unit Or_error.t =
-    let params' = Act_c_mini.Function.parameters next in
-    if parameter_list_equal params params' then Result.ok_unit
-    else
-      Or_error.error_s
-        [%message
-          "Functions do not agree on parameter lists"
-            ~first_example:
-              (params : Act_c_mini.Type.t Act_c_mini.Named.Alist.t)
-            ~second_example:
-              (params' : Act_c_mini.Type.t Act_c_mini.Named.Alist.t)]
-
-  (* In a memalloy style litmus test, the globals start as fully typed
-     pointer parameters, so we scrape the global type context from there. In
-     doing so, we reduce the pointer types back to value ones. *)
-
-  let lift_global_var_alist :
-         (Act_common.C_id.t, Act_c_mini.Type.t) List.Assoc.t
-      -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t Or_error.t
-      =
-    Tx.Or_error.combine_map ~f:(fun (c_id, ptr_type) ->
-        let lit_id = Act_common.Litmus_id.global c_id in
-        Or_error.Let_syntax.(
-          let%map c_type = Act_c_mini.Type.deref ptr_type in
-          ( lit_id
-          , Var_map.Record.make ~c_type
-              ~mapped_to_global:B.globals_become_globals ~c_id )))
-
-  let make_global_var_alist :
-         Act_c_mini.Function.t list
-      -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t Or_error.t
-      = function
-    | [] ->
-        Or_error.error_string "need at least one function"
-    | x :: xs ->
-        let params = Act_c_mini.Function.parameters x in
-        Or_error.(
-          xs
-          |> List.map ~f:(check_parameters_consistent params)
-          |> Or_error.combine_errors_unit
-          >>= fun () -> lift_global_var_alist params)
-
-  let make_local_var_alist (tid : int) (f : Act_c_mini.Function.t) :
-      (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t =
-    f |> Act_c_mini.Function.body_decls
-    |> List.map ~f:(fun (local_c_id, init) ->
+  let make_var_map : Act_c_mini.Litmus.Ast.Validated.t ->
+      Var_map.t Or_error.t =
+    Act_c_mini.Litmus_vars.make_scoped_map
+      ~make_global:(fun c_id c_type ->
+          Var_map.Record.make ~c_type
+            ~mapped_to_global:B.globals_become_globals ~c_id )
+      ~make_local:(fun tid local_c_id c_type ->
            let lit_id = Act_common.Litmus_id.local tid local_c_id in
            let c_id = Qualify.litmus_id lit_id in
-           let c_type = Act_c_mini.Initialiser.ty init in
-           ( lit_id
-           , Var_map.Record.make ~c_type
-               ~mapped_to_global:B.locals_become_globals ~c_id ))
-
-  let make_local_var_alists :
-         Act_c_mini.Function.t list
-      -> (Act_common.Litmus_id.t, Var_map.Record.t) List.Assoc.t list =
-    List.mapi ~f:make_local_var_alist
-
-  let make_var_map (functions : Act_c_mini.Function.t list) :
-      Var_map.t Or_error.t =
-    Or_error.Let_syntax.(
-      let%bind global_alist = make_global_var_alist functions in
-      let local_alists = make_local_var_alists functions in
-      let alist = List.concat (global_alist :: local_alists) in
-      let%map map =
-        Map.of_alist_or_error (module Act_common.Litmus_id) alist
-      in
-      Ac.Scoped_map.of_litmus_id_map map)
+           Var_map.Record.make ~c_type
+             ~mapped_to_global:B.locals_become_globals ~c_id )
 
   let make_aux (input : Act_c_mini.Litmus.Ast.Validated.t) :
       Aux.t Or_error.t =
@@ -135,7 +70,7 @@ struct
     let num_threads = List.length programs in
     Or_error.Let_syntax.(
       let%map var_map =
-        make_var_map (List.map ~f:Act_c_mini.Named.value programs)
+        make_var_map input
       in
       Aux.make ~litmus_aux ~var_map ~num_threads ())
 

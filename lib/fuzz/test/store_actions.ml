@@ -97,14 +97,17 @@ let%test_module "int tests" =
           ~initial_value:(Act_c_mini.Constant.int (-55)))
 
     let init_fuzzer_state : State.t Lazy.t =
-      let open Lazy.Let_syntax in
-      let%map globals_alist = globals in
-      let globals =
-        Map.of_alist_exn (module Act_common.C_id) globals_alist
-      in
-      State.init ~globals
-        ~locals:(Set.empty (module Act_common.Litmus_id))
-        ()
+      Lazy.Let_syntax.(
+        let%map globals_alist = globals in
+        let vars =
+          globals_alist
+          |> List.map ~f:(fun (id, ty) ->
+              Act_common.Litmus_id.global id,
+              Act_fuzz.Var.Record.make_existing Global (Some ty))
+          |> Map.of_alist_exn (module Act_common.Litmus_id)
+          |> Act_common.Scoped_map.of_litmus_id_map
+        in
+        State.make ~vars ())
 
     let run_test () : (State.t * Subject.Test.t) Or_error.t =
       State.Monad.(

@@ -37,9 +37,6 @@ val body_decls : t -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t
 val body_stms : t -> Statement.t list
 (** [body_decls func] gets [func]'s statements. *)
 
-val cvars : t -> Set.M(Act_common.C_id).t
-(** [cvars func] extracts a set of C variable names from [func]. *)
-
 (** {3 Mutators} *)
 
 val with_body_stms : t -> Statement.t list -> t

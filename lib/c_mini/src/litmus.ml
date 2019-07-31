@@ -82,23 +82,3 @@ end
 
 module Ast = Act_litmus.Ast.Make (Lang)
 module Pp = Act_litmus.Pp.Make_sequential (Ast)
-
-let function_vars (tid : int) (func : Lang.Program.t) :
-    Set.M(Ac.Litmus_id).t =
-  func |> Named.value |> Function.cvars
-  |> Set.map (module Ac.Litmus_id) ~f:(Ac.Litmus_id.local tid)
-
-let litmus_local_vars (ast : Ast.Validated.t) : Set.M(Ac.Litmus_id).t =
-  ast |> Ast.Validated.programs
-  |> List.mapi ~f:function_vars
-  |> Set.union_list (module Ac.Litmus_id)
-
-let litmus_global_vars (ast : Ast.Validated.t) : Set.M(Ac.Litmus_id).t =
-  ast |> Ast.Validated.init
-  |> List.map ~f:(fun (var, _) -> Ac.Litmus_id.global var)
-  |> Set.of_list (module Ac.Litmus_id)
-
-let vars (ast : Ast.Validated.t) : Set.M(Ac.Litmus_id).t =
-  let locals = litmus_local_vars ast in
-  let globals = litmus_global_vars ast in
-  Set.union locals globals

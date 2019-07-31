@@ -62,6 +62,3 @@ Travesty.Traversable.Make0 (struct
         ~functions:(F.map_m ~f:(N.map_right_m ~f:(D.map_m ~f)))
   end
 end)
-
-let cvars (prog : t) : Set.M(Ac.C_id).t =
-  prog |> On_decls.to_list |> List.map ~f:Named.name |> Ac.C_id.Set.of_list

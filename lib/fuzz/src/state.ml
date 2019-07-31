@@ -13,21 +13,8 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-type t = {vars: Var.Map.t; o: Ac.Output.t} [@@deriving fields]
-
-let init ?(o : Ac.Output.t = Ac.Output.silent ())
-    ~(globals : Act_c_mini.Type.t Map.M(Ac.C_id).t)
-    ~(locals : Set.M(Ac.Litmus_id).t) () : t =
-  let globals' =
-    globals |> Map.to_alist
-    |> Tx.Alist.bi_map ~left:Ac.Litmus_id.global ~right:Option.some
-  in
-  let locals' = locals |> Set.to_list |> List.map ~f:(fun x -> (x, None)) in
-  let var_map =
-    Map.of_alist_exn (module Ac.Litmus_id) (globals' @ locals')
-  in
-  let vars = Var.Map.make_existing_var_map var_map in
-  {vars; o}
+type t = {o: Ac.Output.t [@default (Ac.Output.silent ())]
+         ; vars: Var.Map.t} [@@deriving fields, make]
 
 let try_map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t Or_error.t) :
     t Or_error.t =

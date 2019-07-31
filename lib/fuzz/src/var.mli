@@ -49,6 +49,12 @@ module Record : sig
 
   (** {3 Constructors} *)
 
+  val make_existing :
+    Act_common.Scope.t ->
+    Act_c_mini.Type.t option -> t
+  (** [make_existing scope ty] makes a variable record for
+      a non-fuzzer-generated variable of type [ty] and scope [scope]. *)
+
   val make_generated_global :
     ?initial_value:Act_c_mini.Constant.t -> Act_c_mini.Type.t -> t
   (** [make_generated_global ?initial_value ty] makes a variable record for
@@ -115,11 +121,11 @@ module Map : sig
 
   (** {3 Constructors} *)
 
-  val make_existing_var_map :
-    Act_c_mini.Type.t option Map.M(Act_common.Litmus_id).t -> t
-  (** [make_existing_var_map map] expands a set of known-existing C variable
-      names to a var-record map where each name is registered as an existing
-      variable. *)
+  val make_existing_var_map : Act_c_mini.Litmus.Ast.Validated.t ->
+      t Or_error.t
+  (** [make_existing_var_map test] tries to generate a var-record map
+     for the Litmus-style functions in [test], where each name is
+     registered as an existing variable. *)
 
   (** {3 Queries} *)
 
