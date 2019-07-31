@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+#
+# Quick wrapper for checking the states of one C test.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
+readonly SCRIPTDIR
+
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+# shellcheck source=scripts/act_bash/log.sh
+source "${SCRIPTDIR}/act_bash/log.sh"
+
+## Constants and arguments ##
+
+# The backend ID to use to get state sets.
+BACKEND="herd"
+
+# If nonempty, specifies a compiler to use with `obj_splitmus`: this
+# script will then go through `obj_splitmus` instead of directly running
+# the backend.
+COMPILER=""
+
+## Functions ##
+
+# Prints usage information and exits.
+usage() {
+  echo "Usage: $0 [-b BACKEND] [-c COMPILER] [-qvxh?] C_TEST"
+  echo
+  echo "-b: ID of backend to use for checking C files"
+  echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
+  echo "-v/-q: verbose/quiet"
+  echo "-x: run ACT binaries with 'dune exec'"
+  echo "-h/-?: usage"
+  exit
+}
+
+# Runs the appropriate pipeline to generate a state JSON output.
+#
+# Globals:
+#   - BACKEND (read)
+#   - COMPILER (read)
+#
+# Arguments:
+#   1: the file containing the C litmus test to simulate or execute.
+run() {
+  local infile="$1"
+
+  if [[ -nz ${COMPILER} ]]; then
+    act::log "Using obj_splitmus, backend '%s', compiler '%s', target '%s'.\n" "${BACKEND}" "${COMPILER}" "${infile}"
+    "${SCRIPTDIR}/obj_splitmus" "${BACKEND}" "${COMPILER}" "${infile}"
+  else
+    act::log "Using backend '%s' directly, target '%s'.\n" "${BACKEND}" "${infile}"
+    act::backend run -c -sim "${BACKEND}" "${infile}" | act::backend parse -sim "${BACKEND}"
+  fi
+}
+
+# Main function.
+main() {
+  while getopts "b:c:qvx?h" a; do
+    case ${a} in
+    b) BACKEND=${OPTARG} ;;
+    c) COMPILER=${OPTARG} ;;
+    q) VERBOSE="false" ;;
+    v) VERBOSE="true" ;;
+    x) DUNE_EXEC="true" ;;
+    h|?) usage ;;
+    esac
+  done
+  readonly BACKEND COMPILER VERBOSE DUNE_EXEC
+  shift $((OPTIND-1))
+
+  if [[ ${DUNE_EXEC} = "true" ]]; then
+    act::log "%s: using 'dune exec' for ACT.\n" $0
+  fi
+
+  if [[ $# -ne 1 ]]; then
+    act::error "expected precisely one anonymous argument"
+    usage
+  fi
+  local infile="$1"
+
+  run "${infile}"
+}
+
+## Entry point ##
+
+main "$@"
