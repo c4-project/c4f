@@ -51,17 +51,17 @@ struct
     let locations = Act_c_mini.Litmus.Ast.Validated.locations input in
     Act_litmus.Aux.make ?postcondition ~init ?locations ()
 
-  let make_var_map : Act_c_mini.Litmus.Ast.Validated.t ->
-      Var_map.t Or_error.t =
+  let make_var_map :
+      Act_c_mini.Litmus.Ast.Validated.t -> Var_map.t Or_error.t =
     Act_c_mini.Litmus_vars.make_scoped_map
       ~make_global:(fun c_id c_type ->
-          Var_map.Record.make ~c_type
-            ~mapped_to_global:B.globals_become_globals ~c_id )
+        Var_map.Record.make ~c_type
+          ~mapped_to_global:B.globals_become_globals ~c_id)
       ~make_local:(fun tid local_c_id c_type ->
-           let lit_id = Act_common.Litmus_id.local tid local_c_id in
-           let c_id = Qualify.litmus_id lit_id in
-           Var_map.Record.make ~c_type
-             ~mapped_to_global:B.locals_become_globals ~c_id )
+        let lit_id = Act_common.Litmus_id.local tid local_c_id in
+        let c_id = Qualify.litmus_id lit_id in
+        Var_map.Record.make ~c_type
+          ~mapped_to_global:B.locals_become_globals ~c_id)
 
   let make_aux (input : Act_c_mini.Litmus.Ast.Validated.t) :
       Aux.t Or_error.t =
@@ -69,9 +69,7 @@ struct
     let litmus_aux = make_litmus_aux input in
     let num_threads = List.length programs in
     Or_error.Let_syntax.(
-      let%map var_map =
-        make_var_map input
-      in
+      let%map var_map = make_var_map input in
       Aux.make ~litmus_aux ~var_map ~num_threads ())
 
   let make_program (input : Act_c_mini.Litmus.Ast.Validated.t)

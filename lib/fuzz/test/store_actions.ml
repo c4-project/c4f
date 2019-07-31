@@ -102,8 +102,8 @@ let%test_module "int tests" =
         let vars =
           globals_alist
           |> List.map ~f:(fun (id, ty) ->
-              Act_common.Litmus_id.global id,
-              Act_fuzz.Var.Record.make_existing Global (Some ty))
+                 ( Act_common.Litmus_id.global id
+                 , Act_fuzz.Var.Record.make_existing Global (Some ty) ))
           |> Map.of_alist_exn (module Act_common.Litmus_id)
           |> Act_common.Scoped_map.of_litmus_id_map
         in

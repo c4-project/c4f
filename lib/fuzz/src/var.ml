@@ -60,8 +60,8 @@ module Record = struct
 
   let erase_value (record : t) : t = {record with known_value= None}
 
-  let make_existing (scope : Ac.Scope.t) (ty : Act_c_mini.Type.t option) :
-      t =
+  let make_existing (scope : Ac.Scope.t) (ty : Act_c_mini.Type.t option) : t
+      =
     make ~source:`Existing ~scope ?ty ()
 
   let make_generated_global ?(initial_value : Act_c_mini.Constant.t option)
@@ -80,7 +80,8 @@ module Map = struct
       t Or_error.t =
     Act_c_mini.Litmus_vars.make_scoped_map test
       ~make_global:(fun _ ty -> Record.make_existing Global (Some ty))
-      ~make_local:(fun tid _ ty -> Record.make_existing (Local tid) (Some ty))
+      ~make_local:(fun tid _ ty ->
+        Record.make_existing (Local tid) (Some ty))
 
   let register_global ?(initial_value : Act_c_mini.Constant.t option)
       (map : t) (id : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =

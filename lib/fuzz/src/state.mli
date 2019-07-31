@@ -16,15 +16,10 @@ open Base
 type t
 (** Opaque type of states. *)
 
-val make :
-     ?o:Act_common.Output.t
-  -> vars:Var.Map.t
-  -> unit
-  -> t
-(** [make ?o ~vars ()] creates an initial state with the variable
-    map [vars]. If an output
-    context [o] is provided, it can be used for logging verbose/debug
-    information during the fuzzing process. *)
+val make : ?o:Act_common.Output.t -> vars:Var.Map.t -> unit -> t
+(** [make ?o ~vars ()] creates an initial state with the variable map
+    [vars]. If an output context [o] is provided, it can be used for logging
+    verbose/debug information during the fuzzing process. *)
 
 val vars : t -> Var.Map.t
 (** [vars state] gets the state's variable map. *)

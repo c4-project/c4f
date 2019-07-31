@@ -34,8 +34,8 @@ let%test_module "using sample environment" =
       |> Act_utils.My_map.map_with_keys
            (module Act_common.Litmus_id)
            ~f:(fun ~key ~data ->
-               let lit = Act_common.Litmus_id.global key in
-               (lit, Var.Record.make_existing Global (Some data)))
+             let lit = Act_common.Litmus_id.global key in
+             (lit, Var.Record.make_existing Global (Some data)))
       |> Or_error.ok_exn |> Act_common.Scoped_map.of_litmus_id_map
 
     let run programs =

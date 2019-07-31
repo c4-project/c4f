@@ -13,8 +13,8 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-type t = {o: Ac.Output.t [@default (Ac.Output.silent ())]
-         ; vars: Var.Map.t} [@@deriving fields, make]
+type t = {o: Ac.Output.t [@default Ac.Output.silent ()]; vars: Var.Map.t}
+[@@deriving fields, make]
 
 let try_map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t Or_error.t) :
     t Or_error.t =
