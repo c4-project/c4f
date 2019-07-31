@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Given a compiler ID and memalloy-style output directory, this script
 # runs `act explain` on both the litmus file and its parallel C witness, and
@@ -8,7 +8,7 @@
 # the C witness and its delimusification, and therefore highlight bugs in the
 # delitmusifier.
 
-if [ "$#" -ne "2" ];
+if [[ $# -ne 2 ]];
 then
 	echo "Usage: $0 COMPILER MEMALLOY_DIR"
 	exit
@@ -40,7 +40,7 @@ explain () {
 
 	if ${ACT} explain -compiler "${compiler}" "${@}" > "${output}";
 	then
-		if [ "$(wc -l <"${output}")" -eq 0 ];
+		if [[ "$(wc -l <"${output}")" -eq 0 ]];
 		then
 			>&2 echo "$0: ${pass} on ${bname} returned empty file"
 			return 2
