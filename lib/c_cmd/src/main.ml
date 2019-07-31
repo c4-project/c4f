@@ -20,4 +20,6 @@ single C files or litmus tests in a target-independent way.
 
 let command : Command.t =
   Command.group ~summary:"commands for dealing with C files" ~readme
-    [("delitmus", Delitmus.command); ("compile", Compile.command); ("gen-locmap", Gen_locmap.command)]
+    [ ("delitmus", Delitmus.command)
+    ; ("compile", Compile.command)
+    ; ("gen-locmap", Gen_locmap.command) ]

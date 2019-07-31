@@ -26,7 +26,8 @@ module Normal = Act_utils.Frontend.Make (struct
   let message = C_messages.message
 end)
 
-let litmus_predefined_types = Set.of_list (module String) ["atomic_bool"; "atomic_int"; "bool"]
+let litmus_predefined_types =
+  Set.of_list (module String) ["atomic_bool"; "atomic_int"; "bool"]
 
 module Litmus = Act_utils.Frontend.Make (struct
   type ast = Ast.Litmus.t

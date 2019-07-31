@@ -7,8 +7,9 @@
 // style: vars-as-globals
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 atomic_int x = 0;
 atomic_int y = 0;
 int t2r0 = 0;
@@ -58,8 +59,9 @@ P3()
 // style: vars-as-parameters
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 void
 P0_body(atomic_int *x, atomic_int *y)
 { atomic_store_explicit(x, 1, memory_order_seq_cst); }
@@ -107,8 +109,9 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
 // style: vars-as-globals
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 int MaJgQmON3yu = 2728;
 int VFTQNWN = -13;
 int ZgoV7uel9o = 1073;
@@ -202,8 +205,9 @@ P4()
 // style: vars-as-parameters
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 void
 P0_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
         atomic_int *ne0J8wrPQam, atomic_int *x, atomic_int *y)
@@ -301,8 +305,9 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
 // style: vars-as-globals
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 atomic_int x = 0;
 int t0r0 = 0;
 void
@@ -336,8 +341,9 @@ P1()
 // style: vars-as-parameters
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 void
 P0_body(atomic_int *x, int *r0)
 {
@@ -372,8 +378,9 @@ P1_body(atomic_int *x)
 // style: vars-as-globals
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 int x = 0;
 int t0r0 = 0;
 void
@@ -399,8 +406,9 @@ P0()
 // style: vars-as-parameters
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 void
 P0_body(int *x, int *r0)
 { *x = 1; *r0 = *x; }
@@ -428,8 +436,9 @@ P0_body(int *x, int *r0)
 // style: vars-as-globals
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 atomic_int x = 0;
 atomic_int y = 0;
 int t1r0 = 0;
@@ -473,8 +482,9 @@ P2()
 // style: vars-as-parameters
 //
 
-// <!> Auto-generated from a litmus test by act.
+// <!> Auto-generated from a litmus test by ACT.
 #include <stdatomic.h>
+#include <stdbool.h>
 void
 P0_body(atomic_int *x, atomic_int *y)
 { atomic_store_explicit(x, 1, memory_order_seq_cst); }

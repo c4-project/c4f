@@ -13,19 +13,20 @@ open Base
 module Pb = Plumbing
 
 let prelude : string list =
-  [ "// <!> Auto-generated from a litmus test by act."
+  [ "// <!> Auto-generated from a litmus test by ACT."
   ; "#include <stdatomic.h>"
+  ; "#include <stdbool.h>"
   ; "" ]
 
-let pp_prelude : unit Fmt.t =
+let pp_prelude (type a) : a Fmt.t =
   Fmt.(const (vbox (list ~sep:sp string)) prelude)
 
 let pp_del : Output.t Fmt.t =
   Fmt.(
-    prefix pp_prelude
-      (using
+    pp_prelude
+    ++ using
          (Fn.compose Act_c_mini.Reify.program Output.program)
-         (vbox Act_c_lang.Ast.Translation_unit.pp)))
+         (vbox Act_c_lang.Ast.Translation_unit.pp))
 
 let delitmusify_and_print (vast : Act_c_mini.Litmus.Ast.Validated.t)
     (oc : Stdio.Out_channel.t) ~(style : Runner.Style.t) : Aux.t Or_error.t

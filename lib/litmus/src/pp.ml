@@ -158,7 +158,8 @@ struct
   module Ast = Ast
 
   module Specific = struct
-    let print_programs_inner (oc : Stdio.Out_channel.t) : Ast.Lang.Program.t list -> unit =
+    let print_programs_inner (oc : Stdio.Out_channel.t) :
+        Ast.Lang.Program.t list -> unit =
       Fmt.(vbox (list ~sep:(cut ++ cut) Ast.Lang.Program.pp) ++ flush)
         (Caml.Format.formatter_of_out_channel oc)
   end
