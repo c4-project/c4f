@@ -22,6 +22,7 @@ lit_file="$2"
 
 # Most other invocations of mktemp aren't portable.
 tmpdir="$(mktemp -d)" || exit
+trap 'rm -r "${tmpdir}"' EXIT
 
 auxfile="${tmpdir}/aux.json"
 cfile="${tmpdir}/out.c"
@@ -30,6 +31,4 @@ sfile="${tmpdir}/out.s"
 "${ACT}" c delitmus -aux "${auxfile}" "${lit_file}" -o "${cfile}"
 "${ACT}" c compile -compiler "${compiler}" "${cfile}" -o "${sfile}"
 "${ACT}" asm litmusify -compiler "${compiler}" -aux "${auxfile}" "${sfile}"
-
-rm -r "${tmpdir}"
 

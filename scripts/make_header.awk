@@ -9,6 +9,7 @@ BEGIN {
   in_decl = 0;
 
   print "#include <stdatomic.h>"
+  print "#include <stdbool.h>"
 }
 
 # Start of function

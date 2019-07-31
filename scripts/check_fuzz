@@ -18,18 +18,18 @@ source "${SCRIPTDIR}/act_bash/log.sh"
 
 ## Constants and arguments ##
 
+# The backend ID to use to get state sets.
+BACKEND="herd"
+
 # The name of the compiler to compile through (using obj_splitmus).
 # If empty, we don't compile, we just run straight through the backend.
 COMPILER=""
 
-# Whether or not verbose logging is enabled.
-VERBOSE="false"
-
 # Whether or not we're running ACT programs through `dune exec`.
 DUNE_EXEC="false"
 
-# The backend ID to use to get state sets.
-BACKEND="herd"
+# Whether or not verbose logging is enabled.
+VERBOSE="false"
 
 ## Functions ##
 
@@ -56,11 +56,11 @@ main() {
     h|?) usage ;;
     esac
   done
-  readonly BACKEND COMPILER DIR_NAME DUNE_EXEC VERBOSE
+  readonly BACKEND COMPILER DUNE_EXEC VERBOSE
   shift $((OPTIND-1))
 
   if [[ ${DUNE_EXEC} = "true" ]]; then
-    act::log "%s: using 'dune exec' for ACT.\n" $0
+    act::log "%s: using 'dune exec' for ACT.\n" "$0"
   fi
 
   if [[ $# -ne 2 ]]; then

@@ -52,11 +52,12 @@ delitmus_and_compile() {
 #   - SCRIPTDIR (read)
 #
 # Arguments:
-#   1: the compiler ID.
-#   2: path to the delitmus aux file to use when generating the harness.
-#   3: path to which a skeleton assembly file should be written.
-#   4: path to which a skeleton assembly Litmus test should be written.
-#   5: directory into which the Litmus harness should be constructed.
+#   1: the backend ID.
+#   2: the compiler ID.
+#   3: path to the delitmus aux file to use when generating the harness.
+#   4: path to which a skeleton assembly file should be written.
+#   5: path to which a skeleton assembly Litmus test should be written.
+#   6: directory into which the Litmus harness should be constructed.
 make_litmus_harness() {
   local backend="$1"
   local compiler="$2"

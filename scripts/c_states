@@ -49,7 +49,7 @@ usage() {
 run() {
   local infile="$1"
 
-  if [[ -nz ${COMPILER} ]]; then
+  if [[ -n ${COMPILER} ]]; then
     act::log "Using obj_splitmus, backend '%s', compiler '%s', target '%s'.\n" "${BACKEND}" "${COMPILER}" "${infile}"
     "${SCRIPTDIR}/obj_splitmus" "${BACKEND}" "${COMPILER}" "${infile}"
   else
@@ -74,7 +74,7 @@ main() {
   shift $((OPTIND-1))
 
   if [[ ${DUNE_EXEC} = "true" ]]; then
-    act::log "%s: using 'dune exec' for ACT.\n" $0
+    act::log "%s: using 'dune exec' for ACT.\n" "$0"
   fi
 
   if [[ $# -ne 1 ]]; then
