@@ -24,18 +24,13 @@ module type S_payload = sig
   type t [@@deriving sexp]
   (** The type of the payload. *)
 
-  type subject
-  (** The type of test subjects. *)
-
-  val gen : subject -> random:Splittable_random.State.t -> t State.Monad.t
+  val gen :
+    Subject.Test.t -> random:Splittable_random.State.t -> t State.Monad.t
   (** [gen subject ~random] is a stateful computation that, given subject
       [subject], RNG [random], and and the current state, returns a payload. *)
 end
 
-module type Generic = sig
-  type subject
-  (** The type of test subjects. *)
-
+module type S = sig
   val name : Id.t
   (** The name of the action, as an act identifier. *)
 
@@ -45,23 +40,15 @@ module type Generic = sig
   val default_weight : int
   (** The default weight of the action. *)
 
-  module Payload : S_payload with type subject := subject
+  module Payload : S_payload
   (** The type of any payload on which this action depends. *)
 
-  val available : subject -> bool State.Monad.t
+  val available : Subject.Test.t -> bool State.Monad.t
   (** [available subject] is a stateful computation that, given subject
       [subject] and the current state, decides whether this action can run
       (given any member of [Random_state.t]). *)
 
-  val run : subject -> Payload.t -> subject State.Monad.t
-  (** [run subject payload] is a stateful computation that runs this action
+  val run : Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t
+  (** [run subject ~payload] is a stateful computation that runs this action
       on [subject] with payload [payload]. *)
-end
-
-module type S = Generic with type subject := Subject.Test.t
-
-module type S_with_payload = sig
-  include S
-
-  val payload : Payload.t
 end

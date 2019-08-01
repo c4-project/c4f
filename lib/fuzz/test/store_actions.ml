@@ -114,7 +114,7 @@ let%test_module "int tests" =
         run'
           ( prepare_fuzzer_state ()
           >>= fun () ->
-          Int.run (Lazy.force test_subject) (Lazy.force random_state) )
+          Int.run (Lazy.force test_subject) ~payload:(Lazy.force random_state) )
           (Lazy.force init_fuzzer_state))
 
     let%expect_test "test int store: programs" =

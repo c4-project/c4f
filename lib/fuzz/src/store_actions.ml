@@ -215,7 +215,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       log o "Adding dependency to store source" ;
       add_dependencies_to_store_src store ~tid)
 
-  let run (subject : Subject.Test.t) ({store; path} : Random_state.t) :
+  let run (subject : Subject.Test.t) ~payload:({store; path} : Random_state.t) :
       Subject.Test.t State.Monad.t =
     let store_stm = Act_c_mini.Statement.atomic_store store in
     let tid = tid_of_path path in

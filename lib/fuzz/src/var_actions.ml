@@ -54,7 +54,7 @@ module Make_global :
   let available = Action.always
 
   let run (subject : Subject.Test.t)
-      ({basic_type; initial_value; name} : Payload.t) :
+      ~payload:({basic_type; initial_value; name} : Payload.t) :
       Subject.Test.t State.Monad.t =
     let ty = Act_c_mini.Type.of_basic basic_type ~pointer:true in
     let open State.Monad.Let_syntax in

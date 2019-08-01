@@ -73,7 +73,7 @@ let log_action (type p)
   Outer_state.Monad.modify (fun x ->
       {x with trace= Trace.add x.trace ~action ~payload})
 
-let run_action (subject : Subject.Test.t) (module Action : Action_types.S) :
+let run_action (module Action : Action_types.S) (subject : Subject.Test.t) :
     Subject.Test.t Outer_state.Monad.t =
   Outer_state.Monad.Let_syntax.(
     (* We can't, AFAIK, move the payload out of this function, as then the
@@ -81,7 +81,7 @@ let run_action (subject : Subject.Test.t) (module Action : Action_types.S) :
        payload, and this is encapsulated in [Action]. *)
     let%bind payload = generate_payload (module Action) subject in
     let%bind () = log_action (module Action) payload in
-    Outer_state.Monad.Monadic.return (Action.run subject payload))
+    Outer_state.Monad.Monadic.return (Action.run subject ~payload))
 
 let mutate_subject_step (subject : Subject.Test.t) :
     Subject.Test.t Outer_state.Monad.t =
@@ -90,7 +90,7 @@ let mutate_subject_step (subject : Subject.Test.t) :
     Ac.Output.pv o "fuzz: picking action...@." ;
     let%bind action = pick_action subject in
     Ac.Output.pv o "fuzz: done; now running action...@." ;
-    run_action subject action
+    run_action action subject
     >>= Outer_state.Monad.tee ~f:(fun _ ->
             Ac.Output.pv o "fuzz: action done.@."))
 

@@ -35,7 +35,7 @@ let%test_module "S-expression representation" =
 
       module Payload = Action.Pure_payload (Dummy_payload)
 
-      let run subject _rstate = State.Monad.return subject
+      let run subject ~(payload : Dummy_payload.t) = ignore payload; State.Monad.return subject
     end
 
     module Another_dummy_action :
@@ -51,7 +51,7 @@ let%test_module "S-expression representation" =
 
       module Payload = Action.No_payload
 
-      let run subject _rstate = State.Monad.return subject
+      let run subject ~(payload : unit) = ignore payload; State.Monad.return subject
     end
 
     let%expect_test "empty trace" =

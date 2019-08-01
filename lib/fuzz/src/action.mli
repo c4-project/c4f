@@ -88,19 +88,15 @@ val always : Subject.Test.t -> bool State.Monad.t
 
 (** {3 Helpers for building action payloads} *)
 
-(** Adapts payload generators that don't depend on the state of the program. *)
 module Pure_payload (S : sig
   type t [@@deriving sexp]
 
   val quickcheck_generator : t Base_quickcheck.Generator.t
-end) :
-  Action_types.S_payload with type t = S.t and type subject = Subject.Test.t
+end) : Action_types.S_payload with type t = S.t
+(** Adapts payload generators that don't depend on the state of the program. *)
 
+module No_payload : Action_types.S_payload with type t = unit
 (** Dummy payload module for actions that take no payload. *)
-module No_payload :
-  Action_types.S_payload
-    with type t = unit
-     and type subject = Subject.Test.t
 
 (** Makes a basic logging function for an action. *)
 module Make_log (B : sig

@@ -117,29 +117,20 @@ module Pure_payload (S : sig
   type t [@@deriving sexp]
 
   val quickcheck_generator : t Base_quickcheck.Generator.t
-end) :
-  Action_types.S_payload with type t = S.t and type subject = Subject.Test.t =
-struct
+end) : Action_types.S_payload with type t = S.t = struct
   include S
 
-  type subject = Subject.Test.t
-
-  let gen (_subject : subject) ~(random : Splittable_random.State.t) :
-      t State.Monad.t =
+  let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t)
+      : t State.Monad.t =
     State.Monad.return
       (Base_quickcheck.Generator.generate ~size:10 ~random
          S.quickcheck_generator)
 end
 
-module No_payload :
-  Action_types.S_payload
-    with type t = unit
-     and type subject = Subject.Test.t = struct
+module No_payload : Action_types.S_payload with type t = unit = struct
   include Unit
 
-  type subject = Subject.Test.t
-
-  let gen (_ : subject) ~(random : Splittable_random.State.t) =
+  let gen (_ : Subject.Test.t) ~(random : Splittable_random.State.t) =
     ignore (random : Splittable_random.State.t) ;
     State.Monad.return ()
 end
