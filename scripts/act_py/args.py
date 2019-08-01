@@ -7,7 +7,7 @@
 #
 # ACT is based in part on code from the Herdtools7 project
 # (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
-# project root for more information. *)
+# project root for more information.
 
 import argparse
 
