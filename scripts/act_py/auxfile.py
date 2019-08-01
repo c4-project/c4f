@@ -13,8 +13,7 @@ import json
 import typing
 from dataclasses import dataclass
 
-from act_py import json_utils
-from . import litmus_id
+from act_py import json_utils, litmus_id
 
 
 @dataclass

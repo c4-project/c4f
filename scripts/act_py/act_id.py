@@ -24,7 +24,7 @@ def to_dir(identifier: Id) -> str:
     Example:
 
     >>> to_dir(Id("spam_spam_spam.sausage.eggs/ham.and\\spam"))
-    "spam__spam__spam_Dsausage_Deggs_Fham_Dand_Bspam"
+    'spam__spam__spam_Dsausage_Deggs_Fham_Dand_Bspam'
 
     :param identifier:
         The ID to convert.
@@ -45,19 +45,41 @@ id_to_dir_replacements: typing.List[typing.Tuple[str, str]] = [
 ]
 
 
+def is_blank(s : str) -> bool:
+    """Returns true provided that the input string is empty after stripping whitespace.
+
+    Examples:
+
+    >>> is_blank("")
+    True
+
+    >>> is_blank(" ")
+    True
+
+    >>> is_blank("     \t\t   ")
+    True
+
+    >>> is_blank("     spam    ")
+    False
+
+    :param s: The string to query.
+    :return: Whether `s` is empty after stripping whitespace.
+    """
+    return s.strip() == ''
+
 def qualify(machine_id: Id, other_id: Id) -> Id:
     """Fully-qualifies a machine-dependent ID by appending it to a machine ID.
 
     Examples:
 
     >>> qualify(Id("localhost"), Id("gcc.x86.O3"))
-    "localhost.gcc.x86.O3"
+    'localhost.gcc.x86.O3'
 
     >>> qualify(Id(""), Id("gcc.x86.O3"))
-    "gcc.x86.O3"
+    'gcc.x86.O3'
 
     :param machine_id: The machine identifier.
     :param other_id: The identifier to qualify with `machine_id`.
     :return: The qualified identifier.
     """
-    return other_id if machine_id.isspace() else Id(".".join([machine_id, other_id]))
+    return other_id if machine_id.strip() == '' else Id(".".join([machine_id, other_id]))

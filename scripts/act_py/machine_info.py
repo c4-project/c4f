@@ -14,7 +14,7 @@ import collections
 import subprocess
 import typing
 
-from . import act_id
+from act_py import act_id
 
 
 def get_machines(
