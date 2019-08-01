@@ -45,7 +45,7 @@ id_to_dir_replacements: typing.List[typing.Tuple[str, str]] = [
 ]
 
 
-def is_blank(s : str) -> bool:
+def is_blank(s: str) -> bool:
     """Returns true provided that the input string is empty after stripping whitespace.
 
     Examples:
@@ -65,7 +65,8 @@ def is_blank(s : str) -> bool:
     :param s: The string to query.
     :return: Whether `s` is empty after stripping whitespace.
     """
-    return s.strip() == ''
+    return s.strip() == ""
+
 
 def qualify(machine_id: Id, other_id: Id) -> Id:
     """Fully-qualifies a machine-dependent ID by appending it to a machine ID.
@@ -82,4 +83,6 @@ def qualify(machine_id: Id, other_id: Id) -> Id:
     :param other_id: The identifier to qualify with `machine_id`.
     :return: The qualified identifier.
     """
-    return other_id if machine_id.strip() == '' else Id(".".join([machine_id, other_id]))
+    return (
+        other_id if machine_id.strip() == "" else Id(".".join([machine_id, other_id]))
+    )

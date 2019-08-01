@@ -86,6 +86,6 @@ def parse_compiler_list(
     for line in lines:
         if line.isspace():
             pass
-        [machine, compiler, *rest] = line.split()
+        [machine, compiler, *_] = line.split()
         machines[act_id.Id(machine)].add(act_id.Id(compiler))
     return machines

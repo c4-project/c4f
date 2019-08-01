@@ -37,7 +37,9 @@ class FieldMissingException(Exception):
         return f"Expected field missing in {self.context}: '{self.field_name}'"
 
 
-def field(d: typing.Mapping[str, typing.Any], key: str, context: str = "dict") -> typing.Any:
+def field(
+    d: typing.Mapping[str, typing.Any], key: str, context: str = "dict"
+) -> typing.Any:
     """Tries to get the given key from the dictionary, but throws a
     slightly more semantically pleasing exception if it doesn't exist.
 
@@ -53,7 +55,9 @@ def field(d: typing.Mapping[str, typing.Any], key: str, context: str = "dict") -
         raise FieldMissingException(key, context) from k
 
 
-def bool_field(d: typing.Mapping[str, typing.Any], key: str, context: str = "dict") -> bool:
+def bool_field(
+    d: typing.Mapping[str, typing.Any], key: str, context: str = "dict"
+) -> bool:
     """As `field`, but converts to `bool`.
 
     :param d: The dictionary to inspect.
@@ -65,7 +69,9 @@ def bool_field(d: typing.Mapping[str, typing.Any], key: str, context: str = "dic
     return bool(field(d, key, context))
 
 
-def str_field(d: typing.Mapping[str, typing.Any], key: str, context: str = "dict") -> str:
+def str_field(
+    d: typing.Mapping[str, typing.Any], key: str, context: str = "dict"
+) -> str:
     """As `field`, but converts to `str`.
 
     :param d: The dictionary to inspect.
