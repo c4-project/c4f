@@ -48,7 +48,7 @@ let output () : Ac.Output.t Outer_state.Monad.t =
   Outer_state.Monad.Monadic.return (State.Monad.output ())
 
 let generate_payload (type rs)
-    (module Act : Action_types.S with type Random_state.t = rs)
+    (module Act : Action_types.S with type Payload.t = rs)
     (subject : Subject.Test.t) : rs Outer_state.Monad.t =
   let open Outer_state.Monad.Let_syntax in
   let%bind o = output () in
@@ -56,7 +56,7 @@ let generate_payload (type rs)
   Ac.Output.pv o "fuzz: generating random state for %a...@." Ac.Id.pp
     Act.name ;
   let%map g =
-    Outer_state.Monad.Monadic.return (Act.Random_state.gen subject ~random)
+    Outer_state.Monad.Monadic.return (Act.Payload.gen subject ~random)
   in
   Ac.Output.pv o "fuzz: done generating random state.@." ;
   g
@@ -68,8 +68,8 @@ let pick_action (subject : Subject.Test.t) :
     Outer_state.Monad.Monadic.return (Action.Pool.pick pool subject random))
 
 let log_action (type p)
-    (action : (module Action_types.S with type Random_state.t = p))
-    (payload : p) : unit Outer_state.Monad.t =
+    (action : (module Action_types.S with type Payload.t = p)) (payload : p)
+    : unit Outer_state.Monad.t =
   Outer_state.Monad.modify (fun x ->
       {x with trace= Trace.add x.trace ~action ~payload})
 

@@ -78,7 +78,7 @@ let%test_module "int tests" =
             ~dst:(Address.of_variable (Act_common.C_id.of_string "gen1"))
             ~mo:Mem_order.Seq_cst)
 
-    let random_state : Int.Random_state.t Lazy.t =
+    let random_state : Int.Payload.t Lazy.t =
       let open Lazy.Let_syntax in
       let%bind store = store in
       let%map path = path in

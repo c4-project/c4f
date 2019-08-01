@@ -18,9 +18,9 @@ type t = elt Fqueue.t [@@deriving sexp]
 let empty : t = Fqueue.empty
 
 let add (type p) (trace : t)
-    ~(action : (module Action_types.S with type Random_state.t = p))
+    ~(action : (module Action_types.S with type Payload.t = p))
     ~(payload : p) : t =
   let (module Action) = action in
   let name = Action.name in
-  let payload = Action.Random_state.sexp_of_t payload in
+  let payload = Action.Payload.sexp_of_t payload in
   Fqueue.enqueue trace {name; payload}

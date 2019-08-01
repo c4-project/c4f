@@ -39,7 +39,7 @@ module Make (B : sig
       (Dst : Act_c_mini.Env_types.S) :
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Act_c_mini.Atomic_store.t
-end) : Action_types.S with type Random_state.t = Random_state.t = struct
+end) : Action_types.S with type Payload.t = Random_state.t = struct
   let name = B.name
 
   include Action.Make_log (B)
@@ -96,7 +96,7 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
          ]
         @ if B.forbid_already_written then [Fn.non has_writes] else [])
 
-  module Random_state = struct
+  module Payload = struct
     type t = Random_state.t [@@deriving sexp]
 
     module G = Base_quickcheck.Generator
@@ -225,7 +225,7 @@ end) : Action_types.S with type Random_state.t = Random_state.t = struct
         (Subject.Test.Path.insert_stm path store_stm subject))
 end
 
-module Int : Action_types.S with type Random_state.t = Random_state.t =
+module Int : Action_types.S with type Payload.t = Random_state.t =
 Make (struct
   let name = Ac.Id.of_string "store.make.int.single"
 

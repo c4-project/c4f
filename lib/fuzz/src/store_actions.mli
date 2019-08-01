@@ -61,11 +61,11 @@ module Make (B : sig
     Act_utils.My_quickcheck.S_with_sexp
       with type t := Act_c_mini.Atomic_store.t
   (** The generator this store action uses to create stores. *)
-end) : Action_types.S with type Random_state.t = Random_state.t
+end) : Action_types.S with type Payload.t = Random_state.t
 (** [Make (B)] makes a store action given the basic configuration in [B]. *)
 
 (** {2 Pre-made modules} *)
 
-module Int : Action_types.S with type Random_state.t = Random_state.t
+module Int : Action_types.S with type Payload.t = Random_state.t
 (** [Int] is a fuzzer action that generates a random atomic-int store
     instruction. *)

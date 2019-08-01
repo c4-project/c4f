@@ -113,14 +113,13 @@ module Pool = struct
             (Weighted_list.sample ~random))
 end
 
-module Pure_random_state (S : sig
+module Pure_payload (S : sig
   type t [@@deriving sexp]
 
   val quickcheck_generator : t Base_quickcheck.Generator.t
 end) :
-  Action_types.S_random_state
-    with type t = S.t
-     and type subject = Subject.Test.t = struct
+  Action_types.S_payload with type t = S.t and type subject = Subject.Test.t =
+struct
   include S
 
   type subject = Subject.Test.t
@@ -132,8 +131,8 @@ end) :
          S.quickcheck_generator)
 end
 
-module No_random_state :
-  Action_types.S_random_state
+module No_payload :
+  Action_types.S_payload
     with type t = unit
      and type subject = Subject.Test.t = struct
   include Unit

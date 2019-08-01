@@ -89,18 +89,16 @@ val always : Subject.Test.t -> bool State.Monad.t
 (** {3 Helpers for building action payloads} *)
 
 (** Adapts payload generators that don't depend on the state of the program. *)
-module Pure_random_state (S : sig
+module Pure_payload (S : sig
   type t [@@deriving sexp]
 
   val quickcheck_generator : t Base_quickcheck.Generator.t
 end) :
-  Action_types.S_random_state
-    with type t = S.t
-     and type subject = Subject.Test.t
+  Action_types.S_payload with type t = S.t and type subject = Subject.Test.t
 
-(** Dummy random state module for actions that take no random state. *)
-module No_random_state :
-  Action_types.S_random_state
+(** Dummy payload module for actions that take no payload. *)
+module No_payload :
+  Action_types.S_payload
     with type t = unit
      and type subject = Subject.Test.t
 

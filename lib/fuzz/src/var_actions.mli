@@ -21,5 +21,5 @@ module Global_random_state : sig
 end
 
 module Make_global :
-  Action_types.S with type Random_state.t = Global_random_state.t
+  Action_types.S with type Payload.t = Global_random_state.t
 (** Fuzzer action that generates a new global variable. *)

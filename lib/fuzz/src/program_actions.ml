@@ -11,7 +11,7 @@
 
 open Base
 
-module Make_empty : Action_types.S with type Random_state.t = unit = struct
+module Make_empty : Action_types.S with type Payload.t = unit = struct
   let name = Act_common.Id.of_string "program.make.empty"
 
   let readme () =
@@ -24,11 +24,11 @@ module Make_empty : Action_types.S with type Random_state.t = unit = struct
 
   let default_weight = 1
 
-  module Random_state = Action.No_random_state
+  module Payload = Action.No_payload
 
   let available = Action.always
 
-  let run (subject : Subject.Test.t) (() : Random_state.t) :
+  let run (subject : Subject.Test.t) (() : Payload.t) :
       Subject.Test.t State.Monad.t =
     State.Monad.return (Subject.Test.add_new_program subject)
 end

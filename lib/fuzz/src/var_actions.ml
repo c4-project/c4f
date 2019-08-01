@@ -20,7 +20,7 @@ module Global_random_state = struct
 end
 
 module Make_global :
-  Action_types.S with type Random_state.t = Global_random_state.t = struct
+  Action_types.S with type Payload.t = Global_random_state.t = struct
   let name = Act_common.Id.of_string "var.make.global"
 
   let readme () =
@@ -32,7 +32,7 @@ module Make_global :
 
   let default_weight = 2
 
-  module Random_state = struct
+  module Payload = struct
     include Global_random_state
     module G = Base_quickcheck.Generator
 
@@ -54,7 +54,7 @@ module Make_global :
   let available = Action.always
 
   let run (subject : Subject.Test.t)
-      ({basic_type; initial_value; name} : Random_state.t) :
+      ({basic_type; initial_value; name} : Payload.t) :
       Subject.Test.t State.Monad.t =
     let ty = Act_c_mini.Type.of_basic basic_type ~pointer:true in
     let open State.Monad.Let_syntax in

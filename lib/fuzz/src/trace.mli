@@ -24,7 +24,7 @@ val empty : t
 
 val add :
      t
-  -> action:(module Action_types.S with type Random_state.t = 'r)
+  -> action:(module Action_types.S with type Payload.t = 'r)
   -> payload:'r
   -> t
 (** [add t ~action ~state] appends action [action], with name [id] and

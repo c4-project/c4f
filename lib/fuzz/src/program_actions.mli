@@ -11,5 +11,5 @@
 
 (** Fuzzer actions for manipulating programs. *)
 
-module Make_empty : Action_types.S with type Random_state.t = unit
+module Make_empty : Action_types.S with type Payload.t = unit
 (** Fuzzer action that generates a new, empty program. *)

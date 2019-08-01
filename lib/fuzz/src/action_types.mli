@@ -14,15 +14,15 @@
 open Base
 open Act_common
 
-(** Module type of random state modules.
+(** Module type of payload modules.
 
-    Each action takes in a random state record that can be:
+    Each action takes in a payload record that can be:
 
     - converted to and from S-expressions;
     - generated, in the context of a fuzzer state, subject, and RNG. *)
-module type S_random_state = sig
+module type S_payload = sig
   type t [@@deriving sexp]
-  (** The type of any random state on which this action depends. *)
+  (** The type of the payload. *)
 
   type subject
   (** The type of test subjects. *)
@@ -45,17 +45,23 @@ module type Generic = sig
   val default_weight : int
   (** The default weight of the action. *)
 
-  module Random_state : S_random_state with type subject := subject
-  (** Random state on which this action depends. *)
+  module Payload : S_payload with type subject := subject
+  (** The type of any payload on which this action depends. *)
 
   val available : subject -> bool State.Monad.t
   (** [available subject] is a stateful computation that, given subject
       [subject] and the current state, decides whether this action can run
       (given any member of [Random_state.t]). *)
 
-  val run : subject -> Random_state.t -> subject State.Monad.t
+  val run : subject -> Payload.t -> subject State.Monad.t
   (** [run subject payload] is a stateful computation that runs this action
       on [subject] with payload [payload]. *)
 end
 
 module type S = Generic with type subject := Subject.Test.t
+
+module type S_with_payload = sig
+  include S
+
+  val payload : Payload.t
+end
