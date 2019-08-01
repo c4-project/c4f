@@ -19,7 +19,7 @@ compiler="${1}"
 root_dir="${2}"
 
 # Programs
-ACT=${ACT="act"}
+ACT=${ACT="act-c"}
 DIFF=${DIFF="diff"}
 
 c_dir="${root_dir}/C"
@@ -31,14 +31,14 @@ l_dir="${root_dir}/litmus"
 # $4: output file
 # $5: input file
 # All other arguments: extra flags passed to act
-explain () {
-	pass="${1}"
-	compiler="${2}"
-	bname="${3}"
-	output="${4}"
+explain() {
+	local pass="${1}"
+	local compiler="${2}"
+	local bname="${3}"
+	local output="${4}"
 	shift 4 # input is, therefore, $1, and included in $@
 
-	if ${ACT} explain -compiler "${compiler}" "${@}" > "${output}";
+	if ${ACT_C} explain -compiler "${compiler}" "${@}" > "${output}";
 	then
 		if [[ "$(wc -l <"${output}")" -eq 0 ]];
 		then

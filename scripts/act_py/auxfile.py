@@ -9,9 +9,8 @@
 # (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
 # project root for more information.
 import dataclasses
-import pathlib
-import typing
 import json
+import typing
 from dataclasses import dataclass
 
 from act_py import json_utils

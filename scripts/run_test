@@ -20,9 +20,10 @@ To create a JSON specification, use `make_test`.
 
 
 import argparse
+import json
 import logging
 import typing
-import json
+
 from act_py import test_runner
 
 

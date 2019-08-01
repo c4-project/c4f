@@ -7,7 +7,6 @@ import enum
 import itertools
 import platform
 import subprocess
-import sys
 import typing
 from dataclasses import dataclass
 from datetime import datetime

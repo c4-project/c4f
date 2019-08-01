@@ -14,7 +14,6 @@ import collections
 import subprocess
 import typing
 
-
 from . import act_id
 
 

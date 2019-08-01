@@ -11,4 +11,4 @@
 
 (** Main entry point for the miscellaneous ACT C language services. *)
 
-let () = Core.Command.run C_cmd.Main.command
+let () = Core.Command.run Cmd_c.Main.command

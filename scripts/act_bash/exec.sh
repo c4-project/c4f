@@ -36,11 +36,23 @@ act::exec() {
 # Runs the 'act-backend' tool.
 #
 # Globals:
-#   - ACT_BACKEND (read)
+#   - ACT (read)
 #   - DUNE_EXEC (transitively read)
 #
 # Arguments:
 #   *: the arguments to the program.
 act::backend() {
   act::exec "${ACT:-"act"}" backend "$@"
+}
+
+# Runs the 'act-delitmus' tool.
+#
+# Globals:
+#   - ACT (read)
+#   - DUNE_EXEC (transitively read)
+#
+# Arguments:
+#   *: the arguments to the program.
+act::delitmus() {
+  act::exec "${ACT:-"act-c"}" delitmus "$@"
 }

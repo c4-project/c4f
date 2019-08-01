@@ -19,7 +19,6 @@ import typing
 
 from act_py import act_id, machine_info, test_runner
 
-
 # TODO(@MattWindsor91): understand drivers other than obj_splitmus.
 # TODO(@MattWindsor91): understand backends other than machine.litmus.
 

@@ -10,11 +10,11 @@
 # project root for more information.
 """The main part of the ACT high-level test runner."""
 import json
-from dataclasses import dataclass
 import logging
 import pathlib
 import subprocess
 import typing
+from dataclasses import dataclass
 
 from act_py import act_id, io_utils, json_utils
 

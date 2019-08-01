@@ -11,4 +11,4 @@
 
 (** Main entry point for the ACT fuzzer. *)
 
-let () = Core.Command.run Fuzz_cmd.Main.command
+let () = Core.Command.run Cmd_fuzz.Main.command
