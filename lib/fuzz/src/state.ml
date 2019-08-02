@@ -16,6 +16,12 @@ module Tx = Travesty_base_exts
 type t = {o: Ac.Output.t [@default Ac.Output.silent ()]; vars: Var.Map.t}
 [@@deriving fields, make]
 
+let of_litmus ?(o : Ac.Output.t option)
+    (lt : Act_c_mini.Litmus.Ast.Validated.t) : t Or_error.t =
+  Or_error.Let_syntax.(
+    let%map vars = Var.Map.make_existing_var_map lt in
+    make ?o ~vars ())
+
 let try_map_vars (s : t) ~(f : Var.Map.t -> Var.Map.t Or_error.t) :
     t Or_error.t =
   Or_error.(s.vars |> f >>| fun vars -> {s with vars})

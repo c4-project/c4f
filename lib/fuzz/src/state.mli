@@ -16,10 +16,23 @@ open Base
 type t
 (** Opaque type of states. *)
 
+(** {2 Constructing an initial fuzzer state} *)
+
 val make : ?o:Act_common.Output.t -> vars:Var.Map.t -> unit -> t
 (** [make ?o ~vars ()] creates an initial state with the variable map
     [vars]. If an output context [o] is provided, it can be used for logging
     verbose/debug information during the fuzzing process. *)
+
+val of_litmus :
+     ?o:Act_common.Output.t
+  -> Act_c_mini.Litmus.Ast.Validated.t
+  -> t Or_error.t
+(** [of_litmus ?o lt] tries to create an initial state by extracting
+    information from [lt]'s auxiliary data. If an output context [o] is
+    provided, it can be used for logging verbose/debug information during
+    the fuzzing process. *)
+
+(** {2 Directly accessing a fuzzer state} *)
 
 val vars : t -> Var.Map.t
 (** [vars state] gets the state's variable map. *)
