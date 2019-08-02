@@ -97,39 +97,7 @@ let list_predicates_command : Command.t =
         Common.lift_command standard_args ~with_compiler_tests:false
           ~f:run_list_predicates)
 
-let list_fuzzer_actions_readme () : string =
-  Act_utils.My_string.format_for_readme
-    {|
-      Reads the current config file, and outputs information about each
-      fuzzer action, including its computed weight after taking the config
-      into consideration.
-    |}
-
-let fuzz_config (cfg : Act_config.Act.t) : Act_config.Fuzz.t =
-  cfg |> Act_config.Act.fuzz
-  |> Option.value ~default:(Act_config.Fuzz.make ())
-
-let pp_fuzz_summaries : Act_fuzz.Action.Summary.t Id.Map.t Fmt.t =
-  Id.pp_map Act_fuzz.Action.Summary.pp
-
-let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Act.t) :
-    unit Or_error.t =
-  let open Or_error.Let_syntax in
-  let fuzz = fuzz_config cfg in
-  let%map summaries = Act_fuzz.Fuzzer.summarise fuzz in
-  Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries summaries
-
-let list_fuzzer_actions_command : Command.t =
-  Command.basic ~summary:"outputs the current fuzzer weight table"
-    ~readme:list_fuzzer_actions_readme
-    Command.Let_syntax.(
-      let%map standard_args = Args.Standard.get in
-      fun () ->
-        Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:run_list_fuzzer_actions)
-
 let command : Command.t =
   Command.group ~summary:"commands for dealing with act configuration"
     [ ("list-compilers", list_compilers_command)
-    ; ("list-predicates", list_predicates_command)
-    ; ("list-fuzzer-actions", list_fuzzer_actions_command) ]
+    ; ("list-predicates", list_predicates_command) ]

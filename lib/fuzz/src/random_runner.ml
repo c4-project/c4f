@@ -23,12 +23,6 @@ let make_rng : int option -> Splittable_random.State.t = function
   | None ->
       Splittable_random.State.create (Random.State.make_self_init ())
 
-let modules : (module Action_types.S) list Lazy.t =
-  lazy
-    [ (module Var_actions.Make_global : Action_types.S)
-    ; (module Store_actions.Int : Action_types.S)
-    ; (module Program_actions.Make_empty : Action_types.S) ]
-
 (** Tracks parts of the fuzzer state and environment that we can't keep in
     the inner state monad for various reasons (circular dependencies, being
     specific to how we choose actions, etc). *)
@@ -94,13 +88,6 @@ let mutate_subject_step (subject : Subject.Test.t) :
     >>= Outer_state.Monad.tee ~f:(fun _ ->
             Ac.Output.pv o "fuzz: action done.@."))
 
-let make_pool : Act_config.Fuzz.t -> Action.Pool.t Or_error.t =
-  Action.Pool.make (Lazy.force modules)
-
-let summarise (cfg : Act_config.Fuzz.t) :
-    Action.Summary.t Ac.Id.Map.t Or_error.t =
-  Or_error.(cfg |> make_pool >>| Action.Pool.summarise)
-
 let mutate_subject (subject : Subject.Test.t) :
     Subject.Test.t Outer_state.Monad.t =
   Outer_state.Monad.Let_syntax.(
@@ -142,7 +129,7 @@ let make_outer_state (seed : int option) (config : Act_config.Fuzz.t) :
   let random = make_rng seed in
   let trace = Trace.empty in
   Or_error.Let_syntax.(
-    let%map pool = make_pool config in
+    let%map pool = Config.make_pool config in
     {Outer_state.random; trace; pool})
 
 let run ?(seed : int option) (test : Act_c_mini.Litmus.Ast.Validated.t)

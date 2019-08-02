@@ -24,7 +24,7 @@ let run ?(seed : int option) ?(trace_output : string option)
     |> Option.value ~default:(Act_config.Fuzz.make ())
   in
   Toplevel.Args.With_files.run_filter_with_aux_out
-    (module Act_fuzz.Filter)
+    (module Act_fuzz.Filter.Random)
     args ~aux_in:{seed; o; config} ~aux_out_f:write_trace
     ?aux_out_filename:trace_output
 

@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** The fuzzer as a filter.
+(** The fuzzer, packaged up as filters.
 
     The fuzzer takes various pieces of configuration (see {{!Aux} Aux}) as
     auxiliary input, and emits a trace of actions performed (see
@@ -23,5 +23,5 @@ module Aux : sig
   (** Type of auxiliary input to the fuzzer filter. *)
 end
 
-include
+module Random :
   Plumbing.Filter_types.S with type aux_i = Aux.t and type aux_o = Trace.t

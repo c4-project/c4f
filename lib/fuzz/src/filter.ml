@@ -18,7 +18,7 @@ module Aux = struct
     {seed: int option; o: Act_common.Output.t; config: Act_config.Fuzz.t}
 end
 
-include Pb.Filter.Make (struct
+module Random = Pb.Filter.Make (struct
   type aux_i = Aux.t
 
   type aux_o = Trace.t
@@ -36,7 +36,7 @@ include Pb.Filter.Make (struct
           ic
       in
       let%bind test = Act_c_mini.Convert.litmus_of_raw_ast raw in
-      let%map test', trace = Fuzzer.run ?seed ~o ~config test in
+      let%map test', trace = Random_runner.run ?seed ~o ~config test in
       Act_c_mini.Litmus.Pp.print oc test' ;
       trace)
 end)
