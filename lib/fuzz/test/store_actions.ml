@@ -11,56 +11,10 @@
 
 open Base
 open Stdio
+module Src = Act_fuzz
 
 let%test_module "int tests" =
   ( module struct
-    open Act_fuzz
-    open Store_actions
-
-    let init : Act_c_mini.Constant.t Act_c_mini.Named.Alist.t Lazy.t =
-      lazy
-        [ (Act_common.C_id.of_string "x", Act_c_mini.Constant.int 27)
-        ; (Act_common.C_id.of_string "y", Act_c_mini.Constant.int 53) ]
-
-    let globals : Act_c_mini.Type.t Act_c_mini.Named.Alist.t Lazy.t =
-      lazy
-        Act_c_mini.
-          [ ( Act_common.C_id.of_string "x"
-            , Type.(int ~pointer:true ~atomic:true ()) )
-          ; ( Act_common.C_id.of_string "y"
-            , Type.(int ~pointer:true ~atomic:true ()) ) ]
-
-    let body_stms : Act_c_mini.Statement.t list Lazy.t =
-      lazy
-        Act_c_mini.
-          [ Statement.atomic_store
-              (Atomic_store.make
-                 ~src:(Expression.constant (Act_c_mini.Constant.int 42))
-                 ~dst:(Address.of_variable (Act_common.C_id.of_string "x"))
-                 ~mo:Mem_order.Seq_cst)
-          ; Statement.nop ()
-          ; Statement.atomic_store
-              (Atomic_store.make
-                 ~src:
-                   (Expression.lvalue
-                      (Lvalue.variable (Act_common.C_id.of_string "foo")))
-                 ~dst:(Address.of_variable (Act_common.C_id.of_string "y"))
-                 ~mo:Mem_order.Relaxed) ]
-
-    let programs : Subject.Program.t list Lazy.t =
-      let open Lazy.Let_syntax in
-      let%bind parameters = globals in
-      let%map body_stms = body_stms in
-      Act_c_mini.
-        [ Subject.Program.of_function
-            (Function.make ~parameters ~body_decls:[] ~body_stms ()) ]
-
-    let test_subject : Subject.Test.t Lazy.t =
-      let open Lazy.Let_syntax in
-      let%bind init = init in
-      let%map programs = programs in
-      {Subject.Test.init; programs}
-
     let path : Act_c_mini.Path_shapes.program Lazy.t =
       lazy Act_c_mini.Path_shapes.(in_func 0 (in_stms (insert 2)))
 
@@ -78,14 +32,14 @@ let%test_module "int tests" =
             ~dst:(Address.of_variable (Act_common.C_id.of_string "gen1"))
             ~mo:Mem_order.Seq_cst)
 
-    let random_state : Int.Payload.t Lazy.t =
+    let random_state : Src.Store_actions.Int.Payload.t Lazy.t =
       let open Lazy.Let_syntax in
       let%bind store = store in
       let%map path = path in
-      Random_state.make ~store ~path
+      Src.Store_actions.Random_state.make ~store ~path
 
-    let prepare_fuzzer_state () : unit State.Monad.t =
-      State.Monad.(
+    let prepare_fuzzer_state () : unit Src.State.Monad.t =
+      Src.State.Monad.(
         register_global
           Act_c_mini.Type.(int ~pointer:true ~atomic:true ())
           (Act_common.C_id.of_string "gen1")
@@ -96,35 +50,23 @@ let%test_module "int tests" =
           (Act_common.C_id.of_string "gen2")
           ~initial_value:(Act_c_mini.Constant.int (-55)))
 
-    let init_fuzzer_state : State.t Lazy.t =
-      Lazy.Let_syntax.(
-        let%map globals_alist = globals in
-        let vars =
-          globals_alist
-          |> List.map ~f:(fun (id, ty) ->
-                 ( Act_common.Litmus_id.global id
-                 , Act_fuzz.Var.Record.make_existing Global (Some ty) ))
-          |> Map.of_alist_exn (module Act_common.Litmus_id)
-          |> Act_common.Scoped_map.of_litmus_id_map
-        in
-        State.make ~vars ())
-
-    let run_test () : (State.t * Subject.Test.t) Or_error.t =
-      State.Monad.(
+    let run_test () : (Src.State.t * Src.Subject.Test.t) Or_error.t =
+      Src.State.Monad.(
         run'
           ( prepare_fuzzer_state ()
           >>= fun () ->
-          Int.run (Lazy.force test_subject)
+          Src.Store_actions.Int.run
+            (Lazy.force Subject.Example.test)
             ~payload:(Lazy.force random_state) )
-          (Lazy.force init_fuzzer_state))
+          (Lazy.force Subject.Example.state))
 
     let%expect_test "test int store: programs" =
       let r =
         let open Or_error.Let_syntax in
         let%map state, test = run_test () in
-        let vars = State.vars state in
+        let vars = Src.State.vars state in
         List.mapi test.programs ~f:(fun id p ->
-            let fn = Subject.Program.to_function ~vars ~id p in
+            let fn = Src.Subject.Program.to_function ~vars ~id p in
             Act_c_mini.(Reify.func (Named.name fn) (Named.value fn)))
       in
       Fmt.(
@@ -147,8 +89,8 @@ let%test_module "int tests" =
       let result =
         Or_error.(
           run_test () >>| fst
-          >>| State.vars_satisfying_all ~scope:(Local 0)
-                ~predicates:[Var.Record.is_global])
+          >>| Src.State.vars_satisfying_all ~scope:(Local 0)
+                ~predicates:[Src.Var.Record.is_global])
       in
       print_s [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
       [%expect {| (Ok (gen1 gen2 x y)) |}]
@@ -157,8 +99,8 @@ let%test_module "int tests" =
       let result =
         Or_error.(
           run_test () >>| fst
-          >>| State.vars_satisfying_all ~scope:(Local 0)
-                ~predicates:[Var.Record.has_known_value])
+          >>| Src.State.vars_satisfying_all ~scope:(Local 0)
+                ~predicates:[Src.Var.Record.has_known_value])
       in
       print_s [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
       [%expect {| (Ok (gen2)) |}]
@@ -167,8 +109,8 @@ let%test_module "int tests" =
       let result =
         Or_error.(
           run_test () >>| fst
-          >>| State.vars_satisfying_all ~scope:(Local 0)
-                ~predicates:[Var.Record.has_dependencies])
+          >>| Src.State.vars_satisfying_all ~scope:(Local 0)
+                ~predicates:[Src.Var.Record.has_dependencies])
       in
       print_s [%sexp (result : Act_common.C_id.t list Or_error.t)] ;
       [%expect {| (Ok (gen2)) |}]

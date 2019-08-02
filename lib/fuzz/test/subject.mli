@@ -9,4 +9,13 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** This interface intentionally left blank. *)
+(** Tests and test data for the fuzzer subject representation. *)
+
+(** An example Litmus test, partitioned into lazily evaluated subcomponents. *)
+module Example : sig
+  val state : Act_fuzz.State.t Lazy.t
+  (** [state] evaluates to the example test's recommended initial state. *)
+
+  val test : Act_fuzz.Subject.Test.t Lazy.t
+  (** [test] evaluates to a sample test subject. *)
+end
