@@ -16,7 +16,9 @@ module Au = Act_utils
 module Forward_spec
     (Outer : Equal.S)
     (Inner : Spec_types.S)
-    (Forwarding : Au.Inherit.S with type c := Inner.t and type t := Outer.t) :
+    (Forwarding : Au.Inherit_types.S
+                    with type c := Inner.t
+                     and type t := Outer.t) :
   Spec_types.S with type t := Outer.t = struct
   module H = Act_utils.Inherit.Helpers (struct
     type t = Outer.t

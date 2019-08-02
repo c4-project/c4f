@@ -25,4 +25,4 @@
 
 module Make_resolver (B : sig
   val cfg : Act_config.Act.t
-end) : Act_backend.Resolver.S
+end) : Act_backend.Resolver_types.S

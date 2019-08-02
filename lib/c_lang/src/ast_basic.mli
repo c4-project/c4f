@@ -50,9 +50,6 @@
 
 open Base
 
-include module type of Ast_basic_intf
-(** As usual, the signatures are in a separate 'intf' module. *)
-
 (** {2 Enumerations} *)
 
 (** Operator enumerations. *)
@@ -73,7 +70,7 @@ module Operators : sig
       | `Assign_or (* |= *) ]
     [@@deriving sexp]
 
-    include Ast_node with type t := t
+    include Ast_basic_types.Ast_node with type t := t
   end
 
   (** Enumeration of binary operators. *)
@@ -101,7 +98,7 @@ module Operators : sig
       | `Ne (* != *) ]
     [@@deriving sexp]
 
-    include Ast_node with type t := t
+    include Ast_basic_types.Ast_node with type t := t
   end
 
   (** Enumeration of prefix operators. *)
@@ -118,14 +115,14 @@ module Operators : sig
       | `Lnot (* ! *) ]
     [@@deriving sexp]
 
-    include Ast_node with type t := t
+    include Ast_basic_types.Ast_node with type t := t
   end
 
   (** Enumeration of postfix operators. *)
   module Post : sig
     type t = [`Inc (* ++ *) | `Dec (* -- *)] [@@deriving sexp]
 
-    include Ast_node with type t := t
+    include Ast_basic_types.Ast_node with type t := t
   end
 end
 
@@ -133,7 +130,7 @@ end
 module Type_qual : sig
   type t = [`Const | `Volatile] [@@deriving sexp]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 
   include Act_utils.Enum_types.Extension_table with type t := t
 end
@@ -152,7 +149,7 @@ module Prim_type : sig
     | `Unsigned ]
   [@@deriving sexp]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 
   include Act_utils.Enum_types.Extension_table with type t := t
 end
@@ -162,7 +159,7 @@ module Storage_class_spec : sig
   type t = [`Auto | `Register | `Static | `Extern | `Typedef]
   [@@deriving sexp]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 
   include Act_utils.Enum_types.Extension_table with type t := t
 end
@@ -174,7 +171,7 @@ module Constant : sig
   type t = Char of char | Float of float | Integer of int
   [@@deriving sexp, quickcheck]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 
   val to_int : t -> int Or_error.t
 
@@ -194,10 +191,11 @@ end
 module Identifier : sig
   include module type of Act_common.C_id
 
-  include Ast_node_with_identifier with type t := t
+  include Ast_basic_types.Ast_node_with_identifier with type t := t
 end
 
-module Pointer : Ast_node with type t = Type_qual.t list list
+module Pointer :
+  Ast_basic_types.Ast_node with type t = Type_qual.t list list
 (** Ast node for pointers *)
 
 (** Reusable AST building block for array subscripts *)
@@ -215,9 +213,9 @@ module Array : sig
 
     type nonrec t = (arr, idx) t [@@deriving sexp]
 
-    include Ast_node with type t := t
+    include Ast_basic_types.Ast_node with type t := t
   end
 
-  module Make (A : Ast_node) (I : Ast_node) :
+  module Make (A : Ast_basic_types.Ast_node) (I : Ast_basic_types.Ast_node) :
     S with type arr := A.t and type idx := I.t
 end

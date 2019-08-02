@@ -48,4 +48,4 @@ val eval_b : Spec.With_id.t -> t Blang.t -> bool
 (** [eval_b R reference expr] evaluates a [Blang] expression [expr] over
     [reference], with respect to module [R]. *)
 
-include Act_common.Property.S with type t := t
+include Act_common.Property_types.S with type t := t

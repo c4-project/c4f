@@ -22,10 +22,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Abstractable_intf
 
-module Make (B : Basic) : S with type t := B.t and module Abs := B.Abs =
-struct
+module Make (B : Abstractable_types.Basic) :
+  Abstractable_types.S with type t := B.t and module Abs := B.Abs = struct
   include B
 
   let abs_kind x = Abs.kind (abstract x)

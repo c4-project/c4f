@@ -5,6 +5,7 @@
  (public_name act.c_lang)
  (synopsis "Automagic Compiler Tormentor: C AST and frontend")
  (inline_tests)
+ (modules_without_implementation ast_basic_types ast_types)
  (preprocess
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common

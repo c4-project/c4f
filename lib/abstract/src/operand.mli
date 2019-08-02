@@ -82,7 +82,7 @@ end
 
 module Inherit_predicates
     (P : S_predicates)
-    (I : Act_utils.Inherit.S_partial with type c := P.t) :
+    (I : Act_utils.Inherit_types.S_partial with type c := P.t) :
   S_predicates with type t := I.t
 (** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
     optional component. Each predicate returns false when the component
@@ -113,7 +113,7 @@ end
 
 module Inherit_properties
     (P : S_properties)
-    (I : Act_utils.Inherit.S with type c := P.t) :
+    (I : Act_utils.Inherit_types.S with type c := P.t) :
   S_properties with type t := I.t
 (** [Inherit_properties] generates a [S_properties] by inheriting it from a
     component. *)
@@ -199,7 +199,7 @@ module Bundle : sig
 
   module Inherit_predicates
       (P : S_predicates)
-      (I : Act_utils.Inherit.S_partial with type c := P.t) :
+      (I : Act_utils.Inherit_types.S_partial with type c := P.t) :
     S_predicates with type t := I.t
   (** [Inherit_predicates] generates a [S_predicates] by inheriting it from
       an optional component. Each predicate returns false when the component
@@ -239,7 +239,7 @@ module Bundle : sig
 
   module Inherit_properties
       (P : S_properties)
-      (I : Act_utils.Inherit.S with type c := P.t) :
+      (I : Act_utils.Inherit_types.S with type c := P.t) :
     S_properties with type t := I.t
   (** [Inherit_properties] generates a [S_properties] by inheriting it from
       a component. *)

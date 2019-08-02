@@ -21,7 +21,9 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Interfaces for converting concrete language elements to their [Abstract]
-    representation *)
+(** Functor for conversions between concrete language elements and
+    [Abstract] representations *)
 
-include Abstractable_intf.Abstractable
+(** [Make] extends a [Basic] to an [S]. *)
+module Make (B : Abstractable_types.Basic) :
+  Abstractable_types.S with type t := B.t and module Abs := B.Abs

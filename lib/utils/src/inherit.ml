@@ -22,10 +22,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Inherit_intf
 
-module Make_partial (I : S) : S_partial with type t = I.t and type c = I.c =
-struct
+module Make_partial (I : Inherit_types.S) :
+  Inherit_types.S_partial with type t = I.t and type c = I.c = struct
   type t = I.t
 
   type c = I.c
@@ -33,11 +32,11 @@ struct
   let component_opt x = Some (I.component x)
 end
 
-module Helpers (I : S) = struct
+module Helpers (I : Inherit_types.S) = struct
   let forward f x = f (I.component x)
 end
 
-module Partial_helpers (I : S_partial) = struct
+module Partial_helpers (I : Inherit_types.S_partial) = struct
   let forward_bool f x = Option.exists ~f (I.component_opt x)
 
   let forward_bind f x = Option.bind ~f (I.component_opt x)

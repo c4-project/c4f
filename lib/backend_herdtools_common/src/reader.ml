@@ -335,5 +335,5 @@ module Make_load (B : Basic) :
     Ctx.run_to_output ?path (I.iter_m ic ~f:M.process_line)
 end
 
-module Make (B : Basic) : Act_backend.Reader_intf.S =
+module Make (B : Basic) : Act_backend.Reader_types.S =
   Act_backend.Reader.Make (Plumbing.Loadable.Make (Make_load (B)))

@@ -24,24 +24,24 @@
 (** [S] is an interface for language-specific hooks into the sanitisation
     process. *)
 module type S = sig
-  include Pass_intf.Basic
+  include Pass_types.Basic
 
   module On_all :
-    Pass_intf.S
+    Pass_types.S
       with type t := Lang.Program.t list
        and type 'a ctx := 'a Ctx.t
 
   module On_program :
-    Pass_intf.S with type t := Lang.Program.t and type 'a ctx := 'a Ctx.t
+    Pass_types.S with type t := Lang.Program.t and type 'a ctx := 'a Ctx.t
 
   module On_statement :
-    Pass_intf.S with type t := Lang.Statement.t and type 'a ctx := 'a Ctx.t
+    Pass_types.S with type t := Lang.Statement.t and type 'a ctx := 'a Ctx.t
 
   module On_instruction :
-    Pass_intf.S
+    Pass_types.S
       with type t := Lang.Instruction.t
        and type 'a ctx := 'a Ctx.t
 
   module On_location :
-    Pass_intf.S with type t := Lang.Location.t and type 'a ctx := 'a Ctx.t
+    Pass_types.S with type t := Lang.Location.t and type 'a ctx := 'a Ctx.t
 end

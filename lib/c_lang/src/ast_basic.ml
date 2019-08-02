@@ -44,7 +44,6 @@
 (****************************************************************************)
 
 open Core_kernel
-include Ast_basic_intf
 
 module Operators = struct
   module Assign = struct
@@ -280,10 +279,10 @@ module Array = struct
 
     type nonrec t = (arr, idx) t
 
-    include Ast_node with type t := t
+    include Ast_basic_types.Ast_node with type t := t
   end
 
-  module Make (A : Ast_node) (I : Ast_node) :
+  module Make (A : Ast_basic_types.Ast_node) (I : Ast_basic_types.Ast_node) :
     S with type arr := A.t and type idx := I.t = struct
     type nonrec t = (A.t, I.t) t
 
@@ -338,7 +337,8 @@ module Identifier = struct
   let identifier = Fn.id
 end
 
-module Pointer : Ast_node with type t = Type_qual.t list list = struct
+module Pointer :
+  Ast_basic_types.Ast_node with type t = Type_qual.t list list = struct
   type t = Type_qual.t list list [@@deriving sexp, eq, compare]
 
   let pp : t Fmt.t =

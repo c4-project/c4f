@@ -19,7 +19,6 @@ module Ac = Act_common
 module Au = Act_utils
 module Tx = Travesty_base_exts
 open Ast_basic
-include Ast_intf
 
 let pp_assign_rhs (type a) (pp : a Fmt.t) : a Fmt.t =
   Fmt.(any "@ =@ " ++ pp)
@@ -28,8 +27,9 @@ let pp_opt_assign (type l r) (ppl : l Fmt.t) (ppr : r Fmt.t) :
     (l * r option) Fmt.t =
   Fmt.(pair ~sep:nop ppl (option (pp_assign_rhs ppr)))
 
-module Optional (N : Ast_node) : Ast_node with type t = N.t option = struct
-  type t = N.t option [@@deriving sexp, eq, compare]
+module Optional (N : Ast_basic_types.Ast_node) :
+  Ast_basic_types.Ast_node with type t = N.t option = struct
+  type t = N.t option [@@deriving sexp, equal, compare]
 
   let pp = Fmt.option N.pp
 end
@@ -46,14 +46,15 @@ module Space : Sep = struct
   let sep = Fmt.sp
 end
 
-module List_of (N : Ast_node) (S : Sep) : Ast_node with type t = N.t list =
-struct
+module List_of (N : Ast_basic_types.Ast_node) (S : Sep) :
+  Ast_basic_types.Ast_node with type t = N.t list = struct
   type t = N.t list [@@deriving sexp, equal, compare]
 
   let pp = Fmt.list ~sep:S.sep N.pp
 end
 
-module End_semi (N : Ast_node) : Ast_node with type t = N.t = struct
+module End_semi (N : Ast_basic_types.Ast_node) :
+  Ast_basic_types.Ast_node with type t = N.t = struct
   type t = N.t [@@deriving sexp, equal, compare]
 
   let pp = Fmt.(N.pp ++ any ";")
@@ -68,20 +69,20 @@ end
 module Parametric = struct
   (** Generic declarations parametrised on qualifiers and declarator. *)
   module G_decl = struct
-    module type S = S_g_decl
+    module type S = Ast_types.S_g_decl
 
     module type Basic = sig
-      module Qual : Ast_node
+      module Qual : Ast_basic_types.Ast_node
       (** Type of qualifiers. *)
 
-      module Decl : Ast_node
+      module Decl : Ast_basic_types.Ast_node
       (** Type of declarators. *)
     end
 
     module Make (B : Basic) :
       S with type qual := B.Qual.t and type decl := B.Decl.t = struct
       type t = {qualifiers: B.Qual.t list; declarator: B.Decl.t}
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let pp : t Fmt.t =
         Fmt.(
@@ -94,12 +95,12 @@ module Parametric = struct
 
   (** Generic composite specs parametrised on sort and declaration. *)
   module Composite_spec = struct
-    module type S = S_composite_spec
+    module type S = Ast_types.S_composite_spec
 
     module type Basic = sig
-      module Kind : Ast_node
+      module Kind : Ast_basic_types.Ast_node
 
-      module Decl : Ast_node
+      module Decl : Ast_basic_types.Ast_node
     end
 
     module Make (B : Basic) :
@@ -110,7 +111,7 @@ module Parametric = struct
             ; name_opt: Identifier.t option
             ; decls: B.Decl.t list }
         | Named of B.Kind.t * Identifier.t
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let pp f = function
         | Literal {kind; name_opt; decls} ->
@@ -125,14 +126,14 @@ module Parametric = struct
 
   (** Direct declarators *)
   module Direct_declarator = struct
-    module type S = S_direct_declarator
+    module type S = Ast_types.S_direct_declarator
 
     module type Basic = sig
-      module Dec : Ast_node_with_identifier
+      module Dec : Ast_basic_types.Ast_node_with_identifier
 
-      module Par : Ast_node
+      module Par : Ast_basic_types.Ast_node
 
-      module Expr : Ast_node
+      module Expr : Ast_basic_types.Ast_node
     end
 
     module Make (B : Basic) :
@@ -146,7 +147,7 @@ module Parametric = struct
         | Array of (t, B.Expr.t option) Array.t
         | Fun_decl of t * B.Par.t
         | Fun_call of t * Identifier.t list
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let rec pp f : t -> unit = function
         | Id i ->
@@ -179,10 +180,10 @@ module Parametric = struct
 
   (** Declarators *)
   module Declarator = struct
-    module type S = S_declarator
+    module type S = Ast_types.S_declarator
 
-    module Make (D : Ast_node_with_identifier) : S with type ddec := D.t =
-    struct
+    module Make (D : Ast_basic_types.Ast_node_with_identifier) :
+      S with type ddec := D.t = struct
       type t = {pointer: Pointer.t option; direct: D.t}
       [@@deriving sexp, equal, compare]
 
@@ -198,17 +199,17 @@ module Parametric = struct
 
   (** Direct abstract declarators *)
   module Direct_abs_declarator = struct
-    module type S = S_direct_abs_declarator
+    module type S = Ast_types.S_direct_abs_declarator
 
     (* TODO(@MattWindsor91): merge this with the one from Direct_declarator
        somehow? *)
 
     module type Basic = sig
-      module Dec : Ast_node
+      module Dec : Ast_basic_types.Ast_node
 
-      module Par : Ast_node
+      module Par : Ast_basic_types.Ast_node
 
-      module Expr : Ast_node
+      module Expr : Ast_basic_types.Ast_node
     end
 
     module Make (B : Basic) :
@@ -220,7 +221,7 @@ module Parametric = struct
         | Bracket of B.Dec.t
         | Array of (t option, B.Expr.t option) Array.t
         | Fun_decl of t option * B.Par.t option
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let rec pp f : t -> unit = function
         | Bracket t ->
@@ -235,11 +236,12 @@ module Parametric = struct
 
   (** Abstract declarators *)
   module Abs_declarator = struct
-    module type S = S_abs_declarator
+    module type S = Ast_types.S_abs_declarator
 
-    module Make (D : Ast_node) : S with type ddec := D.t = struct
+    module Make (D : Ast_basic_types.Ast_node) : S with type ddec := D.t =
+    struct
       type t = Pointer of Pointer.t | Direct of Pointer.t option * D.t
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let pp f : t -> unit = function
         | Pointer ptr ->
@@ -251,18 +253,18 @@ module Parametric = struct
 
   (** Struct declarators *)
   module Struct_declarator = struct
-    module type S = S_struct_declarator
+    module type S = Ast_types.S_struct_declarator
 
     module type Basic = sig
-      module Dec : Ast_node
+      module Dec : Ast_basic_types.Ast_node
 
-      module Expr : Ast_node
+      module Expr : Ast_basic_types.Ast_node
     end
 
     module Make (B : Basic) :
       S with type dec := B.Dec.t and type expr := B.Expr.t = struct
       type t = Regular of B.Dec.t | Bitfield of B.Dec.t option * B.Expr.t
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let pp f : t -> unit = function
         | Regular decl ->
@@ -278,9 +280,10 @@ module Parametric = struct
   end
 
   module Label = struct
-    module type S = S_label
+    module type S = Ast_types.S_label
 
-    module Make (E : Ast_node) : S with type expr := E.t = struct
+    module Make (E : Ast_basic_types.Ast_node) : S with type expr := E.t =
+    struct
       type t = Normal of Identifier.t | Case of E.t | Default
       [@@deriving sexp, equal, compare]
 
@@ -297,9 +300,10 @@ module Parametric = struct
   end
 
   module Expr = struct
-    module type S = S_expr
+    module type S = Ast_types.S_expr
 
-    module Make (T : Ast_node) : S with module Ty = T = struct
+    module Make (T : Ast_basic_types.Ast_node) : S with module Ty = T =
+    struct
       module Ty = T
 
       type t =
@@ -356,11 +360,12 @@ module Parametric = struct
   end
 
   module Param_type_list = struct
-    module type S = S_param_type_list
+    module type S = Ast_types.S_param_type_list
 
-    module Make (P : Ast_node) : S with type pdecl := P.t = struct
+    module Make (P : Ast_basic_types.Ast_node) : S with type pdecl := P.t =
+    struct
       type t = {params: P.t list; style: [`Normal | `Variadic]}
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let pp_style f = function
         | `Normal ->
@@ -377,14 +382,14 @@ module Parametric = struct
   end
 
   module Stm = struct
-    module type S = S_stm
+    module type S = Ast_types.S_stm
 
     module type Basic = sig
-      module Com : Ast_node
+      module Com : Ast_basic_types.Ast_node
 
-      module Expr : Ast_node
+      module Expr : Ast_basic_types.Ast_node
 
-      module Lbl : Ast_node
+      module Lbl : Ast_basic_types.Ast_node
     end
 
     module Make (B : Basic) :
@@ -409,7 +414,7 @@ module Parametric = struct
         | Continue
         | Break
         | Return of B.Expr.t option
-      [@@deriving sexp, eq, compare]
+      [@@deriving sexp, equal, compare]
 
       let rec pp (f : Base.Formatter.t) : t -> unit = function
         | Label (label, labelled) ->
@@ -445,19 +450,19 @@ module Parametric = struct
   end
 
   module Compound_stm = struct
-    module type S = S_compound_stm
+    module type S = Ast_types.S_compound_stm
 
     module type Basic = sig
-      module Decl : Ast_node
+      module Decl : Ast_basic_types.Ast_node
 
-      module Stm : Ast_node
+      module Stm : Ast_basic_types.Ast_node
     end
 
     module Make (B : Basic) :
       S with type decl := B.Decl.t and type stm := B.Stm.t = struct
       module Elt = struct
         type t = [`Stm of B.Stm.t | `Decl of B.Decl.t]
-        [@@deriving sexp, eq, compare]
+        [@@deriving sexp, equal, compare]
 
         let pp (f : Base.Formatter.t) : t -> unit = function
           | `Stm s ->
@@ -466,7 +471,7 @@ module Parametric = struct
               B.Decl.pp f d
       end
 
-      type t = Elt.t list [@@deriving sexp, eq, compare]
+      type t = Elt.t list [@@deriving sexp, equal, compare]
 
       let pp : t Fmt.t =
         Au.My_format.pp_c_braces Fmt.(list ~sep:sp (box Elt.pp))
@@ -474,13 +479,13 @@ module Parametric = struct
   end
 end
 
-module rec Expr : (S_expr with type Ty.t = Type_name.t) =
+module rec Expr : (Ast_types.S_expr with type Ty.t = Type_name.t) =
   Parametric.Expr.Make (Type_name)
 
 and Enumerator : sig
   type t = {name: Identifier.t; value: Expr.t option}
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end = struct
   type t = {name: Identifier.t; value: Expr.t option}
   [@@deriving sexp, equal, compare]
@@ -493,10 +498,11 @@ end = struct
 end
 
 and Enum_spec :
-  (S_composite_spec with type kind := [`Enum] and type decl := Enumerator.t) =
-Parametric.Composite_spec.Make (struct
+  (Ast_types.S_composite_spec
+    with type kind := [`Enum]
+     and type decl := Enumerator.t) = Parametric.Composite_spec.Make (struct
   module Kind = struct
-    type t = [`Enum] [@@deriving sexp, eq, compare]
+    type t = [`Enum] [@@deriving sexp, equal, compare]
 
     let pp f = function `Enum -> Fmt.string f "enum"
   end
@@ -505,7 +511,7 @@ Parametric.Composite_spec.Make (struct
 end)
 
 and Struct_decl :
-  (S_g_decl
+  (Ast_types.S_g_decl
     with type qual := Spec_or_qual.t
      and type decl := Struct_declarator.t list) =
 Parametric.G_decl.Make (struct
@@ -514,7 +520,7 @@ Parametric.G_decl.Make (struct
 end)
 
 and Type_spec :
-  (S_type_spec
+  (Ast_types.S_type_spec
     with type su := Struct_or_union_spec.t
      and type en := Enum_spec.t) = struct
   type t =
@@ -522,7 +528,7 @@ and Type_spec :
     | `Struct_or_union of Struct_or_union_spec.t
     | `Enum of Enum_spec.t
     | `Defined_type of Identifier.t ]
-  [@@deriving sexp, eq, compare]
+  [@@deriving sexp, equal, compare]
 
   let pp f : t -> unit = function
     | #Prim_type.t as prim ->
@@ -535,9 +541,10 @@ and Type_spec :
         Ac.C_id.pp f tdef
 end
 
-and Spec_or_qual : (Ast_node with type t = [Type_spec.t | Type_qual.t]) =
+and Spec_or_qual :
+  (Ast_basic_types.Ast_node with type t = [Type_spec.t | Type_qual.t]) =
 struct
-  type t = [Type_spec.t | Type_qual.t] [@@deriving eq, sexp_of, compare]
+  type t = [Type_spec.t | Type_qual.t] [@@deriving equal, sexp_of, compare]
 
   let t_of_sexp (s : Sexp.t) : t =
     try (Type_spec.t_of_sexp s :> t) with _ -> (Type_qual.t_of_sexp s :> t)
@@ -550,11 +557,11 @@ struct
 end
 
 and Decl_spec :
-  (Ast_node
+  (Ast_basic_types.Ast_node
     with type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t]) =
 struct
   type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t]
-  [@@deriving sexp_of, eq, compare]
+  [@@deriving sexp_of, equal, compare]
 
   let t_of_sexp (s : Sexp.t) : t =
     try (Storage_class_spec.t_of_sexp s :> t)
@@ -570,7 +577,7 @@ struct
 end
 
 and Type_name :
-  (S_g_decl
+  (Ast_types.S_g_decl
     with type qual := Spec_or_qual.t
      and type decl := Abs_declarator.t option) =
 Parametric.G_decl.Make (struct
@@ -579,12 +586,12 @@ Parametric.G_decl.Make (struct
 end)
 
 and Struct_or_union_spec :
-  (S_composite_spec
+  (Ast_types.S_composite_spec
     with type kind := [`Struct | `Union]
      and type decl := Struct_decl.t) =
 Parametric.Composite_spec.Make (struct
   module Kind = struct
-    type t = [`Struct | `Union] [@@deriving sexp, eq, compare]
+    type t = [`Struct | `Union] [@@deriving sexp, equal, compare]
 
     let to_string : t -> string = function
       | `Struct ->
@@ -599,7 +606,7 @@ Parametric.Composite_spec.Make (struct
 end)
 
 and Param_decl :
-  (S_g_decl
+  (Ast_types.S_g_decl
     with type qual := Decl_spec.t
      and type decl :=
           [`Concrete of Declarator.t | `Abstract of Abs_declarator.t option]) =
@@ -609,7 +616,7 @@ Parametric.G_decl.Make (struct
   module Decl = struct
     type t =
       [`Concrete of Declarator.t | `Abstract of Abs_declarator.t option]
-    [@@deriving sexp, eq, compare]
+    [@@deriving sexp, equal, compare]
 
     let pp f : t -> unit = function
       | `Concrete c ->
@@ -624,7 +631,7 @@ and Param_type_list :
   Parametric.Param_type_list.Make (Param_decl)
 
 and Direct_declarator :
-  (S_direct_declarator
+  (Ast_types.S_direct_declarator
     with type dec := Declarator.t
      and type par := Param_type_list.t
      and type expr := Expr.t) = Parametric.Direct_declarator.Make (struct
@@ -638,7 +645,7 @@ and Declarator :
   Parametric.Declarator.Make (Direct_declarator)
 
 and Struct_declarator :
-  (S_struct_declarator
+  (Ast_types.S_struct_declarator
     with type dec := Declarator.t
      and type expr := Expr.t) = Parametric.Struct_declarator.Make (struct
   module Dec = Declarator
@@ -646,7 +653,7 @@ and Struct_declarator :
 end)
 
 and Direct_abs_declarator :
-  (S_direct_abs_declarator
+  (Ast_types.S_direct_abs_declarator
     with type dec := Abs_declarator.t
      and type par := Param_type_list.t
      and type expr := Expr.t) =
@@ -662,7 +669,7 @@ and Abs_declarator :
 
 module Initialiser = struct
   type t = Assign of Expr.t | List of t list
-  [@@deriving sexp, eq, compare]
+  [@@deriving sexp, equal, compare]
 
   let rec pp f : t -> unit = function
     | Assign exp ->
@@ -673,7 +680,7 @@ end
 
 module Init_declarator = struct
   type t = {declarator: Declarator.t; initialiser: Initialiser.t option}
-  [@@deriving sexp, eq, compare]
+  [@@deriving sexp, equal, compare]
 
   let pp =
     Fmt.(
@@ -690,7 +697,7 @@ end)
 module Label = Parametric.Label.Make (Expr)
 
 module rec Stm :
-  (S_stm
+  (Ast_types.S_stm
     with type com := Compound_stm.t
      and type expr := Expr.t
      and type lbl := Label.t) = Parametric.Stm.Make (struct
@@ -700,7 +707,7 @@ module rec Stm :
 end)
 
 and Compound_stm :
-  (S_compound_stm with type decl := Decl.t and type stm := Stm.t) =
+  (Ast_types.S_compound_stm with type decl := Decl.t and type stm := Stm.t) =
 Parametric.Compound_stm.Make (struct
   module Decl = Decl
   module Stm = Stm
@@ -712,7 +719,7 @@ module Function_def = struct
     ; signature: Declarator.t
     ; decls: Decl.t list
     ; body: Compound_stm.t }
-  [@@deriving sexp, eq, compare]
+  [@@deriving sexp, equal, compare]
 
   let pp_oldstyle_decl_list : Decl.t list Fmt.t =
     Fmt.(
@@ -731,7 +738,7 @@ end
 
 module External_decl = struct
   type t = [`Fun of Function_def.t | `Decl of Decl.t]
-  [@@deriving sexp, eq, compare]
+  [@@deriving sexp, equal, compare]
 
   let pp (f : Base.Formatter.t) : t -> unit = function
     | `Fun fn ->
@@ -741,7 +748,7 @@ module External_decl = struct
 end
 
 module Translation_unit = struct
-  type t = External_decl.t list [@@deriving sexp, eq, compare]
+  type t = External_decl.t list [@@deriving sexp, equal, compare]
 
   let pp : t Fmt.t = Fmt.(vbox (list ~sep:sp External_decl.pp))
 end

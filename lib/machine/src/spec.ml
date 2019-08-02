@@ -54,7 +54,7 @@ end
 include M
 
 module Forward_basic_spec
-    (I : Act_utils.Inherit.S)
+    (I : Act_utils.Inherit_types.S)
     (B : Spec_types.S with type t := I.c) :
   Spec_types.S with type t := I.t and type via := B.via = struct
   module H = Act_utils.Inherit.Helpers (I)

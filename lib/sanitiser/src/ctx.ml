@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Ctx_intf
 module Asym = Act_abstract.Symbol
 
 let freshen_label (syms : Set.M(Asym).t) (prefix : string) : string =
@@ -107,7 +106,7 @@ module Common = struct
 end
 
 module Make (Lang : Act_language.Definition_types.S) :
-  S with module Lang := Lang = struct
+  Ctx_types.S with module Lang := Lang = struct
   module Warn = Warn.Make (Lang.Element)
 
   type ctx = (Set.M(Lang.Symbol).t, Lang.Symbol.R_map.t, Warn.t) State.t

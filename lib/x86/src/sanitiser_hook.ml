@@ -23,7 +23,7 @@
 
 open Base
 
-module Make (L : Language_definition.S) :
+module Make (L : Language_definition_types.S) :
   Act_sanitiser.Hook_intf.S with module Lang = L = struct
   open Ast
   module Lang = L

@@ -16,45 +16,46 @@
 
 open Ast_basic
 
-include module type of Ast_intf
-
-module rec Expr : (S_expr with type Ty.t = Type_name.t)
+module rec Expr : (Ast_types.S_expr with type Ty.t = Type_name.t)
 
 and Enumerator : sig
   type t = {name: Identifier.t; value: Expr.t option} [@@deriving sexp]
 end
 
 and Enum_spec :
-  (S_composite_spec with type kind := [`Enum] and type decl := Enumerator.t)
+  (Ast_types.S_composite_spec
+    with type kind := [`Enum]
+     and type decl := Enumerator.t)
 
 and Struct_decl :
-  (S_g_decl
+  (Ast_types.S_g_decl
     with type qual := Spec_or_qual.t
      and type decl := Struct_declarator.t list)
 
 and Type_spec :
-  (S_type_spec
+  (Ast_types.S_type_spec
     with type su := Struct_or_union_spec.t
      and type en := Enum_spec.t)
 
-and Spec_or_qual : (Ast_node with type t = [Type_spec.t | Type_qual.t])
+and Spec_or_qual :
+  (Ast_basic_types.Ast_node with type t = [Type_spec.t | Type_qual.t])
 
 and Decl_spec :
-  (Ast_node
+  (Ast_basic_types.Ast_node
     with type t = [Storage_class_spec.t | Type_spec.t | Type_qual.t])
 
 and Type_name :
-  (S_g_decl
+  (Ast_types.S_g_decl
     with type qual := Spec_or_qual.t
      and type decl := Abs_declarator.t option)
 
 and Struct_or_union_spec :
-  (S_composite_spec
+  (Ast_types.S_composite_spec
     with type kind := [`Struct | `Union]
      and type decl := Struct_decl.t)
 
 and Param_decl :
-  (S_g_decl
+  (Ast_types.S_g_decl
     with type qual := Decl_spec.t
      and type decl :=
           [`Concrete of Declarator.t | `Abstract of Abs_declarator.t option])
@@ -65,55 +66,56 @@ and Param_type_list : sig
 end
 
 and Direct_declarator :
-  (S_direct_declarator
+  (Ast_types.S_direct_declarator
     with type dec := Declarator.t
      and type par := Param_type_list.t
      and type expr := Expr.t)
 
-and Declarator : (S_declarator with type ddec := Direct_declarator.t)
+and Declarator :
+  (Ast_types.S_declarator with type ddec := Direct_declarator.t)
 
 and Struct_declarator :
-  (S_struct_declarator
+  (Ast_types.S_struct_declarator
     with type dec := Declarator.t
      and type expr := Expr.t)
 
 and Direct_abs_declarator :
-  (S_direct_abs_declarator
+  (Ast_types.S_direct_abs_declarator
     with type dec := Abs_declarator.t
      and type par := Param_type_list.t
      and type expr := Expr.t)
 
 and Abs_declarator :
-  (S_abs_declarator with type ddec := Direct_abs_declarator.t)
+  (Ast_types.S_abs_declarator with type ddec := Direct_abs_declarator.t)
 
 module Initialiser : sig
   type t = Assign of Expr.t | List of t list [@@deriving sexp]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 module Init_declarator : sig
   type t = {declarator: Declarator.t; initialiser: Initialiser.t option}
   [@@deriving sexp]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 module Decl :
-  S_g_decl
+  Ast_types.S_g_decl
     with type qual := Decl_spec.t
      and type decl := Init_declarator.t list
 
-module Label : S_label with type expr := Expr.t
+module Label : Ast_types.S_label with type expr := Expr.t
 
 module rec Stm :
-  (S_stm
+  (Ast_types.S_stm
     with type com := Compound_stm.t
      and type expr := Expr.t
      and type lbl := Label.t)
 
 and Compound_stm :
-  (S_compound_stm with type decl := Decl.t and type stm := Stm.t)
+  (Ast_types.S_compound_stm with type decl := Decl.t and type stm := Stm.t)
 
 module Function_def : sig
   type t =
@@ -123,19 +125,19 @@ module Function_def : sig
     ; body: Compound_stm.t }
   [@@deriving sexp]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 module External_decl : sig
   type t = [`Fun of Function_def.t | `Decl of Decl.t] [@@deriving sexp]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 module Translation_unit : sig
   type t = External_decl.t list [@@deriving sexp]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 module Litmus_lang :

@@ -21,6 +21,24 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** Modules that resolve simulator tables for machine IDs *)
+(** [Basic] is the standard input signature for functors creating sanitiser
+    passes. *)
+module type Basic = sig
+  module Lang : Act_language.Definition_types.S
+  (** [Lang] provides language-specific functionality. *)
 
-include module type of Resolver_intf
+  module Ctx : Ctx_types.S with module Lang := Lang
+  (** [Ctx] is the sanitiser's state monad, specialised over [Lang]. *)
+end
+
+(** [S] is the standard signature for sanitiser passes. *)
+module type S = sig
+  type t
+  (** Type of pass subject. *)
+
+  type 'a ctx
+  (** Type of sanitiser context. *)
+
+  val run : t -> t ctx
+  (** [run x] runs this sanitiser pass over [x]. *)
+end

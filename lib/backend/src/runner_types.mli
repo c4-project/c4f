@@ -48,7 +48,7 @@ end
 
 (** Main interface for simulator runners. *)
 module type S = sig
-  module Reader : Reader_intf.S
+  module Reader : Reader_types.S
   (** Allows reading in this simulator's output. *)
 
   module Filter : Filter.S

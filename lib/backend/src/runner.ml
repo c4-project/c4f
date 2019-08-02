@@ -30,7 +30,7 @@ let no_make_harness (_arch : Arch.t) ~(input_path : Fpath.t)
   Or_error.error_string "This backend doesn't support harness making."
 
 module Make (B : sig
-  module Reader : Reader_intf.S
+  module Reader : Reader_types.S
 
   module Unchecked_filter : Filter.S
 
@@ -60,7 +60,7 @@ end
 
 module Make_error_reader (B : sig
   val error : Error.t
-end) : Reader_intf.S = struct
+end) : Reader_types.S = struct
   include Plumbing.Loadable.Make (struct
     type t = Output.t
 

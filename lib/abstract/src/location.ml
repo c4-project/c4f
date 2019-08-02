@@ -52,7 +52,7 @@ end
 
 module Inherit_predicates
     (P : S_predicates)
-    (I : Act_utils.Inherit.S_partial with type c := P.t) :
+    (I : Act_utils.Inherit_types.S_partial with type c := P.t) :
   S_predicates with type t := I.t = struct
   let is_stack_pointer x =
     Option.exists (I.component_opt x) ~f:P.is_stack_pointer

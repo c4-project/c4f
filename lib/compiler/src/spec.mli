@@ -40,7 +40,7 @@ include Act_common.Spec.S with type t := t and module With_id := With_id
 module Forward_spec
     (Outer : Equal.S)
     (Inner : Spec_types.S)
-    (Forwarding : Act_utils.Inherit.S
+    (Forwarding : Act_utils.Inherit_types.S
                     with type c := Inner.t
                      and type t := Outer.t) :
   Spec_types.S with type t := Outer.t

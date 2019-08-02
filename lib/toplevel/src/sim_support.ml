@@ -68,7 +68,7 @@ let make_sim (machine : M_spec.With_id.t) (spec : Act_backend.Spec.t) :
 
 module Make_resolver (B : sig
   val cfg : Act_config.Act.t
-end) : Act_backend.Resolver.S = struct
+end) : Act_backend.Resolver_types.S = struct
   (* TODO(@MattWindsor91): use B.cfg to set up default simulators. *)
 
   let resolve_single (fqid : Act_common.Id.t) :

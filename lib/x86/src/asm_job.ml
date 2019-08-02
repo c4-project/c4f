@@ -27,7 +27,8 @@ module Tx = Travesty_base_exts
 
 module Make_runner_deps
     (Frontend : Frontend.S)
-    (Lang : Language_definition.S) : Act_asm.Runner_intf.Basic = struct
+    (Lang : Language_definition_types.S) : Act_asm.Runner_intf.Basic =
+struct
   module Src_lang = Lang
   module Dst_lang = Language_definition.Herd7
 

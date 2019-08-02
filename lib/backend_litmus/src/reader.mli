@@ -23,4 +23,4 @@
 
 (** Simulation output reader for Litmus7. *)
 
-include Act_backend.Reader_intf.S
+include Act_backend.Reader_types.S

@@ -24,7 +24,6 @@
 open Act_common
 open Base
 open Travesty_containers
-include Language_definition_intf
 
 module Common = struct
   let make_heap_loc l =
@@ -183,7 +182,8 @@ module Make_basic (T : Dialect_intf.S) (P : Pp_intf.S) = struct
   end
 end
 
-module Make (T : Dialect_intf.S) (P : Pp_intf.S) : S = struct
+module Make (T : Dialect_intf.S) (P : Pp_intf.S) :
+  Language_definition_types.S = struct
   module Dialect = T
   module Basic = Make_basic (T) (P)
   include Act_language.Definition.Make (Basic)
@@ -194,14 +194,15 @@ module Gcc = Make (Dialect.Gcc) (Pp.Gcc)
 module Intel = Make (Dialect.Intel) (Pp.Intel)
 module Herd7 = Make (Dialect.Herd7) (Pp.Herd7)
 
-let dialect_table : (Id.t, (module S)) List.Assoc.t Lazy.t =
+let dialect_table :
+    (Id.t, (module Language_definition_types.S)) List.Assoc.t Lazy.t =
   lazy
     [ (Id.of_string "att", (module Att))
     ; (Id.of_string "gcc", (module Gcc))
     ; (Id.of_string "intel", (module Intel))
     ; (Id.of_string "herd7", (module Herd7)) ]
 
-let of_dialect : Id.t -> (module S) Or_error.t =
+let of_dialect : Id.t -> (module Language_definition_types.S) Or_error.t =
   Staged.unstage
     (Dialect.find_by_id dialect_table
        ~context:"finding a language definition")

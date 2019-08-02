@@ -21,8 +21,6 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Reader_intf
+module Extend (B : Reader_types.Basic) : Reader_types.Extensions
 
-module Extend (B : Basic) : Extensions
-
-module Make (B : Basic) : S
+module Make (B : Reader_types.Basic) : Reader_types.S

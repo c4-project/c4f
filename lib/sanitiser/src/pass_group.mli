@@ -95,7 +95,7 @@ module Selector : sig
   (** [t] is the base element type of the language. *)
 
   include
-    Property.S with type t := t
+    Property_types.S with type t := t
   (** This module implements the usual interface for looking up predicate
       documentation. *)
 

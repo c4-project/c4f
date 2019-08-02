@@ -107,7 +107,7 @@ end
 
 module Inherit_predicates
     (P : S_predicates)
-    (I : Au.Inherit.S_partial with type c := P.t) :
+    (I : Au.Inherit_types.S_partial with type c := P.t) :
   S_predicates with type t := I.t = struct
   open Option
 
@@ -200,7 +200,7 @@ include Properties
 
 module Inherit_properties
     (P : S_properties)
-    (I : Au.Inherit.S with type c := P.t) :
+    (I : Au.Inherit_types.S with type c := P.t) :
   S_properties with type t := I.t = struct
   let opcode x = P.opcode (I.component x)
 

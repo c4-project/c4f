@@ -33,6 +33,7 @@ module type S = sig
   (** [convert] tries to convert a program from one dialect to another. *)
 end
 
-module Make (SD : Language_definition.S) (DD : Language_definition.S) :
-  S with type ast = Ast.t
+module Make
+    (SD : Language_definition_types.S)
+    (DD : Language_definition_types.S) : S with type ast = Ast.t
 (** [Make SD DD] makes a conversion from x86 dialect SD to dialect DD. *)

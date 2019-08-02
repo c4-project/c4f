@@ -24,9 +24,17 @@
 open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
-include Convert_intf
 
-module Make (B : Basic) = struct
+module Make (B : sig
+  module From : Ast_types.S
+
+  module To : Ast_types.S
+
+  val constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t
+
+  val program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t
+end) =
+struct
   let convert_programs :
       B.From.Lang.Program.t list -> B.To.Lang.Program.t list Or_error.t =
     Tx.Or_error.combine_map ~f:B.program

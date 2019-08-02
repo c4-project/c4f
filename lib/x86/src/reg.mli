@@ -99,6 +99,6 @@ type t = [reg8 | reg16 | reg32 | flag]
 include Act_utils.Enum_types.Extension_table with type t := t
 
 include
-  Act_abstract.Abstractable.S
+  Act_abstract.Abstractable_types.S
     with type t := t
      and module Abs := Act_abstract.Register

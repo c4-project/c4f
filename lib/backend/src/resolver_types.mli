@@ -21,24 +21,12 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-(** [Basic] is the standard input signature for functors creating sanitiser
-    passes. *)
-module type Basic = sig
-  module Lang : Act_language.Definition_types.S
-  (** [Lang] provides language-specific functionality. *)
+open Base
 
-  module Ctx : Ctx.S with module Lang := Lang
-  (** [Ctx] is the sanitiser's state monad, specialised over [Lang]. *)
-end
-
-(** [S] is the standard signature for sanitiser passes. *)
+(** Signature of modules that resolve fully qualified backend IDs into
+    backend runners. *)
 module type S = sig
-  type t
-  (** Type of pass subject. *)
-
-  type 'a ctx
-  (** Type of sanitiser context. *)
-
-  val run : t -> t ctx
-  (** [run x] runs this sanitiser pass over [x]. *)
+  val resolve_single : Act_common.Id.t -> (module Runner_types.S) Or_error.t
+  (** [resolve_single id] resolves a single simulator with fully qualified
+      ID [id]. *)
 end

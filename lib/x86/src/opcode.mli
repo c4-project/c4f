@@ -110,7 +110,7 @@ module Sizable : sig
 
   (** We can convert sizable opcodes to the act abstract form. *)
   include
-    Act_abstract.Abstractable.S
+    Act_abstract.Abstractable_types.S
       with type t := t
        and module Abs := Act_abstract.Instruction.Opcode
 
@@ -137,7 +137,7 @@ module Sized : sig
 
   (** We can convert sized opcodes to the act abstract form. *)
   include
-    Act_abstract.Abstractable.S
+    Act_abstract.Abstractable_types.S
       with type t := t
        and module Abs := Act_abstract.Instruction.Opcode
 end
@@ -157,7 +157,7 @@ module Basic : sig
 
   (** We can convert basic opcodes to the act abstract form. *)
   include
-    Act_abstract.Abstractable.S
+    Act_abstract.Abstractable_types.S
       with type t := t
        and module Abs := Act_abstract.Instruction.Opcode
 
@@ -212,7 +212,7 @@ module Jump : sig
 
   (** We can convert jumps to the act abstract form. *)
   include
-    Act_abstract.Abstractable.S
+    Act_abstract.Abstractable_types.S
       with type t := t
        and module Abs := Act_abstract.Instruction.Opcode
 end
@@ -245,7 +245,7 @@ val unknown : string -> t
 
 (** We can convert elements of [t] to the act abstract form. *)
 include
-  Act_abstract.Abstractable.S
+  Act_abstract.Abstractable_types.S
     with type t := t
      and module Abs := Act_abstract.Instruction.Opcode
 
@@ -255,7 +255,7 @@ val of_string : string -> t
 (** {2 Common opcodes} *)
 
 val call : t
-(** [cal] is CALL. *)
+(** [call] is CALL. *)
 
 val jmp : t
 (** [jmp] is JMP (unconditional jump); not to be confused with

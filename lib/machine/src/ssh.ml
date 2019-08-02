@@ -23,7 +23,7 @@ let pp f {host; user; copy_dir} =
 
 module To_config (C : sig
   val ssh : t
-end) : Act_utils.Ssh.S = struct
+end) : Act_utils.Ssh_types.S = struct
   let host = host C.ssh
 
   let user = user C.ssh

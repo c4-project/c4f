@@ -38,7 +38,7 @@ module type Basic = sig
       example, recursive explanations of child components). *)
 
   include
-    Act_abstract.Abstractable.S with type t := elt
+    Act_abstract.Abstractable_types.S with type t := elt
   (** Items of type [elt] must be abstractable. *)
 
   include
@@ -81,7 +81,7 @@ module type S = sig
       example, recursive explanations of child components). *)
 
   include
-    Act_abstract.Abstractable.S with type t := t
+    Act_abstract.Abstractable_types.S with type t := t
   (** Each [t] inherits the abstract type projection of its underlying
       [exp]. *)
 

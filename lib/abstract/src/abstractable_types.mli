@@ -1,6 +1,6 @@
 (* This file is part of 'act'.
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018 by Matt Windsor
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the
@@ -23,10 +23,30 @@
 
 open Base
 
-(** Signature of modules that resolve a machine ID we want to simulate on
-    into a table of available simulators on that machine. *)
+(** [Basic] is a common signature for things that have an abstract type,
+    implementing [Abstract.S], that can be queried. *)
+module type Basic = sig
+  type t
+  (** [t] is the concrete type. *)
+
+  module Abs : Node.S
+
+  val abstract : t -> Abs.t
+  (** [abstract x] gets the abstract form of [x]. *)
+end
+
+(** [S] is an extended signature for things that have an abstract type,
+    implementing [Abstract.S], that can be queried. *)
 module type S = sig
-  val resolve_single : Act_common.Id.t -> (module Runner_types.S) Or_error.t
-  (** [resolve_single id] resolves a single simulator with fully qualified
-      ID [id]. *)
+  include Basic
+
+  val abs_kind : t -> Abs.Kind.t
+  (** [abs_kind x] gets the abstract kind of [x]. *)
+
+  val has_abs_kind : Abs.Kind.t -> t -> bool
+  (** [has_abs_kind t x] returns [true] if [x] has abstract kind [t]. *)
+
+  val abs_kind_in : Set.M(Abs.Kind).t -> t -> bool
+  (** [abs_kind_in set x] returns [true] if [x]'s abstract kind is a member
+      of [set]. *)
 end

@@ -25,4 +25,4 @@ val eval : Spec.With_id.t -> t -> bool
 val eval_b : Spec.With_id.t -> t Blang.t -> bool
 (** [eval_b cspec expr] evaluates a [Blang] expression [expr] over [cspec]. *)
 
-include Act_common.Property.S with type t := t
+include Act_common.Property_types.S with type t := t

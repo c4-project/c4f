@@ -26,23 +26,22 @@
 
     This is based on the pattern used in [Base.Comparable]. *)
 
-include module type of Inherit_intf
-
 (** [Make_partial] converts an [S] into an [S_partial] that always returns
     [Some (component x)] for [component_opt x]. *)
-module Make_partial (I : S) : S_partial with type t = I.t and type c = I.c
+module Make_partial (I : Inherit_types.S) :
+  Inherit_types.S_partial with type t = I.t and type c = I.c
 
 (** {2 Helpers for building inheritance modules} *)
 
 (** [Helpers] produces helper functions for forwarding through an {{!S} S}. *)
-module Helpers (I : S) : sig
+module Helpers (I : Inherit_types.S) : sig
   val forward : (I.c -> 'a) -> I.t -> 'a
   (** [forward f t] lifts the component accessor [f] over [t]. *)
 end
 
 (** [Partial_helpers] produces helper functions for forwarding through an
     {{!S_partial} S_partial}. *)
-module Partial_helpers (I : S_partial) : sig
+module Partial_helpers (I : Inherit_types.S_partial) : sig
   val forward_bool : (I.c -> bool) -> I.t -> bool
   (** [forward_bool f t] is [false] if [t] doesn't have the required
       component, and [f c] if it does (and that component is [c]). *)

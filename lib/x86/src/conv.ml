@@ -31,7 +31,9 @@ module type S = sig
   val convert : ast -> ast Or_error.t
 end
 
-module Make (SD : Language_definition.S) (DD : Language_definition.S) =
+module Make
+    (SD : Language_definition_types.S)
+    (DD : Language_definition_types.S) =
 struct
   type ast = Ast.t
 

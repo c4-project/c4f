@@ -22,9 +22,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-
-include module type of Property_intf
-(** For [S], see here. *)
+(** Helpers for properties and property trees. *)
 
 (** Helpers for documenting property trees. *)
 module Tree_doc : sig

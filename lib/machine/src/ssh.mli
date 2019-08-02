@@ -32,5 +32,5 @@ val copy_dir : t -> string
 
 module To_config (C : sig
   val ssh : t
-end) : Act_utils.Ssh.S
+end) : Act_utils.Ssh_types.S
 (** [To_config] lifts a [t] to an [Ssh.S]. *)

@@ -39,5 +39,5 @@ module type Basic = Reader_intf.Basic with type state_line := State_line.t
 (** Synonym for {{!Reader_intf.Basic} Reader_intf.Basic} with [state_line]
     fixed. *)
 
-module Make (B : Basic) : Act_backend.Reader_intf.S
+module Make (B : Basic) : Act_backend.Reader_types.S
 (** Makes an output scraper for the Herdtools7 simulator described in [B]. *)

@@ -24,7 +24,6 @@
 open Core
 module Pb = Plumbing
 module Tx = Travesty_base_exts
-include Fs_intf
 
 let default_sort_compare : Fpath.t -> Fpath.t -> int =
   Tx.Fn.on Fpath.to_string ~f:String_extended.collate
@@ -49,7 +48,7 @@ let subpaths (path : Fpath.t) : Fpath.t list =
   let npath = Fpath.normalize path in
   mu [npath] npath
 
-module Unix : S = struct
+module Unix : Fs_types.S = struct
   type ent_type = File | Dir | Nothing | Unknown
 
   let get_ent_type (path : string) : ent_type =

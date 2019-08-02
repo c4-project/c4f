@@ -22,7 +22,6 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-include Property_intf
 
 module Tree_doc = struct
   type elt = {args: string list; details: string}

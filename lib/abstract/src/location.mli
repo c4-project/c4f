@@ -73,7 +73,7 @@ end
 
 module Inherit_predicates
     (P : S_predicates)
-    (I : Act_utils.Inherit.S_partial with type c := P.t) :
+    (I : Act_utils.Inherit_types.S_partial with type c := P.t) :
   S_predicates with type t := I.t
 (** [Inherit_predicates] generates a [S_predicates] by inheriting it from an
     optional component. Each predicate returns false when the component

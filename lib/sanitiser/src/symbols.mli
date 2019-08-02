@@ -33,7 +33,7 @@
         for Herd-like programs to parse with less human-readable (but more
         machine-readable) equivalents.}} *)
 
-module Make (B : Pass_intf.Basic) :
-  Pass_intf.S
+module Make (B : Pass_types.Basic) :
+  Pass_types.S
     with type t := B.Lang.Program.t list
      and type 'a ctx := 'a B.Ctx.t

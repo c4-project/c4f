@@ -24,9 +24,7 @@
 (** [Ssh] contains types, modules, and functions for doing remote work over
     SSH. *)
 
-open Core
-
-include module type of Ssh_intf
+open Base
 
 (** {2 SSH configuration records} *)
 
@@ -47,14 +45,14 @@ val make : ?user:string -> host:string -> unit -> t
 
 module Make (Conf : sig
   val ssh : t
-end) : S
+end) : Ssh_types.S
 (** [Make] makes an [S] from a [t]. *)
 
-module Runner (Conf : Basic_runner) : Plumbing.Runner_types.S
+module Runner (Conf : Ssh_types.Basic_runner) : Plumbing.Runner_types.S
 (** [Runner] provides a [Run.Runner] using the given SSH config. *)
 
 (** [Scp] provides SCP file transfer operations, given an [S]. *)
-module Scp (Conf : S) : sig
+module Scp (Conf : Ssh_types.S) : sig
   val send :
     recurse:bool -> local:Fpath.t -> remote:string -> unit Or_error.t
   (** [send ~recurse ~local ~remote] tries to copy the local path [local] to

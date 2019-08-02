@@ -22,9 +22,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
 open Base
-open Pass_intf
 
 module Make_null (Ctx : Monad.S) (Subject : Base.T) :
-  S with type t := Subject.t and type 'a ctx := 'a Ctx.t = struct
+  Pass_types.S with type t := Subject.t and type 'a ctx := 'a Ctx.t = struct
   let run : Subject.t -> Subject.t Ctx.t = Ctx.return
 end

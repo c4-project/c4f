@@ -60,7 +60,7 @@ module type S_g_decl = sig
 
   type t = {qualifiers: qual list; declarator: decl}
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (** Signature of general composite (enum, struct, union) specifiers. *)
@@ -76,7 +76,7 @@ module type S_composite_spec = sig
         {kind: kind; name_opt: Identifier.t option; decls: decl list}
     | Named of kind * Identifier.t
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (** {3 Declarators} *)
@@ -99,7 +99,7 @@ module type S_direct_declarator = sig
     | Fun_decl of t * par
     | Fun_call of t * Identifier.t list
 
-  include Ast_node_with_identifier with type t := t
+  include Ast_basic_types.Ast_node_with_identifier with type t := t
 end
 
 (** Signature of declarators. *)
@@ -109,7 +109,7 @@ module type S_declarator = sig
 
   type t = {pointer: Pointer.t option; direct: ddec}
 
-  include Ast_node_with_identifier with type t := t
+  include Ast_basic_types.Ast_node_with_identifier with type t := t
 end
 
 (** Signature of direct abstract declarators. *)
@@ -128,7 +128,7 @@ module type S_direct_abs_declarator = sig
     | Array of (t option, expr option) Array.t
     | Fun_decl of t option * par option
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (** Signature of abstract declarators. *)
@@ -138,7 +138,7 @@ module type S_abs_declarator = sig
 
   type t = Pointer of Pointer.t | Direct of Pointer.t option * ddec
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (** Signature of struct declarators. *)
@@ -151,14 +151,14 @@ module type S_struct_declarator = sig
 
   type t = Regular of dec | Bitfield of dec option * expr
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (* {3 Other} *)
 
 (** Signature of expression nodes. *)
 module type S_expr = sig
-  module Ty : Ast_node
+  module Ty : Ast_basic_types.Ast_node
   (** Type of type names. *)
 
   type t =
@@ -179,7 +179,7 @@ module type S_expr = sig
     | Constant of Constant.t
     | Brackets of t
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (** Signature of labels *)
@@ -189,7 +189,7 @@ module type S_label = sig
 
   type t = Normal of Identifier.t | Case of expr | Default
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (** Signature of compound statements *)
@@ -200,13 +200,14 @@ module type S_compound_stm = sig
   type stm
   (** Type of statements. *)
 
-  module Elt : Ast_node with type t = [`Stm of stm | `Decl of decl]
+  module Elt :
+    Ast_basic_types.Ast_node with type t = [`Stm of stm | `Decl of decl]
 
   (* TODO(@MattWindsor91): this is the C99 definition of compound
      statements, but everything else targets C89. *)
   type t = Elt.t list
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (** Signature of statements *)
@@ -235,7 +236,7 @@ module type S_stm = sig
     | Break
     | Return of expr option
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (** Signature of type specifiers *)
@@ -252,7 +253,7 @@ module type S_type_spec = sig
     | `Enum of en
     | `Defined_type of Identifier.t ]
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end
 
 (** Signature of parameter type lists *)
@@ -262,5 +263,5 @@ module type S_param_type_list = sig
 
   type t = {params: pdecl list; style: [`Normal | `Variadic]}
 
-  include Ast_node with type t := t
+  include Ast_basic_types.Ast_node with type t := t
 end

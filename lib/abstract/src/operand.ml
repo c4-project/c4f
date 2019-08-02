@@ -112,7 +112,7 @@ end
 
 module Inherit_predicates
     (P : S_predicates)
-    (I : Au.Inherit.S_partial with type c := P.t) :
+    (I : Au.Inherit_types.S_partial with type c := P.t) :
   S_predicates with type t := I.t = struct
   include Location.Inherit_predicates
             (P)
@@ -164,7 +164,7 @@ end
 
 module Inherit_properties
     (P : S_properties)
-    (I : Au.Inherit.S with type c := P.t) :
+    (I : Au.Inherit_types.S with type c := P.t) :
   S_properties with type t := I.t = struct
   module I_with_c = struct
     type c = P.t
@@ -341,7 +341,7 @@ module Bundle = struct
 
   module Inherit_predicates
       (P : S_predicates)
-      (I : Au.Inherit.S_partial with type c := P.t) :
+      (I : Au.Inherit_types.S_partial with type c := P.t) :
     S_predicates with type t := I.t = struct
     module H = Au.Inherit.Partial_helpers (struct
       type c = P.t
@@ -413,7 +413,7 @@ module Bundle = struct
 
   module Inherit_properties
       (P : S_properties)
-      (I : Au.Inherit.S with type c := P.t) :
+      (I : Au.Inherit_types.S with type c := P.t) :
     S_properties with type t := I.t = struct
     module I_with_c = struct
       type c = P.t

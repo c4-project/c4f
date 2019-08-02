@@ -66,7 +66,7 @@ let list_compilers_command : Command.t =
           ?machine_predicate ~with_compiler_tests:true
           ~f:(run_list_compilers standard_args))
 
-let predicate_lists : (string, (module Property.S)) List.Assoc.t =
+let predicate_lists : (string, (module Property_types.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"
     , (module Act_compiler.Property) )
   ; ("Machine predicates (-filter-machines)", (module Act_machine.Property))
@@ -74,11 +74,12 @@ let predicate_lists : (string, (module Property.S)) List.Assoc.t =
   ; ( "Sanitiser passes (-sanitiser-passes)"
     , (module Act_sanitiser.Pass_group.Selector) ) ]
 
-let pp_tree_module : (module Property.S) Fmt.t =
+let pp_tree_module : (module Property_types.S) Fmt.t =
  fun f (module M) -> M.pp_tree f ()
 
 (** [pp_predicate_list] is a pretty-printer for predicate lists. *)
-let pp_predicate_list : (string, (module Property.S)) List.Assoc.t Fmt.t =
+let pp_predicate_list :
+    (string, (module Property_types.S)) List.Assoc.t Fmt.t =
   Fmt.(
     list ~sep:(any "@,@,")
       (vbox ~indent:2 (pair ~sep:sp (string ++ any ":") pp_tree_module)))

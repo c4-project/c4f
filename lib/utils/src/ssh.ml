@@ -25,7 +25,6 @@
     SSH. *)
 
 open Core
-include Ssh_intf
 module Pb = Plumbing
 
 type t = {user: string option [@sexp.option]; host: string}
@@ -33,13 +32,13 @@ type t = {user: string option [@sexp.option]; host: string}
 
 module Make (C : sig
   val ssh : t
-end) : S = struct
+end) : Ssh_types.S = struct
   let host = host C.ssh
 
   let user = user C.ssh
 end
 
-module Scp (Conf : S) = struct
+module Scp (Conf : Ssh_types.S) = struct
   open Conf
 
   let send ~(recurse : bool) ~(local : Fpath.t) ~(remote : string) =
@@ -67,7 +66,7 @@ module Scp (Conf : S) = struct
     Pb.Runner.Local.run ~prog:"scp" argv
 end
 
-module Runner (Conf : Basic_runner) : Pb.Runner_types.S =
+module Runner (Conf : Ssh_types.Basic_runner) : Pb.Runner_types.S =
 Pb.Runner.Make (struct
   open Conf
   module Scp = Scp (Conf)

@@ -48,7 +48,7 @@ module type Basic = sig
     Travesty.Traversable_types.S0 with module Elt = Sym and type t := t
 
   include
-    Act_abstract.Abstractable.S
+    Act_abstract.Abstractable_types.S
       with type t := t
        and module Abs := Act_abstract.Location
 

@@ -31,7 +31,7 @@
 open Base
 
 module Make (B : sig
-  module Reader : Reader_intf.S
+  module Reader : Reader_types.S
 
   module Unchecked_filter : Filter.S
 

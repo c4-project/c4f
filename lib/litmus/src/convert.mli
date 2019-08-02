@@ -23,10 +23,20 @@
 
 open Base
 
-include module type of Convert_intf
-
 (** A functor that constructs a partial conversion function from one Litmus
     AST to another. *)
-module Make (B : Basic) : sig
+module Make (B : sig
+  module From : Ast_types.S
+  (** The Litmus language from which we're converting. *)
+
+  module To : Ast_types.S
+  (** The Litmus language to which we're converting. *)
+
+  val constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t
+  (** [constant k] tries to convert [k] to the new language. *)
+
+  val program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t
+  (** [constant k] tries to convert [k] to the new language. *)
+end) : sig
   val convert : B.From.Validated.t -> B.To.Validated.t Or_error.t
 end

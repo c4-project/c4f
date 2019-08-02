@@ -53,7 +53,7 @@ module type Basic = sig
   (** [pp_operands f ins] pretty-prints only the instruction operands. *)
 
   include
-    Act_abstract.Abstractable.S
+    Act_abstract.Abstractable_types.S
       with type t := t
        and module Abs := Act_abstract.Instruction
 

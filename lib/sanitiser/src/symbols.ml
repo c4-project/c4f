@@ -23,8 +23,8 @@
 
 open Base
 
-module Make (B : Pass_intf.Basic) :
-  Pass_intf.S
+module Make (B : Pass_types.Basic) :
+  Pass_types.S
     with type t := B.Lang.Program.t list
      and type 'a ctx := 'a B.Ctx.t = struct
   module Ctx_Pcon = Travesty_base_exts.List.On_monad (B.Ctx)

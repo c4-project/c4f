@@ -21,14 +21,12 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-open Reader_intf
-
-module Extend (B : Basic) : Extensions = struct
+module Extend (B : Reader_types.Basic) : Reader_types.Extensions = struct
   let read_output_from_string (s : string) : Output.t =
     Output.join (B.load_from_string s)
 end
 
-module Make (B : Basic) : S = struct
+module Make (B : Reader_types.Basic) : Reader_types.S = struct
   include B
   include Extend (B)
 end

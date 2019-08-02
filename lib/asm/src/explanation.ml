@@ -206,7 +206,9 @@ module Make_ins (B : Basic_ins) :
 
     include (
       B.Instruction :
-        Act_abstract.Abstractable.S with module Abs := Abs and type t := elt )
+        Act_abstract.Abstractable_types.S
+          with module Abs := Abs
+           and type t := elt )
 
     let abs_flags _ _ : Set.M(Flag).t = Set.empty (module Flag)
   end
@@ -254,7 +256,9 @@ module Make_stm (B : Basic_stm) = struct
 
     include (
       B.Statement :
-        Act_abstract.Abstractable.S with module Abs := Abs and type t := elt )
+        Act_abstract.Abstractable_types.S
+          with module Abs := Abs
+           and type t := elt )
 
     let abs_flags = B.Statement.extended_flags
   end
