@@ -82,9 +82,9 @@ module Inherit_predicates
 module Kind : sig
   type t = Register_direct | Register_indirect | Heap | Unknown
 
-  include Act_utils.Enum.S_table with type t := t
+  include Act_utils.Enum_types.S_table with type t := t
 
-  include Act_utils.Enum.Extension_table with type t := t
+  include Act_utils.Enum_types.Extension_table with type t := t
 end
 
 include

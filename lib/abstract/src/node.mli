@@ -38,9 +38,9 @@ module type S = sig
   module Kind : sig
     type t
 
-    include Enum.S_table with type t := t
+    include Enum_types.S_table with type t := t
 
-    include Enum.Extension_table with type t := t
+    include Enum_types.Extension_table with type t := t
   end
 
   module Flag : Flag_enum.S

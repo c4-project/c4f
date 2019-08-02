@@ -82,7 +82,7 @@ end
 module Bop : sig
   type t = Plus | Minus [@@deriving sexp, quickcheck]
 
-  include Enum.Extension_table with type t := t
+  include Enum_types.Extension_table with type t := t
 end
 
 module Operand : sig

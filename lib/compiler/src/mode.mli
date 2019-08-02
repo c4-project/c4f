@@ -15,4 +15,4 @@ type t =
   | Object  (** Compiling a single file to object code. *)
 [@@deriving sexp]
 
-include Act_utils.Enum.Extension_table with type t := t
+include Act_utils.Enum_types.Extension_table with type t := t

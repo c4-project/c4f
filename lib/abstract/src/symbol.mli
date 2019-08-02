@@ -35,7 +35,7 @@ include module type of M
 module Sort : sig
   type t = Jump | Heap | Label
 
-  include Enum.Extension_table with type t := t
+  include Enum_types.Extension_table with type t := t
 end
 
 (** [Table] is a module concerning symbol tables: many-to-many mappings

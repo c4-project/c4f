@@ -28,7 +28,7 @@ module Basic : sig
   val int : ?atomic:bool -> unit -> t
   (** [int] is the int, or C11 atomic_int, type. *)
 
-  include Enum.Extension_table with type t := t
+  include Enum_types.Extension_table with type t := t
 
   val to_spec : t -> [> Act_c_lang.Ast.Type_spec.t]
   (** [to_spec btype] converts a basic type to a type spec. *)

@@ -32,9 +32,9 @@ type t = General of string | Stack_pointer | Unknown
 module Kind : sig
   type t = General | Stack_pointer | Unknown
 
-  include Act_utils.Enum.S_table with type t := t
+  include Act_utils.Enum_types.S_table with type t := t
 
-  include Act_utils.Enum.Extension_table with type t := t
+  include Act_utils.Enum_types.Extension_table with type t := t
 end
 
 include Pretty_printer.S with type t := t

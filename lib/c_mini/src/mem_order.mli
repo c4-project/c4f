@@ -33,9 +33,9 @@ type t =
   | Relaxed  (** [memory_order_relaxed] *)
   | Consume  (** [memory_order_consume] *)
 
-include Act_utils.Enum.S_table with type t := t
+include Act_utils.Enum_types.S_table with type t := t
 
-include Act_utils.Enum.Extension_table with type t := t
+include Act_utils.Enum_types.Extension_table with type t := t
 
 (** {2 Predicates} *)
 

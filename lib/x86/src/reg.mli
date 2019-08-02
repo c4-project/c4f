@@ -96,7 +96,7 @@ type reg32 = [gp32 | sp32] [@@deriving enumerate, equal, sexp]
 type t = [reg8 | reg16 | reg32 | flag]
 (** [t] enumerates all commonly used registers available in 32-bit x86. *)
 
-include Act_utils.Enum.Extension_table with type t := t
+include Act_utils.Enum_types.Extension_table with type t := t
 
 include
   Act_abstract.Abstractable.S

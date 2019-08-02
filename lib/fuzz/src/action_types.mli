@@ -48,7 +48,8 @@ module type S = sig
       [subject] and the current state, decides whether this action can run
       (given any member of [Random_state.t]). *)
 
-  val run : Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t
+  val run :
+    Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t
   (** [run subject ~payload] is a stateful computation that runs this action
       on [subject] with payload [payload]. *)
 end

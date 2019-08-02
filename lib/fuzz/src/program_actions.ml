@@ -30,6 +30,6 @@ module Make_empty : Action_types.S with type Payload.t = unit = struct
 
   let run (subject : Subject.Test.t) ~(payload : Payload.t) :
       Subject.Test.t State.Monad.t =
-    ignore payload;
+    ignore payload ;
     State.Monad.return (Subject.Test.add_new_program subject)
 end

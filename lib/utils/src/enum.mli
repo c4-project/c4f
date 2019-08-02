@@ -23,6 +23,14 @@
 
 (** Helper functions and modules for enums *)
 
-include
-  Enum_intf.Enum
-(** We keep all declarations in [Enum_intf], to reduce duplication. *)
+module Make_from_enumerate (E : Enum_types.S_enumerate) :
+  Enum_types.S with type t = E.t
+(** [Make_from_enumerate] makes an [S] from an [S_enumerate]. *)
+
+module Extend (E : Enum_types.S_sexp) :
+  Enum_types.Extension with type t := E.t
+(** [Extend] makes an enum extension. *)
+
+module Extend_table (E : Enum_types.S_table) :
+  Enum_types.Extension_table with type t := E.t
+(** [Extend] makes an enum extension with table support. *)

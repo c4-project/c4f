@@ -60,7 +60,7 @@ type t =
 (** [t] enumerates the various high-level sanitisation passes. *)
 
 include
-  Enum.Extension_table with type t := t
+  Enum_types.Extension_table with type t := t
 (** We include the usual enum extensions for [Pass]. *)
 
 val explain : (t, comparator_witness) Set.t

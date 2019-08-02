@@ -37,9 +37,9 @@ type t =
 module Kind : sig
   type t = Directive | Instruction | Blank | Label | Unknown
 
-  include Enum.S_table with type t := t
+  include Enum_types.S_table with type t := t
 
-  include Enum.Extension_table with type t := t
+  include Enum_types.Extension_table with type t := t
 end
 
 (** [S_predicates] is the signature of any module that can access simple

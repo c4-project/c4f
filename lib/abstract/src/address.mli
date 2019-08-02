@@ -31,9 +31,9 @@ type t = Int of int | Symbol of Symbol.t [@@deriving sexp, equal]
 module Kind : sig
   type t = Int | Symbol
 
-  include Act_utils.Enum.S_table with type t := t
+  include Act_utils.Enum_types.S_table with type t := t
 
-  include Act_utils.Enum.Extension_table with type t := t
+  include Act_utils.Enum_types.Extension_table with type t := t
 end
 
 include Pretty_printer.S with type t := t

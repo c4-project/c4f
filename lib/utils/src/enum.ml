@@ -23,16 +23,15 @@
 
 open Base
 module Tx = Travesty_base_exts
-include Enum_intf
 
-module Make_comparable (E : S_sexp) : Comparable.S with type t := E.t =
-Comparable.Make (struct
+module Make_comparable (E : Enum_types.S_sexp) :
+  Comparable.S with type t := E.t = Comparable.Make (struct
   include E
 
   let compare = Comparable.lift ~f:E.to_enum Int.compare
 end)
 
-module Make_hashable (E : S) : sig
+module Make_hashable (E : Enum_types.S) : sig
   type t = E.t [@@deriving hash]
 end = struct
   type t = E.t
@@ -45,7 +44,7 @@ end
 module Make_quickcheck (E : sig
   type t [@@deriving hash]
 
-  include S_sexp with type t := t
+  include Enum_types.S_sexp with type t := t
 end) : My_quickcheck.S_with_sexp with type t = E.t = struct
   type t = E.t
 
@@ -65,7 +64,8 @@ end) : My_quickcheck.S_with_sexp with type t = E.t = struct
   let quickcheck_shrinker = S.atomic
 end
 
-module Make_from_enumerate (E : S_enumerate) : S with type t = E.t = struct
+module Make_from_enumerate (E : Enum_types.S_enumerate) :
+  Enum_types.S with type t = E.t = struct
   type t = E.t
 
   let min = 0
@@ -79,7 +79,8 @@ module Make_from_enumerate (E : S_enumerate) : S with type t = E.t = struct
   let of_enum = List.nth E.all
 end
 
-module Extend (E : S_sexp) : Extension with type t := E.t = struct
+module Extend (E : Enum_types.S_sexp) :
+  Enum_types.Extension with type t := E.t = struct
   module EH = struct
     include E
     include Make_hashable (E)
@@ -110,8 +111,8 @@ module Extend (E : S_sexp) : Extension with type t := E.t = struct
   let all_set () = Set.of_list (module EC) (all_list ())
 end
 
-module Extend_table (E : S_table) : Extension_table with type t := E.t =
-struct
+module Extend_table (E : Enum_types.S_table) :
+  Enum_types.Extension_table with type t := E.t = struct
   module Tbl = String_table.Make (struct
     include E
 

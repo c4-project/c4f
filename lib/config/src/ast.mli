@@ -109,7 +109,7 @@ module Default : sig
   module Category : sig
     type t = Arch | Compiler | Machine | Sim [@@deriving sexp]
 
-    include Act_utils.Enum.Extension_table with type t := t
+    include Act_utils.Enum_types.Extension_table with type t := t
   end
 
   type t = Try of Category.t * Id.t [@@deriving sexp]

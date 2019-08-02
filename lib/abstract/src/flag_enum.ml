@@ -27,7 +27,7 @@ open Act_utils
 module type S = sig
   type t
 
-  include Enum.Extension_table with type t := t
+  include Enum_types.Extension_table with type t := t
 end
 
 module None : S with type t = Nothing.t = struct

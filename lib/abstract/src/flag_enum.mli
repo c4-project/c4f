@@ -34,7 +34,7 @@ open Core_kernel
 module type S = sig
   type t
 
-  include Act_utils.Enum.Extension_table with type t := t
+  include Act_utils.Enum_types.Extension_table with type t := t
 end
 
 module None : S with type t = Nothing.t
