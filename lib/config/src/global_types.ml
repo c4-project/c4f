@@ -9,8 +9,6 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
-
 (** Baseline interface of modules over configuration. *)
 module type S = sig
   type t
@@ -18,7 +16,7 @@ module type S = sig
   val defaults : t -> Default.t
   (** [defaults c] gets the defaults set specified by configuration [c]. *)
 
-  val fuzz : t -> Fuzz.t option
+  val fuzz : t -> Act_fuzz.Config.t
   (** [fuzz c] gets the fuzzer config, if any, to use for configuration [c]. *)
 
   val machines : t -> Act_machine.Spec.Set.t

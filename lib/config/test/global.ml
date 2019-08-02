@@ -16,7 +16,7 @@ module Ac = Act_common
 module Am = Act_machine
 
 module Data = struct
-  let fuzz : Fuzz.t Lazy.t = Lazy.from_fun Fuzz.make
+  let fuzz : Act_fuzz.Config.t Lazy.t = Lazy.from_fun Act_fuzz.Config.make
 
   (* These defaults should line up with the ones in Machine.Test.Qualified.
 
@@ -51,8 +51,8 @@ let%test_module "accessors" =
            (machines ((foo) (bar) (localhost))) (sims ())) |}]
 
     let%expect_test "fuzz" =
-      print_s [%sexp (Global.fuzz global : Fuzz.t option)] ;
-      [%expect {| (((weights ()))) |}]
+      print_s [%sexp (Global.fuzz global : Act_fuzz.Config.t)] ;
+      [%expect {| ((weights ())) |}]
 
     let%expect_test "machines" =
       Fmt.pr "@[%a@]@." Am.Spec.Set.pp (Global.machines global) ;

@@ -60,11 +60,10 @@ module Pool : sig
   type t
   (** Action lists are just weighted lists of first-class action modules. *)
 
-  val make :
-    (module Action_types.S) list -> Act_config.Fuzz.t -> t Or_error.t
-  (** [make actions config] tries to make a weighted action pool by taking
-      the actions defined in [action_map] and applying the user-specified
-      weight overrides in [config]. *)
+  val of_weighted_actions :
+    ((module Action_types.S), int) List.Assoc.t -> t Or_error.t
+  (** [of_weighted_actions actions] tries to make a weighted action pool
+      from the action-to-weight association given in [actions]. *)
 
   val summarise : t -> Summary.t Id.Map.t
   (** [summarise pool] generates a mapping from action names to summaries of

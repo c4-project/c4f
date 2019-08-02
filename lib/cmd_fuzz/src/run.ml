@@ -19,10 +19,7 @@ let write_trace (trace : Act_fuzz.Trace.t) (oc : Stdio.Out_channel.t) :
 let run ?(seed : int option) ?(trace_output : string option)
     (args : _ Toplevel.Args.With_files.t) (o : Act_common.Output.t)
     (act_config : Act_config.Act.t) : unit Or_error.t =
-  let config =
-    act_config |> Act_config.Act.fuzz
-    |> Option.value ~default:(Act_config.Fuzz.make ())
-  in
+  let config = Act_config.Act.fuzz act_config in
   Toplevel.Args.With_files.run_filter_with_aux_out
     (module Act_fuzz.Filter.Random)
     args ~aux_in:{seed; o; config} ~aux_out_f:write_trace

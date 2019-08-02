@@ -7,7 +7,7 @@
   (pps ppx_deriving.std ppx_jane sedlex.ppx))
  (libraries sexplib0 fmt fpath menhirLib travesty travesty.base_exts sedlex
    base.caml core_kernel plumbing act.common act.compiler act.litmus
-   act.backend act.utils act.sanitiser act.machine))
+   act.backend act.utils act.fuzz act.sanitiser act.machine))
 
 ;; Config file parser
 

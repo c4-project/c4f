@@ -61,29 +61,10 @@ end
 module Pool = struct
   type t = (module Action_types.S) Weighted_list.t
 
-  let make_weight_pair (weight_overrides : int Id.Map.t)
-      (module M : Action_types.S) : (module Action_types.S) * int =
-    let weight =
-      M.name
-      |> Id.Map.find weight_overrides
-      |> Option.value ~default:M.default_weight
-    in
-    ((module M : Action_types.S), weight)
-
-  let make_weight_alist (actions : (module Action_types.S) list)
-      (weight_overrides : int Id.Map.t) :
-      ((module Action_types.S), int) List.Assoc.t =
-    List.map ~f:(make_weight_pair weight_overrides) actions
-
-  let make (actions : (module Action_types.S) list)
-      (config : Act_config.Fuzz.t) : t Or_error.t =
-    let weight_overrides_alist = Act_config.Fuzz.weights config in
-    Or_error.Let_syntax.(
-      let%bind weight_overrides =
-        Id.Map.of_alist_or_error weight_overrides_alist
-      in
-      let weights = make_weight_alist actions weight_overrides in
-      Weighted_list.from_alist weights)
+  let of_weighted_actions
+      (weighted_actions : ((module Action_types.S), int) List.Assoc.t) :
+      t Or_error.t =
+    Weighted_list.from_alist weighted_actions
 
   let summarise : t -> Summary.t Id.Map.t =
     Weighted_list.fold ~init:Id.Map.empty

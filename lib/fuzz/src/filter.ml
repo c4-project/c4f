@@ -14,8 +14,7 @@ open Stdio
 module Pb = Plumbing
 
 module Aux = struct
-  type t =
-    {seed: int option; o: Act_common.Output.t; config: Act_config.Fuzz.t}
+  type t = {seed: int option; o: Act_common.Output.t; config: Config.t}
 end
 
 module Random = Pb.Filter.Make (struct

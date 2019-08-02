@@ -18,8 +18,7 @@
 (** {2 Fuzzer config as an auxiliary input} *)
 
 module Aux : sig
-  type t =
-    {seed: int option; o: Act_common.Output.t; config: Act_config.Fuzz.t}
+  type t = {seed: int option; o: Act_common.Output.t; config: Config.t}
   (** Type of auxiliary input to the fuzzer filter. *)
 end
 

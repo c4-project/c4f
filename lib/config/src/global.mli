@@ -21,7 +21,7 @@ type t
 
 val make :
      ?defaults:Default.t
-  -> ?fuzz:Fuzz.t
+  -> ?fuzz:Act_fuzz.Config.t
   -> machines:Act_machine.Spec.Set.t
   -> unit
   -> t

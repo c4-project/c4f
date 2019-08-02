@@ -124,7 +124,7 @@ let make_inner_state (o : Ac.Output.t)
     let%map vars = Var.Map.make_existing_var_map test in
     State.make ~o ~vars ())
 
-let make_outer_state (seed : int option) (config : Act_config.Fuzz.t) :
+let make_outer_state (seed : int option) (config : Config.t) :
     Outer_state.t Or_error.t =
   let random = make_rng seed in
   let trace = Trace.empty in
@@ -133,7 +133,7 @@ let make_outer_state (seed : int option) (config : Act_config.Fuzz.t) :
     {Outer_state.random; trace; pool})
 
 let run ?(seed : int option) (test : Act_c_mini.Litmus.Ast.Validated.t)
-    ~(o : Ac.Output.t) ~(config : Act_config.Fuzz.t) :
+    ~(o : Ac.Output.t) ~(config : Config.t) :
     (Act_c_mini.Litmus.Ast.Validated.t * Trace.t) Or_error.t =
   Or_error.Let_syntax.(
     let%bind inner_state = make_inner_state o test in

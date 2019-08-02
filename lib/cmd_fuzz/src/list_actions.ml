@@ -21,17 +21,13 @@ let list_fuzzer_actions_readme () : string =
       into consideration.
     |}
 
-let fuzz_config (cfg : Act_config.Act.t) : Act_config.Fuzz.t =
-  cfg |> Act_config.Act.fuzz
-  |> Option.value ~default:(Act_config.Fuzz.make ())
-
-let pp_fuzz_summaries : Act_fuzz.Action.Summary.t Id.Map.t Fmt.t =
+let pp_fuzz_summaries : Act_fuzz.Action.Summary.t Map.M(Id).t Fmt.t =
   Id.pp_map Act_fuzz.Action.Summary.pp
 
 let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Act.t) :
     unit Or_error.t =
   Or_error.(
-    cfg |> fuzz_config |> Act_fuzz.Config.summarise
+    cfg |> Act_config.Act.fuzz |> Act_fuzz.Config.summarise
     >>| Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries)
 
 let command : Command.t =

@@ -8,5 +8,5 @@
   (pps ppx_deriving.std ppx_jane))
  (modules_without_implementation action_types)
  (libraries splittable_random sexplib0 stdio base.caml core_kernel fmt
-   travesty travesty.base_exts plumbing act.common act.config act.litmus
-   act.utils act.c_lang act.c_mini))
+   travesty travesty.base_exts plumbing act.common act.litmus act.utils
+   act.c_lang act.c_mini))
