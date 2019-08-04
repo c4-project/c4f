@@ -14,6 +14,8 @@
     This module describes a (de)serialisable log of the various actions that
     occurred during a fuzzing run. *)
 
+open Base
+
 type t [@@deriving sexp]
 (** Opaque type of traces. *)
 
@@ -29,3 +31,13 @@ val add :
   -> t
 (** [add t ~action ~state] appends action [action], with name [id] and
     payload [payload], to the trace. *)
+
+(** {2 Replaying traces} *)
+
+val run :
+     t
+  -> Subject.Test.t
+  -> resolve:(Act_common.Id.t -> (module Action_types.S) Or_error.t)
+  -> Subject.Test.t State.Monad.t
+(** [run t subject ~resolve] applies a trace [t] to test subject [subject],
+    using [resolve] to resolve action IDs to their modules. *)
