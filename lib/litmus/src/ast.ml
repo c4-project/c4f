@@ -80,11 +80,18 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   module Validated = struct
     type t =
       { name: string
-      ; init: (Ac.C_id.t, Lang.Constant.t) List.Assoc.t
-      ; locations: Ac.C_id.t list option
-      ; programs: Lang.Program.t list
-      ; postcondition: Lang.Constant.t Postcondition.t option }
+      ; aux: Lang.Constant.t Aux.t
+      ; programs: Lang.Program.t list }
     [@@deriving fields, sexp]
+
+    let init : t -> (Ac.C_id.t, Lang.Constant.t) List.Assoc.t =
+      Fn.compose Aux.init aux
+
+    let locations : t -> Ac.C_id.t list option =
+      Fn.compose Aux.locations aux
+
+    let postcondition : t -> Lang.Constant.t Postcondition.t option =
+      Fn.compose Aux.postcondition aux
 
     (** [validate_init init] validates an incoming litmus test's init block. *)
     let validate_init (init : (Ac.C_id.t, Lang.Constant.t) List.Assoc.t) =
@@ -126,13 +133,17 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
           [%message "Litmus name contains invalid character" ~name]
       else Validate.pass
 
+    let validate_aux (t : Lang.Constant.t Aux.t) : Validate.t =
+      Validate.of_list
+        [ validate_init (Aux.init t)
+        ; validate_locations (Aux.locations t)
+        ; validate_post (Aux.postcondition t) ]
+
     let validate_fields (t : t) : Validate.t =
       let w check = Validate.field_folder t check in
       Validate.of_list
-        (Fields.fold ~init:[] ~name:(w validate_name)
-           ~init:(w validate_init) ~programs:(w validate_programs)
-           ~locations:(w validate_locations)
-           ~postcondition:(w validate_post))
+        (Fields.fold ~init:[] ~name:(w validate_name) ~aux:(w validate_aux)
+           ~programs:(w validate_programs))
 
     let get_uniform_globals :
         Lang.Program.t list -> Lang.Type.t Ac.C_id.Map.t option Or_error.t =
@@ -184,7 +195,7 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     let validate_post_or_location_exists : t Validate.check =
       Validate.booltest
         (fun t ->
-          Option.is_some t.locations || Option.is_some t.postcondition)
+          Option.is_some (locations t) || Option.is_some (postcondition t))
         ~if_false:"Test must have a postcondition or location stanza."
 
     let variables_in_init (candidate : t) : Ac.C_id.Set.t =
@@ -218,10 +229,8 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
     let validate lit : t Or_error.t =
       Validate.valid_or_error lit validate_inner
 
-    let make ?locations ?postcondition ~name ~init ~programs () =
-      let candidate =
-        Fields.create ~locations ~postcondition ~name ~init ~programs
-      in
+    let make ~name ~aux ~programs =
+      let candidate = Fields.create ~name ~aux ~programs in
       validate candidate
   end
 
@@ -252,12 +261,17 @@ module Make (Lang : Basic) : S with module Lang = Lang = struct
   let check_language (language : Ac.C_id.t) =
     Validate.valid_or_error language validate_language
 
+  let get_aux (decls : Decl.t list) : Lang.Constant.t Aux.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind init = get_init decls in
+      let%bind postcondition = get_post decls in
+      let%map locations = get_locations decls in
+      Aux.make ~init ?postcondition ?locations ())
+
   let validate ({language; name; decls} : t) : Validated.t Or_error.t =
-    let open Or_error.Let_syntax in
-    let%bind programs = get_programs decls in
-    let%bind init = get_init decls in
-    let%bind postcondition = get_post decls in
-    let%bind locations = get_locations decls in
-    let%bind _ = check_language language in
-    Validated.make ~name ~init ?locations ?postcondition ~programs ()
+    Or_error.Let_syntax.(
+      let%bind programs = get_programs decls in
+      let%bind _ = check_language language in
+      let%bind aux = get_aux decls in
+      Validated.make ~name ~programs ~aux)
 end

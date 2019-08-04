@@ -196,6 +196,19 @@ module Pred = struct
   end
 
   include Q
+
+  let rec pp (f : Formatter.t) (pred : 'const t) ~(pp_const : 'const Fmt.t)
+      : unit =
+    let mu = pp ~pp_const in
+    match pred with
+    | Bracket p ->
+        Fmt.parens mu f p
+    | Or (l, r) ->
+        Fmt.pf f "%a@ \\/@ %a" mu l mu r
+    | And (l, r) ->
+        Fmt.pf f "%a@ /\\@ %a" mu l mu r
+    | Elt (Eq (i, c)) ->
+        Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
 end
 
 type 'const t = {quantifier: [`Exists]; predicate: 'const Pred.t}
@@ -242,3 +255,13 @@ Travesty.Bi_traversable.Make1_right (struct
       B.bi_map_m ~left:(Lid_cid.map_m ~f:left) ~right t
   end
 end)
+
+let pp_quantifier (f : Formatter.t) : [`Exists] -> unit = function
+  | `Exists ->
+      Fmt.string f "exists"
+
+let pp (f : Formatter.t) (pc : 'const t) ~(pp_const : 'const Fmt.t) : unit =
+  let predicate = predicate pc in
+  let quantifier = quantifier pc in
+  Fmt.(box (pair ~sep:sp pp_quantifier (parens (Pred.pp ~pp_const))))
+    f (quantifier, predicate)

@@ -199,9 +199,10 @@ module Test = struct
          Act_c_mini.Constant.t Act_litmus.Postcondition.t option)
       (subject : t) ~(vars : Var.Map.t) ~(name : string) :
       Act_c_mini.Litmus.Ast.Validated.t Or_error.t =
+    (* TODO(@MattWindsor91): preserve whole aux in subject. *)
     let programs = Program.list_to_litmus ~vars subject.programs in
-    Act_c_mini.Litmus.Ast.Validated.make ?postcondition ~name
-      ~init:subject.init ~programs ()
+    let aux = Act_litmus.Aux.make ~init:subject.init ?postcondition () in
+    Act_c_mini.Litmus.Ast.Validated.make ~name ~aux ~programs
 
   let add_var_to_init (subject : t) (var : Ac.C_id.t)
       (initial_value : Act_c_mini.Constant.t) : t =

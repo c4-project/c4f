@@ -67,15 +67,19 @@ struct
       -> B.To.Lang.Constant.t Postcondition.t option Or_error.t =
     Tx.Option.With_errors.map_m ~f:convert_post
 
+  let convert_aux (old : B.From.Lang.Constant.t Aux.t) :
+      B.To.Lang.Constant.t Aux.t Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind init = convert_init (Aux.init old) in
+      let%map postcondition = convert_post_opt (Aux.postcondition old) in
+      Aux.make ~init ?postcondition ?locations:(Aux.locations old) ())
+
   let convert (old : B.From.Validated.t) : B.To.Validated.t Or_error.t =
     let name = B.From.Validated.name old in
-    let old_init = B.From.Validated.init old in
-    let old_post = B.From.Validated.postcondition old in
+    let old_aux = B.From.Validated.aux old in
     let old_programs = B.From.Validated.programs old in
-    let locations = B.From.Validated.locations old in
-    let open Or_error.Let_syntax in
-    let%bind init = convert_init old_init
-    and postcondition = convert_post_opt old_post
-    and programs = convert_programs old_programs in
-    B.To.Validated.make ~name ~init ?postcondition ?locations ~programs ()
+    Or_error.Let_syntax.(
+      let%bind aux = convert_aux old_aux
+      and programs = convert_programs old_programs in
+      B.To.Validated.make ~name ~aux ~programs)
 end

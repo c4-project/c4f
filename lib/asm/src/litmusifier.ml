@@ -98,13 +98,9 @@ module Make (B : Runner_intf.Basic) :
       ~(name : string) ~(programs : program list) =
     Or_error.Let_syntax.(
       let%bind aux = make_aux config redirects in
-      let init = Act_litmus.Aux.init aux in
-      let postcondition = Act_litmus.Aux.postcondition aux in
-      let locations = Act_litmus.Aux.locations aux in
       let%bind l_programs = make_litmus_programs programs in
       Or_error.tag ~tag:"Couldn't build litmus file."
-        (Litmus.Validated.make ~name ~init ~programs:l_programs
-           ?postcondition ?locations ()))
+        (Litmus.Validated.make ~name ~aux ~programs:l_programs))
 
   let collate_warnings (programs : Sanitiser.Output.Program.t list) =
     List.concat_map programs ~f:Sanitiser.Output.Program.warnings

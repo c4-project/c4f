@@ -97,6 +97,12 @@ module Pred : sig
     Travesty.Bi_traversable_types.S1_right
       with type 'c t = 'c t
        and type left = Act_common.C_id.t
+
+  (** {3 Pretty-printing} *)
+
+  val pp : Formatter.t -> 'const t -> pp_const:'const Fmt.t -> unit
+  (** [pp f pred ~pp_const] pretty-prints [pred] on [f], using [pp_const] to
+      print constants. *)
 end
 
 (** {2 AST for postconditions} *)
@@ -128,3 +134,9 @@ module On_c_identifiers :
   Travesty.Bi_traversable_types.S1_right
     with type 'c t = 'c t
      and type left = Act_common.C_id.t
+
+(** {3 Pretty-printing} *)
+
+val pp : Formatter.t -> 'const t -> pp_const:'const Fmt.t -> unit
+(** [pp f pred ~pp_const] pretty-prints [pred] on [f], using [pp_const] to
+    print constants. *)

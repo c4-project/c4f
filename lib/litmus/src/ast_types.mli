@@ -20,7 +20,7 @@
    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
-open Core_kernel
+open Base
 module Id = Act_common.Litmus_id
 
 (** {2 Signatures} *)
@@ -132,6 +132,9 @@ module type S = sig
     val name : t -> string
     (** [name test] gets the name of [test]. *)
 
+    val aux : t -> Lang.Constant.t Aux.t
+    (** [aux test] gets [test]'s auxiliary data directly. *)
+
     val init : t -> (Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
     (** [init test] gets the initialiser in [test]. *)
 
@@ -149,16 +152,12 @@ module type S = sig
     (** For pretty-printing, use one of the functors in [Pp]. *)
 
     val make :
-         ?locations:Act_common.C_id.t list
-      -> ?postcondition:Lang.Constant.t Postcondition.t
-      -> name:string
-      -> init:(Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
+         name:string
+      -> aux:Lang.Constant.t Aux.t
       -> programs:Lang.Program.t list
-      -> unit
       -> t Or_error.t
-    (** [make ?location ?post ~name ~init ~programs ()] directly constructs
-        a validated AST with the given fields. It may fail if the result
-        fails validation. *)
+    (** [make ~name ~aux ~programs] directly constructs a validated AST with
+        the given fields. It may fail if the result fails validation. *)
   end
 
   val validate : t -> Validated.t Or_error.t

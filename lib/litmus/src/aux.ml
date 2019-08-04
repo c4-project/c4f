@@ -70,8 +70,7 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
     Option.value_map foo ~f ~default:`Null
 
   let postcondition_to_json (pc : Const.t Postcondition.t) : Yojson.Safe.t =
-    `String
-      (Fmt.strf "@[<h>%a@]" (Pp.Generic.pp_post ~pp_const:Const.pp) pc)
+    `String (Fmt.strf "@[<h>%a@]" (Postcondition.pp ~pp_const:Const.pp) pc)
 
   let to_yojson (aux : t) : Yojson.Safe.t =
     `Assoc

@@ -32,31 +32,6 @@ module Generic = struct
       option
         (hbox
            (any "locations@ " ++ brackets (box (list ~sep:semi Ac.C_id.pp)))))
-
-  let rec pp_predicate (f : Formatter.t)
-      (pred : 'const Postcondition.Pred.t) ~(pp_const : 'const Fmt.t) : unit
-      =
-    let mu = pp_predicate ~pp_const in
-    match pred with
-    | Bracket p ->
-        Fmt.parens mu f p
-    | Or (l, r) ->
-        Fmt.pf f "%a@ \\/@ %a" mu l mu r
-    | And (l, r) ->
-        Fmt.pf f "%a@ /\\@ %a" mu l mu r
-    | Elt (Eq (i, c)) ->
-        Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
-
-  let pp_quantifier (f : Formatter.t) : [`Exists] -> unit = function
-    | `Exists ->
-        Fmt.string f "exists"
-
-  let pp_post (f : Formatter.t) (pc : 'const Postcondition.t)
-      ~(pp_const : 'const Fmt.t) : unit =
-    let predicate = Postcondition.predicate pc in
-    let quantifier = Postcondition.quantifier pc in
-    Fmt.(box (pair ~sep:sp pp_quantifier (parens (pp_predicate ~pp_const))))
-      f (quantifier, predicate)
 end
 
 module type Basic = sig
@@ -78,7 +53,7 @@ module Make_common (B : Basic) = struct
             pf f "@[%a = %a;@]" Ac.C_id.pp l B.Ast.Lang.Constant.pp c))
 
   let pp_post : B.Ast.Lang.Constant.t Postcondition.t Fmt.t =
-    Generic.pp_post ~pp_const:B.Ast.Lang.Constant.pp
+    Postcondition.pp ~pp_const:B.Ast.Lang.Constant.pp
 
   let print_body (oc : Out_channel.t) (litmus : B.Ast.Validated.t) : unit =
     let f = Caml.Format.formatter_of_out_channel oc in
