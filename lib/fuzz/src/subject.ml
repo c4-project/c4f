@@ -185,24 +185,24 @@ module Test = struct
       handle_stm path ~f:(Program.Path.transform_stm ~f)
   end
 
-  let programs_of_litmus (test : Act_c_mini.Litmus.Ast.Validated.t) :
-      Program.t list =
-    test |> Act_c_mini.Litmus.Ast.Validated.programs
+  let programs_of_litmus (test : Act_c_mini.Litmus.Test.t) : Program.t list
+      =
+    test |> Act_c_mini.Litmus.Test.programs
     |> List.map ~f:(Fn.compose Program.of_function Act_c_mini.Named.value)
 
-  let of_litmus (test : Act_c_mini.Litmus.Ast.Validated.t) : t =
-    { init= Act_c_mini.Litmus.Ast.Validated.init test
+  let of_litmus (test : Act_c_mini.Litmus.Test.t) : t =
+    { init= Act_c_mini.Litmus.Test.init test
     ; programs= programs_of_litmus test }
 
   let to_litmus
       ?(postcondition :
          Act_c_mini.Constant.t Act_litmus.Postcondition.t option)
       (subject : t) ~(vars : Var.Map.t) ~(name : string) :
-      Act_c_mini.Litmus.Ast.Validated.t Or_error.t =
+      Act_c_mini.Litmus.Test.t Or_error.t =
     (* TODO(@MattWindsor91): preserve whole aux in subject. *)
     let programs = Program.list_to_litmus ~vars subject.programs in
     let aux = Act_litmus.Aux.make ~init:subject.init ?postcondition () in
-    Act_c_mini.Litmus.Ast.Validated.make ~name ~aux ~programs
+    Act_c_mini.Litmus.Test.make ~name ~aux ~programs
 
   let add_var_to_init (subject : t) (var : Ac.C_id.t)
       (initial_value : Act_c_mini.Constant.t) : t =

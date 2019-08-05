@@ -19,7 +19,7 @@ open Base
 
 (** Base signature for delitmus drivers *)
 module type S = sig
-  val run : Act_c_mini.Litmus.Ast.Validated.t -> Output.t Or_error.t
+  val run : Act_c_mini.Litmus.Test.t -> Output.t Or_error.t
 end
 
 module Vars_as_globals : S

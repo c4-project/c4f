@@ -35,7 +35,7 @@ let driver_of_style : Style.t -> (module Driver.S) = function
   | Vars_as_parameters ->
       (module Driver.Vars_as_parameters)
 
-let run (input : Act_c_mini.Litmus.Ast.Validated.t) ~(style : Style.t) :
+let run (input : Act_c_mini.Litmus.Test.t) ~(style : Style.t) :
     Output.t Or_error.t =
   let (module M) = driver_of_style style in
   M.run input

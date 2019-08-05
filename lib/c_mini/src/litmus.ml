@@ -26,7 +26,7 @@ module Tx = Travesty_base_exts
 module Ac = Act_common
 
 module Lang :
-  Act_litmus.Ast_types.Basic
+  Act_litmus.Test_types.Basic
     with type Statement.t =
           [`Stm of Statement.t | `Decl of Initialiser.t Named.t]
      and type Program.t = Function.t Named.t
@@ -80,5 +80,5 @@ module Lang :
   let name = "C"
 end
 
-module Ast = Act_litmus.Ast.Make (Lang)
-module Pp = Act_litmus.Pp.Make_sequential (Ast)
+module Test = Act_litmus.Test.Make (Lang)
+module Pp = Act_litmus.Pp.Make_sequential (Test)

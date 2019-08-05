@@ -67,7 +67,7 @@
 %type <Ast.Translation_unit.t> translation_unit
 %start translation_unit
 
-%type <Ast.Litmus.t> litmus
+%type <(Ast.Litmus_lang.Constant.t, Ast.Litmus_lang.Program.t) Act_litmus.Ast.t> litmus
 %start litmus
 
 %type <Ast_basic.Constant.t Act_litmus.Postcondition.t> litmus_postcondition
@@ -93,20 +93,20 @@ let endsemi(x) == terminated(x, ";")
 
 let litmus :=
   | language = IDENTIFIER; name = IDENTIFIER; decls = litmus_declaration+; EOF;
-    { { Litmus.language = Act_common.C_id.of_string language
+    { { Act_litmus.Ast.language = Act_common.C_id.of_string language
       ; name
       ; decls
       }
     }
 
 let litmus_declaration :=
-  | ~ = litmus_initialiser;   < Litmus.Decl.Init >
-  | ~ = litmus_postcondition; < Litmus.Decl.Post >
-  | ~ = litmus_locations;     < Litmus.Decl.Locations >
-  | ~ = function_definition;  < Litmus.Decl.Program >
+  | ~ = litmus_initialiser;   < Act_litmus.Ast.Decl.Init >
+  | ~ = litmus_postcondition; < Act_litmus.Ast.Decl.Post >
+  | ~ = litmus_locations;     < Act_litmus.Ast.Decl.Locations >
+  | ~ = function_definition;  < Act_litmus.Ast.Decl.Program >
 
 let litmus_init_stm :=
-  | id = identifier; "="; value = constant; { { Litmus.Init.id; value } }
+  | id = identifier; "="; value = constant; { { Act_litmus.Ast.Init.id; value } }
 
 let litmus_initialiser := braced(list(endsemi(litmus_init_stm)))
 

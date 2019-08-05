@@ -27,13 +27,15 @@
 
 (* TODO(@MattWindsor91): reduce coupling of these to the AST/Lang modules *)
 
-module Make_tabular (Ast : Ast_types.S) : Pp_intf.S with module Ast = Ast
+module Make_tabular (Test : Test_types.S) :
+  Pp_intf.S with module Test = Test
 (** [Make_tabular] makes a pretty-printer for a Litmus AST that outputs
     programs as tables.
 
     This is useful for assembly languages. *)
 
-module Make_sequential (Ast : Ast_types.S) : Pp_intf.S with module Ast = Ast
+module Make_sequential (Test : Test_types.S) :
+  Pp_intf.S with module Test = Test
 (** [Make_sequential] makes a pretty-printer for a Litmus AST that directly
     outputs each program AST in sequence.
 

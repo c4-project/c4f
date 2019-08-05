@@ -27,7 +27,13 @@ module Normal :
   Plumbing.Loadable_types.S with type t = Ast.Translation_unit.t
 (** Frontend for 'normal' C (C89 at time of writing). *)
 
-module Litmus : Plumbing.Loadable_types.S with type t = Ast.Litmus.t
+module Litmus :
+  Plumbing.Loadable_types.S
+    with type t =
+          ( Ast.Litmus_lang.Constant.t
+          , Ast.Litmus_lang.Program.t )
+          Act_litmus.Ast.t
+
 (** Frontend for C-based litmus tests. *)
 
 module Litmus_post :

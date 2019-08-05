@@ -28,11 +28,11 @@ let pp_del : Output.t Fmt.t =
          (Fn.compose Act_c_mini.Reify.program Output.program)
          (vbox Act_c_lang.Ast.Translation_unit.pp))
 
-let delitmusify_and_print (vast : Act_c_mini.Litmus.Ast.Validated.t)
+let delitmusify_and_print (test : Act_c_mini.Litmus.Test.t)
     (oc : Stdio.Out_channel.t) ~(style : Runner.Style.t) : Aux.t Or_error.t
     =
   Or_error.Let_syntax.(
-    let%map dl = Runner.run vast ~style in
+    let%map dl = Runner.run test ~style in
     Fmt.pf (Caml.Format.formatter_of_out_channel oc) "%a@." pp_del dl ;
     Output.aux dl)
 

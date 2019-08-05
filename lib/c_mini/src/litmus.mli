@@ -31,14 +31,17 @@
     This language uses {{!Reify} Reify} for all of its pretty-printing
     needs. *)
 module Lang :
-  Act_litmus.Ast_types.Basic
+  Act_litmus.Test_types.Basic
     with type Statement.t =
           [`Stm of Statement.t | `Decl of Initialiser.t Named.t]
      and type Program.t = Function.t Named.t
      and type Constant.t = Constant.t
 
-module Ast : Act_litmus.Ast_types.S with module Lang = Lang
-(** The mini-model's full Litmus AST module. *)
+(** The mini-model's full Litmus test module. *)
+module Test :
+  Act_litmus.Test_types.S
+    with module Lang = Lang
+     and type raw = Act_litmus.Test.Raw.M(Lang).t
 
-module Pp : Act_litmus.Pp_intf.S with module Ast = Ast
+module Pp : Act_litmus.Pp_intf.S with module Test = Test
 (** Pretty-printing for the mini-model's litmus AST. *)

@@ -4,7 +4,7 @@
  (name act_litmus)
  (public_name act.litmus)
  (synopsis "Automagic Compiler Tormentor: Litmus language support")
- (modules_without_implementation ast_types)
+ (modules_without_implementation test_types)
  (preprocess
   (pps ppx_deriving_yojson ppx_deriving.std ppx_jane))
  (libraries sexplib0 stdio base base.caml core_kernel yojson

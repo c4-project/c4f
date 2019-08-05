@@ -34,7 +34,7 @@ module type S = sig
   type program
   (** Type of incoming programs. *)
 
-  module Litmus : Act_litmus.Ast_types.S
+  module Litmus : Act_litmus.Test_types.S
   (** The AST module for the litmus test language we're targeting. *)
 
   module Redirect : Act_common.Redirect_map_intf.S
@@ -45,13 +45,12 @@ module type S = sig
     -> redirects:Redirect.t
     -> name:string
     -> programs:program list
-    -> Litmus.Validated.t Or_error.t
+    -> Litmus.t Or_error.t
   (** [make ~config ~redirects ~name ~programs] litmusifies a list of
       programs [programs], with test name [name], redirect map [redirects],
       and configuration [config]. *)
 
-  val print_litmus :
-    fmt -> Stdio.Out_channel.t -> Litmus.Validated.t -> unit
+  val print_litmus : fmt -> Stdio.Out_channel.t -> Litmus.t -> unit
   (** [print_litmus fmt oc ast] is the litmus test printer matching the
       configuration [fmt]. *)
 

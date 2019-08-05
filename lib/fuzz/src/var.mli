@@ -119,8 +119,7 @@ module Map : sig
 
   (** {3 Constructors} *)
 
-  val make_existing_var_map :
-    Act_c_mini.Litmus.Ast.Validated.t -> t Or_error.t
+  val make_existing_var_map : Act_c_mini.Litmus.Test.t -> t Or_error.t
   (** [make_existing_var_map test] tries to generate a var-record map for
       the Litmus-style functions in [test], where each name is registered as
       an existing variable. *)

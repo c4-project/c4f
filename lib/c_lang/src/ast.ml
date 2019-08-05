@@ -754,7 +754,7 @@ module Translation_unit = struct
 end
 
 module Litmus_lang :
-  Act_litmus.Ast_types.Basic
+  Act_litmus.Test_types.Basic
     with type Statement.t = [`Stm of Stm.t | `Decl of Decl.t]
      and type Program.t = Function_def.t
      and type Constant.t = Constant.t = struct
@@ -788,7 +788,7 @@ module Litmus_lang :
 end
 
 module Litmus = struct
-  module A = Act_litmus.Ast.Make (Litmus_lang)
+  module A = Act_litmus.Test.Make (Litmus_lang)
   include A
   include Act_litmus.Pp.Make_sequential (A)
   module Id = Act_common.Litmus_id

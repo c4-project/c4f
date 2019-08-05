@@ -102,7 +102,7 @@ module Test : sig
   (** Allows production and consumption of random paths over fuzzable tests
       in the same way as normal mini programs. *)
 
-  val of_litmus : Act_c_mini.Litmus.Ast.Validated.t -> t
+  val of_litmus : Act_c_mini.Litmus.Test.t -> t
   (** [of_litmus test] converts a validated C litmus test [test] to the
       intermediate form used for fuzzing. *)
 
@@ -111,7 +111,7 @@ module Test : sig
     -> t
     -> vars:Var.Map.t
     -> name:string
-    -> Act_c_mini.Litmus.Ast.Validated.t Or_error.t
+    -> Act_c_mini.Litmus.Test.t Or_error.t
   (** [to_litmus ?postcondition subject ~vars ~name] tries to reconstitute a
       validated C litmus test from the subject [subject], attaching the name
       [name] and optional postcondition [post], and using the variable map

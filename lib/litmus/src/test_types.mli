@@ -72,97 +72,60 @@ module type Basic = sig
   end
 end
 
-(** {2 AST modules} *)
+(** {2 Test modules} *)
 
-(** The interface for litmus AST modules.
+(** Validated litmus tests.
 
-    AST modules contain, effectively, two litmus ASTs: the raw AST that can
-    contain any number of possibly ill-formed elements in any order, and a
-    'validated' subset that obeys various invariants. *)
+    A 'valid' litmus test is one that has a well-formed name, the correct
+    language, exactly one init block, at most one postcondition block, and a
+    set of appropriately named programs. *)
 module type S = sig
   module Lang : Basic
 
-  module Init : sig
-    type elt = {id: Act_common.C_id.t; value: Lang.Constant.t}
-    [@@deriving sexp]
+  type raw
+  (** Type of unvalidated litmus tests. *)
 
-    type t = elt list [@@deriving sexp]
-  end
+  type t [@@deriving sexp_of]
+  (** The abstract type of a validated litmus AST. *)
 
-  module Decl : sig
-    type t =
-      | Program of Lang.Program.t
-      | Init of Init.t
-      | Post of Lang.Constant.t Postcondition.t
-      | Locations of Act_common.C_id.t list
-    [@@deriving sexp]
+  val name : t -> string
+  (** [name test] gets the name of [test]. *)
 
-    val as_program : t -> Lang.Program.t option
-    (** [as_program decl] returns [Some p] if [decl] is a program [p], and
-        [None] otherwise. *)
+  val aux : t -> Lang.Constant.t Aux.t
+  (** [aux test] gets [test]'s auxiliary data directly. *)
 
-    val as_init : t -> Init.t option
-    (** [as_init decl] returns [Some i] if [decl] is an init-block [i], and
-        [None] otherwise. *)
+  val init : t -> (Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
+  (** [init test] gets the initialiser in [test]. *)
 
-    val as_post : t -> Lang.Constant.t Postcondition.t option
-    (** [as_post decl] returns [Some c] if [decl] is a postcondition [c],
-        and [None] otherwise. *)
+  val programs : t -> Lang.Program.t list
+  (** [programs test] gets the program listings in [test], in left-right or
+      top-bottom order. *)
 
-    val as_locations : t -> Act_common.C_id.t list option
-    (** [as_post decl] returns [Some ls] if [decl] is a location list [ls],
-        and [None] otherwise. *)
-  end
+  val locations : t -> Act_common.C_id.t list option
+  (** [locations test] gets the locations stanza for [test], if it exists. *)
 
-  type t = {language: Act_common.C_id.t; name: string; decls: Decl.t list}
-  [@@deriving sexp]
-  (** The type of (non-validated) litmus ASTs. *)
+  val postcondition : t -> Lang.Constant.t Postcondition.t option
+  (** [postcondition test] gets the postcondition of [test], if one exists. *)
 
-  (* TODO(@MattWindsor91): expose constructors *)
+  (** For pretty-printing, use one of the functors in [Pp]. *)
 
-  (** Validated litmus ASTs.
+  (** {3 Constructing validated tests} *)
 
-      A 'valid' litmus AST is one that has a well-formed name, the correct
-      language, exactly one init block, at most one postcondition block, and
-      a set of appropriately named programs. *)
-  module Validated : sig
-    type t [@@deriving sexp_of]
-    (** The abstract type of a validated litmus AST. *)
+  val make :
+       name:string
+    -> aux:Lang.Constant.t Aux.t
+    -> programs:Lang.Program.t list
+    -> t Or_error.t
+  (** [make ~name ~aux ~programs] directly constructs a validated test with
+      the given fields. It may fail if the result fails validation. *)
 
-    val name : t -> string
-    (** [name test] gets the name of [test]. *)
+  val validate : raw -> t Or_error.t
+  (** [validate lit] tries to validate an existing Litmus test. It may fail
+      if the input isn't a valid Litmus program. *)
 
-    val aux : t -> Lang.Constant.t Aux.t
-    (** [aux test] gets [test]'s auxiliary data directly. *)
-
-    val init : t -> (Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
-    (** [init test] gets the initialiser in [test]. *)
-
-    val programs : t -> Lang.Program.t list
-    (** [programs test] gets the program listings in [test], in left-right
-        or top-bottom order. *)
-
-    val locations : t -> Act_common.C_id.t list option
-    (** [locations test] gets the locations stanza for [test], if it exists. *)
-
-    val postcondition : t -> Lang.Constant.t Postcondition.t option
-    (** [postcondition test] gets the postcondition of [test], if one
-        exists. *)
-
-    (** For pretty-printing, use one of the functors in [Pp]. *)
-
-    val make :
-         name:string
-      -> aux:Lang.Constant.t Aux.t
-      -> programs:Lang.Program.t list
-      -> t Or_error.t
-    (** [make ~name ~aux ~programs] directly constructs a validated AST with
-        the given fields. It may fail if the result fails validation. *)
-  end
-
-  val validate : t -> Validated.t Or_error.t
-  (** [validate lit] tries to validate a litmus AST. It may fail if the
-      input isn't a valid Litmus program. *)
+  val of_ast : Ast.M(Lang).t -> t Or_error.t
+  (** [of_ast ast] tries to construct a validated Litmus test directly from
+      an abstract syntax tree [ast]. *)
 end
 
 (** {2 Conversion} *)

@@ -16,4 +16,4 @@
     therefore insulates against future changes in the abstract/full C
     representation. *)
 
-include Plumbing.Loadable_types.S with type t = Litmus.Ast.Validated.t
+include Plumbing.Loadable_types.S with type t = Litmus.Test.t

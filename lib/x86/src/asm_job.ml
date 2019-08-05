@@ -32,7 +32,7 @@ struct
   module Src_lang = Lang
   module Dst_lang = Language_definition.Herd7
 
-  module Litmus_ast = Act_litmus.Ast.Make (struct
+  module Litmus_ast = Act_litmus.Test.Make (struct
     module Program = struct
       include Dst_lang.Program
 

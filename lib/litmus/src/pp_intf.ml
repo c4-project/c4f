@@ -26,15 +26,15 @@ open Stdio
 module Id = Act_common.Litmus_id
 
 module type S = sig
-  module Ast : Ast_types.S
+  module Test : Test_types.S
 
-  val print : Out_channel.t -> Ast.Validated.t -> unit
+  val print : Out_channel.t -> Test.t -> unit
   (** [print oc ast] prints [ast] on output channel [oc]. *)
 
-  val print_programs : Out_channel.t -> Ast.Validated.t -> unit
+  val print_programs : Out_channel.t -> Test.t -> unit
   (** [print_programs oc ast] prints the program table of [ast] on output
       channel [oc], omitting all of the other parts of the AST. *)
 
-  val pp_post : Formatter.t -> Ast.Lang.Constant.t Postcondition.t -> unit
+  val pp_post : Test.Lang.Constant.t Postcondition.t Fmt.t
   (** [pp_post f post] prints the postcondition [post] on formatter [f]. *)
 end

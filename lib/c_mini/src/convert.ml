@@ -546,7 +546,7 @@ module Litmus_conv = Act_litmus.Convert.Make (struct
     module Lang = Ast.Litmus_lang
   end
 
-  module To = Litmus.Ast
+  module To = Litmus.Test
 
   let program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t = func
 
@@ -554,8 +554,8 @@ module Litmus_conv = Act_litmus.Convert.Make (struct
     constant
 end)
 
-let litmus : Ast.Litmus.Validated.t -> Litmus.Ast.Validated.t Or_error.t =
-  Litmus_conv.convert
+let litmus : Ast.Litmus.t -> Litmus.Test.t Or_error.t = Litmus_conv.convert
 
-let litmus_of_raw_ast (ast : Ast.Litmus.t) =
-  Or_error.(ast |> Ast.Litmus.validate >>= litmus)
+let litmus_of_raw_ast (ast : Act_litmus.Ast.M(Act_c_lang.Ast.Litmus_lang).t)
+    =
+  Or_error.(ast |> Ast.Litmus.of_ast >>= litmus)

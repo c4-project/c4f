@@ -26,9 +26,9 @@ module Ac = Act_common
 module Tx = Travesty_base_exts
 
 module Make (B : sig
-  module From : Ast_types.S
+  module From : Test_types.S
 
-  module To : Ast_types.S
+  module To : Test_types.S
 
   val constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t
 
@@ -74,12 +74,12 @@ struct
       let%map postcondition = convert_post_opt (Aux.postcondition old) in
       Aux.make ~init ?postcondition ?locations:(Aux.locations old) ())
 
-  let convert (old : B.From.Validated.t) : B.To.Validated.t Or_error.t =
-    let name = B.From.Validated.name old in
-    let old_aux = B.From.Validated.aux old in
-    let old_programs = B.From.Validated.programs old in
+  let convert (old : B.From.t) : B.To.t Or_error.t =
+    let name = B.From.name old in
+    let old_aux = B.From.aux old in
+    let old_programs = B.From.programs old in
     Or_error.Let_syntax.(
       let%bind aux = convert_aux old_aux
       and programs = convert_programs old_programs in
-      B.To.Validated.make ~name ~aux ~programs)
+      B.To.make ~name ~aux ~programs)
 end

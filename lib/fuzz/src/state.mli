@@ -24,9 +24,7 @@ val make : ?o:Act_common.Output.t -> vars:Var.Map.t -> unit -> t
     verbose/debug information during the fuzzing process. *)
 
 val of_litmus :
-     ?o:Act_common.Output.t
-  -> Act_c_mini.Litmus.Ast.Validated.t
-  -> t Or_error.t
+  ?o:Act_common.Output.t -> Act_c_mini.Litmus.Test.t -> t Or_error.t
 (** [of_litmus ?o lt] tries to create an initial state by extracting
     information from [lt]'s auxiliary data. If an output context [o] is
     provided, it can be used for logging verbose/debug information during

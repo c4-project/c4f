@@ -16,10 +16,10 @@ open Act_common
 
 val run :
      ?seed:int
-  -> Act_c_mini.Litmus.Ast.Validated.t
+  -> Act_c_mini.Litmus.Test.t
   -> o:Output.t
   -> config:Config.t
-  -> (Act_c_mini.Litmus.Ast.Validated.t * Trace.t) Or_error.t
+  -> (Act_c_mini.Litmus.Test.t * Trace.t) Or_error.t
 (** [run ?seed test ~o test] mutates [test] using a random number generator
     seeded by [seed]. Any debugging information is printed to the
     appropriate formatters on [o], and a trace of all run actions is

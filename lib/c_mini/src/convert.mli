@@ -42,12 +42,11 @@ val translation_unit :
 (** [translation_unit ast] tries to interpret a C translation unit AST as a
     mini-model program. *)
 
-val litmus :
-  Act_c_lang.Ast.Litmus.Validated.t -> Litmus.Ast.Validated.t Or_error.t
+val litmus : Act_c_lang.Ast.Litmus.t -> Litmus.Test.t Or_error.t
 (** [litmus test] tries to interpret a Litmus test over the full C AST as
     one over the mini-model. *)
 
 val litmus_of_raw_ast :
-  Act_c_lang.Ast.Litmus.t -> Litmus.Ast.Validated.t Or_error.t
+  Act_litmus.Ast.M(Act_c_lang.Ast.Litmus_lang).t -> Litmus.Test.t Or_error.t
 (** [litmus_of_raw_ast test] applies [litmus] to the validated form, if
     available, of [test]. *)

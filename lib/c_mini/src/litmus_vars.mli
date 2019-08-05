@@ -21,7 +21,7 @@
 open Base
 
 val make_scoped_map :
-     Litmus.Ast.Validated.t
+     Litmus.Test.t
   -> make_global:(Act_common.C_id.t -> Type.t -> 'a)
   -> make_local:(int -> Act_common.C_id.t -> Type.t -> 'a)
   -> 'a Act_common.Scoped_map.t Or_error.t
@@ -31,8 +31,7 @@ val make_scoped_map :
     [make_global] and [make_local] to construct the values stored in the
     scoped map. *)
 
-val make_set :
-  Litmus.Ast.Validated.t -> Set.M(Act_common.Litmus_id).t Or_error.t
+val make_set : Litmus.Test.t -> Set.M(Act_common.Litmus_id).t Or_error.t
 (** [make_set vast] tries to make a Litmus ID set by inspecting all local
     variable declarations and global-representing parameters in the
     functions in [fns]. *)

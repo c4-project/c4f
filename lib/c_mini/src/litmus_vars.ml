@@ -43,7 +43,7 @@ let lift_global_var_alist (type a) (xs : (Ac.C_id.t, Type.t) List.Assoc.t)
         let%map c_type = Type.deref ptr_type in
         (lit_id, f c_id c_type)))
 
-let make_global_var_alist (type a) (progs : Litmus.Ast.Lang.Program.t list)
+let make_global_var_alist (type a) (progs : Litmus.Test.Lang.Program.t list)
     ~(f : Ac.C_id.t -> Type.t -> a) :
     (Ac.Litmus_id.t, a) List.Assoc.t Or_error.t =
   match progs with
@@ -60,7 +60,7 @@ let make_global_var_alist (type a) (progs : Litmus.Ast.Lang.Program.t list)
         >>= fun () -> lift_global_var_alist ~f params)
 
 let make_local_var_alist (type a) (tid : int)
-    (prog : Litmus.Ast.Lang.Program.t)
+    (prog : Litmus.Test.Lang.Program.t)
     ~(f : int -> Act_common.C_id.t -> Type.t -> a) :
     (Act_common.Litmus_id.t, a) List.Assoc.t =
   prog |> Named.value |> Function.body_decls
@@ -69,22 +69,22 @@ let make_local_var_alist (type a) (tid : int)
          let c_type = Initialiser.ty init in
          (lit_id, f tid local_c_id c_type))
 
-let make_local_var_alists (type a) (progs : Litmus.Ast.Lang.Program.t list)
+let make_local_var_alists (type a) (progs : Litmus.Test.Lang.Program.t list)
     ~(f : int -> Act_common.C_id.t -> Type.t -> a) :
     (Act_common.Litmus_id.t, a) List.Assoc.t list =
   List.mapi progs ~f:(make_local_var_alist ~f)
 
-let make_alist (type a) (vast : Litmus.Ast.Validated.t)
+let make_alist (type a) (vast : Litmus.Test.t)
     ~(make_global : Act_common.C_id.t -> Type.t -> a)
     ~(make_local : int -> Act_common.C_id.t -> Type.t -> a) :
     (Act_common.Litmus_id.t, a) List.Assoc.t Or_error.t =
-  let programs = Litmus.Ast.Validated.programs vast in
+  let programs = Litmus.Test.programs vast in
   let local_alists = make_local_var_alists programs ~f:make_local in
   Or_error.Let_syntax.(
     let%map global_alist = make_global_var_alist programs ~f:make_global in
     List.concat (global_alist :: local_alists))
 
-let make_scoped_map (type a) (vast : Litmus.Ast.Validated.t)
+let make_scoped_map (type a) (vast : Litmus.Test.t)
     ~(make_global : Act_common.C_id.t -> Type.t -> a)
     ~(make_local : int -> Act_common.C_id.t -> Type.t -> a) :
     a Ac.Scoped_map.t Or_error.t =
@@ -94,7 +94,7 @@ let make_scoped_map (type a) (vast : Litmus.Ast.Validated.t)
     >>= Map.of_alist_or_error (module Act_common.Litmus_id)
     >>| Ac.Scoped_map.of_litmus_id_map)
 
-let make_set (vast : Litmus.Ast.Validated.t) :
+let make_set (vast : Litmus.Test.t) :
     Set.M(Act_common.Litmus_id).t Or_error.t =
   (* TODO(@MattWindsor91): this is likely to be inefficient. *)
   Or_error.(

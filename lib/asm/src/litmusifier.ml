@@ -71,8 +71,8 @@ module Make (B : Runner_intf.Basic) :
   module Litmus = B.Litmus_ast
   module Sanitiser = Act_sanitiser.Instance.Make (B.Sanitiser_hook)
 
-  let print_litmus : Format.t -> Out_channel.t -> Litmus.Validated.t -> unit
-      = function
+  let print_litmus : Format.t -> Out_channel.t -> Litmus.t -> unit =
+    function
     | Full ->
         B.Litmus_pp.print
     | Programs_only ->
@@ -100,7 +100,7 @@ module Make (B : Runner_intf.Basic) :
       let%bind aux = make_aux config redirects in
       let%bind l_programs = make_litmus_programs programs in
       Or_error.tag ~tag:"Couldn't build litmus file."
-        (Litmus.Validated.make ~name ~aux ~programs:l_programs))
+        (Litmus.make ~name ~aux ~programs:l_programs))
 
   let collate_warnings (programs : Sanitiser.Output.Program.t list) =
     List.concat_map programs ~f:Sanitiser.Output.Program.warnings

@@ -12,7 +12,7 @@
 include Plumbing.Loadable.Make_chain
           (Act_c_lang.Frontend.Litmus)
           (struct
-            type dst = Litmus.Ast.Validated.t
+            type dst = Litmus.Test.t
 
             let f = Convert.litmus_of_raw_ast
           end)

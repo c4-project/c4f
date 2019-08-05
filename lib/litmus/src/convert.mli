@@ -26,10 +26,10 @@ open Base
 (** A functor that constructs a partial conversion function from one Litmus
     AST to another. *)
 module Make (B : sig
-  module From : Ast_types.S
+  module From : Test_types.S
   (** The Litmus language from which we're converting. *)
 
-  module To : Ast_types.S
+  module To : Test_types.S
   (** The Litmus language to which we're converting. *)
 
   val constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t
@@ -38,5 +38,5 @@ module Make (B : sig
   val program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t
   (** [constant k] tries to convert [k] to the new language. *)
 end) : sig
-  val convert : B.From.Validated.t -> B.To.Validated.t Or_error.t
+  val convert : B.From.t -> B.To.t Or_error.t
 end

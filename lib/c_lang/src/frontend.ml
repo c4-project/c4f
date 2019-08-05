@@ -30,7 +30,8 @@ let litmus_predefined_types =
   Set.of_list (module String) ["atomic_bool"; "atomic_int"; "bool"]
 
 module Litmus = Act_utils.Frontend.Make (struct
-  type ast = Ast.Litmus.t
+  type ast =
+    (Ast.Litmus_lang.Constant.t, Ast.Litmus_lang.Program.t) Act_litmus.Ast.t
 
   module I = Parser.MenhirInterpreter
 

@@ -102,14 +102,12 @@ let mutate_subject (subject : Subject.Test.t) :
     in
     subject')
 
-let run_with_state (test : Act_c_mini.Litmus.Ast.Validated.t) :
-    Act_c_mini.Litmus.Ast.Validated.t Runner_state.Monad.t =
+let run_with_state (test : Act_c_mini.Litmus.Test.t) :
+    Act_c_mini.Litmus.Test.t Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     (* TODO: add uuid to this *)
-    let name = Act_c_mini.Litmus.Ast.Validated.name test in
-    let postcondition =
-      Act_c_mini.Litmus.Ast.Validated.postcondition test
-    in
+    let name = Act_c_mini.Litmus.Test.name test in
+    let postcondition = Act_c_mini.Litmus.Test.postcondition test in
     let subject = Subject.Test.of_litmus test in
     let%bind subject' = mutate_subject subject in
     Runner_state.Monad.Monadic.return
@@ -126,9 +124,9 @@ let make_runner_state (seed : int option) (config : Config.t) :
     let%map pool = Config.make_pool config in
     {Runner_state.random; trace; pool})
 
-let run ?(seed : int option) (test : Act_c_mini.Litmus.Ast.Validated.t)
+let run ?(seed : int option) (test : Act_c_mini.Litmus.Test.t)
     ~(o : Ac.Output.t) ~(config : Config.t) :
-    (Act_c_mini.Litmus.Ast.Validated.t * Trace.t) Or_error.t =
+    (Act_c_mini.Litmus.Test.t * Trace.t) Or_error.t =
   Or_error.Let_syntax.(
     let%bind fuzz_state = State.of_litmus ~o test in
     let%bind runner_state = make_runner_state seed config in

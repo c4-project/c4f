@@ -21,7 +21,6 @@ module Style : sig
   include Act_utils.Enum_types.Extension_table with type t := t
 end
 
-val run :
-  Act_c_mini.Litmus.Ast.Validated.t -> style:Style.t -> Output.t Or_error.t
+val run : Act_c_mini.Litmus.Test.t -> style:Style.t -> Output.t Or_error.t
 (** [run litmus ~style] runs de-litmusification on [litmus] according to
     style [style]. *)

@@ -76,8 +76,8 @@ end
 module Map = struct
   type t = Record.t Ac.Scoped_map.t
 
-  let make_existing_var_map (test : Act_c_mini.Litmus.Ast.Validated.t) :
-      t Or_error.t =
+  let make_existing_var_map (test : Act_c_mini.Litmus.Test.t) : t Or_error.t
+      =
     Act_c_mini.Litmus_vars.make_scoped_map test
       ~make_global:(fun _ ty -> Record.make_existing Global (Some ty))
       ~make_local:(fun tid _ ty ->
