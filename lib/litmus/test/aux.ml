@@ -40,28 +40,13 @@ let%test_module "JSON deserialisation" =
       let json = J.to_yojson aux in
       Yojson.Safe.pretty_to_channel ~std:true stdout json
 
-    let str_local (tid : int) (str : string) : Ac.Litmus_id.t =
-      Ac.Litmus_id.local tid (Ac.C_id.of_string str)
-
     let%expect_test "empty aux" =
       test (A.make ()) ;
       [%expect
         {| { "locations": null, "init": {}, "postcondition": null } |}]
 
     let%expect_test "SBSC example aux" =
-      let a (tid : int) = str_local tid "a" in
-      let x = Ac.C_id.of_string "x" in
-      let y = Ac.C_id.of_string "y" in
-      let init : (Ac.C_id.t, int) List.Assoc.t = [(x, 0); (y, 0)] in
-      let postcondition : int Act_litmus.Postcondition.t =
-        Act_litmus.Postcondition.(
-          make ~quantifier:`Exists
-            ~predicate:
-              Pred.(Elt Pred_elt.(a 0 ==? 0) && Elt Pred_elt.(a 1 ==? 1)))
-      in
-      let locations : Ac.C_id.t list = [x; y] in
-      let aux = A.make ~init ~postcondition ~locations () in
-      test aux ;
+      test (Lazy.force Examples.Sbsc.aux) ;
       [%expect
         {|
         {
