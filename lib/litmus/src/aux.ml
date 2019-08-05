@@ -21,6 +21,21 @@ type 'const t =
 
 let empty (type k) : k t = {locations= None; init= []; postcondition= None}
 
+let add_global (type k) (aux : k t) ~(name : Ac.C_id.t) ~(initial_value : k)
+    : k t Or_error.t =
+  (* TODO(@MattWindsor91): check for duplicates. *)
+  Or_error.return
+    { locations= Option.map ~f:(fun ls -> name :: ls) aux.locations
+    ; init= (name, initial_value) :: aux.init
+    ; postcondition= aux.postcondition }
+
+let map_tids (type k) (aux : k t) ~(f : int -> int) : k t =
+  let post = postcondition aux in
+  let post' =
+    Option.map ~f:(Postcondition.map_left ~f:(Ac.Litmus_id.map_tid ~f)) post
+  in
+  {aux with postcondition= post'}
+
 module BT :
   Travesty.Bi_traversable_types.S1_right
     with type 'const t := 'const t

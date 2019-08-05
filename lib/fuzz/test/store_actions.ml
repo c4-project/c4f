@@ -65,7 +65,7 @@ let%test_module "int tests" =
         let open Or_error.Let_syntax in
         let%map state, test = run_test () in
         let vars = Src.State.vars state in
-        List.mapi test.programs ~f:(fun id p ->
+        List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun id p ->
             let fn = Src.Subject.Program.to_function ~vars ~id p in
             Act_c_mini.(Reify.func (Named.name fn) (Named.value fn)))
       in

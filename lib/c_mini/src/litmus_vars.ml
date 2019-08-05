@@ -78,7 +78,7 @@ let make_alist (type a) (vast : Litmus.Test.t)
     ~(make_global : Act_common.C_id.t -> Type.t -> a)
     ~(make_local : int -> Act_common.C_id.t -> Type.t -> a) :
     (Act_common.Litmus_id.t, a) List.Assoc.t Or_error.t =
-  let programs = Litmus.Test.programs vast in
+  let programs = Litmus.Test.threads vast in
   let local_alists = make_local_var_alists programs ~f:make_local in
   Or_error.Let_syntax.(
     let%map global_alist = make_global_var_alist programs ~f:make_global in

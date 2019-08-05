@@ -63,16 +63,16 @@ struct
           ~mapped_to_global:B.locals_become_globals ~c_id)
 
   let make_aux (input : Act_c_mini.Litmus.Test.t) : Aux.t Or_error.t =
-    let programs = Act_c_mini.Litmus.Test.programs input in
+    let threads = Act_c_mini.Litmus.Test.threads input in
     let litmus_aux = make_litmus_aux input in
-    let num_threads = List.length programs in
+    let num_threads = List.length threads in
     Or_error.Let_syntax.(
       let%map var_map = make_var_map input in
       Aux.make ~litmus_aux ~var_map ~num_threads ())
 
   let make_program (input : Act_c_mini.Litmus.Test.t) (context : Context.t)
       : Act_c_mini.Program.t Or_error.t =
-    let raw_functions = Act_c_mini.Litmus.Test.programs input in
+    let raw_functions = Act_c_mini.Litmus.Test.threads input in
     let globals = make_globals context in
     Or_error.Let_syntax.(
       let%map function_list =
@@ -101,7 +101,7 @@ struct
        way in which C litmus tests are constructed. *)
     let functions =
       List.map ~f:Act_c_mini.Named.value
-        (Act_c_mini.Litmus.Test.programs input)
+        (Act_c_mini.Litmus.Test.threads input)
     in
     let local_inits = make_local_inits functions in
     Context.make ~aux ~local_inits

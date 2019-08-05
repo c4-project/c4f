@@ -74,38 +74,20 @@ end
 
 (** {2 Test modules} *)
 
-(** Validated litmus tests.
+(** Signature of objects that contain frozen, 'valid' Litmus tests.
 
     A 'valid' litmus test is one that has a well-formed name, the correct
     language, exactly one init block, at most one postcondition block, and a
     set of appropriately named programs. *)
 module type S = sig
-  module Lang : Basic
-
   type raw
   (** Type of unvalidated litmus tests. *)
 
+  module Lang : Basic
+  (** The subset of the Litmus language used to define this module. *)
+
   type t [@@deriving sexp_of]
   (** The abstract type of a validated litmus AST. *)
-
-  val name : t -> string
-  (** [name test] gets the name of [test]. *)
-
-  val aux : t -> Lang.Constant.t Aux.t
-  (** [aux test] gets [test]'s auxiliary data directly. *)
-
-  val init : t -> (Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
-  (** [init test] gets the initialiser in [test]. *)
-
-  val programs : t -> Lang.Program.t list
-  (** [programs test] gets the program listings in [test], in left-right or
-      top-bottom order. *)
-
-  val locations : t -> Act_common.C_id.t list option
-  (** [locations test] gets the locations stanza for [test], if it exists. *)
-
-  val postcondition : t -> Lang.Constant.t Postcondition.t option
-  (** [postcondition test] gets the postcondition of [test], if one exists. *)
 
   (** For pretty-printing, use one of the functors in [Pp]. *)
 
@@ -114,9 +96,9 @@ module type S = sig
   val make :
        name:string
     -> aux:Lang.Constant.t Aux.t
-    -> programs:Lang.Program.t list
+    -> threads:Lang.Program.t list
     -> t Or_error.t
-  (** [make ~name ~aux ~programs] directly constructs a validated test with
+  (** [make ~name ~aux ~threads] directly constructs a validated test with
       the given fields. It may fail if the result fails validation. *)
 
   val validate : raw -> t Or_error.t
@@ -126,21 +108,47 @@ module type S = sig
   val of_ast : Ast.M(Lang).t -> t Or_error.t
   (** [of_ast ast] tries to construct a validated Litmus test directly from
       an abstract syntax tree [ast]. *)
+
+  (** {3 Accessing properties of validated tests} *)
+
+  val raw : t -> raw
+  (** [raw test] gets the raw, unvalidated form of [test]. *)
+
+  val threads : t -> Lang.Program.t list
+  (** [programs test] gets the program listings in [test], in left-right or
+      top-bottom order. *)
+
+  val name : t -> string
+  (** [name test] gets the name of [test]. *)
+
+  val aux : t -> Lang.Constant.t Aux.t
+  (** [aux test] gets the auxiliary record for [test]. *)
+
+  (** {4 Shortcuts for accessing individual auxiliary record fields} *)
+
+  val init : t -> (Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
+  (** [init test] gets the initialiser in [test]. *)
+
+  val locations : t -> Act_common.C_id.t list option
+  (** [locations test] gets the locations stanza for [test], if it exists. *)
+
+  val postcondition : t -> Lang.Constant.t Postcondition.t option
+  (** [postcondition test] gets the postcondition of [test], if one exists. *)
 end
 
 (** {2 Conversion} *)
 
 (** Signature of inputs to the [Convert] functor. *)
 module type Basic_convert = sig
-  module From : S
+  module From : Basic
   (** The Litmus language from which we're converting. *)
 
-  module To : S
+  module To : Basic
   (** The Litmus language to which we're converting. *)
 
-  val constant : From.Lang.Constant.t -> To.Lang.Constant.t Or_error.t
+  val constant : From.Constant.t -> To.Constant.t Or_error.t
   (** [constant k] tries to convert [k] to the new language. *)
 
-  val program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t
+  val program : From.Program.t -> To.Program.t Or_error.t
   (** [constant k] tries to convert [k] to the new language. *)
 end

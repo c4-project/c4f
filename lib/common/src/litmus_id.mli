@@ -36,22 +36,20 @@ val global_of_string : string -> t Or_error.t
     It fails if [str] isn't a valid C identifier. *)
 
 (** {3 Local identifiers} *)
+
 val local : int -> C_id.t -> t
 (** [local tid id] creates a local identifier with the given thread ID. *)
 
-(** {2 Accessors} *)
+(** {2 Modifying an identifier} *)
 
-val is_global : t -> bool
-(** [is_global id] is [true] if [id] is a global identifier, or [false]
-    otherwise. *)
+val map_tid : t -> f:(int -> int) -> t
+(** [map_tid id ~f] maps [f] over any thread identifier in [id]. *)
+
+(** {2 Accessors} *)
 
 val as_global : t -> C_id.t option
 (** [as_global id] gets [Some cid] if [id] is the global identifier [cid],
     or [None] otherwise. *)
-
-val is_local : t -> bool
-(** [is_local id] is [true] if [id] is a local identifier, or [false]
-    otherwise. *)
 
 val as_local : t -> (int * C_id.t) option
 (** [as_local id] gets [Some (tid, cid)] if [id] is the local identifier
@@ -70,7 +68,15 @@ val to_memalloy_id : t -> C_id.t
     This is [x] where [id = Global x], and ["tXY"] where
     [id = Local (X, Y)]. *)
 
-(** {2 Queries} *)
+(** {3 Predicates} *)
+
+val is_global : t -> bool
+(** [is_global id] is [true] if [id] is a global identifier, or [false]
+    otherwise. *)
+
+val is_local : t -> bool
+(** [is_local id] is [true] if [id] is a local identifier, or [false]
+    otherwise. *)
 
 val is_in_scope : t -> from:int -> bool
 (** [is_in_scope id ~from] asks whether [id] is in scope from the point of

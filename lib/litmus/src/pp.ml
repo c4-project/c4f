@@ -44,7 +44,7 @@ end
 (** Makes the bits of a litmus AST that are common to all styles. *)
 module Make_common (B : Basic) = struct
   let print_programs (oc : Out_channel.t) (ast : B.Test.t) : unit =
-    B.print_programs_inner oc (B.Test.programs ast)
+    B.print_programs_inner oc (B.Test.threads ast)
 
   let pp_init : (Ac.C_id.t, B.Test.Lang.Constant.t) List.Assoc.t Fmt.t =
     Act_utils.My_format.pp_c_braces

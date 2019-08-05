@@ -95,12 +95,12 @@ module Make (B : Runner_intf.Basic) :
     Make_aux.of_delitmus_aux dl_aux ~redirect_map
 
   let make ~(config : Config.t) ~(redirects : B.Src_lang.Symbol.R_map.t)
-      ~(name : string) ~(programs : program list) =
+      ~(name : string) ~(threads : program list) =
     Or_error.Let_syntax.(
       let%bind aux = make_aux config redirects in
-      let%bind l_programs = make_litmus_programs programs in
+      let%bind l_threads = make_litmus_programs threads in
       Or_error.tag ~tag:"Couldn't build litmus file."
-        (Litmus.make ~name ~aux ~programs:l_programs))
+        (Litmus.make ~name ~aux ~threads:l_threads))
 
   let collate_warnings (programs : Sanitiser.Output.Program.t list) =
     List.concat_map programs ~f:Sanitiser.Output.Program.warnings
@@ -126,12 +126,11 @@ module Make (B : Runner_intf.Basic) :
     let%bind symbols = unstringify_symbols symbol_strs in
     let%bind o = Sanitiser.sanitise ~passes ~symbols program in
     let redirects = Sanitiser.Output.redirects o in
-    let programs = Sanitiser.Output.programs o in
-    let warnings = collate_warnings programs in
-    let%map lit = make ~config ~redirects ~name:in_name ~programs in
+    let threads = Sanitiser.Output.programs o in
+    let warnings = collate_warnings threads in
+    let%map lit = make ~config ~redirects ~name:in_name ~threads in
     print_litmus (Config.format config) outp lit ;
     Out_channel.newline outp ;
-    let redirects = Sanitiser.Output.redirects o in
     Job.Output.make Sanitiser.Warn.pp in_name
       (B.Src_lang.Symbol.R_map.to_string_alist redirects)
       warnings

@@ -137,13 +137,11 @@ module Program = struct
 end
 
 module Test = struct
-  type t =
-    { init: Act_c_mini.Constant.t Act_c_mini.Named.Alist.t
-    ; programs: Program.t list }
+  type t = (Act_c_mini.Constant.t, Program.t) Act_litmus.Test.Raw.t
   [@@deriving sexp]
 
-  let add_new_program (test : t) : t =
-    {test with programs= Program.empty :: test.programs}
+  let add_new_program : t -> t =
+    Act_litmus.Test.Raw.add_thread_at_end ~thread:Program.empty
 
   module Path : Act_c_mini.Path_types.S_program with type target := t =
   struct
@@ -154,7 +152,7 @@ module Test = struct
     let gen_insert_stm (test : target) :
         Act_c_mini.Path_shapes.program Base_quickcheck.Generator.t =
       let prog_gens =
-        List.mapi test.programs ~f:(fun index prog ->
+        List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun index prog ->
             Base_quickcheck.Generator.map
               (Program.Path.gen_insert_stm prog)
               ~f:(Act_c_mini.Path_shapes.in_func index))
@@ -165,15 +163,9 @@ module Test = struct
         ~(f :
            Act_c_mini.Path_shapes.func -> Program.t -> Program.t Or_error.t)
         (test : target) : target Or_error.t =
-      let open Or_error.Let_syntax in
       match path with
       | In_func (index, rest) ->
-          let programs = test.programs in
-          let%map programs' =
-            Tx.List.With_errors.replace_m programs index ~f:(fun func ->
-                func |> f rest >>| Option.some)
-          in
-          {test with programs= programs'}
+          Act_litmus.Test.Raw.try_map_thread ~index ~f:(f rest) test
 
     let insert_stm (path : Act_c_mini.Path_shapes.program) (stm : stm) :
         target -> target Or_error.t =
@@ -187,24 +179,26 @@ module Test = struct
 
   let programs_of_litmus (test : Act_c_mini.Litmus.Test.t) : Program.t list
       =
-    test |> Act_c_mini.Litmus.Test.programs
+    test |> Act_c_mini.Litmus.Test.threads
     |> List.map ~f:(Fn.compose Program.of_function Act_c_mini.Named.value)
 
   let of_litmus (test : Act_c_mini.Litmus.Test.t) : t =
-    { init= Act_c_mini.Litmus.Test.init test
-    ; programs= programs_of_litmus test }
+    Act_litmus.Test.Raw.make
+      ~name:(Act_c_mini.Litmus.Test.name test)
+      ~aux:(Act_c_mini.Litmus.Test.aux test)
+      ~threads:(programs_of_litmus test)
 
-  let to_litmus
-      ?(postcondition :
-         Act_c_mini.Constant.t Act_litmus.Postcondition.t option)
-      (subject : t) ~(vars : Var.Map.t) ~(name : string) :
+  let to_litmus (subject : t) ~(vars : Var.Map.t) :
       Act_c_mini.Litmus.Test.t Or_error.t =
     (* TODO(@MattWindsor91): preserve whole aux in subject. *)
-    let programs = Program.list_to_litmus ~vars subject.programs in
-    let aux = Act_litmus.Aux.make ~init:subject.init ?postcondition () in
-    Act_c_mini.Litmus.Test.make ~name ~aux ~programs
+    let name = Act_litmus.Test.Raw.name subject in
+    let aux = Act_litmus.Test.Raw.aux subject in
+    let threads = Act_litmus.Test.Raw.threads subject in
+    let threads' = Program.list_to_litmus ~vars threads in
+    Act_c_mini.Litmus.Test.make ~name ~aux ~threads:threads'
 
   let add_var_to_init (subject : t) (var : Ac.C_id.t)
-      (initial_value : Act_c_mini.Constant.t) : t =
-    {subject with init= (var, initial_value) :: subject.init}
+      (initial_value : Act_c_mini.Constant.t) : t Or_error.t =
+    Act_litmus.Test.Raw.try_map_aux subject
+      ~f:(Act_litmus.Aux.add_global ~name:var ~initial_value)
 end

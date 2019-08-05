@@ -58,6 +58,7 @@ module Make_global :
       Subject.Test.t State.Monad.t =
     let ty = Act_c_mini.Type.of_basic basic_type ~pointer:true in
     let open State.Monad.Let_syntax in
-    let%map () = State.Monad.register_global ty name ~initial_value in
-    Subject.Test.add_var_to_init subject name initial_value
+    let%bind () = State.Monad.register_global ty name ~initial_value in
+    State.Monad.Monadic.return
+      (Subject.Test.add_var_to_init subject name initial_value)
 end

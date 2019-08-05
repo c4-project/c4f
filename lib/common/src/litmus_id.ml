@@ -101,6 +101,9 @@ let as_local : t -> (int * C_id.t) option = function
 
 let tid : t -> int option = Fn.compose (Option.map ~f:fst) as_local
 
+let map_tid (id : t) ~(f : int -> int) : t =
+  match id with Local (k, v) -> Local (f k, v) | _ -> id
+
 let is_global : t -> bool = Fn.non is_local
 
 let as_global : t -> C_id.t option = function

@@ -35,7 +35,7 @@ module Make (B : sig
   val program : From.Lang.Program.t -> To.Lang.Program.t Or_error.t
 end) =
 struct
-  let convert_programs :
+  let convert_threads :
       B.From.Lang.Program.t list -> B.To.Lang.Program.t list Or_error.t =
     Tx.Or_error.combine_map ~f:B.program
 
@@ -77,9 +77,9 @@ struct
   let convert (old : B.From.t) : B.To.t Or_error.t =
     let name = B.From.name old in
     let old_aux = B.From.aux old in
-    let old_programs = B.From.programs old in
+    let old_threads = B.From.threads old in
     Or_error.Let_syntax.(
       let%bind aux = convert_aux old_aux
-      and programs = convert_programs old_programs in
-      B.To.make ~name ~aux ~programs)
+      and threads = convert_threads old_threads in
+      B.To.make ~name ~aux ~threads)
 end

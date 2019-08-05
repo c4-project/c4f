@@ -106,15 +106,12 @@ let run_with_state (test : Act_c_mini.Litmus.Test.t) :
     Act_c_mini.Litmus.Test.t Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     (* TODO: add uuid to this *)
-    let name = Act_c_mini.Litmus.Test.name test in
-    let postcondition = Act_c_mini.Litmus.Test.postcondition test in
     let subject = Subject.Test.of_litmus test in
     let%bind subject' = mutate_subject subject in
     Runner_state.Monad.Monadic.return
       State.Monad.(
         with_vars_m (fun vars ->
-            Monadic.return
-              (Subject.Test.to_litmus ~vars ~name ?postcondition subject'))))
+            Monadic.return (Subject.Test.to_litmus ~vars subject'))))
 
 let make_runner_state (seed : int option) (config : Config.t) :
     Runner_state.t Or_error.t =

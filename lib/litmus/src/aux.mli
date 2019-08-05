@@ -45,6 +45,20 @@ val init : 'const t -> (Act_common.C_id.t, 'const) List.Assoc.t
 val postcondition : 'const t -> 'const Postcondition.t option
 (** [postcondition aux] gets the postcondition given in [aux], if any. *)
 
+(** {2 Modifying an auxiliary record} *)
+
+val add_global :
+     'const t
+  -> name:Act_common.C_id.t
+  -> initial_value:'const
+  -> 'const t Or_error.t
+(** [add_global aux ~name ~initial_value] adds a global variable with name
+    [name] and initial value [~initial_value] to the auxiliary record [aux]. *)
+
+val map_tids : 'const t -> f:(int -> int) -> 'const t
+(** [map_tids aux ~f] maps [f] over all of the thread IDs in [aux]
+    (specifically, in [aux]'s postcondition). *)
+
 (** {2 Traversals} *)
 
 (** We permit monadic bi-traversal over the C identifiers and constants in a

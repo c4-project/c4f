@@ -44,10 +44,10 @@ module type S = sig
        config:config
     -> redirects:Redirect.t
     -> name:string
-    -> programs:program list
+    -> threads:program list
     -> Litmus.t Or_error.t
-  (** [make ~config ~redirects ~name ~programs] litmusifies a list of
-      programs [programs], with test name [name], redirect map [redirects],
+  (** [make ~config ~redirects ~name ~threads] litmusifies a list of
+      programs [threads], with test name [name], redirect map [redirects],
       and configuration [config]. *)
 
   val print_litmus : fmt -> Stdio.Out_channel.t -> Litmus.t -> unit

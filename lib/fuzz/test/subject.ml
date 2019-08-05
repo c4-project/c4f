@@ -69,8 +69,9 @@ module Example = struct
   let test : Subject.Test.t Lazy.t =
     Lazy.Let_syntax.(
       let%bind init = init in
-      let%map programs = programs in
-      {Subject.Test.init; programs})
+      let%map threads = programs in
+      let aux = Act_litmus.Aux.make ~init () in
+      Act_litmus.Test.Raw.make ~name:"example" ~aux ~threads)
 end
 
 let%test_module "program" =
