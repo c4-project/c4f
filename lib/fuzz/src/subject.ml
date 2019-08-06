@@ -130,10 +130,11 @@ module Program = struct
 
   let list_to_litmus (progs : t list) ~(vars : Var.Map.t) :
       Act_c_mini.Litmus.Lang.Program.t list =
+    (* We need to filter _before_ we map, since otherwise we'll end up
+       assigning the wrong thread IDs. *)
     progs
-    |> List.filter_mapi ~f:(fun id prog ->
-           if has_statements prog then Some (to_function ~vars ~id prog)
-           else None)
+    |> List.filter ~f:has_statements
+    |> List.mapi ~f:(fun id prog -> to_function ~vars ~id prog)
 end
 
 module Test = struct

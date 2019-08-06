@@ -127,4 +127,27 @@ let%test_module "using sample environment" =
               (Atomic_store
                ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
                 (mo memory_order_relaxed))))))))) |}]
+
+    let%expect_test "programs_to_litmus: sample programs with interspersed emptiness" =
+      let programs =
+        Example.programs
+        |> Lazy.force
+        |> List.intersperse ~sep:Program.empty in
+      run programs ;
+      [%expect
+        {|
+        (((name P0)
+          (value
+           ((parameters
+             ((bar atomic_int*) (barbaz bool) (blep int*) (foo int)
+              (foobaz atomic_bool*) (x atomic_int) (y atomic_int) (z atomic_bool)))
+            (body_decls ())
+            (body_stms
+             ((Atomic_store
+               ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
+                (mo memory_order_seq_cst)))
+              Nop
+              (Atomic_store
+               ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
+                (mo memory_order_relaxed))))))))) |}]
   end )
