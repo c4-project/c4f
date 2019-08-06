@@ -7,8 +7,11 @@
 # through `dune exec`.
 declare DUNE_EXEC
 
-# If set, overrides the choice of main `act` executable
+# If set, overrides the choice of main `act` executable.
 declare ACT
+
+# If set, overrides the choice of `act-c` executable.
+declare ACT_C
 
 
 # Runs an OCaml ACT tool.
@@ -33,7 +36,22 @@ act::exec() {
   fi
 }
 
-# Runs the 'act-backend' tool.
+
+# Runs the ACT 'litmusify' tool.
+#
+# Globals:
+#   - ACT (read)
+#   - DUNE_EXEC (transitively read)
+#
+# Arguments:
+#   *: the arguments to the program.
+act::litmusify() {
+  # `litmusify` is currently `act asm litmusify`; this will change later.
+  act::exec "${ACT:-"act"}" asm litmusify "$@"
+}
+
+
+# Runs the ACT 'backend' tool.
 #
 # Globals:
 #   - ACT (read)
@@ -42,10 +60,12 @@ act::exec() {
 # Arguments:
 #   *: the arguments to the program.
 act::backend() {
+  # `backend` is currently `act backend`; this will change later.
   act::exec "${ACT:-"act"}" backend "$@"
 }
 
-# Runs the 'act-delitmus' tool.
+
+# Runs the ACT 'compile' tool.
 #
 # Globals:
 #   - ACT (read)
@@ -53,6 +73,21 @@ act::backend() {
 #
 # Arguments:
 #   *: the arguments to the program.
+act::compile() {
+  # `compile` is currently `act compile`; this may change later.
+  act::exec "${ACT_C:-"act-c"}" compile "$@"
+}
+
+
+# Runs the ACT 'delitmus' tool.
+#
+# Globals:
+#   - ACT_C (read)
+#   - DUNE_EXEC (transitively read)
+#
+# Arguments:
+#   *: the arguments to the program.
 act::delitmus() {
-  act::exec "${ACT:-"act-c"}" delitmus "$@"
+  # `delitmus` is currently `act-c delitmus`; this may change later.
+  act::exec "${ACT_C:-"act-c"}" delitmus "$@"
 }

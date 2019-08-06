@@ -23,10 +23,10 @@ from act_py import act_id, machine_info, test_runner
 # TODO(@MattWindsor91): understand backends other than machine.litmus.
 
 
-obj_splitmus_name: str = os.path.join(os.path.dirname(__file__), "obj_splitmus_gen")
+obj_splitmus_name: str = os.path.join(os.path.dirname(__file__), "obj_splitmus")
 
 
-obj_splitmus_driver: str = obj_splitmus_name + " {backend} {compiler} {subject_path} {subject_name} {dir}"
+obj_splitmus_driver: str = obj_splitmus_name + " -b {backend} -c {compiler} -n {subject_name} -d {dir} {subject_path}"
 
 
 def make_test(
