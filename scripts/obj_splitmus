@@ -185,9 +185,9 @@ usage() {
   echo "-c: ID of compiler to use to compile file"
   echo "-d: directory to use for outputting intermediate files"
   echo "-n: name to use for Litmus test"
-  echo "-q/v: turn verbose mode off/on"
-  echo '-x: use `dune exec` to run ACT binaries'
-  echo '-h/?: this usage note'
+  echo "-v/-q: verbose/quiet"
+  echo '-x: run ACT binaries with `dune exec`'
+  echo "-h/-?: usage"
   exit 1
 }
 

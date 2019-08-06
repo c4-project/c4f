@@ -29,7 +29,7 @@ act::exec() {
   local prog=$1
   shift 1
 
-  if [[ DUNE_EXEC = "true" ]]; then
+  if [[ ${DUNE_EXEC} = "true" ]]; then
     dune exec "${prog}" -- "$@"
   else
     "${prog}" "$@"
