@@ -75,18 +75,24 @@ let as_variable (lv : t) : Ac.C_id.t Or_error.t =
           "Can't safely convert this lvalue to a variable" ~lvalue:(lv : t)]
 
 module Type_check (E : Env_types.S) = struct
+  let type_of_variable (v : Ac.C_id.t) : Type.t Or_error.t =
+    Result.of_option
+      (Map.find E.env v)
+      ~error:
+        (Error.create_s
+           [%message
+             "Variable not in environment"
+               ~variable:(v : Ac.C_id.t)
+               ~environment:(E.env : Type.t Map.M(Ac.C_id).t)])
+
   let rec type_of : t -> Type.t Or_error.t = function
-    | Variable v ->
-        Result.of_option
-          (Ac.C_id.Map.find E.env v)
-          ~error:
-            (Error.create_s
-               [%message
-                 "Variable not in environment"
-                   ~variable:(v : Ac.C_id.t)
-                   ~environment:(E.env : Type.t Ac.C_id.Map.t)])
+    | Variable v -> type_of_variable v
     | Deref l ->
+      Or_error.tag_arg
         Or_error.(l |> type_of >>= Type.deref)
+        "checking underlying type of lvalue dereferencing"
+        l
+        sexp_of_t
 end
 
 let anonymise = function Variable v -> `A v | Deref d -> `B d

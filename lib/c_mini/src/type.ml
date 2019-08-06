@@ -103,8 +103,11 @@ let is_pointer : t -> bool = function
 let deref : t -> t Or_error.t = function
   | Pointer_to k ->
       Or_error.return (Normal k)
-  | Normal _ ->
-      Or_error.error_string "not a pointer type"
+  | Normal basic_type ->
+    Or_error.error_s
+      [%message "tried to get value type of a non-pointer type"
+        (basic_type: Basic.t)
+      ]
 
 let ref : t -> t Or_error.t = function
   | Normal k ->

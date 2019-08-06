@@ -34,14 +34,25 @@ let check_parameters_consistent (params : Type.t Named.Alist.t)
    parameters, so we scrape the global type context from there. In doing so,
    we reduce the pointer types back to value ones. *)
 
+let lift_global_var (type a) (c_id: Ac.C_id.t) (ptr_type : Type.t)
+    ~(f : Ac.C_id.t -> Type.t -> a) :
+  (Ac.Litmus_id.t * a) Or_error.t =
+  let lit_id = Act_common.Litmus_id.global c_id in
+  Or_error.tag_arg
+    Or_error.Let_syntax.(
+      let%map c_type = Type.deref ptr_type in
+      (lit_id, f c_id c_type)
+    )
+    "While lifting global out of parameter list"
+    (c_id, ptr_type)
+    [%sexp_of: Ac.C_id.t * Type.t]
+
 let lift_global_var_alist (type a) (xs : (Ac.C_id.t, Type.t) List.Assoc.t)
     ~(f : Ac.C_id.t -> Type.t -> a) :
     (Ac.Litmus_id.t, a) List.Assoc.t Or_error.t =
   Tx.Or_error.combine_map xs ~f:(fun (c_id, ptr_type) ->
-      let lit_id = Act_common.Litmus_id.global c_id in
-      Or_error.Let_syntax.(
-        let%map c_type = Type.deref ptr_type in
-        (lit_id, f c_id c_type)))
+      lift_global_var ~f c_id ptr_type
+)
 
 let make_global_var_alist (type a) (progs : Litmus.Test.Lang.Program.t list)
     ~(f : Ac.C_id.t -> Type.t -> a) :
