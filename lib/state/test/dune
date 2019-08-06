@@ -1,10 +1,10 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_backend_test)
+ (name act_state_test)
  (inline_tests)
  (preprocess
   (pps ppx_jane))
  (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config stdio
-   base base.caml fmt travesty travesty.base_exts act.backend act.common
+   base base.caml fmt travesty travesty.base_exts act.state act.common
    act.utils))

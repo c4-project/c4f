@@ -13,7 +13,7 @@ open Base
 module A = Act_common
 module Au = Act_utils
 module Tx = Travesty_base_exts
-module Ob = Output.Observation
+module Ob = Observation
 
 module Location_map = struct
   type t = A.Litmus_id.t option Map.M(A.Litmus_id).t
@@ -44,7 +44,7 @@ module Location_map = struct
 end
 
 module Order = struct
-  include Au.Set_partial_order.M (State)
+  include Au.Set_partial_order.M (Entry)
 
   let operator : Ordering.t option -> string = function
     | Some Equal ->
@@ -84,12 +84,12 @@ let pp_summary (f : Formatter.t) : t -> unit = function
       Fmt.pf f "Oracle@ %a@ Subject" Order.pp_operator
         (Au.Set_partial_order.to_ordering_opt o)
 
-let pp_side_set (side : string) (f : Formatter.t) (set : Set.M(State).t) :
+let pp_side_set (side : string) (f : Formatter.t) (set : Set.M(Entry).t) :
     unit =
   if not (Set.is_empty set) then
     Fmt.(
       Fmt.pf f "@[<v 2>In %s only:@ %a@]" side
-        (using Set.to_list (list ~sep:cut State.pp))
+        (using Set.to_list (list ~sep:cut Entry.pp))
         set)
 
 let pp_specifics (f : Formatter.t) : t -> unit = function
@@ -114,11 +114,11 @@ let to_string : t -> string = function
       Printf.sprintf "Oracle %s Subject"
         (Order.operator (Au.Set_partial_order.to_ordering_opt o))
 
-let compare_states ~(oracle_states : State.t list)
-    ~(subject_states : State.t list) : t =
+let compare_states ~(oracle_states : Entry.t list)
+    ~(subject_states : Entry.t list) : t =
   let result =
     Tx.Fn.on
-      (Set.of_list (module State))
+      (Set.of_list (module Entry))
       ~f:Au.Set_partial_order.make oracle_states subject_states
   in
   Result result
@@ -132,20 +132,20 @@ let not_in_subject_error (location : A.Litmus_id.t) : Error.t Lazy.t =
          "Location present in the oracle but absent in the subject"
            ~location:(location : A.Litmus_id.t)])
 
-let map_subject_states (states : State.t list)
+let map_subject_states (states : Entry.t list)
     ~(location_map : Location_map.t) =
   Tx.Or_error.combine_map states
     ~f:
-      (State.map ~value_map:Or_error.return ~location_map:(fun l ->
+      (Entry.map ~value_map:Or_error.return ~location_map:(fun l ->
            l |> Map.find location_map
            |> Result.of_option
                 ~error:Error.(of_lazy_t (not_in_subject_error l))))
 
-let filter_oracle_states ~(raw_oracle_states : State.t list)
-    ~(subject_states : State.t list) : State.t list Or_error.t =
+let filter_oracle_states ~(raw_oracle_states : Entry.t list)
+    ~(subject_states : Entry.t list) : Entry.t list Or_error.t =
   let open Or_error.Let_syntax in
-  let%map domain = State.common_domain subject_states in
-  List.map raw_oracle_states ~f:(State.restrict ~domain)
+  let%map domain = Entry.common_domain subject_states in
+  List.map raw_oracle_states ~f:(Entry.restrict ~domain)
 
 let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
     ~(location_map : Location_map.t) : t Or_error.t =

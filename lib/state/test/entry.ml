@@ -12,24 +12,24 @@
 open Base
 open Stdio
 module A = Act_common
-module Src = Act_backend
+module Src = Act_state
 module Tx = Travesty_base_exts
 
 let%test_module "common_domain" =
   ( module struct
-    let test (states : Src.State.t list) : unit =
+    let test (states : Src.Entry.t list) : unit =
       print_s
         [%sexp
-          (Src.State.common_domain states : Set.M(A.Litmus_id).t Or_error.t)]
+          (Src.Entry.common_domain states : Set.M(A.Litmus_id).t Or_error.t)]
 
-    let state_exn (xs : (string, string) List.Assoc.t) : Src.State.t =
+    let state_exn (xs : (string, string) List.Assoc.t) : Src.Entry.t =
       xs
       |> Tx.Alist.map_left ~f:A.Litmus_id.of_string
-      |> Src.State.of_alist |> Or_error.ok_exn
+      |> Src.Entry.of_alist |> Or_error.ok_exn
 
     let%expect_test "no states" = test [] ; [%expect {| (Ok ()) |}]
 
-    let test_state : Src.State.t =
+    let test_state : Src.Entry.t =
       state_exn [("0:foo", "snap"); ("1:bar", "crackle"); ("baz", "pop")]
 
     let%expect_test "single state" =

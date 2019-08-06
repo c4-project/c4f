@@ -16,21 +16,17 @@ let run (_o : Output.t) (_cfg : Act_config.Act.t) ~(oracle_raw : string)
     ~(subject_raw : string) ~(location_map_raw : string) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind oracle_in = Plumbing.Input.of_string_opt (Some oracle_raw) in
-    let%bind oracle =
-      Act_backend.Output.Observation.load_from_isrc oracle_in
-    in
+    let%bind oracle = Act_state.Observation.load_from_isrc oracle_in in
     let%bind subject_in = Plumbing.Input.of_string_opt (Some subject_raw) in
-    let%bind subject =
-      Act_backend.Output.Observation.load_from_isrc subject_in
-    in
+    let%bind subject = Act_state.Observation.load_from_isrc subject_in in
     let%bind location_map_in =
       Plumbing.Input.of_string_opt (Some location_map_raw)
     in
     let%bind location_map =
-      Act_backend.Diff.Location_map.load_from_isrc location_map_in
+      Act_state.Diff.Location_map.load_from_isrc location_map_in
     in
-    let%map diff = Act_backend.Diff.run ~oracle ~subject ~location_map in
-    Act_backend.Diff.pp Fmt.stdout diff)
+    let%map diff = Act_state.Diff.run ~oracle ~subject ~location_map in
+    Act_state.Diff.pp Fmt.stdout diff)
 
 let readme () =
   Act_utils.My_string.format_for_readme

@@ -18,7 +18,7 @@ let run (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t)
     let%bind vast = Act_c_mini.Frontend.load_from_isrc i in
     let%bind vars = Act_c_mini.Litmus_vars.make_set vast in
     let%bind o = Toplevel.Args.With_files.outfile_sink args in
-    Act_backend.Diff.Location_map.(vars |> reflexive |> output ~onto:o))
+    Act_state.Diff.Location_map.(vars |> reflexive |> output ~onto:o))
 
 let readme () : string =
   Act_utils.My_string.format_for_readme

@@ -11,4 +11,4 @@
    fmt.tty unix travesty.base_exts plumbing act.asm act.fuzz act_c_lang
    act.common act.compiler act.compiler_gcc act.config act.delitmus
    act.machine act.litmus act.sanitiser act.backend act.backend_herd
-   act.backend_litmus act.utils act.x86))
+   act.backend_litmus act.utils act.x86 act.state))

@@ -9,4 +9,4 @@
   (pps ppx_deriving.std ppx_deriving_yojson ppx_jane))
  (libraries result ppx_deriving_yojson.runtime yojson ppx_expect.common
    sexplib0 stdio base base.caml core_kernel fmt fpath travesty
-   travesty.base_exts act.common act.utils plumbing))
+   travesty.base_exts act.common act.state act.utils plumbing))

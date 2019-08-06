@@ -44,7 +44,7 @@ end
 
 (** Synonym of [Set_partial_order] for orderings between state sets. *)
 module Order : sig
-  type t = (State.t, State.comparator_witness) Act_utils.Set_partial_order.t
+  type t = (Entry.t, Entry.comparator_witness) Act_utils.Set_partial_order.t
 end
 
 type t =
@@ -64,8 +64,8 @@ include
     [to_string]. *)
 
 val run :
-     oracle:Output.Observation.t
-  -> subject:Output.Observation.t
+     oracle:Observation.t
+  -> subject:Observation.t
   -> location_map:Location_map.t
   -> t Or_error.t
 (** [run ~oracle ~subject ~location_map] applies the partial map

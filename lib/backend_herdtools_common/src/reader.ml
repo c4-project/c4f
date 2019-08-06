@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Base
 open Act_common
@@ -127,12 +115,12 @@ module Ctx = struct
     type t =
       { a_state: Automaton.t  (** The current automaton state. *)
       ; path: string option  (** The file, if any, we're reading. *)
-      ; obs: Act_backend.Output.Observation.t
+      ; obs: Act_state.Observation.t
             (** The observations we've built so far. *) }
     [@@deriving fields, make]
 
     let init : ?path:string -> unit -> t =
-      make ~a_state:Empty ~obs:(Act_backend.Output.Observation.init ())
+      make ~a_state:Empty ~obs:(Act_state.Observation.init ())
 
     let map_fld_m (body : t) ~(field : (t, 'a) Field.t)
         ~(f : 'a -> 'a Or_error.t) : t Or_error.t =
@@ -143,8 +131,7 @@ module Ctx = struct
       map_fld_m body ~field:Fields.a_state
 
     let map_obs_m (body : t) :
-           f:(   Act_backend.Output.Observation.t
-              -> Act_backend.Output.Observation.t Or_error.t)
+           f:(Act_state.Observation.t -> Act_state.Observation.t Or_error.t)
         -> t Or_error.t =
       map_fld_m body ~field:Fields.obs
 
@@ -154,15 +141,15 @@ module Ctx = struct
     let try_enter_state_block (num_states : int) : t -> t Or_error.t =
       map_a_state_m ~f:(Automaton.try_enter_state_block num_states)
 
-    let try_leave_state (state : Act_backend.State.t) (body : t) :
+    let try_leave_state (state : Act_state.Entry.t) (body : t) :
         t Or_error.t =
       Or_error.(
         body
         |> map_a_state_m ~f:Automaton.try_leave_state
-        >>= map_obs_m ~f:(Act_backend.Output.Observation.add ~state))
+        >>= map_obs_m ~f:(Act_state.Observation.add ~state))
 
     let try_set_undefined : t -> t Or_error.t =
-      map_obs_m ~f:Act_backend.Output.Observation.set_undefined
+      map_obs_m ~f:Act_state.Observation.set_undefined
 
     let try_leave_summary (info : Summary_info.t) (body : t) : t Or_error.t
         =
@@ -181,7 +168,7 @@ module Ctx = struct
 
   let peek_automaton () : Automaton.t t = peek Body.a_state
 
-  let peek_obs () : Act_backend.Output.Observation.t t = peek Body.obs
+  let peek_obs () : Act_state.Observation.t t = peek Body.obs
 
   (** [fail_if_bad_state ()] produces an error if the reader ended in a
       state other than Postamble. *)
@@ -204,7 +191,7 @@ module Ctx = struct
   let enter_state_block (num_states : int) : unit t =
     Monadic.modify (Body.try_enter_state_block num_states)
 
-  let leave_state (parsed_state : Act_backend.State.t) : unit t =
+  let leave_state (parsed_state : Act_state.Entry.t) : unit t =
     Monadic.modify (Body.try_leave_state parsed_state)
 
   let leave_summary (info : Summary_info.t) : unit t =
@@ -254,15 +241,15 @@ module Make_main (B : Basic) = struct
     (* The RHS of state lines are always 'binding; binding; binding;', with
        a trailing ;. *)
     let try_parse_state_line_body (line : string) :
-        Act_backend.State.t Or_error.t =
+        Act_state.Entry.t Or_error.t =
       Or_error.(
         line |> String.split ~on:';'
         |> Tx.List.exclude ~f:String.is_empty (* Drop trailing ; *)
         |> List.map ~f:proc_binding |> Result.all
-        >>= Act_backend.State.of_alist)
+        >>= Act_state.Entry.of_alist)
 
-    let try_parse_state_line (line : string) :
-        Act_backend.State.t Or_error.t =
+    let try_parse_state_line (line : string) : Act_state.Entry.t Or_error.t
+        =
       Or_error.Let_syntax.(
         let%bind {rest; _} = B.try_split_state_line line in
         try_parse_state_line_body rest)

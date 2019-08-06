@@ -10,10 +10,10 @@
    project root for more information. *)
 
 open Base
-module Src = Act_backend
+module Src = Act_state
 module Ac = Act_common
 module Tx = Travesty_base_exts
-module Ob = Src.Output.Observation
+module Ob = Src.Observation
 
 let%test_module "run" =
   ( module struct
@@ -38,7 +38,7 @@ let%test_module "run" =
       Or_error.(
         xs
         |> Tx.Alist.map_left ~f:Ac.Litmus_id.of_string
-        |> Src.State.of_alist
+        |> Src.Entry.of_alist
         >>= (fun state -> Ob.add o ~state)
         |> Or_error.ok_exn)
 

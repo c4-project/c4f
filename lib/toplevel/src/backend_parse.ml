@@ -29,7 +29,7 @@ let run ?(fqid : Id.t = Id.of_string "herd")
             out
         in
         Yojson.Safe.pretty_to_channel oc
-          (Act_backend.Output.Observation.to_yojson obs)))
+          (Act_state.Observation.to_yojson obs)))
 
 let command : Command.t =
   Command.basic
