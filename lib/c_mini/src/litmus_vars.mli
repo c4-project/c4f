@@ -22,8 +22,8 @@ open Base
 
 val make_scoped_map :
      Litmus.Test.t
-  -> make_global:(Act_common.C_id.t -> Type.t -> 'a)
-  -> make_local:(int -> Act_common.C_id.t -> Type.t -> 'a)
+  -> make_global:(Act_common.C_id.t -> Type.t -> 'a Or_error.t)
+  -> make_local:(int -> Act_common.C_id.t -> Type.t -> 'a Or_error.t)
   -> 'a Act_common.Scoped_map.t Or_error.t
 (** [make_scoped_map vast ~make_global ~make_local] tries to make a scoped
     map by inspecting all local variable declarations and
