@@ -128,11 +128,12 @@ let%test_module "using sample environment" =
                ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
                 (mo memory_order_relaxed))))))))) |}]
 
-    let%expect_test "programs_to_litmus: sample programs with interspersed emptiness" =
+    let%expect_test "programs_to_litmus: sample programs with interspersed \
+                     emptiness" =
       let programs =
-        Example.programs
-        |> Lazy.force
-        |> List.intersperse ~sep:Program.empty in
+        Example.programs |> Lazy.force
+        |> List.intersperse ~sep:Program.empty
+      in
       run programs ;
       [%expect
         {|

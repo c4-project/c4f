@@ -51,16 +51,16 @@ struct
     let locations = Act_c_mini.Litmus.Test.locations input in
     Act_litmus.Aux.make ?postcondition ~init ?locations ()
 
-  let make_global (c_id : Ac.C_id.t) (ptr_type : Act_c_mini.Type.t) : Var_map.Record.t Or_error.t =
+  let make_global (c_id : Ac.C_id.t) (ptr_type : Act_c_mini.Type.t) :
+      Var_map.Record.t Or_error.t =
     let mapped_to_global = B.globals_become_globals in
     Or_error.Let_syntax.(
       (* Globals in a valid C litmus test come through as pointers. *)
       let%map c_type = Act_c_mini.Type.deref ptr_type in
-        Var_map.Record.make ~c_type
-          ~mapped_to_global ~c_id)
+      Var_map.Record.make ~c_type ~mapped_to_global ~c_id)
 
-  let make_local (tid : int) (local_c_id : Ac.C_id.t) (c_type : Act_c_mini.Type.t) :
-    Var_map.Record.t Or_error.t =
+  let make_local (tid : int) (local_c_id : Ac.C_id.t)
+      (c_type : Act_c_mini.Type.t) : Var_map.Record.t Or_error.t =
     let mapped_to_global = B.locals_become_globals in
     let lit_id = Act_common.Litmus_id.local tid local_c_id in
     let c_id = Qualify.litmus_id lit_id in

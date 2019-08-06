@@ -14,9 +14,8 @@ open Stdio
 
 let dump : Act_c_mini.Type.t list -> unit =
   List.iter ~f:(fun ty ->
-      Stdio.printf "str: %s; sexp: " (Act_c_mini.Type.to_string ty);
-      print_s [%sexp (ty : Act_c_mini.Type.t)]
-    )
+      Stdio.printf "str: %s; sexp: " (Act_c_mini.Type.to_string ty) ;
+      print_s [%sexp (ty : Act_c_mini.Type.t)])
 
 let%expect_test "bool: combinatoric" =
   dump
@@ -24,8 +23,9 @@ let%expect_test "bool: combinatoric" =
       [ bool ~atomic:false ~pointer:false ()
       ; bool ~atomic:false ~pointer:true ()
       ; bool ~atomic:true ~pointer:false ()
-      ; bool ~atomic:true ~pointer:true () ];
-  [%expect {|
+      ; bool ~atomic:true ~pointer:true () ] ;
+  [%expect
+    {|
     str: bool; sexp: bool
     str: bool*; sexp: bool*
     str: atomic_bool; sexp: atomic_bool
@@ -33,12 +33,13 @@ let%expect_test "bool: combinatoric" =
 
 let%expect_test "int: combinatoric" =
   dump
-      Act_c_mini.Type.
-          [ int ~atomic:false ~pointer:false ()
-          ; int ~atomic:false ~pointer:true ()
-          ; int ~atomic:true ~pointer:false ()
-          ; int ~atomic:true ~pointer:true () ] ;
-  [%expect {|
+    Act_c_mini.Type.
+      [ int ~atomic:false ~pointer:false ()
+      ; int ~atomic:false ~pointer:true ()
+      ; int ~atomic:true ~pointer:false ()
+      ; int ~atomic:true ~pointer:true () ] ;
+  [%expect
+    {|
     str: int; sexp: int
     str: int*; sexp: int*
     str: atomic_int; sexp: atomic_int
