@@ -7,13 +7,19 @@
  (name act_c)
  (public_name act-c)
  (modules act_c)
- (libraries base core_kernel core toplevel cmd_c act.utils))
+ (libraries base core_kernel core toplevel cmd_c))
 
 (executable
  (name act_fuzz)
  (public_name act-fuzz)
  (modules act_fuzz)
- (libraries base core_kernel core toplevel cmd_fuzz act.utils))
+ (libraries base core_kernel core toplevel cmd_fuzz))
+
+(executable
+ (name act_state)
+ (public_name act-state)
+ (modules act_state)
+ (libraries base core_kernel core toplevel cmd_state))
 
 (rule
  (targets specs.output)

@@ -17,22 +17,6 @@ module Ob = Src.Observation
 
 let%test_module "run" =
   ( module struct
-    let sample_location_map_raw : (string, string option) List.Assoc.t =
-      [ ("t0a", Some "0:a")
-      ; ("t0b", Some "0:b")
-      ; ("t1a", Some "1:a")
-      ; ("t1b", Some "1:b")
-      ; ("x", Some "x")
-      ; ("y", Some "y")
-      ; ("0:temp", None)
-      ; ("1:temp", None) ]
-
-    let location_map : Ac.Litmus_id.t option Map.M(Ac.Litmus_id).t =
-      sample_location_map_raw
-      |> Tx.Alist.bi_map ~left:Ac.Litmus_id.of_string
-           ~right:(Option.map ~f:Ac.Litmus_id.of_string)
-      |> Map.of_alist_exn (module Ac.Litmus_id)
-
     let add_state_exn (xs : (string, string) List.Assoc.t) (o : Ob.t) : Ob.t
         =
       Or_error.(
@@ -69,7 +53,7 @@ let%test_module "run" =
 
     let test (subject : Ob.t) : unit =
       let result =
-        Src.Diff.run ~oracle:normal_oracle ~subject ~location_map
+        Src.Diff.run ~oracle:normal_oracle ~subject
       in
       Fmt.(pr "@[%a@]@." (result ~ok:Src.Diff.pp ~error:Error.pp)) result
 
@@ -84,17 +68,17 @@ let%test_module "run" =
     let smaller_subject : Ob.t =
       Ob.init ()
       |> add_state_exn
-           [ ("t0a", "potato")
-           ; ("t0b", "waffles")
-           ; ("t1a", "true")
-           ; ("t1b", "6")
+           [ ("0:a", "potato")
+           ; ("0:b", "waffles")
+           ; ("1:a", "true")
+           ; ("1:b", "6")
            ; ("x", "100")
            ; ("y", "kg") ]
       |> add_state_exn
-           [ ("t0a", "sweet")
-           ; ("t0b", "waffles")
-           ; ("t1a", "false")
-           ; ("t1b", "42")
+           [ ("0:a", "sweet")
+           ; ("0:b", "waffles")
+           ; ("1:a", "false")
+           ; ("1:b", "42")
            ; ("x", "100")
            ; ("y", "cwt") ]
 
@@ -109,10 +93,24 @@ let%test_module "run" =
     let equivalent_subject : Ob.t =
       smaller_subject
       |> add_state_exn
-           [ ("t0a", "potato")
-           ; ("t0b", "wedges")
-           ; ("t1a", "true")
-           ; ("t1b", "42")
+           [ ("0:a", "potato")
+           ; ("0:b", "wedges")
+           ; ("1:a", "true")
+           ; ("1:b", "42")
+           ; ("x", "99")
+           ; ("y", "kg") ]
+
+    let%expect_test "equivalent subject states" =
+      test equivalent_subject ; [%expect {|
+      Oracle == Subject |}]
+
+    let equivalent_subject : Ob.t =
+      smaller_subject
+      |> add_state_exn
+           [ ("0:a", "potato")
+           ; ("0:b", "wedges")
+           ; ("1:a", "true")
+           ; ("1:b", "42")
            ; ("x", "99")
            ; ("y", "kg") ]
 
@@ -123,10 +121,10 @@ let%test_module "run" =
     let larger_subject : Ob.t =
       equivalent_subject
       |> add_state_exn
-           [ ("t0a", "potato")
-           ; ("t0b", "heads")
-           ; ("t1a", "true")
-           ; ("t1b", "2")
+           [ ("0:a", "potato")
+           ; ("0:b", "heads")
+           ; ("1:a", "true")
+           ; ("1:b", "2")
            ; ("x", "99")
            ; ("y", "red balloons") ]
 
@@ -143,24 +141,24 @@ let%test_module "run" =
         Ob.(
           init ()
           |> add_state_exn
-               [ ("t0a", "potato")
-               ; ("t0b", "waffles")
-               ; ("t1a", "true")
-               ; ("t1b", "6")
+               [ ("0:a", "potato")
+               ; ("0:b", "waffles")
+               ; ("1:a", "true")
+               ; ("1:b", "6")
                ; ("x", "100")
                ; ("y", "kg") ]
           |> add_state_exn
-               [ ("t0a", "sweet")
-               ; ("t0b", "waffles")
-               ; ("t1a", "false")
-               ; ("t1b", "42")
+               [ ("0:a", "sweet")
+               ; ("0:b", "waffles")
+               ; ("1:a", "false")
+               ; ("1:b", "42")
                ; ("x", "100")
                ; ("y", "percent") ]
           |> add_state_exn
-               [ ("t0a", "potato")
-               ; ("t0b", "wedges")
-               ; ("t1a", "true")
-               ; ("t1b", "42")
+               [ ("0:a", "potato")
+               ; ("0:b", "wedges")
+               ; ("1:a", "true")
+               ; ("1:b", "42")
                ; ("x", "99")
                ; ("y", "kg") ]) ;
       [%expect

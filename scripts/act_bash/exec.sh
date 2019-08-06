@@ -36,7 +36,7 @@ act::exec() {
   if [[ ${DUNE_EXEC} = "true" ]]; then
     # We can't build here because some of the act scripts fork off multiple
     # act tool executions, and building on each would cause race conditions.
-    dune exec --no-build "${prog}" -- "$@"
+    dune exec --no-build --display=quiet "${prog}" -- "$@"
   else
     "${prog}" "$@"
   fi
@@ -109,5 +109,18 @@ act::fuzz() {
 act::litmusify() {
   # `litmusify` is currently `act asm litmusify`; this will change later.
   act::exec "${ACT:-"act"}" asm litmusify "$@"
+}
+
+
+# Runs the ACT 'state' tool.
+#
+# Globals:
+#   - ACT_STATE (read)
+#   - DUNE_EXEC (transitively read)
+#
+# Arguments:
+#   *: the arguments to the program.
+act::state() {
+  act::exec "${ACT_STATE:-"act-state"}" "$@"
 }
 

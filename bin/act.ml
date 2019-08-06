@@ -14,6 +14,12 @@
     This module contains act's main entry point, which multiplexes all of
     the various act sub-programs. *)
 
+(* NOTE:
+
+   The monolithic `act` binary is DEPRECATED. All commands are slowly moving
+   out of it into their own binaries, and subject to further subdivision at
+   a later date. *)
+
 open Core
 open Toplevel
 
@@ -29,7 +35,6 @@ let command =
   Command.group ~summary:"the Automagic Compiler Tormentor" ~readme
     [ ("asm", Asm_main.command)
     ; ("configure", Configure.command)
-    ; ("diff-states", Diff_states.command)
     ; ("backend", Backend.command) ]
 
 let () = Command.run command

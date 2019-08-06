@@ -63,11 +63,6 @@ include
 (** We can also pretty-print diff results, with similar results to running
     [to_string]. *)
 
-val run :
-     oracle:Observation.t
-  -> subject:Observation.t
-  -> location_map:Location_map.t
-  -> t Or_error.t
-(** [run ~oracle ~subject ~location_map] applies the partial map
-    [location_map] to every state binding in [subject], then analyses it
-    against [oracle]. *)
+val run : oracle:Observation.t -> subject:Observation.t -> t Or_error.t
+(** [run ~oracle ~subject] runs the state differ on oracle [oracle] and
+    subject [subject]. *)

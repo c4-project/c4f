@@ -123,45 +123,26 @@ let compare_states ~(oracle_states : Entry.t list)
   in
   Result result
 
-let not_in_subject_error (location : A.Litmus_id.t) : Error.t Lazy.t =
-  (* TODO(@MattWindsor91): is this even an error? are there examples where
-     this legitimately happens eg. compiler optimisations? *)
-  lazy
-    (Error.create_s
-       [%message
-         "Location present in the oracle but absent in the subject"
-           ~location:(location : A.Litmus_id.t)])
+let filter_to_common_domain ~(raw_oracle_states : Entry.t list)
+    ~(raw_subject_states : Entry.t list) :
+    (Entry.t list * Entry.t list) Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind oracle_domain = Entry.common_domain raw_oracle_states in
+    let%map subject_domain = Entry.common_domain raw_subject_states in
+    let domain = Set.inter oracle_domain subject_domain in
+    ( List.map raw_oracle_states ~f:(Entry.restrict ~domain)
+    , List.map raw_subject_states ~f:(Entry.restrict ~domain) ))
 
-let map_subject_states (states : Entry.t list)
-    ~(location_map : Location_map.t) =
-  Tx.Or_error.combine_map states
-    ~f:
-      (Entry.map ~value_map:Or_error.return ~location_map:(fun l ->
-           l |> Map.find location_map
-           |> Result.of_option
-                ~error:Error.(of_lazy_t (not_in_subject_error l))))
-
-let filter_oracle_states ~(raw_oracle_states : Entry.t list)
-    ~(subject_states : Entry.t list) : Entry.t list Or_error.t =
-  let open Or_error.Let_syntax in
-  let%map domain = Entry.common_domain subject_states in
-  List.map raw_oracle_states ~f:(Entry.restrict ~domain)
-
-let run_defined ~(oracle : Ob.t) ~(subject : Ob.t)
-    ~(location_map : Location_map.t) : t Or_error.t =
-  let open Or_error.Let_syntax in
+let run_defined ~(oracle : Ob.t) ~(subject : Ob.t) : t Or_error.t =
   let raw_oracle_states = Ob.states oracle in
   let raw_subject_states = Ob.states subject in
-  let%bind subject_states =
-    map_subject_states raw_subject_states ~location_map
-  in
-  let%map oracle_states =
-    filter_oracle_states ~raw_oracle_states ~subject_states
-  in
-  compare_states ~oracle_states ~subject_states
+  Or_error.Let_syntax.(
+    let%map oracle_states, subject_states =
+      filter_to_common_domain ~raw_oracle_states ~raw_subject_states
+    in
+    compare_states ~oracle_states ~subject_states)
 
-let run ~(oracle : Ob.t) ~(subject : Ob.t) ~(location_map : Location_map.t)
-    : t Or_error.t =
+let run ~(oracle : Ob.t) ~(subject : Ob.t) : t Or_error.t =
   if Ob.is_undefined oracle then Or_error.return Oracle_undefined
   else if Ob.is_undefined subject then Or_error.return Subject_undefined
-  else run_defined ~oracle ~subject ~location_map
+  else run_defined ~oracle ~subject
