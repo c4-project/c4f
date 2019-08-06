@@ -16,7 +16,9 @@ source "${SCRIPTDIR}/act_bash/exec.sh"
 # shellcheck source=scripts/act_bash/log.sh
 source "${SCRIPTDIR}/act_bash/log.sh"
 
+
 ## Constants and arguments ##
+
 
 # The backend ID to use to get state sets.
 BACKEND="herd"
@@ -31,7 +33,9 @@ DUNE_EXEC="false"
 # Whether or not verbose logging is enabled.
 VERBOSE="false"
 
+
 ## Functions ##
+
 
 # Prints usage information and exits.
 usage() {
@@ -44,6 +48,7 @@ usage() {
   echo "-h/-?: usage"
   exit
 }
+
 
 main() {
   while getopts "b:c:qvx?h" a; do
@@ -80,6 +85,6 @@ main() {
     <(act::exec act-c gen-locmap "${original_file}")
 }
 
-## Entry point ##
 
+## Entry point ##
 main "${@}"

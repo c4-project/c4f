@@ -14,6 +14,10 @@ declare ACT
 declare ACT_C
 
 
+# If set, overrides the choice of `act-fuzz` executable.
+declare ACT_FUZZ
+
+
 # Runs an OCaml ACT tool.
 #
 # If `DUNE_EXEC` is set to "true", the tool will be run indirectly through
@@ -36,20 +40,6 @@ act::exec() {
   else
     "${prog}" "$@"
   fi
-}
-
-
-# Runs the ACT 'litmusify' tool.
-#
-# Globals:
-#   - ACT (read)
-#   - DUNE_EXEC (transitively read)
-#
-# Arguments:
-#   *: the arguments to the program.
-act::litmusify() {
-  # `litmusify` is currently `act asm litmusify`; this will change later.
-  act::exec "${ACT:-"act"}" asm litmusify "$@"
 }
 
 
@@ -93,3 +83,31 @@ act::delitmus() {
   # `delitmus` is currently `act-c delitmus`; this may change later.
   act::exec "${ACT_C:-"act-c"}" delitmus "$@"
 }
+
+
+# Runs the ACT 'fuzz' tool.
+#
+# Globals:
+#   - ACT_FUZZ (read)
+#   - DUNE_EXEC (transitively read)
+#
+# Arguments:
+#   *: the arguments to the program.
+act::fuzz() {
+  act::exec "${ACT_FUZZ:-"act-fuzz"}" "$@"
+}
+
+
+# Runs the ACT 'litmusify' tool.
+#
+# Globals:
+#   - ACT (read)
+#   - DUNE_EXEC (transitively read)
+#
+# Arguments:
+#   *: the arguments to the program.
+act::litmusify() {
+  # `litmusify` is currently `act asm litmusify`; this will change later.
+  act::exec "${ACT:-"act"}" asm litmusify "$@"
+}
+
