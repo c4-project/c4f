@@ -30,7 +30,9 @@ act::exec() {
   shift 1
 
   if [[ ${DUNE_EXEC} = "true" ]]; then
-    dune exec "${prog}" -- "$@"
+    # We can't build here because some of the act scripts fork off multiple
+    # act tool executions, and building on each would cause race conditions.
+    dune exec --no-build "${prog}" -- "$@"
   else
     "${prog}" "$@"
   fi
