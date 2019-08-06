@@ -49,7 +49,7 @@ module Record : sig
 
   (** {3 Constructors} *)
 
-  val make_existing : Act_common.Scope.t -> Act_c_mini.Type.t option -> t
+  val make_existing : Act_common.Scope.t -> Act_c_mini.Type.t -> t
   (** [make_existing scope ty] makes a variable record for a
       non-fuzzer-generated variable of type [ty] and scope [scope]. *)
 
@@ -86,7 +86,7 @@ module Record : sig
 
   (** {3 Properties} *)
 
-  val ty : t -> Act_c_mini.Type.t option
+  val ty : t -> Act_c_mini.Type.t
   (** Gets the type of the variable, if known. *)
 
   (** {3 Actions} *)

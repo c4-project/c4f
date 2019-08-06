@@ -90,7 +90,7 @@ module Type_check (E : Env_types.S) = struct
     | Deref l ->
       Or_error.tag_arg
         Or_error.(l |> type_of >>= Type.deref)
-        "checking underlying type of lvalue dereferencing"
+        "While checking underlying type of lvalue dereferencing:"
         l
         sexp_of_t
 end

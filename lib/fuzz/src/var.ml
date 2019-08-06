@@ -22,7 +22,7 @@ end
 
 module Record = struct
   type t =
-    { ty: Act_c_mini.Type.t option
+    { ty: Act_c_mini.Type.t
     ; source: [`Existing | `Generated]
     ; scope: Ac.Scope.t
     ; known_value: Known_value.t option
@@ -32,10 +32,10 @@ module Record = struct
   let is_global (r : t) : bool = Ac.Scope.is_global (scope r)
 
   let has_basic_type (r : t) ~(basic : Act_c_mini.Type.Basic.t) : bool =
-    Option.exists ~f:(Act_c_mini.Type.basic_type_is ~basic) (ty r)
+    Act_c_mini.Type.basic_type_is ~basic (ty r)
 
   let is_atomic (r : t) : bool =
-    Option.exists ~f:Act_c_mini.Type.is_atomic (ty r)
+    Act_c_mini.Type.is_atomic (ty r)
 
   let was_generated : t -> bool = function
     | {source= `Generated; _} ->
@@ -60,9 +60,9 @@ module Record = struct
 
   let erase_value (record : t) : t = {record with known_value= None}
 
-  let make_existing (scope : Ac.Scope.t) (ty : Act_c_mini.Type.t option) : t
+  let make_existing (scope : Ac.Scope.t) (ty : Act_c_mini.Type.t) : t
       =
-    make ~source:`Existing ~scope ?ty ()
+    make ~source:`Existing ~scope ~ty ()
 
   let make_generated_global ?(initial_value : Act_c_mini.Constant.t option)
       (ty : Act_c_mini.Type.t) : t =
@@ -79,9 +79,9 @@ module Map = struct
   let make_existing_var_map (test : Act_c_mini.Litmus.Test.t) : t Or_error.t
       =
     Act_c_mini.Litmus_vars.make_scoped_map test
-      ~make_global:(fun _ ty -> Record.make_existing Global (Some ty))
+      ~make_global:(fun _ ty -> Record.make_existing Global ty)
       ~make_local:(fun tid _ ty ->
-        Record.make_existing (Local tid) (Some ty))
+        Record.make_existing (Local tid) ty)
 
   let register_global ?(initial_value : Act_c_mini.Constant.t option)
       (map : t) (id : Ac.C_id.t) (ty : Act_c_mini.Type.t) : t =
@@ -123,8 +123,7 @@ module Map = struct
       ~(predicates : (Record.t -> bool) list) :
       Act_c_mini.Type.t Map.M(Ac.C_id).t =
     Map.filter_map vars ~f:(fun data ->
-        Option.(
-          data |> Record.ty >>= some_if (Tx.List.all ~predicates data)))
+          data |> Record.ty |> Option.some_if (Tx.List.all ~predicates data))
 
   let env_satisfying_all (vars : t) ~(scope : Ac.Scope.t)
       ~(predicates : (Record.t -> bool) list) :

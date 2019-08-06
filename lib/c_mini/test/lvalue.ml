@@ -60,7 +60,10 @@ let%expect_test "Type-checking an invalid deferencing variable lvalue" =
     T.type_of (deref (variable (Act_common.C_id.of_string "foo")))
   in
   print_s [%sexp (result : Act_c_mini.Type.t Or_error.t)] ;
-  [%expect {| (Error "not a pointer type") |}]
+  [%expect {|
+    (Error
+     ("While checking underlying type of lvalue dereferencing:" (Variable foo)
+      ("tried to get value type of a non-pointer type" (basic_type int)))) |}]
 
 let%expect_test "gen: sample" =
   Act_utils.My_quickcheck.print_sample (module Act_c_mini.Lvalue) ;
