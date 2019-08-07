@@ -1,5 +1,5 @@
 (tests
- (names explain delitmus litmusify config config_failures reflexive_locmap)
+ (names explain delitmus litmusify config config_failures)
  (preprocess
   (pps ppx_jane))
  (libraries ppx_deriving_yojson.runtime result yojson sexplib0 base.caml

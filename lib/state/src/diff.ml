@@ -15,34 +15,6 @@ module Au = Act_utils
 module Tx = Travesty_base_exts
 module Ob = Observation
 
-module Location_map = struct
-  type t = A.Litmus_id.t option Map.M(A.Litmus_id).t
-
-  module Json =
-    Plumbing.Jsonable.Make_map
-      (A.Litmus_id)
-      (Plumbing.Jsonable.Option (A.Litmus_id))
-
-  include (Json : module type of Json with type t := t)
-
-  module Load = Plumbing.Loadable.Of_jsonable (Json)
-
-  include (Load : module type of Load with type t := t)
-
-  let reflexive (vars : Set.M(Act_common.Litmus_id).t) : t =
-    vars
-    |> Set.to_sequence ~order:`Increasing
-    |> Sequence.map ~f:(fun x -> (x, Some x))
-    |> Map.of_increasing_sequence (module Act_common.Litmus_id)
-    |> Or_error.ok_exn
-
-  let output (map : t) ~(onto : Plumbing.Output.t) : unit Or_error.t =
-    Plumbing.Output.with_output onto ~f:(fun oc ->
-        map |> to_yojson |> Yojson.Safe.pretty_to_channel oc ;
-        Stdio.Out_channel.newline oc ;
-        Result.ok_unit)
-end
-
 module Order = struct
   include Au.Set_partial_order.M (Entry)
 
