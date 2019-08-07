@@ -21,8 +21,10 @@
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+open Base
+
 let null_formatter () =
-  Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
+  Caml.Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
 
 let pp_c_braces (pi : 'a Fmt.t) : 'a Fmt.t =
   Fmt.(hvbox (hvbox ~indent:4 (any "{@ " ++ pi) ++ any "@ }"))
@@ -30,3 +32,9 @@ let pp_c_braces (pi : 'a Fmt.t) : 'a Fmt.t =
 let pp_kv f k pv v =
   Fmt.(hvbox ~indent:1 (pair ~sep:(const (char ++ sp) ':') string pv))
     f (k, v)
+
+let pp_set (type elem cmp) (elem : elem Fmt.t) : (elem, cmp) Set.t Fmt.t =
+  Fmt.(using Set.to_list (braces (box (list ~sep:comma elem))))
+
+let pp_if (t : unit Fmt.t) (f : unit Fmt.t) : bool Fmt.t =
+ fun fmt x -> (if x then t else f) fmt ()

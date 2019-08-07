@@ -113,7 +113,4 @@ module type Extension_table = sig
   val of_string_option : string -> t option
   (** [of_string_option] is the same as [of_string] in [StringTable.Intf],
       but renamed so as not to clash with the [Stringable] version. *)
-
-  val pp_set : (t, comparator_witness) Set.t Fmt.t
-  (** [pp_set] pretty-prints a set of [t]. *)
 end

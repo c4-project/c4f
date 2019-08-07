@@ -4,34 +4,34 @@
 
 ```
 -- program 0
-_P0:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
+_P0:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
 movl $2, %EAX # <-- move
 xchgl %EAX, _x # <-- RMW
 movl $1, %EAX # <-- move
 xchgl %EAX, _y # <-- RMW
-popl %EBP # <-- stack (manipulates stack)
+popl %EBP # <-- stack {manipulates stack}
 retl # <-- return
 -- program 1
-_P1:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
+_P1:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
 movl $2, %EAX # <-- move
 xchgl %EAX, _y # <-- RMW
 movl $1, %EAX # <-- move
 xchgl %EAX, _x # <-- RMW
-popl %EBP # <-- stack (manipulates stack)
+popl %EBP # <-- stack {manipulates stack}
 retl # <-- return
 ```
 ## gcc_elf_o0_stackchk.s
 
 ```
 -- program 0
-P0:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $24, %ESP # <-- arith (manipulates stack)
+P0:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $24, %ESP # <-- arith {manipulates stack}
 movl %GS:20, %EAX # <-- move
 movl %EAX, -12(%EBP) # <-- move
 xorl %EAX, %EAX # <-- logical
@@ -51,10 +51,10 @@ call __stack_chk_fail # <-- call
 leave # <-- call
 ret # <-- return
 -- program 1
-P1:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $24, %ESP # <-- arith (manipulates stack)
+P1:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $24, %ESP # <-- arith {manipulates stack}
 movl %GS:20, %EAX # <-- move
 movl %EAX, -12(%EBP) # <-- move
 xorl %EAX, %EAX # <-- logical
@@ -78,10 +78,10 @@ ret # <-- return
 
 ```
 -- program 0
-_P0:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arith (manipulates stack)
+_P0:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $16, %ESP # <-- arith {manipulates stack}
 movl $0, _t0r0 # <-- move
 movl $_x, -4(%EBP) # <-- move
 movl $2, -8(%EBP) # <-- move
@@ -99,10 +99,10 @@ L3:  # <-- label
 leave # <-- call
 ret # <-- return
 -- program 1
-_P1:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arith (manipulates stack)
+_P1:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $16, %ESP # <-- arith {manipulates stack}
 movl $_x, -4(%EBP) # <-- move
 movl $1, -8(%EBP) # <-- move
 movl -8(%EBP), %EAX # <-- move
@@ -116,10 +116,10 @@ ret # <-- return
 
 ```
 -- program 0
-_P0:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arith (manipulates stack)
+_P0:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $16, %ESP # <-- arith {manipulates stack}
 movl $_y, -4(%EBP) # <-- move
 movl -4(%EBP), %EAX # <-- move
 movl (%EAX), %EAX # <-- move
@@ -134,10 +134,10 @@ L3:  # <-- label
 leave # <-- call
 ret # <-- return
 -- program 1
-_P1:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arith (manipulates stack)
+_P1:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $16, %ESP # <-- arith {manipulates stack}
 movl _x, %EAX # <-- move
 movl %EAX, _t1r0 # <-- move
 movl _t1r0, %EAX # <-- move
@@ -157,10 +157,10 @@ ret # <-- return
 
 ```
 -- program 0
-_P0:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arith (manipulates stack)
+_P0:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $16, %ESP # <-- arith {manipulates stack}
 movl $_x, -4(%EBP) # <-- move
 movl -4(%EBP), %EAX # <-- move
 movl (%EAX), %EAX # <-- move
@@ -176,10 +176,10 @@ movl %EDX, (%EAX) # <-- move
 leave # <-- call
 ret # <-- return
 -- program 1
-_P1:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arith (manipulates stack)
+_P1:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $16, %ESP # <-- arith {manipulates stack}
 movl $_y, -4(%EBP) # <-- move
 movl $2, -12(%EBP) # <-- move
 movl -12(%EBP), %EAX # <-- move
@@ -199,10 +199,10 @@ ret # <-- return
 
 ```
 -- program 0
-_P0:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arith (manipulates stack)
+_P0:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $16, %ESP # <-- arith {manipulates stack}
 movl _y, %EAX # <-- move
 movl %EAX, -4(%EBP) # <-- move
 movl -4(%EBP), %EAX # <-- move
@@ -215,10 +215,10 @@ L3:  # <-- label
 leave # <-- call
 ret # <-- return
 -- program 1
-_P1:  # <-- label (unused label, program boundary)
-pushl %EBP # <-- stack (manipulates stack)
-movl %ESP, %EBP # <-- move (manipulates stack)
-subl $16, %ESP # <-- arith (manipulates stack)
+_P1:  # <-- label {unused label, program boundary}
+pushl %EBP # <-- stack {manipulates stack}
+movl %ESP, %EBP # <-- move {manipulates stack}
+subl $16, %ESP # <-- arith {manipulates stack}
 movl _x, %EAX # <-- move
 movl %EAX, _t1r0 # <-- move
 movl _t1r0, %EAX # <-- move

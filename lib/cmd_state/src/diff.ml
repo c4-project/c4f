@@ -41,8 +41,7 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map_open standard_args = ignore anon ; Toplevel.Args.Standard.get
       and oracle_raw = anon ("ORACLE_NAME" %: Filename.arg_type)
-      and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type)
-      in
+      and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type) in
       fun () ->
         Toplevel.Common.lift_command standard_args
           ~with_compiler_tests:false

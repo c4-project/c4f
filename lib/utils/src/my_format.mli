@@ -36,3 +36,10 @@ val pp_c_braces : 'v Fmt.t -> 'v Fmt.t
 val pp_kv : Formatter.t -> string -> 'v Fmt.t -> 'v -> unit
 (** [pp_kv f k pv v] prints a key-value pair, whose key is the string [k]
     and value is the value [v] printable by [pv], onto formatter [f]. *)
+
+val pp_set : 'elem Fmt.t -> ('elem, 'cmp) Set.t Fmt.t
+(** [pp_set pp_elem] pretty-prints prints a set, using {!pp_elem} as the
+    element printer. *)
+
+val pp_if : unit Fmt.t -> unit Fmt.t -> bool Fmt.t
+(** [pp_if t f] formats a Boolean with [t] if true, or [f] if false. *)

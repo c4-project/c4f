@@ -77,7 +77,9 @@ module Make (B : Explanation_intf.Basic) :
         ~abstract:(fun _ _ _ -> ())
         ~abs_flags:(fun _ _ flags ->
           if not (Set.is_empty flags) then
-            pf f "@[flags:@ %a;@]@ " B.Flag.pp_set flags)
+            pf f "@[flags:@ %a;@]@ "
+              (Act_utils.My_format.pp_set B.Flag.pp)
+              flags)
         ~details:(fun _ _ -> B.pp_details f))
 
   let pp f t = pp_details B.pp pp_body f (original t, t)

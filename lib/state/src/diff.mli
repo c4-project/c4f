@@ -22,17 +22,17 @@
 
 open Base
 
-(** Synonym of [Set_partial_order] for orderings between state sets. *)
-module Order : sig
-  type t = (Entry.t, Entry.comparator_witness) Act_utils.Set_partial_order.t
-end
+(** {1 The diff result structure} *)
 
-type t =
-  | Oracle_undefined
-      (** The oracle execution triggered undefined behaviour. *)
-  | Subject_undefined
-      (** The subject execution triggered undefined behaviour. *)
-  | Result of Order.t  (** Analysis completed with the following result. *)
+type t
+
+val domain : t -> Set.M(Act_common.Litmus_id).t
+
+val order : t -> Act_utils.Set_partial_order.M(Entry).t
+
+val is_oracle_undefined : t -> bool
+
+val is_subject_undefined : t -> bool
 
 val to_string : t -> string
 (** [to_string result] returns a human-readable string representing

@@ -52,9 +52,7 @@ let%test_module "run" =
              ; ("y", "kg") ])
 
     let test (subject : Ob.t) : unit =
-      let result =
-        Src.Diff.run ~oracle:normal_oracle ~subject
-      in
+      let result = Src.Diff.run ~oracle:normal_oracle ~subject in
       Fmt.(pr "@[%a@]@." (result ~ok:Src.Diff.pp ~error:Error.pp)) result
 
     let%expect_test "no subject states" =
@@ -63,6 +61,8 @@ let%test_module "run" =
         {|
       Oracle >> Subject
       In oracle only:
+        {{}}
+      Variables considered:
         {} |}]
 
     let smaller_subject : Ob.t =
@@ -88,7 +88,9 @@ let%test_module "run" =
         {|
       Oracle >> Subject
       In oracle only:
-        {x = 99; y = kg; 0:a = potato; 0:b = wedges; 1:a = true; 1:b = 42} |}]
+        {{x = 99; y = kg; 0:a = potato; 0:b = wedges; 1:a = true; 1:b = 42}}
+      Variables considered:
+        {x, y, 0:a, 0:b, 1:a, 1:b} |}]
 
     let equivalent_subject : Ob.t =
       smaller_subject
@@ -101,8 +103,12 @@ let%test_module "run" =
            ; ("y", "kg") ]
 
     let%expect_test "equivalent subject states" =
-      test equivalent_subject ; [%expect {|
-      Oracle == Subject |}]
+      test equivalent_subject ;
+      [%expect
+        {|
+      Oracle == Subject
+      Variables considered:
+        {x, y, 0:a, 0:b, 1:a, 1:b} |}]
 
     let equivalent_subject : Ob.t =
       smaller_subject
@@ -115,8 +121,12 @@ let%test_module "run" =
            ; ("y", "kg") ]
 
     let%expect_test "equivalent subject states" =
-      test equivalent_subject ; [%expect {|
-      Oracle == Subject |}]
+      test equivalent_subject ;
+      [%expect
+        {|
+      Oracle == Subject
+      Variables considered:
+        {x, y, 0:a, 0:b, 1:a, 1:b} |}]
 
     let larger_subject : Ob.t =
       equivalent_subject
@@ -134,7 +144,9 @@ let%test_module "run" =
         {|
       Oracle << Subject
       In subject only:
-        {x = 99; y = red balloons; 0:a = potato; 0:b = heads; 1:a = true; 1:b = 2} |}]
+        {{x = 99; y = red balloons; 0:a = potato; 0:b = heads; 1:a = true; 1:b = 2}}
+      Variables considered:
+        {x, y, 0:a, 0:b, 1:a, 1:b} |}]
 
     let%expect_test "uncorrelated subject states" =
       test
@@ -165,7 +177,9 @@ let%test_module "run" =
         {|
       Oracle <> Subject
       In oracle only:
-        {x = 100; y = cwt; 0:a = sweet; 0:b = waffles; 1:a = false; 1:b = 42}
+        {{x = 100; y = cwt; 0:a = sweet; 0:b = waffles; 1:a = false; 1:b = 42}}
       In subject only:
-        {x = 100; y = percent; 0:a = sweet; 0:b = waffles; 1:a = false; 1:b = 42} |}]
+        {{x = 100; y = percent; 0:a = sweet; 0:b = waffles; 1:a = false; 1:b = 42}}
+      Variables considered:
+        {x, y, 0:a, 0:b, 1:a, 1:b} |}]
   end )

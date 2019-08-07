@@ -112,16 +112,21 @@ struct
   let explain prog symbol_table =
     {statements= explain_program symbol_table prog; symbol_table}
 
+  let pp_stm_flag_set =
+    pp_set_adj (Act_utils.My_format.pp_set Stm_explanation.Flag.pp)
+
+  let pp_ins_flag_set =
+    pp_set_adj (Act_utils.My_format.pp_set Ins_explanation.Flag.pp)
+
   let pp_generic_statement_explanation f exp =
     Stm_explanation.(
       Fmt.pf f "@[<--@ @[%a%a@]@]" Act_abstract.Statement.Kind.pp
-        (abs_kind exp) (pp_set_adj Flag.pp_set) (abs_flags exp))
+        (abs_kind exp) pp_stm_flag_set (abs_flags exp))
 
   let pp_instruction_explanation f exp ins =
     Ins_explanation.(
       Fmt.pf f "@[<--@ @[%a%a%a@]@]" Act_abstract.Instruction.Kind.pp
-        (abs_kind ins) (pp_set_adj Flag.pp_set) (abs_flags ins)
-        (pp_set_adj Stm_explanation.Flag.pp_set)
+        (abs_kind ins) pp_ins_flag_set (abs_flags ins) pp_stm_flag_set
         (Stm_explanation.abs_flags exp))
 
   let pp_explanation f exp =

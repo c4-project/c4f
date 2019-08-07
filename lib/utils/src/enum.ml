@@ -145,6 +145,4 @@ module Extend_table (E : Enum_types.S_table) :
   let of_string_option = Tbl.of_string
 
   let pp : t Fmt.t = Fmt.of_to_string to_string
-
-  let pp_set = Fmt.(using Set.to_list (parens (box (list ~sep:comma pp))))
 end
