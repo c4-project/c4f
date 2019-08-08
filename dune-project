@@ -20,9 +20,9 @@
   (depends
     (ocaml (>= 4.08))
     (dune (and :build (>= 1.10) (< 2)))
-    (ppx_deriving_yojson (and (>= 3.5.1) (< 4)))
     ppx_deriving
     ppx_jane
+    (ppx_yojson_conv (and (>= v0.12) (< v0.13)))
     (core (and (>= v0.12) (< v0.13)))
     (fmt (and (>= 0.8.7) (< 0.9)))
     (fpath (and (>= 0.7.2) (< 0.8)))

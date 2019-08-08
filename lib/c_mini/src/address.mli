@@ -100,8 +100,8 @@ include
 
     The default quickcheck instance random addresses without constraint. We
     also provide several modules with more specific restrictions. Most of
-    these are in {{!Address_gen}Address_gen}, but we expose their common
-    ancestor, {{!Quickcheck_generic}Quickcheck_generic}}, here by necessity. *)
+    these are in {!Address_gen}, but we expose their common ancestor,
+    {!Quickcheck_generic}, here by necessity. *)
 
 module Quickcheck_generic
     (Lv : Act_utils.My_quickcheck.S_with_sexp with type t := Lvalue.t) :

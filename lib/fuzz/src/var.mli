@@ -32,12 +32,11 @@ open Base
 
     These records are used to decide:
 
-    {ul
-     {- whether a generated variable has exactly one value throughout the
-        lifetime of a litmus test (meaning we can depend on that value for
-        generating other code);}
-     {- whether that value is depended upon (meaning we can't use the
-        variable as the target of a value-changing operation).}} *)
+    - whether a generated variable has exactly one value throughout the
+      lifetime of a litmus test (meaning we can depend on that value for
+      generating other code);
+    - whether that value is depended upon (meaning we can't use the variable
+      as the target of a value-changing operation). *)
 module Known_value : sig
   type t = {value: Act_c_mini.Constant.t; has_dependencies: bool}
   [@@deriving equal]

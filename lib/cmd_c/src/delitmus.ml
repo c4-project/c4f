@@ -13,7 +13,7 @@ open Core
 
 let write_aux (aux : Act_delitmus.Aux.t) (oc : Stdio.Out_channel.t) :
     unit Or_error.t =
-  let aux_json = Act_delitmus.Aux.to_yojson aux in
+  let aux_json = Act_delitmus.Aux.yojson_of_t aux in
   Or_error.try_with (fun () -> Yojson.Safe.pretty_to_channel oc aux_json)
 
 let run ?(aux_output : string option)

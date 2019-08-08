@@ -87,10 +87,10 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
   let postcondition_to_json (pc : Const.t Postcondition.t) : Yojson.Safe.t =
     `String (Fmt.strf "@[<h>%a@]" (Postcondition.pp ~pp_const:Const.pp) pc)
 
-  let to_yojson (aux : t) : Yojson.Safe.t =
+  let yojson_of_t (aux : t) : Yojson.Safe.t =
     `Assoc
-      [ ("locations", [%to_yojson: Ac.C_id.t list option] (locations aux))
-      ; ("init", [%to_yojson: Const.t Ac.C_id.Alist.t] (init aux))
+      [ ("locations", [%yojson_of: Ac.C_id.t list option] (locations aux))
+      ; ("init", [%yojson_of: Const.t Ac.C_id.Alist.t] (init aux))
       ; ("postcondition", opt ~f:postcondition_to_json (postcondition aux))
       ]
 
@@ -107,16 +107,20 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
     in
     Result.map_error ~f:Error.to_string_hum result
 
-  let of_yojson (json : Yojson.Safe.t) : (t, string) Result.t =
-    Result.Let_syntax.(
-      let%bind locations =
-        [%of_yojson: Ac.C_id.t list option] (U.member "locations" json)
-      in
-      let%bind init =
-        [%of_yojson: Const.t Ac.C_id.Alist.t] (U.member "init" json)
-      in
-      let%map postcondition =
-        postcondition_of_json (U.member "postcondition" json)
-      in
-      make ?locations ~init ?postcondition ())
+  let t_of_yojson (json : Yojson.Safe.t) : t =
+    let locations =
+      [%of_yojson: Ac.C_id.t list option] (U.member "locations" json)
+    in
+    let init =
+      [%of_yojson: Const.t Ac.C_id.Alist.t] (U.member "init" json)
+    in
+    let postcondition =
+      Result.ok_or_failwith
+        (postcondition_of_json (U.member "postcondition" json))
+    in
+    make ?locations ~init ?postcondition ()
+
+  let t_of_yojson' (json : Yojson.Safe.t) : (t, string) Result.t =
+    Result.try_with (fun () -> t_of_yojson json)
+    |> Result.map_error ~f:Exn.to_string
 end

@@ -11,30 +11,18 @@
 
 (** Signatures of things that can be (de)serialised using Yojson. *)
 
-open Base
-
 (** Signature of things that can be serialised to (safe Yo-)json. *)
 module type To = sig
-  type t
-
-  val to_yojson : t -> Yojson.Safe.t
+  type t [@@deriving yojson_of]
 end
 
-(** Signature of things that can be deserialised from (safe Yo-)json.
-
-    Deliberately aligned with the API of [ppx_deriving_yojson]. *)
+(** Signature of things that can be deserialised from (safe Yo-)json. *)
 module type Of = sig
-  type t
-
-  val of_yojson : Yojson.Safe.t -> (t, string) Result.t
+  type t [@@deriving of_yojson]
 end
 
 (** Signature of things that can be serialised to, and deserialised from,
     (safe Yo-)json. *)
 module type S = sig
-  type t
-
-  include To with type t := t
-
-  include Of with type t := t
+  type t [@@deriving yojson]
 end

@@ -13,8 +13,43 @@
 
 open Base
 
-module Make_alist (K : Stringable.S) (V : Jsonable_types.S) :
-  Jsonable_types.S with type t = (K.t, V.t) List.Assoc.t
+(** {1 Helpers for associative lists} *)
+
+module Alist : sig
+  val yojson_of_alist :
+       ('k -> string)
+    -> ('v -> Yojson.Safe.t)
+    -> ('k, 'v) List.Assoc.t
+    -> Yojson.Safe.t
+  (** [yojson_of_alist string_of_k yojson_of_v xs] converts an association
+      list [xs] into a JSON object using [string_of_k] to convert keys into
+      strings and [yojson_of_v] to convert values into JSON. *)
+
+  val alist_of_yojson :
+       (string -> 'k)
+    -> (Yojson.Safe.t -> 'v)
+    -> Yojson.Safe.t
+    -> ('k, 'v) List.Assoc.t
+  (** [alist_of_yojson k_of_string v_of_yojson j] converts a JSON object [j]
+      into an association list using [k_of_string] to convert strings into
+      keys and [v_of_yojson] to convert value JSON into values. It raises
+      exceptions on failure. *)
+
+  val alist_of_yojson' :
+       (string -> 'k)
+    -> (Yojson.Safe.t -> ('v, string) Result.t)
+    -> Yojson.Safe.t
+    -> (('k, 'v) List.Assoc.t, string) Result.t
+  (** [alist_of_yojson' k_of_string v_of_yojson' j] behaves as
+      {!alist_of_yojson}, but both [v_of_yojson'] and itself return
+      string-error results. *)
+
+  module Make (K : Stringable.S) (V : Jsonable_types.S) :
+    Jsonable_types.S with type t = (K.t, V.t) List.Assoc.t
+  (** [Make] makes a standard JSON conversion module from an associative
+      list, given fixed bi-directional key-to-string and value-to-JSON
+      conversions. *)
+end
 
 module Make_map (K : sig
   type t

@@ -26,12 +26,11 @@
     This module provides a global sanitiser pass that performs two renaming
     sub-passes on all symbols:
 
-    {ul
-     {- [`Unmangle_symbols]: replace compiler-mangled symbols with their
-        original C identifiers where doing so is unambiguous;}
-     {- [`Escape_symbols]: replace characters in symbols that are difficult
-        for Herd-like programs to parse with less human-readable (but more
-        machine-readable) equivalents.}} *)
+    - [`Unmangle_symbols]: replace compiler-mangled symbols with their
+      original C identifiers where doing so is unambiguous;
+    - [`Escape_symbols]: replace characters in symbols that are difficult
+      for Herd-like programs to parse with less human-readable (but more
+      machine-readable) equivalents. *)
 
 module Make (B : Pass_types.Basic) :
   Pass_types.S

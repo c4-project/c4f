@@ -34,6 +34,6 @@ let reflexive (vars : Set.M(Act_common.Litmus_id).t) : t =
 
 let output (map : t) ~(onto : Plumbing.Output.t) : unit Or_error.t =
   Plumbing.Output.with_output onto ~f:(fun oc ->
-      map |> to_yojson |> Yojson.Safe.pretty_to_channel oc ;
+      map |> yojson_of_t |> Yojson.Safe.pretty_to_channel oc ;
       Stdio.Out_channel.newline oc ;
       Result.ok_unit)

@@ -89,13 +89,13 @@ module Alist : sig
       with type 'r t = (t, 'r) List.Assoc.t
        and type left := t
 
-  val to_yojson : ('r -> Yojson.Safe.t) -> 'r t -> Yojson.Safe.t
+  val yojson_of_t : ('r -> Yojson.Safe.t) -> 'r t -> Yojson.Safe.t
   (** [to_yojson rhs assoc] serialises [assoc] to a JSON object, using [rhs]
       as the serialiser for values. *)
 
-  val of_yojson_exn : (Yojson.Safe.t -> 'r) -> Yojson.Safe.t -> 'r t
+  val t_of_yojson : (Yojson.Safe.t -> 'r) -> Yojson.Safe.t -> 'r t
 
-  val of_yojson :
+  val t_of_yojson' :
        (Yojson.Safe.t -> ('r, string) Result.t)
     -> Yojson.Safe.t
     -> ('r t, string) Result.t

@@ -12,9 +12,9 @@ bug-reports: "https://github.com/MattWindsor91/act/issues"
 depends: [
   "ocaml" {>= "4.08"}
   "dune" {build & >= "1.10" & < "2"}
-  "ppx_deriving_yojson" {>= "3.5.1" & < "4"}
   "ppx_deriving"
   "ppx_jane"
+  "ppx_yojson_conv" {>= "v0.12" & < "v0.13"}
   "core" {>= "v0.12" & < "v0.13"}
   "fmt" {>= "0.8.7" & < "0.9"}
   "fpath" {>= "0.7.2" & < "0.8"}

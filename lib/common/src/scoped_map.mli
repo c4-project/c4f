@@ -58,7 +58,7 @@ val build_set :
   -> 'a t
   -> f:(Litmus_id.t -> 'a -> 'e option)
   -> ('e, 'w) Set.t
-(** [build_set (Carrier) map ~f is a general function for projecting a
+(** [build_set (Carrier) map ~f] is a general function for projecting a
     scoped map down to a set. *)
 
 (** {3 Projections to maps} *)

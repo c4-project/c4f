@@ -87,8 +87,8 @@ val as_variable : t -> Act_common.C_id.t Or_error.t
 
     The default quickcheck instance random lvalues without constraint. We
     also provide several modules with more specific restrictions. Most of
-    these are in {{!Lvalue_gen}Lvalue_gen}, but we expose their common
-    ancestor, {{!Quickcheck_generic}Quickcheck_generic}}, here by necessity. *)
+    these are in {!Lvalue_gen}, but we expose their common ancestor,
+    {!Quickcheck_generic}, here by necessity. *)
 
 (** Generates random lvalues, parametrised on a given identifier generator. *)
 module Quickcheck_generic

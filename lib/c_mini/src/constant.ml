@@ -48,13 +48,13 @@ let as_int : t -> int Or_error.t =
 let pp (f : Formatter.t) : t -> unit =
   reduce ~int:(Fmt.int f) ~bool:(Fmt.bool f)
 
-let to_yojson : t -> Yojson.Safe.t = function
+let yojson_of_t : t -> Yojson.Safe.t = function
   | Bool d ->
       `Bool d
   | Int i ->
       `Int i
 
-let of_yojson (json : Yojson.Safe.t) : (t, string) Result.t =
+let t_of_yojson' (json : Yojson.Safe.t) : (t, string) Result.t =
   let js = [json] in
   Yojson.Safe.Util.(
     match filter_int js with
@@ -66,6 +66,9 @@ let of_yojson (json : Yojson.Safe.t) : (t, string) Result.t =
           Result.return (bool b)
       | _ ->
           Result.fail "malformed JSON encoding of C literal" ))
+
+let t_of_yojson (json : Yojson.Safe.t) : t =
+  Result.ok_or_failwith (t_of_yojson' json)
 
 let gen_int32_as_int : int Generator.t =
   Generator.map [%quickcheck.generator: int32] ~f:(fun x ->

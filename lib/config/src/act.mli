@@ -31,16 +31,18 @@ val make :
   -> ?disabled_machines:(Id.t, Error.t option) List.Assoc.t
   -> ?machines:Act_machine.Spec.Set.t
   -> global:Global.t
-  -> sanitiser_passes:(   default:Set.M(Act_sanitiser.Pass_group).t
-                       -> Set.M(Act_sanitiser.Pass_group).t)
+  -> sanitiser_passes:
+       (   default:Set.M(Act_sanitiser.Pass_group).t
+        -> Set.M(Act_sanitiser.Pass_group).t)
   -> unit
   -> t
 
 val of_global :
      ?chook:Act_machine.Qualified.Compiler.t hook
   -> ?mhook:Act_machine.Spec.With_id.t hook
-  -> ?phook:(   default:Set.M(Act_sanitiser.Pass_group).t
-             -> Set.M(Act_sanitiser.Pass_group).t)
+  -> ?phook:
+       (   default:Set.M(Act_sanitiser.Pass_group).t
+        -> Set.M(Act_sanitiser.Pass_group).t)
   -> Global.t
   -> t Or_error.t
 (** [of_global ?chook ?mhook ?phook global] takes a global config [t] and

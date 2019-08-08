@@ -18,10 +18,10 @@ type t
 
 val make :
      aux:Aux.t
-  -> local_inits:( int
-                 , (Act_common.C_id.t, Act_c_mini.Constant.t) List.Assoc.t
-                 )
-                 List.Assoc.t
+  -> local_inits:
+       ( int
+       , (Act_common.C_id.t, Act_c_mini.Constant.t) List.Assoc.t )
+       List.Assoc.t
   -> t
 
 (** {2 Components} *)

@@ -11,4 +11,4 @@
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
    bin_prot bin_prot.shape sexplib sexplib0 stdio fmt shell.string_extended
    core_kernel base base.caml travesty travesty.base_exts act.utils plumbing
-   yojson))
+   yojson ppx_yojson_conv.runtime-lib))

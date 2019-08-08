@@ -6,6 +6,6 @@
  (synopsis "Modules for building Unix-style filters and other pipework")
  (modules_without_implementation io_types jsonable_types loadable_types)
  (preprocess
-  (pps ppx_deriving.std ppx_jane))
+  (pps ppx_yojson_conv ppx_deriving.std ppx_jane))
  (libraries result sexplib sexplib0 core core_kernel base base.caml shell
    shell.low_level_process stdio fpath fmt yojson travesty travesty.base_exts))

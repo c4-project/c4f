@@ -45,10 +45,12 @@ val with_body_stms : t -> Statement.t list -> t
 
 val map :
      t
-  -> parameters:(   (Act_common.C_id.t, Type.t) List.Assoc.t
-                 -> (Act_common.C_id.t, Type.t) List.Assoc.t)
-  -> body_decls:(   (Act_common.C_id.t, Initialiser.t) List.Assoc.t
-                 -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t)
+  -> parameters:
+       (   (Act_common.C_id.t, Type.t) List.Assoc.t
+        -> (Act_common.C_id.t, Type.t) List.Assoc.t)
+  -> body_decls:
+       (   (Act_common.C_id.t, Initialiser.t) List.Assoc.t
+        -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t)
   -> body_stms:(Statement.t list -> Statement.t list)
   -> t
 (** [map func ~parameters ~body_decls ~body_stms] runs the given functions
@@ -59,10 +61,12 @@ val map :
 module On_monad (M : Monad.S) : sig
   val map_m :
        t
-    -> parameters:(   (Act_common.C_id.t, Type.t) List.Assoc.t
-                   -> (Act_common.C_id.t, Type.t) List.Assoc.t M.t)
-    -> body_decls:(   (Act_common.C_id.t, Initialiser.t) List.Assoc.t
-                   -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t M.t)
+    -> parameters:
+         (   (Act_common.C_id.t, Type.t) List.Assoc.t
+          -> (Act_common.C_id.t, Type.t) List.Assoc.t M.t)
+    -> body_decls:
+         (   (Act_common.C_id.t, Initialiser.t) List.Assoc.t
+          -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t M.t)
     -> body_stms:(Statement.t list -> Statement.t list M.t)
     -> t M.t
 end

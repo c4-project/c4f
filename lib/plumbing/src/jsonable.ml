@@ -26,24 +26,48 @@ let protect ~(f : unit -> 'a) : 'a Str_result.t =
   let r = Result.try_with f in
   Result.map_error r ~f:Exn.to_string
 
-module Make_alist (K : Stringable.S) (V : Jsonable_types.S) :
-  Jsonable_types.S with type t = (K.t, V.t) List.Assoc.t = struct
-  type t = (K.t, V.t) List.Assoc.t
+module Alist = struct
+  let yojson_of_alist (type k v) (string_of_k : k -> string)
+      (yojson_of_v : v -> Yojson.Safe.t) (l : (k, v) List.Assoc.t) :
+      Yojson.Safe.t =
+    `Assoc (Tx.Alist.bi_map ~left:string_of_k ~right:yojson_of_v l)
 
-  let to_yojson (x : t) : Yojson.Safe.t =
-    `Assoc (Tx.Alist.bi_map ~left:K.to_string ~right:V.to_yojson x)
-
-  let protect_key_of_string (k : string) : K.t Str_result.t =
-    protect ~f:(fun () -> K.of_string k)
+  let protect_key_of_string (type k) (k : string)
+      ~(k_of_string : string -> k) : k Str_result.t =
+    protect ~f:(fun () -> k_of_string k)
 
   let require_assoc (j : Yojson.Safe.t) :
       (string, Yojson.Safe.t) List.Assoc.t Str_result.t =
     protect ~f:(fun () -> Yojson.Safe.Util.to_assoc j)
 
-  let of_yojson : Yojson.Safe.t -> t Str_result.t =
+  let alist_of_yojson' (type k v) (k_of_string : string -> k)
+      (v_of_yojson' : Yojson.Safe.t -> v Str_result.t) :
+      Yojson.Safe.t -> (k, v) List.Assoc.t Str_result.t =
     Sx.(
       require_assoc
-      >=> AM.bi_map_m ~left:protect_key_of_string ~right:V.of_yojson)
+      >=> AM.bi_map_m
+            ~left:(protect_key_of_string ~k_of_string)
+            ~right:v_of_yojson')
+
+  let alist_of_yojson (type k v) (k_of_string : string -> k)
+      (v_of_yojson : Yojson.Safe.t -> v) (j : Yojson.Safe.t) :
+      (k, v) List.Assoc.t =
+    j |> Yojson.Safe.Util.to_assoc
+    |> Tx.Alist.bi_map ~left:k_of_string ~right:v_of_yojson
+
+  module Make (K : Stringable.S) (V : Jsonable_types.S) :
+    Jsonable_types.S with type t = (K.t, V.t) List.Assoc.t = struct
+    type t = (K.t, V.t) List.Assoc.t
+
+    let yojson_of_t (x : t) : Yojson.Safe.t =
+      `Assoc (Tx.Alist.bi_map ~left:K.to_string ~right:V.yojson_of_t x)
+
+    let t_of_yojson' : Yojson.Safe.t -> t Str_result.t =
+      alist_of_yojson' K.of_string V.t_of_yojson'
+
+    let t_of_yojson : Yojson.Safe.t -> t =
+      alist_of_yojson K.of_string V.t_of_yojson
+  end
 end
 
 module Make_map (K : sig
@@ -57,28 +81,34 @@ end)
 struct
   type t = V.t Map.M(K).t
 
-  module Alist = Make_alist (K) (V)
+  module Alist = Alist.Make (K) (V)
 
-  let to_yojson : t -> Yojson.Safe.t =
-    Fn.compose Alist.to_yojson Map.to_alist
+  let yojson_of_t : t -> Yojson.Safe.t =
+    Fn.compose Alist.yojson_of_t Map.to_alist
 
   let of_alist : (K.t, V.t) List.Assoc.t -> t Str_result.t =
     Fn.compose
       (Result.map_error ~f:Error.to_string_hum)
       (Map.of_alist_or_error (module K))
 
-  let of_yojson : Yojson.Safe.t -> t Str_result.t =
-    Sx.(Alist.of_yojson >=> of_alist)
+  let t_of_yojson' : Yojson.Safe.t -> t Str_result.t =
+    Sx.(Alist.t_of_yojson' >=> of_alist)
+
+  let t_of_yojson (j : Yojson.Safe.t) : t =
+    j |> Alist.t_of_yojson |> Map.of_alist_exn (module K)
 end
 
 module Of_stringable (E : Stringable.S) :
   Jsonable_types.S with type t = E.t = struct
   type t = E.t
 
-  let to_yojson (x : E.t) : Yojson.Safe.t = `String (E.to_string x)
+  let yojson_of_t (x : E.t) : Yojson.Safe.t = `String (E.to_string x)
 
-  let of_yojson (j : Yojson.Safe.t) : (E.t, string) Result.t =
-    protect ~f:(fun () -> j |> Yojson.Safe.Util.to_string |> E.of_string)
+  let t_of_yojson (j : Yojson.Safe.t) : E.t =
+    j |> Yojson.Safe.Util.to_string |> E.of_string
+
+  let t_of_yojson' (j : Yojson.Safe.t) : (E.t, string) Result.t =
+    protect ~f:(fun () -> t_of_yojson j)
 end
 
 module String : Jsonable_types.S with type t = string =
@@ -86,12 +116,5 @@ module String : Jsonable_types.S with type t = string =
 
 module Option (B : Jsonable_types.S) :
   Jsonable_types.S with type t = B.t option = struct
-  type t = B.t option
-
-  let to_yojson : B.t option -> Yojson.Safe.t =
-    Option.value_map ~f:B.to_yojson ~default:`Null
-
-  let of_yojson (j : Yojson.Safe.t) : B.t option Str_result.t =
-    let err_opt = Yojson.Safe.Util.to_option B.of_yojson j in
-    OM.sequence_m err_opt
+  type t = B.t option [@@deriving yojson]
 end

@@ -26,7 +26,7 @@ module Ac = Act_common
 module Au = Act_utils
 
 module Spec = struct
-  module M = Plumbing.Jsonable.Make_alist (String) (Act_delitmus.Aux)
+  module M = Plumbing.Jsonable.Alist.Make (String) (Act_delitmus.Aux)
   include M
 
   module Load : Plumbing.Loadable_types.S with type t := t =
