@@ -1,23 +1,17 @@
-%{
-(****************************************************************************)
-(*                           the diy toolsuite                              *)
-(*                                                                          *)
-(* Jade Alglave, University College London, UK.                             *)
-(* Luc Maranget, INRIA Paris-Rocquencourt, France.                          *)
-(*                                                                          *)
-(* Copyright 2015-present Institut National de Recherche en Informatique et *)
-(* en Automatique and the authors. All rights reserved.                     *)
-(*                                                                          *)
-(* This software is governed by the CeCILL-B license under French law and   *)
-(* abiding by the rules of distribution of free software. You can use,      *)
-(* modify and/ or redistribute the software under the terms of the CeCILL-B *)
-(* license as circulated by CEA, CNRS and INRIA at the following URL        *)
-(* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
-(****************************************************************************)
+(* The Automagic Compiler Tormentor
 
+   Copyright (c) 2018--2019 Matt Windsor and contributors
+
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
+
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
+
+%{
     open Ast
     open Ast_basic
-
 %}
 
 %token EOF
@@ -60,7 +54,7 @@
 %token ADD SUB
 %token STAR DIV MOD
 
-%token LIT_EXISTS LIT_LOCATIONS
+%token LIT_EXISTS LIT_FORALL LIT_LOCATIONS
 %token LIT_AND (* /\; not expressible as an alias *)
 %token LIT_OR (* \/; not expressible as an alias *)
 
@@ -112,7 +106,9 @@ let litmus_initialiser := braced(list(endsemi(litmus_init_stm)))
 
 let litmus_locations := LIT_LOCATIONS; bracketed(slist(identifier))
 
-let litmus_quantifier := LIT_EXISTS; { `Exists }
+let litmus_quantifier :=
+  | LIT_EXISTS; { Act_litmus.Postcondition.Quantifier.Exists }
+  | LIT_FORALL; { Act_litmus.Postcondition.Quantifier.Exists }
 
 let litmus_postcondition :=
   | quantifier = litmus_quantifier; predicate = parened(litmus_disjunct);
@@ -120,11 +116,11 @@ let litmus_postcondition :=
 
 let litmus_disjunct :=
   | litmus_conjunct
-  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { Act_litmus.Postcondition.Pred.(l || r) }
+  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { Act_litmus.Postcondition.Pred.Infix.(l || r) }
 
 let litmus_conjunct :=
   | litmus_equality
-  | l = litmus_conjunct; LIT_AND; r = litmus_equality; { Act_litmus.Postcondition.Pred.(l && r) }
+  | l = litmus_conjunct; LIT_AND; r = litmus_equality; { Act_litmus.Postcondition.Pred.Infix.(l && r) }
 
 let litmus_equality :=
   | ~ = parened(litmus_disjunct); < Act_litmus.Postcondition.Pred.bracket >
@@ -457,4 +453,5 @@ identifier:
   | i = IDENTIFIER { Act_common.C_id.of_string i }
 (* Contextual keywords. *)
   | LIT_EXISTS { Act_common.C_id.of_string "exists" }
+  | LIT_FORALL { Act_common.C_id.of_string "forall" }
   | LIT_LOCATIONS { Act_common.C_id.of_string "locations" }

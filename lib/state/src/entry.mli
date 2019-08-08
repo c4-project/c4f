@@ -9,7 +9,10 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** A single state in a simulator run output. *)
+(** A single state in a simulator run output.
+
+    The only thing stopping this module from being called [State] is the
+    fact that [State] is already the name of the {i library}. *)
 
 open Base
 open Act_common
@@ -50,3 +53,11 @@ val common_domain : t list -> Set.M(Litmus_id).t Or_error.t
 val restrict : t -> domain:Set.M(Litmus_id).t -> t
 (** [restrict t ~domain] removes all mappings in [t] that don't reference
     identifiers in [domain]. *)
+
+val maps_to : t -> key:Litmus_id.t -> data:string -> bool
+(** [maps_to t ~key ~data] is [true] if, and only if, [t] contains a mapping
+    from [key] to [data]. *)
+
+(** The specific set type for entries, combined with a pre-derived Yojson instance;
+    for use in deriving Yojson for things that contain entry sets. *)
+module Set : Plumbing.Jsonable_types.S with type t = (t, comparator_witness) Set.t

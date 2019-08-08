@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Litmus AST: base modules and functors.
 
@@ -27,6 +15,8 @@
     underlying language of the litmus tests. *)
 
 open Base
+
+(** {1 Predicate elements} *)
 
 (** Directly-parametrised AST for basic predicate elements.
 
@@ -36,11 +26,11 @@ module Pred_elt : sig
   type 'const t = Eq of Act_common.Litmus_id.t * 'const
   [@@deriving sexp, compare, equal, quickcheck]
 
-  (** {3 Constructors} *)
+  (** {2 Constructors} *)
 
   val ( ==? ) : Act_common.Litmus_id.t -> 'const -> 'const t
 
-  (** {3 Traversals} *)
+  (** {2 Traversals} *)
 
   (** Bi-traversing monadically over all identifiers in a predicate element
       on the left, and all constants on the right. *)
@@ -57,6 +47,8 @@ module Pred_elt : sig
        and type left = Act_common.C_id.t
 end
 
+(** {1 Predicates} *)
+
 (** Directly-parametrised AST for predicates. *)
 module Pred : sig
   (** Type of Litmus predicates. *)
@@ -67,11 +59,13 @@ module Pred : sig
     | Elt of 'const Pred_elt.t
   [@@deriving sexp, compare, equal, quickcheck]
 
-  (** {3 Constructors} *)
+  (** {2 Constructors} *)
 
-  val ( && ) : 'const t -> 'const t -> 'const t
+  module Infix : sig
+    val ( && ) : 'const t -> 'const t -> 'const t
 
-  val ( || ) : 'const t -> 'const t -> 'const t
+    val ( || ) : 'const t -> 'const t -> 'const t
+  end
 
   val elt : 'const Pred_elt.t -> 'const t
   (** [elt x] lifts [x] to a predicate. *)
@@ -82,7 +76,7 @@ module Pred : sig
   val debracket : 'const t -> 'const t
   (** [debracket pred] removes any brackets in [pred]. *)
 
-  (** {3 Traversals} *)
+  (** {2 Traversals} *)
 
   (** Bi-traversing monadically over all identifiers in a predicate on the
       left, and all constants on the right. *)
@@ -98,28 +92,39 @@ module Pred : sig
       with type 'c t = 'c t
        and type left = Act_common.C_id.t
 
-  (** {3 Pretty-printing} *)
+  (** {2 Pretty-printing} *)
 
   val pp : Formatter.t -> 'const t -> pp_const:'const Fmt.t -> unit
   (** [pp f pred ~pp_const] pretty-prints [pred] on [f], using [pp_const] to
       print constants. *)
 end
 
-(** {2 AST for postconditions} *)
+(** {1 Quantifiers} *)
+
+module Quantifier : sig
+  type t =
+    | Exists
+    | For_all [@@deriving quickcheck]
+  (** The variant type of quantifiers. *)
+
+  include Act_utils.Enum_types.Extension_table with type t := t
+end
+
+(** {1 Postconditions proper} *)
 
 type 'const t [@@deriving sexp, compare, equal, quickcheck]
 (** Type of Litmus postconditions. *)
 
-val make : quantifier:[`Exists] -> predicate:'const Pred.t -> 'const t
+val make : quantifier:Quantifier.t -> predicate:'const Pred.t -> 'const t
 (** [make ~quantifier ~predicate] constructs a postcondition. *)
 
-val quantifier : 'const t -> [`Exists]
+val quantifier : 'const t -> Quantifier.t
 (** [quantifier post] gets [post]'s quantifier. *)
 
 val predicate : 'const t -> 'const Pred.t
 (** [predicate post] gets [post]'s predicate. *)
 
-(** {3 Traversals} *)
+(** {2 Traversals} *)
 
 (** Bi-traversing monadically over all Litmus identifiers in a predicate on
     the left, and all constants on the right. *)
@@ -135,7 +140,7 @@ module On_c_identifiers :
     with type 'c t = 'c t
      and type left = Act_common.C_id.t
 
-(** {3 Pretty-printing} *)
+(** {2 Pretty-printing} *)
 
 val pp : Formatter.t -> 'const t -> pp_const:'const Fmt.t -> unit
 (** [pp f pred ~pp_const] pretty-prints [pred] on [f], using [pp_const] to

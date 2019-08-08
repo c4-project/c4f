@@ -72,6 +72,8 @@ let tr_name typedefs s =
   (* Litmus extensions *)
   | "exists" ->
       LIT_EXISTS
+  | "forall" ->
+      LIT_FORALL
   | "locations" ->
       LIT_LOCATIONS
   (* Others *)

@@ -12,10 +12,7 @@
 open Base
 open Travesty_base_exts
 
-module Entry_set : Plumbing.Jsonable_types.S with type t = Set.M(Entry).t =
-  Plumbing.Jsonable.Set.Make (Entry)
-
-type t = {in_left_only: Entry_set.t; in_right_only: Entry_set.t}
+type t = {in_left_only: Entry.Set.t; in_right_only: Entry.Set.t}
 [@@deriving fields, yojson]
 
 let empty : t =

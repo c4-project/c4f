@@ -12,6 +12,7 @@
 open Core_kernel (* not Base; for extended quickcheck *)
 
 module Id = Act_common.Litmus_id
+module Tx = Travesty_base_exts
 
 module Pred_elt = struct
   type 'const t = Eq of Id.t * 'const
@@ -71,9 +72,11 @@ module Pred = struct
     | Elt of 'const Pred_elt.t
   [@@deriving sexp, compare, equal, variants]
 
-  let ( || ) (l : 'const t) (r : 'const t) : 'const t = Or (l, r)
+  module Infix = struct
+    let ( || ) (l : 'const t) (r : 'const t) : 'const t = Or (l, r)
 
-  let ( && ) (l : 'const t) (r : 'const t) : 'const t = And (l, r)
+    let ( && ) (l : 'const t) (r : 'const t) : 'const t = And (l, r)
+  end
 
   let rec debracket : 'const t -> 'const t = function
     | Bracket x ->
@@ -211,7 +214,22 @@ module Pred = struct
         Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
 end
 
-type 'const t = {quantifier: [`Exists]; predicate: 'const Pred.t}
+module Quantifier = struct
+  module M = struct
+    type t =
+      | Exists
+      | For_all [@@deriving enum, quickcheck]
+
+    let table : (t, string) List.Assoc.t =
+      [ (Exists, "exists")
+      ; (For_all, "forall")
+      ]
+  end
+  include M
+  include Act_utils.Enum.Extend_table (M)
+end
+
+type 'const t = {quantifier: Quantifier.t; predicate: 'const Pred.t}
 [@@deriving sexp, compare, equal, quickcheck, fields, make]
 
 module BT :
@@ -256,12 +274,8 @@ Travesty.Bi_traversable.Make1_right (struct
   end
 end)
 
-let pp_quantifier (f : Formatter.t) : [`Exists] -> unit = function
-  | `Exists ->
-      Fmt.string f "exists"
-
 let pp (f : Formatter.t) (pc : 'const t) ~(pp_const : 'const Fmt.t) : unit =
   let predicate = predicate pc in
   let quantifier = quantifier pc in
-  Fmt.(box (pair ~sep:sp pp_quantifier (parens (Pred.pp ~pp_const))))
+  Fmt.(box (pair ~sep:sp Quantifier.pp (parens (Pred.pp ~pp_const))))
     f (quantifier, predicate)

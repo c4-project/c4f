@@ -29,7 +29,7 @@ let%test_module "SBSC example" =
         (aux
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
-           (((quantifier Exists)
+           (((quantifier exists)
              (predicate (And (Elt (Eq 0:a 0)) (Elt (Eq 1:a 1)))))))))
         (threads ("(this was thread 0)" "(this was thread 1)")))) |}]
 
@@ -44,7 +44,7 @@ let%test_module "SBSC example" =
         (aux
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
-           (((quantifier Exists)
+           (((quantifier exists)
              (predicate (And (Elt (Eq 0:a 0)) (Elt (Eq 1:a 1)))))))))
         (threads ("(this was thread 0)" "(this was thread 1)" "<NEW THREAD>")))) |}]
 
@@ -57,7 +57,7 @@ let%test_module "SBSC example" =
         (aux
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
-           (((quantifier Exists)
+           (((quantifier exists)
              (predicate (And (Elt (Eq 1:a 0)) (Elt (Eq 2:a 1)))))))))
         (threads ("<NEW THREAD>" "(this was thread 0)" "(this was thread 1)")))) |}]
 
@@ -70,7 +70,7 @@ let%test_module "SBSC example" =
         (aux
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
-           (((quantifier Exists)
+           (((quantifier exists)
              (predicate (And (Elt (Eq 0:a 0)) (Elt (Eq 2:a 1)))))))))
         (threads ("(this was thread 0)" "<NEW THREAD>" "(this was thread 1)")))) |}]
 
@@ -83,7 +83,7 @@ let%test_module "SBSC example" =
         (aux
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
-           (((quantifier Exists)
+           (((quantifier exists)
              (predicate (And (Elt (Eq 0:a 0)) (Elt (Eq 1:a 1)))))))))
         (threads ("(this was thread 0)" "(this was thread 1)" "<NEW THREAD>")))) |}]
 
@@ -108,7 +108,7 @@ let%test_module "SBSC example" =
         (aux
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
-           (((quantifier Exists)
+           (((quantifier exists)
              (predicate (And (Elt (Eq 0:a 0)) (Elt (Eq 1:a 1)))))))))
         (threads ("(this was thread 0)" "(this was thread 1)")))) |}]
   end )

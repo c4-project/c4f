@@ -18,13 +18,16 @@ module M = struct
   type t = string Map.M(A.Litmus_id).t [@@deriving sexp, compare]
 end
 
-include M
-include Comparable.Make (M)
+module M_for_set = struct
+  include M
+  include Comparable.Make (M)
 
-module J : Plumbing.Jsonable_types.S with type t := t =
-  Plumbing.Jsonable.Make_map (A.Litmus_id) (Plumbing.Jsonable.String)
+  module J : Plumbing.Jsonable_types.S with type t := t =
+    Plumbing.Jsonable.Make_map (A.Litmus_id) (Plumbing.Jsonable.String)
 
-include J
+  include J
+end
+include M_for_set
 
 module Q : My_quickcheck.S_with_sexp with type t := t = struct
   include M
@@ -102,3 +105,10 @@ let pp : t Fmt.t =
       (braces
          (list ~sep:semi
             (box (pair ~sep:(any "@ =@ ") A.Litmus_id.pp string)))))
+
+module Set = Plumbing.Jsonable.Set.Make (M_for_set)
+
+let maps_to (entry : t) ~(key:Act_common.Litmus_id.t) ~(data:string) : bool =
+  Option.exists (Map.find entry key) ~f:(String.equal data)
+(** [maps_to t ~key ~data] is [true] if, and only if, [t] contains a mapping
+    from [key] to [data]. *)
