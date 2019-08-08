@@ -1,48 +1,89 @@
-(* The Automagic Compiler Tormentor
+(* This file is part of 'act'.
 
-   Copyright (c) 2018--2019 Matt Windsor and contributors
+   Copyright (c) 2018, 2019 by Matt Windsor
 
-   ACT itself is licensed under the MIT License. See the LICENSE file in the
-   project root for more information.
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the
+   "Software"), to deal in the Software without restriction, including
+   without limitation the rights to use, copy, modify, merge, publish,
+   distribute, sublicense, and/or sell copies of the Software, and to permit
+   persons to whom the Software is furnished to do so, subject to the
+   following conditions:
 
-   ACT is based in part on code from the Herdtools7 project
-   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
-   project root for more information. *)
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-(** Comparing two simulation outputs.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-    This module contains a function, {{!run} run}, for running
-    'diff'-comparisons between two simulation outputs: an 'oracle'
-    (generally from a C litmus test) and a 'subject' (generally from its
-    compiled assembly).
-
-    Each run takes, as additional parameters, partial mappings between the
-    (litmus-style) state variable identifiers, and (uninterpreted string)
-    values, mapping from the subject back to the oracle. *)
+(** Record summarising the difference between two state sets. *)
 
 open Base
 
-(** {1 The diff result structure} *)
-
-type t
-
-val domain : t -> Set.M(Act_common.Litmus_id).t
-
-val order : t -> Act_utils.Set_partial_order.M(Entry).t
-
-val is_oracle_undefined : t -> bool
-
-val is_subject_undefined : t -> bool
-
-val to_string : t -> string
-(** [to_string result] returns a human-readable string representing
-    [result]. *)
+type t [@@deriving yojson]
+(** Opaque type of partial order results. *)
 
 include
   Pretty_printer.S with type t := t
-(** We can also pretty-print diff results, with similar results to running
-    [to_string]. *)
+(** Diffs are pretty-printable (though the result isn't guaranteed to be
+    machine-readable; use the Yojson instance for interoperability with
+    other tools). *)
 
-val run : oracle:Observation.t -> subject:Observation.t -> t Or_error.t
-(** [run ~oracle ~subject] runs the state differ on oracle [oracle] and
-    subject [subject]. *)
+(** {1 Construction} *)
+
+val make : Set.M(Entry).t -> Set.M(Entry).t -> t
+(** [make x y] compares two sets [x] and [y] by analysing their symmetric
+    difference. *)
+
+(** {1 Queries on diffs} *)
+
+(** {2 Partial conversion to total orderings} *)
+
+val to_ordering_opt : t -> Ordering.t option
+(** [to_ordering_opt po] converts [po] to a total ordering if it has one, or
+    return [None] otherwise. *)
+
+(** {2 Relational queries} *)
+
+val is_equal : t -> bool
+(** [is_equal po] is true if [po] represents set equality. *)
+
+val is_proper_superset : t -> bool
+(** [is_proper_superset po] is true if [po] represents a proper superset. *)
+
+val is_superset : t -> bool
+(** [is_superset po] is true if [po] represents a superset (including
+    equality). *)
+
+val is_proper_subset : t -> bool
+(** [is_proper_subset po] is true if [po] represents a proper subset. *)
+
+val is_subset : t -> bool
+(** [is_subset po] is true if [po] represents a subset (including equality). *)
+
+val is_unordered : t -> bool
+(** [is_unordered po] is true if [po] doesn't represent set equality,
+    subset, or superset. *)
+
+val left_has_uniques : t -> bool
+(** [left_has_uniques po] is true if the LHS set [po] concerns has values
+    not in the RHS set (that is, it's a superset or non-order). *)
+
+val right_has_uniques : t -> bool
+(** [left_has_uniques po] is true if the RHS set [po] concerns has values
+    not in the LHS set (that is, it's a subset or non-order). *)
+
+(** {2 Extracting sets and information about them} *)
+
+val in_left_only : t -> Set.M(Entry).t
+(** [in_left_only po] gets the set of all items in the LHS set [po]
+    concerns, but not the RHS set. *)
+
+val in_right_only : t -> Set.M(Entry).t
+(** [in_right_only po] gets the set of all items in the RHS set [po]
+    concerns, but not the LHS set. *)

@@ -26,6 +26,45 @@ let protect ~(f : unit -> 'a) : 'a Str_result.t =
   let r = Result.try_with f in
   Result.map_error r ~f:Exn.to_string
 
+module Set = struct
+  let yojson_of_set (type x c) (yojson_of_x : x -> Yojson.Safe.t)
+      (set : (x, c) Set.t) : Yojson.Safe.t =
+    set |> Set.to_list |> yojson_of_list yojson_of_x
+
+  let set_of_yojson (type x c)
+      (module C : Comparator.S
+        with type t = x
+         and type comparator_witness = c) (x_of_yojson : Yojson.Safe.t -> x)
+      (j : Yojson.Safe.t) : Set.M(C).t =
+    j |> list_of_yojson x_of_yojson |> Set.of_list (module C)
+
+  let set_of_yojson' (type x c)
+      (module C : Comparator.S
+        with type t = x
+         and type comparator_witness = c)
+      (x_of_yojson' : Yojson.Safe.t -> x Str_result.t) (j : Yojson.Safe.t) :
+      Set.M(C).t Str_result.t =
+    protect ~f:(fun () ->
+        set_of_yojson
+          (module C)
+          (fun x -> x |> x_of_yojson' |> Result.ok_or_failwith)
+          j)
+
+  module Make (V : sig
+    include Jsonable_types.S
+
+    include Comparable.S with type t := t
+  end) : Jsonable_types.S with type t = Set.M(V).t = struct
+    type t = Set.M(V).t
+
+    let yojson_of_t = yojson_of_set V.yojson_of_t
+
+    let t_of_yojson = set_of_yojson (module V) V.t_of_yojson
+
+    let t_of_yojson' = set_of_yojson' (module V) V.t_of_yojson'
+  end
+end
+
 module Alist = struct
   let yojson_of_alist (type k v) (string_of_k : k -> string)
       (yojson_of_v : v -> Yojson.Safe.t) (l : (k, v) List.Assoc.t) :

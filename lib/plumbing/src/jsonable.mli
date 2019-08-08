@@ -13,6 +13,40 @@
 
 open Base
 
+(** {1 Helpers for sets} *)
+
+module Set : sig
+  val yojson_of_set :
+    ('x -> Yojson.Safe.t) -> ('x, _) Set.t -> Yojson.Safe.t
+  (** [yojson_of_set yojson_of_x xs] converts a set [xs] into a JSON list
+      using [yojson_of_x] to convert values into JSON. *)
+
+  val set_of_yojson :
+       (module Comparator.S with type t = 'x and type comparator_witness = 'c)
+    -> (Yojson.Safe.t -> 'x)
+    -> Yojson.Safe.t
+    -> ('x, 'c) Set.t
+  (** [set_of_yojson x_of_yojson j] converts a JSON list [j] into a set
+      using [x_of_yojson] to convert value JSON into values. It raises
+      exceptions on failure. *)
+
+  val set_of_yojson' :
+       (module Comparator.S with type t = 'x and type comparator_witness = 'c)
+    -> (Yojson.Safe.t -> ('x, string) Result.t)
+    -> Yojson.Safe.t
+    -> (('x, 'c) Set.t, string) Result.t
+  (** [set_of_yojson' x_of_yojson' j] behaves as {!set_of_yojson}, but both
+      [x_of_yojson'] and itself return string-error results. *)
+
+  module Make (V : sig
+    include Jsonable_types.S
+
+    include Comparable.S with type t := t
+  end) : Jsonable_types.S with type t = Set.M(V).t
+  (** [Make] makes a standard JSON conversion module from a set, given fixed
+      bi-directional value-to-JSON conversions. *)
+end
+
 (** {1 Helpers for associative lists} *)
 
 module Alist : sig

@@ -1,5 +1,16 @@
 # Unreleased
 
+Note that these changes are infrequently maintained and may not tell the
+whole story.
+
+## 2019-Aug-08
+
+- State observation comparing is now available at `act-state compare`.  It
+  does NOT perform normalisation of the two state sets --- this must be done
+  externally (a tool for doing this using delitmus will appear eventually).
+- State observation comparison results come as JSON by default; pass
+  `-human-readable` for pretty-printed equivalent.
+
 ## 2019-Jul-29
 
 - Amongst other things, `act c fuzz` is now `act-fuzz run` (ie a new program).

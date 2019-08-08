@@ -12,15 +12,23 @@
 open Core
 open Act_common
 
+let output (result : Act_state.Compare.Result.t) ~(human_readable : bool) :
+    unit =
+  let pp =
+    if human_readable then Act_state.Compare.Result.pp
+    else Act_state.Compare.Result.pp_json
+  in
+  pp Fmt.stdout result
+
 let run (_o : Output.t) (_cfg : Act_config.Act.t) ~(oracle_raw : string)
-    ~(subject_raw : string) : unit Or_error.t =
+    ~(subject_raw : string) ~(human_readable : bool) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind oracle_in = Plumbing.Input.of_string_opt (Some oracle_raw) in
     let%bind oracle = Act_state.Observation.load_from_isrc oracle_in in
     let%bind subject_in = Plumbing.Input.of_string_opt (Some subject_raw) in
     let%bind subject = Act_state.Observation.load_from_isrc subject_in in
-    let%map diff = Act_state.Diff.run ~oracle ~subject in
-    Act_state.Diff.pp Fmt.stdout diff)
+    let%map result = Act_state.Compare.run ~oracle ~subject in
+    output result ~human_readable)
 
 let readme () =
   Act_utils.My_string.format_for_readme
@@ -39,10 +47,13 @@ let readme () =
 let command : Command.t =
   Command.basic ~summary:"compares two state observations" ~readme
     Command.Let_syntax.(
-      let%map_open standard_args = ignore anon ; Toplevel.Args.Standard.get
+      let%map_open standard_args = Toplevel.Args.Standard.get
+      and human_readable =
+        flag "human-readable" no_arg
+          ~doc:"If true, output human-readable summary instead of JSON"
       and oracle_raw = anon ("ORACLE_NAME" %: Filename.arg_type)
       and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type) in
       fun () ->
         Toplevel.Common.lift_command standard_args
           ~with_compiler_tests:false
-          ~f:(run ~oracle_raw ~subject_raw))
+          ~f:(run ~oracle_raw ~subject_raw ~human_readable))

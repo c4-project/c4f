@@ -79,7 +79,7 @@ main() {
   if [[ ${VERBOSE} == "true" ]]; then flags="-v"; fi
   if [[ ${DUNE_EXEC} == "true" ]]; then flags="${flags}x"; fi
 
-  act::state diff \
+  act::state compare -hum \
     <("${SCRIPTDIR}/c_states" -b "${BACKEND}" -c "${COMPILER}" "${flags}" "${original_file}") \
     <("${SCRIPTDIR}/c_states" -b "${BACKEND}" -c "${COMPILER}" "${flags}" "${fuzzed_file}")
 }
