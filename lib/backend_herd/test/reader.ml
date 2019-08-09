@@ -40,7 +40,8 @@ let%expect_test "valid output without postcondition parses correctly" =
   [%expect
     {|
     (Success
-     ((states
-       (((A 100) (B 100) (C 1000) (D 100)) ((A 100) (B 0) (C 250) (D 50))
-        ((A 0) (B 100) (C 50) (D 10)) ((A 0) (B 0) (C 0) (D 0))))
-      (is_undefined false))) |}]
+     ((flags ())
+      (states
+       (((A 0) (B 0) (C 0) (D 0)) ((A 0) (B 100) (C 50) (D 10))
+        ((A 100) (B 0) (C 250) (D 50)) ((A 100) (B 100) (C 1000) (D 100))))
+      (witnesses ()) (counter_examples ()))) |}]

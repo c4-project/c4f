@@ -120,7 +120,7 @@ module Ctx = struct
     [@@deriving fields, make]
 
     let init : ?path:string -> unit -> t =
-      make ~a_state:Empty ~obs:(Act_state.Observation.init ())
+      make ~a_state:Empty ~obs:Act_state.Observation.empty
 
     let map_fld_m (body : t) ~(field : (t, 'a) Field.t)
         ~(f : 'a -> 'a Or_error.t) : t Or_error.t =

@@ -58,7 +58,15 @@ val maps_to : t -> key:Litmus_id.t -> data:string -> bool
 (** [maps_to t ~key ~data] is [true] if, and only if, [t] contains a mapping
     from [key] to [data]. *)
 
-module Set :
-  Plumbing.Jsonable_types.S with type t = (t, comparator_witness) Set.t
-(** The specific set type for entries, combined with a pre-derived Yojson
-    instance; for use in deriving Yojson for things that contain entry sets. *)
+(** The specific set type for entries, combined with several pre-derived
+    instances for use in quickchecking and serialising things that contain
+    entry sets. *)
+module Set : sig
+  type nonrec t = (t, comparator_witness) Set.t
+
+  include Plumbing.Jsonable_types.S with type t := t
+
+  include Sexpable.S with type t := t
+
+  include Act_utils.My_quickcheck.S_with_sexp with type t := t
+end

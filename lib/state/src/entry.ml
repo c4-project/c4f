@@ -107,7 +107,24 @@ let pp : t Fmt.t =
          (list ~sep:semi
             (box (pair ~sep:(any "@ =@ ") A.Litmus_id.pp string)))))
 
-module Set = Plumbing.Jsonable.Set.Make (M_for_set)
+module Set = struct
+  include Plumbing.Jsonable.Set.Make (M_for_set)
+
+  let sexp_of_t : t -> Sexp.t = [%sexp_of: Set.M(M_for_set).t]
+
+  let t_of_sexp : Sexp.t -> t = [%of_sexp: Set.M(M_for_set).t]
+
+  open Base_quickcheck
+
+  let quickcheck_generator : t Generator.t =
+    Generator.set_t_m (module M_for_set) Q.quickcheck_generator
+
+  let quickcheck_shrinker : t Shrinker.t =
+    Shrinker.set_t Q.quickcheck_shrinker
+
+  let quickcheck_observer : t Observer.t =
+    Observer.set_t Q.quickcheck_observer
+end
 
 (** [maps_to t ~key ~data] is [true] if, and only if, [t] contains a mapping
     from [key] to [data]. *)

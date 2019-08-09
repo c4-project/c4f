@@ -28,7 +28,7 @@ let%test_module "run" =
 
     let normal_oracle : Ob.t =
       Ob.(
-        init ()
+        empty
         |> add_state_exn
              [ ("0:a", "potato")
              ; ("0:b", "waffles")
@@ -57,7 +57,7 @@ let%test_module "run" =
         result
 
     let%expect_test "no subject states" =
-      test (Ob.init ()) ;
+      test Ob.empty ;
       [%expect
         {|
       Oracle >> Subject
@@ -67,7 +67,7 @@ let%test_module "run" =
         {} |}]
 
     let smaller_subject : Ob.t =
-      Ob.init ()
+      Ob.empty
       |> add_state_exn
            [ ("0:a", "potato")
            ; ("0:b", "waffles")
@@ -152,7 +152,7 @@ let%test_module "run" =
     let%expect_test "uncorrelated subject states" =
       test
         Ob.(
-          init ()
+          empty
           |> add_state_exn
                [ ("0:a", "potato")
                ; ("0:b", "waffles")

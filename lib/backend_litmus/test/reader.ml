@@ -118,30 +118,32 @@ let%expect_test "valid output without postcondition parses correctly" =
   [%expect
     {|
     (Success
-     ((states
-       (((A 1) (B 1) (C 1) (D 1) (x 1) (y 1))
-        ((A 0) (B 1) (C 1) (D 1) (x 1) (y 1))
-        ((A 1) (B 0) (C 1) (D 1) (x 1) (y 1))
-        ((A 0) (B 0) (C 1) (D 1) (x 1) (y 1))
-        ((A 1) (B 1) (C 0) (D 1) (x 1) (y 1))
-        ((A 0) (B 1) (C 0) (D 1) (x 1) (y 1))
-        ((A 1) (B 0) (C 0) (D 1) (x 1) (y 1))
+     ((flags ())
+      (states
+       (((A 0) (B 0) (C 0) (D 0) (x 1) (y 1))
         ((A 0) (B 0) (C 0) (D 1) (x 1) (y 1))
-        ((A 1) (B 1) (C 1) (D 0) (x 1) (y 1))
-        ((A 0) (B 1) (C 1) (D 0) (x 1) (y 1))
         ((A 0) (B 0) (C 1) (D 0) (x 1) (y 1))
-        ((A 1) (B 1) (C 0) (D 0) (x 1) (y 1))
+        ((A 0) (B 0) (C 1) (D 1) (x 1) (y 1))
         ((A 0) (B 1) (C 0) (D 0) (x 1) (y 1))
+        ((A 0) (B 1) (C 0) (D 1) (x 1) (y 1))
+        ((A 0) (B 1) (C 1) (D 0) (x 1) (y 1))
+        ((A 0) (B 1) (C 1) (D 1) (x 1) (y 1))
         ((A 1) (B 0) (C 0) (D 0) (x 1) (y 1))
-        ((A 0) (B 0) (C 0) (D 0) (x 1) (y 1))))
-      (is_undefined false))) |}]
+        ((A 1) (B 0) (C 0) (D 1) (x 1) (y 1))
+        ((A 1) (B 0) (C 1) (D 1) (x 1) (y 1))
+        ((A 1) (B 1) (C 0) (D 0) (x 1) (y 1))
+        ((A 1) (B 1) (C 0) (D 1) (x 1) (y 1))
+        ((A 1) (B 1) (C 1) (D 0) (x 1) (y 1))
+        ((A 1) (B 1) (C 1) (D 1) (x 1) (y 1))))
+      (witnesses ()) (counter_examples ()))) |}]
 
 let%expect_test "valid output with postcondition parses correctly" =
   print_output_from_string test_output_valid_pc ;
   [%expect
     {|
       (Success
-       ((states
-         (((0:EAX 1) (1:EAX 1)) ((0:EAX 0) (1:EAX 1)) ((0:EAX 1) (1:EAX 0))
-          ((0:EAX 0) (1:EAX 0))))
-        (is_undefined false))) |}]
+       ((flags ())
+        (states
+         (((0:EAX 0) (1:EAX 0)) ((0:EAX 0) (1:EAX 1)) ((0:EAX 1) (1:EAX 0))
+          ((0:EAX 1) (1:EAX 1))))
+        (witnesses ()) (counter_examples ()))) |}]

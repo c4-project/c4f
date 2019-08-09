@@ -101,23 +101,20 @@ module Result = struct
   let to_string : t -> string = Fmt.to_to_string pp
 end
 
-let get_common_domain (raw_oracle_states : Entry.t list)
-    (raw_subject_states : Entry.t list) :
+let get_common_domain (raw_oracle_states : Set.M(Entry).t)
+    (raw_subject_states : Set.M(Entry).t) :
     Set.M(Act_common.Litmus_id).t Or_error.t =
   Or_error.Let_syntax.(
-    let%map oracle_domain = Entry.common_domain raw_oracle_states
-    and subject_domain = Entry.common_domain raw_subject_states in
+    let%map oracle_domain =
+      Entry.common_domain (Set.to_list raw_oracle_states)
+    and subject_domain =
+      Entry.common_domain (Set.to_list raw_subject_states)
+    in
     Set.inter oracle_domain subject_domain)
 
-let filter_to_domain (states : Entry.t list)
-    ~(domain : Set.M(Act_common.Litmus_id).t) : Entry.t list =
-  List.map states ~f:(Entry.restrict ~domain)
-
-let diff_states ~(oracle_states : Entry.t list)
-    ~(subject_states : Entry.t list) : Diff.t =
-  Tx.Fn.on
-    (Set.of_list (module Entry))
-    ~f:Diff.make oracle_states subject_states
+let filter_to_domain (states : Set.M(Entry).t)
+    ~(domain : Set.M(Act_common.Litmus_id).t) : Set.M(Entry).t =
+  Set.map (module Entry) states ~f:(Entry.restrict ~domain)
 
 let run ~(oracle : Ob.t) ~(subject : Ob.t) : Result.t Or_error.t =
   let raw_oracle_states = Ob.states oracle in
@@ -128,7 +125,7 @@ let run ~(oracle : Ob.t) ~(subject : Ob.t) : Result.t Or_error.t =
     in
     let oracle_states = filter_to_domain raw_oracle_states ~domain in
     let subject_states = filter_to_domain raw_subject_states ~domain in
-    let diff = diff_states ~oracle_states ~subject_states in
+    let diff = Diff.make oracle_states subject_states in
     Result.Fields.create ~domain ~diff
       ~order:(Diff.to_ordering_opt diff)
       ~is_oracle_undefined:(Ob.is_undefined oracle)

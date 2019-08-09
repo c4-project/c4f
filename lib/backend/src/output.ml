@@ -43,4 +43,4 @@ let to_observation_or_error (o : t) ~(handle_skipped : [`Error | `Ignore]) :
   | Skipped {why}, `Error ->
       Result.Error (Error.of_info why)
   | Skipped {why= _}, `Ignore ->
-      Or_error.return (Act_state.Observation.init ())
+      Or_error.return Act_state.Observation.empty
