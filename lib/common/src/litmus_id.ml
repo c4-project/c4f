@@ -89,6 +89,9 @@ end)
 let global_of_string (str : string) : t Or_error.t =
   Or_error.(str |> C_id.create >>| global)
 
+let global_of_string_exn (str : string) : t =
+  str |> C_id.of_string |> global
+
 let variable_name : t -> C_id.t = function Local (_, v) | Global v -> v
 
 let is_local : t -> bool = function Local _ -> true | Global _ -> false

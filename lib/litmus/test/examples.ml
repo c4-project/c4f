@@ -25,7 +25,8 @@ module Sbsc = struct
       Post.(
         make ~quantifier:Exists
           ~predicate:
-            Pred.Infix.(Elt Pred_elt.(a 0 ==? 0) && Elt Pred_elt.(a 1 ==? 1)))
+            Pred.Infix.(
+              Elt Pred_elt.(a 0 ==? 0) && Elt Pred_elt.(a 1 ==? 1)))
 
   let aux : int Aux.t Lazy.t =
     let x = Ac.C_id.of_string "x" in

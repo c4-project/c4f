@@ -62,9 +62,17 @@ module Pred : sig
   (** {2 Constructors} *)
 
   module Infix : sig
+    val ( ==? ) : Act_common.Litmus_id.t -> 'const -> 'const t
+    (** [k ==? v] is a primitive equality test that key [k] maps to value
+        [v]. *)
+
     val ( && ) : 'const t -> 'const t -> 'const t
+    (** [l && r] is logical conjunction, representing the [/\] operator in
+        written Litmus. *)
 
     val ( || ) : 'const t -> 'const t -> 'const t
+    (** [l || r] is logical disjunction, representing the [\/] operator in
+        written Litmus. *)
   end
 
   val elt : 'const Pred_elt.t -> 'const t
@@ -102,10 +110,8 @@ end
 (** {1 Quantifiers} *)
 
 module Quantifier : sig
-  type t =
-    | Exists
-    | For_all [@@deriving quickcheck]
   (** The variant type of quantifiers. *)
+  type t = Exists | For_all [@@deriving quickcheck]
 
   include Act_utils.Enum_types.Extension_table with type t := t
 end

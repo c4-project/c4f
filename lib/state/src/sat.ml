@@ -12,16 +12,16 @@
 open Base
 
 module Result = struct
-  type t = Entry.t Act_litmus.Postcondition_eval.Result.t [@@deriving yojson_of]
+  type t = Entry.t Act_litmus.Postcondition_eval.Result.t
+  [@@deriving yojson_of]
 end
 
-let check_elt (state: Entry.t) : string Act_litmus.Postcondition.Pred_elt.t -> bool =
-  function
-  | Eq (key, data) -> Entry.maps_to ~key ~data state
+let check_elt (state : Entry.t) :
+    string Act_litmus.Postcondition.Pred_elt.t -> bool = function
+  | Eq (key, data) ->
+      Entry.maps_to ~key ~data state
 
-let run (obs : Observation.t)
-  ~(post:string Act_litmus.Postcondition.t)
-  : Result.t =
+let run (obs : Observation.t) ~(post : string Act_litmus.Postcondition.t) :
+    Result.t =
   let states = Observation.states obs in
-  Act_litmus.Postcondition_eval.eval post ~subjects:states
-    ~elt:check_elt
+  Act_litmus.Postcondition_eval.eval post ~subjects:states ~elt:check_elt

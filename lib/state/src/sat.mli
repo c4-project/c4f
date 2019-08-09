@@ -20,11 +20,8 @@ end
 
 (** {1 Running satisfiability queries} *)
 
-(** [run obs ~post] checks to see if [post] is satisfiable by [obs].
-    [post] is a Litmus postcondition where each constant is a string
-    (this being because the ACT state representation currently uses
-    string values). *)
 val run :
-     Observation.t
-  -> post:string Act_litmus.Postcondition.t
-  -> Result.t
+  Observation.t -> post:string Act_litmus.Postcondition.t -> Result.t
+(** [run obs ~post] checks to see if [post] is satisfiable by [obs]. [post]
+    is a Litmus postcondition where each constant is a string (this being
+    because the ACT state representation currently uses string values). *)

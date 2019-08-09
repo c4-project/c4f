@@ -35,6 +35,10 @@ val global_of_string : string -> t Or_error.t
 (** [global_of_string str] tries to create a global identifier from [str].
     It fails if [str] isn't a valid C identifier. *)
 
+val global_of_string_exn : string -> t
+(** [global_of_string_exn str] is [global_of_string], but throws an
+    exception on failure. *)
+
 (** {3 Local identifiers} *)
 
 val local : int -> C_id.t -> t

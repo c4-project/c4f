@@ -27,6 +27,7 @@ module M_for_set = struct
 
   include J
 end
+
 include M_for_set
 
 module Q : My_quickcheck.S_with_sexp with type t := t = struct
@@ -108,7 +109,8 @@ let pp : t Fmt.t =
 
 module Set = Plumbing.Jsonable.Set.Make (M_for_set)
 
-let maps_to (entry : t) ~(key:Act_common.Litmus_id.t) ~(data:string) : bool =
-  Option.exists (Map.find entry key) ~f:(String.equal data)
 (** [maps_to t ~key ~data] is [true] if, and only if, [t] contains a mapping
     from [key] to [data]. *)
+let maps_to (entry : t) ~(key : Act_common.Litmus_id.t) ~(data : string) :
+    bool =
+  Option.exists (Map.find entry key) ~f:(String.equal data)

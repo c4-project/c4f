@@ -76,6 +76,9 @@ module Pred = struct
     let ( || ) (l : 'const t) (r : 'const t) : 'const t = Or (l, r)
 
     let ( && ) (l : 'const t) (r : 'const t) : 'const t = And (l, r)
+
+    let ( ==? ) (k : Act_common.Litmus_id.t) (v : 'const) : 'const t =
+      elt (Pred_elt.eq k v)
   end
 
   let rec debracket : 'const t -> 'const t = function
@@ -216,15 +219,12 @@ end
 
 module Quantifier = struct
   module M = struct
-    type t =
-      | Exists
-      | For_all [@@deriving enum, quickcheck]
+    type t = Exists | For_all [@@deriving enum, quickcheck]
 
     let table : (t, string) List.Assoc.t =
-      [ (Exists, "exists")
-      ; (For_all, "forall")
-      ]
+      [(Exists, "exists"); (For_all, "forall")]
   end
+
   include M
   include Act_utils.Enum.Extend_table (M)
 end

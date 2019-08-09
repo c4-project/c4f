@@ -90,7 +90,9 @@ module Result = struct
       vbox
         (concat ~sep:nop
            [ using order pp_order
-           ; using (Fn.compose (Fn.non Diff.is_equal) diff) (Act_utils.My_format.pp_if sp nop)
+           ; using
+               (Fn.compose (Fn.non Diff.is_equal) diff)
+               (Act_utils.My_format.pp_if sp nop)
            ; using diff Diff.pp
            ; using domain pp_domain
            ; using is_oracle_undefined (pp_undefined "oracle")

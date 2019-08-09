@@ -58,6 +58,7 @@ val maps_to : t -> key:Litmus_id.t -> data:string -> bool
 (** [maps_to t ~key ~data] is [true] if, and only if, [t] contains a mapping
     from [key] to [data]. *)
 
-(** The specific set type for entries, combined with a pre-derived Yojson instance;
-    for use in deriving Yojson for things that contain entry sets. *)
-module Set : Plumbing.Jsonable_types.S with type t = (t, comparator_witness) Set.t
+module Set :
+  Plumbing.Jsonable_types.S with type t = (t, comparator_witness) Set.t
+(** The specific set type for entries, combined with a pre-derived Yojson
+    instance; for use in deriving Yojson for things that contain entry sets. *)
