@@ -1,0 +1,58 @@
+%%%%%%%%%%%%%%%%%%%%%
+% Results for iriw3 %
+%%%%%%%%%%%%%%%%%%%%%
+X86 iriw
+
+{a=0; b=0; c=0; d=0; x=0; y=0;}
+
+ P0          | P1          | P2           | P3           ;
+ MOVL [x],$1 | MOVL [y],$1 | MOVL EAX,[x] | MOVL EAX,[y] ;
+ MFENCE      | MFENCE      | MOVL [a],EAX | MOVL [c],EAX ;
+             |             | MOVL EAX,[y] | MOVL EAX,[x] ;
+             |             | MOVL [b],EAX | MOVL [d],EAX ;
+
+locations [a; b; c; d; x; y;]
+exists (x=1)
+Generated assembler
+	##START _litmus_P0
+	movl	$1, -4(%rdi,%rax,4)
+	mfence
+	##START _litmus_P1
+	movl	$1, -4(%rdi,%rax,4)
+	mfence
+	##START _litmus_P2
+	movl	-4(%rbx,%rcx,4), %eax
+	movl	%eax, -4(%r9,%rcx,4)
+	movl	-4(%rdx,%rcx,4), %eax
+	movl	%eax, -4(%r10,%rcx,4)
+	##START _litmus_P3
+	movl	-4(%rdx,%rcx,4), %eax
+	movl	%eax, -4(%r9,%rcx,4)
+	movl	-4(%rbx,%rcx,4), %eax
+	movl	%eax, -4(%r10,%rcx,4)
+
+Test iriw Allowed
+Histogram (15 states)
+171303*>a=0; b=0; c=0; d=0; x=1; y=1;
+305   *>a=1; b=0; c=0; d=0; x=1; y=1;
+73340 *>a=0; b=1; c=0; d=0; x=1; y=1;
+90182 *>a=1; b=1; c=0; d=0; x=1; y=1;
+936   *>a=0; b=0; c=1; d=0; x=1; y=1;
+59101 *>a=0; b=1; c=1; d=0; x=1; y=1;
+21965 *>a=1; b=1; c=1; d=0; x=1; y=1;
+40095 *>a=0; b=0; c=0; d=1; x=1; y=1;
+52514 *>a=1; b=0; c=0; d=1; x=1; y=1;
+6     *>a=0; b=1; c=0; d=1; x=1; y=1;
+87699 *>a=1; b=1; c=0; d=1; x=1; y=1;
+123478*>a=0; b=0; c=1; d=1; x=1; y=1;
+29521 *>a=1; b=0; c=1; d=1; x=1; y=1;
+88756 *>a=0; b=1; c=1; d=1; x=1; y=1;
+160799*>a=1; b=1; c=1; d=1; x=1; y=1;
+Ok
+
+Witnesses
+Positive: 1000000, Negative: 0
+Condition exists (x=1) is validated
+Hash=6ecc017b88e6ea3d9e47c7bdabecda37
+Observation iriw Always 1000000 0
+Time iriw 0.28
