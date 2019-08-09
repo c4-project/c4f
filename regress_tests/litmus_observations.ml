@@ -1,0 +1,36 @@
+(* The Automagic Compiler Tormentor
+
+   Copyright (c) 2018--2019 Matt Windsor and contributors
+
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
+
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
+
+(** Tests the Litmus observation parser on various Litmus . *)
+
+open Core
+module Ac = Act_common
+
+let run_on_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
+  ignore file ;
+  Or_error.Let_syntax.(
+    let%bind res = Act_backend_litmus.Reader.load ~path in
+    let%map obs =
+      Act_backend.Output.to_observation_or_error res ~handle_skipped:`Error
+    in
+    let json = Act_state.Observation.yojson_of_t obs in
+    Yojson.Safe.pretty_to_channel Stdio.Out_channel.stdout json)
+
+let run (test_dir : Fpath.t) : unit Or_error.t =
+  let full_dir = Fpath.(test_dir / "observations" / "litmus" / "") in
+  Common.regress_on_files "Litmusifier" ~dir:full_dir ~ext:"txt"
+    ~f:run_on_file
+
+let command =
+  Common.make_regress_command
+    ~summary:"runs litmus observation-parsing regressions" run
+
+let () = Command.run command
