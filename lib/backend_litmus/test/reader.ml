@@ -9,6 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+open Base
 open Stdio
 
 (** An example 'valid' Litmus7 output with no postcondition. *)
@@ -110,14 +111,14 @@ Time SB 0.12
 let print_output_from_string (s : string) : unit =
   print_s
     [%sexp
-      ( Act_backend_litmus.Reader.read_output_from_string s
-        : Act_backend.Output.t )]
+      ( Act_backend_litmus.Reader.load_from_string s
+        : Act_state.Observation.t Or_error.t )]
 
 let%expect_test "valid output without postcondition parses correctly" =
   print_output_from_string test_output_valid_no_pc ;
   [%expect
     {|
-    (Success
+    (Ok
      ((flags ())
       (states
        (((A 0) (B 0) (C 0) (D 0) (x 1) (y 1))
@@ -141,7 +142,7 @@ let%expect_test "valid output with postcondition parses correctly" =
   print_output_from_string test_output_valid_pc ;
   [%expect
     {|
-      (Success
+      (Ok
        ((flags ())
         (states
          (((0:EAX 0) (1:EAX 0)) ((0:EAX 0) (1:EAX 1)) ((0:EAX 1) (1:EAX 0))

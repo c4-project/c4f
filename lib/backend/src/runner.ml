@@ -36,7 +36,7 @@ end) : Runner_types.S = struct
   let make_harness = B.make_harness_unchecked
 
   let run (arch : Arch.t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
-      Output.t Or_error.t =
+      Act_state.Observation.t Or_error.t =
     Or_error.Let_syntax.(
       let%bind () =
         Filter.run arch
@@ -48,21 +48,16 @@ end
 
 module Make_error_reader (B : sig
   val error : Error.t
-end) : Reader_types.S = struct
-  include Plumbing.Loadable.Make (struct
-    type t = Output.t
+end) : Reader_types.S =  Plumbing.Loadable.Make (struct
+    type t = Act_state.Observation.t
 
     let load_from_ic ?(path : string option) (_ic : Stdio.In_channel.t) :
-        Output.t Or_error.t =
+      Act_state.Observation.t Or_error.t =
       ignore path ; Result.Error B.error
 
-    let load_from_string (_str : string) : Output.t Or_error.t =
+    let load_from_string (_str : string) : Act_state.Observation.t Or_error.t =
       Result.Error B.error
   end)
-
-  let read_output_from_string (_s : string) : Output.t =
-    Output.Errored {err= B.error}
-end
 
 module Make_error (B : sig
   val error : Error.t
@@ -79,6 +74,6 @@ end) : Runner_types.S = struct
   type t = Filter.aux_i
 
   let run (_ctx : t) ~(input_path : Fpath.t) ~(output_path : Fpath.t) :
-      Output.t Or_error.t =
+      Act_state.Observation.t Or_error.t =
     ignore input_path ; ignore output_path ; Result.Error B.error
 end

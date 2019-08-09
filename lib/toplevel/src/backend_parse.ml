@@ -22,14 +22,11 @@ let run ?(fqid : Id.t = Id.of_string "herd")
     let%bind input = Args.With_files.infile_source args in
     let%bind output = Args.With_files.outfile_sink args in
     let%bind (module Sim) = Res.resolve_single fqid in
-    let%bind out = Sim.Reader.load_from_isrc input in
+    let%bind obs = Sim.Reader.load_from_isrc input in
     Plumbing.Output.with_output output ~f:(fun oc ->
-        let%map obs =
-          Act_backend.Output.to_observation_or_error ~handle_skipped:`Error
-            out
-        in
-        Yojson.Safe.pretty_to_channel oc
-          (Act_state.Observation.yojson_of_t obs)))
+        Or_error.return
+        (Yojson.Safe.pretty_to_channel oc
+          (Act_state.Observation.yojson_of_t obs))))
 
 let command : Command.t =
   Command.basic

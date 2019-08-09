@@ -6,4 +6,4 @@
  (preprocess
   (pps ppx_jane))
  (libraries ppx_expect.common ppx_expect.config ppx_inline_test.config base
-   stdio act.backend act.backend_litmus))
+   stdio act.state act.backend act.backend_litmus))

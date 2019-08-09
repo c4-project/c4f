@@ -17,10 +17,7 @@ module Ac = Act_common
 let run_on_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   ignore file ;
   Or_error.Let_syntax.(
-    let%bind res = Act_backend_litmus.Reader.load ~path in
-    let%map obs =
-      Act_backend.Output.to_observation_or_error res ~handle_skipped:`Error
-    in
+    let%map obs = Act_backend_litmus.Reader.load ~path in
     let json = Act_state.Observation.yojson_of_t obs in
     Yojson.Safe.pretty_to_channel Stdio.Out_channel.stdout json)
 

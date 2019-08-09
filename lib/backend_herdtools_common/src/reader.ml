@@ -176,14 +176,13 @@ module Ctx = struct
     peek_automaton () >>| Automaton.validate_final_state >>| Validate.result
     >>= Monadic.return
 
-  let try_close () : Act_backend.Output.t t =
+  let try_close () : Act_state.Observation.t t =
     Let_syntax.(
       let%bind _ = fail_if_bad_state () in
-      let%map obs = peek_obs () in
-      Act_backend.Output.Success obs)
+      peek_obs ())
 
   let run_to_output ?(path : string option) (op : unit t) :
-      Act_backend.Output.t Or_error.t =
+      Act_state.Observation.t Or_error.t =
     run (op >>= try_close) (Body.init ?path ())
 
   let enter_preamble () : unit t = Monadic.modify Body.try_enter_preamble
@@ -307,14 +306,14 @@ module Make_main (B : Basic) = struct
 end
 
 module Make_load (B : Basic) :
-  Plumbing.Loadable_types.Basic with type t = Act_backend.Output.t = struct
+  Plumbing.Loadable_types.Basic with type t = Act_state.Observation.t = struct
   module M = Make_main (B)
   module L = Tx.List.On_monad (Ctx)
   module I = Ic.On_monad (Ctx)
 
-  type nonrec t = Act_backend.Output.t
+  type nonrec t = Act_state.Observation.t
 
-  let load_from_string (s : string) : Act_backend.Output.t Or_error.t =
+  let load_from_string (s : string) : Act_state.Observation.t Or_error.t =
     let lines = String.split_lines s in
     Ctx.run_to_output (L.iter_m lines ~f:M.process_line)
 
@@ -323,4 +322,4 @@ module Make_load (B : Basic) :
 end
 
 module Make (B : Basic) : Act_backend.Reader_types.S =
-  Act_backend.Reader.Make (Plumbing.Loadable.Make (Make_load (B)))
+  Plumbing.Loadable.Make (Make_load (B))

@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Backend runner interfaces.
 
@@ -69,22 +57,8 @@ module type S = sig
        Arch.t
     -> input_path:Fpath.t
     -> output_path:Fpath.t
-    -> Output.t Or_error.t
-  (** [run ctx ~input_path ~output_path] runs the simulator on [input_path],
+    -> Act_state.Observation.t Or_error.t
+  (** [run ctx ~input_path ~output_path] runs the backend on [input_path],
       using [ctx] as context, outputs to [output_path], and then tries to
-      load back the results as generic simulator output. *)
+      load back the results as a generic observation. *)
 end
-
-(* val name : Act_common.Id.t (** [name] is the name of the simulator, as an
-   act ID. This can differ from the ID under which this simulator was
-   registered in any runner tables. *)
-
-   val machine_id : Act_common.Id.t (** [machine_id] is the ID of the
-   machine on which this simulator is running. *)
-
-   (** The main body of the simulator runner is a filter from litmus tests
-   to output files. The filter shouldn't produce any auxiliary output, and
-   should accept an architecture as its input. *) module Filter : Filter.S
-
-   (** Simulator runners must be able to load back their output into the
-   simulator output format. *) module Reader : Reader_intf.Basic end *)
