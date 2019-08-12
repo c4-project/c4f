@@ -306,7 +306,8 @@ module Make_main (B : Basic) = struct
 end
 
 module Make_load (B : Basic) :
-  Plumbing.Loadable_types.Basic with type t = Act_state.Observation.t = struct
+  Plumbing.Loadable_types.Basic with type t = Act_state.Observation.t =
+struct
   module M = Make_main (B)
   module L = Tx.List.On_monad (Ctx)
   module I = Ic.On_monad (Ctx)

@@ -48,16 +48,17 @@ end
 
 module Make_error_reader (B : sig
   val error : Error.t
-end) : Reader_types.S =  Plumbing.Loadable.Make (struct
-    type t = Act_state.Observation.t
+end) : Reader_types.S = Plumbing.Loadable.Make (struct
+  type t = Act_state.Observation.t
 
-    let load_from_ic ?(path : string option) (_ic : Stdio.In_channel.t) :
+  let load_from_ic ?(path : string option) (_ic : Stdio.In_channel.t) :
       Act_state.Observation.t Or_error.t =
-      ignore path ; Result.Error B.error
+    ignore path ; Result.Error B.error
 
-    let load_from_string (_str : string) : Act_state.Observation.t Or_error.t =
-      Result.Error B.error
-  end)
+  let load_from_string (_str : string) : Act_state.Observation.t Or_error.t
+      =
+    Result.Error B.error
+end)
 
 module Make_error (B : sig
   val error : Error.t

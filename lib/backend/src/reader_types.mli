@@ -9,6 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-module type S = Plumbing.Loadable_types.S with type t = Act_state.Observation.t
+module type S =
+  Plumbing.Loadable_types.S with type t = Act_state.Observation.t
 (** Shorthand for the specific type of loadable module a simulator runner
     expects. *)

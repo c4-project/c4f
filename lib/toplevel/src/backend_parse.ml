@@ -25,8 +25,8 @@ let run ?(fqid : Id.t = Id.of_string "herd")
     let%bind obs = Sim.Reader.load_from_isrc input in
     Plumbing.Output.with_output output ~f:(fun oc ->
         Or_error.return
-        (Yojson.Safe.pretty_to_channel oc
-          (Act_state.Observation.yojson_of_t obs))))
+          (Yojson.Safe.pretty_to_channel oc
+             (Act_state.Observation.yojson_of_t obs))))
 
 let command : Command.t =
   Command.basic
