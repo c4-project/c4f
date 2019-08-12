@@ -12,6 +12,25 @@
 open Base
 open Base_quickcheck
 
+module Entry_tag = struct
+  type t =
+    | Witness
+    | Counter_example
+    | Unknown
+
+  let process
+      (witnesses : Set.M(Entry).t)
+      (counter_examples : Set.M(Entry).t) (tag : t) ~(entry : Entry.t)
+    : Set.M(Entry).t * Set.M(Entry).t =
+    match tag with
+    | Witness ->
+      (Set.add witnesses entry, counter_examples)
+    | Counter_example ->
+      (witnesses, Set.add counter_examples entry)
+    | Unknown ->
+      (witnesses, counter_examples)
+end
+
 module Flag = struct
   module M = struct
     type t = Sat | Unsat | Undefined [@@deriving enum, quickcheck]
@@ -69,7 +88,8 @@ let empty : t =
   ; witnesses= Set.empty (module Entry)
   ; counter_examples= Set.empty (module Entry) }
 
-let add ?(kind : [`Witness | `Counter_example] option) (out : t)
+
+let add ?(tag : Entry_tag.t = Unknown) (out : t)
     ~(state : Entry.t) : t Or_error.t =
   (* TODO(@MattWindsor91): it's unclear as to whether this treatment of
      'undefined' is correct. *)
@@ -84,15 +104,8 @@ let add ?(kind : [`Witness | `Counter_example] option) (out : t)
     let witnesses = witnesses out in
     let counter_examples = counter_examples out in
     let states' = Set.add states state in
-    let witnesses', counter_examples' =
-      match kind with
-      | None ->
-          (witnesses, counter_examples)
-      | Some `Witness ->
-          (Set.add witnesses state, counter_examples)
-      | Some `Counter_example ->
-          (witnesses, Set.add counter_examples state)
-    in
+    let witnesses', counter_examples' = Entry_tag.process witnesses counter_examples
+        tag ~entry:state in
     Or_error.return
       { out with
         states= states'
