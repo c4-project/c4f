@@ -27,14 +27,10 @@ val empty : t
 
 (** Type of tag that can be attached to entries added using {!add}. *)
 module Entry_tag : sig
-  type t =
-    | Witness
-    | Counter_example
-    | Unknown
+  type t = Witness | Counter_example | Unknown
 end
 
-val add :
-  ?tag:Entry_tag.t -> t -> state:Entry.t -> t Or_error.t
+val add : ?tag:Entry_tag.t -> t -> state:Entry.t -> t Or_error.t
 (** [add ?kind out ~state] adds [state] onto the state set of [out]. It
     fails if [out] is marked as having undefined behaviour. If [tag] is
     given, [state] may also propagate to the observation's witness or
