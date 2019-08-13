@@ -57,5 +57,5 @@ include Shc.Reader.Make (struct
     let occurrences_str, rest = split_line_to_string_tuple line in
     Or_error.Let_syntax.(
       let%map occurrences = parse_int_opt occurrences_str in
-      {Shc.Reader.State_line.occurrences; rest})
+      Shc.Reader.State_line.make ?occurrences rest)
 end)

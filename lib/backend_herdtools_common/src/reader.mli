@@ -28,11 +28,18 @@
     different, and fills in the common ground. *)
 
 module State_line : sig
-  type t =
-    { occurrences: int option
-          (** Optional number of occurrences for this state. *)
-    ; rest: string  (** The (so far unparsed) rest of the state line. *) }
-  (** Type of split state lines. *)
+  type t
+  (** Opaque type of state lines. *)
+
+  val make :
+       ?occurrences:int
+    -> ?tag:Act_state.Observation.Entry_tag.t
+    -> string
+    -> t
+  (** [make ?occurrences ?tag rest] makes a state line with the optional
+      already-parsed occurrence number [occurrences], entry tag [tag], and
+      the string containing the part of the state line that is common to
+      both Herd and Litmus. *)
 end
 
 module type Basic = Reader_intf.Basic with type state_line := State_line.t

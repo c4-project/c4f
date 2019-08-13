@@ -12,9 +12,16 @@
 open Base
 open Act_common
 module Tx = Travesty_base_exts
+module Obs = Act_state.Observation
 
 module State_line = struct
-  type t = {occurrences: int option; rest: string}
+  module Tag = Obs.Entry_tag
+
+  type t =
+    { occurrences: int option
+    ; tag: Tag.t [@default Tag.Unknown]
+    ; rest: string [@main] }
+  [@@deriving make]
 end
 
 module type Basic = Reader_intf.Basic with type state_line := State_line.t
@@ -100,16 +107,6 @@ module Automaton = struct
         state_change_error st "leaving the summary"
 end
 
-module Summary_info = struct
-  type t = Defined | Undefined
-
-  let is_defined : t -> bool = function
-    | Defined ->
-        true
-    | Undefined ->
-        false
-end
-
 module Ctx = struct
   module Body = struct
     type t =
@@ -120,7 +117,7 @@ module Ctx = struct
     [@@deriving fields, make]
 
     let init : ?path:string -> unit -> t =
-      make ~a_state:Empty ~obs:Act_state.Observation.empty
+      make ~a_state:Empty ~obs:Obs.empty
 
     let map_fld_m (body : t) ~(field : (t, 'a) Field.t)
         ~(f : 'a -> 'a Or_error.t) : t Or_error.t =
@@ -130,9 +127,8 @@ module Ctx = struct
         f:(Automaton.t -> Automaton.t Or_error.t) -> t Or_error.t =
       map_fld_m body ~field:Fields.a_state
 
-    let map_obs_m (body : t) :
-           f:(Act_state.Observation.t -> Act_state.Observation.t Or_error.t)
-        -> t Or_error.t =
+    let map_obs_m (body : t) : f:(Obs.t -> Obs.t Or_error.t) -> t Or_error.t
+        =
       map_fld_m body ~field:Fields.obs
 
     let try_enter_preamble : t -> t Or_error.t =
@@ -148,16 +144,10 @@ module Ctx = struct
         |> map_a_state_m ~f:Automaton.try_leave_state
         >>= map_obs_m ~f:(Act_state.Observation.add ~state))
 
-    let try_set_undefined : t -> t Or_error.t =
-      map_obs_m ~f:Act_state.Observation.set_undefined
-
-    let try_leave_summary (info : Summary_info.t) (body : t) : t Or_error.t
-        =
-      let is_defined = Summary_info.is_defined info in
-      Or_error.(
-        body
-        |> map_a_state_m ~f:Automaton.try_leave_summary
-        >>= Tx.Or_error.map_unless_m is_defined ~f:try_set_undefined)
+    let try_leave_summary (info : Obs.t -> Obs.t Or_error.t) :
+        t -> t Or_error.t =
+      Tx.Or_error.(
+        map_a_state_m ~f:Automaton.try_leave_summary >=> map_obs_m ~f:info)
   end
 
   include Travesty.State_transform.Make (struct
@@ -193,7 +183,7 @@ module Ctx = struct
   let leave_state (parsed_state : Act_state.Entry.t) : unit t =
     Monadic.modify (Body.try_leave_state parsed_state)
 
-  let leave_summary (info : Summary_info.t) : unit t =
+  let leave_summary (info : Obs.t -> Obs.t Or_error.t) : unit t =
     Monadic.modify (Body.try_leave_summary info)
 end
 
@@ -259,24 +249,25 @@ module Make_main (B : Basic) = struct
 
   module Summary = struct
     (** [summaries] associates each expected summary line in a Herd output
-        with some information about it---presently, just whether it
-        represents undefined behaviour. *)
-    let summaries : (string, Summary_info.t) List.Assoc.t =
-      [ ("Ok", Defined)
-      ; ("No", Defined)
-      ; ("Yes", Defined)
-      ; ("Undef", Undefined) ]
+        with the observation flags it represents. *)
+    let summaries : (string, Obs.t -> Obs.t Or_error.t) List.Assoc.t =
+      [ ("Ok", Obs.set_sat)
+      ; ("No", Obs.set_unsat)
+      ; ("Yes", Obs.set_sat) (* seen in practice? *)
+      ; ("Undef", Obs.set_undefined) ]
 
-    let get_summary_info (line : string) : Summary_info.t Or_error.t =
-      line
-      |> List.Assoc.find summaries ~equal:String.Caseless.equal
-      |> Result.of_option
-           ~error:(Error.create_s [%message "unexpected summary" ~got:line])
+    let get_summary_info (line : string) (obs : Obs.t) : Obs.t Or_error.t =
+      let f =
+        line
+        |> List.Assoc.find summaries ~equal:String.Caseless.equal
+        |> Result.of_option
+             ~error:
+               (Error.create_s [%message "unexpected summary" ~got:line])
+      in
+      Or_error.bind f ~f:(fun f' -> f' obs)
 
     let process (line : string) : unit Ctx.t =
-      Ctx.Let_syntax.(
-        let%bind info = Ctx.Monadic.return (get_summary_info line) in
-        Ctx.leave_summary info)
+      Ctx.leave_summary (get_summary_info line)
   end
 
   module Postamble = struct

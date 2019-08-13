@@ -41,7 +41,7 @@ let%expect_test "valid output without postcondition parses correctly" =
   [%expect
     {|
     (Ok
-     ((flags ())
+     ((flags (sat))
       (states
        (((A 0) (B 0) (C 0) (D 0)) ((A 0) (B 100) (C 50) (D 10))
         ((A 100) (B 0) (C 250) (D 50)) ((A 100) (B 100) (C 1000) (D 100))))

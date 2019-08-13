@@ -31,6 +31,6 @@ include Shc.Reader.Make (struct
   let try_split_state_line (line : string) :
       Shc.Reader.State_line.t Or_error.t =
     (* Herd inputs don't have a histogram, so they don't have an occurrence
-       count. *)
-    Or_error.return {Shc.Reader.State_line.occurrences= None; rest= line}
+       count or witness accounting. *)
+    Or_error.return (Shc.Reader.State_line.make line)
 end)
