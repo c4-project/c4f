@@ -83,13 +83,15 @@ let regress_run_asm (type cfg)
     (passes : Set.M(Act_sanitiser.Pass_group).t) ~(file : Fpath.t)
     ~(config_fn : Act_delitmus.Aux.t -> cfg) ~(path : Fpath.t) :
     unit Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind aux = find_aux spec file in
-  let input = Act_asm.Job.make ~passes ~config:(config_fn aux) in
-  let%map _ =
-    Job.run (input ()) (Plumbing.Input.of_fpath path) Plumbing.Output.stdout
-  in
-  ()
+  Or_error.Let_syntax.(
+    let%bind aux = find_aux spec file in
+    let input = Act_asm.Job.make ~passes ~config:(config_fn aux) in
+    let%map _ =
+      Job.run (input ())
+        (Plumbing.Input.of_fpath path)
+        Plumbing.Output.stdout
+    in
+    ())
 
 let regress_on_file ~(dir : Fpath.t) (file : Fpath.t)
     ~(f : file:Fpath.t -> path:Fpath.t -> unit Or_error.t) : unit Or_error.t
@@ -104,24 +106,24 @@ let regress_on_file ~(dir : Fpath.t) (file : Fpath.t)
 let regress_on_files (bin_name : string) ~(dir : Fpath.t) ~(ext : string)
     ~(f : file:Fpath.t -> path:Fpath.t -> unit Or_error.t) : unit Or_error.t
     =
-  let open Or_error.Let_syntax in
-  printf "# %s tests\n\n" bin_name ;
-  let%bind test_files = Au.Fs.Unix.get_files ~ext dir in
-  let results = List.map test_files ~f:(regress_on_file ~dir ~f) in
-  let%map () = Or_error.combine_errors_unit results in
-  printf "\nRan %d test(s).\n" (List.length test_files)
+  Or_error.Let_syntax.(
+    printf "# %s tests\n\n" bin_name ;
+    let%bind test_files = Au.Fs.Unix.get_files ~ext dir in
+    let results = List.map test_files ~f:(regress_on_file ~dir ~f) in
+    let%map () = Or_error.combine_errors_unit results in
+    printf "\nRan %d test(s).\n" (List.length test_files))
 
 let regress_run_asm_many (type cfg)
     (module Job : Act_asm.Runner_intf.S with type cfg = cfg)
     (modename : string) passes (test_path : Fpath.t)
     ~(config_fn : Act_delitmus.Aux.t -> cfg) : unit Or_error.t =
-  let open Or_error.Let_syntax in
-  let dir = Fpath.(test_path / "asm" / "x86" / "att" / "") in
-  let%bind specs = read_specs dir in
-  let%bind test_files = Au.Fs.Unix.get_files ~ext:"s" dir in
-  let%bind () = check_files_against_specs specs test_files in
-  regress_on_files modename ~dir ~ext:"s"
-    ~f:(regress_run_asm (module Job) specs passes ~config_fn)
+  Or_error.Let_syntax.(
+    let dir = Fpath.(test_path / "asm" / "x86" / "att" / "") in
+    let%bind specs = read_specs dir in
+    let%bind test_files = Au.Fs.Unix.get_files ~ext:"s" dir in
+    let%bind () = check_files_against_specs specs test_files in
+    regress_on_files modename ~dir ~ext:"s"
+      ~f:(regress_run_asm (module Job) specs passes ~config_fn))
 
 let make_regress_command (regress_function : Fpath.t -> unit Or_error.t)
     ~(summary : string) : Command.t =

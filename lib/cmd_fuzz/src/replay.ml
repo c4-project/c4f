@@ -18,7 +18,7 @@ let run ?(trace_input : string option) (args : _ Toplevel.Args.With_files.t)
   Or_error.Let_syntax.(
     let%bind trace_in = Plumbing.Input.of_string_opt trace_input in
     let%bind trace = Act_fuzz.Trace.load_from_isrc trace_in in
-    let aux_in = Act_fuzz.Filter.Aux.make ~o ~config ~rest:trace in
+    let aux_in = Act_fuzz.Filter.Aux.make ~o ~config trace in
     Toplevel.Args.With_files.run_filter
       (module Act_fuzz.Filter.Replay)
       args ~aux_in)

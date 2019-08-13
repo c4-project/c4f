@@ -9,7 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Tests the Litmus observation parser on various Litmus . *)
+(** Tests the Litmus observation parser on various Litmus7-style outputs.
+    The output is the corresponding ACT observation JSON, and the intent is
+    to track unwanted changes in the JSON format. *)
 
 open Core
 module Ac = Act_common

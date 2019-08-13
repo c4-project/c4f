@@ -14,7 +14,10 @@ open Stdio
 module Pb = Plumbing
 
 module Aux = struct
-  type 'rest t = {o: Act_common.Output.t; config: Config.t; rest: 'rest}
+  type 'rest t =
+    { o: Act_common.Output.t [@default Act_common.Output.silent ()]
+    ; config: Config.t
+    ; rest: 'rest [@main] }
   [@@deriving make]
 end
 

@@ -22,10 +22,9 @@ module Aux : sig
   (** Opaque type of auxiliary input to the fuzzer filter. The [rest]
       parameter depends on the specific filter. *)
 
-  val make :
-    o:Act_common.Output.t -> config:Config.t -> rest:'rest -> 'rest t
-  (** [make ~o ~config ~rest] makes an auxiliary input for the fuzzer
-      filters given outputter [o], fuzzer config [config], and
+  val make : ?o:Act_common.Output.t -> config:Config.t -> 'rest -> 'rest t
+  (** [make ?o ~config rest] makes an auxiliary input for the fuzzer filters
+      given optional outputter [o], fuzzer config [config], and
       fuzzer-dependent 'rest of input' parameter [rest]. *)
 end
 

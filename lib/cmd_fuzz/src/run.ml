@@ -20,7 +20,7 @@ let run ?(seed : int option) ?(trace_output : string option)
     (args : _ Toplevel.Args.With_files.t) (o : Act_common.Output.t)
     (act_config : Act_config.Act.t) : unit Or_error.t =
   let config = Act_config.Act.fuzz act_config in
-  let aux_in = Act_fuzz.Filter.Aux.make ~o ~config ~rest:seed in
+  let aux_in = Act_fuzz.Filter.Aux.make ~o ~config seed in
   Toplevel.Args.With_files.run_filter_with_aux_out
     (module Act_fuzz.Filter.Random)
     args ~aux_in ~aux_out_f:write_trace ?aux_out_filename:trace_output

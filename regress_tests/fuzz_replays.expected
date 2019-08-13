@@ -1,0 +1,47 @@
+# Fuzz replay tests
+
+## sbsc.1.trace
+
+```
+C SBSC
+
+{
+    Xv8jOk6fGbC = 2147483647;
+    cQpyaUbj5gR = -521;
+    UcoE3gzvYko = 203657823;
+    u = -29491608;
+    cP = 13;
+    BNFKW = -123;
+    Is9Qk0n4Rhat = 1720645492;
+    kx0hFmyY7lL6 = -42175;
+    cQHO4Qc5Vo4 = -2147483648;
+    x = 0;
+    y = 0;
+}
+
+void
+P0(int *BNFKW, atomic_int *Is9Qk0n4Rhat, atomic_int *UcoE3gzvYko,
+   atomic_int *Xv8jOk6fGbC, int *cP, atomic_bool *cQHO4Qc5Vo4,
+   atomic_bool *cQpyaUbj5gR, bool *kx0hFmyY7lL6, int *u, atomic_int *x,
+   atomic_int *y)
+{
+    int a;
+    atomic_store_explicit(x, 1, memory_order_relaxed);
+    a = atomic_load_explicit(y, memory_order_relaxed);
+}
+
+void
+P1(int *BNFKW, atomic_int *Is9Qk0n4Rhat, atomic_int *UcoE3gzvYko,
+   atomic_int *Xv8jOk6fGbC, int *cP, atomic_bool *cQHO4Qc5Vo4,
+   atomic_bool *cQpyaUbj5gR, bool *kx0hFmyY7lL6, int *u, atomic_int *x,
+   atomic_int *y)
+{
+    int a;
+    atomic_store_explicit(y, 1, memory_order_relaxed);
+    a = atomic_load_explicit(x, memory_order_relaxed);
+    atomic_store_explicit(Is9Qk0n4Rhat, 59774975, memory_order_relaxed);
+}
+
+exists (0:a == 0 /\ 1:a == 0)```
+
+Ran 1 test(s).
