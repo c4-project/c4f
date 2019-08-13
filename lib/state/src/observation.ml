@@ -72,11 +72,11 @@ end
 include M
 include Plumbing.Loadable.Of_jsonable (M)
 
-let is_undefined (x : t) = Set.mem (flags x) Flag.Undefined
+let is_undefined (x : t) : bool = Set.mem (flags x) Flag.Undefined
 
-let is_unsat (x : t) = Set.mem (flags x) Flag.Sat
+let is_unsat (x : t) : bool = Set.mem (flags x) Flag.Sat
 
-let is_sat (x : t) = Set.mem (flags x) Flag.Unsat
+let is_sat (x : t) : bool = Set.mem (flags x) Flag.Unsat
 
 let empty : t =
   { flags= Set.empty (module Flag)

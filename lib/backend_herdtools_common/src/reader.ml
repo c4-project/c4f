@@ -13,18 +13,31 @@ open Base
 open Act_common
 module Tx = Travesty_base_exts
 module Obs = Act_state.Observation
+module Tag = Obs.Entry_tag
 
 module State_line = struct
-  module Tag = Obs.Entry_tag
-
-  type t =
+  type 'a t =
     { occurrences: int option
     ; tag: Tag.t [@default Tag.Unknown]
-    ; rest: string [@main] }
+    ; rest: 'a [@main] }
   [@@deriving make]
+
+  module T = Travesty.Traversable.Make1 (struct
+    type nonrec 'a t = 'a t
+
+    module On_monad (M : Monad.S) = struct
+      let map_m (sl : 'a t) ~(f : 'a -> 'b M.t) : 'b t M.t =
+        M.Let_syntax.(
+          let%map rest' = f sl.rest in
+          {occurrences= sl.occurrences; tag= sl.tag; rest= rest'})
+    end
+  end)
+
+  include (T : module type of T with type 'a t := 'a t)
 end
 
-module type Basic = Reader_intf.Basic with type state_line := State_line.t
+module type Basic =
+  Reader_intf.Basic with type state_line := string State_line.t
 
 module Automaton = struct
   (** The current automaton state of a Herd reader. *)
@@ -137,12 +150,12 @@ module Ctx = struct
     let try_enter_state_block (num_states : int) : t -> t Or_error.t =
       map_a_state_m ~f:(Automaton.try_enter_state_block num_states)
 
-    let try_leave_state (state : Act_state.Entry.t) (body : t) :
-        t Or_error.t =
-      Or_error.(
-        body
-        |> map_a_state_m ~f:Automaton.try_leave_state
-        >>= map_obs_m ~f:(Act_state.Observation.add ~state))
+    let try_leave_state (sl : Act_state.Entry.t State_line.t) :
+        t -> t Or_error.t =
+      let {State_line.rest= state; tag; _} = sl in
+      Tx.Or_error.(
+        map_a_state_m ~f:Automaton.try_leave_state
+        >=> map_obs_m ~f:(Act_state.Observation.add ~tag ~state))
 
     let try_leave_summary (info : Obs.t -> Obs.t Or_error.t) :
         t -> t Or_error.t =
@@ -180,7 +193,7 @@ module Ctx = struct
   let enter_state_block (num_states : int) : unit t =
     Monadic.modify (Body.try_enter_state_block num_states)
 
-  let leave_state (parsed_state : Act_state.Entry.t) : unit t =
+  let leave_state (parsed_state : Act_state.Entry.t State_line.t) : unit t =
     Monadic.modify (Body.try_leave_state parsed_state)
 
   let leave_summary (info : Obs.t -> Obs.t Or_error.t) : unit t =
@@ -227,21 +240,24 @@ module Make_main (B : Basic) = struct
           Or_error.error_s
             [%message "Expected a binding of the form X=Y" ~got:binding]
 
-    (* The RHS of state lines are always 'binding; binding; binding;', with
-       a trailing ;. *)
+    let split_state_bindings (line : string) : string list =
+      (* The RHS of state lines are always 'binding; binding; binding;',
+         with a trailing ;. *)
+      line |> String.split ~on:';' |> Tx.List.exclude ~f:String.is_empty
+
+    (* Drop trailing ; *)
+
     let try_parse_state_line_body (line : string) :
         Act_state.Entry.t Or_error.t =
       Or_error.(
-        line |> String.split ~on:';'
-        |> Tx.List.exclude ~f:String.is_empty (* Drop trailing ; *)
-        |> List.map ~f:proc_binding |> Result.all
-        >>= Act_state.Entry.of_alist)
+        line |> split_state_bindings |> List.map ~f:proc_binding
+        |> Result.all >>= Act_state.Entry.of_alist)
 
-    let try_parse_state_line (line : string) : Act_state.Entry.t Or_error.t
-        =
-      Or_error.Let_syntax.(
-        let%bind {rest; _} = B.try_split_state_line line in
-        try_parse_state_line_body rest)
+    let try_parse_state_line :
+        string -> Act_state.Entry.t State_line.t Or_error.t =
+      Tx.Or_error.(
+        B.try_split_state_line
+        >=> State_line.With_errors.map_m ~f:try_parse_state_line_body)
 
     let process (line : string) : unit Ctx.t =
       Ctx.(line |> try_parse_state_line |> Monadic.return >>= leave_state)
@@ -309,7 +325,8 @@ struct
     let lines = String.split_lines s in
     Ctx.run_to_output (L.iter_m lines ~f:M.process_line)
 
-  let load_from_ic ?path ic =
+  let load_from_ic ?(path : string option) (ic : Stdio.In_channel.t) :
+      Obs.t Or_error.t =
     Ctx.run_to_output ?path (I.iter_m ic ~f:M.process_line)
 end
 
