@@ -20,10 +20,10 @@ let run ?(seed : int option) ?(trace_output : string option)
     (args : _ Toplevel.Args.With_files.t) (o : Act_common.Output.t)
     (act_config : Act_config.Act.t) : unit Or_error.t =
   let config = Act_config.Act.fuzz act_config in
+  let aux_in = Act_fuzz.Filter.Aux.make ~o ~config ~rest:seed in
   Toplevel.Args.With_files.run_filter_with_aux_out
     (module Act_fuzz.Filter.Random)
-    args ~aux_in:{seed; o; config} ~aux_out_f:write_trace
-    ?aux_out_filename:trace_output
+    args ~aux_in ~aux_out_f:write_trace ?aux_out_filename:trace_output
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
@@ -37,7 +37,6 @@ let command : Command.t =
     ~readme
     Command.Let_syntax.(
       let%map_open standard_args =
-        ignore anon ;
         Toplevel.Args.(With_files.get Standard.get)
       and seed =
         flag "seed" (optional int)

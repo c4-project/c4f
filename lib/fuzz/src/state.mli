@@ -51,6 +51,8 @@ module Monad : sig
       with type state := t
        and module Inner := Or_error
 
+  (** {2 Liftings} *)
+
   val with_vars_m : (Var.Map.t -> 'a t) -> 'a t
   (** [with_vars_m f] is a stateful action that binds the stateful action
       [f] over the current variable map. *)
@@ -59,12 +61,19 @@ module Monad : sig
   (** [with_vars f] is a variant of {{!with_vars_m} with_vars_m} which maps
       across [f] rather than binding. *)
 
+  (** {2 Queries} *)
+
   val resolve :
        Act_common.C_id.t
     -> scope:Act_common.Scope.t
     -> Act_common.Litmus_id.t t
   (** [resolve id ~scope] tries to get the Litmus-style ID corresponding to
       the resolution of [id] in scope [scope]. *)
+
+  val output : unit -> Act_common.Output.t t
+  (** [output ()] is a stateful action that gets the current output context. *)
+
+  (** {2 Commands} *)
 
   val register_global :
        ?initial_value:Act_c_mini.Constant.t
@@ -96,7 +105,4 @@ module Monad : sig
 
       This should be done after involving [var] in any atomic actions that
       modify it. *)
-
-  val output : unit -> Act_common.Output.t t
-  (** [output ()] is a stateful action that gets the current output context. *)
 end

@@ -13,7 +13,12 @@ open Core_kernel (* for Fqueue *)
 
 type elt = {name: Act_common.Id.t; payload: Sexp.t} [@@deriving sexp]
 
-type t = elt Fqueue.t [@@deriving sexp]
+module M = struct
+  type t = elt Fqueue.t [@@deriving sexp]
+end
+
+include M
+include Plumbing.Loadable.Of_sexpable (M)
 
 let empty : t = Fqueue.empty
 

@@ -22,6 +22,13 @@ let modules : (module Action_types.S) list Lazy.t =
     ; (module Store_actions.Int : Action_types.S)
     ; (module Program_actions.Make_empty : Action_types.S) ]
 
+let module_map : (module Action_types.S) Map.M(Act_common.Id).t Lazy.t =
+  Lazy.(
+    modules
+    >>| List.map ~f:(fun (module M : Action_types.S) ->
+            (M.name, (module M : Action_types.S)))
+    >>| Map.of_alist_exn (module Act_common.Id))
+
 let make_weight_pair (weight_overrides : int Map.M(Act_common.Id).t)
     (module M : Action_types.S) : (module Action_types.S) * int =
   let weight =

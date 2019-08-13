@@ -14,28 +14,75 @@ open Stdio
 module Pb = Plumbing
 
 module Aux = struct
-  type t = {seed: int option; o: Act_common.Output.t; config: Config.t}
+  type 'rest t = {o: Act_common.Output.t; config: Config.t; rest: 'rest}
+  [@@deriving make]
 end
 
+let run_on_litmus (test : Act_c_mini.Litmus.Test.t)
+    ~(o : Act_common.Output.t)
+    ~(f : Subject.Test.t -> 'm Output.t State.Monad.t) :
+    (Act_c_mini.Litmus.Test.t * 'm) Or_error.t =
+  let subject = Subject.Test.of_litmus test in
+  Or_error.Let_syntax.(
+    let%bind state = State.of_litmus ~o test in
+    let%bind state', output = State.Monad.run' (f subject) state in
+    let vars = State.vars state' in
+    let%map test' = Subject.Test.to_litmus (Output.subject output) ~vars in
+    (test', Output.metadata output))
+
+let run_with_channels ?(path : string option) (ic : In_channel.t)
+    (oc : Out_channel.t) ~(o : Act_common.Output.t)
+    ~(f : Subject.Test.t -> 'm Output.t State.Monad.t) : 'm Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind test = Act_c_mini.Frontend.load_from_ic ?path ic in
+    let%map test', metadata = run_on_litmus ~o ~f test in
+    Act_c_mini.Litmus.Pp.print oc test' ;
+    metadata)
+
 module Random = Pb.Filter.Make (struct
-  type aux_i = Aux.t
+  type aux_i = int option Aux.t
 
   type aux_o = Trace.t
 
-  let name = "Fuzzer"
+  let name = "Fuzzer (random)"
 
-  let run (ctx : Aux.t Pb.Filter_context.t) (ic : In_channel.t)
+  let run (ctx : int option Aux.t Pb.Filter_context.t) (ic : In_channel.t)
       (oc : Out_channel.t) : Trace.t Or_error.t =
-    let {Aux.seed; o; config} = Pb.Filter_context.aux ctx in
+    let {Aux.rest; o; config} = Pb.Filter_context.aux ctx in
     let input = Pb.Filter_context.input ctx in
-    Or_error.Let_syntax.(
-      let%bind raw =
-        Act_c_lang.Frontend.Litmus.load_from_ic
-          ~path:(Pb.Input.to_string input)
-          ic
-      in
-      let%bind test = Act_c_mini.Convert.litmus_of_raw_ast raw in
-      let%map test', trace = Random_runner.run ?seed ~o ~config test in
-      Act_c_mini.Litmus.Pp.print oc test' ;
-      trace)
+    run_with_channels
+      ~path:(Pb.Input.to_string input)
+      ic oc ~o
+      ~f:(Random_runner.run ?seed:rest ~config)
+end)
+
+(* TODO(@MattWindsor91): unify this logic with all the other resolvers? *)
+let resolve_action (id : Act_common.Id.t) :
+    (module Action_types.S) Or_error.t =
+  Act_utils.My_map.find_or_error ~sexp_of_key:Act_common.Id.sexp_of_t
+    ~map_name:"module map"
+    (Lazy.force Config.module_map)
+    id
+
+let run_replay (subject : Subject.Test.t) ~(trace : Trace.t) :
+    unit Output.t State.Monad.t =
+  State.Monad.(
+    Let_syntax.(
+      let%map subject' = Trace.run trace subject ~resolve:resolve_action in
+      Output.make ~subject:subject' ~metadata:()))
+
+module Replay = Pb.Filter.Make (struct
+  type aux_i = Trace.t Aux.t
+
+  type aux_o = unit
+
+  let name = "Fuzzer (replay)"
+
+  let run (ctx : Trace.t Aux.t Pb.Filter_context.t) (ic : In_channel.t)
+      (oc : Out_channel.t) : unit Or_error.t =
+    let {Aux.rest; o; _} = Pb.Filter_context.aux ctx in
+    let input = Pb.Filter_context.input ctx in
+    run_with_channels
+      ~path:(Pb.Input.to_string input)
+      ic oc ~o ~f:(run_replay ~trace:rest)
 end)

@@ -19,7 +19,9 @@ open Base
 type t [@@deriving sexp]
 (** Opaque type of traces. *)
 
-(** {2 Building traces} *)
+(** {1 Building traces} *)
+
+(** {2 Programmatically} *)
 
 val empty : t
 (** The empty trace. *)
@@ -32,7 +34,13 @@ val add :
 (** [add t ~action ~state] appends action [action], with name [id] and
     payload [payload], to the trace. *)
 
-(** {2 Replaying traces} *)
+(** {2 From files} *)
+
+include
+  Plumbing.Loadable_types.S with type t := t
+(** We can load traces (from S-expressions). *)
+
+(** {1 Replaying traces} *)
 
 val run :
      t

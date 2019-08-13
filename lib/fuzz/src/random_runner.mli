@@ -12,15 +12,14 @@
 (** A fuzz runner that applies a random battery of fuzzer actions to a test. *)
 
 open Base
-open Act_common
 
 val run :
      ?seed:int
-  -> Act_c_mini.Litmus.Test.t
-  -> o:Output.t
+  -> Subject.Test.t
   -> config:Config.t
-  -> (Act_c_mini.Litmus.Test.t * Trace.t) Or_error.t
-(** [run ?seed test ~o test] mutates [test] using a random number generator
-    seeded by [seed]. Any debugging information is printed to the
-    appropriate formatters on [o], and a trace of all run actions is
-    returned alongside the new test. *)
+  -> Trace.t Output.t State.Monad.t
+(** [run ?seed test ~config] mutates [test] using a random number generator
+    seeded by [seed], and the fuzzer config given by [config]. It returns
+    the output of the fuzzing operation (including the final test, a trace
+    of all actions applied, and the final variable map) inside the main
+    fuzzer state monad. *)

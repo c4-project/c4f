@@ -17,3 +17,18 @@ let map_with_keys (type ak av aw bk bv bw) (cmp : (bk, bw) Map.comparator)
   map |> Map.to_alist
   |> List.map ~f:(fun (key, data) -> f ~key ~data)
   |> Map.of_alist_or_error cmp
+
+let not_found_error (type k) ?(sexp_of_key : (k -> Sexp.t) option)
+    ~(map_name : string) (key : k) : Error.t =
+  let string = Printf.sprintf "Given key not found in %s" map_name in
+  match sexp_of_key with
+  | None ->
+      Error.of_string string
+  | Some f ->
+      Error.create_s [%message string ~key:(f key : Sexp.t)]
+
+let find_or_error (type k v w) ?(sexp_of_key : (k -> Sexp.t) option)
+    ?(map_name : string = "map") (map : (k, v, w) Map.t) (key : k) :
+    v Or_error.t =
+  let error = lazy (not_found_error ?sexp_of_key ~map_name key) in
+  key |> Map.find map |> Result.of_option ~error:(Error.of_lazy_t error)

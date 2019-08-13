@@ -13,6 +13,13 @@
 
 open Base
 
+(** {1 Constants} *)
+
+val module_map : (module Action_types.S) Map.M(Act_common.Id).t Lazy.t
+(** [module_map] lazily evaluates to a map from action IDs to their modules. *)
+
+(** {1 The configuration record} *)
+
 (** {2 Constructing a fuzzer configuration} *)
 
 type t [@@deriving sexp]

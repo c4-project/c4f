@@ -102,17 +102,6 @@ let mutate_subject (subject : Subject.Test.t) :
     in
     subject')
 
-let run_with_state (test : Act_c_mini.Litmus.Test.t) :
-    Act_c_mini.Litmus.Test.t Runner_state.Monad.t =
-  Runner_state.Monad.Let_syntax.(
-    (* TODO: add uuid to this *)
-    let subject = Subject.Test.of_litmus test in
-    let%bind subject' = mutate_subject subject in
-    Runner_state.Monad.Monadic.return
-      State.Monad.(
-        with_vars_m (fun vars ->
-            Monadic.return (Subject.Test.to_litmus ~vars subject'))))
-
 let make_runner_state (seed : int option) (config : Config.t) :
     Runner_state.t Or_error.t =
   let random = make_rng seed in
@@ -121,15 +110,19 @@ let make_runner_state (seed : int option) (config : Config.t) :
     let%map pool = Config.make_pool config in
     {Runner_state.random; trace; pool})
 
-let run ?(seed : int option) (test : Act_c_mini.Litmus.Test.t)
-    ~(o : Ac.Output.t) ~(config : Config.t) :
-    (Act_c_mini.Litmus.Test.t * Trace.t) Or_error.t =
-  Or_error.Let_syntax.(
-    let%bind fuzz_state = State.of_litmus ~o test in
-    let%bind runner_state = make_runner_state seed config in
-    let%map runner_state', test' =
-      State.Monad.run
-        (Runner_state.Monad.run' (run_with_state test) runner_state)
-        fuzz_state
-    in
-    (test', runner_state'.trace))
+let make_output (rstate : Runner_state.t) (subject : Subject.Test.t) :
+    Trace.t Output.t =
+  let trace = Runner_state.trace rstate in
+  Output.make ~subject ~metadata:trace
+
+let run ?(seed : int option) (test : Subject.Test.t) ~(config : Config.t) :
+    Trace.t Output.t State.Monad.t =
+  State.Monad.(
+    Let_syntax.(
+      let%bind runner_state =
+        Monadic.return (make_runner_state seed config)
+      in
+      let%map state, subject =
+        Runner_state.Monad.run' (mutate_subject test) runner_state
+      in
+      make_output state subject))

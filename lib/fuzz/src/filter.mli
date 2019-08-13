@@ -15,12 +15,34 @@
     auxiliary input, and emits a trace of actions performed (see
     {{!Trace} Trace}) as auxiliary output. *)
 
-(** {2 Fuzzer config as an auxiliary input} *)
+(** {1 Fuzzer config as an auxiliary input} *)
 
 module Aux : sig
-  type t = {seed: int option; o: Act_common.Output.t; config: Config.t}
-  (** Type of auxiliary input to the fuzzer filter. *)
+  type 'rest t
+  (** Opaque type of auxiliary input to the fuzzer filter. The [rest]
+      parameter depends on the specific filter. *)
+
+  val make :
+    o:Act_common.Output.t -> config:Config.t -> rest:'rest -> 'rest t
+  (** [make ~o ~config ~rest] makes an auxiliary input for the fuzzer
+      filters given outputter [o], fuzzer config [config], and
+      fuzzer-dependent 'rest of input' parameter [rest]. *)
 end
 
+(** {1 Running the fuzzer with random actions}
+
+    Here, the 'rest' parameter to the auxiliary input is an optional seed to
+    use to start the random number generator. *)
 module Random :
-  Plumbing.Filter_types.S with type aux_i = Aux.t and type aux_o = Trace.t
+  Plumbing.Filter_types.S
+    with type aux_i = int option Aux.t
+     and type aux_o = Trace.t
+
+(** {1 Replaying a trace with the fuzzer}
+
+    Here, the 'rest' parameter to the auxiliary input is the trace to
+    replay. *)
+module Replay :
+  Plumbing.Filter_types.S
+    with type aux_i = Trace.t Aux.t
+     and type aux_o = unit
