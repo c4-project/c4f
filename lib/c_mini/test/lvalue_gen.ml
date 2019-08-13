@@ -14,7 +14,7 @@ module Q = Base_quickcheck
 module Src = Act_c_mini
 
 let variable_in (module E : Src.Env_types.S) (l : Src.Lvalue.t) : bool =
-  Act_common.C_id.Map.mem E.env (Src.Lvalue.variable_of l)
+  Map.mem E.env (Src.Lvalue.variable_of l)
 
 let print_sample = Act_utils.My_quickcheck.print_sample
 

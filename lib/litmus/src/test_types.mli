@@ -64,7 +64,7 @@ module type Basic = sig
     val listing : t -> Statement.t list
     (** [listing program] gets [program]'s statement listing. *)
 
-    val global_vars : t -> Type.t Act_common.C_id.Map.t option
+    val global_vars : t -> Type.t Map.M(Act_common.C_id).t option
     (** [global_vars program] gets the set of global variables referenced by
         [program], if this makes sense for this particular litmus language. *)
 

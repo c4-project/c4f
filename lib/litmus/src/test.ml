@@ -164,11 +164,13 @@ module Make (Lang : Test_types.Basic) :
         ~if_false:"Test must have a postcondition or location stanza."
 
     let variables_in_init (aux : _ Aux.t) : Set.M(Ac.C_id).t =
-      aux |> Aux.init |> List.map ~f:fst |> Ac.C_id.Set.of_list
+      aux |> Aux.init |> List.map ~f:fst |> Set.of_list (module Ac.C_id)
 
     let variables_in_locations (aux : _ Aux.t) : Set.M(Ac.C_id).t =
       aux |> Aux.locations
-      |> Option.value_map ~f:Ac.C_id.Set.of_list ~default:Ac.C_id.Set.empty
+      |> Option.value_map
+           ~f:(Set.of_list (module Ac.C_id))
+           ~default:(Set.empty (module Ac.C_id))
 
     let validate_location_variables : Lang.Constant.t Aux.t Validate.check =
      fun aux ->
@@ -199,15 +201,17 @@ module Make (Lang : Test_types.Basic) :
            ~aux:(w validate_aux) ~threads:(w validate_threads))
 
     let get_uniform_globals :
-        Lang.Program.t list -> Lang.Type.t Ac.C_id.Map.t option Or_error.t =
-      function
+           Lang.Program.t list
+        -> Lang.Type.t Map.M(Ac.C_id).t option Or_error.t = function
       | [] ->
           Or_error.error_string "empty threads"
       | x :: xs ->
           let s = Lang.Program.global_vars x in
           let is_uniform =
             List.for_all xs ~f:(fun x' ->
-                [%equal: Lang.Type.t Ac.C_id.Map.t option] s
+                Option.equal
+                  (Map.equal Lang.Type.equal)
+                  s
                   (Lang.Program.global_vars x'))
           in
           Or_error.(

@@ -61,7 +61,7 @@ module Make (B : Basic_symbol) : S with module Sym = B = struct
       |> List.map ~f:B.to_c_identifier
       |> Or_error.combine_errors
     in
-    C_id.Set.of_list dest_id_list
+    Set.of_list (module C_id) dest_id_list
 
   let of_symbol_alist : (B.t, B.t) List.Assoc.t -> t Or_error.t =
     Map.of_alist_or_error (module B)
@@ -170,7 +170,7 @@ let%test_module "string redirect maps" =
          ("validation failed"
           (.foxtrot
            ("validation errors" (("fst.char '.'" "Invalid initial character.")))
-           lib/common/src/c_id.ml:62:13))) |}]
+           lib/common/src/c_id.ml:50:13))) |}]
 
     let%expect_test "dest_of_id: not in map" =
       let foo = C_id.of_string "nope" in

@@ -88,5 +88,5 @@ end =
 
 let variable_of (ld : t) : Ac.C_id.t = Address.variable_of (src ld)
 
-let variable_in_env (ld : t) ~(env : _ Ac.C_id.Map.t) : bool =
+let variable_in_env (ld : t) ~(env : _ Map.M(Ac.C_id).t) : bool =
   Address.variable_in_env (src ld) ~env

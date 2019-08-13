@@ -84,7 +84,7 @@ let%test_unit "on_address_of_typed_id: always takes pointer type" =
   Base_quickcheck.Test.run_exn
     (module E.Random_var)
     ~f:(fun id ->
-      let ty = Act_common.C_id.Map.find_exn E.env id in
+      let ty = Map.find_exn E.env id in
       [%test_result: Act_c_mini.Type.t Or_error.t] ~here:[[%here]]
         (Tc.type_of (on_address_of_typed_id ~id ~ty))
         ~expect:

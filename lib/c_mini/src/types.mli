@@ -43,7 +43,7 @@ module type S_has_underlying_variable = sig
   val variable_of : t -> Act_common.C_id.t
   (** [variable_of x] is the underlying variable of [x]. *)
 
-  val variable_in_env : t -> env:_ Act_common.C_id.Map.t -> bool
+  val variable_in_env : t -> env:_ Map.M(Act_common.C_id).t -> bool
   (** [variable_in_env x ~env] gets whether [x]'s underlying variable name
       is a key in an environment [env]. *)
 end

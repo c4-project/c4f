@@ -38,6 +38,6 @@ end
 module Make (B : sig
   val tid : int
 
-  val locals : Act_common.C_id.Set.t
+  val locals : Set.M(Act_common.C_id).t
 end) : S
 (** Makes a thread context module from a thread ID and local environment. *)
