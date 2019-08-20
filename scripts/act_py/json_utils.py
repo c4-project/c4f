@@ -16,6 +16,16 @@ import os
 import typing
 
 
+def dump_dataclass(item: typing.Any, fp: typing.TextIO) -> None:
+    """Dumps a dataclass to a file.
+
+    :param item: The dataclass to dump to a file.
+    :param fp: A file-like object to use as the target of the write.
+    :return: Nothing.
+    """
+    json.dump(dataclasses.asdict(item), fp, indent="\t")
+
+
 class FieldMissingException(Exception):
     """Exception raised when conversion from a dict (eg. from JSON) depends on a field that isn't present.
 

@@ -15,6 +15,16 @@ act::error() {
   echo "$0: $1" >&2
 }
 
+# Echoes the argument to stderr, prefixed by the program name, then
+# exits.
+#
+# Arguments:
+#   1: the string to echo.
+act::fatal() {
+  act::error "$1"
+  exit
+}
+
 # If VERBOSE is "true", sends all subsequent arguments to printf.
 #
 # Globals:

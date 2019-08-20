@@ -9,8 +9,7 @@
 # (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
 # project root for more information.
 """Miscellaneous I/O utility functions."""
-
-
+import logging
 import pathlib
 
 
@@ -32,3 +31,14 @@ def check_file_exists(file_path: pathlib.Path) -> None:
     """
     if not file_path.is_file():
         raise FileNotFoundError(file_path)
+
+
+def config_logger(loglevel: str) -> None:
+    """Sets up the logger using the given log level.
+
+    :param loglevel: The log level specified on the command line.
+    """
+    numeric_level = getattr(logging, loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError("Invalid log level: %s" % loglevel)
+    logging.basicConfig(level=numeric_level)

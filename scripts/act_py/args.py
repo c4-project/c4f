@@ -18,3 +18,16 @@ aux_in_parser.add_argument(
     type=argparse.FileType("r"),
     help="Path to the auxiliary JSON file created during a previous delitmus pass.",
 )
+
+# A parser that contains the common set of arguments used in the test-handling
+# scripts (run_test, check_test).
+test_phase_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
+test_phase_parser.add_argument(
+    "test", type=argparse.FileType("r"), help="The input test file."
+)
+test_phase_parser.add_argument(
+    "--log",
+    type=str,
+    default="WARNING",
+    help="The log level (eg. DEBUG, INFO, WARNING, ERROR, or CRITICAL).",
+)

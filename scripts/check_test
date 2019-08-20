@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+# The Automagic Compiler Tormentor
+#
+# Copyright (c) 2018--2019 Matt Windsor and contributors
+#
+# ACT itself is licensed under the MIT License. See the LICENSE file in the
+# project root for more information.
+#
+# ACT is based in part on code from the Herdtools7 project
+# (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+# project root for more information.
+"""Checks a completed test for satisfiability on each output."""
+import argparse
+
+import typing
+
+from act_py import args, io_utils, test, test_checker
+
+
+def check_from_spec_file(
+    fp: typing.TextIO, settings: test_checker.CheckSettings
+) -> None:
+    """Loads a test specification JSON file from `fp`, and runs the resulting test.
+
+    :param fp: The file-pointer from which we load the JSON.
+    """
+    test.load(fp).check(settings)
+
+
+def make_settings(arguments: argparse.Namespace) -> test_checker.CheckSettings:
+    """Makes a checker settings struct using the parsed arguments.
+
+    :param arguments: The argument namespace to read.
+    :return: A settings record derived from `args`.
+    """
+    # We do this the long way around to make sure that the CheckSettings
+    # defaults are maintained.
+    settings = test_checker.CheckSettings()
+    if arguments.sat is not None:
+        settings.print_sat = arguments.sat
+    if arguments.unsat is not None:
+        settings.print_unsat = arguments.unsat
+    if arguments.unknown is not None:
+        settings.print_unknown = arguments.unknown
+    if arguments.witnesses is not None:
+        settings.print_witnesses = arguments.witnesses
+    if arguments.counter_examples is not None:
+        settings.print_counter_examples = arguments.counter_examples
+    return settings
+
+
+# Used to build the argument parser.
+flags = ["sat", "unsat", "witnesses", "counter-examples", "unknown"]
+
+
+def main() -> None:
+    """Main function."""
+
+    parser = argparse.ArgumentParser(
+        description=__doc__, parents=[args.test_phase_parser]
+    )
+    for flag in flags:
+        dest = flag.replace("-", "_")
+        parser.add_argument(f"--{flag}", action="store_true", dest=dest, default=None)
+        parser.add_argument(f"--no-{flag}", action="store_false", dest=dest)
+
+    arguments = parser.parse_args()
+
+    settings = make_settings(arguments)
+
+    io_utils.config_logger(arguments.log)
+    check_from_spec_file(arguments.test, settings)
+
+
+if __name__ == "__main__":
+    main()

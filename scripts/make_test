@@ -17,7 +17,7 @@ import pathlib
 import sys
 import typing
 
-from act_py import act_id, machine_info, test_runner
+from act_py import act_id, machine_info, test, test_common
 
 # TODO(@MattWindsor91): understand drivers other than obj_splitmus.
 # TODO(@MattWindsor91): understand backends other than machine.litmus.
@@ -34,27 +34,25 @@ def make_test(
     subject_paths: typing.List[pathlib.Path],
     machine_predicate: typing.Optional[str],
     compiler_predicate: typing.Optional[str],
-) -> test_runner.Test:
+) -> test.Test:
     subjects = [inspect_subject(path) for path in subject_paths]
 
-    env: test_runner.TestEnv = test_runner.TestEnv(
-        subjects, obj_splitmus_driver, output_dir
-    )
-    machines: typing.Mapping[act_id.Id, test_runner.MachineTest] = get_machines(
+    env: test_common.Env = test_common.Env(subjects, obj_splitmus_driver, output_dir)
+    machines: typing.Mapping[act_id.Id, test.MachineTest] = get_machines(
         compiler_predicate=compiler_predicate, machine_predicate=machine_predicate
     )
-    return test_runner.Test(env, machines)
+    return test.Test(env, machines)
 
 
-def inspect_subject(path: pathlib.Path) -> test_runner.TestSubject:
+def inspect_subject(path: pathlib.Path) -> test_common.Subject:
     """Visits the subject path `path` and infers the rest of the subject data.
 
     :param path: The path to visit.
     :return: The resulting `test_runner.TestSubject`.
     """
-    with path.open() as fp:
+    with open(path, "r") as fp:
         name: str = get_subject_name(fp)
-    return test_runner.TestSubject(name, path)
+    return test_common.Subject(name, path)
 
 
 def get_subject_name(fp: typing.TextIO) -> str:
@@ -73,7 +71,7 @@ def get_subject_name(fp: typing.TextIO) -> str:
 
 def get_machines(
     machine_predicate: typing.Optional[str], compiler_predicate: typing.Optional[str]
-) -> typing.Mapping[act_id.Id, test_runner.MachineTest]:
+) -> typing.Mapping[act_id.Id, test.MachineTest]:
     """Gets machine information from ACT's configuration in `test_runner.MachineTest` form.
 
     :param machine_predicate:
@@ -92,7 +90,7 @@ def get_machines(
 
 def expand_machine(
     machine_id: act_id.Id, compilers: typing.Iterable[act_id.Id]
-) -> test_runner.MachineTest:
+) -> test.MachineTest:
     """Expands a raw machine listing into a testable machine.
 
     :param machine_id: The ID of the machine to expand.
@@ -100,7 +98,7 @@ def expand_machine(
     :return: The result of expanding `raw_machine`.
     """
     # TODO(@MattWindsor91): actually search for the correct backend.
-    return test_runner.MachineTest(
+    return test.MachineTest(
         list(compilers), act_id.qualify(machine_id, act_id.Id("litmus"))
     )
 
@@ -111,7 +109,7 @@ if __name__ == "__main__":
         "-o",
         "--output",
         metavar="DIR",
-        type=pathlib.Path,
+        type=lambda x: pathlib.Path(x),
         default=pathlib.Path("./output"),
         help="The directory to which the test will output its results.",
     )
@@ -134,15 +132,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "subjects",
         metavar="FILE",
-        type=pathlib.Path,
+        type=(lambda x: pathlib.Path(x)),
         nargs="+",
         help="The C/litmus files to test.",
     )
     args = parser.parse_args()
-    test: test_runner.Test = make_test(
+    result: test.Test = make_test(
         output_dir=args.output,
         subject_paths=args.subjects,
         compiler_predicate=args.compiler_predicate,
         machine_predicate=args.machine_predicate,
     )
-    test.dump(sys.stdout)
+    result.dump(sys.stdout)

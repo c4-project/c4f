@@ -40,6 +40,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 master_doc = 'index'
 
+default_role = 'any'
 
 # -- Options for HTML output -------------------------------------------------
 

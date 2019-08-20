@@ -1,5 +1,5 @@
 ``obj_splitmus``: spliced Litmus test driver
---------------------------------------------
+============================================
 
 ``obj_splitmus`` is a test driver that wraps Litmus7-style backends to work
 around the restrictions in those tools' input.  It:
@@ -18,7 +18,7 @@ around the restrictions in those tools' input.  It:
    breaking change.
 
 Usage
-^^^^^
+-----
 
 For single-file usage:
 
@@ -31,7 +31,7 @@ where ``LITMUS_ID`` is the fully-qualified ID of a Litmus-style backend in
 ``act.conf``, and ``file`` is a C litmus test.
 
 Rationale
-^^^^^^^^^
+---------
 
 Using Litmus7 directly (the intended way) means that our assembly litmus
 tests must pass through Litmus7's assembly parser.  As Litmus7 was designed for

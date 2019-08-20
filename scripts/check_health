@@ -9,5 +9,6 @@ SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
 # shellcheck source=scripts/act_bash/exec.sh
 source "${SCRIPTDIR}/act_bash/exec.sh"
 
+readonly DUNE_EXEC="false"
 act::backend -help >/dev/null
 act::delitmus -help >/dev/null

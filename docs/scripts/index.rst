@@ -18,6 +18,10 @@ These live in the ``./scripts`` directory.
    :maxdepth: 2
    :caption: Contents:
 
+   do_memalloy
+   do_memalloy_test
    fuzz_many
    make_conf
+   make_test
+   run_test
    test_drivers

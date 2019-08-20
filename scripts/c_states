@@ -39,7 +39,7 @@ usage() {
   echo "-b: ID of backend to use for checking C files"
   echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
   echo "-v/-q: verbose/quiet"
-  echo '-x: run ACT binaries with `dune exec`'
+  echo "-x: run ACT binaries with \`dune exec\`"
   echo "-h/-?: usage"
   exit
 }

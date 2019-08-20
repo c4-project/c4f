@@ -13,7 +13,6 @@ declare ACT
 # If set, overrides the choice of `act-c` executable.
 declare ACT_C
 
-
 # If set, overrides the choice of `act-fuzz` executable.
 declare ACT_FUZZ
 

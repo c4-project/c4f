@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+#
+# A harness script that runs memalloy (looking for it in the given directory),
+# fuzzes its output into a directory, builds a test, runs that test, and
+# handles the results.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
+# shellcheck source=scripts/act_bash/args.sh
+source "${SCRIPTDIR}/act_bash/args.sh"
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+# shellcheck source=scripts/act_bash/log.sh
+source "${SCRIPTDIR}/act_bash/log.sh"
+
+## Constants ##
+# TODO(@MattWindsor91): most of these shouldn't be hardcoded.
+
+# The number of events Memalloy should be asked to produce by default.
+readonly DEFAULT_MEMALLOY_EVENTS=4
+
+# The number of times the fuzzer should run on each Memalloy output by default.
+readonly DEFAULT_FUZZ_PASSES=10
+
+# The directory, relative to the Memalloy output directory, to which any
+# fuzzer outcomes should be output.
+readonly FUZZ_OUTPUT_DIR="fuzz"
+
+## Arguments ##
+
+# The backend-filtering predicate to send to the test builder.
+BACKEND_PREDICATE=""
+
+# The compiler-filtering predicate to send to the test builder.
+COMPILER_PREDICATE=""
+
+
+## Functions ##
+
+
+# Prints usage information and exits.
+usage() {
+  echo "Usage: $0 [-b BACKEND_PREDICATE] [-c COMPILER_PREDICATE] [-qvxh?] MEMALLOY_DIR"
+  echo
+  echo "-b: predicate to use to find backends"
+  echo "-c: predicate to use to find compilers"
+  echo "-v/-q: verbose/quiet"
+  echo "-x: run ACT binaries with \`dune exec\`"
+  echo "-h/-?: usage"
+  exit
+}
+
+
+# Main function.
+main() {
+  while getopts "b:c:m:qvx?h" a; do
+    case ${a} in
+    b) BACKEND_PREDICATE=${OPTARG} ;;
+    c) COMPILER_PREDICATE=${OPTARG} ;;
+    q) VERBOSE="false" ;;
+    v) VERBOSE="true" ;;
+    x) DUNE_EXEC="true" ;;
+    h|?) usage ;;
+    esac
+  done
+  readonly BACKEND_PREDICATE COMPILER_PREDICATE DUNE_EXEC VERBOSE
+  shift $((OPTIND-1))
+
+  if [[ ${DUNE_EXEC} = "true" ]]; then
+    act::log "%s: using 'dune exec' for ACT.\n" "$0"
+  fi
+
+  if [[ $# -ne 1 ]]; then
+    act::error "need precisely one directory"
+    usage
+  fi
+  local memalloy_dir=$1
+
+  "${SCRIPTDIR}/do_memalloy" "${memalloy_dir}"
+
+  local results_dir="${memalloy_dir}/results/_latest"
+  litmus_dir="${results_dir}/litmus"
+  fuzz_dir="${results_dir}/${FUZZ_OUTPUT_DIR}"
+  mkdir -p "${fuzz_dir}"
+
+  "${SCRIPTDIR/fuzz_many}"
+
+  # TODO(@MattWindsor91): everything else
+}
+
+
+## Entry point ##
+main "$@"

@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Runs Memalloy from the given directory, giving sensible defaults for
+# ACT usage.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+
+## Constants ##
+# TODO(@MattWindsor91): most of these shouldn't be hardcoded.
+
+
+# The model, relative to Memalloy's models directory, to use to generate
+# violations.
+readonly MEMALLOY_VIOLATES_MODEL="c11_lahav.cat"
+
+# The model, relative to Memalloy's models directory, to use to filter
+# read-modify-writes.
+readonly MEMALLOY_NORMWS_MODEL="c11_normws.cat"
+
+# The number of events Memalloy should be asked to produce by default.
+readonly DEFAULT_MEMALLOY_EVENTS=4
+
+
+## Arguments ##
+
+
+# The directory in which Memalloy lives.
+MEMALLOY_DIR=""
+
+# The number of events Memalloy should be asked to produce.
+# Defaults to 'DEFAULT_MEMALLOY_EVENTS' if left empty.
+MEMALLOY_EVENTS=""
+
+
+## Functions ##
+
+
+# Prints usage information and exits.
+usage() {
+  echo "Usage: $0 [-n NUM_EVENTS] MEMALLOY_DIR"
+  echo
+  echo "-n: number of events for Memalloy to produce (default ${DEFAULT_MEMALLOY_EVENTS})"
+  echo "-h/-?: usage"
+  exit
+}
+
+
+# The main body of the script.
+main() {
+    while getopts "n:?h" a; do
+    case ${a} in
+    n) MEMALLOY_EVENTS=${OPTARG} ;;
+    h|?) usage ;;
+    esac
+  done
+  if [[ -z "${MEMALLOY_EVENTS}" ]]; then MEMALLOY_EVENTS="${DEFAULT_MEMALLOY_EVENTS}"; fi
+  readonly MEMALLOY_EVENTS
+  shift $((OPTIND-1))
+
+  readonly MEMALLOY_DIR="$1"
+  cd "${MEMALLOY_DIR}"
+  # -batch stops Memalloy from trying to open the directory;
+  # >/dev/null is because Memalloy is quite chatty by default.
+  ./comparator \
+    -arch C \
+    -violates "models/${MEMALLOY_VIOLATES_MODEL}" \
+    -satisfies "models/${MEMALLOY_NORMWS_MODEL}" \
+    -events "${MEMALLOY_EVENTS}" \
+    -iter \
+    -batch >/dev/null
+}
+
+
+## Entry point ##
+main "$@"

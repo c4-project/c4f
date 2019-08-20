@@ -5,4 +5,4 @@
 
 .. warning:: Under construction.
 
-For an introduction, see :ref:`intro-fuzz-multiple`.
+For an introduction, see `intro-fuzz-multiple`.

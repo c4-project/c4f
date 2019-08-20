@@ -72,7 +72,7 @@ class Aux:
         :param fp: A file-like object to use as the target of the write.
         :return: Nothing.
         """
-        json.dump(dataclasses.asdict(self), fp, indent="\t")
+        json_utils.dump_dataclass(self, fp)
 
     def variables_of_thread(self, tid: int) -> typing.Iterator[litmus_id.Lid]:
         """Yields the C identifier of each variable in this auxiliary record that is visible from the given thread ID.
