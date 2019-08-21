@@ -25,9 +25,26 @@ test_phase_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=Fa
 test_phase_parser.add_argument(
     "test", type=argparse.FileType("r"), help="The input test file."
 )
-test_phase_parser.add_argument(
+log_group = test_phase_parser.add_mutually_exclusive_group()
+log_group.add_argument(
     "--log",
     type=str,
     default="WARNING",
-    help="The log level (eg. DEBUG, INFO, WARNING, ERROR, or CRITICAL).",
+    help="the log level (eg. DEBUG, INFO, WARNING, ERROR, or CRITICAL)",
+)
+log_group.add_argument(
+    "-q",
+    "--quiet",
+    action="store_const",
+    const="ERROR",
+    dest="log",
+    help="quiet (short for --log=ERROR)"
+)
+log_group.add_argument(
+    "-v",
+    "--verbose",
+    action="store_const",
+    const="INFO",
+    dest="log",
+    help="verbose (short for --log=INFO)"
 )

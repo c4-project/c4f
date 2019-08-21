@@ -50,7 +50,21 @@ def make_settings(arguments: argparse.Namespace) -> test_checker.CheckSettings:
 
 
 # Used to build the argument parser.
-flags = ["sat", "unsat", "witnesses", "counter-examples", "unknown"]
+flags = {
+    "sat": ("s", "postcondition-satisfying tests"),
+    "unsat": ("u", "postcondition-refuting tests"),
+    "witnesses" : ("w", "witness states"),
+    "counter-examples": ("x", "counter-example states"),
+    "unknown": ("n", "tests with unknown results")
+}
+
+
+def generate_flag_parameters(parser: argparse.ArgumentParser) -> None:
+    for flag, (short, doc) in flags.items():
+        dest = flag.replace("-", "_")
+        no_short = short.upper()
+        parser.add_argument(f"--{flag}", f"-{short}", action="store_true", help=f"enables printing of {doc}", dest=dest, default=None)
+        parser.add_argument(f"--no-{flag}", f"-{no_short}", action="store_false", help=f"disables printing of {doc}", dest=dest)
 
 
 def main() -> None:
@@ -59,10 +73,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__, parents=[args.test_phase_parser]
     )
-    for flag in flags:
-        dest = flag.replace("-", "_")
-        parser.add_argument(f"--{flag}", action="store_true", dest=dest, default=None)
-        parser.add_argument(f"--no-{flag}", action="store_false", dest=dest)
+    generate_flag_parameters(parser)
 
     arguments = parser.parse_args()
 

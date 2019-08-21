@@ -21,6 +21,7 @@ source "${SCRIPTDIR}/act_bash/naming.sh"
 
 ## Constants ##
 
+
 # The name to give to the symlink created in 'fire and forget' mode.
 readonly SYMLINK_NAME="_fuzz_latest"
 

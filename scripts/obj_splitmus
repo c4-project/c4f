@@ -16,9 +16,10 @@ readonly SCRIPTDIR
 source "${SCRIPTDIR}/act_bash/args.sh"
 # shellcheck source=scripts/act_bash/exec.sh
 source "${SCRIPTDIR}/act_bash/exec.sh"
-# shellcheck source=scripts/act_bash/exec.sh
+# shellcheck source=scripts/act_bash/log.sh
 source "${SCRIPTDIR}/act_bash/log.sh"
-
+# shellcheck source=scripts/act_bash/naming.sh
+source "${SCRIPTDIR}/act_bash/naming.sh"
 
 ## Constants and arguments ##
 
@@ -178,17 +179,6 @@ run() {
   "${litdir}/${TEST_NAME}.exe" | act::backend parse -sim "${BACKEND}"
 }
 
-
-# Populates OUTPUT_DIR with a temporary directory then sets a callback to
-# remove it when the shell dies.
-#
-# Globals:
-#   OUTPUT_DIR: write (and reference in trap)
-setup_temp_output_dir() {
-  OUTPUT_DIR="$(mktemp -d)" || exit 2
-  act::log "using temporary directory: '%s'.\n" "${OUTPUT_DIR}"
-  trap 'rm -rf ${OUTPUT_DIR}' EXIT
-}
 
 
 # Prints the script's usage and exits.

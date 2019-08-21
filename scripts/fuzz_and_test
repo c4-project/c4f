@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+#
+# A harness script that runs fuzz_many on the given filenames, then
+# creates and runs a test in a possibly-given directory.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
+# shellcheck source=scripts/act_bash/args.sh
+source "${SCRIPTDIR}/act_bash/args.sh"
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+# shellcheck source=scripts/act_bash/log.sh
+source "${SCRIPTDIR}/act_bash/log.sh"
+# shellcheck source=scripts/act_bash/naming.sh
+source "${SCRIPTDIR}/act_bash/naming.sh"
+
+## Constants ##
+
+# The number of times each input should be fuzzed by default.
+readonly DEFAULT_FUZZ_PASSES=10
+
+
+readonly FUZZ_OUTPUT_DIR="fuzz"
+
+
+readonly TEST_OUTPUT_DIR="test"
+
+
+## Arguments ##
+
+
+# The output directory used for both fuzzing and testing.
+# If empty, this will be set by `act::setup_temp_output_dir`, and automatically
+# removed on exit.
+OUTPUT_DIR=""
+
+# The directory in which Memalloy lives.
+MEMALLOY_DIR=""
+
+# The number of events Memalloy should be asked to produce.
+# Passed straight into `do_memalloy`, which will do the appropriate default
+# substitution and error handling.
+MEMALLOY_EVENTS=""
+
+# The number of times the fuzzer should run on each Memalloy output.
+# Defaults to `DEFAULT_FUZZ_PASSES` if empty.
+FUZZ_PASSES=""
+
+# The backend-filtering predicate to send to the test builder.
+BACKEND_PREDICATE=""
+
+# The compiler-filtering predicate to send to the test builder.
+COMPILER_PREDICATE=""
+
+
+## Functions ##
+
+
+# Prints usage information and exits.
+usage() {
+  echo "Usage: $0 [-d OUTPUT_DIR] [-k NUM_FUZZ_PASSES] [-xh?] MEMALLOY_DIR"
+  echo
+  echo "-b: ID of backend to use for checking C files"
+  echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
+  echo "-k: number of times to fuzz each item"
+  echo "-v/-q: verbose/quiet"
+  echo "-x: run ACT binaries with \`dune exec\`"
+  echo "-h/-?: usage"
+  exit
+}
+
+
+# Main function.
+main() {
+  while getopts "c:d:k:m:qvx?h" a; do
+    case ${a} in
+    c) COMPILER_PREDICATE=${OPTARG} ;;
+    d) OUTPUT_DIR=${OPTARG} ;;
+    k) FUZZ_PASSES=${OPTARG} ;;
+    m) MACHINE_PREDICATE=${OPTARG} ;;
+    q) VERBOSE="false" ;;
+    v) VERBOSE="true" ;;
+    x) DUNE_EXEC="true" ;;
+    h|?) usage ;;
+    esac
+  done
+  if [[ -z "${FUZZ_PASSES}" ]]; then FUZZ_PASSES="${DEFAULT_FUZZ_PASSES}"; fi
+  readonly COMPILER_PREDICATE MACHINE_PREDICATE FUZZ_PASSES DUNE_EXEC VERBOSE
+  shift $((OPTIND-1))
+
+  if [[ ${DUNE_EXEC} = "true" ]]; then
+    act::log "%s: using 'dune exec' for ACT.\n" "$0"
+  fi
+
+  if [[ -z ${OUTPUT_DIR} ]]; then act::setup_temp_output_dir; fi
+  readonly OUTPUT_DIR
+
+  local qv_flags="$(act::flags_qv)"
+  local qvx_flags="$(act::flags_qvx)"
+
+  local fuzz_dir="${OUTPUT_DIR}/${FUZZ_OUTPUT_DIR}"
+  act::log "now fuzzing into %s\n" "${fuzz_dir}"
+  mkdir -p "${fuzz_dir}"
+  "${SCRIPTDIR}/fuzz_many" "${qvx_flags}" -c "${FUZZ_PASSES}" -d "${fuzz_dir}" "$@"
+
+
+  local test_dir="${OUTPUT_DIR}/${TEST_OUTPUT_DIR}"
+  local test_file="${test_dir}/test.json"
+  act::log "now making test (%s)\n" "${test_file}"
+  mkdir -p "${test_dir}"
+  "${SCRIPTDIR}/make_test" -o "${test_dir}" --compilers="${COMPILER_PREDICATE}" --machines="${MACHINE_PREDICATE}" "${fuzz_dir}"/* > "${test_file}"
+
+  if [[ ${VERBOSE} = "true" ]]; then
+    echo "== BEGIN TEST FILE ==" >&2
+    cat "${test_file}" >&2
+    echo "" >&2
+    echo "== END TEST FILE ==" >&2
+  fi
+
+  act::log "now running test (%s)\n" "${test_file}"
+  "${SCRIPTDIR}/run_test" "${qv_flags}" "${test_file}"
+  "${SCRIPTDIR}/check_test" "${qv_flags}" "${test_file}"
+}
+
+
+## Entry point ##
+main "$@"

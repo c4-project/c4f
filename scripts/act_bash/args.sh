@@ -3,7 +3,8 @@
 # Helpers for keeping a consistent argument set across the various ACT
 # scripts.
 #
-# Expects log.sh to be loaded.
+# Expects log.sh to be sourced.
+
 
 declare DUNE_EXEC
 
