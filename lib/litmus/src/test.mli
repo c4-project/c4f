@@ -60,6 +60,10 @@ module Raw : sig
       result in well-formed litmus tests, but may cause validation against a
       language to fail if not. *)
 
+  val map_name : ('const, 'prog) t ->
+      f:(string -> string) -> ('const, 'prog) t
+  (** [map_name test ~f] maps [f] over the name of [test]. *)
+
   (** {4 Manipulating the auxiliary data} *)
 
   val try_map_aux :
