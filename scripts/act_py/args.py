@@ -38,7 +38,7 @@ log_group.add_argument(
     action="store_const",
     const="ERROR",
     dest="log",
-    help="quiet (short for --log=ERROR)"
+    help="quiet (short for --log=ERROR)",
 )
 log_group.add_argument(
     "-v",
@@ -46,5 +46,5 @@ log_group.add_argument(
     action="store_const",
     const="INFO",
     dest="log",
-    help="verbose (short for --log=INFO)"
+    help="verbose (short for --log=INFO)",
 )

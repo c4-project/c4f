@@ -11,6 +11,8 @@
 """Support for working with ACT IDs."""
 
 import typing
+from act_py import str_utils
+
 
 # Type of act IDs.
 Id = typing.NewType("Id", str)
@@ -45,29 +47,6 @@ id_to_dir_replacements: typing.List[typing.Tuple[str, str]] = [
 ]
 
 
-def is_blank(s: str) -> bool:
-    """Returns true provided that the input string is empty after stripping whitespace.
-
-    Examples:
-
-    >>> is_blank("")
-    True
-
-    >>> is_blank(" ")
-    True
-
-    >>> is_blank("     \t\t   ")
-    True
-
-    >>> is_blank("     spam    ")
-    False
-
-    :param s: The string to query.
-    :return: Whether `s` is empty after stripping whitespace.
-    """
-    return s.strip() == ""
-
-
 def qualify(machine_id: Id, other_id: Id) -> Id:
     """Fully-qualifies a machine-dependent ID by appending it to a machine ID.
 
@@ -84,5 +63,7 @@ def qualify(machine_id: Id, other_id: Id) -> Id:
     :return: The qualified identifier.
     """
     return (
-        other_id if machine_id.strip() == "" else Id(".".join([machine_id, other_id]))
+        other_id
+        if str_utils.is_blank(machine_id)
+        else Id(".".join([machine_id, other_id]))
     )

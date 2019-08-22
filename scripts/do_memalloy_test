@@ -31,11 +31,11 @@ readonly FUZZ_OUTPUT_DIR="fuzz"
 
 ## Arguments ##
 
-# The backend-filtering predicate to send to the test builder.
-BACKEND_PREDICATE=""
-
 # The compiler-filtering predicate to send to the test builder.
 COMPILER_PREDICATE=""
+
+# The machine-filtering predicate to send to the test builder.
+MACHINE_PREDICATE=""
 
 
 ## Functions ##
@@ -43,10 +43,10 @@ COMPILER_PREDICATE=""
 
 # Prints usage information and exits.
 usage() {
-  echo "Usage: $0 [-b BACKEND_PREDICATE] [-c COMPILER_PREDICATE] [-qvxh?] MEMALLOY_DIR"
+  echo "Usage: $0 [-c COMPILER_PREDICATE] [-m MACHINE_PREDICATE] [-qvxh?] MEMALLOY_DIR"
   echo
-  echo "-b: predicate to use to find backends"
   echo "-c: predicate to use to find compilers"
+  echo "-m: predicate to use to find machines"
   echo "-v/-q: verbose/quiet"
   echo "-x: run ACT binaries with \`dune exec\`"
   echo "-h/-?: usage"
@@ -56,10 +56,10 @@ usage() {
 
 # Main function.
 main() {
-  while getopts "b:c:m:qvx?h" a; do
+  while getopts "c:m:qvx?h" a; do
     case ${a} in
-    b) BACKEND_PREDICATE=${OPTARG} ;;
     c) COMPILER_PREDICATE=${OPTARG} ;;
+    m) MACHINE_PREDICATE=${OPTARG} ;;
     q) VERBOSE="false" ;;
     v) VERBOSE="true" ;;
     x) DUNE_EXEC="true" ;;

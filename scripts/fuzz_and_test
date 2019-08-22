@@ -37,23 +37,15 @@ readonly TEST_OUTPUT_DIR="test"
 # removed on exit.
 OUTPUT_DIR=""
 
-# The directory in which Memalloy lives.
-MEMALLOY_DIR=""
-
-# The number of events Memalloy should be asked to produce.
-# Passed straight into `do_memalloy`, which will do the appropriate default
-# substitution and error handling.
-MEMALLOY_EVENTS=""
-
 # The number of times the fuzzer should run on each Memalloy output.
 # Defaults to `DEFAULT_FUZZ_PASSES` if empty.
 FUZZ_PASSES=""
 
-# The backend-filtering predicate to send to the test builder.
-BACKEND_PREDICATE=""
-
 # The compiler-filtering predicate to send to the test builder.
 COMPILER_PREDICATE=""
+
+# The machine-filtering predicate to send to the test builder.
+MACHINE_PREDICATE=""
 
 
 ## Functions ##
@@ -61,10 +53,10 @@ COMPILER_PREDICATE=""
 
 # Prints usage information and exits.
 usage() {
-  echo "Usage: $0 [-d OUTPUT_DIR] [-k NUM_FUZZ_PASSES] [-xh?] MEMALLOY_DIR"
+  echo "Usage: $0 [-c COMPILER_PREDICATE] [-m MACHINE_PREDICATE] [-k NUM_FUZZ_PASSES] [-qvxh?] MEMALLOY_DIR"
   echo
-  echo "-b: ID of backend to use for checking C files"
   echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
+  echo "-m: ID of backend to use for checking C files"
   echo "-k: number of times to fuzz each item"
   echo "-v/-q: verbose/quiet"
   echo "-x: run ACT binaries with \`dune exec\`"
@@ -98,8 +90,11 @@ main() {
   if [[ -z ${OUTPUT_DIR} ]]; then act::setup_temp_output_dir; fi
   readonly OUTPUT_DIR
 
-  local qv_flags="$(act::flags_qv)"
-  local qvx_flags="$(act::flags_qvx)"
+  # Flags used to communicate verbosity/dune-exec to other scripts.
+  local qv_flags
+  qv_flags="$(act::flags_qv)"
+  local qvx_flags
+  qvx_flags="$(act::flags_qvx)"
 
   local fuzz_dir="${OUTPUT_DIR}/${FUZZ_OUTPUT_DIR}"
   act::log "now fuzzing into %s\n" "${fuzz_dir}"
@@ -113,18 +108,25 @@ main() {
   mkdir -p "${test_dir}"
   "${SCRIPTDIR}/make_test" -o "${test_dir}" --compilers="${COMPILER_PREDICATE}" --machines="${MACHINE_PREDICATE}" "${fuzz_dir}"/* > "${test_file}"
 
-  if [[ ${VERBOSE} = "true" ]]; then
-    echo "== BEGIN TEST FILE ==" >&2
-    cat "${test_file}" >&2
-    echo "" >&2
-    echo "== END TEST FILE ==" >&2
-  fi
+  if [[ ${VERBOSE} = "true" ]]; then echo_test_file "${test_file}"; fi
 
   act::log "now running test (%s)\n" "${test_file}"
   "${SCRIPTDIR}/run_test" "${qv_flags}" "${test_file}"
   "${SCRIPTDIR}/check_test" "${qv_flags}" "${test_file}"
 }
 
+# Dumps the contents of the given test file to stderr.
+#
+# Arguments:
+#   1: the path to the test file
+echo_test_file() {
+  local test_file=$1
+
+  echo "== BEGIN TEST FILE ==" >&2
+  cat "${test_file}" >&2
+  echo "" >&2
+  echo "== END TEST FILE ==" >&2
+}
 
 ## Entry point ##
 main "$@"
