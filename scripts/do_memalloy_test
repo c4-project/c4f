@@ -31,42 +31,64 @@ readonly FUZZ_OUTPUT_DIR="fuzz"
 
 ## Arguments ##
 
+
+# Flags forwarded directly to the test checker.
+CHECK_FLAGS=""
+
+# Whether we are using Dune to execute any OCaml ACT tools.
+DUNE_EXEC="false"
+
+# Whether we are forcing Memalloy to run even if we have a results directory.
+FORCE_MEMALLOY="false"
+
+# The directory in which Memalloy lives.
+MEMALLOY_DIR=""
+
+# The number of events to ask Memalloy to generator
+# Defaults to `DEFAULT_MEMALLOY_EVENTS` if empty.
+MEMALLOY_EVENTS=""
+
+# The number of times the fuzzer should run on each Memalloy output.
+# Defaults to `DEFAULT_FUZZ_PASSES` if empty.
+FUZZ_PASSES=""
+
 # The compiler-filtering predicate to send to the test builder.
 COMPILER_PREDICATE=""
 
 # The machine-filtering predicate to send to the test builder.
 MACHINE_PREDICATE=""
 
-
 ## Functions ##
 
 
 # Prints usage information and exits.
 usage() {
-  echo "Usage: $0 [-c COMPILER_PREDICATE] [-m MACHINE_PREDICATE] [-qvxh?] MEMALLOY_DIR"
-  echo
-  echo "-c: predicate to use to find compilers"
-  echo "-m: predicate to use to find machines"
-  echo "-v/-q: verbose/quiet"
-  echo "-x: run ACT binaries with \`dune exec\`"
-  echo "-h/-?: usage"
+  echo "Usage: $0"
+  echo "  [-c COMPILER_PREDICATE] [-m MACHINE_PREDICATE]"
+  echo "  [-e NUM_MEMALLOY_EVENTS] [-k NUM_FUZZ_PASSES]"
+  echo "  [-fsuwtnSUWTNqvxh?] MEMALLOY_DIR"
   exit
 }
 
 
 # Main function.
 main() {
-  while getopts "c:m:qvx?h" a; do
+  while getopts "c:e:k:m:fsuwtnSUWTNqvx?h" a; do
     case ${a} in
     c) COMPILER_PREDICATE=${OPTARG} ;;
+    e) MEMALLOY_EVENTS=${OPTARG} ;;
+    k) FUZZ_PASSES=${OPTARG} ;;
     m) MACHINE_PREDICATE=${OPTARG} ;;
+    s|u|w|t|n|S|U|W|T|N) CHECK_FLAGS="${CHECK_FLAGS}${a}" ;;
+    f) FORCE_MEMALLOY="true" ;;
     q) VERBOSE="false" ;;
     v) VERBOSE="true" ;;
     x) DUNE_EXEC="true" ;;
     h|?) usage ;;
     esac
   done
-  readonly BACKEND_PREDICATE COMPILER_PREDICATE DUNE_EXEC VERBOSE
+  readonly CHECK_FLAGS COMPILER_PREDICATE MACHINE_PREDICATE MEMALLOY_EVENTS \
+	   FUZZ_PASSES FORCE_MEMALLOY DUNE_EXEC VERBOSE
   shift $((OPTIND-1))
 
   if [[ ${DUNE_EXEC} = "true" ]]; then
@@ -77,18 +99,76 @@ main() {
     act::error "need precisely one directory"
     usage
   fi
-  local memalloy_dir=$1
+  readonly MEMALLOY_DIR=$1
 
-  "${SCRIPTDIR}/do_memalloy" "${memalloy_dir}"
+  run_memalloy_if_needed
+  run_fuzz_and_test
+}
 
-  local results_dir="${memalloy_dir}/results/_latest"
-  litmus_dir="${results_dir}/litmus"
-  fuzz_dir="${results_dir}/${FUZZ_OUTPUT_DIR}"
-  mkdir -p "${fuzz_dir}"
 
-  "${SCRIPTDIR/fuzz_many}"
+# Checks whether Memalloy forcing is on, or if the results directory is
+# not present.  If either are true, runs `do_memalloy` in the specified
+# Memalloy directory.
+#
+# If we are reusing the existing Memalloy directory, and verbosity is on,
+#
+# Globals:
+#   FORCE_MEMALLOY: read
+#   MEMALLOY_DIR: read
+#   MEMALLOY_EVENTS: read
+#   SCRIPTDIR: read
+#   VERBOSE: read indirectly
+run_memalloy_if_needed() {
+  local results_dir="${MEMALLOY_DIR}/results/_latest"
 
-  # TODO(@MattWindsor91): everything else
+  if [[ ${FORCE_MEMALLOY} == "true" || ( ! -d "${results_dir}" ) ]]; then
+    act::log "Running memalloy.\n"
+    "${SCRIPTDIR}/do_memalloy" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}"
+  else
+    act::log "Using existing memalloy results directory"
+    if [[ -n $(command -v stat) ]]; then
+      local mtime
+      mtime="$(stat -L -c "%Y" "${results_dir}")"
+      act::log "(last modified on %(%c)T)" "${mtime}"
+    fi
+    act::log ".\n"
+  fi
+
+  if [[ ! -d "${results_dir}" ]]; then
+    act::error "Missing Memalloy results directory"
+    exit
+  fi
+}
+
+
+# Runs the `fuzz_and_test` script on the results produced by the last
+# invocation of Memalloy.
+#
+# Globals:
+#   CHECK_FLAGS: read
+#   COMPILER_PREDICATE: read
+#   DUNE_EXEC: read indirectly
+#   FUZZ_PASSES: read
+#   MACHINE_PREDICATE: read
+#   MEMALLOY_DIR: read
+#   SCRIPTDIR: read
+run_fuzz_and_test() {
+  local results_dir="${MEMALLOY_DIR}/results/_latest"
+  local litmus_dir="${results_dir}/litmus"
+
+  local scratch_dir="${results_dir}/act"
+  mkdir -p "${scratch_dir}"
+
+  local qvx_flags
+  qvx_flags="$(act::flags_qvx)"
+
+  "${SCRIPTDIR}/fuzz_and_test" \
+    -c "${COMPILER_PREDICATE}" \
+    -d "${scratch_dir}" \
+    -k "${FUZZ_PASSES}" \
+    -m "${MACHINE_PREDICATE}" \
+    "${qvx_flags}${CHECK_FLAGS}" \
+    "${litmus_dir}"/*.litmus
 }
 
 

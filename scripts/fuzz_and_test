@@ -35,6 +35,9 @@ readonly TEST_OUTPUT_DIR="test"
 # Flags forwarded directly to the test checker.
 CHECK_FLAGS=""
 
+# Whether we are using Dune to execute any OCaml ACT tools.
+DUNE_EXEC="false"
+
 # The output directory used for both fuzzing and testing.
 # If empty, this will be set by `act::setup_temp_output_dir`, and automatically
 # removed on exit.
@@ -116,7 +119,7 @@ main() {
 
   act::log "now running test (%s)\n" "${test_file}"
   "${SCRIPTDIR}/run_test" "${qv_flags}" "${test_file}"
-  "${SCRIPTDIR}/check_test" "${qv_flags}${CHECK_FLAGS}" "${test_file}"
+  "${SCRIPTDIR}/report_test" "${qv_flags}${CHECK_FLAGS}" "${test_file}"
 }
 
 # Dumps the contents of the given test file to stderr.

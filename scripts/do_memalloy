@@ -39,9 +39,9 @@ MEMALLOY_EVENTS=""
 
 # Prints usage information and exits.
 usage() {
-  echo "Usage: $0 [-n NUM_EVENTS] MEMALLOY_DIR"
+  echo "Usage: $0 [-e NUM_EVENTS] MEMALLOY_DIR"
   echo
-  echo "-n: number of events for Memalloy to produce (default ${DEFAULT_MEMALLOY_EVENTS})"
+  echo "-e: number of events for Memalloy to produce (default ${DEFAULT_MEMALLOY_EVENTS})"
   echo "-h/-?: usage"
   exit
 }
@@ -49,9 +49,9 @@ usage() {
 
 # The main body of the script.
 main() {
-    while getopts "n:?h" a; do
+    while getopts "e:?h" a; do
     case ${a} in
-    n) MEMALLOY_EVENTS=${OPTARG} ;;
+    e) MEMALLOY_EVENTS=${OPTARG} ;;
     h|?) usage ;;
     esac
   done

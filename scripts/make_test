@@ -51,13 +51,15 @@ def inspect_subject(path: pathlib.Path) -> test_common.Subject:
     :return: The resulting `test_runner.TestSubject`.
     """
     with open(path, "r") as fp:
-        name: str = get_subject_name(fp)
+        name: str = get_subject_name(path, fp)
     return test_common.Subject(name, path)
 
 
-def get_subject_name(fp: typing.TextIO) -> str:
+def get_subject_name(path: os.PathLike, fp: typing.TextIO) -> str:
     """Reads the subject name from the top of a Litmus test.
 
+    :param path:
+        The path to the file being read, used for any exceptions.
     :param fp:
         The file pointer to read.
     :return:
@@ -66,7 +68,17 @@ def get_subject_name(fp: typing.TextIO) -> str:
     fp.seek(0)
     header: str = fp.readline()
     header_chunks = header.split()
+    if len(header_chunks) < 2:
+        raise BadLitmusException(path, f"Header ill-formed: '{header}'")
     return header_chunks[1].strip()
+
+
+class BadLitmusException(Exception):
+    """Exception thrown when something occurs that indicates that a bad
+    Litmus test was passed in."""
+
+    def __init__(self, path: os.PathLike, message: str):
+        super().__init__(f"Bad litmus file '{path}': {message}")
 
 
 def get_machines(
