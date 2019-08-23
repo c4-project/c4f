@@ -32,6 +32,7 @@ function act::set_nz() {
   printf -v "${name}" '%s' "${value}"
 }
 
+
 # Sets a variable, but errors if the value is an empty ('zero') string or if
 # the variable already has a non-empty ('nonzero') value.
 #
@@ -53,7 +54,6 @@ function act::set_nz_once() {
   fi
   act::set_nz "${hr_name}" "${name}" "${value}"
 }
-
 
 
 # Composes a block of flags that, when sent to an ACT shell script that

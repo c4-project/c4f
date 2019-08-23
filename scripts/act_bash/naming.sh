@@ -27,7 +27,7 @@ act::fuzz_base_name() {
 }
 
 
-# Outputs the a systematically generated fuzzer output name.
+# Outputs the systematically generated fuzzer output name.
 #
 # Arguments:
 #   1: name to transform

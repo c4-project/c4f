@@ -6,29 +6,38 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-ACT="${ACT="act"}"
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+# shellcheck source=scripts/act_bash/log.sh
+source "${SCRIPTDIR}/act_bash/log.sh"
+# shellcheck source=scripts/act_bash/naming.sh
+source "${SCRIPTDIR}/act_bash/naming.sh"
+
+
+OUTPUT_DIR=""
+
 
 usage() {
 	echo "usage: $0 COMPILER LIT_FILE"
 	exit 1
 }
 
-if [[ $# -ne 2 ]]; then
-	usage
-fi
+main() {
+  if [[ $# -ne 2 ]]; then usage; fi
 
-compiler="$1"
-lit_file="$2"
+  local compiler="$1"
+  local lit_file="$2"
 
-# Most other invocations of mktemp aren't portable.
-tmpdir="$(mktemp -d)" || exit
-trap 'rm -r "${tmpdir}"' EXIT
+  act::setup_temp_output_dir # into OUTPUT_DIR
+  local auxfile="${OUTPUT_DIR}/aux.json"
+  local cfile="${OUTPUT_DIR}/out.c"
+  local sfile="${OUTPUT_DIR}/out.s"
 
-auxfile="${tmpdir}/aux.json"
-cfile="${tmpdir}/out.c"
-sfile="${tmpdir}/out.s"
+  act::delitmus -aux "${auxfile}" "${lit_file}" -o "${cfile}"
+  act::compile -compiler "${compiler}" "${cfile}" -o "${sfile}"
+  act::litmusify -compiler "${compiler}" -aux "${auxfile}" "${sfile}"
+}
 
-"${ACT}" c delitmus -aux "${auxfile}" "${lit_file}" -o "${cfile}"
-"${ACT}" c compile -compiler "${compiler}" "${cfile}" -o "${sfile}"
-"${ACT}" asm litmusify -compiler "${compiler}" -aux "${auxfile}" "${sfile}"
-
+## Entry point ##
+main "$@"
