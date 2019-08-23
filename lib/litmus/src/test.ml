@@ -53,8 +53,8 @@ module Raw = struct
     {test with threads= threads test @ [thread]}
 
   let map_name (type const prog) (test : (const, prog) t)
-      ~(f: string -> string) : (const, prog) t =
-    { test with name= f test.name }
+      ~(f : string -> string) : (const, prog) t =
+    {test with name= f test.name}
 
   let try_map_aux (type c1 c2 prog) (test : (c1, prog) t)
       ~(f : c1 Aux.t -> c2 Aux.t Or_error.t) : (c2, prog) t Or_error.t =

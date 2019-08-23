@@ -70,24 +70,26 @@ let%expect_test "gen: sample" =
   Act_utils.My_quickcheck.print_sample (module Act_c_mini.Lvalue) ;
   [%expect
     {|
-    (Variable J___r8___Ps_____rS_K)
-    (Variable P_ZvJK_s)
-    (Variable QC___PG)
-    (Variable Snh2_IR___EjA_wx)
-    (Variable ZI_9__8z7__j__)
-    (Variable _CR_)
-    (Variable __)
-    (Variable _gAO__o)
-    (Variable n_P_)
-    (Variable o73Y15D)
-    (Variable t)
-    (Deref (Variable Al))
-    (Deref (Variable MV___q_r))
-    (Deref (Variable _))
-    (Deref (Variable _S______z1_73ts_8))
-    (Deref (Variable __D))
-    (Deref (Deref (Variable __u_E7_fn)))
-    (Deref (Deref (Deref (Deref (Variable b__v))))) |}]
+    (Variable C7s_n)
+    (Variable JUATvMOOQ_5__79toi4TX)
+    (Variable L)
+    (Variable R_l7x1_DtR)
+    (Variable ZxjS_I0A_UPr)
+    (Variable aGxObBDD)
+    (Variable j)
+    (Variable sqg__ZTYwX)
+    (Deref (Variable N_snbpe))
+    (Deref (Variable O))
+    (Deref (Variable _ftnD7))
+    (Deref (Variable i_SRwKe0))
+    (Deref (Variable nfqe))
+    (Deref (Variable wbYpbRVz1N3_St))
+    (Deref (Deref (Variable Lo)))
+    (Deref (Deref (Variable cGPmS_oQ9l_wsKX)))
+    (Deref (Deref (Variable pJw5IlP_HsShx__)))
+    (Deref (Deref (Deref (Variable bg1nh2XjLEjA))))
+    (Deref (Deref (Deref (Deref (Variable H)))))
+    (Deref (Deref (Deref (Deref (Deref (Variable _9lCUCr6)))))) |}]
 
 let%test_unit "on_value_of_typed_id: always takes basic type" =
   let (module E) = Lazy.force Env.test_env_mod in

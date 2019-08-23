@@ -88,25 +88,19 @@ let mutate_subject_step (subject : Subject.Test.t) :
     >>= Runner_state.Monad.tee ~f:(fun _ ->
             Ac.Output.pv o "fuzz: action done.@."))
 
+let make_name_stamp (random : Splittable_random.State.t) : string =
+  Act_common.C_id.to_string
+    (Base_quickcheck.Generator.generate ~random ~size:10
+       Act_common.C_id.quickcheck_generator)
 
-let make_name_stamp_part (rng : Splittable_random.State.t) : string =
-  (* 63 bits of entropy, hopefully. *)
-  let str =
-    rng
-    |> Splittable_random.int64 ~lo:Int64.zero ~hi:Int64.max_value
-    |> Int64.Hex.to_string
-  in String.drop_prefix str 2 (* 0x *)
-
-let stamp_name (test : Subject.Test.t) :
-  Subject.Test.t Runner_state.Monad.t =
-  Runner_state.Monad.(Let_syntax.(
-    let%map rng = peek Runner_state.random in
-    let hi_str = make_name_stamp_part rng in
-    let lo_str = make_name_stamp_part rng in
-    Act_litmus.Test.Raw.map_name test ~f:(fun name ->
-        Printf.sprintf "%s_%s_%s" name hi_str lo_str
-      )
-  ))
+let stamp_name (test : Subject.Test.t) : Subject.Test.t Runner_state.Monad.t
+    =
+  Runner_state.Monad.(
+    Let_syntax.(
+      let%map rng = peek Runner_state.random in
+      let stamp = make_name_stamp rng in
+      Act_litmus.Test.Raw.map_name test ~f:(fun name ->
+          Printf.sprintf "%s_%s" name stamp)))
 
 let mutate_subject (subject : Subject.Test.t) :
     Subject.Test.t Runner_state.Monad.t =
@@ -136,8 +130,8 @@ let make_output (rstate : Runner_state.t) (subject : Subject.Test.t) :
   let trace = Runner_state.trace rstate in
   Output.make ~subject ~metadata:trace
 
-let run ?(seed : int option) (subject : Subject.Test.t) ~(config : Config.t) :
-    Trace.t Output.t State.Monad.t =
+let run ?(seed : int option) (subject : Subject.Test.t) ~(config : Config.t)
+    : Trace.t Output.t State.Monad.t =
   State.Monad.(
     Let_syntax.(
       let%bind runner_state =

@@ -93,7 +93,7 @@ include Json
 module Q : Quickcheck.S with type t := t = struct
   let char_or_underscore (c : char Quickcheck.Generator.t) :
       char Quickcheck.Generator.t =
-    Quickcheck.Generator.(union [c; return '_'])
+    Quickcheck.Generator.(weighted_union [(8.0, c); (1.0, return '_')])
 
   let quickcheck_generator : t Quickcheck.Generator.t =
     Quickcheck.Generator.map

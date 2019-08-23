@@ -22,45 +22,61 @@ let%expect_test "quickcheck generator sample" =
   [%expect
     {|
     ((quantifier exists)
-     (predicate (Bracket (Elt (Eq _FZtMt__9VQ_p_E__ -12135116520244)))))
-    ((quantifier exists)
-     (predicate (Bracket (Elt (Eq 2:w_3_a_9N___ -87945063396361262)))))
+     (predicate
+      (Bracket
+       (Or (Elt (Eq 16:J 902895501375878957))
+        (Elt (Eq yO0ddM_QDnOPbwHT 394320765567294))))))
+    ((quantifier exists) (predicate (Bracket (Elt (Eq 6:kzHwOt9 -1)))))
     ((quantifier exists)
      (predicate
-      (Or (And (Elt (Eq 1:_vy__u -192459552073625)) (Elt (Eq ______ 1)))
-       (Elt (Eq 4:O_R_mwz -1)))))
+      (Or
+       (Bracket
+        (Or (Bracket (Elt (Eq 7:bWp71sSh 90965132575962503)))
+         (Elt (Eq gl 177816))))
+       (Bracket (Elt (Eq 8:PU_ 69829377413441892))))))
     ((quantifier exists)
      (predicate
-      (And (Elt (Eq 6:O___w__jH___Q_R -122406473))
-       (Elt (Eq h_bl___sR_N_9_ -793)))))
+      (Or (Elt (Eq wP_KR_ 10))
+       (Or (Elt (Eq Y_m_ -1)) (Elt (Eq x__Z -249567708890932))))))
+    ((quantifier exists)
+     (predicate
+      (And
+       (Bracket
+        (Or (Bracket (Elt (Eq ni 0)))
+         (And (Elt (Eq 0:vK 381)) (Elt (Eq gU 2374814964917089553)))))
+       (Bracket (Elt (Eq 2:_qL 257102))))))
     ((quantifier exists) (predicate (Elt (Eq B 17389146807090))))
-    ((quantifier exists) (predicate (Elt (Eq _8z7__j__ 263823))))
-    ((quantifier exists) (predicate (Elt (Eq _hx -82934877441))))
-    ((quantifier exists) (predicate (Elt (Eq r_C___PG_ 9020672024159))))
-    ((quantifier exists) (predicate (Elt (Eq 0:__My 15568213580))))
-    ((quantifier exists) (predicate (Elt (Eq 7:fp 30823683174765055))))
+    ((quantifier exists) (predicate (Elt (Eq RXtT_aZEtaPErNE3 -244))))
+    ((quantifier exists) (predicate (Elt (Eq ib_Qh 1659469926793563215))))
+    ((quantifier exists) (predicate (Elt (Eq 3:IM_ 15568213580))))
+    ((quantifier exists) (predicate (Elt (Eq 3:p_5 1020929039755))))
+    ((quantifier exists) (predicate (Elt (Eq 8:xtKnhx_m1LKJGp -349))))
     ((quantifier forall)
      (predicate
       (Bracket
-       (Or (Elt (Eq ___ 8))
-        (Or (Elt (Eq __K_QA 381796369316705))
-         (Elt (Eq 6:_t_g1nh2 -8267175828708256)))))))
+       (Or (Bracket (Elt (Eq 5:XCxSNsl -6353388)))
+        (Elt (Eq O_CUII_ 1510397937673))))))
     ((quantifier forall)
      (predicate
-      (Or (Bracket (And (Elt (Eq n7 -28613698)) (Elt (Eq e 5450134))))
-       (Bracket (Elt (Eq _5_ -6537442140))))))
+      (Bracket
+       (And (Bracket (Elt (Eq tnuWPAc 278966333774708263)))
+        (Bracket (Elt (Eq V_glvVSx89154 -12135116520244)))))))
+    ((quantifier forall) (predicate (Bracket (Elt (Eq LoAm_w8 815989604)))))
+    ((quantifier forall) (predicate (Bracket (Elt (Eq hS 4036446942)))))
     ((quantifier forall)
      (predicate
-      (And (Elt (Eq 17:_m_W_b_d_x_E_fE6R_ -4611686018427387904))
-       (Elt (Eq _X_Bl_aivN_E___H_e_ -590525)))))
-    ((quantifier forall) (predicate (Elt (Eq T0_ghNl7k_bY_ 74323250521029))))
+      (Or (Elt (Eq iJfhXdi8F2t59L -2035868215198038645))
+       (And
+        (And (Elt (Eq 17:ebJ_L__N_y_k_4Qjw7 -44)) (Elt (Eq 11:bx_a_XaXKCz 0)))
+        (Elt (Eq bEZsajE6nffJfeafn -9937405399042326))))))
+    ((quantifier forall)
+     (predicate
+      (And (Bracket (Elt (Eq 6:e3Qim6zTrFCU -3)))
+       (Bracket
+        (Or (Elt (Eq 8:U0 -15)) (Elt (Eq 11:eceGILQihEl 82012054457070)))))))
     ((quantifier forall) (predicate (Elt (Eq _F -12981610))))
-    ((quantifier forall) (predicate (Elt (Eq _GV_Ji___ -644427380338))))
-    ((quantifier forall) (predicate (Elt (Eq __S___y___e_6Ju__s -5))))
-    ((quantifier forall) (predicate (Elt (Eq oZvJK -1))))
-    ((quantifier forall) (predicate (Elt (Eq 5:___BV 76121054410))))
-    ((quantifier forall)
-     (predicate (Elt (Eq 12:H_R_g__KVWq192I_ 4611686018427387903)))) |}]
+    ((quantifier forall) (predicate (Elt (Eq ue_CGHy8R8 23890860676656021))))
+    ((quantifier forall) (predicate (Elt (Eq z -2)))) |}]
 
 let%expect_test "pretty-printing example" =
   Src.Postcondition.(
