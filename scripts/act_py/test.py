@@ -4,7 +4,7 @@ import pathlib
 import typing
 from dataclasses import dataclass
 
-from act_py import act_id, json_utils, test_checker, test_common, test_runner
+from act_py import act_id, json_utils, test_reporter, test_common, test_runner
 
 PhaseFactory = typing.Callable[[test_common.Instance], test_common.Phase]
 
@@ -70,12 +70,13 @@ class Test:
         self.env.prepare()
         self.do_phase(test_runner.run_phase)
 
-    def check(self, settings: test_checker.CheckSettings) -> None:
+    def check(self, settings: test_reporter.ReportSettings) -> None:
         """Checks the results of the test specified by this object.
 
         :param settings: The settings to use for the checker.
         """
-        self.do_phase(functools.partial(test_checker.check_phase, settings))
+        print(f"# Test summary")
+        self.do_phase(functools.partial(test_reporter.check_phase, settings))
 
     def dump(self, fp: typing.TextIO) -> None:
         """Dumps this test, as JSON, to the given file pointer.

@@ -14,11 +14,11 @@ import argparse
 
 import typing
 
-from act_py import args, io_utils, test, test_checker
+from act_py import args, io_utils, test, test_reporter
 
 
 def check_from_spec_file(
-    fp: typing.TextIO, settings: test_checker.CheckSettings
+    fp: typing.TextIO, settings: test_reporter.ReportSettings
 ) -> None:
     """Loads a test specification JSON file from `fp`, and runs the resulting test.
 
@@ -27,7 +27,7 @@ def check_from_spec_file(
     test.load(fp).check(settings)
 
 
-def make_settings(arguments: argparse.Namespace) -> test_checker.CheckSettings:
+def make_settings(arguments: argparse.Namespace) -> test_reporter.ReportSettings:
     """Makes a checker settings struct using the parsed arguments.
 
     :param arguments: The argument namespace to read.
@@ -35,7 +35,7 @@ def make_settings(arguments: argparse.Namespace) -> test_checker.CheckSettings:
     """
     # We do this the long way around to make sure that the CheckSettings
     # defaults are maintained.
-    settings = test_checker.CheckSettings()
+    settings = test_reporter.ReportSettings()
     if arguments.sat is not None:
         settings.print_sat = arguments.sat
     if arguments.unsat is not None:
@@ -54,7 +54,7 @@ flags = {
     "sat": ("s", "postcondition-satisfying tests"),
     "unsat": ("u", "postcondition-refuting tests"),
     "witnesses" : ("w", "witness states"),
-    "counter-examples": ("x", "counter-example states"),
+    "counter-examples": ("t", "counter-example states"),
     "unknown": ("n", "tests with unknown results")
 }
 

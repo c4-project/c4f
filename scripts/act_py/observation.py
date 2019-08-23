@@ -12,6 +12,7 @@
 import json
 
 import enum
+import os
 import typing
 from dataclasses import dataclass
 
@@ -22,6 +23,9 @@ class Flag(enum.Enum):
     SAT = "sat"
     UNSAT = "unsat"
     UNDEF = "undef"
+    # This flag doesn't yet correspond to any actual ACT output, but we use it
+    # when presenting a fatal-error observation as an observation object.
+    MISSING = "missing"
 
 
 @dataclass
@@ -81,6 +85,65 @@ class Observation:
         false otherwise.
         """
         return Flag.UNSAT in self.flags
+
+    @property
+    def is_missing(self) -> bool:
+        """Checks whether this object represents a missing observation.
+
+        Examples:
+
+        >>> Observation([], [], [], set()).is_missing
+        False
+
+        >>> Observation([], [], [], {Flag.MISSING}).is_missing
+        True
+
+        >>> Observation([], [], [], {Flag.UNSAT}).is_missing
+        False
+
+        :return: True if the `Flag.MISSING` flag is enabled on this observation;
+        false otherwise.
+        """
+        return Flag.MISSING in self.flags
+
+
+def load_from_path(path: os.PathLike) -> Observation:
+    """Loads an observation from a path.
+
+    Returns a `missing` observation if the file doesn't exist.
+
+    :param path: The path from which we will load an observation.
+    :return: The resulting `Observation` object.
+    """
+    try:
+        with open(path, "r") as fp:
+            return load(fp)
+    except FileNotFoundError:
+        return missing()
+
+
+def missing() -> Observation:
+    """Generates a 'null object' representing a missing observation.
+
+    Examples:
+
+    >>> { f.value for f in missing().flags }
+    {'missing'}
+
+    >>> missing().witnesses
+    []
+
+    >>> missing().counter_examples
+    []
+
+    >>> missing().states
+    []
+
+    :return: The missing-observation object.
+    """
+    return Observation(
+        flags={Flag.MISSING}, counter_examples=[], witnesses=[], states=[]
+    )
 
 
 def load(fp: typing.TextIO) -> Observation:

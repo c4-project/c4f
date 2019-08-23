@@ -32,6 +32,9 @@ readonly TEST_OUTPUT_DIR="test"
 ## Arguments ##
 
 
+# Flags forwarded directly to the test checker.
+CHECK_FLAGS=""
+
 # The output directory used for both fuzzing and testing.
 # If empty, this will be set by `act::setup_temp_output_dir`, and automatically
 # removed on exit.
@@ -67,12 +70,13 @@ usage() {
 
 # Main function.
 main() {
-  while getopts "c:d:k:m:qvx?h" a; do
+  while getopts "c:d:k:m:suwtnSUWTNqvx?h" a; do
     case ${a} in
     c) COMPILER_PREDICATE=${OPTARG} ;;
     d) OUTPUT_DIR=${OPTARG} ;;
     k) FUZZ_PASSES=${OPTARG} ;;
     m) MACHINE_PREDICATE=${OPTARG} ;;
+    s|u|w|t|n|S|U|W|T|N) CHECK_FLAGS="${CHECK_FLAGS}${a}" ;;
     q) VERBOSE="false" ;;
     v) VERBOSE="true" ;;
     x) DUNE_EXEC="true" ;;
@@ -80,7 +84,7 @@ main() {
     esac
   done
   if [[ -z "${FUZZ_PASSES}" ]]; then FUZZ_PASSES="${DEFAULT_FUZZ_PASSES}"; fi
-  readonly COMPILER_PREDICATE MACHINE_PREDICATE FUZZ_PASSES DUNE_EXEC VERBOSE
+  readonly CHECK_FLAGS COMPILER_PREDICATE MACHINE_PREDICATE FUZZ_PASSES DUNE_EXEC VERBOSE
   shift $((OPTIND-1))
 
   if [[ ${DUNE_EXEC} = "true" ]]; then
@@ -112,7 +116,7 @@ main() {
 
   act::log "now running test (%s)\n" "${test_file}"
   "${SCRIPTDIR}/run_test" "${qv_flags}" "${test_file}"
-  "${SCRIPTDIR}/check_test" "${qv_flags}" "${test_file}"
+  "${SCRIPTDIR}/check_test" "${qv_flags}${CHECK_FLAGS}" "${test_file}"
 }
 
 # Dumps the contents of the given test file to stderr.

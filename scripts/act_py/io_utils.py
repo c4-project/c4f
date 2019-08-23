@@ -27,10 +27,22 @@ def check_file_exists(file_path: pathlib.Path) -> None:
     """Checks that the given file path exists.
     Raises `FileNotFoundError` if not.
 
-    :param file_path: The path of the subject to test.
+    :param file_path: The path of the file to test.
     """
     if not file_path.is_file():
         raise FileNotFoundError(file_path)
+
+
+def remove_if_exists(file_path: pathlib.Path) -> None:
+    """Tries to remove the given path, but silently succeeds if it doesn't
+    exist.
+
+    :param file_path: The path of the file to remove, if it exists.
+    """
+    try:
+        file_path.unlink()
+    except FileNotFoundError:
+        pass
 
 
 def config_logger(loglevel: str) -> None:
