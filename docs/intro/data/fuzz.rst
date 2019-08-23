@@ -1,12 +1,12 @@
-.. _fuzz:
+.. _intro-data-fuzz:
 
 Fuzzing existing litmus tests
 -----------------------------
 
-ACT contains a tool, ``act c fuzz``, for taking C litmus tests and
+ACT contains a tool, ``act-fuzz``, for taking C litmus tests and
 randomly altering them in various final-state-preserving ways.  This is useful,
 for example, for expanding the small tests output by
-:ref:`Memalloy <memalloy>`.
+:ref:`Memalloy <intro-data-memalloy>`.
 
 .. warning::
 

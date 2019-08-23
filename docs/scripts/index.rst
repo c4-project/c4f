@@ -22,6 +22,5 @@ These live in the ``./scripts`` directory.
    do_memalloy_test
    fuzz_many
    make_conf
-   make_test
-   run_test
+   test_pipeline
    test_drivers

@@ -1,3 +1,5 @@
+.. _intro-data:
+
 Getting test-run data
 =====================
 
@@ -12,4 +14,4 @@ as much of the compiler's behaviour with respect to concurrency as possible.
    memalloy
    fuzz
 
-.. _litmus tests: http://diy.inria.fr/doc/litmus.html#sec3 
+.. _litmus tests: http://diy.inria.fr/doc/litmus.html#sec3

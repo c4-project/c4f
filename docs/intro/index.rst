@@ -9,4 +9,5 @@ Introduction
 
    before_use/index
    data/index
+   test/index
    fuzz/index

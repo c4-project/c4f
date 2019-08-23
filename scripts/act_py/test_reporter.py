@@ -145,10 +145,10 @@ class ReportPhase(test_common.Phase):
             )
 
 
-def check_phase(
+def report_phase(
     settings: ReportSettings, instance: test_common.Instance
 ) -> test_common.Phase:
-    """Function wrapper for `CheckPhase`.
+    """Function wrapper for `ReportPhase`.
 
     :param settings: The settings to use for the check.
     :param instance: The instance to use for the check.

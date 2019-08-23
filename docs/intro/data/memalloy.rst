@@ -1,4 +1,4 @@
-.. _memalloy:
+.. _intro-data-memalloy:
 
 Generating tests with Memalloy
 ------------------------------

@@ -17,14 +17,30 @@ import typing
 from act_py import args, io_utils, test, test_reporter
 
 
-def check_from_spec_file(
+def main() -> None:
+    """Main function."""
+
+    parser = argparse.ArgumentParser(
+        description=__doc__, parents=[args.test_phase_parser]
+    )
+    generate_flag_parameters(parser)
+
+    arguments = parser.parse_args()
+
+    settings = make_settings(arguments)
+
+    io_utils.config_logger(arguments.log)
+    run_from_spec_file(arguments.test, settings)
+
+
+def run_from_spec_file(
     fp: typing.TextIO, settings: test_reporter.ReportSettings
 ) -> None:
     """Loads a test specification JSON file from `fp`, and runs the resulting test.
 
     :param fp: The file-pointer from which we load the JSON.
     """
-    test.load(fp).check(settings)
+    test.load(fp).report(settings)
 
 
 def make_settings(arguments: argparse.Namespace) -> test_reporter.ReportSettings:
@@ -53,9 +69,9 @@ def make_settings(arguments: argparse.Namespace) -> test_reporter.ReportSettings
 flags = {
     "sat": ("s", "postcondition-satisfying tests"),
     "unsat": ("u", "postcondition-refuting tests"),
-    "witnesses" : ("w", "witness states"),
+    "witnesses": ("w", "witness states"),
     "counter-examples": ("t", "counter-example states"),
-    "unknown": ("n", "tests with unknown results")
+    "unknown": ("n", "tests with unknown results"),
 }
 
 
@@ -63,24 +79,21 @@ def generate_flag_parameters(parser: argparse.ArgumentParser) -> None:
     for flag, (short, doc) in flags.items():
         dest = flag.replace("-", "_")
         no_short = short.upper()
-        parser.add_argument(f"--{flag}", f"-{short}", action="store_true", help=f"enables printing of {doc}", dest=dest, default=None)
-        parser.add_argument(f"--no-{flag}", f"-{no_short}", action="store_false", help=f"disables printing of {doc}", dest=dest)
-
-
-def main() -> None:
-    """Main function."""
-
-    parser = argparse.ArgumentParser(
-        description=__doc__, parents=[args.test_phase_parser]
-    )
-    generate_flag_parameters(parser)
-
-    arguments = parser.parse_args()
-
-    settings = make_settings(arguments)
-
-    io_utils.config_logger(arguments.log)
-    check_from_spec_file(arguments.test, settings)
+        parser.add_argument(
+            f"--{flag}",
+            f"-{short}",
+            action="store_true",
+            help=f"enables printing of {doc}",
+            dest=dest,
+            default=None,
+        )
+        parser.add_argument(
+            f"--no-{flag}",
+            f"-{no_short}",
+            action="store_false",
+            help=f"disables printing of {doc}",
+            dest=dest,
+        )
 
 
 if __name__ == "__main__":

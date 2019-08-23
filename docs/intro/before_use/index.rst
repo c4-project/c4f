@@ -1,3 +1,5 @@
+.. _intro-before-use:
+
 Before using ACT
 ================
 

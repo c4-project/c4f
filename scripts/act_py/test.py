@@ -70,13 +70,13 @@ class Test:
         self.env.prepare()
         self.do_phase(test_runner.run_phase)
 
-    def check(self, settings: test_reporter.ReportSettings) -> None:
-        """Checks the results of the test specified by this object.
+    def report(self, settings: test_reporter.ReportSettings) -> None:
+        """Reports the results of the test specified by this object.
 
         :param settings: The settings to use for the checker.
         """
         print(f"# Test summary")
-        self.do_phase(functools.partial(test_reporter.check_phase, settings))
+        self.do_phase(functools.partial(test_reporter.report_phase, settings))
 
     def dump(self, fp: typing.TextIO) -> None:
         """Dumps this test, as JSON, to the given file pointer.
