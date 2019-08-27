@@ -126,11 +126,7 @@ run_memalloy_if_needed() {
     "${SCRIPTDIR}/do_memalloy" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}"
   else
     act::log "Using existing memalloy results directory"
-    if [[ -n $(command -v stat) ]]; then
-      local mtime
-      mtime="$(stat -L -c "%Y" "${results_dir}")"
-      act::log "(last modified on %(%c)T)" "${mtime}"
-    fi
+    dump_last_modified_time "${results_dir}"
     act::log ".\n"
   fi
 
@@ -140,6 +136,34 @@ run_memalloy_if_needed() {
   fi
 }
 
+
+# If `stat` is available, prints the last modified time of the given results
+# directory symlink (less a newline).
+#
+# Arguments:
+#   1: the results-directory symlink to inspect.
+dump_last_modified_time() {
+  local results_dir=$1
+
+  # `stat` is non-standard: if it exists, it'll have different flags depending
+  # on whether we're on a GNU or BSD system (or, indeed, a non-GNU non-BSD
+  # system, but we don't support that yet).  The other thing is that `printf`
+  # has different format flags!
+  if [[ -z $(command -v stat)  ]]; then return 1; fi
+  case "$(uname -s)" in
+    Linux)
+      # GNU stat and printf
+      local mtime="$(stat -Lc "%Y" "${results_dir}")"
+      act::log " (last modified on %(%c)T)" "${mtime}"
+      ;;
+    Darwin|NetBSD|OpenBSD)
+      # BSD stat and printf
+      local mtime="$(stat -Lf "%Sm" "${results_dir}")"
+      act::log " (last modified on %s)" "${mtime}"
+      ;;
+    *) return 2 ;;
+  esac
+}
 
 # Runs the `fuzz_and_test` script on the results produced by the last
 # invocation of Memalloy.

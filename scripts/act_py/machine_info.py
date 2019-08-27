@@ -34,12 +34,41 @@ def get_machines(
     predicate_args: typing.Iterable[str] = make_predicate_args(
         machine_predicate, compiler_predicate
     )
+    stdout = run_list_compilers(predicate_args)
+    return parse_compiler_list(stdout.splitlines())
+
+
+def run_list_compilers(predicate_args):
+    """Runs the ACT list-compilers program with the given arguments.
+
+    :param predicate_args: The arguments to send to the compiler lister.
+    :return:
+        The standard output of the process if the lister completed
+        successfully.
+    :raise: `ActMachineInspectError` if the lister failed.
+    """
     args: typing.List[str] = ["act", "configure", "list-compilers", *predicate_args]
     proc: subprocess.CompletedProcess = subprocess.run(
-        args, capture_output=True, text=True, check=True
+        args, capture_output=True, text=True
     )
+    try:
+        proc.check_returncode()
+    except subprocess.CalledProcessError as e:
+        raise ActMachineInspectError(proc.stderr) from e
     stdout: str = proc.stdout
-    return parse_compiler_list(stdout.splitlines())
+    return stdout
+
+
+class ActMachineInspectError(Exception):
+    """Error raised when a call to `get_machines` receives a bad response from
+    another ACT program.
+    """
+
+    act_message: str
+
+    def __init__(self, act_message: str):
+        self.act_message = act_message
+        super().__init__(f"Error asking ACT for machine information: {self.act_message}")
 
 
 def make_predicate_args(
