@@ -51,10 +51,7 @@ type t =
   { disabled_compilers: (Ac.Id.t, Error.t option) List.Assoc.t [@default []]
   ; disabled_machines: (Ac.Id.t, Error.t option) List.Assoc.t [@default []]
   ; machines: M_spec.Set.t [@default Act_common.Spec.Set.empty]
-  ; global: Global.t
-  ; sanitiser_passes:
-         default:Set.M(Act_sanitiser.Pass_group).t
-      -> Set.M(Act_sanitiser.Pass_group).t }
+  ; global: Global.t }
 [@@deriving fields, make]
 
 type 't hook = 't -> 't option Or_error.t
@@ -180,15 +177,14 @@ module Filterer = struct
 end
 
 let of_global ?(chook = Fn.compose Result.return Option.some)
-    ?(mhook = Fn.compose Result.return Option.some)
-    ?(phook = fun ~default -> default) (global : Global.t) : t Or_error.t =
+    ?(mhook = Fn.compose Result.return Option.some) (global : Global.t) :
+    t Or_error.t =
   let raw_ms = Global.machines global in
   Or_error.Let_syntax.(
     let%map filter_ctx, machines = Filterer.filter mhook chook raw_ms in
     let disabled_machines = Filterer.Ctx.disabled_machines filter_ctx in
     let disabled_compilers = Filterer.Ctx.disabled_compilers filter_ctx in
-    make ~global ~machines ~disabled_compilers ~disabled_machines
-      ~sanitiser_passes:phook ())
+    make ~global ~machines ~disabled_compilers ~disabled_machines ())
 
 module H = Act_utils.Inherit.Helpers (struct
   type nonrec t = t

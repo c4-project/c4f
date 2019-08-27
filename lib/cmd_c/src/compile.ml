@@ -13,10 +13,11 @@ open Core_kernel
 module Cq_spec = Act_machine.Qualified.Compiler
 
 let run (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t)
-    (_o : Act_common.Output.t) (cfg : Act_config.Act.t)
+    (_o : Act_common.Output.t) (global_cfg : Act_config.Global.t)
     ~(raw_target : Toplevel.Asm_target.t) ~(mode : Act_compiler.Mode.t) :
     unit Or_error.t =
   Or_error.Let_syntax.(
+    let%bind cfg = Act_config.Act.of_global global_cfg in
     let%bind target = Toplevel.Asm_target.resolve ~cfg raw_target in
     let%bind (module R) =
       Toplevel.Language_support.Resolve_compiler_from_target
@@ -53,5 +54,4 @@ let command : Command.t =
       fun () ->
         Toplevel.Common.lift_command
           (Toplevel.Args.With_files.rest standard_args)
-          ~with_compiler_tests:false
           ~f:(run standard_args ~raw_target ~mode))

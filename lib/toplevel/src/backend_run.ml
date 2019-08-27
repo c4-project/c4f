@@ -14,11 +14,13 @@ open Act_common
 
 let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
     (args : Args.Standard.t Args.With_files.t) (_o : Output.t)
-    (cfg : Act_config.Act.t) : unit Or_error.t =
-  let module Res = Sim_support.Make_resolver (struct
-    let cfg = cfg
-  end) in
+    (global_cfg : Act_config.Global.t) : unit Or_error.t =
   Or_error.Let_syntax.(
+    (* TODO(@MattWindsor91): machine predicates? *)
+    let%bind cfg = Act_config.Act.of_global global_cfg in
+    let module Res = Sim_support.Make_resolver (struct
+      let cfg = cfg
+    end) in
     let%bind (module Backend) = Res.resolve_single fqid in
     Args.With_files.run_filter (module Backend.Filter) args ~aux_in:arch)
 
@@ -48,5 +50,4 @@ let command : Command.t =
       fun () ->
         Common.lift_command
           (Args.With_files.rest standard_args)
-          ~with_compiler_tests:false
           ~f:(run standard_args ?arch ?fqid:sim))

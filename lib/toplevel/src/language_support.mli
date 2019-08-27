@@ -49,16 +49,16 @@ module Resolve_compiler_from_target :
     look up compilers from targets, filling in a dummy compiler if the
     target doesn't mention a compiler. *)
 
-val load_and_process_config :
+val make_filtered_machine_config :
      ?compiler_predicate:Act_compiler.Property.t Blang.t
   -> ?machine_predicate:Act_machine.Property.t Blang.t
-  -> ?sanitiser_passes:Act_sanitiser.Pass_group.Selector.t Blang.t
   -> ?with_compiler_tests:bool (* default true *)
-  -> Fpath.t
+  -> Act_config.Global.t
   -> Act_config.Act.t Or_error.t
-(** [load_and_process_config ?compiler_predicate ?machine_predicate
-    ?sanitiser_passes ?with_compiler_tests path] loads the config file at
-    [path] and optionally tests all machines and compilers therein.
+(** [make_filtered_machine_config ?compiler_predicate ?machine_predicate
+    ?with_compiler_tests config] uses the config [global], as well as the
+    given compiler and machine filtering predicates, to produce a filtered
+    machine configuration.
 
     If [compiler_predicate] (a Blang expression) is present, only compilers
     satisfying it (on enabled machines) will be accepted.
@@ -66,9 +66,5 @@ val load_and_process_config :
     If [machine_predicate] (also a Blang expression) is present, only
     machines satisfying it will be enabled.
 
-    If [sanitiser_passes] (another Blang expression) is present, the
-    sanitiser pass override in the final config will be set to the result of
-    evaluating that expression.
-
-    If [with_compiler_tests] is absent, or present and true, compilers will
-    be tested for reachability. *)
+    If [with_compiler_tests] is present and true, compilers will be tested
+    for reachability. *)

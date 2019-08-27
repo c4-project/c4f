@@ -18,8 +18,8 @@ let write_trace (trace : Act_fuzz.Trace.t) (oc : Stdio.Out_channel.t) :
 
 let run ?(seed : int option) ?(trace_output : string option)
     (args : _ Toplevel.Args.With_files.t) (o : Act_common.Output.t)
-    (act_config : Act_config.Act.t) : unit Or_error.t =
-  let config = Act_config.Act.fuzz act_config in
+    (global_config : Act_config.Global.t) : unit Or_error.t =
+  let config = Act_config.Global.fuzz global_config in
   let aux_in = Act_fuzz.Filter.Aux.make ~o ~config seed in
   Toplevel.Args.With_files.run_filter_with_aux_out
     (module Act_fuzz.Filter.Random)
@@ -51,5 +51,4 @@ let command : Command.t =
       fun () ->
         Toplevel.Common.lift_command
           (Toplevel.Args.With_files.rest standard_args)
-          ~with_compiler_tests:false
           ~f:(run standard_args ?seed ?trace_output))

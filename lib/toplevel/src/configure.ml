@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Core_kernel
 open Act_common
@@ -47,24 +35,39 @@ let pp_compiler_terse (f : Formatter.t) (spec : Cq_spec.t) : unit =
 let pp_compiler (verbose : bool) : Cq_spec.t Fmt.t =
   if verbose then pp_compiler_verbose else pp_compiler_terse
 
-let run_list_compilers (standard_args : Args.Standard.t) (_o : Output.t)
-    (cfg : Act_config.Act.t) : unit Or_error.t =
-  let compilers = Act_config.Act.all_compilers cfg in
-  let verbose = Args.Standard.is_verbose standard_args in
-  Fmt.(pr "@[<v>%a@]@." (list (pp_compiler verbose)) compilers) ;
-  Result.ok_unit
+let run_list_compilers
+    ?(compiler_predicate : Act_compiler.Property.t Blang.t option)
+    ?(machine_predicate : Act_machine.Property.t Blang.t option)
+    (standard_args : Args.Standard.t) (_o : Output.t)
+    (global_cfg : Act_config.Global.t) ~(with_compiler_tests : bool) :
+    unit Or_error.t =
+  Or_error.Let_syntax.(
+    let%map cfg =
+      Language_support.make_filtered_machine_config ?compiler_predicate
+        ?machine_predicate ~with_compiler_tests global_cfg
+    in
+    let compilers = Act_config.Act.all_compilers cfg in
+    let verbose = Args.Standard.is_verbose standard_args in
+    Fmt.(pr "@[<v>%a@]@." (list (pp_compiler verbose)) compilers))
 
 let list_compilers_command : Command.t =
   Command.basic
     ~summary:"outputs information about the current compiler specs"
     Command.Let_syntax.(
-      let%map standard_args = Args.Standard.get
+      let%map_open standard_args = Args.Standard.get
       and compiler_predicate = Args.compiler_predicate
-      and machine_predicate = Args.machine_predicate in
+      and machine_predicate = Args.machine_predicate
+      and with_compiler_tests =
+        flag "test-compilers" no_arg
+          ~doc:
+            "If true, test each compiler's presence and only print the \
+             compilers that pass"
+      in
       fun () ->
-        Common.lift_command standard_args ?compiler_predicate
-          ?machine_predicate ~with_compiler_tests:true
-          ~f:(run_list_compilers standard_args))
+        Common.lift_command standard_args
+          ~f:
+            (run_list_compilers standard_args ?compiler_predicate
+               ?machine_predicate ~with_compiler_tests))
 
 let predicate_lists : (string, (module Property_types.S)) List.Assoc.t =
   [ ( "Compiler predicates (-filter-compilers)"
@@ -84,7 +87,7 @@ let pp_predicate_list :
     list ~sep:(any "@,@,")
       (vbox ~indent:2 (pair ~sep:sp (string ++ any ":") pp_tree_module)))
 
-let run_list_predicates (_o : Output.t) (_cfg : Act_config.Act.t) :
+let run_list_predicates (_o : Output.t) (_cfg : Act_config.Global.t) :
     unit Or_error.t =
   Fmt.pr "@[<v>%a@]@." pp_predicate_list predicate_lists ;
   Result.ok_unit
@@ -93,9 +96,7 @@ let list_predicates_command : Command.t =
   Command.basic ~summary:"describes the filtering predicate languages"
     Command.Let_syntax.(
       let%map standard_args = Args.Standard.get in
-      fun () ->
-        Common.lift_command standard_args ~with_compiler_tests:false
-          ~f:run_list_predicates)
+      fun () -> Common.lift_command standard_args ~f:run_list_predicates)
 
 let command : Command.t =
   Command.group ~summary:"commands for dealing with act configuration"

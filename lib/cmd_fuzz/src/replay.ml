@@ -12,9 +12,9 @@
 open Core (* for Filename.arg_type *)
 
 let run ?(trace_input : string option) (args : _ Toplevel.Args.With_files.t)
-    (o : Act_common.Output.t) (act_config : Act_config.Act.t) :
+    (o : Act_common.Output.t) (global_config : Act_config.Global.t) :
     unit Or_error.t =
-  let config = Act_config.Act.fuzz act_config in
+  let config = Act_config.Global.fuzz global_config in
   Or_error.Let_syntax.(
     let%bind trace_in = Plumbing.Input.of_string_opt trace_input in
     let%bind trace = Act_fuzz.Trace.load_from_isrc trace_in in
@@ -45,5 +45,4 @@ let command : Command.t =
       fun () ->
         Toplevel.Common.lift_command
           (Toplevel.Args.With_files.rest standard_args)
-          ~with_compiler_tests:false
           ~f:(run standard_args ~trace_input))

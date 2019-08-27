@@ -28,21 +28,15 @@ let setup_colour (args : Args.Standard.t) : unit =
   let style_renderer = Args.Standard.colour args in
   Fmt_tty.setup_std_outputs ?style_renderer ()
 
-let lift_command
-    ?(compiler_predicate : Act_compiler.Property.t Blang.t option)
-    ?(machine_predicate : Act_machine.Property.t Blang.t option)
-    ?(sanitiser_passes : Act_sanitiser.Pass_group.Selector.t Blang.t option)
-    ?(with_compiler_tests : bool option) (args : Args.Standard.t)
-    ~(f : Ac.Output.t -> Act_config.Act.t -> unit Or_error.t) : unit =
+let lift_command (args : Args.Standard.t)
+    ~(f : Ac.Output.t -> Act_config.Global.t -> unit Or_error.t) : unit =
   setup_colour args ;
   let o = make_output_from_standard_args args in
   let result =
     Or_error.(
-      Args.Standard.config_file args
-      |> Plumbing.Fpath_helpers.of_string
-      >>= Language_support.load_and_process_config ?compiler_predicate
-            ?machine_predicate ?sanitiser_passes ?with_compiler_tests
-      >>= f o)
+      args |> Args.Standard.config_file |> Option.some
+      |> Plumbing.Input.of_string_opt
+      >>= Act_config.Global.Load.load_from_isrc >>= f o)
   in
   if Or_error.is_error result then (
     Ac.Output.print_error o result ;

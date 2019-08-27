@@ -46,5 +46,4 @@ let command : Command.t =
       fun () ->
         Toplevel.Common.lift_command
           (Toplevel.Args.With_files.rest standard_args)
-          ~with_compiler_tests:false
           ~f:(run standard_args ~style ?aux_output))

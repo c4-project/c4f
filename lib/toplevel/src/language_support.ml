@@ -97,13 +97,11 @@ let machine_hook predicate (mspec : Mw_spec.t) : Mw_spec.t option Or_error.t
     (* TODO(@MattWindsor91): actually test the machine here! *)
     (Option.some_if (eval_b mspec predicate) mspec)
 
-let load_and_process_config ?(compiler_predicate = Blang.true_)
-    ?(machine_predicate = Blang.true_)
-    ?(sanitiser_passes = Blang.base `Default) ?(with_compiler_tests = true)
-    (path : Fpath.t) =
-  let open Or_error.Let_syntax in
-  let%bind rcfg = Act_config.Global.Load.load ~path in
+let make_filtered_machine_config
+    ?(compiler_predicate : Act_compiler.Property.t Blang.t = Blang.true_)
+    ?(machine_predicate : Act_machine.Property.t Blang.t = Blang.true_)
+    ?(with_compiler_tests : bool = false) (global : Act_config.Global.t) :
+    Act_config.Act.t Or_error.t =
   let chook = compiler_hook with_compiler_tests compiler_predicate in
   let mhook = machine_hook machine_predicate in
-  let phook = Act_sanitiser.Pass_group.Selector.eval_b sanitiser_passes in
-  Act_config.Act.of_global rcfg ~chook ~mhook ~phook
+  Act_config.Act.of_global global ~chook ~mhook

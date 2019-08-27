@@ -24,10 +24,10 @@ let list_fuzzer_actions_readme () : string =
 let pp_fuzz_summaries : Act_fuzz.Action.Summary.t Map.M(Id).t Fmt.t =
   Id.pp_map Act_fuzz.Action.Summary.pp
 
-let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Act.t) :
+let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Global.t) :
     unit Or_error.t =
   Or_error.(
-    cfg |> Act_config.Act.fuzz |> Act_fuzz.Config.summarise
+    cfg |> Act_config.Global.fuzz |> Act_fuzz.Config.summarise
     >>| Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries)
 
 let command : Command.t =
@@ -37,4 +37,4 @@ let command : Command.t =
       let%map standard_args = Toplevel.Args.Standard.get in
       fun () ->
         Toplevel.Common.lift_command standard_args
-          ~with_compiler_tests:false ~f:run_list_fuzzer_actions)
+          ~f:run_list_fuzzer_actions)

@@ -20,7 +20,7 @@ let output (result : Act_state.Compare.Result.t) ~(human_readable : bool) :
   in
   pp Fmt.stdout result
 
-let run (_o : Output.t) (_cfg : Act_config.Act.t) ~(oracle_raw : string)
+let run (_o : Output.t) (_cfg : Act_config.Global.t) ~(oracle_raw : string)
     ~(subject_raw : string) ~(human_readable : bool) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind oracle_in = Plumbing.Input.of_string_opt (Some oracle_raw) in
@@ -55,5 +55,4 @@ let command : Command.t =
       and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type) in
       fun () ->
         Toplevel.Common.lift_command standard_args
-          ~with_compiler_tests:false
           ~f:(run ~oracle_raw ~subject_raw ~human_readable))

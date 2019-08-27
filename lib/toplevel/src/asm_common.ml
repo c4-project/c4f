@@ -63,16 +63,22 @@ let get_aux (args : Args.Standard_asm.t) ~(output : Act_common.Output.t) :
       warn_no_aux output ;
       Or_error.return Act_delitmus.Aux.empty
 
+let resolve_sanitiser_passes (args : Args.Standard_asm.t)
+    ~(default_passes : Set.M(Act_sanitiser.Pass_group).t) :
+    Set.M(Act_sanitiser.Pass_group).t =
+  args |> Args.Standard_asm.sanitiser_passes
+  |> Option.value_map ~default:default_passes
+       ~f:(Act_sanitiser.Pass_group.Selector.eval_b ~default:default_passes)
+
 let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
-    (act_config : Act_config.Act.t) ~(f : Input.t -> unit Or_error.t)
+    (global_cfg : Act_config.Global.t) ~(f : Input.t -> unit Or_error.t)
     ~(default_passes : Set.M(Act_sanitiser.Pass_group).t) : unit Or_error.t
     =
-  let sanitiser_passes =
-    Act_config.Act.sanitiser_passes act_config ~default:default_passes
-  in
+  let sanitiser_passes = resolve_sanitiser_passes args ~default_passes in
   let f_args = Args.Standard_asm.rest args in
   Or_error.Let_syntax.(
     let%bind c_litmus_aux = get_aux args ~output in
+    let%bind act_config = Act_config.Act.of_global global_cfg in
     let%bind target = resolve_target args act_config in
     let%bind pb_input = Args.With_files.infile_source f_args in
     let%bind pb_output = Args.With_files.outfile_sink f_args in

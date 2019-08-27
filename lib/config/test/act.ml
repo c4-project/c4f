@@ -15,13 +15,11 @@ let print_result (type a) (pp_inner : a Fmt.t) : a Or_error.t -> unit =
   Fmt.(pr "@[%a@]@." (result ~ok:pp_inner ~error:Error.pp))
 
 module Data = struct
-  let sanitiser_passes ~(default : _) : _ = default
-
   let act : Act_config.Act.t Lazy.t =
     Lazy.Let_syntax.(
       let%map global = Global.Data.global in
       let machines = Act_config.Global.machines global in
-      Act_config.Act.make ~global ~machines ~sanitiser_passes ())
+      Act_config.Act.make ~global ~machines ())
 end
 
 let%test_module "compiler lookup" =
