@@ -41,12 +41,16 @@ let try_get_lang_proc (language : string) =
   |> Result.of_option
        ~error:(Error.create_s [%message "Unknown language" ~language])
 
-let asm_runner_from_arch :
+let asm_runner_of_arch :
     Id.t -> (module Act_asm.Runner_intf.Basic) Or_error.t =
   Id.hd_reduce
     ~on_empty:(fun () -> Or_error.error_string "Missing language name")
     ~f:(fun lang rest ->
       Result.(try_get_lang_proc lang >>= fun proc -> proc rest))
+
+let asm_runner_of_target (tgt : Act_machine.Qualified.Compiler.t Act_machine.Target.t) :
+    (module Act_asm.Runner_intf.Basic) Or_error.t =
+  asm_runner_of_arch (Act_machine.Target.arch tgt)
 
 let style_modules : (Id.t, (module C_types.Basic)) List.Assoc.t =
   [(Id.of_string "gcc", (module Act_compiler_gcc.Instance))]

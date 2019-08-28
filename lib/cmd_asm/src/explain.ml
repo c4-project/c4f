@@ -26,11 +26,11 @@ let explain_runner (module B : Act_asm.Runner_intf.Basic) :
   let module Exp = Act_asm.Explainer.Make (B) in
   (module Exp.Filter)
 
-let explain_filter (target : Act_machine.Target.t) :
+let explain_filter (target : Act_machine.Qualified.Compiler.t Act_machine.Target.t) :
     (module Act_asm.Explainer.S_filter) Or_error.t =
   Or_error.(
     tag ~tag:"while getting an explain filter for this target"
-      (target |> Toplevel.Common.asm_runner_of_target >>| explain_runner))
+      (target |> Toplevel.Language_support.asm_runner_of_target >>| explain_runner))
 
 let run_with_input (o : A.Output.t) target job_input infile outfile =
   Or_error.Let_syntax.(

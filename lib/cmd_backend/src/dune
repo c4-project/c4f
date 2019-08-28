@@ -6,6 +6,6 @@
  ; act binaries that it's not particularly useful on its own.
  (preprocess
   (pps ppx_jane))
- (libraries stdio base base.caml core_kernel core fmt yojson plumbing
-   toplevel act.backend act.common act.compiler act.config act.delitmus
-   act.machine act.state act.utils))
+ (libraries stdio base base.caml core_kernel fmt yojson plumbing
+   toplevel act.backend act.common act.config
+   act.state act.utils))

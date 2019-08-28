@@ -29,7 +29,7 @@ module Input : sig
 
   val sanitiser_passes : t -> Set.M(Act_sanitiser.Pass_group).t
 
-  val target : t -> Act_machine.Target.t
+  val target : t -> Act_machine.Qualified.Compiler.t Act_machine.Target.t
 
   val c_litmus_aux : t -> Act_delitmus.Aux.t
   (** [c_litmus_aux in] gets the auxiliary information associated with any C

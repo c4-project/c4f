@@ -29,7 +29,7 @@ let run (input : In.t) : unit Or_error.t =
   end) in
   Or_error.Let_syntax.(
     let%bind (module Runner) =
-      Toplevel.Common.asm_runner_of_target target
+      Toplevel.Language_support.asm_runner_of_target target
     in
     let module Lit = Act_asm.Litmusifier.Make (Runner) in
     let job_input = In.make_job_input input litmus_config_fn in

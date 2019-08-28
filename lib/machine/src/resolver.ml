@@ -48,13 +48,13 @@ module Make (B : Basic) : Resolver_types.S with type spec = Sp.t = struct
 end
 
 module Make_on_target (B : Basic) :
-  Resolver_types.S with type spec = Target.t = struct
-  type spec = Target.t
+  Resolver_types.S with type spec = Qualified.Compiler.t Target.t = struct
+  type spec = Qualified.Compiler.t Target.t
 
   let from_spec : spec -> _ Or_error.t = function
-    | `Spec cspec ->
+    | Cc cspec ->
         from_resolver_and_spec B.resolve cspec
-    | `Arch _ ->
+    | Arch _ ->
         Or_error.return
           ( module C_instance.Fail (struct
             let error =
@@ -62,7 +62,7 @@ module Make_on_target (B : Basic) :
                 "To run a compiler, you must supply a compiler ID."
           end) : C_instance_t.S )
 
-  let filter_from_spec (tgt : Target.t) : (module C_filter.S) Or_error.t =
+  let filter_from_spec (tgt : Qualified.Compiler.t Target.t) : (module C_filter.S) Or_error.t =
     Or_error.Let_syntax.(
       let%map (module M) = from_spec tgt in
       (module C_filter.Make (M) : C_filter.S))

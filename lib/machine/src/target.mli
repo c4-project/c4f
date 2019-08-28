@@ -9,19 +9,26 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Type of target specifiers for jobs that can accept both C files and
-    assembly. *)
+(** Type of target specifiers for jobs that can accept both compilers
+    and processor architectures. *)
 
 open Base
 
-type t = [`Spec of Qualified.Compiler.t | `Arch of Act_common.Id.t]
+type 'compiler t =
+  | Cc   of 'compiler
+  | Arch of Act_common.Id.t
 (** [t] is either a machine-qualified compiler specification, or a raw
     architecture. *)
 
-val arch : t -> Act_common.Id.t
+include Travesty.Bi_traversable_types.S1_left with type 'compiler t := 'compiler t
+    and type right = Act_common.Id.t
+(** We can traverse over the compilers (on the left) and architecture
+    IDs (on the right) in a specification. *)
+
+val arch : Qualified.Compiler.t t -> Act_common.Id.t
 (** [arch_of_target target] gets the architecture ID associated with
     [target]. *)
 
-val ensure_spec : t -> Qualified.Compiler.t Or_error.t
+val ensure_spec : 'spec t -> 'spec Or_error.t
 (** [ensure_spec target] extracts a compiler spec from [target], failing if
     it is a raw architecture. *)

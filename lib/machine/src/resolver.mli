@@ -26,6 +26,6 @@ module Make (B : Basic) :
     {{!Basic_resolver} Basic_resolver} over direct compiler specs. *)
 
 module Make_on_target (B : Basic) :
-  Resolver_types.S with type spec = Target.t
+  Resolver_types.S with type spec = Qualified.Compiler.t Target.t
 (** Constructs a {{!S_resolver} S_resolver} over targets from a
     {{!Basic_resolver} Basic_resolver}. *)

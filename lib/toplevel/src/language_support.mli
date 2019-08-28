@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Language lookup and module building support
 
@@ -32,10 +20,15 @@
 open Core_kernel
 open Act_common
 
-val asm_runner_from_arch :
+val asm_runner_of_arch :
   Id.t -> (module Act_asm.Runner_intf.Basic) Or_error.t
-(** [asm_runner_from_arch arch] generates an assembly job runner from an
+(** [asm_runner_of_arch arch] generates an assembly job runner from an
     architecture ID [arch]. *)
+
+val asm_runner_of_target :
+  Act_machine.Qualified.Compiler.t Act_machine.Target.t -> (module Act_asm.Runner_intf.Basic) Or_error.t
+(** [asm_runner_of_target target] gets the runner dependency module
+    associated with a target (either a compiler spec or emits clause). *)
 
 module Resolve_compiler :
   Act_machine.Resolver_types.S
@@ -44,7 +37,7 @@ module Resolve_compiler :
     look up compilers. *)
 
 module Resolve_compiler_from_target :
-  Act_machine.Resolver_types.S with type spec = Act_machine.Target.t
+  Act_machine.Resolver_types.S with type spec = Act_machine.Qualified.Compiler.t Act_machine.Target.t
 (** Compiler resolver that uses this module's built-in compiler table to
     look up compilers from targets, filling in a dummy compiler if the
     target doesn't mention a compiler. *)

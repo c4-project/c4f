@@ -15,10 +15,6 @@ module Ac = Act_common
 module Pb = Plumbing
 module Cc_target = Act_machine.Target
 
-let asm_runner_of_target (tgt : Cc_target.t) :
-    (module Act_asm.Runner_intf.Basic) Or_error.t =
-  Language_support.asm_runner_from_arch (Cc_target.arch tgt)
-
 let make_output_from_standard_args (args : Args.Standard.t) : Ac.Output.t =
   Ac.Output.make
     ~verbose:(Args.Standard.is_verbose args)

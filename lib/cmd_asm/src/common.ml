@@ -20,7 +20,7 @@ module Input = struct
     ; args: Args.Standard_asm.t
     ; sanitiser_passes: Set.M(Act_sanitiser.Pass_group).t
     ; c_litmus_aux: Act_delitmus.Aux.t
-    ; target: Act_machine.Target.t
+    ; target: Act_machine.Qualified.Compiler.t Act_machine.Target.t
     ; pb_input: Plumbing.Input.t
     ; pb_output: Plumbing.Output.t
     ; output: Act_common.Output.t }
@@ -34,7 +34,7 @@ module Input = struct
 end
 
 let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
-    Act_machine.Target.t Or_error.t =
+    Act_machine.Qualified.Compiler.t Act_machine.Target.t Or_error.t =
   let raw_target = Args.Standard_asm.target args in
   Toplevel.Asm_target.resolve ~cfg raw_target
 
