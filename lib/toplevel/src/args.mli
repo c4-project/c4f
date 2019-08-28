@@ -125,34 +125,14 @@ module With_files : sig
       [aux_out_f], or otherwise discards it. It returns any errors arising. *)
 end
 
-(** Variant of {{!Standard_with_files} Standard_with_files} including the
-    standard [act asm] arguments. *)
-module Standard_asm : sig
-  type t
-  (** Opaque type of processed argument records. *)
-
-  val rest : t -> Standard.t With_files.t
-  (** [rest args] retrieves the argument record wrapped by [args]. *)
-
-  val get : t Command.Param.t
-  (** [get] is a [Command.Param.t] that describes how to get the standard
-      assembly arguments at the command line. *)
-
-  val aux_file : t -> string option
-  (** [aux_file args] gets the path of a litmus aux file, if user supplied
-      one. *)
-
-  val target : t -> Asm_target.t
-  (** [target args] gets either a defined assembly architecture, or a
-      compiler ID. *)
-
-  val sanitiser_passes :
-    t -> Act_sanitiser.Pass_group.Selector.t Blang.t option
-  (** [sanitiser_passes args] gets the Blang predicate, if any, supplied to
-      filter the sanitiser pass selection. *)
-end
-
 (** {2 Miscellaneous argument helpers} *)
+
+val id_type : Act_common.Id.t Command.Arg_type.t
+(** [id_type] is an argument type for ACT IDs. *)
+
+val asm_target : Asm_target.t Command.Param.t
+(** [asm_target] defines a parameter for collecting an assembly target
+    (architecture or compiler). *)
 
 val flag_to_enum_choice :
   'a -> string -> doc:string -> 'a option Command.Param.t
@@ -188,7 +168,3 @@ val machine_predicate :
   Act_machine.Property.t Blang.t option Command.Param.t
 (** [machine_predicate] defines a parameter for collecting a filtering
     predicate for machines. *)
-
-val asm_target : Asm_target.t Command.Param.t
-(** [asm_target] defines a parameter for collecting an assembly target
-    (architecture or compiler). *)

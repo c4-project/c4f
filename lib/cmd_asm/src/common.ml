@@ -36,7 +36,7 @@ end
 let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
     Act_machine.Target.t Or_error.t =
   let raw_target = Args.Standard_asm.target args in
-  Asm_target.resolve ~cfg raw_target
+  Toplevel.Asm_target.resolve ~cfg raw_target
 
 let no_aux_warning : string =
   {|
@@ -80,8 +80,8 @@ let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
     let%bind c_litmus_aux = get_aux args ~output in
     let%bind act_config = Act_config.Act.of_global global_cfg in
     let%bind target = resolve_target args act_config in
-    let%bind pb_input = Args.With_files.infile_source f_args in
-    let%bind pb_output = Args.With_files.outfile_sink f_args in
+    let%bind pb_input = Toplevel.Args.With_files.infile_source f_args in
+    let%bind pb_output = Toplevel.Args.With_files.outfile_sink f_args in
     let input =
       Input.Fields.create ~act_config ~output ~args ~sanitiser_passes
         ~c_litmus_aux ~target ~pb_input ~pb_output
@@ -92,5 +92,6 @@ let lift_command (args : Args.Standard_asm.t)
     ~(f : Input.t -> unit Or_error.t)
     ~(default_passes : Set.M(Act_sanitiser.Pass_group).t) : unit =
   let f_args = Args.Standard_asm.rest args in
-  let s_args = Args.With_files.rest f_args in
-  Common.lift_command s_args ~f:(with_input args ~f ~default_passes)
+  let s_args = Toplevel.Args.With_files.rest f_args in
+  Toplevel.Common.lift_command s_args
+    ~f:(with_input args ~f ~default_passes)

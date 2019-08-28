@@ -108,7 +108,6 @@ main() {
   mkdir -p "${fuzz_dir}"
   "${SCRIPTDIR}/fuzz_many" "${qvx_flags}" -c "${FUZZ_PASSES}" -d "${fuzz_dir}" "$@"
 
-
   local test_dir="${OUTPUT_DIR}/${TEST_OUTPUT_DIR}"
   local test_file="${test_dir}/test.json"
   act::log "now making test (%s)\n" "${test_file}"

@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Core_kernel
 module A = Act_common
@@ -42,7 +30,7 @@ let explain_filter (target : Act_machine.Target.t) :
     (module Act_asm.Explainer.S_filter) Or_error.t =
   Or_error.(
     tag ~tag:"while getting an explain filter for this target"
-      (target |> Common.asm_runner_of_target >>| explain_runner))
+      (target |> Toplevel.Common.asm_runner_of_target >>| explain_runner))
 
 let run_with_input (o : A.Output.t) target job_input infile outfile =
   Or_error.Let_syntax.(
@@ -50,7 +38,7 @@ let run_with_input (o : A.Output.t) target job_input infile outfile =
     A.Output.pv o "Got explain filter (name %s)" Exp.name ;
     Exp.run job_input infile outfile)
 
-module In = Asm_common.Input
+module In = Common.Input
 
 let run output_format (input : In.t) =
   let o = In.output input in
@@ -86,5 +74,5 @@ let command =
             ~if_nothing_chosen:(`Default_to None))
       in
       fun () ->
-        Asm_common.lift_command standard_args ~f:(run output_format)
+        Common.lift_command standard_args ~f:(run output_format)
           ~default_passes:Act_sanitiser.Pass_group.explain)

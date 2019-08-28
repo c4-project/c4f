@@ -71,13 +71,14 @@ module Other = struct
     flag name (optional id_type) ~doc:("ARCH_ID " ^ doc)
 
   let asm_target : Asm_target.t Command.Param.t =
-    choose_one
-      [ map
-          ~f:(Option.map ~f:Asm_target.compiler_id)
-          (flag "compiler" (optional id_type)
-             ~doc:"COMPILER_ID ID of the compiler to target")
-      ; map ~f:(Option.map ~f:Asm_target.arch) (arch ()) ]
-      ~if_nothing_chosen:`Raise
+    Command.Param.(
+      choose_one
+        [ map
+            ~f:(Option.map ~f:Asm_target.compiler_id)
+            (flag "compiler" (optional id_type)
+               ~doc:"COMPILER_ID ID of the compiler to target")
+        ; map ~f:(Option.map ~f:Asm_target.arch) (arch ()) ]
+        ~if_nothing_chosen:`Raise)
 
   let aux_file : string option Command.Param.t =
     flag "aux-file"
@@ -185,22 +186,4 @@ module With_files = struct
         ~f:(fun filename ->
           Or_error.try_with_join (fun () ->
               Stdio.Out_channel.with_file filename ~f:(aux_out_f aux_out))))
-end
-
-module Standard_asm = struct
-  type t =
-    { rest: Standard.t With_files.t
-    ; aux_file: string option
-    ; target: Asm_target.t
-    ; sanitiser_passes: Act_sanitiser.Pass_group.Selector.t Blang.t option
-    }
-  [@@deriving fields]
-
-  let get =
-    Command.Let_syntax.(
-      let%map target = Other.asm_target
-      and aux_file = Other.aux_file
-      and sanitiser_passes = Other.sanitiser_passes
-      and rest = With_files.get Standard.get in
-      {rest; target; aux_file; sanitiser_passes})
 end

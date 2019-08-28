@@ -1,7 +1,8 @@
 (executable
- (public_name act)
- (modules act)
- (libraries base core_kernel core toplevel act.utils))
+ (name act_asm)
+ (public_name act-asm)
+ (modules act_asm)
+ (libraries base core_kernel core toplevel cmd_asm))
 
 (executable
  (name act_backend)
