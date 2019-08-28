@@ -58,7 +58,7 @@ act::exec() {
 # Arguments:
 #   *: the arguments to the program.
 act::backend() {
-  act::exec "${ACT_BACKEND:-"act-backend"}" backend "$@"
+  act::exec "${ACT_BACKEND:-"act-backend"}" "$@"
 }
 
 
