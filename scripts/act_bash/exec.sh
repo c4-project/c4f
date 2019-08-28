@@ -11,6 +11,9 @@ declare DUNE_EXEC
 # If set, overrides the choice of main `act` executable.
 declare ACT
 
+# If set, overrides the choice of main `act` executable.
+declare ACT_BACKEND
+
 # If set, overrides the choice of `act-c` executable.
 declare ACT_C
 
@@ -49,14 +52,13 @@ act::exec() {
 # Runs the ACT 'backend' tool.
 #
 # Globals:
-#   - ACT (read)
+#   - ACT_BACKEND (read)
 #   - DUNE_EXEC (transitively read)
 #
 # Arguments:
 #   *: the arguments to the program.
 act::backend() {
-  # `backend` is currently `act backend`; this will change later.
-  act::exec "${ACT:-"act"}" backend "$@"
+  act::exec "${ACT_BACKEND:-"act-backend"}" backend "$@"
 }
 
 

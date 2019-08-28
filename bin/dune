@@ -4,6 +4,12 @@
  (libraries base core_kernel core toplevel act.utils))
 
 (executable
+ (name act_backend)
+ (public_name act-backend)
+ (modules act_backend)
+ (libraries base core_kernel core toplevel cmd_backend))
+
+(executable
  (name act_c)
  (public_name act-c)
  (modules act_c)
