@@ -3,6 +3,12 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2019-Aug-28
+
+- `act configure` is now `act-config`.
+- Compiler testing now only happens if one passes `-test-compilers` to
+  `act-config list-compilers`.
+
 ## 2019-Aug-08
 
 - State observation comparing is now available at `act-state compare`.  It

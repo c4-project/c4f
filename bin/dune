@@ -10,6 +10,12 @@
  (libraries base core_kernel core toplevel cmd_c))
 
 (executable
+ (name act_config)
+ (public_name act-config)
+ (modules act_config)
+ (libraries base core_kernel core toplevel cmd_config))
+
+(executable
  (name act_fuzz)
  (public_name act-fuzz)
  (modules act_fuzz)
@@ -26,7 +32,7 @@
  (action
   (with-stdout-to
    specs.output
-   (run act config "list-compilers" "-verbose" "-config" "act.conf.example")))
+   (run act-config "list-compilers" "-verbose" "-config" "act.conf.example")))
  (deps "act.conf.example"))
 
 (alias

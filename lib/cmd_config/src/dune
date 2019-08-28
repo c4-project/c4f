@@ -1,0 +1,11 @@
+; -*- mode: lisp; -*-
+
+(library
+ (name cmd_config)
+ ; This module is deliberately left private, as it's so tightly coupled to the
+ ; act binaries that it's not particularly useful on its own.
+ (preprocess
+  (pps ppx_jane))
+ (libraries stdio base base.caml core_kernel fmt plumbing toplevel
+   act.backend act.common act.compiler act.config act.machine act.sanitiser
+   act.utils))

@@ -47,7 +47,7 @@ def run_list_compilers(predicate_args):
         successfully.
     :raise: `ActMachineInspectError` if the lister failed.
     """
-    args: typing.List[str] = ["act", "configure", "list-compilers", *predicate_args]
+    args: typing.List[str] = ["act-config", "list-compilers", *predicate_args]
     proc: subprocess.CompletedProcess = subprocess.run(
         args, capture_output=True, text=True
     )
@@ -97,7 +97,7 @@ def make_predicate_args(
 def parse_compiler_list(
     lines: typing.Iterable[str]
 ) -> typing.Dict[act_id.Id, typing.Set[act_id.Id]]:
-    """Parses a compiler information list from `act configure list-compilers`.
+    """Parses a compiler information list from `act-config list-compilers`.
 
     >>> parse_compiler_list([ 'localhost gcc.x86.O0',
     ...                       'localhost gcc.x86.O3',

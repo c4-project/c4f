@@ -3,6 +3,7 @@
 # Contains a wrapper for running ACT binaries, which allows for the use
 # of 'dune exec'.
 
+
 # If `DUNE_EXEC` is set to "true", calls to `act::exec` will run their program
 # through `dune exec`.
 declare DUNE_EXEC
@@ -15,6 +16,9 @@ declare ACT_C
 
 # If set, overrides the choice of `act-fuzz` executable.
 declare ACT_FUZZ
+
+# If set, overrides the choice of `act-state` executable.
+declare ACT_STATE
 
 
 # Runs an OCaml ACT tool.

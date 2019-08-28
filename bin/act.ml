@@ -33,8 +33,6 @@ with the C11 memory model with regards to the assembly they emit.
 
 let command =
   Command.group ~summary:"the Automagic Compiler Tormentor" ~readme
-    [ ("asm", Asm_main.command)
-    ; ("configure", Configure.command)
-    ; ("backend", Backend.command) ]
+    [("asm", Asm_main.command); ("backend", Backend.command)]
 
 let () = Command.run command
