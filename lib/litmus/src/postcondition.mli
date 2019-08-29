@@ -67,11 +67,11 @@ module Pred : sig
         [v]. *)
 
     val ( && ) : 'const t -> 'const t -> 'const t
-    (** [l && r] is logical conjunction, representing the [/\] operator in
+    (** [l && r] is logical conjunction, representing the '/\' operator in
         written Litmus. *)
 
     val ( || ) : 'const t -> 'const t -> 'const t
-    (** [l || r] is logical disjunction, representing the [\/] operator in
+    (** [l || r] is logical disjunction, representing the '\/' operator in
         written Litmus. *)
   end
 
