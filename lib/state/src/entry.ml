@@ -53,6 +53,8 @@ include Q
 
 let of_alist = Map.of_alist_or_error (module A.Litmus_id)
 
+let to_alist : t -> (A.Litmus_id.t, string) List.Assoc.t = Map.to_alist
+
 let domain : t -> Set.M(A.Litmus_id).t =
   Fn.compose (Set.of_list (module A.Litmus_id)) Map.keys
 

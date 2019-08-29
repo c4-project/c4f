@@ -9,7 +9,10 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Litmus AST: base modules and functors.
+(** Minimalistic AST for litmus test postconditions.
+
+    This AST only tries to cover the parts of the litmus-test format that
+    ACT actually needs for input.
 
     These parts of the litmus AST have no module-level dependency on the
     underlying language of the litmus tests. *)
@@ -23,7 +26,9 @@ open Base
     The distinction between [Pred_elt] and {{!Pred} Pred} mainly exists to
     make conversion to and from other languages, like [Blang], easier. *)
 module Pred_elt : sig
-  type 'const t = Eq of Act_common.Litmus_id.t * 'const
+  type 'const t =
+    | Bool of bool
+    | Eq of Act_common.Litmus_id.t * 'const
   [@@deriving sexp, compare, equal, quickcheck]
 
   (** {2 Constructors} *)
@@ -61,18 +66,42 @@ module Pred : sig
 
   (** {2 Constructors} *)
 
-  module Infix : sig
-    val ( ==? ) : Act_common.Litmus_id.t -> 'const -> 'const t
-    (** [k ==? v] is a primitive equality test that key [k] maps to value
+  val or_ : 'const t -> 'const t -> 'const t
+  (** [or_ l r] is logical disjunction, representing the '\/' operator in
+        written Litmus. *)
+
+  val optimising_or : 'const t -> 'const t -> 'const t
+  (** [optimising_or l r] is [or_ l r], but short-circuits in various cases. *)
+
+  val and_ : 'const t -> 'const t -> 'const t
+  (** [and_ l r] is logical conjunction, representing the '/\' operator in
+        written Litmus. *)
+
+  val optimising_and : 'const t -> 'const t -> 'const t
+  (** [optimising_and l r] is [and_ l r], but short-circuits in various cases. *)
+
+  val eq : Act_common.Litmus_id.t -> 'const -> 'const t
+  (** [eq k v] is a primitive equality test that key [k] maps to value
         [v]. *)
 
+  val bool : bool -> 'const t
+  (** [bool b] lifts [b] to a predicate. *)
+
+  module Infix : sig
+    val ( ==? ) : Act_common.Litmus_id.t -> 'const -> 'const t
+    (** [k ==? v] is [eq k v]. *)
+
     val ( && ) : 'const t -> 'const t -> 'const t
-    (** [l && r] is logical conjunction, representing the '/\' operator in
-        written Litmus. *)
+    (** [l && r] is [and l r]. *)
+
+    val ( &&+ ) : 'const t -> 'const t -> 'const t
+    (** [l ||+ r] is [optimising_and l r]. *)
 
     val ( || ) : 'const t -> 'const t -> 'const t
-    (** [l || r] is logical disjunction, representing the '\/' operator in
-        written Litmus. *)
+    (** [l || r] [or l r]. *)
+
+    val ( ||+ ) : 'const t -> 'const t -> 'const t
+    (** [l ||+ r] is [optimising_or l r]. *)
   end
 
   val elt : 'const Pred_elt.t -> 'const t

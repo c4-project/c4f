@@ -15,10 +15,19 @@ module Id = Act_common.Litmus_id
 module Tx = Travesty_base_exts
 
 module Pred_elt = struct
-  type 'const t = Eq of Id.t * 'const
+  type 'const t =
+    | Bool of bool
+    | Eq of Id.t * 'const
   [@@deriving sexp, compare, equal, quickcheck, variants]
 
   let ( ==? ) = eq
+
+  let pp (f : Formatter.t) (e : 'const t) ~(pp_const : 'const Fmt.t) : unit =
+    match e with
+    | Bool true -> Fmt.pf f "true"
+    | Bool false -> Fmt.pf f "false"
+    | Eq (i, c) ->
+      Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
 
   module BT :
     Travesty.Bi_traversable_types.S1_right
@@ -32,6 +41,7 @@ module Pred_elt = struct
       let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
           ~(right : 'a -> 'b M.t) : 'b t M.t =
         match t with
+        | Bool k -> M.return (Bool k)
         | Eq (id, c) ->
             M.Let_syntax.(
               let%map id' = left id and c' = right c in
@@ -72,10 +82,32 @@ module Pred = struct
     | Elt of 'const Pred_elt.t
   [@@deriving sexp, compare, equal, variants]
 
-  module Infix = struct
-    let ( || ) (l : 'const t) (r : 'const t) : 'const t = Or (l, r)
+  let bool (b : bool) : 'const t =
+    elt (Pred_elt.bool b)
 
-    let ( && ) (l : 'const t) (r : 'const t) : 'const t = And (l, r)
+  let eq (k : Act_common.Litmus_id.t) (v : 'const) : 'const t =
+    elt (Pred_elt.eq k v)
+
+  let optimising_or (l : 'const t) (r : 'const t) : 'const t =
+    match (l, r) with
+    | Elt (Bool true), _ | _, Elt (Bool true) -> bool true
+    | Elt (Bool false), x | x, Elt (Bool false) -> x
+    | Or (x, y), z -> or_ x (or_ y z)
+    | _ -> or_ l r
+
+  let optimising_and (l : 'const t) (r : 'const t) : 'const t =
+    match (l, r) with
+    | Elt (Bool false), _ | _, Elt (Bool false) -> bool false
+    | Elt (Bool true), x | x, Elt (Bool true) -> x
+    | Or (x, y), z -> and_ x (and_ y z)
+    | _ -> and_ l r
+
+  module Infix = struct
+    let ( || ) (l : 'const t) (r : 'const t) : 'const t = or_ l r
+    let ( ||+ ) (l : 'const t) (r : 'const t) : 'const t = optimising_or l r
+
+    let ( && ) (l : 'const t) (r : 'const t) : 'const t = and_ l r
+    let ( &&+ ) (l : 'const t) (r : 'const t) : 'const t = optimising_and l r
 
     let ( ==? ) (k : Act_common.Litmus_id.t) (v : 'const) : 'const t =
       elt (Pred_elt.eq k v)
@@ -112,7 +144,7 @@ module Pred = struct
           | Or (l, r) ->
               let%map l' = bi_map_m ~left ~right l
               and r' = bi_map_m ~left ~right r in
-              Or (l', r')
+              or_ l' r'
           | And (l, r) ->
               let%map l' = bi_map_m ~left ~right l
               and r' = bi_map_m ~left ~right r in
@@ -213,8 +245,7 @@ module Pred = struct
         Fmt.pf f "%a@ \\/@ %a" mu l mu r
     | And (l, r) ->
         Fmt.pf f "%a@ /\\@ %a" mu l mu r
-    | Elt (Eq (i, c)) ->
-        Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
+    | Elt e -> Pred_elt.pp f ~pp_const e
 end
 
 module Quantifier = struct

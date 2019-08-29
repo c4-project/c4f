@@ -40,6 +40,9 @@ val map :
 val of_alist : (Litmus_id.t, string) List.Assoc.t -> t Or_error.t
 (** [of_alist alist] tries to convert [alist] into a state. *)
 
+val to_alist : t -> (Litmus_id.t, string) List.Assoc.t
+(** [to_alist entry] converts [entry] into an associative list. *)
+
 (** {2 Domain queries} *)
 
 val domain : t -> Set.M(Litmus_id).t
