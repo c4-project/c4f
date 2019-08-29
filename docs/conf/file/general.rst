@@ -1,3 +1,5 @@
+.. _conf-file-general:
+
 General format
 --------------
 

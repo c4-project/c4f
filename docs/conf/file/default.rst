@@ -1,3 +1,5 @@
+.. _conf-file-default:
+
 The ``default`` block
 ---------------------
 

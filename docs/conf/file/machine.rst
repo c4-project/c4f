@@ -1,3 +1,5 @@
+.. _conf-file-machine:
+
 The ``machine`` block
 ---------------------
 

@@ -1,3 +1,5 @@
+.. _conf-file:
+
 The ``act.conf`` file format
 ============================
 
