@@ -1,7 +1,7 @@
 .. _commands-act-fuzz-run:
 
-``act-fuzz run``: run the fuzzer on one file
---------------------------------------------
+``act-fuzz run``: perform fuzzing mutations on a C litmus test
+--------------------------------------------------------------
 
 .. warning:: Under construction.
 

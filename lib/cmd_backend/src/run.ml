@@ -27,7 +27,7 @@ let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
       args ~aux_in:arch)
 
 let command : Command.t =
-  Command.basic ~summary:"runs a configured test backend"
+  Command.basic ~summary:"run a configured test backend"
     Command.Let_syntax.(
       let%map_open standard_args =
         ignore anon ;

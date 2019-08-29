@@ -32,7 +32,7 @@ let run ?(fqid : Id.t = Id.of_string "herd")
 
 let command : Command.t =
   Command.basic
-    ~summary:"parses native output from a configured test backend"
+    ~summary:"parse native output from a configured test backend"
     Command.Let_syntax.(
       let%map standard_args = Toplevel.Args.(With_files.get Standard.get)
       and sim = Toplevel.Args.simulator () in

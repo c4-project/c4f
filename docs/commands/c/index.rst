@@ -1,7 +1,11 @@
-Commands on C Files
-===================
+.. _commands-act-c:
+
+``act-c``: commands for dealing with C files
+============================================
 
 .. toctree::
    :maxdepth: 2
+   :caption: Sub-commands:
 
    compile
+   delitmus

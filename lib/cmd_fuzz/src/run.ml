@@ -33,7 +33,7 @@ mutations to the litmus test, and outputs the resulting modified test.
 |}
 
 let command : Command.t =
-  Command.basic ~summary:"performs fuzzing mutations on a C litmus test"
+  Command.basic ~summary:"perform fuzzing mutations on a C litmus test"
     ~readme
     Command.Let_syntax.(
       let%map_open standard_args =

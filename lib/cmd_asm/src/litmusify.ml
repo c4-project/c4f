@@ -36,7 +36,7 @@ let run (input : In.t) : unit Or_error.t =
     Or_error.ignore_m (Lit.Filter.run job_input infile outfile))
 
 let command =
-  Command.basic ~summary:"converts an assembly file to a litmus test"
+  Command.basic ~summary:"convert an assembly file to a litmus test"
     Command.Let_syntax.(
       let%map standard_args = Args.Standard_asm.get in
       fun () ->

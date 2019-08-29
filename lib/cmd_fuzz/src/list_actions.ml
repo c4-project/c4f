@@ -31,7 +31,7 @@ let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Global.t) :
     >>| Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries)
 
 let command : Command.t =
-  Command.basic ~summary:"outputs the current fuzzer weight table"
+  Command.basic ~summary:"output the current fuzzer weight table"
     ~readme:list_fuzzer_actions_readme
     Command.Let_syntax.(
       let%map standard_args = Toplevel.Args.Standard.get in

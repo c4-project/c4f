@@ -31,7 +31,7 @@ let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
 
 let command : Command.t =
   Command.basic
-    ~summary:"runs a configured test backend in harness-making mode"
+    ~summary:"ask a configured test backend to make a harness"
     Command.Let_syntax.(
       let%map_open standard_args =
         Toplevel.Args.(With_files.get Standard.get)

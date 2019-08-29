@@ -46,7 +46,7 @@ let readme () : string =
     |}
 
 let command : Command.t =
-  Command.basic ~summary:"runs the given compiler on a single file" ~readme
+  Command.basic ~summary:"run the given compiler on a single file" ~readme
     Command.Let_syntax.(
       let%map standard_args = Toplevel.Args.(With_files.get Standard.get)
       and raw_target = Toplevel.Args.asm_target

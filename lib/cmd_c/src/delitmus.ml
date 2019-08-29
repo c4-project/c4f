@@ -24,7 +24,7 @@ let run ?(aux_output : string option)
     args ~aux_in:style ~aux_out_f:write_aux ?aux_out_filename:aux_output
 
 let command : Command.t =
-  Command.basic ~summary:"converts a C litmus test to a normal C file"
+  Command.basic ~summary:"convert a C litmus test to a normal C file"
     Command.Let_syntax.(
       let%map_open standard_args =
         Toplevel.Args.(With_files.get Standard.get)

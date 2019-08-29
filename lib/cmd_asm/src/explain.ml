@@ -56,7 +56,7 @@ let run output_format (input : In.t) =
     print_symbol_map (Act_asm.Job.Output.symbol_map out))
 
 let command =
-  Command.basic ~summary:"explains act's understanding of an assembly file"
+  Command.basic ~summary:"explain ACT's understanding of an assembly file"
     Command.Let_syntax.(
       let%map_open standard_args = ignore anon ; Args.Standard_asm.get
       and output_format =

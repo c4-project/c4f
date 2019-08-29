@@ -45,7 +45,7 @@ let readme () =
   |}
 
 let command : Command.t =
-  Command.basic ~summary:"compares two state observations" ~readme
+  Command.basic ~summary:"compare two state observations" ~readme
     Command.Let_syntax.(
       let%map_open standard_args = Toplevel.Args.Standard.get
       and human_readable =

@@ -62,7 +62,7 @@ act::backend() {
 }
 
 
-# Runs the ACT 'compile' tool.
+# Runs the ACT 'compile' sub-tool.
 #
 # Globals:
 #   - ACT (read)
@@ -71,12 +71,12 @@ act::backend() {
 # Arguments:
 #   *: the arguments to the program.
 act::compile() {
-  # `compile` is currently `act compile`; this may change later.
+  # `compile` is currently `act-c compile`; this may change later.
   act::exec "${ACT_C:-"act-c"}" compile "$@"
 }
 
 
-# Runs the ACT 'delitmus' tool.
+# Runs the ACT 'delitmus' sub-tool.
 #
 # Globals:
 #   - ACT_C (read)
@@ -103,7 +103,7 @@ act::fuzz() {
 }
 
 
-# Runs the ACT 'litmusify' tool.
+# Runs the ACT 'litmusify' sub-tool.
 #
 # Globals:
 #   - ACT (read)

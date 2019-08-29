@@ -31,7 +31,7 @@ the mutations listed in the trace to the test, and outputs the resulting modifie
 |}
 
 let command : Command.t =
-  Command.basic ~summary:"replays a fuzzing trace on a C litmus test"
+  Command.basic ~summary:"replay a fuzzing trace on a C litmus test"
     ~readme
     Command.Let_syntax.(
       let%map_open standard_args =
