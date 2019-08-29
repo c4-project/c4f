@@ -62,7 +62,8 @@ module Make_on_target (B : Basic) :
                 "To run a compiler, you must supply a compiler ID."
           end) : C_instance_t.S )
 
-  let filter_from_spec (tgt : Qualified.Compiler.t Target.t) : (module C_filter.S) Or_error.t =
+  let filter_from_spec (tgt : Qualified.Compiler.t Target.t) :
+      (module C_filter.S) Or_error.t =
     Or_error.Let_syntax.(
       let%map (module M) = from_spec tgt in
       (module C_filter.Make (M) : C_filter.S))

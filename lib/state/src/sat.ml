@@ -24,4 +24,5 @@ let check_elt (state : Entry.t) :
 let run (obs : Observation.t) ~(post : string Act_litmus.Postcondition.t) :
     Result.t =
   let states = Observation.states obs in
-  Act_litmus.Postcondition_eval.eval post ~subjects:states ~elt:check_elt
+  let subjects = Set.to_list states in
+  Act_litmus.Postcondition_eval.eval post ~subjects ~elt:check_elt

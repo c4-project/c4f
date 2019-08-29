@@ -30,8 +30,7 @@ let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
     List.iter ~f:Stdio.print_endline cmds)
 
 let command : Command.t =
-  Command.basic
-    ~summary:"ask a configured test backend to make a harness"
+  Command.basic ~summary:"ask a configured test backend to make a harness"
     Command.Let_syntax.(
       let%map_open standard_args =
         Toplevel.Args.(With_files.get Standard.get)

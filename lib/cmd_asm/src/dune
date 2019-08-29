@@ -6,6 +6,6 @@
  ; act binaries that it's not particularly useful on its own.
  (preprocess
   (pps ppx_jane))
- (libraries stdio base base.caml core_kernel core fmt plumbing
-   toplevel act.asm act.common travesty travesty.base_exts
-   act.config act.delitmus act.machine act.sanitiser act.utils))
+ (libraries stdio base base.caml core_kernel core fmt plumbing toplevel
+   act.asm act.common travesty travesty.base_exts act.config act.delitmus
+   act.machine act.sanitiser act.utils))

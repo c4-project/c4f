@@ -25,10 +25,13 @@
 
 open Base
 
-(** Type of top-level command targets, as taken from the command line. *)
 type t = Act_common.Id.t Act_machine.Target.t
+(** Type of top-level command targets, as taken from the command line. *)
 
-val resolve : t -> cfg:Act_config.Act.t -> Act_machine.Qualified.Compiler.t Act_machine.Target.t Or_error.t
+val resolve :
+     t
+  -> cfg:Act_config.Act.t
+  -> Act_machine.Qualified.Compiler.t Act_machine.Target.t Or_error.t
 (** [resolve target ~cfg] passes through [target] if it's a direct
     architecture reference; if it's a compiler ID, it tries to look up that
     ID in [cfg], resolving it to a compiler spec. *)

@@ -48,7 +48,8 @@ let asm_runner_of_arch :
     ~f:(fun lang rest ->
       Result.(try_get_lang_proc lang >>= fun proc -> proc rest))
 
-let asm_runner_of_target (tgt : Act_machine.Qualified.Compiler.t Act_machine.Target.t) :
+let asm_runner_of_target
+    (tgt : Act_machine.Qualified.Compiler.t Act_machine.Target.t) :
     (module Act_asm.Runner_intf.Basic) Or_error.t =
   asm_runner_of_arch (Act_machine.Target.arch tgt)
 

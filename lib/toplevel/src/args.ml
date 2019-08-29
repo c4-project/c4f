@@ -65,7 +65,9 @@ module Other = struct
             ~f:(Option.map ~f:(fun x -> Act_machine.Target.Cc x))
             (flag "compiler" (optional id_type)
                ~doc:"COMPILER_ID ID of the compiler to target")
-        ; map ~f:(Option.map ~f:(fun x -> Act_machine.Target.Arch x)) (arch ()) ]
+        ; map
+            ~f:(Option.map ~f:(fun x -> Act_machine.Target.Arch x))
+            (arch ()) ]
         ~if_nothing_chosen:`Raise)
 
   let aux_file : string option Command.Param.t =

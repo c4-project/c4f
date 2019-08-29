@@ -19,4 +19,3 @@ let resolve (target : t) ~(cfg : Act_config.Act.t) :
   Act_machine.Target.With_errors.map_left_m
     ~f:(fun fqid -> Act_config.Act.compiler cfg ~fqid)
     target
-
