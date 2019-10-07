@@ -16,17 +16,15 @@ module Result = struct
   [@@deriving fields, yojson]
 end
 
-let rec eval_pred (pred : 'const Postcondition.Pred.t)
+let eval_bop : Postcondition.Pred_bop.t -> bool -> bool -> bool = function
+  | Or -> (
+      || )
+  | And -> (
+      && )
+
+let eval_pred (pred : 'const Postcondition.Pred.t)
     ~(elt : 'const Postcondition.Pred_elt.t -> bool) : bool =
-  match pred with
-  | Bracket p ->
-      eval_pred ~elt p
-  | Or (l, r) ->
-      eval_pred ~elt l || eval_pred ~elt r
-  | And (l, r) ->
-      eval_pred ~elt l && eval_pred ~elt r
-  | Elt e ->
-      elt e
+  Postcondition.Pred.reduce ~elt ~bop:eval_bop pred
 
 let eval_quantifier (quant : Postcondition.Quantifier.t) ~(f : 'a -> bool)
     ~(subjects : 'a list) : 'a Result.t =

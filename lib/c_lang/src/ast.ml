@@ -800,11 +800,3 @@ module P = struct
   type t = Litmus_lang.Constant.t LP.t
   [@@deriving sexp, quickcheck, compare, equal]
 end
-
-(** {2 Quickcheck tests} *)
-
-let%test_unit "debracket is idempotent" =
-  Base_quickcheck.Test.run_exn
-    (module P)
-    ~f:(fun pred ->
-      [%test_eq: P.t] (LP.debracket pred) (LP.debracket (LP.debracket pred)))

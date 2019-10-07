@@ -166,9 +166,15 @@ end
 
 (** {2 Basic AST nodes} *)
 
+(** A slightly modified version of string with a quickcheck generator that
+    only generates single-character-wide characters. *)
+module Char_string : sig
+  type t = string [@@deriving sexp, equal, compare, quickcheck]
+end
+
 (** AST node for constants *)
 module Constant : sig
-  type t = Char of char | Float of float | Integer of int
+  type t = Char of Char_string.t | Float of float | Integer of int
   [@@deriving sexp, quickcheck]
 
   include Ast_basic_types.Ast_node with type t := t

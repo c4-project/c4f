@@ -19,7 +19,7 @@
 %token <string> TYPEDEF_NAME (* TODO: lexer hack *)
 %token <int> INT_LIT
 %token <float> FLOAT_LIT
-%token <char> CHAR_LIT
+%token <string> CHAR_LIT (* string, not char, due to unicode *)
 %token <string> STRING
 
 %token LPAR "("
@@ -55,6 +55,7 @@
 %token STAR DIV MOD
 
 %token LIT_EXISTS LIT_FORALL LIT_LOCATIONS
+%token LIT_TRUE LIT_FALSE
 %token LIT_AND (* /\; not expressible as an alias *)
 %token LIT_OR (* \/; not expressible as an alias *)
 
@@ -108,7 +109,7 @@ let litmus_locations := LIT_LOCATIONS; bracketed(slist(identifier))
 
 let litmus_quantifier :=
   | LIT_EXISTS; { Act_litmus.Postcondition.Quantifier.Exists }
-  | LIT_FORALL; { Act_litmus.Postcondition.Quantifier.Exists }
+  | LIT_FORALL; { Act_litmus.Postcondition.Quantifier.For_all }
 
 let litmus_postcondition :=
   | quantifier = litmus_quantifier; predicate = parened(litmus_disjunct);
@@ -119,11 +120,13 @@ let litmus_disjunct :=
   | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { Act_litmus.Postcondition.Pred.Infix.(l || r) }
 
 let litmus_conjunct :=
-  | litmus_equality
-  | l = litmus_conjunct; LIT_AND; r = litmus_equality; { Act_litmus.Postcondition.Pred.Infix.(l && r) }
+  | litmus_primitive
+  | l = litmus_conjunct; LIT_AND; r = litmus_primitive; { Act_litmus.Postcondition.Pred.Infix.(l && r) }
 
-let litmus_equality :=
-  | ~ = parened(litmus_disjunct); < Act_litmus.Postcondition.Pred.bracket >
+let litmus_primitive :=
+  | ~ = parened(litmus_disjunct); <>
+  | LIT_TRUE; { Act_litmus.Postcondition.Pred.bool true }
+  | LIT_FALSE; { Act_litmus.Postcondition.Pred.bool false }
   | l = litmus_identifier; "=="; r = constant; { Act_litmus.Postcondition.(Pred.elt (Pred_elt.(l ==? r))) }
 
 let litmus_identifier :=
@@ -452,6 +455,8 @@ identifier:
 (* The lexer should do C identifier validation for us by construction. *)
   | i = IDENTIFIER { Act_common.C_id.of_string i }
 (* Contextual keywords. *)
+  | LIT_TRUE { Act_common.C_id.of_string "true" }
+  | LIT_FALSE { Act_common.C_id.of_string "false" }
   | LIT_EXISTS { Act_common.C_id.of_string "exists" }
   | LIT_FORALL { Act_common.C_id.of_string "forall" }
   | LIT_LOCATIONS { Act_common.C_id.of_string "locations" }

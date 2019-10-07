@@ -5,5 +5,6 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane))
- (libraries sexplib0 splittable_random ppx_expect.common ppx_expect.config
-   ppx_inline_test.config stdio base core_kernel fpath fmt act_utils))
+ (libraries sedlex sexplib0 splittable_random ppx_expect.common
+   ppx_expect.config ppx_inline_test.config stdio base core_kernel fpath fmt
+   act_utils))

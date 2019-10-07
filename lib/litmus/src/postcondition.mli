@@ -26,9 +26,7 @@ open Base
     The distinction between [Pred_elt] and {{!Pred} Pred} mainly exists to
     make conversion to and from other languages, like [Blang], easier. *)
 module Pred_elt : sig
-  type 'const t =
-    | Bool of bool
-    | Eq of Act_common.Litmus_id.t * 'const
+  type 'const t = Bool of bool | Eq of Act_common.Litmus_id.t * 'const
   [@@deriving sexp, compare, equal, quickcheck]
 
   (** {2 Constructors} *)
@@ -52,37 +50,39 @@ module Pred_elt : sig
        and type left = Act_common.C_id.t
 end
 
+(** {1 Predicate binary operators} *)
+
+module Pred_bop : sig
+  (** Type of predicate binary operators. *)
+  type t = Or | And
+end
+
 (** {1 Predicates} *)
 
 (** Directly-parametrised AST for predicates. *)
 module Pred : sig
+  type 'const t [@@deriving sexp, compare, equal, quickcheck]
   (** Type of Litmus predicates. *)
-  type 'const t =
-    | Bracket of 'const t
-    | Or of 'const t * 'const t
-    | And of 'const t * 'const t
-    | Elt of 'const Pred_elt.t
-  [@@deriving sexp, compare, equal, quickcheck]
 
   (** {2 Constructors} *)
 
   val or_ : 'const t -> 'const t -> 'const t
   (** [or_ l r] is logical disjunction, representing the '\/' operator in
-        written Litmus. *)
+      written Litmus. *)
 
   val optimising_or : 'const t -> 'const t -> 'const t
   (** [optimising_or l r] is [or_ l r], but short-circuits in various cases. *)
 
   val and_ : 'const t -> 'const t -> 'const t
   (** [and_ l r] is logical conjunction, representing the '/\' operator in
-        written Litmus. *)
+      written Litmus. *)
 
   val optimising_and : 'const t -> 'const t -> 'const t
-  (** [optimising_and l r] is [and_ l r], but short-circuits in various cases. *)
+  (** [optimising_and l r] is [and_ l r], but short-circuits in various
+      cases. *)
 
   val eq : Act_common.Litmus_id.t -> 'const -> 'const t
-  (** [eq k v] is a primitive equality test that key [k] maps to value
-        [v]. *)
+  (** [eq k v] is a primitive equality test that key [k] maps to value [v]. *)
 
   val bool : bool -> 'const t
   (** [bool b] lifts [b] to a predicate. *)
@@ -107,13 +107,16 @@ module Pred : sig
   val elt : 'const Pred_elt.t -> 'const t
   (** [elt x] lifts [x] to a predicate. *)
 
-  val bracket : 'const t -> 'const t
-  (** [bracket x] surrounds [x] with parentheses. *)
-
-  val debracket : 'const t -> 'const t
-  (** [debracket pred] removes any brackets in [pred]. *)
-
   (** {2 Traversals} *)
+
+  val reduce :
+       'const t
+    -> elt:('const Pred_elt.t -> 'a)
+    -> bop:(Pred_bop.t -> 'a -> 'a -> 'a)
+    -> 'a
+  (** [reduce x ~elt ~bop] reduces [x] to a single value by using [elt] to
+      convert elements to values and [bop] to combine reductions over binary
+      operators. *)
 
   (** Bi-traversing monadically over all identifiers in a predicate on the
       left, and all constants on the right. *)

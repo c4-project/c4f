@@ -43,6 +43,7 @@
    circulated by CEA, CNRS and INRIA at the following URL
    "http://www.cecill.info". We also give a copy in LICENSE.txt. *)
 
+open Base
 module S = Sedlexing
 module F = Frontend
 
@@ -106,25 +107,130 @@ let rec skip_string (lexbuf : S.lexbuf) : unit =
   | _ ->
       skip_string lexbuf
 
+type char_result = Single | Double | Char of char | String of string
+
+let read_hex_escape (lexbuf : S.lexbuf) ~(k : char_result -> 'a) : 'a =
+  match%sedlex lexbuf with
+  | hex_digit, hex_digit ->
+      let digits = S.Utf8.lexeme lexbuf in
+      (* Int.Hex.of_string won't take raw digits. *)
+      let char_int = Int.Hex.of_string ("0x" ^ digits) in
+      let char = Char.of_int_exn char_int in
+      k (Char char)
+  | _ ->
+      F.lex_error
+        (Printf.sprintf "Invalid hex escape sequence: '%s'"
+           (S.Utf8.lexeme lexbuf))
+        lexbuf
+
+let read_escape (lexbuf : S.lexbuf) ~(k : char_result -> 'a) : 'a =
+  match%sedlex lexbuf with
+  | '\'' ->
+      k (Char '\'')
+  | '"' ->
+      k (Char '"')
+  (* TODO(@MattWindsor91): octal escapes *)
+  | '0' ->
+      k (Char '\x00')
+  | '\\' ->
+      k (Char '\\')
+  | 'x' ->
+      read_hex_escape lexbuf ~k
+  | _ ->
+      F.lex_error
+        (Printf.sprintf "Invalid escape sequence: '%s'"
+           (S.Utf8.lexeme lexbuf))
+        lexbuf
+
+let read_string_or_char_inner (lexbuf : S.lexbuf) ~(k : char_result -> 'a) :
+    'a =
+  match%sedlex lexbuf with
+  | '\'' ->
+      k Single
+  | '"' ->
+      k Double
+  | '\\' ->
+      read_escape ~k lexbuf
+  (* TODO(@MattWindsor91): all other escapes *)
+  | Plus (Compl ('\'' | '"' | '\\')) ->
+      k (String (S.Utf8.lexeme lexbuf))
+  | _ ->
+      F.lex_error
+        (Printf.sprintf "Invalid char/string-literal character: '%s'"
+           (S.Utf8.lexeme lexbuf))
+        lexbuf
+
 (* per 'Real World OCaml' *)
 let rec read_string_inner (tok : string -> 't) (buf : Buffer.t)
     (lexbuf : S.lexbuf) : 't =
-  match%sedlex lexbuf with
-  | '"' ->
-      tok (Buffer.contents buf)
-  | '\\', '\\' ->
-      Buffer.add_char buf '\\' ;
-      read_string_inner tok buf lexbuf
-  | '\\', '0' ->
-      Buffer.add_char buf '\x00' ;
-      read_string_inner tok buf lexbuf
-  | Plus (Compl ('"' | '\\')) ->
-      Buffer.add_string buf (S.Utf8.lexeme lexbuf) ;
-      read_string_inner tok buf lexbuf
-  | _ ->
-      F.lex_error
-        ("Invalid string character: " ^ S.Utf8.lexeme lexbuf)
-        lexbuf
+  read_string_or_char_inner lexbuf ~k:(function
+    | Single ->
+        Buffer.add_char buf '\'' ;
+        read_string_inner tok buf lexbuf
+    | Double ->
+        tok (Buffer.contents buf)
+    | Char c ->
+        Buffer.add_char buf c ;
+        read_string_inner tok buf lexbuf
+    | String s ->
+        Buffer.add_string buf s ;
+        read_string_inner tok buf lexbuf)
 
 let read_string (tok : string -> 't) : S.lexbuf -> 't =
   read_string_inner tok (Buffer.create 17)
+
+let read_char_end (tok : string -> 't) (lexbuf : S.lexbuf)
+    (contents : string) : 't =
+  match%sedlex lexbuf with
+  | '\'' ->
+      tok contents
+  | _ ->
+      F.lex_error "Char literal can only contain one character" lexbuf
+
+let read_char (tok : string -> 't) (lexbuf : S.lexbuf) : 't =
+  read_string_or_char_inner lexbuf ~k:(function
+    | Single ->
+        F.lex_error "No character in character literal" lexbuf
+    | Double ->
+        read_char_end tok lexbuf "\""
+    | Char c ->
+        read_char_end tok lexbuf (String.of_char c)
+    | String s ->
+        read_char_end tok lexbuf s)
+
+let escape_string_char (buf : Buffer.t) (lexeme : string) : unit =
+  if String.length lexeme = 1 then
+    let chr = lexeme.[0] in
+    if Char.is_print chr then Buffer.add_char buf chr
+    else Buffer.add_string buf (Printf.sprintf "\\x%02x" (Char.to_int chr))
+  else
+    (* TODO(@MattWindsor91): unicode escapes *)
+    Buffer.add_string buf lexeme
+
+let rec escape_string_inner (buf : Buffer.t) (lexbuf : S.lexbuf) : string =
+  match%sedlex lexbuf with
+  | '\\' ->
+      Buffer.add_string buf "\\\\" ;
+      escape_string_inner buf lexbuf
+  | '"' ->
+      Buffer.add_string buf "\\\"" ;
+      escape_string_inner buf lexbuf
+  | '\'' ->
+      Buffer.add_string buf "\\'" ;
+      escape_string_inner buf lexbuf
+  (* TODO(@MattWindsor91): octal escapes *)
+  | '\x00' ->
+      Buffer.add_string buf "\\0" ;
+      escape_string_inner buf lexbuf
+  | any ->
+      escape_string_char buf (S.Utf8.lexeme lexbuf) ;
+      escape_string_inner buf lexbuf
+  | eof ->
+      Buffer.contents buf
+  | _ ->
+      F.lex_error "Unexpected char when escaping:" lexbuf
+
+let escape_string (s : string) : string =
+  escape_string_inner
+    (Buffer.create (String.length s))
+    (S.Utf8.from_string s)

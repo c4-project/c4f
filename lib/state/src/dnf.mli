@@ -20,21 +20,16 @@ open Base
 
 (** {1 Conversion functions} *)
 
-val convert_states :
-     Set.M(Entry).t
-  -> string Act_litmus.Postcondition.t
+val convert_states : Set.M(Entry).t -> string Act_litmus.Postcondition.t
 (** [convert_states entries] produces a for-all Litmus postcondition that
     requires a state to be one of the states in [entries]. *)
 
-val convert :
-     Observation.t
-  -> string Act_litmus.Postcondition.t
-  (** [convert obs] is {!convert_states} on the witnesses of [obs]. *)
+val convert : Observation.t -> string Act_litmus.Postcondition.t
+(** [convert obs] is {!convert_states} on the witnesses of [obs]. *)
 
 (** {1 As a filter} *)
 
-(** Wraps {!convert} up as a filter that parses an observation JSON
-    file, then emits a Litmus postcondition. *)
+(** Wraps {!convert} up as a filter that parses an observation JSON file,
+    then emits a Litmus postcondition. *)
 module Filter :
-  Plumbing.Filter_types.S with type aux_i = unit
-                           and type aux_o = unit
+  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit

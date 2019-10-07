@@ -95,21 +95,40 @@ module Q : Quickcheck.S with type t := t = struct
       char Quickcheck.Generator.t =
     Quickcheck.Generator.(weighted_union [(8.0, c); (1.0, return '_')])
 
-  let quickcheck_generator : t Quickcheck.Generator.t =
+  let c_keywords : Base.Set.M(String).t Lazy.t =
+    lazy
+      (Base.Set.of_list
+         (module String)
+         ["do"; "while"; "if"; "for"; "true"; "false"; "void"])
+
+  let is_c_keyword (s : string) : bool =
+    (* Not pointfree because of the need to force a lazy value. *)
+    Base.Set.mem (Lazy.force c_keywords) s
+
+  let gen_including_c_keywords : t Quickcheck.Generator.t =
     Quickcheck.Generator.map
       (My_quickcheck.gen_string_initial
          ~initial:(char_or_underscore Char.gen_alpha)
          ~rest:(char_or_underscore Char.gen_alphanum))
       ~f:create_exn
 
+  let quickcheck_generator : t Quickcheck.Generator.t =
+    Quickcheck.Generator.filter gen_including_c_keywords ~f:(fun id ->
+        not (is_c_keyword (raw id)))
+
   let quickcheck_observer : t Quickcheck.Observer.t =
     Quickcheck.Observer.unmap String.quickcheck_observer ~f:raw
+
+  let create_opt : string -> t option = Fn.compose Result.ok create
+
+  let inflate_shrunk (s : string) : t option =
+    Option.(s |> some_if (not (is_c_keyword s)) >>= create_opt)
 
   let quickcheck_shrinker : t Quickcheck.Shrinker.t =
     Quickcheck.Shrinker.create (fun ident ->
         ident |> raw
         |> Quickcheck.Shrinker.shrink String.quickcheck_shrinker
-        |> Sequence.filter_map ~f:(Fn.compose Result.ok create))
+        |> Sequence.filter_map ~f:inflate_shrunk)
 end
 
 include Q

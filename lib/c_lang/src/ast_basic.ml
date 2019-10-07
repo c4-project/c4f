@@ -298,20 +298,43 @@ module Array = struct
   end
 end
 
+module Char_string = struct
+  type t = string [@@deriving sexp, equal, compare, quickcheck]
+
+  let quickcheck_generator : t Base_quickcheck.Generator.t =
+    (* TODO(@MattWindsor91): Unicode? *)
+    Base_quickcheck.Generator.map ~f:String.of_char
+      Base_quickcheck.Generator.char_print
+
+  let quickcheck_shrinker : t Base_quickcheck.Shrinker.t =
+    Base_quickcheck.Shrinker.atomic
+end
+
+module Float_not_nan = struct
+  type t = float [@@deriving sexp, equal, compare, quickcheck]
+
+  let quickcheck_generator : t Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.float_finite
+end
+
 module Constant = struct
-  type t = Char of char | Float of float | Integer of int
-  [@@deriving sexp, variants, eq, compare, quickcheck]
+  type t =
+    | Char of Char_string.t
+    (* UTF-8 *)
+    | Float of Float_not_nan.t
+    | Integer of int
+  [@@deriving sexp, variants, equal, compare, quickcheck]
 
-  (* TODO(@MattWindsor91): escaping *)
-  let escape_char = Char.to_string
-
-  let pp_char = Fmt.(quote ~mark:"'" (using escape_char string))
+  let pp_char =
+    Fmt.(quote ~mark:"'" (using Act_utils.Lex_utils.escape_string string))
 
   let pp f = function
     | Char c ->
         pp_char f c
     | Float d ->
-        Fmt.float f d
+        (* NOT Fmt.float; it emits, for instance, '-0' instead of '-0.'.
+           This then breaks parser round-tripping. *)
+        Fmt.(using Float.to_string string) f d
     | Integer i ->
         Fmt.int f i
 

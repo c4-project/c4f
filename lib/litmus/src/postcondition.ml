@@ -15,19 +15,20 @@ module Id = Act_common.Litmus_id
 module Tx = Travesty_base_exts
 
 module Pred_elt = struct
-  type 'const t =
-    | Bool of bool
-    | Eq of Id.t * 'const
+  type 'const t = Bool of bool | Eq of Id.t * 'const
   [@@deriving sexp, compare, equal, quickcheck, variants]
 
   let ( ==? ) = eq
 
-  let pp (f : Formatter.t) (e : 'const t) ~(pp_const : 'const Fmt.t) : unit =
+  let pp (f : Formatter.t) (e : 'const t) ~(pp_const : 'const Fmt.t) : unit
+      =
     match e with
-    | Bool true -> Fmt.pf f "true"
-    | Bool false -> Fmt.pf f "false"
+    | Bool true ->
+        Fmt.pf f "true"
+    | Bool false ->
+        Fmt.pf f "false"
     | Eq (i, c) ->
-      Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
+        Fmt.pf f "%a@ ==@ %a" Id.pp i pp_const c
 
   module BT :
     Travesty.Bi_traversable_types.S1_right
@@ -41,7 +42,8 @@ module Pred_elt = struct
       let bi_map_m (t : 'a t) ~(left : Id.t -> Id.t M.t)
           ~(right : 'a -> 'b M.t) : 'b t M.t =
         match t with
-        | Bool k -> M.return (Bool k)
+        | Bool k ->
+            M.return (Bool k)
         | Eq (id, c) ->
             M.Let_syntax.(
               let%map id' = left id and c' = right c in
@@ -74,54 +76,75 @@ module Pred_elt = struct
   end)
 end
 
+module Pred_bop = struct
+  type t = Or | And
+  [@@deriving sexp, compare, equal, variants, quickcheck]
+
+  let to_string : t -> string = function Or -> "\\/" | And -> "/\\"
+
+  let pp : t Fmt.t = Fmt.of_to_string to_string
+end
+
 module Pred = struct
   type 'const t =
-    | Bracket of 'const t
-    | Or of 'const t * 'const t
-    | And of 'const t * 'const t
+    | Bop of Pred_bop.t * 'const t * 'const t
     | Elt of 'const Pred_elt.t
   [@@deriving sexp, compare, equal, variants]
 
-  let bool (b : bool) : 'const t =
-    elt (Pred_elt.bool b)
+  let or_ (l : 'const t) (r : 'const t) : 'const t = bop Or l r
+
+  let and_ (l : 'const t) (r : 'const t) : 'const t = bop And l r
+
+  let bool (b : bool) : 'const t = elt (Pred_elt.bool b)
 
   let eq (k : Act_common.Litmus_id.t) (v : 'const) : 'const t =
     elt (Pred_elt.eq k v)
 
+  let reduce (x : 'const t) ~(elt : 'const Pred_elt.t -> 'a)
+      ~(bop : Pred_bop.t -> 'a -> 'a -> 'a) : 'a =
+    let rec mu = function
+      | Bop (o, l, r) ->
+          bop o (mu l) (mu r)
+      | Elt e ->
+          elt e
+    in
+    mu x
+
   let optimising_or (l : 'const t) (r : 'const t) : 'const t =
     match (l, r) with
-    | Elt (Bool true), _ | _, Elt (Bool true) -> bool true
-    | Elt (Bool false), x | x, Elt (Bool false) -> x
-    | Or (x, y), z -> or_ x (or_ y z)
-    | _ -> or_ l r
+    | Elt (Bool true), _ | _, Elt (Bool true) ->
+        bool true
+    | Elt (Bool false), x | x, Elt (Bool false) ->
+        x
+    | Bop (Or, x, y), z ->
+        or_ x (or_ y z)
+    | _ ->
+        or_ l r
 
   let optimising_and (l : 'const t) (r : 'const t) : 'const t =
     match (l, r) with
-    | Elt (Bool false), _ | _, Elt (Bool false) -> bool false
-    | Elt (Bool true), x | x, Elt (Bool true) -> x
-    | Or (x, y), z -> and_ x (and_ y z)
-    | _ -> and_ l r
+    | Elt (Bool false), _ | _, Elt (Bool false) ->
+        bool false
+    | Elt (Bool true), x | x, Elt (Bool true) ->
+        x
+    | Bop (And, x, y), z ->
+        and_ x (and_ y z)
+    | _ ->
+        and_ l r
 
   module Infix = struct
     let ( || ) (l : 'const t) (r : 'const t) : 'const t = or_ l r
+
     let ( ||+ ) (l : 'const t) (r : 'const t) : 'const t = optimising_or l r
 
     let ( && ) (l : 'const t) (r : 'const t) : 'const t = and_ l r
-    let ( &&+ ) (l : 'const t) (r : 'const t) : 'const t = optimising_and l r
+
+    let ( &&+ ) (l : 'const t) (r : 'const t) : 'const t =
+      optimising_and l r
 
     let ( ==? ) (k : Act_common.Litmus_id.t) (v : 'const) : 'const t =
       elt (Pred_elt.eq k v)
   end
-
-  let rec debracket : 'const t -> 'const t = function
-    | Bracket x ->
-        debracket x
-    | Or (l, r) ->
-        Or (debracket l, debracket r)
-    | And (l, r) ->
-        And (debracket l, debracket r)
-    | Elt x ->
-        Elt x
 
   module BT :
     Travesty.Bi_traversable_types.S1_right
@@ -138,17 +161,10 @@ module Pred = struct
           ~(right : 'a -> 'b M.t) : 'b t M.t =
         M.Let_syntax.(
           match t with
-          | Bracket x ->
-              let%map x' = bi_map_m ~left ~right x in
-              Bracket x'
-          | Or (l, r) ->
+          | Bop (op, l, r) ->
               let%map l' = bi_map_m ~left ~right l
               and r' = bi_map_m ~left ~right r in
-              or_ l' r'
-          | And (l, r) ->
-              let%map l' = bi_map_m ~left ~right l
-              and r' = bi_map_m ~left ~right r in
-              And (l', r')
+              Bop (op, l', r')
           | Elt x ->
               let%map x' = Pe.bi_map_m ~left ~right x in
               Elt x')
@@ -182,24 +198,12 @@ module Pred = struct
     module O = Quickcheck.Observer
     module S = Quickcheck.Shrinker
 
-    let anonymise = function
-      | Bracket x ->
-          `A x
-      | Or (l, r) ->
-          `B (l, r)
-      | And (l, r) ->
-          `C (l, r)
-      | Elt x ->
-          `D x
+    let anonymise = function Bop (o, l, r) -> `A (o, l, r) | Elt x -> `B x
 
     let deanonymise = function
-      | `A x ->
-          Bracket x
-      | `B (l, r) ->
-          Or (l, r)
-      | `C (l, r) ->
-          And (l, r)
-      | `D x ->
+      | `A (o, l, r) ->
+          Bop (o, l, r)
+      | `B x ->
           Elt x
 
     let quickcheck_generator (elt : 'const G.t) : 'const t G.t =
@@ -208,44 +212,51 @@ module Pred = struct
             ~f:(fun x -> Elt x)
             [%quickcheck.generator: [%custom elt] Pred_elt.t] ]
         ~f:(fun mu ->
-          [ G.map ~f:deanonymise
+          [ G.map
+              ~f:(fun (o, l, r) -> Bop (o, l, r))
               [%quickcheck.generator:
-                [ `A of [%custom mu]
-                | `B of [%custom mu] * [%custom mu]
-                | `C of [%custom mu] * [%custom mu] ]] ])
+                Pred_bop.t * [%custom mu] * [%custom mu]] ])
 
     let quickcheck_observer (elt : 'const O.t) : 'const t O.t =
       O.fixed_point (fun mu ->
           O.unmap ~f:anonymise
             [%quickcheck.observer:
-              [ `A of [%custom mu]
-              | `B of [%custom mu] * [%custom mu]
-              | `C of [%custom mu] * [%custom mu]
-              | `D of [%custom elt] Pred_elt.t ]])
+              [ `A of Pred_bop.t * [%custom mu] * [%custom mu]
+              | `B of [%custom elt] Pred_elt.t ]])
 
     let quickcheck_shrinker (elt : 'const S.t) : 'const t S.t =
       S.fixed_point (fun mu ->
           S.map ~f:deanonymise ~f_inverse:anonymise
             [%quickcheck.shrinker:
-              [ `A of [%custom mu]
-              | `B of [%custom mu] * [%custom mu]
-              | `C of [%custom mu] * [%custom mu]
-              | `D of [%custom elt] Pred_elt.t ]])
+              [ `A of Pred_bop.t * [%custom mu] * [%custom mu]
+              | `B of [%custom elt] Pred_elt.t ]])
   end
 
   include Q
 
+  let left_needs_brackets (o : Pred_bop.t) : 'const t -> bool = function
+    | Bop (o', _, _) ->
+        not (Pred_bop.equal o o')
+    | Elt _ ->
+        false
+
+  let right_needs_brackets (_o : Pred_bop.t) : 'const t -> bool = function
+    | Bop (_o', _, _) ->
+        true
+    | Elt _ ->
+        false
+
   let rec pp (f : Formatter.t) (pred : 'const t) ~(pp_const : 'const Fmt.t)
       : unit =
+    let elt f = Pred_elt.pp f ~pp_const in
     let mu = pp ~pp_const in
     match pred with
-    | Bracket p ->
-        Fmt.parens mu f p
-    | Or (l, r) ->
-        Fmt.pf f "%a@ \\/@ %a" mu l mu r
-    | And (l, r) ->
-        Fmt.pf f "%a@ /\\@ %a" mu l mu r
-    | Elt e -> Pred_elt.pp f ~pp_const e
+    | Bop (o, l, r) ->
+        let pp_l = if left_needs_brackets o l then Fmt.parens mu else mu in
+        let pp_r = if right_needs_brackets o r then Fmt.parens mu else mu in
+        Fmt.(pf f "%a@ %a@ %a" pp_l l Pred_bop.pp o pp_r r)
+    | Elt e ->
+        elt f e
 end
 
 module Quantifier = struct

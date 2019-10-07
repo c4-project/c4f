@@ -18,7 +18,8 @@ end
 
 let check_elt (state : Entry.t) :
     string Act_litmus.Postcondition.Pred_elt.t -> bool = function
-  | Bool k -> k
+  | Bool k ->
+      k
   | Eq (key, data) ->
       Entry.maps_to ~key ~data state
 

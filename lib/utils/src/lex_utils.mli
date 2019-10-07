@@ -26,6 +26,14 @@ val skip_string : lexbuf -> unit
 (** [skip_string lexbuf] lexes the body of a double-quoted string,
     discarding it. *)
 
+val read_char : (string -> 'a) -> lexbuf -> 'a
+(** [read_char token lexbuf] lexes the body of a single-quoted C char
+    literal, feeding it to the token constructor [token]. *)
+
 val read_string : (string -> 'a) -> lexbuf -> 'a
-(** [read_string token lexbuf] lexes the body of a double-quoted string,
-    feeding it to the token constructor [token]. *)
+(** [read_string token lexbuf] lexes the body of a double-quoted C string
+    literal, feeding it to the token constructor [token]. *)
+
+val escape_string : string -> string
+(** [escape_string token lexbuf] escapes a string [s] using the same
+    conventions as [read_string]. *)
