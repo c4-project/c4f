@@ -16,15 +16,15 @@ module Result = struct
   [@@deriving fields, yojson]
 end
 
-let eval_bop : Postcondition.Pred_bop.t -> bool -> bool -> bool = function
+let eval_bop : Predicate.Bop.t -> bool -> bool -> bool = function
   | Or -> (
       || )
   | And -> (
       && )
 
-let eval_pred (pred : 'const Postcondition.Pred.t)
-    ~(elt : 'const Postcondition.Pred_elt.t -> bool) : bool =
-  Postcondition.Pred.reduce ~elt ~bop:eval_bop pred
+let eval_pred (pred : 'const Predicate.t)
+    ~(elt : 'const Predicate.Element.t -> bool) : bool =
+  Predicate.reduce ~elt ~bop:eval_bop pred
 
 let eval_quantifier (quant : Postcondition.Quantifier.t) ~(f : 'a -> bool)
     ~(subjects : 'a list) : 'a Result.t =
@@ -39,8 +39,8 @@ let eval_quantifier (quant : Postcondition.Quantifier.t) ~(f : 'a -> bool)
   Result.Fields.create ~truth ~witnesses ~counter_examples
 
 let eval (pc : 'const Postcondition.t)
-    ~(elt : 'a -> 'const Postcondition.Pred_elt.t -> bool)
-    ~(subjects : 'a list) : 'a Result.t =
+    ~(elt : 'a -> 'const Predicate.Element.t -> bool) ~(subjects : 'a list)
+    : 'a Result.t =
   let predicate = Postcondition.predicate pc in
   let quantifier = Postcondition.quantifier pc in
   eval_quantifier quantifier ~subjects ~f:(fun a ->

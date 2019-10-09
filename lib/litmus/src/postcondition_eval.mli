@@ -37,9 +37,7 @@ end
 (** {1 Evaluating parts of postconditions} *)
 
 val eval_pred :
-     'const Postcondition.Pred.t
-  -> elt:('const Postcondition.Pred_elt.t -> bool)
-  -> bool
+  'const Predicate.t -> elt:('const Predicate.Element.t -> bool) -> bool
 (** [eval_pred pred ~elt] evaluates a Litmus postcondition predicate,
     applying [elt] to check the truth of each predicate element. *)
 
@@ -55,7 +53,7 @@ val eval_quantifier :
 
 val eval :
      'const Postcondition.t
-  -> elt:('a -> 'const Postcondition.Pred_elt.t -> bool)
+  -> elt:('a -> 'const Predicate.Element.t -> bool)
   -> subjects:'a list
   -> 'a Result.t
 (** [eval post ~elt ~subjects] evaluates a Litmus postcondition, against a

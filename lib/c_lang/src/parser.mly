@@ -117,17 +117,17 @@ let litmus_postcondition :=
 
 let litmus_disjunct :=
   | litmus_conjunct
-  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { Act_litmus.Postcondition.Pred.Infix.(l || r) }
+  | l = litmus_disjunct; LIT_OR; r = litmus_conjunct; { Act_litmus.Predicate.Infix.(l || r) }
 
 let litmus_conjunct :=
   | litmus_primitive
-  | l = litmus_conjunct; LIT_AND; r = litmus_primitive; { Act_litmus.Postcondition.Pred.Infix.(l && r) }
+  | l = litmus_conjunct; LIT_AND; r = litmus_primitive; { Act_litmus.Predicate.Infix.(l && r) }
 
 let litmus_primitive :=
   | ~ = parened(litmus_disjunct); <>
-  | LIT_TRUE; { Act_litmus.Postcondition.Pred.bool true }
-  | LIT_FALSE; { Act_litmus.Postcondition.Pred.bool false }
-  | l = litmus_identifier; "=="; r = constant; { Act_litmus.Postcondition.(Pred.elt (Pred_elt.(l ==? r))) }
+  | LIT_TRUE; { Act_litmus.Predicate.bool true }
+  | LIT_FALSE; { Act_litmus.Predicate.bool false }
+  | l = litmus_identifier; "=="; r = constant; { Act_litmus.Predicate.Infix.(l ==? r) }
 
 let litmus_identifier :=
   | i = IDENTIFIER;                     { Litmus.Id.global (Act_common.C_id.of_string i) }

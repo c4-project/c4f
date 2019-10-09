@@ -29,7 +29,7 @@ let%test_module "convert_states" =
         (Act_litmus.Postcondition.pp ~pp_const:String.pp)
         output
 
-    let%expect_test "empty set" = test [] ; [%expect {| forall (true) |}]
+    let%expect_test "empty set" = test [] ; [%expect {| forall (false) |}]
 
     let%expect_test "set of empty observation" =
       test [[]] ;

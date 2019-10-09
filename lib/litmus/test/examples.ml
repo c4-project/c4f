@@ -12,6 +12,7 @@
 open Base
 module Aux = Act_litmus.Aux
 module Post = Act_litmus.Postcondition
+module Pred = Act_litmus.Predicate
 module Ac = Act_common
 
 module Sbsc = struct

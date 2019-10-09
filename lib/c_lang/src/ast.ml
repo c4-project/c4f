@@ -794,7 +794,7 @@ module Litmus = struct
   module Id = Act_common.Litmus_id
 end
 
-module LP = Act_litmus.Postcondition.Pred
+module LP = Act_litmus.Predicate
 
 module P = struct
   type t = Litmus_lang.Constant.t LP.t

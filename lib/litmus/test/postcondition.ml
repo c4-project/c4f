@@ -80,7 +80,7 @@ let%expect_test "pretty-printing example" =
     Fmt.pr "@[%a@]@." (pp ~pp_const:Int.pp)
       (make ~quantifier:Quantifier.Exists
          ~predicate:
-           Pred.(
+           Src.Predicate.(
              Infix.(
                Act_common.Litmus_id.global_of_string_exn "foo" ==? 10
                && Act_common.Litmus_id.global_of_string_exn "bar" ==? 30
