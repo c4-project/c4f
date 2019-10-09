@@ -14,49 +14,39 @@ module Src = Act_state
 module Ac = Act_common
 module Tx = Travesty_base_exts
 module Ob = Src.Observation
+module Ou = Observation.Test_utils
 
 let%test_module "run" =
   ( module struct
-    let add_state_exn (xs : (string, string) List.Assoc.t) (o : Ob.t) : Ob.t
-        =
-      Or_error.(
-        xs
-        |> Tx.Alist.map_left ~f:Ac.Litmus_id.of_string
-        |> Src.Entry.of_alist
-        >>= (fun state -> Ob.add o ~state)
-        |> Or_error.ok_exn)
-
     let normal_oracle : Ob.t =
       Ob.(
         empty
-        |> add_state_exn
-             [ ("0:a", "potato")
-             ; ("0:b", "waffles")
-             ; ("1:a", "true")
-             ; ("1:b", "6")
-             ; ("x", "100")
-             ; ("y", "kg") ]
-        |> add_state_exn
-             [ ("0:a", "sweet")
-             ; ("0:b", "waffles")
-             ; ("1:a", "false")
-             ; ("1:b", "42")
-             ; ("x", "100")
-             ; ("y", "cwt") ]
-        |> add_state_exn
-             [ ("0:a", "potato")
-             ; ("0:b", "wedges")
-             ; ("1:a", "true")
-             ; ("1:b", "42")
-             ; ("x", "99")
-             ; ("y", "kg") ])
+        |> Ou.add_entries_exn
+             [ [ ("0:a", "potato")
+               ; ("0:b", "waffles")
+               ; ("1:a", "true")
+               ; ("1:b", "6")
+               ; ("x", "100")
+               ; ("y", "kg") ]
+             ; [ ("0:a", "sweet")
+               ; ("0:b", "waffles")
+               ; ("1:a", "false")
+               ; ("1:b", "42")
+               ; ("x", "100")
+               ; ("y", "cwt") ]
+             ; [ ("0:a", "potato")
+               ; ("0:b", "wedges")
+               ; ("1:a", "true")
+               ; ("1:b", "42")
+               ; ("x", "99")
+               ; ("y", "kg") ] ])
 
     let test (subject : Ob.t) : unit =
       let result = Src.Compare.run ~oracle:normal_oracle ~subject in
       Fmt.(pr "@[%a@]@." (result ~ok:Src.Compare.Result.pp ~error:Error.pp))
         result
 
-    let%expect_test "no subject states" =
+    let%expect_test "no subject entries" =
       test Ob.empty ;
       [%expect
         {|
@@ -68,22 +58,21 @@ let%test_module "run" =
 
     let smaller_subject : Ob.t =
       Ob.empty
-      |> add_state_exn
-           [ ("0:a", "potato")
-           ; ("0:b", "waffles")
-           ; ("1:a", "true")
-           ; ("1:b", "6")
-           ; ("x", "100")
-           ; ("y", "kg") ]
-      |> add_state_exn
-           [ ("0:a", "sweet")
-           ; ("0:b", "waffles")
-           ; ("1:a", "false")
-           ; ("1:b", "42")
-           ; ("x", "100")
-           ; ("y", "cwt") ]
+      |> Ou.add_entries_exn
+           [ [ ("0:a", "potato")
+             ; ("0:b", "waffles")
+             ; ("1:a", "true")
+             ; ("1:b", "6")
+             ; ("x", "100")
+             ; ("y", "kg") ]
+           ; [ ("0:a", "sweet")
+             ; ("0:b", "waffles")
+             ; ("1:a", "false")
+             ; ("1:b", "42")
+             ; ("x", "100")
+             ; ("y", "cwt") ] ]
 
-    let%expect_test "smaller subject states" =
+    let%expect_test "smaller subject entries" =
       test smaller_subject ;
       [%expect
         {|
@@ -95,15 +84,15 @@ let%test_module "run" =
 
     let equivalent_subject : Ob.t =
       smaller_subject
-      |> add_state_exn
-           [ ("0:a", "potato")
-           ; ("0:b", "wedges")
-           ; ("1:a", "true")
-           ; ("1:b", "42")
-           ; ("x", "99")
-           ; ("y", "kg") ]
+      |> Ou.add_entries_exn
+           [ [ ("0:a", "potato")
+             ; ("0:b", "wedges")
+             ; ("1:a", "true")
+             ; ("1:b", "42")
+             ; ("x", "99")
+             ; ("y", "kg") ] ]
 
-    let%expect_test "equivalent subject states" =
+    let%expect_test "equivalent subject entries" =
       test equivalent_subject ;
       [%expect
         {|
@@ -113,15 +102,15 @@ let%test_module "run" =
 
     let equivalent_subject : Ob.t =
       smaller_subject
-      |> add_state_exn
-           [ ("0:a", "potato")
-           ; ("0:b", "wedges")
-           ; ("1:a", "true")
-           ; ("1:b", "42")
-           ; ("x", "99")
-           ; ("y", "kg") ]
+      |> Ou.add_entries_exn
+           [ [ ("0:a", "potato")
+             ; ("0:b", "wedges")
+             ; ("1:a", "true")
+             ; ("1:b", "42")
+             ; ("x", "99")
+             ; ("y", "kg") ] ]
 
-    let%expect_test "equivalent subject states" =
+    let%expect_test "equivalent subject entries" =
       test equivalent_subject ;
       [%expect
         {|
@@ -131,15 +120,15 @@ let%test_module "run" =
 
     let larger_subject : Ob.t =
       equivalent_subject
-      |> add_state_exn
-           [ ("0:a", "potato")
-           ; ("0:b", "heads")
-           ; ("1:a", "true")
-           ; ("1:b", "2")
-           ; ("x", "99")
-           ; ("y", "red balloons") ]
+      |> Ou.add_entries_exn
+           [ [ ("0:a", "potato")
+             ; ("0:b", "heads")
+             ; ("1:a", "true")
+             ; ("1:b", "2")
+             ; ("x", "99")
+             ; ("y", "red balloons") ] ]
 
-    let%expect_test "larger subject states" =
+    let%expect_test "larger subject entries" =
       test larger_subject ;
       [%expect
         {|
@@ -149,31 +138,29 @@ let%test_module "run" =
       Variables considered:
         {x, y, 0:a, 0:b, 1:a, 1:b} |}]
 
-    let%expect_test "uncorrelated subject states" =
+    let%expect_test "uncorrelated subject entries" =
       test
         Ob.(
           empty
-          |> add_state_exn
-               [ ("0:a", "potato")
-               ; ("0:b", "waffles")
-               ; ("1:a", "true")
-               ; ("1:b", "6")
-               ; ("x", "100")
-               ; ("y", "kg") ]
-          |> add_state_exn
-               [ ("0:a", "sweet")
-               ; ("0:b", "waffles")
-               ; ("1:a", "false")
-               ; ("1:b", "42")
-               ; ("x", "100")
-               ; ("y", "percent") ]
-          |> add_state_exn
-               [ ("0:a", "potato")
-               ; ("0:b", "wedges")
-               ; ("1:a", "true")
-               ; ("1:b", "42")
-               ; ("x", "99")
-               ; ("y", "kg") ]) ;
+          |> Ou.add_entries_exn
+               [ [ ("0:a", "potato")
+                 ; ("0:b", "waffles")
+                 ; ("1:a", "true")
+                 ; ("1:b", "6")
+                 ; ("x", "100")
+                 ; ("y", "kg") ]
+               ; [ ("0:a", "sweet")
+                 ; ("0:b", "waffles")
+                 ; ("1:a", "false")
+                 ; ("1:b", "42")
+                 ; ("x", "100")
+                 ; ("y", "percent") ]
+               ; [ ("0:a", "potato")
+                 ; ("0:b", "wedges")
+                 ; ("1:a", "true")
+                 ; ("1:b", "42")
+                 ; ("x", "99")
+                 ; ("y", "kg") ] ]) ;
       [%expect
         {|
       Oracle <> Subject

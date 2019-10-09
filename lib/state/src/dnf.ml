@@ -28,7 +28,7 @@ let convert_states (entries : Set.M(Entry).t) :
     ~predicate:(predicate_of_states entries)
 
 let convert : Observation.t -> string Act_litmus.Postcondition.t =
-  Fn.compose convert_states Observation.witnesses
+  Fn.compose convert_states Observation.states
 
 let print_postcondition (oc : Stdio.Out_channel.t) :
     string Act_litmus.Postcondition.t -> unit =

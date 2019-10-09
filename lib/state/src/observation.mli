@@ -30,11 +30,17 @@ module Entry_tag : sig
   type t = Witness | Counter_example | Unknown
 end
 
-val add : ?tag:Entry_tag.t -> t -> state:Entry.t -> t Or_error.t
-(** [add ?kind out ~state] adds [state] onto the state set of [out]. It
+val add : ?tag:Entry_tag.t -> t -> entry:Entry.t -> t Or_error.t
+(** [add ?tag out ~entry] adds [entry] onto the state sets of [out]. It
     fails if [out] is marked as having undefined behaviour. If [tag] is
-    given, [state] may also propagate to the observation's witness or
+    given, [entry] may also propagate to the observation's witness or
     counter-example set accordingly. *)
+
+val add_many :
+  ?tag:Entry_tag.t -> t -> entries:Set.M(Entry).t -> t Or_error.t
+(** [add_many ?tag obs ~entries] behaves like the successive application of
+    [add ~tag] with each entry in [entries], progressively adding the states
+    to [obs]. *)
 
 val set_undefined : t -> t Or_error.t
 (** [set_undefined out] marks [out] with an undefined behaviour flag. It

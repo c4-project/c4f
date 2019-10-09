@@ -16,13 +16,13 @@ module Entry_tag = struct
   type t = Witness | Counter_example | Unknown
 
   let process (witnesses : Set.M(Entry).t)
-      (counter_examples : Set.M(Entry).t) (tag : t) ~(entry : Entry.t) :
-      Set.M(Entry).t * Set.M(Entry).t =
+      (counter_examples : Set.M(Entry).t) (tag : t)
+      ~(entries : Set.M(Entry).t) : Set.M(Entry).t * Set.M(Entry).t =
     match tag with
     | Witness ->
-        (Set.add witnesses entry, counter_examples)
+        (Set.union witnesses entries, counter_examples)
     | Counter_example ->
-        (witnesses, Set.add counter_examples entry)
+        (witnesses, Set.union counter_examples entries)
     | Unknown ->
         (witnesses, counter_examples)
 end
@@ -86,29 +86,34 @@ let empty : t =
   ; witnesses= Set.empty (module Entry)
   ; counter_examples= Set.empty (module Entry) }
 
-let add ?(tag : Entry_tag.t = Unknown) (out : t) ~(state : Entry.t) :
-    t Or_error.t =
+let add_many_raw ?(tag : Entry_tag.t = Entry_tag.Unknown) (obs : t)
+    ~(entries : Set.M(Entry).t) : t =
+  let witnesses = witnesses obs in
+  let counter_examples = counter_examples obs in
+  let states' = Set.union entries (states obs) in
+  let witnesses', counter_examples' =
+    Entry_tag.process witnesses counter_examples tag ~entries
+  in
+  { obs with
+    states= states'
+  ; witnesses= witnesses'
+  ; counter_examples= counter_examples' }
+
+let add_many ?(tag : Entry_tag.t option) (obs : t)
+    ~(entries : Set.M(Entry).t) : t Or_error.t =
   (* TODO(@MattWindsor91): it's unclear as to whether this treatment of
      'undefined' is correct. *)
-  if is_undefined out then
+  if is_undefined obs then
     Or_error.error_s
       [%message
-        "Can't add state to simulation output, as the output is marked \
+        "Can't add state(s) to observation, as the output is marked \
          undefined"
-          (state : Entry.t)]
-  else
-    let states = states out in
-    let witnesses = witnesses out in
-    let counter_examples = counter_examples out in
-    let states' = Set.add states state in
-    let witnesses', counter_examples' =
-      Entry_tag.process witnesses counter_examples tag ~entry:state
-    in
-    Or_error.return
-      { out with
-        states= states'
-      ; witnesses= witnesses'
-      ; counter_examples= counter_examples' }
+          (entries : Set.M(Entry).t)]
+  else Or_error.return (add_many_raw ?tag obs ~entries)
+
+let add ?(tag : Entry_tag.t option) (obs : t) ~(entry : Entry.t) :
+    t Or_error.t =
+  add_many ?tag obs ~entries:(Set.singleton (module Entry) entry)
 
 let set_flag_raw (obs : t) ~(flag : Flag.t) : t =
   {obs with flags= Set.add obs.flags flag}

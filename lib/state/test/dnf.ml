@@ -13,40 +13,45 @@ open Base
 module Src = Act_state
 module Tx = Travesty_base_exts
 
+module Examples = struct
+  let entry = [("foo", "1"); ("0:bar", "2"); ("1:baz", "3")]
+
+  let entries =
+    [ entry
+    ; [("foo", "1"); ("0:bar", "4"); ("1:baz", "9")]
+    ; [("foo", "1"); ("0:bar", "10")] ]
+
+  let obs =
+    Src.Observation.empty
+    |> Observation.Test_utils.add_entries_exn entries
+    |> Observation.Test_utils.add_entries_exn ~tag:Counter_example
+         [[("foo", "6"); ("0:bar", "5"); ("1:baz", "9")]]
+    |> Observation.Test_utils.add_entries_exn ~tag:Witness
+         [[("foo", "6"); ("1:baz", "53")]]
+end
+
 let print_predicate : string Act_litmus.Predicate.t -> unit =
   Fmt.pr "@[%a@]@." (Act_litmus.Predicate.pp ~pp_const:String.pp)
 
 let print_postcondition : string Act_litmus.Postcondition.t -> unit =
   Fmt.pr "@[%a@]@." (Act_litmus.Postcondition.pp ~pp_const:String.pp)
 
-let states_exn (input : (string, string) List.Assoc.t list) :
-    Set.M(Src.Entry).t =
-  input
-  |> List.map ~f:(Tx.Alist.map_left ~f:Act_common.Litmus_id.of_string)
-  |> Tx.Or_error.combine_map ~f:Src.Entry.of_alist
-  |> Or_error.ok_exn
-  |> Set.of_list (module Src.Entry)
-
 let%test_module "predicate_of_state" =
   ( module struct
     let test (input : (string, string) List.Assoc.t) : unit =
-      let entry =
-        input
-        |> Tx.Alist.map_left ~f:Act_common.Litmus_id.of_string
-        |> Src.Entry.of_alist |> Or_error.ok_exn
-      in
+      let entry = Entry.Test_utils.entry_exn input in
       let output = Src.Dnf.predicate_of_state entry in
       print_predicate output
 
     let%expect_test "sample entry" =
-      let entry = [("foo", "1"); ("0:bar", "2"); ("1:baz", "3")] in
-      test entry ; [%expect {| foo == 1 /\ (0:bar == 2 /\ 1:baz == 3) |}]
+      test Examples.entry ;
+      [%expect {| foo == 1 /\ (0:bar == 2 /\ 1:baz == 3) |}]
   end )
 
 let%test_module "predicate_of_states" =
   ( module struct
     let test (input : (string, string) List.Assoc.t list) : unit =
-      let entries = states_exn input in
+      let entries = Entry.Test_utils.entries_exn input in
       let output = Src.Dnf.predicate_of_states entries in
       print_predicate output
 
@@ -57,12 +62,7 @@ let%test_module "predicate_of_states" =
       [%expect {| true |}]
 
     let%expect_test "sample set" =
-      let raw_entries =
-        [ [("foo", "1"); ("0:bar", "2"); ("1:baz", "3")]
-        ; [("foo", "1"); ("0:bar", "4"); ("1:baz", "9")]
-        ; [("foo", "1"); ("0:bar", "10")] ]
-      in
-      test raw_entries ;
+      test Examples.entries ;
       [%expect
         {|
         (foo == 1 /\ 0:bar == 10) \/
@@ -73,13 +73,13 @@ let%test_module "predicate_of_states" =
 let%test_module "convert_states" =
   ( module struct
     let test (input : (string, string) List.Assoc.t list) : unit =
-      let entries = states_exn input in
+      let entries = Entry.Test_utils.entries_exn input in
       let output = Src.Dnf.convert_states entries in
       print_postcondition output
 
     let%expect_test "empty set" = test [] ; [%expect {| forall (false) |}]
 
-    let%expect_test "set of empty observation" =
+    let%expect_test "set of empty entry" =
       test [[]] ;
       [%expect {| forall (true) |}]
 
@@ -96,4 +96,23 @@ let%test_module "convert_states" =
         ((foo == 1 /\ 0:bar == 10) \/
          ((foo == 1 /\ (0:bar == 2 /\ 1:baz == 3)) \/
           (foo == 1 /\ (0:bar == 4 /\ 1:baz == 9)))) |}]
+  end )
+
+let%test_module "convert" =
+  ( module struct
+    let test (input : Src.Observation.t) : unit =
+      let output = Src.Dnf.convert input in
+      print_postcondition output
+
+    let%expect_test "empty observation" =
+      test Src.Observation.empty ;
+      [%expect {| forall (false) |}]
+
+    let%expect_test "example observation" =
+      test Examples.obs ; [%expect {|
+        forall
+        ((foo == 1 /\ 0:bar == 10) \/
+         ((foo == 1 /\ (0:bar == 2 /\ 1:baz == 3)) \/
+          (foo == 1 /\ (0:bar == 4 /\ 1:baz == 9)) \/
+          (foo == 6 /\ (0:bar == 5 /\ 1:baz == 9)) \/ (foo == 6 /\ 1:baz == 53))) |}]
   end )

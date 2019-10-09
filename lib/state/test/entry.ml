@@ -15,6 +15,21 @@ module A = Act_common
 module Src = Act_state
 module Tx = Travesty_base_exts
 
+module Test_utils = struct
+  let entry_exn (xs : (string, string) List.Assoc.t) : Src.Entry.t =
+    xs
+    |> Tx.Alist.map_left ~f:A.Litmus_id.of_string
+    |> Src.Entry.of_alist |> Or_error.ok_exn
+
+  let entries_exn (input : (string, string) List.Assoc.t list) :
+      Set.M(Src.Entry).t =
+    input
+    |> List.map ~f:(Tx.Alist.map_left ~f:Act_common.Litmus_id.of_string)
+    |> Tx.Or_error.combine_map ~f:Src.Entry.of_alist
+    |> Or_error.ok_exn
+    |> Set.of_list (module Src.Entry)
+end
+
 let%test_module "common_domain" =
   ( module struct
     let test (states : Src.Entry.t list) : unit =
@@ -22,15 +37,11 @@ let%test_module "common_domain" =
         [%sexp
           (Src.Entry.common_domain states : Set.M(A.Litmus_id).t Or_error.t)]
 
-    let state_exn (xs : (string, string) List.Assoc.t) : Src.Entry.t =
-      xs
-      |> Tx.Alist.map_left ~f:A.Litmus_id.of_string
-      |> Src.Entry.of_alist |> Or_error.ok_exn
-
     let%expect_test "no states" = test [] ; [%expect {| (Ok ()) |}]
 
     let test_state : Src.Entry.t =
-      state_exn [("0:foo", "snap"); ("1:bar", "crackle"); ("baz", "pop")]
+      Test_utils.entry_exn
+        [("0:foo", "snap"); ("1:bar", "crackle"); ("baz", "pop")]
 
     let%expect_test "single state" =
       test [test_state] ;
@@ -39,9 +50,9 @@ let%test_module "common_domain" =
     let%expect_test "consistent domains" =
       test
         [ test_state
-        ; state_exn
+        ; Test_utils.entry_exn
             [("0:foo", "power"); ("1:bar", "courage"); ("baz", "wisdom")]
-        ; state_exn
+        ; Test_utils.entry_exn
             [ ("0:foo", "hamburger")
             ; ("1:bar", "cheeseburger")
             ; ("baz", "veggieburger") ] ] ;
@@ -50,8 +61,9 @@ let%test_module "common_domain" =
     let%expect_test "inconsistent domains" =
       test
         [ test_state
-        ; state_exn [("0:foo", "power"); ("baz", "wisdom")]
-        ; state_exn [("1:bar", "cheeseburger"); ("baz", "veggieburger")] ] ;
+        ; Test_utils.entry_exn [("0:foo", "power"); ("baz", "wisdom")]
+        ; Test_utils.entry_exn
+            [("1:bar", "cheeseburger"); ("baz", "veggieburger")] ] ;
       [%expect
         {|
         (Error

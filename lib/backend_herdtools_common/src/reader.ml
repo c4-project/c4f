@@ -155,7 +155,7 @@ module Ctx = struct
       let {State_line.rest= state; tag; _} = sl in
       Tx.Or_error.(
         map_a_state_m ~f:Automaton.try_leave_state
-        >=> map_obs_m ~f:(Act_state.Observation.add ~tag ~state))
+        >=> map_obs_m ~f:(Act_state.Observation.add ~tag ~entry:state))
 
     let try_leave_summary (info : Obs.t -> Obs.t Or_error.t) :
         t -> t Or_error.t =

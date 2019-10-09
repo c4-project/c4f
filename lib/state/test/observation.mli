@@ -11,19 +11,19 @@
 
 (** This module mostly contains tests for the similarly named source module
     (not exposed in this signature), but also has various helpers for
-    building tests for entries. *)
+    building tests for observations. *)
 
 open Base
 
 module Test_utils : sig
-  (** {2 Non-robust shorthands for building entries quickly} *)
+  (** {2 Non-robust shorthands for building observations quickly} *)
 
-  val entry_exn : (string, string) List.Assoc.t -> Act_state.Entry.t
-  (** [entry_exn xs] makes an entry from a string-string list, throwing an
-      exception if this fails. *)
-
-  val entries_exn :
-    (string, string) List.Assoc.t list -> Set.M(Act_state.Entry).t
-  (** [entries_exn xs] makes an entry set from a string-string list-list,
-      throwing an exception if this fails. *)
+  val add_entries_exn :
+       ?tag:Act_state.Observation.Entry_tag.t
+    -> (string, string) List.Assoc.t list
+    -> Act_state.Observation.t
+    -> Act_state.Observation.t
+  (** [add_entries_exn ?tag entries obs] converts [entries] to an entry set
+      using [Entry.Test_utils.entries_exn], then adds them to [obs] while
+      raising for any errors from doing so. *)
 end
