@@ -14,14 +14,13 @@ module Src = Act_state
 module Tx = Travesty_base_exts
 
 let print_predicate : string Act_litmus.Predicate.t -> unit =
-  Fmt.pr "@[%a@]@."
-    (Act_litmus.Predicate.pp ~pp_const:String.pp)
+  Fmt.pr "@[%a@]@." (Act_litmus.Predicate.pp ~pp_const:String.pp)
 
 let print_postcondition : string Act_litmus.Postcondition.t -> unit =
-  Fmt.pr "@[%a@]@."
-    (Act_litmus.Postcondition.pp ~pp_const:String.pp)
+  Fmt.pr "@[%a@]@." (Act_litmus.Postcondition.pp ~pp_const:String.pp)
 
-let states_exn (input : (string, string) List.Assoc.t list) : Set.M(Src.Entry).t =
+let states_exn (input : (string, string) List.Assoc.t list) :
+    Set.M(Src.Entry).t =
   input
   |> List.map ~f:(Tx.Alist.map_left ~f:Act_common.Litmus_id.of_string)
   |> Tx.Or_error.combine_map ~f:Src.Entry.of_alist
@@ -30,23 +29,19 @@ let states_exn (input : (string, string) List.Assoc.t list) : Set.M(Src.Entry).t
 
 let%test_module "predicate_of_state" =
   ( module struct
-
     let test (input : (string, string) List.Assoc.t) : unit =
       let entry =
         input
         |> Tx.Alist.map_left ~f:Act_common.Litmus_id.of_string
-        |> Src.Entry.of_alist
-        |> Or_error.ok_exn
+        |> Src.Entry.of_alist |> Or_error.ok_exn
       in
-      let output = Src.Dnf.predicate_of_state entry
-      in print_predicate output
+      let output = Src.Dnf.predicate_of_state entry in
+      print_predicate output
 
     let%expect_test "sample entry" =
-      let entry =
-        [("foo", "1"); ("0:bar", "2"); ("1:baz", "3")]
-      in
+      let entry = [("foo", "1"); ("0:bar", "2"); ("1:baz", "3")] in
       test entry ; [%expect {| foo == 1 /\ (0:bar == 2 /\ 1:baz == 3) |}]
-  end)
+  end )
 
 let%test_module "predicate_of_states" =
   ( module struct
@@ -67,7 +62,9 @@ let%test_module "predicate_of_states" =
         ; [("foo", "1"); ("0:bar", "4"); ("1:baz", "9")]
         ; [("foo", "1"); ("0:bar", "10")] ]
       in
-      test raw_entries ; [%expect {|
+      test raw_entries ;
+      [%expect
+        {|
         (foo == 1 /\ 0:bar == 10) \/
         ((foo == 1 /\ (0:bar == 2 /\ 1:baz == 3)) \/
          (foo == 1 /\ (0:bar == 4 /\ 1:baz == 9))) |}]
@@ -92,7 +89,9 @@ let%test_module "convert_states" =
         ; [("foo", "1"); ("0:bar", "4"); ("1:baz", "9")]
         ; [("foo", "1"); ("0:bar", "10")] ]
       in
-      test raw_entries ; [%expect {|
+      test raw_entries ;
+      [%expect
+        {|
         forall
         ((foo == 1 /\ 0:bar == 10) \/
          ((foo == 1 /\ (0:bar == 2 /\ 1:baz == 3)) \/

@@ -128,8 +128,6 @@ module Set = struct
     Observer.set_t Q.quickcheck_observer
 end
 
-(** [maps_to t ~key ~data] is [true] if, and only if, [t] contains a mapping
-    from [key] to [data]. *)
 let maps_to (entry : t) ~(key : Act_common.Litmus_id.t) ~(data : string) :
     bool =
   Option.exists (Map.find entry key) ~f:(String.equal data)

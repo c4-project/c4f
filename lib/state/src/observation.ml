@@ -72,11 +72,13 @@ end
 include M
 include Plumbing.Loadable.Of_jsonable (M)
 
-let is_undefined (x : t) : bool = Set.mem (flags x) Flag.Undefined
+let has_flag (x : t) ~(flag : Flag.t) : bool = Set.mem (flags x) flag
 
-let is_unsat (x : t) : bool = Set.mem (flags x) Flag.Sat
+let is_undefined : t -> bool = has_flag ~flag:Undefined
 
-let is_sat (x : t) : bool = Set.mem (flags x) Flag.Unsat
+let is_unsat : t -> bool = has_flag ~flag:Sat
+
+let is_sat : t -> bool = has_flag ~flag:Unsat
 
 let empty : t =
   { flags= Set.empty (module Flag)
@@ -108,26 +110,22 @@ let add ?(tag : Entry_tag.t = Unknown) (out : t) ~(state : Entry.t) :
       ; witnesses= witnesses'
       ; counter_examples= counter_examples' }
 
-let set_flag (out : t) (flag : Flag.t) : t =
-  {out with flags= Set.add out.flags flag}
+let set_flag_raw (obs : t) ~(flag : Flag.t) : t =
+  {obs with flags= Set.add obs.flags flag}
 
-let set_undefined (out : t) : t Or_error.t =
-  if is_undefined out then
-    Or_error.error_string "Simulation output already marked as undefined"
-  else if not (Set.is_empty (states out)) then
+let set_flag (obs : t) ~(flag : Flag.t) : t Or_error.t =
+  if has_flag obs ~flag then
+    Or_error.errorf "Observation is already marked %s" (Flag.to_string flag)
+  else Or_error.return (set_flag_raw obs ~flag)
+
+let set_undefined (obs : t) : t Or_error.t =
+  if not (Set.is_empty (states obs)) then
     Or_error.error_s
       [%message
-        "Can't mark simulation output as undefined, as it has states"
-          (states out : Set.M(Entry).t)]
-  else Or_error.return (set_flag out Flag.Undefined)
+        "Can't mark observation as undefined, as it has states"
+          (states obs : Set.M(Entry).t)]
+  else set_flag obs ~flag:Undefined
 
-let set_sat_or_unsat (flag : Flag.t) (out : t) : t Or_error.t =
-  if is_sat out then
-    Or_error.error_string "Simulation output already marked as sat"
-  else if is_unsat out then
-    Or_error.error_string "Simulation output already marked as unsat"
-  else Or_error.return (set_flag out flag)
+let set_unsat : t -> t Or_error.t = set_flag ~flag:Unsat
 
-let set_unsat : t -> t Or_error.t = set_sat_or_unsat Flag.Unsat
-
-let set_sat : t -> t Or_error.t = set_sat_or_unsat Flag.Sat
+let set_sat : t -> t Or_error.t = set_flag ~flag:Sat

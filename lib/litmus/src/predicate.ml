@@ -121,9 +121,7 @@ let optimising_or (l : 'const t) (r : 'const t) : 'const t =
       or_ l r
 
 let optimising_or_seq (xs : 'const t Sequence.t) : 'const t =
-  Sequence.fold xs
-    ~init:(bool false)
-    ~f:optimising_or
+  Sequence.fold xs ~init:(bool false) ~f:optimising_or
 
 let optimising_and (l : 'const t) (r : 'const t) : 'const t =
   match (l, r) with
@@ -137,9 +135,7 @@ let optimising_and (l : 'const t) (r : 'const t) : 'const t =
       and_ l r
 
 let optimising_and_seq (xs : 'const t Sequence.t) : 'const t =
-  Sequence.fold xs
-    ~init:(bool true)
-    ~f:optimising_and
+  Sequence.fold xs ~init:(bool true) ~f:optimising_and
 
 module Infix = struct
   let ( || ) (l : 'const t) (r : 'const t) : 'const t = or_ l r
