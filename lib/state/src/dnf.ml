@@ -13,14 +13,15 @@ open Base
 
 let predicate_of_state (entry : Entry.t) : string Act_litmus.Predicate.t =
   entry |> Entry.to_alist
-  |> Act_litmus.Predicate.(
-       List.fold ~init:(bool true) ~f:(fun acc (k, v) ->
-           Infix.(acc &&+ (k ==? v))))
+  |> Sequence.of_list
+  |> Sequence.map ~f:(fun (k, v) -> Act_litmus.Predicate.eq k v)
+  |> Act_litmus.Predicate.optimising_and_seq
 
-let predicate_of_states : Set.M(Entry).t -> string Act_litmus.Predicate.t =
-  Act_litmus.Predicate.(
-    Set.fold ~init:(bool false) ~f:(fun acc entry ->
-        Infix.(acc ||+ predicate_of_state entry)))
+let predicate_of_states (states: Set.M(Entry).t) : string Act_litmus.Predicate.t =
+  states
+  |> Set.to_sequence
+  |> Sequence.map ~f:predicate_of_state
+  |> Act_litmus.Predicate.optimising_or_seq
 
 let convert_states (entries : Set.M(Entry).t) :
     string Act_litmus.Postcondition.t =

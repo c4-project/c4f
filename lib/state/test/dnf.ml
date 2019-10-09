@@ -13,21 +13,72 @@ open Base
 module Src = Act_state
 module Tx = Travesty_base_exts
 
+let print_predicate : string Act_litmus.Predicate.t -> unit =
+  Fmt.pr "@[%a@]@."
+    (Act_litmus.Predicate.pp ~pp_const:String.pp)
+
+let print_postcondition : string Act_litmus.Postcondition.t -> unit =
+  Fmt.pr "@[%a@]@."
+    (Act_litmus.Postcondition.pp ~pp_const:String.pp)
+
+let states_exn (input : (string, string) List.Assoc.t list) : Set.M(Src.Entry).t =
+  input
+  |> List.map ~f:(Tx.Alist.map_left ~f:Act_common.Litmus_id.of_string)
+  |> Tx.Or_error.combine_map ~f:Src.Entry.of_alist
+  |> Or_error.ok_exn
+  |> Set.of_list (module Src.Entry)
+
+let%test_module "predicate_of_state" =
+  ( module struct
+
+    let test (input : (string, string) List.Assoc.t) : unit =
+      let entry =
+        input
+        |> Tx.Alist.map_left ~f:Act_common.Litmus_id.of_string
+        |> Src.Entry.of_alist
+        |> Or_error.ok_exn
+      in
+      let output = Src.Dnf.predicate_of_state entry
+      in print_predicate output
+
+    let%expect_test "sample entry" =
+      let entry =
+        [("foo", "1"); ("0:bar", "2"); ("1:baz", "3")]
+      in
+      test entry ; [%expect {| foo == 1 /\ (0:bar == 2 /\ 1:baz == 3) |}]
+  end)
+
+let%test_module "predicate_of_states" =
+  ( module struct
+    let test (input : (string, string) List.Assoc.t list) : unit =
+      let entries = states_exn input in
+      let output = Src.Dnf.predicate_of_states entries in
+      print_predicate output
+
+    let%expect_test "empty set" = test [] ; [%expect {| false |}]
+
+    let%expect_test "set of empty observation" =
+      test [[]] ;
+      [%expect {| true |}]
+
+    let%expect_test "sample set" =
+      let raw_entries =
+        [ [("foo", "1"); ("0:bar", "2"); ("1:baz", "3")]
+        ; [("foo", "1"); ("0:bar", "4"); ("1:baz", "9")]
+        ; [("foo", "1"); ("0:bar", "10")] ]
+      in
+      test raw_entries ; [%expect {|
+        (foo == 1 /\ 0:bar == 10) \/
+        ((foo == 1 /\ (0:bar == 2 /\ 1:baz == 3)) \/
+         (foo == 1 /\ (0:bar == 4 /\ 1:baz == 9))) |}]
+  end )
+
 let%test_module "convert_states" =
   ( module struct
     let test (input : (string, string) List.Assoc.t list) : unit =
-      let entries =
-        input
-        |> List.map ~f:(Tx.Alist.map_left ~f:Act_common.Litmus_id.of_string)
-        |> Tx.Or_error.combine_map ~f:Src.Entry.of_alist
-        |> Or_error.ok_exn
-      in
-      let output =
-        Src.Dnf.convert_states (Set.of_list (module Src.Entry) entries)
-      in
-      Fmt.pr "@[%a@]@."
-        (Act_litmus.Postcondition.pp ~pp_const:String.pp)
-        output
+      let entries = states_exn input in
+      let output = Src.Dnf.convert_states entries in
+      print_postcondition output
 
     let%expect_test "empty set" = test [] ; [%expect {| forall (false) |}]
 
@@ -39,8 +90,11 @@ let%test_module "convert_states" =
       let raw_entries =
         [ [("foo", "1"); ("0:bar", "2"); ("1:baz", "3")]
         ; [("foo", "1"); ("0:bar", "4"); ("1:baz", "9")]
-        ; [("foo", "1"); ("0:bar", "10")]
-        ; [] ]
+        ; [("foo", "1"); ("0:bar", "10")] ]
       in
-      test raw_entries ; [%expect {| forall (true) |}]
+      test raw_entries ; [%expect {|
+        forall
+        ((foo == 1 /\ 0:bar == 10) \/
+         ((foo == 1 /\ (0:bar == 2 /\ 1:baz == 3)) \/
+          (foo == 1 /\ (0:bar == 4 /\ 1:baz == 9)))) |}]
   end )

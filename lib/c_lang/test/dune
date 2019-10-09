@@ -1,0 +1,10 @@
+;; -*- mode: lisp; -*-
+
+(library
+ (name act_c_lang_test)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane))
+ (libraries fmt ppx_expect.common ppx_expect.config ppx_inline_test.config
+   base base.caml stdio parsexp act.common act.c_lang act.litmus act.utils
+   sexplib0))

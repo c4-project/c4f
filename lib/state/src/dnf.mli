@@ -20,6 +20,14 @@ open Base
 
 (** {1 Conversion functions} *)
 
+val predicate_of_state : Entry.t -> string Act_litmus.Predicate.t
+(** [predicate_of_state entry] converts [entry] into a conjunction
+   predicate. *)
+
+val predicate_of_states : Set.M(Entry).t -> string Act_litmus.Predicate.t
+(** [predicate_of_states entries] converts the set [entries] into a
+   sum of products predicate. *)
+
 val convert_states : Set.M(Entry).t -> string Act_litmus.Postcondition.t
 (** [convert_states entries] produces a for-all Litmus postcondition that
     requires a state to be one of the states in [entries]. *)
