@@ -47,9 +47,10 @@ struct
     in
     (* These _should_ be ok to pass through verbatim; they only use global
        variables. *)
+    let name = Act_c_mini.Litmus.Test.name input in
     let init = Act_c_mini.Litmus.Test.init input in
     let locations = Act_c_mini.Litmus.Test.locations input in
-    Act_litmus.Header.make ?postcondition ~init ?locations ()
+    Act_litmus.Header.make ~name ?postcondition ~init ?locations ()
 
   let make_global (c_id : Ac.C_id.t) (ptr_type : Act_c_mini.Type.t) :
       Var_map.Record.t Or_error.t =

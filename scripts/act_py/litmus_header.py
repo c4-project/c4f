@@ -13,13 +13,14 @@ import json
 import typing
 from dataclasses import dataclass
 
-from act_py import litmus_id
+from act_py import json_utils, litmus_id
 
 
 @dataclass
 class LitmusHeader:
     """The bit of a Litmus test that isn't code."""
 
+    name: str
     locations: typing.Optional[typing.List[str]]
     init: typing.Optional[typing.Dict[str, int]]
     postcondition: typing.Optional[str]
@@ -32,10 +33,11 @@ class LitmusHeader:
 
 
 def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusHeader:
+    name = json_utils.str_field(aux_dict, "name")
     locations = aux_dict["locations"]
     init = aux_dict["init"]
     postcondition = aux_dict["postcondition"]
-    return LitmusHeader(locations, init, postcondition)
+    return LitmusHeader(name=name, locations=locations, init=init, postcondition=postcondition)
 
 
 def load(fp: typing.TextIO) -> LitmusHeader:

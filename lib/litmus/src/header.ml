@@ -16,18 +16,25 @@ module Ac = Act_common
 type 'const t =
   { locations: Ac.C_id.t list option
   ; init: (Ac.C_id.t * 'const) list
-  ; postcondition: 'const Postcondition.t option }
+  ; postcondition: 'const Postcondition.t option
+  ; name: string
+  }
 [@@deriving fields, make, equal, sexp]
 
-let empty (type k) : k t = {locations= None; init= []; postcondition= None}
+let empty (type k) : k t = {name = ""; locations= None; init= []; postcondition= None}
 
 let add_global (type k) (aux : k t) ~(name : Ac.C_id.t) ~(initial_value : k)
     : k t Or_error.t =
   (* TODO(@MattWindsor91): check for duplicates. *)
   Or_error.return
-    { locations= Option.map ~f:(fun ls -> name :: ls) aux.locations
+    { name= aux.name
+    ; locations= Option.map ~f:(fun ls -> name :: ls) aux.locations
     ; init= (name, initial_value) :: aux.init
     ; postcondition= aux.postcondition }
+
+let map_name (type k) (header : k t)
+    ~(f : string -> string) : k t =
+  {header with name= f header.name}
 
 let map_tids (type k) (aux : k t) ~(f : int -> int) : k t =
   let post = postcondition aux in
@@ -56,11 +63,12 @@ Travesty.Bi_traversable.Make1_right (struct
 
     let bi_map_m (type a b) (aux : a t) ~(left : Ac.C_id.t -> Ac.C_id.t M.t)
         ~(right : a -> b M.t) : b t M.t =
+      let name = name aux in
       let locations = locations aux in
       M.Let_syntax.(
         let%map init = MA.bi_map_m (init aux) ~left ~right
         and postcondition = MP.bi_map_m (postcondition aux) ~left ~right in
-        make ~init ?locations ?postcondition ())
+        make ~name ~init ?locations ?postcondition ())
   end
 end)
 
@@ -108,6 +116,9 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
     Result.map_error ~f:Error.to_string_hum result
 
   let t_of_yojson (json : Yojson.Safe.t) : t =
+    let name =
+      [%of_yojson: string] (U.member "name" json)
+    in
     let locations =
       [%of_yojson: Ac.C_id.t list option] (U.member "locations" json)
     in
@@ -118,7 +129,7 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
       Result.ok_or_failwith
         (postcondition_of_json (U.member "postcondition" json))
     in
-    make ?locations ~init ?postcondition ()
+    make ~name ?locations ~init ?postcondition ()
 
   let t_of_yojson' (json : Yojson.Safe.t) : (t, string) Result.t =
     Result.try_with (fun () -> t_of_yojson json)

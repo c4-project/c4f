@@ -60,14 +60,13 @@ struct
     Or_error.Let_syntax.(
       let%bind init = convert_init (Header.init old) in
       let%map postcondition = convert_post_opt (Header.postcondition old) in
-      Header.make ~init ?postcondition ?locations:(Header.locations old) ())
+      Header.make ~name:(Header.name old) ~init ?postcondition ?locations:(Header.locations old) ())
 
   let convert (old : B.From.t) : B.To.t Or_error.t =
-    let name = B.From.name old in
     let old_header = B.From.header old in
     let old_threads = B.From.threads old in
     Or_error.Let_syntax.(
       let%bind header = convert_header old_header
       and threads = convert_threads old_threads in
-      B.To.make ~name ~header ~threads)
+      B.To.make ~header ~threads)
 end

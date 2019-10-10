@@ -95,12 +95,12 @@ module Make (B : Runner_intf.Basic) :
     Make_header.of_delitmus_aux dl_aux ~redirect_map
 
   let make ~(config : Config.t) ~(redirects : B.Src_lang.Symbol.R_map.t)
-      ~(name : string) ~(threads : program list) =
+      ~(threads : program list) =
     Or_error.Let_syntax.(
       let%bind header = make_header config redirects in
       let%bind l_threads = make_litmus_programs threads in
       Or_error.tag ~tag:"Couldn't build litmus file."
-        (Litmus.make ~name ~header ~threads:l_threads))
+        (Litmus.make ~header ~threads:l_threads))
 
   let collate_warnings (programs : Sanitiser.Output.Program.t list) =
     List.concat_map programs ~f:Sanitiser.Output.Program.warnings
@@ -128,7 +128,7 @@ module Make (B : Runner_intf.Basic) :
     let redirects = Sanitiser.Output.redirects o in
     let threads = Sanitiser.Output.programs o in
     let warnings = collate_warnings threads in
-    let%map lit = make ~config ~redirects ~name:in_name ~threads in
+    let%map lit = make ~config ~redirects ~threads in
     print_litmus (Config.format config) outp lit ;
     Out_channel.newline outp ;
     Job.Output.make Sanitiser.Warn.pp in_name

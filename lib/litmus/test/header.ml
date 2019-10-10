@@ -41,9 +41,9 @@ let%test_module "JSON deserialisation" =
       Yojson.Safe.pretty_to_channel ~std:true stdout json
 
     let%expect_test "empty header" =
-      test (A.make ()) ;
+      test A.empty ;
       [%expect
-        {| { "locations": null, "init": {}, "postcondition": null } |}]
+        {| { "name": "", "locations": null, "init": {}, "postcondition": null } |}]
 
     let%expect_test "SBSC example header" =
       test (Lazy.force Examples.Sbsc.header) ;

@@ -35,17 +35,13 @@ module Raw : sig
   (** {3 Constructing raw tests} *)
 
   val make :
-       name:string
-    -> header:'const Header.t
+       header:'const Header.t
     -> threads:'prog list
     -> ('const, 'prog) t
-  (** [make ~name ~header ~threads] directly constructs an unvalidated
+  (** [make ~header ~threads] directly constructs an unvalidated
       Litmus test with the given fields. *)
 
   (** {3 Accessing parts of raw tests} *)
-
-  val name : (_, _) t -> string
-  (** [name test] gets the name of [test]. *)
 
   val header : ('const, _) t -> 'const Header.t
   (** [header test] gets [test]'s header directly. *)

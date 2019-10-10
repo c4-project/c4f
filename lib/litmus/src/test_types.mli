@@ -83,12 +83,12 @@ module type S = sig
   (** {3 Constructing validated tests} *)
 
   val make :
-       name:string
-    -> header:Lang.Constant.t Header.t
+       header:Lang.Constant.t Header.t
     -> threads:Lang.Program.t list
     -> t Or_error.t
-  (** [make ~name ~header ~threads] directly constructs a validated test
-      with the given fields. It may fail if the result fails validation. *)
+  (** [make ~header ~threads] directly constructs a validated test
+     with the given header and thread programs. It may fail if the result
+     fails validation. *)
 
   val validate : raw -> t Or_error.t
   (** [validate lit] tries to validate an existing Litmus test. It may fail
@@ -107,13 +107,13 @@ module type S = sig
   (** [programs test] gets the program listings in [test], in left-right or
       top-bottom order. *)
 
-  val name : t -> string
-  (** [name test] gets the name of [test]. *)
-
   val header : t -> Lang.Constant.t Header.t
   (** [header test] gets the header for [test]. *)
 
   (** {4 Shortcuts for accessing individual header fields} *)
+
+  val name : t -> string
+  (** [name test] gets the name of [test]. *)
 
   val init : t -> (Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
   (** [init test] gets the initialiser in [test]. *)

@@ -96,9 +96,9 @@ let%test_module "trace playback" =
       [%expect
         {|
       (Ok
-       ((name example)
-        (header
-         ((locations ()) (init ((x (Int 27)) (y (Int 53)))) (postcondition ())))
+       ((header
+         ((locations ()) (init ((x (Int 27)) (y (Int 53)))) (postcondition ())
+          (name example)))
         (threads
          (((decls ())
            (stms

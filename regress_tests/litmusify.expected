@@ -3,7 +3,7 @@
 ## clang_macho_o3_xchg.s
 
 ```
-X86 clang_macho_o3_xchg
+X86 Xchg
 
 { x = 0; y = 0; }
 
@@ -18,7 +18,7 @@ locations [x; y]
 ## gcc_elf_o0_stackchk.s
 
 ```
-X86 gcc_elf_o0_stackchk
+X86 Stackchk
 
 { x = 0; y = 0; }
 
@@ -42,7 +42,7 @@ locations [x; y]
 ## gcc_macho_o0_deref_cmpxchg.s
 
 ```
-X86 gcc_macho_o0_deref_cmpxchg
+X86 Cmpxchg
 
 { x = 0; y = 0; }
 
@@ -67,7 +67,7 @@ locations [x; y]
 ## gcc_macho_o0_deref_write.s
 
 ```
-X86 gcc_macho_o0_deref_write
+X86 DerefWrite
 
 { x = 0; y = 0; }
 
@@ -87,7 +87,7 @@ locations [x; y]
 ## gcc_macho_o0_immediate_heap.s
 
 ```
-X86 gcc_macho_o0_immediate_heap
+X86 ImmediateHeap
 
 { x = 0; y = 0; }
 
@@ -103,7 +103,7 @@ locations [x; y]
 ## gcc_macho_o0_moves.s
 
 ```
-X86 gcc_macho_o0_moves
+X86 Moves
 
 { x = 0; y = 0; }
 

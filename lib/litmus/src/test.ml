@@ -16,7 +16,7 @@ module Tx = Travesty_base_exts
 
 module Raw = struct
   type ('const, 'prog) t =
-    {name: string; header: 'const Header.t; threads: 'prog list}
+    {header: 'const Header.t; threads: 'prog list}
   [@@deriving fields, sexp]
 
   (* We could use [@@deriving make] here, but that would give us an optional
@@ -44,7 +44,7 @@ module Raw = struct
     Or_error.Let_syntax.(
       let%map threads' = Tx.List.insert threads index thread in
       let header' = bump_tids (header test) ~from:index ~delta:1 in
-      make ~threads:threads' ~header:header' ~name:(name test))
+      make ~threads:threads' ~header:header')
 
   let add_thread_at_end (type const prog) (test : (const, prog) t)
       ~(thread : prog) : (const, prog) t =
@@ -54,7 +54,7 @@ module Raw = struct
 
   let map_name (type const prog) (test : (const, prog) t)
       ~(f : string -> string) : (const, prog) t =
-    {test with name= f test.name}
+    {test with header= Header.map_name ~f test.header}
 
   let try_map_header (type c1 c2 prog) (test : (c1, prog) t)
       ~(f : c1 Header.t -> c2 Header.t Or_error.t) : (c2, prog) t Or_error.t
@@ -91,7 +91,7 @@ module Raw = struct
     Or_error.Let_syntax.(
       let%map threads' = Tx.List.replace threads index ~f:(Fn.const None) in
       let header' = bump_tids (header test) ~from:index ~delta:(-1) in
-      make ~threads:threads' ~header:header' ~name:(name test))
+      make ~threads:threads' ~header:header')
 end
 
 let check_init_against_globals (type k t)
@@ -195,7 +195,8 @@ module Make (Lang : Test_types.Basic) :
 
     let validate_header (t : Lang.Constant.t Header.t) : Validate.t =
       Validate.of_list
-        [ validate_init (Header.init t)
+        [ validate_name (Header.name t)
+        ; validate_init (Header.init t)
         ; validate_locations (Header.locations t)
         ; validate_post (Header.postcondition t)
         ; validate_post_or_location_exists t
@@ -204,7 +205,7 @@ module Make (Lang : Test_types.Basic) :
     let validate_fields (t : t) : Validate.t =
       let w check = Validate.field_folder t check in
       Validate.of_list
-        (Raw.Fields.fold ~init:[] ~name:(w validate_name)
+        (Raw.Fields.fold ~init:[]
            ~header:(w validate_header) ~threads:(w validate_threads))
 
     let get_uniform_globals :
@@ -244,11 +245,11 @@ module Make (Lang : Test_types.Basic) :
       Validate.all [validate_fields; validate_globals]
   end)
 
-  let name : t -> string = Fn.compose Raw.name raw
-
   let threads : t -> Lang.Program.t list = Fn.compose Raw.threads raw
 
   let header : t -> Lang.Constant.t Header.t = Fn.compose Raw.header raw
+
+  let name : t -> string = Fn.compose Header.name header
 
   let init : t -> (Ac.C_id.t, Lang.Constant.t) List.Assoc.t =
     Fn.compose Header.init header
@@ -262,7 +263,7 @@ module Make (Lang : Test_types.Basic) :
   (* slight renaming *)
   let validate : raw -> t Or_error.t = create
 
-  let make ~name ~header ~threads = create (Raw.make ~name ~header ~threads)
+  let make ~header ~threads = create (Raw.make ~header ~threads)
 
   let validate_language : Ac.C_id.t Validate.check =
     Validate.booltest
@@ -278,8 +279,8 @@ module Make (Lang : Test_types.Basic) :
     let threads = Ast.get_programs decls in
     Or_error.Let_syntax.(
       let%bind _ = check_language language in
-      let%bind header = Ast.get_header decls in
-      make ~name ~threads ~header)
+      let%bind header = Ast.get_header name decls in
+      make ~threads ~header)
 
   let try_map_raw (test : t) ~(f : raw -> raw Or_error.t) : t Or_error.t =
     Or_error.(test |> raw |> f >>= validate)

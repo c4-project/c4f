@@ -79,8 +79,9 @@ val get_post :
 val get_locations :
   (_, _) Decl.t list -> Act_common.C_id.t list option Or_error.t
 
-val get_header : ('const, _) Decl.t list -> 'const Header.t Or_error.t
-(** [get_header decls] scrapes [decls] for all of the various parts of a
-    Litmus test that make up a header, then builds a {!Header} with them. *)
+val get_header : string -> ('const, _) Decl.t list -> 'const Header.t Or_error.t
+(** [get_header name decls] scrapes [decls] for all of the various
+   parts of a Litmus test that make up a header, then builds a
+   {!Header} with them and the test name [name]. *)
 
 (* TODO(@MattWindsor91): expose constructors *)

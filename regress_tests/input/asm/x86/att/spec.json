@@ -3,6 +3,7 @@
 	{
 		"num_threads": 2,
 		"litmus_header": {
+			"name": "Xchg",
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -15,6 +16,7 @@
 	{
 		"num_threads": 2,
 		"litmus_header": {
+			"name": "Stackchk",
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -28,6 +30,7 @@
 	{
 		"num_threads": 2,
 		"litmus_header": {
+			"name": "Cmpxchg",
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -40,6 +43,7 @@
 	{
 		"num_threads": 2,
 		"litmus_header": {
+			"name": "DerefWrite",
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -54,6 +58,7 @@
 	{
 		"num_threads": 2,
 		"litmus_header": {
+			"name": "ImmediateHeap",
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -67,6 +72,7 @@
 	{
 		"num_threads": 2,
 		"litmus_header": {
+			"name": "Moves",
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
