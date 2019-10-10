@@ -11,10 +11,10 @@
 
 open Base
 
-type t = Constant.t Act_litmus.Aux.t [@@deriving equal]
+type t = Constant.t Act_litmus.Header.t [@@deriving equal]
 
 module J : Plumbing.Jsonable_types.S with type t := t =
-Act_litmus.Aux.Json (struct
+Act_litmus.Header.Json (struct
   include Constant
 
   let parse_post_string (s : string) :

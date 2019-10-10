@@ -186,20 +186,19 @@ module Test = struct
   let of_litmus (test : Act_c_mini.Litmus.Test.t) : t =
     Act_litmus.Test.Raw.make
       ~name:(Act_c_mini.Litmus.Test.name test)
-      ~aux:(Act_c_mini.Litmus.Test.aux test)
+      ~header:(Act_c_mini.Litmus.Test.header test)
       ~threads:(programs_of_litmus test)
 
   let to_litmus (subject : t) ~(vars : Var.Map.t) :
       Act_c_mini.Litmus.Test.t Or_error.t =
-    (* TODO(@MattWindsor91): preserve whole aux in subject. *)
     let name = Act_litmus.Test.Raw.name subject in
-    let aux = Act_litmus.Test.Raw.aux subject in
+    let header = Act_litmus.Test.Raw.header subject in
     let threads = Act_litmus.Test.Raw.threads subject in
     let threads' = Program.list_to_litmus ~vars threads in
-    Act_c_mini.Litmus.Test.make ~name ~aux ~threads:threads'
+    Act_c_mini.Litmus.Test.make ~name ~header ~threads:threads'
 
   let add_var_to_init (subject : t) (var : Ac.C_id.t)
       (initial_value : Act_c_mini.Constant.t) : t Or_error.t =
-    Act_litmus.Test.Raw.try_map_aux subject
-      ~f:(Act_litmus.Aux.add_global ~name:var ~initial_value)
+    Act_litmus.Test.Raw.try_map_header subject
+      ~f:(Act_litmus.Header.add_global ~name:var ~initial_value)
 end

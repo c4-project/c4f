@@ -36,19 +36,19 @@ module Raw : sig
 
   val make :
        name:string
-    -> aux:'const Aux.t
+    -> header:'const Header.t
     -> threads:'prog list
     -> ('const, 'prog) t
-  (** [make ~name ~aux ~threads] directly constructs an unvalidated Litmus
-      test with the given fields. *)
+  (** [make ~name ~header ~threads] directly constructs an unvalidated
+      Litmus test with the given fields. *)
 
   (** {3 Accessing parts of raw tests} *)
 
   val name : (_, _) t -> string
   (** [name test] gets the name of [test]. *)
 
-  val aux : ('const, _) t -> 'const Aux.t
-  (** [aux test] gets [test]'s auxiliary data directly. *)
+  val header : ('const, _) t -> 'const Header.t
+  (** [header test] gets [test]'s header directly. *)
 
   val threads : (_, 'prog) t -> 'prog list
   (** [threads test] gets the program listings in [test], in left-right or
@@ -64,13 +64,13 @@ module Raw : sig
     ('const, 'prog) t -> f:(string -> string) -> ('const, 'prog) t
   (** [map_name test ~f] maps [f] over the name of [test]. *)
 
-  (** {4 Manipulating the auxiliary data} *)
+  (** {4 Manipulating the header} *)
 
-  val try_map_aux :
+  val try_map_header :
        ('c1, 'prog) t
-    -> f:('c1 Aux.t -> 'c2 Aux.t Or_error.t)
+    -> f:('c1 Header.t -> 'c2 Header.t Or_error.t)
     -> ('c2, 'prog) t Or_error.t
-  (** [try_map_aux test ~f] tries to map [f] over the auxiliary record in
+  (** [try_map_header test ~f] tries to map [f] over the test header in
       [test]. *)
 
   (** {4 Manipulating threads} *)

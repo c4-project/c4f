@@ -97,7 +97,7 @@ let%test_module "trace playback" =
         {|
       (Ok
        ((name example)
-        (aux
+        (header
          ((locations ()) (init ((x (Int 27)) (y (Int 53)))) (postcondition ())))
         (threads
          (((decls ())

@@ -28,11 +28,11 @@ struct
 
   let of_delitmus_aux (dl_aux : Act_delitmus.Aux.t)
       ~(redirect_map : B.Symbol.R_map.t) :
-      B.Constant.t Act_litmus.Aux.t Or_error.t =
-    let c_litmus_aux = Act_delitmus.Aux.litmus_aux dl_aux in
+      B.Constant.t Act_litmus.Header.t Or_error.t =
+    let c_litmus_header = Act_delitmus.Aux.litmus_header dl_aux in
     (* TODO(@MattWindsor91): use the delitmus map to transform all *LITMUS*
        IDs in the postcondition. *)
-    Act_litmus.Aux.With_errors.bi_map_m c_litmus_aux
+    Act_litmus.Header.With_errors.bi_map_m c_litmus_header
       ~left:(transform_id ~redirect_map)
       ~right:transform_constant
 end

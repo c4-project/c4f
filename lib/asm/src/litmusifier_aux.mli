@@ -19,5 +19,5 @@ end) : sig
   val of_delitmus_aux :
        Act_delitmus.Aux.t
     -> redirect_map:B.Symbol.R_map.t
-    -> B.Constant.t Act_litmus.Aux.t Or_error.t
+    -> B.Constant.t Act_litmus.Header.t Or_error.t
 end

@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** A specialisation of {!Act_litmus.Aux} that includes JSON serialisation
-    and deserialisation. *)
+(** A specialisation of {!Act_litmus.Header} that includes JSON
+    serialisation and deserialisation. *)
 
-type t = Constant.t Act_litmus.Aux.t [@@deriving equal, yojson]
+type t = Constant.t Act_litmus.Header.t [@@deriving equal, yojson]

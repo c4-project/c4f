@@ -2,7 +2,7 @@
 	"clang_macho_o3_xchg.s":
 	{
 		"num_threads": 2,
-		"litmus_aux": {
+		"litmus_header": {
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -14,7 +14,7 @@
 	"gcc_elf_o0_stackchk.s":
 	{
 		"num_threads": 2,
-		"litmus_aux": {
+		"litmus_header": {
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -27,7 +27,7 @@
 	"gcc_macho_o0_deref_cmpxchg.s":
 	{
 		"num_threads": 2,
-		"litmus_aux": {
+		"litmus_header": {
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -39,7 +39,7 @@
 	"gcc_macho_o0_deref_write.s":
 	{
 		"num_threads": 2,
-		"litmus_aux": {
+		"litmus_header": {
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -53,7 +53,7 @@
 	"gcc_macho_o0_immediate_heap.s":
 	{
 		"num_threads": 2,
-		"litmus_aux": {
+		"litmus_header": {
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},
@@ -66,7 +66,7 @@
 	"gcc_macho_o0_moves.s":
 	{
 		"num_threads": 2,
-		"litmus_aux": {
+		"litmus_header": {
 			"locations": [ "x", "y" ],
 			"init": { "x": 0, "y": 0 }
 		},

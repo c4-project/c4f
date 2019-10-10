@@ -70,8 +70,8 @@ module Example = struct
     Lazy.Let_syntax.(
       let%bind init = init in
       let%map threads = programs in
-      let aux = Act_litmus.Aux.make ~init () in
-      Act_litmus.Test.Raw.make ~name:"example" ~aux ~threads)
+      let header = Act_litmus.Header.make ~init () in
+      Act_litmus.Test.Raw.make ~name:"example" ~header ~threads)
 end
 
 let%test_module "program" =

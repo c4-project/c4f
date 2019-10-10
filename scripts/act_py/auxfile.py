@@ -17,7 +17,7 @@ from act_py import json_utils, litmus_id
 
 
 @dataclass
-class LitmusAux:
+class LitmusHeader:
     """Representation of the part of an ACT 'aux file' that contains Litmus-specific information."""
 
     locations: typing.Optional[typing.List[str]]
@@ -53,7 +53,7 @@ class Aux:
 
     num_threads: int
     var_map: typing.Dict[str, VarRecord]
-    litmus_aux: LitmusAux
+    litmus_header: LitmusHeader
 
     def __str__(self) -> str:
         """Converts this aux record to a string.
@@ -84,14 +84,14 @@ class Aux:
         return (l for l in self.litmus_ids if l.tid is None or tid == l.tid)
 
     def rewrite_locals(self, rewriter: typing.Callable[[litmus_id.Lid], str]):
-        self.litmus_aux.rewrite_locals(rewriter)
+        self.litmus_header.rewrite_locals(rewriter)
 
 
-def litmus_of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusAux:
+def litmus_of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusHeader:
     locations = aux_dict["locations"]
     init = aux_dict["init"]
     postcondition = aux_dict["postcondition"]
-    return LitmusAux(locations, init, postcondition)
+    return LitmusHeader(locations, init, postcondition)
 
 
 def var_record_of_dict(vr_dict: typing.Dict[str, typing.Any]) -> VarRecord:
@@ -106,8 +106,8 @@ def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> Aux:
     var_map: typing.Dict[str, VarRecord] = {
         k: var_record_of_dict(v) for (k, v) in aux_dict["var_map"].items()
     }
-    litmus_aux: LitmusAux = litmus_of_dict(aux_dict["litmus_aux"])
-    return Aux(num_threads, var_map, litmus_aux)
+    litmus_header: LitmusHeader = litmus_of_dict(aux_dict["litmus_header"])
+    return Aux(num_threads, var_map, litmus_header)
 
 
 def load(fp: typing.TextIO) -> Aux:

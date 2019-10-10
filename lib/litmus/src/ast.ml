@@ -104,9 +104,10 @@ let get_locations (decls : (_, _) Decl.t list) :
     Ac.C_id.t list option Or_error.t =
   decls |> List.filter_map ~f:Decl.as_locations |> Tx.List.at_most_one
 
-let get_aux (decls : ('const, _) Decl.t list) : 'const Aux.t Or_error.t =
+let get_header (decls : ('const, _) Decl.t list) :
+    'const Header.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind init = get_init decls in
     let%bind postcondition = get_post decls in
     let%map locations = get_locations decls in
-    Aux.make ~init ?postcondition ?locations ())
+    Header.make ~init ?postcondition ?locations ())

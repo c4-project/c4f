@@ -16,7 +16,8 @@ module M = struct
   open Caml
 
   type t =
-    { litmus_aux: Act_c_mini.Litmus_aux.t [@default Act_litmus.Aux.empty]
+    { litmus_header: Act_c_mini.Litmus_header.t
+          [@default Act_litmus.Header.empty]
     ; var_map: Var_map.t
     ; num_threads: int }
   [@@deriving make, fields, equal, yojson]
@@ -35,7 +36,7 @@ let symbols (aux : t) : string list =
   |> List.map ~f:Act_common.C_id.to_string
 
 let empty : t =
-  { litmus_aux= Act_litmus.Aux.empty
+  { litmus_header= Act_litmus.Header.empty
   ; var_map= Act_common.Scoped_map.empty
   ; num_threads= 0 }
 

@@ -38,7 +38,7 @@ P3()
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": null,
     "init": { "x": 0, "y": 0 },
     "postcondition":
@@ -84,7 +84,7 @@ P3_body(atomic_int *x, atomic_int *y, int *r0, int *r1)
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": null,
     "init": { "x": 0, "y": 0 },
     "postcondition":
@@ -152,7 +152,7 @@ P4()
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": [
       "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x",
       "y"
@@ -244,7 +244,7 @@ P4_body(int *MaJgQmON3yu, int *VFTQNWN, int *ZgoV7uel9o, int *m02M5s,
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": [
       "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x",
       "y"
@@ -325,7 +325,7 @@ P1()
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": null,
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
@@ -358,7 +358,7 @@ P1_body(atomic_int *x)
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": null,
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 2)"
@@ -390,7 +390,7 @@ P0()
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": null,
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
@@ -416,7 +416,7 @@ P0_body(int *x, int *r0)
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": null,
     "init": { "x": 0 },
     "postcondition": "exists (t0r0 == 0 /\\ x == 1)"
@@ -463,7 +463,7 @@ P2()
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": null,
     "init": { "x": 0, "y": 0 },
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"
@@ -504,7 +504,7 @@ P2_body(atomic_int *x, atomic_int *y, int *r0)
 /* --Begin auxiliary output--
 
 {
-  "litmus_aux": {
+  "litmus_header": {
     "locations": null,
     "init": { "x": 0, "y": 0 },
     "postcondition": "exists (t1r0 == 1 /\\ t1r1 == 0 /\\ t2r0 == 0)"

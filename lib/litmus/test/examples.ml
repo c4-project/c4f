@@ -10,7 +10,7 @@
    project root for more information. *)
 
 open Base
-module Aux = Act_litmus.Aux
+module Header = Act_litmus.Header
 module Post = Act_litmus.Postcondition
 module Pred = Act_litmus.Predicate
 module Ac = Act_common
@@ -27,20 +27,20 @@ module Sbsc = struct
         make ~quantifier:Exists
           ~predicate:Pred.Infix.(a 0 ==? 0 && a 1 ==? 1))
 
-  let aux : int Aux.t Lazy.t =
+  let header : int Header.t Lazy.t =
     let x = Ac.C_id.of_string "x" in
     let y = Ac.C_id.of_string "y" in
     let init : (Ac.C_id.t, int) List.Assoc.t = [(x, 0); (y, 0)] in
     let locations : Ac.C_id.t list = [x; y] in
     Lazy.Let_syntax.(
       let%map postcondition = postcondition in
-      Aux.make ~init ~postcondition ~locations ())
+      Header.make ~init ~postcondition ~locations ())
 
   let threads : string list Lazy.t =
     lazy ["(this was thread 0)"; "(this was thread 1)"]
 
   let test : (int, string) Act_litmus.Test.Raw.t Lazy.t =
     Lazy.Let_syntax.(
-      let%map aux = aux and threads = threads in
-      Act_litmus.Test.Raw.make ~name:"SBSC" ~aux ~threads)
+      let%map header = header and threads = threads in
+      Act_litmus.Test.Raw.make ~name:"SBSC" ~header ~threads)
 end

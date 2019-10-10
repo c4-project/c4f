@@ -26,7 +26,7 @@ let%test_module "SBSC example" =
         {|
       (Ok
        ((name SBSC)
-        (aux
+        (header
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
            (((quantifier exists)
@@ -41,7 +41,7 @@ let%test_module "SBSC example" =
         {|
       (Ok
        ((name SBSC)
-        (aux
+        (header
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
            (((quantifier exists)
@@ -54,7 +54,7 @@ let%test_module "SBSC example" =
         {|
       (Ok
        ((name SBSC)
-        (aux
+        (header
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
            (((quantifier exists)
@@ -67,7 +67,7 @@ let%test_module "SBSC example" =
         {|
       (Ok
        ((name SBSC)
-        (aux
+        (header
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
            (((quantifier exists)
@@ -80,7 +80,7 @@ let%test_module "SBSC example" =
         {|
       (Ok
        ((name SBSC)
-        (aux
+        (header
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
            (((quantifier exists)
@@ -105,7 +105,7 @@ let%test_module "SBSC example" =
         {|
       (Ok
        ((name SBSC)
-        (aux
+        (header
          ((locations ((x y))) (init ((x 0) (y 0)))
           (postcondition
            (((quantifier exists)

@@ -83,24 +83,24 @@ module Make (B : Runner_intf.Basic) :
 
   let make_litmus_programs = Tx.Or_error.combine_map ~f:make_litmus_program
 
-  module Make_aux = Litmusifier_aux.Make (struct
+  module Make_header = Litmusifier_aux.Make (struct
     module Symbol = B.Src_lang.Symbol
     module Constant = B.Dst_lang.Constant
   end)
 
-  let make_aux (config : Config.t)
+  let make_header (config : Config.t)
       (redirect_map : B.Src_lang.Symbol.R_map.t) :
-      B.Dst_lang.Constant.t Act_litmus.Aux.t Or_error.t =
+      B.Dst_lang.Constant.t Act_litmus.Header.t Or_error.t =
     let dl_aux = Config.aux config in
-    Make_aux.of_delitmus_aux dl_aux ~redirect_map
+    Make_header.of_delitmus_aux dl_aux ~redirect_map
 
   let make ~(config : Config.t) ~(redirects : B.Src_lang.Symbol.R_map.t)
       ~(name : string) ~(threads : program list) =
     Or_error.Let_syntax.(
-      let%bind aux = make_aux config redirects in
+      let%bind header = make_header config redirects in
       let%bind l_threads = make_litmus_programs threads in
       Or_error.tag ~tag:"Couldn't build litmus file."
-        (Litmus.make ~name ~aux ~threads:l_threads))
+        (Litmus.make ~name ~header ~threads:l_threads))
 
   let collate_warnings (programs : Sanitiser.Output.Program.t list) =
     List.concat_map programs ~f:Sanitiser.Output.Program.warnings

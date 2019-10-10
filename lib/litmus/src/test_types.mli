@@ -1,25 +1,14 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 open Base
 module Id = Act_common.Litmus_id
 
@@ -33,7 +22,7 @@ module type Basic = sig
 
   (** Abstract type of constant syntax *)
   module Constant : sig
-    type t [@@deriving compare, eq, sexp, quickcheck]
+    type t [@@deriving compare, equal, sexp, quickcheck]
 
     include Pretty_printer.S with type t := t
   end
@@ -51,7 +40,7 @@ module type Basic = sig
 
   (** Abstract type of types. *)
   module Type : sig
-    type t [@@deriving compare, eq, sexp]
+    type t [@@deriving compare, equal, sexp]
   end
 
   (** Abstract type of programs. *)
@@ -95,11 +84,11 @@ module type S = sig
 
   val make :
        name:string
-    -> aux:Lang.Constant.t Aux.t
+    -> header:Lang.Constant.t Header.t
     -> threads:Lang.Program.t list
     -> t Or_error.t
-  (** [make ~name ~aux ~threads] directly constructs a validated test with
-      the given fields. It may fail if the result fails validation. *)
+  (** [make ~name ~header ~threads] directly constructs a validated test
+      with the given fields. It may fail if the result fails validation. *)
 
   val validate : raw -> t Or_error.t
   (** [validate lit] tries to validate an existing Litmus test. It may fail
@@ -121,10 +110,10 @@ module type S = sig
   val name : t -> string
   (** [name test] gets the name of [test]. *)
 
-  val aux : t -> Lang.Constant.t Aux.t
-  (** [aux test] gets the auxiliary record for [test]. *)
+  val header : t -> Lang.Constant.t Header.t
+  (** [header test] gets the header for [test]. *)
 
-  (** {4 Shortcuts for accessing individual auxiliary record fields} *)
+  (** {4 Shortcuts for accessing individual header fields} *)
 
   val init : t -> (Act_common.C_id.t, Lang.Constant.t) List.Assoc.t
   (** [init test] gets the initialiser in [test]. *)

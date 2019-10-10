@@ -16,7 +16,7 @@ module Tx = Travesty_base_exts
 
 module Raw = struct
   type ('const, 'prog) t =
-    {name: string; aux: 'const Aux.t; threads: 'prog list}
+    {name: string; header: 'const Header.t; threads: 'prog list}
   [@@deriving fields, sexp]
 
   (* We could use [@@deriving make] here, but that would give us an optional
@@ -33,9 +33,9 @@ module Raw = struct
     type nonrec t = (L.Constant.t, L.Program.t) t
   end
 
-  let bump_tids (type const) (aux : const Aux.t) ~(from : int)
-      ~(delta : int) : const Aux.t =
-    Aux.map_tids aux ~f:(fun tid ->
+  let bump_tids (type const) (header : const Header.t) ~(from : int)
+      ~(delta : int) : const Header.t =
+    Header.map_tids header ~f:(fun tid ->
         if from <= tid then tid + delta else tid)
 
   let add_thread (type const prog) (test : (const, prog) t) ~(thread : prog)
@@ -43,8 +43,8 @@ module Raw = struct
     let threads = threads test in
     Or_error.Let_syntax.(
       let%map threads' = Tx.List.insert threads index thread in
-      let aux' = bump_tids (aux test) ~from:index ~delta:1 in
-      make ~threads:threads' ~aux:aux' ~name:(name test))
+      let header' = bump_tids (header test) ~from:index ~delta:1 in
+      make ~threads:threads' ~header:header' ~name:(name test))
 
   let add_thread_at_end (type const prog) (test : (const, prog) t)
       ~(thread : prog) : (const, prog) t =
@@ -56,13 +56,14 @@ module Raw = struct
       ~(f : string -> string) : (const, prog) t =
     {test with name= f test.name}
 
-  let try_map_aux (type c1 c2 prog) (test : (c1, prog) t)
-      ~(f : c1 Aux.t -> c2 Aux.t Or_error.t) : (c2, prog) t Or_error.t =
-    let aux = aux test in
+  let try_map_header (type c1 c2 prog) (test : (c1, prog) t)
+      ~(f : c1 Header.t -> c2 Header.t Or_error.t) : (c2, prog) t Or_error.t
+      =
+    let header = header test in
     (* We don't need to do any thread ID manipulation if we're just mapping. *)
     Or_error.Let_syntax.(
-      let%map aux' = f aux in
-      {test with aux= aux'})
+      let%map header' = f header in
+      {test with header= header'})
 
   let try_map_threads (type const p1 p2) (test : (const, p1) t)
       ~(f : p1 -> p2 Or_error.t) : (const, p2) t Or_error.t =
@@ -89,8 +90,8 @@ module Raw = struct
     let threads = threads test in
     Or_error.Let_syntax.(
       let%map threads' = Tx.List.replace threads index ~f:(Fn.const None) in
-      let aux' = bump_tids (aux test) ~from:index ~delta:(-1) in
-      make ~threads:threads' ~aux:aux' ~name:(name test))
+      let header' = bump_tids (header test) ~from:index ~delta:(-1) in
+      make ~threads:threads' ~header:header' ~name:(name test))
 end
 
 let check_init_against_globals (type k t)
@@ -157,29 +158,31 @@ module Make (Lang : Test_types.Basic) :
           [%message "Litmus name contains invalid character" ~name]
       else Validate.pass
 
-    (** [validate_post_or_location_exists] checks an incoming Litmus aux to
-        ensure that it has either a postcondition or a locations stanza. *)
+    (** [validate_post_or_location_exists] checks an incoming Litmus header
+        to ensure that it has either a postcondition or a locations stanza. *)
     let validate_post_or_location_exists :
-        Lang.Constant.t Aux.t Validate.check =
+        Lang.Constant.t Header.t Validate.check =
       Validate.booltest
         (fun t ->
-          Option.is_some (Aux.locations t)
-          || Option.is_some (Aux.postcondition t))
+          Option.is_some (Header.locations t)
+          || Option.is_some (Header.postcondition t))
         ~if_false:"Test must have a postcondition or location stanza."
 
-    let variables_in_init (aux : _ Aux.t) : Set.M(Ac.C_id).t =
-      aux |> Aux.init |> List.map ~f:fst |> Set.of_list (module Ac.C_id)
+    let variables_in_init (header : _ Header.t) : Set.M(Ac.C_id).t =
+      header |> Header.init |> List.map ~f:fst
+      |> Set.of_list (module Ac.C_id)
 
-    let variables_in_locations (aux : _ Aux.t) : Set.M(Ac.C_id).t =
-      aux |> Aux.locations
+    let variables_in_locations (header : _ Header.t) : Set.M(Ac.C_id).t =
+      header |> Header.locations
       |> Option.value_map
            ~f:(Set.of_list (module Ac.C_id))
            ~default:(Set.empty (module Ac.C_id))
 
-    let validate_location_variables : Lang.Constant.t Aux.t Validate.check =
-     fun aux ->
-      let in_locations = variables_in_locations aux in
-      let in_init = variables_in_init aux in
+    let validate_location_variables :
+        Lang.Constant.t Header.t Validate.check =
+     fun header ->
+      let in_locations = variables_in_locations header in
+      let in_init = variables_in_init header in
       let excess = Set.diff in_locations in_init in
       if Set.is_empty excess then Validate.pass
       else
@@ -190,11 +193,11 @@ module Make (Lang : Test_types.Basic) :
               ~in_init:(in_init : Set.M(Ac.C_id).t)
               ~excess:(excess : Set.M(Ac.C_id).t)]
 
-    let validate_aux (t : Lang.Constant.t Aux.t) : Validate.t =
+    let validate_header (t : Lang.Constant.t Header.t) : Validate.t =
       Validate.of_list
-        [ validate_init (Aux.init t)
-        ; validate_locations (Aux.locations t)
-        ; validate_post (Aux.postcondition t)
+        [ validate_init (Header.init t)
+        ; validate_locations (Header.locations t)
+        ; validate_post (Header.postcondition t)
         ; validate_post_or_location_exists t
         ; validate_location_variables t ]
 
@@ -202,7 +205,7 @@ module Make (Lang : Test_types.Basic) :
       let w check = Validate.field_folder t check in
       Validate.of_list
         (Raw.Fields.fold ~init:[] ~name:(w validate_name)
-           ~aux:(w validate_aux) ~threads:(w validate_threads))
+           ~header:(w validate_header) ~threads:(w validate_threads))
 
     let get_uniform_globals :
            Lang.Program.t list
@@ -233,7 +236,9 @@ module Make (Lang : Test_types.Basic) :
           | None ->
               Result.ok_unit
           | Some gs ->
-              check_init_against_globals (Aux.init (Raw.aux candidate)) gs)
+              check_init_against_globals
+                (Header.init (Raw.header candidate))
+                gs)
 
     let validate : t Validate.check =
       Validate.all [validate_fields; validate_globals]
@@ -243,20 +248,21 @@ module Make (Lang : Test_types.Basic) :
 
   let threads : t -> Lang.Program.t list = Fn.compose Raw.threads raw
 
-  let aux : t -> Lang.Constant.t Aux.t = Fn.compose Raw.aux raw
+  let header : t -> Lang.Constant.t Header.t = Fn.compose Raw.header raw
 
   let init : t -> (Ac.C_id.t, Lang.Constant.t) List.Assoc.t =
-    Fn.compose Aux.init aux
+    Fn.compose Header.init header
 
-  let locations : t -> Ac.C_id.t list option = Fn.compose Aux.locations aux
+  let locations : t -> Ac.C_id.t list option =
+    Fn.compose Header.locations header
 
   let postcondition : t -> Lang.Constant.t Postcondition.t option =
-    Fn.compose Aux.postcondition aux
+    Fn.compose Header.postcondition header
 
   (* slight renaming *)
   let validate : raw -> t Or_error.t = create
 
-  let make ~name ~aux ~threads = create (Raw.make ~name ~aux ~threads)
+  let make ~name ~header ~threads = create (Raw.make ~name ~header ~threads)
 
   let validate_language : Ac.C_id.t Validate.check =
     Validate.booltest
@@ -272,6 +278,6 @@ module Make (Lang : Test_types.Basic) :
     let threads = Ast.get_programs decls in
     Or_error.Let_syntax.(
       let%bind _ = check_language language in
-      let%bind aux = Ast.get_aux decls in
-      make ~name ~threads ~aux)
+      let%bind header = Ast.get_header decls in
+      make ~name ~threads ~header)
 end

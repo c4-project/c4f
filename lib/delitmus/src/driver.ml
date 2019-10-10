@@ -38,8 +38,8 @@ struct
     let global_recs = Var_map.globally_mapped_vars vm in
     List.map ~f:(fun (i, v) -> make_global ctx i v) global_recs
 
-  let make_litmus_aux (input : Act_c_mini.Litmus.Test.t) :
-      Act_c_mini.Constant.t Act_litmus.Aux.t =
+  let make_litmus_header (input : Act_c_mini.Litmus.Test.t) :
+      Act_c_mini.Constant.t Act_litmus.Header.t =
     let postcondition =
       Option.map
         (Act_c_mini.Litmus.Test.postcondition input)
@@ -49,7 +49,7 @@ struct
        variables. *)
     let init = Act_c_mini.Litmus.Test.init input in
     let locations = Act_c_mini.Litmus.Test.locations input in
-    Act_litmus.Aux.make ?postcondition ~init ?locations ()
+    Act_litmus.Header.make ?postcondition ~init ?locations ()
 
   let make_global (c_id : Ac.C_id.t) (ptr_type : Act_c_mini.Type.t) :
       Var_map.Record.t Or_error.t =
@@ -71,11 +71,11 @@ struct
 
   let make_aux (input : Act_c_mini.Litmus.Test.t) : Aux.t Or_error.t =
     let threads = Act_c_mini.Litmus.Test.threads input in
-    let litmus_aux = make_litmus_aux input in
+    let litmus_header = make_litmus_header input in
     let num_threads = List.length threads in
     Or_error.Let_syntax.(
       let%map var_map = make_var_map input in
-      Aux.make ~litmus_aux ~var_map ~num_threads ())
+      Aux.make ~litmus_header ~var_map ~num_threads ())
 
   let make_program (input : Act_c_mini.Litmus.Test.t) (context : Context.t)
       : Act_c_mini.Program.t Or_error.t =

@@ -55,19 +55,19 @@ struct
       -> B.To.Lang.Constant.t Postcondition.t option Or_error.t =
     Tx.Option.With_errors.map_m ~f:convert_post
 
-  let convert_aux (old : B.From.Lang.Constant.t Aux.t) :
-      B.To.Lang.Constant.t Aux.t Or_error.t =
+  let convert_header (old : B.From.Lang.Constant.t Header.t) :
+      B.To.Lang.Constant.t Header.t Or_error.t =
     Or_error.Let_syntax.(
-      let%bind init = convert_init (Aux.init old) in
-      let%map postcondition = convert_post_opt (Aux.postcondition old) in
-      Aux.make ~init ?postcondition ?locations:(Aux.locations old) ())
+      let%bind init = convert_init (Header.init old) in
+      let%map postcondition = convert_post_opt (Header.postcondition old) in
+      Header.make ~init ?postcondition ?locations:(Header.locations old) ())
 
   let convert (old : B.From.t) : B.To.t Or_error.t =
     let name = B.From.name old in
-    let old_aux = B.From.aux old in
+    let old_header = B.From.header old in
     let old_threads = B.From.threads old in
     Or_error.Let_syntax.(
-      let%bind aux = convert_aux old_aux
+      let%bind header = convert_header old_header
       and threads = convert_threads old_threads in
-      B.To.make ~name ~aux ~threads)
+      B.To.make ~name ~header ~threads)
 end
