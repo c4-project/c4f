@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Command for act's C/Litmus delitmusifier. *)
+(** A specialisation of {!Act_litmus.Aux} that includes JSON serialisation
+    and deserialisation. *)
 
-val command : Core_kernel.Command.t
-(** [command] is the top-level 'act-c delitmus' command. *)
+type t = Constant.t Act_litmus.Aux.t [@@deriving equal, yojson]

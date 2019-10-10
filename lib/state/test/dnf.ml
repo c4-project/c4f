@@ -109,7 +109,9 @@ let%test_module "convert" =
       [%expect {| forall (false) |}]
 
     let%expect_test "example observation" =
-      test Examples.obs ; [%expect {|
+      test Examples.obs ;
+      [%expect
+        {|
         forall
         ((foo == 1 /\ 0:bar == 10) \/
          ((foo == 1 /\ (0:bar == 2 /\ 1:baz == 3)) \/

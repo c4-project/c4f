@@ -7,7 +7,7 @@
  (modules_without_implementation path_types env_types types)
  (inline_tests)
  (preprocess
-  (pps ppx_deriving.std ppx_jane))
+  (pps ppx_deriving.std ppx_yojson_conv ppx_jane))
  (libraries ppx_inline_test.config ppx_expect.config ppx_expect.common
    splittable_random sexplib0 stdio base.caml core_kernel fmt travesty
    travesty.base_exts plumbing act.common act.litmus act.utils act.c_lang
