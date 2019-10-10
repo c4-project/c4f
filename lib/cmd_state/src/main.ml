@@ -21,4 +21,6 @@ ACT tests.
 let command : Command.t =
   Command.group ~summary:"commands for dealing with state observations"
     ~readme
-    [("compare", Compare.command); ("dnf", Dnf.command)]
+    [ ("compare", Compare.command)
+    ; ("dnf", Dnf.command)
+    ; ("license", Common_cmd.License.command) ]

@@ -38,26 +38,26 @@ let pp_compiler (verbose : bool) : Cq_spec.t Fmt.t =
 let run_list_compilers
     ?(compiler_predicate : Act_compiler.Property.t Blang.t option)
     ?(machine_predicate : Act_machine.Property.t Blang.t option)
-    (standard_args : Toplevel.Args.Standard.t) (_o : Output.t)
+    (standard_args : Common_cmd.Args.Standard.t) (_o : Output.t)
     (global_cfg : Act_config.Global.t) ~(with_compiler_tests : bool) :
     unit Or_error.t =
   Or_error.Let_syntax.(
     let%map cfg =
-      Toplevel.Language_support.make_filtered_machine_config
+      Common_cmd.Language_support.make_filtered_machine_config
         ?compiler_predicate ?machine_predicate ~with_compiler_tests
         global_cfg
     in
     let compilers = Act_config.Act.all_compilers cfg in
-    let verbose = Toplevel.Args.Standard.is_verbose standard_args in
+    let verbose = Common_cmd.Args.Standard.is_verbose standard_args in
     Fmt.(pr "@[<v>%a@]@." (list (pp_compiler verbose)) compilers))
 
 let list_compilers_command : Command.t =
   Command.basic
     ~summary:"outputs information about the current compiler specs"
     Command.Let_syntax.(
-      let%map_open standard_args = Toplevel.Args.Standard.get
-      and compiler_predicate = Toplevel.Args.compiler_predicate
-      and machine_predicate = Toplevel.Args.machine_predicate
+      let%map_open standard_args = Common_cmd.Args.Standard.get
+      and compiler_predicate = Common_cmd.Args.compiler_predicate
+      and machine_predicate = Common_cmd.Args.machine_predicate
       and with_compiler_tests =
         flag "test-compilers" no_arg
           ~doc:
@@ -65,7 +65,7 @@ let list_compilers_command : Command.t =
              compilers that pass"
       in
       fun () ->
-        Toplevel.Common.lift_command standard_args
+        Common_cmd.Common.lift_command standard_args
           ~f:
             (run_list_compilers standard_args ?compiler_predicate
                ?machine_predicate ~with_compiler_tests))
@@ -96,11 +96,12 @@ let run_list_predicates (_o : Output.t) (_cfg : Act_config.Global.t) :
 let list_predicates_command : Command.t =
   Command.basic ~summary:"describes the filtering predicate languages"
     Command.Let_syntax.(
-      let%map standard_args = Toplevel.Args.Standard.get in
+      let%map standard_args = Common_cmd.Args.Standard.get in
       fun () ->
-        Toplevel.Common.lift_command standard_args ~f:run_list_predicates)
+        Common_cmd.Common.lift_command standard_args ~f:run_list_predicates)
 
 let command : Command.t =
   Command.group ~summary:"commands for dealing with ACT configuration"
-    [ ("list-compilers", list_compilers_command)
+    [ ("license", Common_cmd.License.command)
+    ; ("list-compilers", list_compilers_command)
     ; ("list-predicates", list_predicates_command) ]

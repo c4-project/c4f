@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
+(** Command for act's C/Litmus aux replacer. *)
 
-let format_for_readme (str : string) : string =
-  Fmt.(str "%a" (box paragraphs)) str
+val command : Core_kernel.Command.t
+(** [command] is the top-level 'act-c replace-aux' command. *)

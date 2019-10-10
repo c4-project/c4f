@@ -18,7 +18,7 @@ let run (dir : Fpath.t) : unit Or_error.t =
   let arch = Ac.Id.of_string "x86.att" in
   Or_error.Let_syntax.(
     let%bind (module L) =
-      Toplevel.Language_support.asm_runner_of_arch arch
+      Common_cmd.Language_support.asm_runner_of_arch arch
     in
     let module Exp = Act_asm.Explainer.Make (L) in
     Common.regress_run_asm_many

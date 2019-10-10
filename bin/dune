@@ -2,37 +2,37 @@
  (name act_asm)
  (public_name act-asm)
  (modules act_asm)
- (libraries base core_kernel core toplevel cmd_asm))
+ (libraries base core_kernel core common_cmd cmd_asm))
 
 (executable
  (name act_backend)
  (public_name act-backend)
  (modules act_backend)
- (libraries base core_kernel core toplevel cmd_backend))
+ (libraries base core_kernel core common_cmd cmd_backend))
 
 (executable
  (name act_c)
  (public_name act-c)
  (modules act_c)
- (libraries base core_kernel core toplevel cmd_c))
+ (libraries base core_kernel core common_cmd cmd_c))
 
 (executable
  (name act_config)
  (public_name act-config)
  (modules act_config)
- (libraries base core_kernel core toplevel cmd_config))
+ (libraries base core_kernel core common_cmd cmd_config))
 
 (executable
  (name act_fuzz)
  (public_name act-fuzz)
  (modules act_fuzz)
- (libraries base core_kernel core toplevel cmd_fuzz))
+ (libraries base core_kernel core common_cmd cmd_fuzz))
 
 (executable
  (name act_state)
  (public_name act-state)
  (modules act_state)
- (libraries base core_kernel core toplevel cmd_state))
+ (libraries base core_kernel core common_cmd cmd_state))
 
 (rule
  (targets specs.output)

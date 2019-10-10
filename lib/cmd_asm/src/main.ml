@@ -25,4 +25,6 @@ see the `c` command group.
 
 let command : Command.t =
   Command.group ~summary:"commands for dealing with assembly files" ~readme
-    [("explain", Explain.command); ("litmusify", Litmusify.command)]
+    [ ("explain", Explain.command)
+    ; ("litmusify", Litmusify.command)
+    ; ("license", Common_cmd.License.command) ]

@@ -1,7 +1,7 @@
 ; -*- mode: lisp; -*-
 
 (library
- (name toplevel)
+ (name common_cmd)
  ; This module is deliberately left private, as it's so tightly coupled to the
  ; act binaries that it's not particularly useful on its own.
  (preprocess

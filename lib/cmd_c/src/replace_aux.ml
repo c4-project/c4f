@@ -11,8 +11,8 @@
 
 open Core
 
-let run (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t) _o _cfg
-    ~(aux_file : string) : unit Or_error.t =
+let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
+    _cfg ~(aux_file : string) : unit Or_error.t =
   ignore args ;
   ignore aux_file ;
   Or_error.unimplemented "TODO"
@@ -28,13 +28,13 @@ let command : Command.t =
   Command.basic ~summary:"replaces aux info in a C litmus test" ~readme
     Command.Let_syntax.(
       let%map_open standard_args =
-        Toplevel.Args.(With_files.get Standard.get)
+        Common_cmd.Args.(With_files.get Standard.get)
       and aux_file =
         flag "aux"
           (required Filename.arg_type)
           ~doc:"FILE a file containing the new auxiliary litmus information"
       in
       fun () ->
-        Toplevel.Common.lift_command
-          (Toplevel.Args.With_files.rest standard_args)
+        Common_cmd.Common.lift_command
+          (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ~aux_file))

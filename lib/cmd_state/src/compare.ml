@@ -47,12 +47,12 @@ let readme () =
 let command : Command.t =
   Command.basic ~summary:"compare two state observations" ~readme
     Command.Let_syntax.(
-      let%map_open standard_args = Toplevel.Args.Standard.get
+      let%map_open standard_args = Common_cmd.Args.Standard.get
       and human_readable =
         flag "human-readable" no_arg
           ~doc:"If true, output human-readable summary instead of JSON"
       and oracle_raw = anon ("ORACLE_NAME" %: Filename.arg_type)
       and subject_raw = anon ("SUBJECT_NAME" %: Filename.arg_type) in
       fun () ->
-        Toplevel.Common.lift_command standard_args
+        Common_cmd.Common.lift_command standard_args
           ~f:(run ~oracle_raw ~subject_raw ~human_readable))

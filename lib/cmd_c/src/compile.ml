@@ -12,19 +12,19 @@
 open Core_kernel
 module Cq_spec = Act_machine.Qualified.Compiler
 
-let run (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t)
+let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
     (_o : Act_common.Output.t) (global_cfg : Act_config.Global.t)
-    ~(raw_target : Toplevel.Asm_target.t) ~(mode : Act_compiler.Mode.t) :
+    ~(raw_target : Common_cmd.Asm_target.t) ~(mode : Act_compiler.Mode.t) :
     unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind cfg = Act_config.Act.of_global global_cfg in
-    let%bind target = Toplevel.Asm_target.resolve ~cfg raw_target in
+    let%bind target = Common_cmd.Asm_target.resolve ~cfg raw_target in
     let%bind (module R) =
-      Toplevel.Language_support.Resolve_compiler_from_target
+      Common_cmd.Language_support.Resolve_compiler_from_target
       .filter_from_spec target
     in
-    let%bind input = Toplevel.Args.With_files.infile_source args in
-    let%bind output = Toplevel.Args.With_files.outfile_sink args in
+    let%bind input = Common_cmd.Args.With_files.infile_source args in
+    let%bind output = Common_cmd.Args.With_files.outfile_sink args in
     Or_error.ignore_m (R.run mode input output))
 
 let mode_type : Act_compiler.Mode.t Command.Arg_type.t =
@@ -48,10 +48,10 @@ let readme () : string =
 let command : Command.t =
   Command.basic ~summary:"run the given compiler on a single file" ~readme
     Command.Let_syntax.(
-      let%map standard_args = Toplevel.Args.(With_files.get Standard.get)
-      and raw_target = Toplevel.Args.asm_target
+      let%map standard_args = Common_cmd.Args.(With_files.get Standard.get)
+      and raw_target = Common_cmd.Args.asm_target
       and mode = mode_param in
       fun () ->
-        Toplevel.Common.lift_command
-          (Toplevel.Args.With_files.rest standard_args)
+        Common_cmd.Common.lift_command
+          (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ~raw_target ~mode))

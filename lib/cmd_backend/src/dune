@@ -6,5 +6,5 @@
  ; act binaries that it's not particularly useful on its own.
  (preprocess
   (pps ppx_jane))
- (libraries stdio base base.caml core_kernel fmt yojson plumbing toplevel
+ (libraries stdio base base.caml core_kernel fmt yojson plumbing common_cmd
    act.backend act.common act.config act.state act.utils))

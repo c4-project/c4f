@@ -17,11 +17,11 @@ let write_trace (trace : Act_fuzz.Trace.t) (oc : Stdio.Out_channel.t) :
   Result.ok_unit
 
 let run ?(seed : int option) ?(trace_output : string option)
-    (args : _ Toplevel.Args.With_files.t) (o : Act_common.Output.t)
+    (args : _ Common_cmd.Args.With_files.t) (o : Act_common.Output.t)
     (global_config : Act_config.Global.t) : unit Or_error.t =
   let config = Act_config.Global.fuzz global_config in
   let aux_in = Act_fuzz.Filter.Aux.make ~o ~config seed in
-  Toplevel.Args.With_files.run_filter_with_aux_out
+  Common_cmd.Args.With_files.run_filter_with_aux_out
     (module Act_fuzz.Filter.Random)
     args ~aux_in ~aux_out_f:write_trace ?aux_out_filename:trace_output
 
@@ -37,7 +37,7 @@ let command : Command.t =
     ~readme
     Command.Let_syntax.(
       let%map_open standard_args =
-        Toplevel.Args.(With_files.get Standard.get)
+        Common_cmd.Args.(With_files.get Standard.get)
       and seed =
         flag "seed" (optional int)
           ~doc:"INT use this integer as the seed to the fuzzer RNG"
@@ -49,6 +49,6 @@ let command : Command.t =
              this filename"
       in
       fun () ->
-        Toplevel.Common.lift_command
-          (Toplevel.Args.With_files.rest standard_args)
+        Common_cmd.Common.lift_command
+          (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ?seed ?trace_output))

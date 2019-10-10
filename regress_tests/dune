@@ -4,7 +4,7 @@
  (preprocess
   (pps ppx_jane))
  (libraries result yojson sexplib0 base.caml core_kernel core stdio fmt
-   toplevel fpath ppx_yojson_conv.runtime-lib travesty travesty.base_exts
+   common_cmd fpath ppx_yojson_conv.runtime-lib travesty travesty.base_exts
    plumbing act.asm act.backend act.backend_litmus act.c_mini act.common
    act.config act.delitmus act.fuzz act.litmus act.sanitiser act.state
    act.utils)

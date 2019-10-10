@@ -19,7 +19,7 @@ module Standard_asm : sig
   type t
   (** Opaque type of processed argument records. *)
 
-  val rest : t -> Toplevel.Args.Standard.t Toplevel.Args.With_files.t
+  val rest : t -> Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t
   (** [rest args] retrieves the argument record wrapped by [args]. *)
 
   val get : t Command.Param.t
@@ -30,7 +30,7 @@ module Standard_asm : sig
   (** [aux_file args] gets the path of a litmus aux file, if user supplied
       one. *)
 
-  val target : t -> Toplevel.Asm_target.t
+  val target : t -> Common_cmd.Asm_target.t
   (** [target args] gets either a defined assembly architecture, or a
       compiler ID. *)
 

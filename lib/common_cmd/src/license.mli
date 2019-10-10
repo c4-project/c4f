@@ -9,7 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
+val command : Core_kernel.Command.t
+(** A command that prints license information.
 
-let format_for_readme (str : string) : string =
-  Fmt.(str "%a" (box paragraphs)) str
+    This command exists in an attempt to adhere to clause 5.4 of the
+    CeCILL-B license, the licence used by the bits of Herdtools7 code from
+    which some parts of the ACT code derive. *)

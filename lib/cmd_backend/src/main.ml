@@ -20,6 +20,7 @@ as well as processing their results.
 
 let command : Command.t =
   Command.group ~summary:"commands for dealing with test backends" ~readme
-    [ ("make-harness", Make_harness.command)
+    [ ("license", Common_cmd.License.command)
+    ; ("make-harness", Make_harness.command)
     ; ("parse", Parse.command)
     ; ("run", Run.command) ]

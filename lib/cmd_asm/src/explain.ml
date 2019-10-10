@@ -31,7 +31,7 @@ let explain_filter
     (module Act_asm.Explainer.S_filter) Or_error.t =
   Or_error.(
     tag ~tag:"while getting an explain filter for this target"
-      ( target |> Toplevel.Language_support.asm_runner_of_target
+      ( target |> Common_cmd.Language_support.asm_runner_of_target
       >>| explain_runner ))
 
 let run_with_input (o : A.Output.t) target job_input infile outfile =
@@ -60,7 +60,7 @@ let run output_format (input : In.t) =
 let command =
   Command.basic ~summary:"explain ACT's understanding of an assembly file"
     Command.Let_syntax.(
-      let%map_open standard_args = ignore anon ; Args.Standard_asm.get
+      let%map_open standard_args = Args.Standard_asm.get
       and output_format =
         Act_asm.Explainer.Config.Format.(
           choose_one

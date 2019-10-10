@@ -25,6 +25,7 @@ weights, use the `list-actions` command.
 
 let command : Command.t =
   Command.group ~summary:"the ACT fuzzer" ~readme
-    [ ("replay", Replay.command)
+    [ ("license", Common_cmd.License.command)
+    ; ("replay", Replay.command)
     ; ("run", Run.command)
     ; ("list-actions", List_actions.command) ]

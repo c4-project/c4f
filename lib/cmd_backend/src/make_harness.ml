@@ -13,16 +13,16 @@ open Core_kernel
 open Act_common
 
 let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
-    (args : Toplevel.Args.Standard.t Toplevel.Args.With_files.t)
+    (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
     (_o : Output.t) (global_cfg : Act_config.Global.t) : unit Or_error.t =
   Or_error.Let_syntax.(
     (* TODO(@MattWindsor91): machine predicates? *)
     let%bind cfg = Act_config.Act.of_global global_cfg in
-    let module Res = Toplevel.Sim_support.Make_resolver (struct
+    let module Res = Common_cmd.Sim_support.Make_resolver (struct
       let cfg = cfg
     end) in
-    let%bind input = Toplevel.Args.With_files.infile_source args in
-    let%bind output = Toplevel.Args.With_files.outfile_sink args in
+    let%bind input = Common_cmd.Args.With_files.infile_source args in
+    let%bind output = Common_cmd.Args.With_files.outfile_sink args in
     let%bind (module Sim) = Res.resolve_single fqid in
     let%bind input_path = Plumbing.Input.to_file_err input in
     let%bind output_dir = Plumbing.Output.to_file_err output in
@@ -33,18 +33,19 @@ let command : Command.t =
   Command.basic ~summary:"ask a configured test backend to make a harness"
     Command.Let_syntax.(
       let%map_open standard_args =
-        Toplevel.Args.(With_files.get Standard.get)
-      and sim = Toplevel.Args.simulator ()
+        Common_cmd.Args.(With_files.get Standard.get)
+      and sim = Common_cmd.Args.simulator ()
       and arch =
         choose_one
-          [ Toplevel.Args.flag_to_enum_choice (Some Act_backend.Arch.C) "-c"
+          [ Common_cmd.Args.flag_to_enum_choice (Some Act_backend.Arch.C)
+              "-c"
               ~doc:
                 "Tells the backend to test the input against the C memory \
                  model"
           ; map
               ~f:
                 (Option.map ~f:(fun x -> Some (Act_backend.Arch.Assembly x)))
-              (Toplevel.Args.arch
+              (Common_cmd.Args.arch
                  ~doc:
                    "ARCH tells the backend to test the input against the \
                     given architecture"
@@ -52,6 +53,6 @@ let command : Command.t =
           ~if_nothing_chosen:(`Default_to None)
       in
       fun () ->
-        Toplevel.Common.lift_command
-          (Toplevel.Args.With_files.rest standard_args)
+        Common_cmd.Common.lift_command
+          (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ?arch ?fqid:sim))

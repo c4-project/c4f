@@ -13,18 +13,18 @@ open Core
 
 module Standard_asm = struct
   type t =
-    { rest: Toplevel.Args.Standard.t Toplevel.Args.With_files.t
+    { rest: Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t
     ; aux_file: string option
-    ; target: Toplevel.Asm_target.t
+    ; target: Common_cmd.Asm_target.t
     ; sanitiser_passes: Act_sanitiser.Pass_group.Selector.t Blang.t option
     }
   [@@deriving fields]
 
   let get =
     Command.Let_syntax.(
-      let%map target = Toplevel.Args.asm_target
-      and aux_file = Toplevel.Args.aux_file
-      and sanitiser_passes = Toplevel.Args.sanitiser_passes
-      and rest = Toplevel.Args.(With_files.get Standard.get) in
+      let%map target = Common_cmd.Args.asm_target
+      and aux_file = Common_cmd.Args.aux_file
+      and sanitiser_passes = Common_cmd.Args.sanitiser_passes
+      and rest = Common_cmd.Args.(With_files.get Standard.get) in
       {rest; target; aux_file; sanitiser_passes})
 end

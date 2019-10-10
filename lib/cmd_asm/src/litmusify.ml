@@ -24,12 +24,12 @@ let run (input : In.t) : unit Or_error.t =
   let infile = In.pb_input input in
   let outfile = In.pb_output input in
   let target = In.target input in
-  let module R = Toplevel.Sim_support.Make_resolver (struct
+  let module R = Common_cmd.Sim_support.Make_resolver (struct
     let cfg = cfg
   end) in
   Or_error.Let_syntax.(
     let%bind (module Runner) =
-      Toplevel.Language_support.asm_runner_of_target target
+      Common_cmd.Language_support.asm_runner_of_target target
     in
     let module Lit = Act_asm.Litmusifier.Make (Runner) in
     let job_input = In.make_job_input input litmus_config_fn in

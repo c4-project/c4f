@@ -34,7 +34,7 @@ let command : Command.t =
   Command.basic ~summary:"output the current fuzzer weight table"
     ~readme:list_fuzzer_actions_readme
     Command.Let_syntax.(
-      let%map standard_args = Toplevel.Args.Standard.get in
+      let%map standard_args = Common_cmd.Args.Standard.get in
       fun () ->
-        Toplevel.Common.lift_command standard_args
+        Common_cmd.Common.lift_command standard_args
           ~f:run_list_fuzzer_actions)
