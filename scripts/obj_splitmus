@@ -235,7 +235,7 @@ main() {
   fi
   readonly INPUT_FILE TEST_NAME
   
-  if [[ -z ${OUTPUT_DIR} ]]; then setup_temp_output_dir; fi
+  if [[ -z ${OUTPUT_DIR} ]]; then act::setup_temp_output_dir; fi
   readonly OUTPUT_DIR
 
   if [[ ${DUNE_EXEC} = "true" ]]; then

@@ -31,6 +31,14 @@ class LitmusHeader:
                 self.postcondition, rewriter
             )
 
+    def dump(self, fp: typing.TextIO) -> None:
+        """Dumps this aux record to a file.
+
+        :param fp: A file-like object to use as the target of the write.
+        :return: Nothing.
+        """
+        json_utils.dump_dataclass(self, fp)
+
 
 def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusHeader:
     name = json_utils.str_field(aux_dict, "name")
