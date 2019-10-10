@@ -12,8 +12,8 @@
 (** Records of auxiliary Litmus information.
 
     This module describes a container for the parts of a Litmus test that
-    aren't the program itself: the name, locations stanza, initial value map, and
-    postcondition. *)
+    aren't the program itself: the name, locations stanza, initial value
+    map, and postcondition. *)
 
 open Base
 
@@ -29,8 +29,8 @@ val make :
   -> name:string
   -> unit
   -> 'const t
-(** [make ?locations ?init ?postcondition ~name ()] makes a header with
-    the given fields. *)
+(** [make ?locations ?init ?postcondition ~name ()] makes a header with the
+    given fields. *)
 
 val empty : 'const t
 (** [empty] is the empty header, with the empty string as its name. *)
@@ -41,7 +41,8 @@ val name : _ t -> string
 (** [name header] gets the test name of [header], if any. *)
 
 val locations : _ t -> Act_common.C_id.t list option
-(** [locations header] gets the computed location stanza of [header], if any. *)
+(** [locations header] gets the computed location stanza of [header], if
+    any. *)
 
 val init : 'const t -> (Act_common.C_id.t, 'const) List.Assoc.t
 (** [init header] gets the computed init block of [header]. *)

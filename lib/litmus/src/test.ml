@@ -15,8 +15,7 @@ module Ac = Act_common
 module Tx = Travesty_base_exts
 
 module Raw = struct
-  type ('const, 'prog) t =
-    {header: 'const Header.t; threads: 'prog list}
+  type ('const, 'prog) t = {header: 'const Header.t; threads: 'prog list}
   [@@deriving fields, sexp]
 
   (* We could use [@@deriving make] here, but that would give us an optional
@@ -205,8 +204,8 @@ module Make (Lang : Test_types.Basic) :
     let validate_fields (t : t) : Validate.t =
       let w check = Validate.field_folder t check in
       Validate.of_list
-        (Raw.Fields.fold ~init:[]
-           ~header:(w validate_header) ~threads:(w validate_threads))
+        (Raw.Fields.fold ~init:[] ~header:(w validate_header)
+           ~threads:(w validate_threads))
 
     let get_uniform_globals :
            Lang.Program.t list

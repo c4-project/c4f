@@ -86,9 +86,9 @@ module type S = sig
        header:Lang.Constant.t Header.t
     -> threads:Lang.Program.t list
     -> t Or_error.t
-  (** [make ~header ~threads] directly constructs a validated test
-     with the given header and thread programs. It may fail if the result
-     fails validation. *)
+  (** [make ~header ~threads] directly constructs a validated test with the
+      given header and thread programs. It may fail if the result fails
+      validation. *)
 
   val validate : raw -> t Or_error.t
   (** [validate lit] tries to validate an existing Litmus test. It may fail

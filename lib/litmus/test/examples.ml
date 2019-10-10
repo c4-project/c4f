@@ -34,7 +34,7 @@ module Sbsc = struct
     let locations : Ac.C_id.t list = [x; y] in
     Lazy.Let_syntax.(
       let%map postcondition = postcondition in
-      Header.make ~init ~postcondition ~locations ())
+      Header.make ~name:"SBSC" ~init ~postcondition ~locations ())
 
   let threads : string list Lazy.t =
     lazy ["(this was thread 0)"; "(this was thread 1)"]
@@ -42,5 +42,5 @@ module Sbsc = struct
   let test : (int, string) Act_litmus.Test.Raw.t Lazy.t =
     Lazy.Let_syntax.(
       let%map header = header and threads = threads in
-      Act_litmus.Test.Raw.make ~name:"SBSC" ~header ~threads)
+      Act_litmus.Test.Raw.make ~header ~threads)
 end

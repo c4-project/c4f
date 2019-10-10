@@ -17,11 +17,11 @@ type 'const t =
   { locations: Ac.C_id.t list option
   ; init: (Ac.C_id.t * 'const) list
   ; postcondition: 'const Postcondition.t option
-  ; name: string
-  }
+  ; name: string }
 [@@deriving fields, make, equal, sexp]
 
-let empty (type k) : k t = {name = ""; locations= None; init= []; postcondition= None}
+let empty (type k) : k t =
+  {name= ""; locations= None; init= []; postcondition= None}
 
 let add_global (type k) (aux : k t) ~(name : Ac.C_id.t) ~(initial_value : k)
     : k t Or_error.t =
@@ -32,8 +32,7 @@ let add_global (type k) (aux : k t) ~(name : Ac.C_id.t) ~(initial_value : k)
     ; init= (name, initial_value) :: aux.init
     ; postcondition= aux.postcondition }
 
-let map_name (type k) (header : k t)
-    ~(f : string -> string) : k t =
+let map_name (type k) (header : k t) ~(f : string -> string) : k t =
   {header with name= f header.name}
 
 let map_tids (type k) (aux : k t) ~(f : int -> int) : k t =
@@ -97,7 +96,8 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
 
   let yojson_of_t (aux : t) : Yojson.Safe.t =
     `Assoc
-      [ ("locations", [%yojson_of: Ac.C_id.t list option] (locations aux))
+      [ ("name", [%yojson_of: string] (name aux))
+      ; ("locations", [%yojson_of: Ac.C_id.t list option] (locations aux))
       ; ("init", [%yojson_of: Const.t Ac.C_id.Alist.t] (init aux))
       ; ("postcondition", opt ~f:postcondition_to_json (postcondition aux))
       ]
@@ -116,9 +116,7 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
     Result.map_error ~f:Error.to_string_hum result
 
   let t_of_yojson (json : Yojson.Safe.t) : t =
-    let name =
-      [%of_yojson: string] (U.member "name" json)
-    in
+    let name = [%of_yojson: string] (U.member "name" json) in
     let locations =
       [%of_yojson: Ac.C_id.t list option] (U.member "locations" json)
     in

@@ -33,9 +33,8 @@ module type S = sig
     -> redirects:Redirect.t
     -> threads:program list
     -> Litmus.t Or_error.t
-  (** [make ~config ~redirects ~threads] litmusifies a list of
-      programs [threads], with redirect map [redirects],
-      and configuration [config]. *)
+  (** [make ~config ~redirects ~threads] litmusifies a list of programs
+      [threads], with redirect map [redirects], and configuration [config]. *)
 
   val print_litmus : fmt -> Stdio.Out_channel.t -> Litmus.t -> unit
   (** [print_litmus fmt oc ast] is the litmus test printer matching the

@@ -50,6 +50,7 @@ let%test_module "JSON deserialisation" =
       [%expect
         {|
         {
+          "name": "SBSC",
           "locations": [ "x", "y" ],
           "init": { "x": 0, "y": 0 },
           "postcondition": "exists (0:a == 0 /\\ 1:a == 1)"
@@ -67,12 +68,15 @@ let%test_module "JSON serialisation" =
       test
         {|
         {
+          "name": "SBSC",
           "locations": [ "x", "y" ],
           "init": { "x": 0, "y": 0 }
         }
         |} ;
       [%expect
-        {| (Ok ((locations ((x y))) (init ((x 0) (y 0))) (postcondition ()))) |}]
+        {|
+          (Ok
+           ((locations ((x y))) (init ((x 0) (y 0))) (postcondition ()) (name SBSC))) |}]
   end )
 
 (* TODO(@MattWindsor91): test with postcondition *)
