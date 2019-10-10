@@ -8,27 +8,13 @@
 # ACT is based in part on code from the Herdtools7 project
 # (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
 # project root for more information.
+
 import dataclasses
 import json
 import typing
 from dataclasses import dataclass
 
-from act_py import json_utils, litmus_id
-
-
-@dataclass
-class LitmusHeader:
-    """Representation of the part of an ACT 'aux file' that contains Litmus-specific information."""
-
-    locations: typing.Optional[typing.List[str]]
-    init: typing.Optional[typing.Dict[str, int]]
-    postcondition: typing.Optional[str]
-
-    def rewrite_locals(self, rewriter: typing.Callable[[litmus_id.Lid], str]):
-        if self.postcondition is not None:
-            self.postcondition = litmus_id.rewrite_post_locals(
-                self.postcondition, rewriter
-            )
+from act_py import json_utils, litmus_id, litmus_header
 
 
 @dataclass
@@ -53,7 +39,7 @@ class Aux:
 
     num_threads: int
     var_map: typing.Dict[str, VarRecord]
-    litmus_header: LitmusHeader
+    litmus_header: litmus_header.LitmusHeader
 
     def __str__(self) -> str:
         """Converts this aux record to a string.
@@ -87,13 +73,6 @@ class Aux:
         self.litmus_header.rewrite_locals(rewriter)
 
 
-def litmus_of_dict(aux_dict: typing.Dict[str, typing.Any]) -> LitmusHeader:
-    locations = aux_dict["locations"]
-    init = aux_dict["init"]
-    postcondition = aux_dict["postcondition"]
-    return LitmusHeader(locations, init, postcondition)
-
-
 def var_record_of_dict(vr_dict: typing.Dict[str, typing.Any]) -> VarRecord:
     mapped_to_global = json_utils.bool_field(vr_dict, "mapped_to_global", "var record")
     c_id = json_utils.str_field(vr_dict, "c_id", "var record")
@@ -106,8 +85,10 @@ def of_dict(aux_dict: typing.Dict[str, typing.Any]) -> Aux:
     var_map: typing.Dict[str, VarRecord] = {
         k: var_record_of_dict(v) for (k, v) in aux_dict["var_map"].items()
     }
-    litmus_header: LitmusHeader = litmus_of_dict(aux_dict["litmus_header"])
-    return Aux(num_threads, var_map, litmus_header)
+    header: litmus_header.LitmusHeader = litmus_header.of_dict(
+        aux_dict["litmus_header"]
+    )
+    return Aux(num_threads, var_map, header)
 
 
 def load(fp: typing.TextIO) -> Aux:

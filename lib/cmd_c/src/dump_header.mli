@@ -9,7 +9,7 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Command for act's C/Litmus header replacer. *)
+(** Command for act's C/Litmus header dumper. *)
 
 val command : Core_kernel.Command.t
-(** [command] is the top-level 'act-c replace-header' command. *)
+(** [command] is the top-level 'act-c dump-header' command. *)

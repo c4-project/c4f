@@ -68,7 +68,9 @@ class ActMachineInspectError(Exception):
 
     def __init__(self, act_message: str):
         self.act_message = act_message
-        super().__init__(f"Error asking ACT for machine information: {self.act_message}")
+        super().__init__(
+            f"Error asking ACT for machine information: {self.act_message}"
+        )
 
 
 def make_predicate_args(

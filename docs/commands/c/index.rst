@@ -9,3 +9,5 @@
 
    compile
    delitmus
+   dump-header
+   replace-header

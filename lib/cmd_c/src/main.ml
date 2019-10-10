@@ -22,5 +22,6 @@ let command : Command.t =
   Command.group ~summary:"commands for dealing with C files" ~readme
     [ ("compile", Compile.command)
     ; ("delitmus", Delitmus.command)
+    ; ("dump-header", Dump_header.command)
     ; ("license", Common_cmd.License.command)
     ; ("replace-header", Replace_header.command) ]

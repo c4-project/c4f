@@ -18,6 +18,14 @@ include
   Plumbing.Loadable_types.S with type t := t
 (** Loading Litmus headers from JSON. *)
 
+(** {2 Filters for manipulating test headers}
+
+    These filters make use of the JSON form of {!t}. *)
+
+(** A filter for extracting the header of a C-mini Litmus test. *)
+module Dump_filter :
+  Plumbing.Filter_types.S with type aux_i = unit and type aux_o = unit
+
 (** A filter for replacing the header of a C-mini Litmus test. *)
 module Replace_filter :
   Plumbing.Filter_types.S with type aux_i = t and type aux_o = unit

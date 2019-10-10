@@ -29,6 +29,24 @@ include Plumbing.Loadable.Of_jsonable (J)
 
 let equal = Act_litmus.Header.equal Constant.equal
 
+module Dump_filter = Plumbing.Filter.Make (struct
+  let name = "dump-header"
+
+  type aux_i = unit
+
+  type aux_o = unit
+
+  let run (ctx : aux_i Plumbing.Filter_context.t) (ic : Stdio.In_channel.t)
+      (oc : Stdio.Out_channel.t) : aux_o Or_error.t =
+    Or_error.Let_syntax.(
+      let%map test =
+        Frontend.load_from_ic ic
+          ~path:(Plumbing.Filter_context.input_path_string ctx)
+      in
+      let header = Litmus.Test.header test in
+      Yojson.Safe.pretty_to_channel oc (yojson_of_t header))
+end)
+
 module Replace_filter = Plumbing.Filter.Make (struct
   let name = "replace-header"
 
