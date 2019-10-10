@@ -14,11 +14,10 @@
 
 type t = Constant.t Act_litmus.Header.t [@@deriving equal, yojson]
 
+include
+  Plumbing.Loadable_types.S with type t := t
 (** Loading Litmus headers from JSON. *)
-include Plumbing.Loadable_types.S with type t := t
 
 (** A filter for replacing the header of a C-mini Litmus test. *)
-module Replace_filter : Plumbing.Filter_types.S
-  with type aux_i = t
-   and type aux_o = unit
-
+module Replace_filter :
+  Plumbing.Filter_types.S with type aux_i = t and type aux_o = unit

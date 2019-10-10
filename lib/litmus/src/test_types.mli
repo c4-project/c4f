@@ -130,9 +130,12 @@ module type S = sig
   (** [try_map_raw test ~f] maps [f] over the unvalidated form of [test],
       then, if successful, tries to re-validate it. *)
 
-  val try_map_header : t -> f:(Lang.Constant.t Header.t -> Lang.Constant.t Header.t Or_error.t) -> t Or_error.t
-  (** [try_map_header test ~f] maps [f] over the header of [test],
-      then, if successful, tries to re-validate the resulting test. *)
+  val try_map_header :
+       t
+    -> f:(Lang.Constant.t Header.t -> Lang.Constant.t Header.t Or_error.t)
+    -> t Or_error.t
+  (** [try_map_header test ~f] maps [f] over the header of [test], then, if
+      successful, tries to re-validate the resulting test. *)
 end
 
 (** {2 Conversion} *)

@@ -18,9 +18,7 @@ let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
     let%bind header = Act_c_mini.Litmus_header.load ~path:header_path in
     Common_cmd.Args.With_files.run_filter
       (module Act_c_mini.Litmus_header.Replace_filter)
-      args
-      ~aux_in:header
-  )
+      args ~aux_in:header)
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
@@ -44,12 +42,5 @@ let command : Command.t =
       in
       fun () ->
         Common_cmd.Common.lift_command
-
-
-
-
-
-
-
           (Common_cmd.Args.With_files.rest standard_args)
           ~f:(run standard_args ~header_file))
