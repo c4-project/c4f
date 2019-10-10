@@ -56,6 +56,18 @@ function act::set_nz_once() {
 }
 
 
+# Checks to see if DUNE_EXEC is set; if so, logs the fact.
+#
+# Globals:
+#   DUNE_EXEC: read
+#   VERBOSE: read (transitively)
+function act::check_dune_exec() {
+   if [[ ${DUNE_EXEC} == "true" ]]; then
+    act::log "%s: using 'dune exec' for ACT.\n" "$0"
+  fi
+}
+
+
 # Composes a block of flags that, when sent to an ACT shell script that
 # accepts the `q` (quiet) or `v` (verbose) flag, replicates the current
 # verbosity.

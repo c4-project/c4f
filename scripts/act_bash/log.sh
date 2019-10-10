@@ -25,6 +25,16 @@ act::fatal() {
   exit
 }
 
+# Echoes the argument to stderr, prefixed by the program name, then
+# calls `usage`.
+#
+# Arguments:
+#   1: the string to echo.
+act::arg_error() {
+  act::error "$1"
+  usage
+}
+
 # If VERBOSE is "true", sends all subsequent arguments to printf.
 #
 # Globals:

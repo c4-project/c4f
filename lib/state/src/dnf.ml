@@ -34,7 +34,7 @@ let print_postcondition (oc : Stdio.Out_channel.t) :
     string Act_litmus.Postcondition.t -> unit =
   Fmt.pf
     (Caml.Format.formatter_of_out_channel oc)
-    "@[%a@]@."
+    "@[<h>%a@]@."
     (Act_litmus.Postcondition.pp ~pp_const:String.pp)
 
 module Filter :

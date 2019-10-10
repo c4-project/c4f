@@ -62,6 +62,19 @@ act::backend() {
 }
 
 
+# Runs the ACT 'c' tool.
+#
+# Globals:
+#   - ACT_C (read)
+#   - DUNE_EXEC (transitively read)
+#
+# Arguments:
+#   *: the arguments to the program.
+act::c() {
+  act::exec "${ACT_C:-"act-c"}" "$@"
+}
+
+
 # Runs the ACT 'compile' sub-tool.
 #
 # Globals:
@@ -72,7 +85,7 @@ act::backend() {
 #   *: the arguments to the program.
 act::compile() {
   # `compile` is currently `act-c compile`; this may change later.
-  act::exec "${ACT_C:-"act-c"}" compile "$@"
+  act::c compile "$@"
 }
 
 
@@ -86,7 +99,7 @@ act::compile() {
 #   *: the arguments to the program.
 act::delitmus() {
   # `delitmus` is currently `act-c delitmus`; this may change later.
-  act::exec "${ACT_C:-"act-c"}" delitmus "$@"
+  act::c delitmus "$@"
 }
 
 

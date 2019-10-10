@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Given a C litmus test and its fuzzed equivalent, this script checks
-# to see if the behaviours of one are included in the behaviours of the other.
+# Reads a C litmus test in from the given file, runs it using the given backend,
+# and generates a DNF postcondition from the resulting states.
 #
 # For usage information, scroll down to the `usage` function.
 
@@ -41,7 +41,7 @@ VERBOSE="false"
 
 # Prints usage information and exits.
 usage() {
-  echo "Usage: $0 [-b BACKEND] [-c COMPILER] [-qvxh?] ORIGINAL_FILE FUZZED_FILE"
+  echo "Usage: $0 [-b BACKEND] [-c COMPILER] [-qvxh?] C_TEST"
   echo
   echo "-b: ID of backend to use for checking C files"
   echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
@@ -56,7 +56,7 @@ main() {
   while getopts "b:c:qvx?h" a; do
     case ${a} in
     b) act::set_nz "b" "BACKEND" "${OPTARG}" ;;
-    c) COMPILER=${OPTARG} ;;
+    c) COMPILER="${OPTARG}" ;;
     q) VERBOSE="false" ;;
     v) VERBOSE="true" ;;
     x) DUNE_EXEC="true" ;;
@@ -66,22 +66,13 @@ main() {
   readonly BACKEND COMPILER DUNE_EXEC VERBOSE
   shift $((OPTIND-1))
 
-  if [[ ${DUNE_EXEC} = "true" ]]; then
-    act::log "%s: using 'dune exec' for ACT.\n" "$0"
-  fi
+  act::check_dune_exec
+  if [[ $# -ne 1 ]]; then act::arg_error "need precisely one file argument"; fi
 
-  if [[ $# -ne 2 ]]; then
-    echo "${0}: need precisely two file arguments"
-    usage
-  fi
   local original_file=$1
-  local fuzzed_file=$2
+  local flags="$(act::flags_qvx)"
 
-  local flags
-  flags="$(act::flags_qvx)"
-  act::state compare -hum \
-    <("${SCRIPTDIR}/c_states" -b "${BACKEND}" -c "${COMPILER}" "${flags}" "${original_file}") \
-    <("${SCRIPTDIR}/c_states" -b "${BACKEND}" -c "${COMPILER}" "${flags}" "${fuzzed_file}")
+  "${SCRIPTDIR}/c_states" -b "${BACKEND}" -c "${COMPILER}" "${flags}" "${original_file}" | act::state dnf
 }
 
 
