@@ -11,9 +11,7 @@
 
 open Base
 
-type t = Constant.t Act_litmus.Header.t [@@deriving equal]
-
-module J : Plumbing.Jsonable_types.S with type t := t =
+module J : Plumbing.Jsonable_types.S with type t = Constant.t Act_litmus.Header.t =
 Act_litmus.Header.Json (struct
   include Constant
 
@@ -26,3 +24,21 @@ Act_litmus.Header.Json (struct
 end)
 
 include J
+include Plumbing.Loadable.Of_jsonable (J)
+
+let equal = Act_litmus.Header.equal Constant.equal
+
+module Replace_filter = Plumbing.Filter.Make (struct
+    let name = "replace-header"
+
+    type aux_i = t
+    type aux_o = unit
+
+    let run (ctx : aux_i Plumbing.Filter_context.t) (ic : Stdio.In_channel.t) (oc : Stdio.Out_channel.t) : aux_o Or_error.t =
+      let header = Plumbing.Filter_context.aux ctx in
+      Or_error.Let_syntax.(
+        let%bind test = Frontend.load_from_ic ic ~path:(Plumbing.Filter_context.input_path_string ctx) in
+        let%map test' = Litmus.Test.try_map_header test ~f:(fun _ -> Or_error.return header) in
+        Litmus.Pp.print oc test'
+      )
+end)

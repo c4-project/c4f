@@ -123,6 +123,16 @@ module type S = sig
 
   val postcondition : t -> Lang.Constant.t Postcondition.t option
   (** [postcondition test] gets the postcondition of [test], if one exists. *)
+
+  (** {3 Modifying validated tests} *)
+
+  val try_map_raw : t -> f:(raw -> raw Or_error.t) -> t Or_error.t
+  (** [try_map_raw test ~f] maps [f] over the unvalidated form of [test],
+      then, if successful, tries to re-validate it. *)
+
+  val try_map_header : t -> f:(Lang.Constant.t Header.t -> Lang.Constant.t Header.t Or_error.t) -> t Or_error.t
+  (** [try_map_header test ~f] maps [f] over the header of [test],
+      then, if successful, tries to re-validate the resulting test. *)
 end
 
 (** {2 Conversion} *)

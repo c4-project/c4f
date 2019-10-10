@@ -280,4 +280,16 @@ module Make (Lang : Test_types.Basic) :
       let%bind _ = check_language language in
       let%bind header = Ast.get_header decls in
       make ~name ~threads ~header)
+
+  let try_map_raw
+    (test: t)
+    ~(f: raw -> raw Or_error.t)
+    : t Or_error.t =
+    Or_error.(test |> raw |> f >>= validate)
+
+  let try_map_header
+    (test: t)
+    ~(f: Lang.Constant.t Header.t -> Lang.Constant.t Header.t Or_error.t)
+    : t Or_error.t =
+    try_map_raw ~f:(Raw.try_map_header ~f) test
 end
