@@ -26,17 +26,18 @@ let file_type : t -> string option = function
       sd.file_type
 
 include Io_common.Make (struct
-    type nonrec t = t
+  type nonrec t = t
 
   let of_fpath : Fpath.t -> t = file
 
   let to_fpath_opt : t -> Fpath.t option = function
     | File f ->
-      Some f
+        Some f
     | Stdin _ ->
-      None
+        None
 
   let std () = stdin ()
+
   let std_name = "stdin"
 end)
 

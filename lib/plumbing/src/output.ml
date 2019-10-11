@@ -18,18 +18,19 @@ let temp ~(prefix : string) ~(ext : string) : t =
   file (Fpath.v (Filename.temp_file prefix ("." ^ ext)))
 
 include Io_common.Make (struct
-    type nonrec t = t
+  type nonrec t = t
 
-    let of_fpath : Fpath.t -> t = file
+  let of_fpath : Fpath.t -> t = file
 
-    let to_fpath_opt : t -> Fpath.t option = function
-      | File f ->
+  let to_fpath_opt : t -> Fpath.t option = function
+    | File f ->
         Some f
-      | Stdout ->
+    | Stdout ->
         None
 
-    let std () = stdout
-    let std_name = "stdout"
+  let std () = stdout
+
+  let std_name = "stdout"
 end)
 
 let as_input : t -> Input.t Or_error.t = function

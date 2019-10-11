@@ -18,9 +18,8 @@ module Make (R : Runner_intf.Runnable) :
 
   let parse isrc =
     let iname = Plumbing.Input.to_string isrc in
-    Or_error.tag_arg
-      (R.Program.load isrc)
-      "Error while parsing assembly" iname String.sexp_of_t
+    Or_error.tag_arg (R.Program.load isrc) "Error while parsing assembly"
+      iname String.sexp_of_t
 
   let in_source_to_basename (is : Plumbing.Input.t) : string =
     is |> Plumbing.Input.to_fpath_opt

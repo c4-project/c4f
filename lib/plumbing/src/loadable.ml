@@ -17,12 +17,13 @@ module Make (B : Loadable_types.Basic) :
   include B
 
   let load (is : Input.t) : t Or_error.t =
-    Input.with_input is ~f:(fun ic -> load_from_ic ?path:(Input.to_string_opt is) ic)
+    Input.with_input is ~f:(fun ic ->
+        load_from_ic ?path:(Input.to_string_opt is) ic)
 end
 
 module Make_chain
     (B : Loadable_types.Basic)
-    (C : Loadable_types.Basic_chain with type src := B.t) :
+    (C : Convert_types.S_with_failure with type src := B.t) :
   Loadable_types.S with type t = C.dst = Make (struct
   type t = C.dst
 

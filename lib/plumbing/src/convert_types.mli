@@ -9,20 +9,18 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Functor for making the bits of {!Input} and {!Output} that are common to
-    both.
+(** Module types for modules that convert from one type to the other. *)
 
-    Client code shouldn't usually use this. *)
+open Base
 
-module Make (B : sig
-  type t
+(** Conversion with possible failure. *)
+module type S_with_failure = sig
+  type src
+  (** Source type of the conversion. *)
 
-  val of_fpath : Fpath.t -> t
+  type dst
+  (** Destination type of the conversion. *)
 
-  val to_fpath_opt : t -> Fpath.t option
-
-  val std : unit -> t
-
-  val std_name : string
-end) : Io_types.Common with type t := B.t
-(** [Make] makes the IO code common to {!Input} and {!Output}. *)
+  val f : src -> dst Or_error.t
+  (** [f s] tries to convert [s]. *)
+end

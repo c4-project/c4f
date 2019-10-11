@@ -32,9 +32,8 @@ module type Common = sig
       and returns the standard stream otherwise. *)
 
   val of_string : string -> t Or_error.t
-  (** [of_string n] behaves as {!of_string_opt}, but maps "-" to
-      [None] (standard stream) and all other paths [p] to [Some p]
-      (file). *)
+  (** [of_string n] behaves as {!of_string_opt}, but maps "-" to [None]
+      (standard stream) and all other paths [p] to [Some p] (file). *)
 
   (** {3 To paths} *)
 

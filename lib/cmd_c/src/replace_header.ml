@@ -14,7 +14,9 @@ open Core
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
     _cfg ~(header_file : string) : unit Or_error.t =
   Or_error.Let_syntax.(
-    let%bind header_input = Plumbing.Input.of_string_opt (Some header_file) in
+    let%bind header_input =
+      Plumbing.Input.of_string_opt (Some header_file)
+    in
     let%bind header = Act_c_mini.Litmus_header.load header_input in
     Common_cmd.Args.With_files.run_filter
       (module Act_c_mini.Litmus_header.Replace_filter)

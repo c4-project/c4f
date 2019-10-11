@@ -34,21 +34,5 @@ module type S = sig
   include Basic
 
   val load : Input.t -> t Or_error.t
-  (** [load ~path] loads a [t] from a file named [path]. *)
-end
-
-(** {2 Chaining} *)
-
-(** Signature of modules that explain how to post-process the result of a
-    loadable. *)
-module type Basic_chain = sig
-  type src
-  (** Type of the original loadable. *)
-
-  type dst
-  (** Type of the new loadable. *)
-
-  val f : src -> dst Or_error.t
-  (** [f src] is a potentially-failing transformation from [src] to a member
-      of [dst]. *)
+  (** [load input] loads a [t] from the input source specified by [input]. *)
 end
