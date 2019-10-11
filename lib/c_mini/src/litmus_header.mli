@@ -18,6 +18,10 @@ include
   Plumbing.Loadable_types.S with type t := t
 (** Loading Litmus headers from JSON. *)
 
+include
+  Plumbing.Storable_types.S with type t := t
+(** Storing Litmus headers to JSON. *)
+
 (** {2 Filters for manipulating test headers}
 
     These filters make use of the JSON form of {!t}. *)
