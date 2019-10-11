@@ -16,18 +16,9 @@ source "${SCRIPTDIR}/act_bash/exec.sh"
 # shellcheck source=scripts/act_bash/log.sh
 source "${SCRIPTDIR}/act_bash/log.sh"
 
-## Constants ##
-# TODO(@MattWindsor91): most of these shouldn't be hardcoded.
-
-# The number of events Memalloy should be asked to produce by default.
-readonly DEFAULT_MEMALLOY_EVENTS=4
-
-# The number of times the fuzzer should run on each Memalloy output by default.
-readonly DEFAULT_FUZZ_PASSES=10
-
-# The directory, relative to the Memalloy output directory, to which any
-# fuzzer outcomes should be output.
-readonly FUZZ_OUTPUT_DIR="fuzz"
+declare DEFAULT_MEMALLOY_EVENTS
+# shellcheck source=scripts/act_bash/memalloy.sh
+source "${SCRIPTDIR}/act_bash/memalloy.sh"
 
 ## Arguments ##
 
@@ -67,6 +58,10 @@ usage() {
   echo "  [-c COMPILER_PREDICATE] [-m MACHINE_PREDICATE]"
   echo "  [-e NUM_MEMALLOY_EVENTS] [-k NUM_FUZZ_PASSES]"
   echo "  [-fsuwtnSUWTNqvxh?] MEMALLOY_DIR"
+  echo
+  echo "-e: number of events for Memalloy to produce (default ${DEFAULT_MEMALLOY_EVENTS})"
+  echo "-k: number of times each Memalloy output will be fuzzed"
+  echo "-h/-?: usage"
   exit
 }
 
@@ -122,8 +117,7 @@ run_memalloy_if_needed() {
   local results_dir="${MEMALLOY_DIR}/results/_latest"
 
   if [[ ${FORCE_MEMALLOY} == "true" || ( ! -d "${results_dir}" ) ]]; then
-    act::log "Running memalloy.\n"
-    "${SCRIPTDIR}/do_memalloy" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}"
+    run_and_dnf_memalloy "${results_dir}"
   else
     act::log "Using existing memalloy results directory"
     dump_last_modified_time "${results_dir}"
@@ -134,6 +128,45 @@ run_memalloy_if_needed() {
     act::error "Missing Memalloy results directory"
     exit
   fi
+}
+
+
+run_and_dnf_memalloy() {
+  local results_dir="$1"
+
+  act::log "Running memalloy.\n"
+  "${SCRIPTDIR}/do_memalloy" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}"
+
+  act::log "DNF-converting memalloy results.\n"
+
+  local flags
+  flags="$(act::flags_qvx)"
+
+  # TODO(@MattWindsor91): maybe don't modify in place?
+  for file in "${results_dir}/litmus"/*.litmus; do
+    act::log "~> %s\n" "${file}"
+    # TODO(@MattWindsor91): -b BACKEND
+    "${SCRIPTDIR}/make_dnf" -i "${flags}" "${file}" || broken_dnf "${file}"
+  done
+}
+
+
+# Prints an error indicating that an attempt to convert a postcondition
+# to a DNF failed, then moves the offending file out of the way.
+#
+# Because this might be caused by the backend used for DNF analysis not
+# understanding the input correctly (which is eminently possible with
+# backends like herd7), it needs to be handled semi-gracefully.
+#
+# Arguments:
+#   1.  The file that failed postcondition conversion.
+broken_dnf() {
+  local file="$1"
+  local new_file="${file}.bad_dnf"
+
+  act::error "Couldn't DNF postcondition for ${file}."
+  act::error "Moving out of the way (to ${new_file})."
+  mv "${file}" "${new_file}"
 }
 
 
@@ -153,12 +186,14 @@ dump_last_modified_time() {
   case "$(uname -s)" in
     Linux)
       # GNU stat and printf
-      local mtime="$(stat -Lc "%Y" "${results_dir}")"
+      local mtime
+      mtime="$(stat -Lc "%Y" "${results_dir}")"
       act::log " (last modified on %(%c)T)" "${mtime}"
       ;;
     Darwin|NetBSD|OpenBSD)
       # BSD stat and printf
-      local mtime="$(stat -Lf "%Sm" "${results_dir}")"
+      local mtime
+      mtime="$(stat -Lf "%Sm" "${results_dir}")"
       act::log " (last modified on %s)" "${mtime}"
       ;;
     *) return 2 ;;

@@ -71,15 +71,13 @@ main() {
   if [[ $# -ne 1 ]]; then act::arg_error "need precisely one file argument"; fi
 
   local original_file=$1
-  local flags
-  flags="$(act::flags_qvx)"
 
-  act::log "Making postcondition..."
+  act::log "Making postcondition...\n"
 
   local postcondition
-  postcondition=$("${SCRIPTDIR}/make_dnf_postcondition" -b "${BACKEND}" -c "${COMPILER}" "${flags}" "${original_file}")
+  postcondition=$(act::run_with_bcqvx "${SCRIPTDIR}/make_dnf_postcondition" "${original_file}")
 
-  act::log "Now making altered header..."
+  act::log "Now making altered header...\n"
 
   act::c dump-header "${original_file}" |
   "${SCRIPTDIR}/doctor_litmus_header" -p "${postcondition}"

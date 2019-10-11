@@ -70,9 +70,8 @@ main() {
   if [[ $# -ne 1 ]]; then act::arg_error "need precisely one file argument"; fi
 
   local original_file=$1
-  local flags="$(act::flags_qvx)"
 
-  "${SCRIPTDIR}/c_states" -b "${BACKEND}" -c "${COMPILER}" "${flags}" "${original_file}" | act::state dnf
+  act::run_with_bcqvx "${SCRIPTDIR}/c_states" "${original_file}" | act::state dnf
 }
 
 
