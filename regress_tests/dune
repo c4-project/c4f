@@ -1,5 +1,5 @@
 (tests
- (names config config_failures delitmus explain fuzz_replays
+ (names config config_failures delitmus dump_header explain fuzz_replays
    litmus_observations litmusify)
  (preprocess
   (pps ppx_jane))

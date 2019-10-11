@@ -1,0 +1,61 @@
+# Delitmus tests
+
+## iriw.c.litmus
+
+```
+{
+  "name": "iriw",
+  "locations": null,
+  "init": { "x": 0, "y": 0 },
+  "postcondition":
+    "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+}```
+## iriw_fuzz_redundant.c.litmus
+
+```
+{
+  "name": "iriw",
+  "locations": [
+    "MaJgQmON3yu", "ZgoV7uel9o", "VFTQNWN", "m02M5s", "ne0J8wrPQam", "x", "y"
+  ],
+  "init": {
+    "MaJgQmON3yu": 2728,
+    "ZgoV7uel9o": 1073,
+    "VFTQNWN": -13,
+    "m02M5s": -64856,
+    "ne0J8wrPQam": -12197004,
+    "x": 0,
+    "y": 0
+  },
+  "postcondition":
+    "exists (2:r0 == 1 /\\ 2:r1 == 0 /\\ 3:r0 == 1 /\\ 3:r1 == 0)"
+}```
+## memalloy_cmpxchg.c.litmus
+
+```
+{
+  "name": "test_7",
+  "locations": null,
+  "init": { "x": 0 },
+  "postcondition": "exists (0:r0 == 0 /\\ x == 2)"
+}```
+## memalloy_na_int.c.litmus
+
+```
+{
+  "name": "test_0",
+  "locations": null,
+  "init": { "x": 0 },
+  "postcondition": "exists (0:r0 == 0 /\\ x == 1)"
+}```
+## rwc.c.litmus
+
+```
+{
+  "name": "rwc",
+  "locations": null,
+  "init": { "x": 0, "y": 0 },
+  "postcondition": "exists (1:r0 == 1 /\\ 1:r1 == 0 /\\ 2:r0 == 0)"
+}```
+
+Ran 5 test(s).

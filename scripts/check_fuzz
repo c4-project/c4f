@@ -66,14 +66,9 @@ main() {
   readonly BACKEND COMPILER DUNE_EXEC VERBOSE
   shift $((OPTIND-1))
 
-  if [[ ${DUNE_EXEC} = "true" ]]; then
-    act::log "%s: using 'dune exec' for ACT.\n" "$0"
-  fi
+  act::check_dune_exec
+  if [[ $# -ne 2 ]]; then act::arg_error "${0}: need precisely two file arguments"; fi
 
-  if [[ $# -ne 2 ]]; then
-    echo "${0}: need precisely two file arguments"
-    usage
-  fi
   local original_file=$1
   local fuzzed_file=$2
 
