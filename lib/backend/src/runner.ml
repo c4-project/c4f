@@ -43,7 +43,7 @@ end) : Runner_types.S = struct
           (Plumbing.Input.of_fpath input_path)
           (Plumbing.Output.of_fpath output_path)
       in
-      B.Reader.load ~path:output_path)
+      B.Reader.load (Plumbing.Input.of_fpath output_path))
 end
 
 module Make_error_reader (B : sig

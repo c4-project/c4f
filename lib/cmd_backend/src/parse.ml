@@ -24,7 +24,7 @@ let run ?(fqid : Id.t = Id.of_string "herd")
     let%bind input = Common_cmd.Args.With_files.infile_source args in
     let%bind output = Common_cmd.Args.With_files.outfile_sink args in
     let%bind (module Sim) = Res.resolve_single fqid in
-    let%bind obs = Sim.Reader.load_from_isrc input in
+    let%bind obs = Sim.Reader.load input in
     Plumbing.Output.with_output output ~f:(fun oc ->
         Or_error.return
           (Yojson.Safe.pretty_to_channel oc

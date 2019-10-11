@@ -26,7 +26,7 @@ let run_on_file ~(file : Fpath.t) ~(path : Fpath.t) : unit Or_error.t =
   let litmus_path = litmus_path_of path in
   Or_error.Let_syntax.(
     let%bind trace =
-      Act_fuzz.Trace.load_from_isrc (Plumbing.Input.of_fpath path)
+      Act_fuzz.Trace.load (Plumbing.Input.of_fpath path)
     in
     let config = Act_fuzz.Config.make () in
     let aux = Act_fuzz.Filter.Aux.make ~config trace in

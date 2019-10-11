@@ -33,10 +33,7 @@ end
 module type S = sig
   include Basic
 
-  val load_from_isrc : Input.t -> t Or_error.t
-  (** [load_from_isrc is] loads a [t] from an input source [is]. *)
-
-  val load : path:Fpath.t -> t Or_error.t
+  val load : Input.t -> t Or_error.t
   (** [load ~path] loads a [t] from a file named [path]. *)
 end
 

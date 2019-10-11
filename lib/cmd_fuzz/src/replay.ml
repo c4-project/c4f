@@ -17,7 +17,7 @@ let run ?(trace_input : string option)
   let config = Act_config.Global.fuzz global_config in
   Or_error.Let_syntax.(
     let%bind trace_in = Plumbing.Input.of_string_opt trace_input in
-    let%bind trace = Act_fuzz.Trace.load_from_isrc trace_in in
+    let%bind trace = Act_fuzz.Trace.load trace_in in
     let aux_in = Act_fuzz.Filter.Aux.make ~o ~config trace in
     Common_cmd.Args.With_files.run_filter
       (module Act_fuzz.Filter.Replay)

@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Base
 open Filter_types
@@ -49,7 +37,7 @@ let copy (ic : Stdio.In_channel.t) (oc : Stdio.Out_channel.t) :
 let route_input_to_file (src : Input.t) : Fpath.t Or_error.t =
   let sink = Output.temp ~prefix:"filter" ~ext:"tmp" in
   Or_error.Let_syntax.(
-    let%bind file = Output.to_file_err sink in
+    let%bind file = Output.to_fpath_err sink in
     let%map () = Io_helpers.with_input_and_output src sink ~f:copy in
     file)
 
@@ -57,7 +45,7 @@ let route_input_to_file (src : Input.t) : Fpath.t Or_error.t =
     it creates a temporary file, copies [src]'s contents into it, and
     returns that if no errors occur. *)
 let ensure_input_file (src : Input.t) : Fpath.t Or_error.t =
-  match Input.to_file src with
+  match Input.to_fpath_opt src with
   | Some f ->
       Or_error.return f
   | None ->
@@ -70,7 +58,7 @@ let route_input_from_file (sink : Output.t) ~(f : Fpath.t -> 'a Or_error.t)
     : 'a Or_error.t =
   let temp_out = Output.temp ~prefix:"filter" ~ext:"tmp" in
   Or_error.Let_syntax.(
-    let%bind file = Output.to_file_err temp_out in
+    let%bind file = Output.to_fpath_err temp_out in
     let%bind result = f file in
     let temp_in = Input.file file in
     let%map () = Io_helpers.with_input_and_output temp_in sink ~f:copy in
@@ -82,7 +70,7 @@ let route_input_from_file (sink : Output.t) ~(f : Fpath.t -> 'a Or_error.t)
     completion. *)
 let ensure_output_file (sink : Output.t) ~(f : Fpath.t -> 'a Or_error.t) :
     'a Or_error.t =
-  match Output.to_file sink with
+  match Output.to_fpath_opt sink with
   | Some file ->
       f file
   | None ->

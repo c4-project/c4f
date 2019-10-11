@@ -58,7 +58,7 @@ let get_aux (args : Args.Standard_asm.t) ~(output : Act_common.Output.t) :
   | Some auxf ->
       Or_error.(
         Some auxf |> Pb.Input.of_string_opt
-        >>= Act_delitmus.Aux.load_from_isrc)
+        >>= Act_delitmus.Aux.load)
   | None ->
       warn_no_aux output ;
       Or_error.return Act_delitmus.Aux.empty

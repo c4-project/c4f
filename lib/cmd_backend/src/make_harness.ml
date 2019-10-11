@@ -24,8 +24,8 @@ let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
     let%bind input = Common_cmd.Args.With_files.infile_source args in
     let%bind output = Common_cmd.Args.With_files.outfile_sink args in
     let%bind (module Sim) = Res.resolve_single fqid in
-    let%bind input_path = Plumbing.Input.to_file_err input in
-    let%bind output_dir = Plumbing.Output.to_file_err output in
+    let%bind input_path = Plumbing.Input.to_fpath_err input in
+    let%bind output_dir = Plumbing.Output.to_fpath_err output in
     let%map cmds = Sim.make_harness arch ~input_path ~output_dir in
     List.iter ~f:Stdio.print_endline cmds)
 

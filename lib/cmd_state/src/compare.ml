@@ -24,9 +24,9 @@ let run (_o : Output.t) (_cfg : Act_config.Global.t) ~(oracle_raw : string)
     ~(subject_raw : string) ~(human_readable : bool) : unit Or_error.t =
   Or_error.Let_syntax.(
     let%bind oracle_in = Plumbing.Input.of_string_opt (Some oracle_raw) in
-    let%bind oracle = Act_state.Observation.load_from_isrc oracle_in in
+    let%bind oracle = Act_state.Observation.load oracle_in in
     let%bind subject_in = Plumbing.Input.of_string_opt (Some subject_raw) in
-    let%bind subject = Act_state.Observation.load_from_isrc subject_in in
+    let%bind subject = Act_state.Observation.load subject_in in
     let%map result = Act_state.Compare.run ~oracle ~subject in
     output result ~human_readable)
 

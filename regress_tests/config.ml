@@ -19,7 +19,7 @@ let pp_ast : Act_config.Ast.t Fmt.t =
 let parse_config_failures ~(file : Fpath.t) ~(path : Fpath.t) :
     unit Or_error.t =
   ignore file ;
-  let r = Act_config.Frontend.load ~path in
+  let r = Act_config.Frontend.load (Plumbing.Input.of_fpath path) in
   Fmt.(
     pr "@[%a@]@."
       (result ~ok:pp_ast ~error:(any "UNEXPECTED ERROR:@ " ++ Error.pp)))

@@ -32,7 +32,7 @@ let lift_command (args : Args.Standard.t)
     Or_error.(
       args |> Args.Standard.config_file |> Option.some
       |> Plumbing.Input.of_string_opt
-      >>= Act_config.Global.Load.load_from_isrc >>= f o)
+      >>= Act_config.Global.Load.load >>= f o)
   in
   if Or_error.is_error result then (
     Ac.Output.print_error o result ;
