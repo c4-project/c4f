@@ -15,15 +15,20 @@ open Base
 
 (** Signature over the tool-specific parts of a Herdtools output scraper. *)
 module type Basic = sig
+  type test_type
+  (** Filled in with {!Reader.Test_type}. *)
+
   type state_line
+  (** Filled in with {!Reader.State_line}. *)
 
   val try_parse_state_count : string -> int option
   (** [try_parse_state_count line] should return [Some k] if preamble line
       [line] contains a state count with [k] states, and [None] otherwise.
       (It needn't do any further validation.) *)
 
-  val try_split_state_line : string -> state_line Or_error.t
-  (** [try_split_state_line line] should try to split a state line into the
-      (optional) number of occurrences of that state, and an otherwise
-      unparsed line containing the state data. *)
+  val try_split_state_line : test_type -> string -> state_line Or_error.t
+  (** [try_split_state_line test_type line] should try to split [line] into
+      the state tag (taking into account [test_type], the (optional) number
+      of occurrences of that state, and an otherwise unparsed line
+      containing the state data. *)
 end

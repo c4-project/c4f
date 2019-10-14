@@ -20,6 +20,10 @@ include
   Plumbing.Loadable_types.S with type t := t
 (** Observations can be loaded from JSON files. *)
 
+include
+  Plumbing.Storable_types.S with type t := t
+(** Observations can be stored to JSON files. *)
+
 (** {1 Constructing an observation record} *)
 
 val empty : t

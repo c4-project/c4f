@@ -15,6 +15,14 @@
     This module provides {{!Make} a functor} that accepts the bits that are
     different, and fills in the common ground. *)
 
+(** The type of test, as announced on the first line.
+
+    This type basically correlates to a forall/exists in the Litmus
+    postcondition. *)
+module Test_type : sig
+  type t = Allowed | Required
+end
+
 (** Abstract type of semi-parsed Herdtools7 state lines.
 
     The common reader logic makes much use of this structure internally, but
@@ -34,10 +42,12 @@ module State_line : sig
       both Herd and Litmus. *)
 end
 
-module type Basic =
-  Reader_intf.Basic with type state_line := string State_line.t
-(** Synonym for {{!Reader_intf.Basic} Reader_intf.Basic} with [state_line]
+(** Synonym for {!Reader_types.Basic} with [state_line] and [test_type]
     fixed. *)
+module type Basic =
+  Reader_types.Basic
+    with type state_line := string State_line.t
+     and type test_type := Test_type.t
 
 module Make (B : Basic) : Act_backend.Reader_types.S
 (** Makes an output scraper for the Herdtools7 simulator described in [B]. *)

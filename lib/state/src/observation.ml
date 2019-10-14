@@ -71,6 +71,7 @@ end
 
 include M
 include Plumbing.Loadable.Of_jsonable (M)
+include Plumbing.Storable.Of_jsonable (M)
 
 let has_flag (x : t) ~(flag : Flag.t) : bool = Set.mem (flags x) flag
 

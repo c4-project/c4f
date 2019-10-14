@@ -45,28 +45,31 @@ let parse_int (s : string) : int Or_error.t =
 let parse_int_opt : string option -> int option Or_error.t =
   Tx.Option.With_errors.map_m ~f:parse_int
 
-let parse_tag : string -> Tag.t Or_error.t = function
-  | "*" ->
+let parse_tag (tt : Shc.Reader.Test_type.t) (tag : string) :
+    Tag.t Or_error.t =
+  match (tt, tag) with
+  | Allowed, "*" | Required, ":" ->
       Or_error.return Tag.Witness
-  | ":" ->
+  | Allowed, ":" | Required, "*" ->
       Or_error.return Tag.Counter_example
-  | tag ->
+  | _ ->
       Or_error.error_s
         [%message "Unknown tag in Litmus histogram" (tag : string)]
 
-let parse_tag_opt : string option -> Tag.t option Or_error.t =
-  Tx.Option.With_errors.map_m ~f:parse_tag
+let parse_tag_opt (tt : Shc.Reader.Test_type.t) :
+    string option -> Tag.t option Or_error.t =
+  Tx.Option.With_errors.map_m ~f:(parse_tag tt)
 
 include Shc.Reader.Make (struct
   let try_parse_state_count (line : string) : int option =
     Option.try_with (fun () ->
         Caml.Scanf.sscanf line "Histogram (%d states)" Fn.id)
 
-  let try_split_state_line (line : string) :
+  let try_split_state_line (tt : Shc.Reader.Test_type.t) (line : string) :
       string Shc.Reader.State_line.t Or_error.t =
     let occurrences_str, tag_str, rest = split_line_to_string_tuple line in
     Or_error.Let_syntax.(
       let%map occurrences = parse_int_opt occurrences_str
-      and tag = parse_tag_opt tag_str in
+      and tag = parse_tag_opt tt tag_str in
       Shc.Reader.State_line.make ?occurrences ?tag rest)
 end)

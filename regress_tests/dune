@@ -1,13 +1,13 @@
 (tests
  (names config config_failures delitmus dump_header explain fuzz_replays
-   litmus_observations litmusify)
+   herd_observations litmus_observations litmusify)
  (preprocess
   (pps ppx_jane))
  (libraries result yojson sexplib0 base.caml core_kernel core stdio fmt
    common_cmd fpath ppx_yojson_conv.runtime-lib travesty travesty.base_exts
-   plumbing act.asm act.backend act.backend_litmus act.c_mini act.common
-   act.config act.delitmus act.fuzz act.litmus act.sanitiser act.state
-   act.utils)
+   plumbing act.asm act.backend act.backend_herd act.backend_litmus
+   act.c_mini act.common act.config act.delitmus act.fuzz act.litmus
+   act.sanitiser act.state act.utils)
  (action
   (run %{test} input))
  (deps
@@ -18,4 +18,5 @@
   (glob_files "input/config/failures/*.conf")
   (glob_files "input/litmus/*.litmus")
   (glob_files "input/asm/x86/att/*.s")
+  (glob_files "input/observations/herd/*.txt")
   (glob_files "input/observations/litmus/*.txt")))

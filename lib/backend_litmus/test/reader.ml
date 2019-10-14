@@ -136,8 +136,7 @@ let%expect_test "valid output without postcondition parses correctly" =
         ((A 1) (B 1) (C 0) (D 1) (x 1) (y 1))
         ((A 1) (B 1) (C 1) (D 0) (x 1) (y 1))
         ((A 1) (B 1) (C 1) (D 1) (x 1) (y 1))))
-      (witnesses ())
-      (counter_examples
+      (witnesses
        (((A 0) (B 0) (C 0) (D 0) (x 1) (y 1))
         ((A 0) (B 0) (C 0) (D 1) (x 1) (y 1))
         ((A 0) (B 0) (C 1) (D 0) (x 1) (y 1))
@@ -152,7 +151,8 @@ let%expect_test "valid output without postcondition parses correctly" =
         ((A 1) (B 1) (C 0) (D 0) (x 1) (y 1))
         ((A 1) (B 1) (C 0) (D 1) (x 1) (y 1))
         ((A 1) (B 1) (C 1) (D 0) (x 1) (y 1))
-        ((A 1) (B 1) (C 1) (D 1) (x 1) (y 1)))))) |}]
+        ((A 1) (B 1) (C 1) (D 1) (x 1) (y 1))))
+      (counter_examples ()))) |}]
 
 let%expect_test "valid output with postcondition parses correctly" =
   print_output_from_string test_output_valid_pc ;

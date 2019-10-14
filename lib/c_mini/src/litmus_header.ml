@@ -44,8 +44,7 @@ module Dump_filter = Plumbing.Filter.Make (struct
         Frontend.load_from_ic ic
           ~path:(Plumbing.Filter_context.input_path_string ctx)
       in
-      store_to_oc ~dest:oc (Litmus.Test.header test)
-    )
+      store_to_oc ~dest:oc (Litmus.Test.header test))
 end)
 
 module Replace_filter = Plumbing.Filter.Make (struct

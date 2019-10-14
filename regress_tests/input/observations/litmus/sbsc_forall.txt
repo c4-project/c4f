@@ -1,0 +1,80 @@
+%%%%%%%%%%%%%%%%%%%
+% Results for dnf %
+%%%%%%%%%%%%%%%%%%%
+C SBSC
+
+{x=0; y=0;}
+
+P0(_Atomic int* x, _Atomic int* y) {
+
+    int a;
+    atomic_store_explicit(x, 1, memory_order_relaxed);
+    a = atomic_load_explicit(y, memory_order_relaxed);
+
+}
+
+P1(_Atomic int* x, _Atomic int* y) {
+
+    int a;
+    atomic_store_explicit(y, 1, memory_order_relaxed);
+    a = atomic_load_explicit(x, memory_order_relaxed);
+
+}
+
+
+forall (0:a=0 /\ 1:a=0 \/ 0:a=0 /\ 1:a=1 \/ 0:a=1 /\ 1:a=0 \/ 0:a=1 /\ 1:a=1)
+Generated assembler
+	##START _litmus_P0
+	##START _litmus_P1
+
+Test SBSC Required
+Histogram (3 states)
+499992:>0:a=1; 1:a=0;
+500001:>0:a=0; 1:a=1;
+7     :>0:a=1; 1:a=1;
+Ok
+
+Witnesses
+Positive: 1000000, Negative: 0
+Condition forall (0:a=0 /\ 1:a=0 \/ 0:a=0 /\ 1:a=1 \/ 0:a=1 /\ 1:a=0 \/ 0:a=1 /\ 1:a=1) is validated
+Hash=4c06f3042b665f1b535c8156abfb0f14
+Observation SBSC Always 1000000 0
+Time SBSC 0.19
+
+Machine:dyn894-83.eduroam.ic.ac.uk
+Hardware:
+
+    Hardware Overview:
+
+      Model Name: MacBook Pro
+      Model Identifier: MacBookPro13,2
+      Processor Name: Dual-Core Intel Core i5
+      Processor Speed: 2.9 GHz
+      Number of Processors: 1
+      Total Number of Cores: 2
+      L2 Cache (per Core): 256 KB
+      L3 Cache: 4 MB
+      Hyper-Threading Technology: Enabled
+      Memory: 8 GB
+      Boot ROM Version: 262.0.0.0.0
+      SMC Version (system): 2.37f21
+      Serial Number (system): C02ST235GYFH
+      Hardware UUID: 5BA6E000-BC91-5244-BDF1-648A4F32DF70
+
+Revision 95785c747750be4a3b64adfab9d5f5ee0ead8240, version 7.54+02(dev)
+Command line: litmus7 -c11 true -carch X86 dnf
+Parameters
+#define SIZE_OF_TEST 100000
+#define NUMBER_OF_RUN 10
+#define AVAIL 1
+#define STRIDE (-1)
+#define MAX_LOOP 0
+/* gcc options: -Wall -std=gnu11 -fomit-frame-pointer -O2 */
+/* barrier: user */
+/* launch: changing */
+/* affinity: none */
+/* alloc: dynamic */
+/* memory: direct */
+/* safer: write */
+/* preload: random */
+/* speedcheck: no */

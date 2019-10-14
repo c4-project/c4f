@@ -15,6 +15,20 @@ module Tx = Travesty_base_exts
 module Obs = Act_state.Observation
 module Tag = Obs.Entry_tag
 
+module Test_type = struct
+  type t = Allowed | Required [@@deriving sexp_of]
+
+  let of_string_err (s : string) : t Or_error.t =
+    s |> String.strip |> String.lowercase
+    |> function
+    | "allowed" ->
+        Or_error.return Allowed
+    | "required" ->
+        Or_error.return Required
+    | s' ->
+        Or_error.error_s [%message "Invalid test type" ~test_type:s']
+end
+
 module State_line = struct
   type 'a t =
     { occurrences: int option
@@ -37,12 +51,15 @@ module State_line = struct
 end
 
 module type Basic =
-  Reader_intf.Basic with type state_line := string State_line.t
+  Reader_types.Basic
+    with type state_line := string State_line.t
+     and type test_type := Test_type.t
 
 module Automaton = struct
   (** The current automaton state of a Herd reader. *)
   type t =
     | Empty  (** We haven't read anything yet. *)
+    | Pre_test  (** We haven't hit the actual test yet. *)
     | Preamble  (** We're in the pre-state matter. *)
     | State of {left: int}  (** We're in a state block. *)
     | Summary  (** We're reading the summary tag. *)
@@ -66,8 +83,10 @@ module Automaton = struct
   let validate_final_state : t Validate.check = function
     | Empty ->
         Validate.fail_s [%message "Input was empty."]
-    | State {left} ->
+    | State {left; _} ->
         Validate.fail_s (expected_more_states_message left)
+    | Pre_test ->
+        Validate.fail_s [%message "Input ended before reaching test."]
     | Preamble ->
         Validate.fail_s [%message "Input ended with no state block."]
     | Summary ->
@@ -90,33 +109,39 @@ module Automaton = struct
         "In wrong position to change reader state." ~state
           ~at_position:(st : t)]
 
-  let try_enter_preamble : t -> t Or_error.t = function
+  let try_enter_pre_test : t -> t Or_error.t = function
     | Empty ->
+        Or_error.return Pre_test
+    | (State _ | Pre_test | Preamble | Summary | Postamble) as st ->
+        state_change_error st "entering a preamble"
+
+  let try_enter_preamble : t -> t Or_error.t = function
+    | Pre_test ->
         Or_error.return Preamble
-    | (State _ | Preamble | Summary | Postamble) as st ->
+    | (Empty | State _ | Preamble | Summary | Postamble) as st ->
         state_change_error st "entering a preamble"
 
   (** [try_leave_state a] tries to update [a] after having processed a
       single state line. *)
   let try_leave_state : t -> t Or_error.t = function
-    | State {left= 0} ->
+    | State {left= 0; _} ->
         Or_error.error_string "State underflow."
     | State {left= k} ->
         Or_error.return (after_state_line k)
-    | (Preamble | Summary | Postamble | Empty) as st ->
+    | (Pre_test | Preamble | Summary | Postamble | Empty) as st ->
         state_change_error st "leaving a state line"
 
   let try_enter_state_block (num_states : int) : t -> t Or_error.t =
     function
     | Preamble ->
         of_state_count num_states
-    | (State _ | Summary | Postamble | Empty) as st ->
+    | (Pre_test | State _ | Summary | Postamble | Empty) as st ->
         state_change_error st "entering the state block"
 
   let try_leave_summary : t -> t Or_error.t = function
     | Summary ->
         Or_error.return Postamble
-    | (State _ | Preamble | Postamble | Empty) as st ->
+    | (Pre_test | State _ | Preamble | Postamble | Empty) as st ->
         state_change_error st "leaving the summary"
 end
 
@@ -125,16 +150,20 @@ module Ctx = struct
     type t =
       { a_state: Automaton.t  (** The current automaton state. *)
       ; path: string option  (** The file, if any, we're reading. *)
+      ; test_type: Test_type.t option  (** The type of test. *)
       ; obs: Act_state.Observation.t
             (** The observations we've built so far. *) }
     [@@deriving fields, make]
 
     let init : ?path:string -> unit -> t =
-      make ~a_state:Empty ~obs:Obs.empty
+      make ~a_state:Empty ~obs:Obs.empty ?test_type:None
 
     let map_fld_m (body : t) ~(field : (t, 'a) Field.t)
         ~(f : 'a -> 'a Or_error.t) : t Or_error.t =
       Or_error.(body |> Field.get field |> f >>| Field.fset field body)
+
+    let set_test_type (body : t) ~(test_type : Test_type.t) : t =
+      {body with test_type= Some test_type}
 
     let map_a_state_m (body : t) :
         f:(Automaton.t -> Automaton.t Or_error.t) -> t Or_error.t =
@@ -143,6 +172,9 @@ module Ctx = struct
     let map_obs_m (body : t) : f:(Obs.t -> Obs.t Or_error.t) -> t Or_error.t
         =
       map_fld_m body ~field:Fields.obs
+
+    let try_enter_pre_test : t -> t Or_error.t =
+      map_a_state_m ~f:Automaton.try_enter_pre_test
 
     let try_enter_preamble : t -> t Or_error.t =
       map_a_state_m ~f:Automaton.try_enter_preamble
@@ -169,6 +201,8 @@ module Ctx = struct
     module Inner = Or_error
   end)
 
+  let peek_test_type () : Test_type.t option t = peek Body.test_type
+
   let peek_automaton () : Automaton.t t = peek Body.a_state
 
   let peek_obs () : Act_state.Observation.t t = peek Body.obs
@@ -188,7 +222,12 @@ module Ctx = struct
       Act_state.Observation.t Or_error.t =
     run (op >>= try_close) (Body.init ?path ())
 
+  let enter_pre_test () : unit t = Monadic.modify Body.try_enter_pre_test
+
   let enter_preamble () : unit t = Monadic.modify Body.try_enter_preamble
+
+  let set_test_type (test_type : Test_type.t) : unit t =
+    modify (Body.set_test_type ~test_type)
 
   let enter_state_block (num_states : int) : unit t =
     Monadic.modify (Body.try_enter_state_block num_states)
@@ -218,14 +257,37 @@ module Ic = struct
 end
 
 module Make_main (B : Basic) = struct
+  module Pre_test = struct
+    let splits_to_test_type : string list -> Test_type.t Or_error.t =
+      function
+      | _ :: _ :: type_str :: _ ->
+          Test_type.of_string_err type_str
+      | splits ->
+          Or_error.error_s
+            [%message
+              "Expected three elements in the test header"
+                ~got:(splits : string list)]
+
+    let try_parse_test_header (line : string) : Test_type.t Ctx.t =
+      line |> String.strip |> String.split ~on:' '
+      |> Tx.List.exclude ~f:String.is_empty
+      |> splits_to_test_type |> Ctx.Monadic.return
+
+    let process (line : string) : unit Ctx.t =
+      if String.is_prefix line ~prefix:"Test" then
+        Ctx.(
+          line |> try_parse_test_header >>= set_test_type >>= enter_preamble)
+      else Ctx.return ()
+
+    let process_from_empty (line : string) : unit Ctx.t =
+      Ctx.(enter_pre_test () >> process line)
+  end
+
   module Preamble = struct
     let process (line : string) : unit Ctx.t =
       let state_o = B.try_parse_state_count line in
       Option.value_map state_o ~f:Ctx.enter_state_block
         ~default:(Ctx.return ())
-
-    let process_from_empty (line : string) : unit Ctx.t =
-      Ctx.(enter_preamble () >> process line)
   end
 
   module State = struct
@@ -253,14 +315,24 @@ module Make_main (B : Basic) = struct
         line |> split_state_bindings |> List.map ~f:proc_binding
         |> Result.all >>= Act_state.Entry.of_alist)
 
-    let try_parse_state_line :
+    let try_parse_state_line (tt : Test_type.t) :
         string -> Act_state.Entry.t State_line.t Or_error.t =
       Tx.Or_error.(
-        B.try_split_state_line
+        B.try_split_state_line tt
         >=> State_line.With_errors.map_m ~f:try_parse_state_line_body)
 
     let process (line : string) : unit Ctx.t =
-      Ctx.(line |> try_parse_state_line |> Monadic.return >>= leave_state)
+      Ctx.(
+        Let_syntax.(
+          let%bind tt_opt = peek_test_type () in
+          let%bind tt =
+            Monadic.return
+              (Result.of_option tt_opt
+                 ~error:
+                   (Error.of_string "Internal error: Missing test type"))
+          in
+          let%bind state = Monadic.return (try_parse_state_line tt line) in
+          leave_state state))
   end
 
   module Summary = struct
@@ -296,7 +368,9 @@ module Make_main (B : Basic) = struct
     Ctx.Let_syntax.(
       match%map Ctx.peek_automaton () with
       | Empty ->
-          Preamble.process_from_empty
+          Pre_test.process_from_empty
+      | Pre_test ->
+          Pre_test.process
       | Preamble ->
           Preamble.process
       | State _ ->

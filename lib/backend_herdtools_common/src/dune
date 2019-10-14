@@ -4,6 +4,7 @@
  (name act_backend_herdtools_common)
  (public_name act.backend_herdtools_common)
  (synopsis "Common glue for Herdtools7-derived simulators")
+ (modules_without_implementation reader_types)
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries sexplib0 stdio shell.string_extended core_kernel travesty
