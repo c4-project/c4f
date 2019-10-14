@@ -31,7 +31,7 @@ end) : Io_types.Common with type t := B.t = struct
     Or_error.(str |> Fpath_helpers.of_string_option >>| of_fpath_opt)
 
   let of_string (str : string) : t Or_error.t =
-    of_string_opt (Option.some_if (String.equal str "-") str)
+    of_string_opt (Option.some_if (not (String.equal str "-")) str)
 
   let to_fpath_err (io : t) : Fpath.t Or_error.t =
     Result.of_option (to_fpath_opt io)
