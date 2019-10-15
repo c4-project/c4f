@@ -62,6 +62,9 @@ class MarkdownReporter:
         self, header: str, states: typing.List[typing.Mapping[str, str]]
     ) -> None:
         print()
+        if not states:
+            print(f"No {header.lower()}.")
+            return
         print(f"### {header} ({len(states)}):")
         print()
         self.print_states(states)
@@ -115,10 +118,10 @@ class ReportPhase(test_common.Phase):
     def is_printable(self, obs: observation.Observation) -> bool:
         if obs.is_missing:
             return True
-        if obs.is_sat and self.settings.print_sat:
-            return True
-        if obs.is_unsat and self.settings.print_unsat:
-            return True
+        if obs.is_sat:
+            return self.settings.print_sat
+        if obs.is_unsat:
+            return self.settings.print_unsat
         if self.settings.print_unknown:
             return True
         return False
