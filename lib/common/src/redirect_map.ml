@@ -169,8 +169,9 @@ let%test_module "string redirect maps" =
         (Error
          ("validation failed"
           (.foxtrot
-           ("validation errors" (("fst.char '.'" "Invalid initial character.")))
-           lib/common/src/c_id.ml:50:13))) |}]
+           ("validation errors"
+            (("fst.initial char '.'" "Invalid initial character.")))
+           lib/common/src/c_id.ml:66:17))) |}]
 
     let%expect_test "dest_of_id: not in map" =
       let foo = C_id.of_string "nope" in

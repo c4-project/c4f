@@ -58,6 +58,10 @@ let%test_module "is_string_safe (standard)" =
       Io.print_bool (is_string_safe "_t0r0") ;
       [%expect {| true |}]
 
+    let%expect_test "Herd program ID" =
+      Io.print_bool (is_string_safe "P45") ;
+      [%expect {| true |}]
+
     let%expect_test "negative example" =
       Io.print_bool (is_string_safe "0r0") ;
       [%expect {| false |}]
@@ -73,5 +77,9 @@ let%test_module "is_string_safe (Herd-safe)" =
 
     let%expect_test "is_string_safe: negative example" =
       Io.print_bool (is_string_safe "_t0r0") ;
+      [%expect {| false |}]
+
+    let%expect_test "is_string_safe: program ID" =
+      Io.print_bool (is_string_safe "P45") ;
       [%expect {| false |}]
   end )

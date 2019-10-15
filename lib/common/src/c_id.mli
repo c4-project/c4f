@@ -46,7 +46,7 @@ val is_string_safe : string -> bool
 (** A restricted form of C identifiers that represents identifiers that Herd
     can safely lex. *)
 module Herd_safe : sig
-  type c = t
+  type c = t (* This should be :=, but PPXes won't let me use 4.08 syntax*)
 
   type t [@@deriving bin_io, compare, hash, sexp, quickcheck]
 

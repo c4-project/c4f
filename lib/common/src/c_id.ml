@@ -13,40 +13,56 @@ open Core_kernel
 module Tx = Travesty_base_exts
 open Act_utils
 
-module type Basic = sig
+(* C identifiers and Herd-safe identifiers include a lot of similar
+   boilerplate, so here's a functor that builds it. *)
+module Make (B : sig
   val here : Lexing.position
 
   val validate_initial_char : char Validate.check
 
   val validate_char : char Validate.check
+
+  val validate_general : string Validate.check
+end) =
+struct
+  module M = Validated.Make_bin_io_compare_hash_sexp (struct
+    include String
+
+    let here = B.here
+
+    let validate_sep : (char * char list) Validate.check =
+      Validate.pair
+        ~fst:(fun c ->
+          Validate.name
+            (Printf.sprintf "initial char '%c'" c)
+            (B.validate_initial_char c))
+        ~snd:
+          (Validate.list ~name:(Printf.sprintf "char '%c'") B.validate_char)
+
+    let validate : t Validate.check =
+     fun id ->
+      match String.to_list id with
+      | [] ->
+          Validate.fail_s [%message "Identifiers can't be empty" ~id]
+      | c :: cs ->
+          Validate.Infix.(validate_sep (c, cs) ++ B.validate_general id)
+
+    let validate_binio_deserialization = true
+  end)
+
+  include M
+  include Comparable.Make (M)
+
+  let to_string : t -> string = raw
+
+  let of_string : string -> t = create_exn
+
+  let pp : t Fmt.t = Fmt.of_to_string to_string
+
+  let is_string_safe (str : string) : bool = Or_error.is_ok (create str)
 end
 
-module Make (B : Basic) = struct
-  include String
-
-  let here = B.here
-
-  let validate_sep : (char * char list) Validate.check =
-    Validate.pair
-      ~fst:(fun c ->
-        Validate.name
-          (Printf.sprintf "char '%c'" c)
-          (B.validate_initial_char c))
-      ~snd:
-        (Validate.list ~name:(Printf.sprintf "char '%c'") B.validate_char)
-
-  let validate : t Validate.check =
-   fun id ->
-    match String.to_list id with
-    | [] ->
-        Validate.fail_s [%message "Identifiers can't be empty" ~id]
-    | c :: cs ->
-        validate_sep (c, cs)
-
-  let validate_binio_deserialization = true
-end
-
-module M = Validated.Make_bin_io_compare_hash_sexp (Make (struct
+module C = Make (struct
   let here = [%here]
 
   let validate_initial_char : char Validate.check =
@@ -58,18 +74,11 @@ module M = Validated.Make_bin_io_compare_hash_sexp (Make (struct
     Validate.booltest
       Tx.Fn.(Char.is_alphanum ||| Char.equal '_')
       ~if_false:"Invalid character."
-end))
 
-include M
-include Comparable.Make (M)
+  let validate_general : string Validate.check = Fn.const Validate.pass
+end)
 
-let to_string : t -> string = raw
-
-let of_string : string -> t = create_exn
-
-let pp : t Fmt.t = Fmt.of_to_string to_string
-
-let is_string_safe (str : string) : bool = Or_error.is_ok (create str)
+include C
 
 module Json : Plumbing.Jsonable_types.S with type t := t = struct
   let yojson_of_t (id : t) : Yojson.Safe.t = `String (raw id)
@@ -134,9 +143,9 @@ end
 include Q
 
 module Herd_safe = struct
-  type c = t
+  type c = t (* See MLI *)
 
-  module M = Validated.Make_bin_io_compare_hash_sexp (Make (struct
+  include Make (struct
     let here = [%here]
 
     let validate_initial_char : char Validate.check =
@@ -146,29 +155,28 @@ module Herd_safe = struct
     let validate_char : char Validate.check =
       Validate.booltest Char.is_alphanum
         ~if_false:"Invalid non-initial character (must be alphanumeric)."
-  end))
 
-  include M
-  include Comparable.Make (M)
+    let validate_general (s : string) : Validate.t =
+      Option.try_with (fun () ->
+          Caml.Scanf.sscanf s "P%d"
+            (Printf.sprintf "Herd ID must not be a program name: got P%d"))
+      |> Validate.of_error_opt
+  end)
 
-  let of_c_identifier (cid : c) : t Or_error.t = cid |> to_string |> create
+  let of_c_identifier (cid : C.t) : t Or_error.t =
+    cid |> C.to_string |> create
 
-  let to_c_identifier (hid : t) : c = hid |> raw |> of_string
-
-  let is_string_safe (str : string) : bool = Or_error.is_ok (create str)
-
-  let to_string : t -> string = raw
-
-  let of_string : string -> t = create_exn
-
-  let pp : t Fmt.t = Fmt.of_to_string to_string
+  let to_c_identifier (hid : t) : C.t = hid |> raw |> C.of_string
 
   module Q : Quickcheck.S with type t := t = struct
     let quickcheck_generator : t Quickcheck.Generator.t =
-      Quickcheck.Generator.map
+      (* Make a best first attempt to generate valid Herd-safe identifiers,
+         and then throw away any that violate more esoteric requirements
+         such as no-program-ids. *)
+      Quickcheck.Generator.filter_map
+        ~f:(Fn.compose Result.ok create)
         (My_quickcheck.gen_string_initial ~initial:Char.gen_alpha
            ~rest:Char.gen_alphanum)
-        ~f:create_exn
 
     let quickcheck_observer : t Quickcheck.Observer.t =
       Quickcheck.Observer.unmap String.quickcheck_observer ~f:raw
