@@ -12,23 +12,20 @@
 open Core
 
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
-    _cfg ~(header_file : string) : unit Or_error.t =
-  Or_error.Let_syntax.(
+    _cfg : unit Or_error.t =
+  ignore args;
+  Or_error.unimplemented "TODO"
+(*  Or_error.Let_syntax.(
     let%bind header_input = Plumbing.Input.of_string header_file in
     let%bind header = Act_c_mini.Litmus_header.load header_input in
     Common_cmd.Args.With_files.run_filter
       (module Act_c_mini.Litmus_header.Filters.Replace)
-      args ~aux_in:header)
+      args ~aux_in:header) *)
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
     {|
-Substitutes the contents of a JSON file for the header content
-in a C litmus test.
-
-The format of this JSON file is the same as that created by `dump-header`,
-which, in turn, corresponds to the 'litmus_header'
-segment of a Delitmus aux file.
+Applies patches to the header content in a C litmus test.
 |}
 
 let command : Command.t =
@@ -36,12 +33,8 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map_open standard_args =
         Common_cmd.Args.(With_files.get Standard.get)
-      and header_file =
-        flag "header"
-          (required Filename.arg_type)
-          ~doc:"FILE a file containing the new header"
       in
       fun () ->
         Common_cmd.Common.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args ~header_file))
+          ~f:(run standard_args))
