@@ -90,7 +90,7 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t
 
 (** {1 Applying changes to headers}
 
-    This sub-module describes change sets for Litmus headers.  These support
+    This sub-module describes change sets for Litmus headers. These support
     commands like `act-c modify-header` that apply a set of specific
     modifications to the header of a Litmus test. *)
 
@@ -101,13 +101,12 @@ module Change : sig
 
   type 'const t =
     | Set_postcondition of 'const Postcondition.t option
-    | Set_name of string
-    (** Type of individual changes. *)
+    | Set_name of string  (** Type of individual changes. *)
 
   val apply : 'const t -> header:'const hdr -> 'const hdr
   (** [apply change ~header] applies [change] to [header]. *)
 
   val apply_list : 'const t list -> header:'const hdr -> 'const hdr
-  (** [apply changes ~header] applies each change in [changes], in
-      sequence, to [header]. *)
+  (** [apply changes ~header] applies each change in [changes], in sequence,
+      to [header]. *)
 end

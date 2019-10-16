@@ -8,4 +8,4 @@
   (pps ppx_jane))
  (libraries stdio base base.caml core_kernel core fmt fpath yojson plumbing
    common_cmd act.backend act.c_lang act.c_mini act.common act.compiler
-   act.config act.delitmus act.machine act.utils))
+   act.config act.delitmus act.litmus act.machine act.utils))

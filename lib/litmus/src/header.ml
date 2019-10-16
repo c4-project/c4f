@@ -141,14 +141,14 @@ module Change = struct
     | Set_postcondition of 'const Postcondition.t option
     | Set_name of string
 
-  let apply (change : 'const t) ~(header: 'const hdr) : 'const hdr =
+  let apply (change : 'const t) ~(header : 'const hdr) : 'const hdr =
     match change with
     | Set_postcondition pc ->
-      { header with postcondition = pc }
+        {header with postcondition= pc}
     | Set_name name ->
-      { header with name = name }
+        {header with name}
 
-  let apply_list (changes : 'const t list) ~(header: 'const hdr) : 'const hdr =
+  let apply_list (changes : 'const t list) ~(header : 'const hdr) :
+      'const hdr =
     List.fold ~init:header ~f:(fun header -> apply ~header) changes
 end
-

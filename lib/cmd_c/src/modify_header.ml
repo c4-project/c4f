@@ -11,16 +11,19 @@
 
 open Core
 
-let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
-    _cfg : unit Or_error.t =
-  ignore args;
+let make_changes_list ?(set_name : string option)
+    ?(set_postcondition : string option) () :
+    Act_c_mini.Constant.t Act_litmus.Header.Change.t list Or_error.t =
+  ignore set_name ;
+  ignore set_postcondition ;
   Or_error.unimplemented "TODO"
-(*  Or_error.Let_syntax.(
-    let%bind header_input = Plumbing.Input.of_string header_file in
-    let%bind header = Act_c_mini.Litmus_header.load header_input in
-    Common_cmd.Args.With_files.run_filter
-      (module Act_c_mini.Litmus_header.Filters.Replace)
-      args ~aux_in:header) *)
+
+let run ?(set_name : string option) ?(set_postcondition : string option)
+    (_args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
+    _cfg : unit Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind _changes = make_changes_list ?set_name ?set_postcondition () in
+    Or_error.unimplemented "TODO")
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
@@ -33,8 +36,13 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map_open standard_args =
         Common_cmd.Args.(With_files.get Standard.get)
+      and set_postcondition =
+        flag "postcondition" (optional string)
+          ~doc:"Replaces the postcondition of the test."
+      and set_name =
+        flag "name" (optional string) ~doc:"Replaces the name of the test."
       in
       fun () ->
         Common_cmd.Common.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args))
+          ~f:(run standard_args ?set_name ?set_postcondition))
