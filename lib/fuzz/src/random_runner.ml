@@ -44,16 +44,16 @@ let output () : Ac.Output.t Runner_state.Monad.t =
 let generate_payload (type rs)
     (module Act : Action_types.S with type Payload.t = rs)
     (subject : Subject.Test.t) : rs Runner_state.Monad.t =
-  let open Runner_state.Monad.Let_syntax in
-  let%bind o = output () in
-  let%bind random = Runner_state.Monad.peek Runner_state.random in
-  Ac.Output.pv o "fuzz: generating random state for %a...@." Ac.Id.pp
-    Act.name ;
-  let%map g =
-    Runner_state.Monad.Monadic.return (Act.Payload.gen subject ~random)
-  in
-  Ac.Output.pv o "fuzz: done generating random state.@." ;
-  g
+  Runner_state.Monad.Let_syntax.(
+    let%bind o = output () in
+    let%bind random = Runner_state.Monad.peek Runner_state.random in
+    Ac.Output.pv o "fuzz: generating random state for %a...@." Ac.Id.pp
+      Act.name ;
+    let%map g =
+      Runner_state.Monad.Monadic.return (Act.Payload.gen subject ~random)
+    in
+    Ac.Output.pv o "fuzz: done generating random state.@." ;
+    g)
 
 let pick_action (subject : Subject.Test.t) :
     (module Action_types.S) Runner_state.Monad.t =
@@ -88,25 +88,10 @@ let mutate_subject_step (subject : Subject.Test.t) :
     >>= Runner_state.Monad.tee ~f:(fun _ ->
             Ac.Output.pv o "fuzz: action done.@."))
 
-let make_name_stamp (random : Splittable_random.State.t) : string =
-  Act_common.C_id.to_string
-    (Base_quickcheck.Generator.generate ~random ~size:10
-       Act_common.C_id.quickcheck_generator)
-
-let stamp_name (test : Subject.Test.t) : Subject.Test.t Runner_state.Monad.t
-    =
-  Runner_state.Monad.(
-    Let_syntax.(
-      let%map rng = peek Runner_state.random in
-      let stamp = make_name_stamp rng in
-      Act_litmus.Test.Raw.map_name test ~f:(fun name ->
-          Printf.sprintf "%s_%s" name stamp)))
-
 let mutate_subject (subject : Subject.Test.t) :
     Subject.Test.t Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     let cap = 10 in
-    let%bind subject = stamp_name subject in
     let%map _, subject' =
       Runner_state.Monad.fix (cap, subject)
         ~f:(fun mu (remaining, subject') ->
