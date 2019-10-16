@@ -20,7 +20,7 @@ open Base
 type 'const t [@@deriving equal, sexp]
 (** Opaque type of Litmus headers. *)
 
-(** {2 Constructors} *)
+(** {1 Constructors} *)
 
 val make :
      ?locations:Act_common.C_id.t list
@@ -35,7 +35,7 @@ val make :
 val empty : 'const t
 (** [empty] is the empty header, with the empty string as its name. *)
 
-(** {2 Accessors} *)
+(** {1 Accessors} *)
 
 val name : _ t -> string
 (** [name header] gets the test name of [header], if any. *)
@@ -50,7 +50,7 @@ val init : 'const t -> (Act_common.C_id.t, 'const) List.Assoc.t
 val postcondition : 'const t -> 'const Postcondition.t option
 (** [postcondition header] gets the postcondition given in [header], if any. *)
 
-(** {2 Modifying a header} *)
+(** {1 Modifying a header} *)
 
 val add_global :
      'const t
@@ -67,7 +67,7 @@ val map_tids : 'const t -> f:(int -> int) -> 'const t
 (** [map_tids aux ~f] maps [f] over all of the thread IDs in [aux]
     (specifically, in [aux]'s postcondition). *)
 
-(** {2 Traversals} *)
+(** {1 Traversals} *)
 
 (** We permit monadic bi-traversal over the C identifiers and constants in a
     litmus auxiliary record, potentially changing the constant type. *)
@@ -76,7 +76,7 @@ include
     with type 'const t := 'const t
      and type left = Act_common.C_id.t
 
-(** {2 Serialisation} *)
+(** {1 Serialisation} *)
 
 module Json (Const : sig
   type t
@@ -87,3 +87,27 @@ module Json (Const : sig
 
   val parse_post_string : string -> t Postcondition.t Or_error.t
 end) : Plumbing.Jsonable_types.S with type t = Const.t t
+
+(** {1 Applying changes to headers}
+
+    This sub-module describes change sets for Litmus headers.  These support
+    commands like `act-c modify-header` that apply a set of specific
+    modifications to the header of a Litmus test. *)
+
+module Change : sig
+  type 'const hdr = 'const t
+  (** Do not use; should be [:=], but at time of writing PPXes refuse to let
+      us use 4.08 syntax. *)
+
+  type 'const t =
+    | Set_postcondition of 'const Postcondition.t option
+    | Set_name of string
+    (** Type of individual changes. *)
+
+  val apply : 'const t -> header:'const hdr -> 'const hdr
+  (** [apply change ~header] applies [change] to [header]. *)
+
+  val apply_list : 'const t list -> header:'const hdr -> 'const hdr
+  (** [apply changes ~header] applies each change in [changes], in
+      sequence, to [header]. *)
+end

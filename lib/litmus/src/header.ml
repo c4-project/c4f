@@ -133,3 +133,22 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
     Result.try_with (fun () -> t_of_yojson json)
     |> Result.map_error ~f:Exn.to_string
 end
+
+module Change = struct
+  type 'const hdr = 'const t
+
+  type 'const t =
+    | Set_postcondition of 'const Postcondition.t option
+    | Set_name of string
+
+  let apply (change : 'const t) ~(header: 'const hdr) : 'const hdr =
+    match change with
+    | Set_postcondition pc ->
+      { header with postcondition = pc }
+    | Set_name name ->
+      { header with name = name }
+
+  let apply_list (changes : 'const t list) ~(header: 'const hdr) : 'const hdr =
+    List.fold ~init:header ~f:(fun header -> apply ~header) changes
+end
+
