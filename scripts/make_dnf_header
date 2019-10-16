@@ -77,10 +77,9 @@ main() {
   local postcondition
   postcondition=$(act::run_with_bcqvx "${SCRIPTDIR}/make_dnf_postcondition" "${original_file}")
 
-  act::log "Now making altered header...\n"
+  act::log "Altering header...\n"
 
-  act::c dump-header "${original_file}" |
-  "${SCRIPTDIR}/doctor_litmus_header" -p "${postcondition}"
+  act::c modify-header -postcondition "${postcondition}" "${original_file}"
 }
 
 
