@@ -11,19 +11,17 @@
 
 open Core
 
-let make_changes_list ?(set_name : string option)
-    ?(set_postcondition : string option) () :
-    Act_c_mini.Constant.t Act_litmus.Header.Change.t list Or_error.t =
-  ignore set_name ;
-  ignore set_postcondition ;
-  Or_error.unimplemented "TODO"
-
-let run ?(set_name : string option) ?(set_postcondition : string option)
-    (_args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o
-    _cfg : unit Or_error.t =
+let run ?(name : [< `Keep | `Replace_with of string] option)
+    ?(postcondition : [< `Keep | `Clear | `Replace_with of string] option)
+    (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t) _o _cfg
+    : unit Or_error.t =
   Or_error.Let_syntax.(
-    let%bind _changes = make_changes_list ?set_name ?set_postcondition () in
-    Or_error.unimplemented "TODO")
+    let%bind changes =
+      Act_c_mini.Litmus_header.Change_set.of_args ?name ?postcondition ()
+    in
+    Common_cmd.Args.With_files.run_filter
+      (module Act_c_mini.Litmus_header.Filters.Modify)
+      args ~aux_in:changes)
 
 let readme () : string =
   Act_utils.My_string.format_for_readme
@@ -36,13 +34,22 @@ let command : Command.t =
     Command.Let_syntax.(
       let%map_open standard_args =
         Common_cmd.Args.(With_files.get Standard.get)
-      and set_postcondition =
-        flag "postcondition" (optional string)
-          ~doc:"Replaces the postcondition of the test."
-      and set_name =
-        flag "name" (optional string) ~doc:"Replaces the name of the test."
+      and postcondition =
+        choose_one
+          [ flag "no-postcondition" no_arg
+              ~doc:"Removes any postcondition present."
+            |> map ~f:(fun present -> Option.some_if present `Clear)
+          ; flag "postcondition" (optional string)
+              ~doc:"POST Replaces the postcondition of the test."
+            |> map ~f:(Option.map ~f:(fun (x : string) -> `Replace_with x))
+          ]
+          ~if_nothing_chosen:(`Default_to `Keep)
+      and name =
+        flag "name" (optional string)
+          ~doc:"NAME Replaces the name of the test."
+        |> map ~f:(Option.map ~f:(fun n -> `Replace_with n))
       in
       fun () ->
         Common_cmd.Common.lift_command
           (Common_cmd.Args.With_files.rest standard_args)
-          ~f:(run standard_args ?set_name ?set_postcondition))
+          ~f:(run standard_args ?name ~postcondition))

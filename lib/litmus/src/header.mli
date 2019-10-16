@@ -94,19 +94,23 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t
     commands like `act-c modify-header` that apply a set of specific
     modifications to the header of a Litmus test. *)
 
-module Change : sig
+module Change_set : sig
   type 'const hdr = 'const t
   (** Do not use; should be [:=], but at time of writing PPXes refuse to let
       us use 4.08 syntax. *)
 
-  type 'const t =
-    | Set_postcondition of 'const Postcondition.t option
-    | Set_name of string  (** Type of individual changes. *)
+  type 'const t
+  (** Opaque type of individual changes. *)
+
+  val make :
+       ?name:[`Keep | `Replace_with of string]
+    -> ?postcondition:
+         [`Keep | `Clear | `Replace_with of 'const Postcondition.t]
+    -> unit
+    -> 'const t
+  (** [make ?name ?postcondition ()] makes a change set from the given
+      [name] and [postcondition] directives (which default to [`Keep].) *)
 
   val apply : 'const t -> header:'const hdr -> 'const hdr
   (** [apply change ~header] applies [change] to [header]. *)
-
-  val apply_list : 'const t list -> header:'const hdr -> 'const hdr
-  (** [apply changes ~header] applies each change in [changes], in sequence,
-      to [header]. *)
 end

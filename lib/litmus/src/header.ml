@@ -134,21 +134,51 @@ end) : Plumbing.Jsonable_types.S with type t = Const.t t = struct
     |> Result.map_error ~f:Exn.to_string
 end
 
-module Change = struct
+module Change_set = struct
+  module Hdr_fields = Fields
+
   type 'const hdr = 'const t
 
   type 'const t =
-    | Set_postcondition of 'const Postcondition.t option
-    | Set_name of string
+    { name: [`Keep | `Replace_with of string] [@default `Keep]
+    ; postcondition:
+        [`Keep | `Clear | `Replace_with of 'const Postcondition.t]
+          [@default `Keep] }
+  [@@deriving fields, make]
+
+  let apply_keep_replace (type a const)
+      (field : ([> `Set_and_create], const hdr, a) Field.t_with_perm)
+      (change : [< `Keep | `Replace_with of a]) (header : const hdr) :
+      const hdr =
+    match change with
+    | `Keep ->
+        header
+    | `Replace_with x ->
+        Field.fset field header x
+
+  let apply_keep_clear_replace (type a const)
+      (field : ([> `Set_and_create], const hdr, a option) Field.t_with_perm)
+      (change : [`Keep | `Clear | `Replace_with of a]) (header : const hdr)
+      : const hdr =
+    match change with
+    | `Clear ->
+        apply_keep_replace field (`Replace_with None) header
+    | `Keep ->
+        header
+    | `Replace_with x ->
+        apply_keep_replace field (`Replace_with (Some x)) header
+
+  let apply_postcondition
+      (change : [`Keep | `Clear | `Replace_with of 'const Postcondition.t])
+      (header : 'const hdr) : 'const hdr =
+    apply_keep_clear_replace Hdr_fields.postcondition change header
+
+  let apply_name (change : [`Keep | `Replace_with of string])
+      (header : 'const hdr) : 'const hdr =
+    apply_keep_replace Hdr_fields.name change header
 
   let apply (change : 'const t) ~(header : 'const hdr) : 'const hdr =
-    match change with
-    | Set_postcondition pc ->
-        {header with postcondition= pc}
-    | Set_name name ->
-        {header with name}
-
-  let apply_list (changes : 'const t list) ~(header : 'const hdr) :
-      'const hdr =
-    List.fold ~init:header ~f:(fun header -> apply ~header) changes
+    header
+    |> apply_postcondition change.postcondition
+    |> apply_name change.name
 end
