@@ -27,7 +27,7 @@ act::fuzz_base_name() {
 }
 
 
-# Outputs the systematically generated fuzzer output name.
+# Outputs the systematically generated fuzzer output name, less 'litmus'.
 #
 # Arguments:
 #   1: name to transform
@@ -36,7 +36,7 @@ act::fuzz_name() {
   local in_file="${1}"
   local nth="${2}"
 
-  printf "%s_%d.litmus" "$(act::fuzz_base_name "${in_file}")" "${nth}"
+  printf "%s_%d" "$(act::fuzz_base_name "${in_file}")" "${nth}"
 }
 
 
