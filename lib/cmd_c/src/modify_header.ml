@@ -37,16 +37,16 @@ let command : Command.t =
       and postcondition =
         choose_one
           [ flag "no-postcondition" no_arg
-              ~doc:"Removes any postcondition present."
+              ~doc:"removes any postcondition present"
             |> map ~f:(fun present -> Option.some_if present `Clear)
           ; flag "postcondition" (optional string)
-              ~doc:"POST Replaces the postcondition of the test."
+              ~doc:"POST replaces the postcondition of the test"
             |> map ~f:(Option.map ~f:(fun (x : string) -> `Replace_with x))
           ]
           ~if_nothing_chosen:(`Default_to `Keep)
       and name =
         flag "name" (optional string)
-          ~doc:"NAME Replaces the name of the test."
+          ~doc:"NAME replaces the name of the test"
         |> map ~f:(Option.map ~f:(fun n -> `Replace_with n))
       in
       fun () ->
