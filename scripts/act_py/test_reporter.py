@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import typing
 
-from act_py import observation, test_common
+from act_py import act_id, observation, test, test_common
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class ReportSettings:
     print_counter_examples: bool = True
 
 
-class MarkdownReporter:
+class MarkdownReportWriter:
     """Object that handles reports by emitting them as markdown."""
 
     io: typing.TextIO
@@ -49,32 +49,57 @@ class MarkdownReporter:
     def __init__(self, file: typing.TextIO):
         self.file = file
 
+    def print_header(self, level: int, body: str) -> None:
+        """Prints a markdown header.
+
+        :param level: The level of the header (minimum 1).
+        :param body: The body of the header.
+        :return: Nothing.
+        """
+        print('#' * max(1, level), body, file=self.file)
+        print(file=self.file)
+
+    def print_machine_header(self, name: str) -> None:
+        """Prints a header for the given machine.
+
+        :param name: The name of the machine.
+        :return: Nothing.
+        """
+        self.print_header(1, f"Machine {name}")
+
+    def print_compiler_header(self, name: str) -> None:
+        """Prints a header for the given compiler.
+
+        :param name: The name of the compiler.
+        :return: Nothing.
+        """
+        self.print_header(2, f"Compiler {name}")
+
     def print_observation_header(
         self, name: str, flags: typing.Set[observation.Flag], has_errors: bool
-    ):
+    ) -> None:
         flag_strs = [f.value for f in flags] + (["has errors"] if has_errors else [])
         flag_str = ", ".join(flag_strs)
 
-        print("", file=self.file)
-        print(f"## {name} ({flag_str})", file=self.file)
+        self.print_header(3, f"{name} ({flag_str})")
 
     def print_states_with_header(
         self, header: str, states: typing.List[typing.Mapping[str, str]]
     ) -> None:
-        print()
         if not states:
-            print(f"No {header.lower()}.")
+            print(f"No {header.lower()}.", file=self.file)
+            print(file=self.file)
             return
-        print(f"### {header} ({len(states)}):")
-        print()
+        self.print_header(4, f"{header} ({len(states)}):")
         self.print_states(states)
+        print(file=self.file)
 
     def print_states(self, states: typing.List[typing.Mapping[str, str]]) -> None:
         for state in states:
             self.print_state(state)
         # This is done because the checker occasionally sends stderr output soon
         # after using stdout, and it can race with the state output.
-        sys.stdout.flush()
+        self.file.flush()
 
     def print_state(self, cx: typing.Mapping[str, str]) -> None:
         print("  -", end=" ", file=self.file)
@@ -82,36 +107,66 @@ class MarkdownReporter:
         print(file=self.file)
 
 
-class ReportPhase(test_common.Phase):
+class Reporter:
     """Object representing a single run of the reporter, with a given machine, compiler, and subject."""
 
     settings: ReportSettings
 
     def __init__(
         self,
-        reporter: MarkdownReporter,
+        reporter: MarkdownReportWriter,
         settings: ReportSettings,
-        instance: test_common.Instance,
     ):
-        test_common.Phase.__init__(self, instance)
         self.reporter = reporter
         self.settings = settings
 
-    def run(self) -> None:
-        """Runs this test instance."""
-        obs = observation.load_from_path(self.state_file)
-        self.inspect_observation(obs)
+    def run(self, test: test.Test) -> None:
+        """Reports on the given test.
 
-    def inspect_observation(self, obs: observation.Observation) -> None:
+        :param test: The test to summarise.
+        :return: Nothing.
+        """
+        for machine_id, machine in test.machines.items():
+            self.run_on_machine(machine_id, machine, test.env)
+
+    def run_on_machine(self, machine_id: act_id.Id, machine: test.MachineTest, env: test_common.Env):
+        """Reports on the given machine test.
+
+        :param machine_id: The ID of the machine to summarise.
+        :param machine: The machine test to summarise.
+        :param env: The test's environment block.
+        :return: Nothing.
+        """
+        self.reporter.print_machine_header(machine_id)
+        for compiler in machine.compiler_tests(machine_id):
+            self.run_on_compiler(compiler, env)
+
+    def run_on_compiler(self, compiler: test.CompilerTest, env: test_common.Env):
+        """Reports on the given compiler test.
+        :param compiler: The compiler test to summarise.
+        :param env: The test's environment block.
+        :return: Nothing.
+        """
+        self.reporter.print_compiler_header(compiler.compiler_id)
+        for instance in compiler.instances(env):
+            self.run_on_instance(instance)
+
+    def run_on_instance(self, instance: test_common.Instance) -> None:
+        """Reports over a test instance."""
+        obs = observation.load_from_path(instance.state_file)
+        self.inspect_observation(obs, instance)
+
+    def inspect_observation(self, obs: observation.Observation, instance: test_common.Instance) -> None:
         """Inspects the given observation, grumbling onto stdout about what
         lies within.
 
         :param obs: The observation to inspect.
+        :param instance: The observed test instance.
         """
         if not self.is_printable(obs):
             return
         self.reporter.print_observation_header(
-            self.instance.name, obs.flags, self.has_errors
+            instance.name, obs.flags, instance.has_errors
         )
         self.print_state_breakdown(obs)
 
@@ -126,18 +181,6 @@ class ReportPhase(test_common.Phase):
             return True
         return False
 
-    @property
-    def has_errors(self) -> bool:
-        """Checks whether this subject encountered errors during its last run.
-
-        :return: True if an error file exists and is nonempty; false otherwise.
-        """
-        try:
-            with open(self.error_file, "r") as f:
-                lines = f.readlines()
-                return lines != []
-        except FileNotFoundError:
-            return False
 
     def print_state_breakdown(self, obs: observation.Observation) -> None:
         if self.settings.print_witnesses:
@@ -146,16 +189,3 @@ class ReportPhase(test_common.Phase):
             self.reporter.print_states_with_header(
                 "Counter-examples", obs.counter_examples
             )
-
-
-def report_phase(
-    settings: ReportSettings, instance: test_common.Instance
-) -> test_common.Phase:
-    """Function wrapper for `ReportPhase`.
-
-    :param settings: The settings to use for the check.
-    :param instance: The instance to use for the check.
-    :return: A `test_common.Phase` that, when run, checks the test result for
-        `instance`.
-    """
-    return ReportPhase(MarkdownReporter(sys.stdout), settings, instance)

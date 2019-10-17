@@ -12,6 +12,7 @@
 """Checks a completed test for satisfiability on each output."""
 import argparse
 
+import sys
 import typing
 
 from act_py import args, io_utils, test, test_reporter
@@ -39,8 +40,13 @@ def run_from_spec_file(
     """Loads a test specification JSON file from `fp`, and runs the resulting test.
 
     :param fp: The file-pointer from which we load the JSON.
+    :param settings: The settings to use when reporting.
     """
-    test.load(fp).report(settings)
+    t = test.load(fp)
+    reporter = test_reporter.Reporter(
+        test_reporter.MarkdownReportWriter(sys.stdout), settings
+    )
+    reporter.run(t)
 
 
 def make_settings(arguments: argparse.Namespace) -> test_reporter.ReportSettings:

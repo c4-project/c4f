@@ -1,12 +1,32 @@
-import functools
 import json
 import pathlib
 import typing
 from dataclasses import dataclass
 
-from act_py import act_id, json_utils, test_reporter, test_common, test_runner
+from act_py import act_id, json_utils, test_common
 
-PhaseFactory = typing.Callable[[test_common.Instance], test_common.Phase]
+@dataclass
+class CompilerTest:
+    """A grouping of compiler metadata and instances."""
+    compiler_id: act_id.Id
+    machine_id: act_id.Id
+    backend: act_id.Id
+
+    @property
+    def qualified_compiler_id(self) -> act_id.Id:
+        """Gets this compiler's qualified ID.
+
+        :return: the qualified compiler ID.
+        """
+        return act_id.qualify(self.machine_id, self.compiler_id)
+
+    def instances(self, env: test_common.Env) -> typing.Iterable[test_common.Instance]:
+        """Gets a sequence of test instances for this compiler.
+
+        :param env: The environment from which we get the test subjects.
+        :return: An iterable sequence of test instances.
+        """
+        return (test_common.Instance(self.backend, self.qualified_compiler_id, subject, env) for subject in env.subjects)
 
 
 @dataclass
@@ -16,42 +36,16 @@ class MachineTest:
     compilers: typing.List[act_id.Id]
     backend: act_id.Id
 
-    def run_phase(
-        self, machine_id: act_id.Id, env: test_common.Env, phase_factory: PhaseFactory
-    ) -> None:
-        """Runs a tester phase for all compilers on this machine.
+    def compiler_tests(self, machine_id: act_id.Id) -> typing.Iterable[CompilerTest]:
+        """Gets a sequence of compiler tests.
 
-        :param machine_id:
+         :param machine_id:
             The ID of the machine, used to generate fully qualified compiler
             IDs.
-        :param env:
-            The `Env` containing test subjects and drivers.
-        :param phase_factory:
-            A function that creates the testing phase required.
+        :return: an iterable sequence of compiler tests; this sequence is
+        generated fresh each time this method is called.
         """
-        for compiler_id in self.compilers:
-            q_compiler_id = act_id.qualify(machine_id, compiler_id)
-            self.run_phase_on_compiler(q_compiler_id, env, phase_factory)
-
-    def run_phase_on_compiler(
-        self,
-        q_compiler_id: act_id.Id,
-        env: test_common.Env,
-        phase_factory: PhaseFactory,
-    ) -> None:
-        """Runs tests for a single compiler on this machine.
-
-        :param q_compiler_id:
-            The fully qualified ID of the compiler.
-        :param env:
-            The `Env` containing test subjects and drivers.
-        :param phase_factory:
-            The type of phase to run.  This type is used as a factory.
-        """
-        for subject in env.subjects:
-            instance = test_common.Instance(self.backend, q_compiler_id, subject, env)
-            ti: test_common.Phase = phase_factory(instance)
-            ti.run()
+        return (CompilerTest(compiler_id, machine_id, self.backend) for compiler_id in self.compilers)
 
 
 @dataclass
@@ -60,23 +54,6 @@ class Test:
 
     env: test_common.Env
     machines: typing.Mapping[act_id.Id, MachineTest]
-
-    def do_phase(self, phase_factory: PhaseFactory) -> None:
-        for (machine_id, machine_spec) in self.machines.items():
-            machine_spec.run_phase(machine_id, self.env, phase_factory)
-
-    def run(self) -> None:
-        """Runs the test specified by this object."""
-        self.env.prepare()
-        self.do_phase(test_runner.run_phase)
-
-    def report(self, settings: test_reporter.ReportSettings) -> None:
-        """Reports the results of the test specified by this object.
-
-        :param settings: The settings to use for the checker.
-        """
-        print(f"# Test summary")
-        self.do_phase(functools.partial(test_reporter.report_phase, settings))
 
     def dump(self, fp: typing.TextIO) -> None:
         """Dumps this test, as JSON, to the given file pointer.

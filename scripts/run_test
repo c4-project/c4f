@@ -22,7 +22,7 @@ To create a JSON specification, use `make_test`.
 import argparse
 import typing
 
-from act_py import args as a, io_utils, test
+from act_py import args as a, io_utils, test, test_runner
 
 
 def run_from_spec_file(fp: typing.TextIO) -> None:
@@ -30,7 +30,9 @@ def run_from_spec_file(fp: typing.TextIO) -> None:
 
     :param fp: The file-pointer from which we load the JSON.
     """
-    test.load(fp).run()
+    t = test.load(fp)
+    runner = test_runner.Runner()
+    runner.run(t)
 
 
 if __name__ == "__main__":
