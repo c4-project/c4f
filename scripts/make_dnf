@@ -33,10 +33,6 @@ COMPILER=""
 # Whether or not we're running ACT programs through `dune exec`.
 DUNE_EXEC="false"
 
-# Whether or not to modify the file 'in-place'
-# (really, create a temporary file then move it over the original)
-IN_PLACE="false"
-
 # Whether or not verbose logging is enabled.
 VERBOSE="false"
 
@@ -44,12 +40,24 @@ VERBOSE="false"
 ## Functions ##
 
 
+# Prints usage information and exits.
+usage() {
+  echo "Usage: $0 [-b BACKEND] [-c COMPILER] [-qvxh?] C_TEST"
+  echo
+  echo "-b: ID of backend to use for checking C files"
+  echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
+  echo "-v/-q: verbose/quiet"
+  echo "-x: run ACT binaries with \`dune exec\`"
+  echo "-h/-?: usage"
+  exit
+}
+
+
 main() {
-  while getopts "b:c:iqvx?h" a; do
+  while getopts "b:c:qvx?h" a; do
     case ${a} in
     b) act::set_nz "b" "BACKEND" "${OPTARG}" ;;
-    c) act::set_nz "c" "COMPILER" "${OPTARG}" ;;
-    i) IN_PLACE="true" ;;
+    c) COMPILER="${OPTARG}" ;;
     q) VERBOSE="false" ;;
     v) VERBOSE="true" ;;
     x) DUNE_EXEC="true" ;;
@@ -60,73 +68,18 @@ main() {
   shift $((OPTIND-1))
 
   act::check_dune_exec
-
   if [[ $# -ne 1 ]]; then act::arg_error "need precisely one file argument"; fi
 
-  if [[ "${IN_PLACE}" = "true" ]]; then
-    dnf_in_place "$1"
-  else
-    dnf_onto_stdout "$1"
-  fi
-}
-
-
-# Prints usage information and exits.
-usage() {
-  echo "Usage: $0 [-b BACKEND] [-c COMPILER] [-qvxh?] C_TEST"
-  echo
-  echo "-b: ID of backend to use for checking C files"
-  echo "-c: ID of compiler to use (if given, obj_splitmus is used)"
-  echo "-i: modify file in place"
-  echo "-v/-q: verbose/quiet"
-  echo "-x: run ACT binaries with \`dune exec\`"
-  echo "-h/-?: usage"
-  exit
-}
-
-
-# Performs a postcondition DNF expansion 'in place'.
-#
-# Technically, this creates a temporary Litmus test file, then moves
-# it over the old file.
-#
-# Globals:
-#   See `dnf_onto_stdout`.
-#
-# Arguments:
-#   1.  The original file to DNF-convert and replace.
-dnf_in_place() {
   local original_file=$1
 
-  local temp_file
-  temp_file="$(mktemp)" || exit 2
-  trap '{ rm -f "${temp_file}"; }' EXIT
+  act::log "Making postcondition...\n"
 
-  act::log "Rewriting %s in place.\n" "${original_file}"
-  dnf_onto_stdout "${original_file}" > "${temp_file}"
-  mv "${temp_file}" "${original_file}"
+  local postcondition
+  postcondition=$(act::run_with_bcqvx "${SCRIPTDIR}/make_dnf_postcondition" "${original_file}")
 
-  trap - EXIT
-}
+  act::log "Altering header...\n"
 
-
-# Performs a postcondition DNF expansion, outputting the result onto
-# stdout.
-#
-# Globals:
-#   ACT_C: read (transitively)
-#   BACKEND: read (transitively)
-#   COMPILER: read (transitively)
-#   SCRIPTDIR: read
-#
-# Arguments:
-#   1.  The original file to DNF-convert.
-dnf_onto_stdout() {
-  local original_file=$1
-
-  act::c replace-header \
-   -header <(act::run_with_bcqvx "${SCRIPTDIR}/make_dnf_header" "${original_file}") \
-    "${original_file}"
+  act::c modify-header -postcondition "${postcondition}" "${original_file}"
 }
 
 

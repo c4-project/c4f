@@ -96,109 +96,19 @@ main() {
   fi
   readonly MEMALLOY_DIR=$1
 
-  run_memalloy_if_needed
-  run_fuzz_and_test
-}
-
-
-# Checks whether Memalloy forcing is on, or if the results directory is
-# not present.  If either are true, runs `do_memalloy` in the specified
-# Memalloy directory.
-#
-# If we are reusing the existing Memalloy directory, and verbosity is on,
-#
-# Globals:
-#   FORCE_MEMALLOY: read
-#   MEMALLOY_DIR: read
-#   MEMALLOY_EVENTS: read
-#   SCRIPTDIR: read
-#   VERBOSE: read indirectly
-run_memalloy_if_needed() {
   local results_dir="${MEMALLOY_DIR}/results/_latest"
-
-  if [[ ${FORCE_MEMALLOY} == "true" || ( ! -d "${results_dir}" ) ]]; then
-    run_and_dnf_memalloy "${results_dir}"
-  else
-    act::log "Using existing memalloy results directory"
-    dump_last_modified_time "${results_dir}"
-    act::log ".\n"
-  fi
-
-  if [[ ! -d "${results_dir}" ]]; then
-    act::error "Missing Memalloy results directory"
-    exit
-  fi
-}
-
-
-run_and_dnf_memalloy() {
-  local results_dir="$1"
-
-  act::log "Running memalloy.\n"
-  "${SCRIPTDIR}/do_memalloy" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}"
-
-  act::log "DNF-converting memalloy results.\n"
+  local scratch_dir="${results_dir}/act"
+  local dnf_dir="${scratch_dir}/dnf"
 
   local flags
   flags="$(act::flags_qvx)"
+  if [[ ${FORCE_MEMALLOY} = "true" ]]; then flags = "${flags}f"; fi
 
-  # TODO(@MattWindsor91): maybe don't modify in place?
-  for file in "${results_dir}/litmus"/*.litmus; do
-    act::log "~> %s\n" "${file}"
-    # TODO(@MattWindsor91): -b BACKEND
-    "${SCRIPTDIR}/make_dnf" -i "${flags}" "${file}" || broken_dnf "${file}"
-  done
+  "${SCRIPTDIR}/do_memalloy_dnf" "${flags}" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}" "${dnf_dir}"
+
+  run_fuzz_and_test "${dnf_dir}" "${scratch_dir}"
 }
 
-
-# Prints an error indicating that an attempt to convert a postcondition
-# to a DNF failed, then moves the offending file out of the way.
-#
-# Because this might be caused by the backend used for DNF analysis not
-# understanding the input correctly (which is eminently possible with
-# backends like herd7), it needs to be handled semi-gracefully.
-#
-# Arguments:
-#   1.  The file that failed postcondition conversion.
-broken_dnf() {
-  local file="$1"
-  local new_file="${file}.bad_dnf"
-
-  act::error "Couldn't DNF postcondition for ${file}."
-  act::error "Moving out of the way (to ${new_file})."
-  mv "${file}" "${new_file}"
-}
-
-
-# If `stat` is available, prints the last modified time of the given results
-# directory symlink (less a newline).
-#
-# Arguments:
-#   1: the results-directory symlink to inspect.
-dump_last_modified_time() {
-  local results_dir=$1
-
-  # `stat` is non-standard: if it exists, it'll have different flags depending
-  # on whether we're on a GNU or BSD system (or, indeed, a non-GNU non-BSD
-  # system, but we don't support that yet).  The other thing is that `printf`
-  # has different format flags!
-  if [[ -z $(command -v stat)  ]]; then return 1; fi
-  case "$(uname -s)" in
-    Linux)
-      # GNU stat and printf
-      local mtime
-      mtime="$(stat -Lc "%Y" "${results_dir}")"
-      act::log " (last modified on %(%c)T)" "${mtime}"
-      ;;
-    Darwin|NetBSD|OpenBSD)
-      # BSD stat and printf
-      local mtime
-      mtime="$(stat -Lf "%Sm" "${results_dir}")"
-      act::log " (last modified on %s)" "${mtime}"
-      ;;
-    *) return 2 ;;
-  esac
-}
 
 # Runs the `fuzz_and_test` script on the results produced by the last
 # invocation of Memalloy.
@@ -211,23 +121,24 @@ dump_last_modified_time() {
 #   MACHINE_PREDICATE: read
 #   MEMALLOY_DIR: read
 #   SCRIPTDIR: read
+#
+# Arguments:
+#   1: the directory to use for input (should contain '.litmus' files)
+#   2: the root output directory
 run_fuzz_and_test() {
-  local results_dir="${MEMALLOY_DIR}/results/_latest"
-  local litmus_dir="${results_dir}/litmus"
-
-  local scratch_dir="${results_dir}/act"
-  mkdir -p "${scratch_dir}"
+  local input_dir="${1}"
+  local output_dir="${2}"
 
   local qvx_flags
   qvx_flags="$(act::flags_qvx)"
 
   "${SCRIPTDIR}/fuzz_and_test" \
     -c "${COMPILER_PREDICATE}" \
-    -d "${scratch_dir}" \
+    -d "${output_dir}" \
     -k "${FUZZ_PASSES}" \
     -m "${MACHINE_PREDICATE}" \
     "${qvx_flags}${CHECK_FLAGS}" \
-    "${litmus_dir}"/*.litmus
+    "${input_dir}"/*.litmus
 }
 
 

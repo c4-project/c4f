@@ -1,0 +1,254 @@
+#!/usr/bin/env bash
+#
+# A harness script that runs memalloy (looking for it in the given directory),
+# DNF-converts every result it generates, and outputs it into another given
+# directory.
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+SCRIPTDIR="${SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
+# shellcheck source=scripts/act_bash/args.sh
+source "${SCRIPTDIR}/act_bash/args.sh"
+# shellcheck source=scripts/act_bash/exec.sh
+source "${SCRIPTDIR}/act_bash/exec.sh"
+# shellcheck source=scripts/act_bash/log.sh
+source "${SCRIPTDIR}/act_bash/log.sh"
+
+declare DEFAULT_MEMALLOY_EVENTS
+# shellcheck source=scripts/act_bash/memalloy.sh
+source "${SCRIPTDIR}/act_bash/memalloy.sh"
+
+## Arguments ##
+
+
+# Whether we are using Dune to execute any OCaml ACT tools.
+DUNE_EXEC="false"
+
+# Whether we are forcing Memalloy and DNF to run even if we have a results directory.
+FORCE_MEMALLOY="false"
+
+# The directory in which Memalloy lives.
+MEMALLOY_DIR=""
+
+# The DNF output directory.
+DNF_DIR=""
+
+# The number of events to ask Memalloy to generate.
+# Defaults to `DEFAULT_MEMALLOY_EVENTS` if empty.
+MEMALLOY_EVENTS=""
+
+# The number of times the fuzzer should run on each Memalloy output.
+# Defaults to `DEFAULT_FUZZ_PASSES` if empty.
+FUZZ_PASSES=""
+
+## Functions ##
+
+
+# Prints usage information and exits.
+usage() {
+  echo "Usage: $0"
+  echo "  [-e NUM_MEMALLOY_EVENTS]"
+  echo "  [-fsuwtnSUWTNqvxh?] MEMALLOY_DIR OUTPUT_DIR"
+  echo
+  echo "-e: number of events for Memalloy to produce (default ${DEFAULT_MEMALLOY_EVENTS})"
+  echo "-h/-?: usage"
+  echo
+  echo "OUTPUT_DIR will be created if needed, and MAY be a subdirectory of"
+  echo "MEMALLOY_DIR/results/_latest".
+  exit
+}
+
+
+# Main function.
+main() {
+  while getopts "e:fqvx?h" a; do
+    case ${a} in
+    e) MEMALLOY_EVENTS=${OPTARG} ;;
+    f) FORCE_MEMALLOY="true" ;;
+    q) VERBOSE="false" ;;
+    v) VERBOSE="true" ;;
+    x) DUNE_EXEC="true" ;;
+    h|?) usage ;;
+    esac
+  done
+  readonly MEMALLOY_EVENTS FORCE_MEMALLOY DUNE_EXEC VERBOSE
+  shift $((OPTIND-1))
+
+  act::check_dune_exec
+
+  if [[ $# -ne 2 ]]; then
+    act::arg_error "need two directory arguments"
+    usage
+  fi
+  readonly MEMALLOY_DIR=$1
+  readonly DNF_DIR=$2
+
+  local results_dir="${MEMALLOY_DIR}/results/_latest"
+
+  run_memalloy_if_needed "${results_dir}"
+
+  # This needs to be done _after_ possibly running memalloy, as memalloy
+  # might relink 'results_dir' elsewhere.
+  mkdir -p "${DNF_DIR}"
+
+  run_dnf_if_needed "${results_dir}"
+}
+
+
+# Checks whether Memalloy forcing is on, or if the results directory is
+# not present.  If either are true, runs `do_memalloy` in the specified
+# Memalloy directory.
+#
+# Globals:
+#   FORCE_MEMALLOY: read
+#   (various others read indirectly)
+#
+# Arguments:
+#   1: the memalloy results directory.
+run_memalloy_if_needed() {
+  local results_dir="${1}"
+
+  if [[ ${FORCE_MEMALLOY} = "true" || ( ! -d "${results_dir}" ) ]]; then
+    run_memalloy
+  else
+    act::log "Using existing memalloy results directory"
+    dump_last_modified_time "${results_dir}"
+    act::log ".\n"
+  fi
+
+  if [[ ! -d "${results_dir}" ]]; then
+    act::fatal "Missing Memalloy results directory"
+  fi
+}
+
+
+# Runs `do_memalloy` in the Memalloy directory.
+#
+# This does not take in the results directory as an argument, as
+# Memalloy automatically infers it from its own directory.
+#
+# Globals:
+#   MEMALLOY_DIR: read
+#   MEMALLOY_EVENTS: read
+#   SCRIPTDIR: read
+#   (various others read indirectly)
+run_memalloy() {
+  act::log "Running memalloy.\n"
+  "${SCRIPTDIR}/do_memalloy" -e "${MEMALLOY_EVENTS}" "${MEMALLOY_DIR}"
+}
+
+
+# Checks whether Memalloy forcing is on, or if the DNF directory is
+# not present.  If either are true, runs `make_dnf` for each result in
+# the results directory, outputting successful results to the
+# DNF directory.
+#
+# If we are reusing the existing Memalloy directory, and verbosity is on,
+#
+# Globals:
+#   DNF_DIR: read
+#   FORCE_MEMALLOY: read
+#   (various others read indirectly)
+#
+# Arguments:
+#   1: the memalloy results directory.
+run_dnf_if_needed() {
+  local results_dir="${1}"
+
+  if [[ ${FORCE_MEMALLOY} = "true" || ( ! -d "${DNF_DIR}" ) ]]; then
+    run_dnf "${results_dir}" "${DNF_DIR}"
+  else
+    act::log "Using existing DNF directory"
+    dump_last_modified_time "${DNF_DIR}"
+    act::log ".\n"
+  fi
+
+  if [[ ! -d "${DNF_DIR}" ]]; then
+    act::fatal "Missing DNF directory"
+  fi
+}
+
+
+# Runs `make_dnf` on each test in the results directory, outputting the
+# results to the DNF directory.
+#
+# Globals:
+#   SCRIPTDIR: read
+#   (various others read indirectly)
+#
+# Arguments:
+#   1: the memalloy results directory.
+#   2: the dnf output directory.
+run_dnf() {
+  local results_dir="${1}"
+  local dnf_dir="${2}"
+
+  act::log "DNF-converting memalloy results.\n"
+
+  local flags
+  flags="$(act::flags_qvx)"
+
+  for file in "${results_dir}/litmus"/*.litmus; do
+    local out_file
+    out_file="${dnf_dir}/$(basename "${file}")"
+    act::log "~> %s (to %s)\n" "${file}" "${out_file}"
+    # TODO(@MattWindsor91): -b BACKEND
+    "${SCRIPTDIR}/make_dnf" "${flags}" "${file}" > "${out_file}" || broken_dnf "${out_file}"
+  done
+}
+
+
+# Prints an error indicating that an attempt to convert a postcondition
+# to a DNF failed, then moves the offending file out of the way.
+#
+# Because this might be caused by the backend used for DNF analysis not
+# understanding the input correctly (which is eminently possible with
+# backends like herd7), it needs to be handled semi-gracefully.
+#
+# Arguments:
+#   1.  The file that failed postcondition conversion.
+broken_dnf() {
+  local file="$1"
+  local new_file="${file}.bad_dnf"
+
+  act::error "Couldn't DNF postcondition for ${file}."
+  act::error "Moving out of the way (to ${new_file})."
+  mv "${file}" "${new_file}"
+}
+
+
+# If `stat` is available, prints the last modified time of the given results
+# directory symlink (less a newline).
+#
+# Arguments:
+#   1: the results-directory symlink to inspect.
+dump_last_modified_time() {
+  local results_dir=$1
+
+  # `stat` is non-standard: if it exists, it'll have different flags depending
+  # on whether we're on a GNU or BSD system (or, indeed, a non-GNU non-BSD
+  # system, but we don't support that yet).  The other thing is that `printf`
+  # has different format flags!
+  if [[ -z $(command -v stat)  ]]; then return 1; fi
+  case "$(uname -s)" in
+    Linux)
+      # GNU stat and printf
+      local mtime
+      mtime="$(stat -Lc "%Y" "${results_dir}")"
+      act::log " (last modified on %(%c)T)" "${mtime}"
+      ;;
+    Darwin|NetBSD|OpenBSD)
+      # BSD stat and printf
+      local mtime
+      mtime="$(stat -Lf "%Sm" "${results_dir}")"
+      act::log " (last modified on %s)" "${mtime}"
+      ;;
+    *) return 2 ;;
+  esac
+}
+
+
+## Entry point ##
+main "$@"
