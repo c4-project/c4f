@@ -15,52 +15,6 @@ module Stm = Act_c_mini.Statement
 module Fun = Act_c_mini.Function
 module Prog = Act_c_mini.Program
 
-module Make_statement_list (M : Path_types.S_statement) :
-  Path_types.S_statement_list with type target = M.target = struct
-  type target = M.target
-
-  let insert_stm (path : Path_shapes.stm_list) (stm : Metadata.t Stm.t)
-      (dest : target list) : target list Or_error.t =
-    match path with
-    | Insert index ->
-        Tx.List.insert dest index (M.lift_stm stm)
-    | In_stm (index, rest) ->
-        Tx.List.With_errors.replace_m dest index ~f:(fun x ->
-            Or_error.(M.insert_stm rest stm x >>| Option.some))
-
-  let transform_stm (path : Path_shapes.stm_list)
-      ~(f : Metadata.t Stm.t -> Metadata.t Stm.t Or_error.t)
-      (dest : target list) : target list Or_error.t =
-    match path with
-    | In_stm (index, rest) ->
-        Tx.List.With_errors.replace_m dest index ~f:(fun x ->
-            Or_error.(M.transform_stm rest ~f x >>| Option.some))
-    | Insert _ ->
-        Or_error.error_s
-          [%message
-            "Can't use insert-at path to transform statements" ~here:[%here]
-              ~path:(path : Path_shapes.stm_list)]
-
-  let gen_insert_stm_on (index : int) (single_dest : target) :
-      Path_shapes.stm_list Base_quickcheck.Generator.t list =
-    let insert_after =
-      Base_quickcheck.Generator.return (Path_shapes.insert (index + 1))
-    in
-    let insert_into =
-      single_dest |> M.try_gen_insert_stm
-      |> Option.map
-           ~f:(Base_quickcheck.Generator.map ~f:(Path_shapes.in_stm index))
-      |> Option.to_list
-    in
-    insert_after :: insert_into
-
-  let gen_insert_stm (dest : target list) :
-      Path_shapes.stm_list Base_quickcheck.Generator.t =
-    Base_quickcheck.Generator.union
-      ( Base_quickcheck.Generator.return (Path_shapes.insert 0)
-      :: List.concat_mapi ~f:gen_insert_stm_on dest )
-end
-
 module rec Statement :
   (Path_types.S_statement with type target = Metadata.t Stm.t) = struct
   type target = Metadata.t Stm.t
@@ -117,8 +71,52 @@ module rec Statement :
 end
 
 and Statement_list :
-  (Path_types.S_statement_list with type target = Metadata.t Stm.t) =
-  Make_statement_list (Statement)
+  (Path_types.S_statement_list with type target = Metadata.t Stm.t) = struct
+  module M = Statement
+
+  type target = M.target
+
+  let insert_stm (path : Path_shapes.stm_list) (stm : Metadata.t Stm.t)
+      (dest : target list) : target list Or_error.t =
+    match path with
+    | Insert index ->
+        Tx.List.insert dest index (M.lift_stm stm)
+    | In_stm (index, rest) ->
+        Tx.List.With_errors.replace_m dest index ~f:(fun x ->
+            Or_error.(M.insert_stm rest stm x >>| Option.some))
+
+  let transform_stm (path : Path_shapes.stm_list)
+      ~(f : Metadata.t Stm.t -> Metadata.t Stm.t Or_error.t)
+      (dest : target list) : target list Or_error.t =
+    match path with
+    | In_stm (index, rest) ->
+        Tx.List.With_errors.replace_m dest index ~f:(fun x ->
+            Or_error.(M.transform_stm rest ~f x >>| Option.some))
+    | Insert _ ->
+        Or_error.error_s
+          [%message
+            "Can't use insert-at path to transform statements" ~here:[%here]
+              ~path:(path : Path_shapes.stm_list)]
+
+  let gen_insert_stm_on (index : int) (single_dest : target) :
+      Path_shapes.stm_list Base_quickcheck.Generator.t list =
+    let insert_after =
+      Base_quickcheck.Generator.return (Path_shapes.insert (index + 1))
+    in
+    let insert_into =
+      single_dest |> M.try_gen_insert_stm
+      |> Option.map
+           ~f:(Base_quickcheck.Generator.map ~f:(Path_shapes.in_stm index))
+      |> Option.to_list
+    in
+    insert_after :: insert_into
+
+  let gen_insert_stm (dest : target list) :
+      Path_shapes.stm_list Base_quickcheck.Generator.t =
+    Base_quickcheck.Generator.union
+      ( Base_quickcheck.Generator.return (Path_shapes.insert 0)
+      :: List.concat_mapi ~f:gen_insert_stm_on dest )
+end
 
 and If_statement :
   (Path_types.S_if_statement with type target = Metadata.t Stm.If.t) =

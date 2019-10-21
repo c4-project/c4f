@@ -9,19 +9,10 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Mini-model: path-based traversal.
+(** Path-based traversal of mini-C elements.
 
     This module includes functors that create functionality for walking down
-    mini-C constructs
-
-    We define path-based traversal over mini-C constructs in a generalised,
-    functor based way so that we can expand it to slightly modified mini-C
-    representations, such as those used in the fuzzer. *)
-
-(** {2 Functors} *)
-
-module Make_statement_list (M : Path_types.S_statement) :
-  Path_types.S_statement_list with type target = M.target
+    the various mini-C constructs used in the fuzzer. *)
 
 module Statement_list :
   Path_types.S_statement_list
