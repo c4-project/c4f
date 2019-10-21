@@ -23,7 +23,7 @@ end
 
 let run_on_litmus (test : Act_c_mini.Litmus.Test.t)
     ~(o : Act_common.Output.t)
-    ~(f : Metadata.t Subject.Test.t -> 'm Output.t State.Monad.t) :
+    ~(f : Subject.Test.t -> 'm Output.t State.Monad.t) :
     (Act_c_mini.Litmus.Test.t * 'm) Or_error.t =
   let subject = Subject.Test.of_litmus test in
   Or_error.Let_syntax.(
@@ -35,8 +35,7 @@ let run_on_litmus (test : Act_c_mini.Litmus.Test.t)
 
 let run_with_channels ?(path : string option) (ic : In_channel.t)
     (oc : Out_channel.t) ~(o : Act_common.Output.t)
-    ~(f : Metadata.t Subject.Test.t -> 'm Output.t State.Monad.t) :
-    'm Or_error.t =
+    ~(f : Subject.Test.t -> 'm Output.t State.Monad.t) : 'm Or_error.t =
   Or_error.Let_syntax.(
     let%bind test = Act_c_mini.Frontend.load_from_ic ?path ic in
     let%map test', metadata = run_on_litmus ~o ~f test in
@@ -68,7 +67,7 @@ let resolve_action (id : Act_common.Id.t) :
     (Lazy.force Config.module_map)
     id
 
-let run_replay (subject : Metadata.t Subject.Test.t) ~(trace : Trace.t) :
+let run_replay (subject : Subject.Test.t) ~(trace : Trace.t) :
     unit Output.t State.Monad.t =
   State.Monad.(
     Let_syntax.(

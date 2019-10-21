@@ -71,7 +71,7 @@ module Pool : sig
 
   val pick :
        t
-    -> Metadata.t Subject.Test.t
+    -> Subject.Test.t
     -> Splittable_random.State.t
     -> (module Action_types.S) State.Monad.t
   (** [pick pool subject rng] is a stateful action that picks a
@@ -81,7 +81,7 @@ end
 
 (** {2 Helpers for building actions} *)
 
-val always : Metadata.t Subject.Test.t -> bool State.Monad.t
+val always : Subject.Test.t -> bool State.Monad.t
 (** [always test] always returns [true] without modifying or inspecting the
     fuzzer state. *)
 

@@ -15,7 +15,7 @@ open Base
 
 val run :
      ?seed:int
-  -> Metadata.t Subject.Test.t
+  -> Subject.Test.t
   -> config:Config.t
   -> Trace.t Output.t State.Monad.t
 (** [run ?seed test ~config] mutates [test] using a random number generator

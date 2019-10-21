@@ -32,17 +32,12 @@ let add (type p) (trace : t)
 
 type step =
   | Stop
-  | Action of
-      { f:
-             Metadata.t Subject.Test.t
-          -> Metadata.t Subject.Test.t State.Monad.t
-      ; tail: t }
+  | Action of {f: Subject.Test.t -> Subject.Test.t State.Monad.t; tail: t}
   | Error of Error.t
 
 let resolve_step ({name; payload= payload_sexp} : elt)
     ~(resolve : Act_common.Id.t -> (module Action_types.S) Or_error.t) :
-    (Metadata.t Subject.Test.t -> Metadata.t Subject.Test.t State.Monad.t)
-    Or_error.t =
+    (Subject.Test.t -> Subject.Test.t State.Monad.t) Or_error.t =
   Or_error.Let_syntax.(
     let%bind (module Action) = resolve name in
     let%map payload =
@@ -63,9 +58,9 @@ let run_step (trace : t)
     | Error e ->
         Error e )
 
-let run (trace : t) (test : Metadata.t Subject.Test.t)
+let run (trace : t) (test : Subject.Test.t)
     ~(resolve : Act_common.Id.t -> (module Action_types.S) Or_error.t) :
-    Metadata.t Subject.Test.t State.Monad.t =
+    Subject.Test.t State.Monad.t =
   State.Monad.Let_syntax.(
     let%map _, test' =
       State.Monad.fix (trace, test) ~f:(fun mu (this_trace, this_test) ->

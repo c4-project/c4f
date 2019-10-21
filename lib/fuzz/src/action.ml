@@ -13,10 +13,10 @@ open Base
 open Act_common
 open Act_utils
 
-let always : Metadata.t Subject.Test.t -> bool State.Monad.t =
+let always : Subject.Test.t -> bool State.Monad.t =
   Fn.const (State.Monad.return true)
 
-let zero_if_not_available (subject : Metadata.t Subject.Test.t)
+let zero_if_not_available (subject : Subject.Test.t)
     (module A : Action_types.S) (weight : int) : int State.Monad.t =
   State.Monad.Let_syntax.(if%map A.available subject then weight else 0)
 
@@ -80,11 +80,11 @@ module Pool = struct
 
   (** [to_available_only wl ~subject] is a stateful action that modifies
       [wl] to pull any actions not available on [subject] to weight 0. *)
-  let to_available_only (wl : t) ~(subject : Metadata.t Subject.Test.t) :
+  let to_available_only (wl : t) ~(subject : Subject.Test.t) :
       t State.Monad.t =
     W.adjust_weights_m wl ~f:(zero_if_not_available subject)
 
-  let pick (table : t) (subject : Metadata.t Subject.Test.t)
+  let pick (table : t) (subject : Subject.Test.t)
       (random : Splittable_random.State.t) :
       (module Action_types.S) State.Monad.t =
     State.Monad.(
@@ -101,8 +101,8 @@ module Pure_payload (S : sig
 end) : Action_types.S_payload with type t = S.t = struct
   include S
 
-  let gen (_subject : Metadata.t Subject.Test.t)
-      ~(random : Splittable_random.State.t) : t State.Monad.t =
+  let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t)
+      : t State.Monad.t =
     State.Monad.return
       (Base_quickcheck.Generator.generate ~size:10 ~random
          S.quickcheck_generator)
@@ -111,8 +111,7 @@ end
 module No_payload : Action_types.S_payload with type t = unit = struct
   include Unit
 
-  let gen (_ : Metadata.t Subject.Test.t)
-      ~(random : Splittable_random.State.t) =
+  let gen (_ : Subject.Test.t) ~(random : Splittable_random.State.t) =
     ignore (random : Splittable_random.State.t) ;
     State.Monad.return ()
 end

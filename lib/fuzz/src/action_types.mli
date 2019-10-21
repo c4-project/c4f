@@ -25,9 +25,7 @@ module type S_payload = sig
   (** The type of the payload. *)
 
   val gen :
-       Metadata.t Subject.Test.t
-    -> random:Splittable_random.State.t
-    -> t State.Monad.t
+    Subject.Test.t -> random:Splittable_random.State.t -> t State.Monad.t
   (** [gen subject ~random] is a stateful computation that, given subject
       [subject], RNG [random], and and the current state, returns a payload. *)
 end
@@ -45,15 +43,13 @@ module type S = sig
   module Payload : S_payload
   (** The type of any payload on which this action depends. *)
 
-  val available : Metadata.t Subject.Test.t -> bool State.Monad.t
+  val available : Subject.Test.t -> bool State.Monad.t
   (** [available subject] is a stateful computation that, given subject
       [subject] and the current state, decides whether this action can run
       (given any member of [Random_state.t]). *)
 
   val run :
-       Metadata.t Subject.Test.t
-    -> payload:Payload.t
-    -> Metadata.t Subject.Test.t State.Monad.t
+    Subject.Test.t -> payload:Payload.t -> Subject.Test.t State.Monad.t
   (** [run subject ~payload] is a stateful computation that runs this action
       on [subject] with payload [payload]. *)
 end

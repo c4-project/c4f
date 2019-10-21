@@ -92,8 +92,7 @@ let%test_module "trace playback" =
               Or_error.unimplemented "shouldn't run this"))
       in
       let result = Src.State.Monad.run computation state in
-      print_s
-        [%sexp (result : Src.Metadata.t Src.Subject.Test.t Or_error.t)] ;
+      print_s [%sexp (result : Src.Subject.Test.t Or_error.t)] ;
       [%expect
         {|
       (Ok

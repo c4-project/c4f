@@ -16,12 +16,11 @@ module Fun = Act_c_mini.Function
 module Prog = Act_c_mini.Program
 
 module Make_statement_list (M : Path_types.S_statement) :
-  Path_types.S_statement_list with type 'meta target = 'meta M.target =
-struct
-  type 'meta target = 'meta M.target
+  Path_types.S_statement_list with type target = M.target = struct
+  type target = M.target
 
-  let insert_stm (path : Path_shapes.stm_list) (stm : 'meta Stm.t)
-      (dest : 'meta target list) : 'meta target list Or_error.t =
+  let insert_stm (path : Path_shapes.stm_list) (stm : Metadata.t Stm.t)
+      (dest : target list) : target list Or_error.t =
     match path with
     | Insert index ->
         Tx.List.insert dest index (M.lift_stm stm)
@@ -30,8 +29,8 @@ struct
             Or_error.(M.insert_stm rest stm x >>| Option.some))
 
   let transform_stm (path : Path_shapes.stm_list)
-      ~(f : 'meta Stm.t -> 'meta Stm.t Or_error.t)
-      (dest : 'meta target list) : 'meta target list Or_error.t =
+      ~(f : Metadata.t Stm.t -> Metadata.t Stm.t Or_error.t)
+      (dest : target list) : target list Or_error.t =
     match path with
     | In_stm (index, rest) ->
         Tx.List.With_errors.replace_m dest index ~f:(fun x ->
@@ -42,7 +41,7 @@ struct
             "Can't use insert-at path to transform statements" ~here:[%here]
               ~path:(path : Path_shapes.stm_list)]
 
-  let gen_insert_stm_on (index : int) (single_dest : 'meta target) :
+  let gen_insert_stm_on (index : int) (single_dest : target) :
       Path_shapes.stm_list Base_quickcheck.Generator.t list =
     let insert_after =
       Base_quickcheck.Generator.return (Path_shapes.insert (index + 1))
@@ -55,7 +54,7 @@ struct
     in
     insert_after :: insert_into
 
-  let gen_insert_stm (dest : 'meta target list) :
+  let gen_insert_stm (dest : target list) :
       Path_shapes.stm_list Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.union
       ( Base_quickcheck.Generator.return (Path_shapes.insert 0)
@@ -63,8 +62,8 @@ struct
 end
 
 module rec Statement :
-  (Path_types.S_statement with type 'meta target = 'meta Stm.t) = struct
-  type 'meta target = 'meta Stm.t
+  (Path_types.S_statement with type target = Metadata.t Stm.t) = struct
+  type target = Metadata.t Stm.t
 
   let lift_stm = Fn.id
 
@@ -76,16 +75,16 @@ module rec Statement :
         "Invalid target for 'in_if' path" [%here]
           ~target:(Stm.erase_meta dest : unit Stm.t)]
 
-  let handle_in_if (dest : 'meta Stm.t)
-      ~(f : 'meta Stm.If.t -> 'meta Stm.If.t Or_error.t) :
-      'meta Stm.t Or_error.t =
+  let handle_in_if (dest : Metadata.t Stm.t)
+      ~(f : Metadata.t Stm.If.t -> Metadata.t Stm.If.t Or_error.t) :
+      Metadata.t Stm.t Or_error.t =
     Stm.reduce dest
       ~if_stm:(fun ifs -> Or_error.(ifs |> f >>| Stm.if_stm))
       ~assign:(in_if_error dest) ~atomic_cmpxchg:(in_if_error dest)
       ~atomic_store:(in_if_error dest) ~nop:(in_if_error dest)
 
-  let insert_stm (path : Path_shapes.stm) (stm : 'meta Stm.t)
-      (dest : 'meta Stm.t) : 'meta Stm.t Or_error.t =
+  let insert_stm (path : Path_shapes.stm) (stm : Metadata.t Stm.t)
+      (dest : Metadata.t Stm.t) : Metadata.t Stm.t Or_error.t =
     match path with
     | In_if rest ->
         handle_in_if ~f:(If_statement.insert_stm rest stm) dest
@@ -95,21 +94,21 @@ module rec Statement :
             "Can't insert statement here" ~path:(path : Path_shapes.stm)]
 
   let transform_stm (path : Path_shapes.stm)
-      ~(f : 'meta Stm.t -> 'meta Stm.t Or_error.t) (dest : 'meta Stm.t) :
-      'meta Stm.t Or_error.t =
+      ~(f : Metadata.t Stm.t -> Metadata.t Stm.t Or_error.t)
+      (dest : Metadata.t Stm.t) : Metadata.t Stm.t Or_error.t =
     match path with
     | In_if rest ->
         handle_in_if ~f:(If_statement.transform_stm rest ~f) dest
     | This_stm ->
         f dest
 
-  let gen_if_stm_insert_stm (i : 'meta Stm.If.t) :
+  let gen_if_stm_insert_stm (i : Metadata.t Stm.If.t) :
       Path_shapes.stm Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.map
       (If_statement.gen_insert_stm i)
       ~f:Path_shapes.in_if
 
-  let try_gen_insert_stm (type meta) (m : meta Stm.t) :
+  let try_gen_insert_stm (m : Metadata.t Stm.t) :
       Path_shapes.stm Base_quickcheck.Generator.t option =
     Stm.reduce m
       ~if_stm:(Fn.compose Option.some gen_if_stm_insert_stm)
@@ -118,13 +117,13 @@ module rec Statement :
 end
 
 and Statement_list :
-  (Path_types.S_statement_list with type 'meta target = 'meta Stm.t) =
+  (Path_types.S_statement_list with type target = Metadata.t Stm.t) =
   Make_statement_list (Statement)
 
 and If_statement :
-  (Path_types.S_if_statement with type 'meta target = 'meta Stm.If.t) =
+  (Path_types.S_if_statement with type target = Metadata.t Stm.If.t) =
 struct
-  type 'meta target = 'meta Stm.If.t
+  type target = Metadata.t Stm.If.t
 
   module B = Stm.If.Base_map (Or_error)
   module Block_stms = Act_c_mini.Block.On_meta_statement_list (Stm)
@@ -150,24 +149,24 @@ struct
     | This_cond ->
         Or_error.error_string "Not a statement path"
 
-  let insert_stm (path : Path_shapes.ifs) (stm : 'meta Stm.t) :
-      'meta Stm.If.t -> 'meta Stm.If.t Or_error.t =
+  let insert_stm (path : Path_shapes.ifs) (stm : Metadata.t Stm.t) :
+      Metadata.t Stm.If.t -> Metadata.t Stm.If.t Or_error.t =
     handle_stm path ~f:(fun rest -> Statement_list.insert_stm rest stm)
 
   let transform_stm (path : Path_shapes.ifs)
-      ~(f : 'meta Stm.t -> 'meta Stm.t Or_error.t) :
-      'meta Stm.If.t -> 'meta Stm.If.t Or_error.t =
+      ~(f : Metadata.t Stm.t -> Metadata.t Stm.t Or_error.t) :
+      Metadata.t Stm.If.t -> Metadata.t Stm.If.t Or_error.t =
     handle_stm path ~f:(Statement_list.transform_stm ~f)
 
   let gen_insert_stm_for_branch (branch : bool)
-      (branch_block : ('meta, 'meta Stm.t) Act_c_mini.Block.t) :
+      (branch_block : (Metadata.t, Metadata.t Stm.t) Act_c_mini.Block.t) :
       Path_shapes.ifs Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.map
       ~f:(Path_shapes.in_block branch)
       (Statement_list.gen_insert_stm
          (Act_c_mini.Block.statements branch_block))
 
-  let gen_insert_stm (ifs : 'meta Stm.If.t) :
+  let gen_insert_stm (ifs : Metadata.t Stm.If.t) :
       Path_shapes.ifs Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.union
       [ gen_insert_stm_for_branch true (Stm.If.t_branch ifs)
@@ -175,10 +174,10 @@ struct
 end
 
 module Function :
-  Path_types.S_function with type 'meta target := 'meta Fun.t = struct
-  type 'meta target = 'meta Fun.t
+  Path_types.S_function with type target := Metadata.t Fun.t = struct
+  type target = Metadata.t Fun.t
 
-  let gen_insert_stm (func : 'meta target) :
+  let gen_insert_stm (func : target) :
       Path_shapes.func Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.map
       (Statement_list.gen_insert_stm (Fun.body_stms func))
@@ -187,28 +186,28 @@ module Function :
   let handle_stm (path : Path_shapes.func)
       ~(f :
             Path_shapes.stm_list
-         -> 'meta Stm.t list
-         -> 'meta Stm.t list Or_error.t) (func : 'meta Fun.t) :
-      'meta Fun.t Or_error.t =
+         -> Metadata.t Stm.t list
+         -> Metadata.t Stm.t list Or_error.t) (func : Metadata.t Fun.t) :
+      Metadata.t Fun.t Or_error.t =
     match path with
     | In_stms rest ->
         Or_error.(f rest (Fun.body_stms func) >>| Fun.with_body_stms func)
 
-  let insert_stm (path : Path_shapes.func) (stm : 'meta Stm.t) :
-      'meta target -> 'meta target Or_error.t =
+  let insert_stm (path : Path_shapes.func) (stm : Metadata.t Stm.t) :
+      target -> target Or_error.t =
     handle_stm path ~f:(fun rest -> Statement_list.insert_stm rest stm)
 
   let transform_stm (path : Path_shapes.func)
-      ~(f : 'meta Stm.t -> 'meta Stm.t Or_error.t) :
-      'meta target -> 'meta target Or_error.t =
+      ~(f : Metadata.t Stm.t -> Metadata.t Stm.t Or_error.t) :
+      target -> target Or_error.t =
     handle_stm path ~f:(Statement_list.transform_stm ~f)
 end
 
 module Program :
-  Path_types.S_program with type 'meta target := 'meta Prog.t = struct
-  type 'meta target = 'meta Prog.t
+  Path_types.S_program with type target := Metadata.t Prog.t = struct
+  type target = Metadata.t Prog.t
 
-  let gen_insert_stm (prog : 'meta target) :
+  let gen_insert_stm (prog : target) :
       Path_shapes.program Base_quickcheck.Generator.t =
     let prog_gens =
       List.mapi (Prog.functions prog) ~f:(fun index (_, func) ->
@@ -219,8 +218,9 @@ module Program :
     Base_quickcheck.Generator.union prog_gens
 
   let handle_stm (path : Path_shapes.program)
-      ~(f : Path_shapes.func -> 'meta Fun.t -> 'meta Fun.t Or_error.t)
-      (prog : 'meta target) : 'meta target Or_error.t =
+      ~(f :
+         Path_shapes.func -> Metadata.t Fun.t -> Metadata.t Fun.t Or_error.t)
+      (prog : target) : target Or_error.t =
     let open Or_error.Let_syntax in
     match path with
     | In_func (index, rest) ->
@@ -233,12 +233,12 @@ module Program :
         in
         Prog.with_functions prog functions'
 
-  let insert_stm (path : Path_shapes.program) (stm : 'meta Stm.t) :
-      'meta target -> 'meta target Or_error.t =
+  let insert_stm (path : Path_shapes.program) (stm : Metadata.t Stm.t) :
+      target -> target Or_error.t =
     handle_stm path ~f:(fun rest -> Function.insert_stm rest stm)
 
   let transform_stm (path : Path_shapes.program)
-      ~(f : 'meta Stm.t -> 'meta Stm.t Or_error.t) :
-      'meta target -> 'meta target Or_error.t =
+      ~(f : Metadata.t Stm.t -> Metadata.t Stm.t Or_error.t) :
+      target -> target Or_error.t =
     handle_stm path ~f:(Function.transform_stm ~f)
 end

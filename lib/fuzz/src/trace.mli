@@ -44,8 +44,8 @@ include
 
 val run :
      t
-  -> Metadata.t Subject.Test.t
+  -> Subject.Test.t
   -> resolve:(Act_common.Id.t -> (module Action_types.S) Or_error.t)
-  -> Metadata.t Subject.Test.t State.Monad.t
+  -> Subject.Test.t State.Monad.t
 (** [run t subject ~resolve] applies a trace [t] to test subject [subject],
     using [resolve] to resolve action IDs to their modules. *)

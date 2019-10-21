@@ -18,13 +18,13 @@ type 'm t
 
 (* TODO(@MattWindsor91): disambiguate output metadata from subject metadata. *)
 
-val make : subject:Metadata.t Subject.Test.t -> metadata:'m -> 'm t
+val make : subject:Subject.Test.t -> metadata:'m -> 'm t
 (** [make ~subject ~metadata] makes a fuzzer output with the given final
     [subject], var map [vars], and output metadata [metadata]. *)
 
 (** {1 Extracting fields from a fuzzer output} *)
 
-val subject : _ t -> Metadata.t Subject.Test.t
+val subject : _ t -> Subject.Test.t
 (** [subject out] gets the fuzzer test subject associated with [out]. *)
 
 val metadata : 'm t -> 'm

@@ -152,13 +152,13 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       log o "Found environments for store" ;
       gen_store_with_envs src_mod dst_mod o ~random
 
-    let gen_path (o : Ac.Output.t) (subject : Metadata.t Subject.Test.t)
+    let gen_path (o : Ac.Output.t) (subject : Subject.Test.t)
         ~(random : Splittable_random.State.t) : Path_shapes.program =
       log o "Generating path" ;
       Base_quickcheck.Generator.generate ~random ~size:10
         (Subject.Test.Path.gen_insert_stm subject)
 
-    let gen' (o : Ac.Output.t) (subject : Metadata.t Subject.Test.t)
+    let gen' (o : Ac.Output.t) (subject : Subject.Test.t)
         ~(random : Splittable_random.State.t) (vars : Var.Map.t) :
         t Or_error.t =
       let path = gen_path o subject ~random in
@@ -166,15 +166,15 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
         let%map store = gen_store o vars ~tid:(tid_of_path path) ~random in
         Random_state.make ~store ~path)
 
-    let gen (subject : Metadata.t Subject.Test.t)
-        ~(random : Splittable_random.State.t) : t State.Monad.t =
+    let gen (subject : Subject.Test.t) ~(random : Splittable_random.State.t)
+        : t State.Monad.t =
       let open State.Monad.Let_syntax in
       let%bind o = State.Monad.output () in
       State.Monad.with_vars_m
         (Fn.compose State.Monad.Monadic.return (gen' o subject ~random))
   end
 
-  let available (_ : Metadata.t Subject.Test.t) =
+  let available (_ : Subject.Test.t) =
     State.Monad.with_vars
       (Var.Map.exists_satisfying_all ~scope:Ac.Scope.Global
          ~predicates:(Lazy.force dst_restrictions))
@@ -213,9 +213,9 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       log o "Adding dependency to store source" ;
       add_dependencies_to_store_src store ~tid)
 
-  let run (subject : Metadata.t Subject.Test.t)
+  let run (subject : Subject.Test.t)
       ~payload:({store; path} : Random_state.t) :
-      Metadata.t Subject.Test.t State.Monad.t =
+      Subject.Test.t State.Monad.t =
     let store_stm = Act_c_mini.Statement.atomic_store store in
     let tid = tid_of_path path in
     State.Monad.Let_syntax.(

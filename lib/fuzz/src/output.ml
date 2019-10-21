@@ -11,5 +11,5 @@
 
 open Base
 
-type 'a t = {subject: Metadata.t Subject.Test.t; metadata: 'a}
+type 'a t = {subject: Subject.Test.t; metadata: 'a}
 [@@deriving fields, make]

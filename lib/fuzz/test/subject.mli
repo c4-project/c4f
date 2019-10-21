@@ -16,6 +16,6 @@ module Example : sig
   val state : Act_fuzz.State.t Lazy.t
   (** [state] evaluates to the example test's recommended initial state. *)
 
-  val test : Act_fuzz.Metadata.t Act_fuzz.Subject.Test.t Lazy.t
+  val test : Act_fuzz.Subject.Test.t Lazy.t
   (** [test] evaluates to a sample test subject. *)
 end
