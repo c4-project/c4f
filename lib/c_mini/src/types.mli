@@ -1,31 +1,19 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Mini-model: module signatures and basic types *)
 
 open Base
 
-(** {2 General signatures} *)
+(** {1 General signatures} *)
 
 (** Signature of modules that expose a 'named' part of a mini-model element,
     usually for compatibility with functors. *)
@@ -94,108 +82,156 @@ module type S_identifier_traversable = sig
        and type Elt.t = identifier
 end
 
+(** Signature of c-mini modules that facilitate traversing over all of the
+    typical features of a c-mini node, so long as any metadata has been
+    fixed. *)
+module type S_with_meta = sig
+  type 'meta t
+
+  type address
+
+  type lvalue
+
+  type identifier
+
+  module On_meta :
+    Travesty.Traversable_types.S1 with type 'meta t := 'meta t
+  (** We can traverse over the metadata. *)
+
+  val erase_meta : 'meta t -> unit t
+  (** [erase_meta x] deletes all of [x]'s metadata. *)
+
+  (** By fixing the metadata type, we can perform various forms of standard
+      traversal. *)
+  module With_meta (Meta : T) : sig
+    type nonrec t = Meta.t t
+
+    include
+      S_address_traversable with type t := t and type address := address
+
+    include S_lvalue_traversable with type t := t and type lvalue := lvalue
+
+    include
+      S_identifier_traversable
+        with type t := t
+         and type identifier := identifier
+  end
+end
+
+(** {1 Parametrised signatures of parts of c-mini}
+
+    These two signatures exist because their implementing modules are
+    mutually recursive.
+
+    The implementations of these generally fix the type parameters at the
+    top of the signature. *)
+
+(** {2 Statements}
+
+    Parametrised signature of statement implementations. *)
 module type S_statement = sig
-  type t [@@deriving sexp, equal]
+  type 'meta t [@@deriving sexp, equal]
 
-  type assign
+  type 'meta assign
+  (** Generally fixed to {!Assign.t}. *)
 
-  type atomic_cmpxchg
+  type 'meta atomic_cmpxchg
+  (** Generally fixed to {!Atomic_cmpxchg.t}. *)
 
-  type atomic_store
+  type 'meta atomic_store
+  (** Generally fixed to {!Atomic_store.t}. *)
 
-  type if_stm
+  type 'meta if_stm
+  (** Generally fixed to {!Statement.If.t}. *)
 
   (** {3 Constructors} *)
 
-  val assign : assign -> t
+  val assign : 'meta assign -> 'meta t
   (** [assign a] lifts an assignment [a] to a statement. *)
 
-  val atomic_cmpxchg : atomic_cmpxchg -> t
+  val atomic_cmpxchg : 'meta atomic_cmpxchg -> 'meta t
   (** [atomic_cmpxchg a] lifts an atomic compare-exchange [a] to a
       statement. *)
 
-  val atomic_store : atomic_store -> t
+  val atomic_store : 'meta atomic_store -> 'meta t
   (** [atomic_store a] lifts an atomic store [a] to a statement. *)
 
-  val if_stm : if_stm -> t
+  val if_stm : 'meta if_stm -> 'meta t
   (** [if_statement ifs] lifts an if statement [ifs] to a statement. *)
 
-  val nop : unit -> t
+  val nop : unit -> 'meta t
   (** [nop] is a no-operation statement; it corresponds to C's empty
       expression statement. *)
 
-  val map :
-       t
-    -> assign:(assign -> 'result)
-    -> atomic_cmpxchg:(atomic_cmpxchg -> 'result)
-    -> atomic_store:(atomic_store -> 'result)
-    -> if_stm:(if_stm -> 'result)
+  val reduce :
+       'meta t
+    -> assign:('meta assign -> 'result)
+    -> atomic_cmpxchg:('meta atomic_cmpxchg -> 'result)
+    -> atomic_store:('meta atomic_store -> 'result)
+    -> if_stm:('meta if_stm -> 'result)
     -> nop:(unit -> 'result)
     -> 'result
-  (** [map stm ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop] maps the
-      appropriate function of those given over [stm]. It does _not_
-      recursively reduce statements inside blocks. *)
+  (** [reduce stm ~assign ~atomic_cmpxchg ~atomic_store ~if_stm ~nop]
+      applies the appropriate function of those given to [stm]. It does
+      _not_ recursively reduce statements inside blocks. *)
 
   (** {3 Traversing} *)
 
   module Base_map (M : Monad.S) : sig
     val bmap :
-         t
-      -> assign:(assign -> assign M.t)
-      -> atomic_cmpxchg:(atomic_cmpxchg -> atomic_cmpxchg M.t)
-      -> atomic_store:(atomic_store -> atomic_store M.t)
-      -> if_stm:(if_stm -> if_stm M.t)
+         'm1 t
+      -> assign:('m1 assign -> 'm2 assign M.t)
+      -> atomic_cmpxchg:('m1 atomic_cmpxchg -> 'm2 atomic_cmpxchg M.t)
+      -> atomic_store:('m1 atomic_store -> 'm2 atomic_store M.t)
+      -> if_stm:('m1 if_stm -> 'm2 if_stm M.t)
       -> nop:(unit -> unit M.t)
-      -> t M.t
+      -> 'm2 t M.t
   end
 
-  include S_address_traversable with type t := t
-
-  include S_lvalue_traversable with type t := t
-
-  include S_identifier_traversable with type t := t
+  include S_with_meta with type 'meta t := 'meta t
 end
 
+(** {2 If statements}
+
+    Parametrised signature of if-statement implementations. *)
 module type S_if_statement = sig
-  type expr
+  type 'meta expr
 
-  type stm
+  type 'meta stm
 
-  type t [@@deriving sexp, equal]
+  type 'meta t [@@deriving sexp, equal]
 
-  (** {3 Constructors} *)
+  (** {2 Constructors} *)
 
   val make :
-    cond:expr -> ?t_branch:stm list -> ?f_branch:stm list -> unit -> t
-  (** [if_stm ~cond ?t_branch ?f_branch ()] creates an if statement with
-      condition [cond], optional true branch [t_branch], and optional false
-      branch [f_branch]. *)
+       cond:'meta expr
+    -> t_branch:('meta, 'meta stm) Block.t
+    -> f_branch:('meta, 'meta stm) Block.t
+    -> 'meta t
+  (** [make ~cond t_branch f_branch ()] creates an if statement with
+      condition [cond], true branch [t_branch], and false branch [f_branch]. *)
 
-  (** {3 Accessors} *)
+  (** {2 Accessors} *)
 
-  val cond : t -> expr
+  val cond : 'meta t -> 'meta expr
   (** [cond ifs] gets [ifs]'s condition. *)
 
-  val t_branch : t -> stm list
+  val t_branch : 'meta t -> ('meta, 'meta stm) Block.t
   (** [t_branch ifs] gets [ifs]'s true branch. *)
 
-  val f_branch : t -> stm list
+  val f_branch : 'meta t -> ('meta, 'meta stm) Block.t
   (** [f_branch ifs] gets [ifs]'s false branch. *)
 
   (** {3 Traversing} *)
 
   module Base_map (M : Monad.S) : sig
     val bmap :
-         t
-      -> cond:(expr -> expr M.t)
-      -> t_branch:(stm list -> stm list M.t)
-      -> f_branch:(stm list -> stm list M.t)
-      -> t M.t
+         'm1 t
+      -> cond:('m1 expr -> 'm2 expr M.t)
+      -> t_branch:(('m1, 'm1 stm) Block.t -> ('m2, 'm2 stm) Block.t M.t)
+      -> f_branch:(('m1, 'm1 stm) Block.t -> ('m2, 'm2 stm) Block.t M.t)
+      -> 'm2 t M.t
   end
 
-  include S_address_traversable with type t := t
-
-  include S_lvalue_traversable with type t := t
-
-  include S_identifier_traversable with type t := t
+  include S_with_meta with type 'meta t := 'meta t
 end

@@ -9,7 +9,9 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
+(** Fuzz metadata. *)
 
-type 'a t = {subject: Metadata.t Subject.Test.t; metadata: 'a}
-[@@deriving fields, make]
+type t [@@deriving equal, sexp]
+
+val empty : t
+(** [empty is the empty metadata. *)

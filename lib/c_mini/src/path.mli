@@ -21,16 +21,19 @@
 (** {2 Functors} *)
 
 module Make_statement_list (M : Path_types.S_statement) :
-  Path_types.S_statement_list with type target = M.target
+  Path_types.S_statement_list with type 'meta target = 'meta M.target
 
 module Statement_list :
-  Path_types.S_statement_list with type target = Statement.t
+  Path_types.S_statement_list with type 'meta target = 'meta Statement.t
 
 module If_statement :
-  Path_types.S_if_statement with type target = Statement.If.t
+  Path_types.S_if_statement with type 'meta target = 'meta Statement.If.t
 
-module Statement : Path_types.S_statement with type target = Statement.t
+module Statement :
+  Path_types.S_statement with type 'meta target = 'meta Statement.t
 
-module Function : Path_types.S_function with type target := Function.t
+module Function :
+  Path_types.S_function with type 'meta target := 'meta Function.t
 
-module Program : Path_types.S_program with type target := Program.t
+module Program :
+  Path_types.S_program with type 'meta target := 'meta Program.t

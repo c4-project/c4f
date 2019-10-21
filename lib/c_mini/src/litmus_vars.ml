@@ -20,7 +20,7 @@ let parameter_list_equal :
   [%equal: (Ac.C_id.t * Type.t) list]
 
 let check_parameters_consistent (params : Type.t Named.Alist.t)
-    (next : Function.t) : unit Or_error.t =
+    (next : unit Function.t) : unit Or_error.t =
   let params' = Function.parameters next in
   if parameter_list_equal params params' then Result.ok_unit
   else

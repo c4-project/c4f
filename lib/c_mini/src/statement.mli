@@ -18,19 +18,19 @@
 module rec Main :
   (Types.S_statement
     with type address := Address.t
-     and type assign := Assign.t
-     and type atomic_cmpxchg := Atomic_cmpxchg.t
-     and type atomic_store := Atomic_store.t
      and type identifier := Act_c_lang.Ast_basic.Identifier.t
-     and type if_stm := If.t
-     and type lvalue := Lvalue.t)
+     and type lvalue := Lvalue.t
+     and type 'meta assign := Assign.t
+     and type 'meta atomic_cmpxchg := Atomic_cmpxchg.t
+     and type 'meta atomic_store := Atomic_store.t
+     and type 'meta if_stm := 'meta If.t)
 
 and If :
   (Types.S_if_statement
-    with type expr := Expression.t
-     and type stm := Main.t
-     and type address := Address.t
+    with type address := Address.t
      and type identifier := Act_c_lang.Ast_basic.Identifier.t
-     and type lvalue := Lvalue.t)
+     and type lvalue := Lvalue.t
+     and type 'meta expr := Expression.t
+     and type 'meta stm := 'meta Main.t)
 
-include module type of Main with type t = Main.t
+include module type of Main with type 'meta t = 'meta Main.t

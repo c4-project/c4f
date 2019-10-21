@@ -41,7 +41,7 @@ module Example = struct
       in
       Act_fuzz.State.make ~vars ())
 
-  let body_stms : Act_c_mini.Statement.t list Lazy.t =
+  let body_stms : unit Act_c_mini.Statement.t list Lazy.t =
     lazy
       Act_c_mini.
         [ Statement.atomic_store
@@ -58,7 +58,7 @@ module Example = struct
                ~dst:(Address.of_variable (Act_common.C_id.of_string "y"))
                ~mo:Mem_order.Relaxed) ]
 
-  let programs : Subject.Program.t list Lazy.t =
+  let programs : Act_fuzz.Metadata.t Subject.Program.t list Lazy.t =
     Lazy.Let_syntax.(
       let%bind parameters = globals in
       let%map body_stms = body_stms in
@@ -66,7 +66,7 @@ module Example = struct
         [ Subject.Program.of_function
             (Function.make ~parameters ~body_decls:[] ~body_stms ()) ])
 
-  let test : Subject.Test.t Lazy.t =
+  let test : Act_fuzz.Metadata.t Subject.Test.t Lazy.t =
     Lazy.Let_syntax.(
       let%bind init = init in
       let%map threads = programs in

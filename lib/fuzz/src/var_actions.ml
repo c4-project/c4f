@@ -43,7 +43,7 @@ module Make_global :
         let%map name = Var.Map.gen_fresh_var vars in
         {basic_type; initial_value; name})
 
-    let gen (_subject : Subject.Test.t)
+    let gen (_subject : Metadata.t Subject.Test.t)
         ~(random : Splittable_random.State.t) : t State.Monad.t =
       State.Monad.(
         Let_syntax.(
@@ -53,9 +53,9 @@ module Make_global :
 
   let available = Action.always
 
-  let run (subject : Subject.Test.t)
+  let run (subject : Metadata.t Subject.Test.t)
       ~payload:({basic_type; initial_value; name} : Payload.t) :
-      Subject.Test.t State.Monad.t =
+      Metadata.t Subject.Test.t State.Monad.t =
     let ty = Act_c_mini.Type.of_basic basic_type ~pointer:true in
     let open State.Monad.Let_syntax in
     let%bind () = State.Monad.register_global ty name ~initial_value in

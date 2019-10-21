@@ -13,54 +13,64 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-type t =
+type 'meta t =
   { parameters: Type.t Named.Alist.t
   ; body_decls: Initialiser.t Named.Alist.t
-  ; body_stms: Statement.t list }
+  ; body_stms: 'meta Statement.t list }
 [@@deriving sexp, fields, make, equal]
 
-let with_body_stms (func : t) (new_stms : Statement.t list) : t =
+let with_body_stms (type m1 m2) (func : m1 t)
+    (new_stms : m2 Statement.t list) : m2 t =
   {func with body_stms= new_stms}
 
 module On_monad (M : Monad.S) = struct
-  module F = Travesty.Traversable.Helpers (M)
-
-  let map_m (func : t)
+  let map_m (type m1 m2) (func : m1 t)
       ~(parameters :
             (Ac.C_id.t, Type.t) List.Assoc.t
          -> (Ac.C_id.t, Type.t) List.Assoc.t M.t)
       ~(body_decls :
             (Ac.C_id.t, Initialiser.t) List.Assoc.t
          -> (Ac.C_id.t, Initialiser.t) List.Assoc.t M.t)
-      ~(body_stms : Statement.t list -> Statement.t list M.t) : t M.t =
-    Fields.fold ~init:(M.return func) ~parameters:(F.proc_field parameters)
-      ~body_decls:(F.proc_field body_decls)
-      ~body_stms:(F.proc_field body_stms)
+      ~(body_stms : m1 Statement.t list -> m2 Statement.t list M.t) :
+      m2 t M.t =
+    M.Let_syntax.(
+      let%map parameters' = parameters func.parameters
+      and body_decls' = body_decls func.body_decls
+      and body_stms' = body_stms func.body_stms in
+      { parameters= parameters'
+      ; body_decls= body_decls'
+      ; body_stms= body_stms' })
 end
 
-let map =
-  let module M = On_monad (Monad.Ident) in
-  M.map_m
+module Mid = On_monad (Monad.Ident)
 
-module On_decls :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Initialiser.t Named.t =
-Travesty.Traversable.Make0 (struct
-  type nonrec t = t
+let map (type m1) (func : m1 t) = Mid.map_m func
 
-  module Elt = struct
-    type t = Initialiser.t Named.t [@@deriving equal]
-  end
+module With_meta (Meta : Equal.S) = struct
+  type nonrec t = Meta.t t
 
-  module On_monad (M : Monad.S) = struct
-    module B = On_monad (M)
-    module Al = Named.Alist.As_named (Initialiser)
-    module L = Al.On_monad (M)
+  let equal : t -> t -> bool = equal Meta.equal
 
-    let map_m (func : t)
-        ~(f : Initialiser.t Named.t -> Initialiser.t Named.t M.t) =
-      B.map_m func ~parameters:M.return ~body_decls:(L.map_m ~f)
-        ~body_stms:M.return
-  end
-end)
+  module On_decls :
+    Travesty.Traversable_types.S0
+      with type t = t
+       and type Elt.t = Initialiser.t Named.t =
+  Travesty.Traversable.Make0 (struct
+    type nonrec t = t
+
+    module Elt = struct
+      type t = Initialiser.t Named.t [@@deriving equal]
+    end
+
+    module On_monad (M : Monad.S) = struct
+      module B = On_monad (M)
+      module Al = Named.Alist.As_named (Initialiser)
+      module L = Al.On_monad (M)
+
+      let map_m (func : t)
+          ~(f : Initialiser.t Named.t -> Initialiser.t Named.t M.t) =
+        B.map_m func ~parameters:M.return ~body_decls:(L.map_m ~f)
+          ~body_stms:M.return
+    end
+  end)
+end

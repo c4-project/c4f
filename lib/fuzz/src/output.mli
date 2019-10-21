@@ -16,16 +16,18 @@ type 'm t
 
 (** {1 Constructing a fuzzer output} *)
 
-val make : subject:Subject.Test.t -> metadata:'m -> 'm t
-(** [make ~subject ~vars ~trace] makes a fuzzer output with the given final
-    [subject], var map [vars], and trace [trace]. *)
+(* TODO(@MattWindsor91): disambiguate output metadata from subject metadata. *)
+
+val make : subject:Metadata.t Subject.Test.t -> metadata:'m -> 'm t
+(** [make ~subject ~metadata] makes a fuzzer output with the given final
+    [subject], var map [vars], and output metadata [metadata]. *)
 
 (** {1 Extracting fields from a fuzzer output} *)
 
-val subject : _ t -> Subject.Test.t
+val subject : _ t -> Metadata.t Subject.Test.t
 (** [subject out] gets the fuzzer test subject associated with [out]. *)
 
 val metadata : 'm t -> 'm
-(** [metadata out] gets the metadata associated with [out]. Generally, for
-    random fuzzers this will be the trace, and for replaying fuzzers this
-    will be empty. *)
+(** [metadata out] gets the output-level metadata associated with [out].
+    Generally, for random fuzzers this will be the trace, and for replaying
+    fuzzers this will be empty. *)

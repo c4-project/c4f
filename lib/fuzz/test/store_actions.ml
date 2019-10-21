@@ -50,7 +50,8 @@ let%test_module "int tests" =
           (Act_common.C_id.of_string "gen2")
           ~initial_value:(Act_c_mini.Constant.int (-55)))
 
-    let run_test () : (Src.State.t * Src.Subject.Test.t) Or_error.t =
+    let run_test () :
+        (Src.State.t * Src.Metadata.t Src.Subject.Test.t) Or_error.t =
       Src.State.Monad.(
         run'
           ( prepare_fuzzer_state ()

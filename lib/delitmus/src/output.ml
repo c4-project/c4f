@@ -9,5 +9,5 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-type t = {program: Act_c_mini.Program.t; aux: Aux.t}
+type t = {program: unit Act_c_mini.Program.t; aux: Aux.t}
 [@@deriving make, fields]

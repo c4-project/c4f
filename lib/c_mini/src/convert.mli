@@ -21,12 +21,13 @@ val constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t
 (** [constant ast] tries to interpret a C constant AST as a mini-model
     constant. *)
 
-val func : Act_c_lang.Ast.Function_def.t -> Function.t Named.t Or_error.t
+val func :
+  Act_c_lang.Ast.Function_def.t -> unit Function.t Named.t Or_error.t
 (** [func ast] tries to interpret a C function definition AST as a
     mini-model function. *)
 
 val translation_unit :
-  Act_c_lang.Ast.Translation_unit.t -> Program.t Or_error.t
+  Act_c_lang.Ast.Translation_unit.t -> unit Program.t Or_error.t
 (** [translation_unit ast] tries to interpret a C translation unit AST as a
     mini-model program. *)
 

@@ -13,46 +13,46 @@
 
 open Base
 
-type t [@@deriving sexp, equal]
+type 'meta t [@@deriving sexp, equal]
 
 (** {2 Constructors} *)
 
 val make :
      parameters:(Act_common.C_id.t, Type.t) List.Assoc.t
   -> body_decls:(Act_common.C_id.t, Initialiser.t) List.Assoc.t
-  -> ?body_stms:Statement.t list
+  -> ?body_stms:'meta Statement.t list
   -> unit
-  -> t
+  -> 'meta t
 (** [make ~parameters ~body_decls ?body_stms] creates a function with the
     given contents. *)
 
 (** {2 Accessors} *)
 
-val parameters : t -> (Act_common.C_id.t, Type.t) List.Assoc.t
+val parameters : _ t -> (Act_common.C_id.t, Type.t) List.Assoc.t
 (** [parameters func] gets [func]'s parameter list. *)
 
-val body_decls : t -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t
+val body_decls : _ t -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t
 (** [body_decls func] gets [func]'s in-body variable declarations. *)
 
-val body_stms : t -> Statement.t list
-(** [body_decls func] gets [func]'s statements. *)
+val body_stms : 'meta t -> 'meta Statement.t list
+(** [body_stms func] gets [func]'s statements. *)
 
 (** {3 Mutators} *)
 
-val with_body_stms : t -> Statement.t list -> t
+val with_body_stms : 'm1 t -> 'm2 Statement.t list -> 'm2 t
 (** [with_body_stms func new_stms] produces a new function by substituting
     [new_stms] for [func]'s body statements. *)
 
 val map :
-     t
+     'm1 t
   -> parameters:
        (   (Act_common.C_id.t, Type.t) List.Assoc.t
         -> (Act_common.C_id.t, Type.t) List.Assoc.t)
   -> body_decls:
        (   (Act_common.C_id.t, Initialiser.t) List.Assoc.t
         -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t)
-  -> body_stms:(Statement.t list -> Statement.t list)
-  -> t
+  -> body_stms:('m1 Statement.t list -> 'm2 Statement.t list)
+  -> 'm2 t
 (** [map func ~parameters ~body_decls ~body_stms] runs the given functions
     over the respective parts of a function. *)
 
@@ -60,20 +60,24 @@ val map :
 
 module On_monad (M : Monad.S) : sig
   val map_m :
-       t
+       'm1 t
     -> parameters:
          (   (Act_common.C_id.t, Type.t) List.Assoc.t
           -> (Act_common.C_id.t, Type.t) List.Assoc.t M.t)
     -> body_decls:
          (   (Act_common.C_id.t, Initialiser.t) List.Assoc.t
           -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t M.t)
-    -> body_stms:(Statement.t list -> Statement.t list M.t)
-    -> t M.t
+    -> body_stms:('m1 Statement.t list -> 'm2 Statement.t list M.t)
+    -> 'm2 t M.t
 end
 
-(** [On_decls] allows traversal over all of the declarations inside a
-    function. *)
-module On_decls :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Initialiser.t Named.t
+module With_meta (Meta : Equal.S) : sig
+  type nonrec t = Meta.t t [@@deriving equal]
+
+  (** [On_decls] allows traversal over all of the declarations inside a
+      function. *)
+  module On_decls :
+    Travesty.Traversable_types.S0
+      with type t = t
+       and type Elt.t = Initialiser.t Named.t
+end

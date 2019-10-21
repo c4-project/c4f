@@ -10,6 +10,6 @@
    project root for more information. *)
 
 open Base
+include Unit (* for now *)
 
-type 'a t = {subject: Metadata.t Subject.Test.t; metadata: 'a}
-[@@deriving fields, make]
+let empty : t = ()

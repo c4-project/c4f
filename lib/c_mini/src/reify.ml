@@ -116,28 +116,35 @@ let assign (asn : Assign.t) : Ast.Stm.t =
   let rvalue = Assign.rvalue asn in
   Expr (Some (Binary (lvalue_to_expr lvalue, `Assign, expr rvalue)))
 
-let rec stm : Statement.t -> Ast.Stm.t =
-  Statement.map ~assign ~atomic_cmpxchg ~atomic_store ~if_stm
+let lift_stms (type stm) (stm : stm -> Ast.Stm.t) (xs : stm list) :
+    Ast.Compound_stm.t =
+  List.map ~f:(fun s -> `Stm (stm s)) xs
+
+let block (type meta stm) (stm : stm -> Ast.Stm.t) (b : (meta, stm) Block.t)
+    : Ast.Stm.t =
+  Compound (lift_stms stm (Block.statements b))
+
+let rec stm : _ Statement.t -> Ast.Stm.t =
+  Statement.reduce ~assign ~atomic_cmpxchg ~atomic_store ~if_stm
     ~nop:(fun () -> Expr None)
 
-and if_stm (ifs : Statement.If.t) : Ast.Stm.t =
+and if_stm (ifs : _ Statement.If.t) : Ast.Stm.t =
   If
     { cond= expr (Statement.If.cond ifs)
-    ; t_branch=
-        Compound
-          (List.map ~f:(fun x -> `Stm (stm x)) (Statement.If.t_branch ifs))
+    ; t_branch= block stm (Statement.If.t_branch ifs)
     ; f_branch=
         ( match Statement.If.f_branch ifs with
-        | [] ->
+        | x when Block.is_empty x ->
             None
-        | fb ->
-            Some (Compound (List.map ~f:(fun x -> `Stm (stm x)) fb)) ) }
+        | x ->
+            Some (block stm x) ) }
 
-let func_body (ds : Initialiser.t Named.Alist.t) (ss : Statement.t list) :
-    Ast.Compound_stm.t =
-  decls ds @ List.map ~f:(fun x -> `Stm (stm x)) ss
+let func_body (ds : Initialiser.t Named.Alist.t)
+    (statements : _ Statement.t list) : Ast.Compound_stm.t =
+  decls ds @ lift_stms stm statements
 
-let func (id : Act_common.C_id.t) (def : Function.t) : Ast.External_decl.t =
+let func (id : Act_common.C_id.t) (def : _ Function.t) : Ast.External_decl.t
+    =
   let parameters = Function.parameters def in
   let body_decls = Function.body_decls def in
   let body_stms = Function.body_stms def in
@@ -147,7 +154,7 @@ let func (id : Act_common.C_id.t) (def : Function.t) : Ast.External_decl.t =
     ; decls= []
     ; body= func_body body_decls body_stms }
 
-let program (prog : Program.t) : Ast.Translation_unit.t =
+let program (prog : _ Program.t) : Ast.Translation_unit.t =
   let globals = Program.globals prog in
   let functions = Program.functions prog in
   List.concat [decls globals; List.map ~f:(Tuple2.uncurry func) functions]

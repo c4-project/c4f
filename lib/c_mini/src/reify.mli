@@ -1,33 +1,22 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** Functions for reifying a mini-model into an AST. *)
 
-val func : Act_common.C_id.t -> Function.t -> Act_c_lang.Ast.External_decl.t
+val func :
+  Act_common.C_id.t -> _ Function.t -> Act_c_lang.Ast.External_decl.t
 (** [func id f] reifies the mini-function [f], with name [id], into the C
     AST. *)
 
-val program : Program.t -> Act_c_lang.Ast.Translation_unit.t
+val program : _ Program.t -> Act_c_lang.Ast.Translation_unit.t
 (** [program p] reifies the mini-program [p] into the C AST. *)
 
 val decl : Act_common.C_id.t -> Initialiser.t -> Act_c_lang.Ast.Decl.t
@@ -37,5 +26,5 @@ val decl : Act_common.C_id.t -> Initialiser.t -> Act_c_lang.Ast.Decl.t
 val expr : Expression.t -> Act_c_lang.Ast.Expr.t
 (** [expr e] reifies the mini-expression [e] into the C AST. *)
 
-val stm : Statement.t -> Act_c_lang.Ast.Stm.t
+val stm : _ Statement.t -> Act_c_lang.Ast.Stm.t
 (** [stm s] reifies the mini-statement [s] into the C AST. *)

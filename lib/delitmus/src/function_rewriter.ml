@@ -15,9 +15,9 @@ module Tx = Travesty_base_exts
 
 module type S = sig
   val rewrite_all :
-       Act_c_mini.Function.t Act_c_mini.Named.t list
+       unit Act_c_mini.Function.t Act_c_mini.Named.t list
     -> context:Context.t
-    -> Act_c_mini.Function.t Act_c_mini.Named.t list Or_error.t
+    -> unit Act_c_mini.Function.t Act_c_mini.Named.t list Or_error.t
 end
 
 type 'a local_rw_fun = 'a -> tid:int -> context:Context.t -> 'a Or_error.t
@@ -65,8 +65,10 @@ struct
       Ctx.T.when_local ~over:Fn.id
         ~f:(Basic.rewrite_local_cid ~context:Ctx.context ~tid:Ctx.T.tid)
 
-    let rewrite_ids : C.Statement.t -> C.Statement.t Or_error.t =
-      C.Statement.On_identifiers.With_errors.map_m ~f:rewrite_id_if_local
+    module C_stm_meta = C.Statement.With_meta (Unit)
+
+    let rewrite_ids : unit C.Statement.t -> unit C.Statement.t Or_error.t =
+      C_stm_meta.On_identifiers.With_errors.map_m ~f:rewrite_id_if_local
 
     (* When rewriting global lvalues (as part of a var-as-global run), we do
        it _after_ address rewriting, as the address rewriting will
@@ -76,25 +78,29 @@ struct
        do it _before_ address rewriting, as the address rewriting will
        temporarily _decrease_ the amount of indirection. *)
 
-    let rewrite_global_lvalues : C.Statement.t -> C.Statement.t Or_error.t =
-      C.Statement.On_lvalues.With_errors.map_m ~f:rewrite_lvalue_if_global
+    let rewrite_global_lvalues :
+        unit C.Statement.t -> unit C.Statement.t Or_error.t =
+      C_stm_meta.On_lvalues.With_errors.map_m ~f:rewrite_lvalue_if_global
 
-    let rewrite_local_lvalues : C.Statement.t -> C.Statement.t Or_error.t =
-      C.Statement.On_lvalues.With_errors.map_m ~f:rewrite_lvalue_if_local
+    let rewrite_local_lvalues :
+        unit C.Statement.t -> unit C.Statement.t Or_error.t =
+      C_stm_meta.On_lvalues.With_errors.map_m ~f:rewrite_lvalue_if_local
 
-    let rewrite_addresses : C.Statement.t -> C.Statement.t Or_error.t =
-      C.Statement.On_addresses.With_errors.map_m
+    let rewrite_addresses :
+        unit C.Statement.t -> unit C.Statement.t Or_error.t =
+      C_stm_meta.On_addresses.With_errors.map_m
         ~f:
           Tx.Or_error.(
             rewrite_address_if_local >=> rewrite_address_if_global)
 
-    let rewrite_statement : C.Statement.t -> C.Statement.t Or_error.t =
+    let rewrite_statement :
+        unit C.Statement.t -> unit C.Statement.t Or_error.t =
       Tx.Or_error.(
         rewrite_local_lvalues >=> rewrite_addresses
         >=> rewrite_global_lvalues >=> rewrite_ids)
 
     let rewrite_statements :
-        C.Statement.t list -> C.Statement.t list Or_error.t =
+        unit C.Statement.t list -> unit C.Statement.t list Or_error.t =
       Tx.Or_error.combine_map ~f:rewrite_statement
 
     let expand_parameter (id : Act_common.Litmus_id.t)
@@ -124,15 +130,15 @@ struct
 
     module F = C.Function.On_monad (Or_error)
 
-    let rewrite : C.Function.t -> C.Function.t Or_error.t =
+    let rewrite : unit C.Function.t -> unit C.Function.t Or_error.t =
       F.map_m
         ~parameters:(fun _ -> populate_parameters ())
         ~body_decls:(fun _ -> Or_error.return [])
         ~body_stms:rewrite_statements
   end
 
-  let rewrite (tid : int) (func : C.Function.t) ~(context : Context.t) :
-      C.Function.t Or_error.t =
+  let rewrite (tid : int) (func : unit C.Function.t) ~(context : Context.t)
+      : unit C.Function.t Or_error.t =
     let module T = Thread.Make (struct
       let tid = tid
 
@@ -147,13 +153,13 @@ struct
     end) in
     M.rewrite func
 
-  let rewrite_named (tid : int) (fn : C.Function.t C.Named.t)
-      ~(context : Context.t) : C.Function.t C.Named.t Or_error.t =
+  let rewrite_named (tid : int) (fn : unit C.Function.t C.Named.t)
+      ~(context : Context.t) : unit C.Function.t C.Named.t Or_error.t =
     C.Named.With_errors.bi_map_m fn ~left:Basic.rewrite_function_name
       ~right:(rewrite tid ~context)
 
-  let rewrite_all (fs : C.Function.t C.Named.t list) ~(context : Context.t)
-      : C.Function.t C.Named.t list Or_error.t =
+  let rewrite_all (fs : unit C.Function.t C.Named.t list)
+      ~(context : Context.t) : unit C.Function.t C.Named.t list Or_error.t =
     fs |> List.mapi ~f:(rewrite_named ~context) |> Or_error.combine_errors
 end
 

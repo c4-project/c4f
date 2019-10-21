@@ -13,38 +13,44 @@
 
 open Base
 
-type t [@@deriving sexp]
+type 'meta t [@@deriving sexp]
 
 (** {2 Constructors} *)
 
 val make :
      globals:(Act_common.C_id.t, Initialiser.t) List.Assoc.t
-  -> functions:(Act_common.C_id.t, Function.t) List.Assoc.t
-  -> t
+  -> functions:(Act_common.C_id.t, 'meta Function.t) List.Assoc.t
+  -> 'meta t
 (** [make ~globals ~functions] makes a program with global variable
     declarations [globals] and function definitions [functions]. *)
 
 (** {2 Accessors} *)
 
-val globals : t -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t
+val globals : _ t -> (Act_common.C_id.t, Initialiser.t) List.Assoc.t
 (** [globals program] gets an associative list of each global initialiser in
     [program]. *)
 
-val functions : t -> (Act_common.C_id.t, Function.t) List.Assoc.t
+val functions :
+  'meta t -> (Act_common.C_id.t, 'meta Function.t) List.Assoc.t
 (** [functions program] gets an associative list of each function in
     [program]. *)
 
 (** {2 Mutators} *)
 
-val with_functions : t -> (Act_common.C_id.t, Function.t) List.Assoc.t -> t
+val with_functions :
+  _ t -> (Act_common.C_id.t, 'meta Function.t) List.Assoc.t -> 'meta t
 (** [with_functions prog new_functions] creates a new program by
     substituting [new_functions] for [prog]'s functions. *)
 
 (** {2 Traversals} *)
 
-(** [On_decls] allows traversal over all of the declarations inside a
-    program. *)
-module On_decls :
-  Travesty.Traversable_types.S0
-    with type t = t
-     and type Elt.t = Initialiser.t Named.t
+module With_meta (Meta : Equal.S) : sig
+  type nonrec t = Meta.t t
+
+  (** [On_decls] allows traversal over all of the declarations inside a
+      program. *)
+  module On_decls :
+    Travesty.Traversable_types.S0
+      with type t = t
+       and type Elt.t = Initialiser.t Named.t
+end

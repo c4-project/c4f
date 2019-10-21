@@ -342,7 +342,7 @@ let%expect_test "model atomic_load_explicit" =
       (Ok
        (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_seq_cst)))) |}]
 
-let model_atomic_store : Ast.Expr.t list -> Statement.t Or_error.t =
+let model_atomic_store : Ast.Expr.t list -> unit Statement.t Or_error.t =
   function
   | [raw_dst; raw_src; raw_mo] ->
       let open Or_error.Let_syntax in
@@ -356,7 +356,7 @@ let model_atomic_store : Ast.Expr.t list -> Statement.t Or_error.t =
           "Invalid arguments to atomic_store_explicit"
             ~got:(args : Ast.Expr.t list)]
 
-let model_atomic_cmpxchg : Ast.Expr.t list -> Statement.t Or_error.t =
+let model_atomic_cmpxchg : Ast.Expr.t list -> unit Statement.t Or_error.t =
   function
   | [raw_obj; raw_expected; raw_desired; raw_succ; raw_fail] ->
       let open Or_error.Let_syntax in
@@ -374,13 +374,13 @@ let model_atomic_cmpxchg : Ast.Expr.t list -> Statement.t Or_error.t =
             ~got:(args : Ast.Expr.t list)]
 
 let expr_stm_call_table :
-    (Ast.Expr.t list -> Statement.t Or_error.t) Named.Alist.t Lazy.t =
+    (Ast.Expr.t list -> unit Statement.t Or_error.t) Named.Alist.t Lazy.t =
   lazy
     [ (Ac.C_id.of_string "atomic_store_explicit", model_atomic_store)
     ; ( Ac.C_id.of_string "atomic_compare_exchange_strong_explicit"
       , model_atomic_cmpxchg ) ]
 
-let expr_stm : Ast.Expr.t -> Statement.t Or_error.t = function
+let expr_stm : Ast.Expr.t -> unit Statement.t Or_error.t = function
   | Binary (l, `Assign, r) ->
       let open Or_error.Let_syntax in
       let%map lvalue = expr_to_lvalue l and rvalue = expr r in
@@ -411,25 +411,28 @@ let possible_compound_to_list : Ast.Stm.t -> Ast.Stm.t list Or_error.t =
   | stm ->
       Or_error.return [stm]
 
-let model_if (model_stm : Ast.Stm.t -> Statement.t Or_error.t)
-    (old_cond : Ast.Expr.t) (old_t_branch : Ast.Stm.t)
-    (old_f_branch : Ast.Stm.t option) : Statement.t Or_error.t =
-  let open Or_error.Let_syntax in
-  let%bind cond = expr old_cond in
-  let%bind t_list = possible_compound_to_list old_t_branch in
-  let%bind f_list =
-    Option.value_map ~f:possible_compound_to_list old_f_branch
-      ~default:(Or_error.return [])
-  in
-  let model_if_branch xs =
-    xs |> List.map ~f:model_stm |> Or_error.combine_errors
-  in
-  let%map t_branch = model_if_branch t_list
-  and f_branch = model_if_branch f_list in
-  let ifs = Statement.If.make ~cond ~t_branch ~f_branch () in
-  Statement.if_stm ifs
+let model_if_branch (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
+    (branch : Ast.Stm.t) : (unit, unit Statement.t) Block.t Or_error.t =
+  Or_error.(
+    branch |> possible_compound_to_list
+    >>= Tx.Or_error.combine_map ~f:model_stm
+    >>| Block.of_statement_list)
 
-let rec stm : Ast.Stm.t -> Statement.t Or_error.t = function
+let model_if (model_stm : Ast.Stm.t -> unit Statement.t Or_error.t)
+    (old_cond : Ast.Expr.t) (old_t_branch : Ast.Stm.t)
+    (old_f_branch : Ast.Stm.t option) : unit Statement.t Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind cond = expr old_cond in
+    let%bind t_branch = model_if_branch model_stm old_t_branch in
+    let%map f_branch =
+      Option.value_map old_f_branch
+        ~f:(model_if_branch model_stm)
+        ~default:(Or_error.return (Block.of_statement_list []))
+    in
+    let ifs = Statement.If.make ~cond ~t_branch ~f_branch in
+    Statement.if_stm ifs)
+
+let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
   | Expr None ->
       Or_error.return (Statement.nop ())
   | Expr (Some e) ->
@@ -465,7 +468,7 @@ let%expect_test "model atomic_store_explicit" =
                         ; Constant (Integer 42)
                         ; Identifier
                             (Ac.C_id.of_string "memory_order_relaxed") ] })))
-        : Statement.t Or_error.t )] ;
+        : unit Statement.t Or_error.t )] ;
   [%expect
     {|
       (Ok
@@ -493,7 +496,7 @@ let%expect_test "model atomic cmpxchg" =
                             (Ac.C_id.of_string "memory_order_relaxed")
                         ; Identifier
                             (Ac.C_id.of_string "memory_order_relaxed") ] })))
-        : Statement.t Or_error.t )] ;
+        : unit Statement.t Or_error.t )] ;
   [%expect
     {|
       (Ok
@@ -503,7 +506,7 @@ let%expect_test "model atomic cmpxchg" =
          (fail memory_order_relaxed)))) |}]
 
 let func_body (body : Ast.Compound_stm.t) :
-    (Initialiser.t Named.Alist.t * Statement.t list) Or_error.t =
+    (Initialiser.t Named.Alist.t * unit Statement.t list) Or_error.t =
   let open Or_error.Let_syntax in
   let%bind ast_decls, ast_nondecls = sift_decls body in
   let%bind ast_stms = ensure_statements ast_nondecls in
@@ -511,15 +514,15 @@ let func_body (body : Ast.Compound_stm.t) :
   and stms = Tx.Or_error.combine_map ~f:stm ast_stms in
   (decls, stms)
 
-let func (f : Ast.Function_def.t) : Function.t Named.t Or_error.t =
+let func (f : Ast.Function_def.t) : unit Function.t Named.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind () = Validate.result (validate_func f) in
     let%map name, parameters = func_signature f.signature
     and body_decls, body_stms = func_body f.body in
     Named.make ~name (Function.make ~parameters ~body_decls ~body_stms ()))
 
-let translation_unit (prog : Ast.Translation_unit.t) : Program.t Or_error.t
-    =
+let translation_unit (prog : Ast.Translation_unit.t) :
+    unit Program.t Or_error.t =
   Or_error.Let_syntax.(
     let%bind ast_decls, ast_nondecls = sift_decls prog in
     let%bind ast_funs = ensure_functions ast_nondecls in

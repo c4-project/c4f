@@ -16,13 +16,13 @@ module Ac = Act_common
 module Lang :
   Act_litmus.Test_types.Basic
     with type Statement.t =
-          [`Stm of Statement.t | `Decl of Initialiser.t Named.t]
-     and type Program.t = Function.t Named.t
+          [`Stm of unit Statement.t | `Decl of Initialiser.t Named.t]
+     and type Program.t = unit Function.t Named.t
      and type Constant.t = Constant.t = struct
   module Constant = Constant
 
   module Statement = struct
-    type t = [`Stm of Statement.t | `Decl of Initialiser.t Named.t]
+    type t = [`Stm of unit Statement.t | `Decl of Initialiser.t Named.t]
     [@@deriving sexp]
 
     let reify : t -> _ = function
@@ -43,7 +43,7 @@ module Lang :
   module Type = Type
 
   module Program = struct
-    type t = Function.t Named.t [@@deriving sexp]
+    type t = unit Function.t Named.t [@@deriving sexp]
 
     let name (nd : t) : string option =
       Some (Ac.C_id.to_string (Named.name nd))

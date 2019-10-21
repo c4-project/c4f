@@ -43,7 +43,7 @@ let output () : Ac.Output.t Runner_state.Monad.t =
 
 let generate_payload (type rs)
     (module Act : Action_types.S with type Payload.t = rs)
-    (subject : Subject.Test.t) : rs Runner_state.Monad.t =
+    (subject : Metadata.t Subject.Test.t) : rs Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     let%bind o = output () in
     let%bind random = Runner_state.Monad.peek Runner_state.random in
@@ -55,7 +55,7 @@ let generate_payload (type rs)
     Ac.Output.pv o "fuzz: done generating random state.@." ;
     g)
 
-let pick_action (subject : Subject.Test.t) :
+let pick_action (subject : Metadata.t Subject.Test.t) :
     (module Action_types.S) Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     let%bind {pool; random; _} = Runner_state.Monad.peek Fn.id in
@@ -67,8 +67,9 @@ let log_action (type p)
   Runner_state.Monad.modify (fun x ->
       {x with trace= Trace.add x.trace ~action ~payload})
 
-let run_action (module Action : Action_types.S) (subject : Subject.Test.t) :
-    Subject.Test.t Runner_state.Monad.t =
+let run_action (module Action : Action_types.S)
+    (subject : Metadata.t Subject.Test.t) :
+    Metadata.t Subject.Test.t Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     (* We can't, AFAIK, move the payload out of this function, as then the
        subject step runner would become dependent on the exact type of the
@@ -77,8 +78,8 @@ let run_action (module Action : Action_types.S) (subject : Subject.Test.t) :
     let%bind () = log_action (module Action) payload in
     Runner_state.Monad.Monadic.return (Action.run subject ~payload))
 
-let mutate_subject_step (subject : Subject.Test.t) :
-    Subject.Test.t Runner_state.Monad.t =
+let mutate_subject_step (subject : Metadata.t Subject.Test.t) :
+    Metadata.t Subject.Test.t Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     let%bind o = output () in
     Ac.Output.pv o "fuzz: picking action...@." ;
@@ -88,8 +89,8 @@ let mutate_subject_step (subject : Subject.Test.t) :
     >>= Runner_state.Monad.tee ~f:(fun _ ->
             Ac.Output.pv o "fuzz: action done.@."))
 
-let mutate_subject (subject : Subject.Test.t) :
-    Subject.Test.t Runner_state.Monad.t =
+let mutate_subject (subject : Metadata.t Subject.Test.t) :
+    Metadata.t Subject.Test.t Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     let cap = 10 in
     let%map _, subject' =
@@ -110,13 +111,13 @@ let make_runner_state (seed : int option) (config : Config.t) :
     let%map pool = Config.make_pool config in
     {Runner_state.random; trace; pool})
 
-let make_output (rstate : Runner_state.t) (subject : Subject.Test.t) :
-    Trace.t Output.t =
+let make_output (rstate : Runner_state.t)
+    (subject : Metadata.t Subject.Test.t) : Trace.t Output.t =
   let trace = Runner_state.trace rstate in
   Output.make ~subject ~metadata:trace
 
-let run ?(seed : int option) (subject : Subject.Test.t) ~(config : Config.t)
-    : Trace.t Output.t State.Monad.t =
+let run ?(seed : int option) (subject : Metadata.t Subject.Test.t)
+    ~(config : Config.t) : Trace.t Output.t State.Monad.t =
   State.Monad.(
     Let_syntax.(
       let%bind runner_state =

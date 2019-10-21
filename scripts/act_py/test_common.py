@@ -217,9 +217,9 @@ class Instance:
         :param proc: The completed process corresponding to the driver.
         """
         if proc.returncode == 0:
-            logger.info("%s: success", str(self))
+            logger.info("%s: success", self.name)
         else:
-            logger.error("%s: failed: see %s for details", str(self), self.error_file)
+            logger.error("%s: failed: see %s for details", self.name, self.error_file)
 
     def write_files(self, proc: subprocess.CompletedProcess) -> None:
         """Writes the output of a driver to specific files in the output
