@@ -11,9 +11,28 @@
 
 open Stdio
 
+let%test_module "Statement_list" =
+  ( module struct
+    let%test_unit "insertions into an empty list are always at index 0" =
+      Base_quickcheck.Test.run_exn
+        ( module struct
+          type t = Act_fuzz.Path_shapes.stm_list [@@deriving sexp]
+
+          let quickcheck_generator =
+            Act_fuzz.Path.Statement_list.gen_insert_stm []
+
+          let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+        end )
+        ~f:(function
+          | Act_fuzz.Path_shapes.Insert 0 ->
+              ()
+          | _ ->
+              failwith "Unexpected path")
+  end )
+
 let%test_module "s-expression serialisation" =
   ( module struct
-    open Act_c_mini.Path_shapes
+    open Act_fuzz.Path_shapes
 
     let test (x : program) : unit = print_s [%sexp (x : program)]
 

@@ -12,7 +12,7 @@
 open Base
 module Ac = Act_common
 
-let tid_of_path : Act_c_mini.Path_shapes.program -> int = function
+let tid_of_path : Path_shapes.program -> int = function
   | In_func (t, _) ->
       t
 
@@ -20,8 +20,7 @@ module Random_state = struct
   (* We don't give [gen] here, because it depends quite a lot on the functor
      arguments of [Make]. *)
 
-  type t =
-    {store: Act_c_mini.Atomic_store.t; path: Act_c_mini.Path_shapes.program}
+  type t = {store: Act_c_mini.Atomic_store.t; path: Path_shapes.program}
   [@@deriving fields, make, sexp]
 end
 
@@ -154,8 +153,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
       gen_store_with_envs src_mod dst_mod o ~random
 
     let gen_path (o : Ac.Output.t) (subject : Metadata.t Subject.Test.t)
-        ~(random : Splittable_random.State.t) :
-        Act_c_mini.Path_shapes.program =
+        ~(random : Splittable_random.State.t) : Path_shapes.program =
       log o "Generating path" ;
       Base_quickcheck.Generator.generate ~random ~size:10
         (Subject.Test.Path.gen_insert_stm subject)

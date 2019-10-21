@@ -11,13 +11,16 @@
 
 open Base
 module Tx = Travesty_base_exts
+module Stm = Act_c_mini.Statement
+module Fun = Act_c_mini.Function
+module Prog = Act_c_mini.Program
 
 module Make_statement_list (M : Path_types.S_statement) :
   Path_types.S_statement_list with type 'meta target = 'meta M.target =
 struct
   type 'meta target = 'meta M.target
 
-  let insert_stm (path : Path_shapes.stm_list) (stm : 'meta Statement.t)
+  let insert_stm (path : Path_shapes.stm_list) (stm : 'meta Stm.t)
       (dest : 'meta target list) : 'meta target list Or_error.t =
     match path with
     | Insert index ->
@@ -27,7 +30,7 @@ struct
             Or_error.(M.insert_stm rest stm x >>| Option.some))
 
   let transform_stm (path : Path_shapes.stm_list)
-      ~(f : 'meta Statement.t -> 'meta Statement.t Or_error.t)
+      ~(f : 'meta Stm.t -> 'meta Stm.t Or_error.t)
       (dest : 'meta target list) : 'meta target list Or_error.t =
     match path with
     | In_stm (index, rest) ->
@@ -58,8 +61,6 @@ struct
       ( Base_quickcheck.Generator.return (Path_shapes.insert 0)
       :: List.concat_mapi ~f:gen_insert_stm_on dest )
 end
-
-module Stm = Statement
 
 module rec Statement :
   (Path_types.S_statement with type 'meta target = 'meta Stm.t) = struct
@@ -126,7 +127,7 @@ struct
   type 'meta target = 'meta Stm.If.t
 
   module B = Stm.If.Base_map (Or_error)
-  module Block_stms = Block.On_meta_statement_list (Stm)
+  module Block_stms = Act_c_mini.Block.On_meta_statement_list (Stm)
   module Block_stms_err = Block_stms.On_monad (Or_error)
 
   (* TODO(@MattWindsor91): this will probably need to be changed to accept
@@ -159,11 +160,12 @@ struct
     handle_stm path ~f:(Statement_list.transform_stm ~f)
 
   let gen_insert_stm_for_branch (branch : bool)
-      (branch_block : ('meta, 'meta Stm.t) Block.t) :
+      (branch_block : ('meta, 'meta Stm.t) Act_c_mini.Block.t) :
       Path_shapes.ifs Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.map
       ~f:(Path_shapes.in_block branch)
-      (Statement_list.gen_insert_stm (Block.statements branch_block))
+      (Statement_list.gen_insert_stm
+         (Act_c_mini.Block.statements branch_block))
 
   let gen_insert_stm (ifs : 'meta Stm.If.t) :
       Path_shapes.ifs Base_quickcheck.Generator.t =
@@ -172,40 +174,25 @@ struct
       ; gen_insert_stm_for_branch false (Stm.If.f_branch ifs) ]
 end
 
-let%test_unit "insertions into an empty list are always at index 0" =
-  Base_quickcheck.Test.run_exn
-    ( module struct
-      type t = Path_shapes.stm_list [@@deriving sexp]
-
-      let quickcheck_generator = Statement_list.gen_insert_stm []
-
-      let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
-    end )
-    ~f:(function
-      | Path_shapes.Insert 0 -> () | _ -> failwith "Unexpected path")
-
-module Fun = Function
-
 module Function :
-  Path_types.S_function with type 'meta target := 'meta Function.t = struct
-  type 'meta target = 'meta Function.t
+  Path_types.S_function with type 'meta target := 'meta Fun.t = struct
+  type 'meta target = 'meta Fun.t
 
   let gen_insert_stm (func : 'meta target) :
       Path_shapes.func Base_quickcheck.Generator.t =
     Base_quickcheck.Generator.map
-      (Statement_list.gen_insert_stm (Function.body_stms func))
+      (Statement_list.gen_insert_stm (Fun.body_stms func))
       ~f:Path_shapes.in_stms
 
   let handle_stm (path : Path_shapes.func)
       ~(f :
             Path_shapes.stm_list
          -> 'meta Stm.t list
-         -> 'meta Stm.t list Or_error.t) (func : 'meta Function.t) :
-      'meta Function.t Or_error.t =
+         -> 'meta Stm.t list Or_error.t) (func : 'meta Fun.t) :
+      'meta Fun.t Or_error.t =
     match path with
     | In_stms rest ->
-        Or_error.(
-          f rest (Function.body_stms func) >>| Function.with_body_stms func)
+        Or_error.(f rest (Fun.body_stms func) >>| Fun.with_body_stms func)
 
   let insert_stm (path : Path_shapes.func) (stm : 'meta Stm.t) :
       'meta target -> 'meta target Or_error.t =
@@ -218,13 +205,13 @@ module Function :
 end
 
 module Program :
-  Path_types.S_program with type 'meta target := 'meta Program.t = struct
-  type 'meta target = 'meta Program.t
+  Path_types.S_program with type 'meta target := 'meta Prog.t = struct
+  type 'meta target = 'meta Prog.t
 
   let gen_insert_stm (prog : 'meta target) :
       Path_shapes.program Base_quickcheck.Generator.t =
     let prog_gens =
-      List.mapi (Program.functions prog) ~f:(fun index (_, func) ->
+      List.mapi (Prog.functions prog) ~f:(fun index (_, func) ->
           Base_quickcheck.Generator.map
             (Function.gen_insert_stm func)
             ~f:(Path_shapes.in_func index))
@@ -237,14 +224,14 @@ module Program :
     let open Or_error.Let_syntax in
     match path with
     | In_func (index, rest) ->
-        let functions = Program.functions prog in
+        let functions = Prog.functions prog in
         let%map functions' =
           Tx.List.With_errors.replace_m functions index
             ~f:(fun (name, func) ->
               let%map func' = f rest func in
               Some (name, func'))
         in
-        Program.with_functions prog functions'
+        Prog.with_functions prog functions'
 
   let insert_stm (path : Path_shapes.program) (stm : 'meta Stm.t) :
       'meta target -> 'meta target Or_error.t =

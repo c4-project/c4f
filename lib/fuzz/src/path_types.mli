@@ -21,13 +21,18 @@ module type S_path = sig
   type 'meta target
 
   val insert_stm :
-    t -> 'meta Statement.t -> 'meta target -> 'meta target Or_error.t
+       t
+    -> 'meta Act_c_mini.Statement.t
+    -> 'meta target
+    -> 'meta target Or_error.t
   (** [insert_stm path stm dest] tries to insert [stm] into the part of
       [dest] pointed to by [path]. *)
 
   val transform_stm :
        t
-    -> f:('meta Statement.t -> 'meta Statement.t Or_error.t)
+    -> f:
+         (   'meta Act_c_mini.Statement.t
+          -> 'meta Act_c_mini.Statement.t Or_error.t)
     -> 'meta target
     -> 'meta target Or_error.t
   (** [transform_stm path ~f dest] tries to modify the statement at [stm]
@@ -43,11 +48,11 @@ module type S_statement = sig
       with type t := Path_shapes.stm
        and type 'meta target := 'meta target
 
-  val lift_stm : 'meta Statement.t -> 'meta target
+  val lift_stm : 'meta Act_c_mini.Statement.t -> 'meta target
   (** [lift_stm s] lifts a generated statement [s] to the target type of
       this path. *)
 
-  val lower_stm : 'meta target -> 'meta Statement.t
+  val lower_stm : 'meta target -> 'meta Act_c_mini.Statement.t
   (** [lower_stm s] lowers a generated statement [s] to the statement type
       of this path. *)
 

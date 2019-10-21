@@ -24,16 +24,20 @@ module Make_statement_list (M : Path_types.S_statement) :
   Path_types.S_statement_list with type 'meta target = 'meta M.target
 
 module Statement_list :
-  Path_types.S_statement_list with type 'meta target = 'meta Statement.t
+  Path_types.S_statement_list
+    with type 'meta target = 'meta Act_c_mini.Statement.t
 
 module If_statement :
-  Path_types.S_if_statement with type 'meta target = 'meta Statement.If.t
+  Path_types.S_if_statement
+    with type 'meta target = 'meta Act_c_mini.Statement.If.t
 
 module Statement :
-  Path_types.S_statement with type 'meta target = 'meta Statement.t
+  Path_types.S_statement
+    with type 'meta target = 'meta Act_c_mini.Statement.t
 
 module Function :
-  Path_types.S_function with type 'meta target := 'meta Function.t
+  Path_types.S_function
+    with type 'meta target := 'meta Act_c_mini.Function.t
 
 module Program :
-  Path_types.S_program with type 'meta target := 'meta Program.t
+  Path_types.S_program with type 'meta target := 'meta Act_c_mini.Program.t

@@ -30,7 +30,7 @@ module Program = struct
   let has_statements (p : 'meta t) : bool = not (List.is_empty p.stms)
 
   module Stm_path :
-    Act_c_mini.Path_types.S_statement
+    Path_types.S_statement
       with type 'meta target = 'meta Act_c_mini.Statement.t With_source.t =
   struct
     type 'meta target = 'meta Act_c_mini.Statement.t With_source.t
@@ -40,40 +40,39 @@ module Program = struct
     let lift_stm item = With_source.make ~item ~source:`Generated
 
     let try_gen_insert_stm t =
-      Act_c_mini.Path.Statement.try_gen_insert_stm (With_source.item t)
+      Path.Statement.try_gen_insert_stm (With_source.item t)
 
     let insert_stm path stm {With_source.item; source} =
       Or_error.(
         item
-        |> Act_c_mini.Path.Statement.insert_stm path stm
+        |> Path.Statement.insert_stm path stm
         >>| fun item' -> With_source.make ~item:item' ~source)
 
     let transform_stm path ~f {With_source.item; source} =
       Or_error.(
         item
-        |> Act_c_mini.Path.Statement.transform_stm path ~f
+        |> Path.Statement.transform_stm path ~f
         >>| fun item' -> With_source.make ~item:item' ~source)
   end
 
   module Stm_list_path :
-    Act_c_mini.Path_types.S_statement_list
+    Path_types.S_statement_list
       with type 'meta target = 'meta Act_c_mini.Statement.t With_source.t =
-    Act_c_mini.Path.Make_statement_list (Stm_path)
+    Path.Make_statement_list (Stm_path)
 
-  module Path :
-    Act_c_mini.Path_types.S_function with type 'meta target := 'meta t =
+  module Path : Path_types.S_function with type 'meta target := 'meta t =
   struct
     type 'meta target = 'meta t
 
     let gen_insert_stm ({stms; _} : 'meta target) :
-        Act_c_mini.Path_shapes.func Base_quickcheck.Generator.t =
+        Path_shapes.func Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.map
         (Stm_list_path.gen_insert_stm stms)
-        ~f:Act_c_mini.Path_shapes.in_stms
+        ~f:Path_shapes.in_stms
 
-    let handle_stm (path : Act_c_mini.Path_shapes.func)
+    let handle_stm (path : Path_shapes.func)
         ~(f :
-              Act_c_mini.Path_shapes.stm_list
+              Path_shapes.stm_list
            -> 'meta Act_c_mini.Statement.t With_source.t list
            -> 'meta Act_c_mini.Statement.t With_source.t list Or_error.t)
         (prog : 'meta t) : 'meta t Or_error.t =
@@ -82,12 +81,12 @@ module Program = struct
           Or_error.(
             f rest prog.stms >>| fun stms' -> {prog with stms= stms'})
 
-    let insert_stm (path : Act_c_mini.Path_shapes.func)
+    let insert_stm (path : Path_shapes.func)
         (stm : 'meta Act_c_mini.Statement.t) :
         'meta target -> 'meta target Or_error.t =
       handle_stm path ~f:(fun rest -> Stm_list_path.insert_stm rest stm)
 
-    let transform_stm (path : Act_c_mini.Path_shapes.func)
+    let transform_stm (path : Path_shapes.func)
         ~(f :
               'meta Act_c_mini.Statement.t
            -> 'meta Act_c_mini.Statement.t Or_error.t) :
@@ -151,38 +150,35 @@ module Test = struct
   let add_new_program : 'meta t -> 'meta t =
     Act_litmus.Test.Raw.add_thread_at_end ~thread:Program.empty
 
-  module Path :
-    Act_c_mini.Path_types.S_program with type 'meta target := 'meta t =
+  module Path : Path_types.S_program with type 'meta target := 'meta t =
   struct
     type 'meta target = 'meta t
 
     type 'meta stm = 'meta Act_c_mini.Statement.t
 
     let gen_insert_stm (test : 'meta target) :
-        Act_c_mini.Path_shapes.program Base_quickcheck.Generator.t =
+        Path_shapes.program Base_quickcheck.Generator.t =
       let prog_gens =
         List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun index prog ->
             Base_quickcheck.Generator.map
               (Program.Path.gen_insert_stm prog)
-              ~f:(Act_c_mini.Path_shapes.in_func index))
+              ~f:(Path_shapes.in_func index))
       in
       Base_quickcheck.Generator.union prog_gens
 
-    let handle_stm (path : Act_c_mini.Path_shapes.program)
+    let handle_stm (path : Path_shapes.program)
         ~(f :
-              Act_c_mini.Path_shapes.func
-           -> 'meta Program.t
-           -> 'meta Program.t Or_error.t) (test : 'meta target) :
-        'meta target Or_error.t =
+           Path_shapes.func -> 'meta Program.t -> 'meta Program.t Or_error.t)
+        (test : 'meta target) : 'meta target Or_error.t =
       match path with
       | In_func (index, rest) ->
           Act_litmus.Test.Raw.try_map_thread ~index ~f:(f rest) test
 
-    let insert_stm (path : Act_c_mini.Path_shapes.program) (stm : 'meta stm)
-        : 'meta target -> 'meta target Or_error.t =
+    let insert_stm (path : Path_shapes.program) (stm : 'meta stm) :
+        'meta target -> 'meta target Or_error.t =
       handle_stm path ~f:(fun rest -> Program.Path.insert_stm rest stm)
 
-    let transform_stm (path : Act_c_mini.Path_shapes.program)
+    let transform_stm (path : Path_shapes.program)
         ~(f : 'meta stm -> 'meta stm Or_error.t) :
         'meta target -> 'meta target Or_error.t =
       handle_stm path ~f:(Program.Path.transform_stm ~f)

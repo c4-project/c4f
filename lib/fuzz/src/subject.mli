@@ -44,8 +44,7 @@ module Program : sig
   [@@deriving sexp]
   (** Transparent type of fuzzable programs. *)
 
-  module Path :
-    Act_c_mini.Path_types.S_function with type 'meta target := 'meta t
+  module Path : Path_types.S_function with type 'meta target := 'meta t
   (** Allows production and consumption of random paths over fuzzable
       programs in the same way as normal mini functions. *)
 
@@ -90,8 +89,7 @@ module Test : sig
   (** [add_new_program test] appends a new, empty program onto [test]'s
       programs list, returning the resulting test. *)
 
-  module Path :
-    Act_c_mini.Path_types.S_program with type 'meta target := 'meta t
+  module Path : Path_types.S_program with type 'meta target := 'meta t
   (** Allows production and consumption of random paths over fuzzable tests
       in the same way as normal mini programs. *)
 
