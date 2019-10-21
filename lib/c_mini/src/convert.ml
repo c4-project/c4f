@@ -30,17 +30,6 @@ let sift_decls (maybe_decl_list : ([> `Decl of 'd] as 'a) list) :
           return (decls, Fqueue.enqueue rest item))
     >>| fun (decls, rest) -> (Fqueue.to_list decls, Fqueue.to_list rest))
 
-let%expect_test "sift_decls: mixed example" =
-  let result =
-    Or_error.(
-      [`Decl "foo"; `Decl "bar"; `Ndecl "baz"; `Ndecl "barbaz"]
-      |> sift_decls
-      >>| Tuple2.map_snd
-            ~f:(List.map ~f:(function `Decl _ -> "DECL" | `Ndecl x -> x)))
-  in
-  Stdio.print_s [%sexp (result : (string list * string list) Or_error.t)] ;
-  [%expect {| (Ok ((foo bar) (baz barbaz))) |}]
-
 (** [ensure_functions xs] makes sure that each member of [xs] is a function
     definition. *)
 let ensure_functions :
@@ -451,59 +440,6 @@ let rec stm : Ast.Stm.t -> unit Statement.t Or_error.t = function
     | Goto _ ) as s ->
       Or_error.error_s
         [%message "Unsupported statement" ~got:(s : Ast.Stm.t)]
-
-let%expect_test "model atomic_store_explicit" =
-  Stdio.print_s
-    [%sexp
-      ( stm
-          Ast.(
-            Stm.Expr
-              (Some
-                 (Expr.Call
-                    { func=
-                        Identifier
-                          (Ac.C_id.of_string "atomic_store_explicit")
-                    ; arguments=
-                        [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
-                        ; Constant (Integer 42)
-                        ; Identifier
-                            (Ac.C_id.of_string "memory_order_relaxed") ] })))
-        : unit Statement.t Or_error.t )] ;
-  [%expect
-    {|
-      (Ok
-       (Atomic_store
-        ((src (Constant (Int 42))) (dst (Ref (Lvalue (Variable x))))
-         (mo memory_order_relaxed)))) |}]
-
-let%expect_test "model atomic cmpxchg" =
-  Stdio.print_s
-    [%sexp
-      ( stm
-          Ast.(
-            Stm.Expr
-              (Some
-                 (Expr.Call
-                    { func=
-                        Identifier
-                          (Ac.C_id.of_string
-                             "atomic_compare_exchange_strong_explicit")
-                    ; arguments=
-                        [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
-                        ; Prefix (`Ref, Identifier (Ac.C_id.of_string "y"))
-                        ; Constant (Integer 42)
-                        ; Identifier
-                            (Ac.C_id.of_string "memory_order_relaxed")
-                        ; Identifier
-                            (Ac.C_id.of_string "memory_order_relaxed") ] })))
-        : unit Statement.t Or_error.t )] ;
-  [%expect
-    {|
-      (Ok
-       (Atomic_cmpxchg
-        ((obj (Ref (Lvalue (Variable x)))) (expected (Ref (Lvalue (Variable y))))
-         (desired (Constant (Int 42))) (succ memory_order_relaxed)
-         (fail memory_order_relaxed)))) |}]
 
 let func_body (body : Ast.Compound_stm.t) :
     (Initialiser.t Named.Alist.t * unit Statement.t list) Or_error.t =

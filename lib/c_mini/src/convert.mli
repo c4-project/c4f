@@ -17,9 +17,22 @@
 
 open Base
 
+val sift_decls :
+  ([> `Decl of 'd] as 'a) list -> ('d list * 'a list) Or_error.t
+(** [sift_decls maybe_decl_list] tries to separate [maybe_decl_list] into a
+    list of declarations followed immediately by a list of code, C89-style. *)
+
 val constant : Act_c_lang.Ast_basic.Constant.t -> Constant.t Or_error.t
 (** [constant ast] tries to interpret a C constant AST as a mini-model
     constant. *)
+
+val stm : Act_c_lang.Ast.Stm.t -> unit Statement.t Or_error.t
+(** [stm ast] tries to interpret a C statement AST as a mini-model
+    statement. *)
+
+val expr : Act_c_lang.Ast.Expr.t -> Expression.t Or_error.t
+(** [expr ast] tries to interpret a C expression AST as a mini-model
+    statement. *)
 
 val func :
   Act_c_lang.Ast.Function_def.t -> unit Function.t Named.t Or_error.t
