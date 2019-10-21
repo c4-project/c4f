@@ -11,9 +11,8 @@
 
 open Base
 
-type t =
-  { source: [`Existing | `Generated] } [@@deriving sexp, equal]
+type t = {source: [`Existing | `Generated]} [@@deriving sexp, equal]
 
-let existing : t = { source= `Existing }
+let existing : t = {source= `Existing}
 
-let generated : t = { source= `Generated }
+let generated : t = {source= `Generated}

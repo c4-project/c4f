@@ -36,8 +36,8 @@ module Program = struct
         ~(f :
               Path_shapes.stm_list
            -> Metadata.t Act_c_mini.Statement.t list
-           -> Metadata.t Act_c_mini.Statement.t list
-              Or_error.t) (prog : t) : t Or_error.t =
+           -> Metadata.t Act_c_mini.Statement.t list Or_error.t) (prog : t)
+        : t Or_error.t =
       match path with
       | In_stms rest ->
           Or_error.(
@@ -46,7 +46,8 @@ module Program = struct
     let insert_stm (path : Path_shapes.func)
         (stm : Metadata.t Act_c_mini.Statement.t) :
         target -> target Or_error.t =
-      handle_stm path ~f:(fun rest -> Path.Statement_list.insert_stm rest stm)
+      handle_stm path ~f:(fun rest ->
+          Path.Statement_list.insert_stm rest stm)
 
     let transform_stm (path : Path_shapes.func)
         ~(f :
@@ -59,9 +60,10 @@ module Program = struct
   let statements_of_function (func : unit Act_c_mini.Function.t) :
       Metadata.t Act_c_mini.Statement.t list =
     func |> Act_c_mini.Function.body_stms
-    |> List.map ~f:(
-             Act_c_mini.Statement.On_meta.map
-               ~f:(fun () -> Metadata.existing))
+    |> List.map
+         ~f:
+           (Act_c_mini.Statement.On_meta.map ~f:(fun () ->
+                Metadata.existing))
 
   let of_function (func : unit Act_c_mini.Function.t) : t =
     { decls= Act_c_mini.Function.body_decls func
@@ -80,10 +82,7 @@ module Program = struct
   let to_function (prog : t) ~(vars : Var.Map.t) ~(id : int) :
       unit Act_c_mini.Function.t Act_c_mini.Named.t =
     let name = Ac.C_id.of_string (Printf.sprintf "P%d" id) in
-    let body_stms =
-      List.map prog.stms
-        ~f:Act_c_mini.Statement.erase_meta
-    in
+    let body_stms = List.map prog.stms ~f:Act_c_mini.Statement.erase_meta in
     let parameters = make_function_parameters vars in
     let func =
       Act_c_mini.Function.make ~parameters ~body_decls:prog.decls ~body_stms

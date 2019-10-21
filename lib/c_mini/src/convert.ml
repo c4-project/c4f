@@ -314,23 +314,6 @@ let rec expr : Ast.Expr.t -> Expression.t Or_error.t =
       Or_error.error_s
         [%message "Unsupported expression" ~got:(e : Ast.Expr.t)]
 
-let%expect_test "model atomic_load_explicit" =
-  Stdio.print_s
-    [%sexp
-      ( expr
-          Ast.(
-            Expr.Call
-              { func= Identifier (Ac.C_id.of_string "atomic_load_explicit")
-              ; arguments=
-                  [ Prefix (`Ref, Identifier (Ac.C_id.of_string "x"))
-                  ; Identifier (Ac.C_id.of_string "memory_order_seq_cst") ]
-              })
-        : Expression.t Or_error.t )] ;
-  [%expect
-    {|
-      (Ok
-       (Atomic_load ((src (Ref (Lvalue (Variable x)))) (mo memory_order_seq_cst)))) |}]
-
 let model_atomic_store : Ast.Expr.t list -> unit Statement.t Or_error.t =
   function
   | [raw_dst; raw_src; raw_mo] ->
