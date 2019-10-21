@@ -21,26 +21,11 @@
 
 open Base
 
-(** An item, annotated with information about its source. *)
-module With_source : sig
-  type 'a t
-
-  val item : 'a t -> 'a
-  (** [item x] gets [x]'s underlying item. *)
-
-  val source : 'a t -> [`Existing | `Generated]
-  (** [source x] gets [x]'s source. *)
-
-  val make : item:'a -> source:[`Existing | `Generated] -> 'a t
-  (** [make ~item ~source] makes a source-annotated item with contents
-      [item] and source [source]. *)
-end
-
 (** Fuzzable representation of a program. *)
 module Program : sig
   type t =
     { decls: Act_c_mini.Initialiser.t Act_c_mini.Named.Alist.t
-    ; stms: Metadata.t Act_c_mini.Statement.t With_source.t list }
+    ; stms: Metadata.t Act_c_mini.Statement.t list }
   [@@deriving sexp]
   (** Transparent type of fuzzable programs. *)
 

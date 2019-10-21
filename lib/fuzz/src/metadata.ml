@@ -10,6 +10,10 @@
    project root for more information. *)
 
 open Base
-include Unit (* for now *)
 
-let empty : t = ()
+type t =
+  { source: [`Existing | `Generated] } [@@deriving sexp, equal]
+
+let existing : t = { source= `Existing }
+
+let generated : t = { source= `Generated }

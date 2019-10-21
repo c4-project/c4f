@@ -102,15 +102,11 @@ let%test_module "trace playback" =
         (threads
          (((decls ())
            (stms
-            (((item
-               (Atomic_store
-                ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-                 (mo memory_order_seq_cst))))
-              (source Existing))
-             ((item Nop) (source Existing))
-             ((item
-               (Atomic_store
-                ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
-                 (mo memory_order_relaxed))))
-              (source Existing))))))))) |}]
+            ((Atomic_store
+              ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
+               (mo memory_order_seq_cst)))
+             Nop
+             (Atomic_store
+              ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
+               (mo memory_order_relaxed)))))))))) |}]
   end )

@@ -13,52 +13,15 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
-(* TODO(@MattWindsor91): deprecate this in favour of metadata *)
-module With_source = struct
-  type 'a t = {item: 'a; source: [`Existing | `Generated]}
-  [@@deriving sexp, fields, make]
-end
-
 module Program = struct
   type t =
     { decls: Act_c_mini.Initialiser.t Act_c_mini.Named.Alist.t
-    ; stms: Metadata.t Act_c_mini.Statement.t With_source.t list }
+    ; stms: Metadata.t Act_c_mini.Statement.t list }
   [@@deriving sexp]
 
   let empty : t = {decls= []; stms= []}
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
-
-  module Stm_path :
-    Path_types.S_statement
-      with type target = Metadata.t Act_c_mini.Statement.t With_source.t =
-  struct
-    type target = Metadata.t Act_c_mini.Statement.t With_source.t
-
-    let lower_stm = With_source.item
-
-    let lift_stm item = With_source.make ~item ~source:`Generated
-
-    let try_gen_insert_stm t =
-      Path.Statement.try_gen_insert_stm (With_source.item t)
-
-    let insert_stm path stm {With_source.item; source} =
-      Or_error.(
-        item
-        |> Path.Statement.insert_stm path stm
-        >>| fun item' -> With_source.make ~item:item' ~source)
-
-    let transform_stm path ~f {With_source.item; source} =
-      Or_error.(
-        item
-        |> Path.Statement.transform_stm path ~f
-        >>| fun item' -> With_source.make ~item:item' ~source)
-  end
-
-  module Stm_list_path :
-    Path_types.S_statement_list
-      with type target = Metadata.t Act_c_mini.Statement.t With_source.t =
-    Path.Make_statement_list (Stm_path)
 
   module Path : Path_types.S_function with type target := t = struct
     type target = t
@@ -66,14 +29,14 @@ module Program = struct
     let gen_insert_stm ({stms; _} : target) :
         Path_shapes.func Base_quickcheck.Generator.t =
       Base_quickcheck.Generator.map
-        (Stm_list_path.gen_insert_stm stms)
+        (Path.Statement_list.gen_insert_stm stms)
         ~f:Path_shapes.in_stms
 
     let handle_stm (path : Path_shapes.func)
         ~(f :
               Path_shapes.stm_list
-           -> Metadata.t Act_c_mini.Statement.t With_source.t list
-           -> Metadata.t Act_c_mini.Statement.t With_source.t list
+           -> Metadata.t Act_c_mini.Statement.t list
+           -> Metadata.t Act_c_mini.Statement.t list
               Or_error.t) (prog : t) : t Or_error.t =
       match path with
       | In_stms rest ->
@@ -83,26 +46,22 @@ module Program = struct
     let insert_stm (path : Path_shapes.func)
         (stm : Metadata.t Act_c_mini.Statement.t) :
         target -> target Or_error.t =
-      handle_stm path ~f:(fun rest -> Stm_list_path.insert_stm rest stm)
+      handle_stm path ~f:(fun rest -> Path.Statement_list.insert_stm rest stm)
 
     let transform_stm (path : Path_shapes.func)
         ~(f :
               Metadata.t Act_c_mini.Statement.t
            -> Metadata.t Act_c_mini.Statement.t Or_error.t) :
         target -> target Or_error.t =
-      handle_stm path ~f:(Stm_list_path.transform_stm ~f)
+      handle_stm path ~f:(Path.Statement_list.transform_stm ~f)
   end
 
   let statements_of_function (func : unit Act_c_mini.Function.t) :
-      Metadata.t Act_c_mini.Statement.t With_source.t list =
+      Metadata.t Act_c_mini.Statement.t list =
     func |> Act_c_mini.Function.body_stms
-    |> List.map ~f:(fun item ->
-           let item =
+    |> List.map ~f:(
              Act_c_mini.Statement.On_meta.map
-               ~f:(fun () -> Metadata.empty)
-               item
-           in
-           With_source.make ~item ~source:`Existing)
+               ~f:(fun () -> Metadata.existing))
 
   let of_function (func : unit Act_c_mini.Function.t) : t =
     { decls= Act_c_mini.Function.body_decls func
@@ -123,7 +82,7 @@ module Program = struct
     let name = Ac.C_id.of_string (Printf.sprintf "P%d" id) in
     let body_stms =
       List.map prog.stms
-        ~f:(Fn.compose Act_c_mini.Statement.erase_meta With_source.item)
+        ~f:Act_c_mini.Statement.erase_meta
     in
     let parameters = make_function_parameters vars in
     let func =
