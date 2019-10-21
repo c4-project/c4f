@@ -23,7 +23,7 @@ module rec Statement :
 
   let lower_stm = Fn.id
 
-  let in_if_error (type meta) (dest : meta Stm.t) (_ : 'a) : 'b Or_error.t =
+  let in_if_error (dest : Metadata.t Stm.t) (_ : 'a) : 'b Or_error.t =
     Or_error.error_s
       [%message
         "Invalid target for 'in_if' path" [%here]
@@ -130,12 +130,12 @@ struct
   (* TODO(@MattWindsor91): this will probably need to be changed to accept
      full blocks. *)
 
-  let handle_stm (type meta) (path : Path_shapes.ifs)
+  let handle_stm (path : Path_shapes.ifs)
       ~(f :
             Path_shapes.stm_list
-         -> meta Stm.t list
-         -> meta Stm.t list Or_error.t) (ifs : meta Stm.If.t) :
-      meta Stm.If.t Or_error.t =
+         -> Metadata.t Stm.t list
+         -> Metadata.t Stm.t list Or_error.t) (ifs : Metadata.t Stm.If.t) :
+      Metadata.t Stm.If.t Or_error.t =
     let lift_f rest = Block_stms_err.map_m ~f:(f rest) in
     match path with
     | In_block (branch, rest) ->
