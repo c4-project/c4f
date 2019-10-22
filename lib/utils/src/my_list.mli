@@ -90,7 +90,21 @@ val splice :
     [pos] is out of bounds, or the list from [pos] onwards is shorter than
     [len]. *)
 
+val try_splice :
+     'a list
+  -> pos:int
+  -> len:int
+  -> replace_f:('a list -> 'a list Or_error.t)
+  -> 'a list Or_error.t
+(** [try_splice xs ~pos ~len ~replace_f] behaves as {!splice}, but
+    accepts a [replace_f] that can fail. *)
+
 val map_sub :
   'a list -> pos:int -> len:int -> f:('a -> 'a) -> 'a list Or_error.t
 (** [map_sub xs ~pos ~len ~f] maps [f] over the part of [xs] denoted by
+    [pos] and [len]. *)
+
+val try_map_sub :
+  'a list -> pos:int -> len:int -> f:('a -> 'a Or_error.t) -> 'a list Or_error.t
+(** [try_map_sub xs ~pos ~len ~f] maps [f] over the part of [xs] denoted by
     [pos] and [len]. *)
