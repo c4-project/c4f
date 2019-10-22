@@ -35,35 +35,36 @@ let find_one (type a b) ?(item_name : string = "item") (items : a list)
   find_at_most_one items ~item_name ~f
     ~on_empty:(Or_error.errorf "Expected at least one %s" item_name)
 
-(* These functions probably raise exceptions on empty lists, so we don't
-   expose them directly: see `random_index` and `random_stride` later on. *)
+module Random = struct
+  (* These functions probably raise exceptions on empty lists, so we don't
+     expose them directly: see `index` and `stride` later on. *)
 
-let random_index_raw (xs : 'a list) ~(random : Splittable_random.State.t) :
-    int =
-  Splittable_random.int random ~lo:0 ~hi:(List.length xs - 1)
+  let index_raw (xs : 'a list) ~(random : Splittable_random.State.t) : int =
+    Splittable_random.int random ~lo:0 ~hi:(List.length xs - 1)
 
-let random_stride_raw (xs : 'a list) ~(random : Splittable_random.State.t) :
-    int * int =
-  let ix1 = random_index_raw xs ~random in
-  let ix2 = random_index_raw xs ~random in
-  let ixmin = min ix1 ix2 in
-  let ixmax = max ix1 ix2 in
-  (ixmin, ixmax - ixmin)
+  let stride_raw (xs : 'a list) ~(random : Splittable_random.State.t) :
+      int * int =
+    let ix1 = index_raw xs ~random in
+    let ix2 = index_raw xs ~random in
+    let ixmin = min ix1 ix2 in
+    let ixmax = max ix1 ix2 in
+    (ixmin, ixmax - ixmin)
 
-let guard_if_empty (xs : 'a list) ~(f : 'a list -> 'b) : 'b option =
-  if List.is_empty xs then None else Some (f xs)
+  let guard_if_empty (xs : 'a list) ~(f : 'a list -> 'b) : 'b option =
+    if List.is_empty xs then None else Some (f xs)
 
-let random_index (xs : 'a list) ~(random : Splittable_random.State.t) :
-    int option =
-  guard_if_empty xs ~f:(random_index_raw ~random)
+  let index (xs : 'a list) ~(random : Splittable_random.State.t) :
+      int option =
+    guard_if_empty xs ~f:(index_raw ~random)
 
-let random_stride (xs : 'a list) ~(random : Splittable_random.State.t) :
-    (int * int) option =
-  guard_if_empty xs ~f:(random_stride_raw ~random)
+  let stride (xs : 'a list) ~(random : Splittable_random.State.t) :
+      (int * int) option =
+    guard_if_empty xs ~f:(stride_raw ~random)
 
-let random_item (xs : 'a list) ~(random : Splittable_random.State.t) :
-    'a option =
-  Option.(random_index ~random xs >>= List.nth xs)
+  let item (xs : 'a list) ~(random : Splittable_random.State.t) : 'a option
+      =
+    Option.(index ~random xs >>= List.nth xs)
+end
 
 let split_or_error (xs : 'a list) (n : int) : ('a list * 'a list) Or_error.t
     =

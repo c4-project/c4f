@@ -54,23 +54,24 @@ val find_one :
 
 (** {2 Using a splittable RNG to access elements} *)
 
-val random_index : _ list -> random:Splittable_random.State.t -> int option
-(** [random_index xs ~random] returns [None] if [xs] is empty, and [Some i],
-    where [i] is a random number generated with [random] between [0] and
-    [length xs] exclusive, otherwise. *)
+module Random : sig
+  val index : _ list -> random:Splittable_random.State.t -> int option
+  (** [index xs ~random] returns [None] if [xs] is empty, and [Some i],
+      where [i] is a random number generated with [random] between [0] and
+      [length xs] exclusive, otherwise. *)
 
-val random_stride :
-  _ list -> random:Splittable_random.State.t -> (int * int) option
-(** [random_index xs ~random] returns [None] if [xs] is empty, and
-    [Some (i, n)], where [i] is a random index generated with [random]
-    between [0] and [length xs] exclusive and [n] is a random length
-    generated with [random] between [0] and the [length] of the sub-list
-    after [i], otherwise. *)
+  val stride :
+    _ list -> random:Splittable_random.State.t -> (int * int) option
+  (** [index xs ~random] returns [None] if [xs] is empty, and [Some (i, n)],
+      where [i] is a random index generated with [random] between [0] and
+      [length xs] exclusive and [n] is a random length generated with
+      [random] between [0] and the [length] of the sub-list after [i],
+      otherwise. *)
 
-val random_item : 'a list -> random:Splittable_random.State.t -> 'a option
-(** [random_item xs ~random] behaves like
-    {{!List.random_element} List.random_element}, but uses a splittable RNG
-    for compatibility with Quickcheck etc. *)
+  val item : 'a list -> random:Splittable_random.State.t -> 'a option
+  (** [item xs ~random] behaves like {!List.random_element}, but uses a
+      splittable RNG for compatibility with Quickcheck etc. *)
+end
 
 (** {2 Manipulating lists} *)
 

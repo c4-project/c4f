@@ -42,7 +42,7 @@ end
 let%test_module "Random" =
   ( module struct
     let make_random () : Splittable_random.State.t =
-      let rng = Random.State.make_self_init ~allow_in_tests:true () in
+      let rng = Base.Random.State.make_self_init ~allow_in_tests:true () in
       Splittable_random.State.create rng
 
     let check_random (xs : int list) ~(pred : int list -> 'a -> bool)
@@ -52,40 +52,39 @@ let%test_module "Random" =
     let in_bounds (type a) (xs : a list) (i : int) : bool =
       Option.is_some (List.nth xs i)
 
-    let%test_unit "random_index is always in bounds" =
+    let%test_unit "index is always in bounds" =
       let random = make_random () in
       Test.run_exn
         (module Int_list)
         ~f:
           ([%test_pred: int list] ~here:[[%here]]
-             (check_random ~f:(random_index ~random) ~pred:in_bounds))
+             (check_random ~f:(Random.index ~random) ~pred:in_bounds))
 
-    let%test_unit "random_stride is always in bounds" =
+    let%test_unit "stride is always in bounds" =
       let random = make_random () in
       Test.run_exn
         (module Int_list)
         ~f:
           ([%test_pred: int list] ~here:[[%here]]
-             (check_random ~f:(random_stride ~random)
+             (check_random ~f:(Random.stride ~random)
                 ~pred:(fun xs (i, n) ->
                   in_bounds xs i && n <= List.length (List.drop xs (i - 1)))))
 
-    let%test_module "random_item" =
+    let%test_module "item" =
       ( module struct
-        let%expect_test "random item: empty list" =
+        let%expect_test "empty list" =
           let deterministic_srng = Splittable_random.State.of_int 0 in
           print_s
-            [%sexp (random_item ~random:deterministic_srng [] : int option)] ;
+            [%sexp (Random.item ~random:deterministic_srng [] : int option)] ;
           [%expect {| () |}]
 
-        let%test_unit "random_item is always a valid item" =
-          let rng = Random.State.make_self_init ~allow_in_tests:true () in
-          let random = Splittable_random.State.create rng in
+        let%test_unit "always a valid item" =
+          let random = make_random () in
           Test.run_exn
             (module Int_list)
             ~f:
               ([%test_pred: int list] ~here:[[%here]]
-                 (check_random ~f:(random_item ~random)
+                 (check_random ~f:(Random.item ~random)
                     ~pred:(List.mem ~equal:Int.equal)))
       end )
   end )
