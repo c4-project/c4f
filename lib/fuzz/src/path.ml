@@ -38,7 +38,7 @@ module rec Statement :
     match path with
     | In_if rest ->
         handle_in_if ~f:(If_statement.insert_stm rest stm) dest
-    | _ ->
+    | This_stm ->
         Or_error.error_s
           [%message
             "Can't insert statement here" ~path:(path : Path_shapes.stm)]
@@ -77,6 +77,16 @@ and Statement_list :
     Tx.List.With_errors.replace_m dest index ~f:(fun x ->
         Or_error.(x |> f >>| Option.some))
 
+  let bad_stm_list_path_error (path : Path_shapes.stm_list)
+      ~(here : Source_code_position.t) ~(context : string) :
+      target list Or_error.t =
+    Or_error.error_s
+      [%message
+        "Can't use this statement-list path here"
+          ~here:(here : Source_code_position.t)
+          ~context
+          ~path:(path : Path_shapes.stm_list)]
+
   let insert_stm (path : Path_shapes.stm_list) (stm : Metadata.t Stm.t)
       (dest : target list) : target list Or_error.t =
     match path with
@@ -84,6 +94,8 @@ and Statement_list :
         Tx.List.insert dest index stm
     | In_stm (index, rest) ->
         handle_in_stm dest index ~f:(M.insert_stm rest stm)
+    | On_stm_range (_, _) ->
+        bad_stm_list_path_error path ~context:"insert_stm" ~here:[%here]
 
   let transform_stm (path : Path_shapes.stm_list)
       ~(f : Metadata.t Stm.t -> Metadata.t Stm.t Or_error.t)
@@ -91,11 +103,10 @@ and Statement_list :
     match path with
     | In_stm (index, rest) ->
         handle_in_stm dest index ~f:(M.transform_stm rest ~f)
+    | On_stm_range (_index, _length) ->
+        Or_error.unimplemented "TODO"
     | Insert _ ->
-        Or_error.error_s
-          [%message
-            "Can't use insert-at path to transform statements" ~here:[%here]
-              ~path:(path : Path_shapes.stm_list)]
+        bad_stm_list_path_error path ~context:"transform_stm" ~here:[%here]
 
   let gen_insert_stm_on (index : int) (single_dest : target) :
       Path_shapes.stm_list Base_quickcheck.Generator.t list =
