@@ -80,11 +80,16 @@ val split_or_error : 'a list -> int -> ('a list * 'a list) Or_error.t
 
 val splice :
      'a list
-  -> start:int
-  -> length:int
+  -> pos:int
+  -> len:int
   -> replace_f:('a list -> 'a list)
   -> 'a list Or_error.t
-(** [splice xs ~start ~length ~replace_f] replaces the part of [xs] denoted
-    by [start] and [length] with its image in [replace_f]. It returns an
-    error if [start] is out of bounds, or the list from [start] onwards is
-    shorter than [length]. *)
+(** [splice xs ~pos ~len ~replace_f] replaces the part of [xs] denoted by
+    [pos] and [len] with its image in [replace_f]. It returns an error if
+    [pos] is out of bounds, or the list from [pos] onwards is shorter than
+    [len]. *)
+
+val map_sub :
+  'a list -> pos:int -> len:int -> f:('a -> 'a) -> 'a list Or_error.t
+(** [map_sub xs ~pos ~len ~f] maps [f] over the part of [xs] denoted by
+    [pos] and [len]. *)

@@ -90,19 +90,20 @@ let%test_module "Random" =
       end )
   end )
 
+let test_splice_like : int list Or_error.t -> unit =
+  Fmt.(pr "@[%a@]@." (result ~error:Error.pp ~ok:(list ~sep:comma int)))
+
 let%test_module "splice" =
   ( module struct
-    let test : int list Or_error.t -> unit =
-      Fmt.(pr "@[%a@]@." (result ~error:Error.pp ~ok:(list ~sep:comma int)))
-
-    let test_fib ~(start : int) ~(length : int)
+    let test_fib ~(pos : int) ~(len : int)
         ~(replace_f : int list -> int list) : unit =
-      test (splice [1; 1; 2; 3; 5; 8; 13; 21] ~start ~length ~replace_f)
+      test_splice_like
+        (splice [1; 1; 2; 3; 5; 8; 13; 21] ~pos ~len ~replace_f)
 
     let%test_module "in-bounds" =
       ( module struct
         let test_in_bounds : replace_f:(int list -> int list) -> unit =
-          test_fib ~start:2 ~length:3
+          test_fib ~pos:2 ~len:3
 
         let%expect_test "in-bounds, do nothing" =
           test_in_bounds ~replace_f:Fn.id ;
@@ -119,42 +120,69 @@ let%test_module "splice" =
 
     let%test_module "out-of-bounds" =
       ( module struct
-        let%expect_test "out of bounds (negative start)" =
-          test_fib ~start:(-1) ~length:3 ~replace_f:Fn.id ;
+        let%expect_test "out of bounds (negative pos)" =
+          test_fib ~pos:(-1) ~len:3 ~replace_f:Fn.id ;
           [%expect {| Can't split a list at a negative point -1 |}]
 
-        let%expect_test "out of bounds (over-far start)" =
-          test_fib ~start:8 ~length:3 ~replace_f:Fn.id ;
+        let%expect_test "out of bounds (over-far pos)" =
+          test_fib ~pos:8 ~len:3 ~replace_f:Fn.id ;
           [%expect {| Can't split a list of length 0 at point 3 |}]
 
-        let%expect_test "out of bounds (negative length)" =
-          test_fib ~start:2 ~length:(-3) ~replace_f:Fn.id ;
+        let%expect_test "out of bounds (negative len)" =
+          test_fib ~pos:2 ~len:(-3) ~replace_f:Fn.id ;
           [%expect {| Can't split a list at a negative point -3 |}]
 
-        let%expect_test "out of bounds (overlong length)" =
-          test_fib ~start:2 ~length:7 ~replace_f:Fn.id ;
+        let%expect_test "out of bounds (overlong len)" =
+          test_fib ~pos:2 ~len:7 ~replace_f:Fn.id ;
           [%expect {| Can't split a list of length 6 at point 7 |}]
       end )
 
     let%test_module "pathological cases" =
       ( module struct
-        let%expect_test "zero-length list, reverse items" =
-          test_fib ~start:2 ~length:0 ~replace_f:List.rev ;
+        let%expect_test "zero-len list, reverse items" =
+          test_fib ~pos:2 ~len:0 ~replace_f:List.rev ;
           [%expect {| 1, 1, 2, 3, 5, 8, 13, 21 |}]
 
         let%test_unit "splice on a full list behaves as operating directly"
             =
           Test.run_exn
             ( module struct
-              type t = int * int list * (int list -> int list)
+              type t = int list * (int list -> int list)
               [@@deriving sexp, quickcheck]
             end )
-            ~f:(fun (x, xs, f) ->
+            ~f:(fun (xs, f) ->
               [%test_result: int list Or_error.t] ~here:[[%here]]
                 ~equal:[%compare.equal: int list Or_error.t]
-                ~expect:(Or_error.return (f (x :: xs)))
-                (splice (x :: xs) ~start:0
-                   ~length:(List.length (x :: xs))
-                   ~replace_f:f))
+                ~expect:(Or_error.return (f xs))
+                (splice xs ~pos:0 ~len:(List.length xs) ~replace_f:f))
       end )
+  end )
+
+let%test_module "map_sub" =
+  ( module struct
+    let test_fib ~(pos : int) ~(len : int) ~(f : int -> int) : unit =
+      test_splice_like (map_sub [1; 1; 2; 3; 5; 8; 13; 21] ~pos ~len ~f)
+
+    let%test_module "in-bounds" =
+      ( module struct
+        let test_in_bounds : f:(int -> int) -> unit = test_fib ~pos:2 ~len:3
+
+        let%expect_test "in-bounds, do nothing" =
+          test_in_bounds ~f:Fn.id ; [%expect {| 1, 1, 2, 3, 5, 8, 13, 21 |}]
+
+        let%expect_test "in-bounds, double items" =
+          test_in_bounds ~f:(Int.( * ) 2) ;
+          [%expect {| 1, 1, 4, 6, 10, 8, 13, 21 |}]
+      end )
+
+    let%test_unit "map_sub on a full list behaves as map" =
+      Test.run_exn
+        ( module struct
+          type t = int list * (int -> int) [@@deriving sexp, quickcheck]
+        end )
+        ~f:(fun (xs, f) ->
+          [%test_result: int list Or_error.t] ~here:[[%here]]
+            ~equal:[%compare.equal: int list Or_error.t]
+            ~expect:(Or_error.return (List.map ~f xs))
+            (map_sub xs ~pos:0 ~len:(List.length xs) ~f))
   end )

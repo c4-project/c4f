@@ -74,10 +74,17 @@ let split_or_error (xs : 'a list) (n : int) : ('a list * 'a list) Or_error.t
     Or_error.errorf "Can't split a list of length %d at point %d" len n
   else Or_error.return (List.split_n xs n)
 
-let splice (xs : 'a list) ~(start : int) ~(length : int)
+(* TODO(@MattWindsor91): if splice isn't woefully inefficient, map_sub is.
+   Any more efficient implementations gratefully accepted. *)
+
+let splice (xs : 'a list) ~(pos : int) ~(len : int)
     ~(replace_f : 'a list -> 'a list) : 'a list Or_error.t =
   Or_error.Let_syntax.(
-    let%bind prefix, rest = split_or_error xs start in
-    let%map input, suffix = split_or_error rest length in
+    let%bind prefix, rest = split_or_error xs pos in
+    let%map input, suffix = split_or_error rest len in
     let output = replace_f input in
     List.concat [prefix; output; suffix])
+
+let map_sub (xs : 'a list) ~(pos : int) ~(len : int) ~(f : 'a -> 'a) :
+    'a list Or_error.t =
+  splice xs ~pos ~len ~replace_f:(List.map ~f)
