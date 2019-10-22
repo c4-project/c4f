@@ -34,6 +34,18 @@ module type S_path = sig
     -> target Or_error.t
   (** [transform_stm path ~f dest] tries to modify the statement at [stm]
       using [f]. *)
+
+  val transform_stm_list :
+       t
+    -> f:
+         (   Metadata.t Act_c_mini.Statement.t list
+          -> Metadata.t Act_c_mini.Statement.t list Or_error.t)
+    -> target
+    -> target Or_error.t
+  (** [transform_stm_list path ~f dest] tries to modify the list of all
+      statement at [stm] using [f]. Unlike {!transform_stm},
+      [transform_stm_list] can add and remove statements from the enclosing
+      block. *)
 end
 
 (** Signature of paths over statements and statement-like entities. *)

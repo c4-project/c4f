@@ -55,6 +55,13 @@ module Program = struct
            -> Metadata.t Act_c_mini.Statement.t Or_error.t) :
         target -> target Or_error.t =
       handle_stm path ~f:(Path.Statement_list.transform_stm ~f)
+
+    let transform_stm_list (path : Path_shapes.func)
+        ~(f :
+              Metadata.t Act_c_mini.Statement.t list
+           -> Metadata.t Act_c_mini.Statement.t list Or_error.t) :
+        target -> target Or_error.t =
+      handle_stm path ~f:(Path.Statement_list.transform_stm_list ~f)
   end
 
   let statements_of_function (func : unit Act_c_mini.Function.t) :
@@ -135,6 +142,11 @@ module Test = struct
     let transform_stm (path : Path_shapes.program)
         ~(f : stm -> stm Or_error.t) : target -> target Or_error.t =
       handle_stm path ~f:(Program.Path.transform_stm ~f)
+
+    let transform_stm_list (path : Path_shapes.program)
+        ~(f : stm list -> stm list Or_error.t) : target -> target Or_error.t
+        =
+      handle_stm path ~f:(Program.Path.transform_stm_list ~f)
   end
 
   let programs_of_litmus (test : Act_c_mini.Litmus.Test.t) : Program.t list

@@ -77,8 +77,9 @@ let%test_module "Statement_list" =
               [%expect
                 {|
           (Error
-           ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:98:65)
-            (context insert_stm) (path (On_stm_range 1 2)))) |}]
+           ("Can't use this statement-list path here"
+            (here lib/fuzz/src/path.ml:109:65) (context insert_stm)
+            (path (On_stm_range 1 2)))) |}]
 
             let%expect_test "insert into list" =
               test_insert insert_path ;
@@ -155,8 +156,65 @@ let%test_module "Statement_list" =
                 {|
           (Error
            ("Can't use this statement-list path here"
-            (here lib/fuzz/src/path.ml:109:68) (context transform_stm)
+            (here lib/fuzz/src/path.ml:120:68) (context transform_stm)
             (path (Insert 2)))) |}]
+          end )
+
+        let%test_module "transform_stm_list" =
+          ( module struct
+            type stm = F.Metadata.t Stm.t
+
+            let make_block (statements : stm list) :
+                (F.Metadata.t, stm) Act_c_mini.Block.t =
+              Act_c_mini.Block.make ~metadata:F.Metadata.generated
+                ~statements ()
+
+            let iffify (statements : F.Metadata.t Stm.t list) :
+                F.Metadata.t Stm.t list Or_error.t =
+              Or_error.return
+                [ Stm.if_stm
+                    (Stm.If.make
+                       ~cond:(Act_c_mini.Expression.bool_lit true)
+                       ~t_branch:(make_block statements)
+                       ~f_branch:(make_block [])) ]
+
+            let test_transform_list (path : F.Path_shapes.stm_list) : unit =
+              test
+                (F.Path.Statement_list.transform_stm_list path ~f:iffify
+                   (Lazy.force body_stms))
+
+            let%expect_test "try to list-transform a statement (invalid)" =
+              test_transform_list in_stm_path ;
+              [%expect
+                {| (Error ("Can't transform multiple statements here" (path This_stm))) |}]
+
+            let%expect_test "list-transform a range" =
+              test_transform_list on_stm_range_path ;
+              [%expect
+                {|
+                  (Ok
+                   ((Atomic_store
+                     ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
+                      (mo memory_order_seq_cst)))
+                    (If_stm
+                     ((cond (Constant (Bool true)))
+                      (t_branch
+                       ((statements
+                         (Nop
+                          (Atomic_store
+                           ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
+                            (mo memory_order_relaxed)))))
+                        (metadata ((source Generated)))))
+                      (f_branch ((statements ()) (metadata ((source Generated))))))))) |}]
+
+            let%expect_test "list-transform an insertion (invalid)" =
+              test_transform_list insert_path ;
+              [%expect
+                {|
+                  (Error
+                   ("Can't use this statement-list path here"
+                    (here lib/fuzz/src/path.ml:131:73) (context transform_stm_list)
+                    (path (Insert 2)))) |}]
           end )
       end )
   end )
