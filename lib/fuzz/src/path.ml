@@ -103,8 +103,8 @@ and Statement_list :
     match path with
     | In_stm (index, rest) ->
         handle_in_stm dest index ~f:(M.transform_stm rest ~f)
-    | On_stm_range (_index, _length) ->
-        Or_error.unimplemented "TODO"
+    | On_stm_range (pos, len) ->
+        Act_utils.My_list.try_map_sub ~pos ~len ~f dest
     | Insert _ ->
         bad_stm_list_path_error path ~context:"transform_stm" ~here:[%here]
 

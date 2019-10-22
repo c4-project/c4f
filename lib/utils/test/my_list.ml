@@ -98,8 +98,7 @@ let%test_module "splice" =
   ( module struct
     let test_fib ~(pos : int) ~(len : int)
         ~(replace_f : int list -> int list) : unit =
-      test_splice_like
-        (splice fibs ~pos ~len ~replace_f)
+      test_splice_like (splice fibs ~pos ~len ~replace_f)
 
     let%test_module "in-bounds" =
       ( module struct
@@ -161,21 +160,26 @@ let%test_module "splice" =
 
 let%test_module "try_splice" =
   ( module struct
-    let test_fib ~(pos : int) ~(len : int) ~(replace_f : int list -> int list Or_error.t) : unit =
+    let test_fib ~(pos : int) ~(len : int)
+        ~(replace_f : int list -> int list Or_error.t) : unit =
       test_splice_like (try_splice fibs ~pos ~len ~replace_f)
 
     let%test_module "in-bounds" =
       ( module struct
-        let test_in_bounds : replace_f:(int list -> int list Or_error.t) -> unit = test_fib ~pos:2 ~len:3
+        let test_in_bounds :
+            replace_f:(int list -> int list Or_error.t) -> unit =
+          test_fib ~pos:2 ~len:3
 
         let%expect_test "in-bounds, do nothing" =
-          test_in_bounds ~replace_f:Or_error.return ; [%expect {| 1, 1, 2, 3, 5, 8, 13, 21 |}]
+          test_in_bounds ~replace_f:Or_error.return ;
+          [%expect {| 1, 1, 2, 3, 5, 8, 13, 21 |}]
 
         let%expect_test "in-bounds, fail" =
-          test_in_bounds ~replace_f:(Fn.const (Or_error.error_string "oops")) ;
+          test_in_bounds
+            ~replace_f:(Fn.const (Or_error.error_string "oops")) ;
           [%expect {| oops |}]
       end )
-  end)
+  end )
 
 let%test_module "map_sub" =
   ( module struct
@@ -208,22 +212,27 @@ let%test_module "map_sub" =
 
 let%test_module "try_map_sub" =
   ( module struct
-    let test_fib ~(pos : int) ~(len : int) ~(f : int -> int Or_error.t) : unit =
+    let test_fib ~(pos : int) ~(len : int) ~(f : int -> int Or_error.t) :
+        unit =
       test_splice_like (try_map_sub fibs ~pos ~len ~f)
 
     let%test_module "in-bounds" =
       ( module struct
-        let test_in_bounds : f:(int -> int Or_error.t) -> unit = test_fib ~pos:2 ~len:3
+        let test_in_bounds : f:(int -> int Or_error.t) -> unit =
+          test_fib ~pos:2 ~len:3
 
         let%expect_test "in-bounds, do nothing" =
-          test_in_bounds ~f:Or_error.return ; [%expect {| 1, 1, 2, 3, 5, 8, 13, 21 |}]
+          test_in_bounds ~f:Or_error.return ;
+          [%expect {| 1, 1, 2, 3, 5, 8, 13, 21 |}]
 
         let%expect_test "in-bounds, partial" =
-          test_in_bounds ~f:(fun x -> if x % 2 = 0 then Or_error.return x else Or_error.errorf "%d" x) ;
+          test_in_bounds ~f:(fun x ->
+              if x % 2 = 0 then Or_error.return x
+              else Or_error.errorf "%d" x) ;
           [%expect {| (3 5) |}]
 
         let%expect_test "in-bounds, fail" =
           test_in_bounds ~f:(Or_error.errorf "%d") ;
           [%expect {| (2 3 5) |}]
       end )
-  end)
+  end )

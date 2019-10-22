@@ -76,8 +76,7 @@ let split_or_error (xs : 'a list) (n : int) : ('a list * 'a list) Or_error.t
   else Or_error.return (List.split_n xs n)
 
 (* TODO(@MattWindsor91): if [try_]splice isn't woefully inefficient,
-   [try_]map_sub is.  Any more efficient implementations gratefully
-   accepted. *)
+   [try_]map_sub is. Any more efficient implementations gratefully accepted. *)
 
 let try_splice (xs : 'a list) ~(pos : int) ~(len : int)
     ~(replace_f : 'a list -> 'a list Or_error.t) : 'a list Or_error.t =
@@ -91,9 +90,10 @@ let splice (xs : 'a list) ~(pos : int) ~(len : int)
     ~(replace_f : 'a list -> 'a list) : 'a list Or_error.t =
   try_splice xs ~pos ~len ~replace_f:(Fn.compose Or_error.return replace_f)
 
-let try_map_sub (xs : 'a list) ~(pos : int) ~(len : int) ~(f : 'a -> 'a Or_error.t) :
-    'a list Or_error.t =
-  try_splice xs ~pos ~len ~replace_f:(Travesty_base_exts.Or_error.combine_map ~f)
+let try_map_sub (xs : 'a list) ~(pos : int) ~(len : int)
+    ~(f : 'a -> 'a Or_error.t) : 'a list Or_error.t =
+  try_splice xs ~pos ~len
+    ~replace_f:(Travesty_base_exts.Or_error.combine_map ~f)
 
 let map_sub (xs : 'a list) ~(pos : int) ~(len : int) ~(f : 'a -> 'a) :
     'a list Or_error.t =
