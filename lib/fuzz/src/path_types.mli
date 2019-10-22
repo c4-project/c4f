@@ -42,14 +42,6 @@ module type S_statement = sig
 
   include S_path with type t := Path_shapes.stm and type target := target
 
-  val lift_stm : Metadata.t Act_c_mini.Statement.t -> target
-  (** [lift_stm s] lifts a generated statement [s] to the target type of
-      this path. *)
-
-  val lower_stm : target -> Metadata.t Act_c_mini.Statement.t
-  (** [lower_stm s] lowers a generated statement [s] to the statement type
-      of this path. *)
-
   val try_gen_insert_stm :
     target -> Path_shapes.stm Base_quickcheck.Generator.t option
   (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator

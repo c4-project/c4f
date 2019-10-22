@@ -19,10 +19,6 @@ module rec Statement :
   (Path_types.S_statement with type target = Metadata.t Stm.t) = struct
   type target = Metadata.t Stm.t
 
-  let lift_stm = Fn.id
-
-  let lower_stm = Fn.id
-
   let in_if_error (dest : Metadata.t Stm.t) (_ : 'a) : 'b Or_error.t =
     Or_error.error_s
       [%message
@@ -76,22 +72,25 @@ and Statement_list :
 
   type target = M.target
 
+  let handle_in_stm (dest : target list) (index : int)
+      ~(f : target -> target Or_error.t) : target list Or_error.t =
+    Tx.List.With_errors.replace_m dest index ~f:(fun x ->
+        Or_error.(x |> f >>| Option.some))
+
   let insert_stm (path : Path_shapes.stm_list) (stm : Metadata.t Stm.t)
       (dest : target list) : target list Or_error.t =
     match path with
     | Insert index ->
-        Tx.List.insert dest index (M.lift_stm stm)
+        Tx.List.insert dest index stm
     | In_stm (index, rest) ->
-        Tx.List.With_errors.replace_m dest index ~f:(fun x ->
-            Or_error.(M.insert_stm rest stm x >>| Option.some))
+        handle_in_stm dest index ~f:(M.insert_stm rest stm)
 
   let transform_stm (path : Path_shapes.stm_list)
       ~(f : Metadata.t Stm.t -> Metadata.t Stm.t Or_error.t)
       (dest : target list) : target list Or_error.t =
     match path with
     | In_stm (index, rest) ->
-        Tx.List.With_errors.replace_m dest index ~f:(fun x ->
-            Or_error.(M.transform_stm rest ~f x >>| Option.some))
+        handle_in_stm dest index ~f:(M.transform_stm rest ~f)
     | Insert _ ->
         Or_error.error_s
           [%message
