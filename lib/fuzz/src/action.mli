@@ -14,9 +14,9 @@
 open Base
 open Act_common
 
-(** {2 Summaries of actions}
+(** {1 Summaries of actions}
 
-    To build these summaries, see {{!Pool.summarise} Pool.summarise} below. *)
+    To build these summaries, see {!Pool.summarise} below. *)
 
 (** A summary of the weight assigned to an action in an action pool. *)
 module Adjusted_weight : sig
@@ -79,13 +79,21 @@ module Pool : sig
       [subject], using [pool] as a random number generator. *)
 end
 
-(** {2 Helpers for building actions} *)
+(** {1 Helpers for building actions} *)
 
 val always : Subject.Test.t -> bool State.Monad.t
 (** [always test] always returns [true] without modifying or inspecting the
     fuzzer state. *)
 
-(** {3 Helpers for building action payloads} *)
+(** {2 Helpers for building action payloads} *)
+
+val lift_quickcheck :
+     'a Base_quickcheck.Generator.t
+  -> random:Splittable_random.State.t
+  -> 'a State.Monad.t
+(** [lift_quickcheck gen ~random] lifts a Quickcheck-style generator [gen]
+    into a state-monad action taking a random number generator [random] and
+    outputting the randomly generated value. *)
 
 module Pure_payload (S : sig
   type t [@@deriving sexp]

@@ -13,59 +13,26 @@ open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
 
+module Statement = struct
+  type t = Metadata.t Act_c_mini.Statement.t [@@deriving sexp]
+end
+
+module Block = struct
+  type t = (Metadata.t, Statement.t) Act_c_mini.Block.t
+end
+
 module Program = struct
   type t =
     { decls: Act_c_mini.Initialiser.t Act_c_mini.Named.Alist.t
-    ; stms: Metadata.t Act_c_mini.Statement.t list }
+    ; stms: Statement.t list }
   [@@deriving sexp]
 
   let empty : t = {decls= []; stms= []}
 
   let has_statements (p : t) : bool = not (List.is_empty p.stms)
 
-  module Path : Path_types.S_function with type target := t = struct
-    type target = t
-
-    let gen_insert_stm ({stms; _} : target) :
-        Path_shapes.func Base_quickcheck.Generator.t =
-      Base_quickcheck.Generator.map
-        (Path.Statement_list.gen_insert_stm stms)
-        ~f:Path_shapes.in_stms
-
-    let handle_stm (path : Path_shapes.func)
-        ~(f :
-              Path_shapes.stm_list
-           -> Metadata.t Act_c_mini.Statement.t list
-           -> Metadata.t Act_c_mini.Statement.t list Or_error.t) (prog : t)
-        : t Or_error.t =
-      match path with
-      | In_stms rest ->
-          Or_error.(
-            f rest prog.stms >>| fun stms' -> {prog with stms= stms'})
-
-    let insert_stm (path : Path_shapes.func)
-        (stm : Metadata.t Act_c_mini.Statement.t) :
-        target -> target Or_error.t =
-      handle_stm path ~f:(fun rest ->
-          Path.Statement_list.insert_stm rest stm)
-
-    let transform_stm (path : Path_shapes.func)
-        ~(f :
-              Metadata.t Act_c_mini.Statement.t
-           -> Metadata.t Act_c_mini.Statement.t Or_error.t) :
-        target -> target Or_error.t =
-      handle_stm path ~f:(Path.Statement_list.transform_stm ~f)
-
-    let transform_stm_list (path : Path_shapes.func)
-        ~(f :
-              Metadata.t Act_c_mini.Statement.t list
-           -> Metadata.t Act_c_mini.Statement.t list Or_error.t) :
-        target -> target Or_error.t =
-      handle_stm path ~f:(Path.Statement_list.transform_stm_list ~f)
-  end
-
   let statements_of_function (func : unit Act_c_mini.Function.t) :
-      Metadata.t Act_c_mini.Statement.t list =
+      Statement.t list =
     func |> Act_c_mini.Function.body_stms
     |> List.map
          ~f:
@@ -112,42 +79,6 @@ module Test = struct
 
   let add_new_program : t -> t =
     Act_litmus.Test.Raw.add_thread_at_end ~thread:Program.empty
-
-  module Path : Path_types.S_program with type target := t = struct
-    type target = t
-
-    type stm = Metadata.t Act_c_mini.Statement.t
-
-    let gen_insert_stm (test : target) :
-        Path_shapes.program Base_quickcheck.Generator.t =
-      let prog_gens =
-        List.mapi (Act_litmus.Test.Raw.threads test) ~f:(fun index prog ->
-            Base_quickcheck.Generator.map
-              (Program.Path.gen_insert_stm prog)
-              ~f:(Path_shapes.in_func index))
-      in
-      Base_quickcheck.Generator.union prog_gens
-
-    let handle_stm (path : Path_shapes.program)
-        ~(f : Path_shapes.func -> Program.t -> Program.t Or_error.t)
-        (test : target) : target Or_error.t =
-      match path with
-      | In_func (index, rest) ->
-          Act_litmus.Test.Raw.try_map_thread ~index ~f:(f rest) test
-
-    let insert_stm (path : Path_shapes.program) (stm : stm) :
-        target -> target Or_error.t =
-      handle_stm path ~f:(fun rest -> Program.Path.insert_stm rest stm)
-
-    let transform_stm (path : Path_shapes.program)
-        ~(f : stm -> stm Or_error.t) : target -> target Or_error.t =
-      handle_stm path ~f:(Program.Path.transform_stm ~f)
-
-    let transform_stm_list (path : Path_shapes.program)
-        ~(f : stm list -> stm list Or_error.t) : target -> target Or_error.t
-        =
-      handle_stm path ~f:(Program.Path.transform_stm_list ~f)
-  end
 
   let programs_of_litmus (test : Act_c_mini.Litmus.Test.t) : Program.t list
       =

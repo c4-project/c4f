@@ -21,46 +21,56 @@ module type S_path = sig
   type target
 
   val insert_stm :
-    t -> Metadata.t Act_c_mini.Statement.t -> target -> target Or_error.t
-  (** [insert_stm path stm dest] tries to insert [stm] into the part of
-      [dest] pointed to by [path]. *)
+       t
+    -> to_insert:Metadata.t Act_c_mini.Statement.t
+    -> target:target
+    -> target Or_error.t
+  (** [insert_stm path ~to_insert ~target] tries to insert [to_insert] into
+      [path] relative to [target]. *)
 
   val transform_stm :
        t
     -> f:
          (   Metadata.t Act_c_mini.Statement.t
           -> Metadata.t Act_c_mini.Statement.t Or_error.t)
-    -> target
+    -> target:target
     -> target Or_error.t
-  (** [transform_stm path ~f dest] tries to modify the statement at [stm]
-      using [f]. *)
+  (** [transform_stm path ~f ~target] tries to modify the statement at
+      [path] relative to [target] using [f]. *)
 
   val transform_stm_list :
        t
     -> f:
          (   Metadata.t Act_c_mini.Statement.t list
           -> Metadata.t Act_c_mini.Statement.t list Or_error.t)
-    -> target
+    -> target:target
     -> target Or_error.t
-  (** [transform_stm_list path ~f dest] tries to modify the list of all
-      statement at [stm] using [f]. Unlike {!transform_stm},
-      [transform_stm_list] can add and remove statements from the enclosing
-      block. *)
+  (** [transform_stm_list path ~f ~target] tries to modify the list of all
+      statement at [path] relative to [target] using [f]. Unlike
+      {!transform_stm}, [transform_stm_list] can add and remove statements
+      from the enclosing block. *)
 end
 
 (** Signature of paths over statements and statement-like entities. *)
 module type S_statement = sig
   type target
 
-  include S_path with type t := Path_shapes.stm and type target := target
+  include S_path with type t = Path_shapes.stm and type target := target
 
-  val try_gen_insert_stm :
-    target -> Path_shapes.stm Base_quickcheck.Generator.t option
+  val try_gen_insert_stm : target -> t Base_quickcheck.Generator.t option
   (** [try_gen_insert_stm dest] tries to create a Quickcheck-style generator
       for statement insertion paths targeting [dest].
 
       It can return [None] if [dest] has no position at which statements can
       be inserted. *)
+
+  val try_gen_transform_stm_list :
+    target -> t Base_quickcheck.Generator.t option
+  (** [try_gen_transform_stm dest] tries to create a Quickcheck-style
+      generator for statement list transformation paths targeting [dest].
+
+      It can return [None] if [dest] has no position at which statement
+      lists can be transformed. *)
 end
 
 module type S_stm_container = sig
@@ -69,6 +79,12 @@ module type S_stm_container = sig
   val gen_insert_stm : target -> t Base_quickcheck.Generator.t
   (** [gen_insert_stm dest] creates a Quickcheck-style generator for
       statement insertion paths targeting [dest]. *)
+
+  val try_gen_transform_stm_list :
+    target -> t Base_quickcheck.Generator.t option
+  (** [try_gen_transform_stm_list dest] tries to creates a Quickcheck-style
+      generator for statement list transformation paths targeting [dest]. It
+      returns [None] if the list is empty. *)
 end
 
 (** Signature of paths over conditionals *)
@@ -87,7 +103,7 @@ module type S_statement_list = sig
 
   include
     S_stm_container
-      with type t := Path_shapes.stm_list
+      with type t = Path_shapes.stm_list
        and type target := target list
 end
 

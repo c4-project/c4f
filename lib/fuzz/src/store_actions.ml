@@ -156,7 +156,7 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
         ~(random : Splittable_random.State.t) : Path_shapes.program =
       log o "Generating path" ;
       Base_quickcheck.Generator.generate ~random ~size:10
-        (Subject.Test.Path.gen_insert_stm subject)
+        (Path.Subject.Test.gen_insert_stm subject)
 
     let gen' (o : Ac.Output.t) (subject : Subject.Test.t)
         ~(random : Splittable_random.State.t) (vars : Var.Map.t) :
@@ -221,7 +221,8 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
     State.Monad.Let_syntax.(
       let%bind () = do_bookkeeping store ~tid in
       State.Monad.Monadic.return
-        (Subject.Test.Path.insert_stm path store_stm subject))
+        (Path.Subject.Test.insert_stm path ~to_insert:store_stm
+           ~target:subject))
 end
 
 module Int : Action_types.S with type Payload.t = Random_state.t =

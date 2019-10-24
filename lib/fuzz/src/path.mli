@@ -9,10 +9,18 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Path-based traversal of mini-C elements.
+(** Path-based traversal of mini-C and fuzzer-subject elements.
 
-    This module includes functors that create functionality for walking down
-    the various mini-C constructs used in the fuzzer. *)
+    This module includes submodules for walking down the various mini-C
+    constructs used in the fuzzer. *)
+
+(** {1 Helpers} *)
+
+val tid : Path_shapes.program -> int
+(** [tid_of_path prog_path] gets the thread ID of the particular thread that
+    [prog_path] walks down. *)
+
+(** {1 Specific types of path} *)
 
 module Statement_list :
   Path_types.S_statement_list
@@ -31,3 +39,10 @@ module Function :
 
 module Program :
   Path_types.S_program with type target := Metadata.t Act_c_mini.Program.t
+
+module Subject : sig
+  module Program :
+    Path_types.S_function with type target := Subject.Program.t
+
+  module Test : Path_types.S_program with type target := Subject.Test.t
+end

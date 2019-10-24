@@ -21,17 +21,25 @@
 
 open Base
 
+(** {1 Shorthand for mini-C constructs with subject metadata} *)
+
+(** Subject statements. *)
+module Statement : sig
+  type t = Metadata.t Act_c_mini.Statement.t [@@deriving sexp]
+end
+
+(** Subject blocks. *)
+module Block : sig
+  type t = (Metadata.t, Statement.t) Act_c_mini.Block.t
+end
+
 (** Fuzzable representation of a program. *)
 module Program : sig
   type t =
     { decls: Act_c_mini.Initialiser.t Act_c_mini.Named.Alist.t
-    ; stms: Metadata.t Act_c_mini.Statement.t list }
+    ; stms: Statement.t list }
   [@@deriving sexp]
   (** Transparent type of fuzzable programs. *)
-
-  module Path : Path_types.S_function with type target := t
-  (** Allows production and consumption of random paths over fuzzable
-      programs in the same way as normal mini functions. *)
 
   (** {3 Constructors} *)
 
@@ -72,10 +80,6 @@ module Test : sig
   val add_new_program : t -> t
   (** [add_new_program test] appends a new, empty program onto [test]'s
       programs list, returning the resulting test. *)
-
-  module Path : Path_types.S_program with type target := t
-  (** Allows production and consumption of random paths over fuzzable tests
-      in the same way as normal mini programs. *)
 
   val of_litmus : Act_c_mini.Litmus.Test.t -> t
   (** [of_litmus test] converts a validated C litmus test [test] to the

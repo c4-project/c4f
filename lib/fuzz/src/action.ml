@@ -13,6 +13,11 @@ open Base
 open Act_common
 open Act_utils
 
+let lift_quickcheck (type a) (gen : a Base_quickcheck.Generator.t)
+    ~(random : Splittable_random.State.t) : a State.Monad.t =
+  State.Monad.return
+    (Base_quickcheck.Generator.generate ~size:10 ~random gen)
+
 let always : Subject.Test.t -> bool State.Monad.t =
   Fn.const (State.Monad.return true)
 
@@ -103,9 +108,7 @@ end) : Action_types.S_payload with type t = S.t = struct
 
   let gen (_subject : Subject.Test.t) ~(random : Splittable_random.State.t)
       : t State.Monad.t =
-    State.Monad.return
-      (Base_quickcheck.Generator.generate ~size:10 ~random
-         S.quickcheck_generator)
+    lift_quickcheck S.quickcheck_generator ~random
 end
 
 module No_payload : Action_types.S_payload with type t = unit = struct

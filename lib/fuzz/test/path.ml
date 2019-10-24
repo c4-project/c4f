@@ -64,8 +64,8 @@ let%test_module "Statement_list" =
           ( module struct
             let test_insert (path : F.Path_shapes.stm_list) : unit =
               test
-                (F.Path.Statement_list.insert_stm path example_stm
-                   (Lazy.force body_stms))
+                (F.Path.Statement_list.insert_stm path
+                   ~to_insert:example_stm ~target:(Lazy.force body_stms))
 
             let%expect_test "insert onto statement (invalid)" =
               test_insert in_stm_path ;
@@ -78,7 +78,7 @@ let%test_module "Statement_list" =
                 {|
           (Error
            ("Can't use this statement-list path here"
-            (here lib/fuzz/src/path.ml:109:65) (context insert_stm)
+            (here lib/fuzz/src/path.ml:150:63) (context insert_stm)
             (path (On_stm_range 1 2)))) |}]
 
             let%expect_test "insert into list" =
@@ -120,7 +120,7 @@ let%test_module "Statement_list" =
               test
                 (F.Path.Statement_list.transform_stm path
                    ~f:(Fn.const (Or_error.return example_stm))
-                   (Lazy.force body_stms))
+                   ~target:(Lazy.force body_stms))
 
             let%expect_test "transform a statement" =
               test_transform in_stm_path ;
@@ -156,7 +156,7 @@ let%test_module "Statement_list" =
                 {|
           (Error
            ("Can't use this statement-list path here"
-            (here lib/fuzz/src/path.ml:120:68) (context transform_stm)
+            (here lib/fuzz/src/path.ml:161:66) (context transform_stm)
             (path (Insert 2)))) |}]
           end )
 
@@ -181,7 +181,7 @@ let%test_module "Statement_list" =
             let test_transform_list (path : F.Path_shapes.stm_list) : unit =
               test
                 (F.Path.Statement_list.transform_stm_list path ~f:iffify
-                   (Lazy.force body_stms))
+                   ~target:(Lazy.force body_stms))
 
             let%expect_test "try to list-transform a statement (invalid)" =
               test_transform_list in_stm_path ;
@@ -213,7 +213,7 @@ let%test_module "Statement_list" =
                 {|
                   (Error
                    ("Can't use this statement-list path here"
-                    (here lib/fuzz/src/path.ml:131:73) (context transform_stm_list)
+                    (here lib/fuzz/src/path.ml:173:14) (context transform_stm_list)
                     (path (Insert 2)))) |}]
           end )
       end )
