@@ -30,8 +30,6 @@ module Make_global :
     and primitive type.
     |}
 
-  let default_weight = 2
-
   module Payload = struct
     include Global_random_state
     module G = Base_quickcheck.Generator

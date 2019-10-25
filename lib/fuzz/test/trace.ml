@@ -27,8 +27,6 @@ let%test_module "S-expression representation" =
 
       let available = Src.Action.always
 
-      let default_weight = 1
-
       let readme () =
         {| This is a module that is almost, but not quite, entirely unlike a fuzzer action. |}
 
@@ -44,8 +42,6 @@ let%test_module "S-expression representation" =
       let name = Act_common.Id.of_string "another.dummy.action"
 
       let available = Src.Action.always
-
-      let default_weight = 1
 
       let readme () =
         {| This is also a module that is almost, but not quite, entirely unlike a fuzzer action. |}

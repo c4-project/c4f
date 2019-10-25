@@ -59,7 +59,8 @@ let pick_action (subject : Subject.Test.t) :
     (module Action_types.S) Runner_state.Monad.t =
   Runner_state.Monad.Let_syntax.(
     let%bind {pool; random; _} = Runner_state.Monad.peek Fn.id in
-    Runner_state.Monad.Monadic.return (Action.Pool.pick pool subject random))
+    Runner_state.Monad.Monadic.return
+      (Action.Pool.pick pool ~subject ~random))
 
 let log_action (type p)
     (action : (module Action_types.S with type Payload.t = p)) (payload : p)

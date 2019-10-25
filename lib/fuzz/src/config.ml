@@ -16,31 +16,38 @@ type t =
         [@default []] [@drop_if_default] }
 [@@deriving sexp, fields, make]
 
-let modules : (module Action_types.S) list Lazy.t =
+let modules : Action.With_default_weight.t list Lazy.t =
   lazy
-    [ (module Var_actions.Make_global : Action_types.S)
-    ; (module Store_actions.Int : Action_types.S)
-    ; (module Program_actions.Make_empty : Action_types.S)
-    ; (module Flow_actions.If.Duplicate : Action_types.S) ]
+    Action.With_default_weight.
+      [ make
+          ~action:(module Var_actions.Make_global : Action_types.S)
+          ~default_weight:2
+      ; make
+          ~action:(module Store_actions.Int : Action_types.S)
+          ~default_weight:3
+      ; make
+          ~action:(module Program_actions.Make_empty : Action_types.S)
+          ~default_weight:1
+      ; make ~action:(module Flow_actions.If.Duplicate) ~default_weight:1 ]
 
-let module_map : (module Action_types.S) Map.M(Act_common.Id).t Lazy.t =
+let module_map : Action.With_default_weight.t Map.M(Act_common.Id).t Lazy.t
+    =
   Lazy.(
     modules
-    >>| List.map ~f:(fun (module M : Action_types.S) ->
-            (M.name, (module M : Action_types.S)))
+    >>| List.map ~f:(fun a -> (Action.With_default_weight.name a, a))
     >>| Map.of_alist_exn (module Act_common.Id))
 
 let make_weight_pair (weight_overrides : int Map.M(Act_common.Id).t)
-    (module M : Action_types.S) : (module Action_types.S) * int =
+    (action : Action.With_default_weight.t) :
+    Action.With_default_weight.t * int option =
   let weight =
-    M.name |> Map.find weight_overrides
-    |> Option.value ~default:M.default_weight
+    Map.find weight_overrides (Action.With_default_weight.name action)
   in
-  ((module M : Action_types.S), weight)
+  (action, weight)
 
-let make_weight_alist (actions : (module Action_types.S) list)
+let make_weight_alist (actions : Action.With_default_weight.t list)
     (weight_overrides : int Map.M(Act_common.Id).t) :
-    ((module Action_types.S), int) List.Assoc.t =
+    (Action.With_default_weight.t, int option) List.Assoc.t =
   List.map ~f:(make_weight_pair weight_overrides) actions
 
 let make_pool (config : t) : Action.Pool.t Or_error.t =

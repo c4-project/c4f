@@ -27,8 +27,6 @@ end
 module Make (B : sig
   val name : Ac.Id.t
 
-  val default_weight : int
-
   val forbid_already_written : bool
 
   val dst_type : Act_c_mini.Type.Basic.t
@@ -42,8 +40,6 @@ end) : Action_types.S with type Payload.t = Random_state.t = struct
   let name = B.name
 
   include Action.Make_log (B)
-
-  let default_weight = B.default_weight
 
   (** [readme_chunks ()] generates fragments of unformatted README text
       based on the configuration of this store module. *)
@@ -232,8 +228,6 @@ Make (struct
   let dst_type = Act_c_mini.Type.Basic.int ~atomic:true ()
 
   let forbid_already_written = true (* for now *)
-
-  let default_weight = 3
 
   module Quickcheck = Act_c_mini.Atomic_store.Quickcheck_ints
 end)

@@ -22,8 +22,6 @@ module Make_empty : Action_types.S with type Payload.t = unit = struct
     with other actions that construct statements and control flows.
     |}
 
-  let default_weight = 1
-
   module Payload = Action.No_payload
 
   let available = Action.always

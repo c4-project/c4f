@@ -14,6 +14,38 @@
 open Base
 open Act_common
 
+(** {1 Types} *)
+
+type t = (module Action_types.S)
+(** An action as a first-class module. *)
+
+(** {2 Actions with default weights}
+
+    This module concerns actions bundled with their default weight. This is
+    the way in which actions are stored natively in the action table; we
+    don't keep default weights in the actual action modules to avoid them
+    being scattered over various files. *)
+module With_default_weight : sig
+  type t
+  (** Opaque type of actions-with-default-weight. *)
+
+  val make : action:(module Action_types.S) -> default_weight:int -> t
+  (** [make ~action ~default_weight] constructs an
+      action-with-default-weight from its action module [action] and default
+      weight [default_weight]. *)
+
+  (** {3 Accessors} *)
+
+  val action : t -> (module Action_types.S)
+  (** [action a] gets [a]'s action module. *)
+
+  val default_weight : t -> int
+  (** [default_weight a] gets [a]'s default weight. *)
+
+  val name : t -> Act_common.Id.t
+  (** [name a] is shorthand for [A.name], where [A] is [action a]. *)
+end
+
 (** {1 Summaries of actions}
 
     To build these summaries, see {!Pool.summarise} below. *)
@@ -39,9 +71,9 @@ module Summary : sig
   val make : weight:Adjusted_weight.t -> readme:string -> t
   (** [make ~weight ~summary] makes a fuzzer action summary. *)
 
-  val of_action : (module Action_types.S) -> user_weight:int -> t
-  (** [of_action action ~user_weight] makes a fuzzer action summary using an
-      action module [action] and the given user weighting [user_weight]. *)
+  val of_action : ?user_weight:int -> With_default_weight.t -> t
+  (** [of_action ?user_weight ~action] makes a fuzzer action summary using
+      an action [action] and the given user weighting [user_weight]. *)
 
   val weight : t -> Adjusted_weight.t
   (** [weight summary] gets the final 'adjusted' weight of the action
@@ -65,7 +97,7 @@ module Pool : sig
   (** Action lists are just weighted lists of first-class action modules. *)
 
   val of_weighted_actions :
-    ((module Action_types.S), int) List.Assoc.t -> t Or_error.t
+    (With_default_weight.t, int option) List.Assoc.t -> t Or_error.t
   (** [of_weighted_actions actions] tries to make a weighted action pool
       from the action-to-weight association given in [actions]. *)
 
@@ -75,12 +107,12 @@ module Pool : sig
 
   val pick :
        t
-    -> Subject.Test.t
-    -> Splittable_random.State.t
+    -> subject:Subject.Test.t
+    -> random:Splittable_random.State.t
     -> (module Action_types.S) State.Monad.t
-  (** [pick pool subject rng] is a stateful action that picks a
+  (** [pick pool ~subject ~random] is a stateful action that picks a
       weighted-random action module from [pool] that is available on
-      [subject], using [pool] as a random number generator. *)
+      [subject], using [random] as a random number generator. *)
 end
 
 (** {1 Helpers for building actions} *)

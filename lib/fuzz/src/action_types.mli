@@ -30,15 +30,13 @@ module type S_payload = sig
       [subject], RNG [random], and and the current state, returns a payload. *)
 end
 
+(** Module type of fuzzer actions. *)
 module type S = sig
   val name : Id.t
   (** The name of the action, as an act identifier. *)
 
   val readme : unit -> string
   (** [readme ()] builds a long synopsis of this action. *)
-
-  val default_weight : int
-  (** The default weight of the action. *)
 
   module Payload : S_payload
   (** The type of any payload on which this action depends. *)

@@ -60,12 +60,13 @@ module Random = Pb.Filter.Make (struct
 end)
 
 (* TODO(@MattWindsor91): unify this logic with all the other resolvers? *)
-let resolve_action (id : Act_common.Id.t) :
-    (module Action_types.S) Or_error.t =
-  Act_utils.My_map.find_or_error ~sexp_of_key:Act_common.Id.sexp_of_t
-    ~map_name:"module map"
-    (Lazy.force Config.module_map)
+let resolve_action (id : Act_common.Id.t) : Action.t Or_error.t =
+  Or_error.(
     id
+    |> Act_utils.My_map.find_or_error ~sexp_of_key:Act_common.Id.sexp_of_t
+         ~map_name:"module map"
+         (Lazy.force Config.module_map)
+    >>| Action.With_default_weight.action)
 
 let run_replay (subject : Subject.Test.t) ~(trace : Trace.t) :
     unit Output.t State.Monad.t =

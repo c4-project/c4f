@@ -20,8 +20,6 @@ module If = struct
   module type S = Action_types.S with type Payload.t = Payload.t
 
   module Make (Basic : sig
-    val default_weight : int
-
     val name_suffix : string
 
     val readme_suffix : string
@@ -103,8 +101,6 @@ module If = struct
   end
 
   module Duplicate : S = Make (struct
-    let default_weight = 1
-
     let name_suffix = "duplicate"
 
     let readme_suffix =
