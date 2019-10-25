@@ -78,7 +78,7 @@ let%test_module "Statement_list" =
                 {|
           (Error
            ("Can't use this statement-list path here"
-            (here lib/fuzz/src/path.ml:150:63) (context insert_stm)
+            (here lib/fuzz/src/path.ml:148:65) (context insert_stm)
             (path (On_stm_range 1 2)))) |}]
 
             let%expect_test "insert into list" =
@@ -156,7 +156,7 @@ let%test_module "Statement_list" =
                 {|
           (Error
            ("Can't use this statement-list path here"
-            (here lib/fuzz/src/path.ml:161:66) (context transform_stm)
+            (here lib/fuzz/src/path.ml:159:68) (context transform_stm)
             (path (Insert 2)))) |}]
           end )
 
@@ -213,7 +213,7 @@ let%test_module "Statement_list" =
                 {|
                   (Error
                    ("Can't use this statement-list path here"
-                    (here lib/fuzz/src/path.ml:173:14) (context transform_stm_list)
+                    (here lib/fuzz/src/path.ml:171:16) (context transform_stm_list)
                     (path (Insert 2)))) |}]
           end )
       end )
