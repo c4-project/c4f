@@ -20,7 +20,8 @@ let modules : (module Action_types.S) list Lazy.t =
   lazy
     [ (module Var_actions.Make_global : Action_types.S)
     ; (module Store_actions.Int : Action_types.S)
-    ; (module Program_actions.Make_empty : Action_types.S) ]
+    ; (module Program_actions.Make_empty : Action_types.S)
+    ; (module Flow_actions.If.Duplicate : Action_types.S) ]
 
 let module_map : (module Action_types.S) Map.M(Act_common.Id).t Lazy.t =
   Lazy.(
