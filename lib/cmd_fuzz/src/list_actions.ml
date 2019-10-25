@@ -21,14 +21,11 @@ let list_fuzzer_actions_readme () : string =
       into consideration.
     |}
 
-let pp_fuzz_summaries : Act_fuzz.Action.Summary.t Map.M(Id).t Fmt.t =
-  Id.pp_map Act_fuzz.Action.Summary.pp
-
 let run_list_fuzzer_actions (_o : Output.t) (cfg : Act_config.Global.t) :
     unit Or_error.t =
   Or_error.(
     cfg |> Act_config.Global.fuzz |> Act_fuzz.Config.summarise
-    >>| Fmt.pr "@[<v>%a@]@." pp_fuzz_summaries)
+    >>| Fmt.pr "@[<v>%a@]@." Act_fuzz.Action.Summary.pp_map)
 
 let command : Command.t =
   Command.basic ~summary:"output the current fuzzer weight table"

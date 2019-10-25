@@ -53,6 +53,10 @@ module Summary : sig
   include
     Pretty_printer.S with type t := t
   (** Summaries may be pretty-printed. *)
+
+  val pp_map : t Map.M(Act_common.Id).t Fmt.t
+  (** [pp_map f map] pretty-prints a map of summaries [map] on formatter
+      [f]. *)
 end
 
 (** A weighted pool of fuzzer actions. *)

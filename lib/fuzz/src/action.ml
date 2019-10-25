@@ -61,6 +61,8 @@ module Summary = struct
   let pp (f : Formatter.t) ({weight; readme} : t) : unit =
     Fmt.pf f "@[<v>@[Weight:@ %a@]@,@[<hv 2>Summary:@ @[%a@]@]@]"
       Adjusted_weight.pp weight Fmt.paragraphs readme
+
+  let pp_map : t Map.M(Act_common.Id).t Fmt.t = Act_common.Id.pp_map pp
 end
 
 module Pool = struct

@@ -1,6 +1,6 @@
 (tests
  (names config config_failures delitmus dump_header explain fuzz_replays
-   herd_observations litmus_observations litmusify)
+   fuzz_action_list herd_observations litmus_observations litmusify)
  (preprocess
   (pps ppx_jane))
  (libraries result yojson sexplib0 base.caml core_kernel core stdio fmt

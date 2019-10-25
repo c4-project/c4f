@@ -1,0 +1,32 @@
+flow.if.duplicate:
+  Weight: 1x
+  Summary:
+    Removes a sublist of statements from the program, replacing them with an
+    `if` statement containing some transformation of the removed
+    statements.
+    
+    This version of the action generates an arbitrary condition, and
+    initialises both branches of the `if` statement with the original
+    statements.
+program.make.empty:
+  Weight: 1x
+  Summary:
+    Generates a new, empty program at one end of the program list. This
+    action isn't very useful on its own, but works well in combination with
+    other actions that construct statements and control flows.
+store.make.int.single:
+  Weight: 3x
+  Summary:
+    Generates a store operation on a randomly selected fuzzer-generated
+    global variable.
+    
+    This operation generates 'atomic_int's.
+    
+    This version of the action only stores to variables that haven't
+    previously been selected for store actions. This makes calculating
+    candidate executions easier, but limits the degree of entropy somewhat.
+var.make.global:
+  Weight: 2x
+  Summary:
+    Generates a new global variable, with a random name, initial value, and
+    primitive type.
