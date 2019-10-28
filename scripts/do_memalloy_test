@@ -26,11 +26,21 @@ source "${SCRIPTDIR}/act_bash/memalloy.sh"
 # Flags forwarded directly to the test checker.
 CHECK_FLAGS=""
 
+# The compiler-filtering predicate to send to the test builder.
+COMPILER_PREDICATE=""
+
 # Whether we are using Dune to execute any OCaml ACT tools.
 DUNE_EXEC="false"
 
 # Whether we are forcing Memalloy to run even if we have a results directory.
 FORCE_MEMALLOY="false"
+
+# The number of times the fuzzer should run on each Memalloy output.
+# Defaults to `DEFAULT_FUZZ_PASSES` if empty.
+FUZZ_PASSES=""
+
+# The machine-filtering predicate to send to the test builder.
+MACHINE_PREDICATE=""
 
 # The directory in which Memalloy lives.
 MEMALLOY_DIR=""
@@ -39,15 +49,9 @@ MEMALLOY_DIR=""
 # Defaults to `DEFAULT_MEMALLOY_EVENTS` if empty.
 MEMALLOY_EVENTS=""
 
-# The number of times the fuzzer should run on each Memalloy output.
-# Defaults to `DEFAULT_FUZZ_PASSES` if empty.
-FUZZ_PASSES=""
+# Whether or not verbose logging is enabled.
+VERBOSE="false"
 
-# The compiler-filtering predicate to send to the test builder.
-COMPILER_PREDICATE=""
-
-# The machine-filtering predicate to send to the test builder.
-MACHINE_PREDICATE=""
 
 ## Functions ##
 
