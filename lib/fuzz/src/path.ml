@@ -198,7 +198,7 @@ and Statement_list :
 
   let gen_transform_stm_list_on (index : int) (single_dest : target) :
       t Base_quickcheck.Generator.t list =
-    single_dest |> M.try_gen_insert_stm
+    single_dest |> M.try_gen_transform_stm_list
     |> map_opt_gen ~f:(Path_shapes.in_stm index)
     |> Option.to_list
 
