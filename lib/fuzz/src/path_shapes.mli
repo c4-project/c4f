@@ -13,17 +13,17 @@
 
 open Base
 
-type index = int [@@deriving sexp]
+type index = int [@@deriving sexp, compare, equal]
 (** An index in a list selector. *)
 
-type length = int [@@deriving sexp]
+type length = int [@@deriving sexp, compare, equal]
 (** A length in a list selector. *)
 
-type branch = bool [@@deriving sexp]
+type branch = bool [@@deriving sexp, compare, equal]
 (** A branch in an if-statement selector. *)
 
 (** A path focusing on a statement. *)
-type stm = In_if of ifs | This_stm [@@deriving sexp]
+type stm = In_if of ifs | This_stm [@@deriving sexp, compare, equal]
 
 (** A path focusing on a list of statements. *)
 and stm_list =
@@ -31,16 +31,17 @@ and stm_list =
   | In_stm of index * stm  (** Traversing further into one statement. *)
   | On_stm_range of index * length
       (** Appling something to an entire subrange of statements. *)
-[@@deriving sexp]
+[@@deriving sexp, compare, equal]
 
 (** A path focusing on an if-statement. *)
-and ifs = In_block of branch * stm_list | This_cond [@@deriving sexp]
+and ifs = In_block of branch * stm_list | This_cond
+[@@deriving sexp, compare, equal]
 
 (** A path focusing on a function. *)
-type func = In_stms of stm_list [@@deriving sexp]
+type func = In_stms of stm_list [@@deriving sexp, compare, equal]
 
 (** A path focusing on a program. *)
-type program = In_func of index * func [@@deriving sexp]
+type program = In_func of index * func [@@deriving sexp, compare, equal]
 
 (** {2 Constructors} *)
 

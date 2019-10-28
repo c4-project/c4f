@@ -11,21 +11,22 @@
 
 open Base
 
-type index = int [@@deriving sexp]
+type index = int [@@deriving sexp, compare, equal]
 
-type length = int [@@deriving sexp]
+type length = int [@@deriving sexp, compare, equal]
 
-type branch = bool [@@deriving sexp]
+type branch = bool [@@deriving sexp, compare, equal]
 
-type stm = In_if of ifs | This_stm [@@deriving sexp]
+type stm = In_if of ifs | This_stm [@@deriving sexp, compare, equal]
 
 and stm_list =
   | Insert of index
   | In_stm of index * stm
   | On_stm_range of index * length
-[@@deriving sexp]
+[@@deriving sexp, equal]
 
-and ifs = In_block of branch * stm_list | This_cond [@@deriving sexp]
+and ifs = In_block of branch * stm_list | This_cond
+[@@deriving sexp, compare, equal]
 
 let in_if (rest : ifs) : stm = In_if rest
 
@@ -39,10 +40,10 @@ let in_block (b : branch) (rest : stm_list) : ifs = In_block (b, rest)
 
 let this_cond : ifs = This_cond
 
-type func = In_stms of stm_list [@@deriving sexp]
+type func = In_stms of stm_list [@@deriving sexp, compare, equal]
 
 let in_stms (rest : stm_list) : func = In_stms rest
 
-type program = In_func of index * func [@@deriving sexp]
+type program = In_func of index * func [@@deriving sexp, compare, equal]
 
 let in_func (i : index) (rest : func) : program = In_func (i, rest)

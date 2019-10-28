@@ -51,8 +51,15 @@ let%test_module "Statement_list" =
                  ~src:(Expression.int_lit 9001)
                  ~dst:(Address.of_variable (Act_common.C_id.of_string "y"))))
 
+        (* TODO(@MattWindsor91): generalise this? *)
+        let pp_statement : F.Metadata.t Stm.t Fmt.t =
+          Fmt.using Act_c_mini.Reify.stm Act_c_lang.Ast.Stm.pp
+
         let test (stms : F.Metadata.t Stm.t list Or_error.t) : unit =
-          Stdio.print_s [%sexp (stms : F.Metadata.t Stm.t list Or_error.t)]
+          Fmt.(
+            pr "@[<v>%a@]@."
+              (result ~ok:(list ~sep:sp (box pp_statement)) ~error:Error.pp)
+              stms)
 
         let body_stms : F.Metadata.t Stm.t list Lazy.t =
           Lazy.(
@@ -70,48 +77,32 @@ let%test_module "Statement_list" =
             let%expect_test "insert onto statement (invalid)" =
               test_insert in_stm_path ;
               [%expect
-                {| (Error ("Can't insert statement here" (path This_stm))) |}]
+                {| ("Can't insert statement here" (path This_stm)) |}]
 
             let%expect_test "insert onto range (invalid)" =
               test_insert on_stm_range_path ;
               [%expect
                 {|
-          (Error
-           ("Can't use this statement-list path here"
-            (here lib/fuzz/src/path.ml:148:65) (context insert_stm)
-            (path (On_stm_range 1 2)))) |}]
+          ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:148:65)
+           (context insert_stm) (path (On_stm_range 1 2))) |}]
 
             let%expect_test "insert into list" =
               test_insert insert_path ;
               [%expect
                 {|
-          (Ok
-           ((Atomic_store
-             ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-              (mo memory_order_seq_cst)))
-            Nop
-            (Atomic_store
-             ((src (Constant (Int 9001))) (dst (Lvalue (Variable y)))
-              (mo memory_order_seq_cst)))
-            (Atomic_store
-             ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
-              (mo memory_order_relaxed))))) |}]
+          atomic_store_explicit(x, 42, memory_order_seq_cst);
+          ;
+          atomic_store_explicit(y, 9001, memory_order_seq_cst);
+          atomic_store_explicit(y, foo, memory_order_relaxed); |}]
 
             let%expect_test "insert onto end of list" =
               test_insert insert_at_end_path ;
               [%expect
                 {|
-          (Ok
-           ((Atomic_store
-             ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-              (mo memory_order_seq_cst)))
-            Nop
-            (Atomic_store
-             ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
-              (mo memory_order_relaxed)))
-            (Atomic_store
-             ((src (Constant (Int 9001))) (dst (Lvalue (Variable y)))
-              (mo memory_order_seq_cst))))) |}]
+          atomic_store_explicit(x, 42, memory_order_seq_cst);
+          ;
+          atomic_store_explicit(y, foo, memory_order_relaxed);
+          atomic_store_explicit(y, 9001, memory_order_seq_cst); |}]
           end )
 
         let%test_module "transform_stm" =
@@ -126,38 +117,24 @@ let%test_module "Statement_list" =
               test_transform in_stm_path ;
               [%expect
                 {|
-                  (Ok
-                   ((Atomic_store
-                     ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-                      (mo memory_order_seq_cst)))
-                    Nop
-                    (Atomic_store
-                     ((src (Constant (Int 9001))) (dst (Lvalue (Variable y)))
-                      (mo memory_order_seq_cst))))) |}]
+                  atomic_store_explicit(x, 42, memory_order_seq_cst);
+                  ;
+                  atomic_store_explicit(y, 9001, memory_order_seq_cst); |}]
 
             let%expect_test "transform a range" =
               test_transform on_stm_range_path ;
               [%expect
                 {|
-          (Ok
-           ((Atomic_store
-             ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-              (mo memory_order_seq_cst)))
-            (Atomic_store
-             ((src (Constant (Int 9001))) (dst (Lvalue (Variable y)))
-              (mo memory_order_seq_cst)))
-            (Atomic_store
-             ((src (Constant (Int 9001))) (dst (Lvalue (Variable y)))
-              (mo memory_order_seq_cst))))) |}]
+          atomic_store_explicit(x, 42, memory_order_seq_cst);
+          atomic_store_explicit(y, 9001, memory_order_seq_cst);
+          atomic_store_explicit(y, 9001, memory_order_seq_cst); |}]
 
             let%expect_test "transform an insertion (invalid)" =
               test_transform insert_path ;
               [%expect
                 {|
-          (Error
-           ("Can't use this statement-list path here"
-            (here lib/fuzz/src/path.ml:159:68) (context transform_stm)
-            (path (Insert 2)))) |}]
+          ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:159:68)
+           (context transform_stm) (path (Insert 2))) |}]
           end )
 
         let%test_module "transform_stm_list" =
@@ -186,35 +163,42 @@ let%test_module "Statement_list" =
             let%expect_test "try to list-transform a statement (invalid)" =
               test_transform_list in_stm_path ;
               [%expect
-                {| (Error ("Can't transform multiple statements here" (path This_stm))) |}]
+                {| ("Can't transform multiple statements here" (path This_stm)) |}]
 
             let%expect_test "list-transform a range" =
               test_transform_list on_stm_range_path ;
               [%expect
                 {|
-                  (Ok
-                   ((Atomic_store
-                     ((src (Constant (Int 42))) (dst (Lvalue (Variable x)))
-                      (mo memory_order_seq_cst)))
-                    (If_stm
-                     ((cond (Constant (Bool true)))
-                      (t_branch
-                       ((statements
-                         (Nop
-                          (Atomic_store
-                           ((src (Lvalue (Variable foo))) (dst (Lvalue (Variable y)))
-                            (mo memory_order_relaxed)))))
-                        (metadata ((source Generated)))))
-                      (f_branch ((statements ()) (metadata ((source Generated))))))))) |}]
+                  atomic_store_explicit(x, 42, memory_order_seq_cst);
+                  if (true) { ; atomic_store_explicit(y, foo, memory_order_relaxed); } |}]
 
             let%expect_test "list-transform an insertion (invalid)" =
               test_transform_list insert_path ;
               [%expect
                 {|
-                  (Error
-                   ("Can't use this statement-list path here"
-                    (here lib/fuzz/src/path.ml:171:16) (context transform_stm_list)
-                    (path (Insert 2)))) |}]
+                  ("Can't use this statement-list path here" (here lib/fuzz/src/path.ml:171:16)
+                   (context transform_stm_list) (path (Insert 2))) |}]
+
+            let%test_unit "generator over stm-list produces valid paths" =
+              Test.run_exn
+                ( module struct
+                  type t = F.Path_shapes.stm_list [@@deriving sexp]
+
+                  let quickcheck_generator =
+                    Option.value_exn ~here:[%here]
+                      (F.Path.Statement_list.try_gen_transform_stm_list
+                         (Lazy.force body_stms))
+
+                  let quickcheck_shrinker =
+                    (* for now *)
+                    Shrinker.atomic
+                end )
+                ~f:(fun path ->
+                  [%test_result: unit Or_error.t] ~here:[[%here]]
+                    ~expect:(Or_error.return ())
+                    (Or_error.map ~f:(Fn.const ())
+                       (F.Path.Statement_list.transform_stm_list path
+                          ~f:Or_error.return ~target:(Lazy.force body_stms))))
           end )
       end )
   end )
