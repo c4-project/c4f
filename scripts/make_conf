@@ -216,15 +216,17 @@ def lookup_local_backends() -> typing.Mapping[str, Backend]:
 
 
 def lookup_local_machine() -> Machine:
-    node = platform.node()
-    id = "localhost" if node.isspace() else trim_node(node)
+    """Looks up compilers and backends on this machine.
 
+    :return: A `Machine` with the identifier "localhost", and any found
+    compilers and backends on the local machine.
+    """
     arch = platform.machine()
 
     compilers: typing.Mapping[str, Compiler] = lookup_local_compilers(arch)
     backends: typing.Mapping[str, Backend] = lookup_local_backends()
 
-    return Machine(id, arch, compilers, backends)
+    return Machine("localhost", arch, compilers, backends)
 
 
 def print_default(mach: Machine) -> None:
