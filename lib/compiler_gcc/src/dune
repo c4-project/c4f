@@ -3,4 +3,4 @@
  (public_name act.compiler_gcc)
  (preprocess
   (pps ppx_jane))
- (libraries base act_common act_compiler))
+ (libraries base act_common act_compiler act.utils plumbing))
