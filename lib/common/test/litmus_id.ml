@@ -31,9 +31,8 @@ let%test_module "try_parse" =
     (Error
      ("validation failed"
       (1
-       ("validation errors"
-        (("fst.initial char '1'" "Invalid initial character.")))
-       lib/common/src/c_id.ml:66:13))) |}]
+       ("validation errors" (("initial char '1'" "Invalid initial character.")))
+       lib/common/src/c_id.ml:118:13))) |}]
   end )
 
 let%test_module "Id tests" =

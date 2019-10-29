@@ -50,36 +50,37 @@ let%test_module "is_string_safe (standard)" =
   ( module struct
     open Act_common.C_id
 
-    let%expect_test "positive example" =
-      Io.print_bool (is_string_safe "t0r0") ;
-      [%expect {| true |}]
+    let test (candidate : string) : unit =
+      Io.print_bool (is_string_safe candidate)
+
+    let%expect_test "positive example" = test "t0r0" ; [%expect {| true |}]
 
     let%expect_test "positive (but not herd-safe) example" =
-      Io.print_bool (is_string_safe "_t0r0") ;
-      [%expect {| true |}]
+      test "_t0r0" ; [%expect {| true |}]
 
-    let%expect_test "Herd program ID" =
-      Io.print_bool (is_string_safe "P45") ;
-      [%expect {| true |}]
+    let%expect_test "Herd program ID" = test "P45" ; [%expect {| true |}]
 
-    let%expect_test "negative example" =
-      Io.print_bool (is_string_safe "0r0") ;
-      [%expect {| false |}]
+    let%expect_test "negative example" = test "0r0" ; [%expect {| false |}]
   end )
 
 let%test_module "is_string_safe (Herd-safe)" =
   ( module struct
     open Act_common.C_id.Herd_safe
 
-    let%expect_test "is_string_safe: positive example" =
-      Io.print_bool (is_string_safe "t0r0") ;
-      [%expect {| true |}]
+    let test (candidate : string) : unit =
+      Io.print_bool (is_string_safe candidate)
 
-    let%expect_test "is_string_safe: negative example" =
-      Io.print_bool (is_string_safe "_t0r0") ;
-      [%expect {| false |}]
+    let%expect_test "positive example" = test "t0r0" ; [%expect {| true |}]
 
-    let%expect_test "is_string_safe: program ID" =
-      Io.print_bool (is_string_safe "P45") ;
-      [%expect {| false |}]
+    let%expect_test "negative example" =
+      test "_t0r0" ; [%expect {| false |}]
+
+    let%expect_test "program ID (negative)" =
+      test "P45" ; [%expect {| false |}]
+
+    (* This particular candidate Herd identifier has been the bane of the
+       ACT fuzzer for a little while. It clashes with an innocuous macro of
+       the same name in Litmus-generated harness C files. *)
+    let%expect_test "clashing 'N' (negative)" =
+      test "N" ; [%expect {| false |}]
   end )
