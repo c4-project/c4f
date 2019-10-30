@@ -78,20 +78,13 @@ main() {
 
   act::check_dune_exec
 
-  if [[ $# -ne 2 ]]; then
-    act::arg_error "need two directory arguments"
-    usage
-  fi
+  if [[ $# -ne 2 ]]; then act::arg_error "need two directory arguments"; fi
   readonly MEMALLOY_DIR=$1
   readonly DNF_DIR=$2
 
   local results_dir="${MEMALLOY_DIR}/results/_latest"
 
   run_memalloy_if_needed "${results_dir}"
-
-  # This needs to be done _after_ possibly running memalloy, as memalloy
-  # might relink 'results_dir' elsewhere.
-  mkdir -p "${DNF_DIR}"
 
   run_dnf_if_needed "${results_dir}"
 }
@@ -186,6 +179,7 @@ run_dnf() {
   local dnf_dir="${2}"
 
   act::log "DNF-converting memalloy results.\n"
+  mkdir -p "${dnf_dir}"
 
   local flags
   flags="$(act::flags_qvx)"

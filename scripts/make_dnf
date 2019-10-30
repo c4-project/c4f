@@ -56,7 +56,7 @@ usage() {
 main() {
   while getopts "b:c:qvx?h" a; do
     case ${a} in
-    b) act::set_nz "b" "BACKEND" "${OPTARG}" ;;
+    b) BACKEND="${OPTARG}" ;;
     c) COMPILER="${OPTARG}" ;;
     q) VERBOSE="false" ;;
     v) VERBOSE="true" ;;
