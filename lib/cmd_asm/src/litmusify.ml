@@ -20,13 +20,9 @@ let litmus_config_fn (aux : Act_delitmus.Aux.t) :
 module In = Common.Input
 
 let run (input : In.t) : unit Or_error.t =
-  let cfg = In.act_config input in
   let infile = In.pb_input input in
   let outfile = In.pb_output input in
   let target = In.target input in
-  let module R = Common_cmd.Sim_support.Make_resolver (struct
-    let cfg = cfg
-  end) in
   Or_error.Let_syntax.(
     let%bind (module Runner) =
       Common_cmd.Language_support.asm_runner_of_target target

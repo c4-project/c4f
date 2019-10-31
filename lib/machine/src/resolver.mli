@@ -16,3 +16,5 @@ module Compiler (Resolver : sig
        Act_compiler.Spec.With_id.t
     -> (module Act_compiler.Instance_types.Basic) Or_error.t
 end) : Resolver_types.S_compiler
+(** Constructs a compiler resolver, given a basic compiler resolution
+    function. *)

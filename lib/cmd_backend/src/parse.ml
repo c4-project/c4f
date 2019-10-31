@@ -18,7 +18,7 @@ let run ?(fqid : Id.t = Id.of_string "herd")
   Or_error.Let_syntax.(
     (* TODO(@MattWindsor91): machine predicates? *)
     let%bind cfg = Act_config.Act.of_global global_cfg in
-    let module Res = Common_cmd.Sim_support.Make_resolver (struct
+    let module Res = Common_cmd.Backend_support.Make_resolver (struct
       let cfg = cfg
     end) in
     let%bind input = Common_cmd.Args.With_files.infile_source args in
