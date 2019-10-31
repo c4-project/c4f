@@ -76,16 +76,6 @@ module type S = sig
     (** [get_using_fqid specs ~fqid] tries to look up a spec in [specs]
         whose ID forms a prefix of the 'fully qualified' ID ~fqid. *)
 
-    val restrict : t -> identifiers:Id.Set.t -> t
-    (** [restrict specs ~identifiers] returns the map corresponding to
-        [specs], but with all specs removed whose ID is not in [ids]. *)
-
-    val partition_map :
-      t -> f:(With_id.t -> [`Fst of 'a | `Snd of 'b]) -> 'a list * 'b list
-    (** [partition_map specs ~f] applies a partitioning predicate [f] to the
-        specifications in [specs], returning those marked [`Fst] in the
-        first bucket and those marked [`Snd] in the second. *)
-
     val group : t -> f:(With_id.t -> Id.t) -> t Id.Map.t
     (** [group specs ~f] groups [specs] into buckets according to some
         grouping function [f]. [f] returns specification IDs; the idea is

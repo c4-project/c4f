@@ -69,7 +69,9 @@ val make :
 (** {2 Accessors} *)
 
 val enabled : 'spec t -> 'spec Act_common.Spec.Set.t
-(** [enabled listing] gets every enabled spec in [listing]. *)
+(** [enabled listing] gets every enabled spec in [listing], as a spec table.
+    Generally, the IDs of each spec in the table will be fully qualified
+    IDs, and the specs themselves will be machine-qualified. *)
 
 val disabled :
   'spec t -> ('spec Act_common.Spec.With_id.t, Disable.t) List.Assoc.t

@@ -19,7 +19,7 @@ module Machine = struct
       ~(predicate : Property.t Blang.t) :
       Spec.With_id.t list
       * (Spec.With_id.t, Resolver_listing.Disable.t) List.Assoc.t =
-    Spec.Set.partition_map specs ~f:(fun spec ->
+    Act_common.Spec.Set.partition_map specs ~f:(fun spec ->
         if Property.eval_b spec predicate then `Fst spec
         else
           `Snd
@@ -78,7 +78,7 @@ end) : Resolver_types.S_compiler = struct
       ~(predicate : Act_compiler.Property.t Blang.t) :
       Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
     let qc c_spec = Qc.make ~m_spec ~c_spec in
-    Act_compiler.Spec.Set.partition_map specs ~f:(fun spec ->
+    Act_common.Spec.Set.partition_map specs ~f:(fun spec ->
         if Act_compiler.Property.eval_b spec predicate then `Fst (qc spec)
         else
           `Snd

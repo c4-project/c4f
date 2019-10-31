@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 (** [Spec] contains general interfaces for dealing with specifications of
     machines and compilers. *)
@@ -43,7 +31,7 @@ module With_id : sig
   (** [spec s] unwraps the identifier of [s]. *)
 end
 
-(** Specification sets, parametrised directly on the spec type.
+(** Specification tables, parametrised directly on the spec type.
 
     As 'proper' specification types have several operations needed for full
     use of specification sets, this module has very few available
@@ -56,13 +44,19 @@ module Set : sig
   val empty : 'spec t
   (** [empty] is the empty specification set. *)
 
-  val restrict : 'spec t -> identifiers:Id.Set.t -> 'spec t
-
   val of_list : 'spec With_id.t list -> 'spec t Or_error.t
   (** [of_list xs] tries to make a set from [xs]. It raises an error if [xs]
       contains duplicate IDs. *)
 
   val of_map : 'spec Map.M(Id).t -> 'spec t
+
+  val partition_map :
+       'spec t
+    -> f:('spec With_id.t -> [`Fst of 'a | `Snd of 'b])
+    -> 'a list * 'b list
+  (** [partition_map specs ~f] applies a partitioning predicate [f] to the
+      specifications in [specs], returning those marked [`Fst] in the first
+      bucket and those marked [`Snd] in the second. *)
 
   module On_specs : Travesty.Traversable_types.S1 with type 'a t = 'a t
   (** We can monadically traverse the specifications in a set. *)

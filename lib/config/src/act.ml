@@ -126,15 +126,14 @@ module Filterer = struct
       C_spec.Set.t M.t =
     M.Let_syntax.(
       let%bind hook = M.get_compiler_hook in
-      C_spec.Set.(
-        let enabled, disabled =
-          partition_map ~f:(part_compilers hook m_spec) cs
-        in
-        (* TODO(@MattWindsor91): move compiler testing here. *)
-        let machine_id = M_spec.With_id.id m_spec in
-        let%bind () = M.add_disabled_compilers ~machine_id disabled in
-        M.Monadic.return
-          (Act_common.Spec.Set.of_list (List.map ~f:Cq_spec.c_spec enabled))))
+      let enabled, disabled =
+        Act_common.Spec.Set.partition_map ~f:(part_compilers hook m_spec) cs
+      in
+      (* TODO(@MattWindsor91): move compiler testing here. *)
+      let machine_id = M_spec.With_id.id m_spec in
+      let%bind () = M.add_disabled_compilers ~machine_id disabled in
+      M.Monadic.return
+        (Act_common.Spec.Set.of_list (List.map ~f:Cq_spec.c_spec enabled)))
 
   let filter_compilers_in_machine_spec (spec : M_spec.t)
       ~(machine_id : Ac.Id.t) : M_spec.t M.t =
@@ -160,16 +159,15 @@ module Filterer = struct
   let filter_machines (ms : M_spec.Set.t) : M_spec.Set.t M.t =
     M.Let_syntax.(
       let%bind hook = M.get_machine_hook in
-      M_spec.Set.(
-        let enabled, disabled =
-          partition_map
-            ~f:(part_chain_fst MP.part_enabled (MP.part_hook hook))
-            ms
-        in
-        (* TODO(@MattWindsor91): test machines *)
-        let%bind () = M.add_disabled_machines disabled in
-        let%bind enabled' = filter_compilers_in_machines enabled in
-        M.Monadic.return (Act_common.Spec.Set.of_list enabled')))
+      let enabled, disabled =
+        Act_common.Spec.Set.partition_map
+          ~f:(part_chain_fst MP.part_enabled (MP.part_hook hook))
+          ms
+      in
+      (* TODO(@MattWindsor91): test machines *)
+      let%bind () = M.add_disabled_machines disabled in
+      let%bind enabled' = filter_compilers_in_machines enabled in
+      M.Monadic.return (Act_common.Spec.Set.of_list enabled'))
 
   let filter (m_hook : M_spec.With_id.t hook) (c_hook : Cq_spec.t hook)
       (raw_ms : M_spec.Set.t) : (Ctx.t * M_spec.Set.t) Or_error.t =

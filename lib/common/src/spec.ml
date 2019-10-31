@@ -9,9 +9,6 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** [Spec] contains general interfaces for dealing with specifications of
-    machines and compilers. *)
-
 open Base
 open Spec_types
 module Au = Act_utils
@@ -26,12 +23,9 @@ module Set = struct
 
   let empty (type a) : a t = []
 
-  let restrict (set : 'spec t) ~(identifiers : Id.Set.t) : 'spec t =
-    List.filter set ~f:(Fn.compose (Id.Set.mem identifiers) fst)
-
   let partition_map (type a b) (t : 'spec t)
-      ~(f : Id.t -> 'spec -> [`Fst of a | `Snd of b]) : a list * b list =
-    List.partition_map t ~f:(fun (i, s) -> f i s)
+      ~(f : 'spec With_id.t -> [`Fst of a | `Snd of b]) : a list * b list =
+    List.partition_map t ~f:(fun (id, spec) -> f (With_id.make ~id ~spec))
 
   let map (type a) (t : 'spec t) ~(f : Id.t -> 'spec -> a) : a list =
     List.map t ~f:(fun (i, s) -> f i s)
@@ -105,13 +99,6 @@ module Make (B : Basic) :
 
   module Set = struct
     type t = B.t Set.t [@@deriving equal]
-
-    let restrict : t -> identifiers:Id.Set.t -> t = Set.restrict
-
-    let partition_map (t : t)
-        ~(f : B.With_id.t -> [`Fst of 'a | `Snd of 'b]) : 'a list * 'b list
-        =
-      Set.partition_map t ~f:(fun id spec -> f (With_id.make ~id ~spec))
 
     let map (t : t) ~(f : B.With_id.t -> 'a) : 'a list =
       Set.map t ~f:(fun id spec -> f (With_id.make ~id ~spec))
