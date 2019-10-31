@@ -10,4 +10,5 @@
  (preprocess
   (pps ppx_deriving.std ppx_jane))
  (libraries sexplib0 stdio base base.caml core_kernel fmt travesty
-   travesty.base_exts travesty.containers act_abstract act_common act_utils plumbing))
+   travesty.base_exts travesty.containers act_abstract act_common act_utils
+   plumbing))

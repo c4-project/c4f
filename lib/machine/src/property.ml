@@ -36,12 +36,13 @@ let tree_docs : Ac.Property.Tree_doc.t =
     , {args= []; details= {| Selects machines that are known to be local. |}}
     ) ]
 
-let pp_tree : unit Fmt.t =
-  Ac.Property.Tree_doc.pp tree_docs (List.map ~f:fst Variants.descriptions)
+let property_names : string list = List.map ~f:fst Variants.descriptions
+
+let pp_tree : unit Fmt.t = Ac.Property.Tree_doc.pp tree_docs property_names
 
 let%expect_test "all properties have documentation" =
   let num_passes =
-    Variants.descriptions |> List.map ~f:fst
+    property_names
     |> List.map ~f:(List.Assoc.mem tree_docs ~equal:String.Caseless.equal)
     |> List.count ~f:not
   in

@@ -9,62 +9,161 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
-module Pb = Plumbing
+open Core_kernel
 module C_instance = Act_compiler.Instance
 module C_instance_t = Act_compiler.Instance_types
 module C_filter = Act_compiler.Filter
 
-module type Basic =
-  Resolver_types.Basic with type spec := Act_compiler.Spec.With_id.t
+module Machine = struct
+  let partition_by_filter (specs : Spec.Set.t)
+      ~(predicate : Property.t Blang.t) :
+      Spec.With_id.t list
+      * (Spec.With_id.t, Resolver_listing.Disable.t) List.Assoc.t =
+    Spec.Set.partition_map specs ~f:(fun spec ->
+        if Property.eval_b spec predicate then `Fst spec
+        else
+          `Snd
+            ( spec
+            , Resolver_listing.Disable.make ~location:Machine
+                ~reason:Filtered ))
 
-module Sp = Qualified.Compiler
+  let partition_by_enabled (specs : Spec.With_id.t list) :
+      Spec.With_id.t list
+      * (Spec.With_id.t, Resolver_listing.Disable.t) List.Assoc.t =
+    List.partition_map specs ~f:(fun m_spec ->
+        if Spec.With_id.is_enabled m_spec then `Fst m_spec
+        else
+          `Snd
+            ( m_spec
+            , Resolver_listing.Disable.make ~location:Machine
+                ~reason:In_config ))
 
-let from_resolver_and_spec
-    (resolve :
-      Act_compiler.Spec.With_id.t -> (module C_instance_t.Basic) Or_error.t)
-    (spec : Sp.t) : (module C_instance_t.S) Or_error.t =
-  let cspec = Sp.c_spec spec in
-  Or_error.Let_syntax.(
-    let%map (module B : C_instance_t.Basic) = resolve cspec in
-    let (module Runner) = Spec.With_id.runner (Sp.m_spec spec) in
-    ( module C_instance.Make (struct
-      let cspec = cspec
-
-      include B
-      module Runner = Runner
-    end) : C_instance_t.S ))
-
-module Make (B : Basic) : Resolver_types.S with type spec = Sp.t = struct
-  type spec = Sp.t
-
-  let from_spec : spec -> (module C_instance_t.S) Or_error.t =
-    from_resolver_and_spec B.resolve
-
-  let filter_from_spec (cspec : Sp.t) : (module C_filter.S) Or_error.t =
-    Or_error.Let_syntax.(
-      let%map (module M) = from_spec cspec in
-      (module C_filter.Make (M) : C_filter.S))
+  let filtered_list ?(predicate : Property.t Blang.t = Blang.true_)
+      (specs : Spec.Set.t) : Spec.With_id.t Resolver_listing.t =
+    let pass_filter, fail_filter = partition_by_filter specs ~predicate in
+    let enabled_machines, disabled_in_config =
+      partition_by_enabled pass_filter
+    in
+    Resolver_listing.make enabled_machines
+      ~disabled:(fail_filter @ disabled_in_config)
 end
 
-module Make_on_target (B : Basic) :
-  Resolver_types.S with type spec = Qualified.Compiler.t Target.t = struct
-  type spec = Qualified.Compiler.t Target.t
+module Compiler (Resolver : sig
+  val f :
+       Act_compiler.Spec.With_id.t
+    -> (module Act_compiler.Instance_types.Basic) Or_error.t
+end) : Resolver_types.S_compiler = struct
+  module Qc = Qualified.Compiler
 
-  let from_spec : spec -> _ Or_error.t = function
-    | Cc cspec ->
-        from_resolver_and_spec B.resolve cspec
-    | Arch _ ->
-        Or_error.return
-          ( module C_instance.Fail (struct
-            let error =
-              Error.of_string
-                "To run a compiler, you must supply a compiler ID."
-          end) : C_instance_t.S )
-
-  let filter_from_spec (tgt : Qualified.Compiler.t Target.t) :
-      (module C_filter.S) Or_error.t =
+  let resolve (q_spec : Qc.t) : (module C_instance_t.S) Or_error.t =
+    let c_spec = Qc.c_spec q_spec in
+    let m_spec = Qc.m_spec q_spec in
     Or_error.Let_syntax.(
-      let%map (module M) = from_spec tgt in
-      (module C_filter.Make (M) : C_filter.S))
+      let%map (module B : C_instance_t.Basic) = Resolver.f c_spec in
+      let (module Runner) = Spec.With_id.runner m_spec in
+      ( module C_instance.Make (struct
+        let cspec = c_spec
+
+        include B
+        module Runner = Runner
+      end) : C_instance_t.S ))
+
+  let partition_by_filter (m_spec : Spec.With_id.t)
+      (specs : Act_compiler.Spec.Set.t)
+      ~(predicate : Act_compiler.Property.t Blang.t) :
+      Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
+    let qc c_spec = Qc.make ~m_spec ~c_spec in
+    Act_compiler.Spec.Set.partition_map specs ~f:(fun spec ->
+        if Act_compiler.Property.eval_b spec predicate then `Fst (qc spec)
+        else
+          `Snd
+            ( qc spec
+            , Resolver_listing.Disable.make ~location:Spec ~reason:Filtered
+            ))
+
+  let partition_by_enabled (specs : Qc.t list) :
+      Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
+    List.partition_map specs ~f:(fun c_spec ->
+        if Act_compiler.Spec.With_id.is_enabled (Qc.c_spec c_spec) then
+          `Fst c_spec
+        else
+          `Snd
+            ( c_spec
+            , Resolver_listing.Disable.make ~location:Spec ~reason:In_config
+            ))
+
+  let compilers_of_enabled_machine (m_spec : Spec.With_id.t)
+      ~(compiler_predicate : Act_compiler.Property.t Blang.t) :
+      Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
+    let specs = Spec.With_id.compilers m_spec in
+    let pass_filter, fail_filter =
+      partition_by_filter m_spec specs ~predicate:compiler_predicate
+    in
+    let enabled_compilers, disabled_in_config =
+      partition_by_enabled pass_filter
+    in
+    (enabled_compilers, fail_filter @ disabled_in_config)
+
+  let compilers_of_enabled_machines (machines : Spec.With_id.t list)
+      ~(compiler_predicate : Act_compiler.Property.t Blang.t) :
+      Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
+    List.fold machines ~init:([], []) ~f:(fun (enabled, disabled) m_spec ->
+        let enabled', disabled' =
+          compilers_of_enabled_machine m_spec ~compiler_predicate
+        in
+        (enabled @ enabled', disabled @ disabled'))
+
+  let machine_disabled_compilers
+      (disabled_machines :
+        (Spec.With_id.t, Resolver_listing.Disable.t) List.Assoc.t) :
+      (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
+    List.concat_map disabled_machines ~f:(fun (m_spec, disable) ->
+        m_spec |> Spec.With_id.compilers
+        |> Act_compiler.Spec.Set.map ~f:(fun c_spec ->
+               (Qc.make ~c_spec ~m_spec, disable)))
+
+  let test_compiler (compiler : Qc.t) : unit Or_error.t =
+    Or_error.Let_syntax.(
+      let%bind (module Compiler) = resolve compiler in
+      Compiler.test ())
+
+  let actually_test_compilers (compilers : Qc.t list) :
+      Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
+    compilers
+    |> List.partition_map ~f:(fun compiler ->
+           match test_compiler compiler with
+           | Ok () ->
+               `Fst compiler
+           | Error error ->
+               `Snd
+                 ( compiler
+                 , Resolver_listing.Disable.make_failed ~location:Spec
+                     ~error ))
+
+  let maybe_test_compilers (compilers : Qc.t list) ~(test_compilers : bool)
+      : Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
+    if test_compilers then actually_test_compilers compilers
+    else (compilers, [])
+
+  let filtered_list ?(machine_predicate : Property.t Blang.t option)
+      ?(compiler_predicate : Act_compiler.Property.t Blang.t = Blang.true_)
+      ?(test_compilers : bool = false) (specs : Spec.Set.t) :
+      Qc.t Resolver_listing.t =
+    let machine_listing =
+      Machine.filtered_list ?predicate:machine_predicate specs
+    in
+    let enabled_machines = Resolver_listing.enabled machine_listing in
+    let disabled_machines = Resolver_listing.disabled machine_listing in
+    let machine_disabled_compilers =
+      machine_disabled_compilers disabled_machines
+    in
+    let enabled_compilers, disabled_compilers =
+      compilers_of_enabled_machines enabled_machines ~compiler_predicate
+    in
+    let passed_compilers, failed_test =
+      maybe_test_compilers enabled_compilers ~test_compilers
+    in
+    Resolver_listing.make passed_compilers
+      ~disabled:
+        (machine_disabled_compilers @ disabled_compilers @ failed_test)
 end

@@ -9,10 +9,19 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
+(** Module types for resolvers. *)
+
 open Core_kernel
 
-module Compiler (Resolver : sig
-  val f :
-       Act_compiler.Spec.With_id.t
-    -> (module Act_compiler.Instance_types.Basic) Or_error.t
-end) : Resolver_types.S_compiler
+module type S_compiler = sig
+  val resolve :
+       Qualified.Compiler.t
+    -> (module Act_compiler.Instance_types.S) Or_error.t
+
+  val filtered_list :
+       ?machine_predicate:Property.t Blang.t
+    -> ?compiler_predicate:Act_compiler.Property.t Blang.t
+    -> ?test_compilers:bool
+    -> Spec.Set.t
+    -> Qualified.Compiler.t Resolver_listing.t
+end

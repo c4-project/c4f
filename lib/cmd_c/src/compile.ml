@@ -12,6 +12,15 @@
 open Core_kernel
 module Cq_spec = Act_machine.Qualified.Compiler
 
+let resolve_compiler_filter (target : Cq_spec.t Act_machine.Target.t) :
+    (module Act_compiler.Filter.S) Or_error.t =
+  Or_error.Let_syntax.(
+    let%bind spec = Act_machine.Target.ensure_spec target in
+    let%map (module Compiler) =
+      Common_cmd.Language_support.Resolve_compiler.resolve spec
+    in
+    (module Act_compiler.Filter.Make (Compiler) : Act_compiler.Filter.S))
+
 let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
     (_o : Act_common.Output.t) (global_cfg : Act_config.Global.t)
     ~(raw_target : Common_cmd.Asm_target.t) ~(mode : Act_compiler.Mode.t) :
@@ -19,10 +28,7 @@ let run (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
   Or_error.Let_syntax.(
     let%bind cfg = Act_config.Act.of_global global_cfg in
     let%bind target = Common_cmd.Asm_target.resolve ~cfg raw_target in
-    let%bind (module R) =
-      Common_cmd.Language_support.Resolve_compiler_from_target
-      .filter_from_spec target
-    in
+    let%bind (module R) = resolve_compiler_filter target in
     let%bind input = Common_cmd.Args.With_files.infile_source args in
     let%bind output = Common_cmd.Args.With_files.outfile_sink args in
     Or_error.ignore_m (R.run mode input output))

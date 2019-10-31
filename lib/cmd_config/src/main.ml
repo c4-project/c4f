@@ -41,15 +41,17 @@ let run_list_compilers
     (standard_args : Common_cmd.Args.Standard.t) (_o : Output.t)
     (global_cfg : Act_config.Global.t) ~(with_compiler_tests : bool) :
     unit Or_error.t =
-  Or_error.Let_syntax.(
-    let%map cfg =
-      Common_cmd.Language_support.make_filtered_machine_config
-        ?compiler_predicate ?machine_predicate ~with_compiler_tests
-        global_cfg
-    in
-    let compilers = Act_config.Act.all_compilers cfg in
-    let verbose = Common_cmd.Args.Standard.is_verbose standard_args in
-    Fmt.(pr "@[<v>%a@]@." (list (pp_compiler verbose)) compilers))
+  (* TODO(@MattWindsor91): print out information about failed compilers too. *)
+  let listing =
+    Common_cmd.Language_support.Resolve_compiler.filtered_list
+      ?compiler_predicate ?machine_predicate
+      ~test_compilers:with_compiler_tests
+      (Act_config.Global.machines global_cfg)
+  in
+  let compilers = Act_machine.Resolver_listing.enabled listing in
+  let verbose = Common_cmd.Args.Standard.is_verbose standard_args in
+  Fmt.(pr "@[<v>%a@]@." (list (pp_compiler verbose)) compilers) ;
+  Or_error.return ()
 
 let list_compilers_command : Command.t =
   Command.basic
