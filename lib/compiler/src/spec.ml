@@ -71,7 +71,7 @@ module M = struct
 end
 
 module With_id = struct
-  module W = Ac.Spec.With_id (M)
+  module W = Ac.Spec.Make_with_id (M)
   include W
 
   include Forward_spec (W) (M)

@@ -60,15 +60,18 @@ type 'spec t
 (** {2 Constructors} *)
 
 val make :
-  ?disabled:('spec, Disable.t) List.Assoc.t -> 'spec list -> 'spec t
+     ?disabled:('spec Act_common.Spec.With_id.t, Disable.t) List.Assoc.t
+  -> 'spec Act_common.Spec.Set.t
+  -> 'spec t
 (** [make ?disabled enabled] builds a listing from the enabled specs
     [enabled] and optional disabled specs [disabled]. *)
 
 (** {2 Accessors} *)
 
-val enabled : 'spec t -> 'spec list
+val enabled : 'spec t -> 'spec Act_common.Spec.Set.t
 (** [enabled listing] gets every enabled spec in [listing]. *)
 
-val disabled : 'spec t -> ('spec, Disable.t) List.Assoc.t
+val disabled :
+  'spec t -> ('spec Act_common.Spec.With_id.t, Disable.t) List.Assoc.t
 (** [disabled listing] gets every disabled spec in [listing], alongside the
     reasoning as to why it was disabled. *)

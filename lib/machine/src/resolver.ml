@@ -39,12 +39,17 @@ module Machine = struct
                 ~reason:In_config ))
 
   let filtered_list ?(predicate : Property.t Blang.t = Blang.true_)
-      (specs : Spec.Set.t) : Spec.With_id.t Resolver_listing.t =
+      (specs : Spec.Set.t) : Spec.t Resolver_listing.t =
     let pass_filter, fail_filter = partition_by_filter specs ~predicate in
     let enabled_machines, disabled_in_config =
       partition_by_enabled pass_filter
     in
-    Resolver_listing.make enabled_machines
+    (* [of_list] errors only if there are duplicate IDs; as we're reducing
+       an existing table, it should be safe to assume there are no errors. *)
+    let enabled_table =
+      Or_error.ok_exn (Act_common.Spec.Set.of_list enabled_machines)
+    in
+    Resolver_listing.make enabled_table
       ~disabled:(fail_filter @ disabled_in_config)
 end
 
@@ -104,14 +109,15 @@ end) : Resolver_types.S_compiler = struct
     in
     (enabled_compilers, fail_filter @ disabled_in_config)
 
-  let compilers_of_enabled_machines (machines : Spec.With_id.t list)
+  let compilers_of_enabled_machines (machines : Spec.Set.t)
       ~(compiler_predicate : Act_compiler.Property.t Blang.t) :
       Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
-    List.fold machines ~init:([], []) ~f:(fun (enabled, disabled) m_spec ->
-        let enabled', disabled' =
-          compilers_of_enabled_machine m_spec ~compiler_predicate
-        in
-        (enabled @ enabled', disabled @ disabled'))
+    let par =
+      Spec.Set.map machines
+        ~f:(compilers_of_enabled_machine ~compiler_predicate)
+    in
+    let en, di = List.unzip par in
+    (List.join en, List.join di)
 
   let machine_disabled_compilers
       (disabled_machines :
@@ -127,23 +133,39 @@ end) : Resolver_types.S_compiler = struct
       let%bind (module Compiler) = resolve compiler in
       Compiler.test ())
 
-  let actually_test_compilers (compilers : Qc.t list) :
-      Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
-    compilers
-    |> List.partition_map ~f:(fun compiler ->
-           match test_compiler compiler with
-           | Ok () ->
-               `Fst compiler
-           | Error error ->
-               `Snd
-                 ( compiler
-                 , Resolver_listing.Disable.make_failed ~location:Spec
-                     ~error ))
+  let actually_test_compilers :
+         Qc.t list
+      -> Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
+    List.partition_map ~f:(fun compiler ->
+        match test_compiler compiler with
+        | Ok () ->
+            `Fst compiler
+        | Error error ->
+            `Snd
+              ( compiler
+              , Resolver_listing.Disable.make_failed ~location:Spec ~error
+              ))
 
   let maybe_test_compilers (compilers : Qc.t list) ~(test_compilers : bool)
       : Qc.t list * (Qc.t, Resolver_listing.Disable.t) List.Assoc.t =
     if test_compilers then actually_test_compilers compilers
     else (compilers, [])
+
+  let fqid_of_qc (s : Qc.t) : Act_common.Id.t =
+    Act_common.(Id.(Spec.With_id.(id (Qc.m_spec s) @. id (Qc.c_spec s))))
+
+  let add_fqids_to_enabled :
+      Qc.t list -> Qc.t Act_common.Spec.With_id.t list =
+    List.map ~f:(fun s ->
+        Act_common.Spec.With_id.make ~id:(fqid_of_qc s) ~spec:s)
+
+  let add_fqids_to_disabled :
+         (Qc.t, Resolver_listing.Disable.t) List.Assoc.t
+      -> ( Qc.t Act_common.Spec.With_id.t
+         , Resolver_listing.Disable.t )
+         List.Assoc.t =
+    List.map ~f:(fun (s, e) ->
+        (Act_common.Spec.With_id.make ~id:(fqid_of_qc s) ~spec:s, e))
 
   let filtered_list ?(machine_predicate : Property.t Blang.t option)
       ?(compiler_predicate : Act_compiler.Property.t Blang.t = Blang.true_)
@@ -163,7 +185,14 @@ end) : Resolver_types.S_compiler = struct
     let passed_compilers, failed_test =
       maybe_test_compilers enabled_compilers ~test_compilers
     in
-    Resolver_listing.make passed_compilers
-      ~disabled:
+    let fqid_passed_compilers = add_fqids_to_enabled passed_compilers in
+    (* See the similar comment in [Machine]. *)
+    let passed_set =
+      Or_error.ok_exn (Act_common.Spec.Set.of_list fqid_passed_compilers)
+    in
+    let disabled =
+      add_fqids_to_disabled
         (machine_disabled_compilers @ disabled_compilers @ failed_test)
+    in
+    Resolver_listing.make passed_set ~disabled
 end

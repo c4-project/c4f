@@ -28,7 +28,10 @@ val make :
 
 (** We extend [With_id] to include all of the accessors from [Basic_spec]. *)
 module With_id : sig
-  include Act_common.Spec_types.S_with_id with type elt := t
+  include
+    Act_common.Spec_types.S_with_id
+      with type elt := t
+       and type t = t Act_common.Spec.With_id.t
 
   include Spec_types.S with type t := t
 end

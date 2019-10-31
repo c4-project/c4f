@@ -17,6 +17,10 @@ open Spec_types
 module Au = Act_utils
 module Tx = Travesty_base_exts
 
+module With_id = struct
+  type 'spec t = {id: Id.t; spec: 'spec} [@@deriving fields, make, equal]
+end
+
 module Set = struct
   type 'spec t = (Id.t * 'spec) list [@@deriving equal]
 
@@ -33,6 +37,18 @@ module Set = struct
     List.map t ~f:(fun (i, s) -> f i s)
 
   let of_map (type spec) : spec Map.M(Id).t -> spec t = Map.to_alist
+
+  let of_list (type a) (xs : a With_id.t list) : a t Or_error.t =
+    let open Or_error.Let_syntax in
+    let%map () =
+      xs
+      |> List.find_all_dups ~compare:(Tx.Fn.on With_id.id ~f:Id.compare)
+      |> List.map ~f:(fun x ->
+             Or_error.error_s
+               [%message "duplicate ID" ~id:(With_id.id x : Id.t)])
+      |> Or_error.combine_errors_unit
+    in
+    List.map ~f:(fun x -> (With_id.id x, With_id.spec x)) xs
 
   let get_using_fqid (type spec) ?(id_type : string = "unknown")
       (specs : spec t) ~(fqid : Id.t) : (Id.t * spec) Or_error.t =
@@ -61,11 +77,18 @@ module type S = sig
   include Spec_types.S with type Set.t = t Set.t and type t := t
 end
 
-module With_id (C : Spec_types.Common) :
-  Spec_types.S_with_id with type elt = C.t = struct
+module Make_with_id (C : Spec_types.Common) :
+  Spec_types.S_with_id with type elt = C.t and type t = C.t With_id.t =
+struct
   type elt = C.t
 
-  type t = {id: Id.t; spec: C.t} [@@deriving fields, make, equal]
+  type t = C.t With_id.t [@@deriving equal]
+
+  let id = With_id.id
+
+  let spec = With_id.spec
+
+  let make = With_id.make
 
   let is_enabled x = C.is_enabled (spec x)
 
@@ -104,18 +127,6 @@ module Make (B : Basic) :
       Or_error.Let_syntax.(
         let%map spec = Set.get specs ~id ~id_type:type_name in
         With_id.make ~id ~spec)
-
-    let of_list xs =
-      let open Or_error.Let_syntax in
-      let%map () =
-        xs
-        |> List.find_all_dups ~compare:(Tx.Fn.on With_id.id ~f:Id.compare)
-        |> List.map ~f:(fun x ->
-               Or_error.error_s
-                 [%message "duplicate ID" ~id:(With_id.id x : Id.t)])
-        |> Or_error.combine_errors_unit
-      in
-      List.map ~f:(fun x -> (With_id.id x, With_id.spec x)) xs
 
     let group t ~f =
       t

@@ -76,7 +76,7 @@ module Forward_basic_spec
 end
 
 module With_id = struct
-  include Ac.Spec.With_id (M)
+  include Ac.Spec.Make_with_id (M)
 
   include Forward_basic_spec
             (struct

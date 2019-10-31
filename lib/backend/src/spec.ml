@@ -63,7 +63,7 @@ end
 
 module Spec = Ac.Spec.Make (struct
   include Spec_common
-  module With_id = Ac.Spec.With_id (Spec_common)
+  module With_id = Ac.Spec.Make_with_id (Spec_common)
 end)
 
 include (Spec : module type of Spec with type t := M.t)

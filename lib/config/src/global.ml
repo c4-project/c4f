@@ -173,7 +173,7 @@ module Load : Plumbing.Loadable_types.S with type t = t = struct
         items
         |> List.filter_map ~f:Ast.Top.as_machine
         |> Tx.List.With_errors.map_m ~f:(fun (i, s) -> machine_with_id i s)
-        >>= M_spec.Set.of_list)
+        >>= Act_common.Spec.Set.of_list)
 
     let to_weight_opt : Ast.Fuzz.t -> (Act_common.Id.t * int) option =
       function

@@ -26,6 +26,23 @@
 
 open Base
 
+module With_id : sig
+  type 'spec t
+
+  (** {2 Constructors} *)
+
+  val make : id:Id.t -> spec:'spec -> 'spec t
+  (** [make ~id ~spec] makes a {!t} with the given [id] and [spec]. *)
+
+  (** {2 Accessors} *)
+
+  val id : _ t -> Id.t
+  (** [id s] gets the identifier of [s]. *)
+
+  val spec : 'spec t -> 'spec
+  (** [spec s] unwraps the identifier of [s]. *)
+end
+
 (** Specification sets, parametrised directly on the spec type.
 
     As 'proper' specification types have several operations needed for full
@@ -41,6 +58,10 @@ module Set : sig
 
   val restrict : 'spec t -> identifiers:Id.Set.t -> 'spec t
 
+  val of_list : 'spec With_id.t list -> 'spec t Or_error.t
+  (** [of_list xs] tries to make a set from [xs]. It raises an error if [xs]
+      contains duplicate IDs. *)
+
   val of_map : 'spec Map.M(Id).t -> 'spec t
 
   module On_specs : Travesty.Traversable_types.S1 with type 'a t = 'a t
@@ -53,13 +74,13 @@ module type S = sig
   include Spec_types.S with type Set.t = t Set.t and type t := t
 end
 
-module With_id (C : Spec_types.Common) :
-  Spec_types.S_with_id with type elt = C.t
 (** [With_id] is a basic implementation of [S_with_id] for specs with type
     [B.t].
 
     Usually, spec modules should extend [With_id] to implement the various
     accessors they expose on the spec type itself, for convenience. *)
+module Make_with_id (C : Spec_types.Common) :
+  Spec_types.S_with_id with type elt = C.t and type t = C.t With_id.t
 
 (** [Make] makes an [S] from a [Basic]. *)
 module Make (B : Spec_types.Basic) :

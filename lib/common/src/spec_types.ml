@@ -76,10 +76,6 @@ module type S = sig
     (** [get_using_fqid specs ~fqid] tries to look up a spec in [specs]
         whose ID forms a prefix of the 'fully qualified' ID ~fqid. *)
 
-    val of_list : With_id.t list -> t Or_error.t
-    (** [of_list xs] tries to make a set from [xs]. It raises an error if
-        [xs] contains duplicate IDs. *)
-
     val restrict : t -> identifiers:Id.Set.t -> t
     (** [restrict specs ~identifiers] returns the map corresponding to
         [specs], but with all specs removed whose ID is not in [ids]. *)

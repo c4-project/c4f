@@ -31,7 +31,10 @@ val make :
 (** [With_id] is an extension onto [Spec.With_id] that lets such items be
     machine references, and adds all of the [Spec] accessors. *)
 module With_id : sig
-  include Act_common.Spec_types.S_with_id with type elt := t
+  include
+    Act_common.Spec_types.S_with_id
+      with type elt := t
+       and type t = t Act_common.Spec.With_id.t
 
   include Spec_types.S with type t := t and type via := Via.t
 end

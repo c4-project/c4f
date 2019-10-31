@@ -28,5 +28,6 @@ module Disable = struct
 end
 
 type 'spec t =
-  {disabled: ('spec * Disable.t) list; enabled: 'spec list [@main]}
+  { disabled: ('spec Act_common.Spec.With_id.t * Disable.t) list
+  ; enabled: 'spec Act_common.Spec.Set.t [@main] }
 [@@deriving fields, make]

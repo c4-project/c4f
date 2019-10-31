@@ -30,8 +30,8 @@ module Spec_sets = struct
     Lazy.Let_syntax.(
       let%map gcc_spec = gcc_spec in
       Or_error.ok_exn
-        (Spec.Set.of_list
-           [ Spec.With_id.make
+        (Act_common.Spec.Set.of_list
+           [ Act_common.Spec.With_id.make
                ~id:(Ac.Id.of_string "gcc.x86.normal")
                ~spec:gcc_spec ]))
 end

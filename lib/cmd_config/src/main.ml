@@ -48,7 +48,10 @@ let run_list_compilers
       ~test_compilers:with_compiler_tests
       (Act_config.Global.machines global_cfg)
   in
-  let compilers = Act_machine.Resolver_listing.enabled listing in
+  let compilers =
+    Act_common.Spec.Set.On_specs.to_list
+      (Act_machine.Resolver_listing.enabled listing)
+  in
   let verbose = Common_cmd.Args.Standard.is_verbose standard_args in
   Fmt.(pr "@[<v>%a@]@." (list (pp_compiler verbose)) compilers) ;
   Or_error.return ()

@@ -22,8 +22,8 @@ module Spec_sets = struct
     Lazy.Let_syntax.(
       let%map localhost_herd_spec = localhost_herd_spec in
       Or_error.ok_exn
-        (Act_backend.Spec.Set.of_list
-           [ Act_backend.Spec.With_id.make ~id:(Ac.Id.of_string "herd")
+        (Act_common.Spec.Set.of_list
+           [ Act_common.Spec.With_id.make ~id:(Ac.Id.of_string "herd")
                ~spec:localhost_herd_spec ]))
 
   let localhost_spec : Am.Spec.t Lazy.t =
@@ -38,8 +38,8 @@ module Spec_sets = struct
     Lazy.Let_syntax.(
       let%map localhost_spec = localhost_spec in
       Or_error.ok_exn
-        (Am.Spec.Set.of_list
-           [ Am.Spec.With_id.make
+        (Act_common.Spec.Set.of_list
+           [ Act_common.Spec.With_id.make
                ~id:(Ac.Id.of_string "localhost")
                ~spec:localhost_spec ]))
 end
