@@ -77,3 +77,10 @@ val disabled :
   'spec t -> ('spec Act_common.Spec.With_id.t, Disable.t) List.Assoc.t
 (** [disabled listing] gets every disabled spec in [listing], alongside the
     reasoning as to why it was disabled. *)
+
+val get_with_fqid :
+     ?id_type:string
+  -> ?default_machines:Act_common.Id.t list
+  -> 'spec t
+  -> fqid:Act_common.Id.t
+  -> 'spec Or_error.t

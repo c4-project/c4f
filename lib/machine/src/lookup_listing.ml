@@ -31,3 +31,11 @@ type 'spec t =
   { disabled: ('spec Act_common.Spec.With_id.t * Disable.t) list
   ; enabled: 'spec Act_common.Spec.Set.t [@main] }
 [@@deriving fields, make]
+
+let get_with_fqid ?(id_type : string option)
+    ?(default_machines : Act_common.Id.t list = []) (listing : 'spec t)
+    ~(fqid : Act_common.Id.t) : 'spec Or_error.t =
+  (* TODO(@MattWindsor91): on error, try looking up in the disabled specs,
+     and emit a helpful error. *)
+  Act_common.Spec.Set.get_with_fqid ?id_type ~prefixes:default_machines
+    (enabled listing) ~fqid

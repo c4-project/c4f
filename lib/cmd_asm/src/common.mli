@@ -19,7 +19,8 @@ module Input : sig
   type t
   (** Opaque type of assembly command input. *)
 
-  val act_config : t -> Act_config.Act.t
+  val global_config : t -> Act_config.Global.t
+  (** [global_config in] gets the global ACT config attached to [in]. *)
 
   val pb_input : t -> Plumbing.Input.t
 

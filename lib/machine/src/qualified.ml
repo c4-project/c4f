@@ -10,6 +10,7 @@
    project root for more information. *)
 
 open Base
+module Ac = Act_common
 module Tx = Travesty_base_exts
 module C_spec = Act_compiler.Spec
 module S_spec = Act_backend.Spec
@@ -27,97 +28,48 @@ module Compiler = struct
             (struct
               let component = c_spec
             end)
+
+  let lift_resolver (q_spec : t)
+      ~(f :
+            Act_compiler.Spec.With_id.t
+         -> (module Act_compiler.Instance_types.Basic) Or_error.t) :
+      (module Act_compiler.Instance_types.S) Or_error.t =
+    let c_spec = c_spec q_spec in
+    let m_spec = m_spec q_spec in
+    Or_error.Let_syntax.(
+      let%map (module B : Act_compiler.Instance_types.Basic) = f c_spec in
+      let (module Runner) = Spec.With_id.runner m_spec in
+      ( module Act_compiler.Instance.Make (struct
+        let cspec = c_spec
+
+        include B
+        module Runner = Runner
+      end) : Act_compiler.Instance_types.S ))
 end
 
 module Sim = struct
   type t = {s_spec: S_spec.With_id.t; m_spec: M_spec.With_id.t}
   [@@deriving make, fields, equal]
 
-  (* TODO(@MattWindsor91): properly chain here? *)
-end
-
-(** Basic signature used for constructing qualified lookups. *)
-module type Basic_lookup = sig
-  module Inner : Act_common.Spec.S
-  (** The unqualified inner specification module. *)
-
-  type t
-  (** The qualified final specification type. *)
-
-  val from_machine : Spec.t -> Inner.Set.t
-  (** [from_machine] gets the list of unqualified specifications for the
-      given machine. *)
-
-  val qualify : Inner.With_id.t -> m_spec:Spec.With_id.t -> t
-  (** [qualify spec ~m_spec] lifts an inner specification [spec] to a
-      qualified spec with the machine being that described in [m_spec]. *)
-end
-
-module Make_lookup (B : Basic_lookup) :
-  Qualified_types.S_lookup with type t = B.t = struct
-  type t = B.t
-
-  let lookup_direct (machines : Spec.Set.t) ~(fqid : Act_common.Id.t) :
-      t Or_error.t =
+  let lift_resolver (q_spec : t)
+      ~(f :
+            Act_backend.Spec.With_id.t
+         -> (   (module Act_backend.Runner_types.Basic)
+             -> (module Act_backend.Runner_types.S))
+            Or_error.t) : (module Act_backend.Runner_types.S) Or_error.t =
+    let s_spec = s_spec q_spec in
+    let m_spec = m_spec q_spec in
     Or_error.Let_syntax.(
-      let%bind m_spec = Spec.Set.get_using_fqid machines ~fqid in
-      let%bind inner_id =
-        Act_common.Id.drop_prefix fqid ~prefix:(M_spec.With_id.id m_spec)
+      let%map backend_maker = f s_spec in
+      let (module Runner) = Spec.With_id.runner m_spec in
+      let (b : (module Act_backend.Runner_types.Basic)) =
+        ( module struct
+          let spec = Ac.Spec.With_id.spec s_spec
+
+          let machine_id = Ac.Spec.With_id.id m_spec
+
+          module Runner = Runner
+        end )
       in
-      let specs = B.from_machine (Spec.With_id.spec m_spec) in
-      let%map spec = B.Inner.Set.get specs inner_id in
-      B.qualify spec ~m_spec)
-
-  let lookup_default_fallback (defaults : Act_common.Id.t list)
-      (initial_error : Error.t) (machines : Spec.Set.t)
-      (fqid : Act_common.Id.t) =
-    let result =
-      Or_error.find_map_ok defaults ~f:(fun default ->
-          let fqid = Act_common.Id.(default @. fqid) in
-          lookup_direct machines ~fqid)
-    in
-    (* We want default resolution to be 'hidden' in the error case; errors
-       returned should refer to the original resolution attempt. *)
-    Tx.Or_error.map_right result ~f:(Fn.const initial_error)
-
-  let lookup ?(defaults : Act_common.Id.t list = []) (machines : Spec.Set.t)
-      ~(fqid : Act_common.Id.t) : t Or_error.t =
-    match (defaults, lookup_direct machines ~fqid) with
-    | [], result | _, (Ok _ as result) ->
-        result
-    | _, Error err ->
-        lookup_default_fallback defaults err machines fqid
-
-  let all_on_machine (m_spec : Spec.With_id.t) : t list =
-    m_spec |> Spec.With_id.spec |> B.from_machine
-    |> B.Inner.Set.map ~f:(B.qualify ~m_spec)
-
-  let all (machines : Spec.Set.t) : t list =
-    List.concat (M_spec.Set.map ~f:all_on_machine machines)
+      backend_maker b)
 end
-
-module Lookup_compilers :
-  Qualified_types.S_lookup with type t = Compiler.t = Make_lookup (struct
-  type t = Compiler.t
-
-  module Inner = Act_compiler.Spec
-
-  let from_machine = Spec.compilers
-
-  let qualify (c_spec : Act_compiler.Spec.With_id.t)
-      ~(m_spec : Spec.With_id.t) =
-    Compiler.make ~c_spec ~m_spec
-end)
-
-module Lookup_sims : Qualified_types.S_lookup with type t = Sim.t =
-Make_lookup (struct
-  type t = Sim.t
-
-  module Inner = Act_backend.Spec
-
-  let from_machine = Spec.backends
-
-  let qualify (s_spec : Act_backend.Spec.With_id.t)
-      ~(m_spec : Spec.With_id.t) =
-    Sim.make ~s_spec ~m_spec
-end)

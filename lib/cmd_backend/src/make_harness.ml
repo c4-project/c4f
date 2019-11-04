@@ -14,19 +14,16 @@ open Act_common
 
 let run ?(arch = Act_backend.Arch.C) ?(fqid : Id.t = Id.of_string "herd")
     (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
-    (_o : Output.t) (global_cfg : Act_config.Global.t) : unit Or_error.t =
+    (_o : Output.t) (cfg : Act_config.Global.t) : unit Or_error.t =
   Or_error.Let_syntax.(
-    (* TODO(@MattWindsor91): machine predicates? *)
-    let%bind cfg = Act_config.Act.of_global global_cfg in
-    let module Res = Common_cmd.Backend_support.Make_resolver (struct
-      let cfg = cfg
-    end) in
     let%bind input = Common_cmd.Args.With_files.infile_source args in
     let%bind output = Common_cmd.Args.With_files.outfile_sink args in
-    let%bind (module Sim) = Res.resolve_single fqid in
     let%bind input_path = Plumbing.Input.to_fpath_err input in
     let%bind output_dir = Plumbing.Output.to_fpath_err output in
-    let%map cmds = Sim.make_harness arch ~input_path ~output_dir in
+    let%bind (module Backend : Act_backend.Runner_types.S) =
+      Common_cmd.Backend_support.lookup_and_resolve_in_cfg fqid ~cfg
+    in
+    let%map cmds = Backend.make_harness arch ~input_path ~output_dir in
     List.iter ~f:Stdio.print_endline cmds)
 
 let command : Command.t =

@@ -9,9 +9,4 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-(** Tests and test data over the 'act' configuration struct. *)
-
-module Data : sig
-  val act : Act_config.Act.t Lazy.t
-  (** [act] evaluates to a sample ACT configuration. *)
-end
+(** This interface intentionally left blank. *)

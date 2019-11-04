@@ -16,7 +16,7 @@ module Pb = Plumbing
 
 module Input = struct
   type t =
-    { act_config: Act_config.Act.t
+    { global_config: Act_config.Global.t
     ; args: Args.Standard_asm.t
     ; sanitiser_passes: Set.M(Act_sanitiser.Pass_group).t
     ; c_litmus_aux: Act_delitmus.Aux.t
@@ -33,8 +33,8 @@ module Input = struct
     Act_asm.Job.make ~config ~passes:(sanitiser_passes i) ()
 end
 
-let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Act.t) :
-    Act_machine.Qualified.Compiler.t Act_machine.Target.t Or_error.t =
+let resolve_target (args : Args.Standard_asm.t) (cfg : Act_config.Global.t)
+    : Act_machine.Qualified.Compiler.t Act_machine.Target.t Or_error.t =
   let raw_target = Args.Standard_asm.target args in
   Common_cmd.Asm_target.resolve ~cfg raw_target
 
@@ -70,19 +70,18 @@ let resolve_sanitiser_passes (args : Args.Standard_asm.t)
        ~f:(Act_sanitiser.Pass_group.Selector.eval_b ~default:default_passes)
 
 let with_input (args : Args.Standard_asm.t) (output : Ac.Output.t)
-    (global_cfg : Act_config.Global.t) ~(f : Input.t -> unit Or_error.t)
+    (global_config : Act_config.Global.t) ~(f : Input.t -> unit Or_error.t)
     ~(default_passes : Set.M(Act_sanitiser.Pass_group).t) : unit Or_error.t
     =
   let sanitiser_passes = resolve_sanitiser_passes args ~default_passes in
   let f_args = Args.Standard_asm.rest args in
   Or_error.Let_syntax.(
     let%bind c_litmus_aux = get_aux args ~output in
-    let%bind act_config = Act_config.Act.of_global global_cfg in
-    let%bind target = resolve_target args act_config in
+    let%bind target = resolve_target args global_config in
     let%bind pb_input = Common_cmd.Args.With_files.infile_source f_args in
     let%bind pb_output = Common_cmd.Args.With_files.outfile_sink f_args in
     let input =
-      Input.Fields.create ~act_config ~output ~args ~sanitiser_passes
+      Input.Fields.create ~global_config ~output ~args ~sanitiser_passes
         ~c_litmus_aux ~target ~pb_input ~pb_output
     in
     f input)

@@ -27,10 +27,6 @@ module M = struct
      infers. *)
   let is_enabled = enabled
 
-  let backend (spec : t) ~(id : Ac.Id.t) :
-      Act_backend.Spec.With_id.t Or_error.t =
-    Act_backend.Spec.Set.get (backends spec) id
-
   let pp_enabled (f : Base.Formatter.t) : bool -> unit = function
     | true ->
         ()
@@ -65,8 +61,6 @@ module Forward_basic_spec
   let pp f = H.forward (B.pp f)
 
   let runner = H.forward B.runner
-
-  let backend = H.forward B.backend
 
   let backends = H.forward B.backends
 

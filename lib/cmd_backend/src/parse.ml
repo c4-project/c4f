@@ -14,17 +14,14 @@ open Act_common
 
 let run ?(fqid : Id.t = Id.of_string "herd")
     (args : Common_cmd.Args.Standard.t Common_cmd.Args.With_files.t)
-    (_o : Output.t) (global_cfg : Act_config.Global.t) : unit Or_error.t =
+    (_o : Output.t) (cfg : Act_config.Global.t) : unit Or_error.t =
   Or_error.Let_syntax.(
-    (* TODO(@MattWindsor91): machine predicates? *)
-    let%bind cfg = Act_config.Act.of_global global_cfg in
-    let module Res = Common_cmd.Backend_support.Make_resolver (struct
-      let cfg = cfg
-    end) in
     let%bind input = Common_cmd.Args.With_files.infile_source args in
     let%bind output = Common_cmd.Args.With_files.outfile_sink args in
-    let%bind (module Sim) = Res.resolve_single fqid in
-    let%bind obs = Sim.Reader.load input in
+    let%bind (module Backend : Act_backend.Runner_types.S) =
+      Common_cmd.Backend_support.lookup_and_resolve_in_cfg fqid ~cfg
+    in
+    let%bind obs = Backend.Reader.load input in
     Plumbing.Output.with_output output ~f:(fun oc ->
         Or_error.return
           (Yojson.Safe.pretty_to_channel oc

@@ -50,6 +50,29 @@ module Set : sig
 
   val of_map : 'spec Map.M(Id).t -> 'spec t
 
+  val get : ?id_type:string -> 'spec t -> id:Id.t -> 'spec Or_error.t
+  (** [get ?id_type specs ~id] tries to look up ID [id] in [specs], and
+      emits an error if it can't. If [id_type] is given, it will appear as
+      the ID type in such errors. *)
+
+  val get_with_fqid :
+       ?id_type:string
+    -> 'spec t
+    -> prefixes:Id.t list
+    -> fqid:Id.t
+    -> 'spec Or_error.t
+  (** [get_with_fqid ?id_type specs ~prefixes ~fqid] behaves as {!get}, but,
+      on lookup error, tries again with each prefix in [prefix] added to
+      [fqid] in turn. This is intended to model searches by a fully
+      qualified ID, where [prefixes] contains defaults for the qualifying
+      part of the ID. *)
+
+  (** {2 Projections} *)
+
+  val map : 'spec t -> f:('spec With_id.t -> 'a) -> 'a list
+  (** [map specs ~f] applies a mapper [f] to the specifications in [specs],
+      returning the results as a list. *)
+
   val partition_map :
        'spec t
     -> f:('spec With_id.t -> [`Fst of 'a | `Snd of 'b])

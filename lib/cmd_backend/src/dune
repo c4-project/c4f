@@ -7,4 +7,4 @@
  (preprocess
   (pps ppx_jane))
  (libraries stdio base base.caml core_kernel fmt yojson plumbing common_cmd
-   act.backend act.common act.config act.state act.utils))
+   act.backend act.common act.config act.machine act.state act.utils))

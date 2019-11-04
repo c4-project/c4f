@@ -1,25 +1,13 @@
-(* This file is part of 'act'.
+(* The Automagic Compiler Tormentor
 
-   Copyright (c) 2018, 2019 by Matt Windsor
+   Copyright (c) 2018--2019 Matt Windsor and contributors
 
-   Permission is hereby granted, free of charge, to any person obtaining a
-   copy of this software and associated documentation files (the
-   "Software"), to deal in the Software without restriction, including
-   without limitation the rights to use, copy, modify, merge, publish,
-   distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the
-   following conditions:
+   ACT itself is licensed under the MIT License. See the LICENSE file in the
+   project root for more information.
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-   NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-   USE OR OTHER DEALINGS IN THE SOFTWARE. *)
+   ACT is based in part on code from the Herdtools7 project
+   (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
+   project root for more information. *)
 
 open Base
 module Ac = Act_common
@@ -40,42 +28,34 @@ let try_get_sim_proc (style_id : Ac.Id.t) :
      -> (module Act_backend.Runner_types.S))
     Or_error.t =
   Ac.Id.try_find_assoc_with_suggestions sim_procs style_id
-    ~id_type:"sim style"
+    ~id_type:"backend style"
 
-let try_make_sim (machine : M_spec.With_id.t) (spec : Act_backend.Spec.t) :
-    (module Act_backend.Runner_types.S) Or_error.t =
-  Or_error.Let_syntax.(
-    let%map make_sim = try_get_sim_proc (Act_backend.Spec.style spec) in
-    let (module R) = M_spec.With_id.runner machine in
-    let module Basic : Act_backend.Runner_types.Basic = struct
-      let spec = spec
+let resolve :
+       Act_machine.Qualified.Sim.t
+    -> (module Act_backend.Runner_types.S) Or_error.t =
+  Act_machine.Qualified.Sim.lift_resolver
+    ~f:(fun (sspec : Act_backend.Spec.With_id.t) ->
+      sspec |> Act_common.Spec.With_id.spec |> Act_backend.Spec.style
+      |> try_get_sim_proc)
 
-      let machine_id = M_spec.With_id.id machine
+module Lookup = struct
+  include Act_machine.Lookup.Backend (struct
+    let test _spec = Or_error.return () (* for now *)
+  end)
 
-      module Runner = R
-    end in
-    let (module Sim) = make_sim (module Basic) in
-    (module Sim : Act_backend.Runner_types.S))
-
-let make_error (e : Error.t) =
-  ( module Act_backend.Runner.Make_error (struct
-    let error = e
-  end) : Act_backend.Runner_types.S )
-
-let make_sim (machine : M_spec.With_id.t) (spec : Act_backend.Spec.t) :
-    (module Act_backend.Runner_types.S) =
-  match try_make_sim machine spec with Ok m -> m | Error e -> make_error e
-
-module Make_resolver (B : sig
-  val cfg : Act_config.Act.t
-end) : Act_backend.Resolver_types.S = struct
-  (* TODO(@MattWindsor91): use B.cfg to set up default simulators. *)
-
-  let resolve_single (fqid : Act_common.Id.t) :
-      (module Act_backend.Runner_types.S) Or_error.t =
-    Or_error.Let_syntax.(
-      let%map q_spec = Act_config.Act.sim B.cfg ~fqid in
-      let m_spec = Sq_spec.m_spec q_spec in
-      let s_spec = Sq_spec.s_spec q_spec in
-      make_sim m_spec (Act_backend.Spec.With_id.spec s_spec))
+  (* TODO(@MattWindsor91): this seems exceptionally coupled, but it can't go
+     into the lookup functor as it depends on Act_config. *)
+  let lookup_in_cfg (fqid : Act_common.Id.t) ~(cfg : Act_config.Global.t) :
+      Act_machine.Qualified.Sim.t Or_error.t =
+    (* TODO(@MattWindsor91): there are probably ways we can declutter this *)
+    let specs = Act_config.Global.machines cfg in
+    let default_machines =
+      Act_config.(Default.machines (Global.defaults cfg))
+    in
+    lookup_single ~default_machines specs ~fqid
 end
+
+let lookup_and_resolve_in_cfg (fqid : Act_common.Id.t)
+    ~(cfg : Act_config.Global.t) :
+    (module Act_backend.Runner_types.S) Or_error.t =
+  Or_error.(fqid |> Lookup.lookup_in_cfg ~cfg >>= resolve)

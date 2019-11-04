@@ -44,11 +44,6 @@ module type S = sig
   val backends : t -> Act_backend.Spec.Set.t
   (** [backends spec] gets the backend specifications attached to [spec]. *)
 
-  val backend :
-    t -> id:Act_common.Id.t -> Act_backend.Spec.With_id.t Or_error.t
-  (** [sim spec ~id] gets the high-level specification in [spec] for the
-      backend with identifier [id], if one exists. *)
-
   (** {3 Running things on this machine} *)
 
   val via : t -> via

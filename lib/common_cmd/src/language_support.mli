@@ -31,6 +31,22 @@ val asm_runner_of_target :
 (** [asm_runner_of_target target] gets the runner dependency module
     associated with a target (either a compiler spec or emits clause). *)
 
-module Resolve_compiler : Act_machine.Resolver_types.S_compiler
-(** Compiler resolver that uses this module's built-in compiler table to
-    look up compilers. *)
+val resolve :
+     Act_machine.Qualified.Compiler.t
+  -> (module Act_compiler.Instance_types.S) Or_error.t
+(** [resolve spec] resolves [spec] using this module's built-in compiler
+    table to look up compiler styles. *)
+
+(** [Lookup] permits look-up of compilers with presence testing supplied by
+    using {!resolve} to resolve the compiler, and the compiler's [test]
+    function. *)
+module Lookup : sig
+  include Act_machine.Lookup_types.S_compiler
+
+  val lookup_in_cfg :
+       Act_common.Id.t
+    -> cfg:Act_config.Global.t
+    -> Act_machine.Qualified.Compiler.t Or_error.t
+  (** [lookup_in_cfg fqid ~cfg] looks up the fully qualified backend ID
+      [fqid] in the specs, and using the defaults, given by [cfg]. *)
+end

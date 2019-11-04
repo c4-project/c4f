@@ -68,23 +68,11 @@ module type S = sig
     (** [pp_verbose verbose f specs] prints a [specs] with the level of
         verbosity implied by [verbose]. *)
 
-    val get : t -> Id.t -> With_id.t Or_error.t
-    (** [get specs id] tries to look up ID [id] in [specs], and emits an
-        error if it can't. *)
-
-    val get_using_fqid : t -> fqid:Id.t -> With_id.t Or_error.t
-    (** [get_using_fqid specs ~fqid] tries to look up a spec in [specs]
-        whose ID forms a prefix of the 'fully qualified' ID ~fqid. *)
-
     val group : t -> f:(With_id.t -> Id.t) -> t Id.Map.t
     (** [group specs ~f] groups [specs] into buckets according to some
         grouping function [f]. [f] returns specification IDs; the idea is
         that this allows grouping of specifications by references to other,
         larger specifications. *)
-
-    val map : t -> f:(With_id.t -> 'a) -> 'a list
-    (** [map specs ~f] applies a mapper [f] to the specifications in
-        [specs], returning the results as a list. *)
   end
 
   val pp_verbose : bool -> t Fmt.t

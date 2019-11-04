@@ -27,8 +27,8 @@ module Set = struct
       ~(f : 'spec With_id.t -> [`Fst of a | `Snd of b]) : a list * b list =
     List.partition_map t ~f:(fun (id, spec) -> f (With_id.make ~id ~spec))
 
-  let map (type a) (t : 'spec t) ~(f : Id.t -> 'spec -> a) : a list =
-    List.map t ~f:(fun (i, s) -> f i s)
+  let map (type a) (t : 'spec t) ~(f : 'spec With_id.t -> a) : a list =
+    List.map t ~f:(fun (id, spec) -> f (With_id.make ~id ~spec))
 
   let of_map (type spec) : spec Map.M(Id).t -> spec t = Map.to_alist
 
@@ -44,13 +44,29 @@ module Set = struct
     in
     List.map ~f:(fun x -> (With_id.id x, With_id.spec x)) xs
 
-  let get_using_fqid (type spec) ?(id_type : string = "unknown")
-      (specs : spec t) ~(fqid : Id.t) : (Id.t * spec) Or_error.t =
-    Id.try_find_assoc_with_suggestions_prefix specs fqid ~id_type
-
   let get (type spec) ?(id_type : string = "unknown") (specs : spec t)
       ~(id : Id.t) : spec Or_error.t =
     Id.try_find_assoc_with_suggestions specs id ~id_type
+
+  let get_prefix_fallback (type spec) ?(id_type : string option)
+      (specs : spec t) (defaults : Id.t list) (initial_error : Error.t)
+      ~(fqid : Id.t) : spec Or_error.t =
+    let result =
+      Or_error.find_map_ok defaults ~f:(fun default ->
+          let fqid = Id.(default @. fqid) in
+          get ?id_type specs ~id:fqid)
+    in
+    (* We want default resolution to be 'hidden' in the error case; errors
+       returned should refer to the original resolution attempt. *)
+    Travesty_base_exts.Or_error.map_right result ~f:(Fn.const initial_error)
+
+  let get_with_fqid (type spec) ?(id_type : string option) (specs : spec t)
+      ~(prefixes : Id.t list) ~(fqid : Id.t) =
+    match (prefixes, get ?id_type specs ~id:fqid) with
+    | [], result | _, (Ok _ as result) ->
+        result
+    | _, Error err ->
+        get_prefix_fallback ?id_type specs prefixes err ~fqid
 
   module On_specs : Travesty.Traversable_types.S1 with type 'a t = 'a t =
   Travesty.Traversable.Make1 (struct
@@ -99,21 +115,6 @@ module Make (B : Basic) :
 
   module Set = struct
     type t = B.t Set.t [@@deriving equal]
-
-    let map (t : t) ~(f : B.With_id.t -> 'a) : 'a list =
-      Set.map t ~f:(fun id spec -> f (With_id.make ~id ~spec))
-
-    let get_using_fqid (specs : t) ~(fqid : Id.t) : With_id.t Or_error.t =
-      Or_error.Let_syntax.(
-        let%map id, spec =
-          Set.get_using_fqid specs ~fqid ~id_type:type_name
-        in
-        With_id.make ~id ~spec)
-
-    let get specs (id : Id.t) =
-      Or_error.Let_syntax.(
-        let%map spec = Set.get specs ~id ~id_type:type_name in
-        With_id.make ~id ~spec)
 
     let group t ~f =
       t

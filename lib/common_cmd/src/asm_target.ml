@@ -14,8 +14,8 @@ module A = Act_common
 
 type t = Act_common.Id.t Act_machine.Target.t
 
-let resolve (target : t) ~(cfg : Act_config.Act.t) :
+let resolve (target : t) ~(cfg : Act_config.Global.t) :
     Act_machine.Qualified.Compiler.t Act_machine.Target.t Or_error.t =
-  Act_machine.Target.With_errors.map_left_m
-    ~f:(fun fqid -> Act_config.Act.compiler cfg ~fqid)
-    target
+  (* TODO(@MattWindsor91): add fallback for default compilers *)
+  Act_machine.Target.With_errors.map_left_m target
+    ~f:(Language_support.Lookup.lookup_in_cfg ~cfg)
