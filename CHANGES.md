@@ -3,6 +3,12 @@
 Note that these changes are infrequently maintained and may not tell the
 whole story.
 
+## 2019-Nov-05
+
+- `act-config list-compilers` is now `act-c list-compilers`.
+- (And many other changes; I haven't been diligent in maintaining the
+  changelog!)
+
 ## 2019-Aug-28
 
 - `act configure` is now `act-config`.
