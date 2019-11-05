@@ -15,25 +15,13 @@ module C_spec = Act_compiler.Spec
 module Cq_spec = Act_machine.Qualified.Compiler
 
 let pp_compiler_verbose (f : Formatter.t) (spec : Cq_spec.t) : unit =
-  let compiler = Cq_spec.c_spec spec in
+  let compiler = Act_machine.Qualified.spec spec in
   Fmt.pf f "@[<v 2>@[<h>%a/%a@]@ %a@]" Id.pp
-    (Act_machine.Spec.With_id.id (Cq_spec.m_spec spec))
+    (Act_machine.Spec.With_id.id (Act_machine.Qualified.m_spec spec))
     Id.pp
     (C_spec.With_id.id compiler)
     C_spec.pp
     (C_spec.With_id.spec compiler)
-
-let pp_compiler_terse (f : Formatter.t) (spec : Cq_spec.t) : unit =
-  let compiler = Cq_spec.c_spec spec in
-  Fmt.pf f "@[<h>%a@ %a@ %a@]" Id.pp
-    (Act_machine.Spec.With_id.id (Cq_spec.m_spec spec))
-    Id.pp
-    (C_spec.With_id.id compiler)
-    C_spec.pp_summary
-    (C_spec.With_id.spec compiler)
-
-let pp_compiler (verbose : bool) : Cq_spec.t Fmt.t =
-  if verbose then pp_compiler_verbose else pp_compiler_terse
 
 let run_list_compilers
     ?(compiler_predicate : Act_compiler.Property.t Blang.t option)
@@ -49,12 +37,15 @@ let run_list_compilers
         ~test_specs:with_compiler_tests
         (Act_config.Global.machines global_cfg)
     in
-    let compilers =
+    let to_enabled_list = Fn.compose
       Act_common.Spec.Set.On_specs.to_list
-        (Act_machine.Lookup_listing.enabled compiler_listing)
-    in
+      Act_machine.Lookup_listing.enabled in
     let verbose = Common_cmd.Args.Standard.is_verbose standard_args in
-    Fmt.(pr "@[<v>%a@]@." (list (pp_compiler verbose)) compilers))
+    let pp =
+      if verbose then Fmt.(using to_enabled_list (list pp_compiler_verbose))
+      else Act_machine.Lookup_listing.pp_qualified_summary C_spec.pp_summary
+    in
+    Fmt.(pr "@[<v>%a@]@." pp compiler_listing))
 
 let list_compilers_command : Command.t =
   Command.basic

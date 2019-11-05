@@ -39,3 +39,18 @@ let get_with_fqid ?(id_type : string option)
      and emit a helpful error. *)
   Act_common.Spec.Set.get_with_fqid ?id_type ~prefixes:default_machines
     (enabled listing) ~fqid
+
+let enabled_spec_list (listing : 'spec t) : 'spec list =
+  listing
+  |> enabled
+  |> Act_common.Spec.Set.map ~f:Act_common.Spec.With_id.spec
+
+let pp_qualified_summary_entry (pp_body : 'spec Fmt.t) : 'spec Qualified.t Fmt.t =
+  Fmt.(concat ~sep:sp
+    [ using Qualified.m_spec_id (styled (`Fg `Red) Act_common.Id.pp)
+    ; using Qualified.spec_id (styled (`Fg `Blue) Act_common.Id.pp)
+    ; using Qualified.spec_without_id pp_body
+    ])
+
+let pp_qualified_summary (pp_body : 'spec Fmt.t) : 'spec Qualified.t t Fmt.t =
+  Fmt.(using enabled_spec_list (list ~sep:sp (hbox (pp_qualified_summary_entry pp_body))))

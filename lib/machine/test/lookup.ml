@@ -31,7 +31,7 @@ let%test_module "Compilers" =
             Lookup.lookup_single machines ~fqid ?default_machines:defaults
           in
           print_result
-            (Fmt.using Act_machine.Qualified.Compiler.c_spec
+            (Fmt.using Act_machine.Qualified.spec
                Act_compiler.Spec.With_id.pp)
             result
 
@@ -103,7 +103,7 @@ let%test_module "Backend" =
         let test (fqid : Act_common.Id.t) : unit =
           let result = Lookup.lookup_single machines ~fqid in
           print_result
-            (Fmt.using Act_machine.Qualified.Sim.s_spec
+            (Fmt.using Act_machine.Qualified.spec
                Act_backend.Spec.With_id.pp)
             result
 

@@ -12,8 +12,6 @@
 open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
-module M_spec = Act_machine.Spec
-module Sq_spec = Act_machine.Qualified.Sim
 
 let sim_procs :
     ( Ac.Id.t
@@ -31,9 +29,9 @@ let try_get_sim_proc (style_id : Ac.Id.t) :
     ~id_type:"backend style"
 
 let resolve :
-       Act_machine.Qualified.Sim.t
+       Act_machine.Qualified.Backend.t
     -> (module Act_backend.Runner_types.S) Or_error.t =
-  Act_machine.Qualified.Sim.lift_resolver
+  Act_machine.Qualified.Backend.lift_resolver
     ~f:(fun (sspec : Act_backend.Spec.With_id.t) ->
       sspec |> Act_common.Spec.With_id.spec |> Act_backend.Spec.style
       |> try_get_sim_proc)
@@ -46,7 +44,7 @@ module Lookup = struct
   (* TODO(@MattWindsor91): this seems exceptionally coupled, but it can't go
      into the lookup functor as it depends on Act_config. *)
   let lookup_in_cfg (fqid : Act_common.Id.t) ~(cfg : Act_config.Global.t) :
-      Act_machine.Qualified.Sim.t Or_error.t =
+      Act_machine.Qualified.Backend.t Or_error.t =
     (* TODO(@MattWindsor91): there are probably ways we can declutter this *)
     let specs = Act_config.Global.machines cfg in
     let default_machines =

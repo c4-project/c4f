@@ -19,6 +19,6 @@ end) : Lookup_types.S_compiler
 (** Constructs a compiler lookup given a compiler presence testing function. *)
 
 module Backend (Resolver : sig
-  val test : Qualified.Sim.t -> unit Or_error.t
+  val test : Qualified.Backend.t -> unit Or_error.t
 end) : Lookup_types.S_backend
 (** Constructs a backend lookup given a backend presence testing function. *)

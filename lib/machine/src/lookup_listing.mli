@@ -78,9 +78,26 @@ val disabled :
 (** [disabled listing] gets every disabled spec in [listing], alongside the
     reasoning as to why it was disabled. *)
 
+(** {2 Lookup} *)
+
 val get_with_fqid :
      ?id_type:string
   -> ?default_machines:Act_common.Id.t list
   -> 'spec t
   -> fqid:Act_common.Id.t
   -> 'spec Or_error.t
+
+(** {2 Pretty-printing} *)
+
+val pp_qualified_summary : 'spec Fmt.t -> 'spec Qualified.t t Fmt.t
+(** [pp_qualified_summary pp_spec] is a helper for implementing a form
+   of pretty-printing on lookup listings where:
+
+    - each spec is a single line;
+    - each line begins with the machine ID, then the spec ID;
+    - fields are space-delimited and terse.
+
+    This sort of summary is (mostly) human-readable,
+    but easily scraped by Unix-style scripts.
+
+    The caller should supply their own [box]. *)

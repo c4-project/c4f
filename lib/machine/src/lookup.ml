@@ -12,7 +12,7 @@
 open Core_kernel
 module Ac = Act_common
 module Qc = Qualified.Compiler
-module Qb = Qualified.Sim
+module Qb = Qualified.Backend
 
 module Machine = struct
   let partition_by_filter (specs : Spec.Set.t)
@@ -80,8 +80,6 @@ let partition_by_enabled_gen (type spec) (specs : spec list)
 module Make (B : sig
   type spec
 
-  type qspec
-
   type pred
 
   val id_type : string
@@ -90,19 +88,19 @@ module Make (B : sig
 
   val eval_pred : pred -> spec Ac.Spec.With_id.t -> bool
 
-  val qualify : Spec.t Ac.Spec.With_id.t -> spec Ac.Spec.With_id.t -> qspec
+  val is_enabled : spec -> bool
 
-  val is_enabled : qspec -> bool
-
-  val test_spec : qspec -> unit Or_error.t
-
-  val fqid_of_qualified : qspec -> Ac.Id.t
+  val test_spec : spec Qualified.t -> unit Or_error.t
 end) =
 struct
+  let is_enabled (q : B.spec Qualified.t) : bool =
+    q |> Qualified.spec |> Act_common.Spec.With_id.spec |> B.is_enabled
+
   let specs_of_enabled_machine ?(predicate : B.pred option)
       (m_spec : Spec.t Ac.Spec.With_id.t) :
-      B.qspec list * (B.qspec, Lookup_listing.Disable.t) List.Assoc.t =
-    let qualify = B.qualify m_spec in
+      B.spec Qualified.t list
+      * (B.spec Qualified.t, Lookup_listing.Disable.t) List.Assoc.t =
+    let qualify spec = Qualified.make ~m_spec ~spec in
     let filter spec =
       Option.for_all ~f:(Fn.flip B.eval_pred spec) predicate
     in
@@ -111,13 +109,14 @@ struct
       partition_by_filter_gen specs ~qualify ~filter
     in
     let enabled_compilers, disabled_in_config =
-      partition_by_enabled_gen pass_filter ~is_enabled:B.is_enabled
+      partition_by_enabled_gen pass_filter ~is_enabled
     in
     (enabled_compilers, fail_filter @ disabled_in_config)
 
   let specs_of_enabled_machines ?(predicate : B.pred option)
       (machines : Spec.Set.t) :
-      B.qspec list * (B.qspec, Lookup_listing.Disable.t) List.Assoc.t =
+      B.spec Qualified.t list
+      * (B.spec Qualified.t, Lookup_listing.Disable.t) List.Assoc.t =
     let par =
       Act_common.Spec.Set.map machines
         ~f:(specs_of_enabled_machine ?predicate)
@@ -128,14 +127,16 @@ struct
   let machine_disabled_specs
       (disabled_machines :
         (Spec.With_id.t, Lookup_listing.Disable.t) List.Assoc.t) :
-      (B.qspec, Lookup_listing.Disable.t) List.Assoc.t =
+      (B.spec Qualified.t, Lookup_listing.Disable.t) List.Assoc.t =
     List.concat_map disabled_machines ~f:(fun (m_spec, disable) ->
         m_spec |> B.specs_of_machine
-        |> Ac.Spec.Set.map ~f:(fun spec -> (B.qualify m_spec spec, disable)))
+        |> Ac.Spec.Set.map ~f:(fun spec ->
+               (Qualified.make ~m_spec ~spec, disable)))
 
   let actually_test_specs :
-         B.qspec list
-      -> B.qspec list * (B.qspec, Lookup_listing.Disable.t) List.Assoc.t =
+         B.spec Qualified.t list
+      -> B.spec Qualified.t list
+         * (B.spec Qualified.t, Lookup_listing.Disable.t) List.Assoc.t =
     List.partition_map ~f:(fun spec ->
         match B.test_spec spec with
         | Ok () ->
@@ -145,25 +146,29 @@ struct
               ( spec
               , Lookup_listing.Disable.make_failed ~location:Spec ~error ))
 
-  let maybe_test_specs ?(test_specs : bool = false) (specs : B.qspec list) :
-      B.qspec list * (B.qspec, Lookup_listing.Disable.t) List.Assoc.t =
+  let maybe_test_specs ?(test_specs : bool = false)
+      (specs : B.spec Qualified.t list) :
+      B.spec Qualified.t list
+      * (B.spec Qualified.t, Lookup_listing.Disable.t) List.Assoc.t =
     if test_specs then actually_test_specs specs else (specs, [])
 
-  let add_fqids_to_enabled : B.qspec list -> B.qspec Ac.Spec.With_id.t list
-      =
+  let add_fqids_to_enabled :
+      B.spec Qualified.t list -> B.spec Qualified.t Ac.Spec.With_id.t list =
     List.map ~f:(fun s ->
-        Ac.Spec.With_id.make ~id:(B.fqid_of_qualified s) ~spec:s)
+        Ac.Spec.With_id.make ~id:(Qualified.fqid s) ~spec:s)
 
   let add_fqids_to_disabled :
-         (B.qspec, Lookup_listing.Disable.t) List.Assoc.t
-      -> (B.qspec Ac.Spec.With_id.t, Lookup_listing.Disable.t) List.Assoc.t
-      =
+         (B.spec Qualified.t, Lookup_listing.Disable.t) List.Assoc.t
+      -> ( B.spec Qualified.t Ac.Spec.With_id.t
+         , Lookup_listing.Disable.t )
+         List.Assoc.t =
     List.map ~f:(fun (s, e) ->
-        (Ac.Spec.With_id.make ~id:(B.fqid_of_qualified s) ~spec:s, e))
+        (Ac.Spec.With_id.make ~id:(Qualified.fqid s) ~spec:s, e))
 
   let filtered_list ?(machine_predicate : Property.t Blang.t option)
       ?(predicate : B.pred option) ?(test_specs : bool option)
-      (specs : Spec.Set.t) : B.qspec Lookup_listing.t Or_error.t =
+      (specs : Spec.Set.t) : B.spec Qualified.t Lookup_listing.t Or_error.t
+      =
     let machine_listing =
       Machine.filtered_list ?predicate:machine_predicate specs
     in
@@ -190,7 +195,8 @@ struct
   let lookup_single ?(default_machines : Act_common.Id.t list option)
       ?(machine_predicate : Property.t Blang.t option)
       ?(predicate : B.pred option) ?(test_specs : bool option)
-      (specs : Spec.Set.t) ~(fqid : Ac.Id.t) : B.qspec Or_error.t =
+      (specs : Spec.Set.t) ~(fqid : Ac.Id.t) : B.spec Qualified.t Or_error.t
+      =
     (* TODO(@MattWindsor91): there may be a more efficient way of doing this
        than constructing a whole lookup listing. *)
     Or_error.Let_syntax.(
@@ -206,49 +212,33 @@ module Compiler (Basic : sig
 end) : Lookup_types.S_compiler = Make (struct
   type spec = Act_compiler.Spec.t
 
-  type qspec = Qc.t
-
   type pred = Act_compiler.Property.t Blang.t
 
   let id_type = "compiler"
 
-  let qualify m_spec c_spec = Qc.make ~m_spec ~c_spec
-
-  let is_enabled c_spec =
-    Act_compiler.Spec.With_id.is_enabled (Qc.c_spec c_spec)
+  let is_enabled = Act_compiler.Spec.is_enabled
 
   let eval_pred pred spec = Act_compiler.Property.eval_b spec pred
 
   let specs_of_machine = Spec.With_id.compilers
 
   let test_spec = Basic.test
-
-  let fqid_of_qualified (s : Qc.t) : Ac.Id.t =
-    Ac.(Id.(Spec.With_id.(id (Qc.m_spec s) @. id (Qc.c_spec s))))
 end)
 
 module Backend (Basic : sig
-  val test : Qb.t -> unit Or_error.t
+  val test : Qualified.Backend.t -> unit Or_error.t
 end) : Lookup_types.S_backend = Make (struct
   type spec = Act_backend.Spec.t
-
-  type qspec = Qb.t
 
   type pred = unit Blang.t
 
   let id_type = "backend"
 
-  let qualify m_spec s_spec = Qb.make ~m_spec ~s_spec
-
-  let is_enabled s_spec =
-    Act_backend.Spec.With_id.is_enabled (Qb.s_spec s_spec)
+  let is_enabled = Act_backend.Spec.is_enabled
 
   let eval_pred _pred _spec = false (* for now *)
 
   let specs_of_machine = Spec.With_id.backends
 
   let test_spec = Basic.test
-
-  let fqid_of_qualified (s : Qb.t) : Ac.Id.t =
-    Ac.(Id.(Spec.With_id.(id (Qb.m_spec s) @. id (Qb.s_spec s))))
 end)

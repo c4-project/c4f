@@ -12,7 +12,6 @@
 open Base
 module Ac = Act_common
 module C_spec = Act_compiler.Spec
-module Cq_spec = Qualified.Compiler
 
 type 'compiler t = Cc of 'compiler | Arch of Act_common.Id.t
 
@@ -38,9 +37,9 @@ include (
       with type 'compiler t := 'compiler t
        and type right = Act_common.Id.t )
 
-let arch : Cq_spec.t t -> Ac.Id.t = function
+let arch : Qualified.Compiler.t t -> Ac.Id.t = function
   | Cc spec ->
-      C_spec.With_id.emits (Cq_spec.c_spec spec)
+      C_spec.With_id.emits (Qualified.spec spec)
   | Arch arch ->
       arch
 

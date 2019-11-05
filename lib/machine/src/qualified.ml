@@ -12,29 +12,37 @@
 open Base
 module Ac = Act_common
 module Tx = Travesty_base_exts
-module C_spec = Act_compiler.Spec
-module S_spec = Act_backend.Spec
-module M_spec = Spec
+
+(* This M brought to you by ppx_deriving not supporting nonrec *)
+module M = struct
+  type 'qual t =
+    {spec: 'qual Act_common.Spec.With_id.t; m_spec: Spec.With_id.t}
+  [@@deriving make, fields, equal]
+end
+
+include M
+
+let m_spec_id (q : _ t) : Ac.Id.t =
+  Ac.Spec.With_id.id (M.m_spec q)
+
+let spec_id (q : _ t) : Ac.Id.t =
+  Ac.Spec.With_id.id (M.spec q)
+
+let fqid (q : _ t) : Ac.Id.t =
+  Ac.Id.(m_spec_id q @. spec_id q)
+
+let spec_without_id (q : 'qual t) : 'qual =
+  q |> spec |> Act_common.Spec.With_id.spec
 
 module Compiler = struct
-  module M = struct
-    type t = {c_spec: C_spec.With_id.t; m_spec: M_spec.With_id.t}
-    [@@deriving make, fields, equal]
-  end
-
-  include M
-
-  include C_spec.Forward_spec (M) (C_spec.With_id)
-            (struct
-              let component = c_spec
-            end)
+  type t = Act_compiler.Spec.t M.t [@@deriving equal]
 
   let lift_resolver (q_spec : t)
       ~(f :
             Act_compiler.Spec.With_id.t
          -> (module Act_compiler.Instance_types.Basic) Or_error.t) :
       (module Act_compiler.Instance_types.S) Or_error.t =
-    let c_spec = c_spec q_spec in
+    let c_spec = spec q_spec in
     let m_spec = m_spec q_spec in
     Or_error.Let_syntax.(
       let%map (module B : Act_compiler.Instance_types.Basic) = f c_spec in
@@ -47,9 +55,8 @@ module Compiler = struct
       end) : Act_compiler.Instance_types.S ))
 end
 
-module Sim = struct
-  type t = {s_spec: S_spec.With_id.t; m_spec: M_spec.With_id.t}
-  [@@deriving make, fields, equal]
+module Backend = struct
+  type t = Act_backend.Spec.t M.t [@@deriving equal]
 
   let lift_resolver (q_spec : t)
       ~(f :
@@ -57,7 +64,7 @@ module Sim = struct
          -> (   (module Act_backend.Runner_types.Basic)
              -> (module Act_backend.Runner_types.S))
             Or_error.t) : (module Act_backend.Runner_types.S) Or_error.t =
-    let s_spec = s_spec q_spec in
+    let s_spec = spec q_spec in
     let m_spec = m_spec q_spec in
     Or_error.Let_syntax.(
       let%map backend_maker = f s_spec in

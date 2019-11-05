@@ -61,6 +61,6 @@ module type S_compiler =
     consume {!Qualified.Backend.t} specs and emit
     {!Act_backend.Runner_types.S} modules. *)
 module type S_backend =
-  S with type spec := Qualified.Sim.t and type property := unit
+  S with type spec := Qualified.Backend.t and type property := unit
 
 (* for now *)

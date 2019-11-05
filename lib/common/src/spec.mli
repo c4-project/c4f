@@ -15,7 +15,7 @@
 open Base
 
 module With_id : sig
-  type 'spec t
+  type 'spec t [@@deriving equal]
 
   (** {2 Constructors} *)
 

@@ -14,26 +14,51 @@
 
 open Base
 
-(** {1 Compiler}
+(** {1 Basic shape of qualified specifications} *)
 
-    Bundles of compiler and machine specification. *)
+type 'qual t [@@deriving equal]
+(** Opaque type of qualified specifications, parametrised over the
+    type of the inner (non-machine) specification. *)
+
+(** {2 Constructing a qualified specification} *)
+
+val make
+  :  spec:'qual Act_common.Spec.With_id.t
+  -> m_spec: Spec.With_id.t
+  -> 'qual t
+(** [make ~spec ~m_spec] wraps [spec] in a qualified specification over
+    machine specification [m_spec]. *)
+
+(** {2 Accessors}
+
+    These can, of course, be used with {!Compiler.t} and {!Backend.t} *)
+
+val spec : 'qual t -> 'qual Act_common.Spec.With_id.t
+(** [spec q] unwraps [q], returning the original specification wrapped
+    with its identifier. *)
+
+val spec_without_id : 'qual t -> 'qual
+(** [spec_without_id q] applies {!Act_common.Spec.With_id.spec} to
+    [spec q]. *)
+
+val m_spec : _ t -> Spec.t Act_common.Spec.With_id.t
+(** [m_spec q] gets the machine spec within [q]. *)
+
+(** {3 Identifiers} *)
+
+val spec_id : _ t -> Act_common.Id.t
+(** [spec_id q] gets the unqualified ID of the wrapped spec within [q]. *)
+
+val m_spec_id : _ t -> Act_common.Id.t
+(** [m_spec_id q] gets the unqualified ID of the machine spec within [q]. *)
+
+val fqid : _ t -> Act_common.Id.t
+(** [fqid q] gets the fully qualified ID (machine, dot, spec) of [q]. *)
+
+(** {1 Qualified compiler specifications} *)
 module Compiler : sig
-  include Qualified_types.S
-
-  (** {3 Constructors} *)
-
-  val make :
-    c_spec:Act_compiler.Spec.With_id.t -> m_spec:Spec.With_id.t -> t
-
-  (** {3 Accessors} *)
-
-  val c_spec : t -> Act_compiler.Spec.With_id.t
-  (** [c_spec spec] strips the machine spec from [spec], turning it into an
-      ordinary {!With_id.t}. *)
-
-  (** {2 Using qualified compiler specifications as compiler specifications} *)
-
-  include Act_compiler.Spec_types.S with type t := t
+  type nonrec t = Act_compiler.Spec.t t [@@deriving equal]
+  (** Shorthand for a qualified compiler specification. *)
 
   (** {2 Resolving fully qualified IDs to compilers} *)
 
@@ -48,24 +73,10 @@ module Compiler : sig
       on success, a {!Act_compiler.Instance_types.S} instance. *)
 end
 
-(** Bundles of simulator and machine specification. *)
-module Sim : sig
-  type t [@@deriving equal]
-  (** Opaque type of machine-qualified sim specifications. *)
-
-  (** {2 Constructors} *)
-
-  val make : s_spec:Act_backend.Spec.With_id.t -> m_spec:Spec.With_id.t -> t
-
-  (** {2 Accessors} *)
-
-  val s_spec : t -> Act_backend.Spec.With_id.t
-  (** [s_spec spec] strips the machine spec from [spec], turning it into an
-      {{!Act_sim.Spec.With_id.t} ordinary Act_sim.Spec.With_id.t}. *)
-
-  val m_spec : t -> Spec.With_id.t
-  (** [m_spec spec] accesses the bundled machine specification inside
-      [spec]. *)
+(** {1 Qualified backend specifications} *)
+module Backend : sig
+  type nonrec t = Act_backend.Spec.t t [@@deriving equal]
+  (** Shorthand for a qualified backend specification. *)
 
   (** {2 Resolving fully qualified IDs to compilers} *)
 
