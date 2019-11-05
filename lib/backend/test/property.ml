@@ -11,7 +11,14 @@
 
 open Base
 
-module Make_null (Ctx : Monad.S) (Subject : Base.T) :
-  Pass_types.S with type t := Subject.t and type 'a ctx := 'a Ctx.t = struct
-  let run : Subject.t -> Subject.t Ctx.t = Ctx.return
-end
+let%expect_test "all properties have documentation" =
+  let num_passes =
+    Act_backend.Property.names |> Lazy.force
+    |> List.map
+         ~f:
+           (List.Assoc.mem Act_backend.Property.tree_docs
+              ~equal:String.Caseless.equal)
+    |> List.count ~f:not
+  in
+  Fmt.pr "@[<v>%d@]@." num_passes ;
+  [%expect {| 0 |}]

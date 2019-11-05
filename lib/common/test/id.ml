@@ -127,7 +127,7 @@ let%test_module "Property" =
           (Sexp.of_string "(and (has_tag bar) (has_prefix foo))")
       in
       let id = of_string "Foo.Bar.Baz" in
-      print_s [%sexp (eval_b id query : bool)] ;
+      print_s [%sexp (eval_b query id : bool)] ;
       [%expect {| true |}]
 
     let%expect_test "eval_b: sample failing expression" =
@@ -136,6 +136,6 @@ let%test_module "Property" =
           (Sexp.of_string "(and (has_tag bar) (is foo.bar))")
       in
       let id = of_string "Foo.Bar.Baz" in
-      print_s [%sexp (eval_b id query : bool)] ;
+      print_s [%sexp (eval_b query id : bool)] ;
       [%expect {| false |}]
   end )

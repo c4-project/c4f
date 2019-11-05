@@ -188,6 +188,8 @@ module Selector = struct
     include Enum.Make_from_enumerate (M)
   end)
 
+  let names = lazy (List.map ~f:snd table)
+
   let __t_of_sexp__ = t_of_sexp (* ?! *)
 
   let eval (default : Set.M(Single_passes).t) : t -> Set.M(Single_passes).t =

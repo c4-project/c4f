@@ -9,9 +9,4 @@
    (https://github.com/herd/herdtools7) : see the LICENSE.herd file in the
    project root for more information. *)
 
-open Base
-
-module Make_null (Ctx : Monad.S) (Subject : Base.T) :
-  Pass_types.S with type t := Subject.t and type 'a ctx := 'a Ctx.t = struct
-  let run : Subject.t -> Subject.t Ctx.t = Ctx.return
-end
+(** This interface intentionally left blank. *)

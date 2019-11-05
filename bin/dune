@@ -39,7 +39,7 @@
  (action
   (with-stdout-to
    specs.output
-   (run act-config "list-compilers" "-verbose" "-config" "act.conf.example")))
+   (run act-c "list-compilers" "-verbose" "-config" "act.conf.example")))
  (deps "act.conf.example"))
 
 (alias

@@ -111,7 +111,8 @@ module Property = struct
     [@@deriving sexp, variants]
   end
 
-  let eval id = function
+  let eval (prop : M.t) ~(id : id) : bool =
+    match prop with
     | M.Has_tag s ->
         has_tag id s
     | M.Has_prefix s ->
@@ -120,6 +121,9 @@ module Property = struct
         equal (of_string s) id
 
   include M
+
+  let names : string list Lazy.t =
+    lazy (List.map ~f:fst Variants.descriptions)
 
   let tree_docs : Property.Tree_doc.t =
     [ ( "has_tag"
@@ -139,5 +143,5 @@ module Property = struct
   let pp_tree : unit Fmt.t =
     Property.Tree_doc.pp tree_docs (List.map ~f:fst Variants.descriptions)
 
-  let eval_b id expr = Blang.eval expr (eval id)
+  let eval_b expr id = Blang.eval expr (eval ~id)
 end

@@ -23,7 +23,7 @@ let tree_docs : Ac.Property.Tree_doc.t =
     , { args= ["PROPERTY"]
       ; details=
           {|
-Selects compilers whose 'style' (for example, 'gcc')
+Selects backends whose 'style' (for example, 'herd' or 'litmus')
 matches the given ID;
 see 'identifier predicates'.
 |}

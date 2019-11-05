@@ -17,10 +17,10 @@ type t [@@deriving sexp]
 (** {1 Constructors} *)
 
 val id : Act_common.Id.Property.t -> t
-(** [id prop] constructs a query over a compiler's ID. *)
+(** [id] constructs a query over a backend's ID. *)
 
 val style : Act_common.Id.Property.t -> t
-(** [style prop] constructs a query over a compiler's style ID. *)
+(** [has_style style] constructs a query over a backend's style ID. *)
 
 (** {1 Interface implementations} *)
 

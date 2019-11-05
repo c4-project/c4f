@@ -215,7 +215,7 @@ end) : Lookup_types.S_compiler = Make (struct
 
   let is_enabled = Act_compiler.Spec.is_enabled
 
-  let eval_pred pred spec = Act_compiler.Property.eval_b spec pred
+  let eval_pred = Act_compiler.Property.eval_b
 
   let specs_of_machine = Spec.With_id.compilers
 

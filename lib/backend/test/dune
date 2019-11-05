@@ -1,9 +1,9 @@
 ;; -*- mode: lisp; -*-
 
 (library
- (name act_compiler_test)
+ (name act_backend_test)
  (inline_tests)
  (preprocess
   (pps ppx_jane))
  (libraries ppx_expect.config ppx_expect.common ppx_inline_test.config base
-   core_kernel fmt act.compiler act.common act.utils))
+   core_kernel fmt act.backend act.common act.utils))

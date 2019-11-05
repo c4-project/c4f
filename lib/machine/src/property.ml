@@ -19,13 +19,15 @@ type t = Id of Ac.Id.Property.t | Is_remote | Is_local
 
 let eval (spec : Spec.With_id.t) = function
   | Id prop ->
-      Ac.Id.Property.eval (Spec.With_id.id spec) prop
+      Ac.Id.Property.eval ~id:(Spec.With_id.id spec) prop
   | Is_remote ->
       Spec.With_id.remoteness spec = `Remote
   | Is_local ->
       Spec.With_id.remoteness spec = `Local
 
 let eval_b spec expr = Blang.eval expr (eval spec)
+
+let names : string list Lazy.t = lazy (List.map ~f:fst Variants.descriptions)
 
 let tree_docs : Ac.Property.Tree_doc.t =
   [ ("id", {args= ["PROPERTY"]; details= {| See 'identifier predicates'. |}})
